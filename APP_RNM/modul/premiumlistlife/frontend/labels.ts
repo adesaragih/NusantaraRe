@@ -131,7 +131,7 @@ export const JUDUL_KOLOM_PESERTA: Record<string, string> = {
 export const DETAIL_POLIS = {
   judul: 'Premium List Detail',
   nomor: 'PL_NUMBER',
-  belumBernomor: 'Belum bernomor',
+  belumBernomor: 'Not yet numbered',
   terbitkan: 'Generate PL Number',
   /**
    * ⛔ Kalimatnya MENYEBUT apa yang harus dikerjakan lebih dahulu. "Tidak
@@ -152,9 +152,9 @@ export const DETAIL_POLIS = {
  */
 export const UNGGAH_CSV = {
   judul: 'Upload CSV Premium List Detail',
-  pilihBerkas: 'Berkas CSV',
-  tinjau: 'Tinjau',
-  simpan: 'Simpan permanen',
+  pilihBerkas: 'CSV file',
+  tinjau: 'Preview',
+  simpan: 'Save',
   /**
    * ⛔ Aturan pemisah DINYATAKAN DI MUKA, bukan hanya saat menolak. Korpus
    * menyebutnya enam kali di nama langkahnya ("SEPARATOR MENGGUNAKAN TITIK")
@@ -162,16 +162,16 @@ export const UNGGAH_CSV = {
    * aturannya setelah berkasnya ditolak.
    */
   aturanPemisah:
-    'Angka memakai TITIK sebagai pemisah desimal, dan tanpa pemisah ribuan. ' +
-    'Contoh: 1234567.89 — bukan 1,234,567.89 dan bukan 1.234.567,89. ' +
-    'Tanggal berformat dd/mm/yyyy.',
+    'Numbers use a DOT (.) as the decimal separator, with no thousands separator. ' +
+    'Example: 1234567.89 — not 1,234,567.89 and not 1.234.567,89. ' +
+    'Dates use the dd/mm/yyyy format.',
   perbaikiDulu:
-    'Perbaiki dulu baris yang ditolak, lalu tinjau ulang. Selama masih ada ' +
-    'penolakan, tidak ada satu baris pun yang disimpan.',
-  kolomBaris: 'Baris',
-  kolomKolom: 'Kolom',
-  kolomPesan: 'Pesan',
-  kolomSebab: 'Sebab',
+    'Fix the rejected rows first, then preview again. While any row is ' +
+    'rejected, no row is saved.',
+  kolomBaris: 'Row',
+  kolomKolom: 'Column',
+  kolomPesan: 'Message',
+  kolomSebab: 'Reason',
 } as const
 
 /**
@@ -390,3 +390,10 @@ export const KOLOM_PRODUK = {
   sob: 'SOB',
   policyHolder: 'POLICY HOLDER',
 } as const
+
+/**
+ * Teks pilihan kosong dropdown modul ini — bahasa Inggris (permintaan work owner
+ * 01-10-2026). Diteruskan lewat prop `kosong` komponen `Pilih` inti, sehingga
+ * bawaan inti (`-- pilih --`) untuk modul lain tidak berubah.
+ */
+export const TEKS_PILIH = '-- choose --'

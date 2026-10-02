@@ -1,0 +1,194 @@
+<?xml version="1.0"?>
+
+<pagedata>
+<pyRuleAvailable>Yes</pyRuleAvailable>
+<pySkipInLP>false</pySkipInLP>
+<pyRuleName>LinkService LinkService</pyRuleName>
+<pxUpdateSystemID>pegadevnusare2</pxUpdateSystemID>
+<pyValueChanged>false</pyValueChanged>
+<pyClassName/>
+<pxUpdateDateTime>20250904T143230.823 GMT</pxUpdateDateTime>
+<pzRuleSetVersionMinor>01</pzRuleSetVersionMinor>
+<pxMoveImportOperName>ADE SAMUEL TUA SARAGIH</pxMoveImportOperName>
+<pySortDateCircumWithinRSMajor>true</pySortDateCircumWithinRSMajor>
+<pyUsage/>
+<pzRuleSetVersionMajor>01</pzRuleSetVersionMajor>
+<pyRuleFormStatusTime>20260908T014415.682 GMT</pyRuleFormStatusTime>
+<pyJavaStream/>
+<pySettingViewInLP>pzSettingDefaultViewInLP</pySettingViewInLP>
+<pzRuleSetVersionPatch>88</pzRuleSetVersionPatch>
+<pxHostId>jboss1073</pxHostId>
+<pxCreateDateTime>20250904T143152.280 GMT</pxCreateDateTime>
+<pyRuleFormType>Harness</pyRuleFormType>
+<pyRuleSet>GISFW</pyRuleSet>
+<pyCircumstanceDefinition/>
+<pyRuleHarness>RuleForm</pyRuleHarness>
+<pyInterface/>
+<pxInstanceLockedCreateDateTime/>
+<pxInstanceLockedBy/>
+<pyBaseRule>false</pyBaseRule>
+<pyCircumstanceDateProp/>
+<pyCircumstanceVal/>
+<pxInsName>LINKSERVICE!LINKSERVICE</pxInsName>
+<pyFormPost/>
+<pxSaveDateTime>20250904T143230.941 GMT</pxSaveDateTime>
+<pyShowJavaWindowName>GeneratedJava20260908T014415.749 GMT</pyShowJavaWindowName>
+<pyMethodStatus/>
+<pxInstanceLockedRuleSetVersion/>
+<pyPurpose>LinkService</pyPurpose>
+<pyCircumstanceProp/>
+<pyIsFromManageChangeLP/>
+<pyDocumentTitle/>
+<pxInstanceLockedDateTime/>
+<pzInsKey>RULE-ADMIN-SYSTEM-SETTINGS LINKSERVICE LINKSERVICE #20250904T143152.280 GMT</pzInsKey>
+<pyTemplate/>
+<pySPRuleSetName/>
+<pzIsPrivateCheckOut>true</pzIsPrivateCheckOut>
+<pxInsId>LINKSERVICE!LINKSERVICE</pxInsId>
+<pyIsStaleRuleCheckEnabled>false</pyIsStaleRuleCheckEnabled>
+<pyWorkKey/>
+<pyRuleParamsStreamName/>
+<pyRuleFormStatus>Good</pyRuleFormStatus>
+<pySpecialtyComponentData/>
+<pxInstanceLockedRuleSet/>
+<pyRuleSetVersion>01-01-88</pyRuleSetVersion>
+<pyTemplateDisplayText>No ruleset versions available</pyTemplateDisplayText>
+<pzDocumentKey>RULE-ADMIN-SYSTEM-SETTINGS LINKSERVICE LINKSERVICE #20250904T143152.280 GMT</pzDocumentKey>
+<pyStepPageReference>RH_1</pyStepPageReference>
+<pxUpdateOpName>ADE SAMUEL TUA SARAGIH</pxUpdateOpName>
+<pyWindowTitle/>
+<pxUpdateOperator>ADESAMUEL</pxUpdateOperator>
+<pyCircumstanceType/>
+<pyObjClassLabel>Application Settings</pyObjClassLabel>
+<pxSiblingCount/>
+<pxMoveFromSystem/>
+<pzChecksum>100758171</pzChecksum>
+<pyDescription/>
+<pxMoveImportOperId>ADESAMUEL</pxMoveImportOperId>
+<pyDisplayMode>basic</pyDisplayMode>
+<pxInstanceLockedKey/>
+<pxTabLabel>LinkService LinkService</pxTabLabel>
+<pxMoveImportDateTime>20250904T150143.376 GMT</pxMoveImportDateTime>
+<pyOwner>LinkService</pyOwner>
+<pxObjClass>Rule-Admin-System-Settings</pxObjClass>
+<pyCircumstanceDate/>
+<pyTemplateInputBox/>
+<pxCreateOperator>ADESAMUEL</pxCreateOperator>
+<pyRuleStarts/>
+<pyRuleEnds/>
+<pxCreateSystemID>pegadevnusare2</pxCreateSystemID>
+<pxLimitedAccess>Dev</pxLimitedAccess>
+<pyLabel>LinkService</pyLabel>
+<pxCommitDateTime>20250904T150144.000 GMT</pxCommitDateTime>
+<pzOriginalInstanceKey>RULE-ADMIN-SYSTEM-SETTINGS LINKSERVICE LINKSERVICE #20250904T143152.280 GMT</pzOriginalInstanceKey>
+<pyCircumstanceTemplate/>
+<pxCreateOpName>ADE SAMUEL TUA SARAGIH</pxCreateOpName>
+<pyStreamName/>
+<pzStatus>valid</pzStatus>
+<pyRuleVersionsList REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pxListSubscript>1</pxListSubscript>
+<pyMenuTooltip/>
+<pzInsKey>RULE-ADMIN-SYSTEM-SETTINGS LINKSERVICE LINKSERVICE #20250904T143152.280 GMT</pzInsKey>
+<pyLabel>01-01-88 (Available)</pyLabel>
+</rowdata>
+</pyRuleVersionsList>
+<pyToolBarSettings>
+<pyFavorites>true</pyFavorites>
+<pxCanJustifyWarnings>true</pxCanJustifyWarnings>
+<pyRecover>false</pyRecover>
+<pyForward>true</pyForward>
+<pyRestore>false</pyRestore>
+<pyBranchOut>false</pyBranchOut>
+<pySave>false</pySave>
+<pyLaunch>true</pyLaunch>
+<pyHasQualifiers>false</pyHasQualifiers>
+<pyCheckIn>false</pyCheckIn>
+<pyRequiresCheckOut>true</pyRequiresCheckOut>
+<pySiblings>true</pySiblings>
+<pyAvailability>false</pyAvailability>
+<pyHelpRef>/rule-/rule-admin-/rule-admin-system-/rule-admin-system-settings/main</pyHelpRef>
+<pyDelegates>false</pyDelegates>
+<pyRefresh>true</pyRefresh>
+<pyPreview>false</pyPreview>
+<pyRun>false</pyRun>
+<pyCheckOut>true</pyCheckOut>
+<pyRuleData>true</pyRuleData>
+<pyVersionSecure>true</pyVersionSecure>
+<pyRuleResolution>true</pyRuleResolution>
+<pyCurrentlyOpen>true</pyCurrentlyOpen>
+<pxObjClass>Embed-WBSettings-ToolBar</pxObjClass>
+<pyDelete>false</pyDelete>
+<pyShowJava>false</pyShowJava>
+<pyNew>true</pyNew>
+<pyBack>true</pyBack>
+<pyCompareVersion/>
+<pySaveAs>true</pySaveAs>
+<pyHelpURI>https://community.pega.com/help_v88/rule-/rule-admin-/rule-admin-system-/rule-admin-system-settings/main</pyHelpURI>
+<pyPropertyPane>false</pyPropertyPane>
+<pyUsesInheritance>false</pyUsesInheritance>
+</pyToolBarSettings>
+<pyRMAction>
+<pxObjClass>Embed-RuleManagement</pxObjClass>
+<pyAction>load</pyAction>
+</pyRMAction>
+<pyCustomFields REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="empty">
+<pyCFieldValue/>
+<pxObjClass>Embed-CustomFieldsList</pxObjClass>
+<pyCFileKey/>
+<pyCFieldName/>
+<pyCFileRelativePath/>
+<pxSubscript>empty</pxSubscript>
+<pyCFieldType/>
+</rowdata>
+</pyCustomFields>
+<pxWarnings REPEATINGTYPE="PageList"/>
+<pySettingMetaData>
+<pxObjClass>Embed-SettingMetaData</pxObjClass>
+<pyValueType>String</pyValueType>
+<pyCategoryName/>
+</pySettingMetaData>
+<pyPagesAndClasses REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-PagesAndClasses</pxObjClass>
+<pyPagesAndClassesClass/>
+<pyPagesAndClassesPage/>
+</rowdata>
+</pyPagesAndClasses>
+<pyProductionLevel REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-System-Settings</pxObjClass>
+<pySetting>=ResponLink.URL</pySetting>
+<pyDescription>1 - Sandbox</pyDescription>
+<pyLabel/>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-System-Settings</pxObjClass>
+<pySetting>=ResponLink.URL</pySetting>
+<pyDescription>2 - Development</pyDescription>
+<pyLabel/>
+</rowdata>
+<rowdata REPEATINGINDEX="3">
+<pxObjClass>Embed-System-Settings</pxObjClass>
+<pySetting>=ResponLink.URL</pySetting>
+<pyDescription>3 - Quality assurance</pyDescription>
+<pyLabel/>
+</rowdata>
+<rowdata REPEATINGINDEX="4">
+<pxObjClass>Embed-System-Settings</pxObjClass>
+<pySetting>=ResponLink.URL</pySetting>
+<pyDescription>4 - Staging</pyDescription>
+<pyLabel/>
+</rowdata>
+<rowdata REPEATINGINDEX="5">
+<pxObjClass>Embed-System-Settings</pxObjClass>
+<pySetting>=ResponLink.URL</pySetting>
+<pyDescription>5 - Production</pyDescription>
+<pyLabel/>
+</rowdata>
+</pyProductionLevel>
+<pxWarningsToDisplay REPEATINGTYPE="PageList"/>
+</pagedata>

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import { isiDariPenawaran, tanggalMasukan, type PenawaranPolis } from '../api'
 import { LABEL_PENAWARAN } from '../labels'
-import { hitungMaxTBC, jenisAsuransiDari, kolomWajibKosong, opsiDari, tampilTBC, tanggalRiwayat, terapkanPilihan } from './FormPenawaran'
+import { hitungMaxTBC, jenisAsuransiDari, kolomWajibKosong, opsiDari, saringAngkaDesimal, tampilTBC, tanggalRiwayat, terapkanPilihan } from './FormPenawaran'
 
 // Uji form penawaran — tiket 01 bagian 3.
 
@@ -235,5 +235,79 @@ describe('kolom wajib dan tombol Save Offer', () => {
 describe('status tersimpan (migrasi 062)', () => {
   it('radio Status terisi dari status terakhir yang disimpan', () => {
     expect(isiDariPenawaran(contoh).status).toBe('Pending')
+  })
+})
+
+describe('gaya layar (premiumlistlife.css)', () => {
+  const CSS = readFileSync(join(__dirname, '..', 'premiumlistlife.css'), 'utf8')
+  const DATA_POLIS = readFileSync(join(__dirname, 'FormDataPolis.tsx'), 'utf8')
+
+  it('setiap kelas pl- yang dipakai layar terdefinisi di CSS modul', () => {
+    const dipakai = new Set(BERKAS.match(/pl-offer[\w-]*/g) ?? [])
+    expect(dipakai.size).toBeGreaterThan(5)
+    for (const k of dipakai) {
+      expect(CSS).toContain('.' + k)
+    }
+  })
+
+  it('setiap tombol memakai kelas dasar btn — tanpa itu tampil sebagai tombol bawaan peramban', () => {
+    for (const sumber of [BERKAS, DATA_POLIS]) {
+      expect(sumber).not.toMatch(/className="btn--/)
+    }
+  })
+
+  it('CSS memakai token inti, nol warna heksa', () => {
+    expect(CSS).not.toMatch(/#[0-9a-fA-F]{3,6}\b/)
+  })
+})
+
+describe('Sum Insured hanya angka', () => {
+  it('huruf, simbol, dan koma dibuang; satu titik desimal dipertahankan', () => {
+    expect(saringAngkaDesimal('6.000.000abc')).toBe('6.000000')
+    expect(saringAngkaDesimal('Rp 6,000,000,000')).toBe('6000000000')
+    expect(saringAngkaDesimal('1234.56')).toBe('1234.56')
+    expect(saringAngkaDesimal('-1e5')).toBe('15')
+    expect(saringAngkaDesimal('')).toBe('')
+  })
+
+  it('kolom Sum Insured memakai penyaringnya', () => {
+    expect(BERKAS).toContain("ubah('sumInsured')(saringAngkaDesimal(v))")
+  })
+})
+
+describe('dropdown berbahasa Inggris', () => {
+  it('setiap Pilih di layar memakai teks kosong "-- choose --"', () => {
+    const DATA_POLIS = readFileSync(join(__dirname, 'FormDataPolis.tsx'), 'utf8')
+    for (const sumber of [BERKAS, DATA_POLIS]) {
+      const pilih = sumber.match(/<Pilih\b/g) ?? []
+      const kosong = sumber.match(/kosong=\{TEKS_PILIH\}/g) ?? []
+      expect(pilih.length).toBeGreaterThan(0)
+      expect(kosong.length).toBe(pilih.length)
+    }
+  })
+})
+
+describe('gaya seluruh layar modul', () => {
+  const CSS = readFileSync(join(__dirname, '..', 'premiumlistlife.css'), 'utf8')
+  const layar = ['FormDataPolis.tsx', 'PremiumListDetail.tsx', 'UnggahCSVPeserta.tsx', 'InputOffer.tsx']
+
+  it('setiap kelas pl- yang dipakai terdefinisi di premiumlistlife.css', () => {
+    for (const berkas of layar) {
+      const sumber = readFileSync(join(__dirname, berkas), 'utf8')
+      for (const k of new Set(sumber.match(/\bpl-[a-z]+(?:__[a-z-]+)?/g) ?? [])) {
+        if (k === 'pl-detail' || k === 'pl-datapolis' || k === 'pl-unggah') continue // pembungkus tanpa gaya
+        expect(CSS, `${berkas}: .${k}`).toContain('.' + k)
+      }
+    }
+  })
+
+  it('tidak ada tombol tanpa kelas dasar btn', () => {
+    for (const berkas of layar) {
+      const sumber = readFileSync(join(__dirname, berkas), 'utf8')
+      const tombol = sumber.match(/<button\b[^>]*>/g) ?? []
+      for (const t of tombol) {
+        expect(t, berkas).toMatch(/className="btn\b/)
+      }
+    }
   })
 })

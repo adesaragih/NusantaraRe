@@ -25,7 +25,8 @@ func TestDataPolisWajibIsiDilaporkanSekaligus(t *testing.T) {
 		t.Fatalf("galat = %v", err)
 	}
 	for _, p := range []string{PesanProductNameKosong, PesanRISlipKosong, PesanProRateTypeKosong,
-		PesanMarketingKosong, PesanAnnuityInterestKosong, PesanPremiumRefundKosong, PesanSOBKosong, PesanBillingKosong} {
+		PesanMarketingKosong, PesanAnnuityInterestKosong, PesanPremiumRefundKosong, PesanSOBKosong, PesanBillingKosong,
+		PesanRetroKosong} {
 		if !strings.Contains(err.Error(), p) {
 			t.Errorf("pesan %q tidak dilaporkan: %v", p, err)
 		}
@@ -95,5 +96,32 @@ func TestPeriksaBatasProduk(t *testing.T) {
 	}
 	if got := PeriksaBatasProduk("QR", "", BatasProduk{}, peserta); len(got) != 0 {
 		t.Errorf("batas kosong tetap menuduh: %q", got)
+	}
+}
+
+// Premium Payment Method: kode 1/2/3 (Calculate1_Act), teks keputusan work owner.
+func TestPilihanPremiumPaymentMethod(t *testing.T) {
+	mau := map[string]string{"1": "Single", "2": "Annually", "3": "Others"}
+	if len(PilihanProRateType) != len(mau) {
+		t.Fatalf("pilihan = %v", PilihanProRateType)
+	}
+	for _, p := range PilihanProRateType {
+		if mau[p.Kode] != p.Nama {
+			t.Errorf("kode %q = %q, mau %q", p.Kode, p.Nama, mau[p.Kode])
+		}
+	}
+}
+
+// Billing Name dan Retrocessionaire hanya untuk TP/TR; di Type lain dikosongkan.
+func TestBillingRetroDikosongkanSelainTPTR(t *testing.T) {
+	d := dataPolisLengkap() // Type QR
+	d.RetroID, d.RetroName = "UJI-R1", "UJI-BILLING"
+	d.SecurityReinsurerID, d.SecurityReinsurer = "UJI-S1", "UJI-RETRO"
+	got, err := SusunDataPolis(d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.RetroID != "" || got.RetroName != "" || got.SecurityReinsurerID != "" || got.SecurityReinsurer != "" {
+		t.Errorf("QR menyimpan Billing/Retro tersembunyi: %+v", got)
 	}
 }

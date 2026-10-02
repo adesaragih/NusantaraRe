@@ -34,12 +34,13 @@ import {
   type AkibatKeputusanPolis,
 } from '../api'
 import FormPenawaran from './FormPenawaran'
+import '../premiumlistlife.css'
 
 /** Menyusun kalimat tentang akibat sebuah keputusan. */
 export function ringkasanAkibat(a: AkibatKeputusanPolis): string {
-  if (a.statusWork !== '') return `Kasus ditutup — ${a.statusWork}.`
-  if (a.tahapTujuan !== '') return `Kasus berpindah ke ${a.tahapTujuan}.`
-  return 'Keputusan tersimpan.'
+  if (a.statusWork !== '') return `Case closed — ${a.statusWork}.`
+  if (a.tahapTujuan !== '') return `Case moved to ${a.tahapTujuan}.`
+  return 'Decision saved.'
 }
 
 /**
@@ -52,7 +53,9 @@ export function ringkasanAkibat(a: AkibatKeputusanPolis): string {
  * di mana mereka berada.
  */
 export function judulKeputusan(tahap: string): string {
-  return tahap === TAHAP_POLIS.detail ? 'Input Premium Detail' : 'Input Offer'
+  // Judul tahap penawaran = nama tahapnya, VERBATIM `pyWorkStatus` (`Input Offer Life`)
+  // - permintaan work owner 01-10-2026.
+  return tahap === TAHAP_POLIS.detail ? TAHAP_POLIS.detail : TAHAP_POLIS.penawaran
 }
 
 export default function InputOffer({
@@ -106,17 +109,32 @@ export default function InputOffer({
     }
   }
 
+  // ⛔ Di tahap Input Premium Detail layar ini berdiri DI BAWAH Premium List
+  // Detail (rute.tsx), yang sudah punya kepala sendiri — kepala kedua dibuang,
+  // periode pindah ke panel Decision.
+  const diDetail = tahap === TAHAP_POLIS.detail
+  const lencanaPeriode = periode !== '' && (
+    <span className="pl-kepala__chip" role="status">
+      <span className="pl-kepala__label">Period</span> {periodeTampil(periode)}
+    </span>
+  )
+
   return (
     <section className="polis-offer">
-      <h2 className="polis-offer__judul">{judulKeputusan(tahap)}</h2>
-      <p className="polis-offer__tahap">
-        {polisID} — {tahap}
-      </p>
-
-      {periode !== '' && (
-        <p className="polis-offer__periode" role="status">
-          Periode produksi: {periode}
-        </p>
+      {/*
+        Kepala ringkas (permintaan work owner 01-10-2026): judul, lalu nomor
+        kasus dan periode produksi saja. Tahap tidak diulang — judulnya
+        (`judulKeputusan`) sudah menyebutnya.
+      */}
+      {!diDetail && (
+        <header className="pl-kepala">
+          <h2 className="pl-kepala__judul">{judulKeputusan(tahap)}</h2>
+          <div className="pl-kepala__meta">
+            <span className="pl-kepala__chip">{polisID}</span>
+            {/* ⛔ Periode produksi DITAMPILKAN sebelum menyimpan — AC tiket 02. */}
+            {lencanaPeriode}
+          </div>
+        </header>
       )}
       {galatPeriode !== null && <Gagal galat={galatPeriode} />}
 
@@ -128,43 +146,66 @@ export default function InputOffer({
       */}
       {tahap === TAHAP_POLIS.penawaran && <FormPenawaran polisID={polisID} />}
 
-      {galat !== null && <Gagal galat={galat} />}
-      {akibat !== null && <p role="status">{ringkasanAkibat(akibat)}</p>}
+      <section className="panel pl-keputusan">
+        <h3 className="panel__title">Decision</h3>
+        {diDetail && <div className="pl-kepala__meta pl-keputusan__meta">{lencanaPeriode}</div>}
+        {galat !== null && <Gagal galat={galat} />}
+        {akibat !== null && (
+          <p className="pl-offer__tersimpan" role="status">
+            {ringkasanAkibat(akibat)}
+          </p>
+        )}
 
-      <p className="polis-offer__aksi">
-        <button
-          type="button"
-          disabled={sibuk}
-          onClick={() => {
-            void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.confirm))
-          }}
-        >
-          {KEPUTUSAN_POLIS.confirm}
-        </button>{' '}
-        {/* ⛔ Hanya bila tahapnya punya konektornya — lihat kepala berkas. */}
-        {bolehRejectDiTahap(tahap) && (
-          <>
+        <div className="pl-keputusan__aksi">
+          <button
+            type="button"
+            className="btn btn--primary"
+            disabled={sibuk}
+            onClick={() => {
+              void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.confirm))
+            }}
+          >
+            {KEPUTUSAN_POLIS.confirm}
+          </button>
+          {/* ⛔ Hanya bila tahapnya punya konektornya — lihat kepala berkas. */}
+          {bolehRejectDiTahap(tahap) && (
             <button
               type="button"
+              className="btn"
               disabled={sibuk}
               onClick={() => {
                 void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.reject))
               }}
             >
               {KEPUTUSAN_POLIS.reject}
-            </button>{' '}
-          </>
-        )}
-        <button
-          type="button"
-          disabled={sibuk}
-          onClick={() => {
-            void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.decline))
-          }}
-        >
-          {KEPUTUSAN_POLIS.decline}
-        </button>
-      </p>
+            </button>
+          )}
+          <button
+            type="button"
+            className="btn btn--danger"
+            disabled={sibuk}
+            onClick={() => {
+              void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.decline))
+            }}
+          >
+            {KEPUTUSAN_POLIS.decline}
+          </button>
+        </div>
+      </section>
     </section>
   )
+}
+
+/**
+ * Periode produksi untuk layar: `YYYY-MM` dari server menjadi `MM/YYYY`.
+ *
+ * Bentuk yang tidak dikenal ditampilkan APA ADANYA — mengubah teks yang tidak
+ * dipahami berarti menampilkan periode yang tidak pernah dikirim server.
+ */
+export function periodeTampil(periode: string): string {
+  const m = /^(\d{4})-(\d{1,2})$/.exec(periode.trim())
+  const tahun = m?.[1]
+  const bulan = m?.[2]
+  if (tahun === undefined || bulan === undefined) return periode
+  return `${bulan.padStart(2, '0')}/${tahun}`
 }

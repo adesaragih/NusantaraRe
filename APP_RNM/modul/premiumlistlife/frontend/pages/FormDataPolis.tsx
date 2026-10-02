@@ -32,7 +32,8 @@ import {
   type PenawaranPolis,
   type PilihanKode,
 } from '../api'
-import { KOLOM_PRODUK, LABEL_DATA_POLIS } from '../labels'
+import { KOLOM_PRODUK, LABEL_DATA_POLIS, TEKS_PILIH } from '../labels'
+import '../premiumlistlife.css'
 
 /** Type yang menuntut R/I SLIP dan Billing Name (`.Type == 'TR' || 'TP'`). */
 export function typeRetro(type: string): boolean {
@@ -57,6 +58,7 @@ export function kolomWajibDataPolis(isi: IsiDataPolis): string[] {
     [isi.annuityInterest.trim() === '', LABEL_DATA_POLIS.annuityInterest],
     [isi.premiumRefundFactor.trim() === '', LABEL_DATA_POLIS.premiumRefundFactor],
     [typeRetro(isi.type) && isi.retroName.trim() === '', LABEL_DATA_POLIS.billing],
+    [typeRetro(isi.type) && isi.securityReinsurer.trim() === '', LABEL_DATA_POLIS.retro],
   ]
   return periksa.filter(([kosong]) => kosong).map(([, label]) => label)
 }
@@ -146,9 +148,10 @@ export default function FormDataPolis({
     }
   }
 
+  // Tombol pilih di samping isiannya — pola layar Input Offer Life.
   const tombol = (label: string, jenis: Popup) =>
     bisa && (
-      <button type="button" className="btn--sm" onClick={() => { setPopup(jenis) }}>
+      <button type="button" className="btn btn--ghost" onClick={() => { setPopup(jenis) }}>
         {label}
       </button>
     )
@@ -156,91 +159,137 @@ export default function FormDataPolis({
   return (
     <section className="panel pl-datapolis">
       <h3 className="panel__title">{LABEL_DATA_POLIS.judul}</h3>
-      <div className="form-grid">
+      {/*
+        TIGA KOLOM (premiumlistlife.css), urutan sel `ShowLifePremiumDetail`:
+        kiri data polis, tengah pihak, kanan tanggal dan status. Isian yang
+        dipilih dari master memakai tombol di sampingnya; tanggal berpasangan.
+      */}
+      <div className="pl-datapolis__kolom-tiga">
         <div>
-          {/* `Choose Product Name` tampil bila PL_NUMBER belum ada. */}
-          {!bernomor && tombol(LABEL_DATA_POLIS.pilihProduk, 'produk')}
-          <Field label={LABEL_DATA_POLIS.productName} value={isi.productName} onChange={() => {}} readOnly required />
-          {tampil(LABEL_DATA_POLIS.productNameId, isi.productNameId)}
-          <Pilih
-            label={LABEL_DATA_POLIS.type}
-            value={isi.type}
-            onChange={ubah('type')}
-            opsi={opsi(data.pilihan.type)}
-            required
-          />
-          {tampil(LABEL_DATA_POLIS.typeCeding, offer.typeCedingName)}
+          <h4 className="pl-offer__subjudul">Policy Data</h4>
+          <div className="pl-offer__pilih">
+            <Field label={LABEL_DATA_POLIS.productName} value={isi.productName} onChange={() => {}} readOnly required />
+            {/* `Choose Product Name` tampil bila PL_NUMBER belum ada. */}
+            {!bernomor && tombol(LABEL_DATA_POLIS.pilihProduk, 'produk')}
+          </div>
+          <div className="pl-offer__pasangan">
+            {tampil(LABEL_DATA_POLIS.productNameId, isi.productNameId)}
+            <Pilih
+              kosong={TEKS_PILIH}
+              label={LABEL_DATA_POLIS.type}
+              value={isi.type}
+              onChange={ubah('type')}
+              opsi={opsi(data.pilihan.type)}
+              required
+            />
+          </div>
+          <div className="pl-offer__pasangan">
+            {tampil(LABEL_DATA_POLIS.typeCeding, offer.typeCedingName)}
+            <Pilih
+              kosong={TEKS_PILIH}
+              label={LABEL_DATA_POLIS.proRateType}
+              value={isi.proRateType}
+              onChange={ubah('proRateType')}
+              opsi={opsi(data.pilihan.proRateType)}
+              required
+            />
+          </div>
           {typeRetro(isi.type) && (
-            <>
+            <div className="pl-offer__pilih">
               <Field label={LABEL_DATA_POLIS.riSlip} value={isi.riSlipRnm} onChange={() => {}} readOnly required />
               {tombol(LABEL_DATA_POLIS.riSlip, 'rislip')}
-            </>
+            </div>
           )}
-          <Pilih
-            label={LABEL_DATA_POLIS.proRateType}
-            value={isi.proRateType}
-            onChange={ubah('proRateType')}
-            opsi={opsi(data.pilihan.proRateType)}
-            required
-          />
-          <Field label={LABEL_DATA_POLIS.marketing} value={isi.marketingName} onChange={() => {}} readOnly required />
-          {tombol(LABEL_DATA_POLIS.marketing, 'marketing')}
+          <div className="pl-offer__pilih">
+            <Field label={LABEL_DATA_POLIS.marketing} value={isi.marketingName} onChange={() => {}} readOnly required />
+            {tombol(LABEL_DATA_POLIS.marketing, 'marketing')}
+          </div>
           {tampil(LABEL_DATA_POLIS.sumInsured, offer.sumInsured)}
           {/* Desimal sebagai TEKS, titik sebagai pemisah — bukan input number. */}
-          <Field
-            label={LABEL_DATA_POLIS.annuityInterest}
-            value={isi.annuityInterest}
-            onChange={ubah('annuityInterest')}
-            readOnly={!bisa}
-            required
-          />
-          <Field
-            label={LABEL_DATA_POLIS.premiumRefundFactor}
-            value={isi.premiumRefundFactor}
-            onChange={ubah('premiumRefundFactor')}
-            readOnly={!bisa}
-            required
-          />
+          <div className="pl-offer__pasangan">
+            <Field
+              label={LABEL_DATA_POLIS.annuityInterest}
+              value={isi.annuityInterest}
+              onChange={ubah('annuityInterest')}
+              readOnly={!bisa}
+              required
+            />
+            <Field
+              label={LABEL_DATA_POLIS.premiumRefundFactor}
+              value={isi.premiumRefundFactor}
+              onChange={ubah('premiumRefundFactor')}
+              readOnly={!bisa}
+              required
+            />
+          </div>
           {offer.noOffer !== '' && tampil(LABEL_DATA_POLIS.noOffer, offer.noOffer)}
           {tampil(LABEL_DATA_POLIS.ketentuanUnderwriting, offer.ketentuanUnderwriting)}
         </div>
         <div>
+          <h4 className="pl-offer__subjudul">Parties</h4>
           {tampil(LABEL_DATA_POLIS.ceding, isi.cedingCoName)}
           {tampil(LABEL_DATA_POLIS.policyHolder, isi.policyHolderName)}
-          {tampil(LABEL_DATA_POLIS.jenisAsuransi, offer.jenisAsuransi)}
-          {tampil(LABEL_DATA_POLIS.businessCode, offer.businessName)}
-          {tampil(LABEL_DATA_POLIS.batasUsia, offer.batasUsiaPeserta === null ? '' : String(offer.batasUsiaPeserta))}
-          {tampil(LABEL_DATA_POLIS.periode, offer.periodePertanggungan)}
-          <p className="field__label">{LABEL_DATA_POLIS.catatanBilling}</p>
-          <Field
-            label={LABEL_DATA_POLIS.billing}
-            value={isi.retroName}
-            onChange={() => {}}
-            readOnly
-            required={typeRetro(isi.type)}
-          />
-          {tombol(LABEL_DATA_POLIS.pilihBilling, 'billing')}
-          {tampil(LABEL_DATA_POLIS.retro, isi.securityReinsurer)}
-          {tombol(LABEL_DATA_POLIS.pilihRetro, 'retro')}
+          <div className="pl-offer__pasangan">
+            {tampil(LABEL_DATA_POLIS.jenisAsuransi, offer.jenisAsuransi)}
+            {tampil(LABEL_DATA_POLIS.businessCode, offer.businessName)}
+          </div>
+          <div className="pl-offer__pasangan">
+            {tampil(LABEL_DATA_POLIS.batasUsia, offer.batasUsiaPeserta === null ? '' : String(offer.batasUsiaPeserta))}
+            {tampil(LABEL_DATA_POLIS.periode, offer.periodePertanggungan)}
+          </div>
+          {/*
+            Billing Name dan Retrocessionaire HANYA untuk Type TP/TR (keputusan
+            work owner 01-10-2026) — selain itu disembunyikan, dan server
+            mengosongkannya saat Save Data (`models.SusunDataPolis`).
+          */}
+          {typeRetro(isi.type) && (
+            <>
+              <p className="pl-datapolis__catatan" role="note">
+                {LABEL_DATA_POLIS.catatanBilling}
+              </p>
+              {/* Satu grid untuk keduanya — kotak isian sama lebar. */}
+              <div className={bisa ? 'pl-offer__pilih-grup' : 'pl-offer__pilih-grup pl-offer__pilih-grup--baca'}>
+                <Field
+                  label={LABEL_DATA_POLIS.billing}
+                  value={isi.retroName}
+                  onChange={() => {}}
+                  readOnly
+                  required
+                />
+                {tombol(LABEL_DATA_POLIS.pilihBilling, 'billing')}
+                {/* Wajib untuk TP/TR — keputusan work owner 01-10-2026. */}
+                <Field
+                  label={LABEL_DATA_POLIS.retro}
+                  value={isi.securityReinsurer}
+                  onChange={() => {}}
+                  readOnly
+                  required
+                />
+                {tombol(LABEL_DATA_POLIS.pilihRetro, 'retro')}
+              </div>
+            </>
+          )}
         </div>
         <div>
-          {tampil(LABEL_DATA_POLIS.dateReceived, tanggalMasukan(offer.dateReceived))}
-          {tampil(LABEL_DATA_POLIS.tanggalPenawaran, tanggalMasukan(offer.tanggalPenawaran))}
-          {tampil(LABEL_DATA_POLIS.tanggalRespon, tanggalMasukan(offer.tanggalRespon))}
-          {tampil(LABEL_DATA_POLIS.tanggalKonfirmasi, tanggalMasukan(offer.tanggalKonfirmasi))}
-          {tampil(LABEL_DATA_POLIS.tanggalKonfirmasiBalik, tanggalMasukan(offer.tanggalKonfirmasiBalik))}
-          {tampil(LABEL_DATA_POLIS.tanggalRealisasi, tanggalMasukan(offer.tanggalRealisasi))}
-          {tampil(LABEL_DATA_POLIS.tanggalBind, tanggalMasukan(offer.tanggalBind))}
-          {offer.tbc !== null && tampil(LABEL_DATA_POLIS.tanggalTbc, tanggalMasukan(offer.tanggalTbc))}
-          {tampil(LABEL_DATA_POLIS.wpc, tanggalMasukan(data.wpc))}
-          {tampil(LABEL_DATA_POLIS.status, offer.status)}
+          <h4 className="pl-offer__subjudul">Dates &amp; Status</h4>
+          <div className="pl-offer__pasangan">
+            {tampil(LABEL_DATA_POLIS.dateReceived, tanggalMasukan(offer.dateReceived))}
+            {tampil(LABEL_DATA_POLIS.tanggalPenawaran, tanggalMasukan(offer.tanggalPenawaran))}
+            {tampil(LABEL_DATA_POLIS.tanggalRespon, tanggalMasukan(offer.tanggalRespon))}
+            {tampil(LABEL_DATA_POLIS.tanggalKonfirmasi, tanggalMasukan(offer.tanggalKonfirmasi))}
+            {tampil(LABEL_DATA_POLIS.tanggalRealisasi, tanggalMasukan(offer.tanggalRealisasi))}
+            {tampil(LABEL_DATA_POLIS.tanggalKonfirmasiBalik, tanggalMasukan(offer.tanggalKonfirmasiBalik))}
+            {tampil(LABEL_DATA_POLIS.tanggalBind, tanggalMasukan(offer.tanggalBind))}
+            {offer.tbc !== null && tampil(LABEL_DATA_POLIS.tanggalTbc, tanggalMasukan(offer.tanggalTbc))}
+            {tampil(LABEL_DATA_POLIS.wpc, tanggalMasukan(data.wpc))}
+            {tampil(LABEL_DATA_POLIS.status, offer.status)}
+          </div>
           {tampil(LABEL_DATA_POLIS.statusUpdate, offer.statusUpdate)}
           {tampil(LABEL_DATA_POLIS.keteranganMarketing, offer.keteranganMarketing)}
         </div>
       </div>
 
       {galatSimpan !== null && <Gagal galat={galatSimpan} />}
-      {tersimpan && <p role="status">Data polis tersimpan.</p>}
       {/*
         Pesan SavePremiumList_Act langkah 8.1/8.2 (umur / sum insured di luar
         batas produk). Data TETAP tersimpan — `Obj-Save WithErrors=true`.
@@ -253,17 +302,26 @@ export default function FormDataPolis({
         </div>
       )}
       {bisa && (
-        <p>
+        <div className="pl-offer__aksi">
           <button
             type="button"
-            className="btn--primary"
+            className="btn btn--primary"
             disabled={sibuk || kurang.length > 0}
             onClick={() => { void simpan() }}
           >
             {LABEL_DATA_POLIS.simpan}
           </button>
-          {kurang.length > 0 && <span role="status"> Wajib diisi: {kurang.join(', ')}</span>}
-        </p>
+          {kurang.length > 0 && (
+            <span className="pl-offer__kurang" role="status">
+              Required: {kurang.join(', ')}
+            </span>
+          )}
+          {tersimpan && kurang.length === 0 && (
+            <span className="pl-offer__tersimpan" role="status">
+              Policy data saved.
+            </span>
+          )}
+        </div>
       )}
 
       {popup !== null && (
@@ -391,7 +449,7 @@ function PopupCari({
       onTutup={onTutup}
       onKirim={() => { void jalankan() }}
       aksi={
-        <button type="submit" className="btn--primary" disabled={sibuk}>
+        <button type="submit" className="btn btn--primary" disabled={sibuk}>
           Search
         </button>
       }
@@ -399,7 +457,7 @@ function PopupCari({
     >
       <Field label="Search" value={teks} onChange={setTeks} autoFocus />
       {galat !== null && <Gagal galat={galat} />}
-      {hasil !== null && hasil.length === 0 && <p>Tidak ada yang cocok.</p>}
+      {hasil !== null && hasil.length === 0 && <p>No matching results.</p>}
       {hasil !== null && hasil.length > 0 && (
         <table className="inbox__tabel">
           <thead>
@@ -417,7 +475,7 @@ function PopupCari({
                   <td key={i}>{s}</td>
                 ))}
                 <td>
-                  <button type="button" className="btn--sm" onClick={() => { onPilih(b) }}>
+                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => { onPilih(b) }}>
                     Choose
                   </button>
                 </td>

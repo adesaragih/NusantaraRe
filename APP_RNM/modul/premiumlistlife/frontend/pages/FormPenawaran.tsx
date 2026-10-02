@@ -29,7 +29,8 @@ import {
   type PenawaranPolis,
   type PilihanKode,
 } from '../api'
-import { KOLOM_RIWAYAT_PENAWARAN, LABEL_PENAWARAN } from '../labels'
+import { KOLOM_RIWAYAT_PENAWARAN, LABEL_PENAWARAN, TEKS_PILIH } from '../labels'
+import '../premiumlistlife.css'
 
 /** Popup yang sedang terbuka. */
 export type JenisPopupPenawaran = 'ceding' | 'pemegang'
@@ -117,62 +118,71 @@ export default function FormPenawaran({ polisID }: { polisID: string }) {
   const kurang = kolomWajibKosong(isi)
 
   return (
-    <section className="panel polis-penawaran">
+    <section className="panel pl-offer">
       <h3 className="panel__title">{LABEL_PENAWARAN.judul}</h3>
 
       {/*
-        DUA KOLOM, urutan sel `InputOfferLife.xml`: kiri identitas dan
-        pertanggungan, kanan tanggal-tanggal dan catatan.
+        DUA KOLOM TETAP (premiumlistlife.css), urutan sel `InputOfferLife.xml`:
+        kiri identitas dan pertanggungan, kanan tanggal-tanggal dan catatan.
+        Isian pendek berpasangan supaya form tidak menuntut gulir panjang.
       */}
-      <div className="form-grid">
+      <div className="pl-offer__kolom-dua">
         <div>
+          <h4 className="pl-offer__subjudul">Offer Data</h4>
           {/* `pyVisible NOTBLANK` — hanya tampil bila sudah ada nomornya. */}
           {data.noOffer !== '' && (
             <Field label={LABEL_PENAWARAN.noOffer} value={data.noOffer} onChange={() => {}} readOnly />
           )}
-          <Field
-            label={LABEL_PENAWARAN.cedingCoName}
-            value={isi.cedingCoName}
-            onChange={() => {}}
-            readOnly
-            required
-          />
-          <Field
-            label={LABEL_PENAWARAN.policyHolderName}
-            value={isi.policyHolderName}
-            onChange={() => {}}
-            readOnly
-            required
-          />
-          {bisa && (
-            <p>
-              <button type="button" className="btn--sm" onClick={() => { setPopup('ceding') }}>
+          {/* Satu grid untuk keduanya — kotak isian Ceding dan Policy Holder sama lebar. */}
+          <div className={bisa ? 'pl-offer__pilih-grup' : 'pl-offer__pilih-grup pl-offer__pilih-grup--baca'}>
+            <Field
+              label={LABEL_PENAWARAN.cedingCoName}
+              value={isi.cedingCoName}
+              onChange={() => {}}
+              readOnly
+              required
+            />
+            {bisa && (
+              <button type="button" className="btn btn--ghost" onClick={() => { setPopup('ceding') }}>
                 {LABEL_PENAWARAN.pilihCeding}
-              </button>{' '}
-              <button type="button" className="btn--sm" onClick={() => { setPopup('pemegang') }}>
+              </button>
+            )}
+            <Field
+              label={LABEL_PENAWARAN.policyHolderName}
+              value={isi.policyHolderName}
+              onChange={() => {}}
+              readOnly
+              required
+            />
+            {bisa && (
+              <button type="button" className="btn btn--ghost" onClick={() => { setPopup('pemegang') }}>
                 {LABEL_PENAWARAN.pilihPemegang}
               </button>
-            </p>
-          )}
+            )}
+          </div>
+          <div className="pl-offer__pasangan">
+            <Pilih
+              kosong={TEKS_PILIH}
+              label={LABEL_PENAWARAN.typeCeding}
+              value={isi.typeCeding}
+              onChange={ubah('typeCeding')}
+              opsi={opsiDari(data.pilihan.typeCeding)}
+              required
+            />
+            {/*
+              Read-only, TURUNAN System Reinsurance (`SetReinsuranceType`): XOL ->
+              Non Proportional, selain itu Proportional. Diperbarui langsung saat
+              System Reinsurance diganti; server menghitung ulang saat disimpan.
+            */}
+            <Field
+              label={LABEL_PENAWARAN.jenisAsuransi}
+              value={jenisAsuransiDari(isi.typeCeding)}
+              onChange={() => {}}
+              readOnly
+            />
+          </div>
           <Pilih
-            label={LABEL_PENAWARAN.typeCeding}
-            value={isi.typeCeding}
-            onChange={ubah('typeCeding')}
-            opsi={opsiDari(data.pilihan.typeCeding)}
-            required
-          />
-          {/*
-            Read-only, TURUNAN System Reinsurance (`SetReinsuranceType`): XOL ->
-            Non Proportional, selain itu Proportional. Diperbarui langsung saat
-            System Reinsurance diganti; server menghitung ulang saat disimpan.
-          */}
-          <Field
-            label={LABEL_PENAWARAN.jenisAsuransi}
-            value={jenisAsuransiDari(isi.typeCeding)}
-            onChange={() => {}}
-            readOnly
-          />
-          <Pilih
+            kosong={TEKS_PILIH}
             label={LABEL_PENAWARAN.businessCode}
             value={isi.businessCode}
             onChange={ubah('businessCode')}
@@ -185,24 +195,26 @@ export default function FormPenawaran({ polisID }: { polisID: string }) {
             nilainya tetap ikut terkirim apa adanya lewat `isi`, sehingga Save Offer
             tidak mengosongkan nilai yang sudah tersimpan.
           */}
-          <Field
-            label={LABEL_PENAWARAN.batasUsiaPeserta}
-            type="number"
-            value={isi.batasUsiaPeserta}
-            onChange={ubah('batasUsiaPeserta')}
-            readOnly={kunci}
-          />
-          <Field
-            label={LABEL_PENAWARAN.periodePertanggungan}
-            value={isi.periodePertanggungan}
-            onChange={ubah('periodePertanggungan')}
-            readOnly={kunci}
-          />
+          <div className="pl-offer__pasangan">
+            <Field
+              label={LABEL_PENAWARAN.batasUsiaPeserta}
+              type="number"
+              value={isi.batasUsiaPeserta}
+              onChange={ubah('batasUsiaPeserta')}
+              readOnly={kunci}
+            />
+            <Field
+              label={LABEL_PENAWARAN.periodePertanggungan}
+              value={isi.periodePertanggungan}
+              onChange={ubah('periodePertanggungan')}
+              readOnly={kunci}
+            />
+          </div>
           {/* Uang tetap TEKS — `type="text"`, bukan number (ADR-U-0003). */}
           <Field
             label={LABEL_PENAWARAN.sumInsured}
             value={isi.sumInsured}
-            onChange={ubah('sumInsured')}
+            onChange={(v) => { ubah('sumInsured')(saringAngkaDesimal(v)) }}
             readOnly={kunci}
           />
           {kunci ? (
@@ -222,79 +234,62 @@ export default function FormPenawaran({ polisID }: { polisID: string }) {
           )}
         </div>
         <div>
-          <Field
-            label={LABEL_PENAWARAN.dateReceived}
-            type="date"
-            value={isi.dateReceived}
-            onChange={ubah('dateReceived')}
-            readOnly={kunci}
-          />
-          <Field
-            label={LABEL_PENAWARAN.tanggalPenawaran}
-            type="date"
-            value={isi.tanggalPenawaran}
-            onChange={ubah('tanggalPenawaran')}
-            readOnly={kunci}
-          />
-          <Field
-            label={LABEL_PENAWARAN.tanggalRespon}
-            type="date"
-            value={isi.tanggalRespon}
-            onChange={ubah('tanggalRespon')}
-            readOnly={kunci}
-          />
-          <Field
-            label={LABEL_PENAWARAN.tanggalKonfirmasi}
-            type="date"
-            value={isi.tanggalKonfirmasi}
-            onChange={ubah('tanggalKonfirmasi')}
-            readOnly={kunci}
-          />
-          {(
-            [
-              ['tanggalKonfirmasiBalik', LABEL_PENAWARAN.tanggalKonfirmasiBalik],
-              ['tanggalRealisasi', LABEL_PENAWARAN.tanggalRealisasi],
-              ['tanggalBind', LABEL_PENAWARAN.tanggalBind],
-            ] as const
-          ).map(([medan, label]) => (
-            <Field key={medan} label={label} type="date" value={isi[medan]} onChange={ubah(medan)} readOnly={kunci} />
-          ))}
-          {/* `Input TBC` tampil bila `.TanggalKonfirmasi != ''`. */}
-          {tampilTBC(isi) && (
+          <h4 className="pl-offer__subjudul">Dates &amp; Status</h4>
+          <div className="pl-offer__pasangan">
+            {(
+              [
+                ['dateReceived', LABEL_PENAWARAN.dateReceived],
+                ['tanggalPenawaran', LABEL_PENAWARAN.tanggalPenawaran],
+                ['tanggalRespon', LABEL_PENAWARAN.tanggalRespon],
+                ['tanggalKonfirmasi', LABEL_PENAWARAN.tanggalKonfirmasi],
+                ['tanggalRealisasi', LABEL_PENAWARAN.tanggalRealisasi],
+                ['tanggalKonfirmasiBalik', LABEL_PENAWARAN.tanggalKonfirmasiBalik],
+                ['tanggalBind', LABEL_PENAWARAN.tanggalBind],
+              ] as const
+            ).map(([medan, label]) => (
+              <Field key={medan} label={label} type="date" value={isi[medan]} onChange={ubah(medan)} readOnly={kunci} />
+            ))}
+          </div>
+          <div className="pl-offer__pasangan">
+            {/* `Input TBC` tampil bila `.TanggalKonfirmasi != ''`. */}
+            {tampilTBC(isi) && (
+              <Field
+                label={LABEL_PENAWARAN.tbc}
+                type="number"
+                value={isi.tbc}
+                onChange={ubah('tbc')}
+                readOnly={kunci}
+              />
+            )}
+            {/*
+              `Max TBC` tampil bila `.TBC != ''`, read-only. Dihitung LANGSUNG
+              dari isian yang sedang diketik (Confirmation Date + Input TBC hari),
+              sebagaimana `SetMaxTBCLife_Act` berjalan saat `.TBC` berubah. Saat
+              disimpan, server menghitungnya ulang — nilai layar hanya tampilan.
+            */}
+            {isi.tbc !== '' && (
+              <Field
+                label={LABEL_PENAWARAN.tanggalTbc}
+                value={hitungMaxTBC(isi.tanggalKonfirmasi, isi.tbc)}
+                onChange={() => {}}
+                readOnly
+              />
+            )}
+          </div>
+          <div className="pl-offer__pasangan">
             <Field
-              label={LABEL_PENAWARAN.tbc}
-              type="number"
-              value={isi.tbc}
-              onChange={ubah('tbc')}
+              label={LABEL_PENAWARAN.statusUpdate}
+              value={isi.statusUpdate}
+              onChange={ubah('statusUpdate')}
               readOnly={kunci}
             />
-          )}
-          {/*
-            `Max TBC` tampil bila `.TBC != ''`, read-only. Dihitung LANGSUNG
-            dari isian yang sedang diketik (Confirmation Date + Input TBC hari),
-            sebagaimana `SetMaxTBCLife_Act` berjalan saat `.TBC` berubah. Saat
-            disimpan, server menghitungnya ulang — nilai layar hanya tampilan.
-          */}
-          {isi.tbc !== '' && (
             <Field
-              label={LABEL_PENAWARAN.tanggalTbc}
-              value={hitungMaxTBC(isi.tanggalKonfirmasi, isi.tbc)}
-              onChange={() => {}}
-              readOnly
+              label={LABEL_PENAWARAN.statusFinal}
+              value={isi.statusFinal}
+              onChange={ubah('statusFinal')}
+              readOnly={kunci}
             />
-          )}
-          <Field
-            label={LABEL_PENAWARAN.statusUpdate}
-            value={isi.statusUpdate}
-            onChange={ubah('statusUpdate')}
-            readOnly={kunci}
-          />
-          <Field
-            label={LABEL_PENAWARAN.statusFinal}
-            value={isi.statusFinal}
-            onChange={ubah('statusFinal')}
-            readOnly={kunci}
-          />
+          </div>
           {kunci ? (
             <Field
               label={LABEL_PENAWARAN.keteranganMarketing}
@@ -313,24 +308,27 @@ export default function FormPenawaran({ polisID }: { polisID: string }) {
         </div>
       </div>
 
-      <div className="form-grid">
-        <fieldset className="field">
+      <div className="pl-offer__bawah">
+        <fieldset className="pl-offer__status">
           <legend className="field__label">
             {LABEL_PENAWARAN.status}
             <span className="field__req">*</span>
           </legend>
-          {data.pilihan.status.map((p) => (
-            <label key={p.kode} className="polis-penawaran__radio">
-              <input
-                type="radio"
-                name="status-penawaran"
-                value={p.kode}
-                checked={isi.status === p.kode}
-                onChange={() => { ubah('status')(p.kode) }}
-              />{' '}
-              {p.nama}
-            </label>
-          ))}
+          <div className="pl-offer__status-pilihan">
+            {data.pilihan.status.map((p) => (
+              <label key={p.kode} className="pl-offer__pil">
+                <input
+                  type="radio"
+                  name="status-penawaran"
+                  value={p.kode}
+                  checked={isi.status === p.kode}
+                  disabled={!bisa}
+                  onChange={() => { ubah('status')(p.kode) }}
+                />
+                {p.nama}
+              </label>
+            ))}
+          </div>
         </fieldset>
         <Area
           label={LABEL_PENAWARAN.description}
@@ -341,53 +339,64 @@ export default function FormPenawaran({ polisID }: { polisID: string }) {
       </div>
 
       {galatSimpan !== null && <Gagal galat={galatSimpan} />}
-      {tersimpan && <p role="status">Penawaran tersimpan.</p>}
       {bisa && (
-        <p>
+        <div className="pl-offer__aksi">
           {/* ⛔ Tidak dapat ditekan selama ada kolom wajib yang kosong. */}
           <button
             type="button"
-            className="btn--primary"
+            className="btn btn--primary"
             disabled={sibuk || kurang.length > 0}
             onClick={() => { void simpan() }}
           >
             {LABEL_PENAWARAN.simpan}
           </button>
           {kurang.length > 0 && (
-            <span className="polis-penawaran__kurang" role="status">
-              {' '}Wajib diisi: {kurang.join(', ')}
+            <span className="pl-offer__kurang" role="status">
+              Required: {kurang.join(', ')}
             </span>
           )}
-        </p>
+          {tersimpan && kurang.length === 0 && (
+            <span className="pl-offer__tersimpan" role="status">
+              Offer saved.
+            </span>
+          )}
+        </div>
       )}
 
-      <table className="inbox__tabel polis-penawaran__riwayat">
-        <thead>
-          <tr>
-            <th>{KOLOM_RIWAYAT_PENAWARAN.dateSuggest}</th>
-            <th>{KOLOM_RIWAYAT_PENAWARAN.picSuggest}</th>
-            <th>{KOLOM_RIWAYAT_PENAWARAN.isCedingConfirm}</th>
-            <th>{KOLOM_RIWAYAT_PENAWARAN.initialSuggest}</th>
-            <th>{KOLOM_RIWAYAT_PENAWARAN.commentSuggest}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.riwayat.length === 0 && (
-            <tr>
-              <td colSpan={5}>Belum ada riwayat penawaran.</td>
-            </tr>
-          )}
-          {data.riwayat.map((r) => (
-            <tr key={r.no}>
-              <td>{tanggalRiwayat(r.dateSuggest)}</td>
-              <td>{r.picSuggest || '—'}</td>
-              <td>{r.isCedingConfirm || '—'}</td>
-              <td>{r.initialSuggest || '—'}</td>
-              <td>{r.commentSuggest || '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="pl-offer__riwayat">
+        <h4 className="pl-offer__subjudul">Offer History</h4>
+        <div className="pl-offer__riwayat-gulir">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{KOLOM_RIWAYAT_PENAWARAN.dateSuggest}</th>
+                <th>{KOLOM_RIWAYAT_PENAWARAN.picSuggest}</th>
+                <th>{KOLOM_RIWAYAT_PENAWARAN.isCedingConfirm}</th>
+                <th>{KOLOM_RIWAYAT_PENAWARAN.initialSuggest}</th>
+                <th>{KOLOM_RIWAYAT_PENAWARAN.commentSuggest}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.riwayat.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="pl-offer__kosong">
+                    No offer history yet.
+                  </td>
+                </tr>
+              )}
+              {data.riwayat.map((r) => (
+                <tr key={r.no}>
+                  <td>{tanggalRiwayat(r.dateSuggest)}</td>
+                  <td>{r.picSuggest || '—'}</td>
+                  <td>{r.isCedingConfirm || '—'}</td>
+                  <td>{r.initialSuggest || '—'}</td>
+                  <td>{r.commentSuggest || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {popup !== null && (
         <PopupRujukan
@@ -438,7 +447,7 @@ function PopupRujukan({
       onTutup={onTutup}
       onKirim={() => { void jalankan() }}
       aksi={
-        <button type="submit" className="btn--primary" disabled={sibuk}>
+        <button type="submit" className="btn btn--primary" disabled={sibuk}>
           {LABEL_PENAWARAN.cari}
         </button>
       }
@@ -446,7 +455,7 @@ function PopupRujukan({
     >
       <Field label={LABEL_PENAWARAN.cari} value={cari} onChange={setCari} autoFocus />
       {galat !== null && <Gagal galat={galat} />}
-      {hasil !== null && hasil.length === 0 && <p>Tidak ada yang cocok.</p>}
+      {hasil !== null && hasil.length === 0 && <p>No matching results.</p>}
       {hasil !== null && hasil.length > 0 && (
         <table className="inbox__tabel">
           <thead>
@@ -464,7 +473,7 @@ function PopupRujukan({
                 <td>{b.nama}</td>
                 {jenis === 'pemegang' && <td>{b.keterangan ?? ''}</td>}
                 <td>
-                  <button type="button" className="btn--sm" onClick={() => { onPilih(b) }}>
+                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => { onPilih(b) }}>
                     {LABEL_PENAWARAN.pilih}
                   </button>
                 </td>
@@ -531,4 +540,18 @@ export function kolomWajibKosong(isi: IsiPenawaranPolis): string[] {
     [isi.description, LABEL_PENAWARAN.description],
   ]
   return periksa.filter(([nilai]) => nilai.trim() === '').map(([, label]) => label)
+}
+
+/**
+ * Penyaring ketikan Sum Insured: hanya angka dan SATU titik desimal.
+ *
+ * ⛔ Bukan `type="number"`: uang tetap TEKS (ADR-U-0003) — kotak angka peramban
+ * membulatkan nilai besar dan menerima `e`, `+`, `-`. Koma dibuang, bukan
+ * dianggap desimal: server membaca titik sebagai pemisah desimal.
+ */
+export function saringAngkaDesimal(v: string): string {
+  const bersih = v.replace(/[^0-9.]/g, '')
+  const titik = bersih.indexOf('.')
+  if (titik < 0) return bersih
+  return bersih.slice(0, titik + 1) + bersih.slice(titik + 1).replace(/\./g, '')
 }

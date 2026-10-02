@@ -113,17 +113,11 @@ describe('nomor PL', () => {
     expect(kalimatNomor(null)).toBe('')
   })
 
-  it('tombol mati bila sudah bernomor atau belum punya peserta', () => {
-    // ⛔ Tombol yang tetap hidup tetapi selalu menjawab hal yang sama
-    // mengajari orang mengabaikan jawabannya.
-    expect(SUMBER).toContain('disabled={sibuk || terbit || bernomor || tanpaPeserta}')
-  })
-
-  it('sebab tombolnya mati DIKATAKAN, bukan dibiarkan ditebak', () => {
-    expect(SUMBER).toContain('DETAIL_POLIS.sudahBernomor')
-    expect(SUMBER).toContain('DETAIL_POLIS.perluPeserta')
-    // Kalimatnya menyebut apa yang harus dikerjakan lebih dahulu.
-    expect(DETAIL_POLIS.perluPeserta).toContain('Unggah rincian peserta')
+  it('TANPA tombol Generate PL Number (keputusan work owner 01-10-2026)', () => {
+    // Nomor PL terbit saat polis disimpan, bukan lewat tombol; di
+    // ShowLifePremiumDetail sel PL_NUMBER pun `pyVisible never`.
+    expect(SUMBER).not.toContain('DETAIL_POLIS.terbitkan')
+    expect(SUMBER).not.toContain('terbitkanNomorPL')
   })
 
   it('selisih kolom dijawab di layar, bukan hanya di komentar Go', () => {
@@ -131,7 +125,7 @@ describe('nomor PL', () => {
     // medan layar lama menjadi tiga puluh delapan; jawaban yang hanya ada di
     // kode bukan jawaban bagi yang bertanya.
     expect(SUMBER).toContain('kepala.medanTanpaKolom')
-    expect(SUMBER).toContain('medan layar lama tidak ditampilkan')
+    expect(SUMBER).toContain('legacy screen fields not shown')
   })
 
   it('layar TIDAK merakit bentuk nomor sendiri', () => {

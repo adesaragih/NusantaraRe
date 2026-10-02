@@ -1,0 +1,163 @@
+<?xml version="1.0"?>
+
+<pagedata>
+<pyRuleAvailable>Yes</pyRuleAvailable>
+<pxUpdateSystemID>pega</pxUpdateSystemID>
+<pyRuleName>ASM-FW-GISFW-Int-OFFERJSON ASM AttachmentLife</pyRuleName>
+<pyValueChanged>false</pyValueChanged>
+<pyClassName>ASM-FW-GISFW-Int-OFFERJSON</pyClassName>
+<pxUpdateDateTime>20201201T064042.112 GMT</pxUpdateDateTime>
+<pzRuleSetVersionMinor>01</pzRuleSetVersionMinor>
+<pxMoveImportOperName>Aldo Saputra</pxMoveImportOperName>
+<pySortDateCircumWithinRSMajor>true</pySortDateCircumWithinRSMajor>
+<pyMemo>attachment file</pyMemo>
+<pyUsage/>
+<pyRuleFormStatusTime>20260907T103502.749 GMT</pyRuleFormStatusTime>
+<pzRuleSetVersionMajor>01</pzRuleSetVersionMajor>
+<pyJavaStream/>
+<pzRuleSetVersionPatch>56</pzRuleSetVersionPatch>
+<pxHostId>pega-nusre</pxHostId>
+<pxCreateDateTime>20201112T023040.268 GMT</pxCreateDateTime>
+<pyOpenSQL/>
+<pyRuleFormType>Harness</pyRuleFormType>
+<pyRuleSet>GISFW</pyRuleSet>
+<pyCircumstanceDefinition/>
+<pyRuleHarness>RuleForm</pyRuleHarness>
+<pyInterface/>
+<pxInstanceLockedCreateDateTime/>
+<pxInstanceLockedBy/>
+<pyBaseRule>false</pyBaseRule>
+<pyCircumstanceVal/>
+<pyCircumstanceDateProp/>
+<pxInsName>ASM-FW-GISFW-INT-OFFERJSON!ASM!ATTACHMENTLIFE</pxInsName>
+<pxSaveDateTime>20201201T064042.117 GMT</pxSaveDateTime>
+<pyShowJavaWindowName>GeneratedJava20260907T103502.849 GMT</pyShowJavaWindowName>
+<pyFormPost/>
+<pyMethodStatus/>
+<pxInstanceLockedRuleSetVersion/>
+<pyCircumstanceProp/>
+<pyIsFromManageChangeLP/>
+<pyDocumentTitle/>
+<pxInstanceLockedDateTime/>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-OFFERJSON ASM!ATTACHMENTLIFE #20201112T023040.268 GMT</pzInsKey>
+<pyTemplate/>
+<pyRelativePath/>
+<pySPRuleSetName>RAUNISINAGA@</pySPRuleSetName>
+<pzIsPrivateCheckOut>true</pzIsPrivateCheckOut>
+<pxInsId>ASM-FW-GISFW-INT-OFFERJSON!ASM!ATTACHMENTLIFE</pxInsId>
+<pyIsStaleRuleCheckEnabled>false</pyIsStaleRuleCheckEnabled>
+<pyRuleParamsStreamName/>
+<pyWorkKey/>
+<pyRuleFormStatus>Good</pyRuleFormStatus>
+<pySpecialtyComponentData/>
+<pyRuleSetVersion>01-01-56</pyRuleSetVersion>
+<pxInstanceLockedRuleSet/>
+<pyTemplateDisplayText>No ruleset versions available</pyTemplateDisplayText>
+<pzDocumentKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-OFFERJSON ASM!ATTACHMENTLIFE #20201112T023040.268 GMT</pzDocumentKey>
+<pyStepPageReference>RH_1</pyStepPageReference>
+<pxUpdateOpName>Rauni Sinaga</pxUpdateOpName>
+<pyWindowTitle/>
+<pxUpdateOperator>RAUNISINAGA</pxUpdateOperator>
+<pyBrowseSQL>select * from CATEGORY_ATTACH_REAS where note in ('OFFER','QUOTATION/PLACING SLIP','EMAIL','SOA','R/I SLIP','CLAUSES','EXTENDWPC','NOTA/INVOICE','OBJECTLIST','OTHERS','PHOTO','SURVEYREPORT')</pyBrowseSQL>
+<pyCircumstanceType/>
+<pyDeleteSQL/>
+<pyObjClassLabel>Connect SQL</pyObjClassLabel>
+<pxSiblingCount/>
+<pyStatus/>
+<pxMoveFromSystem/>
+<pzChecksum>748971732</pzChecksum>
+<pyDescription/>
+<pxMoveImportOperId>aldo_saputra</pxMoveImportOperId>
+<pyRequestType>AttachmentLife</pyRequestType>
+<pyHandlerFlow/>
+<pyDisplayMode>basic</pyDisplayMode>
+<pxInstanceLockedKey/>
+<pxTabLabel>ASM-FW-GISFW-Int-OFFERJSON ASM AttachmentLife</pxTabLabel>
+<pxMoveImportDateTime>20210318T124350.067 GMT</pxMoveImportDateTime>
+<pxObjClass>Rule-Connect-SQL</pxObjClass>
+<pySaveSQL/>
+<pyCircumstanceDate/>
+<pyTemplateInputBox/>
+<pxCreateOperator>REVIRUNDUPADANG</pxCreateOperator>
+<pyRuleStarts/>
+<pyRuleEnds/>
+<pyRWAccess>ASM</pyRWAccess>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxLimitedAccess>Dev</pxLimitedAccess>
+<pyLabel>AttachmentLife</pyLabel>
+<pxCommitDateTime>20250614T162711.000 GMT</pxCommitDateTime>
+<pzOriginalInstanceKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-OFFERJSON ASM!ATTACHMENTLIFE #20201112T023040.268 GMT</pzOriginalInstanceKey>
+<pyCircumstanceTemplate/>
+<pxCreateOpName>Revi Rundupadang</pxCreateOpName>
+<pyStreamName/>
+<pzStatus>valid</pzStatus>
+<pyRuleVersionsList REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>1</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-OFFERJSON ASM!ATTACHMENTLIFE #20201112T023040.268 GMT</pzInsKey>
+<pyLabel>01-01-56 (Available)</pyLabel>
+</rowdata>
+</pyRuleVersionsList>
+<pyToolBarSettings>
+<pyFavorites>true</pyFavorites>
+<pxCanJustifyWarnings>true</pxCanJustifyWarnings>
+<pyRecover>false</pyRecover>
+<pyForward>true</pyForward>
+<pyRestore>false</pyRestore>
+<pyBranchOut>false</pyBranchOut>
+<pySave>false</pySave>
+<pyLaunch>true</pyLaunch>
+<pyHasQualifiers>false</pyHasQualifiers>
+<pySiblings>true</pySiblings>
+<pyCheckIn>false</pyCheckIn>
+<pyRequiresCheckOut>true</pyRequiresCheckOut>
+<pyAvailability>false</pyAvailability>
+<pyHelpRef>/rule-/rule-connect-/rule-connect-sql/main</pyHelpRef>
+<pyDelegates>false</pyDelegates>
+<pyRefresh>true</pyRefresh>
+<pyPreview>false</pyPreview>
+<pyRun>false</pyRun>
+<pyCheckOut>true</pyCheckOut>
+<pyRuleData>true</pyRuleData>
+<pyVersionSecure>true</pyVersionSecure>
+<pyRuleResolution>true</pyRuleResolution>
+<pyCurrentlyOpen>true</pyCurrentlyOpen>
+<pxObjClass>Embed-WBSettings-ToolBar</pxObjClass>
+<pyNew>true</pyNew>
+<pyDelete>false</pyDelete>
+<pyShowJava>false</pyShowJava>
+<pyBack>true</pyBack>
+<pyCompareVersion/>
+<pySaveAs>true</pySaveAs>
+<pyHelpURI>https://community.pega.com/help_v88/rule-/rule-connect-/rule-connect-sql/main</pyHelpURI>
+<pyPropertyPane>false</pyPropertyPane>
+<pyUsesInheritance>false</pyUsesInheritance>
+</pyToolBarSettings>
+<pyRMAction>
+<pxObjClass>Embed-RuleManagement</pxObjClass>
+<pyAction>load</pyAction>
+</pyRMAction>
+<pyCustomFields REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="empty">
+<pyCFieldValue/>
+<pxObjClass>Embed-CustomFieldsList</pxObjClass>
+<pyCFileKey/>
+<pyCFieldName/>
+<pyCFileRelativePath/>
+<pxSubscript>empty</pxSubscript>
+<pyCFieldType/>
+</rowdata>
+</pyCustomFields>
+<pxWarnings REPEATINGTYPE="PageList"/>
+<pyPagesAndClasses REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-PagesAndClasses</pxObjClass>
+<pyPagesAndClassesClass/>
+<pyPagesAndClassesPage/>
+</rowdata>
+</pyPagesAndClasses>
+<pxWarningsToDisplay REPEATINGTYPE="PageList"/>
+</pagedata>

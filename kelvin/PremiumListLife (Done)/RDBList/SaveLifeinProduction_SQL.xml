@@ -1,0 +1,320 @@
+<?xml version="1.0"?>
+
+<pagedata>
+<pyRuleName>ASM-FW-GISFW-Work-LIFE ASM SaveLifeinProduction_SQL</pyRuleName>
+<pxUpdateSystemID>pegaprdnusare</pxUpdateSystemID>
+<pyValueChanged>false</pyValueChanged>
+<pxUpdateDateTime>20250602T040444.951 GMT</pxUpdateDateTime>
+<pzRuleSetVersionMinor>01</pzRuleSetVersionMinor>
+<pxOriginalCreateSystemID>pegaprdnusare</pxOriginalCreateSystemID>
+<pyUsage/>
+<pyMemo>save</pyMemo>
+<pzRuleSetVersionMajor>01</pzRuleSetVersionMajor>
+<pyJavaStream/>
+<pxCreateDateTime>20250602T040444.951 GMT</pxCreateDateTime>
+<pxOriginalCreateDateTime>20250227T063136.822 GMT</pxOriginalCreateDateTime>
+<pxOriginalCreateOpName>KELVIN JUSLIM</pxOriginalCreateOpName>
+<pyInterface/>
+<pxInstanceLockedCreateDateTime/>
+<pxInstanceLockedBy/>
+<pyBaseRule>false</pyBaseRule>
+<pxInsName>ASM-FW-GISFW-WORK-LIFE!ASM!SAVELIFEINPRODUCTION_SQL</pxInsName>
+<pyFormPost/>
+<pxSaveDateTime>20250602T040444.954 GMT</pxSaveDateTime>
+<pyCircumstanceProp/>
+<pyDocumentTitle/>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-WORK-LIFE ASM!SAVELIFEINPRODUCTION_SQL #20250602T040444.951 GMT</pzInsKey>
+<pyTemplate/>
+<pyLabelOld>SaveLifeinProduction_SQL</pyLabelOld>
+<pyRelativePath/>
+<pzIsPrivateCheckOut>true</pzIsPrivateCheckOut>
+<pxInsId>ASM-FW-GISFW-WORK-LIFE!ASM!SAVELIFEINPRODUCTION_SQL</pxInsId>
+<pyIsStaleRuleCheckEnabled>false</pyIsStaleRuleCheckEnabled>
+<pyWorkKey/>
+<pyRuleParamsStreamName/>
+<pySpecialtyComponentData/>
+<pyRuleSetVersion>01-01-83</pyRuleSetVersion>
+<pzDocumentKey>RULE-CONNECT-SQL ASM-FW-GISFW-WORK-LIFE ASM!SAVELIFEINPRODUCTION_SQL #20250602T040444.951 GMT</pzDocumentKey>
+<pxUpdateOpName>KELVIN JUSLIM</pxUpdateOpName>
+<pyWindowTitle/>
+<pxUpdateOperator>KELVINJUSLIM</pxUpdateOperator>
+<pxOriginalCreateOperator>KELVINJUSLIM</pxOriginalCreateOperator>
+<pyObjClassLabel>Connect SQL</pyObjClassLabel>
+<pxSiblingCount/>
+<pxMoveFromSystem/>
+<pzChecksum>-983754033</pzChecksum>
+<pxMoveImportOperId>ADESAMUEL</pxMoveImportOperId>
+<pyHandlerFlow/>
+<pyDisplayMode>clone</pyDisplayMode>
+<pxInstanceLockedKey/>
+<pxTabLabel>ASM-FW-GISFW-Work-LIFE ASM SaveLifeinProduction_SQL</pxTabLabel>
+<pxObjClass>Rule-Connect-SQL</pxObjClass>
+<pyTemplateInputBox/>
+<pyCircumstanceDate/>
+<pyRWAccess>ASM</pyRWAccess>
+<pxCreateSystemID>pegaprdnusare</pxCreateSystemID>
+<pxCommitDateTime>20250615T044658.000 GMT</pxCommitDateTime>
+<pzOriginalInstanceKey>RULE-CONNECT-SQL ASM-FW-GISFW-INT-OFFERJSON ASM!SAVEOFFERJSONLIFE_SQL #20220713T095602.751 GMT</pzOriginalInstanceKey>
+<pyStreamName/>
+<pyRuleAvailable>Yes</pyRuleAvailable>
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pxMoveImportOperName>ADE SAMUEL TUA SARAGIH</pxMoveImportOperName>
+<pySortDateCircumWithinRSMajor>true</pySortDateCircumWithinRSMajor>
+<pyRuleFormStatusTime>20260907T102641.362 GMT</pyRuleFormStatusTime>
+<pzRuleSetVersionPatch>83</pzRuleSetVersionPatch>
+<pxHostId>jboss1073</pxHostId>
+<pyOpenSQL/>
+<pyRuleFormType>Harness</pyRuleFormType>
+<pyCircumstanceDefinition/>
+<pyRuleSet>GISFW</pyRuleSet>
+<pyRuleHarness>RuleForm</pyRuleHarness>
+<pxMoveOriginalRuleSetVersion>01-01-82</pxMoveOriginalRuleSetVersion>
+<pyCircumstanceVal/>
+<pyCircumstanceDateProp/>
+<pyDeleteMemo>test generate no offer</pyDeleteMemo>
+<pyShowJavaWindowName>GeneratedJava20260907T102641.397 GMT</pyShowJavaWindowName>
+<pyMethodStatus/>
+<pxInstanceLockedRuleSetVersion/>
+<pyIsFromManageChangeLP/>
+<pxInstanceLockedDateTime/>
+<pySPRuleSetName>GISFW</pySPRuleSetName>
+<pyRuleFormStatus>Good</pyRuleFormStatus>
+<pxOriginalRuleSet>GISFW</pxOriginalRuleSet>
+<pxInstanceLockedRuleSet/>
+<pyTemplateDisplayText>No ruleset versions available</pyTemplateDisplayText>
+<pyStepPageReference>RH_1</pyStepPageReference>
+<pyBrowseSQL>BEGIN 
+    INSERT INTO POOLDATA.LIFEINPRODUCTION
+                ( 
+IDPEGA,
+NOPOLIS,
+BUSINESSCODE,
+BUSINESSNAME,
+CEDINGCO,
+CEDINGCONAME,
+DATERECEIVED,
+MARKETINGCODE,
+MARKETINGNAME,
+POLICYHOLDER,
+POLICYHOLDERNAME,
+PRORATETYPE,
+CREATEOPNAME,
+SOB,
+SOBNAME,
+TYPE,
+TYPECEDING,
+MOID,
+NOOFFER,
+RISLIPRNM,
+RETROID,
+RETRONAME,
+DESCRIPTION,
+TYPECEDINGNAME,
+WPC,
+SECURITYREINSURERID,
+SECURITYREINSURER,
+PRODUCTNAMEID,
+PRODUCTNAME,
+LAYER_1,
+LAYER_2,
+LAYER_3,
+LAYER_4,
+ANNUITYINTEREST,
+PREMIUMREFUNDFACTOR,
+TGL_INPUT
+)
+     VALUES      (
+                  {InputDataLife.CARI1},
+                  {pyWorkPage.PremiumListSummary.PL_NUMBER},
+                  {TempInputDataLife.CARI3},
+                  {TempInputDataLife.CARI4},
+                  {TempInputDataLife.CARI5},
+                  {TempInputDataLife.CARI6},
+                  To_date({TempInputDataLife.CARI7}, 'DD/MM/YYYY'),
+                  {TempInputDataLife.CARI8},
+                  {TempInputDataLife.CARI9},
+                  {TempInputDataLife.CARI10},
+                  {TempInputDataLife.CARI11},
+                  {TempInputDataLife.CARI12},
+                  {TempInputDataLife.CARI13},
+                  {TempInputDataLife.CARI14},
+                  {TempInputDataLife.CARI15},
+                  {TempInputDataLife.CARI16},
+                  {TempInputDataLife.CARI17},
+                  {TempInputDataLife.CARI18},
+                  {TempInputDataLife.CARI19},
+                  {TempInputDataLife.CARI20},
+                  {TempInputDataLife.CARI21},
+                  {TempInputDataLife.CARI22},
+                  {TempInputDataLife.CARI23},
+                  {TempInputDataLife.CARI24},
+                  To_date({TempInputDataLife.CARI25}, 'DD/MM/YYYY'),
+                  {TempInputDataLife.CARI26},
+                  {TempInputDataLife.CARI27},
+                  {TempInputDataLife.CARI30},
+                  {TempInputDataLife.CARI31},
+                  {TempInputDataLife.CARI32},
+                  {TempInputDataLife.CARI33},
+                  {TempInputDataLife.CARI34},
+                  {TempInputDataLife.CARI35},
+                  {TempInputDataLife.CARI28},
+                  {TempInputDataLife.CARI29},
+                  sysdate
+                  );
+    COMMIT; 
+END;</pyBrowseSQL>
+<pyCircumstanceType/>
+<pyDeleteSQL/>
+<pxMergeSynchronized>20241101T073259.018 GMT</pxMergeSynchronized>
+<pyStatus/>
+<pyDescription/>
+<pyPreviousApplicationName>GISFW</pyPreviousApplicationName>
+<pyHistoryObject/>
+<pxMoveOriginalRuleSet>GISFW</pxMoveOriginalRuleSet>
+<pyRequestType>SaveLifeinProduction_SQL</pyRequestType>
+<pxMoveOriginalKey>RULE-CONNECT-SQL ASM-FW-GISFW-WORK-LIFE ASM!SAVELIFEINPRODUCTION_SQL #20250227T063136.822 GMT</pxMoveOriginalKey>
+<pxMoveImportDateTime>20250615T044658.058 GMT</pxMoveImportDateTime>
+<pyCheckInRuleSet/>
+<pySaveSQL/>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyRuleEnds/>
+<pyRuleStarts/>
+<pxLimitedAccess>Dev</pxLimitedAccess>
+<pyCircumstanceTemplate/>
+<pyLabel>SaveLifeinProduction_SQL</pyLabel>
+<pxCreateOpName>KELVIN JUSLIM</pxCreateOpName>
+<pzStatus>valid</pzStatus>
+<pyRuleVersionsList REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pxListSubscript>1</pxListSubscript>
+<pyMenuTooltip/>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-WORK-LIFE ASM!SAVELIFEINPRODUCTION_SQL #20250602T040444.951 GMT</pzInsKey>
+<pyLabel>01-01-83 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>2</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-WORK-LIFE ASM!SAVELIFEINPRODUCTION_SQL #20250227T063248.320 GMT</pzInsKey>
+<pyLabel>01-01-82 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="3">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pxListSubscript>3</pxListSubscript>
+<pyMenuTooltip/>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-WORK-LIFE ASM!SAVELIFEINPRODUCTION_SQL #20241001T075026.670 GMT</pzInsKey>
+<pyLabel>01-01-81 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="4">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>4</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-WORK-LIFE ASM!SAVELIFEINPRODUCTION_SQL #20240821T024922.212 GMT</pzInsKey>
+<pyLabel>01-01-80 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="5">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>5</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-WORK-LIFE ASM!SAVELIFEINPRODUCTION_SQL #20240605T034745.283 GMT</pzInsKey>
+<pyLabel>01-01-79 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="6">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pxListSubscript>6</pxListSubscript>
+<pyMenuTooltip/>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-WORK-LIFE ASM!SAVELIFEINPRODUCTION_SQL #20240417T025522.227 GMT</pzInsKey>
+<pyLabel>01-01-78 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="7">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>7</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-WORK-LIFE ASM!SAVELIFEINPRODUCTION_SQL #20230717T064723.267 GMT</pzInsKey>
+<pyLabel>01-01-73 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="8">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>8</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-WORK-LIFE ASM!SAVELIFEINPRODUCTION_SQL #20230127T061524.983 GMT</pzInsKey>
+<pyLabel>01-01-69 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="9">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>9</pxListSubscript>
+<pzInsKey>RULE-CONNECT-SQL ASM-FW-GISFW-WORK-LIFE ASM!SAVELIFEINPRODUCTION_SQL #20221013T065219.084 GMT</pzInsKey>
+<pyLabel>01-01-67 (Available)</pyLabel>
+</rowdata>
+</pyRuleVersionsList>
+<pyRMAction>
+<pxObjClass>Embed-RuleManagement</pxObjClass>
+<pyAction>load</pyAction>
+</pyRMAction>
+<pyCustomFields REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="empty">
+<pyCFieldValue/>
+<pxObjClass>Embed-CustomFieldsList</pxObjClass>
+<pyCFileKey/>
+<pyCFieldName/>
+<pyCFileRelativePath/>
+<pxSubscript>empty</pxSubscript>
+<pyCFieldType/>
+</rowdata>
+</pyCustomFields>
+<pyPagesAndClasses REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-PagesAndClasses</pxObjClass>
+<pyPagesAndClassesClass/>
+<pyPagesAndClassesPage/>
+</rowdata>
+</pyPagesAndClasses>
+<pyToolBarSettings>
+<pyFavorites>true</pyFavorites>
+<pxCanJustifyWarnings>true</pxCanJustifyWarnings>
+<pyRecover>false</pyRecover>
+<pyForward>true</pyForward>
+<pyRestore>false</pyRestore>
+<pyBranchOut>false</pyBranchOut>
+<pySave>false</pySave>
+<pyLaunch>true</pyLaunch>
+<pyHasQualifiers>false</pyHasQualifiers>
+<pySiblings>true</pySiblings>
+<pyRequiresCheckOut>true</pyRequiresCheckOut>
+<pyCheckIn>false</pyCheckIn>
+<pyAvailability>false</pyAvailability>
+<pyHelpRef>/rule-/rule-connect-/rule-connect-sql/main</pyHelpRef>
+<pyDelegates>false</pyDelegates>
+<pyRefresh>true</pyRefresh>
+<pyPreview>false</pyPreview>
+<pyRun>false</pyRun>
+<pyCheckOut>true</pyCheckOut>
+<pyRuleData>true</pyRuleData>
+<pyVersionSecure>true</pyVersionSecure>
+<pyRuleResolution>true</pyRuleResolution>
+<pyCurrentlyOpen>true</pyCurrentlyOpen>
+<pxObjClass>Embed-WBSettings-ToolBar</pxObjClass>
+<pyShowJava>false</pyShowJava>
+<pyNew>true</pyNew>
+<pyDelete>false</pyDelete>
+<pyBack>true</pyBack>
+<pyCompareVersion/>
+<pySaveAs>true</pySaveAs>
+<pyHelpURI>https://community.pega.com/help_v88/rule-/rule-connect-/rule-connect-sql/main</pyHelpURI>
+<pyPropertyPane>false</pyPropertyPane>
+<pyUsesInheritance>false</pyUsesInheritance>
+</pyToolBarSettings>
+<pxWarnings REPEATINGTYPE="PageList"/>
+<pxWarningsToDisplay REPEATINGTYPE="PageList"/>
+</pagedata>

@@ -59,13 +59,16 @@ var PilihanTypePolis = []Pilihan{
 
 // PilihanProRateType - dropdown `Premium Payment Method`.
 //
-// `[terverifikasi]` `Calculate1_Act`: `@if(ProRateType==1,"AP",@if(ProRateType==2,
-// "PY","PM"))` - kode 1/2/3. ⚠️ Kepanjangan AP/PY/PM tidak ada di korpus dan
-// tidak dikarang.
+// Kode 1/2/3 `[terverifikasi]` `Calculate1_Act`: `@if(ProRateType==1,"AP",
+// @if(ProRateType==2,"PY","PM"))`. Teks tampilnya `[keputusan work owner
+// 01-10-2026]`: 1 Single, 2 Annually, 3 Others - pilihan radio/dropdown aslinya
+// milik rule properti yang tidak diekspor. ⚠️ Singkatan AP/PY/PM di
+// Calculate1_Act adalah kode turunan untuk perhitungan (tidak dibawa), BUKAN
+// teks dropdown.
 var PilihanProRateType = []Pilihan{
-	{Kode: "1", Nama: "AP"},
-	{Kode: "2", Nama: "PY"},
-	{Kode: "3", Nama: "PM"},
+	{Kode: "1", Nama: "Single"},
+	{Kode: "2", Nama: "Annually"},
+	{Kode: "3", Nama: "Others"},
 }
 
 // Pesan wajib-isi layar Input Premium Detail.
@@ -74,8 +77,11 @@ var PilihanProRateType = []Pilihan{
 // kawan-kawan di polis_validasi.go dipakai ulang). Sisanya karangan layar baru
 // berpola sama: sel ber-pyRequired tanpa kalimat korpus.
 const (
-	PesanRISlipKosong          = "R/I SLIP RNM No. can't null"
-	PesanBillingKosong         = "Billing Name can't null"
+	PesanRISlipKosong  = "R/I SLIP RNM No. can't null"
+	PesanBillingKosong = "Billing Name can't null"
+	// PesanRetroKosong - Retrocessionaire wajib untuk TP/TR (keputusan work owner
+	// 01-10-2026; di Pega selnya tidak ber-pyRequired).
+	PesanRetroKosong           = "Retrocessionaire can't null"
 	PesanAnnuityInterestKosong = "Annuity Interest can't null"
 	PesanPremiumRefundKosong   = "Premium Refund Factor can't null"
 )
@@ -160,6 +166,11 @@ func SusunDataPolis(isi IsianDataPolis) (IsianDataPolis, error) {
 	// R/I SLIP hanya bermakna untuk TP/TR (selnya pun hanya tampil di sana).
 	if !TypeRetro(isi.Type) {
 		isi.RISlipRNM = ""
+		// Billing Name dan Retrocessionaire hanya untuk TP/TR - layar
+		// menyembunyikannya di Type lain (keputusan work owner 01-10-2026);
+		// nilai tersembunyi tidak boleh ikut tersimpan.
+		isi.RetroID, isi.RetroName = "", ""
+		isi.SecurityReinsurerID, isi.SecurityReinsurer = "", ""
 	}
 	if id, nama, ada := SecurityReinsurerOtomatis(isi.RetroID); ada {
 		isi.SecurityReinsurerID, isi.SecurityReinsurer = id, nama
@@ -179,6 +190,7 @@ func SusunDataPolis(isi IsianDataPolis) (IsianDataPolis, error) {
 	tambah(isi.PremiumRefundFactor == nil, PesanPremiumRefundKosong)
 	tambah(isi.SourceOfBusiness == "", PesanSOBKosong)
 	tambah(TypeRetro(isi.Type) && isi.RetroName == "", PesanBillingKosong)
+	tambah(TypeRetro(isi.Type) && isi.SecurityReinsurer == "", PesanRetroKosong)
 	if len(kurang) > 0 {
 		return isi, fmt.Errorf("%w: %s", ErrDataPolisBelumLengkap, GabungPesanPenawaran(kurang))
 	}

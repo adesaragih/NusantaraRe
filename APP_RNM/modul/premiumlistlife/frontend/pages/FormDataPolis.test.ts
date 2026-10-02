@@ -46,9 +46,13 @@ describe('kolom wajib data polis', () => {
     expect(kolomWajibDataPolis(isiDariDataPolis(contoh))).toEqual([])
   })
 
-  it('TP/TR menuntut R/I SLIP dan Billing Name', () => {
+  it('TP/TR menuntut R/I SLIP, Billing Name, dan Retrocessionaire', () => {
     const isi = { ...isiDariDataPolis(contoh), type: 'TP' }
-    expect(kolomWajibDataPolis(isi)).toEqual([LABEL_DATA_POLIS.riSlip, LABEL_DATA_POLIS.billing])
+    expect(kolomWajibDataPolis(isi)).toEqual([
+      LABEL_DATA_POLIS.riSlip,
+      LABEL_DATA_POLIS.billing,
+      LABEL_DATA_POLIS.retro,
+    ])
     expect(typeRetro('TR')).toBe(true)
     expect(typeRetro('QP')).toBe(false)
   })
@@ -79,5 +83,26 @@ describe('struktur layar', () => {
     expect(LABEL_DATA_POLIS.proRateType).toBe('Premium Payment Method')
     expect(LABEL_DATA_POLIS.billing).toBe('Billing Name')
     expect(LABEL_DATA_POLIS.simpan).toBe('Save Data')
+  })
+})
+
+describe('Billing Name dan Retrocessionaire', () => {
+  it('hanya tampil untuk Type TP/TR', () => {
+    const blok = BERKAS.slice(BERKAS.indexOf('{typeRetro(isi.type) && (\n            <>\n              <p className="pl-datapolis__catatan"'))
+    expect(blok.length).toBeGreaterThan(0)
+    expect(blok).toContain('LABEL_DATA_POLIS.billing')
+    expect(blok).toContain('LABEL_DATA_POLIS.retro')
+  })
+})
+
+describe('Retrocessionaire wajib (TP/TR) dan lebar kolom seragam', () => {
+  it('Retrocessionaire masuk daftar wajib untuk TP/TR, tidak untuk QR', () => {
+    const tp = { ...isiDariDataPolis(contoh), type: 'TP', riSlipRnm: 'UJI-RNML', retroName: 'UJI-B' }
+    expect(kolomWajibDataPolis(tp)).toEqual([LABEL_DATA_POLIS.retro])
+    expect(kolomWajibDataPolis(isiDariDataPolis(contoh))).not.toContain(LABEL_DATA_POLIS.retro)
+  })
+
+  it('Billing dan Retrocessionaire berbagi satu grid', () => {
+    expect(BERKAS).toContain('pl-offer__pilih-grup')
   })
 })

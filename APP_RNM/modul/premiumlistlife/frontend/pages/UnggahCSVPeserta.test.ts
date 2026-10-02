@@ -38,7 +38,7 @@ describe('dua langkah', () => {
 
   it('sebab tombol simpan mati DIKATAKAN', () => {
     expect(SUMBER).toContain('UNGGAH_CSV.perbaikiDulu')
-    expect(UNGGAH_CSV.perbaikiDulu).toContain('tidak ada satu baris pun yang disimpan')
+    expect(UNGGAH_CSV.perbaikiDulu).toContain('no row is saved')
   })
 
   it('tinjauan lama dibuang saat berkas berganti', () => {
@@ -54,7 +54,7 @@ describe('aturan pemisah dinyatakan di muka', () => {
     // ⛔ Korpus menyebut aturan ini enam kali di nama langkahnya dan TIDAK
     // PERNAH di pesan yang dilihat pemakai — sehingga orang baru tahu
     // aturannya setelah berkasnya ditolak.
-    expect(UNGGAH_CSV.aturanPemisah).toContain('TITIK')
+    expect(UNGGAH_CSV.aturanPemisah).toContain('DOT')
     expect(UNGGAH_CSV.aturanPemisah).toContain('1,234,567.89')
     expect(UNGGAH_CSV.aturanPemisah).toContain('1.234.567,89')
     expect(UNGGAH_CSV.aturanPemisah).toContain('dd/mm/yyyy')
@@ -98,7 +98,7 @@ describe('ringkasan tinjauan', () => {
   it('berkas bersih dikatakan lolos', () => {
     expect(
       ringkasanTinjau({ cacahBaris: 5, cacahDitolak: 0, ditolak: [], lolos: true }),
-    ).toContain('semuanya lolos')
+    ).toContain('all passed')
   })
 
   it('berkas rusak menyebut cacah BARIS dan cacah ALASAN, keduanya', () => {
@@ -114,9 +114,9 @@ describe('ringkasan tinjauan', () => {
       ],
       lolos: false,
     })
-    expect(s).toContain('10 baris terbaca')
-    expect(s).toContain('2 baris ditolak')
-    expect(s).toContain('3 alasan')
-    expect(s).toContain('Tidak ada yang tersimpan')
+    expect(s).toContain('10 rows read')
+    expect(s).toContain('2 rows rejected')
+    expect(s).toContain('3 reasons')
+    expect(s).toContain('Nothing was saved')
   })
 })

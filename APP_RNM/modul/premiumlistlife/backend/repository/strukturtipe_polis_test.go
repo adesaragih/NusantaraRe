@@ -180,12 +180,14 @@ func TestMigrasi050Sampai056TipeNullFKIndexSesuaiStruktur(t *testing.T) {
 	// ⛔ 225 sejak 059 (seragam T_WORK_CLAIM, 01-10-2026): STATUS menjadi
 	// STATUS_WORK (nol bersih) ditambah COVER_KEY, CREATE_OP, CREATE_OP_NAME,
 	// TGL_CREATE, TGL_UPDATE.
+	// ⛔ 242 sejak 059-062 isian penawaran (01-10-2026): +17 kolom T_PREMIUM_LIST
+	// (8 di 059 isian, 7 di 060, JENIS_ASURANSI 061, STATUS_PENAWARAN 062).
 	total := 0
 	for _, k := range struktur {
 		total += len(k)
 	}
-	if len(struktur) != 7 || total != 225 {
-		t.Fatalf("STRUKTUR terbaca %d tabel / %d kolom, mau 7 / 225; pengurainya rusak, "+
+	if len(struktur) != 7 || total != 242 {
+		t.Fatalf("STRUKTUR terbaca %d tabel / %d kolom, mau 7 / 242; pengurainya rusak, "+
 			"atau STRUKTUR berubah - perbarui angka ini dengan sadar", len(struktur), total)
 	}
 	for tab, kol := range struktur {

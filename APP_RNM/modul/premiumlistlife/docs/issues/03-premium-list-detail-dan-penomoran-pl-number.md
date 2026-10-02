@@ -342,7 +342,7 @@ uang menyusul.
 | Sel Pega | Kode |
 | --- | --- |
 | Choose Product Name → `ChooseProdName` / `BrowseProductForNB_Life` (Ceding kasus) → `SetProdNametoPolis` | `GET /api/polis-life/{id}/cari-produk` (`PRODUCT_LIFE`) |
-| Type* (QR/QP/TP/TR), Premium Payment Method* (1 AP / 2 PY / 3 PM, `Calculate1_Act`) | dropdown, pilihan dari server |
+| Type* (QR/QP/TP/TR), Premium Payment Method* (kode 1/2/3 dari `Calculate1_Act`; teks 1 Single / 2 Annually / 3 Others — keputusan work owner 01-10-2026) | dropdown, pilihan dari server |
 | R/I SLIP RNM No.* (TP/TR) → `GetPLandNopolis_sql` (NOPOLIS RNML-Q / RNML-F) | `GET /api/polis-life/cari-rislip` (`T_PREMIUM_LIST.NO_POLIS`, JSON_POLIS dibuang) |
 | Marketing Officer* → `BrowseMarketingOfficer_RD` (MOStatus = 1) | `GET /api/polis-life/cari-marketing` (`MARKETINGOFFICER`) |
 | Annuity Interest*, Premium Refund Factor* | desimal sebagai teks |
@@ -352,7 +352,7 @@ uang menyusul.
 Simpan: `PUT /api/polis-life/{id}/data-polis`, hanya di tahap Input Premium Detail, menulis kolom yang
 sudah ada di `T_PREMIUM_LIST` (nol migrasi). ⚠️ `[belum terverifikasi]` kolom `PRODUCT_LIFE`
 (CEDINGID, SOBID, SOBNAME, POLICYHODER, POLICYHODERNAME, INWARDNAME) dan `MARKETINGOFFICER`
-(CLIENTID, MOSTATUS) — nama properti RD; konfirmasi DBA sebelum DEV. Kepanjangan AP/PY/PM dan teks
+(CLIENTID, MOSTATUS) — nama properti RD; konfirmasi DBA sebelum DEV. Teks
 dropdown Type tidak ada di korpus.
 
 **`Save Data` = `SavePremiumList_Act` saja `[keputusan work owner 01-10-2026]`** — `Calculate1_Act`

@@ -9,9 +9,10 @@
 // pernah ada terbaca "datanya hilang". Keduanya salah, dan yang kedua membuat
 // orang mencari data yang tidak pernah kami punya.
 //
-// ⛔ NOMOR LAHIR SEKALI. Tombolnya mati begitu polis bernomor, dan layar
-// MENGATAKAN sebabnya — tombol yang tetap hidup tetapi selalu menjawab hal
-// yang sama mengajari orang mengabaikan jawabannya.
+// ⛔ TANPA TOMBOL GENERATE PL NUMBER (keputusan work owner 01-10-2026). Di
+// `ShowLifePremiumDetail` sel PL_NUMBER pun ber-`pyVisible never`: nomor PL
+// terbit saat polis DISIMPAN (Confirm tahap ini / Submit summary, tiket 05a),
+// bukan lewat tombol. Layar hanya menampilkan nomornya bila sudah ada.
 //
 // ⛔ UANG TETAP TEKS. Tidak satu pun sel melewati `Number(...)`: premi
 // delapan angka desimal dibulatkan diam-diam olehnya (ADR-U-0003).
@@ -24,10 +25,10 @@ import { DETAIL_POLIS, JUDUL_KOLOM_PESERTA } from '../labels'
 import { Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import FormDataPolis from './FormDataPolis'
 import UnggahCSVPeserta from './UnggahCSVPeserta'
+import '../premiumlistlife.css'
 import {
   ambilKepalaPolis,
   ambilPesertaPolis,
-  terbitkanNomorPL,
   type HalamanPesertaPolis,
   type KepalaPolis,
 } from '../api'
@@ -60,8 +61,6 @@ export default function PremiumListDetail({ polisID }: { polisID: string }) {
   const [hal, setHal] = useState<HalamanPesertaPolis | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(true)
-  const [terbit, setTerbit] = useState(false)
-  const [kabar, setKabar] = useState('')
 
   const muat = useCallback(async () => {
     setSibuk(true)
@@ -89,56 +88,29 @@ export default function PremiumListDetail({ polisID }: { polisID: string }) {
   }, [muat])
 
   const bernomor = kepala !== null && kepala.plNumber.trim() !== ''
-  const tanpaPeserta = hal !== null && hal.total === 0
-
-  async function terbitkan(): Promise<void> {
-    if (terbit || bernomor) return
-    setTerbit(true)
-    setGalat(null)
-    setKabar('')
-    try {
-      const hasil = await terbitkanNomorPL(polisID)
-      setKepala((lama) => (lama === null ? lama : { ...lama, plNumber: hasil.nomor }))
-      setKabar(
-        hasil.baruTerbit
-          ? `Nomor terbit untuk periode ${hasil.periode} pada ${String(hasil.barisPeserta)} baris peserta.`
-          : DETAIL_POLIS.sudahBernomor,
-      )
-      // Grid ikut disegarkan: setiap barisnya kini memuat nomornya.
-      setHal(await ambilPesertaPolis(polisID))
-    } catch (e) {
-      setGalat(e)
-    } finally {
-      setTerbit(false)
-    }
-  }
 
   return (
     <section className="pl-detail">
-      <header className="pl-detail__kepala">
-        <h2 className="pl-detail__judul">{DETAIL_POLIS.judul}</h2>
+      {/*
+        Kepala ringkas — pola layar Input Offer Life: judul, lalu lencana nomor
+        kasus, Type, Class of Business, dan PL_NUMBER (bila belum, dikatakan).
+      */}
+      <header className="pl-kepala">
+        <h2 className="pl-kepala__judul">{DETAIL_POLIS.judul}</h2>
         {kepala !== null && (
-          <p className="pl-detail__identitas">
-            {kepala.polisId} — {selPeserta(kepala.type)} /{' '}
-            {selPeserta(kepala.businessCode)}
-          </p>
+          <div className="pl-kepala__meta">
+            <span className="pl-kepala__chip">{kepala.polisId}</span>
+            <span className="pl-kepala__chip">
+              <span className="pl-kepala__label">Type</span> {selPeserta(kepala.type)}
+            </span>
+            <span className="pl-kepala__chip">
+              <span className="pl-kepala__label">COB</span> {selPeserta(kepala.businessCode)}
+            </span>
+            <span className="pl-kepala__chip">
+              <span className="pl-kepala__label">{DETAIL_POLIS.nomor}</span> {kalimatNomor(kepala)}
+            </span>
+          </div>
         )}
-        <p className="pl-detail__nomor">
-          {DETAIL_POLIS.nomor}: <strong>{kalimatNomor(kepala)}</strong>
-        </p>
-        <button
-          type="button"
-          className="pl-detail__terbitkan"
-          disabled={sibuk || terbit || bernomor || tanpaPeserta}
-          onClick={() => {
-            void terbitkan()
-          }}
-        >
-          {DETAIL_POLIS.terbitkan}
-        </button>
-        {/* ⛔ Sebab tombolnya mati DIKATAKAN, bukan dibiarkan ditebak. */}
-        {bernomor && <p role="status">{DETAIL_POLIS.sudahBernomor}</p>}
-        {!bernomor && tanpaPeserta && <p role="status">{DETAIL_POLIS.perluPeserta}</p>}
       </header>
 
       {/*
@@ -167,61 +139,65 @@ export default function PremiumListDetail({ polisID }: { polisID: string }) {
         }}
       />
 
-      {sibuk && <Memuat />}
-      {galat !== null && <Gagal galat={galat} />}
-      {kabar !== '' && <p role="status">{kabar}</p>}
+      <section className="panel">
+        <h3 className="panel__title">Participants</h3>
+        {sibuk && <Memuat />}
+        {galat !== null && <Gagal galat={galat} />}
 
-      {hal !== null && hal.baris.length === 0 && (
-        <Kosong pesan="Polis ini belum punya baris peserta." />
-      )}
+        {hal !== null && hal.baris.length === 0 && (
+          <Kosong pesan="This policy has no participant rows yet." />
+        )}
 
-      {hal !== null && hal.baris.length > 0 && (
-        <table className="pl-detail__tabel">
-          <thead>
-            <tr>
-              {hal.kolom.map((k) => (
-                <th key={k}>{judulKolom(k)}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {hal.baris.map((b) => (
-              <tr key={b.id}>
-                {hal.kolom.map((k) => (
-                  <td key={k}>{selPeserta(b.nilai[k])}</td>
+        {hal !== null && hal.baris.length > 0 && (
+          <div className="pl-offer__riwayat-gulir">
+            <table className="inbox__tabel">
+              <thead>
+                <tr>
+                  {hal.kolom.map((k) => (
+                    <th key={k}>{judulKolom(k)}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {hal.baris.map((b) => (
+                  <tr key={b.id}>
+                    {hal.kolom.map((k) => (
+                      <td key={k}>{selPeserta(b.nilai[k])}</td>
+                    ))}
+                  </tr>
                 ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-      {hal !== null && (
-        <p className="pl-detail__cacah" role="status">
-          {hal.baris.length} dari {hal.total}
-        </p>
-      )}
+        {hal !== null && hal.baris.length > 0 && (
+          <p className="panel__note pl-detail__cacah" role="status">
+            {hal.baris.length} of {hal.total}
+          </p>
+        )}
 
-      {/*
-        ⛔ SELISIH KOLOM DIJAWAB DI LAYAR, bukan hanya di komentar Go.
-        `PL_Detail_Sec` menampilkan empat puluh medan; grid ini tiga puluh
-        delapan. Siapa pun yang menghitungnya akan bertanya, dan jawaban yang
-        hanya ada di kode bukan jawaban bagi yang bertanya.
-      */}
-      {kepala !== null && kepala.medanTanpaKolom.length > 0 && (
-        <details className="pl-detail__absen">
-          <summary>
-            {kepala.medanTanpaKolom.length} medan layar lama tidak ditampilkan
-          </summary>
-          <ul>
-            {kepala.medanTanpaKolom.map((m) => (
-              <li key={m.medan}>
-                <code>{m.medan}</code> — {m.alasan}
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
+        {/*
+          ⛔ SELISIH KOLOM DIJAWAB DI LAYAR, bukan hanya di komentar Go.
+          `PL_Detail_Sec` menampilkan empat puluh medan; grid ini tiga puluh
+          delapan. Siapa pun yang menghitungnya akan bertanya, dan jawaban yang
+          hanya ada di kode bukan jawaban bagi yang bertanya.
+        */}
+        {kepala !== null && kepala.medanTanpaKolom.length > 0 && (
+          <details className="pl-detail__absen">
+            <summary>
+              {kepala.medanTanpaKolom.length} legacy screen fields not shown
+            </summary>
+            <ul>
+              {kepala.medanTanpaKolom.map((m) => (
+                <li key={m.medan}>
+                  <code>{m.medan}</code> — {m.alasan}
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+      </section>
     </section>
   )
 }

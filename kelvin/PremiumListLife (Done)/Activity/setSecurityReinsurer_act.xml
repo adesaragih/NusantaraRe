@@ -1,0 +1,924 @@
+<?xml version="1.0"?>
+
+<pagedata>
+<pyInputMayStart>false</pyInputMayStart>
+<pyRuleName>setSecurityReinsurer_act</pyRuleName>
+<pxUpdateSystemID>pega</pxUpdateSystemID>
+<pyValueChanged>false</pyValueChanged>
+<pyXMLSignature>&lt;?xml version="1.0"?&gt;&lt;methodSignature&gt;&lt;pyStepsCallParams&gt;&lt;/pyStepsCallParams&gt;&lt;pyStepsPageAliases&gt;&lt;/pyStepsPageAliases&gt;&lt;/methodSignature&gt;</pyXMLSignature>
+<pxUpdateDateTime>20250203T032359.774 GMT</pxUpdateDateTime>
+<pzRuleSetVersionMinor>01</pzRuleSetVersionMinor>
+<pyMemo>save</pyMemo>
+<pyUsage/>
+<pzRuleSetVersionMajor>01</pzRuleSetVersionMajor>
+<pyJavaStream/>
+<pxCreateDateTime>20250124T044021.989 GMT</pxCreateDateTime>
+<pyAssociatedImage/>
+<pyInterface/>
+<pxInstanceLockedCreateDateTime/>
+<pxInstanceLockedBy/>
+<pyBaseRule>false</pyBaseRule>
+<pxInsName>ASM-FW-GISFW-WORK-LIFE!SETSECURITYREINSURER_ACT</pxInsName>
+<pyFormPost/>
+<pxSaveDateTime>20250203T032359.788 GMT</pxSaveDateTime>
+<pyCircumstanceProp/>
+<pyToolbarSaveLabel>Save</pyToolbarSaveLabel>
+<pyDocumentTitle/>
+<pzInsKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20250124T044021.989 GMT</pzInsKey>
+<pyTemplate/>
+<pyRelativePath/>
+<pzIsPrivateCheckOut>true</pzIsPrivateCheckOut>
+<pxInsId>!SETSECURITYREINSURER_ACT</pxInsId>
+<pyActivityName>setSecurityReinsurer_act</pyActivityName>
+<pyIsStaleRuleCheckEnabled>false</pyIsStaleRuleCheckEnabled>
+<pyWorkKey/>
+<pyRuleParamsStreamName/>
+<pySpecialtyComponentData/>
+<pyRuleSetVersion>01-01-81</pyRuleSetVersion>
+<pzDocumentKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20250124T044021.989 GMT</pzDocumentKey>
+<pyActivityType>ACTIVITY</pyActivityType>
+<pxUpdateOpName>Kelvin Juslim</pxUpdateOpName>
+<pyWindowTitle/>
+<pxUpdateOperator>KELVINJUSLIM</pxUpdateOperator>
+<pyObjClassLabel>Activity</pyObjClassLabel>
+<pxSiblingCount/>
+<pxMoveFromSystem/>
+<pzChecksum>1233447379</pzChecksum>
+<pxMoveImportOperId>ADESAMUEL</pxMoveImportOperId>
+<pyDisplayMode>basic</pyDisplayMode>
+<pxInstanceLockedKey/>
+<pxTabLabel>setSecurityReinsurer_act</pxTabLabel>
+<pxObjClass>Rule-Obj-Activity</pxObjClass>
+<pyCircumstanceDate/>
+<pyTemplateInputBox/>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pzOriginalInstanceKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20190523T161253.388 GMT</pzOriginalInstanceKey>
+<pxCommitDateTime>20250614T164844.000 GMT</pxCommitDateTime>
+<pyStreamName/>
+<pyRuleAvailable>Yes</pyRuleAvailable>
+<pyJavaClassName>Rule_Obj_Activity_ASM_FW_GISFW_Work_LIFE_setSecurityReinsurer_act_Action_20250203T032336_209_GMT</pyJavaClassName>
+<pzIndexCount>18</pzIndexCount>
+<pyClassName>ASM-FW-GISFW-Work-LIFE</pyClassName>
+<pxMoveImportOperName>ADE SAMUEL TUA SARAGIH</pxMoveImportOperName>
+<pySortDateCircumWithinRSMajor>true</pySortDateCircumWithinRSMajor>
+<pyRuleFormStatusTime>20260907T103859.984 GMT</pyRuleFormStatusTime>
+<pzRuleSetVersionPatch>81</pzRuleSetVersionPatch>
+<pxHostId>pega-nusre</pxHostId>
+<pyRuleFormType>Harness</pyRuleFormType>
+<pyRuleSet>GISFW</pyRuleSet>
+<pyCircumstanceDefinition/>
+<pyRuleHarness>RuleForm</pyRuleHarness>
+<pySelected>false</pySelected>
+<pyCircumstanceDateProp/>
+<pyCircumstanceVal/>
+<pyShowJavaWindowName>GeneratedJava20260907T103900.029 GMT</pyShowJavaWindowName>
+<pyMethodStatus/>
+<pxInstanceLockedRuleSetVersion/>
+<pyIsFromManageChangeLP/>
+<pxCreatedInPRPCVersion>07-01-07</pxCreatedInPRPCVersion>
+<pxInstanceLockedDateTime/>
+<pyJavaGenerateVersion>03-01-01</pyJavaGenerateVersion>
+<pyTaskStatusXml>&lt;pagedata&gt;&lt;/pagedata&gt;</pyTaskStatusXml>
+<pySPRuleSetName>GISFW</pySPRuleSetName>
+<pyRuleFormStatus>Good</pyRuleFormStatus>
+<pxInstanceLockedRuleSet/>
+<pyTemplateDisplayText>No ruleset versions available</pyTemplateDisplayText>
+<pyAuthenticatedOnly>true</pyAuthenticatedOnly>
+<pyJavaFUAVersion>03-02</pyJavaFUAVersion>
+<pyStepPageReference>RH_1</pyStepPageReference>
+<pyJavaGenerateTime>20250203T032359.759 GMT</pyJavaGenerateTime>
+<pyCircumstanceType/>
+<pxMergeSynchronized>20231222T083807.140 GMT</pxMergeSynchronized>
+<pyStatus/>
+<pyDescription/>
+<pyRuleSearchQuery/>
+<pxMoveImportDateTime>20250220T101348.934 GMT</pxMoveImportDateTime>
+<pyCheckInRuleSet/>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyRuleEnds/>
+<pyRuleStarts/>
+<pyJavaGenerateAPIVersion>03-02</pyJavaGenerateAPIVersion>
+<pxLimitedAccess>Dev</pxLimitedAccess>
+<pxHasPromptPagesDefined>false</pxHasPromptPagesDefined>
+<pyLabel>setSecurityReinsurer_act</pyLabel>
+<pyCircumstanceTemplate/>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyOldActivityType>ACTIVITY</pyOldActivityType>
+<pzStatus>valid</pzStatus>
+<pyRuleVersionsList REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pxListSubscript>1</pxListSubscript>
+<pyMenuTooltip/>
+<pzInsKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20250124T044021.989 GMT</pzInsKey>
+<pyLabel>01-01-81 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pxListSubscript>2</pxListSubscript>
+<pyMenuTooltip/>
+<pzInsKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20231207T083100.050 GMT</pzInsKey>
+<pyLabel>01-01-76 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="3">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>3</pxListSubscript>
+<pzInsKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20230502T024201.173 GMT</pzInsKey>
+<pyLabel>01-01-71 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="4">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>4</pxListSubscript>
+<pzInsKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20230313T085148.376 GMT</pzInsKey>
+<pyLabel>01-01-70 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="5">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pxListSubscript>5</pxListSubscript>
+<pyMenuTooltip/>
+<pzInsKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20190523T161253.388 GMT</pzInsKey>
+<pyLabel>01-01-55 (Available)</pyLabel>
+</rowdata>
+</pyRuleVersionsList>
+<pySystemParameters REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamName>flowName</pyParametersParamName>
+<pyParametersParamDesc>subscript to the pxFlow page</pyParametersParamDesc>
+<pyParametersParamType>String</pyParametersParamType>
+<pyUsage>FLOW</pyUsage>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamName>flowType</pyParametersParamName>
+<pyParametersParamDesc>pyFlowType of the flow being run</pyParametersParamDesc>
+<pyParametersParamType>String</pyParametersParamType>
+<pyUsage>FLOW</pyUsage>
+</rowdata>
+<rowdata REPEATINGINDEX="3">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamName>ReferencePageName</pyParametersParamName>
+<pyParametersParamDesc>work object page name</pyParametersParamDesc>
+<pyParametersParamType>String</pyParametersParamType>
+<pyUsage>FLOW</pyUsage>
+</rowdata>
+<rowdata REPEATINGINDEX="4">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamName>ReferenceClass</pyParametersParamName>
+<pyParametersParamDesc>class of the work object</pyParametersParamDesc>
+<pyParametersParamType>String</pyParametersParamType>
+<pyUsage>FLOW</pyUsage>
+</rowdata>
+<rowdata REPEATINGINDEX="5">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamName>ReferenceInsKey</pyParametersParamName>
+<pyParametersParamDesc>pzInsKey of the work object</pyParametersParamDesc>
+<pyParametersParamType>String</pyParametersParamType>
+<pyUsage>FLOW</pyUsage>
+</rowdata>
+<rowdata REPEATINGINDEX="6">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamName>pyDraftMode</pyParametersParamName>
+<pyParametersParamDesc>flag for whether this flow is in draft mode or not</pyParametersParamDesc>
+<pyParametersParamType>TrueFalse</pyParametersParamType>
+<pyUsage>FLOW</pyUsage>
+</rowdata>
+</pySystemParameters>
+<pyActivityRolesList REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Rule-ActivitySecurity</pxObjClass>
+<pyActivityRole/>
+</rowdata>
+</pyActivityRolesList>
+<pyParameters REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamIntelliValidateAs/>
+<pyParametersParamName/>
+<pyParametersParamDefaultValue/>
+<pyParametersParamIntelliRule/>
+<pyParametersParamIntelliBaseClass>PageClass</pyParametersParamIntelliBaseClass>
+<pyParametersParamDesc/>
+<pyParametersParamInOut>IN</pyParametersParamInOut>
+<pyParametersParamType>STRING</pyParametersParamType>
+<pyParametersParamReq>0</pyParametersParamReq>
+</rowdata>
+</pyParameters>
+<pyRuleCompareList REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pxListSubscript>1</pxListSubscript>
+<pyMenuTooltip/>
+<pzInsKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20250124T044021.989 GMT</pzInsKey>
+<pyLabel>01-01-81 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>2</pxListSubscript>
+<pzInsKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20231207T083100.050 GMT</pzInsKey>
+<pyLabel>01-01-76 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="3">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pxListSubscript>3</pxListSubscript>
+<pyMenuTooltip/>
+<pzInsKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20230502T024201.173 GMT</pzInsKey>
+<pyLabel>01-01-71 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="4">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>4</pxListSubscript>
+<pzInsKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20230313T085148.376 GMT</pzInsKey>
+<pyLabel>01-01-70 (Available)</pyLabel>
+</rowdata>
+<rowdata REPEATINGINDEX="5">
+<pxObjClass>Rule-</pxObjClass>
+<pyValue>3</pyValue>
+<pyMenuTooltip/>
+<pxListSubscript>5</pxListSubscript>
+<pzInsKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20190523T161253.388 GMT</pzInsKey>
+<pyLabel>01-01-55 (Available)</pyLabel>
+</rowdata>
+</pyRuleCompareList>
+<pyRMAction>
+<pxObjClass>Embed-RuleManagement</pxObjClass>
+<pyAction>load</pyAction>
+</pyRMAction>
+<pyCustomFields REPEATINGTYPE="PageGroup">
+<rowdata REPEATINGINDEX="empty">
+<pyCFieldValue/>
+<pxObjClass>Embed-CustomFieldsList</pxObjClass>
+<pyCFileKey/>
+<pyCFieldName/>
+<pyCFileRelativePath/>
+<pxSubscript>empty</pxSubscript>
+<pyCFieldType/>
+</rowdata>
+</pyCustomFields>
+<pyStepsRepeatDef>
+</pyStepsRepeatDef>
+<pyActivityPrivilegeList REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Rule-PrivilegeSecurity</pxObjClass>
+<pyPrivilegeName/>
+<pyPrivilegeClass>ASM-FW-GISFW-Work-LIFE</pyPrivilegeClass>
+</rowdata>
+</pyActivityPrivilegeList>
+<pyLocalParameters REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamName/>
+<pyParametersParamDesc/>
+<pyParametersParamType>String</pyParametersParamType>
+</rowdata>
+</pyLocalParameters>
+<pySteps REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pyStepActivityDescription/>
+<pyStepsActivityName>Property-Set</pyStepsActivityName>
+<pyStepPageReference>RH_1.pySteps(1)</pyStepPageReference>
+<pyStepsTransition/>
+<pyOnException/>
+<pxStepDefaultDescription>Property-Set</pxStepDefaultDescription>
+<pyPropRef/>
+<pxCreateDateTime>20250203T032340.148 GMT</pxCreateDateTime>
+<pyStepsObjectName/>
+<pyPassCurrentParameterPage>false</pyPassCurrentParameterPage>
+<pyStepsActivityNameUC>PROPERTY-SET</pyStepsActivityNameUC>
+<pyStepsParentClass>ASM-FW-GISFW-Work-LIFE</pyStepsParentClass>
+<pyExpanded>true</pyExpanded>
+<pyStepsBlockName/>
+<pyStepsJavaSource/>
+<pzStepExpanded/>
+<pyStepsDescription>kosongkan Security Reinsurer</pyStepsDescription>
+<pyStepsClassName>ASM-FW-GISFW-Work-LIFE</pyStepsClassName>
+<pxObjClass>Embed-ActivitySteps</pxObjClass>
+<pyTemplateInputBox/>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyStepsPreCondition/>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyParamArray REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<PropertiesName>.SecurityReinsurerID</PropertiesName>
+<PropertiesValue>""</PropertiesValue>
+<pyTempPlaceHolder>TempPlaceHolder</pyTempPlaceHolder>
+<pyExpressionGadget>
+<pxObjClass>PegaGadget-ExpressionBuilder</pxObjClass>
+<pyTemplateInputBox/>
+<pyShowCustomPages>true</pyShowCustomPages>
+<pyShowLocalVariables>true</pyShowLocalVariables>
+<pyShowParameters>true</pyShowParameters>
+<pyEditable>true</pyEditable>
+<pyIsLaunchAsOverlay>false</pyIsLaunchAsOverlay>
+<pyExpressionMapNew REPEATINGTYPE="PropertyGroup">
+</pyExpressionMapNew>
+</pyExpressionGadget>
+<pyStepsParamUI REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pyParametersParamSmartPromptRule>PROPERTY</pyParametersParamSmartPromptRule>
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamSize>30</pyParametersParamSize>
+<pyParametersParamName>PropertiesName</pyParametersParamName>
+<pyParametersParamIntelliRule>Rule-Obj-Property</pyParametersParamIntelliRule>
+<pyParametersParamIntelliBaseClass>PageClass</pyParametersParamIntelliBaseClass>
+<pyParametersParamSmartPrompt>true</pyParametersParamSmartPrompt>
+<pyParametersParamDesc>The name of the property to update.  Specified as (page.property or .property syntax)</pyParametersParamDesc>
+<pyParametersParamInOut>true</pyParametersParamInOut>
+<pyParametersParamType>STRING</pyParametersParamType>
+<pyParametersParamReq>true</pyParametersParamReq>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamSmartPromptRule>PROPERTY</pyParametersParamSmartPromptRule>
+<pyParametersParamSize>90</pyParametersParamSize>
+<pyParametersParamName>PropertiesValue</pyParametersParamName>
+<pyParametersParamIntelliRule>Rule-Obj-Property</pyParametersParamIntelliRule>
+<pyParametersParamSmartPrompt>true</pyParametersParamSmartPrompt>
+<pyParametersParamDesc>The property(s) value.  This can be a literal value in double quotes or a reference value (page.property, .property or a java expression)</pyParametersParamDesc>
+<pyParametersParamIntelliBaseClass>PageClass</pyParametersParamIntelliBaseClass>
+<pyParametersParamInOut>true</pyParametersParamInOut>
+<pyParametersParamType>STRING</pyParametersParamType>
+<pyParametersParamReq>true</pyParametersParamReq>
+</rowdata>
+</pyStepsParamUI>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pxCreateDateTime>20250203T032344.796 GMT</pxCreateDateTime>
+<PropertiesName>.SecurityReinsurer</PropertiesName>
+<PropertiesValue>""</PropertiesValue>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyTempPlaceHolder>TempPlaceHolder</pyTempPlaceHolder>
+<pyExpressionGadget>
+<pxObjClass>PegaGadget-ExpressionBuilder</pxObjClass>
+<pyTemplateInputBox/>
+<pyShowCustomPages>true</pyShowCustomPages>
+<pyShowLocalVariables>true</pyShowLocalVariables>
+<pyShowParameters>true</pyShowParameters>
+<pyEditable>true</pyEditable>
+<pyIsLaunchAsOverlay>false</pyIsLaunchAsOverlay>
+<pyExpressionMapNew REPEATINGTYPE="PropertyGroup">
+</pyExpressionMapNew>
+</pyExpressionGadget>
+</rowdata>
+</pyParamArray>
+<pyStepsTransParams REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ActivityTransitions</pxObjClass>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyStepsTransParamsWhen/>
+<pyStepsTransParamsWhenFalse>2</pyStepsTransParamsWhenFalse>
+<pyStepsTransParamsWhenTruePrms/>
+<pxCreateDateTime>20250203T032340.150 GMT</pxCreateDateTime>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyStepsTransParamsWhenFalsePrms/>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyStepsTransParamsWhenTrue>2</pyStepsTransParamsWhenTrue>
+</rowdata>
+</pyStepsTransParams>
+<pyStepsCallParams>
+<pxObjClass/>
+<pyTempPlaceHolder>TempPlaceHolder</pyTempPlaceHolder>
+<pyStepsParamUIRemoved/>
+<pyStepsParamUI/>
+</pyStepsCallParams>
+<pySteps REPEATINGTYPE="PageList"/>
+<pyStepsPageAliases>
+<pxObjClass/>
+</pyStepsPageAliases>
+<pyStepsPreCondParams REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ActivityPreConditions</pxObjClass>
+<pyStepsPreCondParamsWhenTruePrms/>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyStepsPreCondParamsWhenTrue>2</pyStepsPreCondParamsWhenTrue>
+<pyStepsPreCondParamsWhenFalsePrms/>
+<pyStepsPreCondParamsWhenFalse>2</pyStepsPreCondParamsWhenFalse>
+<pxCreateDateTime>20250203T032340.149 GMT</pxCreateDateTime>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyStepsPreCondParamsWhen/>
+</rowdata>
+</pyStepsPreCondParams>
+<pyStepsRepeatDef>
+<pxObjClass>Embed-ActivityRepeat</pxObjClass>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyStepsRepeatDefStop/>
+<pxCreateDateTime>20250203T032340.151 GMT</pxCreateDateTime>
+<pyStepsRepeatDefHasRepeat/>
+<pyStepsRepeatDefIteration/>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyForEachProperty/>
+<pyStepsRepeatDefLimit/>
+<pyStepsRepeatDefStart/>
+<pyForEachValidClasses REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ActivityForEachClasses</pxObjClass>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pxCreateDateTime>20250203T032340.152 GMT</pxCreateDateTime>
+<pyForEachClass/>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+</rowdata>
+</pyForEachValidClasses>
+</pyStepsRepeatDef>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pyStepActivityDescription/>
+<pyStepsActivityName>Property-Set</pyStepsActivityName>
+<pyStepPageReference>RH_1.pySteps(2)</pyStepPageReference>
+<pxStepDefaultDescription>Property-Set</pxStepDefaultDescription>
+<pyOnException/>
+<pyStepsTransition/>
+<pyPropRef/>
+<pxCreateDateTime>20231207T083101.759 GMT</pxCreateDateTime>
+<pyStepsObjectName/>
+<pyPassCurrentParameterPage>false</pyPassCurrentParameterPage>
+<pyStepsActivityNameUC>PROPERTY-SET</pyStepsActivityNameUC>
+<pyStepsParentClass>ASM-FW-GISFW-Work-LIFE</pyStepsParentClass>
+<pyExpanded>true</pyExpanded>
+<pyStepsBlockName/>
+<pyStepsJavaSource/>
+<pzStepExpanded/>
+<pyStepsDescription/>
+<pyStepsClassName>ASM-FW-GISFW-Work-LIFE</pyStepsClassName>
+<pxObjClass>Embed-ActivitySteps</pxObjClass>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyTemplateInputBox/>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyStepsPreCondition>true</pyStepsPreCondition>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyParamArray REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<PropertiesName>.SecurityReinsurerID</PropertiesName>
+<PropertiesValue>"L0000134"</PropertiesValue>
+<pyTempPlaceHolder>TempPlaceHolder</pyTempPlaceHolder>
+<pyExpressionGadget>
+<pxObjClass>PegaGadget-ExpressionBuilder</pxObjClass>
+<pyTemplateInputBox/>
+<pyShowCustomPages>true</pyShowCustomPages>
+<pyShowLocalVariables>true</pyShowLocalVariables>
+<pyShowParameters>true</pyShowParameters>
+<pyEditable>true</pyEditable>
+<pyIsLaunchAsOverlay>false</pyIsLaunchAsOverlay>
+<pyExpressionMapNew REPEATINGTYPE="PropertyGroup">
+</pyExpressionMapNew>
+</pyExpressionGadget>
+<pyStepsParamUI REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamSmartPromptRule>PROPERTY</pyParametersParamSmartPromptRule>
+<pyParametersParamName>PropertiesName</pyParametersParamName>
+<pyParametersParamSize>30</pyParametersParamSize>
+<pyParametersParamIntelliRule>Rule-Obj-Property</pyParametersParamIntelliRule>
+<pyParametersParamDesc>The name of the property to update.  Specified as (page.property or .property syntax)</pyParametersParamDesc>
+<pyParametersParamIntelliBaseClass>PageClass</pyParametersParamIntelliBaseClass>
+<pyParametersParamSmartPrompt>true</pyParametersParamSmartPrompt>
+<pyParametersParamInOut>true</pyParametersParamInOut>
+<pyParametersParamType>STRING</pyParametersParamType>
+<pyParametersParamReq>true</pyParametersParamReq>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamSmartPromptRule>PROPERTY</pyParametersParamSmartPromptRule>
+<pyParametersParamName>PropertiesValue</pyParametersParamName>
+<pyParametersParamSize>90</pyParametersParamSize>
+<pyParametersParamIntelliRule>Rule-Obj-Property</pyParametersParamIntelliRule>
+<pyParametersParamIntelliBaseClass>PageClass</pyParametersParamIntelliBaseClass>
+<pyParametersParamDesc>The property(s) value.  This can be a literal value in double quotes or a reference value (page.property, .property or a java expression)</pyParametersParamDesc>
+<pyParametersParamSmartPrompt>true</pyParametersParamSmartPrompt>
+<pyParametersParamInOut>true</pyParametersParamInOut>
+<pyParametersParamType>STRING</pyParametersParamType>
+<pyParametersParamReq>true</pyParametersParamReq>
+</rowdata>
+</pyStepsParamUI>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pxCreateDateTime>20231207T083146.305 GMT</pxCreateDateTime>
+<PropertiesName>.SecurityReinsurer</PropertiesName>
+<PropertiesValue>"AON REINSURANCE BROKERS INDONESIA"</PropertiesValue>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyTempPlaceHolder>TempPlaceHolder</pyTempPlaceHolder>
+<pyExpressionGadget>
+<pxObjClass>PegaGadget-ExpressionBuilder</pxObjClass>
+<pyTemplateInputBox/>
+<pyShowCustomPages>true</pyShowCustomPages>
+<pyShowLocalVariables>true</pyShowLocalVariables>
+<pyShowParameters>true</pyShowParameters>
+<pyEditable>true</pyEditable>
+<pyIsLaunchAsOverlay>false</pyIsLaunchAsOverlay>
+<pyExpressionMapNew REPEATINGTYPE="PropertyGroup">
+</pyExpressionMapNew>
+</pyExpressionGadget>
+</rowdata>
+</pyParamArray>
+<pyStepsTransParams REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ActivityTransitions</pxObjClass>
+<pyStepsTransParamsWhen/>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyStepsTransParamsWhenTruePrms/>
+<pyStepsTransParamsWhenFalse>2</pyStepsTransParamsWhenFalse>
+<pxCreateDateTime>20231207T083101.761 GMT</pxCreateDateTime>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyStepsTransParamsWhenFalsePrms/>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyStepsTransParamsWhenTrue>2</pyStepsTransParamsWhenTrue>
+</rowdata>
+</pyStepsTransParams>
+<pyStepsCallParams>
+<pxObjClass/>
+<pyTempPlaceHolder>TempPlaceHolder</pyTempPlaceHolder>
+<pyStepsParamUIRemoved/>
+<pyStepsParamUI/>
+</pyStepsCallParams>
+<pySteps REPEATINGTYPE="PageList"/>
+<pyStepsPageAliases>
+<pxObjClass/>
+</pyStepsPageAliases>
+<pyStepsPreCondParams REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ActivityPreConditions</pxObjClass>
+<pyStepsPreCondParamsWhenTruePrms/>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyStepsPreCondParamsWhenTrue>2</pyStepsPreCondParamsWhenTrue>
+<pyStepsPreCondParamsWhenFalse>3</pyStepsPreCondParamsWhenFalse>
+<pyStepsPreCondParamsWhenFalsePrms/>
+<pxCreateDateTime>20231207T083101.760 GMT</pxCreateDateTime>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyStepsPreCondParamsWhen>.RetroID=="L0000141"</pyStepsPreCondParamsWhen>
+<pyExpressionGadget>
+<pxObjClass>PegaGadget-ExpressionBuilder</pxObjClass>
+<pyTemplateInputBox/>
+<pyShowCustomPages>true</pyShowCustomPages>
+<pyShowLocalVariables>true</pyShowLocalVariables>
+<pyShowParameters>true</pyShowParameters>
+<pyEditable>true</pyEditable>
+<pyIsLaunchAsOverlay>true</pyIsLaunchAsOverlay>
+<pyExpressionMapNew REPEATINGTYPE="PropertyGroup">
+</pyExpressionMapNew>
+</pyExpressionGadget>
+</rowdata>
+</pyStepsPreCondParams>
+<pyStepsRepeatDef>
+<pxObjClass>Embed-ActivityRepeat</pxObjClass>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyStepsRepeatDefStop/>
+<pxCreateDateTime>20231207T083101.762 GMT</pxCreateDateTime>
+<pyStepsRepeatDefHasRepeat/>
+<pyStepsRepeatDefIteration/>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyForEachProperty/>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyStepsRepeatDefLimit/>
+<pyStepsRepeatDefStart/>
+<pyForEachValidClasses REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ActivityForEachClasses</pxObjClass>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pxCreateDateTime>20231207T083101.763 GMT</pxCreateDateTime>
+<pyForEachClass/>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+</rowdata>
+</pyForEachValidClasses>
+</pyStepsRepeatDef>
+</rowdata>
+<rowdata REPEATINGINDEX="3">
+<pyStepActivityDescription/>
+<pyStepsActivityName>Property-Set</pyStepsActivityName>
+<pyStepPageReference>RH_1.pySteps(3)</pyStepPageReference>
+<pyStepsTransition/>
+<pyOnException/>
+<pxStepDefaultDescription>Property-Set</pxStepDefaultDescription>
+<pyPropRef/>
+<pxCreateDateTime>20231222T083724.368 GMT</pxCreateDateTime>
+<pyStepsObjectName/>
+<pyPassCurrentParameterPage>false</pyPassCurrentParameterPage>
+<pyStepsActivityNameUC>PROPERTY-SET</pyStepsActivityNameUC>
+<pyStepsParentClass>ASM-FW-GISFW-Work-LIFE</pyStepsParentClass>
+<pyExpanded>true</pyExpanded>
+<pyStepsBlockName/>
+<pyStepsJavaSource/>
+<pzStepExpanded/>
+<pyStepsDescription/>
+<pyStepsClassName>ASM-FW-GISFW-Work-LIFE</pyStepsClassName>
+<pxObjClass>Embed-ActivitySteps</pxObjClass>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyTemplateInputBox/>
+<pyStepsPreCondition>true</pyStepsPreCondition>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyParamArray REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<PropertiesName>.SecurityReinsurerID</PropertiesName>
+<PropertiesValue>"B0000020"</PropertiesValue>
+<pyTempPlaceHolder>TempPlaceHolder</pyTempPlaceHolder>
+<pyExpressionGadget>
+<pxObjClass>PegaGadget-ExpressionBuilder</pxObjClass>
+<pyTemplateInputBox/>
+<pyShowCustomPages>true</pyShowCustomPages>
+<pyShowLocalVariables>true</pyShowLocalVariables>
+<pyShowParameters>true</pyShowParameters>
+<pyEditable>true</pyEditable>
+<pyIsLaunchAsOverlay>false</pyIsLaunchAsOverlay>
+<pyExpressionMapNew REPEATINGTYPE="PropertyGroup">
+</pyExpressionMapNew>
+</pyExpressionGadget>
+<pyStepsParamUI REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamSmartPromptRule>PROPERTY</pyParametersParamSmartPromptRule>
+<pyParametersParamSize>30</pyParametersParamSize>
+<pyParametersParamName>PropertiesName</pyParametersParamName>
+<pyParametersParamIntelliRule>Rule-Obj-Property</pyParametersParamIntelliRule>
+<pyParametersParamIntelliBaseClass>PageClass</pyParametersParamIntelliBaseClass>
+<pyParametersParamDesc>The name of the property to update.  Specified as (page.property or .property syntax)</pyParametersParamDesc>
+<pyParametersParamSmartPrompt>true</pyParametersParamSmartPrompt>
+<pyParametersParamInOut>true</pyParametersParamInOut>
+<pyParametersParamType>STRING</pyParametersParamType>
+<pyParametersParamReq>true</pyParametersParamReq>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pyParametersParamSmartPromptRule>PROPERTY</pyParametersParamSmartPromptRule>
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pyParametersParamName>PropertiesValue</pyParametersParamName>
+<pyParametersParamSize>90</pyParametersParamSize>
+<pyParametersParamIntelliRule>Rule-Obj-Property</pyParametersParamIntelliRule>
+<pyParametersParamDesc>The property(s) value.  This can be a literal value in double quotes or a reference value (page.property, .property or a java expression)</pyParametersParamDesc>
+<pyParametersParamSmartPrompt>true</pyParametersParamSmartPrompt>
+<pyParametersParamIntelliBaseClass>PageClass</pyParametersParamIntelliBaseClass>
+<pyParametersParamInOut>true</pyParametersParamInOut>
+<pyParametersParamType>STRING</pyParametersParamType>
+<pyParametersParamReq>true</pyParametersParamReq>
+</rowdata>
+</pyStepsParamUI>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-MethodParams</pxObjClass>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pxCreateDateTime>20231222T083752.889 GMT</pxCreateDateTime>
+<PropertiesName>.SecurityReinsurer</PropertiesName>
+<PropertiesValue>"IBS REINSURANCE BROKERS"</PropertiesValue>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyTempPlaceHolder>TempPlaceHolder</pyTempPlaceHolder>
+<pyExpressionGadget>
+<pxObjClass>PegaGadget-ExpressionBuilder</pxObjClass>
+<pyTemplateInputBox/>
+<pyShowCustomPages>true</pyShowCustomPages>
+<pyShowLocalVariables>true</pyShowLocalVariables>
+<pyShowParameters>true</pyShowParameters>
+<pyEditable>true</pyEditable>
+<pyIsLaunchAsOverlay>false</pyIsLaunchAsOverlay>
+<pyExpressionMapNew REPEATINGTYPE="PropertyGroup">
+</pyExpressionMapNew>
+</pyExpressionGadget>
+</rowdata>
+</pyParamArray>
+<pyStepsTransParams REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ActivityTransitions</pxObjClass>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyStepsTransParamsWhen/>
+<pyStepsTransParamsWhenTruePrms/>
+<pyStepsTransParamsWhenFalse>2</pyStepsTransParamsWhenFalse>
+<pxCreateDateTime>20231222T083724.370 GMT</pxCreateDateTime>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyStepsTransParamsWhenFalsePrms/>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyStepsTransParamsWhenTrue>2</pyStepsTransParamsWhenTrue>
+</rowdata>
+</pyStepsTransParams>
+<pyStepsCallParams>
+<pxObjClass/>
+<pyStepsParamUIRemoved/>
+<pyStepsParamUI/>
+<pyTempPlaceHolder>TempPlaceHolder</pyTempPlaceHolder>
+</pyStepsCallParams>
+<pySteps REPEATINGTYPE="PageList"/>
+<pyStepsPageAliases>
+<pxObjClass/>
+</pyStepsPageAliases>
+<pyStepsPreCondParams REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ActivityPreConditions</pxObjClass>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyStepsPreCondParamsWhenTruePrms/>
+<pyStepsPreCondParamsWhenTrue>2</pyStepsPreCondParamsWhenTrue>
+<pyStepsPreCondParamsWhenFalse>3</pyStepsPreCondParamsWhenFalse>
+<pyStepsPreCondParamsWhenFalsePrms/>
+<pxCreateDateTime>20231222T083724.369 GMT</pxCreateDateTime>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyStepsPreCondParamsWhen>.RetroID=="L0000135" || .RetroID=="L0000137"</pyStepsPreCondParamsWhen>
+<pyExpressionGadget>
+<pxObjClass>PegaGadget-ExpressionBuilder</pxObjClass>
+<pyTemplateInputBox/>
+<pyShowCustomPages>true</pyShowCustomPages>
+<pyShowLocalVariables>true</pyShowLocalVariables>
+<pyShowParameters>true</pyShowParameters>
+<pyEditable>true</pyEditable>
+<pyIsLaunchAsOverlay>true</pyIsLaunchAsOverlay>
+<pyExpressionMapNew REPEATINGTYPE="PropertyGroup">
+</pyExpressionMapNew>
+</pyExpressionGadget>
+</rowdata>
+</pyStepsPreCondParams>
+<pyStepsRepeatDef>
+<pxObjClass>Embed-ActivityRepeat</pxObjClass>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pyStepsRepeatDefStop/>
+<pxCreateDateTime>20231222T083724.371 GMT</pxCreateDateTime>
+<pyStepsRepeatDefIteration/>
+<pyStepsRepeatDefHasRepeat/>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyForEachProperty/>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+<pyStepsRepeatDefLimit/>
+<pyStepsRepeatDefStart/>
+<pyForEachValidClasses REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-ActivityForEachClasses</pxObjClass>
+<pxCreateOperator>KELVINJUSLIM</pxCreateOperator>
+<pxCreateDateTime>20231222T083724.372 GMT</pxCreateDateTime>
+<pxCreateSystemID>pega</pxCreateSystemID>
+<pyForEachClass/>
+<pxCreateOpName>Kelvin Juslim</pxCreateOpName>
+</rowdata>
+</pyForEachValidClasses>
+</pyStepsRepeatDef>
+</rowdata>
+</pySteps>
+<pyPagesAndClasses REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-PagesAndClasses</pxObjClass>
+<pyPagesAndClassesClass/>
+<pyPagesAndClassesPage/>
+<pyPagesAndClassesMode/>
+</rowdata>
+</pyPagesAndClasses>
+<pxNamedPageReferences REPEATINGTYPE="PageList"/>
+<pxMessageSummary>
+<pxObjClass>Embed-Message-Summary</pxObjClass>
+<pxHighSeverityWarningCount>1</pxHighSeverityWarningCount>
+<pxUnjustifiedHSWarningCount>1</pxUnjustifiedHSWarningCount>
+<pxLowSeverityWarningCount>0</pxLowSeverityWarningCount>
+</pxMessageSummary>
+<pyToolBarSettings>
+<pyFavorites>true</pyFavorites>
+<pxCanJustifyWarnings>true</pxCanJustifyWarnings>
+<pyRecover>false</pyRecover>
+<pyForward>true</pyForward>
+<pyRestore>false</pyRestore>
+<pyBranchOut>false</pyBranchOut>
+<pySave>false</pySave>
+<pyLaunch>true</pyLaunch>
+<pyHasQualifiers>false</pyHasQualifiers>
+<pyRequiresCheckOut>true</pyRequiresCheckOut>
+<pyCheckIn>false</pyCheckIn>
+<pySiblings>true</pySiblings>
+<pyAvailability>false</pyAvailability>
+<pyHelpRef>/rule-/rule-obj-/rule-obj-activity/main</pyHelpRef>
+<pyDelegates>false</pyDelegates>
+<pyRefresh>true</pyRefresh>
+<pyPreview>true</pyPreview>
+<pyRun>true</pyRun>
+<pyCheckOut>true</pyCheckOut>
+<pyRuleData>true</pyRuleData>
+<pyVersionSecure>true</pyVersionSecure>
+<pyRuleResolution>true</pyRuleResolution>
+<pyCurrentlyOpen>true</pyCurrentlyOpen>
+<pxObjClass>Embed-WBSettings-ToolBar</pxObjClass>
+<pyNew>true</pyNew>
+<pyShowJava>true</pyShowJava>
+<pyDelete>false</pyDelete>
+<pyBack>true</pyBack>
+<pyCompareVersion/>
+<pyHelpURI>https://community.pega.com/help_v88/rule-/rule-obj-/rule-obj-activity/main</pyHelpURI>
+<pySaveAs>true</pySaveAs>
+<pyPropertyPane>false</pyPropertyPane>
+<pyUsesInheritance>true</pyUsesInheritance>
+</pyToolBarSettings>
+<pxAPIMethodReferences REPEATINGTYPE="PageList"/>
+<pxWarnings REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Warning</pxObjClass>
+<pxWarningSeverity>1</pxWarningSeverity>
+<pzIndexOwnerKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20250124T044021.989 GMT</pzIndexOwnerKey>
+<pxWarningMessage>(Rule-Obj-Activity)pxUseDataTransform</pxWarningMessage>
+<pxWarningType>Maintainability</pxWarningType>
+<pxWarningCreateOperator>sandy</pxWarningCreateOperator>
+<pxWarningRuleSetType>PEGA</pxWarningRuleSetType>
+<pxWarningName>Use Data Transform</pxWarningName>
+<pxWarningCreatedTime>20190523T161456.674 GMT</pxWarningCreatedTime>
+<pxWarningDetails>(Rule-Obj-Activity)pxUseDataTransform</pxWarningDetails>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="Warnings">12</rowdata>
+</pzIndexes>
+</rowdata>
+</pxWarnings>
+<pxRuleReferences REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>ASM-FW-GISFW-Work-LIFE</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20250124T044021.989 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-Class</pxRuleObjClass>
+<pxRuleFamilyName>ASM-FW-GISFW-WORK-LIFE</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">13</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="2">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>SecurityReinsurer</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20250124T044021.989 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-Property</pxRuleObjClass>
+<pxRuleFamilyName>SECURITYREINSURER</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">14</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="3">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>RetroID</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20250124T044021.989 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-Property</pxRuleObjClass>
+<pxRuleFamilyName>RETROID</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">15</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="4">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName/>
+<pyRuleName>Property-Set</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20250124T044021.989 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Method</pxRuleObjClass>
+<pxRuleFamilyName>PROPERTY-SET</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">16</rowdata>
+</pzIndexes>
+</rowdata>
+<rowdata REPEATINGINDEX="5">
+<pxObjClass>Embed-Reference-Rule</pxObjClass>
+<pxRuleClassName>ASM-FW-GISFW-Work-LIFE</pxRuleClassName>
+<pyRuleName>SecurityReinsurerID</pyRuleName>
+<pyMethodStatus/>
+<pzIndexOwnerKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20250124T044021.989 GMT</pzIndexOwnerKey>
+<pxRuleObjClass>Rule-Obj-Property</pxRuleObjClass>
+<pxRuleFamilyName>SECURITYREINSURERID</pxRuleFamilyName>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="RuleReference">17</rowdata>
+</pzIndexes>
+</rowdata>
+</pxRuleReferences>
+<pxWarningsToDisplay REPEATINGTYPE="PageList">
+<rowdata REPEATINGINDEX="1">
+<pxObjClass>Embed-Warning</pxObjClass>
+<pxWarningSeverity>1</pxWarningSeverity>
+<pzIndexOwnerKey>RULE-OBJ-ACTIVITY ASM-FW-GISFW-WORK-LIFE SETSECURITYREINSURER_ACT #20250124T044021.989 GMT</pzIndexOwnerKey>
+<pxWarningMessage>Consider refactoring this activity into a data transform. Data transforms are easier to read and maintain than activities and provide most of the same capabilities</pxWarningMessage>
+<pxWarningType>Maintainability</pxWarningType>
+<pxWarningCreateOperator>sandy</pxWarningCreateOperator>
+<pxWarningRuleSetType>PEGA</pxWarningRuleSetType>
+<pxWarningCreatedTime>20190523T161456.674 GMT</pxWarningCreatedTime>
+<pxWarningName>Use Data Transform</pxWarningName>
+<pxWarningDetails>(Rule-Obj-Activity)pxUseDataTransform</pxWarningDetails>
+<pzIndexes REPEATINGTYPE="PropertyGroup">
+<rowdata REPEATINGINDEX="Warnings">12</rowdata>
+</pzIndexes>
+</rowdata>
+</pxWarningsToDisplay>
+</pagedata>
