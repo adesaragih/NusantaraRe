@@ -101,7 +101,7 @@ func pasangDB(t *testing.T) *ujiDB {
 	return u
 }
 
-// ddlFlat - pernyataan berkas migrasi 140–147 modul ini (maju atau mundur), `{skema}` diganti skema uji.
+// ddlFlat - pernyataan berkas migrasi 140–148 modul ini (maju atau mundur), `{skema}` diganti skema uji.
 func ddlFlat(t *testing.T, mundur bool, skema string) []string {
 	t.Helper()
 	entri, err := os.ReadDir(filepath.Join("..", "migrations"))
@@ -118,9 +118,10 @@ func ddlFlat(t *testing.T, mundur bool, skema string) []string {
 			sumber["migrations/"+e.Name()] = &fstest.MapFile{Data: isi}
 		}
 	}
-	// Delapan langkah - induk + tujuh anak (repository.DaftarTabelFlat; paket uji ini tidak mengimpor repository,
-	// penjaga inti TestHandlersTidakMengimporRepository). Kurang dari itu = skema uji sebagian: gagal, bukan diam.
-	const langkahFlat = 8
+	// Sembilan langkah - induk + tujuh anak (repository.DaftarTabelFlat; paket uji ini tidak mengimpor repository,
+	// penjaga inti TestHandlersTidakMengimporRepository) + 148 empat kolom outward. Kurang dari itu = skema uji
+	// sebagian: gagal, bukan diam.
+	const langkahFlat = 9
 	langkah, err := migrasi.Daftar(mundur, sumber)
 	if err != nil || len(langkah) != langkahFlat {
 		t.Fatalf("membaca migrasi flat: %d langkah (mau %d), %v", len(langkah), langkahFlat, err)

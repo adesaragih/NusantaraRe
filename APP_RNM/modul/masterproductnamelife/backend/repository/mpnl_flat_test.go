@@ -14,7 +14,12 @@ import (
 	"nusantarare/modul/masterproductnamelife/backend/models"
 )
 
-// polaKolomDDLFlat - satu baris definisi kolom DDL 140–147.
+// polaKolomDDLFlat - satu baris definisi kolom DDL 140–148 (CREATE TABLE dan ALTER TABLE ... ADD ().
+//
+// polaKolomDitambah - berkas yang menambah kolom ke tabel flat yang sudah ada (148: empat kolom outward OQ-FLAT-08,
+// sebab 146 sudah dijalankan di DEV tanpa kolom itu).
+var polaKolomDitambah = regexp.MustCompile(`(?i)ALTER\s+TABLE\s+\{skema\}\.(\w+)\s+ADD\s*\(`)
+
 var polaKolomDDLFlat = regexp.MustCompile(`^\s+([A-Z][A-Z0-9_]*)\s+(VARCHAR2\((\d+)\)|NUMBER\(38,8\)|NUMBER\(5\)|DATE|TIMESTAMP)`)
 
 type kolomDDL struct {
@@ -39,6 +44,9 @@ func kolomDDLFlat(t *testing.T) map[string][]kolomDDL {
 			t.Fatal(err)
 		}
 		m := polaTabelDibuat.FindStringSubmatch(string(isi))
+		if m == nil {
+			m = polaKolomDitambah.FindStringSubmatch(string(isi))
+		}
 		if m == nil {
 			continue
 		}

@@ -117,6 +117,8 @@ var polaPernyataanFlat = []*regexp.Regexp{
 	regexp.MustCompile(`(?is)^CREATE\s+TABLE\s+\{skema\}\.M_PRODUCTNAME_LIFE\w*\s*\(`),
 	regexp.MustCompile(`(?is)^CREATE\s+(UNIQUE\s+)?INDEX\s+\{skema\}\.\w+\s+ON\s+\{skema\}\.M_PRODUCTNAME_LIFE\w*\s*\(`),
 	regexp.MustCompile(`(?is)^DROP\s+TABLE\s+\{skema\}\.M_PRODUCTNAME_LIFE\w*(\s+CASCADE\s+CONSTRAINTS)?(\s+PURGE)?$`),
+	// Kolom ditambah/dibuang pada tabel flat yang sudah dijalankan di DEV (148, OQ-FLAT-08) - berkas lama tidak diubah.
+	regexp.MustCompile(`(?is)^ALTER\s+TABLE\s+\{skema\}\.M_PRODUCTNAME_LIFE\w*\s+(ADD|DROP)\s*\(`),
 }
 
 // polaObjekWarisanProduk - kedua tabel JSON warisan dan ketiga view: tidak pernah disebut migrasi rentang ini.
@@ -165,7 +167,7 @@ func pelanggaranIsiMigrasi(nama, isi string) []string {
 		}
 		if !sah {
 			kata := strings.Fields(p)
-			hasil = append(hasil, "pernyataan di luar CREATE/DROP objek M_PRODUCTNAME_LIFE*: "+
+			hasil = append(hasil, "pernyataan di luar CREATE/ALTER/DROP objek M_PRODUCTNAME_LIFE*: "+
 				strings.Join(kata[:min(3, len(kata))], " "))
 		}
 	}
@@ -221,6 +223,9 @@ func TestMPNLAturanMigrasiMenggigit(t *testing.T) {
 		"CREATE OR REPLACE VIEW {skema}.PRODUCT_LIFE AS SELECT ID FROM {skema}.M_PRODUCTNAME_LIFE\n/\n",
 		"CREATE TABLE {skema}.M_PRODUCTNAME_LIFE_X (\n  A VARCHAR2(6),\n  CONSTRAINT FK_X FOREIGN KEY (A) REFERENCES {skema}.M_PRODUCT_LIFE (ID)\n)\n/\n",
 		"CREATE INDEX {skema}.IX_X ON {skema}.M_PRODUCTINWARD_LIFE (ID)\n/\n",
+		"ALTER TABLE {skema}.M_PRODUCT_LIFE ADD (X VARCHAR2(1))\n/\n",
+		"ALTER TABLE {skema}.M_PRODUCTNAME_LIFE_X MODIFY (A VARCHAR2(9))\n/\n",
+		"ALTER TABLE {skema}.M_PRODUCTNAME_LIFE_X ADD CONSTRAINT FK_X FOREIGN KEY (A) REFERENCES {skema}.M_PRODUCT_LIFE (ID)\n/\n",
 	} {
 		if len(pelanggaranIsiMigrasi("150_uji.sql", buruk)) == 0 {
 			t.Errorf("seharusnya ditolak: %q", buruk)
@@ -229,6 +234,8 @@ func TestMPNLAturanMigrasiMenggigit(t *testing.T) {
 	for _, baik := range []string{
 		"-- komentar\nCREATE TABLE {skema}.M_PRODUCTNAME_LIFE_X (\n  A VARCHAR2(6)\n)\n/\nCREATE INDEX {skema}.IX_X ON {skema}.M_PRODUCTNAME_LIFE_X (A)\n/\n",
 		"DROP TABLE {skema}.M_PRODUCTNAME_LIFE_X CASCADE CONSTRAINTS\n/\n",
+		"ALTER TABLE {skema}.M_PRODUCTNAME_LIFE_X ADD (\n  B VARCHAR2(100)\n)\n/\n",
+		"ALTER TABLE {skema}.M_PRODUCTNAME_LIFE_X DROP (B)\n/\n",
 	} {
 		if p := pelanggaranIsiMigrasi("150_uji.sql", baik); len(p) != 0 {
 			t.Errorf("seharusnya sah: %q: %v", baik, p)

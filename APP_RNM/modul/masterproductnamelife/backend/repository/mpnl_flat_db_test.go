@@ -32,7 +32,11 @@ type ujiFlat struct {
 	ctx   context.Context
 }
 
-// ddlFlat - pernyataan berkas migrasi 140–147 modul ini (maju atau mundur), `{skema}` diganti skema uji.
+// ddlFlat - pernyataan berkas migrasi 140–148 modul ini (maju atau mundur), `{skema}` diganti skema uji.
+//
+// langkahMigrasiFlat - 140–147 (satu tabel per berkas) + 148 (empat kolom outward, OQ-FLAT-08).
+var langkahMigrasiFlat = len(repository.DaftarTabelFlat) + 1
+
 func ddlFlat(t *testing.T, mundur bool, skema string) []string {
 	t.Helper()
 	entri, err := os.ReadDir(filepath.Join("..", "migrations"))
@@ -50,7 +54,7 @@ func ddlFlat(t *testing.T, mundur bool, skema string) []string {
 		}
 	}
 	langkah, err := migrasi.Daftar(mundur, sumber)
-	if err != nil || len(langkah) != len(repository.DaftarTabelFlat) {
+	if err != nil || len(langkah) != langkahMigrasiFlat {
 		t.Fatalf("membaca migrasi flat: %d langkah, %v", len(langkah), err)
 	}
 	var hasil []string
