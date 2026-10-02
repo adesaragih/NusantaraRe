@@ -262,6 +262,17 @@ describe('Beranda bergaya soft UI', () => {
       ['--br-aksen-teks', '--br-ikon'],
       ['--br-sukses-teks', '--br-sukses-latar'],
       ['--br-netral-teks', '--br-netral-latar'],
+      // Gaya Kelola User (02-10-2026): kartu putih, belang, sorot, kepala navy, tautan modul, gradasi akar.
+      ['--br-teks', '--br-isi'],
+      ['--br-teks', '--br-zebra'],
+      ['--br-teks-redup', '--br-isi'],
+      ['--br-kepala-teks', '--br-kepala-tabel'],
+      ['--br-aksen-teks', '--br-isi'],
+      ['--br-aksen-teks', '--br-aksen-lembut'],
+      ['--br-teks', '--br-latar-atas'],
+      ['--br-teks', '--br-latar-bawah'],
+      ['--br-teks-redup', '--br-latar-atas'],
+      ['--br-teks-redup', '--br-latar-bawah'],
     ] as const
     expect([...kontrasKurang(terang, pasangan).map((x) => `terang ${x}`), ...kontrasKurang(gelap, pasangan).map((x) => `gelap ${x}`)]).toEqual([])
   })

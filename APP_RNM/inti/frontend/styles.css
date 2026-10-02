@@ -6287,7 +6287,10 @@ textarea.field__input {
    ====================================================================== */
 .beranda {
   --br-latar: #eef1f6;
-  --br-latar-tepi: #e2e7ef;
+  --br-latar-tepi: #cfd7e5;
+  --br-latar-atas: #f9fafd;
+  --br-latar-bawah: #e4e9f3;
+  --br-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
   --br-kartu: #eef1f6;
   --br-lembut: #e9edf3;
   --br-lembut-tepi: #dde3ec;
@@ -6297,10 +6300,14 @@ textarea.field__input {
   --br-aksen-teks: #2339a3;
   --br-aksen-lembut: #e3e8f6;
   --br-aksen-garis: #b9c5ee;
-  --br-kepala-tabel: #eaeef4;
-  --br-baris-hover: #e6ebf3;
-  --br-garis: #dfe4ec;
-  --br-tepi: #d5dce7;
+  --br-kepala-tabel: #dde4f2;
+  --br-kepala-teks: #22326b;
+  --br-kepala-garis: #c3cde2;
+  --br-isi: #ffffff;
+  --br-zebra: #f5f7fb;
+  --br-baris-hover: #e6ecfa;
+  --br-garis: #e1e6ef;
+  --br-tepi: #c8d1e1;
   --br-tombol: #d63a42;
   --br-tombol-ujung: #bf2f37;
   --br-tombol-hover: #c2333b;
@@ -6334,12 +6341,17 @@ textarea.field__input {
   padding: 24px;
   border: 1px solid var(--br-latar-tepi);
   border-radius: 26px;
-  background: var(--br-latar);
-  box-shadow: var(--br-bayang-lembar);
+  /* Gradasi TERLIHAT dan bayangan di SEMUA sisi - gaya Kelola User (02-10-2026): alas #eef1f6 dulu
+     nyaris lebur dengan latar halaman #f4f6fa, tepinya pucat, bayangannya hanya di bawah. */
+  background: linear-gradient(180deg, var(--br-latar-atas) 0%, var(--br-latar-bawah) 100%);
+  box-shadow: var(--br-bayang-akar);
 }
 :root[data-theme="dark"] .beranda {
   --br-latar: #1b2130;
-  --br-latar-tepi: #252c3c;
+  --br-latar-tepi: #323b50;
+  --br-latar-atas: #222a3b;
+  --br-latar-bawah: #161b27;
+  --br-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
   --br-kartu: #1b2130;
   --br-lembut: #181d2a;
   --br-lembut-tepi: #242b3a;
@@ -6349,10 +6361,14 @@ textarea.field__input {
   --br-aksen-teks: #aebcff;
   --br-aksen-lembut: #222b45;
   --br-aksen-garis: #3a4b8f;
-  --br-kepala-tabel: #1d2433;
-  --br-baris-hover: #212a3c;
-  --br-garis: #283042;
-  --br-tepi: #2d3546;
+  --br-kepala-tabel: #273152;
+  --br-kepala-teks: #dbe2ff;
+  --br-kepala-garis: #3a4670;
+  --br-isi: #1f2638;
+  --br-zebra: #232b3f;
+  --br-baris-hover: #2b3554;
+  --br-garis: #2c3447;
+  --br-tepi: #3a4459;
   --br-terang: rgba(255, 255, 255, 0.045);
   --br-gelap: rgba(0, 0, 0, 0.55);
   --br-kilau: rgba(255, 255, 255, 0.04);
@@ -6391,10 +6407,10 @@ textarea.field__input {
   outline-offset: 2px;
 }
 
-/* Kartu: TIMBUL KELUAR. */
+/* Kartu: TIMBUL KELUAR - PUTIH bertepi jelas di atas alas bergradasi (gaya Kelola User 02-10-2026). */
 .beranda .kartu {
-  background: var(--br-latar);
-  border: 1px solid var(--br-kilau);
+  background: var(--br-isi);
+  border: 1px solid var(--br-tepi);
   border-radius: 20px;
   box-shadow: var(--br-timbul);
 }
@@ -6414,11 +6430,16 @@ textarea.field__input {
 }
 .beranda .beranda__kartu thead th {
   background: var(--br-kepala-tabel);
-  color: var(--br-teks-redup);
-  border-color: var(--br-garis);
+  color: var(--br-kepala-teks);
+  font-weight: 700;
+  border-color: var(--br-kepala-garis);
 }
 .beranda .beranda__kartu td {
+  background: var(--br-isi);
   border-bottom-color: var(--br-garis);
+}
+.beranda .beranda__kartu tbody tr:nth-child(even) > td {
+  background: var(--br-zebra);
 }
 .beranda .beranda__kartu tbody tr:hover {
   background: transparent;
@@ -6447,14 +6468,17 @@ textarea.field__input {
 .beranda .beranda__kartu-tautan {
   margin: 0;
   padding: 6px 14px;
-  border: 1px solid var(--br-kilau);
+  border: 1px solid var(--br-tepi);
   border-radius: 999px;
-  background: var(--br-latar);
+  background: var(--br-isi);
   color: var(--br-aksen-teks);
+  font-weight: 600;
   box-shadow: var(--br-timbul-kecil);
 }
 .beranda .beranda__kartu-tautan:hover {
-  color: var(--br-aksen);
+  background: var(--br-aksen-lembut);
+  border-color: var(--br-aksen-garis);
+  color: var(--br-aksen-teks);
   text-decoration: none;
 }
 .beranda .beranda__kartu-tautan:active {
