@@ -70,6 +70,10 @@ func (k *KasusPolis) Buat(ctx context.Context, pelaku inti.Pelaku, flag string,
 	if err != nil {
 		return HasilKasusPolisBaru{}, fmt.Errorf("%w: %w", galat.ErrPermintaanTidakSah, err)
 	}
+	// ⛔ Pembuat = akun pelaku, di CREATE_OP dan CREATE_OP_NAME - sama dengan
+	// Claim Life `pendaftaran.go` sampai login menyediakan nama tampilan
+	// (migrasi 059, brief seragam kolom 01-10-2026).
+	awal = awal.DenganPembuat(pelaku.AkunID)
 	if k == nil || k.svc == nil || !k.svc.PunyaDatabase() {
 		return HasilKasusPolisBaru{}, db.ErrTanpaOracle
 	}

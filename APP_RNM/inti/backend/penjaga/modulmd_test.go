@@ -142,7 +142,7 @@ func uraiModulMD(isi string) (modulMD, error) {
 		case dalamBab && strings.HasPrefix(t, "### "):
 			judul, kepala = strings.TrimSpace(strings.TrimPrefix(t, "### ")), false
 			if !jenisPernyataan[judul] {
-				return m, fmt.Errorf("judul pernyataan %q tidak dikenal penjaga; jenis yang dibaca: docs/bersama/PANDUAN-TIM-PER-MODUL.md bab 6", judul)
+				return m, fmt.Errorf("judul pernyataan %q tidak dikenal penjaga; jenis yang dibaca: APP_RNM/PANDUAN-TIM-PER-MODUL.md bab 6", judul)
 			}
 			if _, ganda := m.pernyataan[judul]; ganda {
 				return m, fmt.Errorf("pernyataan %q ganda", judul)

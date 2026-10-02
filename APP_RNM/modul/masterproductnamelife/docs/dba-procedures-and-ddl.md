@@ -213,3 +213,14 @@ List bersarang → tabel anak: `CommentList`, `DocumentClaim`, `PlanList`, `Unde
 3. **Daftar kolom = field yang di-set di Activity** (bukan superset visibilitas Section).
 
 ## OQ-JSON-PRODUCT → ✅ DITUTUP `[data DBA + terverifikasi Section]` (2026-09-15).
+
+---
+
+## Ralat bertanggal 01-10-2026 — katalog DEV kolom `M_PRODUCT_LIFE`
+
+> Sumber: brief `PROMPT-LANJUTAN-MASTER-PRODUCT-NAME-LIFE-1.md` §1–§2 (katalog DEV `ALL_TAB_COLUMNS`/`ALL_OBJECTS` dan agregat `JSONDATA`, dibaca asisten, baca-saja). Tabel dan temuan di atas **tidak dihapus**.
+
+| Kalimat lama *(dikutip)* | Fakta DEV | Berlaku |
+| --- | --- | --- |
+| baris tabel *"`PRODUCTNAME` \| `VARCHAR2(1000)`"* dan *"`BEGIN_DATE` \| `DATE`"*; temuan 1 *"`M_PRODUCT_LIFE` = JSON + **4 kolom flatten** (`RIRISKID`, `RIRISK`, `PRODUCTNAME`, `BEGIN_DATE`)"* | `ALL_TAB_COLUMNS` DEV: `ID`, `JSONDATA`, `RIRISKID`, `RIRISK` — **dua** kolom datar | `M_PRODUCT_LIFE` = JSON + **2 kolom datar** (`RIRISKID`, `RIRISK`); penulisnya di korpus hanya `SaveProductNameLIfeFlat` b84 |
+| *"Index: `INDEX2 (ID)`, `M_PRODUCT_LIFE_INDEX1 (ID, PRODUCTNAME)`"* | daftar index DEV tidak dibaca dalam lanjutan ini; index atas kolom yang tidak ada tidak mungkin ada dalam bentuk itu | `belum terverifikasi` — DDL di atas tampaknya berasal dari lingkungan lain; DBA diminta mencocokkan |

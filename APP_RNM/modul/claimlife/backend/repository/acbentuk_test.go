@@ -91,10 +91,12 @@ func TestAC10AdjustmentMemuatKolomInti(t *testing.T) {
 
 // AC 23: T_WORK_CLAIM memuat kolom pindahan dari header.
 //
-// ⚠️ CASEID di AC menjadi CASE_ID di STRUKTUR.
+// ⚠️ CASEID di AC menjadi CASE_ID di STRUKTUR - lalu DIBUANG migrasi 023
+// (keputusan work owner 01-10-2026): ID dipakai sebagai gantinya. Bentuk
+// akhirnya ditagih TestMigrasi023BentukAkhirWorkClaim.
 func TestAC23WorkClaimMemuatKolomPindahan(t *testing.T) {
 	wajibMemuat(t, sqlTabel(t, "001_"), "T_WORK_CLAIM", []string{
-		"CREATE_OP", "CREATE_OP_NAME", "TGL_UPDATE", "CASE_ID", "LINI",
+		"CREATE_OP", "CREATE_OP_NAME", "TGL_UPDATE", "LINI",
 	})
 }
 

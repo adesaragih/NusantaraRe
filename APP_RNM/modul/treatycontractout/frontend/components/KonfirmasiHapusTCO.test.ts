@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 
 import { AKAR_APLIKASI } from '../../../../inti/frontend/uji/sumber'
 import { HAPUS_TCO } from '../labels'
-import { rincianDampak } from './KonfirmasiHapusTCO'
+import { rincianDampak, teksBersama } from './KonfirmasiHapusTCO'
 
 /**
  * Seluruh klien backend: dulu SATU `services/api.ts`, kini `inti/klien.ts` +
@@ -31,9 +31,9 @@ describe('popup konfirmasi hapus', () => {
     expect(rincianDampak(d, 'kontrak')).toEqual(['2 reinsurer', '3 security', '1 business'])
     expect(rincianDampak(d, 'reinsurer')).toEqual(['3 security'])
   })
-  it('menyatakan eksplisit klausul TIDAK terhapus (AC 44)', () => {
-    expect(HAPUS_TCO.klausulTetap).toMatch(/are NOT deleted/)
-    expect(baca('KonfirmasiHapusTCO.tsx')).toContain('{dampak.klausulTetap} {HAPUS_TCO.klausulTetap}')
+  it('01-10-2026: catatan klausul DIBUANG dari popup (klausul tetap tidak dihapus server, AC 44)', () => {
+    expect(HAPUS_TCO).not.toHaveProperty('klausulTetap')
+    expect(baca('KonfirmasiHapusTCO.tsx')).not.toMatch(/dampak\.klausulTetap|HAPUS_TCO\.klausulTetap/)
   })
   it('Batal tidak menghapus; Ya mengirim jumlah yang DILIHAT', () => {
     for (const panel of ['PanelKontrakTahun.tsx', 'PanelReinsurerKombinasi.tsx']) {
@@ -48,8 +48,19 @@ describe('popup konfirmasi hapus', () => {
     expect(baca('KonfirmasiHapusTCO.tsx')).toContain('dampak.bersama > 0')
   })
   it('OQ-TCO-21: kontrak lain terdampak disebut sebagai peringatan dan ikut dikonfirmasi', () => {
-    expect(HAPUS_TCO.bersama).toMatch(/ARE deleted/)
+    expect(teksBersama(1)).toMatch(/ARE deleted/)
+    expect(teksBersama(2)).toMatch(/ARE deleted/)
     expect(baca('KonfirmasiHapusTCO.tsx')).toContain('role="alert"')
+    expect(baca('KonfirmasiHapusTCO.tsx')).toContain('<strong>{dampak.bersama}</strong> {teksBersama(dampak.bersama)}')
+  })
+  it('01-10-2026: kalimat kontrak lain tunggal/jamak benar, business NULL ikut disebut', () => {
+    expect(teksBersama(1)).toMatch(/^other contract uses .* its reinsurers/)
+    expect(teksBersama(2)).toMatch(/^other contracts use .* their reinsurers/)
+    expect(teksBersama(3)).toBe(teksBersama(2))
+    for (const n of [1, 2]) {
+      expect(teksBersama(n)).not.toMatch(/another/)
+      expect(teksBersama(n)).toMatch(/belong to this treaty year or have no treaty year\.$/)
+    }
   })
   it('OQ-TCO-21: DELETE kontrak mengirim cacah kontrak lain', () => {
     expect(readFileSync(join(__dirname, '..', 'api.ts'), 'utf8')).toContain('bersama: String(d.bersama)')

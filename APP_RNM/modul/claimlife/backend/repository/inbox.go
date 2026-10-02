@@ -71,7 +71,7 @@ type BarisInbox struct {
 type SaringInbox struct {
 	// Tahap - nama assignment VERBATIM; wajib.
 	Tahap string
-	// PeranTahap - nilai `PY_POSITION` yang setara, untuk baris LAMA yang
+	// PeranTahap - nilai `POSITION` yang setara, untuk baris LAMA yang
 	// kolom `TAHAP`-nya masih kosong.
 	PeranTahap string
 	// AkunID menyaring worklist ke kasus milik pelaku sendiri. Kosong berarti
@@ -89,7 +89,7 @@ type SaringInbox struct {
 // justru yang lebih dipercaya pemakai, sebab ia lebih ringkas.
 //
 // ⚠️ `NVL(w.TAHAP, :2)` membuat baris LAMA (TAHAP kosong) ikut terbaca lewat
-// `PY_POSITION`-nya. Tanpa itu seluruh kasus yang sudah ada sebelum migrasi
+// `POSITION`-nya. Tanpa itu seluruh kasus yang sudah ada sebelum migrasi
 // 016 menghilang dari kotak masuk tanpa satu pun galat.
 func sqlInboxWhere(pakaiAkun bool) string {
 	w := ` WHERE NVL(w.TAHAP, :tahapCadangan) = :tahap`
@@ -101,7 +101,9 @@ func sqlInboxWhere(pakaiAkun bool) string {
 
 // sqlInbox merakit pembacaan barisnya.
 func sqlInbox(work, header string, pakaiAkun bool) string {
-	return fmt.Sprintf(`SELECT w.CASE_ID, w.ID, NVL(w.TAHAP, :tahapCadangan),
+	// CASE_ID dibuang migrasi 023 (keputusan work owner 01-10-2026): Case ID
+	// kotak masuk = ID kasus.
+	return fmt.Sprintf(`SELECT w.ID, NVL(w.TAHAP, :tahapCadangan),
 			   w.CREATE_OP_NAME, w.TGL_CREATE,
 			   h.STS_REJECT, h.CLAIM_NO, h.POLICY_NO, h.BUSINESS_NAME, h.CURRENCY
 		  FROM %s w
@@ -171,15 +173,15 @@ func (r *KlaimLife) AmbilInbox(ctx context.Context, s SaringInbox) (
 	for baris.Next() {
 		var (
 			b                                       BarisInbox
-			caseID, workID, tahap, opName           sql.NullString
+			workID, tahap, opName                   sql.NullString
 			status, nomorKlaim, polis, bisnis, kurs sql.NullString
 			tglCreate                               sql.NullTime
 		)
-		if err := baris.Scan(&caseID, &workID, &tahap, &opName, &tglCreate,
+		if err := baris.Scan(&workID, &tahap, &opName, &tglCreate,
 			&status, &nomorKlaim, &polis, &bisnis, &kurs); err != nil {
 			return nil, 0, fmt.Errorf("repository: membaca baris kotak masuk: %w", err)
 		}
-		b.CaseID, b.WorkID, b.Tahap = caseID.String, workID.String, tahap.String
+		b.CaseID, b.WorkID, b.Tahap = workID.String, workID.String, tahap.String
 		b.CreateOpName, b.TglCreate = opName.String, tglCreate.Time
 		b.StatusKlaim, b.NomorKlaim = status.String, nomorKlaim.String
 		b.NomorPolis, b.NamaBisnis, b.MataUang = polis.String, bisnis.String, kurs.String

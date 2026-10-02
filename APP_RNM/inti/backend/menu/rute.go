@@ -16,8 +16,11 @@ import (
 //
 // `pembaca` nil = proses tanpa Oracle. `modulAktif` adalah nama modul yang
 // dipasang proses ini (MODUL_AKTIF): butir modul lain tidak dikirim.
-// `stubPelaku` = AUTH_STUB, dibaca hanya untuk diteruskan ke
-// `SaringMenuUntukPelaku`.
+//
+// Saringan per akun (Kelola User, 01-10-2026): permintaan bersesi login
+// menerima HANYA menu akunnya (`SaringMenuUntukAkun`). Tanpa sesi,
+// `stubPelaku` (AUTH_STUB) menerima seluruh menu tabel tanpa menu aplikasi -
+// Kelola User menuntut login sungguhan - dan tanpa stub jawabannya 401.
 //
 // ⛔ Kegagalan dijawab galat TERANG, tidak pernah menu kosong: sidebar yang
 // kosong diam-diam terbaca "aplikasi tanpa menu". Rincian galat driver
@@ -28,6 +31,11 @@ func Rute(pembaca PembacaMenu, modulAktif []string, stubPelaku bool) http.Handle
 	return func(w http.ResponseWriter, r *http.Request) {
 		if pembaca == nil {
 			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi; menu dibaca dari M_NAV_MENU")
+			return
+		}
+		kode, sesi := inti.AksesMenuDari(r.Context())
+		if !sesi && !stubPelaku {
+			galat.Tulis(w, http.StatusUnauthorized, "belum login atau sesi sudah berakhir")
 			return
 		}
 		baris, err := pembaca.Baca(r.Context())
@@ -41,6 +49,10 @@ func Rute(pembaca PembacaMenu, modulAktif []string, stubPelaku bool) http.Handle
 			galat.Tulis(w, http.StatusInternalServerError, "menu: membaca M_NAV_MENU gagal; rinciannya di log server")
 			return
 		}
-		galat.TulisJSON(w, SaringMenuUntukPelaku(inti.PelakuDari(r, stubPelaku), Susun(baris, aktif)))
+		m := Susun(baris, aktif)
+		if sesi {
+			m = SaringMenuUntukAkun(m, kode)
+		}
+		galat.TulisJSON(w, m)
 	}
 }

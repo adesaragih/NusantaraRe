@@ -105,3 +105,7 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Status 01-10-2026 (paket 11)
+
+**Status:** ✅ **dibangun** — master `REINSURANCETYPE` `.Flag = 1` (paket 1 `db7f636`, paket 3 `38c3d42`), dropdown `REINS TYPE` paket 9+10 (`a3c07bc`).

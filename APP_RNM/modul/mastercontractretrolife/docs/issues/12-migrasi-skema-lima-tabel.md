@@ -1,5 +1,7 @@
 # 12: Migrasi skema — DDL lima tabel, PK, FK, dan sequence
 
+> ✅ **Dibuka kembali 01-10-2026 dan selesai sebagian** — keputusan work owner 01-10-2026: *"untuk modul Treaty Contract Retro Life aku izinkan kamu ALTER TABLE yang digunakan, perbaiki logic relasi datanya dan logic aplikasinya"*. Penyimpangan sadar 7 (PK `ID`) dan 8 (FK `ON DELETE CASCADE`) dikerjakan di migrasi `100_relasi_lima_tabel_life`, ditambah FK penjaga salinan. Bagian tiket yang menyalin atau membuat tabel baru **tetap tidak dikerjakan**: tabel warisan dipakai apa adanya.
+
 **Status:** ready-for-agent — ✅ **OQ-001 ditutup** `[data DBA]`
 
 **Blocked by:** None (can start immediately)
@@ -131,3 +133,15 @@ Migrasi diuji terhadap **skema uji Oracle nyata** — bukan mock.
 ```
 go test ./internal/...
 ```
+
+---
+
+## Ralat bertanggal 30-09-2026 — sesi implementasi (paket 0)
+
+> Sumber: `RALAT-DEV-30-09-2026.md` (K1–K8 katalog DEV, R1–R12 pembacaan ulang XML) dan `PARITAS-LAYAR-DAN-AKSI.md`. Kalimat di atas **tidak dihapus**; yang berlaku adalah ralat ini.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"Status: ready-for-agent — ✅ OQ-001 ditutup"*; *"DDL kelima tabel + PK + FK + sequence"*; *"Keadaan yang dinyatakan: kelima tabel sudah punya PK `ID` … keempat FK sudah terpasang dengan mode `ON DELETE CASCADE`"* | ⛔ **tiket DICABUT** (K1): kelima tabel di DEV nol constraint P/R/U. **Nol migrasi, nol DDL, nol tabel baru** — preseden tco4 Treaty Contract Out `[keputusan asisten dari preseden tco4; veto work owner]`. Rentang 100–139 tetap kosong; penjaga modul menolak berkas migrasi di rentang itu. Keunikan `ID` dan kaskade di Go (K2, K3); pertanyaan asal DDL → OQ-MCRL-02 |
+
+**Status:** `wontfix` — dicabut 30-09-2026.

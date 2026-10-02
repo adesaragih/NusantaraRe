@@ -63,6 +63,18 @@ type Config struct {
 	// dulu. Mati secara bawaan, dan ditolak keras saat IS_PEGA_PROD=true.
 	AuthStub bool
 
+	// SesiRahasia adalah kunci HMAC cookie sesi login (SESI_RAHASIA),
+	// minimal 32 karakter. Kosong = login menjawab 503 (stub tetap dapat
+	// dipakai di pengembangan). Keputusan work owner 01-10-2026.
+	//
+	// ⛔ Nilainya tidak pernah ditulis di repo, di log, atau di percakapan.
+	SesiRahasia string
+
+	// SesiCookieAman adalah atribut Secure cookie sesi (SESI_COOKIE_SECURE,
+	// bawaan true). `false` hanya untuk server http tanpa TLS di jaringan
+	// uji - dan ditolak saat IS_PEGA_PROD=true.
+	SesiCookieAman bool
+
 	// UnggahanDir adalah folder LOKAL tempat berkas unggahan disimpan
 	// (butir be).
 	//
@@ -224,6 +236,8 @@ func Load() (Config, error) {
 
 	c.SkemaUjiDiakui = strings.EqualFold(strings.TrimSpace(os.Getenv(EnvSkemaUji)), "true")
 	c.AuthStub = strings.EqualFold(strings.TrimSpace(os.Getenv("AUTH_STUB")), "true")
+	c.SesiRahasia = strings.TrimSpace(os.Getenv("SESI_RAHASIA"))
+	c.SesiCookieAman = !strings.EqualFold(strings.TrimSpace(os.Getenv("SESI_COOKIE_SECURE")), "false")
 	// ⛔ Tidak di-TrimSpace dan tidak dinormalkan: garam adalah byte apa
 	// adanya, dan membetulkannya diam-diam menghasilkan token yang berbeda
 	// dari yang sistem lama terbitkan.
@@ -265,6 +279,15 @@ func Load() (Config, error) {
 			ErrKonfigurasi)
 	}
 
+	// ⛔ Rahasia pendek dapat ditebak; cookie tanpa Secure di produksi dapat
+	// disadap. Keduanya ditolak saat menyala, bukan saat login pertama.
+	if c.SesiRahasia != "" && len(c.SesiRahasia) < PanjangMinSesiRahasia {
+		return Config{}, fmt.Errorf("%w: SESI_RAHASIA minimal %d karakter", ErrKonfigurasi, PanjangMinSesiRahasia)
+	}
+	if !c.SesiCookieAman && c.IsPegaProd {
+		return Config{}, fmt.Errorf("%w: SESI_COOKIE_SECURE=false ditolak saat IS_PEGA_PROD=true", ErrKonfigurasi)
+	}
+
 	if c.OracleDSN != "" && c.OracleSchema == "" {
 		return Config{}, fmt.Errorf(
 			"%w: ORACLE_SCHEMA wajib terisi bila ORACLE_DSN terisi (ADR-U-0033)", ErrKonfigurasi)
@@ -280,6 +303,9 @@ func Load() (Config, error) {
 
 	return c, nil
 }
+
+// PanjangMinSesiRahasia - panjang minimal SESI_RAHASIA.
+const PanjangMinSesiRahasia = 32
 
 // PunyaOracle menyatakan apakah proses dikonfigurasi menyentuh Oracle.
 func (c Config) PunyaOracle() bool { return c.OracleDSN != "" }

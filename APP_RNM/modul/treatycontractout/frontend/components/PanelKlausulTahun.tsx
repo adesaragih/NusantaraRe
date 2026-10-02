@@ -15,7 +15,7 @@
 
 import { useEffect, useState } from 'react'
 
-import { KLAUSUL_TCO, MENU_TCO } from '../labels'
+import { JUDUL_TAMPIL_TCO, KLAUSUL_TCO } from '../labels'
 import { formatDate } from '../../../../inti/frontend/lib/format'
 import { ambilJenisKlausul, type JenisKlausul, type TahunTreaty } from '../api'
 import { Field, Gagal, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
@@ -40,7 +40,7 @@ export default function PanelKlausulTahun({ tahun, onTutup }: { tahun: TahunTrea
   return (
     <section className="panel">
       <header className="inbox__kepala">
-        <h2 className="inbox__judul">{MENU_TCO.inboxTreatyContractDescription}</h2>
+        <h2 className="inbox__judul">{JUDUL_TAMPIL_TCO.deskripsi}</h2>
         {onTutup !== undefined && (
           <button type="button" className="btn btn--ghost btn--sm" onClick={onTutup}>
             {KLAUSUL_TCO.tutup}
@@ -62,35 +62,37 @@ export default function PanelKlausulTahun({ tahun, onTutup }: { tahun: TahunTrea
         {daftar === null && galat === null && <Memuat />}
         {daftar !== null && daftar.length === 0 && <Kosong pesan={KLAUSUL_TCO.kosong} />}
         {daftar !== null && daftar.length > 0 && (
-          <table className="inbox__tabel">
-            <thead>
-              <tr>
-                <th>{KLAUSUL_TCO.kolomId}</th>
-                <th>{KLAUSUL_TCO.kolomDescriptionName}</th>
-                <th className="table__actions" />
-              </tr>
-            </thead>
-            <tbody>
-              {daftar.map((j) => (
-                <tr key={j.id} className={j.id === terbuka ? 'inbox__baris belah__baris--aktif' : 'inbox__baris'}>
-                  <td>{j.id}</td>
-                  <td>{j.descName}</td>
-                  <td className="table__actions">
-                    <button
-                      type="button"
-                      className="btn btn--ghost btn--sm"
-                      aria-haspopup="dialog"
-                      onClick={() => {
-                        setTerbuka((t) => alihJenisTunggal(t, j.id))
-                      }}
-                    >
-                      {KLAUSUL_TCO.show}
-                    </button>
-                  </td>
+          <div className="tco-tabel">
+            <table className="inbox__tabel">
+              <thead>
+                <tr>
+                  <th>{KLAUSUL_TCO.kolomId}</th>
+                  <th>{KLAUSUL_TCO.kolomDescriptionName}</th>
+                  <th className="table__actions" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {daftar.map((j) => (
+                  <tr key={j.id} className={j.id === terbuka ? 'inbox__baris belah__baris--aktif' : 'inbox__baris'}>
+                    <td>{j.id}</td>
+                    <td>{j.descName}</td>
+                    <td className="table__actions">
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        aria-haspopup="dialog"
+                        onClick={() => {
+                          setTerbuka((t) => alihJenisTunggal(t, j.id))
+                        }}
+                      >
+                        {KLAUSUL_TCO.show}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
       {jenis !== undefined && (

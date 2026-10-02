@@ -1,6 +1,13 @@
 # 02: Buat case endorsement + muat & salin data polis lama
 
-**Status:** ready-for-agent
+> **Ralat 01-10-2026** (gelombang 2 brief, `../RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
+> - **R20** — case endorsement sebagai work object terpisah → kasus = baris versi `T_PREMIUM_LIST` ber-`ID` `EDMLF-<n>`; **tidak** menulis `T_WORK_POLIS` (kotak masuk PremiumList membaca seluruh tabel itu).
+> - **R22** — *"Ambil `IDPEGA` polis terakhir dari `JSON_POLIS`; baca polis NB beserta detailnya"* → dua sumber satu bentuk (`RALAT` bab 4); salinan dari sumber warisan ber-`PARENT_ID` kosong — OQ-EDM-007.
+> - **R09** — kolom produk/layer tidak ditulis jalur EDM (STRUKTUR `[terbuka]`) → `ProductName`, `ProductNameID`, `WPC` disalin (MappingEDMLife 9 b2205/b2226/b2247).
+> - **R10** — baris `Delete` dihapus di perulangan → disaring tanpa melewati baris lain.
+> - **R11** — pembuat kasus `CreateCaseEMDL` → jalurnya (panel Inbox `InData.CARI1==1`) tak terjangkau; pembuat kasus hidup = `MappingEDMLife`.
+
+**Status:** done 01-10-2026 — bbdc658 (salinan dari versi endorsement **warisan** ditolak sampai OQ-EDM-016)
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 01 (gerbang kelayakan — case hanya dibuat setelah kelimanya lolos)
 
@@ -110,3 +117,11 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+## Status 01-10-2026 — K5 keputusan work owner 01-10-2026 (OQ-EDM-016)
+
+Kalimat lama *"salinan dari versi endorsement **warisan** ditolak sampai OQ-EDM-016"* tidak berlaku lagi: versi endorsement sistem
+lama disalin dari `M_LIFE_PREMIUM_DETAIL` (`PL_NUMBER` + `IDPEGA` versi itu, `_INDEX4`) seperti `MappingEDMLife` 10 b2339 (salin
+halaman, PRE=false), 11.1 b2583 (selain `Delete` → `"Old"` b2609, prakondisi b2691 T=3) dan 11.2 b2737 (buang `Delete`, b2831);
+peserta new business (status NULL) tetap tersalin. `ErrSumberWarisanEDM` dicabut. Uji: `TestBuatKasusDariVersiEndorsementWarisan` (tiruan: Old+New tersalin,
+Delete tidak), `TestSQLSalinVersiWarisanBerindex` (penampung `:7` = `Delete`).

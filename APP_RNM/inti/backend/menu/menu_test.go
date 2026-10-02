@@ -120,12 +120,42 @@ func TestSusunDaftarKosongBukanNull(t *testing.T) {
 	}
 }
 
-// Titik sambung akses per akun: hari ini meneruskan SEMUA, untuk pelaku siapa pun.
-func TestSaringMenuUntukPelakuMeneruskanSemua(t *testing.T) {
+// Saringan per akun (Kelola User, keputusan work owner 01-10-2026): hanya
+// modul yang KODE-nya dimiliki akun; golongan yang kosong hilang; menu
+// aplikasi (Kelola User) tampil di golongan ADMIN, PALING BAWAH, hanya bila
+// dimiliki. Modul yang belum dimigrasi ikut disaring - kelak ia tampil hanya
+// bagi yang diberi.
+func TestSaringMenuUntukAkun(t *testing.T) {
 	m := Susun(barisUji(), semuaAktif)
-	for _, p := range []inti.Pelaku{{}, {AkunID: "UJI-1", Peran: []string{"UjiPeran"}}} {
-		if !reflect.DeepEqual(SaringMenuUntukPelaku(p, m), m) {
-			t.Errorf("pelaku %+v: menu berubah", p)
+	dapat := ringkas(SaringMenuUntukAkun(m, []string{"claimlife", "nbfacin", KodeKelolaUser, "tidakada"}))
+	mau := []string{"FACULTATIVE", "  nbfacin", "KLAIM", "  claimlife", GolonganAdmin, "  " + KodeKelolaUser}
+	if !reflect.DeepEqual(dapat, mau) {
+		t.Errorf("dapat %v\nmau   %v", dapat, mau)
+	}
+	if dapat := SaringMenuUntukAkun(m, nil); len(dapat.Golongan) != 0 || dapat.Golongan == nil {
+		t.Errorf("akun tanpa menu: %+v, mau golongan kosong (bukan null)", dapat)
+	}
+	// Menu asal tidak berubah - saringan menyalin.
+	if !reflect.DeepEqual(ringkas(m), ringkas(Susun(barisUji(), semuaAktif))) {
+		t.Error("SaringMenuUntukAkun mengubah menu asalnya")
+	}
+}
+
+// Menu aplikasi BUKAN baris tabel menu: golongannya di luar CHECK GROUPMENU,
+// dan kodenya tidak bertabrakan dengan nama modul mana pun.
+func TestMenuAplikasi(t *testing.T) {
+	if len(MenuAplikasi) != 1 || MenuAplikasi[0].Kode != KodeKelolaUser || MenuAplikasi[0].Label != "Kelola User" ||
+		!MenuAplikasi[0].Dimigrasi || MenuAplikasi[0].Modul != KodeKelolaUser {
+		t.Errorf("MenuAplikasi = %+v", MenuAplikasi)
+	}
+	for _, g := range Golongan {
+		if g == GolonganAdmin {
+			t.Errorf("golongan %s ada di Golongan (CHECK GROUPMENU) - menu aplikasi bukan baris tabel", g)
+		}
+	}
+	for _, b := range barisUji() {
+		if b.Kode == KodeKelolaUser {
+			t.Errorf("kode %s bertabrakan dengan modul", b.Kode)
 		}
 	}
 }
@@ -174,7 +204,7 @@ func minta(t *testing.T, h http.HandlerFunc) (*httptest.ResponseRecorder, map[st
 // urutan,dimigrasi}]}]} - satu tingkat, tanpa "kelompok" maupun "butir".
 // Menggantikan `TestRuteMenjawabPohon`.
 func TestRuteMenjawabSatuTingkatDiBawahGolongan(t *testing.T) {
-	w, badan := minta(t, Rute(pembacaUji{baris: barisUji()}, semuaAktif, false))
+	w, badan := minta(t, Rute(pembacaUji{baris: barisUji()}, semuaAktif, true))
 	if w.Code != http.StatusOK {
 		t.Fatalf("kode %d: %v", w.Code, badan)
 	}
@@ -215,7 +245,7 @@ func TestRuteTanpaDatabase503(t *testing.T) {
 // Tabel belum ada (migrasi 900 belum dijalankan): 503 yang MENYEBUT sebabnya.
 func TestRuteTabelBelumAda503MenyebutMigrasi(t *testing.T) {
 	err := errors.New("ORA-00942: table or view does not exist")
-	w, badan := minta(t, Rute(pembacaUji{err: err}, semuaAktif, false))
+	w, badan := minta(t, Rute(pembacaUji{err: err}, semuaAktif, true))
 	pesan, _ := badan["galat"].(string)
 	if w.Code != http.StatusServiceUnavailable || !strings.Contains(pesan, "900") || !strings.Contains(pesan, "-migrate") {
 		t.Errorf("kode %d, galat %q - mau 503 yang menyebut migrasi 900 dan -migrate", w.Code, pesan)
@@ -223,7 +253,7 @@ func TestRuteTabelBelumAda503MenyebutMigrasi(t *testing.T) {
 }
 
 func TestRuteGagalBaca500(t *testing.T) {
-	w, badan := minta(t, Rute(pembacaUji{err: errors.New("ORA-12541: no listener")}, semuaAktif, false))
+	w, badan := minta(t, Rute(pembacaUji{err: errors.New("ORA-12541: no listener")}, semuaAktif, true))
 	pesan, _ := badan["galat"].(string)
 	if w.Code != http.StatusInternalServerError || !strings.Contains(pesan, "M_NAV_MENU") {
 		t.Errorf("kode %d, galat %q - mau 500 yang menyebut M_NAV_MENU", w.Code, pesan)
@@ -231,5 +261,50 @@ func TestRuteGagalBaca500(t *testing.T) {
 	// Galat driver tidak ke badan jawaban - ia tinggal di log server.
 	if strings.Contains(pesan, "ORA-12541") || strings.Contains(pesan, "listener") {
 		t.Errorf("galat driver bocor ke badan jawaban: %q", pesan)
+	}
+}
+
+// mintaDengan - seperti `minta`, dengan context permintaan yang disiapkan.
+func mintaDengan(t *testing.T, h http.HandlerFunc, siap func(*http.Request) *http.Request) (*httptest.ResponseRecorder, Menu) {
+	t.Helper()
+	w := httptest.NewRecorder()
+	h(w, siap(httptest.NewRequest(http.MethodGet, "/api/menu", nil)))
+	var m Menu
+	if w.Code == http.StatusOK {
+		if err := json.Unmarshal(w.Body.Bytes(), &m); err != nil {
+			t.Fatalf("badan bukan menu: %q", w.Body.String())
+		}
+	}
+	return w, m
+}
+
+// Siapa melihat apa:
+//   - sesi login: HANYA menu akunnya, ditambah golongan ADMIN bila ia memegang
+//     Kelola User - stub atau bukan
+//   - tanpa sesi, AUTH_STUB=true: seluruh menu tabel, TANPA menu aplikasi
+//     (Kelola User menuntut login sungguhan)
+//   - tanpa sesi, AUTH_STUB=false: 401
+func TestRuteMenyaringMenurutSesi(t *testing.T) {
+	p := pembacaUji{baris: barisUji()}
+	dariSesi := func(kode ...string) func(*http.Request) *http.Request {
+		return func(r *http.Request) *http.Request {
+			return r.WithContext(inti.DenganAksesMenu(r.Context(), kode))
+		}
+	}
+	tanpaSesi := func(r *http.Request) *http.Request { return r }
+	for _, stub := range []bool{false, true} {
+		w, m := mintaDengan(t, Rute(p, semuaAktif, stub), dariSesi("premiumlistlife", KodeKelolaUser))
+		if mau := []string{"TREATY", "  premiumlistlife", GolonganAdmin, "  " + KodeKelolaUser}; w.Code != http.StatusOK ||
+			!reflect.DeepEqual(ringkas(m), mau) {
+			t.Errorf("stub=%v sesi: kode %d menu %v, mau %v", stub, w.Code, ringkas(m), mau)
+		}
+	}
+	w, m := mintaDengan(t, Rute(p, semuaAktif, true), tanpaSesi)
+	if w.Code != http.StatusOK || !reflect.DeepEqual(ringkas(m), ringkas(Susun(barisUji(), semuaAktif))) {
+		t.Errorf("stub tanpa sesi: kode %d menu %v, mau seluruh menu tabel", w.Code, ringkas(m))
+	}
+	w, _ = mintaDengan(t, Rute(p, semuaAktif, false), tanpaSesi)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("tanpa sesi dan tanpa stub: kode %d, mau 401", w.Code)
 	}
 }

@@ -1,6 +1,6 @@
 # 04: Tujuh pemilih master — dan RI Rate yang bukan RI Risk
 
-**Status:** ready-for-agent
+**Status:** selesai (01-10-2026) — paket 2 `a94905e`, layar paket 10 (`1ada8d7`); `Choose R/I Rate` ⏸️ OQ-MPNL-03 (503 berkalimat); uji `db` ditulis dan MELEWATI di sesi implementasi (tanpa `ORACLE_DSN`; POOLDATA/DEV bukan sasaran)
 
 **Blocked by:** 02 (pemilih mengisi field pada produk)
 
@@ -90,3 +90,24 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Ralat bertanggal 01-10-2026 — sesi implementasi (paket 2)
+
+> Sumber: `../RALAT-DEV-30-09-2026.md` (R18) dan `../PARITAS-LAYAR-DAN-AKSI.md` §4. Kalimat di atas **tidak dihapus**.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"Ketujuh nilai dipilih dari **masternya masing-masing**"*; *"Ketujuh daftar dibaca dari basis data"* | enam dibangun dari RD-nya (`GET /api/master-product-name-life/master/{ceding,sob,pemegang-polis,mata-uang,ri-risk,penyebab}?cari=`), saringan dan urutan VERBATIM RD, batas baris = `pyMaxRecords`. **R/I Rate** (`BrowseRateLifeSummary`, view atas JSON rate) menjawab **503 berkalimat** sampai OQ-MPNL-03 dijawab (R18) |
+| *"Pemilih pemegang polis dapat **dicari**"* | ketujuh pemilih punya medan `Search` (`SearchPolicyHolder.CARI1`), dihurufbesarkan `SearchPolicyHolder_act` b236 — bukan hanya pemegang polis |
+| Tabel sumber tidak disebut | objek fisik = nama kelas (`AGENT`, `CLIENT`, `CURRENCY`, `RIRISK_LIFE_SUMMARY`, `CAUSEOFLOSS_LIFE`) — OQ-MPNL-04; objek yang tidak ada = 503 yang menyebut objeknya |
+| *"Pilihan yang **tidak ada** di master **ditolak**"*; *"Nama … dapat **dibangun ulang** dari identitasnya"* | ditegakkan saat simpan (paket 3–4): nilai yang **berubah** dari yang tersimpan diperiksa ke masternya dan namanya ditulis dari master |
+
+## Status 01-10-2026 — K1 keputusan work owner 01-10-2026 (OQ-MPNL-03)
+
+Kalimat lama *"`Choose R/I Rate` ⏸️ OQ-MPNL-03 (503 berkalimat)"* tidak berlaku lagi: `Choose R/I Rate` membaca view `RATE_LIFE_SUMMARY` dan `View Rate`
+membaca view `RATE_LIFE`, baca saja, kolom RD saja (`GET /master/ri-rate`, `GET /rate` = 200). Baris `PLAN LIST` baru dapat
+diberi R/I Rate; pilihan baru wajib ada di view dan namanya diambil dari master (`SetRIRate` b2448). `View Rate` disaring
+`RIRATEID` baris plan — penyimpangan sadar dari `ViewRate.xml` b1024 (`ParamID.OUTWARDRATEID` tidak pernah diisi; PARITAS bab
+keputusan OQ 01-10-2026).

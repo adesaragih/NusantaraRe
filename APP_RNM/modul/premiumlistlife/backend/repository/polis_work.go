@@ -3,20 +3,25 @@ package repository
 // Baris kerja polis - `T_WORK_POLIS`, tiket 01 PremiumList Life.
 //
 // Untuk apa berkas ini: membaca dan menulis tahap serta status kerja sebuah
-// polis. Tabelnya lahir di migrasi 050; kolomnya empat, dan keduanya yang
-// berarti - `POSITION` dan `STATUS` - menyimpan teks VERBATIM dari flow
-// (`models.TahapPolis*`, `models.StatusPolis*`).
+// polis. Tabelnya lahir di migrasi 050; dua kolom yang berarti - `POSITION`
+// dan `STATUS_WORK` (bernama `STATUS` sampai 059) - menyimpan teks VERBATIM
+// dari flow (`models.TahapPolis*`, `models.StatusPolis*`).
+//
+// ⛔ Sejak 059 (seragam `T_WORK_CLAIM`, keputusan work owner 01-10-2026)
+// setiap ubah baris kasus menulis `TGL_UPDATE = SYSDATE` di pernyataan yang
+// sama, dan keadaan ikut membaca pembuat, waktu, dan `COVER_KEY`.
 //
 // ⛔ Setiap query menyebut skemanya lewat `Qualify` (ADR-U-0033), nol
 // `COMMIT` (ADR-U-0029).
 //
-// Dibaca sesudah: migrasi 050.
+// Dibaca sesudah: migrasi 050, 059.
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"nusantarare/inti/backend/db"
 	"nusantarare/modul/premiumlistlife/backend/models"
@@ -42,7 +47,7 @@ func NewWorkPolis(db *db.DB) *WorkPolis { return &WorkPolis{db: db} }
 // Pembagian yang benar:
 //
 //	POSITION  `pyWorkPage.Position`  -> Offer | Premium   (posisi LAYAR)
-//	STATUS    `pyWorkStatus`         -> Input Offer Life | Input Premium
+//	STATUS_WORK `pyWorkStatus`       -> Input Offer Life | Input Premium
 //	                                    Detail | Input Premium Summary |
 //	                                    Resolved-Rejected | Resolved-Completed
 //
@@ -53,16 +58,25 @@ type KeadaanPolis struct {
 	ID string
 	// Position - `Offer` atau `Premium`; lihat models.Posisi*.
 	Position string
-	// Status - `pyWorkStatus`: nama assignment selama berjalan, `Resolved-*`
-	// saat tertutup. Kosong berarti belum pernah disetel (ADR-U-0027).
+	// Status - `pyWorkStatus` (kolom `STATUS_WORK`): nama assignment selama
+	// berjalan, `Resolved-*` saat tertutup. Kosong berarti belum pernah
+	// disetel (ADR-U-0027).
 	Status string
 	Lini   string
+	// CoverKey - kasus induk (`T_WORK_POLIS.ID`); kosong sampai ada modul
+	// yang terbukti mengisinya.
+	CoverKey string
+	// CreateOp, CreateOpName - pembuat kasus; kosong untuk baris yang lahir
+	// sebelum 059 (CREATE_OP selalu, CREATE_OP_NAME bila tidak terisi ulang).
+	CreateOp, CreateOpName string
+	// TglCreate, TglUpdate - waktu lahir dan ubah terakhir; nol bila kosong.
+	TglCreate, TglUpdate time.Time
 }
 
 // sqlKeadaanPolis merakit pembacaannya.
 func sqlKeadaanPolis(tabel string) string {
 	return fmt.Sprintf(
-		`SELECT ID, LINI, POSITION, STATUS FROM %s WHERE ID = :1`, tabel)
+		`SELECT ID, LINI, POSITION, STATUS_WORK, COVER_KEY, CREATE_OP, CREATE_OP_NAME, TGL_CREATE, TGL_UPDATE FROM %s WHERE ID = :1`, tabel)
 }
 
 // sqlBenderaPolis membaca `FLAG_ONGOING_POLICY` saja - butir bq.
@@ -106,8 +120,10 @@ func (r *WorkPolis) Keadaan(ctx context.Context, id string) (KeadaanPolis, error
 	if err := db.PeriksaSQL(q); err != nil {
 		return KeadaanPolis{}, err
 	}
-	var pengenal, lini, posisi, status sql.NullString
-	err = r.db.QueryRowContext(ctx, q, id).Scan(&pengenal, &lini, &posisi, &status)
+	var pengenal, lini, posisi, status, induk, op, namaOp sql.NullString
+	var lahir, ubah sql.NullTime
+	err = r.db.QueryRowContext(ctx, q, id).Scan(&pengenal, &lini, &posisi, &status,
+		&induk, &op, &namaOp, &lahir, &ubah)
 	if errors.Is(err, sql.ErrNoRows) {
 		return KeadaanPolis{}, ErrWorkPolisTidakAda
 	}
@@ -117,24 +133,26 @@ func (r *WorkPolis) Keadaan(ctx context.Context, id string) (KeadaanPolis, error
 	return KeadaanPolis{
 		ID: pengenal.String, Lini: lini.String,
 		Position: posisi.String, Status: status.String,
+		CoverKey: induk.String, CreateOp: op.String, CreateOpName: namaOp.String,
+		TglCreate: lahir.Time, TglUpdate: ubah.Time,
 	}, nil
 }
 
 // sqlPindahTahapPolis merakit perpindahan tahap.
 //
-// ⛔ Yang ditulis `STATUS`, bukan `POSITION` - lihat ralat di
+// ⛔ Yang ditulis `STATUS_WORK`, bukan `POSITION` - lihat ralat di
 // `KeadaanPolis`. Tahap adalah `pyWorkStatus`; `POSITION` menyimpan posisi
 // layar (`Offer`/`Premium`) dan tidak berubah karena perpindahan tahap.
 //
-// ⛔ Syarat WHERE menyertakan STATUS LAMA, dan itu bukan kehati-hatian
+// ⛔ Syarat WHERE menyertakan STATUS_WORK LAMA, dan itu bukan kehati-hatian
 // berlebih: baris dibaca di luar transaksi, jadi ia dapat berpindah di
 // antara baca dan tulis. Tanpa syarat itu dua permintaan serentak sama-sama
 // menang, dan yang kedua memindahkan kasus dari tahap yang sudah bukan
 // tahapnya lagi. Pola yang sama dengan `PerbaruiStatusBaris` di Claim Life.
 func sqlPindahTahapPolis(tabel string) string {
 	return fmt.Sprintf(
-		`UPDATE %s SET STATUS = :1
-		  WHERE ID = :2 AND (STATUS = :3 OR (STATUS IS NULL AND :3 IS NULL))`, tabel)
+		`UPDATE %s SET STATUS_WORK = :1, TGL_UPDATE = SYSDATE
+		  WHERE ID = :2 AND (STATUS_WORK = :3 OR (STATUS_WORK IS NULL AND :3 IS NULL))`, tabel)
 }
 
 // PindahTahap memindahkan polis ke tahap lain.
@@ -162,8 +180,8 @@ func (r *WorkPolis) PindahTahap(ctx context.Context, tx *db.Tx,
 // `TutupKasus` Claim Life (butir bb): kotak masuk adalah worklist, dan kasus
 // yang tertutup tidak boleh berdiri di antrean mana pun.
 //
-// ⛔ Syaratnya `STATUS` BUKAN salah satu status akhir - bukan `IS NULL`.
-// Sejak ralat 28-09-2026, `STATUS` juga menyimpan nama tahap selama kasus
+// ⛔ Syaratnya `STATUS_WORK` BUKAN salah satu status akhir - bukan `IS NULL`.
+// Sejak ralat 28-09-2026, kolom itu juga menyimpan nama tahap selama kasus
 // berjalan, jadi `IS NULL` hanya benar untuk kasus yang belum pernah
 // bertahap. Yang dijaga: kasus yang SUDAH tertutup tidak ditutup lagi dengan
 // alasan yang berbeda - dan alasan penutupan itu jejak.
@@ -174,9 +192,9 @@ func (r *WorkPolis) PindahTahap(ctx context.Context, tx *db.Tx,
 // (temuan /code-review giliran 10: `Submit` summary).
 func sqlTutupPolis(tabel string) string {
 	return fmt.Sprintf(
-		`UPDATE %s SET STATUS = :1, POSITION = NULL
-		  WHERE ID = :2 AND (STATUS IS NULL OR STATUS NOT IN (:3, :4))
-		    AND (STATUS = :5 OR (STATUS IS NULL AND :5 IS NULL))`, tabel)
+		`UPDATE %s SET STATUS_WORK = :1, POSITION = NULL, TGL_UPDATE = SYSDATE
+		  WHERE ID = :2 AND (STATUS_WORK IS NULL OR STATUS_WORK NOT IN (:3, :4))
+		    AND (STATUS_WORK = :5 OR (STATUS_WORK IS NULL AND :5 IS NULL))`, tabel)
 }
 
 // TutupKasus menutup kasus polis dengan status kerja akhirnya - hanya bila

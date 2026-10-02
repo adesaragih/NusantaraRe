@@ -1,9 +1,11 @@
 # Modul `nbfacin` — NB FacIn
 
-✅ **Dimigrasi sebagian, 2 Oktober 2026** (tiket 20–21; keputusan work owner butir 58–61). Terdaftar lewat
-`backend/modul.go`; menu menyala lewat slot `962_menu_nbfacin.sql` (**ditulis, belum dijalankan** — `-migrate`
-dijalankan work owner). Layar pertama: blok coverage MARINE CARGO (port `InputCoverageCargo_FacIn`) dengan isian uji
-premi. ⚠️ Endpoint akseptasi mengambil jabatan dari isian permintaan — **tidak aman untuk produksi** (butir 58).
+⚠️ **Kerangka — belum dimigrasi.** Folder ini dibuat struktur tim satu folder per modul (keputusan work
+owner 30-09-2026) supaya pemilik, rentang migrasi, dan slot menu modul ini TETAP sejak awal — satu
+modul, satu folder, satu pemilik. Belum ada kode: tanpa `backend/modul.go` modul ini tidak terdaftar
+(daftar Go bangkitan `inti/backend/daftar`, `import.meta.glob` frontend), dan kelompoknya di sidebar
+tetap "belum dimigrasi" (`M_NAV_MENU.DIMIGRASI = '0'`). Cara memulainya:
+`APP_RNM/PANDUAN-TIM-PER-MODUL.md` (akar repo) bab 4.
 
 ⛔ **Tabel di bawah dibaca penjaga** (`inti/backend/penjaga`): rentang migrasi dan slot menu. Ubah
 nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak boleh berbagi nomor.

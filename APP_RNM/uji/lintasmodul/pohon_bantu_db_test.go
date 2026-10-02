@@ -71,10 +71,11 @@ func contohPohon(t *testing.T) models.PohonKlaim {
 	}
 	return models.PohonKlaim{
 		Work: models.WorkClaim{
-			ID: "CLM-UJI900", Lini: inti.LiniLife, Type: "UJI-TYPE", CaseID: "UJI-CASE-900",
+			// CASE_ID dibuang Claim Life 023: CASEID baris datar = ID; TYPE di header.
+			ID: "CLM-UJI900", Lini: inti.LiniLife,
 		},
 		Klaim: models.Klaim{
-			ID: "CLM-UJI900", NomorKlaim: "UJI-CLM-9", NomorPolis: "UJI-POL-9",
+			ID: "CLM-UJI900", NomorKlaim: "UJI-CLM-9", NomorPolis: "UJI-POL-9", Type: "UJI-TYPE",
 			NamaBisnis: "UJI BISNIS", KodeStatus: "0",
 			Peserta: []models.Peserta{{
 				ID: "UJI-P-1", NomorSertifikat: "006", MataUang: "IDR",

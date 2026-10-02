@@ -26,9 +26,9 @@ import (
 func pohonUjiG17(t *testing.T, svc *services.Service, db *intidb.DB, id, kode string) models.PohonKlaim {
 	t.Helper()
 	pohon := models.PohonKlaim{
-		Work: models.WorkClaim{ID: id, Lini: inti.LiniLife, Type: "QP"},
+		Work: models.WorkClaim{ID: id, Lini: inti.LiniLife},
 		Klaim: models.Klaim{
-			NomorKlaim: "UJI-" + id,
+			NomorKlaim: "UJI-" + id, Type: "QP",
 			Peserta: []models.Peserta{{
 				NomorSertifikat: "017", MataUang: "IDR",
 				Baris: []models.BarisAdjustment{{KodeStatus: kode}},

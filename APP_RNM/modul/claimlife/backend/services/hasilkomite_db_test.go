@@ -153,9 +153,9 @@ func TestPutaranPesertaTanpaBarisDijawabJujur(t *testing.T) {
 	ctx := context.Background()
 
 	pohon := models.PohonKlaim{
-		Work: models.WorkClaim{ID: "CLM-UJI740", Lini: inti.LiniLife, Type: "QP",
-			Tahap: models.TahapClaimAnalis.String(), PyPosition: models.PeranSPVLife},
-		Klaim: models.Klaim{NomorKlaim: "UJI-CLM-740",
+		Work: models.WorkClaim{ID: "CLM-UJI740", Lini: inti.LiniLife,
+			Tahap: models.TahapClaimAnalis.String(), Position: models.PeranSPVLife},
+		Klaim: models.Klaim{NomorKlaim: "UJI-CLM-740", Type: "QP",
 			Peserta: []models.Peserta{{NomorSertifikat: "006", MataUang: "IDR"}}},
 	}
 	if err := svc.DalamTransaksi(ctx, func(tx *intidb.Tx) error {
@@ -194,9 +194,9 @@ func TestPutaranHanyaDiClaimAnalis(t *testing.T) {
 	ctx := context.Background()
 
 	pohon := models.PohonKlaim{
-		Work: models.WorkClaim{ID: "CLM-UJI741", Lini: inti.LiniLife, Type: "QP",
-			Tahap: models.TahapOutstanding.String(), PyPosition: models.PeranAdminLife},
-		Klaim: models.Klaim{NomorKlaim: "UJI-CLM-741",
+		Work: models.WorkClaim{ID: "CLM-UJI741", Lini: inti.LiniLife,
+			Tahap: models.TahapOutstanding.String(), Position: models.PeranAdminLife},
+		Klaim: models.Klaim{NomorKlaim: "UJI-CLM-741", Type: "QP",
 			Peserta: []models.Peserta{{NomorSertifikat: "006", MataUang: "IDR",
 				Baris: []models.BarisAdjustment{{KodeStatus: kontrak.KodeDitolak}}}}},
 	}

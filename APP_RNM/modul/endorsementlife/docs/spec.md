@@ -1,5 +1,12 @@
 # Spec — Endorsement Life (migrasi Pega → Go + React + Oracle)
 
+> **Ralat 01-10-2026** (gelombang 2 brief, `RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
+> - **E2** — §16 / Kontrak batas: *"⚠️ `POOLDATA.M_LIFE_PREMIUM_DETAIL` / `_SUMMARY` adalah bentuk **sistem lama** — bukan target tulis sistem baru"* → Endorsement **menulis** keduanya persis `SaveMasterLPDet`/`InsertPLSummary`, di samping versi baru tabel aplikasi.
+> - **R01** — §7 *"`<nomor polis>/<PRODKE + 1>`"* → nomor polis = `PL_NUMBER` (`InsertJsonPolisEDM` b102).
+> - **R04** — AC 31 dianggap sejalan dengan Pega → Pega menahan kasus `Decline` (`FilterProteksiEDMLife` b526); keputusan work owner diikuti, OQ-EDM-002.
+> - **R05** — §1 *"di jalur endorsement tidak dijalankan"* → korpus memanggilnya di `SaveCSVEDMLife` langkah 3 b629 (`·`); keputusan work owner diikuti, OQ-EDM-003.
+> - **R20** — §16 *"Endorsement adalah **baris versi baru** di `T_PREMIUM_LIST`"* beserta `T_WORK_POLIS` sejajar (STRUKTUR) → baris versi = kasus itu sendiri; **tanpa** baris `T_WORK_POLIS`.
+
 Status: ready-for-agent
 Konteks: `endorsement-life` — "Life — Endorsement" (konteks/menu **terpisah** dari PremiumList Life)
 Modul: **Endorsement Life** (75 berkas), class work `ASM-FW-GISFW-WORK-ENDORSEMENTLIFE`

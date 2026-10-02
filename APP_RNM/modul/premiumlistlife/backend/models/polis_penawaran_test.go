@@ -141,7 +141,7 @@ func TestKasusPolisTertutupTepatBukanAwalan(t *testing.T) {
 // TestNamaTahapDanStatusVERBATIMDariKorpus membaca flow-nya LANGSUNG.
 //
 // ⛔ Penjaga yang membandingkan salinan dengan salinan tidak menjaga apa pun.
-// Nilai-nilai ini masuk `T_WORK_POLIS.POSITION` dan `.STATUS`; yang meleset
+// Nilai-nilai ini masuk `T_WORK_POLIS.POSITION` dan `.STATUS_WORK`; yang meleset
 // membuat kotak masuk kosong untuk baris yang sebenarnya ada.
 func TestNamaTahapDanStatusVERBATIMDariKorpus(t *testing.T) {
 	const letak = `D:\XML\RNM_BRD\PremiumList Life\InputPolicyHolder.xml`

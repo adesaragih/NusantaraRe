@@ -58,7 +58,12 @@ export default defineConfig(({ mode }) => {
     root: AKAR_FRONTEND,
     plugins: [react()],
     server: {
-      port: 5173,
+      // Keputusan work owner 01-10-2026: frontend dev SELALU di 5174, 5173 tidak
+      // dipakai lagi. strictPort: bila 5174 terpakai (mis. `npm run dev` kedua),
+      // Vite BERHENTI dengan galat alih-alih diam-diam pindah ke port lain -
+      // dua server basi di dua port pernah menyembunyikan menu modul baru.
+      port: 5174,
+      strictPort: true,
       // Bila DEV_PROXY_TARGET kosong, tidak ada proxy: perilaku lama.
       proxy: proxyTarget
         ? {

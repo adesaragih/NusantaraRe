@@ -681,12 +681,13 @@ export async function konversiKurs(tahunID: string, dari: 'Rp' | 'Usd', nilai: s
 // Treaty Contract Out tiket 10 — kaskade hapus + popup konfirmasi.
 // ---------------------------------------------------------------------------
 
-/** Isi popup: yang ikut terhapus, dan klausul yang TETAP. */
+/** Isi popup: yang ikut terhapus. */
 export interface DampakHapusTCO {
   kontrak: number
   reinsurer: number
   security: number
   business: number
+  /** Klausul yang TETAP (AC 44) — masih dikirim server, tidak lagi ditampilkan popup [keputusan work owner 01-10-2026]. */
   klausulTetap: number
   /** Kontrak lain yang memakai kombinasi yang sama — anak kombinasinya IKUT terhapus (OQ-TCO-21). */
   bersama: number

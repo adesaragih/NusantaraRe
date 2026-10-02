@@ -34,7 +34,18 @@ export interface Sesi {
    * satu pelaku MEMANG boleh memegang lebih dari satu peran.
    */
   peran: KodePeran[]
+  /**
+   * Nama tampilan (`M_LOGIN_GO.NAME`) - hanya dari login sungguhan; stub
+   * tidak mengisinya, dan layar memakai `akunID` sebagai gantinya.
+   */
+  nama?: string
 }
+
+/**
+ * Peristiwa `window` saat backend menjawab 401 di tengah pemakaian (login
+ * sungguhan): sesi berakhir, App kembali ke layar login.
+ */
+export const PERISTIWA_SESI_BERAKHIR = 'rnm:sesi-berakhir'
 
 /** Ketiga peran yang ada — ADR-U-0002. */
 export const PERAN_TERSEDIA: readonly KodePeran[] = [
@@ -69,6 +80,16 @@ function saringPeran(nilai: readonly string[]): KodePeran[] {
     }
   }
   return sah
+}
+
+/**
+ * Identitas dari login sungguhan (`GET /api/auth/saya`, M_LOGIN_GO).
+ *
+ * ⛔ Peran = workbasket akun itu; yang tidak dikenal layar ini disaring
+ * seperti peran stub - backend tetap memeriksa seluruh workbasket-nya.
+ */
+export function sesiDariProfil(p: { akunId: string; nama: string; peran: readonly string[] }): Sesi {
+  return { akunID: p.akunId, nama: p.nama, peran: saringPeran(p.peran) }
 }
 
 /**

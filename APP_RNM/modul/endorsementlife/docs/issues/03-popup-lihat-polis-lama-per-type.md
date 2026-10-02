@@ -1,6 +1,11 @@
 # 03: Popup "lihat polis lama" — satu tampilan per jenis transaksi
 
-**Status:** ready-for-agent
+> **Ralat 01-10-2026** (gelombang 2 brief, `../RALAT-DEV-01-10-2026.md` — ralat mengalahkan isi di bawah). Teks lama yang tidak berlaku:
+> - **R02** — *"di `ShowLifePremiumSummary_EDM`, tiap pasang"* tombol membuka varian per `Type` → layar itu yatim di flow (assignment `Input EDM Summary` tanpa konektor masuk); tombol `View Old Policy` dipindah ke kepala `InputEDMLife` — OQ-EDM-004.
+> - **R03** — *"`QP`, `TP`, `TR` memakai"* varian masing-masing → di Pega ketiga varian kosong (wadah luar `.Type = 'QR'`); grid dalamnya dibangun.
+> - **A2** — nomor baris `65043, 65282` … `67068` → baris awal elemen; nomor yang dapat di-grep: `View Old Policy` b64965/b65522/b66083/b66640.
+
+**Status:** done 01-10-2026 — bbdc658
 
 **Blocked by:** **00 (kolom EDM + PARENT_ID — PREFACTOR)**, 02 (case endorsement harus sudah memegang rujukan polis lama)
 

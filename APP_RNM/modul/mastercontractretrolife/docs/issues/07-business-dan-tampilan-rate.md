@@ -92,3 +92,32 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Ralat bertanggal 30-09-2026 — sesi implementasi (paket 0)
+
+> Sumber: `RALAT-DEV-30-09-2026.md` (K1–K8 katalog DEV, R1–R12 pembacaan ulang XML) dan `PARITAS-LAYAR-DAN-AKSI.md`. Kalimat di atas **tidak dihapus**; yang berlaku adalah ralat ini.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| TAMBAHAN-TIKET: *"⛔ **Tiket ini MACET** sampai **Pertanyaan A** dijawab"* | **terjawab dari korpus** (R7): `RIRATE` = nama tabel rate (`USEDBY` dari `BrowseRateLifeSummary`), `RIRATEID` = ID tabel rate; tetap teks. Tiket tidak macet |
+| *"`REINSTYPEID` dan `TREATYYEAR` **tidak ditulis** pada baris business"* | tetap **ditulis** sebagai salinan induk (K4) |
+| — | `View Rate` form (tampil bila `RIRATEID` terisi) dan `View Rate` baris sama-sama membuka section `ViewRate` (`Rate List`, view `RATE_LIFE` disaring `IDUSEDBY`); objek ringkasan rate `[dugaan]` — OQ-MCRL-05 |
+
+## Status 01-10-2026 (paket 11)
+
+**Status:** ⏸️ **sebagian** — business simpan/ubah/hapus paket 6/7 (`b3e097d`, `81b78bd`) dan panel `Business List` paket 9+10 (`a3c07bc`) dibangun; autocomplete `R/I RATE` dan `Rate List` dibangun tetapi datanya **menunggu OQ-MCRL-13** (503 berkalimat) — business BARU belum dapat disimpan (`RIRATEID` wajib).
+
+## Status 01-10-2026 — K1 keputusan work owner 01-10-2026 (OQ-MCRL-13 + OQ-MCRL-05)
+
+**Status:** ✅ **selesai** — kalimat lama *"autocomplete `R/I RATE` dan `Rate List` dibangun tetapi datanya **menunggu OQ-MCRL-13**
+(503 berkalimat) — business BARU belum dapat disimpan (`RIRATEID` wajib)"* tidak berlaku lagi.
+
+- `R/I RATE` membaca view `RATE_LIFE_SUMMARY` (`BrowseRateLifeSummary`: `ID`, `USEDBY`, urut `ID ASC`); `Rate List` membaca
+  view `RATE_LIFE` (`BrowseRateLife_RD`: enam kolom grid, `IDUSEDBY = :1`, urut `ID DESC, RATE ASC`, 500 baris + `terpotong`).
+- Business **baru** dapat disimpan; RIRATEID pilihan baru wajib ada di `RATE_LIFE_SUMMARY` (penyimpangan sadar — Pega tidak
+  memeriksa); `RIRATE` tetap teks apa adanya (AC 26).
+- AC 27 *"popup murni baca"* kini dijaga dua lapis: `periksaBacaSaja` (runtime) dan `TestMCRLMasterHanyaDibacaSelect` (statik).
+- DEV baca-saja 01-10-2026: `GET /ringkasan-rate` 200 (100 saran), `GET /rate` 200 (1 dan 59 baris), nol tulisan.
+

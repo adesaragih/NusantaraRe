@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react'
 
-import { KLAUSUL_TCO, MENU_TCO } from '../labels'
+import { JUDUL_TAMPIL_TCO, KLAUSUL_TCO } from '../labels'
 import PanelKlausulTahun from '../components/PanelKlausulTahun'
 import { Gagal, Memuat, Pilih } from '../../../../inti/frontend/components/ui/dasar'
 import { ambilTahunTreaty, type TahunTreaty } from '../api'
@@ -33,9 +33,9 @@ export default function InboxTreatyContractDescription() {
   const terpilih = tahun?.find((t) => t.id === pilih) ?? null
 
   return (
-    <div className="inbox">
+    <div className="inbox tco">
       <header className="inbox__kepala">
-        <h2 className="inbox__judul">{MENU_TCO.inboxTreatyContractDescription}</h2>
+        <h2 className="inbox__judul">{JUDUL_TAMPIL_TCO.deskripsi}</h2>
       </header>
       {galat !== null && <Gagal galat={galat} />}
       {tahun === null && galat === null && <Memuat />}

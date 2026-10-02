@@ -19,7 +19,8 @@ import (
 
 // KlaimKomite adalah yang Komite butuhkan dari Claim Life (km3).
 type KlaimKomite interface {
-	// TypeKlaim membaca `TYPE` kasus klaim (`T_WORK_CLAIM`).
+	// TypeKlaim membaca `TYPE` kasus klaim dari header klaimnya
+	// (`T_GENERAL_CLAIM`, pindah dari `T_WORK_CLAIM` di migrasi Claim Life 023).
 	TypeKlaim(ctx context.Context, klaimID string) (string, error)
 	// KodeBisnisKlaim membaca `BUSINESSID` header klaim; teks kosong bila
 	// header tidak ada atau kodenya belum tersimpan.

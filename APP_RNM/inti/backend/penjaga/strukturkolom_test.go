@@ -31,8 +31,10 @@ import (
 
 // letakStrukturInti - dokumen STRUKTUR tabel lintas modul milik `inti`
 // (900-949): M_NAV_MENU, 30-09-2026. Sejak struktur tim satu folder per modul
-// di `docs/bersama/` (dokumen lintas modul, milik tim inti; dulu `.scratch/inti/`).
-const letakStrukturInti = "../../../../docs/bersama/STRUKTUR-TABEL-INTI.md"
+// di `inti/docs/` (dokumen lintas modul, milik tim inti; dulu `docs/bersama/`,
+// sebelumnya `.scratch/inti/` - dipindah ke dalam APP_RNM saat repo dipangkas
+// hanya berisi aplikasi, 1 Oktober 2026).
+const letakStrukturInti = "../../docs/STRUKTUR-TABEL-INTI.md"
 
 // letakStruktur menunjuk SELURUH dokumen STRUKTUR yang MENGIKAT:
 // `docs/STRUKTUR-TABEL-*.md` setiap modul TERDAFTAR (punya `backend/modul.go`),
@@ -752,6 +754,10 @@ var pasanganLebarKolom = []struct{ anakTabel, anakKolom, indukTabel, indukKolom 
 	{"T_KOMITE_KOMITELIST", "DATA_KOMITE_ID", "T_GENERAL_KOMITE", "ID"},
 	{"T_CLAIMLF_ADJUSTMENT", "KOMITE_ID", "T_WORK_CLAIM", "ID"},
 	{"T_WORK_CLAIM", "COVER_KEY", "T_WORK_CLAIM", "ID"},
+	// Menu per akun (Kelola User, 01-10-2026): akun dan KODE menu yang ditunjuknya.
+	{"M_LOGIN_GO_MENU", "LOGIN_ID", "M_LOGIN_GO", "LOGIN_ID"},
+	{"M_LOGIN_GO_MENU", "MENU_KODE", "M_NAV_MENU", "KODE"},
+	{"M_LOGIN_GO_WORKBASKET", "LOGIN_ID", "M_LOGIN_GO", "LOGIN_ID"},
 }
 
 func TestLebarKolomPenunjukSamaDenganIndukNya(t *testing.T) {

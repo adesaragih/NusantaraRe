@@ -10,7 +10,7 @@ Folder ini memuat **seluruh aplikasi** hasil migrasi Pega → Go + React + Oracl
 `..\PROMPT-STRUKTUR-TIM-SATU-FOLDER-PER-MODUL.md`)*: satu orang fullstack memegang satu modul, dan
 segala milik modul itu — backend, frontend, dokumen — tinggal di **satu folder**
 `modul/<nama>/`. Alur kerja tim, kepemilikan, dan cara memulai modul:
-`..\docs\bersama\PANDUAN-TIM-PER-MODUL.md`.
+`PANDUAN-TIM-PER-MODUL.md`. Cabang git dan pembagian tim: `PANDUAN-CABANG-GIT.md`.
 
 | Folder / berkas | Isinya, dalam bahasa sehari-hari |
 | --- | --- |
@@ -132,7 +132,7 @@ $env:Path = 'C:\Program Files\Go\bin;C:\Program Files\nodejs;' + $env:Path
 | Jalankan backend | `go run ./cmd/api` | log `http: mendengarkan di :8080`; `MODUL_AKTIF=claimlife,komiteclaimlife` memasang sebagian modul |
 | Periksa tipe frontend | `npm run typecheck` — dari `APP_RNM/`, bukan `frontend/` *(sejak 30-09-2026)* | tidak mencetak galat |
 | Uji frontend | `npm test` | seluruh berkas uji `passed` |
-| Jalankan frontend | `npm run dev` | buka `http://localhost:5173/` |
+| Jalankan frontend | `npm run dev` | buka `http://localhost:5174/` |
 | Bangun frontend | `npm run build` | menjalankan `tsc` dulu, lalu Vite membuat `dist/` |
 
 ⛔ **`go test -tags=db` MENGHAPUS tabel di skema yang ditunjuk `ORACLE_SCHEMA`** — termasuk
@@ -155,8 +155,10 @@ Dengan `make`: `make test` · `make typecheck` · `make check` · `make test-db`
 4. **Nol alamat host, kata sandi, atau nomor polis sungguhan di kode dan test.** Alamat dari
    env var; data uji berawalan `UJI-`. *(ADR-U-0004)*
 
-Rujukan `ADR-U-nnnn` menunjuk `..\docs\bersama\adr\`; `ADR-D-<modul>-nnnn` ke `..\dastin\...\docs\adr\`;
-`ADR-F-nnnn` ke `..\jefri\OUTPUT FIX\adr\`.
+Rujukan `ADR-U-nnnn`, `ADR-D-<modul>-nnnn`, dan `ADR-F-nnnn` menunjuk dokumen keputusan yang dulu
+tinggal di luar `APP_RNM` (`docs\bersama\adr\`, `dastin\`, `jefri\`). Folder itu dipangkas dari repo
+pada 1 Oktober 2026 supaya repositori hanya memuat aplikasi; isinya tetap tersimpan di riwayat git dan
+dapat dipulihkan dengan `git checkout <commit-sebelum-pangkas> -- <jalur>`.
 
 ## 7. Dari mana pekerjaan datang
 

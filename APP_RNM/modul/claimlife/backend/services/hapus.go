@@ -79,16 +79,12 @@ func (h *Penghapusan) Dampak(ctx context.Context, pelaku inti.Pelaku, klaimID st
 	if _, err := h.pastikanAda(ctx, klaimID); err != nil {
 		return d, err
 	}
-	// ⛔ CASE_ID DIBACA, tidak diandaikan sama dengan pengenal klaim. Butir ae1
-	// memang mengisinya begitu untuk klaim yang sistem ini buat sendiri, tetapi
-	// itu keputusan pengisian - bukan jaminan bentuk - dan klaim yang kelak
-	// dimigrasikan membawa CASE_ID warisannya sendiri. Mengandaikannya berarti
-	// mencacah baris milik klaim lain.
-	caseID, err := repository.NewKlaimLife(h.svc.DB()).CaseIDKlaim(ctx, klaimID)
-	if err != nil {
-		return d, err
-	}
-	return repository.NewPohonKlaim(h.svc.DB()).Dampak(ctx, klaimID, caseID)
+	// ⛔ CASEID baris datar warisan = ID klaim sejak migrasi 023 (keputusan
+	// work owner 01-10-2026): kolom CASE_ID dibuang - ia memang selalu ID
+	// untuk klaim yang sistem ini buat (butir ae1), dan migrasi klaim lama
+	// memakai CASEID warisan sebagai ID. Migrasi 023 menolak berjalan bila
+	// ada baris yang berbeda.
+	return repository.NewPohonKlaim(h.svc.DB()).Dampak(ctx, klaimID, klaimID)
 }
 
 // Hapus TIDAK menghapus - dan itu keputusan yang sudah diambil, bukan celah.

@@ -180,40 +180,42 @@ export default function PanelBusinessKombinasi({
       {daftar === null && galat === null && <Memuat />}
       {daftar !== null && daftar.daftar.length === 0 && <Kosong pesan={BUSINESS_TCO.kosong} />}
       {daftar !== null && daftar.daftar.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{BUSINESS_TCO.kolomTreatyGroup}</th>
-              <th>{BUSINESS_TCO.kolomBusinessId}</th>
-              <th>{BUSINESS_TCO.kolomBusinessName}</th>
-              <th>{BUSINESS_TCO.formActive}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {daftar.daftar.map((b) => (
-              <tr key={b.id} className={b.aktif ? 'inbox__baris' : 'inbox__baris inbox__baris--pasif'}>
-                <td>{b.treatyGroupName}</td>
-                <td>{b.id}</td>
-                <td>{b.bizName}</td>
-                <td>{labelAktif(b)}</td>
-                <td className="table__actions">
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formBusinessDari(b))}>
-                    {BUSINESS_TCO.edit}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    disabled={sibuk}
-                    onClick={() => void jalankan(() => hapusBusinessKombinasi(tahunID, kontrakID, b.id))}
-                  >
-                    {BUSINESS_TCO.delete}
-                  </button>
-                </td>
+        <div className="tco-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{BUSINESS_TCO.kolomTreatyGroup}</th>
+                <th>{BUSINESS_TCO.kolomBusinessId}</th>
+                <th>{BUSINESS_TCO.kolomBusinessName}</th>
+                <th>{BUSINESS_TCO.formActive}</th>
+                <th className="table__actions" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {daftar.daftar.map((b) => (
+                <tr key={b.id} className={b.aktif ? 'inbox__baris' : 'inbox__baris inbox__baris--pasif'}>
+                  <td>{b.treatyGroupName}</td>
+                  <td>{b.id}</td>
+                  <td>{b.bizName}</td>
+                  <td>{labelAktif(b)}</td>
+                  <td className="table__actions">
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formBusinessDari(b))}>
+                      {BUSINESS_TCO.edit}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      disabled={sibuk}
+                      onClick={() => void jalankan(() => hapusBusinessKombinasi(tahunID, kontrakID, b.id))}
+                    >
+                      {BUSINESS_TCO.delete}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   )

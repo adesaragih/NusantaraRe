@@ -242,55 +242,57 @@ export default function PanelReinsurerKombinasi({
       {daftar === null && galat === null && <Memuat />}
       {daftar !== null && daftar.daftar.length === 0 && <Kosong pesan={REINSURER_TCO.kosong} />}
       {daftar !== null && daftar.daftar.length > 0 && (
-        <table className="inbox__tabel">
-          <thead>
-            <tr>
-              <th>{REINSURER_TCO.kolomReinsId}</th>
-              <th>{REINSURER_TCO.kolomReinsurer}</th>
-              <th>{REINSURER_TCO.kolomShare}</th>
-              <th>{REINSURER_TCO.kolomComm}</th>
-              <th>{REINSURER_TCO.kolomRating}</th>
-              <th>{REINSURER_TCO.kolomOperatorName}</th>
-              <th className="table__actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {daftar.daftar.map((r) => (
-              <tr key={r.id} className="inbox__baris">
-                <td>{r.reinsurerId}</td>
-                <td>{r.name}</td>
-                <td>{formatNumber(r.pctShare, DESIMAL_TAK_DIBATASI)}</td>
-                <td>{formatNumber(r.ricomm, DESIMAL_TAK_DIBATASI)}</td>
-                <td>{r.stdRating}</td>
-                <td>{r.operatorName}</td>
-                <td className="table__actions">
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formReinsurerDari(r))}>
-                    {REINSURER_TCO.edit}
-                  </button>{' '}
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => mintaHapus(r)}>
-                    {REINSURER_TCO.delete}
-                  </button>{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setSecurity(r)
-                    }}
-                  >
-                    {REINSURER_TCO.securityReinsurer}
-                  </button>
-                </td>
+        <div className="tco-tabel">
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{REINSURER_TCO.kolomReinsId}</th>
+                <th>{REINSURER_TCO.kolomReinsurer}</th>
+                <th>{REINSURER_TCO.kolomShare}</th>
+                <th>{REINSURER_TCO.kolomComm}</th>
+                <th>{REINSURER_TCO.kolomRating}</th>
+                <th>{REINSURER_TCO.kolomOperatorName}</th>
+                <th className="table__actions" />
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colSpan={2}>{REINSURER_TCO.totalShare}</td>
-              <td>{formatNumber(daftar.totalShare, DESIMAL_TAK_DIBATASI)}</td>
-              <td colSpan={4} />
-            </tr>
-          </tfoot>
-        </table>
+            </thead>
+            <tbody>
+              {daftar.daftar.map((r) => (
+                <tr key={r.id} className="inbox__baris">
+                  <td>{r.reinsurerId}</td>
+                  <td>{r.name}</td>
+                  <td>{formatNumber(r.pctShare, DESIMAL_TAK_DIBATASI)}</td>
+                  <td>{formatNumber(r.ricomm, DESIMAL_TAK_DIBATASI)}</td>
+                  <td>{r.stdRating}</td>
+                  <td>{r.operatorName}</td>
+                  <td className="table__actions">
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => buka(formReinsurerDari(r))}>
+                      {REINSURER_TCO.edit}
+                    </button>{' '}
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => mintaHapus(r)}>
+                      {REINSURER_TCO.delete}
+                    </button>{' '}
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setSecurity(r)
+                      }}
+                    >
+                      {REINSURER_TCO.securityReinsurer}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={2}>{REINSURER_TCO.totalShare}</td>
+                <td>{formatNumber(daftar.totalShare, DESIMAL_TAK_DIBATASI)}</td>
+                <td colSpan={4} />
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       )}
 
       {konfirmasi !== null && (

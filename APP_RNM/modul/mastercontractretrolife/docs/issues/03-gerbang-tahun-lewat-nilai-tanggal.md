@@ -82,3 +82,26 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Ralat bertanggal 30-09-2026 — sesi implementasi (paket 0)
+
+> Sumber: `RALAT-DEV-30-09-2026.md` (K1–K8 katalog DEV, R1–R12 pembacaan ulang XML) dan `PARITAS-LAYAR-DAN-AKSI.md`. Kalimat di atas **tidak dihapus**; yang berlaku adalah ralat ini.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"**Aturannya dipertahankan, caranya diperbaiki.**"* | ⛔ premis keliru: gerbang itu **MATI** di Pega (T1 ronde 2 — `PRE=false`) → **OQ-MCRL-01** (K7) |
+| *"sistem menolak kontrak yang tanggal mulainya jatuh di tahun berbeda"* | bawaan sampai OQ-MCRL-01 dijawab: **ikut XML — tidak ditegakkan**. Pelajaran GILIRAN-11: dua gerbang mati pernah ditegakkan di modul lain dan harus dicabut |
+
+**Status:** `[menunggu OQ-MCRL-01]` — tidak dibangun. Uji paket 3 membuktikan kontrak dengan tahun berbeda **tetap tersimpan**.
+
+## Status 01-10-2026 (paket 11)
+
+**Status:** ⏸️ tetap `[menunggu OQ-MCRL-01]` — gerbang tidak ditegakkan, di backend maupun layar (ikut Pega, K7).
+
+## Status 01-10-2026 — OQ-MCRL-01 ditutup (`PROMPT-LANJUTAN-TIGA-MODUL-LIFE-KEPUTUSAN-OQ.md` §2)
+
+Kalimat lama *"ralat bertanggal `[menunggu OQ-MCRL-01]`"* tidak berlaku lagi: **ditutup 01-10-2026 — keputusan work owner: ikut rekomendasi asisten (bawaan dipertahankan)** — gerbang tahun (tahun tanggal
+mulai kontrak = tahun treaty) **ikut Pega, tidak ditegakkan** (langkahnya `PRE=false` di `SaveSecurityLife_Act` 4·5·6,
+`SaveSecurityReinsurerLife_Act` 4·5·6, `SaveBusinessLife_Act` 6). Bawaan yang sudah dibangun (K7) dipertahankan; tiket ini final.

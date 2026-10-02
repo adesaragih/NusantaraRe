@@ -34,6 +34,37 @@
 export const HALAMAN_BERANDA = 'beranda'
 
 /**
+ * Halaman Kelola User (keputusan work owner 01-10-2026) - milik aplikasi
+ * seperti Beranda, tetapi tampil HANYA bagi akun yang memegang menunya.
+ */
+export const HALAMAN_KELOLA_USER = 'kelolauser'
+
+/**
+ * KODE menu Kelola User - `menu.KodeKelolaUser` di backend. Bukan baris
+ * `M_NAV_MENU`: `GET /api/menu` mengirimnya di golongan ADMIN hanya bagi
+ * pemegangnya.
+ */
+export const KODE_MENU_KELOLA_USER = 'kelolauser'
+
+/**
+ * Modul yang boleh dipasang untuk akun yang login: modul aktif (MODUL_AKTIF)
+ * yang menunya ia pegang (`M_LOGIN_GO_MENU`). Padanan gerbang 403 backend -
+ * layar modul yang tidak boleh dibuka tidak dipasang, jadi tidak satu pun
+ * permintaannya berangkat.
+ *
+ * `menuAkun` null = tanpa saringan akun (mode stub). `aktif` null = daftar
+ * modul aktif belum terbaca: `semua` dipakai, seperti `modulDipasang`.
+ */
+export function modulUntukAkun(
+  aktif: readonly string[] | null,
+  menuAkun: readonly string[] | null,
+  semua: readonly string[],
+): readonly string[] | null {
+  if (menuAkun === null) return aktif
+  return (aktif ?? semua).filter((n) => menuAkun.includes(n))
+}
+
+/**
  * Satu entri menu yang dapat dibuka - Beranda, atau halaman AWAL satu modul.
  *
  * `H` adalah union halaman, bukan `string`: nama halaman yang salah ketik

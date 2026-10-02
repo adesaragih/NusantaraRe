@@ -312,9 +312,10 @@ func IsiContoh(ctx context.Context, db *sql.DB, skema string) error {
 		q    string
 		args []any
 	}{
-		{fmt.Sprintf(`INSERT INTO %s.T_WORK_CLAIM (ID, LINI, TYPE, CASE_ID)
-			VALUES (:1, :2, :3, :4)`, skema),
-			[]any{"CLM-UJI001", "LIFE", "UJI-TYPE", "UJI-CASE-1"}},
+		// TYPE di header klaim dan CASE_ID dibuang sejak Claim Life 023.
+		{fmt.Sprintf(`INSERT INTO %s.T_WORK_CLAIM (ID, LINI)
+			VALUES (:1, :2)`, skema),
+			[]any{"CLM-UJI001", "LIFE"}},
 
 		// Baris komite yang ditunjuk KOMITE_ID di bawah. Sejak keputusan work
 		// owner d (26-09-2026) KOMITE_ID ber-REFERENCES ke T_WORK_CLAIM(ID),
@@ -325,14 +326,14 @@ func IsiContoh(ctx context.Context, db *sql.DB, skema string) error {
 		// akan membuat penghapusan klaim (AC 38) ditolak ORA-02292, sebab FK
 		// COVER_KEY tanpa ON DELETE menolak menghapus induk yang masih
 		// ditunjuk. Itu pertanyaan jalur hapus tiket 15, bukan tiket ini.
-		{fmt.Sprintf(`INSERT INTO %s.T_WORK_CLAIM (ID, LINI, TYPE, CASE_ID)
-			VALUES (:1, :2, :3, :4)`, skema),
-			[]any{"KMT-UJI001", "LIFE", "UJI-KOMITE", "UJI-CASE-KMT"}},
+		{fmt.Sprintf(`INSERT INTO %s.T_WORK_CLAIM (ID, LINI)
+			VALUES (:1, :2)`, skema),
+			[]any{"KMT-UJI001", "LIFE"}},
 
 		{fmt.Sprintf(`INSERT INTO %s.T_GENERAL_CLAIM
-			(ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT)
-			VALUES (:1, :2, :3, :4, :5)`, skema),
-			[]any{"CLM-UJI001", "UJI-CLM-0001", "UJI-POL-0001", "UJI BISNIS", "0"}},
+			(ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT, TYPE)
+			VALUES (:1, :2, :3, :4, :5, :6)`, skema),
+			[]any{"CLM-UJI001", "UJI-CLM-0001", "UJI-POL-0001", "UJI BISNIS", "0", "UJI-TYPE"}},
 
 		{fmt.Sprintf(`INSERT INTO %s.T_CLAIMLF_PREMIUMLIST_DETAIL
 			(ID, CLAIM_ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY)

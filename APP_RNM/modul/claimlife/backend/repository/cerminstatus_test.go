@@ -59,7 +59,7 @@ func TestSetelCerminOutstandingMenolakKunciKosong(t *testing.T) {
 // titik tunggal penulis status, `PerbaruiStatusBaris`.
 func TestStatusCerminMengikutiPenulisStatus(t *testing.T) {
 	for _, dariKosong := range []bool{true, false} {
-		q := sqlIkutkanStatusCermin("S.L", "S.W", "S.P", dariKosong)
+		q := sqlIkutkanStatusCermin("S.L", "S.P", dariKosong)
 		if err := db.PeriksaSQL(q); err != nil {
 			t.Error(err)
 		}
@@ -67,7 +67,8 @@ func TestStatusCerminMengikutiPenulisStatus(t *testing.T) {
 		if strings.Contains(set, ",") || !strings.Contains(set, "STS_REJECT = :1") {
 			t.Errorf("SET bukan satu kolom STS_REJECT: %s", set)
 		}
-		for _, wajib := range []string{"o.ID = :2", "p.ID = :3", "w.ID = p.CLAIM_ID", "o.CASEID ="} {
+		// CASEID = CLAIM_ID peserta sejak migrasi 023 (CASE_ID dibuang, ID dipakai).
+		for _, wajib := range []string{"o.ID = :2", "p.ID = :3", "o.CASEID = (SELECT p.CLAIM_ID FROM S.P p"} {
 			if !strings.Contains(q, wajib) {
 				t.Errorf("kunci cermin kehilangan %q:\n%s", wajib, q)
 			}

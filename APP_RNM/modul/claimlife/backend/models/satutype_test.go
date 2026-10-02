@@ -33,21 +33,16 @@ var polaMedanType = regexp.MustCompile(`(?m)^\t+Type\s+string`)
 // itulah gunanya daftar ini - bukan untuk melonggarkan, melainkan untuk
 // membuat setiap salinan baru harus dipertanggungjawabkan.
 var medanTypeYangSah = map[string]string{
-	// Satu-satunya rumah TERSIMPAN: kolom T_WORK_CLAIM.TYPE.
-	"models/pohonklaim.go": "WorkClaim - satu-satunya salinan yang tersimpan",
+	// Satu-satunya rumah TERSIMPAN: kolom T_GENERAL_CLAIM.TYPE - pindah dari
+	// T_WORK_CLAIM.TYPE di migrasi 023 (keputusan work owner 01-10-2026).
+	"models/klaimlife.go": "Klaim - satu-satunya salinan yang tersimpan",
 	// Muatan permintaan, hidup sepanjang satu permintaan HTTP lalu hilang.
 	// Ia bukan salinan kedua melainkan jalan masuk menuju yang pertama.
 	"services/pendaftaran.go": "PermintaanDaftar - muatan permintaan, tidak tersimpan",
 	"handlers/register.go":    "badan JSON - muatan permintaan, tidak tersimpan",
-	// ⛔ A2, butir af. `MuatanKomite.Type` BUKAN salinan kedua dari Type
-	// klaim: ia dibaca dari `T_WORK_CLAIM.TYPE` klaim induk lalu menjadi
-	// `TYPE` milik work object ANAKNYA - baris `KMTLF-` yang berbeda, yang
-	// memang punya kolom itu sendiri. Meniru `pxAddChildWork`, yang menyalin
-	// data halaman ke kasus anak.
-	//
-	// Ia hidup sepanjang satu transaksi lalu hilang; yang tersimpan tetap
-	// satu kolom per baris, bukan dua kolom untuk satu baris.
-	"services/komite.go": "MuatanKomite - Type work object ANAK, satu transaksi",
+	// ⛔ `MuatanKomite.Type` (A2, butir af) DIBUANG di migrasi 023: baris
+	// kerja Komite tidak lagi menyimpan TYPE - salinannya dulu tidak pernah
+	// dibaca; wewenang Komite membaca `TypeKlaim` klaim induk.
 	// ⛔ MODUL LAIN, TABEL LAIN. `PenawaranPolis.Type` adalah `Type`
 	// sebuah POLIS (`pyWorkPage.Type` di `InputPolicyHolder`), bukan `Type`
 	// sebuah KLAIM. Rumah tersimpannya `T_PREMIUM_LIST.TYPE` (migrasi 051),
@@ -74,7 +69,7 @@ var medanTypeYangSah = map[string]string{
 	// ⛔ INI YANG MEMBUAT PENJAGA INI BERHARGA DI SINI: di Pega, layar
 	// Register Claim Life menampilkan `.PolicyDataLife.Type` sebagai medan
 	// `pyReadOnly` - DIBACA dari polis, tidak pernah diketik dan tidak
-	// pernah disimpan ke tabel klaim. Menyalinnya ke `T_WORK_CLAIM.TYPE`
+	// pernah disimpan ke tabel klaim. Menyalinnya ke `T_GENERAL_CLAIM.TYPE`
 	// akan membuat dua `Type` untuk satu klaim, dan yang satu akan basi
 	// begitu polisnya di-endorse.
 	// Refactor bentuk B (30-09-2026): tipe `PolisRingkas` kini kontrak lintas
@@ -125,11 +120,11 @@ func TestTypeKlaimHanyaSatuRumahTersimpan(t *testing.T) {
 	// Rumah tersimpannya harus benar-benar ada, bukan sekadar tidak dilanggar.
 	var adaRumah bool
 	for _, jalur := range temuan {
-		if jalur == "models/pohonklaim.go" {
+		if jalur == "models/klaimlife.go" {
 			adaRumah = true
 		}
 	}
 	if !adaRumah {
-		t.Error("medan Type di WorkClaim hilang; penjaga ini kehilangan yang dijaganya")
+		t.Error("medan Type di Klaim hilang; penjaga ini kehilangan yang dijaganya")
 	}
 }

@@ -59,7 +59,8 @@ const (
 //
 // ⛔ RALAT 28-09-2026. Komentar ronde pertama berbunyi *"nilai inilah yang
 // masuk `T_WORK_POLIS.POSITION`"*. KELIRU. Nilai ini `pyWorkStatus`, dan yang
-// masuk kolom `STATUS`. Kolom `POSITION` menyimpan hal yang BERBEDA - lihat
+// masuk kolom `STATUS_WORK` (bernama `STATUS` sampai migrasi 059). Kolom
+// `POSITION` menyimpan hal yang BERBEDA - lihat
 // `PosisiOffer`/`PosisiPremium` di bawah.
 //
 // Yang membantahnya `Activity/ProtectAccept.xml`, yang membandingkan

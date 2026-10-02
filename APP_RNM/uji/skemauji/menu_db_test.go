@@ -14,7 +14,6 @@ package skemauji_test
 // ⛔ Melewati bila Oracle belum dikonfigurasi. Melewati bukan lulus.
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -27,22 +26,9 @@ import (
 // Menggantikan `TestMenuIsiAwalDariOracleIdempotenDanBerCheck` (20 kelompok +
 // 5 butir, INSERT 900 diulang) - brief menu datar 30-09-2026.
 func TestMenuDatarDariOracleIdempotenDanBerCheck(t *testing.T) {
-	sqlDB, skema, err := skemauji.Buka()
-	if err != nil {
-		if !skemauji.BolehDilewati(err) {
-			t.Fatalf("skema uji menolak: %v", err)
-		}
-		t.Skipf("lewati: %v", err)
-	}
-	defer func() { _ = sqlDB.Close() }()
-	ctx := context.Background()
-	if err := sqlDB.PingContext(ctx); err != nil {
-		t.Skipf("lewati: oracle tidak terjangkau: %v", err)
-	}
-	if err := skemauji.Pasang(ctx, sqlDB, skema); err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = skemauji.Bongkar(ctx, sqlDB, skema) }()
+	// Pintu skema uji inti bersama - bantu_inti_db_test.go.
+	sqlDB, skema, ctx := pasangSkemaInti(t)
+	var err error
 
 	satu := func(q string, arg ...any) int {
 		t.Helper()

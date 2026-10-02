@@ -70,10 +70,10 @@ func pohonUjiKomite(t *testing.T, svc *services.Service, db *intidb.DB,
 	pohon := models.PohonKlaim{
 		// Claim Analis: satu-satunya tahap tempat `Add` (putaran) dilayani
 		// (b18160). Penyerahan ke Komite tidak bergerbang tahap.
-		Work: models.WorkClaim{ID: workID, Lini: inti.LiniLife, Type: "TP",
-			Tahap: models.TahapClaimAnalis.String(), PyPosition: models.PeranSPVLife},
+		Work: models.WorkClaim{ID: workID, Lini: inti.LiniLife,
+			Tahap: models.TahapClaimAnalis.String(), Position: models.PeranSPVLife},
 		Klaim: models.Klaim{
-			NomorKlaim: "UJI-CLM-" + workID,
+			NomorKlaim: "UJI-CLM-" + workID, Type: "TP",
 			Peserta: []models.Peserta{{
 				NomorSertifikat: "006", MataUang: "IDR",
 				Baris: []models.BarisAdjustment{{

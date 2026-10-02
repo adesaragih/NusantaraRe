@@ -35,13 +35,18 @@ func TestSisipKasusPolisMenulisKelimaKolomKerja(t *testing.T) {
 	if err := db.PeriksaSQL(q); err != nil {
 		t.Fatal(err)
 	}
-	for _, k := range []string{"ID", "LINI", "POSITION", "STATUS", "FLAG_ONGOING_POLICY"} {
-		if !strings.Contains(q, k) {
-			t.Errorf("kolom %s tidak ditulis:\n%s", k, q)
-		}
+	// ⛔ Sejak 059 (seragam T_WORK_CLAIM): STATUS_WORK, bukan STATUS, dan
+	// pembuat serta waktu lahir ikut tertulis. Waktu dari SYSDATE - jam basis
+	// data, seperti setiap ubah baris kasus (`TGL_UPDATE = SYSDATE`).
+	if !strings.Contains(q, "(ID, LINI, POSITION, STATUS_WORK, FLAG_ONGOING_POLICY, "+
+		"COVER_KEY, CREATE_OP, CREATE_OP_NAME, TGL_CREATE, TGL_UPDATE)") {
+		t.Errorf("kolom kasus polis baru:\n%s", q)
 	}
-	if got := urutanPenampung(q); got != "12345" {
-		t.Errorf("penampung %q, mau 12345", got)
+	if !strings.Contains(q, "VALUES (:1, :2, :3, :4, :5, :6, :7, :8, SYSDATE, SYSDATE)") {
+		t.Errorf("nilai kasus polis baru:\n%s", q)
+	}
+	if got := urutanPenampung(q); got != "12345678" {
+		t.Errorf("penampung %q, mau 12345678", got)
 	}
 }
 
@@ -73,8 +78,10 @@ func TestArgumenKasusPolisBerurutanSepertiPenampung(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	arg := argSisipKasusPolis("NBLF-1", k)
-	mau := []any{"NBLF-1", inti.LiniLife, models.PosisiOffer, models.TahapPolisPenawaran, "1"}
+	arg := argSisipKasusPolis("NBLF-1", k.DenganPembuat("UJI-AKUN"))
+	// COVER_KEY kosong -> NULL, bukan teks kosong.
+	mau := []any{"NBLF-1", inti.LiniLife, models.PosisiOffer, models.TahapPolisPenawaran, "1",
+		nil, "UJI-AKUN", "UJI-AKUN"}
 	if len(arg) != len(mau) {
 		t.Fatalf("argumen %v", arg)
 	}

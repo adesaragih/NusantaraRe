@@ -1,6 +1,6 @@
 # 02: Produk sisi umum — CRUD, identitas dari sequence, gagal terang-terangan
 
-**Status:** ready-for-agent
+**Status:** selesai (01-10-2026) — paket 1 `4ce0771` (baca) + paket 3 `2f39341` (tulis), layar paket 10 (`1ada8d7`); uji `db` ditulis dan MELEWATI di sesi implementasi (tanpa `ORACLE_DSN`; POOLDATA/DEV bukan sasaran)
 
 **Blocked by:** 01 (skema relasional — bentuk barunya harus ada lebih dulu)
 
@@ -92,3 +92,26 @@ go test ./internal/...
 cd frontend && npm test
 make check
 ```
+
+---
+
+## Ralat bertanggal 01-10-2026 — sesi implementasi (paket 3)
+
+> Sumber: `../RALAT-DEV-30-09-2026.md` (P1, P6, R7, R8, R14) dan `../PARITAS-LAYAR-DAN-AKSI.md` §3, §7. Kalimat di atas **tidak dihapus**.
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| *"Area codebase … Tulis/baca `product_life`"* | **P1**: tulis/baca `M_PRODUCT_LIFE.JSONDATA` berkunci Pega + kolom datar `RIRISKID`, `RIRISK`, `PRODUCTNAME`, `BEGIN_DATE` (pernyataan yang sama, satu transaksi). Nol tabel baru |
+| *"⚠️ Membuangnya **mengubah perilaku**: guard yang selama ini mungkin tak pernah menyala akan **mulai menolak**"* | **R7**: prakondisi ber-`PoductName` di `SaveProductName_Act` 8–11, 13–16 ber-**PRE=false** — tidak pernah dievaluasi; tidak ada perilaku yang berubah. Kode baru tetap tanpa `PoductName` |
+| Identitas *"'1' + lima digit"* | tetap (**P6**): `'1' ‖ LPAD(M_PRODUCT_LIFE_SEQ.NEXTVAL, 5, '0')`; nomor > 5 digit dan ID yang sudah dipakai salah satu tabel **ditolak terang** (500 berkalimat), tidak dipotong/digandakan |
+| (tidak disebut) medan `Product Code` b3894 dapat disunting dan terikat `ProductName.ID` | **R14**: baca-saja; `POST` yang membawa `id` ditolak 400 (ADR-0006) |
+| *"Penyimpanan mencatat **siapa** pembuat dan **siapa** pengubah terakhir"* | `CREATEOP` = pelaku untuk produk baru — termasuk salinan `Copy`, yang di Pega mewarisi pembuat asal (OQ-MPNL-13); tetap untuk ubah. `UPDATEOP` = pelaku setiap simpan (`SaveProductName_Act` 1 b361, 6 b1370) |
+| *"Endpoint CRUD produk"* | `POST /api/master-product-name-life/produk` (baru), `PUT /produk/{id}` (ubah). **Nol** rute hapus: korpus tidak punya tombol/aktivitas hapus produk |
+
+---
+
+## Ralat bertanggal 01-10-2026 — lanjutan 1 (katalog DEV)
+
+| Kalimat lama | Ralat |
+| --- | --- |
+| ralat paket 3 *"+ kolom datar `RIRISKID`, `RIRISK`, `PRODUCTNAME`, `BEGIN_DATE`"* | kolom datar hanya `RIRISKID`, `RIRISK` (DEV `ALL_TAB_COLUMNS`); `PRODUCTNAME` dan `BEGIN_DATE` tidak ada dan tidak ditulis — `6fd539c`. Tanggal tetap teks `dd/MM/yyyy` di `JSONDATA` |

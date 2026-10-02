@@ -5,7 +5,8 @@ paket 1–8). Untuk siapa: pengembang yang memegang satu modul, dan siapa pun ya
 aplikasi dengan sebagian modul saja. Diperbarui 30 September 2026: menu dari tabel `M_NAV_MENU`
 (`..\PROMPT-MENU-DARI-TABEL-M_NAV_MENU.md`) — bab 2, 3, 5, dan bab 6 baru. Diperbarui lagi 30 September
 2026: **struktur tim satu folder per modul** (`..\PROMPT-STRUKTUR-TIM-SATU-FOLDER-PER-MODUL.md`) — bab 1,
-3, 4, 5, dan 6. Alur kerja tim dan cara memulai modul kerangka: `..\docs\bersama\PANDUAN-TIM-PER-MODUL.md`.
+3, 4, 5, dan 6. Alur kerja tim dan cara memulai modul kerangka: `PANDUAN-TIM-PER-MODUL.md`; isi cabang
+`main` dan `dev`, nama cabang, dan arah merge: `PANDUAN-CABANG-GIT.md`.
 
 ## 1. Bentuknya dalam satu layar
 
@@ -21,8 +22,8 @@ APP_RNM/
       kontrak/          antarmuka lintas modul, TANPA implementasi (PembacaPolis, KlaimKomite)
       perakit.go        menyambung kontrak menurut Pendaftaran() setiap modul
       daftar/           daftar modul BANGKITAN (go generate): modul_<nama>_gen.go per modul
-      menu/             GET /api/menu: pembaca M_NAV_MENU, pohon GROUPMENU, SaringMenuUntukPelaku
-      migrations/       tabel lintas modul 900-949: M_NAV_MENU (900)
+      menu/             GET /api/menu: pembaca M_NAV_MENU, pohon GROUPMENU, SaringMenuUntukAkun
+      migrations/       tabel lintas modul 900-949: M_NAV_MENU (900), M_LOGIN_GO (902), M_LOGIN_GO_MENU (903)
       penjaga/          uji penjaga SELURUH aplikasi - membaca modul/* dan MODUL.md, nol nama modul
     frontend/           kerangka React bersama: Shell, ui/dasar, klien.ts, lib/, hooks/, store/, labels.ts
   modul/
@@ -34,7 +35,8 @@ APP_RNM/
     _templat/           templat folder modul
   uji/                  penunjang uji netral: skemauji (skema Oracle tiruan), lintasmodul
   frontend/             perakit: index.html main.tsx App.tsx Beranda.tsx daftar.ts katalogKorpus.ts
-..\docs\bersama\       ADR, CONTEXT, STRUKTUR-TABEL-INTI, PANDUAN-TIM-PER-MODUL
+  inti/docs/            STRUKTUR-TABEL-INTI (tabel lintas modul milik inti, 900-949)
+  PANDUAN-*.md          menjalankan, deploy, alur tim, cabang git
 ..\.github\CODEOWNERS   pemilik setiap folder
 ```
 
@@ -222,7 +224,7 @@ Pemilik ditetapkan di **`..\.github\CODEOWNERS`** — nama akun di sana PENANDA 
 | `APP_RNM/inti/backend/daftar/modul_<nama>_gen.go` (bangkitan) | pemilik modul itu |
 | `APP_RNM/inti/`, `cmd/`, `frontend/`, `uji/`, `pkg/`, `modul/_templat/` | tim inti |
 | `APP_RNM/go.mod`, `go.sum`, `package.json`, `package-lock.json`, `vite.config.ts`, `tsconfig.json`, `Makefile` | tim inti — pustaka baru lewat pull request |
-| `docs/bersama/`, `docs/agents/`, `.github/`, dokumen akar | tim inti |
+| `APP_RNM/inti/docs/`, `APP_RNM/PANDUAN-*.md`, `.github/` | tim inti |
 
 Brief acuan setiap modul tercatat di `MODUL.md`-nya.
 
@@ -262,7 +264,7 @@ Sejak 30-09-2026 sidebar dan palet Ctrl+K dirakit dari tabel **`M_NAV_MENU`** le
 (keputusan work owner 30-09-2026: *"menu jangan ada model seperti child … 1 modul 1 menu"*) tabelnya
 **datar**: 20 baris, satu per folder modul korpus; `KODE` = `MODUL` = nama modul (tabel nama modul);
 `URUTAN` = urutan di dalam `GROUPMENU`. Tidak ada `PARENT_ID`, tidak ada butir anak. Daftarnya di
-`..\docs\bersama\STRUKTUR-TABEL-INTI.md`.
+`inti\docs\STRUKTUR-TABEL-INTI.md`.
 
 Sidebar: kepala `GROUPMENU` (`TREATY`, `FACULTATIVE`, `KLAIM`, `MASTER`, dalam urutan itu), di bawahnya
 **satu tombol per modul** berlabel `LABEL` (nama folder korpus VERBATIM). Klik tombol membuka **halaman
@@ -334,7 +336,10 @@ melihat perubahan data semacam itu. Slot menu modul **tidak** dapat melakukannya
 `UPDATE DIMIGRASI`); bila menu itu memang dibuang untuk seterusnya, itu keputusan work owner yang
 dikerjakan tim inti — migrasi `inti` baru beserta perubahan penjaga `TestMenuHanyaDi900DanSlotMenuModulnya`.
 
-**Di luar lingkup hari ini** (dicatat, tidak dibangun): tabel akses per akun (mis. `M_NAV_MENU_AKSES`:
-akun atau peran → `MENU_ID`) dan login. Titik sambungnya sudah ada: `inti/backend/menu`
-`SaringMenuUntukPelaku(pelaku, menu)` — hari ini meneruskan semua — dipanggil `GET /api/menu` untuk
-setiap permintaan.
+**Akses per akun** (Kelola User, keputusan work owner 01-10-2026): tabel `M_LOGIN_GO_MENU` (migrasi
+inti 903) — KODE menu per akun. `GET /api/menu` mengirim hanya menu akun yang login
+(`inti/backend/menu` `SaringMenuUntukAkun`), dan `cmd/api` menjawab 403 untuk rute modul yang menunya tidak
+dipegang. ⛔ Layar modul yang memanggil rute modul LAIN wajib didaftarkan di `cmd/api/rakit.go`
+`ruteDipinjam` — `TestPanggilanLintasModulTerdaftar` menagihnya; tanpanya pemegang menu layar itu mendapat
+403. Modul yang baru dimigrasi (`DIMIGRASI = '1'` di slot menunya) tampil HANYA bagi akun yang memegang
+menunya — akun yang ada saat 903 berjalan memegang semua; akun lain diberi admin lewat Kelola User.

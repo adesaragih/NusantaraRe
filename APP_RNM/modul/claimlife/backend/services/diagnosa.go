@@ -103,7 +103,7 @@ func (d *DiagnosaPeserta) pagari(ctx context.Context, pelaku inti.Pelaku,
 	k.diag = repository.NewDiagnosa(d.svc.DB())
 
 	// Gerbang 1 dan 2 - tahap, lalu pemegangnya. Kolom TAHAP menang;
-	// PY_POSITION cadangan untuk baris lama (butir at).
+	// POSITION cadangan untuk baris lama (butir at).
 	tahap, err := tahapKasus(ctx, k.baca, klaimID)
 	if err != nil {
 		return k, err

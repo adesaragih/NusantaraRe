@@ -215,17 +215,18 @@ func (r *KlaimLife) AmbilBaris(ctx context.Context, klaimID string) (map[string]
 	return out, rows.Err()
 }
 
-// TypeKlaim membaca `Type` klaim dari baris work object-nya.
+// TypeKlaim membaca `Type` klaim dari header klaimnya.
 //
 // ⛔ Satu-satunya pembaca `Type`, dan ia membacanya dari satu-satunya tempat
-// yang menyimpannya - `T_WORK_CLAIM.TYPE`. Tiket 06 AC 5: validasi dan
-// penurunan jenis klaim membaca satu field yang sama, bukan dua salinan
+// yang menyimpannya - `T_GENERAL_CLAIM.TYPE` sejak migrasi 023 (pindah dari
+// `T_WORK_CLAIM`, keputusan work owner 01-10-2026). Tiket 06 AC 5: validasi
+// dan penurunan jenis klaim membaca satu field yang sama, bukan dua salinan
 // seperti di Pega.
 //
 // Header klaim dan baris work object berbagi kunci utama (`isiIdentitas`),
 // jadi pengenal klaim dapat dipakai apa adanya.
 func (r *KlaimLife) TypeKlaim(ctx context.Context, klaimID string) (string, error) {
-	tabel, err := r.db.Qualify("T_WORK_CLAIM")
+	tabel, err := r.db.Qualify("T_GENERAL_CLAIM")
 	if err != nil {
 		return "", err
 	}
@@ -236,7 +237,7 @@ func (r *KlaimLife) TypeKlaim(ctx context.Context, klaimID string) (string, erro
 	var tipe sql.NullString
 	err = r.db.QueryRowContext(ctx, q, klaimID).Scan(&tipe)
 	if err == sql.ErrNoRows {
-		return "", fmt.Errorf("repository: work object %q tidak ada", klaimID)
+		return "", fmt.Errorf("repository: header klaim %q tidak ada", klaimID)
 	}
 	if err != nil {
 		return "", fmt.Errorf("repository: membaca Type klaim: %w", err)
@@ -574,11 +575,9 @@ func (r *KlaimLife) PerbaruiStatusBaris(ctx context.Context, tx *db.Tx,
 	if err != nil {
 		return err
 	}
-	work, err := r.db.Qualify("T_WORK_CLAIM")
-	if err != nil {
-		return err
-	}
-	q := sqlIkutkanStatusCermin(lama, work, pes, kosong(kodeLama))
+	// CASEID cermin = CLAIM_ID peserta: kolom CASE_ID dibuang migrasi 023,
+	// CASEID = ID klaim.
+	q := sqlIkutkanStatusCermin(lama, pes, kosong(kodeLama))
 	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
@@ -688,39 +687,12 @@ func (r *KlaimLife) setelPenandaDipilih(ctx context.Context, tx *db.Tx,
 	return db.PastikanSatuBaris(hasil, "penyetelan IS_CHECK")
 }
 
-// CaseIDKlaim membaca CASE_ID baris work object sebuah klaim.
-//
-// ⛔ DIBACA, tidak diandaikan sama dengan pengenal klaim. Butir ae1 memang
-// memutuskan `CASEID = pengenal work object` untuk klaim yang sistem ini
-// buat sendiri, tetapi itu keputusan pengisian - bukan jaminan bentuk. Klaim
-// yang kelak dimigrasikan (tiket 13) membawa CASE_ID warisannya sendiri, dan
-// kode yang mengandaikan keduanya sama akan mencacah baris milik klaim lain.
-func (r *KlaimLife) CaseIDKlaim(ctx context.Context, klaimID string) (string, error) {
-	tabel, err := r.db.Qualify("T_WORK_CLAIM")
-	if err != nil {
-		return "", err
-	}
-	q := fmt.Sprintf(`SELECT CASE_ID FROM %s WHERE ID = :1`, tabel)
-	if err := db.PeriksaSQL(q); err != nil {
-		return "", err
-	}
-	var caseID sql.NullString
-	err = r.db.QueryRowContext(ctx, q, klaimID).Scan(&caseID)
-	if err == sql.ErrNoRows {
-		return "", fmt.Errorf("repository: work object %q tidak ada", klaimID)
-	}
-	if err != nil {
-		return "", fmt.Errorf("repository: membaca CASE_ID: %w", err)
-	}
-	return caseID.String, nil
-}
-
 // PerbaruiTahap memindahkan kasus di tangga kerja.
 //
 // ⛔ SATU pernyataan, dan ia TIDAK menyentuh STS_REJECT mana pun. Perpindahan
 // tahap memindahkan pekerjaan, bukan memutuskan klaim (ADR-U-0011).
 //
-// Kolomnya sudah ada di migrasi 001: PY_POSITION, SENDTO_ADMIN, SENDTO_MEDICAL.
+// Kolomnya: POSITION (migrasi 023; PY_POSITION di 001), SENDTO_ADMIN, SENDTO_MEDICAL.
 // Nol kolom baru, nol langkah migrasi.
 //
 // ⛔ Tahap ASAL ikut sebagai syarat WHERE. Ia dibaca di luar transaksi, jadi
@@ -735,16 +707,16 @@ func (r *KlaimLife) PerbaruiTahap(ctx context.Context, tx *db.Tx,
 		return err
 	}
 	// ⛔ BUTIR at: `TAHAP` ikut ditulis, dan penjaga optimisnya kini
-	// memakai TAHAP - bukan PY_POSITION. Alasannya memaksa: pada
-	// perpindahan Input Register ⇄ Outstanding Claim `PY_POSITION` TIDAK
-	// BERUBAH (keduanya ReasLifeAdmin), sehingga penjaga ber-PY_POSITION
+	// memakai TAHAP - bukan POSITION. Alasannya memaksa: pada
+	// perpindahan Input Register ⇄ Outstanding Claim `POSITION` TIDAK
+	// BERUBAH (keduanya ReasLifeAdmin), sehingga penjaga ber-POSITION
 	// tidak dapat mendeteksi kasus yang sudah dipindahkan orang lain
 	// sejak dibaca.
 	//
 	// ⚠️ `NVL` dipakai untuk baris LAMA yang `TAHAP`-nya masih kosong:
 	// tanpa itu setiap perpindahan pertama baris lama akan menyentuh nol
 	// baris dan gagal, padahal tidak ada yang salah dengannya.
-	q := fmt.Sprintf(`UPDATE %s SET PY_POSITION = :1, SENDTO_ADMIN = :2,
+	q := fmt.Sprintf(`UPDATE %s SET POSITION = :1, SENDTO_ADMIN = :2,
 		 SENDTO_MEDICAL = :3, TGL_UPDATE = :4, TAHAP = :5
 		 WHERE ID = :6 AND NVL(TAHAP, :7) = :8`, tabel)
 	if err := db.PeriksaSQL(q); err != nil {
@@ -768,17 +740,17 @@ func (r *KlaimLife) PerbaruiTahap(ctx context.Context, tx *db.Tx,
 	return nil
 }
 
-// TahapKlaim membaca PY_POSITION baris work object sebuah klaim.
+// TahapKlaim membaca POSITION baris work object sebuah klaim.
 func (r *KlaimLife) TahapKlaim(ctx context.Context, klaimID string) (string, error) {
 	_, peran, err := r.TahapDanPeran(ctx, klaimID)
 	return peran, err
 }
 
-// TahapDanPeran membaca TAHAP dan PY_POSITION sebuah kasus sekaligus.
+// TahapDanPeran membaca TAHAP dan POSITION sebuah kasus sekaligus.
 //
 // ⛔ BUTIR at. Keduanya dibaca BERSAMA, dalam satu kueri, karena keduanya
 // menjawab pertanyaan yang berbeda dan pemanggil memerlukan keduanya:
-// `TAHAP` mengatakan di anak tangga mana kasusnya berdiri, `PY_POSITION`
+// `TAHAP` mengatakan di anak tangga mana kasusnya berdiri, `POSITION`
 // mengatakan peran siapa yang memegangnya. Dua kueri berarti ada jendela
 // ketika keduanya dibaca dari keadaan yang berbeda.
 //
@@ -793,7 +765,7 @@ func (r *KlaimLife) TahapDanPeran(ctx context.Context, klaimID string) (
 	if err != nil {
 		return "", "", err
 	}
-	q := fmt.Sprintf(`SELECT TAHAP, PY_POSITION FROM %s WHERE ID = :1`, tabel)
+	q := fmt.Sprintf(`SELECT TAHAP, POSITION FROM %s WHERE ID = :1`, tabel)
 	if err := db.PeriksaSQL(q); err != nil {
 		return "", "", err
 	}
@@ -859,7 +831,7 @@ func (r *KlaimLife) StatusWorkKlaim(ctx context.Context, klaimID string) (string
 // menyentuh nol baris dan berkata jelas.
 //
 // ⚠️ `NVL(TAHAP, :n)` sama seperti PerbaruiTahap: baris LAMA yang TAHAP-nya
-// masih kosong tetap dapat ditutup dari tahap yang disimpulkan PY_POSITION.
+// masih kosong tetap dapat ditutup dari tahap yang disimpulkan POSITION.
 func (r *KlaimLife) TutupKasus(ctx context.Context, tx *db.Tx,
 	klaimID, tahapAsal, statusWork string, saat time.Time) error {
 

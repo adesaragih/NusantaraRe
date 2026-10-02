@@ -1,0 +1,355 @@
+/*
+ * Gaya modul Treaty Contract Out.
+ *
+ * ⛔ TERISOLASI: SETIAP pemilih diawali kelas akar `.tco` (dipasang di akar ketiga halaman modul:
+ * `InboxTreatyContract`, `InboxTreatyContractReinsType`, `InboxTreatyContractDescription`; panel dan
+ * popup modul dirender di dalamnya, Modal inti tanpa portal). Kelas khusus modul berawalan `tco-`.
+ * Kelas bersama `inti` (panel, btn, inbox__tabel, table__actions, form-grid, modal) hanya DITIMPA di
+ * bawah `.tco`, tidak pernah didefinisikan ulang secara global. Dijaga `gaya.test.ts`. Warna dari token
+ * tema bersama, jadi tema gelap ikut. Diimpor sekali oleh `rute.tsx`.
+ */
+
+/* Akar: boleh menyusut di dalam kolom flex/grid kerangka, sehingga tabel lebar menggulir di
+   pembungkusnya sendiri, bukan mendorong halaman melebar. */
+.tco {
+  min-width: 0;
+}
+
+.tco .inbox__kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+/* --------------------------------------------------------------- tabel */
+/* Pembungkus gulir setiap grid: tabel yang lebih lebar dari panel menggulir DI SINI, bukan keluar dari
+   panel atau mendorong halaman melebar. */
+.tco .tco-tabel {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 16px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  /* Acuan ukuran isi baris rinci (`cqi` di bawah) = lebar area gulir yang TERLIHAT. */
+  container-type: inline-size;
+}
+
+.tco .tco-tabel > .inbox__tabel {
+  width: 100%;
+  margin-top: 0;
+}
+
+.tco .tco-tabel > .inbox__tabel thead th {
+  white-space: nowrap;
+}
+
+/* Kolom tombol baris menempel di kanan saat tabel digulir, sehingga aksi baris selalu terlihat. */
+.tco .tco-tabel th.table__actions,
+.tco .tco-tabel td.table__actions {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  box-shadow: -1px 0 0 var(--border);
+}
+
+.tco .tco-tabel th.table__actions {
+  background: var(--bg);
+}
+
+.tco .tco-tabel td.table__actions {
+  background: var(--surface);
+  white-space: nowrap;
+}
+
+.tco .tco-tabel tr:hover > td.table__actions {
+  background: var(--hover-baris);
+}
+
+.tco .tco-tabel td.table__actions > .btn + .btn {
+  margin-left: 6px;
+}
+
+/* Baris RINCI (panel Business, Reinsurer, Security dibuka di bawah barisnya): isinya menempel di kiri
+   area gulir dan tidak lebih lebar dari layar, sehingga panel di dalamnya tetap terbaca utuh walau
+   tabel kontraknya digulir menyamping. */
+.tco .tco-tabel tr.inbox__rinci > td {
+  padding: 12px;
+}
+
+.tco .tco-tabel tr.inbox__rinci > td > * {
+  position: sticky;
+  left: 12px;
+  /* Cadangan peramban tanpa container query, lalu batas tepat selebar area gulir. */
+  max-width: calc(100vw - 48px);
+  max-width: calc(100cqi - 24px);
+}
+
+/* Grid di dalam popup dibatasi tingginya dan menggulir di dalam. */
+.tco .modal .tco-tabel {
+  max-height: 50vh;
+  overflow: auto;
+}
+
+/* ------------------------------------------------- tablet, laptop kecil */
+@media (max-width: 1024px) {
+  .tco .panel {
+    padding: 16px;
+  }
+}
+
+/* ---------------------------------------------------------------- ponsel */
+@media (max-width: 640px) {
+  .tco .panel {
+    padding: 12px;
+    border-radius: var(--radius-sm);
+  }
+
+  .tco .aksi-baris > .btn {
+    flex: 1 1 auto;
+  }
+
+  .tco .tco-tabel > .inbox__tabel th,
+  .tco .tco-tabel > .inbox__tabel td {
+    padding: 8px 10px;
+  }
+
+  .tco .tco-tabel tr.inbox__rinci > td {
+    padding: 8px;
+  }
+
+  .tco .tco-tabel tr.inbox__rinci > td > * {
+    left: 8px;
+    max-width: calc(100vw - 32px);
+    max-width: calc(100cqi - 16px);
+  }
+
+  /* Ponsel: kolom tombol TIDAK menempel - di layar sempit ia menutupi hampir seluruh kolom data.
+     Data tampil lebih dulu; tombol dijangkau dengan menggeser tabel di dalam panel. */
+  .tco .tco-tabel th.table__actions,
+  .tco .tco-tabel td.table__actions {
+    position: static;
+    box-shadow: none;
+  }
+
+  .tco .modal__actions {
+    flex-wrap: wrap;
+  }
+
+  .tco .modal__actions > .btn {
+    flex: 1 1 auto;
+  }
+}
+
+/* ================================================================ soft UI
+   NEUMORFISME RAPI dengan warna aktif. Permintaan work owner 02-10-2026, berurutan: tema Kelola User untuk Beranda, Treaty Contract
+   Out, dan Master Contract Retro Life; "perbaiki buat lebih bagus dan menarik dan elegan"; "ganti
+   warna yg pake ungu atau lavender di semua menu"; lalu "soft UI atau neumorfisme kok hilang ya?? aku
+   mau itu tetep ada, tapi warna pake yg aktif sekarang aja. untuk neumorfisme ada yg timbul keluar ada
+   yang timbul kedalam juga, buat yang rapih dan elegan", "terapkan di beranda, treaty contract out,
+   master contract retro dan menu user".
+   Alas abu kebiruan sangat muda #eef1f6, supaya bayangan terang dan gelap sama-sama terlihat. TIMBUL
+   KELUAR: panel, tombol. TIMBUL KE DALAM: isian, wadah tabel, panel di dalam panel, tombol ditekan.
+   Aksen biru navy template #2b44b0; tombol utama merah bergradasi halus. Kontras: token teks minimal
+   4,5:1 terhadap latarnya, dijaga gaya.test. TANPA backdrop-filter, filter, atau transform: properti
+   itu mengurung popup `position: fixed` (bug popup tidak di tengah 02-10-2026). Token `--mt-*` hanya di
+   kelas akar .tco; tema gelap ditimpa di `:root[data-theme="dark"] .tco`. `--text-3` inti DITIMPA
+   di akar ini saja supaya label dan keterangan abu tetap terbaca. */
+.tco {
+  --mt-latar: #eef1f6;
+  --mt-latar-tepi: #e2e7ef;
+  --mt-kartu: #eef1f6;
+  --mt-lembut: #e9edf3;
+  --mt-lembut-tepi: #dde3ec;
+  --mt-teks: #101828;
+  --mt-teks-redup: #4f586b;
+  --mt-aksen: #2b44b0;
+  --mt-aksen-teks: #2339a3;
+  --mt-aksen-lembut: #e3e8f6;
+  --mt-aksen-garis: #b9c5ee;
+  --mt-kepala-tabel: #eaeef4;
+  --mt-baris-hover: #e6ebf3;
+  --mt-garis: #dfe4ec;
+  --mt-tepi: #d5dce7;
+  --mt-tombol: #d63a42;
+  --mt-tombol-ujung: #bf2f37;
+  --mt-tombol-hover: #c2333b;
+  --mt-tombol-hover-ujung: #a9282f;
+  --mt-terang: rgba(255, 255, 255, 0.92);
+  --mt-gelap: rgba(163, 177, 198, 0.55);
+  --mt-kilau: rgba(255, 255, 255, 0.7);
+  --mt-timbul: 8px 8px 18px var(--mt-gelap), -8px -8px 18px var(--mt-terang);
+  --mt-timbul-kecil: 4px 4px 9px var(--mt-gelap), -4px -4px 9px var(--mt-terang);
+  --mt-cekung: inset 3px 3px 7px var(--mt-gelap), inset -3px -3px 7px var(--mt-terang);
+  --mt-cekung-kecil: inset 2px 2px 4px var(--mt-gelap), inset -2px -2px 4px var(--mt-terang);
+  --mt-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --mt-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--mt-terang);
+  --mt-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --mt-bayang-lembar: 0 1px 2px rgba(16, 24, 40, 0.04), 0 22px 50px -32px rgba(16, 24, 60, 0.28);
+  --text-3: var(--mt-teks-redup);
+  color: var(--mt-teks);
+  padding: 24px;
+  border: 1px solid var(--mt-latar-tepi);
+  border-radius: 26px;
+  background: var(--mt-latar);
+  box-shadow: var(--mt-bayang-lembar);
+}
+:root[data-theme="dark"] .tco {
+  --mt-latar: #1b2130;
+  --mt-latar-tepi: #252c3c;
+  --mt-kartu: #1b2130;
+  --mt-lembut: #181d2a;
+  --mt-lembut-tepi: #242b3a;
+  --mt-teks: #eef0f6;
+  --mt-teks-redup: #aab2c4;
+  --mt-aksen: #8ea2f5;
+  --mt-aksen-teks: #aebcff;
+  --mt-aksen-lembut: #222b45;
+  --mt-aksen-garis: #3a4b8f;
+  --mt-kepala-tabel: #1d2433;
+  --mt-baris-hover: #212a3c;
+  --mt-garis: #283042;
+  --mt-tepi: #2d3546;
+  --mt-terang: rgba(255, 255, 255, 0.045);
+  --mt-gelap: rgba(0, 0, 0, 0.55);
+  --mt-kilau: rgba(255, 255, 255, 0.04);
+  --mt-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --mt-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--mt-terang);
+  --mt-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --mt-bayang-lembar: 0 1px 2px rgba(0, 0, 0, 0.4), 0 22px 50px -32px rgba(0, 0, 0, 0.8);
+}
+
+.tco .inbox__judul,
+.tco .panel__title,
+.tco .modal__title {
+  color: var(--mt-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.tco .muted {
+  color: var(--mt-teks-redup);
+}
+.tco :focus-visible {
+  outline: 2px solid var(--mt-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM (cekung) bertepi tipis; fokus biru navy bercincin lembut. */
+.tco .field__input {
+  background: var(--mt-latar);
+  border: 1px solid var(--mt-tepi);
+  border-radius: 12px;
+  box-shadow: var(--mt-cekung-kecil);
+  color: var(--mt-teks);
+}
+.tco .field__input:hover:not(:disabled) {
+  border-color: var(--mt-aksen-garis);
+}
+.tco .field__input:focus {
+  border-color: var(--mt-aksen);
+  box-shadow: var(--mt-cekung-kecil), var(--mt-cincin);
+  outline: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan: TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.tco .btn {
+  border-radius: 999px;
+}
+.tco .btn--primary {
+  background: linear-gradient(180deg, var(--mt-tombol), var(--mt-tombol-ujung));
+  border-color: var(--mt-tombol-ujung);
+  color: #ffffff;
+  box-shadow: var(--mt-bayang-tombol);
+}
+.tco .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--mt-tombol-hover), var(--mt-tombol-hover-ujung));
+  border-color: var(--mt-tombol-hover-ujung);
+}
+.tco .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+.tco .btn--ghost {
+  background: var(--mt-latar);
+  border: 1px solid var(--mt-kilau);
+  color: var(--mt-teks);
+  box-shadow: var(--mt-timbul-kecil);
+}
+.tco .btn--ghost:hover:not(:disabled) {
+  color: var(--mt-aksen-teks);
+}
+.tco .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--mt-cekung-kecil);
+}
+.tco .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut; isinya ikut neumorfisme. */
+.tco .modal {
+  background: var(--mt-latar);
+  border: 1px solid var(--mt-kilau);
+  border-radius: 22px;
+  box-shadow: var(--mt-bayang-popup);
+}
+.tco .modal__head,
+.tco .modal__actions {
+  border-color: var(--mt-garis);
+}
+.tco .alert {
+  border-radius: 12px;
+}
+
+/* Panel: TIMBUL KELUAR. Panel di dalam panel: TIMBUL KE DALAM, jadi jenjangnya terbaca. */
+.tco .panel {
+  background: var(--mt-latar);
+  border: 1px solid var(--mt-kilau);
+  border-radius: 20px;
+  box-shadow: var(--mt-timbul);
+}
+.tco .panel .panel {
+  background: var(--mt-lembut);
+  border-color: var(--mt-lembut-tepi);
+  border-radius: 16px;
+  box-shadow: var(--mt-cekung);
+}
+
+/* Wadah tabel: TIMBUL KE DALAM (baki); baris rata, garis tipis, sorot baris biru samar. Kolom aksi
+   yang menempel ikut warna alas supaya tidak tampak sebagai pita. */
+.tco .tco-tabel {
+  border-color: var(--mt-lembut-tepi);
+  border-radius: 16px;
+  background: var(--mt-latar);
+  box-shadow: var(--mt-cekung);
+}
+.tco .tco-tabel > .inbox__tabel thead th,
+.tco .tco-tabel th.table__actions {
+  background: var(--mt-kepala-tabel);
+  color: var(--mt-teks-redup);
+  border-bottom-color: var(--mt-garis);
+}
+.tco .tco-tabel > .inbox__tabel td {
+  border-bottom-color: var(--mt-garis);
+}
+.tco .tco-tabel td.table__actions {
+  background: var(--mt-latar);
+}
+.tco .tco-tabel > .inbox__tabel > tbody > tr:not(.inbox__rinci):hover > td,
+.tco .tco-tabel tr:hover > td.table__actions {
+  background: var(--mt-baris-hover);
+}
+
+@media (max-width: 640px) {
+  .tco {
+    padding: 14px;
+    border-radius: 18px;
+  }
+  .tco .panel {
+    border-radius: 16px;
+    box-shadow: var(--mt-timbul-kecil);
+  }
+}

@@ -55,7 +55,7 @@ type AnggotaTangga struct {
 // Mengembalikan pengenal kasus (`KMTLF-xxxxxx`), yang sekaligus menjadi
 // `T_GENERAL_KOMITE.ID` - shared primary key.
 func (r *PohonKlaim) BuatKasusKomite(ctx context.Context, tx *db.Tx,
-	klaimID, adjustmentID, lini, tipe string, anggota []AnggotaTangga,
+	klaimID, adjustmentID, lini string, anggota []AnggotaTangga,
 	saat time.Time) (string, error) {
 
 	if len(anggota) == 0 {
@@ -67,19 +67,20 @@ func (r *PohonKlaim) BuatKasusKomite(ctx context.Context, tx *db.Tx,
 		return "", err
 	}
 
-	// 1. Work object anaknya - `pxAddChildWork`.
+	// 1. Work object anaknya - `pxAddChildWork`. TYPE tidak ikut sejak
+	// migrasi 023: milik header klaim induk (`T_GENERAL_CLAIM.TYPE`).
 	work, err := r.db.Qualify("T_WORK_CLAIM")
 	if err != nil {
 		return "", err
 	}
 	qWork := fmt.Sprintf(`INSERT INTO %s
-		(ID, COVER_KEY, LINI, TYPE, TGL_UPDATE)
-		VALUES (:1,:2,:3,:4,:5)`, work)
+		(ID, COVER_KEY, LINI, TGL_UPDATE)
+		VALUES (:1,:2,:3,:4)`, work)
 	if err := db.PeriksaSQL(qWork); err != nil {
 		return "", err
 	}
 	hasil, err := tx.ExecContext(ctx, qWork, kasusID,
-		db.KosongJadiNil(klaimID), db.KosongJadiNil(lini), db.KosongJadiNil(tipe), saat)
+		db.KosongJadiNil(klaimID), db.KosongJadiNil(lini), saat)
 	if err != nil {
 		return "", fmt.Errorf("repository: melahirkan work object komite: %w", err)
 	}
