@@ -56,6 +56,17 @@ Sistem baru membaca `M_PRODUCT_LIFE.ID` + `JSONDATA` sendiri (P2) — kunci kolo
 Pesan: wadah b616 `STSSAVE==100` → `OutputParam.ERRMSG` b878; wadah b1269 `STSSAVE==99` → `ERRMSG` b1531 (dipakai `CopyProduct`); wadah b1921 `ProductName.ERRMSG!=''` → b2183.
 Baca-saja: medan ber-`ro = ProductName.IsView=='true'` (mode lihat sesudah `View`; `Edit` membukanya). *(Ralat audit 02-10-2026: tidak SETIAP medan - enam medan pemilih master SELALU baca-saja, `pyReadOnly` true + `pyEditOptions` Read-only + `pyReadOnlyCondition` kosong: Ceding b4040, SOB b4428, R/I Risk Name b7362, Cause Of Loss b10626, Policy Holder b17062, Currency b28105; nilainya hanya dari tombol `Choose*` *(sejak keputusan work owner 02-10-2026: dari dropdown master, §4)*. Sel `PLAN LIST` `Bussines` `.Name` b33504 dan `Benefit` b33658 juga selalu baca-saja. Lihat RALAT 02-10-2026.)*
 
+> ⭐ **Tata letak 02-10-2026 (foto layar Pega dari work owner):** *"sekarang isinya perbaiki mengikuti tata letak begini, kamu
+> tetep boleh berkreasi asal membuat jauh lebih baik"*. Wadah b2573 dirender sebagai dua kartu berdampingan, mengikuti
+> XML: **`TREATY NAME`** (`<pyTitle>` b2934): medan sisi umum, lalu `LIEN CLAUSE` dan `DOCUMENT CLAIM`; **`INWARD`**
+> (`<pyTitle>` b16621): `Policy Holder`, `Insured`, pasangan `Addendum No.`/`Addendum` dan `Amandement No.`/`Amandement`,
+> lalu **kolom kiri b21723** (`Max Notification Claim Expired` … `Premium Refund Factor (%)`) dan **kolom kanan b27004**
+> (`Max Production Data Receive` … `Proportional Table`; `%` b27585 dan `X + n` b27773 mati). Label di kiri, nilai di
+> kanan (`components/Medan.tsx`). Kreasi tambahan: mode lihat menampilkan TEKS (bukan isian baca-saja) - angka berpemisah
+> ribuan rata kanan, tanggal `DD/MM/YYYY`, kosong `—`; jenis tampilan = tipe kolom flat `mpnl_flat.go`; sel grid mode lihat
+> juga teks; kotak form sempit menumpuk kartu (container query). Penjaga: `components/FormProduk.test.ts` (urutan medan
+> = urutan baris XML per wadah, jenis tampilan = tipe kolom), `bentuk.test.ts` (`tampilAngka`, `tampilTanggal`).
+
 ### 3.1 Sisi umum — halaman `ProductName` → `M_PRODUCT_LIFE.JSONDATA`
 
 | Medan korpus (bNNN · label VERBATIM) | Kontrol · visibilitas · aksi | Kunci JSON | Keadaan |
@@ -233,6 +244,7 @@ menjawab 503 bila Oracle tidak dikonfigurasi, galat berbadan `{"galat": "..."}`.
 | `components/FormProduk.tsx` | mode form: §3.1, §3.2, §5, tombol bawah §3.3; `SetTreatyName_Act`, `CountMaxSumReasured_Act`, `CopyProduct`, `CopyFinancialWriting`, `CopyUnderWritingLimit` di klien (`bentuk.ts`) |
 | `components/Saran.tsx` | `pxAutoComplete` `Ceding`, `SOB`, `R/I Risk Name`, `Policy Holder`, `Currency`, `Plan Name` |
 | ~~`components/PemilihMaster.tsx`~~ | ketujuh `Choose*` → `Search` / grid `ID` · `Name` (`RIRate Name`) / `Choose` / `Submit` · `Cancel` (§4) — *dipensiunkan 02-10-2026 (keputusan work owner, §4)* |
+| `components/Medan.tsx` | baris label-kiri / nilai-kanan form (tata letak 02-10-2026, §3): mode lihat teks berformat, mode sunting isian; `PilihanMedan` untuk `Premium Payment Method` |
 | `components/DropdownMaster.tsx` | ketujuh pemilih master sebagai dropdown (keputusan work owner 02-10-2026, §4): `Search`, kepala `ID` · `Name` (`RIRate Name`), `set*_DT` |
 | `components/Dialog.tsx` | `SaveProductName_Confirm` (`Do you want to save the data?`, `Comment`, `Save` · `Cancel`), `EditProductName_Confirm` (`Do you want to Edit the data?`, `Edit` · `Cancel`) |
 | `components/ModalRate.tsx` | `View Rate` → `ViewRate` (`Outward List`, `ID` · `USEDBY` · `GENDER` · `CONTRACT` · `AGE` · `RATE`, `Submit` · `Cancel`) — data ⏸️ OQ-MPNL-03 *(ralat 01-10-2026, K1 keputusan work owner 01-10-2026: data view `RATE_LIFE` ✅)* |
