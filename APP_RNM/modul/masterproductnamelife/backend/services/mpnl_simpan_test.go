@@ -184,13 +184,6 @@ func TestPanjangKolomDatarDitolakBukanDipotong(t *testing.T) {
 	ditolak(t, func(_ *tiruan.Gudang, m *models.Produk) {
 		m.Umum.ProductName = strings.Repeat("P", 4001)
 	}, "PRODUCTNAME is longer than 4000 bytes")
-	// Audit 02-10-2026: larik UnderwritingLimitList dibaca view PRODUCT_LIFE UTUH sebagai teks (VARCHAR2(4000)).
-	ditolak(t, func(_ *tiruan.Gudang, m *models.Produk) {
-		for range 40 {
-			m.UnderwritingLimit = append(m.UnderwritingLimit, models.BarisUWLimit{MinInsured: "1", MaxInsured: "2", MinAge: "1",
-				MaxAge: "2", Medical: "UJI", Description: strings.Repeat("D", 100)})
-		}
-	}, "UnderwritingLimitList is longer than 4000 bytes")
 
 	// Nama panjang dari KLIEN dengan ID master sah: yang ditulis adalah nama master - diterima.
 	l, g := layananMaster()

@@ -4,8 +4,30 @@ package services_test
 
 import (
 	"context"
+	"strings"
 	"testing"
+
+	"nusantarare/modul/masterproductnamelife/backend/models"
 )
+
+// Keadaan DEV 02-10-2026: 45 dari 103 produk ber-UNDERWRITING LIMIT melampaui 4000 byte (terpanjang 84 baris; view
+// PRODUCT_LIFE membacanya NULL sejak era Pega). Produk seperti itu TETAP dapat disimpan - penjaga panjang hanya
+// untuk kunci view skalar (regresi audit 02-10-2026 dicabut).
+func TestUWLimitPanjangSepertiDEVTetapDapatDisimpan(t *testing.T) {
+	l, g := layananMaster()
+	m := produkMasuk()
+	for range 84 {
+		m.UnderwritingLimit = append(m.UnderwritingLimit, models.BarisUWLimit{MinInsured: "100000000", MaxInsured: "250000000",
+			MinAge: "18", MaxAge: "65", Medical: "UJI MEDIS", Description: strings.Repeat("D", 100)})
+	}
+	p, err := l.SimpanProduk(context.Background(), pelakuUji, m, true)
+	if err != nil {
+		t.Fatalf("produk ber-UW limit 84 baris tersimpan seperti di Pega: %v", err)
+	}
+	if !strings.Contains(g.Umum[p.ID], `"UnderwritingLimitList":[`) || len(p.UnderwritingLimit) != 84 {
+		t.Errorf("84 baris UW limit tersimpan utuh: %d", len(p.UnderwritingLimit))
+	}
+}
 
 // Keadaan DEV 02-10-2026: `M_PRODUCT_LIFE_SEQ` tertinggal dari data. Produk baru TIDAK lagi gagal 500 dan
 // tidak menimpa produk yang ada: ID terpakai dilewati ke nomor bebas berikut.

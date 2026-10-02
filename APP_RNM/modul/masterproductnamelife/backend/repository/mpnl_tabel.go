@@ -60,14 +60,15 @@ const (
 // dibaca view sebagai NULL (`NULL ON ERROR`) - Claim Life diam-diam kehilangan nilainya.
 const LebarKunciView = 4000
 
-// KunciViewTerlaluPanjang - kunci view yang nilainya (bentuk Pega) melampaui LebarKunciView: kunci skalar,
-// dan larik `UnderwritingLimitList` yang dibaca view `PRODUCT_LIFE` UTUH sebagai teks JSON (audit
-// 02-10-2026: dulu larik ini terukur 0 byte, jadi tabel UW limit panjang lolos dan view membacanya NULL).
+// KunciViewTerlaluPanjang - kunci view SKALAR yang nilainya (bentuk Pega) melampaui LebarKunciView.
+//
+// ⛔ Larik `UnderwritingLimitList` SENGAJA tidak diukur. View `PRODUCT_LIFE` membacanya utuh sebagai teks
+// VARCHAR2(4000), dan di DEV 45 dari 103 produk ber-UW limit SUDAH melampauinya sejak era Pega (view membacanya
+// NULL; daftar terpanjang 84 baris). Menolaknya membuat 45 produk itu tidak dapat disimpan lagi - regresi yang
+// sempat masuk audit 02-10-2026 dan dicabut di hari yang sama. Perilaku Pega dipertahankan: simpan diterima,
+// view tetap NULL. Penyelesaian tuntasnya rancangan tabel flat (tiket 01): daftar ini menjadi tabel anak.
 func KunciViewTerlaluPanjang(p models.Produk) []string {
 	umum, inward := HalamanPega(p)
-	if raw, err := rakitBaris(p.UnderwritingLimit, kodekUWLimit); err == nil {
-		umum[kunciUWLimit] = string(raw)
-	}
 	var hasil []string
 	for _, k := range KunciViewProduk {
 		if len(umum[k]) > LebarKunciView {
