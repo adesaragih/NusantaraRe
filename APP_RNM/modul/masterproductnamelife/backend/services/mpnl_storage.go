@@ -75,6 +75,9 @@ var (
 	ErrBerkasTidakDiStorage = errors.New("services: the attachment file is not in storage")
 )
 
+// errURLDitolak - URL bertanda tangan ditolak penyimpanan (400 `ExpiredToken`, 401, 403): URL baru diminta sekali.
+var errURLDitolak = errors.New("the signed URL was rejected")
+
 // galatStorage - galat penyimpanan: kalimat layar tanpa sebab mentah (teks Oracle hanya di log), jenisnya terbaca
 // `errors.Is`.
 type galatStorage struct {
@@ -286,13 +289,17 @@ func jalurObjek(o models.ObjekPenyimpanan) string {
 	return strings.ReplaceAll(o.AppFolder, awalanGS(o.AppName), "")
 }
 
-// berlaku - URL tersimpan masih dapat dipakai (EXPDATE GMT belum lewat, dengan sisa minimum).
+// berlaku - URL tersimpan masih dapat dipakai (EXPDATE belum lewat, dengan sisa minimum).
+//
+// ⚠️ EXPDATE dibaca jam Asia/Jakarta, BUKAN GMT seperti rumus Pega (b2366 `+ " GMT"`): bukti DEV 03-10-2026 - URL
+// ber-EXPDATE `13:28:00` ditolak Google `ExpiredToken` sesudah 13:28 WIB (layanan menjawab `exp` jam lokal). Dibaca GMT,
+// URL mati dianggap berlaku tujuh jam lagi. Bila ternyata GMT, akibatnya hanya geturl lebih awal.
 func (p penyimpananGoogle) berlaku(o models.ObjekPenyimpanan) bool {
 	if strings.TrimSpace(o.URLPublic) == "" {
 		return false
 	}
-	exp, err := time.Parse(formatExp, strings.TrimSpace(o.Exp))
-	return err == nil && exp.After(p.jam().UTC().Add(sisaURLMinimum))
+	exp, err := time.ParseInLocation(formatExp, strings.TrimSpace(o.Exp), zonaJakarta)
+	return err == nil && exp.After(p.jam().Add(sisaURLMinimum))
 }
 
 // Tautan - `GetUrlGoogleStorage_Act`: URL bertanda tangan objek terkirim; objek baru dijawab bila geturl dipanggil.
@@ -304,6 +311,11 @@ func (p penyimpananGoogle) Tautan(ctx context.Context, o models.ObjekPenyimpanan
 	if p.berlaku(o) {
 		return o.URLPublic, nil, nil
 	}
+	return p.mintaURL(ctx, o)
+}
+
+// mintaURL - geturl (`GetUrlGoogleStorage_Act` b1238–b1781): URL bertanda tangan BARU dan objek yang diperbarui.
+func (p penyimpananGoogle) mintaURL(ctx context.Context, o models.ObjekPenyimpanan) (string, *models.ObjekPenyimpanan, error) {
 	durasi := DurasiLampiran
 	folder := strings.TrimSuffix(jalurObjek(o), o.FileName)
 	j, err := p.panggil(ctx, layanan.KunciURLBerkas, permintaanStorage{App: o.AppName, Durasi: &durasi, Folder: folder,
@@ -336,6 +348,13 @@ func (p penyimpananGoogle) Buka(ctx context.Context, o models.ObjekPenyimpanan) 
 		return nil, nil, err
 	}
 	isi, err := p.unduh(ctx, bertanda)
+	if err != nil && baru == nil && errors.Is(err, errURLDitolak) {
+		// URL TERSIMPAN ditolak walau EXPDATE belum lewat (selisih jam / zona): URL baru, diulang SEKALI.
+		if bertanda, baru, err = p.mintaURL(ctx, o); err != nil {
+			return nil, nil, err
+		}
+		isi, err = p.unduh(ctx, bertanda)
+	}
 	if err != nil {
 		return nil, nil, err
 	}
@@ -362,8 +381,12 @@ func (p penyimpananGoogle) unduh(ctx context.Context, bertanda string) (io.ReadC
 	}
 	_, _ = io.Copy(io.Discard, io.LimitReader(jwb.Body, batasJawabanStorage))
 	_ = jwb.Body.Close()
-	if jwb.StatusCode == http.StatusNotFound {
+	switch jwb.StatusCode {
+	case http.StatusNotFound:
 		return nil, galatStorage{jenis: ErrBerkasTidakDiStorage, layar: ErrBerkasTidakDiStorage.Error()}
+	case http.StatusBadRequest, http.StatusUnauthorized, http.StatusForbidden:
+		return nil, galatStorage{jenis: ErrStorageGagal, sebab: errURLDitolak,
+			layar: fmt.Sprintf("%s: the signed URL answered status %d", ErrStorageGagal, jwb.StatusCode)}
 	}
 	return nil, gagal("the signed URL answered status %d", jwb.StatusCode)
 }

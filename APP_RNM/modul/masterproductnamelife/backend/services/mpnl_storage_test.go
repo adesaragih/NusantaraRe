@@ -75,6 +75,11 @@ func (s *storageTiruan) layani(w http.ResponseWriter, r *http.Request) {
 	}
 	if strings.HasPrefix(r.URL.Path, "/objek/") {
 		s.ambilObjek++
+		if r.URL.RawQuery == "kedaluwarsa" {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = io.WriteString(w, "<Error><Code>ExpiredToken</Code></Error>")
+			return
+		}
 		isi, ada := s.objek[strings.TrimPrefix(r.URL.Path, "/objek/")]
 		if !ada {
 			http.NotFound(w, r)
@@ -230,7 +235,7 @@ func TestStorageGoogleBukaMemakaiURLTersimpanAtauMemintaYangBaru(t *testing.T) {
 	jalur := "Contract/Doc/2025/08/" + namaUji
 	s.objek[jalur] = []byte("isi lama")
 	o := models.ObjekPenyimpanan{ImageID: "ABC123", URLPublic: s.srv.URL + "/objek/" + jalur, AppFolder: gsObjek("UJI-APP", jalur),
-		Exp: "01/10/2026 08:40:00", FileName: namaUji, AppName: "UJI-APP"}
+		Exp: "01/10/2026 15:40:00", FileName: namaUji, AppName: "UJI-APP"}
 
 	isi, baru, err := p.Buka(ctx, o)
 	if err != nil {
@@ -276,7 +281,7 @@ func TestStorageGoogleBukaGagalTerang(t *testing.T) {
 	ctx := context.Background()
 	s := baruStorageTiruan(t)
 	p, _ := s.penyimpanan(t)
-	hilang := models.ObjekPenyimpanan{ImageID: "ABC123", URLPublic: s.srv.URL + "/objek/tidak-ada", Exp: "01/10/2026 08:40:00",
+	hilang := models.ObjekPenyimpanan{ImageID: "ABC123", URLPublic: s.srv.URL + "/objek/tidak-ada", Exp: "01/10/2026 15:40:00",
 		FileName: namaUji, AppName: "UJI-APP", AppFolder: gsObjek("UJI-APP", "tidak-ada")}
 	if _, _, err := p.Buka(ctx, hilang); !errors.Is(err, ErrBerkasTidakDiStorage) {
 		t.Errorf("404 URL bertanda tangan = berkas tidak ada: %v", err)
@@ -389,7 +394,7 @@ func TestStorageGoogleTautan(t *testing.T) {
 	p, _ := s.penyimpanan(t)
 	jalur := "Contract/Doc/2025/08/" + namaUji
 	o := models.ObjekPenyimpanan{ImageID: "ABC123", URLPublic: s.srv.URL + "/objek/" + jalur, AppFolder: gsObjek("UJI-APP", jalur),
-		Exp: "01/10/2026 08:40:00", FileName: namaUji, AppName: "UJI-APP"}
+		Exp: "01/10/2026 15:40:00", FileName: namaUji, AppName: "UJI-APP"}
 	u, baru, err := p.Tautan(ctx, o)
 	if err != nil || u != o.URLPublic || baru != nil || len(s.daftarMinta()) != 0 || s.ambilObjek != 0 {
 		t.Errorf("URL tersimpan: %q %+v %v (geturl %d, unduh %d)", u, baru, err, len(s.daftarMinta()), s.ambilObjek)
@@ -434,7 +439,7 @@ func TestStorageGoogleTanpaPengalihan(t *testing.T) {
 	if _, err := p.Kirim(ctx, objekUji(), "pdf", "application/pdf"); !errors.Is(err, ErrStorageGagal) {
 		t.Errorf("307 titik layanan = gagal: %v", err)
 	}
-	o := models.ObjekPenyimpanan{ImageID: "ABC123", URLPublic: s.srv.URL + "/objek/x", Exp: "01/10/2026 08:40:00",
+	o := models.ObjekPenyimpanan{ImageID: "ABC123", URLPublic: s.srv.URL + "/objek/x", Exp: "01/10/2026 15:40:00",
 		FileName: namaUji, AppName: "UJI-APP", AppFolder: gsObjek("UJI-APP", "x")}
 	if _, _, err := p.Buka(ctx, o); !errors.Is(err, ErrStorageGagal) {
 		t.Errorf("302 URL bertanda tangan = gagal: %v", err)
@@ -452,7 +457,7 @@ func TestStorageGoogleURLHampirKedaluwarsaDimintaUlang(t *testing.T) {
 	jalur := "Contract/Doc/2025/08/" + namaUji
 	s.objek[jalur] = []byte("x")
 	o := models.ObjekPenyimpanan{ImageID: "ABC123", URLPublic: s.srv.URL + "/objek/" + jalur, AppFolder: gsObjek("UJI-APP", jalur),
-		Exp: jamStorage.Add(30 * time.Second).Format(formatExp), FileName: namaUji, AppName: "UJI-APP"}
+		Exp: jamStorage.In(zonaJakarta).Add(30 * time.Second).Format(formatExp), FileName: namaUji, AppName: "UJI-APP"}
 	isi, baru, err := p.Buka(ctx, o)
 	if err != nil {
 		t.Fatal(err)
@@ -531,5 +536,42 @@ func TestStubMenolakHapusObjekPenyimpananNyata(t *testing.T) {
 	err := p.Hapus(context.Background(), "ABC123", &models.ObjekPenyimpanan{ImageID: "ABC123", URLPublic: "UJI-URL"})
 	if !errors.Is(err, ErrStorageBelumSiap) || !strings.Contains(Pesan(err), "storage service") {
 		t.Errorf("stub: %v", err)
+	}
+}
+
+// DEV 03-10-2026: EXPDATE `13:28:00` ditulis jam LOKAL layanan (WIB) - URL itu ditolak Google `ExpiredToken` sesudah
+// 13:28 WIB. EXPDATE dibaca Asia/Jakarta: yang ditulis 08:40 (= 01:40 UTC) sudah lewat pada 08:10 UTC.
+func TestStorageGoogleEXPDATEDibacaJamJakarta(t *testing.T) {
+	ctx := context.Background()
+	s := baruStorageTiruan(t)
+	p, _ := s.penyimpanan(t)
+	jalur := "Contract/Doc/2025/08/" + namaUji
+	s.objek[jalur] = []byte("x")
+	o := models.ObjekPenyimpanan{ImageID: "ABC123", URLPublic: s.srv.URL + "/objek/" + jalur, AppFolder: gsObjek("UJI-APP", jalur),
+		Exp: "01/10/2026 08:40:00", FileName: namaUji, AppName: "UJI-APP"}
+	u, baru, err := p.Tautan(ctx, o)
+	if err != nil || baru == nil || len(s.daftarMinta()) != 1 || u == o.URLPublic {
+		t.Errorf("EXPDATE 08:40 WIB sudah lewat pada 15:10 WIB: geturl: %q %+v %v", u, baru, err)
+	}
+}
+
+// URL tersimpan yang ditolak penyimpanan (400 ExpiredToken / 401 / 403) walau EXPDATE belum lewat: URL baru diminta
+// lewat geturl dan unduhan diulang SEKALI - selisih jam tidak menggagalkan unduhan.
+func TestStorageGoogleURLTersimpanDitolakDimintaUlang(t *testing.T) {
+	ctx := context.Background()
+	s := baruStorageTiruan(t)
+	p, _ := s.penyimpanan(t)
+	jalur := "Contract/Doc/2025/08/" + namaUji
+	s.objek[jalur] = []byte("isi lama")
+	o := models.ObjekPenyimpanan{ImageID: "ABC123", URLPublic: s.srv.URL + "/objek/" + jalur + "?kedaluwarsa",
+		AppFolder: gsObjek("UJI-APP", jalur), Exp: "01/10/2026 15:40:00", FileName: namaUji, AppName: "UJI-APP"}
+	isi, baru, err := p.Buka(ctx, o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, _ := io.ReadAll(isi)
+	_ = isi.Close()
+	if string(d) != "isi lama" || baru == nil || len(s.daftarMinta()) != 1 || s.ambilObjek != 2 {
+		t.Errorf("ditolak lalu geturl dan diulang sekali: %q %+v (geturl %d, unduh %d)", d, baru, len(s.daftarMinta()), s.ambilObjek)
 	}
 }
