@@ -1,7 +1,8 @@
 package repository
 
 // Tab Object FIRE (tiket 35): .LocationList -> T_LOCATIONLIST (induk T_GENERAL_POLIS) ->
-// T_PROPERTY -> T_RISKLOCATION / T_BUILDINGCONSTRUCTION (tabel rancangan, migrasi 186).
+// T_PROPERTY -> T_RISKLOCATION / T_BUILDINGCONSTRUCTION (tabel rancangan, migrasi 186) /
+// T_SURROUNDINGRISK (tiket 38, migrasi 187).
 // Daftar dibaca urut SEQ_NO dan DIGANTI UTUH di dalam transaksi pemanggil (anak lebih dulu
 // dihapus, lalu disisip ulang urut). Seluruh nilai parameter terikat.
 
@@ -20,10 +21,12 @@ const (
 	TabelProperty             = "T_PROPERTY"
 	TabelRiskLocation         = "T_RISKLOCATION"
 	TabelBuildingConstruction = "T_BUILDINGCONSTRUCTION"
+	TabelSurroundingRisk      = "T_SURROUNDINGRISK"
 	sequenceLocationList      = "SEQ_T_LOCATIONLIST"
 	sequenceProperty          = "SEQ_T_PROPERTY"
 	sequenceRiskLocation      = "SEQ_T_RISKLOCATION"
 	sequenceBuildingConstruct = "SEQ_T_BUILDINGCONSTRUCTION"
+	sequenceSurroundingRisk   = "SEQ_T_SURROUNDINGRISK"
 	teksBenar, teksSalah      = "true", "false" // boolean Pega di IS_* (fixture)
 )
 
@@ -41,7 +44,7 @@ type ObjekOracle struct{ db *db.DB }
 // NewObjekOracle merakit penyimpan objek.
 func NewObjekOracle(d *db.DB) *ObjekOracle { return &ObjekOracle{db: d} }
 
-type tabelObjek struct{ work, general, loc, prop, risk, bang string }
+type tabelObjek struct{ work, general, loc, prop, risk, bang, sekitar string }
 
 func (r *ObjekOracle) tabel() (tabelObjek, error) {
 	var t tabelObjek
@@ -49,7 +52,7 @@ func (r *ObjekOracle) tabel() (tabelObjek, error) {
 		nama string
 		ke   *string
 	}{{TabelWorkPolis, &t.work}, {TabelGeneralPolis, &t.general}, {TabelLocationList, &t.loc}, {TabelProperty, &t.prop},
-		{TabelRiskLocation, &t.risk}, {TabelBuildingConstruction, &t.bang}} {
+		{TabelRiskLocation, &t.risk}, {TabelBuildingConstruction, &t.bang}, {TabelSurroundingRisk, &t.sekitar}} {
 		q, err := r.db.Qualify(x.nama)
 		if err != nil {
 			return t, err
@@ -67,15 +70,23 @@ func sqlAdaKasus(work string) string {
 var kolomBacaObjek = []string{"p.OBJECT_NO", "p.OBJECT_TYPE", "p.OBJECT_NAME", "p.IS_MATERIAL_DAMAGE", "p.IS_TOP_RISK",
 	"p.ROAD_TYPE", "p.ROAD_NAME", "p.BUILDING_NO", "r.ASM_ZIP_CODE", "p.COUNTRY", "r.ASM_ADDRESS", "r.ASMRW", "r.ASM_CITY",
 	"r.ASM_DISTRICT", "p.PROVINCE", "p.ALM_RISK_ID", "b.NUMBER_OF_FLOOR", "b.ROOF_TYPE", "b.WALL_TYPE", "b.FLOOR_TYPE",
-	"b.PARTITION_TYPE", "b.SUPPORT_WALL_TYPE", "b.OTHERS_TYPE"}
+	"b.PARTITION_TYPE", "b.SUPPORT_WALL_TYPE", "b.OTHERS_TYPE",
+	// tiket 38
+	"p.OWNERSHIP", "p.IS_PRODUCTION_PROCESS_FLAG", "p.IS_HOT_WORK_PROCESS_FLAG", "p.IS_FLAMMABLE_ITEM_FLAG",
+	"s.FRONT_OCCUPATION", "s.FRONT_CONSTRUCTION", "s.FRONT_DISTANCE", "s.FRONT_NOTE",
+	"s.LEFT_OCCUPATION", "s.LEFT_CONSTRUCTION", "s.LEFT_DISTANCE", "s.LEFT_NOTE",
+	"s.BACK_OCCUPATION", "s.BACK_CONSTRUCTION", "s.BACK_DISTANCE", "s.BACK_NOTE",
+	"s.RIGHT_OCCUPATION", "s.RIGHT_CONSTRUCTION", "s.RIGHT_DISTANCE", "s.RIGHT_NOTE",
+	"s.HOUSEKEEPING_STATUS", "s.FLOOD_AREA_STATUS", "s.FLOOD_AREA", "s.HOUSEKEEPING_REMARK"}
 
-// sqlBacaObjek - satu baris per lokasi; anak tunggal lewat LEFT JOIN (UNIQUE PARENT_ID, 186).
+// sqlBacaObjek - satu baris per lokasi; anak tunggal lewat LEFT JOIN (UNIQUE PARENT_ID, 186/187).
 func sqlBacaObjek(t tabelObjek) string {
 	return "SELECT " + strings.Join(kolomBacaObjek, ", ") + `
 FROM ` + t.loc + ` l
 LEFT JOIN ` + t.prop + ` p ON p.PARENT_ID = l.ID
 LEFT JOIN ` + t.risk + ` r ON r.PARENT_ID = p.ID
 LEFT JOIN ` + t.bang + ` b ON b.PARENT_ID = p.ID
+LEFT JOIN ` + t.sekitar + ` s ON s.PARENT_ID = p.ID
 WHERE l.PARENT_ID = :1
 ORDER BY l.SEQ_NO`
 }
@@ -86,6 +97,7 @@ func sqlHapusObjek(t tabelObjek) []string {
 	return []string{
 		"DELETE FROM " + t.risk + " WHERE PARENT_ID IN (" + prop + ")",
 		"DELETE FROM " + t.bang + " WHERE PARENT_ID IN (" + prop + ")",
+		"DELETE FROM " + t.sekitar + " WHERE PARENT_ID IN (" + prop + ")",
 		"DELETE FROM " + t.prop + " WHERE PARENT_ID IN (SELECT ID FROM " + t.loc + " WHERE PARENT_ID = :1)",
 		"DELETE FROM " + t.loc + " WHERE PARENT_ID = :1",
 	}
@@ -103,7 +115,9 @@ func sqlSisipLokasi(loc string) string {
 
 func sqlSisipProperty(prop string) string {
 	return "INSERT INTO " + prop + " (ID, PARENT_ID, OBJECT_NO, OBJECT_TYPE, OBJECT_NAME, IS_MATERIAL_DAMAGE, IS_TOP_RISK," +
-		" ROAD_TYPE, ROAD_NAME, BUILDING_NO, COUNTRY, PROVINCE, ALM_RISK_ID) VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, :13)"
+		" ROAD_TYPE, ROAD_NAME, BUILDING_NO, COUNTRY, PROVINCE, ALM_RISK_ID, OWNERSHIP, IS_PRODUCTION_PROCESS_FLAG," +
+		" IS_HOT_WORK_PROCESS_FLAG, IS_FLAMMABLE_ITEM_FLAG)" +
+		" VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, :13, :14, :15, :16, :17)"
 }
 
 func sqlSisipRisk(risk string) string {
@@ -113,6 +127,28 @@ func sqlSisipRisk(risk string) string {
 func sqlSisipBangunan(bang string) string {
 	return "INSERT INTO " + bang + " (ID, PARENT_ID, FLOOR_TYPE, NUMBER_OF_FLOOR, ROOF_TYPE, WALL_TYPE, PARTITION_TYPE," +
 		" SUPPORT_WALL_TYPE, OTHERS_TYPE) VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9)"
+}
+
+// sqlSisipSekitar - T_SURROUNDINGRISK (tiket 38): ID, PARENT_ID, empat sisi x 4 (urut FRONT, LEFT,
+// BACK, RIGHT), lalu HOUSEKEEPING_STATUS, FLOOD_AREA_STATUS, FLOOD_AREA, HOUSEKEEPING_REMARK.
+func sqlSisipSekitar(sekitar string) string {
+	return "INSERT INTO " + sekitar + " (ID, PARENT_ID," +
+		" FRONT_OCCUPATION, FRONT_CONSTRUCTION, FRONT_DISTANCE, FRONT_NOTE," +
+		" LEFT_OCCUPATION, LEFT_CONSTRUCTION, LEFT_DISTANCE, LEFT_NOTE," +
+		" BACK_OCCUPATION, BACK_CONSTRUCTION, BACK_DISTANCE, BACK_NOTE," +
+		" RIGHT_OCCUPATION, RIGHT_CONSTRUCTION, RIGHT_DISTANCE, RIGHT_NOTE," +
+		" HOUSEKEEPING_STATUS, FLOOD_AREA_STATUS, FLOOD_AREA, HOUSEKEEPING_REMARK)" +
+		" VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, :13, :14, :15, :16, :17, :18, :19, :20, :21, :22)"
+}
+
+// argSekitar - bind :3..:22 sqlSisipSekitar, urutan sama dengan daftar kolomnya.
+func argSekitar(s models.SurroundingRisk) []any {
+	k := db.KosongJadiNil
+	var arg []any
+	for _, x := range []models.SisiRisiko{s.Front, s.Left, s.Back, s.Right} {
+		arg = append(arg, k(x.Occupation), k(x.Construction), k(x.Distance), k(x.Note))
+	}
+	return append(arg, k(s.HousekeepingStatus), k(s.FloodAreaStatus), k(s.FloodArea), k(s.HousekeepingRemark))
 }
 
 // teksBool - boolean -> teks Pega. Baca: hanya teks "true" = benar (kosong/NULL = salah).
@@ -162,7 +198,20 @@ func (r *ObjekOracle) BacaObjek(ctx context.Context, id string) ([]models.ObjekF
 			RiskLocation: v("r.ASM_ADDRESS"), Territory: v("r.ASMRW"), City: v("r.ASM_CITY"), District: v("r.ASM_DISTRICT"),
 			Province: v("p.PROVINCE"), RiskAddressID: v("p.ALM_RISK_ID"), NumberOfFloor: v("b.NUMBER_OF_FLOOR"),
 			RoofType: v("b.ROOF_TYPE"), WallType: v("b.WALL_TYPE"), FloorType: v("b.FLOOR_TYPE"),
-			PartitionType: v("b.PARTITION_TYPE"), SupportWallType: v("b.SUPPORT_WALL_TYPE"), OtherType: v("b.OTHERS_TYPE")})
+			PartitionType: v("b.PARTITION_TYPE"), SupportWallType: v("b.SUPPORT_WALL_TYPE"), OtherType: v("b.OTHERS_TYPE"),
+			Ownership: v("p.OWNERSHIP"), IsProductionProcess: v("p.IS_PRODUCTION_PROCESS_FLAG") == teksBenar,
+			IsHotWorkProcess: v("p.IS_HOT_WORK_PROCESS_FLAG") == teksBenar, IsFlammableItem: v("p.IS_FLAMMABLE_ITEM_FLAG") == teksBenar,
+			SurroundingRisk: models.SurroundingRisk{
+				Front: models.SisiRisiko{Occupation: v("s.FRONT_OCCUPATION"), Construction: v("s.FRONT_CONSTRUCTION"),
+					Distance: v("s.FRONT_DISTANCE"), Note: v("s.FRONT_NOTE")},
+				Left: models.SisiRisiko{Occupation: v("s.LEFT_OCCUPATION"), Construction: v("s.LEFT_CONSTRUCTION"),
+					Distance: v("s.LEFT_DISTANCE"), Note: v("s.LEFT_NOTE")},
+				Back: models.SisiRisiko{Occupation: v("s.BACK_OCCUPATION"), Construction: v("s.BACK_CONSTRUCTION"),
+					Distance: v("s.BACK_DISTANCE"), Note: v("s.BACK_NOTE")},
+				Right: models.SisiRisiko{Occupation: v("s.RIGHT_OCCUPATION"), Construction: v("s.RIGHT_CONSTRUCTION"),
+					Distance: v("s.RIGHT_DISTANCE"), Note: v("s.RIGHT_NOTE")},
+				HousekeepingStatus: v("s.HOUSEKEEPING_STATUS"), FloodAreaStatus: v("s.FLOOD_AREA_STATUS"),
+				FloodArea: v("s.FLOOD_AREA"), HousekeepingRemark: v("s.HOUSEKEEPING_REMARK")}})
 	}
 	if err := baris.Err(); err != nil {
 		return nil, fmt.Errorf("repository: objek: %w", err)
@@ -196,8 +245,9 @@ func (r *ObjekOracle) GantiObjek(ctx context.Context, tx *db.Tx, id string, bari
 	}
 	k := db.KosongJadiNil
 	for i, o := range baris {
-		ids := make([]string, 4)
-		for j, seq := range []string{sequenceLocationList, sequenceProperty, sequenceRiskLocation, sequenceBuildingConstruct} {
+		ids := make([]string, 5)
+		for j, seq := range []string{sequenceLocationList, sequenceProperty, sequenceRiskLocation, sequenceBuildingConstruct,
+			sequenceSurroundingRisk} {
 			if ids[j], err = r.db.NomorBerikut(ctx, tx, seq); err != nil {
 				return err
 			}
@@ -213,11 +263,13 @@ func (r *ObjekOracle) GantiObjek(ctx context.Context, tx *db.Tx, id string, bari
 			{sqlSisipLokasi(t.loc), TabelLocationList, []any{ids[0], id, i + 1, uid}},
 			{sqlSisipProperty(t.prop), TabelProperty, []any{ids[1], ids[0], k(o.ObjectNo), k(o.ObjectType), k(o.ObjectName),
 				teksBool(o.IsMaterialDamage), teksBool(o.IsTopRisk), k(o.RoadType), k(o.RoadName), k(o.BuildingNo), k(o.Country),
-				k(o.Province), k(o.RiskAddressID)}},
+				k(o.Province), k(o.RiskAddressID), k(o.Ownership), teksBool(o.IsProductionProcess), teksBool(o.IsHotWorkProcess),
+				teksBool(o.IsFlammableItem)}},
 			{sqlSisipRisk(t.risk), TabelRiskLocation, []any{ids[2], ids[1], k(o.RiskLocation), k(o.City), k(o.District),
 				k(o.Territory), k(o.ZipCode)}},
 			{sqlSisipBangunan(t.bang), TabelBuildingConstruction, []any{ids[3], ids[1], k(o.FloorType), k(o.NumberOfFloor),
 				k(o.RoofType), k(o.WallType), k(o.PartitionType), k(o.SupportWallType), k(o.OtherType)}},
+			{sqlSisipSekitar(t.sekitar), TabelSurroundingRisk, append([]any{ids[4], ids[1]}, argSekitar(o.SurroundingRisk)...)},
 		}
 		for _, l := range langkah {
 			h, err := jalankan(ctx, tx, l.q, "menyisipkan "+l.tabel, l.arg...)

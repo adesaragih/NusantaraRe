@@ -40,7 +40,7 @@ const dropdown = [...HTML.matchAll(/<select[^>]*>([\s\S]*?)<\/select>/g)].map((m
 describe('FormOpportunity = gambar Pega (keadaan awal)', () => {
   it('akar halaman memasang kelas modul dan judul Opportunity', () => {
     expect(HTML.startsWith('<div class="nbfacin">')).toBe(true)
-    expect(HTML).toContain(`<h4 class="panel__title">${F.judul}</h4>`)
+    expect(HTML).toContain(`<h2 class="inbox__judul">${F.judul}</h2>`)
   })
 
   it('urutan label: atas (tanggal, Owner), kolom kiri, kolom kanan, bawah - Type Of Facultative belum tampil', () => {
@@ -154,10 +154,11 @@ describe('FormOpportunity = gambar Pega (keadaan awal)', () => {
   })
 
   it('tombol Create opportunity di kanan atas, sebaris dengan judul (permintaan work owner 03-10-2026); popup tertutup', () => {
-    const kepala = HTML.slice(HTML.indexOf('<div class="nbf-kepala">'), HTML.indexOf('<div class="nbf-opp__atas">'))
-    expect(kepala).toContain(`<h4 class="panel__title">${F.judul}</h4>`)
+    // Templat Kelola User: kepala `inbox__kepala`, judul kiri, tombol kanan.
+    const kepala = HTML.slice(HTML.indexOf('<header class="inbox__kepala">'), HTML.indexOf('</header>'))
+    expect(kepala).toContain(`<h2 class="inbox__judul">${F.judul}</h2>`)
     expect(kepala).toContain(`<button type="button" class="btn btn--primary">${KEPALA_PORTAL.buat.label}</button>`)
-    expect(kepala.indexOf('panel__title')).toBeLessThan(kepala.indexOf('btn--primary'))
+    expect(kepala.indexOf('inbox__judul')).toBeLessThan(kepala.indexOf('btn--primary'))
     expect(HTML).not.toMatch(/type="submit"/)
     expect(HTML).not.toContain(POPUP.judul)
   })

@@ -1221,6 +1221,25 @@ Dibangun `GET /api/nbfacin/risk-address` menurut RD `BrowseRisksAddress_RD` `[te
 (`.PostalCode = RW.ZipCode` — `RW.ZipCode` adalah syarat JOIN, bukan saringan). Tabel warisan `RISKADDRESS`, `RW` (baca saja,
 DDL terverifikasi). Keputusan agent A116–A122 menunggu konfirmasi (`issues/36-choose-clear-risk-address.md`). Tanpa migrasi.
 
+## Keputusan work owner — 3 Oktober 2026, simpan alamat risiko baru (tiket 37)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 81 | W-1 (diteruskan sesi `nusantarare-0f`: Save memanggil prosedur `pooldata.InsertUpdateRISKADDRESS`) bertentangan dengan ADR-0043 (*"jangan ada lagi pemanggilan procedure, segala procedure hardcode dalam skrip"*). Ditanyakan langsung ke work owner di sesi ini (AskUserQuestion) | **"Port to Go, keep ADR-0043"** — W-1 diganti: INSERT dari Go di transaksi aplikasi; ID dengan ekspresi prosedur yang sama `GETCURRENTSITE \|\| LPAD(TO_CHAR(RISKADDRESS_SEQ.NEXTVAL),12,'0')` (fungsi hanya untuk awalan situs — isinya tidak ada di korpus); nol CALL prosedur, tanpa ROLLBACK tersembunyi |
+
+W-2 (akumulasi ditunda) dan W-3 (ID baru dikembalikan) tetap. Keputusan agent A123–A127 menunggu konfirmasi
+(`issues/37-add-alamat-risiko.md`). Tanpa migrasi.
+
+## Tiket 38 — sub-tab Surrounding Risk (backend), diteruskan sesi `nusantarare-0f`
+
+`GET`/`PUT /api/nbfacin/kasus/{caseId}/objek` membawa Ownership, tiga flag proses, dan Surrounding Risk; `GET
+/api/nbfacin/occupation` menurut RD `BrowseOccupationFacInFIRE_RD` `[terverifikasi]`. Migrasi **187**: empat kolom rancangan
+`T_PROPERTY` (ALTER ADD) + `T_SURROUNDINGRISK` utuh dengan 18 kolom baru (amandemen loader `amandemenSekitar`; skema 79 tabel
+/ **1.412** kolom). Ditulis, belum dijalankan — urutan DEV: 182 → 183 → 184 → 185 → 186 → **187**. Keputusan agent
+A129–A131 menunggu konfirmasi (`issues/38-surrounding-risk.md`). Tanpa keputusan work owner baru; daftar dropdown
+(`DDL\FrontConstruction.xml`, `Ownership.xml`, `FloodAreaStatus.xml`, `HousekeepingStatus.xml`, `FloodArea.xml`,
+ditambahkan work owner) dipakai frontend saja — server tidak memvalidasi enumerasi.
+
 ## Yang belum diputuskan
 
 

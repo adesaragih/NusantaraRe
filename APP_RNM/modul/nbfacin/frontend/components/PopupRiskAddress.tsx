@@ -13,14 +13,15 @@
 //
 // Keputusan agent (tiket 36): H-1 saringan = salinan medan objek saat dibuka (diisi awal dari objek), bukan
 // terikat ke objek - mengetik di saringan tidak mengubah objek sebelum Pilih. H-2 grid kosong sampai Search. H-3
-// Pilih mengisi objek di layar; tersimpan lewat Save tab Object (sejalan E-1). H-4 `Add` (harness
-// `ChooseRiskLocation`, alamat baru ke RISKADDRESS) = tahap berikut - nonaktif.
+// Pilih mengisi objek di layar; tersimpan lewat Save tab Object (sejalan E-1). `Add` (tiket 37) membuka
+// `PopupTambahRisk` MENGGANTIKAN popup ini (pola E-6); alamat yang tersimpan langsung mengisi objek.
 
 import { useRef, useState } from 'react'
 
 import { Field, Gagal, Halaman, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
-import { cariRiskAddress, type BarisRisk, type HalamanRisk, type SaringRisk } from '../api'
+import { cariRiskAddress, type AlamatBaru, type BarisRisk, type HalamanRisk, type SaringRisk } from '../api'
 import { POPUP_RISK as R, TEKS_RISK } from '../labels'
+import PopupTambahRisk from './PopupTambahRisk'
 
 /** Ada minimal satu saringan terisi. */
 export function adaSaring(s: SaringRisk): boolean {
@@ -31,11 +32,15 @@ export default function PopupRiskAddress({
   awal,
   onTutup,
   onPilih,
+  onBaru,
 }: {
   awal: SaringRisk
   onTutup: () => void
   onPilih: (b: BarisRisk) => void
+  /** Alamat baru tersimpan lewat Add (tiket 37) beserta ID barunya. */
+  onBaru: (a: AlamatBaru, id: string) => void
 }) {
+  const [menambah, setMenambah] = useState(false)
   const [saring, setSaring] = useState<SaringRisk>(awal)
   const [hasil, setHasil] = useState<HalamanRisk | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
@@ -70,6 +75,11 @@ export default function PopupRiskAddress({
 
   const set = (k: keyof SaringRisk) => (v: string) => setSaring((s) => ({ ...s, [k]: v }))
 
+  if (menambah) {
+    // Close = kembali ke popup pencari (Pega: window.close jendela Add).
+    return <PopupTambahRisk onTutup={() => setMenambah(false)} onTersimpan={onBaru} />
+  }
+
   return (
     <Modal
       judul={R.judul}
@@ -81,7 +91,7 @@ export default function PopupRiskAddress({
           <button type="submit" className="btn btn--primary" disabled={memuat}>
             {R.cari.label}
           </button>
-          <button type="button" className="btn btn--ghost" disabled>
+          <button type="button" className="btn btn--ghost" onClick={() => setMenambah(true)}>
             {R.tambah.label}
           </button>
         </>

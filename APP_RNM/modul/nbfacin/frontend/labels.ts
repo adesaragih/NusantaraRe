@@ -518,3 +518,133 @@ export const TEKS_RISK = {
   isiSaring: 'Isi minimal satu saringan lalu tekan Search.',
   tanpaHasil: 'Tidak ada alamat risiko yang cocok.',
 } as const
+
+/**
+ * Popup Add alamat risiko (tiket 37) - tombol `Add` popup Choose Risk Location (ChooseRiskAddress sel 74 ->
+ * harness `ChooseRiskLocation` -> section `NB FacIn\Section\InputRiskAddress.xml`). Label = `pyLabelFieldValue`
+ * sel 3-21, tombol sel 28 `Save` / 29 `Close` (`pyLabel`). Medan tersembunyi (`never`): Code, Type, Status Trans
+ * Pusat - tidak diport. Judul modal = label tombol pembukanya (harness tanpa WindowName).
+ */
+export const POPUP_TAMBAH_RISK = {
+  judul: 'Add',
+  country: { sel: '3', tag: 'pyLabelFieldValue', label: 'Country' },
+  province: { sel: '5', tag: 'pyLabelFieldValue', label: 'Province' },
+  city: { sel: '7', tag: 'pyLabelFieldValue', label: 'City' },
+  district: { sel: '9', tag: 'pyLabelFieldValue', label: 'District' },
+  territory: { sel: '11', tag: 'pyLabelFieldValue', label: 'Territory' },
+  zipCode: { sel: '13', tag: 'pyLabelFieldValue', label: 'Zip Code' },
+  title: { sel: '20', tag: 'pyLabelFieldValue', label: 'Title' },
+  address: { sel: '21', tag: 'pyLabelFieldValue', label: 'Address' },
+  simpan: { sel: '28', tag: 'pyLabel', label: 'Save' },
+  tutup: { sel: '29', tag: 'pyLabel', label: 'Close' },
+} as const
+
+/**
+ * Pilihan Title - tangkapan layar work owner 03-10-2026 (sumber Pega `associated`, aturan properti tidak ada di
+ * korpus). Urutan sama dengan REGEXP `(DESA|DUSUN|GANG|GEDUNG|JL\.|KOMPLEK|PERUMAHAN|OTHERS)` di
+ * `NB FacIn\RDBList\SearchAccumulationbypersetase_SQL.xml` (diuji). Tanpa pilihan kosong (`pyHasNoSelection=false`)
+ * -> nilai awal = pilihan pertama (DESA). Nilai = teks (dirangkai ke Risk Location).
+ */
+export const OPSI_TITLE_RISK = ['DESA', 'DUSUN', 'GANG', 'GEDUNG', 'JL.', 'KOMPLEK', 'PERUMAHAN', 'OTHERS'] as const
+
+/** Teks sistem baru popup Add - BUKAN dari Pega. */
+export const TEKS_TAMBAH_RISK = {
+  /** Keputusan agent I-4: Pega tidak memvalidasi; baris master kosong dicegah. */
+  wajib: 'Zip Code dan Address wajib diisi.',
+  menyimpan: 'Menyimpan…',
+  tanpaZip: 'Zip Code tidak ditemukan di tabel RW.',
+} as const
+
+/**
+ * Sub-tab Surrounding Risk (tiket 38) - `NB FacIn\Section\RiskAround.xml`. Empat blok sisi (pyTitle Front / Left /
+ * Back / Right) masing-masing: Occupation (autocomplete `D_BrowseOccupationFacInFIRE`), Construction (dropdown),
+ * Distance (meter), Note (baca-saja, diisi nama Occupation). Sel per sisi diuji `labels.test.ts`.
+ */
+export const SISI_SEKITAR = [
+  { kunci: 'front', judul: 'Front', occupation: '9', construction: '12', distance: '13', note: '14' },
+  { kunci: 'left', judul: 'Left', occupation: '23', construction: '26', distance: '27', note: '28' },
+  { kunci: 'back', judul: 'Back', occupation: '37', construction: '40', distance: '41', note: '42' },
+  { kunci: 'right', judul: 'Right', occupation: '51', construction: '54', distance: '55', note: '56' },
+] as const
+
+/** Label medan per sisi (`pyLabelFieldValue`, sama di keempat sisi). */
+export const MEDAN_SISI = {
+  occupation: 'Occupation',
+  construction: 'Construction',
+  distance: 'Distance (meter)',
+  note: 'Note',
+} as const
+
+/** Blok Other Description (sel 59 / 70, pyTitle) - label `pyLabelFieldValue` / `pyCheckboxCaption`. */
+export const LAIN_SEKITAR = {
+  judul: { sel: '', tag: 'pyTitle', label: 'Other Description' },
+  ownership: { sel: '65', tag: 'pyLabelFieldValue', label: 'Ownership' },
+  housekeepingStatus: { sel: '66', tag: 'pyLabelFieldValue', label: 'House keeping Status' },
+  floodAreaStatus: { sel: '67', tag: 'pyLabelFieldValue', label: 'Flood Area Status' },
+  floodArea: { sel: '68', tag: 'pyLabelFieldValue', label: 'Flood Area' },
+  housekeepingRemark: { sel: '69', tag: 'pyLabelFieldValue', label: 'Housekeeping Remark' },
+  productionProcess: { sel: '77', tag: 'pyCheckboxCaption', label: 'Production Process' },
+  hotWork: { sel: '78', tag: 'pyCheckboxCaption', label: 'Job With a Chance of Fire' },
+  flammable: { sel: '79', tag: 'pyCheckboxCaption', label: 'Flammable Item' },
+} as const
+
+/** Flood Area tampil hanya bila Flood Area Status = "0" (sel 68 `pyVisible OTHER`). */
+export const FLOOD_STATUS_TAMPIL = '0'
+
+/**
+ * Daftar dropdown Surrounding Risk - `[terverifikasi]` aturan properti Pega (PromptList) yang ditambahkan work owner
+ * 03-10-2026 di `D:\migrasi\RNM\DDL\`: value = `pyStandardValue`, label = `pyLocalizedValue`, pasangan PER
+ * rowdata (diuji `labels.test.ts`).
+ * - `FrontConstruction.xml` (`SURROUNDINGRISK!FRONTCONSTRUCTION`): baris pertama tanpa nilai = "Silahkan pilih".
+ *   Left / Back / Right memakai daftar yang sama `[dugaan]` - hanya aturan Front yang dikirim; tangkapan layar
+ *   menampilkan "Silahkan pilih" di keempat sisi. Nilai tersimpan = teks panjang (hingga ~210 karakter).
+ * - `Ownership.xml`, `HousekeepingStatus.xml`, `FloodAreaStatus.xml`: TANPA baris kosong -> nilai awal = pilihan
+ *   pertama "Not Informed" (cocok dengan data contoh: Ownership "2", HousekeepingStatus "0", FloodAreaStatus "2").
+ * - `FloodArea.xml` (`SURROUNDINGRISK!FLOODAREA`): baris pertama tanpa nilai = "Silahkan pilih"; tampil hanya bila
+ *   Flood Area Status = Yes ("0"). Nilainya dipakai `"0"+FloodArea` di `SetFloodParamFacIn_ACT`.
+ */
+export const OPSI_CONSTRUCTION = [
+  { value: 'Reinforce concrete', label: 'I' },
+  {
+    value:
+      'Building with all structural members and at least 80% of the walls constructed with non - combustible materials, roof covering to be non - combustible, but roof supports may be of wood or other combustible materials',
+    label: 'II',
+  },
+  { value: 'All other buildings', label: 'III' },
+]
+export const CONSTRUCTION_KOSONG = 'Silahkan pilih'
+export const OPSI_OWNERSHIP = [
+  { value: '2', label: 'Not Informed' },
+  { value: '0', label: 'Own' },
+  { value: '1', label: 'Rent' },
+]
+export const OPSI_HOUSEKEEPING = [
+  { value: '0', label: 'Not Informed' },
+  { value: '1', label: 'Good' },
+  { value: '2', label: 'Fair' },
+  { value: '3', label: 'Poor' },
+]
+export const OPSI_FLOOD_STATUS = [
+  { value: '2', label: 'Not Informed' },
+  { value: '0', label: 'Yes' },
+  { value: '1', label: 'No' },
+]
+export const OPSI_FLOOD_AREA = [
+  { value: '1', label: 'Low' },
+  { value: '2', label: 'Medium' },
+  { value: '3', label: 'High' },
+  { value: '4', label: 'Very High' },
+]
+
+/** Teks Surrounding Risk. */
+export const TEKS_SEKITAR = {
+  /**
+   * Paragraf `InputFireObject_Q1_RiskFactorOption` (sel 76; isi aturan tidak ada di korpus) - teks dari tangkapan
+   * layar work owner 03-10-2026.
+   */
+  faktorRisiko: 'Choose the factors below and give a description for any of it. Please Skip this step if the factor you need is not available.',
+  /** `Activity\NegativeIsNotAllowed.xml` (`Local.notminus`). */
+  jarakMinus: 'Jarak Resiko Sekitar tidak boleh Minus',
+  /** Sistem baru: saran Occupation kosong. */
+  tanpaOccupation: 'Tidak ada occupation yang cocok.',
+} as const

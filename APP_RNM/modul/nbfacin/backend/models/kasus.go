@@ -77,3 +77,14 @@ type RiskAddress struct {
 type SaringRisk struct {
 	Address, ZipCode, Country, Province, City, District, Territory string
 }
+
+// BarisRW - satu saran Zip Code (tiket 37): baris POOLDATA.RW (NOTE = territory, NATION = negara).
+type BarisRW struct {
+	ZipCode, TerritoryName, DistrictName, CityName, ProvinceName, NationName string
+}
+
+// AlamatBaru - isian popup Add alamat risiko (tiket 37) = parameter P_* prosedur
+// InsertUpdateRISKADDRESS tanpa P_ID.
+type AlamatBaru struct {
+	NationName, ProvinceName, DistrictName, CityName, TerritoryName, Title, Address, PostalCode string
+}

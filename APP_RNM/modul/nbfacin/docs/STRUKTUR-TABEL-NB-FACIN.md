@@ -1,11 +1,12 @@
 # Struktur Tabel — NB FacIn: PETA TABEL WARISAN yang dibaca + tabel yang dibuat
 
-Modul ini **membuat delapan tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
+Modul ini **membuat sembilan tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
 `T_QUOTATIONDATA` **sebagian** (migrasi 182/183, tiket 31 / butir 78.4), `T_CEDINGCOLIST` utuh (185, tiket 34), dan tabel tab Object FIRE (186, tiket 35: `T_LOCATIONLIST` /
-`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh) — dan **menulis**
+`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh) — dan **menulis**
 baris `T_WORK_POLIS` milik premiumlistlife (K-064; tidak dibuat, tidak dipetakan kolomnya di sini). Selebihnya ia hanya
-**membaca** dua belas tabel yang sudah ada — enam tabel limit
-akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), dan tabel bisnis `BUSINESS` (tiket 28). Enam tabel limit akseptasi yang sudah ada
+**membaca** tiga belas tabel yang sudah ada — enam tabel limit
+akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), tabel bisnis `BUSINESS` (tiket 28), `MARKETINGOFFICER` (31), `AGENT`
+(33), `RISKADDRESS` (36; juga DISISIPI tiket 37), `RW` (36/37), `OCCUPATION` (38) — sama dengan bab "Tabel warisan" `MODUL.md`. Enam tabel limit akseptasi yang sudah ada
 di `POOLDATA`, dengan nama tabel dan kolom **verbatim**. Berkas ini **peta**, bukan DDL: hanya kolom yang dibaca
 repository (`backend/repository/limit.go`). Ke-enamnya dinyatakan di `MODUL.md` bab "Tabel warisan: dibaca, tidak
 dibuat".
@@ -193,11 +194,12 @@ induk `T_GENERAL_POLIS`. Satu baris per objek, urut `SEQ_NO`; diganti utuh tiap 
 
 ## T_PROPERTY
 
-Tiket 35 — migrasi 186, **sebagian**: tanpa `TOTAL_TSI` (uang) dan tanpa tiga flag proses yang tidak dipakai layar
-(`IS_FLAMMABLE_ITEM_FLAG`, `IS_HOT_WORK_PROCESS_FLAG`, `IS_PRODUCTION_PROCESS_FLAG`) serta `OWNERSHIP` — ditambah tiket 23.
+Tiket 35 — migrasi 186, **sebagian**: tanpa `TOTAL_TSI` (uang) — ditambah tiket 23. Tiket 38 — migrasi 187 menambah
+empat kolom rancangan `OWNERSHIP`, `IS_PRODUCTION_PROCESS_FLAG`, `IS_HOT_WORK_PROCESS_FLAG`, `IS_FLAMMABLE_ITEM_FLAG`
+(`ALTER TABLE … ADD`, tipe rancangan).
 Satu baris per lokasi (`UQ_T_PROPERTY_PARENT`). Boolean disimpan teks `true`/`false` (bentuk data fixture).
 
-| Kolom | Tipe | Tipe DDL (migrasi 186) | Isi |
+| Kolom | Tipe | Tipe DDL (migrasi 186/187) | Isi |
 | --- | --- | --- | --- |
 | `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_PROPERTY` |
 | `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
@@ -215,6 +217,10 @@ Satu baris per lokasi (`UQ_T_PROPERTY_PARENT`). Boolean disimpan teks `true`/`fa
 | `ROAD_NAME` | teks | VARCHAR2(500) | Address — `.Property.RoadName` (sel 29) |
 | `ROAD_TYPE` | teks | VARCHAR2(50) | Type — `.Property.RoadType` (sel 28) |
 | `CURRENCY_CODE` | teks | VARCHAR2(10) DEFAULT 'UNKNOWN' NOT NULL | K-069 (bawaan; tidak ditulis layar) |
+| `OWNERSHIP` | teks | VARCHAR2(50) | Ownership — `.Property.Ownership` (`RiskAround` sel 65); kode apa adanya (187) |
+| `IS_PRODUCTION_PROCESS_FLAG` | teks | VARCHAR2(10) | `.Property.IsProductionProcessFlag` (sel 77) `true`/`false` (187) |
+| `IS_HOT_WORK_PROCESS_FLAG` | teks | VARCHAR2(10) | `.Property.IsHotWorkProcessFlag` (sel 78) `true`/`false` (187) |
+| `IS_FLAMMABLE_ITEM_FLAG` | teks | VARCHAR2(10) | `.Property.IsFlammableItemFlag` (sel 79) `true`/`false` (187) |
 
 ## T_RISKLOCATION
 
@@ -251,6 +257,41 @@ Satu baris per property (`UQ_T_BUILDINGCONSTR_PARENT`).
 | `SUPPORT_WALL_TYPE` | teks | VARCHAR2(50) | **baru** — `.SupportWallType` (sel 57) |
 | `OTHERS_TYPE` | teks | VARCHAR2(50) | **baru** — `.OthersType` (sel 58) |
 
+## T_SURROUNDINGRISK
+
+Tiket 38 — migrasi 187, **utuh** (rancangan: jalur `LocationList/Property/SurroundingRisk`, induk `T_PROPERTY`) + 18 kolom
+**baru** (bukan di rancangan; A130, amandemen loader `amandemenSekitar`) dari `NB FacIn\Section\RiskAround.xml`.
+Satu baris per property (`UQ_T_SURROUNDINGRISK_PARENT`). Kode disimpan apa adanya — server tidak mencocokkan ke daftar
+pilihan (aturan properti `DDL\FrontConstruction.xml` / `Ownership.xml` / `FloodAreaStatus.xml` /
+`HousekeepingStatus.xml` / `FloodArea.xml` dipakai frontend).
+
+| Kolom | Tipe | Tipe DDL (migrasi 187) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_SURROUNDINGRISK` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_PROPERTY.ID` |
+| `FLOOD_AREA_STATUS` | teks | VARCHAR2(50) | Flood Area Status (sel 67) — kode apa adanya |
+| `HOUSEKEEPING_STATUS` | teks | VARCHAR2(50) | Housekeeping Status (sel 66) — kode apa adanya |
+| `FRONT_OCCUPATION` | teks | VARCHAR2(1000) | **baru** — `.Property.SurroundingRisk.FrontOccupation` (sel 9) = `OCCUPATION.OLDID` (lebar = sumber, butir 80) |
+| `FRONT_CONSTRUCTION` | teks | VARCHAR2(500) | **baru** — `.FrontConstruction`; nilai standar terpanjang 215 bita |
+| `FRONT_DISTANCE` | teks | VARCHAR2(50) | **baru** — `.FrontDistance`; teks angka 0..100000, ≤ 2 desimal (A129) |
+| `FRONT_NOTE` | teks | VARCHAR2(1000) | **baru** — `.FrontNote` (diisi `OCCUPATION.NAME`; lebar = sumber, butir 80) |
+| `LEFT_OCCUPATION` | teks | VARCHAR2(1000) | **baru** — sisi Left, pola sama (sel 23–28) |
+| `LEFT_CONSTRUCTION` | teks | VARCHAR2(500) | **baru** |
+| `LEFT_DISTANCE` | teks | VARCHAR2(50) | **baru** |
+| `LEFT_NOTE` | teks | VARCHAR2(1000) | **baru** |
+| `BACK_OCCUPATION` | teks | VARCHAR2(1000) | **baru** — sisi Back (sel 37–42) |
+| `BACK_CONSTRUCTION` | teks | VARCHAR2(500) | **baru** |
+| `BACK_DISTANCE` | teks | VARCHAR2(50) | **baru** |
+| `BACK_NOTE` | teks | VARCHAR2(1000) | **baru** |
+| `RIGHT_OCCUPATION` | teks | VARCHAR2(1000) | **baru** — sisi Right (sel 51–56) |
+| `RIGHT_CONSTRUCTION` | teks | VARCHAR2(500) | **baru** |
+| `RIGHT_DISTANCE` | teks | VARCHAR2(50) | **baru** |
+| `RIGHT_NOTE` | teks | VARCHAR2(1000) | **baru** |
+| `FLOOD_AREA` | teks | VARCHAR2(50) | **baru** — `.FloodArea` (sel 68); kode apa adanya (aturan properti `DDL\FloodArea.xml`: 4 nilai, 1 bita) |
+| `HOUSEKEEPING_REMARK` | teks | VARCHAR2(500) | **baru** — `.HousekeepingRemark` (sel 69) |
+
 ## MARKETINGOFFICER
 
 Tiket 31 (pilihan Marketing Name). Tabel warisan `POOLDATA`, **baca saja**. Sumber tipe `[terverifikasi]`: DDL
@@ -280,9 +321,11 @@ Hanya lima kolom di bawah yang dibaca.
 
 ## RISKADDRESS
 
-Tiket 36 (popup Choose Risk Address). Tabel warisan `POOLDATA.RISKADDRESS`, **baca saja**. Sumber tipe `[terverifikasi]`:
+Tiket 36 (popup Choose Risk Address) dan 37 (Add). Tabel warisan `POOLDATA.RISKADDRESS`, **dibaca dan DISISIPI** (tiket 37:
+alamat baru, port Go prosedur `InsertUpdateRISKADDRESS`, butir 81 — ID `GETCURRENTSITE || LPAD(TO_CHAR(RISKADDRESS_SEQ.NEXTVAL),12,'0')`, ≤ 15 karakter
+memakai fungsi dan sequence POOLDATA yang ada; tidak dibuat modul ini). Sumber tipe `[terverifikasi]`:
 DDL `D:\migrasi\RNM\DDL\RISKADDRESS.txt` (16 kolom, semua VARCHAR2(4000), tanpa PK). Dibaca sembilan kolom (kolom hasil RD
-`BrowseRisksAddress_RD`).
+`BrowseRisksAddress_RD`); kesembilan kolom yang sama **ditulis** saat alamat baru disisipkan (tiket 37).
 
 | Kolom | Tipe DDL | Dibaca untuk |
 | --- | --- | --- |
@@ -298,10 +341,29 @@ DDL `D:\migrasi\RNM\DDL\RISKADDRESS.txt` (16 kolom, semua VARCHAR2(4000), tanpa 
 
 ## RW
 
-Tiket 36. Tabel warisan `POOLDATA.RW`, **baca saja** — hanya untuk JOIN RD (`ASM-FW-GISFW-Int-RW`, prefix `RW`, INNER JOIN
+Tiket 36/37. Tabel warisan `POOLDATA.RW`, **baca saja** — JOIN RD tiket 36 dan saran Zip Code tiket 37; JOIN RD (`ASM-FW-GISFW-Int-RW`, prefix `RW`, INNER JOIN
 `.PostalCode = RW.ZipCode`; kelas → tabel `[dugaan]`). Sumber tipe `[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\RW.txt` (19 kolom;
 `RDBMASTERRW.txt` adalah prosedur penulisnya).
 
 | Kolom | Tipe DDL | Dibaca untuk |
 | --- | --- | --- |
-| `ZIPCODE` | VARCHAR2(4000) | syarat JOIN `= RISKADDRESS.POSTALCODE` |
+| `ZIPCODE` | VARCHAR2(4000) | syarat JOIN `= RISKADDRESS.POSTALCODE` (tiket 36); saran Zip Code "diawali" (tiket 37) |
+| `NOTE` | VARCHAR2(4000) | Territory saran Zip Code (RD `.Note`, tiket 37) |
+| `DISTRICTNAME` | VARCHAR2(4000) | District saran Zip Code |
+| `CITYNAME` | VARCHAR2(4000) | City saran Zip Code |
+| `PROVINCENAME` | VARCHAR2(4000) | Province saran Zip Code |
+| `NATION` | VARCHAR2(100) | Country saran Zip Code — RD `.NATIONNAME`; alias `NATION as "NATIONNAME"` `[terverifikasi]` `RDBList\BrowseRW2_SQL.xml` |
+| `STS_AKTIF` | VARCHAR2(10) | saringan RD `= "1"` (tiket 37) |
+
+## OCCUPATION
+
+Tiket 38 (saran Occupation Surrounding Risk). Tabel warisan `POOLDATA.OCCUPATION`, **baca saja**. Sumber tipe
+`[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\OCCUPATION.txt`; kelas → tabel `[terverifikasi]`
+`RDBList\SearchOccupationIDSQL.xml` (kelas `ASM-FW-GISFW-INT-OCCUPATION`, `FROM OCCUPATION`). RD
+`BrowseOccupationFacInFIRE_RD`. Hanya tiga kolom di bawah yang dibaca.
+
+| Kolom | Tipe DDL | Dibaca untuk |
+| --- | --- | --- |
+| `OLDID` | VARCHAR2(1000) | nilai saran (`.OldID`) → `T_SURROUNDINGRISK.*_OCCUPATION`; dicari; urutan kedua |
+| `NAME` | VARCHAR2(1000) | nama (`.Name`) → `*_NOTE` di layar; dicari; urutan pertama |
+| `TYPE` | VARCHAR2(1000) | saringan RD `.Type = Param.TYPE` = `'FIRE'` |

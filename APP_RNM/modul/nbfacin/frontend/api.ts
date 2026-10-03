@@ -259,6 +259,39 @@ export interface ObjekFire {
   partitionType: string
   supportWallType: string
   otherType: string
+  /** `.Property.Ownership` (Surrounding Risk, tiket 38). */
+  ownership: string
+  /** `.Property.IsProductionProcessFlag`. */
+  isProductionProcess: boolean
+  /** `.Property.IsHotWorkProcessFlag`. */
+  isHotWorkProcess: boolean
+  /** `.Property.IsFlammableItemFlag`. */
+  isFlammableItem: boolean
+  /** `.Property.SurroundingRisk` (tiket 38). */
+  surroundingRisk: SurroundingRisk
+}
+
+/** Satu sisi Surrounding Risk - `.{Front|Left|Back|Right}{Occupation|Construction|Distance|Note}`. */
+export interface SisiRisiko {
+  /** OCCUPATION.OLDID terpilih (autocomplete menyimpan `.OldID`). */
+  occupation: string
+  construction: string
+  /** Teks angka, ≥ 0, 2 desimal (pxNumber). */
+  distance: string
+  /** Diisi OCCUPATION.NAME saat memilih Occupation. */
+  note: string
+}
+
+/** `.Property.SurroundingRisk`. */
+export interface SurroundingRisk {
+  front: SisiRisiko
+  left: SisiRisiko
+  back: SisiRisiko
+  right: SisiRisiko
+  housekeepingStatus: string
+  floodAreaStatus: string
+  floodArea: string
+  housekeepingRemark: string
 }
 
 /** Jawaban baca / simpan tab Object. */
@@ -314,4 +347,54 @@ export function cariRiskAddress(saring: SaringRisk, halaman: number): Promise<Ha
   const kueri: Record<string, string | number> = { halaman }
   for (const [k, v] of Object.entries(saring)) if (v.trim() !== '') kueri[k] = v.trim()
   return minta<HalamanRisk>('/api/nbfacin/risk-address', { kueri })
+}
+
+/** Satu baris RW untuk saran Zip Code (RD `BrowseRW_RD`, STS_AKTIF = "1"). */
+export interface BarisRW {
+  zipCode: string
+  /** `.Note` -> Territory. */
+  territoryName: string
+  districtName: string
+  cityName: string
+  provinceName: string
+  nationName: string
+}
+
+/** `GET /api/nbfacin/rw?zipCode=` - saran Zip Code popup Add (tiket 37). */
+export function cariZipCode(zipCode: string): Promise<{ baris: BarisRW[] }> {
+  return minta<{ baris: BarisRW[] }>('/api/nbfacin/rw', { kueri: { zipCode: zipCode.trim() } })
+}
+
+/** Isian popup Add - urutan kolom yang ditulis ke RISKADDRESS (urutan parameter `InsertUpdateRISKADDRESS` Pega). */
+export interface AlamatBaru {
+  nationName: string
+  provinceName: string
+  districtName: string
+  cityName: string
+  territoryName: string
+  title: string
+  address: string
+  postalCode: string
+}
+
+/**
+ * `POST /api/nbfacin/risk-address` - Save popup Add: INSERT RISKADDRESS dari Go, TANPA memanggil prosedur
+ * (ADR-0043; register butir 81 menggantikan W-1); `id` = ID baru dengan ekspresi prosedur Pega
+ * `GETCURRENTSITE || LPAD(RISKADDRESS_SEQ.NEXTVAL, 12, '0')`.
+ */
+export function simpanAlamatBaru(a: AlamatBaru): Promise<{ id: string }> {
+  return minta<{ id: string }>('/api/nbfacin/risk-address', { metode: 'POST', badan: a })
+}
+
+/** Satu baris OCCUPATION untuk saran Occupation (data page `D_BrowseOccupationFacInFIRE`, TYPE = 'FIRE'). */
+export interface BarisOccupation {
+  /** `.OldID` - nilai yang disimpan. */
+  oldId: string
+  /** `.Name` - masuk ke Note sisi itu. */
+  name: string
+}
+
+/** `GET /api/nbfacin/occupation?cari=` - saran Occupation Surrounding Risk (tiket 38). */
+export function cariOccupation(cari: string): Promise<{ baris: BarisOccupation[] }> {
+  return minta<{ baris: BarisOccupation[] }>('/api/nbfacin/occupation', { kueri: { cari: cari.trim() } })
 }

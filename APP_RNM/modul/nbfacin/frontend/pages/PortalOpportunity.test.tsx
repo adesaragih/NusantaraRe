@@ -22,7 +22,7 @@ describe('PortalOpportunity = unsur yang TAMPIL di Pega', () => {
   })
 
   it('judul dan tombol Create opportunity, berurutan', () => {
-    const judul = HTML.indexOf(`>${KEPALA_PORTAL.judul.label}</h4>`)
+    const judul = HTML.indexOf(`<h2 class="inbox__judul">${KEPALA_PORTAL.judul.label}</h2>`)
     const tombol = HTML.indexOf(`>${KEPALA_PORTAL.buat.label}</button>`)
     expect(judul).toBeGreaterThan(-1)
     expect(tombol).toBeGreaterThan(judul)
@@ -55,7 +55,7 @@ describe('PortalOpportunity = unsur yang TAMPIL di Pega', () => {
   })
 
   it('kotak saring dapat diisi; Filter / Enter mencari dari halaman 1; ✕ mengosongkan dan memuat ulang', () => {
-    const saring = HTML.slice(HTML.indexOf('class="nbf-saring"'), HTML.indexOf('class="table-wrap"'))
+    const saring = HTML.slice(HTML.indexOf('class="toolbar"'), HTML.indexOf('class="toolbar__spacer"'))
     expect(saring).not.toContain('disabled')
     expect(saring).toContain(`<button type="submit" class="btn btn--sm">${SARING_PORTAL.tombol.label}</button>`)
     expect(SUMBER).toContain('void muat(kotak, 1)')
@@ -68,7 +68,9 @@ describe('PortalOpportunity = unsur yang TAMPIL di Pega', () => {
     const sel = [...baris.matchAll(/<td \/>|<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => (m[1] ?? '').trim())
     expect(sel).toHaveLength(8)
     expect(sel[0]).toBe('{b.caseId}')
-    expect(sel[1]).toContain('onClick={() => onBuka(b.caseId)}')
+    expect(sel[1]).toContain('onBuka(b.caseId)')
+    expect(sel[1]).toContain('e.stopPropagation()')
+    expect(SUMBER).toContain('<tr key={b.caseId} className="inbox__baris" onClick={() => onBuka(b.caseId)}>')
     expect(sel[2]).toBe('')
     expect(sel.slice(3, 6)).toEqual(['{b.groupBusiness}', '{b.insuredName}', '{b.marketing}'])
     expect(sel[6]).toBe('')
@@ -83,5 +85,13 @@ describe('PortalOpportunity = unsur yang TAMPIL di Pega', () => {
 
   it('tombol Create opportunity hidup (membuka form, tiket 26)', () => {
     expect(HTML).toMatch(new RegExp(`<button type="button" class="btn btn--primary">${KEPALA_PORTAL.buat.label}</button>`))
+  })
+
+  it('templat = menu Kelola User: kepala inbox, toolbar (saring kiri, Create opportunity kanan), tabel inbox', () => {
+    expect(HTML).toContain('<section class="inbox"><header class="inbox__kepala"><h2 class="inbox__judul">')
+    const bilah = HTML.slice(HTML.indexOf('<form class="toolbar"'), HTML.indexOf('</form>'))
+    expect(bilah.indexOf('type="search"')).toBeLessThan(bilah.indexOf('toolbar__spacer'))
+    expect(bilah.indexOf('toolbar__spacer')).toBeLessThan(bilah.indexOf(`>${KEPALA_PORTAL.buat.label}</button>`))
+    expect(HTML).toContain('<table class="inbox__tabel">')
   })
 })

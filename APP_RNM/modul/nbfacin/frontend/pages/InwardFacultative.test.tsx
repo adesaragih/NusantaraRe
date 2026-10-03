@@ -30,8 +30,9 @@ const label = [...HTML.matchAll(/<(?:label|span) class="field__label"[^>]*>([^<]
 
 describe('Inward Facultative tahap 1 = tangkapan layar kasus FIRE + XML Periode', () => {
   it('judul = nomor case, lalu blok General', () => {
-    expect(HTML.indexOf('>NB-1</h3>')).toBeGreaterThan(-1)
-    expect(HTML.indexOf('>NB-1</h3>')).toBeLessThan(HTML.indexOf(`>${P.judul.label}</h4>`))
+    // Templat Kelola User: nomor case = judul `h2.inbox__judul` di kepala halaman.
+    expect(HTML.indexOf('<h2 class="inbox__judul">NB-1</h2>')).toBeGreaterThan(-1)
+    expect(HTML.indexOf('<h2 class="inbox__judul">NB-1</h2>')).toBeLessThan(HTML.indexOf(`>${P.judul.label}</h4>`))
   })
 
   it('urutan label: kolom kiri lalu kanan', () => {

@@ -16,6 +16,8 @@
 // (`terapkanRisk`). Clear Risk Address mengosongkan medan `ClearRiskLocation_act` (`kosongkanRisk`) - Building No.
 // tidak ikut. Keduanya tersimpan lewat Save.
 //
+// Surrounding Risk (tiket 38): `SubTabSekitar`; Distance minus ikut menahan Save.
+//
 // Keputusan agent (tiket 35): G-1 (selesai di tiket 36); medan Risk Address tampil-saja kecuali Building No. G-3 sub-tab selain Object Address =
 // tahap berikut (`BelumTersedia`). Daftar Roof / Wall / Floor Type = aturan properti Pega (`DDL\RoofType.xml` dst.,
 // lihat `OPSI_ROOF_TYPE` di labels.ts); nilai tersimpan = kode Pega; objek baru berawal "Lain-lain" (14 / 9 /
@@ -24,8 +26,9 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { BelumTersedia, Field, Gagal, Halaman, Pilih, StripTab, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
-import { ambilObjek, simpanObjek, type BarisRisk, type ObjekFire, type SaringRisk } from '../api'
+import { ambilObjek, simpanObjek, type AlamatBaru, type BarisRisk, type ObjekFire, type SaringRisk } from '../api'
 import PopupRiskAddress from './PopupRiskAddress'
+import SubTabSekitar, { OWNERSHIP_AWAL, adaJarakMinus, sekitarKosong } from './SubTabSekitar'
 import {
   AWAL_BANGUNAN,
   BANGUNAN_KOSONG,
@@ -65,6 +68,30 @@ export function objekBaru(objectNo: string): ObjekFire {
     roadType: '', roadName: '', buildingNo: '', zipCode: '', country: '', riskLocation: '', territory: '',
     city: '', district: '', province: '', riskAddressId: '',
     numberOfFloor: '', ...AWAL_BANGUNAN, partitionType: '', supportWallType: '', otherType: '',
+    ownership: OWNERSHIP_AWAL, isProductionProcess: false, isHotWorkProcess: false, isFlammableItem: false,
+    surroundingRisk: sekitarKosong(),
+  }
+}
+
+/**
+ * Objek dari server dilengkapi medan yang belum dikirim (mis. backend sebelum tiket 38 tanpa `surroundingRisk`),
+ * supaya layar tidak runtuh pada data lama.
+ */
+export function rapikanObjek(d: Partial<ObjekFire>): ObjekFire {
+  const awal = objekBaru(d.objectNo ?? '')
+  const s = (d.surroundingRisk ?? {}) as Partial<ObjekFire['surroundingRisk']>
+  const k = sekitarKosong()
+  return {
+    ...awal,
+    ...d,
+    surroundingRisk: {
+      ...k,
+      ...s,
+      front: { ...k.front, ...s.front },
+      left: { ...k.left, ...s.left },
+      back: { ...k.back, ...s.back },
+      right: { ...k.right, ...s.right },
+    },
   }
 }
 
@@ -94,6 +121,20 @@ export function terapkanRisk(o: ObjekFire, b: BarisRisk): ObjekFire {
     riskLocation: `${b.title} ${b.address},${b.territoryName},${b.districtName},${b.cityName},${b.provinceName},${b.nationName}`,
     buildingNo: '',
   }
+}
+
+/**
+ * Alamat baru dari popup Add (tiket 37) - langkah 9 `Activity\SaveRiskAddress_Act.xml`: RoadName, RoadType = Title,
+ * Risk Location dirangkai seperti `SetRiskIdDT_FacIn`, Zip Code, Country, Province, City, District, Territory;
+ * Building No. TIDAK disentuh. Risk Address ID = ID baru dari backend (keputusan work owner 03-10-2026; Pega
+ * membiarkannya kosong).
+ */
+export function terapkanAlamatBaru(o: ObjekFire, a: AlamatBaru, id: string): ObjekFire {
+  const hasil = terapkanRisk(o, {
+    id, title: a.title, address: a.address, nationName: a.nationName, provinceName: a.provinceName,
+    cityName: a.cityName, districtName: a.districtName, territoryName: a.territoryName, postalCode: a.postalCode,
+  })
+  return { ...hasil, buildingNo: o.buildingNo }
 }
 
 /** Clear Risk Address - `Activity\ClearRiskLocation_act.xml` (Building No. tidak ikut). */
@@ -186,6 +227,10 @@ function ObjectAddress({ o, ubah, galatType }: { o: ObjekFire; ubah: (o: ObjekFi
             ubah(terapkanRisk(o, b))
             setPilihRisk(false)
           }}
+          onBaru={(a, id) => {
+            ubah(terapkanAlamatBaru(o, a, id))
+            setPilihRisk(false)
+          }}
         />
       )}
 
@@ -242,7 +287,7 @@ export default function TabObject({ caseId }: { caseId: string }) {
   const [cobaSimpan, setCobaSimpan] = useState(false)
   const kunciBerikut = useRef(1)
 
-  const bungkus = (data: ObjekFire[]): BarisLayar[] => data.map((d) => ({ kunci: kunciBerikut.current++, data: d }))
+  const bungkus = (data: ObjekFire[]): BarisLayar[] => data.map((d) => ({ kunci: kunciBerikut.current++, data: rapikanObjek(d) }))
 
   useEffect(() => {
     let batal = false
@@ -279,14 +324,22 @@ export default function TabObject({ caseId }: { caseId: string }) {
   }
 
   const typeKosong = baris.some((x) => x.data.objectType === '')
-  const adaLantaiMinus = baris.some((x) => lantaiMinus(x.data.numberOfFloor))
+  const adaLantaiMinus = baris.some((x) => lantaiMinus(x.data.numberOfFloor) || adaJarakMinus(x.data.surroundingRisk))
 
   async function simpan() {
     setCobaSimpan(true)
     if (typeKosong || adaLantaiMinus) {
-      // Baris yang salah dibuka di Object Address supaya pesannya terlihat.
-      const salah = baris.filter((x) => x.data.objectType === '' || lantaiMinus(x.data.numberOfFloor))
-      setTerbuka((t) => ({ ...t, ...Object.fromEntries(salah.map((x) => [x.kunci, SUBTAB_OBJEK[0]])) }))
+      // Baris yang salah dibuka di sub-tab tempat pesannya (Object Address, atau Surrounding Risk untuk Distance).
+      const salah = baris.filter((x) => x.data.objectType === '' || lantaiMinus(x.data.numberOfFloor) || adaJarakMinus(x.data.surroundingRisk))
+      setTerbuka((t) => ({
+        ...t,
+        ...Object.fromEntries(
+          salah.map((x) => [
+            x.kunci,
+            x.data.objectType === '' || lantaiMinus(x.data.numberOfFloor) ? SUBTAB_OBJEK[0] : SUBTAB_OBJEK[1],
+          ]),
+        ),
+      }))
       return
     }
     setMenyimpan(true)
@@ -374,6 +427,8 @@ export default function TabObject({ caseId }: { caseId: string }) {
                       <StripTab tab={SUBTAB_OBJEK} aktif={sub} onPilih={(t) => setTerbuka((s) => ({ ...s, [x.kunci]: t }))} />
                       {sub === SUBTAB_OBJEK[0] ? (
                         <ObjectAddress o={x.data} ubah={(d) => ubah(x.kunci, d)} galatType={cobaSimpan && x.data.objectType === ''} />
+                      ) : sub === SUBTAB_OBJEK[1] ? (
+                        <SubTabSekitar o={x.data} ubah={(d) => ubah(x.kunci, d)} />
                       ) : (
                         <BelumTersedia apa={`${TEKS_INWARD.isiTab} ${sub}`} />
                       )}

@@ -1,6 +1,6 @@
 package handlers
 
-// Tab Object FIRE (tiket 35): GET/PUT /api/nbfacin/kasus/{caseId}/objek - kontrak `ObjekFire`
+// Tab Object FIRE (tiket 35, Surrounding Risk tiket 38): GET/PUT /api/nbfacin/kasus/{caseId}/objek - kontrak `ObjekFire`
 // frontend (modul/nbfacin/frontend/api.ts).
 
 import (
@@ -37,6 +37,32 @@ type objekKabel struct {
 	PartitionType    string `json:"partitionType"`
 	SupportWallType  string `json:"supportWallType"`
 	OtherType        string `json:"otherType"`
+	// tiket 38
+	Ownership           string       `json:"ownership"`
+	IsProductionProcess bool         `json:"isProductionProcess"`
+	IsHotWorkProcess    bool         `json:"isHotWorkProcess"`
+	IsFlammableItem     bool         `json:"isFlammableItem"`
+	SurroundingRisk     sekitarKabel `json:"surroundingRisk"`
+}
+
+// sekitarKabel - kontrak `SurroundingRisk` frontend (tiket 38).
+type sekitarKabel struct {
+	Front              sisiKabel `json:"front"`
+	Left               sisiKabel `json:"left"`
+	Back               sisiKabel `json:"back"`
+	Right              sisiKabel `json:"right"`
+	HousekeepingStatus string    `json:"housekeepingStatus"`
+	FloodAreaStatus    string    `json:"floodAreaStatus"`
+	FloodArea          string    `json:"floodArea"`
+	HousekeepingRemark string    `json:"housekeepingRemark"`
+}
+
+// sisiKabel - kontrak `SisiRisiko` frontend.
+type sisiKabel struct {
+	Occupation   string `json:"occupation"`
+	Construction string `json:"construction"`
+	Distance     string `json:"distance"`
+	Note         string `json:"note"`
 }
 
 type daftarObjek struct {
@@ -46,10 +72,41 @@ type daftarObjek struct {
 // batasBadanObjek - badan PUT terbesar yang diterima (A112).
 const batasBadanObjek = 1 << 20
 
+// keKabel / keModel - pemetaan medan EKSPLISIT (struct bersarang tidak dapat dikonversi langsung).
+func keKabel(o models.ObjekFire) objekKabel {
+	s := o.SurroundingRisk
+	return objekKabel{ObjectNo: o.ObjectNo, ObjectType: o.ObjectType, ObjectName: o.ObjectName,
+		IsMaterialDamage: o.IsMaterialDamage, IsTopRisk: o.IsTopRisk, RoadType: o.RoadType, RoadName: o.RoadName,
+		BuildingNo: o.BuildingNo, ZipCode: o.ZipCode, Country: o.Country, RiskLocation: o.RiskLocation,
+		Territory: o.Territory, City: o.City, District: o.District, Province: o.Province, RiskAddressID: o.RiskAddressID,
+		NumberOfFloor: o.NumberOfFloor, RoofType: o.RoofType, WallType: o.WallType, FloorType: o.FloorType,
+		PartitionType: o.PartitionType, SupportWallType: o.SupportWallType, OtherType: o.OtherType,
+		Ownership: o.Ownership, IsProductionProcess: o.IsProductionProcess, IsHotWorkProcess: o.IsHotWorkProcess,
+		IsFlammableItem: o.IsFlammableItem,
+		SurroundingRisk: sekitarKabel{Front: sisiKabel(s.Front), Left: sisiKabel(s.Left), Back: sisiKabel(s.Back),
+			Right: sisiKabel(s.Right), HousekeepingStatus: s.HousekeepingStatus, FloodAreaStatus: s.FloodAreaStatus,
+			FloodArea: s.FloodArea, HousekeepingRemark: s.HousekeepingRemark}}
+}
+
+func keModel(o objekKabel) models.ObjekFire {
+	s := o.SurroundingRisk
+	return models.ObjekFire{ObjectNo: o.ObjectNo, ObjectType: o.ObjectType, ObjectName: o.ObjectName,
+		IsMaterialDamage: o.IsMaterialDamage, IsTopRisk: o.IsTopRisk, RoadType: o.RoadType, RoadName: o.RoadName,
+		BuildingNo: o.BuildingNo, ZipCode: o.ZipCode, Country: o.Country, RiskLocation: o.RiskLocation,
+		Territory: o.Territory, City: o.City, District: o.District, Province: o.Province, RiskAddressID: o.RiskAddressID,
+		NumberOfFloor: o.NumberOfFloor, RoofType: o.RoofType, WallType: o.WallType, FloorType: o.FloorType,
+		PartitionType: o.PartitionType, SupportWallType: o.SupportWallType, OtherType: o.OtherType,
+		Ownership: o.Ownership, IsProductionProcess: o.IsProductionProcess, IsHotWorkProcess: o.IsHotWorkProcess,
+		IsFlammableItem: o.IsFlammableItem,
+		SurroundingRisk: models.SurroundingRisk{Front: models.SisiRisiko(s.Front), Left: models.SisiRisiko(s.Left),
+			Back: models.SisiRisiko(s.Back), Right: models.SisiRisiko(s.Right), HousekeepingStatus: s.HousekeepingStatus,
+			FloodAreaStatus: s.FloodAreaStatus, FloodArea: s.FloodArea, HousekeepingRemark: s.HousekeepingRemark}}
+}
+
 func keObjekKabel(d []models.ObjekFire) daftarObjek {
 	baris := make([]objekKabel, 0, len(d))
 	for _, o := range d {
-		baris = append(baris, objekKabel(o))
+		baris = append(baris, keKabel(o))
 	}
 	return daftarObjek{Baris: baris}
 }
@@ -76,7 +133,7 @@ func simpanObjek(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		}
 		baris := make([]models.ObjekFire, len(b.Baris))
 		for i, o := range b.Baris {
-			baris[i] = models.ObjekFire(o)
+			baris[i] = keModel(o)
 		}
 		d, err := svc.GantiObjek(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("caseId"), baris)
 		if err != nil {

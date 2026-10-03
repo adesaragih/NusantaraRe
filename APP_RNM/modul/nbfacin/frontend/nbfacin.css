@@ -11,27 +11,10 @@
 }
 
 /* ------------------------------------------------------------ portal */
-/* Baris judul: `Opportunity` di kiri, `Create opportunity` di kanan (Header sel 57 / 72). */
-.nbfacin .nbf-kepala {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 16px;
-  margin-bottom: 12px;
-}
-
-/* Kotak saring + ikon hapus + Filter berdampingan (List sel 9 / 10 / 13). */
-.nbfacin .nbf-saring {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
+/* Kepala, bilah saring, dan tabel memakai templat inti Kelola User (`inbox__kepala`, `toolbar`, `inbox__tabel`).
+   Kotak saring selebar kotak cari Kelola User. */
 .nbfacin .nbf-saring__kotak {
-  width: 260px;
-  max-width: 100%;
+  width: min(320px, 100%);
 }
 
 /* Tautan Name di grid portal (Pega pxLink -> openWorkByHandle): tombol bergaya tautan. */
@@ -179,10 +162,6 @@
 }
 
 /* ---------------------------------------------------- Inward Facultative */
-/* Nomor case di atas layar (judul harness Pega: `NB-<n>`). */
-.nbfacin .nbf-inward__case {
-  margin: 0 0 12px;
-}
 .nbfacin .nbf-inward__teks {
   padding: 6px 0;
   min-height: 1.6em;
@@ -244,6 +223,48 @@
   .nbfacin .nbf-risk {
     grid-template-columns: 1fr;
   }
+}
+
+/* Popup Add alamat risiko: dua kolom seperti tangkapan layar; saran Zip Code di bawah kotaknya. */
+.nbfacin .nbf-tambah-risk {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+.nbfacin .nbf-tambah-risk__saran {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border, currentColor);
+}
+.nbfacin .nbf-tambah-risk__bawah {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+@media (max-width: 720px) {
+  .nbfacin .nbf-tambah-risk {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Surrounding Risk: Construction dan Distance sebaris (layout "Inline" sel 10/24/38/52). */
+.nbfacin .nbf-sekitar__sebaris {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.nbfacin .nbf-sekitar__centang {
+  display: grid;
+  gap: 6px;
+}
+/* Paragraf faktor risiko (Pega: teks hijau di atas tiga centang). */
+.nbfacin .nbf-sekitar__faktor {
+  margin: 0;
+  color: var(--success-text, inherit);
+  font-weight: 600;
 }
 
 /* Save tab Object di kanan (Dtl sel 25). */

@@ -15,6 +15,10 @@
 // NBStatus (judul kosong di Pega) tetap ada tetapi kosong - tautan View (`ViewOutstandingCase`) belum diport.
 //
 // `Create opportunity` membuka form Opportunity (B-3, tiket 26). Nol catatan pengembang di layar (B-4).
+//
+// Templat layar = menu Kelola User (permintaan work owner 03-10-2026 "samain kaya menu kelola user"): kepala
+// `inbox__kepala` + judul `h2.inbox__judul`, bilah `toolbar` (saring kiri, tombol utama kanan sesudah
+// `toolbar__spacer`), tabel `inbox__tabel` dengan baris `inbox__baris` yang dapat diklik.
 
 import { useEffect, useRef, useState } from 'react'
 
@@ -55,15 +59,12 @@ export default function PortalOpportunity({ onBuat, onBuka }: { onBuat: () => vo
 
   return (
     <div className="nbfacin">
-      <section className="panel">
-        <div className="nbf-kepala">
-          <h4 className="panel__title">{KEPALA_PORTAL.judul.label}</h4>
-          <button type="button" className="btn btn--primary" onClick={onBuat}>
-            {KEPALA_PORTAL.buat.label}
-          </button>
-        </div>
+      <section className="inbox">
+        <header className="inbox__kepala">
+          <h2 className="inbox__judul">{KEPALA_PORTAL.judul.label}</h2>
+        </header>
         <form
-          className="nbf-saring"
+          className="toolbar"
           onSubmit={(e) => {
             e.preventDefault()
             void muat(kotak, 1)
@@ -71,7 +72,7 @@ export default function PortalOpportunity({ onBuat, onBuka }: { onBuat: () => vo
         >
           <input
             className="field__input nbf-saring__kotak"
-            type="text"
+            type="search"
             aria-label={SARING_PORTAL.label.label}
             placeholder={SARING_PORTAL.placeholder.label}
             value={kotak}
@@ -91,12 +92,15 @@ export default function PortalOpportunity({ onBuat, onBuka }: { onBuat: () => vo
           <button type="submit" className="btn btn--sm" disabled={memuat}>
             {SARING_PORTAL.tombol.label}
           </button>
+          <span className="toolbar__spacer" />
+          <button type="button" className="btn btn--primary" onClick={onBuat}>
+            {KEPALA_PORTAL.buat.label}
+          </button>
         </form>
         {hasil && hasil.baris.length > 0 && (
           <Halaman halaman={hasil.halaman} ukuran={hasil.ukuran} total={hasil.total} onPindah={(h) => void muat(kunciCari.current, h)} />
         )}
-        <div className="table-wrap">
-          <table className="nbf-tabel">
+        <table className="inbox__tabel">
             <thead>
               <tr>
                 {KOLOM_PORTAL.map((k) => (
@@ -109,10 +113,18 @@ export default function PortalOpportunity({ onBuat, onBuka }: { onBuat: () => vo
             {hasil && hasil.baris.length > 0 && (
               <tbody>
                 {hasil.baris.map((b) => (
-                  <tr key={b.caseId}>
+                  <tr key={b.caseId} className="inbox__baris" onClick={() => onBuka(b.caseId)}>
                     <td>{b.caseId}</td>
                     <td>
-                      <button type="button" className="nbf-tautan" onClick={() => onBuka(b.caseId)}>
+                      <button
+                        type="button"
+                        className="nbf-tautan"
+                        onClick={(e) => {
+                          // Baris sudah membuka case; cegah panggilan ganda.
+                          e.stopPropagation()
+                          onBuka(b.caseId)
+                        }}
+                      >
                         {b.name || b.caseId}
                       </button>
                     </td>
@@ -126,8 +138,7 @@ export default function PortalOpportunity({ onBuat, onBuka }: { onBuat: () => vo
                 ))}
               </tbody>
             )}
-          </table>
-        </div>
+        </table>
         {memuat && !hasil && <Memuat />}
         {hasil && hasil.baris.length === 0 && <Kosong pesan={TEKS_PORTAL.tanpaCase} />}
         <Gagal galat={galat} />

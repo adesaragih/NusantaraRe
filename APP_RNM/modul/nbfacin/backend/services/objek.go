@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	inti "nusantarare/inti/backend"
@@ -26,12 +27,64 @@ var ErrObjekTanpaDatabase = errors.New("services: basis data tidak dikonfigurasi
 // bilangan bulat >= 0 (A111: tanpa tanda, tanpa desimal).
 var polaLantai = regexp.MustCompile(`^[0-9]+$`)
 
-// lebarObjek - lebar kolom (BYTE) tiap medan teks (migrasi 186 = rancangan).
-var lebarObjek = []struct {
+// polaJarak - Distance sisi Surrounding Risk (tiket 38, A129): bilangan >= 0, paling banyak dua
+// desimal, titik sebagai pemisah; batas atas batasJarak. `[terverifikasi]` keempat kontrol Distance
+// `Section\RiskAround.xml` (baris 2082-2140 dst.): pyMin 0, pyMax 100000, pyDecimalPlaces 2.
+var polaJarak = regexp.MustCompile(`^[0-9]+(\.[0-9]{1,2})?$`)
+
+// batasJarak - pyMax kontrol Distance.
+const batasJarak = 100000
+
+// jarakSah - kosong, atau cocok polaJarak dan <= batasJarak. Jarak bukan uang (CLAUDE.md §7):
+// ParseFloat hanya untuk membandingkan batas.
+func jarakSah(s string) bool {
+	if s == "" {
+		return true
+	}
+	if !polaJarak.MatchString(s) {
+		return false
+	}
+	f, err := strconv.ParseFloat(s, 64)
+	return err == nil && f <= batasJarak
+}
+
+type lebarMedan struct {
 	nama  string
 	nilai func(models.ObjekFire) string
 	n     int
+}
+
+// sisiObjek - empat sisi Surrounding Risk, nama JSON-nya, dan cara mengambilnya.
+var sisiObjek = []struct {
+	nama  string
+	ambil func(models.ObjekFire) models.SisiRisiko
 }{
+	{"front", func(o models.ObjekFire) models.SisiRisiko { return o.SurroundingRisk.Front }},
+	{"left", func(o models.ObjekFire) models.SisiRisiko { return o.SurroundingRisk.Left }},
+	{"back", func(o models.ObjekFire) models.SisiRisiko { return o.SurroundingRisk.Back }},
+	{"right", func(o models.ObjekFire) models.SisiRisiko { return o.SurroundingRisk.Right }},
+}
+
+// lebarSekitar - lebar kolom T_SURROUNDINGRISK (migrasi 187) tiap medan surroundingRisk.
+func lebarSekitar() []lebarMedan {
+	var l []lebarMedan
+	for _, s := range sisiObjek {
+		ambil, awal := s.ambil, "surroundingRisk."+s.nama+"."
+		l = append(l,
+			lebarMedan{awal + "occupation", func(o models.ObjekFire) string { return ambil(o).Occupation }, 1000},
+			lebarMedan{awal + "construction", func(o models.ObjekFire) string { return ambil(o).Construction }, 500},
+			lebarMedan{awal + "distance", func(o models.ObjekFire) string { return ambil(o).Distance }, 50},
+			lebarMedan{awal + "note", func(o models.ObjekFire) string { return ambil(o).Note }, 1000})
+	}
+	return append(l,
+		lebarMedan{"surroundingRisk.housekeepingStatus", func(o models.ObjekFire) string { return o.SurroundingRisk.HousekeepingStatus }, 50},
+		lebarMedan{"surroundingRisk.floodAreaStatus", func(o models.ObjekFire) string { return o.SurroundingRisk.FloodAreaStatus }, 50},
+		lebarMedan{"surroundingRisk.floodArea", func(o models.ObjekFire) string { return o.SurroundingRisk.FloodArea }, 50},
+		lebarMedan{"surroundingRisk.housekeepingRemark", func(o models.ObjekFire) string { return o.SurroundingRisk.HousekeepingRemark }, 500})
+}
+
+// lebarObjek - lebar kolom (BYTE) tiap medan teks (migrasi 186 = rancangan; 187 tiket 38).
+var lebarObjek = append([]lebarMedan{
 	{"objectNo", func(o models.ObjekFire) string { return o.ObjectNo }, 50},
 	{"objectType", func(o models.ObjekFire) string { return o.ObjectType }, 50},
 	{"objectName", func(o models.ObjekFire) string { return o.ObjectName }, 500},
@@ -53,7 +106,8 @@ var lebarObjek = []struct {
 	{"partitionType", func(o models.ObjekFire) string { return o.PartitionType }, 50},
 	{"supportWallType", func(o models.ObjekFire) string { return o.SupportWallType }, 50},
 	{"otherType", func(o models.ObjekFire) string { return o.OtherType }, 50},
-}
+	{"ownership", func(o models.ObjekFire) string { return o.Ownership }, 50},
+}, lebarSekitar()...)
 
 // DenganObjek memasang penyimpan objek (tiket 35).
 func (s *Service) DenganObjek(o repository.PenyimpanObjek) *Service {
@@ -64,9 +118,10 @@ func (s *Service) DenganObjek(o repository.PenyimpanObjek) *Service {
 // batasBarisObjek - T_LOCATIONLIST.SEQ_NO NUMBER(5): paling banyak 99999 baris (A112).
 const batasBarisObjek = 99999
 
-// periksaObjek - Object Type wajib per baris (sel 6 wajib), lantai, lebar kolom. Server TIDAK
-// mencocokkan Object Type / Roof / Wall / Floor ke daftar pilihan (daftar layar G-9 sesi 0f;
-// nilai disimpan teks apa adanya sesuai lebar kolom).
+// periksaObjek - Object Type wajib per baris (sel 6 wajib), lantai, jarak sisi, lebar kolom.
+// Server TIDAK mencocokkan Object Type / Roof / Wall / Floor / Ownership / Construction /
+// Housekeeping / Flood ke daftar pilihan (daftar layar G-9 sesi 0f; nilai disimpan teks apa
+// adanya sesuai lebar kolom).
 func periksaObjek(baris []models.ObjekFire) error {
 	var masalah []string
 	if len(baris) > batasBarisObjek {
@@ -78,6 +133,11 @@ func periksaObjek(baris []models.ObjekFire) error {
 		}
 		if o.NumberOfFloor != "" && !polaLantai.MatchString(o.NumberOfFloor) {
 			masalah = append(masalah, fmt.Sprintf("baris[%d].numberOfFloor harus bilangan bulat >= 0", i))
+		}
+		for _, s := range sisiObjek {
+			if !jarakSah(s.ambil(o).Distance) {
+				masalah = append(masalah, fmt.Sprintf("baris[%d].surroundingRisk.%s.distance harus angka 0..%d dengan paling banyak 2 desimal", i, s.nama, batasJarak))
+			}
 		}
 		for _, l := range lebarObjek {
 			if len(l.nilai(o)) > l.n {

@@ -25,6 +25,18 @@ import {
   PERIODE,
   POPUP_CEDING,
   POPUP_RISK,
+  POPUP_TAMBAH_RISK,
+  SISI_SEKITAR,
+  MEDAN_SISI,
+  LAIN_SEKITAR,
+  TEKS_SEKITAR,
+  OPSI_CONSTRUCTION,
+  CONSTRUCTION_KOSONG,
+  OPSI_OWNERSHIP,
+  OPSI_HOUSEKEEPING,
+  OPSI_FLOOD_STATUS,
+  OPSI_FLOOD_AREA,
+  OPSI_TITLE_RISK,
   POPUP_SOB,
   SARING_PORTAL,
   SIMPAN_OBJEK,
@@ -368,5 +380,105 @@ describe.skipIf(!adaRisk)('popup Choose Risk Address = korpus (ChooseRiskAddress
 
   it('uji ini menggigit: label salah tidak ditemukan', () => {
     expect(blokSel(saring, '79').some((b) => b.includes('<pyLabelFieldValue>Zip code</pyLabelFieldValue>'))).toBe(false)
+  })
+})
+
+const BERKAS_TAMBAH = {
+  isian: NBFACIN + 'Section\\InputRiskAddress.xml',
+  akumulasi: NBFACIN + 'RDBList\\SearchAccumulationbypersetase_SQL.xml',
+  pencari: NBFACIN + 'Section\\ChooseRiskAddress.xml',
+}
+const adaTambah = Object.values(BERKAS_TAMBAH).every((b) => existsSync(b))
+
+describe.skipIf(!adaTambah)('popup Add alamat risiko = korpus (InputRiskAddress) - tiket 37', () => {
+  const baca = (b: string) => (adaTambah ? readFileSync(b, 'utf-8') : '')
+  const isian = baca(BERKAS_TAMBAH.isian)
+  const medan = Object.entries(POPUP_TAMBAH_RISK).filter(([k]) => k !== 'judul') as [string, { sel: string; tag: string; label: string }][]
+
+  it.each(medan)('medan/tombol %s', (_, u) => {
+    expect(blokSel(isian, u.sel).some((b) => b.includes(`<${u.tag}>${u.label}</${u.tag}>`))).toBe(true)
+  })
+
+  it('judul = tombol Add pembuka harness ChooseRiskLocation', () => {
+    const blok = blokSel(baca(BERKAS_TAMBAH.pencari), '74').find((b) => b.includes('<pyHarnessName>ChooseRiskLocation</pyHarnessName>')) ?? ''
+    expect(blok).toContain(`<pyLabel>${POPUP_TAMBAH_RISK.judul}</pyLabel>`)
+  })
+
+  it('syarat tampil berantai Province <- Country, City <- Province, District <- City, Territory <- District', () => {
+    for (const k of ['NationName', 'ProvinceName', 'CityName', 'DistrictName']) {
+      expect(isian).toContain(`<pyCondition>InputRiskAddress.${k} != ''</pyCondition>`)
+    }
+  })
+
+  it('pilihan Title = urutan REGEXP di SearchAccumulationbypersetase_SQL', () => {
+    const re = /\((DESA\|[^)]*)\)/.exec(baca(BERKAS_TAMBAH.akumulasi))?.[1] ?? ''
+    expect(re.split('|').map((x) => x.replace('\\.', '.'))).toEqual([...OPSI_TITLE_RISK])
+  })
+
+  it('uji ini menggigit: label salah tidak ditemukan', () => {
+    expect(blokSel(isian, '13').some((b) => b.includes('<pyLabelFieldValue>Zip code</pyLabelFieldValue>'))).toBe(false)
+  })
+})
+
+const BERKAS_SEKITAR = {
+  bagian: NBFACIN + 'Section\\RiskAround.xml',
+  minus: NBFACIN + 'Activity\\NegativeIsNotAllowed.xml',
+}
+const adaSekitar = Object.values(BERKAS_SEKITAR).every((b) => existsSync(b))
+
+describe.skipIf(!adaSekitar)('Surrounding Risk = korpus (RiskAround) - tiket 38', () => {
+  const baca = (b: string) => (adaSekitar ? readFileSync(b, 'utf-8') : '')
+  const xml = baca(BERKAS_SEKITAR.bagian)
+  const ada = (sel: string, tag: string, label: string) => blokSel(xml, sel).some((b) => b.includes(`<${tag}>${label}</${tag}>`))
+
+  it.each(SISI_SEKITAR.map((s) => [s.judul, s] as const))('sisi %s: judul + empat medan di sel yang benar', (_, s) => {
+    expect(xml).toContain(`<pyTitle>${s.judul}</pyTitle>`)
+    expect(ada(s.occupation, 'pyLabelFieldValue', MEDAN_SISI.occupation)).toBe(true)
+    expect(ada(s.construction, 'pyLabelFieldValue', MEDAN_SISI.construction)).toBe(true)
+    expect(ada(s.distance, 'pyLabelFieldValue', MEDAN_SISI.distance)).toBe(true)
+    expect(ada(s.note, 'pyLabelFieldValue', MEDAN_SISI.note)).toBe(true)
+    const nama = s.judul
+    expect(blokSel(xml, s.occupation).some((b) => b.includes(`<pyValue>.Property.SurroundingRisk.${nama}Occupation</pyValue>`))).toBe(true)
+    expect(blokSel(xml, s.distance).some((b) => b.includes(`<pyValue>.Property.SurroundingRisk.${nama}Distance</pyValue>`))).toBe(true)
+  })
+
+  it('Occupation = data page D_BrowseOccupationFacInFIRE (TYPE FIRE)', () => {
+    expect(blokSel(xml, '9').some((b) => b.includes('D_BrowseOccupationFacInFIRE') && b.includes('FIRE'))).toBe(true)
+  })
+
+  it.each(Object.entries(LAIN_SEKITAR))('Other Description %s', (_, u) => {
+    if (u.sel === '') expect(xml).toContain(`<${u.tag}>${u.label}</${u.tag}>`)
+    else expect(ada(u.sel, u.tag, u.label)).toBe(true)
+  })
+
+  it('Flood Area tampil hanya bila Flood Area Status = 0; pesan Distance minus = NegativeIsNotAllowed', () => {
+    expect(xml).toContain('<pyCondition>.Property.SurroundingRisk.FloodAreaStatus==0</pyCondition>')
+    expect(baca(BERKAS_SEKITAR.minus)).toContain(TEKS_SEKITAR.jarakMinus)
+  })
+
+  it('uji ini menggigit: label salah tidak ditemukan', () => {
+    expect(ada('13', 'pyLabelFieldValue', 'Distance')).toBe(false)
+  })
+})
+
+const BERKAS_SEKITAR_DDL = {
+  FrontConstruction: { opsi: OPSI_CONSTRUCTION, kosong: CONSTRUCTION_KOSONG as string | null },
+  Ownership: { opsi: OPSI_OWNERSHIP, kosong: null },
+  HousekeepingStatus: { opsi: OPSI_HOUSEKEEPING, kosong: null },
+  FloodAreaStatus: { opsi: OPSI_FLOOD_STATUS, kosong: null },
+  FloodArea: { opsi: OPSI_FLOOD_AREA, kosong: CONSTRUCTION_KOSONG as string | null },
+}
+const adaSekitarDDL = Object.keys(BERKAS_SEKITAR_DDL).every((n) => existsSync(`${DDL}${n}.xml`))
+
+describe.skipIf(!adaSekitarDDL)('dropdown Surrounding Risk = aturan properti Pega (DDL\\*.xml) - tiket 38', () => {
+  it.each(Object.entries(BERKAS_SEKITAR_DDL))('%s: pasangan value/label per rowdata, berurutan', (nama, u) => {
+    const baris = daftarPrompt(readFileSync(`${DDL}${nama}.xml`, 'utf-8'))
+    const isi = u.kosong === null ? baris : baris.slice(1)
+    if (u.kosong !== null) expect(baris[0]).toEqual(['', u.kosong])
+    expect(isi).toEqual(u.opsi.map((o) => [o.value, o.label]))
+  })
+
+  it('Flood Area Status "Yes" bernilai "0" = syarat tampil Flood Area', () => {
+    expect(OPSI_FLOOD_STATUS.find((o) => o.label === 'Yes')?.value).toBe('0')
   })
 })

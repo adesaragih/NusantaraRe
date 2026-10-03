@@ -252,13 +252,14 @@ export default function FormOpportunity({
 
   return (
     <div className="nbfacin">
-      <section className="panel">
-        <div className="nbf-kepala">
-          <h4 className="panel__title">{F.judul}</h4>
+      <section className="inbox">
+        <header className="inbox__kepala">
+          <h2 className="inbox__judul">{F.judul}</h2>
           <button type="button" className="btn btn--primary" onClick={() => void buat()} disabled={menyimpan || caseId !== ''}>
             {menyimpan ? TEKS.menyimpan : KEPALA_PORTAL.buat.label}
           </button>
-        </div>
+        </header>
+        <div className="panel">
         {kurang.length > 0 && (
           <div className="alert alert--error">
             {TEKS.wajibKosong} {kurang.join(', ')}
@@ -363,6 +364,7 @@ export default function FormOpportunity({
         </div>
         <div className="nbf-opp__bawah">
           <Area label={F.deskripsi} value={deskripsi} onChange={setDeskripsi} baris={5} />
+        </div>
         </div>
       </section>
       {cariGrup && (

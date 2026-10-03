@@ -27,12 +27,12 @@ func TestSkemaUkuran(t *testing.T) {
 	}
 	// Butir 72: +48 kolom penunjuk teks mentah (amandemenPenunjuk) -> 61 kolom amandemen.
 	// Butir 76.2: +1 T_WORK_POLIS.LINI -> 62 (76.1/76.4 mengganti tipe/nama, tidak menambah).
-	// Tiket 35 (A110): +3 kolom T_BUILDINGCONSTRUCTION -> 65.
-	if am != 65 || len(amandemenPenunjuk) != 48 || len(amandemenTabel) != 1 || len(amandemenJalur) != 1 {
-		t.Fatalf("amandemen %d kolom (%d penunjuk) / %d tabel / %d jalur, mau 65 (48) / 1 / 1", am, len(amandemenPenunjuk), len(amandemenTabel), len(amandemenJalur))
+	// Tiket 35 (A110): +3 kolom T_BUILDINGCONSTRUCTION -> 65. Tiket 38 (A130): +18 T_SURROUNDINGRISK -> 83.
+	if am != 83 || len(amandemenPenunjuk) != 48 || len(amandemenTabel) != 1 || len(amandemenJalur) != 1 {
+		t.Fatalf("amandemen %d kolom (%d penunjuk) / %d tabel / %d jalur, mau 83 (48) / 1 / 1", am, len(amandemenPenunjuk), len(amandemenTabel), len(amandemenJalur))
 	}
 	if len(skemaTabel) != 78+1 || n != 1329+am || len(jalurSumber) != 148+1 || len(warisMataUang) != 8 || len(penunjukKandidat) != 50 {
-		t.Fatalf("%d tabel, %d kolom, %d jalur, %d waris, %d penunjuk; mau 79/1394/149/8/50",
+		t.Fatalf("%d tabel, %d kolom, %d jalur, %d waris, %d penunjuk; mau 79/1412/149/8/50",
 			len(skemaTabel), n, len(jalurSumber), len(warisMataUang), len(penunjukKandidat))
 	}
 	unknown := 0
@@ -175,7 +175,8 @@ func TestSetiapKolomBerasal(t *testing.T) {
 	// Butir 72: medan +48 (kolom penunjuk teks mentah). 865 + 327 + 166 + 32 = 1.390.
 	// Butir 76: repository +1 (LINI); empat kolom gabungan tetap repository. 865 + 327 + 167 + 32 = 1.391.
 	// Tiket 35 (A110): medan +3 (PartitionType, SupportWallType, OthersType). 868 + 327 + 167 + 32 = 1.394.
-	mau := map[string]int{asalMedan: 868, asalFlatten: 327, asalRepository: 167, asalKosong: 32}
+	// Tiket 38 (A130): medan +18 (empat sisi x 4, FloodArea, HousekeepingRemark). 886 + 327 + 167 + 32 = 1.412.
+	mau := map[string]int{asalMedan: 886, asalFlatten: 327, asalRepository: 167, asalKosong: 32}
 	for a, n := range mau {
 		if jumlah[a] != n {
 			t.Errorf("%s: %d kolom, mau %d", a, jumlah[a], n)

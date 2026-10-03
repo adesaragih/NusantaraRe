@@ -27,7 +27,8 @@ import (
 )
 
 const (
-	// TabelRiskAddress, TabelRW - tabel warisan POOLDATA, baca saja.
+	// TabelRiskAddress, TabelRW - tabel warisan POOLDATA (tidak dibuat modul ini): RISKADDRESS dibaca
+	// (tiket 36) dan disisipi alamat baru (tiket 37, rw.go); RW dibaca saja.
 	TabelRiskAddress = "RISKADDRESS"
 	TabelRW          = "RW"
 	// BatasRiskAddress - pyMaxRecords RD: paling banyak 100 baris hasil (A117).

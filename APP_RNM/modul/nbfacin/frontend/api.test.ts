@@ -6,12 +6,15 @@ import {
   badanPremiCargo,
   buatOpportunity,
   cariAccount,
+  cariOccupation,
   cariRiskAddress,
   cariSOB,
+  cariZipCode,
   daftarCaseNB,
   daftarClassOfBusiness,
   daftarMarketing,
   simpanGeneral,
+  simpanAlamatBaru,
   simpanObjek,
 } from './api'
 
@@ -207,6 +210,50 @@ describe('cariRiskAddress (tiket 36)', () => {
       expect([...q.keys()].sort()).toEqual(['city', 'halaman', 'zipCode'])
       expect(q.get('zipCode')).toBe('99999')
       expect(q.get('halaman')).toBe('2')
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('popup Add alamat risiko (tiket 37)', () => {
+  it('GET /api/nbfacin/rw?zipCode= dan POST /api/nbfacin/risk-address membawa isian utuh', async () => {
+    const asli = globalThis.fetch
+    const panggil: { url: string; metode: string; badan: string }[] = []
+    globalThis.fetch = (async (u: RequestInfo | URL, init?: RequestInit) => {
+      panggil.push({ url: String(u), metode: init?.method ?? '', badan: String(init?.body ?? '') })
+      return new Response(JSON.stringify({ baris: [], id: 'UJI-1' }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await cariZipCode(' 999 ')
+      const a = {
+        nationName: 'N', provinceName: 'P', districtName: 'D', cityName: 'C', territoryName: 'T', title: 'DESA',
+        address: 'A', postalCode: '99999',
+      }
+      await simpanAlamatBaru(a)
+      expect(panggil[0]!.metode).toBe('GET')
+      expect(new URL(panggil[0]!.url, 'http://x').pathname).toMatch(/\/api\/nbfacin\/rw$/)
+      expect(new URL(panggil[0]!.url, 'http://x').searchParams.get('zipCode')).toBe('999')
+      expect([panggil[1]!.metode, panggil[1]!.url.replace(/^.*(\/api\/)/, '$1')]).toEqual(['POST', '/api/nbfacin/risk-address'])
+      expect(JSON.parse(panggil[1]!.badan)).toEqual(a)
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('cariOccupation (tiket 38)', () => {
+  it('GET /api/nbfacin/occupation?cari= dipangkas', async () => {
+    const asli = globalThis.fetch
+    let url = ''
+    globalThis.fetch = (async (u: RequestInfo | URL) => {
+      url = String(u)
+      return new Response(JSON.stringify({ baris: [] }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await cariOccupation('  uji  ')
+      expect(new URL(url, 'http://x').pathname).toMatch(/\/api\/nbfacin\/occupation$/)
+      expect(new URL(url, 'http://x').searchParams.get('cari')).toBe('uji')
     } finally {
       globalThis.fetch = asli
     }

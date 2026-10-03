@@ -258,7 +258,9 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
 
   return (
     <div className="nbfacin">
-      <h3 className="nbf-inward__case">{kasus.caseId}</h3>
+      <header className="inbox__kepala">
+        <h2 className="inbox__judul">{kasus.caseId}</h2>
+      </header>
       <Gagal galat={galatMuat} />
       {tersimpan && <div className="alert alert--ok">{TEKS_INWARD.tersimpan}</div>}
       <Gagal galat={galatSimpan} />

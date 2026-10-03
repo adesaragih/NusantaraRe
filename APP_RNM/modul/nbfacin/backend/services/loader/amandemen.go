@@ -177,6 +177,25 @@ var amandemenBangunan = []kolomSkema{
 	{nama: "OTHERS_TYPE", tipe: "VARCHAR2(50)", medan: "OthersType"},
 }
 
+// amandemenSekitar - tiket 38 (A130): 18 medan SurroundingRisk yang ADA di layar
+// (`Section\RiskAround.xml` sel 9-14/23-28/37-42/51-56, 68, 69) tetapi tidak di rancangan:
+// empat sisi x {Occupation, Construction, Distance, Note}, FloodArea, HousekeepingRemark. Kode
+// VARCHAR2(50), teks VARCHAR2(500) (pola V-6); Occupation / Note VARCHAR2(1000) = OCCUPATION.OLDID / NAME
+// (butir 80); Construction VARCHAR2(500) (nilai standar terpanjang
+// 215 bita, `DDL\FrontConstruction.xml`); Distance teks angka VARCHAR2(50) (A129). Migrasi 187.
+var amandemenSekitar = func() []kolomSkema {
+	var ks []kolomSkema
+	for _, s := range []struct{ kolom, medan string }{{"FRONT", "Front"}, {"LEFT", "Left"}, {"BACK", "Back"}, {"RIGHT", "Right"}} {
+		ks = append(ks,
+			kolomSkema{nama: s.kolom + "_OCCUPATION", tipe: "VARCHAR2(1000)", medan: s.medan + "Occupation"},
+			kolomSkema{nama: s.kolom + "_CONSTRUCTION", tipe: "VARCHAR2(500)", medan: s.medan + "Construction"},
+			kolomSkema{nama: s.kolom + "_DISTANCE", tipe: "VARCHAR2(50)", medan: s.medan + "Distance"},
+			kolomSkema{nama: s.kolom + "_NOTE", tipe: "VARCHAR2(1000)", medan: s.medan + "Note"})
+	}
+	return append(ks, kolomSkema{nama: "FLOOD_AREA", tipe: "VARCHAR2(50)", medan: "FloodArea"},
+		kolomSkema{nama: "HOUSEKEEPING_REMARK", tipe: "VARCHAR2(500)", medan: "HousekeepingRemark"})
+}()
+
 // init - menggabungkan amandemen ke skema bangkitan. ⛔ Bila workbook kelak sudah
 // memuat tabel/kolom/jalur yang sama, penggabungan diam-diam akan menggandakan atau
 // menimpanya; karena itu tabrakan = panic saat paket dimuat (amandemen ini harus
@@ -184,6 +203,7 @@ var amandemenBangunan = []kolomSkema{
 // Duplikat di dalam amandemen sendiri juga panic.
 func init() {
 	amandemenKolom["T_BUILDINGCONSTRUCTION"] = append(amandemenKolom["T_BUILDINGCONSTRUCTION"], amandemenBangunan...)
+	amandemenKolom["T_SURROUNDINGRISK"] = append(amandemenKolom["T_SURROUNDINGRISK"], amandemenSekitar...)
 	for _, k := range amandemenPenunjuk {
 		amandemenKolom[k.tabel] = append(amandemenKolom[k.tabel], kolomSkema{nama: k.nama, tipe: tipePenunjuk, medan: k.medan})
 	}

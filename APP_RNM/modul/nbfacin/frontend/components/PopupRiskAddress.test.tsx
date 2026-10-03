@@ -11,7 +11,7 @@ import { POPUP_RISK as R } from '../labels'
 import PopupRiskAddress, { adaSaring } from './PopupRiskAddress'
 
 const KOSONG = { address: '', zipCode: '', country: '', province: '', city: '', district: '', territory: '' }
-const HTML = renderToStaticMarkup(<PopupRiskAddress awal={{ ...KOSONG, zipCode: '99999' }} onTutup={() => {}} onPilih={() => {}} />)
+const HTML = renderToStaticMarkup(<PopupRiskAddress awal={{ ...KOSONG, zipCode: '99999' }} onTutup={() => {}} onPilih={() => {}} onBaru={() => {}} />)
 const SUMBER = readFileSync(join(__dirname, 'PopupRiskAddress.tsx'), 'utf8').replace(/\r\n/g, '\n')
 
 describe('PopupRiskAddress', () => {
@@ -28,10 +28,12 @@ describe('PopupRiskAddress', () => {
     expect(HTML).not.toContain('<tbody')
   })
 
-  it('kaki: Search = kirim form (Enter juga), Add nonaktif (H-4)', () => {
+  it('kaki: Search = kirim form (Enter juga); Add hidup membuka PopupTambahRisk menggantikan popup ini (tiket 37)', () => {
     expect(HTML).toMatch(new RegExp(`<button type="submit" class="btn btn--primary">${R.cari.label}</button>`))
-    expect(HTML).toMatch(new RegExp(`<button type="button" class="btn btn--ghost" disabled="">${R.tambah.label}</button>`))
+    expect(HTML).toMatch(new RegExp(`<button type="button" class="btn btn--ghost">${R.tambah.label}</button>`))
     expect(SUMBER).toContain('onKirim={() => void muat(saring, 1)}')
+    expect(SUMBER).toContain('onClick={() => setMenambah(true)}')
+    expect(SUMBER).toMatch(/if \(menambah\) \{[\s\S]*?return <PopupTambahRisk onTutup=\{\(\) => setMenambah\(false\)\} onTersimpan=\{onBaru\} \/>/)
   })
 
   it('Search tanpa saringan tidak memanggil server, menampilkan pesan; paging memakai saringan Search terakhir', () => {
