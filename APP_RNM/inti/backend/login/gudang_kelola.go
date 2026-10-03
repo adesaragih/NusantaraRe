@@ -16,7 +16,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 
 	"nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/menu"
@@ -25,7 +24,7 @@ import (
 var _ GudangKelola = (*GudangOracle)(nil)
 
 func sqlDaftarAkun(t string, satu bool) string {
-	q := fmt.Sprintf(`SELECT LOGIN_ID, NAME, ORGANIZATION_CODE, DIVISION_CODE, UNIT_CODE, IS_ACTIVE,
+	q := fmt.Sprintf(`SELECT LOGIN_ID, CONTACT_ID, NAME, ORGANIZATION_CODE, DIVISION_CODE, UNIT_CODE, IS_ACTIVE,
 	        MUST_CHANGE_PASSWORD, CASE WHEN LOCKED_UNTIL > SYSDATE THEN 1 ELSE 0 END, LAST_LOGIN,
 	        EMAIL, PHONE_NUMBER, EMPLOYEE_ID, JOB_POSITION
 	   FROM %s`, t)
@@ -106,15 +105,15 @@ type pemindai interface{ Scan(...any) error }
 
 func pindaiRingkas(p pemindai) (RingkasAkun, error) {
 	var r RingkasAkun
-	var org, div, unit, nama, email, telepon, nik, jabatan sql.NullString
+	var idKontak, org, div, unit, nama, email, telepon, nik, jabatan sql.NullString
 	var aktif, wajib string
 	var kunci int
 	var terakhir sql.NullTime
-	if err := p.Scan(&r.AkunID, &nama, &org, &div, &unit, &aktif, &wajib, &kunci, &terakhir,
+	if err := p.Scan(&r.AkunID, &idKontak, &nama, &org, &div, &unit, &aktif, &wajib, &kunci, &terakhir,
 		&email, &telepon, &nik, &jabatan); err != nil {
 		return RingkasAkun{}, err
 	}
-	r.Nama, r.Organisasi, r.Divisi, r.Unit = nama.String, org.String, div.String, unit.String
+	r.IDKontak, r.Nama, r.Organisasi, r.Divisi, r.Unit = idKontak.String, nama.String, org.String, div.String, unit.String
 	r.Kontak = Kontak{Email: email.String, Telepon: telepon.String, NIK: nik.String, Jabatan: jabatan.String}
 	r.Aktif, r.WajibGantiSandi, r.Terkunci = aktif == benderaYa, wajib == benderaYa, kunci == 1
 	if terakhir.Valid {
@@ -243,8 +242,8 @@ func tulisTx(ctx context.Context, tx *db.Tx, q string, harusSatu bool, args ...a
 	}
 	hasil, err := tx.ExecContext(ctx, q, args...)
 	if err != nil {
-		if strings.Contains(err.Error(), "ORA-00001") {
-			return fmt.Errorf("login: isian ganda: %w", err)
+		if ganda := galatGanda(err); ganda != nil {
+			return ganda
 		}
 		return fmt.Errorf("login: menulis akun: %w", err)
 	}

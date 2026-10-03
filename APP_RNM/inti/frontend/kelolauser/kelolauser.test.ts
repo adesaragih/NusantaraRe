@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { KELOLA_USER } from '../labels'
+import { KELOLA_USER, LOGIN } from '../labels'
 import { KODE_MENU_KELOLA_USER, modulUntukAkun } from '../lib/daftarMenu'
 import {
   ambilDaftarPengguna,
@@ -21,6 +21,7 @@ import {
   badanUbah,
   isianKosong,
   kelompokMenu,
+  periksaGanda,
   periksaIsian,
   isianDari,
   periksaKontak,
@@ -146,7 +147,7 @@ describe('daftar dan menu', () => {
   it('saringan daftar mencari username dan nama, setiap kata', () => {
     const a = (akunId: string, nama: string): RingkasAkun => ({
       akunId, nama, organisasi: '', divisi: '', unit: '', aktif: true, terkunci: false, wajibGantiSandi: false, loginTerakhir: '',
-      email: '', telepon: '', nik: '', jabatan: '',
+      email: '', telepon: '', nik: '', jabatan: '', contactId: '',
     })
     const daftar = [a('SUPERADMIN', 'Super Admin'), a('UJI-1', 'Budi Klaim')]
     expect(saringDaftar(daftar, 'klaim').map((x) => x.akunId)).toEqual(['UJI-1'])
@@ -237,9 +238,55 @@ describe('kontak akun - Email, Phone Number, Employee ID (NIK), Position (Kelola
   it('form ubah terisi dari akun tersimpan', () => {
     const r = {
       akunId: 'UJI-K', nama: 'Uji', organisasi: '', divisi: '', unit: '', aktif: true, terkunci: false, wajibGantiSandi: false,
-      loginTerakhir: '', email: 'k@x.example', telepon: '08123456789', nik: 'UJI-9', jabatan: 'Staff', workbasket: [], menu: [],
+      loginTerakhir: '', email: 'k@x.example', telepon: '08123456789', nik: 'UJI-9', jabatan: 'Staff', contactId: 'CON-1009',
+      workbasket: [], menu: [],
     }
     const isi = isianDari(r)
     expect([isi.email, isi.telepon, isi.nik, isi.jabatan]).toEqual(['k@x.example', '08123456789', 'UJI-9', 'Staff'])
+  })
+})
+
+describe('identitas akun - Contact ID, username dan email sudah terdaftar (migrasi 905, 03-10-2026)', () => {
+  const akun = (akunId: string, email: string, contactId: string): RingkasAkun => ({
+    akunId, nama: `Nama ${akunId}`, organisasi: '', divisi: '', unit: '', aktif: true, terkunci: false, wajibGantiSandi: false,
+    loginTerakhir: '', email, telepon: '', nik: '', jabatan: '', contactId,
+  })
+  const daftar = [akun('UJI-ADMIN', 'uji.admin@nusantara.example', 'CON-1001'), akun('UJI-DUA', 'uji.dua@nusantara.example', 'CON-1002')]
+  const isi = (akunId: string, email: string) => ({ ...isianKosong(), akunId, email })
+
+  it('username sudah terdaftar: sama persis atau beda huruf saja', () => {
+    for (const id of ['UJI-ADMIN', ' uji-admin ', 'Uji-Dua']) {
+      expect(periksaGanda(isi(id, ''), null, daftar)).toBe(KELOLA_USER.galatUsernameTerdaftar)
+    }
+    expect(periksaGanda(isi('UJI-BARU', ''), null, daftar)).toBeNull()
+  })
+
+  it('email sudah terdaftar: email akun lain, tanpa beda huruf; milik sendiri boleh', () => {
+    expect(periksaGanda(isi('UJI-BARU', ' UJI.ADMIN@nusantara.example '), null, daftar)).toBe(KELOLA_USER.galatEmailTerdaftar)
+    expect(periksaGanda(isi('UJI-ADMIN', 'Uji.Admin@nusantara.example'), 'UJI-ADMIN', daftar)).toBeNull()
+    expect(periksaGanda(isi('UJI-ADMIN', 'UJI.Dua@nusantara.example'), 'UJI-ADMIN', daftar)).toBe(KELOLA_USER.galatEmailTerdaftar)
+    expect(periksaGanda(isi('UJI-BARU', ''), null, daftar)).toBeNull()
+  })
+
+  it('daftar belum termuat: tidak menebak, backend tetap menjaga', () => {
+    expect(periksaGanda(isi('UJI-ADMIN', ''), null, null)).toBeNull()
+  })
+
+  it('pesan ganda berbahasa Inggris dan SAMA dengan jawaban 409 backend; galat ganda tinggal di tab Profil', () => {
+    expect(KELOLA_USER.galatUsernameTerdaftar).toBe('Username is already registered')
+    expect(KELOLA_USER.galatEmailTerdaftar).toBe('Email is already registered to another account')
+    expect(tabGalat(KELOLA_USER.galatUsernameTerdaftar)).toBe('profil')
+    expect(tabGalat(KELOLA_USER.galatEmailTerdaftar)).toBe('profil')
+  })
+
+  it('cari menemukan Contact ID dan email', () => {
+    expect(saringDaftar(daftar, 'con-1002').map((x) => x.akunId)).toEqual(['UJI-DUA'])
+    expect(saringDaftar(daftar, 'uji.admin@').map((x) => x.akunId)).toEqual(['UJI-ADMIN'])
+  })
+
+  it('label: Contact ID; layar login tetap username saja (login lewat email dibatalkan work owner)', () => {
+    expect(KELOLA_USER.contactId).toBe('Contact ID')
+    expect(LOGIN.akun).toBe('Username')
+    expect(LOGIN.salah).toBe('Incorrect username or password.')
   })
 })

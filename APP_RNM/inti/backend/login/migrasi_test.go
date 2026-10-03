@@ -158,3 +158,49 @@ func TestMigrasi904Mundur(t *testing.T) {
 		t.Errorf("904_down:\n dapat %q\n mau   %q", p, mau)
 	}
 }
+
+// Migrasi 905 - CONTACT_ID, username unik, email unik (keputusan work owner 03-10-2026, V1): LOGIN_ID tetap username, kolom
+// baru CONTACT_ID `CON-n` buatan sequence yang mulai di atas nomor kontak SFAGIS terbesar (108 di DEV), akun lama
+// diberi nomor di migrasi yang sama, lalu NOT NULL dan unik. LOGIN_ID unik tanpa beda huruf ("proteksi username
+// sudah ada"). EMAIL disimpan huruf kecil dan unik tanpa beda huruf ("email sudah terdaftar"); login tetap username
+// saja - login lewat email dibatalkan work owner.
+func TestMigrasi905ContactIDDanEmailUnik(t *testing.T) {
+	p := baca902(t, "905_m_login_go_contact_id.sql")
+	var satu []string
+	for _, s := range p {
+		satu = append(satu, strings.Join(strings.Fields(s), " "))
+	}
+	mau := []string{
+		"CREATE SEQUENCE {skema}.M_LOGIN_GO_CONTACT_SEQ START WITH 1001 INCREMENT BY 1 NOCACHE",
+		"ALTER TABLE {skema}.M_LOGIN_GO ADD ( CONTACT_ID VARCHAR2(20) )",
+		"UPDATE {skema}.M_LOGIN_GO SET CONTACT_ID = 'CON-' || {skema}.M_LOGIN_GO_CONTACT_SEQ.NEXTVAL WHERE CONTACT_ID IS NULL",
+		"ALTER TABLE {skema}.M_LOGIN_GO MODIFY (CONTACT_ID NOT NULL)",
+		"CREATE UNIQUE INDEX {skema}.UX_M_LOGIN_GO_CONTACT_ID ON {skema}.M_LOGIN_GO (CONTACT_ID)",
+		"CREATE UNIQUE INDEX {skema}.UX_M_LOGIN_GO_LOGIN_ID ON {skema}.M_LOGIN_GO (LOWER(LOGIN_ID))",
+		"UPDATE {skema}.M_LOGIN_GO SET EMAIL = LOWER(EMAIL) WHERE EMAIL <> LOWER(EMAIL)",
+		"CREATE UNIQUE INDEX {skema}.UX_M_LOGIN_GO_EMAIL ON {skema}.M_LOGIN_GO (LOWER(EMAIL))",
+	}
+	if !reflect.DeepEqual(satu, mau) {
+		t.Errorf("905:\n dapat %q\n mau   %q", satu, mau)
+	}
+	// Aplikasi memberi nomor dengan sequence dan awalan yang SAMA dengan migrasi.
+	sisip := strings.Join(strings.Fields(sqlSisipAkun("T", "S")), " ")
+	nilai := nilaiSisipAkun(AkunBaru{ID: "UJI"}, "hash", true)
+	if !strings.Contains(sisip, ":13 || S.NEXTVAL)") || len(nilai) != 13 || nilai[12] != "CON-" ||
+		AwalanIDKontak != "CON-" || sekuensIDKontak != "M_LOGIN_GO_CONTACT_SEQ" {
+		t.Errorf("INSERT akun memberi CONTACT_ID dari %s berawalan %s (bind ke-13 %v): %s", sekuensIDKontak, AwalanIDKontak, nilai, sisip)
+	}
+}
+
+func TestMigrasi905Mundur(t *testing.T) {
+	p := baca902(t, "905_m_login_go_contact_id_down.sql")
+	mau := []string{
+		"DROP INDEX {skema}.UX_M_LOGIN_GO_EMAIL",
+		"DROP INDEX {skema}.UX_M_LOGIN_GO_LOGIN_ID",
+		"ALTER TABLE {skema}.M_LOGIN_GO DROP (CONTACT_ID)",
+		"DROP SEQUENCE {skema}.M_LOGIN_GO_CONTACT_SEQ",
+	}
+	if !reflect.DeepEqual(p, mau) {
+		t.Errorf("905_down:\n dapat %q\n mau   %q", p, mau)
+	}
+}

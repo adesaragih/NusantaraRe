@@ -41,6 +41,9 @@ var (
 	ErrNIKTidakSah = errors.New("login: Employee ID (NIK) may only contain letters, digits, dots, slashes, or hyphens (max. 30 characters)")
 	// ErrJabatanTidakSah - jabatan terlalu panjang.
 	ErrJabatanTidakSah = errors.New("login: Position is too long (max. 150 characters)")
+	// ErrEmailSudahTerdaftar - email sudah dipakai akun lain, tanpa beda huruf (migrasi 905, permintaan work owner
+	// 03-10-2026 "proteksi email sudah terdaftar").
+	ErrEmailSudahTerdaftar = errors.New("login: Email is already registered to another account")
 )
 
 var (
@@ -49,10 +52,10 @@ var (
 	polaNIK     = regexp.MustCompile(`^[A-Za-z0-9./-]+$`)
 )
 
-// RapikanKontak membuang spasi tepi setiap isian.
+// RapikanKontak membuang spasi tepi setiap isian; email menjadi huruf kecil (migrasi 905: email unik tanpa beda huruf).
 func RapikanKontak(k Kontak) Kontak {
 	return Kontak{
-		Email:   strings.TrimSpace(k.Email),
+		Email:   strings.ToLower(strings.TrimSpace(k.Email)),
 		Telepon: strings.TrimSpace(k.Telepon),
 		NIK:     strings.TrimSpace(k.NIK),
 		Jabatan: strings.TrimSpace(k.Jabatan),

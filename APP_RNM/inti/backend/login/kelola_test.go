@@ -68,7 +68,7 @@ func (g *gudangTiruan) DaftarAkun(context.Context) ([]RingkasAkun, error) {
 	var out []RingkasAkun
 	for _, a := range g.akun {
 		r := ringkasDari(*a)
-		r.Kontak = g.kontak[a.ID]
+		r.Kontak, r.IDKontak = g.kontak[a.ID], g.idKontak[a.ID]
 		out = append(out, r)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].AkunID < out[j].AkunID })
@@ -80,7 +80,7 @@ func (g *gudangTiruan) RingkasAkun(_ context.Context, id string) (RingkasAkun, e
 		return RingkasAkun{}, ErrAkunTidakAda
 	}
 	r := ringkasDari(*a)
-	r.Kontak = g.kontak[id]
+	r.Kontak, r.IDKontak = g.kontak[id], g.idKontak[id]
 	return r, nil
 }
 func ringkasDari(a Akun) RingkasAkun {

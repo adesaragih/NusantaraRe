@@ -76,7 +76,10 @@ func tulisGalatKelola(w http.ResponseWriter, err error, apa string) {
 	case errors.Is(err, ErrAkunTidakAda):
 		galat.Tulis(w, http.StatusNotFound, "akun tidak ada")
 	case errors.Is(err, ErrAkunSudahAda):
-		galat.Tulis(w, http.StatusConflict, "username sudah dipakai")
+		// Bahasa Inggris, sama dengan `KELOLA_USER.galatUsernameTerdaftar` (permintaan work owner 03-10-2026).
+		galat.Tulis(w, http.StatusConflict, "Username is already registered")
+	case errors.Is(err, ErrEmailSudahTerdaftar):
+		galat.Tulis(w, http.StatusConflict, strings.TrimPrefix(ErrEmailSudahTerdaftar.Error(), "login: "))
 	case errors.Is(err, ErrDiriSendiri), errors.Is(err, ErrAdminTerakhir):
 		galat.Tulis(w, http.StatusConflict, pesan)
 	case errors.Is(err, ErrAkunTidakSah):

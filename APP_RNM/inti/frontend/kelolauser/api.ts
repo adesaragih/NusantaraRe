@@ -10,6 +10,8 @@ import { minta } from '../klien'
 /** Satu baris daftar — `login.RingkasAkun`. */
 export interface RingkasAkun {
   akunId: string
+  /** `CONTACT_ID` `CON-n` (migrasi 905) — diberi saat user dibuat, tidak pernah berubah. */
+  contactId: string
   nama: string
   organisasi: string
   divisi: string

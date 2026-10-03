@@ -3,6 +3,9 @@ package login
 import (
 	"context"
 	"errors"
+	"fmt"
+	"sort"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -22,6 +25,8 @@ type gudangTiruan struct {
 	dibuat           []AkunBaru
 	// kontak - email, telepon, NIK, jabatan per akun (migrasi 904); nil = belum ada yang ditulis.
 	kontak map[string]Kontak
+	// idKontak - CONTACT_ID per akun (migrasi 905); diberi BuatAkun berurutan mulai CON-1001 seperti sequence.
+	idKontak map[string]string
 }
 
 // hashUji - satu hash bcrypt untuk seluruh uji (cost 12 lambat).
@@ -127,6 +132,10 @@ func (g *gudangTiruan) BuatAkun(_ context.Context, a AkunBaru, hash string, waji
 	g.workbasket[a.ID], g.menu[a.ID] = a.Workbasket, a.Menu
 	g.akun[a.ID] = &Akun{ID: a.ID, Nama: a.Nama, HashSandi: hash, Aktif: true, WajibGantiSandi: wajibGanti, VersiSesi: 1}
 	g.tulisKontak(a.ID, a.Kontak)
+	if g.idKontak == nil {
+		g.idKontak = map[string]string{}
+	}
+	g.idKontak[a.ID] = fmt.Sprintf("%s%d", AwalanIDKontak, 1001+len(g.idKontak))
 	return nil
 }
 
@@ -135,6 +144,25 @@ func (g *gudangTiruan) tulisKontak(id string, k Kontak) {
 		g.kontak = map[string]Kontak{}
 	}
 	g.kontak[id] = k
+}
+
+// PemakaiUsername dan PemakaiEmail - seperti Oracle: tanpa beda huruf, urut LOGIN_ID.
+func (g *gudangTiruan) PemakaiUsername(_ context.Context, id string) ([]string, error) {
+	return g.pemakai(func(akun string) string { return akun }, id), nil
+}
+func (g *gudangTiruan) PemakaiEmail(_ context.Context, email string) ([]string, error) {
+	return g.pemakai(func(akun string) string { return g.kontak[akun].Email }, email), nil
+}
+func (g *gudangTiruan) pemakai(nilaiAkun func(string) string, cari string) []string {
+	cari = strings.TrimSpace(cari)
+	var out []string
+	for id := range g.akun {
+		if v := nilaiAkun(id); v != "" && strings.EqualFold(v, cari) {
+			out = append(out, id)
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 func layananUji(g *gudangTiruan, saat time.Time) *Layanan {

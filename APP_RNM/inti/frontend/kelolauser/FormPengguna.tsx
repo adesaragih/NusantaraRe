@@ -25,6 +25,7 @@ import {
   ubahPengguna,
   type OpsiMaster,
   type PilihanKelola,
+  type RingkasAkun,
   type RinciAkun,
 } from './api'
 import {
@@ -36,6 +37,7 @@ import {
   isianDari,
   isianKosong,
   kelompokMenu,
+  periksaGanda,
   periksaIsian,
   setelDivisi,
   setelOrganisasi,
@@ -88,6 +90,7 @@ function IsianSandiBaru({
 export default function FormPengguna({
   akunId,
   akunSaya,
+  daftar,
   onTutup,
   onTersimpan,
 }: {
@@ -95,12 +98,16 @@ export default function FormPengguna({
   akunId: string | null
   /** Akun yang sedang login - Kelola User miliknya tidak dapat dicabut. */
   akunSaya: string
+  /** Daftar user yang sudah termuat - cek username/email sudah terdaftar sebelum kirim; `null` = belum termuat. */
+  daftar: readonly RingkasAkun[] | null
   onTutup: () => void
   onTersimpan: (r: RinciAkun) => void
 }) {
   const baru = akunId === null
   const [pilihan, setPilihan] = useState<PilihanKelola | null>(null)
   const [isi, setIsi] = useState<IsianForm>(isianKosong)
+  // Contact ID hanya ditampilkan (migrasi 905): diberi backend saat user dibuat, tidak dapat diubah.
+  const [idKontak, setIdKontak] = useState('')
   // Centang wajib ganti saat dibuka - Security hanya dikirim bila berubah.
   const [wajibAwal, setWajibAwal] = useState(true)
   const [tab, setTab] = useState<TabForm>('profil')
@@ -117,6 +124,7 @@ export default function FormPengguna({
         setPilihan(p)
         if (r !== null) {
           setIsi(isianDari(r))
+          setIdKontak(r.contactId)
           setWajibAwal(r.wajibGantiSandi)
         }
       },
@@ -136,7 +144,7 @@ export default function FormPengguna({
 
   const kirim = () => {
     if (sibuk || pilihan === null) return
-    const awal = periksaIsian(isi, baru, akunSaya)
+    const awal = periksaIsian(isi, baru, akunSaya) ?? periksaGanda(isi, akunId, daftar)
     setGalatLokal(awal)
     setGalatSimpan(null)
     if (awal !== null) {
@@ -204,6 +212,12 @@ export default function FormPengguna({
                   />
                   {!baru && <p className="muted kelola-user__catatan">{KELOLA_USER.akunTetap}</p>}
                 </div>
+                {!baru && (
+                  <div>
+                    <Field label={KELOLA_USER.contactId} value={idKontak} onChange={() => undefined} readOnly />
+                    <p className="muted kelola-user__catatan">{KELOLA_USER.catatanContactId}</p>
+                  </div>
+                )}
                 <Field
                   label={KELOLA_USER.nama}
                   value={isi.nama}

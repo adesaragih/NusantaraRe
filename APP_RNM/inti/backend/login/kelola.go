@@ -43,7 +43,9 @@ var (
 //
 // ⛔ Nol hash, nol versi sesi.
 type RingkasAkun struct {
-	AkunID          string `json:"akunId"`
+	AkunID string `json:"akunId"`
+	// IDKontak - `CONTACT_ID` `CON-n` (migrasi 905): diberi saat akun dibuat, tidak pernah berubah.
+	IDKontak        string `json:"contactId"`
 	Nama            string `json:"nama"`
 	Organisasi      string `json:"organisasi"`
 	Divisi          string `json:"divisi"`
@@ -327,6 +329,9 @@ func (k *Kelola) Ubah(ctx context.Context, aktor, id string, isi IsianAkun) (Rin
 	isi.Workbasket, isi.Menu = bersih(isi.Workbasket), bersih(isi.Menu)
 	isi.Kontak = RapikanKontak(isi.Kontak)
 	if err := PeriksaKontak(isi.Kontak); err != nil {
+		return RinciAkun{}, err
+	}
+	if err := k.layanan.periksaEmailBebas(ctx, id, isi.Email); err != nil {
 		return RinciAkun{}, err
 	}
 	if id == aktor && !inti.PunyaMenu(isi.Menu, menu.KodeKelolaUser) {

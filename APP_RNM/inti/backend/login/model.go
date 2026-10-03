@@ -83,4 +83,10 @@ type Gudang interface {
 	// BuatAkun menulis akun, workbasket, dan menunya dalam SATU transaksi;
 	// `wajibGanti` mengisi MUST_CHANGE_PASSWORD.
 	BuatAkun(ctx context.Context, a AkunBaru, hash string, wajibGanti bool) error
+	// PemakaiUsername - LOGIN_ID akun yang username-nya sama dengan `id`, tanpa beda huruf (migrasi 905); urut,
+	// kosong = belum dipakai.
+	PemakaiUsername(ctx context.Context, id string) ([]string, error)
+	// PemakaiEmail - LOGIN_ID akun yang EMAIL-nya sama dengan `email`, tanpa beda huruf (migrasi 905); urut,
+	// kosong = belum dipakai.
+	PemakaiEmail(ctx context.Context, email string) ([]string, error)
 }

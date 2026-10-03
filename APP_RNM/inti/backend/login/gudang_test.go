@@ -22,11 +22,14 @@ func TestSQLGudangBersihDanBerbind(t *testing.T) {
 		"divisi":     sqlInfoDivisi("S.M_DIVISION", "S.M_ORGANIZATION"),
 		"organisasi": sqlInfoOrganisasi("S.M_ORGANIZATION"),
 		"wb aktif":   sqlWorkbasketAktif("S.M_WORKBASKET"),
-		"sisip":      sqlSisipAkun("S.M_LOGIN_GO"),
+		"sisip":      sqlSisipAkun("S.M_LOGIN_GO", "S.M_LOGIN_GO_CONTACT_SEQ"),
 		"sisip wb":   sqlSisipWorkbasket("S.M_LOGIN_GO_WORKBASKET"),
 		"menu":       sqlMenu("S.M_LOGIN_GO_MENU"),
 		"wb semua":   sqlWorkbasketSemua("S.M_LOGIN_GO_WORKBASKET"),
 		"sisip menu": sqlSisipMenu("S.M_LOGIN_GO_MENU"),
+		// Identitas (migrasi 905, 03-10-2026).
+		"pemakai username": sqlPemakaiUsername("S.M_LOGIN_GO"),
+		"pemakai email":    sqlPemakaiEmail("S.M_LOGIN_GO"),
 		// Kelola User (01-10-2026).
 		"ringkas":      sqlDaftarAkun("S.M_LOGIN_GO", true),
 		"kunci admin":  sqlKunciAdmin("S.M_LOGIN_GO", "S.M_LOGIN_GO_MENU"),

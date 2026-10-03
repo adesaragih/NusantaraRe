@@ -238,6 +238,24 @@ func (l *Layanan) periksaJenjang(ctx context.Context, a AkunBaru) error {
 	return nil
 }
 
+// periksaEmailBebas - email (sudah dirapikan) tidak dipakai akun LAIN, tanpa beda huruf (permintaan work owner
+// 03-10-2026 "email sudah terdaftar"). Email kosong selalu bebas.
+func (l *Layanan) periksaEmailBebas(ctx context.Context, pemilik, email string) error {
+	if email == "" {
+		return nil
+	}
+	pemakai, err := l.gudang.PemakaiEmail(ctx, email)
+	if err != nil {
+		return err
+	}
+	for _, id := range pemakai {
+		if id != pemilik {
+			return ErrEmailSudahTerdaftar
+		}
+	}
+	return nil
+}
+
 // BuatPengguna membuat akun dengan sandi sementara - dikembalikan SEKALI
 // untuk dicetak; akunnya wajib ganti sandi saat login pertama.
 func (l *Layanan) BuatPengguna(ctx context.Context, a AkunBaru) (string, error) {
@@ -266,9 +284,13 @@ func (l *Layanan) buat(ctx context.Context, a AkunBaru, sandi string, wajibGanti
 	if !AkunSah(a.ID) || a.Nama == "" || len(a.Nama) > 150 {
 		return ErrAkunTidakSah
 	}
-	if _, err := l.gudang.AmbilAkun(ctx, a.ID); err == nil {
-		return ErrAkunSudahAda
-	} else if !errors.Is(err, ErrAkunTidakAda) {
+	// Username sudah ada (permintaan work owner 03-10-2026): sama persis atau beda huruf saja (migrasi 905).
+	if pemakai, err := l.gudang.PemakaiUsername(ctx, a.ID); err != nil {
+		return err
+	} else if len(pemakai) > 0 {
+		return fmt.Errorf("%w: %s", ErrAkunSudahAda, strings.Join(pemakai, ", "))
+	}
+	if err := l.periksaEmailBebas(ctx, a.ID, a.Email); err != nil {
 		return err
 	}
 	if err := l.periksaJenjang(ctx, a); err != nil {

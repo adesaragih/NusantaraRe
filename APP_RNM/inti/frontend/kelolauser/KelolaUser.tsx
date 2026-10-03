@@ -154,6 +154,8 @@ export default function KelolaUser({
                   <td>
                     {a.akunId}
                     {saya && <span className="muted"> ({KELOLA_USER.anda})</span>}
+                    {/* Contact ID di bawah username (migrasi 905), bukan kolom sendiri: tabel tidak melebar. */}
+                    {a.contactId !== '' && <div className="muted">{a.contactId}</div>}
                   </td>
                   <td>
                     {a.nama}
@@ -235,6 +237,7 @@ export default function KelolaUser({
           key={form ?? ''}
           akunId={form}
           akunSaya={akunSaya}
+          daftar={daftar}
           onTutup={() => {
             setForm(undefined)
           }}

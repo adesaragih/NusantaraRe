@@ -152,6 +152,29 @@ export function periksaIsian(isi: IsianForm, baru: boolean, akunSaya: string): s
   return null
 }
 
+/**
+ * Username atau email sudah terdaftar (migrasi 905) — dicek di layar dari daftar yang sudah termuat supaya pesannya
+ * langsung muncul; backend tetap penjaga sebenarnya (409). Aturannya sama dengan `login.PemakaiUsername` dan
+ * `login.PemakaiEmail`: username dengan username, email dengan email, masing-masing tanpa beda huruf. `akunId` = akun
+ * yang diubah (`null` = user baru); `daftar` `null` = belum termuat, tidak menebak.
+ */
+export function periksaGanda(
+  isi: Pick<IsianForm, 'akunId' | 'email'>,
+  akunId: string | null,
+  daftar: readonly RingkasAkun[] | null,
+): string | null {
+  if (daftar === null) return null
+  const lain = daftar.filter((a) => a.akunId !== akunId)
+  const sama = (a: string, b: string) => a !== '' && a.toLowerCase() === b.toLowerCase()
+  if (akunId === null) {
+    const id = isi.akunId.trim()
+    if (lain.some((a) => sama(a.akunId, id))) return KELOLA_USER.galatUsernameTerdaftar
+  }
+  const email = isi.email.trim()
+  if (email !== '' && lain.some((a) => sama(a.email, email))) return KELOLA_USER.galatEmailTerdaftar
+  return null
+}
+
 export function badanUbah(isi: IsianForm): BadanUbah {
   return {
     nama: isi.nama.trim(),
@@ -201,7 +224,7 @@ export function saringDaftar(daftar: readonly RingkasAkun[], kueri: string): Rin
   const kata = kueri.trim().toLowerCase().split(/\s+/).filter(Boolean)
   if (kata.length === 0) return [...daftar]
   return daftar.filter((a) => {
-    const jerami = (a.akunId + ' ' + a.nama).toLowerCase()
+    const jerami = [a.akunId, a.contactId, a.nama, a.email].join(' ').toLowerCase()
     return kata.every((k) => jerami.includes(k))
   })
 }

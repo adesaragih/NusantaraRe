@@ -186,7 +186,7 @@ export const KELOLA_USER = {
   judul: 'Kelola User',
   sub: 'Akun login, workbasket, dan menu yang boleh dibuka setiap user. Perubahan berlaku pada permintaan berikutnya.',
   tambah: 'Tambah user',
-  cari: 'Cari username atau nama',
+  cari: 'Cari username, Contact ID, nama, atau email',
   kosong: 'Belum ada user.',
   tidakCocok: 'Tidak ada user yang cocok dengan pencarian.',
   kolomAkun: 'Username',
@@ -258,6 +258,13 @@ export const KELOLA_USER = {
   galatTelepon: 'Phone Number must contain 8 to 15 digits, may start with +, and may use spaces or hyphens',
   galatNIK: 'Employee ID (NIK) may only contain letters, digits, dots, slashes, or hyphens (max. 30 characters)',
   galatJabatan: 'Position is too long (max. 150 characters)',
+  // Identitas akun (migrasi 905, keputusan work owner 03-10-2026: "M_LOGIN_GO ID nya pake CON-xxx"; "tambahkan
+  // proteksi ... email sudah terdaftar"; "proteksi username sudah ada"). Pesan ganda SAMA dengan jawaban 409
+  // `kelola_rute.go`. Login lewat email dibatalkan work owner - layar login tetap username.
+  contactId: 'Contact ID',
+  catatanContactId: 'Generated automatically when the user is created; it never changes.',
+  galatUsernameTerdaftar: 'Username is already registered',
+  galatEmailTerdaftar: 'Email is already registered to another account',
   tersimpan: (akun: string) => `User ${akun} tersimpan.`,
   terhapus: (akun: string) => `User ${akun} dihapus permanen.`,
   dinonaktifkan: (akun: string) => `User ${akun} dinonaktifkan; sesinya berakhir pada permintaan berikutnya.`,

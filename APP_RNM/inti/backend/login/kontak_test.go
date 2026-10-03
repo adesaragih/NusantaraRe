@@ -120,10 +120,10 @@ func TestPesanKontakBerbahasaInggris(t *testing.T) {
 
 // go-ora mengikat menurut URUTAN placeholder: kolom kontak dan nilainya (`nilaiKontak`) harus berurutan sama.
 func TestSQLKontakUrutKolomDanBind(t *testing.T) {
-	sisip := strings.Join(strings.Fields(sqlSisipAkun("T")), " ")
-	if !strings.Contains(sisip, "MUST_CHANGE_PASSWORD, EMAIL, PHONE_NUMBER, EMPLOYEE_ID, JOB_POSITION)") ||
-		!strings.Contains(sisip, ":8, :9, :10, :11, :12)") {
-		t.Errorf("INSERT: kolom kontak sesudah MUST_CHANGE_PASSWORD, bind :9-:12: %s", sisip)
+	sisip := strings.Join(strings.Fields(sqlSisipAkun("T", "S")), " ")
+	if !strings.Contains(sisip, "MUST_CHANGE_PASSWORD, EMAIL, PHONE_NUMBER, EMPLOYEE_ID, JOB_POSITION, CONTACT_ID)") ||
+		!strings.Contains(sisip, ":8, :9, :10, :11, :12, :13 || S.NEXTVAL)") {
+		t.Errorf("INSERT: kolom kontak sesudah MUST_CHANGE_PASSWORD, bind :9-:12, CONTACT_ID :13: %s", sisip)
 	}
 	ubah := strings.Join(strings.Fields(sqlUbahProfil("T")), " ")
 	if !strings.Contains(ubah, "EMAIL = :5, PHONE_NUMBER = :6, EMPLOYEE_ID = :7, JOB_POSITION = :8") ||
