@@ -246,3 +246,20 @@ describe('mode lihat: nol tambah/edit/delete - baru ada sesudah Edit (keputusan 
     for (const k of ['LAMPIRAN_MPNL.refresh', 'LAMPIRAN_MPNL.downloadAll']) expect(dijagaLihat(LAMPIRAN, k), k).toBe(false)
   })
 })
+
+describe('Document List dipilih dari daftar (permintaan work owner 03-10-2026)', () => {
+  it('kolom Document List DOCUMENT CLAIM membawa PILIHAN_DOKUMEN_KLAIM', () => {
+    expect(KODE).toContain("kolom={[[DOKUMEN_MPNL.documentList, 'document', PILIHAN_DOKUMEN_KLAIM]]}")
+  })
+
+  it('sel berpilihan di mode sunting = pilihan (nilai di luar daftar tetap tampil, tidak dibuang); mode lihat = teks', () => {
+    const grid = KODE.slice(KODE.indexOf('function GridSederhana'), KODE.indexOf('function GridBerangka'))
+    expect(grid).toMatch(/opsi !== undefined && !lihat \? \(\s*<>\s*<PilihanMedan/)
+    expect(grid).toContain('<SelIsi')
+    // Nama utuh nilai terpilih tampil di bawah kotak pilihan (kotak bawaan tidak membungkus teks panjang).
+    expect(grid).toContain('<div className="mpnl-sel-teks">')
+    const MEDAN = readFileSync(join(__dirname, 'Medan.tsx'), 'utf8')
+    expect(MEDAN).toContain("const asing = value !== '' && !opsi.some((o) => o.value === value)")
+  })
+})
+

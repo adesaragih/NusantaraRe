@@ -38,6 +38,7 @@ import {
   type ProdukUmum,
 } from '../api'
 import {
+  PILIHAN_DOKUMEN_KLAIM,
   PILIHAN_PEMBAYARAN,
   hitungMaxSumReasured,
   namaTreaty,
@@ -253,12 +254,13 @@ export default function FormProduk({
             }}
           />
 
-          {/* `DOCUMENT CLAIM` b14601 - `Document List` dropdown `associated` (daftar tak ikut ekspor, OQ-MPNL-05). */}
+          {/* `DOCUMENT CLAIM` b14601 - `Document List` dropdown: PromptList properti `.Document` (XML dikirim work owner
+          03-10-2026, `PILIHAN_DOKUMEN_KLAIM`); nilai lama di luar daftar tetap tampil, tidak dibuang. */}
           <h4 className="mpnl-judul-grid">{DOKUMEN_MPNL.judul}</h4>
           <GridSederhana<BarisDokumen>
             baris={p.documentClaim}
             lihat={lihat}
-            kolom={[[DOKUMEN_MPNL.documentList, 'document']]}
+            kolom={[[DOKUMEN_MPNL.documentList, 'document', PILIHAN_DOKUMEN_KLAIM]]}
             kosong={{ document: '' }}
             onUbah={(d) => {
               setP((x) => ({ ...x, documentClaim: d }))
@@ -687,7 +689,8 @@ function GridSederhana<T extends { asli?: string }>({
 }: {
   baris: readonly T[]
   lihat: boolean
-  kolom: ReadonlyArray<readonly [label: string, medan: keyof T & string]>
+  /** Kolom: label, medan, dan (opsional) daftar pilihan - sel berpilihan menjadi pilihan di mode sunting. */
+  kolom: ReadonlyArray<readonly [label: string, medan: keyof T & string, opsi?: readonly string[]]>
   kosong: T
   onUbah: (d: T[]) => void
 }) {
@@ -716,14 +719,28 @@ function GridSederhana<T extends { asli?: string }>({
             <tbody>
               {baris.map((b, i) => (
                 <tr key={i} className="inbox__baris">
-                  {kolom.map(([l, m]) => (
+                  {kolom.map(([l, m, opsi]) => (
                     <td key={m}>
-                      <SelIsi
-                        label={l}
-                        nilai={String(b[m] ?? '')}
-                        readOnly={lihat}
-                        onUbah={(v) => onUbah(ganti<T>(baris, i, { [m]: v } as Partial<T>))}
-                      />
+                      {opsi !== undefined && !lihat ? (
+                        <>
+                          <PilihanMedan
+                            labelAria={l}
+                            value={String(b[m] ?? '')}
+                            opsi={opsi.map((v) => ({ value: v, label: v }))}
+                            kelas="field__input mpnl-sel-isi"
+                            onChange={(v) => onUbah(ganti<T>(baris, i, { [m]: v } as Partial<T>))}
+                          />
+                          {/* Kotak pilihan bawaan tidak membungkus teks: nama utuh nilai terpilih di bawahnya. */}
+                          {String(b[m] ?? '') !== '' && <div className="mpnl-sel-teks">{String(b[m] ?? '')}</div>}
+                        </>
+                      ) : (
+                        <SelIsi
+                          label={l}
+                          nilai={String(b[m] ?? '')}
+                          readOnly={lihat}
+                          onUbah={(v) => onUbah(ganti<T>(baris, i, { [m]: v } as Partial<T>))}
+                        />
+                      )}
                     </td>
                   ))}
                   <td className="table__actions">

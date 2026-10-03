@@ -113,18 +113,23 @@ export function PilihanMedan({
   value,
   opsi,
   onChange,
+  kelas = 'field__input',
 }: {
   labelAria: string
   value: string
   opsi: readonly { value: string; label: string }[]
   onChange: (v: string) => void
+  /** Kelas `<select>`; sel grid memakai `field__input mpnl-sel-isi` (selebar sel). */
+  kelas?: string
 }) {
   const teksUI = useTeksUI()
   const asing = value !== '' && !opsi.some((o) => o.value === value)
   return (
     <select
-      className="field__input"
+      className={kelas}
       aria-label={labelAria}
+      // Teks pilihan panjang (Document List) terpotong di kotak sempit: teks utuhnya di tooltip.
+      title={value}
       value={value}
       onChange={(e) => {
         onChange(e.target.value)

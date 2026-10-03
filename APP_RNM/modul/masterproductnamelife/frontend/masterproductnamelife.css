@@ -179,6 +179,15 @@
   min-width: 90px;
 }
 
+/* Nama utuh nilai terpilih di bawah kotak pilihan sel grid (Document List: teks panjang, kartu sempit). */
+.mpnl .mpnl-sel-teks {
+  margin-top: 4px;
+  color: var(--mt-teks-redup);
+  font-size: var(--fs-xs);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 /* Checkbox `On Retention` b47303 (`pyCheckboxCaption` b47312). */
 .mpnl .mpnl-centang {
   display: inline-flex;

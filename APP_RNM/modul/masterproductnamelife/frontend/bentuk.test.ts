@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   BATAS_DROPDOWN,
+  PILIHAN_DOKUMEN_KLAIM,
   PILIHAN_PEMBAYARAN,
   geserAktif,
   hitungMaxSumReasured,
@@ -194,6 +195,30 @@ describe('Copy Old - popup produk lama (permintaan work owner 03-10-2026)', () =
         { id: '5', status: 'sudahAda', pesan: [] },
       ]),
     ).toEqual({ disalin: 2, sudahAda: 1, ditolak: 1, gagal: 1 })
+  })
+})
+
+describe('Document List - PromptList properti `.Document` (XML dikirim work owner 03-10-2026)', () => {
+  it('16 nilai `pyStandardValue`, urutan `pyPromptTableList`, tanpa ganda', () => {
+    expect(PILIHAN_DOKUMEN_KLAIM).toEqual([
+      'Sertifikat peserta (Participant certificate)',
+      'Copy identitas diri KTP/SIM/Paspor (Copy of ID card/Driving license/Passport)',
+      'Copy kartu keluarga (Copy of family card)',
+      'Copy sertifikat kematian (Copy of death certificate)',
+      'Copy bukti pembayaran klaim (Copy of claim payment receipt)',
+      'Copy legalisir rincian biaya perawatan dari rumah sakit (Legalized copy of hospital treatment cost details)',
+      'Copy legalisir kwitansi biaya perawatan dari rumah sakit (Legalized copy of hospital payment receipts)',
+      'Surat pernyataan meninggal oleh dokter/rumah sakit (Doctor/Hospital death statement letter)',
+      'Surat keterangan meninggal oleh polisi (Police Statement for death)',
+      'Surat keterangan meninggal karena kecelakaan oleh polisi (Police Statement for accidental death)',
+      'Surat keterangan kepolisian untuk klaim akibat kecelakaan (Police Statement for accident claim)',
+      'Surat diagnosa dari dokter/rumah sakit (Doctor/Hospital diagnosis letter)',
+      'Surat pernyataan kesehatan / SPK (Health declaration form)',
+      'Formulir klaim dari perusahaan asuransi (Insurance claim form)',
+      'Laporan resume medis dokter/rumah sakit tentang perawatan/pembedahan peserta (Medical summary report from doctor/hospital regarding treatment/surgery)',
+      'Lain-lain (Others)',
+    ])
+    expect(new Set(PILIHAN_DOKUMEN_KLAIM).size).toBe(16)
   })
 })
 

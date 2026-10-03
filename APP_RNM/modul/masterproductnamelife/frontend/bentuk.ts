@@ -94,6 +94,31 @@ export const PILIHAN_PEMBAYARAN: readonly Opsi[] = [
   { value: '4', label: PEMBAYARAN_MPNL.monthly },
 ]
 
+/**
+ * `Document List` b15286 (grid `DOCUMENT CLAIM`) - daftar PromptList properti `.Document` kelas
+ * `ASM-FW-GISFW-Data-UnderwritingLimit` (`Rule-Obj-Property`, ruleset GISFW 01-01-91, `pyTableOption` PromptList,
+ * `pyPromptTableList` 16 baris; `pyStandardValue` = `pyLocalizedValue`). Rule ini tidak ada di korpus ekspor (OQ-MPNL-05);
+ * XML-nya dikirim work owner 03-10-2026: "untuk document list productname pilih dari list ini". Urutan = urutan rule.
+ */
+export const PILIHAN_DOKUMEN_KLAIM: readonly string[] = [
+  'Sertifikat peserta (Participant certificate)',
+  'Copy identitas diri KTP/SIM/Paspor (Copy of ID card/Driving license/Passport)',
+  'Copy kartu keluarga (Copy of family card)',
+  'Copy sertifikat kematian (Copy of death certificate)',
+  'Copy bukti pembayaran klaim (Copy of claim payment receipt)',
+  'Copy legalisir rincian biaya perawatan dari rumah sakit (Legalized copy of hospital treatment cost details)',
+  'Copy legalisir kwitansi biaya perawatan dari rumah sakit (Legalized copy of hospital payment receipts)',
+  'Surat pernyataan meninggal oleh dokter/rumah sakit (Doctor/Hospital death statement letter)',
+  'Surat keterangan meninggal oleh polisi (Police Statement for death)',
+  'Surat keterangan meninggal karena kecelakaan oleh polisi (Police Statement for accidental death)',
+  'Surat keterangan kepolisian untuk klaim akibat kecelakaan (Police Statement for accident claim)',
+  'Surat diagnosa dari dokter/rumah sakit (Doctor/Hospital diagnosis letter)',
+  'Surat pernyataan kesehatan / SPK (Health declaration form)',
+  'Formulir klaim dari perusahaan asuransi (Insurance claim form)',
+  'Laporan resume medis dokter/rumah sakit tentang perawatan/pembedahan peserta (Medical summary report from doctor/hospital regarding treatment/surgery)',
+  'Lain-lain (Others)',
+]
+
 /** `Premium Factor (%)` b25398 - visibilitas `OTHER ProductNameInward.PAYMENT==3`. */
 export function tampilPremiumFactor(payment: string): boolean {
   return payment.trim() === '3'
