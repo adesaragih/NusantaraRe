@@ -42,8 +42,8 @@ func TestLaporanMedanTakDikenalBerkasCSV(t *testing.T) { // K17, AC 57
 	baris := bacaCSV(t, &tak)
 	harap := [][]string{
 		{"POLIS_ID", "JALUR", "NILAI"},
-		{"NB-77", "PolicyTreatyIn.QuotationData.UJIFiktifQuotation", ""},
-		{"NB-77", "PolicyTreatyIn.UJIMedanFiktif", "UJI-a, \"b\"\nbaris kedua"}, // nilai utuh, tidak dibuang
+		{"UJI-77", "PolicyTreatyIn.QuotationData.UJIFiktifQuotation", ""},
+		{"UJI-77", "PolicyTreatyIn.UJIMedanFiktif", "UJI-a, \"b\"\nbaris kedua"}, // nilai utuh, tidak dibuang
 	}
 	if len(baris) != len(harap) {
 		t.Fatalf("CSV %q", baris)
@@ -88,7 +88,7 @@ func TestLaporanGalatBerkasCSVDanTanggalAmbiguDihitung(t *testing.T) { // AC 58,
 	if len(baris) != 3 || strings.Join(baris[0], ",") != "IDPEGA,NOPOLIS,JALUR,NILAI,SEBAB" {
 		t.Fatalf("CSV galat %q", baris)
 	}
-	if baris[1][0] != "ASM-FW-GISFW-WORK-NB NB-77" || baris[1][2] != "PolicyTreatyIn.StartDate" ||
+	if baris[1][0] != "ASM-FW-GISFW-WORK-NB UJI-77" || baris[1][2] != "PolicyTreatyIn.StartDate" ||
 		baris[1][3] != "05/06/2017" || !strings.Contains(baris[1][4], "ambigu") {
 		t.Errorf("baris galat tanggal %q", baris[1])
 	}
@@ -117,10 +117,36 @@ func TestRingkasanSelesaiHanyaBilaNolGalatDanNolTakDikenal(t *testing.T) { // AC
 	l.SudahDimuat()
 	_ = l.Tutup()
 	r := l.Ringkasan()
-	if !r.Selesai() || r.AngkaKasusTerbesar != 77 || r.SudahDimuat != 1 {
+	// pyID fixture `UJI-77` bukan ruang nomor `AwalanKasus`: SEQ_WORK_POLIS tidak tersentuh.
+	if !r.Selesai() || r.AngkaKasusTerbesar != 0 || r.SudahDimuat != 1 {
 		t.Errorf("ringkasan %+v", r)
 	}
-	if !strings.Contains(r.Teks(), "NB-77") {
+	if strings.Contains(r.Teks(), "Nomor kasus terbesar") {
+		t.Errorf("pyID di luar awalan %s tidak dilaporkan:\n%s", AwalanKasus, r.Teks())
+	}
+}
+
+// Nomor kasus terbesar = ruang nomor `AwalanKasus` (SEQ_WORK_POLIS bersama,
+// models/kasus.go). pyID dirakit dari `RakitIDKasus` - perilaku yang diuji
+// memang ruang nomor itu; fixture sendiri tetap `UJI-`.
+func TestRingkasanMencetakNomorKasusTerbesarBerawalanKasus(t *testing.T) {
+	var tak, gal bytes.Buffer
+	l, _ := LaporanPemuatBaru(&tak, &gal, true)
+	for _, urut := range []string{"770", "77"} {
+		b := barisUji(dokumenUjiProp)
+		b.IDPega = strings.ToUpper(KelasDeret) + " " + RakitIDKasus(urut)
+		h, err := PecahDokumenLama(b)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = l.Berhasil(h)
+	}
+	_ = l.Tutup()
+	r := l.Ringkasan()
+	if r.AngkaKasusTerbesar != 770 {
+		t.Errorf("angka kasus terbesar %d, harap 770", r.AngkaKasusTerbesar)
+	}
+	if !strings.Contains(r.Teks(), RakitIDKasus("770")) {
 		t.Errorf("nomor kasus terbesar wajib dicetak (SEQ_WORK_POLIS):\n%s", r.Teks())
 	}
 }

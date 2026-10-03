@@ -74,7 +74,7 @@ func muatLama(t *testing.T, ctx context.Context, d *intidb.DB, g *repository.Gud
 func TestPemuatLamaMenulisLewatAntarmukaSama(t *testing.T) { // AC 21, 22, 55, 56, 68, 69
 	sqlDB, skema, ctx, d := pasang(t)
 	g := repository.Baru(d)
-	b := models.BarisJSONPolis{IDPega: "ASM-FW-GISFW-WORK-NB NB-990001", NoPolis: "UJI-QP.T1.10.2017.90001",
+	b := models.BarisJSONPolis{IDPega: "ASM-FW-GISFW-WORK-NB UJI-990001", NoPolis: "UJI-QP.T1.10.2017.90001",
 		ProdKe: "0", TglInput: "2017-10-02 08:00:00", Username: "UJI-AKUN", DataJSON: []byte(dokumenUjiLamaProp)}
 	h := muatLama(t, ctx, d, g, b)
 
@@ -120,7 +120,7 @@ func TestPemuatLamaMenulisLewatAntarmukaSama(t *testing.T) { // AC 21, 22, 55, 5
 func TestPemuatLamaNonProporsionalBersarang(t *testing.T) { // AC 50, 53
 	_, _, ctx, d := pasang(t)
 	g := repository.Baru(d)
-	b := models.BarisJSONPolis{IDPega: "ASM-FW-GISFW-WORK-NB NB-990002", NoPolis: "UJI-QR.T1.01.2018.90002",
+	b := models.BarisJSONPolis{IDPega: "ASM-FW-GISFW-WORK-NB UJI-990002", NoPolis: "UJI-QR.T1.01.2018.90002",
 		ProdKe: "0", DataJSON: []byte(dokumenUjiLamaNonProp)}
 	h := muatLama(t, ctx, d, g, b)
 	baca, err := g.BacaHalaman(ctx, nil, h.ID)

@@ -85,7 +85,7 @@ const dokumenUjiProp = `{
 
 func barisUji(dokumen string) BarisJSONPolis {
 	return BarisJSONPolis{
-		IDPega: "ASM-FW-GISFW-WORK-NB NB-77", NoPolis: "UJI-QP.T1.10.2017.00001", ProdKe: "0",
+		IDPega: "ASM-FW-GISFW-WORK-NB UJI-77", NoPolis: "UJI-QP.T1.10.2017.00001", ProdKe: "0",
 		TglInput: "2017-10-02 08:00:00", Username: "UJI-AKUN", DataJSON: []byte(dokumen),
 	}
 }
@@ -98,8 +98,8 @@ func TestPecahDokumenProporsionalDatar(t *testing.T) { // AC 52, 55, 29, 69; ID-
 	if len(h.Galat) > 0 {
 		t.Fatalf("galat tak terduga: %+v", h.Galat)
 	}
-	if h.ID != "NB-77" {
-		t.Errorf("ID kasus %q, harap NB-77 (pyID dari IDPEGA)", h.ID)
+	if h.ID != "UJI-77" {
+		t.Errorf("ID kasus %q, harap UJI-77 (pyID dari IDPEGA)", h.ID)
 	}
 	for jalur, harap := range map[string]string{
 		"PolicyTreatyIn.PremiOgp":                       "592629512.880000276",          // AC 55: tidak dibulatkan ke presisi mata uang
@@ -298,7 +298,7 @@ func TestDokumenDiLuarLingkupAtauRusak(t *testing.T) {
 		{"lini lain", `{"pxObjClass": "UJI-Data-PolicyFacIn"}`, "", "0", ErrBukanTreatyIn},
 		{"generasi endorsemen", dokumenUjiProp, "", "1", ErrGenerasiEndorsemen},
 		{"PRODKE kosong", dokumenUjiProp, "", "", ErrProdKe},
-		{"IDPEGA tanpa kelas", dokumenUjiProp, "NB-77", "0", ErrIDPega},
+		{"IDPEGA tanpa kelas", dokumenUjiProp, "UJI-77", "0", ErrIDPega},
 	} {
 		b := barisUji(tt.dokumen)
 		b.ProdKe = tt.prod

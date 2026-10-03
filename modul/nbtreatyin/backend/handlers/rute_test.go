@@ -77,7 +77,7 @@ func TestAlurHTTP(t *testing.T) {
 	}
 	jalur := "/api/nb-treaty-in/kasus/" + k.ID
 
-	if w := minta(t, s, "GET", "/api/nb-treaty-in/kasus/NB-404", "UJI-A", "", nil); w.Code != http.StatusNotFound {
+	if w := minta(t, s, "GET", "/api/nb-treaty-in/kasus/UJI-404", "UJI-A", "", nil); w.Code != http.StatusNotFound {
 		t.Fatalf("kasus tak ada: %d", w.Code)
 	}
 	w = minta(t, s, "GET", jalur, "UJI-A", "ReasTreatyInAdmin", nil)
