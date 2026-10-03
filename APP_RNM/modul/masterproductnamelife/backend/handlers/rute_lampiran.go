@@ -15,6 +15,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 
@@ -62,7 +63,12 @@ func daftarkanLampiran(pasang func(string, rute)) {
 		}
 		defer func() { _ = b.Isi.Close() }()
 		kirimBerkas(w, b.Nama, b.Mime)
-		_, _ = io.Copy(w, b.Isi)
+		if _, err := io.Copy(w, b.Isi); err != nil {
+			// Isi putus di tengah (penyimpanan): sambungan diputus - peramban melihat unduhan gagal, bukan berkas
+			// terpotong berstatus 200. Rincian galat tidak dicetak (bisa memuat alamat jaringan).
+			log.Printf("master product name life: attachment %s download was interrupted", r.PathValue("lid"))
+			panic(http.ErrAbortHandler)
+		}
 	})
 	pasang("GET "+dasar+"/unduh-semua", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		var buf bytes.Buffer

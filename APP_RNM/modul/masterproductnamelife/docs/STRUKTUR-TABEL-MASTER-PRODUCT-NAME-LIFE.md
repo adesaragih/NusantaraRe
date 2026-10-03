@@ -70,7 +70,7 @@ saling membatalkan (`TestDokumenSTRUKTURSepakatAtasTabelBersama`).
 
 | Tabel | Sentuhan modul ini |
 | --- | --- |
-| `T_STORAGE_IMAGE` | ditulis pelaksana stub lampiran (`Insert_T_Storage_SQL` b85: `IMAGEID`, `URLPUBLIC` NULL, `APPFOLDER`, `EXPDATE`, `FILENAME`, `APPNAME`, `STORAGE = 'standard'`), dihapus `DeleteStorage_SQL` b85 |
+| `T_STORAGE_IMAGE` | ditulis pelaksana lampiran (`Insert_T_Storage_SQL` b85: `IMAGEID`, `URLPUBLIC`, `APPFOLDER`, `EXPDATE`, `FILENAME`, `APPNAME`, `STORAGE = 'standard'`; stub: `URLPUBLIC` NULL, nyata 03-10-2026: nilai jawaban `ServiceGoogle`), dibaca `GetLinkStorage_SQL` b85, diperbarui `Update_T_Storage_SQL` b85 (URL bertanda tangan baru, mode nyata), dihapus `DeleteStorage_SQL` b85 |
 | `T_LOG_SERVICE_RNM` | outbox bersama (Claim Life 015): `MODUL = 'MASTERPRODUCTNAMELIFE'`, `JENIS_EFEK = 'unggah-lampiran'` |
 | `T_FOLDER_IMAGE` | dibaca `APPNAME` (`GetAppName_SQL` b58) |
 | `AGENT`, `CLIENT`, `CURRENCY`, `RIRISK_LIFE_SUMMARY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE` | dibaca saja — pemilih master dan `PLAN LIST` (OQ-MPNL-04) |

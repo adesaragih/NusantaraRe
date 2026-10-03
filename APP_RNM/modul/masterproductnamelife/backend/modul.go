@@ -17,6 +17,7 @@ import (
 	"net/http"
 
 	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/config"
 	"nusantarare/modul/masterproductnamelife/backend/handlers"
 	"nusantarare/modul/masterproductnamelife/backend/services"
 )
@@ -43,7 +44,12 @@ func Pendaftaran() inti.Pendaftaran {
 		Nama:    Nama,
 		Migrasi: berkasMigrasi,
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
-			return Baru(services.DariDasar(p.Dasar()), p.Config().AuthStub), nil
+			cfg := p.Config()
+			// Penyimpanan lampiran: bawaan stub lokal; `PELAKSANA_STORAGE=nyata` = `ServiceGoogle` seperti XML
+			// (keputusan work owner 03-10-2026). ⛔ Garam tidak pernah dicetak.
+			svc := services.DariDasar(p.Dasar()).
+				DenganPenyimpananNyata(cfg.PelaksanaStorage == config.PelaksanaStorageNyata, cfg.StorageTokenSalt)
+			return Baru(svc, cfg.AuthStub), nil
 		},
 	}
 }
@@ -67,5 +73,5 @@ func (Modul) Nama() string { return Nama }
 func (m Modul) DaftarkanRute(mux *http.ServeMux) { handlers.DaftarkanRute(mux, m.svc, m.stubPelaku) }
 
 // JalankanPekerja - modul ini tidak punya pekerja latar: efek keluar lampiran
-// dikirim seketika sesudah rekam dan diulang lewat rute `ulangi` (stub, P5).
+// dikirim seketika sesudah rekam dan diulang lewat rute `ulangi` (P5; stub atau nyata).
 func (Modul) JalankanPekerja(context.Context) inti.Pekerja { return inti.TanpaPekerja() }

@@ -1,6 +1,6 @@
 # 09: Efek keluar penyimpanan berkas — resolusi alamat, token, dan pengulangan
 
-**Status:** selesai sebagai stub (01-10-2026) — paket 8 `1ff3091`; pengirim nyata menunggu OQ-047 / OQ-MPNL-10; uji `db` ditulis dan MELEWATI di sesi implementasi (tanpa `ORACLE_DSN`; POOLDATA/DEV bukan sasaran)
+**Status:** selesai sebagai stub (01-10-2026) — paket 8 `1ff3091`; pengirim nyata menunggu OQ-047 / OQ-MPNL-10 *(ralat 03-10-2026: pengirim nyata dibangun — `mpnl_storage.go`, saklar `PELAKSANA_STORAGE=nyata`, keputusan work owner "ikuti dari XML nya aja"; register OQ bab 03-10-2026)*; uji `db` ditulis dan MELEWATI di sesi implementasi (tanpa `ORACLE_DSN`; POOLDATA/DEV bukan sasaran)
 
 **Blocked by:** 08 (lampiran harus ada lebih dulu — tiket ini mengeraskan jalur keluarnya)
 
@@ -114,3 +114,8 @@ make check
 | (tidak disebut) nama objek | `InsertGoogleStorage_Act` 8 b1339: folder `Contract/Doc/YYYY/MM/`, berkas `yyyyMMdd-hhmmss-S - <nama>` zona Asia/Jakarta, `EXPDATE = SYSDATE + 1800 detik`, `APPNAME` dari `T_FOLDER_IMAGE` (`GetAppName_SQL` b58); `ImageID` dari `unggah.ImageIDBaru` (pengganti MD5 `GenerateImageID_SQL` b79) |
 
 **Status:** paket 8 — selesai sebagai stub outbox; pengirim nyata menunggu keputusan alamat (OQ-047 / OQ-MPNL-10).
+
+**Ralat 03-10-2026:** pengirim nyata dibangun di balik `PELAKSANA_STORAGE=nyata` (bawaan tetap stub) — alamat dari
+`M_LINK_SERVICE` saat jalan (`inti/backend/layanan`, kunci `Google` / `upload`, `geturl`, `delete`), token `GCP_IMAGE` /
+`STORAGE_TOKEN_SALT`, outbox dan kirim ulang tetap. Penghapusan di penyimpanan nyata yang dijawab galat menahan hapus rekam
+(`DeleteAttacProdName_act` `StepStatusFail` b444); berkas stub yang sudah tidak ada tetap bukan galat.

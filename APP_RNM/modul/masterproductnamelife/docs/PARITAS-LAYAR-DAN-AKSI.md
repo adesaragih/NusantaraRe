@@ -186,6 +186,14 @@ Pesan statik VERBATIM: b66071 `Make sure the file name doesn't contain forbidden
 | `GetMimeType` (DecisionTable, dipanggil `InsertGoogleStorage_Act` b761) | 48 baris + `otherwise` | `inti/backend/unggah.MimeDariNamaFile` (salinan tabel yang sama) | — | ✅ paket 8 |
 | `ServiceGoogle` (ConnectREST, `pyBaseURLSetting = LinkService!LinkService` b161) · `LinkService` (SystemSettings) · `GetLinkService` · `GetTokenStorage_SQL` (`GET_TOKEN_STORAGE`) | — | — | — | ⏸️ paket 8 — **stub outbox**; nol alamat di berkas (ADR-0013) |
 
+> **Ralat 03-10-2026 (keputusan work owner *"untuk document masih belum berfungsi, ikuti dari XML nya aja"*, OQ-MPNL-10
+> dibalik):** baris `ServiceGoogle`/`LinkService`/`GetTokenStorage_SQL`, tautan nama berkas, `Download All`, dan `Delete` di
+> atas kini mengikuti XML bila `PELAKSANA_STORAGE=nyata` — `backend/services/mpnl_storage.go`: unggah
+> `InsertGoogleStorage_Act` (POST JSON ke alamat `M_LINK_SERVICE` "Google"/"upload", `T_STORAGE_IMAGE` dari jawaban), unduh
+> `GetUrlGoogleStorage_Act` (URL tersimpan selama `EXPDATE` belum lewat; selain itu "geturl" + `Update_T_Storage_SQL`), hapus
+> `DeleteGoogleStorage_Act` ("delete", gagal = rekam tetap). Bawaannya tetap stub. Lampiran Pega lama (berkas di penyimpanan
+> asal) terunduh hanya di mode nyata. `View Office Online` tetap stub (OQ-MPNL-11). Rincian: register OQ, bab 03-10-2026.
+
 ## 7. Simpan — `SaveProductName_Act` (FlowAction `SaveProductName_Confirm` b101)
 
 | Langkah (bNNN · blok) | Isi | Sistem baru | Keadaan |

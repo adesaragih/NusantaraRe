@@ -16,7 +16,7 @@
 | OQ-MPNL-07 | `Download All` b67657 menjalankan jalur treaty-in (`M_ATTACHMENTTREATY_2` milik `TreatyIn.ID`) — salah ekspor (OQ-056). | mengunduh seluruh lampiran **produk ini** sebagai satu arsip zip (AC tiket 08) | work owner | ✅ **ditutup 01-10-2026 — keputusan work owner: ikut rekomendasi asisten (bawaan dipertahankan)** |
 | OQ-MPNL-08 | Kolom datar `PRODUCTNAME` dan `BEGIN_DATE` `M_PRODUCT_LIFE`: korpus nol penulis (`SaveProductNameLIfeFlat` hanya `RIRISKID`/`RIRISK`), prosedur hanya `JSONDATA` (`dba-procedures-and-ddl.md` §1). | **dicabut (lanjutan 1 L1; ralat audit 02-10-2026): kedua kolom tidak ada di `M_PRODUCT_LIFE` DEV, tidak ditulis.** Bawaan lama: ditulis menurut P1: `PRODUCTNAME` = JSON `PRODUCTNAME`, `BEGIN_DATE` = `BEGIN` inward (`dd/MM/yyyy` → `DATE`), NULL bila kosong | work owner / DBA | ditutup 01-10-2026 (katalog DEV, L1/L4) |
 | OQ-MPNL-09 | `OutwardList`: Pega mengisinya saat checkbox `On Retention` diubah (nilai `BEGIN`/`MATURE` saat itu). `OVR_COMM` yang dibaca view tidak punya penulis di korpus (`SetParamOutward` tidak diekspor). | dihitung **saat simpan** bila checkbox diubah dalam sesi sunting itu (memakai `BEGIN`/`MATURE` yang disimpan), selain itu dipertahankan; `OVR_COMM` `""` | work owner | ditutup 01-10-2026 (data DEV, L5) |
-| OQ-MPNL-10 | Unggah lampiran: `InsertGoogleStorage_Act` mengirim berkas ke layanan luar (`ServiceGoogle` + `LinkService`) dan mencatat `URLPUBLIC`. Alamatnya di `M_LINK_SERVICE` (OQ-047). | **stub outbox**: rekam `M_ATTACHMENTPRODUCTNAME` + antre efek di satu transaksi; pelaksana stub menyimpan berkas di folder lokal `UNGGAHAN_DIR` dan mencatat `T_STORAGE_IMAGE` (`URLPUBLIC` kosong, `APPFOLDER = Contract`, `STORAGE = standard`). Gagal → status `gagal`, dapat diulang | work owner / tim inti | ✅ **ditutup 01-10-2026 — keputusan work owner: ikut rekomendasi asisten (bawaan dipertahankan)** |
+| OQ-MPNL-10 | Unggah lampiran: `InsertGoogleStorage_Act` mengirim berkas ke layanan luar (`ServiceGoogle` + `LinkService`) dan mencatat `URLPUBLIC`. Alamatnya di `M_LINK_SERVICE` (OQ-047). | **stub outbox**: rekam `M_ATTACHMENTPRODUCTNAME` + antre efek di satu transaksi; pelaksana stub menyimpan berkas di folder lokal `UNGGAHAN_DIR` dan mencatat `T_STORAGE_IMAGE` (`URLPUBLIC` kosong, `APPFOLDER = Contract`, `STORAGE = standard`). Gagal → status `gagal`, dapat diulang | work owner / tim inti | ✅ **ditutup 01-10-2026 — keputusan work owner: ikut rekomendasi asisten (bawaan dipertahankan)** *(Ralat 03-10-2026: dibalik — keputusan work owner "untuk document masih belum berfungsi, ikuti dari XML nya aja"; penyimpanan nyata seperti XML di balik `PELAKSANA_STORAGE=nyata`, bab bertanggal 03-10-2026 di bawah.)* |
 | OQ-MPNL-11 | `View Office Online` membungkus URL bertanda tangan ke penampil kantor di luar (`DownloadAttProdName_Act` 7 b1080). | tautan tampil untuk jenis `xls/xlsx/doc/docx/ppt/pptx` (b69291); rute menjawab **503 berkalimat**: penampil luar tidak dipanggil, alamatnya tidak ditulis | work owner | ✅ **ditutup 01-10-2026 — keputusan work owner: ikut rekomendasi asisten (bawaan dipertahankan)** |
 | OQ-MPNL-12 | `Medical` baris batas underwriting: tiket 06 menuntut hanya `FCL`/`NM`/`MEDIS`, XML teks bebas (b44814). | **teks bebas** (R16) | Product + UW | ditutup 01-10-2026 (data DEV, L6) |
 | OQ-MPNL-13 | `Copy` (`CopyProduct`) mengosongkan kedua `ID` tetapi tidak `CREATEOP`; `SaveProductName_Act` 6 b1370 hanya mengisi `CREATEOP` bila kosong — salinan mewarisi pembuat produk asal. | produk **baru** (termasuk salinan) ber-`CREATEOP` = pelaku (ADR-0007); selebihnya salinan ikut XML — medan mati, `CommentList`, `OutwardList` produk asal diwarisi (paket 9) | work owner | ✅ **ditutup 01-10-2026 — keputusan work owner: ikut rekomendasi asisten (bawaan dipertahankan)** |
@@ -127,3 +127,44 @@ Data DEV 03-10-2026 (SELECT saja, 195 produk lama): 1.121 baris DOCUMENT CLAIM -
 tidak cocok entri mana pun. **Terbuka:** dibiarkan apa adanya, atau dikonversi ke teks daftar saat disalin (Copy Old / alat
 pindah) - menunggu keputusan work owner.
 
+
+### OQ-MPNL-10 dibalik 03-10-2026 — lampiran ke penyimpanan nyata seperti XML
+
+Work owner 03-10-2026, sesudah dijelaskan bahwa berkas lampiran masih tersimpan di folder stub: *"untuk document masih belum
+berfungsi"*, lalu *"untuk document masih belum berfungsi, ikuti dari XML nya aja"*.
+
+Bukti DEV (SELECT saja, 03-10-2026): 2 lampiran produk yang ada di tabel flat adalah unggahan Pega 22-08-2025 —
+`T_STORAGE_IMAGE` berisi `URLPUBLIC` https, `APPFOLDER` = awalan gs + App + `Contract/Doc/2025/08/` + `FILENAME`, `EXPDATE`
+sudah lewat. Di stub, berkas itu tidak dapat diunduh (409 "not in the storage stub"). `M_LINK_SERVICE` memuat kunci `Google` /
+`upload`, `geturl`, `delete`; `T_FOLDER_IMAGE` 1 baris; `GCP_IMAGE` ada.
+
+| Aksi | XML diikuti | Dibangun (`backend/services/mpnl_storage.go`) |
+| --- | --- | --- |
+| Add attachment → Attach | `InsertGoogleStorage_Act` (Set Data b1339, SET JSON b1572, `ServiceGoogle` b1846, `Insert_T_Storage_SQL`) | POST JSON `App`, `Kodestring`, `Durasi` 1800, `Folder`, `Namafile`, `Image` base64, `ext`, `MimeType`; `T_STORAGE_IMAGE` dari jawaban (`URLImage`, `appfolder`, `exp`) |
+| Tautan nama berkas, Download All | `DownloadAttProdName_Act` 6 b953 / `DownloadAll_Act` 5 b875 → `GetUrlGoogleStorage_Act` | URL tersimpan dipakai selama `EXPDATE` belum lewat; selain itu `geturl` (Folder = APPFOLDER tanpa Namafile tanpa awalan gs+App) lalu `Update_T_Storage_SQL` |
+| Delete | `DeleteAttacProdName_act` 2 b411 → `DeleteGoogleStorage_Act` | POST `delete` (`Namafile` = jalur objek penuh); gagal = rekam tetap |
+
+Cara menyalakan (di `.env` server aplikasi; bawaan tetap stub):
+
+```
+PELAKSANA_STORAGE=nyata
+STORAGE_TOKEN_SALT=<garam procedure GET_TOKEN_STORAGE — dari DBA>
+```
+
+`UNGGAHAN_DIR` tetap wajib (antrean lokal sampai objek tercatat). Saklar ini bersama Treaty Contract Out (`inti/backend/config`).
+
+Penyimpangan sadar: (1) token ditiru `inti/backend/layanan` (keputusan tim "jangan ada lagi pemanggilan procedure"), bukan
+procedure `GET_TOKEN_STORAGE`; (2) pengiriman tetap efek keluar outbox (P5) — rekam dulu, kirim sesudahnya, dapat diulang;
+(3) isi diunduh backend dari URL bertanda tangan (hanya https, tanpa pengalihan) lalu diteruskan ke peramban — Pega membuka URL
+itu di jendela peramban; (4) jawaban geturl tanpa `appfolder` tidak mengosongkan `APPFOLDER`; (5) objek yang dicatat stub
+(`URLPUBLIC` kosong) tetap dibaca dan dihapus di folder stub. `View Office Online` tetap 503 (OQ-MPNL-11): penampilnya
+alamat literal di XML (b1103), dan alamat literal dilarang `TestMPNLNolAlamatLayanan`.
+
+Uji: layanan tiruan `httptest` TLS (`mpnl_storage_test.go`), status HTTP 502/503/409 (`rute_storage_test.go`). Layanan
+sungguhan **tidak** dipanggil dari uji atau dari sesi ini; data DEV hanya dibaca.
+
+Sesudah tinjauan kode 03-10-2026: Namafile dari waktu REKAM (ID lampiran) sehingga kirim ulang menimpa objek yang sama;
+efek kirim tidak ikut batal bila peramban memutus; token tidak dipakai ulang bila sisa < 15 detik; pengalihan 3xx tidak
+diikuti; unduhan yang putus diputus sambungannya (bukan 200 terpotong); stub menolak menghapus objek yang ada di
+penyimpanan nyata (503). **Batasan diketahui:** menghapus lampiran yang SEDANG dikirim dari tab/sesi lain dapat
+meninggalkan objek tanpa rekam — jendelanya selama unggah berjalan; tidak ditangani.

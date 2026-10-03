@@ -152,12 +152,17 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusNotFound, services.Pesan(err))
 	case errors.Is(err, services.ErrNamaLampiranSudahAda), errors.Is(err, services.ErrLampiranBelumTerkirim),
 		errors.Is(err, services.ErrLampiranSudahTerkirim), errors.Is(err, services.ErrBerkasSumberHilang),
-		errors.Is(err, services.ErrBerkasTidakDiStub):
+		errors.Is(err, services.ErrBerkasTidakDiStub), errors.Is(err, services.ErrBerkasTidakDiStorage):
 		// 409: keadaan lampiran menolak aksi - kalimat menyebut yang harus dilakukan.
 		galat.Tulis(w, http.StatusConflict, services.Pesan(err))
-	case errors.Is(err, services.ErrOfficeStub), errors.Is(err, services.ErrPenyimpananBelumDisetel):
-		// 503: penampil kantor luar tidak dipanggil (OQ-MPNL-11) / folder stub belum disetel.
+	case errors.Is(err, services.ErrOfficeStub), errors.Is(err, services.ErrPenyimpananBelumDisetel),
+		errors.Is(err, services.ErrStorageBelumSiap):
+		// 503: penampil kantor luar tidak dipanggil (OQ-MPNL-11) / folder stub belum disetel / alamat, App, atau
+		// token penyimpanan nyata tidak tersedia.
 		galat.Tulis(w, http.StatusServiceUnavailable, services.Pesan(err))
+	case errors.Is(err, services.ErrStorageGagal):
+		// 502: layanan penyimpanan nyata gagal - rinciannya di log layanan, tanpa alamat dan token.
+		galat.Tulis(w, http.StatusBadGateway, services.Pesan(err))
 	case errors.Is(err, services.ErrMasterTidakTerbaca):
 		// 503: master rujukan tidak terbaca - pesannya MENYEBUT objeknya, sebab Oracle hanya di log.
 		log.Printf("master product name life: %v", err)

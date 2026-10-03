@@ -14,8 +14,9 @@ package services
 // mengirim berkas DULU lalu merekam; di sini rekam + antrean outbox lebih dulu
 // (satu transaksi), lalu pengiriman sebagai EFEK KELUAR - kegagalannya tercatat,
 // terlihat (`status = gagal` + galat), dan dapat diulang; produk tidak pernah
-// ikut batal. Pengirimnya STUB (folder lokal `UNGGAHAN_DIR`): `ServiceGoogle`,
-// `LinkService`, token storage TIDAK dipanggil, alamatnya tidak ditulis.
+// ikut batal. Pengirimnya `PenyimpananBerkas`: stub folder lokal `UNGGAHAN_DIR` (bawaan) atau penyimpanan nyata
+// `ServiceGoogle` lewat `M_LINK_SERVICE` + token (`mpnl_storage.go`, `PELAKSANA_STORAGE=nyata`, keputusan work
+// owner 03-10-2026). Antrean lokal dibuang sesudah objeknya tercatat.
 // ⛔ Berkas berjenis tak dikenal tabel `GetMimeType` DITOLAK berkalimat - di Pega
 // ia diam-diam tidak diunggah (Exit-Activity 5 b856) dan tidak direkam.
 
@@ -44,6 +45,8 @@ type GudangLampiran interface {
 	SisipLampiran(ctx context.Context, tx *db.Tx, l models.Lampiran) (string, error)
 	HapusLampiran(ctx context.Context, tx *db.Tx, produkID, id string) error
 	CatatObjek(ctx context.Context, tx *db.Tx, o models.ObjekPenyimpanan) error
+	AmbilObjek(ctx context.Context, tx *db.Tx, imageID string) (models.ObjekPenyimpanan, bool, error)
+	PerbaruiObjek(ctx context.Context, tx *db.Tx, o models.ObjekPenyimpanan) error
 	HapusObjek(ctx context.Context, tx *db.Tx, imageID string) error
 	NamaAplikasi(ctx context.Context, tx *db.Tx) (string, error)
 	AntreUnggah(ctx context.Context, tx *db.Tx, lampiranID, muatan string, saat time.Time) error
@@ -53,18 +56,20 @@ type GudangLampiran interface {
 }
 
 // PenyimpananBerkas - penyimpanan berkas di balik antarmuka (tiket 09 AC). Bawaan
-// = stub folder lokal (`penyimpananLokal`); uji memakai tiruan.
+// = stub folder lokal (`penyimpananLokal`); nyata = `penyimpananGoogle`; uji memakai tiruan.
 type PenyimpananBerkas interface {
 	// SimpanAntrean menahan isi berkas sampai dikirim.
 	SimpanAntrean(ctx context.Context, imageID string, isi io.Reader) error
-	// BuangAntrean membuang isi yang belum dikirim (transaksi rekam gagal).
+	// BuangAntrean membuang isi antrean (transaksi rekam gagal, atau objeknya sudah tercatat).
 	BuangAntrean(ctx context.Context, imageID string)
-	// Kirim memindahkan berkas ke penyimpanan; sudah terkirim = nil (idempoten).
-	Kirim(ctx context.Context, imageID string) error
-	// Buka membaca berkas terkirim.
-	Buka(ctx context.Context, imageID string) (io.ReadCloser, error)
-	// Hapus membuang berkas; yang sudah tidak ada bukan galat.
-	Hapus(ctx context.Context, imageID string) error
+	// Kirim mengirim berkas antrean `o.ImageID` sebagai objek `o` (Folder, Namafile, App, Durasi) dan menjawab
+	// objek yang dicatat ke `T_STORAGE_IMAGE` (`InsertGoogleStorage_Act`).
+	Kirim(ctx context.Context, o models.ObjekPenyimpanan, ext, mime string) (models.ObjekPenyimpanan, error)
+	// Buka membaca objek terkirim `o` (baris `T_STORAGE_IMAGE`); objek baru tidak nil bila URL bertanda tangannya
+	// diperbarui (`GetUrlGoogleStorage_Act` → `Update_T_Storage_SQL`).
+	Buka(ctx context.Context, o models.ObjekPenyimpanan) (io.ReadCloser, *models.ObjekPenyimpanan, error)
+	// Hapus membuang objek terkirim `o` (nil = belum terkirim) beserta antreannya.
+	Hapus(ctx context.Context, imageID string, o *models.ObjekPenyimpanan) error
 }
 
 // Pesan VERBATIM dan nilai korpus.
@@ -96,7 +101,8 @@ var (
 	// ErrBerkasTidakDiStub - rekam dan objek ada, tetapi berkasnya tidak ada di folder stub: berkas
 	// yang diunggah Pega tinggal di penyimpanan asalnya sampai pengirim nyata tersambung (409).
 	ErrBerkasTidakDiStub = errors.New("services: the attachment file is not in the storage stub; files uploaded " +
-		"before this module stay in the original storage until it is connected (OQ-MPNL-10)")
+		"before this module stay in the original storage and are read only when the storage service is enabled " +
+		"(PELAKSANA_STORAGE=nyata)")
 	// ErrOfficeStub - `View Office Online` membungkus URL ke penampil kantor di luar (503, OQ-MPNL-11).
 	ErrOfficeStub = errors.New("services: View Office Online is a stub - the external office viewer is not called " +
 		"(OQ-MPNL-11); download the file instead")
@@ -202,16 +208,21 @@ func (l *Layanan) UnggahLampiran(ctx context.Context, p inti.Pelaku, produkID, n
 }
 
 // kirimLampiran - satu percobaan efek keluar; hasilnya DICATAT di outbox, tidak
-// dilempar ke pengunggah (lampiran opsional, tiket 08).
+// dilempar ke pengunggah (lampiran opsional, tiket 08). Antrean lokal dibuang hanya sesudah objeknya tercatat.
 func (l *Layanan) kirimLampiran(ctx context.Context, produkID, lampiranID string) {
+	// Efek keluar tidak ikut batal bila peramban memutus permintaan: hasilnya tetap tercatat (batas waktunya sendiri).
+	ctx, batal := context.WithTimeout(context.WithoutCancel(ctx), BatasWaktuStorage+time.Minute)
+	defer batal()
 	saat := l.jam()
+	terkirim := ""
 	err := l.tx(ctx, func(tx *db.Tx) error {
 		efek, percobaan, ada, err := l.gudang.PungutUnggah(ctx, tx, lampiranID, saat)
 		if err != nil || !ada {
 			return err
 		}
-		gagal := l.kirimSatu(ctx, tx, produkID, lampiranID, saat)
+		storageID, gagal := l.kirimSatu(ctx, tx, produkID, lampiranID, saat)
 		if gagal == nil {
+			terkirim = storageID
 			return l.gudang.TuntaskanUnggah(ctx, tx, efek, outbox.StatusEfekSelesai, time.Time{}, "", saat)
 		}
 		status, jadwal := outbox.StatusEfekAntre, saat.Add(outbox.Backoff(percobaan))
@@ -222,6 +233,10 @@ func (l *Layanan) kirimLampiran(ctx context.Context, produkID, lampiranID string
 	})
 	if err != nil {
 		l.catat(fmt.Sprintf("master product name life: recording attachment %s send result failed: %v", lampiranID, err))
+		return
+	}
+	if terkirim != "" {
+		l.berkas.BuangAntrean(ctx, terkirim)
 	}
 }
 
@@ -232,31 +247,56 @@ const PesanKirimGagal = "sending the attachment to storage failed; the details a
 // pesanKirim - kalimat galat kirim yang DISIMPAN dan ditampilkan: galat bernama dengan kalimatnya
 // sendiri, selain itu kalimat tetap; galat aslinya ke log.
 func (l *Layanan) pesanKirim(lampiranID string, gagal error) string {
-	if errors.Is(gagal, ErrBerkasSumberHilang) || errors.Is(gagal, ErrPenyimpananBelumDisetel) {
+	if errors.Is(gagal, ErrBerkasSumberHilang) || errors.Is(gagal, ErrPenyimpananBelumDisetel) ||
+		errors.Is(gagal, ErrStorageGagal) || errors.Is(gagal, ErrStorageBelumSiap) {
+		if errors.Is(gagal, ErrStorageGagal) || errors.Is(gagal, ErrStorageBelumSiap) {
+			l.catat(fmt.Sprintf("master product name life: sending attachment %s failed: %v", lampiranID, gagal))
+		}
 		return Pesan(gagal)
 	}
 	l.catat(fmt.Sprintf("master product name life: sending attachment %s failed: %v", lampiranID, gagal))
 	return PesanKirimGagal
 }
 
-func (l *Layanan) kirimSatu(ctx context.Context, tx *db.Tx, produkID, lampiranID string, saat time.Time) error {
+// kirimSatu - `InsertGoogleStorage_Act`: App (6 b960) lebih dulu - penyimpanan nyata membutuhkannya untuk token
+// dan badan permintaan; objek yang dijawab penyimpanan dicatat (`Insert_T_Storage_SQL`). Mengembalikan IMAGEID.
+func (l *Layanan) kirimSatu(ctx context.Context, tx *db.Tx, produkID, lampiranID string, saat time.Time) (string, error) {
 	a, err := l.gudang.AmbilLampiran(ctx, tx, produkID, lampiranID)
 	if err != nil {
-		return err
-	}
-	if err := l.berkas.Kirim(ctx, a.StorageID); err != nil {
-		return err
+		return "", err
 	}
 	app, err := l.gudang.NamaAplikasi(ctx, tx)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if app == "" {
-		return errors.New("services: T_FOLDER_IMAGE has no APPNAME; the storage application name is required")
+		return "", errors.New("services: T_FOLDER_IMAGE has no APPNAME; the storage application name is required")
 	}
-	folder, file := namaObjek(saat, a.FileName)
-	return l.gudang.CatatObjek(ctx, tx, models.ObjekPenyimpanan{ImageID: a.StorageID, AppFolder: folder, FileName: file,
-		AppName: app, DurasiDetik: DurasiLampiran})
+	folder, file := namaObjek(waktuRekam(a.ID, saat), a.FileName)
+	// EXPDATE bawaan (stub): sekarang + Durasi, GMT; penyimpanan nyata menggantinya dengan `exp` jawabannya.
+	o, err := l.berkas.Kirim(ctx, models.ObjekPenyimpanan{ImageID: a.StorageID, AppFolder: folder, FileName: file,
+		AppName: app, DurasiDetik: DurasiLampiran, Exp: saat.UTC().Add(DurasiLampiran * time.Second).Format(formatExp)},
+		a.FileMimeType, unggah.MimeDariNamaFile(a.FileName))
+	if err != nil {
+		return "", err
+	}
+	return a.StorageID, l.gudang.CatatObjek(ctx, tx, o)
+}
+
+// waktuRekam - waktu nama objek dari ID lampiran (`TO_CHAR(SYSTIMESTAMP, 'YYYYMMDDHH24MISSFF3')`, dibaca sebagai
+// Asia/Jakarta sehingga angkanya kembali utuh): Folder + Namafile SAMA di setiap percobaan - kirim ulang menimpa
+// objek yang sama, bukan meninggalkan objek yatim bila percobaan sebelumnya sampai tetapi pencatatannya gagal.
+// (Pega memakai `@CurrentDate` saat unggah - selisihnya milidetik pada percobaan pertama.) ID berbentuk lain →
+// waktu percobaan.
+func waktuRekam(id string, saat time.Time) time.Time {
+	if len(id) != 17 {
+		return saat
+	}
+	t, err := time.ParseInLocation("20060102150405.000", id[:14]+"."+id[14:], zonaJakarta)
+	if err != nil {
+		return saat
+	}
+	return t
 }
 
 // UlangiLampiran - kirim ulang lampiran yang belum terkirim (tiket 09 AC).
@@ -307,16 +347,45 @@ func (l *Layanan) UnduhLampiran(ctx context.Context, p inti.Pelaku, produkID, id
 	if a.Status != models.StatusTerunggah {
 		return BerkasUnduhan{}, ErrLampiranBelumTerkirim
 	}
-	isi, err := l.berkas.Buka(ctx, a.StorageID)
+	isi, err := l.bukaObjek(ctx, a)
 	if err != nil {
-		if errors.Is(err, ErrPenyimpananBelumDisetel) {
-			return BerkasUnduhan{}, err // 503, bukan 409
-		}
-		// Jalur folder stub dan kunci objek hanya di log, tidak di layar (audit 02-10-2026).
-		l.catat(fmt.Sprintf("master product name life: opening attachment %s (storage %s) failed: %v", id, a.StorageID, err))
-		return BerkasUnduhan{}, fmt.Errorf("%w: %s", ErrBerkasTidakDiStub, a.FileName)
+		return BerkasUnduhan{}, err
 	}
 	return BerkasUnduhan{Nama: a.FileName, Mime: unggah.MimeDariNamaFile(a.FileName), Isi: isi}, nil
+}
+
+// bukaObjek - `GetLinkStorage_SQL` lalu isi berkas; URL bertanda tangan yang diperbarui dicatat
+// (`Update_T_Storage_SQL`) di transaksi pendeknya sendiri - Pega menjalankannya sebagai RDB-List lepas; gagal
+// mencatat tidak menahan unduhan.
+func (l *Layanan) bukaObjek(ctx context.Context, a models.Lampiran) (io.ReadCloser, error) {
+	o, ada, err := l.gudang.AmbilObjek(ctx, nil, a.StorageID)
+	if err != nil {
+		return nil, err
+	}
+	if !ada {
+		return nil, ErrLampiranBelumTerkirim
+	}
+	isi, baru, err := l.berkas.Buka(ctx, o)
+	switch {
+	case err == nil:
+	case errors.Is(err, ErrPenyimpananBelumDisetel), errors.Is(err, ErrStorageBelumSiap), errors.Is(err, ErrStorageGagal):
+		// 503 / 502 berkalimat; rinciannya ke log.
+		l.catat(fmt.Sprintf("master product name life: opening attachment %s failed: %v", a.ID, err))
+		return nil, err
+	case errors.Is(err, ErrBerkasTidakDiStorage):
+		l.catat(fmt.Sprintf("master product name life: opening attachment %s failed: %v", a.ID, err))
+		return nil, fmt.Errorf("%w: %s", ErrBerkasTidakDiStorage, a.FileName)
+	default:
+		// Jalur folder stub dan kunci objek hanya di log, tidak di layar (audit 02-10-2026).
+		l.catat(fmt.Sprintf("master product name life: opening attachment %s (storage %s) failed: %v", a.ID, a.StorageID, err))
+		return nil, fmt.Errorf("%w: %s", ErrBerkasTidakDiStub, a.FileName)
+	}
+	if baru != nil {
+		if err := l.tx(ctx, func(tx *db.Tx) error { return l.gudang.PerbaruiObjek(ctx, tx, *baru) }); err != nil {
+			l.catat(fmt.Sprintf("master product name life: recording the new signed URL of attachment %s failed: %v", a.ID, err))
+		}
+	}
+	return isi, nil
 }
 
 // NamaDaftarTakTersedia - entri zip yang menyebut lampiran terkirim yang berkasnya
@@ -324,64 +393,69 @@ func (l *Layanan) UnduhLampiran(ctx context.Context, p inti.Pelaku, produkID, id
 const NamaDaftarTakTersedia = "_not-available.txt"
 
 // UnduhSemuaLampiran - tombol `Download All` b67657 → satu arsip zip lampiran
-// TERKIRIM produk ini (R15, OQ-MPNL-07). Mengembalikan jumlah berkas. Lampiran
-// yang berkasnya tidak ada di folder stub dicantumkan di `_not-available.txt`;
-// bila TIDAK SATU PUN tersedia, jawabannya 409 berkalimat.
+// TERKIRIM produk ini (R15, OQ-MPNL-07; `DownloadAll_Act` 5 b875 `GetUrlGoogleStorage_Act` per lampiran).
+// Mengembalikan jumlah berkas. Lampiran yang berkasnya tidak ada (folder stub / penyimpanan) dicantumkan di
+// `_not-available.txt`; bila TIDAK SATU PUN tersedia, jawabannya 409 berkalimat. Penyimpanan yang gagal atau
+// belum siap menggagalkan seluruh arsip dengan galatnya sendiri - bukan "tidak tersedia".
 func (l *Layanan) UnduhSemuaLampiran(ctx context.Context, p inti.Pelaku, produkID string, ke io.Writer) (int, error) {
 	daftar, err := l.DaftarLampiran(ctx, p, produkID)
 	if err != nil {
 		return 0, err
 	}
-	type tersedia struct {
-		nama string
-		isi  io.ReadCloser
-	}
-	var ada []tersedia
+	// Satu per satu: dibuka, disalin, ditutup - URL bertanda tangan tidak dibiarkan terbuka menunggu giliran. `ke`
+	// penyangga pemanggil: galat di tengah membuang seluruh arsip.
 	var hilang []string
-	defer func() {
-		for _, t := range ada {
-			_ = t.isi.Close()
-		}
-	}()
+	sebab := ErrBerkasTidakDiStub
+	z := zip.NewWriter(ke)
+	n := 0
 	for _, a := range daftar {
 		if a.Status != models.StatusTerunggah {
 			continue
 		}
-		isi, err := l.berkas.Buka(ctx, a.StorageID)
-		if err != nil {
+		isi, err := l.bukaObjek(ctx, a)
+		switch {
+		case err == nil:
+		case errors.Is(err, ErrBerkasTidakDiStorage):
+			sebab = ErrBerkasTidakDiStorage
 			hilang = append(hilang, a.FileName)
 			continue
-		}
-		ada = append(ada, tersedia{nama: a.FileName, isi: isi})
-	}
-	if len(ada) == 0 && len(hilang) > 0 {
-		return 0, fmt.Errorf("%w: %s", ErrBerkasTidakDiStub, strings.Join(hilang, ", "))
-	}
-	z := zip.NewWriter(ke)
-	for _, t := range ada {
-		w, err := z.Create(t.nama)
-		if err == nil {
-			_, err = io.Copy(w, t.isi)
-		}
-		if err != nil {
+		case errors.Is(err, ErrBerkasTidakDiStub), errors.Is(err, ErrLampiranBelumTerkirim):
+			hilang = append(hilang, a.FileName)
+			continue
+		default:
 			return 0, err
 		}
+		w, err := z.Create(a.FileName)
+		if err == nil {
+			_, err = io.Copy(w, isi)
+		}
+		_ = isi.Close()
+		if err != nil {
+			// Teks galat baca bisa memuat alamat jaringan - hanya ke log.
+			l.catat(fmt.Sprintf("master product name life: reading attachment %s into the archive failed: %v", a.ID, err))
+			return 0, gagal("reading %q was interrupted", a.FileName)
+		}
+		n++
+	}
+	if n == 0 && len(hilang) > 0 {
+		return 0, fmt.Errorf("%w: %s", sebab, strings.Join(hilang, ", "))
 	}
 	if len(hilang) > 0 {
 		w, err := z.Create(NamaDaftarTakTersedia)
 		if err == nil {
-			_, err = io.WriteString(w, Pesan(ErrBerkasTidakDiStub)+":\r\n"+strings.Join(hilang, "\r\n")+"\r\n")
+			_, err = io.WriteString(w, Pesan(sebab)+":\r\n"+strings.Join(hilang, "\r\n")+"\r\n")
 		}
 		if err != nil {
 			return 0, err
 		}
 	}
-	return len(ada), z.Close()
+	return n, z.Close()
 }
 
 // HapusLampiran - `Delete` b69714 (`DeleteAttacProdName_act`): berkas dulu (2
-// b411; gagal = rekam tetap), lalu objek dan rekam (3 b528) di satu transaksi.
-// Berkas yang sudah tidak ada di penyimpanan bukan galat (tiket 09 AC).
+// b411 `DeleteGoogleStorage_Act` atas objek `GetLinkStorage_SQL`; gagal = rekam tetap), lalu objek dan rekam (3
+// b528) di satu transaksi. Berkas stub yang sudah tidak ada bukan galat (tiket 09 AC); jawaban galat layanan
+// penyimpanan nyata menahan hapus (`StepStatusFail` b444).
 func (l *Layanan) HapusLampiran(ctx context.Context, p inti.Pelaku, produkID, id string) error {
 	if err := inti.WajibIdentitas(p); err != nil {
 		return err
@@ -390,7 +464,18 @@ func (l *Layanan) HapusLampiran(ctx context.Context, p inti.Pelaku, produkID, id
 	if err != nil {
 		return err
 	}
-	if err := l.berkas.Hapus(ctx, a.StorageID); err != nil {
+	o, terkirim, err := l.gudang.AmbilObjek(ctx, nil, a.StorageID)
+	if err != nil {
+		return err
+	}
+	var objek *models.ObjekPenyimpanan
+	if terkirim {
+		objek = &o
+	}
+	if err := l.berkas.Hapus(ctx, a.StorageID, objek); err != nil {
+		if errors.Is(err, ErrStorageGagal) || errors.Is(err, ErrStorageBelumSiap) {
+			l.catat(fmt.Sprintf("master product name life: deleting attachment %s from storage failed: %v", id, err))
+		}
 		return err
 	}
 	saat := l.jam()

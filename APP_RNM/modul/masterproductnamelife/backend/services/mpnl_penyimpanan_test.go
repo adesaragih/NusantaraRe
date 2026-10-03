@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"nusantarare/modul/masterproductnamelife/backend/models"
 )
 
 func TestPenyimpananLokalKirimIdempotenHapusTanpaGalat(t *testing.T) {
@@ -18,14 +20,20 @@ func TestPenyimpananLokalKirimIdempotenHapusTanpaGalat(t *testing.T) {
 	if err := p.SimpanAntrean(ctx, "ABC123", strings.NewReader("isi")); err != nil {
 		t.Fatal(err)
 	}
+	o := models.ObjekPenyimpanan{ImageID: "ABC123", AppFolder: "Contract/Doc/2026/10/", FileName: "x - UJI.pdf", AppName: "UJI-APP"}
 	for i := 0; i < 2; i++ {
-		if err := p.Kirim(ctx, "ABC123"); err != nil {
+		hasil, err := p.Kirim(ctx, o, "pdf", "application/pdf")
+		if err != nil {
 			t.Fatalf("kirim ke-%d: %v", i+1, err)
 		}
+		// Stub: objek tercatat apa adanya - URLPUBLIC kosong, alamat penyimpanan tidak ada.
+		if hasil != o {
+			t.Errorf("objek stub: %+v", hasil)
+		}
 	}
-	r, err := p.Buka(ctx, "ABC123")
-	if err != nil {
-		t.Fatal(err)
+	r, baru, err := p.Buka(ctx, o)
+	if err != nil || baru != nil {
+		t.Fatal(err, baru)
 	}
 	isi, _ := io.ReadAll(r)
 	_ = r.Close()
@@ -35,19 +43,19 @@ func TestPenyimpananLokalKirimIdempotenHapusTanpaGalat(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(akar, folderStub, "simpan", "ABC123")); err != nil {
 		t.Errorf("berkas di folder stub: %v", err)
 	}
-	if err := p.Hapus(ctx, "ABC123"); err != nil {
+	if err := p.Hapus(ctx, "ABC123", &o); err != nil {
 		t.Errorf("hapus: %v", err)
 	}
-	if err := p.Hapus(ctx, "ABC123"); err != nil {
+	if err := p.Hapus(ctx, "ABC123", nil); err != nil {
 		t.Errorf("hapus yang sudah tidak ada bukan galat: %v", err)
 	}
-	if err := p.Kirim(ctx, "ABC123"); !errors.Is(err, ErrBerkasSumberHilang) {
+	if _, err := p.Kirim(ctx, o, "pdf", "application/pdf"); !errors.Is(err, ErrBerkasSumberHilang) {
 		t.Errorf("sumber hilang: %v", err)
 	}
 	if err := p.SimpanAntrean(ctx, "../keluar", strings.NewReader("x")); !errors.Is(err, errImageIDTidakSah) {
 		t.Errorf("kunci objek berjalur ditolak: %v", err)
 	}
-	if err := PenyimpananLokal(" ").Kirim(ctx, "X"); !errors.Is(err, ErrPenyimpananBelumDisetel) {
+	if _, err := PenyimpananLokal(" ").Kirim(ctx, models.ObjekPenyimpanan{ImageID: "X"}, "pdf", ""); !errors.Is(err, ErrPenyimpananBelumDisetel) {
 		t.Errorf("UNGGAHAN_DIR kosong gagal terang: %v", err)
 	}
 }

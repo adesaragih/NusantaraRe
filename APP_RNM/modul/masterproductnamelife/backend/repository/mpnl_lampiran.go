@@ -7,13 +7,15 @@ package repository
 //	GetAttachmentProdName_Sql b84 SELECT … WHERE treatyid = ProductName.ID
 //	DeleteAttachProdName_Sql b85  DELETE … WHERE treatyid = … AND id = …
 //	Insert_T_Storage_SQL b85      INSERT T_STORAGE_IMAGE (IMAGEID, URLPUBLIC, APPFOLDER, EXPDATE, FILENAME, APPNAME, STORAGE='standard')
+//	GetLinkStorage_SQL b85        SELECT URLPUBLIC, APPFOLDER, EXPDATE, APPNAME, FILENAME … WHERE imageid = …
+//	Update_T_Storage_SQL b85      UPDATE T_STORAGE_IMAGE SET URLPUBLIC, APPFOLDER, EXPDATE, TANGGAL_UPLOAD WHERE imageid = …
 //	DeleteStorage_SQL b85         DELETE T_STORAGE_IMAGE WHERE imageid = …
 //	GetAppName_SQL b58            SELECT APPNAME FROM POOLDATA.T_FOLDER_IMAGE
 //
 // ⛔ Pengiriman berkas = EFEK KELUAR lewat outbox bersama `T_LOG_SERVICE_RNM`
 // (preseden Treaty Contract Out): rekam lampiran + antrean di SATU transaksi;
-// pelaksana stub menulis `T_STORAGE_IMAGE` saat berhasil. `URLPUBLIC` NULL -
-// alamat nyata tidak dipanggil dan tidak ditulis (OQ-MPNL-10).
+// pelaksana menulis `T_STORAGE_IMAGE` saat berhasil - nilai `URLPUBLIC`/`APPFOLDER`/`EXPDATE` dari jawaban
+// penyimpanan (keputusan work owner 03-10-2026, OQ-MPNL-10 ditutup); stub lokal menulis `URLPUBLIC` NULL.
 // ⛔ Status "terunggah" = baris `T_STORAGE_IMAGE` untuk `T_STORAGE_ID` ada.
 
 import (
@@ -45,7 +47,7 @@ const (
 // Kolom yang disebut SQL lampiran (penjaga kata cadangan).
 var (
 	KolomLampiran = []string{"ID", "TREATYID", "CATEGORY", "FILENAME", "FILEMIMETYPE", "DATA_JSON", "USERNAME", "T_STORAGE_ID"}
-	KolomObjek    = []string{"IMAGEID", "URLPUBLIC", "APPFOLDER", "EXPDATE", "FILENAME", "APPNAME", "STORAGE"}
+	KolomObjek    = []string{"IMAGEID", "URLPUBLIC", "APPFOLDER", "EXPDATE", "FILENAME", "APPNAME", "STORAGE", "TANGGAL_UPLOAD"}
 	KolomOutbox   = []string{"ID", "MODUL", "RUJUKAN", "STATUS", "PERCOBAAN", "GALAT_TERAKHIR", "DIBUAT"}
 )
 
@@ -81,9 +83,24 @@ func sqlAdaObjek(tabel string) string {
 	return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE IMAGEID = :1`, tabel)
 }
 
+// sqlSisipObjek - `Insert_T_Storage_SQL` b85: `To_date({InsertDoc.exp}, 'DD/MM/YYYY HH24:MI:SS')`.
 func sqlSisipObjek(tabel string) string {
 	return fmt.Sprintf(`INSERT INTO %s (IMAGEID, URLPUBLIC, APPFOLDER, EXPDATE, FILENAME, APPNAME, STORAGE)
-		VALUES (:1, NULL, :2, SYSDATE + :3 / 86400, :4, :5, 'standard')`, tabel)
+		VALUES (:1, :2, :3, TO_DATE(:4, 'DD/MM/YYYY HH24:MI:SS'), :5, :6, 'standard')`, tabel)
+}
+
+// sqlAmbilObjek - `GetLinkStorage_SQL` b85 (`pxResults(1)`; `T_STORAGE_IMAGE` tanpa PK). EXPDATE dibaca dalam bentuk
+// tulisnya sendiri - tanpa tafsir zona waktu oleh driver.
+func sqlAmbilObjek(tabel string) string {
+	return fmt.Sprintf(`SELECT URLPUBLIC, APPFOLDER, TO_CHAR(EXPDATE, 'DD/MM/YYYY HH24:MI:SS'), APPNAME, FILENAME
+		FROM %s WHERE IMAGEID = :1 FETCH FIRST 1 ROWS ONLY`, tabel)
+}
+
+// sqlPerbaruiObjek - `Update_T_Storage_SQL` b85.
+func sqlPerbaruiObjek(tabel string) string {
+	return fmt.Sprintf(`UPDATE %s SET URLPUBLIC = :1, APPFOLDER = :2,
+		EXPDATE = TO_DATE(:3, 'DD/MM/YYYY HH24:MI:SS'), TANGGAL_UPLOAD = TO_DATE(:4, 'MM/DD/YYYY HH24:MI:SS')
+		WHERE IMAGEID = :5`, tabel)
 }
 
 func sqlHapusObjek(tabel string) string {
@@ -254,8 +271,36 @@ func (g *Gudang) CatatObjek(ctx context.Context, tx *db.Tx, o models.ObjekPenyim
 	if err != nil || ada {
 		return err
 	}
-	return g.exec(ctx, tx, TabelObjek, sqlSisipObjek, o.ImageID, o.AppFolder, o.DurasiDetik, o.FileName,
-		db.KosongJadiNil(o.AppName))
+	return g.exec(ctx, tx, TabelObjek, sqlSisipObjek, o.ImageID, db.KosongJadiNil(o.URLPublic), o.AppFolder,
+		db.KosongJadiNil(o.Exp), o.FileName, db.KosongJadiNil(o.AppName))
+}
+
+// AmbilObjek - `GetLinkStorage_SQL` b85; `ada` false = lampiran belum terkirim.
+func (g *Gudang) AmbilObjek(ctx context.Context, tx *db.Tx, imageID string) (models.ObjekPenyimpanan, bool, error) {
+	if imageID == "" {
+		return models.ObjekPenyimpanan{}, false, nil
+	}
+	q, err := g.siapkan(TabelObjek, sqlAmbilObjek)
+	if err != nil {
+		return models.ObjekPenyimpanan{}, false, err
+	}
+	var url, folder, exp, app, nama sql.NullString
+	err = g.kueri(tx).QueryRowContext(ctx, q, imageID).Scan(&url, &folder, &exp, &app, &nama)
+	if errors.Is(err, sql.ErrNoRows) {
+		return models.ObjekPenyimpanan{}, false, nil
+	}
+	if err != nil {
+		return models.ObjekPenyimpanan{}, false, fmt.Errorf("repository: reading %s: %w", TabelObjek, err)
+	}
+	return models.ObjekPenyimpanan{ImageID: imageID, URLPublic: url.String, AppFolder: folder.String, Exp: exp.String,
+		AppName: app.String, FileName: nama.String}, true, nil
+}
+
+// PerbaruiObjek - `Update_T_Storage_SQL` b85 (URL bertanda tangan baru dari geturl). Seperti Pega, SEMUA baris
+// ber-IMAGEID itu diperbarui - `T_STORAGE_IMAGE` tanpa PK.
+func (g *Gudang) PerbaruiObjek(ctx context.Context, tx *db.Tx, o models.ObjekPenyimpanan) error {
+	return g.eksekusi(ctx, tx, TabelObjek, sqlPerbaruiObjek, false, db.KosongJadiNil(o.URLPublic),
+		db.KosongJadiNil(o.AppFolder), db.KosongJadiNil(o.Exp), db.KosongJadiNil(o.TanggalUpload), o.ImageID)
 }
 
 // HapusObjek - `DeleteStorage_SQL`; objek yang sudah tidak ada bukan galat.
