@@ -40,9 +40,13 @@ type Gudang struct {
 	OJK     string
 	urutPol int
 	Closing int
-	GagalDi string // nama operasi yang dipaksa gagal (uji pembatalan transaksi)
-	dalamTx bool
-	Panggil []string
+	// Master - tiruan `services.PembacaMasterTreaty` (master XOL per nomor
+	// kontrak, K8); MasterRusak memaksa `ErrMasterXOLRusak`.
+	Master      map[string]models.MasterXOL
+	MasterRusak bool
+	GagalDi     string // nama operasi yang dipaksa gagal (uji pembatalan transaksi)
+	dalamTx     bool
+	Panggil     []string
 }
 
 // Baru menyusun gudang kosong.
@@ -53,6 +57,7 @@ func Baru() *Gudang {
 		Nama:    map[string]string{},
 		Kontrak: map[string]models.BarisKontrak{},
 		Bisnis:  map[string]models.BarisBisnis{},
+		Master:  map[string]models.MasterXOL{},
 		Closing: 25,
 		OJK:     "UJI-OJK",
 	}
@@ -199,6 +204,7 @@ func (g *Gudang) SimpanHalaman(_ context.Context, _ *db.Tx, id string, h *models
 	// PolicyNo milik SetelNomorPolis, persis repository (NOPOLIS di luar katalog).
 	s.Hapus(models.HalamanPolis + ".PolicyNo")
 	s.Hapus(models.JalurStsPKP)
+	buangMaster(s)
 	if pn := h.Ambil("PositionNote"); pn != "" {
 		k := g.Kasus[id]
 		k.PositionNote = pn
@@ -206,6 +212,43 @@ func (g *Gudang) SimpanHalaman(_ context.Context, _ *db.Tx, id string, h *models
 	}
 	g.Halaman[id] = s
 	return nil
+}
+
+// buangMaster meniru katalog: halaman master `TreatyIn` tidak disimpan, hanya
+// `TreatyIn.ID` (TREATY_IN_ID) - master XOL dibaca ulang saat berkas dibuka.
+func buangMaster(h *models.Halaman) {
+	for k := range h.Nilai {
+		if strings.HasPrefix(k, models.HalamanMaster+".") && k != models.HalamanMaster+".ID" {
+			delete(h.Nilai, k)
+		}
+	}
+	for k := range h.Daftar {
+		if strings.HasPrefix(k, models.HalamanMaster+".") {
+			delete(h.Daftar, k)
+		}
+	}
+}
+
+// MasterXOL - tiruan `repository.MasterXOLDariJSON` (salinan, supaya halaman
+// tidak berbagi peta dengan tiruan).
+func (g *Gudang) MasterXOL(_ context.Context, noKontrak string) (models.MasterXOL, error) {
+	m, ada := g.Master[noKontrak]
+	if !ada {
+		return models.MasterXOL{}, repository.ErrMasterXOLTidakAda
+	}
+	if g.MasterRusak {
+		return models.MasterXOL{}, repository.ErrMasterXOLRusak
+	}
+	s := models.HalamanBaru()
+	models.TerapkanMasterXOL(s, m)
+	out := models.MasterXOL{Nilai: map[string]string{}, Daftar: map[string][]models.Baris{}}
+	for k, v := range s.Nilai {
+		out.Nilai[strings.TrimPrefix(k, models.HalamanMaster+".")] = v
+	}
+	for k, v := range s.Daftar {
+		out.Daftar[strings.TrimPrefix(k, models.HalamanMaster+".")] = v
+	}
+	return out, nil
 }
 
 func (g *Gudang) BacaHalaman(_ context.Context, _ *db.Tx, id string) (*models.Halaman, error) {

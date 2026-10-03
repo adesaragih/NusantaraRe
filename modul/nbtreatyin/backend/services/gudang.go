@@ -56,10 +56,30 @@ type Gudang interface {
 	DaftarJenisReas(ctx context.Context) ([]models.Pilihan, error)
 	PolisSerupa(ctx context.Context, h *models.Halaman) ([]string, error)
 
+	// PembacaMasterTreaty - master kontrak jalur XOL (K8).
+	PembacaMasterTreaty
+
 	CatatRiwayat(ctx context.Context, tx *db.Tx, r models.Riwayat) error
 	DaftarRiwayat(ctx context.Context, idPega string) ([]models.Riwayat, error)
 	DaftarPeranTempat(ctx context.Context) ([]repository.PeranTempat, error)
 	NamaTampilan(ctx context.Context, loginID string) (string, error)
+}
+
+// PembacaMasterTreaty adalah sumber master kontrak treaty untuk jalur NB
+// NonProporsional / XOL (`[keputusan work owner]` K8): `TreatyIn.Share()`,
+// `Installment()`, `FacultativeShareList()`, `Limits()`, ... menurut
+// `models.SkalarMasterXOL` / `models.DaftarMasterXOL`.
+//
+// Kini dipenuhi `repository.MasterXOLDariJSON` - baca-saja `JSONDATA`
+// `M_TREATY_IN` / `M_TREATY_IN_EDM`, pengecualian sempit atas P29. Tanda
+// tangannya sengaja tidak menyebut JSON: begitu tabel master modul `treatyin`
+// (`KONTRAK`, `LAYER`, `BAGIAN`, `PEMULIHAN_LIMIT`, `TERMIN`, `POTONGAN`) terisi,
+// antarmuka ini dipenuhi kontrak modul itu (PERMINTAAN-TIM-INTI bagian E).
+type PembacaMasterTreaty interface {
+	// MasterXOL membaca master satu kontrak menurut nomornya
+	// (`PolicyTreatyIn.NoOffer`). Nol master = `ErrMasterXOLTidakAda`; dokumen
+	// tak terurai = `ErrMasterXOLRusak`.
+	MasterXOL(ctx context.Context, noKontrak string) (models.MasterXOL, error)
 }
 
 // penyimpanOracle - `repository.Gudang` + transaksi `inti.Dasar`.
@@ -71,6 +91,12 @@ type penyimpanOracle struct {
 // Transaksi = `inti.Dasar.DalamTransaksi` (ADR-U-0029).
 func (p penyimpanOracle) Transaksi(ctx context.Context, fn func(tx *db.Tx) error) error {
 	return p.dasar.DalamTransaksi(ctx, fn)
+}
+
+// MasterXOL = `repository.MasterXOLDariJSON` (K8) - satu-satunya titik ganti
+// ke kontrak `PembacaMasterTreaty` modul treatyin.
+func (p penyimpanOracle) MasterXOL(ctx context.Context, noKontrak string) (models.MasterXOL, error) {
+	return p.Gudang.MasterXOLDariJSON(ctx, noKontrak)
 }
 
 // DariDasar menyusun layanan di atas basis data bersama. Tanpa Oracle

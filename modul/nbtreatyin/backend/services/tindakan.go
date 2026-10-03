@@ -73,8 +73,13 @@ func (l *Layanan) turunkan(ctx context.Context, h *models.Halaman) error {
 		}
 		models.SetelNamaMataUang(h, nama)
 	}
-	if err := models.CountNetPremi(h); err != nil {
-		return err
+	// ⛔ K8: polis NonProp baru - medan uang berada di kontainer
+	// `.IsNewPolicyNonProp != 1` yang tersembunyi, tidak satu pun refresh memicu
+	// CountNetPremi_act; nilainya milik InputPolicyTreatyInDetail_NonProp 18-19.
+	if !models.PolisNonPropBaru(h) {
+		if err := models.CountNetPremi(h); err != nil {
+			return err
+		}
 	}
 	return models.HitungTotalSpreading(h)
 }
@@ -279,6 +284,11 @@ func (l *Layanan) PilihBisnis(ctx context.Context, p inti.Pelaku, id, idDetail s
 		return Layar{}, err
 	}
 	models.TerapkanBisnisPilih(h, bis) // 14.7-14.9
+	// 16 (NonProportional) dan 18 - K8, nonprop.go. Langkah 13 dan 17 (master
+	// proporsional) tidak di sini.
+	if err := l.pilihBisnisNonProp(ctx, h); err != nil {
+		return Layar{}, err
+	}
 	if err := l.tulis(ctx, k, func(tx *db.Tx) error { return l.g.SimpanHalaman(ctx, tx, id, h) }); err != nil {
 		return Layar{}, err
 	}
@@ -424,8 +434,12 @@ func (l *Layanan) validasiKirim(ctx context.Context, p inti.Pelaku, h *models.Ha
 		// diambil, nilai yang akan disimpan tidak berubah.
 		salin := h.Salin()
 		salin.BersihkanPesan()
-		if err := models.CountOGPONP(salin); err != nil {
-			return err
+		// K8: rantai uang (CountOGPONP_Act) hanya terpicu dari medan kontainer
+		// proporsional - tersembunyi bagi polis NonProp baru.
+		if !models.PolisNonPropBaru(h) {
+			if err := models.CountOGPONP(salin); err != nil {
+				return err
+			}
 		}
 		models.ProtectDate(salin)
 		pesan = append(pesan, salin.SemuaPesan()...)

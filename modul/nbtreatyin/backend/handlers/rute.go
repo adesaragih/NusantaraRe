@@ -90,7 +90,9 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, services.ErrDataKontrakTidakAda),
 		errors.Is(err, services.ErrTipeNomorKosong),
-		errors.Is(err, services.ErrOJKKosong):
+		errors.Is(err, services.ErrOJKKosong),
+		errors.Is(err, services.ErrMasterXOLTidakAda),
+		errors.Is(err, services.ErrMasterXOLRusak):
 		// AC 37: kegagalan membaca data kontrak DITAMPILKAN kepada pengguna.
 		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrKasusTertutup),

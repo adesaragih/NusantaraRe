@@ -171,6 +171,9 @@ func (l *Layanan) layar(ctx context.Context, p inti.Pelaku, k models.Kasus, h *m
 	}
 	var wajib []string
 	for _, m := range models.DaftarMedanWajib(k.PositionNote) {
+		if models.TersembunyiNonProp(h, m.Jalur) {
+			continue
+		}
 		if m.Syarat == nil || m.Syarat(h) {
 			wajib = append(wajib, m.Jalur)
 		}
@@ -248,7 +251,11 @@ func (l *Layanan) siapkan(ctx context.Context, p inti.Pelaku, k models.Kasus, h 
 		return err
 	}
 	models.PraprosesTanggal(h, sekarang, hari)
-	return l.muatMaster(ctx, h)
+	if err := l.muatMaster(ctx, h); err != nil {
+		return err
+	}
+	// langkah 10 dan master XOL (K8) - nonprop.go
+	return l.siapkanNonProp(ctx, h)
 }
 
 // muatMaster mengisi halaman TreatyIn dari baris view kontrak terpilih.
