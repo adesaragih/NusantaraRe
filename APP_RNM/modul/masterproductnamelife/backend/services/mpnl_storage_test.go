@@ -269,11 +269,11 @@ func TestStorageGoogleBukaMemakaiURLTersimpanAtauMemintaYangBaru(t *testing.T) {
 		t.Errorf("objek diperbarui: %+v", baru)
 	}
 
-	// Jawaban tanpa appfolder tidak mengosongkan APPFOLDER - hapus membutuhkannya (penyimpangan sadar kecil).
+	// b2253 `UpdateDoc.appfolder = UploadDoc.Response.appfolder` - apa adanya, seperti XML.
 	s.tanpaAppfolder = true
 	_, baru, err = p.Buka(ctx, o)
-	if err != nil || baru == nil || baru.AppFolder != o.AppFolder {
-		t.Errorf("appfolder lama dipertahankan: %+v %v", baru, err)
+	if err != nil || baru == nil || baru.AppFolder != "" {
+		t.Errorf("appfolder dari jawaban apa adanya: %+v %v", baru, err)
 	}
 }
 
@@ -449,8 +449,9 @@ func TestStorageGoogleTanpaPengalihan(t *testing.T) {
 	}
 }
 
-// URL tersimpan yang tinggal kurang dari satu menit diminta ulang - unduhan tidak berangkat dengan URL yang hampir mati.
-func TestStorageGoogleURLHampirKedaluwarsaDimintaUlang(t *testing.T) {
+// Langkah 6 `JIKA EXPDATE SUDAH EXPIRED` dilewati bila `@CompareDates(UploadDoc.exp, @CurrentDateTime())` (b2610):
+// URL tersimpan dipakai selama EXPDATE SESUDAH sekarang - tanpa margin; EXPDATE yang sudah lewat = geturl.
+func TestStorageGoogleCompareDatesPersis(t *testing.T) {
 	ctx := context.Background()
 	s := baruStorageTiruan(t)
 	p, _ := s.penyimpanan(t)
@@ -458,16 +459,31 @@ func TestStorageGoogleURLHampirKedaluwarsaDimintaUlang(t *testing.T) {
 	s.objek[jalur] = []byte("x")
 	o := models.ObjekPenyimpanan{ImageID: "ABC123", URLPublic: s.srv.URL + "/objek/" + jalur, AppFolder: gsObjek("UJI-APP", jalur),
 		Exp: jamStorage.In(zonaJakarta).Add(30 * time.Second).Format(formatExp), FileName: namaUji, AppName: "UJI-APP"}
-	isi, baru, err := p.Buka(ctx, o)
-	if err != nil {
-		t.Fatal(err)
+	if u, baru, err := p.Tautan(ctx, o); err != nil || baru != nil || u != o.URLPublic || len(s.daftarMinta()) != 0 {
+		t.Errorf("EXPDATE 30 detik lagi: URL tersimpan dipakai: %q %+v %v", u, baru, err)
 	}
-	_ = isi.Close()
-	if baru == nil || len(s.daftarMinta()) != 1 {
-		t.Errorf("sisa 30 detik: geturl dipanggil: %+v %d", baru, len(s.daftarMinta()))
+	o.Exp = jamStorage.In(zonaJakarta).Add(-time.Second).Format(formatExp)
+	if _, baru, err := p.Tautan(ctx, o); err != nil || baru == nil || len(s.daftarMinta()) != 1 {
+		t.Errorf("EXPDATE sudah lewat: geturl: %+v %v", baru, err)
 	}
-	if tanggalUploadPega("2026-10-01 08:10:00") != "" || tanggalUploadPega(" 10/01/2026 08:10:00 ") != "10/01/2026 08:10:00" {
-		t.Error("DateTime hanya bentuk MM/DD/YYYY HH24:MI:SS (Update_T_Storage_SQL)")
+	o.Exp = ""
+	if _, baru, err := p.Tautan(ctx, o); err != nil || baru == nil || len(s.daftarMinta()) != 2 {
+		t.Errorf("EXPDATE kosong (b705 UploadDoc.exp==\"\"): geturl: %+v %v", baru, err)
+	}
+}
+
+// Langkah 6.6 `Insert ke table` dilewati bila `UploadDoc.Response.URLImage == ""` (b2558): tanpa UPDATE, langkah 7
+// mengembalikan URL tersimpan (b879 → b2672).
+func TestStorageGoogleGeturlKosongMengembalikanURLTersimpan(t *testing.T) {
+	ctx := context.Background()
+	s := baruStorageTiruan(t)
+	p, _ := s.penyimpanan(t)
+	s.urlKosong = true
+	o := models.ObjekPenyimpanan{ImageID: "ABC123", URLPublic: "UJI-URL-LAMA", AppFolder: gsObjek("UJI-APP", "x"),
+		Exp: "22/08/2025 07:00:00", FileName: "x", AppName: "UJI-APP"}
+	u, baru, err := p.Tautan(ctx, o)
+	if err != nil || u != "UJI-URL-LAMA" || baru != nil || len(s.daftarMinta()) != 1 {
+		t.Errorf("geturl tanpa URLImage: URL tersimpan, tanpa objek baru: %q %+v %v", u, baru, err)
 	}
 }
 
@@ -502,13 +518,13 @@ func (p *penyimpanTokenPalsu) SimpanToken(_ context.Context, _ *db.Tx, _, token,
 	return nil
 }
 
-// `GET_TOKEN_STORAGE` ditiru dengan margin 15 detik (preseden TCO `MarginTokenTCO`): token yang tinggal kurang dari itu
-// tidak dipakai ulang - unggahan base64 besar tidak berangkat dengan token yang mati di tengah jalan.
-func TestTokenStorageBermargin(t *testing.T) {
+// GET TOKEN (6.1 b1056 `GetTokenStorage_SQL` → `GET_TOKEN_STORAGE`): token yang `INPUTDATE > SYSDATE` dipakai ulang,
+// persis seperti procedure - tanpa margin; selain itu token baru.
+func TestTokenStorageSepertiProcedure(t *testing.T) {
 	ctx := context.Background()
 	pt := &penyimpanTokenPalsu{berlaku: "UJI-LAMA"}
 	tok, err := tokenStorage(ctx, nil, pt, "UJI-GARAM", "UJI-APP", jamStorage)
-	if err != nil || tok != "UJI-LAMA" || !pt.ditanyaSesudah.Equal(jamStorage.Add(MarginToken)) || len(pt.disimpan) != 0 {
+	if err != nil || tok != "UJI-LAMA" || !pt.ditanyaSesudah.Equal(jamStorage) || len(pt.disimpan) != 0 {
 		t.Errorf("token berlaku dipakai ulang bila sisa > margin: %q %v %v %v", tok, err, pt.ditanyaSesudah, pt.disimpan)
 	}
 	pt = &penyimpanTokenPalsu{}
@@ -555,9 +571,8 @@ func TestStorageGoogleEXPDATEDibacaJamJakarta(t *testing.T) {
 	}
 }
 
-// URL tersimpan yang ditolak penyimpanan (400 ExpiredToken / 401 / 403) walau EXPDATE belum lewat: URL baru diminta
-// lewat geturl dan unduhan diulang SEKALI - selisih jam tidak menggagalkan unduhan.
-func TestStorageGoogleURLTersimpanDitolakDimintaUlang(t *testing.T) {
+// XML tidak mencoba ulang: URL tersimpan yang ditolak penyimpanan (400 ExpiredToken) = galat, tanpa geturl kedua.
+func TestStorageGoogleURLDitolakTanpaCobaUlang(t *testing.T) {
 	ctx := context.Background()
 	s := baruStorageTiruan(t)
 	p, _ := s.penyimpanan(t)
@@ -565,13 +580,7 @@ func TestStorageGoogleURLTersimpanDitolakDimintaUlang(t *testing.T) {
 	s.objek[jalur] = []byte("isi lama")
 	o := models.ObjekPenyimpanan{ImageID: "ABC123", URLPublic: s.srv.URL + "/objek/" + jalur + "?kedaluwarsa",
 		AppFolder: gsObjek("UJI-APP", jalur), Exp: "01/10/2026 15:40:00", FileName: namaUji, AppName: "UJI-APP"}
-	isi, baru, err := p.Buka(ctx, o)
-	if err != nil {
-		t.Fatal(err)
-	}
-	d, _ := io.ReadAll(isi)
-	_ = isi.Close()
-	if string(d) != "isi lama" || baru == nil || len(s.daftarMinta()) != 1 || s.ambilObjek != 2 {
-		t.Errorf("ditolak lalu geturl dan diulang sekali: %q %+v (geturl %d, unduh %d)", d, baru, len(s.daftarMinta()), s.ambilObjek)
+	if _, _, err := p.Buka(ctx, o); !errors.Is(err, ErrStorageGagal) || len(s.daftarMinta()) != 0 || s.ambilObjek != 1 {
+		t.Errorf("ditolak: galat, tanpa geturl: %v (geturl %d, unduh %d)", err, len(s.daftarMinta()), s.ambilObjek)
 	}
 }

@@ -25,9 +25,10 @@ package services
 // masuk pesan galat maupun log.
 // ⚠️ PENYIMPANGAN SADAR: (1) pengiriman tetap efek keluar outbox (P5) - berkas ditahan di antrean lokal
 // `UNGGAHAN_DIR` sampai objeknya tercatat; (2) isi diunduh backend dari URL bertanda tangan (hanya https, tanpa
-// pengalihan) lalu diteruskan ke peramban - Pega membuka URL itu di jendela peramban; (3) jawaban geturl tanpa
-// `appfolder` tidak mengosongkan APPFOLDER (hapus membutuhkannya); (4) objek yang dicatat stub lokal (URLPUBLIC
-// kosong) dibaca dan dihapus di folder stub - riwayat sebelum penyambungan tetap terbaca.
+// pengalihan) lalu diteruskan ke peramban - Pega membuka URL itu di jendela peramban; (3) objek yang dicatat stub
+// lokal (URLPUBLIC kosong) dibaca dan dihapus di folder stub - riwayat sebelum penyambungan tetap terbaca.
+// Alur geturl mengikuti langkah `GetUrlGoogleStorage_Act` apa adanya (lihat `Tautan`) - tanpa coba ulang dan tanpa
+// margin waktu yang tidak ada di XML (work owner 03-10-2026: "harusnya ikuti activity dari XML nya semua").
 
 import (
 	"bytes"
@@ -53,13 +54,6 @@ import (
 // BatasWaktuStorage - `ServiceGoogle.xml` b29 `pyResponseTimeout 300000`.
 const BatasWaktuStorage = 300 * time.Second
 
-// sisaURLMinimum - URL tersimpan yang tinggal berlaku kurang dari ini diminta ulang: unduhan tidak putus di tengah.
-const sisaURLMinimum = time.Minute
-
-// MarginToken - token `GCP_IMAGE` (umur satu menit) yang tinggal kurang dari ini tidak dipakai ulang: unggahan base64
-// besar tidak berangkat dengan token yang mati di tengah jalan (preseden Treaty Contract Out `MarginTokenTCO`).
-const MarginToken = 15 * time.Second
-
 // batasJawabanStorage - jawaban JSON layanan tidak dibaca tanpa batas.
 const batasJawabanStorage = 1 << 20
 
@@ -74,9 +68,6 @@ var (
 	// ErrBerkasTidakDiStorage - URL bertanda tangan menjawab 404: berkasnya tidak ada di penyimpanan (409).
 	ErrBerkasTidakDiStorage = errors.New("services: the attachment file is not in storage")
 )
-
-// errURLDitolak - URL bertanda tangan ditolak penyimpanan (400 `ExpiredToken`, 401, 403): URL baru diminta sekali.
-var errURLDitolak = errors.New("the signed URL was rejected")
 
 // galatStorage - galat penyimpanan: kalimat layar tanpa sebab mentah (teks Oracle hanya di log), jenisnya terbaca
 // `errors.Is`.
@@ -289,52 +280,56 @@ func jalurObjek(o models.ObjekPenyimpanan) string {
 	return strings.ReplaceAll(o.AppFolder, awalanGS(o.AppName), "")
 }
 
-// berlaku - URL tersimpan masih dapat dipakai (EXPDATE belum lewat, dengan sisa minimum).
+// berlaku - prasyarat langkah 6 `JIKA EXPDATE SUDAH EXPIRED` (b1022): `@CompareDates(UploadDoc.exp,
+// @CurrentDateTime())` (b2610) → Skip Step. URL tersimpan dipakai selama EXPDATE SESUDAH sekarang - persis, tanpa
+// margin; EXPDATE kosong (b705 `UploadDoc.exp==""`) = langkah 6 dijalankan.
 //
-// ⚠️ EXPDATE dibaca jam Asia/Jakarta, BUKAN GMT seperti rumus Pega (b2366 `+ " GMT"`): bukti DEV 03-10-2026 - URL
-// ber-EXPDATE `13:28:00` ditolak Google `ExpiredToken` sesudah 13:28 WIB (layanan menjawab `exp` jam lokal). Dibaca GMT,
-// URL mati dianggap berlaku tujuh jam lagi. Bila ternyata GMT, akibatnya hanya geturl lebih awal.
+// ⚠️ EXPDATE dibaca jam Asia/Jakarta - jam yang dipakai Pega saat membandingkan nilai DATE basis data dengan
+// `@CurrentDateTime()`: bukti DEV 03-10-2026, URL ber-EXPDATE `13:28:00` ditolak Google `ExpiredToken` sesudah 13:28 WIB.
 func (p penyimpananGoogle) berlaku(o models.ObjekPenyimpanan) bool {
-	if strings.TrimSpace(o.URLPublic) == "" {
-		return false
-	}
 	exp, err := time.ParseInLocation(formatExp, strings.TrimSpace(o.Exp), zonaJakarta)
-	return err == nil && exp.After(p.jam().Add(sisaURLMinimum))
+	return err == nil && exp.After(p.jam())
 }
 
-// Tautan - `GetUrlGoogleStorage_Act`: URL bertanda tangan objek terkirim; objek baru dijawab bila geturl dipanggil.
+// Tautan - `GetUrlGoogleStorage_Act` (`DownloadAttProdName_Act` 6 b953, Durasi "1800"), objek `o` = hasil langkah 4 b671
+// GET LINK (`GetLinkStorage_SQL`, dibaca pemanggil):
+//
+//	5   b855  `UpdateDoc.URLImage` / `Param.Url` = URLImage tersimpan
+//	6   b1022 JIKA EXPDATE SUDAH EXPIRED - dilewati bila `berlaku`:
+//	    6.1 b1056 GET TOKEN (`GetTokenStorage_SQL`)      6.2 b1238 Set Data (Folder, Namafile, Durasi)
+//	    6.3 b1511 SET JSON                               6.4 b1668 GetLinkService "Google"/"geturl"
+//	    6.5 b1781 Connect-REST `ServiceGoogle`
+//	    6.6 b1951 Insert ke table - dilewati bila `UploadDoc.Response.URLImage == ""` (b2558):
+//	        b1985 UpdateDoc, b2125 exp/URLImage/appfolder/DateTime/ImageID, b2375 `Update_T_Storage_SQL` (pemanggil)
+//	7   b2650 Return `Param.Url = UpdateDoc.URLImage`
+//
 // Objek yang dicatat stub lokal tidak punya URL (`ErrOfficeStub`).
 func (p penyimpananGoogle) Tautan(ctx context.Context, o models.ObjekPenyimpanan) (string, *models.ObjekPenyimpanan, error) {
 	if strings.TrimSpace(o.URLPublic) == "" {
 		return "", nil, ErrOfficeStub
 	}
 	if p.berlaku(o) {
-		return o.URLPublic, nil, nil
+		return o.URLPublic, nil, nil // 6 dilewati → 7: URL tersimpan
 	}
-	return p.mintaURL(ctx, o)
-}
-
-// mintaURL - geturl (`GetUrlGoogleStorage_Act` b1238–b1781): URL bertanda tangan BARU dan objek yang diperbarui.
-func (p penyimpananGoogle) mintaURL(ctx context.Context, o models.ObjekPenyimpanan) (string, *models.ObjekPenyimpanan, error) {
+	// 6.2 b1260 `@replaceAll(.Folder, .Namafile, "")`, b1325 `@replaceAll(.Folder, <awalan gs+App>, "")`.
 	durasi := DurasiLampiran
-	folder := strings.TrimSuffix(jalurObjek(o), o.FileName)
+	folder := strings.ReplaceAll(strings.ReplaceAll(o.AppFolder, o.FileName, ""), awalanGS(o.AppName), "")
+	// 6.1 GET TOKEN, 6.3 SET JSON, 6.4 GetLinkService, 6.5 Connect-REST - `panggil`.
 	j, err := p.panggil(ctx, layanan.KunciURLBerkas, permintaanStorage{App: o.AppName, Durasi: &durasi, Folder: folder,
 		Namafile: o.FileName})
 	if err != nil {
 		return "", nil, err
 	}
 	if strings.TrimSpace(j.URLImage) == "" {
-		return "", nil, gagal("geturl answered an empty URLImage")
+		return o.URLPublic, nil, nil // 6.6 dilewati (b2558) → 7: URL tersimpan, tanpa UPDATE
 	}
+	// 6.6 b2125–b2295: UpdateDoc dari jawaban, apa adanya.
 	segar := o
-	segar.URLPublic, segar.Exp, segar.TanggalUpload = j.URLImage, expPega(j.Exp), tanggalUploadPega(j.DateTime)
-	if strings.TrimSpace(j.AppFolder) != "" {
-		segar.AppFolder = j.AppFolder
-	}
-	return j.URLImage, &segar, nil
+	segar.URLPublic, segar.Exp, segar.AppFolder, segar.TanggalUpload = j.URLImage, expPega(j.Exp), j.AppFolder, j.DateTime
+	return j.URLImage, &segar, nil // 7: URL baru
 }
 
-// Buka - `Tautan` lalu isi dari URL bertanda tangan; objek baru dijawab bila geturl dipanggil.
+// Buka - `Tautan` lalu isi dari URL bertanda tangan; objek baru dijawab bila langkah 6.6 dijalankan.
 func (p penyimpananGoogle) Buka(ctx context.Context, o models.ObjekPenyimpanan) (io.ReadCloser, *models.ObjekPenyimpanan, error) {
 	if strings.TrimSpace(o.URLPublic) == "" {
 		// Dicatat stub lokal - berkasnya di folder stub, tidak pernah di penyimpanan.
@@ -348,13 +343,6 @@ func (p penyimpananGoogle) Buka(ctx context.Context, o models.ObjekPenyimpanan) 
 		return nil, nil, err
 	}
 	isi, err := p.unduh(ctx, bertanda)
-	if err != nil && baru == nil && errors.Is(err, errURLDitolak) {
-		// URL TERSIMPAN ditolak walau EXPDATE belum lewat (selisih jam / zona): URL baru, diulang SEKALI.
-		if bertanda, baru, err = p.mintaURL(ctx, o); err != nil {
-			return nil, nil, err
-		}
-		isi, err = p.unduh(ctx, bertanda)
-	}
 	if err != nil {
 		return nil, nil, err
 	}
@@ -381,12 +369,8 @@ func (p penyimpananGoogle) unduh(ctx context.Context, bertanda string) (io.ReadC
 	}
 	_, _ = io.Copy(io.Discard, io.LimitReader(jwb.Body, batasJawabanStorage))
 	_ = jwb.Body.Close()
-	switch jwb.StatusCode {
-	case http.StatusNotFound:
+	if jwb.StatusCode == http.StatusNotFound {
 		return nil, galatStorage{jenis: ErrBerkasTidakDiStorage, layar: ErrBerkasTidakDiStorage.Error()}
-	case http.StatusBadRequest, http.StatusUnauthorized, http.StatusForbidden:
-		return nil, galatStorage{jenis: ErrStorageGagal, sebab: errURLDitolak,
-			layar: fmt.Sprintf("%s: the signed URL answered status %d", ErrStorageGagal, jwb.StatusCode)}
 	}
 	return nil, gagal("the signed URL answered status %d", jwb.StatusCode)
 }
@@ -426,31 +410,22 @@ func expPega(exp string) string {
 	return t.Format(formatExp)
 }
 
-// tanggalUploadPega - `DateTime` geturl apa adanya bila berbentuk `MM/DD/YYYY HH24:MI:SS` (`Update_T_Storage_SQL`);
-// bentuk lain → kosong (NULL), bukan ORA-01843.
-func tanggalUploadPega(teks string) string {
-	t := strings.TrimSpace(teks)
-	if _, err := time.Parse("01/02/2006 15:04:05", t); err != nil {
-		return ""
-	}
-	return t
-}
-
 // penyimpanTokenStorage - bacaan dan tulisan `GCP_IMAGE` (`inti/backend/layanan.PenyimpanToken`).
 type penyimpanTokenStorage interface {
 	TokenBerlaku(ctx context.Context, tx *db.Tx, appName string, saat time.Time) (string, error)
 	SimpanToken(ctx context.Context, tx *db.Tx, appName, token, pengguna string, sampai time.Time) error
 }
 
-// tokenStorage - `GET_TOKEN_STORAGE` ditiru (`inti/backend/layanan/token.go`): token yang masih berlaku LEBIH dari
-// `MarginToken` dipakai ulang - tanpa garam; selain itu token baru dirakit dengan garam (`STORAGE_TOKEN_SALT`) dan
-// disimpan dengan umur satu menit, pengguna `Job` (`NVL(masukan, 'Job')`). ⛔ Garam dan token tidak pernah masuk
-// pesan galat.
+// tokenStorage - GET TOKEN (`InsertGoogleStorage_Act` 7 b1155, `GetUrlGoogleStorage_Act` 6.1 b1056,
+// `DeleteGoogleStorage_Act` b811: `GetTokenStorage_SQL` → procedure `GET_TOKEN_STORAGE`) ditiru seperti procedure-nya
+// (`inti/backend/layanan/token.go`): token terbaru yang `INPUTDATE > SYSDATE` dipakai ulang - tanpa garam; selain itu
+// token baru dirakit dengan garam (`STORAGE_TOKEN_SALT`) dan disimpan dengan umur satu menit, pengguna `Job`
+// (`NVL(masukan, 'Job')`). ⛔ Garam dan token tidak pernah masuk pesan galat.
 func tokenStorage(ctx context.Context, tx *db.Tx, p penyimpanTokenStorage, garam, app string, saat time.Time) (string, error) {
 	if strings.TrimSpace(app) == "" {
 		return "", layanan.ErrAppNameKosong
 	}
-	lama, err := p.TokenBerlaku(ctx, tx, app, saat.Add(MarginToken))
+	lama, err := p.TokenBerlaku(ctx, tx, app, saat)
 	if err != nil || lama != "" {
 		return lama, err
 	}

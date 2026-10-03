@@ -180,7 +180,7 @@ Keputusan work owner 03-10-2026:
 
 | Butir | Keputusan | Dibangun |
 | --- | --- | --- |
-| Aktivasi | *"Selalu nyata, ikut XML"* | Layanan Oracle SELALU memakai `penyimpananGoogle` — saklar `PELAKSANA_STORAGE` tidak lagi dibaca modul ini (bab di atas, "Cara menyalakan", **gugur**). Token berlaku di `GCP_IMAGE` (sisa > 15 detik) dipakai ulang TANPA garam; `STORAGE_TOKEN_SALT` hanya untuk token baru — tanpa token berlaku dan tanpa garam: 503 berkalimat. `UNGGAHAN_DIR` tetap wajib (antrean). Teks entri penjaga inti disesuaikan. |
+| Aktivasi | *"Selalu nyata, ikut XML"* | Layanan Oracle SELALU memakai `penyimpananGoogle` — saklar `PELAKSANA_STORAGE` tidak lagi dibaca modul ini (bab di atas, "Cara menyalakan", **gugur**). Token berlaku di `GCP_IMAGE` (`INPUTDATE > SYSDATE`, seperti procedure; *ralat sore: margin 15 detik dicabut*) dipakai ulang TANPA garam; `STORAGE_TOKEN_SALT` hanya untuk token baru — tanpa token berlaku dan tanpa garam: 503 berkalimat. `UNGGAHAN_DIR` tetap wajib (antrean). Teks entri penjaga inti disesuaikan. |
 | OQ-MPNL-11 `View Office Online` | *"Izinkan ditulis di kode"* | rute `GET …/lampiran/{lid}/office` menjawab `{url}` bertanda tangan (`GetUrlGoogleStorage_Act`, Durasi 1800); frontend `penampilOffice.ts` memuat alamat penampil b1103 — satu-satunya alamat literal modul, pengecualian bernama `alamatDiizinkan` di `TestMPNLNolAlamatLayanan`. |
 | Cara membuka penampil | *"KENAPA HARUS NYENGGOL MODUL LAIN?"* — tidak menyentuh modul lain | penjaga lintas-modul `modul/claimlife/frontend/unduhdokumen.test.ts` melarang `window.open` / `location.*` (navigasi ke backend tanpa identitas). Penampil dibuka lewat FORM GET ber-`action` tetap ke alamat penampil, `target="_blank"`, input `src` = URL bertanda tangan (`application/x-www-form-urlencoded` = `@encodeURL`); dua langkah — klik mengambil URL, tombol di jendela kecil membuka tab (klik pengguna, tidak diblokir pemblokir pop-up). *(Ralat 03-10-2026: work owner "TIDAK UDAH TAMBAH TAMBAH LAGI BUAT DOCUMENT, PAKE APA YANG SUDAH ADA" — jendela kecil dan tombolnya dicabut; link `View Office Online` yang ada langsung mengirim form tersembunyi, satu klik.)* |
 
@@ -196,3 +196,27 @@ Permintaan work owner 03-10-2026: *"PERBAIKI UPLOAD DOCUMENT BISA BANYAK DAN BIS
 menerima banyak berkas (pemilih `multiple` dan kotak seret-lepas); berkas diunggah SATU PER SATU lewat rute unggah yang ada
 (`POST …/lampiran`, satu berkas per permintaan - backend tidak berubah). Nama ganda dalam pilihan dibuang (backend menolak
 nama ganda per produk); kegagalan per berkas ditampilkan dan berkasnya tinggal di pilihan, yang berhasil langsung ke grid.
+
+### Unduh lampiran 502 (03-10-2026 sore) — alur `GetUrlGoogleStorage_Act` apa adanya
+
+Gejala: `…/lampiran/20250822135941817/unduh` 502. Diagnosis baca-saja: URL tersimpan ber-EXPDATE `13:28:00` ditolak
+Google `400 ExpiredToken` sesudah 13:28 WIB, sedangkan kode membaca EXPDATE sebagai GMT (dianggap berlaku sampai 20:28 WIB).
+
+Perbaikan pertama (`0ab5e116`) menambah penyesuaian Go: margin 1 menit dan coba ulang bila URL ditolak. Work owner:
+*"ITU HARUSNYA IKUTI ACTIVITY DARI XML NYA SEMUA, KAMU HANYA MELAKUKAN PENYESUAIAN KE GO!! LIHAT ACTIVITY VIEW, ADA
+GETTOKEN, DAN KETIKA EXPIRED, HIT API LAGI UNTUK GENERATE LINK BARU!"* — penyesuaian itu dicabut; `Tautan`
+(`backend/services/mpnl_storage.go`) kini mengikuti langkah XML apa adanya:
+
+| Langkah | XML | Go |
+| --- | --- | --- |
+| 4 b671 | GET LINK `GetLinkStorage_SQL` | `AmbilObjek` (pemanggil) |
+| 5 b855 | `Param.Url` = URLImage tersimpan | URL tersimpan |
+| 6 b1022 | JIKA EXPDATE SUDAH EXPIRED — dilewati bila `@CompareDates(exp, @CurrentDateTime())` (b2610); `exp == ""` (b705) = dijalankan | `berlaku`: EXPDATE sesudah sekarang, tanpa margin |
+| 6.1 b1056 | GET TOKEN `GetTokenStorage_SQL` | `tokenStorage` (`INPUTDATE > SYSDATE`, tanpa margin) |
+| 6.2–6.5 | Set Data, SET JSON, GetLinkService Google/geturl, Connect-REST | `panggil` |
+| 6.6 b1951 | Insert ke table — dilewati bila `Response.URLImage == ""` (b2558); UpdateDoc apa adanya → `Update_T_Storage_SQL` | URL tersimpan bila kosong; selain itu objek baru (appfolder, DateTime apa adanya) dicatat |
+| 7 b2650 | Return `Param.Url` | URL |
+
+Satu-satunya tafsir: EXPDATE dibaca jam Asia/Jakarta — jam yang Pega pakai saat membandingkan DATE basis data dengan
+`@CurrentDateTime()` (bukti di atas). Verifikasi DEV baca-saja: enam lampiran produk 100003 terunduh — empat lewat
+langkah 6 (token + geturl), dua memakai URL tersimpan.
