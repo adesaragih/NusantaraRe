@@ -675,8 +675,9 @@ func TestMPNLAturanViewRateMenggigit(t *testing.T) {
 //
 // Kalimat work owner dikutip: "UBAH SEMUA JANGAN ADA YANG SIMPAN KE TABLE JSON SIMPAN KE TABLE FLAT SEMUA. DAN JANGAN
 // GUNAKAN TABLE VIEW NYA" (sebelumnya K7: "semua simpan dan baca dari table flat"). Kode aplikasi - layar, services,
-// repository - tidak menyebut kedua tabel JSON warisan; satu-satunya pengecualian alat pindah (sumber salinan sekali
-// jalan ke tabel flat) dan nama konstantanya. Ketiga view produk tidak disebut kode mana pun.
+// repository - tidak menyebut kedua tabel JSON warisan; satu-satunya pengecualian jalur pindah `mpnl_pindah.go` (alat
+// pindah, popup Copy Old 03-10-2026, dan pemeriksa ID produk lama - semuanya BACA saja) dan nama konstantanya. Ketiga
+// view produk tidak disebut kode mana pun.
 
 // polaTabelJSONProduk - kedua tabel JSON warisan, sebagai nama Oracle atau konstanta Go (`M_PRODUCT_LIFE_SEQ` -
 // sequence identitas - bukan tabel JSON dan tidak cocok `\b`).

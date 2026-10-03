@@ -24,10 +24,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"sort"
 	"strings"
 	"time"
 
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/masterproductnamelife/backend/models"
 )
 
@@ -81,6 +83,8 @@ type LaporanPindah struct {
 	NormalisasiJenis    map[string]int
 	Ditulis             bool
 	ContohNormalisasi   []Temuan
+	// NormalisasiProduk - ID produk → jenis normalisasi → cacah (Copy Old menilai per produk).
+	NormalisasiProduk map[string]map[string]int
 }
 
 // Lolos - nol kegagalan DAN nol normalisasi (normalisasi menunggu keputusan work owner, brief T3).
@@ -107,7 +111,7 @@ func (l LaporanPindah) BolehDitulis() bool {
 
 func laporanBaru() LaporanPindah {
 	return LaporanPindah{Baris: map[string]int{}, Normalisasi: map[string]int{}, MedanTanpaKolom: map[string]int{},
-		DibuangD2: map[string]int{}, NormalisasiJenis: map[string]int{}}
+		DibuangD2: map[string]int{}, NormalisasiJenis: map[string]int{}, NormalisasiProduk: map[string]map[string]int{}}
 }
 
 // Beda - satu medan yang berbeda antara dua produk.
@@ -445,6 +449,10 @@ func rekonsiliasi(umum, inward []barisJSON) (LaporanPindah, []models.Produk) {
 			jenis := JenisNormalisasi(nilaiMedan(p, b))
 			lap.Normalisasi[b.Tabel+"."+b.Kolom+" ("+jenis+")"]++
 			lap.NormalisasiJenis[jenis]++
+			if lap.NormalisasiProduk[u.id] == nil {
+				lap.NormalisasiProduk[u.id] = map[string]int{}
+			}
+			lap.NormalisasiProduk[u.id][jenis]++
 			if len(lap.ContohNormalisasi) < 20 {
 				lap.ContohNormalisasi = append(lap.ContohNormalisasi, Temuan{ProdukID: u.id, Tabel: b.Tabel,
 					Kolom: b.Kolom, Urut: b.Urut})
@@ -789,4 +797,165 @@ func (g *Gudang) PindahFlat(ctx context.Context, jalankan bool, terima []string)
 	}
 	lap.Ditulis = true
 	return lap, nil
+}
+
+// --- Copy Old (permintaan work owner 03-10-2026) -----------------------------------------------------------------
+//
+// Tombol `Copy Old` di samping `Add` membuka popup berisi produk tabel JSON warisan yang BELUM ada di induk flat; yang
+// dicentang disalin lewat `Process Copy`. Aturannya SAMA dengan alat pindah - rekonsiliasi seluruh sumber, K3,
+// keputusan OQ-FLAT-07 (jenis normalisasi diterima) dan OQ-FLAT-09 (tanggal dikonversi) - tetapi per produk: satu
+// transaksi per produk, tulis lalu baca ulang. Kedua tabel JSON hanya DIBACA (penjaga TestMPNLAplikasiHanyaTabelFlat:
+// berkas ini satu-satunya kode aplikasi yang menyebutnya).
+
+// NormalisasiDiputuskan - jenis normalisasi yang diterima work owner 02-10-2026 (OQ-FLAT-07, "ikuti rekomendasi").
+var NormalisasiDiputuskan = []string{"koma desimal", "nol depan"}
+
+// ErrSudahDiFlat - ID produk lama sudah ada di induk flat (disalin sebelumnya, oleh pemakai lain, atau alat pindah).
+var ErrSudahDiFlat = errors.New("repository: the product is already in the flat tables")
+
+// statusLama - murni: rekonsiliasi seluruh sumber JSON → baris popup untuk produk yang BELUM ada di induk flat
+// (`diFlat`), urut ID, dan bentuk flat produk yang boleh disalin. Alasan dan catatan menyebut tabel dan kolom saja.
+func statusLama(umum, inward []barisJSON, diFlat map[string]bool) ([]models.ProdukLama, map[string]models.Produk) {
+	lap, produk := rekonsiliasi(umum, inward)
+	menurutID := make(map[string]models.Produk, len(produk))
+	for _, p := range produk {
+		menurutID[p.ID] = p
+	}
+	diterima := map[string]bool{}
+	for _, j := range NormalisasiDiputuskan {
+		diterima[j] = true
+	}
+	daftar := []models.ProdukLama{}
+	siap := map[string]models.Produk{}
+	sudah := map[string]bool{}
+	for _, u := range umum {
+		if diFlat[u.id] || sudah[u.id] {
+			continue
+		}
+		sudah[u.id] = true
+		d := models.ProdukLama{ID: u.id, Alasan: []string{}, Catatan: []string{}}
+		for _, g := range lap.Gagal {
+			// Kalimat kegagalan berawalan ID produk: `<id>: …` atau `<id> <tabel>.<kolom>…` (Temuan).
+			if sisa, ok := strings.CutPrefix(g, u.id+":"); ok {
+				d.Alasan = append(d.Alasan, strings.TrimSpace(sisa))
+			} else if sisa, ok := strings.CutPrefix(g, u.id+" "); ok {
+				d.Alasan = append(d.Alasan, strings.TrimSpace(sisa))
+			}
+		}
+		jenis := make([]string, 0, len(lap.NormalisasiProduk[u.id]))
+		for j := range lap.NormalisasiProduk[u.id] {
+			jenis = append(jenis, j)
+		}
+		sort.Strings(jenis)
+		for _, j := range jenis {
+			n := lap.NormalisasiProduk[u.id][j]
+			if diterima[j] {
+				d.Catatan = append(d.Catatan, fmt.Sprintf("angka dirapikan (%s), %d nilai - diputuskan OQ-FLAT-07", j, n))
+			} else {
+				d.Alasan = append(d.Alasan, fmt.Sprintf("angka berbentuk %s (%d nilai) belum diputuskan work owner (OQ-FLAT-07)", j, n))
+			}
+		}
+		for _, t := range lap.K3 {
+			if t.ProdukID == u.id {
+				d.Catatan = append(d.Catatan, "nilai tidak sah dikosongkan (K3) - "+strings.TrimPrefix(t.String(), u.id+" "))
+			}
+		}
+		for _, t := range lap.TanggalDikonversi {
+			if t.ProdukID == u.id {
+				d.Catatan = append(d.Catatan, "tanggal dikonversi (OQ-FLAT-09) - "+strings.TrimPrefix(t.String(), u.id+" "))
+			}
+		}
+		p, ada := menurutID[u.id]
+		if ada {
+			d.ProductName, d.Ceding, d.TreatyNumber = p.Umum.ProductName, p.Umum.Ceding, p.Umum.TreatyNumber
+			d.InwardName, d.CreateOp, d.UpdateOp = p.Umum.InwardName, p.Umum.CreateOp, p.Umum.UpdateOp
+		} else if len(d.Alasan) == 0 {
+			d.Alasan = append(d.Alasan, "produk tidak dapat dibentuk dari JSON-nya")
+		}
+		d.BolehDisalin = ada && len(d.Alasan) == 0
+		if d.BolehDisalin {
+			siap[u.id] = p
+		}
+		daftar = append(daftar, d)
+	}
+	sort.Slice(daftar, func(i, j int) bool { return daftar[i].ID < daftar[j].ID })
+	return daftar, siap
+}
+
+// SiapkanProdukLama - Copy Old: baris popup dan bentuk flat produk yang boleh disalin. SELECT saja (kedua tabel JSON
+// dan ID induk flat).
+func (g *Gudang) SiapkanProdukLama(ctx context.Context) ([]models.ProdukLama, map[string]models.Produk, error) {
+	umum, inward, err := g.bacaSumberJSON(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	ids, err := g.semuaIDFlat(ctx, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	diFlat := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		diFlat[id] = true
+	}
+	daftar, siap := statusLama(umum, inward, diFlat)
+	return daftar, siap, nil
+}
+
+// SalinProdukLama - Copy Old: satu produk lama (bentuk flat dari SiapkanProdukLama) ditulis ke tabel flat di transaksi
+// pemanggil, lalu dibaca ulang dan dibandingkan. ID yang sudah ada di induk flat = ErrSudahDiFlat, nol tulisan.
+func (g *Gudang) SalinProdukLama(ctx context.Context, tx *db.Tx, p models.Produk) error {
+	if !tx.Terisi() {
+		return errors.New("repository: copying an old product requires a transaction")
+	}
+	q, err := g.siapkan(TabelFlatInduk, sqlCacahID)
+	if err != nil {
+		return err
+	}
+	var c int
+	if err := tx.QueryRowContext(ctx, q, p.ID).Scan(&c); err != nil {
+		return fmt.Errorf("repository: checking %s %s: %w", TabelFlatInduk, p.ID, err)
+	}
+	if c > 0 {
+		return fmt.Errorf("%w: %s", ErrSudahDiFlat, p.ID)
+	}
+	if err := g.tulisFlat(ctx, tx, p, true); err != nil {
+		// Disalin pemakai lain di antara pemeriksaan dan penulisan: PK induk menolaknya.
+		if strings.Contains(err.Error(), "ORA-00001") {
+			return fmt.Errorf("%w: %s", ErrSudahDiFlat, p.ID)
+		}
+		return err
+	}
+	f, err := g.bacaFlat(ctx, tx, p.ID, false)
+	if err != nil {
+		return err
+	}
+	if beda := BedaProduk(p, f); len(beda) > 0 {
+		return fmt.Errorf("%w: %s %s.%s", ErrBacaUlangBeda, p.ID, beda[0].Tabel, beda[0].Kolom)
+	}
+	return nil
+}
+
+// idLamaTerpakai - penerbitan ID produk baru: ID yang masih dipakai kedua tabel JSON warisan tidak diterbitkan ulang,
+// karena produk lama itu masih dapat disalin (Copy Old / alat pindah) dengan ID-nya - tanpa ini produk baru dapat
+// merebut nomornya. Tabel warisan yang sudah dibuang DBA bukan galat (ORA-00942 dicatat log). SELECT saja.
+func (g *Gudang) idLamaTerpakai(ctx context.Context, tx *db.Tx, id string) (bool, error) {
+	for _, tabel := range []string{TabelProduk, TabelInward} {
+		q, err := g.siapkan(tabel, sqlCacahID)
+		if err != nil {
+			return false, err
+		}
+		var c int
+		if err := tx.QueryRowContext(ctx, q, id).Scan(&c); err != nil {
+			if strings.Contains(err.Error(), "ORA-00942") {
+				// ⚠️ ORA-00942 juga berarti hak SELECT dicabut: dicatat, supaya pemeriksaan yang dilewati terlihat DBA.
+				log.Printf("master product name life: %s not readable (%v); its IDs are not checked for %s", tabel, err, id)
+				continue
+			}
+			return false, fmt.Errorf("repository: checking %s %s: %w", tabel, id, err)
+		}
+		if c > 0 {
+			return true, nil
+		}
+	}
+	return false, nil
 }

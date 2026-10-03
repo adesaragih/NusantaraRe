@@ -54,15 +54,15 @@ func TestDBSimpanBaruDariSequenceLaluUpsertDikunciID(t *testing.T) {
 	}
 }
 
-// Keputusan work owner 02-10-2026 ("simpan ke table flat semua"): penerbitan ID hanya memeriksa induk flat - kedua
-// tabel JSON warisan tidak dibaca dan tidak disentuh aplikasi, juga tidak dibutuhkan (dibuang DBA pun simpan tetap jalan).
-func TestDBIdentitasHanyaDariIndukFlat(t *testing.T) {
+// ID yang masih dipakai tabel JSON warisan dilewati (03-10-2026, Copy Old): produk lama yang belum disalin tetap dapat
+// disalin dengan ID-nya. Tabel JSON hanya DIBACA, tidak pernah ditulis; tabel yang sudah dibuang DBA bukan galat.
+func TestDBIdentitasMelewatiIDProdukLama(t *testing.T) {
 	u := pasangDB(t)
 	u.exec(t, `INSERT INTO {s}.M_PRODUCTINWARD_LIFE (ID, JSONDATA) VALUES ('100044', '{}')`)
 	u.isiMasterUji(t)
 	kode, badan := u.kirim(t, "POST", pre+"/produk", badanUji)
-	if kode != http.StatusOK || !strings.Contains(badan, `"id":"100044"`) {
-		t.Errorf("ID yang hanya ada di tabel JSON tidak diperiksa: produk baru 100044: %d %s", kode, badan)
+	if kode != http.StatusOK || !strings.Contains(badan, `"id":"100045"`) {
+		t.Errorf("ID 100044 dipakai produk lama: produk baru 100045: %d %s", kode, badan)
 	}
 	if n := u.cacah(t, "M_PRODUCTNAME_LIFE", ""); n != 1 {
 		t.Errorf("satu baris induk: %d", n)
@@ -72,8 +72,41 @@ func TestDBIdentitasHanyaDariIndukFlat(t *testing.T) {
 	}
 	u.exec(t, `DROP TABLE {s}.M_PRODUCTINWARD_LIFE PURGE`)
 	u.exec(t, `DROP TABLE {s}.M_PRODUCT_LIFE PURGE`)
-	if kode, badan := u.kirim(t, "POST", pre+"/produk", badanUji); kode != http.StatusOK || !strings.Contains(badan, `"id":"100045"`) {
+	if kode, badan := u.kirim(t, "POST", pre+"/produk", badanUji); kode != http.StatusOK || !strings.Contains(badan, `"id":"100046"`) {
 		t.Errorf("tanpa tabel JSON: produk baru tetap terbit: %d %s", kode, badan)
+	}
+}
+
+// Copy Old (03-10-2026) di Oracle sungguhan: produk JSON warisan tampil di daftar, `Process Copy` menulis induk + anak
+// ke tabel flat (satu transaksi per produk), tabel JSON tidak berubah, dan produk itu hilang dari daftar.
+func TestDBCopyOld(t *testing.T) {
+	u := pasangDB(t)
+	u.exec(t, `INSERT INTO {s}.M_PRODUCT_LIFE (ID, JSONDATA, RIRISKID, RIRISK) VALUES ('100901',
+		'{"ID":"100901","PRODUCTNAME":"UJI LAMA","RICOMM":"1,5","DocumentClaim":[{"Document":"UJI DOK A"},{"Document":"UJI DOK B"}]}', NULL, NULL)`)
+	u.exec(t, `INSERT INTO {s}.M_PRODUCTINWARD_LIFE (ID, JSONDATA) VALUES ('100901',
+		'{"ID":"100901","PRODUCTID":"100901","INSURED":"UJI INSURED","BEGIN":"01/08/2023"}')`)
+	kode, badan := u.kirim(t, "GET", pre+"/produk-lama", "")
+	if kode != http.StatusOK || !strings.Contains(badan, `"id":"100901"`) || !strings.Contains(badan, `"bolehDisalin":true`) {
+		t.Fatalf("daftar Copy Old: %d %s", kode, badan)
+	}
+	kode, badan = u.kirim(t, "POST", pre+"/produk-lama/salin", `{"ids":["100901"]}`)
+	if kode != http.StatusOK || !strings.Contains(badan, `"status":"disalin"`) {
+		t.Fatalf("Process Copy: %d %s", kode, badan)
+	}
+	if n := u.cacah(t, "M_PRODUCTNAME_LIFE", "ID = '100901' AND INSURED = 'UJI INSURED' AND RICOMM = 1.5 AND BEGIN_DATE = DATE '2023-08-01'"); n != 1 {
+		t.Errorf("induk flat tersalin (koma desimal dirapikan, tanggal dikonversi): %d", n)
+	}
+	if n := u.cacah(t, "M_PRODUCTNAME_LIFE_DOCCLAIM", "PRODUCTID = '100901'"); n != 2 {
+		t.Errorf("dua baris DOCUMENT CLAIM: %d", n)
+	}
+	if n := u.cacah(t, "M_PRODUCT_LIFE", ""); n != 1 {
+		t.Errorf("tabel JSON tidak berubah: %d", n)
+	}
+	if _, badan := u.kirim(t, "GET", pre+"/produk-lama", ""); strings.Contains(badan, `"id":"100901"`) {
+		t.Errorf("produk tersalin tidak lagi di daftar: %s", badan)
+	}
+	if _, badan := u.kirim(t, "POST", pre+"/produk-lama/salin", `{"ids":["100901"]}`); !strings.Contains(badan, `"status":"sudahAda"`) {
+		t.Errorf("salin ulang = sudah ada: %s", badan)
 	}
 }
 

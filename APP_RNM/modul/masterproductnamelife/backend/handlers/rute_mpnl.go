@@ -8,6 +8,8 @@
 //	GET  /api/master-product-name-life/master/{jenis}?cari=&batas=  tujuh pemilih master (`Choose*`, PARITAS §4); `batas` = autocomplete
 //	GET  /api/master-product-name-life/master-plan?cari=     autocomplete `Plan Name` (PLAN LIST)
 //	GET  /api/master-product-name-life/rate?riRateId=        tombol `View Rate` - view `RATE_LIFE` (K1)
+//	GET  /api/master-product-name-life/produk-lama           popup `Copy Old` (`rute_lama.go`, 03-10-2026)
+//	POST /api/master-product-name-life/produk-lama/salin     `Process Copy`
 package handlers
 
 import (
@@ -61,6 +63,7 @@ func daftarkan(mux *http.ServeMux, layanan func() *services.Layanan, adaDB func(
 	daftarkanBaca(pasang)
 	daftarkanTulis(pasang)
 	daftarkanLampiran(pasang)
+	daftarkanLama(pasang)
 }
 
 func daftarkanBaca(pasang func(string, rute)) {

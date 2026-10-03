@@ -57,6 +57,11 @@ type Gudang struct {
 	// MintaOR - tanggal (`dd/MM/yyyy`) yang diterima DaftarReinstypeOR terakhir.
 	MintaOR [2]string
 
+	// lama - kedua tabel JSON warisan (Copy Old, `lama.go`): ID → produk lama. Diisi IsiLama.
+	lama map[string]*produkLama
+	// GagalSalinLama - ID → galat: SalinProdukLama produk itu gagal dengan galat ini (uji per produk).
+	GagalSalinLama map[string]error
+
 	// Komit mencacah transaksi yang ditutup sukses.
 	Komit int
 	// GagalBaca - bila terisi, setiap pembacaan gagal dengan galat ini.
@@ -65,7 +70,7 @@ type Gudang struct {
 
 // Baru menyusun gudang kosong.
 func Baru() *Gudang {
-	return &Gudang{Produk: map[string]models.Produk{},
+	return &Gudang{Produk: map[string]models.Produk{}, lama: map[string]*produkLama{}, GagalSalinLama: map[string]error{},
 		Master: map[models.JenisMaster][]models.NilaiMaster{}, Seq: 44, Rate: map[string][]models.BarisRate{}}
 }
 
@@ -160,8 +165,10 @@ func (g *Gudang) SisipProduk(_ context.Context, _ *db.Tx, p models.Produk) (stri
 			return n, nil
 		},
 		func(id string) (bool, error) {
+			// ID produk lama yang belum disalin juga dilewati (seperti `idLamaTerpakai` Oracle).
 			_, flat := g.Produk[id]
-			return flat, nil
+			_, lama := g.lama[id]
+			return flat || lama, nil
 		},
 	)
 	if err != nil {
