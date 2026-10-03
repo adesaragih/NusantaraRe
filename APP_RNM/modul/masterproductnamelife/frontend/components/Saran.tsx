@@ -5,7 +5,7 @@
 // Di sini: mengetik mengubah nama dan MENGOSONGKAN pasangan ID-nya (pemanggil) - server menolak nama tanpa ID
 // dengan kalimat "must be chosen from the master list"; memilih saran mengisi keduanya.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 
 import { Gagal } from '../../../../inti/frontend/components/ui/dasar'
 
@@ -21,6 +21,11 @@ export interface PropsSaran<T> {
   kunci: (t: T) => string
   onPilih: (t: T) => void
   readOnly?: boolean
+  /**
+   * Saran berkolom (`pyAdditionalFields` ber-`pyShow` true, mis. `Plan Name` b33121: ID, CoverName, Business, Benefit):
+   * kepala kolom + satu sel per kolom. Tanpa ini setiap saran satu baris `teks`.
+   */
+  kolom?: { judul: readonly string[]; isi: (t: T) => readonly string[] }
 }
 
 /** Jeda ketik sebelum RD dibaca. */
@@ -28,7 +33,7 @@ const JEDA_MS = 250
 /** Saran yang ditampilkan paling banyak. */
 const SARAN_MAKS = 20
 
-export default function Saran<T>({ label, labelAria, nilai, onKetik, cari, teks, kunci, onPilih, readOnly }: PropsSaran<T>) {
+export default function Saran<T>({ label, labelAria, nilai, onKetik, cari, teks, kunci, onPilih, readOnly, kolom }: PropsSaran<T>) {
   const [buka, setBuka] = useState(false)
   const [daftar, setDaftar] = useState<readonly T[]>([])
   const [galat, setGalat] = useState<unknown>(null)
@@ -88,7 +93,18 @@ export default function Saran<T>({ label, labelAria, nilai, onKetik, cari, teks,
       {label ? <label className="field__label">{label}</label> : null}
       {input}
       {buka && daftar.length > 0 && (
-        <ul className="mpnl-saran__daftar" role="listbox">
+        <ul
+          className={kolom ? 'mpnl-saran__daftar mpnl-saran__daftar--kolom' : 'mpnl-saran__daftar'}
+          role="listbox"
+          style={kolom ? ({ '--mpnl-saran-kolom': kolom.judul.length } as CSSProperties) : undefined}
+        >
+          {kolom && (
+            <li className="mpnl-saran__kepala" role="presentation">
+              {kolom.judul.map((j) => (
+                <span key={j}>{j}</span>
+              ))}
+            </li>
+          )}
           {daftar.map((t) => (
             <li
               key={kunci(t)}
@@ -101,7 +117,7 @@ export default function Saran<T>({ label, labelAria, nilai, onKetik, cari, teks,
                 setBuka(false)
               }}
             >
-              {teks(t)}
+              {kolom ? kolom.isi(t).map((v, i) => <span key={i}>{v}</span>) : teks(t)}
             </li>
           ))}
         </ul>

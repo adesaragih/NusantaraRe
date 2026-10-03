@@ -32,6 +32,7 @@ const F_CHOOSECEDING = 'FlowAction\\ChooseCeding.xml'
 const F_VIEWRATE = 'FlowAction\\ViewRate.xml'
 const F_PRODUCTNAMEATTACHCONTENT = 'FlowAction\\ProductNameAttachContent.xml'
 const A_GENERATEUPLOAD = 'Activity\\GenerateUpload_Act.xml'
+const R_BROWSEPRODUCTTYPELIFE = 'ReportDefinition\\BrowseProductTypeLife_RD.xml'
 const D_COPYPRODUCT = 'DataTransform\\CopyProduct.xml'
 
 type Bukti = readonly [kunci: string, berkas: string, baris: number, tag: string]
@@ -39,6 +40,11 @@ type Bukti = readonly [kunci: string, berkas: string, baris: number, tag: string
 /** Kunci `OBJEK.medan` → baris tag korpus yang ISINYA persis teks label (dibangkitkan dari korpus, PARITAS §0). */
 const BUKTI: readonly Bukti[] = [
   ['GRID_MPNL.labelSelAdd', S_INBOXPRODUCTNAME, 71783, 'pyLabelFieldValue'],
+  // Kolom saran `Plan Name` (b33213 .ID, b33247 .CoverName, b33280 .Business, b33313 .Benefit) - label kolom RD sumbernya.
+  ['SARAN_PLAN_MPNL.kolomId', R_BROWSEPRODUCTTYPELIFE, 568, 'pyFieldLabel'],
+  ['SARAN_PLAN_MPNL.kolomCoverName', R_BROWSEPRODUCTTYPELIFE, 642, 'pyFieldLabel'],
+  ['SARAN_PLAN_MPNL.kolomBusiness', R_BROWSEPRODUCTTYPELIFE, 583, 'pyFieldLabel'],
+  ['SARAN_PLAN_MPNL.kolomBenefit', R_BROWSEPRODUCTTYPELIFE, 613, 'pyFieldLabel'],
   ['GRID_MPNL.add', S_INBOXPRODUCTNAME, 71865, 'pyLabel'],
   ['GRID_MPNL.tooltipAdd', S_INBOXPRODUCTNAME, 71863, 'pyTooltip'],
   ['GRID_MPNL.kolomId', S_INBOXPRODUCTNAME, 72403, 'pyValue'],

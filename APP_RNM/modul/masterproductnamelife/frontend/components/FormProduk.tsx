@@ -58,6 +58,7 @@ import {
   PEMILIH_MPNL,
   PESAN_MPNL,
   PLAN_MPNL,
+  SARAN_PLAN_MPNL,
   TOMBOL_MPNL,
   UMUM_MPNL,
   UWLIMIT_MPNL,
@@ -421,6 +422,10 @@ export default function FormProduk({
                       cari={cariJenisPlan}
                       teks={(t) => t.coverName}
                       kunci={(t) => t.id}
+                      kolom={{
+                        judul: [SARAN_PLAN_MPNL.kolomId, SARAN_PLAN_MPNL.kolomCoverName, SARAN_PLAN_MPNL.kolomBusiness, SARAN_PLAN_MPNL.kolomBenefit],
+                        isi: (t) => [t.id, t.coverName, t.business, t.benefit],
+                      }}
                       onPilih={(t) => {
                         // Autocomplete b33198: `.CoverName` → `.Plan`, `.ID` → `.PlanID`, `.Business` → `.Name`, `.Benefit` → `.Benefit`.
                         setP((x) => ({

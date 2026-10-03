@@ -263,3 +263,21 @@ describe('Document List dipilih dari daftar (permintaan work owner 03-10-2026)',
   })
 })
 
+describe('Plan Name = autocomplete XML b33121 (permintaan work owner 03-10-2026 "samain dengan xml nya")', () => {
+  it('saran menampilkan empat kolom XML - ID, CoverName, Business, Benefit (pyShow true), urutan pyAdditionalFields', () => {
+    const i = KODE.indexOf('<Saran<JenisPlan>')
+    const saran = KODE.slice(i, KODE.indexOf('/>', KODE.indexOf('onPilih=', i)))
+    expect(saran).toMatch(
+      /kolom=\{\{\s*judul: \[SARAN_PLAN_MPNL\.kolomId, SARAN_PLAN_MPNL\.kolomCoverName, SARAN_PLAN_MPNL\.kolomBusiness, SARAN_PLAN_MPNL\.kolomBenefit\],\s*isi: \(t\) => \[t\.id, t\.coverName, t\.business, t\.benefit\],?\s*\}\}/,
+    )
+    // Memilih: .CoverName → .Plan, .ID → .PlanID, .Business → .Name, .Benefit → .Benefit (b33216, b33250, b33283, b33315).
+    expect(saran).toContain('{ plan: t.coverName, planId: t.id, name: t.business, benefit: t.benefit }')
+  })
+
+  it('Saran merender kepala kolom dan satu sel per kolom bila `kolom` diberikan', () => {
+    const SARAN = readFileSync(join(__dirname, 'Saran.tsx'), 'utf8')
+    expect(SARAN).toContain('className="mpnl-saran__kepala"')
+    expect(SARAN).toContain('kolom.isi(t).map(')
+  })
+})
+

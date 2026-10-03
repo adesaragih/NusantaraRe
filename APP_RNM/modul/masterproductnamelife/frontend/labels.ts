@@ -194,6 +194,22 @@ export const PLAN_MPNL = {
   delete: 'Delete',
 } as const
 
+/**
+ * Kolom saran autocomplete `Plan Name` (`InboxProductName.xml` b33121 `pxAutoComplete`, RD `BrowseProductTypeLife_RD`):
+ * `pyAdditionalFields` b33213 `.ID`, b33247 `.CoverName`, b33280 `.Business`, b33313 `.Benefit` - semuanya `pyShow` true.
+ * Labelnya label kolom RD sumber (`BrowseProductTypeLife_RD.xml` `pyFieldLabel`).
+ */
+export const SARAN_PLAN_MPNL = {
+  /** `BrowseProductTypeLife_RD.xml` b568 `<pyFieldLabel>`. */
+  kolomId: 'ID',
+  /** `BrowseProductTypeLife_RD.xml` b642 `<pyFieldLabel>`. */
+  kolomCoverName: 'CoverName',
+  /** `BrowseProductTypeLife_RD.xml` b583 `<pyFieldLabel>`. */
+  kolomBusiness: 'Business',
+  /** `BrowseProductTypeLife_RD.xml` b613 `<pyFieldLabel>`. */
+  kolomBenefit: 'Benefit',
+} as const
+
 /** Grid `FINANCIAL UNDERWRITING` - `ProductName.FinancialUnderwritingList`. */
 export const FINUW_MPNL = {
   /** `InboxProductName.xml` b37148 `<pyValue>`. */

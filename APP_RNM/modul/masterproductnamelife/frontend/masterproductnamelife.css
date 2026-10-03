@@ -158,6 +158,33 @@
   cursor: pointer;
 }
 
+/* Saran berkolom (`Plan Name` b33121: ID, CoverName, Business, Benefit): kolom rata antar-baris lewat subgrid; daftar
+   boleh lebih lebar dari isiannya. */
+.mpnl .mpnl-saran__daftar--kolom {
+  display: grid;
+  grid-template-columns: repeat(var(--mpnl-saran-kolom), minmax(4em, max-content));
+  column-gap: 16px;
+  right: auto;
+  min-width: 100%;
+  width: max-content;
+  max-width: min(760px, 92vw);
+}
+
+.mpnl .mpnl-saran__daftar--kolom > .mpnl-saran__butir,
+.mpnl .mpnl-saran__daftar--kolom > .mpnl-saran__kepala {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+.mpnl .mpnl-saran__kepala {
+  padding: 4px 12px 6px;
+  border-bottom: 1px solid var(--mt-garis);
+  color: var(--mt-kepala-teks);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
 .mpnl .mpnl-saran__butir:hover {
   background: var(--mt-baris-hover);
   color: var(--mt-aksen-teks);
