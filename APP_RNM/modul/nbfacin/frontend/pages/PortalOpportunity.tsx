@@ -44,7 +44,7 @@ export default function PortalOpportunity({ onBuat }: { onBuat: () => void }) {
           </button>
         </div>
         <div className="table-wrap">
-          <table className="table">
+          <table className="nbf-tabel">
             <thead>
               <tr>
                 {KOLOM_PORTAL.map((k) => (

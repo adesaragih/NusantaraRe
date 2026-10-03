@@ -93,7 +93,7 @@ export function PopupChooseAccount({ onTutup, onPilih }: { onTutup: () => void; 
         <Halaman halaman={hasil.halaman} ukuran={hasil.ukuran} total={hasil.total} onPindah={(h) => void muat(kunciCari.current, h)} />
       )}
       <div className="table-wrap">
-        <table className="table">
+        <table className="nbf-tabel">
           <thead>
             <tr>
               <th scope="col" />

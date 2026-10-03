@@ -104,3 +104,48 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ------------------------------------------------------------- tabel */
+/* Tabel modul (portal Opportunity + popup ChooseAccount). Keputusan work owner 02-10-2026: "untuk css style
+   per modul tidak ada lagi menumpang per inti" - kelas inti `.table` hanya dipakai modul ini, jadi aturannya
+   tinggal di sini (penjaga `inti/frontend/cssmodul.guard.test.ts`). Nilai meniru `.table` inti apa adanya,
+   token tema bersama. Pembungkus gulir `.table-wrap` tetap kelas bersama inti. */
+.nbfacin .nbf-tabel {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fs-md);
+}
+.nbfacin .nbf-tabel thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--alt-row);
+  color: var(--muted);
+  box-shadow: inset 0 -1px 0 var(--border);
+  font-weight: 600;
+  text-align: left;
+  padding: 11px 14px;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+.nbfacin .nbf-tabel tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--alt-row);
+  vertical-align: middle;
+}
+.nbfacin .nbf-tabel tbody tr:last-child td {
+  border-bottom: none;
+}
+.nbfacin .nbf-tabel tbody tr {
+  transition: background var(--t);
+}
+.nbfacin .nbf-tabel tbody tr:nth-child(even) {
+  background: var(--alt-row);
+}
+.nbfacin .nbf-tabel tbody tr:hover {
+  background: var(--hover-baris);
+}
