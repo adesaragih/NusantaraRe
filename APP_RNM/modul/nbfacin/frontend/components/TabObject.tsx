@@ -12,8 +12,11 @@
 // - Number of Floor < 0 → "Floor number can't be minus" (`SetErrorMessageFloorNumber_Act`).
 // - Save: seluruh daftar dikirim `PUT …/objek` (Object Type wajib per baris, sel 6).
 //
-// Keputusan agent (tiket 35): G-1 Choose / Clear Risk Address nonaktif sampai tahap 2 (popup `ChooseRiskAddress`
-// atas tabel RISKADDRESS); medan Risk Address tampil-saja kecuali Building No. G-3 sub-tab selain Object Address =
+// Choose Risk Address (tiket 36): popup `PopupRiskAddress`; Pilih mengisi Risk Address menurut `SetRiskIdDT_FacIn`
+// (`terapkanRisk`). Clear Risk Address mengosongkan medan `ClearRiskLocation_act` (`kosongkanRisk`) - Building No.
+// tidak ikut. Keduanya tersimpan lewat Save.
+//
+// Keputusan agent (tiket 35): G-1 (selesai di tiket 36); medan Risk Address tampil-saja kecuali Building No. G-3 sub-tab selain Object Address =
 // tahap berikut (`BelumTersedia`). Daftar Roof / Wall / Floor Type = aturan properti Pega (`DDL\RoofType.xml` dst.,
 // lihat `OPSI_ROOF_TYPE` di labels.ts); nilai tersimpan = kode Pega; objek baru berawal "Lain-lain" (14 / 9 /
 // "KELAS I").
@@ -21,7 +24,8 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { BelumTersedia, Field, Gagal, Halaman, Pilih, StripTab, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
-import { ambilObjek, simpanObjek, type ObjekFire } from '../api'
+import { ambilObjek, simpanObjek, type BarisRisk, type ObjekFire, type SaringRisk } from '../api'
+import PopupRiskAddress from './PopupRiskAddress'
 import {
   AWAL_BANGUNAN,
   BANGUNAN_KOSONG,
@@ -69,6 +73,46 @@ export function gantiObjectType(o: ObjekFire, objectType: string): ObjekFire {
   return { ...o, objectType, objectName: objectType === OBJECT_TYPE_LAINNYA ? '' : objectType }
 }
 
+/**
+ * Pilih di popup Risk Address - `DataTransform\SetRiskIdDT_FacIn.xml`: AlmRiskID = ID, RoadType = Title,
+ * RoadName = Address, ASMRW = TerritoryName, ASMDistrict, ASMCity, Province, Country = NationName, ASMZipCode =
+ * PostalCode, ASMAddress = Title + " " + Address + "," + Territory + "," + District + "," + City + "," + Province +
+ * "," + Nation; BuildingNo dikosongkan.
+ */
+export function terapkanRisk(o: ObjekFire, b: BarisRisk): ObjekFire {
+  return {
+    ...o,
+    riskAddressId: b.id,
+    roadType: b.title,
+    roadName: b.address,
+    territory: b.territoryName,
+    district: b.districtName,
+    city: b.cityName,
+    province: b.provinceName,
+    country: b.nationName,
+    zipCode: b.postalCode,
+    riskLocation: `${b.title} ${b.address},${b.territoryName},${b.districtName},${b.cityName},${b.provinceName},${b.nationName}`,
+    buildingNo: '',
+  }
+}
+
+/** Clear Risk Address - `Activity\ClearRiskLocation_act.xml` (Building No. tidak ikut). */
+export function kosongkanRisk(o: ObjekFire): ObjekFire {
+  return {
+    ...o,
+    roadType: '', roadName: '', zipCode: '', province: '', country: '', territory: '', city: '', district: '',
+    riskLocation: '', riskAddressId: '',
+  }
+}
+
+/** Saringan awal popup = medan objek yang diikat sel 78-84 (H-1). */
+export function saringDari(o: ObjekFire): SaringRisk {
+  return {
+    address: o.roadName, zipCode: o.zipCode, country: o.country, province: o.province, city: o.city,
+    district: o.district, territory: o.territory,
+  }
+}
+
 /** Number of Floor bernilai minus (`NumberOfFloor < 0`). */
 export function lantaiMinus(numberOfFloor: string): boolean {
   const n = Number(numberOfFloor)
@@ -103,6 +147,7 @@ function Centang({ label, checked, onChange }: { label: string; checked: boolean
 /** Sub-tab Object Address (`ObjectDetails`). */
 function ObjectAddress({ o, ubah, galatType }: { o: ObjekFire; ubah: (o: ObjekFire) => void; galatType: boolean }) {
   const set = (k: keyof ObjekFire) => (v: string) => ubah({ ...o, [k]: v })
+  const [pilihRisk, setPilihRisk] = useState(false)
   return (
     <div className="nbf-objek__isi">
       <div className="nbf-opp__kolom">
@@ -126,13 +171,23 @@ function ObjectAddress({ o, ubah, galatType }: { o: ObjekFire; ubah: (o: ObjekFi
       </div>
 
       <div className="nbf-opp__tombol">
-        <button type="button" className="btn btn--sm" disabled>
+        <button type="button" className="btn btn--sm" onClick={() => setPilihRisk(true)}>
           {A.chooseRisk.label}
         </button>
-        <button type="button" className="btn btn--sm" disabled>
+        <button type="button" className="btn btn--sm" onClick={() => ubah(kosongkanRisk(o))}>
           {A.clearRisk.label}
         </button>
       </div>
+      {pilihRisk && (
+        <PopupRiskAddress
+          awal={saringDari(o)}
+          onTutup={() => setPilihRisk(false)}
+          onPilih={(b) => {
+            ubah(terapkanRisk(o, b))
+            setPilihRisk(false)
+          }}
+        />
+      )}
 
       <h5 className="nbf-objek__judul">{A.judulRisk.label}</h5>
       <div className="nbf-opp__kolom">

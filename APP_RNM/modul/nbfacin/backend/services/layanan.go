@@ -50,7 +50,8 @@ func DariDasar(d *inti.Dasar) *Service {
 		DenganMarketingOfficer(repository.NewMarketingOfficerOracle(d.DB())).
 		DenganPortal(repository.NewPortalOracle(d.DB())).
 		DenganSOB(repository.NewSOBOracle(d.DB())).
-		DenganObjek(repository.NewObjekOracle(d.DB()))
+		DenganObjek(repository.NewObjekOracle(d.DB())).
+		DenganRisk(repository.NewRiskOracle(d.DB()))
 }
 
 // Service - layanan NB Fac In.
@@ -77,7 +78,9 @@ type Service struct {
 	sob repository.PembacaSOB
 	// objek - tab Object FIRE (tiket 35); nil = tanpa basis data (503).
 	objek repository.PenyimpanObjek
-	jam   func() time.Time
+	// risk - pencarian alamat risiko (tiket 36); nil = tanpa basis data (503).
+	risk repository.PembacaRisk
+	jam  func() time.Time
 }
 
 // DenganAkun memasang pembaca tabel akun (tiket 27).

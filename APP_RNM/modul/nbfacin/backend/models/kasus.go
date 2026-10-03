@@ -66,3 +66,14 @@ type Ceding struct {
 	ID   string
 	Name string
 }
+
+// RiskAddress - satu baris hasil popup Choose Risk Address (tiket 36): POOLDATA.RISKADDRESS.
+type RiskAddress struct {
+	ID, Title, Address, NationName, ProvinceName, CityName, DistrictName, TerritoryName, PostalCode string
+}
+
+// SaringRisk - saringan popup Choose Risk Address (kosong = dilewati); urutan = filter RD
+// BrowseRisksAddress_RD A..G (tiket 36).
+type SaringRisk struct {
+	Address, ZipCode, Country, Province, City, District, Territory string
+}

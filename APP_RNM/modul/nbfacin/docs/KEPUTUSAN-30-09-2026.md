@@ -1214,6 +1214,13 @@ G-9 (daftar Roof/Wall/Floor) `[terverifikasi]` lewat aturan properti Pega yang d
 (`DDL\RoofType.xml`, `WallType.xml`, `FloorType.xml`): Roof 1..14, Wall 1..9, Floor `KELAS III` = Keramik, `KELAS II` = Kayu,
 `KELAS I` = Lain-lain (dipasangkan per rowdata); tanpa `pyDefaultValue`.
 
+## Tiket 36 — popup Choose Risk Address (backend), diteruskan sesi `nusantarare-0f`
+
+Dibangun `GET /api/nbfacin/risk-address` menurut RD `BrowseRisksAddress_RD` `[terverifikasi]`: tujuh filter Contains (A
+`.Address` tidak peka huruf), logika AND, DISTINCT, tanpa urutan, `pyMaxRecords` 100, dan **INNER JOIN `RW`**
+(`.PostalCode = RW.ZipCode` — `RW.ZipCode` adalah syarat JOIN, bukan saringan). Tabel warisan `RISKADDRESS`, `RW` (baca saja,
+DDL terverifikasi). Keputusan agent A116–A122 menunggu konfirmasi (`issues/36-choose-clear-risk-address.md`). Tanpa migrasi.
+
 ## Yang belum diputuskan
 
 

@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { GRID_OBJEK, OBJECT_TYPE_LAINNYA, OPSI_FLOOR_TYPE, OPSI_ROOF_TYPE, OPSI_WALL_TYPE, SIMPAN_OBJEK, SUBTAB_OBJEK, TEKS_INWARD } from '../labels'
-import TabObject, { gantiObjectType, lantaiMinus, objekBaru } from './TabObject'
+import TabObject, { gantiObjectType, kosongkanRisk, lantaiMinus, objekBaru, saringDari, terapkanRisk } from './TabObject'
 
 const HTML = renderToStaticMarkup(<TabObject caseId="NB-1" />)
 const SUMBER = readFileSync(join(__dirname, 'TabObject.tsx'), 'utf8').replace(/\r\n/g, '\n')
@@ -78,9 +78,45 @@ describe('TabObject - aturan', () => {
     expect(SUMBER).toContain("galatType={cobaSimpan && x.data.objectType === ''}")
   })
 
-  it('Choose / Clear Risk Address nonaktif (G-1); nilai tersimpan di luar daftar tetap tampil (data lama)', () => {
-    expect(SUMBER).toMatch(/disabled>\s*\{A\.chooseRisk\.label\}/)
-    expect(SUMBER).toMatch(/disabled>\s*\{A\.clearRisk\.label\}/)
+  it('Choose Risk Address membuka popup berisi saringan dari objek; Clear mengosongkan; nilai di luar daftar tetap tampil', () => {
+    expect(SUMBER).toMatch(/onClick=\{\(\) => setPilihRisk\(true\)\}>\s*\{A\.chooseRisk\.label\}/)
+    expect(SUMBER).toMatch(/onClick=\{\(\) => ubah\(kosongkanRisk\(o\)\)\}>\s*\{A\.clearRisk\.label\}/)
+    expect(SUMBER).toContain('awal={saringDari(o)}')
+    expect(SUMBER).toMatch(/onPilih=\{\(b\) => \{\s*ubah\(terapkanRisk\(o, b\)\)/)
     expect(SUMBER).toContain('opsi={denganTersimpan(OPSI_ROOF_TYPE, o.roofType)} kosong={BANGUNAN_KOSONG}')
+  })
+})
+
+describe('TabObject - Risk Address (tiket 36)', () => {
+  const B = {
+    id: 'UJI-R1', title: 'JL.', address: 'UJI JALAN 1', nationName: 'UJI NEGARA', provinceName: 'UJI PROV',
+    cityName: 'UJI KOTA', districtName: 'UJI KEC', territoryName: 'UJI KEL', postalCode: '99999',
+  }
+
+  it('Pilih = SetRiskIdDT_FacIn: medan terisi, Risk Location dirangkai, Building No. dikosongkan', () => {
+    const o = terapkanRisk({ ...objekBaru('1'), buildingNo: '7', objectType: 'Shop' }, B)
+    expect(o.riskAddressId).toBe('UJI-R1')
+    expect([o.roadType, o.roadName, o.territory, o.district, o.city, o.province, o.country, o.zipCode]).toEqual([
+      'JL.', 'UJI JALAN 1', 'UJI KEL', 'UJI KEC', 'UJI KOTA', 'UJI PROV', 'UJI NEGARA', '99999',
+    ])
+    expect(o.riskLocation).toBe('JL. UJI JALAN 1,UJI KEL,UJI KEC,UJI KOTA,UJI PROV,UJI NEGARA')
+    expect(o.buildingNo).toBe('')
+    expect(o.objectType).toBe('Shop')
+  })
+
+  it('Clear = ClearRiskLocation_act: sepuluh medan kosong, Building No. dan medan lain tetap', () => {
+    const o = kosongkanRisk({ ...terapkanRisk(objekBaru('1'), B), buildingNo: '7' })
+    expect([o.roadType, o.roadName, o.zipCode, o.province, o.country, o.territory, o.city, o.district, o.riskLocation, o.riskAddressId]).toEqual(
+      Array(10).fill(''),
+    )
+    expect(o.buildingNo).toBe('7')
+    expect(o.roofType).toBe('14')
+  })
+
+  it('saringan awal popup = medan objek (Address = RoadName)', () => {
+    expect(saringDari(terapkanRisk(objekBaru('1'), B))).toEqual({
+      address: 'UJI JALAN 1', zipCode: '99999', country: 'UJI NEGARA', province: 'UJI PROV', city: 'UJI KOTA',
+      district: 'UJI KEC', territory: 'UJI KEL',
+    })
   })
 })

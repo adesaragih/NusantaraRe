@@ -275,3 +275,43 @@ export function ambilObjek(caseId: string): Promise<DaftarObjek> {
 export function simpanObjek(caseId: string, baris: ObjekFire[]): Promise<DaftarObjek> {
   return minta<DaftarObjek>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/objek`, { metode: 'PUT', badan: { baris } })
 }
+
+/** Saringan popup Choose Risk Address - nama medan = properti Pega yang diikat sel 78-84. */
+export interface SaringRisk {
+  address: string
+  zipCode: string
+  country: string
+  province: string
+  city: string
+  district: string
+  territory: string
+}
+
+/** Satu baris RISKADDRESS (RD `BrowseRisksAddress_RD`, kelas Int-RISKADDRESS). Teks apa adanya. */
+export interface BarisRisk {
+  /** `.ID` -> `.Property.AlmRiskID`. */
+  id: string
+  /** `.Title` (Type, mis. "JL.", "OTHERS"). */
+  title: string
+  address: string
+  nationName: string
+  provinceName: string
+  cityName: string
+  districtName: string
+  territoryName: string
+  postalCode: string
+}
+
+export interface HalamanRisk {
+  baris: BarisRisk[]
+  total: number
+  halaman: number
+  ukuran: number
+}
+
+/** `GET /api/nbfacin/risk-address` - minimal satu saringan terisi (tiket 36). */
+export function cariRiskAddress(saring: SaringRisk, halaman: number): Promise<HalamanRisk> {
+  const kueri: Record<string, string | number> = { halaman }
+  for (const [k, v] of Object.entries(saring)) if (v.trim() !== '') kueri[k] = v.trim()
+  return minta<HalamanRisk>('/api/nbfacin/risk-address', { kueri })
+}

@@ -477,3 +477,44 @@ export const AWAL_BANGUNAN = { roofType: '14', wallType: '9', floorType: 'KELAS 
 
 /** Teks pilihan kosong Roof / Wall / Floor Type - baris pertama PromptList ketiga aturan properti (sel 50: "Please Select"). */
 export const BANGUNAN_KOSONG = 'Silahkan Pilih'
+
+/**
+ * Popup Choose Risk Address (tiket 36) - ObjectDetails sel 16 showHarness `ChooseRiskAddress` (WindowName
+ * "Choose Risk Location", Target popup). Saringan = `NB FacIn\Section\ChooseRiskAddress.xml` sel 78-84
+ * (`pyLabelFieldValue`), tombol sel 73 `Search` / 74 `Add` (`pyLabel`); grid = `ChooseRiskAddress_ResultList.xml`
+ * sel 19-26 (`pyValue`), 10 per halaman bernomor. `Pilih` = tangkapan layar work owner 03-10-2026 (di XML ikon
+ * `IconChoose.png` tanpa teks).
+ */
+export const POPUP_RISK = {
+  judul: 'Choose Risk Location',
+  saring: {
+    address: { sel: '78', tag: 'pyLabelFieldValue', label: 'Address' },
+    zipCode: { sel: '79', tag: 'pyLabelFieldValue', label: 'Zip Code' },
+    country: { sel: '80', tag: 'pyLabelFieldValue', label: 'Country' },
+    province: { sel: '81', tag: 'pyLabelFieldValue', label: 'Province' },
+    city: { sel: '82', tag: 'pyLabelFieldValue', label: 'City' },
+    district: { sel: '83', tag: 'pyLabelFieldValue', label: 'District' },
+    territory: { sel: '84', tag: 'pyLabelFieldValue', label: 'Territory' },
+  },
+  cari: { sel: '73', tag: 'pyLabel', label: 'Search' },
+  tambah: { sel: '74', tag: 'pyLabel', label: 'Add' },
+  kolom: [
+    { sel: '19', tag: 'pyValue', label: 'Type' },
+    { sel: '20', tag: 'pyValue', label: 'Address' },
+    { sel: '21', tag: 'pyValue', label: 'Country' },
+    { sel: '22', tag: 'pyValue', label: 'Province' },
+    { sel: '23', tag: 'pyValue', label: 'City' },
+    { sel: '24', tag: 'pyValue', label: 'District' },
+    { sel: '25', tag: 'pyValue', label: 'Territory' },
+    { sel: '26', tag: 'pyValue', label: 'Zip Code' },
+  ],
+  pilih: 'Pilih',
+  ukuran: 10,
+} as const
+
+/** Teks sistem baru popup Risk Address - BUKAN dari Pega. */
+export const TEKS_RISK = {
+  /** Search tanpa satu pun saringan (Pega `SearchRiskAddressAct` tidak mencari bila semua kosong). */
+  isiSaring: 'Isi minimal satu saringan lalu tekan Search.',
+  tanpaHasil: 'Tidak ada alamat risiko yang cocok.',
+} as const

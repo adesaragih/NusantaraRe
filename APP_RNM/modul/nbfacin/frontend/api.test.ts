@@ -6,6 +6,7 @@ import {
   badanPremiCargo,
   buatOpportunity,
   cariAccount,
+  cariRiskAddress,
   cariSOB,
   daftarCaseNB,
   daftarClassOfBusiness,
@@ -185,6 +186,27 @@ describe('tab Object (tiket 35)', () => {
         ['PUT', '/api/nbfacin/kasus/NB-1/objek'],
       ])
       expect(JSON.parse(panggil[1]!.badan)).toEqual({ baris: [] })
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('cariRiskAddress (tiket 36)', () => {
+  it('GET /api/nbfacin/risk-address hanya membawa saringan terisi (dipangkas) + halaman', async () => {
+    const asli = globalThis.fetch
+    let url = ''
+    globalThis.fetch = (async (u: RequestInfo | URL) => {
+      url = String(u)
+      return new Response(JSON.stringify({ baris: [], total: 0, halaman: 1, ukuran: 10 }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await cariRiskAddress({ address: '', zipCode: ' 99999 ', country: '', province: '', city: 'uji', district: '', territory: '' }, 2)
+      expect(url).toMatch(/\/api\/nbfacin\/risk-address\?/)
+      const q = new URL(url, 'http://x').searchParams
+      expect([...q.keys()].sort()).toEqual(['city', 'halaman', 'zipCode'])
+      expect(q.get('zipCode')).toBe('99999')
+      expect(q.get('halaman')).toBe('2')
     } finally {
       globalThis.fetch = asli
     }

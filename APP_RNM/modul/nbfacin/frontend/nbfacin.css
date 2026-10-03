@@ -226,6 +226,26 @@
 .nbfacin .nbf-objek__judul {
   margin: 8px 0 0;
 }
+/* Popup Choose Risk Address: saringan kiri, grid kanan (tangkapan layar). */
+.nbfacin .nbf-risk {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 3fr;
+  gap: 16px;
+  align-items: start;
+}
+.nbfacin .nbf-risk__saring {
+  display: grid;
+  gap: 8px;
+}
+.nbfacin .nbf-risk__hasil {
+  min-width: 0;
+}
+@media (max-width: 720px) {
+  .nbfacin .nbf-risk {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Save tab Object di kanan (Dtl sel 25). */
 .nbfacin .nbf-objek__kaki {
   display: flex;

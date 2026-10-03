@@ -4,7 +4,7 @@ Modul ini **membuat delapan tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 2
 `T_QUOTATIONDATA` **sebagian** (migrasi 182/183, tiket 31 / butir 78.4), `T_CEDINGCOLIST` utuh (185, tiket 34), dan tabel tab Object FIRE (186, tiket 35: `T_LOCATIONLIST` /
 `T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh) — dan **menulis**
 baris `T_WORK_POLIS` milik premiumlistlife (K-064; tidak dibuat, tidak dipetakan kolomnya di sini). Selebihnya ia hanya
-**membaca** sepuluh tabel yang sudah ada — enam tabel limit
+**membaca** dua belas tabel yang sudah ada — enam tabel limit
 akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), dan tabel bisnis `BUSINESS` (tiket 28). Enam tabel limit akseptasi yang sudah ada
 di `POOLDATA`, dengan nama tabel dan kolom **verbatim**. Berkas ini **peta**, bukan DDL: hanya kolom yang dibaca
 repository (`backend/repository/limit.go`). Ke-enamnya dinyatakan di `MODUL.md` bab "Tabel warisan: dibaca, tidak
@@ -277,3 +277,31 @@ Hanya lima kolom di bawah yang dibaca.
 | `CLIENTNAME` | VARCHAR2(1000 BYTE) | nama SOB (`.ClientName`) → `T_QUOTATIONDATA.SOB_NAME` (500); dicari |
 | `STATUSACTIVE` | VARCHAR2(1000 BYTE) | syarat `= '1'` (teks) |
 | `AGENTTPYE2` | VARCHAR2(1000 BYTE) | syarat `IS NULL OR <> 'LIFE INSURANCE'` (butir 79.1) |
+
+## RISKADDRESS
+
+Tiket 36 (popup Choose Risk Address). Tabel warisan `POOLDATA.RISKADDRESS`, **baca saja**. Sumber tipe `[terverifikasi]`:
+DDL `D:\migrasi\RNM\DDL\RISKADDRESS.txt` (16 kolom, semua VARCHAR2(4000), tanpa PK). Dibaca sembilan kolom (kolom hasil RD
+`BrowseRisksAddress_RD`).
+
+| Kolom | Tipe DDL | Dibaca untuk |
+| --- | --- | --- |
+| `ID` | VARCHAR2(4000) | nilai Pilih → `.Property.AlmRiskID`; urutan (A118) |
+| `TITLE` | VARCHAR2(4000) | Type → `.Property.RoadType` |
+| `ADDRESS` | VARCHAR2(4000) | Address → `.Property.RoadName`; saringan A (JALAN) |
+| `NATIONNAME` | VARCHAR2(4000) | Country; saringan C |
+| `PROVINCENAME` | VARCHAR2(4000) | Province; saringan D |
+| `CITYNAME` | VARCHAR2(4000) | City; saringan E |
+| `DISTRICTNAME` | VARCHAR2(4000) | District; saringan F |
+| `TERRITORYNAME` | VARCHAR2(4000) | Territory; saringan G |
+| `POSTALCODE` | VARCHAR2(4000) | Zip Code; saringan B; kunci JOIN ke `RW.ZIPCODE` |
+
+## RW
+
+Tiket 36. Tabel warisan `POOLDATA.RW`, **baca saja** — hanya untuk JOIN RD (`ASM-FW-GISFW-Int-RW`, prefix `RW`, INNER JOIN
+`.PostalCode = RW.ZipCode`; kelas → tabel `[dugaan]`). Sumber tipe `[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\RW.txt` (19 kolom;
+`RDBMASTERRW.txt` adalah prosedur penulisnya).
+
+| Kolom | Tipe DDL | Dibaca untuk |
+| --- | --- | --- |
+| `ZIPCODE` | VARCHAR2(4000) | syarat JOIN `= RISKADDRESS.POSTALCODE` |

@@ -32,6 +32,7 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc("GET /api/nbfacin/sob", cariSOB(svc))
 	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}/objek", bacaObjek(svc))
 	mux.HandleFunc("PUT /api/nbfacin/kasus/{caseId}/objek", simpanObjek(svc, stubPelaku))
+	mux.HandleFunc("GET /api/nbfacin/risk-address", cariRisk(svc))
 }
 
 // isianOpportunity - badan POST /api/nbfacin/opportunity, kontrak frontend
@@ -267,7 +268,7 @@ func tulisGalat(w http.ResponseWriter, err error) {
 	case errors.Is(err, services.ErrMasukanAkun), errors.Is(err, services.ErrMasukanKelasBisnis),
 		errors.Is(err, services.ErrMasukanOpportunity), errors.Is(err, services.ErrMasukanGeneral),
 		errors.Is(err, services.ErrMasukanPortal), errors.Is(err, services.ErrMasukanSOB),
-		errors.Is(err, services.ErrMasukanObjek):
+		errors.Is(err, services.ErrMasukanObjek), errors.Is(err, services.ErrMasukanRisk):
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, inti.ErrTanpaIdentitas):
 		galat.Tulis(w, http.StatusUnauthorized, err.Error())
@@ -279,7 +280,8 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		errors.Is(err, services.ErrAkunTanpaDatabase), errors.Is(err, services.ErrKelasBisnisTanpaDatabase),
 		errors.Is(err, services.ErrOpportunityTanpaDatabase), errors.Is(err, services.ErrKasusTanpaDatabase),
 		errors.Is(err, services.ErrMarketingTanpaDatabase), errors.Is(err, services.ErrPortalTanpaDatabase),
-		errors.Is(err, services.ErrSOBTanpaDatabase), errors.Is(err, services.ErrObjekTanpaDatabase):
+		errors.Is(err, services.ErrSOBTanpaDatabase), errors.Is(err, services.ErrObjekTanpaDatabase),
+		errors.Is(err, services.ErrRiskTanpaDatabase):
 		galat.Tulis(w, http.StatusServiceUnavailable, err.Error())
 	default:
 		log.Printf("nbfacin: galat server: %v", err)

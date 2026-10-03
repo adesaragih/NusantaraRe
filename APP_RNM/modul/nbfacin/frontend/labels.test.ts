@@ -24,6 +24,7 @@ import {
   OPSI_WALL_TYPE,
   PERIODE,
   POPUP_CEDING,
+  POPUP_RISK,
   POPUP_SOB,
   SARING_PORTAL,
   SIMPAN_OBJEK,
@@ -330,5 +331,42 @@ describe.skipIf(!adaBangunan)('Roof / Wall / Floor Type = aturan properti Pega (
   it('uji ini menggigit: pasangan yang tertukar tidak cocok', () => {
     const baris = daftarPrompt(readFileSync(`${DDL}FloorType.xml`, 'utf-8'))
     expect(baris).not.toContainEqual(['KELAS I', 'Keramik'])
+  })
+})
+
+const BERKAS_RISK = {
+  saring: NBFACIN + 'Section\\ChooseRiskAddress.xml',
+  hasil: NBFACIN + 'Section\\ChooseRiskAddress_ResultList.xml',
+  alamat: NBFACIN + 'Section\\ObjectDetails.xml',
+}
+const adaRisk = Object.values(BERKAS_RISK).every((b) => existsSync(b))
+
+describe.skipIf(!adaRisk)('popup Choose Risk Address = korpus (ChooseRiskAddress, _ResultList) - tiket 36', () => {
+  const baca = (b: string) => (adaRisk ? readFileSync(b, 'utf-8') : '')
+  const saring = baca(BERKAS_RISK.saring)
+  const hasil = baca(BERKAS_RISK.hasil)
+
+  it('Choose Risk Address membuka harness ChooseRiskAddress berjudul Choose Risk Location', () => {
+    const blok = blokSel(baca(BERKAS_RISK.alamat), '16').find((b) => b.includes('<pyHarnessName>ChooseRiskAddress</pyHarnessName>')) ?? ''
+    expect(blok).toContain(`<pyWindowName>${POPUP_RISK.judul}</pyWindowName>`)
+    expect(blok).toContain('<pyTarget>popup</pyTarget>')
+  })
+
+  it.each([...Object.values(POPUP_RISK.saring), POPUP_RISK.cari, POPUP_RISK.tambah].map((u) => [u.label, u] as const))('saringan/tombol %s', (_, u) => {
+    expect(blokSel(saring, u.sel).some((b) => b.includes(`<${u.tag}>${u.label}</${u.tag}>`))).toBe(true)
+  })
+
+  it.each(POPUP_RISK.kolom.map((k) => [k.label, k] as const))('kolom grid %s', (_, k) => {
+    expect(blokSel(hasil, k.sel).some((b) => b.includes(`<${k.tag}>${k.label}</${k.tag}>`))).toBe(true)
+  })
+
+  it('grid 10 per halaman bernomor; Pilih = SetRiskIdDT_FacIn', () => {
+    expect(hasil).toContain(`<pyPageSize>${POPUP_RISK.ukuran}</pyPageSize>`)
+    expect(hasil).toContain('<pyPageMode>Numeric</pyPageMode>')
+    expect(hasil).toContain('<pyName>SetRiskIdDT_FacIn</pyName>')
+  })
+
+  it('uji ini menggigit: label salah tidak ditemukan', () => {
+    expect(blokSel(saring, '79').some((b) => b.includes('<pyLabelFieldValue>Zip code</pyLabelFieldValue>'))).toBe(false)
   })
 })
