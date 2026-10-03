@@ -116,7 +116,7 @@ func periksaItem(n int, item []models.ItemObjek) []string {
 		if len(it.Coverages) > 0 && len(it.Currency) > lebarMataUangCoverage {
 			masalah = append(masalah, fmt.Sprintf("%scurrency paling banyak %d byte bila item ber-coverage", awal, lebarMataUangCoverage))
 		}
-		masalah = append(masalah, periksaCoverage(n, m, it.Coverages)...)
+		masalah = append(masalah, periksaCoverage(fmt.Sprintf("baris[%d].items[%d].", n, m), it.Coverages)...)
 	}
 	return masalah
 }

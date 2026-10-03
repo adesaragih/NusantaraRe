@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 
 import { FORM_COV as F, LABEL_COVERAGE_BASIS, TEKS_COVERAGE } from '../labels'
 import FormCoverage, { adaGalatCoverage, angkaSah, coverageBaru } from './FormCoverage'
-import { totalPremiItem } from './TabCoverage'
+import { bolehNetRate, totalPremiItem } from './TabCoverage'
 
 const SUMBER_TAB = readFileSync(join(__dirname, 'TabCoverage.tsx'), 'utf8').replace(/\r\n/g, '\n')
 const SUMBER_FORM = readFileSync(join(__dirname, 'FormCoverage.tsx'), 'utf8').replace(/\r\n/g, '\n')
@@ -83,5 +83,21 @@ describe('FormCoverage - medan uang berformat ribuan', () => {
     expect(SUMBER_FORM).toContain("return k === 'discount' ? <IsianUang {...props} /> : <Field {...props} />")
     const html = form({ ...coverageBaru(), premium: '2500000.5' })
     expect(html).toContain('value="2.500.000,5"')
+  })
+})
+
+describe('TabCoverage - net rate (tiket 44, CekNetRate_ACT)', () => {
+  const c = (oldId: string) => ({ ...coverageBaru(), oldId })
+  it('‰ Total Net Rate dapat diisi hanya bila kelima OLDID ada (cocok harfiah)', () => {
+    expect(bolehNetRate(['FLEXAS', '4.1A CC', '4.3', '4.2 PRGBI', 'OTHERS'].map(c))).toBe(true)
+    expect(bolehNetRate(['FLEXAS', '4.1A CC', '4.3', '4.2 PRGBI'].map(c))).toBe(false)
+    expect(bolehNetRate(['flexas', '4.1A CC', '4.3', '4.2 PRGBI', 'OTHERS'].map(c))).toBe(false)
+    expect(bolehNetRate(undefined)).toBe(false)
+  })
+
+  it('perubahan net rate -> POST hitung-net-rate sesudah jeda; jawaban lama dibuang', () => {
+    expect(SUMBER_TAB).toContain('hitungNetRate(caseId, {')
+    expect(SUMBER_TAB).toContain('if (n === nomorNet.current) ubahCoverage(o, i, h.coverages)')
+    expect(SUMBER_TAB).toContain('{bolehNetRate(covs) ? (')
   })
 })

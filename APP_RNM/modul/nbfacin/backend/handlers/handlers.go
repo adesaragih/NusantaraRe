@@ -42,6 +42,7 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc("GET /api/nbfacin/coverage", cariCoverage(svc))
 	mux.HandleFunc("GET /api/nbfacin/coverage-otomatis", coverageOtomatis(svc))
 	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/hitung-coverage", hitungCoverage(svc))
+	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/hitung-net-rate", hitungNetRate(svc))
 }
 
 // isianOpportunity - badan POST /api/nbfacin/opportunity, kontrak frontend

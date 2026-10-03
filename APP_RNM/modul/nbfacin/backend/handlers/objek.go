@@ -138,7 +138,7 @@ type itemKabel struct {
 	PctAdjust2     string `json:"pctAdjust2"`
 	PctAdjustOther string `json:"pctAdjustOther"`
 	// tiket 43 - coverages selalu larik ke luar; totalGrossPremi BACA-SAJA (dihitung ulang saat PUT); totalNetRate
-	// diterima dan disimpan apa adanya (A159).
+	// diterima lalu diterapkan aturan net rate tiket 44 (A166).
 	Coverages       []coverageKabel `json:"coverages"`
 	TotalGrossPremi string          `json:"totalGrossPremi"`
 	TotalNetRate    string          `json:"totalNetRate"`

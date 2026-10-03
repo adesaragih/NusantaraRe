@@ -9,6 +9,10 @@
 // Total Gross Premium item = Σ Premium coverage (`CountPremi_ACT` langkah total) - dijumlah eksak (`jumlahDesimal`).
 // Total per mata uang dan ‰ Total Net Rate = dari server (pembagian di backend, tanpa float).
 //
+// Tahap C2 net rate (tiket 44): ‰ Total Net Rate dapat diisi bila item memuat kelima OLDID `OLDID_NET_RATE`
+// (`CekNetRate_ACT`); perubahan memanggil `POST …/hitung-net-rate` (`CalculateNetRate_ACT`) - NetRate dan premi tiap
+// coverage dihitung backend (jeda 500 ms). Item tanpa kelima coverage: Total Net Rate tampil baca-saja.
+//
 // Keputusan agent (tiket 43): P-5 perubahan di tab Coverage dan tab Object disimpan masing-masing lewat tombol Save
 // tab itu; pindah tab tanpa Save membuang perubahan (sama dengan pola tab sebelumnya). P-6 tombol Copy Coverage /
 // Copy Deductible / Copy Coverage From dan grid Summary = tahap berikut.
@@ -18,19 +22,20 @@ import { useEffect, useRef, useState } from 'react'
 import { Gagal, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { jumlahDesimal } from '../../../../inti/frontend/lib/desimal'
 import { formatNumber } from '../../../../inti/frontend/lib/format'
-import { ambilObjek, coverageOtomatis, simpanObjek, type CoverageObjek, type ObjekFire } from '../api'
+import { ambilObjek, coverageOtomatis, hitungNetRate, simpanObjek, type CoverageObjek, type ObjekFire } from '../api'
 import {
   GRID_COV_ITEM,
   GRID_COV_OBJEK,
   GRID_COV_TOTAL,
   GRID_COVERAGE,
   GRID_OBJEK,
+  OLDID_NET_RATE,
   SIMPAN_COVERAGE,
   TEKS_FORM_OPPORTUNITY,
   TEKS_INWARD,
   TEKS_OBJEK,
 } from '../labels'
-import FormCoverage, { adaGalatCoverage, coverageBaru } from './FormCoverage'
+import FormCoverage, { adaGalatCoverage, angkaSah, coverageBaru } from './FormCoverage'
 import { rapikanObjek } from './TabObject'
 
 const DESIMAL = 4
@@ -52,6 +57,26 @@ function Buka({ buka, onKlik }: { buka: boolean; onKlik: () => void }) {
 
 const balik = (daftar: string[], k: string) => (daftar.includes(k) ? daftar.filter((x) => x !== k) : [...daftar, k])
 
+/** `CekNetRate_ACT`: FlagNetRate = kelima OLDID net rate ada di daftar coverage item (cocok harfiah). */
+export function bolehNetRate(coverages: CoverageObjek[] | undefined): boolean {
+  const ada = new Set((coverages ?? []).map((c) => c.oldId))
+  return OLDID_NET_RATE.every((k) => ada.has(k))
+}
+
+/** Isian ‰ Total Net Rate (teks desimal); hitung ulang lewat backend sesudah jeda. */
+function IsianNetRate({ nilai, onUbah }: { nilai: string; onUbah: (v: string) => void }) {
+  return (
+    <input
+      className="field__input nbf-angka"
+      type="text"
+      inputMode="decimal"
+      aria-label={GRID_COV_ITEM[4].label}
+      value={nilai}
+      onChange={(e) => onUbah(e.target.value)}
+    />
+  )
+}
+
 export default function TabCoverage({ caseId }: { caseId: string }) {
   const [objek, setObjek] = useState<ObjekFire[] | null>(null)
   const [terbuka, setTerbuka] = useState<string[]>([])
@@ -59,6 +84,8 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
   const [menyimpan, setMenyimpan] = useState(false)
   const [tersimpan, setTersimpan] = useState(false)
   const aktif = useRef(true)
+  const jadwalNet = useRef<number | undefined>(undefined)
+  const nomorNet = useRef(0)
 
   useEffect(() => {
     aktif.current = true
@@ -82,6 +109,35 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
         : d.map((x, a) => (a !== o ? x : { ...x, items: x.items.map((it, b) => (b !== i ? it : { ...it, coverages })) })),
     )
     setTersimpan(false)
+  }
+
+  /** ‰ Total Net Rate diubah: simpan isian, lalu bagi ke coverage di backend (`CalculateNetRate_ACT`). */
+  function ubahNetRate(o: number, i: number, v: string) {
+    if (objek === null) return
+    const it = objek[o]!.items[i]!
+    setObjek((d) =>
+      d === null ? d : d.map((x, a) => (a !== o ? x : { ...x, items: x.items.map((y, b) => (b !== i ? y : { ...y, totalNetRate: v })) })),
+    )
+    setTersimpan(false)
+    window.clearTimeout(jadwalNet.current)
+    if (v.trim() !== '' && !angkaSah(v)) return
+    jadwalNet.current = window.setTimeout(() => {
+      const n = ++nomorNet.current
+      hitungNetRate(caseId, {
+        tsi: it.tsi,
+        totalNetRate: v,
+        coverages: it.coverages ?? [],
+        isAdjustable: it.isAdjustable,
+        pctAdjustOther: it.pctAdjustOther,
+      }).then(
+        (h) => {
+          if (n === nomorNet.current) ubahCoverage(o, i, h.coverages)
+        },
+        (err: unknown) => {
+          if (n === nomorNet.current) setGalat(err)
+        },
+      )
+    }, 500)
   }
 
   async function tambah(o: number, i: number, ada: CoverageObjek[]) {
@@ -180,7 +236,13 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                                   <td>{it.currency}</td>
                                   <td className="nbf-angka">{formatNumber(it.tsi, DESIMAL)}</td>
                                   <td className="nbf-angka">{formatNumber(totalPremiItem(covs, it.totalGrossPremi), DESIMAL)}</td>
-                                  <td className="nbf-angka">{formatNumber(it.totalNetRate ?? '', DESIMAL)}</td>
+                                  <td className="nbf-angka">
+                                    {bolehNetRate(covs) ? (
+                                      <IsianNetRate nilai={it.totalNetRate ?? ''} onUbah={(v) => ubahNetRate(o, i, v)} />
+                                    ) : (
+                                      formatNumber(it.totalNetRate ?? '', DESIMAL)
+                                    )}
+                                  </td>
                                 </tr>,
                                 terbuka.includes(`i${o}-${i}`) && (
                                   <tr key={`id${i}`} className="nbf-objek__detail">

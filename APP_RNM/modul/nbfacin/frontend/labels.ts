@@ -965,3 +965,10 @@ export const TEKS_COVERAGE = {
   tanpaCoverage: 'Tidak ada coverage yang cocok.',
   cariCoverage: 'Search',
 } as const
+
+/**
+ * Net rate item (tiket 44, tahap C2) - `NB FacIn\Activity\CekNetRate_ACT.xml`: ‰ Total Net Rate dapat diisi
+ * (`FlagNetRate` "true") HANYA bila CoverageList item memuat kelima `.OLDID` ini (cocok harfiah); selain itu
+ * TotalNetRate = 0. `CalculateNetRate_ACT`: NetRate coverage = Rate / ΣRate × TotalNetRate, lalu `CountPremi_ACT`.
+ */
+export const OLDID_NET_RATE = ['FLEXAS', '4.1A CC', '4.3', '4.2 PRGBI', 'OTHERS'] as const

@@ -349,15 +349,15 @@ func hitungSimpan(c models.CoverageObjek, tsi, prorate *apd.Decimal, it Penyesua
 	return h, nil
 }
 
-// periksaCoverage - isian coverage item ke-m baris ke-n (tanpa basis data): jumlah, lebar teks, desimal sah, basis 1-4.
-// Rate tidak dipaksa wajib (P-3).
-func periksaCoverage(n, m int, cov []models.CoverageObjek) []string {
+// periksaCoverage - isian coverage satu item (tanpa basis data): jumlah, lebar teks, desimal sah, basis 1-4. `awalItem`
+// = awalan jalur pesan ("baris[n].items[m]." pada PUT objek, "" pada POST hitung-net-rate). Rate tidak dipaksa wajib (P-3).
+func periksaCoverage(awalItem string, cov []models.CoverageObjek) []string {
 	if len(cov) > batasItem {
-		return []string{fmt.Sprintf("baris[%d].items[%d].coverages paling banyak %d", n, m, batasItem)}
+		return []string{fmt.Sprintf("%scoverages paling banyak %d", awalItem, batasItem)}
 	}
 	var masalah []string
 	for k, c := range cov {
-		awal := fmt.Sprintf("baris[%d].items[%d].coverages[%d].", n, m, k)
+		awal := fmt.Sprintf("%scoverages[%d].", awalItem, k)
 		if alasan := periksaBasis(c.CoverageBasis); alasan != "" {
 			masalah = append(masalah, awal+alasan)
 		}
@@ -450,8 +450,9 @@ func (s *Service) HitungCoverageKasus(ctx context.Context, id string, c models.C
 	return HitungCoverage(c, tsi, prorate, mode, modeDiskon, it)
 }
 
-// siapkanCoverage - PUT objek: setiap coverage dihitung ulang (modeSimpan), TotalGrossPremi item = Σ Premium tersimpan
-// (A159; item tanpa coverage -> nil). Periode case dibaca hanya bila ada coverage.
+// siapkanCoverage - PUT objek: setiap coverage dihitung ulang (hitungSimpan, atau TerapkanNetRate bila item ber-flag
+// net rate dan Total Net Rate terisi - tiket 44, A166), TotalGrossPremi item = Σ Premium tersimpan (A159; item tanpa
+// coverage -> nil). Periode case dibaca hanya bila ada coverage.
 func (s *Service) siapkanCoverage(ctx context.Context, id string, baris []models.ObjekFire) error {
 	var prorate *apd.Decimal
 	for n := range baris {
@@ -474,14 +475,35 @@ func (s *Service) siapkanCoverage(ctx context.Context, id string, baris []models
 					return err
 				}
 			}
-			total := apd.New(0, 0)
-			hasil := make([]models.CoverageObjek, len(it.Coverages))
-			for k, c := range it.Coverages {
-				c2, err := hitungSimpan(c, it.TSI, prorate, PenyesuaianItem{it.IsAdjustable, it.PctAdjustOther})
-				if err != nil {
-					return fmt.Errorf("%w: baris[%d].items[%d].coverages[%d]: %v", ErrMasukanObjek, n, m, k, err)
+			penyesuaian := PenyesuaianItem{it.IsAdjustable, it.PctAdjustOther}
+			var hasil []models.CoverageObjek
+			flag := FlagNetRate(it.Coverages)
+			if flag && it.TotalNetRate != nil {
+				// Tiket 44: item ber-flag dengan Total Net Rate terisi -> CalculateNetRate_ACT (A166).
+				var err error
+				if hasil, err = TerapkanNetRate(it.Coverages, it.TSI, prorate, it.TotalNetRate, penyesuaian); err != nil {
+					var g *galatNetRate
+					if errors.As(err, &g) {
+						return fmt.Errorf("%w: baris[%d].items[%d].%s: %s", ErrMasukanObjek, n, m, g.jalur, g.alasan)
+					}
+					return err
 				}
-				hasil[k] = c2
+			} else {
+				hasil = make([]models.CoverageObjek, len(it.Coverages))
+				for k, c := range it.Coverages {
+					c2, err := hitungSimpan(c, it.TSI, prorate, penyesuaian)
+					if err != nil {
+						return fmt.Errorf("%w: baris[%d].items[%d].coverages[%d]: %v", ErrMasukanObjek, n, m, k, err)
+					}
+					hasil[k] = c2
+				}
+			}
+			if !flag {
+				// CekNetRate_ACT langkah 4: tanpa kelima coverage net rate -> TotalNetRate 0.
+				it.TotalNetRate = apd.New(0, 0)
+			}
+			total := apd.New(0, 0)
+			for _, c2 := range hasil {
 				if c2.Premium != nil {
 					konteksCoverage.Add(total, total, c2.Premium)
 				}

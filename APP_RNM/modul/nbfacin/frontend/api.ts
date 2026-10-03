@@ -683,3 +683,14 @@ export function hitungCoverage(
 ): Promise<CoverageObjek> {
   return minta<CoverageObjek>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/hitung-coverage`, { metode: 'POST', badan })
 }
+
+/**
+ * `POST /api/nbfacin/kasus/{caseId}/hitung-net-rate` - tahap C2 (`CalculateNetRate_ACT`): bagi ‰ Total Net Rate ke
+ * setiap coverage (NetRate = Rate / ΣRate × TotalNetRate) lalu hitung ulang premi. Tanpa menyimpan.
+ */
+export function hitungNetRate(
+  caseId: string,
+  badan: { tsi: string; totalNetRate: string; coverages: CoverageObjek[]; isAdjustable?: boolean; pctAdjustOther?: string },
+): Promise<{ coverages: CoverageObjek[]; totalNetRate: string; flagNetRate: boolean }> {
+  return minta(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/hitung-net-rate`, { metode: 'POST', badan })
+}

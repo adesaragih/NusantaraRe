@@ -149,6 +149,46 @@ func coverageOtomatis(svc *services.Service) http.HandlerFunc {
 	}
 }
 
+// badanHitungNetRate - badan POST hitung-net-rate (tiket 44); totalNetRate kosong = 0 (CalculateNetRate langkah 1).
+type badanHitungNetRate struct {
+	TSI            string          `json:"tsi"`
+	TotalNetRate   string          `json:"totalNetRate"`
+	Coverages      []coverageKabel `json:"coverages"`
+	IsAdjustable   bool            `json:"isAdjustable"`
+	PctAdjustOther string          `json:"pctAdjustOther"`
+}
+
+// hitungNetRate - POST /api/nbfacin/kasus/{caseId}/hitung-net-rate: bagi Total Net Rate ke coverage, tanpa menyimpan.
+func hitungNetRate(svc *services.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var b badanHitungNetRate
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, batasBadanCoverage)).Decode(&b); err != nil {
+			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON hitung net rate yang sah")
+			return
+		}
+		var masalah []string
+		cov := keCoverageModelDaftar("", b.Coverages, &masalah)
+		tsi := services.UraiDesimalIsian("tsi", b.TSI, &masalah)
+		tnr := services.UraiDesimalIsian("totalNetRate", b.TotalNetRate, &masalah)
+		it := services.PenyesuaianItem{IsAdjustable: b.IsAdjustable,
+			PctAdjustOther: services.UraiDesimalIsian("pctAdjustOther", b.PctAdjustOther, &masalah)}
+		if err := services.GalatIsianObjek(masalah); err != nil {
+			tulisGalat(w, err)
+			return
+		}
+		h, err := svc.HitungNetRateKasus(r.Context(), r.PathValue("caseId"), cov, tsi, tnr, it)
+		if err != nil {
+			tulisGalat(w, err)
+			return
+		}
+		galat.TulisJSON(w, struct {
+			Coverages    []coverageKabel `json:"coverages"`
+			TotalNetRate string          `json:"totalNetRate"`
+			FlagNetRate  bool            `json:"flagNetRate"`
+		}{keCoverageKabel(h.Coverages), teks(h.TotalNetRate), h.Flag})
+	}
+}
+
 // badanHitungCoverage - badan POST hitung-coverage. modeDiskon kosong = diturunkan (A157).
 type badanHitungCoverage struct {
 	Coverage       coverageKabel `json:"coverage"`

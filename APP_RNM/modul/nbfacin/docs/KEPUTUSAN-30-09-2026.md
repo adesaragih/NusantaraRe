@@ -1328,6 +1328,12 @@ work owner): CURRENCY_CODE = mata uang item, kolom total lewat ALTER, total per 
 agent A155–A160 dan A162–A164 **menunggu konfirmasi** (`issues/43-coverage-fire-c1.md`) — ⚠️ A160: view `COVERAGE_FACIN` tanpa
 ACTIVESTATUS, saringan aktif RD tidak dapat dinyatakan (`[pertanyaan terbuka]` DBA).
 
+## Tiket 44 — tab Coverage FIRE tahap C2 Net Rate (backend), diteruskan sesi `nusantarare-0f`
+
+`POST …/kasus/{caseId}/hitung-net-rate` (port `CekNetRate_ACT` + `CalculateNetRate_ACT`) dan aturan net rate di `PUT
+…/objek`. Tanpa migrasi (memakai kolom 193). Keputusan agent A165–A168 **menunggu konfirmasi** (`issues/44-net-rate-c2.md`);
+A166 menggantikan bagian TotalNetRate dari A159.
+
 ## Bug DEV — 3 Oktober 2026, popup Choose Class of Construction kosong (diteruskan sesi `nusantarare-0f`)
 
 | # | Butir | Keputusan |

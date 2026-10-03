@@ -333,7 +333,7 @@ persen `NUMBER(38,8)` (rancangan `NUMBER` polos; ADR-0016), ditulis/dibaca sebag
 | `NO_OF_TREE` | teks | VARCHAR2(50) | **baru** — No of Trees (`.NoOfTree`) |
 | `AREA_HECTAR` | teks | VARCHAR2(50) | **baru** — Area ( Hectar ) (`.AreaHectar`) |
 | `TOTAL_GROSS_PREMI` | angka desimal | NUMBER(38,8) | tiket 43 (193) — **uang**, Σ Premium coverage item, dihitung server saat PUT (`CountPremi_ACT` langkah 55-56); item tanpa coverage = kosong |
-| `TOTAL_NET_RATE` | angka desimal | NUMBER(38,8) | tiket 43 (193) — ‰ Total Net Rate, disimpan apa adanya dari PUT (A159; rumusnya tahap C2) |
+| `TOTAL_NET_RATE` | angka desimal | NUMBER(38,8) | tiket 43 (193) — ‰ Total Net Rate dari PUT; tiket 44: item ber-coverage tanpa kelima coverage net rate → 0 (`CekNetRate_ACT` langkah 4); item tanpa coverage → apa adanya (A166) |
 
 ## T_COVERAGELIST
 
@@ -366,7 +366,7 @@ medan kontrak ADA di rancangan — tanpa kolom baru. Medan uang / rate / persen 
 | `FIRST_LOSS` | teks | VARCHAR2(50) | % First Loss — teks desimal (rancangan VARCHAR2) |
 | `DISCOUNT_PERCENTAGE` | angka desimal | NUMBER(38,8) | % Discount |
 | `TSI_LIABILITY` | angka desimal | NUMBER(38,8) | **uang** — server, per basis |
-| `NET_RATE` | angka desimal | NUMBER(38,8) | ‰ Net Rate (terisi → menggantikan Rate dalam rumus) |
+| `NET_RATE` | angka desimal | NUMBER(38,8) | ‰ Net Rate (terisi → menggantikan Rate dalam rumus); tiket 44: item ber-flag + Total Net Rate → Rate / ΣRate × Total Net Rate (`CalculateNetRate_ACT`), disimpan 8 desimal, premi dari nilai 20 desimal |
 | `LIMITOF_LIABILITY` | angka desimal | NUMBER(38,8) | **uang** — Limit of Liability |
 | `PCT_LO_L` | angka desimal | NUMBER(38,8) | % LoL |
 | `PRO_RATE_PERCENT` | angka desimal | NUMBER(38,8) | server — Prorate periode polis case |

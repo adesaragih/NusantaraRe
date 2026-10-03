@@ -106,7 +106,8 @@ func TestHitungCoverageHandler(t *testing.T) {
 }
 
 // TestObjekCoverage - PUT/GET objek dengan items[].coverages (tiket 43): premi dihitung ulang server, totalGrossPremi
-// BACA-SAJA, totalNetRate pulang-pergi, totalPerCurrency dihitung; 400 ber-jalur coverages[k]; mata uang > 10 byte.
+// BACA-SAJA, totalNetRate = 0 tanpa kelima coverage net rate (tiket 44, CekNetRate langkah 4), totalPerCurrency dihitung;
+// 400 ber-jalur coverages[k]; mata uang > 10 byte.
 func TestObjekCoverage(t *testing.T) {
 	var d []models.ObjekFire
 	svc := services.Baru(nil).DenganObjek(objekTiruan{&d}).DenganTransaksi(tanpaOracle).DenganPilihanItem(pilihanTiruan{}).
@@ -132,7 +133,7 @@ func TestObjekCoverage(t *testing.T) {
 	}
 	it := j.Baris[0].Items[0]
 	if len(it.Coverages[0]) != len(kunciCoverage) || it.Coverages[0]["premium"] != "1000000" || it.TotalGrossPremi != "1000000" ||
-		it.TotalNetRate != "1.25" {
+		it.TotalNetRate != "0" {
 		t.Errorf("item: %s", isi)
 	}
 	tot := j.Baris[0].TotalPerCurrency
@@ -150,6 +151,53 @@ func TestObjekCoverage(t *testing.T) {
 	} {
 		if kode, isi := minta(t, svc, "PUT", jalur, u.badan, "UJI-USER"); kode != 400 || !strings.Contains(isi, u.pesan) {
 			t.Errorf("%s: %d %s", nama, kode, isi)
+		}
+	}
+}
+
+// TestHitungNetRateHandler - POST …/hitung-net-rate (tiket 44): bentuk {coverages, totalNetRate, flagNetRate}; flag
+// false -> "0" dan coverage apa adanya; flag true -> NetRate dibagi; 400 ber-jalur; 409 periode kosong.
+func TestHitungNetRateHandler(t *testing.T) {
+	svc := services.Baru(nil).DenganKasus(kasusTiruan{k: kasusPeriode()})
+	jalur := "/api/nbfacin/kasus/UJI-NB-1/hitung-net-rate"
+	cov := func(oldID, rate string) string {
+		return `{"coverage":"1","oldId":"` + oldID + `","coverageBasis":"1","rate":"` + rate + `","indemnityPercentage":"100"}`
+	}
+	lima := cov("FLEXAS", "1") + "," + cov("4.1A CC", "1") + "," + cov("4.3", "2") + "," + cov("4.2 PRGBI", "") + "," + cov("OTHERS", "")
+	tanpaRate := cov("FLEXAS", "") + "," + cov("4.1A CC", "0") + "," + cov("4.3", "") + "," + cov("4.2 PRGBI", "") + "," + cov("OTHERS", "")
+	kode, isi := minta(t, svc, "POST", jalur, `{"tsi":"1000000000","totalNetRate":"2","coverages":[`+lima+`]}`, "")
+	var j struct {
+		Coverages    []map[string]any `json:"coverages"`
+		TotalNetRate string           `json:"totalNetRate"`
+		FlagNetRate  bool             `json:"flagNetRate"`
+	}
+	var mentah map[string]any
+	if err := json.Unmarshal([]byte(isi), &j); err != nil || kode != 200 || json.Unmarshal([]byte(isi), &mentah) != nil || len(mentah) != 3 ||
+		len(j.Coverages) != 5 || len(j.Coverages[0]) != len(kunciCoverage) {
+		t.Fatalf("%d %s", kode, isi)
+	}
+	if !j.FlagNetRate || j.TotalNetRate != "2" || j.Coverages[2]["netRate"] != "1" || j.Coverages[2]["premium"] != "1000000" {
+		t.Errorf("flag true: %s", isi)
+	}
+	if kode, isi := minta(t, svc, "POST", jalur, `{"tsi":"1000000000","totalNetRate":"2","coverages":[`+cov("FLEXAS", "1")+`]}`, ""); kode != 200 ||
+		!strings.Contains(isi, `"totalNetRate":"0","flagNetRate":false`) || !strings.Contains(isi, `"netRate":""`) {
+		t.Errorf("flag false: %d %s", kode, isi)
+	}
+	for _, u := range []struct {
+		nama, badan, pesan string
+		svc                *services.Service
+		kode               int
+	}{
+		{"JSON rusak", `{"coverages":`, "bukan JSON", svc, 400},
+		{"rate koma", `{"tsi":"1","totalNetRate":"2","coverages":[` + cov("FLEXAS", "1,5") + `]}`, "coverages[0].rate harus angka", svc, 400},
+		{"total minus", `{"tsi":"1","totalNetRate":"-2","coverages":[]}`, "totalNetRate harus angka", svc, 400},
+		{"ΣRate 0", `{"tsi":"1","totalNetRate":"2","coverages":[` + tanpaRate + `]}`, "totalNetRate: Σ Rate coverage = 0", svc, 400},
+		{"periode kosong", `{"tsi":"1","totalNetRate":"2","coverages":[` + lima + `]}`, "Begin / End",
+			services.Baru(nil).DenganKasus(kasusTiruan{k: &models.Kasus{CaseID: "UJI-NB-1"}}), 409},
+	} {
+		kode, isi := minta(t, u.svc, "POST", jalur, u.badan, "")
+		if kode != u.kode || !strings.Contains(isi, u.pesan) {
+			t.Errorf("%s: %d %s, mau %d", u.nama, kode, isi, u.kode)
 		}
 	}
 }
