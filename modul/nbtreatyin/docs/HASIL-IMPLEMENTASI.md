@@ -1,6 +1,6 @@
 # Hasil implementasi — modul `nbtreatyin` (NB Treaty In)
 
-> Putaran 2 · konsolidasi paket P1–P9 di cabang integrasi `modul/nbtreatyin/implementasi` (`71842cb0`), dirangkum
+> Putaran 2 · konsolidasi paket P1–P9 di cabang integrasi `modul/nbtreatyin/implementasi` (`a7f37124`; sebelum pesan dua commit merge dirapikan: `71842cb0`), dirangkum
 > paket P10 pada 04-10-2026, lalu diperbarui paket **P11** (04-10-2026, cabang `modul/nbtreatyin/p11-sisa`: seluruh
 > butir bab 9 "pekerjaan yang masih dapat dikerjakan"). Setiap bukti di bawah diperiksa ulang ke kode dan uji cabang
 > itu — bukan disalin dari laporan paket.
