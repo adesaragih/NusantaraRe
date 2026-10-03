@@ -306,15 +306,33 @@ func TestMedanTerkunciAtasanDanTurunanAdmin(t *testing.T) { // AC 49-52
 	}
 	a := putusan("1")
 	a.Setel("PolicyTreatyIn.PremiOgp", "999999")
+	// AC 52: `DetailDeptHeadTreatyIn_UW` - DueTo, FlagPPH, No Offer Slip
+	// `pyDisabled=always`; `ListSuggest.ProductionDate` tidak tampil tanpa
+	// tempat berperan (tiket 05) -> keempatnya tidak dapat diisi atasan.
 	a.Setel("PolicyTreatyIn.QuotationData.NoOfferSlip", "UJI-SLIP")
+	a.Setel("PolicyTreatyIn.FlagPPH", "true")
+	a.Setel("PolicyTreatyIn.DueTo", "0")
+	a.Setel("PolicyTreatyIn.ProductionDate", "2099-01-01 00:00:00")
 	if kode, isi := u.kirim(id, secHead, a); kode != http.StatusOK {
 		t.Fatalf("%d %s", kode, isi)
 	}
-	if got := u.g.Halaman[id].Ambil("PolicyTreatyIn.PremiOgp"); got != "1000" {
+	g := u.g.Halaman[id]
+	if got := g.Ambil("PolicyTreatyIn.PremiOgp"); got != "1000" {
 		t.Fatalf("PremiOgp terkunci di layar atasan, tersimpan %q", got)
 	}
-	if got := u.g.Halaman[id].Ambil("PolicyTreatyIn.QuotationData.NoOfferSlip"); got != "UJI-SLIP" {
-		t.Fatalf("No Offer Slip dapat diisi atasan, tersimpan %q", got)
+	for j, tolak := range map[string]string{
+		"PolicyTreatyIn.QuotationData.NoOfferSlip": "UJI-SLIP",
+		"PolicyTreatyIn.FlagPPH":                   "true",
+		"PolicyTreatyIn.DueTo":                     "0",
+		"PolicyTreatyIn.ProductionDate":            "2099-01-01 00:00:00",
+	} {
+		if got := g.Ambil(j); got == tolak {
+			t.Errorf("%s tidak dapat diisi atasan (AC 52), tersimpan %q", j, got)
+		}
+	}
+	usulan := g.AmbilDaftar(models.DaftarUsulan)
+	if len(usulan) == 0 || usulan[len(usulan)-1]["Suggest"] != "UJI-1" || usulan[len(usulan)-1]["IsApproved"] != "1" {
+		t.Fatalf("Approval dan Suggest dapat diisi atasan: %v", usulan)
 	}
 }
 

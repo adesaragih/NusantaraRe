@@ -41,7 +41,13 @@ func (l *Layanan) kerjakan(ctx context.Context, p inti.Pelaku, id string, masuk 
 	if err := l.siapkan(ctx, p, k, h); err != nil {
 		return models.Kasus{}, nil, err
 	}
-	models.GabungMasukanLayar(h, masuk, k.PositionNote)
+	// `ListSuggest.ProductionDate` hanya diterima bila tampil bagi pelaku
+	// (tempat berperan tiket 05; AC 52, 81).
+	tempat, err := l.tempat(ctx, p)
+	if err != nil {
+		return models.Kasus{}, nil, err
+	}
+	models.GabungMasukanLayar(h, masuk, k.PositionNote, tempat[TempatTanggalProduksi])
 	if k.PositionNote == models.PosisiAdmin {
 		if err := l.turunkan(ctx, h); err != nil {
 			return models.Kasus{}, nil, err

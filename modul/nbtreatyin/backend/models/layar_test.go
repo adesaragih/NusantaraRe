@@ -92,6 +92,48 @@ func TestMedanWajibBersyarat(t *testing.T) {
 	}
 }
 
+// Sel di dalam wadah tersembunyi tidak ter-render, jadi `pyRequired`-nya tidak
+// berlaku. Wadah (`pyContainerVisibleWhen`) dibaca ulang 2026-10-03:
+//
+//	DetailPolicyTreatyIn       FlagPPH, TypeTax, Choose Business: `.ClaimType != 'XOL Retro'`
+//	                           bagian uang/spreading/angsuran:
+//	                           `.IsNewPolicyNonProp != 1 && .IsNewPolicyListFormat != 1`
+//	DetailDeptHeadTreatyIn_UW  bagian uang/spreading/angsuran: `.IsNewPolicyNonProp != 1`
+func TestMedanWajibIkutWadahTampil(t *testing.T) {
+	label := func(h *Halaman, posisi string) map[string]bool {
+		out := map[string]bool{}
+		for _, l := range MedanWajibKosong(h, posisi) {
+			out[l] = true
+		}
+		return out
+	}
+	h := HalamanBaru()
+	h.Setel("PolicyTreatyIn.FlagPPH", "true")
+	if !label(h, PosisiAdmin)["Type Tax"] {
+		t.Fatal("Type Tax wajib bila FlagPPH true")
+	}
+	h.Setel("PolicyTreatyIn.ClaimType", "XOL Retro")
+	if label(h, PosisiAdmin)["Type Tax"] {
+		t.Error("Type Tax di wadah `.ClaimType != 'XOL Retro'`: tidak wajib untuk XOL Retro")
+	}
+	h = HalamanBaru()
+	if !label(h, PosisiAdmin)["Premi Ogp"] || !label(h, PosisiDeptHead)["Premi Ogp"] {
+		t.Fatal("Premi Ogp wajib di kedua layar bila bagian uang tampil")
+	}
+	h.Setel("PolicyTreatyIn.IsNewPolicyNonProp", "1")
+	if label(h, PosisiAdmin)["Premi Ogp"] || label(h, PosisiDeptHead)["Deduction1"] {
+		t.Error("IsNewPolicyNonProp 1: bagian uang tersembunyi, medannya tidak wajib")
+	}
+	h = HalamanBaru()
+	h.Setel("PolicyTreatyIn.IsNewPolicyListFormat", "1")
+	if label(h, PosisiAdmin)["Premi Ogp"] {
+		t.Error("admin IsNewPolicyListFormat 1: bagian uang tersembunyi")
+	}
+	if !label(h, PosisiDeptHead)["Premi Ogp"] {
+		t.Error("atasan: wadah uang hanya bersyarat IsNewPolicyNonProp")
+	}
+}
+
 func TestGabungMasukanAtasanHanyaMedanTerbuka(t *testing.T) { // AC 49-52
 	h := HalamanBaru()
 	h.Setel("PolicyTreatyIn.PremiOgp", "1000")
@@ -99,21 +141,73 @@ func TestGabungMasukanAtasanHanyaMedanTerbuka(t *testing.T) { // AC 49-52
 	m := HalamanBaru()
 	m.Setel("PolicyTreatyIn.PremiOgp", "1")
 	m.Setel("PolicyTreatyIn.Suggest", "UJI")
-	GabungMasukanLayar(h, m, PosisiSecHead)
+	GabungMasukanLayar(h, m, PosisiSecHead, false)
 	if h.Ambil("PolicyTreatyIn.PremiOgp") != "1000" || h.Ambil("PolicyTreatyIn.Suggest") != "UJI" {
 		t.Fatal("atasan: medan terkunci diabaikan, Suggest diterima")
 	}
 	if h.Ambil("PolicyTreatyIn.DueTo") != "1" {
 		t.Fatal("medan yang tidak dikirim tidak dikosongkan")
 	}
-	GabungMasukanLayar(h, m, PosisiAdmin)
+	GabungMasukanLayar(h, m, PosisiAdmin, false)
 	if h.Ambil("PolicyTreatyIn.PremiOgp") != "1" {
 		t.Fatal("admin boleh mengubah PremiOgp")
 	}
 	m.Setel("PolicyTreatyIn.StatementDate", "2000-01-01 00:00:00")
-	GabungMasukanLayar(h, m, PosisiAdmin)
+	GabungMasukanLayar(h, m, PosisiAdmin, false)
 	if h.Ambil("PolicyTreatyIn.StatementDate") != "" {
 		t.Fatal("StatementDate terkunci ALWAYS di layar admin")
+	}
+}
+
+// AC 52 - `Section/DetailDeptHeadTreatyIn_UW`: `.DueTo`, `.FlagPPH`,
+// `.QuotationData.NoOfferSlip` ber-`pyReadOnly=false` tetapi mode suntingnya
+// `pyDisabled=true` / `pyDisabledNew=always` - tidak dapat diisi. Yang dapat
+// diisi atasan hanya `Section/ListSuggest`: `.IsApproved`, `.Suggest`, dan
+// `.ProductionDate` bila tampil (`.IsApproved == 1` && tempat tiket 05).
+func TestAtasanHanyaMengisiPutusanCatatanDanTanggalProduksiBersyarat(t *testing.T) {
+	isi := func(tempat bool, approval string) *Halaman {
+		h := HalamanBaru()
+		h.Setel("PolicyTreatyIn.DueTo", "1")
+		h.Setel("PolicyTreatyIn.FlagPPH", "false")
+		h.Setel("PolicyTreatyIn.QuotationData.NoOfferSlip", "UJI-SLIP-LAMA")
+		h.Setel("PolicyTreatyIn.ProductionDate", "2026-10-01 00:00:00")
+		m := HalamanBaru()
+		m.Setel("PolicyTreatyIn.DueTo", "0")
+		m.Setel("PolicyTreatyIn.FlagPPH", "true")
+		m.Setel("PolicyTreatyIn.QuotationData.NoOfferSlip", "UJI-SLIP-BARU")
+		m.Setel("PolicyTreatyIn.IsApproved", approval)
+		m.Setel("PolicyTreatyIn.Suggest", "UJI-catatan")
+		m.Setel("PolicyTreatyIn.ProductionDate", "2026-10-31 00:00:00")
+		GabungMasukanLayar(h, m, PosisiDeptHead, tempat)
+		return h
+	}
+	h := isi(false, "1")
+	for j, harap := range map[string]string{
+		"PolicyTreatyIn.DueTo":                     "1",
+		"PolicyTreatyIn.FlagPPH":                   "false",
+		"PolicyTreatyIn.QuotationData.NoOfferSlip": "UJI-SLIP-LAMA",
+		"PolicyTreatyIn.IsApproved":                "1",
+		"PolicyTreatyIn.Suggest":                   "UJI-catatan",
+		"PolicyTreatyIn.ProductionDate":            "2026-10-01 00:00:00", // tempat tertunda: tidak tampil
+	} {
+		if got := h.Ambil(j); got != harap {
+			t.Errorf("%s = %q, harap %q", j, got, harap)
+		}
+	}
+	if got := isi(true, "1").Ambil("PolicyTreatyIn.ProductionDate"); got != "2026-10-31 00:00:00" {
+		t.Errorf("tempat berperan + IsApproved 1: ProductionDate tampil dan diterima, tersimpan %q", got)
+	}
+	if got := isi(true, "0").Ambil("PolicyTreatyIn.ProductionDate"); got != "2026-10-01 00:00:00" {
+		t.Errorf("IsApproved 0: ProductionDate tidak tampil, tersimpan %q", got)
+	}
+	// admin: ListSuggest yang sama - ProductionDate bergerbang serupa
+	a := HalamanBaru()
+	m := HalamanBaru()
+	m.Setel("PolicyTreatyIn.IsApproved", "1")
+	m.Setel("PolicyTreatyIn.ProductionDate", "2026-10-31 00:00:00")
+	GabungMasukanLayar(a, m, PosisiAdmin, false)
+	if got := a.Ambil("PolicyTreatyIn.ProductionDate"); got != "" {
+		t.Errorf("admin tanpa tempat berperan: ProductionDate tidak diterima, tersimpan %q", got)
 	}
 }
 
