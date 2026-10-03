@@ -64,3 +64,19 @@ export const FOLDER_KORPUS = {
   treatyIn: 'Treaty In',
   treatyInAdjustment: 'Treaty In Adjustment',
 } as const
+
+/**
+ * Nama TAMPILAN modul yang BUKAN nama folder korpus - keputusan work owner 03-10-2026 ("ganti nama modul ... hapus kata
+ * Master nya", nama tampilan saja; kode modul, folder, rute, dan MODUL_AKTIF tetap). Dipakai `M_NAV_MENU.LABEL` sesudah
+ * slot menu modulnya (959 / 961), `kelompok` menu modulnya, dan kartu Beranda. Pasangan Go: `labelTampilDisetujui`
+ * (`inti/backend/penjaga/menu_test.go`) - keduanya dikunci uji.
+ */
+export const LABEL_TAMPIL: Readonly<Partial<Record<keyof typeof FOLDER_KORPUS, string>>> = {
+  masterContractRetroLife: 'Contract Retro Life',
+  masterProductNameLife: 'Product Name Life',
+}
+
+/** Nama menu setiap folder korpus: nama tampilan bila diputuskan (`LABEL_TAMPIL`), selain itu nama folder VERBATIM. */
+export const LABEL_MENU = Object.fromEntries(
+  Object.entries(FOLDER_KORPUS).map(([k, v]) => [k, LABEL_TAMPIL[k as keyof typeof FOLDER_KORPUS] ?? v]),
+) as Readonly<Record<keyof typeof FOLDER_KORPUS, string>>

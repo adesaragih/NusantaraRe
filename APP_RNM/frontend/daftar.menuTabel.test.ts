@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AKAR_APLIKASI } from '../inti/frontend/uji/sumber'
 import { berkasMenu, menuBersih, type BarisMenuBersih } from '../inti/frontend/uji/menuBersih'
 import { ambilMenu } from '../inti/frontend/klien'
-import { FOLDER_KORPUS } from './katalogKorpus'
+import { FOLDER_KORPUS, LABEL_MENU, LABEL_TAMPIL } from './katalogKorpus'
 import { MODUL_FRONTEND } from './daftar'
 
 // Penjaga DUA ARAH: HASIL BERSIH M_NAV_MENU (900 + 901 + slot menu modul) ↔
@@ -99,8 +99,11 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
     ])
   })
 
-  it('LABEL = FOLDER_KORPUS (20 folder korpus)', () => {
-    expect(new Set(BERSIH.baris.map((b) => b.label))).toEqual(new Set(Object.values(FOLDER_KORPUS)))
+  it('LABEL = FOLDER_KORPUS (20 folder korpus), kecuali nama tampilan LABEL_TAMPIL', () => {
+    expect(new Set(BERSIH.baris.map((b) => b.label))).toEqual(new Set(Object.values(LABEL_MENU)))
+    // Keputusan work owner 03-10-2026 - SATU-SATUNYA nama tampilan; pasangan Go `labelTampilDisetujui` memuat yang sama.
+    expect(LABEL_TAMPIL).toEqual({ masterContractRetroLife: 'Contract Retro Life', masterProductNameLife: 'Product Name Life' })
+    for (const [k, v] of Object.entries(LABEL_TAMPIL)) expect(FOLDER_KORPUS[k as keyof typeof FOLDER_KORPUS]).toBe(`Master ${v}`)
     expect(Object.values(FOLDER_KORPUS)).toHaveLength(20)
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In')
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In Adjustment')

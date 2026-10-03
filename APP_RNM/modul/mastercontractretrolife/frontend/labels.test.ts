@@ -31,7 +31,6 @@ type Bukti = readonly [kunci: string, berkas: string, baris: number, tag: string
 
 /** Kunci `OBJEK.medan` → baris tag korpus yang memuat teksnya. */
 const BUKTI: readonly Bukti[] = [
-  ['TAHUN_MCRL.judul', GRID, 1082, 'pyValue'],
   ['TAHUN_MCRL.labelSelAdd', TAHUN, 8927, 'pyLabelFieldValue'],
   ['TAHUN_MCRL.add', TAHUN, 9007, 'pyLabel'],
   ['TAHUN_MCRL.tooltipAdd', TAHUN, 9005, 'pyTooltip'],
@@ -153,7 +152,8 @@ const BUKTI: readonly Bukti[] = [
 
 /** Kunci `[tidak ada di korpus]` - masing-masing beralasan di `labels.ts`. */
 const BUKAN_KORPUS: readonly string[] = [
-  'MENU_MCRL.kelompok', // nama FOLDER korpus, dibuktikan terpisah di bawah
+  'MENU_MCRL.kelompok', // nama tampilan = folder korpus tanpa "Master " (03-10-2026), dibuktikan terpisah di bawah
+  'TAHUN_MCRL.judul', // b1082 tanpa "MASTER " (03-10-2026), dibuktikan terpisah di bawah
   'UMUM_MCRL.tutup',
   'UMUM_MCRL.kosong',
   'UMUM_MCRL.terpotong',
@@ -203,9 +203,14 @@ describe.skipIf(!adaKorpus)('label Master Contract Retro Life berbukti barisnya'
     expect(baca(berkas as string, nomor as number)).toBe(`<${tag}>${xml(nilai(kunci as string))}</${tag}>`)
   })
 
-  it('nama menu = nama folder korpus', () => {
+  // Keputusan work owner 03-10-2026: nama tampilan = nama korpus tanpa kata "Master" (nama tampilan saja).
+  it('nama menu = nama folder korpus tanpa "Master"', () => {
     const induk = readdirSync(join(KORPUS, '..'))
-    expect(induk).toContain(LABEL.MENU_MCRL.kelompok)
+    expect(induk).toContain(`Master ${LABEL.MENU_MCRL.kelompok}`)
+  })
+
+  it('judul halaman = GridRetrocessionLife b1082 tanpa "MASTER"', () => {
+    expect(baca(GRID, 1082)).toBe(`<pyValue>MASTER ${LABEL.TAHUN_MCRL.judul}</pyValue>`)
   })
 
   it('ikon tutup harness = pxIconCancel di keempat harness', () => {

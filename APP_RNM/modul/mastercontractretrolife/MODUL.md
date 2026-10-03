@@ -11,6 +11,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | --- | --- |
 | Nama modul | `mastercontractretrolife` |
 | Folder korpus | `Master Contract Retro Life` |
+| Nama tampilan | `Contract Retro Life` — keputusan work owner 03-10-2026 (kata "Master" dihapus, nama tampilan saja): label menu `M_NAV_MENU.LABEL` (slot menu 959), judul halaman, kartu Beranda. Kode modul, folder, rute API, dan `MODUL_AKTIF` tetap. |
 | GROUPMENU | `MASTER` |
 | Pemilik | `@PEMILIK-MASTERCONTRACTRETROLIFE` |
 | Status | dimigrasi |

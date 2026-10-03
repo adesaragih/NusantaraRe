@@ -11,6 +11,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | --- | --- |
 | Nama modul | `masterproductnamelife` |
 | Folder korpus | `Master Product Name Life` |
+| Nama tampilan | `Product Name Life` — keputusan work owner 03-10-2026 (kata "Master" dihapus, nama tampilan saja): label menu `M_NAV_MENU.LABEL` (slot menu 961), judul halaman, kartu Beranda. Kode modul, folder, rute API, dan `MODUL_AKTIF` tetap. |
 | GROUPMENU | `MASTER` |
 | Pemilik | `@PEMILIK-MASTERPRODUCTNAMELIFE` |
 | Status | dimigrasi |

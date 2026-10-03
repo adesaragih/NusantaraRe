@@ -11,10 +11,13 @@
 //
 // Teks yang TIDAK ada di korpus ditandai `[tidak ada di korpus]` beserta alasannya; dijaga `labels.test.ts`.
 
-/** Menu - `M_NAV_MENU.LABEL` isi awal 900 = nama folder korpus. */
+/** Menu - `M_NAV_MENU.LABEL` sesudah slot 961. */
 export const MENU_MPNL = {
-  /** Nama folder korpus `D:\XML\RNM_BRD\Master Product Name Life`. */
-  kelompok: 'Master Product Name Life',
+  /**
+   * `[tidak ada di korpus]` - nama tampilan: folder korpus `D:\XML\RNM_BRD\Master Product Name Life` tanpa kata
+   * "Master" (keputusan work owner 03-10-2026, nama tampilan saja; migrasi 961). Kode modul tetap.
+   */
+  kelompok: 'Product Name Life',
 } as const
 
 

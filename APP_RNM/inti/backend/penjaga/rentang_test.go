@@ -215,7 +215,9 @@ func pernyataanPerLangkah(t *testing.T, mundur bool) map[string][]string {
 // slot menu modul `modul` tidak sah; kosong = sah.
 //
 // Sah HANYA: maju `UPDATE ... SET DIMIGRASI = '1' ... WHERE KODE = '<modul>'`,
-// mundur yang sama dengan `'0'`. `INSERT INTO M_NAV_MENU` di slot = MERAH:
+// mundur yang sama dengan `'0'`; dan - untuk baris `labelTampilDisetujui`
+// (keputusan work owner 03-10-2026) - maju `UPDATE ... SET LABEL = '<nama
+// tampilan>' ... WHERE KODE = '<modul>'`, mundur kembali nama folder. `INSERT INTO M_NAV_MENU` di slot = MERAH:
 // baris modul sudah ada sejak 900 (satu per folder korpus), dan butir di bawah
 // modul dicabut keputusan work owner 30-09-2026.
 func pelanggaranSlotMenu(modul string, maju, mundur []string) []string {
@@ -224,6 +226,23 @@ func pelanggaranSlotMenu(modul string, maju, mundur []string) []string {
 		alasan = append(alasan, "berkas slot menu tanpa satu pun pernyataan")
 	}
 	periksa := func(arah, p, mauDimigrasi string) {
+		if m := polaUbahLabel.FindStringSubmatch(p); m != nil {
+			lt, disetujui := labelTampilDisetujui[modul]
+			mau := lt.tampil
+			if mauDimigrasi == "0" {
+				mau = lt.folder
+			}
+			switch {
+			case m[2] != modul:
+				alasan = append(alasan, fmt.Sprintf("%smengubah LABEL baris %s - slot ini milik %s", arah, m[2], modul))
+			case !disetujui:
+				alasan = append(alasan, arah+"mengubah LABEL baris "+modul+" - LABEL = nama folder korpus, kecuali "+
+					"nama tampilan labelTampilDisetujui (keputusan work owner)")
+			case m[1] != mau:
+				alasan = append(alasan, fmt.Sprintf("%smenyetel LABEL = '%s', mau '%s'", arah, m[1], mau))
+			}
+			return
+		}
 		if strings.Contains(strings.ToUpper(p), "INSERT INTO") {
 			alasan = append(alasan, arah+"INSERT INTO M_NAV_MENU di slot menu - satu modul satu baris, "+
 				"barisnya sudah ada sejak 900; slot hanya menyalakan DIMIGRASI: "+ringkas(p))
@@ -269,6 +288,26 @@ func TestAturanSlotMenuMenggigit(t *testing.T) {
 			"AND NOT EXISTS (SELECT 1 FROM {skema}.M_NAV_MENU b WHERE b.KODE = '" + butir + "')"
 	}
 	hapus := func(butir string) string { return "DELETE FROM {skema}.M_NAV_MENU WHERE KODE = '" + butir + "'" }
+	label := func(kode, teks string) string {
+		return "UPDATE {skema}.M_NAV_MENU SET LABEL = '" + teks + "', TGL_UBAH = SYSDATE\nWHERE KODE = '" + kode + "'"
+	}
+	// Nama tampilan (03-10-2026): sah hanya untuk baris labelTampilDisetujui, teksnya persis, mundur ke nama folder.
+	const ppn = "masterproductnamelife"
+	for _, k := range []struct {
+		nama, modul  string
+		maju, mundur []string
+		sah          bool
+	}{
+		{"nama tampilan disetujui", ppn, []string{label(ppn, "Product Name Life")}, []string{label(ppn, "Master Product Name Life")}, true},
+		{"nama tampilan lain", ppn, []string{label(ppn, "PNL")}, []string{label(ppn, "Master Product Name Life")}, false},
+		{"mundur bukan nama folder", ppn, []string{label(ppn, "Product Name Life")}, []string{label(ppn, "Product Name Life")}, false},
+		{"LABEL baris yang tidak disetujui", "alfa", []string{label("alfa", "A")}, []string{label("alfa", "Alfa")}, false},
+		{"LABEL modul lain dari slot ini", "alfa", []string{label(ppn, "Product Name Life")}, []string{label(ppn, "Master Product Name Life")}, false},
+	} {
+		if dapat := len(pelanggaranSlotMenu(k.modul, k.maju, k.mundur)) == 0; dapat != k.sah {
+			t.Errorf("%s: sah=%v, mau %v (%v)", k.nama, dapat, k.sah, pelanggaranSlotMenu(k.modul, k.maju, k.mundur))
+		}
+	}
 	for _, k := range []struct {
 		nama         string
 		maju, mundur []string

@@ -67,6 +67,10 @@ var (
 	// 901, dan bentuk lama mati di ORA-00904 - skema tiruan menagihnya.
 	polaUbahDimigrasi = regexp.MustCompile(`(?s)^UPDATE \{skema\}\.M_NAV_MENU SET DIMIGRASI = '([01])', TGL_UBAH = SYSDATE\s+` +
 		`WHERE KODE = '([^']+)'$`)
+	// polaUbahLabel - nama tampilan baris modul (keputusan work owner 03-10-2026), SAH HANYA untuk baris
+	// `labelTampilDisetujui` di slot menu modulnya sendiri (`pelanggaranSlotMenu`).
+	polaUbahLabel = regexp.MustCompile(`(?s)^UPDATE \{skema\}\.M_NAV_MENU SET LABEL = '([^']+)', TGL_UBAH = SYSDATE\s+` +
+		`WHERE KODE = '([^']+)'$`)
 	polaIndeksMenu = regexp.MustCompile(`^CREATE INDEX \{skema\}\.(\w+) ON \{skema\}\.M_NAV_MENU \((\w+)\)$`)
 	// polaUbahDimigrasiLama - bentuk slot SEBELUM 901 (menyebut PARENT_ID).
 	// Dikenal supaya skema tiruan menolaknya dengan SEBAB yang benar -
@@ -75,6 +79,18 @@ var (
 		`WHERE KODE = '([^']+)' AND PARENT_ID IS NULL$`)
 	polaKonstrain = regexp.MustCompile(`CONSTRAINT (\w+) `)
 )
+
+// labelTampil - nama tampilan baris modul yang BUKAN nama folder korpus.
+type labelTampil struct{ folder, tampil string }
+
+// labelTampilDisetujui - SATU-SATUNYA baris modul yang LABEL-nya bukan nama folder korpus: nama tampilan tanpa kata
+// "Master" (keputusan work owner 03-10-2026 "ganti nama modul ... hapus kata Master nya", nama tampilan saja - KODE,
+// MODUL, folder, rute, dan MODUL_AKTIF tetap). Diubah slot menu modulnya sendiri (961 / 959); mundurnya
+// mengembalikan nama folder. Setiap baris lain tetap LABEL = nama folder VERBATIM. Jumlahnya dikunci.
+var labelTampilDisetujui = map[string]labelTampil{
+	"masterproductnamelife":   {folder: "Master Product Name Life", tampil: "Product Name Life"},
+	"mastercontractretrolife": {folder: "Master Contract Retro Life", tampil: "Contract Retro Life"},
+}
 
 // barisMenu - satu baris M_NAV_MENU di skema tiruan. `induk` kosong = baris
 // modul; terisi = butir anak (900 saja).
@@ -190,6 +206,14 @@ func (s *skemaMenu) terapkan(p string) error {
 			return fmt.Errorf("UPDATE DIMIGRASI atas %s - baris modul itu tidak (belum) ada", m[2])
 		}
 		s.baris[i].dimigrasi = m[1]
+		return nil
+	}
+	if m := polaUbahLabel.FindStringSubmatch(p); m != nil {
+		i := s.cari(m[2])
+		if i < 0 || s.baris[i].induk != "" {
+			return fmt.Errorf("UPDATE LABEL atas %s - baris modul itu tidak (belum) ada", m[2])
+		}
+		s.baris[i].label = m[1]
 		return nil
 	}
 	if pk, ok := migrasi.BacaPerintahKatalog(p); ok {
@@ -417,9 +441,10 @@ func TestCheckGroupMenu(t *testing.T) {
 }
 
 // Hasil bersih 900 + 901 + slot: DUA PULUH baris, satu per folder modul
-// korpus, nol butir anak. LABEL = nama folder VERBATIM, KODE = MODUL = nama
-// modul backend (tabel nama modul: nama folder tanpa spasi, huruf kecil),
-// URUTAN = urutan di dalam GROUPMENU.
+// korpus, nol butir anak. LABEL = nama folder VERBATIM - kecuali nama tampilan
+// `labelTampilDisetujui` (03-10-2026) -, KODE = MODUL = nama modul backend
+// (tabel nama modul: nama FOLDER tanpa spasi, huruf kecil), URUTAN = urutan di
+// dalam GROUPMENU.
 //
 // Menggantikan `TestIsiAwalMenuDuaPuluhKelompok` (900 saja) - brief menu datar
 // 30-09-2026 §4: penjaga membaca hasil bersih, bukan isi 900.
@@ -434,14 +459,24 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 	kode := map[string]bool{}
 	urutanTerakhir := map[string]int{}
 	var label []string
+	tampil := 0
 	for _, k := range kelompok {
 		if kode[k.kode] {
 			t.Errorf("KODE %s ganda", k.kode)
 		}
 		kode[k.kode] = true
-		label = append(label, k.label)
-		if mau := strings.ToLower(strings.ReplaceAll(k.label, " ", "")); k.kode != mau || k.modul != mau {
-			t.Errorf("baris %q: KODE %q, MODUL %q, mau keduanya %q (tabel nama modul)", k.label, k.kode, k.modul, mau)
+		// Nama folder baris ini: LABEL-nya, atau - untuk nama tampilan yang disetujui - folder asalnya.
+		folder := k.label
+		if lt, ada := labelTampilDisetujui[k.kode]; ada {
+			tampil++
+			if k.label != lt.tampil {
+				t.Errorf("baris %s: LABEL %q, mau nama tampilan %q (labelTampilDisetujui)", k.kode, k.label, lt.tampil)
+			}
+			folder = lt.folder
+		}
+		label = append(label, folder)
+		if mau := strings.ToLower(strings.ReplaceAll(folder, " ", "")); k.kode != mau || k.modul != mau {
+			t.Errorf("baris %q: KODE %q, MODUL %q, mau keduanya %q (tabel nama modul)", folder, k.kode, k.modul, mau)
 		}
 		// URUTAN 1, 2, 3, ... di dalam golongannya, menurut urutan berkas.
 		if k.urutan != urutanTerakhir[k.golongan]+1 {
@@ -453,6 +488,9 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 		if urutanTerakhir[g] == 0 {
 			t.Errorf("golongan %s tanpa satu pun modul", g)
 		}
+	}
+	if tampil != len(labelTampilDisetujui) {
+		t.Errorf("%d nama tampilan terpakai, labelTampilDisetujui memuat %d - pengecualian mati dibuang", tampil, len(labelTampilDisetujui))
 	}
 
 	// Folder modul korpus: folder yang memuat Activity DAN Section. Korpus

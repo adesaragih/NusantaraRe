@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest'
 
 import { AKAR_APLIKASI, folderKorpusBelumDimigrasi } from '../inti/frontend/uji/sumber'
 import { MENU, MODUL_LAIN_TERLARANG } from '../inti/frontend/labels'
-import { FOLDER_KORPUS } from './katalogKorpus'
+import { LABEL_MENU } from './katalogKorpus'
 import { MENU_TCO } from '../modul/treatycontractout/frontend/labels'
 import { ENTRI_MENU, MODUL_FRONTEND } from './daftar'
 import { KELOMPOK_CLAIMLIFE } from '../modul/claimlife/frontend/menu'
@@ -37,7 +37,7 @@ function tanpaKomentar(teks: string): string {
 const kode = tanpaKomentar(SUMBER)
 
 /** Nama kelompok yang Shell render, dibaca dari labelnya. */
-const KELOMPOK_SIDEBAR = Object.values(FOLDER_KORPUS)
+const KELOMPOK_SIDEBAR = Object.values(LABEL_MENU)
 
 describe('menu hanya yang berbukti korpus', () => {
   it('kelompok sidebar TEPAT dua puluh', () => {
@@ -54,7 +54,7 @@ describe('menu hanya yang berbukti korpus', () => {
     // Dan seluruhnya disebut di Shell, supaya tidak ada kelompok yang
     // terdaftar di label tetapi tidak dirender.
     for (const nama of KELOMPOK_SIDEBAR) {
-      expect(Object.values(FOLDER_KORPUS)).toContain(nama)
+      expect(Object.values(LABEL_MENU)).toContain(nama)
     }
   })
 
@@ -82,7 +82,7 @@ describe('menu hanya yang berbukti korpus', () => {
     // keputusan sepi.
     const label = modul.map((e) => e.label)
     expect(modul).toHaveLength(MODUL_FRONTEND.length)
-    for (const l of label) expect(Object.values(FOLDER_KORPUS), l).toContain(l)
+    for (const l of label) expect(Object.values(LABEL_MENU), l).toContain(l)
     // Label butir navigasi lama tidak tampil lagi sebagai menu.
     for (const lama of ['Inbox Claim Life', 'Register', 'PremiumList', 'Inbox Komite']) {
       expect(label, lama).not.toContain(lama)

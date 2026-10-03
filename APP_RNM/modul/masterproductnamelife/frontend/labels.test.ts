@@ -190,7 +190,7 @@ const BUKTI_SEBAGIAN: ReadonlyArray<readonly [kunci: string, berkas: string, bar
 
 /** Kunci `[tidak ada di korpus]` - masing-masing beralasan di `labels.ts`. */
 const BUKAN_KORPUS: readonly string[] = [
-  'MENU_MPNL.kelompok', // nama FOLDER korpus, dibuktikan terpisah di bawah
+  'MENU_MPNL.kelompok', // nama tampilan = folder korpus tanpa "Master " (03-10-2026), dibuktikan terpisah di bawah
   'LAIN_MPNL.kosong',
   'LAIN_MPNL.terpotong',
   'LAIN_MPNL.tambahBaris',
@@ -257,7 +257,8 @@ describe.skipIf(!adaKorpus)('label Master Product Name Life berbukti barisnya', 
   })
 
   it('nama menu = nama folder korpus', () => {
-    expect(readdirSync(join(KORPUS, '..'))).toContain(LABEL.MENU_MPNL.kelompok)
+    // Keputusan work owner 03-10-2026: nama tampilan = nama folder korpus tanpa kata "Master".
+    expect(readdirSync(join(KORPUS, '..'))).toContain(`Master ${LABEL.MENU_MPNL.kelompok}`)
   })
 
   it('ketujuh section pemilih memuat Search, ID, Name / RIRate Name, Choose; ketujuh FlowAction Submit / Cancel', () => {

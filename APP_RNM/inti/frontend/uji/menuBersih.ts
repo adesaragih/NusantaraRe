@@ -82,6 +82,9 @@ const POLA_BUTIR = /^INSERT INTO \{skema\}\.M_NAV_MENU \([^)]*\)\s+SELECT \{skem
 const HAPUS_BUTIR = "EXECUTE IMMEDIATE 'DELETE FROM {skema}.M_NAV_MENU WHERE PARENT_ID IS NOT NULL'"
 // Bentuk slot menu SESUDAH 901 saja (`WHERE KODE = '<modul>'`, berjangkar).
 const POLA_UBAH = /^UPDATE \{skema\}\.M_NAV_MENU SET DIMIGRASI = '([01])', TGL_UBAH = SYSDATE\s+WHERE KODE = '([^']+)'$/
+// Nama tampilan baris modul di slot menunya (keputusan work owner 03-10-2026). Keabsahannya - hanya baris
+// `labelTampilDisetujui`, teks persis - dijaga `inti/backend/penjaga`; di sini hanya diterapkan.
+const POLA_UBAH_LABEL = /^UPDATE \{skema\}\.M_NAV_MENU SET LABEL = '([^']+)', TGL_UBAH = SYSDATE\s+WHERE KODE = '([^']+)'$/
 
 /** Hasil bersih: baris modul, butir yang tersisa, dan cacah INSERT yang terbaca. */
 export interface MenuBersih {
@@ -123,6 +126,11 @@ export function menuBersih(berkas: readonly BerkasMigrasiMenu[] = berkasMenu()):
       const u = POLA_UBAH.exec(p)
       if (u !== null) {
         for (const x of hasil.baris) if (x.kode === u[2]) x.dimigrasi = u[1] === '1'
+        continue
+      }
+      const l = POLA_UBAH_LABEL.exec(p)
+      if (l !== null) {
+        for (const x of hasil.baris) if (x.kode === l[2]) x.label = l[1]!
         continue
       }
       hasil.takDikenal.push(`${b.nama}: ${p.slice(0, 80)}`)
