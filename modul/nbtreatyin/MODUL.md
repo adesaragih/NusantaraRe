@@ -71,6 +71,31 @@ sheet *NB Treaty In Prop* / *NonProp*), bangkitan `docs/alat/skema.py` dari kata
 peran-tempat konstanta kode, medan tak dikenal pemuat dokumen lama ke berkas laporan CSV.
 Perbandingan kolom lawan diagram: `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`. Slot menu `968`: satu `UPDATE DIMIGRASI` baris modul ini, nol `INSERT`.
 
+| Migrasi | Tabel yang dibuat | Sheet diagram |
+| --- | --- | --- |
+| 320 | `T_GENERAL_POLIS` | Prop + NonProp F9–F33 |
+| 321 | `T_POLIS_QUOTATION` | Prop + NonProp J35–J38 |
+| 322 | `T_POLIS_CEDING` | Prop + NonProp R40–R50 |
+| 323 | `T_POLIS_INSTALMENT` | Prop J52–J56 · NonProp J52–J55 |
+| 324 | `T_POLIS_INSTALMENT_DETAIL` | NonProp R57–R61 (NonProp saja) |
+| 325 | `T_POLIS_SPREADING` | Prop J66–J69 · NonProp J71–J74 |
+| 326 | `T_POLIS_XOL` | NonProp J76–J80 (NonProp saja) |
+| 327 | `T_POLIS_XOL_LAYER` | NonProp R82–R87 (NonProp saja) |
+
+## Tabel warisan yang dibaca dan ditulis
+
+Tidak dibuat dan tidak diubah strukturnya oleh modul ini; ditulis hanya bila diagram grilling menyebut penulisnya.
+
+| Tabel | Akses | Dasar |
+| --- | --- | --- |
+| `T_WORK_POLIS`, `SEQ_WORK_POLIS` | tulis + baca | akar diagram (B5); milik premiumlistlife |
+| `HISTORYAKSEPTASIPEGA` | tulis + baca | riwayat akseptasi (`InsertHistoryAkseptasiPega_Sql`, diagram Prop F98–F99) |
+| `HISTORYAKSEPTASIPRODUCTION` | tulis + baca | catatan usulan (`SaveViewSuggest -> InsertViewSuggest_SQL`, diagram Prop J74–J76; K4) |
+| `GENERATE_SEQUENCE_NUMBER` | tulis lewat `inti/backend/penomor` | deret nomor polis (padanan `PROC_GENERATE_SEQUENCE_NUMBER`); diagram F103 menyebutnya "dibaca saja" — `docs/PERMINTAAN-TIM-INTI.md` F8 |
+| `TANGGAL_CLOSING`, `KODE_PRODUKSI`, `CURRENCY`, `BUSINESS`, `REINSURANCETYPE`, `TREATYGROUP`, `MARKETINGOFFICER`, `CLIENT`, `AGENT`, `M_LOGIN_GO`, view `TREATYINDETAILJOINEDM`, `TREATYINDETAIL`, `TREATYINPRODUCTION` | baca | RD/RDB terjangkau; `TREATYINPRODUCTION` ditulis modul EDM |
+| `M_TREATY_IN`, `M_TREATY_IN_EDM` | baca (JSON, satu fungsi `repository.MasterXOLDariJSON`) | K8 |
+| `JSON_POLIS` | baca (pemuat dokumen lama saja) | tiket 22 |
+
 ## Pemuat dokumen lama (tiket 22)
 
 Memindah seluruh dokumen polis generasi NB (`PRODKE 0`) dari `POOLDATA.JSON_POLIS` ke 8 tabel diagram
