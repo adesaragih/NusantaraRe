@@ -61,6 +61,9 @@ Baca-saja: medan ber-`ro = ProductName.IsView=='true'` (mode lihat sesudah `View
 > kini berkolom seperti `pyAdditionalFields` ber-`pyShow` true: **ID** (b33213 → `.PlanID`), **CoverName** (b33247 →
 > `.Plan`), **Business** (b33280 → `.Name`), **Benefit** (b33313 → `.Benefit`), kepala = `pyFieldLabel` RD
 > `BrowseProductTypeLife_RD` (b568, b642, b583, b613); dicari pada CoverName dan Business (`pyUseForSearch` true).
+> ⛔ *Lanjutan 03-10-2026 - keputusan work owner "tolong ubah jadi model dropdown":* Plan Name kini **dropdown**
+> (`components/DropdownCari.tsx`, mesin yang sama dengan pemilih master) - menyimpang dari isian bebas b33137: nilai hanya
+> dari daftar RD. Kolom, pencarian, dan penerima `set` tetap seperti di atas; `Saran.tsx` (autocomplete) dihapus.
 
 > ⭐ **`Document List` 03-10-2026:** dropdown dari 16 nilai PromptList properti `.Document` (XML dikirim work owner,
 > OQ-MPNL-05 sebagian terjawab); nilai lama di luar daftar tetap tampil bertanda, tidak dibuang; mode lihat teks.
