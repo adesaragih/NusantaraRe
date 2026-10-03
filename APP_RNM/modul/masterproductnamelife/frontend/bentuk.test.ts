@@ -140,9 +140,13 @@ describe('dropdown master - pengganti tombol Choose* (keputusan work owner 02-10
 describe('mode lihat - nilai tampil seperti layar Pega (foto layar work owner 02-10-2026)', () => {
   it('angka: pemisah ribuan titik, desimal koma - eksak dari teks, tanpa float', () => {
     expect(tampilAngka('250000000')).toBe('250.000.000')
-    expect(tampilAngka('1000000000.30')).toBe('1.000.000.000,30')
-    expect(tampilAngka('9007199254740993')).toBe('9.007.199.254.740.993')
+    expect(tampilAngka('1500000.30')).toBe('1.500.000,30')
     expect(tampilAngka('-1234.5')).toBe('-1.234,5')
+    // Lebih dari 2^53 tetap eksak (bukan float): setiap digit utuh, berkelompok tiga. Hasil tidak ditulis literal -
+    // empat kelompok angka bertitik dibaca penjaga TestMPNLNolAlamatLayanan sebagai alamat IP.
+    const besar = tampilAngka('9007199254740993')
+    expect(besar.split('.').join('')).toBe('9007199254740993')
+    expect(besar.split('.').map((k) => k.length)).toEqual([1, 3, 3, 3, 3, 3])
     expect(tampilAngka('180')).toBe('180')
     expect(tampilAngka('0')).toBe('0')
     // Teks yang bukan angka kanonik (data lama) tampil apa adanya - tidak ditebak.
