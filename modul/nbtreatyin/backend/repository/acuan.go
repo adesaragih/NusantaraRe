@@ -494,6 +494,11 @@ func (g *Gudang) PolisSerupa(ctx context.Context, h *models.Halaman) ([]string, 
 	if err1 != nil || err2 != nil {
 		return nil, nil // tanggal kosong: RDB membandingkan dengan NULL -> nol baris
 	}
+	// `BALANCE_DUE_TO = REPLACE({InputData.Totaltsi},',','.')` - Totaltsi kosong
+	// menjadi NULL di Oracle -> nol baris (bukan dibandingkan dengan 0).
+	if strings.TrimSpace(p("BalanceDueTo")) == "" {
+		return nil, nil
+	}
 	saldo, err := models.AngkaTeks("BalanceDueTo", p("BalanceDueTo"))
 	if err != nil {
 		return nil, err

@@ -449,8 +449,23 @@ func (l *Layanan) validasiKirim(ctx context.Context, p inti.Pelaku, h *models.Ha
 // PesanDuplikatAwal - VERBATIM `TreatyRealizationCheckDuplicate` langkah 4.
 const PesanDuplikatAwal = "Protect Duplicate Policy; data is similar to "
 
-// cekDuplikat = `TreatyRealizationCheckDuplicate`: ada polis produksi serupa
-// dan ClaimType bukan "XOL" -> pesan halaman (submit tertahan).
+// cekDuplikat = `Activity/TreatyRealizationCheckDuplicate`, dipanggil HANYA
+// `InputPolicyTreatyInPost_Act` langkah 3 (pasca-proses flow action admin)
+// bersyarat `.PolicyTreatyIn.IsApproved==1` (AC 59, RALAT putaran 2):
+//
+//	1    Page-Clear-Messages pyWorkPage
+//	2-3  RDB `TreatyRealizationCheckDuplicate` atas TREATYINPRODUCTION
+//	     (`repository.PolisSerupa`, pemetaan parameter apa adanya)
+//	4    local.msg = "Protect Duplicate Policy; data is similar to "
+//	5.1  setiap baris: local.msg = local.msg + .CARI1 + " "
+//	6    `@SizeOfPropertyList(ResultData.pxResults) > 0 && .PolicyTreatyIn.ClaimType != "XOL"`
+//	     -> Page-Set-Messages pyWorkPage: submit tertahan (422)
+//
+// ⛔ `CheckDuplicateOffer` (peringatan "jumlah klaim > 0") TIDAK dibangun:
+// langkah 1-4 berlabel `//`, dan satu-satunya pemanggilnya (`SetTreatyIn_Act`
+// langkah 14) memanggilnya tanpa parameter (`pyPassCurrentParameterPage=false`)
+// sehingga `GetCountClaim` selalu menghitung `masterid = NULL` = 0 - langkah
+// 7-8 (pesannya) tidak pernah benar.
 func (l *Layanan) cekDuplikat(ctx context.Context, h *models.Halaman) error {
 	sama, err := l.g.PolisSerupa(ctx, h)
 	if err != nil {
