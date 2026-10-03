@@ -120,20 +120,37 @@ func SalinQuotation(h *Halaman) {
 	}
 }
 
-// GeserTanggalProduksi = `InputPolicyTreatyInPre_Act` langkah 9:
-// hari StatementDate melewati hari tutup buku -> ProductionDate = tanggal 1
-// bulan berikut.
+// GeserTanggalProduksi = `InputPolicyTreatyInPre_Act` langkah 9 ("Set
+// Production Date kalau diatas tanggal 25"):
 //
-// ⛔ PENYIMPANGAN SADAR. Rule menanam `@substring(StatementDate,6,2)>25`;
-// `GeneratePolicyNoTreaty_Act` langkah 5.3 membaca hari yang sama dari
-// `POOLDATA.TANGGAL_CLOSING`. Dua aturan hidup berdampingan - pola yang SAMA
-// dengan `InsertJsonPolisLife_Act` b1170 lawan `PROC_GENERATE_SEQUENCE_NUMBER`
-// di PremiumList Life, tempat `[keputusan work owner]` menetapkan "ikuti yang
-// dari DB" (penjaga `TestNolAmbangTutupBukuTertanam`). Preseden itu
-// diterapkan di sini: `hariClosing` dibaca dari tabel oleh pemanggil.
+//	syarat  `@substring(pyWorkPage.PolicyTreatyIn.StatementDate,6,2)>25`
+//	        benar -> jalankan; salah -> lewati (hari = batas TIDAK digeser)
+//	ProductionDate = @addCalendar(StatementDate,'0','1','0','0','0','0','0')
+//	ProductionDate = @substring(ProductionDate,0,6) + "01" + @substring(ProductionDate,8)
+//
+// Hasilnya tanggal 1 bulan berikut; `@substring(..,8)` membawa BAGIAN WAKTU
+// StatementDate (`THHmmss.SSS GMT`) apa adanya - jamnya dipertahankan.
+// ⛔ RALAT putaran 2: port pertama menulis pukul 00:00:00 - tidak ada di rule.
+//
+// ⛔ PENYIMPANGAN SADAR. Rule menanam `>25`; `GeneratePolicyNoTreaty_Act`
+// langkah 5.3 membaca hari yang sama dari `POOLDATA.TANGGAL_CLOSING`
+// (`GETTanggalClosing_SQL` -> `Local.TglProd`). Dua aturan hidup berdampingan
+// - pola yang SAMA dengan `InsertJsonPolisLife_Act` b1170 lawan
+// `PROC_GENERATE_SEQUENCE_NUMBER` di PremiumList Life, tempat `[keputusan work
+// owner]` menetapkan "ikuti yang dari DB" (penjaga
+// `TestNolAmbangTutupBukuTertanam`). Preseden itu diterapkan di sini:
+// `hariClosing` dibaca pemanggil dari tabel (`penomor.HariClosing`), dan
+// pembandingnya tetap `>` seperti rule.
+//
+// ⚠️ Catatan: `@substring(StatementDate,6,2)` membaca hari dari teks internal
+// DateTime Pega (GMT); di sini hari dibaca di zona waktu `statement` itu sendiri
+// (jam aplikasi). Keduanya sama kecuali pukul 00:00-06:59 WIB bila jam
+// aplikasi berzona WIB - dicatat, tidak ditiru (bergantung zona JVM Pega, yang
+// tidak ada di korpus).
 func GeserTanggalProduksi(statement time.Time, hariClosing int) time.Time {
 	if statement.Day() > hariClosing {
-		return time.Date(statement.Year(), statement.Month()+1, 1, 0, 0, 0, 0, statement.Location())
+		return time.Date(statement.Year(), statement.Month()+1, 1,
+			statement.Hour(), statement.Minute(), statement.Second(), statement.Nanosecond(), statement.Location())
 	}
 	return statement
 }

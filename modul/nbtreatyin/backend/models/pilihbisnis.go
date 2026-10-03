@@ -16,9 +16,11 @@ package models
 // (`[keputusan work owner]` P29, PERTANYAAN-untuk-DBA "enam aktivitas yang
 // membongkar JSON tidak dimigrasi"): langkah 9-10 (`adoptJSONObject`), 13
 // (jadwal angsuran dari `TreatyIn.INSTALLMENT`), 16
-// (`InputPolicyTreatyInDetail_NonProp`), 17 (`TreatyInputPctCommSpreading` -
-// `FetchMasterTreatyIn`), 18 (`TreatyIn.LimitShareSummaryList`). Yang
-// dibangun: langkah 3-8, 11, 14, 15 - seluruhnya membaca view dan tabel acuan.
+// (`InputPolicyTreatyInDetail_NonProp`), 18 (`TreatyIn.LimitShareSummaryList`).
+// Yang dibangun: langkah 3-8, 11, 14, 15 - seluruhnya membaca view dan tabel
+// acuan - dan langkah 17 (`TreatyInputPctCommSpreading`) SEBAGIAN: RiCommOgp
+// dari kolom view RIOGR/RIONR (`models/komisi.go`, RALAT putaran 2); baris
+// spreading-nya tidak (bukan kolom view, alasan c).
 
 import (
 	"strings"
