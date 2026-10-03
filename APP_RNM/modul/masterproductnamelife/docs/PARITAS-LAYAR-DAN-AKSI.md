@@ -56,6 +56,13 @@ Sistem baru membaca `M_PRODUCT_LIFE.ID` + `JSONDATA` sendiri (P2) — kunci kolo
 Pesan: wadah b616 `STSSAVE==100` → `OutputParam.ERRMSG` b878; wadah b1269 `STSSAVE==99` → `ERRMSG` b1531 (dipakai `CopyProduct`); wadah b1921 `ProductName.ERRMSG!=''` → b2183.
 Baca-saja: medan ber-`ro = ProductName.IsView=='true'` (mode lihat sesudah `View`; `Edit` membukanya). *(Ralat audit 02-10-2026: tidak SETIAP medan - enam medan pemilih master SELALU baca-saja, `pyReadOnly` true + `pyEditOptions` Read-only + `pyReadOnlyCondition` kosong: Ceding b4040, SOB b4428, R/I Risk Name b7362, Cause Of Loss b10626, Policy Holder b17062, Currency b28105; nilainya hanya dari tombol `Choose*` *(sejak keputusan work owner 02-10-2026: dari dropdown master, §4)*. Sel `PLAN LIST` `Bussines` `.Name` b33504 dan `Benefit` b33658 juga selalu baca-saja. Lihat RALAT 02-10-2026.)*
 
+> ⛔ **Mode lihat 03-10-2026 - keputusan work owner:** *"TOLONG PERBAIKI, JIKA VIEW TIDAK TAMBAH/EDIT/DELETE SAAT KLIK EDIT
+> BARU BISA"*. Menyimpang dari XML (tombol `Add`/`Delete` grid dan checkbox `On Retention` tidak ber-`ro`): di mode lihat
+> SEMUA aksi ubah tersembunyi - `Add`/`Delete` PLAN LIST, `Add`/`Copy row`/`Delete` FINANCIAL UNDERWRITING dan UNDERWRITING
+> LIMIT, `Copy`, `Add attachment`/kirim ulang/`Delete` lampiran - dan `On Retention` mati; sel grid (termasuk `Plan Name`)
+> tampil teks. Tetap: `Close`, `Edit`, `Generate`, `View Rate`, `Refresh`, `Download All`, unduh berkas, `View Office
+> Online`. Sesudah `Edit` semuanya kembali. Penjaga `components/FormProduk.test.ts` (*mode lihat: nol tambah/edit/delete*).
+
 > ⭐ **Tata letak 02-10-2026 (foto layar Pega dari work owner):** *"sekarang isinya perbaiki mengikuti tata letak begini, kamu
 > tetep boleh berkreasi asal membuat jauh lebih baik"*. Wadah b2573 dirender sebagai dua kartu berdampingan, mengikuti
 > XML: **`TREATY NAME`** (`<pyTitle>` b2934): medan sisi umum, lalu `LIEN CLAUSE` dan `DOCUMENT CLAIM`; **`INWARD`**
