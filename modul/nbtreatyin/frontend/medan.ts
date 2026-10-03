@@ -19,8 +19,10 @@
 //   - tombol `Select Source Of Business` (admin, `.ClaimType = 'XOL Retro'`) BUKAN
 //     medan: dibangun paket P3 di `components/PilihSumberBisnis.tsx` (RALAT tiket 11);
 //   - tombol `Choose Business R` (wadah `.ClaimType = 'XOL Retro'`) dan subsection
-//     `DetailPoliciesNonProportional` / `DetailPolicyTreatyOutNonProportional`
-//     (wadah `.IsNewPolicyNonProp = 1`) - jalur NonProp/XOL, paket P5;
+//     `DetailPolicyTreatyOutNonProportional` (wadah `.IsNewPolicyNonProp = 1 &&
+//     .ClaimType = 'XOL Retro'`): treaty KELUAR, K8 butir 4 tetap tidak dibangun.
+//     Subsection `DetailPoliciesNonProportional` DIBANGUN (K8) -
+//     `components/DetailNonProp.tsx`, bukan medan di berkas ini;
 //   - tombol `Survey Report` (`HistoricalSurveyReport[UW]`) - K7: tidak dibangun,
 //     tidak ada tabel di diagram grilling;
 //   - grid `Breakdown Spreading` (`.BreakDownSpreadList`) - K9 (KEPUTUSAN-RONDE-12

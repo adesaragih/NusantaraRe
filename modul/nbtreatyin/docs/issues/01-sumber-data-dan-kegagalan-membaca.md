@@ -104,3 +104,41 @@ tersembunyi**.
    `BreakDownSpreading_Act` (K9) dan 4 (berlabel `//`) tidak.
 3. ⚠️ Urutan `Limits/Detail` dokumen tidak ada di view: baris dibaca `ORDER BY ID`, baris cocok
    terakhir menang (sama dengan kalang Pega bila hanya satu baris cocok).
+
+## ⛔ RALAT K8 — master jalur NonProp/XOL (putaran 2, 03-10-2026)
+
+`[keputusan work owner]` **K8** (PROMPT-NB-TREATY-IN-PUTARAN-2 bab 2; PESAN-KOREKSI-PUTARAN-2 bagian D).
+
+1. **`[penyimpangan sadar]` atas P29.** Bunyi lama (RALAT 2026-10-03 butir 1): *"`TreatyIn.RNMShareP`,
+   `RNMShare`, `BrokeragePercentP`, `CurrencyList`, `INSTALLMENT`, `Limits/Share` milik JSON master (P29) dan
+   **tidak punya kolom padanan**"*. Bunyi baru: untuk jalur **NonProporsional / XOL saja**, master dibaca
+   **BACA-SAJA** dari `JSONDATA` `M_TREATY_IN` / `M_TREATY_IN_EDM` — persis SQL `RDBList\BrowseTreatyIn`
+   (`select JSONDATA ... from pooldata.M_TREATY_IN where ID={TreatyIn.ID} union all ... M_TREATY_IN_edm ...`)
+   dan `RDBList\BrowseTreatyInJoinEDM` — di **SATU** fungsi `repository.MasterXOLDariJSON`, di balik
+   `services.PembacaMasterTreaty` (kelak kontrak modul `treatyin`, PERMINTAAN-TIM-INTI bagian E). Hanya
+   medan daftar `models.SkalarMasterXOL` / `models.DaftarMasterXOL` yang lolos (selebihnya dibuang di
+   pengurai). Dasar: medan itu tidak ada di view, dan tabel master relasional `treatyin` (`KONTRAK`,
+   `LAYER`, `BAGIAN`, `PEMULIHAN_LIMIT`, `TERMIN`, `POTONGAN`) nol baris (dicek 03-10-2026).
+2. **Daftar medan K8 lawan XML.** K8 menyebut `TreatyIn.TreatyXOLList`, `Share().SpreadingListXOL`,
+   `Installment`, `RetroList`, `FacultativeShare`, `FlagPPH`, `TypeTax`. Dari XML: `TreatyXOLList` adalah
+   KELUARAN (`PolicyTreatyIn.TreatyXOLList`, bukan medan master); `FlagPPH`/`TypeTax` dibaca dari halaman
+   POLIS (`pyWorkPage.PolicyTreatyIn.*`, isian layar admin), bukan master; `RetroList` hanya dibaca
+   `TreatyNonPropSetSpreading` langkah 8-9 yang berlabel `//` — **tidak dibaca**. Selebihnya yang dibaca
+   rule terjangkau (nomor langkah di `models/masterxol.go`): `Share()` beserta `GrossPremiumList`,
+   `NetPremiumList`, `DeductionList`, `DeductionTotalList`, `RnmLimitList`, `SpreadingListXOL`;
+   `Installment().InstallmentList`; `FacultativeShare`, `FacultativeShareList()`; `RNMShare`; `EDMState`;
+   `ProportionType`; `Limits()` (pemulihan); ringkasan dan total yang ditampilkan subsection
+   `DetailPolicyTreatyInNonProportional`.
+3. **Kegagalan membaca master** saat pilih bisnis = **422, nol simpanan** (AC 36-38, sama dengan view).
+   Saat pra-proses (`TreatyRealizationCheckXOLList`) mengikuti XML: master kosong, pesan
+   `"Error fetching XolList"`.
+4. **AC 57 tetap ⛔** (K8 butir 4): treaty keluar — `RDBList\BrowseTreatyOut`
+   `select JSONDATA as CLASSOFBUSINESS from pooldata.M_treaty_out where ID={pyWorkPage.PolicyTreatyIn.NoOffer}`.
+   **AC 58 tetap ✅**: nol penulisan treaty keluar maupun master treaty masuk.
+5. **RALAT butir 2 di atas:** `InputPolicyTreatyInDetail_preACT` langkah **16 dan 18 dibangun** (K8);
+   langkah 17 sebagian dari view (RALAT P4 di atas); langkah 9-10 (`M_TREATY_IN_DETAIL_EDM` — bukan tabel
+   K8) dan 13 tetap tidak.
+6. `IsEDMInputOnNB` (NonProp langkah 10) disimpan di kolom `T_GENERAL_POLIS.IS_EDM_INPUT_ON_NB` (medan
+   `PolicyTreatyIn` diagram, katalog paket penyimpanan); syarat tampil `DetailPoliciesNonProportional`
+   (`!TreatyMasterInEDM || IsEDMInputOnNB == true`) selalu benar sesudah langkah 10, sehingga varian EDM
+   subsection tidak terjangkau.

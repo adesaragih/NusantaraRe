@@ -96,6 +96,15 @@ satu tempat = tertunda), nol peran karangan (AC 91). Uji: `models/peran_tempat_t
 **Status tetap needs-info** — pemetaan 12 tempat dan arahnya menunggu IAM; mengisinya = menyunting satu
 variabel, bukan migrasi.
 
+## ⛔ RALAT K8 — tempat `DetailPoliciesNonProportional` (putaran 2, 03-10-2026)
+
+Bunyi lama (tabel tempat): *"label NON EDM / EDM `DetailPoliciesNonProportional` (`<ID-operator-2>`) | bagian
+XOL non-proporsional tidak dibangun (P29)"*. Bunyi baru: subsection `DetailPoliciesNonProportional`
+**dibangun** (K8, `frontend/components/DetailNonProp.tsx`); kedua LABEL teks "NON EDM" / "EDM" yang tampil
+hanya bagi `OperatorID.pxInsName = '<ID-operator-2>'` tetap **tertunda** sebagai tempat berperan (tidak
+ditampilkan siapa pun sampai IAM memetakan perannya, AC 81). Isi subsection tidak bergantung pada
+label itu.
+
 ## ⭐ Putaran 2 — paket P8: work group di gerbang portal (03-10-2026)
 
 Butir terbuka **baru** (tidak menahan tiket 04): wadah grid `Section\SFAPortal_OpportunitiesList.xml` bersyarat

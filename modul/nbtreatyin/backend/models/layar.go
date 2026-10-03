@@ -247,9 +247,10 @@ var medanAdmin = func() map[string]bool {
 // GabungMasukanLayar menyalin nilai kiriman layar `masuk` ke halaman
 // tersimpan `h`, HANYA untuk medan yang boleh diubah di posisi itu.
 //
-//	Admin   `medanAdmin` (daftar izin), beserta daftar SpreadingRiskList,
-//	        ListInstallment, TreatyXOLList (baris boleh ditambah/dihapus -
-//	        tombol Add/Delete layar admin)
+//	Admin   `medanAdmin` (daftar izin), beserta daftar `DaftarDariLayar`
+//	        (SpreadingRiskList, ListInstallment - baris boleh ditambah/dihapus,
+//	        tombol Add/Delete layar admin). ⛔ RALAT K8: TreatyXOLList tidak
+//	        tampil di section mana pun - tidak lagi diterima dari layar.
 //	Atasan  hanya `medanAtasan`; seluruh daftar terkunci
 //
 // Kedua layar: `.ProductionDate` (`ListSuggest`) diterima hanya bila tampil -
@@ -276,7 +277,7 @@ func GabungMasukanLayar(h, masuk *Halaman, posisi string, tempatTanggalProduksi 
 				h.Setel(j, v)
 			}
 		}
-		for _, d := range []string{DaftarSpreading, DaftarAngsuran, HalamanPolis + ".TreatyXOLList"} {
+		for _, d := range DaftarDariLayar(h) { // nonprop_layar.go
 			if b, ada := masuk.Daftar[d]; ada {
 				h.SetelDaftar(d, salinBaris(b))
 			}

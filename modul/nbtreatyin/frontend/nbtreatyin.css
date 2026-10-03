@@ -99,3 +99,15 @@
   grid-template-columns: max-content 1fr;
   gap: 6px 16px;
 }
+
+/* Subsection DetailPoliciesNonProportional: grid total per mata uang berdampingan, rincian angsuran per mata uang. */
+.nbtreatyin .nbti__total-np {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.nbtreatyin .nbti__angsuran-np {
+  margin: 8px 0 16px;
+}

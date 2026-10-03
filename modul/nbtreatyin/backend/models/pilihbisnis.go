@@ -14,13 +14,15 @@ package models
 //
 // ⛔ Bagian JSON `InputPolicyTreatyInDetail_preACT` TIDAK dibangun
 // (`[keputusan work owner]` P29, PERTANYAAN-untuk-DBA "enam aktivitas yang
-// membongkar JSON tidak dimigrasi"): langkah 9-10 (`adoptJSONObject`), 13
-// (jadwal angsuran dari `TreatyIn.INSTALLMENT`), 16
-// (`InputPolicyTreatyInDetail_NonProp`), 18 (`TreatyIn.LimitShareSummaryList`).
+// membongkar JSON tidak dimigrasi"): langkah 9-10 (`adoptJSONObject`
+// `M_TREATY_IN_DETAIL_EDM`), 13 (jadwal angsuran dari `TreatyIn.INSTALLMENT`).
 // Yang dibangun: langkah 3-8, 11, 14, 15 - seluruhnya membaca view dan tabel
 // acuan - dan langkah 17 (`TreatyInputPctCommSpreading`) SEBAGIAN: RiCommOgp
 // dari kolom view RIOGR/RIONR (`models/komisi.go`, RALAT putaran 2); baris
 // spreading-nya tidak (bukan kolom view, alasan c).
+// ⭐ RALAT K8 (03-10-2026): langkah 16 (`InputPolicyTreatyInDetail_NonProp`) dan
+// 18 (`TreatyIn.LimitShareSummaryList`) DIBANGUN - master XOL dibaca baca-saja
+// (`nonprop.go`, `nonprop_detail.go`, `services/nonprop.go`).
 
 import (
 	"strings"
@@ -81,8 +83,8 @@ func TerapkanDetailKontrak(h *Halaman, b BarisKontrak) {
 	}
 	// langkah 6: TreatyIn.ID = pxResults(1).ID
 	h.Setel(HalamanMaster+".ID", b["ID"])
-	// langkah 11: Property-Remove ListInstallment
-	h.SetelDaftar(DaftarAngsuran, nil)
+	// langkah 11: Property-Remove ListInstallment (beserta InstallmentList bersarang)
+	hapusDaftarBeserta(h, DaftarAngsuran)
 }
 
 // TerapkanMasterKontrak mengisi halaman `TreatyIn` dari baris view yang sama

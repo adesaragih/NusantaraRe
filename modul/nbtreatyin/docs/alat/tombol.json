@@ -110,7 +110,7 @@
         "Activity/SetValueRetro_Act"
       ],
       "padanan": "-",
-      "status": "paket P5 (jalur NonProp/XOL)"
+      "status": "tidak dibangun - treaty KELUAR, [keputusan work owner] K8 butir 4: SetValueRetro_Act -> InputPolicyTreatyOutDetail_preACT membaca JSON M_TREATY_OUT (RDBList\\BrowseTreatyOutDetail: `select JSONDATA as CLASSOFBUSINESS from pooldata.M_treaty_out where ID={pyWorkPage.PolicyTreatyIn.NoOffer}`)"
     },
     {
       "tombol": "Survey Report",
@@ -422,18 +422,73 @@
       "status": "tidak dibangun sebagai aksi - tidak terpicu (AC 49-52)"
     },
     {
-      "tombol": "subsection DetailPoliciesNonProportional / DetailPolicyTreatyOutNonProportional (termasuk tombol TreatyInNonSetTotal 1=2)",
+      "tombol": "subsection DetailPolicyTreatyOutNonProportional",
       "section": "DetailPolicyTreatyIn / DetailDeptHeadTreatyIn_UW",
-      "tampil": "wadah .IsNewPolicyNonProp = 1 && .ClaimType != / = 'XOL Retro'",
-      "aksi_xml": "lihat INVENTARIS bab 5 Section/DetailPolicyTreatyInNonProportional*",
+      "tampil": "wadah .IsNewPolicyNonProp = 1 && .ClaimType = 'XOL Retro'",
+      "aksi_xml": "lihat INVENTARIS bab 5 Section/DetailPolicyTreatyOutNonProportional",
       "rule": [
-        "Section/DetailPoliciesNonProportional",
-        "Section/DetailPolicyTreatyInNonProportional",
-        "Section/DetailPolicyTreatyInNonProportionalEDM",
         "Section/DetailPolicyTreatyOutNonProportional"
       ],
       "padanan": "-",
-      "status": "paket P5 (jalur NonProp/XOL)"
+      "status": "tidak dibangun - treaty KELUAR, [keputusan work owner] K8 butir 4 (JSON M_TREATY_OUT: `select JSONDATA as CLASSOFBUSINESS from pooldata.M_treaty_out where ID={pyWorkPage.PolicyTreatyIn.NoOffer}`)"
+    },
+    {
+      "tombol": "subsection DetailPoliciesNonProportional (tampil)",
+      "section": "DetailPolicyTreatyIn / DetailDeptHeadTreatyIn_UW",
+      "tampil": "wadah .IsNewPolicyNonProp = 1 && .ClaimType != 'XOL Retro'; di dalamnya DetailPolicyTreatyInNonProportional bila !TreatyMasterInEDM || IsEDMInputOnNB == true (selalu benar sesudah NonProp langkah 10)",
+      "aksi_xml": "(tampil saja; master TreatyIn dibaca saat pilih bisnis / pra-proses)",
+      "rule": [
+        "Section/DetailPoliciesNonProportional",
+        "Section/DetailPolicyTreatyInNonProportional",
+        "When/TreatyMasterInEDM",
+        "Activity/InputPolicyTreatyInDetail_NonProp",
+        "Activity/TreatyRealizationCheckXOLList"
+      ],
+      "padanan": "pages/LayarKasus.tsx tampilNonProp -> components/DetailNonProp.tsx; master dari services.siapkanNonProp (PembacaMasterTreaty = repository.MasterXOLDariJSON, K8)",
+      "status": "dibangun (K8)"
+    },
+    {
+      "tombol": ".pyTemplateButton Button (refresh TreatyInNonSetTotal)",
+      "section": "DetailPolicyTreatyInNonProportional / ...EDM",
+      "tampil": "OTHER 1=2",
+      "aksi_xml": "click -> refresh TreatyInNonSetTotal",
+      "rule": [
+        "Activity/TreatyInNonSetTotal"
+      ],
+      "padanan": "-",
+      "status": "tidak dibangun - (a) tampil 1=2"
+    },
+    {
+      "tombol": "Add / Delete (section SpreadingRiskList NonProp)",
+      "section": "SpreadingRiskList (di DetailPolicyTreatyInNonProportional)",
+      "tampil": "InputParam.CARI12 != 'treaty' && != 'TreatyPolicy' && (TreatyIn.FacultativeShare = 0 || '')",
+      "aksi_xml": "click -> addRow / deleteRow (.SpreadingRiskList)",
+      "rule": [],
+      "padanan": "components/DetailNonProp.tsx (admin, spreadingTerbuka) -> diterima server models.DaftarDariLayar (NonProp: hanya bila FacultativeShare 0/'')",
+      "status": "dibangun (K8)"
+    },
+    {
+      "tombol": ".SharePercentage / .ClaimPercentage (section SpreadingRiskList NonProp)",
+      "section": "SpreadingRiskList (di DetailPolicyTreatyInNonProportional)",
+      "tampil": "terkunci bila TreatyIn.FacultativeShare > 0",
+      "aksi_xml": "change -> refresh CountSpreading_Act(SharePct, Index=.pxListSubscript, Type)",
+      "rule": [
+        "Activity/CountSpreading_Act"
+      ],
+      "padanan": "DetailNonProp.tsx onBlur -> POST /hitung {aksi: CountSpreading, indeks} -> models.CountSpreading",
+      "status": "dibangun (K8)"
+    },
+    {
+      "tombol": "grid ListInstallment (masterDetail InstallmentList)",
+      "section": "DetailPolicyTreatyInNonProportional",
+      "tampil": "selalu (dalam subsection)",
+      "aksi_xml": "pyRowEditing masterDetail -> FlowAction InstallmentList (Section InstallmentList pyReadOnly)",
+      "rule": [
+        "FlowAction/InstallmentList",
+        "Section/InstallmentList"
+      ],
+      "padanan": "DetailNonProp.tsx (hanya-baca; rincian per mata uang ditampilkan terbuka); server tidak menerima ListInstallment NonProp dari layar",
+      "status": "dibangun (K8)"
     }
   ]
 }

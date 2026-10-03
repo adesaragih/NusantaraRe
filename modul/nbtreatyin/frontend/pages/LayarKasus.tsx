@@ -34,6 +34,7 @@ import {
   type NomorPolis,
   type Riwayat,
 } from '../api'
+import DetailNonProp from '../components/DetailNonProp'
 import InputAngka from '../components/InputAngka'
 import KotakMedan from '../components/KotakMedan'
 import PilihBisnis from '../components/PilihBisnis'
@@ -66,6 +67,7 @@ import {
   type Aksi,
   type Medan,
 } from '../medan'
+import { tampilNonProp } from '../nonprop'
 import { sajikan, type Sajian } from '../sajian'
 
 const P = 'PolicyTreatyIn.'
@@ -281,6 +283,18 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
         )}
         <div className="form-grid">{medanTampil(admin ? MEDAN_ADMIN_UMUM : MEDAN_ATASAN_UMUM, h).map(kotak)}</div>
       </Panel>
+
+      {/* subsection `DetailPoliciesNonProportional` - wadah `.IsNewPolicyNonProp = 1 && .ClaimType != 'XOL Retro'` (K8) */}
+      {tampilNonProp(h) && (
+        <DetailNonProp
+          halaman={h}
+          sunting={admin && boleh}
+          opsiSpreading={acuan?.spreading ?? []}
+          onUbahBaris={ubahBaris}
+          onSetelDaftar={(j, b) => setH(setelDaftar(h, j, b))}
+          onRefresh={(aksi, indeks) => refresh([{ aksi }], indeks)}
+        />
+      )}
 
       {wadahUang && (
         <Panel judul={BAGIAN.uang}>
