@@ -67,7 +67,9 @@ func (g *gudangTiruan) jagaAdmin(ubah func()) error {
 func (g *gudangTiruan) DaftarAkun(context.Context) ([]RingkasAkun, error) {
 	var out []RingkasAkun
 	for _, a := range g.akun {
-		out = append(out, ringkasDari(*a))
+		r := ringkasDari(*a)
+		r.Kontak = g.kontak[a.ID]
+		out = append(out, r)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].AkunID < out[j].AkunID })
 	return out, nil
@@ -77,7 +79,9 @@ func (g *gudangTiruan) RingkasAkun(_ context.Context, id string) (RingkasAkun, e
 	if !ada {
 		return RingkasAkun{}, ErrAkunTidakAda
 	}
-	return ringkasDari(*a), nil
+	r := ringkasDari(*a)
+	r.Kontak = g.kontak[id]
+	return r, nil
 }
 func ringkasDari(a Akun) RingkasAkun {
 	return RingkasAkun{AkunID: a.ID, Nama: a.Nama, Organisasi: a.Organisasi, Divisi: a.Divisi, Unit: a.Unit,
@@ -87,6 +91,7 @@ func (g *gudangTiruan) UbahAkun(_ context.Context, id string, isi IsianAkun) err
 	return g.jagaAdmin(func() {
 		a := g.akun[id]
 		a.Nama, a.Organisasi, a.Divisi, a.Unit = isi.Nama, isi.Organisasi, isi.Divisi, isi.Unit
+		g.tulisKontak(id, isi.Kontak)
 		g.workbasket[id], g.menu[id] = isi.Workbasket, isi.Menu
 	})
 }

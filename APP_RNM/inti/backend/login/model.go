@@ -27,6 +27,8 @@ type AkunBaru struct {
 	Workbasket               []string
 	// Menu - KODE menu (`M_LOGIN_GO_MENU`); kosong = akun tanpa satu layar pun.
 	Menu []string
+	// Kontak - email, nomor HP, NIK, jabatan (migrasi 904); opsional.
+	Kontak
 }
 
 // Profil adalah identitas yang dikirim ke layar (`GET /api/auth/saya`).

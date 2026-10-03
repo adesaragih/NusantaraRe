@@ -113,7 +113,8 @@ func sqlWorkbasketAktif(wb string) string {
 
 func sqlSisipAkun(t string) string {
 	return fmt.Sprintf(`INSERT INTO %s (LOGIN_ID, NAME, PASSWORD_HASH, ORGANIZATION_CODE, DIVISION_CODE,
-	    UNIT_CODE, IS_ACTIVE, MUST_CHANGE_PASSWORD) VALUES (:1, :2, :3, :4, :5, :6, :7, :8)`, t)
+	    UNIT_CODE, IS_ACTIVE, MUST_CHANGE_PASSWORD, EMAIL, PHONE_NUMBER, EMPLOYEE_ID, JOB_POSITION)
+	  VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12)`, t)
 }
 
 func sqlSisipWorkbasket(t string) string {
@@ -362,8 +363,8 @@ func (g *GudangOracle) BuatAkun(ctx context.Context, a AkunBaru, hash string, wa
 	langkah := []struct {
 		q    string
 		args []any
-	}{{sqlSisipAkun(t), []any{a.ID, a.Nama, hash, db.KosongJadiNil(a.Organisasi), db.KosongJadiNil(a.Divisi),
-		db.KosongJadiNil(a.Unit), benderaYa, wajib}}}
+	}{{sqlSisipAkun(t), append([]any{a.ID, a.Nama, hash, db.KosongJadiNil(a.Organisasi), db.KosongJadiNil(a.Divisi),
+		db.KosongJadiNil(a.Unit), benderaYa, wajib}, nilaiKontak(a.Kontak)...)}}
 	for _, w := range a.Workbasket {
 		langkah = append(langkah, struct {
 			q    string

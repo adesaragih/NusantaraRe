@@ -93,6 +93,10 @@ menampung data dari M_UNIT, M_DIVISION, M_ORGANIZATION”; “simpan aja code ny
 | `LAST_LOGIN` | DATE | ya | | jejak | login berhasil terakhir |
 | `TGL_CREATE` | DATE | tidak | | jejak | `DEFAULT SYSDATE` |
 | `TGL_UPDATE` | DATE | ya | | jejak | |
+| `EMAIL` | teks | ya | | Kelola User | migrasi `904_m_login_go_kontak.sql` (03-10-2026, permintaan work owner *"tambahkan email, no hp, nik dan jabatan; buat dalam bahasa inggris"*) — alamat email, maks. 254; label layar `Email` |
+| `PHONE_NUMBER` | teks | ya | | Kelola User | migrasi 904 — nomor HP 8–15 digit, boleh diawali `+`, boleh spasi/tanda hubung; label `Phone Number` |
+| `EMPLOYEE_ID` | teks | ya | | Kelola User | migrasi 904 — NIK (Nomor Induk Karyawan, bukan NIK kependudukan), huruf/angka/titik/garis miring/tanda hubung, maks. 30; label `Employee ID (NIK)` |
+| `JOB_POSITION` | teks | ya | | Kelola User | migrasi 904 — jabatan, maks. 150; label `Position` |
 
 **Index:** PK.
 

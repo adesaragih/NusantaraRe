@@ -213,6 +213,39 @@ export default function FormPengguna({
                   required
                   autoFocus={!baru}
                 />
+                {/* Kontak akun (Kelola User 03-10-2026) - opsional, label berbahasa Inggris. */}
+                <Field
+                  label={KELOLA_USER.email}
+                  type="email"
+                  value={isi.email}
+                  placeholder={KELOLA_USER.contohEmail}
+                  onChange={(v) => {
+                    ubah({ email: v })
+                  }}
+                />
+                <Field
+                  label={KELOLA_USER.telepon}
+                  type="tel"
+                  value={isi.telepon}
+                  placeholder={KELOLA_USER.contohTelepon}
+                  onChange={(v) => {
+                    ubah({ telepon: v })
+                  }}
+                />
+                <Field
+                  label={KELOLA_USER.nik}
+                  value={isi.nik}
+                  onChange={(v) => {
+                    ubah({ nik: v })
+                  }}
+                />
+                <Field
+                  label={KELOLA_USER.jabatan}
+                  value={isi.jabatan}
+                  onChange={(v) => {
+                    ubah({ jabatan: v })
+                  }}
+                />
                 <Pilih
                   label={KELOLA_USER.organisasi}
                   value={isi.organisasi}

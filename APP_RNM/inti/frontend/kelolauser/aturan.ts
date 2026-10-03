@@ -29,6 +29,11 @@ export interface IsianForm {
   menu: string[]
   /** Centang "Change Password Next Login" (tab Security). */
   wajibGanti: boolean
+  /** Kontak akun (Kelola User 03-10-2026) — opsional. */
+  email: string
+  telepon: string
+  nik: string
+  jabatan: string
 }
 
 /** Tab form tambah/ubah user. */
@@ -47,6 +52,10 @@ export function isianKosong(): IsianForm {
     menu: [],
     // User baru bawaannya WAJIB mengganti password yang diketik admin.
     wajibGanti: true,
+    email: '',
+    telepon: '',
+    nik: '',
+    jabatan: '',
   }
 }
 
@@ -62,7 +71,36 @@ export function isianDari(r: RinciAkun): IsianForm {
     workbasket: [...r.workbasket],
     menu: [...r.menu],
     wajibGanti: r.wajibGantiSandi,
+    email: r.email,
+    telepon: r.telepon,
+    nik: r.nik,
+    jabatan: r.jabatan,
   }
+}
+
+/** Bentuk kontak — sama dengan `login.PeriksaKontak` di backend (kosong selalu sah). */
+export const POLA_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+export const POLA_TELEPON = /^\+?[0-9][0-9 -]*[0-9]$/
+export const POLA_NIK = /^[A-Za-z0-9./-]+$/
+
+/** Panjang BYTE UTF-8, seperti kolom VARCHAR2 dan `len()` Go. */
+function panjangByte(s: string): number {
+  return new TextEncoder().encode(s).length
+}
+
+/** Galat kontak PERTAMA (urut medan di form); `null` = sah. */
+export function periksaKontak(isi: Pick<IsianForm, 'email' | 'telepon' | 'nik' | 'jabatan'>): string | null {
+  const email = isi.email.trim()
+  if (email !== '' && (panjangByte(email) > 254 || !POLA_EMAIL.test(email))) return KELOLA_USER.galatEmail
+  const telepon = isi.telepon.trim()
+  if (telepon !== '') {
+    const digit = telepon.replace(/[^0-9]/g, '').length
+    if (telepon.length > 30 || !POLA_TELEPON.test(telepon) || digit < 8 || digit > 15) return KELOLA_USER.galatTelepon
+  }
+  const nik = isi.nik.trim()
+  if (nik !== '' && (nik.length > 30 || !POLA_NIK.test(nik))) return KELOLA_USER.galatNIK
+  if (panjangByte(isi.jabatan.trim()) > 150) return KELOLA_USER.galatJabatan
+  return null
 }
 
 /** Divisi milik organisasi itu. */
@@ -104,6 +142,8 @@ export function periksaIsian(isi: IsianForm, baru: boolean, akunSaya: string): s
   if (baru && !akunSah(isi.akunId.trim())) return KELOLA_USER.galatAkun
   const nama = isi.nama.trim()
   if (nama === '' || [...nama].length > 150) return KELOLA_USER.galatNama
+  const kontak = periksaKontak(isi)
+  if (kontak !== null) return kontak
   if (baru || isi.sandi !== '' || isi.ulangiSandi !== '') {
     if ([...isi.sandi].length < PANJANG_MIN_SANDI) return KELOLA_USER.galatSandi
     if (isi.sandi !== isi.ulangiSandi) return KELOLA_USER.galatUlangi
@@ -120,6 +160,10 @@ export function badanUbah(isi: IsianForm): BadanUbah {
     unit: isi.unit,
     workbasket: [...isi.workbasket],
     menu: [...isi.menu],
+    email: isi.email.trim(),
+    telepon: isi.telepon.trim(),
+    nik: isi.nik.trim(),
+    jabatan: isi.jabatan.trim(),
   }
 }
 

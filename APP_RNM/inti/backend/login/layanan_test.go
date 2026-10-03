@@ -20,6 +20,8 @@ type gudangTiruan struct {
 	masterWorkbasket map[string]bool
 	gagal, berhasil  []string
 	dibuat           []AkunBaru
+	// kontak - email, telepon, NIK, jabatan per akun (migrasi 904); nil = belum ada yang ditulis.
+	kontak map[string]Kontak
 }
 
 // hashUji - satu hash bcrypt untuk seluruh uji (cost 12 lambat).
@@ -124,7 +126,15 @@ func (g *gudangTiruan) BuatAkun(_ context.Context, a AkunBaru, hash string, waji
 	g.dibuat = append(g.dibuat, a)
 	g.workbasket[a.ID], g.menu[a.ID] = a.Workbasket, a.Menu
 	g.akun[a.ID] = &Akun{ID: a.ID, Nama: a.Nama, HashSandi: hash, Aktif: true, WajibGantiSandi: wajibGanti, VersiSesi: 1}
+	g.tulisKontak(a.ID, a.Kontak)
 	return nil
+}
+
+func (g *gudangTiruan) tulisKontak(id string, k Kontak) {
+	if g.kontak == nil {
+		g.kontak = map[string]Kontak{}
+	}
+	g.kontak[id] = k
 }
 
 func layananUji(g *gudangTiruan, saat time.Time) *Layanan {

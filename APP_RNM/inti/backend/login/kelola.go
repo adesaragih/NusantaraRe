@@ -53,6 +53,8 @@ type RingkasAkun struct {
 	WajibGantiSandi bool   `json:"wajibGantiSandi"`
 	// LoginTerakhir - `LAST_LOGIN`, `YYYY-MM-DD HH:MI` jam Oracle; kosong = belum pernah.
 	LoginTerakhir string `json:"loginTerakhir"`
+	// Kontak - `email`, `telepon`, `nik`, `jabatan` (migrasi 904, Kelola User 03-10-2026).
+	Kontak
 }
 
 // RinciAkun adalah satu akun beserta workbasket dan menunya - isi form ubah.
@@ -68,6 +70,7 @@ type IsianAkun struct {
 	Organisasi, Divisi, Unit string
 	Workbasket               []string
 	Menu                     []string
+	Kontak
 }
 
 // OpsiMaster adalah satu pilihan dropdown master. `Induk` = CODE organisasi
@@ -267,6 +270,10 @@ func (k *Kelola) Buat(ctx context.Context, aktor string, a AkunBaru, sandi strin
 	}
 	a.Workbasket, a.Menu = bersih(a.Workbasket), bersih(a.Menu)
 	a.Organisasi, a.Divisi, a.Unit = strings.TrimSpace(a.Organisasi), strings.TrimSpace(a.Divisi), strings.TrimSpace(a.Unit)
+	a.Kontak = RapikanKontak(a.Kontak)
+	if err := PeriksaKontak(a.Kontak); err != nil {
+		return err
+	}
 	if err := k.PeriksaMenu(ctx, a.Menu); err != nil {
 		return err
 	}
@@ -318,6 +325,10 @@ func (k *Kelola) Ubah(ctx context.Context, aktor, id string, isi IsianAkun) (Rin
 	}
 	isi.Organisasi, isi.Divisi, isi.Unit = strings.TrimSpace(isi.Organisasi), strings.TrimSpace(isi.Divisi), strings.TrimSpace(isi.Unit)
 	isi.Workbasket, isi.Menu = bersih(isi.Workbasket), bersih(isi.Menu)
+	isi.Kontak = RapikanKontak(isi.Kontak)
+	if err := PeriksaKontak(isi.Kontak); err != nil {
+		return RinciAkun{}, err
+	}
 	if id == aktor && !inti.PunyaMenu(isi.Menu, menu.KodeKelolaUser) {
 		return RinciAkun{}, ErrDiriSendiri
 	}

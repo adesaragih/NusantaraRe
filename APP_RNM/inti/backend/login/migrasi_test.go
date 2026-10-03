@@ -5,6 +5,7 @@ package login
 import (
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -123,5 +124,37 @@ func TestMigrasi903Mundur(t *testing.T) {
 	p := baca902(t, "903_m_login_go_menu_down.sql")
 	if mau := []string{"DROP TABLE {skema}.M_LOGIN_GO_MENU CASCADE CONSTRAINTS"}; !reflect.DeepEqual(p, mau) {
 		t.Errorf("903_down:\n dapat %q\n mau   %q", p, mau)
+	}
+}
+
+// Migrasi 904 - kolom kontak M_LOGIN_GO (Kelola User 03-10-2026): empat kolom berbahasa Inggris, semuanya
+// NULLABLE (akun lama tidak punya isinya), lebar = batas `PeriksaKontak`.
+func TestMigrasi904KolomKontak(t *testing.T) {
+	p := baca902(t, "904_m_login_go_kontak.sql")
+	if len(p) != 1 {
+		t.Fatalf("904 terbaca %d pernyataan, mau 1", len(p))
+	}
+	satu := strings.Join(strings.Fields(p[0]), " ")
+	mau := "ALTER TABLE {skema}.M_LOGIN_GO ADD ( EMAIL VARCHAR2(254), PHONE_NUMBER VARCHAR2(30), EMPLOYEE_ID VARCHAR2(30), JOB_POSITION VARCHAR2(150) )"
+	if satu != mau {
+		t.Errorf("904:\n dapat %q\n mau   %q", satu, mau)
+	}
+	if strings.Contains(strings.ToUpper(satu), "NOT NULL") {
+		t.Error("kolom kontak harus NULLABLE - akun yang sudah ada tidak punya isinya")
+	}
+	for _, k := range []struct {
+		kolom string
+		lebar int
+	}{{"EMAIL", PanjangMaksEmail}, {"PHONE_NUMBER", PanjangMaksTelepon}, {"EMPLOYEE_ID", PanjangMaksNIK}, {"JOB_POSITION", PanjangMaksJabatan}} {
+		if !strings.Contains(satu, k.kolom+" VARCHAR2("+strconv.Itoa(k.lebar)+")") {
+			t.Errorf("lebar kolom %s harus %d (batas PeriksaKontak)", k.kolom, k.lebar)
+		}
+	}
+}
+
+func TestMigrasi904Mundur(t *testing.T) {
+	p := baca902(t, "904_m_login_go_kontak_down.sql")
+	if mau := []string{"ALTER TABLE {skema}.M_LOGIN_GO DROP (EMAIL, PHONE_NUMBER, EMPLOYEE_ID, JOB_POSITION)"}; !reflect.DeepEqual(p, mau) {
+		t.Errorf("904_down:\n dapat %q\n mau   %q", p, mau)
 	}
 }
