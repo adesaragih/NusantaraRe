@@ -21,6 +21,7 @@ package models
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -115,18 +116,126 @@ var (
 
 // ---------------------------------------------------------------- penggolong
 
+// berkasMedanAbaikanLama - daftar medan dokumen yang SENGAJA tidak disimpan
+// beserta alasan tertulisnya (simpul utuh, ruas di mana pun, skalar tingkat
+// polis). Dihitung per alasan di ringkasan pemuat, tidak hilang diam-diam.
+//
+// Mengapa berkas data, bukan literal kode: penjaga lintas modul
+// `TestNolPenyimpanKeputusanKomiteDiKonteksIni`
+// (`modul/claimlife/backend/services/komite_statik_test.go`, `polaIndeksPosisi`)
+// memindai SETIAP berkas .go repo secara leksikal dan melarang nama properti
+// nomor baris Pega di luar komentar ("nol indeks posisi dipakai sebagai kunci
+// rujukan di mana pun"). Pemuat ini memang TIDAK memakainya sebagai kunci:
+// properti itu hanya dikenali supaya DIBUANG - urutan baris diwakili NOURUT
+// (spec-penyimpanan ID-11). Cakupan penjaga diajukan ke tim claimlife/inti
+// (`docs/PERMINTAAN-TIM-INTI.md` bagian A). go:embed terisi saat kompilasi,
+// jadi pemecah tetap murni (nol baca berkas saat jalan).
+//
+//go:embed medan_abaikan_lama.json
+var berkasMedanAbaikanLama []byte
+
+// penggolongAbaikan - isi `medan_abaikan_lama.json` dengan rujukan alasan
+// sudah diselesaikan menjadi teksnya.
+type penggolongAbaikan struct {
+	alasan      map[string]string // kunci -> teks alasan
+	simpul      map[string]string // puncak -> teks; seluruh isi simpul
+	skalarPolis map[string]string // puncak skalar tingkat polis -> teks
+	ruas        map[string]ruasAbaikan
+}
+
+// ruasAbaikan - nama properti daun di mana pun; hanyaDiBarisDaftar = hanya
+// bila medannya berada di baris PageList (pola memuat "()").
+type ruasAbaikan struct {
+	alasan             string
+	hanyaDiBarisDaftar bool
+}
+
+// muatPenggolongAbaikan mengurai berkas data penggolong. Rujukan ke alasan
+// yang tidak terdefinisi dan medan JSON tak dikenal ditolak - berkas data
+// tidak diperiksa penyusun Go, jadi pemeriksaannya di sini.
+func muatPenggolongAbaikan(isi []byte) (penggolongAbaikan, error) {
+	var mentah struct {
+		Catatan     []string          `json:"catatan"`
+		Alasan      map[string]string `json:"alasan"`
+		Simpul      map[string]string `json:"simpul"`
+		SkalarPolis map[string]string `json:"skalar_polis"`
+		Ruas        map[string]struct {
+			Alasan             string `json:"alasan"`
+			HanyaDiBarisDaftar bool   `json:"hanya_di_baris_daftar"`
+		} `json:"ruas"`
+	}
+	dek := json.NewDecoder(bytes.NewReader(isi))
+	dek.DisallowUnknownFields()
+	if err := dek.Decode(&mentah); err != nil {
+		return penggolongAbaikan{}, fmt.Errorf("models: medan_abaikan_lama.json: %w", err)
+	}
+	var galat error
+	teks := func(bagian, nama, kunci string) string {
+		s := mentah.Alasan[kunci]
+		if s == "" && galat == nil {
+			galat = fmt.Errorf("models: medan_abaikan_lama.json %s %q merujuk alasan tak terdefinisi %q", bagian, nama, kunci)
+		}
+		return s
+	}
+	p := penggolongAbaikan{alasan: mentah.Alasan, simpul: map[string]string{},
+		skalarPolis: map[string]string{}, ruas: map[string]ruasAbaikan{}}
+	for nama, kunci := range mentah.Simpul {
+		p.simpul[nama] = teks("simpul", nama, kunci)
+	}
+	for nama, kunci := range mentah.SkalarPolis {
+		p.skalarPolis[nama] = teks("skalar_polis", nama, kunci)
+	}
+	for nama, r := range mentah.Ruas {
+		p.ruas[nama] = ruasAbaikan{alasan: teks("ruas", nama, r.Alasan), hanyaDiBarisDaftar: r.HanyaDiBarisDaftar}
+	}
+	if galat != nil {
+		return penggolongAbaikan{}, galat
+	}
+	return p, nil
+}
+
+// medanAbaikanLama - penggolong dari berkas tertanam. Gagal urai = berkas
+// tertanam cacat (galat pemrogram, sama halnya `regexp.MustCompile`).
+var medanAbaikanLama = func() penggolongAbaikan {
+	p, err := muatPenggolongAbaikan(berkasMedanAbaikanLama)
+	if err != nil {
+		panic(err)
+	}
+	return p
+}()
+
+// teksAlasan - teks alasan berkunci `kunci` di berkas tertanam.
+func teksAlasan(kunci string) string {
+	s, ada := medanAbaikanLama.alasan[kunci]
+	if !ada {
+		panic("models: medan_abaikan_lama.json tanpa alasan " + kunci)
+	}
+	return s
+}
+
 // Alasan medan dokumen yang SENGAJA tidak disimpan - masing-masing keputusan
-// tertulis. Dihitung per alasan di ringkasan pemuat, tidak hilang diam-diam.
-const (
-	AlasanInternalPega  = "pxObjClass - internal Pega, tidak dimigrasi (P29 sifat 4; rancangan §4.1)"
-	AlasanNourut        = "pxListSubscript - nomor baris, diwakili NOURUT (spec-penyimpanan ID-11)"
-	AlasanKeadaanLayar  = "Show/ViewState/pxResults/FillPaymentInstallmentEDMT - keadaan layar (rancangan §4.1, 4q5.7)"
-	AlasanTurunan       = "Total* tingkat polis - turunan baris spreading, dihitung saat dibaca (katalog.go; RALAT AC 38)"
-	AlasanPantulanLayer = "Layer* tingkat polis - pantulan baris layer pertama (ID-22, rancangan 4q.10)"
-	AlasanBreakdown     = "BreakDownSpreadList - tidak dimigrasi (KEPUTUSAN-RONDE-12 butir 3/3b)"
-	AlasanPersetujuanDH = "isApprovedtoDeptHead - tidak dibangun (spec AC 64)"
-	AlasanOldData       = "OldData - diganti penunjuk OLD_POLIS_ID, kosong di NB (rancangan 4ter.1, ID-9)"
-	AlasanSelisih       = "TreatyDifference/TreatyXOLDifferenceList - selisih endorsemen, nol baris di NB (rancangan 4ter.2)"
+// tertulis; teksnya di `medan_abaikan_lama.json` dan tercetak di ringkasan
+// pemuat (kunci `HasilPecah.Diabaikan`).
+var (
+	// AlasanInternalPega - `pxObjClass`, internal Pega.
+	AlasanInternalPega = teksAlasan("internal_pega")
+	// AlasanNourut - properti nomor baris Pega (berbasis 1) di baris daftar;
+	// diwakili NOURUT, bukan kunci rujukan (spec-penyimpanan ID-11).
+	AlasanNourut = teksAlasan("nourut")
+	// AlasanKeadaanLayar - Show/ViewState/pxResults/FillPaymentInstallmentEDMT.
+	AlasanKeadaanLayar = teksAlasan("keadaan_layar")
+	// AlasanTurunan - Total* tingkat polis.
+	AlasanTurunan = teksAlasan("turunan")
+	// AlasanPantulanLayer - Layer* tingkat polis.
+	AlasanPantulanLayer = teksAlasan("pantulan_layer")
+	// AlasanBreakdown - BreakDownSpreadList (K9).
+	AlasanBreakdown = teksAlasan("breakdown")
+	// AlasanPersetujuanDH - isApprovedtoDeptHead.
+	AlasanPersetujuanDH = teksAlasan("persetujuan_dh")
+	// AlasanOldData - simpul OldData.
+	AlasanOldData = teksAlasan("old_data")
+	// AlasanSelisih - TreatyDifference/TreatyXOLDifferenceList.
+	AlasanSelisih = teksAlasan("selisih")
 )
 
 // IndukDaftarBersarang - tabel cucu -> jalur daftar induknya di dokumen
@@ -184,44 +293,31 @@ func petaKatalogDokumen() (map[string]Kolom, error) {
 	return peta, nil
 }
 
-// alasanDiabaikan - alasan tertulis bila pola medan sengaja tidak disimpan.
+// alasanDiabaikan - alasan tertulis bila pola medan sengaja tidak disimpan
+// (daftarnya: `medan_abaikan_lama.json`).
 //
-// Simpul utuh (OldData, TreatyDifference, ...) diperiksa lebih dulu: seluruh
-// isinya - termasuk pxObjClass-nya - tercatat di bawah alasan simpul itu.
+// Urutan pemeriksaan: (1) simpul utuh (OldData, TreatyDifference, ...) lebih
+// dulu - seluruh isinya, termasuk pxObjClass-nya, tercatat di bawah alasan
+// simpul itu; (2) ruas daun di mana pun (pxObjClass; nomor baris hanya di
+// baris daftar); (3) skalar tingkat polis saja. Medan lain = "" (tak dikenal).
 func alasanDiabaikan(pola string) string {
+	p := medanAbaikanLama
 	akar := strings.TrimPrefix(pola, HalamanPolis+".")
 	puncak := akar
 	if i := strings.IndexAny(akar, ".("); i >= 0 {
 		puncak = akar[:i]
 	}
-	switch puncak {
-	case "Show", "ViewState", "pxResults", "FillPaymentInstallmentEDMT":
-		return AlasanKeadaanLayar
-	case "BreakDownSpreadList":
-		return AlasanBreakdown
-	case "OldData":
-		return AlasanOldData
-	case "TreatyDifference", "TreatyXOLDifferenceList":
-		return AlasanSelisih
+	if s, ada := p.simpul[puncak]; ada {
+		return s
 	}
 	ruas := pola[strings.LastIndex(pola, ".")+1:]
-	switch {
-	case ruas == "pxObjClass":
-		return AlasanInternalPega
-	case ruas == "pxListSubscript" && strings.Contains(pola, "()"):
-		return AlasanNourut
-	case puncak != akar:
+	if r, ada := p.ruas[ruas]; ada && (!r.hanyaDiBarisDaftar || strings.Contains(pola, "()")) {
+		return r.alasan
+	}
+	if puncak != akar {
 		return ""
 	}
-	switch puncak {
-	case "TotalPremium", "TotalClaim", "TotalSharePercentagePremium", "TotalSharePercentageClaim":
-		return AlasanTurunan
-	case "Layer", "LayerType", "LayerPart", "LayerPartType":
-		return AlasanPantulanLayer
-	case "isApprovedtoDeptHead":
-		return AlasanPersetujuanDH
-	}
-	return ""
+	return p.skalarPolis[puncak]
 }
 
 // ---------------------------------------------------------------- pemecah

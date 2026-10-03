@@ -3,9 +3,11 @@ package models
 // Uji seam fungsi murni pemuat dokumen lama (tiket 22): pembaca tanggal lama,
 // pemecah dokumen, dan penggolong medan. ⛔ Fixture fiktif berawalan UJI-,
 // dibentuk dari STRUKTUR contoh DATA_JSON (PERTANYAAN-untuk-DBA P29 "lima
-// sifat", rancangan 4quinque) - bukan salinan isinya.
+// sifat", rancangan 4quinque) - bukan salinan isinya; berkasnya di testdata/.
 
 import (
+	_ "embed"
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
@@ -47,41 +49,14 @@ func TestTanggalAmbiguTidakDitebak(t *testing.T) { // K15
 	}
 }
 
-// dokumenUjiProp - bentuk contoh 2 (proporsional): ListInstallment DATAR,
-// SpreadingRiskList, QuotationData{CedingCoList}, pxObjClass di setiap simpul.
-const dokumenUjiProp = `{
- "pxObjClass": "ASM-FW-GISFW-Data-PolicyTreatyIn",
- "PolicyNo": "UJI-QP.T1.10.2017.00001",
- "NoOffer": "UJI-OFR-1",
- "IsApproved": "1",
- "PremiOgp": "592629512.880000276",
- "StartDate": "20171001",
- "EndDate": "",
- "StatementDate": "20170930T170000.000 GMT",
- "CedingCo": "UJI-C1; UJI-C2; ",
- "CedingCoName": "UJI-CEDING A; UJI-CEDING B; ",
- "Show": "true",
- "TotalPremium": "592629512.880000276",
- "UJIMedanFiktif": "UJI-nilai-lewat",
- "QuotationData": {
-  "pxObjClass": "ASM-FW-GISFW-Data-Quotation",
-  "ProportionalType": "Proportional",
-  "GroupPanel": "006",
-  "BusinessOldId": "01",
-  "UJIFiktifQuotation": "",
-  "CedingCoList": [
-   {"pxObjClass": "UJI-kelas", "CedingCo": "UJI-C1", "CedingCoName": "UJI-CEDING A"},
-   {"CedingCo": "UJI-C2", "CedingCoName": "UJI-CEDING B"}
-  ]
- },
- "ListInstallment": [
-  {"pxObjClass": "UJI-kelas", "pxListSubscript": "1", "InstallmentNo": "1", "DueDate": "20171101", "Premium": "148157378.220000069"},
-  {"InstallmentNo": "2", "DueDate": "20171201", "Premium": "148157378.220000069"}
- ],
- "SpreadingRiskList": [
-  {"TreatyType": "UJI-10015", "SharePercentage": "100", "PremiumSpreaded": "592629512.880000276"}
- ]
-}`
+// dokumenUjiProp - bentuk contoh 2 (proporsional): ListInstallment DATAR
+// (baris pertama membawa properti nomor baris Pega), SpreadingRiskList,
+// QuotationData{CedingCoList}, pxObjClass di setiap simpul. Fixture dokumen
+// lama ada di testdata/ (JSON): nama properti nomor baris Pega tidak boleh
+// muncul di kode Go (penjaga lintas modul claimlife, PERMINTAAN-TIM-INTI.md A).
+//
+//go:embed testdata/dokumen_uji_prop.json
+var dokumenUjiProp string
 
 func barisUji(dokumen string) BarisJSONPolis {
 	return BarisJSONPolis{
@@ -149,31 +124,9 @@ func TestPecahDokumenProporsionalDatar(t *testing.T) { // AC 52, 55, 29, 69; ID-
 // dokumenUjiNonProp - bentuk contoh 3 (non-proporsional XOL): ListInstallment
 // BERSARANG (InstallmentList), TreatyXOLList > ValueList, OldData berisi
 // TreatyXOLList kosong, TreatyDifference.
-const dokumenUjiNonProp = `{
- "pxObjClass": "ASM-FW-GISFW-Data-PolicyTreatyIn",
- "PolicyNo": "UJI-QR.T1.01.2018.00002",
- "IsNewPolicyNonProp": "1",
- "StartDate": "20180101",
- "EndDate": "20181231",
- "QuotationData": {"ProportionalType": "NonProportional"},
- "OldData": {"pxObjClass": "UJI-kelas", "TreatyXOLList": []},
- "TreatyDifference": {"NetPremium": "-1.5", "ListInstallment": []},
- "ListInstallment": [
-  {"InstallmentNo": "1", "Premium": "3000.5", "pyExpanded": "true",
-   "InstallmentList": [
-    {"InstallmentNo": "1", "DueDate": "20180131", "Premium": "1500.25"},
-    {"InstallmentNo": "2", "DueDate": "20180228", "Premium": "1500.25"}
-   ]}
- ],
- "TreatyXOLList": [
-  {"GrossPremi": "3000.5", "NetPremi": "2800", "Deduction": "200.5",
-   "ValueList": [
-    {"Layer": "1", "LayerType": "UJI-LT", "LayerPart": "1", "LayerPartType": "UJI-LPT", "GrossPremi": "1000", "Deduction": "100.25"},
-    {"Layer": "2", "LayerType": "UJI-LT", "LayerPart": "1", "LayerPartType": "UJI-LPT", "GrossPremi": "2000.5", "Deduction": "100.25"}
-   ]},
-  {"GrossPremi": "10", "NetPremi": "9", "Deduction": "1", "ValueList": []}
- ]
-}`
+//
+//go:embed testdata/dokumen_uji_nonprop.json
+var dokumenUjiNonProp string
 
 func TestPecahDokumenNonProporsionalBersarang(t *testing.T) { // AC 53; ID-26, ID-29
 	b := barisUji(dokumenUjiNonProp)
@@ -207,7 +160,7 @@ func TestPecahDokumenNonProporsionalBersarang(t *testing.T) { // AC 53; ID-26, I
 }
 
 // TestUjiPemecahMencakupDuaBentuk - AC 54: uji yang hanya mencakup satu bentuk
-// ListInstallment tidak memadai. Fixture di berkas ini wajib memuat keduanya.
+// ListInstallment tidak memadai. Fixture testdata/ uji ini wajib memuat keduanya.
 func TestUjiPemecahMencakupDuaBentuk(t *testing.T) {
 	bentuk := map[string]bool{}
 	for _, d := range []string{dokumenUjiProp, dokumenUjiNonProp} {
@@ -226,6 +179,73 @@ func TestUjiPemecahMencakupDuaBentuk(t *testing.T) {
 	}
 	if !bentuk["datar"] || !bentuk["bersarang"] {
 		t.Fatalf("cakupan bentuk ListInstallment tidak memadai: %v", bentuk)
+	}
+}
+
+// kasusPenggolong - pola medan -> alasan yang diharapkan; JSON karena nama
+// properti nomor baris Pega tidak boleh muncul di kode Go (penjaga lintas
+// modul claimlife, PERMINTAAN-TIM-INTI.md A).
+//
+//go:embed testdata/penggolong_kasus.json
+var kasusPenggolong []byte
+
+// TestPenggolongMedanDiabaikan mengunci penggolong medan yang SENGAJA tidak
+// disimpan: setiap cabang (simpul utuh lebih dulu, ruas di mana pun, nomor
+// baris hanya di baris daftar, skalar tingkat polis saja) beserta teks
+// alasannya - teks itu tercetak di ringkasan pemuat (AC 59).
+func TestPenggolongMedanDiabaikan(t *testing.T) {
+	var uji struct {
+		Alasan map[string]string `json:"alasan"`
+		Kasus  []struct {
+			Pola  string `json:"pola"`
+			Harap string `json:"harap"`
+		} `json:"kasus"`
+	}
+	if err := json.Unmarshal(kasusPenggolong, &uji); err != nil {
+		t.Fatal(err)
+	}
+	if len(uji.Kasus) < 30 {
+		t.Fatalf("hanya %d kasus terbaca; fixture-nya yang rusak", len(uji.Kasus))
+	}
+	for kunci, v := range map[string]string{
+		"internal_pega": AlasanInternalPega, "nourut": AlasanNourut, "keadaan_layar": AlasanKeadaanLayar,
+		"turunan": AlasanTurunan, "pantulan_layer": AlasanPantulanLayer, "breakdown": AlasanBreakdown,
+		"persetujuan_dh": AlasanPersetujuanDH, "old_data": AlasanOldData, "selisih": AlasanSelisih,
+	} {
+		if v != uji.Alasan[kunci] {
+			t.Errorf("alasan %s = %q, harap %q", kunci, v, uji.Alasan[kunci])
+		}
+	}
+	for _, k := range uji.Kasus {
+		harap := ""
+		if k.Harap != "" {
+			harap = uji.Alasan[k.Harap]
+			if harap == "" {
+				t.Fatalf("kasus %s: kunci alasan %q tidak ada di fixture", k.Pola, k.Harap)
+			}
+		}
+		if got := alasanDiabaikan(k.Pola); got != harap {
+			t.Errorf("alasanDiabaikan(%s) = %q, harap %q", k.Pola, got, harap)
+		}
+	}
+}
+
+// TestBerkasPenggolongCacatDitolak - berkas data tidak diperiksa penyusun Go:
+// rujukan alasan yang salah ketik dan medan JSON tak dikenal wajib ditolak,
+// bukan diam-diam menjadikan medannya "tak dikenal".
+func TestBerkasPenggolongCacatDitolak(t *testing.T) {
+	for nama, isi := range map[string]string{
+		"alasan simpul tak terdefinisi": `{"alasan": {"a": "UJI-a"}, "simpul": {"UJI": "b"}}`,
+		"alasan ruas tak terdefinisi":   `{"alasan": {"a": "UJI-a"}, "ruas": {"UJI": {"alasan": "b"}}}`,
+		"alasan skalar tak terdefinisi": `{"alasan": {"a": "UJI-a"}, "skalar_polis": {"UJI": ""}}`,
+		"medan JSON tak dikenal":        `{"alasan": {"a": "UJI-a"}, "simpull": {}}`,
+	} {
+		if _, err := muatPenggolongAbaikan([]byte(isi)); err == nil {
+			t.Errorf("%s: harap ditolak", nama)
+		}
+	}
+	if _, err := muatPenggolongAbaikan([]byte(`{"alasan": {"a": "UJI-a"}, "simpul": {"UJI": "a"}}`)); err != nil {
+		t.Errorf("berkas sah ditolak: %v", err)
 	}
 }
 

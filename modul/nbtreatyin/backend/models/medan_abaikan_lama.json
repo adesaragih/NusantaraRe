@@ -1,0 +1,44 @@
+{
+ "catatan": [
+  "Medan dokumen lama (POOLDATA.JSON_POLIS.DATA_JSON, tiket 22) yang SENGAJA tidak disimpan, beserta alasan tertulisnya. Dibaca models/dokumenlama.go lewat go:embed (alasanDiabaikan); setiap medan yang diabaikan dihitung per alasan di ringkasan pemuat (AC 59), tidak hilang diam-diam.",
+  "Mengapa berkas data, bukan literal kode: penjaga lintas modul claimlife TestNolPenyimpanKeputusanKomiteDiKonteksIni (polaIndeksPosisi) memindai setiap berkas .go repo secara leksikal dan melarang nama properti nomor baris Pega di luar komentar. Pemuat ini TIDAK memakai nomor baris sebagai kunci: properti itu hanya dikenali supaya DIBUANG, karena urutan baris diwakili NOURUT (spec-penyimpanan ID-11). Cakupan penjaga diajukan ke tim claimlife/inti di docs/PERMINTAAN-TIM-INTI.md bagian A.",
+  "simpul: nama properti tingkat polis yang SELURUH isinya diabaikan (diperiksa lebih dulu, termasuk pxObjClass di dalamnya). ruas: nama properti daun di mana pun; hanya_di_baris_daftar = hanya bila medan berada di baris PageList (pola memuat '()'). skalar_polis: nama properti skalar tingkat polis saja (tidak berlaku di dalam simpul atau baris).",
+  "Kasus uji perilakunya: testdata/penggolong_kasus.json (TestPenggolongMedanDiabaikan)."
+ ],
+ "alasan": {
+  "internal_pega": "pxObjClass - internal Pega, tidak dimigrasi (P29 sifat 4; rancangan §4.1)",
+  "nourut": "pxListSubscript - nomor baris, diwakili NOURUT (spec-penyimpanan ID-11)",
+  "keadaan_layar": "Show/ViewState/pxResults/FillPaymentInstallmentEDMT - keadaan layar (rancangan §4.1, 4q5.7)",
+  "turunan": "Total* tingkat polis - turunan baris spreading, dihitung saat dibaca (katalog.go; RALAT AC 38)",
+  "pantulan_layer": "Layer* tingkat polis - pantulan baris layer pertama (ID-22, rancangan 4q.10)",
+  "breakdown": "BreakDownSpreadList - tidak dimigrasi (KEPUTUSAN-RONDE-12 butir 3/3b)",
+  "persetujuan_dh": "isApprovedtoDeptHead - tidak dibangun (spec AC 64)",
+  "old_data": "OldData - diganti penunjuk OLD_POLIS_ID, kosong di NB (rancangan 4ter.1, ID-9)",
+  "selisih": "TreatyDifference/TreatyXOLDifferenceList - selisih endorsemen, nol baris di NB (rancangan 4ter.2)"
+ },
+ "simpul": {
+  "Show": "keadaan_layar",
+  "ViewState": "keadaan_layar",
+  "pxResults": "keadaan_layar",
+  "FillPaymentInstallmentEDMT": "keadaan_layar",
+  "BreakDownSpreadList": "breakdown",
+  "OldData": "old_data",
+  "TreatyDifference": "selisih",
+  "TreatyXOLDifferenceList": "selisih"
+ },
+ "ruas": {
+  "pxObjClass": {"alasan": "internal_pega"},
+  "pxListSubscript": {"alasan": "nourut", "hanya_di_baris_daftar": true}
+ },
+ "skalar_polis": {
+  "TotalPremium": "turunan",
+  "TotalClaim": "turunan",
+  "TotalSharePercentagePremium": "turunan",
+  "TotalSharePercentageClaim": "turunan",
+  "Layer": "pantulan_layer",
+  "LayerType": "pantulan_layer",
+  "LayerPart": "pantulan_layer",
+  "LayerPartType": "pantulan_layer",
+  "isApprovedtoDeptHead": "persetujuan_dh"
+ }
+}
