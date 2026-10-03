@@ -90,10 +90,13 @@ export interface Riwayat {
   tglTransfer: string
 }
 
-/** Satu refresh berhitung - `services.PermintaanHitung`. */
+/** Satu refresh berhitung - `services.PermintaanHitung`. `urutan` = action set
+ *  sel dengan lebih dari satu refresh, dijalankan berurutan atas halaman yang
+ *  sama (mengabaikan `aksi`/`param`). */
 export interface PermintaanHitung {
-  aksi: string
+  aksi?: string
   param?: string
+  urutan?: { aksi: string; param?: string }[]
   indeks?: number
   halaman: Halaman
 }
