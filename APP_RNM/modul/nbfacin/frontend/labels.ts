@@ -691,8 +691,8 @@ export const ITEM_KOSONG = 'Choose'
 
 /**
  * Daftar Condition Object Item - `[terverifikasi]` aturan properti `ASM-FW-GISFW-DATA-PROPERTYITEM!CONDITION`
- * (PromptList, ditambahkan work owner 03-10-2026 sebagai `DDL\Condition.xml`; ⚠️ berkas itu kemudian ditimpa aturan
- * Deductible bernama sama - uji mencari menurut pxInsName). Baris pertama tanpa nilai = "Please Select".
+ * (PromptList, `DDL\ConditionObjectItem.xml`, dikirim ulang work owner 03-10-2026 setelah `DDL\Condition.xml` diisi
+ * aturan Deductible bernama sama - uji mencari menurut pxInsName). Baris pertama tanpa nilai = "Please Select".
  */
 export const OPSI_CONDITION = [
   { value: '1', label: 'Good' },

@@ -24,9 +24,9 @@ jadi menyimpan coverage yang memuat `deductibles` akan ditolak 400 sampai backen
   `MinMax`, `Currency`, `TypeDeductible2`, `PctDeductible2`, `Condition`, `InputCondition`, `Amount`, `TimeExcess`,
   `FlagCurrency`, `IndexProperty` / `IndexPropertyItem` / `IndexCoverage` / `IndexDeductible`. Properti kosong tidak
   diekspor (mis. satu deductible MinMax 3 tanpa `Currency` / `Amount`).
-- ⚠️ `DDL\Condition.xml` kini berisi `DATA-DEDUCTIBLE!CONDITION` dan menimpa `DATA-PROPERTYITEM!CONDITION` (Condition
-  Object Item, tiket 39) yang dikirim dengan nama berkas sama. Uji Object Item Condition dilewati sampai berkas itu
-  dikirim ulang dengan nama lain.
+- `DDL\Condition.xml` kini berisi `DATA-DEDUCTIBLE!CONDITION`; `DATA-PROPERTYITEM!CONDITION` (Condition Object Item,
+  tiket 39) dikirim ulang work owner sebagai `DDL\ConditionObjectItem.xml` (03-10-2026). Uji label mencari keduanya
+  menurut `<pxInsName>`, bukan nama berkas.
 
 ## Frontend (sesi 0f)
 
