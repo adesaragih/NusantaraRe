@@ -41,6 +41,7 @@ type Gudang interface {
 	HariClosing(ctx context.Context, tx *db.Tx) (int, error)
 
 	DetailKontrak(ctx context.Context, id string) (models.BarisKontrak, error)
+	KomisiKontrak(ctx context.Context, treatyID string) ([]models.BarisKontrak, error)
 	DaftarDetailKontrak(ctx context.Context, s repository.SaringanDetail) ([]models.BarisKontrak, error)
 	IDMataUangDariNama(ctx context.Context, nama string) (string, error)
 	NamaMataUang(ctx context.Context, id string) (string, error)
@@ -55,6 +56,8 @@ type Gudang interface {
 	DaftarJenisSpreading(ctx context.Context) ([]models.Pilihan, error)
 	DaftarJenisReas(ctx context.Context) ([]models.Pilihan, error)
 	PolisSerupa(ctx context.Context, h *models.Halaman) ([]string, error)
+	DaftarAgenHierarki(ctx context.Context) ([]models.BarisAgen, error)
+	AgenHierarki(ctx context.Context, id string) (models.BarisAgen, bool, error)
 
 	CatatRiwayat(ctx context.Context, tx *db.Tx, r models.Riwayat) error
 	// CatatUsulan menulis catatan SuggestList ke POOLDATA.HISTORYAKSEPTASIPRODUCTION

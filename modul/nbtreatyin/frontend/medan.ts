@@ -11,9 +11,10 @@
 // ⛔ Tidak ditampilkan, dan sebabnya:
 //   - elemen bersyarat tampil `1=2` / `NEVER` (80 elemen mati, AC 53):
 //     `.BizName`, `.DueTo` (admin), label pemisah, label bagian;
-//   - `Select Source Of Business` (tampil hanya bila ClaimType 'XOL Retro') dan
-//     `Choose Business R` (`SetValueRetro_Act` -> `InputPolicyTreatyOutDetail_preACT`):
+//   - `Choose Business R` (`SetValueRetro_Act` -> `InputPolicyTreatyOutDetail_preACT`):
 //     jalur retro/treaty keluar - pembongkar JSON master (P29, AC 58, 62);
+//   (Tombol `Select Source Of Business`, tampil bila ClaimType 'XOL Retro', BUKAN medan:
+//   dibangun di `components/PilihSumberBisnis.tsx` - RALAT tiket 11.)
 //   - tombol `Survey Report` (`HistoricalSurveyReport`): penyimpanan survei tidak
 //     dirancang di tiket 00-23 - `[terbuka]`;
 //   - subsection `DetailPoliciesNonProportional` / `DetailPolicyTreatyOutNonProportional`:
