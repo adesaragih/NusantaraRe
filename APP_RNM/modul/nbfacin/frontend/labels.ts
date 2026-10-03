@@ -648,3 +648,213 @@ export const TEKS_SEKITAR = {
   /** Sistem baru: saran Occupation kosong. */
   tanpaOccupation: 'Tidak ada occupation yang cocok.',
 } as const
+
+/**
+ * Sub-tab Object Item (tiket 39) - `NB FacIn\Section\PropertyItemList.xml` (grid `.Property.PropertyItemList`,
+ * layout NB `!IsEDM`, sel kepala 19-24; grid Total `.Property.TotalTSIList` sel 59-60) dan form detail
+ * `Section\PropertyItemFacIn_Section.xml` (flow action `PropertyItemFacIn_FlowAction`). Diuji `labels.test.ts`.
+ */
+export const GRID_ITEM = {
+  kolom: [
+    { sel: '19', label: 'Object Item Type' },
+    { sel: '20', label: 'Condition' },
+    { sel: '21', label: 'Year' },
+    { sel: '22', label: 'Unit(s)' },
+    { sel: '23', label: 'Currency' },
+    { sel: '24', label: 'TSI Object Item' },
+  ],
+  total: [
+    { sel: '59', label: 'Currency' },
+    { sel: '60', label: 'Total TSI' },
+  ],
+} as const
+
+/** Form detail baris item (`pyLabelFieldValue`, kecuali centang `pyCheckboxCaption`). */
+export const FORM_ITEM = {
+  itemType: { sel: '5', tag: 'pyLabelFieldValue', label: 'Object Item Type' },
+  note: { sel: '6', tag: 'pyLabelFieldValue', label: 'Object Item Note' },
+  year: { sel: '11', tag: 'pyLabelFieldValue', label: 'Year' },
+  unit: { sel: '12', tag: 'pyLabelFieldValue', label: 'Unit(s)' },
+  condition: { sel: '13', tag: 'pyLabelFieldValue', label: 'Condition' },
+  currency: { sel: '16', tag: 'pyLabelFieldValue', label: 'Currency' },
+  tsi: { sel: '17', tag: 'pyLabelFieldValue', label: 'TSI Object Item (All Unit)' },
+  yearOfPlanting: { sel: '20', tag: 'pyLabelFieldValue', label: 'Year of Planting' },
+  noOfTree: { sel: '21', tag: 'pyLabelFieldValue', label: 'No of Trees' },
+  areaHectar: { sel: '22', tag: 'pyLabelFieldValue', label: 'Area ( Hectar )' },
+  remark: { sel: '27', tag: 'pyLabelFieldValue', label: 'Remark of' },
+  adjustable: { sel: '31', tag: 'pyCheckboxCaption', label: 'Adjustable' },
+  pctAdjust: { sel: '36', tag: 'pyLabelFieldValue', label: 'Adjustment Pct. %' },
+} as const
+
+/** Pilihan kosong dropdown Object Item Type / Currency (form detail: "Choose"). */
+export const ITEM_KOSONG = 'Choose'
+
+/**
+ * Daftar Condition dan Adjustment Pct. (PctAdjust2) - sumber Pega `associated`, aturan properti TIDAK ada di korpus.
+ * ⚠️ Kosong sampai work owner menambahkan berkasnya (`DDL\`); nilai tersimpan tetap tampil lewat `Pilih`.
+ */
+export const OPSI_CONDITION: { value: string; label: string }[] = []
+export const OPSI_PCT_ADJUST: { value: string; label: string }[] = []
+
+/** Teks Object Item. */
+export const TEKS_ITEM = {
+  /** `Activity\ValidateAdjustPct.xml` (PctAdjustOther < 60 atau > 100). */
+  pctAdjust: "%Adjustment can't be less than 60% or more than 100%",
+  /** Sistem baru: field value Pega `ErrorMessageUnit` tidak ada di korpus (`SetErrorMessageUnit_Act`, Unit <= 0). */
+  unit: 'Unit(s) harus lebih dari 0.',
+  /** Sistem baru: field value Pega `TSIObjectItemErrorMessage` tidak ada di korpus (TSI < 0). */
+  tsiMinus: 'TSI Object Item tidak boleh minus.',
+  /** Sistem baru: TSI bukan angka desimal bertitik. */
+  tsiBukanAngka: 'TSI Object Item harus angka (pemisah desimal titik).',
+  /**
+   * Sistem baru (keputusan agent A133, tiket 39): Currency wajib - kolom rancangan CURRENCY NOT NULL DEFAULT 'UNKNOWN'
+   * dan aplikasi dilarang menulis 'UNKNOWN' (K-012). Pega sendiri tidak mewajibkannya.
+   */
+  currencyWajib: 'Currency wajib diisi.',
+} as const
+
+/**
+ * Sub-tab Occupation (tiket 40) - `NB FacIn\Section\OccupationList.xml` (grid `.Property.OccupationList`, kepala sel
+ * 14-16), form `OccupationItemFacIn_Section.xml`, popup `ChooseOccupation.xml` dan `ChooseClassofContraction.xml`.
+ * Diuji `labels.test.ts`.
+ */
+export const GRID_OKUPASI = [
+  { sel: '14', label: 'Occupation ID' },
+  { sel: '15', label: 'Occupation Name' },
+  { sel: '16', label: 'Class Of Construction' },
+] as const
+
+export const FORM_OKUPASI = {
+  pilihOkupasi: { sel: '3', tag: 'pyLabel', label: 'Choose Occupation' },
+  occupationId: { sel: '4', tag: 'pyLabelFieldValue', label: 'Occupation ID' },
+  occupationName: { sel: '5', tag: 'pyLabelFieldValue', label: 'Occupation Name' },
+  pilihKonstruksi: { sel: '8', tag: 'pyLabel', label: 'Choose Class of Construction' },
+  konstruksi: { sel: '9', tag: 'pyLabelFieldValue', label: 'Class of Construction' },
+} as const
+
+/** Popup Choose Occupation (`ChooseOccupation.xml`): kotak sel 1, kolom sel 16-17, tombol sel 22. */
+export const POPUP_OKUPASI = {
+  cari: { sel: '1', tag: 'pyLabelFieldValue', label: 'Search Name/ID' },
+  kolom: [
+    { sel: '16', label: 'ID' },
+    { sel: '17', label: 'Name' },
+  ],
+  pilih: { sel: '22', tag: 'pyLabel', label: 'Choose' },
+  ukuran: 20,
+} as const
+
+/** Popup Choose Class of Construction (`ChooseClassofContraction.xml`): kolom sel 15 (Limit sel 16 tersembunyi). */
+export const POPUP_KONSTRUKSI = {
+  kolom: { sel: '15', label: 'Description' },
+  pilih: { sel: '21', tag: 'pyLabel', label: 'Choose' },
+} as const
+
+/** Teks sistem baru sub-tab Occupation. */
+export const TEKS_OKUPASI = {
+  tanpaHasil: 'Tidak ada data yang cocok.',
+  /** Choose Class of Construction sebelum Occupation dipilih (Category kosong). */
+  pilihOkupasiDulu: 'Pilih Occupation lebih dulu.',
+} as const
+
+/**
+ * Sub-tab FEA = Fire Extinguisher Availability (flow action `InputFEA`, pyLabel "Input Fire Extinguisher Availability")
+ * - tiket 41. Grid `NB FacIn\Section\FEAList.xml` (`.FEAList` baris objek, kepala sel 15-20). Form isian: section
+ * `OfferFEAList!InputFEA` TIDAK ada di korpus; dipakai padanannya `Section\InputFEA_IsUW.xml` (kelas sama, baca-saja)
+ * sel 12-21. Diuji `labels.test.ts`.
+ */
+export const GRID_FEA = [
+  { sel: '15', label: 'APAR' },
+  { sel: '16', label: 'Sprinkler' },
+  { sel: '17', label: 'Smoke Detector & Alarm' },
+  { sel: '18', label: 'Hydrant' },
+  { sel: '19', label: 'Private Truck Brigade' },
+  { sel: '20', label: 'Others Info' },
+] as const
+
+export const FORM_FEA = {
+  apar: { sel: '12', label: 'APAR (Unit)' },
+  sprinkler: { sel: '13', label: 'Sprinkler (Unit)' },
+  smokeDetector: { sel: '14', label: 'Smoke Detector & Alarm (Unit)' },
+  hydrant: { sel: '15', label: 'Hydrant (Unit)' },
+  privateTruckBrigade: { sel: '16', label: 'Private Truck Brigade (Unit)' },
+  privateFireBrigade: { sel: '17', label: 'Private Team Fire Brigade' },
+  teamSopSafety: { sel: '18', label: 'Team & SOP Safety' },
+  teamSopRiskManagement: { sel: '19', label: 'Team & SOP Risk Management' },
+  info: { sel: '21', label: 'Others Info' },
+} as const
+
+/**
+ * Daftar Private Team Fire Brigade / Team & SOP Safety / Team & SOP Risk Management - `associated`, aturan properti
+ * (`DataFEA.*`) TIDAK ada di korpus. ⚠️ Kosong sampai work owner menambahkan berkasnya (`DDL\`).
+ */
+export const OPSI_FIRE_BRIGADE: { value: string; label: string }[] = []
+export const OPSI_SOP_SAFETY: { value: string; label: string }[] = []
+export const OPSI_SOP_RISIKO: { value: string; label: string }[] = []
+
+/** Teks sistem baru sub-tab FEA. */
+export const TEKS_FEA = {
+  /** Jumlah unit (pxNumber) - keputusan agent M-2: bilangan bulat >= 0. */
+  unit: 'Isi jumlah unit (bilangan bulat, 0 atau lebih).',
+} as const
+
+/**
+ * Sub-tab Loss Record (tiket 42) - `NB FacIn\Section\CauseOfLoss_FacIn.xml` (grid `.Property.ListCauseOfLoss`, kepala
+ * sel 17-22), form `InputCauseOfLoss_FacIn.xml` (sel 3-11), dan `InputOfferFacInLossRatio.xml` (sel 3-6). Diuji
+ * `labels.test.ts`.
+ */
+export const GRID_KERUGIAN = [
+  { sel: '17', label: 'Date of Loss' },
+  { sel: '18', label: 'Insured Name' },
+  { sel: '19', label: 'Loss Object' },
+  { sel: '20', label: 'Currency' },
+  { sel: '21', label: 'Total of Loss' },
+  { sel: '22', label: 'Total Claim' },
+] as const
+
+export const FORM_KERUGIAN = {
+  insuredName: { sel: '3', label: 'Insured Name' },
+  dateOfLoss: { sel: '4', label: 'Date of Loss' },
+  lossObject: { sel: '5', label: 'Loss Object' },
+  currency: { sel: '6', label: 'Currency' },
+  claim: { sel: '7', label: 'Total Claim (100%)' },
+  preventionOfLoss: { sel: '8', label: 'Prevention Of Loss' },
+  causeOfLoss: { sel: '9', label: 'Cause of Loss' },
+  detail: { sel: '11', label: 'Loss Detail' },
+} as const
+
+/** Label medan `.Remarks` (sel 10) - di Pega dari deskripsi properti yang tidak ada di korpus; teks sistem baru. */
+export const LABEL_REMARKS = 'Remarks'
+
+/**
+ * Daftar `.Remarks` - `associated`, aturan properti `Data-CauseOfLoss.Remarks` TIDAK ada di korpus. Data contoh berisi
+ * "Settled" dan "--". ⚠️ Kosong sampai work owner menambahkan berkasnya.
+ */
+export const OPSI_REMARKS: { value: string; label: string }[] = []
+
+/** Loss ratio objek (`InputOfferFacInLossRatio`, baca-saja). Desimal tampilan = pxNumber Pega. */
+export const LOSS_RATIO = [
+  { sel: '3', label: 'LR 1 Year', kunci: 'oneYearAmount', desimal: 3 },
+  { sel: '4', label: '%LR 1 Years', kunci: 'oneYearPercent', desimal: 2 },
+  { sel: '5', label: 'LR 3 - 5 Years', kunci: 'threeFiveYearAmount', desimal: 3 },
+  { sel: '6', label: '%LR 3 - 5 Years', kunci: 'threeFiveYearPercent', desimal: 2 },
+] as const
+
+/** Sub-tab Loss Record Internal (tiket 42) - grid `CauseOfLossClaim_FacIn.xml` (`.Property.ListCauseOfLossClaim`). */
+export const GRID_KLAIM_INTERNAL = [
+  { sel: '24', label: 'Year' },
+  { sel: '25', label: 'Date of Loss' },
+  { sel: '26', label: 'Location No' },
+  { sel: '27', label: 'Location' },
+  { sel: '28', label: 'Currency' },
+  { sel: '29', label: 'Premium' },
+  { sel: '30', label: 'O/S Claim' },
+  { sel: '31', label: 'Acccepted Claim' },
+  { sel: '32', label: 'Incurred Claim' },
+  { sel: '33', label: 'Loss Ratio' },
+  { sel: '34', label: 'Remark' },
+] as const
+
+/** Teks sistem baru Loss Record. */
+export const TEKS_KERUGIAN = {
+  uang: 'Isi angka (pemisah desimal titik).',
+} as const

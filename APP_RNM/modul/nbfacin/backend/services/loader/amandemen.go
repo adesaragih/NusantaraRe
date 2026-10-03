@@ -196,6 +196,20 @@ var amandemenSekitar = func() []kolomSkema {
 		kolomSkema{nama: "HOUSEKEEPING_REMARK", tipe: "VARCHAR2(500)", medan: "HousekeepingRemark"})
 }()
 
+// amandemenItem - tiket 39 (A132): enam medan PropertyItem yang ADA di layar
+// (`Section\PropertyItemFacIn_Section.xml`: .PropertyYear, .Unit, .Condition, .Year, .NoOfTree,
+// .AreaHectar) tetapi tidak di rancangan T_PROPERTYITEMLIST. Nama/tipe = medan bernama sama di tabel
+// rancangan lain (YEAR / UNIT VARCHAR2(50), CONDITION VARCHAR2(500)); angka disimpan teks (pola A129).
+// Migrasi 188.
+var amandemenItem = []kolomSkema{
+	{nama: "PROPERTY_YEAR", tipe: "VARCHAR2(50)", medan: "PropertyYear"},
+	{nama: "UNIT", tipe: "VARCHAR2(50)", medan: "Unit"},
+	{nama: "CONDITION", tipe: "VARCHAR2(500)", medan: "Condition"},
+	{nama: "YEAR", tipe: "VARCHAR2(50)", medan: "Year"},
+	{nama: "NO_OF_TREE", tipe: "VARCHAR2(50)", medan: "NoOfTree"},
+	{nama: "AREA_HECTAR", tipe: "VARCHAR2(50)", medan: "AreaHectar"},
+}
+
 // init - menggabungkan amandemen ke skema bangkitan. ⛔ Bila workbook kelak sudah
 // memuat tabel/kolom/jalur yang sama, penggabungan diam-diam akan menggandakan atau
 // menimpanya; karena itu tabrakan = panic saat paket dimuat (amandemen ini harus
@@ -204,6 +218,7 @@ var amandemenSekitar = func() []kolomSkema {
 func init() {
 	amandemenKolom["T_BUILDINGCONSTRUCTION"] = append(amandemenKolom["T_BUILDINGCONSTRUCTION"], amandemenBangunan...)
 	amandemenKolom["T_SURROUNDINGRISK"] = append(amandemenKolom["T_SURROUNDINGRISK"], amandemenSekitar...)
+	amandemenKolom["T_PROPERTYITEMLIST"] = append(amandemenKolom["T_PROPERTYITEMLIST"], amandemenItem...)
 	for _, k := range amandemenPenunjuk {
 		amandemenKolom[k.tabel] = append(amandemenKolom[k.tabel], kolomSkema{nama: k.nama, tipe: tipePenunjuk, medan: k.medan})
 	}

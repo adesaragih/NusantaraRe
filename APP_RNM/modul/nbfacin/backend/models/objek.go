@@ -35,6 +35,36 @@ type ObjekFire struct {
 	IsHotWorkProcess    bool            // T_PROPERTY.IS_HOT_WORK_PROCESS_FLAG   (sel 78)
 	IsFlammableItem     bool            // T_PROPERTY.IS_FLAMMABLE_ITEM_FLAG     (sel 79)
 	SurroundingRisk     SurroundingRisk // T_SURROUNDINGRISK, satu baris per Property
+	// Tiket 39 - .Property.PropertyItemList, T_PROPERTYITEMLIST urut SEQ_NO (migrasi 188).
+	Items []ItemObjek
+}
+
+// ItemObjek - satu .Property.PropertyItemList(n) (tiket 39, `Section\PropertyItemFacIn_Section.xml`).
+// Uang dan persen dibawa sebagai TEKS desimal bertitik - tidak pernah float (ADR-0003/0016); services
+// mengurainya ke desimal berskala tetap (apd) untuk diperiksa, repository menulisnya NUMBER(38,8).
+type ItemObjek struct {
+	ItemTypeID     string // ITEM_TYPE_ID       (.ItemTypeID = V_JN_OBJ_ITEM.MJOI_KODE)
+	ItemType       string // ITEM_TYPE          (.ItemType = V_JN_OBJ_ITEM.JN_OBJ_ITEM)
+	Note           string // PROPERTI_ITEM_NOTE (.PropertiItemNote = V_JN_OBJ_ITEM.KETERANGAN)
+	PropertyYear   string // PROPERTY_YEAR      (kolom baru 188)
+	Unit           string // UNIT               (kolom baru 188)
+	Condition      string // CONDITION          (kolom baru 188)
+	Currency       string // CURRENCY           (CURRENCY.CURRENCY; wajib, A133)
+	TSI            string // TSI_OBJECT_ITEM    uang NUMBER(38,8), teks desimal
+	YearOfPlanting string // YEAR               (.Year, kolom baru 188)
+	NoOfTree       string // NO_OF_TREE         (kolom baru 188)
+	AreaHectar     string // AREA_HECTAR        (kolom baru 188)
+	Remark         string // REMARK
+	IsAdjustable   bool   // IS_ADJUSTABLE_FLAG teks "true"/"false"
+	PctAdjust2     string // PCT_ADJUST2        persen NUMBER(38,8), teks desimal
+	PctAdjustOther string // PCT_ADJUST_OTHER   persen NUMBER(38,8), teks desimal
+}
+
+// JenisItem - satu pilihan Object Item Type (tiket 39, V_JN_OBJ_ITEM).
+type JenisItem struct {
+	Kode       string // MJOI_KODE
+	Nama       string // JN_OBJ_ITEM
+	Keterangan string // KETERANGAN -> Object Item Note
 }
 
 // SurroundingRisk - .Property.SurroundingRisk (tiket 38). Teks apa adanya; tidak dicocokkan ke

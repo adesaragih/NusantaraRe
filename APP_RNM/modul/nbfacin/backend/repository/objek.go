@@ -2,7 +2,7 @@ package repository
 
 // Tab Object FIRE (tiket 35): .LocationList -> T_LOCATIONLIST (induk T_GENERAL_POLIS) ->
 // T_PROPERTY -> T_RISKLOCATION / T_BUILDINGCONSTRUCTION (tabel rancangan, migrasi 186) /
-// T_SURROUNDINGRISK (tiket 38, migrasi 187).
+// T_SURROUNDINGRISK (tiket 38, migrasi 187) / T_PROPERTYITEMLIST (tiket 39, migrasi 188, banyak per property).
 // Daftar dibaca urut SEQ_NO dan DIGANTI UTUH di dalam transaksi pemanggil (anak lebih dulu
 // dihapus, lalu disisip ulang urut). Seluruh nilai parameter terikat.
 
@@ -22,11 +22,13 @@ const (
 	TabelRiskLocation         = "T_RISKLOCATION"
 	TabelBuildingConstruction = "T_BUILDINGCONSTRUCTION"
 	TabelSurroundingRisk      = "T_SURROUNDINGRISK"
+	TabelPropertyItemList     = "T_PROPERTYITEMLIST"
 	sequenceLocationList      = "SEQ_T_LOCATIONLIST"
 	sequenceProperty          = "SEQ_T_PROPERTY"
 	sequenceRiskLocation      = "SEQ_T_RISKLOCATION"
 	sequenceBuildingConstruct = "SEQ_T_BUILDINGCONSTRUCTION"
 	sequenceSurroundingRisk   = "SEQ_T_SURROUNDINGRISK"
+	sequencePropertyItemList  = "SEQ_T_PROPERTYITEMLIST"
 	teksBenar, teksSalah      = "true", "false" // boolean Pega di IS_* (fixture)
 )
 
@@ -44,7 +46,7 @@ type ObjekOracle struct{ db *db.DB }
 // NewObjekOracle merakit penyimpan objek.
 func NewObjekOracle(d *db.DB) *ObjekOracle { return &ObjekOracle{db: d} }
 
-type tabelObjek struct{ work, general, loc, prop, risk, bang, sekitar string }
+type tabelObjek struct{ work, general, loc, prop, risk, bang, sekitar, item string }
 
 func (r *ObjekOracle) tabel() (tabelObjek, error) {
 	var t tabelObjek
@@ -52,7 +54,8 @@ func (r *ObjekOracle) tabel() (tabelObjek, error) {
 		nama string
 		ke   *string
 	}{{TabelWorkPolis, &t.work}, {TabelGeneralPolis, &t.general}, {TabelLocationList, &t.loc}, {TabelProperty, &t.prop},
-		{TabelRiskLocation, &t.risk}, {TabelBuildingConstruction, &t.bang}, {TabelSurroundingRisk, &t.sekitar}} {
+		{TabelRiskLocation, &t.risk}, {TabelBuildingConstruction, &t.bang}, {TabelSurroundingRisk, &t.sekitar},
+		{TabelPropertyItemList, &t.item}} {
 		q, err := r.db.Qualify(x.nama)
 		if err != nil {
 			return t, err
@@ -77,7 +80,9 @@ var kolomBacaObjek = []string{"p.OBJECT_NO", "p.OBJECT_TYPE", "p.OBJECT_NAME", "
 	"s.LEFT_OCCUPATION", "s.LEFT_CONSTRUCTION", "s.LEFT_DISTANCE", "s.LEFT_NOTE",
 	"s.BACK_OCCUPATION", "s.BACK_CONSTRUCTION", "s.BACK_DISTANCE", "s.BACK_NOTE",
 	"s.RIGHT_OCCUPATION", "s.RIGHT_CONSTRUCTION", "s.RIGHT_DISTANCE", "s.RIGHT_NOTE",
-	"s.HOUSEKEEPING_STATUS", "s.FLOOD_AREA_STATUS", "s.FLOOD_AREA", "s.HOUSEKEEPING_REMARK"}
+	"s.HOUSEKEEPING_STATUS", "s.FLOOD_AREA_STATUS", "s.FLOOD_AREA", "s.HOUSEKEEPING_REMARK",
+	// tiket 39: kunci item (T_PROPERTYITEMLIST.PARENT_ID)
+	"TO_CHAR(p.ID)"}
 
 // sqlBacaObjek - satu baris per lokasi; anak tunggal lewat LEFT JOIN (UNIQUE PARENT_ID, 186/187).
 func sqlBacaObjek(t tabelObjek) string {
@@ -95,6 +100,7 @@ ORDER BY l.SEQ_NO`
 func sqlHapusObjek(t tabelObjek) []string {
 	prop := "SELECT p.ID FROM " + t.prop + " p JOIN " + t.loc + " l ON l.ID = p.PARENT_ID WHERE l.PARENT_ID = :1"
 	return []string{
+		"DELETE FROM " + t.item + " WHERE PARENT_ID IN (" + prop + ")",
 		"DELETE FROM " + t.risk + " WHERE PARENT_ID IN (" + prop + ")",
 		"DELETE FROM " + t.bang + " WHERE PARENT_ID IN (" + prop + ")",
 		"DELETE FROM " + t.sekitar + " WHERE PARENT_ID IN (" + prop + ")",
@@ -180,6 +186,7 @@ func (r *ObjekOracle) BacaObjek(ctx context.Context, id string) ([]models.ObjekF
 	}
 	defer baris.Close()
 	hasil := []models.ObjekFire{}
+	var idProperty []string
 	for baris.Next() {
 		teks := make(map[string]*sql.NullString, len(kolomBacaObjek))
 		tujuan := make([]any, len(kolomBacaObjek))
@@ -211,10 +218,22 @@ func (r *ObjekOracle) BacaObjek(ctx context.Context, id string) ([]models.ObjekF
 				Right: models.SisiRisiko{Occupation: v("s.RIGHT_OCCUPATION"), Construction: v("s.RIGHT_CONSTRUCTION"),
 					Distance: v("s.RIGHT_DISTANCE"), Note: v("s.RIGHT_NOTE")},
 				HousekeepingStatus: v("s.HOUSEKEEPING_STATUS"), FloodAreaStatus: v("s.FLOOD_AREA_STATUS"),
-				FloodArea: v("s.FLOOD_AREA"), HousekeepingRemark: v("s.HOUSEKEEPING_REMARK")}})
+				FloodArea: v("s.FLOOD_AREA"), HousekeepingRemark: v("s.HOUSEKEEPING_REMARK")},
+			Items: []models.ItemObjek{}})
+		idProperty = append(idProperty, v("TO_CHAR(p.ID)"))
 	}
 	if err := baris.Err(); err != nil {
 		return nil, fmt.Errorf("repository: objek: %w", err)
+	}
+	baris.Close()
+	item, err := r.bacaItem(ctx, t, id)
+	if err != nil {
+		return nil, err
+	}
+	for i, p := range idProperty {
+		if d, ada := item[p]; ada && p != "" {
+			hasil[i].Items = d
+		}
 	}
 	return hasil, nil
 }
@@ -246,6 +265,7 @@ func (r *ObjekOracle) GantiObjek(ctx context.Context, tx *db.Tx, id string, bari
 	k := db.KosongJadiNil
 	for i, o := range baris {
 		ids := make([]string, 5)
+		// ids: 0 lokasi, 1 property, 2 risk, 3 bangunan, 4 sekitar; item bernomor sendiri (sisipItem).
 		for j, seq := range []string{sequenceLocationList, sequenceProperty, sequenceRiskLocation, sequenceBuildingConstruct,
 			sequenceSurroundingRisk} {
 			if ids[j], err = r.db.NomorBerikut(ctx, tx, seq); err != nil {
@@ -279,6 +299,9 @@ func (r *ObjekOracle) GantiObjek(ctx context.Context, tx *db.Tx, id string, bari
 			if err := db.PastikanSatuBaris(h, l.tabel); err != nil {
 				return err
 			}
+		}
+		if err := r.sisipItem(ctx, tx, t, ids[1], o.Items); err != nil {
+			return err
 		}
 	}
 	return nil

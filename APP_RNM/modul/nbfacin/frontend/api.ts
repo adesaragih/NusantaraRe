@@ -269,6 +269,142 @@ export interface ObjekFire {
   isFlammableItem: boolean
   /** `.Property.SurroundingRisk` (tiket 38). */
   surroundingRisk: SurroundingRisk
+  /** `.Property.PropertyItemList` (tiket 39), urut = PropertyItemNo. */
+  items: ItemObjek[]
+  /** `.Property.OccupationList` (tiket 40). */
+  occupations: OkupasiObjek[]
+  /** `.FEAList` baris objek (tiket 41) - Fire Extinguisher Availability. */
+  fea: BarisFEA[]
+  /** `.Property.ListCauseOfLoss` (tiket 42). */
+  lossRecords: CatatanKerugian[]
+  /** Loss ratio objek - BACA-SAJA, dikirim server; diabaikan saat PUT (tiket 42). */
+  lossRatio: LossRatio
+  /** `.Property.ListCauseOfLossClaim` - BACA-SAJA (Loss Record Internal); diabaikan saat PUT (tiket 42). */
+  internalLossRecords: KlaimInternal[]
+}
+
+/** Satu catatan kerugian - `ASM-FW-GISFW-Data-CauseOfLoss`. Uang = teks desimal (ADR-0003). */
+export interface CatatanKerugian {
+  /** `.DateOfLoss` - kabel `DD-MM-YYYY`. */
+  dateOfLoss: string
+  /** `.CoinsData.CoinsName` - kolom grid "Insured Name". */
+  coinsName: string
+  /** `.LossObject`. */
+  lossObject: string
+  /** `.Currency`. */
+  currency: string
+  /** `.Amount` "Total of Loss" - uang, tanpa isian di layar (baca-saja). */
+  amount: string
+  /** `.Claim` "Total Claim (100%)" - uang. */
+  claim: string
+  /** `.PreventionOfLoss` - uang. */
+  preventionOfLoss: string
+  /** `.CauseOfLoss`. */
+  causeOfLoss: string
+  /** `.Remarks`. */
+  remarks: string
+  /** `.Detail` "Loss Detail". */
+  detail: string
+}
+
+/** `.LossRatio1Year*` / `.LossRatio35Year*` baris objek (T_LOCATIONLIST). Teks desimal. */
+export interface LossRatio {
+  oneYearAmount: string
+  oneYearPercent: string
+  threeFiveYearAmount: string
+  threeFiveYearPercent: string
+}
+
+/** Satu baris Loss Record Internal - `ASM-FW-GISFW-Data-CauseOfLossClaim`. Uang = teks desimal. */
+export interface KlaimInternal {
+  /** `.DateOfLoss` - kabel `DD-MM-YYYY` (kolom Year = tahunnya). */
+  dateOfLoss: string
+  locationNo: string
+  location: string
+  currency: string
+  premium: string
+  /** `.EstiamsiKlaim` (O/S Claim). */
+  osClaim: string
+  /** `.AkseptasiKlaim` (Acccepted Claim). */
+  acceptedClaim: string
+  /** `.InccuredKlaim` (Incurred Claim). */
+  incurredClaim: string
+  /** `.LossRatio` - pecahan (Pega menampilkan dengan simbol %). */
+  lossRatio: string
+  remark: string
+}
+
+/** Satu baris FEA - `ASM-FW-GISFW-Data-OfferFacIn-OfferFEAList`. Jumlah unit = teks angka. */
+export interface BarisFEA {
+  /** `.APAR`. */
+  apar: string
+  /** `.Sprinkler`. */
+  sprinkler: string
+  /** `.SmokeDetector`. */
+  smokeDetector: string
+  /** `.Hydrant`. */
+  hydrant: string
+  /** `.DataFEA.PrivateTruckBrigade`. */
+  privateTruckBrigade: string
+  /** `.DataFEA.PrivateFireBrigade`. */
+  privateFireBrigade: string
+  /** `.DataFEA.TeamSOPSafety`. */
+  teamSopSafety: string
+  /** `.DataFEA.TeamSOPRiskManagement`. */
+  teamSopRiskManagement: string
+  /** `.InfoFEA`. */
+  info: string
+}
+
+/** Satu baris Occupation - `ASM-FW-GISFW-Data-Occupation`. */
+export interface OkupasiObjek {
+  /** `.OccupationId` = OCCUPATION.OLDID. */
+  occupationId: string
+  /** `.OccupationName` = OCCUPATION.NAME. */
+  occupationName: string
+  /** `.TableOfLimit.Category` - romawi "I"/"II"/"III" dari KDRiskExposure (`SetDataOccupation`). */
+  category: string
+  /** `.TableOfLimit.Description` - Class of Construction. */
+  constructionClass: string
+  /** `.TableOfLimit.PctLimit` - persen batas, TEKS apa adanya (Pega berkoma desimal). */
+  pctLimit: string
+}
+
+/**
+ * Satu baris Object Item - `ASM-FW-GISFW-Data-PropertyItem`. `tsi` = UANG, teks desimal bertitik apa adanya (ADR-0003,
+ * ADR-0016) - tidak pernah lewat float.
+ */
+export interface ItemObjek {
+  /** `.ItemTypeID` = V_JN_OBJ_ITEM.MJOI_KODE. */
+  itemTypeId: string
+  /** `.ItemType` = V_JN_OBJ_ITEM.JN_OBJ_ITEM (kolom grid "Object Item Type"). */
+  itemType: string
+  /** `.PropertiItemNote` (KETERANGAN dari `GetObjectItem`). */
+  note: string
+  /** `.PropertyYear`. */
+  propertyYear: string
+  /** `.Unit`. */
+  unit: string
+  /** `.Condition`. */
+  condition: string
+  /** `.Currency` (CURRENCY.CURRENCY). */
+  currency: string
+  /** `.TSIObjectItem` - uang, teks desimal. */
+  tsi: string
+  /** `.Year` (Year of Planting). */
+  yearOfPlanting: string
+  /** `.NoOfTree`. */
+  noOfTree: string
+  /** `.AreaHectar`. */
+  areaHectar: string
+  /** `.Remark`. */
+  remark: string
+  /** `.IsAdjustableFlag`. */
+  isAdjustable: boolean
+  /** `.PctAdjust2` (dropdown, tampil bila tidak Adjustable). */
+  pctAdjust2: string
+  /** `.PctAdjustOther` (angka, tampil bila Adjustable). */
+  pctAdjustOther: string
 }
 
 /** Satu sisi Surrounding Risk - `.{Front|Left|Back|Right}{Occupation|Construction|Distance|Note}`. */
@@ -392,9 +528,46 @@ export interface BarisOccupation {
   oldId: string
   /** `.Name` - masuk ke Note sisi itu. */
   name: string
+  /** `.KDRiskExposure` ("01"/"02"/"03") - dipakai sub-tab Occupation (tiket 40); boleh absen di jawaban lama. */
+  kdRiskExposure?: string
 }
 
 /** `GET /api/nbfacin/occupation?cari=` - saran Occupation Surrounding Risk (tiket 38). */
 export function cariOccupation(cari: string): Promise<{ baris: BarisOccupation[] }> {
   return minta<{ baris: BarisOccupation[] }>('/api/nbfacin/occupation', { kueri: { cari: cari.trim() } })
+}
+
+/** Satu jenis item objek - view V_JN_OBJ_ITEM (RD `BrowseV_JN_OBJ_ITEM`, ISACTIVE = 1). */
+export interface JenisItem {
+  /** MJOI_KODE. */
+  kode: string
+  /** JN_OBJ_ITEM. */
+  nama: string
+  /** KETERANGAN (`GetObjectItem`) -> Object Item Note. */
+  keterangan: string
+}
+
+/** `GET /api/nbfacin/jenis-item-objek` - pilihan Object Item Type (tiket 39). */
+export function daftarJenisItem(): Promise<{ baris: JenisItem[] }> {
+  return minta<{ baris: JenisItem[] }>('/api/nbfacin/jenis-item-objek')
+}
+
+/** `GET /api/nbfacin/mata-uang` - pilihan Currency (RD `BrowseCurrency_RD`, tanpa "ITL"). */
+export function daftarMataUang(): Promise<{ baris: string[] }> {
+  return minta<{ baris: string[] }>('/api/nbfacin/mata-uang')
+}
+
+/** Satu baris TABLEOFLIMIT (RD `BrowseTableOfLimit_RD`). */
+export interface BarisTableOfLimit {
+  description: string
+  /** Teks apa adanya. */
+  pctLimit: string
+}
+
+/**
+ * `GET /api/nbfacin/kasus/{caseId}/table-of-limit?category=` - popup Choose Class of Construction (tiket 40). Tahun dan
+ * Bizcode (`pyWorkPage.OfferFacIn.CurrentYear`, `QuotationData.BusinessCode`) diturunkan server dari case.
+ */
+export function cariTableOfLimit(caseId: string, category: string): Promise<{ baris: BarisTableOfLimit[] }> {
+  return minta<{ baris: BarisTableOfLimit[] }>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/table-of-limit`, { kueri: { category } })
 }

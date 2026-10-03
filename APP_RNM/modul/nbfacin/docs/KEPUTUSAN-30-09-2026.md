@@ -1240,6 +1240,16 @@ A129–A131 menunggu konfirmasi (`issues/38-surrounding-risk.md`). Tanpa keputus
 (`DDL\FrontConstruction.xml`, `Ownership.xml`, `FloodAreaStatus.xml`, `HousekeepingStatus.xml`, `FloodArea.xml`,
 ditambahkan work owner) dipakai frontend saja — server tidak memvalidasi enumerasi.
 
+## Tiket 39 — sub-tab Object Item (backend), diteruskan sesi `nusantarare-0f`
+
+`GET`/`PUT …/objek` membawa `items` → `T_PROPERTYITEMLIST` (migrasi **188**, sebagian pola A109, enam kolom baru +
+amandemen loader `amandemenItem`; skema 79 tabel / **1.418** kolom). `TSI_OBJECT_ITEM` uang `NUMBER(38,8)` (ADR-0016),
+`PCT_ADJUST2`/`PCT_ADJUST_OTHER` persen `NUMBER(38,8)` — teks desimal di JSON, `apd` di Go, nol float. `GET
+/api/nbfacin/jenis-item-objek` (V_JN_OBJ_ITEM) dan `GET /api/nbfacin/mata-uang` (CURRENCY) menurut RD `[terverifikasi]`;
+DDL kedua objek warisan itu **tidak ada** — tipe kolomnya `belum terverifikasi` (diminta lewat sesi 0f). Ditulis, belum
+dijalankan — urutan DEV: … → 187 → **188**. Keputusan agent A132–A137 menunggu konfirmasi (`issues/39-object-item.md`);
+A133 (mata uang wajib) bersandar pada K-069 + K-012 (ADR modul 0006 `Unknown` eksplisit, bukan `docs/bersama` ADR-0006).
+
 ## Yang belum diputuskan
 
 

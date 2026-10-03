@@ -43,6 +43,27 @@ type objekKabel struct {
 	IsHotWorkProcess    bool         `json:"isHotWorkProcess"`
 	IsFlammableItem     bool         `json:"isFlammableItem"`
 	SurroundingRisk     sekitarKabel `json:"surroundingRisk"`
+	// tiket 39
+	Items []itemKabel `json:"items"`
+}
+
+// itemKabel - kontrak `ItemObjek` frontend (tiket 39); uang/persen = teks desimal.
+type itemKabel struct {
+	ItemTypeID     string `json:"itemTypeId"`
+	ItemType       string `json:"itemType"`
+	Note           string `json:"note"`
+	PropertyYear   string `json:"propertyYear"`
+	Unit           string `json:"unit"`
+	Condition      string `json:"condition"`
+	Currency       string `json:"currency"`
+	TSI            string `json:"tsi"`
+	YearOfPlanting string `json:"yearOfPlanting"`
+	NoOfTree       string `json:"noOfTree"`
+	AreaHectar     string `json:"areaHectar"`
+	Remark         string `json:"remark"`
+	IsAdjustable   bool   `json:"isAdjustable"`
+	PctAdjust2     string `json:"pctAdjust2"`
+	PctAdjustOther string `json:"pctAdjustOther"`
 }
 
 // sekitarKabel - kontrak `SurroundingRisk` frontend (tiket 38).
@@ -85,7 +106,25 @@ func keKabel(o models.ObjekFire) objekKabel {
 		IsFlammableItem: o.IsFlammableItem,
 		SurroundingRisk: sekitarKabel{Front: sisiKabel(s.Front), Left: sisiKabel(s.Left), Back: sisiKabel(s.Back),
 			Right: sisiKabel(s.Right), HousekeepingStatus: s.HousekeepingStatus, FloodAreaStatus: s.FloodAreaStatus,
-			FloodArea: s.FloodArea, HousekeepingRemark: s.HousekeepingRemark}}
+			FloodArea: s.FloodArea, HousekeepingRemark: s.HousekeepingRemark},
+		Items: keItemKabel(o.Items)}
+}
+
+// keItemKabel / keItemModel - ItemObjek <-> itemKabel; selalu larik (bukan null) ke luar.
+func keItemKabel(d []models.ItemObjek) []itemKabel {
+	hasil := make([]itemKabel, 0, len(d))
+	for _, i := range d {
+		hasil = append(hasil, itemKabel(i))
+	}
+	return hasil
+}
+
+func keItemModel(d []itemKabel) []models.ItemObjek {
+	hasil := make([]models.ItemObjek, 0, len(d))
+	for _, i := range d {
+		hasil = append(hasil, models.ItemObjek(i))
+	}
+	return hasil
 }
 
 func keModel(o objekKabel) models.ObjekFire {
@@ -100,7 +139,8 @@ func keModel(o objekKabel) models.ObjekFire {
 		IsFlammableItem: o.IsFlammableItem,
 		SurroundingRisk: models.SurroundingRisk{Front: models.SisiRisiko(s.Front), Left: models.SisiRisiko(s.Left),
 			Back: models.SisiRisiko(s.Back), Right: models.SisiRisiko(s.Right), HousekeepingStatus: s.HousekeepingStatus,
-			FloodAreaStatus: s.FloodAreaStatus, FloodArea: s.FloodArea, HousekeepingRemark: s.HousekeepingRemark}}
+			FloodAreaStatus: s.FloodAreaStatus, FloodArea: s.FloodArea, HousekeepingRemark: s.HousekeepingRemark},
+		Items: keItemModel(o.Items)}
 }
 
 func keObjekKabel(d []models.ObjekFire) daftarObjek {

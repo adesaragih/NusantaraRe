@@ -267,6 +267,12 @@
   font-weight: 600;
 }
 
+/* Kolom angka (TSI) rata kanan. */
+.nbfacin .nbf-angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Save tab Object di kanan (Dtl sel 25). */
 .nbfacin .nbf-objek__kaki {
   display: flex;

@@ -36,6 +36,8 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc("POST /api/nbfacin/risk-address", simpanAlamat(svc, stubPelaku))
 	mux.HandleFunc("GET /api/nbfacin/rw", cariRW(svc))
 	mux.HandleFunc("GET /api/nbfacin/occupation", cariOccupation(svc))
+	mux.HandleFunc("GET /api/nbfacin/jenis-item-objek", daftarJenisItem(svc))
+	mux.HandleFunc("GET /api/nbfacin/mata-uang", daftarMataUang(svc))
 }
 
 // isianOpportunity - badan POST /api/nbfacin/opportunity, kontrak frontend
@@ -287,7 +289,7 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		errors.Is(err, services.ErrMarketingTanpaDatabase), errors.Is(err, services.ErrPortalTanpaDatabase),
 		errors.Is(err, services.ErrSOBTanpaDatabase), errors.Is(err, services.ErrObjekTanpaDatabase),
 		errors.Is(err, services.ErrRiskTanpaDatabase), errors.Is(err, services.ErrRWTanpaDatabase),
-		errors.Is(err, services.ErrOccupationTanpaDatabase):
+		errors.Is(err, services.ErrOccupationTanpaDatabase), errors.Is(err, services.ErrPilihanItemTanpaDatabase):
 		galat.Tulis(w, http.StatusServiceUnavailable, err.Error())
 	default:
 		log.Printf("nbfacin: galat server: %v", err)

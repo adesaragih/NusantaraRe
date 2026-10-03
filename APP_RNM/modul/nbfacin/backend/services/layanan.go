@@ -53,7 +53,8 @@ func DariDasar(d *inti.Dasar) *Service {
 		DenganObjek(repository.NewObjekOracle(d.DB())).
 		DenganRisk(repository.NewRiskOracle(d.DB())).
 		DenganRW(repository.NewRWOracle(d.DB())).
-		DenganOccupation(repository.NewOccupationOracle(d.DB()))
+		DenganOccupation(repository.NewOccupationOracle(d.DB())).
+		DenganPilihanItem(repository.NewPilihanItemOracle(d.DB()))
 }
 
 // Service - layanan NB Fac In.
@@ -86,7 +87,10 @@ type Service struct {
 	rw repository.PenyimpanRW
 	// occupation - saran Occupation Surrounding Risk (tiket 38); nil = tanpa basis data (503).
 	occupation repository.PembacaOccupation
-	jam        func() time.Time
+	// jenisItem, mataUang - pilihan Object Item Type / Currency (tiket 39); nil = tanpa basis data (503).
+	jenisItem repository.PembacaJenisItem
+	mataUang  repository.PembacaMataUang
+	jam       func() time.Time
 }
 
 // DenganAkun memasang pembaca tabel akun (tiket 27).

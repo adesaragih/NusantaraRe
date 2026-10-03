@@ -30,6 +30,20 @@ import {
   MEDAN_SISI,
   LAIN_SEKITAR,
   TEKS_SEKITAR,
+  GRID_ITEM,
+  FORM_ITEM,
+  ITEM_KOSONG,
+  TEKS_ITEM,
+  GRID_OKUPASI,
+  FORM_OKUPASI,
+  POPUP_OKUPASI,
+  POPUP_KONSTRUKSI,
+  GRID_FEA,
+  FORM_FEA,
+  GRID_KERUGIAN,
+  FORM_KERUGIAN,
+  LOSS_RATIO,
+  GRID_KLAIM_INTERNAL,
   OPSI_CONSTRUCTION,
   CONSTRUCTION_KOSONG,
   OPSI_OWNERSHIP,
@@ -480,5 +494,179 @@ describe.skipIf(!adaSekitarDDL)('dropdown Surrounding Risk = aturan properti Peg
 
   it('Flood Area Status "Yes" bernilai "0" = syarat tampil Flood Area', () => {
     expect(OPSI_FLOOD_STATUS.find((o) => o.label === 'Yes')?.value).toBe('0')
+  })
+})
+
+const BERKAS_ITEM = {
+  daftar: NBFACIN + 'Section\\PropertyItemList.xml',
+  form: NBFACIN + 'Section\\PropertyItemFacIn_Section.xml',
+  pct: NBFACIN + 'Activity\\ValidateAdjustPct.xml',
+}
+const adaItem = Object.values(BERKAS_ITEM).every((b) => existsSync(b))
+
+describe.skipIf(!adaItem)('Object Item = korpus (PropertyItemList, PropertyItemFacIn_Section) - tiket 39', () => {
+  const baca = (b: string) => (adaItem ? readFileSync(b, 'utf-8') : '')
+  const daftar = baca(BERKAS_ITEM.daftar)
+  const form = baca(BERKAS_ITEM.form)
+
+  it.each([...GRID_ITEM.kolom, ...GRID_ITEM.total].map((k) => [k.label, k] as const))('kolom grid %s', (_, k) => {
+    expect(blokSel(daftar, k.sel).some((b) => b.includes(`<pyValue>${k.label}</pyValue>`))).toBe(true)
+  })
+
+  it('grid item atas .Property.PropertyItemList (master-detail); total atas .Property.TotalTSIList', () => {
+    expect(daftar).toContain('<pyPageListProperty>.Property.PropertyItemList</pyPageListProperty>')
+    expect(daftar).toContain('<pyPageListProperty>.Property.TotalTSIList</pyPageListProperty>')
+  })
+
+  it.each(Object.entries(FORM_ITEM))('form %s', (_, u) => {
+    expect(blokSel(form, u.sel).some((b) => b.includes(`<${u.tag}>${u.label}</${u.tag}>`))).toBe(true)
+  })
+
+  it('pilihan kosong "Choose"; Adjustment Pct. angka tampil bila Adjustable; pesan ValidateAdjustPct', () => {
+    expect(form).toContain(`<pyNoSelectionText>${ITEM_KOSONG}</pyNoSelectionText>`)
+    expect(blokSel(form, FORM_ITEM.pctAdjust.sel).some((b) => b.includes('<pyCondition>IsAdjustableFlag</pyCondition>'))).toBe(true)
+    expect(baca(BERKAS_ITEM.pct)).toContain(TEKS_ITEM.pctAdjust)
+  })
+
+  it('uji ini menggigit: label salah tidak ditemukan', () => {
+    expect(blokSel(form, '17').some((b) => b.includes('<pyLabelFieldValue>TSI Object Item</pyLabelFieldValue>'))).toBe(false)
+  })
+})
+
+const BERKAS_OKUPASI = {
+  daftar: NBFACIN + 'Section\\OccupationList.xml',
+  form: NBFACIN + 'Section\\OccupationItemFacIn_Section.xml',
+  cari: NBFACIN + 'Section\\ChooseOccupation.xml',
+  konstruksi: NBFACIN + 'Section\\ChooseClassofContraction.xml',
+  data: NBFACIN + 'Activity\\SetDataOccupation.xml',
+}
+const adaOkupasi = Object.values(BERKAS_OKUPASI).every((b) => existsSync(b))
+
+describe.skipIf(!adaOkupasi)('Occupation = korpus (OccupationList, OccupationItemFacIn_Section, Choose*) - tiket 40', () => {
+  const baca = (b: string) => (adaOkupasi ? readFileSync(b, 'utf-8') : '')
+  const daftar = baca(BERKAS_OKUPASI.daftar)
+  const form = baca(BERKAS_OKUPASI.form)
+  const cari = baca(BERKAS_OKUPASI.cari)
+  const konstruksi = baca(BERKAS_OKUPASI.konstruksi)
+  const ada = (xml: string, sel: string, tag: string, label: string) => blokSel(xml, sel).some((b) => b.includes(`<${tag}>${label}</${tag}>`))
+
+  it.each(GRID_OKUPASI.map((k) => [k.label, k] as const))('kolom grid %s', (_, k) => {
+    expect(ada(daftar, k.sel, 'pyValue', k.label)).toBe(true)
+  })
+
+  it('grid atas .Property.OccupationList', () => {
+    expect(daftar).toContain('<pyPageListProperty>.Property.OccupationList</pyPageListProperty>')
+  })
+
+  it.each(Object.entries(FORM_OKUPASI))('form %s', (_, u) => {
+    expect(ada(form, u.sel, u.tag, u.label)).toBe(true)
+  })
+
+  it('Class of Construction wajib', () => {
+    expect(blokSel(form, FORM_OKUPASI.konstruksi.sel).some((b) => b.includes('<pyRequired>true</pyRequired>'))).toBe(true)
+  })
+
+  it('popup Occupation: kotak cari, kolom ID / Name, Choose; RD BrowseOccupationFacInFIRE_RD', () => {
+    expect(ada(cari, POPUP_OKUPASI.cari.sel, POPUP_OKUPASI.cari.tag, POPUP_OKUPASI.cari.label)).toBe(true)
+    for (const k of POPUP_OKUPASI.kolom) expect(ada(cari, k.sel, 'pyValue', k.label)).toBe(true)
+    expect(ada(cari, POPUP_OKUPASI.pilih.sel, POPUP_OKUPASI.pilih.tag, POPUP_OKUPASI.pilih.label)).toBe(true)
+    expect(cari).toContain('BrowseOccupationFacInFIRE_RD')
+  })
+
+  it('popup Class of Construction: kolom Description, Choose; RD BrowseTableOfLimit_RD', () => {
+    expect(ada(konstruksi, POPUP_KONSTRUKSI.kolom.sel, 'pyValue', POPUP_KONSTRUKSI.kolom.label)).toBe(true)
+    expect(ada(konstruksi, POPUP_KONSTRUKSI.pilih.sel, POPUP_KONSTRUKSI.pilih.tag, POPUP_KONSTRUKSI.pilih.label)).toBe(true)
+    expect(konstruksi).toContain('BrowseTableOfLimit_RD')
+  })
+
+  it('SetDataOccupation: KDRiskExposure 03/02/01 -> III/II/I', () => {
+    expect(baca(BERKAS_OKUPASI.data)).toMatch(/@if\(\.TableOfLimit\.Category="03","III",@if\(\.TableOfLimit\.Category="02","II",@if\(\.TableOfLimit\.Category="01","I",""\)\)\)/)
+  })
+
+  it('uji ini menggigit: label salah tidak ditemukan', () => {
+    expect(ada(form, '9', 'pyLabelFieldValue', 'Class Of Construction')).toBe(false)
+  })
+})
+
+const BERKAS_FEA = {
+  daftar: NBFACIN + 'Section\\FEAList.xml',
+  form: NBFACIN + 'Section\\InputFEA_IsUW.xml',
+  aksi: NBFACIN + 'FlowAction\\InputFEA.xml',
+}
+const adaFEA = Object.values(BERKAS_FEA).every((b) => existsSync(b))
+/** Label berisi `&` tertulis `&amp;` di XML. */
+const xmlTeks = (s: string) => s.replace(/&/g, '&amp;')
+
+describe.skipIf(!adaFEA)('FEA = korpus (FEAList, InputFEA_IsUW, flow action InputFEA) - tiket 41', () => {
+  const baca = (b: string) => (adaFEA ? readFileSync(b, 'utf-8') : '')
+  const daftar = baca(BERKAS_FEA.daftar)
+  const form = baca(BERKAS_FEA.form)
+
+  it('FEA = Fire Extinguisher Availability (pyLabel flow action InputFEA)', () => {
+    expect(baca(BERKAS_FEA.aksi)).toContain('<pyLabel>Input Fire Extinguisher Availability</pyLabel>')
+  })
+
+  it.each(GRID_FEA.map((k) => [k.label, k] as const))('kolom grid %s', (_, k) => {
+    expect(blokSel(daftar, k.sel).some((b) => b.includes(`<pyValue>${xmlTeks(k.label)}</pyValue>`))).toBe(true)
+  })
+
+  it('grid atas .FEAList (master-detail, flow action InputFEA)', () => {
+    expect(daftar).toContain('<pyPageListProperty>.FEAList</pyPageListProperty>')
+    expect(daftar).toContain('<pyRowEditing>masterDetail</pyRowEditing>')
+  })
+
+  it.each(Object.entries(FORM_FEA))('form %s', (_, u) => {
+    expect(blokSel(form, u.sel).some((b) => b.includes(`<pyLabelFieldValue>${xmlTeks(u.label)}</pyLabelFieldValue>`))).toBe(true)
+  })
+
+  it('uji ini menggigit: label salah tidak ditemukan', () => {
+    expect(blokSel(form, '12').some((b) => b.includes('<pyLabelFieldValue>APAR</pyLabelFieldValue>'))).toBe(false)
+  })
+})
+
+const BERKAS_KERUGIAN = {
+  daftar: NBFACIN + 'Section\\CauseOfLoss_FacIn.xml',
+  form: NBFACIN + 'Section\\InputCauseOfLoss_FacIn.xml',
+  rasio: NBFACIN + 'Section\\InputOfferFacInLossRatio.xml',
+  internal: NBFACIN + 'Section\\CauseOfLossClaim_FacIn.xml',
+}
+const adaKerugian = Object.values(BERKAS_KERUGIAN).every((b) => existsSync(b))
+
+describe.skipIf(!adaKerugian)('Loss Record + Loss Record Internal = korpus - tiket 42', () => {
+  const baca = (b: string) => (adaKerugian ? readFileSync(b, 'utf-8') : '')
+  const daftar = baca(BERKAS_KERUGIAN.daftar)
+  const form = baca(BERKAS_KERUGIAN.form)
+  const rasio = baca(BERKAS_KERUGIAN.rasio)
+  const internal = baca(BERKAS_KERUGIAN.internal)
+  const ada = (xml: string, sel: string, tag: string, label: string) => blokSel(xml, sel).some((b) => b.includes(`<${tag}>${label}</${tag}>`))
+
+  it.each(GRID_KERUGIAN.map((k) => [k.label, k] as const))('kolom Loss Record %s', (_, k) => {
+    expect(ada(daftar, k.sel, 'pyValue', k.label)).toBe(true)
+  })
+
+  it.each(Object.entries(FORM_KERUGIAN))('form %s', (_, u) => {
+    expect(ada(form, u.sel, 'pyLabelFieldValue', u.label)).toBe(true)
+  })
+
+  it('Loss Detail wajib; grid atas .Property.ListCauseOfLoss', () => {
+    expect(blokSel(form, FORM_KERUGIAN.detail.sel).some((b) => b.includes('<pyRequired>true</pyRequired>'))).toBe(true)
+    expect(daftar).toContain('<pyPageListProperty>.Property.ListCauseOfLoss</pyPageListProperty>')
+  })
+
+  it.each(LOSS_RATIO.map((l) => [l.label, l] as const))('loss ratio %s', (_, l) => {
+    expect(ada(rasio, l.sel, 'pyLabelFieldValue', l.label)).toBe(true)
+  })
+
+  it.each(GRID_KLAIM_INTERNAL.map((k) => [k.label, k] as const))('kolom Loss Record Internal %s', (_, k) => {
+    expect(ada(internal, k.sel, 'pyValue', k.label)).toBe(true)
+  })
+
+  it('Loss Record Internal: tombol Get tersembunyi (1=0), grid baca-saja atas .Property.ListCauseOfLossClaim', () => {
+    expect(internal).toContain('<pyPageListProperty>.Property.ListCauseOfLossClaim</pyPageListProperty>')
+    expect(blokSel(internal, '1').some((b) => b.includes('<pyCondition>1=0</pyCondition>'))).toBe(true)
+  })
+
+  it('uji ini menggigit: label salah tidak ditemukan', () => {
+    expect(ada(form, '7', 'pyLabelFieldValue', 'Total Claim')).toBe(false)
   })
 })

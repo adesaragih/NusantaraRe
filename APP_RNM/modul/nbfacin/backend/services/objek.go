@@ -144,6 +144,7 @@ func periksaObjek(baris []models.ObjekFire) error {
 				masalah = append(masalah, fmt.Sprintf("baris[%d].%s paling banyak %d byte", i, l.nama, l.n))
 			}
 		}
+		masalah = append(masalah, periksaItem(i, o.Items)...)
 	}
 	if len(masalah) > 0 {
 		return fmt.Errorf("%w: %s", ErrMasukanObjek, strings.Join(masalah, "; "))
@@ -167,7 +168,7 @@ func (s *Service) BacaObjek(ctx context.Context, id string) ([]models.ObjekFire,
 }
 
 // GantiObjek - tombol Save tab Object: identitas (401) -> isian (400) -> basis data (503) ->
-// case (404); daftar diganti utuh di satu transaksi, lalu dibaca ulang.
+// mata uang item di CURRENCY (400, tiket 39) -> case (404); daftar diganti utuh di satu transaksi, lalu dibaca ulang.
 func (s *Service) GantiObjek(ctx context.Context, pelaku inti.Pelaku, id string, baris []models.ObjekFire) ([]models.ObjekFire, error) {
 	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return nil, err
@@ -180,6 +181,9 @@ func (s *Service) GantiObjek(ctx context.Context, pelaku inti.Pelaku, id string,
 	}
 	if !idKasusSah(id) {
 		return nil, ErrKasusTidakAda
+	}
+	if err := s.periksaMataUang(ctx, baris); err != nil {
+		return nil, err
 	}
 	err := s.transaksi(ctx, func(tx *db.Tx) error { return s.objek.GantiObjek(ctx, tx, id, baris) })
 	if errors.Is(err, repository.ErrKasusTidakAda) {

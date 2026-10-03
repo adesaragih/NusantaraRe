@@ -28,6 +28,10 @@ import { useEffect, useRef, useState } from 'react'
 import { BelumTersedia, Field, Gagal, Halaman, Pilih, StripTab, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
 import { ambilObjek, simpanObjek, type AlamatBaru, type BarisRisk, type ObjekFire, type SaringRisk } from '../api'
 import PopupRiskAddress from './PopupRiskAddress'
+import SubTabItem, { adaGalatItem } from './SubTabItem'
+import SubTabFEA, { adaGalatFEA } from './SubTabFEA'
+import { SubTabKerugian, SubTabKlaimInternal, adaGalatKerugian, lossRatioKosong } from './SubTabKerugian'
+import SubTabOkupasi from './SubTabOkupasi'
 import SubTabSekitar, { OWNERSHIP_AWAL, adaJarakMinus, sekitarKosong } from './SubTabSekitar'
 import {
   AWAL_BANGUNAN,
@@ -70,6 +74,12 @@ export function objekBaru(objectNo: string): ObjekFire {
     numberOfFloor: '', ...AWAL_BANGUNAN, partitionType: '', supportWallType: '', otherType: '',
     ownership: OWNERSHIP_AWAL, isProductionProcess: false, isHotWorkProcess: false, isFlammableItem: false,
     surroundingRisk: sekitarKosong(),
+    items: [],
+    occupations: [],
+    fea: [],
+    lossRecords: [],
+    lossRatio: lossRatioKosong(),
+    internalLossRecords: [],
   }
 }
 
@@ -84,6 +94,12 @@ export function rapikanObjek(d: Partial<ObjekFire>): ObjekFire {
   return {
     ...awal,
     ...d,
+    items: d.items ?? [],
+    occupations: d.occupations ?? [],
+    fea: d.fea ?? [],
+    lossRecords: d.lossRecords ?? [],
+    lossRatio: { ...lossRatioKosong(), ...d.lossRatio },
+    internalLossRecords: d.internalLossRecords ?? [],
     surroundingRisk: {
       ...k,
       ...s,
@@ -277,7 +293,7 @@ function ObjectAddress({ o, ubah, galatType }: { o: ObjekFire; ubah: (o: ObjekFi
   )
 }
 
-export default function TabObject({ caseId }: { caseId: string }) {
+export default function TabObject({ caseId, insuredName = '' }: { caseId: string; insuredName?: string }) {
   const [baris, setBaris] = useState<BarisLayar[]>([])
   const [terbuka, setTerbuka] = useState<Record<number, SubTab>>({})
   const [halaman, setHalaman] = useState(1)
@@ -324,19 +340,42 @@ export default function TabObject({ caseId }: { caseId: string }) {
   }
 
   const typeKosong = baris.some((x) => x.data.objectType === '')
-  const adaLantaiMinus = baris.some((x) => lantaiMinus(x.data.numberOfFloor) || adaJarakMinus(x.data.surroundingRisk))
+  const adaLantaiMinus = baris.some(
+    (x) =>
+      lantaiMinus(x.data.numberOfFloor) ||
+      adaJarakMinus(x.data.surroundingRisk) ||
+      adaGalatItem(x.data.items) ||
+      adaGalatFEA(x.data.fea) ||
+      adaGalatKerugian(x.data.lossRecords),
+  )
 
   async function simpan() {
     setCobaSimpan(true)
     if (typeKosong || adaLantaiMinus) {
-      // Baris yang salah dibuka di sub-tab tempat pesannya (Object Address, atau Surrounding Risk untuk Distance).
-      const salah = baris.filter((x) => x.data.objectType === '' || lantaiMinus(x.data.numberOfFloor) || adaJarakMinus(x.data.surroundingRisk))
+      // Baris yang salah dibuka di sub-tab tempat pesannya (Object Address / Surrounding Risk / Object Item).
+      const salah = baris.filter(
+        (x) =>
+          x.data.objectType === '' ||
+          lantaiMinus(x.data.numberOfFloor) ||
+          adaJarakMinus(x.data.surroundingRisk) ||
+          adaGalatItem(x.data.items) ||
+          adaGalatFEA(x.data.fea) ||
+          adaGalatKerugian(x.data.lossRecords),
+      )
       setTerbuka((t) => ({
         ...t,
         ...Object.fromEntries(
           salah.map((x) => [
             x.kunci,
-            x.data.objectType === '' || lantaiMinus(x.data.numberOfFloor) ? SUBTAB_OBJEK[0] : SUBTAB_OBJEK[1],
+            x.data.objectType === '' || lantaiMinus(x.data.numberOfFloor)
+              ? SUBTAB_OBJEK[0]
+              : adaJarakMinus(x.data.surroundingRisk)
+                ? SUBTAB_OBJEK[1]
+                : adaGalatItem(x.data.items)
+                  ? SUBTAB_OBJEK[2]
+                  : adaGalatFEA(x.data.fea)
+                    ? SUBTAB_OBJEK[4]
+                    : SUBTAB_OBJEK[5],
           ]),
         ),
       }))
@@ -429,6 +468,25 @@ export default function TabObject({ caseId }: { caseId: string }) {
                         <ObjectAddress o={x.data} ubah={(d) => ubah(x.kunci, d)} galatType={cobaSimpan && x.data.objectType === ''} />
                       ) : sub === SUBTAB_OBJEK[1] ? (
                         <SubTabSekitar o={x.data} ubah={(d) => ubah(x.kunci, d)} />
+                      ) : sub === SUBTAB_OBJEK[2] ? (
+                        <SubTabItem items={x.data.items} ubah={(items) => ubah(x.kunci, { ...x.data, items })} tandaiWajib={cobaSimpan} />
+                      ) : sub === SUBTAB_OBJEK[5] ? (
+                        <SubTabKerugian
+                          rows={x.data.lossRecords}
+                          lossRatio={x.data.lossRatio}
+                          insuredName={insuredName}
+                          ubah={(lossRecords) => ubah(x.kunci, { ...x.data, lossRecords })}
+                        />
+                      ) : sub === SUBTAB_OBJEK[6] ? (
+                        <SubTabKlaimInternal rows={x.data.internalLossRecords} />
+                      ) : sub === SUBTAB_OBJEK[4] ? (
+                        <SubTabFEA fea={x.data.fea} ubah={(fea) => ubah(x.kunci, { ...x.data, fea })} />
+                      ) : sub === SUBTAB_OBJEK[3] ? (
+                        <SubTabOkupasi
+                          caseId={caseId}
+                          occupations={x.data.occupations}
+                          ubah={(occupations) => ubah(x.kunci, { ...x.data, occupations })}
+                        />
                       ) : (
                         <BelumTersedia apa={`${TEKS_INWARD.isiTab} ${sub}`} />
                       )}

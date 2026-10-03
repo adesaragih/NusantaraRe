@@ -1,12 +1,12 @@
 # Struktur Tabel — NB FacIn: PETA TABEL WARISAN yang dibaca + tabel yang dibuat
 
-Modul ini **membuat sembilan tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
+Modul ini **membuat sepuluh tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
 `T_QUOTATIONDATA` **sebagian** (migrasi 182/183, tiket 31 / butir 78.4), `T_CEDINGCOLIST` utuh (185, tiket 34), dan tabel tab Object FIRE (186, tiket 35: `T_LOCATIONLIST` /
-`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh) — dan **menulis**
+`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian) — dan **menulis**
 baris `T_WORK_POLIS` milik premiumlistlife (K-064; tidak dibuat, tidak dipetakan kolomnya di sini). Selebihnya ia hanya
-**membaca** tiga belas tabel yang sudah ada — enam tabel limit
+**membaca** lima belas tabel yang sudah ada — enam tabel limit
 akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), tabel bisnis `BUSINESS` (tiket 28), `MARKETINGOFFICER` (31), `AGENT`
-(33), `RISKADDRESS` (36; juga DISISIPI tiket 37), `RW` (36/37), `OCCUPATION` (38) — sama dengan bab "Tabel warisan" `MODUL.md`. Enam tabel limit akseptasi yang sudah ada
+(33), `RISKADDRESS` (36; juga DISISIPI tiket 37), `RW` (36/37), `OCCUPATION` (38), `V_JN_OBJ_ITEM` dan `CURRENCY` (39) — sama dengan bab "Tabel warisan" `MODUL.md`. Enam tabel limit akseptasi yang sudah ada
 di `POOLDATA`, dengan nama tabel dan kolom **verbatim**. Berkas ini **peta**, bukan DDL: hanya kolom yang dibaca
 repository (`backend/repository/limit.go`). Ke-enamnya dinyatakan di `MODUL.md` bab "Tabel warisan: dibaca, tidak
 dibuat".
@@ -292,6 +292,40 @@ pilihan (aturan properti `DDL\FrontConstruction.xml` / `Ownership.xml` / `FloodA
 | `FLOOD_AREA` | teks | VARCHAR2(50) | **baru** — `.FloodArea` (sel 68); kode apa adanya (aturan properti `DDL\FloodArea.xml`: 4 nilai, 1 bita) |
 | `HOUSEKEEPING_REMARK` | teks | VARCHAR2(500) | **baru** — `.HousekeepingRemark` (sel 69) |
 
+## T_PROPERTYITEMLIST
+
+Tiket 39 — migrasi 188, **sebagian** (pola A109): rancangan jalur `LocationList/Property/PropertyItemList`, induk
+`T_PROPERTY`, **banyak** baris per property urut `SEQ_NO` (= `PROPERTY_ITEM_NO` 1..n). Tanpa kolom yang tidak dipakai layar
+ini (`CURRENCY_ID`, `CURRENCY_OLD_ID`, `FLAG_NET_RATE`, `IS_OLD_DATA`, `PERCENTAGE_ADJUSTMENT`, `PROPERTY_ID`,
+`SELECTED_LOCATION_ADDRESS`, `SELECTED_OBJECT_ITEM`, uang premi `TOTAL_GROSS_PREMI` / `TOTAL_NET_RATE` /
+`TOTAL_PREMIUM_NUSANTARA_RE`) — ditambah tiket 23. Enam kolom **baru** (A132, amandemen loader `amandemenItem`). Uang dan
+persen `NUMBER(38,8)` (rancangan `NUMBER` polos; ADR-0016), ditulis/dibaca sebagai teks desimal bertitik — nol float.
+
+| Kolom | Tipe | Tipe DDL (migrasi 188) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_PROPERTYITEMLIST` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_PROPERTY.ID` |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan item 1..n |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
+| `CURRENCY` | teks | VARCHAR2(50) DEFAULT 'UNKNOWN' NOT NULL | Currency (`CURRENCY.CURRENCY`, tanpa ITL); **wajib** diisi layar (A133; aplikasi tidak menulis `UNKNOWN`, K-012) |
+| `IS_ADJUSTABLE_FLAG` | teks | VARCHAR2(10) | Adjustable `true`/`false` |
+| `ITEM_TYPE` | teks | VARCHAR2(50) | Object Item Type — `V_JN_OBJ_ITEM.JN_OBJ_ITEM` |
+| `ITEM_TYPE_ID` | teks | VARCHAR2(50) | `V_JN_OBJ_ITEM.MJOI_KODE` (nilai dropdown) |
+| `PCT_ADJUST2` | angka desimal | NUMBER(38,8) | Adjustment Pct. (dropdown, tidak Adjustable) — persen |
+| `PCT_ADJUST_OTHER` | angka desimal | NUMBER(38,8) | Adjustment Pct. (Adjustable: 60..100, `ValidateAdjustPct`) — persen |
+| `PROPERTI_ITEM_NOTE` | teks | VARCHAR2(500) | Object Item Note — `V_JN_OBJ_ITEM.KETERANGAN` |
+| `PROPERTY_ITEM_NO` | teks | VARCHAR2(50) | nomor item = `SEQ_NO` (K-6) |
+| `REMARK` | teks | VARCHAR2(500) | Remark of `<ItemType>` |
+| `TSI_OBJECT_ITEM` | angka desimal | NUMBER(38,8) | **UANG** — TSI Object Item (All Unit), ≥ 0, ≤ 8 desimal |
+| `PROPERTY_YEAR` | teks | VARCHAR2(50) | **baru** — Year (`.PropertyYear`) |
+| `UNIT` | teks | VARCHAR2(50) | **baru** — Unit(s) (`.Unit`), bilangan bulat > 0 |
+| `CONDITION` | teks | VARCHAR2(500) | **baru** — Condition (`.Condition`), kode apa adanya |
+| `YEAR` | teks | VARCHAR2(50) | **baru** — Year of Planting (`.Year`) |
+| `NO_OF_TREE` | teks | VARCHAR2(50) | **baru** — No of Trees (`.NoOfTree`) |
+| `AREA_HECTAR` | teks | VARCHAR2(50) | **baru** — Area ( Hectar ) (`.AreaHectar`) |
+
 ## MARKETINGOFFICER
 
 Tiket 31 (pilihan Marketing Name). Tabel warisan `POOLDATA`, **baca saja**. Sumber tipe `[terverifikasi]`: DDL
@@ -367,3 +401,28 @@ Tiket 38 (saran Occupation Surrounding Risk). Tabel warisan `POOLDATA.OCCUPATION
 | `OLDID` | VARCHAR2(1000) | nilai saran (`.OldID`) → `T_SURROUNDINGRISK.*_OCCUPATION`; dicari; urutan kedua |
 | `NAME` | VARCHAR2(1000) | nama (`.Name`) → `*_NOTE` di layar; dicari; urutan pertama |
 | `TYPE` | VARCHAR2(1000) | saringan RD `.Type = Param.TYPE` = `'FIRE'` |
+
+## V_JN_OBJ_ITEM
+
+Tiket 39 (pilihan Object Item Type). View warisan `POOLDATA`, **baca saja**. Kelas → tabel `[terverifikasi]`
+`RDBList\GetObjectItembyName_SQL.xml` (kelas `ASM-FW-GISFW-INT-V_JN_OBJ_ITEM`, `FROM V_JN_OBJ_ITEM ... AND ISACTIVE ='1'`).
+RD `BrowseV_JN_OBJ_ITEM` (DISTINCT, urut JN_OBJ_ITEM, maks 10000) dan `GetObjectItem` (KETERANGAN). ⚠️ DDL view **tidak ada**
+di `DDL\` — tipe kolom `belum terverifikasi`; MJOI_KODE dibaca lewat `TO_CHAR`.
+
+| Kolom | Tipe DDL | Dibaca untuk |
+| --- | --- | --- |
+| `MJOI_KODE` | belum terverifikasi | `kode` → `T_PROPERTYITEMLIST.ITEM_TYPE_ID` |
+| `JN_OBJ_ITEM` | belum terverifikasi | `nama` → `ITEM_TYPE`; urutan |
+| `KETERANGAN` | belum terverifikasi | `keterangan` → `PROPERTI_ITEM_NOTE` (layar) |
+| `ISACTIVE` | belum terverifikasi | saringan RD `.ISACTIVE = 1` (dibandingkan `'1'` seperti SQL Pega) |
+
+## CURRENCY
+
+Tiket 39 (pilihan Currency + pemeriksaan mata uang item). Tabel warisan `POOLDATA`, **baca saja**. Kelas → tabel
+`[terverifikasi]` `RDBList\GetAllCurrency.xml` (kelas `ASM-FW-GISFW-INT-CURRENCY`, `select Currency as CURR, OldID as OldID
+from currency`). RD `BrowseCurrency_RD` (`.Currency != "ITL"`, maks 500, tanpa urutan). ⚠️ DDL tabel **tidak ada** di
+`DDL\` — tipe kolom `belum terverifikasi`.
+
+| Kolom | Tipe DDL | Dibaca untuk |
+| --- | --- | --- |
+| `CURRENCY` | belum terverifikasi | pilihan Currency (≠ `ITL`), urut CURRENCY (A135); anggota sah `T_PROPERTYITEMLIST.CURRENCY` |

@@ -9,9 +9,12 @@ import {
   cariOccupation,
   cariRiskAddress,
   cariSOB,
+  cariTableOfLimit,
   cariZipCode,
   daftarCaseNB,
   daftarClassOfBusiness,
+  daftarJenisItem,
+  daftarMataUang,
   daftarMarketing,
   simpanGeneral,
   simpanAlamatBaru,
@@ -254,6 +257,43 @@ describe('cariOccupation (tiket 38)', () => {
       await cariOccupation('  uji  ')
       expect(new URL(url, 'http://x').pathname).toMatch(/\/api\/nbfacin\/occupation$/)
       expect(new URL(url, 'http://x').searchParams.get('cari')).toBe('uji')
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('pilihan Object Item (tiket 39)', () => {
+  it('GET /api/nbfacin/jenis-item-objek dan /api/nbfacin/mata-uang', async () => {
+    const asli = globalThis.fetch
+    const url: string[] = []
+    globalThis.fetch = (async (u: RequestInfo | URL) => {
+      url.push(new URL(String(u), 'http://x').pathname)
+      return new Response(JSON.stringify({ baris: [] }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await daftarJenisItem()
+      await daftarMataUang()
+      expect(url).toEqual(['/api/nbfacin/jenis-item-objek', '/api/nbfacin/mata-uang'])
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('cariTableOfLimit (tiket 40)', () => {
+  it('GET /api/nbfacin/kasus/{caseId}/table-of-limit?category=', async () => {
+    const asli = globalThis.fetch
+    let url = ''
+    globalThis.fetch = (async (u: RequestInfo | URL) => {
+      url = String(u)
+      return new Response(JSON.stringify({ baris: [] }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await cariTableOfLimit('NB-1', 'III')
+      const u = new URL(url, 'http://x')
+      expect(u.pathname).toBe('/api/nbfacin/kasus/NB-1/table-of-limit')
+      expect(u.searchParams.get('category')).toBe('III')
     } finally {
       globalThis.fetch = asli
     }

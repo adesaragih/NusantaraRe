@@ -151,6 +151,6 @@ describe('Inward Facultative tahap 1 = tangkapan layar kasus FIRE + XML Periode'
   it('tab Object kasus FIRE = TabObject; selain FIRE tetap BelumTersedia (G-5)', () => {
     const SUMBER = readFileSync(join(__dirname, 'InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
     expect(SUMBER).toContain("const kasusFire = (op.groupBusiness ?? '').trim().toUpperCase() === 'FIRE'")
-    expect(SUMBER).toContain("{tab === 'Object' && kasusFire ? <TabObject caseId={kasus.caseId} /> : <BelumTersedia")
+    expect(SUMBER).toContain("{tab === 'Object' && kasusFire ? <TabObject caseId={kasus.caseId} insuredName={insured} /> : <BelumTersedia")
   })
 })

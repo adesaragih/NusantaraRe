@@ -159,6 +159,63 @@ describe('TabObject - Surrounding Risk (tiket 38)', () => {
   it('sub-tab kedua = SubTabSekitar; Distance minus menahan Save dan membuka Surrounding Risk', () => {
     expect(SUMBER).toMatch(/sub === SUBTAB_OBJEK\[1\] \? \(\s*<SubTabSekitar/)
     expect(SUMBER).toContain('adaJarakMinus(x.data.surroundingRisk)')
-    expect(SUMBER).toContain('? SUBTAB_OBJEK[0] : SUBTAB_OBJEK[1]')
+    expect(SUMBER).toMatch(
+      /\? SUBTAB_OBJEK\[0\]\s*: adaJarakMinus\(x\.data\.surroundingRisk\)\s*\? SUBTAB_OBJEK\[1\]\s*: adaGalatItem\(x\.data\.items\)\s*\? SUBTAB_OBJEK\[2\]\s*: adaGalatFEA\(x\.data\.fea\)\s*\? SUBTAB_OBJEK\[4\]\s*: SUBTAB_OBJEK\[5\]/,
+    )
+  })
+})
+
+describe('TabObject - Object Item (tiket 39)', () => {
+  it('objek baru tanpa item; data lama tanpa items dilengkapi []', () => {
+    expect(objekBaru('1').items).toEqual([])
+    const lama = { ...objekBaru('2') } as Partial<ReturnType<typeof objekBaru>>
+    delete lama.items
+    expect(rapikanObjek(lama).items).toEqual([])
+  })
+
+  it('sub-tab ketiga = SubTabItem; galat item menahan Save dan membuka Object Item', () => {
+    expect(SUMBER).toMatch(/sub === SUBTAB_OBJEK\[2\] \? \(\s*<SubTabItem items=\{x\.data\.items\}[\s\S]*?tandaiWajib=\{cobaSimpan\}/)
+    expect(SUMBER).toContain('adaGalatItem(x.data.items)')
+  })
+})
+
+describe('TabObject - Occupation (tiket 40)', () => {
+  it('objek baru tanpa occupation; data lama dilengkapi []; sub-tab keempat = SubTabOkupasi', () => {
+    expect(objekBaru('1').occupations).toEqual([])
+    const lama = { ...objekBaru('2') } as Partial<ReturnType<typeof objekBaru>>
+    delete lama.occupations
+    expect(rapikanObjek(lama).occupations).toEqual([])
+    expect(SUMBER).toMatch(/sub === SUBTAB_OBJEK\[3\] \? \(\s*<SubTabOkupasi\s*caseId=\{caseId\}/)
+  })
+})
+
+describe('TabObject - FEA (tiket 41)', () => {
+  it('objek baru tanpa FEA; data lama dilengkapi []; sub-tab kelima = SubTabFEA; galat FEA menahan Save', () => {
+    expect(objekBaru('1').fea).toEqual([])
+    const lama = { ...objekBaru('2') } as Partial<ReturnType<typeof objekBaru>>
+    delete lama.fea
+    expect(rapikanObjek(lama).fea).toEqual([])
+    expect(SUMBER).toMatch(/sub === SUBTAB_OBJEK\[4\] \? \(\s*<SubTabFEA fea=\{x\.data\.fea\}/)
+    expect(SUMBER).toContain('adaGalatFEA(x.data.fea)')
+  })
+})
+
+describe('TabObject - Loss Record (tiket 42)', () => {
+  it('objek baru: tanpa catatan, loss ratio kosong; data lama dilengkapi', () => {
+    const o = objekBaru('1')
+    expect([o.lossRecords, o.internalLossRecords]).toEqual([[], []])
+    expect(o.lossRatio).toEqual({ oneYearAmount: '', oneYearPercent: '', threeFiveYearAmount: '', threeFiveYearPercent: '' })
+    const lama = { ...objekBaru('2') } as Partial<ReturnType<typeof objekBaru>>
+    delete lama.lossRecords
+    delete lama.lossRatio
+    delete lama.internalLossRecords
+    const r = rapikanObjek(lama)
+    expect([r.lossRecords, r.internalLossRecords, r.lossRatio.oneYearAmount]).toEqual([[], [], ''])
+  })
+
+  it('sub-tab keenam = SubTabKerugian (nama tertanggung case), ketujuh = SubTabKlaimInternal', () => {
+    expect(SUMBER).toMatch(/sub === SUBTAB_OBJEK\[5\] \? \(\s*<SubTabKerugian[\s\S]*?insuredName=\{insuredName\}/)
+    expect(SUMBER).toMatch(/sub === SUBTAB_OBJEK\[6\] \? \(\s*<SubTabKlaimInternal rows=\{x\.data\.internalLossRecords\} \/>/)
+    expect(SUMBER).toContain('adaGalatKerugian(x.data.lossRecords)')
   })
 })

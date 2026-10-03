@@ -22,7 +22,7 @@ func (o objekTiruan) GantiObjek(_ context.Context, _ *db.Tx, _ string, baris []m
 	return nil
 }
 
-// TestObjek - GET/PUT /api/nbfacin/kasus/{caseId}/objek (tiket 35, 38): 28 kunci persis kontrak
+// TestObjek - GET/PUT /api/nbfacin/kasus/{caseId}/objek (tiket 35, 38, 39): 29 kunci persis kontrak
 // ObjekFire, boolean JSON, `baris` larik walau kosong; PUT 200 baca ulang, 400/401/503.
 func TestObjek(t *testing.T) {
 	var d []models.ObjekFire
@@ -40,7 +40,7 @@ func TestObjek(t *testing.T) {
 	kunciMau := []string{"objectNo", "objectType", "objectName", "isMaterialDamage", "isTopRisk", "roadType", "roadName",
 		"buildingNo", "zipCode", "country", "riskLocation", "territory", "city", "district", "province", "riskAddressId",
 		"numberOfFloor", "roofType", "wallType", "floorType", "partitionType", "supportWallType", "otherType",
-		"ownership", "isProductionProcess", "isHotWorkProcess", "isFlammableItem", "surroundingRisk"}
+		"ownership", "isProductionProcess", "isHotWorkProcess", "isFlammableItem", "surroundingRisk", "items"}
 	if err := json.Unmarshal([]byte(isi), &j); err == nil && len(j.Baris) == 1 {
 		for _, k := range kunciMau {
 			if _, ada := j.Baris[0][k]; !ada {
@@ -82,7 +82,7 @@ func TestObjekSurroundingRisk(t *testing.T) {
 		`,"housekeepingStatus":"0","floodAreaStatus":"2","floodArea":"UJI AREA","housekeepingRemark":"UJI R"}`
 	kode, isi := minta(t, svc, "PUT", "/api/nbfacin/kasus/UJI-NB-1/objek",
 		`{"baris":[{"objectType":"UJI","ownership":"1","isProductionProcess":true,"isFlammableItem":true,"surroundingRisk":`+sekitar+`}]}`, "UJI-USER")
-	if kode != 200 || !strings.Contains(isi, `"surroundingRisk":`+sekitar+`}`) ||
+	if kode != 200 || !strings.Contains(isi, `"surroundingRisk":`+sekitar+`,"items":[]}`) ||
 		!strings.Contains(isi, `"ownership":"1","isProductionProcess":true,"isHotWorkProcess":false,"isFlammableItem":true`) {
 		t.Fatalf("%d %s", kode, isi)
 	}
@@ -116,5 +116,59 @@ func TestOccupation(t *testing.T) {
 	}
 	if kode, _ := minta(t, services.Baru(nil), "GET", "/api/nbfacin/occupation?cari=pa", "", ""); kode != 503 {
 		t.Errorf("tanpa DB: %d", kode)
+	}
+}
+
+// TestObjekItem - tiket 39: items pulang-pergi utuh (kunci persis kontrak ItemObjek, uang teks), items yang tidak
+// dikirim = [] ; 400 ber-indeks; mata uang diperiksa ke daftar.
+func TestObjekItem(t *testing.T) {
+	var d []models.ObjekFire
+	svc := services.Baru(nil).DenganObjek(objekTiruan{&d}).DenganTransaksi(tanpaOracle).DenganPilihanItem(pilihanTiruan{})
+	item := `{"itemTypeId":"UJI01","itemType":"UJI MESIN","note":"UJI KET","propertyYear":"2020","unit":"2","condition":"UJI",` +
+		`"currency":"IDR","tsi":"1500000000.12345678","yearOfPlanting":"","noOfTree":"","areaHectar":"","remark":"UJI R",` +
+		`"isAdjustable":true,"pctAdjust2":"","pctAdjustOther":"75.5"}`
+	kode, isi := minta(t, svc, "PUT", "/api/nbfacin/kasus/UJI-NB-1/objek", `{"baris":[{"objectType":"UJI","items":[`+item+`]},{"objectType":"UJI"}]}`, "UJI-USER")
+	if kode != 200 || !strings.Contains(isi, `"items":[`+item+`]`) || !strings.HasSuffix(isi, `"items":[]}]}`) {
+		t.Fatalf("%d %s", kode, isi)
+	}
+	if len(d) != 2 || len(d[0].Items) != 1 || d[0].Items[0].TSI != "1500000000.12345678" || d[1].Items == nil {
+		t.Errorf("model: %+v", d)
+	}
+	for nama, u := range map[string]struct {
+		badan, pesan string
+	}{
+		"tsi angka JSON": {`{"baris":[{"objectType":"UJI","items":[{"currency":"IDR","tsi":15}]}]}`, "bukan JSON"},
+		"tsi koma":       {`{"baris":[{"objectType":"UJI","items":[{"currency":"IDR","tsi":"1,5"}]}]}`, "baris[0].items[0].tsi"},
+		"mata uang ITL":  {`{"baris":[{"objectType":"UJI","items":[{"currency":"ITL"}]}]}`, `baris[0].items[0].currency \"ITL\"`},
+	} {
+		if kode, isi := minta(t, svc, "PUT", "/api/nbfacin/kasus/UJI-NB-1/objek", u.badan, "UJI-USER"); kode != 400 || !strings.Contains(isi, u.pesan) {
+			t.Errorf("%s: %d %s", nama, kode, isi)
+		}
+	}
+}
+
+type pilihanTiruan struct{}
+
+func (pilihanTiruan) DaftarJenisItem(context.Context) ([]models.JenisItem, error) {
+	return []models.JenisItem{{Kode: "UJI01", Nama: "UJI MESIN", Keterangan: "UJI KET"}}, nil
+}
+
+func (pilihanTiruan) DaftarMataUang(context.Context) ([]string, error) {
+	return []string{"IDR", "USD"}, nil
+}
+
+// TestPilihanItem - GET jenis-item-objek dan mata-uang (tiket 39): bentuk persis kontrak; tanpa identitas; 503.
+func TestPilihanItem(t *testing.T) {
+	svc := services.Baru(nil).DenganPilihanItem(pilihanTiruan{})
+	if kode, isi := minta(t, svc, "GET", "/api/nbfacin/jenis-item-objek", "", ""); kode != 200 || isi != `{"baris":[{"kode":"UJI01","nama":"UJI MESIN","keterangan":"UJI KET"}]}` {
+		t.Errorf("jenis item: %d %s", kode, isi)
+	}
+	if kode, isi := minta(t, svc, "GET", "/api/nbfacin/mata-uang", "", ""); kode != 200 || isi != `{"baris":["IDR","USD"]}` {
+		t.Errorf("mata uang: %d %s", kode, isi)
+	}
+	for _, jalur := range []string{"/api/nbfacin/jenis-item-objek", "/api/nbfacin/mata-uang"} {
+		if kode, _ := minta(t, services.Baru(nil), "GET", jalur, "", ""); kode != 503 {
+			t.Errorf("%s tanpa DB: %d", jalur, kode)
+		}
 	}
 }
