@@ -90,6 +90,11 @@ berinduk `T_GENERAL_POLIS` (`T_CARGOLIST`, `T_CEDINGCEDANTLIST`, `T_CURRENCYLIST
 dua cara (himpunan tabel = 10, baris jalur = 10; nol tabel berinduk campuran). Diterapkan di `loader/amandemen.go`
 (`selaraskanWorkPolis`) + `aturan.go`; mutasi 67/67 tertangkap.
 
+⚠️ **Sudah dibuat sebagian (butir 78.4, tiket 31):** `T_GENERAL_POLIS` (migrasi 182: `ID`, `IDPEGA`, `COB_GROUP`,
+`START_DATE_TIME`, `OFFERING_DATE`, `END_DATE_TIME`, `FOLLOWING`) dan `T_QUOTATIONDATA` (183: kolom sistem + 9 kolom
+blok General, `ID NUMBER(19)` + `SEQ_T_QUOTATIONDATA`, `UQ_T_QUOTATIONDATA_PARENT`). Tiket ini kelak **menambah** kolom
+sisanya lewat `ALTER`, tidak membuat ulang kedua tabel.
+
 ⚠️ **Terbuka:** `ALTER` atas tabel milik premiumlistlife dari rentang 180–219 — koordinasi dengan pemiliknya; kotak masuk
 PremiumList membaca **seluruh** `T_WORK_POLIS` tanpa saringan `LINI` (lihat register butir 76, risiko R1).
 

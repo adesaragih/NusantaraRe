@@ -1152,6 +1152,33 @@ bukan saringan. Tidak disunting (di luar lingkup).
 ekspor uji (butir 74, klaim sesi 0f, tidak diverifikasi agent ini). Bila nomor NB Pega yang ada memang mencapai 184351,
 nomor baru dapat bertabrakan dengan kasus lama — `belum terverifikasi`, menunggu work owner/DBA.
 
+## Keputusan work owner — 3 Oktober 2026, layar Inward Facultative tahap 2 (tiket 31)
+
+Tugas diteruskan sesi `nusantarare-0f` (work owner "commit dan lanjut"); butir yang perlu tafsiran ditanyakan langsung
+ke work owner di sesi ini (AskUserQuestion, 3 Oktober 2026). Bukti dan kontrak: `issues/31-baca-simpan-case-inward-general.md`.
+
+| # | Butir | Pilihan work owner |
+| ---: | --- | --- |
+| 78.1 | Bentuk simpan Begin/Offering/End date (rancangan: teks Pega VARCHAR2(30)) | **"Pega text, WIB"** — Offering `YYYYMMDD`; baca GMT → WIB → tanggal. Jam Begin/End: semula ~~00:00 WIB (`…T170000.000 GMT` hari sebelumnya)~~ → **diralat: "05:00 GMT / 12:00 WIB"** (pertanyaan diajukan ulang setelah agent meralat hitungannya: nilai terkini fixture Start 050000 ×4 / 170000 ×1, End ×3 / ×2 — angka awal menjumlahkan salinan `OldData`, jebakan sensus 5) |
+| 78.2 | Policy Type: data Pega berkode `0`/`1`/`2`, layar berlabel `Individual Policy`/`Master Policy`, pemetaan tidak ada di korpus | **"Label text for now"** — label disimpan apa adanya (penyimpangan); dikonversi ke kode bila pemetaan diketahui |
+| 78.3 | Type facultative: data `FacultativeIn`, layar `Facultative In` | **"As sent by the screen"** — tanpa konversi tebakan |
+| 78.4 | `T_GENERAL_POLIS` / `T_QUOTATIONDATA` tidak dapat dibuat utuh (presisi tim inti; panjang butir 68.1) | **"Create with needed columns"** — migrasi 182/183 kolom sistem + kolom layar; sisanya tiket 23 lewat `ALTER` |
+
+**Penerapan:** migrasi `182_t_general_polis.sql`, `183_t_quotationdata.sql` (+ `SEQ_T_QUOTATIONDATA`) — **ditulis, tidak
+dijalankan**; `GET /api/nbfacin/kasus/{caseId}`, `PUT /api/nbfacin/kasus/{caseId}/general`, `GET /api/nbfacin/marketing-officer`.
+Keputusan agent A86–A94 (menunggu konfirmasi): tiket 31 bab *Keputusan agent*.
+
+**Ralat atas brief** `[terverifikasi]` `Periode.xml`: Source of business = `.QuotationData.SobName`; Old Policy Number =
+`.Following` (akar, `T_GENERAL_POLIS.FOLLOWING`). `PEGA_MARKETINGOFFICER.txt` adalah prosedur, tabelnya `MARKETINGOFFICER`.
+
+## Tiket 32 — daftar case NB di portal Opportunity, diteruskan sesi `nusantarare-0f`
+
+Permintaan work owner (dikutip sesi 0f): **"nb yang sudah di create, muncul disini … harus ada case id nya, group business,
+insured name, status."** Dibangun `GET /api/nbfacin/opportunity` (`issues/32-daftar-case-nb-portal-opportunity.md`): hanya
+`LINI = 'FAC'`, status = `STATUS_WORK` (bukan `NBStatusNew` grid Pega — selisih dicatat), cari tidak peka huruf atas case id +
+Business Prospect Name. Keputusan agent A95–A98 menunggu konfirmasi; A97 mencatat lima selisih dengan
+`GetListOpportunityF` `[terverifikasi]` (saringan pembuat/team group/Resolved tidak diterapkan). ⚠️ Rute butuh migrasi 183.
+
 ## Yang belum diputuskan
 
 

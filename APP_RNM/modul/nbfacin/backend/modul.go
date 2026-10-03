@@ -17,8 +17,9 @@ import (
 )
 
 // berkasMigrasi adalah folder `migrations/` modul ini: 180 T_NB_OPPORTUNITY dan 181
-// SEQ_WORK_POLIS_NB (tiket 29, butir 76 - 181 berpenanda {NB_MULAI} yang wajib diisi
-// work owner/DBA sebelum dijalankan), slot menu 962 (butir 59).
+// SEQ_WORK_POLIS_NB (tiket 29, butir 76 - angka awal 181 diisi work owner/DBA, penanda
+// {NB_MULAI}), 182 T_GENERAL_POLIS dan 183 T_QUOTATIONDATA sebagian (tiket 31), slot menu
+// 962 (butir 59).
 //
 //go:embed migrations/*.sql
 var berkasMigrasi embed.FS

@@ -34,6 +34,17 @@
   max-width: 100%;
 }
 
+/* Tautan Name di grid portal (Pega pxLink -> openWorkByHandle): tombol bergaya tautan. */
+.nbfacin .nbf-tautan {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary-text);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* ------------------------------------------------------- form Opportunity */
 /* Tangkapan layar: Estimated Closing Date sendirian di baris atas, lalu dua kolom (kiri lebar, kanan
    sempit), lalu Description selebar form. */

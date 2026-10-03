@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import { badanPremiCargo, buatOpportunity, cariAccount, daftarClassOfBusiness } from './api'
+import {
+  ambilKasus,
+  badanPremiCargo,
+  buatOpportunity,
+  cariAccount,
+  daftarCaseNB,
+  daftarClassOfBusiness,
+  daftarMarketing,
+  simpanGeneral,
+} from './api'
 
 describe('badanPremiCargo', () => {
   it('angka tetap teks, lini MARINE CARGO, bukan master policy', () => {
@@ -84,6 +93,53 @@ describe('buatOpportunity (tiket 29)', () => {
       expect(url).toMatch(/\/api\/nbfacin\/opportunity$/)
       expect(JSON.parse(badan)).toEqual(isian)
       expect(h).toEqual({ caseId: 'NB-1' })
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('kasus NB - baca, simpan General, marketing officer (tiket 31)', () => {
+  it('rute dan metode sesuai kontrak; caseId di-encode', async () => {
+    const asli = globalThis.fetch
+    const panggil: { url: string; metode: string; badan: string }[] = []
+    globalThis.fetch = (async (u: RequestInfo | URL, init?: RequestInit) => {
+      panggil.push({ url: String(u), metode: init?.method ?? '', badan: String(init?.body ?? '') })
+      return new Response(JSON.stringify({ baris: [] }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await ambilKasus('NB-1')
+      await simpanGeneral('NB-1', {
+        reffNumber: 'UJI', qqName: '', beginDate: '01-10-2026', offeringDate: '03-10-2026', endDate: '',
+        policyType: '', marketingId: 'UJI-M', day: '', typeFacultative: 'Facultative In',
+      })
+      await daftarMarketing()
+      expect(panggil.map((p) => [p.metode, p.url.replace(/^.*(\/api\/)/, '$1')])).toEqual([
+        ['GET', '/api/nbfacin/kasus/NB-1'],
+        ['PUT', '/api/nbfacin/kasus/NB-1/general'],
+        ['GET', '/api/nbfacin/marketing-officer'],
+      ])
+      expect(JSON.parse(panggil[1]!.badan).marketingId).toBe('UJI-M')
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('daftarCaseNB (tiket 32)', () => {
+  it('GET /api/nbfacin/opportunity dengan cari (dipangkas) dan halaman', async () => {
+    const asli = globalThis.fetch
+    let url = ''
+    globalThis.fetch = (async (u: RequestInfo | URL) => {
+      url = String(u)
+      return new Response(JSON.stringify({ baris: [], total: 0, halaman: 1, ukuran: 15 }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await daftarCaseNB('  NB-1  ', 1)
+      expect(url).toMatch(/\/api\/nbfacin\/opportunity\?/)
+      const q = new URL(url, 'http://x').searchParams
+      expect(q.get('cari')).toBe('NB-1')
+      expect(q.get('halaman')).toBe('1')
     } finally {
       globalThis.fetch = asli
     }

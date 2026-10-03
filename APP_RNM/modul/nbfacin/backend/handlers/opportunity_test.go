@@ -63,7 +63,7 @@ func kirimOpportunity(t *testing.T, svc *services.Service, stub bool, pelaku, se
 // Data sintetis UJI-.
 func TestBuatOpportunity(t *testing.T) {
 	var pembuat string
-	svc := services.Baru(nil).DenganCaseNB(caseNBTiruan{pembuat: &pembuat}, tanpaOracle)
+	svc := services.Baru(nil).DenganCaseNB(caseNBTiruan{pembuat: &pembuat}).DenganTransaksi(tanpaOracle)
 	if kode, isi := kirimOpportunity(t, svc, false, "", "UJI-SESI", badanSah); kode != 201 || isi != `{"caseId":"NB-900001"}` || pembuat != "UJI-SESI" {
 		t.Fatalf("sesi: %d %s, pembuat %q", kode, isi, pembuat)
 	}
@@ -88,7 +88,7 @@ func TestBuatOpportunity(t *testing.T) {
 		{"bukan teks", svc, true, "UJI-STUB", `{"phase":1}`, 400, "JSON", ""},
 		{"isian tak sah", svc, true, "UJI-STUB", strings.Replace(badanSah, `"31-10-2026"`, `"31-02-2026"`, 1), 400, "estimatedClosingDate", ""},
 		{"tanpa DB", services.Baru(nil), true, "UJI-STUB", badanSah, 503, "basis data", ""},
-		{"galat Oracle", services.Baru(nil).DenganCaseNB(caseNBTiruan{err: errors.New("ORA-UJI rincian rahasia")}, tanpaOracle),
+		{"galat Oracle", services.Baru(nil).DenganCaseNB(caseNBTiruan{err: errors.New("ORA-UJI rincian rahasia")}).DenganTransaksi(tanpaOracle),
 			true, "UJI-STUB", badanSah, 500, "galat server", "rahasia"},
 	} {
 		kode, isi := kirimOpportunity(t, u.svc, u.stub, u.pelaku, "", u.badan)

@@ -102,3 +102,71 @@ export interface HasilOpportunity {
 export function buatOpportunity(isian: IsianOpportunity): Promise<HasilOpportunity> {
   return minta<HasilOpportunity>('/api/nbfacin/opportunity', { metode: 'POST', badan: isian })
 }
+
+/** Isian blok General layar Inward Facultative (section Periode) - tiket 30/31. Tanggal kabel DD-MM-YYYY. */
+export interface GeneralInward {
+  reffNumber: string
+  qqName: string
+  beginDate: string
+  offeringDate: string
+  endDate: string
+  policyType: string
+  /** `.QuotationData.MOID` - id marketing officer terpilih. */
+  marketingId: string
+  day: string
+  typeFacultative: string
+  /** Tampil-saja (diisi fitur Change SOB / Change Ceding Co / Following, tahap berikutnya). */
+  sourceOfBusiness: string
+  cedingCoName: string
+  groupName: string
+  oldPolicyNumber: string
+}
+
+/** Medan General yang dikirim tombol Save for later (tanpa medan tampil-saja). */
+export type SimpanGeneral = Omit<GeneralInward, 'sourceOfBusiness' | 'cedingCoName' | 'groupName' | 'oldPolicyNumber'>
+
+/** Jawaban `GET /api/nbfacin/kasus/{caseId}` (tiket 31, backend sesi c3). */
+export interface KasusNB {
+  caseId: string
+  position: string
+  statusWork: string
+  opportunity: IsianOpportunity
+  insuredName: string
+  general: GeneralInward
+}
+
+export function ambilKasus(caseId: string): Promise<KasusNB> {
+  return minta<KasusNB>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}`)
+}
+
+export function simpanGeneral(caseId: string, general: SimpanGeneral): Promise<KasusNB> {
+  return minta<KasusNB>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/general`, { metode: 'PUT', badan: general })
+}
+
+/** Pilihan Marketing Name (`BrowseMarketingOfficer_RD`). */
+export function daftarMarketing(): Promise<{ baris: { id: string; nama: string }[] }> {
+  return minta<{ baris: { id: string; nama: string }[] }>('/api/nbfacin/marketing-officer')
+}
+
+/** Satu baris daftar case NB di portal (tiket 32, backend sesi c3). Teks apa adanya. */
+export interface BarisCaseNB {
+  caseId: string
+  name: string
+  groupBusiness: string
+  insuredName: string
+  marketing: string
+  status: string
+}
+
+/** Jawaban `GET /api/nbfacin/opportunity` - daftar case NB Fac In, terbaru dulu. */
+export interface HalamanCaseNB {
+  baris: BarisCaseNB[]
+  total: number
+  halaman: number
+  ukuran: number
+}
+
+/** `cari` "mengandung" atas case id atau nama (placeholder Pega "NB-1234 or Name"); `halaman` mulai 1. */
+export function daftarCaseNB(cari: string, halaman: number): Promise<HalamanCaseNB> {
+  return minta<HalamanCaseNB>('/api/nbfacin/opportunity', { kueri: { cari: cari.trim(), halaman } })
+}

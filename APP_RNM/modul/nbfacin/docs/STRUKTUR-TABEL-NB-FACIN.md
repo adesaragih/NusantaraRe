@@ -1,8 +1,9 @@
 # Struktur Tabel — NB FacIn: PETA TABEL WARISAN yang dibaca + tabel yang dibuat
 
-Modul ini **membuat satu tabel**, `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3 — bab terakhir), dan **menulis**
+Modul ini **membuat tiga tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), dan `T_GENERAL_POLIS` /
+`T_QUOTATIONDATA` **sebagian** (migrasi 182/183, tiket 31 / butir 78.4) — dan **menulis**
 baris `T_WORK_POLIS` milik premiumlistlife (K-064; tidak dibuat, tidak dipetakan kolomnya di sini). Selebihnya ia hanya
-**membaca** delapan tabel yang sudah ada — enam tabel limit
+**membaca** sembilan tabel yang sudah ada — enam tabel limit
 akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), dan tabel bisnis `BUSINESS` (tiket 28). Enam tabel limit akseptasi yang sudah ada
 di `POOLDATA`, dengan nama tabel dan kolom **verbatim**. Berkas ini **peta**, bukan DDL: hanya kolom yang dibaca
 repository (`backend/repository/limit.go`). Ke-enamnya dinyatakan di `MODUL.md` bab "Tabel warisan: dibaca, tidak
@@ -116,3 +117,53 @@ keputusan agent A81.
 | `OPPORTUNITY_SOURCE` | teks | VARCHAR2(255) | Opportunity Source |
 | `BUSINESS_STATUS` | teks | VARCHAR2(255) | Business Status |
 | `DESCRIPTION` | teks | VARCHAR2(4000) | Description |
+
+## T_GENERAL_POLIS
+
+Tiket 31 (blok General layar Inward Facultative), butir 78.4 — **dibuat sebagian** modul ini, migrasi
+`182_t_general_polis.sql`: kolom sistem + kolom yang dipakai layar; kolom rancangan lain (termasuk kolom uang yang
+menunggu keputusan presisi tim inti) ditambah tiket 23 lewat `ALTER`. Nama/tipe = rancangan (`loader/skema_gen.go`,
+dijaga `TestMigrasiFlatSebagianCocokRancangan`). Berbagi PK dengan `T_WORK_POLIS` (K-064), tanpa FK lintas modul.
+
+| Kolom | Tipe | Tipe DDL (migrasi 182) | Isi |
+| --- | --- | --- | --- |
+| `ID` | teks | VARCHAR2(32) NOT NULL | PK = `T_WORK_POLIS.ID` (butir 76.1) |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan (diisi loader untuk data lama) |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan (diisi loader) |
+| `START_DATE_TIME` | teks | VARCHAR2(30) | Begin date — `.PolicyData.StartDateTime`, teks Pega `YYYYMMDDTHHMMSS.mmm GMT`, ditulis 12:00 WIB = `T050000.000 GMT` (butir 78.1) |
+| `OFFERING_DATE` | teks | VARCHAR2(30) | Offering date — `.PolicyData.OfferingDate`, teks Pega `YYYYMMDD` |
+| `END_DATE_TIME` | teks | VARCHAR2(30) | End date — `.PolicyData.EndDateTime`, teks Pega |
+| `FOLLOWING` | teks | VARCHAR2(50) | Old Policy Number — `.Following` (sel 72), tampil saja |
+
+## T_QUOTATIONDATA
+
+Tiket 31, butir 78.4 — **dibuat sebagian**, migrasi `183_t_quotationdata.sql` (+ `SEQ_T_QUOTATIONDATA`). Satu baris
+per case (`UQ_T_QUOTATIONDATA_PARENT`, A87); `PARENT_ID` → `T_GENERAL_POLIS.ID` (FK tanpa `ON DELETE`).
+
+| Kolom | Tipe | Tipe DDL (migrasi 183) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_QUOTATIONDATA` (A92) |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | teks | VARCHAR2(32) NOT NULL | = `T_GENERAL_POLIS.ID` (butir 76.1) |
+| `NO_OFFER_SLIP` | teks | VARCHAR2(50) | Reff. number — `.QuotationData.NoOfferSlip` (sel 9) |
+| `QQ_NAME` | teks | VARCHAR2(500) | QQ name — `.QuotationData.QQName` (sel 20) |
+| `POLICY_TYPE` | teks | VARCHAR2(50) | Policy Type — `.QuotationData.PolicyType` (sel 26); label layar apa adanya (butir 78.2) |
+| `MOID` | teks | VARCHAR2(50) | Marketing Name — `.QuotationData.MOID` (sel 75) = `MARKETINGOFFICER.ID` |
+| `EDM_DAY` | teks | VARCHAR2(50) | Day — `.QuotationData.EDMDay` (sel 78) |
+| `TYPE_FACULTATIVE` | teks | VARCHAR2(50) | Type facultative — `.QuotationData.TypeFacultative` (sel 43); apa adanya (butir 78.3) |
+| `SOB_NAME` | teks | VARCHAR2(500) | Source of business — `.QuotationData.SobName` (sel 48), tampil saja |
+| `CEDING_CO_NAME` | teks | VARCHAR2(500) | Ceding co name — `.QuotationData.CedingCoName` (sel 49), tampil saja |
+| `GROUP_NAME` | teks | VARCHAR2(500) | Group Name — `.QuotationData.GroupName` (sel 56), tampil saja |
+
+## MARKETINGOFFICER
+
+Tiket 31 (pilihan Marketing Name). Tabel warisan `POOLDATA`, **baca saja**. Sumber tipe `[terverifikasi]`: DDL
+`D:\migrasi\RNM\DDL\MARKETINGOFFICER.txt` (15 kolom; `PEGA_MARKETINGOFFICER.txt` adalah prosedur penulis tabel
+ini, bukan tabel). Hanya tiga kolom di bawah yang dibaca.
+
+| Kolom | Tipe DDL | Dibaca untuk |
+| --- | --- | --- |
+| `ID` | VARCHAR2(100) | nilai pilihan (`.ID`) → disimpan ke `T_QUOTATIONDATA.MOID`; urutan DESC |
+| `CLIENTNAME` | VARCHAR2(100) | teks pilihan (pyPrompt `.ClientName`) |
+| `MOSTATUS` | VARCHAR2(100) | saringan RD `.MOStatus = "1"` |

@@ -25,6 +25,10 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc("GET /api/nbfacin/account", cariAkun(svc))
 	mux.HandleFunc("GET /api/nbfacin/class-of-business", kelasBisnis(svc))
 	mux.HandleFunc("POST /api/nbfacin/opportunity", buatOpportunity(svc, stubPelaku))
+	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}", bacaKasus(svc))
+	mux.HandleFunc("PUT /api/nbfacin/kasus/{caseId}/general", simpanGeneral(svc, stubPelaku))
+	mux.HandleFunc("GET /api/nbfacin/marketing-officer", daftarMarketing(svc))
+	mux.HandleFunc("GET /api/nbfacin/opportunity", cariPortal(svc, stubPelaku))
 }
 
 // isianOpportunity - badan POST /api/nbfacin/opportunity, kontrak frontend
@@ -258,15 +262,19 @@ func urai(w http.ResponseWriter, r *http.Request, tujuan any) bool {
 func tulisGalat(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, services.ErrMasukanAkun), errors.Is(err, services.ErrMasukanKelasBisnis),
-		errors.Is(err, services.ErrMasukanOpportunity):
+		errors.Is(err, services.ErrMasukanOpportunity), errors.Is(err, services.ErrMasukanGeneral),
+		errors.Is(err, services.ErrMasukanPortal):
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, inti.ErrTanpaIdentitas):
 		galat.Tulis(w, http.StatusUnauthorized, err.Error())
+	case errors.Is(err, services.ErrKasusTidakAda):
+		galat.Tulis(w, http.StatusNotFound, err.Error())
 	case errors.Is(err, services.ErrTidakDapatDiproses):
 		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrTanpaDatabase), errors.Is(err, services.ErrTabelLimitTakTersedia),
 		errors.Is(err, services.ErrAkunTanpaDatabase), errors.Is(err, services.ErrKelasBisnisTanpaDatabase),
-		errors.Is(err, services.ErrOpportunityTanpaDatabase):
+		errors.Is(err, services.ErrOpportunityTanpaDatabase), errors.Is(err, services.ErrKasusTanpaDatabase),
+		errors.Is(err, services.ErrMarketingTanpaDatabase), errors.Is(err, services.ErrPortalTanpaDatabase):
 		galat.Tulis(w, http.StatusServiceUnavailable, err.Error())
 	default:
 		log.Printf("nbfacin: galat server: %v", err)

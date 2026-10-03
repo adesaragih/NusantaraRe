@@ -15,6 +15,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 
@@ -119,13 +120,22 @@ func (r *CaseNBOracle) sisip(ctx context.Context, tx *db.Tx, tabel string, sql f
 	if err != nil {
 		return err
 	}
-	teks := sql(q)
-	if err := db.PeriksaSQL(teks); err != nil {
+	hasil, err := jalankan(ctx, tx, sql(q), "menyisipkan "+tabel, arg...)
+	if err != nil {
 		return err
 	}
-	hasil, err := tx.ExecContext(ctx, teks, arg...)
-	if err != nil {
-		return fmt.Errorf("repository: menyisipkan %s: %w", tabel, err)
-	}
 	return db.PastikanSatuBaris(hasil, tabel)
+}
+
+// jalankan - satu pernyataan tulis di transaksi pemanggil: PeriksaSQL, ExecContext,
+// galat berlabel `aksi` (mis. "menyisipkan T_NB_OPPORTUNITY"). Dipakai casenb.go dan kasus.go.
+func jalankan(ctx context.Context, tx *db.Tx, q, aksi string, arg ...any) (sql.Result, error) {
+	if err := db.PeriksaSQL(q); err != nil {
+		return nil, err
+	}
+	hasil, err := tx.ExecContext(ctx, q, arg...)
+	if err != nil {
+		return nil, fmt.Errorf("repository: %s: %w", aksi, err)
+	}
+	return hasil, nil
 }

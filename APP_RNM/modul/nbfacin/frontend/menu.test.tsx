@@ -44,4 +44,9 @@ describe('halaman depan NB FacIn', () => {
     expect(rute).toContain("{halaman === 'nbfacin-inward' && kasus && <InwardFacultative")
     expect(render('nbfacin-inward')).toBe('')
   })
+
+  it('klik Name di portal membuka case tersebut di layar Inward Facultative (tiket 32)', () => {
+    const rute = readFileSync(join(__dirname, 'rute.tsx'), 'utf8')
+    expect(rute).toMatch(/onBuka=\{\(caseId\) => \{\s*setKasus\(\{ caseId \}\)\s*onPindah\('nbfacin-inward'\)/)
+  })
 })

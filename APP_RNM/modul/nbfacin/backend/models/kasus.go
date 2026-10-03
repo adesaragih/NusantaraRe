@@ -1,0 +1,50 @@
+package models
+
+// Kasus - satu case NB untuk layar Inward Facultative (tiket 31): baris T_WORK_POLIS
+// (milik premiumlistlife, K-064) + T_NB_OPPORTUNITY + nama tertanggung T_M_ACCOUNT +
+// blok General (T_GENERAL_POLIS / T_QUOTATIONDATA). Teks apa adanya; NULL = "".
+type Kasus struct {
+	CaseID      string
+	Position    string
+	StatusWork  string
+	Opportunity Opportunity
+	InsuredName string
+	General     General
+}
+
+// General - isian blok General (section Periode) sebagaimana TERSIMPAN. Tanggal = teks
+// bentuk Pega (butir 78.1): OfferingDate 'YYYYMMDD', StartDateTime/EndDateTime
+// 'YYYYMMDDTHHMMSS.mmm GMT'. Tersimpan = baris T_GENERAL_POLIS sudah ada.
+type General struct {
+	ReffNumber       string // T_QUOTATIONDATA.NO_OFFER_SLIP  (.QuotationData.NoOfferSlip, sel 9)
+	QQName           string // T_QUOTATIONDATA.QQ_NAME        (.QuotationData.QQName, sel 20)
+	StartDateTime    string // T_GENERAL_POLIS.START_DATE_TIME (.PolicyData.StartDateTime, sel 21)
+	OfferingDate     string // T_GENERAL_POLIS.OFFERING_DATE   (.PolicyData.OfferingDate, sel 22)
+	EndDateTime      string // T_GENERAL_POLIS.END_DATE_TIME   (.PolicyData.EndDateTime, sel 60)
+	PolicyType       string // T_QUOTATIONDATA.POLICY_TYPE    (.QuotationData.PolicyType, sel 26)
+	MarketingID      string // T_QUOTATIONDATA.MOID           (.QuotationData.MOID, sel 75)
+	Day              string // T_QUOTATIONDATA.EDM_DAY        (.QuotationData.EDMDay, sel 78)
+	TypeFacultative  string // T_QUOTATIONDATA.TYPE_FACULTATIVE (.QuotationData.TypeFacultative, sel 43)
+	SourceOfBusiness string // T_QUOTATIONDATA.SOB_NAME       (.QuotationData.SobName, sel 48) - tampil saja
+	CedingCoName     string // T_QUOTATIONDATA.CEDING_CO_NAME (.QuotationData.CedingCoName, sel 49) - tampil saja
+	GroupName        string // T_QUOTATIONDATA.GROUP_NAME     (.QuotationData.GroupName, sel 56) - tampil saja
+	OldPolicyNumber  string // T_GENERAL_POLIS.FOLLOWING      (.Following, sel 72) - tampil saja
+	Tersimpan        bool
+}
+
+// MarketingOfficer - satu pilihan dropdown Marketing Name (sel 75): ID disimpan ke MOID,
+// Nama = CLIENTNAME (pyPrompt `.ClientName`).
+type MarketingOfficer struct {
+	ID   string
+	Nama string
+}
+
+// BarisPortal - satu baris daftar case NB di portal Opportunity (tiket 32). NULL = "".
+type BarisPortal struct {
+	CaseID        string // T_WORK_POLIS.ID
+	Name          string // T_NB_OPPORTUNITY.BUSINESS_PROSPECT_NAME
+	GroupBusiness string // T_NB_OPPORTUNITY.GROUP_BUSINESS
+	InsuredName   string // T_M_ACCOUNT.INSUREDNAME lewat ACCOUNT_ID
+	Marketing     string // MARKETINGOFFICER.CLIENTNAME lewat T_QUOTATIONDATA.MOID; kosong bila belum ada
+	Status        string // T_WORK_POLIS.STATUS_WORK
+}

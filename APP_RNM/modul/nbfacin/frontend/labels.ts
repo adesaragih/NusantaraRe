@@ -85,8 +85,8 @@ export const KOLOM_PORTAL = [
 
 /** Teks sistem baru - BUKAN dari korpus. */
 export const TEKS_PORTAL = {
-  /** Untuk `BelumTersedia` (keputusan agent B-2): daftar belum punya sumber data. */
-  daftar: 'Daftar opportunity',
+  /** Daftar berhasil dimuat tetapi kosong / tidak ada yang cocok dengan saringan. */
+  tanpaCase: 'Tidak ada case yang cocok.',
   /** Nama aksesibel ikon hapus isian (sel 10, `pxIcon` tanpa teks). */
   hapusIsian: 'Hapus isian saring',
 } as const
@@ -238,6 +238,8 @@ export const PERIODE = {
   search: { sel: '69', tag: 'pyLabel', label: 'Search' },
   oldPolicyNumber: { sel: '72', tag: 'pyLabelFieldValue', label: 'Old Policy Number' },
   marketingName: { sel: '75', tag: 'pyLabelFieldValue', label: 'Marketing Name' },
+  /** Teks pilihan kosong dropdown Marketing Name (dekat sel 75). */
+  marketingKosong: { sel: '', tag: 'pyNoSelectionText', label: 'Choose' },
   day: { sel: '78', tag: 'pyLabelFieldValue', label: 'Day' },
   judulCsv: { sel: '', tag: 'pyTitle', label: 'Please upload file with .csv format' },
   downloadTemplateCsv: { sel: '93', tag: 'pyLabel', label: 'Download Template CSV' },
@@ -291,4 +293,6 @@ export const TEKS_INWARD = {
   kosong: 'No items',
   /** Untuk `BelumTersedia` isi tab detail (tahap 3). */
   isiTab: 'Isi tab',
+  /** Sesudah Save for later berhasil. */
+  tersimpan: 'Tersimpan.',
 } as const

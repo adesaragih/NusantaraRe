@@ -1,13 +1,17 @@
-// Paritas layar portal Opportunity dengan harness Pega `SFAPortalOpportunities` - tiket 25.
+// Paritas layar portal Opportunity dengan harness Pega `SFAPortalOpportunities` - tiket 25; daftar case NB tiket 32.
 // Halaman DIRENDER (react-dom/server), bukan dibaca sebagai teks sumber.
+
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-import { KEPALA_PORTAL, KOLOM_PORTAL, SARING_PORTAL, TEKS_PORTAL } from '../labels'
+import { KEPALA_PORTAL, KOLOM_PORTAL, SARING_PORTAL } from '../labels'
 import PortalOpportunity from './PortalOpportunity'
 
-const HTML = renderToStaticMarkup(<PortalOpportunity onBuat={() => {}} />)
+const HTML = renderToStaticMarkup(<PortalOpportunity onBuat={() => {}} onBuka={() => {}} />)
+const SUMBER = readFileSync(join(__dirname, 'PortalOpportunity.tsx'), 'utf8').replace(/\r\n/g, '\n')
 
 /** Teks setiap `<th>` berurutan. */
 const judulKolom = [...HTML.matchAll(/<th[^>]*>([^<]*)<\/th>/g)].map((m) => m[1])
@@ -43,15 +47,38 @@ describe('PortalOpportunity = unsur yang TAMPIL di Pega', () => {
     expect(HTML).not.toContain('Create Opportunity')
   })
 
-  it('daftar tanpa sumber data = BelumTersedia, bukan tabel kosong (B-2)', () => {
-    expect(HTML).toContain(`${TEKS_PORTAL.daftar} tidak dapat dimuat saat ini.`)
+  it('daftar case NB dimuat saat dibuka; belum ada baris sebelum jawaban datang (tiket 32)', () => {
+    expect(SUMBER).toMatch(/useEffect\(\(\) => \{\s*void muat\('', 1\)/)
+    expect(SUMBER).toContain('daftarCaseNB(cari, halaman)')
     expect(HTML).not.toContain('<tbody')
+    expect(HTML).not.toContain('tidak dapat dimuat')
   })
 
-  it('kotak saring, ikon hapus, dan Filter nonaktif selama daftar tidak dapat dimuat', () => {
+  it('kotak saring dapat diisi; Filter / Enter mencari dari halaman 1; ✕ mengosongkan dan memuat ulang', () => {
     const saring = HTML.slice(HTML.indexOf('class="nbf-saring"'), HTML.indexOf('class="table-wrap"'))
-    expect(saring.match(/disabled=""/g)).toHaveLength(3)
-    expect(saring).toContain(`>${SARING_PORTAL.tombol.label}</button>`)
+    expect(saring).not.toContain('disabled')
+    expect(saring).toContain(`<button type="submit" class="btn btn--sm">${SARING_PORTAL.tombol.label}</button>`)
+    expect(SUMBER).toContain('void muat(kotak, 1)')
+    expect(SUMBER).toMatch(/setKotak\(''\)\s*void muat\('', 1\)/)
+    expect(SUMBER).toContain('onPindah={(h) => void muat(kunciCari.current, h)}')
+  })
+
+  it('baris: Offer No = case id, Name tautan pembuka case, kolom 3 dan 7 kosong, Status (permintaan work owner)', () => {
+    const baris = SUMBER.slice(SUMBER.indexOf('hasil.baris.map((b) =>'), SUMBER.indexOf('</tbody>'))
+    const sel = [...baris.matchAll(/<td \/>|<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => (m[1] ?? '').trim())
+    expect(sel).toHaveLength(8)
+    expect(sel[0]).toBe('{b.caseId}')
+    expect(sel[1]).toContain('onClick={() => onBuka(b.caseId)}')
+    expect(sel[2]).toBe('')
+    expect(sel.slice(3, 6)).toEqual(['{b.groupBusiness}', '{b.insuredName}', '{b.marketing}'])
+    expect(sel[6]).toBe('')
+    expect(sel[7]).toBe('{b.status}')
+  })
+
+  it('jawaban lama dibuang; kosong = pesan, bukan tabel kosong tanpa keterangan; galat apa adanya', () => {
+    expect(SUMBER).toContain('if (nomor === nomorPermintaan.current) setHasil(h)')
+    expect(SUMBER).toContain('<Kosong pesan={TEKS_PORTAL.tanpaCase} />')
+    expect(SUMBER).toContain('<Gagal galat={galat} />')
   })
 
   it('tombol Create opportunity hidup (membuka form, tiket 26)', () => {

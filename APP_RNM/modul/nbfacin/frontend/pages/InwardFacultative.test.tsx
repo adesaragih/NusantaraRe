@@ -4,6 +4,9 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { KOLOM_RINGKASAN, PERIODE as P, PILIHAN_PERIODE, SHOW_DETAIL, TEKS_INWARD, TOMBOL_KAKI_INWARD as KAKI } from '../labels'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import InwardFacultative, { hariIniKabel, type KasusBaru } from './InwardFacultative'
 
 const KASUS: KasusBaru = {
@@ -59,12 +62,12 @@ describe('Inward Facultative tahap 1 = tangkapan layar kasus FIRE + XML Periode'
     expect(HTML).not.toMatch(/type="radio"[^>]*checked/)
   })
 
-  it('tombol fitur lain nonaktif; Cancel hidup, Save for later dan Submit nonaktif', () => {
+  it('tombol fitur lain nonaktif; Cancel dan Save for later hidup, Submit nonaktif', () => {
     for (const t of [P.uploadQuotation, P.uploadRISlip, P.changeSob, P.changeCedingCo, P.search, P.downloadTemplateCsv, P.uploadCsv, P.viewUpload, P.saveData, P.insertAccumulation]) {
       expect(HTML).toMatch(new RegExp(`<button[^>]*disabled=""[^>]*>${t.label.replace(/[/.]/g, '\\$&')}</button>`))
     }
     expect(HTML).toMatch(new RegExp(`<button type="button" class="btn btn--ghost">${KAKI.batal.label}</button>`))
-    expect(HTML).toMatch(new RegExp(`<button[^>]*disabled=""[^>]*>${KAKI.simpan.label}</button>`))
+    expect(HTML).toMatch(new RegExp(`<button type="button" class="btn btn--ghost">${KAKI.simpan.label}</button>`))
     expect(HTML).toMatch(new RegExp(`<button[^>]*disabled=""[^>]*>${KAKI.submit.label}</button>`))
   })
 
@@ -77,5 +80,19 @@ describe('Inward Facultative tahap 1 = tangkapan layar kasus FIRE + XML Periode'
 
   it('hariIniKabel = DD-MM-YYYY', () => {
     expect(hariIniKabel(new Date(2026, 9, 3))).toBe('03-10-2026')
+  })
+
+  it('tahap 2: case dimuat saat dibuka, Marketing Name dari backend, Save for later = PUT general (tiket 31)', () => {
+    const SUMBER = readFileSync(join(__dirname, 'InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
+    expect(SUMBER).toContain('ambilKasus(kasus.caseId).then(')
+    expect(SUMBER).toContain('}, [kasus.caseId])')
+    expect(SUMBER).toContain('setOpsiMarketing(h.baris.map((b) => ({ value: b.id, label: b.nama })))')
+    expect(SUMBER).toContain('opsi={opsiMarketing}')
+    const awal = SUMBER.indexOf('async function simpan()')
+    const simpan = SUMBER.slice(awal, SUMBER.indexOf('\n  }\n', awal))
+    expect(simpan).toMatch(/simpanGeneral\(kasus\.caseId, \{[\s\S]*marketingId: marketing,[\s\S]*\}\)/)
+    expect(simpan).not.toMatch(/sourceOfBusiness|cedingCoName|groupName|oldPolicyNumber/)
+    // Offering date tetap hari ini bila server belum punya nilainya (InwardFacultative_PreDT).
+    expect(SUMBER).toContain('setPenawaran(g.offeringDate || hariIniKabel())')
   })
 })

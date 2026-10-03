@@ -22,9 +22,16 @@ import (
 // Transaksi - pembuka satu transaksi (inti.Dasar.DalamTransaksi): galat fn = batal.
 type Transaksi func(ctx context.Context, fn func(tx *db.Tx) error) error
 
-// DenganCaseNB memasang pembuat case NB dan pembuka transaksinya (tiket 29).
-func (s *Service) DenganCaseNB(c repository.PenulisCaseNB, t Transaksi) *Service {
-	s.caseNB, s.transaksi = c, t
+// DenganTransaksi memasang pembuka transaksi - SATU untuk semua penulis (case NB tiket
+// 29, General tiket 31).
+func (s *Service) DenganTransaksi(t Transaksi) *Service {
+	s.transaksi = t
+	return s
+}
+
+// DenganCaseNB memasang pembuat case NB (tiket 29); transaksinya lewat DenganTransaksi.
+func (s *Service) DenganCaseNB(c repository.PenulisCaseNB) *Service {
+	s.caseNB = c
 	return s
 }
 

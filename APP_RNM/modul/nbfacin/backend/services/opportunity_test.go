@@ -65,7 +65,7 @@ func TestBuatOpportunity(t *testing.T) {
 	var pembuat string
 	var o models.Opportunity
 	var batal bool
-	svc := Baru(nil).DenganCaseNB(caseNBTiruan{langkah: &langkah, pembuat: &pembuat, o: &o}, transaksiTiruan(&batal))
+	svc := Baru(nil).DenganCaseNB(caseNBTiruan{langkah: &langkah, pembuat: &pembuat, o: &o}).DenganTransaksi(transaksiTiruan(&batal))
 	id, err := svc.BuatOpportunity(context.Background(), inti.Pelaku{AkunID: "UJI-USER"}, isianSah())
 	if err != nil || id != "NB-900001" || batal {
 		t.Fatalf("id %q, galat %v, batal %v", id, err, batal)
@@ -89,7 +89,7 @@ func TestBuatOpportunityGagal(t *testing.T) {
 	var o models.Opportunity
 	var batal bool
 	tiruan := caseNBTiruan{langkah: &langkah, pembuat: &pembuat, o: &o}
-	svc := Baru(nil).DenganCaseNB(tiruan, transaksiTiruan(&batal))
+	svc := Baru(nil).DenganCaseNB(tiruan).DenganTransaksi(transaksiTiruan(&batal))
 
 	if _, err := svc.BuatOpportunity(ctx, inti.Pelaku{AkunID: "  "}, isianSah()); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("tanpa identitas: %v", err)
@@ -140,7 +140,7 @@ func TestBuatOpportunityGagal(t *testing.T) {
 		langkah = nil
 		gagal := tiruan
 		gagal.galatPada = l
-		id, err := Baru(nil).DenganCaseNB(gagal, transaksiTiruan(&batal)).BuatOpportunity(ctx, akun, isianSah())
+		id, err := Baru(nil).DenganCaseNB(gagal).DenganTransaksi(transaksiTiruan(&batal)).BuatOpportunity(ctx, akun, isianSah())
 		if err == nil || id != "" || !batal || langkah[len(langkah)-1] != l {
 			t.Errorf("galat di %q: id %q, galat %v, batal %v, langkah %v", l, id, err, batal, langkah)
 		}

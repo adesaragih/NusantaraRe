@@ -16,7 +16,15 @@ export function RuteNbFacIn({ halaman, masuk, onPindah }: PropsRute<HalamanNbFac
   const [kasus, setKasus] = useState<KasusBaru | null>(null)
   return (
     <>
-      {halaman === 'nbfacin-portal' && <PortalOpportunity onBuat={() => onPindah('nbfacin-opportunity')} />}
+      {halaman === 'nbfacin-portal' && (
+        <PortalOpportunity
+          onBuat={() => onPindah('nbfacin-opportunity')}
+          onBuka={(caseId) => {
+            setKasus({ caseId })
+            onPindah('nbfacin-inward')
+          }}
+        />
+      )}
       {halaman === 'nbfacin-opportunity' && (
         <FormOpportunity
           pemilik={masuk.nama ?? masuk.akunID}

@@ -6,6 +6,11 @@
 // (`InputInwardFacultativeDtl`, tab) → tombol kaki flow action. Medan yang tampil = kasus FIRE pada tangkapan
 // layar work owner 03-10-2026 (gambar tidak disalin: memuat nama pelanggan/orang).
 //
+// Tahap 2 (tiket 31): data case dimuat `GET /api/nbfacin/kasus/{caseId}` saat layar dibuka (sampai jawaban
+// datang, isian Create opportunity yang dibawa dipakai sebagai nilai awal); pilihan Marketing Name dari
+// `GET /api/nbfacin/marketing-officer` (`BrowseMarketingOfficer_RD`); Save for later = `PUT …/general`.
+// Submit tetap nonaktif (pasca-proses flow action = tahap tersendiri).
+//
 // Tahap 1 (keputusan agent, tiket 30):
 // - nilai awal dari isian Create opportunity yang baru saja dikirim (belum ada endpoint baca case):
 //   Business status, Insured name, Class of business (= Group Business: properti sel 42
@@ -17,10 +22,10 @@
 //   nonaktif sampai backend-nya ada; Cancel kembali ke portal;
 // - isi tab detail = tahap 3 (`BelumTersedia`). Nol catatan pengembang di layar.
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
-import { BelumTersedia, Field, Pilih, StripTab, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
-import type { IsianOpportunity } from '../api'
+import { BelumTersedia, Field, Gagal, Pilih, StripTab, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
+import { ambilKasus, daftarMarketing, simpanGeneral, type GeneralInward, type IsianOpportunity, type KasusNB } from '../api'
 import TanggalDMY from '../components/TanggalDMY'
 import {
   KOLOM_RINGKASAN,
@@ -33,12 +38,15 @@ import {
   TOMBOL_KAKI_INWARD as KAKI,
 } from '../labels'
 
-/** Case NB yang baru dibuat, dibawa dari form Opportunity. */
+/**
+ * Case NB yang dibuka: dari Create opportunity (membawa isian + Insured name sebagai nilai awal) atau dari
+ * daftar portal (hanya nomor case - sisanya dimuat `GET /api/nbfacin/kasus/{caseId}`).
+ */
 export interface KasusBaru {
   caseId: string
-  isian: IsianOpportunity
+  isian?: IsianOpportunity
   /** INSUREDNAME akun terpilih di ChooseAccount (kosong bila tidak memilih). */
-  insuredName: string
+  insuredName?: string
 }
 
 type TabDetail = (typeof TAB_DETAIL)[number]
@@ -99,30 +107,107 @@ function Radio({
 }
 
 export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru; onBatal: () => void }) {
-  const { isian } = kasus
+  const isian = kasus.isian
   const [reff, setReff] = useState('')
   const [qq, setQq] = useState('')
   const [mulai, setMulai] = useState('')
   const [penawaran, setPenawaran] = useState(hariIniKabel())
   const [selesai, setSelesai] = useState('')
   const [policyType, setPolicyType] = useState('')
-  const [typeFac, setTypeFac] = useState(isian.typeOfFacultative)
+  const [typeFac, setTypeFac] = useState(isian?.typeOfFacultative ?? '')
   const [marketing, setMarketing] = useState('')
   const [hari, setHari] = useState('')
   const [detail, setDetail] = useState(false)
   const [tab, setTab] = useState<TabDetail>(TAB_DETAIL[0])
+  const [dariServer, setDariServer] = useState<KasusNB | null>(null)
+  const [opsiMarketing, setOpsiMarketing] = useState<Opsi[]>([])
+  const [galatMuat, setGalatMuat] = useState<unknown>(null)
+  const [menyimpan, setMenyimpan] = useState(false)
+  const [galatSimpan, setGalatSimpan] = useState<unknown>(null)
+  const [tersimpan, setTersimpan] = useState(false)
+
+  /** Isi state layar dari jawaban server. */
+  function terapkan(k: KasusNB) {
+    const g = k.general
+    setDariServer(k)
+    setReff(g.reffNumber)
+    setQq(g.qqName)
+    setMulai(g.beginDate)
+    setPenawaran(g.offeringDate || hariIniKabel())
+    setSelesai(g.endDate)
+    setPolicyType(g.policyType)
+    setTypeFac(g.typeFacultative || k.opportunity.typeOfFacultative)
+    setMarketing(g.marketingId)
+    setHari(g.day)
+  }
+
+  useEffect(() => {
+    let batal = false
+    ambilKasus(kasus.caseId).then(
+      (k) => {
+        if (!batal) terapkan(k)
+      },
+      (err: unknown) => {
+        if (!batal) setGalatMuat(err)
+      },
+    )
+    daftarMarketing().then(
+      (h) => {
+        if (!batal) setOpsiMarketing(h.baris.map((b) => ({ value: b.id, label: b.nama })))
+      },
+      (err: unknown) => {
+        if (!batal) setGalatMuat(err)
+      },
+    )
+    return () => {
+      batal = true
+    }
+  }, [kasus.caseId])
+
+  async function simpan() {
+    setMenyimpan(true)
+    setGalatSimpan(null)
+    setTersimpan(false)
+    try {
+      const k = await simpanGeneral(kasus.caseId, {
+        reffNumber: reff,
+        qqName: qq,
+        beginDate: mulai,
+        offeringDate: penawaran,
+        endDate: selesai,
+        policyType,
+        marketingId: marketing,
+        day: hari,
+        typeFacultative: typeFac,
+      })
+      terapkan(k)
+      setTersimpan(true)
+    } catch (err) {
+      setGalatSimpan(err)
+    } finally {
+      setMenyimpan(false)
+    }
+  }
+
+  /** Medan tampil-saja: dari server bila sudah dimuat. */
+  const g: Partial<GeneralInward> = dariServer?.general ?? {}
+  const insured = dariServer?.insuredName ?? kasus.insuredName ?? ''
+  const op: Partial<IsianOpportunity> = dariServer?.opportunity ?? isian ?? {}
 
   return (
     <div className="nbfacin">
       <h3 className="nbf-inward__case">{kasus.caseId}</h3>
+      <Gagal galat={galatMuat} />
+      {tersimpan && <div className="alert alert--ok">{TEKS_INWARD.tersimpan}</div>}
+      <Gagal galat={galatSimpan} />
 
       <section className="panel">
         <h4 className="panel__title">{P.judul.label}</h4>
         <div className="nbf-opp__kolom">
           <div className="nbf-opp__tumpuk">
             <Field label={P.reffNumber.label} value={reff} onChange={setReff} />
-            <Tampil label={P.businessStatus.label} nilai={isian.businessStatus} />
-            <Tampil label={P.insuredName.label} nilai={kasus.insuredName} />
+            <Tampil label={P.businessStatus.label} nilai={op.businessStatus ?? ''} />
+            <Tampil label={P.insuredName.label} nilai={insured} />
             <Field label={P.qqName.label} value={qq} onChange={setQq} />
             <TanggalDMY
               label={P.beginDate.label}
@@ -150,17 +235,17 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
             </div>
           </div>
           <div className="nbf-opp__tumpuk">
-            <Tampil label={P.classOfBusiness.label} nilai={isian.groupBusiness} />
-            <Pilih label={P.typeFacultative.label} value={typeFac} onChange={setTypeFac} opsi={satu(isian.typeOfFacultative)} />
+            <Tampil label={P.classOfBusiness.label} nilai={op.groupBusiness ?? ''} />
+            <Pilih label={P.typeFacultative.label} value={typeFac} onChange={setTypeFac} opsi={satu(op.typeOfFacultative ?? '')} />
             <div className="nbf-inward__baris-tombol">
-              <Tampil label={P.sourceOfBusiness.label} nilai="" />
+              <Tampil label={P.sourceOfBusiness.label} nilai={g.sourceOfBusiness ?? ''} />
               <TombolNonaktif label={P.changeSob.label} utama />
             </div>
             <div className="nbf-inward__baris-tombol">
-              <Tampil label={P.cedingCoName.label} nilai="" />
+              <Tampil label={P.cedingCoName.label} nilai={g.cedingCoName ?? ''} />
               <TombolNonaktif label={P.changeCedingCo.label} utama />
             </div>
-            <Tampil label={P.groupName.label} nilai="" />
+            <Tampil label={P.groupName.label} nilai={g.groupName ?? ''} />
             <TanggalDMY
               label={P.endDate.label}
               value={selesai}
@@ -173,8 +258,8 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
               <span className="field__label">{P.followingPolicyNumber.label}</span>
               <TombolNonaktif label={P.search.label} utama />
             </div>
-            <Tampil label={P.oldPolicyNumber.label} nilai="" />
-            <Pilih label={P.marketingName.label} value={marketing} onChange={setMarketing} opsi={[]} required />
+            <Tampil label={P.oldPolicyNumber.label} nilai={g.oldPolicyNumber ?? ''} />
+            <Pilih label={P.marketingName.label} value={marketing} onChange={setMarketing} opsi={opsiMarketing} kosong={P.marketingKosong.label} required />
             <Radio label={P.day.label} nama="nbfacin-day" pilihan={PILIHAN_PERIODE.day} value={hari} onChange={setHari} />
           </div>
         </div>
@@ -221,8 +306,8 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
         <button type="button" className="btn btn--ghost" onClick={onBatal}>
           {KAKI.batal.label}
         </button>
-        <button type="button" className="btn btn--ghost" disabled>
-          {KAKI.simpan.label}
+        <button type="button" className="btn btn--ghost" onClick={() => void simpan()} disabled={menyimpan}>
+          {menyimpan ? TEKS_FORM_OPPORTUNITY.menyimpan : KAKI.simpan.label}
         </button>
         <button type="button" className="btn btn--primary" disabled>
           {KAKI.submit.label}

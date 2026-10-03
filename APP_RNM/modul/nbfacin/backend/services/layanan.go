@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	inti "nusantarare/inti/backend"
@@ -44,7 +45,10 @@ func DariDasar(d *inti.Dasar) *Service {
 	}
 	return Baru(repository.NewLimitOracle(d.DB())).DenganAkun(repository.NewAkunOracle(d.DB())).
 		DenganKelasBisnis(repository.NewKelasBisnisOracle(d.DB())).
-		DenganCaseNB(repository.NewCaseNBOracle(d.DB()), d.DalamTransaksi)
+		DenganTransaksi(d.DalamTransaksi).DenganCaseNB(repository.NewCaseNBOracle(d.DB())).
+		DenganKasus(repository.NewKasusOracle(d.DB())).
+		DenganMarketingOfficer(repository.NewMarketingOfficerOracle(d.DB())).
+		DenganPortal(repository.NewPortalOracle(d.DB()))
 }
 
 // Service - layanan NB Fac In.
@@ -61,6 +65,13 @@ type Service struct {
 	// (inti.Dasar.DalamTransaksi); nil = tanpa basis data (503).
 	caseNB    repository.PenulisCaseNB
 	transaksi Transaksi
+	// kasus, marketing, jam - layar Inward Facultative (tiket 31); nil = tanpa basis
+	// data (503); jam nil = time.Now.
+	kasus     repository.PenyimpanKasus
+	marketing repository.PembacaMarketingOfficer
+	// portal - daftar case NB portal Opportunity (tiket 32); nil = tanpa basis data (503).
+	portal repository.PembacaPortal
+	jam    func() time.Time
 }
 
 // DenganAkun memasang pembaca tabel akun (tiket 27).
