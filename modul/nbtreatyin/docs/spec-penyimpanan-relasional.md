@@ -395,6 +395,23 @@ Pega bersufiks ` GMT`. Pengurai wajib menerima keduanya.
 **ID-20** ⛔ Uang tidak pernah `float` *(ADR-0003)*. Perbandingan nilai uang **tidak boleh
 sama-persis** — bertoleransi, atau dibandingkan dalam bentuk terbulatkan.
 
+> ⛔ **RALAT** 2026-10-04 (P11, tiket 18) — bunyi lama ID-20: *"Perbandingan nilai uang **tidak boleh
+> sama-persis** — bertoleransi, atau dibandingkan dalam bentuk terbulatkan."* → bunyi baru: **Pembandingan
+> DUA nilai uang satu sama lain tidak boleh sama-persis** — bertoleransi, atau dalam bentuk terbulatkan.
+> Pembandingan nilai uang **lawan tetapan nol** (tanda: `>= 0`, `< 0`, `!= 0`, `> 0`, kosong / `"0"`)
+> mengikuti XML **apa adanya, eksak** — toleransi di sana mengubah perilaku rule. Bukti (sisir 176 rule
+> terjangkau, tiket 18 bab P11): nol pembandingan dua nilai uang yang hidup; yang ada hanya uang lawan nol
+> (`Activity/SetDueTo_act.xml` langkah 1–2 `.BalanceDueTo>=0` / `<0`; `Activity/CountNetPremi_act.xml` langkah 6
+> `.Deduction1!="" || .Deduction1!=0`; `Activity/CountOGPONP_Act.xml` langkah 1–2 `.PremiOgp == "" ||.PremiOgp ==  "0"`
+> dan langkah 8 `.Claim!=0&&.Claim!=""`; `Activity/InputPolicyTreatyInDetail_preACT.xml` langkah 17 `@if(.Limit>0,"IDR","")`;
+> `Section/DetailPolicyTreatyIn.xml` `.Claim != '' && .Claim != 0`; `Section/DetailDeptHeadTreatyIn_UW.xml` `.BalanceDueTo < 0` /
+> `>= 0`). Satu-satunya pembandingan bertoleransi atas rasio dua nilai uang, `((.ResultOgp2/.PremiOgp)-.OveriddingCommOgp)<=0.01`
+> dan tiga saudaranya, ada di langkah berlabel `//` (dinonaktifkan): `CountOverridingCommOgp_Act` 1/2/4,
+> `CountOverridingCommOnp_Act` 1/2, `CountRiCommOgp_act` 4, `CountRiCommOnp_act` 1; `Local.NETPREMI>200000000.00` hanya di
+> `CekLimitTreatyAcc_Act` (tidak dibangun, K2). Uji: `backend/models/pembandingan_uang_test.go`
+> `TestPortTidakMembandingkanDuaNilaiUang` (penjaga AST: setiap `.Cmp` lawan tetapan rule, nol teks medan uang
+> dibandingkan persis dengan teks medan lain) dan `TestTandaUangLawanNolEksakSepertiXML`.
+
 ### Isi tabel
 
 **ID-21** `T_GENERAL_POLIS` memuat 79 medan skalar tingkat atas `PolicyTreatyIn` — ⭐ ditambah **`REMARK`** *(panjang 128)*, medan yang sensus korpus lewatkan dan baru terlihat dari data guide — ditambah tujuh
@@ -589,6 +606,20 @@ dapat diuji dari luar.
     *(ID-16)*
 15. `[terverifikasi]` `IsApproved` bernilai `""` tersimpan sebagai `""`, bukan `NULL` dan bukan
     `"0"`. Test yang menemukan ketiganya menyatu **gagal**. *(ID-17)*
+    > ⛔ **RALAT** 2026-10-04 (P11, tiket 18) — bunyi lama dikutip: *"`IsApproved` bernilai `""` tersimpan sebagai
+    > `""`, bukan `NULL` dan bukan `"0"`. Test yang menemukan ketiganya menyatu **gagal**."* → bunyi baru:
+    > **`IsApproved` bernilai `""` tersimpan sebagai `NULL` dan terbaca kembali sebagai `""`; `"0"` tersimpan
+    > `'0'` dan terbaca kembali `"0"`. Test yang menemukan `""` tersimpan atau terbaca sebagai `"0"`, atau `"0"`
+    > tersimpan NULL / terbaca `""`, gagal.** Sebab: Oracle menyamakan teks kosong `''` dengan `NULL` pada `VARCHAR2`
+    > (*Oracle Database SQL Language Reference*, bab "Nulls": nilai karakter berpanjang nol diperlakukan sebagai null)
+    > — "tersimpan sebagai `""`, bukan `NULL`" mustahil secara fisik. Yang dijaga ID-17 tetap utuh: `""` dan `"0"`
+    > tidak pernah menyatu, di kolom (`NULL` lawan `'0'`) maupun di halaman (`""` lawan `"0"`), sebab XML
+    > membandingkannya sebagai teks: `DecisionTable/isApproved.xml` kolom `pyWorkPage.PolicyTreatyIn.IsApproved`
+    > bertipe `text`, satu baris `= 0` → `No`, selain itu bawaan (disetujui) — `""` disetujui, `"0"` ditolak (AC 16).
+    > Uji: `backend/repository/kolom_test.go` `TestNilaiTulisKosongJadiNULL` (penanda `""` → NULL),
+    > `TestNilaiBaca` (NULL → `""`); `backend/repository/penyimpanan_db_test.go` `TestIsApprovedKosongDanNolTetapBerbeda`
+    > (kolom dibaca langsung, bertag `db`, belum dijalankan — K11); `backend/models/tangga_test.go`
+    > `TestIsApprovedSelainNolDisetujuiTermasukKosong`.
 16. `[terverifikasi]` `IsApproved` bernilai `"0"` menghasilkan keputusan **ditolak**; nilai lain
     menghasilkan **disetujui**. Test yang menemukan sebaliknya **gagal**. *(ID-17)*
 17. `[terverifikasi]` Teks kosong `""` pada medan uang tersimpan sebagai `NULL`. Test yang menemukan
@@ -614,6 +645,12 @@ dapat diuji dari luar.
     pun **gagal**. *(ID-20)*
 25. `[terverifikasi]` Pembandingan dua nilai uang memakai toleransi atau bentuk terbulatkan, bukan
     kesamaan persis. Test yang menemukan pembandingan persis **gagal**. *(ID-20)*
+    > ⛔ **RALAT** 2026-10-04 (P11, tiket 18) — bunyi lama dikutip: *"Pembandingan dua nilai uang memakai toleransi
+    > atau bentuk terbulatkan, bukan kesamaan persis. Test yang menemukan pembandingan persis **gagal**."* → bunyi
+    > baru: **Port rumus tidak membandingkan dua nilai uang satu sama lain — 176 rule terjangkau pun tidak; bila
+    > kelak ada, ia bertoleransi atau terbulatkan. Pembandingan uang lawan nol mengikuti XML eksak. Test yang
+    > menemukan pembandingan persis antara dua nilai uang di port, atau toleransi pada pembandingan lawan nol,
+    > gagal.** Bukti XML dan uji: RALAT ID-20 (bab 5) dan tiket 18 bab P11.
 
 ### Isi tabel
 
@@ -748,6 +785,8 @@ dapat diuji dari luar.
 | AC | Bunyi lama (dikutip) | Temuan | Yang dibangun |
 | ---: | --- | --- | --- |
 | 15 | *"`IsApproved` bernilai `""` tersimpan sebagai `""`, bukan `NULL`"* | Oracle menyimpan `''` sebagai NULL | dibaca kembali `""`; setara di halaman, tidak di SQL |
+| 15 ⛔ RALAT (P11, 04-10-2026) | baris di atas: *"dibaca kembali `""`; setara di halaman, tidak di SQL"* — temuan tanpa bunyi AC baru | Oracle `''` ≡ NULL | bunyi baru AC 15 ditulis di bab AC: `""` → NULL → `""`, `"0"` → `'0'` → `"0"`; keduanya tidak menyatu (`DecisionTable/isApproved.xml` kolom `text`); `repository/penyimpanan_db_test.go` `TestIsApprovedKosongDanNolTetapBerbeda` (K11) |
+| 25 ⛔ RALAT (P11, 04-10-2026) | *"Pembandingan dua nilai uang memakai toleransi atau bentuk terbulatkan, bukan kesamaan persis"* | 176 rule terjangkau: nol pembandingan dua nilai uang yang hidup (rasio bertoleransi `<=0.01` hanya di langkah `//`); uang lawan nol eksak | bunyi baru AC 25 + RALAT ID-20; `models/pembandingan_uang_test.go` |
 | 38 | *"`DEDUCTION1` `DEDUCTION2` `TOTAL_SHARE_PERCENTAGE_PREMIUM` `TOTAL_SHARE_PERCENTAGE_CLAIM` disimpan sebagai persen"* | `TOTAL_*` turunan baris spreading; penjaga repo melarang nama `TOTAL_` di migrasi | DEDUCTION1/2 persen; `TOTAL_*` dihitung saat dibaca (`HitungTotalSpreading`) |
 | 38 ⛔ RALAT (P9, 04-10-2026) | baris di atas: *"DEDUCTION1/2 persen"* | `[keputusan work owner]` **K3** (rumus XML apa adanya) — bertentangan dengan kode sejak paket P2 | `DEDUCTION1/2` **uang** (`models/katalog.go` `kUang`, `NUMBER(38,8)`; RALAT AC 38 di bab AC): sel `.Deduction1/2` `pxCurrency` (`Section\DetailPolicyTreatyIn.xml`, `Section\DetailDeptHeadTreatyIn_UW.xml`), `CountNetPremi_act` langkah 4, `SetPPNPPH` langkah 4; `TOTAL_*` tetap turunan |
 | 39 | *"`HISTORYAKSEPTASIPRODUCTION` tidak dibuat ulang"* | `SaveViewSuggest` hanya menulis bila `BusinessFac == "F"`; treaty "T" | ⚠️ `T_POLIS_SUGGEST` (baris dokumen SuggestList, bukan tabel riwayat) — keputusan agen, mohon konfirmasi WO |
