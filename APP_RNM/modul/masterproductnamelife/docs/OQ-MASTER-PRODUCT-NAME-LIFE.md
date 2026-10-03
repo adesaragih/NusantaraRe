@@ -114,3 +114,16 @@ Masih terbuka: **OQ-FLAT-03** (siapa dan kapan Pega berhenti menulis) dan **OQ-F
 `PRODUCTINWARD_LIFE`) — keduanya tanpa rekomendasi tunggal. *(Ralat 02-10-2026: OQ-FLAT-04 **ditunda** — keputusan work owner
 *"OQ-FLAT-04 :  BIARKAN SAJA, NANTI PAS DEVELOP BAGIAN ITU AKAN DIPEERBAIKI!"*; yang masih terbuka tinggal OQ-FLAT-03.)*
 
+### OQ-MPNL-05 sebagian terjawab 03-10-2026 - daftar `Document List`
+
+Work owner mengirim XML rule `Rule-Obj-Property` `.Document` kelas `ASM-FW-GISFW-Data-UnderwritingLimit` (ruleset GISFW
+01-01-91, `pyTableOption` PromptList, 16 nilai) dengan kalimat *"untuk document list productname pilih dari list ini"*.
+`Document List` grid DOCUMENT CLAIM kini dipilih dari ke-16 nilai itu (`PILIHAN_DOKUMEN_KLAIM`, `bentuk.ts`); nilai lama di
+luar daftar tetap tampil bertanda *(not in the reference list)* dan tidak dibuang. XML-nya tidak disimpan di repo (memuat nama
+operator; korpus hanya-baca). `Product Name` dan `Birthday` tetap terbuka.
+
+Data DEV 03-10-2026 (SELECT saja, 195 produk lama): 1.121 baris DOCUMENT CLAIM - 36 persis di daftar; 1.085 di luar daftar
+(16 nilai): 10 nilai / 425 baris sama dengan teks Indonesia entri daftar tanpa terjemahan `(English)`, 6 nilai / 660 baris
+tidak cocok entri mana pun. **Terbuka:** dibiarkan apa adanya, atau dikonversi ke teks daftar saat disalin (Copy Old / alat
+pindah) - menunggu keputusan work owner.
+
