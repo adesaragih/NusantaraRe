@@ -330,3 +330,19 @@ aplikasi dipakai: ID produk lama baru terlihat oleh penerbitan ID setelah berada
 lain (`CURRENCY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE`, `RIRISK_LIFE_SUMMARY`, `RATE_LIFE_SUMMARY`, `RATE_LIFE`) tetap
 dibaca untuk pilihan dropdown — bukan view produk modul ini.
 
+### Permintaan work owner 03-10-2026 — tombol Copy Old
+
+Kalimat work owner dikutip: *"TOLONG BUATKAN DI SAMPING TOMBOL ADD, TOMBOL "COPY OLD", FUNGSINYA UNTUK COPY DATA DARI TABEL LAMA YANG DARI JSON ... SAAT DI BUKA, MUNCUL POPUP, MUNCUL SEMUA LIST DARI TABEL LAMA YANG BELUM DI MIGRASI, DISETIAP LIST BISA DI CENTANG ... TOMBOL PROCESS COPY UNTUK MENGCOPY YANG DI CENTANG LALU MASUK KE TABLE BARU"*.
+
+| Hal | Dibangun |
+| --- | --- |
+| Tombol | `Copy Old` tepat di samping `Add` (halaman daftar) |
+| Popup | `GET /produk-lama`: SEMUA produk tabel JSON lama yang ID-nya belum ada di `M_PRODUCTNAME_LIFE`, urut ID, kolom grid + `Product Name` + `Notes`; `Search`, centang per baris, centang semua; produk yang ditolak rekonsiliasi tampil dengan alasannya (kolom, tanpa nilai) dan tidak dapat dicentang |
+| `Process Copy` | `POST /produk-lama/salin`: per produk SATU transaksi - tulis induk + tujuh anak, baca ulang, bandingkan; gagal satu tidak membatalkan yang lain; hasil per produk (`Copied` / `Already in the new tables` / `Cannot be copied` / `Failed`). Daftar dibaca ulang: yang tersalin hilang dari popup dan tampil di grid |
+| Aturan salin | SAMA dengan alat pindah: rekonsiliasi seluruh sumber, K3 (nilai tak sah dikosongkan, dicatat), OQ-FLAT-07 (`koma desimal`, `nol depan` diterima; jenis lain menolak), OQ-FLAT-09 (tanggal dikonversi, dicatat) |
+| Tabel JSON | hanya DIBACA (jalur pindah `mpnl_pindah.go`); tidak ada tulisan ke JSON maupun view |
+
+*Ralat atas bab sebelumnya (02-10-2026 malam), baris "Penerbitan ID produk baru → induk flat saja":* sejak Copy Old, ID produk
+baru kembali **melewati ID produk lama** (`idLamaTerpakai`, baca saja). Tanpa itu produk baru dapat merebut nomor produk lama
+yang belum disalin, dan produk lama itu tidak dapat lagi disalin dengan ID-nya.
+

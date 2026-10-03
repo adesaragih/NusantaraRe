@@ -244,6 +244,7 @@ menjawab 503 bila Oracle tidak dikonfigurasi, galat berbadan `{"galat": "..."}`.
 | `components/FormProduk.tsx` | mode form: §3.1, §3.2, §5, tombol bawah §3.3; `SetTreatyName_Act`, `CountMaxSumReasured_Act`, `CopyProduct`, `CopyFinancialWriting`, `CopyUnderWritingLimit` di klien (`bentuk.ts`) |
 | `components/Saran.tsx` | `pxAutoComplete` `Ceding`, `SOB`, `R/I Risk Name`, `Policy Holder`, `Currency`, `Plan Name` |
 | ~~`components/PemilihMaster.tsx`~~ | ketujuh `Choose*` → `Search` / grid `ID` · `Name` (`RIRate Name`) / `Choose` / `Submit` · `Cancel` (§4) — *dipensiunkan 02-10-2026 (keputusan work owner, §4)* |
+| `components/DialogCopyOld.tsx` | popup **Copy Old** (permintaan work owner 03-10-2026, bukan layar Pega): produk tabel JSON lama yang belum ada di tabel flat, centang, `Process Copy` |
 | `components/Medan.tsx` | baris label-kiri / nilai-kanan form (tata letak 02-10-2026, §3): mode lihat teks berformat, mode sunting isian; `PilihanMedan` untuk `Premium Payment Method` |
 | `components/DropdownMaster.tsx` | ketujuh pemilih master sebagai dropdown (keputusan work owner 02-10-2026, §4): `Search`, kepala `ID` · `Name` (`RIRate Name`), `set*_DT` |
 | `components/Dialog.tsx` | `SaveProductName_Confirm` (`Do you want to save the data?`, `Comment`, `Save` · `Cancel`), `EditProductName_Confirm` (`Do you want to Edit the data?`, `Edit` · `Cancel`) |
