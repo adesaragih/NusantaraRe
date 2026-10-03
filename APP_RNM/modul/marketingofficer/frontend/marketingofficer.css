@@ -277,11 +277,19 @@
   font-size: var(--fs-xs);
 }
 
+/* Tombol aksi SEBARIS ke samping (permintaan work owner 03-10-2026 "buat ke samping aja"): tidak turun ke bawah;
+   tabel yang lebih lebar dari layar menggulir di dalam akar. */
 .marketingofficer .marketingofficer__aksi {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
-  gap: 4px;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.marketingofficer .marketingofficer__tabel td.table__actions {
+  width: 1%;
+  white-space: nowrap;
 }
 
 /* Status: chip bertinta warna statusnya, timbul tipis, bertitik. */

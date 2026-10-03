@@ -56,6 +56,12 @@ describe('gaya modul Marketing Officer', () => {
     expect(ATURAN).not.toMatch(/kelola-user/)
   })
 
+  it('tombol aksi sebaris ke samping, tidak turun ke bawah', () => {
+    const aksi = /\.marketingofficer \.marketingofficer__aksi \{([^}]*)\}/.exec(ATURAN)?.[1] ?? ''
+    expect(aksi).toContain('flex-wrap: nowrap;')
+    expect(aksi).toContain('white-space: nowrap;')
+  })
+
   it('nol properti yang memerangkap Modal tanpa portal', () => {
     expect(ATURAN).not.toMatch(/(^|[\s;{])(-webkit-)?(backdrop-filter|filter|transform|translate|rotate|scale|perspective|will-change|contain)\s*:/m)
   })
