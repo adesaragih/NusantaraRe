@@ -55,3 +55,30 @@ di tiket ini**.
 Keanggotaan diperiksa menurut NAMA workbasket (`inti.Pelaku.Peran`) — `services.anggota`. Penunjukan
 menurut nomor urut tidak dibangun: `InputPolicyTreatyIn_preDT` langkah 12-13 (`pyWorkBasketList(2)`),
 `When\IsUW` (`pyWorkBasketList(1)` = ReasFacIn* — tidak pernah benar bagi antrean treaty).
+
+## ⭐ Putaran 2 — paket P8: gerbang daftar portal (03-10-2026)
+
+Dasar: PROMPT-NB-TREATY-IN-PUTARAN-2 bab 0 butir 4–9, bab 2 K12; temuan audit P6.
+
+Hasil implementasi 2026-10-03 di atas tidak menyebut tempat penunjukan-menurut-posisi yang ketiga
+(`Section\SFAPortal_OpportunitiesList.xml`, posisi 2, tabel *Rule Pega sumber*). Bunyi lama, dikutip:
+*"Penunjukan menurut nomor urut tidak dibangun: `InputPolicyTreatyIn_preDT` langkah 12-13
+(`pyWorkBasketList(2)`), `When\IsUW` (`pyWorkBasketList(1)` = ReasFacIn* — tidak pernah benar bagi antrean
+treaty)."* Bunyi itu tetap benar untuk kedua rule tersebut; tempat ketiga kini **dibangun menurut nama**:
+
+| XML (`Section\SFAPortal_OpportunitiesList.xml`) | Dibangun |
+| --- | --- |
+| baris saringan `.FilterTermForOpportunity` + tombol Filter — tampil selalu | `PortalNBTreatyIn.tsx` (tetap) |
+| wadah `pyContainerVisibleWhen` `OperatorID.pyWorkGroup!='ReasLife' && OperatorID.pyWorkBasketList(2).pyWorkBasketName=='ReasTreatyInAdmin'` ⊃ wadah `!IsOperatorLife` ⊃ SATU grid `pyGridProps/pyRDName = GetListOpportunity` | `services.DaftarKasus`: anggota `ReasTreatyInAdmin` **menurut nama** (AC 14) melihat grid — semua kasus terbuka, opsional per posisi |
+| Sec Head / Dept Head: grid tersembunyi; tugasnya dirutekan `Flow\InputRealizationTreatyIn` ke workbasket (Assignment4/6 `ReasTreatyInSecHead`, Assignment3 `ReasTreatyInDeptHead`, `ToWorkBasket`). ⛔ Daftar kerja workbasket Pega **tidak ada di korpus** | portal tunggal (bab 0 butir 7): **hanya** kasus yang menunggu di posisi tangga yang dipegang pelaku (AC 11, 92); `?posisi=` di luar posisinya ⇒ 403 |
+| pelaku tanpa posisi tangga (termasuk GroupLeader/Director yang dibuang, AC 10) | 403 `ErrBukanAnggotaAntrean` |
+| klausa `pyWorkGroup!='ReasLife'` (= `!IsOperatorLife`) | ⛔ **tidak dibangun** — work group Pega tak berpadanan di `inti.Pelaku` (AkunID + workbasket) maupun M_LOGIN_GO; K12 kosong ⇒ butir terbuka di tiket 05 |
+
+Perubahan perilaku sejak putaran 1: daftar portal semula terbuka bagi **setiap** pelaku beridentitas (semua
+kasus terbuka); kini mengikuti wadah XML di atas. Membuka kasus lewat ID (`GET /kasus/{id}`, hanya-baca bagi
+bukan anggota) tidak berubah.
+
+Uji seam HTTP: `backend/handlers/portal_test.go` `TestGerbangDaftarPortal` (admin di urutan 1 dan 2, Sec Head,
+Dept Head, keduanya, saring posisi, cari, bukan anggota, GroupLeader, tanpa peran);
+`backend/handlers/rute_test.go` `TestAlurHTTP` (daftar tanpa antrean ⇒ 403);
+`backend/repository/kolom_test.go` `TestSQLDaftarKasusPenampungUnik` (`POSITION_NOTE IN (...)`, penampung unik).

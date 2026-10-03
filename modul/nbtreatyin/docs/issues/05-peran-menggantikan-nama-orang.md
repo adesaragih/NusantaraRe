@@ -95,3 +95,15 @@ satu tempat = tertunda), nol peran karangan (AC 91). Uji: `models/peran_tempat_t
 
 **Status tetap needs-info** — pemetaan 12 tempat dan arahnya menunggu IAM; mengisinya = menyunting satu
 variabel, bukan migrasi.
+
+## ⭐ Putaran 2 — paket P8: work group di gerbang portal (03-10-2026)
+
+Butir terbuka **baru** (tidak menahan tiket 04): wadah grid `Section\SFAPortal_OpportunitiesList.xml` bersyarat
+`OperatorID.pyWorkGroup!='ReasLife' && OperatorID.pyWorkBasketList(2).pyWorkBasketName=='ReasTreatyInAdmin'`, dan
+wadah dalamnya `!IsOperatorLife` (`When\IsOperatorLife.xml`: `OperatorID.pyWorkGroup = "ReasLife"`). Klausa
+workbasket dibangun menurut nama (tiket 04, P8). ⛔ Klausa **work group** tidak dibangun: `inti.Pelaku` hanya
+membawa AkunID + workbasket, dan M_LOGIN_GO hanya CODE organisasi/divisi/unit — pemetaan work group Pega
+`ReasLife` ke data itu **tidak ada** (K12 kosong). Menyimpulkannya dari peran `ReasLife*` = menebak (AC 91).
+Akibatnya: operator ber-work-group `ReasLife` yang juga anggota `ReasTreatyInAdmin` melihat daftar di sistem baru
+tetapi tidak di Pega. Yang dibutuhkan dari `[IAM]`: padanan work group untuk akun (atau konfirmasi bahwa syarat itu
+boleh dibuang). **Status tetap needs-info.**
