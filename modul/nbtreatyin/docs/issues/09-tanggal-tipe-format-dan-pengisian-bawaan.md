@@ -38,7 +38,7 @@ sistem, dan formatnya diurus di lapisan layar — ⭐ urutan dan perbandingan ta
 - [x] **AC 33** — **satu format** dipakai di seluruh sistem; ⛔ tidak ada dua format berdampingan
 - [x] **AC 34** — tanggal akhir kosong diisi **tanggal hari ini**, ⛔ bukan ditambah satu tahun
 - [x] **AC 35** — tanggal mulai dan tanggal laporan kosong diisi tanggal hari ini
-- [ ] ⛔ **AC 69** — migrasi menghasilkan kontrak ber-tanggal-akhir **sama dengan tanggal mulai**
+- [x] **AC 69** — migrasi menghasilkan kontrak ber-tanggal-akhir **sama dengan tanggal mulai** *(putaran 2, pemuat tiket 22: `models.PecahDokumenLama` mengisi EndDate kosong = StartDate — `TestPecahDokumenProporsionalDatar`; kolom `END_DATE` diperiksa `TestPemuatLamaMenulisLewatAntarmukaSama` bertag `db`, belum dijalankan)*
       untuk berkas yang tanggal akhirnya kosong
 
 ## Butir `[terbuka]` yang menyentuh tiket ini
