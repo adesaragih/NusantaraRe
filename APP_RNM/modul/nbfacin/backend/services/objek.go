@@ -180,6 +180,8 @@ func (s *Service) BacaObjek(ctx context.Context, id string) ([]models.ObjekFire,
 			rugi[j] = c
 		}
 		baris[i].LossRecords = rugi
+		// Tiket 43: total per mata uang objek dihitung saat baca (tidak disimpan).
+		baris[i].TotalPerCurrency = TotalPerMataUang(baris[i].Items)
 	}
 	return baris, err
 }
@@ -205,6 +207,9 @@ func (s *Service) GantiObjek(ctx context.Context, pelaku inti.Pelaku, id string,
 	}
 	simpan, err := s.siapkanKerugian(ctx, id, baris)
 	if err != nil {
+		return nil, err
+	}
+	if err := s.siapkanCoverage(ctx, id, simpan); err != nil {
 		return nil, err
 	}
 	err = s.transaksi(ctx, func(tx *db.Tx) error { return s.objek.GantiObjek(ctx, tx, id, simpan) })

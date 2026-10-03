@@ -20,14 +20,14 @@ func (t tolTiruan) KodeBisnis(_ context.Context, nama, grup string) ([]string, e
 	return t.kode, nil
 }
 
-func (t tolTiruan) DaftarTableOfLimit(_ context.Context, kode, tahun, kategori string) ([]models.BarisTableOfLimit, error) {
-	*t.daftarDiminta = kode + "|" + tahun + "|" + kategori
+func (t tolTiruan) DaftarTableOfLimit(_ context.Context, kode, kategori string) ([]models.BarisTableOfLimit, error) {
+	*t.daftarDiminta = kode + "|" + kategori
 	return []models.BarisTableOfLimit{{Description: "UJI KELAS", PctLimit: "70,000 "}}, nil
 }
 
 // TestTableOfLimit - tiket 40 / butir 89: BIZCODE = BUSINESS.ID dari nama Class of Business + group business case;
-// TAHUN = tahun Begin WIB (17:00 GMT 31-12-2025 = 01-01-2026 WIB -> "2026", A153);
-// 0 / > 1 baris atau isian case kosong -> 409; kategori dipangkas dan diteruskan; 404 / 400 / 503.
+// tanpa saringan tahun dan Begin date tidak dibutuhkan (A161 menggantikan A153); 0 / > 1 baris atau Class of Business
+// case kosong -> 409; kategori dipangkas dan diteruskan; 404 / 400 / 503.
 func TestTableOfLimit(t *testing.T) {
 	ctx := context.Background()
 	var diminta [2]string
@@ -41,7 +41,7 @@ func TestTableOfLimit(t *testing.T) {
 		return Baru(nil).DenganKasus(kasus).DenganTableOfLimit(tolTiruan{kode: kode, kodeDiminta: &diminta, daftarDiminta: &kat})
 	}
 	b, err := svc("10048").TableOfLimit(ctx, "UJI-NB-1", " II ")
-	if err != nil || len(b) != 1 || b[0].PctLimit != "70,000 " || diminta != [2]string{"UJI KELAS BISNIS", "UJI-G1"} || kat != "10048|2026|II" {
+	if err != nil || len(b) != 1 || b[0].PctLimit != "70,000 " || diminta != [2]string{"UJI KELAS BISNIS", "UJI-G1"} || kat != "10048|II" {
 		t.Fatalf("%v %v %v %q", b, err, diminta, kat)
 	}
 	for nama, u := range map[string]struct {
@@ -52,11 +52,14 @@ func TestTableOfLimit(t *testing.T) {
 		"tidak ada":      {svc(), "UJI-NB-1", "tidak ada di BUSINESS"},
 		"ganda":          {svc("1", "2"), "UJI-NB-1", "ganda di BUSINESS"},
 		"case tanpa COB": {svc("1"), "UJI-NB-2", "Class of Business / Group Business case belum diisi"},
-		"tanpa Begin":    {svc("1"), "UJI-NB-3", "Begin date case belum diisi"},
 	} {
 		if _, err := u.svc.TableOfLimit(ctx, u.id, "II"); !errors.Is(err, ErrTableOfLimitTidakSiap) || !strings.Contains(err.Error(), u.pesan) {
 			t.Errorf("%s: %v", nama, err)
 		}
+	}
+	// Begin date kosong tidak lagi 409 (A161).
+	if b, err := svc("7").TableOfLimit(ctx, "UJI-NB-3", ""); err != nil || len(b) != 1 || kat != "7|" {
+		t.Errorf("tanpa Begin: %v %v %q", b, err, kat)
 	}
 	if _, err := svc("1").TableOfLimit(ctx, "UJI-NB-TIDAK-ADA", ""); !errors.Is(err, ErrKasusTidakAda) {
 		t.Errorf("404: %v", err)

@@ -1297,7 +1297,7 @@ dijalankan — urutan DEV: … → 190 → **191**. Keputusan agent A145–A152 
 | ---: | --- | --- |
 | 90 | Keputusan agent A145–A152 (tiket 42) | **"setuju sesuai rekomendasi agent A145–A152"** — DISETUJUI |
 | 91 | Keputusan agent A116–A122 (tiket 36) | **"setuju A116–A122"** — DISETUJUI. Seluruh keputusan agent A99–A152 kini disetujui |
-| 92 | A153 saringan tahun Table of Limit (tiket 40): popup tombol mengirim Tahun kosong, autocomplete mengirim CurrentYear (= tahun Begin date) — AskUserQuestion di sesi 0f | **SARING tahun Begin date** (= implementasi `4b149fe5`, tanpa perubahan kode). A154 disetujui kemudian (butir 93) |
+| 92 | ⛔ *dibatalkan butir 95* — A153 saringan tahun Table of Limit (tiket 40): popup tombol mengirim Tahun kosong, autocomplete mengirim CurrentYear (= tahun Begin date) — AskUserQuestion di sesi 0f | **SARING tahun Begin date** (= implementasi `4b149fe5`, tanpa perubahan kode). A154 disetujui kemudian (butir 93) |
 | 93 | A154 (tiket 40): Class of Business case dicocokkan persis ke `BUSINESS.NOTE` di group business case; 0 / > 1 baris → 409 | **"setuju A154"** — DISETUJUI. Seluruh keputusan agent A99–A154 kini disetujui |
 | 89 | Ralat W-5 (butir 86) sesudah melihat contoh `DDL\TABLEOFLIMIT.xml` (BIZCODE 10048, NOTE "EMPLOYERS LIABILITY"), AskUserQuestion di sesi 0f | **BIZCODE = `BUSINESS.ID` Class of Business** yang dipilih di form Opportunity — BUKAN Group Business. Form menyimpan NAMA (`T_NB_OPPORTUNITY.CLASS_OF_BUSINESS` = BUSINESS.NOTE), jadi ID diturunkan: `BUSINESS.ID WHERE NOTE = nama AND BUSINESSGROUPID = GROUP_BUSINESS_ID case`; 0 / > 1 baris → 409 |
 
@@ -1316,6 +1316,23 @@ tanpa `angkaKeluar` (pra-butir 94). `T_TABLEOFLIMIT.PCT_LIMIT` / `TABLEOFLIMIT.P
 ⚠️ **R-ADR34:** `T_LOCATIONLIST.LOSS_RATIO*_PERCENT` (VARCHAR2) kini diurai desimal saat dibaca - nilai lama yang bukan
 desimal polos (koma, "%", spasi) membuat baca objek case itu GAGAL (500), bukan diteruskan apa adanya seperti sebelumnya.
 Contoh data: semua "0"; loader menyimpan teks Pega apa adanya. `[pertanyaan terbuka]` bentuk nilai produksi.
+
+## Tiket 43 — tab Coverage FIRE tahap C1 (backend), diteruskan sesi `nusantarare-0f`
+
+`POST …/kasus/{caseId}/hitung-coverage` (port `CountPremi_ACT` basis 1–4), `GET /api/nbfacin/coverage` (COVERAGE_FACIN),
+`GET /api/nbfacin/coverage-otomatis` (COVERAGE, lima kode `AddCoverageAutoFire`), dan `items[].coverages` /
+`totalGrossPremi` / `totalNetRate` / `totalPerCurrency` di `…/objek`. Migrasi **193** (`T_COVERAGELIST` sebagian + dua kolom
+total `T_PROPERTYITEMLIST`) ditulis, belum dijalankan — urutan DEV: … → 192 → **193**; ⛔ 193 WAJIB dijalankan sebelum backend baru (tanpa itu GET/PUT
+objek gagal ORA-00904). Diteruskan sesi 0f (bukan keputusan
+work owner): CURRENCY_CODE = mata uang item, kolom total lewat ALTER, total per objek, heuristik mode saat PUT. Keputusan
+agent A155–A160 dan A162–A164 **menunggu konfirmasi** (`issues/43-coverage-fire-c1.md`) — ⚠️ A160: view `COVERAGE_FACIN` tanpa
+ACTIVESTATUS, saringan aktif RD tidak dapat dinyatakan (`[pertanyaan terbuka]` DBA).
+
+## Bug DEV — 3 Oktober 2026, popup Choose Class of Construction kosong (diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 95 | Popup Choose Class of Construction KOSONG di DEV; di Pega untuk okupasi 2951 ada hasilnya. `[terverifikasi]` contoh `DDL\TABLEOFLIMIT.xml` ber-`TAHUN` 2017 (1 baris); popup tombol Pega (`Section\ChooseClassofContraction.xml`) mengirim Tahun kosong → filter dibuang; saringan tahun Begin date (2025/2026) membuang semua baris | **Ikuti popup Pega** (perintah sesi 0f): saringan TAHUN DIHAPUS dari `GET …/table-of-limit`; Begin date tidak lagi wajib (409 dihapus); BIZCODE (butir 89), CATEGORY, DISTINCT, urutan, ≤ 500 tetap. **A153 / butir 92 DIBATALKAN**, pengganti **A161** "popup tanpa saringan tahun, sama dengan Pega" — ✅ **DIKONFIRMASI work owner 03-10-2026** (diteruskan sesi 0f: *"Class of Construction sudah sesuai dan muncul di pop up-nya"*). Tanpa migrasi |
 
 ## Yang belum diputuskan
 

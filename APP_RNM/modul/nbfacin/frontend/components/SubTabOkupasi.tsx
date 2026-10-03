@@ -14,6 +14,7 @@
 // kapasitas treaty) dihitung di backend / tahap kapasitas, bukan di layar. L-2 tanda wajib Class of Construction hanya
 // penanda - Save Pega (`SaveFacIn_Act`) tidak memvalidasi; penolakan = tahap Submit. L-3 popup Occupation memuat
 // seluruh okupasi FIRE saat dibuka (Pega: grid tanpa saringan, 20 per halaman) dan menyaring saat mengetik.
+// Choose Class of Construction hanya ditahan bila Occupation belum dipilih (Category kosong tetap dibuka).
 // L-4 popup tampil MENGGANTIKAN satu sama lain (pola E-6) - tidak bertumpuk.
 
 import { useEffect, useRef, useState } from 'react'
@@ -282,7 +283,10 @@ export default function SubTabOkupasi({
                           type="button"
                           className="btn btn--sm"
                           onClick={() => {
-                            if (o.category === '') {
+                            // Hanya ditahan bila Occupation belum dipilih sama sekali. Category kosong (KDRiskExposure
+                            // selain 01/02/03) TETAP membuka popup - Pega pun membukanya; backend membuang saringan
+                            // kategori yang kosong (perbaikan 03-10-2026).
+                            if (o.occupationId === '') {
                               setPesan(TEKS_OKUPASI.pilihOkupasiDulu)
                               return
                             }

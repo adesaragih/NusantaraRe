@@ -42,7 +42,9 @@ describe('SubTabOkupasi', () => {
   })
 
   it('Choose Class of Construction butuh Category; popup bergantian (tidak bertumpuk); Occupation dimuat saat dibuka', () => {
-    expect(SUMBER).toMatch(/if \(o\.category === ''\) \{\s*setPesan\(TEKS_OKUPASI\.pilihOkupasiDulu\)/)
+    // Ditahan hanya bila Occupation belum dipilih; Category kosong tetap membuka popup (seperti Pega).
+    expect(SUMBER).toMatch(/if \(o\.occupationId === ''\) \{\s*setPesan\(TEKS_OKUPASI\.pilihOkupasiDulu\)/)
+    expect(SUMBER).not.toMatch(/if \(o\.category === ''\)/)
     expect(SUMBER).toContain("{popup?.jenis === 'okupasi' && (")
     expect(SUMBER).toContain("{popup?.jenis === 'konstruksi' && (")
     expect(SUMBER).toContain("kotak === '' ? 0 : JEDA_MS")

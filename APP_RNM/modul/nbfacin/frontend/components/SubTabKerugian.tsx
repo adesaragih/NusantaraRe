@@ -25,6 +25,7 @@ import { Area, Field, Pilih, type Opsi } from '../../../../inti/frontend/compone
 import { desimalSah } from '../../../../inti/frontend/lib/desimal'
 import { formatNumber } from '../../../../inti/frontend/lib/format'
 import { daftarMataUang, type CatatanKerugian, type KlaimInternal, type LossRatio } from '../api'
+import IsianUang from './IsianUang'
 import TanggalDMY from './TanggalDMY'
 import {
   FORM_KERUGIAN as F,
@@ -109,8 +110,8 @@ function FormKerugian({
             required
             error={tandaiWajib && r.currency.trim() === '' ? TEKS_ITEM.currencyWajib : undefined}
           />
-          <Field label={F.claim.label} value={r.claim} onChange={set('claim')} error={uangSah(r.claim) ? undefined : TEKS_KERUGIAN.uang} />
-          <Field
+          <IsianUang label={F.claim.label} value={r.claim} onChange={set('claim')} error={uangSah(r.claim) ? undefined : TEKS_KERUGIAN.uang} />
+          <IsianUang
             label={F.preventionOfLoss.label}
             value={r.preventionOfLoss}
             onChange={set('preventionOfLoss')}

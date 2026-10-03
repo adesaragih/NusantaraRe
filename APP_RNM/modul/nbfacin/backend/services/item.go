@@ -109,6 +109,14 @@ func periksaItem(n int, item []models.ItemObjek) []string {
 				masalah = append(masalah, fmt.Sprintf("%s%s paling banyak %d byte", awal, l.nama, l.n))
 			}
 		}
+		if !desimalSah(it.TotalNetRate) {
+			masalah = append(masalah, awal+"totalNetRate"+pesanDesimal)
+		}
+		// CURRENCY_CODE T_COVERAGELIST (migrasi 193) = VARCHAR2(10) rancangan, diisi mata uang item.
+		if len(it.Coverages) > 0 && len(it.Currency) > lebarMataUangCoverage {
+			masalah = append(masalah, fmt.Sprintf("%scurrency paling banyak %d byte bila item ber-coverage", awal, lebarMataUangCoverage))
+		}
+		masalah = append(masalah, periksaCoverage(n, m, it.Coverages)...)
 	}
 	return masalah
 }

@@ -877,3 +877,91 @@ export const GRID_KLAIM_INTERNAL = [
 export const TEKS_KERUGIAN = {
   uang: 'Isi angka (pemisah desimal titik).',
 } as const
+
+/**
+ * Tab Coverage FIRE (tiket 43, tahap C1) - `NB FacIn\Section\InputInwardFacultativeDtl.xml` tab "Coverage" (visible
+ * IsFire) -> `CoverageList.xml` (grid objek, sel 37-39) -> flow action `CoverageListFire_FlowAction` ->
+ * `PropertyItemListCoverage.xml` (grid item sel 17-21, grid total per mata uang sel 51-54) -> flow action
+ * `PropertyItemCoverageFacIn_FlowAction` -> `InputCoverageFire.xml` (grid coverage sel 16-18) -> flow action
+ * `CoverageItem` (form, `CoverageItem.xml`). Tombol Save = Dtl `SaveFacIn_Act`. Diuji `labels.test.ts`.
+ */
+export const GRID_COV_OBJEK = [
+  { sel: '37', label: 'No.' },
+  { sel: '38', label: 'Object Name' },
+  { sel: '39', label: 'Location' },
+] as const
+
+export const GRID_COV_ITEM = [
+  { sel: '17', label: 'Object Item Type' },
+  { sel: '18', label: 'Currency' },
+  { sel: '19', label: 'TSI Object Item' },
+  { sel: '20', label: 'Total Gross Premium' },
+  { sel: '21', label: '‰ Total Net Rate' },
+] as const
+
+/** Grid total per mata uang (`.Property.TotalTSIPremiGrossList`). "Total Gross Rate" = permil (Pega salah memberi akhiran %). */
+export const GRID_COV_TOTAL = [
+  { sel: '51', label: 'Currency' },
+  { sel: '52', label: 'Total TSI' },
+  { sel: '53', label: 'Total Premi' },
+  { sel: '54', label: 'Total Gross Rate' },
+] as const
+
+export const GRID_COVERAGE = [
+  { sel: '16', label: 'Coverage' },
+  { sel: '17', label: '‰ Standard Rate' },
+  { sel: '18', label: 'Premi' },
+] as const
+
+/** Form coverage (`CoverageItem.xml`, `pyLabelFieldValue`; tombol `pyLabel`). */
+export const FORM_COV = {
+  pilihCoverage: { sel: '4', tag: 'pyLabel', label: 'Choose Coverage' },
+  coverage: { sel: '5', tag: 'pyLabelFieldValue', label: 'Coverage' },
+  conditions: { sel: '20', tag: 'pyLabelFieldValue', label: 'Conditions' },
+  day: { sel: '26', tag: 'pyLabelFieldValue', label: 'Days' },
+  tsi: { sel: '27', tag: 'pyLabelFieldValue', label: 'TSI' },
+  indemnity: { sel: '28', tag: 'pyLabelFieldValue', label: 'Indemnity' },
+  rate: { sel: '29', tag: 'pyLabelFieldValue', label: '‰ Gross Rate' },
+  firstLoss: { sel: '30', tag: 'pyLabelFieldValue', label: '% First Loss' },
+  discountPercentage: { sel: '31', tag: 'pyLabelFieldValue', label: '% Discount' },
+  tsiLiability: { sel: '32', tag: 'pyLabelFieldValue', label: 'First Loss' },
+  netRate: { sel: '33', tag: 'pyLabelFieldValue', label: '‰ Net Rate' },
+  limitOfLiability: { sel: '34', tag: 'pyLabelFieldValue', label: 'Limit of Liability' },
+  pctLol: { sel: '35', tag: 'pyLabelFieldValue', label: '% Limit of Liability' },
+  proRate: { sel: '39', tag: 'pyLabelFieldValue', label: '% Pro Rate' },
+  indemnityPercentage: { sel: '41', tag: 'pyLabelFieldValue', label: '% Indemnity' },
+  firstScale: { sel: '42', tag: 'pyLabelFieldValue', label: '% First Scale' },
+  sublimit: { sel: '43', tag: 'pyLabelFieldValue', label: '% Sub Limit' },
+  lostLimit: { sel: '44', tag: 'pyLabelFieldValue', label: '% Loss Limit' },
+  emlPml: { sel: '45', tag: 'pyLabelFieldValue', label: '% EML/PML' },
+  discount: { sel: '46', tag: 'pyLabelFieldValue', label: 'Discount' },
+  premium: { sel: '47', tag: 'pyLabelFieldValue', label: 'Gross Premium' },
+} as const
+
+/** Label Coverage Basis = pyLabel aturan `ASM-FW-GISFW-DATA-COVERAGE!COVERAGEBASIS` (`DDL\CoverageBasis.xml`). */
+export const LABEL_COVERAGE_BASIS = 'Coverage Basis'
+
+/**
+ * Pilihan Coverage Basis - PromptList `DDL\CoverageBasis.xml` (diuji). C1 menghitung basis 1-4; Layering (5) = tahap
+ * berikut (C2; grid LayerList).
+ */
+export const OPSI_COVERAGE_BASIS = [
+  { value: '1', label: 'Sum Insured Basis' },
+  { value: '2', label: 'First Loss Basis' },
+  { value: '3', label: 'EML / PML Basis' },
+  { value: '4', label: 'Sub Limit Basis' },
+  { value: '5', label: 'Layering Basis' },
+]
+
+/** Tombol Save tab Coverage (Dtl, `SaveFacIn_Act`). */
+export const SIMPAN_COVERAGE = 'Save'
+
+/** Teks sistem baru tab Coverage. */
+export const TEKS_COVERAGE = {
+  rateWajib: '‰ Gross Rate wajib diisi.',
+  angka: 'Isi angka (pemisah desimal titik).',
+  menghitung: 'Menghitung…',
+  layeringBelum: 'Layering Basis belum tersedia (tahap berikut).',
+  tanpaCoverage: 'Tidak ada coverage yang cocok.',
+  cariCoverage: 'Search',
+} as const

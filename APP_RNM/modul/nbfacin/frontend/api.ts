@@ -279,6 +279,8 @@ export interface ObjekFire {
   lossRecords: CatatanKerugian[]
   /** Loss ratio objek - BACA-SAJA, dikirim server; diabaikan saat PUT (tiket 42). */
   lossRatio: LossRatio
+  /** `.Property.TotalTSIPremiGrossList` - total per mata uang; BACA-SAJA (tiket 43). */
+  totalPerCurrency?: TotalCoverage[]
   /** `.Property.ListCauseOfLossClaim` - BACA-SAJA (Loss Record Internal); diabaikan saat PUT (tiket 42). */
   internalLossRecords: KlaimInternal[]
 }
@@ -405,7 +407,71 @@ export interface ItemObjek {
   pctAdjust2: string
   /** `.PctAdjustOther` (angka, tampil bila Adjustable). */
   pctAdjustOther: string
+  /** `.CoverageList` (tab Coverage, tiket 43). Boleh absen di data lama. */
+  coverages?: CoverageObjek[]
+  /** `.TotalGrossPremi` - Σ Premium coverage; BACA-SAJA (dihitung server). */
+  totalGrossPremi?: string
+  /** `.TotalNetRate` ‰ - BACA-SAJA. */
+  totalNetRate?: string
 }
+
+/**
+ * Satu coverage - `ASM-FW-GISFW-Data-Coverage` (tiket 43). Uang / rate / persen = teks desimal bertitik (ADR-0003,
+ * ADR-0034). Medan bertanda "server" dihitung backend (rumus `CountPremi_ACT`), diabaikan saat PUT.
+ */
+export interface CoverageObjek {
+  /** `.Coverage` (ID COVERAGE_FACIN). */
+  coverage: string
+  /** `.OLDID` - kode tampil kolom "Coverage". */
+  oldId: string
+  /** `.CoverageNote` - nama coverage. */
+  coverageNote: string
+  /** `.CoverageBasis` "1".."5". */
+  coverageBasis: string
+  /** `.Day`. */
+  day: string
+  /** `.TSI` - server (= TSI Object Item). */
+  tsi: string
+  /** `.Indemnity`. */
+  indemnity: string
+  /** `.Rate` ‰ Gross Rate. */
+  rate: string
+  /** `.RateOJK` ‰ Standard Rate (lookup tarif = tahap C4). */
+  rateOjk: string
+  /** `.FirstLoss` %. */
+  firstLoss: string
+  /** `.DiscountPercentage` %. */
+  discountPercentage: string
+  /** `.TSILiability` - server. */
+  tsiLiability: string
+  /** `.NetRate` ‰. */
+  netRate: string
+  /** `.LimitofLiability`. */
+  limitOfLiability: string
+  /** `.PctLoL` %. */
+  pctLol: string
+  /** `.ProRatePercent` - server (periode polis). */
+  proRatePercent: string
+  /** `.IndemnityPercentage` %. */
+  indemnityPercentage: string
+  /** `.FirstScale` %. */
+  firstScale: string
+  /** `.Sublimit` %. */
+  sublimit: string
+  /** `.LostLimit` %. */
+  lostLimit: string
+  /** `.EmlPml` %. */
+  emlPml: string
+  /** `.Discount` (uang). */
+  discount: string
+  /** `.Premium` Gross Premium (uang) - server bila mode "percent". */
+  premium: string
+  /** `.Conditions`. */
+  conditions: string
+}
+
+/** Mode hitung `CountPremi_ACT`: dari rate ("percent") atau dari premi ("amount", rate dihitung balik). */
+export type ModeHitung = 'percent' | 'amount'
 
 /** Satu sisi Surrounding Risk - `.{Front|Left|Back|Right}{Occupation|Construction|Distance|Note}`. */
 export interface SisiRisiko {
@@ -570,4 +636,50 @@ export interface BarisTableOfLimit {
  */
 export function cariTableOfLimit(caseId: string, category: string): Promise<{ baris: BarisTableOfLimit[] }> {
   return minta<{ baris: BarisTableOfLimit[] }>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/table-of-limit`, { kueri: { category } })
+}
+
+/** Satu baris total per mata uang objek (`.Property.TotalTSIPremiGrossList`). Teks desimal. */
+export interface TotalCoverage {
+  currency: string
+  tsi: string
+  premium: string
+  /** Premium / TSI × 1000 (‰). */
+  rate: string
+}
+
+/** Satu baris COVERAGE_FACIN (RD `BrowseCoverageFacIn_RD`, Type FIRE). */
+export interface BarisCoverage {
+  id: string
+  oldId: string
+  nama: string
+}
+
+/** `GET /api/nbfacin/coverage?cari=` - popup Choose Coverage (tiket 43). */
+export function cariCoverage(cari: string): Promise<{ baris: BarisCoverage[] }> {
+  return minta<{ baris: BarisCoverage[] }>('/api/nbfacin/coverage', { kueri: { cari: cari.trim() } })
+}
+
+/** `GET /api/nbfacin/coverage-otomatis` - lima coverage awal FIRE (`AddCoverageAutoFire`). */
+export function coverageOtomatis(): Promise<{ baris: BarisCoverage[] }> {
+  return minta<{ baris: BarisCoverage[] }>('/api/nbfacin/coverage-otomatis')
+}
+
+/**
+ * `POST /api/nbfacin/kasus/{caseId}/hitung-coverage` - hitung satu coverage (`CountPremi_ACT`) tanpa menyimpan: TSI dari
+ * item, Prorate dari periode polis case.
+ */
+export function hitungCoverage(
+  caseId: string,
+  badan: {
+    coverage: CoverageObjek
+    tsi: string
+    mode: ModeHitung
+    /** `Param.DiscountStatus` - medan diskon yang diubah: "% Discount" = percent, "Discount" = amount. */
+    modeDiskon?: ModeHitung
+    /** Item pemilik coverage (`CountPremi_ACT` langkah 11-16, PctAdjustment). */
+    isAdjustable?: boolean
+    pctAdjustOther?: string
+  },
+): Promise<CoverageObjek> {
+  return minta<CoverageObjek>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/hitung-coverage`, { metode: 'POST', badan })
 }

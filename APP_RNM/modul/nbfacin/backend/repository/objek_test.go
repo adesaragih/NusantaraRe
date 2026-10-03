@@ -13,7 +13,7 @@ import (
 
 func tabelObjekUji() tabelObjek {
 	return tabelObjek{work: "UJI.W", general: "UJI.G", loc: "UJI.L", prop: "UJI.P", risk: "UJI.R", bang: "UJI.B", sekitar: "UJI.S", item: "UJI.I",
-		okupasi: "UJI.O", tol: "UJI.K", fea: "UJI.F", rugi: "UJI.C", koas: "UJI.D"}
+		okupasi: "UJI.O", tol: "UJI.K", fea: "UJI.F", rugi: "UJI.C", koas: "UJI.D", cov: "UJI.V"}
 }
 
 // TestSQLObjek - tiket 35: baca urut SEQ_NO lewat case; hapus ANAK sebelum INDUK (FK tanpa
@@ -32,7 +32,7 @@ func TestSQLObjek(t *testing.T) {
 		t.Error("SELECT harus tepat daftar kolomBacaObjek")
 	}
 	hapus := sqlHapusObjek(tb)
-	urut := []string{"DELETE FROM UJI.D ", "DELETE FROM UJI.C ", "DELETE FROM UJI.K ", "DELETE FROM UJI.O ", "DELETE FROM UJI.I ", "DELETE FROM UJI.R ", "DELETE FROM UJI.B ", "DELETE FROM UJI.S ", "DELETE FROM UJI.P ", "DELETE FROM UJI.F ", "DELETE FROM UJI.L "}
+	urut := []string{"DELETE FROM UJI.D ", "DELETE FROM UJI.C ", "DELETE FROM UJI.K ", "DELETE FROM UJI.O ", "DELETE FROM UJI.V ", "DELETE FROM UJI.I ", "DELETE FROM UJI.R ", "DELETE FROM UJI.B ", "DELETE FROM UJI.S ", "DELETE FROM UJI.P ", "DELETE FROM UJI.F ", "DELETE FROM UJI.L "}
 	if len(hapus) != len(urut) {
 		t.Fatalf("%d DELETE, mau %d", len(hapus), len(urut))
 	}
@@ -54,7 +54,8 @@ func TestSQLObjek(t *testing.T) {
 func TestSQLObjekMemakaiKolomMigrasi(t *testing.T) {
 	sql := bacaMigrasi(t, "186_t_objek_fire.sql") + "\n" + bacaMigrasi(t, "187_t_surroundingrisk.sql") + "\n" +
 		bacaMigrasi(t, "188_t_propertyitemlist.sql") + "\n" + bacaMigrasi(t, "189_t_occupationlist.sql") + "\n" +
-		bacaMigrasi(t, "190_t_fealist.sql") + "\n" + bacaMigrasi(t, "191_t_listcauseofloss.sql")
+		bacaMigrasi(t, "190_t_fealist.sql") + "\n" + bacaMigrasi(t, "191_t_listcauseofloss.sql") + "\n" +
+		bacaMigrasi(t, "193_t_coveragelist.sql")
 	kolom := map[string]map[string]bool{}
 	for _, m := range regexp.MustCompile(`(?s)(?:CREATE TABLE|ALTER TABLE) \{skema\}\.(\w+) (?:ADD )?\((.*?)\n\)`).FindAllStringSubmatch(sql, -1) {
 		if kolom[m[1]] == nil {
@@ -71,10 +72,10 @@ func TestSQLObjekMemakaiKolomMigrasi(t *testing.T) {
 	}
 	tb := tabelObjek{loc: "T_LOCATIONLIST", prop: "T_PROPERTY", risk: "T_RISKLOCATION", bang: "T_BUILDINGCONSTRUCTION", sekitar: "T_SURROUNDINGRISK",
 		item: "T_PROPERTYITEMLIST", okupasi: "T_OCCUPATIONLIST", tol: "T_TABLEOFLIMIT", fea: "T_FEALIST",
-		rugi: "T_LISTCAUSEOFLOSS", koas: "T_COINSDATA"}
+		rugi: "T_LISTCAUSEOFLOSS", koas: "T_COINSDATA", cov: "T_COVERAGELIST"}
 	for _, q := range []string{sqlSisipLokasi(tb.loc), sqlSisipProperty(tb.prop), sqlSisipRisk(tb.risk), sqlSisipBangunan(tb.bang),
 		sqlSisipSekitar(tb.sekitar), sqlSisipItem(tb.item), sqlSisipOkupasi(tb.okupasi), sqlSisipTableOfLimit(tb.tol), sqlSisipFEA(tb.fea),
-		sqlSisipKerugian(tb.rugi), sqlSisipKoas(tb.koas)} {
+		sqlSisipKerugian(tb.rugi), sqlSisipKoas(tb.koas), sqlSisipCoverage(tb.cov)} {
 		m := regexp.MustCompile(`INSERT INTO (\w+) \(([^)]*)\) VALUES \((.*)\)$`).FindStringSubmatch(q)
 		if m == nil {
 			t.Fatalf("INSERT tak terbaca: %q", q)
@@ -85,18 +86,18 @@ func TestSQLObjekMemakaiKolomMigrasi(t *testing.T) {
 		}
 		for _, c := range cols {
 			if !kolom[m[1]][c] {
-				t.Errorf("%s.%s ditulis, tidak ada di 186-191", m[1], c)
+				t.Errorf("%s.%s ditulis, tidak ada di 186-193", m[1], c)
 			}
 		}
 	}
 	alias := map[string]string{"p": "T_PROPERTY", "r": "T_RISKLOCATION", "b": "T_BUILDINGCONSTRUCTION", "s": "T_SURROUNDINGRISK",
 		"i": "T_PROPERTYITEMLIST", "l": "T_LOCATIONLIST", "o": "T_OCCUPATIONLIST", "k": "T_TABLEOFLIMIT", "f": "T_FEALIST",
-		"c": "T_LISTCAUSEOFLOSS", "d": "T_COINSDATA"}
-	for _, m := range regexp.MustCompile(`\b([prbsilokfcd])\.([A-Z_]+)\b`).FindAllStringSubmatch(sqlBacaObjek(tabelObjekUji())+"\n"+sqlBacaItem(tabelObjekUji())+
+		"c": "T_LISTCAUSEOFLOSS", "d": "T_COINSDATA", "v": "T_COVERAGELIST"}
+	for _, m := range regexp.MustCompile(`\b([prbsilokfcdv])\.([A-Z_]+)\b`).FindAllStringSubmatch(sqlBacaObjek(tabelObjekUji())+"\n"+sqlBacaItem(tabelObjekUji())+
 		"\n"+sqlBacaOkupasi(tabelObjekUji())+"\n"+sqlBacaFEA(tabelObjekUji())+
-		"\n"+sqlBacaKerugian(tabelObjekUji()), -1) {
+		"\n"+sqlBacaKerugian(tabelObjekUji())+"\n"+sqlBacaCoverage(tabelObjekUji()), -1) {
 		if !kolom[alias[m[1]]][m[2]] {
-			t.Errorf("%s.%s dibaca, tidak ada di 186-191", alias[m[1]], m[2])
+			t.Errorf("%s.%s dibaca, tidak ada di 186-193", alias[m[1]], m[2])
 		}
 	}
 }

@@ -59,7 +59,7 @@ wajib. Datanya ikut Save tab Object.
 - [x] Grid + Tambah / Hapus + form detail + dua popup; label diuji ke korpus.
 - [x] Choose Occupation mengisi ID, Name, Category; Choose Class of Construction mengisi Description + PctLimit.
 - [x] Backend: simpan / baca okupasi (T_OCCUPATIONLIST + T_TABLEOFLIMIT rancangan, migrasi 189), `kdRiskExposure`, cari kosong.
-- [x] Backend: endpoint table-of-limit (BIZCODE butir 89; TAHUN = tahun Begin date, A153).
+- [x] Backend: endpoint table-of-limit (BIZCODE butir 89; ~~TAHUN = tahun Begin date, A153~~ → tanpa saringan tahun, A161).
 
 ## Backend (sesi c3, 03-10-2026) — disusun agent
 
@@ -118,8 +118,9 @@ PCTLIMIT dan TAHUN teks.
   404 case tidak ada; 400 `category` > 50 bita; **409** bila BIZCODE tidak dapat ditentukan; 503.
 - BIZCODE (butir 89): `BUSINESS.ID` ber-`NOTE` = `T_NB_OPPORTUNITY.CLASS_OF_BUSINESS` dan `BUSINESSGROUPID` =
   `GROUP_BUSINESS_ID` case. Class of Business / Group Business kosong, 0 baris, atau > 1 baris → 409 dengan pesan jelas.
-- TABLEOFLIMIT (DDL `TABLEOFLIMIT.txt`, semua VARCHAR2(4000)): `BIZCODE = kode AND TAHUN = tahun Begin date (WIB)`
-  [+ `CATEGORY = category` bila diisi]; Begin date kosong → 409;
+- TABLEOFLIMIT (DDL `TABLEOFLIMIT.txt`, semua VARCHAR2(4000)): `BIZCODE = kode` [+ `CATEGORY = category` bila diisi];
+  **tanpa saringan TAHUN, Begin date tidak dibutuhkan** (A161, 03-10-2026 — menggantikan `AND TAHUN = tahun Begin date`
+  dan 409 Begin kosong dari A153);
   DISTINCT atas kolom laporan RD (Bizcode, Category, Description, PctLimit, Note); urut Category, Description; ≤ 500.
   `pctLimit` teks apa adanya.
 
@@ -136,5 +137,6 @@ menyebut CurrentYear "hanya di `Section\TableOfLimit.xml`" — salah; pencarian 
 
 | # | Keputusan | Dasar |
 | --- | --- | --- |
-| A153 | Endpoint **menyaring TAHUN = tahun Begin date** (WIB) — jalan autocomplete; Begin kosong → 409 | ✅ **DISETUJUI work owner 03-10-2026** (butir 92: *SARING tahun Begin date*); korpus punya dua jalan (autocomplete bertahun, tombol tanpa tahun) |
+| ~~A153~~ | ~~Endpoint **menyaring TAHUN = tahun Begin date** (WIB) — jalan autocomplete; Begin kosong → 409~~ | ⛔ **DIBATALKAN 03-10-2026** (perintah sesi 0f, bug DEV) — sebelumnya disetujui work owner (butir 92). Diganti A161 |
+| A161 | Endpoint **tanpa saringan TAHUN** (= popup tombol Pega, Tahun kosong → filter dibuang); Begin date tidak dibutuhkan (409 Begin kosong dihapus). Sebab: popup Choose Class of Construction KOSONG di DEV — contoh `DDL\TABLEOFLIMIT.xml` ber-`TAHUN` 2017 (1 baris), saringan tahun Begin (2025/2026) membuang semua baris; di Pega popup yang sama untuk okupasi 2951 berisi (laporan sesi 0f). BIZCODE (butir 89), CATEGORY, DISTINCT, urutan, ≤ 500 tetap | ✅ **DISETUJUI work owner 03-10-2026** (diteruskan sesi 0f: *"Class of Construction sudah sesuai dan muncul di pop up-nya"*; butir 95) |
 | A154 | NOTE dicocokkan persis; 0 / > 1 baris BUSINESS → 409 | ✅ **DISETUJUI work owner 03-10-2026** (butir 93: *"setuju A154"*); arahan sesi 0f; nama tersimpan = BUSINESS.NOTE pilihan datalist (cobSah) |

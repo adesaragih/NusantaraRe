@@ -58,6 +58,14 @@ import {
   OPSI_SOP_RISIKO,
   OPSI_REMARKS,
   LABEL_REMARKS,
+  GRID_COV_OBJEK,
+  GRID_COV_ITEM,
+  GRID_COV_TOTAL,
+  GRID_COVERAGE,
+  FORM_COV,
+  LABEL_COVERAGE_BASIS,
+  OPSI_COVERAGE_BASIS,
+  SIMPAN_COVERAGE,
   OPSI_TITLE_RISK,
   POPUP_SOB,
   SARING_PORTAL,
@@ -699,5 +707,72 @@ describe.skipIf(!existsSync(`${DDL}Remarks.xml`))('label Remarks = pyLabel atura
     const xml = readFileSync(`${DDL}Remarks.xml`, 'utf-8')
     expect(xml).toContain('<pxInsName>ASM-FW-GISFW-DATA-CAUSEOFLOSS!REMARKS</pxInsName>')
     expect(xml).toContain(`<pyLabel>${LABEL_REMARKS}</pyLabel>`)
+  })
+})
+
+const BERKAS_COV = {
+  dtl: NBFACIN + 'Section\\InputInwardFacultativeDtl.xml',
+  objek: NBFACIN + 'Section\\CoverageList.xml',
+  item: NBFACIN + 'Section\\PropertyItemListCoverage.xml',
+  grid: NBFACIN + 'Section\\InputCoverageFire.xml',
+  form: NBFACIN + 'Section\\CoverageItem.xml',
+  premi: NBFACIN + 'Activity\\CountPremi_ACT.xml',
+  otomatis: NBFACIN + 'Activity\\AddCoverageAutoFire.xml',
+}
+const adaCov = Object.values(BERKAS_COV).every((b) => existsSync(b))
+
+describe.skipIf(!adaCov)('tab Coverage FIRE = korpus (CoverageList -> PropertyItemListCoverage -> InputCoverageFire -> CoverageItem) - tiket 43', () => {
+  const baca = (b: string) => (adaCov ? readFileSync(b, 'utf-8') : '')
+  const ada = (xml: string, sel: string, tag: string, label: string) => blokSel(xml, sel).some((b) => b.includes(`<${tag}>${label}</${tag}>`))
+  const objek = baca(BERKAS_COV.objek)
+  const item = baca(BERKAS_COV.item)
+  const grid = baca(BERKAS_COV.grid)
+  const form = baca(BERKAS_COV.form)
+
+  it('Dtl: tab Coverage + tombol Save', () => {
+    const dtl = baca(BERKAS_COV.dtl)
+    expect(dtl).toContain('<pyTitle>Coverage</pyTitle>')
+    expect(dtl).toContain(`<pyLabel>${SIMPAN_COVERAGE}</pyLabel>`)
+  })
+
+  it.each(GRID_COV_OBJEK.map((k) => [k.label, k] as const))('kolom objek %s', (_, k) => {
+    expect(ada(objek, k.sel, 'pyValue', k.label)).toBe(true)
+  })
+  it.each([...GRID_COV_ITEM, ...GRID_COV_TOTAL].map((k) => [k.label, k] as const))('kolom item / total %s', (_, k) => {
+    expect(ada(item, k.sel, 'pyValue', k.label)).toBe(true)
+  })
+  it.each(GRID_COVERAGE.map((k) => [k.label, k] as const))('kolom coverage %s', (_, k) => {
+    expect(ada(grid, k.sel, 'pyValue', k.label)).toBe(true)
+  })
+  it.each(Object.entries(FORM_COV))('form %s', (_, u) => {
+    expect(ada(form, u.sel, u.tag, u.label)).toBe(true)
+  })
+
+  it('‰ Gross Rate wajib; grid berantai sesuai PageList', () => {
+    expect(blokSel(form, FORM_COV.rate.sel).some((b) => b.includes('<pyRequired>true</pyRequired>'))).toBe(true)
+    expect(item).toContain('<pyPageListProperty>.Property.PropertyItemList</pyPageListProperty>')
+    expect(item).toContain('<pyPageListProperty>.Property.TotalTSIPremiGrossList</pyPageListProperty>')
+    expect(grid).toContain('<pyPageListProperty>.CoverageList</pyPageListProperty>')
+  })
+
+  it('rumus premi Sum Insured di CountPremi_ACT (rate permil, dasar 1e9)', () => {
+    expect(baca(BERKAS_COV.premi)).toContain('@Math.divide((.TSI*.Rate*Local.Prorate*.IndemnityPercentage*Local.LossLimit),1000000000,20)')
+  })
+
+  it('AddCoverageAutoFire: lima coverage awal', () => {
+    const t = baca(BERKAS_COV.otomatis)
+    for (const k of ['100815', '100825', '100828', '100829', '100840']) expect(t).toContain(`<PropertiesValue>"${k}"</PropertiesValue>`)
+  })
+
+  it('uji ini menggigit: label salah tidak ditemukan', () => {
+    expect(ada(form, '29', 'pyLabelFieldValue', 'Gross Rate')).toBe(false)
+  })
+})
+
+describe.skipIf(!existsSync(`${DDL}CoverageBasis.xml`))('Coverage Basis = aturan properti (DDL\\CoverageBasis.xml)', () => {
+  it('label + lima pilihan berurutan', () => {
+    const xml = readFileSync(`${DDL}CoverageBasis.xml`, 'utf-8')
+    expect(xml).toContain(`<pyLabel>${LABEL_COVERAGE_BASIS}</pyLabel>`)
+    expect(daftarPrompt(xml).filter(([v]) => v !== '')).toEqual(OPSI_COVERAGE_BASIS.map((o) => [o.value, o.label]))
   })
 })

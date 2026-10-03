@@ -98,3 +98,12 @@ describe('SubTabItem - Condition (Condition.xml)', () => {
     expect(html).toContain('<td>UJI</td><td>Fair</td>')
   })
 })
+
+describe('SubTabItem - TSI berformat ribuan (permintaan work owner 03-10-2026)', () => {
+  it('TSI memakai IsianUang: tampil 20.000.000', () => {
+    const html = renderToStaticMarkup(<SubTabItem items={[it1({ tsi: '20000000' })]} ubah={() => {}} />)
+    expect(html).not.toContain('20.000.000</input')
+    const sumber = readFileSync(join(__dirname, 'SubTabItem.tsx'), 'utf8')
+    expect(sumber).toContain('<IsianUang label={F.tsi.label} value={i.tsi} onChange={set(\'tsi\')} error={g.tsi} />')
+  })
+})

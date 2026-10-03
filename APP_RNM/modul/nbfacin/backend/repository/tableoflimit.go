@@ -9,7 +9,8 @@ package repository
 // autocomplete Class of Construction (`Section\OccupationItemFacIn_Section.xml`, data page D_BrowseTableOfLimit) mengirim
 // `Tahun = pyWorkPage.OfferFacIn.CurrentYear` (= tahun Begin date, SetValidateDate_Act), sedangkan tombol Choose Class of
 // Construction (`Section\ChooseClassofContraction.xml`) mengirim Tahun KOSONG (filter dibuang). Endpoint ini mengikuti
-// jalan autocomplete - saringan tahun Begin date (A153, permintaan sesi 0f).
+// popup tombol - TANPA saringan tahun (A161, menggantikan A153: contoh `DDL\TABLEOFLIMIT.xml` ber-TAHUN 2017, saringan
+// tahun Begin date membuang semua baris di DEV; dikonfirmasi work owner 03-10-2026, butir 95).
 // DDL `DDL\TABLEOFLIMIT.txt` (03-10-2026): seluruh kolom VARCHAR2(4000 BYTE); nama tabel dari DDL itu.
 // BIZCODE = BUSINESS.ID Class of Business case (keputusan work owner butir 89).
 
@@ -33,9 +34,9 @@ const (
 type PembacaTableOfLimit interface {
 	// KodeBisnis - BUSINESS.ID ber-NOTE `nama` di group `grup` (paling banyak dua, cukup untuk mengenali ganda).
 	KodeBisnis(ctx context.Context, nama, grup string) ([]string, error)
-	// DaftarTableOfLimit - baris TABLEOFLIMIT ber-BIZCODE `kode` dan TAHUN `tahun`; `kategori` kosong = tanpa saringan
-	// kategori.
-	DaftarTableOfLimit(ctx context.Context, kode, tahun, kategori string) ([]models.BarisTableOfLimit, error)
+	// DaftarTableOfLimit - baris TABLEOFLIMIT ber-BIZCODE `kode`, seluruh tahun (A161); `kategori` kosong = tanpa
+	// saringan kategori.
+	DaftarTableOfLimit(ctx context.Context, kode, kategori string) ([]models.BarisTableOfLimit, error)
 }
 
 // TableOfLimitOracle - PembacaTableOfLimit atas Oracle.
@@ -49,11 +50,12 @@ func sqlKodeBisnis(bisnis string) string {
 	return "SELECT ID FROM " + bisnis + " WHERE NOTE = :1 AND BUSINESSGROUPID = :2 ORDER BY ID FETCH FIRST 2 ROWS ONLY"
 }
 
-// sqlTableOfLimit - DISTINCT atas kolom laporan RD; :1 kode, :2 tahun (teks, DDL VARCHAR2), [:3 kategori], batas terakhir.
+// sqlTableOfLimit - DISTINCT atas kolom laporan RD; :1 kode, [:2 kategori], batas terakhir. Tanpa TAHUN (A161) - baris
+// yang sama di beberapa tahun menyatu oleh DISTINCT (TAHUN bukan kolom laporan RD).
 func sqlTableOfLimit(tol string, denganKategori bool) string {
-	syarat, batas := "BIZCODE = :1 AND TAHUN = :2", ":3"
+	syarat, batas := "BIZCODE = :1", ":2"
 	if denganKategori {
-		syarat, batas = "BIZCODE = :1 AND TAHUN = :2 AND CATEGORY = :3", ":4"
+		syarat, batas = "BIZCODE = :1 AND CATEGORY = :2", ":3"
 	}
 	return "SELECT DESCRIPTION, PCTLIMIT FROM (SELECT DISTINCT BIZCODE, CATEGORY, DESCRIPTION, PCTLIMIT, NOTE FROM " + tol +
 		" WHERE " + syarat + ") ORDER BY CATEGORY, DESCRIPTION, PCTLIMIT, NOTE FETCH FIRST " + batas + " ROWS ONLY"
@@ -85,14 +87,14 @@ func (r *TableOfLimitOracle) KodeBisnis(ctx context.Context, nama, grup string) 
 }
 
 // DaftarTableOfLimit - lihat PembacaTableOfLimit. PCTLIMIT teks apa adanya (DDL VARCHAR2; koma dan spasi ujung tetap).
-func (r *TableOfLimitOracle) DaftarTableOfLimit(ctx context.Context, kode, tahun, kategori string) ([]models.BarisTableOfLimit, error) {
+func (r *TableOfLimitOracle) DaftarTableOfLimit(ctx context.Context, kode, kategori string) ([]models.BarisTableOfLimit, error) {
 	q, err := r.db.Qualify(TabelTableOfLimitWarisan)
 	if err != nil {
 		return nil, err
 	}
-	arg := []any{kode, tahun, BatasTableOfLimit}
+	arg := []any{kode, BatasTableOfLimit}
 	if kategori != "" {
-		arg = []any{kode, tahun, kategori, BatasTableOfLimit}
+		arg = []any{kode, kategori, BatasTableOfLimit}
 	}
 	baris, err := r.db.QueryContext(ctx, sqlTableOfLimit(q, kategori != ""), arg...)
 	if err != nil {

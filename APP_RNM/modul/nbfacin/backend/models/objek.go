@@ -49,6 +49,27 @@ type ObjekFire struct {
 	// `DDL\SetLossRatio_Act.xml`; N-1 digantikan).
 	LossRecords []CatatanKerugian
 	LossRatio   LossRatio
+	// Tiket 43 - .Property.TotalTSIPremiGrossList (SumTotalTSIPremiGross_Act cabang FIRE): DIHITUNG saat baca, tidak
+	// disimpan.
+	TotalPerCurrency []TotalCoverage
+}
+
+// TotalCoverage - satu mata uang di Total per objek: TSI = Σ TSIObjectItem, Premium = Σ TotalGrossPremi item,
+// Rate = Premium / TSI × 1000 (TSI 0 -> 0).
+type TotalCoverage struct {
+	Currency           string
+	TSI, Premium, Rate *apd.Decimal
+}
+
+// CoverageObjek - satu .Property.PropertyItemList(m).CoverageList(k) (kelas Data-Coverage, tiket 43) ->
+// T_COVERAGELIST. Uang / rate / persen = *apd.Decimal (ADR-0034); nil = kosong. FirstLoss / FirstScale / LostLimit /
+// EmlPml dihitung sebagai angka tetapi tersimpan teks di kolom rancangan VARCHAR2(50).
+type CoverageObjek struct {
+	Coverage, OldID, CoverageNote, CoverageBasis, Day, Indemnity, Conditions                           string
+	TSI, Rate, RateOJK, FirstLoss, DiscountPercentage, TSILiability, NetRate, LimitOfLiability, PctLoL *apd.Decimal
+	ProRatePercent, IndemnityPercentage, FirstScale, Sublimit, LostLimit, EmlPml, Discount, Premium    *apd.Decimal
+	// PctAdjustment - .PctAdjustment hasil CountPremi langkah 11-15 (bukan medan kontrak; disimpan PCT_ADJUSTMENT).
+	PctAdjustment *apd.Decimal
 }
 
 // CatatanKerugian - satu .Property.ListCauseOfLoss(n) (kelas Data-CauseOfLoss). Uang = *apd.Decimal, nil = kosong
@@ -115,12 +136,23 @@ type ItemObjek struct {
 	IsAdjustable   bool         // IS_ADJUSTABLE_FLAG teks "true"/"false"
 	PctAdjust2     *apd.Decimal // PCT_ADJUST2 persen NUMBER(38,8)
 	PctAdjustOther *apd.Decimal // PCT_ADJUST_OTHER persen NUMBER(38,8)
+	// Tiket 43 - .CoverageList item (T_COVERAGELIST, induk T_PROPERTYITEMLIST lewat PARENT_TABLE) dan total item.
+	Coverages       []CoverageObjek
+	TotalGrossPremi *apd.Decimal // TOTAL_GROSS_PREMI = Σ Premium coverage (CountPremi langkah 55-56)
+	TotalNetRate    *apd.Decimal // TOTAL_NET_RATE - dihitung tahap C2 (CalculateNetRate); tahap C1 diteruskan apa adanya
 }
 
 // BarisTableOfLimit - satu pilihan Class of Construction (tiket 40, TABLEOFLIMIT); PctLimit teks apa adanya.
 type BarisTableOfLimit struct {
 	Description string // TABLEOFLIMIT.DESCRIPTION
 	PctLimit    string // TABLEOFLIMIT.PCTLIMIT
+}
+
+// BarisCoverage - satu pilihan coverage (tiket 43): COVERAGE_FACIN (popup) atau COVERAGE (otomatis).
+type BarisCoverage struct {
+	ID    string // ID -> .Coverage
+	OldID string // OLDID - kode tampil
+	Nama  string // NAMACOVERAGE / NAME -> .CoverageNote
 }
 
 // JenisItem - satu pilihan Object Item Type (tiket 39, V_JN_OBJ_ITEM).

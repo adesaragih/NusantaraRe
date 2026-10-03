@@ -1,12 +1,12 @@
 # Struktur Tabel — NB FacIn: PETA TABEL WARISAN yang dibaca + tabel yang dibuat
 
-Modul ini **membuat lima belas tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
+Modul ini **membuat enam belas tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
 `T_QUOTATIONDATA` **sebagian** (migrasi 182/183, tiket 31 / butir 78.4), `T_CEDINGCOLIST` utuh (185, tiket 34), dan tabel tab Object FIRE (186, tiket 35: `T_LOCATIONLIST` /
-`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian; 189, tiket 40: `T_OCCUPATIONLIST` sebagian, `T_TABLEOFLIMIT` utuh; 190, tiket 41: `T_FEALIST` baru; 191, tiket 42: `T_LISTCAUSEOFLOSS`, `T_COINSDATA` utuh) — dan **menulis**
+`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian; 189, tiket 40: `T_OCCUPATIONLIST` sebagian, `T_TABLEOFLIMIT` utuh; 190, tiket 41: `T_FEALIST` baru; 191, tiket 42: `T_LISTCAUSEOFLOSS`, `T_COINSDATA` utuh; 193, tiket 43: `T_COVERAGELIST` sebagian) — dan **menulis**
 baris `T_WORK_POLIS` milik premiumlistlife (K-064; tidak dibuat, tidak dipetakan kolomnya di sini). Selebihnya ia hanya
-**membaca** enam belas tabel yang sudah ada — enam tabel limit
+**membaca** delapan belas tabel / view yang sudah ada — enam tabel limit
 akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), tabel bisnis `BUSINESS` (tiket 28), `MARKETINGOFFICER` (31), `AGENT`
-(33), `RISKADDRESS` (36; juga DISISIPI tiket 37), `RW` (36/37), `OCCUPATION` (38), `V_JN_OBJ_ITEM` dan `CURRENCY` (39), `TABLEOFLIMIT` (40) — sama dengan bab "Tabel warisan" `MODUL.md`. Enam tabel limit akseptasi yang sudah ada
+(33), `RISKADDRESS` (36; juga DISISIPI tiket 37), `RW` (36/37), `OCCUPATION` (38), `V_JN_OBJ_ITEM` dan `CURRENCY` (39), `TABLEOFLIMIT` (40), view `COVERAGE_FACIN` dan `COVERAGE` (43) — sama dengan bab "Tabel warisan" `MODUL.md`. Enam tabel limit akseptasi yang sudah ada
 di `POOLDATA`, dengan nama tabel dan kolom **verbatim**. Berkas ini **peta**, bukan DDL: hanya kolom yang dibaca
 repository (`backend/repository/limit.go`). Ke-enamnya dinyatakan di `MODUL.md` bab "Tabel warisan: dibaca, tidak
 dibuat".
@@ -304,8 +304,8 @@ pilihan (aturan properti `DDL\FrontConstruction.xml` / `Ownership.xml` / `FloodA
 Tiket 39 — migrasi 188, **sebagian** (pola A109): rancangan jalur `LocationList/Property/PropertyItemList`, induk
 `T_PROPERTY`, **banyak** baris per property urut `SEQ_NO` (= `PROPERTY_ITEM_NO` 1..n). Tanpa kolom yang tidak dipakai layar
 ini (`CURRENCY_ID`, `CURRENCY_OLD_ID`, `FLAG_NET_RATE`, `IS_OLD_DATA`, `PERCENTAGE_ADJUSTMENT`, `PROPERTY_ID`,
-`SELECTED_LOCATION_ADDRESS`, `SELECTED_OBJECT_ITEM`, uang premi `TOTAL_GROSS_PREMI` / `TOTAL_NET_RATE` /
-`TOTAL_PREMIUM_NUSANTARA_RE`) — ditambah tiket 23. Enam kolom **baru** (A132, amandemen loader `amandemenItem`). Uang dan
+`SELECTED_LOCATION_ADDRESS`, `SELECTED_OBJECT_ITEM`, `TOTAL_PREMIUM_NUSANTARA_RE`) — ditambah tiket 23; `TOTAL_GROSS_PREMI` /
+`TOTAL_NET_RATE` ditambah tiket 43 (migrasi 193 `ALTER ADD`). Enam kolom **baru** (A132, amandemen loader `amandemenItem`). Uang dan
 persen `NUMBER(38,8)` (rancangan `NUMBER` polos; ADR-0016), ditulis/dibaca sebagai teks desimal bertitik — nol float.
 
 | Kolom | Tipe | Tipe DDL (migrasi 188) | Isi |
@@ -332,6 +332,54 @@ persen `NUMBER(38,8)` (rancangan `NUMBER` polos; ADR-0016), ditulis/dibaca sebag
 | `YEAR` | teks | VARCHAR2(50) | **baru** — Year of Planting (`.Year`) |
 | `NO_OF_TREE` | teks | VARCHAR2(50) | **baru** — No of Trees (`.NoOfTree`) |
 | `AREA_HECTAR` | teks | VARCHAR2(50) | **baru** — Area ( Hectar ) (`.AreaHectar`) |
+| `TOTAL_GROSS_PREMI` | angka desimal | NUMBER(38,8) | tiket 43 (193) — **uang**, Σ Premium coverage item, dihitung server saat PUT (`CountPremi_ACT` langkah 55-56); item tanpa coverage = kosong |
+| `TOTAL_NET_RATE` | angka desimal | NUMBER(38,8) | tiket 43 (193) — ‰ Total Net Rate, disimpan apa adanya dari PUT (A159; rumusnya tahap C2) |
+
+## T_COVERAGELIST
+
+Tiket 43 — migrasi 193, **sebagian** (pola A109). Rancangan memberi tabel ini **induk jamak** (CargoList / PropertyItemList /
+AnekaList / PersonList / VehicleList), dibedakan `PARENT_TABLE` / `SRC_PATH`; NB menulis hanya jalur
+`LocationList/Property/PropertyItemList/CoverageList` (`PARENT_TABLE` `T_PROPERTYITEMLIST`). `PARENT_ID` **tanpa FK**
+(pola A140), indeks `IX_T_COVERAGELIST_PARENT (PARENT_TABLE, PARENT_ID)`. Banyak baris per item, urut `SEQ_NO`. Seluruh
+medan kontrak ADA di rancangan — tanpa kolom baru. Medan uang / rate / persen dihitung server (`CountPremi_ACT`, basis
+1–4) dan disimpan setengah-ke-atas 8 desimal (A155).
+
+| Kolom | Tipe | Tipe DDL (migrasi 193) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_COVERAGELIST` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_PROPERTYITEMLIST.ID` |
+| `PARENT_TABLE` | teks | VARCHAR2(30) | `T_PROPERTYITEMLIST` |
+| `SRC_PATH` | teks | VARCHAR2(200) | `LocationList/Property/PropertyItemList/CoverageList` |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan coverage 1..n |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
+| `COVERAGE` | teks | VARCHAR2(50) | `.Coverage` — ID coverage (`COVERAGE_FACIN.ID`) |
+| `OLDID` | teks | VARCHAR2(50) | `.OLDID` — kode tampil |
+| `COVERAGE_NOTE` | teks | VARCHAR2(500) | `.CoverageNote` — nama coverage |
+| `COVERAGE_BASIS` | teks | VARCHAR2(50) | `.CoverageBasis` — 1..4 (5 Layering ditolak 400, tahap C2–C4) |
+| `DAY` | teks | VARCHAR2(50) | `.Day` |
+| `TSI` | angka desimal | NUMBER(38,8) | **uang** — server: = `TSI_OBJECT_ITEM` item |
+| `INDEMNITY` | teks | VARCHAR2(50) | `.Indemnity` |
+| `RATE` | angka desimal | NUMBER(38,8) | ‰ Gross Rate (dihitung balik pada mode amount) |
+| `RATE_OJK` | angka desimal | NUMBER(38,8) | ‰ Standard Rate (lookup = tahap C4) |
+| `FIRST_LOSS` | teks | VARCHAR2(50) | % First Loss — teks desimal (rancangan VARCHAR2) |
+| `DISCOUNT_PERCENTAGE` | angka desimal | NUMBER(38,8) | % Discount |
+| `TSI_LIABILITY` | angka desimal | NUMBER(38,8) | **uang** — server, per basis |
+| `NET_RATE` | angka desimal | NUMBER(38,8) | ‰ Net Rate (terisi → menggantikan Rate dalam rumus) |
+| `LIMITOF_LIABILITY` | angka desimal | NUMBER(38,8) | **uang** — Limit of Liability |
+| `PCT_LO_L` | angka desimal | NUMBER(38,8) | % LoL |
+| `PRO_RATE_PERCENT` | angka desimal | NUMBER(38,8) | server — Prorate periode polis case |
+| `INDEMNITY_PERCENTAGE` | angka desimal | NUMBER(38,8) | % Indemnity |
+| `FIRST_SCALE` | teks | VARCHAR2(50) | % First Scale — teks desimal |
+| `SUBLIMIT` | angka desimal | NUMBER(38,8) | % Sub Limit |
+| `LOST_LIMIT` | teks | VARCHAR2(50) | % Loss Limit — teks desimal (ejaan rancangan / Pega `.LostLimit`) |
+| `EML_PML` | teks | VARCHAR2(50) | % EML / PML — teks desimal |
+| `DISCOUNT` | angka desimal | NUMBER(38,8) | **uang** — Discount |
+| `PREMIUM` | angka desimal | NUMBER(38,8) | **uang** — Gross Premium (server pada mode percent) |
+| `CONDITIONS` | teks | VARCHAR2(500) | `.Conditions` |
+| `PCT_ADJUSTMENT` | angka desimal | NUMBER(38,8) | server — `CountPremi_ACT` langkah 11-15 (A156); tidak dikirim JSON |
+| `CURRENCY_CODE` | teks | VARCHAR2(10) DEFAULT 'UNKNOWN' NOT NULL | = `CURRENCY` item (K-069 / K-012); item ber-coverage dengan mata uang > 10 byte → 400 |
 
 ## T_OCCUPATIONLIST
 
@@ -534,13 +582,41 @@ from currency`). RD `BrowseCurrency_RD` (`.Currency != "ITL"`, maks 500, tanpa u
 
 Tiket 40 (popup Choose Class of Construction). Tabel warisan `POOLDATA.TABLEOFLIMIT`, **baca saja**. Sumber tipe
 `[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\TABLEOFLIMIT.txt` (03-10-2026, seluruh kolom VARCHAR2(4000 BYTE)). RD
-`BrowseTableOfLimit_RD`. Hanya enam kolom di bawah yang dibaca.
+`BrowseTableOfLimit_RD`. Hanya lima kolom di bawah yang dibaca. `TAHUN` **tidak** disaring (A161, menggantikan A153 —
+popup tombol Pega mengirim Tahun kosong).
 
 | Kolom | Tipe DDL | Dibaca untuk |
 | --- | --- | --- |
 | `BIZCODE` | VARCHAR2(4000 BYTE) | saringan = `BUSINESS.ID` Class of Business case (butir 89); DISTINCT |
-| `TAHUN` | VARCHAR2(4000 BYTE) | saringan = tahun Begin date case, WIB (A153) |
 | `CATEGORY` | VARCHAR2(4000 BYTE) | saringan `category` (bila diisi); urutan pertama |
 | `DESCRIPTION` | VARCHAR2(4000 BYTE) | `description` → Class of Construction; urutan kedua |
 | `PCTLIMIT` | VARCHAR2(4000 BYTE) | `pctLimit` teks apa adanya |
 | `NOTE` | VARCHAR2(4000 BYTE) | kolom laporan RD (ikut DISTINCT), tidak dikirim |
+
+## COVERAGE_FACIN
+
+Tiket 43 (popup Choose Coverage). **View** warisan `POOLDATA.COVERAGE_FACIN`, **baca saja**. Sumber `[terverifikasi]`: DDL
+`D:\migrasi\RNM\DDL\COVERAGE_FACIN.txt` (03-10-2026): `CREATE OR REPLACE FORCE VIEW` lima kolom atas `JSON_VALUE` tabel
+`M_COVERAGE` — **tanpa** `ACTIVESTATUS` (A160). Kelas → tabel `[terverifikasi]`: `RDBList\GetCoverageFacin.xml` ("FROM
+COVERAGE_FACIN"). RD `BrowseCoverageFacIn_RD` (Type FIRE, NamaCoverage Contains, DISTINCT, maks 500, urut NamaCoverage lalu
+OLDID). Tipe kolom view tidak tertulis di DDL (turunan `M_COVERAGE`, DDL-nya tidak ada) — `belum terverifikasi`.
+
+| Kolom | Tipe | Dibaca untuk |
+| --- | --- | --- |
+| `ID` | belum terverifikasi (dibaca lewat `TO_CHAR`) | `id` → `T_COVERAGELIST.COVERAGE`; ikut DISTINCT |
+| `BIZCODE` | belum terverifikasi | kolom laporan RD (ikut DISTINCT), tidak dikirim; saringan RD dikirim kosong |
+| `NAMACOVERAGE` | belum terverifikasi | `nama`; saringan `cari` (UPPER LIKE); urutan pertama |
+| `TYPE` | belum terverifikasi | saringan = `FIRE` |
+| `OLDID` | belum terverifikasi | `oldId`; urutan kedua |
+
+## COVERAGE
+
+Tiket 43 (lima coverage otomatis). Tabel warisan `POOLDATA.COVERAGE`, **baca saja**. Sumber tipe `[terverifikasi]`: DDL
+`D:\migrasi\RNM\DDL\COVERAGE.txt`. Kelas → tabel `[terverifikasi]`: `Activity\AddCoverageAutoFire.xml` Obj-Browse
+`ASM-FW-GISFW-Int-COVERAGE`, `RDBList\SearchCoverageIDSQL.xml` ("FROM COVERAGE"). Hanya tiga kolom yang dibaca.
+
+| Kolom | Tipe DDL | Dibaca untuk |
+| --- | --- | --- |
+| `ID` | VARCHAR2(4000 BYTE) | saringan = lima kode `AddCoverageAutoFire` (100815, 100828, 100829, 100825, 100840; urut korpus) |
+| `NAME` | VARCHAR2(4000 BYTE) | `nama` → `.CoverageNote` |
+| `OLDID` | VARCHAR2(23 BYTE) | `oldId` → `.OLDID` |

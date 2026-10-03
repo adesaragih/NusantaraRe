@@ -48,6 +48,7 @@ import {
 } from '../api'
 import PopupCedingCoList from '../components/PopupCedingCoList'
 import PopupPilihAgent from '../components/PopupPilihAgent'
+import TabCoverage from '../components/TabCoverage'
 import TabObject from '../components/TabObject'
 import TanggalDMY from '../components/TanggalDMY'
 import {
@@ -355,7 +356,13 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
         {detail && (
           <div className="nbf-inward__detail">
             <StripTab tab={TAB_DETAIL} aktif={tab} onPilih={setTab} />
-            {tab === 'Object' && kasusFire ? <TabObject caseId={kasus.caseId} insuredName={insured} /> : <BelumTersedia apa={`${TEKS_INWARD.isiTab} ${tab}`} />}
+            {tab === 'Object' && kasusFire ? (
+              <TabObject caseId={kasus.caseId} insuredName={insured} />
+            ) : tab === 'Coverage' && kasusFire ? (
+              <TabCoverage caseId={kasus.caseId} />
+            ) : (
+              <BelumTersedia apa={`${TEKS_INWARD.isiTab} ${tab}`} />
+            )}
           </div>
         )}
       </section>

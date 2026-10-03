@@ -25,6 +25,7 @@ import { Area, Field, Pilih, type Opsi } from '../../../../inti/frontend/compone
 import { desimalSah, jumlahDesimal } from '../../../../inti/frontend/lib/desimal'
 import { formatNumber } from '../../../../inti/frontend/lib/format'
 import { daftarJenisItem, daftarMataUang, type ItemObjek, type JenisItem } from '../api'
+import IsianUang from './IsianUang'
 import {
   CONDITION_KOSONG,
   FORM_ITEM as F,
@@ -145,7 +146,7 @@ function FormItem({
             required
             error={tandaiWajib ? g.currency : undefined}
           />
-          <Field label={F.tsi.label} value={i.tsi} onChange={set('tsi')} error={g.tsi} />
+          <IsianUang label={F.tsi.label} value={i.tsi} onChange={set('tsi')} error={g.tsi} />
         </div>
         <div className="nbf-opp__tumpuk">
           <Field label={F.yearOfPlanting.label} value={i.yearOfPlanting} onChange={set('yearOfPlanting')} />

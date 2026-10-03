@@ -55,7 +55,8 @@ func DariDasar(d *inti.Dasar) *Service {
 		DenganRW(repository.NewRWOracle(d.DB())).
 		DenganOccupation(repository.NewOccupationOracle(d.DB())).
 		DenganPilihanItem(repository.NewPilihanItemOracle(d.DB())).
-		DenganTableOfLimit(repository.NewTableOfLimitOracle(d.DB()))
+		DenganTableOfLimit(repository.NewTableOfLimitOracle(d.DB())).
+		DenganCoverage(repository.NewCoverageOracle(d.DB()))
 }
 
 // Service - layanan NB Fac In.
@@ -93,7 +94,9 @@ type Service struct {
 	mataUang  repository.PembacaMataUang
 	// tableOfLimit - pilihan Class of Construction (tiket 40); nil = tanpa basis data (503).
 	tableOfLimit repository.PembacaTableOfLimit
-	jam          func() time.Time
+	// coverage - pilihan coverage tab Coverage (tiket 43); nil = tanpa basis data (503).
+	coverage repository.PembacaCoverage
+	jam      func() time.Time
 }
 
 // DenganAkun memasang pembaca tabel akun (tiket 27).

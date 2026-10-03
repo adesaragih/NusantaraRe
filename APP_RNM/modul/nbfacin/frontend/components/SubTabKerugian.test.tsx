@@ -61,3 +61,13 @@ describe('SubTabKlaimInternal', () => {
     expect(html).toContain('<td>2026</td><td>05/02/2026</td><td>1</td><td>UJI</td><td>USD</td><td class="nbf-angka">100</td>')
   })
 })
+
+describe('SubTabKerugian - medan uang berformat ribuan', () => {
+  it('Total Claim dan Prevention Of Loss = IsianUang', async () => {
+    const { readFileSync } = await import('node:fs')
+    const { join } = await import('node:path')
+    const s = readFileSync(join(__dirname, 'SubTabKerugian.tsx'), 'utf8')
+    expect(s).toContain('<IsianUang label={F.claim.label}')
+    expect(s).toMatch(/<IsianUang\s*label=\{F\.preventionOfLoss\.label\}/)
+  })
+})

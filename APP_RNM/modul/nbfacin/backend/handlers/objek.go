@@ -57,6 +57,8 @@ type objekKabel struct {
 	LossRecords         []kerugianKabel `json:"lossRecords"`
 	LossRatio           lossRatioKabel  `json:"lossRatio"`
 	InternalLossRecords []klaimKabel    `json:"internalLossRecords"`
+	// tiket 43 - BACA-SAJA: dihitung saat GET, diabaikan PUT.
+	TotalPerCurrency []totalCoverageKabel `json:"totalPerCurrency"`
 }
 
 // kerugianKabel - kontrak `CatatanKerugian` frontend (tiket 42); uang teks desimal, dateOfLoss DD-MM-YYYY.
@@ -135,6 +137,11 @@ type itemKabel struct {
 	IsAdjustable   bool   `json:"isAdjustable"`
 	PctAdjust2     string `json:"pctAdjust2"`
 	PctAdjustOther string `json:"pctAdjustOther"`
+	// tiket 43 - coverages selalu larik ke luar; totalGrossPremi BACA-SAJA (dihitung ulang saat PUT); totalNetRate
+	// diterima dan disimpan apa adanya (A159).
+	Coverages       []coverageKabel `json:"coverages"`
+	TotalGrossPremi string          `json:"totalGrossPremi"`
+	TotalNetRate    string          `json:"totalNetRate"`
 }
 
 // sekitarKabel - kontrak `SurroundingRisk` frontend (tiket 38).
@@ -180,6 +187,7 @@ func keKabel(o models.ObjekFire) objekKabel {
 			FloodArea: s.FloodArea, HousekeepingRemark: s.HousekeepingRemark},
 		Items: keItemKabel(o.Items), Occupations: keOkupasiKabel(o.Occupations), FEA: keFEAKabel(o.FEA),
 		LossRecords: keKerugianKabel(o.LossRecords), InternalLossRecords: []klaimKabel{},
+		TotalPerCurrency: keTotalKabel(o.TotalPerCurrency),
 		LossRatio: lossRatioKabel{OneYearAmount: teks(o.LossRatio.OneYearAmount), OneYearPercent: teks(o.LossRatio.OneYearPercent),
 			ThreeFiveYearAmount: teks(o.LossRatio.ThreeFiveYearAmount), ThreeFiveYearPercent: teks(o.LossRatio.ThreeFiveYearPercent)}}
 }
@@ -254,7 +262,8 @@ func keItemKabel(d []models.ItemObjek) []itemKabel {
 		hasil = append(hasil, itemKabel{ItemTypeID: i.ItemTypeID, ItemType: i.ItemType, Note: i.Note, PropertyYear: i.PropertyYear,
 			Unit: i.Unit, Condition: i.Condition, Currency: i.Currency, TSI: teks(i.TSI), YearOfPlanting: i.YearOfPlanting,
 			NoOfTree: i.NoOfTree, AreaHectar: i.AreaHectar, Remark: i.Remark, IsAdjustable: i.IsAdjustable,
-			PctAdjust2: teks(i.PctAdjust2), PctAdjustOther: teks(i.PctAdjustOther)})
+			PctAdjust2: teks(i.PctAdjust2), PctAdjustOther: teks(i.PctAdjustOther), Coverages: keCoverageKabel(i.Coverages),
+			TotalGrossPremi: teks(i.TotalGrossPremi), TotalNetRate: teks(i.TotalNetRate)})
 	}
 	return hasil
 }
@@ -269,7 +278,9 @@ func keItemModel(n int, d []itemKabel, masalah *[]string) []models.ItemObjek {
 			YearOfPlanting: i.YearOfPlanting, NoOfTree: i.NoOfTree, AreaHectar: i.AreaHectar, Remark: i.Remark,
 			IsAdjustable:   i.IsAdjustable,
 			PctAdjust2:     services.UraiDesimalIsian(awal+"pctAdjust2", i.PctAdjust2, masalah),
-			PctAdjustOther: services.UraiDesimalIsian(awal+"pctAdjustOther", i.PctAdjustOther, masalah)})
+			PctAdjustOther: services.UraiDesimalIsian(awal+"pctAdjustOther", i.PctAdjustOther, masalah),
+			Coverages:      keCoverageModelDaftar(awal, i.Coverages, masalah),
+			TotalNetRate:   services.UraiDesimalIsian(awal+"totalNetRate", i.TotalNetRate, masalah)})
 	}
 	return hasil
 }

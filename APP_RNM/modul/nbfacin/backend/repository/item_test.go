@@ -29,10 +29,11 @@ func TestSQLItem(t *testing.T) {
 	kolom := strings.Split(m[1], ", ")
 	// VALUES dipisah per bind: TO_NUMBER(...) memuat koma di dalam kutip, jadi dipasangkan lewat nomor bind.
 	nilai := regexp.MustCompile(`TO_NUMBER\(:\d+[^)]*\)|:\d+`).FindAllString(m[2], -1)
-	if len(kolom) != 20 || len(nilai) != 20 {
-		t.Fatalf("%d kolom / %d nilai, mau 20", len(kolom), len(nilai))
+	if len(kolom) != 22 || len(nilai) != 22 {
+		t.Fatalf("%d kolom / %d nilai, mau 22", len(kolom), len(nilai))
 	}
-	uang := map[string]bool{"TSI_OBJECT_ITEM": true, "PCT_ADJUST2": true, "PCT_ADJUST_OTHER": true}
+	uang := map[string]bool{"TSI_OBJECT_ITEM": true, "PCT_ADJUST2": true, "PCT_ADJUST_OTHER": true, "TOTAL_GROSS_PREMI": true,
+		"TOTAL_NET_RATE": true}
 	for i, k := range kolom {
 		if bind := fmt.Sprintf(":%d", i+1); !strings.Contains(nilai[i], bind) {
 			t.Errorf("kolom %s bind %q, mau %s", k, nilai[i], bind)
@@ -51,13 +52,15 @@ func TestSQLItem(t *testing.T) {
 func TestArgItemMenurutKolom(t *testing.T) {
 	it := models.ItemObjek{ItemTypeID: "ITEM_TYPE_ID", ItemType: "ITEM_TYPE", Note: "PROPERTI_ITEM_NOTE", PropertyYear: "PROPERTY_YEAR",
 		Unit: "UNIT", Condition: "CONDITION", Currency: "CURRENCY", TSI: desimalUji("1.5"), YearOfPlanting: "YEAR",
-		NoOfTree: "NO_OF_TREE", AreaHectar: "AREA_HECTAR", Remark: "REMARK", PctAdjust2: desimalUji("2"), PctAdjustOther: desimalUji("3.25")}
-	desimal := map[string]string{"TSI_OBJECT_ITEM": "1.5", "PCT_ADJUST2": "2", "PCT_ADJUST_OTHER": "3.25"}
+		NoOfTree: "NO_OF_TREE", AreaHectar: "AREA_HECTAR", Remark: "REMARK", PctAdjust2: desimalUji("2"), PctAdjustOther: desimalUji("3.25"),
+		TotalGrossPremi: desimalUji("4"), TotalNetRate: desimalUji("5.5")}
+	desimal := map[string]string{"TSI_OBJECT_ITEM": "1.5", "PCT_ADJUST2": "2", "PCT_ADJUST_OTHER": "3.25", "TOTAL_GROSS_PREMI": "4",
+		"TOTAL_NET_RATE": "5.5"}
 	m := regexp.MustCompile(`\(([^)]*)\) VALUES`).FindStringSubmatch(sqlSisipItem("UJI.I"))
 	kolom := strings.Split(m[1], ", ")[5:]
 	arg := argItem(it)
-	if len(arg) != len(kolom) || len(kolom) != 15 {
-		t.Fatalf("%d bind, %d kolom, mau 15", len(arg), len(kolom))
+	if len(arg) != len(kolom) || len(kolom) != 17 {
+		t.Fatalf("%d bind, %d kolom, mau 17", len(arg), len(kolom))
 	}
 	for i, k := range kolom {
 		mau := any(k)
@@ -116,8 +119,8 @@ func TestBacaItemMemakaiKolomBernama(t *testing.T) {
 			t.Errorf("kolom %s dipilih tetapi tidak dibaca", k)
 		}
 	}
-	if len(kolomBacaItem) != 16 {
-		t.Errorf("%d kolom, mau 16 (kunci induk + 15 medan)", len(kolomBacaItem))
+	if len(kolomBacaItem) != 19 {
+		t.Errorf("%d kolom, mau 19 (kunci induk + 15 medan + kunci item + 2 total tiket 43)", len(kolomBacaItem))
 	}
 }
 

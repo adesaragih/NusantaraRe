@@ -36,7 +36,9 @@ const (
 // kolomBacaItem - kolom sqlBacaItem BERNAMA (dibaca lewat kunci) -> medan ItemObjek.
 var kolomBacaItem = []string{"TO_CHAR(i.PARENT_ID)", "i.ITEM_TYPE_ID", "i.ITEM_TYPE", "i.PROPERTI_ITEM_NOTE", "i.PROPERTY_YEAR",
 	"i.UNIT", "i.CONDITION", "i.CURRENCY", angkaKeluar("i.TSI_OBJECT_ITEM"), "i.YEAR", "i.NO_OF_TREE",
-	"i.AREA_HECTAR", "i.REMARK", "i.IS_ADJUSTABLE_FLAG", angkaKeluar("i.PCT_ADJUST2"), angkaKeluar("i.PCT_ADJUST_OTHER")}
+	"i.AREA_HECTAR", "i.REMARK", "i.IS_ADJUSTABLE_FLAG", angkaKeluar("i.PCT_ADJUST2"), angkaKeluar("i.PCT_ADJUST_OTHER"),
+	// tiket 43: kunci coverage dan total item
+	"TO_CHAR(i.ID)", angkaKeluar("i.TOTAL_GROSS_PREMI"), angkaKeluar("i.TOTAL_NET_RATE")}
 
 // sqlBacaItem - seluruh item case :1, urut property lalu SEQ_NO.
 func sqlBacaItem(t tabelObjek) string {
@@ -53,8 +55,9 @@ func sqlSisipItem(item string) string {
 	angka := func(n int) string { return angkaMasuk(":" + strconv.Itoa(n)) }
 	return "INSERT INTO " + item + " (ID, PARENT_ID, SEQ_NO, ROW_UID, PROPERTY_ITEM_NO, ITEM_TYPE_ID, ITEM_TYPE," +
 		" PROPERTI_ITEM_NOTE, PROPERTY_YEAR, UNIT, CONDITION, CURRENCY, TSI_OBJECT_ITEM, YEAR, NO_OF_TREE, AREA_HECTAR, REMARK," +
-		" IS_ADJUSTABLE_FLAG, PCT_ADJUST2, PCT_ADJUST_OTHER) VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, " +
-		angka(13) + ", :14, :15, :16, :17, :18, " + angka(19) + ", " + angka(20) + ")"
+		" IS_ADJUSTABLE_FLAG, PCT_ADJUST2, PCT_ADJUST_OTHER, TOTAL_GROSS_PREMI, TOTAL_NET_RATE) VALUES (:1, :2, :3, :4, :5, :6, :7," +
+		" :8, :9, :10, :11, :12, " + angka(13) + ", :14, :15, :16, :17, :18, " + angka(19) + ", " + angka(20) + ", " + angka(21) +
+		", " + angka(22) + ")"
 }
 
 // argItem - bind :6..:20 sqlSisipItem, urutan sama dengan daftar kolomnya. Kosong -> NULL; CURRENCY
@@ -63,7 +66,8 @@ func argItem(it models.ItemObjek) []any {
 	k := db.KosongJadiNil
 	return []any{k(it.ItemTypeID), k(it.ItemType), k(it.Note), k(it.PropertyYear), k(it.Unit), k(it.Condition),
 		it.Currency, ikatDesimal(it.TSI), k(it.YearOfPlanting), k(it.NoOfTree), k(it.AreaHectar), k(it.Remark),
-		teksBool(it.IsAdjustable), ikatDesimal(it.PctAdjust2), ikatDesimal(it.PctAdjustOther)}
+		teksBool(it.IsAdjustable), ikatDesimal(it.PctAdjust2), ikatDesimal(it.PctAdjustOther), ikatDesimal(it.TotalGrossPremi),
+		ikatDesimal(it.TotalNetRate)}
 }
 
 // bacaItem - item case `id` per T_PROPERTY.ID (teks).
@@ -74,6 +78,13 @@ func (r *ObjekOracle) bacaItem(ctx context.Context, t tabelObjek, id string) (ma
 	}
 	defer baris.Close()
 	hasil := map[string][]models.ItemObjek{}
+	// letakItem - posisi item di `hasil` dan T_PROPERTYITEMLIST.ID-nya, untuk memasang coverage (tiket 43).
+	type letakItem struct {
+		induk  string
+		indeks int
+		id     string
+	}
+	var letak []letakItem
 	for baris.Next() {
 		teks := make(map[string]*sql.NullString, len(kolomBacaItem))
 		tujuan := make([]any, len(kolomBacaItem))
@@ -93,13 +104,27 @@ func (r *ObjekOracle) bacaItem(ctx context.Context, t tabelObjek, id string) (ma
 		if err := bacaDesimalKe(TabelPropertyItemList+" induk "+induk, teks,
 			kolomDesimal{angkaKeluar("i.TSI_OBJECT_ITEM"), "TSI_OBJECT_ITEM", &it.TSI},
 			kolomDesimal{angkaKeluar("i.PCT_ADJUST2"), "PCT_ADJUST2", &it.PctAdjust2},
-			kolomDesimal{angkaKeluar("i.PCT_ADJUST_OTHER"), "PCT_ADJUST_OTHER", &it.PctAdjustOther}); err != nil {
+			kolomDesimal{angkaKeluar("i.PCT_ADJUST_OTHER"), "PCT_ADJUST_OTHER", &it.PctAdjustOther},
+			kolomDesimal{angkaKeluar("i.TOTAL_GROSS_PREMI"), "TOTAL_GROSS_PREMI", &it.TotalGrossPremi},
+			kolomDesimal{angkaKeluar("i.TOTAL_NET_RATE"), "TOTAL_NET_RATE", &it.TotalNetRate}); err != nil {
 			return nil, err
 		}
+		it.Coverages = []models.CoverageObjek{}
 		hasil[induk] = append(hasil[induk], it)
+		letak = append(letak, letakItem{induk, len(hasil[induk]) - 1, v("TO_CHAR(i.ID)")})
 	}
 	if err := baris.Err(); err != nil {
 		return nil, fmt.Errorf("repository: item objek: %w", err)
+	}
+	baris.Close()
+	cov, err := r.bacaCoverage(ctx, t, id)
+	if err != nil {
+		return nil, err
+	}
+	for _, l := range letak {
+		if d, ada := cov[l.id]; ada && l.id != "" {
+			hasil[l.induk][l.indeks].Coverages = d
+		}
 	}
 	return hasil, nil
 }
@@ -121,6 +146,9 @@ func (r *ObjekOracle) sisipItem(ctx context.Context, tx *db.Tx, t tabelObjek, id
 			return err
 		}
 		if err := db.PastikanSatuBaris(h, TabelPropertyItemList); err != nil {
+			return err
+		}
+		if err := r.sisipCoverage(ctx, tx, t, idItem, it.Currency, it.Coverages); err != nil {
 			return err
 		}
 	}

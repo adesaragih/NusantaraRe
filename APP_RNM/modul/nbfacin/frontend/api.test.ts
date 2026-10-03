@@ -6,7 +6,10 @@ import {
   badanPremiCargo,
   buatOpportunity,
   cariAccount,
+  cariCoverage,
   cariOccupation,
+  coverageOtomatis,
+  hitungCoverage,
   cariRiskAddress,
   cariSOB,
   cariTableOfLimit,
@@ -294,6 +297,33 @@ describe('cariTableOfLimit (tiket 40)', () => {
       const u = new URL(url, 'http://x')
       expect(u.pathname).toBe('/api/nbfacin/kasus/NB-1/table-of-limit')
       expect(u.searchParams.get('category')).toBe('III')
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('tab Coverage (tiket 43)', () => {
+  it('GET coverage?cari=, GET coverage-otomatis, POST kasus/{id}/hitung-coverage', async () => {
+    const asli = globalThis.fetch
+    const panggil: { url: string; metode: string; badan: string }[] = []
+    globalThis.fetch = (async (u: RequestInfo | URL, init?: RequestInit) => {
+      panggil.push({ url: String(u), metode: init?.method ?? 'GET', badan: String(init?.body ?? '') })
+      return new Response(JSON.stringify({ baris: [] }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await cariCoverage(' api ')
+      await coverageOtomatis()
+      const c = { coverage: 'UJI', rate: '1.5' } as never
+      await hitungCoverage('NB-1', { coverage: c, tsi: '1000', mode: 'percent' })
+      const u = panggil.map((p) => [p.metode, new URL(p.url, 'http://x').pathname])
+      expect(u).toEqual([
+        ['GET', '/api/nbfacin/coverage'],
+        ['GET', '/api/nbfacin/coverage-otomatis'],
+        ['POST', '/api/nbfacin/kasus/NB-1/hitung-coverage'],
+      ])
+      expect(new URL(panggil[0]!.url, 'http://x').searchParams.get('cari')).toBe('api')
+      expect(JSON.parse(panggil[2]!.badan)).toEqual({ coverage: { coverage: 'UJI', rate: '1.5' }, tsi: '1000', mode: 'percent' })
     } finally {
       globalThis.fetch = asli
     }
