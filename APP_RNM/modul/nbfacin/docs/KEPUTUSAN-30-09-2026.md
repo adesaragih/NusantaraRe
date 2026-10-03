@@ -1260,6 +1260,13 @@ perintah sesi 0f (*"lanjut tiket 40 tanpa endpoint table-of-limit dulu"*): DDL T
 ditemukan. Ditulis,
 belum dijalankan — urutan DEV: … → 188 → **189**. Keputusan agent A138–A141 menunggu konfirmasi (`issues/40-occupation.md`).
 
+## Tiket 41 — sub-tab FEA (backend), diteruskan sesi `nusantarare-0f`
+
+`GET`/`PUT …/objek` membawa `fea` → tabel **baru** `T_FEALIST` (induk `T_LOCATIONLIST`), migrasi **190**; loader:
+`amandemenFEA` + jalur `LocationList/FEAList` + lipatan `.DataFEA` (skema 80 tabel / **1.433** kolom / 150 jalur).
+Ditulis, belum dijalankan — urutan DEV: … → 189 → **190**. Keputusan agent A142–A144 menunggu konfirmasi
+(`issues/41-fea.md`). Tanpa keputusan work owner baru.
+
 ## Yang belum diputuskan
 
 

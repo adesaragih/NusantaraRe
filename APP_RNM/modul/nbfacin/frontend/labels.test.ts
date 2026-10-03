@@ -50,6 +50,8 @@ import {
   OPSI_HOUSEKEEPING,
   OPSI_FLOOD_STATUS,
   OPSI_FLOOD_AREA,
+  OPSI_CONDITION,
+  CONDITION_KOSONG,
   OPSI_TITLE_RISK,
   POPUP_SOB,
   SARING_PORTAL,
@@ -481,6 +483,7 @@ const BERKAS_SEKITAR_DDL = {
   HousekeepingStatus: { opsi: OPSI_HOUSEKEEPING, kosong: null },
   FloodAreaStatus: { opsi: OPSI_FLOOD_STATUS, kosong: null },
   FloodArea: { opsi: OPSI_FLOOD_AREA, kosong: CONSTRUCTION_KOSONG as string | null },
+  Condition: { opsi: OPSI_CONDITION, kosong: CONDITION_KOSONG as string | null },
 }
 const adaSekitarDDL = Object.keys(BERKAS_SEKITAR_DDL).every((n) => existsSync(`${DDL}${n}.xml`))
 

@@ -15,7 +15,7 @@
 // Keputusan agent (tiket 39): K-1 hitung ulang premi / spreading saat TSI berubah (`CountPremi_ACT`,
 // `cekSpreadingFactIn`) = tab Coverage, bukan di sini. K-2 urutan baris Total = urutan muncul mata uang di daftar
 // item (Pega: urutan tabel CURRENCY). K-3 pesan Unit / TSI minus = teks sistem baru (field value Pega tidak ada di
-// korpus). K-4 daftar Condition dan Adjustment Pct. (PctAdjust2) menunggu aturan properti dari work owner.
+// korpus). K-4 daftar Condition = aturan properti `DDL\Condition.xml`; Adjustment Pct. (PctAdjust2) menunggu.
 // A133 (backend c3): Currency wajib - bertanda wajib, menahan Save; pesannya tampil sesudah Save dicoba.
 
 import { useEffect, useState } from 'react'
@@ -24,7 +24,18 @@ import { Area, Field, Pilih, type Opsi } from '../../../../inti/frontend/compone
 import { desimalSah, jumlahDesimal } from '../../../../inti/frontend/lib/desimal'
 import { formatNumber } from '../../../../inti/frontend/lib/format'
 import { daftarJenisItem, daftarMataUang, type ItemObjek, type JenisItem } from '../api'
-import { FORM_ITEM as F, GRID_ITEM, GRID_OBJEK, ITEM_KOSONG, OPSI_CONDITION, OPSI_PCT_ADJUST, TEKS_INWARD, TEKS_ITEM, TEKS_OBJEK } from '../labels'
+import {
+  CONDITION_KOSONG,
+  FORM_ITEM as F,
+  GRID_ITEM,
+  GRID_OBJEK,
+  ITEM_KOSONG,
+  OPSI_CONDITION,
+  OPSI_PCT_ADJUST,
+  TEKS_INWARD,
+  TEKS_ITEM,
+  TEKS_OBJEK,
+} from '../labels'
 
 /** Desimal tampilan grid (pxNumber 4 dp). */
 const DESIMAL_GRID = 4
@@ -122,7 +133,7 @@ function FormItem({
           <Area label={F.note.label} value={i.note} onChange={set('note')} baris={2} />
           <Field label={F.year.label} value={i.propertyYear} onChange={set('propertyYear')} />
           <Field label={F.unit.label} value={i.unit} onChange={set('unit')} error={g.unit} />
-          <Pilih label={F.condition.label} value={i.condition} onChange={set('condition')} opsi={OPSI_CONDITION} />
+          <Pilih label={F.condition.label} value={i.condition} onChange={set('condition')} opsi={OPSI_CONDITION} kosong={CONDITION_KOSONG} />
           <Pilih
             label={F.currency.label}
             value={i.currency}

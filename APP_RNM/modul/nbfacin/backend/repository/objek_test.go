@@ -11,7 +11,7 @@ import (
 
 func tabelObjekUji() tabelObjek {
 	return tabelObjek{work: "UJI.W", general: "UJI.G", loc: "UJI.L", prop: "UJI.P", risk: "UJI.R", bang: "UJI.B", sekitar: "UJI.S", item: "UJI.I",
-		okupasi: "UJI.O", tol: "UJI.K"}
+		okupasi: "UJI.O", tol: "UJI.K", fea: "UJI.F"}
 }
 
 // TestSQLObjek - tiket 35: baca urut SEQ_NO lewat case; hapus ANAK sebelum INDUK (FK tanpa
@@ -25,11 +25,11 @@ func TestSQLObjek(t *testing.T) {
 			t.Errorf("baca tanpa %q", harus)
 		}
 	}
-	if n := len(strings.Split(baca[len("SELECT "):strings.Index(baca, "\nFROM")], ",")); n != 48 {
-		t.Errorf("SELECT %d kolom, mau 48 (23 tiket 35 + 24 tiket 38 + kunci item tiket 39)", n)
+	if n := len(strings.Split(baca[len("SELECT "):strings.Index(baca, "\nFROM")], ",")); n != 49 {
+		t.Errorf("SELECT %d kolom, mau 49 (23 tiket 35 + 24 tiket 38 + kunci item tiket 39 + kunci FEA tiket 41)", n)
 	}
 	hapus := sqlHapusObjek(tb)
-	urut := []string{"DELETE FROM UJI.K ", "DELETE FROM UJI.O ", "DELETE FROM UJI.I ", "DELETE FROM UJI.R ", "DELETE FROM UJI.B ", "DELETE FROM UJI.S ", "DELETE FROM UJI.P ", "DELETE FROM UJI.L "}
+	urut := []string{"DELETE FROM UJI.K ", "DELETE FROM UJI.O ", "DELETE FROM UJI.I ", "DELETE FROM UJI.R ", "DELETE FROM UJI.B ", "DELETE FROM UJI.S ", "DELETE FROM UJI.P ", "DELETE FROM UJI.F ", "DELETE FROM UJI.L "}
 	if len(hapus) != len(urut) {
 		t.Fatalf("%d DELETE, mau %d", len(hapus), len(urut))
 	}
@@ -50,7 +50,8 @@ func TestSQLObjek(t *testing.T) {
 // ALTER TABLE ADD migrasi 186-188, dan jumlah bind = jumlah kolom tiap INSERT.
 func TestSQLObjekMemakaiKolomMigrasi(t *testing.T) {
 	sql := bacaMigrasi(t, "186_t_objek_fire.sql") + "\n" + bacaMigrasi(t, "187_t_surroundingrisk.sql") + "\n" +
-		bacaMigrasi(t, "188_t_propertyitemlist.sql") + "\n" + bacaMigrasi(t, "189_t_occupationlist.sql")
+		bacaMigrasi(t, "188_t_propertyitemlist.sql") + "\n" + bacaMigrasi(t, "189_t_occupationlist.sql") + "\n" +
+		bacaMigrasi(t, "190_t_fealist.sql")
 	kolom := map[string]map[string]bool{}
 	for _, m := range regexp.MustCompile(`(?s)(?:CREATE TABLE|ALTER TABLE) \{skema\}\.(\w+) (?:ADD )?\((.*?)\n\)`).FindAllStringSubmatch(sql, -1) {
 		if kolom[m[1]] == nil {
@@ -66,9 +67,9 @@ func TestSQLObjekMemakaiKolomMigrasi(t *testing.T) {
 		t.Fatalf("migrasi 187 tak terbaca: %d kolom T_SURROUNDINGRISK", len(kolom["T_SURROUNDINGRISK"]))
 	}
 	tb := tabelObjek{loc: "T_LOCATIONLIST", prop: "T_PROPERTY", risk: "T_RISKLOCATION", bang: "T_BUILDINGCONSTRUCTION", sekitar: "T_SURROUNDINGRISK",
-		item: "T_PROPERTYITEMLIST", okupasi: "T_OCCUPATIONLIST", tol: "T_TABLEOFLIMIT"}
+		item: "T_PROPERTYITEMLIST", okupasi: "T_OCCUPATIONLIST", tol: "T_TABLEOFLIMIT", fea: "T_FEALIST"}
 	for _, q := range []string{sqlSisipLokasi(tb.loc), sqlSisipProperty(tb.prop), sqlSisipRisk(tb.risk), sqlSisipBangunan(tb.bang),
-		sqlSisipSekitar(tb.sekitar), sqlSisipItem(tb.item), sqlSisipOkupasi(tb.okupasi), sqlSisipTableOfLimit(tb.tol)} {
+		sqlSisipSekitar(tb.sekitar), sqlSisipItem(tb.item), sqlSisipOkupasi(tb.okupasi), sqlSisipTableOfLimit(tb.tol), sqlSisipFEA(tb.fea)} {
 		m := regexp.MustCompile(`INSERT INTO (\w+) \(([^)]*)\) VALUES \((.*)\)$`).FindStringSubmatch(q)
 		if m == nil {
 			t.Fatalf("INSERT tak terbaca: %q", q)
@@ -79,16 +80,16 @@ func TestSQLObjekMemakaiKolomMigrasi(t *testing.T) {
 		}
 		for _, c := range cols {
 			if !kolom[m[1]][c] {
-				t.Errorf("%s.%s ditulis, tidak ada di 186-189", m[1], c)
+				t.Errorf("%s.%s ditulis, tidak ada di 186-190", m[1], c)
 			}
 		}
 	}
 	alias := map[string]string{"p": "T_PROPERTY", "r": "T_RISKLOCATION", "b": "T_BUILDINGCONSTRUCTION", "s": "T_SURROUNDINGRISK",
-		"i": "T_PROPERTYITEMLIST", "l": "T_LOCATIONLIST", "o": "T_OCCUPATIONLIST", "k": "T_TABLEOFLIMIT"}
-	for _, m := range regexp.MustCompile(`\b([prbsilok])\.([A-Z_]+)\b`).FindAllStringSubmatch(sqlBacaObjek(tabelObjekUji())+"\n"+sqlBacaItem(tabelObjekUji())+
-		"\n"+sqlBacaOkupasi(tabelObjekUji()), -1) {
+		"i": "T_PROPERTYITEMLIST", "l": "T_LOCATIONLIST", "o": "T_OCCUPATIONLIST", "k": "T_TABLEOFLIMIT", "f": "T_FEALIST"}
+	for _, m := range regexp.MustCompile(`\b([prbsilokf])\.([A-Z_]+)\b`).FindAllStringSubmatch(sqlBacaObjek(tabelObjekUji())+"\n"+sqlBacaItem(tabelObjekUji())+
+		"\n"+sqlBacaOkupasi(tabelObjekUji())+"\n"+sqlBacaFEA(tabelObjekUji()), -1) {
 		if !kolom[alias[m[1]]][m[2]] {
-			t.Errorf("%s.%s dibaca, tidak ada di 186-189", alias[m[1]], m[2])
+			t.Errorf("%s.%s dibaca, tidak ada di 186-190", alias[m[1]], m[2])
 		}
 	}
 }
@@ -115,8 +116,8 @@ func TestBacaObjekMemakaiKolomBernama(t *testing.T) {
 			t.Errorf("kolom %s dipilih tetapi tidak dibaca", k)
 		}
 	}
-	if len(kolomBacaObjek) != 48 {
-		t.Errorf("%d kolom, mau 48 (23 tiket 35 + 4 T_PROPERTY + 20 T_SURROUNDINGRISK tiket 38 + kunci item)", len(kolomBacaObjek))
+	if len(kolomBacaObjek) != 49 {
+		t.Errorf("%d kolom, mau 49 (23 tiket 35 + 4 T_PROPERTY + 20 T_SURROUNDINGRISK tiket 38 + kunci item + kunci FEA)", len(kolomBacaObjek))
 	}
 }
 

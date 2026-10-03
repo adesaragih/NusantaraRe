@@ -47,6 +47,21 @@ type objekKabel struct {
 	Items []itemKabel `json:"items"`
 	// tiket 40
 	Occupations []okupasiKabel `json:"occupations"`
+	// tiket 41
+	FEA []feaKabel `json:"fea"`
+}
+
+// feaKabel - kontrak `BarisFEA` frontend (tiket 41).
+type feaKabel struct {
+	APAR                  string `json:"apar"`
+	Sprinkler             string `json:"sprinkler"`
+	SmokeDetector         string `json:"smokeDetector"`
+	Hydrant               string `json:"hydrant"`
+	PrivateTruckBrigade   string `json:"privateTruckBrigade"`
+	PrivateFireBrigade    string `json:"privateFireBrigade"`
+	TeamSOPSafety         string `json:"teamSopSafety"`
+	TeamSOPRiskManagement string `json:"teamSopRiskManagement"`
+	Info                  string `json:"info"`
 }
 
 // okupasiKabel - kontrak `OkupasiObjek` frontend (tiket 40).
@@ -118,7 +133,24 @@ func keKabel(o models.ObjekFire) objekKabel {
 		SurroundingRisk: sekitarKabel{Front: sisiKabel(s.Front), Left: sisiKabel(s.Left), Back: sisiKabel(s.Back),
 			Right: sisiKabel(s.Right), HousekeepingStatus: s.HousekeepingStatus, FloodAreaStatus: s.FloodAreaStatus,
 			FloodArea: s.FloodArea, HousekeepingRemark: s.HousekeepingRemark},
-		Items: keItemKabel(o.Items), Occupations: keOkupasiKabel(o.Occupations)}
+		Items: keItemKabel(o.Items), Occupations: keOkupasiKabel(o.Occupations), FEA: keFEAKabel(o.FEA)}
+}
+
+// keFEAKabel / keFEAModel - BarisFEA <-> feaKabel; selalu larik ke luar.
+func keFEAKabel(d []models.BarisFEA) []feaKabel {
+	hasil := make([]feaKabel, 0, len(d))
+	for _, f := range d {
+		hasil = append(hasil, feaKabel(f))
+	}
+	return hasil
+}
+
+func keFEAModel(d []feaKabel) []models.BarisFEA {
+	hasil := make([]models.BarisFEA, 0, len(d))
+	for _, f := range d {
+		hasil = append(hasil, models.BarisFEA(f))
+	}
+	return hasil
 }
 
 // keOkupasiKabel / keOkupasiModel - OkupasiObjek <-> okupasiKabel; selalu larik ke luar.
@@ -168,7 +200,7 @@ func keModel(o objekKabel) models.ObjekFire {
 		SurroundingRisk: models.SurroundingRisk{Front: models.SisiRisiko(s.Front), Left: models.SisiRisiko(s.Left),
 			Back: models.SisiRisiko(s.Back), Right: models.SisiRisiko(s.Right), HousekeepingStatus: s.HousekeepingStatus,
 			FloodAreaStatus: s.FloodAreaStatus, FloodArea: s.FloodArea, HousekeepingRemark: s.HousekeepingRemark},
-		Items: keItemModel(o.Items), Occupations: keOkupasiModel(o.Occupations)}
+		Items: keItemModel(o.Items), Occupations: keOkupasiModel(o.Occupations), FEA: keFEAModel(o.FEA)}
 }
 
 func keObjekKabel(d []models.ObjekFire) daftarObjek {

@@ -40,6 +40,22 @@ type ObjekFire struct {
 	// Tiket 40 - .Property.OccupationList (BUKAN .Property.RiskLocation.OccupationList), T_OCCUPATIONLIST urut
 	// SEQ_NO + T_TABLEOFLIMIT (migrasi 189).
 	Occupations []OkupasiObjek
+	// Tiket 41 - .LocationList(n).FEAList (milik baris lokasi, bukan Property), T_FEALIST urut SEQ_NO (migrasi 190).
+	FEA []BarisFEA
+}
+
+// BarisFEA - satu .FEAList(n) (kelas Data-OfferFacIn-OfferFEAList); empat medan dari halaman tertanam .DataFEA.
+// Jumlah unit = teks angka bulat >= 0 (M-2).
+type BarisFEA struct {
+	APAR                  string // APAR                     (.APAR)
+	Sprinkler             string // SPRINKLER                (.Sprinkler)
+	SmokeDetector         string // SMOKE_DETECTOR           (.SmokeDetector)
+	Hydrant               string // HYDRANT                  (.Hydrant)
+	PrivateTruckBrigade   string // PRIVATE_TRUCK_BRIGADE    (.DataFEA.PrivateTruckBrigade)
+	PrivateFireBrigade    string // PRIVATE_FIRE_BRIGADE     (.DataFEA.PrivateFireBrigade)
+	TeamSOPSafety         string // TEAM_SOP_SAFETY          (.DataFEA.TeamSOPSafety)
+	TeamSOPRiskManagement string // TEAM_SOP_RISK_MANAGEMENT (.DataFEA.TeamSOPRiskManagement)
+	Info                  string // INFO_FEA                 (.InfoFEA)
 }
 
 // OkupasiObjek - satu .Property.OccupationList(n) (kelas Data-Occupation) beserta halaman .TableOfLimit-nya.

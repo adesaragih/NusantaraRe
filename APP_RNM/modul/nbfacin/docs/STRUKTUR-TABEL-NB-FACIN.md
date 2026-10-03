@@ -1,8 +1,8 @@
 # Struktur Tabel — NB FacIn: PETA TABEL WARISAN yang dibaca + tabel yang dibuat
 
-Modul ini **membuat dua belas tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
+Modul ini **membuat tiga belas tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
 `T_QUOTATIONDATA` **sebagian** (migrasi 182/183, tiket 31 / butir 78.4), `T_CEDINGCOLIST` utuh (185, tiket 34), dan tabel tab Object FIRE (186, tiket 35: `T_LOCATIONLIST` /
-`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian; 189, tiket 40: `T_OCCUPATIONLIST` sebagian, `T_TABLEOFLIMIT` utuh) — dan **menulis**
+`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian; 189, tiket 40: `T_OCCUPATIONLIST` sebagian, `T_TABLEOFLIMIT` utuh; 190, tiket 41: `T_FEALIST` baru) — dan **menulis**
 baris `T_WORK_POLIS` milik premiumlistlife (K-064; tidak dibuat, tidak dipetakan kolomnya di sini). Selebihnya ia hanya
 **membaca** lima belas tabel yang sudah ada — enam tabel limit
 akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), tabel bisnis `BUSINESS` (tiket 28), `MARKETINGOFFICER` (31), `AGENT`
@@ -359,6 +359,31 @@ Tiket 40 — migrasi 189, **utuh**. Halaman `.TableOfLimit` okupasi: satu baris 
 | `CATEGORY` | teks | VARCHAR2(50) | Category I/II/III (`SetDataOccupation` dari KDRiskExposure 01/02/03) |
 | `DESCRIPTION` | teks | VARCHAR2(500) | Class of Construction |
 | `PCT_LIMIT` | teks | VARCHAR2(50) | PctLimit — **teks apa adanya** (butir 68.1: rancangan NUMBER; koma desimal dan spasi ujung dipertahankan); lebar A139 |
+
+## T_FEALIST
+
+Tiket 41 — migrasi 190, tabel **BARU** (rancangan flat tidak punya tabel FEA; A142, amandemen loader `amandemenFEA` +
+jalur `LocationList/FEAList` + lipatan `.DataFEA`). `.FEAList` milik **baris lokasi** (kelas
+`Data-OfferFacIn-LocationReinsurance`), jadi induknya `T_LOCATIONLIST`; banyak baris per lokasi, urut `SEQ_NO`. Kolom
+sistem = pola tabel berulang rancangan (T_ADDITIONALSHIP).
+
+| Kolom | Tipe | Tipe DDL (migrasi 190) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_FEALIST` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_LOCATIONLIST.ID` |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan FEA 1..n |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
+| `APAR` | teks | VARCHAR2(50) | APAR (`.APAR`) — jumlah unit, bilangan bulat ≥ 0 (M-2) |
+| `SPRINKLER` | teks | VARCHAR2(50) | Sprinkler (`.Sprinkler`) — jumlah unit |
+| `SMOKE_DETECTOR` | teks | VARCHAR2(50) | Smoke Detector & Alarm (`.SmokeDetector`) — jumlah unit |
+| `HYDRANT` | teks | VARCHAR2(50) | Hydrant (`.Hydrant`) — jumlah unit |
+| `PRIVATE_TRUCK_BRIGADE` | teks | VARCHAR2(50) | Private Truck Brigade (Unit) (`.DataFEA.PrivateTruckBrigade`) — jumlah unit |
+| `PRIVATE_FIRE_BRIGADE` | teks | VARCHAR2(50) | Private Team Fire Brigade (`.DataFEA.PrivateFireBrigade`) — kode apa adanya |
+| `TEAM_SOP_SAFETY` | teks | VARCHAR2(50) | Team & SOP Safety (`.DataFEA.TeamSOPSafety`) — kode apa adanya |
+| `TEAM_SOP_RISK_MANAGEMENT` | teks | VARCHAR2(50) | Team & SOP Risk Management (`.DataFEA.TeamSOPRiskManagement`) — kode apa adanya |
+| `INFO_FEA` | teks | VARCHAR2(500) | Others Info (`.InfoFEA`) |
 
 ## MARKETINGOFFICER
 

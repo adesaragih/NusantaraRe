@@ -214,12 +214,48 @@ var amandemenItem = []kolomSkema{
 	{nama: "AREA_HECTAR", tipe: "VARCHAR2(50)", medan: "AreaHectar"},
 }
 
+// amandemenFEA - tiket 41 (A142): tabel BARU T_FEALIST untuk `LocationList/FEAList` (rancangan tidak punya tabel
+// FEA). Kolom sistem pola tabel berulang (T_ADDITIONALSHIP); medan dari `Section\InputFEA_IsUW.xml`; empat
+// medan halaman tertanam .DataFEA dilipat ke baris ini (lipatFEA). Migrasi 190.
+var amandemenFEA = []kolomSkema{
+	{nama: "ID", tipe: "NUMBER", wajib: true},
+	{nama: "IDPEGA", tipe: "VARCHAR2(50)"},
+	{nama: "COB_GROUP", tipe: "VARCHAR2(20)"},
+	{nama: "PARENT_ID", tipe: "NUMBER", wajib: true},
+	{nama: "SEQ_NO", tipe: "NUMBER(5)", wajib: true},
+	{nama: "ROW_UID", tipe: "VARCHAR2(36)", wajib: true},
+	{nama: "APAR", tipe: "VARCHAR2(50)", medan: "APAR"},
+	{nama: "SPRINKLER", tipe: "VARCHAR2(50)", medan: "Sprinkler"},
+	{nama: "SMOKE_DETECTOR", tipe: "VARCHAR2(50)", medan: "SmokeDetector"},
+	{nama: "HYDRANT", tipe: "VARCHAR2(50)", medan: "Hydrant"},
+	{nama: "PRIVATE_TRUCK_BRIGADE", tipe: "VARCHAR2(50)", medan: "PrivateTruckBrigade"},
+	{nama: "PRIVATE_FIRE_BRIGADE", tipe: "VARCHAR2(50)", medan: "PrivateFireBrigade"},
+	{nama: "TEAM_SOP_SAFETY", tipe: "VARCHAR2(50)", medan: "TeamSOPSafety"},
+	{nama: "TEAM_SOP_RISK_MANAGEMENT", tipe: "VARCHAR2(50)", medan: "TeamSOPRiskManagement"},
+	{nama: "INFO_FEA", tipe: "VARCHAR2(500)", medan: "InfoFEA"},
+}
+
+// jalurFEA, lipatFEA - tiket 41: jalur FEAList di bawah baris lokasi; halaman .DataFEA dilipat (medan sendiri ikut).
+var (
+	jalurFEA = jalurSkema{jalur: "LocationList/FEAList", tabel: "T_FEALIST", induk: "T_LOCATIONLIST"}
+	lipatFEA = lipatan{"T_FEALIST", "DataFEA"}
+)
+
 // init - menggabungkan amandemen ke skema bangkitan. ⛔ Bila workbook kelak sudah
 // memuat tabel/kolom/jalur yang sama, penggabungan diam-diam akan menggandakan atau
 // menimpanya; karena itu tabrakan = panic saat paket dimuat (amandemen ini harus
 // dicabut, bukan ditumpuk).
 // Duplikat di dalam amandemen sendiri juga panic.
 func init() {
+	if _, ada := amandemenTabel[jalurFEA.tabel]; ada {
+		panic("loader: amandemen tabel " + jalurFEA.tabel + " ganda")
+	}
+	amandemenTabel[jalurFEA.tabel] = amandemenFEA
+	amandemenJalur = append(amandemenJalur, jalurFEA)
+	if _, ada := lipat[lipatFEA]; ada {
+		panic("loader: lipatan T_FEALIST/DataFEA sudah ada")
+	}
+	lipat[lipatFEA] = aturanLipat{medanSendiri: true}
 	amandemenKolom["T_BUILDINGCONSTRUCTION"] = append(amandemenKolom["T_BUILDINGCONSTRUCTION"], amandemenBangunan...)
 	amandemenKolom["T_SURROUNDINGRISK"] = append(amandemenKolom["T_SURROUNDINGRISK"], amandemenSekitar...)
 	amandemenKolom["T_PROPERTYITEMLIST"] = append(amandemenKolom["T_PROPERTYITEMLIST"], amandemenItem...)

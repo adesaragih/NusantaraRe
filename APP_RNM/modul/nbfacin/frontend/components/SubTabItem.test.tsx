@@ -90,3 +90,10 @@ describe('SubTabItem - aturan', () => {
     expect(F.tsi.label).toBe('TSI Object Item (All Unit)')
   })
 })
+
+describe('SubTabItem - Condition (Condition.xml)', () => {
+  it('kolom grid Condition menampilkan label, bukan kode', () => {
+    const html = renderToStaticMarkup(<SubTabItem items={[it1({ itemType: 'UJI', condition: '2' })]} ubah={() => {}} />)
+    expect(html).toContain('<td>UJI</td><td>Fair</td>')
+  })
+})

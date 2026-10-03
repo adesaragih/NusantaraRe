@@ -690,10 +690,21 @@ export const FORM_ITEM = {
 export const ITEM_KOSONG = 'Choose'
 
 /**
- * Daftar Condition dan Adjustment Pct. (PctAdjust2) - sumber Pega `associated`, aturan properti TIDAK ada di korpus.
+ * Daftar Condition - `[terverifikasi]` aturan properti `ASM-FW-GISFW-DATA-PROPERTYITEM!CONDITION` (PromptList,
+ * `D:\migrasi\RNM\DDL\Condition.xml`, ditambahkan work owner 03-10-2026); baris pertama tanpa nilai = "Please Select".
+ * Diuji `labels.test.ts`.
+ */
+export const OPSI_CONDITION = [
+  { value: '1', label: 'Good' },
+  { value: '2', label: 'Fair' },
+  { value: '3', label: 'Poor' },
+]
+export const CONDITION_KOSONG = 'Please Select'
+
+/**
+ * Daftar Adjustment Pct. (PctAdjust2) - sumber Pega `associated`, aturan properti TIDAK ada di korpus.
  * ⚠️ Kosong sampai work owner menambahkan berkasnya (`DDL\`); nilai tersimpan tetap tampil lewat `Pilih`.
  */
-export const OPSI_CONDITION: { value: string; label: string }[] = []
 export const OPSI_PCT_ADJUST: { value: string; label: string }[] = []
 
 /** Teks Object Item. */

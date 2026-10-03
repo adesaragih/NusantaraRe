@@ -25,6 +25,7 @@ const (
 	TabelPropertyItemList     = "T_PROPERTYITEMLIST"
 	TabelOccupationList       = "T_OCCUPATIONLIST"
 	TabelTableOfLimit         = "T_TABLEOFLIMIT"
+	TabelFEAList              = "T_FEALIST"
 	sequenceLocationList      = "SEQ_T_LOCATIONLIST"
 	sequenceProperty          = "SEQ_T_PROPERTY"
 	sequenceRiskLocation      = "SEQ_T_RISKLOCATION"
@@ -33,6 +34,7 @@ const (
 	sequencePropertyItemList  = "SEQ_T_PROPERTYITEMLIST"
 	sequenceOccupationList    = "SEQ_T_OCCUPATIONLIST"
 	sequenceTableOfLimit      = "SEQ_T_TABLEOFLIMIT"
+	sequenceFEAList           = "SEQ_T_FEALIST"
 	teksBenar, teksSalah      = "true", "false" // boolean Pega di IS_* (fixture)
 )
 
@@ -50,7 +52,7 @@ type ObjekOracle struct{ db *db.DB }
 // NewObjekOracle merakit penyimpan objek.
 func NewObjekOracle(d *db.DB) *ObjekOracle { return &ObjekOracle{db: d} }
 
-type tabelObjek struct{ work, general, loc, prop, risk, bang, sekitar, item, okupasi, tol string }
+type tabelObjek struct{ work, general, loc, prop, risk, bang, sekitar, item, okupasi, tol, fea string }
 
 func (r *ObjekOracle) tabel() (tabelObjek, error) {
 	var t tabelObjek
@@ -59,7 +61,8 @@ func (r *ObjekOracle) tabel() (tabelObjek, error) {
 		ke   *string
 	}{{TabelWorkPolis, &t.work}, {TabelGeneralPolis, &t.general}, {TabelLocationList, &t.loc}, {TabelProperty, &t.prop},
 		{TabelRiskLocation, &t.risk}, {TabelBuildingConstruction, &t.bang}, {TabelSurroundingRisk, &t.sekitar},
-		{TabelPropertyItemList, &t.item}, {TabelOccupationList, &t.okupasi}, {TabelTableOfLimit, &t.tol}} {
+		{TabelPropertyItemList, &t.item}, {TabelOccupationList, &t.okupasi}, {TabelTableOfLimit, &t.tol},
+		{TabelFEAList, &t.fea}} {
 		q, err := r.db.Qualify(x.nama)
 		if err != nil {
 			return t, err
@@ -85,8 +88,8 @@ var kolomBacaObjek = []string{"p.OBJECT_NO", "p.OBJECT_TYPE", "p.OBJECT_NAME", "
 	"s.BACK_OCCUPATION", "s.BACK_CONSTRUCTION", "s.BACK_DISTANCE", "s.BACK_NOTE",
 	"s.RIGHT_OCCUPATION", "s.RIGHT_CONSTRUCTION", "s.RIGHT_DISTANCE", "s.RIGHT_NOTE",
 	"s.HOUSEKEEPING_STATUS", "s.FLOOD_AREA_STATUS", "s.FLOOD_AREA", "s.HOUSEKEEPING_REMARK",
-	// tiket 39: kunci item (T_PROPERTYITEMLIST.PARENT_ID)
-	"TO_CHAR(p.ID)"}
+	// tiket 39: kunci item (T_PROPERTYITEMLIST.PARENT_ID); tiket 41: kunci FEA (T_FEALIST.PARENT_ID)
+	"TO_CHAR(p.ID)", "TO_CHAR(l.ID)"}
 
 // sqlBacaObjek - satu baris per lokasi; anak tunggal lewat LEFT JOIN (UNIQUE PARENT_ID, 186/187).
 func sqlBacaObjek(t tabelObjek) string {
@@ -112,6 +115,7 @@ func sqlHapusObjek(t tabelObjek) []string {
 		"DELETE FROM " + t.bang + " WHERE PARENT_ID IN (" + prop + ")",
 		"DELETE FROM " + t.sekitar + " WHERE PARENT_ID IN (" + prop + ")",
 		"DELETE FROM " + t.prop + " WHERE PARENT_ID IN (SELECT ID FROM " + t.loc + " WHERE PARENT_ID = :1)",
+		"DELETE FROM " + t.fea + " WHERE PARENT_ID IN (SELECT ID FROM " + t.loc + " WHERE PARENT_ID = :1)",
 		"DELETE FROM " + t.loc + " WHERE PARENT_ID = :1",
 	}
 }
@@ -193,7 +197,7 @@ func (r *ObjekOracle) BacaObjek(ctx context.Context, id string) ([]models.ObjekF
 	}
 	defer baris.Close()
 	hasil := []models.ObjekFire{}
-	var idProperty []string
+	var idProperty, idLokasi []string
 	for baris.Next() {
 		teks := make(map[string]*sql.NullString, len(kolomBacaObjek))
 		tujuan := make([]any, len(kolomBacaObjek))
@@ -226,8 +230,9 @@ func (r *ObjekOracle) BacaObjek(ctx context.Context, id string) ([]models.ObjekF
 					Distance: v("s.RIGHT_DISTANCE"), Note: v("s.RIGHT_NOTE")},
 				HousekeepingStatus: v("s.HOUSEKEEPING_STATUS"), FloodAreaStatus: v("s.FLOOD_AREA_STATUS"),
 				FloodArea: v("s.FLOOD_AREA"), HousekeepingRemark: v("s.HOUSEKEEPING_REMARK")},
-			Items: []models.ItemObjek{}, Occupations: []models.OkupasiObjek{}})
+			Items: []models.ItemObjek{}, Occupations: []models.OkupasiObjek{}, FEA: []models.BarisFEA{}})
 		idProperty = append(idProperty, v("TO_CHAR(p.ID)"))
+		idLokasi = append(idLokasi, v("TO_CHAR(l.ID)"))
 	}
 	if err := baris.Err(); err != nil {
 		return nil, fmt.Errorf("repository: objek: %w", err)
@@ -240,6 +245,15 @@ func (r *ObjekOracle) BacaObjek(ctx context.Context, id string) ([]models.ObjekF
 	okupasi, err := r.bacaOkupasi(ctx, t, id)
 	if err != nil {
 		return nil, err
+	}
+	fea, err := r.bacaFEA(ctx, t, id)
+	if err != nil {
+		return nil, err
+	}
+	for i, l := range idLokasi {
+		if d, ada := fea[l]; ada {
+			hasil[i].FEA = d
+		}
 	}
 	for i, p := range idProperty {
 		if p == "" {
@@ -321,6 +335,9 @@ func (r *ObjekOracle) GantiObjek(ctx context.Context, tx *db.Tx, id string, bari
 			return err
 		}
 		if err := r.sisipOkupasi(ctx, tx, t, ids[1], o.Occupations); err != nil {
+			return err
+		}
+		if err := r.sisipFEA(ctx, tx, t, ids[0], o.FEA); err != nil {
 			return err
 		}
 	}
