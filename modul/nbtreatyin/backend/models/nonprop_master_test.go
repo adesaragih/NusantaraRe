@@ -125,3 +125,16 @@ func TestTampilanMasterNonPropTidakMenyentuhPolis(t *testing.T) {
 		t.Fatal("tampilan master tidak menulis medan polis tersimpan")
 	}
 }
+
+func TestPilihBisnisUlangMembuangRincianAngsuran(t *testing.T) {
+	// preACT langkah 11 `Property-Remove ListInstallment`: PageList dibuang beserta
+	// halaman bersarangnya - rincian NonProp lama tidak tertinggal saat kontrak
+	// dipilih ulang (penyimpanan polis Proportional menolak rincian bersarang, AC 31).
+	h := models.HalamanBaru()
+	h.SetelDaftar("PolicyTreatyIn.ListInstallment", []models.Baris{{"Currency": "IDR"}})
+	h.SetelDaftar("PolicyTreatyIn.ListInstallment(1).InstallmentList", []models.Baris{{"Premium": "1"}})
+	models.TerapkanDetailKontrak(h, models.BarisKontrak{"PROPORTIONTYPE": "Proportional"})
+	if len(h.AmbilDaftar("PolicyTreatyIn.ListInstallment(1).InstallmentList")) != 0 {
+		t.Fatal("rincian bersarang ikut terhapus")
+	}
+}

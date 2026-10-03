@@ -79,8 +79,8 @@ func TerapkanDetailKontrak(h *Halaman, b BarisKontrak) {
 	}
 	// langkah 6: TreatyIn.ID = pxResults(1).ID
 	h.Setel(HalamanMaster+".ID", b["ID"])
-	// langkah 11: Property-Remove ListInstallment
-	h.SetelDaftar(DaftarAngsuran, nil)
+	// langkah 11: Property-Remove ListInstallment (beserta InstallmentList bersarang)
+	hapusDaftarBeserta(h, DaftarAngsuran)
 }
 
 // TerapkanMasterKontrak mengisi halaman `TreatyIn` dari baris view yang sama
