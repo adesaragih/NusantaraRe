@@ -1,8 +1,0 @@
-15.53.30 [vite] http proxy error: /api/menu
-AggregateError [ECONNREFUSED]: 
-    at internalConnectMultiple (node:net:1430:18)
-    at afterConnectMultiple (node:net:2099:7)
-15.53.30 [vite] http proxy error: /api/modul-aktif
-AggregateError [ECONNREFUSED]: 
-    at internalConnectMultiple (node:net:1430:18)
-    at afterConnectMultiple (node:net:2099:7)
