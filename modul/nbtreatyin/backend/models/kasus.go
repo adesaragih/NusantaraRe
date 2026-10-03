@@ -41,7 +41,8 @@ type Kasus struct {
 	// PositionNote - workbasket tempat kasus menunggu (POSISI, AC 92).
 	PositionNote string `json:"positionNote"`
 	NoPolis      string `json:"noPolis"`
-	// GenerasiTertutup - `TGL_TUTUP` terisi (ID-10).
+	// GenerasiTertutup - generasi sudah punya penerus (OLD_POLIS_ID baris lain
+	// menunjuknya; ID-10).
 	GenerasiTertutup bool   `json:"generasiTertutup"`
 	CreateOp         string `json:"createOp"`
 	TglCreate        string `json:"tglCreate"`

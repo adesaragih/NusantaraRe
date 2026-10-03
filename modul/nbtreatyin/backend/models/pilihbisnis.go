@@ -90,9 +90,20 @@ func TerapkanDetailKontrak(h *Halaman, b BarisKontrak) {
 // `Commencement`, `Termination` (layar atasan dan admin menampilkannya).
 // Medan master lain (RNMShareP, RNMShare, BrokeragePercentP, CurrencyList,
 // INSTALLMENT, Limits...) tidak punya kolom padanan - lihat `MasterTersedia`.
+//
+// ⭐ LAYER* tingkat polis juga diisi di sini: di Pega ia PANTULAN baris
+// pertama view (`InputPolicyTreatyInDetail_preACT` langkah 3:
+// `PolicyTreatyIn.LayerType = pyReportContentPage.pxResults(1).LAYERTYPE`, dst.)
+// dan tidak punya kolom di T_GENERAL_POLIS (diagram grilling F26, ID-22) -
+// maka dibaca balik dari baris view yang sama (TreatyIn.ID) setiap layar
+// dibuka. Nilainya layer PERTAMA saja (pxResults(1)), sama dengan Pega.
 func TerapkanMasterKontrak(h *Halaman, b BarisKontrak) {
 	h.Setel(HalamanMaster+".Commencement", b["COMMENCEMENT"])
 	h.Setel(HalamanMaster+".Termination", b["TERMINATION"])
+	h.Setel(HalamanPolis+".LayerType", b["LAYERTYPE"])
+	h.Setel(HalamanPolis+".Layer", b["LAYER"])
+	h.Setel(HalamanPolis+".LayerPartType", b["LAYERPARTTYPE"])
+	h.Setel(HalamanPolis+".LayerPart", b["LAYERPART"])
 }
 
 // SetelIDMataUang = `SetTreatyCurrencyID` langkah 3 (RDB `GetCurrencyIDByName`).

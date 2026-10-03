@@ -48,7 +48,7 @@ const (
 var (
 	// ErrKasusTidakAda - tidak ada kasus NB Treaty In dengan ID itu.
 	ErrKasusTidakAda = errors.New("repository: kasus NB Treaty In tidak ada")
-	// ErrGenerasiTertutup - baris generasi sudah ditutup (TGL_TUTUP terisi);
+	// ErrGenerasiTertutup - baris generasi sudah ditutup (punya penerus);
 	// tidak boleh disunting (spec-penyimpanan ID-10, AC 6).
 	ErrGenerasiTertutup = errors.New("repository: generasi polis sudah ditutup dan tidak boleh disunting")
 	// ErrTahapBerubah - kasus berpindah tahap di antara baca dan tulis.

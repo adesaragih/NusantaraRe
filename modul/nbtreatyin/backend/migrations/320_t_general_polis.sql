@@ -4,15 +4,19 @@
 -- migrasi 050/059): ID adalah ID baris T_WORK_POLIS, tanpa kolom kunci tamu
 -- tersendiri (spec-penyimpanan ID-7, AC 5).
 --
+-- Diagram grilling F12-F16: UNIQUE (NOPOLIS, PRODKE) dan UNIQUE (OLD_POLIS_ID).
 -- Kunci alami (NOPOLIS, PRODKE) unik - ditegakkan BASIS DATA (ID-8, AC 1).
 -- NOPOLIS kosong selama realisasi belum bernomor, jadi indeks uniknya hanya
--- memuat baris bernomor (indeks berfungsi CASE): dua draf tanpa nomor tidak bentrok.
+-- memuat baris bernomor (indeks berfungsi CASE): dua draf tanpa nomor tidak bentrok
+-- (UNIQUE biasa menganggap (NULL, 0) dan (NULL, 0) kembar di Oracle).
 -- PRODKE bilangan bulat lebar (KEPUTUSAN-RONDE-12 butir 1 dan 8); NB selalu 0.
 -- OLD_POLIS_ID menunjuk generasi sebelumnya - unik, kosong di NB (ID-9, AC 3, 4).
--- TGL_TUTUP terisi = generasi tertutup, tidak boleh disunting (ID-10, AC 6) -
--- ditegakkan services.
+-- Generasi TERTUTUP = ada baris penerus yang OLD_POLIS_ID-nya menunjuk generasi
+-- ini; tidak boleh disunting (ID-10, AC 6) - tanpa kolom penanda (diagram).
 --
--- Kolom lain DIBANGKITKAN dari backend/models/katalog.go (docs/alat/skema.py).
+-- Kolom lain DIBANGKITKAN dari backend/models/katalog.go (docs/alat/skema.py) -
+-- 79 medan PolicyTreatyIn + 7 kolom json_polis menurut diagram dan rancangan;
+-- LAYER* dicoret (diagram F26). Perbandingan: docs/PERBANDINGAN-KOLOM-DIAGRAM.md.
 -- Uang dan persen NUMBER(38,8) (KEPUTUSAN 23-09-2026 sore), tanggal DATE (P32),
 -- kode dan penanda teks (ID-16, ID-17). Nol COMMIT.
 CREATE TABLE {skema}.T_GENERAL_POLIS (
@@ -24,7 +28,6 @@ CREATE TABLE {skema}.T_GENERAL_POLIS (
   IDPEGA                    VARCHAR2(128),
   TGL_INPUT                 DATE,
   USERNAME                  VARCHAR2(64),
-  TGL_TUTUP                 DATE,
   POSITION_NOTE             VARCHAR2(64),
   NB_STATUS                 VARCHAR2(255),
   TREATY_IN_ID              VARCHAR2(64),
@@ -35,10 +38,10 @@ CREATE TABLE {skema}.T_GENERAL_POLIS (
   SUGGEST_DATE              DATE,
   OPERATOR_NAME             VARCHAR2(128),
   IS_NEW_POLICY_NON_PROP    VARCHAR2(16),
+  IS_EDM_INPUT_ON_NB        VARCHAR2(16),
   HAS_FAC_OUT               VARCHAR2(16),
   FLAG_PPH                  VARCHAR2(16),
   FLAG_RETRO_TREATY         VARCHAR2(16),
-  IS_OJK_NOPOLIS            VARCHAR2(16),
   DUE_TO                    VARCHAR2(16),
   TYPE_TAX                  VARCHAR2(64),
   STATEMENT_TYPE            VARCHAR2(64),
@@ -46,6 +49,7 @@ CREATE TABLE {skema}.T_GENERAL_POLIS (
   TREATY_GROUP_NAME         VARCHAR2(255),
   TREATY_GROUP_OLD_ID       VARCHAR2(64),
   OJK_BUSINESS_ID           VARCHAR2(64),
+  ID_NEW_BISNIS             VARCHAR2(64),
   BIZ_CODE                  VARCHAR2(64),
   BIZ_NAME                  VARCHAR2(255),
   SOB                       VARCHAR2(64),
@@ -88,7 +92,6 @@ CREATE TABLE {skema}.T_GENERAL_POLIS (
   BALANCE_BEFORE_PPH        NUMBER(38,8),
   DEDUCTION1                NUMBER(38,8),
   DEDUCTION2                NUMBER(38,8),
-  BROKERAGE_FEE             NUMBER(38,8),
   BROKERAGE_FEE_SEBENARNYA  NUMBER(38,8),
   PPH_VALUE                 NUMBER(38,8),
   PPN_VALUE                 NUMBER(38,8),

@@ -205,13 +205,9 @@ func (g *Gudang) SimpanHalaman(_ context.Context, _ *db.Tx, id string, h *models
 	if g.Kasus[id].GenerasiTertutup {
 		return repository.ErrGenerasiTertutup
 	}
-	s := h.Salin()
-	s.BersihkanPesan()
-	// PolicyNo milik SetelNomorPolis, persis repository (NOPOLIS di luar katalog).
-	s.Hapus(models.HalamanPolis + ".PolicyNo")
-	s.Hapus(models.JalurStsPKP)
-	// SuggestList milik HISTORYAKSEPTASIPRODUCTION (CatatUsulan), bukan halaman.
-	s.SetelDaftar(models.DaftarUsulan, nil)
+	// Hanya medan berkolom yang bertahan - persis repository (delapan tabel
+	// diagram). PolicyNo milik SetelNomorPolis, SuggestList milik CatatUsulan.
+	s := models.ProyeksiKatalog(h)
 	if pn := h.Ambil("PositionNote"); pn != "" {
 		k := g.Kasus[id]
 		k.PositionNote = pn

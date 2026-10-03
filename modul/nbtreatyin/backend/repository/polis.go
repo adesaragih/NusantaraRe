@@ -12,8 +12,12 @@ package repository
 // yang sama dengan baris induknya: gagal di tengah = tidak ada yang tersimpan
 // (AC 29).
 //
-// ⛔ Generasi tertutup (TGL_TUTUP terisi) ditolak SEBELUM satu pun baris
-// disentuh (ID-10).
+// ⛔ Generasi tertutup (ada penerus yang OLD_POLIS_ID-nya menunjuk generasi
+// ini - `syaratTerbuka`) ditolak SEBELUM satu pun baris disentuh (ID-10).
+// Tanpa kolom penanda: diagram grilling tidak memuatnya.
+//
+// ⛔ T_POLIS_CEDING anak T_POLIS_QUOTATION (diagram O39, QUOTATION_ID): anak
+// dihapus SEBELUM baris quotation ditulis ulang, lalu disisip sesudahnya.
 //
 // ⛔ Halaman `Quotation` dan salinannya `PolicyTreatyIn.QuotationData`
 // disimpan SATU kali (ID-23). Nilai yang ditulis: QuotationData bila terisi,
@@ -47,8 +51,10 @@ var (
 	cucuAngsuran = &anakTabel{tabel: models.TabelAngsuranRinci, kolomInduk: "INSTALMENT_ID"}
 	cucuLayer    = &anakTabel{tabel: models.TabelLayerXOL, kolomInduk: "XOL_ID"}
 	// tabelAnak - urutan sisip (induk sebelum cucu ada di dalam tiap entri).
+	// Nilai kolom induk anak = ID polis: QUOTATION_ID adalah POLIS_ID baris
+	// T_POLIS_QUOTATION (1:1, kunci utama bersama).
 	tabelAnak = []anakTabel{
-		{tabel: models.TabelCeding, kolomInduk: "POLIS_ID"},
+		{tabel: models.TabelCeding, kolomInduk: "QUOTATION_ID"},
 		{tabel: models.TabelAngsuran, kolomInduk: "POLIS_ID", cucu: cucuAngsuran},
 		{tabel: models.TabelSpreading, kolomInduk: "POLIS_ID"},
 		{tabel: models.TabelXOL, kolomInduk: "POLIS_ID", cucu: cucuLayer},
@@ -65,10 +71,10 @@ func (g *Gudang) SimpanHalaman(ctx context.Context, tx *db.Tx, id string, h *mod
 	if err := g.tulisInduk(ctx, tx, id, h); err != nil {
 		return err
 	}
-	if err := g.tulisQuotation(ctx, tx, id, h); err != nil {
+	if err := g.hapusAnak(ctx, tx, id); err != nil {
 		return err
 	}
-	if err := g.hapusAnak(ctx, tx, id); err != nil {
+	if err := g.tulisQuotation(ctx, tx, id, h); err != nil {
 		return err
 	}
 	for _, a := range tabelAnak {
@@ -98,7 +104,7 @@ func (g *Gudang) tulisInduk(ctx context.Context, tx *db.Tx, id string, h *models
 		args = append(args, v...)
 		n += jml
 	}
-	q := fmt.Sprintf(`UPDATE %s SET %s WHERE ID = :%d AND TGL_TUTUP IS NULL`, t, strings.Join(set, ", "), n)
+	q := fmt.Sprintf(`UPDATE %s g SET %s WHERE g.ID = :%d AND %s`, t, strings.Join(set, ", "), n, syaratTerbuka(t))
 	hasil, err := jalankan(ctx, tx, "menyimpan polis", q, append(args, id)...)
 	if err != nil {
 		return err
@@ -108,7 +114,7 @@ func (g *Gudang) tulisInduk(ctx context.Context, tx *db.Tx, id string, h *models
 	}
 	// Nol baris: kasus tidak ada, atau generasinya tertutup.
 	var tutup int
-	qc := fmt.Sprintf(`SELECT CASE WHEN TGL_TUTUP IS NULL THEN 0 ELSE 1 END FROM %s WHERE ID = :1`, t)
+	qc := fmt.Sprintf(`SELECT CASE WHEN %s THEN 0 ELSE 1 END FROM %s g WHERE g.ID = :1`, syaratTerbuka(t), t)
 	if err := db.PeriksaSQL(qc); err != nil {
 		return err
 	}
@@ -123,12 +129,11 @@ func (g *Gudang) tulisInduk(ctx context.Context, tx *db.Tx, id string, h *models
 	return fmt.Errorf("repository: penyimpanan polis %s tidak menyentuh baris", id)
 }
 
-// nilaiQuotation - QuotationData bila terisi, selain itu Quotation.
-func nilaiQuotation(h *models.Halaman, prop string) string {
-	if v := h.Ambil(models.HalamanPolis + ".QuotationData." + prop); v != "" {
-		return v
-	}
-	return h.Ambil(models.HalamanQuotation + "." + prop)
+// syaratTerbuka - generasi beralias `g` belum punya penerus (ID-10): tidak ada
+// baris yang OLD_POLIS_ID-nya menunjuk g.ID. Pengganti kolom penanda tutup yang
+// tidak ada di diagram grilling.
+func syaratTerbuka(t string) string {
+	return fmt.Sprintf(`NOT EXISTS (SELECT 1 FROM %s s WHERE s.OLD_POLIS_ID = g.ID)`, t)
 }
 
 func (g *Gudang) tulisQuotation(ctx context.Context, tx *db.Tx, id string, h *models.Halaman) error {
@@ -145,7 +150,7 @@ func (g *Gudang) tulisQuotation(ctx context.Context, tx *db.Tx, id string, h *mo
 	n := 2
 	for _, k := range models.TabelQuotation.Kolom {
 		eks, jml := ekspresiTulis(k, n)
-		v, err := nilaiTulis(k, nilaiQuotation(h, k.Properti))
+		v, err := nilaiTulis(k, models.NilaiQuotation(h, k.Properti))
 		if err != nil {
 			return err
 		}
@@ -170,13 +175,13 @@ func (g *Gudang) hapusAnak(ctx context.Context, tx *db.Tx, id string) error {
 			if err != nil {
 				return err
 			}
-			q := fmt.Sprintf(`DELETE FROM %s WHERE %s IN (SELECT ID FROM %s WHERE POLIS_ID = :1)`, c, a.cucu.kolomInduk, t)
+			q := fmt.Sprintf(`DELETE FROM %s WHERE %s IN (SELECT ID FROM %s WHERE %s = :1)`, c, a.cucu.kolomInduk, t, a.kolomInduk)
 			if _, err := jalankan(ctx, tx, "menghapus "+a.cucu.tabel.Nama, q, id); err != nil {
 				return err
 			}
 		}
 		if _, err := jalankan(ctx, tx, "menghapus "+a.tabel.Nama,
-			fmt.Sprintf(`DELETE FROM %s WHERE POLIS_ID = :1`, t), id); err != nil {
+			fmt.Sprintf(`DELETE FROM %s WHERE %s = :1`, t, a.kolomInduk), id); err != nil {
 			return err
 		}
 	}
@@ -239,7 +244,7 @@ func (g *Gudang) SetelNomorPolis(ctx context.Context, tx *db.Tx, id, nopol strin
 		return err
 	}
 	hasil, err := jalankan(ctx, tx, "menyimpan nomor polis",
-		fmt.Sprintf(`UPDATE %s SET NOPOLIS = :1 WHERE ID = :2 AND NOPOLIS IS NULL AND TGL_TUTUP IS NULL`, t), nopol, id)
+		fmt.Sprintf(`UPDATE %s g SET NOPOLIS = :1 WHERE g.ID = :2 AND g.NOPOLIS IS NULL AND %s`, t, syaratTerbuka(t)), nopol, id)
 	if err != nil {
 		return err
 	}
@@ -344,7 +349,7 @@ func (g *Gudang) bacaAnak(ctx context.Context, tx *db.Tx, a anakTabel, id string
 		return err
 	}
 	ks := a.tabel.Kolom
-	q := fmt.Sprintf(`SELECT ID, %s FROM %s WHERE POLIS_ID = :1 ORDER BY NOURUT`, daftarBaca(ks, ""), t)
+	q := fmt.Sprintf(`SELECT ID, %s FROM %s WHERE %s = :1 ORDER BY NOURUT`, daftarBaca(ks, ""), t, a.kolomInduk)
 	baris, kunci, err := g.bacaBaris(ctx, tx, q, ks, id)
 	if err != nil {
 		return err

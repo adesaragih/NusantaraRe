@@ -74,6 +74,7 @@ func TestPulangPergiHalamanLewatKatalog(t *testing.T) {
 	h.Setel("PolicyTreatyIn.BizCode", "006")
 	h.Setel("Quotation.BusinessOldId", "01")
 	h.Setel("Quotation.BusinessFac", "T")
+	h.SetelDaftar(models.TabelCeding.Daftar, []models.Baris{{"CedingCo": "UJI-C1", "CedingCoName": "UJI CEDING SATU"}})
 	h.SetelDaftar(models.DaftarSpreading, []models.Baris{{"TreatyType": "UJI-10015", "SharePercentage": "33.3333"}, {"TreatyType": "UJI-10218"}})
 	h.SetelDaftar(models.DaftarAngsuran, []models.Baris{{"InstallmentNo": "1", "DueDate": "2026-11-01", "Premium": "1.5"}})
 	h.SetelDaftar(models.JalurAnak(models.DaftarAngsuran, 1, "InstallmentList"), []models.Baris{{"InstallmentNo": "1", "PremiumAfterTax": "0.75"}})
@@ -110,7 +111,13 @@ func TestPulangPergiHalamanLewatKatalog(t *testing.T) {
 	if len(rinci) != 1 || rinci[0]["PremiumAfterTax"] != "0.75" {
 		t.Errorf("rincian angsuran %+v", rinci)
 	}
-	// NB: baris dihapus, NOURUT dinomori ulang (ID-12)
+	// T_POLIS_CEDING di bawah T_POLIS_QUOTATION (QUOTATION_ID, diagram O39) -
+	// CEDING_CO_ID dan CEDING_CO_NAME terpisah (AC 28)
+	if c := b.AmbilDaftar(models.TabelCeding.Daftar); len(c) != 1 || c[0]["CedingCo"] != "UJI-C1" || c[0]["CedingCoName"] != "UJI CEDING SATU" {
+		t.Errorf("ceding %+v", c)
+	}
+	// NB: baris dihapus, NOURUT dinomori ulang (ID-12) - simpan kedua juga
+	// menulis ulang quotation SESUDAH anaknya dihapus (FK ceding -> quotation)
 	h.SetelDaftar(models.DaftarSpreading, []models.Baris{{"TreatyType": "UJI-10218"}})
 	if err := dalamTx(t, ctx, d, func(tx *intidb.Tx) error { return g.SimpanHalaman(ctx, tx, id, h) }); err != nil {
 		t.Fatal(err)
@@ -162,8 +169,16 @@ func TestGenerasiTertutupDitolakDanPembatalanUtuh(t *testing.T) { // ID-10, AC 2
 	if _, err := g.Keadaan(ctx, nil, "UJI-NB-BATAL"); !errors.Is(err, repository.ErrKasusTidakAda) {
 		t.Fatalf("baris tersisa sesudah pembatalan: %v", err)
 	}
-	if _, err := sqlDB.ExecContext(ctx, fmt.Sprintf(`UPDATE %s.T_GENERAL_POLIS SET TGL_TUTUP = SYSDATE WHERE ID = :1`, skema), id); err != nil {
+	// Generasi DITUTUP oleh lahirnya penerus (ID-10): baris lain yang
+	// OLD_POLIS_ID-nya menunjuk generasi ini - tanpa kolom penanda.
+	if err := dalamTx(t, ctx, d, func(tx *intidb.Tx) error { return g.SisipKasus(ctx, tx, "UJI-NB-PENERUS", "UJI-AKUN", "UJI") }); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := sqlDB.ExecContext(ctx, fmt.Sprintf(`UPDATE %s.T_GENERAL_POLIS SET OLD_POLIS_ID = :1, PRODKE = 1 WHERE ID = 'UJI-NB-PENERUS'`, skema), id); err != nil {
+		t.Fatal(err)
+	}
+	if k, err := g.Keadaan(ctx, nil, id); err != nil || !k.GenerasiTertutup {
+		t.Fatalf("keadaan generasi berpenerus: %+v %v", k, err)
 	}
 	err = dalamTx(t, ctx, d, func(tx *intidb.Tx) error { return g.SimpanHalaman(ctx, tx, id, models.HalamanBaru()) })
 	if !errors.Is(err, repository.ErrGenerasiTertutup) {

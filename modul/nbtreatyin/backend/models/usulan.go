@@ -117,7 +117,7 @@ func UsulanBelumTersimpan(h *Halaman) []UsulanProduksi {
 			Posisi:       PosisiUsulanProduksi,
 			PIC:          b["OperatorName"],
 			TglInp:       b["Date"],
-			Type:         BisnisTreaty, // Quotation.BusinessFac - selalu "T" di modul ini
+			Type:         h.Ambil(HalamanQuotation + ".BusinessFac"), // CARI7; "T" sejak kasus lahir
 			Putaran:      PutaranUsulanProduksi,
 			Approval:     approvalUsulan(b["IsApproved"]),
 			Keterangan:   potongKarakter(b["Suggest"], PanjangKeterangan),

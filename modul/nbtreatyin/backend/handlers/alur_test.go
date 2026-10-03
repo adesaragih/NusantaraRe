@@ -374,26 +374,59 @@ func TestPilihBisnis(t *testing.T) { // tiket 01; AC 36-38
 		t.Fatal("pembacaan gagal tidak boleh menyimpan apa pun")
 	}
 	u.g.Kontrak["UJI-D1"] = models.BarisKontrak{"ID": "UJI-D1", "TREATYID": "UJI-T1", "LIMITCURRENCY": "IDR",
-		"CLASSOFBUSINESS": "UJI BISNIS", "TREATYTYPE": "", "PROPORTIONTYPE": "Proportional", "MDPVALUE": "500"}
+		"CLASSOFBUSINESS": "UJI BISNIS", "TREATYTYPE": "", "PROPORTIONTYPE": "Proportional", "MDPVALUE": "500",
+		"LAYERTYPE": "UJI-LT", "LAYER": "1", "LAYERPARTTYPE": "UJI-LPT", "LAYERPART": "2"}
 	u.g.Bisnis["UJI BISNIS"] = models.BarisBisnis{OldID: "01", GroupPanel: "006", ID: "UJI-B1"}
 	kode, isi := u.panggil("POST", "/kasus/"+id+"/pilih-bisnis", admin, map[string]any{"idDetail": "UJI-D1"})
 	if kode != http.StatusOK {
 		t.Fatalf("pilih bisnis: %d %s", kode, isi)
 	}
-	h := u.g.Halaman[id]
+	var ly services.Layar
+	if err := json.Unmarshal([]byte(isi), &ly); err != nil {
+		t.Fatal(err)
+	}
 	for j, harap := range map[string]string{
-		"PolicyTreatyIn.NoOffer":                    "UJI-T1",
-		"PolicyTreatyIn.TreatyType":                 "XOL", // langkah 5
-		"PolicyTreatyIn.IDCurrency":                 "UJI-ID-IDR",
-		"PolicyTreatyIn.PremiOgp":                   "500",
-		"PolicyTreatyIn.BizCode":                    "UJI-B1",
 		"Quotation.BusinessType":                    "FireStyle2", // BusinessType_DeT 006/01
 		"PolicyTreatyIn.QuotationData.BusinessType": "FireStyle2", // langkah 14.9
-		"TreatyIn.ID":                               "UJI-D1",
-		"PolicyTreatyIn.OJKBusinessID":              "UJI-OJK",
+	} {
+		if got := ly.Halaman.Ambil(j); got != harap {
+			t.Errorf("layar %s = %q, harap %q", j, got, harap)
+		}
+	}
+	// Tersimpan: medan berkolom saja. BusinessType TURUNAN masukannya yang
+	// tersimpan (GroupPanel "006" + BusinessOldId "01" - diagram J38), tanpa kolom.
+	h := u.g.Halaman[id]
+	for j, harap := range map[string]string{
+		"PolicyTreatyIn.NoOffer":       "UJI-T1",
+		"PolicyTreatyIn.TreatyType":    "XOL", // langkah 5
+		"PolicyTreatyIn.IDCurrency":    "UJI-ID-IDR",
+		"PolicyTreatyIn.PremiOgp":      "500",
+		"PolicyTreatyIn.BizCode":       "UJI-B1",
+		"Quotation.GroupPanel":         "006",
+		"Quotation.BusinessOldId":      "01",
+		"Quotation.BusinessType":       "",
+		"TreatyIn.ID":                  "UJI-D1",
+		"PolicyTreatyIn.OJKBusinessID": "UJI-OJK",
+		"PolicyTreatyIn.LayerType":     "", // diagram F26: dicoret dari T_GENERAL_POLIS
 	} {
 		if got := h.Ambil(j); got != harap {
-			t.Errorf("%s = %q, harap %q", j, got, harap)
+			t.Errorf("tersimpan %s = %q, harap %q", j, got, harap)
+		}
+	}
+	if got := models.GolongkanJenisUsaha(h.Ambil("Quotation.GroupPanel"), h.Ambil("Quotation.BusinessOldId")); got != "FireStyle2" {
+		t.Errorf("penggolong atas kolom tersimpan = %q (AC 14)", got)
+	}
+	// LAYER* tingkat polis = PANTULAN baris view (preACT langkah 3,
+	// pxResults(1)) - dibaca balik lewat TreatyIn.ID saat layar dibuka (ID-22).
+	_, isi = u.panggil("GET", "/kasus/"+id, admin, nil)
+	ly = services.Layar{}
+	if err := json.Unmarshal([]byte(isi), &ly); err != nil {
+		t.Fatal(err)
+	}
+	for j, harap := range map[string]string{"PolicyTreatyIn.LayerType": "UJI-LT", "PolicyTreatyIn.Layer": "1",
+		"PolicyTreatyIn.LayerPartType": "UJI-LPT", "PolicyTreatyIn.LayerPart": "2"} {
+		if got := ly.Halaman.Ambil(j); got != harap {
+			t.Errorf("dibuka ulang %s = %q, harap %q", j, got, harap)
 		}
 	}
 }

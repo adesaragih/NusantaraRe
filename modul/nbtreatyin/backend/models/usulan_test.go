@@ -12,6 +12,7 @@ import (
 func TestUsulanBelumTersimpanMenurutSaveViewSuggest(t *testing.T) { // AC 40, 41, 43, 44
 	h := HalamanBaru()
 	h.Setel(HalamanQuotation+".BusinessCode", "UJI-B1")
+	h.Setel(HalamanQuotation+".BusinessFac", BisnisTreaty)
 	panjang := strings.Repeat("é", 3995) // 3995 KARAKTER, bukan byte
 	h.SetelDaftar(DaftarUsulan, []Baris{
 		{"Suggest": "UJI-lama", "IsApproved": "1", "Date": "2026-10-01 08:00:00", "OperatorName": "Uji Lama", "OperatorID": "UJI-L", "IsSave": "Yes"},

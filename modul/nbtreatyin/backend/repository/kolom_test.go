@@ -160,8 +160,8 @@ func TestKatalogSepakatDenganDDL(t *testing.T) {
 		return "VARCHAR2"
 	}
 	bukanKatalog := map[string]bool{"ID": true, "POLIS_ID": true, "NOURUT": true, "INSTALMENT_ID": true, "XOL_ID": true,
-		"NOPOLIS": true, "PRODKE": true, "NOENDORS": true, "OLD_POLIS_ID": true, "IDPEGA": true, "TGL_INPUT": true,
-		"USERNAME": true, "TGL_TUTUP": true}
+		"QUOTATION_ID": true, "NOPOLIS": true, "PRODKE": true, "NOENDORS": true, "OLD_POLIS_ID": true, "IDPEGA": true,
+		"TGL_INPUT": true, "USERNAME": true}
 	for _, tb := range models.SemuaTabel {
 		kol, ada := ddl[tb.Nama]
 		if !ada {
@@ -231,5 +231,147 @@ func TestSQLRiwayatProduksiMengikutiInsertViewSuggest(t *testing.T) {
 	}
 	if n := sqlNourutUsulan("S.HISTORYAKSEPTASIPRODUCTION"); !strings.Contains(n, "MAX(TO_NUMBER(NOURUT))") || !strings.Contains(n, "IDPEGA = :1") {
 		t.Fatalf("NOURUT berikutnya per IDPEGA:\n%s", n)
+	}
+}
+
+// kolomDDL membaca CREATE TABLE seluruh migrasi maju modul ini: tabel -> kolom.
+func kolomDDL(t *testing.T) map[string][]string {
+	t.Helper()
+	berkas, err := filepath.Glob(filepath.Join("..", "migrations", "*.sql"))
+	if err != nil || len(berkas) == 0 {
+		t.Fatalf("migrasi tidak terbaca: %v", err)
+	}
+	pola := regexp.MustCompile(`(?s)CREATE TABLE \{skema\}\.(\w+) \((.*?)\n\)`)
+	hasil := map[string][]string{}
+	for _, b := range berkas {
+		if strings.HasSuffix(b, "_down.sql") {
+			continue
+		}
+		isi, err := os.ReadFile(b)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, m := range pola.FindAllStringSubmatch(string(isi), -1) {
+			if _, ganda := hasil[m[1]]; ganda {
+				t.Fatalf("%s dibuat dua kali", m[1])
+			}
+			var kol []string
+			for _, baris := range strings.Split(m[2], "\n") {
+				if f := strings.Fields(strings.TrimSpace(baris)); len(f) >= 2 && f[0] != "CONSTRAINT" {
+					kol = append(kol, f[0])
+				}
+			}
+			hasil[m[1]] = kol
+		}
+	}
+	return hasil
+}
+
+// Bab 0 butir 11-12 PROMPT putaran 2: TEPAT delapan tabel diagram grilling
+// (Diagram-Skema-Tabel-NusantaraRe.xlsx sheet NB Treaty In Prop/NonProp), dan
+// kolomnya mengikuti diagram + rancangan-tabel-datar; kolom di luar keduanya
+// hanya yang XML buktikan DIBACA rule terjangkau (RALAT rancangan,
+// docs/PERBANDINGAN-KOLOM-DIAGRAM.md).
+func TestTabelDanKolomMengikutiDiagramGrilling(t *testing.T) {
+	daftar := func(s string) []string { return strings.Fields(s) }
+	angsuran := "INSTALLMENT_NO DUE_DATE INSTALLMENT_PERCENTAGE PREMIUM PAYMENT_TOTAL PREMIUM_AFTER_PPH PREMIUM_AFTER_PPN PREMIUM_AFTER_TAX CURRENCY ID_CURRENCY "
+	xol := "CURRENCY ID_CURRENCY GROSS_PREMI NET_PREMI DEDUCTION DUE_TO DUE_TO_VALUE BROKERAGE_FEE_SEBENARNYA PPH_VALUE PPN_VALUE NET_PREMI_AFTER_PPH NET_PREMI_AFTER_PPN NET_PREMI_AFTER_TAX"
+	harap := map[string][]string{
+		"T_GENERAL_POLIS": daftar(
+			// kunci + json_polis (diagram F11-F16)
+			"ID NOPOLIS PRODKE NOENDORS OLD_POLIS_ID IDPEGA TGL_INPUT USERNAME TGL_PROD " +
+				// PolicyTreatyIn - rancangan §4.1
+				"NO_OFFER MASTER_ID IS_APPROVED SUGGEST SUGGEST_DATE OPERATOR_NAME IS_NEW_POLICY_NON_PROP IS_EDM_INPUT_ON_NB " +
+				"HAS_FAC_OUT FLAG_PPH FLAG_RETRO_TREATY DUE_TO TYPE_TAX STATEMENT_TYPE TREATY_GROUP_ID TREATY_GROUP_NAME " +
+				"TREATY_GROUP_OLD_ID OJK_BUSINESS_ID ID_NEW_BISNIS BIZ_CODE BIZ_NAME SOB SOB_NAME CEDING_CO CEDING_CO_NAME " +
+				"INSURED_ID INSURED_NAME MARKETING_OFFICER TREATY_TYPE TREATY_YEAR CURRENCY ID_CURRENCY QUARTAL " +
+				"YEAR_OF_QUARTAL CLAIM_TYPE CLAIM_PAYMENT_TYPE INSTALLMENT REMARK START_DATE END_DATE STATEMENT_DATE " +
+				"GROSS_PREMIUM PREMI_OGP RESULT_OGP1 RESULT_OGP2 PREMI_ONP RESULT_ONP1 RESULT_ONP2 CLAIM OUTSTANDING_CLAIM " +
+				"SALVAGE_VALUE EXCESS_LOSS NET_PREMIUM BALANCE_DUE_TO BALANCE_BEFORE_TAX BALANCE_BEFORE_PPH DEDUCTION1 " +
+				"DEDUCTION2 PPH_VALUE PPN_VALUE SHARE_VALUE RI_COMM_OGP OVERIDDING_COMM_OGP RI_COMM_ONP OVERIDDING_COMM_ONP " +
+				// RALAT - dibaca rule terjangkau
+				"POSITION_NOTE NB_STATUS TREATY_IN_ID SHARE_CURRENCY GROSS_CLAIM BROKERAGE_FEE_SEBENARNYA"),
+		"T_POLIS_QUOTATION": daftar("POLIS_ID PROPORTIONAL_TYPE MO_ID BUSINESS_CODE BUSINESS_OLD_ID GROUP_PANEL " +
+			"SOURCE_OF_BUSINESS TYPE EDM_TYPE OLD_POLICY_NO MARKETING_NAME " +
+			// RALAT - dibaca rule terjangkau / tampil di Section NB
+			"BUSINESS_NAME BUSINESS_FAC INSURED_ID INSURED_NAME NO_OFFER_SLIP IS_SURVEY_REPORT"),
+		"T_POLIS_CEDING":            daftar("ID QUOTATION_ID NOURUT CEDING_CO_ID CEDING_CO_NAME"),
+		"T_POLIS_INSTALMENT":        daftar("ID POLIS_ID NOURUT " + angsuran + "PPN PPH PAYMENT_TOTAL_AFTER_PPN PAYMENT_TOTAL_AFTER_TAX"),
+		"T_POLIS_INSTALMENT_DETAIL": daftar("ID INSTALMENT_ID NOURUT " + angsuran + "PAYMENT_DATE"),
+		"T_POLIS_SPREADING": daftar("ID POLIS_ID NOURUT TREATY_TYPE TREATY_NAME CURRENCY CURRENCY_ID SHARE_PERCENTAGE " +
+			"SPLIT_RNM_SHARE_PCT CLAIM_PERCENTAGE PREMIUM_SPREADED CLAIM_SPREADED"),
+		"T_POLIS_XOL":       daftar("ID POLIS_ID NOURUT " + xol),
+		"T_POLIS_XOL_LAYER": daftar("ID XOL_ID NOURUT LAYER LAYER_TYPE LAYER_PART LAYER_PART_TYPE " + xol),
+	}
+	ddl := kolomDDL(t)
+	if len(ddl) != 8 {
+		var nama []string
+		for n := range ddl {
+			nama = append(nama, n)
+		}
+		t.Fatalf("TEPAT delapan CREATE TABLE (diagram grilling), dapat %d: %v", len(ddl), nama)
+	}
+	for tabel, mau := range harap {
+		ada, dibuat := ddl[tabel]
+		if !dibuat {
+			t.Errorf("%s tidak dibuat", tabel)
+			continue
+		}
+		punya := map[string]bool{}
+		for _, k := range ada {
+			punya[k] = true
+		}
+		diminta := map[string]bool{}
+		for _, k := range mau {
+			diminta[k] = true
+			if !punya[k] {
+				t.Errorf("%s: kolom %s (diagram/rancangan/RALAT) tidak ada", tabel, k)
+			}
+		}
+		for _, k := range ada {
+			if !diminta[k] {
+				t.Errorf("%s: kolom %s di luar diagram, rancangan, dan RALAT", tabel, k)
+			}
+		}
+	}
+	// Ceding di bawah QUOTATION (diagram O39 "1:N QUOTATION_ID").
+	isi, err := os.ReadFile(filepath.Join("..", "migrations", "322_t_polis_ceding.sql"))
+	if err != nil || !strings.Contains(string(isi), "FOREIGN KEY (QUOTATION_ID) REFERENCES {skema}.T_POLIS_QUOTATION (POLIS_ID)") {
+		t.Fatalf("T_POLIS_CEDING menunjuk T_POLIS_QUOTATION: %v\n%s", err, isi)
+	}
+}
+
+// Kolom yang dibuang (bab 0 butir 12; PERBANDINGAN-KOLOM-DIAGRAM.md) tidak
+// boleh tersisa di SQL mana pun paket ini - ia tidak ada di DDL.
+func TestSQLTidakMenyebutKolomYangDibuang(t *testing.T) {
+	dibuang := []string{"TGL_TUTUP", "IS_OJK_NOPOLIS", "BUSINESS_TYPE", "SOB_LEADER0", "SOB_LEADER1", "MARKETING_CODE",
+		"TEAM_GROUP", "BRANCH_CODE", "BRANCH_NAME", "M_NBTRIN_PERAN_TEMPAT", "T_POLIS_SUGGEST", "T_POLIS_MEDAN_LAIN"}
+	berkas, err := filepath.Glob("*.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dibaca := 0
+	for _, b := range berkas {
+		if strings.HasSuffix(b, "_test.go") {
+			continue
+		}
+		isi, err := os.ReadFile(b)
+		if err != nil {
+			t.Fatal(err)
+		}
+		dibaca++
+		for i, baris := range strings.Split(string(isi), "\n") {
+			if strings.HasPrefix(strings.TrimSpace(baris), "//") {
+				continue
+			}
+			for _, k := range dibuang {
+				if regexp.MustCompile(`\b` + k + `\b`).MatchString(baris) {
+					t.Errorf("%s:%d menyebut kolom/tabel yang dibuang %s", b, i+1, k)
+				}
+			}
+		}
+	}
+	if dibaca < 5 {
+		t.Fatalf("hanya %d berkas terbaca", dibaca)
 	}
 }
