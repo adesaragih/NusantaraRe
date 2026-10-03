@@ -1,3 +1,0 @@
--- Jalur mundur 328.
-DROP TABLE {skema}.T_POLIS_SUGGEST CASCADE CONSTRAINTS
-/

@@ -170,3 +170,61 @@ func TestGenerasiTertutupDitolakDanPembatalanUtuh(t *testing.T) { // ID-10, AC 2
 		t.Fatalf("generasi tertutup: %v", err)
 	}
 }
+
+// K4, AC 39-44: catatan SuggestList ditulis ke tabel WARISAN
+// HISTORYAKSEPTASIPRODUCTION dan dibaca kembali berurut NOURUT. Tabel itu
+// TIDAK dibuat migrasi modul ini - bila skema uji tidak memuatnya, uji dilewati.
+func TestRiwayatProduksiPulangPergi(t *testing.T) {
+	sqlDB, skema, ctx, d := pasang(t)
+	var ada int
+	if err := sqlDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM ALL_TABLES WHERE OWNER = UPPER(:1) AND TABLE_NAME = 'HISTORYAKSEPTASIPRODUCTION'`, skema).Scan(&ada); err != nil {
+		t.Fatal(err)
+	}
+	if ada == 0 {
+		t.Skip("lewati: tabel warisan HISTORYAKSEPTASIPRODUCTION tidak ada di skema uji (tidak dibuat migrasi modul ini)")
+	}
+	g := repository.Baru(d)
+	const id = "UJI-NB-USUL"
+	panjang := ""
+	for i := 0; i < 3995; i++ {
+		panjang += "x"
+	}
+	if err := dalamTx(t, ctx, d, func(tx *intidb.Tx) error {
+		if err := g.SisipKasus(ctx, tx, id, "UJI-AKUN", "UJI NAMA"); err != nil {
+			return err
+		}
+		return g.CatatUsulan(ctx, tx, models.KunciInstans(id), []models.UsulanProduksi{
+			{PIC: "UJI A", TglInp: "2026-10-03 15:30:00", Approval: "Reject", Keterangan: panjang, AksesLogin: "UJI-A", Type: "T"},
+		})
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := dalamTx(t, ctx, d, func(tx *intidb.Tx) error {
+		return g.CatatUsulan(ctx, tx, models.KunciInstans(id), []models.UsulanProduksi{{PIC: "UJI B", Approval: "Accept", Keterangan: "UJI-2", AksesLogin: "UJI-B"}})
+	}); err != nil {
+		t.Fatal(err)
+	}
+	b, err := g.BacaHalaman(ctx, nil, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := b.AmbilDaftar(models.DaftarUsulan)
+	if len(c) != 2 || c[0]["IsApproved"] != "0" || len(c[0]["Suggest"]) != 3990 || c[0]["Date"] != "2026-10-03 15:30:00" ||
+		c[0]["OperatorName"] != "UJI A" || c[1]["IsApproved"] != "1" || c[1]["OperatorID"] != "UJI-B" {
+		t.Fatalf("catatan dibaca kembali: %+v", c)
+	}
+	var no []string
+	rows, err := sqlDB.QueryContext(ctx, fmt.Sprintf(`SELECT TO_CHAR(NOURUT) FROM %s.HISTORYAKSEPTASIPRODUCTION WHERE IDPEGA = :1 ORDER BY TO_NUMBER(NOURUT)`, skema), models.KunciInstans(id))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var n string
+		_ = rows.Scan(&n)
+		no = append(no, n)
+	}
+	if fmt.Sprint(no) != "[1 2]" {
+		t.Fatalf("NOURUT berikutnya per IDPEGA: %v", no)
+	}
+}

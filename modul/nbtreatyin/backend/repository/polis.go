@@ -52,7 +52,6 @@ var (
 		{tabel: models.TabelAngsuran, kolomInduk: "POLIS_ID", cucu: cucuAngsuran},
 		{tabel: models.TabelSpreading, kolomInduk: "POLIS_ID"},
 		{tabel: models.TabelXOL, kolomInduk: "POLIS_ID", cucu: cucuLayer},
-		{tabel: models.TabelUsulan, kolomInduk: "POLIS_ID"},
 	}
 )
 
@@ -267,6 +266,10 @@ func (g *Gudang) BacaHalaman(ctx context.Context, tx *db.Tx, id string) (*models
 		if err := g.bacaAnak(ctx, tx, a, id, h); err != nil {
 			return nil, err
 		}
+	}
+	// SuggestList - dari POOLDATA.HISTORYAKSEPTASIPRODUCTION (K4, usulan.go).
+	if err := g.bacaUsulan(ctx, tx, id, h); err != nil {
+		return nil, err
 	}
 	h.Setel("pyID", id)
 	return h, nil

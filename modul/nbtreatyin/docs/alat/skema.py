@@ -158,23 +158,6 @@ def main():
     anak("327", "T_POLIS_XOL_LAYER", "XOL_ID", "T_POLIS_XOL", "PK_POLIS_XOL_LAYER", "UQ_POLIS_XOL_LAYER_NOURUT",
          "FK_POLIS_XOL_LAYER_XOL", ["327 - T_POLIS_XOL_LAYER <- TreatyXOLList().ValueList - pemegang penanda",
                                     "layer (ID-29; tiket 19 AC 32-35)."] + nourut)
-    anak("328", "T_POLIS_SUGGEST", "POLIS_ID", "T_GENERAL_POLIS", "PK_POLIS_SUGGEST", "UQ_POLIS_SUGGEST_NOURUT",
-         "FK_POLIS_SUGGEST_POLIS", ["328 - T_POLIS_SUGGEST <- PolicyTreatyIn.SuggestList (catatan dan putusan",
-                                    "per tahap; AC 71, 72). RALAT rancangan §4bis.1: riwayat produksi hanya",
-                                    "ditulis untuk bisnis fakultatif, jadi daftar treaty butuh tabel sendiri."] + nourut)
-
-    # ------------------------------------------------------------ 329 penampung
-    tulis("329_t_polis_medan_lain", [
-        "329 - T_POLIS_MEDAN_LAIN: penampung medan tak dikenal (spec-penyimpanan ID-27;",
-        "tiket 19, 22 AC 57, 59). Medan dokumen lama yang tidak punya kolom DISIMPAN,",
-        "bukan dibuang. WAJIB KOSONG sebelum pekerjaan dinyatakan selesai.",
-    ], [blok("T_POLIS_MEDAN_LAIN", [("ID", "VARCHAR2(32) NOT NULL"), ("POLIS_ID", "VARCHAR2(32) NOT NULL")],
-             [{"kolom": "JALUR", "gol": "teks", "panjang": 512}, {"kolom": "NILAI", "gol": "teks", "panjang": 4000}], [
-        "CONSTRAINT PK_POLIS_MEDAN_LAIN PRIMARY KEY (ID)",
-        "CONSTRAINT FK_POLIS_MEDAN_LAIN_POLIS FOREIGN KEY (POLIS_ID) REFERENCES {skema}.T_GENERAL_POLIS (ID)",
-        "CONSTRAINT UQ_POLIS_MEDAN_LAIN_JALUR UNIQUE (POLIS_ID, JALUR)",
-    ])], ["DROP TABLE {skema}.T_POLIS_MEDAN_LAIN CASCADE CONSTRAINTS"])
-
     # ------------------------------------------------------------ STRUKTUR
     w = ["# Struktur Tabel — NB Treaty In", "",
          "Acuan bentuk tabel modul `nbtreatyin`. **Dibangkitkan** `docs/alat/skema.py` dari",
@@ -212,17 +195,29 @@ def main():
             ("T_POLIS_INSTALMENT_DETAIL", ("INSTALMENT_ID", "T_POLIS_INSTALMENT"), "← `ListInstallment().InstallmentList`, non-proporsional."),
             ("T_POLIS_SPREADING", ("POLIS_ID", "T_GENERAL_POLIS"), "← `PolicyTreatyIn.SpreadingRiskList` (ID-28)."),
             ("T_POLIS_XOL", ("POLIS_ID", "T_GENERAL_POLIS"), "← `PolicyTreatyIn.TreatyXOLList` (ID-29)."),
-            ("T_POLIS_XOL_LAYER", ("XOL_ID", "T_POLIS_XOL"), "← `TreatyXOLList().ValueList` (ID-29)."),
-            ("T_POLIS_SUGGEST", ("POLIS_ID", "T_GENERAL_POLIS"), "← `PolicyTreatyIn.SuggestList` (RALAT rancangan §4bis.1).")]:
+            ("T_POLIS_XOL_LAYER", ("XOL_ID", "T_POLIS_XOL"), "← `TreatyXOLList().ValueList` (ID-29).")]:
         sect(nama, [("ID", "teks", "tidak", "PK", "kode", "baris"),
                     (induk[0], "teks", "tidak", f"FK {induk[1]}, UQ ({induk[0]}, NOURUT)", "kode", "induk"),
                     ("NOURUT", "bilangan bulat", "tidak", f"UQ ({induk[0]}, NOURUT)", "cacah", "urutan baris (ID-11)")],
              t[nama]["kolom"], cat)
-    sect("T_POLIS_MEDAN_LAIN", [("ID", "teks", "tidak", "PK", "kode", "baris"),
-                                ("POLIS_ID", "teks", "tidak", "FK T_GENERAL_POLIS, UQ (POLIS_ID, JALUR)", "kode", "induk")],
-         [{"kolom": "JALUR", "gol": "teks", "properti": "jalur medan tak dikenal"},
-          {"kolom": "NILAI", "gol": "teks", "properti": "nilai apa adanya"}],
-         "Penampung medan tak dikenal (ID-27) — wajib kosong sebelum selesai.")
+    # ------------------------------------------------------------ tabel warisan (tidak dibuat)
+    w.extend(["## HISTORYAKSEPTASIPRODUCTION", "",
+              "⛔ **Tabel WARISAN `POOLDATA` — tidak dibuat, tidak diubah strukturnya** (MODUL.md *Tabel warisan*;",
+              "keputusan work owner K4 03-10-2026; spec-penyimpanan ID-31). Catatan `PolicyTreatyIn.SuggestList` ditulis",
+              "ke sini (`repository/usulan.go`, pengganti `RDBList/InsertViewSuggest_SQL`) dan dibaca balik untuk layar.",
+              "Tipe fisik milik tabel lama (belum dicek katalog Oracle — butir terbuka).", "",
+              "| Kolom | Tipe | Null | Kunci | Golongan | Properti Pega |", "| --- | --- | --- | --- | --- | --- |"])
+    for kol, sumber in [("IDPEGA", "`pyWorkPage.pzInsKey`"), ("TYPE_POLIS", "`@replaceAll(pyWorkIDPrefix,\"-\",\"\")` = `NB`"),
+                        ("NOURUT", "berikutnya per IDPEGA (XML `.pxListSubscript`)"), ("POSISI", "`\"Policy\"`"),
+                        ("PIC", "`.OperatorName` — nama tampilan (P33)"), ("TGL_INP", "`.Date`"),
+                        ("DIV", "`OperatorID.pyOrgDivision` — NULL, tanpa sumber (butir terbuka)"),
+                        ("TYPE", "`Quotation.BusinessFac` = `T`"), ("PUTARAN", "`\"2\"`"),
+                        ("APPROVAL", "`.IsApproved` 1 = Accept, 0 = Reject"), ("KETERANGAN", "`substr(.Suggest, 0, 3990)`"),
+                        ("AKSES_LOGIN", "`OperatorID.pyUserIdentifier` — identitas login (P4)"),
+                        ("B2B", "`OfferFacIn.IsB2B` — NULL di NB"), ("BUSINESS_CODE", "`Quotation.BusinessCode`"),
+                        ("PERCENT_RNM", "`OfferFacIn.PercentShare` — NULL di NB")]:
+        w.append(f"| `{kol}` | warisan | ya |  | — | {sumber} |")
+    w.append("")
     open(STRUKTUR, "w", encoding="utf-8", newline="\n").write("\n".join(w).rstrip() + "\n")
     print("ok:", ", ".join(sorted(t)))
 

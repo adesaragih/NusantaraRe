@@ -294,27 +294,10 @@ var TabelLayerXOL = Tabel{Nama: "T_POLIS_XOL_LAYER", Daftar: "ValueList", Kolom:
 	kUang("NetPremiAfterTax", "NET_PREMI_AFTER_TAX"),
 }}
 
-// TabelUsulan - T_POLIS_SUGGEST ← PolicyTreatyIn.SuggestList.
-//
-// ⭐ RALAT rancangan §4bis.1: tabel usulan DIBUTUHKAN. `SaveViewSuggest`
-// menulis `HISTORYAKSEPTASIPRODUCTION` hanya bila `Quotation.BusinessFac == "F"`
-// - termasuk kalang berketerangan "UNTUK TREATY" - sedangkan treaty bernilai
-// "T" (`SetCategoryAttach`). Untuk kasus treaty, daftar usulan selama ini
-// hanya tersimpan di dokumen JSON; tanpa tabel ini catatan pengguna hilang
-// (AC 71, 72). OPERATOR_ID = identitas akses login (P4, AC 39).
-var TabelUsulan = Tabel{Nama: "T_POLIS_SUGGEST", Daftar: DaftarUsulan, Kolom: []Kolom{
-	kTeks("Suggest", "SUGGEST", 4000),
-	kPenanda("IsApproved", "IS_APPROVED"),
-	kTglWaktu("Date", "SUGGEST_DATE"),
-	kTeks("OperatorName", "OPERATOR_NAME", 128),
-	kKode("OperatorID", "OPERATOR_ID", 64),
-	kPenanda("IsSave", "IS_SAVE"),
-}}
-
 // SemuaTabel - urutan tulis (induk lebih dulu).
 var SemuaTabel = []Tabel{
 	TabelGeneralPolis, TabelQuotation, TabelCeding, TabelAngsuran, TabelAngsuranRinci,
-	TabelSpreading, TabelXOL, TabelLayerXOL, TabelUsulan,
+	TabelSpreading, TabelXOL, TabelLayerXOL,
 }
 
 // ErrBentukTidakSah - halaman membawa baris yang tidak boleh dimiliki jenis

@@ -57,6 +57,9 @@ type Gudang interface {
 	PolisSerupa(ctx context.Context, h *models.Halaman) ([]string, error)
 
 	CatatRiwayat(ctx context.Context, tx *db.Tx, r models.Riwayat) error
+	// CatatUsulan menulis catatan SuggestList ke POOLDATA.HISTORYAKSEPTASIPRODUCTION
+	// (SaveViewSuggest -> InsertViewSuggest_SQL), NOURUT berikutnya per IDPEGA.
+	CatatUsulan(ctx context.Context, tx *db.Tx, idPega string, baris []models.UsulanProduksi) error
 	DaftarRiwayat(ctx context.Context, idPega string) ([]models.Riwayat, error)
 	NamaTampilan(ctx context.Context, loginID string) (string, error)
 }

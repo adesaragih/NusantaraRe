@@ -171,9 +171,27 @@ func TestAdminMenolakDiselesaikanDitolak(t *testing.T) { // AC 1, 5, 39-41, 43, 
 	if r.IDPega != "ASM-FW-GISFW-WORK-NB "+id {
 		t.Fatalf("ID_PEGA %q", r.IDPega)
 	}
-	d := u.g.Halaman[id].AmbilDaftar(models.DaftarUsulan)
-	if len(d) != 1 || d[0]["OperatorID"] != "UJI-ADMIN" || d[0]["OperatorName"] != "Uji Admin" || d[0]["Date"] == "" {
-		t.Fatalf("catatan %+v", d)
+	// Catatan usulan -> POOLDATA.HISTORYAKSEPTASIPRODUCTION (K4; SaveViewSuggest
+	// langkah 2, InsertViewSuggest_SQL; spec-penyimpanan ID-31, AC 39-44).
+	if len(u.g.Usulan) != 1 {
+		t.Fatalf("satu baris riwayat produksi per catatan, dapat %d", len(u.g.Usulan))
+	}
+	c := u.g.Usulan[0]
+	if c.IDPega != "ASM-FW-GISFW-WORK-NB "+id || c.NoUrut != 1 || c.TypePolis != "NB" || c.Posisi != "Policy" ||
+		c.PIC != "Uji Admin" || c.AksesLogin != "UJI-ADMIN" || c.Approval != "Reject" || c.Keterangan != "UJI-catatan" ||
+		c.Type != "T" || c.Putaran != "2" || c.TglInp != "2026-10-03 09:00:00" || c.Div != "" {
+		t.Fatalf("baris riwayat produksi %+v", c)
+	}
+	// layar membaca catatan kembali dari tabel itu (riwayat catatan, AC 71)
+	_, isi = u.panggil("GET", "/kasus/"+id, admin, nil)
+	var ly services.Layar
+	if err := json.Unmarshal([]byte(isi), &ly); err != nil {
+		t.Fatal(err)
+	}
+	d := ly.Halaman.AmbilDaftar(models.DaftarUsulan)
+	if len(d) != 1 || d[0]["OperatorID"] != "UJI-ADMIN" || d[0]["OperatorName"] != "Uji Admin" || d[0]["IsApproved"] != "0" ||
+		d[0]["Suggest"] != "UJI-catatan" || d[0]["Date"] != "2026-10-03 09:00:00" {
+		t.Fatalf("catatan dibaca kembali %+v", d)
 	}
 	if kode, _ := u.kirim(id, admin, halamanLengkap("1")); kode != http.StatusConflict {
 		t.Fatalf("kasus tertutup harus ditolak: %d", kode)
@@ -231,6 +249,18 @@ func TestTanggaPenuhDanNomorPolisSekali(t *testing.T) { // AC 6-9, 31, 73, 74
 	if len(u.g.Riwayat) != 5 {
 		t.Fatalf("lima submit, lima riwayat - dapat %d", len(u.g.Riwayat))
 	}
+	// [penyimpangan sadar] K4: catatan SETIAP jenjang ditulis di submit-nya,
+	// NOURUT berurutan per kasus (XML: hanya pasca-submit admin).
+	var akses []string
+	for i, c := range u.g.Usulan {
+		if c.NoUrut != i+1 || c.IDPega != "ASM-FW-GISFW-WORK-NB "+id {
+			t.Fatalf("NOURUT %d: %+v", i+1, c)
+		}
+		akses = append(akses, c.AksesLogin+":"+c.Approval)
+	}
+	if got := strings.Join(akses, " "); got != "UJI-ADMIN:Accept UJI-SH:Reject UJI-ADMIN:Accept UJI-SH:Accept UJI-DH:Accept" {
+		t.Fatalf("baris riwayat produksi per jenjang: %s", got)
+	}
 }
 
 func TestMedanWajibMenahanKirimDanSimpan(t *testing.T) { // AC 45, 48
@@ -277,12 +307,12 @@ func TestPolisSerupaMenahan(t *testing.T) { // TreatyRealizationCheckDuplicate, 
 func TestSatuTransaksiPembatalanUtuh(t *testing.T) { // AC 29, 83 (urutan layanan)
 	u := baru(t)
 	id := u.buat()
-	for _, op := range []string{"PindahPosisi", "CatatRiwayat"} {
+	for _, op := range []string{"PindahPosisi", "CatatRiwayat", "CatatUsulan"} {
 		u.g.GagalDi = op
 		if kode, _ := u.kirim(id, admin, halamanLengkap("1")); kode != http.StatusInternalServerError {
 			t.Fatalf("%s gagal: %d", op, kode)
 		}
-		if len(u.g.Riwayat) != 0 || u.g.Halaman[id].Ambil("PolicyTreatyIn.Suggest") != "" || u.g.Kasus[id].PositionNote != models.PosisiAdmin {
+		if len(u.g.Riwayat) != 0 || len(u.g.Usulan) != 0 || u.g.Halaman[id].Ambil("PolicyTreatyIn.Suggest") != "" || u.g.Kasus[id].PositionNote != models.PosisiAdmin {
 			t.Fatalf("%s: kegagalan di tengah harus membatalkan riwayat, halaman, dan perpindahan", op)
 		}
 	}

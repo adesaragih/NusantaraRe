@@ -1,3 +1,0 @@
--- Jalur mundur 329.
-DROP TABLE {skema}.T_POLIS_MEDAN_LAIN CASCADE CONSTRAINTS
-/

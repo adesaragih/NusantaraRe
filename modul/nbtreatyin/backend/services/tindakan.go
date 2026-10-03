@@ -297,15 +297,16 @@ func (l *Layanan) PilihBisnis(ctx context.Context, p inti.Pelaku, id, idDetail s
 //	Atasan `DeptHeadTreatyIn_UW`: pasca DT `DeptHeadTreatyIn_UW_postDT` ->
 //	       `InsertHistoryAkseptasiPega`
 //
+// `SaveViewSuggest` (InputPolicyTreatyInPost_Act langkah 4) menulis catatan
+// yang baru ditambahkan pasca DT ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION`
+// (`models.UsulanBelumTersimpan`, K4) - `[penyimpangan sadar]` di KETIGA
+// jenjang dan tanpa syarat `BusinessFac == "F"`; rinciannya di models/usulan.go.
+//
 // lalu connector flow (`models.Langkah`). Semuanya SATU transaksi (AC 29, 83).
 // Sesudah transaksi, bila realisasi selesai: Utility2 `serviceInsertArasapas_act`
 // (`konversikan`, KEPUTUSAN-RONDE-12 butir 7) - gagalnya tidak membatalkan apa pun.
 //
 // ⛔ Tidak dibangun, dan sebabnya:
-//   - `SaveViewSuggest` -> HISTORYAKSEPTASIPRODUCTION: kedua kalangnya bersyarat
-//     `Quotation.BusinessFac == "F"`; kasus treaty bernilai "T" (filter E
-//     `GetListOpportunity`) dan nol rule korpus mengisinya "F". Catatan
-//     disimpan di T_POLIS_SUGGEST (RALAT rancangan §4bis.1).
 //   - Utility1 `SaveJsonPolisTreatyIn_Act` - diganti penyimpanan relasional
 //     (AC 16); halaman sudah tersimpan di transaksi yang sama.
 func (l *Layanan) Kirim(ctx context.Context, p inti.Pelaku, id string, masuk *models.Halaman) (HasilKirim, error) {
@@ -381,6 +382,12 @@ func (l *Layanan) kirim(ctx context.Context, p inti.Pelaku, id string, masuk *mo
 			OperatorID: p.AkunID,
 		}); err != nil {
 			return err
+		}
+		// SaveViewSuggest (K4): catatan baru -> HISTORYAKSEPTASIPRODUCTION.
+		if baru := models.UsulanBelumTersimpan(h); len(baru) > 0 {
+			if err := l.g.CatatUsulan(ctx, tx, models.KunciInstans(id), baru); err != nil {
+				return err
+			}
 		}
 		if tr.Ditutup() {
 			if err := l.g.SimpanHalaman(ctx, tx, id, h); err != nil {

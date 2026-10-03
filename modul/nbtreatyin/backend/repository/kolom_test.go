@@ -207,3 +207,29 @@ func TestKolomViewHilangAdalahGalat(t *testing.T) { // AC 89
 		t.Fatalf("ekspresi menurut tipe: %v %v %v", eks, ada, err)
 	}
 }
+
+// InsertViewSuggest_SQL: 15 kolom, KETERANGAN dipotong 3990, TGL_INP DATE,
+// penampung unik; pembacaan balik berurut NOURUT sebagai bilangan (AC 39-44).
+func TestSQLRiwayatProduksiMengikutiInsertViewSuggest(t *testing.T) {
+	q := sqlSisipUsulan("S.HISTORYAKSEPTASIPRODUCTION")
+	for _, k := range []string{"IDPEGA", "TYPE_POLIS", "NOURUT", "POSISI", "PIC", "TGL_INP", "DIV", "TYPE", "PUTARAN",
+		"APPROVAL", "KETERANGAN", "AKSES_LOGIN", "B2B", "BUSINESS_CODE", "PERCENT_RNM"} {
+		if !regexp.MustCompile(`[(,\s]` + k + `[,)\s]`).MatchString(q) {
+			t.Errorf("kolom %s tidak disisipkan:\n%s", k, q)
+		}
+	}
+	pen := regexp.MustCompile(`:(\d+)`).FindAllStringSubmatch(q, -1)
+	if len(pen) != 15 || !strings.Contains(q, "SUBSTR(:11, 1, 3990)") || !strings.Contains(q, "TO_DATE(:6, '"+fmtTanggal+"')") {
+		t.Fatalf("SQL sisip riwayat produksi:\n%s", q)
+	}
+	if strings.Contains(strings.ToUpper(q), "COMMIT") {
+		t.Fatal("nol COMMIT - transaksi milik services")
+	}
+	b := sqlBacaUsulan("S.HISTORYAKSEPTASIPRODUCTION")
+	if !strings.Contains(b, "WHERE IDPEGA = :1") || !strings.Contains(b, "ORDER BY TO_NUMBER(NOURUT)") {
+		t.Fatalf("SQL baca riwayat produksi:\n%s", b)
+	}
+	if n := sqlNourutUsulan("S.HISTORYAKSEPTASIPRODUCTION"); !strings.Contains(n, "MAX(TO_NUMBER(NOURUT))") || !strings.Contains(n, "IDPEGA = :1") {
+		t.Fatalf("NOURUT berikutnya per IDPEGA:\n%s", n)
+	}
+}

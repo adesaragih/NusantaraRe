@@ -256,29 +256,27 @@ Halaman `Quotation` / `PolicyTreatyIn.QuotationData`, 1:1 (ID-23).
 | `NET_PREMI_AFTER_PPN` | angka desimal | ya |  | uang | `NetPremiAfterPPN` |
 | `NET_PREMI_AFTER_TAX` | angka desimal | ya |  | uang | `NetPremiAfterTax` |
 
-## T_POLIS_SUGGEST
+## HISTORYAKSEPTASIPRODUCTION
 
-← `PolicyTreatyIn.SuggestList` (RALAT rancangan §4bis.1).
-
-| Kolom | Tipe | Null | Kunci | Golongan | Properti Pega |
-| --- | --- | --- | --- | --- | --- |
-| `ID` | teks | tidak | PK | kode | baris |
-| `POLIS_ID` | teks | tidak | FK T_GENERAL_POLIS, UQ (POLIS_ID, NOURUT) | kode | induk |
-| `NOURUT` | bilangan bulat | tidak | UQ (POLIS_ID, NOURUT) | cacah | urutan baris (ID-11) |
-| `SUGGEST` | teks | ya |  | teks | `Suggest` |
-| `IS_APPROVED` | teks | ya |  | penanda | `IsApproved` |
-| `SUGGEST_DATE` | DATE | ya |  | tanggal-waktu | `Date` |
-| `OPERATOR_NAME` | teks | ya |  | teks | `OperatorName` |
-| `OPERATOR_ID` | teks | ya |  | kode | `OperatorID` |
-| `IS_SAVE` | teks | ya |  | penanda | `IsSave` |
-
-## T_POLIS_MEDAN_LAIN
-
-Penampung medan tak dikenal (ID-27) — wajib kosong sebelum selesai.
+⛔ **Tabel WARISAN `POOLDATA` — tidak dibuat, tidak diubah strukturnya** (MODUL.md *Tabel warisan*;
+keputusan work owner K4 03-10-2026; spec-penyimpanan ID-31). Catatan `PolicyTreatyIn.SuggestList` ditulis
+ke sini (`repository/usulan.go`, pengganti `RDBList/InsertViewSuggest_SQL`) dan dibaca balik untuk layar.
+Tipe fisik milik tabel lama (belum dicek katalog Oracle — butir terbuka).
 
 | Kolom | Tipe | Null | Kunci | Golongan | Properti Pega |
 | --- | --- | --- | --- | --- | --- |
-| `ID` | teks | tidak | PK | kode | baris |
-| `POLIS_ID` | teks | tidak | FK T_GENERAL_POLIS, UQ (POLIS_ID, JALUR) | kode | induk |
-| `JALUR` | teks | ya |  | teks | `jalur medan tak dikenal` |
-| `NILAI` | teks | ya |  | teks | `nilai apa adanya` |
+| `IDPEGA` | warisan | ya |  | — | `pyWorkPage.pzInsKey` |
+| `TYPE_POLIS` | warisan | ya |  | — | `@replaceAll(pyWorkIDPrefix,"-","")` = `NB` |
+| `NOURUT` | warisan | ya |  | — | berikutnya per IDPEGA (XML `.pxListSubscript`) |
+| `POSISI` | warisan | ya |  | — | `"Policy"` |
+| `PIC` | warisan | ya |  | — | `.OperatorName` — nama tampilan (P33) |
+| `TGL_INP` | warisan | ya |  | — | `.Date` |
+| `DIV` | warisan | ya |  | — | `OperatorID.pyOrgDivision` — NULL, tanpa sumber (butir terbuka) |
+| `TYPE` | warisan | ya |  | — | `Quotation.BusinessFac` = `T` |
+| `PUTARAN` | warisan | ya |  | — | `"2"` |
+| `APPROVAL` | warisan | ya |  | — | `.IsApproved` 1 = Accept, 0 = Reject |
+| `KETERANGAN` | warisan | ya |  | — | `substr(.Suggest, 0, 3990)` |
+| `AKSES_LOGIN` | warisan | ya |  | — | `OperatorID.pyUserIdentifier` — identitas login (P4) |
+| `B2B` | warisan | ya |  | — | `OfferFacIn.IsB2B` — NULL di NB |
+| `BUSINESS_CODE` | warisan | ya |  | — | `Quotation.BusinessCode` |
+| `PERCENT_RNM` | warisan | ya |  | — | `OfferFacIn.PercentShare` — NULL di NB |
