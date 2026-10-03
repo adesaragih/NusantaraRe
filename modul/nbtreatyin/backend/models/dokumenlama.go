@@ -28,7 +28,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"nusantarare/inti/backend/utils"
 )
@@ -113,73 +112,6 @@ var (
 	// (keduanya dari `PolicyTreatyIn.PolicyNo`, SavePolisTreatyIn_SQL).
 	ErrNoPolisBeda = errors.New("models: PolicyNo dokumen berbeda dari JSON_POLIS.NOPOLIS")
 )
-
-// Galat pembacaan tanggal lama.
-var (
-	// ErrTanggalAmbigu - susunan hari/bulan tidak dapat ditentukan dari
-	// nilainya (`05/06/2017`). `[keputusan work owner]` K15: TIDAK ditebak;
-	// dokumennya masuk laporan galat dan jumlahnya dilaporkan.
-	ErrTanggalAmbigu = errors.New("models: tanggal ambigu (susunan hari/bulan tidak dapat ditentukan) - tidak ditebak (K15)")
-	// ErrFormatTanggal - bukan salah satu dari dua format dokumen lama
-	// (ID-19), atau tanggalnya tidak ada di kalender.
-	ErrFormatTanggal = errors.New("models: format tanggal di luar YYYYMMDD / cap waktu Pega ber-GMT")
-)
-
-var (
-	// polaYYYYMMDD - tanggal Pega (`"20171130"`, P29 sifat 2).
-	polaYYYYMMDD = regexp.MustCompile(`^\d{8}$`)
-	// polaCapWaktuGMT - cap waktu Pega (`"20170930T170000.000 GMT"`, P29 sifat 2).
-	polaCapWaktuGMT = regexp.MustCompile(`^(\d{8}T\d{6})(\.\d{1,3})? GMT$`)
-	// polaGarisMiring - susunan `dd/MM/yyyy` atau `MM/dd/yyyy …` (P32:
-	// `InputPolicyTreatyIn_preDT` memakai keduanya).
-	polaGarisMiring = regexp.MustCompile(`^(\d{1,2})/(\d{1,2})/(\d{4})(\s.*)?$`)
-)
-
-// BacaTanggalLama mengubah nilai tanggal dokumen lama menjadi bentuk
-// pertukaran repository (`utils.TanggalSaja` / `utils.TanggalWaktu`).
-//
-//   - `YYYYMMDD` (AC 21) -> `YYYY-MM-DD`; jam tidak dikarang, juga untuk
-//     kolom tanggal-waktu.
-//   - `YYYYMMDDTHHMMSS.mmm GMT` (AC 22) -> jam dinding Asia/Jakarta. Pega
-//     menyimpan cap waktu dalam GMT dan rule-nya sendiri membaca harinya di
-//     Asia/Jakarta (`GeneratePolicyNoTreaty_Act` langkah 5.3, `TanggalProduksiNomor`):
-//     `20170930T170000.000 GMT` adalah 1 Oktober 2017 pukul 00.00 WIB.
-//     Kolom bertanggal saja menerima tanggal kalender Jakarta itu.
-//   - `05/06/2017` -> ErrTanggalAmbigu (K15), tidak ditebak.
-//   - selain itu -> ErrFormatTanggal, juga garis miring yang tidak ambigu:
-//     cara menentukan susunan per baris belum diputuskan (P32 butir 1).
-func BacaTanggalLama(teks string, g Golongan) (string, error) {
-	teks = strings.TrimSpace(teks)
-	switch {
-	case teks == "":
-		return "", nil
-	case polaYYYYMMDD.MatchString(teks):
-		t, err := time.Parse("20060102", teks)
-		if err != nil {
-			return "", fmt.Errorf("%w: %q", ErrFormatTanggal, teks)
-		}
-		return t.Format("2006-01-02"), nil
-	}
-	if m := polaCapWaktuGMT.FindStringSubmatch(teks); m != nil {
-		t, err := time.ParseInLocation("20060102T150405", m[1], time.UTC)
-		if err != nil {
-			return "", fmt.Errorf("%w: %q", ErrFormatTanggal, teks)
-		}
-		lokal := t.In(zonaJakarta())
-		if g == GolTanggal {
-			return lokal.Format("2006-01-02"), nil
-		}
-		return lokal.Format("2006-01-02 15:04:05"), nil
-	}
-	if m := polaGarisMiring.FindStringSubmatch(teks); m != nil {
-		a, _ := strconv.Atoi(m[1])
-		b, _ := strconv.Atoi(m[2])
-		if a >= 1 && a <= 12 && b >= 1 && b <= 12 && a != b {
-			return "", fmt.Errorf("%w: %q", ErrTanggalAmbigu, teks)
-		}
-	}
-	return "", fmt.Errorf("%w: %q", ErrFormatTanggal, teks)
-}
 
 // ---------------------------------------------------------------- penggolong
 
@@ -353,22 +285,6 @@ func kunciUrut(m map[string]any) []string {
 	return k
 }
 
-// teksSkalar - seluruh nilai dokumen lama bertipe teks (P29 sifat 1); angka
-// JSON dibawa sebagai teks literalnya (json.Number), tidak pernah float.
-func teksSkalar(v any) string {
-	switch x := v.(type) {
-	case nil:
-		return ""
-	case string:
-		return x
-	case json.Number:
-		return x.String()
-	case bool:
-		return strconv.FormatBool(x)
-	}
-	return fmt.Sprint(v)
-}
-
 // objek - simpul objek di tingkat halaman (akar, QuotationData, OldData, ...).
 func (p *pejalan) objek(jalur, pola string, m map[string]any) {
 	for _, n := range kunciUrut(m) {
@@ -379,7 +295,7 @@ func (p *pejalan) objek(jalur, pola string, m map[string]any) {
 		case []any:
 			p.daftar(j, q, v)
 		default:
-			s := teksSkalar(v)
+			s, _ := TeksSkalarJSON(v)
 			p.h.Setel(j, s)
 			p.medan = append(p.medan, Medan{Jalur: j, Pola: q, Nilai: s})
 		}
@@ -400,7 +316,8 @@ func (p *pejalan) daftar(jalur, pola string, xs []any) {
 		case []any:
 			p.daftar(j, pola+"()", v)
 		default:
-			p.medan = append(p.medan, Medan{Jalur: j, Pola: pola + "()", Nilai: teksSkalar(v)})
+			s, _ := TeksSkalarJSON(v)
+			p.medan = append(p.medan, Medan{Jalur: j, Pola: pola + "()", Nilai: s})
 		}
 	}
 }
@@ -416,7 +333,7 @@ func (p *pejalan) baris(b Baris, daftar string, i int, awalan, jalur, pola strin
 		case []any:
 			p.daftar(jalur+"."+nama, pola+"."+nama, v)
 		default:
-			s := teksSkalar(v)
+			s, _ := TeksSkalarJSON(v)
 			b[nama] = s
 			p.medan = append(p.medan, Medan{Jalur: jalur + "." + nama, Pola: pola + "." + nama, Nilai: s,
 				daftar: daftar, baris: i, nama: nama})

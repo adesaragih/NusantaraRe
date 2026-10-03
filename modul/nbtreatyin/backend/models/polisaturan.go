@@ -256,10 +256,3 @@ func RakitNomorPolis(awalan, tipe, ojkBusinessID, mmYYYY string, urut int) strin
 	}
 	return awalan + tipe + ".T" + ojkBusinessID + "." + mmYYYY + "." + u
 }
-
-func zonaJakarta() *time.Location {
-	if l, err := time.LoadLocation("Asia/Jakarta"); err == nil {
-		return l
-	}
-	return time.FixedZone("WIB", 7*3600)
-}

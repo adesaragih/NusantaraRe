@@ -29,10 +29,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"nusantarare/inti/backend/db"
-	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/nbtreatyin/backend/models"
 )
 
@@ -119,7 +117,7 @@ func uraiMasterXOL(isi []string) (models.MasterXOL, error) {
 		}
 		for _, k := range models.SkalarMasterXOL {
 			if v, ada := obj[k]; ada {
-				if t, ok := teksSkalar(v); ok {
+				if t, ok := models.TeksSkalarJSON(v); ok {
 					m.Nilai[k] = t
 				}
 			}
@@ -161,9 +159,9 @@ func ambilAnggota(r map[string]any, jalur string, anggota []string) models.Baris
 		if !ada {
 			continue
 		}
-		if t, ok := teksSkalar(v); ok {
+		if t, ok := models.TeksSkalarJSON(v); ok {
 			if models.TanggalMasterXOL[jalur+"."+a] {
-				t = tanggalPega(t)
+				t = models.TanggalMasterPega(t)
 			}
 			b[a] = t
 		}
@@ -186,60 +184,4 @@ func barisObjek(v any) []map[string]any {
 		return []map[string]any{x}
 	}
 	return nil
-}
-
-// teksSkalar - nilai skalar JSON sebagai teks properti Pega. Angka lewat
-// desimal (bukan float) ke bentuk bertitik tanpa notasi ilmiah.
-func teksSkalar(v any) (string, bool) {
-	switch x := v.(type) {
-	case nil:
-		return "", true
-	case string:
-		return x, true
-	case bool:
-		if x {
-			return "true", true
-		}
-		return "false", true
-	case json.Number:
-		d, err := utils.ParseDecimal(x.String())
-		if err != nil {
-			return x.String(), true
-		}
-		return d.Text('f'), true
-	}
-	return "", false
-}
-
-// tanggalPega menormalkan tanggal dokumen ke "2006-01-02" (diagram F21: dua
-// format masuk - `YYYYMMDD` dan cap waktu Pega bersufiks GMT). Cap waktu GMT
-// dibaca di zona Asia/Jakarta (`[tafsiran]` zona bisnis). Bentuk lain apa adanya -
-// penyimpanan menolaknya dengan pesan jalur medannya.
-func tanggalPega(s string) string {
-	t := strings.TrimSpace(s)
-	if len(t) == 8 && utils.AngkaSaja(t) {
-		if d, err := time.Parse("20060102", t); err == nil {
-			return d.Format("2006-01-02")
-		}
-	}
-	if strings.HasSuffix(t, " GMT") {
-		for _, l := range []string{"20060102T150405.000 MST", "20060102T150405 MST"} {
-			if d, err := time.Parse(l, t); err == nil {
-				return d.In(zonaWIB()).Format("2006-01-02")
-			}
-		}
-	}
-	if len(t) >= 10 {
-		if d, err := time.Parse("2006-01-02", t[:10]); err == nil {
-			return d.Format("2006-01-02")
-		}
-	}
-	return s
-}
-
-func zonaWIB() *time.Location {
-	if l, err := time.LoadLocation("Asia/Jakarta"); err == nil {
-		return l
-	}
-	return time.FixedZone("WIB", 7*3600)
 }
