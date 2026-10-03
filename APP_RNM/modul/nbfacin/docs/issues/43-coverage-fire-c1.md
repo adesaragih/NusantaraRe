@@ -12,7 +12,7 @@
 
 Premi dihitung backend (`CountPremi_ACT`). Save = `PUT …/objek`.
 
-**Blocked by:** — (DDL `COVERAGE_FACIN` / `COVERAGE` diberikan work owner 03-10-2026).
+**Blocked by:** — (DDL `COVERAGE` dan RD `DDL\BrowseCoverageFacIn_RD.xml` diberikan work owner 03-10-2026).
 
 **Status:** frontend selesai 03-10-2026 (uji hijau); backend selesai 03-10-2026 sesi c3 (uji hijau; migrasi 193 ditulis,
 **belum dijalankan**).
@@ -56,8 +56,9 @@ kini membaca / menulis `T_PROPERTYITEMLIST.TOTAL_GROSS_PREMI` / `TOTAL_NET_RATE`
 
 - `ItemObjek.coverages?: CoverageObjek[]`, `totalGrossPremi?` dan `totalNetRate?` (server); `ObjekFire.totalPerCurrency?:
   TotalCoverage[]` (server) — ikut `GET`/`PUT …/objek`.
-- `GET /api/nbfacin/coverage?cari=` → `{ baris: [{ id, oldId, nama }] }` (COVERAGE_FACIN, Type FIRE; ~~aktif~~ — view
-  tanpa ACTIVESTATUS, A160).
+- `GET /api/nbfacin/coverage?cari=` → `{ baris: [{ id, oldId, nama }] }` — tabel **COVERAGE** (butir 96): TYPE `FIRE`,
+  ACTIVESTATUS `'1'` atau kosong, NAME Contains `cari` tidak peka huruf, DISTINCT enam kolom laporan, urut NAME lalu OLDID,
+  ≤ 500.
 - `GET /api/nbfacin/coverage-otomatis` → lima coverage `AddCoverageAutoFire`.
 - `POST /api/nbfacin/kasus/{caseId}/hitung-coverage` badan `{ coverage, tsi, mode: "percent" | "amount", modeDiskon?,
   isAdjustable?, pctAdjustOther? }` → `CoverageObjek` terhitung.
@@ -66,7 +67,7 @@ kini membaca / menulis `T_PROPERTYITEMLIST.TOTAL_GROSS_PREMI` / `TOTAL_NET_RATE`
 
 - [x] Grid berantai + Tambah (otomatis) / Hapus + form basis 1–4; label diuji ke korpus; tanpa float di layar.
 - [x] Backend: hitung `CountPremi_ACT` (basis 1–4, prorate, diskon, net rate), simpan coverage, total item / mata uang.
-- [x] DDL COVERAGE_FACIN (03-10-2026).
+- [x] DDL COVERAGE + RD versi work owner (03-10-2026); view COVERAGE_FACIN tidak dipakai (butir 96).
 - [ ] Migrasi 193 dijalankan di DEV (work owner).
 
 ## Backend (sesi c3, 03-10-2026)
@@ -96,7 +97,7 @@ Pega (2 lanjut / 3 lewati / 5 jalankan) diturunkan dari konsistensi logika langk
 `PARENT_TABLE` `T_PROPERTYITEMLIST`, tanpa FK, indeks `(PARENT_TABLE, PARENT_ID)`), `CURRENCY_CODE` = mata uang item
 (disetujui sesi 0f). Loader: skema 199 kolom diperiksa. Peta kolom: `STRUKTUR-TABEL-NB-FACIN.md`.
 
-### Keputusan agent (menunggu konfirmasi)
+### Keputusan agent — A155–A164 ✅ DISETUJUI work owner 03-10-2026 (butir 97); A160 diganti butir 96
 
 | # | Keputusan | Dasar |
 | --- | --- | --- |
@@ -108,5 +109,5 @@ Pega (2 lanjut / 3 lewati / 5 jalankan) diturunkan dari konsistensi logika langk
 | A163 | `coverageBasis` kosong atau di luar 1–5 → 400 (POST dan PUT; basis 5 → 400 sesuai permintaan); hasil hitung yang melebihi NUMBER(38,8) (30 digit bulat) → 400 | Pega tidak menolak basis kosong — langkah rumus 19–50 tidak cocok dan premi tidak dihitung `[terverifikasi]` langkah 19–50. ⚠️ Data lama hasil loader dengan basis kosong atau 5 membuat Save tab Object ditolak 400 sampai tahap C2–C4 `[pertanyaan terbuka]` |
 | A164 | `Day` case (EDMDay) terisi tetapi bukan bilangan / 0 → 409; LossLimit / SubLimit bernilai nol dalam bentuk apa pun ("0", "0.00") → 100 | Pega membandingkan teks `""` / `"0"` pada langkah 17 `[dugaan]` — "0.00" mungkin tidak didefault di Pega; layar mengirim desimal terurai |
 | A159 | `TotalGrossPremi` dihitung ulang saat PUT (Σ Premium, item tanpa coverage → kosong); ⚠️ bagian TotalNetRate diganti tiket 44 (A166) — `TotalNetRate` disimpan apa adanya dari PUT; `PCT_ADJUSTMENT` disimpan tetapi tidak dikirim JSON | rumus TotalNetRate tahap C2; kontrak frontend tanpa pctAdjustment |
-| A160 | Popup Choose Coverage **tanpa** saringan ACTIVESTATUS (`.ACTIVESTATUS = 1 OR IS NULL`, syarat D/E RD) | `[terverifikasi]` RD `ReportDefinition\BrowseCoverageFacIn_RD.xml` `pyFilterLogic` "A AND B AND C AND (D OR E)" dengan D/E atas ACTIVESTATUS; DDL `DDL\COVERAGE_FACIN.txt` = VIEW lima kolom (ID, BIZCODE, NAMACOVERAGE, TYPE, OLDID) — 0 kemunculan ACTIVESTATUS (dihitung dua cara: daftar kolom view dan `grep -c`). Kunci JSON `M_COVERAGE` untuk status aktif tidak ditebak; DDL `M_COVERAGE` tidak ada. `[pertanyaan terbuka]` DBA: tambah ACTIVESTATUS ke view, atau semua baris M_COVERAGE memang aktif? |
+| ~~A160~~ | ~~Popup Choose Coverage **tanpa** saringan ACTIVESTATUS (`.ACTIVESTATUS = 1 OR IS NULL`, syarat D/E RD)~~ | `[terverifikasi]` RD `ReportDefinition\BrowseCoverageFacIn_RD.xml` `pyFilterLogic` "A AND B AND C AND (D OR E)" dengan D/E atas ACTIVESTATUS; DDL `DDL\COVERAGE_FACIN.txt` = VIEW lima kolom (ID, BIZCODE, NAMACOVERAGE, TYPE, OLDID) — 0 kemunculan ACTIVESTATUS (dihitung dua cara: daftar kolom view dan `grep -c`). Kunci JSON `M_COVERAGE` untuk status aktif tidak ditebak; DDL `M_COVERAGE` tidak ada. `[pertanyaan terbuka]` DBA: tambah ACTIVESTATUS ke view, atau semua baris M_COVERAGE memang aktif? | ⛔ **DIGANTI butir 96**: popup dibaca dari tabel `COVERAGE` yang PUNYA `ACTIVESTATUS` — saringan D/E kini dipasang.
 | — | Coverage otomatis dibaca dari tabel `COVERAGE` (bukan `COVERAGE_FACIN`), urutan korpus 100815, 100828, 100829, 100825, 100840; baris pertama per ID | `[terverifikasi]` `Activity\AddCoverageAutoFire.xml` langkah 3 + Obj-Browse kelas `ASM-FW-GISFW-Int-COVERAGE` (`RDBList\SearchCoverageIDSQL.xml` "FROM COVERAGE"); disetujui sesi 0f ("ikuti korpus") |

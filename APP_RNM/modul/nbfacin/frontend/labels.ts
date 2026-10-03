@@ -690,9 +690,9 @@ export const FORM_ITEM = {
 export const ITEM_KOSONG = 'Choose'
 
 /**
- * Daftar Condition - `[terverifikasi]` aturan properti `ASM-FW-GISFW-DATA-PROPERTYITEM!CONDITION` (PromptList,
- * `D:\migrasi\RNM\DDL\Condition.xml`, ditambahkan work owner 03-10-2026); baris pertama tanpa nilai = "Please Select".
- * Diuji `labels.test.ts`.
+ * Daftar Condition Object Item - `[terverifikasi]` aturan properti `ASM-FW-GISFW-DATA-PROPERTYITEM!CONDITION`
+ * (PromptList, ditambahkan work owner 03-10-2026 sebagai `DDL\Condition.xml`; ⚠️ berkas itu kemudian ditimpa aturan
+ * Deductible bernama sama - uji mencari menurut pxInsName). Baris pertama tanpa nilai = "Please Select".
  */
 export const OPSI_CONDITION = [
   { value: '1', label: 'Good' },
@@ -972,3 +972,63 @@ export const TEKS_COVERAGE = {
  * TotalNetRate = 0. `CalculateNetRate_ACT`: NetRate coverage = Rate / ΣRate × TotalNetRate, lalu `CountPremi_ACT`.
  */
 export const OLDID_NET_RATE = ['FLEXAS', '4.1A CC', '4.3', '4.2 PRGBI', 'OTHERS'] as const
+
+/**
+ * Deductible (tahap C3) - `[terverifikasi]` aturan properti `ASM-FW-GISFW-DATA-DEDUCTIBLE!MINMAX` (`DDL\MinMax.xml`) dan
+ * `!CONDITION` (`DDL\Condition.xml`, ditambahkan work owner 03-10-2026). PromptList tanpa baris kosong. Diuji menurut
+ * pxInsName.
+ */
+export const OPSI_MINMAX = [
+  { value: '1', label: 'Min' },
+  { value: '2', label: 'Max' },
+  { value: '3', label: 'Or' },
+]
+export const OPSI_KONDISI_DEDUCTIBLE = [
+  { value: '1', label: 'Any One Occurrence' },
+  { value: '2', label: 'Any One Accident' },
+  { value: '3', label: 'Each and Every Loss' },
+  { value: '4', label: 'Each and Every Claim' },
+  { value: '5', label: 'Other' },
+]
+
+/**
+ * Deductible coverage FIRE (tiket 45, tahap C3) - grid `.DeductibleList` di `NB FacIn\Section\CoverageItem.xml`
+ * (judul "Deductible"; kepala kolom Pega kosong kecuali "Time Excess (Days)") dan form flow action
+ * `InputDtlDeductibleFire_FacIn` -> section `addDeductible.xml` (sel 5-14). Diuji `labels.test.ts`.
+ */
+export const JUDUL_DEDUCTIBLE = 'Deductible'
+export const FORM_DEDUCTIBLE = {
+  typeDeductible: { sel: '5', label: 'Type Deductible' },
+  pctDeductible: { sel: '6', label: 'Pct Deductible' },
+  minMax: { sel: '7', label: 'MinMax' },
+  currency: { sel: '8', label: 'Currency' },
+  typeDeductible2: { sel: '9', label: 'Type Deductible' },
+  pctDeductible2: { sel: '10', label: 'Pct Deductible' },
+  condition: { sel: '11', label: 'Condition' },
+  amount: { sel: '12', label: 'Amount' },
+  inputCondition: { sel: '13', label: 'Condition' },
+  timeExcess: { sel: '14', label: 'Time Excess (In Days)' },
+} as const
+/** Kepala kolom grid "Time Excess (Days)" (CoverageItem.xml); kolom lain memakai label form (keputusan agent R-1). */
+export const KOLOM_TIME_EXCESS = 'Time Excess (Days)'
+/** Pilihan kosong dropdown deductible (`pyNoSelectionText` addDeductible). */
+export const DEDUCTIBLE_KOSONG = 'Choose'
+
+/** Type Deductible / Type Deductible 2 - aturan `DATA-DEDUCTIBLE!TYPEDEDUCTIBLE(2)` (`DDL\TypeDeductible*.xml`). */
+export const OPSI_TYPE_DEDUCTIBLE = [
+  { value: '1', label: '% Of Claim' },
+  { value: '2', label: '% Of Loss' },
+  { value: '3', label: '% Of TSI' },
+  { value: '4', label: '% Of Approved Loss Value' },
+  { value: '5', label: '% Of Recoverable Claim Amount' },
+  { value: '6', label: '% Of Recoverable Amount' },
+  { value: '7', label: 'In Amount' },
+  { value: '0', label: 'NIL' },
+]
+export const OPSI_TYPE_DEDUCTIBLE2 = [
+  { value: '1', label: '% Of Claim' },
+  { value: '2', label: '% Of Loss' },
+  { value: '3', label: '% Of TSI' },
+  { value: '4', label: '% Of TSI Whichever Is Higher' },
+  { value: '0', label: 'NIL' },
+]

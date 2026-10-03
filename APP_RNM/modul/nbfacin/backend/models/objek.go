@@ -148,11 +148,11 @@ type BarisTableOfLimit struct {
 	PctLimit    string // TABLEOFLIMIT.PCTLIMIT
 }
 
-// BarisCoverage - satu pilihan coverage (tiket 43): COVERAGE_FACIN (popup) atau COVERAGE (otomatis).
+// BarisCoverage - satu pilihan coverage (tiket 43) dari tabel COVERAGE (popup dan otomatis).
 type BarisCoverage struct {
 	ID    string // ID -> .Coverage
 	OldID string // OLDID - kode tampil
-	Nama  string // NAMACOVERAGE / NAME -> .CoverageNote
+	Nama  string // COVERAGE.NAME -> .CoverageNote
 }
 
 // JenisItem - satu pilihan Object Item Type (tiket 39, V_JN_OBJ_ITEM).

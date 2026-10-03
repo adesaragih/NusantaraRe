@@ -1,6 +1,6 @@
 package services
 
-// Pilihan coverage tab Coverage FIRE - tiket 43: popup Choose Coverage (COVERAGE_FACIN) dan lima coverage otomatis
+// Pilihan coverage tab Coverage FIRE - tiket 43: popup Choose Coverage (tabel COVERAGE, butir 96) dan lima coverage otomatis
 // (COVERAGE, AddCoverageAutoFire).
 
 import (
@@ -16,7 +16,7 @@ import (
 // lebarCariCoverage - batas kata cari (pola A73).
 const lebarCariCoverage = 255
 
-// DenganCoverage memasang pembaca COVERAGE_FACIN / COVERAGE (tiket 43).
+// DenganCoverage memasang pembaca COVERAGE (tiket 43).
 func (s *Service) DenganCoverage(c repository.PembacaCoverage) *Service {
 	s.coverage = c
 	return s

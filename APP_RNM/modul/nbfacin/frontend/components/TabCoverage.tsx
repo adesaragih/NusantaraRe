@@ -36,6 +36,7 @@ import {
   TEKS_OBJEK,
 } from '../labels'
 import FormCoverage, { adaGalatCoverage, angkaSah, coverageBaru } from './FormCoverage'
+import { adaGalatDeductible } from './GridDeductible'
 import { rapikanObjek } from './TabObject'
 
 const DESIMAL = 4
@@ -155,7 +156,11 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
   }
 
   async function simpan() {
-    if (objek === null || objek.some((x) => x.items.some((it) => adaGalatCoverage(it.coverages ?? [])))) return
+    if (
+      objek === null ||
+      objek.some((x) => x.items.some((it) => adaGalatCoverage(it.coverages ?? []) || (it.coverages ?? []).some((c) => adaGalatDeductible(c.deductibles))))
+    )
+      return
     setMenyimpan(true)
     setGalat(null)
     setTersimpan(false)
@@ -298,7 +303,7 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                                                       caseId={caseId}
                                                       c={c}
                                                       tsiItem={it.tsi}
-                                                      item={{ isAdjustable: it.isAdjustable, pctAdjustOther: it.pctAdjustOther }}
+                                                      item={{ isAdjustable: it.isAdjustable, pctAdjustOther: it.pctAdjustOther, currency: it.currency }}
                                                       ubah={(baru) => ubahCoverage(o, i, covs.map((y, k) => (k === n ? baru : y)))}
                                                     />
                                                   </td>

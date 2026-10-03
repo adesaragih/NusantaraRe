@@ -1319,13 +1319,13 @@ Contoh data: semua "0"; loader menyimpan teks Pega apa adanya. `[pertanyaan terb
 
 ## Tiket 43 — tab Coverage FIRE tahap C1 (backend), diteruskan sesi `nusantarare-0f`
 
-`POST …/kasus/{caseId}/hitung-coverage` (port `CountPremi_ACT` basis 1–4), `GET /api/nbfacin/coverage` (COVERAGE_FACIN),
+`POST …/kasus/{caseId}/hitung-coverage` (port `CountPremi_ACT` basis 1–4), `GET /api/nbfacin/coverage` (COVERAGE_FACIN → tabel COVERAGE, butir 96),
 `GET /api/nbfacin/coverage-otomatis` (COVERAGE, lima kode `AddCoverageAutoFire`), dan `items[].coverages` /
 `totalGrossPremi` / `totalNetRate` / `totalPerCurrency` di `…/objek`. Migrasi **193** (`T_COVERAGELIST` sebagian + dua kolom
 total `T_PROPERTYITEMLIST`) ditulis, belum dijalankan — urutan DEV: … → 192 → **193**; ⛔ 193 WAJIB dijalankan sebelum backend baru (tanpa itu GET/PUT
 objek gagal ORA-00904). Diteruskan sesi 0f (bukan keputusan
 work owner): CURRENCY_CODE = mata uang item, kolom total lewat ALTER, total per objek, heuristik mode saat PUT. Keputusan
-agent A155–A160 dan A162–A164 **menunggu konfirmasi** (`issues/43-coverage-fire-c1.md`) — ⚠️ A160: view `COVERAGE_FACIN` tanpa
+agent A155–A160 dan A162–A164 ✅ **disetujui** butir 97 (A160 diganti butir 96) (`issues/43-coverage-fire-c1.md`) — ⚠️ A160 (lama): view `COVERAGE_FACIN` tanpa
 ACTIVESTATUS, saringan aktif RD tidak dapat dinyatakan (`[pertanyaan terbuka]` DBA).
 
 ## Tiket 44 — tab Coverage FIRE tahap C2 Net Rate (backend), diteruskan sesi `nusantarare-0f`
@@ -1333,6 +1333,15 @@ ACTIVESTATUS, saringan aktif RD tidak dapat dinyatakan (`[pertanyaan terbuka]` D
 `POST …/kasus/{caseId}/hitung-net-rate` (port `CekNetRate_ACT` + `CalculateNetRate_ACT`) dan aturan net rate di `PUT
 …/objek`. Tanpa migrasi (memakai kolom 193). Keputusan agent A165–A168 **menunggu konfirmasi** (`issues/44-net-rate-c2.md`);
 A166 menggantikan bagian TotalNetRate dari A159.
+
+## Keputusan work owner — 3 Oktober 2026, sumber Choose Coverage dan tahap C4 (diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 96 | Sumber popup Choose Coverage (A160: view `COVERAGE_FACIN` tanpa ACTIVESTATUS) | **"diambil dari tabel COVERAGE saja, karena yang di Pega juga begitu"** — RD versi work owner `DDL\BrowseCoverageFacIn_RD.xml` dibaca dari `POOLDATA.COVERAGE`: NamaCoverage = `NAME`, BizCode = `BUSINESSCODE` (param kosong → dibuang), Type = `TYPE` = 'FIRE', `ACTIVESTATUS = '1' OR IS NULL`, OLDID, ID; DISTINCT, ≤ 500, urut NAME lalu OLDID. `[terverifikasi]` hanya saringan C (NamaCoverage Contains) ber-`pyCaseInsensitive` true; A/B/D `=` peka huruf; saringan, urutan, kolom laporan versi DDL = salinan `NB FacIn\ReportDefinition`. View `COVERAGE_FACIN` tidak dipakai lagi. **A160 diganti** |
+| 97 | Keputusan agent A155–A164 (tiket 43) | **DISETUJUI** (A160 sekaligus diganti butir 96). A165–A168 (tiket 44) masih menunggu |
+| 98 | Tahap C4 rate standar (`SetRatePolis_ACT`) | **Ikut Pega DEV dulu — lookup rate standar TIDAK dibangun**; work owner berencana membuat tabel tarif sendiri. `[terverifikasi]` `SetRatePolis_ACT` langkah 1 bercabang `IsPEGAPROD`; langkah 11 (RatePolis tanpa hasil) mengisi rate 0, min 0, max 1000; tujuan lompatan DEV `[dugaan]` (kode lompatan tidak terbaca). Backend: `RateOJK` hanya diteruskan apa adanya (kosong / 0 tetap), **tanpa** pesan min/max 0–1000 karena pemeriksaan min/max (CountPremi langkah 53–54) tidak dibangun |
+| 99 | Info: `DDL\MinMax.xml` (DATA-DEDUCTIBLE!MINMAX 1 Min / 2 Max / 3 Or) dan `DDL\Condition.xml` (DATA-DEDUCTIBLE!CONDITION 1–5) | Dipakai tahap C3 Deductible. ⚠️ `Condition.xml` menimpa berkas lama PROPERTYITEM!CONDITION (butir 85); frontend menguji menurut `pxInsName` |
 
 ## Bug DEV — 3 Oktober 2026, popup Choose Class of Construction kosong (diteruskan sesi `nusantarare-0f`)
 

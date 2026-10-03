@@ -73,5 +73,4 @@ kepemilikan tabel berpindah — keputusan work owner.
 | `V_JN_OBJ_ITEM` | view jenis item objek warisan POOLDATA; NB hanya MEMBACA empat kolom untuk pilihan Object Item Type (tiket 39) |
 | `TABLEOFLIMIT` | tabel batas okupasi warisan POOLDATA; NB hanya MEMBACA lima kolom untuk popup Choose Class of Construction (tiket 40; TAHUN tidak disaring, A161) |
 | `CURRENCY` | tabel mata uang warisan POOLDATA; NB hanya MEMBACA kolom CURRENCY untuk pilihan dan pemeriksaan mata uang item (tiket 39) |
-| `COVERAGE_FACIN` | view coverage warisan POOLDATA (atas M_COVERAGE); NB hanya MEMBACA lima kolom untuk popup Choose Coverage (tiket 43) |
-| `COVERAGE` | tabel coverage warisan POOLDATA; NB hanya MEMBACA tiga kolom untuk lima coverage otomatis AddCoverageAutoFire (tiket 43) |
+| `COVERAGE` | tabel coverage warisan POOLDATA; NB hanya MEMBACA enam kolom untuk popup Choose Coverage (butir 96) dan lima coverage otomatis AddCoverageAutoFire (tiket 43) |

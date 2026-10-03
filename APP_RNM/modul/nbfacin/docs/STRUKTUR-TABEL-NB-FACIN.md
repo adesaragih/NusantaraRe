@@ -4,9 +4,9 @@ Modul ini **membuat enam belas tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tike
 `T_QUOTATIONDATA` **sebagian** (migrasi 182/183, tiket 31 / butir 78.4), `T_CEDINGCOLIST` utuh (185, tiket 34), dan tabel tab Object FIRE (186, tiket 35: `T_LOCATIONLIST` /
 `T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian; 189, tiket 40: `T_OCCUPATIONLIST` sebagian, `T_TABLEOFLIMIT` utuh; 190, tiket 41: `T_FEALIST` baru; 191, tiket 42: `T_LISTCAUSEOFLOSS`, `T_COINSDATA` utuh; 193, tiket 43: `T_COVERAGELIST` sebagian) — dan **menulis**
 baris `T_WORK_POLIS` milik premiumlistlife (K-064; tidak dibuat, tidak dipetakan kolomnya di sini). Selebihnya ia hanya
-**membaca** delapan belas tabel / view yang sudah ada — enam tabel limit
+**membaca** tujuh belas tabel / view yang sudah ada — enam tabel limit
 akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), tabel bisnis `BUSINESS` (tiket 28), `MARKETINGOFFICER` (31), `AGENT`
-(33), `RISKADDRESS` (36; juga DISISIPI tiket 37), `RW` (36/37), `OCCUPATION` (38), `V_JN_OBJ_ITEM` dan `CURRENCY` (39), `TABLEOFLIMIT` (40), view `COVERAGE_FACIN` dan `COVERAGE` (43) — sama dengan bab "Tabel warisan" `MODUL.md`. Enam tabel limit akseptasi yang sudah ada
+(33), `RISKADDRESS` (36; juga DISISIPI tiket 37), `RW` (36/37), `OCCUPATION` (38), `V_JN_OBJ_ITEM` dan `CURRENCY` (39), `TABLEOFLIMIT` (40), `COVERAGE` (43) — sama dengan bab "Tabel warisan" `MODUL.md`. Enam tabel limit akseptasi yang sudah ada
 di `POOLDATA`, dengan nama tabel dan kolom **verbatim**. Berkas ini **peta**, bukan DDL: hanya kolom yang dibaca
 repository (`backend/repository/limit.go`). Ke-enamnya dinyatakan di `MODUL.md` bab "Tabel warisan: dibaca, tidak
 dibuat".
@@ -354,7 +354,7 @@ medan kontrak ADA di rancangan — tanpa kolom baru. Medan uang / rate / persen 
 | `SRC_PATH` | teks | VARCHAR2(200) | `LocationList/Property/PropertyItemList/CoverageList` |
 | `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan coverage 1..n |
 | `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
-| `COVERAGE` | teks | VARCHAR2(50) | `.Coverage` — ID coverage (`COVERAGE_FACIN.ID`) |
+| `COVERAGE` | teks | VARCHAR2(50) | `.Coverage` — ID coverage (`COVERAGE.ID`) |
 | `OLDID` | teks | VARCHAR2(50) | `.OLDID` — kode tampil |
 | `COVERAGE_NOTE` | teks | VARCHAR2(500) | `.CoverageNote` — nama coverage |
 | `COVERAGE_BASIS` | teks | VARCHAR2(50) | `.CoverageBasis` — 1..4 (5 Layering ditolak 400, tahap C2–C4) |
@@ -593,30 +593,19 @@ popup tombol Pega mengirim Tahun kosong).
 | `PCTLIMIT` | VARCHAR2(4000 BYTE) | `pctLimit` teks apa adanya |
 | `NOTE` | VARCHAR2(4000 BYTE) | kolom laporan RD (ikut DISTINCT), tidak dikirim |
 
-## COVERAGE_FACIN
-
-Tiket 43 (popup Choose Coverage). **View** warisan `POOLDATA.COVERAGE_FACIN`, **baca saja**. Sumber `[terverifikasi]`: DDL
-`D:\migrasi\RNM\DDL\COVERAGE_FACIN.txt` (03-10-2026): `CREATE OR REPLACE FORCE VIEW` lima kolom atas `JSON_VALUE` tabel
-`M_COVERAGE` — **tanpa** `ACTIVESTATUS` (A160). Kelas → tabel `[terverifikasi]`: `RDBList\GetCoverageFacin.xml` ("FROM
-COVERAGE_FACIN"). RD `BrowseCoverageFacIn_RD` (Type FIRE, NamaCoverage Contains, DISTINCT, maks 500, urut NamaCoverage lalu
-OLDID). Tipe kolom view tidak tertulis di DDL (turunan `M_COVERAGE`, DDL-nya tidak ada) — `belum terverifikasi`.
-
-| Kolom | Tipe | Dibaca untuk |
-| --- | --- | --- |
-| `ID` | belum terverifikasi (dibaca lewat `TO_CHAR`) | `id` → `T_COVERAGELIST.COVERAGE`; ikut DISTINCT |
-| `BIZCODE` | belum terverifikasi | kolom laporan RD (ikut DISTINCT), tidak dikirim; saringan RD dikirim kosong |
-| `NAMACOVERAGE` | belum terverifikasi | `nama`; saringan `cari` (UPPER LIKE); urutan pertama |
-| `TYPE` | belum terverifikasi | saringan = `FIRE` |
-| `OLDID` | belum terverifikasi | `oldId`; urutan kedua |
-
 ## COVERAGE
 
-Tiket 43 (lima coverage otomatis). Tabel warisan `POOLDATA.COVERAGE`, **baca saja**. Sumber tipe `[terverifikasi]`: DDL
-`D:\migrasi\RNM\DDL\COVERAGE.txt`. Kelas → tabel `[terverifikasi]`: `Activity\AddCoverageAutoFire.xml` Obj-Browse
-`ASM-FW-GISFW-Int-COVERAGE`, `RDBList\SearchCoverageIDSQL.xml` ("FROM COVERAGE"). Hanya tiga kolom yang dibaca.
+Tiket 43 (lima coverage otomatis dan popup Choose Coverage). Tabel warisan `POOLDATA.COVERAGE`, **baca saja**. Sumber
+tipe `[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\COVERAGE.txt`. Coverage otomatis: `Activity\AddCoverageAutoFire.xml`
+Obj-Browse `ASM-FW-GISFW-Int-COVERAGE`, `RDBList\SearchCoverageIDSQL.xml` ("FROM COVERAGE") `[terverifikasi]`. Popup:
+keputusan work owner butir 96 — RD `BrowseCoverageFacIn_RD` (`DDL\BrowseCoverageFacIn_RD.xml`) dibaca dari tabel ini,
+**bukan** view `COVERAGE_FACIN` (tidak dibaca lagi). Enam kolom dibaca.
 
 | Kolom | Tipe DDL | Dibaca untuk |
 | --- | --- | --- |
-| `ID` | VARCHAR2(4000 BYTE) | saringan = lima kode `AddCoverageAutoFire` (100815, 100828, 100829, 100825, 100840; urut korpus) |
-| `NAME` | VARCHAR2(4000 BYTE) | `nama` → `.CoverageNote` |
-| `OLDID` | VARCHAR2(23 BYTE) | `oldId` → `.OLDID` |
+| `ID` | VARCHAR2(4000 BYTE) | otomatis: saringan = lima kode `AddCoverageAutoFire` (100815, 100828, 100829, 100825, 100840; urut korpus); popup: `id` → `T_COVERAGELIST.COVERAGE`, ikut DISTINCT |
+| `NAME` | VARCHAR2(4000 BYTE) | `nama` → `.CoverageNote`; popup: saringan `cari` (Contains, tidak peka huruf — `pyCaseInsensitive`), urutan pertama |
+| `OLDID` | VARCHAR2(23 BYTE) | `oldId` → `.OLDID`; popup: urutan kedua |
+| `TYPE` | VARCHAR2(4000 BYTE) | popup: saringan `= 'FIRE'` (peka huruf, `=` RD) |
+| `ACTIVESTATUS` | VARCHAR2(4000 BYTE) | popup: saringan `= '1'` atau kosong (D OR E RD) |
+| `BUSINESSCODE` | VARCHAR2(4000 BYTE) | popup: kolom laporan RD (ikut DISTINCT), tidak dikirim; saringan B dikirim kosong → dibuang |

@@ -44,7 +44,7 @@ var ErrMasukanCoverage = errors.New("services: isian coverage tidak sah")
 // ErrPeriodeKasus - Begin / End date case kosong atau tak terurai: Prorate tidak dapat dihitung. 409.
 var ErrPeriodeKasus = errors.New("services: periode polis case (Begin / End date) belum diisi - premi coverage tidak dapat dihitung")
 
-// ErrCoverageTanpaDatabase - case / COVERAGE_FACIN / COVERAGE tidak terbaca. 503.
+// ErrCoverageTanpaDatabase - case / COVERAGE tidak terbaca. 503.
 var ErrCoverageTanpaDatabase = errors.New("services: basis data tidak dikonfigurasi, coverage tidak terbaca")
 
 // skalaBagi - @Math.divide(..., 20); skalaTSILiability - @Math.divide(..., 100, 4).

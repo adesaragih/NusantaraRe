@@ -6,7 +6,7 @@
 //
 // ⚠️ Bila korpus tidak terjangkau, test DILEWATI dengan pesan - bukan gagal.
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
@@ -51,6 +51,14 @@ import {
   OPSI_FLOOD_STATUS,
   OPSI_FLOOD_AREA,
   OPSI_CONDITION,
+  OPSI_MINMAX,
+  OPSI_KONDISI_DEDUCTIBLE,
+  OPSI_TYPE_DEDUCTIBLE,
+  OPSI_TYPE_DEDUCTIBLE2,
+  FORM_DEDUCTIBLE,
+  JUDUL_DEDUCTIBLE,
+  KOLOM_TIME_EXCESS,
+  DEDUCTIBLE_KOSONG,
   CONDITION_KOSONG,
   OPSI_PCT_ADJUST,
   OPSI_FIRE_BRIGADE,
@@ -497,7 +505,6 @@ const BERKAS_SEKITAR_DDL = {
   HousekeepingStatus: { opsi: OPSI_HOUSEKEEPING, kosong: null },
   FloodAreaStatus: { opsi: OPSI_FLOOD_STATUS, kosong: null },
   FloodArea: { opsi: OPSI_FLOOD_AREA, kosong: CONSTRUCTION_KOSONG as string | null },
-  Condition: { opsi: OPSI_CONDITION, kosong: CONDITION_KOSONG as string | null },
   PrivateFireBrigade: { opsi: OPSI_FIRE_BRIGADE, kosong: null },
   TeamSOPSafety: { opsi: OPSI_SOP_SAFETY, kosong: null },
   TeamSOPRiskManagement: { opsi: OPSI_SOP_RISIKO, kosong: null },
@@ -774,5 +781,70 @@ describe.skipIf(!existsSync(`${DDL}CoverageBasis.xml`))('Coverage Basis = aturan
     const xml = readFileSync(`${DDL}CoverageBasis.xml`, 'utf-8')
     expect(xml).toContain(`<pyLabel>${LABEL_COVERAGE_BASIS}</pyLabel>`)
     expect(daftarPrompt(xml).filter(([v]) => v !== '')).toEqual(OPSI_COVERAGE_BASIS.map((o) => [o.value, o.label]))
+  })
+})
+
+/**
+ * Cari berkas aturan properti di `DDL\` menurut IDENTITAS rule (`<pxInsName>`), bukan nama berkas - dua aturan berbeda
+ * dapat dikirim dengan nama berkas yang sama (03-10-2026: `Condition.xml` Deductible menimpa `Condition.xml`
+ * PropertyItem). Kosong bila tidak ada.
+ */
+function aturanDDL(pxInsName: string): string {
+  if (!existsSync(DDL)) return ''
+  for (const f of readdirSync(DDL)) {
+    if (!f.toLowerCase().endsWith('.xml')) continue
+    const xml = readFileSync(`${DDL}${f}`, 'utf-8')
+    if (xml.includes(`<pxInsName>${pxInsName}</pxInsName>`)) return xml
+  }
+  return ''
+}
+
+describe('Condition Object Item = ASM-FW-GISFW-DATA-PROPERTYITEM!CONDITION (dicari menurut pxInsName)', () => {
+  const xml = aturanDDL('ASM-FW-GISFW-DATA-PROPERTYITEM!CONDITION')
+  it.skipIf(xml === '')('pasangan value/label per rowdata; baris pertama = Please Select', () => {
+    const baris = daftarPrompt(xml)
+    expect(baris[0]).toEqual(['', CONDITION_KOSONG])
+    expect(baris.slice(1)).toEqual(OPSI_CONDITION.map((o) => [o.value, o.label]))
+  })
+})
+
+describe('Deductible MinMax / Condition = aturan DATA-DEDUCTIBLE (tahap C3)', () => {
+  const minMax = aturanDDL('ASM-FW-GISFW-DATA-DEDUCTIBLE!MINMAX')
+  const kondisi = aturanDDL('ASM-FW-GISFW-DATA-DEDUCTIBLE!CONDITION')
+  it.skipIf(minMax === '')('MinMax = Min / Max / Or', () => {
+    expect(daftarPrompt(minMax)).toEqual(OPSI_MINMAX.map((o) => [o.value, o.label]))
+  })
+  it.skipIf(kondisi === '')('Condition deductible = lima pilihan', () => {
+    expect(daftarPrompt(kondisi)).toEqual(OPSI_KONDISI_DEDUCTIBLE.map((o) => [o.value, o.label]))
+  })
+})
+
+describe.skipIf(!existsSync(NBFACIN + 'Section\\addDeductible.xml'))('Deductible = korpus (addDeductible, CoverageItem) - tiket 45', () => {
+  const form = readFileSync(NBFACIN + 'Section\\addDeductible.xml', 'utf-8')
+  const cov = readFileSync(NBFACIN + 'Section\\CoverageItem.xml', 'utf-8')
+  it.each(Object.entries(FORM_DEDUCTIBLE))('form %s', (_, u) => {
+    expect(blokSel(form, u.sel).some((b) => b.includes(`<pyLabelFieldValue>${u.label}</pyLabelFieldValue>`))).toBe(true)
+  })
+  it('syarat tampil: Pct / MinMax bila Type != 7; Type2 / Pct2 bila MinMax = 3; Condition teks bila Condition = 5', () => {
+    expect(blokSel(form, '6').some((b) => b.includes('<pyCondition>.TypeDeductible != 7</pyCondition>'))).toBe(true)
+    expect(blokSel(form, '9').some((b) => b.includes('<pyCondition>.MinMax = 3</pyCondition>'))).toBe(true)
+    expect(blokSel(form, '13').some((b) => b.includes('<pyCondition>.Condition = 5</pyCondition>'))).toBe(true)
+    expect(form).toContain(`<pyNoSelectionText>${DEDUCTIBLE_KOSONG}</pyNoSelectionText>`)
+  })
+  it('grid CoverageItem: judul Deductible, kolom Time Excess (Days), PageList .DeductibleList', () => {
+    expect(cov).toContain(`>${JUDUL_DEDUCTIBLE}<`)
+    expect(cov).toContain(`<pyValue>${KOLOM_TIME_EXCESS}</pyValue>`)
+    expect(cov).toContain('<pyPageListProperty>.DeductibleList</pyPageListProperty>')
+  })
+})
+
+describe('Type Deductible (1/2) = aturan DATA-DEDUCTIBLE (dicari menurut pxInsName)', () => {
+  const t1 = aturanDDL('ASM-FW-GISFW-DATA-DEDUCTIBLE!TYPEDEDUCTIBLE')
+  const t2 = aturanDDL('ASM-FW-GISFW-DATA-DEDUCTIBLE!TYPEDEDUCTIBLE2')
+  it.skipIf(t1 === '')('TypeDeductible', () => {
+    expect(daftarPrompt(t1)).toEqual(OPSI_TYPE_DEDUCTIBLE.map((o) => [o.value, o.label]))
+  })
+  it.skipIf(t2 === '')('TypeDeductible2', () => {
+    expect(daftarPrompt(t2)).toEqual(OPSI_TYPE_DEDUCTIBLE2.map((o) => [o.value, o.label]))
   })
 })

@@ -14,7 +14,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Area, Field, Gagal, Kosong, Memuat, Modal, Pilih } from '../../../../inti/frontend/components/ui/dasar'
 import { desimalSah } from '../../../../inti/frontend/lib/desimal'
 import { formatNumber } from '../../../../inti/frontend/lib/format'
-import { cariCoverage, hitungCoverage, type BarisCoverage, type CoverageObjek, type ModeHitung } from '../api'
+import { cariCoverage, daftarMataUang, hitungCoverage, type BarisCoverage, type CoverageObjek, type ModeHitung } from '../api'
+import GridDeductible from './GridDeductible'
 import IsianUang from './IsianUang'
 import { FORM_COV as F, LABEL_COVERAGE_BASIS, OPSI_COVERAGE_BASIS, PILIHAN_PERIODE, POPUP_OKUPASI, TEKS_COVERAGE } from '../labels'
 
@@ -127,8 +128,8 @@ export default function FormCoverage({
   c: CoverageObjek
   /** TSI Object Item (teks desimal). */
   tsiItem: string
-  /** Item pemilik (PctAdjustment `CountPremi_ACT`). */
-  item?: { isAdjustable: boolean; pctAdjustOther: string }
+  /** Item pemilik (PctAdjustment `CountPremi_ACT`; mata uang = awal deductible baru). */
+  item?: { isAdjustable: boolean; pctAdjustOther: string; currency?: string }
   ubah: (c: CoverageObjek) => void
 }) {
   const [pilih, setPilih] = useState(false)
@@ -140,6 +141,21 @@ export default function FormCoverage({
   const modeDiskon = useRef<ModeHitung>('percent')
 
   useEffect(() => () => window.clearTimeout(jadwal.current), [])
+
+  // Daftar mata uang untuk Currency deductible (RD `BrowseCurrency_RD`).
+  const [mataUang, setMataUang] = useState<string[]>([])
+  useEffect(() => {
+    let batal = false
+    daftarMataUang().then(
+      (h) => {
+        if (!batal) setMataUang(h.baris)
+      },
+      () => {},
+    )
+    return () => {
+      batal = true
+    }
+  }, [])
 
   /** Ubah lalu jadwalkan hitung ulang di backend. */
   function ubahHitung(baru: CoverageObjek, mode: ModeHitung) {
@@ -240,6 +256,13 @@ export default function FormCoverage({
           <Gagal galat={galat} />
         </div>
       </div>
+      {/* Deductible (tahap C3, tiket 45): tidak memicu hitung premi. */}
+      <GridDeductible
+        daftar={c.deductibles ?? []}
+        currency={item?.currency ?? ''}
+        mataUang={mataUang}
+        ubah={(deductibles) => ubah({ ...c, deductibles })}
+      />
       {pilih && (
         <PopupCoverage
           onTutup={() => setPilih(false)}

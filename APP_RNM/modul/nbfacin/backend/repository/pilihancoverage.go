@@ -2,12 +2,16 @@ package repository
 
 // Pilihan coverage tab Coverage FIRE (tiket 43).
 //
-// Popup Choose Coverage `[terverifikasi]`: RD `BrowseCoverageFacIn_RD` (kelas ASM-FW-GISFW-Int-COVERAGE_FACIN; tabel dari
-// `RDBList\GetCoverageFacin.xml` "FROM COVERAGE_FACIN"): A `.Type = Param.Type` ("FIRE" dari `Section\ChooseCoverage.xml`),
-// B `.BizCode = Param.BizCode` (dikirim KOSONG -> dibuang), C `.NamaCoverage` Contains `Param.Nama` (tidak peka huruf),
-// D/E `.ACTIVESTATUS = 1` OR IS NULL; DISTINCT atas kolom laporan (ID, BizCode, NamaCoverage, Type, OLDID, ACTIVESTATUS);
-// maks 500; urut NamaCoverage lalu OLDID. DDL `DDL\COVERAGE_FACIN.txt` (03-10-2026): VIEW (ID, BIZCODE, NAMACOVERAGE,
-// TYPE, OLDID) atas JSON M_COVERAGE - TANPA ACTIVESTATUS, jadi saringan D/E tidak dapat dinyatakan (A160).
+// Popup Choose Coverage `[terverifikasi]`: RD `BrowseCoverageFacIn_RD` - versi work owner `DDL\BrowseCoverageFacIn_RD.xml`
+// (03-10-2026; saringan, urutan, dan kolom laporan sama dengan salinan `NB FacIn\ReportDefinition`): pyFilterLogic
+// "A AND B AND C AND (D OR E)" - A `.Type = Param.Type` ("FIRE" dari `Section\ChooseCoverage.xml`), B `.BizCode =
+// Param.BizCode` (dikirim KOSONG -> dibuang), C `.NamaCoverage` Contains `Param.Nama` (pyCaseInsensitive true - SATU-
+// SATUNYA saringan tidak peka huruf; A, B, D `=` peka huruf), D `.ACTIVESTATUS = 1`, E `.ACTIVESTATUS` IS NULL;
+// pyGetDistinctRows true atas kolom laporan (ID, BizCode, NamaCoverage, Type, OLDID, ACTIVESTATUS); pyMaxRecords 500;
+// pySortOrder NamaCoverage 1 ASC, OLDID 2 ASC.
+// Sumber = tabel COVERAGE, BUKAN view COVERAGE_FACIN (keputusan work owner butir 96: "diambil dari tabel COVERAGE saja,
+// karena yang di Pega juga begitu"): NamaCoverage = NAME, BizCode = BUSINESSCODE, Type = TYPE, ACTIVESTATUS, OLDID, ID
+// (DDL `DDL\COVERAGE.txt`, seluruhnya VARCHAR2; OLDID VARCHAR2(23)). Saringan aktif D/E kini dinyatakan (A160 diganti).
 //
 // Coverage otomatis `[terverifikasi]`: `Activity\AddCoverageAutoFire.xml` langkah 3 mengisi .Coverage berurutan 100815,
 // 100828, 100829, 100825, 100840, lalu Obj-Browse kelas ASM-FW-GISFW-Int-COVERAGE (.ID = .Coverage) -> .CoverageNote =
@@ -26,12 +30,13 @@ import (
 )
 
 const (
-	// TabelCoverageFacIn - view warisan POOLDATA (baca saja); TabelCoverage - tabel warisan POOLDATA (baca saja).
-	TabelCoverageFacIn = "COVERAGE_FACIN"
-	TabelCoverage      = "COVERAGE"
-	// TipeCoverageFire - Param.Type popup Choose Coverage. BatasCoverage - pyMaxRecords RD.
-	TipeCoverageFire = "FIRE"
-	BatasCoverage    = 500
+	// TabelCoverage - tabel warisan POOLDATA (baca saja), sumber popup dan coverage otomatis.
+	TabelCoverage = "COVERAGE"
+	// TipeCoverageFire - Param.Type popup Choose Coverage. BatasCoverage - pyMaxRecords RD. StatusAktifCoverage - nilai
+	// saringan D (kolom VARCHAR2, dibandingkan sebagai teks).
+	TipeCoverageFire    = "FIRE"
+	BatasCoverage       = 500
+	StatusAktifCoverage = "1"
 )
 
 // kodeCoverageOtomatis - AddCoverageAutoFire langkah 3, urutan korpus.
@@ -39,7 +44,7 @@ var kodeCoverageOtomatis = []string{"100815", "100828", "100829", "100825", "100
 
 // PembacaCoverage - pilihan coverage.
 type PembacaCoverage interface {
-	// CariCoverage - COVERAGE_FACIN FIRE; kata kosong = semua.
+	// CariCoverage - COVERAGE FIRE aktif; kata kosong = semua.
 	CariCoverage(ctx context.Context, kata string) ([]models.BarisCoverage, error)
 	// CoverageOtomatis - lima coverage AddCoverageAutoFire dari COVERAGE (urut korpus; kode tanpa baris -> nama kosong).
 	CoverageOtomatis(ctx context.Context) ([]models.BarisCoverage, error)
@@ -48,18 +53,18 @@ type PembacaCoverage interface {
 // CoverageOracle - PembacaCoverage atas Oracle.
 type CoverageOracle struct{ db *db.DB }
 
-// NewCoverageOracle merakit pembaca COVERAGE_FACIN / COVERAGE.
+// NewCoverageOracle merakit pembaca COVERAGE.
 func NewCoverageOracle(d *db.DB) *CoverageOracle { return &CoverageOracle{db: d} }
 
-// sqlCariCoverage - :1 tipe, [:2 pola NAMACOVERAGE], batas terakhir. ID view lewat TO_CHAR (tipe M_COVERAGE.ID tidak
-// ada di DDL `belum terverifikasi`).
-func sqlCariCoverage(v string, denganKata bool) string {
-	syarat, batas := "TYPE = :1", ":2"
+// sqlCariCoverage - :1 tipe, :2 status aktif, [:3 pola NAME], batas terakhir. DISTINCT atas enam kolom laporan RD; ID
+// pemecah seri terakhir supaya urutan tetap.
+func sqlCariCoverage(c string, denganKata bool) string {
+	syarat, batas := "TYPE = :1 AND (ACTIVESTATUS = :2 OR ACTIVESTATUS IS NULL)", ":3"
 	if denganKata {
-		syarat, batas = `TYPE = :1 AND UPPER(NAMACOVERAGE) LIKE :2 ESCAPE '\'`, ":3"
+		syarat, batas = syarat+` AND UPPER(NAME) LIKE :3 ESCAPE '\'`, ":4"
 	}
-	return "SELECT ID, OLDID, NAMACOVERAGE FROM (SELECT DISTINCT TO_CHAR(ID) AS ID, BIZCODE, NAMACOVERAGE, TYPE, OLDID FROM " + v +
-		" WHERE " + syarat + ") ORDER BY NAMACOVERAGE, OLDID, ID FETCH FIRST " + batas + " ROWS ONLY"
+	return "SELECT ID, OLDID, NAME FROM (SELECT DISTINCT ID, BUSINESSCODE, NAME, TYPE, OLDID, ACTIVESTATUS FROM " + c +
+		" WHERE " + syarat + ") ORDER BY NAME, OLDID, ID FETCH FIRST " + batas + " ROWS ONLY"
 }
 
 // sqlCoverageOtomatis - baris COVERAGE untuk lima kode (bind :1..:5), kolom urutan sama dengan sqlCariCoverage (ID,
@@ -89,20 +94,20 @@ func bacaBarisCoverage(baris *sql.Rows, tabel string) ([]models.BarisCoverage, e
 
 // CariCoverage - lihat PembacaCoverage.
 func (r *CoverageOracle) CariCoverage(ctx context.Context, kata string) ([]models.BarisCoverage, error) {
-	q, err := r.db.Qualify(TabelCoverageFacIn)
+	q, err := r.db.Qualify(TabelCoverage)
 	if err != nil {
 		return nil, err
 	}
-	sqlq, arg := sqlCariCoverage(q, false), []any{TipeCoverageFire, BatasCoverage}
+	sqlq, arg := sqlCariCoverage(q, false), []any{TipeCoverageFire, StatusAktifCoverage, BatasCoverage}
 	if pola := PolaCari(kata); pola != "" {
-		sqlq, arg = sqlCariCoverage(q, true), []any{TipeCoverageFire, pola, BatasCoverage}
+		sqlq, arg = sqlCariCoverage(q, true), []any{TipeCoverageFire, StatusAktifCoverage, pola, BatasCoverage}
 	}
 	baris, err := r.db.QueryContext(ctx, sqlq, arg...)
 	if err != nil {
-		return nil, fmt.Errorf("repository: baca %s: %w", TabelCoverageFacIn, err)
+		return nil, fmt.Errorf("repository: baca %s: %w", TabelCoverage, err)
 	}
 	defer baris.Close()
-	return bacaBarisCoverage(baris, TabelCoverageFacIn)
+	return bacaBarisCoverage(baris, TabelCoverage)
 }
 
 // CoverageOtomatis - lihat PembacaCoverage.

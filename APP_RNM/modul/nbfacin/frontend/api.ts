@@ -468,6 +468,32 @@ export interface CoverageObjek {
   premium: string
   /** `.Conditions`. */
   conditions: string
+  /** `.DeductibleList` (tahap C3, tiket 45). Boleh absen di data lama. */
+  deductibles?: Deductible[]
+}
+
+/** Satu deductible - `ASM-FW-GISFW-Data-Deductible`. Persen / uang = teks desimal. */
+export interface Deductible {
+  /** `.TypeDeductible` (kode, `DDL\TypeDeductible.xml`). */
+  typeDeductible: string
+  /** `.PctDeductible` %. */
+  pctDeductible: string
+  /** `.MinMax` 1 Min / 2 Max / 3 Or. */
+  minMax: string
+  /** `.Currency`. */
+  currency: string
+  /** `.TypeDeductible2` (tampil bila MinMax = 3). */
+  typeDeductible2: string
+  /** `.PctDeductible2` %. */
+  pctDeductible2: string
+  /** `.Condition` (kode, `DDL\Condition.xml` Deductible). */
+  condition: string
+  /** `.Amount` (uang). */
+  amount: string
+  /** `.InputCondition` (bila Condition = 5 Other). */
+  inputCondition: string
+  /** `.TimeExcess` hari. */
+  timeExcess: string
 }
 
 /** Mode hitung `CountPremi_ACT`: dari rate ("percent") atau dari premi ("amount", rate dihitung balik). */
