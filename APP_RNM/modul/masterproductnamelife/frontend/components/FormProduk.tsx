@@ -7,7 +7,10 @@
 //
 // Mode lihat (`ProductName.IsView == 'true'`, sesudah `View` b74798 → `SetProductName` 8 b2147): medan ber-`ro`
 // baca-saja, dropdown master (pengganti tombol `Choose*`, wadah `IsView!='true'`) dan `Save` tidak dapat dipakai,
-// `Edit` tampil. Checkbox `On Retention` dan tombol `Add`/`Delete` grid tidak ber-`ro` di XML.
+// `Edit` tampil. Checkbox `On Retention` dan tombol `Add`/`Delete` grid tidak ber-`ro` di XML - tetapi keputusan work
+// owner 03-10-2026 ("jika view tidak tambah/edit/delete, saat klik edit baru bisa"): di mode lihat SEMUA aksi ubah
+// tersembunyi (Add/Delete/Copy row grid, Copy, Add attachment/Retry/Delete lampiran) dan On Retention mati; yang tetap:
+// Close, Edit, Generate, View Rate, dan aksi baca lampiran.
 // ⛔ Audit 02-10-2026: enam medan pemilih master SELALU baca-saja di XML (`pyReadOnly` true, `pyEditOptions`
 // Read-only, `pyReadOnlyCondition` KOSONG - beda dengan `Product Name` b3585 yang bersyarat `IsView`): Ceding
 // b4040, SOB b4428, R/I Risk Name b7362, Cause Of Loss b10626, Policy Holder b17062, Currency b28105. Nilainya
@@ -373,17 +376,19 @@ export default function FormProduk({
       {/* ---- wadah b30995: PLAN LIST, FINANCIAL UNDERWRITING, UNDERWRITING LIMIT, On Retention - satu kartu ---- */}
       <section className="mpnl-kartu mpnl-bagian">
       <h4 className="mpnl-judul-grid">{PLAN_MPNL.judul}</h4>
-      <div className="aksi-baris">
-        <button
-          type="button"
-          className="btn btn--ghost btn--sm"
-          onClick={() => {
-            setP((x) => ({ ...x, planList: [...x.planList, { plan: '', planId: '', name: '', benefit: '', riRate: '', riRateId: '' }] }))
-          }}
-        >
-          {PLAN_MPNL.add}
-        </button>
-      </div>
+      {!lihat && (
+        <div className="aksi-baris">
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => {
+              setP((x) => ({ ...x, planList: [...x.planList, { plan: '', planId: '', name: '', benefit: '', riRate: '', riRateId: '' }] }))
+            }}
+          >
+            {PLAN_MPNL.add}
+          </button>
+        </div>
+      )}
       {p.planList.length === 0 ? (
         <Kosong pesan={LAIN_MPNL.kosong} />
       ) : (
@@ -401,24 +406,28 @@ export default function FormProduk({
             {p.planList.map((b, i) => (
               <tr key={i} className="inbox__baris">
                 <td>
-                  <Saran<JenisPlan>
-                    labelAria={PLAN_MPNL.planName}
-                    nilai={b.plan}
-                    readOnly={lihat}
-                    onKetik={(v) => {
-                      setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { plan: v, planId: '' }) }))
-                    }}
-                    cari={cariJenisPlan}
-                    teks={(t) => t.coverName}
-                    kunci={(t) => t.id}
-                    onPilih={(t) => {
-                      // Autocomplete b33198: `.CoverName` → `.Plan`, `.ID` → `.PlanID`, `.Business` → `.Name`, `.Benefit` → `.Benefit`.
-                      setP((x) => ({
-                        ...x,
-                        planList: ganti<BarisPlan>(x.planList, i, { plan: t.coverName, planId: t.id, name: t.business, benefit: t.benefit }),
-                      }))
-                    }}
-                  />
+                  {/* Mode lihat: teks, seperti sel grid lain (keputusan work owner 03-10-2026). */}
+                  {lihat ? (
+                    b.plan
+                  ) : (
+                    <Saran<JenisPlan>
+                      labelAria={PLAN_MPNL.planName}
+                      nilai={b.plan}
+                      onKetik={(v) => {
+                        setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { plan: v, planId: '' }) }))
+                      }}
+                      cari={cariJenisPlan}
+                      teks={(t) => t.coverName}
+                      kunci={(t) => t.id}
+                      onPilih={(t) => {
+                        // Autocomplete b33198: `.CoverName` → `.Plan`, `.ID` → `.PlanID`, `.Business` → `.Name`, `.Benefit` → `.Benefit`.
+                        setP((x) => ({
+                          ...x,
+                          planList: ganti<BarisPlan>(x.planList, i, { plan: t.coverName, planId: t.id, name: t.business, benefit: t.benefit }),
+                        }))
+                      }}
+                    />
+                  )}
                 </td>
                 {/* `Bussines` (`.Name` b33504) dan `Benefit` b33658 SELALU baca-saja: diisi autocomplete `Plan Name`. */}
                 <td>{b.name}</td>
@@ -448,15 +457,17 @@ export default function FormProduk({
                       {PLAN_MPNL.viewRate}
                     </button>
                   )}{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setP((x) => ({ ...x, planList: buang(x.planList, i) }))
-                    }}
-                  >
-                    {PLAN_MPNL.delete}
-                  </button>
+                  {!lihat && (
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => {
+                        setP((x) => ({ ...x, planList: buang(x.planList, i) }))
+                      }}
+                    >
+                      {PLAN_MPNL.delete}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -550,6 +561,7 @@ export default function FormProduk({
         <input
           type="checkbox"
           checked={u.isOrs}
+          disabled={lihat}
           onChange={(e) => {
             const v = e.target.checked
             setP((x) => ({ ...x, umum: { ...x.umum, isOrs: v }, hitungOutward: true }))
@@ -586,18 +598,20 @@ export default function FormProduk({
             {TOMBOL_MPNL.edit}
           </button>
         )}{' '}
-        <button
-          type="button"
-          className="btn btn--ghost"
-          onClick={() => {
-            // DataTransform `CopyProduct` b59965; pesan 4 b236 di wadah b1269 (`STSSAVE==99`).
-            setP((x) => salinProduk(x))
-            setPesan(PESAN_MPNL.copy)
-            setGalat(null)
-          }}
-        >
-          {TOMBOL_MPNL.copy}
-        </button>{' '}
+        {!lihat && (
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => {
+              // DataTransform `CopyProduct` b59965; pesan 4 b236 di wadah b1269 (`STSSAVE==99`).
+              setP((x) => salinProduk(x))
+              setPesan(PESAN_MPNL.copy)
+              setGalat(null)
+            }}
+          >
+            {TOMBOL_MPNL.copy}
+          </button>
+        )}{' '}
         <button type="button" className="btn btn--ghost" onClick={() => void generate()}>
           {TOMBOL_MPNL.generate}
         </button>
@@ -626,7 +640,7 @@ export default function FormProduk({
       )}
 
       {/* ---- wadah b64133: lampiran (produk tersimpan) ---- */}
-      {p.id !== '' && <PanelLampiran produkId={p.id} />}
+      {p.id !== '' && <PanelLampiran produkId={p.id} lihat={lihat} />}
 
       {dialog === 'simpan' && (
         <DialogSimpan
@@ -747,7 +761,7 @@ function GridBerangka<T extends { asli?: string }>({
 }) {
   return (
     <>
-      <div className="aksi-baris">{tambah}</div>
+      {!lihat && <div className="aksi-baris">{tambah}</div>}
       {baris.length === 0 ? (
         <Kosong pesan={LAIN_MPNL.kosong} />
       ) : (
@@ -758,7 +772,7 @@ function GridBerangka<T extends { asli?: string }>({
                 {kolom.map(([l]) => (
                   <th key={l}>{l}</th>
                 ))}
-                <th className="table__actions" />
+                {!lihat && <th className="table__actions" />}
               </tr>
             </thead>
             <tbody>
@@ -774,12 +788,14 @@ function GridBerangka<T extends { asli?: string }>({
                       />
                     </td>
                   ))}
-                  <td className="table__actions">
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => onUbah(salinBaris(baris, i))}>
-                      {LAIN_MPNL.salinBaris}
-                    </button>{' '}
-                    {hapus(i)}
-                  </td>
+                  {!lihat && (
+                    <td className="table__actions">
+                      <button type="button" className="btn btn--ghost btn--sm" onClick={() => onUbah(salinBaris(baris, i))}>
+                        {LAIN_MPNL.salinBaris}
+                      </button>{' '}
+                      {hapus(i)}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

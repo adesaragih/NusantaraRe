@@ -190,3 +190,59 @@ describe('jenis tampilan medan = tipe kolom flat (backend mpnl_flat.go)', () => 
   })
 })
 
+
+// ---------------------------------------------------------------------------
+// Keputusan work owner 03-10-2026: "jika view tidak tambah/edit/delete, saat klik edit baru bisa" - di mode lihat
+// SEMUA aksi ubah tersembunyi (menyimpang dari XML: `Add`/`Delete` grid dan checkbox `On Retention` tidak ber-`ro`).
+// ---------------------------------------------------------------------------
+
+const LAMPIRAN = readFileSync(join(__dirname, 'PanelLampiran.tsx'), 'utf8')
+
+/**
+ * Teks `{label}` berada DI DALAM satu blok `{!lihat && …}` (hanya dirender di mode sunting): dari setiap `{!lihat && `
+ * sebelum label, kurung kurawalnya belum tertutup saat label dicapai.
+ */
+function dijagaLihat(kode: string, label: string): boolean {
+  const i = kode.indexOf(`{${label}}`)
+  if (i < 0) return false
+  for (let j = kode.lastIndexOf('{!lihat && ', i); j >= 0; j = kode.lastIndexOf('{!lihat && ', j - 1)) {
+    let dalam = 0
+    let tertutup = false
+    for (let k = j; k < i && !tertutup; k++) {
+      if (kode[k] === '{') dalam++
+      else if (kode[k] === '}' && --dalam === 0) tertutup = true
+    }
+    if (!tertutup) return true
+  }
+  return false
+}
+
+describe('mode lihat: nol tambah/edit/delete - baru ada sesudah Edit (keputusan work owner 03-10-2026)', () => {
+  it('PLAN LIST mode lihat: sel Plan Name teks, bukan isian autocomplete', () => {
+    expect(KODE).toMatch(/\{lihat \? \(\s*b\.plan\s*\) : \(\s*<Saran<JenisPlan>/)
+  })
+
+  it('PLAN LIST: Add dan Delete hanya di mode sunting; View Rate tetap', () => {
+    expect(dijagaLihat(KODE, 'PLAN_MPNL.add')).toBe(true)
+    expect(dijagaLihat(KODE, 'PLAN_MPNL.delete')).toBe(true)
+    expect(dijagaLihat(KODE, 'PLAN_MPNL.viewRate')).toBe(false)
+  })
+
+  it('FINANCIAL UNDERWRITING / UNDERWRITING LIMIT: Add, Copy row, Delete hanya di mode sunting', () => {
+    expect(KODE).toContain('{!lihat && <div className="aksi-baris">{tambah}</div>}')
+    expect(dijagaLihat(KODE, 'LAIN_MPNL.salinBaris')).toBe(true)
+    expect(KODE).toMatch(/\{!lihat && \(\s*<td className="table__actions">[\s\S]*?\{hapus\(i\)\}\s*<\/td>\s*\)\}/)
+  })
+
+  it('checkbox On Retention mati di mode lihat; tombol Copy hanya di mode sunting; Generate tetap', () => {
+    expect(KODE).toMatch(/checked=\{u\.isOrs\}\s*disabled=\{lihat\}/)
+    expect(dijagaLihat(KODE, 'TOMBOL_MPNL.copy')).toBe(true)
+    expect(dijagaLihat(KODE, 'TOMBOL_MPNL.generate')).toBe(false)
+  })
+
+  it('lampiran: Add attachment, Retry, Delete hanya di mode sunting; Refresh dan Download All tetap', () => {
+    expect(KODE).toContain('<PanelLampiran produkId={p.id} lihat={lihat} />')
+    for (const k of ['LAMPIRAN_MPNL.add', 'LAMPIRAN_MPNL.delete', 'LAIN_MPNL.ulangi']) expect(dijagaLihat(LAMPIRAN, k), k).toBe(true)
+    for (const k of ['LAMPIRAN_MPNL.refresh', 'LAMPIRAN_MPNL.downloadAll']) expect(dijagaLihat(LAMPIRAN, k), k).toBe(false)
+  })
+})

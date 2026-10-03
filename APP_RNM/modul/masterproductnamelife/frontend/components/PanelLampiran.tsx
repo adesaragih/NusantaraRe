@@ -7,6 +7,8 @@
 //
 // ⛔ Lampiran melekat pada produk TERSIMPAN (tiket 08: produk dulu, lampiran menyusul) - panel ini dirender
 // hanya untuk produk ber-ID. Status per lampiran (terunggah / gagal / belum) dan kirim ulang: tiket 08–09.
+// Mode lihat (keputusan work owner 03-10-2026 "jika view tidak tambah/edit/delete"): `Add attachment`, kirim ulang, dan
+// `Delete` tersembunyi; `Refresh`, `Download All`, unduh berkas, dan `View Office Online` tetap.
 
 import { useCallback, useEffect, useState } from 'react'
 
@@ -30,7 +32,7 @@ function teksStatus(l: Lampiran): string {
   return LAIN_MPNL.belum
 }
 
-export default function PanelLampiran({ produkId }: { produkId: string }) {
+export default function PanelLampiran({ produkId, lihat }: { produkId: string; lihat: boolean }) {
   const [daftar, setDaftar] = useState<Lampiran[] | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [galatAksi, setGalatAksi] = useState<unknown>(null)
@@ -68,16 +70,18 @@ export default function PanelLampiran({ produkId }: { produkId: string }) {
   return (
     <section className="mpnl-bagian">
       <div className="aksi-baris">
-        <button
-          type="button"
-          className="btn btn--primary btn--sm"
-          onClick={() => {
-            setBerkas(null)
-            setUnggah(true)
-          }}
-        >
-          {LAMPIRAN_MPNL.add}
-        </button>{' '}
+        {!lihat && (
+          <button
+            type="button"
+            className="btn btn--primary btn--sm"
+            onClick={() => {
+              setBerkas(null)
+              setUnggah(true)
+            }}
+          >
+            {LAMPIRAN_MPNL.add}
+          </button>
+        )}{' '}
         <button type="button" className="btn btn--ghost btn--sm" onClick={() => void muat()}>
           {LAMPIRAN_MPNL.refresh}
         </button>
@@ -100,7 +104,7 @@ export default function PanelLampiran({ produkId }: { produkId: string }) {
               <tr>
                 <th>{LAMPIRAN_MPNL.fileName}</th>
                 <th />
-                <th className="table__actions" />
+                {!lihat && <th className="table__actions" />}
               </tr>
             </thead>
             <tbody>
@@ -136,16 +140,18 @@ export default function PanelLampiran({ produkId }: { produkId: string }) {
                       </a>
                     )}
                   </td>
-                  <td className="table__actions">
-                    {l.status !== 'terunggah' && (
-                      <button type="button" className="btn btn--ghost btn--sm" onClick={() => void jalankan(() => ulangiLampiran(produkId, l.id))}>
-                        {LAIN_MPNL.ulangi}
+                  {!lihat && (
+                    <td className="table__actions">
+                      {l.status !== 'terunggah' && (
+                        <button type="button" className="btn btn--ghost btn--sm" onClick={() => void jalankan(() => ulangiLampiran(produkId, l.id))}>
+                          {LAIN_MPNL.ulangi}
+                        </button>
+                      )}{' '}
+                      <button type="button" className="btn btn--ghost btn--sm" onClick={() => void jalankan(() => hapusLampiran(produkId, l.id))}>
+                        {LAMPIRAN_MPNL.delete}
                       </button>
-                    )}{' '}
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => void jalankan(() => hapusLampiran(produkId, l.id))}>
-                      {LAMPIRAN_MPNL.delete}
-                    </button>
-                  </td>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
