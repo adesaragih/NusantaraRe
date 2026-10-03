@@ -1,8 +1,9 @@
 # Hasil implementasi — modul `nbtreatyin` (NB Treaty In)
 
 > Putaran 2 · konsolidasi paket P1–P9 di cabang integrasi `modul/nbtreatyin/implementasi` (`71842cb0`), dirangkum
-> paket P10 pada 04-10-2026. Setiap bukti di bawah diperiksa ulang ke kode dan uji cabang itu — bukan disalin dari
-> laporan paket.
+> paket P10 pada 04-10-2026, lalu diperbarui paket **P11** (04-10-2026, cabang `modul/nbtreatyin/p11-sisa`: seluruh
+> butir bab 9 "pekerjaan yang masih dapat dikerjakan"). Setiap bukti di bawah diperiksa ulang ke kode dan uji cabang
+> itu — bukan disalin dari laporan paket.
 >
 > Status: ✅ lulus (ada bukti uji/kode) · 🟡 sebagian (penahannya disebut) · ⛔ tidak dibangun, dengan alasan
 > (a) tidak terjangkau / nol efek, (b) keputusan work owner tertulis, atau (c) data hanya di JSON di luar K8
@@ -12,8 +13,8 @@
 > `modul/nbtreatyin/backend/` kecuali diawali `frontend/`, `docs/`, atau `inti/`.
 >
 > ⛔ Uji bertag `db` (Oracle sungguhan) **belum pernah dijalankan**: skema uji K11 kosong. AC yang buktinya hanya
-> uji db ditandai 🟡 dengan penahan **K11**. Bila uji db-nya **belum ditulis** (atau tidak memeriksa yang dituntut
-> AC), hal itu disebut terang — itu pekerjaan yang masih dapat dikerjakan (bab 9).
+> uji db ditandai 🟡 dengan penahan **K11**. Sejak P11 **setiap** AC 🟡-K11 sudah punya uji db yang memeriksa yang
+> dituntut AC (ditulis dan dikompilasi `go vet -tags db`, belum dijalankan) — tidak ada lagi uji db yang belum ditulis.
 
 ## Isi
 
@@ -35,7 +36,7 @@ Dihitung dari tabel bab 2–3 (rentang dijabarkan; setiap nomor tepat satu kali)
 | | ✅ | 🟡 | ⛔ | 🔒 | 📄 | jumlah |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | `spec.md` | **80** | 10 | 2 | 0 | 4 | **96** |
-| `spec-penyimpanan-relasional.md` | **51** | 14 | 0 | 0 | 1 | **66** |
+| `spec-penyimpanan-relasional.md` | **53** | 12 | 0 | 0 | 1 | **66** |
 | *putaran 1 — `spec.md`* | *75* | *12* | *5* | *0* | *4* | *96* |
 | *putaran 1 — penyimpanan* | *39* | *14* | *11* | *1* | *1* | *66* |
 
@@ -46,11 +47,9 @@ Penahan setiap 🟡:
 
 | Penahan | `spec.md` | penyimpanan |
 | --- | --- | --- |
-| **K11** — uji db ditulis, belum dijalankan | 23, 29, 31, 68 | 1, 6, 13, 46, 49, 50, 51, 55 |
-| **K11** + uji db **belum ditulis / tidak memeriksa yang dituntut** (bab 9) | 17, 72, 83, 89 | 9, 12, 45 |
+| **K11** — uji db ditulis, belum dijalankan | 17, 23, 29, 31, 68, 72, 83, 89 | 1, 6, 9, 12, 13, 45, 46, 49, 50, 51, 55 |
 | **K12** — pemetaan peran IAM | 12, 45 (bersama K7) | — |
 | keputusan work owner (PERMINTAAN F) | 68 (F7, pemuatan di produksi — bersama K11) | 59 (F3) |
-| belum ada RALAT / bukti dokumen (bab 9) | — | 15, 25 |
 
 ## 2 · `spec.md` — 96 acceptance criteria
 
@@ -71,7 +70,7 @@ Penahan setiap 🟡:
 | 14 | ✅ | `services/layanan.go:80` `anggota` = `PunyaPeran(nama)`; `handlers/alur_test.go:139` (urutan peran terbalik tetap anggota); `When/IsUW` (nomor urut `pyWorkBasketList(1)`) tidak dibangun (b) |
 | 15 | ✅ | RALAT K8: kontrak dari view (`repository.DetailKontrak`, `repository/acuan.go:144`); JSON master **hanya** `repository.MasterXOLDariJSON` (`repository/masterxol.go:74`), medan dari daftar `models/masterxol.go`; `repository/masterxol_test.go:39` TestUraiMasterXOLHanyaMedanK8 |
 | 16 | ✅ | nol penulisan JSON: penulisan hanya ke 8 tabel diagram + `T_WORK_POLIS` + `HISTORYAKSEPTASIPEGA` + `HISTORYAKSEPTASIPRODUCTION` (+ `GENERATE_SEQUENCE_NUMBER` lewat penomor inti, bab 5 butir 24); `handlers/nonprop_test.go:82` TestNonPropPilihBisnisHitungSimpanBacaKembali (halaman master tidak tersimpan); `SaveJsonPolisTreatyIn_Act`, `SavePolisTreatyIn_SQL`, `SaveTreatyIn` tidak dibangun (b) |
-| 17 | 🟡 | 33 kolom RD dibaca dari view (`repository/acuan.go:34` `KolomRDDetail`); uji lawan view sungguhan **belum ditulis** (bab 9) dan tidak dapat dijalankan (K11) |
+| 17 | 🟡 | 33 kolom RD dibaca dari view (`repository/acuan.go:34` `KolomRDDetail`); `repository/kontrak_db_test.go:133` TestDetailKontrakMengisiKe33MedanRD (view sungguhan: baris yang ke-33 kolomnya terisi; tanpa view: tiruan 39 kolom berbentuk katalog, setiap kolom terbaca persis) — **K11** |
 | 18 | ✅ | medan uang dibaca apa adanya (`TO_CHAR` TM9, `repository/kolom.go:147`), tanpa hitung ulang saat dibuka; `handlers/nonprop_test.go:82` (NetPremium tetap 2700 sesudah simpan) |
 | 19-21 | ✅ | `models/penggolong_test.go:185` TestPenggolongBerhentiDiBarisPertama, `:193` TestPenggolongBawaanUnknown, `:145` TestKe128KodeSamaDenganSistemLama |
 | 22 | ✅ | syarat When yang DIJALANKAN — `docs/INVENTARIS-XML.md` bab 11 |
@@ -110,7 +109,7 @@ Penahan setiap 🟡:
 | 69 | ✅ | `models.PecahDokumenLama` (`models/dokumenlama.go:379`): EndDate kosong = StartDate — `models/dokumenlama_test.go:93` |
 | 70 | 📄 | penyimpangan dicatat di kode, tiket, dan bab 5 berkas ini |
 | 71 | ✅ | K4: catatan ke `HISTORYAKSEPTASIPRODUCTION` (TGL_INP, PIC, AKSES_LOGIN) dan dibaca balik untuk layar — `handlers/alur_test.go:155`, `models/usulan_test.go:76` TestBarisCatatanDariRiwayatProduksi |
-| 72 | 🟡 | `DaftarRiwayat` `ORDER BY TGL_TRANSFER, ROWID` (`repository/riwayat.go:51`); uji db **belum ditulis** (bab 9) — K11 |
+| 72 | 🟡 | `DaftarRiwayat` `ORDER BY TGL_TRANSFER, ROWID` (`repository/riwayat.go:51`); `repository/riwayat_db_test.go:62` TestDaftarRiwayatBerurutWaktu (urutan tulis berlawanan dengan urutan waktu) — **K11** |
 | 73 | ✅ | `models.RakitNomorPolis` (`models/polisaturan.go:252`); `models/tangga_test.go:216` TestRakitNomorPolis; `handlers/alur_test.go:202` (bentuk) |
 | 74 | ✅ | nomor kedua = nomor pertama — `handlers/alur_test.go:202`; `SetelNomorPolis` hanya bila `NOPOLIS IS NULL` (`repository/polis.go:241`) |
 | 75 | ✅ | `models/tangga_test.go:162` TestNonProporsionalDitandai |
@@ -121,13 +120,13 @@ Penahan setiap 🟡:
 | 80 | ✅ | layar Dept Head dapat disimpan dan disubmit — `handlers/alur_test.go:202`, `handlers/nonprop_test.go:82` |
 | 81 | ✅ | 12 tempat terdaftar, pemetaan kosong ⇒ tertunda — `handlers/alur_test.go:505` TestTempatBerperanTidakDitebak, `models/peran_tempat_test.go:19`, `:37` |
 | 82 | ✅ | arah `MUNCUL`/`KECUALI` tidak ditebak — `models/peran_tempat_test.go:95` TestTempatTampilMenurutArah, `frontend/tempat.test.ts` |
-| 83 | 🟡 | gagal `CatatRiwayat`/`CatatUsulan` membatalkan submit (`handlers/alur_test.go:355`, tiruan); lawan Oracle: uji db **belum ditulis** (bab 9) — K11 |
+| 83 | 🟡 | gagal `CatatRiwayat`/`CatatUsulan` membatalkan submit (`handlers/alur_test.go:355`, tiruan); lawan Oracle `repository/riwayat_db_test.go:114` TestGagalCatatRiwayatMembatalkanSubmit (CHECK sementara menolak riwayat, ORA-02290; posisi, halaman, riwayat tak berubah) — **K11** |
 | 84 | ✅ | K6: tabel keputusan kosong = disetujui (`models/tangga_test.go:18`); layar: submit tanpa Approval 422 di tiga jenjang (`handlers/logika_test.go:124` TestSubmitTanpaApprovalDitolakDiSetiapJenjang) |
 | 85 | ✅ | `KotakMedan` kode mata uang di samping angka — `frontend/medan.test.ts` "AC 85 + K3" |
 | 86 | ✅ | RALAT K14: format sel Section (`pyDecimalPlaces`, `pySeparators`) — `frontend/sajian.ts`, `frontend/sajian.test.ts`, `frontend/medan.test.ts` |
 | 87 | ✅ | KEPUTUSAN-RONDE-12 butir 7: muatan 4 medan sesudah commit, gagal tidak membatalkan — `handlers/alur_test.go:662` TestKonversiSesudahSelesai; sambungan `[terbuka]` (PERMINTAAN C1) |
 | 88 | ✅ | rule tak terjangkau tidak dibangun — `docs/INVENTARIS-XML.md` bab 1–2 |
-| 89 | 🟡 | kolom view yang hilang = galat (`repository/kolom_test.go:229` TestKolomViewHilangAdalahGalat); keberadaan kolom lawan view sungguhan: uji db **belum ditulis** (bab 9) — K11 |
+| 89 | 🟡 | kolom view yang hilang = galat (`repository/kolom_test.go:229` TestKolomViewHilangAdalahGalat); lawan view sungguhan `repository/kontrak_db_test.go:97` TestViewKontrakMemuatSetiapKolomYangDibaca (37 kolom yang dibaca ada di katalog view; melewati bila DBA tidak menyediakan view di skema uji — PERMINTAAN C4) — **K11** |
 | 90 | ✅ | tabel berejaan ganda (`HISTORYAKSEPTASIPEGA` dst.) lewat `Qualify` satu skema |
 | 91 | ✅ | nol peran karangan; uji memakai peran `UJI-` (`handlers/alur_test.go:505`, `:534`) |
 | 92 | ✅ | berkas menunggu posisi — `handlers/alur_test.go:139`, `handlers/portal_test.go:49` |
@@ -143,18 +142,18 @@ Penahan setiap 🟡:
 | 6 | 🟡 | generasi tertutup = ada penerus (`repository.syaratTerbuka`, `repository/polis.go:135`; kolom `TGL_TUTUP` dibuang P1) → `ErrGenerasiTertutup`; `repository/polis_db_test.go:187` — **K11** |
 | 7 | ✅ | nol kunci tamu NB↔EDM di `T_WORK_POLIS` |
 | 8, 10 | ✅ | `NOURUT` + `UNIQUE (induk, NOURUT)` di setiap tabel anak (DDL 322–327) — `repository/kolom_test.go:310` |
-| 9 | 🟡 | hapus-sisip menomori ulang 1..n (`repository.SimpanHalaman`, `repository/polis.go:67`); uji db `repository/polis_db_test.go:64` menghapus baris tetapi **tidak membaca kolom `NOURUT`** atas tiga angsuran (bab 9) — K11 |
+| 9 | 🟡 | hapus-sisip menomori ulang 1..n (`repository.SimpanHalaman`, `repository/polis.go:67`); `repository/penyimpanan_db_test.go:85` TestNourutDinomoriUlangSesudahBarisKeduaDihapus (tiga angsuran, hapus yang kedua, kolom `NOURUT` dibaca langsung = 1, 2) — **K11** |
 | 11 | ✅ | NB: tidak ada pemasangan antar generasi (milik EDM) |
-| 12 | 🟡 | kode tetap `VARCHAR2` (katalog golongan kode); uji db memeriksa `BizCode "006"` dan `BusinessOldId "01"`, **bukan** `GROUP_PANEL` (bab 9) — K11 |
-| 13 | 🟡 | `BusinessOldId "01"` pulang-pergi `repository/polis_db_test.go:64` — **K11** |
+| 12 | 🟡 | kode tetap `VARCHAR2` (katalog golongan kode); `repository/penyimpanan_db_test.go:110` TestKodeBernolDepanUtuhDiKolom (`GROUP_PANEL` dibaca langsung dari kolom = `006`, `DATA_TYPE` `VARCHAR2`) — **K11** |
+| 13 | 🟡 | `BusinessOldId "01"` pulang-pergi `repository/polis_db_test.go:64`; kolom `BUSINESS_OLD_ID` dibaca langsung `repository/penyimpanan_db_test.go:110` — **K11** |
 | 14 | ✅ | `models/penggolong_test.go` (006/01 → FireStyle2); `handlers/alur_test.go:435` (atas kolom tersimpan) |
-| 15 | 🟡 | Oracle menyimpan `''` sebagai NULL (RALAT tabel bab 6); dibaca kembali `""` (`repository/kolom_test.go:93` TestNilaiBaca), `""` ≠ `"0"`; bunyi baru AC belum ditulis (bab 9) |
+| 15 | ✅ | **RALAT P11** (bunyi baru di spec AC 15): `""` tersimpan NULL (Oracle `''` ≡ NULL) dan terbaca `""`, `"0"` tetap `'0'`/`"0"` — `repository/kolom_test.go:43` TestNilaiTulisKosongJadiNULL, `:93` TestNilaiBaca; `DecisionTable/isApproved.xml` kolom `text`; db `repository/penyimpanan_db_test.go:140` TestIsApprovedKosongDanNolTetapBerbeda (K11) |
 | 16 | ✅ | `models.Disetujui`; `models/tangga_test.go:12`, `:18` |
 | 17-18 | ✅ | `repository/kolom_test.go:43` TestNilaiTulisKosongJadiNULL |
 | 19-20 (+20b) | ✅ | `NUMBER(38,8)` (DDL); pengikatan tanpa pemotongan (`repository/kolom_test.go:21`, 11 desimal diterima); pembulatan pada skala 8 diperiksa `repository/lama_db_test.go:74` (`592629512.88000028`, K11) |
 | 21-22 | ✅ | `models.BacaTanggalLama` (`models/nilaipega.go:80`); `models/dokumenlama_test.go:14` TestBacaTanggalLama, `:35` TestTanggalAmbiguTidakDitebak (K15) |
 | 23-24 | ✅ | kolom `DATE`; nol FLOAT (penjaga `inti/backend/penjaga/migrasi_test.go:179`) |
-| 25 | 🟡 | port rumus meniru pembandingan Pega — persen lawan 100 dan tanda lawan 0 (`models/hitung.go:196`, `:221`, `:300`–`:417`; `models/angsuran.go:71`, `:117`); belum ada bukti tertulis bahwa tak satu pun membandingkan **dua nilai uang**, atau RALAT AC (bab 9) |
+| 25 | ✅ | **RALAT P11** (AC 25 + ID-20): sisir 176 rule terjangkau — nol pembandingan dua nilai uang yang hidup (rasio bertoleransi `<=0.01` hanya di langkah `//`; `NETPREMI>200000000` hanya di `CekLimitTreatyAcc_Act`, K2); uang lawan nol eksak seperti XML (tiket 18 bab P11) — `models/pembandingan_uang_test.go:97` TestPortTidakMembandingkanDuaNilaiUang (penjaga AST), `:156` TestTandaUangLawanNolEksakSepertiXML |
 | 26 | ✅ | tanpa `LAYER*` di `T_GENERAL_POLIS` (diagram F26) — `repository/kolom_test.go:310`; `handlers/alur_test.go:435` (dibaca balik dari view) |
 | 27 | ✅ | `T_POLIS_QUOTATION` = 10 medan diagram J37 + 6 RALAT berbukti XML (`docs/PERBANDINGAN-KOLOM-DIAGRAM.md` bab 2) — `repository/kolom_test.go:310` |
 | 28 | ✅ | `T_POLIS_CEDING` `CEDING_CO_ID` + `CEDING_CO_NAME` (`migrations/322_t_polis_ceding.sql`, diagram R43), di bawah `T_POLIS_QUOTATION` (O39) |
@@ -169,7 +168,7 @@ Penahan setiap 🟡:
 | 40-41 | ✅ | `models/usulan_test.go:12` TestUsulanBelumTersimpanMenurutSaveViewSuggest, `:66` TestApprovalPerBarisHanyaAcceptReject; db `repository/polis_db_test.go:227` (K11) |
 | 42 | ✅ | `APPROVAL` per baris terpisah dari `T_GENERAL_POLIS.IS_APPROVED` — `models/usulan_test.go:76` |
 | 43-44 | ✅ | `AKSES_LOGIN` = identitas login, `PIC` = nama tampilan — `models/usulan_test.go:12`, `handlers/alur_test.go:155` |
-| 45 | 🟡 | satu transaksi (`DalamTransaksi`), pembatalan diuji atas tiruan (`handlers/alur_test.go:355`); uji db kegagalan **tabel anak** belum ditulis (bab 9) — K11 |
+| 45 | 🟡 | satu transaksi (`DalamTransaksi`), pembatalan diuji atas tiruan (`handlers/alur_test.go:355`); lawan Oracle `repository/penyimpanan_db_test.go:175` TestGagalTulisTabelAnakMembatalkanInduk (baris anak kedua ditolak Oracle ORA-01438; induk, quotation, anak lama dibaca langsung tak berubah) — **K11** |
 | 46 | 🟡 | satu transaksi per tindakan, nol `COMMIT` di repository; `repository/polis_db_test.go:187` — **K11** |
 | 47 | ✅ | penjaga `TestNolNamaTabelTelanjangDiQuery`; `inti/backend/penjaga/migrasi_test.go:54` TestSetiapPernyataanSahDanBerskema |
 | 48 | ✅ | nol stored procedure (penomor menulis SQL); `repository/lama_test.go:16` TestSQLPemuatLamaBerskemaTanpaCommit |
@@ -197,6 +196,7 @@ Penahan setiap 🟡:
 | 12 | 🟡 | 🟡 | penahan: semula *"`M_NBTRIN_PERAN_TEMPAT` kosong"* → konstanta `models/peran_tempat.go` kosong (**K16**, migrasi 330 dihapus); 12 tempat terdaftar (P9) |
 | 13, 81 | ✅ | ✅ | bukti *"tabel 330"* → konstanta kode (**K16**) |
 | 15 | ✅ | ✅ | bunyi diperluas **RALAT K8**: JSON master baca-saja di satu fungsi (P5) |
+| 17, 89 | 🟡 | 🟡 | penahan semula *"belum diuji lawan Oracle"* / *"belum diverifikasi lawan instance"* → uji db view ditulis (P11, `repository/kontrak_db_test.go`); tinggal **K11** |
 | 26 | 🟡 | ✅ | **K3**: `Deduction1/2` uang (P2); `BROKERAGE`/`RNM_SHARE` nol pemakai (P4) |
 | 45 | 🟡 | 🟡 | alasan `DateofSurvey`: semula *"layar survei tidak dibangun"* → **K7** (b), tidak ada tabel diagram |
 | 52 | 🟡 | ✅ | RALAT P2 dari XML: atasan mengisi Approval + Suggest (+ ProductionDate bersyarat), bukan "tujuh medan" |
@@ -208,6 +208,7 @@ Penahan setiap 🟡:
 | 68 | ⛔ | 🟡 | pemuat dokumen lama dibangun (P7); uji db K11 |
 | 69 | ⛔ | ✅ | pemuat dokumen lama (P7) |
 | 71 | ✅ | ✅ | tempat simpan semula *"`T_POLIS_SUGGEST`"* → `HISTORYAKSEPTASIPRODUCTION` (**K4**, migrasi 328 dihapus, P1) |
+| 72, 83 | 🟡 | 🟡 | penahan semula *"uji db belum"* / *"lawan Oracle belum dijalankan"* → uji db ditulis (P11, `repository/riwayat_db_test.go`); tinggal **K11** |
 | 84 | 🟡 | ✅ | **K6**: submit tanpa Approval 422 (P4) |
 | 86 | ✅ | ✅ | bunyi baru **K14**: format dari setelan sel Section (P2) |
 | 96 | ✅ | ✅ | peringatan *"commit 9456900e masih memuat nama"* gugur: riwayat ditulis ulang (**K1**) |
@@ -217,12 +218,16 @@ Penahan setiap 🟡:
 | AC | Putaran 1 | Sekarang | Sebab |
 | ---: | :---: | :---: | --- |
 | 6 | 🟡 | 🟡 | penanda tutup semula *"`TGL_TUTUP IS NULL`"* → ada penerus via `OLD_POLIS_ID` (kolom dibuang, P1) |
+| 9, 12 | 🟡 | 🟡 | uji db kini membaca kolom `NOURUT` / `GROUP_PANEL` langsung (P11, `repository/penyimpanan_db_test.go`); tinggal **K11** |
+| 15 | 🟡 | ✅ | **RALAT P11**: bunyi baru — `""` tersimpan NULL, terbaca `""`, tidak pernah menyatu dengan `"0"` |
 | 21-22 | ⛔ | ✅ | pemuat dokumen lama (P7) |
+| 25 | 🟡 | ✅ | **RALAT P11** (AC 25 + ID-20): semula *"perbandingan uang di port rumus ditiru dari Pega (persis)"* — sisir XML: nol pembandingan dua nilai uang; penjaga AST `models/pembandingan_uang_test.go` |
 | 27 | ✅ | ✅ | semula *"26 kolom"* → 10 medan diagram + 6 RALAT (P1) |
 | 38 | 🟡 | ✅ | **K3** (P2, RALAT P9): `DEDUCTION1/2` uang; `TOTAL_*` turunan |
 | 39 | ✅ | ✅ | semula *"tidak ditulis (syarat BusinessFac F)"* → ditulis (**K4**, P1) |
 | 40-41 | ⛔ | ✅ | **K4**: catatan ditulis ke `HISTORYAKSEPTASIPRODUCTION` (P1; kotak tiket 19 RALAT P9) |
 | 42-44 | ✅ | ✅ | semula *"`T_POLIS_SUGGEST.IS_APPROVED` / `OPERATOR_ID` / `OPERATOR_NAME`"* → `APPROVAL` / `AKSES_LOGIN` / `PIC` (**K4**) |
+| 45 | 🟡 | 🟡 | penahan semula *"uji db belum dijalankan"* (pembatalan atas tiruan) → uji db kegagalan **tabel anak** ditulis (P11); tinggal **K11** |
 | 52-54, 56-58 | ⛔ | ✅ | pemuat dokumen lama (P7); AC 57 RALAT **K17** (CSV, bukan `T_POLIS_MEDAN_LAIN`) |
 | 55 | ⛔ | 🟡 | pemuat dibangun (P7); kolom diperiksa uji db, K11 |
 | 59 | 🔒 | 🟡 | mekanisme dibangun (P7); nol baris menunggu **F3** |
@@ -281,8 +286,11 @@ belum dibangun"* (AC 68, 69; penyimpanan 21–22, 52–59), *"`T_POLIS_MEDAN_LAI
 ## 6 · Rule yang tetap tidak dibangun
 
 Sumber: `docs/alat/status.json` (176 rule terjangkau: **109 dibangun**, termasuk yang sebagian, dan **67 tidak
-dibangun**). Lima belas baris status.json menyebut dasarnya tanpa huruf (a)/(b)/(c); hurufnya ditetapkan di sini
-dari teks baris itu (ditandai \*).
+dibangun**). Sejak P11 **setiap** baris "tidak dibangun" di status.json menyebut hurufnya (a)/(b)/(c) beserta bukti XML
+(pemanggil, langkah, prasyarat, SQL). Lima belas baris yang semula tanpa huruf (ditandai \*) diperiksa ulang ke XML;
+hurufnya sama dengan penetapan P10. Satu koreksi bukti: `ReportDefinition/BrowseTreatyOutDetail` bukan SQL JSON —
+RD kelas `ASM-FW-GISFW-Int-TREATYOUTDETAIL`, dirujuk hanya jalur treaty keluar, namanya disebut harfiah K8 butir 4
+(`BrowseTreatyOut*`).
 
 ### (a) Tidak terjangkau dari titik masuk nyata, atau efeknya dibaca nol rule — 29
 
@@ -386,46 +394,53 @@ WO yang tercatat di PERMINTAAN F, data DBA, tim inti). Tiket yang masih punya pe
 | Tiket | Status | AC belum ✅ dan penahannya |
 | --- | --- | --- |
 | 00 | selesai | 0 AC; butir DBA `[terbuka]` (PERMINTAAN C3, C7) |
-| 01 | **sebagian** | 17, 89 — uji db pembacaan view belum ditulis; 57 ⛔ (b) K8 butir 4; F1 |
+| 01 | selesai | 17, 89 — K11 (uji db ditulis P11); 57 ⛔ (b) K8 butir 4; F1 |
 | 02 | selesai | 31 — K11 |
 | 03 | selesai | — |
 | 04 | selesai | — (klausa `pyWorkGroup` K12, PERMINTAAN C6) |
 | 05 | needs-info | 12 — K12 |
 | 06 | selesai | 66 ⛔ (a) |
 | 07 | selesai | 23 — K11 |
-| 08 | **sebagian** | 83 — uji db kegagalan riwayat belum ditulis; 29 — K11 |
+| 08 | selesai | 29, 83 — K11 (uji db AC 83 ditulis P11) |
 | 09 | selesai | — |
-| 10 | **sebagian** | 72 — uji db urutan riwayat belum ditulis; F2; DIV (B4); tipe kolom fisik (C8) |
+| 10 | selesai | 72 — K11 (uji db ditulis P11); F2; DIV (B4); tipe kolom fisik (C8) |
 | 11 | selesai | 45 — K12 (`ProductionDate`), K7 (b) (`DateofSurvey`); spec §9.2 butir 17 (Product & Underwriting) |
 | 12 | selesai | — |
 | 13 | selesai | — (sambungan Arasapas C1) |
 | 14 | selesai | — |
 | 15 | selesai | 68 — K11, F7; 70, 93–95 📄 |
 | 16 | selesai | 1, 6 — K11 |
-| 17 | **sebagian** | 9 — uji db tidak membaca `NOURUT` |
-| 18 | **sebagian** | 25 — bukti/RALAT; 15 — bunyi baru RALAT; 12 — uji db `GROUP_PANEL`; 13 — K11 |
+| 17 | selesai | 9 — K11 (uji db membaca `NOURUT` langsung, P11) |
+| 18 | selesai | 12, 13 — K11 (uji db kolom `GROUP_PANEL`/`BUSINESS_OLD_ID`, P11); 15, 25 ✅ RALAT P11 |
 | 19 | selesai | — (F2, B4, C8 untuk tabel warisan) |
-| 20 | **sebagian** | 45 — uji db kegagalan tabel anak belum ditulis; 46 — K11 |
+| 20 | selesai | 45, 46 — K11 (uji db kegagalan tabel anak ditulis P11) |
 | 21 | selesai | 49–51 — K11 |
 | 22 | selesai | 55 — K11; 59 — F3; F6, F7, C5, C7 |
 | 23 | selesai | 63 📄 |
 
-**Pekerjaan yang masih dapat dikerjakan** (tidak tertahan pihak luar):
+Hasil: **23 tiket selesai**, **05 needs-info** (K12). Sisa penahan seluruhnya pihak luar: K11 (skema uji Oracle —
+uji db belum pernah dijalankan), K12 (IAM), keputusan WO (PERMINTAAN F), DBA / operator lingkungan / tim inti
+(PERMINTAAN B, C).
 
-1. **Uji bertag `db`** (ditulis sekarang, dijalankan begitu K11 ada; pola lewati-bila-tabel-tak-ada seperti
-   `repository/polis_db_test.go:227`): (a) pembacaan view `TREATYINDETAILJOINEDM` — 33 kolom `KolomRDDetail` terisi
-   dan tak satu pun hilang (spec AC 17, 89; tiket 01); (b) `HISTORYAKSEPTASIPEGA` — `DaftarRiwayat` berurut
-   `TGL_TRANSFER` (AC 72; tiket 10) dan kegagalan `CatatRiwayat` membatalkan seluruh submit lawan Oracle (AC 83;
-   tiket 08); (c) tiga baris angsuran, hapus yang kedua, kolom `NOURUT` dibaca langsung = 1, 2 (penyimpanan AC 9;
-   tiket 17); (d) `GROUP_PANEL "006"` dibaca langsung dari kolom (penyimpanan AC 12; tiket 18); (e) kegagalan
-   menulis salah satu **tabel anak** membatalkan induk (penyimpanan AC 45; tiket 20).
-2. **Penyimpanan AC 25** (tiket 18): sisir setiap pembandingan nilai di port (`models/hitung.go`, `models/angsuran.go`,
-   `models/nonprop*.go`) lawan XML; bila tak satu pun membandingkan dua nilai uang (yang ada: persen lawan 100,
-   tanda lawan 0), tulis buktinya / RALAT AC 25 (ID-20); bila ada, bangun bentuk terbulatkan.
-3. **Penyimpanan AC 15** (tiket 18): tulis bunyi baru RALAT (Oracle `''` ≡ NULL; dibaca kembali `""`, tidak pernah
-   `"0"`) — tabel RALAT bab 6 hanya mencatat temuan, belum bunyi baru.
-4. **`docs/alat/status.json`**: lima belas baris "tidak dibangun" tanpa huruf alasan (\* di bab 6) — tambahkan
-   (a)/(b) lalu bangkitkan ulang `INVENTARIS-XML.md`.
+**Pekerjaan yang masih dapat dikerjakan** (tidak tertahan pihak luar): **tidak ada.** Keempat butir bab ini versi P10
+dikerjakan paket P11 (04-10-2026):
+
+1. Uji bertag `db` (ditulis dan dikompilasi `go vet -tags db`, **belum dijalankan** — K11), seluruhnya lewat pemanggil
+   `skemauji.Buka()` yang sudah ada (`pasang`, `repository/polis_db_test.go:25`) — sensus penjaga claimlife
+   `TestSetiapPemanggilBukaMemeriksaBolehDilewati` tetap 17: (a) view `TREATYINDETAILJOINEDM` —
+   `repository/kontrak_db_test.go` (spec AC 17, 89; tiket 01); (b) `HISTORYAKSEPTASIPEGA` — `repository/riwayat_db_test.go`
+   urutan waktu (AC 72; tiket 10) dan kegagalan riwayat membatalkan submit (AC 83; tiket 08); (c)–(e)
+   `repository/penyimpanan_db_test.go`: `NOURUT` 1, 2 sesudah baris kedua dihapus (penyimpanan AC 9; tiket 17),
+   `GROUP_PANEL`/`BUSINESS_OLD_ID` dibaca dari kolom (AC 12, 13; tiket 18), `IsApproved` `""`/`"0"` dari kolom (AC 15),
+   kegagalan tabel anak membatalkan induk (AC 45; tiket 20). Tabel WARISAN yang tidak ada di skema uji
+   (`TREATYINDETAILJOINEDM`, `HISTORYAKSEPTASIPEGA`) dibuat sebagai **tiruan sementara di skema uji** lalu dibuang
+   (pola `repository/masterxol_db_test.go`) — bukan migrasi, bukan tabel baru modul; AC 89 menuntut view sungguhan
+   dan melewati tanpa view itu (PERMINTAAN C4).
+2. Penyimpanan AC 25 (tiket 18): sisir pembandingan XML 176 rule terjangkau lawan port → RALAT ID-20 dan AC 25
+   (`spec-penyimpanan-relasional.md`), penjaga AST `models/pembandingan_uang_test.go`.
+3. Penyimpanan AC 15 (tiket 18): bunyi baru RALAT di bab AC `spec-penyimpanan-relasional.md` (bunyi lama dikutip).
+4. `docs/alat/status.json`: lima belas baris diberi huruf (a)/(b) beserta bukti XML; `INVENTARIS-XML.md` dibangkitkan
+   ulang (bab 6).
 
 ## 10 · Perintah verifikasi
 
@@ -434,4 +449,6 @@ WO yang tercatat di PERMINTAAN F, data DBA, tim inti). Tiket yang masih punya pe
 | `go test ./modul/nbtreatyin/...` | lulus (handlers, models, repository, tiruan) |
 | `go test ./inti/...` | lulus kecuali `inti/backend/penjaga` `TestNolAlamatLayananDiKode` — butuh berkas `.env` lokal yang tidak ada di worktree baru (lingkungan; bukan perubahan modul) |
 | `make test-db` | **tidak dijalankan** — K11 kosong |
+| P11 (`wt-nbtr-p11-sisa`): `go vet ./modul/nbtreatyin/... ./inti/...`, `go vet -tags db ./modul/nbtreatyin/...` | bersih — enam uji db baru (`kontrak_db_test.go`, `riwayat_db_test.go`, `penyimpanan_db_test.go`) terkompilasi, **tidak dijalankan** (K11) |
+| P11: `go test ./modul/nbtreatyin/... ./inti/...` | lulus kecuali `TestNolAlamatLayananDiKode` (`.env` lokal — lingkungan, sama dengan P10); `go test ./modul/claimlife/backend/repository -run TestSetiapPemanggilBukaMemeriksaBolehDilewati` lulus (pemanggil `skemauji.Buka()` tetap 17) |
 | `go vet ./...`, `go test ./...`, `npm run typecheck`, `npm test` | dirangkum orkestrator di laporan akhir putaran 2 (bab 10 PROMPT), dibandingkan baseline bab 1 |
