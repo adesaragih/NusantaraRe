@@ -93,7 +93,10 @@ dua cara (himpunan tabel = 10, baris jalur = 10; nol tabel berinduk campuran). D
 ⚠️ **Sudah dibuat sebagian (butir 78.4, tiket 31):** `T_GENERAL_POLIS` (migrasi 182: `ID`, `IDPEGA`, `COB_GROUP`,
 `START_DATE_TIME`, `OFFERING_DATE`, `END_DATE_TIME`, `FOLLOWING`) dan `T_QUOTATIONDATA` (183: kolom sistem + 9 kolom
 blok General, `ID NUMBER(19)` + `SEQ_T_QUOTATIONDATA`, `UQ_T_QUOTATIONDATA_PARENT`). Tiket ini kelak **menambah** kolom
-sisanya lewat `ALTER`, tidak membuat ulang kedua tabel.
+sisanya lewat `ALTER`, tidak membuat ulang kedua tabel. Sesudahnya: 184 `T_QUOTATIONDATA.SOURCE_OF_BUSINESS` (tiket 33);
+185 `T_CEDINGCOLIST` **utuh** + `T_QUOTATIONDATA.CEDING_CO` VARCHAR2(1000) dan `CEDING_CO_NAME` dilebarkan ke VARCHAR2(4000)
+(butir 80; loader `amandemenLebar`); 186 `T_LOCATIONLIST` / `T_PROPERTY` sebagian, `T_RISKLOCATION` /
+`T_BUILDINGCONSTRUCTION` utuh + tiga kolom baru (tiket 35, A110).
 
 ⚠️ **Terbuka:** `ALTER` atas tabel milik premiumlistlife dari rentang 180–219 — koordinasi dengan pemiliknya; kotak masuk
 PremiumList membaca **seluruh** `T_WORK_POLIS` tanpa saringan `LINI` (lihat register butir 76, risiko R1).

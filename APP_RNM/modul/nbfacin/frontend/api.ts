@@ -115,15 +115,35 @@ export interface GeneralInward {
   marketingId: string
   day: string
   typeFacultative: string
-  /** Tampil-saja (diisi fitur Change SOB / Change Ceding Co / Following, tahap berikutnya). */
+  /**
+   * Kode SOB terpilih di popup Change SOB (`.QuotationData.SourceOfBusiness`, mis. `G0000075`; kolom pasangan
+   * DDL FACINPRODUCTION `SOBID`). Ikut dikirim Save for later; backend memeriksanya ke tabel AGENT (tiket 33).
+   */
+  sourceOfBusinessId: string
+  /** Nama SOB (`.QuotationData.SobName`) - tampil-saja, diisi server dari tabel AGENT menurut kode. */
   sourceOfBusiness: string
+  /**
+   * Daftar ceding (`.Quotation.CedingCoList`: `.CedingCo` = AGENT.ID, `.CedingCoName` = AGENT.CLIENTNAME), urut
+   * sesuai urutan pilih - diisi popup Change Ceding Co (tiket 34).
+   */
+  cedingList: BarisCeding[]
+  /** Gabungan nama ceding berpemisah `;` (`.QuotationData.CedingCoName`, SetCedingCo_Act) - tampil-saja. */
   cedingCoName: string
   groupName: string
   oldPolicyNumber: string
 }
 
 /** Medan General yang dikirim tombol Save for later (tanpa medan tampil-saja). */
-export type SimpanGeneral = Omit<GeneralInward, 'sourceOfBusiness' | 'cedingCoName' | 'groupName' | 'oldPolicyNumber'>
+export type SimpanGeneral = Omit<GeneralInward, 'sourceOfBusiness' | 'cedingList' | 'cedingCoName' | 'groupName' | 'oldPolicyNumber'> & {
+  /** Kode ceding (AGENT.ID) berurutan; nama diambil server dari AGENT (tiket 34). */
+  cedingIds: string[]
+}
+
+/** Satu ceding terpilih. */
+export interface BarisCeding {
+  id: string
+  name: string
+}
 
 /** Jawaban `GET /api/nbfacin/kasus/{caseId}` (tiket 31, backend sesi c3). */
 export interface KasusNB {
@@ -169,4 +189,89 @@ export interface HalamanCaseNB {
 /** `cari` "mengandung" atas case id atau nama (placeholder Pega "NB-1234 or Name"); `halaman` mulai 1. */
 export function daftarCaseNB(cari: string, halaman: number): Promise<HalamanCaseNB> {
   return minta<HalamanCaseNB>('/api/nbfacin/opportunity', { kueri: { cari: cari.trim(), halaman } })
+}
+
+/** Satu baris tabel AGENT untuk popup Change SOB (tiket 33). Teks apa adanya. */
+export interface BarisSOB {
+  /** Kode SOB, mis. `G0000075` - disimpan ke `.QuotationData.SourceOfBusiness` `[dugaan]`. */
+  id: string
+  clientId: string
+  /** Ditampilkan sebagai Source of business (`.QuotationData.SobName`). */
+  name: string
+}
+
+/** Jawaban `GET /api/nbfacin/sob` - backend sesi c3 (tiket 33). */
+export interface HalamanSOB {
+  baris: BarisSOB[]
+  total: number
+  halaman: number
+  ukuran: number
+}
+
+/** Syarat work owner 03-10-2026: StatusActive=1, AgentType2 != 'LIFE INSURANCE', ClientID terisi; cari tidak peka huruf. */
+export function cariSOB(cari: string, halaman: number): Promise<HalamanSOB> {
+  return minta<HalamanSOB>('/api/nbfacin/sob', { kueri: { cari: cari.trim(), halaman } })
+}
+
+/**
+ * Satu objek tab Object (FIRE) - baris `.LocationList` (tiket 35). Semua teks apa adanya; Number of Floor teks
+ * angka. Medan Risk Address diisi fitur Choose Risk Address (tahap berikut) - di sini tampil-saja, kecuali
+ * Building No.
+ */
+export interface ObjekFire {
+  /** `.Property.ObjectNo`. */
+  objectNo: string
+  /** `.Property.ObjectType`. */
+  objectType: string
+  /** `.Property.ObjectName` - kolom grid "Object Name". */
+  objectName: string
+  /** `.Property.IsMaterialDamage`. */
+  isMaterialDamage: boolean
+  /** `.Property.IsTopRisk`. */
+  isTopRisk: boolean
+  /** `.Property.RoadType` (Type). */
+  roadType: string
+  /** `.Property.RoadName` (Address). */
+  roadName: string
+  /** `.Property.BuildingNo`. */
+  buildingNo: string
+  /** `.Property.RiskLocation.ASMZipCode`. */
+  zipCode: string
+  /** `.Property.Country`. */
+  country: string
+  /** `.Property.RiskLocation.ASMAddress` (Risk Location) - kolom grid "Location". */
+  riskLocation: string
+  /** `.Property.RiskLocation.ASMRW` (Territory). */
+  territory: string
+  /** `.Property.RiskLocation.ASMCity`. */
+  city: string
+  /** `.Property.RiskLocation.ASMDistrict`. */
+  district: string
+  /** `.Property.Province`. */
+  province: string
+  /** `.Property.AlmRiskID` (Risk Address ID). */
+  riskAddressId: string
+  /** `.Property.BuildingConstruction.*` - teks apa adanya (Roof/Wall/Floor Type = kode). */
+  numberOfFloor: string
+  roofType: string
+  wallType: string
+  floorType: string
+  partitionType: string
+  supportWallType: string
+  otherType: string
+}
+
+/** Jawaban baca / simpan tab Object. */
+export interface DaftarObjek {
+  baris: ObjekFire[]
+}
+
+/** `GET /api/nbfacin/kasus/{caseId}/objek` - urut sesuai `.LocationList`. */
+export function ambilObjek(caseId: string): Promise<DaftarObjek> {
+  return minta<DaftarObjek>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/objek`)
+}
+
+/** `PUT /api/nbfacin/kasus/{caseId}/objek` - tombol Save tab Object; daftar diganti utuh. */
+export function simpanObjek(caseId: string, baris: ObjekFire[]): Promise<DaftarObjek> {
+  return minta<DaftarObjek>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/objek`, { metode: 'PUT', badan: { baris } })
 }

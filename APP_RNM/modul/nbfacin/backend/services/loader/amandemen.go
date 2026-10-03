@@ -1,6 +1,9 @@
 package loader
 
-import "sort"
+import (
+	"sort"
+	"strings"
+)
 
 // Amandemen rancangan - keputusan work owner 02-10-2026, butir 70 (diteruskan sesi
 // `nusantarare-0f`, "setuju") atas usulan `docs/USULAN-KOLOM-PENAMPUNG.md`. Workbook
@@ -57,6 +60,14 @@ var amandemenGabung = map[string]map[string]kolomSkema{
 
 // anakIDKasus - tabel yang PARENT_ID-nya diganti tipeIDKasus (diisi init; dibaca uji).
 var anakIDKasus []string
+
+// amandemenLebar - butir 80 (keputusan work owner 03-10-2026, tiket 34): kolom gabungan `;`
+// daftar Ceding Co di T_QUOTATIONDATA dilebarkan - kode = DDL Pega FACINOFFER/FACINPRODUCTION
+// CEDINGCO VARCHAR2(1000), nama VARCHAR2(4000). Migrasi 185.
+var amandemenLebar = map[string]string{
+	"T_QUOTATIONDATA.CEDING_CO":      "VARCHAR2(1000)",
+	"T_QUOTATIONDATA.CEDING_CO_NAME": "VARCHAR2(4000)",
+}
 
 // T_ADDITIONALSHIP - kolom sistem sepola tabel berulang berjalur tunggal di DDL draf
 // (ID, IDPEGA, COB_GROUP, PARENT_ID, SEQ_NO, ROW_UID; tanpa PARENT_TABLE/SRC_PATH,
@@ -157,12 +168,22 @@ var amandemenPenunjuk = []kolomPenunjuk{
 
 const tipePenunjuk = "VARCHAR2(50)"
 
+// amandemenBangunan - tiket 35 (A110): tiga medan BuildingConstruction yang ADA di layar
+// (`Section\ObjectDetails.xml` sel 56-58) tetapi tidak di rancangan; tipe = kolom
+// saudaranya (VARCHAR2(50)). Migrasi 186. Digabung ke amandemenKolom di init.
+var amandemenBangunan = []kolomSkema{
+	{nama: "PARTITION_TYPE", tipe: "VARCHAR2(50)", medan: "PartitionType"},
+	{nama: "SUPPORT_WALL_TYPE", tipe: "VARCHAR2(50)", medan: "SupportWallType"},
+	{nama: "OTHERS_TYPE", tipe: "VARCHAR2(50)", medan: "OthersType"},
+}
+
 // init - menggabungkan amandemen ke skema bangkitan. ⛔ Bila workbook kelak sudah
 // memuat tabel/kolom/jalur yang sama, penggabungan diam-diam akan menggandakan atau
 // menimpanya; karena itu tabrakan = panic saat paket dimuat (amandemen ini harus
 // dicabut, bukan ditumpuk).
 // Duplikat di dalam amandemen sendiri juga panic.
 func init() {
+	amandemenKolom["T_BUILDINGCONSTRUCTION"] = append(amandemenKolom["T_BUILDINGCONSTRUCTION"], amandemenBangunan...)
 	for _, k := range amandemenPenunjuk {
 		amandemenKolom[k.tabel] = append(amandemenKolom[k.tabel], kolomSkema{nama: k.nama, tipe: tipePenunjuk, medan: k.medan})
 	}
@@ -196,6 +217,14 @@ func init() {
 	}
 	jalurSumber = append(jalurSumber, amandemenJalur...)
 	selaraskanWorkPolis()
+	for tk, tipe := range amandemenLebar {
+		t, k, _ := strings.Cut(tk, ".")
+		i := indeksKolom(t, k)
+		if i < 0 || skemaTabel[t][i].tipe == tipe {
+			panic("loader: lebar " + tk + " tidak dapat diganti " + tipe)
+		}
+		skemaTabel[t][i].tipe = tipe
+	}
 }
 
 // selaraskanWorkPolis - butir 76.1 dan 76.4. ⛔ Panic bila kolom sumber tidak ada, nama

@@ -1179,6 +1179,41 @@ insured name, status."** Dibangun `GET /api/nbfacin/opportunity` (`issues/32-daf
 Business Prospect Name. Keputusan agent A95–A98 menunggu konfirmasi; A97 mencatat lima selisih dengan
 `GetListOpportunityF` `[terverifikasi]` (saringan pembuat/team group/Resolved tidak diterapkan). ⚠️ Rute butuh migrasi 183.
 
+## Tiket 33 — popup Change SOB (backend), diteruskan sesi `nusantarare-0f`
+
+Perintah work owner (dikutip tiket 33): *"… diambil dari tabel agent, dimana yang ditarik dengan kondisi StatusActive=1,
+AgentType2 != "LIFE INSURANCE", ClientID is not null dan dapat di search tanpa memperhatikan huruf besar dan kecil"*.
+`[terverifikasi]` syarat itu = RD `BrowseAgentNonLife_RD` (A/B/C). Dibangun `GET /api/nbfacin/sob`, `sourceOfBusinessId` di
+GET/PUT case, migrasi 184 (`T_QUOTATIONDATA.SOURCE_OF_BUSINESS`, kolom rancangan). Keputusan agent A99–A104 (tiket 33). ~~⚠️ DDL
+`AGENT` belum ada — nama tabel/kolom `[dugaan]` (A102).~~ → DDL `AGENT.txt` ditambahkan work owner; kolom tipe-2 dieja `AGENTTPYE2`.
+
+| # | Butir | Keputusan work owner 3 Oktober 2026 |
+| ---: | --- | --- |
+| 79.1 | Baris AGENT ber-AgentType2 NULL | **DIIKUTKAN** — syarat `(AGENTTPYE2 IS NULL OR AGENTTPYE2 <> 'LIFE INSURANCE')`; berlaku juga popup Ceding Co (tiket 34). Riwayat: di sesi ini work owner semula menjawab "Exclude them"; sesi `nusantarare-0f` lalu meneruskan keputusan work owner "NULL tidak dibuang"; agent menanyakan ulang dan work owner memilih **"Include empty ones"** sebagai final. Membatalkan A101 |
+| 79.2 | Lebar kode SOB `T_QUOTATIONDATA.SOURCE_OF_BUSINESS` | **"Keep 50"** — mengikuti rancangan; kode > 50 bita ditolak 400 |
+
+## Tiket 34 — popup Change Ceding Co (backend), diteruskan sesi `nusantarare-0f`
+
+Dibangun `general.cedingList` (GET) + `cedingIds` (PUT) di atas tabel RANCANGAN `T_CEDINGCOLIST` (migrasi 185) — usulan
+`T_QUOTATION_CEDING` tidak dipakai karena rancangan sudah punya bentuknya (`issues/34-popup-change-ceding-co.md`).
+
+| # | Butir | Keputusan work owner 3 Oktober 2026 (AskUserQuestion di sesi ini) |
+| ---: | --- | --- |
+| 80 | Lebar kolom gabungan `;` daftar Ceding Co di `T_QUOTATIONDATA` (rancangan `CEDING_CO` VARCHAR2(50), `CEDING_CO_NAME` VARCHAR2(500) ≈ 5 ceding; fixture hanya 1 ceding) | **"Widen joined columns"** — `CEDING_CO` VARCHAR2(1000) (DDL Pega `CEDINGCO`), `CEDING_CO_NAME` VARCHAR2(4000); migrasi 185 + amandemen loader `amandemenLebar` |
+
+Keputusan agent A105–A108 menunggu konfirmasi (tiket 34).
+
+## Tiket 35 — tab Object FIRE tahap 1 (backend), diteruskan sesi `nusantarare-0f`
+
+Dibangun `GET`/`PUT /api/nbfacin/kasus/{caseId}/objek` di atas tabel rancangan `T_LOCATIONLIST` → `T_PROPERTY` →
+`T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` (migrasi 186; dua yang pertama sebagian, pola butir 78.4). Tiga kolom
+BuildingConstruction yang tidak ada di rancangan (`PARTITION_TYPE`, `SUPPORT_WALL_TYPE`, `OTHERS_TYPE`; `ObjectDetails` sel
+56–58) ditambahkan — migrasi + amandemen loader (skema 79 tabel / **1.394** kolom). Keputusan agent A109–A115 menunggu
+konfirmasi (`issues/35-tab-object-fire-tahap-1.md`). Tanpa keputusan work owner baru.
+G-9 (daftar Roof/Wall/Floor) `[terverifikasi]` lewat aturan properti Pega yang ditambahkan work owner
+(`DDL\RoofType.xml`, `WallType.xml`, `FloorType.xml`): Roof 1..14, Wall 1..9, Floor `KELAS III` = Keramik, `KELAS II` = Kayu,
+`KELAS I` = Lain-lain (dipasangkan per rowdata); tanpa `pyDefaultValue`.
+
 ## Yang belum diputuskan
 
 

@@ -14,19 +14,22 @@ import (
 
 // generalKabel - objek `general`; empat medan terakhir tampil-saja.
 type generalKabel struct {
-	ReffNumber       string `json:"reffNumber"`
-	QQName           string `json:"qqName"`
-	BeginDate        string `json:"beginDate"`
-	OfferingDate     string `json:"offeringDate"`
-	EndDate          string `json:"endDate"`
-	PolicyType       string `json:"policyType"`
-	MarketingID      string `json:"marketingId"`
-	Day              string `json:"day"`
-	TypeFacultative  string `json:"typeFacultative"`
-	SourceOfBusiness string `json:"sourceOfBusiness"`
-	CedingCoName     string `json:"cedingCoName"`
-	GroupName        string `json:"groupName"`
-	OldPolicyNumber  string `json:"oldPolicyNumber"`
+	ReffNumber         string `json:"reffNumber"`
+	QQName             string `json:"qqName"`
+	BeginDate          string `json:"beginDate"`
+	OfferingDate       string `json:"offeringDate"`
+	EndDate            string `json:"endDate"`
+	PolicyType         string `json:"policyType"`
+	MarketingID        string `json:"marketingId"`
+	Day                string `json:"day"`
+	TypeFacultative    string `json:"typeFacultative"`
+	SourceOfBusinessID string `json:"sourceOfBusinessId"`
+	SourceOfBusiness   string `json:"sourceOfBusiness"`
+	CedingCoName       string `json:"cedingCoName"`
+	GroupName          string `json:"groupName"`
+	OldPolicyNumber    string `json:"oldPolicyNumber"`
+	// CedingList - daftar Ceding Co urut pilih (tiket 34); selalu larik.
+	CedingList []barisCeding `json:"cedingList"`
 }
 
 // kasusKabel - jawaban GET /api/nbfacin/kasus/{caseId} dan PUT .../general.
@@ -39,7 +42,7 @@ type kasusKabel struct {
 	General     generalKabel     `json:"general"`
 }
 
-// isianGeneral - badan PUT .../general (tanpa medan tampil-saja).
+// isianGeneral - badan PUT .../general (sepuluh medan; tanpa medan tampil-saja).
 type isianGeneral struct {
 	ReffNumber      string `json:"reffNumber"`
 	QQName          string `json:"qqName"`
@@ -50,9 +53,19 @@ type isianGeneral struct {
 	MarketingID     string `json:"marketingId"`
 	Day             string `json:"day"`
 	TypeFacultative string `json:"typeFacultative"`
+	// SourceOfBusinessID - kode SOB (tiket 33); nama diambil server dari AGENT.
+	SourceOfBusinessID string `json:"sourceOfBusinessId"`
+	// CedingIDs - kode Ceding Co urut pilih (tiket 34); kosong/tidak ada = daftar dikosongkan.
+	CedingIDs []string `json:"cedingIds"`
 }
 
-// batasBadanGeneral - sembilan medan, terlebar 500 bita.
+// barisCeding - satu baris daftar Ceding Co.
+type barisCeding struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// batasBadanGeneral - sepuluh medan, terlebar 500 bita.
 const batasBadanGeneral = 16 << 10
 
 func keKasusKabel(k services.KasusKabel) kasusKabel {
@@ -65,8 +78,9 @@ func keKasusKabel(k services.KasusKabel) kasusKabel {
 			Description: o.Description},
 		General: generalKabel{ReffNumber: g.ReffNumber, QQName: g.QQName, BeginDate: g.BeginDate,
 			OfferingDate: g.OfferingDate, EndDate: g.EndDate, PolicyType: g.PolicyType, MarketingID: g.MarketingID,
-			Day: g.Day, TypeFacultative: g.TypeFacultative, SourceOfBusiness: g.SourceOfBusiness,
-			CedingCoName: g.CedingCoName, GroupName: g.GroupName, OldPolicyNumber: g.OldPolicyNumber}}
+			Day: g.Day, TypeFacultative: g.TypeFacultative, SourceOfBusinessID: g.SourceOfBusinessID,
+			SourceOfBusiness: g.SourceOfBusiness,
+			CedingCoName:     g.CedingCoName, GroupName: g.GroupName, OldPolicyNumber: g.OldPolicyNumber, CedingList: keBarisCeding(g.CedingList)}}
 }
 
 // bacaKasus - GET /api/nbfacin/kasus/{caseId}.
@@ -92,7 +106,7 @@ func simpanGeneral(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		k, err := svc.SimpanGeneral(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("caseId"), services.IsianGeneral{
 			ReffNumber: b.ReffNumber, QQName: b.QQName, BeginDate: b.BeginDate, OfferingDate: b.OfferingDate,
 			EndDate: b.EndDate, PolicyType: b.PolicyType, MarketingID: b.MarketingID, Day: b.Day,
-			TypeFacultative: b.TypeFacultative,
+			TypeFacultative: b.TypeFacultative, SourceOfBusinessID: b.SourceOfBusinessID, CedingIDs: b.CedingIDs,
 		})
 		if err != nil {
 			tulisGalat(w, err)
@@ -124,4 +138,12 @@ func daftarMarketing(svc *services.Service) http.HandlerFunc {
 			Baris []barisMarketing `json:"baris"`
 		}{baris})
 	}
+}
+
+func keBarisCeding(d []services.CedingKabel) []barisCeding {
+	hasil := make([]barisCeding, 0, len(d))
+	for _, c := range d {
+		hasil = append(hasil, barisCeding{ID: c.ID, Name: c.Name})
+	}
+	return hasil
 }

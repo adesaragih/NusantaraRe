@@ -56,7 +56,7 @@ var kolomBacaKasus = []string{"w.ID", "w.POSITION", "w.STATUS_WORK",
 	"o.GROUP_BUSINESS", "o.CLASS_OF_BUSINESS", "o.TYPE_OF_INWARD", "o.TYPE_OF_FACULTATIVE", "o.PHASE", "o.STAGE",
 	"o.OPPORTUNITY_SOURCE", "o.BUSINESS_STATUS", "o.DESCRIPTION", "INSUREDNAME",
 	"g.ID", "g.START_DATE_TIME", "g.OFFERING_DATE", "g.END_DATE_TIME", "g.FOLLOWING",
-	"q.NO_OFFER_SLIP", "q.QQ_NAME", "q.POLICY_TYPE", "q.MOID", "q.EDM_DAY", "q.TYPE_FACULTATIVE", "q.SOB_NAME",
+	"q.NO_OFFER_SLIP", "q.QQ_NAME", "q.POLICY_TYPE", "q.MOID", "q.EDM_DAY", "q.TYPE_FACULTATIVE", "q.SOURCE_OF_BUSINESS", "q.SOB_NAME",
 	"q.CEDING_CO_NAME", "q.GROUP_NAME"}
 
 // kolomTanggalKasus - satu-satunya kolom DATE di kolomBacaKasus.
@@ -120,9 +120,16 @@ func (r *KasusOracle) BacaKasus(ctx context.Context, id string) (models.Kasus, e
 			OfferingDate: v("g.OFFERING_DATE"), EndDateTime: v("g.END_DATE_TIME"), OldPolicyNumber: v("g.FOLLOWING"),
 			ReffNumber: v("q.NO_OFFER_SLIP"), QQName: v("q.QQ_NAME"), PolicyType: v("q.POLICY_TYPE"),
 			MarketingID: v("q.MOID"), Day: v("q.EDM_DAY"), TypeFacultative: v("q.TYPE_FACULTATIVE"),
-			SourceOfBusiness: v("q.SOB_NAME"), CedingCoName: v("q.CEDING_CO_NAME"), GroupName: v("q.GROUP_NAME")}}
+			SourceOfBusinessID: v("q.SOURCE_OF_BUSINESS"), SourceOfBusiness: v("q.SOB_NAME"), CedingCoName: v("q.CEDING_CO_NAME"), GroupName: v("q.GROUP_NAME")}}
 	if tutup.Valid {
 		k.Opportunity.EstimatedClosingDate = tutup.Time
+	}
+	ceding, err := r.db.Qualify(TabelCedingCoList)
+	if err != nil {
+		return models.Kasus{}, err
+	}
+	if k.General.CedingList, err = r.bacaCeding(ctx, ceding, t[4], id); err != nil {
+		return models.Kasus{}, err
 	}
 	return k, nil
 }
@@ -141,17 +148,18 @@ func sqlSisipGeneral(general string) string {
 
 func sqlUbahQuotation(quo string) string {
 	return "UPDATE " + quo + " SET NO_OFFER_SLIP = :1, QQ_NAME = :2, POLICY_TYPE = :3, MOID = :4, EDM_DAY = :5," +
-		" TYPE_FACULTATIVE = :6 WHERE PARENT_ID = :7"
+		" TYPE_FACULTATIVE = :6, SOURCE_OF_BUSINESS = :7, SOB_NAME = :8 WHERE PARENT_ID = :9"
 }
 
 func sqlSisipQuotation(quo string) string {
-	return "INSERT INTO " + quo + " (ID, PARENT_ID, NO_OFFER_SLIP, QQ_NAME, POLICY_TYPE, MOID, EDM_DAY, TYPE_FACULTATIVE)" +
-		" VALUES (:1, :2, :3, :4, :5, :6, :7, :8)"
+	return "INSERT INTO " + quo + " (ID, PARENT_ID, NO_OFFER_SLIP, QQ_NAME, POLICY_TYPE, MOID, EDM_DAY, TYPE_FACULTATIVE," +
+		" SOURCE_OF_BUSINESS, SOB_NAME) VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10)"
 }
 
 // SimpanGeneral - lihat PenulisGeneral. Urutan: sentuh T_WORK_POLIS (TGL_UPDATE; sekaligus
 // mengunci baris dan memastikan case Fac In ada), lalu UPDATE-atau-INSERT T_GENERAL_POLIS
-// dan T_QUOTATIONDATA. Medan tampil-saja (SOB, ceding, group, Following) tidak ditulis.
+// dan T_QUOTATIONDATA, lalu daftar Ceding Co (tiket 34). SOB dan ceding ditulis dengan nama dari
+// AGENT (tiket 33/34); Group Name dan Following tampil saja, tidak ditulis.
 func (r *KasusOracle) SimpanGeneral(ctx context.Context, tx *db.Tx, id string, g models.General) error {
 	work, err := r.db.Qualify(TabelWorkPolis)
 	if err != nil {
@@ -182,18 +190,30 @@ func (r *KasusOracle) SimpanGeneral(ctx context.Context, tx *db.Tx, id string, g
 			return err
 		}
 	}
-	isi := []any{k(g.ReffNumber), k(g.QQName), k(g.PolicyType), k(g.MarketingID), k(g.Day), k(g.TypeFacultative)}
+	// Tiket 33 (E-4): nama SOB dari AGENT menurut kode, bukan dari klien; kode kosong =
+	// kode dan nama dikosongkan.
+	namaSob := ""
+	if g.SourceOfBusinessID != "" {
+		if namaSob, err = namaAgent(ctx, r.db, tx, g.SourceOfBusinessID); err != nil {
+			return err
+		}
+	}
+	isi := []any{k(g.ReffNumber), k(g.QQName), k(g.PolicyType), k(g.MarketingID), k(g.Day), k(g.TypeFacultative),
+		k(g.SourceOfBusinessID), k(namaSob)}
 	if n, err = r.ubah(ctx, tx, sqlUbahQuotation(quo), "mengubah "+TabelQuotationData, append(isi, id)...); err != nil {
 		return err
 	}
-	if n > 0 {
-		return nil
+	if n == 0 {
+		urut, err := r.db.NomorBerikut(ctx, tx, SequenceQuotationData)
+		if err != nil {
+			return err
+		}
+		if err := r.sisip(ctx, tx, sqlSisipQuotation(quo), TabelQuotationData, append([]any{urut, id}, isi...)...); err != nil {
+			return err
+		}
 	}
-	urut, err := r.db.NomorBerikut(ctx, tx, SequenceQuotationData)
-	if err != nil {
-		return err
-	}
-	return r.sisip(ctx, tx, sqlSisipQuotation(quo), TabelQuotationData, append([]any{urut, id}, isi...)...)
+	// Tiket 34: daftar Ceding Co diganti utuh (kosong = dikosongkan).
+	return r.simpanCeding(ctx, tx, quo, id, g.CedingIDs)
 }
 
 func (r *KasusOracle) ubah(ctx context.Context, tx *db.Tx, q, aksi string, arg ...any) (int64, error) {

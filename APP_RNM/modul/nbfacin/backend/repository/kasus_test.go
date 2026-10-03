@@ -20,6 +20,18 @@ func kolomMigrasi(t *testing.T, berkas, tabel string) map[string]bool {
 			kolom[f[0]] = true
 		}
 	}
+	// Kolom yang kemudian ditambah lewat ALTER (184: T_QUOTATIONDATA.SOURCE_OF_BUSINESS).
+	if tabel == "T_QUOTATIONDATA" {
+		alter := regexp.MustCompile(`(?s)ALTER TABLE \{skema\}\.T_QUOTATIONDATA ADD \((.*?)\n\)`).FindStringSubmatch(bacaMigrasi(t, "184_t_quotationdata_sob.sql"))
+		if alter == nil {
+			t.Fatal("ALTER 184 tidak terbaca")
+		}
+		for _, b := range strings.Split(alter[1], "\n") {
+			if f := strings.Fields(b); len(f) > 0 {
+				kolom[f[0]] = true
+			}
+		}
+	}
 	return kolom
 }
 
@@ -58,8 +70,8 @@ func TestSQLKasusMemakaiKolomMigrasi(t *testing.T) {
 			}
 		}
 	}
-	// SQL tulis tidak menyentuh medan tampil-saja.
-	for _, k := range []string{"SOB_NAME", "CEDING_CO_NAME", "GROUP_NAME", "FOLLOWING"} {
+	// SQL tulis tidak menyentuh medan tampil-saja (SOB_NAME ditulis server dari AGENT, tiket 33).
+	for _, k := range []string{"CEDING_CO_NAME", "GROUP_NAME", "FOLLOWING"} {
 		if strings.Contains(tulisG+tulisQ, k) {
 			t.Errorf("%s tampil-saja tetapi ditulis", k)
 		}
@@ -78,17 +90,17 @@ func TestSQLKasus(t *testing.T) {
 		}
 	}
 	pilih := baca[len("SELECT "):strings.Index(baca, "\nFROM")]
-	if n := len(strings.Split(pilih, ",")); n != len(kolomBacaKasus) || n != 32 {
-		t.Errorf("SELECT %d kolom, daftar %d, mau 32 (3 case + 14 opportunity + nama + 5 general + 9 quotation)", n, len(kolomBacaKasus))
+	if n := len(strings.Split(pilih, ",")); n != len(kolomBacaKasus) || n != 33 {
+		t.Errorf("SELECT %d kolom, daftar %d, mau 33 (3 case + 14 opportunity + nama + 5 general + 10 quotation)", n, len(kolomBacaKasus))
 	}
 	for got, mau := range map[string]string{
 		sqlSentuhCase("UJI.W"):   "UPDATE UJI.W SET TGL_UPDATE = SYSDATE WHERE ID = :1 AND LINI = :2",
 		sqlUbahGeneral("UJI.G"):  "UPDATE UJI.G SET START_DATE_TIME = :1, OFFERING_DATE = :2, END_DATE_TIME = :3 WHERE ID = :4",
 		sqlSisipGeneral("UJI.G"): "INSERT INTO UJI.G (ID, START_DATE_TIME, OFFERING_DATE, END_DATE_TIME) VALUES (:1, :2, :3, :4)",
 		sqlUbahQuotation("UJI.Q"): "UPDATE UJI.Q SET NO_OFFER_SLIP = :1, QQ_NAME = :2, POLICY_TYPE = :3, MOID = :4, EDM_DAY = :5," +
-			" TYPE_FACULTATIVE = :6 WHERE PARENT_ID = :7",
-		sqlSisipQuotation("UJI.Q"): "INSERT INTO UJI.Q (ID, PARENT_ID, NO_OFFER_SLIP, QQ_NAME, POLICY_TYPE, MOID, EDM_DAY, TYPE_FACULTATIVE)" +
-			" VALUES (:1, :2, :3, :4, :5, :6, :7, :8)",
+			" TYPE_FACULTATIVE = :6, SOURCE_OF_BUSINESS = :7, SOB_NAME = :8 WHERE PARENT_ID = :9",
+		sqlSisipQuotation("UJI.Q"): "INSERT INTO UJI.Q (ID, PARENT_ID, NO_OFFER_SLIP, QQ_NAME, POLICY_TYPE, MOID, EDM_DAY, TYPE_FACULTATIVE," +
+			" SOURCE_OF_BUSINESS, SOB_NAME) VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10)",
 	} {
 		if got != mau {
 			t.Errorf("SQL\n%q\nmau\n%q", got, mau)

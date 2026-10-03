@@ -258,8 +258,6 @@ export const PILIHAN_PERIODE = {
   day: ['365', '366'],
 } as const
 
-/** `Section\FireSummarySection.xml` - judul kolom ringkasan objek (`pyValue`). */
-export const KOLOM_RINGKASAN = ['Object Name', 'Location'] as const
 
 /** `Section\InputInwardFacultative.xml` - checkbox `.IsShowDetail` (`pyCheckboxCaption` L3288). */
 export const SHOW_DETAIL = 'Show Detail'
@@ -287,12 +285,195 @@ export const TOMBOL_KAKI_INWARD = {
 
 /** Teks sistem baru - BUKAN dari Pega. */
 export const TEKS_INWARD = {
-  /** Judul blok ringkasan: hanya terlihat di tangkapan layar ("SUMMARY"); tidak ditemukan di XML. */
-  ringkasan: 'SUMMARY',
+  /**
+   * End date lebih awal dari Begin date. Pega (`SetValidateDate_Act` langkah 1, Property-Set-Messages di
+   * `.PolicyData.EndDateTime`) memakai Rule-Message `ErrorMSG` yang TIDAK ada di korpus - teks ini sistem baru.
+   */
+  endSebelumBegin: 'End date tidak boleh lebih awal dari Begin date.',
   /** Ringkasan objek kosong (Pega "No items"). */
   kosong: 'No items',
   /** Untuk `BelumTersedia` isi tab detail (tahap 3). */
   isiTab: 'Isi tab',
   /** Sesudah Save for later berhasil. */
   tersimpan: 'Tersimpan.',
+  /** Popup Change SOB: pencarian berhasil tetapi kosong. */
+  tanpaSob: 'Tidak ada SOB yang cocok.',
 } as const
+
+/**
+ * Popup tombol `Change SOB` (Periode sel 52 → harness `SOB`, `D:\migrasi\RNM\NB FacIn\Harness\SOB.xml`,
+ * WindowName "Change SOB"). `Search` (`pyLabelFieldValue`) dan `Choose` (`pyLabel`) diuji terhadap SOB.xml; judul
+ * kolom dari TANGKAPAN LAYAR work owner 03-10-2026 (properti grid `.ID`, `.ClientName`; Client ID tak terbaca di XML).
+ */
+export const POPUP_SOB = {
+  judul: 'Change SOB',
+  cari: { tag: 'pyLabelFieldValue', label: 'Search' },
+  pilih: { tag: 'pyLabel', label: 'Choose' },
+  kolom: ['ID', 'Client ID', 'Name'],
+} as const
+
+/**
+ * Popup tombol `Change Ceding Co` (Periode sel 53 → showHarness `ShowCedingCoList`, Target popup) - tiket 34.
+ * `NB FacIn\Section\ShowCedingCoList.xml`: grid atas `.Quotation.CedingCoList`; kepala sel 14 `Ceding Co` (wajib) dan
+ * sel 15 tombol `Add / Select Ceding` (AddCedingList_act → showHarness `CedingCompany`, WindowName "Ceding Company");
+ * baris sel 17 `.CedingCoName` (baca-saja) dan sel 18 `Delete` (DeleteCeding_Act). Judul jendela = pyLabel harness
+ * `ShowCedingCoList`; `Submit` = tombol harness (SetCedingCo_Act).
+ */
+export const POPUP_CEDING = {
+  judul: 'Ceding Co List',
+  kolom: { sel: '14', tag: 'pyValue', label: 'Ceding Co' },
+  tambah: { sel: '15', tag: 'pyLabel', label: 'Add / Select Ceding' },
+  hapus: { sel: '18', tag: 'pyLabel', label: 'Delete' },
+  submit: { tag: 'pyLabel', label: 'Submit' },
+  /** WindowName showHarness `CedingCompany` (sel 15). */
+  judulCari: 'Ceding Company',
+} as const
+
+/**
+ * Tab Object (FIRE) - tiket 35. Dtl tab "Object" sel 21 meng-include section `ObjectList` (visible `IsFire`);
+ * grid `.LocationList` (master-detail, 10 per halaman). Judul kolom = `pyValue` sel 13-16
+ * `NB FacIn\Section\ObjectList.xml`. `Tambah` / `Hapus` = tangkapan layar work owner 03-10-2026 (di XML tombol
+ * ikon `IconAdd.png` / `IconTrash.png` tanpa teks).
+ */
+export const GRID_OBJEK = {
+  kolom: [
+    { sel: '13', tag: 'pyValue', label: 'Top Risk' },
+    { sel: '14', tag: 'pyValue', label: 'No.' },
+    { sel: '15', tag: 'pyValue', label: 'Object Name' },
+    { sel: '16', tag: 'pyValue', label: 'Location' },
+  ],
+  tambah: 'Tambah',
+  hapus: 'Hapus',
+  ukuran: 10,
+} as const
+
+/** Sub-tab baris objek - `pyTitle` `NB FacIn\Section\Property.xml` (flow action `Property_FlowAction`). */
+export const SUBTAB_OBJEK = [
+  'Object Address',
+  'Surrounding Risk',
+  'Object Item',
+  'Occupation',
+  'FEA',
+  'Loss Record',
+  'Loss Record Internal',
+] as const
+
+/** Sub-tab Object Address - `NB FacIn\Section\ObjectDetails.xml` (sel -> label, tag pembawa). */
+export const OBJECT_ADDRESS = {
+  objectNo: { sel: '5', tag: 'pyLabelFieldValue', label: 'Object No.' },
+  objectType: { sel: '6', tag: 'pyLabelFieldValue', label: 'Object Type' },
+  objectTypeKosong: { sel: '6', tag: 'pyNoSelectionText', label: 'Please Select' },
+  materialDamage: { sel: '11', tag: 'pyCheckboxCaption', label: 'Material Damage' },
+  topRisk: { sel: '12', tag: 'pyCheckboxCaption', label: 'Top Risk' },
+  objectName: { sel: '13', tag: 'pyLabelFieldValue', label: 'Object Name' },
+  chooseRisk: { sel: '16', tag: 'pyLabel', label: 'Choose Risk Address' },
+  clearRisk: { sel: '17', tag: 'pyLabel', label: 'Clear Risk Address' },
+  judulRisk: { sel: '', tag: 'pyTitle', label: 'Risk Address' },
+  type: { sel: '28', tag: 'pyLabelFieldValue', label: 'Type' },
+  address: { sel: '29', tag: 'pyLabelFieldValue', label: 'Address' },
+  buildingNo: { sel: '30', tag: 'pyLabelFieldValue', label: 'Building No.' },
+  zipCode: { sel: '31', tag: 'pyLabelFieldValue', label: 'Zip Code' },
+  country: { sel: '32', tag: 'pyLabelFieldValue', label: 'Country' },
+  riskLocation: { sel: '40', tag: 'pyLabelFieldValue', label: 'Risk Location' },
+  territory: { sel: '35', tag: 'pyLabelFieldValue', label: 'Territory' },
+  city: { sel: '36', tag: 'pyLabelFieldValue', label: 'City' },
+  district: { sel: '37', tag: 'pyLabelFieldValue', label: 'District' },
+  province: { sel: '38', tag: 'pyLabelFieldValue', label: 'Province' },
+  riskAddressId: { sel: '39', tag: 'pyLabelFieldValue', label: 'Risk Address ID' },
+  judulBangunan: { sel: '', tag: 'pyTitle', label: 'Building Construction' },
+  numberOfFloor: { sel: '49', tag: 'pyLabelFieldValue', label: 'Number of Floor' },
+  roofType: { sel: '50', tag: 'pyLabelFieldValue', label: 'Roof Type' },
+  wallType: { sel: '51', tag: 'pyLabelFieldValue', label: 'Wall Type' },
+  floorType: { sel: '52', tag: 'pyLabelFieldValue', label: 'Floor Type' },
+  partitionType: { sel: '56', tag: 'pyLabelFieldValue', label: 'Partition Type' },
+  supportWallType: { sel: '57', tag: 'pyLabelFieldValue', label: 'Support Wall Type' },
+  otherType: { sel: '58', tag: 'pyLabelFieldValue', label: 'Other Type' },
+} as const
+
+/** Tombol Save tab Object - Dtl sel 25 (`pyLabel`, runActivity `SaveFacIn_Act`). */
+export const SIMPAN_OBJEK = { sel: '25', tag: 'pyLabel', label: 'Save' } as const
+
+/**
+ * Pilihan Object Type - urutan = tangkapan layar dropdown work owner 03-10-2026. Sumber daftar Pega
+ * (`pyListSource=associated`) tidak ada di korpus; HIMPUNANNYA cocok dengan ekspresi
+ * `@if(.OBJECT_TYPE!="Dwelling House"&&...,"Others",...)` `Activity\InsertUploadFire_act.xml` (diuji).
+ */
+export const OPSI_OBJECT_TYPE = [
+  'Dwelling House',
+  'Shop Houses',
+  'Office',
+  'Shop',
+  'Apartment',
+  'Restaurant',
+  'Private Warehouse',
+  'Public Warehouse',
+  'Factory',
+  'Others',
+] as const
+
+/**
+ * Nilai Object Type yang membuka medan Object Name (sel 13 visible `.Property.ObjectType = 'Others'`).
+ * ⚠️ `SetValueOnObjectName_Act` memeriksa 'Lainnya' - nilai yang tidak ada di daftar; diikuti 'Others' (G-2).
+ */
+export const OBJECT_TYPE_LAINNYA = 'Others'
+
+/** Teks tab Object. */
+export const TEKS_OBJEK = {
+  /** `Activity\SetErrorMessageFloorNumber_Act.xml` (Property-Set-Messages, `NumberOfFloor < 0`). */
+  lantaiMinus: "Floor number can't be minus",
+  /** Sistem baru - BUKAN dari Pega: Object Type wajib (sel 6 `pyRequired`) sebelum Save. */
+  typeWajib: 'Object Type wajib diisi.',
+  /** Sistem baru: nama aksesibel tombol buka/tutup baris. */
+  bukaBaris: 'Buka/tutup detail objek',
+} as const
+
+/**
+ * Pilihan Roof / Wall / Floor Type (Building Construction, sel 50-52, `pyListSource=associated`) - `[terverifikasi]`
+ * aturan properti `ASM-FW-GISFW-DATA-BUILDINGCONSTRUCTION!ROOFTYPE` / `!WALLTYPE` / `!FLOORTYPE` (PromptList,
+ * `D:\migrasi\RNM\DDL\RoofType.xml`, `WallType.xml`, `FloorType.xml`, ditambah work owner 03-10-2026):
+ * value = `pyStandardValue`, label = `pyLocalizedValue`; baris tanpa nilai = "Silahkan Pilih". Diuji `labels.test.ts`.
+ */
+export const OPSI_ROOF_TYPE = [
+  'Dak Beton',
+  'Genteng Beton',
+  'Bilik',
+  'Genteng Tanah Liat',
+  'Sirap',
+  'Seng Gelombang',
+  'Seng Lembaran',
+  'Aluminium Gelombang',
+  'Aluminium Lembaran',
+  'Kaca',
+  'Plastik / Policarbon Lembaran',
+  'Plastik / Policarbon Gelombang',
+  'Daun',
+  'Lain-lain',
+].map((label, i) => ({ value: String(i + 1), label }))
+
+export const OPSI_WALL_TYPE = [
+  'Batu bata',
+  'Kayu / Papan',
+  'Semi Permanen',
+  'Bilik',
+  'Batako',
+  'Panel Beton',
+  'Seng / Plat',
+  'Kaca',
+  'Lain-lain',
+].map((label, i) => ({ value: String(i + 1), label }))
+
+export const OPSI_FLOOR_TYPE = [
+  { value: 'KELAS III', label: 'Keramik' },
+  { value: 'KELAS II', label: 'Kayu' },
+  { value: 'KELAS I', label: 'Lain-lain' },
+]
+
+/**
+ * Nilai awal Building Construction objek baru = "Lain-lain" di ketiganya (Roof 14, Wall 9, Floor "KELAS I"):
+ * seluruh 332 entri data contoh `DDL\CONTOH` dan tangkapan layar objek baru. Aturan properti tidak memuat
+ * `pyDefaultValue` - sumber nilai awalnya di Pega `belum terverifikasi`.
+ */
+export const AWAL_BANGUNAN = { roofType: '14', wallType: '9', floorType: 'KELAS I' } as const
+
+/** Teks pilihan kosong Roof / Wall / Floor Type - baris pertama PromptList ketiga aturan properti (sel 50: "Please Select"). */
+export const BANGUNAN_KOSONG = 'Silahkan Pilih'

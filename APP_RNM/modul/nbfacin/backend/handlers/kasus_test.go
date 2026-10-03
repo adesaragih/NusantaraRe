@@ -38,6 +38,21 @@ func (c kasusTiruan) SimpanGeneral(_ context.Context, _ *db.Tx, _ string, g mode
 	return nil
 }
 
+// kasusCedingTiruan - seperti kasusTiruan, menyalin cedingIds ke cedingList (nama = kode).
+type kasusCedingTiruan struct{ kasusTiruan }
+
+func (c kasusCedingTiruan) SimpanGeneral(ctx context.Context, tx *db.Tx, id string, g models.General) error {
+	for _, k := range g.CedingIDs {
+		g.CedingList = append(g.CedingList, models.Ceding{ID: k, Name: k})
+	}
+	return c.kasusTiruan.SimpanGeneral(ctx, tx, id, g)
+}
+
+func layananKasusCeding() *services.Service {
+	k := &models.Kasus{CaseID: "UJI-NB-1"}
+	return services.Baru(nil).DenganKasus(kasusCedingTiruan{kasusTiruan{k: k}}).DenganTransaksi(tanpaOracle)
+}
+
 func layananKasus() *services.Service {
 	k := &models.Kasus{CaseID: "UJI-NB-1", Position: "Offer", StatusWork: "Pending-Policy", InsuredName: "UJI TERTANGGUNG",
 		Opportunity: models.Opportunity{BusinessProspectName: "UJI Prospek"}, General: models.General{OfferingDate: "20261001"}}
@@ -76,7 +91,7 @@ func TestBacaKasus(t *testing.T) {
 		return k
 	}
 	all, _ := json.Marshal(j)
-	if n := len(kunci(all)); n != 6 || len(kunci(j["opportunity"])) != 14 || len(kunci(j["general"])) != 13 {
+	if n := len(kunci(all)); n != 6 || len(kunci(j["opportunity"])) != 14 || len(kunci(j["general"])) != 15 {
 		t.Errorf("kunci %v / opportunity %v / general %v", kunci(all), kunci(j["opportunity"]), kunci(j["general"]))
 	}
 	for _, harus := range []string{`"caseId":"UJI-NB-1"`, `"position":"Offer"`, `"statusWork":"Pending-Policy"`,

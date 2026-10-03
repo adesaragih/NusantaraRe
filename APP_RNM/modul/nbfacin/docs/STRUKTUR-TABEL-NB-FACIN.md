@@ -1,9 +1,10 @@
 # Struktur Tabel — NB FacIn: PETA TABEL WARISAN yang dibaca + tabel yang dibuat
 
-Modul ini **membuat tiga tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), dan `T_GENERAL_POLIS` /
-`T_QUOTATIONDATA` **sebagian** (migrasi 182/183, tiket 31 / butir 78.4) — dan **menulis**
+Modul ini **membuat delapan tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
+`T_QUOTATIONDATA` **sebagian** (migrasi 182/183, tiket 31 / butir 78.4), `T_CEDINGCOLIST` utuh (185, tiket 34), dan tabel tab Object FIRE (186, tiket 35: `T_LOCATIONLIST` /
+`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh) — dan **menulis**
 baris `T_WORK_POLIS` milik premiumlistlife (K-064; tidak dibuat, tidak dipetakan kolomnya di sini). Selebihnya ia hanya
-**membaca** sembilan tabel yang sudah ada — enam tabel limit
+**membaca** sepuluh tabel yang sudah ada — enam tabel limit
 akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), dan tabel bisnis `BUSINESS` (tiket 28). Enam tabel limit akseptasi yang sudah ada
 di `POOLDATA`, dengan nama tabel dan kolom **verbatim**. Berkas ini **peta**, bukan DDL: hanya kolom yang dibaca
 repository (`backend/repository/limit.go`). Ke-enamnya dinyatakan di `MODUL.md` bab "Tabel warisan: dibaca, tidak
@@ -152,9 +153,103 @@ per case (`UQ_T_QUOTATIONDATA_PARENT`, A87); `PARENT_ID` → `T_GENERAL_POLIS.ID
 | `MOID` | teks | VARCHAR2(50) | Marketing Name — `.QuotationData.MOID` (sel 75) = `MARKETINGOFFICER.ID` |
 | `EDM_DAY` | teks | VARCHAR2(50) | Day — `.QuotationData.EDMDay` (sel 78) |
 | `TYPE_FACULTATIVE` | teks | VARCHAR2(50) | Type facultative — `.QuotationData.TypeFacultative` (sel 43); apa adanya (butir 78.3) |
-| `SOB_NAME` | teks | VARCHAR2(500) | Source of business — `.QuotationData.SobName` (sel 48), tampil saja |
-| `CEDING_CO_NAME` | teks | VARCHAR2(500) | Ceding co name — `.QuotationData.CedingCoName` (sel 49), tampil saja |
+| `SOURCE_OF_BUSINESS` | teks | VARCHAR2(50) | kode SOB — `.QuotationData.SourceOfBusiness`; migrasi **184** (`ALTER … ADD`, tiket 33) |
+| `SOB_NAME` | teks | VARCHAR2(500) | Source of business — `.QuotationData.SobName` (sel 48); ditulis server dari `AGENT` menurut kode (tiket 33, E-4) |
+| `CEDING_CO` | teks | VARCHAR2(1000) | gabungan `;` kode Ceding Co — `.QuotationData.CedingCo`; migrasi **185** (`ALTER … ADD`, butir 80) |
+| `CEDING_CO_NAME` | teks | VARCHAR2(4000) | Ceding co name — `.QuotationData.CedingCoName` (sel 49), gabungan `;` nama dari `AGENT` (tiket 34); 183 VARCHAR2(500), dilebarkan migrasi **185** (butir 80) |
 | `GROUP_NAME` | teks | VARCHAR2(500) | Group Name — `.QuotationData.GroupName` (sel 56), tampil saja |
+
+## T_CEDINGCOLIST
+
+Tiket 34 (daftar Ceding Co), butir 80 — **dibuat utuh** modul ini, migrasi `185_t_cedingcolist.sql` (+ `SEQ_T_CEDINGCOLIST`,
+indeks `IX_CEDINGCOLIST_PARENT`). Tabel RANCANGAN (jalur `QuotationData/CedingCoList`, induk `T_QUOTATIONDATA`); nama/tipe =
+rancangan, ID/PARENT_ID NUMBER(19) (A92). Satu baris per ceding, urut pilih; diganti utuh tiap *Save for later*.
+
+| Kolom | Tipe | Tipe DDL (migrasi 185) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_CEDINGCOLIST` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan (diisi loader) |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan (diisi loader) |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_QUOTATIONDATA.ID` (FK tanpa `ON DELETE`) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan pilih, mulai 1 |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID — baris aplikasi v4 acak (A106), baris loader v5 |
+| `CEDING_CO` | teks | VARCHAR2(50) | kode `AGENT.ID` — `.CedingCoList(n).CedingCo` |
+| `CEDING_CO_NAME` | teks | VARCHAR2(500) | nama dari `AGENT.CLIENTNAME` — `.CedingCoList(n).CedingCoName` |
+
+## T_LOCATIONLIST
+
+Tiket 35 (tab Object FIRE) — migrasi `186_t_objek_fire.sql`, **sebagian** (pola butir 78.4): kolom sistem saja; kolom
+uang `LOSS_RATIO*_AMOUNT` (presisi tim inti) dan kolom lain rancangan ditambah tiket 23. Jalur rancangan `LocationList`,
+induk `T_GENERAL_POLIS`. Satu baris per objek, urut `SEQ_NO`; diganti utuh tiap Save.
+
+| Kolom | Tipe | Tipe DDL (migrasi 186) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_LOCATIONLIST` (A92) |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | teks | VARCHAR2(32) NOT NULL | = `T_GENERAL_POLIS.ID` (butir 76.1; FK) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan baris grid, mulai 1 |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID (aplikasi v4, A106) |
+
+## T_PROPERTY
+
+Tiket 35 — migrasi 186, **sebagian**: tanpa `TOTAL_TSI` (uang) dan tanpa tiga flag proses yang tidak dipakai layar
+(`IS_FLAMMABLE_ITEM_FLAG`, `IS_HOT_WORK_PROCESS_FLAG`, `IS_PRODUCTION_PROCESS_FLAG`) serta `OWNERSHIP` — ditambah tiket 23.
+Satu baris per lokasi (`UQ_T_PROPERTY_PARENT`). Boolean disimpan teks `true`/`false` (bentuk data fixture).
+
+| Kolom | Tipe | Tipe DDL (migrasi 186) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_PROPERTY` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_LOCATIONLIST.ID` |
+| `ALM_RISK_ID` | teks | VARCHAR2(50) | Risk Address ID — `.Property.AlmRiskID` (sel 39) |
+| `BUILDING_NO` | teks | VARCHAR2(50) | Building No. (sel 30) |
+| `COUNTRY` | teks | VARCHAR2(50) | Country (sel 32) |
+| `IS_MATERIAL_DAMAGE` | teks | VARCHAR2(10) | Material Damage (sel 11) `true`/`false` |
+| `IS_TOP_RISK` | teks | VARCHAR2(10) | Top Risk (sel 12) `true`/`false` |
+| `OBJECT_NAME` | teks | VARCHAR2(500) | Object Name (sel 13) |
+| `OBJECT_NO` | teks | VARCHAR2(50) | Object No. (sel 5) |
+| `OBJECT_TYPE` | teks | VARCHAR2(50) | Object Type (sel 6, wajib) |
+| `PROVINCE` | teks | VARCHAR2(50) | Province (sel 38) |
+| `ROAD_NAME` | teks | VARCHAR2(500) | Address — `.Property.RoadName` (sel 29) |
+| `ROAD_TYPE` | teks | VARCHAR2(50) | Type — `.Property.RoadType` (sel 28) |
+| `CURRENCY_CODE` | teks | VARCHAR2(10) DEFAULT 'UNKNOWN' NOT NULL | K-069 (bawaan; tidak ditulis layar) |
+
+## T_RISKLOCATION
+
+Tiket 35 — migrasi 186, **utuh**. Satu baris per property (`UQ_T_RISKLOCATION_PARENT`).
+
+| Kolom | Tipe | Tipe DDL (migrasi 186) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_RISKLOCATION` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_PROPERTY.ID` |
+| `ASM_ADDRESS` | teks | VARCHAR2(50) | Risk Location — `.Property.RiskLocation.ASMAddress` (sel 40; kolom grid "Location") |
+| `ASM_CITY` | teks | VARCHAR2(50) | City (sel 36) |
+| `ASM_DISTRICT` | teks | VARCHAR2(50) | District (sel 37) |
+| `ASMRW` | teks | VARCHAR2(50) | Territory — `.Property.RiskLocation.ASMRW` (sel 35) |
+| `ASM_ZIP_CODE` | teks | VARCHAR2(50) | Zip Code (sel 31) |
+
+## T_BUILDINGCONSTRUCTION
+
+Tiket 35 — migrasi 186, **utuh** + tiga kolom **baru** (bukan di rancangan; A110, amandemen loader `amandemenBangunan`).
+Satu baris per property (`UQ_T_BUILDINGCONSTR_PARENT`).
+
+| Kolom | Tipe | Tipe DDL (migrasi 186) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_BUILDINGCONSTRUCTION` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_PROPERTY.ID` |
+| `FLOOR_TYPE` | teks | VARCHAR2(50) | Floor Type (sel 52) — kode apa adanya (G-4) |
+| `NUMBER_OF_FLOOR` | teks | VARCHAR2(50) | Number of Floor (sel 49) — rancangan teks; diperiksa bilangan bulat ≥ 0 |
+| `ROOF_TYPE` | teks | VARCHAR2(50) | Roof Type (sel 50) — kode apa adanya |
+| `WALL_TYPE` | teks | VARCHAR2(50) | Wall Type (sel 51) — kode apa adanya |
+| `PARTITION_TYPE` | teks | VARCHAR2(50) | **baru** — `.Property.BuildingConstruction.PartitionType` (sel 56) |
+| `SUPPORT_WALL_TYPE` | teks | VARCHAR2(50) | **baru** — `.SupportWallType` (sel 57) |
+| `OTHERS_TYPE` | teks | VARCHAR2(50) | **baru** — `.OthersType` (sel 58) |
 
 ## MARKETINGOFFICER
 
@@ -167,3 +262,18 @@ ini, bukan tabel). Hanya tiga kolom di bawah yang dibaca.
 | `ID` | VARCHAR2(100) | nilai pilihan (`.ID`) → disimpan ke `T_QUOTATIONDATA.MOID`; urutan DESC |
 | `CLIENTNAME` | VARCHAR2(100) | teks pilihan (pyPrompt `.ClientName`) |
 | `MOSTATUS` | VARCHAR2(100) | saringan RD `.MOStatus = "1"` |
+
+## AGENT
+
+Tiket 33 (popup Change SOB). Tabel warisan `POOLDATA.AGENT`, **baca saja**. Sumber tipe `[terverifikasi]`: DDL
+`D:\migrasi\RNM\DDL\AGENT.txt` (ditambahkan work owner 03-10-2026; 28 kolom dihitung dua cara; tanpa PK, dua indeks).
+⚠️ Kolom tipe-2 dieja **`AGENTTPYE2`** di DDL (salah eja di basis data) — dipetakan dari properti `.AgentType2` `[dugaan]`.
+Hanya lima kolom di bawah yang dibaca.
+
+| Kolom | Tipe DDL | Dibaca untuk |
+| --- | --- | --- |
+| `ID` | VARCHAR2(1000 BYTE) | kode SOB (`.ID`) → `T_QUOTATIONDATA.SOURCE_OF_BUSINESS` (≤ 50, butir 79.2); dicari; urut DESC |
+| `CLIENTID` | VARCHAR2(1000 BYTE) | Client ID; syarat `IS NOT NULL`; dicari |
+| `CLIENTNAME` | VARCHAR2(1000 BYTE) | nama SOB (`.ClientName`) → `T_QUOTATIONDATA.SOB_NAME` (500); dicari |
+| `STATUSACTIVE` | VARCHAR2(1000 BYTE) | syarat `= '1'` (teks) |
+| `AGENTTPYE2` | VARCHAR2(1000 BYTE) | syarat `IS NULL OR <> 'LIFE INSURANCE'` (butir 79.1) |

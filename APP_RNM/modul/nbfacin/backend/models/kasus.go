@@ -16,20 +16,25 @@ type Kasus struct {
 // bentuk Pega (butir 78.1): OfferingDate 'YYYYMMDD', StartDateTime/EndDateTime
 // 'YYYYMMDDTHHMMSS.mmm GMT'. Tersimpan = baris T_GENERAL_POLIS sudah ada.
 type General struct {
-	ReffNumber       string // T_QUOTATIONDATA.NO_OFFER_SLIP  (.QuotationData.NoOfferSlip, sel 9)
-	QQName           string // T_QUOTATIONDATA.QQ_NAME        (.QuotationData.QQName, sel 20)
-	StartDateTime    string // T_GENERAL_POLIS.START_DATE_TIME (.PolicyData.StartDateTime, sel 21)
-	OfferingDate     string // T_GENERAL_POLIS.OFFERING_DATE   (.PolicyData.OfferingDate, sel 22)
-	EndDateTime      string // T_GENERAL_POLIS.END_DATE_TIME   (.PolicyData.EndDateTime, sel 60)
-	PolicyType       string // T_QUOTATIONDATA.POLICY_TYPE    (.QuotationData.PolicyType, sel 26)
-	MarketingID      string // T_QUOTATIONDATA.MOID           (.QuotationData.MOID, sel 75)
-	Day              string // T_QUOTATIONDATA.EDM_DAY        (.QuotationData.EDMDay, sel 78)
-	TypeFacultative  string // T_QUOTATIONDATA.TYPE_FACULTATIVE (.QuotationData.TypeFacultative, sel 43)
-	SourceOfBusiness string // T_QUOTATIONDATA.SOB_NAME       (.QuotationData.SobName, sel 48) - tampil saja
-	CedingCoName     string // T_QUOTATIONDATA.CEDING_CO_NAME (.QuotationData.CedingCoName, sel 49) - tampil saja
-	GroupName        string // T_QUOTATIONDATA.GROUP_NAME     (.QuotationData.GroupName, sel 56) - tampil saja
-	OldPolicyNumber  string // T_GENERAL_POLIS.FOLLOWING      (.Following, sel 72) - tampil saja
-	Tersimpan        bool
+	ReffNumber         string // T_QUOTATIONDATA.NO_OFFER_SLIP  (.QuotationData.NoOfferSlip, sel 9)
+	QQName             string // T_QUOTATIONDATA.QQ_NAME        (.QuotationData.QQName, sel 20)
+	StartDateTime      string // T_GENERAL_POLIS.START_DATE_TIME (.PolicyData.StartDateTime, sel 21)
+	OfferingDate       string // T_GENERAL_POLIS.OFFERING_DATE   (.PolicyData.OfferingDate, sel 22)
+	EndDateTime        string // T_GENERAL_POLIS.END_DATE_TIME   (.PolicyData.EndDateTime, sel 60)
+	PolicyType         string // T_QUOTATIONDATA.POLICY_TYPE    (.QuotationData.PolicyType, sel 26)
+	MarketingID        string // T_QUOTATIONDATA.MOID           (.QuotationData.MOID, sel 75)
+	Day                string // T_QUOTATIONDATA.EDM_DAY        (.QuotationData.EDMDay, sel 78)
+	TypeFacultative    string // T_QUOTATIONDATA.TYPE_FACULTATIVE (.QuotationData.TypeFacultative, sel 43)
+	SourceOfBusinessID string // T_QUOTATIONDATA.SOURCE_OF_BUSINESS (.QuotationData.SourceOfBusiness, kode SOB - tiket 33)
+	SourceOfBusiness   string // T_QUOTATIONDATA.SOB_NAME       (.QuotationData.SobName, sel 48) - ditulis server dari AGENT (E-4)
+	CedingCoName       string // T_QUOTATIONDATA.CEDING_CO_NAME (.QuotationData.CedingCoName, sel 49) - gabungan ";" nama dari AGENT (tiket 34)
+	GroupName          string // T_QUOTATIONDATA.GROUP_NAME     (.QuotationData.GroupName, sel 56) - tampil saja
+	OldPolicyNumber    string // T_GENERAL_POLIS.FOLLOWING      (.Following, sel 72) - tampil saja
+	// CedingList - baca: T_CEDINGCOLIST urut SEQ_NO (tiket 34). CedingIDs - tulis: kode urut
+	// pilih; nama diambil server dari AGENT; kosong = daftar dikosongkan.
+	CedingList []Ceding
+	CedingIDs  []string
+	Tersimpan  bool
 }
 
 // MarketingOfficer - satu pilihan dropdown Marketing Name (sel 75): ID disimpan ke MOID,
@@ -47,4 +52,17 @@ type BarisPortal struct {
 	InsuredName   string // T_M_ACCOUNT.INSUREDNAME lewat ACCOUNT_ID
 	Marketing     string // MARKETINGOFFICER.CLIENTNAME lewat T_QUOTATIONDATA.MOID; kosong bila belum ada
 	Status        string // T_WORK_POLIS.STATUS_WORK
+}
+
+// SOB - satu pilihan popup Change SOB (tiket 33): baris tabel AGENT.
+type SOB struct {
+	ID       string
+	ClientID string
+	Name     string
+}
+
+// Ceding - satu baris daftar Ceding Co (tiket 34): kode AGENT.ID dan namanya.
+type Ceding struct {
+	ID   string
+	Name string
 }

@@ -48,7 +48,9 @@ func DariDasar(d *inti.Dasar) *Service {
 		DenganTransaksi(d.DalamTransaksi).DenganCaseNB(repository.NewCaseNBOracle(d.DB())).
 		DenganKasus(repository.NewKasusOracle(d.DB())).
 		DenganMarketingOfficer(repository.NewMarketingOfficerOracle(d.DB())).
-		DenganPortal(repository.NewPortalOracle(d.DB()))
+		DenganPortal(repository.NewPortalOracle(d.DB())).
+		DenganSOB(repository.NewSOBOracle(d.DB())).
+		DenganObjek(repository.NewObjekOracle(d.DB()))
 }
 
 // Service - layanan NB Fac In.
@@ -71,7 +73,11 @@ type Service struct {
 	marketing repository.PembacaMarketingOfficer
 	// portal - daftar case NB portal Opportunity (tiket 32); nil = tanpa basis data (503).
 	portal repository.PembacaPortal
-	jam    func() time.Time
+	// sob - pilihan SOB popup Change SOB (tiket 33); nil = tanpa basis data (503).
+	sob repository.PembacaSOB
+	// objek - tab Object FIRE (tiket 35); nil = tanpa basis data (503).
+	objek repository.PenyimpanObjek
+	jam   func() time.Time
 }
 
 // DenganAkun memasang pembaca tabel akun (tiket 27).

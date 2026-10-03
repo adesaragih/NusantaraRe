@@ -73,7 +73,9 @@ const (
 // GeneralKabel - blok General di kabel (tiket 31). Tanggal DD-MM-YYYY, kosong = "".
 type GeneralKabel struct {
 	ReffNumber, QQName, BeginDate, OfferingDate, EndDate, PolicyType, MarketingID, Day, TypeFacultative string
-	SourceOfBusiness, CedingCoName, GroupName, OldPolicyNumber                                          string
+	SourceOfBusinessID, SourceOfBusiness, CedingCoName, GroupName, OldPolicyNumber                      string
+	// CedingList - daftar Ceding Co urut pilih (tiket 34); CedingCoName = gabungan nama ";".
+	CedingList []CedingKabel
 }
 
 // KasusKabel - jawaban GET/PUT case.
@@ -87,7 +89,17 @@ type KasusKabel struct {
 // IsianGeneral - badan PUT .../general: medan yang dapat diubah (tanpa medan tampil-saja).
 type IsianGeneral struct {
 	ReffNumber, QQName, BeginDate, OfferingDate, EndDate, PolicyType, MarketingID, Day, TypeFacultative string
+	// SourceOfBusinessID - kode SOB popup Change SOB (tiket 33); namanya diambil server dari AGENT.
+	SourceOfBusinessID string
+	// CedingIDs - kode Ceding Co urut pilih (tiket 34); nil/kosong = daftar dikosongkan.
+	CedingIDs []string
 }
+
+// CedingKabel - satu baris daftar Ceding Co di kabel.
+type CedingKabel struct{ ID, Name string }
+
+// batasKodeCeding - lebar T_CEDINGCOLIST.CEDING_CO (rancangan VARCHAR2(50)).
+const batasKodeCeding = 50
 
 func (s *Service) sekarang() time.Time {
 	if s.jam != nil {
@@ -140,6 +152,7 @@ var batasGeneral = []struct {
 	{"marketingId", func(i IsianGeneral) string { return i.MarketingID }, 50},
 	{"day", func(i IsianGeneral) string { return i.Day }, 50},
 	{"typeFacultative", func(i IsianGeneral) string { return i.TypeFacultative }, 50},
+	{"sourceOfBusinessId", func(i IsianGeneral) string { return i.SourceOfBusinessID }, 50},
 }
 
 // periksaGeneral - A90: Save for later menyimpan isian SEBAGIAN - tidak ada medan wajib
@@ -150,7 +163,8 @@ var batasGeneral = []struct {
 func periksaGeneral(i IsianGeneral) (models.General, error) {
 	var masalah []string
 	g := models.General{ReffNumber: i.ReffNumber, QQName: i.QQName, PolicyType: i.PolicyType,
-		MarketingID: i.MarketingID, Day: i.Day, TypeFacultative: i.TypeFacultative}
+		MarketingID: i.MarketingID, Day: i.Day, TypeFacultative: i.TypeFacultative,
+		SourceOfBusinessID: i.SourceOfBusinessID}
 	if t, ada := uraiKabel("beginDate", i.BeginDate, &masalah); ada {
 		g.StartDateTime = t.Add(jamTulisWaktu).UTC().Format(BentukWaktuPega)
 	}
@@ -165,6 +179,17 @@ func periksaGeneral(i IsianGeneral) (models.General, error) {
 			masalah = append(masalah, fmt.Sprintf("%s paling banyak %d byte", b.nama, b.n))
 		}
 	}
+	// Tiket 34: tiap kode tidak kosong dan muat T_CEDINGCOLIST.CEDING_CO; kode ganda tidak
+	// ditolak (E-7 - Pega tidak memeriksanya).
+	for n, k := range i.CedingIDs {
+		switch {
+		case strings.TrimSpace(k) == "":
+			masalah = append(masalah, fmt.Sprintf("cedingIds[%d] kosong", n))
+		case len(k) > batasKodeCeding:
+			masalah = append(masalah, fmt.Sprintf("cedingIds[%d] paling banyak %d byte", n, batasKodeCeding))
+		}
+	}
+	g.CedingIDs = append([]string(nil), i.CedingIDs...)
 	if len(masalah) > 0 {
 		return models.General{}, fmt.Errorf("%w: %s", ErrMasukanGeneral, strings.Join(masalah, "; "))
 	}
@@ -198,8 +223,8 @@ func (s *Service) keKabel(k models.Kasus) KasusKabel {
 		General: GeneralKabel{ReffNumber: g.ReffNumber, QQName: g.QQName, BeginDate: waktuKeKabel(g.StartDateTime),
 			OfferingDate: tawar, EndDate: waktuKeKabel(g.EndDateTime), PolicyType: g.PolicyType,
 			MarketingID: g.MarketingID, Day: g.Day, TypeFacultative: g.TypeFacultative,
-			SourceOfBusiness: g.SourceOfBusiness, CedingCoName: g.CedingCoName, GroupName: g.GroupName,
-			OldPolicyNumber: g.OldPolicyNumber}}
+			SourceOfBusinessID: g.SourceOfBusinessID, SourceOfBusiness: g.SourceOfBusiness, CedingCoName: g.CedingCoName, GroupName: g.GroupName,
+			OldPolicyNumber: g.OldPolicyNumber, CedingList: cedingKabel(g.CedingList)}}
 }
 
 // BacaKasus - case NB `id` untuk layar Inward Facultative.
@@ -240,6 +265,12 @@ func (s *Service) SimpanGeneral(ctx context.Context, pelaku inti.Pelaku, id stri
 	if errors.Is(err, repository.ErrKasusTidakAda) {
 		return KasusKabel{}, ErrKasusTidakAda
 	}
+	if errors.Is(err, repository.ErrSOBTidakSah) {
+		return KasusKabel{}, fmt.Errorf("%w: sourceOfBusinessId tidak ditemukan atau tidak lolos syarat SOB", ErrMasukanGeneral)
+	}
+	if errors.Is(err, repository.ErrCedingTidakSah) || errors.Is(err, repository.ErrCedingTerlaluPanjang) {
+		return KasusKabel{}, fmt.Errorf("%w: %s", ErrMasukanGeneral, strings.TrimPrefix(err.Error(), "repository: "))
+	}
 	if err != nil {
 		return KasusKabel{}, err
 	}
@@ -252,4 +283,12 @@ func (s *Service) DaftarMarketingOfficer(ctx context.Context) ([]models.Marketin
 		return nil, ErrMarketingTanpaDatabase
 	}
 	return s.marketing.DaftarMarketingOfficer(ctx)
+}
+
+func cedingKabel(d []models.Ceding) []CedingKabel {
+	hasil := make([]CedingKabel, len(d))
+	for i, c := range d {
+		hasil[i] = CedingKabel{ID: c.ID, Name: c.Name}
+	}
+	return hasil
 }

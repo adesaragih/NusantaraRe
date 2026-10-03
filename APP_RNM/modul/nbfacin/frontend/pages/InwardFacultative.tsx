@@ -4,12 +4,24 @@
 // action `InwardFacultative`, flow `InputInwardFacultativeOffer`): urutan tingkat atas = Periode (General) →
 // ringkasan (`AllSummarySection`, FIRE: `FireSummarySection`) → checkbox Show Detail → detail
 // (`InputInwardFacultativeDtl`, tab) → tombol kaki flow action. Medan yang tampil = kasus FIRE pada tangkapan
-// layar work owner 03-10-2026 (gambar tidak disalin: memuat nama pelanggan/orang).
+// layar work owner 03-10-2026 (gambar tidak disalin: memuat nama pelanggan/orang). Blok ringkasan (SUMMARY)
+// DIHAPUS atas permintaan work owner 03-10-2026 ("summary ini dihapus saja"); checkbox Show Detail tetap.
 //
 // Tahap 2 (tiket 31): data case dimuat `GET /api/nbfacin/kasus/{caseId}` saat layar dibuka (sampai jawaban
 // datang, isian Create opportunity yang dibawa dipakai sebagai nilai awal); pilihan Marketing Name dari
 // `GET /api/nbfacin/marketing-officer` (`BrowseMarketingOfficer_RD`); Save for later = `PUT …/general`.
 // Submit tetap nonaktif (pasca-proses flow action = tahap tersendiri).
+//
+// Change SOB (tiket 33): tombol membuka `PopupPilihAgent` (harness `SOB`); Choose mengisi Source of business
+// (kode + nama) di layar, kode ikut dikirim Save for later (keputusan agent E-1).
+//
+// Change Ceding Co (tiket 34): tombol membuka `PopupCedingCoList` (harness `ShowCedingCoList`); Submit
+// menyerahkan daftar ceding ke layar, Ceding co name = gabungan nama berpemisah `;` (`SetCedingCo_Act`), dan
+// kode-kodenya ikut Save for later (E-7).
+//
+// Tab Object (tiket 35): kasus FIRE memakai `TabObject` (section `ObjectList`, visible `IsFire`). Kasus FIRE =
+// Group Business "FIRE" (keputusan agent G-5 - When `IsFire` Pega lebih luas: IsKPR, IsOilGas, IsFireStyle1/2,
+// BusinessType "Fire"; sumber datanya belum diport). Selain FIRE (`InputDtlObject_FacIn`) = tahap berikut.
 //
 // Tahap 1 (keputusan agent, tiket 30):
 // - nilai awal dari isian Create opportunity yang baru saja dikirim (belum ada endpoint baca case):
@@ -25,12 +37,23 @@
 import { useEffect, useState } from 'react'
 
 import { BelumTersedia, Field, Gagal, Pilih, StripTab, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
-import { ambilKasus, daftarMarketing, simpanGeneral, type GeneralInward, type IsianOpportunity, type KasusNB } from '../api'
+import {
+  ambilKasus,
+  daftarMarketing,
+  simpanGeneral,
+  type BarisCeding,
+  type GeneralInward,
+  type IsianOpportunity,
+  type KasusNB,
+} from '../api'
+import PopupCedingCoList from '../components/PopupCedingCoList'
+import PopupPilihAgent from '../components/PopupPilihAgent'
+import TabObject from '../components/TabObject'
 import TanggalDMY from '../components/TanggalDMY'
 import {
-  KOLOM_RINGKASAN,
   PERIODE as P,
   PILIHAN_PERIODE,
+  POPUP_SOB,
   SHOW_DETAIL,
   TAB_DETAIL,
   TEKS_FORM_OPPORTUNITY,
@@ -55,6 +78,32 @@ type TabDetail = (typeof TAB_DETAIL)[number]
 export function hariIniKabel(d: Date = new Date()): string {
   const p = (n: number) => String(n).padStart(2, '0')
   return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()}`
+}
+
+/**
+ * Begin date + 1 tahun (kabel `DD-MM-YYYY`) - End date otomatis. Permintaan work owner 03-10-2026 ("saat mengisi
+ * Begin date, end date nya otomatis ke isi + 1 tahun … tapi masih bisa diganti2"); sejalan `SystemSetOneYear_DT`
+ * (`EndDate = @DateTime.addCalendar(StartDate,1,…)`, salinan korpus berkelas PolicyTreatyIn). Seperti Calendar.add
+ * YEAR: 29-02 jatuh ke 28-02 bila tahun berikutnya bukan kabisat. Masukan tidak sah -> kosong.
+ */
+export function tambahSatuTahun(kabel: string): string {
+  const m = /^(\d{2})-(\d{2})-(\d{4})$/.exec(kabel)
+  if (!m) return ''
+  const [h, b, t] = [Number(m[1]), Number(m[2]), Number(m[3]) + 1]
+  const akhirBulan = new Date(t, b, 0).getDate()
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${p(Math.min(h, akhirBulan))}-${p(b)}-${t}`
+}
+
+/** Kabel `DD-MM-YYYY` -> `YYYYMMDD` supaya dapat dibandingkan sebagai teks. */
+const kunciTanggal = (kabel: string) => kabel.slice(6) + kabel.slice(3, 5) + kabel.slice(0, 2)
+
+/**
+ * End date lebih awal dari Begin date - syarat `SetValidateDate_Act` langkah 1
+ * (`.PolicyData.EndDateTime < .PolicyData.StartDateTime && EndDateTime != ""`); tanggal sama = sah.
+ */
+export function endSebelumBegin(mulai: string, selesai: string): boolean {
+  return mulai !== '' && selesai !== '' && kunciTanggal(selesai) < kunciTanggal(mulai)
 }
 
 const satu = (nilai: string): Opsi[] => (nilai === '' ? [] : [{ value: nilai, label: nilai }])
@@ -125,6 +174,10 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
   const [menyimpan, setMenyimpan] = useState(false)
   const [galatSimpan, setGalatSimpan] = useState<unknown>(null)
   const [tersimpan, setTersimpan] = useState(false)
+  const [sob, setSob] = useState({ id: '', nama: '' })
+  const [pilihSob, setPilihSob] = useState(false)
+  const [ceding, setCeding] = useState<BarisCeding[]>([])
+  const [ubahCeding, setUbahCeding] = useState(false)
 
   /** Isi state layar dari jawaban server. */
   function terapkan(k: KasusNB) {
@@ -139,6 +192,8 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
     setTypeFac(g.typeFacultative || k.opportunity.typeOfFacultative)
     setMarketing(g.marketingId)
     setHari(g.day)
+    setSob({ id: g.sourceOfBusinessId, nama: g.sourceOfBusiness })
+    setCeding(g.cedingList ?? [])
   }
 
   useEffect(() => {
@@ -164,7 +219,11 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
     }
   }, [kasus.caseId])
 
+  const tanggalSalah = endSebelumBegin(mulai, selesai)
+
   async function simpan() {
+    // Peringatan End date < Begin date menahan penyimpanan (keputusan agent F-1).
+    if (tanggalSalah) return
     setMenyimpan(true)
     setGalatSimpan(null)
     setTersimpan(false)
@@ -179,6 +238,8 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
         marketingId: marketing,
         day: hari,
         typeFacultative: typeFac,
+        sourceOfBusinessId: sob.id,
+        cedingIds: ceding.map((c) => c.id),
       })
       terapkan(k)
       setTersimpan(true)
@@ -193,6 +254,7 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
   const g: Partial<GeneralInward> = dariServer?.general ?? {}
   const insured = dariServer?.insuredName ?? kasus.insuredName ?? ''
   const op: Partial<IsianOpportunity> = dariServer?.opportunity ?? isian ?? {}
+  const kasusFire = (op.groupBusiness ?? '').trim().toUpperCase() === 'FIRE'
 
   return (
     <div className="nbfacin">
@@ -212,7 +274,11 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
             <TanggalDMY
               label={P.beginDate.label}
               value={mulai}
-              onChange={setMulai}
+              onChange={(k) => {
+                setMulai(k)
+                // Hanya saat Begin date lengkap dan sah - ketikan setengah jadi tidak menghapus End date.
+                if (k !== '') setSelesai(tambahSatuTahun(k))
+              }}
               required
               labelKalender={TEKS_FORM_OPPORTUNITY.kalender}
               pesanFormat={TEKS_FORM_OPPORTUNITY.formatTanggal}
@@ -238,12 +304,16 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
             <Tampil label={P.classOfBusiness.label} nilai={op.groupBusiness ?? ''} />
             <Pilih label={P.typeFacultative.label} value={typeFac} onChange={setTypeFac} opsi={satu(op.typeOfFacultative ?? '')} />
             <div className="nbf-inward__baris-tombol">
-              <Tampil label={P.sourceOfBusiness.label} nilai={g.sourceOfBusiness ?? ''} />
-              <TombolNonaktif label={P.changeSob.label} utama />
+              <Tampil label={P.sourceOfBusiness.label} nilai={sob.nama} />
+              <button type="button" className="btn btn--sm" onClick={() => setPilihSob(true)}>
+                {P.changeSob.label}
+              </button>
             </div>
             <div className="nbf-inward__baris-tombol">
-              <Tampil label={P.cedingCoName.label} nilai={g.cedingCoName ?? ''} />
-              <TombolNonaktif label={P.changeCedingCo.label} utama />
+              <Tampil label={P.cedingCoName.label} nilai={ceding.map((c) => c.name).join(';')} />
+              <button type="button" className="btn btn--sm" onClick={() => setUbahCeding(true)}>
+                {P.changeCedingCo.label}
+              </button>
             </div>
             <Tampil label={P.groupName.label} nilai={g.groupName ?? ''} />
             <TanggalDMY
@@ -251,6 +321,7 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
               value={selesai}
               onChange={setSelesai}
               required
+              error={tanggalSalah ? TEKS_INWARD.endSebelumBegin : undefined}
               labelKalender={TEKS_FORM_OPPORTUNITY.kalender}
               pesanFormat={TEKS_FORM_OPPORTUNITY.formatTanggal}
             />
@@ -276,28 +347,13 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
       </section>
 
       <section className="panel">
-        <h4 className="panel__title">{TEKS_INWARD.ringkasan}</h4>
-        <div className="table-wrap">
-          <table className="nbf-tabel">
-            <thead>
-              <tr>
-                {KOLOM_RINGKASAN.map((k) => (
-                  <th key={k} scope="col">
-                    {k}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-          </table>
-        </div>
-        <p className="muted">{TEKS_INWARD.kosong}</p>
         <label className="nbf-inward__pilihan">
           <input type="checkbox" checked={detail} onChange={(e) => setDetail(e.target.checked)} /> {SHOW_DETAIL}
         </label>
         {detail && (
           <div className="nbf-inward__detail">
             <StripTab tab={TAB_DETAIL} aktif={tab} onPilih={setTab} />
-            <BelumTersedia apa={`${TEKS_INWARD.isiTab} ${tab}`} />
+            {tab === 'Object' && kasusFire ? <TabObject caseId={kasus.caseId} /> : <BelumTersedia apa={`${TEKS_INWARD.isiTab} ${tab}`} />}
           </div>
         )}
       </section>
@@ -306,13 +362,35 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
         <button type="button" className="btn btn--ghost" onClick={onBatal}>
           {KAKI.batal.label}
         </button>
-        <button type="button" className="btn btn--ghost" onClick={() => void simpan()} disabled={menyimpan}>
+        <button type="button" className="btn btn--ghost" onClick={() => void simpan()} disabled={menyimpan || tanggalSalah}>
           {menyimpan ? TEKS_FORM_OPPORTUNITY.menyimpan : KAKI.simpan.label}
         </button>
         <button type="button" className="btn btn--primary" disabled>
           {KAKI.submit.label}
         </button>
       </div>
+      {pilihSob && (
+        <PopupPilihAgent
+          judul={POPUP_SOB.judul}
+          onTutup={() => setPilihSob(false)}
+          onPilih={(b) => {
+            setSob({ id: b.id, nama: b.name })
+            setTersimpan(false)
+            setPilihSob(false)
+          }}
+        />
+      )}
+      {ubahCeding && (
+        <PopupCedingCoList
+          awal={ceding}
+          onTutup={() => setUbahCeding(false)}
+          onSubmit={(d) => {
+            setCeding(d)
+            setTersimpan(false)
+            setUbahCeding(false)
+          }}
+        />
+      )}
     </div>
   )
 }

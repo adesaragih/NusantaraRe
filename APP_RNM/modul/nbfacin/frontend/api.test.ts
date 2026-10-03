@@ -2,13 +2,16 @@ import { describe, expect, it } from 'vitest'
 
 import {
   ambilKasus,
+  ambilObjek,
   badanPremiCargo,
   buatOpportunity,
   cariAccount,
+  cariSOB,
   daftarCaseNB,
   daftarClassOfBusiness,
   daftarMarketing,
   simpanGeneral,
+  simpanObjek,
 } from './api'
 
 describe('badanPremiCargo', () => {
@@ -111,7 +114,7 @@ describe('kasus NB - baca, simpan General, marketing officer (tiket 31)', () => 
       await ambilKasus('NB-1')
       await simpanGeneral('NB-1', {
         reffNumber: 'UJI', qqName: '', beginDate: '01-10-2026', offeringDate: '03-10-2026', endDate: '',
-        policyType: '', marketingId: 'UJI-M', day: '', typeFacultative: 'Facultative In',
+        policyType: '', marketingId: 'UJI-M', day: '', typeFacultative: 'Facultative In', sourceOfBusinessId: 'UJI-S', cedingIds: ['UJI-C1', 'UJI-C2'],
       })
       await daftarMarketing()
       expect(panggil.map((p) => [p.metode, p.url.replace(/^.*(\/api\/)/, '$1')])).toEqual([
@@ -140,6 +143,48 @@ describe('daftarCaseNB (tiket 32)', () => {
       const q = new URL(url, 'http://x').searchParams
       expect(q.get('cari')).toBe('NB-1')
       expect(q.get('halaman')).toBe('1')
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('cariSOB (tiket 33)', () => {
+  it('GET /api/nbfacin/sob dengan cari (dipangkas) dan halaman', async () => {
+    const asli = globalThis.fetch
+    let url = ''
+    globalThis.fetch = (async (u: RequestInfo | URL) => {
+      url = String(u)
+      return new Response(JSON.stringify({ baris: [], total: 0, halaman: 2, ukuran: 20 }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await cariSOB('  uji  ', 2)
+      expect(url).toMatch(/\/api\/nbfacin\/sob\?/)
+      const q = new URL(url, 'http://x').searchParams
+      expect(q.get('cari')).toBe('uji')
+      expect(q.get('halaman')).toBe('2')
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('tab Object (tiket 35)', () => {
+  it('GET dan PUT /api/nbfacin/kasus/{caseId}/objek; PUT membawa { baris }', async () => {
+    const asli = globalThis.fetch
+    const panggil: { url: string; metode: string; badan: string }[] = []
+    globalThis.fetch = (async (u: RequestInfo | URL, init?: RequestInit) => {
+      panggil.push({ url: String(u), metode: init?.method ?? '', badan: String(init?.body ?? '') })
+      return new Response(JSON.stringify({ baris: [] }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await ambilObjek('NB-1')
+      await simpanObjek('NB-1', [])
+      expect(panggil.map((p) => [p.metode, p.url.replace(/^.*(\/api\/)/, '$1')])).toEqual([
+        ['GET', '/api/nbfacin/kasus/NB-1/objek'],
+        ['PUT', '/api/nbfacin/kasus/NB-1/objek'],
+      ])
+      expect(JSON.parse(panggil[1]!.badan)).toEqual({ baris: [] })
     } finally {
       globalThis.fetch = asli
     }
