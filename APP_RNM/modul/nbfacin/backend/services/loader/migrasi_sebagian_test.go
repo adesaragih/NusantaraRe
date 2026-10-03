@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// tipeAkhirMigrasi - tipe kolom tabel flat sesudah migrasi nbfacin 182..188 dijalankan
+// tipeAkhirMigrasi - tipe kolom tabel flat sesudah migrasi nbfacin 182..189 dijalankan
 // BERURUTAN: CREATE TABLE, lalu ALTER ... ADD (...) dan ALTER ... MODIFY (KOLOM TIPE).
 func tipeAkhirMigrasi(t *testing.T) map[string]map[string]string {
 	t.Helper()
@@ -27,7 +27,7 @@ func tipeAkhirMigrasi(t *testing.T) map[string]map[string]string {
 		}
 	}
 	for _, berkas := range []string{"182_t_general_polis.sql", "183_t_quotationdata.sql", "184_t_quotationdata_sob.sql", "185_t_cedingcolist.sql",
-		"186_t_objek_fire.sql", "187_t_surroundingrisk.sql", "188_t_propertyitemlist.sql"} {
+		"186_t_objek_fire.sql", "187_t_surroundingrisk.sql", "188_t_propertyitemlist.sql", "189_t_occupationlist.sql"} {
 		b, err := os.ReadFile("../../migrations/" + berkas)
 		if err != nil {
 			t.Fatal(err)
@@ -63,11 +63,15 @@ func TestMigrasiFlatSebagianCocokRancangan(t *testing.T) {
 		"T_PROPERTYITEMLIST.ID": "NUMBER(19)", "T_PROPERTYITEMLIST.PARENT_ID": "NUMBER(19)",
 		// tiket 39: uang (ADR-0016) dan persen (presisiSah penjaga) - rancangan NUMBER polos.
 		"T_PROPERTYITEMLIST.TSI_OBJECT_ITEM": "NUMBER(38,8)", "T_PROPERTYITEMLIST.PCT_ADJUST2": "NUMBER(38,8)",
-		"T_PROPERTYITEMLIST.PCT_ADJUST_OTHER": "NUMBER(38,8)"}
+		"T_PROPERTYITEMLIST.PCT_ADJUST_OTHER": "NUMBER(38,8)",
+		"T_OCCUPATIONLIST.ID":                 "NUMBER(19)", "T_OCCUPATIONLIST.PARENT_ID": "NUMBER(19)",
+		"T_TABLEOFLIMIT.ID": "NUMBER(19)", "T_TABLEOFLIMIT.PARENT_ID": "NUMBER(19)",
+		// tiket 40: butir 68.1 - rancangan NUMBER, isi teks apa adanya (lebar A139).
+		"T_TABLEOFLIMIT.PCT_LIMIT": "VARCHAR2(50)"}
 	akhir := tipeAkhirMigrasi(t)
 	diperiksa := 0
 	for _, tabel := range []string{"T_GENERAL_POLIS", "T_QUOTATIONDATA", "T_CEDINGCOLIST", "T_LOCATIONLIST",
-		"T_PROPERTY", "T_RISKLOCATION", "T_BUILDINGCONSTRUCTION", "T_SURROUNDINGRISK", "T_PROPERTYITEMLIST"} {
+		"T_PROPERTY", "T_RISKLOCATION", "T_BUILDINGCONSTRUCTION", "T_SURROUNDINGRISK", "T_PROPERTYITEMLIST", "T_OCCUPATIONLIST", "T_TABLEOFLIMIT"} {
 		for k, tipe := range akhir[tabel] {
 			// "VARCHAR2(10)" dari "VARCHAR2(10) DEFAULT 'UNKNOWN' NOT NULL" - tipe saja yang dibandingkan.
 			if i := indeksKolom(tabel, k); i >= 0 && strings.HasPrefix(skemaTabel[tabel][i].tipe, tipe+" ") {
@@ -90,7 +94,7 @@ func TestMigrasiFlatSebagianCocokRancangan(t *testing.T) {
 		}
 	}
 	// Dibuat UTUH: setiap kolom rancangan (sesudah amandemen) ada di migrasi.
-	for _, tabel := range []string{"T_CEDINGCOLIST", "T_RISKLOCATION", "T_BUILDINGCONSTRUCTION", "T_SURROUNDINGRISK"} {
+	for _, tabel := range []string{"T_CEDINGCOLIST", "T_RISKLOCATION", "T_BUILDINGCONSTRUCTION", "T_SURROUNDINGRISK", "T_TABLEOFLIMIT"} {
 		for _, k := range skemaTabel[tabel] {
 			if akhir[tabel][k.nama] == "" {
 				t.Errorf("%s.%s rancangan tidak dibuat migrasi", tabel, k.nama)
@@ -99,9 +103,12 @@ func TestMigrasiFlatSebagianCocokRancangan(t *testing.T) {
 	}
 	// 7 T_GENERAL_POLIS + 15 T_QUOTATIONDATA + 8 T_CEDINGCOLIST + 6 T_LOCATIONLIST + 20 T_PROPERTY (16 + 4 di 187)
 	// + 9 T_RISKLOCATION + 11 T_BUILDINGCONSTRUCTION + 24 T_SURROUNDINGRISK + 22 T_PROPERTYITEMLIST (16 rancangan
-	// + 6 baru, 188) = 122.
-	if diperiksa != 122 {
-		t.Errorf("%d kolom diperiksa, mau 122", diperiksa)
+	// + 6 baru, 188) + 10 T_OCCUPATIONLIST + 7 T_TABLEOFLIMIT (189) = 139.
+	if diperiksa != 139 {
+		t.Errorf("%d kolom diperiksa, mau 139", diperiksa)
+	}
+	if akhir["T_OCCUPATIONLIST"]["OCCUPATION_ID"] != "VARCHAR2(1000)" || akhir["T_OCCUPATIONLIST"]["OCCUPATION_NAME"] != "VARCHAR2(1000)" {
+		t.Errorf("lebar okupasi (A138): %v", akhir["T_OCCUPATIONLIST"])
 	}
 	if akhir["T_QUOTATIONDATA"]["CEDING_CO_NAME"] != "VARCHAR2(4000)" || akhir["T_QUOTATIONDATA"]["CEDING_CO"] != "VARCHAR2(1000)" {
 		t.Errorf("kolom gabungan Ceding Co: %v (butir 80)", akhir["T_QUOTATIONDATA"])

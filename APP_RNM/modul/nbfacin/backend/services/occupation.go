@@ -21,8 +21,8 @@ const (
 	lebarCariOccupation = 255
 )
 
-// ErrMasukanOccupation - cari kosong / < 2 karakter / terlalu panjang. 400.
-var ErrMasukanOccupation = fmt.Errorf("services: cari wajib %d..%d karakter", minCariOccupation, lebarCariOccupation)
+// ErrMasukanOccupation - cari 1 karakter / terlalu panjang. 400. Kosong = seluruh okupasi FIRE (tiket 40).
+var ErrMasukanOccupation = fmt.Errorf("services: cari kosong (semua) atau %d..%d karakter", minCariOccupation, lebarCariOccupation)
 
 // ErrOccupationTanpaDatabase - tabel OCCUPATION tidak terbaca. 503.
 var ErrOccupationTanpaDatabase = errors.New("services: basis data tidak dikonfigurasi, tabel OCCUPATION tidak terbaca")
@@ -33,11 +33,11 @@ func (s *Service) DenganOccupation(o repository.PembacaOccupation) *Service {
 	return s
 }
 
-// CariOccupation - saran Occupation FIRE yang OldID atau Name-nya mengandung `cari` (A131).
-// Tanpa identitas (pola lookup).
+// CariOccupation - saran Occupation FIRE yang OldID atau Name-nya mengandung `cari` (A131); `cari` kosong =
+// seluruh okupasi FIRE <= 500 (popup Choose Occupation, tiket 40). Tanpa identitas (pola lookup).
 func (s *Service) CariOccupation(ctx context.Context, cari string) ([]models.BarisOccupation, error) {
 	k := strings.TrimSpace(cari)
-	if n := utf8.RuneCountInString(k); n < minCariOccupation || n > lebarCariOccupation {
+	if n := utf8.RuneCountInString(k); (n > 0 && n < minCariOccupation) || n > lebarCariOccupation {
 		return nil, ErrMasukanOccupation
 	}
 	if s.occupation == nil {

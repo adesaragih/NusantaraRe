@@ -37,6 +37,18 @@ type ObjekFire struct {
 	SurroundingRisk     SurroundingRisk // T_SURROUNDINGRISK, satu baris per Property
 	// Tiket 39 - .Property.PropertyItemList, T_PROPERTYITEMLIST urut SEQ_NO (migrasi 188).
 	Items []ItemObjek
+	// Tiket 40 - .Property.OccupationList (BUKAN .Property.RiskLocation.OccupationList), T_OCCUPATIONLIST urut
+	// SEQ_NO + T_TABLEOFLIMIT (migrasi 189).
+	Occupations []OkupasiObjek
+}
+
+// OkupasiObjek - satu .Property.OccupationList(n) (kelas Data-Occupation) beserta halaman .TableOfLimit-nya.
+type OkupasiObjek struct {
+	OccupationID      string // T_OCCUPATIONLIST.OCCUPATION_ID  (.OccupationId = OCCUPATION.OLDID)
+	OccupationName    string // T_OCCUPATIONLIST.OCCUPATION_NAME (.OccupationName = OCCUPATION.NAME)
+	Category          string // T_TABLEOFLIMIT.CATEGORY    (.TableOfLimit.Category - I/II/III dari KDRiskExposure)
+	ConstructionClass string // T_TABLEOFLIMIT.DESCRIPTION (.TableOfLimit.Description - Class of Construction)
+	PctLimit          string // T_TABLEOFLIMIT.PCT_LIMIT   (.TableOfLimit.PctLimit - TEKS apa adanya, butir 68.1)
 }
 
 // ItemObjek - satu .Property.PropertyItemList(n) (tiket 39, `Section\PropertyItemFacIn_Section.xml`).
@@ -86,8 +98,9 @@ type SisiRisiko struct {
 	Note         string // OCCUPATION.NAME saat Occupation dipilih
 }
 
-// BarisOccupation - satu saran Occupation Surrounding Risk (tiket 38, OCCUPATION TYPE FIRE).
+// BarisOccupation - satu okupasi FIRE: saran Surrounding Risk (tiket 38) dan popup Choose Occupation (tiket 40).
 type BarisOccupation struct {
-	OldID string // OCCUPATION.OLDID - nilai yang disimpan
-	Name  string // OCCUPATION.NAME
+	OldID          string // OCCUPATION.OLDID - nilai yang disimpan
+	Name           string // OCCUPATION.NAME
+	KdRiskExposure string // OCCUPATION.KDRISKEXPOSURE - SetDataOccupation: 03 -> III, 02 -> II, 01 -> I (tiket 40)
 }

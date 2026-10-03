@@ -23,12 +23,16 @@ const (
 	TabelBuildingConstruction = "T_BUILDINGCONSTRUCTION"
 	TabelSurroundingRisk      = "T_SURROUNDINGRISK"
 	TabelPropertyItemList     = "T_PROPERTYITEMLIST"
+	TabelOccupationList       = "T_OCCUPATIONLIST"
+	TabelTableOfLimit         = "T_TABLEOFLIMIT"
 	sequenceLocationList      = "SEQ_T_LOCATIONLIST"
 	sequenceProperty          = "SEQ_T_PROPERTY"
 	sequenceRiskLocation      = "SEQ_T_RISKLOCATION"
 	sequenceBuildingConstruct = "SEQ_T_BUILDINGCONSTRUCTION"
 	sequenceSurroundingRisk   = "SEQ_T_SURROUNDINGRISK"
 	sequencePropertyItemList  = "SEQ_T_PROPERTYITEMLIST"
+	sequenceOccupationList    = "SEQ_T_OCCUPATIONLIST"
+	sequenceTableOfLimit      = "SEQ_T_TABLEOFLIMIT"
 	teksBenar, teksSalah      = "true", "false" // boolean Pega di IS_* (fixture)
 )
 
@@ -46,7 +50,7 @@ type ObjekOracle struct{ db *db.DB }
 // NewObjekOracle merakit penyimpan objek.
 func NewObjekOracle(d *db.DB) *ObjekOracle { return &ObjekOracle{db: d} }
 
-type tabelObjek struct{ work, general, loc, prop, risk, bang, sekitar, item string }
+type tabelObjek struct{ work, general, loc, prop, risk, bang, sekitar, item, okupasi, tol string }
 
 func (r *ObjekOracle) tabel() (tabelObjek, error) {
 	var t tabelObjek
@@ -55,7 +59,7 @@ func (r *ObjekOracle) tabel() (tabelObjek, error) {
 		ke   *string
 	}{{TabelWorkPolis, &t.work}, {TabelGeneralPolis, &t.general}, {TabelLocationList, &t.loc}, {TabelProperty, &t.prop},
 		{TabelRiskLocation, &t.risk}, {TabelBuildingConstruction, &t.bang}, {TabelSurroundingRisk, &t.sekitar},
-		{TabelPropertyItemList, &t.item}} {
+		{TabelPropertyItemList, &t.item}, {TabelOccupationList, &t.okupasi}, {TabelTableOfLimit, &t.tol}} {
 		q, err := r.db.Qualify(x.nama)
 		if err != nil {
 			return t, err
@@ -100,6 +104,9 @@ ORDER BY l.SEQ_NO`
 func sqlHapusObjek(t tabelObjek) []string {
 	prop := "SELECT p.ID FROM " + t.prop + " p JOIN " + t.loc + " l ON l.ID = p.PARENT_ID WHERE l.PARENT_ID = :1"
 	return []string{
+		"DELETE FROM " + t.tol + " WHERE PARENT_ID IN (SELECT o.ID FROM " + t.okupasi + " o WHERE " + syaratIndukOkupasi +
+			" AND o.PARENT_ID IN (" + prop + "))",
+		"DELETE FROM " + t.okupasi + " o WHERE " + syaratIndukOkupasi + " AND o.PARENT_ID IN (" + prop + ")",
 		"DELETE FROM " + t.item + " WHERE PARENT_ID IN (" + prop + ")",
 		"DELETE FROM " + t.risk + " WHERE PARENT_ID IN (" + prop + ")",
 		"DELETE FROM " + t.bang + " WHERE PARENT_ID IN (" + prop + ")",
@@ -219,7 +226,7 @@ func (r *ObjekOracle) BacaObjek(ctx context.Context, id string) ([]models.ObjekF
 					Distance: v("s.RIGHT_DISTANCE"), Note: v("s.RIGHT_NOTE")},
 				HousekeepingStatus: v("s.HOUSEKEEPING_STATUS"), FloodAreaStatus: v("s.FLOOD_AREA_STATUS"),
 				FloodArea: v("s.FLOOD_AREA"), HousekeepingRemark: v("s.HOUSEKEEPING_REMARK")},
-			Items: []models.ItemObjek{}})
+			Items: []models.ItemObjek{}, Occupations: []models.OkupasiObjek{}})
 		idProperty = append(idProperty, v("TO_CHAR(p.ID)"))
 	}
 	if err := baris.Err(); err != nil {
@@ -230,9 +237,19 @@ func (r *ObjekOracle) BacaObjek(ctx context.Context, id string) ([]models.ObjekF
 	if err != nil {
 		return nil, err
 	}
+	okupasi, err := r.bacaOkupasi(ctx, t, id)
+	if err != nil {
+		return nil, err
+	}
 	for i, p := range idProperty {
-		if d, ada := item[p]; ada && p != "" {
+		if p == "" {
+			continue
+		}
+		if d, ada := item[p]; ada {
 			hasil[i].Items = d
+		}
+		if d, ada := okupasi[p]; ada {
+			hasil[i].Occupations = d
 		}
 	}
 	return hasil, nil
@@ -301,6 +318,9 @@ func (r *ObjekOracle) GantiObjek(ctx context.Context, tx *db.Tx, id string, bari
 			}
 		}
 		if err := r.sisipItem(ctx, tx, t, ids[1], o.Items); err != nil {
+			return err
+		}
+		if err := r.sisipOkupasi(ctx, tx, t, ids[1], o.Occupations); err != nil {
 			return err
 		}
 	}

@@ -1250,6 +1250,16 @@ DDL kedua objek warisan itu **tidak ada** — tipe kolomnya `belum terverifikasi
 dijalankan — urutan DEV: … → 187 → **188**. Keputusan agent A132–A137 menunggu konfirmasi (`issues/39-object-item.md`);
 A133 (mata uang wajib) bersandar pada K-069 + K-012 (ADR modul 0006 `Unknown` eksplisit, bukan `docs/bersama` ADR-0006).
 
+## Tiket 40 — sub-tab Occupation (backend, sebagian), diteruskan sesi `nusantarare-0f`
+
+`GET`/`PUT …/objek` membawa `occupations` → tabel rancangan `T_OCCUPATIONLIST` (sebagian, induk T_PROPERTY lewat
+`PARENT_TABLE`/`SRC_PATH`) + `T_TABLEOFLIMIT` (utuh), migrasi **189**; `PCT_LIMIT` teks apa adanya menurut butir 68.1.
+`GET /api/nbfacin/occupation` membawa `kdRiskExposure` dan menerima `cari` kosong. Endpoint table-of-limit **ditahan** atas
+perintah sesi 0f (*"lanjut tiket 40 tanpa endpoint table-of-limit dulu"*): DDL TABLEOFLIMIT belum ada, dan
+`QuotationData.BusinessCode` hanya tersalin dari halaman `Quotation` (`SetCedingCo_Act`) yang asal BusinessCode-nya belum
+ditemukan. Ditulis,
+belum dijalankan — urutan DEV: … → 188 → **189**. Keputusan agent A138–A141 menunggu konfirmasi (`issues/40-occupation.md`).
+
 ## Yang belum diputuskan
 
 

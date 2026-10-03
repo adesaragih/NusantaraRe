@@ -64,9 +64,13 @@ var anakIDKasus []string
 // amandemenLebar - butir 80 (keputusan work owner 03-10-2026, tiket 34): kolom gabungan `;`
 // daftar Ceding Co di T_QUOTATIONDATA dilebarkan - kode = DDL Pega FACINOFFER/FACINPRODUCTION
 // CEDINGCO VARCHAR2(1000), nama VARCHAR2(4000). Migrasi 185.
+// Tiket 40 (A138, pola butir 80): kode/nama okupasi = lebar sumbernya OCCUPATION.OLDID / NAME VARCHAR2(1000)
+// (DDL OCCUPATION.txt); rancangan 50 / 500. Migrasi 189.
 var amandemenLebar = map[string]string{
-	"T_QUOTATIONDATA.CEDING_CO":      "VARCHAR2(1000)",
-	"T_QUOTATIONDATA.CEDING_CO_NAME": "VARCHAR2(4000)",
+	"T_QUOTATIONDATA.CEDING_CO":        "VARCHAR2(1000)",
+	"T_QUOTATIONDATA.CEDING_CO_NAME":   "VARCHAR2(4000)",
+	"T_OCCUPATIONLIST.OCCUPATION_ID":   "VARCHAR2(1000)",
+	"T_OCCUPATIONLIST.OCCUPATION_NAME": "VARCHAR2(1000)",
 }
 
 // T_ADDITIONALSHIP - kolom sistem sepola tabel berulang berjalur tunggal di DDL draf

@@ -45,6 +45,17 @@ type objekKabel struct {
 	SurroundingRisk     sekitarKabel `json:"surroundingRisk"`
 	// tiket 39
 	Items []itemKabel `json:"items"`
+	// tiket 40
+	Occupations []okupasiKabel `json:"occupations"`
+}
+
+// okupasiKabel - kontrak `OkupasiObjek` frontend (tiket 40).
+type okupasiKabel struct {
+	OccupationID      string `json:"occupationId"`
+	OccupationName    string `json:"occupationName"`
+	Category          string `json:"category"`
+	ConstructionClass string `json:"constructionClass"`
+	PctLimit          string `json:"pctLimit"`
 }
 
 // itemKabel - kontrak `ItemObjek` frontend (tiket 39); uang/persen = teks desimal.
@@ -107,7 +118,24 @@ func keKabel(o models.ObjekFire) objekKabel {
 		SurroundingRisk: sekitarKabel{Front: sisiKabel(s.Front), Left: sisiKabel(s.Left), Back: sisiKabel(s.Back),
 			Right: sisiKabel(s.Right), HousekeepingStatus: s.HousekeepingStatus, FloodAreaStatus: s.FloodAreaStatus,
 			FloodArea: s.FloodArea, HousekeepingRemark: s.HousekeepingRemark},
-		Items: keItemKabel(o.Items)}
+		Items: keItemKabel(o.Items), Occupations: keOkupasiKabel(o.Occupations)}
+}
+
+// keOkupasiKabel / keOkupasiModel - OkupasiObjek <-> okupasiKabel; selalu larik ke luar.
+func keOkupasiKabel(d []models.OkupasiObjek) []okupasiKabel {
+	hasil := make([]okupasiKabel, 0, len(d))
+	for _, o := range d {
+		hasil = append(hasil, okupasiKabel(o))
+	}
+	return hasil
+}
+
+func keOkupasiModel(d []okupasiKabel) []models.OkupasiObjek {
+	hasil := make([]models.OkupasiObjek, 0, len(d))
+	for _, o := range d {
+		hasil = append(hasil, models.OkupasiObjek(o))
+	}
+	return hasil
 }
 
 // keItemKabel / keItemModel - ItemObjek <-> itemKabel; selalu larik (bukan null) ke luar.
@@ -140,7 +168,7 @@ func keModel(o objekKabel) models.ObjekFire {
 		SurroundingRisk: models.SurroundingRisk{Front: models.SisiRisiko(s.Front), Left: models.SisiRisiko(s.Left),
 			Back: models.SisiRisiko(s.Back), Right: models.SisiRisiko(s.Right), HousekeepingStatus: s.HousekeepingStatus,
 			FloodAreaStatus: s.FloodAreaStatus, FloodArea: s.FloodArea, HousekeepingRemark: s.HousekeepingRemark},
-		Items: keItemModel(o.Items)}
+		Items: keItemModel(o.Items), Occupations: keOkupasiModel(o.Occupations)}
 }
 
 func keObjekKabel(d []models.ObjekFire) daftarObjek {

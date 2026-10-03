@@ -9,7 +9,7 @@ import (
 // NAME lalu OLDID, batas terikat; empat bind berurutan.
 func TestSQLOccupation(t *testing.T) {
 	q := sqlCariOccupation("UJI.OCCUPATION")
-	mau := `SELECT OLDID, NAME FROM UJI.OCCUPATION WHERE TYPE = :1 AND (UPPER(OLDID) LIKE :2 ESCAPE '\' OR UPPER(NAME) LIKE :3 ESCAPE '\') ORDER BY NAME, OLDID FETCH FIRST :4 ROWS ONLY`
+	mau := `SELECT OLDID, NAME, KDRISKEXPOSURE FROM UJI.OCCUPATION WHERE TYPE = :1 AND (UPPER(OLDID) LIKE :2 ESCAPE '\' OR UPPER(NAME) LIKE :3 ESCAPE '\') ORDER BY NAME, OLDID FETCH FIRST :4 ROWS ONLY`
 	if q != mau {
 		t.Errorf("SQL\n%s\nmau\n%s", q, mau)
 	}
@@ -17,6 +17,10 @@ func TestSQLOccupation(t *testing.T) {
 		if strings.Count(q, ":"+string(rune('0'+i))) != 1 {
 			t.Errorf("bind :%d tidak tepat satu", i)
 		}
+	}
+	// tiket 40: kata kosong = seluruh okupasi FIRE.
+	if q := sqlSemuaOccupation("UJI.OCCUPATION"); q != "SELECT OLDID, NAME, KDRISKEXPOSURE FROM UJI.OCCUPATION WHERE TYPE = :1 ORDER BY NAME, OLDID FETCH FIRST :2 ROWS ONLY" {
+		t.Errorf("semua: %q", q)
 	}
 	if TipeOccupationFire != "FIRE" || BatasSaranOccupation != 500 {
 		t.Error("parameter RD: TYPE FIRE, pyMaxRecords 500")

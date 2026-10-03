@@ -145,6 +145,7 @@ func periksaObjek(baris []models.ObjekFire) error {
 			}
 		}
 		masalah = append(masalah, periksaItem(i, o.Items)...)
+		masalah = append(masalah, periksaOkupasi(i, o.Occupations)...)
 	}
 	if len(masalah) > 0 {
 		return fmt.Errorf("%w: %s", ErrMasukanObjek, strings.Join(masalah, "; "))

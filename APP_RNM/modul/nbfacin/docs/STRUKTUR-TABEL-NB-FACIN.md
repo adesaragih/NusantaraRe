@@ -1,8 +1,8 @@
 # Struktur Tabel — NB FacIn: PETA TABEL WARISAN yang dibaca + tabel yang dibuat
 
-Modul ini **membuat sepuluh tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
+Modul ini **membuat dua belas tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
 `T_QUOTATIONDATA` **sebagian** (migrasi 182/183, tiket 31 / butir 78.4), `T_CEDINGCOLIST` utuh (185, tiket 34), dan tabel tab Object FIRE (186, tiket 35: `T_LOCATIONLIST` /
-`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian) — dan **menulis**
+`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian; 189, tiket 40: `T_OCCUPATIONLIST` sebagian, `T_TABLEOFLIMIT` utuh) — dan **menulis**
 baris `T_WORK_POLIS` milik premiumlistlife (K-064; tidak dibuat, tidak dipetakan kolomnya di sini). Selebihnya ia hanya
 **membaca** lima belas tabel yang sudah ada — enam tabel limit
 akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), tabel bisnis `BUSINESS` (tiket 28), `MARKETINGOFFICER` (31), `AGENT`
@@ -326,6 +326,40 @@ persen `NUMBER(38,8)` (rancangan `NUMBER` polos; ADR-0016), ditulis/dibaca sebag
 | `NO_OF_TREE` | teks | VARCHAR2(50) | **baru** — No of Trees (`.NoOfTree`) |
 | `AREA_HECTAR` | teks | VARCHAR2(50) | **baru** — Area ( Hectar ) (`.AreaHectar`) |
 
+## T_OCCUPATIONLIST
+
+Tiket 40 — migrasi 189, **sebagian** (pola A109; tanpa `CATEGORY` okupasi, `IS_OLD_DATA`, `LOCATION_ID` — tiket 23).
+Rancangan memberi tabel ini **tiga induk** (`LocationList/Property/OccupationList`, `.../RiskLocation/OccupationList`,
+`VehicleList/OccupationList`); NB menulis jalur pertama saja: `PARENT_TABLE = 'T_PROPERTY'`, `SRC_PATH` = jalur itu (isi sama
+dengan loader). Karena berinduk jamak, `PARENT_ID` **tanpa FK** — indeks `IX_T_OCCUPATIONLIST_PARENT (PARENT_TABLE, PARENT_ID)`.
+
+| Kolom | Tipe | Tipe DDL (migrasi 189) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_OCCUPATIONLIST` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_PROPERTY.ID` (bila `PARENT_TABLE = 'T_PROPERTY'`) |
+| `PARENT_TABLE` | teks | VARCHAR2(30) | tabel induk — `T_PROPERTY` |
+| `SRC_PATH` | teks | VARCHAR2(200) | jalur sumber — `LocationList/Property/OccupationList` |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan okupasi 1..n |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
+| `OCCUPATION_ID` | teks | VARCHAR2(1000) | Occupation ID (`.OccupationId` = `OCCUPATION.OLDID`); lebar = sumber (A138, rancangan 50) |
+| `OCCUPATION_NAME` | teks | VARCHAR2(1000) | Occupation Name (`OCCUPATION.NAME`); lebar = sumber (A138, rancangan 500) |
+
+## T_TABLEOFLIMIT
+
+Tiket 40 — migrasi 189, **utuh**. Halaman `.TableOfLimit` okupasi: satu baris per okupasi (`UQ_T_TABLEOFLIMIT_PARENT`).
+
+| Kolom | Tipe | Tipe DDL (migrasi 189) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_TABLEOFLIMIT` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_OCCUPATIONLIST.ID` |
+| `CATEGORY` | teks | VARCHAR2(50) | Category I/II/III (`SetDataOccupation` dari KDRiskExposure 01/02/03) |
+| `DESCRIPTION` | teks | VARCHAR2(500) | Class of Construction |
+| `PCT_LIMIT` | teks | VARCHAR2(50) | PctLimit — **teks apa adanya** (butir 68.1: rancangan NUMBER; koma desimal dan spasi ujung dipertahankan); lebar A139 |
+
 ## MARKETINGOFFICER
 
 Tiket 31 (pilihan Marketing Name). Tabel warisan `POOLDATA`, **baca saja**. Sumber tipe `[terverifikasi]`: DDL
@@ -394,13 +428,14 @@ Tiket 36/37. Tabel warisan `POOLDATA.RW`, **baca saja** — JOIN RD tiket 36 dan
 Tiket 38 (saran Occupation Surrounding Risk). Tabel warisan `POOLDATA.OCCUPATION`, **baca saja**. Sumber tipe
 `[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\OCCUPATION.txt`; kelas → tabel `[terverifikasi]`
 `RDBList\SearchOccupationIDSQL.xml` (kelas `ASM-FW-GISFW-INT-OCCUPATION`, `FROM OCCUPATION`). RD
-`BrowseOccupationFacInFIRE_RD`. Hanya tiga kolom di bawah yang dibaca.
+`BrowseOccupationFacInFIRE_RD`. Hanya empat kolom di bawah yang dibaca.
 
 | Kolom | Tipe DDL | Dibaca untuk |
 | --- | --- | --- |
 | `OLDID` | VARCHAR2(1000) | nilai saran (`.OldID`) → `T_SURROUNDINGRISK.*_OCCUPATION`; dicari; urutan kedua |
 | `NAME` | VARCHAR2(1000) | nama (`.Name`) → `*_NOTE` di layar; dicari; urutan pertama |
 | `TYPE` | VARCHAR2(1000) | saringan RD `.Type = Param.TYPE` = `'FIRE'` |
+| `KDRISKEXPOSURE` | VARCHAR2(1000) | `kdRiskExposure` → Category okupasi (`SetDataOccupation`, tiket 40) |
 
 ## V_JN_OBJ_ITEM
 
