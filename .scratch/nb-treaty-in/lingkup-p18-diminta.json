@@ -1,0 +1,206 @@
+[
+  {
+    "rule": "InsertToTreatyOutXOLList",
+    "langkah": 30
+  },
+  {
+    "rule": "InsertToTreatyXOLListRetroShare",
+    "langkah": 23
+  },
+  {
+    "rule": "GeneratePolicyNoTreaty_Act",
+    "langkah": 17
+  },
+  {
+    "rule": "InsertToTreatyXOLList",
+    "langkah": 16
+  },
+  {
+    "rule": "FillPaymentInstallment",
+    "langkah": 15
+  },
+  {
+    "rule": "InputPolicyTreatyInPre_Act",
+    "langkah": 12
+  },
+  {
+    "rule": "InputPolicyTreatyEDMDetail_NP",
+    "langkah": 12
+  },
+  {
+    "rule": "TreatyNonPropSetSpreading",
+    "langkah": 10
+  },
+  {
+    "rule": "Protection_Act",
+    "langkah": 9
+  },
+  {
+    "rule": "InsertHistoryAkseptasiPega",
+    "langkah": 8
+  },
+  {
+    "rule": "TreatyNonPropOutSetSpreading",
+    "langkah": 7
+  },
+  {
+    "rule": "TreatyInNonSetTotal",
+    "langkah": 7
+  },
+  {
+    "rule": "CountSpreading_Act",
+    "langkah": 6
+  },
+  {
+    "rule": "SaveViewSuggest",
+    "langkah": 5
+  },
+  {
+    "rule": "SaveJsonPolisTreatyIn_Act",
+    "langkah": 5
+  },
+  {
+    "rule": "CountNetPremi_act",
+    "langkah": 5
+  },
+  {
+    "rule": "CheckDuplicateOffer",
+    "langkah": 5
+  },
+  {
+    "rule": "CekLimitTreatyAcc_Act",
+    "langkah": 5
+  },
+  {
+    "rule": "SetReinstatementPct",
+    "langkah": 4
+  },
+  {
+    "rule": "CountResult1_Act",
+    "langkah": 4
+  },
+  {
+    "rule": "TreatyRealizationCheckDuplicate",
+    "langkah": 3
+  },
+  {
+    "rule": "SetPPNPPH",
+    "langkah": 3
+  },
+  {
+    "rule": "SearchHierarkiSourceBizAgentTreatyIn_Act",
+    "langkah": 3
+  },
+  {
+    "rule": "FetchTreatyGroupOldID",
+    "langkah": 3
+  },
+  {
+    "rule": "CountOGPONP_Act",
+    "langkah": 3
+  },
+  {
+    "rule": "BreakDownSpreading_Act",
+    "langkah": 3
+  },
+  {
+    "rule": "AgentSourceBizTreatyIn_Act",
+    "langkah": 3
+  },
+  {
+    "rule": "TreatyRealizationCheckXOLList",
+    "langkah": 2
+  },
+  {
+    "rule": "TreatyInInputVis",
+    "langkah": 2
+  },
+  {
+    "rule": "SetValidateInstallment_Act",
+    "langkah": 2
+  },
+  {
+    "rule": "SetTreatyCurrencyID",
+    "langkah": 2
+  },
+  {
+    "rule": "SetDueTo_act",
+    "langkah": 2
+  },
+  {
+    "rule": "SetCurrency_act",
+    "langkah": 2
+  },
+  {
+    "rule": "SetCategoryAttach",
+    "langkah": 2
+  },
+  {
+    "rule": "FetchTreatyGroupOJK",
+    "langkah": 2
+  },
+  {
+    "rule": "CountRiCommOnp_act",
+    "langkah": 2
+  },
+  {
+    "rule": "CountRiCommOgp_act",
+    "langkah": 2
+  },
+  {
+    "rule": "CountResult2Onp_act",
+    "langkah": 2
+  },
+  {
+    "rule": "CountResult2Ogp_act",
+    "langkah": 2
+  },
+  {
+    "rule": "CountResult1Onp_Act",
+    "langkah": 2
+  },
+  {
+    "rule": "CountOverridingCommOnp_Act",
+    "langkah": 2
+  },
+  {
+    "rule": "CountOverridingCommOgp_Act",
+    "langkah": 2
+  },
+  {
+    "rule": "ConcatSlipOfferNo_Act",
+    "langkah": 2
+  },
+  {
+    "rule": "CheckDataMkt",
+    "langkah": 2
+  },
+  {
+    "rule": "CalculatePremi_Act",
+    "langkah": 2
+  },
+  {
+    "rule": "TreatyInputPctCommSpreading",
+    "langkah": 1
+  },
+  {
+    "rule": "SetSurveyReport_Act",
+    "langkah": 1
+  },
+  {
+    "rule": "ProtectDate",
+    "langkah": 1
+  },
+  {
+    "rule": "InputParamUploadReas_act",
+    "langkah": 1
+  },
+  {
+    "rule": "CountPctInstallment_Act",
+    "langkah": 1
+  },
+  {
+    "rule": "ConvertHistoryDate",
+    "langkah": 1
+  }
+]
