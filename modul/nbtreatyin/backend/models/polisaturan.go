@@ -1,0 +1,226 @@
+package models
+
+// Untuk apa berkas ini: ATURAN MURNI LAIN di sekitar layar realisasi - pra-proses
+// flow action (Data Transform), penanda penempatan keluar,
+// status riwayat, dan bentuk nomor polis. Seluruhnya port satu rule; nama rule
+// dan langkahnya ditulis di atas tiap fungsi (INVENTARIS-XML.md bab 6-7).
+
+import (
+	"strconv"
+	"strings"
+	"time"
+
+	"nusantarare/inti/backend/utils"
+)
+
+// FormatTanggalWaktu adalah SATU format tanggal-waktu halaman (spec §5.8, AC 33).
+// Tanggal saja memakai `utils.FormatTanggal` ("2006-01-02").
+func FormatTanggalWaktu(t time.Time) string { return utils.FormatTanggalWaktu(t) }
+
+// ---------------------------------------------------------------- pra-proses
+
+// PraprosesAdmin = `DataTransform/InputPolicyTreatyIn_preDT` (pra-proses flow
+// action `InboxPolicyTreatyIn`, layar admin).
+//
+//	1-2  StartDate / EndDate kosong -> hari ini (AC 34, 35; P35: EndDate kosong
+//	     diisi HARI INI, bukan +1 tahun - ditiru apa adanya, spec §10.2)
+//	3    StatementDate kosong -> sekarang
+//	4-5  IsNewPolicyNonProp "1" bila Quotation.ProportionalType NonProportional,
+//	     selain itu "0" bila belum "1" (AC 75)
+//	6-10 MasterID "", MarketingOfficer <- Quotation.MarketingName, Suggest "",
+//	     SuggestDate sekarang, OperatorName <- NAMA TAMPILAN (P33, AC 40, 42)
+//	11   FlagOnGoingPolicy "1" (T_WORK_POLIS.FLAG_ONGOING_POLICY)
+//	14   PolicyTreatyIn.QuotationData <- Quotation (salinan halaman)
+//
+// ⛔ Langkah 12-13 (`TempEmail.CARI28` / `PositionNote` dari
+// `OperatorID.pyWorkBasketList(2)`) TIDAK diport: penunjukan antrean menurut
+// NOMOR URUT diganti pemeriksaan keanggotaan (P25, AC 14) di services.
+// ⚠️ Dua format tanggal rule ini (`dd/MM/yyyy` dan `MM/dd/yyyy hh:mm a`)
+// diganti SATU format (P32, AC 33) - penyimpangan sadar spec §5.8.
+func PraprosesAdmin(h *Halaman, sekarang time.Time, namaTampilan string) {
+	tgl := utils.FormatTanggal(sekarang)
+	if h.Ambil("PolicyTreatyIn.StartDate") == "" {
+		h.Setel("PolicyTreatyIn.StartDate", tgl)
+	}
+	if h.Ambil("PolicyTreatyIn.EndDate") == "" {
+		h.Setel("PolicyTreatyIn.EndDate", tgl)
+	}
+	if h.Ambil("PolicyTreatyIn.StatementDate") == "" {
+		h.Setel("PolicyTreatyIn.StatementDate", FormatTanggalWaktu(sekarang))
+	}
+	if h.Ambil("Quotation.ProportionalType") == JenisNonProporsional {
+		h.Setel("PolicyTreatyIn.IsNewPolicyNonProp", "1")
+	}
+	if h.Ambil("PolicyTreatyIn.IsNewPolicyNonProp") != "1" {
+		h.Setel("PolicyTreatyIn.IsNewPolicyNonProp", "0")
+	}
+	h.Setel("PolicyTreatyIn.MasterID", "")
+	h.Setel("PolicyTreatyIn.MarketingOfficer", h.Ambil("Quotation.MarketingName"))
+	h.Setel("PolicyTreatyIn.Suggest", "")
+	h.Setel("PolicyTreatyIn.SuggestDate", FormatTanggalWaktu(sekarang))
+	h.Setel("PolicyTreatyIn.OperatorName", namaTampilan)
+	h.Setel("FlagOnGoingPolicy", "1")
+	SalinQuotation(h)
+}
+
+// PraprosesAtasan = `DataTransform/DeptHeadTreatyInUW_preDT` (pra-proses flow
+// action `DeptHeadTreatyIn_UW`, layar Sec Head dan Dept Head).
+//
+// ⛔ Langkah 2 rule mengisi OperatorName dari `OperatorID.pyUserIdentifier`
+// (pengenal akun) - BUG, bukan maksud (P33, AC 42); di sini NAMA TAMPILAN.
+// ⛔ Langkah 5 (`isApprovedtoDeptHead`) tidak dibangun - P36, AC 64.
+func PraprosesAtasan(h *Halaman, sekarang time.Time, namaTampilan string) {
+	h.Setel("PolicyTreatyIn.MasterID", "")
+	h.Setel("PolicyTreatyIn.OperatorName", namaTampilan)
+	h.Setel("PolicyTreatyIn.SuggestDate", FormatTanggalWaktu(sekarang))
+	h.Setel("PolicyTreatyIn.IsApproved", "")
+	h.Setel("PolicyTreatyIn.Suggest", "")
+	SalinQuotation(h)
+}
+
+// SalinQuotation meniru `pyWorkPage.PolicyTreatyIn.QuotationData = pyWorkPage.Quotation`
+// (salinan seluruh halaman, termasuk properti yang kosong di sumber).
+func SalinQuotation(h *Halaman) {
+	h.pastikan()
+	for k := range h.Nilai {
+		if strings.HasPrefix(k, HalamanPolis+".QuotationData.") {
+			delete(h.Nilai, k)
+		}
+	}
+	for k, v := range h.Nilai {
+		if strings.HasPrefix(k, HalamanQuotation+".") {
+			h.Nilai[HalamanPolis+".QuotationData."+strings.TrimPrefix(k, HalamanQuotation+".")] = v
+		}
+	}
+}
+
+// GeserTanggalProduksi = `InputPolicyTreatyInPre_Act` langkah 9:
+// hari StatementDate melewati hari tutup buku -> ProductionDate = tanggal 1
+// bulan berikut.
+//
+// ⛔ PENYIMPANGAN SADAR. Rule menanam `@substring(StatementDate,6,2)>25`;
+// `GeneratePolicyNoTreaty_Act` langkah 5.3 membaca hari yang sama dari
+// `POOLDATA.TANGGAL_CLOSING`. Dua aturan hidup berdampingan - pola yang SAMA
+// dengan `InsertJsonPolisLife_Act` b1170 lawan `PROC_GENERATE_SEQUENCE_NUMBER`
+// di PremiumList Life, tempat `[keputusan work owner]` menetapkan "ikuti yang
+// dari DB" (penjaga `TestNolAmbangTutupBukuTertanam`). Preseden itu
+// diterapkan di sini: `hariClosing` dibaca dari tabel oleh pemanggil.
+func GeserTanggalProduksi(statement time.Time, hariClosing int) time.Time {
+	if statement.Day() > hariClosing {
+		return time.Date(statement.Year(), statement.Month()+1, 1, 0, 0, 0, 0, statement.Location())
+	}
+	return statement
+}
+
+// ---------------------------------------------------------------- penempatan keluar
+
+// Kode `TreatyType` penanda punya penempatan keluar - VERBATIM
+// `DataTransform/TestTreatyToFacStatus` (AC 76).
+var KodePenempatanKeluar = []string{"10015", "10218"}
+
+// TetapkanHasFacOut = `InboxPolicyTreatyIn_postDT` langkah 2-3:
+// `.PolicyTreatyIn.HasFacOut = "0"`, lalu `TestTreatyToFacStatus` memasang "1"
+// bila salah satu baris SpreadingRiskList ber-TreatyType salah satu kode itu.
+func TetapkanHasFacOut(h *Halaman) {
+	h.Setel("PolicyTreatyIn.HasFacOut", "0")
+	for _, b := range h.AmbilDaftar(DaftarSpreading) {
+		for _, kode := range KodePenempatanKeluar {
+			if b["TreatyType"] == kode {
+				h.Setel("PolicyTreatyIn.HasFacOut", "1")
+			}
+		}
+	}
+}
+
+// ---------------------------------------------------------------- riwayat
+
+// StatusRiwayat = `Activity/InsertHistoryAkseptasiPega` langkah 2-3 untuk
+// kasus treaty: IsApproved "1" -> ACCEPT, "0" -> REJECT, selain itu kosong
+// (keenam penanda EmailType* milik modul lain, nol di halaman treaty).
+func StatusRiwayat(isApproved string) string {
+	switch isApproved {
+	case "1":
+		return "ACCEPT"
+	case "0":
+		return "REJECT"
+	}
+	return ""
+}
+
+// ---------------------------------------------------------------- nomor polis
+
+// Kode tipe nomor polis - VERBATIM `GeneratePolicyNoTreaty_Act` langkah 7-9.
+const (
+	TipeNomorQR = "QR" // DueTo == 1 (premi)
+	TipeNomorQP = "QP" // DueTo == 0 (bayar)
+	TipeNomorTP = "TP" // ClaimType == "XOL Retro"
+)
+
+// TipeNomorPolis = langkah 7-9; langkah 9 (XOL Retro) dijalankan TERAKHIR,
+// sehingga menimpa QR/QP.
+func TipeNomorPolis(h *Halaman) string {
+	t := ""
+	switch h.Ambil("PolicyTreatyIn.DueTo") {
+	case "1":
+		t = TipeNomorQR
+	case "0":
+		t = TipeNomorQP
+	}
+	if h.Ambil("PolicyTreatyIn.ClaimType") == "XOL Retro" {
+		t = TipeNomorTP
+	}
+	return t
+}
+
+// KelasDeret dan JenisDeret adalah kunci `GENERATE_SEQUENCE_NUMBER` yang
+// dikirim langkah 26: `ParamSeq.CARI1 = pyWorkPage.pxObjClass`,
+// `ParamSeq.CARI2 = ParamSeq.HASIL3+"QR/QP/TP"` - teks "QR/QP/TP" HARFIAH,
+// sehingga ketiga tipe berbagi SATU deret.
+//
+// `pyWorkPage.pxObjClass` kasus NB Treaty In = `ASM-FW-GISFW-Work-NB` (kelas
+// halaman `pyWorkPage` di `pyPagesAndClasses` DecisionTable/isApproved dan
+// DataTransform/DeptHeadTreatyInUW_preDT).
+const KelasDeret = "ASM-FW-GISFW-Work-NB"
+
+// JenisDeret = awalan produksi + "QR/QP/TP".
+func JenisDeret(awalan string) string { return awalan + "QR/QP/TP" }
+
+// TanggalProduksiNomor = `GeneratePolicyNoTreaty_Act` langkah 5.1-5.3.
+//
+//	5.1 ProductionDate = @CurrentDateTime()        (kotak When tak dicentang)
+//	5.2 StatementDate di depan hari ini -> ProductionDate = StatementDate
+//	5.3 hari ProductionDate (Asia/Jakarta) > tanggal closing ->
+//	    tanggal 1 bulan berikut, pukul 05:00 GMT
+func TanggalProduksiNomor(sekarang, statement time.Time, hariClosing int) time.Time {
+	prod := sekarang
+	// 5.2 `@toInt(@DateTime.DateTimeDifference(StatementDate,@CurrentDateTime(),D))<0`
+	// - selisih (sekarang - statement) dalam HARI, dipotong ke nol oleh @toInt:
+	// benar hanya bila StatementDate sedikitnya satu hari penuh di depan.
+	if !statement.IsZero() && sekarang.Sub(statement) <= -24*time.Hour {
+		prod = statement
+	}
+	lokal := prod.In(zonaJakarta())
+	if lokal.Day() > hariClosing {
+		bulan := time.Date(lokal.Year(), lokal.Month(), 1, 5, 0, 0, 0, time.UTC)
+		return bulan.AddDate(0, 1, 0)
+	}
+	return prod
+}
+
+// RakitNomorPolis = langkah 28:
+// `ParamSeq.CARI4 + ".T" + OJKBusinessID + "." + ParamSeq.HASIL1 + "." + ParamSeq.HASIL2`
+// dengan CARI4 = awalan + tipe, HASIL1 = `MM.YYYY`, HASIL2 = urut lima angka.
+func RakitNomorPolis(awalan, tipe, ojkBusinessID, mmYYYY string, urut int) string {
+	u := strconv.Itoa(urut)
+	for len(u) < 5 {
+		u = "0" + u
+	}
+	return awalan + tipe + ".T" + ojkBusinessID + "." + mmYYYY + "." + u
+}
+
+func zonaJakarta() *time.Location {
+	if l, err := time.LoadLocation("Asia/Jakarta"); err == nil {
+		return l
+	}
+	return time.FixedZone("WIB", 7*3600)
+}
