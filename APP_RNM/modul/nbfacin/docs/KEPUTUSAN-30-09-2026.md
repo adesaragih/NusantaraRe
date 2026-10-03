@@ -1048,6 +1048,29 @@ Atas brief sesi `nusantarare-0f` dan DDL `BUSINESS.txt` dari work owner (`issues
 | A77 | Hanya filter C RD (`.BusinessGroupID = Param.Group`) yang dibangun; filter A/B tidak | brief "semua baris"; di satu-satunya section pemakai di folder `NB FacIn` (`InputLossRecord_Sec`) parameter `ID`/`Note`/`Group` kosong (`RNW Fac In` punya salinan bernama sama, tidak dibandingkan) |
 | A78 | `NOTE IS NOT NULL` | brief sesi 0f; **tidak ada di RD** — selisih dengan Pega, dicatat |
 
+## Keputusan work owner — 3 Oktober 2026, Create opportunity (tiket 29), diteruskan sesi `nusantarare-0f`
+
+Diteruskan sesi agent `nusantarare-0f` (pilihan work owner lewat AskUserQuestion di sesi itu). Konteks: tombol
+`Create opportunity` di form Opportunity (tiket 29, frontend + tiket di-commit sesi 0f, `4064d0b`) memanggil kontrak
+`POST /api/nbfacin/opportunity` → 201 `{"caseId":"NB-…"}`; badan = `IsianOpportunity` (`frontend/api.ts`), tanggal bentuk
+kabel `DD-MM-YYYY`. ⛔ **Endpoint belum dibangun** — dicatat saja, atas permintaan sesi 0f ("jangan dibangun dulu").
+
+| # | Butir | Pilihan work owner |
+| ---: | --- | --- |
+| 74.1 | Penyimpanan opportunity/case NB | **"Tunggu tabel flat (tiket 23)"** — **tidak ada** tabel sementara. `POST /api/nbfacin/opportunity` baru dibangun sesudah tabel flat tiket 23 ada; tiket 23 sendiri masih ⏸ ditahan (butir 66, presisi tim inti) |
+| 74.2 | Nomor case NB | **"Lanjut dari nomor terakhir Pega"** — penghitung mulai dari MAX nomor NB yang ada + 1; angka pastinya diisi saat migrasi dijalankan oleh work owner/DBA (⛔ agent tidak menjalankan `-migrate`, butir 65) |
+| 74.3 | Layar sesudah create ("lari ke flow nya") | Flow action `InwardFacultative` → section `InputInwardFacultative` — port berikutnya, **belum dimulai** |
+
+**Bukti yang dikutip sesi 0f:**
+- `[terverifikasi]` oleh agent ini: ADR-0043 (`docs/bersama/adr/0043-penomoran-di-aplikasi.md`) — penomoran di aplikasi,
+  `SELECT … FOR UPDATE`; tiket 29 dan commit `4064d0b` ada.
+- Nomor NB = satu deret global tanpa tahun, sampai `NB-184351` (nama berkas ekspor kasus di `D:\XML NURE\Groupbusiness\`)
+  — **klaim sesi 0f, tidak diverifikasi ulang agent ini** (folder ekspor kasus tidak dibuka).
+
+⚠️ **Terbuka, tidak ditafsirkan:** ADR-0043 mengunci penghitung atas `(CLASS, JENIS, TAHUN)` dengan aturan periode/tahun,
+sedangkan deret NB menurut klaim di atas **tanpa tahun**. Bagaimana nomor NB dipetakan ke kunci itu belum diputuskan —
+`belum terverifikasi`.
+
 **Ralat atas brief** `[terverifikasi]` `BrowseBusiness_RD.xml`: filter B adalah `.Note Contains Param.Note` dengan
 `pyCaseInsensitive` true — bukan `=`. `[dugaan]` `groupBusinessId` = `T_M_ACCOUNT.GROUPBUSINESSID` akun terpilih — belum
 terverifikasi dari korpus (section form Opportunity pemakai RD tidak ada di folder `NB FacIn`).

@@ -21,8 +21,14 @@ wajib diperiksa; bila lengkap, isian dikirim ke backend yang **membuat case NB**
 
 ## Keputusan work owner 03-10-2026
 
-- **Penyimpanan: tunggu tabel flat (tiket 23).** Data opportunity dan case NB baru disimpan sesudah tabel flat
-  (`T_WORK_POLIS` dkk.) dibuat — tiket 23 masih menunggu keputusan presisi tim inti. Tidak ada tabel sementara.
+- ~~**Penyimpanan: tunggu tabel flat (tiket 23).**~~ ⛔ **DIRALAT 03-10-2026** (sesi 0f): pilihan itu diambil
+  work owner karena sesi 0f keliru menyebut penyimpanan case seluruhnya tertahan tiket 23. Faktanya
+  `[terverifikasi]` **`T_WORK_POLIS` sudah ada** — dibuat modul premiumlistlife (`050_t_work_polis.sql`, diubah
+  057/058/059/063) — dan register K-064 (butir 1b) memutuskan Fac In **menyambung** ke tabel itu (pembeda: kolom
+  penanda lini). **Keputusan pengganti (work owner "setuju", 03-10-2026):** case dibuat sekarang di `T_WORK_POLIS`
+  yang ada (ID `NB-<n>`, sequence NB sendiri), isian opportunity ke tabel flat pasangannya yang dibuat sekarang;
+  tiket 23 diselaraskan dengan `T_WORK_POLIS` yang ada (skema loader dari DDL draf bentrok: ID NUMBER vs
+  VARCHAR2(32), POSISI vs POSITION, dst.). Dikerjakan sesi c3; migrasi ditulis, dijalankan work owner di DEV.
 - **Nomor NB: lanjut dari nomor terakhir Pega** (MAX nomor NB yang ada + 1), supaya tidak bentrok dengan kasus
   lama. Angka pastinya diisi saat migrasi dijalankan (work owner/DBA).
 
@@ -38,11 +44,12 @@ wajib diperiksa; bila lengkap, isian dikirim ke backend yang **membuat case NB**
 
 ## Tertahan
 
-- Endpoint `POST /api/nbfacin/opportunity` (backend sesi c3): menunggu tabel flat (tiket 23) + nilai awal
-  penghitung NB. Sampai itu, tombol menampilkan galat backend apa adanya.
+- Endpoint `POST /api/nbfacin/opportunity` (backend sesi c3): sedang dikerjakan; migrasinya menunggu dijalankan
+  work owner di DEV, dengan nilai awal penghitung NB (nomor NB Pega terakhir + 1) yang diisi work owner/DBA.
+  Sampai itu, tombol menampilkan galat backend apa adanya.
 - "Lari ke flow": port section `InputInwardFacultative` — tiket berikutnya; sekarang sesudah case dibuat, nomor
   case ditampilkan di form.
 
-**Status:** blocked — frontend selesai 03-10-2026; backend menunggu tiket 23 dan nilai awal penghitung NB
+**Status:** in-progress — frontend selesai 03-10-2026; backend dikerjakan sesi c3 (T_WORK_POLIS yang ada)
 
 ## Comments

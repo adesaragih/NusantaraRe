@@ -16,7 +16,7 @@ import {
   POPUP_CHOOSE_ACCOUNT as POPUP,
   TOMBOL_FORM_OPPORTUNITY as TOMBOL,
 } from '../labels'
-import FormOpportunity, { PopupChooseAccount } from './FormOpportunity'
+import FormOpportunity, { PopupChooseAccount, cobSah } from './FormOpportunity'
 
 const PEMILIK = 'UJI-PEMILIK'
 const HTML = renderToStaticMarkup(<FormOpportunity pemilik={PEMILIK} />)
@@ -122,6 +122,22 @@ describe('FormOpportunity = gambar Pega (keadaan awal)', () => {
     expect(SUMBER).toContain('<option key={s.id} value={s.note} />')
     // Group berganti = isian Class Of Business lama dikosongkan.
     expect(SUMBER).toContain("if (b.groupBusinessId !== grup?.groupBusinessId) setClassOfBusiness('')")
+  })
+
+  it('Class Of Business di luar daftar dikosongkan: saat keluar kotak dan sebelum dikirim (work owner 03-10-2026)', () => {
+    const saran = [
+      { id: 'UJI-1', note: 'UJI FIRE' },
+      { id: 'UJI-2', note: 'UJI EARTHQUAKE' },
+    ]
+    expect(cobSah('UJI FIRE', saran)).toBe('UJI FIRE')
+    expect(cobSah('uji fire', saran)).toBe('')
+    expect(cobSah('UJI FIR', saran)).toBe('')
+    expect(cobSah('UJI FIRE', [])).toBe('')
+    expect(cobSah('', saran)).toBe('')
+    expect(SUMBER).toContain('onBlur={() => setClassOfBusiness((v) => cobSah(v, saranCOB))}')
+    const buat = SUMBER.slice(SUMBER.indexOf('async function buat()'))
+    expect(buat.indexOf('cobSah(classOfBusiness, saranCOB)')).toBeLessThan(buat.indexOf('medanKosong(cob)'))
+    expect(buat).toContain('classOfBusiness: cob,')
   })
 
   it('tiga tombol Group Business berurutan; Search Group Business hidup, dua lainnya nonaktif (C-2, C-8)', () => {

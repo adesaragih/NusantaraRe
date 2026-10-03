@@ -44,6 +44,15 @@ import {
 
 const tanpaUbah = () => {}
 
+/**
+ * Class Of Business hanya boleh salah satu pilihan daftar (permintaan work owner 03-10-2026: "kalau Class Of
+ * Business yang diketik atau dipilih tidak ada dari list yang muncul, isi ketikannya di hapus saja"). Cocok =
+ * teks persis sama dengan salah satu `NOTE`; selain itu kosong.
+ */
+export function cobSah(nilai: string, saran: readonly BarisClassOfBusiness[]): string {
+  return saran.some((s) => s.note === nilai) ? nilai : ''
+}
+
 /** Satu nilai yang terlihat di gambar - bukan daftar pilihan lengkap (C-1). */
 const satu = (nilai: string): Opsi[] => [{ value: nilai, label: nilai }]
 
@@ -184,11 +193,11 @@ export default function FormOpportunity({ pemilik }: { pemilik: string }) {
   const facultative = typeOfInward === AWAL.typeOfInward
 
   /** Medan wajib (bertanda * di gambar) yang masih kosong, urut layar. */
-  function medanKosong(): string[] {
+  function medanKosong(cob: string): string[] {
     const wajib: [string, string][] = [
       [F.tanggalTutup, tanggalTutup],
       [F.namaProspek, namaProspek.trim()],
-      [F.classOfBusiness, classOfBusiness.trim()],
+      [F.classOfBusiness, cob],
       [F.typeOfInward, typeOfInward],
       ...(facultative ? ([[F.typeOfFacultative, typeOfFacultative]] as [string, string][]) : []),
       [F.phase, phase],
@@ -198,7 +207,10 @@ export default function FormOpportunity({ pemilik }: { pemilik: string }) {
   }
 
   async function buat() {
-    const k = medanKosong()
+    // Ketikan yang bukan pilihan daftar tidak pernah terkirim (lihat `cobSah`).
+    const cob = cobSah(classOfBusiness, saranCOB)
+    if (cob !== classOfBusiness) setClassOfBusiness(cob)
+    const k = medanKosong(cob)
     setKurang(k)
     setGalatSimpan(null)
     if (k.length > 0) return
@@ -209,7 +221,7 @@ export default function FormOpportunity({ pemilik }: { pemilik: string }) {
       insuredId: grup?.insuredId ?? '',
       groupBusinessId: grup?.groupBusinessId ?? '',
       groupBusiness: grup?.groupBusiness ?? '',
-      classOfBusiness: classOfBusiness.trim(),
+      classOfBusiness: cob,
       typeOfInward,
       typeOfFacultative: facultative ? typeOfFacultative : '',
       phase,
@@ -304,6 +316,7 @@ export default function FormOpportunity({ pemilik }: { pemilik: string }) {
                 autoComplete="off"
                 value={classOfBusiness}
                 onChange={(e) => setClassOfBusiness(e.target.value)}
+                onBlur={() => setClassOfBusiness((v) => cobSah(v, saranCOB))}
               />
               <datalist id="nbfacin-saran-cob">
                 {saranCOB.map((s) => (

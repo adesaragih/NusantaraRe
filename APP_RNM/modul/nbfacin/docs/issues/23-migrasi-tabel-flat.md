@@ -12,6 +12,10 @@ migrasi ke Oracle mana pun (`-migrate`) hanya oleh work owner sendiri (butir 65)
 
 **Status:** needs-info — ⏸ ditahan; tidak satu berkas migrasi pun ditulis
 
+**Ditunggu oleh:** tiket 29 `POST /api/nbfacin/opportunity` (Create opportunity) — keputusan work owner 03-10-2026
+butir 74.1 "Tunggu tabel flat (tiket 23)": tanpa tabel sementara; nomor case NB lanjut dari nomor terakhir Pega (butir
+74.2).
+
 ## Yang menahan
 
 1. **Presisi.** `[terverifikasi]` DDL draf memakai **415** kolom `NUMBER` polos (156 di antaranya `ID`/`*_ID`) +
