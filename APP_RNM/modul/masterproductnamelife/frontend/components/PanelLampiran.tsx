@@ -3,9 +3,8 @@
 //  `Add attachment` b64747 → `ProductNameAttachContent` (submit `Attach` b24, `Cancel` b22) → `ProductNameSaveAttachment`
 //  `Refresh` b65270 → `LoadAttachmentProdName`;  `Download All` b67657 (zip lampiran produk ini, RALAT R15)
 //  tautan nama berkas b68903 → `DownloadAttProdName_Act`;  `View Office Online` b69291 → URL bertanda tangan dibuka di
-//  penampil kantor, tab baru (`DownloadAttProdName_Act` 7 b1103; keputusan work owner 03-10-2026) - lewat form GET
-//  ke alamat penampil yang tetap (`penampilOffice.ts`), dua langkah: URL diambil, lalu tombol pembuka di jendela kecil
-//  (klik pengguna sendiri yang membuka tab - tidak diblokir pemblokir pop-up)
+//  penampil kantor, tab baru (`DownloadAttProdName_Act` 7 b1103; keputusan work owner 03-10-2026) - satu klik pada
+//  link yang ada: URL diambil lalu form GET tersembunyi ber-`action` tetap ke penampil (`penampilOffice.ts`) dikirim
 //  `Delete` b69714 → `DeleteAttacProdName_act`.  `Download` b67376 (`OTHER FALSE`) mati - tidak dirender.
 //
 // ⛔ Lampiran melekat pada produk TERSIMPAN (tiket 08: produk dulu, lampiran menyusul) - panel ini dirender
@@ -13,7 +12,7 @@
 // Mode lihat (keputusan work owner 03-10-2026 "jika view tidak tambah/edit/delete"): `Add attachment`, kirim ulang, dan
 // `Delete` tersembunyi; `Refresh`, `Download All`, unduh berkas, dan `View Office Online` tetap.
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Gagal, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import {
@@ -43,8 +42,9 @@ export default function PanelLampiran({ produkId, lihat }: { produkId: string; l
   const [unggah, setUnggah] = useState(false)
   const [berkas, setBerkas] = useState<File | null>(null)
   const [sibuk, setSibuk] = useState(false)
-  // `View Office Online`: berkas yang diminta dan URL bertanda tangannya (null = sedang diambil).
-  const [office, setOffice] = useState<{ nama: string; url: string | null } | null>(null)
+  // `View Office Online`: form GET tersembunyi ke penampil dan input `src`-nya.
+  const formOffice = useRef<HTMLFormElement>(null)
+  const urlOffice = useRef<HTMLInputElement>(null)
 
   const muat = useCallback(async () => {
     try {
@@ -139,13 +139,11 @@ export default function PanelLampiran({ produkId, lihat }: { produkId: string; l
                         className="mpnl-tautan"
                         onClick={(e) => {
                           e.preventDefault()
-                          setOffice({ nama: l.fileName, url: null })
                           void jalankan(async () => {
-                            try {
-                              setOffice({ nama: l.fileName, url: await lihatOffice(produkId, l.id) })
-                            } catch (err) {
-                              setOffice(null)
-                              throw err
+                            const url = await lihatOffice(produkId, l.id)
+                            if (formOffice.current !== null && urlOffice.current !== null) {
+                              urlOffice.current.value = url
+                              formOffice.current.submit()
                             }
                           }, false)
                         }}
@@ -173,37 +171,10 @@ export default function PanelLampiran({ produkId, lihat }: { produkId: string; l
         </div>
       )}
 
-      {office !== null && (
-        <Modal
-          judul={LAMPIRAN_MPNL.viewOffice}
-          onTutup={() => {
-            setOffice(null)
-          }}
-          labelBatal={LAMPIRAN_MPNL.cancel}
-          aksi={
-            office.url !== null && (
-              <form
-                method="get"
-                action={PENAMPIL_OFFICE}
-                target="_blank"
-                onSubmit={() => {
-                  // Ditutup SESUDAH pengiriman: form yang dilepas dari DOM di tengah kiriman membatalkannya.
-                  setTimeout(() => {
-                    setOffice(null)
-                  }, 0)
-                }}
-              >
-                <input type="hidden" name={PARAM_PENAMPIL} value={office.url} />
-                <button type="submit" className="btn btn--primary">
-                  {LAMPIRAN_MPNL.viewOffice}
-                </button>
-              </form>
-            )
-          }
-        >
-          {office.url === null ? <Memuat /> : <p>{office.nama}</p>}
-        </Modal>
-      )}
+      {/* `View Office Online` b1103: `<penampil>?src=<URL bertanda tangan>` di tab baru. */}
+      <form ref={formOffice} method="get" action={PENAMPIL_OFFICE} target="_blank" hidden>
+        <input ref={urlOffice} type="hidden" name={PARAM_PENAMPIL} />
+      </form>
 
       {unggah && (
         <Modal

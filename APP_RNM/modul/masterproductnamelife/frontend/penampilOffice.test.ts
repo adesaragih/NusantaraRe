@@ -20,9 +20,9 @@ describe('View Office Online - penampil kantor (DownloadAttProdName_Act 7 b1103)
     expect(new URLSearchParams(kueri).get(PARAM_PENAMPIL)).toBe(u)
   })
 
-  it('panel membuka penampil lewat form GET ke tab baru - tanpa window.open / location', () => {
-    expect(PANEL).toMatch(/<form\s+method="get"\s+action=\{PENAMPIL_OFFICE\}\s+target="_blank"/)
-    expect(PANEL).toContain('<input type="hidden" name={PARAM_PENAMPIL} value={office.url} />')
-    expect(PANEL).not.toMatch(/window\.open|location\./)
+  it('link View Office Online yang ada langsung membuka penampil (satu klik, form GET tersembunyi, tanpa jendela tambahan)', () => {
+    expect(PANEL).toContain('<form ref={formOffice} method="get" action={PENAMPIL_OFFICE} target="_blank" hidden>')
+    expect(PANEL).toContain('<input ref={urlOffice} type="hidden" name={PARAM_PENAMPIL} />')
+    expect(PANEL).not.toMatch(/window\.open|location\.|setOffice|<Modal\s+judul=\{LAMPIRAN_MPNL\.viewOffice\}/)
   })
 })
