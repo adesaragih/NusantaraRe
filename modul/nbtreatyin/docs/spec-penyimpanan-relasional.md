@@ -401,6 +401,29 @@ sama-persis** — bertoleransi, atau dibandingkan dalam bentuk terbulatkan.
 kolom yang sudah datar di `POOLDATA.json_polis`: `IDPEGA` `NOPOLIS` `NOENDORS` `PRODKE` `TGL_INPUT`
 `TGL_PROD` `USERNAME`.
 
+> ⛔ **RALAT putaran 2 — 03-10-2026 (kolom ikut diagram, bab 0 butir 12)** atas ID-10, ID-21, ID-23,
+> ID-24. Rinciannya per kolom: `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`; ditagih
+> `TestTabelDanKolomMengikutiDiagramGrilling`.
+>
+> - **ID-21** bunyi lama: *"79 medan skalar tingkat atas `PolicyTreatyIn` — ditambah `REMARK` — ditambah
+>   tujuh kolom … `json_polis`"*. Bunyi baru: 79 = **69 kolom** katalog (termasuk `TGL_PROD` dan
+>   `REMARK`) + `NOPOLIS` + 9 tanpa kolom (`LAYER*` 4 dicoret diagram F26, `Total*` 4 turunan,
+>   `isApprovedtoDeptHead` P36). Ditambah tiga kolom halaman kerja `POSITION_NOTE` `NB_STATUS`
+>   `TREATY_IN_ID` (RALAT: dibaca connector Flow / tampil portal / dibaca `BrowseTreatyIn`).
+>   `IS_OJK_NOPOLIS` dan `BROKERAGE_FEE` **dibuang** (hanya ditulis).
+> - **ID-23** bunyi lama: *"`T_POLIS_QUOTATION` — 1:1, 10 medan"*. Bunyi baru: 10 medan diagram **+ 6
+>   RALAT** yang XML buktikan dibaca/tampil: `BusinessName` (`InputPolicyTreatyInPre_Act` langkah 2;
+>   portal), `BusinessFac` (`SaveViewSuggest` CARI7; `GetListOpportunity` filter E), `InsuredID` dan
+>   `InsuredName` (`InputPolicyTreatyInDetail_preACT` langkah 3, 14.1, 14.3; portal), `NoOfferSlip` dan
+>   `IsSurveyReport` (tampil di Section NB, AC 64). Sebelas kolom putaran 1 lainnya dibuang.
+> - **ID-24** bunyi lama: *"`.CedingCo` sebagai id"*. Bunyi baru: kolomnya `CEDING_CO_ID` (diagram R43) dan
+>   tabel menunjuk induknya lewat `QUOTATION_ID → T_POLIS_QUOTATION` (diagram O39), bukan `POLIS_ID`.
+> - **ID-10**: tanpa kolom penanda tutup. Putaran 1 menambah `TGL_TUTUP` (di luar diagram) — **dibuang**;
+>   generasi tertutup = ada baris penerus yang `OLD_POLIS_ID`-nya menunjuknya.
+> - Angsuran (ID-26): `T_POLIS_INSTALMENT` = rancangan §4.3 tanpa `PAYMENT_DATE` (diagram R61) + RALAT
+>   `PPN` `PPH` `PAYMENT_TOTAL_AFTER_PPN` `PAYMENT_TOTAL_AFTER_TAX` (dibaca rumus preACT 18.3.4.1);
+>   `T_POLIS_INSTALMENT_DETAIL` = rancangan §4.3 (11), tanpa `PPN`/`PPH` anak (hanya ditulis).
+
 **ID-22** `[terverifikasi]` ⛔ `LAYER` `LAYER_TYPE` `LAYER_PART` `LAYER_PART_TYPE` **tidak
 disimpan** di `T_GENERAL_POLIS`. Di sistem lama keempatnya **pantulan**, dibaca balik dari kolom
 tabel: `InputPolicyTreatyInDetail_preACT` menetapkan
@@ -492,6 +515,16 @@ Pemetaan yang mengikat: `.Suggest → KETERANGAN` dipotong `substr(…, 0, 3990)
 
 ⭐ `IsApproved` di sini **per baris usulan**, berbeda dari `IsApproved` tingkat polis.
 Menggabungkan keduanya adalah cacat.
+
+> ⭐ **Penerapan putaran 2 — 03-10-2026** `[keputusan work owner]` **K4**: ID-31 berlaku apa adanya.
+> `SuggestList` ditulis ke tabel lama ini (`repository/usulan.go`, pemetaan `models/usulan.go`) dan
+> dibaca balik untuk layar. `[penyimpangan sadar]` terhadap XML, dasar grilling ID-31/AC 39 dan K4:
+> (1) syarat `Quotation.BusinessFac == "F"` `SaveViewSuggest` langkah 2 tidak ditiru; (2) baris ditulis
+> pada submit yang menambahkannya di **ketiga** jenjang, transaksi yang sama — XML hanya memanggilnya dari
+> `InputPolicyTreatyInPost_Act` langkah 4 (pasca-submit admin); (3) `NOURUT` = berikutnya per `IDPEGA` di
+> bawah kunci kasus (XML: `.pxListSubscript`); (4) `TGL_INP` jam 24 (XML memformat `hh` lalu
+> `To_date(…,'HH24…')` — catatan sore tersimpan pagi); (5) `DIV` (`OperatorID.pyOrgDivision`) NULL — tanpa
+> sumber di `inti.Pelaku` (butir terbuka). Tabel dideklarasikan *Tabel warisan* di `MODUL.md`.
 
 ### Penulisan dan transaksi
 
@@ -711,6 +744,7 @@ dapat diuji dari luar.
 | 15 | *"`IsApproved` bernilai `""` tersimpan sebagai `""`, bukan `NULL`"* | Oracle menyimpan `''` sebagai NULL | dibaca kembali `""`; setara di halaman, tidak di SQL |
 | 38 | *"`DEDUCTION1` `DEDUCTION2` `TOTAL_SHARE_PERCENTAGE_PREMIUM` `TOTAL_SHARE_PERCENTAGE_CLAIM` disimpan sebagai persen"* | `TOTAL_*` turunan baris spreading; penjaga repo melarang nama `TOTAL_` di migrasi | DEDUCTION1/2 persen; `TOTAL_*` dihitung saat dibaca (`HitungTotalSpreading`) |
 | 39 | *"`HISTORYAKSEPTASIPRODUCTION` tidak dibuat ulang"* | `SaveViewSuggest` hanya menulis bila `BusinessFac == "F"`; treaty "T" | ⚠️ `T_POLIS_SUGGEST` (baris dokumen SuggestList, bukan tabel riwayat) — keputusan agen, mohon konfirmasi WO |
+| 39 ⛔ RALAT atas RALAT (putaran 2, 03-10-2026) | baris di atas: *"⚠️ `T_POLIS_SUGGEST` (baris dokumen SuggestList, bukan tabel riwayat) — keputusan agen, mohon konfirmasi WO"* | `[keputusan work owner]` **K4**: konfirmasi **ditolak** — tabel di luar diagram grilling (bab 0 butir 11) | ✅ AC 39 apa adanya: migrasi 328 dihapus; `SuggestList` ditulis ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION` yang sudah ada (15 kolom `InsertViewSuggest_SQL`) dan dibaca balik; syarat `BusinessFac == "F"` = `[penyimpangan sadar]` (lihat ID-31) |
 | 21-22, 52-59 | format dan pemuat dokumen lama | pemuat (tiket 22) belum dibangun | `T_POLIS_MEDAN_LAIN` (329) sudah ada tanpa penulis |
 
 ⛔ **RALAT putaran 2 — 03-10-2026 — baris *21-22, 52-59* di atas.** Bunyi lama: *"pemuat (tiket 22) belum

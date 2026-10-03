@@ -86,3 +86,12 @@ dijalankan atasnya — hasil bawaan berarti gagal.
   belum dibangun.
   ⛔ **RALAT putaran 2 (03-10-2026):** bunyi lama *"belum dibangun"* → **dibangun** (tiket 22,
   `models.BacaTanggalLama`).
+
+## ⭐ Putaran 2 — paket penyimpanan (03-10-2026)
+
+Dasar: PROMPT-NB-TREATY-IN-PUTARAN-2 bab 0 butir 11–12, bab 2 K4/K16/K17; rincian kolom `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`.
+
+- Golongan tipe tidak berubah (uang/persen `NUMBER(38,8)`, tanggal `DATE`, cacah `NUMBER(10)`, kode dan
+  penanda teks); kosong → `NULL` di kolom angka/tanggal (diagram F25) tetap `repository.nilaiTulis`.
+- Kolom baru mengikuti golongannya: `IS_EDM_INPUT_ON_NB` penanda, `ID_NEW_BISNIS` kode, `PREMIUM_AFTER_*`
+  uang, `CEDING_CO_ID` kode. `DEDUCTION1/2` milik paket layar (K3) — tidak disentuh paket ini.

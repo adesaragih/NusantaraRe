@@ -54,3 +54,18 @@ penyimpanan.
 `TGL_TUTUP` tidak diisi saat realisasi NB selesai: generasi ditutup ketika generasi penerusnya lahir
 (endorsemen, di luar NB). Penyuntingan kasus yang sudah `Resolved-*` ditolak layanan
 (`ErrKasusTertutup`), dan `TGL_TUTUP` terisi ditolak repository (`ErrGenerasiTertutup`, AC 6).
+
+## ⭐ Putaran 2 — paket penyimpanan (03-10-2026)
+
+Dasar: PROMPT-NB-TREATY-IN-PUTARAN-2 bab 0 butir 11–12, bab 2 K4/K16/K17; rincian kolom `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`.
+
+⛔ **RALAT** atas *Catatan implementasi 2026-10-03* di atas. Bunyi lama, dikutip: *"`TGL_TUTUP` tidak
+diisi saat realisasi NB selesai … dan `TGL_TUTUP` terisi ditolak repository (`ErrGenerasiTertutup`, AC 6)."*
+
+Bunyi baru: kolom `TGL_TUTUP` **dibuang** — tidak ada di diagram grilling dan ID-10 menegakkan pembekuan
+*"di services, bukan di tabel"*. Generasi **tertutup = ada baris penerus yang `OLD_POLIS_ID`-nya menunjuk
+generasi ini** (`repository.syaratTerbuka`: `NOT EXISTS (… s.OLD_POLIS_ID = g.ID)` di `UPDATE` polis, nomor
+polis, posisi, dan `Keadaan`). `ErrGenerasiTertutup` tetap (AC 6). `UNIQUE (OLD_POLIS_ID)` dan
+`UNIQUE (NOPOLIS, PRODKE)` (diagram F16) tetap; yang kedua berupa indeks unik fungsi `CASE` supaya draf tanpa
+nomor tidak bentrok. Uji `-tags db` `TestGenerasiTertutupDitolakDanPembatalanUtuh` kini menutup generasi
+dengan penerus (belum dijalankan — K11). Status tetap **sebagian** (AC 1, 6 🟡: penegakan basis data).

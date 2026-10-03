@@ -75,3 +75,23 @@ lengkap supaya siap dikerjakan begitu pemetaannya tiba, ⛔ **bukan supaya diker
   | tiga tombol Submit `DetailDeptHeadTreatyIn_UW` (`<ID-operator-1>`) | ⚠️ diganti **posisi kasus** Dept Head — diturunkan dari tangga P13, bukan peran tebakan; mohon konfirmasi |
   | label NON EDM / EDM `DetailPoliciesNonProportional` (`<ID-operator-2>`) | bagian XOL non-proporsional tidak dibangun (P29) |
   | `When\IsSPVCreate`, `IsTreaty1`, `IsSPVTreaty1` | hanya memilih Assignment4/6 (posisi sama) — tidak dibangun |
+
+## ⭐ Putaran 2 — paket penyimpanan (03-10-2026)
+
+Dasar: PROMPT-NB-TREATY-IN-PUTARAN-2 bab 0 butir 11–12, bab 2 K4/K16/K17; rincian kolom `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`.
+
+⛔ **RALAT** atas *Hasil implementasi 2026-10-03* butir pertama. Bunyi lama, dikutip: *"Tabel
+`M_NBTRIN_PERAN_TEMPAT` (migrasi 330: KODE_TEMPAT, PERAN, ARAH `MUNCUL`/`KECUALI`), **nol baris** — diisi IAM
+bersama work owner."*
+
+Bunyi baru (`[keputusan work owner]` **K16**): tabel itu tidak ada di diagram grilling — migrasi 330 dan
+pembacanya (`repository.DaftarPeranTempat`, `services.Gudang.DaftarPeranTempat`, tiruan) **dihapus**. Pemetaan
+tempat → peran → arah kini **konstanta kode** `backend/models/peran_tempat.go` (`PemetaanPeranTempat`),
+**kosong sampai IAM menjawab** (K12). Peran pengguna tetap dari `inti.Pelaku.Peran`. Perilaku saat kosong sama
+dengan tabel kosong: setiap tempat tertunda (AC 81), arah tidak ditebak (AC 82; dua arah atau arah asing di
+satu tempat = tertunda), nol peran karangan (AC 91). Uji: `models/peran_tempat_test.go`
+(`TestTempatTampilMenurutArah`, `TestPemetaanPeranTempatKosongSampaiIAMMenjawab`), `handlers/alur_test.go`
+`TestTempatBerperanTidakDitebak`.
+
+**Status tetap needs-info** — pemetaan 12 tempat dan arahnya menunggu IAM; mengisinya = menyunting satu
+variabel, bukan migrasi.

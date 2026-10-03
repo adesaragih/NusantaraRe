@@ -54,3 +54,16 @@ langkah mana pun membatalkan seluruhnya, dan tidak ada lagi berkas yang tersimpa
 alasannya tertulis di `spec.md` §5.7.
 ⛔ Uji keutuhan transaksi **tidak dapat dijalankan dengan tiruan**; ia wajib berjalan lawan basis
 data sungguhan.
+
+## ⭐ Putaran 2 — paket penyimpanan (03-10-2026)
+
+Dasar: PROMPT-NB-TREATY-IN-PUTARAN-2 bab 0 butir 11–12, bab 2 K4/K16/K17; rincian kolom `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`.
+
+- Penulisan catatan usulan ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION` (K4) masuk **transaksi submit yang
+  sama** dengan riwayat, halaman, dan perpindahan — `repository/usulan.go` tanpa `COMMIT`, skema lewat
+  `Qualify` (AC 30). Uji seam HTTP `TestSatuTransaksiPembatalanUtuh` kini juga menyuntikkan kegagalan di
+  `CatatUsulan` — nol baris riwayat produksi, riwayat, halaman, atau perpindahan tersisa (AC 29, 83).
+- Gudang tiruan kini hanya menyimpan medan yang punya kolom (`models.ProyeksiKatalog`) — uji seam HTTP
+  melihat penyimpanan yang sama dengan Oracle. Celah yang terungkap dan ditutup: `LAYER*` tingkat polis
+  hilang sesudah dibuka ulang (kini dibaca balik dari view, ID-22).
+- AC 29 dan 83 tetap 🟡: keutuhan lawan Oracle sungguhan (`-tags db`) belum dijalankan (K11 kosong).
