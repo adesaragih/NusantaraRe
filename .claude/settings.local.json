@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "PowerShell(& \"$env:TEMP\\\\claude\\\\d--migrasi\\\\f171f746-6d82-4730-b6bb-974cc2f51b03\\\\scratchpad\\\\uji-sembilan.ps1\")",
-      "PowerShell(& \"$env:TEMP\\\\claude\\\\d--migrasi\\\\f171f746-6d82-4730-b6bb-974cc2f51b03\\\\scratchpad\\\\uji-37.ps1\")",
-      "PowerShell(& \"$env:TEMP\\\\claude\\\\d--migrasi\\\\f171f746-6d82-4730-b6bb-974cc2f51b03\\\\scratchpad\\\\uji-multi-ccy.ps1\")"
-    ]
-  }
-}
