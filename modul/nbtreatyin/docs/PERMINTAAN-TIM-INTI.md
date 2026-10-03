@@ -30,6 +30,26 @@
 | C3 | Tipe kolom view `TREATYINDETAILJOINEDM`, tabel `TREATYINDETAIL`, kolom `AGENT.STS_PKP` / `STATUSACTIVE` | `[DBA]` | Repository membaca tipe dari `SYS.ALL_TAB_COLUMNS` saat berjalan; nama kolom AGENT diambil dari nama properti RD (belum dikonfirmasi DBA). |
 | C4 | `make test-db` | operator lingkungan | Uji `-tags db` modul ini MELEWATI tanpa `ORACLE_SCHEMA` + `ORACLE_SKEMA_UJI=true`; belum pernah dijalankan lawan skema uji. |
 
+## E · Kontrak `PembacaMasterTreaty` dari modul `treatyin` (K8, 03-10-2026)
+
+`[keputusan work owner]` K8: jalur NB NonProporsional / XOL membaca master kontrak treaty BACA-SAJA dari
+`JSONDATA` `M_TREATY_IN` / `M_TREATY_IN_EDM` (`RDBList\BrowseTreatyIn`, `BrowseTreatyInJoinEDM`) — sebuah
+`[penyimpangan sadar]` atas P29, sebab tabel master relasional modul `treatyin` (`KONTRAK`, `LAYER`,
+`BAGIAN`, `PEMULIHAN_LIMIT`, `TERMIN`, `POTONGAN`) masih **nol baris** (dicek 03-10-2026) dan medannya tidak
+ada di view `TREATYINDETAILJOINEDM`. Pembacaan itu terisolasi di SATU fungsi
+(`modul/nbtreatyin/backend/repository/masterxol.go`, `MasterXOLDariJSON`) di balik antarmuka
+`services.PembacaMasterTreaty`.
+
+| # | Permintaan | Pihak | Rincian |
+| ---: | --- | --- | --- |
+| E1 | Sediakan kontrak `PembacaMasterTreaty` dari modul `treatyin` (baris `Kontrak disediakan` di `MODUL.md`-nya) | pemilik `treatyin` + tim inti (perakit kontrak) | Satu metode: `MasterXOL(ctx, noKontrak string) (MasterXOL, error)` — master satu kontrak menurut nomor kontrak (`TREATYID` = `PolicyTreatyIn.NoOffer`); nol master = galat "tidak ada", bukan master kosong. Bentuk dan daftar medannya: `modul/nbtreatyin/backend/models/masterxol.go` (`SkalarMasterXOL`, `DaftarMasterXOL` — Share() beserta GrossPremiumList/NetPremiumList/DeductionList/DeductionTotalList/RnmLimitList/SpreadingListXOL, Installment().InstallmentList, FacultativeShare(List), RNMShare, EDMState, ProportionType, Limits() pemulihan, ringkasan dan total layer). Angka sebagai teks desimal (nol float), tanggal `YYYY-MM-DD`. |
+| E2 | Pemetaan medan master lawan tabel relasional `treatyin` | pemilik `treatyin` | Tiap medan di E1 dipetakan ke kolom `KONTRAK`/`LAYER`/`BAGIAN`/`PEMULIHAN_LIMIT`/`TERMIN`/`POTONGAN` — atau dinyatakan tidak ada (mis. total dan ringkasan layer yang di Pega disimpan di dokumen). |
+| E3 | Begitu E1 tersedia | `nbtreatyin` | `penyimpanOracle.MasterXOL` (`services/gudang.go`) beralih ke kontrak; `repository.MasterXOLDariJSON` dan uji urainya DIHAPUS; `MODUL.md` baris `Kontrak dipakai` diisi. Nol perubahan di `models` dan `handlers`. |
+
+⛔ Sampai E1 tersedia, `M_TREATY_IN` / `M_TREATY_IN_EDM` tetap dibaca (baca-saja) dan **tidak pernah
+ditulis** dari modul ini. Treaty keluar (`M_TREATY_OUT`, `RDBList\BrowseTreatyOut`) tetap tidak dibaca
+(K8 butir 4).
+
 ## D · Berkas di luar wilayah yang termodifikasi oleh pihak lain
 
 `package.json` dan `package-lock.json` sudah termodifikasi di salinan kerja sebelum implementasi ini

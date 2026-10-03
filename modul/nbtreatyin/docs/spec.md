@@ -292,6 +292,10 @@ penggolongan jenis usaha, rumus pajak brokerage, pengecualian mata uang, dan ant
 ⛔ **JSON tidak dipakai di sistem baru** — tidak untuk membaca, tidak untuk menulis. Seluruh
 mekanisme `adoptJSONObject` + pembacaan kolom dokumen **tidak dimigrasi**.
 
+> ⭐ **RALAT K8 (03-10-2026):** satu pengecualian sempit — master jalur NonProporsional / XOL dibaca
+> **baca-saja** dari `JSONDATA` `M_TREATY_IN` / `M_TREATY_IN_EDM` di satu fungsi repository, hanya
+> medan daftar K8, nol penulisan. Rinciannya di bab 7 "RALAT K8".
+
 ⭐ Sebagai gantinya, data ditarik dari view relasional yang sudah ada:
 
 ```
@@ -926,6 +930,35 @@ dari luar. ⛔ Butir yang terasa seperti keputusan baru adalah salah tulis.
 | 59 | *"Peringatan dipasang ketika jumlah berkas klaim terhubung lebih dari nol."* | `CheckDuplicateOffer` langkah 1-4 berlabel `//`, dipanggil tanpa parameter dari pembongkar JSON — peringatan tidak pernah menyala | tidak dapat dipenuhi seperti tertulis; `TreatyRealizationCheckDuplicate` dibangun |
 | 84 | *"Nilai kosong pada penanda persetujuan tidak menghentikan alur."* | `ListSuggest` mewajibkan Approval; tombol Submit hanya untuk 1/0 | tabel keputusan: kosong = disetujui (diuji); layar: Approval wajib (XML) |
 | 87 | *"Pengiriman ke layanan luar tidak dibangun sebelum muatannya diketahui."* | digantikan KEPUTUSAN-RONDE-12 butir 7 (P8 dicabut) | muatan 4 medan sesudah commit; sambungan `[terbuka]` |
+
+### ⛔ RALAT K8 — jalur NB NonProporsional / XOL dibangun (putaran 2, 03-10-2026)
+
+> `[keputusan work owner]` **K8** (PROMPT-NB-TREATY-IN-PUTARAN-2 bab 2; PESAN-KOREKSI-PUTARAN-2 bagian D):
+> data master jalur XOL **tidak ada** di view `TREATYINDETAILJOINEDM`, dan tabel master relasional modul
+> `treatyin` (`KONTRAK`, `LAYER`, `BAGIAN`, `PEMULIHAN_LIMIT`, `TERMIN`, `POTONGAN`) **masih nol baris**.
+> Maka jalur NonProp dibangun dari XML dan master XOL dibaca **BACA-SAJA** dari `JSONDATA`
+> `M_TREATY_IN` / `M_TREATY_IN_EDM` — pengecualian **sempit** atas P29. Bunyi lama AC di bawah **tidak
+> dihapus**; yang berubah adalah lingkupnya.
+
+| AC | Bunyi lama (dikutip) | Bunyi baru | Bukti XML / kode |
+| ---: | --- | --- | --- |
+| 15 | *"Data kontrak dibaca dari view relasional. Test yang menemukan pembacaan kolom dokumen JSON **gagal**."* | Data kontrak dibaca dari view relasional, **kecuali** master jalur XOL: `JSONDATA` `M_TREATY_IN`/`M_TREATY_IN_EDM` dibaca di **SATU** fungsi (`repository.MasterXOLDariJSON`) di balik `services.PembacaMasterTreaty`, hanya medan master daftar K8 (`models.SkalarMasterXOL`, `models.DaftarMasterXOL`). Test yang menemukan pembacaan JSON **di luar fungsi itu**, atau medan di luar daftar itu, gagal. | `RDBList\BrowseTreatyIn` (SetTreatyIn_Act 4) dan `RDBList\BrowseTreatyInJoinEDM` (InputPolicyTreatyInDetail_NonProp 5) — SQL dikutip di `repository/masterxol.go`; uji `TestUraiMasterXOLHanyaMedanK8` |
+| 16 | *"Sistem baru **tidak menulis** JSON."* | **Tetap.** Nol penulisan JSON, nol penulisan master; halaman `TreatyIn` tidak disimpan (katalog hanya `TREATY_IN_ID`). `SaveTreatyIn` (SetTreatyIn_Act 11) hanya berjalan bila `revisionstate==1` — tidak pernah dari NB | `TestNonPropPilihBisnisHitungSimpanBacaKembali` (master tidak tersimpan) |
+| 57 | *"Data treaty keluar **dapat dibaca** dari konteks realisasi treaty masuk."* | **Tetap ⛔** (K8 butir 4): treaty keluar bukan bagian NB NonProp. Seluruh datanya JSON `M_TREATY_OUT`: `select JSONDATA as CLASSOFBUSINESS from pooldata.M_treaty_out where ID={pyWorkPage.PolicyTreatyIn.NoOffer}` (`RDBList\BrowseTreatyOut`, `BrowseTreatyOutDetail`). `BusinessAndSOBListRetro`, `SetValueRetro_Act`, `InputPolicyTreatyOutDetail_*`, `DetailPolicyTreatyOutNonProportional` (tampil bila `ClaimType = 'XOL Retro'`) tidak dibangun | `docs/alat/status.json` |
+| 58 | *"Data treaty keluar **tidak pernah ditulis** dari konteks ini."* | **Tetap ✅** dan diperluas: jalur XOL/NonProp (yang di prompt putaran 2 bab 4 disebut "AC 58 (XOL/NonProp) dibangun") **DIBANGUN** — `InputPolicyTreatyInDetail_NonProp`, `InsertToTreatyXOLList`, `InsertToTreatyXOLListRetroShare`, `TreatyNonPropSetSpreading`, `TreatySetReinstatement`, `SetReinstatementPct`, `TreatyRealizationCheckXOLList`, subsection `DetailPoliciesNonProportional`; hasilnya **hanya** ke `T_POLIS_XOL`, `T_POLIS_XOL_LAYER`, `T_POLIS_INSTALMENT(_DETAIL)`, `T_POLIS_SPREADING`, `T_GENERAL_POLIS`. Nol tulis ke `M_TREATY_OUT` / `M_TREATY_IN` | `models/nonprop*.go`, `services/nonprop.go`, `frontend/components/DetailNonProp.tsx`; uji `handlers/nonprop_test.go`, `models/nonprop*_test.go` |
+| 62 | *"Enam aturan pembongkar JSON **tidak dimigrasi**."* | **Empat** tetap tidak dimigrasi: `FetchMasterTreatyIn` dan langkah 9-10/13/17 `InputPolicyTreatyInDetail_preACT` (master proporsional, `M_TREATY_IN_DETAIL_EDM` — di luar tabel K8), `InputPolicyTreatyOutDetail_preACT`, `InputPolicyTreatyOutDetail_NonProp` (treaty keluar). **Dua dimigrasi baca-saja** (K8): `InputPolicyTreatyInDetail_NonProp` (+ preACT 16, 18) dan `SetTreatyIn_Act` langkah 3-5, 13 (rantai `TreatyRealizationCheckXOLList`) | `docs/alat/status.json` |
+
+⚠️ Penyimpangan sadar yang menyertai K8 (dicatat juga di tiket 01):
+
+1. **Halaman master tidak disimpan.** Pega menyimpan `pyWorkPage.TreatyIn` di blob kasus; di sini master dibaca
+   ulang saat berkas dibuka, dan tampilannya (NonProp 7-9, preACT 18 bagian `TreatyIn`) disusun dari penanda
+   **terkini** (`models.TampilanMasterNonProp`). Nilai polis tersimpan tidak disentuh.
+2. **Master tidak ada / rusak saat pilih bisnis = 422** dan nol simpanan (AC 36-38), bukan halaman kosong
+   seperti Pega (`catch … oLog.error`). Saat pra-proses (`TreatyRealizationCheckXOLList`) tetap seperti Pega:
+   master kosong, pesan VERBATIM `"Error fetching XolList"`.
+3. **`TreatyRealizationCheckXOLList` tidak dijalankan untuk polis ber-`QuotationData.ProportionalType =
+   'Proportional'`** walau `IsNewPolicyNonProp` tertinggal "1" — penyimpanan menolak baris XOL polis
+   proporsional (spec-penyimpanan AC 33).
 
 ## 8 · Out of Scope
 

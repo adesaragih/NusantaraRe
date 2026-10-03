@@ -52,3 +52,21 @@ pembangunan berikutnya.
 ⚠️ `[terverifikasi]` **Penanda persetujuan kedua dirujuk juga oleh modul Fac** — tiga berkasnya
 merujuk aturan yang sama, yang berkasnya **tidak ada di seluruh korpus**. ⭐ Catat untuk modul itu;
 ⛔ **jangan kerjakan di tiket ini.**
+
+## ⛔ RALAT K8 — AC 62 (putaran 2, 03-10-2026)
+
+Bunyi lama (Acceptance criteria): *"**AC 62** — **6** aturan pembongkar dokumen **tidak dimigrasi**"*;
+Rule Pega sumber: *"**6** aturan pembongkar dokumen | penyimpanan pindah ke sumber relasional | P29 · P15"*.
+
+Bunyi baru — `[keputusan work owner]` **K8** (jalur NonProp/XOL dibangun, master dibaca baca-saja):
+
+| Aturan | Nasib | Bukti |
+| --- | --- | --- |
+| `InputPolicyTreatyInDetail_NonProp` | ✅ **dimigrasi** (langkah 2-6 lewat `repository.MasterXOLDariJSON`, baca-saja) | `RDBList\BrowseTreatyInJoinEDM`; `models.InputDetailNonProp` |
+| `SetTreatyIn_Act` | ✅ **sebagian** — langkah 3-5 (`RDBList\BrowseTreatyIn`) dan 13 (`TreatySetReinstatement`), dalam rantai `TreatyRealizationCheckXOLList` | `services.siapkanNonProp` |
+| `InputPolicyTreatyInDetail_preACT` | langkah 16 dan 18 ✅ (K8); 9-10 (`M_TREATY_IN_DETAIL_EDM`, di luar tabel K8), 13, 17 ⛔ | `services.pilihBisnisNonProp` |
+| `FetchMasterTreatyIn` | ⛔ tetap (master proporsional, bukan jalur XOL) | P29 |
+| `InputPolicyTreatyOutDetail_preACT`, `InputPolicyTreatyOutDetail_NonProp` | ⛔ tetap — treaty KELUAR (K8 butir 4): `select JSONDATA as CLASSOFBUSINESS from pooldata.M_treaty_out where ID={pyWorkPage.PolicyTreatyIn.NoOffer}` | `RDBList\BrowseTreatyOut` |
+
+AC 62 dengan bunyi baru: **nol** pembacaan JSON di luar `repository.MasterXOLDariJSON`, **nol** penulisan
+JSON di mana pun, dan keempat aturan yang tetap ⛔ tidak terpanggil. Status AC tetap ✅.

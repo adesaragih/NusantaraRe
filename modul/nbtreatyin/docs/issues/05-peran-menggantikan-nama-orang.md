@@ -75,3 +75,12 @@ lengkap supaya siap dikerjakan begitu pemetaannya tiba, ⛔ **bukan supaya diker
   | tiga tombol Submit `DetailDeptHeadTreatyIn_UW` (`<ID-operator-1>`) | ⚠️ diganti **posisi kasus** Dept Head — diturunkan dari tangga P13, bukan peran tebakan; mohon konfirmasi |
   | label NON EDM / EDM `DetailPoliciesNonProportional` (`<ID-operator-2>`) | bagian XOL non-proporsional tidak dibangun (P29) |
   | `When\IsSPVCreate`, `IsTreaty1`, `IsSPVTreaty1` | hanya memilih Assignment4/6 (posisi sama) — tidak dibangun |
+
+## ⛔ RALAT K8 — tempat `DetailPoliciesNonProportional` (putaran 2, 03-10-2026)
+
+Bunyi lama (tabel tempat): *"label NON EDM / EDM `DetailPoliciesNonProportional` (`<ID-operator-2>`) | bagian
+XOL non-proporsional tidak dibangun (P29)"*. Bunyi baru: subsection `DetailPoliciesNonProportional`
+**dibangun** (K8, `frontend/components/DetailNonProp.tsx`); kedua LABEL teks "NON EDM" / "EDM" yang tampil
+hanya bagi `OperatorID.pxInsName = '<ID-operator-2>'` tetap **tertunda** sebagai tempat berperan (tidak
+ditampilkan siapa pun sampai IAM memetakan perannya, AC 81). Isi subsection tidak bergantung pada
+label itu.
