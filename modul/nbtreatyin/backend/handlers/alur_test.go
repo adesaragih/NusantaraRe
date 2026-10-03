@@ -14,6 +14,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -260,6 +261,53 @@ func TestTanggaPenuhDanNomorPolisSekali(t *testing.T) { // AC 6-9, 31, 73, 74
 	}
 	if got := strings.Join(akses, " "); got != "UJI-ADMIN:Accept UJI-SH:Reject UJI-ADMIN:Accept UJI-SH:Accept UJI-DH:Accept" {
 		t.Fatalf("baris riwayat produksi per jenjang: %s", got)
+	}
+}
+
+// K4 [penyimpangan sadar - menunggu konfirmasi WO]: NOURUT diberikan
+// gudang (MAX+1 per IDPEGA), XML `InsertViewSuggest_SQL` memakai
+// `.pxListSubscript` (SaveViewSuggest 2.1.2 CARI2). Bukti keduanya sama
+// sepanjang tangga (tolak-naik-setuju, tiga jenjang): sesudah SETIAP submit,
+// SuggestList yang dibangun ulang dari tabel memuat baris NOURUT j tepat di
+// pxListSubscript j, dan baris yang baru ditulis = ujung daftar.
+func TestNourutUsulanSamaDenganSubskripSuggestList(t *testing.T) { // AC 39-44, K4
+	u := baru(t)
+	id := u.buat()
+	langkah := []struct {
+		p pelakuUji
+		h *models.Halaman
+	}{
+		{admin, halamanLengkap("1")}, {secHead, putusan("0")}, {admin, halamanLengkap("1")},
+		{secHead, putusan("1")}, {deptHead, putusan("1")},
+	}
+	for i, l := range langkah {
+		l.h.Setel("PolicyTreatyIn.Suggest", fmt.Sprintf("UJI-catatan-%d", i+1))
+		if l.p == deptHead {
+			if kode, isi := u.panggil("POST", "/kasus/"+id+"/nomor-polis", deptHead, map[string]any{"halaman": l.h}); kode != http.StatusOK {
+				t.Fatalf("nomor polis: %d %s", kode, isi)
+			}
+		}
+		if kode, isi := u.kirim(id, l.p, l.h); kode != http.StatusOK {
+			t.Fatalf("submit %d: %d %s", i+1, kode, isi)
+		}
+		_, isi := u.panggil("GET", "/kasus/"+id, admin, nil)
+		var ly services.Layar
+		if err := json.Unmarshal([]byte(isi), &ly); err != nil {
+			t.Fatal(err)
+		}
+		daftar := ly.Halaman.AmbilDaftar(models.DaftarUsulan)
+		if len(daftar) != i+1 || len(u.g.Usulan) != i+1 {
+			t.Fatalf("submit %d: %d baris SuggestList, %d baris tabel", i+1, len(daftar), len(u.g.Usulan))
+		}
+		for j, b := range daftar { // pxListSubscript = j+1
+			c := u.g.Usulan[j]
+			if c.NoUrut != j+1 || c.Keterangan != b["Suggest"] || c.AksesLogin != b["OperatorID"] {
+				t.Fatalf("submit %d: pxListSubscript %d = %+v, baris tabel NOURUT %d = %+v", i+1, j+1, b, c.NoUrut, c)
+			}
+		}
+		if daftar[i]["Suggest"] != fmt.Sprintf("UJI-catatan-%d", i+1) {
+			t.Fatalf("submit %d: catatan baru bukan di ujung daftar: %+v", i+1, daftar)
+		}
 	}
 }
 

@@ -89,3 +89,32 @@ func TestBarisCatatanDariRiwayatProduksi(t *testing.T) { // AC 42, 71
 		t.Error("APPROVAL kosong -> IsApproved tidak dipasang (sama dengan AddToListComments langkah 1.2)")
 	}
 }
+
+// K4 [penyimpangan sadar - menunggu konfirmasi WO]: NOURUT diberikan
+// repository (MAX+1 per IDPEGA, di bawah kunci kasus), XML memakai
+// `.pxListSubscript` (SaveViewSuggest 2.1.2 CARI2). Keduanya SAMA: SuggestList
+// dibangun ulang dari tabel berurut NOURUT 1..n (BarisCatatan, ber-IsSave),
+// catatan baru ditambahkan di UJUNG (`TambahCatatan`, APPEND), sehingga baris
+// yang ditulis berposisi n+1 = MAX(NOURUT)+1. Uji alur ujung-ke-ujung:
+// handlers/alur_test.go TestNourutUsulanSamaDenganSubskripSuggestList.
+func TestCatatanBaruBerposisiNourutBerikut(t *testing.T) {
+	for n := 0; n <= 3; n++ {
+		h := HalamanBaru()
+		var tabel []Baris // dibaca balik repository: ORDER BY NOURUT
+		for i := 1; i <= n; i++ {
+			tabel = append(tabel, BarisCatatan(UsulanProduksi{NoUrut: i, PIC: "UJI-PIC", Keterangan: "UJI-lama"}))
+		}
+		h.SetelDaftar(DaftarUsulan, tabel)
+		h.Setel(HalamanPolis+".Suggest", "UJI-baru")
+		TambahCatatan(h, "UJI-AKUN")
+		daftar := h.AmbilDaftar(DaftarUsulan)
+		u := UsulanBelumTersimpan(h)
+		if len(u) != 1 || u[0].Keterangan != "UJI-baru" {
+			t.Fatalf("n=%d: satu catatan baru, dapat %+v", n, u)
+		}
+		// .pxListSubscript (berbasis 1) baris yang ditulis = n+1 = MAX(NOURUT)+1
+		if posisi := len(daftar); posisi != n+1 || daftar[posisi-1]["Suggest"] != "UJI-baru" {
+			t.Fatalf("n=%d: catatan baru di pxListSubscript %d, harap %d", n, posisi, n+1)
+		}
+	}
+}

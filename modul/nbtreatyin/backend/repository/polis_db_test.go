@@ -274,6 +274,9 @@ func TestRiwayatProduksiPulangPergi(t *testing.T) {
 		_ = rows.Scan(&n)
 		no = append(no, n)
 	}
+	// K4 [penyimpangan sadar - menunggu konfirmasi WO]: NOURUT j = pxListSubscript j
+	// SuggestList yang dibangun ulang (c[0] = NOURUT 1, c[1] = NOURUT 2) - sama
+	// dengan CARI2 `.pxListSubscript` SaveViewSuggest.
 	if fmt.Sprint(no) != "[1 2]" {
 		t.Fatalf("NOURUT berikutnya per IDPEGA: %v", no)
 	}
