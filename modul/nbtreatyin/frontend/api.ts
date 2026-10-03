@@ -99,13 +99,10 @@ export interface Riwayat {
   tglTransfer: string
 }
 
-/** Satu refresh berhitung - `services.PermintaanHitung`. `urutan` = action set
- *  sel dengan lebih dari satu refresh, dijalankan berurutan atas halaman yang
- *  sama (mengabaikan `aksi`/`param`). */
+/** Action set satu sel - `services.PermintaanHitung`, SATU bentuk: `urutan`
+ *  berisi satu refresh atau lebih, dijalankan berurutan atas halaman yang sama. */
 export interface PermintaanHitung {
-  aksi?: string
-  param?: string
-  urutan?: { aksi: string; param?: string }[]
+  urutan: { aksi: string; param?: string }[]
   indeks?: number
   halaman: Halaman
 }
@@ -176,6 +173,15 @@ export function ambilAcuan(): Promise<Acuan> {
 }
 
 // ------------------------------------------------------------------ halaman
+
+/** Awalan jalur halaman polis - SATU-SATUNYA salinan `models.HalamanPolis` + ".". */
+export const POLIS = 'PolicyTreatyIn.'
+
+/** Awalan jalur halaman master kontrak - `models.HalamanMaster` + ".". */
+export const MASTER = 'TreatyIn.'
+
+/** Nilai `.ClaimType` XOL Retro - `models.KlaimXOLRetro`. */
+export const KLAIM_XOL_RETRO = 'XOL Retro'
 
 /** Nilai satu jalur halaman ("" bila tidak ada). */
 export function nilai(h: Halaman, jalur: string): string {

@@ -6,42 +6,29 @@
 // OpportunitiesList_Header`, bersyarat tampil `1=2`), Stage view/List view -
 // milik modul CRM dan tidak dibangun.
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
-import { buatKasus, daftarKasus, type RingkasanKasus } from '../api'
+import { useAmbil } from '../ambil'
+import { buatKasus, daftarKasus } from '../api'
 import { JUDUL, JUDUL_POSISI, KOLOM_PORTAL, PORTAL, TOMBOL } from '../labels'
 
 export default function PortalNBTreatyIn({ onBuka, pesan }: { onBuka: (id: string) => void; pesan?: string }) {
   const [cari, setCari] = useState('')
   const [kueri, setKueri] = useState('')
-  const [baris, setBaris] = useState<RingkasanKasus[] | null>(null)
-  const [galat, setGalat] = useState<unknown>(null)
+  const { data: baris, galat: galatDaftar } = useAmbil(() => daftarKasus(kueri), [kueri])
+  const [galatBuat, setGalatBuat] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(false)
-
-  useEffect(() => {
-    let dibuang = false
-    setBaris(null)
-    setGalat(null)
-    daftarKasus(kueri)
-      .then((b) => {
-        if (!dibuang) setBaris(b)
-      })
-      .catch((e: unknown) => {
-        if (!dibuang) setGalat(e)
-      })
-    return () => {
-      dibuang = true
-    }
-  }, [kueri])
+  const galat = galatBuat ?? galatDaftar
 
   const buat = async () => {
     setSibuk(true)
+    setGalatBuat(null)
     try {
       const k = await buatKasus()
       onBuka(k.id)
     } catch (e: unknown) {
-      setGalat(e)
+      setGalatBuat(e)
     } finally {
       setSibuk(false)
     }

@@ -6,9 +6,14 @@
 //
 // ⛔ Nol perhitungan di sini - semua nilai datang dari backend (pilih bisnis:
 // InputPolicyTreatyInDetail_NonProp; refresh `CountSpreading`).
+//
+// LABEL "NON EDM" (sebelum subsection) dan "EDM" (sesudahnya, sebelum subsection
+// EDM yang tak terjangkau) tampil hanya bagi `OperatorID.pxInsName = <ID-operator-2>`
+// di XML - di sini DIGERBANG tempat berperan tiket 05 (`tempat.ts`), tertunda
+// selama pemetaan IAM kosong; begitu pemetaannya diisi, label ikut tampil.
 
 import { Panel } from '../../../../inti/frontend/components/ui/dasar'
-import { daftar, nilai, type Baris, type Halaman, type Pilihan } from '../api'
+import { MASTER, POLIS, daftar, nilai, type Baris, type Halaman, type Pilihan } from '../api'
 import { BAGIAN, KOLOM_ANGSURAN, KOLOM_SPREADING, TOMBOL } from '../labels'
 import {
   JUDUL_NONPROP,
@@ -28,10 +33,10 @@ import {
   type Total,
 } from '../nonprop'
 import { sajikan, type Sajian } from '../sajian'
+import { TEMPAT_LABEL_EDM, TEMPAT_LABEL_NON_EDM, tempatTerbuka, type Tempat } from '../tempat'
 
-const P = 'PolicyTreatyIn.'
-const SPREADING = P + 'SpreadingRiskList'
-const ANGSURAN = P + 'ListInstallment'
+const SPREADING = POLIS + 'SpreadingRiskList'
+const ANGSURAN = POLIS + 'ListInstallment'
 
 /** pxNumber section NonProp dan SpreadingRiskList ber-`pyDecimalPlaces` 2 (K14). */
 const DUA: Sajian = { desimal: 2 }
@@ -87,17 +92,28 @@ export interface PropsDetailNonProp {
   halaman: Halaman
   /** Layar admin dan pelaku boleh bekerja - grid spreading dapat disunting. */
   sunting: boolean
+  /** Tempat berperan pelaku (`Layar.tempat`, tiket 05). */
+  tempat: Tempat
   opsiSpreading: Pilihan[]
   onUbahBaris: (jalur: string, i: number, kunci: string, v: string) => void
   onSetelDaftar: (jalur: string, b: Baris[]) => void
   onRefresh: (aksi: string, indeks: number) => void
 }
 
-export default function DetailNonProp({ halaman: h, sunting, opsiSpreading, onUbahBaris, onSetelDaftar, onRefresh }: PropsDetailNonProp) {
+export default function DetailNonProp({
+  halaman: h,
+  sunting,
+  tempat,
+  opsiSpreading,
+  onUbahBaris,
+  onSetelDaftar,
+  onRefresh,
+}: PropsDetailNonProp) {
   const spreading = daftar(h, SPREADING)
   const terbuka = sunting && spreadingTerbuka(h)
   return (
     <>
+      {tempatTerbuka(tempat, TEMPAT_LABEL_NON_EDM) && <p className="nbti__label-np">{JUDUL_NONPROP.nonEdm}</p>}
       <Panel judul={JUDUL_NONPROP.limits}>
         <Grid baris={daftarMaster(h, 'LimitSummaryList')} kolom={KOLOM_LIMIT} />
         <Totals h={h} daftarTotal={TOTAL_LIMIT} />
@@ -118,7 +134,7 @@ export default function DetailNonProp({ halaman: h, sunting, opsiSpreading, onUb
         <Panel judul={JUDUL_NONPROP.fakultatif}>
           <div className="field nbti__medan">
             <span className="field__label">{JUDUL_NONPROP.fakultatifPersen}</span>
-            <span className="nbti__nilai">{nilai(h, 'TreatyIn.FacultativeShare')}</span>
+            <span className="nbti__nilai">{nilai(h, MASTER + 'FacultativeShare')}</span>
           </div>
           <Grid baris={daftarMaster(h, 'LimitFacShareSummaryList')} kolom={KOLOM_FAKULTATIF} />
           <Totals h={h} daftarTotal={TOTAL_FAKULTATIF} />
@@ -191,10 +207,10 @@ export default function DetailNonProp({ halaman: h, sunting, opsiSpreading, onUb
             <tfoot>
               <tr>
                 <td>{KOLOM_SPREADING.totalShare}</td>
-                <td>{angka2(nilai(h, P + 'TotalSharePercentagePremium'))}</td>
-                <td>{angka2(nilai(h, P + 'TotalPremium'))}</td>
-                <td>{angka2(nilai(h, P + 'TotalSharePercentageClaim'))}</td>
-                <td>{angka2(nilai(h, P + 'TotalClaim'))}</td>
+                <td>{angka2(nilai(h, POLIS + 'TotalSharePercentagePremium'))}</td>
+                <td>{angka2(nilai(h, POLIS + 'TotalPremium'))}</td>
+                <td>{angka2(nilai(h, POLIS + 'TotalSharePercentageClaim'))}</td>
+                <td>{angka2(nilai(h, POLIS + 'TotalClaim'))}</td>
               </tr>
             </tfoot>
           </table>
@@ -204,7 +220,7 @@ export default function DetailNonProp({ halaman: h, sunting, opsiSpreading, onUb
       <Panel judul={JUDUL_NONPROP.installment}>
         <div className="field nbti__medan">
           <span className="field__label">{KOLOM_ANGSURAN.installment}</span>
-          <span className="nbti__nilai">{nilai(h, P + 'Installment')}</span>
+          <span className="nbti__nilai">{nilai(h, POLIS + 'Installment')}</span>
         </div>
         {daftar(h, ANGSURAN).map((a, i) => (
           <div key={i} className="nbti__angsuran-np">
@@ -217,6 +233,7 @@ export default function DetailNonProp({ halaman: h, sunting, opsiSpreading, onUb
           </div>
         ))}
       </Panel>
+      {tempatTerbuka(tempat, TEMPAT_LABEL_EDM) && <p className="nbti__label-np">{JUDUL_NONPROP.edm}</p>}
     </>
   )
 }

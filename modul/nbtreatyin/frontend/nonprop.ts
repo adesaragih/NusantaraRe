@@ -9,30 +9,23 @@
 //     IsEDMInputOnNB != true`; InputPolicyTreatyInDetail_NonProp langkah 10 mengisi
 //     `IsEDMInputOnNB = true` tepat ketika `TreatyMasterInEDM` - tidak terjangkau;
 //   - tombol `.pyTemplateButton` (refresh `TreatyInNonSetTotal`): tampil `1=2`;
-//   - label "NON EDM" / "EDM": tampil hanya untuk SATU identitas orang (tiket 05).
+//   - (label "NON EDM" / "EDM" DIGERBANG tempat berperan tiket 05 - `tempat.ts`,
+//     `components/DetailNonProp.tsx`; tertunda selama pemetaan IAM kosong.)
 
-import { nilai, type Baris, type Halaman } from './api'
-
-const P = 'PolicyTreatyIn.'
-const M = 'TreatyIn.'
+import { KLAIM_XOL_RETRO, MASTER, POLIS, nilai, type Baris, type Halaman } from './api'
+import { nolTeks, positifTeks } from './tanda'
 
 /** `.IsNewPolicyNonProp = 1` - kontainer proporsional tersembunyi, subsection NonProp tampil. */
-export const polisNonPropBaru = (h: Halaman) => nilai(h, P + 'IsNewPolicyNonProp') === '1'
+export const polisNonPropBaru = (h: Halaman) => nilai(h, POLIS + 'IsNewPolicyNonProp') === '1'
 
 /** Kontainer `DetailPoliciesNonProportional`: `.IsNewPolicyNonProp = 1 && .ClaimType != 'XOL Retro'`. */
-export const tampilNonProp = (h: Halaman) => polisNonPropBaru(h) && nilai(h, P + 'ClaimType') !== 'XOL Retro'
+export const tampilNonProp = (h: Halaman) => polisNonPropBaru(h) && nilai(h, POLIS + 'ClaimType') !== KLAIM_XOL_RETRO
 
-/** Angka master sebagai bilangan (kosong = 0) - hanya untuk SYARAT tampil, bukan perhitungan. */
-function angka(s: string): number {
-  const n = Number(s.trim() === '' ? '0' : s)
-  return Number.isFinite(n) ? n : NaN
-}
-
-/** `pyWorkPage.TreatyIn.FacultativeShare` = 0 (kosong dihitung 0). */
-export const fakultatifNol = (h: Halaman) => angka(nilai(h, M + 'FacultativeShare')) === 0
+/** `pyWorkPage.TreatyIn.FacultativeShare` = 0 (kosong dihitung 0; tanda teks, nol `Number`). */
+export const fakultatifNol = (h: Halaman) => nolTeks(nilai(h, MASTER + 'FacultativeShare'))
 
 /** Kontainer "Share Facultative": `pyWorkPage.TreatyIn.FacultativeShare>0`. */
-export const tampilFakultatif = (h: Halaman) => angka(nilai(h, M + 'FacultativeShare')) > 0
+export const tampilFakultatif = (h: Halaman) => positifTeks(nilai(h, MASTER + 'FacultativeShare'))
 
 /**
  * Section `SpreadingRiskList`: tombol Add/Delete tampil bila FacultativeShare = 0 atau '';
@@ -140,6 +133,9 @@ export const KOLOM_RINCI: Kolom[] = [
 ]
 
 export const JUDUL_NONPROP = {
+  /** LABEL sel `DetailPoliciesNonProportional` - tampil menurut tempat berperan (tiket 05). */
+  nonEdm: 'NON EDM',
+  edm: 'EDM',
   limits: 'Limits',
   share: 'Share',
   totalSpreaded: 'Total Spreaded',
@@ -152,9 +148,9 @@ export const JUDUL_NONPROP = {
 } as const
 
 /** `% RNM Share`: RNMShare bila FacultativeShare = 0, RnmShareDeducted bila != 0. */
-export const jalurRnmShare = (h: Halaman) => M + (fakultatifNol(h) ? 'RNMShare' : 'RnmShareDeducted')
+export const jalurRnmShare = (h: Halaman) => MASTER + (fakultatifNol(h) ? 'RNMShare' : 'RnmShareDeducted')
 
 /** Baris daftar master (kosong bila tidak ada). */
 export function daftarMaster(h: Halaman, nama: string): Baris[] {
-  return h.daftar?.[M + nama] ?? []
+  return h.daftar?.[MASTER + nama] ?? []
 }

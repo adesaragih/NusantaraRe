@@ -24,6 +24,17 @@ describe('subsection DetailPoliciesNonProportional', () => {
     expect(jalurRnmShare(hal({ 'TreatyIn.FacultativeShare': '5' }))).toBe('TreatyIn.RnmShareDeducted')
   })
 
+  it('tanda FacultativeShare dibaca dari TEKS, tanpa Number/float (spec §5.6)', () => {
+    // angka lebih panjang dari presisi double tetap benar tandanya
+    expect(tampilFakultatif(hal({ 'TreatyIn.FacultativeShare': '0.000000000000000000001' }))).toBe(true)
+    expect(spreadingTerbuka(hal({ 'TreatyIn.FacultativeShare': '0.000000000000000000001' }))).toBe(false)
+    expect(spreadingTerbuka(hal({ 'TreatyIn.FacultativeShare': '0.0000' }))).toBe(true)
+    expect(tampilFakultatif(hal({ 'TreatyIn.FacultativeShare': '-1' }))).toBe(false)
+    // bukan angka: bukan nol, bukan positif (sama dengan NaN sebelumnya)
+    expect(tampilFakultatif(hal({ 'TreatyIn.FacultativeShare': 'UJI-X' }))).toBe(false)
+    expect(spreadingTerbuka(hal({ 'TreatyIn.FacultativeShare': 'UJI-X' }))).toBe(false)
+  })
+
   it('SpreadingRiskList terbuka (Add/Delete, %Share) hanya bila FacultativeShare = 0 atau kosong', () => {
     expect(spreadingTerbuka(hal({}))).toBe(true)
     expect(spreadingTerbuka(hal({ 'TreatyIn.FacultativeShare': '0' }))).toBe(true)

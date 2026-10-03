@@ -111,3 +111,9 @@
 .nbtreatyin .nbti__angsuran-np {
   margin: 8px 0 16px;
 }
+
+/* LABEL "NON EDM" / "EDM" DetailPoliciesNonProportional (tempat berperan tiket 05). */
+.nbtreatyin .nbti__label-np {
+  margin: 8px 0;
+  font-weight: 600;
+}

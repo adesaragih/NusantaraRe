@@ -21,15 +21,14 @@
 //     `pyWorkPage.OfferTreatyIn.QuotationData.*` (+ RDB `BrowseClientEmail_SQL`) yang
 //     dibaca nol rule NB.
 
-import { useEffect, useState } from 'react'
-
 import { Gagal, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
-import { daftarSumberBisnis, nilai, type BarisAgen, type Halaman } from '../api'
+import { useAmbil } from '../ambil'
+import { KLAIM_XOL_RETRO, POLIS, daftarSumberBisnis, nilai, type BarisAgen, type Halaman } from '../api'
 import { JUDUL, KOLOM_SOB, TOMBOL } from '../labels'
 
 /** pyVisible tombol `Select Source Of Business`: `.ClaimType = 'XOL Retro'`. */
 export function tampilTombolSOB(h: Halaman): boolean {
-  return nilai(h, 'PolicyTreatyIn.ClaimType') === 'XOL Retro'
+  return nilai(h, POLIS + 'ClaimType') === KLAIM_XOL_RETRO
 }
 
 /** pyVisible tombol `Choose`: `.ChildCount = 0` (kosong = 0). */
@@ -50,22 +49,7 @@ export default function PilihSumberBisnis({
   onPilih: (idAgen: string, tutup: boolean) => void
   onTutup: () => void
 }) {
-  const [baris, setBaris] = useState<BarisAgen[] | null>(null)
-  const [galat, setGalat] = useState<unknown>(null)
-
-  useEffect(() => {
-    let dibuang = false
-    daftarSumberBisnis()
-      .then((b) => {
-        if (!dibuang) setBaris(b)
-      })
-      .catch((e: unknown) => {
-        if (!dibuang) setGalat(e)
-      })
-    return () => {
-      dibuang = true
-    }
-  }, [])
+  const { data: baris, galat } = useAmbil(daftarSumberBisnis, [])
 
   return (
     <Modal judul={JUDUL.sumberBisnis} onTutup={onTutup} penuh>

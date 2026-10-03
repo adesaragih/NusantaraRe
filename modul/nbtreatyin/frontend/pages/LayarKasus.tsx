@@ -10,10 +10,12 @@
 // Medan wajib datang dari backend (`medanWajib`). Padanan setiap tombol/aksi
 // dengan rule XML: `docs/alat/tombol.json`.
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { Gagal, Memuat, Modal, Panel, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
+import { useAmbilBatal } from '../ambil'
 import {
+  POLIS,
   ambilAcuan,
   bukaKasus,
   daftar,
@@ -69,12 +71,11 @@ import {
 } from '../medan'
 import { tampilNonProp } from '../nonprop'
 import { sajikan, type Sajian } from '../sajian'
+import { tampilTanggalProduksi } from '../tempat'
 
-const P = 'PolicyTreatyIn.'
-const SPREADING = P + 'SpreadingRiskList'
-const ANGSURAN = P + 'ListInstallment'
-const USULAN = P + 'SuggestList'
-const TEMPAT_TANGGAL_PRODUKSI = 'LISTSUGGEST_PRODUCTIONDATE'
+const SPREADING = POLIS + 'SpreadingRiskList'
+const ANGSURAN = POLIS + 'ListInstallment'
+const USULAN = POLIS + 'SuggestList'
 
 function opsi(p: { nilai: string; label: string }[] | null | undefined): Opsi[] {
   return (p ?? []).map((x) => ({ value: x.nilai, label: x.label }))
@@ -98,22 +99,16 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
     setH(ly.halaman)
   }, [])
 
-  useEffect(() => {
-    let dibuang = false
-    Promise.all([bukaKasus(id), ambilAcuan(), riwayatKasus(id)])
-      .then(([ly, a, r]) => {
-        if (dibuang) return
-        terima(ly)
-        setAcuan(a)
-        setRiwayat(r ?? [])
-      })
-      .catch((e: unknown) => {
-        if (!dibuang) setGalat(e)
-      })
-    return () => {
-      dibuang = true
-    }
-  }, [id, terima])
+  useAmbilBatal(
+    () => Promise.all([bukaKasus(id), ambilAcuan(), riwayatKasus(id)]),
+    ([ly, a, r]) => {
+      terima(ly)
+      setAcuan(a)
+      setRiwayat(r ?? [])
+    },
+    setGalat,
+    [id, terima],
+  )
 
   if (galat !== null && layar === null) return <Gagal galat={galat} />
   if (layar === null || h === null) return <Memuat />
@@ -137,12 +132,10 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
   }
 
   const ubah = (jalur: string, v: string) => setH((x) => (x ? setel(x, jalur, v) : x))
-  /** Action set satu sel: satu refresh, atau beberapa berurutan (`urutan`). */
+  /** Action set satu sel - SATU bentuk permintaan: `urutan` satu refresh atau lebih. */
   const refresh = (urutan: Aksi[], indeks?: number, halaman?: Halaman) => {
-    const [satu] = urutan
-    if (!satu) return
-    const badan = urutan.length === 1 ? { aksi: satu.aksi, param: satu.param } : { urutan }
-    void jalankan(() => hitung(id, { ...badan, indeks, halaman: halaman ?? h }), terima)
+    if (urutan.length === 0) return
+    void jalankan(() => hitung(id, { urutan, indeks, halaman: halaman ?? h }), terima)
   }
 
   const selesai = (m: Medan, v: string) => {
@@ -152,7 +145,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
   }
 
   /** Sel angka hanya-baca grid: nilai berformat, kode mata uang bila uang (AC 85). */
-  const kodeMU = nilai(h, P + 'Currency')
+  const kodeMU = nilai(h, POLIS + 'Currency')
   const sel = (v: string | undefined, s: Sajian, uang = false) => (
     <>
       {uang && kodeMU && (v ?? '') !== '' && <span className="nbti__kode">{kodeMU}</span>}
@@ -216,7 +209,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
   const spreading = daftar(h, SPREADING)
   const angsuran = daftar(h, ANGSURAN)
   const usulan = daftar(h, USULAN)
-  const tampilTanggalProduksi = layar.tempat?.[TEMPAT_TANGGAL_PRODUKSI] && nilai(h, P + 'IsApproved') === '1'
+  const tanggalProduksi = tampilTanggalProduksi(h, layar.tempat)
   // Wadah bagian uang / spreading / angsuran (`pyContainerVisibleWhen`).
   const wadahUang = admin ? wadahUangAdmin(h) : wadahUangAtasan(h)
   const ubahAdmin = admin && boleh
@@ -274,7 +267,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
               </button>
             )}
             {/* `.TreatyType='XOL'`; click -> refresh (pra-DT TreatyEnableDisableInput) */}
-            {nilai(h, P + 'TreatyType') === 'XOL' && (
+            {nilai(h, POLIS + 'TreatyType') === 'XOL' && (
               <button type="button" className="btn" onClick={() => refresh([{ aksi: 'TreatyEnableDisableInput' }])}>
                 {TOMBOL.enableDisable}
               </button>
@@ -289,6 +282,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
         <DetailNonProp
           halaman={h}
           sunting={admin && boleh}
+          tempat={layar.tempat}
           opsiSpreading={acuan?.spreading ?? []}
           onUbahBaris={ubahBaris}
           onSetelDaftar={(j, b) => setH(setelDaftar(h, j, b))}
@@ -370,10 +364,10 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
               <tfoot>
                 <tr>
                   <td>{KOLOM_SPREADING.totalShare}</td>
-                  <td>{sel(nilai(h, P + 'TotalSharePercentagePremium'), SAJIAN_SPREADING.total)}</td>
-                  <td>{sel(nilai(h, P + 'TotalPremium'), SAJIAN_SPREADING.total, true)}</td>
-                  <td>{sel(nilai(h, P + 'TotalSharePercentageClaim'), SAJIAN_SPREADING.total)}</td>
-                  <td>{sel(nilai(h, P + 'TotalClaim'), SAJIAN_SPREADING.total, true)}</td>
+                  <td>{sel(nilai(h, POLIS + 'TotalSharePercentagePremium'), SAJIAN_SPREADING.total)}</td>
+                  <td>{sel(nilai(h, POLIS + 'TotalPremium'), SAJIAN_SPREADING.total, true)}</td>
+                  <td>{sel(nilai(h, POLIS + 'TotalSharePercentageClaim'), SAJIAN_SPREADING.total)}</td>
+                  <td>{sel(nilai(h, POLIS + 'TotalClaim'), SAJIAN_SPREADING.total, true)}</td>
                 </tr>
               </tfoot>
             </table>
@@ -391,12 +385,12 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
               <input
                 className="field__input nbti__pendek"
                 aria-label={KOLOM_ANGSURAN.installment}
-                value={nilai(h, P + 'Installment')}
-                onChange={(e) => ubah(P + 'Installment', e.target.value)}
+                value={nilai(h, POLIS + 'Installment')}
+                onChange={(e) => ubah(POLIS + 'Installment', e.target.value)}
                 onBlur={() => refresh([{ aksi: 'FillPaymentInstallment' }])}
               />
             ) : (
-              <span>{nilai(h, P + 'Installment')}</span>
+              <span>{nilai(h, POLIS + 'Installment')}</span>
             )}
           </div>
           <div className="table-wrap">
@@ -478,9 +472,9 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
                     <input
                       type="radio"
                       name="nbti-approval"
-                      checked={nilai(h, P + 'IsApproved') === o.value}
+                      checked={nilai(h, POLIS + 'IsApproved') === o.value}
                       onChange={() => {
-                        const baru = setel(h, P + 'IsApproved', o.value)
+                        const baru = setel(h, POLIS + 'IsApproved', o.value)
                         setH(baru)
                         // change -> runActivity SetDueTo_act (CekLimitTreatyAcc_Act: K2;
                         // Protection_Act: varian tak ada di korpus, INVENTARIS 1.2)
@@ -492,11 +486,11 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
                 ))}
               </div>
             </div>
-            {tampilTanggalProduksi && (
+            {tanggalProduksi && (
               <KotakMedan
-                medan={{ jalur: P + 'ProductionDate', label: 'Production Date', jenis: 'tanggal' }}
+                medan={{ jalur: POLIS + 'ProductionDate', label: 'Production Date', jenis: 'tanggal' }}
                 halaman={h}
-                wajib
+                wajib={wajib.has(POLIS + 'ProductionDate')}
                 hanyaBaca={false}
                 opsiMataUang={[]}
                 opsiMO={[]}
@@ -505,7 +499,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
               />
             )}
             <KotakMedan
-              medan={{ jalur: P + 'Suggest', label: 'Suggest', jenis: 'area' }}
+              medan={{ jalur: POLIS + 'Suggest', label: 'Suggest', jenis: 'area' }}
               halaman={h}
               wajib
               hanyaBaca={false}

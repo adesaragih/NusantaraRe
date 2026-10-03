@@ -2,34 +2,18 @@
 // tombol "Choose" per baris (`SetValue_Act(ID=.ID)`). Kolom `*VALUE` = pxCurrency
 // tanpa `pyDecimalPlaces` -> sajian pola inti (K14, `sajian.ts`).
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { Gagal, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
-import { daftarBisnis, type BarisKontrak } from '../api'
+import { useAmbil } from '../ambil'
+import { daftarBisnis } from '../api'
 import { JUDUL, KOLOM_BISNIS, TOMBOL } from '../labels'
 import { sajikan } from '../sajian'
 
 export default function PilihBisnis({ onPilih, onTutup }: { onPilih: (id: string) => void; onTutup: () => void }) {
   const [cari, setCari] = useState('')
   const [kueri, setKueri] = useState('')
-  const [baris, setBaris] = useState<BarisKontrak[] | null>(null)
-  const [galat, setGalat] = useState<unknown>(null)
-
-  useEffect(() => {
-    let dibuang = false
-    setBaris(null)
-    setGalat(null)
-    daftarBisnis(kueri)
-      .then((b) => {
-        if (!dibuang) setBaris(b)
-      })
-      .catch((e: unknown) => {
-        if (!dibuang) setGalat(e)
-      })
-    return () => {
-      dibuang = true
-    }
-  }, [kueri])
+  const { data: baris, galat } = useAmbil(() => daftarBisnis(kueri), [kueri])
 
   return (
     <Modal judul={JUDUL.pilihBisnis} onTutup={onTutup} penuh>

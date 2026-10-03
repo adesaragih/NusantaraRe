@@ -28,8 +28,9 @@
 //   - grid `Breakdown Spreading` (`.BreakDownSpreadList`) - K9 (KEPUTUSAN-RONDE-12
 //     butir 3/3b): breakdown spreading tidak dimigrasi.
 
-import { nilai, type Halaman } from './api'
+import { KLAIM_XOL_RETRO, POLIS, nilai, type Halaman } from './api'
 import type { Sajian } from './sajian'
+import { negatifTeks } from './tanda'
 
 export type JenisMedan = 'tampil' | 'teks' | 'angka' | 'tanggal' | 'area' | 'centang' | 'mataUang' | 'mo'
 
@@ -55,9 +56,8 @@ export interface Medan {
   sajian?: Sajian
 }
 
-const P = 'PolicyTreatyIn.'
-const v = (h: Halaman, m: string) => nilai(h, P + m)
-const mu = P + 'Currency'
+const v = (h: Halaman, m: string) => nilai(h, POLIS + m)
+const mu = POLIS + 'Currency'
 
 // ------------------------------------------------------------------ syarat
 
@@ -66,13 +66,10 @@ export const bukanNonProp = (h: Halaman) => nilai(h, 'Quotation.ProportionalType
 /** `.IsNewPolicyNonProp != 1`. */
 export const bukanNonPropBaru = (h: Halaman) => v(h, 'IsNewPolicyNonProp') !== '1'
 /** `.BalanceDueTo < 0` (teks kosong = 0, aritmetika Pega). */
-export function saldoNegatif(h: Halaman): boolean {
-  const s = v(h, 'BalanceDueTo').trim()
-  return s !== '' && s.startsWith('-') && /[1-9]/.test(s)
-}
+export const saldoNegatif = (h: Halaman) => negatifTeks(v(h, 'BalanceDueTo'))
 /** `.ClaimType != 'XOL Retro'` - wadah FlagPPH/TypeTax/Choose Business admin, dan
  *  `pyVisible` FlagRetroTreaty. */
-export const bukanXOLRetro = (h: Halaman) => v(h, 'ClaimType') !== 'XOL Retro'
+export const bukanXOLRetro = (h: Halaman) => v(h, 'ClaimType') !== KLAIM_XOL_RETRO
 /** `.QuotationData.ProportionalType = 'Proportional'` - wadah Quartal / U/Y. */
 const proporsionalQD = (h: Halaman) => v(h, 'QuotationData.ProportionalType') === 'Proportional'
 /** `.QuotationData.ProportionalType = 'NonProportional'` - wadah Layer*. */
@@ -113,64 +110,64 @@ const TGL: Sajian = 'tanggal'
 
 /** Medan umum layar admin - urutan sel `DetailPolicyTreatyIn` (wadah "General"). */
 export const MEDAN_ADMIN_UMUM: Medan[] = [
-  { jalur: P + 'NoOffer', label: 'Master ID', jenis: 'tampil' },
+  { jalur: POLIS + 'NoOffer', label: 'Master ID', jenis: 'tampil' },
   { jalur: 'TreatyIn.Commencement', label: 'Commencement', jenis: 'tampil', sajian: TGL },
   // change -> refresh ber-pyPreDataTransform `SystemSetOneYear_DT` (EndDate = StartDate + 1 tahun)
-  { jalur: P + 'StartDate', label: 'Statement Period', jenis: 'tanggal', aksi: [{ aksi: 'SystemSetOneYear' }] },
-  { jalur: P + 'SOBName', label: 'Source Of Business', jenis: 'tampil' },
-  { jalur: P + 'TreatyGroupName', label: 'Treaty Group', jenis: 'tampil', tampil: bukanNonPropBaru },
+  { jalur: POLIS + 'StartDate', label: 'Statement Period', jenis: 'tanggal', aksi: [{ aksi: 'SystemSetOneYear' }] },
+  { jalur: POLIS + 'SOBName', label: 'Source Of Business', jenis: 'tampil' },
+  { jalur: POLIS + 'TreatyGroupName', label: 'Treaty Group', jenis: 'tampil', tampil: bukanNonPropBaru },
   // pyReadOnly `IsUW` (workbasket ReasFacIn*) - tidak pernah benar bagi admin treaty
-  { jalur: P + 'QuotationData.IsSurveyReport', label: 'Survey Report', jenis: 'teks', tampil: bukanNonProp },
-  { jalur: P + 'StatementType', label: 'Statement Type', jenis: 'teks' },
-  { jalur: P + 'QuotationData.NoOfferSlip', label: 'No Offer Slip', jenis: 'area' },
-  { jalur: P + 'FlagRetroTreaty', label: 'FlagRetroTreaty', jenis: 'centang', tampil: bukanXOLRetro },
+  { jalur: POLIS + 'QuotationData.IsSurveyReport', label: 'Survey Report', jenis: 'teks', tampil: bukanNonProp },
+  { jalur: POLIS + 'StatementType', label: 'Statement Type', jenis: 'teks' },
+  { jalur: POLIS + 'QuotationData.NoOfferSlip', label: 'No Offer Slip', jenis: 'area' },
+  { jalur: POLIS + 'FlagRetroTreaty', label: 'FlagRetroTreaty', jenis: 'centang', tampil: bukanXOLRetro },
   // change -> postValue -> runActivity RemoveTypeTax_ACT
-  { jalur: P + 'FlagPPH', label: 'FlagPPH', jenis: 'centang', tampil: bukanXOLRetro, aksi: [{ aksi: 'RemoveTypeTax' }] },
+  { jalur: POLIS + 'FlagPPH', label: 'FlagPPH', jenis: 'centang', tampil: bukanXOLRetro, aksi: [{ aksi: 'RemoveTypeTax' }] },
   {
-    jalur: P + 'TypeTax',
+    jalur: POLIS + 'TypeTax',
     label: 'Type Tax',
     jenis: 'teks',
     tampil: (h) => bukanXOLRetro(h) && v(h, 'FlagPPH') === 'true',
   },
-  { jalur: P + 'ShareCurrency', label: 'RNM Share', jenis: 'tampil' },
-  { jalur: P + 'ShareValue', label: 'ShareValue', jenis: 'tampil', mataUang: P + 'ShareCurrency', sajian: UANG },
-  { jalur: P + 'StatementDate', label: 'Statement Date', jenis: 'tampil', sajian: TGL },
+  { jalur: POLIS + 'ShareCurrency', label: 'RNM Share', jenis: 'tampil' },
+  { jalur: POLIS + 'ShareValue', label: 'ShareValue', jenis: 'tampil', mataUang: POLIS + 'ShareCurrency', sajian: UANG },
+  { jalur: POLIS + 'StatementDate', label: 'Statement Date', jenis: 'tampil', sajian: TGL },
   { jalur: 'TreatyIn.Termination', label: 'Termination', jenis: 'tampil', sajian: TGL },
-  { jalur: P + 'EndDate', label: 'To', jenis: 'tanggal', aksi: [{ aksi: 'ProtectDate' }] },
-  { jalur: P + 'CedingCoName', label: 'Ceding Company', jenis: 'tampil' },
-  { jalur: P + 'InsuredName', label: 'InsuredName', jenis: 'tampil' },
-  { jalur: P + 'TreatyType', label: 'Treaty Type', jenis: 'tampil' },
-  { jalur: P + 'TreatyYear', label: 'UW Year', jenis: 'tampil', tampil: bukanNonPropBaru },
+  { jalur: POLIS + 'EndDate', label: 'To', jenis: 'tanggal', aksi: [{ aksi: 'ProtectDate' }] },
+  { jalur: POLIS + 'CedingCoName', label: 'Ceding Company', jenis: 'tampil' },
+  { jalur: POLIS + 'InsuredName', label: 'InsuredName', jenis: 'tampil' },
+  { jalur: POLIS + 'TreatyType', label: 'Treaty Type', jenis: 'tampil' },
+  { jalur: POLIS + 'TreatyYear', label: 'UW Year', jenis: 'tampil', tampil: bukanNonPropBaru },
   // pyFormatType number tanpa desimal (mode baca); pyShowReadonlyFormatting false
-  { jalur: P + 'Quartal', label: '.Quartal', jenis: 'teks', tampil: proporsionalQD, sajian: UANG },
-  { jalur: P + 'YearOfQuartal', label: 'YearOfQuartal', jenis: 'teks', tampil: proporsionalQD },
+  { jalur: POLIS + 'Quartal', label: '.Quartal', jenis: 'teks', tampil: proporsionalQD, sajian: UANG },
+  { jalur: POLIS + 'YearOfQuartal', label: 'YearOfQuartal', jenis: 'teks', tampil: proporsionalQD },
   // sel `.TreatyYear` kedua, sesudah label "U/Y" (tampil ALWAYS)
-  { jalur: P + 'TreatyYear', label: 'U/Y', jenis: 'tampil', tampil: proporsionalQD },
+  { jalur: POLIS + 'TreatyYear', label: 'U/Y', jenis: 'tampil', tampil: proporsionalQD },
   // change -> postValue -> refresh CheckDataMkt
-  { jalur: P + 'QuotationData.MOID', label: 'Marketing Officer', jenis: 'mo', aksi: [{ aksi: 'CheckDataMkt' }] },
-  { jalur: P + 'QuotationData.ProportionalType', label: 'Proportional Type', jenis: 'tampil', tampil: bukanNonPropBaru },
+  { jalur: POLIS + 'QuotationData.MOID', label: 'Marketing Officer', jenis: 'mo', aksi: [{ aksi: 'CheckDataMkt' }] },
+  { jalur: POLIS + 'QuotationData.ProportionalType', label: 'Proportional Type', jenis: 'tampil', tampil: bukanNonPropBaru },
   // change -> refresh SetCurrency_act(CURR=.IDCurrency)
   {
-    jalur: P + 'IDCurrency',
+    jalur: POLIS + 'IDCurrency',
     label: 'Currency',
     jenis: 'mataUang',
     tampil: bukanNonPropBaru,
     aksi: [{ aksi: 'SetCurrency' }],
   },
-  { jalur: P + 'ClaimType', label: 'Claim Type', jenis: 'teks' },
-  { jalur: P + 'ClaimPaymentType', label: 'Payment Type', jenis: 'teks' },
+  { jalur: POLIS + 'ClaimType', label: 'Claim Type', jenis: 'teks' },
+  { jalur: POLIS + 'ClaimPaymentType', label: 'Payment Type', jenis: 'teks' },
   ...dalamWadah(nonProporsionalQD, [
-    { jalur: P + 'LayerType', label: 'LayerType', jenis: 'tampil' },
-    { jalur: P + 'Layer', label: 'Layer', jenis: 'tampil' },
-    { jalur: P + 'LayerPartType', label: 'LayerPartType', jenis: 'tampil' },
-    { jalur: P + 'LayerPart', label: 'LayerPart', jenis: 'tampil' },
+    { jalur: POLIS + 'LayerType', label: 'LayerType', jenis: 'tampil' },
+    { jalur: POLIS + 'Layer', label: 'Layer', jenis: 'tampil' },
+    { jalur: POLIS + 'LayerPartType', label: 'LayerPartType', jenis: 'tampil' },
+    { jalur: POLIS + 'LayerPart', label: 'LayerPart', jenis: 'tampil' },
   ]),
-  { jalur: P + 'Remark', label: 'Remark', jenis: 'area' },
+  { jalur: POLIS + 'Remark', label: 'Remark', jenis: 'area' },
 ]
 
 /** Satu medan uang tersunting layar admin. */
 const uangAdmin = (m: string, label: string, aksi?: Aksi[], sajian: Sajian = UANG_SUNTING, uang = true): Medan => ({
-  jalur: P + m,
+  jalur: POLIS + m,
   label,
   jenis: 'angka',
   aksi,
@@ -200,10 +197,10 @@ export const MEDAN_ADMIN_UANG: Medan[] = dalamWadah(wadahUangAdmin, [
   uangAdmin('OutstandingClaim', 'Outstanding Claim'),
   uangAdmin('SalvageValue', 'Salvage', OGPONP),
   uangAdmin('ExcessLoss', 'Excess Loss', OGPONP),
-  { jalur: P + 'NetPremium', label: 'Total Premium Before Claim', jenis: 'tampil', mataUang: mu, sajian: UANG },
-  { jalur: P + 'BalanceDueTo', label: 'Balance Due To You', jenis: 'tampil', tampil: saldoNegatif, mataUang: mu, sajian: UANG },
+  { jalur: POLIS + 'NetPremium', label: 'Total Premium Before Claim', jenis: 'tampil', mataUang: mu, sajian: UANG },
+  { jalur: POLIS + 'BalanceDueTo', label: 'Balance Due To You', jenis: 'tampil', tampil: saldoNegatif, mataUang: mu, sajian: UANG },
   {
-    jalur: P + 'BalanceBeforeTax',
+    jalur: POLIS + 'BalanceBeforeTax',
     label: 'Balance Before Tax',
     jenis: 'tampil',
     tampil: (h) => !saldoNegatif(h),
@@ -211,7 +208,7 @@ export const MEDAN_ADMIN_UANG: Medan[] = dalamWadah(wadahUangAdmin, [
     sajian: UANG,
   },
   {
-    jalur: P + 'BalanceBeforePPH',
+    jalur: POLIS + 'BalanceBeforePPH',
     label: 'Balance Before Withholding Tax (PPH 2.2)',
     jenis: 'tampil',
     tampil: (h) => !saldoNegatif(h),
@@ -219,7 +216,7 @@ export const MEDAN_ADMIN_UANG: Medan[] = dalamWadah(wadahUangAdmin, [
     sajian: UANG,
   },
   {
-    jalur: P + 'BalanceDueTo',
+    jalur: POLIS + 'BalanceDueTo',
     label: 'Balance Due To Us',
     jenis: 'tampil',
     tampil: (h) => !saldoNegatif(h),
@@ -229,8 +226,8 @@ export const MEDAN_ADMIN_UANG: Medan[] = dalamWadah(wadahUangAdmin, [
   // K3: pxCurrency, dipakai rumus sebagai jumlah uang (CountNetPremi_act langkah 4)
   uangAdmin('Deduction1', 'Deduction1', OGPONP),
   uangAdmin('Deduction2', 'Deduction2', OGPONP),
-  { jalur: P + 'PPHValue', label: 'PPH 2%', jenis: 'tampil', mataUang: mu, sajian: UANG },
-  { jalur: P + 'PPNValue', label: 'PPN 2.2%', jenis: 'tampil', mataUang: mu, sajian: UANG },
+  { jalur: POLIS + 'PPHValue', label: 'PPH 2%', jenis: 'tampil', mataUang: mu, sajian: UANG },
+  { jalur: POLIS + 'PPNValue', label: 'PPN 2.2%', jenis: 'tampil', mataUang: mu, sajian: UANG },
 ])
 
 // ------------------------------------------------------------------ atasan
@@ -239,52 +236,52 @@ export const MEDAN_ADMIN_UANG: Medan[] = dalamWadah(wadahUangAdmin, [
  *  hanya-baca: `pyReadOnly`, atau `pyDisabled=always` (DueTo, FlagPPH, No Offer
  *  Slip). Yang dapat diisi atasan hanya `ListSuggest` (AC 52). */
 export const MEDAN_ATASAN_UMUM: Medan[] = [
-  { jalur: P + 'NoOffer', label: 'Master ID', jenis: 'tampil' },
+  { jalur: POLIS + 'NoOffer', label: 'Master ID', jenis: 'tampil' },
   { jalur: 'TreatyIn.Commencement', label: 'Commencement', jenis: 'tampil', sajian: TGL },
-  { jalur: P + 'StartDate', label: 'Statement Period', jenis: 'tampil', sajian: TGL },
-  { jalur: P + 'SOBName', label: 'Source Of Business', jenis: 'tampil' },
-  { jalur: P + 'TreatyGroupName', label: 'Treaty Group', jenis: 'tampil', tampil: bukanNonPropBaru },
+  { jalur: POLIS + 'StartDate', label: 'Statement Period', jenis: 'tampil', sajian: TGL },
+  { jalur: POLIS + 'SOBName', label: 'Source Of Business', jenis: 'tampil' },
+  { jalur: POLIS + 'TreatyGroupName', label: 'Treaty Group', jenis: 'tampil', tampil: bukanNonPropBaru },
   // wadah `pyWorkPage.FlagViewPolicy = 1` - FlagViewPolicy tidak diisi rule
   // terjangkau mana pun (hanya dibaca `SumTSIPremiSpreadedRNM_Act`, tak terjangkau)
   ...dalamWadah((h) => nilai(h, 'FlagViewPolicy') === '1', [
-    { jalur: P + 'PolicyNo', label: 'No Polis', jenis: 'tampil' },
-    { jalur: P + 'ProductionDate', label: 'Production Date', jenis: 'tampil', sajian: TGL },
+    { jalur: POLIS + 'PolicyNo', label: 'No Polis', jenis: 'tampil' },
+    { jalur: POLIS + 'ProductionDate', label: 'Production Date', jenis: 'tampil', sajian: TGL },
   ]),
-  { jalur: P + 'DueTo', label: 'Due To Us / You', jenis: 'tampil' },
-  { jalur: P + 'QuotationData.IsSurveyReport', label: 'Survey Report', jenis: 'tampil', tampil: bukanNonProp },
-  { jalur: P + 'StatementType', label: 'Statement Type', jenis: 'tampil' },
-  { jalur: P + 'FlagPPH', label: 'FlagPPH', jenis: 'centang', kunci: true },
-  { jalur: P + 'TypeTax', label: 'Type Tax', jenis: 'tampil', tampil: tidakKosong(P + 'TypeTax') },
-  { jalur: P + 'QuotationData.NoOfferSlip', label: 'No Offer Slip', jenis: 'tampil' },
-  { jalur: P + 'ShareCurrency', label: 'RNM Share', jenis: 'tampil' },
-  { jalur: P + 'ShareValue', label: 'ShareValue', jenis: 'tampil', mataUang: P + 'ShareCurrency', sajian: UANG },
-  { jalur: P + 'StatementDate', label: 'Statement Date', jenis: 'tampil', sajian: TGL },
+  { jalur: POLIS + 'DueTo', label: 'Due To Us / You', jenis: 'tampil' },
+  { jalur: POLIS + 'QuotationData.IsSurveyReport', label: 'Survey Report', jenis: 'tampil', tampil: bukanNonProp },
+  { jalur: POLIS + 'StatementType', label: 'Statement Type', jenis: 'tampil' },
+  { jalur: POLIS + 'FlagPPH', label: 'FlagPPH', jenis: 'centang', kunci: true },
+  { jalur: POLIS + 'TypeTax', label: 'Type Tax', jenis: 'tampil', tampil: tidakKosong(POLIS + 'TypeTax') },
+  { jalur: POLIS + 'QuotationData.NoOfferSlip', label: 'No Offer Slip', jenis: 'tampil' },
+  { jalur: POLIS + 'ShareCurrency', label: 'RNM Share', jenis: 'tampil' },
+  { jalur: POLIS + 'ShareValue', label: 'ShareValue', jenis: 'tampil', mataUang: POLIS + 'ShareCurrency', sajian: UANG },
+  { jalur: POLIS + 'StatementDate', label: 'Statement Date', jenis: 'tampil', sajian: TGL },
   { jalur: 'TreatyIn.Termination', label: 'Termination', jenis: 'tampil', sajian: TGL },
-  { jalur: P + 'EndDate', label: 'To', jenis: 'tampil', sajian: TGL },
-  { jalur: P + 'CedingCoName', label: 'Ceding Company', jenis: 'tampil', tampil: tidakKosong(P + 'CedingCoName') },
-  { jalur: P + 'InsuredName', label: 'InsuredName', jenis: 'tampil' },
-  { jalur: P + 'TreatyType', label: 'Treaty Type', jenis: 'tampil' },
-  { jalur: P + 'TreatyYear', label: 'UW Year', jenis: 'tampil', tampil: bukanNonPropBaru },
-  { jalur: P + 'Quartal', label: '.Quartal', jenis: 'tampil', tampil: proporsionalQD, sajian: BULAT_POLOS },
-  { jalur: P + 'YearOfQuartal', label: 'YearOfQuartal', jenis: 'tampil', tampil: proporsionalQD, sajian: BULAT_POLOS },
-  { jalur: P + 'TreatyYear', label: 'U/Y', jenis: 'tampil', tampil: proporsionalQD },
+  { jalur: POLIS + 'EndDate', label: 'To', jenis: 'tampil', sajian: TGL },
+  { jalur: POLIS + 'CedingCoName', label: 'Ceding Company', jenis: 'tampil', tampil: tidakKosong(POLIS + 'CedingCoName') },
+  { jalur: POLIS + 'InsuredName', label: 'InsuredName', jenis: 'tampil' },
+  { jalur: POLIS + 'TreatyType', label: 'Treaty Type', jenis: 'tampil' },
+  { jalur: POLIS + 'TreatyYear', label: 'UW Year', jenis: 'tampil', tampil: bukanNonPropBaru },
+  { jalur: POLIS + 'Quartal', label: '.Quartal', jenis: 'tampil', tampil: proporsionalQD, sajian: BULAT_POLOS },
+  { jalur: POLIS + 'YearOfQuartal', label: 'YearOfQuartal', jenis: 'tampil', tampil: proporsionalQD, sajian: BULAT_POLOS },
+  { jalur: POLIS + 'TreatyYear', label: 'U/Y', jenis: 'tampil', tampil: proporsionalQD },
   {
-    jalur: P + 'MarketingOfficer',
+    jalur: POLIS + 'MarketingOfficer',
     label: 'Marketing Officer',
     jenis: 'tampil',
-    tampil: tidakKosong(P + 'MarketingOfficer'),
+    tampil: tidakKosong(POLIS + 'MarketingOfficer'),
   },
-  { jalur: P + 'QuotationData.ProportionalType', label: 'Proportional Type', jenis: 'tampil', tampil: bukanNonPropBaru },
-  { jalur: P + 'Currency', label: 'Currency', jenis: 'tampil', tampil: bukanNonPropBaru },
-  { jalur: P + 'ClaimType', label: 'Claim Type', jenis: 'tampil' },
-  { jalur: P + 'ClaimPaymentType', label: 'Claim Payment Type', jenis: 'tampil' },
+  { jalur: POLIS + 'QuotationData.ProportionalType', label: 'Proportional Type', jenis: 'tampil', tampil: bukanNonPropBaru },
+  { jalur: POLIS + 'Currency', label: 'Currency', jenis: 'tampil', tampil: bukanNonPropBaru },
+  { jalur: POLIS + 'ClaimType', label: 'Claim Type', jenis: 'tampil' },
+  { jalur: POLIS + 'ClaimPaymentType', label: 'Claim Payment Type', jenis: 'tampil' },
   ...dalamWadah(nonProporsionalQD, [
-    { jalur: P + 'LayerType', label: 'LayerType', jenis: 'tampil' },
-    { jalur: P + 'Layer', label: 'Layer', jenis: 'tampil' },
-    { jalur: P + 'LayerPartType', label: 'LayerPartType', jenis: 'tampil' },
-    { jalur: P + 'LayerPart', label: 'LayerPart', jenis: 'tampil' },
+    { jalur: POLIS + 'LayerType', label: 'LayerType', jenis: 'tampil' },
+    { jalur: POLIS + 'Layer', label: 'Layer', jenis: 'tampil' },
+    { jalur: POLIS + 'LayerPartType', label: 'LayerPartType', jenis: 'tampil' },
+    { jalur: POLIS + 'LayerPart', label: 'LayerPart', jenis: 'tampil' },
   ]),
-  { jalur: P + 'Remark', label: 'Remark', jenis: 'tampil' },
+  { jalur: POLIS + 'Remark', label: 'Remark', jenis: 'tampil' },
 ]
 
 /** Bagian uang layar atasan - label VERBATIM `DetailDeptHeadTreatyIn_UW`
@@ -294,7 +291,7 @@ export const MEDAN_ATASAN_UANG: Medan[] = dalamWadah(wadahUangAtasan, medanAtasa
 
 function medanAtasanUang(): Medan[] {
   const t = (m: string, label: string, sajian: Sajian = UANG, uang = true): Medan => ({
-    jalur: P + m,
+    jalur: POLIS + m,
     label,
     jenis: 'tampil',
     mataUang: uang ? mu : undefined,
@@ -332,10 +329,10 @@ function medanAtasanUang(): Medan[] {
 /** Total berlabel di bawah grid spreading layar atasan (`.TotalSharePercentagePremium`
  *  dst., pxNumber 2 desimal). Di layar admin sel yang sama berwadah `1=2` (mati). */
 export const MEDAN_ATASAN_TOTAL: Medan[] = dalamWadah(wadahUangAtasan, [
-  { jalur: P + 'TotalSharePercentagePremium', label: 'Total %Share', jenis: 'tampil', sajian: DUA },
-  { jalur: P + 'TotalPremium', label: 'Total Premium', jenis: 'tampil', mataUang: mu, sajian: DUA },
-  { jalur: P + 'TotalSharePercentageClaim', label: 'Total %Share Claim', jenis: 'tampil', sajian: DUA },
-  { jalur: P + 'TotalClaim', label: 'Total Claim', jenis: 'tampil', mataUang: mu, sajian: DUA },
+  { jalur: POLIS + 'TotalSharePercentagePremium', label: 'Total %Share', jenis: 'tampil', sajian: DUA },
+  { jalur: POLIS + 'TotalPremium', label: 'Total Premium', jenis: 'tampil', mataUang: mu, sajian: DUA },
+  { jalur: POLIS + 'TotalSharePercentageClaim', label: 'Total %Share Claim', jenis: 'tampil', sajian: DUA },
+  { jalur: POLIS + 'TotalClaim', label: 'Total Claim', jenis: 'tampil', mataUang: mu, sajian: DUA },
 ])
 
 // ------------------------------------------------------------------ grid (K14)
