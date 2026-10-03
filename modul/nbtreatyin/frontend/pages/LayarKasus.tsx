@@ -1,10 +1,14 @@
 // Layar realisasi satu kasus - flow action posisinya:
 //   Admin   `InboxPolicyTreatyIn`  -> `GeneralPolicyTreatyIn` / `DetailPolicyTreatyIn`
 //   Atasan  `DeptHeadTreatyIn_UW`  -> `GeneralDeptHeadTreatyIn_UW` / `DetailDeptHeadTreatyIn_UW`
-// beserta `SpreadingRiskList`, jadwal angsuran, dan `ListSuggest`.
+// beserta grid `.SpreadingRiskList`, jadwal angsuran `.ListInstallment`, dan
+// `ListSuggest`.
 //
 // ⛔ Setiap refresh berhitung dikirim ke backend (`POST .../hitung`); layar ini
-// tidak menghitung apa pun. Medan wajib datang dari backend (`medanWajib`).
+// tidak menghitung apa pun. Action set sel yang memuat lebih dari satu refresh
+// dikirim SEKALI sebagai `urutan` (dijalankan berurutan atas halaman yang sama).
+// Medan wajib datang dari backend (`medanWajib`). Padanan setiap tombol/aksi
+// dengan rule XML: `docs/alat/tombol.json`.
 
 import { useCallback, useEffect, useState } from 'react'
 
@@ -30,6 +34,7 @@ import {
   type NomorPolis,
   type Riwayat,
 } from '../api'
+import InputAngka from '../components/InputAngka'
 import KotakMedan from '../components/KotakMedan'
 import PilihBisnis from '../components/PilihBisnis'
 import PilihSumberBisnis, { tampilTombolSOB } from '../components/PilihSumberBisnis'
@@ -46,7 +51,22 @@ import {
   PORTAL,
   TOMBOL,
 } from '../labels'
-import { MEDAN_ADMIN_UANG, MEDAN_ADMIN_UMUM, MEDAN_ATASAN_UANG, MEDAN_ATASAN_UMUM, medanTampil, type Medan } from '../medan'
+import {
+  MEDAN_ADMIN_UANG,
+  MEDAN_ADMIN_UMUM,
+  MEDAN_ATASAN_TOTAL,
+  MEDAN_ATASAN_UANG,
+  MEDAN_ATASAN_UMUM,
+  SAJIAN_ANGSURAN,
+  SAJIAN_SPREADING,
+  bukanXOLRetro,
+  medanTampil,
+  wadahUangAdmin,
+  wadahUangAtasan,
+  type Aksi,
+  type Medan,
+} from '../medan'
+import { sajikan, type Sajian } from '../sajian'
 
 const P = 'PolicyTreatyIn.'
 const SPREADING = P + 'SpreadingRiskList'
@@ -115,14 +135,28 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
   }
 
   const ubah = (jalur: string, v: string) => setH((x) => (x ? setel(x, jalur, v) : x))
-  const refresh = (aksi: string, param?: string, indeks?: number, halaman?: Halaman) =>
-    void jalankan(() => hitung(id, { aksi, param, indeks, halaman: halaman ?? h }), terima)
+  /** Action set satu sel: satu refresh, atau beberapa berurutan (`urutan`). */
+  const refresh = (urutan: Aksi[], indeks?: number, halaman?: Halaman) => {
+    const [satu] = urutan
+    if (!satu) return
+    const badan = urutan.length === 1 ? { aksi: satu.aksi, param: satu.param } : { urutan }
+    void jalankan(() => hitung(id, { ...badan, indeks, halaman: halaman ?? h }), terima)
+  }
 
   const selesai = (m: Medan, v: string) => {
     const baru = setel(h, m.jalur, v)
     setH(baru)
-    if (m.aksi && boleh) refresh(m.aksi.aksi, m.aksi.param, undefined, baru)
+    if (m.aksi && boleh) refresh(m.aksi, undefined, baru)
   }
+
+  /** Sel angka hanya-baca grid: nilai berformat, kode mata uang bila uang (AC 85). */
+  const kodeMU = nilai(h, P + 'Currency')
+  const sel = (v: string | undefined, s: Sajian, uang = false) => (
+    <>
+      {uang && kodeMU && (v ?? '') !== '' && <span className="nbti__kode">{kodeMU}</span>}
+      {sajikan(v ?? '', s)}
+    </>
+  )
 
   const kotak = (m: Medan, i: number) => (
     <KotakMedan
@@ -181,6 +215,24 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
   const angsuran = daftar(h, ANGSURAN)
   const usulan = daftar(h, USULAN)
   const tampilTanggalProduksi = layar.tempat?.[TEMPAT_TANGGAL_PRODUKSI] && nilai(h, P + 'IsApproved') === '1'
+  // Wadah bagian uang / spreading / angsuran (`pyContainerVisibleWhen`).
+  const wadahUang = admin ? wadahUangAdmin(h) : wadahUangAtasan(h)
+  const ubahAdmin = admin && boleh
+
+  /** Sel persen spreading: tersunting admin, selain itu hanya-baca berformat. */
+  const persenSpreading = (b: Baris, i: number, k: 'SharePercentage' | 'ClaimPercentage', label: string) =>
+    ubahAdmin ? (
+      // change -> refresh CountSpreading_Act(Index=.pxListSubscript)
+      <InputAngka
+        label={label}
+        value={b[k] ?? ''}
+        sajian={SAJIAN_SPREADING.persen}
+        onChange={(v) => ubahBaris(SPREADING, i, k, v)}
+        onBlur={() => refresh([{ aksi: 'CountSpreading' }], i + 1)}
+      />
+    ) : (
+      sel(b[k], SAJIAN_SPREADING.persen)
+    )
 
   return (
     <div className="inbox nbti__layar">
@@ -205,18 +257,23 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
       )}
 
       <Panel judul={BAGIAN.umum}>
-        {admin && boleh && (
+        {ubahAdmin && (
           <div className="nbti__aksi">
-            <button type="button" className="btn" onClick={() => setPopupBisnis(true)}>
-              {TOMBOL.chooseBusiness}
-            </button>
+            {/* wadah `.ClaimType != 'XOL Retro'`; click -> showHarness BusinessAndSOBList -> refresh */}
+            {bukanXOLRetro(h) && (
+              <button type="button" className="btn" onClick={() => setPopupBisnis(true)}>
+                {TOMBOL.chooseBusiness}
+              </button>
+            )}
+            {/* `.ClaimType = 'XOL Retro'`; click -> showHarness SOB (paket P3) */}
             {tampilTombolSOB(h) && (
               <button type="button" className="btn" onClick={() => setPopupSOB(true)}>
                 {TOMBOL.selectSOB}
               </button>
             )}
+            {/* `.TreatyType='XOL'`; click -> refresh (pra-DT TreatyEnableDisableInput) */}
             {nilai(h, P + 'TreatyType') === 'XOL' && (
-              <button type="button" className="btn" onClick={() => refresh('TreatyEnableDisableInput')}>
+              <button type="button" className="btn" onClick={() => refresh([{ aksi: 'TreatyEnableDisableInput' }])}>
                 {TOMBOL.enableDisable}
               </button>
             )}
@@ -225,166 +282,173 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
         <div className="form-grid">{medanTampil(admin ? MEDAN_ADMIN_UMUM : MEDAN_ATASAN_UMUM, h).map(kotak)}</div>
       </Panel>
 
-      <Panel judul={BAGIAN.uang}>
-        <div className="form-grid">{medanTampil(admin ? MEDAN_ADMIN_UANG : MEDAN_ATASAN_UANG, h).map(kotak)}</div>
-      </Panel>
+      {wadahUang && (
+        <Panel judul={BAGIAN.uang}>
+          <div className="form-grid">{medanTampil(admin ? MEDAN_ADMIN_UANG : MEDAN_ATASAN_UANG, h).map(kotak)}</div>
+        </Panel>
+      )}
 
-      <Panel judul={BAGIAN.spreading}>
-        {admin && boleh && (
-          <button
-            type="button"
-            className="btn btn--sm"
-            onClick={() => setH(setelDaftar(h, SPREADING, [...spreading, {} as Baris]))}
-          >
-            {TOMBOL.add}
-          </button>
-        )}
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">{KOLOM_SPREADING.treatyType}</th>
-                <th scope="col">{KOLOM_SPREADING.share}</th>
-                <th scope="col">{KOLOM_SPREADING.premium}</th>
-                <th scope="col">{KOLOM_SPREADING.claimPct}</th>
-                <th scope="col">{KOLOM_SPREADING.claim}</th>
-                {admin && boleh && <th scope="col" />}
-              </tr>
-            </thead>
-            <tbody>
-              {spreading.map((b, i) => (
-                <tr key={i}>
-                  <td>
-                    {admin && boleh ? (
-                      <select
-                        className="field__input"
-                        value={b.TreatyType ?? ''}
-                        onChange={(e) => ubahBaris(SPREADING, i, 'TreatyType', e.target.value)}
-                      >
-                        <option value="" />
-                        {(acuan?.spreading ?? []).map((o) => (
-                          <option key={o.nilai} value={o.nilai}>
-                            {o.label}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      (b.TreatyName ?? b.TreatyType ?? '')
-                    )}
-                  </td>
-                  {(['SharePercentage', 'PremiumSpreaded', 'ClaimPercentage', 'ClaimSpreaded'] as const).map((k) => (
-                    <td key={k}>
-                      {admin && boleh && (k === 'SharePercentage' || k === 'ClaimPercentage') ? (
-                        <input
+      {wadahUang && (
+        <Panel judul={BAGIAN.spreading}>
+          {ubahAdmin && (
+            // click -> addRow
+            <button
+              type="button"
+              className="btn btn--sm"
+              onClick={() => setH(setelDaftar(h, SPREADING, [...spreading, {} as Baris]))}
+            >
+              {TOMBOL.add}
+            </button>
+          )}
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">{KOLOM_SPREADING.treatyType}</th>
+                  <th scope="col">{KOLOM_SPREADING.share}</th>
+                  <th scope="col">{KOLOM_SPREADING.premium}</th>
+                  <th scope="col">{KOLOM_SPREADING.claimPct}</th>
+                  <th scope="col">{KOLOM_SPREADING.claim}</th>
+                  {ubahAdmin && <th scope="col" />}
+                </tr>
+              </thead>
+              <tbody>
+                {spreading.map((b, i) => (
+                  <tr key={i}>
+                    <td>
+                      {ubahAdmin ? (
+                        <select
                           className="field__input"
-                          value={b[k] ?? ''}
-                          onChange={(e) => ubahBaris(SPREADING, i, k, e.target.value)}
-                          onBlur={() => refresh('CountSpreading', undefined, i + 1)}
-                        />
+                          aria-label={KOLOM_SPREADING.treatyType}
+                          value={b.TreatyType ?? ''}
+                          onChange={(e) => ubahBaris(SPREADING, i, 'TreatyType', e.target.value)}
+                        >
+                          <option value="" />
+                          {(acuan?.spreading ?? []).map((o) => (
+                            <option key={o.nilai} value={o.nilai}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
                       ) : (
-                        (b[k] ?? '')
+                        (b.TreatyName ?? b.TreatyType ?? '')
                       )}
                     </td>
-                  ))}
-                  {admin && boleh && (
-                    <td>
-                      <button
-                        type="button"
-                        className="btn btn--sm btn--danger"
-                        onClick={() => setH(setelDaftar(h, SPREADING, spreading.filter((_, j) => j !== i)))}
-                      >
-                        {TOMBOL.delete}
-                      </button>
-                    </td>
-                  )}
+                    <td>{persenSpreading(b, i, 'SharePercentage', KOLOM_SPREADING.share)}</td>
+                    <td>{sel(b.PremiumSpreaded, SAJIAN_SPREADING.uang, true)}</td>
+                    <td>{persenSpreading(b, i, 'ClaimPercentage', KOLOM_SPREADING.claimPct)}</td>
+                    <td>{sel(b.ClaimSpreaded, SAJIAN_SPREADING.uang, true)}</td>
+                    {ubahAdmin && (
+                      <td>
+                        {/* click -> deleteRow */}
+                        <button
+                          type="button"
+                          className="btn btn--sm btn--danger"
+                          onClick={() => setH(setelDaftar(h, SPREADING, spreading.filter((_, j) => j !== i)))}
+                        >
+                          {TOMBOL.delete}
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>{KOLOM_SPREADING.totalShare}</td>
+                  <td>{sel(nilai(h, P + 'TotalSharePercentagePremium'), SAJIAN_SPREADING.total)}</td>
+                  <td>{sel(nilai(h, P + 'TotalPremium'), SAJIAN_SPREADING.total, true)}</td>
+                  <td>{sel(nilai(h, P + 'TotalSharePercentageClaim'), SAJIAN_SPREADING.total)}</td>
+                  <td>{sel(nilai(h, P + 'TotalClaim'), SAJIAN_SPREADING.total, true)}</td>
                 </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td>{KOLOM_SPREADING.totalShare}</td>
-                <td>{nilai(h, P + 'TotalSharePercentagePremium')}</td>
-                <td>{nilai(h, P + 'TotalPremium')}</td>
-                <td>{nilai(h, P + 'TotalSharePercentageClaim')}</td>
-                <td>{nilai(h, P + 'TotalClaim')}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </Panel>
+              </tfoot>
+            </table>
+          </div>
+          {!admin && <div className="form-grid">{medanTampil(MEDAN_ATASAN_TOTAL, h).map(kotak)}</div>}
+        </Panel>
+      )}
 
-      <Panel judul={BAGIAN.angsuran}>
-        <div className="nbti__aksi">
-          <label className="field__label">{KOLOM_ANGSURAN.installment}</label>
-          {admin && boleh ? (
-            <input
-              className="field__input nbti__pendek"
-              value={nilai(h, P + 'Installment')}
-              onChange={(e) => ubah(P + 'Installment', e.target.value)}
-              onBlur={() => refresh('FillPaymentInstallment')}
-            />
-          ) : (
-            <span>{nilai(h, P + 'Installment')}</span>
-          )}
-        </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">{KOLOM_ANGSURAN.no}</th>
-                <th scope="col">{KOLOM_ANGSURAN.dueDate}</th>
-                <th scope="col">{KOLOM_ANGSURAN.pct}</th>
-                <th scope="col">{KOLOM_ANGSURAN.premium}</th>
-                <th scope="col">{KOLOM_ANGSURAN.total}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {angsuran.map((b, i) => (
-                <tr key={i}>
-                  <td>{b.InstallmentNo ?? ''}</td>
-                  <td>
-                    {admin && boleh ? (
-                      <input
-                        type="date"
-                        className="field__input"
-                        value={(b.DueDate ?? '').slice(0, 10)}
-                        onChange={(e) => ubahBaris(ANGSURAN, i, 'DueDate', e.target.value)}
-                      />
-                    ) : (
-                      (b.DueDate ?? '')
-                    )}
-                  </td>
-                  <td>
-                    {admin && boleh ? (
-                      <input
-                        className="field__input"
-                        value={b.InstallmentPercentage ?? ''}
-                        onChange={(e) => ubahBaris(ANGSURAN, i, 'InstallmentPercentage', e.target.value)}
-                        onBlur={() => refresh('SetValidateInstallment')}
-                      />
-                    ) : (
-                      (b.InstallmentPercentage ?? '')
-                    )}
-                  </td>
-                  <td>
-                    {admin && boleh ? (
-                      <input
-                        className="field__input"
-                        value={b.Premium ?? ''}
-                        onChange={(e) => ubahBaris(ANGSURAN, i, 'Premium', e.target.value)}
-                        onBlur={() => refresh('CountPctInstallment', undefined, Number(b.InstallmentNo) || i + 1)}
-                      />
-                    ) : (
-                      (b.Premium ?? '')
-                    )}
-                  </td>
-                  <td>{b.PaymentTotal ?? ''}</td>
+      {wadahUang && (
+        <Panel judul={BAGIAN.angsuran}>
+          <div className="nbti__aksi">
+            <label className="field__label">{KOLOM_ANGSURAN.installment}</label>
+            {ubahAdmin ? (
+              // change -> refresh FillPaymentInstallment(Installment=.Installment)
+              <input
+                className="field__input nbti__pendek"
+                aria-label={KOLOM_ANGSURAN.installment}
+                value={nilai(h, P + 'Installment')}
+                onChange={(e) => ubah(P + 'Installment', e.target.value)}
+                onBlur={() => refresh([{ aksi: 'FillPaymentInstallment' }])}
+              />
+            ) : (
+              <span>{nilai(h, P + 'Installment')}</span>
+            )}
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">{KOLOM_ANGSURAN.no}</th>
+                  <th scope="col">{KOLOM_ANGSURAN.dueDate}</th>
+                  <th scope="col">{KOLOM_ANGSURAN.pct}</th>
+                  <th scope="col">{KOLOM_ANGSURAN.premium}</th>
+                  <th scope="col">{KOLOM_ANGSURAN.total}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Panel>
+              </thead>
+              <tbody>
+                {angsuran.map((b, i) => (
+                  <tr key={i}>
+                    <td>{b.InstallmentNo ?? ''}</td>
+                    <td>
+                      {ubahAdmin ? (
+                        <input
+                          type="date"
+                          className="field__input"
+                          aria-label={KOLOM_ANGSURAN.dueDate}
+                          value={(b.DueDate ?? '').slice(0, 10)}
+                          onChange={(e) => ubahBaris(ANGSURAN, i, 'DueDate', e.target.value)}
+                        />
+                      ) : (
+                        sajikan(b.DueDate ?? '', SAJIAN_ANGSURAN.dueDate)
+                      )}
+                    </td>
+                    <td>
+                      {ubahAdmin ? (
+                        // change -> refresh SetValidateInstallment_Act
+                        <InputAngka
+                          label={KOLOM_ANGSURAN.pct}
+                          value={b.InstallmentPercentage ?? ''}
+                          sajian={SAJIAN_ANGSURAN.persen}
+                          onChange={(v) => ubahBaris(ANGSURAN, i, 'InstallmentPercentage', v)}
+                          onBlur={() => refresh([{ aksi: 'SetValidateInstallment' }])}
+                        />
+                      ) : (
+                        sel(b.InstallmentPercentage, SAJIAN_ANGSURAN.persen)
+                      )}
+                    </td>
+                    <td>
+                      {ubahAdmin ? (
+                        // change -> refresh CountPctInstallment_Act(idx=.InstallmentNo)
+                        <InputAngka
+                          label={KOLOM_ANGSURAN.premium}
+                          value={b.Premium ?? ''}
+                          sajian={SAJIAN_ANGSURAN.premium}
+                          onChange={(v) => ubahBaris(ANGSURAN, i, 'Premium', v)}
+                          onBlur={() => refresh([{ aksi: 'CountPctInstallment' }], Number(b.InstallmentNo) || i + 1)}
+                        />
+                      ) : (
+                        sel(b.Premium, SAJIAN_ANGSURAN.premium, true)
+                      )}
+                    </td>
+                    <td>{sel(b.PaymentTotal, SAJIAN_ANGSURAN.total, true)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Panel>
+      )}
 
       <Panel judul={BAGIAN.usulan}>
         {boleh && (
@@ -404,7 +468,9 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
                       onChange={() => {
                         const baru = setel(h, P + 'IsApproved', o.value)
                         setH(baru)
-                        refresh('SetDueTo', undefined, undefined, baru)
+                        // change -> runActivity SetDueTo_act (CekLimitTreatyAcc_Act: K2;
+                        // Protection_Act: varian tak ada di korpus, INVENTARIS 1.2)
+                        refresh([{ aksi: 'SetDueTo' }], undefined, baru)
                       }}
                     />
                     {o.label}
@@ -449,7 +515,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
             <tbody>
               {usulan.map((b, i) => (
                 <tr key={i}>
-                  <td>{b.Date ?? ''}</td>
+                  <td>{sajikan(b.Date ?? '', 'tanggal')}</td>
                   <td>{b.OperatorName ?? ''}</td>
                   <td>{PILIHAN_APPROVAL.find((o) => o.value === b.IsApproved)?.label ?? b.IsApproved ?? ''}</td>
                   <td className="nbti__catatan">{b.Suggest ?? ''}</td>

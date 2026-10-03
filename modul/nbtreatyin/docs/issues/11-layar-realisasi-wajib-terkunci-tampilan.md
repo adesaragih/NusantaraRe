@@ -113,3 +113,32 @@ dijawab.
 > (`SearchHierarkiSourceBizAgentTreatyIn_Act` menulis `OfferTreatyIn.QuotationData.*`, dibaca nol
 > rule NB); cabang Ceding (`btnCedingCO_DT`/`BrowseCedingCo_RD`, hanya lewat `Acton=Ceding` yang
 > tak pernah dikirim).
+
+> ⛔ **RALAT** 2026-10-03 (putaran 2, paket P2) — dua butir lain kalimat yang sama: Survey Report →
+> **K7** (tidak ada tabel di diagram grilling; tetap tidak dibangun); `Choose Business R` dan subsection
+> NonProp → **paket P5** (K8). Pemilih SOB: RALAT paket P3 di atas.
+
+## Hasil implementasi putaran 2 — 2026-10-03 (paket P2, cabang `modul/nbtreatyin/p2-layar`)
+
+Setiap sel `DetailPolicyTreatyIn` / `DetailDeptHeadTreatyIn_UW` dicocokkan ulang dengan XML,
+**termasuk syarat wadah** (`pyContainerVisibleWhen`) yang putaran 1 lewatkan. Selisih yang diperbaiki:
+
+| Sel | Bunyi XML | Sebelumnya |
+| --- | --- | --- |
+| admin `.FlagRetroTreaty` | `pyVisible` `.ClaimType != 'XOL Retro'` | dibalik (`=== 'XOL Retro'`) |
+| admin `.FlagPPH`, `.TypeTax`, tombol Choose Business | wadah `.ClaimType != 'XOL Retro'` | selalu |
+| `.Quartal`, `.YearOfQuartal`, `.TreatyYear` kedua ("U/Y") | wadah `.QuotationData.ProportionalType = 'Proportional'` | selalu; sel U/Y tidak ada |
+| `.LayerType` `.Layer` `.LayerPartType` `.LayerPart` | wadah `.QuotationData.ProportionalType = 'NonProportional'` | selalu |
+| bagian uang, grid spreading, angsuran | admin `.IsNewPolicyNonProp != 1 && .IsNewPolicyListFormat != 1`; atasan `.IsNewPolicyNonProp != 1` | selalu |
+| atasan `.DueTo` `.FlagPPH` `.QuotationData.NoOfferSlip` | `pyDisabled=always` | FlagPPH dan No Offer Slip dapat diisi |
+| atasan `.CedingCoName` `.MarketingOfficer` | `NOTBLANK` | selalu |
+| atasan `.PolicyNo`, `.ProductionDate` (General) | wadah `pyWorkPage.FlagViewPolicy = 1` (nol pengisi terjangkau) | selalu |
+| atasan `.TotalSharePercentagePremium` dst. berlabel | tampil (2 desimal); di admin wadah `1=2` | tidak ada |
+| admin `.RiCommOgp` … `.ResultOnp2` (8 sel) | action set: `Count*_Act(Data)` LALU `CountOGPONP_Act` | hanya langkah pertama |
+| `.Deduction1/2` | `pxCurrency` (K3) | tanpa kode mata uang ("persen P29") |
+
+- **AC 45 / 48** — medan wajib di wadah tersembunyi tidak berlaku (Pega tidak me-render selnya):
+  `TypeTax` (`FlagPPH` DAN bukan XOL Retro), medan uang admin/atasan (wadah IsNewPolicyNonProp) —
+  `models/layar.go` `wajibUangAdmin`, `wajibUangAtasan`; uji `TestMedanWajibIkutWadahTampil`.
+- Padanan setiap tombol/aksi dengan rule XML: `docs/alat/tombol.json` (INVENTARIS bab 13).
+- Format penyajian (K14) — tiket 07, AC 86.

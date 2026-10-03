@@ -184,6 +184,7 @@ def tulis(data):
       "10. Decision Table",
       "11. When — syarat yang DIJALANKAN",
       "12. Rujukan ke rule yang tidak ada di korpus, dan selisih kelas",
+      "13. Padanan tombol → activity",
       "")
 
     # ------------------------------------------------------------- 1
@@ -436,7 +437,40 @@ def tulis(data):
         for b, lewat, kk, kb in sorted(g.beda_kelas[a]):
             w(f"| `{a[1]}` | `{b[0]}/{b[1]}` | {sel(lewat)} | {sel(kk)} | {sel(kb)} |")
     w("")
+
+    # ------------------------------------------------------------- 13 tombol
+    _tulis_tombol(w, K)
     return w.teks()
+
+
+def muat_tombol():
+    p = os.path.join(DIR, "tombol.json")
+    if os.path.exists(p):
+        with open(p, encoding="utf-8") as fh:
+            return json.load(fh)
+    return None
+
+
+def _tulis_tombol(w, K):
+    """Bab 13 - padanan setiap tombol / aksi klik-ubah layar dengan rule XML yang
+    dipanggilnya (prompt putaran 2 bab 4 akhir), dari `alat/tombol.json` (diisi tangan).
+    Rule yang dirujuk tetapi tidak ada di korpus ditandai ⚠️."""
+    data = muat_tombol()
+    w("## 13 · Padanan tombol → activity", "")
+    if data is None:
+        w("⚠️ `alat/tombol.json` belum ada.", "")
+        return
+    w(sel(data.get("_keterangan", "")), "",
+      "| Tombol / medan | Section | Tampil | Aksi XML (berurutan) | Rule dipanggil | Padanan kode / rute | Status |",
+      "| --- | --- | --- | --- | --- | --- | --- |")
+    for t in data["tombol"]:
+        rule = []
+        for r in t.get("rule", []):
+            jenis, _, nama = r.partition("/")
+            rule.append(f"`{sel(r)}`" + ("" if (jenis, nama) in K else " ⚠️"))
+        w(f"| {sel(t['tombol'])} | `{sel(t['section'])}` | {sel(t.get('tampil', ''))} | {sel(t['aksi_xml'])} | "
+          f"{', '.join(rule) or '—'} | {sel(t['padanan'])} | {sel(t['status'])} |")
+    w("", "⚠️ = rule tidak ada di korpus.", "")
 
 
 def _tulis_langkah(w, langkah, tingkat):

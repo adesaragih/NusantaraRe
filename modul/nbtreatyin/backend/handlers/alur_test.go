@@ -335,15 +335,35 @@ func TestMedanTerkunciAtasanDanTurunanAdmin(t *testing.T) { // AC 49-52
 	}
 	a := putusan("1")
 	a.Setel("PolicyTreatyIn.PremiOgp", "999999")
+	// AC 52: `DetailDeptHeadTreatyIn_UW` - DueTo, FlagPPH, No Offer Slip
+	// `pyDisabled=always`; `ListSuggest.ProductionDate` tidak tampil tanpa
+	// tempat berperan (tiket 05) -> keempatnya tidak dapat diisi atasan.
 	a.Setel("PolicyTreatyIn.QuotationData.NoOfferSlip", "UJI-SLIP")
+	a.Setel("PolicyTreatyIn.FlagPPH", "true")
+	a.Setel("PolicyTreatyIn.DueTo", "0")
+	a.Setel("PolicyTreatyIn.ProductionDate", "2099-01-01 00:00:00")
 	if kode, isi := u.kirim(id, secHead, a); kode != http.StatusOK {
 		t.Fatalf("%d %s", kode, isi)
 	}
-	if got := u.g.Halaman[id].Ambil("PolicyTreatyIn.PremiOgp"); got != "1000" {
+	g := u.g.Halaman[id]
+	if got := g.Ambil("PolicyTreatyIn.PremiOgp"); got != "1000" {
 		t.Fatalf("PremiOgp terkunci di layar atasan, tersimpan %q", got)
 	}
-	if got := u.g.Halaman[id].Ambil("PolicyTreatyIn.QuotationData.NoOfferSlip"); got != "UJI-SLIP" {
-		t.Fatalf("No Offer Slip dapat diisi atasan, tersimpan %q", got)
+	for j, tolak := range map[string]string{
+		"PolicyTreatyIn.QuotationData.NoOfferSlip": "UJI-SLIP",
+		"PolicyTreatyIn.FlagPPH":                   "true",
+		"PolicyTreatyIn.DueTo":                     "0",
+		"PolicyTreatyIn.ProductionDate":            "2099-01-01 00:00:00",
+	} {
+		if got := g.Ambil(j); got == tolak {
+			t.Errorf("%s tidak dapat diisi atasan (AC 52), tersimpan %q", j, got)
+		}
+	}
+	// Catatan atasan tersimpan di POOLDATA.HISTORYAKSEPTASIPRODUCTION (K4).
+	usulan := u.g.Usulan
+	if len(usulan) == 0 || usulan[len(usulan)-1].Keterangan != "UJI-1" || usulan[len(usulan)-1].Approval != "Accept" ||
+		usulan[len(usulan)-1].AksesLogin != "UJI-SH" {
+		t.Fatalf("Approval dan Suggest dapat diisi atasan: %+v", usulan)
 	}
 }
 
@@ -473,6 +493,49 @@ func TestHitungTidakMenyimpan(t *testing.T) {
 	}
 	if u.g.Halaman[id].Ambil("PolicyTreatyIn.ResultOgp1") != "" {
 		t.Fatal("refresh berhitung tidak menyimpan")
+	}
+}
+
+// Action set sel `.ResultOgp1` `DetailPolicyTreatyIn`: event change ->
+// `refresh CountResult1_Act(Data="Amount")` LALU `refresh CountOGPONP_Act` -
+// dua activity berurutan atas clipboard yang sama. Hitung tangan (PremiOgp 1000,
+// ResultOgp1 250, sisanya 0):
+//
+//	CountResult1_Act langkah 6   RiCommOgp = (250/1000) x 100 = 25
+//	CountNetPremi_act langkah 4  NetPremium = (1000-250)+(0-0)-0-0-0-0 = 750
+//	CountOGPONP_Act langkah 8    ClaimType = "" (Claim 0, Salvage 0) - menimpa isian
+func TestHitungUrutanActionSet(t *testing.T) {
+	u := baru(t)
+	id := u.buat()
+	h := halamanLengkap("")
+	h.Setel("PolicyTreatyIn.ResultOgp1", "250")
+	h.Setel("PolicyTreatyIn.ClaimType", "UJI-LAMA")
+	kode, isi := u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{
+		"urutan":  []map[string]string{{"aksi": "CountResult1", "param": "Amount"}, {"aksi": "CountOGPONP"}},
+		"halaman": h,
+	})
+	if kode != http.StatusOK {
+		t.Fatalf("%d %s", kode, isi)
+	}
+	var ly services.Layar
+	if err := json.Unmarshal([]byte(isi), &ly); err != nil {
+		t.Fatal(err)
+	}
+	for m, harap := range map[string]int64{"RiCommOgp": 25, "NetPremium": 750} {
+		d, err := models.AngkaTeks(m, ly.Halaman.Ambil("PolicyTreatyIn."+m))
+		if err != nil || d.Cmp(apd.New(harap, 0)) != 0 {
+			t.Errorf("%s = %v (%v), harap %d", m, d, err, harap)
+		}
+	}
+	if got := ly.Halaman.Ambil("PolicyTreatyIn.ClaimType"); got != "" {
+		t.Errorf("CountOGPONP_Act langkah 8 berjalan sesudah CountResult1_Act: ClaimType %q", got)
+	}
+	kode, _ = u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{
+		"urutan":  []map[string]string{{"aksi": "CountOGPONP"}, {"aksi": "UJI-Karangan"}},
+		"halaman": h,
+	})
+	if kode != http.StatusBadRequest {
+		t.Fatalf("aksi tak dikenal di urutan: %d", kode)
 	}
 }
 

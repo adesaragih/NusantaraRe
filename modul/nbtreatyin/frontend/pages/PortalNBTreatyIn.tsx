@@ -69,6 +69,13 @@ export default function PortalNBTreatyIn({ onBuka, pesan }: { onBuka: (id: strin
           placeholder={PORTAL.filter}
           value={cari}
           onChange={(e) => setCari(e.target.value)}
+          // `.FilterTermForOpportunity` esc -> setValue "" -> refresh (enter = submit form)
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setCari('')
+              setKueri('')
+            }
+          }}
         />
         <button type="submit" className="btn">
           {TOMBOL.filter}

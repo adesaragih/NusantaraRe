@@ -645,6 +645,12 @@ dapat diuji dari luar.
 38. `[terverifikasi]` `DEDUCTION1` `DEDUCTION2` `TOTAL_SHARE_PERCENTAGE_PREMIUM`
     `TOTAL_SHARE_PERCENTAGE_CLAIM` disimpan sebagai persen. Test yang memperlakukannya sebagai uang
     **gagal**. *(Bab 5, ketetapan lama P29)*
+    > ⛔ **RALAT** 2026-10-03 (K3, paket P2) — bunyi lama: *"`DEDUCTION1` `DEDUCTION2`
+    > `TOTAL_SHARE_PERCENTAGE_PREMIUM` `TOTAL_SHARE_PERCENTAGE_CLAIM` disimpan sebagai persen. Test
+    > yang memperlakukannya sebagai uang **gagal**"* → bunyi baru: **`DEDUCTION1` `DEDUCTION2`
+    > `T_GENERAL_POLIS` bergolongan uang** (`NUMBER(38,8)`, sama tipe fisiknya), mengikuti pemakaian
+    > XML (keputusan WO K3); `TOTAL_SHARE_PERCENTAGE_*` tetap persen. Test yang memperlakukan
+    > `DEDUCTION1/2` sebagai persen **gagal**. Bukti: sel `.Deduction1` `.Deduction2` `pxCurrency` di `Section/DetailPolicyTreatyIn.xml` dan `Section/DetailDeptHeadTreatyIn_UW.xml`; `Activity/CountNetPremi_act` langkah 4 mengurangkan keduanya dari premi; `Activity/SetPPNPPH` langkah 4 membagi `.Deduction1` dengan 1,022. Kode: `models/katalog.go` (`kUang`).
 39. `[terverifikasi]` `HISTORYAKSEPTASIPRODUCTION` tidak dibuat ulang; polis menulis ke tabel yang
     sudah ada. Test yang menemukan tabel riwayat baru **gagal**. *(ID-31)*
 40. `[terverifikasi]` `KETERANGAN` dipotong pada 3990 karakter. Test yang menemukan nilai lebih
@@ -850,6 +856,10 @@ ronde berikutnya.
 **Kolom `DEDUCTION1` menampung dua satuan.** Jalur proporsional mengisinya dari `.Deduction1` — sebuah
 **persen**. Jalur XOL mengisinya dari `.Deduction` — sebuah **nilai uang**. Tidak ada penanda yang
 membedakannya selain `PROPORTIONALTYPE` di baris yang sama.
+> ⛔ **RALAT** 2026-10-03 (K3, paket P2) — bunyi lama: *"Jalur proporsional mengisinya dari
+> `.Deduction1` — sebuah **persen**"* → bunyi baru: `.Deduction1` jalur proporsional adalah **jumlah
+> uang** (XML: `pxCurrency`, dikurangkan dari premi di `CountNetPremi_act` langkah 4) — kedua jalur
+> mengisi `DEDUCTION1` dengan uang (peringatan "persen dengan rupiah" di sini gugur untuk kolom ini).
 
 ⇒ Pembaca lewat SQL **wajib menyaring `PROPORTIONALTYPE` lebih dulu**, kalau tidak ia menjumlahkan
 persen dengan rupiah.

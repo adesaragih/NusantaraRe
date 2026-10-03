@@ -9,6 +9,7 @@ import { MEDAN_ADMIN_UMUM } from './medan'
 describe('tanggal mulai layar admin', () => {
   it('Statement Period memicu aksi SystemSetOneYear (SystemSetOneYear_DT)', () => {
     const m = MEDAN_ADMIN_UMUM.find((x) => x.jalur === 'PolicyTreatyIn.StartDate')
-    expect(m?.aksi).toEqual({ aksi: 'SystemSetOneYear' })
+    // aksi = action set sel, berurutan (medan.ts `Aksi[]`)
+    expect(m?.aksi).toEqual([{ aksi: 'SystemSetOneYear' }])
   })
 })

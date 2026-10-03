@@ -1,11 +1,13 @@
 // Popup `Harness/BusinessAndSOBList` - grid RD `BrowseTreatyInDetail` dengan
-// tombol "Choose" per baris (`SetValue_Act(ID=.ID)`).
+// tombol "Choose" per baris (`SetValue_Act(ID=.ID)`). Kolom `*VALUE` = pxCurrency
+// tanpa `pyDecimalPlaces` -> sajian pola inti (K14, `sajian.ts`).
 
 import { useEffect, useState } from 'react'
 
 import { Gagal, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import { daftarBisnis, type BarisKontrak } from '../api'
 import { JUDUL, KOLOM_BISNIS, TOMBOL } from '../labels'
+import { sajikan } from '../sajian'
 
 export default function PilihBisnis({ onPilih, onTutup }: { onPilih: (id: string) => void; onTutup: () => void }) {
   const [cari, setCari] = useState('')
@@ -68,7 +70,7 @@ export default function PilihBisnis({ onPilih, onTutup }: { onPilih: (id: string
                     </button>
                   </td>
                   {KOLOM_BISNIS.map((k) => (
-                    <td key={k}>{b[k] ?? ''}</td>
+                    <td key={k}>{k.endsWith('VALUE') ? sajikan(b[k] ?? '', {}) : (b[k] ?? '')}</td>
                   ))}
                 </tr>
               ))}
