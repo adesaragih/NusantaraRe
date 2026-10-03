@@ -186,8 +186,10 @@ func TestTanggalProduksiDariHariClosing(t *testing.T) {
 	h := HalamanBaru()
 	sekarang := time.Date(2026, 10, 27, 9, 0, 0, 0, time.UTC)
 	PraprosesTanggal(h, sekarang, 25)
+	// Pre_Act langkah 9: `@substring(ProductionDate,8)` membawa jam StatementDate
+	// (RALAT putaran 2: semula 00:00:00).
 	if h.Ambil("PolicyTreatyIn.StatementDate") != "2026-10-27 09:00:00" ||
-		h.Ambil("PolicyTreatyIn.ProductionDate") != "2026-11-01 00:00:00" {
+		h.Ambil("PolicyTreatyIn.ProductionDate") != "2026-11-01 09:00:00" {
 		t.Fatalf("hari 27 > closing 25: %q / %q", h.Ambil("PolicyTreatyIn.StatementDate"), h.Ambil("PolicyTreatyIn.ProductionDate"))
 	}
 	PraprosesTanggal(h, sekarang, 28)

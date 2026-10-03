@@ -11,9 +11,10 @@
 // ⛔ Tidak ditampilkan, dan sebabnya:
 //   - elemen bersyarat tampil `1=2` / `NEVER` (80 elemen mati, AC 53):
 //     `.BizName`, `.DueTo` (admin), label pemisah, label bagian;
-//   - `Select Source Of Business` (tampil hanya bila ClaimType 'XOL Retro') dan
-//     `Choose Business R` (`SetValueRetro_Act` -> `InputPolicyTreatyOutDetail_preACT`):
+//   - `Choose Business R` (`SetValueRetro_Act` -> `InputPolicyTreatyOutDetail_preACT`):
 //     jalur retro/treaty keluar - pembongkar JSON master (P29, AC 58, 62);
+//   (Tombol `Select Source Of Business`, tampil bila ClaimType 'XOL Retro', BUKAN medan:
+//   dibangun di `components/PilihSumberBisnis.tsx` - RALAT tiket 11.)
 //   - tombol `Survey Report` (`HistoricalSurveyReport`): penyimpanan survei tidak
 //     dirancang di tiket 00-23 - `[terbuka]`;
 //   - subsection `DetailPoliciesNonProportional` / `DetailPolicyTreatyOutNonProportional`:
@@ -56,7 +57,8 @@ const mu = P + 'Currency'
 export const MEDAN_ADMIN_UMUM: Medan[] = [
   { jalur: P + 'NoOffer', label: 'Master ID', jenis: 'tampil' },
   { jalur: 'TreatyIn.Commencement', label: 'Commencement', jenis: 'tampil' },
-  { jalur: P + 'StartDate', label: 'Statement Period', jenis: 'tanggal' },
+  // refresh `change` ber-pyPreDataTransform `SystemSetOneYear_DT` (EndDate = StartDate + 1 tahun)
+  { jalur: P + 'StartDate', label: 'Statement Period', jenis: 'tanggal', aksi: { aksi: 'SystemSetOneYear' } },
   { jalur: P + 'EndDate', label: 'To', jenis: 'tanggal', aksi: { aksi: 'ProtectDate' } },
   { jalur: P + 'SOBName', label: 'Source Of Business', jenis: 'tampil' },
   { jalur: P + 'TreatyGroupName', label: 'Treaty Group', jenis: 'tampil', tampil: bukanNonPropBaru },

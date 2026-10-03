@@ -70,7 +70,10 @@ adalah **bug**, ⛔ bukan perbedaan maksud antar tahap *(P33)*.
 1. **NBStatus.** Tujuh connector Flow menanam nama orang (`NB IS IN <nama>'S INBOX`). P40: nama dari
    data. Berkas menunggu POSISI, bukan orang (AC 92) ⇒ teksnya memakai **nama posisi tujuan**
    (`NB IS IN REASTREATYINSECHEAD'S INBOX`). Cabang DT yang memang memakai data (`pyUserName`,
-   `pxCreateOpName`) memakai nama tampilan dari `M_LOGIN_GO.NAME`. ⚠️ Tafsiran — mohon konfirmasi.
+   `pxCreateOpName`) memakai nama tampilan dari `M_LOGIN_GO.NAME`. ~~⚠️ Tafsiran — mohon konfirmasi.~~
+   ⇒ **Dijawab K5 (PROMPT-NB-TREATY-IN-PUTARAN-2 bab 2, 03-10-2026): Ya** — `NBStatus` memakai nama
+   posisi. Uji: `handlers/alur_test.go` TestTanggaPenuhDanNomorPolisSekali
+   (`NB IS IN REASTREATYINSECHEAD'S INBOX`), `models/tangga_test.go` TestTeksNBStatus.
 2. `HISTORYAKSEPTASIPEGA.ID_PEGA` = `pzInsKey` (`ASM-FW-GISFW-WORK-NB NB-<n>`); `OPERATORID` = identitas
    login; `USERNAME` = nama tampilan; ditulis di transaksi submit (AC 83). Nama tampilan kosong
    menghasilkan kosong — tanpa jatuh-balik ke ID login (AC 40, 42).
