@@ -118,9 +118,12 @@ func TestBacaObjekMemakaiKolomBernama(t *testing.T) {
 			t.Errorf("kunci %q dibaca tetapi tidak dipilih", m[1])
 		}
 	}
-	// tiket 42: amount loss ratio dibaca lewat kunci FmtDesimal ("l."+kolom).
-	for _, m := range regexp.MustCompile(`\{"(LOSS_RATIO[0-9]+_YEAR_AMOUNT)", &lr\.`).FindAllStringSubmatch(string(b), -1) {
-		dibaca[fmt.Sprintf(db.FmtDesimal, "l."+m[1])] = true
+	// tiket 42 / ADR-0034: loss ratio dibaca lewat kunci angkaKeluar("l.X") (amount) dan "l.X_PERCENT" (teks).
+	for _, m := range regexp.MustCompile(`kolomDesimal\{angkaKeluar\("([a-z]\.[A-Z0-9_]+)"\)`).FindAllStringSubmatch(string(b), -1) {
+		dibaca[fmt.Sprintf(db.FmtDesimal, m[1])] = true
+	}
+	for _, m := range regexp.MustCompile(`kolomDesimal\{"(l\.LOSS_RATIO[0-9]+_YEAR_PERCENT)"`).FindAllStringSubmatch(string(b), -1) {
+		dibaca[m[1]] = true
 	}
 	for _, k := range kolomBacaObjek {
 		if !dibaca[k] {

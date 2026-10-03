@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/nbfacin/backend/models"
 )
 
@@ -45,12 +46,13 @@ func TestSQLItem(t *testing.T) {
 	}
 }
 
-// TestArgItemMenurutKolom - bind :6..:20 dipasangkan lewat KUNCI (nilai uji = nama kolomnya sendiri);
-// kosong -> NULL kecuali CURRENCY (wajib) dan IS_ADJUSTABLE_FLAG ("false").
+// TestArgItemMenurutKolom - bind :6..:20 dipasangkan lewat KUNCI (teks: nilai uji = nama kolomnya sendiri; desimal:
+// angka berbeda per kolom); kosong -> NULL kecuali CURRENCY (wajib) dan IS_ADJUSTABLE_FLAG ("false").
 func TestArgItemMenurutKolom(t *testing.T) {
 	it := models.ItemObjek{ItemTypeID: "ITEM_TYPE_ID", ItemType: "ITEM_TYPE", Note: "PROPERTI_ITEM_NOTE", PropertyYear: "PROPERTY_YEAR",
-		Unit: "UNIT", Condition: "CONDITION", Currency: "CURRENCY", TSI: "TSI_OBJECT_ITEM", YearOfPlanting: "YEAR",
-		NoOfTree: "NO_OF_TREE", AreaHectar: "AREA_HECTAR", Remark: "REMARK", PctAdjust2: "PCT_ADJUST2", PctAdjustOther: "PCT_ADJUST_OTHER"}
+		Unit: "UNIT", Condition: "CONDITION", Currency: "CURRENCY", TSI: desimalUji("1.5"), YearOfPlanting: "YEAR",
+		NoOfTree: "NO_OF_TREE", AreaHectar: "AREA_HECTAR", Remark: "REMARK", PctAdjust2: desimalUji("2"), PctAdjustOther: desimalUji("3.25")}
+	desimal := map[string]string{"TSI_OBJECT_ITEM": "1.5", "PCT_ADJUST2": "2", "PCT_ADJUST_OTHER": "3.25"}
 	m := regexp.MustCompile(`\(([^)]*)\) VALUES`).FindStringSubmatch(sqlSisipItem("UJI.I"))
 	kolom := strings.Split(m[1], ", ")[5:]
 	arg := argItem(it)
@@ -61,6 +63,9 @@ func TestArgItemMenurutKolom(t *testing.T) {
 		mau := any(k)
 		if k == "IS_ADJUSTABLE_FLAG" {
 			mau = "false"
+		}
+		if d, ada := desimal[k]; ada {
+			mau = d
 		}
 		if arg[i] != mau {
 			t.Errorf("bind kolom %s = %v", k, arg[i])
@@ -98,8 +103,8 @@ func TestBacaItemMemakaiKolomBernama(t *testing.T) {
 	for _, m := range regexp.MustCompile(`v\("([^"]+)"\)`).FindAllStringSubmatch(string(b), -1) {
 		dibaca[m[1]] = true
 	}
-	for _, m := range regexp.MustCompile(`\{"([A-Z_0-9]+)", &it\.`).FindAllStringSubmatch(string(b), -1) {
-		dibaca[fmt.Sprintf(db.FmtDesimal, "i."+m[1])] = true
+	for _, m := range regexp.MustCompile(`kolomDesimal\{angkaKeluar\("([a-z]\.[A-Z0-9_]+)"\)`).FindAllStringSubmatch(string(b), -1) {
+		dibaca[fmt.Sprintf(db.FmtDesimal, m[1])] = true
 	}
 	for k := range dibaca {
 		if !ada[k] {
@@ -120,11 +125,11 @@ func TestBacaItemMemakaiKolomBernama(t *testing.T) {
 func TestDesimalTeks(t *testing.T) {
 	for masuk, mau := range map[string]string{".5": "0.5", "1500000.25": "1500000.25", "100": "100", "": ""} {
 		v := sql.NullString{String: masuk, Valid: masuk != ""}
-		if got, err := desimalTeks("UJI", "TSI_OBJECT_ITEM", &v); err != nil || got != mau {
-			t.Errorf("%q -> %q (%v), mau %q", masuk, got, err, mau)
+		if got, err := bacaDesimal("UJI", "TSI_OBJECT_ITEM", &v); err != nil || utils.FormatDecimal(got) != mau {
+			t.Errorf("%q -> %v (%v), mau %q", masuk, got, err, mau)
 		}
 	}
-	if _, err := desimalTeks("UJI", "TSI_OBJECT_ITEM", &sql.NullString{String: "1,5", Valid: true}); err == nil {
+	if _, err := bacaDesimal("UJI", "TSI_OBJECT_ITEM", &sql.NullString{String: "1,5", Valid: true}); err == nil {
 		t.Error("koma desimal harus galat, bukan diam-diam")
 	}
 }

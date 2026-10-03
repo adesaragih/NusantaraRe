@@ -95,8 +95,8 @@ var kolomBacaObjek = []string{"p.OBJECT_NO", "p.OBJECT_TYPE", "p.OBJECT_NAME", "
 	// tiket 39: kunci item (T_PROPERTYITEMLIST.PARENT_ID); tiket 41: kunci FEA (T_FEALIST.PARENT_ID)
 	"TO_CHAR(p.ID)", "TO_CHAR(l.ID)",
 	// tiket 42: loss ratio baris lokasi (baca-saja); amount uang lewat TO_CHAR TM9 ber-NLS titik
-	fmt.Sprintf(db.FmtDesimal, "l.LOSS_RATIO1_YEAR_AMOUNT"), "l.LOSS_RATIO1_YEAR_PERCENT",
-	fmt.Sprintf(db.FmtDesimal, "l.LOSS_RATIO35_YEAR_AMOUNT"), "l.LOSS_RATIO35_YEAR_PERCENT"}
+	angkaKeluar("l.LOSS_RATIO1_YEAR_AMOUNT"), "l.LOSS_RATIO1_YEAR_PERCENT",
+	angkaKeluar("l.LOSS_RATIO35_YEAR_AMOUNT"), "l.LOSS_RATIO35_YEAR_PERCENT"}
 
 // sqlBacaObjek - satu baris per lokasi; anak tunggal lewat LEFT JOIN (UNIQUE PARENT_ID, 186/187).
 func sqlBacaObjek(t tabelObjek) string {
@@ -138,8 +138,8 @@ func sqlPastikanGeneral(general string) string {
 // sqlSisipLokasi - :5..:8 loss ratio (tiket 42) hasil hitung services; amount uang lewat TO_NUMBER, percent teks.
 func sqlSisipLokasi(loc string) string {
 	return "INSERT INTO " + loc + " (ID, PARENT_ID, SEQ_NO, ROW_UID, LOSS_RATIO1_YEAR_AMOUNT, LOSS_RATIO1_YEAR_PERCENT," +
-		" LOSS_RATIO35_YEAR_AMOUNT, LOSS_RATIO35_YEAR_PERCENT) VALUES (:1, :2, :3, :4, " + fmt.Sprintf(fmtAngkaMasuk, ":5") +
-		", :6, " + fmt.Sprintf(fmtAngkaMasuk, ":7") + ", :8)"
+		" LOSS_RATIO35_YEAR_AMOUNT, LOSS_RATIO35_YEAR_PERCENT) VALUES (:1, :2, :3, :4, " + angkaMasuk(":5") +
+		", :6, " + angkaMasuk(":7") + ", :8)"
 }
 
 func sqlSisipProperty(prop string) string {
@@ -244,15 +244,16 @@ func (r *ObjekOracle) BacaObjek(ctx context.Context, id string) ([]models.ObjekF
 				FloodArea: v("s.FLOOD_AREA"), HousekeepingRemark: v("s.HOUSEKEEPING_REMARK")},
 			Items: []models.ItemObjek{}, Occupations: []models.OkupasiObjek{}, FEA: []models.BarisFEA{},
 			LossRecords: []models.CatatanKerugian{}})
+		// Loss ratio: amount NUMBER lewat angkaKeluar; percent kolom VARCHAR2 berisi teks desimal - keduanya bacaDesimal.
 		lr := &hasil[len(hasil)-1].LossRatio
-		lr.OneYearPercent, lr.ThreeFiveYearPercent = v("l.LOSS_RATIO1_YEAR_PERCENT"), v("l.LOSS_RATIO35_YEAR_PERCENT")
-		for _, d := range []struct {
-			kolom string
-			ke    *string
-		}{{"LOSS_RATIO1_YEAR_AMOUNT", &lr.OneYearAmount}, {"LOSS_RATIO35_YEAR_AMOUNT", &lr.ThreeFiveYearAmount}} {
-			if *d.ke, err = desimalTeks(TabelLocationList+" case "+id, d.kolom, teks[fmt.Sprintf(db.FmtDesimal, "l."+d.kolom)]); err != nil {
-				return nil, err
-			}
+		// ⚠️ R-ADR34: percent lama yang bukan teks desimal polos (mis. koma / "%") kini GALAT (gagal keras, pola
+		// db.UraiDesimal) - sebelumnya diteruskan apa adanya. Contoh data: semua "0".
+		if err := bacaDesimalKe(TabelLocationList+" case "+id, teks,
+			kolomDesimal{angkaKeluar("l.LOSS_RATIO1_YEAR_AMOUNT"), "LOSS_RATIO1_YEAR_AMOUNT", &lr.OneYearAmount},
+			kolomDesimal{"l.LOSS_RATIO1_YEAR_PERCENT", "LOSS_RATIO1_YEAR_PERCENT", &lr.OneYearPercent},
+			kolomDesimal{angkaKeluar("l.LOSS_RATIO35_YEAR_AMOUNT"), "LOSS_RATIO35_YEAR_AMOUNT", &lr.ThreeFiveYearAmount},
+			kolomDesimal{"l.LOSS_RATIO35_YEAR_PERCENT", "LOSS_RATIO35_YEAR_PERCENT", &lr.ThreeFiveYearPercent}); err != nil {
+			return nil, err
 		}
 		idProperty = append(idProperty, v("TO_CHAR(p.ID)"))
 		idLokasi = append(idLokasi, v("TO_CHAR(l.ID)"))
@@ -341,8 +342,9 @@ func (r *ObjekOracle) GantiObjek(ctx context.Context, tx *db.Tx, id string, bari
 			q, tabel string
 			arg      []any
 		}{
-			{sqlSisipLokasi(t.loc), TabelLocationList, []any{ids[0], id, i + 1, uid, k(o.LossRatio.OneYearAmount),
-				k(o.LossRatio.OneYearPercent), k(o.LossRatio.ThreeFiveYearAmount), k(o.LossRatio.ThreeFiveYearPercent)}},
+			{sqlSisipLokasi(t.loc), TabelLocationList, []any{ids[0], id, i + 1, uid, ikatDesimal(o.LossRatio.OneYearAmount),
+				ikatDesimal(o.LossRatio.OneYearPercent), ikatDesimal(o.LossRatio.ThreeFiveYearAmount),
+				ikatDesimal(o.LossRatio.ThreeFiveYearPercent)}},
 			{sqlSisipProperty(t.prop), TabelProperty, []any{ids[1], ids[0], k(o.ObjectNo), k(o.ObjectType), k(o.ObjectName),
 				teksBool(o.IsMaterialDamage), teksBool(o.IsTopRisk), k(o.RoadType), k(o.RoadName), k(o.BuildingNo), k(o.Country),
 				k(o.Province), k(o.RiskAddressID), k(o.Ownership), teksBool(o.IsProductionProcess), teksBool(o.IsHotWorkProcess),

@@ -11,16 +11,12 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/nbfacin/backend/models"
 	"nusantarare/modul/nbfacin/backend/repository"
 )
 
 // ErrPilihanItemTanpaDatabase - V_JN_OBJ_ITEM / CURRENCY tidak terbaca. 503.
 var ErrPilihanItemTanpaDatabase = errors.New("services: basis data tidak dikonfigurasi, pilihan item objek tidak terbaca")
-
-// polaDesimal - uang/persen NUMBER(38,8): >= 0, titik pemisah, <= 30 digit bulat, <= 8 desimal (ADR-0016).
-var polaDesimal = regexp.MustCompile(`^[0-9]{1,30}(\.[0-9]{1,8})?$`)
 
 // polaUnit - SetErrorMessageUnit_Act `.Unit<=0` dan kontrol pxNumber pyDecimalPlaces 0: bilangan bulat > 0.
 var polaUnit = regexp.MustCompile(`^[0-9]+$`)
@@ -76,13 +72,9 @@ func (s *Service) DaftarMataUang(ctx context.Context) ([]string, error) {
 	return s.mataUang.DaftarMataUang(ctx)
 }
 
-// desimalDalam - teks desimal sah (polaDesimal) di antara bawah..atas, dibandingkan apd (tanpa float).
-func desimalDalam(s string, bawah, atas *apd.Decimal) bool {
-	if !polaDesimal.MatchString(s) {
-		return false
-	}
-	d, err := utils.ParseDecimal(s)
-	return err == nil && d.Cmp(bawah) >= 0 && d.Cmp(atas) <= 0
+// dalamRentang - desimal sah (desimalSah) di antara bawah..atas, dibandingkan apd (tanpa float); nil = tidak sah.
+func dalamRentang(d, bawah, atas *apd.Decimal) bool {
+	return d != nil && desimalSah(d) && d.Cmp(bawah) >= 0 && d.Cmp(atas) <= 0
 }
 
 // periksaItem - isian item baris objek ke-`n` (tanpa basis data). Mata uang WAJIB (A133: kolom CURRENCY NOT NULL
@@ -98,18 +90,18 @@ func periksaItem(n int, item []models.ItemObjek) []string {
 		if strings.TrimSpace(it.Currency) == "" {
 			masalah = append(masalah, awal+"currency wajib diisi")
 		}
-		if it.TSI != "" && !polaDesimal.MatchString(it.TSI) {
-			masalah = append(masalah, awal+"tsi harus angka >= 0 dengan paling banyak 8 desimal")
+		if !desimalSah(it.TSI) {
+			masalah = append(masalah, awal+"tsi"+pesanDesimal)
 		}
 		if it.Unit != "" && (!polaUnit.MatchString(it.Unit) || strings.Trim(it.Unit, "0") == "") {
 			masalah = append(masalah, awal+"unit harus bilangan bulat > 0")
 		}
-		if it.PctAdjust2 != "" && !polaDesimal.MatchString(it.PctAdjust2) {
-			masalah = append(masalah, awal+"pctAdjust2 harus angka >= 0 dengan paling banyak 8 desimal")
+		if !desimalSah(it.PctAdjust2) {
+			masalah = append(masalah, awal+"pctAdjust2"+pesanDesimal)
 		}
-		if it.PctAdjustOther != "" && !polaDesimal.MatchString(it.PctAdjustOther) {
-			masalah = append(masalah, awal+"pctAdjustOther harus angka >= 0 dengan paling banyak 8 desimal")
-		} else if it.IsAdjustable && !desimalDalam(it.PctAdjustOther, batasAdjustBawah, batasAdjustAtas) {
+		if !desimalSah(it.PctAdjustOther) {
+			masalah = append(masalah, awal+"pctAdjustOther"+pesanDesimal)
+		} else if it.IsAdjustable && !dalamRentang(it.PctAdjustOther, batasAdjustBawah, batasAdjustAtas) {
 			masalah = append(masalah, awal+"pctAdjustOther: %Adjustment can't be less than 60% or more than 100%")
 		}
 		for _, l := range lebarItem {

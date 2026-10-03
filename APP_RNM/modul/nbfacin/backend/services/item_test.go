@@ -9,6 +9,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/apd/v3"
+
+	"nusantarare/inti/backend/utils"
+
 	inti "nusantarare/inti/backend"
 	"nusantarare/modul/nbfacin/backend/models"
 )
@@ -25,7 +29,7 @@ func (p pilihanItemTiruan) DaftarMataUang(context.Context) ([]string, error) {
 }
 
 func itemSah() models.ItemObjek {
-	return models.ItemObjek{ItemTypeID: "UJI01", ItemType: "UJI MESIN", Currency: "IDR", TSI: "1500000000.12345678", Unit: "2"}
+	return models.ItemObjek{ItemTypeID: "UJI01", ItemType: "UJI MESIN", Currency: "IDR", TSI: ds("1500000000.12345678"), Unit: "2"}
 }
 
 // TestPeriksaItem - tiket 39: currency wajib (A133), tsi / pct desimal <= 8 (NUMBER(38,8)), unit bulat > 0
@@ -46,16 +50,15 @@ func TestPeriksaItem(t *testing.T) {
 	}{
 		"tanpa mata uang": {ubah(func(i *models.ItemObjek) { i.Currency = "" }), "baris[3].items[1].currency wajib"},
 		"mata uang spasi": {ubah(func(i *models.ItemObjek) { i.Currency = "  " }), "baris[3].items[1].currency wajib"},
-		"tsi minus":       {ubah(func(i *models.ItemObjek) { i.TSI = "-1" }), "baris[3].items[1].tsi harus"},
-		"tsi 9 desimal":   {ubah(func(i *models.ItemObjek) { i.TSI = "1.123456789" }), "baris[3].items[1].tsi"},
-		"tsi koma":        {ubah(func(i *models.ItemObjek) { i.TSI = "1,5" }), "baris[3].items[1].tsi"},
-		"tsi 31 digit":    {ubah(func(i *models.ItemObjek) { i.TSI = strings.Repeat("9", 31) }), "baris[3].items[1].tsi"},
+		"tsi minus":       {ubah(func(i *models.ItemObjek) { i.TSI = ds("-1") }), "baris[3].items[1].tsi harus"},
+		"tsi 9 desimal":   {ubah(func(i *models.ItemObjek) { i.TSI = ds("1.123456789") }), "baris[3].items[1].tsi"},
+		"tsi 31 digit":    {ubah(func(i *models.ItemObjek) { i.TSI = ds(strings.Repeat("9", 31)) }), "baris[3].items[1].tsi"},
 		"unit nol":        {ubah(func(i *models.ItemObjek) { i.Unit = "00" }), "baris[3].items[1].unit harus bilangan bulat > 0"},
 		"unit desimal":    {ubah(func(i *models.ItemObjek) { i.Unit = "1.5" }), "baris[3].items[1].unit"},
-		"pct2 teks":       {ubah(func(i *models.ItemObjek) { i.PctAdjust2 = "tujuh" }), "baris[3].items[1].pctAdjust2"},
-		"adjust 59.99":    {ubah(func(i *models.ItemObjek) { i.IsAdjustable, i.PctAdjustOther = true, "59.99" }), "less than 60%"},
-		"adjust 100.01":   {ubah(func(i *models.ItemObjek) { i.IsAdjustable, i.PctAdjustOther = true, "100.01" }), "more than 100%"},
-		"adjust kosong":   {ubah(func(i *models.ItemObjek) { i.IsAdjustable, i.PctAdjustOther = true, "" }), "baris[3].items[1].pctAdjustOther"},
+		"pct2 minus":      {ubah(func(i *models.ItemObjek) { i.PctAdjust2 = ds("-7") }), "baris[3].items[1].pctAdjust2"},
+		"adjust 59.99":    {ubah(func(i *models.ItemObjek) { i.IsAdjustable, i.PctAdjustOther = true, ds("59.99") }), "less than 60%"},
+		"adjust 100.01":   {ubah(func(i *models.ItemObjek) { i.IsAdjustable, i.PctAdjustOther = true, ds("100.01") }), "more than 100%"},
+		"adjust kosong":   {ubah(func(i *models.ItemObjek) { i.IsAdjustable, i.PctAdjustOther = true, nil }), "baris[3].items[1].pctAdjustOther"},
 		"catatan 501":     {ubah(func(i *models.ItemObjek) { i.Note = strings.Repeat("U", 501) }), "baris[3].items[1].note paling banyak 500"},
 		"kondisi 501":     {ubah(func(i *models.ItemObjek) { i.Condition = strings.Repeat("U", 501) }), "baris[3].items[1].condition paling banyak 500"},
 	} {
@@ -65,14 +68,14 @@ func TestPeriksaItem(t *testing.T) {
 	}
 	for _, pct := range []string{"60", "100", "75.5", "100.00000000"} {
 		it := itemSah()
-		it.IsAdjustable, it.PctAdjustOther = true, pct
+		it.IsAdjustable, it.PctAdjustOther = true, ds(pct)
 		if m := periksaItem(0, []models.ItemObjek{it}); len(m) != 0 {
 			t.Errorf("adjust %s ditolak: %v", pct, m)
 		}
 	}
 	// Tidak Adjustable: pctAdjustOther tidak dibatasi 60..100 (ResetPct_Adjustment mengisinya 100 di layar).
 	it := itemSah()
-	it.PctAdjustOther = "10"
+	it.PctAdjustOther = ds("10")
 	if m := periksaItem(0, []models.ItemObjek{it}); len(m) != 0 {
 		t.Errorf("tidak adjustable: %v", m)
 	}
@@ -87,7 +90,7 @@ func TestGantiObjekMataUangItem(t *testing.T) {
 		DenganPilihanItem(pilihanItemTiruan{&panggil})
 	obj := []models.ObjekFire{{ObjectType: "UJI", Items: []models.ItemObjek{itemSah(), {Currency: "USD"}}}, {ObjectType: "UJI"}}
 	d, err := svc.GantiObjek(ctx, akun, "UJI-NB-1", obj)
-	if err != nil || len(d) != 2 || len(d[0].Items) != 2 || d[0].Items[0].TSI != "1500000000.12345678" || panggil != 1 {
+	if err != nil || len(d) != 2 || len(d[0].Items) != 2 || utils.FormatDecimal(d[0].Items[0].TSI) != "1500000000.12345678" || panggil != 1 {
 		t.Fatalf("%+v (%v) panggil=%d", d, err, panggil)
 	}
 	obj[1].Items = []models.ItemObjek{{Currency: "ITL"}}
@@ -144,5 +147,46 @@ func TestLebarItemSamaDenganMigrasi(t *testing.T) {
 	}
 	if len(lebarItem) != len(kolom) {
 		t.Errorf("%d medan diperiksa, peta %d", len(lebarItem), len(kolom))
+	}
+}
+
+// ds - teks desimal uji -> *apd.Decimal ("" = nil; panik bila salah tulis di uji). Boleh di luar aturan polaDesimal
+// (mis. "-1") untuk menguji pemeriksaan ulang services.
+func ds(s string) *apd.Decimal {
+	if s == "" {
+		return nil
+	}
+	d, err := utils.ParseDecimal(s)
+	if err != nil {
+		panic(err)
+	}
+	return d
+}
+
+// TestUraiDesimalIsian - ADR-0034 (butir 94): SATU fungsi teks JSON -> desimal; kosong = nil; "0.5", 8 desimal, 30 digit
+// bulat sah; koma / huruf / minus / 9 desimal / 31 digit -> pesan ber-jalur (sama dengan sebelum refaktor).
+func TestUraiDesimalIsian(t *testing.T) {
+	for _, s := range []string{"0.5", "0.12345678", "123456789012345678901234567890", "123456789012345678901234567890.12345678", "100"} {
+		var m []string
+		if d := UraiDesimalIsian("baris[0].items[0].tsi", s, &m); d == nil || len(m) != 0 || utils.FormatDecimal(d) != s {
+			t.Errorf("%q -> %v %v", s, d, m)
+		}
+	}
+	var m []string
+	if d := UraiDesimalIsian("x", "", &m); d != nil || len(m) != 0 {
+		t.Errorf("kosong -> %v %v", d, m)
+	}
+	for _, s := range []string{"1,5", "tujuh", "-1", "1.123456789", strings.Repeat("9", 31), " 1", "1e3", ".5"} {
+		var m []string
+		if d := UraiDesimalIsian("baris[2].lossRecords[1].claim", s, &m); d != nil || len(m) != 1 ||
+			m[0] != "baris[2].lossRecords[1].claim harus angka >= 0 dengan paling banyak 8 desimal" {
+			t.Errorf("%q -> %v %v", s, d, m)
+		}
+	}
+	if GalatIsianObjek(nil) != nil {
+		t.Error("tanpa masalah harus nil")
+	}
+	if err := GalatIsianObjek([]string{"a", "b"}); !errors.Is(err, ErrMasukanObjek) || !strings.Contains(err.Error(), "a; b") {
+		t.Errorf("galat: %v", err)
 	}
 }

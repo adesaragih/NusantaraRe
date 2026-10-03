@@ -5,10 +5,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+
+	"github.com/cockroachdb/apd/v3"
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/nbfacin/backend/models"
 	"nusantarare/modul/nbfacin/backend/services"
 )
@@ -175,22 +179,35 @@ func keKabel(o models.ObjekFire) objekKabel {
 			Right: sisiKabel(s.Right), HousekeepingStatus: s.HousekeepingStatus, FloodAreaStatus: s.FloodAreaStatus,
 			FloodArea: s.FloodArea, HousekeepingRemark: s.HousekeepingRemark},
 		Items: keItemKabel(o.Items), Occupations: keOkupasiKabel(o.Occupations), FEA: keFEAKabel(o.FEA),
-		LossRecords: keKerugianKabel(o.LossRecords), LossRatio: lossRatioKabel(o.LossRatio), InternalLossRecords: []klaimKabel{}}
+		LossRecords: keKerugianKabel(o.LossRecords), InternalLossRecords: []klaimKabel{},
+		LossRatio: lossRatioKabel{OneYearAmount: teks(o.LossRatio.OneYearAmount), OneYearPercent: teks(o.LossRatio.OneYearPercent),
+			ThreeFiveYearAmount: teks(o.LossRatio.ThreeFiveYearAmount), ThreeFiveYearPercent: teks(o.LossRatio.ThreeFiveYearPercent)}}
 }
 
-// keKerugianKabel / keKerugianModel - CatatanKerugian <-> kerugianKabel; selalu larik ke luar.
+// teks - desimal -> teks kabel (ADR-0034: teks hanya di batas JSON); nil = "".
+func teks(d *apd.Decimal) string { return utils.FormatDecimal(d) }
+
+// keKerugianKabel / keKerugianModel - CatatanKerugian <-> kerugianKabel; selalu larik ke luar. Uang diurai SEKALI di
+// sini lewat services.UraiDesimalIsian (pesan 400 ber-indeks ke masalah).
 func keKerugianKabel(d []models.CatatanKerugian) []kerugianKabel {
 	hasil := make([]kerugianKabel, 0, len(d))
 	for _, c := range d {
-		hasil = append(hasil, kerugianKabel(c))
+		hasil = append(hasil, kerugianKabel{DateOfLoss: c.DateOfLoss, CoinsName: c.CoinsName, LossObject: c.LossObject,
+			Currency: c.Currency, Amount: teks(c.Amount), Claim: teks(c.Claim), PreventionOfLoss: teks(c.PreventionOfLoss),
+			CauseOfLoss: c.CauseOfLoss, Remarks: c.Remarks, Detail: c.Detail})
 	}
 	return hasil
 }
 
-func keKerugianModel(d []kerugianKabel) []models.CatatanKerugian {
+func keKerugianModel(n int, d []kerugianKabel, masalah *[]string) []models.CatatanKerugian {
 	hasil := make([]models.CatatanKerugian, 0, len(d))
-	for _, c := range d {
-		hasil = append(hasil, models.CatatanKerugian(c))
+	for m, c := range d {
+		awal := fmt.Sprintf("baris[%d].lossRecords[%d].", n, m)
+		hasil = append(hasil, models.CatatanKerugian{DateOfLoss: c.DateOfLoss, CoinsName: c.CoinsName, LossObject: c.LossObject,
+			Currency: c.Currency, Amount: services.UraiDesimalIsian(awal+"amount", c.Amount, masalah),
+			Claim:            services.UraiDesimalIsian(awal+"claim", c.Claim, masalah),
+			PreventionOfLoss: services.UraiDesimalIsian(awal+"preventionOfLoss", c.PreventionOfLoss, masalah),
+			CauseOfLoss:      c.CauseOfLoss, Remarks: c.Remarks, Detail: c.Detail})
 	}
 	return hasil
 }
@@ -229,24 +246,36 @@ func keOkupasiModel(d []okupasiKabel) []models.OkupasiObjek {
 	return hasil
 }
 
-// keItemKabel / keItemModel - ItemObjek <-> itemKabel; selalu larik (bukan null) ke luar.
+// keItemKabel / keItemModel - ItemObjek <-> itemKabel; selalu larik (bukan null) ke luar. Uang/persen diurai SEKALI di
+// sini lewat services.UraiDesimalIsian.
 func keItemKabel(d []models.ItemObjek) []itemKabel {
 	hasil := make([]itemKabel, 0, len(d))
 	for _, i := range d {
-		hasil = append(hasil, itemKabel(i))
+		hasil = append(hasil, itemKabel{ItemTypeID: i.ItemTypeID, ItemType: i.ItemType, Note: i.Note, PropertyYear: i.PropertyYear,
+			Unit: i.Unit, Condition: i.Condition, Currency: i.Currency, TSI: teks(i.TSI), YearOfPlanting: i.YearOfPlanting,
+			NoOfTree: i.NoOfTree, AreaHectar: i.AreaHectar, Remark: i.Remark, IsAdjustable: i.IsAdjustable,
+			PctAdjust2: teks(i.PctAdjust2), PctAdjustOther: teks(i.PctAdjustOther)})
 	}
 	return hasil
 }
 
-func keItemModel(d []itemKabel) []models.ItemObjek {
+func keItemModel(n int, d []itemKabel, masalah *[]string) []models.ItemObjek {
 	hasil := make([]models.ItemObjek, 0, len(d))
-	for _, i := range d {
-		hasil = append(hasil, models.ItemObjek(i))
+	for m, i := range d {
+		awal := fmt.Sprintf("baris[%d].items[%d].", n, m)
+		hasil = append(hasil, models.ItemObjek{ItemTypeID: i.ItemTypeID, ItemType: i.ItemType, Note: i.Note,
+			PropertyYear: i.PropertyYear, Unit: i.Unit, Condition: i.Condition, Currency: i.Currency,
+			TSI:            services.UraiDesimalIsian(awal+"tsi", i.TSI, masalah),
+			YearOfPlanting: i.YearOfPlanting, NoOfTree: i.NoOfTree, AreaHectar: i.AreaHectar, Remark: i.Remark,
+			IsAdjustable:   i.IsAdjustable,
+			PctAdjust2:     services.UraiDesimalIsian(awal+"pctAdjust2", i.PctAdjust2, masalah),
+			PctAdjustOther: services.UraiDesimalIsian(awal+"pctAdjustOther", i.PctAdjustOther, masalah)})
 	}
 	return hasil
 }
 
-func keModel(o objekKabel) models.ObjekFire {
+// keModel - objek ke-`n` badan PUT -> model; masalah urai desimal (ADR-0034) dikumpulkan ke `masalah`.
+func keModel(n int, o objekKabel, masalah *[]string) models.ObjekFire {
 	s := o.SurroundingRisk
 	return models.ObjekFire{ObjectNo: o.ObjectNo, ObjectType: o.ObjectType, ObjectName: o.ObjectName,
 		IsMaterialDamage: o.IsMaterialDamage, IsTopRisk: o.IsTopRisk, RoadType: o.RoadType, RoadName: o.RoadName,
@@ -259,8 +288,8 @@ func keModel(o objekKabel) models.ObjekFire {
 		SurroundingRisk: models.SurroundingRisk{Front: models.SisiRisiko(s.Front), Left: models.SisiRisiko(s.Left),
 			Back: models.SisiRisiko(s.Back), Right: models.SisiRisiko(s.Right), HousekeepingStatus: s.HousekeepingStatus,
 			FloodAreaStatus: s.FloodAreaStatus, FloodArea: s.FloodArea, HousekeepingRemark: s.HousekeepingRemark},
-		Items: keItemModel(o.Items), Occupations: keOkupasiModel(o.Occupations), FEA: keFEAModel(o.FEA),
-		LossRecords: keKerugianModel(o.LossRecords)}
+		Items: keItemModel(n, o.Items, masalah), Occupations: keOkupasiModel(o.Occupations), FEA: keFEAModel(o.FEA),
+		LossRecords: keKerugianModel(n, o.LossRecords, masalah)}
 }
 
 func keObjekKabel(d []models.ObjekFire) daftarObjek {
@@ -292,8 +321,13 @@ func simpanObjek(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			return
 		}
 		baris := make([]models.ObjekFire, len(b.Baris))
+		var masalah []string
 		for i, o := range b.Baris {
-			baris[i] = keModel(o)
+			baris[i] = keModel(i, o, &masalah)
+		}
+		if err := services.GalatIsianObjek(masalah); err != nil {
+			tulisGalat(w, err)
+			return
 		}
 		d, err := svc.GantiObjek(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("caseId"), baris)
 		if err != nil {

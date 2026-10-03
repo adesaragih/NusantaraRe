@@ -1297,8 +1297,25 @@ dijalankan — urutan DEV: … → 190 → **191**. Keputusan agent A145–A152 
 | ---: | --- | --- |
 | 90 | Keputusan agent A145–A152 (tiket 42) | **"setuju sesuai rekomendasi agent A145–A152"** — DISETUJUI |
 | 91 | Keputusan agent A116–A122 (tiket 36) | **"setuju A116–A122"** — DISETUJUI. Seluruh keputusan agent A99–A152 kini disetujui |
-| 92 | A153 saringan tahun Table of Limit (tiket 40): popup tombol mengirim Tahun kosong, autocomplete mengirim CurrentYear (= tahun Begin date) — AskUserQuestion di sesi 0f | **SARING tahun Begin date** (= implementasi `4b149fe5`, tanpa perubahan kode). A154 (0 / > 1 baris BUSINESS → 409) tetap menunggu |
+| 92 | A153 saringan tahun Table of Limit (tiket 40): popup tombol mengirim Tahun kosong, autocomplete mengirim CurrentYear (= tahun Begin date) — AskUserQuestion di sesi 0f | **SARING tahun Begin date** (= implementasi `4b149fe5`, tanpa perubahan kode). A154 disetujui kemudian (butir 93) |
+| 93 | A154 (tiket 40): Class of Business case dicocokkan persis ke `BUSINESS.NOTE` di group business case; 0 / > 1 baris → 409 | **"setuju A154"** — DISETUJUI. Seluruh keputusan agent A99–A154 kini disetujui |
 | 89 | Ralat W-5 (butir 86) sesudah melihat contoh `DDL\TABLEOFLIMIT.xml` (BIZCODE 10048, NOTE "EMPLOYERS LIABILITY"), AskUserQuestion di sesi 0f | **BIZCODE = `BUSINESS.ID` Class of Business** yang dipilih di form Opportunity — BUKAN Group Business. Form menyimpan NAMA (`T_NB_OPPORTUNITY.CLASS_OF_BUSINESS` = BUSINESS.NOTE), jadi ID diturunkan: `BUSINESS.ID WHERE NOTE = nama AND BUSINESSGROUPID = GROUP_BUSINESS_ID case`; 0 / > 1 baris → 409 |
+
+## Keputusan work owner — 3 Oktober 2026, uang di dalam aplikasi (ADR-0034, diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 94 | Temuan sesi c3: model tiket 39/42 menyimpan uang/persen sebagai TEKS di dalam aplikasi (menyimpang ADR-0034 aturan 1) | **"Perbaiki sebelum Coverage"** (AskUserQuestion di sesi 0f) — `ItemObjek.TSI/PctAdjust2/PctAdjustOther`, `CatatanKerugian.Amount/Claim/PreventionOfLoss`, `LossRatio` → `*apd.Decimal` (nil = kosong); SATU fungsi urai teks JSON → desimal (`services.UraiDesimalIsian`, dipakai handler; 400 ber-indeks, pesan sama); SATU pasangan ikat/baca + konversi TO_NUMBER/TO_CHAR ber-NLS di satu tempat (`repository/desimal.go`); kontrak JSON tetap teks |
+
+⚠️ Ditemukan saat sensus medan uang lain (dilaporkan, TIDAK diubah — di luar lingkup butir 94): `services/premium` `Input`
+(TSI, Rate, …) dan `total.go`, `services/pembayaran` `Coverage` (Premium, Discount, …) menerima angka sebagai teks dan
+mengurainya SEKALI di gerbang mesinnya (`utils.ParseDecimal`); `inti/backend/kontrak` `MasukanPremiFacIn` (kontrak lintas
+modul, milik inti) juga teks; `services/acceptance/tangga.go` dan `services/rules` membaca angka dari data case Pega
+sebagai teks lalu mengurainya; `repository/limit.go` (tiket 20) membaca kolom NUMBER bulat lewat `db.UraiDesimal` langsung,
+tanpa `angkaKeluar` (pra-butir 94). `T_TABLEOFLIMIT.PCT_LIMIT` / `TABLEOFLIMIT.PCTLIMIT` tetap teks apa adanya (butir 68.1).
+⚠️ **R-ADR34:** `T_LOCATIONLIST.LOSS_RATIO*_PERCENT` (VARCHAR2) kini diurai desimal saat dibaca - nilai lama yang bukan
+desimal polos (koma, "%", spasi) membuat baca objek case itu GAGAL (500), bukan diteruskan apa adanya seperti sebelumnya.
+Contoh data: semua "0"; loader menyimpan teks Pega apa adanya. `[pertanyaan terbuka]` bentuk nilai produksi.
 
 ## Yang belum diputuskan
 

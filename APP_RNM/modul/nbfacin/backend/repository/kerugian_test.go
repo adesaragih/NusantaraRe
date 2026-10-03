@@ -33,8 +33,9 @@ func TestSQLKerugian(t *testing.T) {
 // TestSisipKerugianMenurutKolom - bind sqlSisipKerugian dipasangkan lewat KUNCI; uang (AMOUNT, CLAIM,
 // PREVENTION_OF_LOSS) tepat lewat TO_NUMBER bertopeng; CURRENCY tidak pernah NULL.
 func TestSisipKerugianMenurutKolom(t *testing.T) {
-	c := models.CatatanKerugian{DateOfLoss: "DATE_OF_LOSS", LossObject: "LOSS_OBJECT", Currency: "CURRENCY", Amount: "AMOUNT",
-		Claim: "CLAIM", PreventionOfLoss: "PREVENTION_OF_LOSS", CauseOfLoss: "CAUSE_OF_LOSS", Remarks: "REMARKS", Detail: "DETAIL"}
+	c := models.CatatanKerugian{DateOfLoss: "DATE_OF_LOSS", LossObject: "LOSS_OBJECT", Currency: "CURRENCY", Amount: desimalUji("1"),
+		Claim: desimalUji("2.5"), PreventionOfLoss: desimalUji("3"), CauseOfLoss: "CAUSE_OF_LOSS", Remarks: "REMARKS", Detail: "DETAIL"}
+	desimal := map[string]string{"AMOUNT": "1", "CLAIM": "2.5", "PREVENTION_OF_LOSS": "3"}
 	m := regexp.MustCompile(`\(([^)]*)\) VALUES \((.*)\)$`).FindStringSubmatch(sqlSisipKerugian("UJI.C"))
 	kolom := strings.Split(m[1], ", ")
 	nilai := regexp.MustCompile(`TO_NUMBER\(:\d+[^)]*\)|:\d+`).FindAllString(m[2], -1)
@@ -49,7 +50,11 @@ func TestSisipKerugianMenurutKolom(t *testing.T) {
 	}
 	arg := argKerugian(c)
 	for i, k := range kolom[4:] {
-		if arg[i] != k {
+		mau := any(k)
+		if d, ada := desimal[k]; ada {
+			mau = d
+		}
+		if arg[i] != mau {
 			t.Errorf("bind kolom %s = %v", k, arg[i])
 		}
 	}
@@ -86,8 +91,8 @@ func TestBacaKerugianMemakaiKolomBernama(t *testing.T) {
 	for _, m := range regexp.MustCompile(`v\("([^"]+)"\)`).FindAllStringSubmatch(string(b), -1) {
 		dibaca[m[1]] = true
 	}
-	for _, m := range regexp.MustCompile(`\{"([A-Z_]+)", &c\.`).FindAllStringSubmatch(string(b), -1) {
-		dibaca[fmt.Sprintf(db.FmtDesimal, "c."+m[1])] = true
+	for _, m := range regexp.MustCompile(`kolomDesimal\{angkaKeluar\("([a-z]\.[A-Z0-9_]+)"\)`).FindAllStringSubmatch(string(b), -1) {
+		dibaca[fmt.Sprintf(db.FmtDesimal, m[1])] = true
 	}
 	for k := range dibaca {
 		if !ada[k] {

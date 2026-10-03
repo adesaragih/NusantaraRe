@@ -1,5 +1,7 @@
 package models
 
+import "github.com/cockroachdb/apd/v3"
+
 // ObjekFire - satu baris tab Object kasus FIRE (tiket 35): .LocationList(n) beserta
 // .Property, .Property.RiskLocation, .Property.BuildingConstruction, .Property.SurroundingRisk
 // (tiket 38). Teks apa adanya;
@@ -49,24 +51,26 @@ type ObjekFire struct {
 	LossRatio   LossRatio
 }
 
-// CatatanKerugian - satu .Property.ListCauseOfLoss(n) (kelas Data-CauseOfLoss). Uang = teks desimal bertitik (ADR-0003).
+// CatatanKerugian - satu .Property.ListCauseOfLoss(n) (kelas Data-CauseOfLoss). Uang = *apd.Decimal, nil = kosong
+// (ADR-0003/0034).
 // DateOfLoss: DD-MM-YYYY di batas services <-> handler; teks Pega di batas services <-> repository.
 type CatatanKerugian struct {
-	DateOfLoss       string // DATE_OF_LOSS       (.DateOfLoss, kolom baru 191)
-	CoinsName        string // T_COINSDATA.COINS_NAME (.CoinsData.CoinsName - kolom grid "Insured Name")
-	LossObject       string // LOSS_OBJECT        (kolom baru 191)
-	Currency         string // CURRENCY           (wajib, K-012)
-	Amount           string // AMOUNT             uang "Total of Loss" (kolom baru 191)
-	Claim            string // CLAIM              uang "Total Claim (100%)"
-	PreventionOfLoss string // PREVENTION_OF_LOSS uang (kolom baru 191)
-	CauseOfLoss      string // CAUSE_OF_LOSS      (kolom baru 191)
-	Remarks          string // REMARKS
-	Detail           string // DETAIL             "Loss Detail" (dilebarkan 500, A146)
+	DateOfLoss       string       // DATE_OF_LOSS       (.DateOfLoss, kolom baru 191)
+	CoinsName        string       // T_COINSDATA.COINS_NAME (.CoinsData.CoinsName - kolom grid "Insured Name")
+	LossObject       string       // LOSS_OBJECT        (kolom baru 191)
+	Currency         string       // CURRENCY           (wajib, K-012)
+	Amount           *apd.Decimal // AMOUNT             uang "Total of Loss" (kolom baru 191)
+	Claim            *apd.Decimal // CLAIM              uang "Total Claim (100%)"
+	PreventionOfLoss *apd.Decimal // PREVENTION_OF_LOSS uang (kolom baru 191)
+	CauseOfLoss      string       // CAUSE_OF_LOSS      (kolom baru 191)
+	Remarks          string       // REMARKS
+	Detail           string       // DETAIL             "Loss Detail" (dilebarkan 500, A146)
 }
 
-// LossRatio - .LossRatio1Year* / .LossRatio35Year* baris lokasi. Amount = uang teks desimal; percent = teks rancangan.
+// LossRatio - .LossRatio1Year* / .LossRatio35Year* baris lokasi; *apd.Decimal, nil = kosong (ADR-0034). Amount = uang
+// NUMBER(38,8); percent tersimpan teks desimal di kolom rancangan VARCHAR2(50).
 type LossRatio struct {
-	OneYearAmount, OneYearPercent, ThreeFiveYearAmount, ThreeFiveYearPercent string
+	OneYearAmount, OneYearPercent, ThreeFiveYearAmount, ThreeFiveYearPercent *apd.Decimal
 }
 
 // BarisFEA - satu .FEAList(n) (kelas Data-OfferFacIn-OfferFEAList); empat medan dari halaman tertanam .DataFEA.
@@ -93,24 +97,24 @@ type OkupasiObjek struct {
 }
 
 // ItemObjek - satu .Property.PropertyItemList(n) (tiket 39, `Section\PropertyItemFacIn_Section.xml`).
-// Uang dan persen dibawa sebagai TEKS desimal bertitik - tidak pernah float (ADR-0003/0016); services
-// mengurainya ke desimal berskala tetap (apd) untuk diperiksa, repository menulisnya NUMBER(38,8).
+// Uang dan persen = desimal berskala tetap *apd.Decimal, nil = kosong (ADR-0003/0016/0034, butir 94): teks hanya di
+// batas JSON (handler) dan bind/hasil Oracle (repository).
 type ItemObjek struct {
-	ItemTypeID     string // ITEM_TYPE_ID       (.ItemTypeID = V_JN_OBJ_ITEM.MJOI_KODE)
-	ItemType       string // ITEM_TYPE          (.ItemType = V_JN_OBJ_ITEM.JN_OBJ_ITEM)
-	Note           string // PROPERTI_ITEM_NOTE (.PropertiItemNote = V_JN_OBJ_ITEM.KETERANGAN)
-	PropertyYear   string // PROPERTY_YEAR      (kolom baru 188)
-	Unit           string // UNIT               (kolom baru 188)
-	Condition      string // CONDITION          (kolom baru 188)
-	Currency       string // CURRENCY           (CURRENCY.CURRENCY; wajib, A133)
-	TSI            string // TSI_OBJECT_ITEM    uang NUMBER(38,8), teks desimal
-	YearOfPlanting string // YEAR               (.Year, kolom baru 188)
-	NoOfTree       string // NO_OF_TREE         (kolom baru 188)
-	AreaHectar     string // AREA_HECTAR        (kolom baru 188)
-	Remark         string // REMARK
-	IsAdjustable   bool   // IS_ADJUSTABLE_FLAG teks "true"/"false"
-	PctAdjust2     string // PCT_ADJUST2        persen NUMBER(38,8), teks desimal
-	PctAdjustOther string // PCT_ADJUST_OTHER   persen NUMBER(38,8), teks desimal
+	ItemTypeID     string       // ITEM_TYPE_ID       (.ItemTypeID = V_JN_OBJ_ITEM.MJOI_KODE)
+	ItemType       string       // ITEM_TYPE          (.ItemType = V_JN_OBJ_ITEM.JN_OBJ_ITEM)
+	Note           string       // PROPERTI_ITEM_NOTE (.PropertiItemNote = V_JN_OBJ_ITEM.KETERANGAN)
+	PropertyYear   string       // PROPERTY_YEAR      (kolom baru 188)
+	Unit           string       // UNIT               (kolom baru 188)
+	Condition      string       // CONDITION          (kolom baru 188)
+	Currency       string       // CURRENCY           (CURRENCY.CURRENCY; wajib, A133)
+	TSI            *apd.Decimal // TSI_OBJECT_ITEM uang NUMBER(38,8)
+	YearOfPlanting string       // YEAR               (.Year, kolom baru 188)
+	NoOfTree       string       // NO_OF_TREE         (kolom baru 188)
+	AreaHectar     string       // AREA_HECTAR        (kolom baru 188)
+	Remark         string       // REMARK
+	IsAdjustable   bool         // IS_ADJUSTABLE_FLAG teks "true"/"false"
+	PctAdjust2     *apd.Decimal // PCT_ADJUST2 persen NUMBER(38,8)
+	PctAdjustOther *apd.Decimal // PCT_ADJUST_OTHER persen NUMBER(38,8)
 }
 
 // BarisTableOfLimit - satu pilihan Class of Construction (tiket 40, TABLEOFLIMIT); PctLimit teks apa adanya.

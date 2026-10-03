@@ -114,3 +114,7 @@ tidak di kontrak dan tidak di rancangan T_PROPERTYITEMLIST), hitung ulang premi 
 **Aturan properti (03-10-2026, diteruskan sesi 0f):** `DDL\Condition.xml` (1 Good / 2 Fair / 3 Poor) dan `DDL\PctAdjust2.xml`
 (satu nilai "100"; item baru di frontend berawal "100", K-7) dipakai frontend. Backend tetap tanpa validasi enumerasi;
 "100" lolos `pctAdjust2` desimal.
+
+**ADR-0034 (butir 94, 03-10-2026):** uang/persen di dalam aplikasi kini `*apd.Decimal` (bukan teks); urai teks JSON →
+desimal sekali di handler (`services.UraiDesimalIsian`, pesan 400 sama), ikat/baca Oracle lewat `repository/desimal.go`.
+Kontrak JSON tidak berubah.

@@ -114,3 +114,7 @@ rekomendasi agent A145–A152"*):
 **Aturan properti (03-10-2026, diteruskan sesi 0f; butir 85):** `DDL\Remarks.xml` (ASM-FW-GISFW-DATA-CAUSEOFLOSS!REMARKS,
 PromptList) = Settled / Ex Gratia Payment / Withdraw / Others / -- (nilai = label) dipakai frontend; terpanjang 17 bita, muat
 di VARCHAR2(500). Backend tetap tanpa validasi enumerasi.
+
+**ADR-0034 (butir 94, 03-10-2026):** uang/persen di dalam aplikasi kini `*apd.Decimal` (bukan teks); urai teks JSON →
+desimal sekali di handler (`services.UraiDesimalIsian`, pesan 400 sama), ikat/baca Oracle lewat `repository/desimal.go`.
+Kontrak JSON tidak berubah.

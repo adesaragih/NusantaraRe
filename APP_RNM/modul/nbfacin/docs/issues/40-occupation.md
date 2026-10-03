@@ -137,4 +137,4 @@ menyebut CurrentYear "hanya di `Section\TableOfLimit.xml`" — salah; pencarian 
 | # | Keputusan | Dasar |
 | --- | --- | --- |
 | A153 | Endpoint **menyaring TAHUN = tahun Begin date** (WIB) — jalan autocomplete; Begin kosong → 409 | ✅ **DISETUJUI work owner 03-10-2026** (butir 92: *SARING tahun Begin date*); korpus punya dua jalan (autocomplete bertahun, tombol tanpa tahun) |
-| A154 | NOTE dicocokkan persis; 0 / > 1 baris BUSINESS → 409 | arahan sesi 0f; nama tersimpan = BUSINESS.NOTE pilihan datalist (cobSah) |
+| A154 | NOTE dicocokkan persis; 0 / > 1 baris BUSINESS → 409 | ✅ **DISETUJUI work owner 03-10-2026** (butir 93: *"setuju A154"*); arahan sesi 0f; nama tersimpan = BUSINESS.NOTE pilihan datalist (cobSah) |

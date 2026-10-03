@@ -8,6 +8,7 @@ import (
 	"time"
 
 	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/nbfacin/backend/models"
 )
 
@@ -15,37 +16,37 @@ import (
 var hariUji = time.Date(2026, 10, 3, 9, 0, 0, 0, WIB)
 
 func catatan(tgl, amount, claim string) models.CatatanKerugian {
-	return models.CatatanKerugian{DateOfLoss: tgl, Currency: "IDR", Amount: amount, Claim: claim}
+	return models.CatatanKerugian{DateOfLoss: tgl, Currency: "IDR", Amount: ds(amount), Claim: ds(claim)}
 }
 
 // TestHitungLossRatio - tiket 42, SetLossRatio_Act + W-4: <= 365 hari masuk LR1 DAN LR35 (kumulatif), <= 1825 hanya
 // LR35; ΣClaim 0 -> 0; ΣAmount 0 -> 0 (W-4); tanpa tanggal tidak dijumlah (A147); 8 desimal setengah-ke-atas (A148).
 func TestHitungLossRatio(t *testing.T) {
-	nol := models.LossRatio{OneYearAmount: "0", OneYearPercent: "0", ThreeFiveYearAmount: "0", ThreeFiveYearPercent: "0"}
+	nol := lrUji("0", "0", "0", "0")
 	for nama, u := range map[string]struct {
 		rugi []models.CatatanKerugian
 		mau  models.LossRatio
 	}{
 		"kosong": {nil, nol},
 		"satu tahun dan lima tahun": {[]models.CatatanKerugian{catatan("03-10-2025", "1000", "250"), catatan("04-10-2022", "1000", "750")},
-			models.LossRatio{OneYearAmount: "0.25", OneYearPercent: "25", ThreeFiveYearAmount: "0.5", ThreeFiveYearPercent: "50"}},
+			lrUji("0.25", "25", "0.5", "50")},
 		"tepat 365 hari masuk": {[]models.CatatanKerugian{catatan("03-10-2025", "400", "100")},
-			models.LossRatio{OneYearAmount: "0.25", OneYearPercent: "25", ThreeFiveYearAmount: "0.25", ThreeFiveYearPercent: "25"}},
+			lrUji("0.25", "25", "0.25", "25")},
 		"366 hari hanya LR35": {[]models.CatatanKerugian{catatan("02-10-2025", "400", "100")},
-			models.LossRatio{OneYearAmount: "0", OneYearPercent: "0", ThreeFiveYearAmount: "0.25", ThreeFiveYearPercent: "25"}},
+			lrUji("0", "0", "0.25", "25")},
 		"lebih dari 1825 hari": {[]models.CatatanKerugian{catatan("01-01-2020", "400", "100")}, nol},
 		"claim nol":            {[]models.CatatanKerugian{catatan("01-10-2026", "400", "0")}, nol},
 		"amount nol W-4":       {[]models.CatatanKerugian{catatan("01-10-2026", "", "100")}, nol},
 		"tanpa tanggal":        {[]models.CatatanKerugian{catatan("", "400", "100")}, nol},
 		"tanggal sesudah hari ini ikut": {[]models.CatatanKerugian{catatan("31-12-2026", "400", "100")},
-			models.LossRatio{OneYearAmount: "0.25", OneYearPercent: "25", ThreeFiveYearAmount: "0.25", ThreeFiveYearPercent: "25"}},
+			lrUji("0.25", "25", "0.25", "25")},
 		"pembulatan 8 desimal": {[]models.CatatanKerugian{catatan("01-10-2026", "3", "2")},
-			models.LossRatio{OneYearAmount: "0.66666667", OneYearPercent: "66.66666667", ThreeFiveYearAmount: "0.66666667", ThreeFiveYearPercent: "66.66666667"}},
+			lrUji("0.66666667", "66.66666667", "0.66666667", "66.66666667")},
 		"uang besar eksak": {[]models.CatatanKerugian{catatan("01-10-2026", "123456789012345678901234567890.12345678", "123456789012345678901234567890.12345678")},
-			models.LossRatio{OneYearAmount: "1", OneYearPercent: "100", ThreeFiveYearAmount: "1", ThreeFiveYearPercent: "100"}},
+			lrUji("1", "100", "1", "100")},
 	} {
-		if got, err := hitungLossRatio(u.rugi, hariUji); err != nil || got != u.mau {
-			t.Errorf("%s: %+v (%v), mau %+v", nama, got, err, u.mau)
+		if got, err := hitungLossRatio(u.rugi, hariUji); err != nil || lrTeks(got) != lrTeks(u.mau) {
+			t.Errorf("%s: %v (%v), mau %v", nama, lrTeks(got), err, lrTeks(u.mau))
 		}
 	}
 }
@@ -77,10 +78,10 @@ func TestPeriksaKerugian(t *testing.T) {
 		pesan string
 	}{
 		"tanpa mata uang": {models.CatatanKerugian{Currency: " "}, "baris[1].lossRecords[0].currency wajib"},
-		"claim koma":      {models.CatatanKerugian{Currency: "IDR", Claim: "1,5"}, "baris[1].lossRecords[0].claim harus"},
-		"prevention minus": {models.CatatanKerugian{Currency: "IDR", PreventionOfLoss: "-1"},
+		"claim 31 digit":  {models.CatatanKerugian{Currency: "IDR", Claim: ds(strings.Repeat("9", 31))}, "baris[1].lossRecords[0].claim harus"},
+		"prevention minus": {models.CatatanKerugian{Currency: "IDR", PreventionOfLoss: ds("-1")},
 			"baris[1].lossRecords[0].preventionOfLoss harus"},
-		"amount 9 desimal": {models.CatatanKerugian{Currency: "IDR", Amount: "1.123456789"}, "baris[1].lossRecords[0].amount harus"},
+		"amount 9 desimal": {models.CatatanKerugian{Currency: "IDR", Amount: ds("1.123456789")}, "baris[1].lossRecords[0].amount harus"},
 		"tanggal 31-02":    {models.CatatanKerugian{Currency: "IDR", DateOfLoss: "31-02-2026"}, "baris[1].lossRecords[0].dateOfLoss bukan tanggal"},
 		"tanggal ISO":      {models.CatatanKerugian{Currency: "IDR", DateOfLoss: "2026-01-01"}, "dateOfLoss bukan tanggal"},
 		"detail 501":       {models.CatatanKerugian{Currency: "IDR", Detail: strings.Repeat("U", 501)}, "baris[1].lossRecords[0].detail paling banyak 500"},
@@ -104,13 +105,13 @@ func TestGantiObjekKerugian(t *testing.T) {
 	c := catatan("01-10-2026", "400", "100")
 	c.CoinsName = "UJI DIABAIKAN"
 	obj := []models.ObjekFire{{ObjectType: "UJI", LossRecords: []models.CatatanKerugian{c},
-		LossRatio: models.LossRatio{OneYearAmount: "9", OneYearPercent: "9"}}}
+		LossRatio: models.LossRatio{OneYearAmount: ds("9"), OneYearPercent: ds("9")}}}
 	d, err := svc.GantiObjek(ctx, akun, "UJI-NB-1", obj)
 	if err != nil || len(d) != 1 || len(d[0].LossRecords) != 1 {
 		t.Fatalf("%+v (%v)", d, err)
 	}
 	if s := tersimpan.ada["UJI-NB-1"][0]; s.LossRecords[0].DateOfLoss != "20261001T050000.000 GMT" ||
-		s.LossRecords[0].CoinsName != "UJI TERTANGGUNG" || s.LossRatio.OneYearAmount != "0.25" || s.LossRatio.OneYearPercent != "25" {
+		s.LossRecords[0].CoinsName != "UJI TERTANGGUNG" || utils.FormatDecimal(s.LossRatio.OneYearAmount) != "0.25" || utils.FormatDecimal(s.LossRatio.OneYearPercent) != "25" {
 		t.Errorf("tersimpan: %+v", s)
 	}
 	if got := d[0].LossRecords[0]; got.DateOfLoss != "01-10-2026" || got.CoinsName != "UJI TERTANGGUNG" {
@@ -142,4 +143,14 @@ func TestTanggalKerugian(t *testing.T) {
 	if got := tanggalKerugianKeKabel(tanggalKerugianKePega("15-08-2026")); got != "15-08-2026" {
 		t.Errorf("pulang-pergi %q", got)
 	}
+}
+
+// lrUji / lrTeks - LossRatio uji dari / ke teks (perbandingan nilai lewat teks kanonik apd).
+func lrUji(a1, p1, a35, p35 string) models.LossRatio {
+	return models.LossRatio{OneYearAmount: ds(a1), OneYearPercent: ds(p1), ThreeFiveYearAmount: ds(a35), ThreeFiveYearPercent: ds(p35)}
+}
+
+func lrTeks(lr models.LossRatio) [4]string {
+	return [4]string{utils.FormatDecimal(lr.OneYearAmount), utils.FormatDecimal(lr.OneYearPercent),
+		utils.FormatDecimal(lr.ThreeFiveYearAmount), utils.FormatDecimal(lr.ThreeFiveYearPercent)}
 }

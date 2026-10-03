@@ -21,7 +21,6 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/nbfacin/backend/models"
 	"nusantarare/modul/nbfacin/backend/repository"
 )
@@ -51,11 +50,11 @@ var lebarKerugian = []struct {
 // uangKerugian - tiga medan uang catatan kerugian (NUMBER(38,8)).
 var uangKerugian = []struct {
 	nama  string
-	nilai func(models.CatatanKerugian) string
+	nilai func(models.CatatanKerugian) *apd.Decimal
 }{
-	{"amount", func(c models.CatatanKerugian) string { return c.Amount }},
-	{"claim", func(c models.CatatanKerugian) string { return c.Claim }},
-	{"preventionOfLoss", func(c models.CatatanKerugian) string { return c.PreventionOfLoss }},
+	{"amount", func(c models.CatatanKerugian) *apd.Decimal { return c.Amount }},
+	{"claim", func(c models.CatatanKerugian) *apd.Decimal { return c.Claim }},
+	{"preventionOfLoss", func(c models.CatatanKerugian) *apd.Decimal { return c.PreventionOfLoss }},
 }
 
 // periksaKerugian - catatan kerugian baris objek ke-`n` (tanpa basis data). Currency wajib (K-069/K-012, pola A133);
@@ -71,8 +70,8 @@ func periksaKerugian(n int, rugi []models.CatatanKerugian) []string {
 			masalah = append(masalah, awal+"currency wajib diisi")
 		}
 		for _, u := range uangKerugian {
-			if v := u.nilai(c); v != "" && !polaDesimal.MatchString(v) {
-				masalah = append(masalah, awal+u.nama+" harus angka >= 0 dengan paling banyak 8 desimal")
+			if !desimalSah(u.nilai(c)) {
+				masalah = append(masalah, awal+u.nama+pesanDesimal)
 			}
 		}
 		var tgl []string
@@ -87,18 +86,6 @@ func periksaKerugian(n int, rugi []models.CatatanKerugian) []string {
 	return masalah
 }
 
-// desimalAtauNol - teks desimal (sudah lolos periksa) -> apd; kosong = 0.
-func desimalAtauNol(s string) *apd.Decimal {
-	if s == "" {
-		return apd.New(0, 0)
-	}
-	d, err := utils.ParseDecimal(s)
-	if err != nil {
-		return apd.New(0, 0)
-	}
-	return d
-}
-
 // konteksLR - pembagian berskala tetap, setengah-ke-atas (A148). Tidak diubah sesudah dibuat (aman dipakai bersama).
 var konteksLR = func() *apd.Context {
 	c := apd.BaseContext.WithPrecision(60)
@@ -111,33 +98,33 @@ var errLRTerlalu = errors.New("loss ratio melebihi NUMBER(38,8)")
 
 // bagiLR - pembilang * kali / penyebut, dibulatkan ke skalaLossRatio desimal. Penyebut 0 -> "0" (W-4). Hasil wajib
 // muat di NUMBER(38,8) (polaDesimal: <= 30 digit bulat) - selain itu errLRTerlalu, bukan galat Oracle saat simpan.
-func bagiLR(pembilang, penyebut *apd.Decimal, kali int64) (string, error) {
+func bagiLR(pembilang, penyebut *apd.Decimal, kali int64) (*apd.Decimal, error) {
 	if penyebut.IsZero() {
-		return "0", nil
+		return apd.New(0, 0), nil
 	}
-	var h apd.Decimal
-	if _, err := konteksLR.Mul(&h, pembilang, apd.New(kali, 0)); err != nil {
-		return "", fmt.Errorf("services: loss ratio: %w", err)
+	h := new(apd.Decimal)
+	if _, err := konteksLR.Mul(h, pembilang, apd.New(kali, 0)); err != nil {
+		return nil, fmt.Errorf("services: loss ratio: %w", err)
 	}
-	if _, err := konteksLR.Quo(&h, &h, penyebut); err != nil {
-		return "", fmt.Errorf("services: loss ratio: %w", err)
+	if _, err := konteksLR.Quo(h, h, penyebut); err != nil {
+		return nil, fmt.Errorf("services: loss ratio: %w", err)
 	}
-	if _, err := konteksLR.Quantize(&h, &h, -skalaLossRatio); err != nil {
-		return "", fmt.Errorf("services: loss ratio: %w", err)
+	if _, err := konteksLR.Quantize(h, h, -skalaLossRatio); err != nil {
+		return nil, fmt.Errorf("services: loss ratio: %w", err)
 	}
-	h.Reduce(&h)
-	s := utils.FormatDecimal(&h)
-	if !polaDesimal.MatchString(s) {
-		return "", errLRTerlalu
+	h.Reduce(h)
+	if !desimalSah(h) {
+		return nil, errLRTerlalu
 	}
-	return s, nil
+	return h, nil
 }
 
 // hitungLossRatio - langkah 2-5 SetLossRatio_Act atas catatan sebuah objek pada tanggal `hari` (WIB). Catatan tanpa
 // dateOfLoss TIDAK dijumlah (A147: selisih tanggal tidak terdefinisi). Tanggal kerugian sesudah `hari` (selisih
 // negatif) ikut, seperti perbandingan `<=` Pega.
 func hitungLossRatio(rugi []models.CatatanKerugian, hari time.Time) (models.LossRatio, error) {
-	nol := models.LossRatio{OneYearAmount: "0", OneYearPercent: "0", ThreeFiveYearAmount: "0", ThreeFiveYearPercent: "0"}
+	nol := models.LossRatio{OneYearAmount: apd.New(0, 0), OneYearPercent: apd.New(0, 0), ThreeFiveYearAmount: apd.New(0, 0),
+		ThreeFiveYearPercent: apd.New(0, 0)}
 	acuan := time.Date(hari.Year(), hari.Month(), hari.Day(), 0, 0, 0, 0, WIB)
 	amount1, claim1, amount2, claim2 := apd.New(0, 0), apd.New(0, 0), apd.New(0, 0), apd.New(0, 0)
 	for _, c := range rugi {
@@ -147,7 +134,7 @@ func hitungLossRatio(rugi []models.CatatanKerugian, hari time.Time) (models.Loss
 		}
 		// Dua tengah malam WIB (tanpa musim panas): selisih tepat kelipatan 24 jam - pembagian bulat, tanpa float.
 		selisih := acuan.Sub(t) / (24 * time.Hour)
-		a, k := desimalAtauNol(c.Amount), desimalAtauNol(c.Claim)
+		a, k := nolBila(c.Amount), nolBila(c.Claim)
 		for _, j := range []struct {
 			batas         time.Duration
 			amount, claim *apd.Decimal
@@ -165,7 +152,7 @@ func hitungLossRatio(rugi []models.CatatanKerugian, hari time.Time) (models.Loss
 	}
 	for _, h := range []struct {
 		amount, claim *apd.Decimal
-		nilai, persen *string
+		nilai, persen **apd.Decimal
 	}{{amount1, claim1, &nol.OneYearAmount, &nol.OneYearPercent}, {amount2, claim2, &nol.ThreeFiveYearAmount, &nol.ThreeFiveYearPercent}} {
 		if h.claim.IsZero() {
 			continue

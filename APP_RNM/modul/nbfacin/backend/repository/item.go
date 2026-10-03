@@ -4,8 +4,7 @@ package repository
 // property, urut SEQ_NO; ikut baca/ganti objek (objek.go). Pilihan Object Item Type (V_JN_OBJ_ITEM) dan Currency
 // (CURRENCY).
 //
-// ⛔ Uang/persen tidak pernah float (ADR-0003/0016): dibaca TO_CHAR TM9 ber-NLS titik (db.FmtDesimal), diurai apd,
-// ditulis TO_NUMBER dengan topeng dan NLS eksplisit - tanpa bergantung NLS sesi.
+// ⛔ Uang/persen tidak pernah float (ADR-0003/0016/0034): *apd.Decimal di aplikasi; ikat/baca lewat desimal.go.
 
 import (
 	"context"
@@ -15,7 +14,6 @@ import (
 	"strings"
 
 	"nusantarare/inti/backend/db"
-	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/nbfacin/backend/models"
 )
 
@@ -35,14 +33,10 @@ const (
 	MataUangDikecualikan = "ITL"
 )
 
-// fmtAngkaMasuk - teks desimal bertitik -> NUMBER(38,8): 30 digit bulat, 8 desimal; NLS titik eksplisit.
-const fmtAngkaMasuk = `TO_NUMBER(%s, 'FM999999999999999999999999999999D99999999', 'NLS_NUMERIC_CHARACTERS=''.,''')`
-
 // kolomBacaItem - kolom sqlBacaItem BERNAMA (dibaca lewat kunci) -> medan ItemObjek.
 var kolomBacaItem = []string{"TO_CHAR(i.PARENT_ID)", "i.ITEM_TYPE_ID", "i.ITEM_TYPE", "i.PROPERTI_ITEM_NOTE", "i.PROPERTY_YEAR",
-	"i.UNIT", "i.CONDITION", "i.CURRENCY", fmt.Sprintf(db.FmtDesimal, "i.TSI_OBJECT_ITEM"), "i.YEAR", "i.NO_OF_TREE",
-	"i.AREA_HECTAR", "i.REMARK", "i.IS_ADJUSTABLE_FLAG", fmt.Sprintf(db.FmtDesimal, "i.PCT_ADJUST2"),
-	fmt.Sprintf(db.FmtDesimal, "i.PCT_ADJUST_OTHER")}
+	"i.UNIT", "i.CONDITION", "i.CURRENCY", angkaKeluar("i.TSI_OBJECT_ITEM"), "i.YEAR", "i.NO_OF_TREE",
+	"i.AREA_HECTAR", "i.REMARK", "i.IS_ADJUSTABLE_FLAG", angkaKeluar("i.PCT_ADJUST2"), angkaKeluar("i.PCT_ADJUST_OTHER")}
 
 // sqlBacaItem - seluruh item case :1, urut property lalu SEQ_NO.
 func sqlBacaItem(t tabelObjek) string {
@@ -56,7 +50,7 @@ ORDER BY i.PARENT_ID, i.SEQ_NO`
 
 // sqlSisipItem - :1 ID, :2 PARENT_ID, :3 SEQ_NO, :4 ROW_UID, :5 PROPERTY_ITEM_NO, :6..:20 medan (urut kolom).
 func sqlSisipItem(item string) string {
-	angka := func(n int) string { return fmt.Sprintf(fmtAngkaMasuk, ":"+strconv.Itoa(n)) }
+	angka := func(n int) string { return angkaMasuk(":" + strconv.Itoa(n)) }
 	return "INSERT INTO " + item + " (ID, PARENT_ID, SEQ_NO, ROW_UID, PROPERTY_ITEM_NO, ITEM_TYPE_ID, ITEM_TYPE," +
 		" PROPERTI_ITEM_NOTE, PROPERTY_YEAR, UNIT, CONDITION, CURRENCY, TSI_OBJECT_ITEM, YEAR, NO_OF_TREE, AREA_HECTAR, REMARK," +
 		" IS_ADJUSTABLE_FLAG, PCT_ADJUST2, PCT_ADJUST_OTHER) VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, " +
@@ -68,17 +62,8 @@ func sqlSisipItem(item string) string {
 func argItem(it models.ItemObjek) []any {
 	k := db.KosongJadiNil
 	return []any{k(it.ItemTypeID), k(it.ItemType), k(it.Note), k(it.PropertyYear), k(it.Unit), k(it.Condition),
-		it.Currency, k(it.TSI), k(it.YearOfPlanting), k(it.NoOfTree), k(it.AreaHectar), k(it.Remark),
-		teksBool(it.IsAdjustable), k(it.PctAdjust2), k(it.PctAdjustOther)}
-}
-
-// desimalTeks - teks TM9 Oracle (mis. ".5") -> teks desimal kanonik ("0.5") lewat apd; galat urai diteruskan.
-func desimalTeks(idBaris, kolom string, v *sql.NullString) (string, error) {
-	d, err := db.UraiDesimal(idBaris, kolom, *v)
-	if err != nil {
-		return "", err
-	}
-	return utils.FormatDecimal(d), nil
+		it.Currency, ikatDesimal(it.TSI), k(it.YearOfPlanting), k(it.NoOfTree), k(it.AreaHectar), k(it.Remark),
+		teksBool(it.IsAdjustable), ikatDesimal(it.PctAdjust2), ikatDesimal(it.PctAdjustOther)}
 }
 
 // bacaItem - item case `id` per T_PROPERTY.ID (teks).
@@ -105,14 +90,11 @@ func (r *ObjekOracle) bacaItem(ctx context.Context, t tabelObjek, id string) (ma
 			PropertyYear: v("i.PROPERTY_YEAR"), Unit: v("i.UNIT"), Condition: v("i.CONDITION"), Currency: v("i.CURRENCY"),
 			YearOfPlanting: v("i.YEAR"), NoOfTree: v("i.NO_OF_TREE"), AreaHectar: v("i.AREA_HECTAR"), Remark: v("i.REMARK"),
 			IsAdjustable: v("i.IS_ADJUSTABLE_FLAG") == teksBenar}
-		for _, d := range []struct {
-			kolom string
-			ke    *string
-		}{{"TSI_OBJECT_ITEM", &it.TSI}, {"PCT_ADJUST2", &it.PctAdjust2}, {"PCT_ADJUST_OTHER", &it.PctAdjustOther}} {
-			if *d.ke, err = desimalTeks(TabelPropertyItemList+" induk "+induk, d.kolom,
-				teks[fmt.Sprintf(db.FmtDesimal, "i."+d.kolom)]); err != nil {
-				return nil, err
-			}
+		if err := bacaDesimalKe(TabelPropertyItemList+" induk "+induk, teks,
+			kolomDesimal{angkaKeluar("i.TSI_OBJECT_ITEM"), "TSI_OBJECT_ITEM", &it.TSI},
+			kolomDesimal{angkaKeluar("i.PCT_ADJUST2"), "PCT_ADJUST2", &it.PctAdjust2},
+			kolomDesimal{angkaKeluar("i.PCT_ADJUST_OTHER"), "PCT_ADJUST_OTHER", &it.PctAdjustOther}); err != nil {
+			return nil, err
 		}
 		hasil[induk] = append(hasil[induk], it)
 	}

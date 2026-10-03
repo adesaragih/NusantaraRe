@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/nbfacin/backend/models"
 	"nusantarare/modul/nbfacin/backend/services"
 )
@@ -134,7 +135,7 @@ func TestObjekItem(t *testing.T) {
 	if kode != 200 || !strings.Contains(isi, `"items":[`+item+`]`) || !strings.HasSuffix(isi, `"items":[],"occupations":[],"fea":[],"lossRecords":[],"lossRatio":{"oneYearAmount":"0","oneYearPercent":"0","threeFiveYearAmount":"0","threeFiveYearPercent":"0"},"internalLossRecords":[]}]}`) {
 		t.Fatalf("%d %s", kode, isi)
 	}
-	if len(d) != 2 || len(d[0].Items) != 1 || d[0].Items[0].TSI != "1500000000.12345678" || d[1].Items == nil {
+	if len(d) != 2 || len(d[0].Items) != 1 || utils.FormatDecimal(d[0].Items[0].TSI) != "1500000000.12345678" || d[1].Items == nil {
 		t.Errorf("model: %+v", d)
 	}
 	for nama, u := range map[string]struct {
@@ -270,5 +271,33 @@ func TestTableOfLimit(t *testing.T) {
 	}
 	if kode, _ := minta(t, services.Baru(nil), "GET", "/api/nbfacin/kasus/UJI-NB-1/table-of-limit", "", ""); kode != 503 {
 		t.Errorf("503: %d", kode)
+	}
+}
+
+// TestObjekDesimalPulangPergi - ADR-0034 (butir 94): uang/persen JSON teks -> *apd.Decimal (satu fungsi) -> teks lagi
+// SAMA PERSIS untuk "0.5", 8 desimal, 30 digit bulat, kosong; teks tak sah -> 400 ber-indeks (pesan sama dengan
+// sebelum refaktor), sebelum services dipanggil.
+func TestObjekDesimalPulangPergi(t *testing.T) {
+	var d []models.ObjekFire
+	k := &models.Kasus{CaseID: "UJI-NB-1", InsuredName: "UJI"}
+	svc := services.Baru(nil).DenganObjek(objekTiruan{&d}).DenganTransaksi(tanpaOracle).DenganPilihanItem(pilihanTiruan{}).
+		DenganKasus(kasusTiruan{k: k})
+	for _, v := range []string{"0.5", "0.12345678", "123456789012345678901234567890", "123456789012345678901234567890.12345678", ""} {
+		badan := `{"baris":[{"objectType":"UJI","items":[{"currency":"IDR","tsi":"` + v + `","pctAdjust2":"` + v + `"}],` +
+			`"lossRecords":[{"currency":"IDR","claim":"` + v + `","amount":"` + v + `","preventionOfLoss":"` + v + `"}]}]}`
+		kode, isi := minta(t, svc, "PUT", "/api/nbfacin/kasus/UJI-NB-1/objek", badan, "UJI-USER")
+		for _, harus := range []string{`"tsi":"` + v + `"`, `"pctAdjust2":"` + v + `"`, `"claim":"` + v + `"`, `"amount":"` + v + `"`,
+			`"preventionOfLoss":"` + v + `"`} {
+			if kode != 200 || !strings.Contains(isi, harus) {
+				t.Errorf("%q: %d tanpa %s: %s", v, kode, harus, isi)
+				break
+			}
+		}
+	}
+	kode, isi := minta(t, svc, "PUT", "/api/nbfacin/kasus/UJI-NB-1/objek",
+		`{"baris":[{"objectType":"UJI","items":[{"currency":"IDR","tsi":"1,5"}],"lossRecords":[{"currency":"IDR","claim":"-1"}]}]}`, "UJI-USER")
+	if kode != 400 || !strings.Contains(isi, `baris[0].items[0].tsi harus angka \u003e= 0 dengan paling banyak 8 desimal`) ||
+		!strings.Contains(isi, `baris[0].lossRecords[0].claim harus angka \u003e= 0 dengan paling banyak 8 desimal`) {
+		t.Errorf("400: %d %s", kode, isi)
 	}
 }
