@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { KELOLA_USER, LOGIN } from '../labels'
@@ -288,5 +291,16 @@ describe('identitas akun - Contact ID, username dan email sudah terdaftar (migra
     expect(KELOLA_USER.contactId).toBe('Contact ID')
     expect(LOGIN.akun).toBe('Username')
     expect(LOGIN.salah).toBe('Incorrect username or password.')
+  })
+})
+
+describe('tampilan daftar user', () => {
+  // Permintaan work owner 03-10-2026: tombol aksi baris (Ubah, Nonaktifkan, Hapus) berderet ke samping,
+  // bukan bertumpuk - sel `.table__actions` sesempit isinya, jadi wadahnya tidak boleh membungkus.
+  it('tombol aksi baris berderet ke samping', () => {
+    const css = readFileSync(join(__dirname, '..', 'styles.css'), 'utf8')
+    const aturan = /\.kelola-user__aksi \{([^}]*)\}/.exec(css)?.[1] ?? ''
+    expect(aturan).toContain('flex-wrap: nowrap;')
+    expect(aturan).not.toContain('flex-wrap: wrap;')
   })
 })

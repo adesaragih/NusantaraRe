@@ -5702,11 +5702,14 @@ textarea.field__input {
   background: var(--warning-bg);
   color: var(--warning-text);
 }
+/* Tombol aksi baris BERDERET ke samping (permintaan work owner 03-10-2026): sel
+   `.table__actions` sesempit isinya (`width: 1%`), jadi wadah yang boleh membungkus
+   menumpuk tombol satu per baris. Tabel lebar menggulir di dalam kotak Kelola User. */
 .kelola-user__aksi {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
-  gap: 4px;
+  gap: 6px;
 }
 .kelola-user__hapus {
   color: var(--danger-text);
@@ -6296,6 +6299,9 @@ textarea.field__input {
   color: var(--ku-kepala-teks);
   font-weight: 700;
   border-bottom: 1px solid var(--ku-kepala-garis);
+  /* Judul panjang ("Organisasi / Divisi / Unit") boleh dua baris, supaya tombol aksi yang berderet
+     ke samping (03-10-2026) tidak mendorong tabel melebihi kotak. */
+  white-space: normal;
 }
 .kelola-user .kelola-user__tabel td {
   color: var(--ku-teks);
