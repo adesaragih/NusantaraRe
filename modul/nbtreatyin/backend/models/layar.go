@@ -26,7 +26,7 @@ type MedanWajib struct {
 
 // bukanNonProp = `pyWorkPage.Quotation.ProportionalType != 'NonProportional'`.
 func bukanNonProp(h *Halaman) bool {
-	return h.Ambil("Quotation.ProportionalType") != JenisNonProporsional
+	return h.Ambil(HalamanQuotation+".ProportionalType") != JenisNonProporsional
 }
 
 // proporsionalQD = `.QuotationData.ProportionalType = 'Proportional'`.
@@ -52,7 +52,7 @@ func flagPPH(h *Halaman) bool { return h.Ambil(HalamanPolis+".FlagPPH") == "true
 
 // bukanXOLRetro = wadah FlagPPH/TypeTax/Choose Business `DetailPolicyTreatyIn`:
 // `.ClaimType != 'XOL Retro'`.
-func bukanXOLRetro(h *Halaman) bool { return h.Ambil(HalamanPolis+".ClaimType") != "XOL Retro" }
+func bukanXOLRetro(h *Halaman) bool { return h.Ambil(HalamanPolis+".ClaimType") != KlaimXOLRetro }
 
 // bukanNonPropBaru = `.IsNewPolicyNonProp != 1` - wadah bagian uang,
 // spreading, angsuran `DetailDeptHeadTreatyIn_UW`.
@@ -94,9 +94,9 @@ func wajibUangAtasan(m, label string) MedanWajib { return wajib(m, label, bukanN
 
 // medanWajibAdmin - `Section/DetailPolicyTreatyIn` + `Section/ListSuggest`.
 //
-// ⛔ `ListSuggest.ProductionDate` wajib HANYA untuk dua identitas orang
-// (`OperatorID.pyUserIdentifier == <ID-operator-3> || <ID-operator-4>`) - salah
-// satu dari 12 tempat tiket 05; TERTUNDA (AC 81), tidak diwajibkan.
+// `ListSuggest.ProductionDate` wajib HANYA untuk dua identitas orang - tempat
+// berperan tiket 05 (`TanggalProduksiWajib`), ditambahkan `MedanWajibBerlaku`;
+// tertunda selama pemetaannya kosong (AC 81).
 var medanWajibAdmin = []MedanWajib{
 	wajib("StartDate", "Statement Period", nil),
 	wajib("QuotationData.IsSurveyReport", "Survey Report", bukanNonProp),
@@ -161,14 +161,36 @@ func DaftarMedanWajib(posisi string) []MedanWajib {
 	return nil
 }
 
-// MedanWajibKosong - label medan wajib yang kosong (AC 45, 48). Urutan = urutan
-// layar.
-func MedanWajibKosong(h *Halaman, posisi string) []string {
-	var kosong []string
-	for _, m := range DaftarMedanWajib(posisi) {
-		if m.Syarat != nil && !m.Syarat(h) {
-			continue
+// medanTanggalProduksi - `Section/ListSuggest` `.ProductionDate` (label sel).
+var medanTanggalProduksi = MedanWajib{Jalur: jalurTanggalProduksi, Label: "Production Date"}
+
+// MedanWajibBerlaku - medan wajib layar posisi itu yang BERLAKU saat ini:
+// syarat `pyRequired` (dan wadahnya) terpenuhi, ditambah `.ProductionDate`
+// bila tempat berperannya terbuka bagi pelaku (`TanggalProduksiWajib`, tiket
+// 05; `tempat` = `TempatTampil` pelaku). Urutan = urutan layar. SATU sumber
+// untuk daftar wajib layar (`Layar.MedanWajib`), tombol Save (AC 48), dan
+// submit (AC 45).
+func MedanWajibBerlaku(h *Halaman, posisi string, tempat map[string]bool) []MedanWajib {
+	daftar := DaftarMedanWajib(posisi)
+	if daftar == nil {
+		return nil
+	}
+	var out []MedanWajib
+	for _, m := range daftar {
+		if m.Syarat == nil || m.Syarat(h) {
+			out = append(out, m)
 		}
+	}
+	if TanggalProduksiWajib(h, tempat) {
+		out = append(out, medanTanggalProduksi)
+	}
+	return out
+}
+
+// MedanWajibKosong - label medan wajib berlaku yang kosong (AC 45, 48).
+func MedanWajibKosong(h *Halaman, posisi string, tempat map[string]bool) []string {
+	var kosong []string
+	for _, m := range MedanWajibBerlaku(h, posisi, tempat) {
 		if strings.TrimSpace(h.Ambil(m.Jalur)) == "" {
 			kosong = append(kosong, m.Label)
 		}
@@ -190,7 +212,7 @@ func MedanWajibKosong(h *Halaman, posisi string) []string {
 //	                           -> TIDAK dapat diisi; sisanya lima pxButton
 //	ListSuggest                `.IsApproved` (wajib), `.Suggest` (wajib) - selalu;
 //	                           `.ProductionDate` - hanya bila tampil (lihat
-//	                           `tanggalProduksiTerbuka`)
+//	                           `TanggalProduksiTampil`, peran_tempat.go)
 //
 // Selain ini terkunci (AC 49-51): nilai kiriman layar untuk medan lain
 // DIABAIKAN, nilai tersimpan dipakai.
@@ -201,15 +223,6 @@ var medanAtasan = []string{
 
 // jalurTanggalProduksi - `Section/ListSuggest` `.ProductionDate`.
 const jalurTanggalProduksi = HalamanPolis + ".ProductionDate"
-
-// tanggalProduksiTerbuka = syarat tampil `Section/ListSuggest` `.ProductionDate`:
-// `.IsApproved == 1 && (OperatorID.pyUserIdentifier=='<ID-operator-3>' ||
-// ... '<ID-operator-4>')`. Bagian identitas diganti tempat berperan tiket 05
-// (`tempat`, dihitung services); tempat tertunda = tidak tampil (AC 81).
-// Sel tak tampil tidak terkirim di Pega -> nilainya tidak pernah diterima.
-func tanggalProduksiTerbuka(h *Halaman, tempat bool) bool {
-	return tempat && h.Ambil(HalamanPolis+".IsApproved") == "1"
-}
 
 // medanAdmin - DAFTAR IZIN layar admin (`DetailPolicyTreatyIn` + `ListSuggest`):
 //
@@ -254,12 +267,12 @@ var medanAdmin = func() map[string]bool {
 //	Atasan  hanya `medanAtasan`; seluruh daftar terkunci
 //
 // Kedua layar: `.ProductionDate` (`ListSuggest`) diterima hanya bila tampil -
-// `tempatTanggalProduksi` = tempat berperan `LISTSUGGEST_PRODUCTIONDATE`
-// (tiket 05) bagi pelaku, dan IsApproved (sesudah digabung) "1".
+// `TanggalProduksiTampil` atas IsApproved (sesudah digabung) dan `tempat`
+// berperan pelaku (tiket 05).
 //
 // Halaman Quotation dan TreatyIn tidak pernah diterima dari layar: Quotation
 // diisi pilih bisnis dan CheckDataMkt; TreatyIn dibaca dari view.
-func GabungMasukanLayar(h, masuk *Halaman, posisi string, tempatTanggalProduksi bool) {
+func GabungMasukanLayar(h, masuk *Halaman, posisi string, tempat map[string]bool) {
 	if masuk == nil {
 		return
 	}
@@ -283,7 +296,7 @@ func GabungMasukanLayar(h, masuk *Halaman, posisi string, tempatTanggalProduksi 
 			}
 		}
 	}
-	if v, ada := masuk.Nilai[jalurTanggalProduksi]; ada && tanggalProduksiTerbuka(h, tempatTanggalProduksi) {
+	if v, ada := masuk.Nilai[jalurTanggalProduksi]; ada && TanggalProduksiTampil(h, tempat) {
 		h.Setel(jalurTanggalProduksi, v)
 	}
 }

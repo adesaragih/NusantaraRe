@@ -17,6 +17,8 @@ package models
 import (
 	"testing"
 	"time"
+
+	"nusantarare/inti/backend/utils"
 )
 
 const batasTiruan = 25
@@ -34,7 +36,7 @@ func TestPraprosesTanggalBatasTutupBuku(t *testing.T) {
 	} {
 		h := HalamanBaru()
 		PraprosesTanggal(h, tt.saat, batasTiruan)
-		if got := h.Ambil("PolicyTreatyIn.StatementDate"); got != FormatTanggalWaktu(tt.saat) {
+		if got := h.Ambil("PolicyTreatyIn.StatementDate"); got != utils.FormatTanggalWaktu(tt.saat) {
 			t.Errorf("%s: StatementDate = %q", tt.saat, got)
 		}
 		if got := h.Ambil("PolicyTreatyIn.ProductionDate"); got != tt.harap {

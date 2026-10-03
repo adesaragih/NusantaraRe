@@ -211,8 +211,8 @@ func TerapkanBisnisPra(h *Halaman, b BarisBisnis) {
 //	9    hari StatementDate melewati hari tutup buku -> ProductionDate = tanggal 1
 //	     bulan berikut (`GeserTanggalProduksi` - hari dari TANGGAL_CLOSING)
 func PraprosesTanggal(h *Halaman, sekarang time.Time, hariClosing int) {
-	h.Setel(HalamanPolis+".StatementDate", FormatTanggalWaktu(sekarang))
-	h.Setel(HalamanPolis+".ProductionDate", FormatTanggalWaktu(GeserTanggalProduksi(sekarang, hariClosing)))
+	h.Setel(HalamanPolis+".StatementDate", utils.FormatTanggalWaktu(sekarang))
+	h.Setel(HalamanPolis+".ProductionDate", utils.FormatTanggalWaktu(GeserTanggalProduksi(sekarang, hariClosing)))
 }
 
 // BarisMO adalah hasil `Obj-Browse` marketing officer (CheckDataMkt langkah 3).

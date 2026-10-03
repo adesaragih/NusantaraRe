@@ -463,14 +463,73 @@ func TestTempatBerperanTidakDitebak(t *testing.T) { // AC 81, 82, 91
 		if err := json.Unmarshal([]byte(isi), &ly); err != nil {
 			t.Fatal(err)
 		}
-		if tampil, ada := ly.Tempat[services.TempatTanggalProduksi]; !ada || tampil {
-			t.Fatalf("%s: tanpa pemetaan, tempat TERTUNDA - tidak tampil (%v)", p.akun, ly.Tempat)
+		if len(ly.Tempat) != len(models.SemuaTempat) {
+			t.Fatalf("%s: kedua belas tempat tiket 05 dilaporkan layar (%v)", p.akun, ly.Tempat)
+		}
+		for kode, tampil := range ly.Tempat {
+			if tampil {
+				t.Fatalf("%s: tanpa pemetaan, tempat %s TERTUNDA - tidak tampil", p.akun, kode)
+			}
 		}
 		for _, w := range ly.MedanWajib {
 			if w == models.HalamanPolis+".ProductionDate" {
 				t.Fatal("tempat tertunda tidak mewajibkan Production Date")
 			}
 		}
+	}
+}
+
+// Mekanisme yang akan dipakai begitu IAM mengisi pemetaan: `ListSuggest.
+// ProductionDate` tampil dan wajib menurut DUA tempat tersendiri (pyVisible,
+// pyRequiredWhen) - satu sumber `models.MedanWajibBerlaku` untuk layar, Save,
+// dan submit. Peran fiktif UJI- (AC 91); pemetaan dipulihkan sesudah uji.
+func TestTanggalProduksiMengikutiPemetaanTempat(t *testing.T) { // AC 81, tiket 05
+	lama := models.PemetaanPeranTempat
+	t.Cleanup(func() { models.PemetaanPeranTempat = lama })
+	models.PemetaanPeranTempat = []models.PeranTempat{
+		{KodeTempat: models.TempatProduksiTampilOperator3, Peran: "UJI-PERAN-PROD", Arah: models.ArahMuncul},
+		{KodeTempat: models.TempatProduksiWajibOperator3, Peran: "UJI-PERAN-PROD", Arah: models.ArahMuncul},
+	}
+	u := baru(t)
+	berperan := pelakuUji{"UJI-ADMIN", models.PosisiAdmin + ",UJI-PERAN-PROD"}
+	id := u.buat()
+	// Pra-proses (InputPolicyTreatyInPre_Act 3-4, 9) selalu mengisi
+	// ProductionDate; layar yang menampilkannya dapat mengosongkannya.
+	h := halamanLengkap("1")
+	h.Setel("PolicyTreatyIn.ProductionDate", "")
+	kode, isi := u.kirim(id, berperan, h)
+	if kode != http.StatusUnprocessableEntity || !strings.Contains(isi, "Production Date") {
+		t.Fatalf("tempat wajib terbuka, Production Date kosong: %d %s", kode, isi)
+	}
+	if kode, isi := u.panggil("PUT", "/kasus/"+id, berperan, map[string]any{"halaman": h}); kode != http.StatusUnprocessableEntity ||
+		!strings.Contains(isi, "Production Date") {
+		t.Fatalf("Save juga menahan (AC 48): %d %s", kode, isi)
+	}
+	_, isi = u.panggil("GET", "/kasus/"+id, berperan, nil)
+	var ly services.Layar
+	if err := json.Unmarshal([]byte(isi), &ly); err != nil {
+		t.Fatal(err)
+	}
+	if !ly.Tempat[models.TempatProduksiTampilOperator3] || ly.Tempat[models.TempatProduksiTampilOperator4] {
+		t.Fatalf("tempat pelaku %v", ly.Tempat)
+	}
+	if w := strings.Join(ly.MedanWajib, " "); strings.Contains(w, "ProductionDate") {
+		t.Fatalf("IsApproved tersimpan kosong: Production Date belum tampil/wajib (%s)", w)
+	}
+	h.Setel("PolicyTreatyIn.ProductionDate", "2026-10-31")
+	if kode, isi := u.kirim(id, berperan, h); kode != http.StatusOK {
+		t.Fatalf("Production Date terisi: %d %s", kode, isi)
+	}
+	if got := u.g.Halaman[id].Ambil("PolicyTreatyIn.ProductionDate"); !strings.HasPrefix(got, "2026-10-31") {
+		t.Fatalf("Production Date tampil diterima dari layar, tersimpan %q", got)
+	}
+	// pelaku tanpa peran itu: tidak tampil (kiriman diabaikan), tidak wajib
+	id2 := u.buat()
+	if kode, isi := u.kirim(id2, admin, h); kode != http.StatusOK {
+		t.Fatalf("tanpa peran: %d %s", kode, isi)
+	}
+	if got := u.g.Halaman[id2].Ambil("PolicyTreatyIn.ProductionDate"); strings.HasPrefix(got, "2026-10-31") {
+		t.Fatalf("tanpa peran: Production Date tak tampil tidak diterima, tersimpan %q", got)
 	}
 }
 

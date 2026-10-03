@@ -13,10 +13,6 @@ import (
 	"nusantarare/inti/backend/utils"
 )
 
-// FormatTanggalWaktu adalah SATU format tanggal-waktu halaman (spec §5.8, AC 33).
-// Tanggal saja memakai `utils.FormatTanggal` ("2006-01-02").
-func FormatTanggalWaktu(t time.Time) string { return utils.FormatTanggalWaktu(t) }
-
 // ---------------------------------------------------------------- pra-proses
 
 // PraprosesAdmin = `DataTransform/InputPolicyTreatyIn_preDT` (pra-proses flow
@@ -39,26 +35,26 @@ func FormatTanggalWaktu(t time.Time) string { return utils.FormatTanggalWaktu(t)
 // diganti SATU format (P32, AC 33) - penyimpangan sadar spec §5.8.
 func PraprosesAdmin(h *Halaman, sekarang time.Time, namaTampilan string) {
 	tgl := utils.FormatTanggal(sekarang)
-	if h.Ambil("PolicyTreatyIn.StartDate") == "" {
-		h.Setel("PolicyTreatyIn.StartDate", tgl)
+	if h.Ambil(HalamanPolis+".StartDate") == "" {
+		h.Setel(HalamanPolis+".StartDate", tgl)
 	}
-	if h.Ambil("PolicyTreatyIn.EndDate") == "" {
-		h.Setel("PolicyTreatyIn.EndDate", tgl)
+	if h.Ambil(HalamanPolis+".EndDate") == "" {
+		h.Setel(HalamanPolis+".EndDate", tgl)
 	}
-	if h.Ambil("PolicyTreatyIn.StatementDate") == "" {
-		h.Setel("PolicyTreatyIn.StatementDate", FormatTanggalWaktu(sekarang))
+	if h.Ambil(HalamanPolis+".StatementDate") == "" {
+		h.Setel(HalamanPolis+".StatementDate", utils.FormatTanggalWaktu(sekarang))
 	}
-	if h.Ambil("Quotation.ProportionalType") == JenisNonProporsional {
-		h.Setel("PolicyTreatyIn.IsNewPolicyNonProp", "1")
+	if h.Ambil(HalamanQuotation+".ProportionalType") == JenisNonProporsional {
+		h.Setel(HalamanPolis+".IsNewPolicyNonProp", "1")
 	}
-	if h.Ambil("PolicyTreatyIn.IsNewPolicyNonProp") != "1" {
-		h.Setel("PolicyTreatyIn.IsNewPolicyNonProp", "0")
+	if h.Ambil(HalamanPolis+".IsNewPolicyNonProp") != "1" {
+		h.Setel(HalamanPolis+".IsNewPolicyNonProp", "0")
 	}
-	h.Setel("PolicyTreatyIn.MasterID", "")
-	h.Setel("PolicyTreatyIn.MarketingOfficer", h.Ambil("Quotation.MarketingName"))
-	h.Setel("PolicyTreatyIn.Suggest", "")
-	h.Setel("PolicyTreatyIn.SuggestDate", FormatTanggalWaktu(sekarang))
-	h.Setel("PolicyTreatyIn.OperatorName", namaTampilan)
+	h.Setel(HalamanPolis+".MasterID", "")
+	h.Setel(HalamanPolis+".MarketingOfficer", h.Ambil(HalamanQuotation+".MarketingName"))
+	h.Setel(HalamanPolis+".Suggest", "")
+	h.Setel(HalamanPolis+".SuggestDate", utils.FormatTanggalWaktu(sekarang))
+	h.Setel(HalamanPolis+".OperatorName", namaTampilan)
 	h.Setel("FlagOnGoingPolicy", "1")
 	SalinQuotation(h)
 }
@@ -96,11 +92,11 @@ func SystemSetOneYear(h *Halaman) {
 // (pengenal akun) - BUG, bukan maksud (P33, AC 42); di sini NAMA TAMPILAN.
 // ⛔ Langkah 5 (`isApprovedtoDeptHead`) tidak dibangun - P36, AC 64.
 func PraprosesAtasan(h *Halaman, sekarang time.Time, namaTampilan string) {
-	h.Setel("PolicyTreatyIn.MasterID", "")
-	h.Setel("PolicyTreatyIn.OperatorName", namaTampilan)
-	h.Setel("PolicyTreatyIn.SuggestDate", FormatTanggalWaktu(sekarang))
-	h.Setel("PolicyTreatyIn.IsApproved", "")
-	h.Setel("PolicyTreatyIn.Suggest", "")
+	h.Setel(HalamanPolis+".MasterID", "")
+	h.Setel(HalamanPolis+".OperatorName", namaTampilan)
+	h.Setel(HalamanPolis+".SuggestDate", utils.FormatTanggalWaktu(sekarang))
+	h.Setel(HalamanPolis+".IsApproved", "")
+	h.Setel(HalamanPolis+".Suggest", "")
 	SalinQuotation(h)
 }
 
@@ -165,11 +161,11 @@ var KodePenempatanKeluar = []string{"10015", "10218"}
 // `.PolicyTreatyIn.HasFacOut = "0"`, lalu `TestTreatyToFacStatus` memasang "1"
 // bila salah satu baris SpreadingRiskList ber-TreatyType salah satu kode itu.
 func TetapkanHasFacOut(h *Halaman) {
-	h.Setel("PolicyTreatyIn.HasFacOut", "0")
+	h.Setel(HalamanPolis+".HasFacOut", "0")
 	for _, b := range h.AmbilDaftar(DaftarSpreading) {
 		for _, kode := range KodePenempatanKeluar {
 			if b["TreatyType"] == kode {
-				h.Setel("PolicyTreatyIn.HasFacOut", "1")
+				h.Setel(HalamanPolis+".HasFacOut", "1")
 			}
 		}
 	}
@@ -203,13 +199,13 @@ const (
 // sehingga menimpa QR/QP.
 func TipeNomorPolis(h *Halaman) string {
 	t := ""
-	switch h.Ambil("PolicyTreatyIn.DueTo") {
+	switch h.Ambil(HalamanPolis + ".DueTo") {
 	case "1":
 		t = TipeNomorQR
 	case "0":
 		t = TipeNomorQP
 	}
-	if h.Ambil("PolicyTreatyIn.ClaimType") == "XOL Retro" {
+	if h.Ambil(HalamanPolis+".ClaimType") == KlaimXOLRetro {
 		t = TipeNomorTP
 	}
 	return t

@@ -20,16 +20,14 @@ package models
 //
 // ⛔ Nol peran karangan (AC 91): uji memakai peran fiktif berawalan UJI-.
 //
-// Tempat identitas di rule TERJANGKAU dan nasibnya (tiket 05):
-//
-//	ListSuggest .ProductionDate (tampil + wajib, <ID-operator-3>/<ID-operator-4>)
-//	    -> TempatTanggalProduksi, lewat pemetaan ini
-//	DetailDeptHeadTreatyIn_UW tiga tombol Submit (<ID-operator-1>)
-//	    -> diganti POSISI kasus (TombolUntuk; AC 8, P13) - catatan tiket 05
-//	DetailPoliciesNonProportional label "NON EDM" / "EDM" (<ID-operator-2>)
-//	    -> milik jalur NonProp (paket XOL); tempatnya belum dipetakan
-//	When IsSPVCreate (<ID-operator-5>/<ID-operator-6>), IsTreaty1, IsSPVTreaty1
-//	    -> hanya memilih Assignment4 atau 6 (posisi sama); tidak dibangun
+// KEDUA BELAS TEMPAT (`[terverifikasi]` grilling ronde 2 P28 / PERTANYAAN-untuk-
+// IAM P28: "4 layar · 12 tempat" = `pyUserIdentifier` di
+// `DetailDeptHeadTreatyIn_UW` 3× · `GeneralDeptHeadTreatyIn_UW` 3× · `ListSuggest`
+// 4×; `pxInsName` di `DetailPoliciesNonProportional` 2×), dibaca ulang dari XML
+// 2026-10-04 - lihat `DaftarTempat`. Identitas orang disamarkan
+// `<ID-operator-N>` seperti INVENTARIS-XML bab 5 (nilainya tidak disalin ke
+// artefak mana pun). Arah setiap tempat TIDAK ditebak dari bentuk `==`/`!=`
+// syarat XML: itu jawaban IAM (AC 82).
 
 // PeranTempat adalah satu baris pemetaan tempat -> peran -> arah.
 type PeranTempat struct {
@@ -39,11 +37,79 @@ type PeranTempat struct {
 	Arah string
 }
 
-// TempatTanggalProduksi - `Section/ListSuggest` medan `.ProductionDate`.
-const TempatTanggalProduksi = "LISTSUGGEST_PRODUCTIONDATE"
+// Kode kedua belas tempat (tiket 05).
+const (
+	// `Section/DetailDeptHeadTreatyIn_UW` - tiga tombol `.pyTemplateButton` "Submit".
+	TempatDetailDHSubmitLetterNoDeptHead = "DETAILDEPTHEADTREATYIN_UW_SUBMIT_LETTERNO_TREATYINDEPTHEAD"
+	TempatDetailDHSubmitLetterNoKosong   = "DETAILDEPTHEADTREATYIN_UW_SUBMIT_LETTERNO_KOSONG"
+	TempatDetailDHSubmitOperator1        = "DETAILDEPTHEADTREATYIN_UW_SUBMIT_OPERATOR_1"
+	// `Section/GeneralDeptHeadTreatyIn_UW` - salinan sertakan ketiga tombol yang
+	// sama (berkas XML-nya memuat aliran `DetailDeptHeadTreatyIn_UW`).
+	TempatGeneralDHSubmitLetterNoDeptHead = "GENERALDEPTHEADTREATYIN_UW_SUBMIT_LETTERNO_TREATYINDEPTHEAD"
+	TempatGeneralDHSubmitLetterNoKosong   = "GENERALDEPTHEADTREATYIN_UW_SUBMIT_LETTERNO_KOSONG"
+	TempatGeneralDHSubmitOperator1        = "GENERALDEPTHEADTREATYIN_UW_SUBMIT_OPERATOR_1"
+	// `Section/ListSuggest` `.ProductionDate` - syarat tampil (`pyVisible OTHER`)
+	// dan syarat wajib (`pyRequiredWhen`), masing-masing dua identitas.
+	TempatProduksiTampilOperator3 = "LISTSUGGEST_PRODUCTIONDATE_TAMPIL_OPERATOR_3"
+	TempatProduksiTampilOperator4 = "LISTSUGGEST_PRODUCTIONDATE_TAMPIL_OPERATOR_4"
+	TempatProduksiWajibOperator3  = "LISTSUGGEST_PRODUCTIONDATE_WAJIB_OPERATOR_3"
+	TempatProduksiWajibOperator4  = "LISTSUGGEST_PRODUCTIONDATE_WAJIB_OPERATOR_4"
+	// `Section/DetailPoliciesNonProportional` - dua LABEL (`OperatorID.pxInsName`).
+	TempatLabelNonEDM = "DETAILPOLICIESNONPROPORTIONAL_LABEL_NON_EDM"
+	TempatLabelEDM    = "DETAILPOLICIESNONPROPORTIONAL_LABEL_EDM"
+)
 
-// SemuaTempat - tempat yang dibaca layanan.
-var SemuaTempat = []string{TempatTanggalProduksi}
+// TempatBerperan - satu tempat identitas di rule terjangkau.
+type TempatBerperan struct {
+	Kode string
+	// Section - berkas `Section\<nama>.xml`.
+	Section string
+	// Sel - sel dan atribut yang memuat syarat identitas.
+	Sel string
+	// Syarat - bentuk syarat XML (identitas disamarkan).
+	Syarat string
+	// Gerbang - apa yang digerbang tempat ini di sistem baru.
+	Gerbang string
+}
+
+const (
+	syaratSubmitDeptHead = `.IsApproved == 1 && OperatorID.pyUserIdentifier!='<ID-operator-1>' && pyWorkPage.LetterNo=='TREATYINDEPTHEAD'`
+	syaratSubmitKosong   = `.IsApproved == 1 && OperatorID.pyUserIdentifier!='<ID-operator-1>' && pyWorkPage.LetterNo==''`
+	syaratSubmitOperator = `.IsApproved == 1 && OperatorID.pyUserIdentifier=='<ID-operator-1>'`
+	syaratProduksi       = `.IsApproved == 1 && (OperatorID.pyUserIdentifier=='<ID-operator-3>' || OperatorID.pyUserIdentifier=='<ID-operator-4>')`
+	syaratLabel          = `OperatorID.pxInsName = '<ID-operator-2>'`
+
+	// gerbangTombolAtasan - ketiga tombol Submit atasan DIGANTI posisi kasus
+	// (`TombolUntuk`): Dept Head - jenjang terakhir tangga P13 - satu-satunya
+	// yang menerbitkan nomor polis, Sec Head selalu menaikkan (AC 8, K2).
+	// Tempat ini terdaftar tetapi TIDAK dibaca layanan (catatan tiket 05).
+	gerbangTombolAtasan = "tidak dibaca - tombol ditentukan posisi kasus (TombolUntuk; AC 8, K2, P13)"
+)
+
+// DaftarTempat - kedua belas tempat tiket 05, urutan berkas XML.
+var DaftarTempat = []TempatBerperan{
+	{TempatDetailDHSubmitLetterNoDeptHead, "DetailDeptHeadTreatyIn_UW", "pxButton Submit (finishAssignment) pyVisible", syaratSubmitDeptHead, gerbangTombolAtasan},
+	{TempatDetailDHSubmitLetterNoKosong, "DetailDeptHeadTreatyIn_UW", "pxButton Submit (GeneratePolicyNoTreaty_Act) pyVisible", syaratSubmitKosong, gerbangTombolAtasan},
+	{TempatDetailDHSubmitOperator1, "DetailDeptHeadTreatyIn_UW", "pxButton Submit (GeneratePolicyNoTreaty_Act) pyVisible", syaratSubmitOperator, gerbangTombolAtasan},
+	{TempatGeneralDHSubmitLetterNoDeptHead, "GeneralDeptHeadTreatyIn_UW", "pxButton Submit (finishAssignment) pyVisible", syaratSubmitDeptHead, gerbangTombolAtasan},
+	{TempatGeneralDHSubmitLetterNoKosong, "GeneralDeptHeadTreatyIn_UW", "pxButton Submit (GeneratePolicyNoTreaty_Act) pyVisible", syaratSubmitKosong, gerbangTombolAtasan},
+	{TempatGeneralDHSubmitOperator1, "GeneralDeptHeadTreatyIn_UW", "pxButton Submit (GeneratePolicyNoTreaty_Act) pyVisible", syaratSubmitOperator, gerbangTombolAtasan},
+	{TempatProduksiTampilOperator3, "ListSuggest", ".ProductionDate pyVisible (identitas ke-1 dari 2)", syaratProduksi, "tampil + diterima dari layar (TanggalProduksiTampil)"},
+	{TempatProduksiTampilOperator4, "ListSuggest", ".ProductionDate pyVisible (identitas ke-2 dari 2)", syaratProduksi, "tampil + diterima dari layar (TanggalProduksiTampil)"},
+	{TempatProduksiWajibOperator3, "ListSuggest", ".ProductionDate pyRequiredWhen (identitas ke-1 dari 2)", syaratProduksi, "wajib (TanggalProduksiWajib)"},
+	{TempatProduksiWajibOperator4, "ListSuggest", ".ProductionDate pyRequiredWhen (identitas ke-2 dari 2)", syaratProduksi, "wajib (TanggalProduksiWajib)"},
+	{TempatLabelNonEDM, "DetailPoliciesNonProportional", `LABEL "NON EDM" pyVisible`, syaratLabel, "label layar NonProp (frontend/tempat.ts)"},
+	{TempatLabelEDM, "DetailPoliciesNonProportional", `LABEL "EDM" pyVisible`, syaratLabel, "label layar NonProp (frontend/tempat.ts)"},
+}
+
+// SemuaTempat - kode kedua belas tempat (`DaftarTempat`).
+var SemuaTempat = func() []string {
+	out := make([]string, len(DaftarTempat))
+	for i, t := range DaftarTempat {
+		out[i] = t.Kode
+	}
+	return out
+}()
 
 // Arah pemeriksaan.
 const (
@@ -95,4 +161,21 @@ func TempatTampil(pemetaan []PeranTempat, punyaPeran func(string) bool) map[stri
 		// kedua arah di satu tempat = bertentangan: tetap tertunda.
 	}
 	return out
+}
+
+// TanggalProduksiTampil = syarat tampil `Section/ListSuggest` `.ProductionDate`:
+// `.IsApproved == 1 && (<identitas-3> || <identitas-4>)` - bagian identitas
+// diganti dua tempat berperannya. Sel tak tampil tidak terkirim di Pega, maka
+// nilainya hanya diterima bila tampil (`GabungMasukanLayar`).
+func TanggalProduksiTampil(h *Halaman, tempat map[string]bool) bool {
+	return h.Ambil(HalamanPolis+".IsApproved") == "1" &&
+		(tempat[TempatProduksiTampilOperator3] || tempat[TempatProduksiTampilOperator4])
+}
+
+// TanggalProduksiWajib = `pyRequiredWhen` sel yang sama (syarat berbunyi sama,
+// tempat sendiri). Sel yang tidak ter-render tidak menegakkan wajibnya, maka
+// juga harus tampil.
+func TanggalProduksiWajib(h *Halaman, tempat map[string]bool) bool {
+	return TanggalProduksiTampil(h, tempat) &&
+		(tempat[TempatProduksiWajibOperator3] || tempat[TempatProduksiWajibOperator4])
 }

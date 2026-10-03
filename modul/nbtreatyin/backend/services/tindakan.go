@@ -16,6 +16,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/nbtreatyin/backend/models"
 )
 
@@ -44,8 +45,7 @@ func (l *Layanan) kerjakan(ctx context.Context, p inti.Pelaku, id string, masuk 
 	// `ListSuggest.ProductionDate` hanya diterima bila tampil bagi pelaku
 	// (tempat berperan tiket 05; AC 52, 81).
 	// Pemetaan kosong (K12, K16) = tempat tertunda = medan tidak diterima.
-	tempat := l.tempat(p)
-	models.GabungMasukanLayar(h, masuk, k.PositionNote, tempat[TempatTanggalProduksi])
+	models.GabungMasukanLayar(h, masuk, k.PositionNote, tempatPelaku(p))
 	if k.PositionNote == models.PosisiAdmin {
 		if err := l.turunkan(ctx, h); err != nil {
 			return models.Kasus{}, nil, err
@@ -264,7 +264,7 @@ func (l *Layanan) SimpanDraf(ctx context.Context, p inti.Pelaku, id string, masu
 	}
 	// `[keputusan work owner]` AC 48: "Berkas tidak dapat disimpan bila medan
 	// wajib pada tingkat itu kosong" - juga tombol Save, bukan hanya Submit.
-	if kosong := models.MedanWajibKosong(h, k.PositionNote); len(kosong) > 0 {
+	if kosong := models.MedanWajibKosong(h, k.PositionNote, tempatPelaku(p)); len(kosong) > 0 {
 		return Layar{}, &GalatValidasi{Pesan: kosong}
 	}
 	if err := l.tulis(ctx, k, func(tx *db.Tx) error { return l.g.SimpanHalaman(ctx, tx, id, h) }); err != nil {
@@ -472,12 +472,7 @@ func (l *Layanan) kirim(ctx context.Context, p inti.Pelaku, id string, masuk *mo
 // dipasang rantai layar (Property-Set-Messages / Page-Set-Messages): halaman
 // berpesan tidak dapat di-submit, sama dengan Pega.
 func (l *Layanan) validasiKirim(ctx context.Context, p inti.Pelaku, h *models.Halaman, posisi string) error {
-	pesan := models.MedanWajibKosong(h, posisi)
-	tempat := l.tempat(p)
-	if tempat[TempatTanggalProduksi] && h.Ambil(models.HalamanPolis+".IsApproved") == "1" &&
-		strings.TrimSpace(h.Ambil(models.HalamanPolis+".ProductionDate")) == "" {
-		pesan = append(pesan, "Production Date")
-	}
+	pesan := models.MedanWajibKosong(h, posisi, tempatPelaku(p))
 	if posisi == models.PosisiAdmin {
 		// Rantai layar admin dijalankan atas SALINAN: hanya pesannya yang
 		// diambil, nilai yang akan disimpan tidak berubah.
@@ -584,7 +579,7 @@ func (l *Layanan) TerbitkanNomor(ctx context.Context, p inti.Pelaku, id string, 
 			return err
 		}
 		h.Setel(models.HalamanPolis+".PolicyNo", bahan.NoPolis)
-		h.Setel(models.HalamanPolis+".ProductionDate", models.FormatTanggalWaktu(bahan.ProductionDate))
+		h.Setel(models.HalamanPolis+".ProductionDate", utils.FormatTanggalWaktu(bahan.ProductionDate))
 		hasil = NomorPolis{ID: id, PolicyNo: bahan.NoPolis}
 		return l.g.SimpanHalaman(ctx, tx, id, h) // langkah 30 Obj-Save
 	})

@@ -79,6 +79,13 @@ func (l *Layanan) periksaPelaku(p inti.Pelaku) error {
 // anggota menjawab: pelaku anggota antrean (workbasket) `posisi`.
 func anggota(p inti.Pelaku, posisi string) bool { return posisi != "" && p.PunyaPeran(posisi) }
 
+// tempatPelaku - tempat berperan tiket 05 bagi pelaku: pemetaan konstanta
+// `models.PemetaanPeranTempat` (K16; kosong sampai IAM menjawab = semua
+// tertunda) atas peran `inti.Pelaku.Peran` (workbasket akun).
+func tempatPelaku(p inti.Pelaku) map[string]bool {
+	return models.TempatTampil(models.PemetaanPeranTempat, p.PunyaPeran)
+}
+
 // ------------------------------------------------------------------ daftar dan buat
 
 // DaftarKasus - daftar portal (`Section/SFAPortal_OpportunitiesList`).
@@ -172,7 +179,8 @@ type Layar struct {
 	// selain itu layar hanya-baca.
 	BolehKerja bool               `json:"bolehKerja"`
 	Tombol     models.TombolKirim `json:"tombol"`
-	// MedanWajib - jalur medan wajib layar posisi ini (berlaku saat ini).
+	// MedanWajib - jalur medan wajib layar posisi ini (berlaku saat ini,
+	// `models.MedanWajibBerlaku`).
 	MedanWajib []string `json:"medanWajib"`
 	// Tempat - tempat berperan (tiket 05) -> tampil atau tidak.
 	Tempat map[string]bool `json:"tempat"`
@@ -200,15 +208,10 @@ func (l *Layanan) BukaKasus(ctx context.Context, p inti.Pelaku, id string) (Laya
 }
 
 func (l *Layanan) layar(ctx context.Context, p inti.Pelaku, k models.Kasus, h *models.Halaman, boleh bool) (Layar, error) {
-	tempat := l.tempat(p)
+	tempat := tempatPelaku(p)
 	var wajib []string
-	for _, m := range models.DaftarMedanWajib(k.PositionNote) {
-		if m.Syarat == nil || m.Syarat(h) {
-			wajib = append(wajib, m.Jalur)
-		}
-	}
-	if tempat[TempatTanggalProduksi] && h.Ambil(models.HalamanPolis+".IsApproved") == "1" {
-		wajib = append(wajib, models.HalamanPolis+".ProductionDate")
+	for _, m := range models.MedanWajibBerlaku(h, k.PositionNote, tempat) {
+		wajib = append(wajib, m.Jalur)
 	}
 	ly := Layar{Kasus: k, Halaman: h, BolehKerja: boleh, MedanWajib: wajib, Tempat: tempat, Pesan: h.SemuaPesan()}
 	if boleh {

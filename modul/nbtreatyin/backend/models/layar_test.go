@@ -70,7 +70,7 @@ func TestMedanWajibAtasanTanpaEnamMedanAdmin(t *testing.T) { // AC 46, 47
 func TestMedanWajibBersyarat(t *testing.T) {
 	h := HalamanBaru()
 	h.Setel("Quotation.ProportionalType", JenisNonProporsional)
-	kosong := MedanWajibKosong(h, PosisiAdmin)
+	kosong := MedanWajibKosong(h, PosisiAdmin, nil)
 	for _, l := range kosong {
 		if l == "Premi Ogp" || l == "Type Tax" || l == "Claim Type" {
 			t.Errorf("%s tidak wajib untuk NonProportional / FlagPPH kosong / Claim kosong", l)
@@ -78,7 +78,7 @@ func TestMedanWajibBersyarat(t *testing.T) {
 	}
 	h.Setel("PolicyTreatyIn.FlagPPH", "true")
 	h.Setel("PolicyTreatyIn.Claim", "5")
-	kosong = MedanWajibKosong(h, PosisiAdmin)
+	kosong = MedanWajibKosong(h, PosisiAdmin, nil)
 	harap := map[string]bool{"Type Tax": false, "Claim Type": false, "Payment Type": false}
 	for _, l := range kosong {
 		if _, ada := harap[l]; ada {
@@ -102,7 +102,7 @@ func TestMedanWajibBersyarat(t *testing.T) {
 func TestMedanWajibIkutWadahTampil(t *testing.T) {
 	label := func(h *Halaman, posisi string) map[string]bool {
 		out := map[string]bool{}
-		for _, l := range MedanWajibKosong(h, posisi) {
+		for _, l := range MedanWajibKosong(h, posisi, nil) {
 			out[l] = true
 		}
 		return out
@@ -112,7 +112,7 @@ func TestMedanWajibIkutWadahTampil(t *testing.T) {
 	if !label(h, PosisiAdmin)["Type Tax"] {
 		t.Fatal("Type Tax wajib bila FlagPPH true")
 	}
-	h.Setel("PolicyTreatyIn.ClaimType", "XOL Retro")
+	h.Setel("PolicyTreatyIn.ClaimType", KlaimXOLRetro)
 	if label(h, PosisiAdmin)["Type Tax"] {
 		t.Error("Type Tax di wadah `.ClaimType != 'XOL Retro'`: tidak wajib untuk XOL Retro")
 	}
@@ -141,19 +141,19 @@ func TestGabungMasukanAtasanHanyaMedanTerbuka(t *testing.T) { // AC 49-52
 	m := HalamanBaru()
 	m.Setel("PolicyTreatyIn.PremiOgp", "1")
 	m.Setel("PolicyTreatyIn.Suggest", "UJI")
-	GabungMasukanLayar(h, m, PosisiSecHead, false)
+	GabungMasukanLayar(h, m, PosisiSecHead, nil)
 	if h.Ambil("PolicyTreatyIn.PremiOgp") != "1000" || h.Ambil("PolicyTreatyIn.Suggest") != "UJI" {
 		t.Fatal("atasan: medan terkunci diabaikan, Suggest diterima")
 	}
 	if h.Ambil("PolicyTreatyIn.DueTo") != "1" {
 		t.Fatal("medan yang tidak dikirim tidak dikosongkan")
 	}
-	GabungMasukanLayar(h, m, PosisiAdmin, false)
+	GabungMasukanLayar(h, m, PosisiAdmin, nil)
 	if h.Ambil("PolicyTreatyIn.PremiOgp") != "1" {
 		t.Fatal("admin boleh mengubah PremiOgp")
 	}
 	m.Setel("PolicyTreatyIn.StatementDate", "2000-01-01 00:00:00")
-	GabungMasukanLayar(h, m, PosisiAdmin, false)
+	GabungMasukanLayar(h, m, PosisiAdmin, nil)
 	if h.Ambil("PolicyTreatyIn.StatementDate") != "" {
 		t.Fatal("StatementDate terkunci ALWAYS di layar admin")
 	}
@@ -165,7 +165,8 @@ func TestGabungMasukanAtasanHanyaMedanTerbuka(t *testing.T) { // AC 49-52
 // diisi atasan hanya `Section/ListSuggest`: `.IsApproved`, `.Suggest`, dan
 // `.ProductionDate` bila tampil (`.IsApproved == 1` && tempat tiket 05).
 func TestAtasanHanyaMengisiPutusanCatatanDanTanggalProduksiBersyarat(t *testing.T) {
-	isi := func(tempat bool, approval string) *Halaman {
+	isi := func(terbuka bool, approval string) *Halaman {
+		tempat := map[string]bool{TempatProduksiTampilOperator4: terbuka}
 		h := HalamanBaru()
 		h.Setel("PolicyTreatyIn.DueTo", "1")
 		h.Setel("PolicyTreatyIn.FlagPPH", "false")
@@ -205,7 +206,7 @@ func TestAtasanHanyaMengisiPutusanCatatanDanTanggalProduksiBersyarat(t *testing.
 	m := HalamanBaru()
 	m.Setel("PolicyTreatyIn.IsApproved", "1")
 	m.Setel("PolicyTreatyIn.ProductionDate", "2026-10-31 00:00:00")
-	GabungMasukanLayar(a, m, PosisiAdmin, false)
+	GabungMasukanLayar(a, m, PosisiAdmin, nil)
 	if got := a.Ambil("PolicyTreatyIn.ProductionDate"); got != "" {
 		t.Errorf("admin tanpa tempat berperan: ProductionDate tidak diterima, tersimpan %q", got)
 	}
