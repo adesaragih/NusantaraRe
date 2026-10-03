@@ -106,7 +106,8 @@ func TestNilaiBaca(t *testing.T) {
 }
 
 func TestSQLDaftarKasusPenampungUnik(t *testing.T) {
-	q := sqlDaftarKasus("S.W", "S.G", "S.Q", true, true)
+	// antrean 2 = gerbang portal bagi pemegang Sec Head + Dept Head (P8).
+	q := sqlDaftarKasus("S.W", "S.G", "S.Q", true, true, 2)
 	pen := regexp.MustCompile(`:(\d+)`).FindAllStringSubmatch(q, -1)
 	lihat := map[string]bool{}
 	for _, p := range pen {
@@ -115,8 +116,12 @@ func TestSQLDaftarKasusPenampungUnik(t *testing.T) {
 		}
 		lihat[p[1]] = true
 	}
-	if len(lihat) != 7 || !strings.Contains(q, "FETCH FIRST 200 ROWS ONLY") {
+	if len(lihat) != 9 || !strings.Contains(q, "FETCH FIRST 200 ROWS ONLY") ||
+		!strings.Contains(q, "AND g.POSITION_NOTE IN (:8, :9)") {
 		t.Fatalf("SQL daftar kasus:\n%s", q)
+	}
+	if strings.Contains(sqlDaftarKasus("S.W", "S.G", "S.Q", false, false, 0), " IN (:4") {
+		t.Fatal("antrean 0 = tanpa klausa antrean")
 	}
 }
 

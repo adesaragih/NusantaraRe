@@ -82,12 +82,47 @@ func anggota(p inti.Pelaku, posisi string) bool { return posisi != "" && p.Punya
 // ------------------------------------------------------------------ daftar dan buat
 
 // DaftarKasus - daftar portal (`Section/SFAPortal_OpportunitiesList`).
+//
+// GERBANG (putaran 2, P8). Grid satu-satunya di section itu (badan REPEATING,
+// `pyGridProps/pyRDName = GetListOpportunity`) bersarang di wadah
+// `pyContainerVisibleWhen = OperatorID.pyWorkGroup!='ReasLife' &&
+// OperatorID.pyWorkBasketList(2).pyWorkBasketName=='ReasTreatyInAdmin'`, lalu
+// wadah `!IsOperatorLife` (When: `OperatorID.pyWorkGroup = "ReasLife"`). Di
+// luar wadah hanya baris saringan. Maka:
+//
+//   - anggota `ReasTreatyInAdmin` (menurut NAMA, bukan urutan ke-2 - AC 14)
+//     melihat grid itu: semua kasus terbuka, opsional per posisi (filter A
+//     `pxCreateOperator = Param.UserIdentifier` tidak dibangun - antrean
+//     bersama AC 11, penyimpangan putaran 1);
+//   - pelaku lain tidak melihat grid itu. Tugasnya dirutekan
+//     `Flow/InputRealizationTreatyIn` ke workbasket (Assignment4/6
+//     `ReasTreatyInSecHead`, Assignment3 `ReasTreatyInDeptHead`,
+//     `ToWorkBasket`); daftar kerja workbasket Pega tidak ada di korpus -
+//     padanannya di portal tunggal ini (bab 0 butir 7): HANYA kasus yang
+//     menunggu di posisi tangga yang ia pegang (AC 11, 92);
+//   - tanpa satu pun posisi tangga: grid tersembunyi dan tidak ada antrean
+//     -> ErrBukanAnggotaAntrean (403).
+//
+// ⛔ `pyWorkGroup != 'ReasLife'` (dan `!IsOperatorLife`, syarat yang sama)
+// TIDAK dibangun: `inti.Pelaku` hanya membawa AkunID + workbasket, dan
+// pemetaan work group Pega ke data akun tidak ada (K12 kosong; tiket 05).
 func (l *Layanan) DaftarKasus(ctx context.Context, p inti.Pelaku, s models.SaringanKasus) ([]models.RingkasanKasus, error) {
 	if err := l.periksaPelaku(p); err != nil {
 		return nil, err
 	}
 	if s.Posisi != "" && !models.AdalahPosisiTangga(s.Posisi) {
 		return nil, fmt.Errorf("%w: posisi %q", ErrPermintaanTidakSah, s.Posisi)
+	}
+	s.Antrean = nil
+	if !anggota(p, models.PosisiAdmin) {
+		for _, pos := range models.PosisiTangga {
+			if anggota(p, pos) && (s.Posisi == "" || s.Posisi == pos) {
+				s.Antrean = append(s.Antrean, pos)
+			}
+		}
+		if len(s.Antrean) == 0 {
+			return nil, fmt.Errorf("%w (daftar portal)", ErrBukanAnggotaAntrean)
+		}
 	}
 	return l.g.DaftarKasus(ctx, s)
 }

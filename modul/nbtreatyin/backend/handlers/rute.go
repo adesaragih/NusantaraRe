@@ -4,7 +4,7 @@
 //
 // Rute - prefix `/api/nb-treaty-in` (MODUL.md):
 //
-//	GET  /api/nb-treaty-in/kasus                      daftar portal (SFAPortal_OpportunitiesList)
+//	GET  /api/nb-treaty-in/kasus                      daftar portal (SFAPortal_OpportunitiesList; gerbang antrean, 403)
 //	POST /api/nb-treaty-in/kasus                      Create (createWork)
 //	GET  /api/nb-treaty-in/kasus/{id}                 buka assignment (pra-proses)
 //	PUT  /api/nb-treaty-in/kasus/{id}                 Save layar admin

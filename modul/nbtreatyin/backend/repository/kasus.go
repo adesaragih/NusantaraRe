@@ -208,7 +208,10 @@ func (g *Gudang) TutupKasus(ctx context.Context, tx *db.Tx, id, statusLama, stat
 // sqlDaftarKasus merakit daftar portal. Penampung UNIK - klausa pembatas
 // baris memecah pengikatan penampung berulang (penjaga
 // `TestNolPenampungBerulangDiSQLBerpembatasBaris`).
-func sqlDaftarKasus(kerja, gen, quot string, cari, posisi bool) string {
+//
+// `antrean` = banyaknya workbasket gerbang portal (`SaringanKasus.Antrean`);
+// 0 = tanpa batas antrean.
+func sqlDaftarKasus(kerja, gen, quot string, cari, posisi bool, antrean int) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, `SELECT w.ID, q.BUSINESS_NAME, q.INSURED_NAME, q.MARKETING_NAME, g.NB_STATUS,
 	        w.STATUS_WORK, g.POSITION_NOTE, g.NOPOLIS, TO_CHAR(w.TGL_CREATE, '%s')
@@ -226,6 +229,15 @@ func sqlDaftarKasus(kerja, gen, quot string, cari, posisi bool) string {
 	if posisi {
 		fmt.Fprintf(&b, `
 	    AND g.POSITION_NOTE = :%d`, n)
+		n++
+	}
+	if antrean > 0 {
+		pen := make([]string, antrean)
+		for i := range pen {
+			pen[i] = fmt.Sprintf(":%d", n+i)
+		}
+		fmt.Fprintf(&b, `
+	    AND g.POSITION_NOTE IN (%s)`, strings.Join(pen, ", "))
 	}
 	fmt.Fprintf(&b, `
 	  ORDER BY w.TGL_CREATE DESC
@@ -239,7 +251,8 @@ func sqlDaftarKasus(kerja, gen, quot string, cari, posisi bool) string {
 // `Resolved-Completed`/`Resolved-Rejected`; C, G: `Contains Param.Search`).
 // ⚠️ Logika filter RD itu tertulis "A" saja (`pxCreateOperator =
 // Param.UserIdentifier`, daftar per pembuat) - bertentangan dengan antrean
-// bersama (AC 11, 92); yang dipakai: SEMUA kasus terbuka, opsional per posisi.
+// bersama (AC 11, 92); yang dipakai: SEMUA kasus terbuka, opsional per posisi,
+// dibatasi `s.Antrean` bila gerbang portal mengisinya (services.DaftarKasus).
 func (g *Gudang) DaftarKasus(ctx context.Context, s models.SaringanKasus) ([]models.RingkasanKasus, error) {
 	kerja, err := g.nama(tabelKerja)
 	if err != nil {
@@ -254,7 +267,7 @@ func (g *Gudang) DaftarKasus(ctx context.Context, s models.SaringanKasus) ([]mod
 		return nil, err
 	}
 	cari := strings.TrimSpace(s.Cari)
-	q := sqlDaftarKasus(kerja, gen, quot, cari != "", s.Posisi != "")
+	q := sqlDaftarKasus(kerja, gen, quot, cari != "", s.Posisi != "", len(s.Antrean))
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
@@ -265,6 +278,9 @@ func (g *Gudang) DaftarKasus(ctx context.Context, s models.SaringanKasus) ([]mod
 	}
 	if s.Posisi != "" {
 		args = append(args, s.Posisi)
+	}
+	for _, a := range s.Antrean {
+		args = append(args, a)
 	}
 	rows, err := g.db.QueryContext(ctx, q, args...)
 	if err != nil {

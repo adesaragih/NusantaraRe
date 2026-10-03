@@ -12,6 +12,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -181,6 +182,9 @@ func (g *Gudang) DaftarKasus(_ context.Context, s models.SaringanKasus) ([]model
 	var out []models.RingkasanKasus
 	for id, k := range g.Kasus {
 		if k.Tertutup() || (s.Posisi != "" && k.PositionNote != s.Posisi) {
+			continue
+		}
+		if s.Antrean != nil && !slices.Contains(s.Antrean, k.PositionNote) {
 			continue
 		}
 		if s.Cari != "" && !strings.Contains(strings.ToUpper(id), strings.ToUpper(s.Cari)) {

@@ -75,6 +75,10 @@ type SaringanKasus struct {
 	Cari string
 	// Posisi - workbasket; kosong = semua posisi.
 	Posisi string
+	// Antrean - bila tidak kosong, hanya kasus yang menunggu di salah satu
+	// workbasket ini. Diisi gerbang portal `services.DaftarKasus` bagi pelaku
+	// di luar wadah grid `ReasTreatyInAdmin` (P8); nil = tanpa batas antrean.
+	Antrean []string
 }
 
 // JalurAnak - kunci daftar bersarang di halaman: `<induk>(<n>).<anak>`,

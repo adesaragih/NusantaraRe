@@ -109,8 +109,12 @@ func TestAlurHTTP(t *testing.T) {
 	if w.Code != http.StatusConflict {
 		t.Fatalf("nomor polis di admin: %d %s", w.Code, w.Body)
 	}
-	if w := minta(t, s, "GET", "/api/nb-treaty-in/kasus", "UJI-A", "", nil); w.Code != http.StatusOK || !strings.Contains(w.Body.String(), k.ID) {
+	// daftar portal: grid hanya di wadah ReasTreatyInAdmin (portal_test.go)
+	if w := minta(t, s, "GET", "/api/nb-treaty-in/kasus", "UJI-A", "ReasTreatyInAdmin", nil); w.Code != http.StatusOK || !strings.Contains(w.Body.String(), k.ID) {
 		t.Fatalf("daftar: %d %s", w.Code, w.Body)
+	}
+	if w := minta(t, s, "GET", "/api/nb-treaty-in/kasus", "UJI-A", "", nil); w.Code != http.StatusForbidden {
+		t.Fatalf("daftar tanpa antrean: %d %s", w.Code, w.Body)
 	}
 	if w := minta(t, s, "GET", "/api/nb-treaty-in/acuan", "UJI-A", "", nil); w.Code != http.StatusOK {
 		t.Fatalf("acuan: %d %s", w.Code, w.Body)
