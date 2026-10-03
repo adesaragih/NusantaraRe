@@ -192,12 +192,20 @@ func (g *Gudang) DaftarKasus(_ context.Context, s models.SaringanKasus) ([]model
 		if s.Antrean != nil && !slices.Contains(s.Antrean, k.PositionNote) {
 			continue
 		}
-		if s.Cari != "" && !strings.Contains(strings.ToUpper(id), strings.ToUpper(s.Cari)) {
+		if !models.CocokCariPortal(id, s.Cari) { // filter G, sama dengan repository
 			continue
 		}
-		out = append(out, models.RingkasanKasus{ID: id, StatusWork: k.StatusWork, PositionNote: k.PositionNote, NoPolis: k.NoPolis})
+		r := models.RingkasanKasus{ID: id, StatusWork: k.StatusWork, PositionNote: k.PositionNote, NoPolis: k.NoPolis}
+		if h := g.Halaman[id]; h != nil {
+			r.BusinessName = h.Ambil(models.HalamanQuotation + ".BusinessName")
+			r.InsuredName = h.Ambil(models.HalamanQuotation + ".InsuredName")
+		}
+		out = append(out, r)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	if len(out) > models.BatasDaftarPortal { // pyMaxRecords, sama dengan repository
+		out = out[:models.BatasDaftarPortal]
+	}
 	return out, nil
 }
 

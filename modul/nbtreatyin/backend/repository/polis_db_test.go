@@ -128,6 +128,41 @@ func TestPulangPergiHalamanLewatKatalog(t *testing.T) {
 	}
 }
 
+// RD `GetListOpportunity`: pencarian hanya filter G (`.TextNoQuotation
+// Contains Param.Search`, tanpa beda huruf besar/kecil) atas pengenal kasus;
+// nama bisnis bukan saringan (filter C `.Name` tidak dibangun).
+func TestDaftarKasusPortalMenurutGetListOpportunity(t *testing.T) { // P8, temuan tinjauan P9
+	_, _, ctx, d := pasang(t)
+	g := repository.Baru(d)
+	const id = "UJI-NB-CARI-1"
+	h := models.HalamanBaru()
+	h.Setel("PositionNote", models.PosisiAdmin)
+	h.Setel("Quotation.BusinessName", "UJI-BISNIS-CARI")
+	if err := dalamTx(t, ctx, d, func(tx *intidb.Tx) error {
+		if err := g.SisipKasus(ctx, tx, id, "UJI-AKUN", "UJI NAMA"); err != nil {
+			return err
+		}
+		return g.SimpanHalaman(ctx, tx, id, h)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for cari, harap := range map[string]int{"uji-nb-cari": 1, "UJI-BISNIS-CARI": 0} {
+		r, err := g.DaftarKasus(ctx, models.SaringanKasus{Cari: cari})
+		if err != nil {
+			t.Fatal(err)
+		}
+		n := 0
+		for _, b := range r {
+			if b.ID == id {
+				n++
+			}
+		}
+		if n != harap {
+			t.Errorf("cari %q: %d baris, harap %d", cari, n, harap)
+		}
+	}
+}
+
 func TestNomorPolisSekaliDanUnik(t *testing.T) { // AC 31, 74
 	_, _, ctx, d := pasang(t)
 	g := repository.Baru(d)

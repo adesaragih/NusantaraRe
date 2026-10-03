@@ -108,3 +108,33 @@ func TestGerbangDaftarPortal(t *testing.T) { // AC 11, 14, 92 - wadah grid SFAPo
 		}
 	}
 }
+
+// RD `GetListOpportunity` (grid satu-satunya portal): pencarian hanya filter G
+// `.TextNoQuotation Contains Param.Search` (`pyCaseInsensitive=true`) = pengenal
+// kasus; filter C `.Name` (kelas CRM, ditulis nol rule) tidak dibangun - nama
+// bisnis/tertanggung BUKAN medan pencarian. `pyMaxRecords` = 500.
+func TestDaftarPortalSesuaiGetListOpportunity(t *testing.T) { // P8, temuan tinjauan P9
+	u := baru(t)
+	id := u.buat()
+	u.g.Halaman[id].Setel(models.HalamanQuotation+".BusinessName", "UJI-BISNIS-CARI")
+	u.g.Halaman[id].Setel(models.HalamanQuotation+".InsuredName", "UJI-TERTANGGUNG-CARI")
+	for _, c := range []struct {
+		kueri string
+		harap []string
+	}{
+		{"?cari=" + strings.ToLower(id), []string{id}}, // tanpa beda huruf besar/kecil
+		{"?cari=UJI-BISNIS-CARI", []string{}},          // .Name / nama bisnis bukan saringan RD
+		{"?cari=UJI-TERTANGGUNG-CARI", []string{}},
+	} {
+		kode, ids, isi := u.daftar(admin, c.kueri)
+		if kode != http.StatusOK || strings.Join(ids, " ") != strings.Join(c.harap, " ") {
+			t.Fatalf("%s: %d %v (%s), harap %v", c.kueri, kode, ids, isi, c.harap)
+		}
+	}
+	for i := 1; i <= models.BatasDaftarPortal; i++ { // 501 kasus terbuka
+		u.buat()
+	}
+	if kode, ids, _ := u.daftar(admin, ""); kode != http.StatusOK || len(ids) != 500 {
+		t.Fatalf("pyMaxRecords 500: %d baris (kode %d)", len(ids), kode)
+	}
+}

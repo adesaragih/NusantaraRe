@@ -68,10 +68,17 @@ type RingkasanKasus struct {
 	TglCreate     string `json:"tglCreate"`
 }
 
+// BatasDaftarPortal - baris terbanyak daftar portal = `pyMaxRecords` RD
+// `GetListOpportunity` (500).
+const BatasDaftarPortal = 500
+
 // SaringanKasus - saringan daftar portal.
 type SaringanKasus struct {
-	// Cari - teks pencarian (`.Name Contains Param.Search`,
-	// `.TextNoQuotation Contains Param.Search` di `GetListOpportunity`).
+	// Cari - teks pencarian `.FilterTermForOpportunity` -> `Param.Search` RD
+	// `GetListOpportunity`: filter G `.TextNoQuotation Contains Param.Search`
+	// (tanpa beda huruf besar/kecil) = pengenal kasus (`CocokCariPortal`).
+	// ⛔ Filter C `.Name Contains Param.Search` tidak dibangun - `.Name`
+	// milik kelas CRM, ditulis nol rule korpus, tak berkolom di diagram.
 	Cari string
 	// Posisi - workbasket; kosong = semua posisi.
 	Posisi string
@@ -79,6 +86,14 @@ type SaringanKasus struct {
 	// workbasket ini. Diisi gerbang portal `services.DaftarKasus` bagi pelaku
 	// di luar wadah grid `ReasTreatyInAdmin` (P8); nil = tanpa batas antrean.
 	Antrean []string
+}
+
+// CocokCariPortal = filter G RD `GetListOpportunity`: `.TextNoQuotation
+// Contains Param.Search`, `pyCaseInsensitive=true`. Kosong = tanpa saringan.
+// Repository menulis padanannya di SQL (`UPPER(w.ID) LIKE`).
+func CocokCariPortal(id, cari string) bool {
+	cari = strings.TrimSpace(cari)
+	return cari == "" || strings.Contains(strings.ToUpper(id), strings.ToUpper(cari))
 }
 
 // JalurAnak - kunci daftar bersarang di halaman: `<induk>(<n>).<anak>`,

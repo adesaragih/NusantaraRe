@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -105,23 +106,47 @@ func TestNilaiBaca(t *testing.T) {
 	}
 }
 
-func TestSQLDaftarKasusPenampungUnik(t *testing.T) {
-	// antrean 2 = gerbang portal bagi pemegang Sec Head + Dept Head (P8).
-	q := sqlDaftarKasus("S.W", "S.G", "S.Q", true, true, 2)
-	pen := regexp.MustCompile(`:(\d+)`).FindAllStringSubmatch(q, -1)
-	lihat := map[string]bool{}
-	for _, p := range pen {
-		if lihat[p[1]] {
-			t.Fatalf("penampung :%s berulang di SQL berpembatas baris:\n%s", p[1], q)
+// Perilaku pengikatan, bukan teks SQL (temuan tinjauan P9 A5): setiap
+// penampung muncul SEKALI (klausa pembatas baris memecah penampung berulang)
+// dan penampung = argumen ikat, :1..:n berurutan, untuk setiap kombinasi
+// saringan portal. Pencarian (filter G GetListOpportunity) mengikat SATU nilai.
+func TestSQLDaftarKasusPenampungSamaDenganArgumen(t *testing.T) {
+	for _, s := range []models.SaringanKasus{
+		{},
+		{Cari: "uji-1"},
+		{Posisi: models.PosisiSecHead},
+		{Antrean: []string{models.PosisiSecHead, models.PosisiDeptHead}},
+		{Cari: "uji-1", Posisi: models.PosisiDeptHead, Antrean: []string{models.PosisiSecHead, models.PosisiDeptHead}},
+	} {
+		q, args := sqlDaftarKasus("S.W", "S.G", "S.Q", s)
+		pen := regexp.MustCompile(`:(\d+)`).FindAllStringSubmatch(q, -1)
+		lihat := map[string]bool{}
+		for _, p := range pen {
+			if lihat[p[1]] {
+				t.Fatalf("%+v: penampung :%s berulang", s, p[1])
+			}
+			lihat[p[1]] = true
 		}
-		lihat[p[1]] = true
-	}
-	if len(lihat) != 9 || !strings.Contains(q, "FETCH FIRST 200 ROWS ONLY") ||
-		!strings.Contains(q, "AND g.POSITION_NOTE IN (:8, :9)") {
-		t.Fatalf("SQL daftar kasus:\n%s", q)
-	}
-	if strings.Contains(sqlDaftarKasus("S.W", "S.G", "S.Q", false, false, 0), " IN (:4") {
-		t.Fatal("antrean 0 = tanpa klausa antrean")
+		if len(lihat) != len(args) {
+			t.Fatalf("%+v: %d penampung, %d argumen", s, len(lihat), len(args))
+		}
+		for i := 1; i <= len(args); i++ {
+			if !lihat[strconv.Itoa(i)] {
+				t.Fatalf("%+v: penampung :%d tidak ada", s, i)
+			}
+		}
+		cari := 0
+		for _, a := range args {
+			if v, ok := a.(string); ok && strings.HasPrefix(v, "%") {
+				cari++
+				if v != "%UJI-1%" {
+					t.Fatalf("pola cari %q: Contains tanpa beda huruf", v)
+				}
+			}
+		}
+		if (s.Cari != "") != (cari == 1) || cari > 1 {
+			t.Fatalf("%+v: pencarian mengikat %d nilai, harap 1 (hanya pengenal kasus)", s, cari)
+		}
 	}
 }
 

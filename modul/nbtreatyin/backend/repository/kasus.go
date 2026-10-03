@@ -22,9 +22,6 @@ import (
 	"nusantarare/modul/nbtreatyin/backend/models"
 )
 
-// batasDaftarKasus - baris terbanyak satu halaman daftar portal.
-const batasDaftarKasus = 200
-
 // IDKasusBerikut menerbitkan pengenal `NB-<n>` dari SEQ_WORK_POLIS.
 func (g *Gudang) IDKasusBerikut(ctx context.Context, tx *db.Tx) (string, error) {
 	urut, err := g.db.NomorBerikut(ctx, tx, sequenceKerjaPolis)
@@ -205,14 +202,29 @@ func (g *Gudang) TutupKasus(ctx context.Context, tx *db.Tx, id, statusLama, stat
 	return nil
 }
 
-// sqlDaftarKasus merakit daftar portal. Penampung UNIK - klausa pembatas
-// baris memecah pengikatan penampung berulang (penjaga
+// sqlDaftarKasus merakit daftar portal beserta argumen ikatnya. Penampung
+// UNIK - klausa pembatas baris memecah pengikatan penampung berulang (penjaga
 // `TestNolPenampungBerulangDiSQLBerpembatasBaris`).
 //
-// `antrean` = banyaknya workbasket gerbang portal (`SaringanKasus.Antrean`);
-// 0 = tanpa batas antrean.
-func sqlDaftarKasus(kerja, gen, quot string, cari, posisi bool, antrean int) string {
+// RD `GetListOpportunity` (logika `B AND D AND E AND F AND A AND (C OR G) AND F1`):
+//
+//	D, F  `A.pyStatusWork` != Resolved-Completed / Resolved-Rejected
+//	C, G  `.Name` / `.TextNoQuotation` Contains `Param.Search` (pyCaseInsensitive)
+//	      - G = pengenal kasus `NB-<n>` (filter B `.TextNoQuotation Contains "NB-"`);
+//	      ⛔ C tidak dibangun: `.Name` milik kelas CRM
+//	      `ASM-FW-SFAGISFW-Work-Opportunity`, ditulis NOL rule korpus dan tak
+//	      berkolom di diagram grilling (butir terbuka, bab 0 butir 11)
+//	pyMaxRecords 500 -> `models.BatasDaftarPortal`
+//
+// `s.Antrean` = workbasket gerbang portal (services.DaftarKasus); kosong =
+// tanpa batas antrean.
+func sqlDaftarKasus(kerja, gen, quot string, s models.SaringanKasus) (string, []any) {
 	var b strings.Builder
+	args := []any{models.LiniKasus, models.StatusDitolak, models.StatusSelesai}
+	pen := func(v any) string {
+		args = append(args, v)
+		return fmt.Sprintf(":%d", len(args))
+	}
 	fmt.Fprintf(&b, `SELECT w.ID, q.BUSINESS_NAME, q.INSURED_NAME, q.MARKETING_NAME, g.NB_STATUS,
 	        w.STATUS_WORK, g.POSITION_NOTE, g.NOPOLIS, TO_CHAR(w.TGL_CREATE, '%s')
 	   FROM %s w
@@ -220,36 +232,32 @@ func sqlDaftarKasus(kerja, gen, quot string, cari, posisi bool, antrean int) str
 	   LEFT JOIN %s q ON q.POLIS_ID = g.ID
 	  WHERE g.PRODKE = 0 AND w.LINI = :1
 	    AND (w.STATUS_WORK IS NULL OR w.STATUS_WORK NOT IN (:2, :3))`, fmtTanggal, kerja, gen, quot)
-	n := 4
-	if cari {
+	if cari := strings.TrimSpace(s.Cari); cari != "" {
 		fmt.Fprintf(&b, `
-	    AND (UPPER(w.ID) LIKE :%d OR UPPER(q.BUSINESS_NAME) LIKE :%d OR UPPER(q.INSURED_NAME) LIKE :%d)`, n, n+1, n+2)
-		n += 3
+	    AND UPPER(w.ID) LIKE %s`, pen("%"+strings.ToUpper(cari)+"%"))
 	}
-	if posisi {
+	if s.Posisi != "" {
 		fmt.Fprintf(&b, `
-	    AND g.POSITION_NOTE = :%d`, n)
-		n++
+	    AND g.POSITION_NOTE = %s`, pen(s.Posisi))
 	}
-	if antrean > 0 {
-		pen := make([]string, antrean)
-		for i := range pen {
-			pen[i] = fmt.Sprintf(":%d", n+i)
+	if len(s.Antrean) > 0 {
+		var ps []string
+		for _, a := range s.Antrean {
+			ps = append(ps, pen(a))
 		}
 		fmt.Fprintf(&b, `
-	    AND g.POSITION_NOTE IN (%s)`, strings.Join(pen, ", "))
+	    AND g.POSITION_NOTE IN (%s)`, strings.Join(ps, ", "))
 	}
 	fmt.Fprintf(&b, `
 	  ORDER BY w.TGL_CREATE DESC
-	  FETCH FIRST %d ROWS ONLY`, batasDaftarKasus)
-	return b.String()
+	  FETCH FIRST %d ROWS ONLY`, models.BatasDaftarPortal)
+	return b.String(), args
 }
 
 // DaftarKasus membaca kasus terbuka untuk portal.
 //
-// Saringan dari RD `GetListOpportunity` (filter D, F: `pyStatusWork` bukan
-// `Resolved-Completed`/`Resolved-Rejected`; C, G: `Contains Param.Search`).
-// ⚠️ Logika filter RD itu tertulis "A" saja (`pxCreateOperator =
+// Saringan dari RD `GetListOpportunity` (lihat `sqlDaftarKasus`).
+// ⚠️ Logika filter RD itu juga memuat "A" (`pxCreateOperator =
 // Param.UserIdentifier`, daftar per pembuat) - bertentangan dengan antrean
 // bersama (AC 11, 92); yang dipakai: SEMUA kasus terbuka, opsional per posisi,
 // dibatasi `s.Antrean` bila gerbang portal mengisinya (services.DaftarKasus).
@@ -266,21 +274,9 @@ func (g *Gudang) DaftarKasus(ctx context.Context, s models.SaringanKasus) ([]mod
 	if err != nil {
 		return nil, err
 	}
-	cari := strings.TrimSpace(s.Cari)
-	q := sqlDaftarKasus(kerja, gen, quot, cari != "", s.Posisi != "", len(s.Antrean))
+	q, args := sqlDaftarKasus(kerja, gen, quot, s)
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
-	}
-	args := []any{models.LiniKasus, models.StatusDitolak, models.StatusSelesai}
-	if cari != "" {
-		pola := "%" + strings.ToUpper(cari) + "%"
-		args = append(args, pola, pola, pola)
-	}
-	if s.Posisi != "" {
-		args = append(args, s.Posisi)
-	}
-	for _, a := range s.Antrean {
-		args = append(args, a)
 	}
 	rows, err := g.db.QueryContext(ctx, q, args...)
 	if err != nil {
