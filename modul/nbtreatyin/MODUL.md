@@ -32,7 +32,7 @@ dipensiunkan 1 Oktober 2026.
 | Folder | Isi |
 | --- | --- |
 | `docs/` | spec, tiket (`issues/`), grilling, `INVENTARIS-XML.md` (bangkitan `docs/alat/`), `STRUKTUR-TABEL-NB-TREATY-IN.md`, `HASIL-IMPLEMENTASI.md`, `PERMINTAAN-TIM-INTI.md` |
-| `backend/` | `models/` (fungsi murni: halaman kerja, katalog, rantai uang, tangga, layar) `repository/` (seluruh SQL) `services/` (aturan, transaksi) `handlers/` (HTTP) `migrations/` `modul.go` |
+| `backend/` | `models/` (fungsi murni: halaman kerja, katalog, rantai uang, tangga, layar, pemecah dokumen lama) `repository/` (seluruh SQL) `services/` (aturan, transaksi) `handlers/` (HTTP) `migrations/` `alat/pemuatlama/` (perintah pemuat dokumen lama - dijalankan manusia, bukan bagian aplikasi) `modul.go` |
 | `frontend/` | `pages/` `components/` `api.ts` `labels.ts` `medan.ts` `menu.ts` `rute.tsx` `nbtreatyin.css` dan `*.test.ts` |
 
 ## Aturan (ringkas)
@@ -64,6 +64,37 @@ sheet *NB Treaty In Prop* / *NonProp*), bangkitan `docs/alat/skema.py` dari kata
 (bab 0 butir 11 PROMPT putaran 2; K4, K16, K17): catatan usulan ke tabel warisan di bawah, pemetaan
 peran-tempat konstanta kode, medan tak dikenal pemuat dokumen lama ke berkas laporan CSV.
 Perbandingan kolom lawan diagram: `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`. Slot menu `968`: satu `UPDATE DIMIGRASI` baris modul ini, nol `INSERT`.
+
+## Pemuat dokumen lama (tiket 22)
+
+Memindah seluruh dokumen polis generasi NB (`PRODKE 0`) dari `POOLDATA.JSON_POLIS` ke 8 tabel diagram
+grilling - setiap polis, tanpa penyaring (KEPUTUSAN-RONDE-12 butir 5). Dijalankan **manusia** dari akar
+repo, sesudah lingkungan dimuat seperti `cmd/api` (`ORACLE_DSN`, `ORACLE_SCHEMA`, `IS_PEGA_PROD`); tidak
+pernah berjalan saat aplikasi menyala. Migrasi 320-327 wajib sudah dijalankan work owner sebelum `-jalankan`.
+
+```powershell
+go run ./modul/nbtreatyin/backend/alat/pemuatlama -keluaran D:\laporan-pemuat            # uji-kering
+go run ./modul/nbtreatyin/backend/alat/pemuatlama -keluaran D:\laporan-pemuat -jalankan  # tulis
+```
+
+| Flag | Arti |
+| --- | --- |
+| `-keluaran <folder>` | wajib; folder berkas laporan, dibuat bila belum ada |
+| `-jalankan` | tulis ke tabel baru, satu transaksi per dokumen, aman diulang (kasus ber-IDPEGA sama dilewati). Tanpa flag ini: uji-kering - hanya `JSON_POLIS` yang dibaca, nol pernyataan ke tabel baru. Ditolak bila `IS_PEGA_PROD=true` |
+
+Berkas per jalankan (`<stempel>` = `YYYYMMDD-HHMMSS`):
+
+| Berkas | Kolom | Aturan |
+| --- | --- | --- |
+| `nbtreatyin-medan-tak-dikenal-<stempel>.csv` | `POLIS_ID`, `JALUR`, `NILAI` | medan dokumen tanpa kolom katalog dan tanpa keputusan tertulis - disimpan di sini, bukan tabel (K17). **Wajib 0 baris data** sebelum pekerjaan dinyatakan selesai (spec-penyimpanan AC 57, 59) |
+| `nbtreatyin-galat-<stempel>.csv` | `IDPEGA`, `NOPOLIS`, `JALUR`, `NILAI`, `SEBAB` | dokumen yang tidak dimuat beserta sebabnya (AC 58); tanggal ambigu tidak ditebak (K15) |
+
+Ringkasan dicetak ke layar (cacah per jenis galat, per alasan medan diabaikan, per pola medan tak dikenal,
+nomor kasus `NB-` terbesar yang dimuat - `SEQ_WORK_POLIS` wajib dimajukan melewatinya). Kode keluar 0
+hanya bila nol dokumen gagal dan nol medan tak dikenal. Penulisan lewat antarmuka yang sama dengan
+aplikasi (`SisipKasus`, `SimpanHalaman`, `SetelNomorPolis`, `TutupKasus`, ditambah kolom datar
+json_polis); `JSON_POLIS` hanya dibaca. Generasi endorsemen (`PRODKE > 0`) milik pemuat EDM
+(`modul/edmtreatyin`, tiket 10) dan hanya dihitung.
 
 ## Menjalankan uji modul ini saja
 

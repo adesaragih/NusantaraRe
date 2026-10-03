@@ -447,6 +447,13 @@ tanpa `JSON_DATAGUIDE`.
 ⇒ Pemuat menyimpan medan yang tidak dikenal alih-alih membuangnya, dan penampung itu **wajib kosong
 sebelum rancangan dinyatakan selesai**.
 
+> ⛔ **RALAT putaran 2 — 03-10-2026** `[keputusan work owner]` **K17** (PROMPT-NB-TREATY-IN-PUTARAN-2.md
+> bab 2). Bunyi lama: *"⭐ **Tabel penampung medan tak dikenal.**"* — dibangun putaran 1 sebagai
+> `T_POLIS_MEDAN_LAIN` (migrasi 329). Bunyi baru: tabel itu **tidak ada di diagram grilling** dan
+> dihapus. Penampungnya **berkas laporan CSV per jalankan pemuat** — `POLIS_ID`, `JALUR`, `NILAI` — di
+> folder keluaran yang ditentukan operator (`MODUL.md` *Pemuat dokumen lama*, tiket 22). Medan tetap
+> tersimpan beserta nilainya, jumlahnya dicetak, dan **wajib 0** sebelum pekerjaan dinyatakan selesai.
+
 **ID-27b** ⛔ **DICABUT 23-09-2026.** `[keputusan work owner]` Tabel sebaran tambahan **tidak ada** — keempat medannya turunan. Bunyi lamanya dikutip di blok kepala berkas ini.
 
 ⚠️ Sensus korpus **melewatkannya** — tidak satu pun aturan merujuk anggotanya. Ini persis jebakan
@@ -659,6 +666,12 @@ dapat diuji dari luar.
     Test yang menemukan kegagalan senyap **gagal**. *(ID-3)*
 59. `[terbuka]` Penampung medan tak dikenal **wajib kosong** sebelum rancangan dinyatakan selesai.
     *(ID-27)*
+    ⛔ **RALAT AC 57 dan 59 — putaran 2, 03-10-2026** (K17). Bunyi lama AC 57: *"Medan dokumen yang tidak
+    dikenal tersimpan di penampung"*; AC 59: *"Penampung medan tak dikenal wajib kosong"*. Bunyi baru:
+    "penampung" = **berkas CSV** `POLIS_ID,JALUR,NILAI` per jalankan pemuat, bukan tabel. AC 57: test
+    yang menemukan medan tak dikenal tidak tertulis di berkas itu beserta nilainya **gagal**. AC 59:
+    berkas itu wajib **nol baris data** sebelum pekerjaan dinyatakan selesai; pemuat mencetak jumlahnya
+    dan keluar dengan kode bukan nol selama jumlahnya > 0.
 
 ### Keamanan
 
@@ -699,6 +712,17 @@ dapat diuji dari luar.
 | 38 | *"`DEDUCTION1` `DEDUCTION2` `TOTAL_SHARE_PERCENTAGE_PREMIUM` `TOTAL_SHARE_PERCENTAGE_CLAIM` disimpan sebagai persen"* | `TOTAL_*` turunan baris spreading; penjaga repo melarang nama `TOTAL_` di migrasi | DEDUCTION1/2 persen; `TOTAL_*` dihitung saat dibaca (`HitungTotalSpreading`) |
 | 39 | *"`HISTORYAKSEPTASIPRODUCTION` tidak dibuat ulang"* | `SaveViewSuggest` hanya menulis bila `BusinessFac == "F"`; treaty "T" | ⚠️ `T_POLIS_SUGGEST` (baris dokumen SuggestList, bukan tabel riwayat) — keputusan agen, mohon konfirmasi WO |
 | 21-22, 52-59 | format dan pemuat dokumen lama | pemuat (tiket 22) belum dibangun | `T_POLIS_MEDAN_LAIN` (329) sudah ada tanpa penulis |
+
+⛔ **RALAT putaran 2 — 03-10-2026 — baris *21-22, 52-59* di atas.** Bunyi lama: *"pemuat (tiket 22) belum
+dibangun"* / *"`T_POLIS_MEDAN_LAIN` (329) sudah ada tanpa penulis"*. Bunyi baru: pemuat dibangun
+(`backend/alat/pemuatlama`, `services/pemuat.go`, `models/dokumenlama.go`, `models/laporanlama.go`,
+`repository/lama.go`); penampung = berkas CSV (K17, RALAT ID-27 dan AC 57/59). AC 21, 22, 52, 53, 54, 56,
+57, 58 diuji; AC 55 dan 59 🟡 (uji kolom bertag `db` belum dijalankan; jumlah atas data nyata belum
+diketahui). `[penyimpangan sadar]` atas **ID-4**: pemecah dokumen lama tinggal di `models` sebagai fungsi
+murni (seam 3 `spec.md` §6.2) supaya uji-kering pemuat tidak menyentuh tabel baru; penulisannya tetap
+lewat antarmuka `repository` yang sama (ID-3). Cap waktu ` GMT` dibaca sebagai jam dinding
+Asia/Jakarta (rule `GeneratePolicyNoTreaty_Act` langkah 5.3 membaca hari dalam Asia/Jakarta); tanggal
+ambigu tidak ditebak (K15).
 
 
 ## 7 · Testing Decisions

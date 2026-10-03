@@ -718,6 +718,17 @@ dari luar. ⛔ Butir yang terasa seperti keputusan baru adalah salah tulis.
 
 45. `[terverifikasi]` Layar admin mewajibkan medan wajibnya; **27** medan berbeda tersebar di
     **6** layar. Test yang menemukan medan wajib dapat dilewati **gagal**. *(Bab 5.11)*
+    > ⛔ **Catatan 2026-10-03 — `DateofSurvey`, K7.** Salah satu dari ke-27 medan adalah `.DateofSurvey`,
+    > satu-satunya medan wajib `Section/InputHistoricalSurveyReportDtl` (popup laporan survei historis:
+    > `Harness/HistoricalSurveyReport` ← tombol *Survey Report* `Section/DetailPolicyTreatyIn`). Keputusan
+    > work owner **K7** (03-10-2026): laporan survei historis **tidak dibangun** —
+    > `Activity/SetSurveyReport_Act` hanya `Property-Set`, nol penulisan; data survei
+    > (`PolicyTreatyIn.QuotationData.SurveyReportList`) di Pega hanya hidup di halaman kerja (JSON), dan
+    > ⛔ **tidak ada tabel di diagram grilling** untuknya (bab 0 butir 11 PROMPT putaran 2). Maka medan ini
+    > **tidak** ditegakkan; AC 45 berlaku bagi 26 medan lainnya (`ProductionDate` lewat tempat berperan,
+    > tiket 05) dan statusnya tetap 🟡. ⛔ **Butir terbuka untuk grilling
+    > berikutnya:** tempat simpan daftar survei (dan apakah layarnya dibangun). Spec ini tidak menyebut
+    > survei di tempat lain, jadi tidak ada bunyi yang perlu di-RALAT.
 46. `[terverifikasi]` Layar Dept Head **tidak** mewajibkan `ClaimPaymentType` `ClaimType`
     `IDCurrency` `Quartal` `TypeTax` `YearOfQuartal`. Test yang menemukan salah satunya diwajibkan
     di sana **gagal**. *(Bab 5.11)*
@@ -1057,17 +1068,17 @@ lain dan **tidak boleh dipinjam** *(P8)*.
 | 3 | penetapan, pembuatan, dan pencabutan peran **belum dibahas sama sekali** | `[IAM]` |
 | 4 | `SumTSIPremiSpreadRNMMultiCob_Act` — di bagian mana ia tinggal | `[pemilik export Pega]` |
 | 5 | muatan yang dikirim ke layanan luar di akhir alur | `[Product+Underwriting]` |
-| 6 | **tipe Oracle** kolom uang — sisi Pega menyimpannya sebagai **teks** | `[DBA]` |
-| 7 | **format penyajian** uang — desimal dan pemisah ribuan | `[work owner]` |
+| 6 | **tipe Oracle** kolom uang — sisi Pega menyimpannya sebagai **teks** ⭐ **DIJAWAB 2026-10-03** dari katalog Oracle — lihat blok *Jawaban* di bawah | ~~`[DBA]`~~ katalog `ALL_TAB_COLUMNS` |
+| 7 | **format penyajian** uang — desimal dan pemisah ribuan ⭐ **diputus K14** — lihat blok *Jawaban* | `[work owner]` |
 | 8 | `RNM_SHARE` persentase **dari apa** | `[Product+Underwriting]` |
 | 9 | ketidakseragaman presisi **4 lawan 8 desimal** untuk rumus yang sama | `[Finance]` |
 | 10 | arti kode lini bisnis, termasuk `"40"` yang berskala penomoran berbeda | `[DBA]` |
 | 11 | arti dua kode penanda "punya penempatan keluar" | `[Product+Underwriting]` |
-| 12 | peran `SystemSetOneYear_DT` — kapan aturan satu-tahun berjalan | `[Product+Underwriting]` |
+| 12 | peran `SystemSetOneYear_DT` — kapan aturan satu-tahun berjalan ⭐ **DIJAWAB 2026-10-03 dari XML** — lihat blok *Jawaban* | ~~`[Product+Underwriting]`~~ XML |
 | 13 | **5 tempat** yang menghapus pesan galat **sesudah** validasi memasangnya | `[pengembang Pega lama]` |
 | 14 | apakah ada **mata uang mati lain** yang tidak disembunyikan | `[Product+Underwriting]` |
-| 15 | data lama bertanggal **ambigu secara mutlak** — `05/06` dapat berarti dua hal | `[work owner]` · `[DBA]` |
-| 16 | berapa baris yang `OPERATORID`-nya **sudah terisi** sekarang | `[DBA]` |
+| 15 | data lama bertanggal **ambigu secara mutlak** — `05/06` dapat berarti dua hal ⭐ **diputus K15** — lihat blok *Jawaban* | `[work owner]` · `[DBA]` |
+| 16 | berapa baris yang `OPERATORID`-nya **sudah terisi** sekarang ⭐ **DIJAWAB 2026-10-03** dari katalog Oracle — lihat blok *Jawaban* | ~~`[DBA]`~~ katalog `ALL_TAB_COLUMNS` |
 | 17 | empat wadah layar berisi **104 medan** — masih dipakai atau ditinggalkan | `[Product+Underwriting]` |
 | 18 | apakah ada kasus mencapai **Acceptance by Dir.** dalam 12 bulan terakhir | `[Product+Underwriting]` |
 | 19 | `InsertToTreatyOutXOLList` **bernama** menulis tetapi tidak ada perintah tulis | `[pengembang Pega lama]` |
@@ -1080,6 +1091,47 @@ lain dan **tidak boleh dipinjam** *(P8)*.
 > `DATA_JSON`. ⛔ **Keempatnya tidak menahan penulisan spec.** ⚠️ Butir **23** menahan **keputusan
 > migrasi data lama** dan **ambang uji paritas** di tiket **15** — bukan penulisan lapisan
 > penyimpanan.
+
+> ⭐⭐ **JAWABAN 2026-10-03 — lima butir §9.2** *(putaran 2; bunyi lama tiap butir dikutip apa adanya,
+> baris tabelnya dibiarkan dengan penanda)*
+>
+> **Butir 6** — bunyi lama: *"**tipe Oracle** kolom uang — sisi Pega menyimpannya sebagai **teks** |
+> `[DBA]`"*. ⭐ **Dijawab dari katalog Oracle** (`ALL_TAB_COLUMNS`, dicek 03-10-2026; PROMPT putaran 2
+> bab 1 — tidak perlu ditanyakan ke DBA lagi). View kontrak `POOLDATA.TREATYINDETAILJOINEDM`: kolom
+> nilai `LIMITVALUE` `RETENTIONVALUE` `EPIVALUE` `NETPREMIVALUE` `SHAREVALUE` `MDPVALUE` `DEDUCTION1`
+> `DEDUCTION2` `RIOGR` `RIONR` `RNM_SHARE` `BROKERAGE` = **`NUMBER` tanpa presisi dan skala**;
+> `COMMENCEMENT`, `TERMINATION` = `DATE`; `INSTALLMENTNO` = `VARCHAR2(1000)` (teks di view, dikonversi
+> ke bilangan bulat di modul); kolom lain `VARCHAR2(1000)`, `ID` `VARCHAR2(100)`. `POOLDATA.AGENT`:
+> `STS_PKP` dan `STATUSACTIVE` ada, keduanya `VARCHAR2(1000)`. ⇒ "teks" hanya berlaku bagi dokumen
+> `DATA_JSON` Pega; sumber relasional yang dibaca modul sudah `NUMBER`. Kolom uang tabel baru tetap
+> `NUMBER(38,8)` (spec penyimpanan AC 20). ⛔ Tipe tabel `TREATYINDETAIL` belum tercakup
+> (`PERMINTAAN-TIM-INTI.md` C3).
+>
+> **Butir 7** — bunyi lama: *"**format penyajian** uang — desimal dan pemisah ribuan | `[work owner]`"*.
+> ⭐ **Diputus K14** (PROMPT putaran 2 bab 2): ikuti yang ditampilkan layar XML (`pyFormat`/kontrol
+> Section, `pyDecimalPlaces`); bila tidak terbaca, pola modul lain di repo. Rujukan saja — pelaksanaan
+> di paket layar.
+>
+> **Butir 12** — bunyi lama: *"peran `SystemSetOneYear_DT` — kapan aturan satu-tahun berjalan |
+> `[Product+Underwriting]`"*. ⭐ **Dijawab dari XML:** `DataTransform/SystemSetOneYear_DT` adalah
+> `pyPreDataTransform` aksi refresh `change` sel `.StartDate` di `Section/DetailPolicyTreatyIn`
+> (layar admin, medan dapat disunting); di `Section/DetailDeptHeadTreatyIn_UW` sel yang sama
+> `pyReadOnly` `1==1` sehingga tak pernah berubah. Jadi: pengisian tanggal-akhir-kosong
+> (`InputPolicyTreatyIn_preDT`, P35/AC 34) berjalan **saat layar admin dibuka**; aturan satu-tahun
+> berjalan **setiap kali admin mengubah tanggal mulai**, dan **menimpa** `.EndDate` tanpa syarat
+> (`.EndDate = @DateTime.addCalendar(.StartDate,1,0,0,0,0,0,0)`). Keduanya tidak bertentangan; AC 34
+> tetap berlaku untuk tanggal akhir kosong. Dibangun 2026-10-03 (`models.SystemSetOneYear`).
+>
+> **Butir 15** — bunyi lama: *"data lama bertanggal **ambigu secara mutlak** — `05/06` dapat berarti
+> dua hal | `[work owner]` · `[DBA]`"*. ⭐ **Diputus K15**: tanggal ambigu **tidak ditebak** — barisnya
+> ditolak ke laporan galat pemuat dokumen lama (tiket 22; berkas laporan, bukan tabel — bab 0 butir 11,
+> K17) dan jumlahnya dilaporkan. Rujukan saja.
+>
+> **Butir 16** — bunyi lama: *"berapa baris yang `OPERATORID`-nya **sudah terisi** sekarang |
+> `[DBA]`"*. ⭐ **Dijawab dari katalog Oracle** (03-10-2026): tabel yang punya kolom `OPERATORID` adalah
+> `HISTORYAKSEPTASIPEGA` (dan tabel ringkasan Life). Di `HISTORYAKSEPTASIPEGA`: **10.548 dari 323.254**
+> baris terisi — **seluruh lini, belum disaring treaty**. Penyimpangan sadar *"`OPERATORID` mulai
+> diisi"* (§10.1 butir 4) tetap berlaku.
 
 ---
 

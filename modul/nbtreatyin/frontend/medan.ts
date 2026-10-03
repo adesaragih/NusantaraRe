@@ -57,7 +57,8 @@ const mu = P + 'Currency'
 export const MEDAN_ADMIN_UMUM: Medan[] = [
   { jalur: P + 'NoOffer', label: 'Master ID', jenis: 'tampil' },
   { jalur: 'TreatyIn.Commencement', label: 'Commencement', jenis: 'tampil' },
-  { jalur: P + 'StartDate', label: 'Statement Period', jenis: 'tanggal' },
+  // refresh `change` ber-pyPreDataTransform `SystemSetOneYear_DT` (EndDate = StartDate + 1 tahun)
+  { jalur: P + 'StartDate', label: 'Statement Period', jenis: 'tanggal', aksi: { aksi: 'SystemSetOneYear' } },
   { jalur: P + 'EndDate', label: 'To', jenis: 'tanggal', aksi: { aksi: 'ProtectDate' } },
   { jalur: P + 'SOBName', label: 'Source Of Business', jenis: 'tampil' },
   { jalur: P + 'TreatyGroupName', label: 'Treaty Group', jenis: 'tampil', tampil: bukanNonPropBaru },

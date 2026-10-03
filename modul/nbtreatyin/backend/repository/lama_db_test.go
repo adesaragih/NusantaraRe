@@ -1,0 +1,136 @@
+//go:build db
+
+package repository_test
+
+// Uji seam repository pemuat dokumen lama (tiket 22) terhadap Oracle
+// SUNGGUHAN (skema uji, `make test-db`; K11 kosong = belum pernah
+// dijalankan). Dokumen fiktif UJI- dipecah `models.PecahDokumenLama`, lalu
+// ditulis lewat antarmuka penyimpanan yang SAMA dengan jalur biasa (ID-3,
+// AC 56), dan nilainya dibaca LANGSUNG dari kolom (spec-penyimpanan §7:
+// pulang-pergi saja tidak cukup).
+
+import (
+	"context"
+	"fmt"
+	"testing"
+
+	intidb "nusantarare/inti/backend/db"
+	"nusantarare/modul/nbtreatyin/backend/models"
+	"nusantarare/modul/nbtreatyin/backend/repository"
+)
+
+const dokumenUjiLamaProp = `{
+ "pxObjClass": "ASM-FW-GISFW-Data-PolicyTreatyIn",
+ "PolicyNo": "UJI-QP.T1.10.2017.90001",
+ "PremiOgp": "592629512.880000276",
+ "StartDate": "20171001",
+ "EndDate": "",
+ "StatementDate": "20170930T170000.000 GMT",
+ "CedingCoName": "UJI-CEDING A; UJI-CEDING B; ",
+ "QuotationData": {"ProportionalType": "Proportional", "GroupPanel": "006", "BusinessOldId": "01",
+  "CedingCoList": [{"CedingCo": "UJI-C1", "CedingCoName": "UJI-CEDING A"}, {"CedingCo": "UJI-C2", "CedingCoName": "UJI-CEDING B"}]},
+ "ListInstallment": [{"InstallmentNo": "1", "DueDate": "20171101", "Premium": "148157378.220000069"}]
+}`
+
+const dokumenUjiLamaNonProp = `{
+ "pxObjClass": "ASM-FW-GISFW-Data-PolicyTreatyIn",
+ "PolicyNo": "UJI-QR.T1.01.2018.90002",
+ "StartDate": "20180101",
+ "EndDate": "20181231",
+ "QuotationData": {"ProportionalType": "NonProportional"},
+ "ListInstallment": [{"InstallmentNo": "1", "Premium": "3000.5",
+   "InstallmentList": [{"InstallmentNo": "1", "DueDate": "20180131", "Premium": "1500.25"}]}],
+ "TreatyXOLList": [{"GrossPremi": "3000.5", "Deduction": "200.5",
+   "ValueList": [{"Layer": "1", "LayerType": "UJI-LT", "Deduction": "100.25"}, {"Layer": "2", "LayerType": "UJI-LT", "Deduction": "100.25"}]}]
+}`
+
+// muatLama = urutan tulis `services.Pemuat` untuk satu dokumen, satu transaksi.
+func muatLama(t *testing.T, ctx context.Context, d *intidb.DB, g *repository.Gudang, b models.BarisJSONPolis) models.HasilPecah {
+	t.Helper()
+	h, err := models.PecahDokumenLama(b)
+	if err != nil || len(h.Galat) > 0 {
+		t.Fatalf("pecah: %v %+v", err, h.Galat)
+	}
+	if err := dalamTx(t, ctx, d, func(tx *intidb.Tx) error {
+		if err := g.SisipKasus(ctx, tx, h.ID, "", ""); err != nil {
+			return err
+		}
+		if err := g.SimpanHalaman(ctx, tx, h.ID, h.Halaman); err != nil {
+			return err
+		}
+		if err := g.SetelNomorPolis(ctx, tx, h.ID, h.NoPolis); err != nil {
+			return err
+		}
+		if err := g.SetelKolomDatarLama(ctx, tx, h.ID, h.Datar); err != nil {
+			return err
+		}
+		return g.TutupKasus(ctx, tx, h.ID, models.AssignmentAdmin, models.StatusSelesai)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	return h
+}
+
+func TestPemuatLamaMenulisLewatAntarmukaSama(t *testing.T) { // AC 21, 22, 55, 56, 68, 69
+	sqlDB, skema, ctx, d := pasang(t)
+	g := repository.Baru(d)
+	b := models.BarisJSONPolis{IDPega: "ASM-FW-GISFW-WORK-NB NB-990001", NoPolis: "UJI-QP.T1.10.2017.90001",
+		ProdKe: "0", TglInput: "2017-10-02 08:00:00", Username: "UJI-AKUN", DataJSON: []byte(dokumenUjiLamaProp)}
+	h := muatLama(t, ctx, d, g, b)
+
+	var premi, mulai, akhir, statement, idpega, user, nopol, prodke string
+	q := fmt.Sprintf(`SELECT %s, TO_CHAR(START_DATE, 'YYYY-MM-DD'), TO_CHAR(END_DATE, 'YYYY-MM-DD'),
+	        TO_CHAR(STATEMENT_DATE, 'YYYY-MM-DD HH24:MI:SS'), IDPEGA, USERNAME, NOPOLIS, TO_CHAR(PRODKE)
+	   FROM %s.T_GENERAL_POLIS WHERE ID = :1`, fmt.Sprintf(intidb.FmtDesimal, "PREMI_OGP"), skema)
+	if err := sqlDB.QueryRowContext(ctx, q, h.ID).Scan(&premi, &mulai, &akhir, &statement, &idpega, &user, &nopol, &prodke); err != nil {
+		t.Fatal(err)
+	}
+	for nama, pasangan := range map[string][2]string{
+		"PREMI_OGP (AC 19, 55: 8 desimal, bukan 2)": {premi, "592629512.88000028"},
+		"START_DATE (AC 21)":                        {mulai, "2017-10-01"},
+		"END_DATE (AC 69)":                          {akhir, "2017-10-01"},
+		"STATEMENT_DATE (AC 22)":                    {statement, "2017-10-01 00:00:00"},
+		"IDPEGA (ID-21)":                            {idpega, b.IDPega},
+		"USERNAME (ID-21)":                          {user, "UJI-AKUN"},
+		"NOPOLIS":                                   {nopol, "UJI-QP.T1.10.2017.90001"},
+		"PRODKE":                                    {prodke, "0"},
+	} {
+		if pasangan[0] != pasangan[1] {
+			t.Errorf("%s = %q, harap %q", nama, pasangan[0], pasangan[1])
+		}
+	}
+	k, err := g.Keadaan(ctx, nil, h.ID)
+	if err != nil || k.StatusWork != models.StatusSelesai || k.Position != "" {
+		t.Errorf("kasus lama harus tertutup Resolved-Completed: %+v %v", k, err)
+	}
+	baca, err := g.BacaHalaman(ctx, nil, h.ID) // AC 68: berkas lama dapat dibuka
+	if err != nil {
+		t.Fatal(err)
+	}
+	if baca.Ambil("PolicyTreatyIn.CedingCoName") != "UJI-CEDING A; UJI-CEDING B; " ||
+		len(baca.AmbilDaftar(models.HalamanPolis+".QuotationData.CedingCoList")) != 2 ||
+		baca.Ambil("Quotation.GroupPanel") != "006" {
+		t.Errorf("halaman terbaca %+v", baca)
+	}
+	if got, err := g.IDPegaKasus(ctx, nil, h.ID); err != nil || got != b.IDPega {
+		t.Errorf("IDPegaKasus %q %v", got, err)
+	}
+}
+
+func TestPemuatLamaNonProporsionalBersarang(t *testing.T) { // AC 50, 53
+	_, _, ctx, d := pasang(t)
+	g := repository.Baru(d)
+	b := models.BarisJSONPolis{IDPega: "ASM-FW-GISFW-WORK-NB NB-990002", NoPolis: "UJI-QR.T1.01.2018.90002",
+		ProdKe: "0", DataJSON: []byte(dokumenUjiLamaNonProp)}
+	h := muatLama(t, ctx, d, g, b)
+	baca, err := g.BacaHalaman(ctx, nil, h.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := baca.AmbilDaftar(models.JalurAnak(models.DaftarAngsuran, 1, "InstallmentList")); len(r) != 1 || r[0]["DueDate"] != "2018-01-31" {
+		t.Errorf("rincian angsuran %+v", r)
+	}
+	if l := baca.AmbilDaftar(models.JalurAnak(models.HalamanPolis+".TreatyXOLList", 1, "ValueList")); len(l) != 2 || l[1]["Layer"] != "2" {
+		t.Errorf("layer %+v", l)
+	}
+}

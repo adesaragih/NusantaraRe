@@ -34,7 +34,7 @@ sehingga tidak ada yang terlupakan saat go-live.
 
 ## Acceptance criteria
 
-- [ ] ⛔ **AC 68** — data lama **terbaca** di sistem baru; berkas lama dapat dibuka
+- [ ] 🟡 **AC 68** — data lama **terbaca** di sistem baru; berkas lama dapat dibuka *(putaran 2: pemuat tiket 22 dibangun — dokumen lama ditulis lewat `SimpanHalaman` dan dibaca `BacaHalaman`, `TestPemuatLamaMenulisLewatAntarmukaSama` bertag `db`, **belum dijalankan**, K11)*
 - [ ] ⛔ **AC 70** — setiap penyimpangan dari perilaku lama **tercatat beserta alasannya**
 - [ ] ⛔ **AC 93** — setiap acceptance criterion merujuk **bab asalnya**
 - [ ] ⛔ **AC 94** — setiap acceptance criterion membawa **penanda**

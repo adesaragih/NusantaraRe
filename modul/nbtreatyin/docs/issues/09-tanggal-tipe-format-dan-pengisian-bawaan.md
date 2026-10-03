@@ -38,7 +38,7 @@ sistem, dan formatnya diurus di lapisan layar — ⭐ urutan dan perbandingan ta
 - [x] **AC 33** — **satu format** dipakai di seluruh sistem; ⛔ tidak ada dua format berdampingan
 - [x] **AC 34** — tanggal akhir kosong diisi **tanggal hari ini**, ⛔ bukan ditambah satu tahun
 - [x] **AC 35** — tanggal mulai dan tanggal laporan kosong diisi tanggal hari ini
-- [ ] ⛔ **AC 69** — migrasi menghasilkan kontrak ber-tanggal-akhir **sama dengan tanggal mulai**
+- [x] **AC 69** — migrasi menghasilkan kontrak ber-tanggal-akhir **sama dengan tanggal mulai** *(putaran 2, pemuat tiket 22: `models.PecahDokumenLama` mengisi EndDate kosong = StartDate — `TestPecahDokumenProporsionalDatar`; kolom `END_DATE` diperiksa `TestPemuatLamaMenulisLewatAntarmukaSama` bertag `db`, belum dijalankan)*
       untuk berkas yang tanggal akhirnya kosong
 
 ## Butir `[terbuka]` yang menyentuh tiket ini
@@ -47,6 +47,21 @@ sistem, dan formatnya diurus di lapisan layar — ⭐ urutan dan perbandingan ta
 | --- | --- | --- |
 | ⚠️ **15** | data lama bertanggal **ambigu mutlak** — satu nilai, dua arti | ⚠️ menahan **migrasi**, bukan perilaku baru |
 | **12** | kapan aturan satu-tahun berjalan, dan apakah ia menimpa pengisian hari-ini | tidak menahan |
+
+> ⛔ **RALAT 2026-10-03 (audit ulang P6) — aturan satu-tahun `SystemSetOneYear_DT`.**
+> Bunyi lama (status putaran 1, `docs/alat/status.json`): *"tidak dibangun — [keputusan work owner]
+> P35/AC 34: EndDate kosong diisi HARI INI, bukan +1 tahun"*; butir 12 di atas: *"kapan aturan
+> satu-tahun berjalan, dan apakah ia menimpa pengisian hari-ini"*.
+> ⭐ Bunyi baru, bukti XML: `DataTransform/SystemSetOneYear_DT` adalah `pyPreDataTransform` aksi
+> refresh `change` sel `.StartDate` di `Section/DetailPolicyTreatyIn` (layar admin, dapat disunting);
+> di `Section/DetailDeptHeadTreatyIn_UW` sel yang sama `pyReadOnly 1==1`. Langkah 1: `.EndDate =
+> @DateTime.addCalendar(.StartDate,1,0,0,0,0,0,0)`. Jadi pengisian tanggal-akhir-kosong (P35/AC 34,
+> `InputPolicyTreatyIn_preDT`) berjalan saat layar dibuka, sedangkan aturan satu-tahun berjalan setiap
+> kali admin mengubah tanggal mulai dan **menimpa** `.EndDate`. P35 tidak melarangnya — jawabannya
+> menulis peran rule ini `[terbuka]` — sehingga alasan "tidak dibangun" itu tidak sah (bab 4 PROMPT
+> putaran 2). **Dibangun:** `models.SystemSetOneYear` (29 Februari → 28 Februari, semantik
+> `Calendar.add`), aksi hitung `SystemSetOneYear`, `.StartDate` admin memicunya (`frontend/medan.ts`).
+> AC 34 tetap ✅ (tanggal akhir **kosong** tetap diisi hari ini). Butir 12 terjawab (spec §9.2).
 
 ## Perintah verifikasi
 

@@ -145,6 +145,7 @@ var aksiHitung = map[string]aksiFn{
 	"CountSpreading":           aksiIndeks(models.CountSpreading),
 	"SetDueTo":                 aksiHalaman(models.SetDueTo),
 	"ProtectDate":              aksiHalaman(tanpaGalat(models.ProtectDate)),
+	"SystemSetOneYear":         aksiHalaman(tanpaGalat(models.SystemSetOneYear)),
 	"RemoveTypeTax":            aksiHalaman(tanpaGalat(models.RemoveTypeTax)),
 	"TreatyEnableDisableInput": aksiHalaman(tanpaGalat(models.TreatyEnableDisableInput)),
 	"FillPaymentInstallment": func(l *Layanan, _ context.Context, h *models.Halaman, _ PermintaanHitung) error {
