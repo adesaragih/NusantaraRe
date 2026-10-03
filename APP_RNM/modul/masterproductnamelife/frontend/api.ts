@@ -397,9 +397,10 @@ export async function unduhSemuaLampiran(produkID: string): Promise<void> {
   return unduhBerkasBeridentitas(`${lampiran(produkID)}/unduh-semua`, `lampiran-${produkID}.zip`)
 }
 
-/** `View Office Online` b69291 - stub: server menjawab 503 berkalimat (OQ-MPNL-11). */
-export async function lihatOffice(produkID: string, id: string): Promise<void> {
-  await minta<unknown>(`${lampiran(produkID)}/${e(id)}/office`)
+/** `View Office Online` b69291 - URL bertanda tangan berkas (`DownloadAttProdName_Act` 6 b953); dibungkus penampil
+ * kantor oleh pemanggil (`tautanPenampilOffice`, b1103). */
+export async function lihatOffice(produkID: string, id: string): Promise<string> {
+  return (await minta<{ url: string }>(`${lampiran(produkID)}/${e(id)}/office`)).url
 }
 
 /** `Delete` b69714 (`DeleteAttacProdName_act`). */

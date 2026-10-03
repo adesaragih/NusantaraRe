@@ -7,7 +7,7 @@ package handlers
 //	POST   /api/master-product-name-life/produk/{id}/lampiran/{lid}/ulangi    kirim ulang (tiket 09)
 //	GET    /api/master-product-name-life/produk/{id}/lampiran/{lid}/unduh     tautan nama berkas b68903
 //	GET    /api/master-product-name-life/produk/{id}/lampiran/unduh-semua     `Download All` b67657 (zip)
-//	GET    /api/master-product-name-life/produk/{id}/lampiran/{lid}/office    `View Office Online` b69291 - 503 stub
+//	GET    /api/master-product-name-life/produk/{id}/lampiran/{lid}/office    `View Office Online` b69291 - {url} bertanda tangan
 //	DELETE /api/master-product-name-life/produk/{id}/lampiran/{lid}           `Delete` b69714
 
 import (
@@ -79,7 +79,8 @@ func daftarkanLampiran(pasang func(string, rute)) {
 		_, _ = w.Write(buf.Bytes())
 	})
 	pasang("GET "+dasar+"/{lid}/office", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
-		jawabGalat(w, l.LihatOffice(r.Context(), p, r.PathValue("id"), r.PathValue("lid")))
+		u, err := l.LihatOffice(r.Context(), p, r.PathValue("id"), r.PathValue("lid"))
+		tulis(w, map[string]string{"url": u}, err)
 	})
 	pasang("DELETE "+dasar+"/{lid}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		err := l.HapusLampiran(r.Context(), p, r.PathValue("id"), r.PathValue("lid"))

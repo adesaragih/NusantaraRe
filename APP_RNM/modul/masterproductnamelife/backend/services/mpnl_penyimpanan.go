@@ -1,7 +1,7 @@
 package services
 
-// Penyimpanan berkas STUB (P5) - BAWAAN selama `PELAKSANA_STORAGE` bukan `nyata`; penyimpanan nyata
-// (`ServiceGoogle` + `LinkService` + token) ada di `mpnl_storage.go` (keputusan work owner 03-10-2026). Berkas
+// Penyimpanan berkas STUB (P5) - untuk uji dan objek yang dicatatnya sebelum 03-10-2026; aplikasi memakai penyimpanan
+// nyata (`ServiceGoogle` + `LinkService` + token, `mpnl_storage.go`, keputusan work owner 03-10-2026). Berkas
 // ditahan di folder lokal `UNGGAHAN_DIR/master-product-name-life/antre/<IMAGEID>`; "kirim" memindahnya ke
 // `…/simpan/<IMAGEID>` (meniru objek di penyimpanan) dan objeknya dicatat apa adanya (URLPUBLIC kosong). ⛔ Nol
 // klien HTTP di berkas ini.
@@ -92,12 +92,17 @@ func (p penyimpananLokal) Buka(_ context.Context, o models.ObjekPenyimpanan) (io
 	return f, nil, nil
 }
 
+// Tautan - berkas stub tidak punya URL bertanda tangan untuk penampil kantor.
+func (penyimpananLokal) Tautan(context.Context, models.ObjekPenyimpanan) (string, *models.ObjekPenyimpanan, error) {
+	return "", nil, ErrOfficeStub
+}
+
 func (p penyimpananLokal) Hapus(_ context.Context, imageID string, o *models.ObjekPenyimpanan) error {
 	if o != nil && strings.TrimSpace(o.URLPublic) != "" {
 		// Objek di penyimpanan nyata (unggahan Pega, atau mode nyata sebelumnya): stub tidak dapat menghapusnya, dan
 		// menghapus rekamnya saja meninggalkan objek yatim.
 		return galatStorage{jenis: ErrStorageBelumSiap, layar: ErrStorageBelumSiap.Error() + ": the attachment file is in " +
-			"storage; deleting it needs the storage service (PELAKSANA_STORAGE=nyata)"}
+			"storage; deleting it needs the storage service"}
 	}
 	for _, bagian := range []string{"simpan", "antre"} {
 		j, err := p.jalur(bagian, imageID)
@@ -123,6 +128,9 @@ func (penyimpananBelumDisetel) Kirim(context.Context, models.ObjekPenyimpanan, s
 }
 func (penyimpananBelumDisetel) Buka(context.Context, models.ObjekPenyimpanan) (io.ReadCloser, *models.ObjekPenyimpanan, error) {
 	return nil, nil, ErrPenyimpananBelumDisetel
+}
+func (penyimpananBelumDisetel) Tautan(context.Context, models.ObjekPenyimpanan) (string, *models.ObjekPenyimpanan, error) {
+	return "", nil, ErrPenyimpananBelumDisetel
 }
 func (penyimpananBelumDisetel) Hapus(context.Context, string, *models.ObjekPenyimpanan) error {
 	return ErrPenyimpananBelumDisetel

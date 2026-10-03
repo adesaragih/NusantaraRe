@@ -157,8 +157,8 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusConflict, services.Pesan(err))
 	case errors.Is(err, services.ErrOfficeStub), errors.Is(err, services.ErrPenyimpananBelumDisetel),
 		errors.Is(err, services.ErrStorageBelumSiap):
-		// 503: penampil kantor luar tidak dipanggil (OQ-MPNL-11) / folder stub belum disetel / alamat, App, atau
-		// token penyimpanan nyata tidak tersedia.
+		// 503: berkas stub lokal tanpa URL untuk penampil kantor / folder antrean belum disetel / alamat, App, atau
+		// token penyimpanan tidak tersedia.
 		galat.Tulis(w, http.StatusServiceUnavailable, services.Pesan(err))
 	case errors.Is(err, services.ErrStorageGagal):
 		// 502: layanan penyimpanan nyata gagal - rinciannya di log layanan, tanpa alamat dan token.

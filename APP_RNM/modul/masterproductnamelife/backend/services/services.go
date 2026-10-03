@@ -25,33 +25,22 @@ import (
 // Service adalah akar layanan Master Product Name Life.
 type Service struct {
 	*inti.Dasar
-	// storage - penyimpanan nyata terpasang (`PELAKSANA_STORAGE=nyata`); nil = stub lokal.
-	storage *storageNyata
+	// garamToken - `STORAGE_TOKEN_SALT`, bahan token penyimpanan BARU (token berlaku di `GCP_IMAGE` dipakai ulang tanpa
+	// garam). ⛔ Tidak pernah dicetak, dicatat, atau masuk pesan galat.
+	garamToken string
 }
 
-// storageNyata - bahan token penyimpanan. ⛔ Garam tidak pernah dicetak, dicatat, atau masuk pesan galat.
-type storageNyata struct {
-	garam string
-}
-
-// DenganPenyimpananNyata memasang penyimpanan nyata (`mpnl_storage.go`) bila `nyata` - dipanggil sekali dari
-// `modul.go` dengan `PELAKSANA_STORAGE == nyata` dan `STORAGE_TOKEN_SALT` (`inti/backend/config`, yang menolak
-// `nyata` tanpa garam saat memuat). Selain itu stub lokal.
-func (s *Service) DenganPenyimpananNyata(nyata bool, garam string) *Service {
+// DenganGaramToken memasang garam token penyimpanan - dipanggil sekali dari `modul.go` dengan `STORAGE_TOKEN_SALT`
+// (`inti/backend/config`); boleh kosong.
+func (s *Service) DenganGaramToken(garam string) *Service {
 	salin := *s
-	salin.storage = nil
-	if nyata {
-		salin.storage = &storageNyata{garam: garam}
-	}
+	salin.garamToken = garam
 	return &salin
 }
 
-// penyimpanan - penyimpanan berkas lampiran yang dipasang: alamat `M_LINK_SERVICE` dan token `GCP_IMAGE` dibaca
-// saat jalan (tanpa Oracle gagal terang).
+// penyimpanan - penyimpanan berkas lampiran: SELALU nyata seperti XML (keputusan work owner 03-10-2026 "selalu nyata,
+// ikut XML"); alamat `M_LINK_SERVICE` dan token `GCP_IMAGE` dibaca saat jalan (tanpa Oracle gagal terang).
 func (s *Service) penyimpanan() PenyimpananBerkas {
-	if s.storage == nil {
-		return PenyimpananLokal(s.UnggahanDir())
-	}
 	alamat := func(ctx context.Context, k layanan.KunciLayanan) (string, error) {
 		if !s.PunyaDatabase() {
 			return "", db.ErrTanpaOracle
@@ -65,7 +54,7 @@ func (s *Service) penyimpanan() PenyimpananBerkas {
 		var tok string
 		err := s.DalamTransaksi(ctx, func(tx *db.Tx) error {
 			var err error
-			tok, err = tokenStorage(ctx, tx, layanan.NewPenyimpanToken(s.DB()), s.storage.garam, app, time.Now())
+			tok, err = tokenStorage(ctx, tx, layanan.NewPenyimpanToken(s.DB()), s.garamToken, app, time.Now())
 			return err
 		})
 		return tok, err

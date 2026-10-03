@@ -119,3 +119,6 @@ make check
 `M_LINK_SERVICE` saat jalan (`inti/backend/layanan`, kunci `Google` / `upload`, `geturl`, `delete`), token `GCP_IMAGE` /
 `STORAGE_TOKEN_SALT`, outbox dan kirim ulang tetap. Penghapusan di penyimpanan nyata yang dijawab galat menahan hapus rekam
 (`DeleteAttacProdName_act` `StepStatusFail` b444); berkas stub yang sudah tidak ada tetap bukan galat.
+
+**Ralat 03-10-2026 sore:** saklar `PELAKSANA_STORAGE` tidak lagi dibaca modul ini — penyimpanan nyata SELALU dipakai
+(keputusan work owner "selalu nyata, ikut XML"); token berlaku `GCP_IMAGE` dipakai ulang tanpa garam.

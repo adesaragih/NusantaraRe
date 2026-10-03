@@ -204,7 +204,7 @@ var berkasKlienHTTPDisetujui = map[string]string{
 		"hanya aktif bila PELAKSANA_STORAGE=nyata",
 	"modul/masterproductnamelife/backend/services/mpnl_storage.go": "transport penyimpanan lampiran Master Product Name Life - " +
 		"[keputusan work owner 03-10-2026, OQ-MPNL-10 dibalik: \"ikuti dari XML nya aja\"; entri ini disetujui work owner " +
-		"03-10-2026]; alamat dari M_LINK_SERVICE saat jalan, hanya aktif bila PELAKSANA_STORAGE=nyata",
+		"03-10-2026; \"selalu nyata, ikut XML\" 03-10-2026]; alamat dari M_LINK_SERVICE saat jalan",
 }
 
 // bolehBacaEnv menyatakan sebuah berkas berhak membaca env var.

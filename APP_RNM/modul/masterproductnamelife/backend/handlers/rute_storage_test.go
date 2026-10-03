@@ -48,6 +48,9 @@ func (s *storagePalsu) Buka(context.Context, models.ObjekPenyimpanan) (io.ReadCl
 	}
 	return io.NopCloser(bytes.NewReader([]byte("isi"))), nil, nil
 }
+func (s *storagePalsu) Tautan(_ context.Context, o models.ObjekPenyimpanan) (string, *models.ObjekPenyimpanan, error) {
+	return o.URLPublic, nil, s.galat
+}
 func (s *storagePalsu) Hapus(context.Context, string, *models.ObjekPenyimpanan) error { return s.galat }
 
 func TestRuteGalatPenyimpananNyata(t *testing.T) {
@@ -66,6 +69,16 @@ func TestRuteGalatPenyimpananNyata(t *testing.T) {
 	var a models.Lampiran
 	if err := json.Unmarshal([]byte(badan), &a); err != nil || a.Status != models.StatusTerunggah {
 		t.Fatalf("lampiran: %+v %v", a, err)
+	}
+	_, _ = kirimBerkasUji(t, dasar, "UJI.pptx", "isi")
+	var x models.Lampiran
+	for _, l := range g.Lampiran {
+		if l.FileName == "UJI.pptx" {
+			x = l
+		}
+	}
+	if kode, b, _ := ambil(t, "GET", dasar+"/"+x.ID+"/office"); kode != http.StatusOK || string(bytes.TrimSpace(b)) != `{"url":"UJI-URL"}` {
+		t.Errorf("View Office Online: URL bertanda tangan: %d %s", kode, b)
 	}
 	for _, k := range []struct {
 		galat error

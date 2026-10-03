@@ -14,9 +14,9 @@ package services
 // mengirim berkas DULU lalu merekam; di sini rekam + antrean outbox lebih dulu
 // (satu transaksi), lalu pengiriman sebagai EFEK KELUAR - kegagalannya tercatat,
 // terlihat (`status = gagal` + galat), dan dapat diulang; produk tidak pernah
-// ikut batal. Pengirimnya `PenyimpananBerkas`: stub folder lokal `UNGGAHAN_DIR` (bawaan) atau penyimpanan nyata
-// `ServiceGoogle` lewat `M_LINK_SERVICE` + token (`mpnl_storage.go`, `PELAKSANA_STORAGE=nyata`, keputusan work
-// owner 03-10-2026). Antrean lokal dibuang sesudah objeknya tercatat.
+// ikut batal. Pengirimnya `PenyimpananBerkas`: penyimpanan nyata `ServiceGoogle` lewat `M_LINK_SERVICE` + token
+// (`mpnl_storage.go`, keputusan work owner 03-10-2026 "selalu nyata, ikut XML"); stub folder lokal untuk uji. Antrean
+// lokal `UNGGAHAN_DIR` dibuang sesudah objeknya tercatat.
 // ⛔ Berkas berjenis tak dikenal tabel `GetMimeType` DITOLAK berkalimat - di Pega
 // ia diam-diam tidak diunggah (Exit-Activity 5 b856) dan tidak direkam.
 
@@ -68,6 +68,8 @@ type PenyimpananBerkas interface {
 	// Buka membaca objek terkirim `o` (baris `T_STORAGE_IMAGE`); objek baru tidak nil bila URL bertanda tangannya
 	// diperbarui (`GetUrlGoogleStorage_Act` → `Update_T_Storage_SQL`).
 	Buka(ctx context.Context, o models.ObjekPenyimpanan) (io.ReadCloser, *models.ObjekPenyimpanan, error)
+	// Tautan - URL bertanda tangan objek terkirim `o` (`View Office Online`); objek baru seperti Buka.
+	Tautan(ctx context.Context, o models.ObjekPenyimpanan) (string, *models.ObjekPenyimpanan, error)
 	// Hapus membuang objek terkirim `o` (nil = belum terkirim) beserta antreannya.
 	Hapus(ctx context.Context, imageID string, o *models.ObjekPenyimpanan) error
 }
@@ -98,14 +100,13 @@ var (
 	// ErrBerkasSumberHilang - isi antrean tidak ada dan penyimpanan tidak memilikinya.
 	ErrBerkasSumberHilang = errors.New("services: the attachment source file no longer exists; delete the attachment " +
 		"and upload it again")
-	// ErrBerkasTidakDiStub - rekam dan objek ada, tetapi berkasnya tidak ada di folder stub: berkas
-	// yang diunggah Pega tinggal di penyimpanan asalnya sampai pengirim nyata tersambung (409).
-	ErrBerkasTidakDiStub = errors.New("services: the attachment file is not in the storage stub; files uploaded " +
-		"before this module stay in the original storage and are read only when the storage service is enabled " +
-		"(PELAKSANA_STORAGE=nyata)")
-	// ErrOfficeStub - `View Office Online` membungkus URL ke penampil kantor di luar (503, OQ-MPNL-11).
-	ErrOfficeStub = errors.New("services: View Office Online is a stub - the external office viewer is not called " +
-		"(OQ-MPNL-11); download the file instead")
+	// ErrBerkasTidakDiStub - objek dicatat stub lokal (URLPUBLIC kosong), tetapi berkasnya tidak ada di folder stub
+	// `UNGGAHAN_DIR` (409).
+	ErrBerkasTidakDiStub = errors.New("services: the attachment file is not in the local storage stub folder " +
+		"(UNGGAHAN_DIR); delete the attachment and upload it again")
+	// ErrOfficeStub - `View Office Online` atas objek tanpa URL bertanda tangan (dicatat stub lokal) (503).
+	ErrOfficeStub = errors.New("services: View Office Online needs the file in storage; this file is only in the " +
+		"local storage stub - download it instead")
 	// ErrPenyimpananBelumDisetel - folder stub belum dipilih (503).
 	ErrPenyimpananBelumDisetel = unggah.ErrUnggahanDirBelumDisetel
 )
@@ -366,26 +367,38 @@ func (l *Layanan) bukaObjek(ctx context.Context, a models.Lampiran) (io.ReadClos
 		return nil, ErrLampiranBelumTerkirim
 	}
 	isi, baru, err := l.berkas.Buka(ctx, o)
+	if err != nil {
+		return nil, l.galatBerkas(a, err)
+	}
+	l.catatURLBaru(ctx, a, baru)
+	return isi, nil
+}
+
+// galatBerkas - galat penyimpanan untuk layar: 503 / 502 / 409 berkalimat; rinciannya ke log.
+func (l *Layanan) galatBerkas(a models.Lampiran, err error) error {
 	switch {
-	case err == nil:
-	case errors.Is(err, ErrPenyimpananBelumDisetel), errors.Is(err, ErrStorageBelumSiap), errors.Is(err, ErrStorageGagal):
-		// 503 / 502 berkalimat; rinciannya ke log.
+	case errors.Is(err, ErrPenyimpananBelumDisetel), errors.Is(err, ErrStorageBelumSiap), errors.Is(err, ErrStorageGagal),
+		errors.Is(err, ErrOfficeStub):
 		l.catat(fmt.Sprintf("master product name life: opening attachment %s failed: %v", a.ID, err))
-		return nil, err
+		return err
 	case errors.Is(err, ErrBerkasTidakDiStorage):
 		l.catat(fmt.Sprintf("master product name life: opening attachment %s failed: %v", a.ID, err))
-		return nil, fmt.Errorf("%w: %s", ErrBerkasTidakDiStorage, a.FileName)
-	default:
-		// Jalur folder stub dan kunci objek hanya di log, tidak di layar (audit 02-10-2026).
-		l.catat(fmt.Sprintf("master product name life: opening attachment %s (storage %s) failed: %v", a.ID, a.StorageID, err))
-		return nil, fmt.Errorf("%w: %s", ErrBerkasTidakDiStub, a.FileName)
+		return fmt.Errorf("%w: %s", ErrBerkasTidakDiStorage, a.FileName)
 	}
-	if baru != nil {
-		if err := l.tx(ctx, func(tx *db.Tx) error { return l.gudang.PerbaruiObjek(ctx, tx, *baru) }); err != nil {
-			l.catat(fmt.Sprintf("master product name life: recording the new signed URL of attachment %s failed: %v", a.ID, err))
-		}
+	// Jalur folder stub dan kunci objek hanya di log, tidak di layar (audit 02-10-2026).
+	l.catat(fmt.Sprintf("master product name life: opening attachment %s (storage %s) failed: %v", a.ID, a.StorageID, err))
+	return fmt.Errorf("%w: %s", ErrBerkasTidakDiStub, a.FileName)
+}
+
+// catatURLBaru - URL bertanda tangan yang diperbarui dicatat (`Update_T_Storage_SQL`) di transaksi pendeknya sendiri -
+// Pega menjalankannya sebagai RDB-List lepas; gagal mencatat tidak menahan unduhan.
+func (l *Layanan) catatURLBaru(ctx context.Context, a models.Lampiran, baru *models.ObjekPenyimpanan) {
+	if baru == nil {
+		return
 	}
-	return isi, nil
+	if err := l.tx(ctx, func(tx *db.Tx) error { return l.gudang.PerbaruiObjek(ctx, tx, *baru) }); err != nil {
+		l.catat(fmt.Sprintf("master product name life: recording the new signed URL of attachment %s failed: %v", a.ID, err))
+	}
 }
 
 // NamaDaftarTakTersedia - entri zip yang menyebut lampiran terkirim yang berkasnya
@@ -501,18 +514,35 @@ func (l *Layanan) HapusLampiran(ctx context.Context, p inti.Pelaku, produkID, id
 	})
 }
 
-// LihatOffice - tautan `View Office Online` b69291 (stub, OQ-MPNL-11).
-func (l *Layanan) LihatOffice(ctx context.Context, p inti.Pelaku, produkID, id string) error {
+// LihatOffice - tautan `View Office Online` b69291 → `DownloadAttProdName_Act` dengan `ViewOffice`: URL bertanda
+// tangan (6 b953 `GetUrlGoogleStorage_Act`, Durasi 1800). Pembungkusan ke penampil kantor (7 b1103) di frontend
+// (`penampilOffice.ts`, keputusan work owner 03-10-2026 "izinkan ditulis di kode"; OQ-MPNL-11 dibalik).
+func (l *Layanan) LihatOffice(ctx context.Context, p inti.Pelaku, produkID, id string) (string, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
-		return err
+		return "", err
 	}
 	a, err := l.gudang.AmbilLampiran(ctx, nil, produkID, id)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if !ekstensiOffice[a.FileMimeType] {
-		return GalatValidasi{Pesan: []string{fmt.Sprintf(
+		return "", GalatValidasi{Pesan: []string{fmt.Sprintf(
 			"View Office Online is only offered for xls, xlsx, doc, docx, ppt and pptx files, not %q", a.FileMimeType)}}
 	}
-	return ErrOfficeStub
+	if a.Status != models.StatusTerunggah {
+		return "", ErrLampiranBelumTerkirim
+	}
+	o, ada, err := l.gudang.AmbilObjek(ctx, nil, a.StorageID)
+	if err != nil {
+		return "", err
+	}
+	if !ada {
+		return "", ErrLampiranBelumTerkirim
+	}
+	u, baru, err := l.berkas.Tautan(ctx, o)
+	if err != nil {
+		return "", l.galatBerkas(a, err)
+	}
+	l.catatURLBaru(ctx, a, baru)
+	return u, nil
 }

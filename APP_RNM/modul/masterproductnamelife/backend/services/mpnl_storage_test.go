@@ -363,27 +363,47 @@ func TestExpPega(t *testing.T) {
 	}
 }
 
-// `PELAKSANA_STORAGE`: bawaan stub lokal; `nyata` memasang penyimpanan Google - garam tidak disimpan di Service.
-func TestPerakitanPenyimpananMenurutSaklar(t *testing.T) {
+// Keputusan work owner 03-10-2026 "selalu nyata, ikut XML": Layanan Oracle SELALU memakai penyimpanan Google
+// (tanpa saklar `PELAKSANA_STORAGE`); garam hanya bahan token baru.
+func TestPerakitanSelaluPenyimpananNyata(t *testing.T) {
 	s := New(nil).DenganUnggahanDir(t.TempDir())
-	if _, ok := (&Service{Dasar: s}).penyimpanan().(penyimpananLokal); !ok {
-		t.Error("bawaan: stub lokal")
+	for _, svc := range []*Service{{Dasar: s}, (&Service{Dasar: s}).DenganGaramToken("UJI-GARAM")} {
+		p, ok := svc.penyimpanan().(penyimpananGoogle)
+		if !ok || p.lokal == nil || p.klien.Timeout != BatasWaktuStorage {
+			t.Fatalf("penyimpanan Google berantrean lokal, batas waktu ServiceGoogle: %T", svc.penyimpanan())
+		}
+		if _, err := p.token(context.Background(), "UJI-APP"); err == nil {
+			t.Error("tanpa Oracle: token gagal terang")
+		}
+		if _, err := p.alamat(context.Background(), layanan.KunciUnggahBerkas); err == nil {
+			t.Error("tanpa Oracle: alamat gagal terang")
+		}
 	}
-	nyata := (&Service{Dasar: s}).DenganPenyimpananNyata(true, "UJI-GARAM")
-	p, ok := nyata.penyimpanan().(penyimpananGoogle)
-	if !ok || p.lokal == nil || p.klien.Timeout != BatasWaktuStorage {
-		t.Errorf("nyata: penyimpanan Google berantrean lokal, batas waktu ServiceGoogle: %T", nyata.penyimpanan())
+}
+
+// `View Office Online` (`DownloadAttProdName_Act` 6 b953 + 7 b1080): URL bertanda tangan saja - tanpa mengunduh isinya;
+// objek stub tidak punya URL.
+func TestStorageGoogleTautan(t *testing.T) {
+	ctx := context.Background()
+	s := baruStorageTiruan(t)
+	p, _ := s.penyimpanan(t)
+	jalur := "Contract/Doc/2025/08/" + namaUji
+	o := models.ObjekPenyimpanan{ImageID: "ABC123", URLPublic: s.srv.URL + "/objek/" + jalur, AppFolder: gsObjek("UJI-APP", jalur),
+		Exp: "01/10/2026 08:40:00", FileName: namaUji, AppName: "UJI-APP"}
+	u, baru, err := p.Tautan(ctx, o)
+	if err != nil || u != o.URLPublic || baru != nil || len(s.daftarMinta()) != 0 || s.ambilObjek != 0 {
+		t.Errorf("URL tersimpan: %q %+v %v (geturl %d, unduh %d)", u, baru, err, len(s.daftarMinta()), s.ambilObjek)
 	}
-	if _, err := p.token(context.Background(), "UJI-APP"); err == nil {
-		t.Error("tanpa Oracle: token gagal terang")
+	o.Exp = "22/08/2025 07:00:00"
+	u, baru, err = p.Tautan(ctx, o)
+	if err != nil || baru == nil || u != baru.URLPublic || len(s.daftarMinta()) != 1 || s.ambilObjek != 0 {
+		t.Errorf("kedaluwarsa: geturl, tanpa unduh: %q %+v %v", u, baru, err)
 	}
-	if _, err := p.alamat(context.Background(), layanan.KunciUnggahBerkas); err == nil {
-		t.Error("tanpa Oracle: alamat gagal terang")
+	if _, _, err := p.Tautan(ctx, models.ObjekPenyimpanan{ImageID: "STUB1", FileName: "x"}); !errors.Is(err, ErrOfficeStub) {
+		t.Errorf("objek stub: %v", err)
 	}
-	if tidak := (&Service{Dasar: s}).DenganPenyimpananNyata(false, "UJI-GARAM"); tidak.penyimpanan() == nil {
-		t.Error("saklar mati: stub")
-	} else if _, ok := tidak.penyimpanan().(penyimpananLokal); !ok {
-		t.Error("saklar mati: stub lokal")
+	if _, _, err := PenyimpananLokal(t.TempDir()).Tautan(ctx, o); !errors.Is(err, ErrOfficeStub) {
+		t.Errorf("stub lokal: %v", err)
 	}
 }
 
@@ -493,8 +513,12 @@ func TestTokenStorageBermargin(t *testing.T) {
 		!pt.sampai.Equal(jamStorage.Add(layanan.UmurToken)) {
 		t.Errorf("token baru dirakit dan disimpan semenit: %q %v %v %v", tok, err, pt.disimpan, pt.sampai)
 	}
+	// Garam hanya bahan token BARU: token berlaku dipakai ulang tanpa garam (DEV 03-10-2026: token berlaku +-58 hari).
+	if tok, err := tokenStorage(ctx, nil, &penyimpanTokenPalsu{berlaku: "UJI-LAMA"}, "", "UJI-APP", jamStorage); err != nil || tok != "UJI-LAMA" {
+		t.Errorf("tanpa garam, token berlaku: %q %v", tok, err)
+	}
 	if _, err := tokenStorage(ctx, nil, &penyimpanTokenPalsu{}, " ", "UJI-APP", jamStorage); !errors.Is(err, layanan.ErrGaramTokenKosong) {
-		t.Errorf("garam kosong: %v", err)
+		t.Errorf("tanpa garam, tanpa token berlaku: %v", err)
 	}
 	if _, err := tokenStorage(ctx, nil, &penyimpanTokenPalsu{}, "UJI-GARAM", "", jamStorage); !errors.Is(err, layanan.ErrAppNameKosong) {
 		t.Errorf("App kosong: %v", err)
@@ -505,7 +529,7 @@ func TestTokenStorageBermargin(t *testing.T) {
 func TestStubMenolakHapusObjekPenyimpananNyata(t *testing.T) {
 	p := PenyimpananLokal(t.TempDir())
 	err := p.Hapus(context.Background(), "ABC123", &models.ObjekPenyimpanan{ImageID: "ABC123", URLPublic: "UJI-URL"})
-	if !errors.Is(err, ErrStorageBelumSiap) || !strings.Contains(Pesan(err), "PELAKSANA_STORAGE") {
+	if !errors.Is(err, ErrStorageBelumSiap) || !strings.Contains(Pesan(err), "storage service") {
 		t.Errorf("stub: %v", err)
 	}
 }

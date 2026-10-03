@@ -193,6 +193,8 @@ Pesan statik VERBATIM: b66071 `Make sure the file name doesn't contain forbidden
 > `GetUrlGoogleStorage_Act` (URL tersimpan selama `EXPDATE` belum lewat; selain itu "geturl" + `Update_T_Storage_SQL`), hapus
 > `DeleteGoogleStorage_Act` ("delete", gagal = rekam tetap). Bawaannya tetap stub. Lampiran Pega lama (berkas di penyimpanan
 > asal) terunduh hanya di mode nyata. `View Office Online` tetap stub (OQ-MPNL-11). Rincian: register OQ, bab 03-10-2026.
+> **Ralat 03-10-2026 sore:** penyimpanan nyata SELALU dipakai ("selalu nyata, ikut XML" — tanpa saklar); `View Office
+> Online` membuka penampil b1103 di tab baru lewat form GET (`penampilOffice.ts`, OQ-MPNL-11 dibalik).
 
 ## 7. Simpan — `SaveProductName_Act` (FlowAction `SaveProductName_Confirm` b101)
 

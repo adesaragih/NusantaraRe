@@ -437,16 +437,60 @@ func pelanggaranAlamat(isi string) []string {
 	return hasil
 }
 
-// TestMPNLNolAlamatLayanan - ADR-0013 / brief bab 1: alamat layanan luar
-// (`ServiceGoogle`, `LinkService`, penampil `View Office Online`) TIDAK
-// dipanggil dan TIDAK ditulis ke berkas apa pun - kode, uji, dan frontend.
+// alamatDiizinkan - SATU-SATUNYA alamat literal modul ini, berkunci akhiran jalur berkas: penampil `View Office
+// Online` (`DownloadAttProdName_Act` 7 b1103 menulisnya literal), keputusan work owner 03-10-2026 "izinkan ditulis di
+// kode". Nilainya INANG alamat itu; berkasnya hanya boleh memuat SATU alamat, berinang itu. Jumlahnya dikunci.
+var alamatDiizinkan = map[string]string{
+	"frontend/penampilOffice.ts": "view.officeapps.live.com",
+}
+
+// pelanggaranBerkas - pelanggaranAlamat, dengan pengecualian bernama `alamatDiizinkan`; `dipakai` = pengecualian
+// berlaku untuk berkas ini.
+func pelanggaranBerkas(jalur, isi string) (hasil []string, dipakai bool) {
+	p := pelanggaranAlamat(isi)
+	for akhiran, inang := range alamatDiizinkan {
+		if strings.HasSuffix(jalur, akhiran) && len(p) == 1 && strings.Count(isi, p[0]+inang+"/") == 1 {
+			return nil, true
+		}
+	}
+	return p, false
+}
+
+// TestMPNLNolAlamatLayanan - ADR-0013 / brief bab 1: alamat layanan luar (`ServiceGoogle`, `LinkService`) TIDAK
+// ditulis ke berkas apa pun - kode, uji, dan frontend; alamatnya di-resolve dari `M_LINK_SERVICE` saat jalan. Satu
+// pengecualian bernama: penampil `View Office Online` (`alamatDiizinkan`).
 func TestMPNLNolAlamatLayanan(t *testing.T) {
+	dipakai := 0
 	for jalur, isi := range berkasModul(t, ".go", ".sql", ".ts", ".tsx", ".css") {
 		if strings.HasSuffix(jalur, "mpnl_penjaga_test.go") {
 			continue
 		}
-		if p := pelanggaranAlamat(isi); len(p) > 0 {
-			t.Errorf("%s memuat alamat atau env var %v - alamat layanan di-resolve saat jalan, stub tidak memanggilnya", jalur, p)
+		p, izin := pelanggaranBerkas(jalur, isi)
+		if izin {
+			dipakai++
+		}
+		if len(p) > 0 {
+			t.Errorf("%s memuat alamat atau env var %v - alamat layanan di-resolve saat jalan (M_LINK_SERVICE)", jalur, p)
+		}
+	}
+	if dipakai != len(alamatDiizinkan) {
+		t.Errorf("%d pengecualian alamat terpakai, petanya memuat %d - pengecualian mati dibuang", dipakai, len(alamatDiizinkan))
+	}
+}
+
+func TestMPNLPengecualianAlamatSempit(t *testing.T) {
+	skema := "https:" + "//"
+	sah := "export const P = '" + skema + "view.officeapps.live.com/op/view.aspx?src='"
+	if p, izin := pelanggaranBerkas("../../frontend/penampilOffice.ts", sah); len(p) != 0 || !izin {
+		t.Errorf("alamat penampil di berkasnya sah: %v %v", p, izin)
+	}
+	for _, k := range []struct{ jalur, isi string }{
+		{"../../frontend/bentuk.ts", sah},
+		{"../../frontend/penampilOffice.ts", sah + "\nconst Q = '" + skema + "contoh.invalid/'"},
+		{"../../frontend/penampilOffice.ts", "export const P = '" + skema + "contoh.invalid/x'"},
+	} {
+		if p, _ := pelanggaranBerkas(k.jalur, k.isi); len(p) == 0 {
+			t.Errorf("%s seharusnya tertangkap: %q", k.jalur, k.isi)
 		}
 	}
 }

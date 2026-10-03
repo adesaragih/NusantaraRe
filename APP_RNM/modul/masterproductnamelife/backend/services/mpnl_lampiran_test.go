@@ -85,6 +85,16 @@ func (b *berkasPalsu) Buka(_ context.Context, o models.ObjekPenyimpanan) (io.Rea
 	return io.NopCloser(bytes.NewReader(d)), b.Segar, nil
 }
 
+func (b *berkasPalsu) Tautan(_ context.Context, o models.ObjekPenyimpanan) (string, *models.ObjekPenyimpanan, error) {
+	if b.BukaGagal != nil {
+		return "", nil, b.BukaGagal
+	}
+	if b.Segar != nil {
+		return b.Segar.URLPublic, b.Segar, nil
+	}
+	return o.URLPublic, nil, nil
+}
+
 func (b *berkasPalsu) Hapus(_ context.Context, id string, o *models.ObjekPenyimpanan) error {
 	b.dihapus = append(b.dihapus, o)
 	delete(b.simpan, id)
@@ -287,16 +297,31 @@ func TestGalatPenyimpananNyataDiteruskan(t *testing.T) {
 	}
 }
 
-func TestViewOfficeOnlineStub(t *testing.T) {
-	l, _, _ := layananLampiran(t)
+// `View Office Online` b69291 (`DownloadAttProdName_Act` ViewOffice): URL bertanda tangan untuk penampil kantor
+// (keputusan work owner 03-10-2026; pembungkusan penampil di frontend); URL yang diperbarui dicatat.
+func TestViewOfficeOnlineTautan(t *testing.T) {
+	l, b, objek := layananLampiran(t)
 	x, _ := unggah(l, "UJI.xlsx", "x")
 	p, _ := unggah(l, "UJI.pdf", "x")
-	if err := l.LihatOffice(context.Background(), pelakuUji, "100007", x.ID); !errors.Is(err, services.ErrOfficeStub) ||
-		!strings.Contains(services.Pesan(err), "OQ-MPNL-11") {
-		t.Errorf("xlsx: penampil luar tidak dipanggil, 503 berkalimat: %v", err)
+	u, err := l.LihatOffice(context.Background(), pelakuUji, "100007", x.ID)
+	if err != nil || u != "UJI-URL-"+x.StorageID {
+		t.Errorf("xlsx: URL bertanda tangan: %q %v", u, err)
 	}
-	if err := l.LihatOffice(context.Background(), pelakuUji, "100007", p.ID); !errors.Is(err, services.ErrMasukanTidakSah) {
+	segar := objek()[x.StorageID]
+	segar.URLPublic = "UJI-URL-BARU"
+	b.Segar = &segar
+	if u, err := l.LihatOffice(context.Background(), pelakuUji, "100007", x.ID); err != nil || u != "UJI-URL-BARU" ||
+		objek()[x.StorageID].URLPublic != "UJI-URL-BARU" {
+		t.Errorf("URL diperbarui dan dicatat: %q %v", u, err)
+	}
+	b.Segar = nil
+	if _, err := l.LihatOffice(context.Background(), pelakuUji, "100007", p.ID); !errors.Is(err, services.ErrMasukanTidakSah) {
 		t.Errorf("pdf: tautan hanya untuk xls/xlsx/doc/docx/ppt/pptx (b69291): %v", err)
+	}
+	b.Gagal = errors.New("UJI gagal")
+	y, _ := unggah(l, "UJI2.docx", "x")
+	if _, err := l.LihatOffice(context.Background(), pelakuUji, "100007", y.ID); !errors.Is(err, services.ErrLampiranBelumTerkirim) {
+		t.Errorf("belum terkirim: %v", err)
 	}
 }
 
