@@ -451,4 +451,15 @@ dikerjakan paket P11 (04-10-2026):
 | `make test-db` | **tidak dijalankan** — K11 kosong |
 | P11 (`wt-nbtr-p11-sisa`): `go vet ./modul/nbtreatyin/... ./inti/...`, `go vet -tags db ./modul/nbtreatyin/...` | bersih — enam uji db baru (`kontrak_db_test.go`, `riwayat_db_test.go`, `penyimpanan_db_test.go`) terkompilasi, **tidak dijalankan** (K11) |
 | P11: `go test ./modul/nbtreatyin/... ./inti/...` | lulus kecuali `TestNolAlamatLayananDiKode` (`.env` lokal — lingkungan, sama dengan P10); `go test ./modul/claimlife/backend/repository -run TestSetiapPemanggilBukaMemeriksaBolehDilewati` lulus (pemanggil `skemauji.Buka()` tetap 17) |
-| `go vet ./...`, `go test ./...`, `npm run typecheck`, `npm test` | dirangkum orkestrator di laporan akhir putaran 2 (bab 10 PROMPT), dibandingkan baseline bab 1 |
+| `go vet ./...`, `go test ./...`, `npm run typecheck`, `npm test` | lihat tabel verifikasi akhir di bawah |
+
+**Verifikasi akhir** — dari akar repo, worktree utama, cabang `modul/nbtreatyin/implementasi` @ `eb058650`
+(04-10-2026), dibandingkan baseline PROMPT putaran 2 bab 1:
+
+| Perintah | Hasil | Lawan baseline |
+| --- | --- | --- |
+| `go vet ./...` | bersih (0 baris keluaran) | sama |
+| `go test ./...` | 73 paket `ok`; gagal **tepat 3**: claimlife `models` TestTypeKlaimHanyaSatuRumahTersimpan, `repository` TestKolomTakDibawaHanyaAdaDiKatalog, `services` TestSetiapRuteNonGETPunyaPenjagaKasusTertutup | sama dengan baseline bab 1; nol merah baru. Merah baru `TestNolPenyimpanKeputusanKomiteDiKonteksIni` (penjaga leksikal claimlife `polaIndeksPosisi`) muncul di tengah putaran dan **ditutup paket P12** di dalam modul (berkas data `models/medan_abaikan_lama.json`, PERMINTAAN A3). `TestNolAlamatLayananDiKode` lulus di worktree utama (merah hanya di worktree tanpa `.env`) |
+| `npm run typecheck` | 0 galat | sama |
+| `npm test` | 7 berkas / 14 uji gagal, 992 lulus, 855 dilewati | daftar gagal **identik** dengan baseline (cssmodul.guard, FormProduk, premiumlistlife gaya ×3, FormPenawaran, treatycontractout tutupSesudahSimpan ×6, InboxTreatyContract ×2, Shell); lulus naik 947 → 992 |
+| `make test-db` | tidak dijalankan | K11 kosong |
