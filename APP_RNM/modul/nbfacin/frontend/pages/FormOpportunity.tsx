@@ -20,10 +20,20 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-import { Area, Field, FieldTanggal, Gagal, Halaman, Kosong, Memuat, Modal, Pilih, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
-import { cariAccount, daftarClassOfBusiness, type BarisAccount, type BarisClassOfBusiness, type HalamanAccount } from '../api'
+import { Area, Field, Gagal, Halaman, Kosong, Memuat, Modal, Pilih, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
+import TanggalDMY from '../components/TanggalDMY'
+import {
+  buatOpportunity,
+  cariAccount,
+  daftarClassOfBusiness,
+  type BarisAccount,
+  type BarisClassOfBusiness,
+  type HalamanAccount,
+  type IsianOpportunity,
+} from '../api'
 import {
   FORM_OPPORTUNITY as F,
+  KEPALA_PORTAL,
   NILAI_AWAL_OPPORTUNITY as AWAL,
   OPSI_OPPORTUNITY_SOURCE,
   POPUP_CHOOSE_ACCOUNT as POPUP,
@@ -145,6 +155,10 @@ export default function FormOpportunity({ pemilik }: { pemilik: string }) {
   const [grup, setGrup] = useState<BarisAccount | null>(null)
   const [saranCOB, setSaranCOB] = useState<BarisClassOfBusiness[]>([])
   const [galatCOB, setGalatCOB] = useState<unknown>(null)
+  const [kurang, setKurang] = useState<string[]>([])
+  const [menyimpan, setMenyimpan] = useState(false)
+  const [galatSimpan, setGalatSimpan] = useState<unknown>(null)
+  const [caseId, setCaseId] = useState('')
 
   // Saran Class Of Business mengikuti Group Business terpilih (C-11). Group berganti = isian lama dan
   // saran lama tidak berlaku; jawaban untuk group lama dibuang.
@@ -167,12 +181,79 @@ export default function FormOpportunity({ pemilik }: { pemilik: string }) {
     }
   }, [idGrup])
 
+  const facultative = typeOfInward === AWAL.typeOfInward
+
+  /** Medan wajib (bertanda * di gambar) yang masih kosong, urut layar. */
+  function medanKosong(): string[] {
+    const wajib: [string, string][] = [
+      [F.tanggalTutup, tanggalTutup],
+      [F.namaProspek, namaProspek.trim()],
+      [F.classOfBusiness, classOfBusiness.trim()],
+      [F.typeOfInward, typeOfInward],
+      ...(facultative ? ([[F.typeOfFacultative, typeOfFacultative]] as [string, string][]) : []),
+      [F.phase, phase],
+      [F.statusBisnis, statusBisnis],
+    ]
+    return wajib.filter(([, v]) => v === '').map(([l]) => l)
+  }
+
+  async function buat() {
+    const k = medanKosong()
+    setKurang(k)
+    setGalatSimpan(null)
+    if (k.length > 0) return
+    const isian: IsianOpportunity = {
+      estimatedClosingDate: tanggalTutup,
+      businessProspectName: namaProspek.trim(),
+      accountId: grup?.id ?? '',
+      insuredId: grup?.insuredId ?? '',
+      groupBusinessId: grup?.groupBusinessId ?? '',
+      groupBusiness: grup?.groupBusiness ?? '',
+      classOfBusiness: classOfBusiness.trim(),
+      typeOfInward,
+      typeOfFacultative: facultative ? typeOfFacultative : '',
+      phase,
+      stage: AWAL.stage,
+      opportunitySource: sumber,
+      businessStatus: statusBisnis,
+      description: deskripsi,
+    }
+    setMenyimpan(true)
+    try {
+      const h = await buatOpportunity(isian)
+      setCaseId(h.caseId)
+    } catch (err) {
+      setGalatSimpan(err)
+    } finally {
+      setMenyimpan(false)
+    }
+  }
+
   return (
     <div className="nbfacin">
       <section className="panel">
-        <h4 className="panel__title">{F.judul}</h4>
+        <div className="nbf-kepala">
+          <h4 className="panel__title">{F.judul}</h4>
+          <button type="button" className="btn btn--primary" onClick={() => void buat()} disabled={menyimpan || caseId !== ''}>
+            {menyimpan ? TEKS.menyimpan : KEPALA_PORTAL.buat.label}
+          </button>
+        </div>
+        {kurang.length > 0 && (
+          <div className="alert alert--error">
+            {TEKS.wajibKosong} {kurang.join(', ')}
+          </div>
+        )}
+        {caseId !== '' && <div className="alert alert--ok">{TEKS.caseDibuat.replace('{caseId}', caseId)}</div>}
+        <Gagal galat={galatSimpan} />
         <div className="nbf-opp__atas">
-          <FieldTanggal label={F.tanggalTutup} value={tanggalTutup} onChange={setTanggalTutup} required />
+          <TanggalDMY
+            label={F.tanggalTutup}
+            value={tanggalTutup}
+            onChange={setTanggalTutup}
+            required
+            labelKalender={TEKS.kalender}
+            pesanFormat={TEKS.formatTanggal}
+          />
           <div className="field">
             <span className="field__label">{F.owner}</span>
             <div className="nbf-opp__owner">{pemilik}</div>
@@ -240,7 +321,7 @@ export default function FormOpportunity({ pemilik }: { pemilik: string }) {
                 kosong={AWAL.inwardKosong}
                 required
               />
-              {typeOfInward === AWAL.typeOfInward && (
+              {facultative && (
                 <Pilih
                   label={F.typeOfFacultative}
                   value={typeOfFacultative}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { badanPremiCargo, cariAccount, daftarClassOfBusiness } from './api'
+import { badanPremiCargo, buatOpportunity, cariAccount, daftarClassOfBusiness } from './api'
 
 describe('badanPremiCargo', () => {
   it('angka tetap teks, lini MARINE CARGO, bukan master policy', () => {
@@ -54,6 +54,36 @@ describe('daftarClassOfBusiness (tiket 26 C-11 / tiket 28)', () => {
       expect(url).toMatch(/\/api\/nbfacin\/class-of-business\?/)
       expect(new URL(url, 'http://x').searchParams.get('groupBusinessId')).toBe('UJI-GRUP')
       expect(h.baris).toEqual([{ id: 'UJI-1', note: 'UJI COB' }])
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('buatOpportunity (tiket 29)', () => {
+  it('POST /api/nbfacin/opportunity dengan isian apa adanya, jawaban caseId', async () => {
+    const asli = globalThis.fetch
+    let url = ''
+    let metode = ''
+    let badan = ''
+    globalThis.fetch = (async (u: RequestInfo | URL, init?: RequestInit) => {
+      url = String(u)
+      metode = init?.method ?? ''
+      badan = String(init?.body ?? '')
+      return new Response(JSON.stringify({ caseId: 'NB-1' }), { status: 201 })
+    }) as typeof fetch
+    const isian = {
+      estimatedClosingDate: '10-03-2026', businessProspectName: 'UJI', accountId: 'UJI-A', insuredId: 'UJI-I',
+      groupBusinessId: 'UJI-G', groupBusiness: 'UJI GRUP', classOfBusiness: 'UJI COB', typeOfInward: 'Facultative',
+      typeOfFacultative: 'Facultative In', phase: 'Proposal', stage: 'Opportunity', opportunitySource: '',
+      businessStatus: 'New Business', description: '',
+    }
+    try {
+      const h = await buatOpportunity(isian)
+      expect(metode).toBe('POST')
+      expect(url).toMatch(/\/api\/nbfacin\/opportunity$/)
+      expect(JSON.parse(badan)).toEqual(isian)
+      expect(h).toEqual({ caseId: 'NB-1' })
     } finally {
       globalThis.fetch = asli
     }

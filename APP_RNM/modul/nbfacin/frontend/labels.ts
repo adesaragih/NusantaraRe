@@ -192,6 +192,15 @@ export const TEKS_GRUP_BISNIS = {
 
 /** Teks sistem baru - BUKAN dari Pega. */
 export const TEKS_FORM_OPPORTUNITY = {
+  /** Nama aksesibel tombol kalender Estimated Closing Date. */
+  kalender: 'Pilih tanggal',
+  /** Isian tanggal 10 karakter tetapi bukan tanggal yang ada. */
+  formatTanggal: 'Tanggal harus berformat dd/mm/yyyy.',
+  /** Awal daftar medan wajib yang belum diisi saat Create opportunity. */
+  wajibKosong: 'Lengkapi dulu:',
+  /** Sesudah case berhasil dibuat; `{caseId}` diganti nomor case. */
+  caseDibuat: 'Case {caseId} berhasil dibuat.',
+  menyimpan: 'Menyimpan…',
   /** Pencarian berhasil tetapi tidak ada baris yang cocok. */
   tanpaAccount: 'Tidak ada account yang cocok.',
 } as const

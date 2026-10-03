@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import type { Sesi } from '../../../inti/frontend/store/sesi'
-import { KEPALA_PORTAL } from './labels'
+import { KEPALA_PORTAL, SARING_PORTAL } from './labels'
 import { HALAMAN_AWAL_NBFACIN, HALAMAN_NBFACIN, PENDAFTARAN_MENU } from './menu'
 import { RuteNbFacIn } from './rute'
 
@@ -28,7 +28,7 @@ describe('halaman depan NB FacIn', () => {
   it('rute: tiap halaman merender layarnya sendiri saja', () => {
     expect(render('nbfacin-portal')).toContain(`>${KEPALA_PORTAL.buat.label}</button>`)
     expect(render('nbfacin-opportunity')).toContain('Business Prospect Name')
-    expect(render('nbfacin-opportunity')).not.toContain(KEPALA_PORTAL.buat.label)
+    expect(render('nbfacin-opportunity')).not.toContain(SARING_PORTAL.placeholder.label)
     expect(render('beranda')).toBe('')
   })
 

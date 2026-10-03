@@ -67,6 +67,23 @@
 .nbfacin .nbf-opp__cob {
   max-width: 240px;
 }
+/* Estimated Closing Date dd/mm/yyyy: kotak teks + tombol kalender; pemilih bawaan tersembunyi tetapi tetap
+   dapat dibuka `showPicker()` (bukan display:none). */
+.nbfacin .nbf-tanggal {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nbfacin .nbf-tanggal__pemilih {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
 /* Owner: teks tampil, bukan kotak isian. */
 .nbfacin .nbf-opp__owner {
   padding: 6px 0;

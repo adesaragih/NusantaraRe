@@ -73,3 +73,32 @@ export interface BarisClassOfBusiness {
 export function daftarClassOfBusiness(groupBusinessId: string): Promise<{ baris: BarisClassOfBusiness[] }> {
   return minta<{ baris: BarisClassOfBusiness[] }>('/api/nbfacin/class-of-business', { kueri: { groupBusinessId } })
 }
+
+/** Isian form Opportunity yang dikirim saat `Create opportunity` (tiket 29). Teks apa adanya. */
+export interface IsianOpportunity {
+  /** Bentuk kabel inti `DD-MM-YYYY`. */
+  estimatedClosingDate: string
+  businessProspectName: string
+  accountId: string
+  insuredId: string
+  groupBusinessId: string
+  groupBusiness: string
+  classOfBusiness: string
+  typeOfInward: string
+  /** Kosong bila Type Of Inward bukan Facultative (medan itu tidak tampil). */
+  typeOfFacultative: string
+  phase: string
+  stage: string
+  opportunitySource: string
+  businessStatus: string
+  description: string
+}
+
+/** Jawaban `POST /api/nbfacin/opportunity`: nomor case baru, mis. `NB-184352`. */
+export interface HasilOpportunity {
+  caseId: string
+}
+
+export function buatOpportunity(isian: IsianOpportunity): Promise<HasilOpportunity> {
+  return minta<HasilOpportunity>('/api/nbfacin/opportunity', { metode: 'POST', badan: isian })
+}

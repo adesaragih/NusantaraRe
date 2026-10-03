@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   FORM_OPPORTUNITY as F,
+  KEPALA_PORTAL,
   NILAI_AWAL_OPPORTUNITY as AWAL,
   OPSI_OPPORTUNITY_SOURCE,
   POPUP_CHOOSE_ACCOUNT as POPUP,
@@ -91,7 +92,8 @@ describe('FormOpportunity = gambar Pega (keadaan awal)', () => {
 
   it('Type Of Facultative hanya dirender bila Type Of Inward = Facultative (C-7)', () => {
     expect(HTML).not.toContain(F.typeOfFacultative)
-    const syarat = SUMBER.indexOf('{typeOfInward === AWAL.typeOfInward && (')
+    expect(SUMBER).toContain('const facultative = typeOfInward === AWAL.typeOfInward')
+    const syarat = SUMBER.indexOf('{facultative && (')
     expect(syarat).toBeGreaterThan(-1)
     expect(SUMBER.indexOf('label={F.typeOfFacultative}')).toBeGreaterThan(syarat)
   })
@@ -123,7 +125,10 @@ describe('FormOpportunity = gambar Pega (keadaan awal)', () => {
   })
 
   it('tiga tombol Group Business berurutan; Search Group Business hidup, dua lainnya nonaktif (C-2, C-8)', () => {
-    const tombol = [...HTML.matchAll(/<button([^>]*)>([^<]*)<\/button>/g)].map((m) => ({ teks: m[2], nonaktif: (m[1] ?? '').includes('disabled') }))
+    const grupHTML = HTML.slice(HTML.indexOf('class="nbf-opp__tombol"'))
+    const tombol = [...grupHTML.matchAll(/<button([^>]*)>([^<]*)<\/button>/g)]
+      .slice(0, 3)
+      .map((m) => ({ teks: m[2], nonaktif: (m[1] ?? '').includes('disabled') }))
     expect(tombol).toEqual([
       { teks: TOMBOL.cariGrup, nonaktif: false },
       { teks: TOMBOL.perusahaanBaru, nonaktif: true },
@@ -132,9 +137,32 @@ describe('FormOpportunity = gambar Pega (keadaan awal)', () => {
     expect(SUMBER).toContain('onClick={() => setCariGrup(true)}')
   })
 
-  it('tanpa tombol simpan - tidak ada di gambar (C-5); popup tertutup pada keadaan awal', () => {
+  it('tombol Create opportunity di kanan atas, sebaris dengan judul (permintaan work owner 03-10-2026); popup tertutup', () => {
+    const kepala = HTML.slice(HTML.indexOf('<div class="nbf-kepala">'), HTML.indexOf('<div class="nbf-opp__atas">'))
+    expect(kepala).toContain(`<h4 class="panel__title">${F.judul}</h4>`)
+    expect(kepala).toContain(`<button type="button" class="btn btn--primary">${KEPALA_PORTAL.buat.label}</button>`)
+    expect(kepala.indexOf('panel__title')).toBeLessThan(kepala.indexOf('btn--primary'))
     expect(HTML).not.toMatch(/type="submit"/)
     expect(HTML).not.toContain(POPUP.judul)
+  })
+
+  it('Estimated Closing Date = kotak dd/mm/yyyy (bukan input date bawaan)', () => {
+    expect(HTML).toContain('placeholder="dd/mm/yyyy"')
+    expect(HTML.match(/type="date"/g)).toHaveLength(1)
+    expect(HTML).toContain('class="nbf-tanggal__pemilih"')
+  })
+
+  it('Create opportunity: medan wajib diperiksa dulu, urut layar; tanpa permintaan bila ada yang kosong', () => {
+    const awal = SUMBER.indexOf('function medanKosong()')
+    const daftar = SUMBER.slice(awal, SUMBER.indexOf('return wajib.filter', awal))
+    const urut = ['F.tanggalTutup', 'F.namaProspek', 'F.classOfBusiness', 'F.typeOfInward', 'F.typeOfFacultative', 'F.phase', 'F.statusBisnis']
+    const letak = urut.map((u) => daftar.indexOf(u + ','))
+    expect(letak.every((l) => l >= 0)).toBe(true)
+    expect([...letak].sort((a, b) => a - b)).toEqual(letak)
+    expect(daftar).toContain('...(facultative ?')
+    const buat = SUMBER.slice(SUMBER.indexOf('async function buat()'))
+    expect(buat.indexOf('if (k.length > 0) return')).toBeLessThan(buat.indexOf('buatOpportunity(isian)'))
+    expect(buat).toContain("typeOfFacultative: facultative ? typeOfFacultative : ''")
   })
 
   it('nol catatan pengembang di layar (C-6)', () => {
