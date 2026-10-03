@@ -18,6 +18,7 @@ func TestBacaTanggalLama(t *testing.T) { // spec-penyimpanan AC 21, 22; K15
 		harap string
 	}{
 		{"", GolTanggal, ""},
+		{" 20171130 ", GolTanggal, "2017-11-30"},                            // spasi tepi bukan bagian tanggal
 		{"20171130", GolTanggal, "2017-11-30"},                              // AC 21 - YYYYMMDD
 		{"20171130", GolTanggalWaktu, "2017-11-30"},                         // tanggal saja, jam tidak dikarang
 		{"20170930T170000.000 GMT", GolTanggalWaktu, "2017-10-01 00:00:00"}, // AC 22 - 17:00 GMT = 00:00 WIB

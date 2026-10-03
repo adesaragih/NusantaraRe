@@ -149,6 +149,7 @@ var (
 //   - selain itu -> ErrFormatTanggal, juga garis miring yang tidak ambigu:
 //     cara menentukan susunan per baris belum diputuskan (P32 butir 1).
 func BacaTanggalLama(teks string, g Golongan) (string, error) {
+	teks = strings.TrimSpace(teks)
 	switch {
 	case teks == "":
 		return "", nil
