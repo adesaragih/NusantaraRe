@@ -55,7 +55,7 @@ func TestSQLObjekMemakaiKolomMigrasi(t *testing.T) {
 	sql := bacaMigrasi(t, "186_t_objek_fire.sql") + "\n" + bacaMigrasi(t, "187_t_surroundingrisk.sql") + "\n" +
 		bacaMigrasi(t, "188_t_propertyitemlist.sql") + "\n" + bacaMigrasi(t, "189_t_occupationlist.sql") + "\n" +
 		bacaMigrasi(t, "190_t_fealist.sql") + "\n" + bacaMigrasi(t, "191_t_listcauseofloss.sql") + "\n" +
-		bacaMigrasi(t, "193_t_coveragelist.sql") + "\n" + bacaMigrasi(t, "194_t_deductiblelist.sql")
+		bacaMigrasi(t, "193_t_coveragelist.sql") + "\n" + bacaMigrasi(t, "194_t_deductiblelist.sql") + "\n" + bacaMigrasi(t, "195_t_coveragelist_unit_akumulasi.sql")
 	kolom := map[string]map[string]bool{}
 	for _, m := range regexp.MustCompile(`(?s)(?:CREATE TABLE|ALTER TABLE) \{skema\}\.(\w+) (?:ADD )?\((.*?)\n\)`).FindAllStringSubmatch(sql, -1) {
 		if kolom[m[1]] == nil {
@@ -86,7 +86,7 @@ func TestSQLObjekMemakaiKolomMigrasi(t *testing.T) {
 		}
 		for _, c := range cols {
 			if !kolom[m[1]][c] {
-				t.Errorf("%s.%s ditulis, tidak ada di 186-194", m[1], c)
+				t.Errorf("%s.%s ditulis, tidak ada di 186-195", m[1], c)
 			}
 		}
 	}
@@ -97,7 +97,7 @@ func TestSQLObjekMemakaiKolomMigrasi(t *testing.T) {
 		"\n"+sqlBacaOkupasi(tabelObjekUji())+"\n"+sqlBacaFEA(tabelObjekUji())+
 		"\n"+sqlBacaKerugian(tabelObjekUji())+"\n"+sqlBacaCoverage(tabelObjekUji())+"\n"+sqlBacaDeductible(tabelObjekUji()), -1) {
 		if !kolom[alias[m[1]]][m[2]] {
-			t.Errorf("%s.%s dibaca, tidak ada di 186-194", alias[m[1]], m[2])
+			t.Errorf("%s.%s dibaca, tidak ada di 186-195", alias[m[1]], m[2])
 		}
 	}
 }

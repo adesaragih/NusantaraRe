@@ -32,7 +32,7 @@ const syaratIndukCoverage = "v.PARENT_TABLE = '" + indukCoverage + "'"
 // kolomCoverage - satu kolom data T_COVERAGELIST (kolomdata.go).
 type kolomCoverage = kolomData[models.CoverageObjek]
 
-// kolomCoverageData - 25 kolom data (migrasi 193) sesudah kolom sistem; CURRENCY_CODE ditambahkan terpisah.
+// kolomCoverageData - 28 kolom data (25 migrasi 193 + 3 migrasi 195) sesudah kolom sistem; CURRENCY_CODE ditambahkan terpisah.
 var kolomCoverageData = []kolomCoverage{
 	kt("COVERAGE", func(c *models.CoverageObjek) *string { return &c.Coverage }),
 	kt("OLDID", func(c *models.CoverageObjek) *string { return &c.OldID }),
@@ -59,6 +59,10 @@ var kolomCoverageData = []kolomCoverage{
 	ka("PREMIUM", jenisAngka, func(c *models.CoverageObjek) **apd.Decimal { return &c.Premium }),
 	kt("CONDITIONS", func(c *models.CoverageObjek) *string { return &c.Conditions }),
 	ka("PCT_ADJUSTMENT", jenisAngka, func(c *models.CoverageObjek) **apd.Decimal { return &c.PctAdjustment }),
+	// tiket 46 (migrasi 195)
+	kt("UNIT", func(c *models.CoverageObjek) *string { return &c.Unit }),
+	kt("ACCUMULATION_CODE", func(c *models.CoverageObjek) *string { return &c.AccumulationCode }),
+	kt("ACCUMULATION_DESCRIPTION", func(c *models.CoverageObjek) *string { return &c.AccumulationDescription }),
 }
 
 // kolomBacaCoverage - kunci induk, kunci coverage (untuk deductible, tiket 45), lalu kolom data.

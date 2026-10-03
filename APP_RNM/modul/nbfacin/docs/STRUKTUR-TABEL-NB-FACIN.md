@@ -380,6 +380,9 @@ medan kontrak ADA di rancangan — tanpa kolom baru. Medan uang / rate / persen 
 | `CONDITIONS` | teks | VARCHAR2(500) | `.Conditions` |
 | `PCT_ADJUSTMENT` | angka desimal | NUMBER(38,8) | server — `CountPremi_ACT` langkah 11-15 (A156); tidak dikirim JSON |
 | `CURRENCY_CODE` | teks | VARCHAR2(10) DEFAULT 'UNKNOWN' NOT NULL | = `CURRENCY` item (K-069 / K-012); item ber-coverage dengan mata uang > 10 byte → 400 |
+| `UNIT` | teks | VARCHAR2(50) | tiket 46 (migrasi 195 `ALTER ADD`) — `.Unit` Indemnity Unit, kode apa adanya |
+| `ACCUMULATION_CODE` | teks | VARCHAR2(50) | tiket 46 (195) — `.AccumulationCode` (Choose / Copy Accumulation) |
+| `ACCUMULATION_DESCRIPTION` | teks | VARCHAR2(500) | tiket 46 (195) — `.AccumulationDescription` = Accumulation Address |
 
 ## T_OCCUPATIONLIST
 

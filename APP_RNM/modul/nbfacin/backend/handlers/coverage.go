@@ -45,6 +45,10 @@ type coverageKabel struct {
 	Conditions          string `json:"conditions"`
 	// tiket 45 - selalu larik ke luar; boleh absen saat masuk.
 	Deductibles []deductibleKabel `json:"deductibles"`
+	// tiket 46 - teks apa adanya; boleh absen saat masuk.
+	Unit                    string `json:"unit"`
+	AccumulationCode        string `json:"accumulationCode"`
+	AccumulationDescription string `json:"accumulationDescription"`
 }
 
 // deductibleKabel - kontrak `Deductible` (tiket 45); kode = teks, persen / uang / hari = teks desimal (ADR-0034).
@@ -121,7 +125,8 @@ func satuCoverageKabel(c models.CoverageObjek) coverageKabel {
 		TSILiability: teks(c.TSILiability), NetRate: teks(c.NetRate), LimitOfLiability: teks(c.LimitOfLiability),
 		PctLoL: teks(c.PctLoL), ProRatePercent: teks(c.ProRatePercent), IndemnityPercentage: teks(c.IndemnityPercentage),
 		FirstScale: teks(c.FirstScale), Sublimit: teks(c.Sublimit), LostLimit: teks(c.LostLimit), EmlPml: teks(c.EmlPml),
-		Discount: teks(c.Discount), Premium: teks(c.Premium), Conditions: c.Conditions, Deductibles: keDeductibleKabel(c.Deductibles)}
+		Discount: teks(c.Discount), Premium: teks(c.Premium), Conditions: c.Conditions, Deductibles: keDeductibleKabel(c.Deductibles),
+		Unit: c.Unit, AccumulationCode: c.AccumulationCode, AccumulationDescription: c.AccumulationDescription}
 }
 
 // keCoverageModel - satu coverage kabel -> model; `awal` = awalan jalur pesan 400 (mis. "baris[0].items[1].coverages[2].").
@@ -136,7 +141,8 @@ func keCoverageModel(awal string, c coverageKabel, masalah *[]string) models.Cov
 		IndemnityPercentage: u("indemnityPercentage", c.IndemnityPercentage), FirstScale: u("firstScale", c.FirstScale),
 		Sublimit: u("sublimit", c.Sublimit), LostLimit: u("lostLimit", c.LostLimit), EmlPml: u("emlPml", c.EmlPml),
 		Discount: u("discount", c.Discount), Premium: u("premium", c.Premium),
-		Deductibles: keDeductibleModel(awal, c.Deductibles, masalah)}
+		Deductibles: keDeductibleModel(awal, c.Deductibles, masalah), Unit: c.Unit, AccumulationCode: c.AccumulationCode,
+		AccumulationDescription: c.AccumulationDescription}
 }
 
 // keCoverageModelDaftar - coverages item; jalur pesan "<awalItem>coverages[k].".

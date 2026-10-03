@@ -72,6 +72,9 @@ type CoverageObjek struct {
 	PctAdjustment *apd.Decimal
 	// Deductibles - .DeductibleList (tiket 45), urut grid.
 	Deductibles []Deductible
+	// Unit (.Unit Indemnity Unit, kode), AccumulationCode, AccumulationDescription (Accumulation Address) - tiket 46,
+	// teks apa adanya (migrasi 195).
+	Unit, AccumulationCode, AccumulationDescription string
 }
 
 // Deductible - satu .CoverageList(k).DeductibleList(d) (kelas Data-Deductible, tiket 45). Kode pilihan = teks

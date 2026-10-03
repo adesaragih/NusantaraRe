@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// tipeAkhirMigrasi - tipe kolom tabel flat sesudah migrasi nbfacin 182..194 dijalankan
+// tipeAkhirMigrasi - tipe kolom tabel flat sesudah migrasi nbfacin 182..195 dijalankan
 // BERURUTAN: CREATE TABLE, lalu ALTER ... ADD (...) dan ALTER ... MODIFY (KOLOM TIPE).
 func tipeAkhirMigrasi(t *testing.T) map[string]map[string]string {
 	t.Helper()
@@ -29,7 +29,7 @@ func tipeAkhirMigrasi(t *testing.T) map[string]map[string]string {
 	for _, berkas := range []string{"182_t_general_polis.sql", "183_t_quotationdata.sql", "184_t_quotationdata_sob.sql", "185_t_cedingcolist.sql",
 		"186_t_objek_fire.sql", "187_t_surroundingrisk.sql", "188_t_propertyitemlist.sql", "189_t_occupationlist.sql",
 		"191_t_listcauseofloss.sql", "192_lebar_alamat_risiko.sql",
-		"193_t_coveragelist.sql", "194_t_deductiblelist.sql"} {
+		"193_t_coveragelist.sql", "194_t_deductiblelist.sql", "195_t_coveragelist_unit_akumulasi.sql"} {
 		b, err := os.ReadFile("../../migrations/" + berkas)
 		if err != nil {
 			t.Fatal(err)
@@ -137,9 +137,9 @@ func TestMigrasiFlatSebagianCocokRancangan(t *testing.T) {
 	// + 9 T_RISKLOCATION + 11 T_BUILDINGCONSTRUCTION + 24 T_SURROUNDINGRISK + 22 T_PROPERTYITEMLIST (16 rancangan
 	// + 6 baru, 188) + 10 T_OCCUPATIONLIST + 7 T_TABLEOFLIMIT (189) = 139.
 	// + 4 T_LOCATIONLIST (191) + 15 T_LISTCAUSEOFLOSS + 5 T_COINSDATA (191) + 2 T_PROPERTYITEMLIST + 34 T_COVERAGELIST
-	// (193) = 199. + 18 T_DEDUCTIBLELIST (194) = 217.
-	if diperiksa != 217 {
-		t.Errorf("%d kolom diperiksa, mau 217", diperiksa)
+	// (193) = 199. + 18 T_DEDUCTIBLELIST (194) = 217. + 3 T_COVERAGELIST (195) = 220.
+	if diperiksa != 220 {
+		t.Errorf("%d kolom diperiksa, mau 220", diperiksa)
 	}
 	// Butir 87/88: Risk Location / Address VARCHAR2(4000), delapan kolom alamat lain VARCHAR2(100) sesudah 192.
 	for tk, mau := range map[string]string{"T_RISKLOCATION.ASM_ADDRESS": "VARCHAR2(4000)", "T_PROPERTY.ROAD_NAME": "VARCHAR2(4000)",

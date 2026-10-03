@@ -96,4 +96,22 @@ Pertanyaan).
 - [x] Days radio mendatar 365 / 366 / 360.
 - [x] Accumulation Code / Address tampil ("---" bila kosong); Copy Accumulation hanya di coverage pertama.
 - [x] Choose menolak accumulation yang zip-nya beda dengan pesan Pega.
-- [ ] Backend: endpoint akumulasi + simpan tiga medan (sesi c3; menunggu DDL `ACCUMULATION`).
+- [x] Backend: simpan tiga medan (sesi c3, 03-10-2026; migrasi 195 ditulis, belum dijalankan).
+- [ ] Backend: endpoint `GET /api/nbfacin/akumulasi` (menunggu DDL `ACCUMULATION`).
+
+## Backend butir 1 (sesi c3, 03-10-2026)
+
+⛔ **Migrasi 195 WAJIB dijalankan di DEV sebelum backend baru** — urutan … → 194 → **195**. Baca / tulis coverage kini
+memakai `T_COVERAGELIST.UNIT` / `ACCUMULATION_CODE` / `ACCUMULATION_DESCRIPTION`; tanpa 195 seluruh tab Object gagal
+ORA-00904.
+
+- `coverages[k].unit` / `accumulationCode` / `accumulationDescription` (teks apa adanya, kosong = NULL) di `GET` / `PUT
+  …/objek`; diteruskan apa adanya oleh `POST hitung-coverage` / `hitung-net-rate` (tanpa disimpan). 400 ber-jalur bila
+  melebihi lebar kolom: `unit` / `accumulationCode` 50, `accumulationDescription` 500 byte. Tanpa pemeriksaan isi kode.
+- Migrasi **195**: `ALTER TABLE T_COVERAGELIST ADD` tiga kolom RANCANGAN (skema loader `T_COVERAGELIST`: `UNIT`
+  VARCHAR2(50), `ACCUMULATION_CODE` VARCHAR2(50), `ACCUMULATION_DESCRIPTION` VARCHAR2(500)) — tipe / lebar rancangan apa
+  adanya, tanpa kolom baru. Sampel `DDL\P-5 *.txt` `[terverifikasi]`: 107 coverage ber-Unit (satu digit) dan 107
+  ber-AccumulationCode (bentuk `aaa-99999-999999`); AccumulationDescription paling panjang 149 byte (≤ 500).
+- Butir 2 (`GET /api/nbfacin/akumulasi`) **tidak dikerjakan**: sumber kelas `Int-ACCUMULATION` tetap belum terverifikasi.
+  `DDL\RDBMASTERACCUMULATION.txt` `[terverifikasi]` adalah PROSEDUR penulis `M_ACCUMULATION` (ID, JSONDATA; ID =
+  negara-zip-urutan) — bukan sumber baca RD; `DDL\M_ACCUMULATION.txt` ber-JSON. Kunci JSON tidak ditebak.

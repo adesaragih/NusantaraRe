@@ -1358,6 +1358,13 @@ membaca `T_DEDUCTIBLELIST`). Skema loader tidak berubah (rancangan sudah punya t
 Keputusan agent A169–A171 **menunggu konfirmasi** (`issues/45-deductible-c3.md`). ⚠️ Koreksi atas kontrak: `PUT …/objek`
 TIDAK memakai `DisallowUnknownFields` (fungsi `urai` handlers.go:268 dipakai rute lain) — medan tak dikenal diabaikan.
 
+## Tiket 46 — Coverage Indemnity Unit + akumulasi (backend butir 1), diteruskan sesi `nusantarare-0f`
+
+`coverages[k].unit` / `accumulationCode` / `accumulationDescription` di `…/objek` → tiga kolom RANCANGAN `T_COVERAGELIST`,
+migrasi **195** (`ALTER ADD`) — ditulis, belum dijalankan; urutan DEV … → 194 → **195** (⛔ wajib sebelum backend baru).
+Tanpa keputusan agent baru. Endpoint `GET /api/nbfacin/akumulasi` menunggu DDL sumber `Int-ACCUMULATION`
+(`issues/46-coverage-tata-letak-akumulasi.md`).
+
 ## Bug DEV — 3 Oktober 2026, popup Choose Class of Construction kosong (diteruskan sesi `nusantarare-0f`)
 
 | # | Butir | Keputusan |

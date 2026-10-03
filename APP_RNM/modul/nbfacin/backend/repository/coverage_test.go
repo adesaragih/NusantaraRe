@@ -37,7 +37,7 @@ func TestSisipCoverageMenurutKolom(t *testing.T) {
 	m := regexp.MustCompile(`\(([^)]*)\) VALUES \((.*)\)$`).FindStringSubmatch(sqlSisipCoverage("UJI.V"))
 	kolom := strings.Split(m[1], ", ")
 	nilai := regexp.MustCompile(`TO_NUMBER\(:\d+[^)]*\)|:\d+`).FindAllString(m[2], -1)
-	if len(kolom) != 6+len(kolomCoverageData)+1 || len(nilai) != len(kolom) || len(kolomCoverageData) != 25 {
+	if len(kolom) != 6+len(kolomCoverageData)+1 || len(nilai) != len(kolom) || len(kolomCoverageData) != 28 {
 		t.Fatalf("%d kolom / %d nilai / %d data", len(kolom), len(nilai), len(kolomCoverageData))
 	}
 	angka := map[string]bool{"TSI": true, "RATE": true, "RATE_OJK": true, "DISCOUNT_PERCENTAGE": true, "TSI_LIABILITY": true, "NET_RATE": true,
@@ -74,7 +74,7 @@ func TestSisipCoverageMenurutKolom(t *testing.T) {
 	}
 	// Kolom baca: NUMBER lewat angkaKeluar, VARCHAR2 apa adanya; kunci induk lalu kunci coverage (tiket 45) di depan.
 	baca := kolomBacaCoverage()
-	if baca[0] != "TO_CHAR(v.PARENT_ID)" || baca[1] != "TO_CHAR(v.ID)" || len(baca) != 27 {
+	if baca[0] != "TO_CHAR(v.PARENT_ID)" || baca[1] != "TO_CHAR(v.ID)" || len(baca) != 30 {
 		t.Fatalf("kolom baca %v", baca)
 	}
 	for i, k := range kolomCoverageData {

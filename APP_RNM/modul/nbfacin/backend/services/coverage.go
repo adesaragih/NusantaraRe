@@ -379,7 +379,7 @@ func periksaCoverage(awalItem string, cov []models.CoverageObjek) []string {
 // lebarMataUangCoverage - T_COVERAGELIST.CURRENCY_CODE VARCHAR2(10) (migrasi 193).
 const lebarMataUangCoverage = 10
 
-// lebarCoverage - lebar kolom (BYTE) migrasi 193 medan teks coverage.
+// lebarCoverage - lebar kolom (BYTE) migrasi 193 / 195 medan teks coverage.
 var lebarCoverage = []struct {
 	nama  string
 	nilai func(models.CoverageObjek) string
@@ -392,6 +392,10 @@ var lebarCoverage = []struct {
 	{"day", func(c models.CoverageObjek) string { return c.Day }, 50},
 	{"indemnity", func(c models.CoverageObjek) string { return c.Indemnity }, 50},
 	{"conditions", func(c models.CoverageObjek) string { return c.Conditions }, 500},
+	// tiket 46 (migrasi 195)
+	{"unit", func(c models.CoverageObjek) string { return c.Unit }, 50},
+	{"accumulationCode", func(c models.CoverageObjek) string { return c.AccumulationCode }, 50},
+	{"accumulationDescription", func(c models.CoverageObjek) string { return c.AccumulationDescription }, 500},
 }
 
 // desimalCoverage - medan desimal masukan coverage (medan server tsi / tsiLiability / proRatePercent diabaikan).
