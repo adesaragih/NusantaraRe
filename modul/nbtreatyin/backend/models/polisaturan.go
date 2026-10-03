@@ -63,6 +63,32 @@ func PraprosesAdmin(h *Halaman, sekarang time.Time, namaTampilan string) {
 	SalinQuotation(h)
 }
 
+// SystemSetOneYear = `DataTransform/SystemSetOneYear_DT` langkah 1:
+// `.EndDate = @DateTime.addCalendar(.StartDate,1,0,0,0,0,0,0)`.
+//
+// Pemicunya (XML): pra-transform (`pyPreDataTransform`) aksi refresh `change`
+// medan `.StartDate` di `Section/DetailPolicyTreatyIn` - layar admin, medan
+// wajib dan dapat disunting. Di `Section/DetailDeptHeadTreatyIn_UW` medan yang
+// sama `pyReadOnly` (`1==1`), jadi aturan ini hanya berjalan di layar admin.
+// Ia BERBEDA dari pengisian tanggal-akhir-kosong `PraprosesAdmin` (P35/AC 34):
+// itu berjalan saat layar dibuka, ini saat tanggal mulai diubah, dan menimpa
+// `.EndDate` tanpa syarat.
+//
+// `addCalendar` Pega = `java.util.Calendar.add(YEAR, 1)`: 29 Februari dijepit
+// ke 28 Februari pada tahun bukan kabisat (bukan digulirkan ke 1 Maret).
+// ⚠️ `[dugaan]` tanggal mulai kosong/tak terbaca: `.EndDate` dibiarkan.
+func SystemSetOneYear(h *Halaman) {
+	mulai, err := utils.ParseTanggal(strings.TrimSpace(h.Ambil(HalamanPolis + ".StartDate")))
+	if err != nil {
+		return
+	}
+	y, m, d := mulai.Date()
+	if akhirBulan := time.Date(y+1, m+1, 0, 0, 0, 0, 0, time.UTC).Day(); d > akhirBulan {
+		d = akhirBulan
+	}
+	h.Setel(HalamanPolis+".EndDate", utils.FormatTanggal(time.Date(y+1, m, d, 0, 0, 0, 0, time.UTC)))
+}
+
 // PraprosesAtasan = `DataTransform/DeptHeadTreatyInUW_preDT` (pra-proses flow
 // action `DeptHeadTreatyIn_UW`, layar Sec Head dan Dept Head).
 //
