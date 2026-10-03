@@ -1,6 +1,6 @@
 package repository
 
-// Untuk apa berkas ini: RIWAYAT, NOMOR POLIS, PERAN TEMPAT, dan NAMA TAMPILAN.
+// Untuk apa berkas ini: RIWAYAT, NOMOR POLIS, dan NAMA TAMPILAN.
 //
 //   - `HISTORYAKSEPTASIPEGA` - `Activity/InsertHistoryAkseptasiPega` (RDB
 //     `InsertHistoryAkseptasiPega_Sql`), pasca-submit KEDUA flow action. Pega
@@ -9,7 +9,6 @@ package repository
 //     membatalkan seluruh submit (AC 83).
 //   - Nomor polis - `GeneratePolicyNoTreaty_Act` lewat penomor bersama
 //     `inti/backend/penomor` (padanan `PROC_GENERATE_SEQUENCE_NUMBER`).
-//   - `M_NBTRIN_PERAN_TEMPAT` - pemetaan tempat -> peran (tiket 05).
 //   - `M_LOGIN_GO.NAME` - nama tampilan (`OperatorID.pyUserName`), dibaca saja
 //     seperti modul marketingofficer.
 
@@ -134,44 +133,6 @@ func (g *Gudang) TerbitkanNomorPolis(ctx context.Context, tx *db.Tx, h *models.H
 // penomor bersama.
 func (g *Gudang) HariClosing(ctx context.Context, tx *db.Tx) (int, error) {
 	return g.nomor.HariClosing(ctx, tx)
-}
-
-// ------------------------------------------------------------------ peran tempat
-
-// PeranTempat adalah satu baris M_NBTRIN_PERAN_TEMPAT.
-type PeranTempat struct {
-	KodeTempat string
-	Peran      string
-	// Arah - MUNCUL (hanya untuk peran ini) atau KECUALI (semua kecuali
-	// peran ini) - TIDAK ditebak (AC 82).
-	Arah string
-}
-
-// DaftarPeranTempat membaca seluruh pemetaan. Tabel kosong = setiap tempat
-// tertunda (AC 81).
-func (g *Gudang) DaftarPeranTempat(ctx context.Context) ([]PeranTempat, error) {
-	t, err := g.nama(tabelPeranTempat)
-	if err != nil {
-		return nil, err
-	}
-	q := fmt.Sprintf(`SELECT KODE_TEMPAT, PERAN, ARAH FROM %s ORDER BY KODE_TEMPAT, PERAN`, t)
-	if err := db.PeriksaSQL(q); err != nil {
-		return nil, err
-	}
-	rows, err := g.db.QueryContext(ctx, q)
-	if err != nil {
-		return nil, fmt.Errorf("repository: membaca peran tempat: %w", err)
-	}
-	defer rows.Close()
-	var out []PeranTempat
-	for rows.Next() {
-		var p PeranTempat
-		if err := rows.Scan(&p.KodeTempat, &p.Peran, &p.Arah); err != nil {
-			return nil, fmt.Errorf("repository: membaca peran tempat: %w", err)
-		}
-		out = append(out, p)
-	}
-	return out, rows.Err()
 }
 
 // ------------------------------------------------------------------ nama tampilan

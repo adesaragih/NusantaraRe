@@ -58,7 +58,6 @@ type Gudang interface {
 
 	CatatRiwayat(ctx context.Context, tx *db.Tx, r models.Riwayat) error
 	DaftarRiwayat(ctx context.Context, idPega string) ([]models.Riwayat, error)
-	DaftarPeranTempat(ctx context.Context) ([]repository.PeranTempat, error)
 	NamaTampilan(ctx context.Context, loginID string) (string, error)
 }
 

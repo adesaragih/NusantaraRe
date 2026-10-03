@@ -411,10 +411,7 @@ func (l *Layanan) kirim(ctx context.Context, p inti.Pelaku, id string, masuk *mo
 // berpesan tidak dapat di-submit, sama dengan Pega.
 func (l *Layanan) validasiKirim(ctx context.Context, p inti.Pelaku, h *models.Halaman, posisi string) error {
 	pesan := models.MedanWajibKosong(h, posisi)
-	tempat, err := l.tempat(ctx, p)
-	if err != nil {
-		return err
-	}
+	tempat := l.tempat(p)
 	if tempat[TempatTanggalProduksi] && h.Ambil(models.HalamanPolis+".IsApproved") == "1" &&
 		strings.TrimSpace(h.Ambil(models.HalamanPolis+".ProductionDate")) == "" {
 		pesan = append(pesan, "Production Date")

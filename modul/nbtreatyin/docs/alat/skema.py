@@ -175,22 +175,6 @@ def main():
         "CONSTRAINT UQ_POLIS_MEDAN_LAIN_JALUR UNIQUE (POLIS_ID, JALUR)",
     ])], ["DROP TABLE {skema}.T_POLIS_MEDAN_LAIN CASCADE CONSTRAINTS"])
 
-    # ------------------------------------------------------------ 330 peran per tempat
-    tulis("330_m_nbtrin_peran_tempat", [
-        "330 - M_NBTRIN_PERAN_TEMPAT: pemetaan TEMPAT -> PERAN -> ARAH untuk tempat yang",
-        "di sistem lama memeriksa identitas orang (tiket 05; P12, P28).",
-        "",
-        "TABEL INI DIISI KEMUDIAN oleh IAM bersama work owner - nol baris dari migrasi.",
-        "Nama orang TIDAK dibawa; tempat tanpa baris = tertunda (AC 81): bagian layarnya",
-        "tidak ditampilkan dan syaratnya tidak dianggap terpenuhi. ARAH menyatakan",
-        "'MUNCUL' (hanya untuk peran ini) atau 'KECUALI' (untuk semua kecuali peran ini)",
-        "dan TIDAK ditebak (AC 82).",
-    ], [blok("M_NBTRIN_PERAN_TEMPAT", [("KODE_TEMPAT", "VARCHAR2(64) NOT NULL"), ("PERAN", "VARCHAR2(64) NOT NULL"),
-                                          ("ARAH", "VARCHAR2(16) NOT NULL")], [], [
-        "CONSTRAINT PK_NBTRIN_PERAN_TEMPAT PRIMARY KEY (KODE_TEMPAT, PERAN)",
-        "CONSTRAINT CK_NBTRIN_PERAN_TEMPAT_ARAH CHECK (ARAH IN ('MUNCUL', 'KECUALI'))",
-    ])], ["DROP TABLE {skema}.M_NBTRIN_PERAN_TEMPAT CASCADE CONSTRAINTS"])
-
     # ------------------------------------------------------------ STRUKTUR
     w = ["# Struktur Tabel — NB Treaty In", "",
          "Acuan bentuk tabel modul `nbtreatyin`. **Dibangkitkan** `docs/alat/skema.py` dari",
@@ -239,10 +223,6 @@ def main():
          [{"kolom": "JALUR", "gol": "teks", "properti": "jalur medan tak dikenal"},
           {"kolom": "NILAI", "gol": "teks", "properti": "nilai apa adanya"}],
          "Penampung medan tak dikenal (ID-27) — wajib kosong sebelum selesai.")
-    sect("M_NBTRIN_PERAN_TEMPAT", [("KODE_TEMPAT", "teks", "tidak", "PK", "kode", "tempat guard (tiket 05)"),
-                                   ("PERAN", "teks", "tidak", "PK", "kode", "peran / workbasket"),
-                                   ("ARAH", "teks", "tidak", "", "kode", "MUNCUL / KECUALI")], [],
-         "Pemetaan tempat → peran → arah; **diisi IAM kemudian**, nol baris dari migrasi (tiket 05).")
     open(STRUKTUR, "w", encoding="utf-8", newline="\n").write("\n".join(w).rstrip() + "\n")
     print("ok:", ", ".join(sorted(t)))
 

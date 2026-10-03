@@ -4,8 +4,8 @@ package repository
 // memegang koneksi dan penomor bersama, beserta nama tabel dan bantuan kecil
 // yang dipakai seluruh berkas paket ini.
 //
-// Tabel MILIK modul ini (migrasi 320-330): T_GENERAL_POLIS dan anak-anaknya
-// T_POLIS_*, serta M_NBTRIN_PERAN_TEMPAT. Tabel MILIK modul lain yang ditulis:
+// Tabel MILIK modul ini (migrasi 320-329): T_GENERAL_POLIS dan anak-anaknya
+// T_POLIS_*. Tabel MILIK modul lain yang ditulis:
 // T_WORK_POLIS (premiumlistlife 050/059 - tabel kasus lintas-lini, dipakai
 // bersama sesuai rancangan §2). Tabel WARISAN Pega yang dibaca: view
 // TREATYINDETAILJOINEDM dan TREATYINDETAIL, CURRENCY, MARKETINGOFFICER,
@@ -30,7 +30,6 @@ import (
 // Nama tabel - tanpa skema; skema dipasang `Qualify`.
 const (
 	tabelKerja         = "T_WORK_POLIS"
-	tabelPeranTempat   = "M_NBTRIN_PERAN_TEMPAT"
 	viewDetailGabung   = "TREATYINDETAILJOINEDM"
 	tabelDetail        = "TREATYINDETAIL"
 	tabelMataUang      = "CURRENCY"

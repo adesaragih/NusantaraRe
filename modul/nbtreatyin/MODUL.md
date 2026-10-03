@@ -48,14 +48,14 @@ dipensiunkan 1 Oktober 2026.
   (`inti/backend/penomor`, `KODE_PRODUKSI` NONLIFE).
 - **Riwayat** `HISTORYAKSEPTASIPEGA` di transaksi submit; `OPERATORID` = identitas login, `USERNAME`
   = nama tampilan (`M_LOGIN_GO.NAME`).
-- **Peran pengganti nama orang** = `M_NBTRIN_PERAN_TEMPAT` (migrasi 330), DIISI KEMUDIAN oleh IAM;
-  tanpa baris = tempat tertunda (tiket 05).
+- **Peran pengganti nama orang** = konstanta kode `backend/models/peran_tempat.go`
+  (`PemetaanPeranTempat`, keputusan work owner K16 03-10-2026 - BUKAN tabel), KOSONG sampai IAM
+  menjawab; tanpa baris = tempat tertunda (tiket 05). Peran pengguna dari `inti.Pelaku.Peran`.
 
 ## Migrasi
 
 Rentang `320-359`: 320-328 tabel polis (bangkitan `docs/alat/skema.py` dari katalog), 329
-`T_POLIS_MEDAN_LAIN` (penampung medan tak dikenal untuk pemuat dokumen lama), 330
-`M_NBTRIN_PERAN_TEMPAT`. Slot menu `968`: satu `UPDATE DIMIGRASI` baris modul ini, nol `INSERT`.
+`T_POLIS_MEDAN_LAIN` (penampung medan tak dikenal untuk pemuat dokumen lama). Slot menu `968`: satu `UPDATE DIMIGRASI` baris modul ini, nol `INSERT`.
 
 ## Menjalankan uji modul ini saja
 

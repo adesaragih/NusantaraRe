@@ -165,10 +165,7 @@ func (l *Layanan) BukaKasus(ctx context.Context, p inti.Pelaku, id string) (Laya
 }
 
 func (l *Layanan) layar(ctx context.Context, p inti.Pelaku, k models.Kasus, h *models.Halaman, boleh bool) (Layar, error) {
-	tempat, err := l.tempat(ctx, p)
-	if err != nil {
-		return Layar{}, err
-	}
+	tempat := l.tempat(p)
 	var wajib []string
 	for _, m := range models.DaftarMedanWajib(k.PositionNote) {
 		if m.Syarat == nil || m.Syarat(h) {

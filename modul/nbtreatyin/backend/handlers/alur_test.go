@@ -23,7 +23,6 @@ import (
 
 	"nusantarare/modul/nbtreatyin/backend/handlers"
 	"nusantarare/modul/nbtreatyin/backend/models"
-	"nusantarare/modul/nbtreatyin/backend/repository"
 	"nusantarare/modul/nbtreatyin/backend/services"
 	"nusantarare/modul/nbtreatyin/backend/tiruan"
 )
@@ -369,32 +368,26 @@ func TestPilihBisnis(t *testing.T) { // tiket 01; AC 36-38
 	}
 }
 
+// Pemetaan tempat -> peran KOSONG sampai IAM menjawab (K12, K16): setiap
+// tempat TERTUNDA bagi siapa pun, dan Production Date tidak diwajibkan.
+// Mekanisme arahnya diuji murni di models (TestTempatTampilMenurutArah).
 func TestTempatBerperanTidakDitebak(t *testing.T) { // AC 81, 82, 91
 	u := baru(t)
 	id := u.buat()
-	lihat := func(p pelakuUji) bool {
+	for _, p := range []pelakuUji{admin, {"UJI-A", models.PosisiAdmin + ",UJI-PERAN-A"}} {
 		_, isi := u.panggil("GET", "/kasus/"+id, p, nil)
 		var ly services.Layar
 		if err := json.Unmarshal([]byte(isi), &ly); err != nil {
 			t.Fatal(err)
 		}
-		return ly.Tempat[services.TempatTanggalProduksi]
-	}
-	if lihat(admin) {
-		t.Fatal("tanpa pemetaan, tempat TERTUNDA - tidak tampil")
-	}
-	punya := pelakuUji{"UJI-A", models.PosisiAdmin + ",UJI-PERAN-A"}
-	u.g.Tempat = []repository.PeranTempat{{KodeTempat: services.TempatTanggalProduksi, Peran: "UJI-PERAN-A", Arah: services.ArahMuncul}}
-	if !lihat(punya) || lihat(admin) {
-		t.Fatal("MUNCUL: hanya pemegang peran yang melihat")
-	}
-	u.g.Tempat[0].Arah = services.ArahKecuali
-	if lihat(punya) || !lihat(admin) {
-		t.Fatal("KECUALI: semua kecuali pemegang peran")
-	}
-	u.g.Tempat = append(u.g.Tempat, repository.PeranTempat{KodeTempat: services.TempatTanggalProduksi, Peran: "UJI-PERAN-B", Arah: services.ArahMuncul})
-	if lihat(punya) {
-		t.Fatal("dua arah di satu tempat bertentangan: tetap tertunda")
+		if tampil, ada := ly.Tempat[services.TempatTanggalProduksi]; !ada || tampil {
+			t.Fatalf("%s: tanpa pemetaan, tempat TERTUNDA - tidak tampil (%v)", p.akun, ly.Tempat)
+		}
+		for _, w := range ly.MedanWajib {
+			if w == models.HalamanPolis+".ProductionDate" {
+				t.Fatal("tempat tertunda tidak mewajibkan Production Date")
+			}
+		}
 	}
 }
 

@@ -282,13 +282,3 @@ Penampung medan tak dikenal (ID-27) — wajib kosong sebelum selesai.
 | `POLIS_ID` | teks | tidak | FK T_GENERAL_POLIS, UQ (POLIS_ID, JALUR) | kode | induk |
 | `JALUR` | teks | ya |  | teks | `jalur medan tak dikenal` |
 | `NILAI` | teks | ya |  | teks | `nilai apa adanya` |
-
-## M_NBTRIN_PERAN_TEMPAT
-
-Pemetaan tempat → peran → arah; **diisi IAM kemudian**, nol baris dari migrasi (tiket 05).
-
-| Kolom | Tipe | Null | Kunci | Golongan | Properti Pega |
-| --- | --- | --- | --- | --- | --- |
-| `KODE_TEMPAT` | teks | tidak | PK | kode | tempat guard (tiket 05) |
-| `PERAN` | teks | tidak | PK | kode | peran / workbasket |
-| `ARAH` | teks | tidak |  | kode | MUNCUL / KECUALI |

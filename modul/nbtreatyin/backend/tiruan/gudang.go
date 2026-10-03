@@ -35,7 +35,6 @@ type Gudang struct {
 	Kontrak map[string]models.BarisKontrak
 	Bisnis  map[string]models.BarisBisnis
 	Serupa  []string
-	Tempat  []repository.PeranTempat
 	StsPKP  string
 	OJK     string
 	urutPol int
@@ -309,10 +308,6 @@ func (g *Gudang) DaftarRiwayat(_ context.Context, idPega string) ([]models.Riway
 		}
 	}
 	return out, nil
-}
-
-func (g *Gudang) DaftarPeranTempat(context.Context) ([]repository.PeranTempat, error) {
-	return g.Tempat, nil
 }
 
 func (g *Gudang) NamaTampilan(_ context.Context, login string) (string, error) {
