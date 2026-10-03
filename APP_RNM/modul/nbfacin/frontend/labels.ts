@@ -204,3 +204,91 @@ export const TEKS_FORM_OPPORTUNITY = {
   /** Pencarian berhasil tetapi tidak ada baris yang cocok. */
   tanpaAccount: 'Tidak ada account yang cocok.',
 } as const
+
+// ---------------------------------------------------------------------------
+// Layar Inward Facultative - assignment pertama case NB (tiket 30, tahap 1)
+// ---------------------------------------------------------------------------
+//
+// ⛔ VERBATIM dari korpus `D:\migrasi\RNM\NB FacIn\`; `labels.test.ts` membuka berkasnya. Susunan yang tampil
+// untuk kasus FIRE dicocokkan dengan tangkapan layar Pega work owner 03-10-2026 (gambar TIDAK disalin ke repo:
+// memuat nama pelanggan dan nama orang).
+
+/** `Section\Periode.xml` (ASM-FW-GISFW-DATA-OFFERFACIN!PERIODE): `sel` = pyCellId, `tag` = elemen teksnya. */
+export const PERIODE = {
+  judul: { sel: '', tag: 'pyTitle', label: 'General' },
+  reffNumber: { sel: '9', tag: 'pyLabelFieldValue', label: 'Reff. number' },
+  businessStatus: { sel: '10', tag: 'pyLabelFieldValue', label: 'Business status' },
+  insuredName: { sel: '16', tag: 'pyLabelFieldValue', label: 'Insured name' },
+  qqName: { sel: '20', tag: 'pyLabelFieldValue', label: 'QQ name' },
+  beginDate: { sel: '21', tag: 'pyLabelFieldValue', label: 'Begin date' },
+  offeringDate: { sel: '22', tag: 'pyLabelFieldValue', label: 'Offering date' },
+  policyType: { sel: '26', tag: 'pyLabelFieldValue', label: 'Policy Type' },
+  riskScoring: { sel: '', tag: 'pyLabelFieldValue', label: 'Risk Scoring' },
+  uploadQuotation: { sel: '38', tag: 'pyLabel', label: 'Upload QUOTATION/PLACING SLIP AI' },
+  uploadRISlip: { sel: '39', tag: 'pyLabel', label: 'Upload R/I SLIP AI' },
+  classOfBusiness: { sel: '42', tag: 'pyLabelFieldValue', label: 'Class of business' },
+  typeFacultative: { sel: '43', tag: 'pyLabelFieldValue', label: 'Type facultative' },
+  sourceOfBusiness: { sel: '48', tag: 'pyLabelFieldValue', label: 'Source of business' },
+  cedingCoName: { sel: '49', tag: 'pyLabelFieldValue', label: 'Ceding co name' },
+  changeSob: { sel: '52', tag: 'pyLabel', label: 'Change SOB' },
+  changeCedingCo: { sel: '53', tag: 'pyLabel', label: 'Change Ceding Co' },
+  groupName: { sel: '56', tag: 'pyLabelFieldValue', label: 'Group Name' },
+  endDate: { sel: '60', tag: 'pyLabelFieldValue', label: 'End date' },
+  followingPolicyNumber: { sel: '66', tag: 'pyValue', label: 'Following Policy Number' },
+  search: { sel: '69', tag: 'pyLabel', label: 'Search' },
+  oldPolicyNumber: { sel: '72', tag: 'pyLabelFieldValue', label: 'Old Policy Number' },
+  marketingName: { sel: '75', tag: 'pyLabelFieldValue', label: 'Marketing Name' },
+  day: { sel: '78', tag: 'pyLabelFieldValue', label: 'Day' },
+  judulCsv: { sel: '', tag: 'pyTitle', label: 'Please upload file with .csv format' },
+  downloadTemplateCsv: { sel: '93', tag: 'pyLabel', label: 'Download Template CSV' },
+  uploadCsv: { sel: '94', tag: 'pyLabel', label: 'Upload CSV' },
+  viewUpload: { sel: '95', tag: 'pyLabel', label: 'View Upload' },
+  saveData: { sel: '96', tag: 'pyLabel', label: 'Save Data' },
+  insertAccumulation: { sel: '97', tag: 'pyLabel', label: 'Insert Accumulation' },
+} as const
+
+/**
+ * Pilihan radio Policy Type (sel 26) dan Day (sel 78) - daftarnya ikut definisi properti (`associated`, tipe
+ * rule Property tidak ada di korpus), jadi teksnya dari TANGKAPAN LAYAR work owner 03-10-2026.
+ */
+export const PILIHAN_PERIODE = {
+  policyType: ['Individual Policy', 'Master Policy'],
+  day: ['365', '366'],
+} as const
+
+/** `Section\FireSummarySection.xml` - judul kolom ringkasan objek (`pyValue`). */
+export const KOLOM_RINGKASAN = ['Object Name', 'Location'] as const
+
+/** `Section\InputInwardFacultative.xml` - checkbox `.IsShowDetail` (`pyCheckboxCaption` L3288). */
+export const SHOW_DETAIL = 'Show Detail'
+
+/** `Section\InputInwardFacultativeDtl.xml` - judul tab (`pyTitle`), urut tangkapan layar kasus FIRE. */
+export const TAB_DETAIL = [
+  'Object',
+  'Coverage',
+  'Clauses',
+  'Spreading',
+  'Inw Fac Cedant Panels',
+  'Premium Deduction / Brokerage Fee',
+  'Loss Record',
+  'Payment',
+  'Scoring Risk',
+  'Correspondence',
+] as const
+
+/** `FlowAction\InwardFacultative.xml` - tombol kaki (pySubmitLabel / pySaveLabel / pyCancelLabel). */
+export const TOMBOL_KAKI_INWARD = {
+  submit: { tag: 'pySubmitLabel', label: 'Submit' },
+  simpan: { tag: 'pySaveLabel', label: 'Save for later' },
+  batal: { tag: 'pyCancelLabel', label: 'Cancel' },
+} as const
+
+/** Teks sistem baru - BUKAN dari Pega. */
+export const TEKS_INWARD = {
+  /** Judul blok ringkasan: hanya terlihat di tangkapan layar ("SUMMARY"); tidak ditemukan di XML. */
+  ringkasan: 'SUMMARY',
+  /** Ringkasan objek kosong (Pega "No items"). */
+  kosong: 'No items',
+  /** Untuk `BelumTersedia` isi tab detail (tahap 3). */
+  isiTab: 'Isi tab',
+} as const

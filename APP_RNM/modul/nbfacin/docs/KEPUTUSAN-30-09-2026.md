@@ -1114,7 +1114,7 @@ tidak dijalankan**; `repository/casenb.go`, `services/opportunity.go`, `handlers
 | # | Keputusan | Dasar |
 | --- | --- | --- |
 | A79 | `T_NB_OPPORTUNITY` berbagi PK dengan `T_WORK_POLIS` **tanpa** constraint FK | pola `T_PREMIUM_LIST` premiumlistlife 050/051; constraint lintas modul tidak diputuskan siapa pun |
-| A80 | Baris `T_WORK_POLIS` NB: `POSITION`, `STATUS_WORK`, `FLAG_ONGOING_POLICY`, `COVER_KEY` **kosong** | nilai awal case NB di Pega `belum terverifikasi` |
+| ~~A80~~ | ~~Baris `T_WORK_POLIS` NB: `POSITION`, `STATUS_WORK`, `FLAG_ONGOING_POLICY`, `COVER_KEY` **kosong**~~ → **DIGANTI butir 77** (`COVER_KEY` tetap kosong) | nilai awal case NB di Pega `belum terverifikasi` |
 | A81 | Tipe `T_NB_OPPORTUNITY`: salinan `T_M_ACCOUNT` bertipe sumber (CHAR), `CLASS_OF_BUSINESS` 4000 BYTE (`BUSINESS.NOTE`), teks lain 255, `DESCRIPTION` 4000; isian melebihi lebar → 400 | pola A73/A76 |
 | A82 | Tanpa identitas → **401**; pembuat = pengenal akun di `CREATE_OP` **dan** `CREATE_OP_NAME`; sesi login didahulukan, stub `X-Pelaku` hanya bila `AUTH_STUB` | pola `KasusPolis.Buat` premiumlistlife, ADR-U-0030 |
 | A83 | Isian disimpan **apa adanya** (tidak dipangkas; medan opsional berisi spasi saja tersimpan spasi, bukan NULL); wajib-isi = bukan hanya spasi; Type Of Facultative wajib bila Type Of Inward **persis** `Facultative`; tanggal `DD-MM-YYYY` ketat (31-02 ditolak), disimpan `DATE` tanpa jam | tiket 29; nilai `Facultative` `[dugaan]` dari frontend |
@@ -1130,6 +1130,27 @@ tidak dijalankan**; `repository/casenb.go`, `services/opportunity.go`, `handlers
 - **R2** nbfacin MENULIS `T_WORK_POLIS` milik premiumlistlife dengan SQL sendiri (`repository/casenb.go`, tanpa kontrak
   lintas modul) dan kelak `ALTER` kolom Fac In atasnya (tiket 23): perubahan premiumlistlife atas tabel itu (mis. kolom
   NOT NULL baru) dapat mematahkan NB tanpa peringatan — koordinasi pemilik / tim inti.
+
+## Keputusan work owner — 3 Oktober 2026, keadaan awal case NB (tiket 29), diteruskan sesi `nusantarare-0f`
+
+Diteruskan sesi `nusantarare-0f`; konteks: work owner sudah menjalankan migrasi 180/181 di DEV (181 diisi work owner:
+`START WITH 151028`, belum di-commit saat dicatat) dan case NB berhasil dibuat. Kutipan: **"saat berhasil create position =
+Offer, FLAG_ONGOING_POLICY=0, STATUS_WORK=Pending-Policy."**
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 77 | Keadaan awal baris `T_WORK_POLIS` case NB — **menggantikan A80** ("kosong") | `POSITION = 'Offer'`, `FLAG_ONGOING_POLICY = '0'`, `STATUS_WORK = 'Pending-Policy'` — teks verbatim, konstanta `PosisiAwalCaseNB` / `FlagAwalCaseNB` / `StatusAwalCaseNB` di `repository/casenb.go`; `COVER_KEY` tetap kosong |
+
+**R1 melebar** `[terverifikasi]`: `'Offer'` adalah nilai posisi Life yang sama (`premiumlistlife/backend/models/polis_penawaran.go`
+L112 `PosisiOffer`; kasus Life baru juga `Offer`, `models/polis_kasus.go` L84). Kotak masuk Life menyaring hanya
+`w.POSITION` (`repository/polis_inbox.go` L111/L125, kueri `?posisi=` dari `handlers/rute_premiumlist.go` L53), jadi case NB
+kini tampil di tab "semua" **dan** di saringan `posisi=Offer`, ber-status `Pending-Policy`. Layar Life hari ini hanya memanggil
+tanpa posisi (`frontend/pages/InboxPremiumList.tsx` L99). `Pending-Policy`: nol kemunculan di premiumlistlife — hanya tampil,
+bukan saringan. Tidak disunting (di luar lingkup).
+
+⚠️ **Dicatat, tidak ditafsirkan:** angka awal 151028 **lebih kecil** dari contoh `NB-184351` yang dikutip sesi 0f dari
+ekspor uji (butir 74, klaim sesi 0f, tidak diverifikasi agent ini). Bila nomor NB Pega yang ada memang mencapai 184351,
+nomor baru dapat bertabrakan dengan kasus lama — `belum terverifikasi`, menunggu work owner/DBA.
 
 ## Yang belum diputuskan
 

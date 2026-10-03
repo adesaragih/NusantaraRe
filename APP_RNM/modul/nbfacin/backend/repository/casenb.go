@@ -36,11 +36,21 @@ const (
 	LiniFacIn = "FAC"
 )
 
+// Keadaan awal case NB yang baru dibuat - butir 77, keputusan work owner 03-10-2026
+// (menggantikan A80 "kosong"), teks VERBATIM: "saat berhasil create position = Offer,
+// FLAG_ONGOING_POLICY=0, STATUS_WORK=Pending-Policy." Kolomnya milik premiumlistlife:
+// POSITION (050), FLAG_ONGOING_POLICY VARCHAR2(1) (057), STATUS_WORK (059/063).
+const (
+	PosisiAwalCaseNB = "Offer"
+	FlagAwalCaseNB   = "0"
+	StatusAwalCaseNB = "Pending-Policy"
+)
+
 // PenulisCaseNB - tiga langkah pembuatan case NB; transaksinya milik pemanggil.
 type PenulisCaseNB interface {
 	// PengenalBerikut - nomor case berikutnya, sudah berawalan (NB-<n>).
 	PengenalBerikut(ctx context.Context, tx *db.Tx) (string, error)
-	// SisipCase - baris T_WORK_POLIS; POSITION dan STATUS_WORK kosong (A80).
+	// SisipCase - baris T_WORK_POLIS berkeadaan awal butir 77 (Offer / 0 / Pending-Policy).
 	SisipCase(ctx context.Context, tx *db.Tx, id, pembuat string) error
 	// SisipOpportunity - baris T_NB_OPPORTUNITY ber-ID sama.
 	SisipOpportunity(ctx context.Context, tx *db.Tx, id string, o models.Opportunity) error
@@ -62,7 +72,12 @@ var kolomOpportunity = []string{"ID", "ESTIMATED_CLOSING_DATE", "BUSINESS_PROSPE
 	"OPPORTUNITY_SOURCE", "BUSINESS_STATUS", "DESCRIPTION"}
 
 func sqlSisipCase(tabel string) string {
-	return fmt.Sprintf(`INSERT INTO %s (ID, LINI, CREATE_OP, CREATE_OP_NAME, TGL_CREATE, TGL_UPDATE) VALUES (:1, :2, :3, :4, SYSDATE, SYSDATE)`, tabel)
+	return fmt.Sprintf(`INSERT INTO %s (ID, LINI, POSITION, FLAG_ONGOING_POLICY, STATUS_WORK, CREATE_OP, CREATE_OP_NAME, TGL_CREATE, TGL_UPDATE)`+
+		` VALUES (:1, :2, :3, :4, :5, :6, :7, SYSDATE, SYSDATE)`, tabel)
+}
+
+func argSisipCase(id, pembuat string) []any {
+	return []any{id, LiniFacIn, PosisiAwalCaseNB, FlagAwalCaseNB, StatusAwalCaseNB, pembuat, pembuat}
 }
 
 func sqlSisipOpportunity(tabel string) string {
@@ -91,7 +106,7 @@ func (r *CaseNBOracle) PengenalBerikut(ctx context.Context, tx *db.Tx) (string, 
 
 // SisipCase - lihat PenulisCaseNB.
 func (r *CaseNBOracle) SisipCase(ctx context.Context, tx *db.Tx, id, pembuat string) error {
-	return r.sisip(ctx, tx, TabelWorkPolis, sqlSisipCase, []any{id, LiniFacIn, pembuat, pembuat})
+	return r.sisip(ctx, tx, TabelWorkPolis, sqlSisipCase, argSisipCase(id, pembuat))
 }
 
 // SisipOpportunity - lihat PenulisCaseNB.

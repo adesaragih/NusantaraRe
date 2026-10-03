@@ -22,6 +22,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Area, Field, Gagal, Halaman, Kosong, Memuat, Modal, Pilih, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
 import TanggalDMY from '../components/TanggalDMY'
+import type { KasusBaru } from './InwardFacultative'
 import {
   buatOpportunity,
   cariAccount,
@@ -150,7 +151,14 @@ export function PopupChooseAccount({ onTutup, onPilih }: { onTutup: () => void; 
   )
 }
 
-export default function FormOpportunity({ pemilik }: { pemilik: string }) {
+export default function FormOpportunity({
+  pemilik,
+  onDibuat,
+}: {
+  pemilik: string
+  /** Case berhasil dibuat -> layar Inward Facultative (tiket 30). */
+  onDibuat?: (k: KasusBaru) => void
+}) {
   const [tanggalTutup, setTanggalTutup] = useState('')
   const [namaProspek, setNamaProspek] = useState('')
   const [classOfBusiness, setClassOfBusiness] = useState('')
@@ -234,6 +242,7 @@ export default function FormOpportunity({ pemilik }: { pemilik: string }) {
     try {
       const h = await buatOpportunity(isian)
       setCaseId(h.caseId)
+      onDibuat?.({ caseId: h.caseId, isian, insuredName: grup?.insuredName ?? '' })
     } catch (err) {
       setGalatSimpan(err)
     } finally {

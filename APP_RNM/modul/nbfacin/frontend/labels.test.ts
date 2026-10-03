@@ -10,7 +10,18 @@ import { existsSync, readFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
-import { KEPALA_PORTAL, KOLOM_PORTAL, MEDAN_COVERAGE_CARGO, SARING_PORTAL, TOMBOL_COVERAGE_CARGO } from './labels'
+import {
+  KEPALA_PORTAL,
+  KOLOM_PORTAL,
+  KOLOM_RINGKASAN,
+  MEDAN_COVERAGE_CARGO,
+  PERIODE,
+  SARING_PORTAL,
+  SHOW_DETAIL,
+  TAB_DETAIL,
+  TOMBOL_COVERAGE_CARGO,
+  TOMBOL_KAKI_INWARD,
+} from './labels'
 
 const SECTION = 'D:\\migrasi\\RNM\\NB FacIn\\Section\\InputCoverageCargo_FacIn.xml'
 const ada = existsSync(SECTION)
@@ -108,3 +119,49 @@ if (!adaPortal) {
     console.warn(`korpus tidak ada di ${KEPALA} / ${DAFTAR}; uji bukti label portal dilewati`)
   })
 }
+
+const NBFACIN = 'D:\\migrasi\\RNM\\NB FacIn\\'
+const BERKAS_INWARD = {
+  periode: NBFACIN + 'Section\\Periode.xml',
+  layar: NBFACIN + 'Section\\InputInwardFacultative.xml',
+  dtl: NBFACIN + 'Section\\InputInwardFacultativeDtl.xml',
+  ringkasan: NBFACIN + 'Section\\FireSummarySection.xml',
+  aksi: NBFACIN + 'FlowAction\\InwardFacultative.xml',
+}
+const adaInward = Object.values(BERKAS_INWARD).every((b) => existsSync(b))
+
+describe.skipIf(!adaInward)('label Inward Facultative = korpus (Periode, InputInwardFacultative, Dtl, FireSummarySection, flow action)', () => {
+  const baca = (b: string) => (adaInward ? readFileSync(b, 'utf-8') : '')
+  const periode = baca(BERKAS_INWARD.periode)
+
+  it.each(Object.entries(PERIODE))('Periode %s', (_, u) => {
+    if (u.sel === '') {
+      // Judul layout / label tanpa sel: cukup ada di berkas dengan tag itu.
+      expect(periode).toContain(`<${u.tag}>${u.label}</${u.tag}>`)
+    } else {
+      const blok = blokSel(periode, u.sel)
+      expect(blok.some((b) => b.includes(`<${u.tag}>${u.label}</${u.tag}>`))).toBe(true)
+    }
+  })
+
+  it('Show Detail = caption checkbox InputInwardFacultative', () => {
+    expect(baca(BERKAS_INWARD.layar)).toContain(`<pyCheckboxCaption>${SHOW_DETAIL}</pyCheckboxCaption>`)
+  })
+
+  it.each(TAB_DETAIL.map((t) => [t]))('judul tab %s = pyTitle InputInwardFacultativeDtl', (t) => {
+    expect(baca(BERKAS_INWARD.dtl)).toContain(`<pyTitle>${t}</pyTitle>`)
+  })
+
+  it.each(KOLOM_RINGKASAN.map((k) => [k]))('kolom ringkasan %s = FireSummarySection', (k) => {
+    expect(baca(BERKAS_INWARD.ringkasan)).toContain(`<pyValue>${k}</pyValue>`)
+  })
+
+  it.each(Object.entries(TOMBOL_KAKI_INWARD))('tombol kaki %s = flow action InwardFacultative', (_, u) => {
+    expect(baca(BERKAS_INWARD.aksi)).toContain(`<${u.tag}>${u.label}</${u.tag}>`)
+  })
+
+  it('uji ini menggigit: label salah tidak ditemukan', () => {
+    expect(blokSel(periode, '9').some((b) => b.includes('<pyLabelFieldValue>Reff. Number</pyLabelFieldValue>'))).toBe(false)
+    expect(baca(BERKAS_INWARD.dtl)).not.toContain('<pyTitle>Objects</pyTitle>')
+  })
+})

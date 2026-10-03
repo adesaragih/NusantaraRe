@@ -24,9 +24,21 @@ func bacaMigrasi(t *testing.T, nama string) string {
 // tabel premiumlistlife (050/059), LINI terikat, waktu dari jam basis data; nol nilai
 // disambung ke teks.
 func TestSQLCaseNB(t *testing.T) {
-	mau := "INSERT INTO UJI.T_WORK_POLIS (ID, LINI, CREATE_OP, CREATE_OP_NAME, TGL_CREATE, TGL_UPDATE) VALUES (:1, :2, :3, :4, SYSDATE, SYSDATE)"
+	mau := "INSERT INTO UJI.T_WORK_POLIS (ID, LINI, POSITION, FLAG_ONGOING_POLICY, STATUS_WORK, CREATE_OP, CREATE_OP_NAME, TGL_CREATE, TGL_UPDATE)" +
+		" VALUES (:1, :2, :3, :4, :5, :6, :7, SYSDATE, SYSDATE)"
 	if got := sqlSisipCase("UJI.T_WORK_POLIS"); got != mau {
 		t.Errorf("SQL\n%q\nmau\n%q", got, mau)
+	}
+	// Butir 77: nilai bind keadaan awal VERBATIM teks work owner; pembuat di dua kolom.
+	arg := argSisipCase("NB-1", "UJI-USER")
+	want := []any{"NB-1", "FAC", "Offer", "0", "Pending-Policy", "UJI-USER", "UJI-USER"}
+	if len(arg) != len(want) {
+		t.Fatalf("argumen %v, mau %v", arg, want)
+	}
+	for i := range want {
+		if arg[i] != want[i] {
+			t.Errorf("bind :%d = %v, mau %v", i+1, arg[i], want[i])
+		}
 	}
 	if LiniFacIn != "FAC" || AwalanCaseNB != "NB-" || SequenceCaseNB != "SEQ_WORK_POLIS_NB" || TabelWorkPolis != "T_WORK_POLIS" {
 		t.Error("konstanta butir 76 berubah")
@@ -72,14 +84,14 @@ func TestKolomOpportunityCocokMigrasi(t *testing.T) {
 	}
 }
 
-// TestMigrasiSequenceWajibDiisi - butir 76.5: angka awal SEQ_WORK_POLIS_NB TIDAK
-// dikarang; penandanya utuh sampai work owner/DBA menggantinya.
+// TestMigrasiSequenceWajibDiisi - butir 76.5: angka awal SEQ_WORK_POLIS_NB milik work
+// owner/DBA. Berkas memuat SATU pernyataan dengan penanda {NB_MULAI} (belum diisi) ATAU
+// bilangan bulat positif tanpa nol di depan (sudah diisi work owner - 03-10-2026 di DEV).
+// Angka itu tidak disalin ke uji ini.
 func TestMigrasiSequenceWajibDiisi(t *testing.T) {
 	sql := bacaMigrasi(t, "181_seq_work_polis_nb.sql")
-	if !strings.Contains(sql, "CREATE SEQUENCE {skema}.SEQ_WORK_POLIS_NB START WITH {NB_MULAI} INCREMENT BY 1 NOCACHE NOCYCLE") {
-		t.Error("181 harus memakai penanda {NB_MULAI}, bukan angka")
-	}
-	if regexp.MustCompile(`START WITH \d`).MatchString(sql) {
-		t.Error("181 memuat angka awal - angka itu milik work owner/DBA")
+	pola := regexp.MustCompile(`(?m)^CREATE SEQUENCE \{skema\}\.SEQ_WORK_POLIS_NB START WITH (\{NB_MULAI\}|[1-9][0-9]*) INCREMENT BY 1 NOCACHE NOCYCLE$`)
+	if n := len(pola.FindAllString(sql, -1)); n != 1 || strings.Count(sql, "CREATE SEQUENCE") != 1 {
+		t.Errorf("181: %d pernyataan sah, mau tepat 1 (penanda {NB_MULAI} atau angka work owner)", n)
 	}
 }

@@ -21,8 +21,8 @@ describe('halaman depan NB FacIn', () => {
     expect(PENDAFTARAN_MENU.halamanAwal).toBe('nbfacin-portal')
   })
 
-  it('tiga halaman terdaftar; coverage kargo tidak dihapus', () => {
-    expect([...HALAMAN_NBFACIN]).toEqual(['nbfacin-portal', 'nbfacin-opportunity', 'nbfacin-coverage-cargo'])
+  it('empat halaman terdaftar; coverage kargo tidak dihapus', () => {
+    expect([...HALAMAN_NBFACIN]).toEqual(['nbfacin-portal', 'nbfacin-opportunity', 'nbfacin-inward', 'nbfacin-coverage-cargo'])
   })
 
   it('rute: tiap halaman merender layarnya sendiri saja', () => {
@@ -35,5 +35,13 @@ describe('halaman depan NB FacIn', () => {
   it('Create opportunity memindah ke form Opportunity', () => {
     const rute = readFileSync(join(__dirname, 'rute.tsx'), 'utf8')
     expect(rute).toContain("onBuat={() => onPindah('nbfacin-opportunity')}")
+  })
+
+  it('sesudah Create berhasil: case disimpan di rute lalu pindah ke Inward Facultative (tiket 30)', () => {
+    const rute = readFileSync(join(__dirname, 'rute.tsx'), 'utf8')
+    expect(rute).toMatch(/onDibuat=\{\(k\) => \{\s*setKasus\(k\)\s*onPindah\('nbfacin-inward'\)/)
+    // Tanpa case (mis. dibuka langsung), halaman Inward tidak dirender.
+    expect(rute).toContain("{halaman === 'nbfacin-inward' && kasus && <InwardFacultative")
+    expect(render('nbfacin-inward')).toBe('')
   })
 })

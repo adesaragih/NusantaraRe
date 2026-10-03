@@ -166,3 +166,50 @@
 .nbfacin .nbf-tabel tbody tr:hover {
   background: var(--hover-baris);
 }
+
+/* ---------------------------------------------------- Inward Facultative */
+/* Nomor case di atas layar (judul harness Pega: `NB-<n>`). */
+.nbfacin .nbf-inward__case {
+  margin: 0 0 12px;
+}
+.nbfacin .nbf-inward__teks {
+  padding: 6px 0;
+  min-height: 1.6em;
+}
+.nbfacin .nbf-inward__radio {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 32px;
+  padding: 6px 0;
+}
+.nbfacin .nbf-inward__pilihan {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Medan tampil + tombol di kanannya (Source of business / Change SOB, ...). */
+.nbfacin .nbf-inward__baris-tombol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.nbfacin .nbf-inward__csv {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+.nbfacin .nbf-inward__detail {
+  margin-top: 12px;
+}
+/* Tombol kaki flow action: Cancel kiri, Save for later + Submit kanan. */
+.nbfacin .nbf-inward__kaki {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.nbfacin .nbf-inward__kaki > :first-child {
+  margin-right: auto;
+}

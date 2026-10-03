@@ -179,6 +179,8 @@ describe('FormOpportunity = gambar Pega (keadaan awal)', () => {
     const buat = SUMBER.slice(SUMBER.indexOf('async function buat()'))
     expect(buat.indexOf('if (k.length > 0) return')).toBeLessThan(buat.indexOf('buatOpportunity(isian)'))
     expect(buat).toContain("typeOfFacultative: facultative ? typeOfFacultative : ''")
+    // Sesudah berhasil: case + isian + Insured name dibawa ke layar Inward Facultative (tiket 30).
+    expect(buat.indexOf('setCaseId(h.caseId)')).toBeLessThan(buat.indexOf("onDibuat?.({ caseId: h.caseId, isian, insuredName: grup?.insuredName ?? '' })"))
   })
 
   it('nol catatan pengembang di layar (C-6)', () => {
