@@ -78,6 +78,10 @@ function pernyataan(isi: string): string[] {
 
 const POLA_KELOMPOK =
   /^INSERT INTO \{skema\}\.M_NAV_MENU \([^)]*\)\s+SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, NULL, '([^']+)', '([^']+)', '([A-Z]+)', '([^']+)', (\d+), '([01])' FROM DUAL/
+// Baris modul DI LUAR korpus (`MODUL_LUAR_KORPUS`): bentuk datar sesudah 901, tanpa PARENT_ID (migrasi inti 906 dst.).
+// Keabsahannya - hanya `modulLuarKorpus` - dijaga skema tiruan Go; di sini hanya diterapkan.
+const POLA_KELOMPOK_DATAR =
+  /^INSERT INTO \{skema\}\.M_NAV_MENU \(ID, KODE, LABEL, GROUPMENU, MODUL, URUTAN, DIMIGRASI\)\s+SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, '([^']+)', '([^']+)', '([A-Z]+)', '([^']+)', (\d+), '([01])' FROM DUAL/
 const POLA_BUTIR = /^INSERT INTO \{skema\}\.M_NAV_MENU \([^)]*\)\s+SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, k\.ID, '([^']+)'/
 const HAPUS_BUTIR = "EXECUTE IMMEDIATE 'DELETE FROM {skema}.M_NAV_MENU WHERE PARENT_ID IS NOT NULL'"
 // Bentuk slot menu SESUDAH 901 saja (`WHERE KODE = '<modul>'`, berjangkar).
@@ -103,7 +107,7 @@ export function menuBersih(berkas: readonly BerkasMigrasiMenu[] = berkasMenu()):
   for (const b of berkas) {
     for (const p of pernyataan(b.isi)) {
       if (p.startsWith('INSERT')) hasil.insert++
-      const k = POLA_KELOMPOK.exec(p)
+      const k = POLA_KELOMPOK.exec(p) ?? POLA_KELOMPOK_DATAR.exec(p)
       if (k !== null) {
         hasil.insertTerbaca++
         if (!hasil.baris.some((x) => x.kode === k[1])) {

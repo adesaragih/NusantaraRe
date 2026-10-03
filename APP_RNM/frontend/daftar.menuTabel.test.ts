@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AKAR_APLIKASI } from '../inti/frontend/uji/sumber'
 import { berkasMenu, menuBersih, type BarisMenuBersih } from '../inti/frontend/uji/menuBersih'
 import { ambilMenu } from '../inti/frontend/klien'
-import { FOLDER_KORPUS, LABEL_MENU, LABEL_TAMPIL } from './katalogKorpus'
+import { FOLDER_KORPUS, LABEL_MENU, LABEL_TAMPIL, MODUL_LUAR_KORPUS } from './katalogKorpus'
 import { MODUL_FRONTEND } from './daftar'
 
 // Penjaga DUA ARAH: HASIL BERSIH M_NAV_MENU (900 + 901 + slot menu modul) ↔
@@ -68,7 +68,8 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
   })
 
   it('dua puluh baris modul, nol butir anak (901)', () => {
-    expect(BERSIH.baris).toHaveLength(20)
+    // Dua puluh folder korpus + modul di luar korpus (Marketing Officer, migrasi inti 906 - keputusan work owner 03-10-2026).
+    expect(BERSIH.baris).toHaveLength(20 + Object.keys(MODUL_LUAR_KORPUS).length)
     expect(BERSIH.butir).toEqual([])
     for (const b of BERSIH.baris) expect(b.kode, b.label).toBe(b.modul)
   })
@@ -105,6 +106,7 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
     expect(LABEL_TAMPIL).toEqual({ masterContractRetroLife: 'Contract Retro Life', masterProductNameLife: 'Product Name Life' })
     for (const [k, v] of Object.entries(LABEL_TAMPIL)) expect(FOLDER_KORPUS[k as keyof typeof FOLDER_KORPUS]).toBe(`Master ${v}`)
     expect(Object.values(FOLDER_KORPUS)).toHaveLength(20)
+    expect(MODUL_LUAR_KORPUS).toEqual({ marketingOfficer: 'Marketing Officer' })
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In')
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In Adjustment')
   })

@@ -1,0 +1,60 @@
+// Label modul Marketing Officer - bahasa Inggris. Caption form Pega `InputMarketingOfficer` (NB FacIn, RNW Fac In,
+// Endorsment Fac In) VERBATIM: Code, Name Marketing, Set as a leader, Branch, Sub Branch, Leader, Active
+// (`labels.test.ts` membacanya dari korpus). Pesan galat backend datang dari jawabannya sendiri.
+
+/** Nama menu - `M_NAV_MENU.LABEL` baris modul ini (migrasi inti 906, keputusan work owner 03-10-2026). */
+export const MENU_MO = { kelompok: 'Marketing Officer' } as const
+
+export const MO = {
+  judul: 'Marketing Officer',
+  sub: 'Marketing officers in POOLDATA.MARKETINGOFFICER - add and edit only; deactivate instead of delete.',
+  tambah: 'Add marketing officer',
+  cari: 'Search code, name, marketing code, login account, leader, or sub branch',
+  saringSemua: 'All',
+  saringAktif: 'Active',
+  saringNonaktif: 'Inactive',
+  kosong: 'No marketing officer yet.',
+  tidakCocok: 'No marketing officer matches the search.',
+  memuat: 'Loading marketing officers…',
+  memuatPilihan: 'Loading options…',
+
+  kolomCode: 'Code',
+  kolomNama: 'Name Marketing',
+  kolomAkun: 'Login Account',
+  kolomLeader: 'Leader',
+  kolomSubBranch: 'Sub Branch',
+  kolomStatus: 'Status',
+  kolomAksi: 'Action',
+  aktif: 'Active',
+  nonaktif: 'Inactive',
+  adalahLeader: 'Leader',
+  tanpaAkun: 'no login account',
+  akunTidakAda: 'not in user list',
+  akunNonaktif: 'account inactive',
+  ubah: 'Edit',
+
+  judulBaru: 'Add marketing officer',
+  judulUbah: 'Edit marketing officer',
+  code: 'Code',
+  codeOtomatis: 'Generated when saved',
+  namaMarketing: 'Name Marketing',
+  catatanNama: 'Taken from the login account when the marketing officer is created; it does not change afterwards.',
+  marketingCode: 'Marketing Code',
+  catatanMarketingCode:
+    "The account's Contact ID, or the code this person already has; it is copied to policies and never changes.",
+  akun: 'Login Account',
+  email: 'Email',
+  setLeader: 'Set as a leader',
+  leader: 'Leader',
+  branch: 'Branch',
+  subBranch: 'Sub Branch',
+  teamGroup: 'Team Group',
+  active: 'Active',
+  pilih: '— select —',
+  simpan: 'Save',
+  menyimpan: 'Saving…',
+  batal: 'Cancel',
+  galatAkun: 'Login Account is required',
+  galatLeader: 'Leader is required, or tick Set as a leader',
+  tersimpan: (id: string) => `Marketing officer ${id} saved.`,
+} as const

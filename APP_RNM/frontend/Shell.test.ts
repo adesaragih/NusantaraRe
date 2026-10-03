@@ -50,7 +50,8 @@ describe('menu hanya yang berbukti korpus', () => {
     // ⛔ DUA PULUH sejak brief menu M_NAV_MENU (30-09-2026): isi awal tabel
     // memuat satu kelompok per folder korpus, Treaty In dan Treaty In
     // Adjustment ikut (`frontend/daftar.menuTabel.test.ts` menjaga LABEL-nya).
-    expect(KELOMPOK_SIDEBAR).toHaveLength(20)
+    // Dua puluh folder korpus + Marketing Officer (modul di luar korpus, migrasi inti 906).
+    expect(KELOMPOK_SIDEBAR).toHaveLength(21)
     // Dan seluruhnya disebut di Shell, supaya tidak ada kelompok yang
     // terdaftar di label tetapi tidak dirender.
     for (const nama of KELOMPOK_SIDEBAR) {

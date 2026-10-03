@@ -55,6 +55,11 @@ var (
 	polaIsiKelompok = regexp.MustCompile(`(?s)^INSERT INTO \{skema\}\.M_NAV_MENU \(ID, PARENT_ID, KODE, LABEL, GROUPMENU, MODUL, URUTAN, DIMIGRASI\)\s+` +
 		`SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, NULL, '([^']+)', '([^']+)', '([^']+)', '([^']+)', (\d+), '([01])' FROM DUAL\s+` +
 		`WHERE NOT EXISTS \(SELECT 1 FROM \{skema\}\.M_NAV_MENU WHERE KODE = '([^']+)'\)$`)
+	// polaIsiKelompokDatar - baris modul DI LUAR korpus (`modulLuarKorpus`): bentuk datar sesudah 901, tanpa
+	// PARENT_ID, oleh langkah inti tersendiri (PANDUAN-TIM-PER-MODUL bab 5).
+	polaIsiKelompokDatar = regexp.MustCompile(`(?s)^INSERT INTO \{skema\}\.M_NAV_MENU \(ID, KODE, LABEL, GROUPMENU, MODUL, URUTAN, DIMIGRASI\)\s+` +
+		`SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, '([^']+)', '([^']+)', '([^']+)', '([^']+)', (\d+), '([01])' FROM DUAL\s+` +
+		`WHERE NOT EXISTS \(SELECT 1 FROM \{skema\}\.M_NAV_MENU WHERE KODE = '([^']+)'\)$`)
 	polaIsiButir = regexp.MustCompile(`(?s)^INSERT INTO \{skema\}\.M_NAV_MENU \(ID, PARENT_ID, KODE, LABEL, GROUPMENU, MODUL, URUTAN, DIMIGRASI\)\s+` +
 		`SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, k\.ID, '([^']+)', '([^']+)', k\.GROUPMENU, k\.MODUL, (\d+), k\.DIMIGRASI\s+` +
 		`FROM \{skema\}\.M_NAV_MENU k\s+WHERE k\.KODE = '([^']+)' AND k\.PARENT_ID IS NULL\s+` +
@@ -87,6 +92,27 @@ type labelTampil struct{ folder, tampil string }
 // "Master" (keputusan work owner 03-10-2026 "ganti nama modul ... hapus kata Master nya", nama tampilan saja - KODE,
 // MODUL, folder, rute, dan MODUL_AKTIF tetap). Diubah slot menu modulnya sendiri (961 / 959); mundurnya
 // mengembalikan nama folder. Setiap baris lain tetap LABEL = nama folder VERBATIM. Jumlahnya dikunci.
+// modulLuarKorpus - baris modul DI LUAR dua puluh folder korpus (PANDUAN-TIM-PER-MODUL bab 5): KODE -> berkas
+// migrasi inti yang membuatnya (bentuk datar `polaIsiKelompokDatar`, sesudah 901). Isi awal 900 tidak disunting.
+// Langkah inti ini SATU-SATUNYA selain 900/901 yang boleh menyentuh M_NAV_MENU, dan diterapkan skema tiruan
+// (`langkahMenu`). Barisnya lahir SESUDAH 903, jadi isi awal hak menu tidak menagihnya - admin memberi hak lewat
+// Kelola User.
+//
+// Keputusan work owner 03-10-2026: modul `marketingofficer`, label "Marketing Officer", kelompok MASTER.
+var modulLuarKorpus = map[string]string{
+	"marketingofficer": "906_m_nav_menu_marketingofficer.sql",
+}
+
+// langkahMenuLuarKorpus menjawab apakah berkas inti `nama` membuat baris modul luar korpus.
+func langkahMenuLuarKorpus(nama string) bool {
+	for _, b := range modulLuarKorpus {
+		if b == nama {
+			return true
+		}
+	}
+	return false
+}
+
 var labelTampilDisetujui = map[string]labelTampil{
 	"masterproductnamelife":   {folder: "Master Product Name Life", tampil: "Product Name Life"},
 	"mastercontractretrolife": {folder: "Master Contract Retro Life", tampil: "Contract Retro Life"},
@@ -165,6 +191,19 @@ func (s *skemaMenu) terapkan(p string) error {
 		}
 		if err := s.perluKolom("PARENT_ID"); err != nil {
 			return err
+		}
+		if s.cari(m[1]) < 0 {
+			u, _ := strconv.Atoi(m[5])
+			s.baris = append(s.baris, barisMenu{kode: m[1], label: m[2], golongan: m[3], modul: m[4], urutan: u, dimigrasi: m[6]})
+		}
+		return nil
+	}
+	if m := polaIsiKelompokDatar.FindStringSubmatch(p); m != nil {
+		if m[7] != m[1] {
+			return fmt.Errorf("INSERT baris modul %s memeriksa NOT EXISTS atas %s", m[1], m[7])
+		}
+		if _, luar := modulLuarKorpus[m[1]]; !luar {
+			return fmt.Errorf("INSERT datar baris modul %s - hanya modul di luar korpus (modulLuarKorpus)", m[1])
 		}
 		if s.cari(m[1]) < 0 {
 			u, _ := strconv.Atoi(m[5])
@@ -336,7 +375,7 @@ func langkahMenu(t *testing.T, hanyaIsiAwal bool) []migrasi.Langkah {
 		pemilik := berkasMigrasi.modul(m.Nama)
 		n, _ := nomorBerkas(m.Nama)
 		isiAwal := pemilik == "inti" && strings.HasPrefix(m.Nama, "900_")
-		datar := !hanyaIsiAwal && pemilik == "inti" && strings.HasPrefix(m.Nama, "901_")
+		datar := !hanyaIsiAwal && pemilik == "inti" && (strings.HasPrefix(m.Nama, "901_") || langkahMenuLuarKorpus(m.Nama))
 		slotModul := !hanyaIsiAwal && pemilik != "inti" && jatah[pemilik].diSlot(n)
 		if isiAwal || datar || slotModul {
 			out = append(out, m)
@@ -453,8 +492,9 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 	if len(butir) != 0 {
 		t.Errorf("hasil bersih masih memuat %d butir anak %v - 901 membuangnya (1 modul 1 menu)", len(butir), butir)
 	}
-	if len(kelompok) != 20 {
-		t.Fatalf("hasil bersih memuat %d baris modul, mau 20 (satu per folder modul korpus)", len(kelompok))
+	if len(kelompok) != 20+len(modulLuarKorpus) {
+		t.Fatalf("hasil bersih memuat %d baris modul, mau %d (satu per folder modul korpus + modulLuarKorpus)",
+			len(kelompok), 20+len(modulLuarKorpus))
 	}
 	kode := map[string]bool{}
 	urutanTerakhir := map[string]int{}
@@ -467,6 +507,7 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 		kode[k.kode] = true
 		// Nama folder baris ini: LABEL-nya, atau - untuk nama tampilan yang disetujui - folder asalnya.
 		folder := k.label
+		_, luar := modulLuarKorpus[k.kode]
 		if lt, ada := labelTampilDisetujui[k.kode]; ada {
 			tampil++
 			if k.label != lt.tampil {
@@ -474,7 +515,9 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 			}
 			folder = lt.folder
 		}
-		label = append(label, folder)
+		if !luar {
+			label = append(label, folder) // modul luar korpus tidak punya folder korpus
+		}
 		if mau := strings.ToLower(strings.ReplaceAll(folder, " ", "")); k.kode != mau || k.modul != mau {
 			t.Errorf("baris %q: KODE %q, MODUL %q, mau keduanya %q (tabel nama modul)", folder, k.kode, k.modul, mau)
 		}
@@ -753,7 +796,9 @@ func TestIsiAwalMenuAkunMemuatSemuaMenu(t *testing.T) {
 	kelompok, _ := isiMenu(t, false)
 	var mau []string
 	for _, k := range kelompok {
-		mau = append(mau, k.kode)
+		if _, luar := modulLuarKorpus[k.kode]; !luar { // lahir sesudah 903 - hak menu lewat Kelola User
+			mau = append(mau, k.kode)
+		}
 	}
 	for _, a := range menu.MenuAplikasi {
 		mau = append(mau, a.Kode)

@@ -76,7 +76,25 @@ export const LABEL_TAMPIL: Readonly<Partial<Record<keyof typeof FOLDER_KORPUS, s
   masterProductNameLife: 'Product Name Life',
 }
 
-/** Nama menu setiap folder korpus: nama tampilan bila diputuskan (`LABEL_TAMPIL`), selain itu nama folder VERBATIM. */
-export const LABEL_MENU = Object.fromEntries(
-  Object.entries(FOLDER_KORPUS).map(([k, v]) => [k, LABEL_TAMPIL[k as keyof typeof FOLDER_KORPUS] ?? v]),
-) as Readonly<Record<keyof typeof FOLDER_KORPUS, string>>
+/**
+ * Modul DI LUAR dua puluh folder korpus (`PANDUAN-TIM-PER-MODUL.md` bab 5) — nama menunya = `M_NAV_MENU.LABEL` barisnya,
+ * yang dibuat langkah inti tersendiri (bukan isi awal 900). Pasangan Go: `modulLuarKorpus`
+ * (`inti/backend/penjaga/menu_test.go`) - keduanya dikunci uji.
+ *
+ * Keputusan work owner 03-10-2026: modul `marketingofficer` (insert/update `MARKETINGOFFICER`), label "Marketing
+ * Officer", kelompok MASTER, baris menu migrasi inti 906.
+ */
+export const MODUL_LUAR_KORPUS = {
+  marketingOfficer: 'Marketing Officer',
+} as const
+
+/**
+ * Nama menu setiap modul: folder korpus dengan nama tampilan bila diputuskan (`LABEL_TAMPIL`), selain itu nama folder
+ * VERBATIM; lalu modul di luar korpus (`MODUL_LUAR_KORPUS`).
+ */
+export const LABEL_MENU = {
+  ...Object.fromEntries(
+    Object.entries(FOLDER_KORPUS).map(([k, v]) => [k, LABEL_TAMPIL[k as keyof typeof FOLDER_KORPUS] ?? v]),
+  ),
+  ...MODUL_LUAR_KORPUS,
+} as Readonly<Record<keyof typeof FOLDER_KORPUS | keyof typeof MODUL_LUAR_KORPUS, string>>
