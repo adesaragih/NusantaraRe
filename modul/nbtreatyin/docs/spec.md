@@ -184,6 +184,9 @@ penggolongan jenis usaha, rumus pajak brokerage, pengecualian mata uang, dan ant
     **supaya** kekeliruannya dapat diperbaiki dan diajukan ulang.
 11. **Sebagai** Kepala Departemen, **saya ingin** mengisi tujuh medan keputusan saya sendiri,
     **supaya** keputusan saya terekam beserta angkanya.
+    > ⛔ **RALAT** 2026-10-03 (putaran 2, paket P2) — bunyi lama: *"mengisi tujuh medan keputusan
+    > saya sendiri"* → bunyi baru: **mengisi putusan (`Approval`) dan catatan (`Suggest`)**, ditambah
+    > `Production Date` hanya bila medan itu tampil baginya. Bukti: AC 52 RALAT.
 12. **Sebagai** Kepala Departemen, **saya ingin** menyetujui berkas sebagai keputusan terakhir,
     **supaya** realisasi selesai dan polis terbentuk.
 13. **Sebagai** Kepala Departemen, **saya ingin** menolak berkas dan mengembalikannya ke admin,
@@ -520,6 +523,9 @@ enam medan yang wajib di layar admin — `ClaimPaymentType` `ClaimType` `IDCurre
 
 ⭐ **Kepala Departemen BUKAN hanya melihat** `[terverifikasi]` — ia mengisi **tujuh medan** sendiri,
 lalu memutuskan.
+> ⛔ **RALAT** 2026-10-03 (putaran 2, paket P2) — bunyi lama: *"ia mengisi **tujuh medan** sendiri"*
+> → bunyi baru: ia mengisi **dua medan selalu** (`.IsApproved`, `.Suggest` di `ListSuggest`) dan
+> **satu bersyarat** (`.ProductionDate`); medan lain layarnya hanya-baca. Bukti: AC 52 RALAT.
 
 ⭐ **Delapan puluh elemen mati dibuang tanpa ditanyakan** `[keputusan work owner]` **P44** —
 `[terverifikasi]` sebabnya struktural: `pyCondition` menempel pada **sel tunggal** dan
@@ -662,6 +668,17 @@ dari luar. ⛔ Butir yang terasa seperti keputusan baru adalah salah tulis.
 26. `[keputusan work owner]` `DEDUCTION1` `DEDUCTION2` `BROKERAGE` `RNM_SHARE` dibaca sebagai
     **persentase**. Test yang menemukan `12.5` diperlakukan sebagai jumlah uang **gagal**.
     *(Bab 5.6)*
+    > ⛔ **RALAT** 2026-10-03 (K3, paket P2) — bunyi lama: *"`DEDUCTION1` `DEDUCTION2` `BROKERAGE`
+    > `RNM_SHARE` dibaca sebagai **persentase**"* → bunyi baru untuk **`DEDUCTION1` `DEDUCTION2`**
+    > (halaman polis `PolicyTreatyIn.Deduction1/2`): dibaca sebagai **jumlah uang**, seperti
+    > pemakaian XML, dan ditampilkan beserta kode mata uangnya (AC 85). `BROKERAGE` dan `RNM_SHARE`
+    > tidak disentuh RALAT ini. Test yang menemukan `Deduction1/2` diperlakukan sebagai persen
+    > **gagal**. Bukti: `Section/DetailPolicyTreatyIn.xml` dan `Section/DetailDeptHeadTreatyIn_UW.xml`
+    > sel `.Deduction1` `.Deduction2` = `pxCurrency`; `Activity/CountNetPremi_act` langkah 4
+    > `.NetPremium = ((.PremiOgp-.ResultOgp1)+(.PremiOnp-.ResultOnp1))-...-.Deduction1-.Deduction2`;
+    > `Activity/SetPPNPPH` langkah 4 `.BrokerageFeeSebenarnya = @if(.TypeTax=="Inclusive",
+    > @divide(.Deduction1,@divide(102.2,100,8),8),.Deduction1)`. Keputusan WO K3 (03-10-2026):
+    > rumus XML apa adanya; pertentangan dengan P29 dicatat di tiket 07.
 27. `[terverifikasi]` `TypeTax` bernilai `"Inclusive"` ⇒ potongan dibagi **1,022**. Test yang
     menemukan potongan dipakai apa adanya **gagal**. *(Bab 5.6)*
 28. `[terverifikasi]` `TypeTax` bernilai apa pun selain `"Inclusive"` persis — **termasuk kosong,
@@ -736,6 +753,30 @@ dari luar. ⛔ Butir yang terasa seperti keputusan baru adalah salah tulis.
     mengunci sebuah bagian atau tab **gagal**. *(Bab 5.11)*
 52. `[terverifikasi]` Kepala Departemen **dapat mengisi tujuh medan**. Test yang menemukan layarnya
     sepenuhnya hanya-baca **gagal**. *(Bab 5.11)*
+    > ⛔ **RALAT** 2026-10-03 (putaran 2, paket P2) — bunyi lama: *"Kepala Departemen **dapat mengisi
+    > tujuh medan**"* → bunyi baru: pemegang layar `DetailDeptHeadTreatyIn_UW` (Sec Head dan Dept
+    > Head) **dapat mengisi dua medan selalu** — `Approval` (`.IsApproved`) dan `Suggest`
+    > (`.Suggest`) — **dan satu bersyarat**, `Production Date` (`.ProductionDate`, hanya bila
+    > `.IsApproved == 1` dan tempat berperan tiket 05 terbuka baginya). Test yang menemukan layarnya
+    > sepenuhnya hanya-baca, **atau menemukan `DueTo`, `FlagPPH`, `No Offer Slip`, atau medan lain
+    > dapat diisi**, **gagal**.
+    > Bukti XML (dibaca ulang 2026-10-03, paket P2): `FlowAction/DeptHeadTreatyIn_UW.xml`
+    > `pySectionReference = GeneralDeptHeadTreatyIn_UW` → `Section/GeneralDeptHeadTreatyIn_UW.xml`
+    > **nol sel sendiri**, hanya menyertakan `DetailDeptHeadTreatyIn_UW` atas `.PolicyTreatyIn` →
+    > `Section/DetailDeptHeadTreatyIn_UW.xml`: sel berkontrol ber-`pyReadOnly=false` hanya **8** —
+    > `.DueTo` (pxRadioButtons), `.FlagPPH` (pxCheckbox), `.QuotationData.NoOfferSlip` (pxTextArea),
+    > ketiganya `pyModes` baris 1 `pyDisabled=true` / `pyDisabledNew=always` (**tidak dapat diisi**),
+    > dan 5 `pxButton` (Survey Report + empat Submit); seluruh sel lain `pyReadOnly=true` →
+    > `Section/ListSuggest.xml` (disertakan): `.IsApproved` (pxRadioButtons, wajib), `.Suggest`
+    > (pxTextArea, wajib), `.ProductionDate` (pxDateTime; `pyVisible`/`pyRequiredWhen`
+    > `.IsApproved == 1 && OperatorID.pyUserIdentifier == '<ID-operator-3>' || '<ID-operator-4>'` —
+    > tempat berperan tiket 05). "Enam" putaran 1 = tiga sel `pyDisabled` + tiga sel `ListSuggest`;
+    > dasar angka "tujuh" tidak ditemukan. Subsection NonProp di layar yang sama (wadah
+    > `.IsNewPolicyNonProp = 1 ...`) memuat sel `pxNumber` atas halaman master `pyWorkPage.TreatyIn.*`
+    > — dinilai paket P5; halaman `TreatyIn` tidak pernah diterima dari layar.
+    > Uji: `handlers/alur_test.go` `TestMedanTerkunciAtasanDanTurunanAdmin`, `models/layar_test.go`
+    > `TestAtasanHanyaMengisiPutusanCatatanDanTanggalProduksiBersyarat`, `frontend/medan.test.ts`
+    > "AC 52".
 
 ### Layar — tampilan
 
@@ -875,6 +916,19 @@ dari luar. ⛔ Butir yang terasa seperti keputusan baru adalah salah tulis.
     yang menemukan angka tanpa mata uang **gagal**. *(Bab 5.6)*
 86. `[terbuka]` Format penyajian uang — jumlah desimal dan pemisah ribuan — **belum ditetapkan**;
     penyajian tidak dibangun sebelum ditetapkan. Test yang menemukan format yang ditebak **gagal**.
+    > ⛔ **RALAT** 2026-10-03 (K14 / OQ 7 dijawab: bawaan) — bunyi lama: *"`[terbuka]` Format penyajian
+    > uang — jumlah desimal dan pemisah ribuan — **belum ditetapkan**; penyajian tidak dibangun sebelum
+    > ditetapkan"* → bunyi baru: `[keputusan work owner]` format penyajian **mengikuti setelan sel
+    > Section XML**: `pxNumber` `pyDecimalPlaces` N ⇒ tepat N desimal (GrossPremium, RiComm*,
+    > OveriddingComm*, PaymentTotal, total berlabel: 2; grid spreading, InstallmentPercentage,
+    > Premium angsuran: 4); `pySeparators=false` ⇒ tanpa pemisah ribuan (Quartal/YearOfQuartal layar
+    > atasan); `pyShowReadonlyFormatting=true` ⇒ isian tersunting berformat selama tidak difokus.
+    > Yang **tidak terbaca** (`pxCurrency` tanpa `pyDecimalPlaces`, Balance* `pyFormatType number`,
+    > locale pemisah) ⇒ pola `inti/frontend/lib/format.ts` (titik ribuan, koma desimal, tanpa batas
+    > desimal, nol ekor dibuang). Nilai tersimpan tidak berubah (AC 24). Test yang menemukan format
+    > berbeda dari setelan sel **gagal**. Bukti: `pyModes` sel `Section/DetailPolicyTreatyIn.xml`,
+    > `DetailDeptHeadTreatyIn_UW.xml`, `SpreadingRiskList.xml`, `BusinessAndSOBList.xml`; kode
+    > `frontend/sajian.ts`, uji `frontend/sajian.test.ts`, `frontend/medan.test.ts`.
     *(Bab 9)*
 
 ### Antarmuka luar

@@ -282,6 +282,11 @@ sistem lama dipertahankan)* · `OVERIDDING_COMM_ONP` · `RESULT_OGP1` · `RESULT
 
 `DEDUCTION1` · `DEDUCTION2` · `TOTAL_SHARE_PERCENTAGE_PREMIUM` · `TOTAL_SHARE_PERCENTAGE_CLAIM`
 
+> ⛔ **RALAT** 2026-10-03 (K3, paket P2) — bunyi lama: *"**Persen** … `DEDUCTION1` · `DEDUCTION2` ·
+> `TOTAL_SHARE_PERCENTAGE_PREMIUM` · `TOTAL_SHARE_PERCENTAGE_CLAIM`"* → bunyi baru: `DEDUCTION1`
+> `DEDUCTION2` pindah ke golongan **Uang** (keputusan WO K3: ikuti pemakaian XML);
+> `TOTAL_SHARE_PERCENTAGE_*` tetap persen. Bukti: sel `.Deduction1` `.Deduction2` `pxCurrency` di `Section/DetailPolicyTreatyIn.xml` dan `Section/DetailDeptHeadTreatyIn_UW.xml`; `Activity/CountNetPremi_act` langkah 4 mengurangkan keduanya dari premi; `Activity/SetPPNPPH` langkah 4 membagi `.Deduction1` dengan 1,022.
+
 **Kode dan teks** `[dari DATA_JSON]`
 
 `POLICY_NO` · `NO_OFFER` · `BIZ_CODE` · `BIZ_NAME` · `OJK_BUSINESS_ID` · `ID_NEW_BISNIS` ·

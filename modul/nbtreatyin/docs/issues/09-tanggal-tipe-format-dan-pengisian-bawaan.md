@@ -67,3 +67,14 @@ bermasa berlaku nol hari — ⛔ **disengaja, bukan cacat migrasi.**
 `[keputusan work owner]` PremiumList Life (dua aturan sama: "ikuti yang dari DB") dan penjaga repo
 `TestNolAmbangTutupBukuTertanam` ⇒ hari tutup buku dibaca dari tabel di kedua tempat. Langkah 3-4
 (StatementDate = ProductionDate = sysdate) kotak When-nya TIDAK dicentang — berjalan setiap pra-proses.
+
+## Tampilan tanggal — putaran 2, 2026-10-03 (paket P2)
+
+`[penyimpangan sadar]` AC 33 (satu format): setiap sel tanggal hanya-baca layar realisasi, grid
+angsuran (`.DueDate`), dan daftar Suggest (`.Date`) ditampilkan lewat `formatDate` inti (`DD-MM-YYYY`,
+tanpa jam — `frontend/sajian.ts`, sajian `'tanggal'`). XML memakai beberapa format: `dd/MM/yyyy`
+(`.StartDate`, `.EndDate`, `.StatementDate` admin, `.DueDate` atasan), `Date-Short-Custom-YYYY`
+(`TreatyIn.Commencement`/`Termination`, `.ProductionDate` atasan), `dd/MM/yyyy hh:mm`
+(`.StatementDate` atasan), `dd/MM/yyyy HH:mm` (`ListSuggest .Date`), `Date-Short`
+(`ListSuggest .ProductionDate`) — justru "dua format berdampingan" yang AC 33 larang. Nilai
+tersimpan tidak berubah.
