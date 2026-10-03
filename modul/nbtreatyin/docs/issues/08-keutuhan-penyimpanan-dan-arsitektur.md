@@ -1,6 +1,6 @@
 # 08: Keutuhan penyimpanan — satu transaksi, skema eksplisit, arah ketergantungan
 
-**Status:** sebagian — dapat dikerjakan: uji bertag `db` kegagalan `CatatRiwayat` membatalkan submit lawan Oracle (AC 83) belum ditulis; penahan pihak luar: K11 (AC 29, 83) *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
+**Status:** selesai — penahan tersisa hanya pihak luar: **K11** (skema uji Oracle — uji bertag `db` AC 29 dan AC 83 sudah ditulis, belum dijalankan) *(putaran 2, paket P11 04-10-2026; semula: sebagian — konsolidasi P10 04-10-2026; sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** 01
 **Menutup:** AC 29 · 30 · 60 · 83 · 90 *(5 AC)* — US 33 · 34
 
@@ -36,7 +36,7 @@ langkah mana pun membatalkan seluruhnya, dan tidak ada lagi berkas yang tersimpa
 
 - [ ] 🟡 **AC 29** — seluruh urutan penyimpanan berada dalam **satu transaksi**; kegagalan di tengah
       menyisakan **nol** baris
-- [ ] 🟡 **AC 83** — kegagalan menyimpan riwayat **membatalkan seluruh transaksi**
+- [ ] 🟡 **AC 83** — kegagalan menyimpan riwayat **membatalkan seluruh transaksi** *(P11: `repository/riwayat_db_test.go` `TestGagalCatatRiwayatMembatalkanSubmit` — K11)*
 - [x] **AC 30** — setiap query menyebut **skema secara eksplisit**
 - [x] **AC 90** — keempat nama berejaan ganda diperlakukan sebagai **satu objek**
 - [x] **AC 60** — arah ketergantungan `handlers → services → repository`; ⛔ tidak terbalik, tidak
@@ -67,3 +67,15 @@ Dasar: PROMPT-NB-TREATY-IN-PUTARAN-2 bab 0 butir 11–12, bab 2 K4/K16/K17; rinc
   melihat penyimpanan yang sama dengan Oracle. Celah yang terungkap dan ditutup: `LAYER*` tingkat polis
   hilang sesudah dibuka ulang (kini dibaca balik dari view, ID-22).
 - AC 29 dan 83 tetap 🟡: keutuhan lawan Oracle sungguhan (`-tags db`) belum dijalankan (K11 kosong).
+
+## ⭐ Putaran 2 — paket P11 (04-10-2026): uji `db` AC 83
+
+`backend/repository/riwayat_db_test.go` `TestGagalCatatRiwayatMembatalkanSubmit` (bertag `db`, **belum dijalankan** —
+K11): urutan tulis submit admin yang disetujui (`services.Kirim`: `SimpanHalaman` → `PindahPosisi` → `CatatRiwayat`;
+riwayat diletakkan terakhir supaya halaman dan posisi sudah tertulis ketika riwayat gagal) dalam SATU transaksi;
+kegagalan disuntikkan **di Oracle** — constraint CHECK sementara menolak `OPERATORID = 'UJI-TOLAK'` (ORA-02290).
+Sesudahnya posisi (`T_WORK_POLIS`, `POSITION_NOTE`), halaman (`PremiOgp`, `NBStatus`, `IsApproved`), dan riwayat
+dibaca ulang: tak satu pun berubah. `HISTORYAKSEPTASIPEGA` warisan dipakai bila ada di skema uji, selain itu tiruan
+tujuh kolom `InsertHistoryAkseptasiPega_Sql` + `OPERATORID` dibuat lalu dibuang.
+
+Status: **selesai** — sisa penahan hanya K11 (AC 29, 83 🟡).

@@ -1,6 +1,6 @@
 # 10: Jejak audit dan kronologi — identitas akses terpisah dari nama tampilan
 
-**Status:** sebagian — dapat dikerjakan: uji bertag `db` urutan `DaftarRiwayat` (AC 72) belum ditulis; penahan pihak luar: K11, F2 (tiga penyimpangan K4, menunggu konfirmasi WO), B4 (`DIV` tanpa sumber di `inti.Pelaku`), C8 (tipe kolom fisik `HISTORYAKSEPTASIPRODUCTION`) *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
+**Status:** selesai — penahan tersisa hanya pihak luar: **K11** (skema uji Oracle — uji bertag `db` AC 72 sudah ditulis, belum dijalankan), **F2** (tiga penyimpangan K4, menunggu konfirmasi WO), **B4** (`DIV` tanpa sumber di `inti.Pelaku`), **C8** (tipe kolom fisik `HISTORYAKSEPTASIPRODUCTION`, DBA) *(putaran 2, paket P11 04-10-2026; semula: sebagian — konsolidasi P10 04-10-2026; sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** 03
 **Menutup:** AC 39 · 40 · 41 · 42 · 43 · 44 · 71 · 72 *(8 AC)* — US 15 · 16 · 20 · 40 · 41 · 42
 
@@ -44,7 +44,7 @@ seseorang berubah.
 - [x] **AC 43** — setiap perpindahan tahap menulis **satu baris riwayat**
 - [x] **AC 44** — pemberitahuan menyebut nama orang **dari data**; ⛔ tidak tertanam di dalam teks
 - [x] **AC 71** — catatan pengguna tersimpan bersama tanggal dan operatornya
-- [ ] 🟡 **AC 72** — riwayat dapat dibaca **berurutan waktu**
+- [ ] 🟡 **AC 72** — riwayat dapat dibaca **berurutan waktu** *(P11: `repository/riwayat_db_test.go` `TestDaftarRiwayatBerurutWaktu` — K11)*
 
 ## Butir `[terbuka]` yang menyentuh tiket ini
 
@@ -135,3 +135,14 @@ penyimpangan berikut **dipertahankan** tetapi berstatus `[penyimpangan sadar —
 
 Dicatat juga di PERMINTAAN-TIM-INTI bagian F2. Kode: `backend/models/usulan.go`, `backend/services/tindakan.go`
 (`Kirim`). AC tidak berubah status.
+
+## ⭐ Putaran 2 — paket P11 (04-10-2026): uji `db` AC 72
+
+`backend/repository/riwayat_db_test.go` `TestDaftarRiwayatBerurutWaktu` (bertag `db`, **belum dijalankan** — K11):
+tiga baris ditulis `CatatRiwayat` (`TGL_TRANSFER = SYSDATE`, padanan `sysdate` `InsertHistoryAkseptasiPega_Sql`),
+lalu waktunya digeser sehingga urutan TULIS berlawanan dengan urutan WAKTU (pertama ditulis = terakhir menurut
+waktu); `DaftarRiwayat` wajib mengembalikan urutan waktu `2026-10-01 09:00:00`, `2026-10-02 08:30:00`,
+`2026-10-03 10:00:00` — pembacaan berurut sisip/ROWID saja gagal. Tabel warisan dipakai bila ada di skema uji,
+selain itu tiruan (lihat tiket 08 bab P11).
+
+Status: **selesai** — sisa penahan hanya pihak luar (K11, F2, B4, C8).

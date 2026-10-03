@@ -1,6 +1,6 @@
 # 01: Sumber data realisasi treaty — dibaca dari view relasional, gagal baca menghentikan proses
 
-**Status:** sebagian — dapat dikerjakan: uji bertag `db` pembacaan view `TREATYINDETAILJOINEDM` (AC 17, 89) belum ditulis; penahan pihak luar: K11 (skema uji Oracle), F1 (ukuran K8, menunggu konfirmasi WO); AC 57 ⛔ (b) K8 butir 4 *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
+**Status:** selesai — penahan tersisa hanya pihak luar: **K11** (skema uji Oracle — uji bertag `db` AC 17, 89 sudah ditulis, belum dijalankan) dan **F1** (ukuran K8, menunggu konfirmasi WO); AC 57 ⛔ (b) K8 butir 4 *(putaran 2, paket P11 04-10-2026; semula: sebagian — konsolidasi P10 04-10-2026; sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** —
 **Menutup:** AC 15 · 16 · 17 · 36 · 37 · 38 · 57 · 58 · 89 *(9 AC)* — US 21 · 23 · 24 · 37
 
@@ -37,8 +37,8 @@ berkas yang tersimpan dari pembacaan yang gagal.
 
 - [x] **AC 15** — data dibaca dari sumber relasional, bukan dari dokumen
 - [x] **AC 16** — sistem baru **tidak menulis** dokumen
-- [ ] 🟡 **AC 17** — ke-**33** medan yang dipakai laporan tersedia
-- [ ] 🟡 **AC 89** — nol medan yang dipakai tetapi tidak tersedia
+- [ ] 🟡 **AC 17** — ke-**33** medan yang dipakai laporan tersedia *(P11: `repository/kontrak_db_test.go` `TestDetailKontrakMengisiKe33MedanRD` — K11)*
+- [ ] 🟡 **AC 89** — nol medan yang dipakai tetapi tidak tersedia *(P11: `repository/kontrak_db_test.go` `TestViewKontrakMemuatSetiapKolomYangDibaca` — K11, view sungguhan di skema uji: PERMINTAAN C4)*
 - [x] **AC 36** — kegagalan pembacaan **menghentikan** proses
 - [x] **AC 37** — kegagalan pembacaan **menampilkan galat kepada pengguna**
 - [x] **AC 38** — nol kasus tersimpan dari pembacaan yang gagal
@@ -168,3 +168,21 @@ Alasan di `docs/alat/status.json` dinilai ulang dengan ukuran yang sama:
 
 Medan yang dibaca `models/masterxol.go` tidak berubah (setiap medan sudah berkutip langkah XML). AC tidak berubah
 status.
+
+## ⭐ Putaran 2 — paket P11 (04-10-2026): uji `db` pembacaan view
+
+`backend/repository/kontrak_db_test.go` (bertag `db`, ditulis dan dikompilasi `go vet -tags db`, **belum dijalankan** —
+K11 kosong), lewat pemanggil `skemauji.Buka()` yang sudah ada (`pasang`, sensus penjaga claimlife tetap 17):
+
+- **AC 89** `TestViewKontrakMemuatSetiapKolomYangDibaca`: ke-37 kolom yang dibaca modul (33 kolom RD
+  `BrowseTreatyJoinEDM` = `repository.KolomRDDetail`, `COMMENCEMENT`, `TERMINATION`, `RIOGR`, `RIONR`) ada di
+  `ALL_TAB_COLUMNS` view `TREATYINDETAILJOINEDM` skema uji, dan `DetailKontrak` atas ID yang tidak ada menghasilkan
+  galat ID — bukan galat "kolom … tidak ada". Menuntut view **sungguhan**: bila DBA tidak menyediakannya di skema
+  uji, uji MELEWATI (tiruan buatan uji tidak membuktikan apa pun tentang view itu).
+- **AC 17** `TestDetailKontrakMengisiKe33MedanRD`: view sungguhan → baris pertama yang ke-33 kolom RD-nya terisi
+  dibaca `DetailKontrak`, tak satu pun kosong; tanpa view → tiruan 39 kolom berbentuk katalog (fakta
+  `ALL_TAB_COLUMNS` 03-10-2026, PROMPT putaran 2 bab 1) diisi satu baris `UJI-` lalu dibuang: setiap kolom terbaca
+  persis (angka `TM9` bertitik, `.5` → `0.5`, `DATE` → `YYYY-MM-DD HH24:MI:SS`), `RNM_SHARE` tidak dibaca (AC 26),
+  `RIOGR`/`RIONR` lewat `KomisiKontrak`.
+
+Status: **selesai** — sisa penahan hanya pihak luar (K11, F1); AC 57 ⛔ (b).
