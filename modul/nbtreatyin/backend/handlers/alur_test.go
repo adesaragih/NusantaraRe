@@ -23,7 +23,6 @@ import (
 
 	"nusantarare/modul/nbtreatyin/backend/handlers"
 	"nusantarare/modul/nbtreatyin/backend/models"
-	"nusantarare/modul/nbtreatyin/backend/repository"
 	"nusantarare/modul/nbtreatyin/backend/services"
 	"nusantarare/modul/nbtreatyin/backend/tiruan"
 )
@@ -172,9 +171,27 @@ func TestAdminMenolakDiselesaikanDitolak(t *testing.T) { // AC 1, 5, 39-41, 43, 
 	if r.IDPega != "ASM-FW-GISFW-WORK-NB "+id {
 		t.Fatalf("ID_PEGA %q", r.IDPega)
 	}
-	d := u.g.Halaman[id].AmbilDaftar(models.DaftarUsulan)
-	if len(d) != 1 || d[0]["OperatorID"] != "UJI-ADMIN" || d[0]["OperatorName"] != "Uji Admin" || d[0]["Date"] == "" {
-		t.Fatalf("catatan %+v", d)
+	// Catatan usulan -> POOLDATA.HISTORYAKSEPTASIPRODUCTION (K4; SaveViewSuggest
+	// langkah 2, InsertViewSuggest_SQL; spec-penyimpanan ID-31, AC 39-44).
+	if len(u.g.Usulan) != 1 {
+		t.Fatalf("satu baris riwayat produksi per catatan, dapat %d", len(u.g.Usulan))
+	}
+	c := u.g.Usulan[0]
+	if c.IDPega != "ASM-FW-GISFW-WORK-NB "+id || c.NoUrut != 1 || c.TypePolis != "NB" || c.Posisi != "Policy" ||
+		c.PIC != "Uji Admin" || c.AksesLogin != "UJI-ADMIN" || c.Approval != "Reject" || c.Keterangan != "UJI-catatan" ||
+		c.Type != "T" || c.Putaran != "2" || c.TglInp != "2026-10-03 09:00:00" || c.Div != "" {
+		t.Fatalf("baris riwayat produksi %+v", c)
+	}
+	// layar membaca catatan kembali dari tabel itu (riwayat catatan, AC 71)
+	_, isi = u.panggil("GET", "/kasus/"+id, admin, nil)
+	var ly services.Layar
+	if err := json.Unmarshal([]byte(isi), &ly); err != nil {
+		t.Fatal(err)
+	}
+	d := ly.Halaman.AmbilDaftar(models.DaftarUsulan)
+	if len(d) != 1 || d[0]["OperatorID"] != "UJI-ADMIN" || d[0]["OperatorName"] != "Uji Admin" || d[0]["IsApproved"] != "0" ||
+		d[0]["Suggest"] != "UJI-catatan" || d[0]["Date"] != "2026-10-03 09:00:00" {
+		t.Fatalf("catatan dibaca kembali %+v", d)
 	}
 	if kode, _ := u.kirim(id, admin, halamanLengkap("1")); kode != http.StatusConflict {
 		t.Fatalf("kasus tertutup harus ditolak: %d", kode)
@@ -232,6 +249,18 @@ func TestTanggaPenuhDanNomorPolisSekali(t *testing.T) { // AC 6-9, 31, 73, 74
 	if len(u.g.Riwayat) != 5 {
 		t.Fatalf("lima submit, lima riwayat - dapat %d", len(u.g.Riwayat))
 	}
+	// [penyimpangan sadar] K4: catatan SETIAP jenjang ditulis di submit-nya,
+	// NOURUT berurutan per kasus (XML: hanya pasca-submit admin).
+	var akses []string
+	for i, c := range u.g.Usulan {
+		if c.NoUrut != i+1 || c.IDPega != "ASM-FW-GISFW-WORK-NB "+id {
+			t.Fatalf("NOURUT %d: %+v", i+1, c)
+		}
+		akses = append(akses, c.AksesLogin+":"+c.Approval)
+	}
+	if got := strings.Join(akses, " "); got != "UJI-ADMIN:Accept UJI-SH:Reject UJI-ADMIN:Accept UJI-SH:Accept UJI-DH:Accept" {
+		t.Fatalf("baris riwayat produksi per jenjang: %s", got)
+	}
 }
 
 func TestMedanWajibMenahanKirimDanSimpan(t *testing.T) { // AC 45, 48
@@ -278,12 +307,12 @@ func TestPolisSerupaMenahan(t *testing.T) { // TreatyRealizationCheckDuplicate, 
 func TestSatuTransaksiPembatalanUtuh(t *testing.T) { // AC 29, 83 (urutan layanan)
 	u := baru(t)
 	id := u.buat()
-	for _, op := range []string{"PindahPosisi", "CatatRiwayat"} {
+	for _, op := range []string{"PindahPosisi", "CatatRiwayat", "CatatUsulan"} {
 		u.g.GagalDi = op
 		if kode, _ := u.kirim(id, admin, halamanLengkap("1")); kode != http.StatusInternalServerError {
 			t.Fatalf("%s gagal: %d", op, kode)
 		}
-		if len(u.g.Riwayat) != 0 || u.g.Halaman[id].Ambil("PolicyTreatyIn.Suggest") != "" || u.g.Kasus[id].PositionNote != models.PosisiAdmin {
+		if len(u.g.Riwayat) != 0 || len(u.g.Usulan) != 0 || u.g.Halaman[id].Ambil("PolicyTreatyIn.Suggest") != "" || u.g.Kasus[id].PositionNote != models.PosisiAdmin {
 			t.Fatalf("%s: kegagalan di tengah harus membatalkan riwayat, halaman, dan perpindahan", op)
 		}
 	}
@@ -306,15 +335,35 @@ func TestMedanTerkunciAtasanDanTurunanAdmin(t *testing.T) { // AC 49-52
 	}
 	a := putusan("1")
 	a.Setel("PolicyTreatyIn.PremiOgp", "999999")
+	// AC 52: `DetailDeptHeadTreatyIn_UW` - DueTo, FlagPPH, No Offer Slip
+	// `pyDisabled=always`; `ListSuggest.ProductionDate` tidak tampil tanpa
+	// tempat berperan (tiket 05) -> keempatnya tidak dapat diisi atasan.
 	a.Setel("PolicyTreatyIn.QuotationData.NoOfferSlip", "UJI-SLIP")
+	a.Setel("PolicyTreatyIn.FlagPPH", "true")
+	a.Setel("PolicyTreatyIn.DueTo", "0")
+	a.Setel("PolicyTreatyIn.ProductionDate", "2099-01-01 00:00:00")
 	if kode, isi := u.kirim(id, secHead, a); kode != http.StatusOK {
 		t.Fatalf("%d %s", kode, isi)
 	}
-	if got := u.g.Halaman[id].Ambil("PolicyTreatyIn.PremiOgp"); got != "1000" {
+	g := u.g.Halaman[id]
+	if got := g.Ambil("PolicyTreatyIn.PremiOgp"); got != "1000" {
 		t.Fatalf("PremiOgp terkunci di layar atasan, tersimpan %q", got)
 	}
-	if got := u.g.Halaman[id].Ambil("PolicyTreatyIn.QuotationData.NoOfferSlip"); got != "UJI-SLIP" {
-		t.Fatalf("No Offer Slip dapat diisi atasan, tersimpan %q", got)
+	for j, tolak := range map[string]string{
+		"PolicyTreatyIn.QuotationData.NoOfferSlip": "UJI-SLIP",
+		"PolicyTreatyIn.FlagPPH":                   "true",
+		"PolicyTreatyIn.DueTo":                     "0",
+		"PolicyTreatyIn.ProductionDate":            "2099-01-01 00:00:00",
+	} {
+		if got := g.Ambil(j); got == tolak {
+			t.Errorf("%s tidak dapat diisi atasan (AC 52), tersimpan %q", j, got)
+		}
+	}
+	// Catatan atasan tersimpan di POOLDATA.HISTORYAKSEPTASIPRODUCTION (K4).
+	usulan := u.g.Usulan
+	if len(usulan) == 0 || usulan[len(usulan)-1].Keterangan != "UJI-1" || usulan[len(usulan)-1].Approval != "Accept" ||
+		usulan[len(usulan)-1].AksesLogin != "UJI-SH" {
+		t.Fatalf("Approval dan Suggest dapat diisi atasan: %+v", usulan)
 	}
 }
 
@@ -345,56 +394,83 @@ func TestPilihBisnis(t *testing.T) { // tiket 01; AC 36-38
 		t.Fatal("pembacaan gagal tidak boleh menyimpan apa pun")
 	}
 	u.g.Kontrak["UJI-D1"] = models.BarisKontrak{"ID": "UJI-D1", "TREATYID": "UJI-T1", "LIMITCURRENCY": "IDR",
-		"CLASSOFBUSINESS": "UJI BISNIS", "TREATYTYPE": "", "PROPORTIONTYPE": "Proportional", "MDPVALUE": "500"}
+		"CLASSOFBUSINESS": "UJI BISNIS", "TREATYTYPE": "", "PROPORTIONTYPE": "Proportional", "MDPVALUE": "500",
+		"LAYERTYPE": "UJI-LT", "LAYER": "1", "LAYERPARTTYPE": "UJI-LPT", "LAYERPART": "2"}
 	u.g.Bisnis["UJI BISNIS"] = models.BarisBisnis{OldID: "01", GroupPanel: "006", ID: "UJI-B1"}
 	kode, isi := u.panggil("POST", "/kasus/"+id+"/pilih-bisnis", admin, map[string]any{"idDetail": "UJI-D1"})
 	if kode != http.StatusOK {
 		t.Fatalf("pilih bisnis: %d %s", kode, isi)
 	}
-	h := u.g.Halaman[id]
+	var ly services.Layar
+	if err := json.Unmarshal([]byte(isi), &ly); err != nil {
+		t.Fatal(err)
+	}
 	for j, harap := range map[string]string{
-		"PolicyTreatyIn.NoOffer":                    "UJI-T1",
-		"PolicyTreatyIn.TreatyType":                 "XOL", // langkah 5
-		"PolicyTreatyIn.IDCurrency":                 "UJI-ID-IDR",
-		"PolicyTreatyIn.PremiOgp":                   "500",
-		"PolicyTreatyIn.BizCode":                    "UJI-B1",
 		"Quotation.BusinessType":                    "FireStyle2", // BusinessType_DeT 006/01
 		"PolicyTreatyIn.QuotationData.BusinessType": "FireStyle2", // langkah 14.9
-		"TreatyIn.ID":                               "UJI-D1",
-		"PolicyTreatyIn.OJKBusinessID":              "UJI-OJK",
+	} {
+		if got := ly.Halaman.Ambil(j); got != harap {
+			t.Errorf("layar %s = %q, harap %q", j, got, harap)
+		}
+	}
+	// Tersimpan: medan berkolom saja. BusinessType TURUNAN masukannya yang
+	// tersimpan (GroupPanel "006" + BusinessOldId "01" - diagram J38), tanpa kolom.
+	h := u.g.Halaman[id]
+	for j, harap := range map[string]string{
+		"PolicyTreatyIn.NoOffer":       "UJI-T1",
+		"PolicyTreatyIn.TreatyType":    "XOL", // langkah 5
+		"PolicyTreatyIn.IDCurrency":    "UJI-ID-IDR",
+		"PolicyTreatyIn.PremiOgp":      "500",
+		"PolicyTreatyIn.BizCode":       "UJI-B1",
+		"Quotation.GroupPanel":         "006",
+		"Quotation.BusinessOldId":      "01",
+		"Quotation.BusinessType":       "",
+		"TreatyIn.ID":                  "UJI-D1",
+		"PolicyTreatyIn.OJKBusinessID": "UJI-OJK",
+		"PolicyTreatyIn.LayerType":     "", // diagram F26: dicoret dari T_GENERAL_POLIS
 	} {
 		if got := h.Ambil(j); got != harap {
-			t.Errorf("%s = %q, harap %q", j, got, harap)
+			t.Errorf("tersimpan %s = %q, harap %q", j, got, harap)
+		}
+	}
+	if got := models.GolongkanJenisUsaha(h.Ambil("Quotation.GroupPanel"), h.Ambil("Quotation.BusinessOldId")); got != "FireStyle2" {
+		t.Errorf("penggolong atas kolom tersimpan = %q (AC 14)", got)
+	}
+	// LAYER* tingkat polis = PANTULAN baris view (preACT langkah 3,
+	// pxResults(1)) - dibaca balik lewat TreatyIn.ID saat layar dibuka (ID-22).
+	_, isi = u.panggil("GET", "/kasus/"+id, admin, nil)
+	ly = services.Layar{}
+	if err := json.Unmarshal([]byte(isi), &ly); err != nil {
+		t.Fatal(err)
+	}
+	for j, harap := range map[string]string{"PolicyTreatyIn.LayerType": "UJI-LT", "PolicyTreatyIn.Layer": "1",
+		"PolicyTreatyIn.LayerPartType": "UJI-LPT", "PolicyTreatyIn.LayerPart": "2"} {
+		if got := ly.Halaman.Ambil(j); got != harap {
+			t.Errorf("dibuka ulang %s = %q, harap %q", j, got, harap)
 		}
 	}
 }
 
+// Pemetaan tempat -> peran KOSONG sampai IAM menjawab (K12, K16): setiap
+// tempat TERTUNDA bagi siapa pun, dan Production Date tidak diwajibkan.
+// Mekanisme arahnya diuji murni di models (TestTempatTampilMenurutArah).
 func TestTempatBerperanTidakDitebak(t *testing.T) { // AC 81, 82, 91
 	u := baru(t)
 	id := u.buat()
-	lihat := func(p pelakuUji) bool {
+	for _, p := range []pelakuUji{admin, {"UJI-A", models.PosisiAdmin + ",UJI-PERAN-A"}} {
 		_, isi := u.panggil("GET", "/kasus/"+id, p, nil)
 		var ly services.Layar
 		if err := json.Unmarshal([]byte(isi), &ly); err != nil {
 			t.Fatal(err)
 		}
-		return ly.Tempat[services.TempatTanggalProduksi]
-	}
-	if lihat(admin) {
-		t.Fatal("tanpa pemetaan, tempat TERTUNDA - tidak tampil")
-	}
-	punya := pelakuUji{"UJI-A", models.PosisiAdmin + ",UJI-PERAN-A"}
-	u.g.Tempat = []repository.PeranTempat{{KodeTempat: services.TempatTanggalProduksi, Peran: "UJI-PERAN-A", Arah: services.ArahMuncul}}
-	if !lihat(punya) || lihat(admin) {
-		t.Fatal("MUNCUL: hanya pemegang peran yang melihat")
-	}
-	u.g.Tempat[0].Arah = services.ArahKecuali
-	if lihat(punya) || !lihat(admin) {
-		t.Fatal("KECUALI: semua kecuali pemegang peran")
-	}
-	u.g.Tempat = append(u.g.Tempat, repository.PeranTempat{KodeTempat: services.TempatTanggalProduksi, Peran: "UJI-PERAN-B", Arah: services.ArahMuncul})
-	if lihat(punya) {
-		t.Fatal("dua arah di satu tempat bertentangan: tetap tertunda")
+		if tampil, ada := ly.Tempat[services.TempatTanggalProduksi]; !ada || tampil {
+			t.Fatalf("%s: tanpa pemetaan, tempat TERTUNDA - tidak tampil (%v)", p.akun, ly.Tempat)
+		}
+		for _, w := range ly.MedanWajib {
+			if w == models.HalamanPolis+".ProductionDate" {
+				t.Fatal("tempat tertunda tidak mewajibkan Production Date")
+			}
+		}
 	}
 }
 
@@ -417,6 +493,49 @@ func TestHitungTidakMenyimpan(t *testing.T) {
 	}
 	if u.g.Halaman[id].Ambil("PolicyTreatyIn.ResultOgp1") != "" {
 		t.Fatal("refresh berhitung tidak menyimpan")
+	}
+}
+
+// Action set sel `.ResultOgp1` `DetailPolicyTreatyIn`: event change ->
+// `refresh CountResult1_Act(Data="Amount")` LALU `refresh CountOGPONP_Act` -
+// dua activity berurutan atas clipboard yang sama. Hitung tangan (PremiOgp 1000,
+// ResultOgp1 250, sisanya 0):
+//
+//	CountResult1_Act langkah 6   RiCommOgp = (250/1000) x 100 = 25
+//	CountNetPremi_act langkah 4  NetPremium = (1000-250)+(0-0)-0-0-0-0 = 750
+//	CountOGPONP_Act langkah 8    ClaimType = "" (Claim 0, Salvage 0) - menimpa isian
+func TestHitungUrutanActionSet(t *testing.T) {
+	u := baru(t)
+	id := u.buat()
+	h := halamanLengkap("")
+	h.Setel("PolicyTreatyIn.ResultOgp1", "250")
+	h.Setel("PolicyTreatyIn.ClaimType", "UJI-LAMA")
+	kode, isi := u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{
+		"urutan":  []map[string]string{{"aksi": "CountResult1", "param": "Amount"}, {"aksi": "CountOGPONP"}},
+		"halaman": h,
+	})
+	if kode != http.StatusOK {
+		t.Fatalf("%d %s", kode, isi)
+	}
+	var ly services.Layar
+	if err := json.Unmarshal([]byte(isi), &ly); err != nil {
+		t.Fatal(err)
+	}
+	for m, harap := range map[string]int64{"RiCommOgp": 25, "NetPremium": 750} {
+		d, err := models.AngkaTeks(m, ly.Halaman.Ambil("PolicyTreatyIn."+m))
+		if err != nil || d.Cmp(apd.New(harap, 0)) != 0 {
+			t.Errorf("%s = %v (%v), harap %d", m, d, err, harap)
+		}
+	}
+	if got := ly.Halaman.Ambil("PolicyTreatyIn.ClaimType"); got != "" {
+		t.Errorf("CountOGPONP_Act langkah 8 berjalan sesudah CountResult1_Act: ClaimType %q", got)
+	}
+	kode, _ = u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{
+		"urutan":  []map[string]string{{"aksi": "CountOGPONP"}, {"aksi": "UJI-Karangan"}},
+		"halaman": h,
+	})
+	if kode != http.StatusBadRequest {
+		t.Fatalf("aksi tak dikenal di urutan: %d", kode)
 	}
 }
 

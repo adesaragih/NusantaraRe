@@ -63,6 +63,32 @@ func PraprosesAdmin(h *Halaman, sekarang time.Time, namaTampilan string) {
 	SalinQuotation(h)
 }
 
+// SystemSetOneYear = `DataTransform/SystemSetOneYear_DT` langkah 1:
+// `.EndDate = @DateTime.addCalendar(.StartDate,1,0,0,0,0,0,0)`.
+//
+// Pemicunya (XML): pra-transform (`pyPreDataTransform`) aksi refresh `change`
+// medan `.StartDate` di `Section/DetailPolicyTreatyIn` - layar admin, medan
+// wajib dan dapat disunting. Di `Section/DetailDeptHeadTreatyIn_UW` medan yang
+// sama `pyReadOnly` (`1==1`), jadi aturan ini hanya berjalan di layar admin.
+// Ia BERBEDA dari pengisian tanggal-akhir-kosong `PraprosesAdmin` (P35/AC 34):
+// itu berjalan saat layar dibuka, ini saat tanggal mulai diubah, dan menimpa
+// `.EndDate` tanpa syarat.
+//
+// `addCalendar` Pega = `java.util.Calendar.add(YEAR, 1)`: 29 Februari dijepit
+// ke 28 Februari pada tahun bukan kabisat (bukan digulirkan ke 1 Maret).
+// ⚠️ `[dugaan]` tanggal mulai kosong/tak terbaca: `.EndDate` dibiarkan.
+func SystemSetOneYear(h *Halaman) {
+	mulai, err := utils.ParseTanggal(strings.TrimSpace(h.Ambil(HalamanPolis + ".StartDate")))
+	if err != nil {
+		return
+	}
+	y, m, d := mulai.Date()
+	if akhirBulan := time.Date(y+1, m+1, 0, 0, 0, 0, 0, time.UTC).Day(); d > akhirBulan {
+		d = akhirBulan
+	}
+	h.Setel(HalamanPolis+".EndDate", utils.FormatTanggal(time.Date(y+1, m, d, 0, 0, 0, 0, time.UTC)))
+}
+
 // PraprosesAtasan = `DataTransform/DeptHeadTreatyInUW_preDT` (pra-proses flow
 // action `DeptHeadTreatyIn_UW`, layar Sec Head dan Dept Head).
 //
@@ -94,20 +120,37 @@ func SalinQuotation(h *Halaman) {
 	}
 }
 
-// GeserTanggalProduksi = `InputPolicyTreatyInPre_Act` langkah 9:
-// hari StatementDate melewati hari tutup buku -> ProductionDate = tanggal 1
-// bulan berikut.
+// GeserTanggalProduksi = `InputPolicyTreatyInPre_Act` langkah 9 ("Set
+// Production Date kalau diatas tanggal 25"):
 //
-// ⛔ PENYIMPANGAN SADAR. Rule menanam `@substring(StatementDate,6,2)>25`;
-// `GeneratePolicyNoTreaty_Act` langkah 5.3 membaca hari yang sama dari
-// `POOLDATA.TANGGAL_CLOSING`. Dua aturan hidup berdampingan - pola yang SAMA
-// dengan `InsertJsonPolisLife_Act` b1170 lawan `PROC_GENERATE_SEQUENCE_NUMBER`
-// di PremiumList Life, tempat `[keputusan work owner]` menetapkan "ikuti yang
-// dari DB" (penjaga `TestNolAmbangTutupBukuTertanam`). Preseden itu
-// diterapkan di sini: `hariClosing` dibaca dari tabel oleh pemanggil.
+//	syarat  `@substring(pyWorkPage.PolicyTreatyIn.StatementDate,6,2)>25`
+//	        benar -> jalankan; salah -> lewati (hari = batas TIDAK digeser)
+//	ProductionDate = @addCalendar(StatementDate,'0','1','0','0','0','0','0')
+//	ProductionDate = @substring(ProductionDate,0,6) + "01" + @substring(ProductionDate,8)
+//
+// Hasilnya tanggal 1 bulan berikut; `@substring(..,8)` membawa BAGIAN WAKTU
+// StatementDate (`THHmmss.SSS GMT`) apa adanya - jamnya dipertahankan.
+// ⛔ RALAT putaran 2: port pertama menulis pukul 00:00:00 - tidak ada di rule.
+//
+// ⛔ PENYIMPANGAN SADAR. Rule menanam `>25`; `GeneratePolicyNoTreaty_Act`
+// langkah 5.3 membaca hari yang sama dari `POOLDATA.TANGGAL_CLOSING`
+// (`GETTanggalClosing_SQL` -> `Local.TglProd`). Dua aturan hidup berdampingan
+// - pola yang SAMA dengan `InsertJsonPolisLife_Act` b1170 lawan
+// `PROC_GENERATE_SEQUENCE_NUMBER` di PremiumList Life, tempat `[keputusan work
+// owner]` menetapkan "ikuti yang dari DB" (penjaga
+// `TestNolAmbangTutupBukuTertanam`). Preseden itu diterapkan di sini:
+// `hariClosing` dibaca pemanggil dari tabel (`penomor.HariClosing`), dan
+// pembandingnya tetap `>` seperti rule.
+//
+// ⚠️ Catatan: `@substring(StatementDate,6,2)` membaca hari dari teks internal
+// DateTime Pega (GMT); di sini hari dibaca di zona waktu `statement` itu sendiri
+// (jam aplikasi). Keduanya sama kecuali pukul 00:00-06:59 WIB bila jam
+// aplikasi berzona WIB - dicatat, tidak ditiru (bergantung zona JVM Pega, yang
+// tidak ada di korpus).
 func GeserTanggalProduksi(statement time.Time, hariClosing int) time.Time {
 	if statement.Day() > hariClosing {
-		return time.Date(statement.Year(), statement.Month()+1, 1, 0, 0, 0, 0, statement.Location())
+		return time.Date(statement.Year(), statement.Month()+1, 1,
+			statement.Hour(), statement.Minute(), statement.Second(), statement.Nanosecond(), statement.Location())
 	}
 	return statement
 }

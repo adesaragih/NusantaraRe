@@ -1,0 +1,494 @@
+{
+  "_keterangan": "Padanan setiap tombol / aksi klik-ubah layar NB Treaty In dengan rule XML yang dipanggilnya (prompt putaran 2 bab 4 akhir). Diisi tangan dari action set sel Section (pyActionSets: event -> aksi berurutan) yang dibaca ulang 2026-10-03; dibaca inventaris.py bab 13. Kolom: tombol (label / medan sel), section, tampil (pyVisible sel + wadah pyContainerVisibleWhen; nonaktif = pyDisabled), aksi_xml (urutan aksi action set), rule (rule yang dipanggil), padanan (kode / rute), status.",
+  "tombol": [
+    {
+      "tombol": "Create opportunity",
+      "section": "SFAPortalOpportunitiesHeader",
+      "tampil": "crmCreateOpportunity && isSellingModeB2BB2C && IsNotAdmin (+ dua varian B2B / B2C)",
+      "aksi_xml": "click -> createWork",
+      "rule": [
+        "Flow/InputRealizationTreatyIn"
+      ],
+      "padanan": "pages/PortalNBTreatyIn.tsx tombol Create -> POST /api/nb-treaty-in/kasus (services.BuatKasus)",
+      "status": "dibangun"
+    },
+    {
+      "tombol": "Stage view / List view",
+      "section": "SFAPortalOpportunitiesHeader",
+      "tampil": "selalu (nonaktif menurut .CurrentMode)",
+      "aksi_xml": "click -> refresh SFAPopulateListHeader (pra-DT SetStageViewParams - tidak ada di korpus) -> refresh SFAPortal_Opportunities; click -> setValue .CurrentMode=\"List\" -> refresh",
+      "rule": [
+        "Activity/SFAPopulateListHeader"
+      ],
+      "padanan": "-",
+      "status": "tidak dibangun - milik portal CRM, bukan alur realisasi (status.json Section/SFAPortalOpportunitiesHeader)"
+    },
+    {
+      "tombol": "Filter / .FilterTermForOpportunity",
+      "section": "SFAPortal_OpportunitiesList",
+      "tampil": "selalu",
+      "aksi_xml": "Filter click -> refresh; isian enter -> refresh; isian esc -> setValue \"\" -> refresh; ikon -> setValue .FilterTermForOpportunity=\"\" -> postValue",
+      "rule": [
+        "ReportDefinition/GetListOpportunity"
+      ],
+      "padanan": "pages/PortalNBTreatyIn.tsx form saring (submit/enter = Filter; Esc = kosongkan + muat ulang) -> GET /api/nb-treaty-in/kasus?cari=",
+      "status": "dibangun - ikon pengosong tanpa refresh tidak dibuat tombol tersendiri (padanannya Esc / mengosongkan isian)"
+    },
+    {
+      "tombol": ".Name (tautan berkas)",
+      "section": "SFAPortal_OpportunitiesList",
+      "tampil": "selalu; nonaktif bila bukan marketing/pembuat/TeamLeader (identitas - tiket 04/05)",
+      "aksi_xml": "click -> openWorkByHandle",
+      "rule": [
+        "FlowAction/InboxPolicyTreatyIn",
+        "FlowAction/DeptHeadTreatyIn_UW"
+      ],
+      "padanan": "pages/PortalNBTreatyIn.tsx tautan -> GET /api/nb-treaty-in/kasus/{id} (services.BukaKasus: hanya-baca bila bukan anggota antrean)",
+      "status": "dibangun"
+    },
+    {
+      "tombol": "Select Source Of Business",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": ".ClaimType = 'XOL Retro'",
+      "aksi_xml": "click -> showHarness (InputQuotation_PreAct Acton=SOB) -> Harness SOB",
+      "rule": [
+        "Activity/InputQuotation_PreAct",
+        "DataTransform/btnSOB_DT",
+        "Harness/SOB",
+        "Section/SourceHierarki",
+        "Activity/AgentSourceBizTreatyIn_Act"
+      ],
+      "padanan": "pages/LayarKasus.tsx (admin, tampilTombolSOB: ClaimType XOL Retro) -> components/PilihSumberBisnis.tsx -> GET /api/nb-treaty-in/sumber-bisnis (services.DaftarSumberBisnis)",
+      "status": "dibangun paket P3 (RALAT tiket 11) - CATATAN-PUTARAN-2 §2c"
+    },
+    {
+      "tombol": "Choose (pohon SOB)",
+      "section": "SourceHierarki",
+      "tampil": ".ChildCount = 0",
+      "aksi_xml": "click -> runActivity SearchHierarkiSourceBizAgentTreatyIn_Act -> runScript opener.location.reload -> runScript window.close",
+      "rule": [
+        "Activity/SearchHierarkiSourceBizAgentTreatyIn_Act",
+        "FlowAction/AgentSourceBizDetails",
+        "DataTransform/SearchHierarkiSourceBizAgent_PostDT"
+      ],
+      "padanan": "components/PilihSumberBisnis.tsx klik baris / Choose -> POST /api/nb-treaty-in/kasus/{id}/pilih-sumber-bisnis (services.PilihSumberBisnis: SearchHierarkiSourceBizAgent_PostDT)",
+      "status": "dibangun paket P3 - aktivitas tombol Choose (menulis OfferTreatyIn.QuotationData.*, dibaca nol rule NB) tidak (RALAT tiket 11)"
+    },
+    {
+      "tombol": "Choose Business",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "wadah .ClaimType != 'XOL Retro'; InputParam.CARI12 != 'treaty' && != 'TreatyPolicy' (InputParam kosong di NB)",
+      "aksi_xml": "click -> showHarness BusinessAndSOBList (popup) -> refresh",
+      "rule": [
+        "Harness/BusinessAndSOBList",
+        "Section/BusinessAndSOBList",
+        "ReportDefinition/BrowseTreatyInDetail"
+      ],
+      "padanan": "pages/LayarKasus.tsx (admin, bukanXOLRetro) -> components/PilihBisnis.tsx -> GET /api/nb-treaty-in/bisnis",
+      "status": "dibangun"
+    },
+    {
+      "tombol": "Choose (popup bisnis)",
+      "section": "BusinessAndSOBList",
+      "tampil": "selalu (dua grid; label 'For Treatyindetail join EDM' mati 1=2)",
+      "aksi_xml": "click -> runActivity SetValue_Act(ID=.ID) -> runScript opener.location.reload -> runScript window.close -> refresh",
+      "rule": [
+        "Activity/SetValue_Act",
+        "Activity/InputPolicyTreatyInDetail_preACT"
+      ],
+      "padanan": "components/PilihBisnis.tsx Choose -> POST /api/nb-treaty-in/kasus/{id}/pilih-bisnis (services.PilihBisnis; Obj-Save ditiru) -> layar dimuat ulang dari jawaban",
+      "status": "dibangun"
+    },
+    {
+      "tombol": "Choose Business R",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "wadah .ClaimType = 'XOL Retro'; InputParam.CARI12 != 'treaty' && != 'TreatyPolicy'",
+      "aksi_xml": "click -> showHarness BusinessAndSOBListRetro (popup) -> refresh",
+      "rule": [
+        "Harness/BusinessAndSOBListRetro",
+        "Section/BusinessAndSOBListRetro",
+        "Activity/SetValueRetro_Act"
+      ],
+      "padanan": "-",
+      "status": "tidak dibangun - treaty KELUAR, [keputusan work owner] K8 butir 4: SetValueRetro_Act -> InputPolicyTreatyOutDetail_preACT membaca JSON M_TREATY_OUT (RDBList\\BrowseTreatyOutDetail: `select JSONDATA as CLASSOFBUSINESS from pooldata.M_treaty_out where ID={pyWorkPage.PolicyTreatyIn.NoOffer}`)"
+    },
+    {
+      "tombol": "Survey Report",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "pyWorkPage.Quotation.ProportionalType != 'NonProportional'; nonaktif .QuotationData.IsSurveyReport=='No' || ''",
+      "aksi_xml": "click -> showHarness HistoricalSurveyReport (popup)",
+      "rule": [
+        "Harness/HistoricalSurveyReport",
+        "FlowAction/InputHistoricalSurveyReport",
+        "Activity/SetSurveyReport_Act"
+      ],
+      "padanan": "-",
+      "status": "tidak dibangun - K7 (keputusan WO 03-10-2026): tidak ada tabel di diagram grilling"
+    },
+    {
+      "tombol": "Enable / Disable Input Type",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": ".TreatyType='XOL'",
+      "aksi_xml": "click -> refresh thisSection dengan pra-DT TreatyEnableDisableInput",
+      "rule": [
+        "DataTransform/TreatyEnableDisableInput"
+      ],
+      "padanan": "pages/LayarKasus.tsx -> POST /kasus/{id}/hitung {aksi: TreatyEnableDisableInput} -> models.TreatyEnableDisableInput",
+      "status": "dibangun"
+    },
+    {
+      "tombol": "Save (bagian uang) / Save (kaki layar)",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "bagian uang: InputParam.CARI12 != 'treaty' && != 'TreatyPolicy' di wadah uang; kaki: selalu",
+      "aksi_xml": "click -> save",
+      "rule": [],
+      "padanan": "pages/LayarKasus.tsx satu tombol Save (admin) -> PUT /api/nb-treaty-in/kasus/{id} (services.SimpanDraf; medan wajib ditegakkan - AC 48)",
+      "status": "dibangun - dua tombol XML beraksi sama, dibangun satu"
+    },
+    {
+      "tombol": "Add / Delete (grid spreading)",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "InputParam.CARI12 != 'treaty' && != 'TreatyPolicy' di wadah uang",
+      "aksi_xml": "click -> addRow / deleteRow (.SpreadingRiskList)",
+      "rule": [],
+      "padanan": "pages/LayarKasus.tsx (admin) mengubah daftar di klien; diterima server lewat models.GabungMasukanLayar saat Save/Submit/hitung",
+      "status": "dibangun"
+    },
+    {
+      "tombol": "Submit (IsApproved==1)",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": ".IsApproved==1; nonaktif TempEmail.CARI28 != pyWorkPage.PositionNote",
+      "aksi_xml": "click -> runActivity SetDueTo_act -> finishAssignment (flow action InboxPolicyTreatyIn: post-DT InboxPolicyTreatyIn_postDT, InputPolicyTreatyInPost_Act)",
+      "rule": [
+        "Activity/SetDueTo_act",
+        "FlowAction/InboxPolicyTreatyIn",
+        "DataTransform/InboxPolicyTreatyIn_postDT",
+        "Activity/InputPolicyTreatyInPost_Act",
+        "Activity/InsertHistoryAkseptasiPega",
+        "Activity/TreatyRealizationCheckDuplicate"
+      ],
+      "padanan": "pages/LayarKasus.tsx tombol kirim (models.TombolUntuk = kirim; bolehKerja = anggota antrean) -> POST /kasus/{id}/kirim -> services.Kirim: SetDueTo -> validasi wajib/pesan -> PascaAdmin -> cekDuplikat -> riwayat -> connector",
+      "status": "dibangun"
+    },
+    {
+      "tombol": "Submit (IsApproved==0)",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": ".IsApproved==0; nonaktif TempEmail.CARI28 != pyWorkPage.PositionNote",
+      "aksi_xml": "click -> localAction PolicyTreatyInDeclineConfirm (modal; local action activity SetDueTo_act)",
+      "rule": [
+        "FlowAction/PolicyTreatyInDeclineConfirm",
+        "Section/PolicyTreatyInDeclineConfirm",
+        "Activity/SetDueTo_act"
+      ],
+      "padanan": "pages/LayarKasus.tsx (models.TombolUntuk = konfirmasi-tolak) -> Modal KONFIRMASI_TOLAK",
+      "status": "dibangun"
+    },
+    {
+      "tombol": "Yes / No (konfirmasi tolak)",
+      "section": "PolicyTreatyInDeclineConfirm",
+      "tampil": "selalu",
+      "aksi_xml": "Yes: click -> finishAssignment; No: click -> closeContainer",
+      "rule": [
+        "FlowAction/InboxPolicyTreatyIn"
+      ],
+      "padanan": "Modal LayarKasus.tsx: Yes -> POST /kasus/{id}/kirim (services.Kirim menjalankan SetDueTo lebih dulu); No -> tutup modal",
+      "status": "dibangun"
+    },
+    {
+      "tombol": "Submit (IsApproved = '0')",
+      "section": "DetailDeptHeadTreatyIn_UW",
+      "tampil": ".IsApproved = '0'; wadah InputParam.CARI12 != 'TreatyPolicy'",
+      "aksi_xml": "click -> finishAssignment (flow action DeptHeadTreatyIn_UW: post-DT DeptHeadTreatyIn_UW_postDT, InsertHistoryAkseptasiPega)",
+      "rule": [
+        "FlowAction/DeptHeadTreatyIn_UW",
+        "DataTransform/DeptHeadTreatyIn_UW_postDT",
+        "Activity/InsertHistoryAkseptasiPega"
+      ],
+      "padanan": "pages/LayarKasus.tsx tombol kirim -> POST /kasus/{id}/kirim -> services.Kirim (PascaAtasan -> riwayat -> connector)",
+      "status": "dibangun"
+    },
+    {
+      "tombol": "Submit (IsApproved == 1, tiga varian)",
+      "section": "DetailDeptHeadTreatyIn_UW",
+      "tampil": ".IsApproved == 1 && identitas operator / pyWorkPage.LetterNo ('TREATYINDEPTHEAD' -> finishAssignment; '' atau identitas tertentu -> nomor polis)",
+      "aksi_xml": "LetterNo 'TREATYINDEPTHEAD': click -> finishAssignment; selain itu: click -> runActivity GeneratePolicyNoTreaty_Act -> localAction ShowPolicyNoTreaty (modal) -> refresh GeneralDeptHeadTreatyIn_UW",
+      "rule": [
+        "Activity/GeneratePolicyNoTreaty_Act",
+        "FlowAction/ShowPolicyNoTreaty",
+        "Section/ShowPolicyNoTreaty_SC",
+        "Activity/CekLimitTreatyAcc_Act"
+      ],
+      "padanan": "models.TombolUntuk menurut POSISI: Sec Head -> kirim; Dept Head -> POST /kasus/{id}/nomor-polis (services.TerbitkanNomor) -> Modal nomor polis",
+      "status": "dibangun - identitas diganti posisi (tiket 05); LetterNo dari CekLimitTreatyAcc_Act tidak dibangun (K2: Sec Head selalu naik)"
+    },
+    {
+      "tombol": "OK (nomor polis)",
+      "section": "ShowPolicyNoTreaty_SC",
+      "tampil": "selalu",
+      "aksi_xml": "click -> closeContainer -> finishAssignment",
+      "rule": [
+        "FlowAction/DeptHeadTreatyIn_UW"
+      ],
+      "padanan": "Modal LayarKasus.tsx OK -> tutup -> POST /kasus/{id}/kirim",
+      "status": "dibangun"
+    },
+    {
+      "tombol": "Survey Report (atasan)",
+      "section": "DetailDeptHeadTreatyIn_UW",
+      "tampil": "pyWorkPage.Quotation.ProportionalType != 'NonProportional'; nonaktif IsSurveyReport 'No' / ''",
+      "aksi_xml": "click -> showHarness HistoricalSurveyReportUW (popup)",
+      "rule": [
+        "Harness/HistoricalSurveyReportUW",
+        "FlowAction/InputHistoricalSurveyReportUW"
+      ],
+      "padanan": "-",
+      "status": "tidak dibangun - K7"
+    },
+    {
+      "tombol": ".IsApproved (Approval)",
+      "section": "ListSuggest",
+      "tampil": "selalu (kedua layar)",
+      "aksi_xml": "change/click -> runActivity SetDueTo_act -> refresh CekLimitTreatyAcc_Act -> refresh Protection_Act -> refresh DetailPolicyTreatyIn / DetailDeptHeadTreatyIn_UW / DetailPolicyTreatyInAddendum",
+      "rule": [
+        "Activity/SetDueTo_act",
+        "Activity/CekLimitTreatyAcc_Act",
+        "Activity/Protection_Act"
+      ],
+      "padanan": "pages/LayarKasus.tsx radio -> POST /kasus/{id}/hitung {aksi: SetDueTo} -> models.SetDueTo",
+      "status": "dibangun sebagian - CekLimitTreatyAcc_Act tidak (K2); Protection_Act varian Data-PolicyTreatyIn tidak ada di korpus (INVENTARIS 1.2)"
+    },
+    {
+      "tombol": ".Suggest",
+      "section": "ListSuggest",
+      "tampil": "selalu (kedua layar)",
+      "aksi_xml": "change -> refresh Protection_Act -> refresh DetailPolicyTreatyIn / DetailDeptHeadTreatyIn_UW",
+      "rule": [
+        "Activity/Protection_Act"
+      ],
+      "padanan": "isian klien saja (tanpa panggilan backend)",
+      "status": "Protection_Act tidak dibangun - varian tidak ada di korpus (INVENTARIS 1.2)"
+    },
+    {
+      "tombol": ".StartDate",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "selalu",
+      "aksi_xml": "change -> refresh thisSection dengan pyPreDataTransform SystemSetOneYear_DT (di pyModes behaviors sel)",
+      "rule": [
+        "DataTransform/SystemSetOneYear_DT"
+      ],
+      "padanan": "medan.ts aksi [SystemSetOneYear] -> POST /hitung -> models.SystemSetOneYear (dibangun paket P4)",
+      "status": "dibangun (paket P4)"
+    },
+    {
+      "tombol": ".IsSurveyReport / .QuotationData.ProportionalType",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "lihat medan.ts",
+      "aksi_xml": "change -> (postValue ->) refresh thisSection TANPA activity",
+      "rule": [],
+      "padanan": "isian klien; layar dihitung ulang dari halaman",
+      "status": "dibangun (tanpa panggilan backend)"
+    },
+    {
+      "tombol": ".StatementType / .QuotationData.NoOfferSlip / .FlagRetroTreaty / .TypeTax",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "lihat medan.ts",
+      "aksi_xml": "change -> postValue",
+      "rule": [],
+      "padanan": "isian klien; diterima server lewat models.GabungMasukanLayar (daftar izin admin)",
+      "status": "dibangun"
+    },
+    {
+      "tombol": ".EndDate",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "selalu",
+      "aksi_xml": "change -> refresh ProtectDate",
+      "rule": [
+        "Activity/ProtectDate"
+      ],
+      "padanan": "medan.ts aksi [ProtectDate] -> POST /hitung -> models.ProtectDate",
+      "status": "dibangun"
+    },
+    {
+      "tombol": ".FlagPPH",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "wadah .ClaimType != 'XOL Retro'",
+      "aksi_xml": "change/click -> postValue -> runActivity RemoveTypeTax_ACT",
+      "rule": [
+        "Activity/RemoveTypeTax_ACT"
+      ],
+      "padanan": "medan.ts aksi [RemoveTypeTax] -> POST /hitung -> models.RemoveTypeTax",
+      "status": "dibangun"
+    },
+    {
+      "tombol": ".QuotationData.MOID",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "selalu",
+      "aksi_xml": "change -> postValue -> refresh CheckDataMkt",
+      "rule": [
+        "Activity/CheckDataMkt"
+      ],
+      "padanan": "medan.ts aksi [CheckDataMkt] -> POST /hitung -> models.TerapkanMO; halaman disimpan (Obj-Save langkah 5)",
+      "status": "dibangun"
+    },
+    {
+      "tombol": ".IDCurrency",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": ".IsNewPolicyNonProp != 1",
+      "aksi_xml": "change -> refresh SetCurrency_act(CURR=.IDCurrency)",
+      "rule": [
+        "Activity/SetCurrency_act"
+      ],
+      "padanan": "medan.ts aksi [SetCurrency] -> POST /hitung -> repository.NamaMataUang + models.SetelNamaMataUang",
+      "status": "dibangun"
+    },
+    {
+      "tombol": ".GrossPremium / .GrossClaim",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "wadah uang admin",
+      "aksi_xml": "change -> refresh CalculatePremi_Act(Action=\"PREMIUM\" / \"CLAIM\")",
+      "rule": [
+        "Activity/CalculatePremi_Act"
+      ],
+      "padanan": "medan.ts aksi [CalculatePremi PREMIUM/CLAIM] -> POST /hitung -> models.CalculatePremi",
+      "status": "dibangun"
+    },
+    {
+      "tombol": ".PremiOgp / .PremiOnp / .Claim / .SalvageValue / .ExcessLoss / .Deduction1 / .Deduction2",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "wadah uang admin",
+      "aksi_xml": "change / enter -> refresh CountOGPONP_Act",
+      "rule": [
+        "Activity/CountOGPONP_Act"
+      ],
+      "padanan": "medan.ts aksi [CountOGPONP] -> POST /hitung -> models.CountOGPONP",
+      "status": "dibangun"
+    },
+    {
+      "tombol": ".RiCommOgp / .ResultOgp1 / .OveriddingCommOgp / .ResultOgp2 / .RiCommOnp / .ResultOnp1 / .OveriddingCommOnp / .ResultOnp2",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "wadah uang admin",
+      "aksi_xml": "change / enter -> refresh CountResult1_Act | CountResult2Ogp_act | CountResult1Onp_Act | CountResult2Onp_act (Data=\"Pct\" untuk persen, \"Amount\" untuk hasil) -> refresh CountOGPONP_Act",
+      "rule": [
+        "Activity/CountResult1_Act",
+        "Activity/CountResult2Ogp_act",
+        "Activity/CountResult1Onp_Act",
+        "Activity/CountResult2Onp_act",
+        "Activity/CountOGPONP_Act"
+      ],
+      "padanan": "medan.ts aksi [Count*(Data), CountOGPONP] -> POST /hitung {urutan} -> services.Hitung menjalankan keduanya berurutan atas halaman yang sama",
+      "status": "dibangun - DIPERBAIKI 2026-10-03 (semula hanya langkah pertama)"
+    },
+    {
+      "tombol": ".SharePercentage / .ClaimPercentage (grid spreading)",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "wadah uang admin",
+      "aksi_xml": "change -> refresh CountSpreading_Act(Index=.pxListSubscript)",
+      "rule": [
+        "Activity/CountSpreading_Act"
+      ],
+      "padanan": "LayarKasus.tsx InputAngka onBlur -> POST /hitung {aksi: CountSpreading, indeks} -> models.CountSpreading",
+      "status": "dibangun"
+    },
+    {
+      "tombol": ".Installment",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "wadah uang admin",
+      "aksi_xml": "change -> refresh FillPaymentInstallment(Installment=.Installment)",
+      "rule": [
+        "Activity/FillPaymentInstallment"
+      ],
+      "padanan": "LayarKasus.tsx -> POST /hitung {aksi: FillPaymentInstallment} -> models.FillPaymentInstallment",
+      "status": "dibangun"
+    },
+    {
+      "tombol": ".InstallmentPercentage / .Premium (grid angsuran)",
+      "section": "DetailPolicyTreatyIn",
+      "tampil": "wadah uang admin; terkunci IsUW || IsClaim || IsShowOpenPolicyMarine || IsOldData = 1",
+      "aksi_xml": "change -> refresh SetValidateInstallment_Act / CountPctInstallment_Act(idx=.InstallmentNo)",
+      "rule": [
+        "Activity/SetValidateInstallment_Act",
+        "Activity/CountPctInstallment_Act"
+      ],
+      "padanan": "LayarKasus.tsx InputAngka onBlur -> POST /hitung {aksi: SetValidateInstallment | CountPctInstallment, indeks}",
+      "status": "dibangun"
+    },
+    {
+      "tombol": "sel ber-aksi layar atasan (.StartDate, .ShareValue, .PremiOgp, .RiCommOgp, ..., grid spreading/angsuran)",
+      "section": "DetailDeptHeadTreatyIn_UW",
+      "tampil": "seluruhnya pyReadOnly (1==1) atau pyDisabled always",
+      "aksi_xml": "change -> refresh CountResult1_Act / CountRiCommOgp_act / CountNetPremi_act / SetCurrency_act / CountSpreading_Act / ... (sel terkunci: event tidak pernah terpicu)",
+      "rule": [],
+      "padanan": "medan.ts MEDAN_ATASAN_*: jenis tampil, tanpa aksi; server menolak isian (models.GabungMasukanLayar)",
+      "status": "tidak dibangun sebagai aksi - tidak terpicu (AC 49-52)"
+    },
+    {
+      "tombol": "subsection DetailPolicyTreatyOutNonProportional",
+      "section": "DetailPolicyTreatyIn / DetailDeptHeadTreatyIn_UW",
+      "tampil": "wadah .IsNewPolicyNonProp = 1 && .ClaimType = 'XOL Retro'",
+      "aksi_xml": "lihat INVENTARIS bab 5 Section/DetailPolicyTreatyOutNonProportional",
+      "rule": [
+        "Section/DetailPolicyTreatyOutNonProportional"
+      ],
+      "padanan": "-",
+      "status": "tidak dibangun - treaty KELUAR, [keputusan work owner] K8 butir 4 (JSON M_TREATY_OUT: `select JSONDATA as CLASSOFBUSINESS from pooldata.M_treaty_out where ID={pyWorkPage.PolicyTreatyIn.NoOffer}`)"
+    },
+    {
+      "tombol": "subsection DetailPoliciesNonProportional (tampil)",
+      "section": "DetailPolicyTreatyIn / DetailDeptHeadTreatyIn_UW",
+      "tampil": "wadah .IsNewPolicyNonProp = 1 && .ClaimType != 'XOL Retro'; di dalamnya DetailPolicyTreatyInNonProportional bila !TreatyMasterInEDM || IsEDMInputOnNB == true (selalu benar sesudah NonProp langkah 10)",
+      "aksi_xml": "(tampil saja; master TreatyIn dibaca saat pilih bisnis / pra-proses)",
+      "rule": [
+        "Section/DetailPoliciesNonProportional",
+        "Section/DetailPolicyTreatyInNonProportional",
+        "When/TreatyMasterInEDM",
+        "Activity/InputPolicyTreatyInDetail_NonProp",
+        "Activity/TreatyRealizationCheckXOLList"
+      ],
+      "padanan": "pages/LayarKasus.tsx tampilNonProp -> components/DetailNonProp.tsx; master dari services.siapkanNonProp (PembacaMasterTreaty = repository.MasterXOLDariJSON, K8)",
+      "status": "dibangun (K8)"
+    },
+    {
+      "tombol": ".pyTemplateButton Button (refresh TreatyInNonSetTotal)",
+      "section": "DetailPolicyTreatyInNonProportional / ...EDM",
+      "tampil": "OTHER 1=2",
+      "aksi_xml": "click -> refresh TreatyInNonSetTotal",
+      "rule": [
+        "Activity/TreatyInNonSetTotal"
+      ],
+      "padanan": "-",
+      "status": "tidak dibangun - (a) tampil 1=2"
+    },
+    {
+      "tombol": "Add / Delete (section SpreadingRiskList NonProp)",
+      "section": "SpreadingRiskList (di DetailPolicyTreatyInNonProportional)",
+      "tampil": "InputParam.CARI12 != 'treaty' && != 'TreatyPolicy' && (TreatyIn.FacultativeShare = 0 || '')",
+      "aksi_xml": "click -> addRow / deleteRow (.SpreadingRiskList)",
+      "rule": [],
+      "padanan": "components/DetailNonProp.tsx (admin, spreadingTerbuka) -> diterima server models.DaftarDariLayar (NonProp: hanya bila FacultativeShare 0/'')",
+      "status": "dibangun (K8)"
+    },
+    {
+      "tombol": ".SharePercentage / .ClaimPercentage (section SpreadingRiskList NonProp)",
+      "section": "SpreadingRiskList (di DetailPolicyTreatyInNonProportional)",
+      "tampil": "terkunci bila TreatyIn.FacultativeShare > 0",
+      "aksi_xml": "change -> refresh CountSpreading_Act(SharePct, Index=.pxListSubscript, Type)",
+      "rule": [
+        "Activity/CountSpreading_Act"
+      ],
+      "padanan": "DetailNonProp.tsx onBlur -> POST /hitung {aksi: CountSpreading, indeks} -> models.CountSpreading",
+      "status": "dibangun (K8)"
+    },
+    {
+      "tombol": "grid ListInstallment (masterDetail InstallmentList)",
+      "section": "DetailPolicyTreatyInNonProportional",
+      "tampil": "selalu (dalam subsection)",
+      "aksi_xml": "pyRowEditing masterDetail -> FlowAction InstallmentList (Section InstallmentList pyReadOnly)",
+      "rule": [
+        "FlowAction/InstallmentList",
+        "Section/InstallmentList"
+      ],
+      "padanan": "DetailNonProp.tsx (hanya-baca; rincian per mata uang ditampilkan terbuka); server tidak menerima ListInstallment NonProp dari layar",
+      "status": "dibangun (K8)"
+    }
+  ]
+}

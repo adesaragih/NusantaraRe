@@ -401,6 +401,29 @@ sama-persis** — bertoleransi, atau dibandingkan dalam bentuk terbulatkan.
 kolom yang sudah datar di `POOLDATA.json_polis`: `IDPEGA` `NOPOLIS` `NOENDORS` `PRODKE` `TGL_INPUT`
 `TGL_PROD` `USERNAME`.
 
+> ⛔ **RALAT putaran 2 — 03-10-2026 (kolom ikut diagram, bab 0 butir 12)** atas ID-10, ID-21, ID-23,
+> ID-24. Rinciannya per kolom: `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`; ditagih
+> `TestTabelDanKolomMengikutiDiagramGrilling`.
+>
+> - **ID-21** bunyi lama: *"79 medan skalar tingkat atas `PolicyTreatyIn` — ditambah `REMARK` — ditambah
+>   tujuh kolom … `json_polis`"*. Bunyi baru: 79 = **69 kolom** katalog (termasuk `TGL_PROD` dan
+>   `REMARK`) + `NOPOLIS` + 9 tanpa kolom (`LAYER*` 4 dicoret diagram F26, `Total*` 4 turunan,
+>   `isApprovedtoDeptHead` P36). Ditambah tiga kolom halaman kerja `POSITION_NOTE` `NB_STATUS`
+>   `TREATY_IN_ID` (RALAT: dibaca connector Flow / tampil portal / dibaca `BrowseTreatyIn`).
+>   `IS_OJK_NOPOLIS` dan `BROKERAGE_FEE` **dibuang** (hanya ditulis).
+> - **ID-23** bunyi lama: *"`T_POLIS_QUOTATION` — 1:1, 10 medan"*. Bunyi baru: 10 medan diagram **+ 6
+>   RALAT** yang XML buktikan dibaca/tampil: `BusinessName` (`InputPolicyTreatyInPre_Act` langkah 2;
+>   portal), `BusinessFac` (`SaveViewSuggest` CARI7; `GetListOpportunity` filter E), `InsuredID` dan
+>   `InsuredName` (`InputPolicyTreatyInDetail_preACT` langkah 3, 14.1, 14.3; portal), `NoOfferSlip` dan
+>   `IsSurveyReport` (tampil di Section NB, AC 64). Sebelas kolom putaran 1 lainnya dibuang.
+> - **ID-24** bunyi lama: *"`.CedingCo` sebagai id"*. Bunyi baru: kolomnya `CEDING_CO_ID` (diagram R43) dan
+>   tabel menunjuk induknya lewat `QUOTATION_ID → T_POLIS_QUOTATION` (diagram O39), bukan `POLIS_ID`.
+> - **ID-10**: tanpa kolom penanda tutup. Putaran 1 menambah `TGL_TUTUP` (di luar diagram) — **dibuang**;
+>   generasi tertutup = ada baris penerus yang `OLD_POLIS_ID`-nya menunjuknya.
+> - Angsuran (ID-26): `T_POLIS_INSTALMENT` = rancangan §4.3 tanpa `PAYMENT_DATE` (diagram R61) + RALAT
+>   `PPN` `PPH` `PAYMENT_TOTAL_AFTER_PPN` `PAYMENT_TOTAL_AFTER_TAX` (dibaca rumus preACT 18.3.4.1);
+>   `T_POLIS_INSTALMENT_DETAIL` = rancangan §4.3 (11), tanpa `PPN`/`PPH` anak (hanya ditulis).
+
 **ID-22** `[terverifikasi]` ⛔ `LAYER` `LAYER_TYPE` `LAYER_PART` `LAYER_PART_TYPE` **tidak
 disimpan** di `T_GENERAL_POLIS`. Di sistem lama keempatnya **pantulan**, dibaca balik dari kolom
 tabel: `InputPolicyTreatyInDetail_preACT` menetapkan
@@ -447,6 +470,13 @@ tanpa `JSON_DATAGUIDE`.
 ⇒ Pemuat menyimpan medan yang tidak dikenal alih-alih membuangnya, dan penampung itu **wajib kosong
 sebelum rancangan dinyatakan selesai**.
 
+> ⛔ **RALAT putaran 2 — 03-10-2026** `[keputusan work owner]` **K17** (PROMPT-NB-TREATY-IN-PUTARAN-2.md
+> bab 2). Bunyi lama: *"⭐ **Tabel penampung medan tak dikenal.**"* — dibangun putaran 1 sebagai
+> `T_POLIS_MEDAN_LAIN` (migrasi 329). Bunyi baru: tabel itu **tidak ada di diagram grilling** dan
+> dihapus. Penampungnya **berkas laporan CSV per jalankan pemuat** — `POLIS_ID`, `JALUR`, `NILAI` — di
+> folder keluaran yang ditentukan operator (`MODUL.md` *Pemuat dokumen lama*, tiket 22). Medan tetap
+> tersimpan beserta nilainya, jumlahnya dicetak, dan **wajib 0** sebelum pekerjaan dinyatakan selesai.
+
 **ID-27b** ⛔ **DICABUT 23-09-2026.** `[keputusan work owner]` Tabel sebaran tambahan **tidak ada** — keempat medannya turunan. Bunyi lamanya dikutip di blok kepala berkas ini.
 
 ⚠️ Sensus korpus **melewatkannya** — tidak satu pun aturan merujuk anggotanya. Ini persis jebakan
@@ -485,6 +515,16 @@ Pemetaan yang mengikat: `.Suggest → KETERANGAN` dipotong `substr(…, 0, 3990)
 
 ⭐ `IsApproved` di sini **per baris usulan**, berbeda dari `IsApproved` tingkat polis.
 Menggabungkan keduanya adalah cacat.
+
+> ⭐ **Penerapan putaran 2 — 03-10-2026** `[keputusan work owner]` **K4**: ID-31 berlaku apa adanya.
+> `SuggestList` ditulis ke tabel lama ini (`repository/usulan.go`, pemetaan `models/usulan.go`) dan
+> dibaca balik untuk layar. `[penyimpangan sadar]` terhadap XML, dasar grilling ID-31/AC 39 dan K4:
+> (1) syarat `Quotation.BusinessFac == "F"` `SaveViewSuggest` langkah 2 tidak ditiru; (2) baris ditulis
+> pada submit yang menambahkannya di **ketiga** jenjang, transaksi yang sama — XML hanya memanggilnya dari
+> `InputPolicyTreatyInPost_Act` langkah 4 (pasca-submit admin); (3) `NOURUT` = berikutnya per `IDPEGA` di
+> bawah kunci kasus (XML: `.pxListSubscript`); (4) `TGL_INP` jam 24 (XML memformat `hh` lalu
+> `To_date(…,'HH24…')` — catatan sore tersimpan pagi); (5) `DIV` (`OperatorID.pyOrgDivision`) NULL — tanpa
+> sumber di `inti.Pelaku` (butir terbuka). Tabel dideklarasikan *Tabel warisan* di `MODUL.md`.
 
 ### Penulisan dan transaksi
 
@@ -605,6 +645,12 @@ dapat diuji dari luar.
 38. `[terverifikasi]` `DEDUCTION1` `DEDUCTION2` `TOTAL_SHARE_PERCENTAGE_PREMIUM`
     `TOTAL_SHARE_PERCENTAGE_CLAIM` disimpan sebagai persen. Test yang memperlakukannya sebagai uang
     **gagal**. *(Bab 5, ketetapan lama P29)*
+    > ⛔ **RALAT** 2026-10-03 (K3, paket P2) — bunyi lama: *"`DEDUCTION1` `DEDUCTION2`
+    > `TOTAL_SHARE_PERCENTAGE_PREMIUM` `TOTAL_SHARE_PERCENTAGE_CLAIM` disimpan sebagai persen. Test
+    > yang memperlakukannya sebagai uang **gagal**"* → bunyi baru: **`DEDUCTION1` `DEDUCTION2`
+    > `T_GENERAL_POLIS` bergolongan uang** (`NUMBER(38,8)`, sama tipe fisiknya), mengikuti pemakaian
+    > XML (keputusan WO K3); `TOTAL_SHARE_PERCENTAGE_*` tetap persen. Test yang memperlakukan
+    > `DEDUCTION1/2` sebagai persen **gagal**. Bukti: sel `.Deduction1` `.Deduction2` `pxCurrency` di `Section/DetailPolicyTreatyIn.xml` dan `Section/DetailDeptHeadTreatyIn_UW.xml`; `Activity/CountNetPremi_act` langkah 4 mengurangkan keduanya dari premi; `Activity/SetPPNPPH` langkah 4 membagi `.Deduction1` dengan 1,022. Kode: `models/katalog.go` (`kUang`).
 39. `[terverifikasi]` `HISTORYAKSEPTASIPRODUCTION` tidak dibuat ulang; polis menulis ke tabel yang
     sudah ada. Test yang menemukan tabel riwayat baru **gagal**. *(ID-31)*
 40. `[terverifikasi]` `KETERANGAN` dipotong pada 3990 karakter. Test yang menemukan nilai lebih
@@ -659,6 +705,12 @@ dapat diuji dari luar.
     Test yang menemukan kegagalan senyap **gagal**. *(ID-3)*
 59. `[terbuka]` Penampung medan tak dikenal **wajib kosong** sebelum rancangan dinyatakan selesai.
     *(ID-27)*
+    ⛔ **RALAT AC 57 dan 59 — putaran 2, 03-10-2026** (K17). Bunyi lama AC 57: *"Medan dokumen yang tidak
+    dikenal tersimpan di penampung"*; AC 59: *"Penampung medan tak dikenal wajib kosong"*. Bunyi baru:
+    "penampung" = **berkas CSV** `POLIS_ID,JALUR,NILAI` per jalankan pemuat, bukan tabel. AC 57: test
+    yang menemukan medan tak dikenal tidak tertulis di berkas itu beserta nilainya **gagal**. AC 59:
+    berkas itu wajib **nol baris data** sebelum pekerjaan dinyatakan selesai; pemuat mencetak jumlahnya
+    dan keluar dengan kode bukan nol selama jumlahnya > 0.
 
 ### Keamanan
 
@@ -698,7 +750,19 @@ dapat diuji dari luar.
 | 15 | *"`IsApproved` bernilai `""` tersimpan sebagai `""`, bukan `NULL`"* | Oracle menyimpan `''` sebagai NULL | dibaca kembali `""`; setara di halaman, tidak di SQL |
 | 38 | *"`DEDUCTION1` `DEDUCTION2` `TOTAL_SHARE_PERCENTAGE_PREMIUM` `TOTAL_SHARE_PERCENTAGE_CLAIM` disimpan sebagai persen"* | `TOTAL_*` turunan baris spreading; penjaga repo melarang nama `TOTAL_` di migrasi | DEDUCTION1/2 persen; `TOTAL_*` dihitung saat dibaca (`HitungTotalSpreading`) |
 | 39 | *"`HISTORYAKSEPTASIPRODUCTION` tidak dibuat ulang"* | `SaveViewSuggest` hanya menulis bila `BusinessFac == "F"`; treaty "T" | ⚠️ `T_POLIS_SUGGEST` (baris dokumen SuggestList, bukan tabel riwayat) — keputusan agen, mohon konfirmasi WO |
+| 39 ⛔ RALAT atas RALAT (putaran 2, 03-10-2026) | baris di atas: *"⚠️ `T_POLIS_SUGGEST` (baris dokumen SuggestList, bukan tabel riwayat) — keputusan agen, mohon konfirmasi WO"* | `[keputusan work owner]` **K4**: konfirmasi **ditolak** — tabel di luar diagram grilling (bab 0 butir 11) | ✅ AC 39 apa adanya: migrasi 328 dihapus; `SuggestList` ditulis ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION` yang sudah ada (15 kolom `InsertViewSuggest_SQL`) dan dibaca balik; syarat `BusinessFac == "F"` = `[penyimpangan sadar]` (lihat ID-31) |
 | 21-22, 52-59 | format dan pemuat dokumen lama | pemuat (tiket 22) belum dibangun | `T_POLIS_MEDAN_LAIN` (329) sudah ada tanpa penulis |
+
+⛔ **RALAT putaran 2 — 03-10-2026 — baris *21-22, 52-59* di atas.** Bunyi lama: *"pemuat (tiket 22) belum
+dibangun"* / *"`T_POLIS_MEDAN_LAIN` (329) sudah ada tanpa penulis"*. Bunyi baru: pemuat dibangun
+(`backend/alat/pemuatlama`, `services/pemuat.go`, `models/dokumenlama.go`, `models/laporanlama.go`,
+`repository/lama.go`); penampung = berkas CSV (K17, RALAT ID-27 dan AC 57/59). AC 21, 22, 52, 53, 54, 56,
+57, 58 diuji; AC 55 dan 59 🟡 (uji kolom bertag `db` belum dijalankan; jumlah atas data nyata belum
+diketahui). `[penyimpangan sadar]` atas **ID-4**: pemecah dokumen lama tinggal di `models` sebagai fungsi
+murni (seam 3 `spec.md` §6.2) supaya uji-kering pemuat tidak menyentuh tabel baru; penulisannya tetap
+lewat antarmuka `repository` yang sama (ID-3). Cap waktu ` GMT` dibaca sebagai jam dinding
+Asia/Jakarta (rule `GeneratePolicyNoTreaty_Act` langkah 5.3 membaca hari dalam Asia/Jakarta); tanggal
+ambigu tidak ditebak (K15).
 
 
 ## 7 · Testing Decisions
@@ -792,6 +856,10 @@ ronde berikutnya.
 **Kolom `DEDUCTION1` menampung dua satuan.** Jalur proporsional mengisinya dari `.Deduction1` — sebuah
 **persen**. Jalur XOL mengisinya dari `.Deduction` — sebuah **nilai uang**. Tidak ada penanda yang
 membedakannya selain `PROPORTIONALTYPE` di baris yang sama.
+> ⛔ **RALAT** 2026-10-03 (K3, paket P2) — bunyi lama: *"Jalur proporsional mengisinya dari
+> `.Deduction1` — sebuah **persen**"* → bunyi baru: `.Deduction1` jalur proporsional adalah **jumlah
+> uang** (XML: `pxCurrency`, dikurangkan dari premi di `CountNetPremi_act` langkah 4) — kedua jalur
+> mengisi `DEDUCTION1` dengan uang (peringatan "persen dengan rupiah" di sini gugur untuk kolom ini).
 
 ⇒ Pembaca lewat SQL **wajib menyaring `PROPORTIONALTYPE` lebih dulu**, kalau tidak ia menjumlahkan
 persen dengan rupiah.

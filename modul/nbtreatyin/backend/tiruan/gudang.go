@@ -31,11 +31,14 @@ type Gudang struct {
 	Kasus   map[string]models.Kasus
 	Halaman map[string]*models.Halaman
 	Riwayat []models.Riwayat
+	// Usulan - baris POOLDATA.HISTORYAKSEPTASIPRODUCTION (catatan SuggestList).
+	Usulan  []BarisRiwayatProduksi
 	Nama    map[string]string // login -> nama tampilan
 	Kontrak map[string]models.BarisKontrak
 	Bisnis  map[string]models.BarisBisnis
 	Serupa  []string
-	Tempat  []repository.PeranTempat
+	Agen    []models.BarisAgen // RD BrowseAgentHierarkiList_RD (pemilih SOB)
+	PKPAgen map[string]string  // STS_PKP per ID agen; tak terdaftar = StsPKP
 	StsPKP  string
 	OJK     string
 	urutPol int
@@ -63,6 +66,12 @@ func Baru() *Gudang {
 	}
 }
 
+// BarisRiwayatProduksi - satu baris HISTORYAKSEPTASIPRODUCTION beserta IDPEGA.
+type BarisRiwayatProduksi struct {
+	IDPega string
+	models.UsulanProduksi
+}
+
 // ErrDipaksa - galat yang disuntikkan uji.
 var ErrDipaksa = errors.New("tiruan: galat dipaksa")
 
@@ -79,6 +88,7 @@ type potret struct {
 	kasus         map[string]models.Kasus
 	halaman       map[string]*models.Halaman
 	riwayat       []models.Riwayat
+	usulan        []BarisRiwayatProduksi
 }
 
 func (g *Gudang) potret() potret {
@@ -90,6 +100,7 @@ func (g *Gudang) potret() potret {
 		p.halaman[k] = v.Salin()
 	}
 	p.riwayat = append(p.riwayat, g.Riwayat...)
+	p.usulan = append(p.usulan, g.Usulan...)
 	return p
 }
 
@@ -105,7 +116,7 @@ func (g *Gudang) Transaksi(ctx context.Context, fn func(tx *db.Tx) error) error 
 	g.dalamTx = false
 	if err != nil {
 		g.urut, g.urutPol = sebelum.urut, sebelum.urutPol
-		g.Kasus, g.Halaman, g.Riwayat = sebelum.kasus, sebelum.halaman, sebelum.riwayat
+		g.Kasus, g.Halaman, g.Riwayat, g.Usulan = sebelum.kasus, sebelum.halaman, sebelum.riwayat, sebelum.usulan
 	}
 	return err
 }
@@ -199,12 +210,10 @@ func (g *Gudang) SimpanHalaman(_ context.Context, _ *db.Tx, id string, h *models
 	if g.Kasus[id].GenerasiTertutup {
 		return repository.ErrGenerasiTertutup
 	}
-	s := h.Salin()
-	s.BersihkanPesan()
-	// PolicyNo milik SetelNomorPolis, persis repository (NOPOLIS di luar katalog).
-	s.Hapus(models.HalamanPolis + ".PolicyNo")
-	s.Hapus(models.JalurStsPKP)
-	buangMaster(s)
+	// Hanya medan berkolom yang bertahan - persis repository (delapan tabel
+	// diagram). PolicyNo milik SetelNomorPolis, SuggestList milik CatatUsulan.
+	// Halaman master TreatyIn (K8) tidak berkolom kecuali TREATY_IN_ID.
+	s := models.ProyeksiKatalog(h)
 	if pn := h.Ambil("PositionNote"); pn != "" {
 		k := g.Kasus[id]
 		k.PositionNote = pn
@@ -212,21 +221,6 @@ func (g *Gudang) SimpanHalaman(_ context.Context, _ *db.Tx, id string, h *models
 	}
 	g.Halaman[id] = s
 	return nil
-}
-
-// buangMaster meniru katalog: halaman master `TreatyIn` tidak disimpan, hanya
-// `TreatyIn.ID` (TREATY_IN_ID) - master XOL dibaca ulang saat berkas dibuka.
-func buangMaster(h *models.Halaman) {
-	for k := range h.Nilai {
-		if strings.HasPrefix(k, models.HalamanMaster+".") && k != models.HalamanMaster+".ID" {
-			delete(h.Nilai, k)
-		}
-	}
-	for k := range h.Daftar {
-		if strings.HasPrefix(k, models.HalamanMaster+".") {
-			delete(h.Daftar, k)
-		}
-	}
 }
 
 // MasterXOL - tiruan `repository.MasterXOLDariJSON` (salinan, supaya halaman
@@ -259,6 +253,13 @@ func (g *Gudang) BacaHalaman(_ context.Context, _ *db.Tx, id string) (*models.Ha
 	s := h.Salin()
 	s.Setel(models.HalamanPolis+".PolicyNo", g.Kasus[id].NoPolis)
 	s.Setel("pyID", id)
+	var catatan []models.Baris
+	for _, u := range g.Usulan {
+		if u.IDPega == models.KunciInstans(id) {
+			catatan = append(catatan, models.BarisCatatan(u.UsulanProduksi))
+		}
+	}
+	s.SetelDaftar(models.DaftarUsulan, catatan)
 	return s, nil
 }
 
@@ -294,6 +295,19 @@ func (g *Gudang) DetailKontrak(_ context.Context, id string) (models.BarisKontra
 	return b, nil
 }
 
+// KomisiKontrak - baris `Kontrak` ber-TREATYID itu, berurut ID (sama dengan
+// repository).
+func (g *Gudang) KomisiKontrak(_ context.Context, treatyID string) ([]models.BarisKontrak, error) {
+	var out []models.BarisKontrak
+	for _, b := range g.Kontrak {
+		if treatyID != "" && b["TREATYID"] == treatyID {
+			out = append(out, b)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i]["ID"] < out[j]["ID"] })
+	return out, nil
+}
+
 func (g *Gudang) DaftarDetailKontrak(context.Context, repository.SaringanDetail) ([]models.BarisKontrak, error) {
 	var out []models.BarisKontrak
 	for _, b := range g.Kontrak {
@@ -316,7 +330,12 @@ func (g *Gudang) NamaMataUang(_ context.Context, id string) (string, error) {
 func (g *Gudang) OJKGrupTreaty(context.Context, string) (string, error)   { return g.OJK, nil }
 func (g *Gudang) OldIDGrupTreaty(context.Context, string) (string, error) { return "UJI-OLD", nil }
 func (g *Gudang) KlienDariNama(context.Context, string) (string, error)   { return "", nil }
-func (g *Gudang) StsPKPAgen(context.Context, string) (string, error)      { return g.StsPKP, nil }
+func (g *Gudang) StsPKPAgen(_ context.Context, sobID string) (string, error) {
+	if v, ada := g.PKPAgen[sobID]; ada {
+		return v, nil
+	}
+	return g.StsPKP, nil
+}
 
 func (g *Gudang) BisnisDariKunci(_ context.Context, kunci string) (models.BarisBisnis, error) {
 	return g.Bisnis[kunci], nil
@@ -336,11 +355,42 @@ func (g *Gudang) PolisSerupa(context.Context, *models.Halaman) ([]string, error)
 	return g.Serupa, nil
 }
 
+func (g *Gudang) DaftarAgenHierarki(context.Context) ([]models.BarisAgen, error) {
+	return append([]models.BarisAgen(nil), g.Agen...), nil
+}
+
+func (g *Gudang) AgenHierarki(_ context.Context, id string) (models.BarisAgen, bool, error) {
+	for _, b := range g.Agen {
+		if b.ID == id {
+			return b, true, nil
+		}
+	}
+	return models.BarisAgen{}, false, nil
+}
+
 func (g *Gudang) CatatRiwayat(_ context.Context, _ *db.Tx, r models.Riwayat) error {
 	if err := g.gagal("CatatRiwayat"); err != nil {
 		return err
 	}
 	g.Riwayat = append(g.Riwayat, r)
+	return nil
+}
+
+// CatatUsulan - NOURUT berikutnya per IDPEGA, persis repository.
+func (g *Gudang) CatatUsulan(_ context.Context, _ *db.Tx, idPega string, baris []models.UsulanProduksi) error {
+	if err := g.gagal("CatatUsulan"); err != nil {
+		return err
+	}
+	akhir := 0
+	for _, u := range g.Usulan {
+		if u.IDPega == idPega && u.NoUrut > akhir {
+			akhir = u.NoUrut
+		}
+	}
+	for i, u := range baris {
+		u.NoUrut = akhir + i + 1
+		g.Usulan = append(g.Usulan, BarisRiwayatProduksi{IDPega: idPega, UsulanProduksi: u})
+	}
 	return nil
 }
 
@@ -352,10 +402,6 @@ func (g *Gudang) DaftarRiwayat(_ context.Context, idPega string) ([]models.Riway
 		}
 	}
 	return out, nil
-}
-
-func (g *Gudang) DaftarPeranTempat(context.Context) ([]repository.PeranTempat, error) {
-	return g.Tempat, nil
 }
 
 func (g *Gudang) NamaTampilan(_ context.Context, login string) (string, error) {

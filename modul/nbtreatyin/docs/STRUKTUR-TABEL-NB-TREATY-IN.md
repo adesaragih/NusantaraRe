@@ -11,7 +11,7 @@ Tabel yang **dibaca, tidak dibuat** modul ini dideklarasikan di `MODUL.md`.
 
 ## T_GENERAL_POLIS
 
-Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7).
+Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7). Generasi tertutup = ada penerus yang `OLD_POLIS_ID`-nya menunjuk baris ini (ID-10).
 
 | Kolom | Tipe | Null | Kunci | Golongan | Properti Pega |
 | --- | --- | --- | --- | --- | --- |
@@ -23,7 +23,6 @@ Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7).
 | `IDPEGA` | teks | ya |  | kode | json_polis |
 | `TGL_INPUT` | DATE | ya |  | tanggal-waktu | json_polis |
 | `USERNAME` | teks | ya |  | kode | identitas akses login (P4) |
-| `TGL_TUTUP` | DATE | ya |  | tanggal-waktu | generasi tertutup |
 | `POSITION_NOTE` | teks | ya |  | teks | `PositionNote` |
 | `NB_STATUS` | teks | ya |  | teks | `NBStatus` |
 | `TREATY_IN_ID` | teks | ya |  | kode | `TreatyIn.ID` |
@@ -34,10 +33,10 @@ Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7).
 | `SUGGEST_DATE` | DATE | ya |  | tanggal-waktu | `SuggestDate` |
 | `OPERATOR_NAME` | teks | ya |  | teks | `OperatorName` |
 | `IS_NEW_POLICY_NON_PROP` | teks | ya |  | penanda | `IsNewPolicyNonProp` |
+| `IS_EDM_INPUT_ON_NB` | teks | ya |  | penanda | `IsEDMInputOnNB` |
 | `HAS_FAC_OUT` | teks | ya |  | penanda | `HasFacOut` |
 | `FLAG_PPH` | teks | ya |  | penanda | `FlagPPH` |
 | `FLAG_RETRO_TREATY` | teks | ya |  | penanda | `FlagRetroTreaty` |
-| `IS_OJK_NOPOLIS` | teks | ya |  | penanda | `IsOJKNopolis` |
 | `DUE_TO` | teks | ya |  | penanda | `DueTo` |
 | `TYPE_TAX` | teks | ya |  | kode | `TypeTax` |
 | `STATEMENT_TYPE` | teks | ya |  | kode | `StatementType` |
@@ -45,6 +44,7 @@ Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7).
 | `TREATY_GROUP_NAME` | teks | ya |  | teks | `TreatyGroupName` |
 | `TREATY_GROUP_OLD_ID` | teks | ya |  | kode | `TreatyGroupOldID` |
 | `OJK_BUSINESS_ID` | teks | ya |  | kode | `OJKBusinessID` |
+| `ID_NEW_BISNIS` | teks | ya |  | kode | `IDNewBisnis` |
 | `BIZ_CODE` | teks | ya |  | kode | `BizCode` |
 | `BIZ_NAME` | teks | ya |  | teks | `BizName` |
 | `SOB` | teks | ya |  | kode | `SOB` |
@@ -87,7 +87,6 @@ Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7).
 | `BALANCE_BEFORE_PPH` | angka desimal | ya |  | uang | `BalanceBeforePPH` |
 | `DEDUCTION1` | angka desimal | ya |  | persen | `Deduction1` |
 | `DEDUCTION2` | angka desimal | ya |  | persen | `Deduction2` |
-| `BROKERAGE_FEE` | angka desimal | ya |  | uang | `BrokerageFee` |
 | `BROKERAGE_FEE_SEBENARNYA` | angka desimal | ya |  | uang | `BrokerageFeeSebenarnya` |
 | `PPH_VALUE` | angka desimal | ya |  | uang | `PPHValue` |
 | `PPN_VALUE` | angka desimal | ya |  | uang | `PPNValue` |
@@ -109,38 +108,28 @@ Halaman `Quotation` / `PolicyTreatyIn.QuotationData`, 1:1 (ID-23).
 | `BUSINESS_CODE` | teks | ya |  | kode | `BusinessCode` |
 | `BUSINESS_OLD_ID` | teks | ya |  | kode | `BusinessOldId` |
 | `GROUP_PANEL` | teks | ya |  | kode | `GroupPanel` |
-| `BUSINESS_NAME` | teks | ya |  | teks | `BusinessName` |
-| `BUSINESS_TYPE` | teks | ya |  | kode | `BusinessType` |
-| `BUSINESS_FAC` | teks | ya |  | kode | `BusinessFac` |
 | `SOURCE_OF_BUSINESS` | teks | ya |  | kode | `SourceOfBusiness` |
-| `SOB_NAME` | teks | ya |  | teks | `SobName` |
-| `SOB_LEADER0` | teks | ya |  | kode | `SobLeader0` |
-| `SOB_LEADER1` | teks | ya |  | kode | `SobLeader1` |
-| `CEDING_CO` | teks | ya |  | kode | `CedingCo` |
-| `CEDING_CO_NAME` | teks | ya |  | teks | `CedingCoName` |
-| `INSURED_ID` | teks | ya |  | kode | `InsuredID` |
-| `INSURED_NAME` | teks | ya |  | teks | `InsuredName` |
-| `MARKETING_CODE` | teks | ya |  | kode | `MarketingCode` |
-| `MARKETING_NAME` | teks | ya |  | teks | `MarketingName` |
-| `TEAM_GROUP` | teks | ya |  | kode | `TeamGroup` |
-| `BRANCH_CODE` | teks | ya |  | kode | `BranchCode` |
-| `BRANCH_NAME` | teks | ya |  | teks | `BranchName` |
-| `NO_OFFER_SLIP` | teks | ya |  | teks | `NoOfferSlip` |
-| `IS_SURVEY_REPORT` | teks | ya |  | penanda | `IsSurveyReport` |
 | `TYPE` | teks | ya |  | kode | `Type` |
 | `EDM_TYPE` | teks | ya |  | kode | `EdmType` |
 | `OLD_POLICY_NO` | teks | ya |  | kode | `OldPolicyNo` |
+| `MARKETING_NAME` | teks | ya |  | teks | `MarketingName` |
+| `BUSINESS_NAME` | teks | ya |  | teks | `BusinessName` |
+| `BUSINESS_FAC` | teks | ya |  | kode | `BusinessFac` |
+| `INSURED_ID` | teks | ya |  | kode | `InsuredID` |
+| `INSURED_NAME` | teks | ya |  | teks | `InsuredName` |
+| `NO_OFFER_SLIP` | teks | ya |  | teks | `NoOfferSlip` |
+| `IS_SURVEY_REPORT` | teks | ya |  | penanda | `IsSurveyReport` |
 
 ## T_POLIS_CEDING
 
-← `QuotationData.CedingCoList` (ID-24).
+← `QuotationData.CedingCoList` (ID-24), di bawah `T_POLIS_QUOTATION` (diagram O39).
 
 | Kolom | Tipe | Null | Kunci | Golongan | Properti Pega |
 | --- | --- | --- | --- | --- | --- |
 | `ID` | teks | tidak | PK | kode | baris |
-| `POLIS_ID` | teks | tidak | FK T_GENERAL_POLIS, UQ (POLIS_ID, NOURUT) | kode | induk |
-| `NOURUT` | bilangan bulat | tidak | UQ (POLIS_ID, NOURUT) | cacah | urutan baris (ID-11) |
-| `CEDING_CO` | teks | ya |  | kode | `CedingCo` |
+| `QUOTATION_ID` | teks | tidak | FK T_POLIS_QUOTATION, UQ (QUOTATION_ID, NOURUT) | kode | induk |
+| `NOURUT` | bilangan bulat | tidak | UQ (QUOTATION_ID, NOURUT) | cacah | urutan baris (ID-11) |
+| `CEDING_CO_ID` | teks | ya |  | kode | `CedingCo` |
 | `CEDING_CO_NAME` | teks | ya |  | teks | `CedingCoName` |
 
 ## T_POLIS_INSTALMENT
@@ -154,10 +143,12 @@ Halaman `Quotation` / `PolicyTreatyIn.QuotationData`, 1:1 (ID-23).
 | `NOURUT` | bilangan bulat | tidak | UQ (POLIS_ID, NOURUT) | cacah | urutan baris (ID-11) |
 | `INSTALLMENT_NO` | bilangan bulat | ya |  | cacah | `InstallmentNo` |
 | `DUE_DATE` | DATE | ya |  | tanggal | `DueDate` |
-| `PAYMENT_DATE` | DATE | ya |  | tanggal | `PaymentDate` |
 | `INSTALLMENT_PERCENTAGE` | angka desimal | ya |  | persen | `InstallmentPercentage` |
 | `PREMIUM` | angka desimal | ya |  | uang | `Premium` |
 | `PAYMENT_TOTAL` | angka desimal | ya |  | uang | `PaymentTotal` |
+| `PREMIUM_AFTER_PPH` | angka desimal | ya |  | uang | `PremiumAfterPPH` |
+| `PREMIUM_AFTER_PPN` | angka desimal | ya |  | uang | `PremiumAfterPPN` |
+| `PREMIUM_AFTER_TAX` | angka desimal | ya |  | uang | `PremiumAfterTax` |
 | `CURRENCY` | teks | ya |  | kode | `Currency` |
 | `ID_CURRENCY` | teks | ya |  | kode | `IDCurrency` |
 | `PPN` | angka desimal | ya |  | uang | `PPN` |
@@ -180,12 +171,11 @@ Halaman `Quotation` / `PolicyTreatyIn.QuotationData`, 1:1 (ID-23).
 | `INSTALLMENT_PERCENTAGE` | angka desimal | ya |  | persen | `InstallmentPercentage` |
 | `PREMIUM` | angka desimal | ya |  | uang | `Premium` |
 | `PAYMENT_TOTAL` | angka desimal | ya |  | uang | `PaymentTotal` |
-| `CURRENCY` | teks | ya |  | kode | `Currency` |
-| `ID_CURRENCY` | teks | ya |  | kode | `IDCurrency` |
-| `PPN` | angka desimal | ya |  | uang | `PPN` |
-| `PPH` | angka desimal | ya |  | uang | `PPh` |
+| `PREMIUM_AFTER_PPH` | angka desimal | ya |  | uang | `PremiumAfterPPH` |
 | `PREMIUM_AFTER_PPN` | angka desimal | ya |  | uang | `PremiumAfterPPN` |
 | `PREMIUM_AFTER_TAX` | angka desimal | ya |  | uang | `PremiumAfterTax` |
+| `CURRENCY` | teks | ya |  | kode | `Currency` |
+| `ID_CURRENCY` | teks | ya |  | kode | `IDCurrency` |
 
 ## T_POLIS_SPREADING
 
@@ -256,39 +246,27 @@ Halaman `Quotation` / `PolicyTreatyIn.QuotationData`, 1:1 (ID-23).
 | `NET_PREMI_AFTER_PPN` | angka desimal | ya |  | uang | `NetPremiAfterPPN` |
 | `NET_PREMI_AFTER_TAX` | angka desimal | ya |  | uang | `NetPremiAfterTax` |
 
-## T_POLIS_SUGGEST
+## HISTORYAKSEPTASIPRODUCTION
 
-← `PolicyTreatyIn.SuggestList` (RALAT rancangan §4bis.1).
-
-| Kolom | Tipe | Null | Kunci | Golongan | Properti Pega |
-| --- | --- | --- | --- | --- | --- |
-| `ID` | teks | tidak | PK | kode | baris |
-| `POLIS_ID` | teks | tidak | FK T_GENERAL_POLIS, UQ (POLIS_ID, NOURUT) | kode | induk |
-| `NOURUT` | bilangan bulat | tidak | UQ (POLIS_ID, NOURUT) | cacah | urutan baris (ID-11) |
-| `SUGGEST` | teks | ya |  | teks | `Suggest` |
-| `IS_APPROVED` | teks | ya |  | penanda | `IsApproved` |
-| `SUGGEST_DATE` | DATE | ya |  | tanggal-waktu | `Date` |
-| `OPERATOR_NAME` | teks | ya |  | teks | `OperatorName` |
-| `OPERATOR_ID` | teks | ya |  | kode | `OperatorID` |
-| `IS_SAVE` | teks | ya |  | penanda | `IsSave` |
-
-## T_POLIS_MEDAN_LAIN
-
-Penampung medan tak dikenal (ID-27) — wajib kosong sebelum selesai.
+⛔ **Tabel WARISAN `POOLDATA` — tidak dibuat, tidak diubah strukturnya** (MODUL.md *Tabel warisan*;
+keputusan work owner K4 03-10-2026; spec-penyimpanan ID-31). Catatan `PolicyTreatyIn.SuggestList` ditulis
+ke sini (`repository/usulan.go`, pengganti `RDBList/InsertViewSuggest_SQL`) dan dibaca balik untuk layar.
+Tipe fisik milik tabel lama (belum dicek katalog Oracle — butir terbuka).
 
 | Kolom | Tipe | Null | Kunci | Golongan | Properti Pega |
 | --- | --- | --- | --- | --- | --- |
-| `ID` | teks | tidak | PK | kode | baris |
-| `POLIS_ID` | teks | tidak | FK T_GENERAL_POLIS, UQ (POLIS_ID, JALUR) | kode | induk |
-| `JALUR` | teks | ya |  | teks | `jalur medan tak dikenal` |
-| `NILAI` | teks | ya |  | teks | `nilai apa adanya` |
-
-## M_NBTRIN_PERAN_TEMPAT
-
-Pemetaan tempat → peran → arah; **diisi IAM kemudian**, nol baris dari migrasi (tiket 05).
-
-| Kolom | Tipe | Null | Kunci | Golongan | Properti Pega |
-| --- | --- | --- | --- | --- | --- |
-| `KODE_TEMPAT` | teks | tidak | PK | kode | tempat guard (tiket 05) |
-| `PERAN` | teks | tidak | PK | kode | peran / workbasket |
-| `ARAH` | teks | tidak |  | kode | MUNCUL / KECUALI |
+| `IDPEGA` | warisan | ya |  | — | `pyWorkPage.pzInsKey` |
+| `TYPE_POLIS` | warisan | ya |  | — | `@replaceAll(pyWorkIDPrefix,"-","")` = `NB` |
+| `NOURUT` | warisan | ya |  | — | berikutnya per IDPEGA (XML `.pxListSubscript`) |
+| `POSISI` | warisan | ya |  | — | `"Policy"` |
+| `PIC` | warisan | ya |  | — | `.OperatorName` — nama tampilan (P33) |
+| `TGL_INP` | warisan | ya |  | — | `.Date` |
+| `DIV` | warisan | ya |  | — | `OperatorID.pyOrgDivision` — NULL, tanpa sumber (butir terbuka) |
+| `TYPE` | warisan | ya |  | — | `Quotation.BusinessFac` = `T` |
+| `PUTARAN` | warisan | ya |  | — | `"2"` |
+| `APPROVAL` | warisan | ya |  | — | `.IsApproved` 1 = Accept, 0 = Reject |
+| `KETERANGAN` | warisan | ya |  | — | `substr(.Suggest, 0, 3990)` |
+| `AKSES_LOGIN` | warisan | ya |  | — | `OperatorID.pyUserIdentifier` — identitas login (P4) |
+| `B2B` | warisan | ya |  | — | `OfferFacIn.IsB2B` — NULL di NB |
+| `BUSINESS_CODE` | warisan | ya |  | — | `Quotation.BusinessCode` |
+| `PERCENT_RNM` | warisan | ya |  | — | `OfferFacIn.PercentShare` — NULL di NB |

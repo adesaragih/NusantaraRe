@@ -47,9 +47,50 @@ func adaKlaim(h *Halaman) bool {
 // flagPPH = `.FlagPPH = true`.
 func flagPPH(h *Halaman) bool { return h.Ambil(HalamanPolis+".FlagPPH") == "true" }
 
+// ---- wadah (`pyContainerVisibleWhen`): sel di wadah tersembunyi tidak
+// ter-render, jadi `pyRequired`-nya tidak berlaku (dibaca ulang 2026-10-03).
+
+// bukanXOLRetro = wadah FlagPPH/TypeTax/Choose Business `DetailPolicyTreatyIn`:
+// `.ClaimType != 'XOL Retro'`.
+func bukanXOLRetro(h *Halaman) bool { return h.Ambil(HalamanPolis+".ClaimType") != "XOL Retro" }
+
+// bukanNonPropBaru = `.IsNewPolicyNonProp != 1` - wadah bagian uang,
+// spreading, angsuran `DetailDeptHeadTreatyIn_UW`.
+func bukanNonPropBaru(h *Halaman) bool { return h.Ambil(HalamanPolis+".IsNewPolicyNonProp") != "1" }
+
+// wadahUangAdmin = `.IsNewPolicyNonProp != 1 && .IsNewPolicyListFormat != 1` -
+// wadah bagian uang, spreading, angsuran `DetailPolicyTreatyIn`.
+// ⚠️ `IsNewPolicyListFormat` tidak diisi rule mana pun di korpus (hanya dibaca
+// dua section ini) - syaratnya ditiru apa adanya.
+func wadahUangAdmin(h *Halaman) bool {
+	return bukanNonPropBaru(h) && h.Ambil(HalamanPolis+".IsNewPolicyListFormat") != "1"
+}
+
+// dan menggabungkan syarat (nil = selalu).
+func dan(fs ...func(*Halaman) bool) func(*Halaman) bool {
+	return func(h *Halaman) bool {
+		for _, f := range fs {
+			if f != nil && !f(h) {
+				return false
+			}
+		}
+		return true
+	}
+}
+
 func wajib(m, label string, syarat func(*Halaman) bool) MedanWajib {
 	return MedanWajib{Jalur: HalamanPolis + "." + m, Label: label, Syarat: syarat}
 }
+
+// wajibUangAdmin - medan wajib bagian uang layar admin: `pyRequired`
+// `bukanNonProp` DAN wadahnya tampil.
+func wajibUangAdmin(m, label string) MedanWajib {
+	return wajib(m, label, dan(bukanNonProp, wadahUangAdmin))
+}
+
+// wajibUangAtasan - medan wajib bagian uang layar atasan: `pyRequired` tanpa
+// syarat, wadahnya `.IsNewPolicyNonProp != 1`.
+func wajibUangAtasan(m, label string) MedanWajib { return wajib(m, label, bukanNonPropBaru) }
 
 // medanWajibAdmin - `Section/DetailPolicyTreatyIn` + `Section/ListSuggest`.
 //
@@ -59,7 +100,7 @@ func wajib(m, label string, syarat func(*Halaman) bool) MedanWajib {
 var medanWajibAdmin = []MedanWajib{
 	wajib("StartDate", "Statement Period", nil),
 	wajib("QuotationData.IsSurveyReport", "Survey Report", bukanNonProp),
-	wajib("TypeTax", "Type Tax", flagPPH),
+	wajib("TypeTax", "Type Tax", dan(flagPPH, bukanXOLRetro)),
 	wajib("StatementDate", "Statement Date", nil),
 	wajib("EndDate", "To", nil),
 	wajib("Quartal", ".Quartal", proporsionalQD),
@@ -67,43 +108,44 @@ var medanWajibAdmin = []MedanWajib{
 	wajib("QuotationData.MOID", "Marketing Officer", nil),
 	wajib("ClaimType", "Claim Type", adaKlaim),
 	wajib("ClaimPaymentType", "Payment Type", adaKlaim),
-	wajib("PremiOgp", "Premi Ogp", bukanNonProp),
-	wajib("RiCommOgp", "(%) Deduction In A (OGP)", bukanNonProp),
-	wajib("OveriddingCommOgp", "(%) Deduction In B (OGP)", bukanNonProp),
-	wajib("PremiOnp", "Premi Onp", bukanNonProp),
-	wajib("RiCommOnp", "(%) Deduction In A (ONP)", bukanNonProp),
-	wajib("OveriddingCommOnp", "(%) Deduction In B (ONP)", bukanNonProp),
-	wajib("Claim", "Claim", bukanNonProp),
-	wajib("OutstandingClaim", "Outstanding Claim", bukanNonProp),
-	wajib("SalvageValue", "Salvage", bukanNonProp),
-	wajib("ExcessLoss", "Excess Loss", bukanNonProp),
-	wajib("Deduction1", "Deduction1", bukanNonProp),
-	wajib("Deduction2", "Deduction2", bukanNonProp),
+	wajibUangAdmin("PremiOgp", "Premi Ogp"),
+	wajibUangAdmin("RiCommOgp", "(%) Deduction In A (OGP)"),
+	wajibUangAdmin("OveriddingCommOgp", "(%) Deduction In B (OGP)"),
+	wajibUangAdmin("PremiOnp", "Premi Onp"),
+	wajibUangAdmin("RiCommOnp", "(%) Deduction In A (ONP)"),
+	wajibUangAdmin("OveriddingCommOnp", "(%) Deduction In B (ONP)"),
+	wajibUangAdmin("Claim", "Claim"),
+	wajibUangAdmin("OutstandingClaim", "Outstanding Claim"),
+	wajibUangAdmin("SalvageValue", "Salvage"),
+	wajibUangAdmin("ExcessLoss", "Excess Loss"),
+	wajibUangAdmin("Deduction1", "Deduction1"),
+	wajibUangAdmin("Deduction2", "Deduction2"),
 	wajib("IsApproved", "Approval", nil),
 	wajib("Suggest", "Suggest", nil),
 }
 
 // medanWajibAtasan - `Section/DetailDeptHeadTreatyIn_UW` + `Section/ListSuggest`.
-// Seluruh medan uangnya wajib TANPA syarat, termasuk `ResultOnp1` (AC 47), dan
-// tidak satu pun dari ClaimPaymentType, ClaimType, IDCurrency, Quartal,
-// TypeTax, YearOfQuartal (AC 46).
+// Seluruh medan uangnya `pyRequired` TANPA syarat, termasuk `ResultOnp1` (AC 47),
+// dan tidak satu pun dari ClaimPaymentType, ClaimType, IDCurrency, Quartal,
+// TypeTax, YearOfQuartal (AC 46). Satu-satunya syarat: wadah bagian uang
+// tampil (`.IsNewPolicyNonProp != 1`).
 var medanWajibAtasan = []MedanWajib{
 	wajib("StartDate", "Statement Period", nil),
 	wajib("StatementDate", "Statement Date", nil),
 	wajib("EndDate", "To", nil),
-	wajib("PremiOgp", "Premi Ogp", nil),
-	wajib("RiCommOgp", "Deduction In A (OGP)", nil),
-	wajib("OveriddingCommOgp", "Deduction In B (OGP)", nil),
-	wajib("Claim", "Claim", nil),
-	wajib("OutstandingClaim", "Outstanding Claim", nil),
-	wajib("SalvageValue", "Salvage", nil),
-	wajib("ExcessLoss", "Excess Loss", nil),
-	wajib("PremiOnp", "Premi Onp", nil),
-	wajib("RiCommOnp", "Deduction In A (ONP)", nil),
-	wajib("ResultOnp1", "ResultOnp1", nil),
-	wajib("OveriddingCommOnp", "Deduction In B (ONP)", nil),
-	wajib("Deduction1", "Deduction1", nil),
-	wajib("Deduction2", "Deduction2", nil),
+	wajibUangAtasan("PremiOgp", "Premi Ogp"),
+	wajibUangAtasan("RiCommOgp", "Deduction In A (OGP)"),
+	wajibUangAtasan("OveriddingCommOgp", "Deduction In B (OGP)"),
+	wajibUangAtasan("Claim", "Claim"),
+	wajibUangAtasan("OutstandingClaim", "Outstanding Claim"),
+	wajibUangAtasan("SalvageValue", "Salvage"),
+	wajibUangAtasan("ExcessLoss", "Excess Loss"),
+	wajibUangAtasan("PremiOnp", "Premi Onp"),
+	wajibUangAtasan("RiCommOnp", "Deduction In A (ONP)"),
+	wajibUangAtasan("ResultOnp1", "ResultOnp1"),
+	wajibUangAtasan("OveriddingCommOnp", "Deduction In B (ONP)"),
+	wajibUangAtasan("Deduction1", "Deduction1"),
+	wajibUangAtasan("Deduction2", "Deduction2"),
 	wajib("IsApproved", "Approval", nil),
 	wajib("Suggest", "Suggest", nil),
 }
@@ -127,9 +169,6 @@ func MedanWajibKosong(h *Halaman, posisi string) []string {
 		if m.Syarat != nil && !m.Syarat(h) {
 			continue
 		}
-		if TersembunyiNonProp(h, m.Jalur) { // kontainer `.IsNewPolicyNonProp != 1` (nonprop_layar.go)
-			continue
-		}
 		if strings.TrimSpace(h.Ambil(m.Jalur)) == "" {
 			kosong = append(kosong, m.Label)
 		}
@@ -139,17 +178,37 @@ func MedanWajibKosong(h *Halaman, posisi string) []string {
 
 // ---------------------------------------------------------------- medan yang boleh diubah
 
-// medanAtasan - medan yang TIDAK terkunci di layar atasan
-// (`DetailDeptHeadTreatyIn_UW` + `ListSuggest`): kolom "Kunci" kosong atau
-// hanya `nonaktif` bersyarat kosong. Selain ini terkunci permanen (AC 49-52):
-// nilai kiriman layar untuk medan lain DIABAIKAN, nilai tersimpan dipakai.
+// medanAtasan - medan yang DAPAT DIISI di layar atasan (flow action
+// `DeptHeadTreatyIn_UW` -> `Section/GeneralDeptHeadTreatyIn_UW` (nol sel
+// sendiri; hanya menyertakan `DetailDeptHeadTreatyIn_UW` atas `.PolicyTreatyIn`)
+// -> `DetailDeptHeadTreatyIn_UW` + `ListSuggest`). AC 52, dibaca ulang
+// 2026-10-03:
+//
+//	DetailDeptHeadTreatyIn_UW  sel ber-`pyReadOnly=false` hanya `.DueTo`,
+//	                           `.FlagPPH`, `.QuotationData.NoOfferSlip` - ketiganya
+//	                           mode sunting `pyDisabled=true`/`pyDisabledNew=always`
+//	                           -> TIDAK dapat diisi; sisanya lima pxButton
+//	ListSuggest                `.IsApproved` (wajib), `.Suggest` (wajib) - selalu;
+//	                           `.ProductionDate` - hanya bila tampil (lihat
+//	                           `tanggalProduksiTerbuka`)
+//
+// Selain ini terkunci (AC 49-51): nilai kiriman layar untuk medan lain
+// DIABAIKAN, nilai tersimpan dipakai.
 var medanAtasan = []string{
-	HalamanPolis + ".DueTo",
-	HalamanPolis + ".FlagPPH",
-	HalamanPolis + ".QuotationData.NoOfferSlip",
 	HalamanPolis + ".IsApproved",
 	HalamanPolis + ".Suggest",
-	HalamanPolis + ".ProductionDate",
+}
+
+// jalurTanggalProduksi - `Section/ListSuggest` `.ProductionDate`.
+const jalurTanggalProduksi = HalamanPolis + ".ProductionDate"
+
+// tanggalProduksiTerbuka = syarat tampil `Section/ListSuggest` `.ProductionDate`:
+// `.IsApproved == 1 && (OperatorID.pyUserIdentifier=='<ID-operator-3>' ||
+// ... '<ID-operator-4>')`. Bagian identitas diganti tempat berperan tiket 05
+// (`tempat`, dihitung services); tempat tertunda = tidak tampil (AC 81).
+// Sel tak tampil tidak terkirim di Pega -> nilainya tidak pernah diterima.
+func tanggalProduksiTerbuka(h *Halaman, tempat bool) bool {
+	return tempat && h.Ambil(HalamanPolis+".IsApproved") == "1"
 }
 
 // medanAdmin - DAFTAR IZIN layar admin (`DetailPolicyTreatyIn` + `ListSuggest`):
@@ -176,7 +235,7 @@ var medanAdmin = func() map[string]bool {
 		"PremiOgp", "RiCommOgp", "ResultOgp1", "OveriddingCommOgp", "ResultOgp2",
 		"PremiOnp", "RiCommOnp", "ResultOnp1", "OveriddingCommOnp", "ResultOnp2",
 		"Claim", "OutstandingClaim", "SalvageValue", "ExcessLoss", "Deduction1", "Deduction2",
-		"Installment", "IsApproved", "Suggest", "ProductionDate",
+		"Installment", "IsApproved", "Suggest",
 		// hasil tombol "Enable / Disable Input Type" (TreatyEnableDisableInput)
 		"IsNewPolicyNonProp", "QuotationData.ProportionalType",
 	} {
@@ -194,9 +253,13 @@ var medanAdmin = func() map[string]bool {
 //	        tampil di section mana pun - tidak lagi diterima dari layar.
 //	Atasan  hanya `medanAtasan`; seluruh daftar terkunci
 //
+// Kedua layar: `.ProductionDate` (`ListSuggest`) diterima hanya bila tampil -
+// `tempatTanggalProduksi` = tempat berperan `LISTSUGGEST_PRODUCTIONDATE`
+// (tiket 05) bagi pelaku, dan IsApproved (sesudah digabung) "1".
+//
 // Halaman Quotation dan TreatyIn tidak pernah diterima dari layar: Quotation
 // diisi pilih bisnis dan CheckDataMkt; TreatyIn dibaca dari view.
-func GabungMasukanLayar(h, masuk *Halaman, posisi string) {
+func GabungMasukanLayar(h, masuk *Halaman, posisi string, tempatTanggalProduksi bool) {
 	if masuk == nil {
 		return
 	}
@@ -208,17 +271,20 @@ func GabungMasukanLayar(h, masuk *Halaman, posisi string) {
 				h.Setel(j, v)
 			}
 		}
-		return
-	}
-	for j, v := range masuk.Nilai {
-		if medanAdmin[j] {
-			h.Setel(j, v)
+	} else {
+		for j, v := range masuk.Nilai {
+			if medanAdmin[j] {
+				h.Setel(j, v)
+			}
+		}
+		for _, d := range DaftarDariLayar(h) { // nonprop_layar.go
+			if b, ada := masuk.Daftar[d]; ada {
+				h.SetelDaftar(d, salinBaris(b))
+			}
 		}
 	}
-	for _, d := range DaftarDariLayar(h) { // nonprop_layar.go
-		if b, ada := masuk.Daftar[d]; ada {
-			h.SetelDaftar(d, salinBaris(b))
-		}
+	if v, ada := masuk.Nilai[jalurTanggalProduksi]; ada && tanggalProduksiTerbuka(h, tempatTanggalProduksi) {
+		h.Setel(jalurTanggalProduksi, v)
 	}
 }
 

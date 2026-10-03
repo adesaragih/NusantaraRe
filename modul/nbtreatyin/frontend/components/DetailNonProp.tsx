@@ -7,7 +7,6 @@
 // ⛔ Nol perhitungan di sini - semua nilai datang dari backend (pilih bisnis:
 // InputPolicyTreatyInDetail_NonProp; refresh `CountSpreading`).
 
-import { formatNumber } from '../../../../inti/frontend/lib/format'
 import { Panel } from '../../../../inti/frontend/components/ui/dasar'
 import { daftar, nilai, type Baris, type Halaman, type Pilihan } from '../api'
 import { BAGIAN, KOLOM_ANGSURAN, KOLOM_SPREADING, TOMBOL } from '../labels'
@@ -28,16 +27,20 @@ import {
   type Kolom,
   type Total,
 } from '../nonprop'
+import { sajikan, type Sajian } from '../sajian'
 
 const P = 'PolicyTreatyIn.'
 const SPREADING = P + 'SpreadingRiskList'
 const ANGSURAN = P + 'ListInstallment'
 
-/** pxNumber section NonProp ber-`pyDecimalPlaces` 2 (K14); Note/Currency teks apa adanya. */
-const angka2 = (v: string | undefined) => formatNumber(v ?? '', 2)
-const TEKS = new Set(['Note', 'Currency', 'DueDate'])
+/** pxNumber section NonProp dan SpreadingRiskList ber-`pyDecimalPlaces` 2 (K14). */
+const DUA: Sajian = { desimal: 2 }
+/** Section `InstallmentList`: `pyFormatType number` tanpa `pyDecimalPlaces` - pola inti. */
+const POLA_INTI: Sajian = {}
+const angka2 = (v: string | undefined) => sajikan(v ?? '', DUA)
+const TEKS = new Set(['Note', 'Currency'])
 
-function Grid({ baris, kolom, desimal = 2 }: { baris: Baris[]; kolom: Kolom[]; desimal?: number }) {
+function Grid({ baris, kolom, sajian = DUA }: { baris: Baris[]; kolom: Kolom[]; sajian?: Sajian }) {
   return (
     <div className="table-wrap">
       <table>
@@ -54,7 +57,9 @@ function Grid({ baris, kolom, desimal = 2 }: { baris: Baris[]; kolom: Kolom[]; d
           {baris.map((b, i) => (
             <tr key={i}>
               {kolom.map((c) => (
-                <td key={c.m}>{TEKS.has(c.m) ? (b[c.m] ?? '') : formatNumber(b[c.m] ?? '', desimal)}</td>
+                <td key={c.m}>
+                  {TEKS.has(c.m) ? (b[c.m] ?? '') : sajikan(b[c.m] ?? '', c.m === 'DueDate' ? 'tanggal' : sajian)}
+                </td>
               ))}
             </tr>
           ))}
@@ -208,7 +213,7 @@ export default function DetailNonProp({ halaman: h, sunting, opsiSpreading, onUb
               <span className="nbti__nilai">{a.Currency ?? ''}</span>
             </div>
             {/* masterDetail -> flow action `InstallmentList` (Section ber-pyReadOnly; angka tanpa pyDecimalPlaces) */}
-            <Grid baris={daftar(h, `${ANGSURAN}(${i + 1}).InstallmentList`)} kolom={KOLOM_RINCI} desimal={-1} />
+            <Grid baris={daftar(h, `${ANGSURAN}(${i + 1}).InstallmentList`)} kolom={KOLOM_RINCI} sajian={POLA_INTI} />
           </div>
         ))}
       </Panel>

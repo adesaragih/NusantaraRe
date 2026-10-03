@@ -1,6 +1,6 @@
 # 12: Layar jenjang ketiga — sembilan medan wajib SEKALIGUS terkunci
 
-**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
+**Status:** selesai *(putaran 2 2026-10-03, paket P2 cabang `modul/nbtreatyin/p2-layar` — AC 52 ✅; semula: sebagian, implementasi 2026-10-03 cabang `modul/nbtreatyin/implementasi`; awalnya ready-for-agent)*
 **Blocked by:** 11
 
 > ⭐⭐ **LEPAS DARI BLOKIR.** `[penyimpangan sadar]` 2026-09-22 — dua baris ini semula berbunyi:
@@ -16,6 +16,11 @@ Hari ini pemegang jenjang ketiga **mengisi tujuh medan sendiri**, lalu memutuska
 sekadar melihat. ⛔ Tetapi layarnya memuat **sembilan medan yang wajib diisi sekaligus terkunci**:
 medan itu wajib, **tidak dapat diisi pengguna**, dan yang seharusnya mengisinya adalah
 **perhitungan yang isinya belum terkirim**.
+
+> ⛔ **RALAT** 2026-10-03 (putaran 2, paket P2) — bunyi lama: *"Hari ini pemegang jenjang ketiga
+> **mengisi tujuh medan sendiri**"* → bunyi baru: pemegang jenjang ketiga mengisi **Approval** dan
+> **Suggest** (selalu), ditambah **Production Date** hanya bila medan itu tampil baginya; selebihnya
+> layarnya hanya-baca. Bukti: bab Hasil implementasi putaran 2 di bawah.
 
 Sesudah tiket ini, pemegang jenjang ketiga dapat mengisi medan keputusannya dan menyimpan berkas.
 
@@ -66,6 +71,10 @@ terkunci, dan itu tetap benar — tetapi **yang mengisinya terbaca di ekspor**. 
 | Medan yang dapat diisi | **tujuh** |
 | Pembersihan pesan yang **ditahan** | **5** tempat yang menghapus **sesudah** validasi memasang pesan; seluruhnya di rantai yang sama |
 
+> ⛔ **RALAT** 2026-10-03 (paket P2) — baris *"Medan yang dapat diisi | **tujuh**"* → **dua selalu
+> (`.IsApproved`, `.Suggest`) + satu bersyarat (`.ProductionDate`)** — rule: `Section/ListSuggest`;
+> `DueTo`, `FlagPPH`, `NoOfferSlip` di `Section/DetailDeptHeadTreatyIn_UW` ber-`pyDisabled=always`.
+
 ## ADR terkait
 
 - **ADR-0007** — jejak audit setiap transisi
@@ -74,8 +83,12 @@ terkunci, dan itu tetap benar — tetapi **yang mengisinya terbaca di ekspor**. 
 
 - [x] **AC 47** — layar jenjang ketiga **mewajibkan** satu medan yang tidak wajib di layar admin
 - [x] **AC 48** — berkas **tidak dapat disimpan** bila medan wajib pada tingkat itu kosong
-- [ ] 🟡 **AC 52** — pemegang jenjang ketiga **dapat mengisi tujuh medan**; ⛔ layarnya **bukan**
-      sepenuhnya hanya-baca
+- [x] ✅ **AC 52** — pemegang jenjang ketiga **dapat mengisi Approval dan Suggest** (+ Production
+      Date bersyarat); ⛔ layarnya **bukan** sepenuhnya hanya-baca, ⛔ medan lain tidak dapat diisi
+      > ⛔ **RALAT** 2026-10-03 — bunyi lama: *"- [ ] 🟡 **AC 52** — pemegang jenjang ketiga **dapat
+      > mengisi tujuh medan**; ⛔ layarnya **bukan** sepenuhnya hanya-baca"*. Uji:
+      > `handlers/alur_test.go` `TestMedanTerkunciAtasanDanTurunanAdmin`, `models/layar_test.go`
+      > `TestAtasanHanyaMengisiPutusanCatatanDanTanggalProduksiBersyarat`, `frontend/medan.test.ts`.
 - [x] **AC 78** — **5** tempat yang menghapus pesan **sesudah** validasi memasangnya **ditahan**
       dan tidak dibangun
 - [x] **AC 80** — ⭐ layar **dapat disimpan**; enam medan diisi langkah, tiga diketik underwriter
@@ -93,6 +106,9 @@ terkunci, dan itu tetap benar — tetapi **yang mengisinya terbaca di ekspor**. 
 ⭐ **Dapat dijalankan sepenuhnya.**
 
 1. Buka layar jenjang ketiga — ⭐ **tujuh** medan dapat diisi, **36** terkunci.
+   > ⛔ **RALAT** 2026-10-03 — bunyi lama: *"⭐ **tujuh** medan dapat diisi"* → bunyi baru: ⭐
+   > **Approval** dan **Suggest** dapat diisi; **Production Date** hanya bila tampil (tiket 05);
+   > `DueTo`, `FlagPPH`, `No Offer Slip` tampil terkunci.
 2. Coba simpan dengan kesembilan medan kosong — ⭐ **ditolak**, dan pesannya menyebut bahwa
    nilainya berasal dari perhitungan yang belum tersedia.
 
@@ -108,3 +124,30 @@ Layar atasan: seluruh medan terkunci kecuali DueTo, FlagPPH, No Offer Slip, Appr
 ProductionDate (enam; spec menyebut tujuh — AC 52 sebagian). Tombol: Sec Head selalu Submit; Dept Head
 IsApproved 1 → Generate nomor polis → ShowPolicyNoTreaty (OK = Submit) — posisi menggantikan
 `<ID-operator-1>` (tiket 05).
+
+> ⛔ **RALAT** 2026-10-03 — kalimat *"seluruh medan terkunci kecuali DueTo, FlagPPH, No Offer Slip,
+> Approval, Suggest, ProductionDate (enam; spec menyebut tujuh — AC 52 sebagian)"* ditarik: DueTo,
+> FlagPPH, No Offer Slip ber-`pyDisabled=always` (lihat di bawah).
+
+## Hasil implementasi putaran 2 — 2026-10-03 (paket P2, cabang `modul/nbtreatyin/p2-layar`)
+
+- **AC 52 ✅.** `models.medanAtasan` = `IsApproved`, `Suggest`; `ProductionDate` diterima hanya bila
+  tampil (`IsApproved == 1` + tempat `LISTSUGGEST_PRODUCTIONDATE`, juga di layar admin) —
+  `GabungMasukanLayar(h, masuk, posisi, tempatTanggalProduksi)`. Layar: `FlagPPH` kotak terkunci,
+  `DueTo` / `No Offer Slip` tampil terkunci.
+- Wadah layar atasan: bagian uang/spreading/angsuran `.IsNewPolicyNonProp != 1` (juga syarat
+  wajibnya — medan di wadah tersembunyi tidak wajib); `No Polis` / `Production Date` di wadah
+  `pyWorkPage.FlagViewPolicy = 1` (tidak diisi rule terjangkau mana pun ⇒ tidak tampil);
+  `Ceding Company`, `Marketing Officer`, `Type Tax` `NOTBLANK`; total berlabel `.Total*` (2 desimal).
+- Format penyajian per sel (K14) — tiket 07.
+
+> Bukti (dibaca ulang 2026-10-03): `FlowAction/DeptHeadTreatyIn_UW.xml` `pySectionReference =
+> GeneralDeptHeadTreatyIn_UW` (nol sel sendiri; menyertakan `DetailDeptHeadTreatyIn_UW` atas
+> `.PolicyTreatyIn`). `Section/DetailDeptHeadTreatyIn_UW.xml`: sel berkontrol ber-`pyReadOnly=false`
+> hanya `.DueTo`, `.FlagPPH`, `.QuotationData.NoOfferSlip` — ketiganya `pyModes` baris 1
+> `pyDisabled=true`/`pyDisabledNew=always`, **tidak dapat diisi** — dan lima `pxButton`.
+> `Section/ListSuggest.xml`: `.IsApproved` (wajib), `.Suggest` (wajib), `.ProductionDate` (tampil dan
+> wajib hanya `.IsApproved == 1 && OperatorID.pyUserIdentifier == '<ID-operator-3>' ||
+> '<ID-operator-4>'` → tempat berperan tiket 05). Hitungan putaran 1 ("enam") memasukkan tiga sel
+> `pyDisabled`; dasar "tujuh" tidak ditemukan. Subsection NonProp (wadah `.IsNewPolicyNonProp = 1`)
+> milik paket P5.

@@ -1,7 +1,13 @@
-"""Bangkitkan migrasi 320-328 dan docs/STRUKTUR-TABEL-NB-TREATY-IN.md dari katalog Go.
+"""Bangkitkan migrasi 320-327 dan docs/STRUKTUR-TABEL-NB-TREATY-IN.md dari katalog Go.
 
 Sumber tunggal: backend/models/katalog.go (Kolom properti -> kolom -> golongan). Uji
-`backend/models/katalog_test.go` menagih bahwa DDL dan katalog tetap sepakat.
+`backend/repository/kolom_test.go` (TestKatalogSepakatDenganDDL,
+TestTabelDanKolomMengikutiDiagramGrilling) menagih bahwa DDL, katalog, dan diagram
+grilling tetap sepakat.
+
+⛔ TEPAT DELAPAN TABEL (bab 0 butir 11 PROMPT putaran 2): T_GENERAL_POLIS,
+T_POLIS_QUOTATION, T_POLIS_CEDING, T_POLIS_INSTALMENT, T_POLIS_INSTALMENT_DETAIL,
+T_POLIS_SPREADING, T_POLIS_XOL, T_POLIS_XOL_LAYER. Tabel lain tidak dibangkitkan.
 
     python skema.py
 
@@ -88,7 +94,7 @@ def main():
     # ------------------------------------------------------------ 320
     kunci = [("ID", "VARCHAR2(32) NOT NULL"), ("NOPOLIS", "VARCHAR2(64)"), ("PRODKE", "NUMBER(10) DEFAULT 0 NOT NULL"),
              ("NOENDORS", "VARCHAR2(64)"), ("OLD_POLIS_ID", "VARCHAR2(32)"), ("IDPEGA", "VARCHAR2(128)"),
-             ("TGL_INPUT", "DATE"), ("USERNAME", "VARCHAR2(64)"), ("TGL_TUTUP", "DATE")]
+             ("TGL_INPUT", "DATE"), ("USERNAME", "VARCHAR2(64)")]
     tulis("320_t_general_polis", [
         "320 - T_GENERAL_POLIS: satu baris per GENERASI polis treaty inward (tiket 16).",
         "",
@@ -96,15 +102,19 @@ def main():
         "migrasi 050/059): ID adalah ID baris T_WORK_POLIS, tanpa kolom kunci tamu",
         "tersendiri (spec-penyimpanan ID-7, AC 5).",
         "",
+        "Diagram grilling F12-F16: UNIQUE (NOPOLIS, PRODKE) dan UNIQUE (OLD_POLIS_ID).",
         "Kunci alami (NOPOLIS, PRODKE) unik - ditegakkan BASIS DATA (ID-8, AC 1).",
         "NOPOLIS kosong selama realisasi belum bernomor, jadi indeks uniknya hanya",
-        "memuat baris bernomor (indeks berfungsi CASE): dua draf tanpa nomor tidak bentrok.",
+        "memuat baris bernomor (indeks berfungsi CASE): dua draf tanpa nomor tidak bentrok",
+        "(UNIQUE biasa menganggap (NULL, 0) dan (NULL, 0) kembar di Oracle).",
         "PRODKE bilangan bulat lebar (KEPUTUSAN-RONDE-12 butir 1 dan 8); NB selalu 0.",
         "OLD_POLIS_ID menunjuk generasi sebelumnya - unik, kosong di NB (ID-9, AC 3, 4).",
-        "TGL_TUTUP terisi = generasi tertutup, tidak boleh disunting (ID-10, AC 6) -",
-        "ditegakkan services.",
+        "Generasi TERTUTUP = ada baris penerus yang OLD_POLIS_ID-nya menunjuk generasi",
+        "ini; tidak boleh disunting (ID-10, AC 6) - tanpa kolom penanda (diagram).",
         "",
-        "Kolom lain DIBANGKITKAN dari backend/models/katalog.go (docs/alat/skema.py).",
+        "Kolom lain DIBANGKITKAN dari backend/models/katalog.go (docs/alat/skema.py) -",
+        "79 medan PolicyTreatyIn + 7 kolom json_polis menurut diagram dan rancangan;",
+        "LAYER* dicoret (diagram F26). Perbandingan: docs/PERBANDINGAN-KOLOM-DIAGRAM.md.",
         "Uang dan persen NUMBER(38,8) (KEPUTUSAN 23-09-2026 sore), tanggal DATE (P32),",
         "kode dan penanda teks (ID-16, ID-17). Nol COMMIT.",
     ], [
@@ -129,20 +139,23 @@ def main():
     ])], ["DROP TABLE {skema}.T_POLIS_QUOTATION CASCADE CONSTRAINTS"])
 
     # ------------------------------------------------------------ anak 1:N
-    def anak(no, nama, induk_kol, induk_tabel, pk, uq, fk, kepala):
+    def anak(no, nama, induk_kol, induk_tabel, pk, uq, fk, kepala, induk_pk="ID"):
         k = t[nama]
         tulis(f"{no}_{nama.lower()}", kepala, [blok(nama, [("ID", "VARCHAR2(32) NOT NULL"),
                                                           (induk_kol, "VARCHAR2(32) NOT NULL"),
                                                           ("NOURUT", "NUMBER(5) NOT NULL")], k["kolom"], [
             f"CONSTRAINT {pk} PRIMARY KEY (ID)",
-            f"CONSTRAINT {fk} FOREIGN KEY ({induk_kol}) REFERENCES {{skema}}.{induk_tabel} (ID)",
+            f"CONSTRAINT {fk} FOREIGN KEY ({induk_kol}) REFERENCES {{skema}}.{induk_tabel} ({induk_pk})",
             f"CONSTRAINT {uq} UNIQUE ({induk_kol}, NOURUT)",
         ])], [f"DROP TABLE {{skema}}.{nama} CASCADE CONSTRAINTS"])
 
     nourut = ["NOURUT = nomor urut baris di dalam induknya, unik per induk (ID-11, AC 8, 10);",
               "kunci pasangan antar generasi, bukan kunci dagang (ID-13, AC 11)."]
-    anak("322", "T_POLIS_CEDING", "POLIS_ID", "T_GENERAL_POLIS", "PK_POLIS_CEDING", "UQ_POLIS_CEDING_NOURUT",
-         "FK_POLIS_CEDING_POLIS", ["322 - T_POLIS_CEDING <- QuotationData.CedingCoList (ID-24; tiket 19 AC 28-30)."] + nourut)
+    anak("322", "T_POLIS_CEDING", "QUOTATION_ID", "T_POLIS_QUOTATION", "PK_POLIS_CEDING", "UQ_POLIS_CEDING_NOURUT",
+         "FK_POLIS_CEDING_QUOTATION", ["322 - T_POLIS_CEDING <- QuotationData.CedingCoList (ID-24; tiket 19 AC 28-30).",
+                                       "Anak T_POLIS_QUOTATION lewat QUOTATION_ID = POLIS_ID quotation (diagram O39);",
+                                       "CEDING_CO_ID <- .CedingCo, CEDING_CO_NAME <- .CedingCoName (diagram R43)."] + nourut,
+         induk_pk="POLIS_ID")
     anak("323", "T_POLIS_INSTALMENT", "POLIS_ID", "T_GENERAL_POLIS", "PK_POLIS_INSTALMENT", "UQ_POLIS_INSTALMENT_NOURUT",
          "FK_POLIS_INSTALMENT_POLIS", ["323 - T_POLIS_INSTALMENT <- PolicyTreatyIn.ListInstallment (ID-26)."] + nourut)
     anak("324", "T_POLIS_INSTALMENT_DETAIL", "INSTALMENT_ID", "T_POLIS_INSTALMENT", "PK_POLIS_INSTALMENT_DETAIL",
@@ -158,39 +171,6 @@ def main():
     anak("327", "T_POLIS_XOL_LAYER", "XOL_ID", "T_POLIS_XOL", "PK_POLIS_XOL_LAYER", "UQ_POLIS_XOL_LAYER_NOURUT",
          "FK_POLIS_XOL_LAYER_XOL", ["327 - T_POLIS_XOL_LAYER <- TreatyXOLList().ValueList - pemegang penanda",
                                     "layer (ID-29; tiket 19 AC 32-35)."] + nourut)
-    anak("328", "T_POLIS_SUGGEST", "POLIS_ID", "T_GENERAL_POLIS", "PK_POLIS_SUGGEST", "UQ_POLIS_SUGGEST_NOURUT",
-         "FK_POLIS_SUGGEST_POLIS", ["328 - T_POLIS_SUGGEST <- PolicyTreatyIn.SuggestList (catatan dan putusan",
-                                    "per tahap; AC 71, 72). RALAT rancangan §4bis.1: riwayat produksi hanya",
-                                    "ditulis untuk bisnis fakultatif, jadi daftar treaty butuh tabel sendiri."] + nourut)
-
-    # ------------------------------------------------------------ 329 penampung
-    tulis("329_t_polis_medan_lain", [
-        "329 - T_POLIS_MEDAN_LAIN: penampung medan tak dikenal (spec-penyimpanan ID-27;",
-        "tiket 19, 22 AC 57, 59). Medan dokumen lama yang tidak punya kolom DISIMPAN,",
-        "bukan dibuang. WAJIB KOSONG sebelum pekerjaan dinyatakan selesai.",
-    ], [blok("T_POLIS_MEDAN_LAIN", [("ID", "VARCHAR2(32) NOT NULL"), ("POLIS_ID", "VARCHAR2(32) NOT NULL")],
-             [{"kolom": "JALUR", "gol": "teks", "panjang": 512}, {"kolom": "NILAI", "gol": "teks", "panjang": 4000}], [
-        "CONSTRAINT PK_POLIS_MEDAN_LAIN PRIMARY KEY (ID)",
-        "CONSTRAINT FK_POLIS_MEDAN_LAIN_POLIS FOREIGN KEY (POLIS_ID) REFERENCES {skema}.T_GENERAL_POLIS (ID)",
-        "CONSTRAINT UQ_POLIS_MEDAN_LAIN_JALUR UNIQUE (POLIS_ID, JALUR)",
-    ])], ["DROP TABLE {skema}.T_POLIS_MEDAN_LAIN CASCADE CONSTRAINTS"])
-
-    # ------------------------------------------------------------ 330 peran per tempat
-    tulis("330_m_nbtrin_peran_tempat", [
-        "330 - M_NBTRIN_PERAN_TEMPAT: pemetaan TEMPAT -> PERAN -> ARAH untuk tempat yang",
-        "di sistem lama memeriksa identitas orang (tiket 05; P12, P28).",
-        "",
-        "TABEL INI DIISI KEMUDIAN oleh IAM bersama work owner - nol baris dari migrasi.",
-        "Nama orang TIDAK dibawa; tempat tanpa baris = tertunda (AC 81): bagian layarnya",
-        "tidak ditampilkan dan syaratnya tidak dianggap terpenuhi. ARAH menyatakan",
-        "'MUNCUL' (hanya untuk peran ini) atau 'KECUALI' (untuk semua kecuali peran ini)",
-        "dan TIDAK ditebak (AC 82).",
-    ], [blok("M_NBTRIN_PERAN_TEMPAT", [("KODE_TEMPAT", "VARCHAR2(64) NOT NULL"), ("PERAN", "VARCHAR2(64) NOT NULL"),
-                                          ("ARAH", "VARCHAR2(16) NOT NULL")], [], [
-        "CONSTRAINT PK_NBTRIN_PERAN_TEMPAT PRIMARY KEY (KODE_TEMPAT, PERAN)",
-        "CONSTRAINT CK_NBTRIN_PERAN_TEMPAT_ARAH CHECK (ARAH IN ('MUNCUL', 'KECUALI'))",
-    ])], ["DROP TABLE {skema}.M_NBTRIN_PERAN_TEMPAT CASCADE CONSTRAINTS"])
-
     # ------------------------------------------------------------ STRUKTUR
     w = ["# Struktur Tabel — NB Treaty In", "",
          "Acuan bentuk tabel modul `nbtreatyin`. **Dibangkitkan** `docs/alat/skema.py` dari",
@@ -218,31 +198,39 @@ def main():
         ("IDPEGA", "teks", "ya", "", "kode", "json_polis"),
         ("TGL_INPUT", "DATE", "ya", "", "tanggal-waktu", "json_polis"),
         ("USERNAME", "teks", "ya", "", "kode", "identitas akses login (P4)"),
-        ("TGL_TUTUP", "DATE", "ya", "", "tanggal-waktu", "generasi tertutup"),
-    ], g["kolom"], "Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7).")
+    ], g["kolom"], "Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7). "
+                   "Generasi tertutup = ada penerus yang `OLD_POLIS_ID`-nya menunjuk baris ini (ID-10).")
     sect("T_POLIS_QUOTATION", [("POLIS_ID", "teks", "tidak", "PK, FK T_GENERAL_POLIS", "kode", "induk")],
          q["kolom"], "Halaman `Quotation` / `PolicyTreatyIn.QuotationData`, 1:1 (ID-23).")
     for nama, induk, cat in [
-            ("T_POLIS_CEDING", ("POLIS_ID", "T_GENERAL_POLIS"), "← `QuotationData.CedingCoList` (ID-24)."),
+            ("T_POLIS_CEDING", ("QUOTATION_ID", "T_POLIS_QUOTATION"), "← `QuotationData.CedingCoList` (ID-24), di bawah `T_POLIS_QUOTATION` (diagram O39)."),
             ("T_POLIS_INSTALMENT", ("POLIS_ID", "T_GENERAL_POLIS"), "← `PolicyTreatyIn.ListInstallment` (ID-26)."),
             ("T_POLIS_INSTALMENT_DETAIL", ("INSTALMENT_ID", "T_POLIS_INSTALMENT"), "← `ListInstallment().InstallmentList`, non-proporsional."),
             ("T_POLIS_SPREADING", ("POLIS_ID", "T_GENERAL_POLIS"), "← `PolicyTreatyIn.SpreadingRiskList` (ID-28)."),
             ("T_POLIS_XOL", ("POLIS_ID", "T_GENERAL_POLIS"), "← `PolicyTreatyIn.TreatyXOLList` (ID-29)."),
-            ("T_POLIS_XOL_LAYER", ("XOL_ID", "T_POLIS_XOL"), "← `TreatyXOLList().ValueList` (ID-29)."),
-            ("T_POLIS_SUGGEST", ("POLIS_ID", "T_GENERAL_POLIS"), "← `PolicyTreatyIn.SuggestList` (RALAT rancangan §4bis.1).")]:
+            ("T_POLIS_XOL_LAYER", ("XOL_ID", "T_POLIS_XOL"), "← `TreatyXOLList().ValueList` (ID-29).")]:
         sect(nama, [("ID", "teks", "tidak", "PK", "kode", "baris"),
                     (induk[0], "teks", "tidak", f"FK {induk[1]}, UQ ({induk[0]}, NOURUT)", "kode", "induk"),
                     ("NOURUT", "bilangan bulat", "tidak", f"UQ ({induk[0]}, NOURUT)", "cacah", "urutan baris (ID-11)")],
              t[nama]["kolom"], cat)
-    sect("T_POLIS_MEDAN_LAIN", [("ID", "teks", "tidak", "PK", "kode", "baris"),
-                                ("POLIS_ID", "teks", "tidak", "FK T_GENERAL_POLIS, UQ (POLIS_ID, JALUR)", "kode", "induk")],
-         [{"kolom": "JALUR", "gol": "teks", "properti": "jalur medan tak dikenal"},
-          {"kolom": "NILAI", "gol": "teks", "properti": "nilai apa adanya"}],
-         "Penampung medan tak dikenal (ID-27) — wajib kosong sebelum selesai.")
-    sect("M_NBTRIN_PERAN_TEMPAT", [("KODE_TEMPAT", "teks", "tidak", "PK", "kode", "tempat guard (tiket 05)"),
-                                   ("PERAN", "teks", "tidak", "PK", "kode", "peran / workbasket"),
-                                   ("ARAH", "teks", "tidak", "", "kode", "MUNCUL / KECUALI")], [],
-         "Pemetaan tempat → peran → arah; **diisi IAM kemudian**, nol baris dari migrasi (tiket 05).")
+    # ------------------------------------------------------------ tabel warisan (tidak dibuat)
+    w.extend(["## HISTORYAKSEPTASIPRODUCTION", "",
+              "⛔ **Tabel WARISAN `POOLDATA` — tidak dibuat, tidak diubah strukturnya** (MODUL.md *Tabel warisan*;",
+              "keputusan work owner K4 03-10-2026; spec-penyimpanan ID-31). Catatan `PolicyTreatyIn.SuggestList` ditulis",
+              "ke sini (`repository/usulan.go`, pengganti `RDBList/InsertViewSuggest_SQL`) dan dibaca balik untuk layar.",
+              "Tipe fisik milik tabel lama (belum dicek katalog Oracle — butir terbuka).", "",
+              "| Kolom | Tipe | Null | Kunci | Golongan | Properti Pega |", "| --- | --- | --- | --- | --- | --- |"])
+    for kol, sumber in [("IDPEGA", "`pyWorkPage.pzInsKey`"), ("TYPE_POLIS", "`@replaceAll(pyWorkIDPrefix,\"-\",\"\")` = `NB`"),
+                        ("NOURUT", "berikutnya per IDPEGA (XML `.pxListSubscript`)"), ("POSISI", "`\"Policy\"`"),
+                        ("PIC", "`.OperatorName` — nama tampilan (P33)"), ("TGL_INP", "`.Date`"),
+                        ("DIV", "`OperatorID.pyOrgDivision` — NULL, tanpa sumber (butir terbuka)"),
+                        ("TYPE", "`Quotation.BusinessFac` = `T`"), ("PUTARAN", "`\"2\"`"),
+                        ("APPROVAL", "`.IsApproved` 1 = Accept, 0 = Reject"), ("KETERANGAN", "`substr(.Suggest, 0, 3990)`"),
+                        ("AKSES_LOGIN", "`OperatorID.pyUserIdentifier` — identitas login (P4)"),
+                        ("B2B", "`OfferFacIn.IsB2B` — NULL di NB"), ("BUSINESS_CODE", "`Quotation.BusinessCode`"),
+                        ("PERCENT_RNM", "`OfferFacIn.PercentShare` — NULL di NB")]:
+        w.append(f"| `{kol}` | warisan | ya |  | — | {sumber} |")
+    w.append("")
     open(STRUKTUR, "w", encoding="utf-8", newline="\n").write("\n".join(w).rstrip() + "\n")
     print("ok:", ", ".join(sorted(t)))
 

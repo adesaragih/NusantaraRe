@@ -15,9 +15,11 @@ package models
 // ⛔ Bagian JSON `InputPolicyTreatyInDetail_preACT` TIDAK dibangun
 // (`[keputusan work owner]` P29, PERTANYAAN-untuk-DBA "enam aktivitas yang
 // membongkar JSON tidak dimigrasi"): langkah 9-10 (`adoptJSONObject`
-// `M_TREATY_IN_DETAIL_EDM`), 13 (jadwal angsuran dari `TreatyIn.INSTALLMENT`),
-// 17 (`TreatyInputPctCommSpreading` - `FetchMasterTreatyIn`). Yang dibangun:
-// langkah 3-8, 11, 14, 15 - seluruhnya membaca view dan tabel acuan.
+// `M_TREATY_IN_DETAIL_EDM`), 13 (jadwal angsuran dari `TreatyIn.INSTALLMENT`).
+// Yang dibangun: langkah 3-8, 11, 14, 15 - seluruhnya membaca view dan tabel
+// acuan - dan langkah 17 (`TreatyInputPctCommSpreading`) SEBAGIAN: RiCommOgp
+// dari kolom view RIOGR/RIONR (`models/komisi.go`, RALAT putaran 2); baris
+// spreading-nya tidak (bukan kolom view, alasan c).
 // ⭐ RALAT K8 (03-10-2026): langkah 16 (`InputPolicyTreatyInDetail_NonProp`) dan
 // 18 (`TreatyIn.LimitShareSummaryList`) DIBANGUN - master XOL dibaca baca-saja
 // (`nonprop.go`, `nonprop_detail.go`, `services/nonprop.go`).
@@ -90,9 +92,20 @@ func TerapkanDetailKontrak(h *Halaman, b BarisKontrak) {
 // `Commencement`, `Termination` (layar atasan dan admin menampilkannya).
 // Medan master lain (RNMShareP, RNMShare, BrokeragePercentP, CurrencyList,
 // INSTALLMENT, Limits...) tidak punya kolom padanan - lihat `MasterTersedia`.
+//
+// ⭐ LAYER* tingkat polis juga diisi di sini: di Pega ia PANTULAN baris
+// pertama view (`InputPolicyTreatyInDetail_preACT` langkah 3:
+// `PolicyTreatyIn.LayerType = pyReportContentPage.pxResults(1).LAYERTYPE`, dst.)
+// dan tidak punya kolom di T_GENERAL_POLIS (diagram grilling F26, ID-22) -
+// maka dibaca balik dari baris view yang sama (TreatyIn.ID) setiap layar
+// dibuka. Nilainya layer PERTAMA saja (pxResults(1)), sama dengan Pega.
 func TerapkanMasterKontrak(h *Halaman, b BarisKontrak) {
 	h.Setel(HalamanMaster+".Commencement", b["COMMENCEMENT"])
 	h.Setel(HalamanMaster+".Termination", b["TERMINATION"])
+	h.Setel(HalamanPolis+".LayerType", b["LAYERTYPE"])
+	h.Setel(HalamanPolis+".Layer", b["LAYER"])
+	h.Setel(HalamanPolis+".LayerPartType", b["LAYERPARTTYPE"])
+	h.Setel(HalamanPolis+".LayerPart", b["LAYERPART"])
 }
 
 // SetelIDMataUang = `SetTreatyCurrencyID` langkah 3 (RDB `GetCurrencyIDByName`).

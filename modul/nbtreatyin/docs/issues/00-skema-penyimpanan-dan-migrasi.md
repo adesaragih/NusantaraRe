@@ -114,3 +114,21 @@ sebagai keterangan **apa yang ditunggu**. ⛔ Nol DDL, nol `CREATE TABLE`.
   `TOTAL_*` (turunan baris; penjaga repo melarang nama ber-awalan TOTAL_ di migrasi), `LAYER*` (ID-22),
   `isApprovedtoDeptHead` (P36, AC 64), `IsEDMInputOnNB` (hanya dipakai pembongkar JSON, AC 62),
   `IDNewBisnis` (nol rule).
+
+## ⭐ Putaran 2 — paket penyimpanan (03-10-2026)
+
+Dasar: PROMPT-NB-TREATY-IN-PUTARAN-2 bab 0 butir 11–12, bab 2 K4/K16/K17; rincian kolom `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`.
+
+⛔ **RALAT** atas *Hasil implementasi 2026-10-03* di atas. Bunyi lama, dikutip: *"`T_GENERAL_POLIS` memuat
+**72** kolom katalog (69 medan `PolicyTreatyIn` + 3 halaman kerja …) … Tidak dibuat, dan sebabnya: … `IsEDMInputOnNB`
+(hanya dipakai pembongkar JSON, AC 62), `IDNewBisnis` (nol rule)."* dan *"migrasi 320-328"*.
+
+Bunyi baru:
+- Migrasi **320–327 = tepat delapan tabel diagram grilling**; 328 `T_POLIS_SUGGEST`, 329 `T_POLIS_MEDAN_LAIN`,
+  330 `M_NBTRIN_PERAN_TEMPAT` **dihapus** (K4, K17, K16). Ditagih `TestTabelDanKolomMengikutiDiagramGrilling`.
+- `T_GENERAL_POLIS` tetap **72** kolom katalog, isinya berubah: **+** `IS_EDM_INPUT_ON_NB` (rancangan §4.1;
+  jalur XOL kini dibangun, K8) dan `ID_NEW_BISNIS` (rancangan §4.1, data guide); **−** `IS_OJK_NOPOLIS`,
+  `BROKERAGE_FEE` (hanya ditulis). `TGL_TUTUP` dibuang (di luar diagram).
+- `T_POLIS_QUOTATION` 10 medan diagram + 6 RALAT (dari 26); `T_POLIS_CEDING` di bawah quotation
+  (`QUOTATION_ID`, `CEDING_CO_ID`); angsuran mengikuti rancangan §4.3 + diagram R61.
+- Status tetap **selesai**.

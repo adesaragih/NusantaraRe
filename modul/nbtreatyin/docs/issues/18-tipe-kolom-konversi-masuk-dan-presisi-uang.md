@@ -63,8 +63,8 @@ dijalankan atasnya — hasil bawaan berarti gagal.
 - [x] **AC 18** — teks kosong pada medan tanggal tersimpan tak-bernilai
 - [x] **AC 19** — nilai uang berdesimal sembilan **dibulatkan pada desimal kedelapan**, bukan dipotong ke dua
 - [x] **AC 20** — kolom uang berskala **delapan desimal**, ⭐ **tiga puluh digit di depan koma** *(`NUMBER(38,8)`; semula ~~dua belas~~ — dinaikkan 23-09-2026 sore)*
-- [ ] ⛔ **AC 21** — tanggal delapan digit terurai benar
-- [ ] ⛔ **AC 22** — cap waktu bersufiks zona terurai benar
+- [x] **AC 21** — tanggal delapan digit terurai benar *(putaran 2, pemuat tiket 22: `models.BacaTanggalLama` — `TestBacaTanggalLama`)*
+- [x] **AC 22** — cap waktu bersufiks zona terurai benar *(putaran 2: `20170930T170000.000 GMT` → `2017-10-01 00:00:00` Asia/Jakarta — `TestBacaTanggalLama`; tanggal ambigu tidak ditebak, K15 — `TestTanggalAmbiguTidakDitebak`)*
 - [x] **AC 23** — pengurutan menurut tanggal menghasilkan urutan kronologis, bukan leksikal
 - [x] **AC 24** — nol kolom uang bertipe mengambang
 - [ ] 🟡 **AC 25** — pembandingan uang memakai toleransi, bukan kesamaan persis
@@ -84,3 +84,14 @@ dijalankan atasnya — hasil bawaan berarti gagal.
   halaman, tidak setara di SQL) — sebagian.
 - **AC 21-22** (format dokumen lama `YYYYMMDD`, cap waktu ` GMT`) milik pemuat dokumen lama — tiket 22,
   belum dibangun.
+  ⛔ **RALAT putaran 2 (03-10-2026):** bunyi lama *"belum dibangun"* → **dibangun** (tiket 22,
+  `models.BacaTanggalLama`).
+
+## ⭐ Putaran 2 — paket penyimpanan (03-10-2026)
+
+Dasar: PROMPT-NB-TREATY-IN-PUTARAN-2 bab 0 butir 11–12, bab 2 K4/K16/K17; rincian kolom `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`.
+
+- Golongan tipe tidak berubah (uang/persen `NUMBER(38,8)`, tanggal `DATE`, cacah `NUMBER(10)`, kode dan
+  penanda teks); kosong → `NULL` di kolom angka/tanggal (diagram F25) tetap `repository.nilaiTulis`.
+- Kolom baru mengikuti golongannya: `IS_EDM_INPUT_ON_NB` penanda, `ID_NEW_BISNIS` kode, `PREMIUM_AFTER_*`
+  uang, `CEDING_CO_ID` kode. `DEDUCTION1/2` milik paket layar (K3) — tidak disentuh paket ini.

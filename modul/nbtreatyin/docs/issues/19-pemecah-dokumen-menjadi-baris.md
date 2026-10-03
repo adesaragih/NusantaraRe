@@ -38,6 +38,11 @@ Pemecah dokumen dan penyusun baris, beserta aturan isi tiap tabel:
 ⭐ **Penampung medan tak dikenal** disediakan — medan dokumen yang tidak dikenal **disimpan**,
 bukan dibuang.
 
+> ⛔ **RALAT putaran 2 (03-10-2026)** `[keputusan work owner]` **K17**: penampung itu **bukan tabel**
+> (`T_POLIS_MEDAN_LAIN` tidak ada di diagram grilling, dihapus) melainkan **berkas laporan CSV per
+> jalankan pemuat** (`POLIS_ID`, `JALUR`, `NILAI`) di folder keluaran operator — tiket 22,
+> `models/laporanlama.go`. Pemecah dokumen lama = `models.PecahDokumenLama` (digerakkan katalog).
+
 ## Batas — yang TIDAK termasuk
 
 ⛔ Uji pulang-pergi dan dua bentuk dokumen — tiket **21**.
@@ -95,6 +100,10 @@ dapat dinyatakan selesai** sampai penampung itu kosong.
   dokumen JSON. Tanpa tabel ini catatan pengguna hilang (spec AC 71). ⚠️ Peninjau spec membacanya
   sebagai bertentangan dengan AC 39 (*"tabel riwayat baru gagal"*); tabel ini menyimpan baris dokumen
   `SuggestList` (pemecah dokumen), bukan riwayat produksi.
+  ⛔ **RALAT putaran 2 (03-10-2026)** — bunyi lama di atas: *"Tabel `T_POLIS_SUGGEST` (migrasi 328) — keputusan
+  AGEN, mohon konfirmasi work owner."* Bunyi baru: `[keputusan work owner]` **K4** — tidak disetujui (di luar
+  diagram grilling); migrasi 328 dihapus. `SuggestList` ditulis ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION` dan
+  dibaca balik (tiket 10, `repository/usulan.go`); AC 40–41 kini berlaku untuk kasus treaty.
 - **AC 38 — pertentangan dicatat.** DEDUCTION1/2 bergolongan persen (WO P29); `TOTAL_SHARE_PERCENTAGE_*`
   tidak disimpan (turunan baris; penjaga repo melarang nama TOTAL_ di migrasi) — tidak dapat dipenuhi.
 - **AC 40-41** berlaku hanya pada `HISTORYAKSEPTASIPRODUCTION`, yang tidak ditulis kasus treaty.

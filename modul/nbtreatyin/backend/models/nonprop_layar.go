@@ -13,30 +13,11 @@ package models
 //     `.IsNewPolicyNonProp = 1 && .ClaimType != 'XOL Retro'`.
 //
 // Medan di kontainer tersembunyi tidak dapat diisi dan tidak pernah memicu
-// refresh - jadi tidak wajib, dan rantai hitungnya tidak berjalan dari layar.
-
-// medanKontainerProp - medan polis di kontainer proporsional kedua layar.
-var medanKontainerProp = func() map[string]bool {
-	m := map[string]bool{}
-	for _, n := range []string{
-		"GrossPremium", "GrossClaim", "PremiOgp", "RiCommOgp", "ResultOgp1", "OveriddingCommOgp", "ResultOgp2",
-		"PremiOnp", "RiCommOnp", "ResultOnp1", "OveriddingCommOnp", "ResultOnp2", "Claim", "OutstandingClaim",
-		"SalvageValue", "ExcessLoss", "NetPremium", "BalanceDueTo", "BalanceBeforeTax", "BalanceBeforePPH",
-		"Deduction1", "Deduction2", "PPHValue", "PPNValue", "Installment",
-	} {
-		m[HalamanPolis+"."+n] = true
-	}
-	return m
-}()
+// refresh - jadi tidak wajib (`wadahUangAdmin` / `bukanNonPropBaru`, layar.go), dan
+// rantai hitungnya tidak berjalan dari layar (`services.turunkan`, `validasiKirim`).
 
 // PolisNonPropBaru = `.IsNewPolicyNonProp = 1` (penanda subsection NonProp).
 func PolisNonPropBaru(h *Halaman) bool { return samaDenganSatu(h.Ambil(pt + "IsNewPolicyNonProp")) }
-
-// TersembunyiNonProp - medan `jalur` berada di kontainer proporsional yang
-// tersembunyi bagi polis NonProp baru.
-func TersembunyiNonProp(h *Halaman, jalur string) bool {
-	return PolisNonPropBaru(h) && medanKontainerProp[jalur]
-}
 
 // DaftarDariLayar - PageList yang boleh dikirim layar admin.
 //

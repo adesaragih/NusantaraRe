@@ -70,7 +70,7 @@ func (u *uji) layar(isi string) services.Layar {
 	return ly
 }
 
-func angkaSama(t *testing.T, apa, dapat, harap string) {
+func angkaSamaTeks(t *testing.T, apa, dapat, harap string) {
 	t.Helper()
 	a, err1 := models.AngkaTeks(apa, dapat)
 	b, err2 := models.AngkaTeks(apa, harap)
@@ -99,7 +99,7 @@ func TestNonPropPilihBisnisHitungSimpanBacaKembali(t *testing.T) {
 		"PolicyTreatyIn.PPNValue": "6.6", "PolicyTreatyIn.PPHValue": "6", "PolicyTreatyIn.BalanceDueTo": "2712.6",
 		"PolicyTreatyIn.ShareValue": "5000",
 	} {
-		angkaSama(t, j, s.Ambil(j), harap)
+		angkaSamaTeks(t, j, s.Ambil(j), harap)
 	}
 	if s.Ambil("PolicyTreatyIn.DueTo") != "1" || s.Ambil("PolicyTreatyIn.StartDate") != "2026-10-01 00:00:00" {
 		t.Errorf("NonProp 13: DueTo %q StartDate %q", s.Ambil("PolicyTreatyIn.DueTo"), s.Ambil("PolicyTreatyIn.StartDate"))
@@ -109,8 +109,8 @@ func TestNonPropPilihBisnisHitungSimpanBacaKembali(t *testing.T) {
 	if len(xol) != 2 {
 		t.Fatalf("TreatyXOLList tersimpan %d baris, harap 2", len(xol))
 	}
-	angkaSama(t, "XOL(1).GrossPremi", xol[0]["GrossPremi"], "3000")
-	angkaSama(t, "XOL(1).NetPremiAfterTax", xol[0]["NetPremiAfterTax"], "2712.6")
+	angkaSamaTeks(t, "XOL(1).GrossPremi", xol[0]["GrossPremi"], "3000")
+	angkaSamaTeks(t, "XOL(1).NetPremiAfterTax", xol[0]["NetPremiAfterTax"], "2712.6")
 	if xol[0]["IDCurrency"] != "UJI-ID-IDR" || xol[1]["IDCurrency"] != "UJI-ID-USD" {
 		t.Errorf("IDCurrency dari GetDataCurrencyByName_SQL: %q %q", xol[0]["IDCurrency"], xol[1]["IDCurrency"])
 	}
@@ -123,12 +123,14 @@ func TestNonPropPilihBisnisHitungSimpanBacaKembali(t *testing.T) {
 	if len(ang) != 2 {
 		t.Fatalf("ListInstallment %d baris", len(ang))
 	}
-	angkaSama(t, "Angsuran(IDR).PPN", ang[0]["PPN"], "2.2")
+	angkaSamaTeks(t, "Angsuran(IDR).PPN", ang[0]["PPN"], "2.2")
 	rinci := s.AmbilDaftar(models.JalurAnak(models.DaftarAngsuran, 1, models.TabelAngsuranRinci.Daftar))
 	if len(rinci) != 2 || rinci[0]["DueDate"] != "2026-11-01" {
 		t.Fatalf("InstallmentList %v", rinci)
 	}
-	angkaSama(t, "Rinci(1).PPN", rinci[0]["PPN"], "0.88")
+	// preACT 18.3.4.2.1: PremiumAfterPPN = PaymentTotalAfterPPN (2700+2.2) x 40%.
+	// `.PPN`/`.PPh` rincian tidak berkolom (diagram R58, PERBANDINGAN-KOLOM-DIAGRAM bab 5).
+	angkaSamaTeks(t, "Rinci(1).PremiumAfterPPN", rinci[0]["PremiumAfterPPN"], "1080.88")
 	// T_POLIS_SPREADING (TreatyNonPropSetSpreading)
 	if sp := s.AmbilDaftar(models.DaftarSpreading); len(sp) != 1 || sp[0]["TreatyType"] != "UJI-SPR-ID" {
 		t.Fatalf("SpreadingRiskList %v", sp)
@@ -147,7 +149,7 @@ func TestNonPropPilihBisnisHitungSimpanBacaKembali(t *testing.T) {
 	if len(ly.Halaman.AmbilDaftar("TreatyIn.Share")) != 2 || ly.Halaman.Ambil("TreatyIn.RNMShare") != "10" {
 		t.Fatal("subsection DetailPoliciesNonProportional membaca master lagi saat dibuka")
 	}
-	angkaSama(t, "tampilan LimitShareSummaryList.PPNValue", ly.Halaman.AmbilDaftar("TreatyIn.LimitShareSummaryList")[0]["PPNValue"], "2.2")
+	angkaSamaTeks(t, "tampilan LimitShareSummaryList.PPNValue", ly.Halaman.AmbilDaftar("TreatyIn.LimitShareSummaryList")[0]["PPNValue"], "2.2")
 	for _, m := range ly.MedanWajib {
 		if m == "PolicyTreatyIn.PremiOgp" || m == "PolicyTreatyIn.Deduction1" {
 			t.Errorf("medan uang tersembunyi (kontainer .IsNewPolicyNonProp != 1) tidak wajib: %s", m)
@@ -165,7 +167,7 @@ func TestNonPropPilihBisnisHitungSimpanBacaKembali(t *testing.T) {
 	if kode != http.StatusOK {
 		t.Fatalf("hitung: %d %s", kode, isi)
 	}
-	angkaSama(t, "PremiumSpreaded", u.layar(isi).Halaman.AmbilDaftar(models.DaftarSpreading)[0]["PremiumSpreaded"], "2700")
+	angkaSamaTeks(t, "PremiumSpreaded", u.layar(isi).Halaman.AmbilDaftar(models.DaftarSpreading)[0]["PremiumSpreaded"], "2700")
 
 	// Simpan: CountNetPremi TIDAK dijalankan untuk NonProp (medan uang tersembunyi,
 	// tak satu pun refresh memicunya) - NetPremium tetap 2700, bukan 3000-306.6.
@@ -174,7 +176,7 @@ func TestNonPropPilihBisnisHitungSimpanBacaKembali(t *testing.T) {
 		t.Fatalf("simpan: %d %s", kode, isi)
 	}
 	s = u.g.Halaman[id]
-	angkaSama(t, "NetPremium sesudah simpan", s.Ambil("PolicyTreatyIn.NetPremium"), "2700")
+	angkaSamaTeks(t, "NetPremium sesudah simpan", s.Ambil("PolicyTreatyIn.NetPremium"), "2700")
 	if x := s.AmbilDaftar(models.TabelXOL.Daftar); len(x) != 2 || x[0]["GrossPremi"] == "UJI-KARANGAN" {
 		t.Fatalf("TreatyXOLList tidak tampil di section mana pun - tidak diterima dari layar: %v", x)
 	}

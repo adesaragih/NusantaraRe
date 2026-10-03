@@ -39,3 +39,13 @@ dibaca kembali — nomor urutnya harus rapat, bukan berlubang.
 - [ ] 🟡 **AC 9** — menghapus baris di tengah menghasilkan penomoran ulang yang rapat
 - [x] **AC 10** — nomor urut unik di dalam satu induk
 - [x] **AC 11** — pemasangan antar generasi memakai nomor urut, **bukan** kunci dagang
+
+## ⭐ Putaran 2 — paket penyimpanan (03-10-2026)
+
+Dasar: PROMPT-NB-TREATY-IN-PUTARAN-2 bab 0 butir 11–12, bab 2 K4/K16/K17; rincian kolom `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`.
+
+- `NOURUT` tetap ada di **setiap** tabel anak (diagram F28) — ditagih `TestTabelDanKolomMengikutiDiagramGrilling`.
+  `T_POLIS_CEDING` kini unik per `(QUOTATION_ID, NOURUT)` (induknya `T_POLIS_QUOTATION`, diagram O39).
+- `NOURUT` catatan usulan di tabel warisan `HISTORYAKSEPTASIPRODUCTION` = berikutnya per `IDPEGA`
+  (tidak dinomori ulang — riwayat, bukan baris dokumen).
+- Status tetap **sebagian** (AC 9 🟡: penomoran ulang lawan Oracle belum dijalankan, K11).

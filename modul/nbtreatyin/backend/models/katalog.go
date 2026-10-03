@@ -9,12 +9,20 @@ package models
 // (`katalog_test.go`, `penjaga strukturkolom_test.go`). Menambah kolom berarti
 // menambah satu baris di sini, satu baris DDL, dan satu baris STRUKTUR.
 //
-// Dasar daftar medan: `docs/SENSUS-PROPERTI-POLICYTREATYIN.md` (sensus XML
-// rule terjangkau, tiket 00), dipilah ke medan yang DIBACA/DITULIS rule dan
-// tampil di layar; keputusan work owner 23-09-2026 "ikuti dari data yang
-// digunakan di Activity dan Section".
+// ⛔⛔ TABEL DAN KOLOM MENGIKUTI DIAGRAM GRILLING (bab 0 butir 11-12 PROMPT
+// putaran 2, keputusan work owner 03-10-2026): tepat delapan tabel
+// (`Diagram-Skema-Tabel-NusantaraRe.xlsx` sheet NB Treaty In Prop/NonProp),
+// kolom menurut diagram + `docs/rancangan-tabel-datar-treaty-in.md`. Kolom di
+// luar keduanya HANYA bila XML membuktikan medannya DIBACA rule NB terjangkau
+// (syarat, rumus, sel Section) - masing-masing bertanda `RALAT` di bawah dan
+// dirinci di `docs/PERBANDINGAN-KOLOM-DIAGRAM.md` (RALAT rancangan §4sexies).
+// Medan yang hanya DITULIS rule, hanya dibaca langkah berlabel `//`, atau
+// hanya dibaca jalur treaty keluar (K8 butir 4) TIDAK punya kolom.
 //
-// ⛔ TIDAK disimpan, dan sebabnya:
+// Dasar sensus: `docs/SENSUS-PROPERTI-POLICYTREATYIN.md` (rule terjangkau).
+//
+// ⛔ TIDAK disimpan, dan sebabnya (PolicyTreatyIn 79 medan diagram = 69 kolom
+// katalog + PolicyNo sebagai NOPOLIS + sembilan di bawah, lihat PERBANDINGAN):
 //   - TotalPremium, TotalClaim, TotalSharePercentagePremium/Claim - TURUNAN:
 //     jumlah baris SpreadingRiskList (`CountSpreading_Act` langkah 4.2-5);
 //     dihitung saat dibaca (`HitungTotalSpreading`). Penjaga
@@ -24,6 +32,8 @@ package models
 //     TREATY_IN_ID, tidak disimpan ganda.
 //   - BreakDownSpreadList - KEPUTUSAN-RONDE-12 butir 3/3b (tidak dimigrasi).
 //   - isApprovedtoDeptHead - P36, AC 64.
+//   - IsOJKNopolis, BrokerageFee - hanya DITULIS (GeneratePolicyNoTreaty_Act
+//     langkah 23; SetPPNPPH langkah 3), nol pembaca; di luar diagram/rancangan.
 //   - Show, ViewState, pxResults - keadaan layar, bukan data.
 
 import (
@@ -82,11 +92,16 @@ func kTglWaktu(p, k string) Kolom    { return Kolom{p, k, GolTanggalWaktu, 0} }
 const pt = HalamanPolis + "."
 
 // TabelGeneralPolis - T_GENERAL_POLIS: satu baris per GENERASI polis, kunci
-// utama bersama T_WORK_POLIS (ID-7). Kolom kunci, generasi, dan alur ditulis
-// repository di luar katalog (ID, NOPOLIS, PRODKE, OLD_POLIS_ID, IDPEGA,
-// TGL_INPUT, USERNAME, TGL_TUTUP).
+// utama bersama T_WORK_POLIS (ID-7). Kolom kunci dan generasi ditulis
+// repository di luar katalog (ID, NOPOLIS, PRODKE, NOENDORS, OLD_POLIS_ID,
+// IDPEGA, TGL_INPUT, USERNAME). Generasi TERTUTUP = ada baris penerus yang
+// OLD_POLIS_ID-nya menunjuk generasi ini (ID-10) - tanpa kolom penanda.
 var TabelGeneralPolis = Tabel{Nama: "T_GENERAL_POLIS", Kolom: []Kolom{
-	// alur kasus (halaman kerja)
+	// RALAT - halaman kerja, bukan PolicyTreatyIn; T_WORK_POLIS (milik
+	// premiumlistlife) tidak punya kolomnya. PositionNote dibaca connector Flow
+	// dan syarat Section; NBStatus tampil di SFAPortal_OpportunitiesList;
+	// TreatyIn.ID dibaca RDBList BrowseTreatyIn ({TreatyIn.ID}) dan
+	// CheckDuplicateOffer - master kontrak dimuat ulang darinya.
 	kTeks("PositionNote", "POSITION_NOTE", 64),
 	kTeks("NBStatus", "NB_STATUS", 255),
 	kKode("TreatyIn.ID", "TREATY_IN_ID", 64),
@@ -98,10 +113,12 @@ var TabelGeneralPolis = Tabel{Nama: "T_GENERAL_POLIS", Kolom: []Kolom{
 	kTglWaktu(pt+"SuggestDate", "SUGGEST_DATE"),
 	kTeks(pt+"OperatorName", "OPERATOR_NAME", 128),
 	kPenanda(pt+"IsNewPolicyNonProp", "IS_NEW_POLICY_NON_PROP"),
+	// rancangan §4.1 - ditulis dan dibaca InputPolicyTreatyInDetail_NonProp
+	// langkah 10-11 (jalur XOL, K8)
+	kPenanda(pt+"IsEDMInputOnNB", "IS_EDM_INPUT_ON_NB"),
 	kPenanda(pt+"HasFacOut", "HAS_FAC_OUT"),
 	kPenanda(pt+"FlagPPH", "FLAG_PPH"),
 	kPenanda(pt+"FlagRetroTreaty", "FLAG_RETRO_TREATY"),
-	kPenanda(pt+"IsOJKNopolis", "IS_OJK_NOPOLIS"),
 	kPenanda(pt+"DueTo", "DUE_TO"),
 	kKode(pt+"TypeTax", "TYPE_TAX", 64),
 	kKode(pt+"StatementType", "STATEMENT_TYPE", 64),
@@ -109,6 +126,9 @@ var TabelGeneralPolis = Tabel{Nama: "T_GENERAL_POLIS", Kolom: []Kolom{
 	kTeks(pt+"TreatyGroupName", "TREATY_GROUP_NAME", 255),
 	kKode(pt+"TreatyGroupOldID", "TREATY_GROUP_OLD_ID", 64),
 	kKode(pt+"OJKBusinessID", "OJK_BUSINESS_ID", 64),
+	// rancangan §4.1 (data guide `$.IDNewBisnis`); nol rule NB - tempat medan
+	// dokumen lama bagi pemuat (tiket 22)
+	kKode(pt+"IDNewBisnis", "ID_NEW_BISNIS", 64),
 	kKode(pt+"BizCode", "BIZ_CODE", 64),
 	kTeks(pt+"BizName", "BIZ_NAME", 255),
 	kKode(pt+"SOB", "SOB", 64),
@@ -122,6 +142,7 @@ var TabelGeneralPolis = Tabel{Nama: "T_GENERAL_POLIS", Kolom: []Kolom{
 	kKode(pt+"TreatyYear", "TREATY_YEAR", 16),
 	kKode(pt+"Currency", "CURRENCY", 16),
 	kKode(pt+"IDCurrency", "ID_CURRENCY", 64),
+	// RALAT - tampil "RNM Share" DetailPolicyTreatyIn dan DetailDeptHeadTreatyIn_UW
 	kKode(pt+"ShareCurrency", "SHARE_CURRENCY", 16),
 	kKode(pt+"Quartal", "QUARTAL", 16),
 	kKode(pt+"YearOfQuartal", "YEAR_OF_QUARTAL", 16),
@@ -136,6 +157,7 @@ var TabelGeneralPolis = Tabel{Nama: "T_GENERAL_POLIS", Kolom: []Kolom{
 	kTglWaktu(pt+"ProductionDate", "TGL_PROD"),
 	// uang
 	kUang(pt+"GrossPremium", "GROSS_PREMIUM"),
+	// RALAT - tampil "Claim 100%" DetailPolicyTreatyIn; dibaca CalculatePremi_Act
 	kUang(pt+"GrossClaim", "GROSS_CLAIM"),
 	kUang(pt+"PremiOgp", "PREMI_OGP"),
 	kUang(pt+"ResultOgp1", "RESULT_OGP1"),
@@ -158,9 +180,10 @@ var TabelGeneralPolis = Tabel{Nama: "T_GENERAL_POLIS", Kolom: []Kolom{
 	// (CountNetPremi_act langkah 4), dibagi 1,022 (SetPPNPPH langkah 4), label
 	// layar `pxCurrency`. Golongan simpan mengikuti WO; rumusnya diport apa
 	// adanya (AC 79). Dicatat di HASIL-IMPLEMENTASI bab 4 dan tiket 07.
-	kPersen(pt+"Deduction1", "DEDUCTION1"),
-	kPersen(pt+"Deduction2", "DEDUCTION2"),
-	kUang(pt+"BrokerageFee", "BROKERAGE_FEE"),
+	kUang(pt+"Deduction1", "DEDUCTION1"), // K3 (03-10-2026): uang seperti XML (pxCurrency; CountNetPremi_act 4) - menggantikan P29 di atas, tiket 07
+	kUang(pt+"Deduction2", "DEDUCTION2"), // K3 (03-10-2026): uang seperti XML (pxCurrency; CountNetPremi_act 4) - menggantikan P29 di atas, tiket 07
+	// RALAT - dibaca rumus SetPPNPPH langkah 3 (.PPHValue/.PPNValue =
+	// .BrokerageFeeSebenarnya * ...)
 	kUang(pt+"BrokerageFeeSebenarnya", "BROKERAGE_FEE_SEBENARNYA"),
 	kUang(pt+"PPHValue", "PPH_VALUE"),
 	kUang(pt+"PPNValue", "PPN_VALUE"),
@@ -172,54 +195,73 @@ var TabelGeneralPolis = Tabel{Nama: "T_GENERAL_POLIS", Kolom: []Kolom{
 	kPersen(pt+"OveriddingCommOnp", "OVERIDDING_COMM_ONP"),
 }}
 
-// TabelQuotation - T_POLIS_QUOTATION, 1:1 (ID-23). Halaman `pyWorkPage.Quotation`
-// dan salinannya `PolicyTreatyIn.QuotationData` (DT pra-proses langkah 14,
+// TabelQuotation - T_POLIS_QUOTATION, 1:1 (ID-23; diagram J35-J37 "10 medan
+// skalar"). Halaman `pyWorkPage.Quotation` dan salinannya
+// `PolicyTreatyIn.QuotationData` (preACT langkah 14.9, DT pra-proses langkah 14,
 // GeneratePolicyNoTreaty_Act langkah 10) disimpan SATU kali.
+//
+// ⛔ Dibuang (di luar diagram, nol pembaca NB terjangkau): BusinessType (hanya
+// ditulis DT BusinessType_DeT 14.8; turunan GroupPanel + BusinessOldId),
+// SobName/SobLeader0/SobLeader1 (pembacanya CheckDataMkt langkah 7 `//` dan
+// jalur treaty keluar), CedingCo/CedingCoName (tingkat polis di T_GENERAL_POLIS,
+// R47), MarketingCode (pembacanya CheckDataMkt langkah 6 `//`), TeamGroup,
+// BranchCode, BranchName (hanya ditulis CheckDataMkt langkah 4).
 var TabelQuotation = Tabel{Nama: "T_POLIS_QUOTATION", Kolom: []Kolom{
+	// diagram - 10 medan
 	kKode("ProportionalType", "PROPORTIONAL_TYPE", 32),
 	kKode("MOID", "MO_ID", 64),
 	kKode("BusinessCode", "BUSINESS_CODE", 64),
 	kKode("BusinessOldId", "BUSINESS_OLD_ID", 16),
 	kKode("GroupPanel", "GROUP_PANEL", 16),
-	kTeks("BusinessName", "BUSINESS_NAME", 255),
-	kKode("BusinessType", "BUSINESS_TYPE", 64),
-	kKode("BusinessFac", "BUSINESS_FAC", 16),
 	kKode("SourceOfBusiness", "SOURCE_OF_BUSINESS", 64),
-	kTeks("SobName", "SOB_NAME", 255),
-	kKode("SobLeader0", "SOB_LEADER0", 64),
-	kKode("SobLeader1", "SOB_LEADER1", 64),
-	kKode("CedingCo", "CEDING_CO", 4000),
-	kTeks("CedingCoName", "CEDING_CO_NAME", 4000),
-	kKode("InsuredID", "INSURED_ID", 64),
-	kTeks("InsuredName", "INSURED_NAME", 255),
-	kKode("MarketingCode", "MARKETING_CODE", 64),
-	kTeks("MarketingName", "MARKETING_NAME", 255),
-	kKode("TeamGroup", "TEAM_GROUP", 64),
-	kKode("BranchCode", "BRANCH_CODE", 64),
-	kTeks("BranchName", "BRANCH_NAME", 255),
-	kTeks("NoOfferSlip", "NO_OFFER_SLIP", 4000),
-	kPenanda("IsSurveyReport", "IS_SURVEY_REPORT"),
 	kKode("Type", "TYPE", 64),
 	kKode("EdmType", "EDM_TYPE", 16),
 	kKode("OldPolicyNo", "OLD_POLICY_NO", 64),
+	kTeks("MarketingName", "MARKETING_NAME", 255),
+	// RALAT - dibaca rule terjangkau / tampil di Section NB
+	//   BusinessName   InputPolicyTreatyInPre_Act langkah 2 (syarat + CARI2);
+	//                  tampil SFAPortal_OpportunitiesList (A.Quotation.BusinessName)
+	//   BusinessFac    SaveViewSuggest CARI7 (TYPE riwayat produksi);
+	//                  GetListOpportunity filter E (A.Quotation.BusinessFac = T)
+	//   InsuredID      InputPolicyTreatyInDetail_preACT langkah 3 (rumus) dan
+	//                  14.3 (syarat Quotation.InsuredID == "")
+	//   InsuredName    preACT langkah 3 dan 14.1; tampil SFAPortal_OpportunitiesList
+	//   NoOfferSlip    tampil DetailPolicyTreatyIn (diisi) dan DetailDeptHeadTreatyIn_UW
+	//   IsSurveyReport tampil + wajib DetailPolicyTreatyIn; syarat tombol Survey Report
+	kTeks("BusinessName", "BUSINESS_NAME", 255),
+	kKode("BusinessFac", "BUSINESS_FAC", 16),
+	kKode("InsuredID", "INSURED_ID", 64),
+	kTeks("InsuredName", "INSURED_NAME", 255),
+	kTeks("NoOfferSlip", "NO_OFFER_SLIP", 4000),
+	kPenanda("IsSurveyReport", "IS_SURVEY_REPORT"),
 }}
 
-// TabelCeding - T_POLIS_CEDING ← QuotationData.CedingCoList (ID-24).
+// TabelCeding - T_POLIS_CEDING ← QuotationData.CedingCoList (ID-24), anak
+// T_POLIS_QUOTATION lewat QUOTATION_ID (diagram O39; kolom R43
+// "CEDING_CO_ID ← .CedingCo · CEDING_CO_NAME ← .CedingCoName").
 var TabelCeding = Tabel{Nama: "T_POLIS_CEDING", Daftar: HalamanPolis + ".QuotationData.CedingCoList", Kolom: []Kolom{
-	kKode("CedingCo", "CEDING_CO", 64),
+	kKode("CedingCo", "CEDING_CO_ID", 64),
 	kTeks("CedingCoName", "CEDING_CO_NAME", 255),
 }}
 
-// TabelAngsuran - T_POLIS_INSTALMENT ← PolicyTreatyIn.ListInstallment (ID-26).
+// TabelAngsuran - T_POLIS_INSTALMENT ← PolicyTreatyIn.ListInstallment (ID-26;
+// diagram J53 "10 medan" = rancangan §4.3 tanpa PAYMENT_DATE, yang hanya ada di
+// anak - diagram R61).
 var TabelAngsuran = Tabel{Nama: "T_POLIS_INSTALMENT", Daftar: DaftarAngsuran, Kolom: []Kolom{
 	kCacah("InstallmentNo", "INSTALLMENT_NO"), // cacah - ID-14
 	kTgl("DueDate", "DUE_DATE"),
-	kTgl("PaymentDate", "PAYMENT_DATE"),
 	kPersen("InstallmentPercentage", "INSTALLMENT_PERCENTAGE"),
 	kUang("Premium", "PREMIUM"),
 	kUang("PaymentTotal", "PAYMENT_TOTAL"),
+	kUang("PremiumAfterPPH", "PREMIUM_AFTER_PPH"),
+	kUang("PremiumAfterPPN", "PREMIUM_AFTER_PPN"),
+	kUang("PremiumAfterTax", "PREMIUM_AFTER_TAX"),
 	kKode("Currency", "CURRENCY", 16),
 	kKode("IDCurrency", "ID_CURRENCY", 64),
+	// RALAT - ditulis lalu DIBACA rumus InputPolicyTreatyInDetail_preACT
+	// langkah 18.3.4.1 (.PaymentTotalAfterPPN = .PaymentTotal+.PPN;
+	// Local.PPNins = .PPN; Local.PPHins = .PPh; Local.PaymentTotalAfterPPN/Tax =
+	// .PaymentTotalAfterPPN/Tax), ada di dokumen lama (data guide)
 	kUang("PPN", "PPN"),
 	kUang("PPh", "PPH"),
 	kUang("PaymentTotalAfterPPN", "PAYMENT_TOTAL_AFTER_PPN"),
@@ -227,7 +269,9 @@ var TabelAngsuran = Tabel{Nama: "T_POLIS_INSTALMENT", Daftar: DaftarAngsuran, Ko
 }}
 
 // TabelAngsuranRinci - T_POLIS_INSTALMENT_DETAIL ← ListInstallment().InstallmentList
-// (hanya non-proporsional, rancangan §3.2).
+// (hanya non-proporsional, rancangan §3.2; diagram R58 "11 medan", R61 "punya
+// PAYMENT_DATE"). PPN/PPh baris anak (preACT 18.3.4.2.1) hanya DITULIS, nol
+// pembaca - tidak punya kolom.
 var TabelAngsuranRinci = Tabel{Nama: "T_POLIS_INSTALMENT_DETAIL", Daftar: "InstallmentList", Kolom: []Kolom{
 	kCacah("InstallmentNo", "INSTALLMENT_NO"), // cacah - ID-14
 	kTgl("DueDate", "DUE_DATE"),
@@ -235,12 +279,11 @@ var TabelAngsuranRinci = Tabel{Nama: "T_POLIS_INSTALMENT_DETAIL", Daftar: "Insta
 	kPersen("InstallmentPercentage", "INSTALLMENT_PERCENTAGE"),
 	kUang("Premium", "PREMIUM"),
 	kUang("PaymentTotal", "PAYMENT_TOTAL"),
-	kKode("Currency", "CURRENCY", 16),
-	kKode("IDCurrency", "ID_CURRENCY", 64),
-	kUang("PPN", "PPN"),
-	kUang("PPh", "PPH"),
+	kUang("PremiumAfterPPH", "PREMIUM_AFTER_PPH"),
 	kUang("PremiumAfterPPN", "PREMIUM_AFTER_PPN"),
 	kUang("PremiumAfterTax", "PREMIUM_AFTER_TAX"),
+	kKode("Currency", "CURRENCY", 16),
+	kKode("IDCurrency", "ID_CURRENCY", 64),
 }}
 
 // TabelSpreading - T_POLIS_SPREADING ← PolicyTreatyIn.SpreadingRiskList (ID-28).
@@ -294,27 +337,86 @@ var TabelLayerXOL = Tabel{Nama: "T_POLIS_XOL_LAYER", Daftar: "ValueList", Kolom:
 	kUang("NetPremiAfterTax", "NET_PREMI_AFTER_TAX"),
 }}
 
-// TabelUsulan - T_POLIS_SUGGEST ← PolicyTreatyIn.SuggestList.
-//
-// ⭐ RALAT rancangan §4bis.1: tabel usulan DIBUTUHKAN. `SaveViewSuggest`
-// menulis `HISTORYAKSEPTASIPRODUCTION` hanya bila `Quotation.BusinessFac == "F"`
-// - termasuk kalang berketerangan "UNTUK TREATY" - sedangkan treaty bernilai
-// "T" (`SetCategoryAttach`). Untuk kasus treaty, daftar usulan selama ini
-// hanya tersimpan di dokumen JSON; tanpa tabel ini catatan pengguna hilang
-// (AC 71, 72). OPERATOR_ID = identitas akses login (P4, AC 39).
-var TabelUsulan = Tabel{Nama: "T_POLIS_SUGGEST", Daftar: DaftarUsulan, Kolom: []Kolom{
-	kTeks("Suggest", "SUGGEST", 4000),
-	kPenanda("IsApproved", "IS_APPROVED"),
-	kTglWaktu("Date", "SUGGEST_DATE"),
-	kTeks("OperatorName", "OPERATOR_NAME", 128),
-	kKode("OperatorID", "OPERATOR_ID", 64),
-	kPenanda("IsSave", "IS_SAVE"),
-}}
-
 // SemuaTabel - urutan tulis (induk lebih dulu).
 var SemuaTabel = []Tabel{
 	TabelGeneralPolis, TabelQuotation, TabelCeding, TabelAngsuran, TabelAngsuranRinci,
-	TabelSpreading, TabelXOL, TabelLayerXOL, TabelUsulan,
+	TabelSpreading, TabelXOL, TabelLayerXOL,
+}
+
+// NilaiQuotation - nilai satu medan T_POLIS_QUOTATION: QuotationData bila
+// terisi, selain itu Quotation (ID-23: keduanya disimpan SATU kali; layar
+// menyunting QuotationData, aktivitas menulis Quotation, `SalinQuotation`
+// menyelaraskannya di pra-proses). Saat dimuat keduanya diisi nilai yang sama.
+func NilaiQuotation(h *Halaman, prop string) string {
+	if v := h.Ambil(HalamanPolis + ".QuotationData." + prop); v != "" {
+		return v
+	}
+	return h.Ambil(HalamanQuotation + "." + prop)
+}
+
+// keturunanKatalog - daftar anak tabel polis beserta cucunya (urutan tulis).
+var keturunanKatalog = []struct {
+	anak Tabel
+	cucu *Tabel
+}{
+	{TabelCeding, nil},
+	{TabelAngsuran, &TabelAngsuranRinci},
+	{TabelSpreading, nil},
+	{TabelXOL, &TabelLayerXOL},
+}
+
+// ProyeksiKatalog - halaman sebagaimana ia KELUAR dari penyimpanan: hanya
+// medan yang punya kolom di delapan tabel diagram (katalog ini), nilai
+// Quotation/QuotationData disatukan (`NilaiQuotation`), baris anak hanya
+// kolom katalognya. Kunci di luar katalog (PolicyTreatyIn.PolicyNo = NOPOLIS)
+// dan SuggestList (HISTORYAKSEPTASIPRODUCTION) TIDAK ikut - milik
+// penulisnya sendiri. Normalisasi angka/tanggal Oracle tidak ditiru.
+//
+// Dipakai gudang tiruan supaya uji seam HTTP melihat apa yang Oracle simpan:
+// medan tanpa kolom hilang sesudah disimpan, persis repository.
+func ProyeksiKatalog(h *Halaman) *Halaman {
+	s := HalamanBaru()
+	for _, k := range TabelGeneralPolis.Kolom {
+		if v := h.Ambil(k.Properti); v != "" {
+			s.Setel(k.Properti, v)
+		}
+	}
+	for _, k := range TabelQuotation.Kolom {
+		if v := NilaiQuotation(h, k.Properti); v != "" {
+			s.Setel(HalamanQuotation+"."+k.Properti, v)
+			s.Setel(HalamanPolis+".QuotationData."+k.Properti, v)
+		}
+	}
+	saring := func(t Tabel, b []Baris) []Baris {
+		var out []Baris
+		for _, x := range b {
+			nb := Baris{}
+			for _, k := range t.Kolom {
+				if v := x[k.Properti]; v != "" {
+					nb[k.Properti] = v
+				}
+			}
+			out = append(out, nb)
+		}
+		return out
+	}
+	for _, kt := range keturunanKatalog {
+		baris := h.AmbilDaftar(kt.anak.Daftar)
+		if len(baris) == 0 {
+			continue
+		}
+		s.SetelDaftar(kt.anak.Daftar, saring(kt.anak, baris))
+		if kt.cucu == nil {
+			continue
+		}
+		for i := range baris {
+			j := JalurAnak(kt.anak.Daftar, i+1, kt.cucu.Daftar)
+			if cucu := h.AmbilDaftar(j); len(cucu) > 0 {
+				s.SetelDaftar(j, saring(*kt.cucu, cucu))
+			}
+		}
+	}
+	return s
 }
 
 // ErrBentukTidakSah - halaman membawa baris yang tidak boleh dimiliki jenis

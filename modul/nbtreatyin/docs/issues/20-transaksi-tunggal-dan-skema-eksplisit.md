@@ -39,3 +39,13 @@ tidak boleh ada satu baris pun tertinggal, termasuk baris induknya.
 - [ ] 🟡 **AC 46** — seluruh penyimpanan satu polis terjadi dalam **satu transaksi**
 - [x] **AC 47** — setiap pernyataan menyebut skema **eksplisit**
 - [x] **AC 48** — penyimpanan **tidak memanggil** satu pun program tersimpan
+
+## ⭐ Putaran 2 — paket penyimpanan (03-10-2026)
+
+Dasar: PROMPT-NB-TREATY-IN-PUTARAN-2 bab 0 butir 11–12, bab 2 K4/K16/K17; rincian kolom `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`.
+
+- `HISTORYAKSEPTASIPRODUCTION` (K4) ditulis di transaksi tunggal submit, skema eksplisit, nol `COMMIT`
+  (`TestSQLRiwayatProduksiMengikutiInsertViewSuggest`), nol procedure — sama dengan AC 47, 48.
+- Urutan simpan disesuaikan FK diagram: anak dihapus **sebelum** `T_POLIS_QUOTATION` ditulis ulang (ceding
+  menunjuk quotation), lalu anak disisip — tetap satu transaksi.
+- AC 45 dan 46 tetap 🟡 (uji `-tags db` belum dijalankan — K11).

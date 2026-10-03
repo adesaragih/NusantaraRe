@@ -184,6 +184,9 @@ penggolongan jenis usaha, rumus pajak brokerage, pengecualian mata uang, dan ant
     **supaya** kekeliruannya dapat diperbaiki dan diajukan ulang.
 11. **Sebagai** Kepala Departemen, **saya ingin** mengisi tujuh medan keputusan saya sendiri,
     **supaya** keputusan saya terekam beserta angkanya.
+    > ⛔ **RALAT** 2026-10-03 (putaran 2, paket P2) — bunyi lama: *"mengisi tujuh medan keputusan
+    > saya sendiri"* → bunyi baru: **mengisi putusan (`Approval`) dan catatan (`Suggest`)**, ditambah
+    > `Production Date` hanya bila medan itu tampil baginya. Bukti: AC 52 RALAT.
 12. **Sebagai** Kepala Departemen, **saya ingin** menyetujui berkas sebagai keputusan terakhir,
     **supaya** realisasi selesai dan polis terbentuk.
 13. **Sebagai** Kepala Departemen, **saya ingin** menolak berkas dan mengembalikannya ke admin,
@@ -524,6 +527,9 @@ enam medan yang wajib di layar admin — `ClaimPaymentType` `ClaimType` `IDCurre
 
 ⭐ **Kepala Departemen BUKAN hanya melihat** `[terverifikasi]` — ia mengisi **tujuh medan** sendiri,
 lalu memutuskan.
+> ⛔ **RALAT** 2026-10-03 (putaran 2, paket P2) — bunyi lama: *"ia mengisi **tujuh medan** sendiri"*
+> → bunyi baru: ia mengisi **dua medan selalu** (`.IsApproved`, `.Suggest` di `ListSuggest`) dan
+> **satu bersyarat** (`.ProductionDate`); medan lain layarnya hanya-baca. Bukti: AC 52 RALAT.
 
 ⭐ **Delapan puluh elemen mati dibuang tanpa ditanyakan** `[keputusan work owner]` **P44** —
 `[terverifikasi]` sebabnya struktural: `pyCondition` menempel pada **sel tunggal** dan
@@ -666,6 +672,17 @@ dari luar. ⛔ Butir yang terasa seperti keputusan baru adalah salah tulis.
 26. `[keputusan work owner]` `DEDUCTION1` `DEDUCTION2` `BROKERAGE` `RNM_SHARE` dibaca sebagai
     **persentase**. Test yang menemukan `12.5` diperlakukan sebagai jumlah uang **gagal**.
     *(Bab 5.6)*
+    > ⛔ **RALAT** 2026-10-03 (K3, paket P2) — bunyi lama: *"`DEDUCTION1` `DEDUCTION2` `BROKERAGE`
+    > `RNM_SHARE` dibaca sebagai **persentase**"* → bunyi baru untuk **`DEDUCTION1` `DEDUCTION2`**
+    > (halaman polis `PolicyTreatyIn.Deduction1/2`): dibaca sebagai **jumlah uang**, seperti
+    > pemakaian XML, dan ditampilkan beserta kode mata uangnya (AC 85). `BROKERAGE` dan `RNM_SHARE`
+    > tidak disentuh RALAT ini. Test yang menemukan `Deduction1/2` diperlakukan sebagai persen
+    > **gagal**. Bukti: `Section/DetailPolicyTreatyIn.xml` dan `Section/DetailDeptHeadTreatyIn_UW.xml`
+    > sel `.Deduction1` `.Deduction2` = `pxCurrency`; `Activity/CountNetPremi_act` langkah 4
+    > `.NetPremium = ((.PremiOgp-.ResultOgp1)+(.PremiOnp-.ResultOnp1))-...-.Deduction1-.Deduction2`;
+    > `Activity/SetPPNPPH` langkah 4 `.BrokerageFeeSebenarnya = @if(.TypeTax=="Inclusive",
+    > @divide(.Deduction1,@divide(102.2,100,8),8),.Deduction1)`. Keputusan WO K3 (03-10-2026):
+    > rumus XML apa adanya; pertentangan dengan P29 dicatat di tiket 07.
 27. `[terverifikasi]` `TypeTax` bernilai `"Inclusive"` ⇒ potongan dibagi **1,022**. Test yang
     menemukan potongan dipakai apa adanya **gagal**. *(Bab 5.6)*
 28. `[terverifikasi]` `TypeTax` bernilai apa pun selain `"Inclusive"` persis — **termasuk kosong,
@@ -722,6 +739,17 @@ dari luar. ⛔ Butir yang terasa seperti keputusan baru adalah salah tulis.
 
 45. `[terverifikasi]` Layar admin mewajibkan medan wajibnya; **27** medan berbeda tersebar di
     **6** layar. Test yang menemukan medan wajib dapat dilewati **gagal**. *(Bab 5.11)*
+    > ⛔ **Catatan 2026-10-03 — `DateofSurvey`, K7.** Salah satu dari ke-27 medan adalah `.DateofSurvey`,
+    > satu-satunya medan wajib `Section/InputHistoricalSurveyReportDtl` (popup laporan survei historis:
+    > `Harness/HistoricalSurveyReport` ← tombol *Survey Report* `Section/DetailPolicyTreatyIn`). Keputusan
+    > work owner **K7** (03-10-2026): laporan survei historis **tidak dibangun** —
+    > `Activity/SetSurveyReport_Act` hanya `Property-Set`, nol penulisan; data survei
+    > (`PolicyTreatyIn.QuotationData.SurveyReportList`) di Pega hanya hidup di halaman kerja (JSON), dan
+    > ⛔ **tidak ada tabel di diagram grilling** untuknya (bab 0 butir 11 PROMPT putaran 2). Maka medan ini
+    > **tidak** ditegakkan; AC 45 berlaku bagi 26 medan lainnya (`ProductionDate` lewat tempat berperan,
+    > tiket 05) dan statusnya tetap 🟡. ⛔ **Butir terbuka untuk grilling
+    > berikutnya:** tempat simpan daftar survei (dan apakah layarnya dibangun). Spec ini tidak menyebut
+    > survei di tempat lain, jadi tidak ada bunyi yang perlu di-RALAT.
 46. `[terverifikasi]` Layar Dept Head **tidak** mewajibkan `ClaimPaymentType` `ClaimType`
     `IDCurrency` `Quartal` `TypeTax` `YearOfQuartal`. Test yang menemukan salah satunya diwajibkan
     di sana **gagal**. *(Bab 5.11)*
@@ -740,6 +768,30 @@ dari luar. ⛔ Butir yang terasa seperti keputusan baru adalah salah tulis.
     mengunci sebuah bagian atau tab **gagal**. *(Bab 5.11)*
 52. `[terverifikasi]` Kepala Departemen **dapat mengisi tujuh medan**. Test yang menemukan layarnya
     sepenuhnya hanya-baca **gagal**. *(Bab 5.11)*
+    > ⛔ **RALAT** 2026-10-03 (putaran 2, paket P2) — bunyi lama: *"Kepala Departemen **dapat mengisi
+    > tujuh medan**"* → bunyi baru: pemegang layar `DetailDeptHeadTreatyIn_UW` (Sec Head dan Dept
+    > Head) **dapat mengisi dua medan selalu** — `Approval` (`.IsApproved`) dan `Suggest`
+    > (`.Suggest`) — **dan satu bersyarat**, `Production Date` (`.ProductionDate`, hanya bila
+    > `.IsApproved == 1` dan tempat berperan tiket 05 terbuka baginya). Test yang menemukan layarnya
+    > sepenuhnya hanya-baca, **atau menemukan `DueTo`, `FlagPPH`, `No Offer Slip`, atau medan lain
+    > dapat diisi**, **gagal**.
+    > Bukti XML (dibaca ulang 2026-10-03, paket P2): `FlowAction/DeptHeadTreatyIn_UW.xml`
+    > `pySectionReference = GeneralDeptHeadTreatyIn_UW` → `Section/GeneralDeptHeadTreatyIn_UW.xml`
+    > **nol sel sendiri**, hanya menyertakan `DetailDeptHeadTreatyIn_UW` atas `.PolicyTreatyIn` →
+    > `Section/DetailDeptHeadTreatyIn_UW.xml`: sel berkontrol ber-`pyReadOnly=false` hanya **8** —
+    > `.DueTo` (pxRadioButtons), `.FlagPPH` (pxCheckbox), `.QuotationData.NoOfferSlip` (pxTextArea),
+    > ketiganya `pyModes` baris 1 `pyDisabled=true` / `pyDisabledNew=always` (**tidak dapat diisi**),
+    > dan 5 `pxButton` (Survey Report + empat Submit); seluruh sel lain `pyReadOnly=true` →
+    > `Section/ListSuggest.xml` (disertakan): `.IsApproved` (pxRadioButtons, wajib), `.Suggest`
+    > (pxTextArea, wajib), `.ProductionDate` (pxDateTime; `pyVisible`/`pyRequiredWhen`
+    > `.IsApproved == 1 && OperatorID.pyUserIdentifier == '<ID-operator-3>' || '<ID-operator-4>'` —
+    > tempat berperan tiket 05). "Enam" putaran 1 = tiga sel `pyDisabled` + tiga sel `ListSuggest`;
+    > dasar angka "tujuh" tidak ditemukan. Subsection NonProp di layar yang sama (wadah
+    > `.IsNewPolicyNonProp = 1 ...`) memuat sel `pxNumber` atas halaman master `pyWorkPage.TreatyIn.*`
+    > — dinilai paket P5; halaman `TreatyIn` tidak pernah diterima dari layar.
+    > Uji: `handlers/alur_test.go` `TestMedanTerkunciAtasanDanTurunanAdmin`, `models/layar_test.go`
+    > `TestAtasanHanyaMengisiPutusanCatatanDanTanggalProduksiBersyarat`, `frontend/medan.test.ts`
+    > "AC 52".
 
 ### Layar — tampilan
 
@@ -879,6 +931,19 @@ dari luar. ⛔ Butir yang terasa seperti keputusan baru adalah salah tulis.
     yang menemukan angka tanpa mata uang **gagal**. *(Bab 5.6)*
 86. `[terbuka]` Format penyajian uang — jumlah desimal dan pemisah ribuan — **belum ditetapkan**;
     penyajian tidak dibangun sebelum ditetapkan. Test yang menemukan format yang ditebak **gagal**.
+    > ⛔ **RALAT** 2026-10-03 (K14 / OQ 7 dijawab: bawaan) — bunyi lama: *"`[terbuka]` Format penyajian
+    > uang — jumlah desimal dan pemisah ribuan — **belum ditetapkan**; penyajian tidak dibangun sebelum
+    > ditetapkan"* → bunyi baru: `[keputusan work owner]` format penyajian **mengikuti setelan sel
+    > Section XML**: `pxNumber` `pyDecimalPlaces` N ⇒ tepat N desimal (GrossPremium, RiComm*,
+    > OveriddingComm*, PaymentTotal, total berlabel: 2; grid spreading, InstallmentPercentage,
+    > Premium angsuran: 4); `pySeparators=false` ⇒ tanpa pemisah ribuan (Quartal/YearOfQuartal layar
+    > atasan); `pyShowReadonlyFormatting=true` ⇒ isian tersunting berformat selama tidak difokus.
+    > Yang **tidak terbaca** (`pxCurrency` tanpa `pyDecimalPlaces`, Balance* `pyFormatType number`,
+    > locale pemisah) ⇒ pola `inti/frontend/lib/format.ts` (titik ribuan, koma desimal, tanpa batas
+    > desimal, nol ekor dibuang). Nilai tersimpan tidak berubah (AC 24). Test yang menemukan format
+    > berbeda dari setelan sel **gagal**. Bukti: `pyModes` sel `Section/DetailPolicyTreatyIn.xml`,
+    > `DetailDeptHeadTreatyIn_UW.xml`, `SpreadingRiskList.xml`, `BusinessAndSOBList.xml`; kode
+    > `frontend/sajian.ts`, uji `frontend/sajian.test.ts`, `frontend/medan.test.ts`.
     *(Bab 9)*
 
 ### Antarmuka luar
@@ -925,10 +990,11 @@ dari luar. ⛔ Butir yang terasa seperti keputusan baru adalah salah tulis.
 
 | AC | Bunyi lama (dikutip) | Temuan | Yang dibangun |
 | ---: | --- | --- | --- |
-| 8 | *"Sec Head menyetujui ⇒ berkas naik ke Dept Head. Test yang menemukan tujuan lain gagal."* | XML: `Decision13`/`CekLimitTreatyAcc_Act` (batas 200 juta) + `Decision8` membiarkan Sec Head menyelesaikan berkas bernomor | ⭐ **WO diikuti** (aturan prompt): selalu Dept Head. Mohon konfirmasi bila batas dikehendaki |
-| 26 | *"`DEDUCTION1` `DEDUCTION2` `BROKERAGE` `RNM_SHARE` dibaca sebagai persentase"* | rumus XML memakai `Deduction1/2` halaman polis sebagai jumlah (CountNetPremi_act 4, SetPPNPPH 4, `pxCurrency`); `RNM_SHARE` belum boleh dipakai | golongan simpan persen (WO); rumus diport apa adanya; nilai master yang tak tersedia → langkahnya dilewati |
-| 59 | *"Peringatan dipasang ketika jumlah berkas klaim terhubung lebih dari nol."* | `CheckDuplicateOffer` langkah 1-4 berlabel `//`, dipanggil tanpa parameter dari pembongkar JSON — peringatan tidak pernah menyala | tidak dapat dipenuhi seperti tertulis; `TreatyRealizationCheckDuplicate` dibangun |
-| 84 | *"Nilai kosong pada penanda persetujuan tidak menghentikan alur."* | `ListSuggest` mewajibkan Approval; tombol Submit hanya untuk 1/0 | tabel keputusan: kosong = disetujui (diuji); layar: Approval wajib (XML) |
+| 8 | *"Sec Head menyetujui ⇒ berkas naik ke Dept Head. Test yang menemukan tujuan lain gagal."* | XML: `Decision13`/`CekLimitTreatyAcc_Act` (batas 200 juta) + `Decision8` membiarkan Sec Head menyelesaikan berkas bernomor | ⭐ **WO diikuti** (aturan prompt): selalu Dept Head. ~~Mohon konfirmasi bila batas dikehendaki~~ ⇒ **K2 (putaran 2, 03-10-2026): WO lama berlaku**; batas 200 juta tidak dibangun (alasan (b)), pertentangan tetap dicatat di tiket 03 |
+| 26 | *"`DEDUCTION1` `DEDUCTION2` `BROKERAGE` `RNM_SHARE` dibaca sebagai persentase"* | rumus XML memakai `Deduction1/2` halaman polis sebagai jumlah (CountNetPremi_act 4, SetPPNPPH 4, `pxCurrency`); `RNM_SHARE` belum boleh dipakai. ⭐ Putaran 2: `RNM_SHARE` **0 rule** di korpus; `BROKERAGE` hanya caption/keterangan di 4 rule NonProp (label `.Deductible/.Deductible2`), **nol pembaca kolom** (`docs/alat/pemakai.py`, 176 rule terjangkau) | golongan simpan persen (WO); rumus diport apa adanya; nilai master yang tak tersedia → langkahnya dilewati. ⇒ Putaran 2: `BROKERAGE`/`RNM_SHARE` view **tidak dibaca** (nol pemakai); `DEDUCTION1/2` — K3: rumus XML apa adanya; golongan/label milik paket katalog/layar (tiket 07 RALAT putaran 2) |
+| 59 | *"Peringatan dipasang ketika jumlah berkas klaim terhubung lebih dari nol."* | `CheckDuplicateOffer` langkah 1-4 berlabel `//`, dipanggil tanpa parameter dari pembongkar JSON — peringatan tidak pernah menyala. ⭐ Putaran 2: `SetTreatyIn_Act` langkah 14 `pyPassCurrentParameterPage=false` ⇒ `GetCountClaim` `masterid = NULL` ⇒ 0 — cabang pesan tak terjangkau (a) | ~~tidak dapat dipenuhi seperti tertulis~~ ⇒ **bunyi baru**: *"Submit admin yang menyetujui (IsApproved 1) tertahan dengan pesan `Protect Duplicate Policy; data is similar to <nopolis> …` bila TREATYINPRODUCTION memuat polis serupa dan ClaimType bukan XOL"* — `TreatyRealizationCheckDuplicate` dibangun dan diuji (tiket 02 RALAT putaran 2) |
+| 66 | *"`isFOR` bernilai `EDM` ⇒ jalur endorsemen; `POLICY` ⇒ polis baru. Test yang menemukan keduanya menempuh cara penyimpanan yang sama gagal."* | ⭐ Putaran 2: `isFOR` hanya di 2 rule terjangkau — pemanggil `Flow\InputRealizationTreatyIn` `Utility1` mengirim `<isFOR/>` **kosong**; pembaca `SaveJsonPolisTreatyIn_Act` langkah 3 (EDM) berlabel `//`, langkah 5 (POLICY) kotak When tak dicentang | **bunyi baru**: *"`isFOR` tidak memilih jalur — nol efek di XML; NB hanya punya jalur polis baru"*; tidak dibangun, alasan (a) (tiket 06 RALAT putaran 2) |
+| 84 | *"Nilai kosong pada penanda persetujuan tidak menghentikan alur."* | `ListSuggest` mewajibkan Approval; tombol Submit hanya untuk 1/0 | tabel keputusan: kosong = disetujui (diuji); layar: Approval wajib (XML). ⇒ **K6 (putaran 2): submit tanpa Approval ditolak 422** di ketiga jenjang — **bunyi baru**: *"Di tabel keputusan kosong = disetujui tanpa galat; di layar submit tanpa Approval ditolak 422"* (tiket 03 RALAT putaran 2) |
 | 87 | *"Pengiriman ke layanan luar tidak dibangun sebelum muatannya diketahui."* | digantikan KEPUTUSAN-RONDE-12 butir 7 (P8 dicabut) | muatan 4 medan sesudah commit; sambungan `[terbuka]` |
 
 ### ⛔ RALAT K8 — jalur NB NonProporsional / XOL dibangun (putaran 2, 03-10-2026)
@@ -1089,17 +1155,17 @@ lain dan **tidak boleh dipinjam** *(P8)*.
 | 3 | penetapan, pembuatan, dan pencabutan peran **belum dibahas sama sekali** | `[IAM]` |
 | 4 | `SumTSIPremiSpreadRNMMultiCob_Act` — di bagian mana ia tinggal | `[pemilik export Pega]` |
 | 5 | muatan yang dikirim ke layanan luar di akhir alur | `[Product+Underwriting]` |
-| 6 | **tipe Oracle** kolom uang — sisi Pega menyimpannya sebagai **teks** | `[DBA]` |
-| 7 | **format penyajian** uang — desimal dan pemisah ribuan | `[work owner]` |
+| 6 | **tipe Oracle** kolom uang — sisi Pega menyimpannya sebagai **teks** ⭐ **DIJAWAB 2026-10-03** dari katalog Oracle — lihat blok *Jawaban* di bawah | ~~`[DBA]`~~ katalog `ALL_TAB_COLUMNS` |
+| 7 | **format penyajian** uang — desimal dan pemisah ribuan ⭐ **diputus K14** — lihat blok *Jawaban* | `[work owner]` |
 | 8 | `RNM_SHARE` persentase **dari apa** | `[Product+Underwriting]` |
 | 9 | ketidakseragaman presisi **4 lawan 8 desimal** untuk rumus yang sama | `[Finance]` |
 | 10 | arti kode lini bisnis, termasuk `"40"` yang berskala penomoran berbeda | `[DBA]` |
 | 11 | arti dua kode penanda "punya penempatan keluar" | `[Product+Underwriting]` |
-| 12 | peran `SystemSetOneYear_DT` — kapan aturan satu-tahun berjalan | `[Product+Underwriting]` |
+| 12 | peran `SystemSetOneYear_DT` — kapan aturan satu-tahun berjalan ⭐ **DIJAWAB 2026-10-03 dari XML** — lihat blok *Jawaban* | ~~`[Product+Underwriting]`~~ XML |
 | 13 | **5 tempat** yang menghapus pesan galat **sesudah** validasi memasangnya | `[pengembang Pega lama]` |
 | 14 | apakah ada **mata uang mati lain** yang tidak disembunyikan | `[Product+Underwriting]` |
-| 15 | data lama bertanggal **ambigu secara mutlak** — `05/06` dapat berarti dua hal | `[work owner]` · `[DBA]` |
-| 16 | berapa baris yang `OPERATORID`-nya **sudah terisi** sekarang | `[DBA]` |
+| 15 | data lama bertanggal **ambigu secara mutlak** — `05/06` dapat berarti dua hal ⭐ **diputus K15** — lihat blok *Jawaban* | `[work owner]` · `[DBA]` |
+| 16 | berapa baris yang `OPERATORID`-nya **sudah terisi** sekarang ⭐ **DIJAWAB 2026-10-03** dari katalog Oracle — lihat blok *Jawaban* | ~~`[DBA]`~~ katalog `ALL_TAB_COLUMNS` |
 | 17 | empat wadah layar berisi **104 medan** — masih dipakai atau ditinggalkan | `[Product+Underwriting]` |
 | 18 | apakah ada kasus mencapai **Acceptance by Dir.** dalam 12 bulan terakhir | `[Product+Underwriting]` |
 | 19 | `InsertToTreatyOutXOLList` **bernama** menulis tetapi tidak ada perintah tulis | `[pengembang Pega lama]` |
@@ -1112,6 +1178,47 @@ lain dan **tidak boleh dipinjam** *(P8)*.
 > `DATA_JSON`. ⛔ **Keempatnya tidak menahan penulisan spec.** ⚠️ Butir **23** menahan **keputusan
 > migrasi data lama** dan **ambang uji paritas** di tiket **15** — bukan penulisan lapisan
 > penyimpanan.
+
+> ⭐⭐ **JAWABAN 2026-10-03 — lima butir §9.2** *(putaran 2; bunyi lama tiap butir dikutip apa adanya,
+> baris tabelnya dibiarkan dengan penanda)*
+>
+> **Butir 6** — bunyi lama: *"**tipe Oracle** kolom uang — sisi Pega menyimpannya sebagai **teks** |
+> `[DBA]`"*. ⭐ **Dijawab dari katalog Oracle** (`ALL_TAB_COLUMNS`, dicek 03-10-2026; PROMPT putaran 2
+> bab 1 — tidak perlu ditanyakan ke DBA lagi). View kontrak `POOLDATA.TREATYINDETAILJOINEDM`: kolom
+> nilai `LIMITVALUE` `RETENTIONVALUE` `EPIVALUE` `NETPREMIVALUE` `SHAREVALUE` `MDPVALUE` `DEDUCTION1`
+> `DEDUCTION2` `RIOGR` `RIONR` `RNM_SHARE` `BROKERAGE` = **`NUMBER` tanpa presisi dan skala**;
+> `COMMENCEMENT`, `TERMINATION` = `DATE`; `INSTALLMENTNO` = `VARCHAR2(1000)` (teks di view, dikonversi
+> ke bilangan bulat di modul); kolom lain `VARCHAR2(1000)`, `ID` `VARCHAR2(100)`. `POOLDATA.AGENT`:
+> `STS_PKP` dan `STATUSACTIVE` ada, keduanya `VARCHAR2(1000)`. ⇒ "teks" hanya berlaku bagi dokumen
+> `DATA_JSON` Pega; sumber relasional yang dibaca modul sudah `NUMBER`. Kolom uang tabel baru tetap
+> `NUMBER(38,8)` (spec penyimpanan AC 20). ⛔ Tipe tabel `TREATYINDETAIL` belum tercakup
+> (`PERMINTAAN-TIM-INTI.md` C3).
+>
+> **Butir 7** — bunyi lama: *"**format penyajian** uang — desimal dan pemisah ribuan | `[work owner]`"*.
+> ⭐ **Diputus K14** (PROMPT putaran 2 bab 2): ikuti yang ditampilkan layar XML (`pyFormat`/kontrol
+> Section, `pyDecimalPlaces`); bila tidak terbaca, pola modul lain di repo. Rujukan saja — pelaksanaan
+> di paket layar.
+>
+> **Butir 12** — bunyi lama: *"peran `SystemSetOneYear_DT` — kapan aturan satu-tahun berjalan |
+> `[Product+Underwriting]`"*. ⭐ **Dijawab dari XML:** `DataTransform/SystemSetOneYear_DT` adalah
+> `pyPreDataTransform` aksi refresh `change` sel `.StartDate` di `Section/DetailPolicyTreatyIn`
+> (layar admin, medan dapat disunting); di `Section/DetailDeptHeadTreatyIn_UW` sel yang sama
+> `pyReadOnly` `1==1` sehingga tak pernah berubah. Jadi: pengisian tanggal-akhir-kosong
+> (`InputPolicyTreatyIn_preDT`, P35/AC 34) berjalan **saat layar admin dibuka**; aturan satu-tahun
+> berjalan **setiap kali admin mengubah tanggal mulai**, dan **menimpa** `.EndDate` tanpa syarat
+> (`.EndDate = @DateTime.addCalendar(.StartDate,1,0,0,0,0,0,0)`). Keduanya tidak bertentangan; AC 34
+> tetap berlaku untuk tanggal akhir kosong. Dibangun 2026-10-03 (`models.SystemSetOneYear`).
+>
+> **Butir 15** — bunyi lama: *"data lama bertanggal **ambigu secara mutlak** — `05/06` dapat berarti
+> dua hal | `[work owner]` · `[DBA]`"*. ⭐ **Diputus K15**: tanggal ambigu **tidak ditebak** — barisnya
+> ditolak ke laporan galat pemuat dokumen lama (tiket 22; berkas laporan, bukan tabel — bab 0 butir 11,
+> K17) dan jumlahnya dilaporkan. Rujukan saja.
+>
+> **Butir 16** — bunyi lama: *"berapa baris yang `OPERATORID`-nya **sudah terisi** sekarang |
+> `[DBA]`"*. ⭐ **Dijawab dari katalog Oracle** (03-10-2026): tabel yang punya kolom `OPERATORID` adalah
+> `HISTORYAKSEPTASIPEGA` (dan tabel ringkasan Life). Di `HISTORYAKSEPTASIPEGA`: **10.548 dari 323.254**
+> baris terisi — **seluruh lini, belum disaring treaty**. Penyimpangan sadar *"`OPERATORID` mulai
+> diisi"* (§10.1 butir 4) tetap berlaku.
 
 ---
 

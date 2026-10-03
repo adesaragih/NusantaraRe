@@ -78,10 +78,10 @@ func (g *Gudang) SisipKasus(ctx context.Context, tx *db.Tx, id, pembuat, namaPem
 
 func sqlKeadaan(kerja, gen string) string {
 	return fmt.Sprintf(`SELECT w.ID, w.POSITION, w.STATUS_WORK, g.POSITION_NOTE, g.NOPOLIS,
-	        CASE WHEN g.TGL_TUTUP IS NULL THEN 0 ELSE 1 END, w.CREATE_OP,
+	        CASE WHEN %s THEN 0 ELSE 1 END, w.CREATE_OP,
 	        TO_CHAR(w.TGL_CREATE, '%s')
 	   FROM %s w JOIN %s g ON g.ID = w.ID
-	  WHERE w.ID = :1`, fmtTanggal, kerja, gen)
+	  WHERE w.ID = :1`, syaratTerbuka(gen), fmtTanggal, kerja, gen)
 }
 
 // Keadaan membaca keadaan kerja satu kasus. Di dalam transaksi bila `tx`
@@ -150,7 +150,7 @@ func sqlPindahKerja(t string) string {
 }
 
 func sqlPindahGenerasi(t string) string {
-	return fmt.Sprintf(`UPDATE %s SET POSITION_NOTE = :1 WHERE ID = :2 AND TGL_TUTUP IS NULL`, t)
+	return fmt.Sprintf(`UPDATE %s g SET POSITION_NOTE = :1 WHERE g.ID = :2 AND %s`, t, syaratTerbuka(t))
 }
 
 // PindahPosisi memindahkan kasus ke posisi lain - tugas properti connector

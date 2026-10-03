@@ -14,6 +14,7 @@ export const JUDUL = {
   secHead: 'Acceptance by Head. Treaty',
   deptHead: 'Acceptance by Dept. Head',
   pilihBisnis: 'Choose Business',
+  sumberBisnis: 'Source Of Business',
   tolak: 'Decline',
   nomorPolis: 'Policy No',
   riwayat: 'History',
@@ -31,6 +32,7 @@ export const TOMBOL = {
   create: 'Create opportunity',
   filter: 'Filter',
   chooseBusiness: 'Choose Business',
+  selectSOB: 'Select Source Of Business',
   choose: 'Choose',
   save: 'Save',
   submit: 'Submit',
@@ -60,6 +62,9 @@ export const PORTAL = {
   kosongPetunjuk: 'Tombol Create membuat berkas baru di antrean admin.',
   hanyaBaca: 'Berkas ini menunggu di antrean lain atau sudah selesai - hanya-baca.',
 } as const
+
+/** Judul kolom TreeGrid `Section/SourceHierarki` (pyCaption, `.ClientName`). */
+export const KOLOM_SOB = 'Source of Business Name'
 
 /** Kolom grid popup `BusinessAndSOBList` (nama kolom view, apa adanya). */
 export const KOLOM_BISNIS = [

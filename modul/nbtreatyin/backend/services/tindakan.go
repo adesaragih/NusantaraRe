@@ -41,7 +41,11 @@ func (l *Layanan) kerjakan(ctx context.Context, p inti.Pelaku, id string, masuk 
 	if err := l.siapkan(ctx, p, k, h); err != nil {
 		return models.Kasus{}, nil, err
 	}
-	models.GabungMasukanLayar(h, masuk, k.PositionNote)
+	// `ListSuggest.ProductionDate` hanya diterima bila tampil bagi pelaku
+	// (tempat berperan tiket 05; AC 52, 81).
+	// Pemetaan kosong (K12, K16) = tempat tertunda = medan tidak diterima.
+	tempat := l.tempat(p)
+	models.GabungMasukanLayar(h, masuk, k.PositionNote, tempat[TempatTanggalProduksi])
 	if k.PositionNote == models.PosisiAdmin {
 		if err := l.turunkan(ctx, h); err != nil {
 			return models.Kasus{}, nil, err
@@ -104,9 +108,28 @@ type PermintaanHitung struct {
 	// Param - parameter aktivitas: Data ("Pct"/"Amount"), DiscountType,
 	// Result, Overidding, Action ("PREMIUM"/"CLAIM").
 	Param string `json:"param"`
+	// Urutan - action set sel yang memuat LEBIH DARI SATU refresh berhitung
+	// (mis. `.RiCommOgp`: `CountResult1_Act(Data="Pct")` lalu `CountOGPONP_Act`):
+	// dijalankan berurutan atas halaman yang sama, seperti clipboard Pega.
+	// Bila diisi, Aksi/Param diabaikan.
+	Urutan []LangkahHitung `json:"urutan,omitempty"`
 	// Indeks - Param.Index / Param.idx, berbasis 1.
 	Indeks  int             `json:"indeks"`
 	Halaman *models.Halaman `json:"halaman"`
+}
+
+// LangkahHitung - satu refresh dalam `PermintaanHitung.Urutan`.
+type LangkahHitung struct {
+	Aksi  string `json:"aksi"`
+	Param string `json:"param"`
+}
+
+// langkah - urutan refresh permintaan ini (satu langkah bila Urutan kosong).
+func (r PermintaanHitung) langkah() []LangkahHitung {
+	if len(r.Urutan) > 0 {
+		return r.Urutan
+	}
+	return []LangkahHitung{{Aksi: r.Aksi, Param: r.Param}}
 }
 
 // aksiHalaman, aksiParam, aksiIndeks - tiga bentuk tanda tangan aktivitas Pega
@@ -150,6 +173,7 @@ var aksiHitung = map[string]aksiFn{
 	"CountSpreading":           aksiIndeks(models.CountSpreading),
 	"SetDueTo":                 aksiHalaman(models.SetDueTo),
 	"ProtectDate":              aksiHalaman(tanpaGalat(models.ProtectDate)),
+	"SystemSetOneYear":         aksiHalaman(tanpaGalat(models.SystemSetOneYear)),
 	"RemoveTypeTax":            aksiHalaman(tanpaGalat(models.RemoveTypeTax)),
 	"TreatyEnableDisableInput": aksiHalaman(tanpaGalat(models.TreatyEnableDisableInput)),
 	"FillPaymentInstallment": func(l *Layanan, _ context.Context, h *models.Halaman, _ PermintaanHitung) error {
@@ -178,13 +202,20 @@ var aksiHitung = map[string]aksiFn{
 	},
 }
 
-// Hitung menjalankan satu refresh berhitung dan mengembalikan layarnya. Hasil
-// TIDAK disimpan - kecuali `CheckDataMkt`, yang di XML menutup dirinya dengan
-// `Obj-Save pyWorkPage` (langkah 5).
+// Hitung menjalankan refresh berhitung (satu, atau `Urutan` action set sel)
+// dan mengembalikan layarnya. Hasil TIDAK disimpan - kecuali `CheckDataMkt`,
+// yang di XML menutup dirinya dengan `Obj-Save pyWorkPage` (langkah 5).
 func (l *Layanan) Hitung(ctx context.Context, p inti.Pelaku, id string, r PermintaanHitung) (Layar, error) {
-	f, ada := aksiHitung[r.Aksi]
-	if !ada {
-		return Layar{}, fmt.Errorf("%w: aksi hitung %q", ErrPermintaanTidakSah, r.Aksi)
+	langkah := r.langkah()
+	fs := make([]aksiFn, len(langkah))
+	simpan := false
+	for i, s := range langkah {
+		f, ada := aksiHitung[s.Aksi]
+		if !ada {
+			return Layar{}, fmt.Errorf("%w: aksi hitung %q", ErrPermintaanTidakSah, s.Aksi)
+		}
+		fs[i] = f
+		simpan = simpan || s.Aksi == "CheckDataMkt"
 	}
 	k, h, err := l.kerjakan(ctx, p, id, r.Halaman)
 	if err != nil {
@@ -193,10 +224,14 @@ func (l *Layanan) Hitung(ctx context.Context, p inti.Pelaku, id string, r Permin
 	if err := l.pasangStsPKP(ctx, h); err != nil {
 		return Layar{}, err
 	}
-	if err := f(l, ctx, h, r); err != nil {
-		return Layar{}, err
+	for i, s := range langkah {
+		satu := r
+		satu.Aksi, satu.Param = s.Aksi, s.Param
+		if err := fs[i](l, ctx, h, satu); err != nil {
+			return Layar{}, err
+		}
 	}
-	if r.Aksi == "CheckDataMkt" {
+	if simpan {
 		if err := l.tulis(ctx, k, func(tx *db.Tx) error { return l.g.SimpanHalaman(ctx, tx, id, h) }); err != nil {
 			return Layar{}, err
 		}
@@ -240,7 +275,8 @@ func (l *Layanan) SimpanDraf(ctx context.Context, p inti.Pelaku, id string, masu
 
 // PilihBisnis = tombol "Choose" popup `BusinessAndSOBList` -> `SetValue_Act`
 // (ID=.ID) -> `InputPolicyTreatyInDetail_preACT`, lalu `Obj-Save`. Bagian
-// yang dibangun: lihat `models/pilihbisnis.go`.
+// yang dibangun: lihat `models/pilihbisnis.go` dan `models/komisi.go`
+// (langkah 17).
 //
 // ⛔ Pembacaan kontrak yang gagal MENGHENTIKAN proses dan tidak menyimpan
 // apa pun (AC 36-38) - di Pega `pxRetrieveReportData` yang kosong mengisi
@@ -284,10 +320,19 @@ func (l *Layanan) PilihBisnis(ctx context.Context, p inti.Pelaku, id, idDetail s
 		return Layar{}, err
 	}
 	models.TerapkanBisnisPilih(h, bis) // 14.7-14.9
-	// 16 (NonProportional) dan 18 - K8, nonprop.go. Langkah 13 dan 17 (master
-	// proporsional) tidak di sini.
+	// 16 (NonProportional) dan 18 - K8, nonprop.go (16 dan 17 saling meniadakan;
+	// 18 hanya berbuat bila master XOL termuat).
 	if err := l.pilihBisnisNonProp(ctx, h); err != nil {
 		return Layar{}, err
+	}
+	// langkah 17 (bukan NonProportional) -> TreatyInputPctCommSpreading:
+	// RiCommOgp dari baris view kontrak NoOffer (models/komisi.go).
+	if models.LangkahKomisiProporsional(h) {
+		baris, err := l.g.KomisiKontrak(ctx, h.Ambil(models.HalamanPolis+".NoOffer"))
+		if err != nil {
+			return Layar{}, err
+		}
+		models.TreatyInputPctCommSpreading(h, baris)
 	}
 	if err := l.tulis(ctx, k, func(tx *db.Tx) error { return l.g.SimpanHalaman(ctx, tx, id, h) }); err != nil {
 		return Layar{}, err
@@ -307,15 +352,16 @@ func (l *Layanan) PilihBisnis(ctx context.Context, p inti.Pelaku, id, idDetail s
 //	Atasan `DeptHeadTreatyIn_UW`: pasca DT `DeptHeadTreatyIn_UW_postDT` ->
 //	       `InsertHistoryAkseptasiPega`
 //
+// `SaveViewSuggest` (InputPolicyTreatyInPost_Act langkah 4) menulis catatan
+// yang baru ditambahkan pasca DT ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION`
+// (`models.UsulanBelumTersimpan`, K4) - `[penyimpangan sadar]` di KETIGA
+// jenjang dan tanpa syarat `BusinessFac == "F"`; rinciannya di models/usulan.go.
+//
 // lalu connector flow (`models.Langkah`). Semuanya SATU transaksi (AC 29, 83).
 // Sesudah transaksi, bila realisasi selesai: Utility2 `serviceInsertArasapas_act`
 // (`konversikan`, KEPUTUSAN-RONDE-12 butir 7) - gagalnya tidak membatalkan apa pun.
 //
 // ⛔ Tidak dibangun, dan sebabnya:
-//   - `SaveViewSuggest` -> HISTORYAKSEPTASIPRODUCTION: kedua kalangnya bersyarat
-//     `Quotation.BusinessFac == "F"`; kasus treaty bernilai "T" (filter E
-//     `GetListOpportunity`) dan nol rule korpus mengisinya "F". Catatan
-//     disimpan di T_POLIS_SUGGEST (RALAT rancangan §4bis.1).
 //   - Utility1 `SaveJsonPolisTreatyIn_Act` - diganti penyimpanan relasional
 //     (AC 16); halaman sudah tersimpan di transaksi yang sama.
 func (l *Layanan) Kirim(ctx context.Context, p inti.Pelaku, id string, masuk *models.Halaman) (HasilKirim, error) {
@@ -392,6 +438,12 @@ func (l *Layanan) kirim(ctx context.Context, p inti.Pelaku, id string, masuk *mo
 		}); err != nil {
 			return err
 		}
+		// SaveViewSuggest (K4): catatan baru -> HISTORYAKSEPTASIPRODUCTION.
+		if baru := models.UsulanBelumTersimpan(h); len(baru) > 0 {
+			if err := l.g.CatatUsulan(ctx, tx, models.KunciInstans(id), baru); err != nil {
+				return err
+			}
+		}
 		if tr.Ditutup() {
 			if err := l.g.SimpanHalaman(ctx, tx, id, h); err != nil {
 				return err
@@ -421,10 +473,7 @@ func (l *Layanan) kirim(ctx context.Context, p inti.Pelaku, id string, masuk *mo
 // berpesan tidak dapat di-submit, sama dengan Pega.
 func (l *Layanan) validasiKirim(ctx context.Context, p inti.Pelaku, h *models.Halaman, posisi string) error {
 	pesan := models.MedanWajibKosong(h, posisi)
-	tempat, err := l.tempat(ctx, p)
-	if err != nil {
-		return err
-	}
+	tempat := l.tempat(p)
 	if tempat[TempatTanggalProduksi] && h.Ambil(models.HalamanPolis+".IsApproved") == "1" &&
 		strings.TrimSpace(h.Ambil(models.HalamanPolis+".ProductionDate")) == "" {
 		pesan = append(pesan, "Production Date")
@@ -453,8 +502,23 @@ func (l *Layanan) validasiKirim(ctx context.Context, p inti.Pelaku, h *models.Ha
 // PesanDuplikatAwal - VERBATIM `TreatyRealizationCheckDuplicate` langkah 4.
 const PesanDuplikatAwal = "Protect Duplicate Policy; data is similar to "
 
-// cekDuplikat = `TreatyRealizationCheckDuplicate`: ada polis produksi serupa
-// dan ClaimType bukan "XOL" -> pesan halaman (submit tertahan).
+// cekDuplikat = `Activity/TreatyRealizationCheckDuplicate`, dipanggil HANYA
+// `InputPolicyTreatyInPost_Act` langkah 3 (pasca-proses flow action admin)
+// bersyarat `.PolicyTreatyIn.IsApproved==1` (AC 59, RALAT putaran 2):
+//
+//	1    Page-Clear-Messages pyWorkPage
+//	2-3  RDB `TreatyRealizationCheckDuplicate` atas TREATYINPRODUCTION
+//	     (`repository.PolisSerupa`, pemetaan parameter apa adanya)
+//	4    local.msg = "Protect Duplicate Policy; data is similar to "
+//	5.1  setiap baris: local.msg = local.msg + .CARI1 + " "
+//	6    `@SizeOfPropertyList(ResultData.pxResults) > 0 && .PolicyTreatyIn.ClaimType != "XOL"`
+//	     -> Page-Set-Messages pyWorkPage: submit tertahan (422)
+//
+// ⛔ `CheckDuplicateOffer` (peringatan "jumlah klaim > 0") TIDAK dibangun:
+// langkah 1-4 berlabel `//`, dan satu-satunya pemanggilnya (`SetTreatyIn_Act`
+// langkah 14) memanggilnya tanpa parameter (`pyPassCurrentParameterPage=false`)
+// sehingga `GetCountClaim` selalu menghitung `masterid = NULL` = 0 - langkah
+// 7-8 (pesannya) tidak pernah benar.
 func (l *Layanan) cekDuplikat(ctx context.Context, h *models.Halaman) error {
 	sama, err := l.g.PolisSerupa(ctx, h)
 	if err != nil {

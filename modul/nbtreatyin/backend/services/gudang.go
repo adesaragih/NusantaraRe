@@ -41,6 +41,7 @@ type Gudang interface {
 	HariClosing(ctx context.Context, tx *db.Tx) (int, error)
 
 	DetailKontrak(ctx context.Context, id string) (models.BarisKontrak, error)
+	KomisiKontrak(ctx context.Context, treatyID string) ([]models.BarisKontrak, error)
 	DaftarDetailKontrak(ctx context.Context, s repository.SaringanDetail) ([]models.BarisKontrak, error)
 	IDMataUangDariNama(ctx context.Context, nama string) (string, error)
 	NamaMataUang(ctx context.Context, id string) (string, error)
@@ -55,13 +56,17 @@ type Gudang interface {
 	DaftarJenisSpreading(ctx context.Context) ([]models.Pilihan, error)
 	DaftarJenisReas(ctx context.Context) ([]models.Pilihan, error)
 	PolisSerupa(ctx context.Context, h *models.Halaman) ([]string, error)
+	DaftarAgenHierarki(ctx context.Context) ([]models.BarisAgen, error)
+	AgenHierarki(ctx context.Context, id string) (models.BarisAgen, bool, error)
 
 	// PembacaMasterTreaty - master kontrak jalur XOL (K8).
 	PembacaMasterTreaty
 
 	CatatRiwayat(ctx context.Context, tx *db.Tx, r models.Riwayat) error
+	// CatatUsulan menulis catatan SuggestList ke POOLDATA.HISTORYAKSEPTASIPRODUCTION
+	// (SaveViewSuggest -> InsertViewSuggest_SQL), NOURUT berikutnya per IDPEGA.
+	CatatUsulan(ctx context.Context, tx *db.Tx, idPega string, baris []models.UsulanProduksi) error
 	DaftarRiwayat(ctx context.Context, idPega string) ([]models.Riwayat, error)
-	DaftarPeranTempat(ctx context.Context) ([]repository.PeranTempat, error)
 	NamaTampilan(ctx context.Context, loginID string) (string, error)
 }
 

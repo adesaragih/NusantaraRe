@@ -70,9 +70,51 @@ adalah **bug**, ⛔ bukan perbedaan maksud antar tahap *(P33)*.
 1. **NBStatus.** Tujuh connector Flow menanam nama orang (`NB IS IN <nama>'S INBOX`). P40: nama dari
    data. Berkas menunggu POSISI, bukan orang (AC 92) ⇒ teksnya memakai **nama posisi tujuan**
    (`NB IS IN REASTREATYINSECHEAD'S INBOX`). Cabang DT yang memang memakai data (`pyUserName`,
-   `pxCreateOpName`) memakai nama tampilan dari `M_LOGIN_GO.NAME`. ⚠️ Tafsiran — mohon konfirmasi.
+   `pxCreateOpName`) memakai nama tampilan dari `M_LOGIN_GO.NAME`. ~~⚠️ Tafsiran — mohon konfirmasi.~~
+   ⇒ **Dijawab K5 (PROMPT-NB-TREATY-IN-PUTARAN-2 bab 2, 03-10-2026): Ya** — `NBStatus` memakai nama
+   posisi. Uji: `handlers/alur_test.go` TestTanggaPenuhDanNomorPolisSekali
+   (`NB IS IN REASTREATYINSECHEAD'S INBOX`), `models/tangga_test.go` TestTeksNBStatus.
 2. `HISTORYAKSEPTASIPEGA.ID_PEGA` = `pzInsKey` (`ASM-FW-GISFW-WORK-NB NB-<n>`); `OPERATORID` = identitas
    login; `USERNAME` = nama tampilan; ditulis di transaksi submit (AC 83). Nama tampilan kosong
    menghasilkan kosong — tanpa jatuh-balik ke ID login (AC 40, 42).
 3. `HISTORYAKSEPTASIPRODUCTION` tidak ditulis kasus treaty: kedua kalang `SaveViewSuggest` bersyarat
    `Quotation.BusinessFac == "F"`; treaty = "T". Catatan disimpan `T_POLIS_SUGGEST` (tiket 19).
+
+## ⭐ Putaran 2 — paket penyimpanan (03-10-2026)
+
+Dasar: PROMPT-NB-TREATY-IN-PUTARAN-2 bab 0 butir 11–12, bab 2 K4/K16/K17; rincian kolom `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`.
+
+⛔ **RALAT atas RALAT butir 3** di atas. Bunyi lama, dikutip: *"`HISTORYAKSEPTASIPRODUCTION` tidak ditulis
+kasus treaty: kedua kalang `SaveViewSuggest` bersyarat `Quotation.BusinessFac == "F"`; treaty = "T". Catatan
+disimpan `T_POLIS_SUGGEST` (tiket 19)."*
+
+Bunyi baru (`[keputusan work owner]` **K4**): `T_POLIS_SUGGEST` di luar diagram grilling — **dihapus**.
+Catatan `SuggestList` **ditulis ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION`** (pengganti
+`SaveViewSuggest` langkah 2 → `RDBList\InsertViewSuggest_SQL`) dan **dibaca balik** untuk grid
+`Section\ListSuggest`:
+
+| Kolom | Isi | XML |
+| --- | --- | --- |
+| `IDPEGA` | `pzInsKey` (`ASM-FW-GISFW-WORK-NB NB-<n>`) | `{pyWorkPage.pzInsKey}` |
+| `TYPE_POLIS` | `NB` | `@replaceAll(pyWorkIDPrefix,"-","")` |
+| `NOURUT` | berikutnya per `IDPEGA` di bawah kunci kasus | `.pxListSubscript` |
+| `POSISI` · `PUTARAN` | `Policy` · `2` | CARI3 · CARI8 kalang "UNTUK TREATY" |
+| `PIC` | **nama tampilan** penulis catatan (AC 40, 44; P33) | `.OperatorName` |
+| `TGL_INP` | `.Date` catatan | CARI5 |
+| `TYPE` | `Quotation.BusinessFac` (`T`) | CARI7 |
+| `APPROVAL` | `1` → `Accept`, `0` → `Reject`, selain itu kosong — **per baris** (AC 41, 42) | CARI9 |
+| `KETERANGAN` | 3990 karakter pertama `.Suggest` (AC 40) | `substr(CARI10,0,3990)` |
+| `AKSES_LOGIN` | **identitas login** penulis (AC 39, 43; P4) | `OperatorID.pyUserIdentifier` |
+| `BUSINESS_CODE` | `Quotation.BusinessCode` | |
+| `DIV` · `B2B` · `PERCENT_RNM` | NULL | `pyOrgDivision` tanpa sumber di inti; `OfferFacIn` halaman Fac |
+
+`[penyimpangan sadar]` (K4, grilling ID-31/AC 39): syarat `BusinessFac == "F"` tidak ditiru; baris ditulis
+pada submit **ketiga** jenjang yang menambahkannya (XML: hanya `InputPolicyTreatyInPost_Act` langkah 4);
+`TGL_INP` jam 24 (XML `hh` → `HH24` menyimpan jam sore sebagai pagi). Uji: `models/usulan_test.go`,
+`handlers/alur_test.go` (`TestAdminMenolakDiselesaikanDitolak`, `TestTanggaPenuhDanNomorPolisSekali` — lima
+baris `NOURUT` 1..5 dengan `AKSES_LOGIN` tiap jenjang), `repository/kolom_test.go`
+`TestSQLRiwayatProduksiMengikutiInsertViewSuggest`, `polis_db_test.go` `TestRiwayatProduksiPulangPergi`
+(`-tags db`, belum dijalankan — K11).
+
+AC 39, 40, 41, 42, 43, 44, 71: ✅ (seam HTTP + fungsi murni). AC 72 tetap 🟡 (pengurutan lawan Oracle).
+Butir terbuka: `DIV` tanpa sumber; tipe fisik `NOURUT` tabel lama belum dicek katalog.
