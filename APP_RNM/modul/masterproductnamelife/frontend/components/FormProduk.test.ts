@@ -286,3 +286,14 @@ describe('Plan Name = dropdown (keputusan work owner 03-10-2026 "tolong ubah jad
   })
 })
 
+
+describe('Add attachment: banyak berkas dan seret-lepas (permintaan work owner 03-10-2026)', () => {
+  it('pemilih berkas multiple, kotak seret-lepas, unggah berurutan lewat rute yang ada', () => {
+    expect(LAMPIRAN).toMatch(/<input\s+type="file"\s+multiple/)
+    expect(LAMPIRAN).toContain('onDragOver={')
+    expect(LAMPIRAN).toContain('onDrop={')
+    expect(LAMPIRAN).toContain('e.dataTransfer.files')
+    expect(LAMPIRAN).toContain('unggahBerurutan(')
+    expect(LAMPIRAN).toContain('LAIN_MPNL.seretBerkas')
+  })
+})

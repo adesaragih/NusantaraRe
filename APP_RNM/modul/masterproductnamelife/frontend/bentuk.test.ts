@@ -20,6 +20,8 @@ import {
   salinProduk,
   tampilPremiumFactor,
   tampilViewOffice,
+  gabungBerkas,
+  unggahBerurutan,
   jenisViewOnline,
   mimeViewOnline,
   tampilAngka,
@@ -233,3 +235,30 @@ describe('Document List - PromptList properti `.Document` (XML dikirim work owne
   })
 })
 
+
+describe('unggah banyak berkas (permintaan work owner 03-10-2026)', () => {
+  const f = (nama: string, isi = 'x'): File => new File([isi], nama)
+
+  it('pilihan digabung; nama sama (tanpa beda huruf besar) tidak digandakan - backend menolaknya', () => {
+    const a = f('UJI satu.pdf')
+    const hasil = gabungBerkas([a], [f('uji SATU.PDF'), f('UJI dua.jpg'), f('UJI dua.jpg')])
+    expect(hasil.map((x) => x.name)).toEqual(['UJI satu.pdf', 'UJI dua.jpg'])
+    expect(hasil[0]).toBe(a)
+  })
+
+  it('satu per satu, berurutan; yang gagal dikumpulkan dan sisanya tetap diunggah', async () => {
+    const dikirim: string[] = []
+    const mulai: string[] = []
+    const gagal = await unggahBerurutan(
+      [f('UJI a.pdf'), f('UJI b.pdf'), f('UJI c.pdf')],
+      async (x) => {
+        dikirim.push(x.name)
+        if (x.name === 'UJI b.pdf') throw new Error('UJI ditolak')
+      },
+      (x, i) => mulai.push(`${i}:${x.name}`),
+    )
+    expect(dikirim).toEqual(['UJI a.pdf', 'UJI b.pdf', 'UJI c.pdf'])
+    expect(mulai).toEqual(['0:UJI a.pdf', '1:UJI b.pdf', '2:UJI c.pdf'])
+    expect(gagal.map((g) => [g.berkas.name, (g.galat as Error).message])).toEqual([['UJI b.pdf', 'UJI ditolak']])
+  })
+})

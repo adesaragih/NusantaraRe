@@ -191,3 +191,8 @@ mewarisi asal aplikasi); isinya dari rute unduh yang ada (berheader identitas), 
 objek URL lokal. `View Office Online` kini juga di popup: form GET ke bingkai bernama di dalam popup, bukan tab baru.
 Jendela peramban terpisah tidak dibangun: menuntut pembukaan jendela lewat skrip, yang dilarang penjaga lintas-modul
 `unduhdokumen.test.ts` (modul lain tidak disentuh). Backend tidak berubah.
+
+Permintaan work owner 03-10-2026: *"PERBAIKI UPLOAD DOCUMENT BISA BANYAK DAN BISA DRAG AND DROP"*. `Add attachment` kini
+menerima banyak berkas (pemilih `multiple` dan kotak seret-lepas); berkas diunggah SATU PER SATU lewat rute unggah yang ada
+(`POST …/lampiran`, satu berkas per permintaan - backend tidak berubah). Nama ganda dalam pilihan dibuang (backend menolak
+nama ganda per produk); kegagalan per berkas ditampilkan dan berkasnya tinggal di pilihan, yang berhasil langsung ke grid.

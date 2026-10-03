@@ -437,4 +437,10 @@ export const LAIN_MPNL = {
   statusDitolak: 'Cannot be copied',
   /** `[tidak ada di korpus]` - status hasil `Process Copy`. */
   statusGagal: 'Failed',
+  /** `[tidak ada di korpus]` - kotak unggah banyak berkas + seret-lepas `Add attachment` (permintaan work owner 03-10-2026). */
+  seretBerkas: 'Drag and drop files here, or click to choose files',
+  /** `[tidak ada di korpus]` - kemajuan unggah banyak berkas, diikuti urutan dan nama berkas. */
+  mengunggah: 'Uploading',
+  /** `[tidak ada di korpus]` - membuang satu berkas dari pilihan unggah (belum diunggah). */
+  buangPilihan: 'Remove',
 } as const

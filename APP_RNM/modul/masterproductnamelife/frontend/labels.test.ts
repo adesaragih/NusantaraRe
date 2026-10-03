@@ -214,6 +214,10 @@ const BUKAN_KORPUS: readonly string[] = [
   'LAIN_MPNL.statusSudahAda',
   'LAIN_MPNL.statusDitolak',
   'LAIN_MPNL.statusGagal',
+  // Unggah banyak + seret-lepas (permintaan work owner 03-10-2026).
+  'LAIN_MPNL.seretBerkas',
+  'LAIN_MPNL.mengunggah',
+  'LAIN_MPNL.buangPilihan',
 ]
 
 /** Nilai label untuk kunci `OBJEK.medan`. */
@@ -327,7 +331,9 @@ describe('tombol layar = tombol korpus', () => {
   // Ikon grid bawaan / salin baris / kirim ulang - beralasan di `labels.ts` (`LAIN_MPNL`).
   const tambahanSah = new Set(['LAIN_MPNL.tambahBaris', 'LAIN_MPNL.hapusBaris', 'LAIN_MPNL.salinBaris', 'LAIN_MPNL.ulangi',
     // Copy Old (permintaan work owner 03-10-2026).
-    'LAIN_MPNL.copyOld', 'LAIN_MPNL.prosesCopy'])
+    'LAIN_MPNL.copyOld', 'LAIN_MPNL.prosesCopy',
+    // Unggah banyak berkas: buang satu berkas dari pilihan (permintaan work owner 03-10-2026).
+    'LAIN_MPNL.buangPilihan'])
   // Keputusan work owner 02-10-2026 ("perubahan pada tampilan untuk semua Choose ubah jadi dropdown saja"): ketujuh
   // tombol `Choose*` dan tombol popup FlowAction `Choose*` (`Choose` baris, `Submit`, `Cancel`) diganti dropdown
   // master (`DropdownMaster`). Labelnya tetap berbukti korpus; tombolnya sengaja TIDAK dirender.

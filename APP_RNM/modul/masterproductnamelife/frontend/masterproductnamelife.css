@@ -764,3 +764,45 @@
   max-height: 75vh;
   margin: 0 auto;
 }
+
+/* `Add attachment`: kotak seret-lepas + daftar berkas terpilih (permintaan work owner 03-10-2026). */
+.mpnl .mpnl-unggah {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 1rem;
+  border: 2px dashed var(--mt-garis);
+  border-radius: 0.5rem;
+  color: var(--mt-teks-redup);
+  text-align: center;
+  cursor: pointer;
+}
+
+.mpnl .mpnl-unggah--seret {
+  border-color: var(--mt-aksen-garis);
+  color: var(--mt-aksen-teks);
+}
+
+.mpnl .mpnl-unggah__daftar,
+.mpnl .mpnl-unggah__gagal {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mpnl .mpnl-unggah__daftar li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--mt-tepi);
+  overflow-wrap: anywhere;
+}
+
+.mpnl .mpnl-unggah__gagal li {
+  padding: 0.25rem 0;
+  color: var(--mt-teks);
+  overflow-wrap: anywhere;
+}

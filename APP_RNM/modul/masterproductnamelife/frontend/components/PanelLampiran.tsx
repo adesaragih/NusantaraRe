@@ -1,6 +1,7 @@
 // Panel lampiran - `InboxProductName` wadah b64133 (PARITAS §6), grid `TempData.AttachmentList`.
 //
 //  `Add attachment` b64747 → `ProductNameAttachContent` (submit `Attach` b24, `Cancel` b22) → `ProductNameSaveAttachment`
+//  - banyak berkas sekaligus dan seret-lepas (permintaan work owner 03-10-2026): diunggah satu per satu lewat rute yang ada
 //  `Refresh` b65270 → `LoadAttachmentProdName`;  `Download All` b67657 (zip lampiran produk ini, RALAT R15)
 //  tautan nama berkas b68903 → `DownloadAttProdName_Act`;  `View Office Online` b69291 → URL bertanda tangan dibuka di
 //  penampil kantor (`DownloadAttProdName_Act` 7 b1103; keputusan work owner 03-10-2026): form GET tersembunyi
@@ -18,6 +19,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Gagal, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
+import { pesanGalat } from '../../../../inti/frontend/klien'
 import {
   ambilIsiLampiran,
   ambilLampiran,
@@ -29,7 +31,7 @@ import {
   unggahLampiran,
   type Lampiran,
 } from '../api'
-import { jenisViewOnline, mimeViewOnline, tampilViewOffice } from '../bentuk'
+import { gabungBerkas, jenisViewOnline, mimeViewOnline, tampilViewOffice, unggahBerurutan } from '../bentuk'
 import { GRID_MPNL, LAIN_MPNL, LAMPIRAN_MPNL } from '../labels'
 import { BINGKAI_PENAMPIL, PARAM_PENAMPIL, PENAMPIL_OFFICE } from '../penampilOffice'
 
@@ -44,7 +46,11 @@ export default function PanelLampiran({ produkId, lihat }: { produkId: string; l
   const [galat, setGalat] = useState<unknown>(null)
   const [galatAksi, setGalatAksi] = useState<unknown>(null)
   const [unggah, setUnggah] = useState(false)
-  const [berkas, setBerkas] = useState<File | null>(null)
+  // `Add attachment`: berkas terpilih, berkas yang sedang diunggah ("2/5 nama"), kegagalan per berkas, seret di atas kotak.
+  const [berkas, setBerkas] = useState<File[]>([])
+  const [proses, setProses] = useState<string | null>(null)
+  const [gagalUnggah, setGagalUnggah] = useState<{ berkas: File; galat: unknown }[]>([])
+  const [seret, setSeret] = useState(false)
   const [sibuk, setSibuk] = useState(false)
   // `View Office Online`: form GET tersembunyi ke penampil dan input `src`-nya.
   const formOffice = useRef<HTMLFormElement>(null)
@@ -143,7 +149,8 @@ export default function PanelLampiran({ produkId, lihat }: { produkId: string; l
             type="button"
             className="btn btn--primary btn--sm"
             onClick={() => {
-              setBerkas(null)
+              setBerkas([])
+              setGagalUnggah([])
               setUnggah(true)
             }}
           >
@@ -269,8 +276,24 @@ export default function PanelLampiran({ produkId, lihat }: { produkId: string; l
               disabled={sibuk}
               onClick={() =>
                 void jalankan(async () => {
-                  await unggahLampiran(produkId, berkas)
-                  setUnggah(false)
+                  if (berkas.length === 0) {
+                    // Kalimat backend VERBATIM: "Tidak ada file yg diattach" (`ProductNameSaveAttachment` 1 b292).
+                    await unggahLampiran(produkId, null)
+                    return
+                  }
+                  setGagalUnggah([])
+                  const gagal = await unggahBerurutan(
+                    berkas,
+                    (f) => unggahLampiran(produkId, f),
+                    (f, i) => {
+                      setProses(`${i + 1}/${berkas.length} ${f.name}`)
+                    },
+                  )
+                  setProses(null)
+                  // Yang berhasil keluar dari pilihan (tampil di grid); yang gagal tinggal untuk diperbaiki/diulang.
+                  setGagalUnggah(gagal)
+                  setBerkas(gagal.map((g) => g.berkas))
+                  if (gagal.length === 0) setUnggah(false)
                 })
               }
             >
@@ -279,13 +302,69 @@ export default function PanelLampiran({ produkId, lihat }: { produkId: string; l
           }
         >
           {galatAksi !== null && <Gagal galat={galatAksi} />}
-          <input
-            type="file"
-            aria-label={LAMPIRAN_MPNL.fileName}
-            onChange={(e) => {
-              setBerkas(e.target.files?.[0] ?? null)
+          <label
+            className={'mpnl-unggah' + (seret ? ' mpnl-unggah--seret' : '')}
+            onDragOver={(e) => {
+              e.preventDefault()
+              setSeret(true)
             }}
-          />
+            onDragLeave={() => {
+              setSeret(false)
+            }}
+            onDrop={(e) => {
+              e.preventDefault()
+              setSeret(false)
+              const jatuh = Array.from(e.dataTransfer.files)
+              setBerkas((b) => gabungBerkas(b, jatuh))
+            }}
+          >
+            <span>{LAIN_MPNL.seretBerkas}</span>
+            <input
+              type="file"
+              multiple
+              aria-label={LAMPIRAN_MPNL.fileName}
+              disabled={sibuk}
+              onChange={(e) => {
+                const dipilih = Array.from(e.target.files ?? [])
+                setBerkas((b) => gabungBerkas(b, dipilih))
+                // Dikosongkan: memilih berkas yang sama lagi tetap memicu onChange.
+                e.target.value = ''
+              }}
+            />
+          </label>
+          {berkas.length > 0 && (
+            <ul className="mpnl-unggah__daftar">
+              {berkas.map((f) => (
+                <li key={f.name}>
+                  <span>{f.name}</span>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    disabled={sibuk}
+                    onClick={() => {
+                      setBerkas((b) => b.filter((x) => x !== f))
+                    }}
+                  >
+                    {LAIN_MPNL.buangPilihan}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {proses !== null && (
+            <p className="muted">
+              {LAIN_MPNL.mengunggah} {proses}
+            </p>
+          )}
+          {gagalUnggah.length > 0 && (
+            <ul className="mpnl-unggah__gagal">
+              {gagalUnggah.map((g) => (
+                <li key={g.berkas.name}>
+                  {g.berkas.name}: {pesanGalat(g.galat) ?? (g.galat instanceof Error ? g.galat.message : LAIN_MPNL.gagal)}
+                </li>
+              ))}
+            </ul>
+          )}
         </Modal>
       )}
     </section>
