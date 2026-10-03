@@ -1,9 +1,29 @@
 // Ilustrasi meja kerja halaman login - dari loginbaru.html (lampiran work owner
 // 01-10-2026). Atribut SVG ditulis ulang ke bentuk JSX; id gradient/filter
 // berawalan `masuk-`. Hiasan saja: `aria-hidden`.
+//
+// ⛔ ANIMASI HANYA DI LAPISAN TERPISAH (permintaan work owner 03-10-2026: animasi
+// gerak loginbaru.html kembali, asap kopi ikut bergerak). Ilustrasi utama DIAM;
+// gelembung chat, tanda centang, dan dua garis asap masing-masing satu SVG
+// transparan bertumpuk di atasnya (viewBox sama, `.halaman-masuk__lapis`) yang
+// digeser/dipudarkan sebagai lapisan komposit. Dulu (02-10-2026) gugus itu
+// beranimasi DI DALAM SVG utama: seluruh kartu kaca digambar ulang tiap bingkai
+// dan layar login/ganti sandi berkedip (`login.test.ts`).
+
+/** Bayangan yang sama dengan SVG utama - id sendiri per lapisan. */
+function Bayangan({ id }: { id: string }) {
+  return (
+    <defs>
+    <filter id={id} x="-30%" y="-30%" width="160%" height="160%">
+    <feDropShadow dx="0" dy="10" stdDeviation="10" floodColor="#4c1d95" floodOpacity="0.25" />
+    </filter>
+    </defs>
+  )
+}
 
 export default function IlustrasiLogin() {
   return (
+    <div className="halaman-masuk__ilustrasi">
     <svg viewBox="0 0 400 420" aria-hidden="true" focusable="false">
     <defs>
     <linearGradient id="masuk-deskTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffe7c2" /><stop offset="1" stopColor="#f5c98c" /></linearGradient>
@@ -52,24 +72,38 @@ export default function IlustrasiLogin() {
     <path d="M346 226h4a9 9 0 0 1 0 18h-4" fill="none" stroke="#e5484d" strokeWidth="5" />
     <rect x="320" y="218" width="28" height="34" rx="8" fill="url(#masuk-mug)" />
     </g>
-    <path d="M328 208c-4-5 4-8 0-14M338 208c-4-5 4-8 0-14" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity="0.75" />
 
-    <g>
-    <g filter="url(#masuk-shadow)">
+    <circle cx="200" cy="56" r="5" fill="#fff" opacity="0.8" />
+    <circle cx="362" cy="170" r="4" fill="#fff" opacity="0.7" />
+    <circle cx="28" cy="250" r="3" fill="#fff" opacity="0.7" />
+    </svg>
+
+    {/* Gelembung chat - melayang. */}
+    <svg className="halaman-masuk__lapis halaman-masuk__melayang" viewBox="0 0 400 420" aria-hidden="true" focusable="false">
+    <Bayangan id="masuk-shadow-gelembung" />
+    <g filter="url(#masuk-shadow-gelembung)">
     <rect x="44" y="60" width="104" height="48" rx="16" fill="#fff" />
     <path d="M70 106l-6 14 18-12z" fill="#fff" />
     </g>
     <circle cx="76" cy="84" r="5" fill="#b98df3" />
     <circle cx="96" cy="84" r="5" fill="#d7bcfb" />
     <circle cx="116" cy="84" r="5" fill="#ff9aa0" />
-    </g>
-    <g>
-    <circle cx="322" cy="92" r="28" fill="#fff" filter="url(#masuk-shadow)" />
-    <path d="M309 92l9 9 17-18" fill="none" stroke="#3aa872" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-    </g>
-    <circle cx="200" cy="56" r="5" fill="#fff" opacity="0.8" />
-    <circle cx="362" cy="170" r="4" fill="#fff" opacity="0.7" />
-    <circle cx="28" cy="250" r="3" fill="#fff" opacity="0.7" />
     </svg>
+
+    {/* Tanda centang - melayang, setengah siklus kemudian. */}
+    <svg className="halaman-masuk__lapis halaman-masuk__melayang halaman-masuk__melayang--tunda" viewBox="0 0 400 420" aria-hidden="true" focusable="false">
+    <Bayangan id="masuk-shadow-centang" />
+    <circle cx="322" cy="92" r="28" fill="#fff" filter="url(#masuk-shadow-centang)" />
+    <path d="M309 92l9 9 17-18" fill="none" stroke="#3aa872" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+
+    {/* Asap kopi - dua garis naik sambil memudar, bergantian. */}
+    <svg className="halaman-masuk__lapis halaman-masuk__uap" viewBox="0 0 400 420" aria-hidden="true" focusable="false">
+    <path d="M328 208c-4-5 4-8 0-14" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity="0.75" />
+    </svg>
+    <svg className="halaman-masuk__lapis halaman-masuk__uap halaman-masuk__uap--tunda" viewBox="0 0 400 420" aria-hidden="true" focusable="false">
+    <path d="M338 208c-4-5 4-8 0-14" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity="0.75" />
+    </svg>
+    </div>
   )
 }
