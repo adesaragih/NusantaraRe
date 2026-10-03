@@ -16,8 +16,8 @@
 //     jalur retro/treaty keluar - pembongkar JSON master (P29, AC 58, 62);
 //   - tombol `Survey Report` (`HistoricalSurveyReport`): penyimpanan survei tidak
 //     dirancang di tiket 00-23 - `[terbuka]`;
-//   - subsection `DetailPoliciesNonProportional` / `DetailPolicyTreatyOutNonProportional`:
-//     isinya halaman master JSON `TreatyIn.Limits/Share/...` (P29).
+//   - subsection `DetailPolicyTreatyOutNonProportional`: treaty KELUAR (K8 butir 4).
+//     `DetailPoliciesNonProportional` DIBANGUN (K8) - `components/DetailNonProp.tsx`.
 
 import { nilai, type Halaman } from './api'
 

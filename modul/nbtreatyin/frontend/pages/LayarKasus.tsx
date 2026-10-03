@@ -29,6 +29,7 @@ import {
   type NomorPolis,
   type Riwayat,
 } from '../api'
+import DetailNonProp from '../components/DetailNonProp'
 import KotakMedan from '../components/KotakMedan'
 import PilihBisnis from '../components/PilihBisnis'
 import {
@@ -45,6 +46,7 @@ import {
   TOMBOL,
 } from '../labels'
 import { MEDAN_ADMIN_UANG, MEDAN_ADMIN_UMUM, MEDAN_ATASAN_UANG, MEDAN_ATASAN_UMUM, medanTampil, type Medan } from '../medan'
+import { polisNonPropBaru, tampilNonProp } from '../nonprop'
 
 const P = 'PolicyTreatyIn.'
 const SPREADING = P + 'SpreadingRiskList'
@@ -178,6 +180,9 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
   const angsuran = daftar(h, ANGSURAN)
   const usulan = daftar(h, USULAN)
   const tampilTanggalProduksi = layar.tempat?.[TEMPAT_TANGGAL_PRODUKSI] && nilai(h, P + 'IsApproved') === '1'
+  // Kontainer uang/spreading/angsuran proporsional: `.IsNewPolicyNonProp != 1`; subsection
+  // `DetailPoliciesNonProportional`: `.IsNewPolicyNonProp = 1 && .ClaimType != 'XOL Retro'` (K8).
+  const nonProp = polisNonPropBaru(h)
 
   return (
     <div className="inbox nbti__layar">
@@ -217,6 +222,18 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
         <div className="form-grid">{medanTampil(admin ? MEDAN_ADMIN_UMUM : MEDAN_ATASAN_UMUM, h).map(kotak)}</div>
       </Panel>
 
+      {tampilNonProp(h) && (
+        <DetailNonProp
+          halaman={h}
+          sunting={admin && boleh}
+          opsiSpreading={acuan?.spreading ?? []}
+          onUbahBaris={ubahBaris}
+          onSetelDaftar={(j, b) => setH(setelDaftar(h, j, b))}
+          onRefresh={(aksi, indeks) => refresh(aksi, undefined, indeks)}
+        />
+      )}
+
+      {!nonProp && (<>
       <Panel judul={BAGIAN.uang}>
         <div className="form-grid">{medanTampil(admin ? MEDAN_ADMIN_UANG : MEDAN_ATASAN_UANG, h).map(kotak)}</div>
       </Panel>
@@ -377,6 +394,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
           </table>
         </div>
       </Panel>
+      </>)}
 
       <Panel judul={BAGIAN.usulan}>
         {boleh && (
