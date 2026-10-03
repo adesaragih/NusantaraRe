@@ -56,7 +56,7 @@ func sqlIDPegaKasus(t string) string {
 }
 
 func sqlSetelKolomDatarLama(t string) string {
-	return fmt.Sprintf(`UPDATE %s SET IDPEGA = :1, NOENDORS = :2, TGL_INPUT = TO_DATE(:3, '%s'), USERNAME = :4 WHERE ID = :5 AND TGL_TUTUP IS NULL`,
+	return fmt.Sprintf(`UPDATE %s SET IDPEGA = :1, NOENDORS = :2, TGL_INPUT = TO_DATE(:3, '%s'), USERNAME = :4 WHERE ID = :5`,
 		t, fmtTanggal)
 }
 
@@ -148,7 +148,9 @@ func (g *Gudang) IDPegaKasus(ctx context.Context, tx *db.Tx, id string) (string,
 }
 
 // SetelKolomDatarLama menulis kolom datar json_polis apa adanya (ID-21) ke
-// generasi yang baru disisipkan `SisipKasus`, di transaksi pemanggil.
+// generasi yang baru disisipkan `SisipKasus` di transaksi pemanggil yang
+// sama - baris itu belum pernah dilihat siapa pun, jadi tanpa syarat
+// generasi terbuka.
 func (g *Gudang) SetelKolomDatarLama(ctx context.Context, tx *db.Tx, id string, k models.KolomDatarLama) error {
 	t, err := g.nama(models.TabelGeneralPolis.Nama)
 	if err != nil {
