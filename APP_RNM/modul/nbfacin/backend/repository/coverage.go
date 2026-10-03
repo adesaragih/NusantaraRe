@@ -7,7 +7,6 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strconv"
 	"strings"
@@ -30,28 +29,8 @@ const (
 // syaratIndukCoverage - hanya coverage berinduk item (literal tetap). Mengandaikan alias `v`.
 const syaratIndukCoverage = "v.PARENT_TABLE = '" + indukCoverage + "'"
 
-// Jenis kolom coverage.
-const (
-	jenisTeks      = iota // VARCHAR2 teks
-	jenisAngka            // NUMBER(38,8) - angkaMasuk / angkaKeluar
-	jenisTeksAngka        // VARCHAR2 berisi teks desimal (rancangan) - ikatDesimal / bacaDesimal tanpa TO_NUMBER
-)
-
-// kolomCoverage - satu kolom data T_COVERAGELIST dan medan CoverageObjek-nya (teks ATAU desimal).
-type kolomCoverage struct {
-	nama  string
-	jenis int
-	teks  func(*models.CoverageObjek) *string
-	des   func(*models.CoverageObjek) **apd.Decimal
-}
-
-func kt(nama string, f func(*models.CoverageObjek) *string) kolomCoverage {
-	return kolomCoverage{nama: nama, jenis: jenisTeks, teks: f}
-}
-
-func ka(nama string, jenis int, f func(*models.CoverageObjek) **apd.Decimal) kolomCoverage {
-	return kolomCoverage{nama: nama, jenis: jenis, des: f}
-}
+// kolomCoverage - satu kolom data T_COVERAGELIST (kolomdata.go).
+type kolomCoverage = kolomData[models.CoverageObjek]
 
 // kolomCoverageData - 25 kolom data (migrasi 193) sesudah kolom sistem; CURRENCY_CODE ditambahkan terpisah.
 var kolomCoverageData = []kolomCoverage{
@@ -82,21 +61,9 @@ var kolomCoverageData = []kolomCoverage{
 	ka("PCT_ADJUSTMENT", jenisAngka, func(c *models.CoverageObjek) **apd.Decimal { return &c.PctAdjustment }),
 }
 
-// kunciBaca - ekspresi terpilih kolom (alias v).
-func (k kolomCoverage) kunciBaca() string {
-	if k.jenis == jenisAngka {
-		return angkaKeluar("v." + k.nama)
-	}
-	return "v." + k.nama
-}
-
-// kolomBacaCoverage - kunci induk + kolom data.
+// kolomBacaCoverage - kunci induk, kunci coverage (untuk deductible, tiket 45), lalu kolom data.
 func kolomBacaCoverage() []string {
-	hasil := []string{"TO_CHAR(v.PARENT_ID)"}
-	for _, k := range kolomCoverageData {
-		hasil = append(hasil, k.kunciBaca())
-	}
-	return hasil
+	return append([]string{"TO_CHAR(v.PARENT_ID)", "TO_CHAR(v.ID)"}, kolomBacaData(kolomCoverageData, "v")...)
 }
 
 // sqlBacaCoverage - seluruh coverage case :1 (berinduk item), urut item lalu SEQ_NO.
@@ -119,37 +86,18 @@ func sqlHapusCoverage(t tabelObjek) string {
 // sqlSisipCoverage - :1 ID, :2 PARENT_ID, :3 PARENT_TABLE, :4 SRC_PATH, :5 SEQ_NO, :6 ROW_UID, lalu kolomCoverageData,
 // terakhir CURRENCY_CODE.
 func sqlSisipCoverage(cov string) string {
-	kolom := []string{"ID", "PARENT_ID", "PARENT_TABLE", "SRC_PATH", "SEQ_NO", "ROW_UID"}
-	nilai := []string{":1", ":2", ":3", ":4", ":5", ":6"}
-	n := len(nilai)
-	for _, k := range kolomCoverageData {
-		n++
-		kolom = append(kolom, k.nama)
-		b := ":" + strconv.Itoa(n)
-		if k.jenis == jenisAngka {
-			b = angkaMasuk(b)
-		}
-		nilai = append(nilai, b)
-	}
-	kolom = append(kolom, "CURRENCY_CODE")
-	nilai = append(nilai, ":"+strconv.Itoa(n+1))
-	return "INSERT INTO " + cov + " (" + strings.Join(kolom, ", ") + ") VALUES (" + strings.Join(nilai, ", ") + ")"
+	nama, nilai := kolomSisipData(kolomCoverageData, 7)
+	kolom := append(append([]string{"ID", "PARENT_ID", "PARENT_TABLE", "SRC_PATH", "SEQ_NO", "ROW_UID"}, nama...), "CURRENCY_CODE")
+	isi := append(append([]string{":1", ":2", ":3", ":4", ":5", ":6"}, nilai...), ":"+strconv.Itoa(7+len(kolomCoverageData)))
+	return "INSERT INTO " + cov + " (" + strings.Join(kolom, ", ") + ") VALUES (" + strings.Join(isi, ", ") + ")"
 }
 
 // argCoverage - bind kolomCoverageData (urutan tabel yang sama) + CURRENCY_CODE.
 func argCoverage(c models.CoverageObjek, mataUang string) []any {
-	var arg []any
-	for _, k := range kolomCoverageData {
-		if k.jenis == jenisTeks {
-			arg = append(arg, db.KosongJadiNil(*k.teks(&c)))
-		} else {
-			arg = append(arg, ikatDesimal(*k.des(&c)))
-		}
-	}
-	return append(arg, mataUang)
+	return append(argData(kolomCoverageData, c), mataUang)
 }
 
-// bacaCoverage - coverage case `id` per T_PROPERTYITEMLIST.ID (teks).
+// bacaCoverage - coverage case `id` per T_PROPERTYITEMLIST.ID (teks), deductible terpasang (tiket 45).
 func (r *ObjekOracle) bacaCoverage(ctx context.Context, t tabelObjek, id string) (map[string][]models.CoverageObjek, error) {
 	baris, err := r.db.QueryContext(ctx, sqlBacaCoverage(t), id)
 	if err != nil {
@@ -158,32 +106,39 @@ func (r *ObjekOracle) bacaCoverage(ctx context.Context, t tabelObjek, id string)
 	defer baris.Close()
 	kunci := kolomBacaCoverage()
 	hasil := map[string][]models.CoverageObjek{}
+	// letak coverage di `hasil` dan T_COVERAGELIST.ID-nya, untuk memasang deductible.
+	type letakCoverage struct {
+		induk  string
+		indeks int
+		id     string
+	}
+	var letak []letakCoverage
 	for baris.Next() {
-		teks := make(map[string]*sql.NullString, len(kunci))
-		tujuan := make([]any, len(kunci))
-		for i, k := range kunci {
-			teks[k] = &sql.NullString{}
-			tujuan[i] = teks[k]
-		}
-		if err := baris.Scan(tujuan...); err != nil {
+		teks, err := pindaiBaris(baris, kunci)
+		if err != nil {
 			return nil, fmt.Errorf("repository: coverage: %w", err)
 		}
 		induk := teks["TO_CHAR(v.PARENT_ID)"].String
-		var c models.CoverageObjek
-		for _, k := range kolomCoverageData {
-			v := teks[k.kunciBaca()]
-			if k.jenis == jenisTeks {
-				*k.teks(&c) = v.String
-				continue
-			}
-			if *k.des(&c), err = bacaDesimal(TabelCoverageList+" induk "+induk, k.nama, v); err != nil {
-				return nil, err
-			}
+		c, err := isiData(kolomCoverageData, "v", TabelCoverageList+" induk "+induk, teks)
+		if err != nil {
+			return nil, err
 		}
+		c.Deductibles = []models.Deductible{}
 		hasil[induk] = append(hasil[induk], c)
+		letak = append(letak, letakCoverage{induk, len(hasil[induk]) - 1, teks["TO_CHAR(v.ID)"].String})
 	}
 	if err := baris.Err(); err != nil {
 		return nil, fmt.Errorf("repository: coverage: %w", err)
+	}
+	baris.Close()
+	ded, err := r.bacaDeductible(ctx, t, id)
+	if err != nil {
+		return nil, err
+	}
+	for _, l := range letak {
+		if d, ada := ded[l.id]; ada && l.id != "" {
+			hasil[l.induk][l.indeks].Deductibles = d
+		}
 	}
 	return hasil, nil
 }
@@ -205,6 +160,9 @@ func (r *ObjekOracle) sisipCoverage(ctx context.Context, tx *db.Tx, t tabelObjek
 			return err
 		}
 		if err := db.PastikanSatuBaris(h, TabelCoverageList); err != nil {
+			return err
+		}
+		if err := r.sisipDeductible(ctx, tx, t, idCov, c.Deductibles); err != nil {
 			return err
 		}
 	}

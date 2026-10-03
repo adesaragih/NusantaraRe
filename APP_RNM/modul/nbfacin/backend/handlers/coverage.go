@@ -43,6 +43,49 @@ type coverageKabel struct {
 	Discount            string `json:"discount"`
 	Premium             string `json:"premium"`
 	Conditions          string `json:"conditions"`
+	// tiket 45 - selalu larik ke luar; boleh absen saat masuk.
+	Deductibles []deductibleKabel `json:"deductibles"`
+}
+
+// deductibleKabel - kontrak `Deductible` (tiket 45); kode = teks, persen / uang / hari = teks desimal (ADR-0034).
+type deductibleKabel struct {
+	TypeDeductible  string `json:"typeDeductible"`
+	PctDeductible   string `json:"pctDeductible"`
+	MinMax          string `json:"minMax"`
+	Currency        string `json:"currency"`
+	TypeDeductible2 string `json:"typeDeductible2"`
+	PctDeductible2  string `json:"pctDeductible2"`
+	Condition       string `json:"condition"`
+	Amount          string `json:"amount"`
+	InputCondition  string `json:"inputCondition"`
+	TimeExcess      string `json:"timeExcess"`
+}
+
+func keDeductibleKabel(d []models.Deductible) []deductibleKabel {
+	hasil := make([]deductibleKabel, 0, len(d))
+	for _, x := range d {
+		hasil = append(hasil, deductibleKabel{TypeDeductible: x.TypeDeductible, PctDeductible: teks(x.PctDeductible), MinMax: x.MinMax,
+			Currency: x.Currency, TypeDeductible2: x.TypeDeductible2, PctDeductible2: teks(x.PctDeductible2), Condition: x.Condition,
+			Amount: teks(x.Amount), InputCondition: x.InputCondition, TimeExcess: teks(x.TimeExcess)})
+	}
+	return hasil
+}
+
+// keDeductibleModel - deductible coverage; jalur pesan "<awalCoverage>deductibles[d].<medan>".
+func keDeductibleModel(awalCoverage string, d []deductibleKabel, masalah *[]string) []models.Deductible {
+	if len(d) == 0 {
+		return nil
+	}
+	hasil := make([]models.Deductible, 0, len(d))
+	for i, x := range d {
+		awal := fmt.Sprintf("%sdeductibles[%d].", awalCoverage, i)
+		u := func(medan, nilai string) *apd.Decimal { return services.UraiDesimalIsian(awal+medan, nilai, masalah) }
+		hasil = append(hasil, models.Deductible{TypeDeductible: x.TypeDeductible, MinMax: x.MinMax, Currency: x.Currency,
+			TypeDeductible2: x.TypeDeductible2, Condition: x.Condition, InputCondition: x.InputCondition,
+			PctDeductible: u("pctDeductible", x.PctDeductible), PctDeductible2: u("pctDeductible2", x.PctDeductible2),
+			Amount: u("amount", x.Amount), TimeExcess: u("timeExcess", x.TimeExcess)})
+	}
+	return hasil
 }
 
 // totalCoverageKabel - kontrak `TotalCoverage` (BACA-SAJA).
@@ -78,7 +121,7 @@ func satuCoverageKabel(c models.CoverageObjek) coverageKabel {
 		TSILiability: teks(c.TSILiability), NetRate: teks(c.NetRate), LimitOfLiability: teks(c.LimitOfLiability),
 		PctLoL: teks(c.PctLoL), ProRatePercent: teks(c.ProRatePercent), IndemnityPercentage: teks(c.IndemnityPercentage),
 		FirstScale: teks(c.FirstScale), Sublimit: teks(c.Sublimit), LostLimit: teks(c.LostLimit), EmlPml: teks(c.EmlPml),
-		Discount: teks(c.Discount), Premium: teks(c.Premium), Conditions: c.Conditions}
+		Discount: teks(c.Discount), Premium: teks(c.Premium), Conditions: c.Conditions, Deductibles: keDeductibleKabel(c.Deductibles)}
 }
 
 // keCoverageModel - satu coverage kabel -> model; `awal` = awalan jalur pesan 400 (mis. "baris[0].items[1].coverages[2].").
@@ -92,7 +135,8 @@ func keCoverageModel(awal string, c coverageKabel, masalah *[]string) models.Cov
 		LimitOfLiability: u("limitOfLiability", c.LimitOfLiability), PctLoL: u("pctLol", c.PctLoL),
 		IndemnityPercentage: u("indemnityPercentage", c.IndemnityPercentage), FirstScale: u("firstScale", c.FirstScale),
 		Sublimit: u("sublimit", c.Sublimit), LostLimit: u("lostLimit", c.LostLimit), EmlPml: u("emlPml", c.EmlPml),
-		Discount: u("discount", c.Discount), Premium: u("premium", c.Premium)}
+		Discount: u("discount", c.Discount), Premium: u("premium", c.Premium),
+		Deductibles: keDeductibleModel(awal, c.Deductibles, masalah)}
 }
 
 // keCoverageModelDaftar - coverages item; jalur pesan "<awalItem>coverages[k].".

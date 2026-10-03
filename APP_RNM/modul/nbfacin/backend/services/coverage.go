@@ -371,6 +371,7 @@ func periksaCoverage(awalItem string, cov []models.CoverageObjek) []string {
 				masalah = append(masalah, awal+u.nama+pesanDesimal)
 			}
 		}
+		masalah = append(masalah, periksaDeductible(awal, c.Deductibles)...)
 	}
 	return masalah
 }

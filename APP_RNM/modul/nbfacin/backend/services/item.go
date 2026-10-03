@@ -124,8 +124,8 @@ func periksaItem(n int, item []models.ItemObjek) []string {
 // mataUangDi - kode mata uang beserta jalur medannya (untuk pesan 400).
 type mataUangDi struct{ jalur, kode string }
 
-// periksaMataUang - setiap mata uang item (tiket 39) dan catatan kerugian (tiket 42) ada di CURRENCY tanpa ITL
-// (pilihan RD BrowseCurrency_RD). Butuh basis data hanya bila ada item / catatan.
+// periksaMataUang - setiap mata uang item (tiket 39), catatan kerugian (tiket 42), dan deductible yang diisi (tiket 45) ada
+// di CURRENCY tanpa ITL (pilihan RD BrowseCurrency_RD). Butuh basis data hanya bila ada item / catatan.
 func (s *Service) periksaMataUang(ctx context.Context, baris []models.ObjekFire) error {
 	var masalah []string
 	var sah map[string]bool
@@ -136,6 +136,16 @@ func (s *Service) periksaMataUang(ctx context.Context, baris []models.ObjekFire)
 		}
 		for m, c := range o.LossRecords {
 			mataUang = append(mataUang, mataUangDi{fmt.Sprintf("baris[%d].lossRecords[%d]", n, m), c.Currency})
+		}
+		// tiket 45: mata uang deductible yang diisi (kosong boleh, A169).
+		for m, it := range o.Items {
+			for k, c := range it.Coverages {
+				for d, de := range c.Deductibles {
+					if de.Currency != "" {
+						mataUang = append(mataUang, mataUangDi{fmt.Sprintf("baris[%d].items[%d].coverages[%d].deductibles[%d]", n, m, k, d), de.Currency})
+					}
+				}
+			}
 		}
 		for _, mu := range mataUang {
 			if sah == nil {

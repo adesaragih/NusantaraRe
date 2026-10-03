@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/nbfacin/backend/models"
 	"nusantarare/modul/nbfacin/backend/services"
 )
@@ -27,10 +28,10 @@ func kasusPeriode() *models.Kasus {
 		General: models.General{StartDateTime: "20250101T050000.000 GMT", EndDateTime: "20260101T050000.000 GMT"}}
 }
 
-// kunciCoverage - 24 kunci kontrak CoverageObjek (frontend/api.ts).
+// kunciCoverage - 25 kunci kontrak CoverageObjek (frontend/api.ts; deductibles tiket 45).
 var kunciCoverage = []string{"coverage", "oldId", "coverageNote", "coverageBasis", "day", "tsi", "indemnity", "rate", "rateOjk",
 	"firstLoss", "discountPercentage", "tsiLiability", "netRate", "limitOfLiability", "pctLol", "proRatePercent",
-	"indemnityPercentage", "firstScale", "sublimit", "lostLimit", "emlPml", "discount", "premium", "conditions"}
+	"indemnityPercentage", "firstScale", "sublimit", "lostLimit", "emlPml", "discount", "premium", "conditions", "deductibles"}
 
 // TestCariCoverage - GET /api/nbfacin/coverage (tiket 43): bentuk persis BarisCoverage, kata di-trim, kosong = semua;
 // tanpa identitas; 400 / 503.
@@ -198,6 +199,49 @@ func TestHitungNetRateHandler(t *testing.T) {
 		kode, isi := minta(t, u.svc, "POST", jalur, u.badan, "")
 		if kode != u.kode || !strings.Contains(isi, u.pesan) {
 			t.Errorf("%s: %d %s, mau %d", u.nama, kode, isi, u.kode)
+		}
+	}
+}
+
+// TestObjekDeductible - tiket 45: coverages[k].deductibles pulang-pergi utuh lewat PUT objek (kunci persis kontrak
+// Deductible; coverage dihitung ulang tanpa kehilangan deductible); tanpa deductibles -> []; 400 ber-jalur
+// …coverages[k].deductibles[d].<medan>; mata uang boleh kosong walau amount diisi (A169), bila diisi harus ada di daftar.
+func TestObjekDeductible(t *testing.T) {
+	var d []models.ObjekFire
+	svc := services.Baru(nil).DenganObjek(objekTiruan{&d}).DenganTransaksi(tanpaOracle).DenganPilihanItem(pilihanTiruan{}).
+		DenganKasus(kasusTiruan{k: kasusPeriode()})
+	jalur := "/api/nbfacin/kasus/UJI-NB-1/objek"
+	ded1 := `{"typeDeductible":"3","pctDeductible":"10","minMax":"3","currency":"USD","typeDeductible2":"1","pctDeductible2":"2.5",` +
+		`"condition":"5","amount":"1000000.12345678","inputCondition":"UJI KONDISI","timeExcess":"14"}`
+	ded2 := `{"typeDeductible":"7","pctDeductible":"","minMax":"","currency":"","typeDeductible2":"","pctDeductible2":"",` +
+		`"condition":"","amount":"","inputCondition":"","timeExcess":""}`
+	badan := func(ded string) string {
+		return `{"baris":[{"objectType":"UJI","items":[{"currency":"IDR","tsi":"1000000000","coverages":[` +
+			`{"coverage":"1","coverageBasis":"1","rate":"1","indemnityPercentage":"100","deductibles":[` + ded + `]},` +
+			`{"coverage":"2","coverageBasis":"1"}]}]}]}`
+	}
+	kode, isi := minta(t, svc, "PUT", jalur, badan(ded1+","+ded2), "UJI-USER")
+	if kode != 200 || !strings.Contains(isi, `"deductibles":[`+ded1+","+ded2+`]}`) || !strings.Contains(isi, `"conditions":"","deductibles":[]}`) ||
+		!strings.Contains(isi, `"premium":"1000000"`) {
+		t.Fatalf("%d %s", kode, isi)
+	}
+	if got := d[0].Items[0].Coverages[0].Deductibles; len(got) != 2 || utils.FormatDecimal(got[0].Amount) != "1000000.12345678" || got[1].Currency != "" {
+		t.Errorf("model: %+v", got)
+	}
+	if kode, isi := minta(t, svc, "PUT", jalur, badan(`{"amount":"5"}`), "UJI-USER"); kode != 200 ||
+		!strings.Contains(isi, `"currency":"","typeDeductible2":"","pctDeductible2":"","condition":"","amount":"5"`) {
+		t.Errorf("amount tanpa mata uang: %d %s", kode, isi)
+	}
+	panjang := strings.Repeat("A", 501)
+	for nama, u := range map[string]struct{ ded, pesan string }{
+		"amount koma":      {`{"amount":"1,5","currency":"USD"}`, "baris[0].items[0].coverages[0].deductibles[0].amount harus angka"},
+		"kode bukan angka": {`{"typeDeductible":"x"}`, "deductibles[0].typeDeductible harus kode bilangan bulat"},
+		"mata uang asing":  {`{"currency":"ITL"}`, `deductibles[0].currency \"ITL\" tidak ada di daftar mata uang`},
+		"kondisi panjang":  {`{"inputCondition":"` + panjang + `"}`, "deductibles[0].inputCondition paling banyak 500 byte"},
+		"time excess":      {`{"timeExcess":"123456789012345678901234567890.12345678"}`, "deductibles[0].timeExcess paling banyak 30 karakter"},
+	} {
+		if kode, isi := minta(t, svc, "PUT", jalur, badan(u.ded), "UJI-USER"); kode != 400 || !strings.Contains(isi, u.pesan) {
+			t.Errorf("%s: %d %s", nama, kode, isi)
 		}
 	}
 }

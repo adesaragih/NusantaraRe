@@ -39,7 +39,7 @@ apa adanya, periode tidak diperiksa. Flag true → NetRate
   `handlers/coverage_test.go` `TestHitungNetRateHandler`. Mutasi tertangkap: pencocokan OLDID dilonggarkan
   (huruf/spasi), NetRate dibulatkan sebelum menghitung premi.
 
-## Keputusan agent (menunggu konfirmasi)
+## Keputusan agent — ✅ A165–A168 DISETUJUI work owner 03-10-2026 (butir 100: *"setuju keputusan Net Rate A165–A168"*)
 
 | # | Keputusan | Dasar |
 | --- | --- | --- |
@@ -50,10 +50,10 @@ apa adanya, periode tidak diperiksa. Flag true → NetRate
 
 ### Catatan review dua sumbu (03-10-2026)
 
-- ⚠️ `[pertanyaan terbuka]` **NetRate basi:** flag false hanya membuat `TotalNetRate = 0` — `NET_RATE` coverage TIDAK
-  dikosongkan (= CekNetRate langkah 4, `[terverifikasi]`). Bila sesudah pembagian satu dari lima coverage dihapus, NetRate
-  lama tetap ada dan premi tetap dihitung dari NetRate itu (cabang NetRate CountPremi). Perilaku Pega dipertahankan;
-  perlu keputusan Product+Underwriting apakah NetRate harus dikosongkan.
+- ✅ **NetRate basi — keputusan work owner 03-10-2026 (butir 101): *"pertahankan sesuai pega"*.** Flag false hanya
+  membuat `TotalNetRate = 0` — `NET_RATE` coverage TIDAK dikosongkan (= CekNetRate langkah 4, `[terverifikasi]`). Bila
+  sesudah pembagian satu dari lima coverage dihapus, NetRate lama tetap ada dan premi tetap dihitung dari NetRate itu
+  (cabang NetRate CountPremi). Kode tidak diubah.
 - A165 vs A166: POST dengan `totalNetRate` kosong dihitung sebagai 0 dan tetap dibagi (ΣRate 0 → 400), sedangkan PUT
   dengan Total Net Rate kosong melewati pembagian (A166) — perbedaan disengaja (POST = peristiwa ubah Total Net Rate di
   layar, PUT tidak).

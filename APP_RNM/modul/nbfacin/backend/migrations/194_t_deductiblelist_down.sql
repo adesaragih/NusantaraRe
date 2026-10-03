@@ -1,0 +1,5 @@
+-- Jalur mundur 194 - tab Coverage FIRE tahap C3 Deductible.
+DROP SEQUENCE {skema}.SEQ_T_DEDUCTIBLELIST
+/
+DROP TABLE {skema}.T_DEDUCTIBLELIST CASCADE CONSTRAINTS
+/

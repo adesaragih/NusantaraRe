@@ -6,8 +6,11 @@
 **What to build:** setiap coverage di tab Coverage FIRE memuat grid **Deductible** (tambah / hapus / form lipat), disimpan
 bersama Save tab Coverage.
 
-**Status:** frontend selesai 03-10-2026 (uji hijau). ⛔ Backend belum: `PUT …/objek` memakai `DisallowUnknownFields`,
-jadi menyimpan coverage yang memuat `deductibles` akan ditolak 400 sampai backend menerima medan itu.
+**Status:** frontend dan backend selesai 03-10-2026 (uji hijau). ⛔ Butuh migrasi **194** dijalankan sesudah 193.
+
+> ⚠️ RALAT (sesi 0f): versi awal baris ini menyebut `PUT …/objek` memakai `DisallowUnknownFields` sehingga
+> `deductibles` ditolak 400. Keliru — `simpanObjek` (`handlers/objek.go`) memakai decoder biasa; `DisallowUnknownFields`
+> hanya di fungsi `urai` (`handlers.go`) untuk rute lain. Sebelum backend tiket ini, `deductibles` dibuang diam-diam.
 
 ## Bukti `[terverifikasi]` — `D:\migrasi\RNM\NB FacIn\` dan `D:\migrasi\RNM\DDL\`
 
@@ -60,4 +63,38 @@ jadi menyimpan coverage yang memuat `deductibles` akan ditolak 400 sampai backen
 - [x] Grid Deductible per coverage: Tambah membuka form, Hapus menghapus baris, baris memperlihatkan label pilihan.
 - [x] Syarat tampil / baca-saja mengikuti addDeductible; Amount berformat ribuan.
 - [x] Angka tak sah memblokir Save.
-- [ ] Backend menyimpan dan mengembalikan `deductibles` (sesi c3).
+- [x] Backend menyimpan dan mengembalikan `deductibles` (sesi c3, 03-10-2026).
+- [ ] Migrasi 194 dijalankan di DEV (work owner).
+
+## Backend (sesi c3, 03-10-2026)
+
+⛔ **Migrasi 194 WAJIB dijalankan di DEV sebelum backend baru** — urutan … → 193 → **194**. `GET` / `PUT …/objek` membaca
+dan menulis `T_DEDUCTIBLELIST`; tanpa 194 seluruh tab Object gagal ORA-00942.
+
+- `GET` / `PUT …/objek`: `coverages[k].deductibles` (selalu larik ke luar, 10 kunci persis kontrak `Deductible`; boleh
+  absen saat masuk). Urutan = SEQ_NO. Kosong → NULL. Coverage yang dihitung ulang (tiket 43 / 44) membawa deductible-nya
+  apa adanya. `POST hitung-coverage` / `hitung-net-rate` juga meneruskan `deductibles` (tidak disimpan).
+- 400 ber-jalur `baris[n].items[m].coverages[k].deductibles[d].<medan>`: desimal tak sah (`pctDeductible`,
+  `pctDeductible2`, `amount`, `timeExcess`); `typeDeductible` / `typeDeductible2` bukan bilangan bulat ≤ 5 digit; lebar
+  `minMax` / `currency` 50, `condition` / `inputCondition` 500 byte; `timeExcess` > 30 karakter; `currency` terisi
+  tetapi tidak ada di `CURRENCY` (≠ ITL, pola A133). Tanpa medan wajib (mata uang pun boleh kosong, A169). Paling banyak 500 deductible per
+  coverage. Keanggotaan kode pilihan tidak diperiksa (pola butir 85).
+- ⚠️ Koreksi kontrak `[terverifikasi]`: `PUT …/objek` (`handlers/objek.go` `simpanObjek`) TIDAK memakai
+  `DisallowUnknownFields` — itu fungsi `urai` (`handlers.go:268`) untuk rute lain; medan tak dikenal di objek diabaikan
+  (sebelum tiket ini `deductibles` dibuang diam-diam, bukan 400).
+- Tabel: migrasi **194** `T_DEDUCTIBLELIST` sebagian (18 kolom; FK `PARENT_ID` → `T_COVERAGELIST.ID`, indeks `PARENT_ID`,
+  `SEQ_T_DEDUCTIBLELIST`); dihapus sebelum coverage saat PUT. `repository/deductible.go`; daftar kolom bersama
+  `repository/kolomdata.go` (T_COVERAGELIST ikut memakainya).
+- Bukti sampel `[terverifikasi]` (dihitung dua cara: blok JSON terurai dan `grep -c` pxObjClass — keduanya **222**
+  deductible di `DDL\P-5 *.txt`): TypeDeductible / TypeDeductible2 / MinMax / Condition bulat 1 digit; PctDeductible
+  `9`, `99`, `9.9`; Amount bulat 3–8 digit; TimeExcess `14` / `30`; **12** deductible tanpa Currency — **ke-12-nya juga
+  tanpa Amount**. Kode TypeDeductible = `pyStandardValue` 0–7 (`DDL\TypeDeductible.xml`; properti String/Text).
+  Aturan properti `TimeExcess` tidak ada di korpus — tipe Pega `belum terverifikasi`; rancangan VARCHAR2(30).
+
+### Keputusan agent (menunggu konfirmasi)
+
+| # | Keputusan | Dasar |
+| --- | --- | --- |
+| A169 | `currency` boleh kosong (juga bila `amount` diisi). Kosong: kolom CURRENCY tidak disisipkan sehingga DEFAULT `'UNKNOWN'` rancangan yang mengisi (keadaan eksplisit K-012); dibaca kembali sebagai kosong. Terisi: wajib ada di `CURRENCY` (≠ ITL) | Rancangan `CURRENCY VARCHAR2(50) DEFAULT 'UNKNOWN' NOT NULL` (K-069, usulan 10) + K-012 (aplikasi tidak menulis `UNKNOWN`); addDeductible tanpa Required. ⚠️ Versi awal mewajibkan mata uang bila Amount diisi — **dicabut** sesudah review sumbu spec: kontrak "tidak ada medan wajib", dan dasarnya hanya korelasi sampel (12 deductible tanpa mata uang, semuanya tanpa Amount `[terverifikasi]`), bukan aturan; bisa menahan Save data lama. `[dugaan]` mata uang harfiah "UNKNOWN" di tabel CURRENCY akan terbaca kosong — tidak diperiksa |
+| A170 | `TYPE_DEDUCTIBLE` / `TYPE_DEDUCTIBLE2` = **NUMBER(5)** (rancangan NUMBER polos); kabel teks, SQL `TO_NUMBER` / `TO_CHAR`; bentuk kode bulat ≤ 5 digit diperiksa | Kode `pyStandardValue` 0–7 `[terverifikasi]`; penjaga `presisiSah` melarang NUMBER polos, NUMBER(5) termasuk bentuk sah |
+| A171 | `timeExcess` = teks desimal (≥ 0, ≤ 8 desimal) di kolom rancangan VARCHAR2(30), panjang ≤ 30 karakter | Kontrak (desimal); rancangan VARCHAR2(30); sampel bulat hari; tipe properti Pega tidak ada di korpus |

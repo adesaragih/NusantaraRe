@@ -72,14 +72,14 @@ func TestSisipCoverageMenurutKolom(t *testing.T) {
 			t.Errorf("bind kolom %s = %v, mau %v", k, arg[i], mau[k])
 		}
 	}
-	// Kolom baca: NUMBER lewat angkaKeluar, VARCHAR2 apa adanya; kunci induk pertama.
+	// Kolom baca: NUMBER lewat angkaKeluar, VARCHAR2 apa adanya; kunci induk lalu kunci coverage (tiket 45) di depan.
 	baca := kolomBacaCoverage()
-	if baca[0] != "TO_CHAR(v.PARENT_ID)" || len(baca) != 26 {
+	if baca[0] != "TO_CHAR(v.PARENT_ID)" || baca[1] != "TO_CHAR(v.ID)" || len(baca) != 27 {
 		t.Fatalf("kolom baca %v", baca)
 	}
 	for i, k := range kolomCoverageData {
-		if angka[k.nama] != strings.HasPrefix(baca[i+1], "TO_CHAR(v.") {
-			t.Errorf("kolom baca %s = %s", k.nama, baca[i+1])
+		if angka[k.nama] != strings.HasPrefix(baca[i+2], "TO_CHAR(v.") {
+			t.Errorf("kolom baca %s = %s", k.nama, baca[i+2])
 		}
 	}
 }

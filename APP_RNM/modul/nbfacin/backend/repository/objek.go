@@ -56,7 +56,9 @@ type ObjekOracle struct{ db *db.DB }
 // NewObjekOracle merakit penyimpan objek.
 func NewObjekOracle(d *db.DB) *ObjekOracle { return &ObjekOracle{db: d} }
 
-type tabelObjek struct{ work, general, loc, prop, risk, bang, sekitar, item, okupasi, tol, fea, rugi, koas, cov string }
+type tabelObjek struct {
+	work, general, loc, prop, risk, bang, sekitar, item, okupasi, tol, fea, rugi, koas, cov, ded string
+}
 
 func (r *ObjekOracle) tabel() (tabelObjek, error) {
 	var t tabelObjek
@@ -66,7 +68,7 @@ func (r *ObjekOracle) tabel() (tabelObjek, error) {
 	}{{TabelWorkPolis, &t.work}, {TabelGeneralPolis, &t.general}, {TabelLocationList, &t.loc}, {TabelProperty, &t.prop},
 		{TabelRiskLocation, &t.risk}, {TabelBuildingConstruction, &t.bang}, {TabelSurroundingRisk, &t.sekitar},
 		{TabelPropertyItemList, &t.item}, {TabelOccupationList, &t.okupasi}, {TabelTableOfLimit, &t.tol},
-		{TabelFEAList, &t.fea}, {TabelListCauseOfLoss, &t.rugi}, {TabelCoinsData, &t.koas}, {TabelCoverageList, &t.cov}} {
+		{TabelFEAList, &t.fea}, {TabelListCauseOfLoss, &t.rugi}, {TabelCoinsData, &t.koas}, {TabelCoverageList, &t.cov}, {TabelDeductibleList, &t.ded}} {
 		q, err := r.db.Qualify(x.nama)
 		if err != nil {
 			return t, err
@@ -119,6 +121,7 @@ func sqlHapusObjek(t tabelObjek) []string {
 		"DELETE FROM " + t.tol + " WHERE PARENT_ID IN (SELECT o.ID FROM " + t.okupasi + " o WHERE " + syaratIndukOkupasi +
 			" AND o.PARENT_ID IN (" + prop + "))",
 		"DELETE FROM " + t.okupasi + " o WHERE " + syaratIndukOkupasi + " AND o.PARENT_ID IN (" + prop + ")",
+		sqlHapusDeductible(t),
 		sqlHapusCoverage(t),
 		"DELETE FROM " + t.item + " WHERE PARENT_ID IN (" + prop + ")",
 		"DELETE FROM " + t.risk + " WHERE PARENT_ID IN (" + prop + ")",

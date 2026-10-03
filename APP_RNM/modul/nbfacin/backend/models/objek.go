@@ -70,6 +70,23 @@ type CoverageObjek struct {
 	ProRatePercent, IndemnityPercentage, FirstScale, Sublimit, LostLimit, EmlPml, Discount, Premium    *apd.Decimal
 	// PctAdjustment - .PctAdjustment hasil CountPremi langkah 11-15 (bukan medan kontrak; disimpan PCT_ADJUSTMENT).
 	PctAdjustment *apd.Decimal
+	// Deductibles - .DeductibleList (tiket 45), urut grid.
+	Deductibles []Deductible
+}
+
+// Deductible - satu .CoverageList(k).DeductibleList(d) (kelas Data-Deductible, tiket 45). Kode pilihan = teks
+// (pyStandardValue); uang / persen / hari = *apd.Decimal, nil = kosong (ADR-0034).
+type Deductible struct {
+	TypeDeductible  string       // TYPE_DEDUCTIBLE  kode 0-7 (DDL\TypeDeductible.xml)
+	MinMax          string       // MIN_MAX          kode 1 Min / 2 Max / 3 Or (DDL\MinMax.xml)
+	Currency        string       // CURRENCY         boleh kosong = DEFAULT 'UNKNOWN' di Oracle (A169)
+	TypeDeductible2 string       // TYPE_DEDUCTIBLE2 kode (tampil bila MinMax 3)
+	Condition       string       // CONDITION        kode 1-5 (DDL\Condition.xml Deductible)
+	InputCondition  string       // INPUT_CONDITION  teks bila Condition 5 Other
+	PctDeductible   *apd.Decimal // PCT_DEDUCTIBLE   persen
+	PctDeductible2  *apd.Decimal // PCT_DEDUCTIBLE2  persen
+	Amount          *apd.Decimal // AMOUNT           uang
+	TimeExcess      *apd.Decimal // TIME_EXCESS      hari, teks desimal di VARCHAR2(30) rancangan (A171)
 }
 
 // CatatanKerugian - satu .Property.ListCauseOfLoss(n) (kelas Data-CauseOfLoss). Uang = *apd.Decimal, nil = kosong

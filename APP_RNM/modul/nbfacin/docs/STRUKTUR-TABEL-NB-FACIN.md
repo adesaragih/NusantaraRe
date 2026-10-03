@@ -1,8 +1,8 @@
 # Struktur Tabel — NB FacIn: PETA TABEL WARISAN yang dibaca + tabel yang dibuat
 
-Modul ini **membuat enam belas tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
+Modul ini **membuat tujuh belas tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
 `T_QUOTATIONDATA` **sebagian** (migrasi 182/183, tiket 31 / butir 78.4), `T_CEDINGCOLIST` utuh (185, tiket 34), dan tabel tab Object FIRE (186, tiket 35: `T_LOCATIONLIST` /
-`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian; 189, tiket 40: `T_OCCUPATIONLIST` sebagian, `T_TABLEOFLIMIT` utuh; 190, tiket 41: `T_FEALIST` baru; 191, tiket 42: `T_LISTCAUSEOFLOSS`, `T_COINSDATA` utuh; 193, tiket 43: `T_COVERAGELIST` sebagian) — dan **menulis**
+`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian; 189, tiket 40: `T_OCCUPATIONLIST` sebagian, `T_TABLEOFLIMIT` utuh; 190, tiket 41: `T_FEALIST` baru; 191, tiket 42: `T_LISTCAUSEOFLOSS`, `T_COINSDATA` utuh; 193, tiket 43: `T_COVERAGELIST` sebagian; 194, tiket 45: `T_DEDUCTIBLELIST` sebagian) — dan **menulis**
 baris `T_WORK_POLIS` milik premiumlistlife (K-064; tidak dibuat, tidak dipetakan kolomnya di sini). Selebihnya ia hanya
 **membaca** tujuh belas tabel / view yang sudah ada — enam tabel limit
 akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), tabel bisnis `BUSINESS` (tiket 28), `MARKETINGOFFICER` (31), `AGENT`
@@ -475,6 +475,34 @@ Tiket 42 — migrasi 191, **utuh** (rancangan `.../ListCauseOfLoss/CoinsData`, s
 | `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
 | `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_LISTCAUSEOFLOSS.ID` |
 | `COINS_NAME` | teks | VARCHAR2(500) | Insured Name grid — **selalu** nama tertanggung case (`SetLossRatio_Act` langkah 3.1) |
+
+## T_DEDUCTIBLELIST
+
+Tiket 45 — migrasi 194, **sebagian** (pola A109): rancangan jalur `.../CoverageList/DeductibleList` (lima jalur, semuanya
+berinduk `T_COVERAGELIST`) → `PARENT_ID` ber-FK ke `T_COVERAGELIST.ID`, indeks `IX_T_DEDUCTIBLELIST_PARENT`. Banyak baris
+per coverage, urut `SEQ_NO`. Tanpa kolom yang belum dipakai layar (`FLAG_CURRENCY` R-3, `DESCRIPTIONS`, `BASIS_TYPE`,
+`CLAIM_CATEGORY`, `DEDUCTIBLE_TYPE`, `TYPE`, `VALUE`, `COVERAGE`, kolom turunan `*_ID`).
+
+| Kolom | Tipe | Tipe DDL (migrasi 194) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_DEDUCTIBLELIST` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_COVERAGELIST.ID` (FK) |
+| `PARENT_TABLE` | teks | VARCHAR2(30) | `T_COVERAGELIST` |
+| `SRC_PATH` | teks | VARCHAR2(200) | `LocationList/Property/PropertyItemList/CoverageList/DeductibleList` |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan deductible 1..n |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
+| `AMOUNT` | angka desimal | NUMBER(38,8) | **uang** — Amount |
+| `CONDITION` | teks | VARCHAR2(500) | kode Condition 1–5 (`DDL\Condition.xml` Deductible) |
+| `CURRENCY` | teks | VARCHAR2(50) DEFAULT 'UNKNOWN' NOT NULL | Currency (`CURRENCY`, ≠ ITL); boleh kosong → tidak disisipkan, DEFAULT mengisi, dibaca kosong (A169) |
+| `INPUT_CONDITION` | teks | VARCHAR2(500) | teks kondisi bila Condition 5 Other |
+| `MIN_MAX` | teks | VARCHAR2(50) | kode 1 Min / 2 Max / 3 Or (`DDL\MinMax.xml`) |
+| `PCT_DEDUCTIBLE` | angka desimal | NUMBER(38,8) | persen |
+| `PCT_DEDUCTIBLE2` | angka desimal | NUMBER(38,8) | persen (bila MinMax 3) |
+| `TIME_EXCESS` | teks | VARCHAR2(30) | Time Excess (hari) — teks desimal (A171) |
+| `TYPE_DEDUCTIBLE` | angka bulat | NUMBER(5) | kode pyStandardValue 0–7 (`DDL\TypeDeductible.xml`, A170) |
+| `TYPE_DEDUCTIBLE2` | angka bulat | NUMBER(5) | kode (`DDL\TypeDeductible2.xml`, bila MinMax 3) |
 
 ## MARKETINGOFFICER
 

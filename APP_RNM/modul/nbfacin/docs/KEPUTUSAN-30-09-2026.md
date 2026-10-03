@@ -1331,7 +1331,7 @@ ACTIVESTATUS, saringan aktif RD tidak dapat dinyatakan (`[pertanyaan terbuka]` D
 ## Tiket 44 — tab Coverage FIRE tahap C2 Net Rate (backend), diteruskan sesi `nusantarare-0f`
 
 `POST …/kasus/{caseId}/hitung-net-rate` (port `CekNetRate_ACT` + `CalculateNetRate_ACT`) dan aturan net rate di `PUT
-…/objek`. Tanpa migrasi (memakai kolom 193). Keputusan agent A165–A168 **menunggu konfirmasi** (`issues/44-net-rate-c2.md`);
+…/objek`. Tanpa migrasi (memakai kolom 193). Keputusan agent A165–A168 ✅ **disetujui** butir 100 (`issues/44-net-rate-c2.md`);
 A166 menggantikan bagian TotalNetRate dari A159.
 
 ## Keputusan work owner — 3 Oktober 2026, sumber Choose Coverage dan tahap C4 (diteruskan sesi `nusantarare-0f`)
@@ -1339,9 +1339,24 @@ A166 menggantikan bagian TotalNetRate dari A159.
 | # | Butir | Keputusan |
 | ---: | --- | --- |
 | 96 | Sumber popup Choose Coverage (A160: view `COVERAGE_FACIN` tanpa ACTIVESTATUS) | **"diambil dari tabel COVERAGE saja, karena yang di Pega juga begitu"** — RD versi work owner `DDL\BrowseCoverageFacIn_RD.xml` dibaca dari `POOLDATA.COVERAGE`: NamaCoverage = `NAME`, BizCode = `BUSINESSCODE` (param kosong → dibuang), Type = `TYPE` = 'FIRE', `ACTIVESTATUS = '1' OR IS NULL`, OLDID, ID; DISTINCT, ≤ 500, urut NAME lalu OLDID. `[terverifikasi]` hanya saringan C (NamaCoverage Contains) ber-`pyCaseInsensitive` true; A/B/D `=` peka huruf; saringan, urutan, kolom laporan versi DDL = salinan `NB FacIn\ReportDefinition`. View `COVERAGE_FACIN` tidak dipakai lagi. **A160 diganti** |
-| 97 | Keputusan agent A155–A164 (tiket 43) | **DISETUJUI** (A160 sekaligus diganti butir 96). A165–A168 (tiket 44) masih menunggu |
+| 97 | Keputusan agent A155–A164 (tiket 43) | **DISETUJUI** (A160 sekaligus diganti butir 96). A165–A168 (tiket 44) disetujui kemudian — butir 100 |
 | 98 | Tahap C4 rate standar (`SetRatePolis_ACT`) | **Ikut Pega DEV dulu — lookup rate standar TIDAK dibangun**; work owner berencana membuat tabel tarif sendiri. `[terverifikasi]` `SetRatePolis_ACT` langkah 1 bercabang `IsPEGAPROD`; langkah 11 (RatePolis tanpa hasil) mengisi rate 0, min 0, max 1000; tujuan lompatan DEV `[dugaan]` (kode lompatan tidak terbaca). Backend: `RateOJK` hanya diteruskan apa adanya (kosong / 0 tetap), **tanpa** pesan min/max 0–1000 karena pemeriksaan min/max (CountPremi langkah 53–54) tidak dibangun |
-| 99 | Info: `DDL\MinMax.xml` (DATA-DEDUCTIBLE!MINMAX 1 Min / 2 Max / 3 Or) dan `DDL\Condition.xml` (DATA-DEDUCTIBLE!CONDITION 1–5) | Dipakai tahap C3 Deductible. ⚠️ `Condition.xml` menimpa berkas lama PROPERTYITEM!CONDITION (butir 85); frontend menguji menurut `pxInsName` |
+| 99 | Info: `DDL\MinMax.xml` (DATA-DEDUCTIBLE!MINMAX 1 Min / 2 Max / 3 Or) dan `DDL\Condition.xml` (DATA-DEDUCTIBLE!CONDITION 1–5) | Dipakai tahap C3 Deductible. ⚠️ `Condition.xml` menimpa berkas lama PROPERTYITEM!CONDITION (butir 85); frontend menguji menurut `pxInsName`. Susulan 03-10-2026: Condition Object Item dikirim ulang sebagai `DDL\ConditionObjectItem.xml` (`[terverifikasi]` pxInsName `ASM-FW-GISFW-DATA-PROPERTYITEM!CONDITION`) — uji label Object Item tidak lagi dilewati |
+
+## Keputusan work owner — 3 Oktober 2026, Net Rate tiket 44 (diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 100 | Keputusan agent A165–A168 (tiket 44) | **"setuju keputusan Net Rate A165–A168"** — DISETUJUI |
+| 101 | NetRate basi: flag false hanya membuat TotalNetRate = 0, NET_RATE coverage tidak dikosongkan (pertanyaan terbuka review tiket 44) | **"pertahankan sesuai pega"** — perilaku `CekNetRate_ACT` langkah 4 dipertahankan; kode tidak diubah |
+
+## Tiket 45 — tab Coverage FIRE tahap C3 Deductible (backend), diteruskan sesi `nusantarare-0f`
+
+`coverages[k].deductibles` di `GET` / `PUT …/objek` → tabel rancangan `T_DEDUCTIBLELIST` (induk `T_COVERAGELIST` ber-FK),
+migrasi **194** — ditulis, belum dijalankan; urutan DEV: … → 193 → **194** (⛔ wajib sebelum backend baru: baca objek
+membaca `T_DEDUCTIBLELIST`). Skema loader tidak berubah (rancangan sudah punya tabel itu); uji migrasi sebagian 217 kolom.
+Keputusan agent A169–A171 **menunggu konfirmasi** (`issues/45-deductible-c3.md`). ⚠️ Koreksi atas kontrak: `PUT …/objek`
+TIDAK memakai `DisallowUnknownFields` (fungsi `urai` handlers.go:268 dipakai rute lain) — medan tak dikenal diabaikan.
 
 ## Bug DEV — 3 Oktober 2026, popup Choose Class of Construction kosong (diteruskan sesi `nusantarare-0f`)
 
