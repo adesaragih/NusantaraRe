@@ -237,3 +237,38 @@ func TestObjekKerugian(t *testing.T) {
 		t.Errorf("tanggal: %d %s", kode, isi)
 	}
 }
+
+type tolTiruan struct{ kode []string }
+
+func (t tolTiruan) KodeBisnis(context.Context, string, string) ([]string, error) { return t.kode, nil }
+
+func (tolTiruan) DaftarTableOfLimit(context.Context, string, string, string) ([]models.BarisTableOfLimit, error) {
+	return []models.BarisTableOfLimit{{Description: "UJI KELAS", PctLimit: "70,000 "}}, nil
+}
+
+// TestTableOfLimit - GET …/table-of-limit (tiket 40): bentuk persis kontrak BarisTableOfLimit; tanpa identitas;
+// 409 bila kode bisnis / Begin date case tidak dapat ditentukan; 400 / 503 (404 diuji di services).
+func TestTableOfLimit(t *testing.T) {
+	k := &models.Kasus{CaseID: "UJI-NB-1", Opportunity: models.Opportunity{ClassOfBusiness: "UJI COB", GroupBusinessID: "UJI-G"},
+		General: models.General{StartDateTime: "20260101T050000.000 GMT"}}
+	svc := services.Baru(nil).DenganKasus(kasusTiruan{k: k}).DenganTableOfLimit(tolTiruan{kode: []string{"10048"}})
+	if kode, isi := minta(t, svc, "GET", "/api/nbfacin/kasus/UJI-NB-1/table-of-limit?category=II", "", ""); kode != 200 ||
+		isi != `{"baris":[{"description":"UJI KELAS","pctLimit":"70,000 "}]}` {
+		t.Errorf("%d %s", kode, isi)
+	}
+	ganda := services.Baru(nil).DenganKasus(kasusTiruan{k: k}).DenganTableOfLimit(tolTiruan{kode: []string{"1", "2"}})
+	if kode, isi := minta(t, ganda, "GET", "/api/nbfacin/kasus/UJI-NB-1/table-of-limit?category=II", "", ""); kode != 409 || !strings.Contains(isi, "ganda") {
+		t.Errorf("409: %d %s", kode, isi)
+	}
+	if kode, _ := minta(t, svc, "GET", "/api/nbfacin/kasus/UJI-NB-1/table-of-limit?category="+strings.Repeat("I", 51), "", ""); kode != 400 {
+		t.Errorf("400: %d", kode)
+	}
+	tanpaBegin := &models.Kasus{CaseID: "UJI-NB-1", Opportunity: k.Opportunity}
+	if kode, isi := minta(t, services.Baru(nil).DenganKasus(kasusTiruan{k: tanpaBegin}).DenganTableOfLimit(tolTiruan{kode: []string{"1"}}),
+		"GET", "/api/nbfacin/kasus/UJI-NB-1/table-of-limit", "", ""); kode != 409 || !strings.Contains(isi, "Begin date") {
+		t.Errorf("409 Begin: %d %s", kode, isi)
+	}
+	if kode, _ := minta(t, services.Baru(nil), "GET", "/api/nbfacin/kasus/UJI-NB-1/table-of-limit", "", ""); kode != 503 {
+		t.Errorf("503: %d", kode)
+	}
+}

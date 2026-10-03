@@ -113,6 +113,12 @@ type ItemObjek struct {
 	PctAdjustOther string // PCT_ADJUST_OTHER   persen NUMBER(38,8), teks desimal
 }
 
+// BarisTableOfLimit - satu pilihan Class of Construction (tiket 40, TABLEOFLIMIT); PctLimit teks apa adanya.
+type BarisTableOfLimit struct {
+	Description string // TABLEOFLIMIT.DESCRIPTION
+	PctLimit    string // TABLEOFLIMIT.PCTLIMIT
+}
+
 // JenisItem - satu pilihan Object Item Type (tiket 39, V_JN_OBJ_ITEM).
 type JenisItem struct {
 	Kode       string // MJOI_KODE

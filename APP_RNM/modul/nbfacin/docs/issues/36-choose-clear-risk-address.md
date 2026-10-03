@@ -86,7 +86,8 @@ selain 99999); `pyMaxRecords` **100**, paging aktif. **`RW.ZipCode`** = filter *
 `ASM-FW-GISFW-Int-RW`, prefix `RW`, **INNER**, `.PostalCode = RW.ZipCode` — tabel `POOLDATA.RW` kolom `ZIPCODE` (DDL
 `RW.txt`); hanya alamat yang kode posnya ada di RW yang tampil. **Dipakai** (dibangun sebagai INNER JOIN), tidak dibuang.
 
-**Keputusan agent (menunggu konfirmasi):**
+**Keputusan agent — DISETUJUI work owner 03-10-2026** (butir 91, diteruskan sesi `nusantarare-0f`: *"setuju
+A116–A122"*):
 
 | # | Keputusan | Dasar |
 | --- | --- | --- |

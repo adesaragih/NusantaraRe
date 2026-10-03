@@ -94,7 +94,8 @@ desimal; Detail pxTextArea; Remarks pxDropdown. `.Amount` (Total of Loss) TIDAK 
 `Section\CauseOfLoss_FacIn.xml` (2 kemunculan). Fixture: 6 catatan, hanya Claim / Currency / Detail / Remarks / CoinsData
 berkunci (kolom rancangan diturunkan dari itu).
 
-**Keputusan agent (menunggu konfirmasi):**
+**Keputusan agent — DISETUJUI work owner 03-10-2026** (butir 90, diteruskan sesi `nusantarare-0f`: *"setuju sesuai
+rekomendasi agent A145–A152"*):
 
 | # | Keputusan | Dasar |
 | --- | --- | --- |

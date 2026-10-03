@@ -4,9 +4,9 @@ Modul ini **membuat lima belas tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tike
 `T_QUOTATIONDATA` **sebagian** (migrasi 182/183, tiket 31 / butir 78.4), `T_CEDINGCOLIST` utuh (185, tiket 34), dan tabel tab Object FIRE (186, tiket 35: `T_LOCATIONLIST` /
 `T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian; 189, tiket 40: `T_OCCUPATIONLIST` sebagian, `T_TABLEOFLIMIT` utuh; 190, tiket 41: `T_FEALIST` baru; 191, tiket 42: `T_LISTCAUSEOFLOSS`, `T_COINSDATA` utuh) — dan **menulis**
 baris `T_WORK_POLIS` milik premiumlistlife (K-064; tidak dibuat, tidak dipetakan kolomnya di sini). Selebihnya ia hanya
-**membaca** lima belas tabel yang sudah ada — enam tabel limit
+**membaca** enam belas tabel yang sudah ada — enam tabel limit
 akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), tabel bisnis `BUSINESS` (tiket 28), `MARKETINGOFFICER` (31), `AGENT`
-(33), `RISKADDRESS` (36; juga DISISIPI tiket 37), `RW` (36/37), `OCCUPATION` (38), `V_JN_OBJ_ITEM` dan `CURRENCY` (39) — sama dengan bab "Tabel warisan" `MODUL.md`. Enam tabel limit akseptasi yang sudah ada
+(33), `RISKADDRESS` (36; juga DISISIPI tiket 37), `RW` (36/37), `OCCUPATION` (38), `V_JN_OBJ_ITEM` dan `CURRENCY` (39), `TABLEOFLIMIT` (40) — sama dengan bab "Tabel warisan" `MODUL.md`. Enam tabel limit akseptasi yang sudah ada
 di `POOLDATA`, dengan nama tabel dan kolom **verbatim**. Berkas ini **peta**, bukan DDL: hanya kolom yang dibaca
 repository (`backend/repository/limit.go`). Ke-enamnya dinyatakan di `MODUL.md` bab "Tabel warisan: dibaca, tidak
 dibuat".
@@ -529,3 +529,18 @@ from currency`). RD `BrowseCurrency_RD` (`.Currency != "ITL"`, maks 500, tanpa u
 | Kolom | Tipe DDL | Dibaca untuk |
 | --- | --- | --- |
 | `CURRENCY` | belum terverifikasi | pilihan Currency (≠ `ITL`), urut CURRENCY (A135); anggota sah `T_PROPERTYITEMLIST.CURRENCY` |
+
+## TABLEOFLIMIT
+
+Tiket 40 (popup Choose Class of Construction). Tabel warisan `POOLDATA.TABLEOFLIMIT`, **baca saja**. Sumber tipe
+`[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\TABLEOFLIMIT.txt` (03-10-2026, seluruh kolom VARCHAR2(4000 BYTE)). RD
+`BrowseTableOfLimit_RD`. Hanya enam kolom di bawah yang dibaca.
+
+| Kolom | Tipe DDL | Dibaca untuk |
+| --- | --- | --- |
+| `BIZCODE` | VARCHAR2(4000 BYTE) | saringan = `BUSINESS.ID` Class of Business case (butir 89); DISTINCT |
+| `TAHUN` | VARCHAR2(4000 BYTE) | saringan = tahun Begin date case, WIB (A153) |
+| `CATEGORY` | VARCHAR2(4000 BYTE) | saringan `category` (bila diisi); urutan pertama |
+| `DESCRIPTION` | VARCHAR2(4000 BYTE) | `description` → Class of Construction; urutan kedua |
+| `PCTLIMIT` | VARCHAR2(4000 BYTE) | `pctLimit` teks apa adanya |
+| `NOTE` | VARCHAR2(4000 BYTE) | kolom laporan RD (ikut DISTINCT), tidak dikirim |

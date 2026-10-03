@@ -1219,7 +1219,7 @@ G-9 (daftar Roof/Wall/Floor) `[terverifikasi]` lewat aturan properti Pega yang d
 Dibangun `GET /api/nbfacin/risk-address` menurut RD `BrowseRisksAddress_RD` `[terverifikasi]`: tujuh filter Contains (A
 `.Address` tidak peka huruf), logika AND, DISTINCT, tanpa urutan, `pyMaxRecords` 100, dan **INNER JOIN `RW`**
 (`.PostalCode = RW.ZipCode` — `RW.ZipCode` adalah syarat JOIN, bukan saringan). Tabel warisan `RISKADDRESS`, `RW` (baca saja,
-DDL terverifikasi). Keputusan agent A116–A122 menunggu konfirmasi (`issues/36-choose-clear-risk-address.md`). Tanpa migrasi.
+DDL terverifikasi). Keputusan agent A116–A122 **disetujui** 03-10-2026 (butir 91; `issues/36-choose-clear-risk-address.md`). Tanpa migrasi.
 
 ## Keputusan work owner — 3 Oktober 2026, simpan alamat risiko baru (tiket 37)
 
@@ -1271,18 +1271,18 @@ Ditulis, belum dijalankan — urutan DEV: … → 189 → **190**. Keputusan age
 
 | # | Butir | Keputusan |
 | ---: | --- | --- |
-| 82 | Keputusan agent sesi c3 A123–A144 dan sesi 0f tiket 36–42 (H-*, I-*, J-*, K-*, L-*, M-*, N-*) | **"setuju keputusan agent"** — semuanya DISETUJUI. ⚠️ A116–A122 (tiket 36) tidak termasuk rentang ini — tetap menunggu |
+| 82 | Keputusan agent sesi c3 A123–A144 dan sesi 0f tiket 36–42 (H-*, I-*, J-*, K-*, L-*, M-*, N-*) | **"setuju keputusan agent"** — semuanya DISETUJUI. A116–A122 (tiket 36) di luar rentang ini — disetujui kemudian (butir 91) |
 | 83 | Loss Record Internal (N-5) | **"biarkan saja kosong"** — grid baca-saja, GET selalu `[]`, tanpa tabel dan tanpa pengisian dari DATAKLAIM |
 | 84 | W-4 Loss Ratio | Dihitung server menurut `DDL\SetLossRatio_Act.xml` (kelas LocationReinsurance); ΣAmount = 0 → LR dan %LR tetap 0; Total of Loss tetap baca-saja |
 | 85 | Aturan properti baru (`DDL\`) | `Condition.xml`, `PctAdjust2.xml` ("100", K-7), `PrivateFireBrigade` / `TeamSOPSafety` / `TeamSOPRiskManagement.xml` (Have / Not Have / No Info) dipakai frontend; backend tetap tanpa validasi enumerasi. Susulan: `Remarks.xml` (CAUSEOFLOSS!REMARKS, PromptList: Settled / Ex Gratia Payment / Withdraw / Others / --) juga dipakai frontend saja |
-| 86 | W-5 BusinessCode table-of-limit (tiket 40) | **= kode Group Business** (dipilih di Create opportunity); kolom yang cocok dengan `TABLEOFLIMIT.BIZCODE` dibuktikan dari data contoh saat endpoint dibangun. Tahun = tahun `T_GENERAL_POLIS.START_DATE_TIME`; Begin kosong → 409 |
+| 86 | W-5 BusinessCode table-of-limit (tiket 40) — ⚠️ **DIGANTI butir 89** | ~~**= kode Group Business**~~ (dipilih di Create opportunity); kolom yang cocok dengan `TABLEOFLIMIT.BIZCODE` dibuktikan dari data contoh saat endpoint dibangun. Tahun = tahun `T_GENERAL_POLIS.START_DATE_TIME`; Begin kosong → 409 |
 
 ## Tiket 42 — sub-tab Loss Record (backend), diteruskan sesi `nusantarare-0f`
 
 `GET`/`PUT …/objek` membawa `lossRecords` → tabel rancangan `T_LISTCAUSEOFLOSS` (+ lima kolom baru, `DETAIL` 500) dan
 `T_COINSDATA`, migrasi **191**; loss ratio dihitung server saat PUT (butir 84) ke kolom rancangan `T_LOCATIONLIST.LOSS_RATIO*`
 (191 `ALTER ADD`); `internalLossRecords` selalu `[]` (butir 83). Skema loader 80 tabel / **1.438** kolom. Ditulis, belum
-dijalankan — urutan DEV: … → 190 → **191**. Keputusan agent A145–A149 menunggu konfirmasi (`issues/42-loss-record.md`).
+dijalankan — urutan DEV: … → 190 → **191**. Keputusan agent A145–A152 **disetujui** 03-10-2026 (butir 90; `issues/42-loss-record.md`).
 
 ## Keputusan work owner — 3 Oktober 2026, bug DEV lebar alamat risiko (diteruskan sesi `nusantarare-0f`)
 
@@ -1290,6 +1290,14 @@ dijalankan — urutan DEV: … → 190 → **191**. Keputusan agent A145–A149 
 | ---: | --- | --- |
 | 87 | Save tab Object gagal di DEV: *"baris[0].riskLocation paling banyak 50 byte"* - Risk Location = rangkaian Title + Address + Territory + District + City + Province + Nation (`SetRiskIdDT_FacIn`) | **"ini perbaiki dlu, kolomnya buatin bisa sampe 4000"** - migrasi BARU **192** (186 sudah dijalankan di DEV, tidak diubah): sepuluh kolom yang diisi dari RISKADDRESS (`T_RISKLOCATION` ASM_ADDRESS / ASM_CITY / ASM_DISTRICT / ASMRW / ASM_ZIP_CODE; `T_PROPERTY` ROAD_NAME / ROAD_TYPE / PROVINCE / COUNTRY / ALM_RISK_ID) `MODIFY` ke VARCHAR2(4000) = lebar sumber RISKADDRESS (pola butir 80); batas validasi backend ikut 4000; `BUILDING_NO` tetap 50 (bukan dari RISKADDRESS); amandemen loader `amandemenLebar`. ⚠️ `_down` gagal (ORA-01441) bila sudah ada nilai panjang. ⚠️ **Diralat butir 88** |
 | 88 | Ralat butir 87 (pesan langsung work owner di sesi 0f, sebelum 192 di-commit / dijalankan) | **"ASM_ADDRESS, ROAD_NAME saja dilebarin segitu, yg lainnya 100 saja"** - 192: `T_RISKLOCATION.ASM_ADDRESS` (Risk Location) dan `T_PROPERTY.ROAD_NAME` (Address) VARCHAR2(4000); ASM_CITY / ASM_DISTRICT / ASMRW / ASM_ZIP_CODE / ROAD_TYPE / PROVINCE / COUNTRY / ALM_RISK_ID VARCHAR2(100); batas validasi 4000 / 100; BUILDING_NO tetap 50 |
+
+## Keputusan work owner — 3 Oktober 2026, BIZCODE Table of Limit dan tiket 42 (diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 90 | Keputusan agent A145–A152 (tiket 42) | **"setuju sesuai rekomendasi agent A145–A152"** — DISETUJUI |
+| 91 | Keputusan agent A116–A122 (tiket 36) | **"setuju A116–A122"** — DISETUJUI. Seluruh keputusan agent A99–A152 kini disetujui; A153–A154 (table-of-limit) menunggu |
+| 89 | Ralat W-5 (butir 86) sesudah melihat contoh `DDL\TABLEOFLIMIT.xml` (BIZCODE 10048, NOTE "EMPLOYERS LIABILITY"), AskUserQuestion di sesi 0f | **BIZCODE = `BUSINESS.ID` Class of Business** yang dipilih di form Opportunity — BUKAN Group Business. Form menyimpan NAMA (`T_NB_OPPORTUNITY.CLASS_OF_BUSINESS` = BUSINESS.NOTE), jadi ID diturunkan: `BUSINESS.ID WHERE NOTE = nama AND BUSINESSGROUPID = GROUP_BUSINESS_ID case`; 0 / > 1 baris → 409 |
 
 ## Yang belum diputuskan
 

@@ -57,7 +57,7 @@ wajib. Datanya ikut Save tab Object.
 - [x] Grid + Tambah / Hapus + form detail + dua popup; label diuji ke korpus.
 - [x] Choose Occupation mengisi ID, Name, Category; Choose Class of Construction mengisi Description + PctLimit.
 - [x] Backend: simpan / baca okupasi (T_OCCUPATIONLIST + T_TABLEOFLIMIT rancangan, migrasi 189), `kdRiskExposure`, cari kosong.
-- [ ] Backend: endpoint table-of-limit (menunggu DDL TABLEOFLIMIT; asal `QuotationData.BusinessCode` belum ditemukan).
+- [x] Backend: endpoint table-of-limit (BIZCODE butir 89; TAHUN = tahun Begin date, A153).
 
 ## Backend (sesi c3, 03-10-2026) — disusun agent
 
@@ -109,3 +109,30 @@ agent"*):
 Business** (dipilih di Create opportunity). Kolom mana yang cocok dengan `TABLEOFLIMIT.BIZCODE` dibuktikan dari data contoh
 saat endpoint dibangun — belum dikerjakan. DDL `TABLEOFLIMIT.txt` (03-10-2026): seluruh kolom VARCHAR2(4000 BYTE) —
 PCTLIMIT dan TAHUN teks.
+
+## Backend table-of-limit (sesi c3, 03-10-2026) — disusun agent
+
+- `GET /api/nbfacin/kasus/{caseId}/table-of-limit?category=` → `{"baris":[{"description","pctLimit"}]}`. Tanpa identitas;
+  404 case tidak ada; 400 `category` > 50 bita; **409** bila BIZCODE tidak dapat ditentukan; 503.
+- BIZCODE (butir 89): `BUSINESS.ID` ber-`NOTE` = `T_NB_OPPORTUNITY.CLASS_OF_BUSINESS` dan `BUSINESSGROUPID` =
+  `GROUP_BUSINESS_ID` case. Class of Business / Group Business kosong, 0 baris, atau > 1 baris → 409 dengan pesan jelas.
+- TABLEOFLIMIT (DDL `TABLEOFLIMIT.txt`, semua VARCHAR2(4000)): `BIZCODE = kode AND TAHUN = tahun Begin date (WIB)`
+  [+ `CATEGORY = category` bila diisi]; Begin date kosong → 409;
+  DISTINCT atas kolom laporan RD (Bizcode, Category, Description, PctLimit, Note); urut Category, Description; ≤ 500.
+  `pctLimit` teks apa adanya.
+
+**`Tahun` — dua jalan di korpus `[terverifikasi]`:** layar Occupation punya DUA jalan ke RD yang sama:
+(1) **autocomplete** Class of Construction di `Section\OccupationItemFacIn_Section.xml` (data page `D_BrowseTableOfLimit`)
+mengirim `Tahun = pyWorkPage.OfferFacIn.CurrentYear` (2 kemunculan; `_IsUW` 2) — CurrentYear = tahun Begin date
+(`SetValidateDate_Act`); (2) **tombol** Choose Class of Construction (`FlowAction\ChooseClassofContraction` →
+`Section\ChooseClassofContraction.xml`) mengirim Tahun KOSONG (`<pyValue/>`, `<Tahun/>`) → filter dibuang (peringatan Pega
+"the filter will be dropped entirely", `BrowseOccupationFacInFIRE_RD.xml` baris 1867). ⚠️ Ralat: tulisan awal bab ini
+menyebut CurrentYear "hanya di `Section\TableOfLimit.xml`" — salah; pencarian pertama hanya mencocokkan bentuk tag
+`<Tahun>` dan melewatkan bentuk `pyName`/`pyValue` (temuan code review sumbu spec).
+
+**Keputusan agent (menunggu konfirmasi):**
+
+| # | Keputusan | Dasar |
+| --- | --- | --- |
+| A153 | Endpoint **menyaring TAHUN = tahun Begin date** (WIB) — jalan autocomplete; Begin kosong → 409 | permintaan sesi 0f; korpus punya dua jalan (autocomplete bertahun, tombol tanpa tahun) dan tidak menyebut mana yang berlaku — ⚠️ **work owner diminta memilih**; tanpa saringan tahun = hapus satu syarat SQL |
+| A154 | NOTE dicocokkan persis; 0 / > 1 baris BUSINESS → 409 | arahan sesi 0f; nama tersimpan = BUSINESS.NOTE pilihan datalist (cobSah) |
