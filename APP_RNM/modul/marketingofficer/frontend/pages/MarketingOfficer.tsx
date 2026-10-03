@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { ambilDaftar, type BarisMO, type MarketingOfficer as BarisTersimpan } from '../api'
-import { kelompokLeader, saring, saringLeader, tandaAkun, type Saringan } from '../aturan'
+import { SARINGAN_AWAL, kelompokLeader, saring, saringLeader, tandaAkun, type Saringan } from '../aturan'
 import FormMO from '../components/FormMO'
 import LogMO from '../components/LogMO'
 import { MO } from '../labels'
@@ -70,7 +70,7 @@ export default function MarketingOfficer() {
   const [daftar, setDaftar] = useState<BarisMO[] | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [kueri, setKueri] = useState('')
-  const [saringan, setSaringan] = useState<Saringan>('semua')
+  const [saringan, setSaringan] = useState<Saringan>(SARINGAN_AWAL)
   const [tampilan, setTampilan] = useState<Tampilan>({ jenis: 'leader' })
   const [form, setForm] = useState<FormTerbuka | undefined>(undefined)
   const [log, setLog] = useState<BarisMO | undefined>(undefined)

@@ -56,6 +56,9 @@ export function setelSubBranch(isi: Isian, p: Pick<Pilihan, 'subBranch'>, sub: s
 
 export type Saringan = 'semua' | 'aktif' | 'nonaktif'
 
+/** Saringan saat halaman dibuka - Active (permintaan work owner 03-10-2026 "set default nya active"). */
+export const SARINGAN_AWAL: Saringan = 'aktif'
+
 /** Saring daftar: status, lalu setiap kata harus ada di salah satu kolom yang tampil. */
 export function saring(d: readonly BarisMO[], kueri: string, s: Saringan): BarisMO[] {
   const kata = kueri.trim().toLowerCase().split(/\s+/).filter(Boolean)

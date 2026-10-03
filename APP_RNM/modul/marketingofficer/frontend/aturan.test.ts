@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ambilDaftar, ambilLog, ambilPilihan, tambah, ubah, type BarisMO, type Pilihan } from './api'
@@ -11,6 +14,7 @@ import {
   saring,
   setelBranch,
   setelSubBranch,
+  SARINGAN_AWAL,
   saringLeader,
   subBranchUntuk,
   tandaAkun,
@@ -127,6 +131,12 @@ describe('halaman depan leader, anggota, dan log (permintaan work owner 03-10-20
       ['10000105', [], 0],
     ])
     expect(k.tanpaLeader.map((b) => b.id)).toEqual(['10000203', '10000204'])
+  })
+
+  it('saringan bawaan: Active', () => {
+    expect(SARINGAN_AWAL).toBe('aktif')
+    const halaman = readFileSync(join(__dirname, 'pages', 'MarketingOfficer.tsx'), 'utf8')
+    expect(halaman).toContain('useState<Saringan>(SARINGAN_AWAL)')
   })
 
   it('saring leader memakai baris leadernya', () => {
