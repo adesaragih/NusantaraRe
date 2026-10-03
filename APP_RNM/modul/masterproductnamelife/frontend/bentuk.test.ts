@@ -20,6 +20,8 @@ import {
   salinProduk,
   tampilPremiumFactor,
   tampilViewOffice,
+  jenisViewOnline,
+  mimeViewOnline,
   tampilAngka,
   tampilTanggal,
   tampilViewRate,
@@ -85,6 +87,15 @@ describe('visibilitas XML', () => {
     expect(tampilViewRate('UJI RATE')).toBe(true)
     expect(['xls', 'xlsx', 'doc', 'docx', 'ppt', 'pptx'].every(tampilViewOffice)).toBe(true)
     expect(tampilViewOffice('pdf')).toBe(false)
+  })
+
+  it('View online (permintaan work owner 03-10-2026): pdf dan gambar raster; svg/html/office tidak', () => {
+    expect(jenisViewOnline('pdf')).toBe('pdf')
+    expect(['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].map(jenisViewOnline)).toEqual(Array(6).fill('gambar'))
+    for (const x of ['svg', 'html', 'xlsx', 'docx', 'txt', '']) expect(jenisViewOnline(x)).toBeNull()
+    expect(mimeViewOnline('pdf')).toBe('application/pdf')
+    expect(mimeViewOnline('jpg')).toBe('image/jpeg')
+    expect(mimeViewOnline('svg')).toBe('')
   })
 
   it('pilihan pembayaran = kode 1-4 GenerateUpload_Act b1141', () => {

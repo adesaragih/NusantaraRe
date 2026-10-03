@@ -124,6 +124,31 @@ export function tampilPremiumFactor(payment: string): boolean {
   return payment.trim() === '3'
 }
 
+/**
+ * `View` lampiran di popup (permintaan work owner 03-10-2026, `[tidak ada di korpus]`): berkas yang dirender peramban -
+ * pdf dan gambar raster - beserta tipe isinya. ⛔ svg/html TIDAK: objek URL mewarisi asal aplikasi, isinya dapat
+ * menjalankan skrip.
+ */
+const VIEW_ONLINE: Readonly<Record<string, { jenis: 'pdf' | 'gambar'; mime: string }>> = {
+  pdf: { jenis: 'pdf', mime: 'application/pdf' },
+  png: { jenis: 'gambar', mime: 'image/png' },
+  jpg: { jenis: 'gambar', mime: 'image/jpeg' },
+  jpeg: { jenis: 'gambar', mime: 'image/jpeg' },
+  gif: { jenis: 'gambar', mime: 'image/gif' },
+  bmp: { jenis: 'gambar', mime: 'image/bmp' },
+  webp: { jenis: 'gambar', mime: 'image/webp' },
+}
+
+/** Jenis tampilan `View` untuk ekstensi `.pyFileMimeType`; null = tidak ditawarkan. */
+export function jenisViewOnline(ekstensi: string): 'pdf' | 'gambar' | null {
+  return Object.hasOwn(VIEW_ONLINE, ekstensi) ? VIEW_ONLINE[ekstensi]!.jenis : null
+}
+
+/** Tipe isi objek URL `View` - dari ekstensi, bukan dari jawaban server. */
+export function mimeViewOnline(ekstensi: string): string {
+  return Object.hasOwn(VIEW_ONLINE, ekstensi) ? VIEW_ONLINE[ekstensi]!.mime : ''
+}
+
 /** `View Office Online` b69291 - visibilitas `OTHER .pyFileMimeType = xls/xlsx/doc/docx/ppt/pptx`. */
 export function tampilViewOffice(ekstensi: string): boolean {
   return ['xls', 'xlsx', 'doc', 'docx', 'ppt', 'pptx'].includes(ekstensi)

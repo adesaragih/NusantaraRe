@@ -397,6 +397,28 @@ export async function unduhSemuaLampiran(produkID: string): Promise<void> {
   return unduhBerkasBeridentitas(`${lampiran(produkID)}/unduh-semua`, `lampiran-${produkID}.zip`)
 }
 
+/**
+ * Isi satu lampiran sebagai Blob - rute unduh yang ADA (`DownloadAttProdName_Act`), berheader identitas - untuk `View`
+ * pdf / gambar di popup (permintaan work owner 03-10-2026).
+ */
+export async function ambilIsiLampiran(produkID: string, id: string): Promise<Blob> {
+  const kendali = new AbortController()
+  const jam = setTimeout(() => {
+    kendali.abort()
+  }, BATAS_WAKTU_MS)
+  try {
+    const jawab = await fetch(rakitURL(`${lampiran(produkID)}/${e(id)}/unduh`), {
+      method: 'GET',
+      headers: { ...headerIdentitas() },
+      signal: kendali.signal,
+    })
+    if (!jawab.ok) throw kegagalanDari(jawab.status, await jawab.text())
+    return await jawab.blob()
+  } finally {
+    clearTimeout(jam)
+  }
+}
+
 /** `View Office Online` b69291 - URL bertanda tangan berkas (`DownloadAttProdName_Act` 6 b953); dibungkus penampil
  * kantor oleh pemanggil (`tautanPenampilOffice`, b1103). */
 export async function lihatOffice(produkID: string, id: string): Promise<string> {

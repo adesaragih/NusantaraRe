@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { PARAM_PENAMPIL, PENAMPIL_OFFICE } from './penampilOffice'
+import { BINGKAI_PENAMPIL, PARAM_PENAMPIL, PENAMPIL_OFFICE } from './penampilOffice'
 
 const PANEL = readFileSync(join(__dirname, 'components', 'PanelLampiran.tsx'), 'utf8')
 
@@ -20,9 +20,21 @@ describe('View Office Online - penampil kantor (DownloadAttProdName_Act 7 b1103)
     expect(new URLSearchParams(kueri).get(PARAM_PENAMPIL)).toBe(u)
   })
 
-  it('link View Office Online yang ada langsung membuka penampil (satu klik, form GET tersembunyi, tanpa jendela tambahan)', () => {
-    expect(PANEL).toContain('<form ref={formOffice} method="get" action={PENAMPIL_OFFICE} target="_blank" hidden>')
+  // Permintaan work owner 03-10-2026: "dari popup atau windows baru (bukan tab baru)" - popup di dalam aplikasi; jendela
+  // peramban baru menuntut `window.open`, yang dilarang penjaga lintas-modul `unduhdokumen.test.ts`.
+  it('View Office Online membuka penampil DI POPUP: form GET tersembunyi berbingkai, bukan tab baru', () => {
+    expect(BINGKAI_PENAMPIL).not.toBe('_blank')
+    expect(PANEL).toContain('<form ref={formOffice} method="get" action={PENAMPIL_OFFICE} target={BINGKAI_PENAMPIL} hidden>')
     expect(PANEL).toContain('<input ref={urlOffice} type="hidden" name={PARAM_PENAMPIL} />')
-    expect(PANEL).not.toMatch(/window\.open|location\.|setOffice|<Modal\s+judul=\{LAMPIRAN_MPNL\.viewOffice\}/)
+    expect(PANEL).toMatch(/<iframe[^>]*name=\{BINGKAI_PENAMPIL\}/)
+    expect(PANEL).not.toMatch(/window\.open|location\.|target="_blank"/)
+  })
+
+  it('View pdf / gambar di popup: hanya objek URL lokal yang dipasang sebagai sumber', () => {
+    const pasang = [...PANEL.matchAll(/\.src\s*=(?!=)\s*([^\n;]+)/g)].map((m) => m[1]!.trim())
+    expect(pasang.length).toBeGreaterThan(0)
+    expect(pasang.every((v) => v === 'objekURL')).toBe(true)
+    expect(PANEL).toContain('const objekURL = URL.createObjectURL(')
+    expect(PANEL).toContain('URL.revokeObjectURL(')
   })
 })

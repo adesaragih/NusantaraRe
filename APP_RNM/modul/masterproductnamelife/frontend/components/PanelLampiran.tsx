@@ -3,19 +3,23 @@
 //  `Add attachment` b64747 → `ProductNameAttachContent` (submit `Attach` b24, `Cancel` b22) → `ProductNameSaveAttachment`
 //  `Refresh` b65270 → `LoadAttachmentProdName`;  `Download All` b67657 (zip lampiran produk ini, RALAT R15)
 //  tautan nama berkas b68903 → `DownloadAttProdName_Act`;  `View Office Online` b69291 → URL bertanda tangan dibuka di
-//  penampil kantor, tab baru (`DownloadAttProdName_Act` 7 b1103; keputusan work owner 03-10-2026) - satu klik pada
-//  link yang ada: URL diambil lalu form GET tersembunyi ber-`action` tetap ke penampil (`penampilOffice.ts`) dikirim
+//  penampil kantor (`DownloadAttProdName_Act` 7 b1103; keputusan work owner 03-10-2026): form GET tersembunyi
+//  ber-`action` tetap ke penampil (`penampilOffice.ts`) dikirim ke bingkai DI POPUP;  `View` pdf / gambar (permintaan
+//  work owner 03-10-2026 "dari popup atau windows baru (bukan tab baru)"): isi dari rute unduh yang ada, objek URL
+//  lokal di popup. Jendela peramban terpisah menuntut pembukaan jendela lewat skrip - dilarang penjaga lintas-modul
+//  `unduhdokumen.test.ts`.
 //  `Delete` b69714 → `DeleteAttacProdName_act`.  `Download` b67376 (`OTHER FALSE`) mati - tidak dirender.
 //
 // ⛔ Lampiran melekat pada produk TERSIMPAN (tiket 08: produk dulu, lampiran menyusul) - panel ini dirender
 // hanya untuk produk ber-ID. Status per lampiran (terunggah / gagal / belum) dan kirim ulang: tiket 08–09.
 // Mode lihat (keputusan work owner 03-10-2026 "jika view tidak tambah/edit/delete"): `Add attachment`, kirim ulang, dan
-// `Delete` tersembunyi; `Refresh`, `Download All`, unduh berkas, dan `View Office Online` tetap.
+// `Delete` tersembunyi; `Refresh`, `Download All`, unduh berkas, `View Office Online`, dan `View` tetap.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Gagal, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import {
+  ambilIsiLampiran,
   ambilLampiran,
   hapusLampiran,
   lihatOffice,
@@ -25,9 +29,9 @@ import {
   unggahLampiran,
   type Lampiran,
 } from '../api'
-import { tampilViewOffice } from '../bentuk'
-import { LAIN_MPNL, LAMPIRAN_MPNL } from '../labels'
-import { PARAM_PENAMPIL, PENAMPIL_OFFICE } from '../penampilOffice'
+import { jenisViewOnline, mimeViewOnline, tampilViewOffice } from '../bentuk'
+import { GRID_MPNL, LAIN_MPNL, LAMPIRAN_MPNL } from '../labels'
+import { BINGKAI_PENAMPIL, PARAM_PENAMPIL, PENAMPIL_OFFICE } from '../penampilOffice'
 
 function teksStatus(l: Lampiran): string {
   if (l.status === 'terunggah') return LAIN_MPNL.terunggah
@@ -45,6 +49,13 @@ export default function PanelLampiran({ produkId, lihat }: { produkId: string; l
   // `View Office Online`: form GET tersembunyi ke penampil dan input `src`-nya.
   const formOffice = useRef<HTMLFormElement>(null)
   const urlOffice = useRef<HTMLInputElement>(null)
+  // Popup penampil: berkas, jenis isi, dan apakah isinya sudah terpasang.
+  const [penampil, setPenampil] = useState<{ nama: string; jenis: 'office' | 'pdf' | 'gambar'; siap: boolean } | null>(null)
+  const bingkai = useRef<HTMLIFrameElement>(null)
+  const gambar = useRef<HTMLImageElement>(null)
+  // Objek URL yang sedang tampil (dicabut saat popup ditutup) dan giliran buka (jawaban popup yang sudah ditutup dibuang).
+  const objekAktif = useRef<string | null>(null)
+  const giliran = useRef(0)
 
   const muat = useCallback(async () => {
     try {
@@ -71,6 +82,57 @@ export default function PanelLampiran({ produkId, lihat }: { produkId: string; l
     } finally {
       setSibuk(false)
     }
+  }
+
+  function tutupPenampil(): void {
+    giliran.current++
+    if (objekAktif.current !== null) URL.revokeObjectURL(objekAktif.current)
+    objekAktif.current = null
+    setPenampil(null)
+  }
+
+  /** `View Office Online`: URL bertanda tangan → form GET ke bingkai popup. */
+  function bukaOffice(l: Lampiran): void {
+    if (sibuk) return
+    const ke = ++giliran.current
+    setPenampil({ nama: l.fileName, jenis: 'office', siap: false })
+    void jalankan(async () => {
+      try {
+        const url = await lihatOffice(produkId, l.id)
+        if (ke !== giliran.current) return
+        if (formOffice.current !== null && urlOffice.current !== null) {
+          urlOffice.current.value = url
+          formOffice.current.submit()
+        }
+        setPenampil((p) => (p === null ? p : { ...p, siap: true }))
+      } catch (err) {
+        if (ke === giliran.current) tutupPenampil()
+        throw err
+      }
+    }, false)
+  }
+
+  /** `View` pdf / gambar: isi dari rute unduh yang ada → objek URL lokal di popup. */
+  function bukaOnline(l: Lampiran): void {
+    const jenis = jenisViewOnline(l.fileMimeType)
+    if (sibuk || jenis === null) return
+    const ke = ++giliran.current
+    setPenampil({ nama: l.fileName, jenis, siap: false })
+    void jalankan(async () => {
+      try {
+        const isi = await ambilIsiLampiran(produkId, l.id)
+        if (ke !== giliran.current) return
+        // Tipe dari ekstensi, bukan dari jawaban: hanya pdf / gambar raster yang dirender.
+        const objekURL = URL.createObjectURL(new Blob([isi], { type: mimeViewOnline(l.fileMimeType) }))
+        objekAktif.current = objekURL
+        if (jenis === 'gambar' && gambar.current !== null) gambar.current.src = objekURL
+        if (jenis === 'pdf' && bingkai.current !== null) bingkai.current.src = objekURL
+        setPenampil((p) => (p === null ? p : { ...p, siap: true }))
+      } catch (err) {
+        if (ke === giliran.current) tutupPenampil()
+        throw err
+      }
+    }, false)
   }
 
   return (
@@ -139,16 +201,22 @@ export default function PanelLampiran({ produkId, lihat }: { produkId: string; l
                         className="mpnl-tautan"
                         onClick={(e) => {
                           e.preventDefault()
-                          void jalankan(async () => {
-                            const url = await lihatOffice(produkId, l.id)
-                            if (formOffice.current !== null && urlOffice.current !== null) {
-                              urlOffice.current.value = url
-                              formOffice.current.submit()
-                            }
-                          }, false)
+                          bukaOffice(l)
                         }}
                       >
                         {LAMPIRAN_MPNL.viewOffice}
+                      </a>
+                    )}
+                    {jenisViewOnline(l.fileMimeType) !== null && (
+                      <a
+                        href="#"
+                        className="mpnl-tautan"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          bukaOnline(l)
+                        }}
+                      >
+                        {GRID_MPNL.view}
                       </a>
                     )}
                   </td>
@@ -171,10 +239,21 @@ export default function PanelLampiran({ produkId, lihat }: { produkId: string; l
         </div>
       )}
 
-      {/* `View Office Online` b1103: `<penampil>?src=<URL bertanda tangan>` di tab baru. */}
-      <form ref={formOffice} method="get" action={PENAMPIL_OFFICE} target="_blank" hidden>
+      {/* `View Office Online` b1103: `<penampil>?src=<URL bertanda tangan>` di bingkai popup. */}
+      <form ref={formOffice} method="get" action={PENAMPIL_OFFICE} target={BINGKAI_PENAMPIL} hidden>
         <input ref={urlOffice} type="hidden" name={PARAM_PENAMPIL} />
       </form>
+
+      {penampil !== null && (
+        <Modal judul={penampil.nama} onTutup={tutupPenampil} labelBatal={LAMPIRAN_MPNL.cancel} penuh>
+          {!penampil.siap && <Memuat />}
+          {penampil.jenis === 'gambar' ? (
+            <img ref={gambar} alt={penampil.nama} className="mpnl-penampil__gambar" />
+          ) : (
+            <iframe ref={bingkai} name={BINGKAI_PENAMPIL} title={penampil.nama} className="mpnl-penampil__bingkai" />
+          )}
+        </Modal>
+      )}
 
       {unggah && (
         <Modal
