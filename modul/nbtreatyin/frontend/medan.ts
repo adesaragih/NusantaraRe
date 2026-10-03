@@ -16,8 +16,8 @@
 //   - elemen bersyarat tampil `1=2` / `NEVER` (80 elemen mati, AC 53):
 //     `.BizName`, `.DueTo` (admin), label pemisah, label bagian, `.Total*`
 //     berlabel layar admin (wadah `1=2`);
-//   - tombol `Select Source Of Business` (admin, `.ClaimType = 'XOL Retro'`) -
-//     dibangun paket P3 (pemilih SOB);
+//   - tombol `Select Source Of Business` (admin, `.ClaimType = 'XOL Retro'`) BUKAN
+//     medan: dibangun paket P3 di `components/PilihSumberBisnis.tsx` (RALAT tiket 11);
 //   - tombol `Choose Business R` (wadah `.ClaimType = 'XOL Retro'`) dan subsection
 //     `DetailPoliciesNonProportional` / `DetailPolicyTreatyOutNonProportional`
 //     (wadah `.IsNewPolicyNonProp = 1`) - jalur NonProp/XOL, paket P5;
@@ -113,8 +113,8 @@ const TGL: Sajian = 'tanggal'
 export const MEDAN_ADMIN_UMUM: Medan[] = [
   { jalur: P + 'NoOffer', label: 'Master ID', jenis: 'tampil' },
   { jalur: 'TreatyIn.Commencement', label: 'Commencement', jenis: 'tampil', sajian: TGL },
-  // change -> refresh (tanpa activity)
-  { jalur: P + 'StartDate', label: 'Statement Period', jenis: 'tanggal' },
+  // change -> refresh ber-pyPreDataTransform `SystemSetOneYear_DT` (EndDate = StartDate + 1 tahun)
+  { jalur: P + 'StartDate', label: 'Statement Period', jenis: 'tanggal', aksi: [{ aksi: 'SystemSetOneYear' }] },
   { jalur: P + 'SOBName', label: 'Source Of Business', jenis: 'tampil' },
   { jalur: P + 'TreatyGroupName', label: 'Treaty Group', jenis: 'tampil', tampil: bukanNonPropBaru },
   // pyReadOnly `IsUW` (workbasket ReasFacIn*) - tidak pernah benar bagi admin treaty

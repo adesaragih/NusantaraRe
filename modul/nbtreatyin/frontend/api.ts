@@ -76,6 +76,15 @@ export interface Acuan {
 /** Satu baris view kontrak (nama kolom view) - `models.BarisKontrak`. */
 export type BarisKontrak = Record<string, string>
 
+/** Satu baris RD `BrowseAgentHierarkiList_RD` (pemilih SOB) - `models.BarisAgen`. */
+export interface BarisAgen {
+  id: string
+  clientName: string
+  leader0: string
+  childCount: string
+  clientId: string
+}
+
 export interface NomorPolis {
   id: string
   policyNo: string
@@ -129,6 +138,11 @@ export function pilihBisnis(id: string, idDetail: string, halaman: Halaman): Pro
   return minta<Layar>(`${kasus(id)}/pilih-bisnis`, { metode: 'POST', badan: { idDetail, halaman } })
 }
 
+/** Klik satu baris popup `SOB` - pra-proses `SearchHierarkiSourceBizAgent_PostDT`. */
+export function pilihSumberBisnis(id: string, idAgen: string, halaman: Halaman): Promise<Layar> {
+  return minta<Layar>(`${kasus(id)}/pilih-sumber-bisnis`, { metode: 'POST', badan: { idAgen, halaman } })
+}
+
 export function terbitkanNomor(id: string, halaman: Halaman): Promise<NomorPolis> {
   return minta<NomorPolis>(`${kasus(id)}/nomor-polis`, { metode: 'POST', badan: { halaman } })
 }
@@ -150,6 +164,11 @@ export function riwayatKasus(id: string): Promise<Riwayat[]> {
 
 export function daftarBisnis(cari: string): Promise<BarisKontrak[]> {
   return minta<BarisKontrak[]>(`${PREFIX_NBTREATYIN}/bisnis`, { kueri: { cari: cari || undefined } })
+}
+
+/** Isi TreeGrid popup `SOB` (`Section/SourceHierarki`). */
+export function daftarSumberBisnis(): Promise<BarisAgen[]> {
+  return minta<BarisAgen[]>(`${PREFIX_NBTREATYIN}/sumber-bisnis`)
 }
 
 export function ambilAcuan(): Promise<Acuan> {

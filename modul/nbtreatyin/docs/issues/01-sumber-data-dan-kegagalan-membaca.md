@@ -81,3 +81,26 @@ tersembunyi**.
    (`InputPolicyTreatyOutDetail_*`, `BusinessAndSOBListRetro`, `DetailPolicyTreatyOutNonProportional`)
    membaca JSON `M_TREATY_OUT` (P29). Data treaty keluar tidak dapat ditampilkan tanpa sumber
    relasional baru — `[terbuka]`.
+
+## ⛔ RALAT putaran 2 (P4, 03-10-2026) — `TreatyInputPctCommSpreading`
+
+1. **RALAT atas RALAT 2 di atas.** Bunyi lama: *"langkah 9-10, 13, 16-18 (JSON master) tidak."* Bunyi
+   baru: langkah **17** (`Activity\TreatyInputPctCommSpreading.xml`, syarat preACT
+   `pyWorkPage.Quotation.ProportionalType=="NonProportional"` benar → lewati) **dibangun sebagian dari
+   view**. Bukti XML: langkah 1 `FetchMasterTreatyIn` memuat JSON master `where ID =
+   PolicyTreatyIn.NoOffer` (`RDBList\BrowseTreatyInJoinEDM`); langkah 2 kalang `TreatyIn.Limits`
+   (2.1 syarat `PolicyTreatyIn.TreatyType==.TreatyType`), 2.1.1 kalang `.Detail` (2.1.1.1 syarat
+   `.TreatyGroup==PolicyTreatyIn.TreatyGroupName`): `RiCommOgp = @replaceAll(.RIOGR,",",".")` lalu
+   **ditimpa** `RiCommOgp = @replaceAll(.RIONR,",",".")`. Keempat medan itu kolom view
+   `TREATYINDETAILJOINEDM` (`TREATYTYPE`, `TREATYGROUP`, `RIOGR`, `RIONR`) ⇒ dibaca
+   `repository.KomisiKontrak` (baris ber-`TREATYID = NoOffer`, lewat `pilihKolom`), diterapkan
+   `models.TreatyInputPctCommSpreading`, dipanggil `services.PilihBisnis`. Hasil akhir = RIONR,
+   RiCommOnp tidak disentuh — ditiru apa adanya. Uji: `models/komisi_test.go`,
+   `handlers/logika_test.go` TestPilihBisnisKomisiOgpDariRIONRView.
+2. **Tetap tidak dibangun, alasan (c):** tiga baris `SpreadingRiskList(1).SharePercentage/TreatyType/
+   TreatyName = .SpreadingTotalPct/.SpreadingTypeID/.SpreadingType` — bukan kolom view (39 kolom =
+   33 kolom RD + `BROKERAGE` `COMMENCEMENT` `TERMINATION` `RIOGR` `RIONR` `RNM_SHARE`), hanya di JSON
+   master; pengecualian baca-JSON K8 terbatas pada medan jalur NonProp/XOL. Langkah 3
+   `BreakDownSpreading_Act` (K9) dan 4 (berlabel `//`) tidak.
+3. ⚠️ Urutan `Limits/Detail` dokumen tidak ada di view: baris dibaca `ORDER BY ID`, baris cocok
+   terakhir menang (sama dengan kalang Pega bila hanya satu baris cocok).

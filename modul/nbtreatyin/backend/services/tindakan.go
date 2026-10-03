@@ -170,6 +170,7 @@ var aksiHitung = map[string]aksiFn{
 	"CountSpreading":           aksiIndeks(models.CountSpreading),
 	"SetDueTo":                 aksiHalaman(models.SetDueTo),
 	"ProtectDate":              aksiHalaman(tanpaGalat(models.ProtectDate)),
+	"SystemSetOneYear":         aksiHalaman(tanpaGalat(models.SystemSetOneYear)),
 	"RemoveTypeTax":            aksiHalaman(tanpaGalat(models.RemoveTypeTax)),
 	"TreatyEnableDisableInput": aksiHalaman(tanpaGalat(models.TreatyEnableDisableInput)),
 	"FillPaymentInstallment": func(l *Layanan, _ context.Context, h *models.Halaman, _ PermintaanHitung) error {
@@ -271,7 +272,8 @@ func (l *Layanan) SimpanDraf(ctx context.Context, p inti.Pelaku, id string, masu
 
 // PilihBisnis = tombol "Choose" popup `BusinessAndSOBList` -> `SetValue_Act`
 // (ID=.ID) -> `InputPolicyTreatyInDetail_preACT`, lalu `Obj-Save`. Bagian
-// yang dibangun: lihat `models/pilihbisnis.go`.
+// yang dibangun: lihat `models/pilihbisnis.go` dan `models/komisi.go`
+// (langkah 17).
 //
 // ⛔ Pembacaan kontrak yang gagal MENGHENTIKAN proses dan tidak menyimpan
 // apa pun (AC 36-38) - di Pega `pxRetrieveReportData` yang kosong mengisi
@@ -315,6 +317,15 @@ func (l *Layanan) PilihBisnis(ctx context.Context, p inti.Pelaku, id, idDetail s
 		return Layar{}, err
 	}
 	models.TerapkanBisnisPilih(h, bis) // 14.7-14.9
+	// langkah 17 (bukan NonProportional) -> TreatyInputPctCommSpreading:
+	// RiCommOgp dari baris view kontrak NoOffer (models/komisi.go).
+	if models.LangkahKomisiProporsional(h) {
+		baris, err := l.g.KomisiKontrak(ctx, h.Ambil(models.HalamanPolis+".NoOffer"))
+		if err != nil {
+			return Layar{}, err
+		}
+		models.TreatyInputPctCommSpreading(h, baris)
+	}
 	if err := l.tulis(ctx, k, func(tx *db.Tx) error { return l.g.SimpanHalaman(ctx, tx, id, h) }); err != nil {
 		return Layar{}, err
 	}
@@ -475,8 +486,23 @@ func (l *Layanan) validasiKirim(ctx context.Context, p inti.Pelaku, h *models.Ha
 // PesanDuplikatAwal - VERBATIM `TreatyRealizationCheckDuplicate` langkah 4.
 const PesanDuplikatAwal = "Protect Duplicate Policy; data is similar to "
 
-// cekDuplikat = `TreatyRealizationCheckDuplicate`: ada polis produksi serupa
-// dan ClaimType bukan "XOL" -> pesan halaman (submit tertahan).
+// cekDuplikat = `Activity/TreatyRealizationCheckDuplicate`, dipanggil HANYA
+// `InputPolicyTreatyInPost_Act` langkah 3 (pasca-proses flow action admin)
+// bersyarat `.PolicyTreatyIn.IsApproved==1` (AC 59, RALAT putaran 2):
+//
+//	1    Page-Clear-Messages pyWorkPage
+//	2-3  RDB `TreatyRealizationCheckDuplicate` atas TREATYINPRODUCTION
+//	     (`repository.PolisSerupa`, pemetaan parameter apa adanya)
+//	4    local.msg = "Protect Duplicate Policy; data is similar to "
+//	5.1  setiap baris: local.msg = local.msg + .CARI1 + " "
+//	6    `@SizeOfPropertyList(ResultData.pxResults) > 0 && .PolicyTreatyIn.ClaimType != "XOL"`
+//	     -> Page-Set-Messages pyWorkPage: submit tertahan (422)
+//
+// ⛔ `CheckDuplicateOffer` (peringatan "jumlah klaim > 0") TIDAK dibangun:
+// langkah 1-4 berlabel `//`, dan satu-satunya pemanggilnya (`SetTreatyIn_Act`
+// langkah 14) memanggilnya tanpa parameter (`pyPassCurrentParameterPage=false`)
+// sehingga `GetCountClaim` selalu menghitung `masterid = NULL` = 0 - langkah
+// 7-8 (pesannya) tidak pernah benar.
 func (l *Layanan) cekDuplikat(ctx context.Context, h *models.Halaman) error {
 	sama, err := l.g.PolisSerupa(ctx, h)
 	if err != nil {

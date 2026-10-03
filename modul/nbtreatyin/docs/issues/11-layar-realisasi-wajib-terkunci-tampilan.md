@@ -80,10 +80,43 @@ dijawab.
   (Accept/Reject).
 - Tidak dibangun: tombol/layar Survey Report (penyimpanan survei tidak dirancang, `[terbuka]`),
   pemilih SOB (hanya untuk XOL Retro), Choose Business R (treaty keluar, JSON).
-  > ⛔ **RALAT** 2026-10-03 — alasan di atas diganti keputusan putaran 2: Survey Report **K7** (tidak
-  > ada tabel di diagram grilling); pemilih SOB (`Select Source Of Business`, terjangkau dan
-  > relasional — CATATAN §2c) **dibangun paket P3**; `Choose Business R` dan subsection NonProp
-  > **dibangun paket P5** (K8).
+
+> ⛔⛔ **RALAT.** 2026-10-03 (putaran 2, paket P3) — bunyi lama dikutip utuh lalu ditarik untuk butir
+> pemilih SOB:
+> > *"Tidak dibangun: tombol/layar Survey Report (penyimpanan survei tidak dirancang, `[terbuka]`),
+> > pemilih SOB (hanya untuk XOL Retro), Choose Business R (treaty keluar, JSON)."*
+> > *(status.json lama: "pemilih hierarki sumber bisnis/ceding hanya tampil bila ClaimType 'XOL
+> > Retro' (jalur retro, P29) — tidak dibangun")*
+>
+> ⭐ **Pemilih SOB DIBANGUN.** "Hanya tampil bila XOL Retro" bukan bukti tak terjangkau, dan P29
+> (data kontrak dari view, nol JSON) tidak menyentuh jalur ini: seluruh datanya relasional (tabel
+> `AGENT`). Bukti XML:
+> - `Section/DetailPolicyTreatyIn` (dan salinannya di `GeneralPolicyTreatyIn`, layar admin flow
+>   action `InboxPolicyTreatyIn`): tombol `Select Source Of Business`, pyVisible
+>   `.ClaimType = 'XOL Retro'`, click → showHarness `SOB` (pyUsingPage `pyWorkPage.Quotation`,
+>   pySubmitData Yes) + aktivitas `InputQuotation_PreAct(Acton=SOB)` → langkah 1 `btnSOB_DT`
+>   (`Quotation.btnQuotation = "SOB"`). Layar atasan tidak memuat tombol ini.
+> - `Harness/SOB` → `Section/SourceHierarki`: TreeGrid `TempBusinessSource.pxResults`,
+>   pyDeferLoadActivity `AgentSourceBizTreatyIn_Act` (langkah 3 `pxShowReport`
+>   `BrowseAgentHierarkiList_RD`), pyRowEditing masterDetail → `FlowAction/AgentSourceBizDetails`
+>   pra-proses `SearchHierarkiSourceBizAgent_PostDT`: `Quotation.SourceOfBusiness/SobName/
+>   SobLeader0/SobLeader1 = @if(.ChildCount > 0, "", ...)`.
+> - Akibat pada data kasus: `Quotation.SourceOfBusiness` (medan diagram `T_POLIS_QUOTATION`) dibaca
+>   `SetPPNPPH` langkah 1-3 (STS_PKP agen) → syarat PPH/PPN langkah 4.
+>
+> Dibangun: `models/sumberbisnis.go`, `repository/agen.go`, `services/sumberbisnis.go`, rute
+> `GET /sumber-bisnis` dan `POST /kasus/{id}/pilih-sumber-bisnis`, `components/PilihSumberBisnis.tsx`.
+> Tetap tidak dibangun, alasan (a) tak berpengaruh/tak terjangkau di NB: autocomplete `Search`
+> (`SearchSOB.CARI1`, dibaca nol rule); perluasan simpul (`Param.Leader` diisi hanya bila
+> `pyWorkPage.OfferTreatyIn.QuotationData.btnQuotation=="SOB"` — properti yang ditulis nol rule ⇒
+> setiap simpul = daftar akar yang sama); aktivitas tombol `Choose`
+> (`SearchHierarkiSourceBizAgentTreatyIn_Act` menulis `OfferTreatyIn.QuotationData.*`, dibaca nol
+> rule NB); cabang Ceding (`btnCedingCO_DT`/`BrowseCedingCo_RD`, hanya lewat `Acton=Ceding` yang
+> tak pernah dikirim).
+
+> ⛔ **RALAT** 2026-10-03 (putaran 2, paket P2) — dua butir lain kalimat yang sama: Survey Report →
+> **K7** (tidak ada tabel di diagram grilling; tetap tidak dibangun); `Choose Business R` dan subsection
+> NonProp → **paket P5** (K8). Pemilih SOB: RALAT paket P3 di atas.
 
 ## Hasil implementasi putaran 2 — 2026-10-03 (paket P2, cabang `modul/nbtreatyin/p2-layar`)
 

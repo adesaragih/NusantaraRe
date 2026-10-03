@@ -105,3 +105,31 @@ Sesudah tiket ini, nilai uang tersimpan **berpresisi penuh**, ditampilkan besert
    `ListAgent.pxResults(1).STS_PKP == 1` (RD `BrowseClientName_RD` atas SourceOfBusiness). Port pertama
    menganggapnya tanpa syarat — diperbaiki.
 3. Nilai master `TreatyIn.*` tidak tersedia (tiket 01 RALAT 1) — langkah yang membaginya dilewati.
+
+## ⛔ RALAT putaran 2 (P4, 03-10-2026) — rumus dan pajak
+
+1. **AC 26 — `RNM_SHARE` dan `BROKERAGE`: nol pemakai.** Bunyi lama: *"`DEDUCTION1` `DEDUCTION2`
+   `BROKERAGE` `RNM_SHARE` dibaca sebagai **persentase**"*. Bukti (`docs/alat/pemakai.py` di atas
+   `graf.Graf(...).terjangkau()`, 278 rule / 176 terjangkau):
+   - `RNM_SHARE` — **0 rule** di seluruh korpus. RD `BrowseTreatyJoinEDM` / `BrowseTreatyInDetail`
+     (33 kolom) tidak memuatnya. Yang dipakai rumus adalah `pyWorkPage.TreatyIn.RNMShareP` /
+     `RNMShare` — medan halaman master JSON (`FetchMasterTreatyIn`), bukan kolom view.
+   - `BROKERAGE` — 4 rule terjangkau memuat kata itu, **tak satu pun membaca kolom/properti
+     `BROKERAGE`**: `Section\DetailPolicyTreatyInNonProportional`, `…NonProportionalEDM`,
+     `…OutNonProportional` hanya `pyCaption Brokerage (IDR)` / `Brokerage (USD)` / `Total Brokerage`
+     (label kolom grid `.Deductible` / `.Deductible2` jalur NonProp), dan
+     `Activity\InputPolicyTreatyOutDetail_NonProp` hanya `pyStepsDescription` "Total BROKERAGE".
+   ⇒ Kedua kolom view **tidak dibaca dan tidak dibangun** (nol pemakai — bab 4 prompt putaran 2).
+   `[terbuka]` §9.2 butir 8 ("`RNM_SHARE` persentase dari apa") tetap milik pemiliknya, tetapi tidak
+   menahan apa pun di modul ini.
+2. **`DEDUCTION1/2`: K3 (03-10-2026) — rumus XML apa adanya.** Rumus sudah diport apa adanya
+   (`CountNetPremi_act` langkah 4 mengurangkannya dari premi; `SetPPNPPH` langkah 4 membaginya
+   1,022) — tidak berubah. ⚠️ Bagian "label dan penyajian mengikuti pemakaian XML" (kolom katalog
+   `kPersen` DEDUCTION1/2, label layar) milik paket katalog/layar, bukan paket ini — butir terbuka.
+3. **`SetPPNPPH` diuji dengan nilai XML** (`models/setppnpph_test.go` TestSetPPNPPHNilaiXML; tujuh
+   kasus): PremiOgp 1000, PremiOnp 600, Deduction1 51,1 ⇒ BrokerageFee `@divide(2.5,100,8)` × 1600
+   = 40; Inclusive 51,1 / 1,022 = 50 ⇒ PPH 1, PPN 1,1; selain Inclusive 51,1 ⇒ PPH 1,022, PPN 1,1242;
+   cabang langkah 4: `FlagPPH=="true"` (melewati syarat PKP), `STS_PKP == 1`, keduanya salah ⇒
+   BrokerageFee* tidak disentuh dan PPH/PPN tetap 0 (langkah 2); `"TRUE"` bukan `"true"`. Lewat HTTP:
+   `handlers/logika_test.go` TestSetPPNPPHMembacaStatusPKPAgen (STS_PKP dari RD
+   `BrowseClientName_RD`).

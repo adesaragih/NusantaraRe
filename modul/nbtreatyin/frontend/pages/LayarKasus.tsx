@@ -21,6 +21,7 @@ import {
   kirimKasus,
   nilai,
   pilihBisnis,
+  pilihSumberBisnis,
   riwayatKasus,
   setel,
   setelDaftar,
@@ -36,6 +37,7 @@ import {
 import InputAngka from '../components/InputAngka'
 import KotakMedan from '../components/KotakMedan'
 import PilihBisnis from '../components/PilihBisnis'
+import PilihSumberBisnis, { tampilTombolSOB } from '../components/PilihSumberBisnis'
 import {
   BAGIAN,
   JUDUL,
@@ -85,6 +87,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
   const [sibuk, setSibuk] = useState(false)
   const [info, setInfo] = useState('')
   const [popupBisnis, setPopupBisnis] = useState(false)
+  const [popupSOB, setPopupSOB] = useState(false)
   const [konfirmasi, setKonfirmasi] = useState(false)
   const [nomor, setNomor] = useState<NomorPolis | null>(null)
 
@@ -260,6 +263,12 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
             {bukanXOLRetro(h) && (
               <button type="button" className="btn" onClick={() => setPopupBisnis(true)}>
                 {TOMBOL.chooseBusiness}
+              </button>
+            )}
+            {/* `.ClaimType = 'XOL Retro'`; click -> showHarness SOB (paket P3) */}
+            {tampilTombolSOB(h) && (
+              <button type="button" className="btn" onClick={() => setPopupSOB(true)}>
+                {TOMBOL.selectSOB}
               </button>
             )}
             {/* `.TreatyType='XOL'`; click -> refresh (pra-DT TreatyEnableDisableInput) */}
@@ -566,6 +575,17 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
           onPilih={(idDetail) => {
             setPopupBisnis(false)
             void jalankan(() => pilihBisnis(id, idDetail, h), terima)
+          }}
+        />
+      )}
+      {popupSOB && (
+        <PilihSumberBisnis
+          terpilih={nilai(h, 'Quotation.SourceOfBusiness')}
+          sibuk={sibuk}
+          onTutup={() => setPopupSOB(false)}
+          onPilih={(idAgen, tutup) => {
+            if (tutup) setPopupSOB(false)
+            void jalankan(() => pilihSumberBisnis(id, idAgen, h), terima)
           }}
         />
       )}

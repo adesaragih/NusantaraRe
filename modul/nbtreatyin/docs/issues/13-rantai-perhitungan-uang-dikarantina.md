@@ -120,3 +120,12 @@ pemanggilan `SumTSIPremiSpreadRNMMultiCob_Act` *(P30)* dan pengiriman ke layanan
   commit, gagal **tidak** membatalkan simpan (`FlagErrorKonversi` verbatim ke layar), dilewati di luar
   produksi. Sambungan nyatanya (kunci `M_LINK_SERVICE`, persetujuan) `[terbuka]` — PERMINTAAN-TIM-INTI C1.
 - **Butir 3/3b**: `BreakDownSpreading_Act` tidak dimigrasi (CountSpreading langkah 6).
+
+## ⭐ Putaran 2 (P4, 03-10-2026) — dicocokkan ulang ke XML
+
+- `TreatyInputPctCommSpreading` langkah 2.1.1.1 masuk rantai: `RiCommOgp` diisi RIONR (RIOGR
+  ditimpa) dari kolom view saat pilih bisnis (`models/komisi.go`; tiket 01 RALAT putaran 2). Tiga baris
+  `SpreadingRiskList(1)` langkah yang sama tidak dibangun — bukan kolom view (alasan c).
+- `SetPPNPPH` diuji dengan nilai XML yang dihitung tangan, termasuk cabang `FlagPPH` dan `STS_PKP`
+  (tiket 07 RALAT putaran 2 butir 3).
+- AC 79 tetap ✅: setiap rumus baru dikutip dari `PropertiesValue` langkahnya di komentar kode.
