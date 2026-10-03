@@ -63,8 +63,8 @@ dijalankan atasnya — hasil bawaan berarti gagal.
 - [x] **AC 18** — teks kosong pada medan tanggal tersimpan tak-bernilai
 - [x] **AC 19** — nilai uang berdesimal sembilan **dibulatkan pada desimal kedelapan**, bukan dipotong ke dua
 - [x] **AC 20** — kolom uang berskala **delapan desimal**, ⭐ **tiga puluh digit di depan koma** *(`NUMBER(38,8)`; semula ~~dua belas~~ — dinaikkan 23-09-2026 sore)*
-- [ ] ⛔ **AC 21** — tanggal delapan digit terurai benar
-- [ ] ⛔ **AC 22** — cap waktu bersufiks zona terurai benar
+- [x] **AC 21** — tanggal delapan digit terurai benar *(putaran 2, pemuat tiket 22: `models.BacaTanggalLama` — `TestBacaTanggalLama`)*
+- [x] **AC 22** — cap waktu bersufiks zona terurai benar *(putaran 2: `20170930T170000.000 GMT` → `2017-10-01 00:00:00` Asia/Jakarta — `TestBacaTanggalLama`; tanggal ambigu tidak ditebak, K15 — `TestTanggalAmbiguTidakDitebak`)*
 - [x] **AC 23** — pengurutan menurut tanggal menghasilkan urutan kronologis, bukan leksikal
 - [x] **AC 24** — nol kolom uang bertipe mengambang
 - [ ] 🟡 **AC 25** — pembandingan uang memakai toleransi, bukan kesamaan persis
@@ -84,3 +84,5 @@ dijalankan atasnya — hasil bawaan berarti gagal.
   halaman, tidak setara di SQL) — sebagian.
 - **AC 21-22** (format dokumen lama `YYYYMMDD`, cap waktu ` GMT`) milik pemuat dokumen lama — tiket 22,
   belum dibangun.
+  ⛔ **RALAT putaran 2 (03-10-2026):** bunyi lama *"belum dibangun"* → **dibangun** (tiket 22,
+  `models.BacaTanggalLama`).

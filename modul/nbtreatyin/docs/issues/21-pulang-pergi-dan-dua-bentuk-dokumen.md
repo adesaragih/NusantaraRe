@@ -36,11 +36,16 @@ Lewat seam `repository`, dengan data buatan — ⛔ **bukan cuplikan produksi**.
 - [ ] 🟡 **AC 49** — polis proporsional pulang-pergi menghasilkan nilai yang sama
 - [ ] 🟡 **AC 50** — polis non-proporsional pulang-pergi menghasilkan nilai yang sama
 - [ ] 🟡 **AC 51** — urutan baris anak saat dibaca sama dengan urutan nomor urutnya
-- [ ] ⛔ **AC 52** — bentuk daftar angsuran **datar** terurai benar
-- [ ] ⛔ **AC 53** — bentuk daftar angsuran **bersarang** terurai benar
-- [ ] ⛔ **AC 54** — cakupan yang hanya satu bentuk dinyatakan **tidak memadai**
+- [x] **AC 52** — bentuk daftar angsuran **datar** terurai benar *(putaran 2, pemuat tiket 22: `models/dokumenlama_test.go` `TestPecahDokumenProporsionalDatar`)*
+- [x] **AC 53** — bentuk daftar angsuran **bersarang** terurai benar *(putaran 2: `TestPecahDokumenNonProporsionalBersarang`; ditulis juga lewat repository — `TestPemuatLamaNonProporsionalBersarang` bertag `db`, belum dijalankan)*
+- [x] **AC 54** — cakupan yang hanya satu bentuk dinyatakan **tidak memadai** *(putaran 2: `TestUjiPemecahMencakupDuaBentuk` gagal bila fixture hanya memuat satu bentuk)*
 
 ## Catatan implementasi 2026-10-03
 
 Pulang-pergi diuji di `repository/polis_db_test.go` (`-tags db`) — **belum pernah dijalankan**: env skema
 uji tidak tersedia di sesi implementasi. AC 52-54 (dua bentuk dokumen lama) milik pemuat tiket 22.
+
+⛔ **RALAT putaran 2 (03-10-2026).** Bunyi lama: *"AC 52-54 (dua bentuk dokumen lama) milik pemuat tiket 22."*
+Bunyi baru: pemuat tiket 22 sudah dibangun; kedua bentuk `ListInstallment` diuji di seam fungsi murni
+pemecah (`models.PecahDokumenLama`) dengan fixture fiktif `UJI-` berbentuk contoh 2 (datar) dan contoh 3
+(bersarang). `[penyimpangan sadar]` atas *"Lewat seam `repository`"* — lihat tiket 22 RALAT seam uji.

@@ -38,6 +38,11 @@ Pemecah dokumen dan penyusun baris, beserta aturan isi tiap tabel:
 ⭐ **Penampung medan tak dikenal** disediakan — medan dokumen yang tidak dikenal **disimpan**,
 bukan dibuang.
 
+> ⛔ **RALAT putaran 2 (03-10-2026)** `[keputusan work owner]` **K17**: penampung itu **bukan tabel**
+> (`T_POLIS_MEDAN_LAIN` tidak ada di diagram grilling, dihapus) melainkan **berkas laporan CSV per
+> jalankan pemuat** (`POLIS_ID`, `JALUR`, `NILAI`) di folder keluaran operator — tiket 22,
+> `models/laporanlama.go`. Pemecah dokumen lama = `models.PecahDokumenLama` (digerakkan katalog).
+
 ## Batas — yang TIDAK termasuk
 
 ⛔ Uji pulang-pergi dan dua bentuk dokumen — tiket **21**.
