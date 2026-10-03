@@ -1,6 +1,6 @@
 # 01: Sumber data realisasi treaty — dibaca dari view relasional, gagal baca menghentikan proses
 
-**Status:** ready-for-agent
+**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
 **Blocked by:** —
 **Menutup:** AC 15 · 16 · 17 · 36 · 37 · 38 · 57 · 58 · 89 *(9 AC)* — US 21 · 23 · 24 · 37
 
@@ -35,15 +35,15 @@ berkas yang tersimpan dari pembacaan yang gagal.
 
 ## Acceptance criteria
 
-- [ ] **AC 15** — data dibaca dari sumber relasional, bukan dari dokumen
-- [ ] **AC 16** — sistem baru **tidak menulis** dokumen
-- [ ] **AC 17** — ke-**33** medan yang dipakai laporan tersedia
-- [ ] **AC 89** — nol medan yang dipakai tetapi tidak tersedia
-- [ ] **AC 36** — kegagalan pembacaan **menghentikan** proses
-- [ ] **AC 37** — kegagalan pembacaan **menampilkan galat kepada pengguna**
-- [ ] **AC 38** — nol kasus tersimpan dari pembacaan yang gagal
-- [ ] **AC 57** — penempatan keluar **dapat dibaca** dari konteks ini
-- [ ] **AC 58** — penempatan keluar **tidak pernah ditulis** dari sini
+- [x] **AC 15** — data dibaca dari sumber relasional, bukan dari dokumen
+- [x] **AC 16** — sistem baru **tidak menulis** dokumen
+- [ ] 🟡 **AC 17** — ke-**33** medan yang dipakai laporan tersedia
+- [ ] 🟡 **AC 89** — nol medan yang dipakai tetapi tidak tersedia
+- [x] **AC 36** — kegagalan pembacaan **menghentikan** proses
+- [x] **AC 37** — kegagalan pembacaan **menampilkan galat kepada pengguna**
+- [x] **AC 38** — nol kasus tersimpan dari pembacaan yang gagal
+- [ ] ⛔ **AC 57** — penempatan keluar **dapat dibaca** dari konteks ini
+- [x] **AC 58** — penempatan keluar **tidak pernah ditulis** dari sini
 
 ## Butir `[terbuka]` yang menyentuh tiket ini
 
@@ -64,3 +64,20 @@ berkas yang tersimpan dari pembacaan yang gagal.
 ⚠️ `[penyimpangan sadar]` Menghentikan proses saat gagal baca **berbeda** dari perilaku Pega.
 Alasannya tertulis di `spec.md` §5.9: **kegagalan yang terlihat lebih murah daripada yang
 tersembunyi**.
+
+## ⛔ RALAT implementasi 2026-10-03
+
+1. **Nilai master `TreatyIn.*` tidak ada di view.** Bunyi lama (Hasil): *"data dibaca dari sumber
+   relasional"*. Benar untuk 33 kolom RD — tetapi `TreatyIn.RNMShareP`, `RNMShare`,
+   `BrokeragePercentP`, `CurrencyList`, `INSTALLMENT`, `Limits/Share` milik JSON master (P29) dan
+   **tidak punya kolom padanan**; `RNM_SHARE` view belum boleh dipakai dalam perhitungan
+   (PERTANYAAN-untuk-DBA). Langkah rantai uang yang membaginya **dilewati selama nilainya kosong**
+   (`models.MasterTersedia`) — penyimpangan sadar, dicatat.
+2. **`InputPolicyTreatyInDetail_preACT` dibangun sebagian** — langkah 3-8, 11, 14, 15 (seluruhnya
+   membaca view dan tabel acuan); langkah 9-10, 13, 16-18 (JSON master) tidak.
+   `pxResults(1).CURRENCYID` bukan kolom RD maupun view → ID mata uang selalu dicari menurut nama
+   (langkah 4).
+3. **AC 57 tidak dapat dipenuhi seperti tertulis.** Seluruh bagian treaty keluar
+   (`InputPolicyTreatyOutDetail_*`, `BusinessAndSOBListRetro`, `DetailPolicyTreatyOutNonProportional`)
+   membaca JSON `M_TREATY_OUT` (P29). Data treaty keluar tidak dapat ditampilkan tanpa sumber
+   relasional baru — `[terbuka]`.

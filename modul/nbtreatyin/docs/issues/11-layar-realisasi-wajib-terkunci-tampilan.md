@@ -1,6 +1,6 @@
 # 11: Layar realisasi — medan wajib, medan terkunci, dan bagian yang tidak dibangun
 
-**Status:** ready-for-agent
+**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
 **Blocked by:** 02
 **Menutup:** AC 45 · 46 · 49 · 50 · 51 · 53 · 54 · 55 · 56 · 77 *(10 AC)* — US 27 · 28 · 29 · 31 · 32
 
@@ -37,16 +37,16 @@ tampil.
 
 ## Acceptance criteria
 
-- [ ] **AC 45** — layar menuntut medan wajibnya; **27** medan berbeda di **6** layar
-- [ ] **AC 46** — layar jenjang ketiga **tidak** mewajibkan enam medan yang wajib di layar admin
-- [ ] **AC 49** — **38** medan terkunci permanen
-- [ ] **AC 50** — **36** dari 38 di layar jenjang ketiga; **2** di layar biasa
-- [ ] **AC 51** — setiap kunci mengenai **tepat satu medan**, ⛔ bukan bagian atau tab
-- [ ] **AC 53** — **80** bagian mati **tidak dibangun**
-- [ ] **AC 54** — daftar pilihan mata uang **tidak memuat** kode yang dikecualikan
-- [ ] **AC 55** — kode jenis kontrak ditampilkan **apa adanya** bila keterangannya belum tersedia
-- [ ] **AC 56** — nilai kode di luar daftar yang dikenal **tetap diterima dan disimpan**
-- [ ] **AC 77** — pembersihan pesan galat di awal diterima apa adanya — **12** tempat
+- [ ] 🟡 **AC 45** — layar menuntut medan wajibnya; **27** medan berbeda di **6** layar
+- [x] **AC 46** — layar jenjang ketiga **tidak** mewajibkan enam medan yang wajib di layar admin
+- [x] **AC 49** — **38** medan terkunci permanen
+- [x] **AC 50** — **36** dari 38 di layar jenjang ketiga; **2** di layar biasa
+- [x] **AC 51** — setiap kunci mengenai **tepat satu medan**, ⛔ bukan bagian atau tab
+- [x] **AC 53** — **80** bagian mati **tidak dibangun**
+- [x] **AC 54** — daftar pilihan mata uang **tidak memuat** kode yang dikecualikan
+- [x] **AC 55** — kode jenis kontrak ditampilkan **apa adanya** bila keterangannya belum tersedia
+- [x] **AC 56** — nilai kode di luar daftar yang dikenal **tetap diterima dan disimpan**
+- [x] **AC 77** — pembersihan pesan galat di awal diterima apa adanya — **12** tempat
 
 ## Butir `[terbuka]` yang menyentuh tiket ini
 
@@ -68,3 +68,15 @@ tampil.
 P44 — `[terverifikasi]` sebabnya struktural: membangunnya berbiaya nol, membuangnya juga.
 ⛔ **Empat wadah berisi 104 medan** menunggu Product & Underwriting dan **tidak dibangun** sebelum
 dijawab.
+
+## Hasil implementasi 2026-10-03
+
+- Medan wajib per layar dari `pyRequired` (`models.DaftarMedanWajib`): 25 medan di dua layar
+  realisasi + `ProductionDate` (tempat berperan, tiket 05) + `DateofSurvey` (layar survei historis,
+  tidak dibangun) = 27 (AC 45). Ditegakkan pada Submit DAN Save (AC 48).
+- Pilihan radio/dropdown bersumber "associated values" rule Property — **tidak ada di korpus**
+  (TypeTax, IsSurveyReport, StatementType, ClaimType, ClaimPaymentType, DueTo) ⇒ isian teks apa adanya
+  (AC 56), tidak dikarang. Approval memakai nilai `1`/`0` dengan teks dari `SaveViewSuggest`
+  (Accept/Reject).
+- Tidak dibangun: tombol/layar Survey Report (penyimpanan survei tidak dirancang, `[terbuka]`),
+  pemilih SOB (hanya untuk XOL Retro), Choose Business R (treaty keluar, JSON).

@@ -1,6 +1,6 @@
 # 02: Daur hidup berkas realisasi dan nomor polis — satu nomor, sekali, tanpa bentrok
 
-**Status:** ready-for-agent
+**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
 **Blocked by:** 01
 **Menutup:** AC 31 · 59 · 73 · 74 *(4 AC)* — US 1 · 4 · 5
 
@@ -35,11 +35,11 @@ penawaran yang sudah pernah ada.
 
 ## Acceptance criteria
 
-- [ ] **AC 73** — nomor polis memuat awalan tetap, penanda treaty, bulan-tahun, dan nomor urut
+- [x] **AC 73** — nomor polis memuat awalan tetap, penanda treaty, bulan-tahun, dan nomor urut
       berdigit tetap
-- [ ] **AC 74** — nomor dibentuk **sekali** per berkas; tidak berubah pada penyimpanan berikutnya
-- [ ] **AC 31** — dua berkas **tidak pernah** bernomor sama
-- [ ] **AC 59** — peringatan muncul ketika jumlah berkas klaim terhubung **lebih dari nol**
+- [x] **AC 74** — nomor dibentuk **sekali** per berkas; tidak berubah pada penyimpanan berikutnya
+- [ ] 🟡 **AC 31** — dua berkas **tidak pernah** bernomor sama
+- [ ] ⛔ **AC 59** — peringatan muncul ketika jumlah berkas klaim terhubung **lebih dari nol**
 
 ## Butir `[terbuka]` yang menyentuh tiket ini
 
@@ -52,3 +52,18 @@ penawaran yang sudah pernah ada.
 1. Realisasikan dua penawaran berbarengan — ⭐ nomor polisnya **berbeda**.
 2. Simpan ulang salah satunya — ⭐ nomornya **tidak berubah**.
 3. Buat penawaran yang sudah pernah ada — ⭐ **peringatan muncul**.
+
+## ⛔ RALAT implementasi 2026-10-03
+
+1. **Rule pembentuk nomor polis.** Bunyi lama: *"Pembentukan nomor polis | `RDBList\GenerateNoPolicy.xml`"*.
+   ⛔ Keliru: `GenerateNoPolicy` dipanggil `SaveJsonPolisTreatyIn_Act` langkah 4 dan **hasilnya tidak
+   dipakai**. Nomor polis dibentuk `Activity\GeneratePolicyNoTreaty_Act` (langkah efektif 3-13, 25-30;
+   14-24 berlabel `//`): `KODE_PRODUKSI(NONLIFE) + QR/QP/TP + ".T" + OJKBusinessID + "." + MM.YYYY +
+   "." + urut5`, urut dari `PROC_GENERATE_SEQUENCE_NUMBER` (kini `inti/backend/penomor`). Langkah 28
+   bersyarat `PolicyNo == ""` — nomor sekali (AC 74).
+2. **P7 terjawab.** `InputData.CARI20` diisi langkah 7-9 (`DueTo` 1 → QR, 0 → QP, `ClaimType`
+   "XOL Retro" → TP).
+3. **AC 59 tidak dapat dipenuhi seperti tertulis.** `CheckDuplicateOffer` langkah 1-4 berlabel `//`
+   dan dipanggil `SetTreatyIn_Act` (pembongkar JSON, tidak dimigrasi — AC 62) TANPA parameter, sehingga
+   `GetCountClaim` selalu menghitung `masterid = NULL` — peringatan **tidak pernah menyala** di sistem
+   lama. Yang dibangun: `TreatyRealizationCheckDuplicate` (pasca-submit admin, IsApproved 1).

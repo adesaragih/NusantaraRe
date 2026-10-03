@@ -11,7 +11,7 @@
 ---
 
 
-**Status:** ⭐ **ready-for-agent** *(semula ~~blocked~~ — 23-09-2026)*
+**Status:** belum *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ⭐ **ready-for-agent** *(semula ~~blocked~~ — 23-09-2026)*)*
 ~~**Blocked by:** **19** · **20** · ⛔ `[work owner]` **dokumen lama dipindahkan seluruhnya atau sebagian** — belum diputuskan~~ ⛔ **penahan gugur 23-09-2026**
 **Menutup:** NB AC **55–59** *(5 AC)*
 **Sumber:** `nb-treaty-in\spec-penyimpanan-relasional.md` ID-3
@@ -43,11 +43,11 @@ Lewat seam `repository` yang sama. ⭐ Uji utama: dokumen bergalat presisi dimua
 
 ## Acceptance criteria
 
-- [ ] **AC 55** — dokumen lama dimuat **tanpa pembulatan ke presisi mata uang**
-- [ ] **AC 56** — pemuat menulis lewat antarmuka penyimpanan yang **sama**
-- [ ] **AC 57** — medan tak dikenal **tersimpan di penampung**, bukan dibuang
-- [ ] **AC 58** — dokumen yang gagal diurai **dilaporkan beserta sebabnya**
-- [ ] **AC 59** — penampung medan tak dikenal **wajib kosong** sebelum pekerjaan dinyatakan selesai
+- [ ] ⛔ **AC 55** — dokumen lama dimuat **tanpa pembulatan ke presisi mata uang**
+- [ ] ⛔ **AC 56** — pemuat menulis lewat antarmuka penyimpanan yang **sama**
+- [ ] ⛔ **AC 57** — medan tak dikenal **tersimpan di penampung**, bukan dibuang
+- [ ] ⛔ **AC 58** — dokumen yang gagal diurai **dilaporkan beserta sebabnya**
+- [ ] ⛔ **AC 59** — penampung medan tak dikenal **wajib kosong** sebelum pekerjaan dinyatakan selesai
 
 ## ⛔ Kenapa tiket ini `blocked`
 
@@ -57,3 +57,11 @@ memuat dua tahun terakhir adalah pekerjaan yang berbeda besarnya.
 
 ⚠️ **AC 59 tidak dapat dipenuhi sebelum tiket 19 lepas** — penampung medan tak dikenal tidak akan
 kosong selama daftar kolom lengkap belum ada.
+
+## ⭐ Penerapan KEPUTUSAN-RONDE-12 — 2026-10-03
+
+- **Butir 5** — seluruh dokumen `POOLDATA.JSON_POLIS`, setiap polis dan setiap generasinya, dipindah;
+  tanpa penyaring. Bunyi lama (*"seluruhnya atau sebagian — belum diputuskan"*) digantikan.
+- ⛔ **Pemuat belum dibangun pada implementasi 2026-10-03.** Penampung `T_POLIS_MEDAN_LAIN` (migrasi 329)
+  sudah ada; penulisnya lahir bersama pemuat. Empat angka DBA butir 5 (cacah baris, tahun terawal,
+  ukuran, PRODKE tertinggi) masih diperlukan untuk merencanakan pemuatan penuh.

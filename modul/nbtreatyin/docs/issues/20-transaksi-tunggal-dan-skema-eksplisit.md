@@ -1,6 +1,6 @@
 # 20: Transaksi tunggal dan skema eksplisit
 
-**Status:** ready-for-agent
+**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
 **Blocked by:** **16** · **19**
 **Menutup:** NB AC **45–48** *(4 AC)*
 **Sumber:** `nb-treaty-in\spec-penyimpanan-relasional.md` ID-32..ID-35
@@ -35,7 +35,7 @@ tidak boleh ada satu baris pun tertinggal, termasuk baris induknya.
 
 ## Acceptance criteria
 
-- [ ] **AC 45** — kegagalan menulis tabel anak mana pun **membatalkan seluruh** penyimpanan
-- [ ] **AC 46** — seluruh penyimpanan satu polis terjadi dalam **satu transaksi**
-- [ ] **AC 47** — setiap pernyataan menyebut skema **eksplisit**
-- [ ] **AC 48** — penyimpanan **tidak memanggil** satu pun program tersimpan
+- [ ] 🟡 **AC 45** — kegagalan menulis tabel anak mana pun **membatalkan seluruh** penyimpanan
+- [ ] 🟡 **AC 46** — seluruh penyimpanan satu polis terjadi dalam **satu transaksi**
+- [x] **AC 47** — setiap pernyataan menyebut skema **eksplisit**
+- [x] **AC 48** — penyimpanan **tidak memanggil** satu pun program tersimpan

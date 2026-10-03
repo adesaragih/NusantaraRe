@@ -1,6 +1,6 @@
 # 09: Tanggal — satu tipe, satu format, dan pengisian bawaan yang ditiru apa adanya
 
-**Status:** ready-for-agent
+**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
 **Blocked by:** —
 **Menutup:** AC 32 · 33 · 34 · 35 · 69 *(5 AC)* — US 2 · 35 · 44
 
@@ -34,11 +34,11 @@ sistem, dan formatnya diurus di lapisan layar — ⭐ urutan dan perbandingan ta
 
 ## Acceptance criteria
 
-- [ ] **AC 32** — tanggal disimpan sebagai **tipe tanggal**, ⛔ bukan teks
-- [ ] **AC 33** — **satu format** dipakai di seluruh sistem; ⛔ tidak ada dua format berdampingan
-- [ ] **AC 34** — tanggal akhir kosong diisi **tanggal hari ini**, ⛔ bukan ditambah satu tahun
-- [ ] **AC 35** — tanggal mulai dan tanggal laporan kosong diisi tanggal hari ini
-- [ ] **AC 69** — migrasi menghasilkan kontrak ber-tanggal-akhir **sama dengan tanggal mulai**
+- [x] **AC 32** — tanggal disimpan sebagai **tipe tanggal**, ⛔ bukan teks
+- [x] **AC 33** — **satu format** dipakai di seluruh sistem; ⛔ tidak ada dua format berdampingan
+- [x] **AC 34** — tanggal akhir kosong diisi **tanggal hari ini**, ⛔ bukan ditambah satu tahun
+- [x] **AC 35** — tanggal mulai dan tanggal laporan kosong diisi tanggal hari ini
+- [ ] ⛔ **AC 69** — migrasi menghasilkan kontrak ber-tanggal-akhir **sama dengan tanggal mulai**
       untuk berkas yang tanggal akhirnya kosong
 
 ## Butir `[terbuka]` yang menyentuh tiket ini
@@ -59,3 +59,11 @@ sistem, dan formatnya diurus di lapisan layar — ⭐ urutan dan perbandingan ta
 ⚠️ `[penyimpangan sadar]` Tipe tanggal dan format tunggal **berbeda** dari Pega. ⭐ Tetapi
 pengisian tanggal-akhir-kosong-jadi-hari-ini **ditiru apa adanya** *(P35)*, walau hasilnya kontrak
 bermasa berlaku nol hari — ⛔ **disengaja, bukan cacat migrasi.**
+
+## ⛔ Penyimpangan sadar — 2026-10-03
+
+`InputPolicyTreatyInPre_Act` langkah 9 menanam `@substring(StatementDate,6,2)>25`, sedangkan
+`GeneratePolicyNoTreaty_Act` langkah 5.3 membaca hari dari `POOLDATA.TANGGAL_CLOSING`. Preseden
+`[keputusan work owner]` PremiumList Life (dua aturan sama: "ikuti yang dari DB") dan penjaga repo
+`TestNolAmbangTutupBukuTertanam` ⇒ hari tutup buku dibaca dari tabel di kedua tempat. Langkah 3-4
+(StatementDate = ProductionDate = sysdate) kotak When-nya TIDAK dicentang — berjalan setiap pra-proses.

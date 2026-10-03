@@ -1,6 +1,6 @@
 # 04: Antrean bersama dan pemeriksaan keanggotaan — bukan nomor urut daftar
 
-**Status:** ready-for-agent
+**Status:** selesai *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
 **Blocked by:** 03
 **Menutup:** AC 11 · 14 · 92 *(3 AC)* — US 3 · 8 · 19
 
@@ -34,9 +34,9 @@ diurutkan ulang.
 
 ## Acceptance criteria
 
-- [ ] **AC 11** — setiap penugasan masuk ke **antrean bersama**; ⛔ tidak ada kotak masuk pribadi
-- [ ] **AC 14** — keanggotaan antrean diperiksa **menurut nama antrean**, ⛔ bukan menurut nomor urut
-- [ ] **AC 92** — berkas menunggu **posisi**, bukan orang
+- [x] **AC 11** — setiap penugasan masuk ke **antrean bersama**; ⛔ tidak ada kotak masuk pribadi
+- [x] **AC 14** — keanggotaan antrean diperiksa **menurut nama antrean**, ⛔ bukan menurut nomor urut
+- [x] **AC 92** — berkas menunggu **posisi**, bukan orang
 
 ## Perintah verifikasi
 
@@ -49,3 +49,9 @@ diurutkan ulang.
 ⚠️ `[terverifikasi]` Pola penunjukan-menurut-posisi ada di **41 berkas pada 9 modul** di seluruh
 korpus. ⭐ Perubahan yang sama berlaku di sana ketika modul itu digarap — **catat, jangan kerjakan
 di tiket ini**.
+
+## Hasil implementasi 2026-10-03
+
+Keanggotaan diperiksa menurut NAMA workbasket (`inti.Pelaku.Peran`) — `services.anggota`. Penunjukan
+menurut nomor urut tidak dibangun: `InputPolicyTreatyIn_preDT` langkah 12-13 (`pyWorkBasketList(2)`),
+`When\IsUW` (`pyWorkBasketList(1)` = ReasFacIn* — tidak pernah benar bagi antrean treaty).

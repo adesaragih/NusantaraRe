@@ -1,6 +1,6 @@
 # 17: Nomor urut baris anak dan pemasangan antar generasi
 
-**Status:** ready-for-agent
+**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
 **Blocked by:** **16**
 **Menutup:** NB AC **8–11** *(4 AC)*
 **Sumber:** `nb-treaty-in\spec-penyimpanan-relasional.md` ID-11..ID-13
@@ -35,7 +35,7 @@ dibaca kembali — nomor urutnya harus rapat, bukan berlubang.
 
 ## Acceptance criteria
 
-- [ ] **AC 8** — setiap tabel anak memiliki kolom nomor urut
-- [ ] **AC 9** — menghapus baris di tengah menghasilkan penomoran ulang yang rapat
-- [ ] **AC 10** — nomor urut unik di dalam satu induk
-- [ ] **AC 11** — pemasangan antar generasi memakai nomor urut, **bukan** kunci dagang
+- [x] **AC 8** — setiap tabel anak memiliki kolom nomor urut
+- [ ] 🟡 **AC 9** — menghapus baris di tengah menghasilkan penomoran ulang yang rapat
+- [x] **AC 10** — nomor urut unik di dalam satu induk
+- [x] **AC 11** — pemasangan antar generasi memakai nomor urut, **bukan** kunci dagang

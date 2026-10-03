@@ -1,6 +1,6 @@
 # 14: Lingkup — yang TIDAK dibangun, dan diuji supaya tetap tidak terbangun
 
-**Status:** ready-for-agent
+**Status:** selesai *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
 **Blocked by:** —
 **Menutup:** AC 61 · 62 · 63 · 64 · 65 · 88 *(6 AC)* — US 45
 
@@ -35,12 +35,12 @@ pembangunan berikutnya.
 
 ## Acceptance criteria
 
-- [ ] **AC 61** — **28** aturan yatim **tidak dimigrasi**; nol terpanggil
-- [ ] **AC 62** — **6** aturan pembongkar dokumen **tidak dimigrasi**
-- [ ] **AC 63** — aturan bernama sama yang menguji `= 1` **tidak dimigrasi**
-- [ ] **AC 64** — penanda persetujuan kedua **tidak dibangun**; penampungnya tidak dibuat
-- [ ] **AC 65** — medan "nomor surat" **tidak** dipakai menyimpan penanda arah
-- [ ] **AC 88** — nol dari **561** langkah yatim terpanggil
+- [x] **AC 61** — **28** aturan yatim **tidak dimigrasi**; nol terpanggil
+- [x] **AC 62** — **6** aturan pembongkar dokumen **tidak dimigrasi**
+- [x] **AC 63** — aturan bernama sama yang menguji `= 1` **tidak dimigrasi**
+- [x] **AC 64** — penanda persetujuan kedua **tidak dibangun**; penampungnya tidak dibuat
+- [x] **AC 65** — medan "nomor surat" **tidak** dipakai menyimpan penanda arah
+- [x] **AC 88** — nol dari **561** langkah yatim terpanggil
 
 ## Perintah verifikasi
 

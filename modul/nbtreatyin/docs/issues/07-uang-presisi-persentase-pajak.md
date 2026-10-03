@@ -1,6 +1,6 @@
 # 07: Uang — presisi penuh, persentase bukan uang, pajak brokerage apa adanya
 
-**Status:** ready-for-agent
+**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
 **Blocked by:** 01
 **Menutup:** AC 18 · 23 · 24 · 25 · 26 · 27 · 28 · 85 · 86 *(9 AC)* — US 21 · 22 · 36 · 38 · 39
 
@@ -35,16 +35,16 @@ Sesudah tiket ini, nilai uang tersimpan **berpresisi penuh**, ditampilkan besert
 
 ## Acceptance criteria
 
-- [ ] **AC 23** — nilai uang disimpan **berpresisi penuh**
-- [ ] **AC 24** — pembulatan **hanya** di titik penyajian, ⛔ tidak pernah di repository
-- [ ] **AC 25** — uang **tidak pernah** diwakili tipe pecahan biner
-- [ ] **AC 26** — empat medan itu dibaca sebagai **persentase**, bukan jumlah uang
-- [ ] **AC 27** — jenis pajak *inclusive* ⇒ potongan dibagi **1,022**
-- [ ] **AC 28** — nilai lain — ⭐ **termasuk kosong, huruf kecil, atau berspasi** — ⇒ potongan
+- [ ] 🟡 **AC 23** — nilai uang disimpan **berpresisi penuh**
+- [x] **AC 24** — pembulatan **hanya** di titik penyajian, ⛔ tidak pernah di repository
+- [x] **AC 25** — uang **tidak pernah** diwakili tipe pecahan biner
+- [ ] 🟡 **AC 26** — empat medan itu dibaca sebagai **persentase**, bukan jumlah uang
+- [x] **AC 27** — jenis pajak *inclusive* ⇒ potongan dibagi **1,022**
+- [x] **AC 28** — nilai lain — ⭐ **termasuk kosong, huruf kecil, atau berspasi** — ⇒ potongan
       dipakai apa adanya
-- [ ] **AC 18** — kedelapan medan uang **ditampilkan apa adanya**, ⛔ tidak dihitung ulang
-- [ ] **AC 85** — angka uang ditampilkan beserta **kode mata uang pasangannya**
-- [ ] **AC 86** — ⛔ format penyajian **belum ditetapkan**; penyajian tidak dibangun dengan format
+- [x] **AC 18** — kedelapan medan uang **ditampilkan apa adanya**, ⛔ tidak dihitung ulang
+- [x] **AC 85** — angka uang ditampilkan beserta **kode mata uang pasangannya**
+- [x] **AC 86** — ⛔ format penyajian **belum ditetapkan**; penyajian tidak dibangun dengan format
       yang ditebak
 
 ## Butir `[terbuka]` yang menyentuh tiket ini
@@ -75,3 +75,14 @@ Sesudah tiket ini, nilai uang tersimpan **berpresisi penuh**, ditampilkan besert
 > di ekspor: `@if(TypeTax="Inclusive", @divide(Deduction,@divide(102.2,100,8),8), Deduction)`,
 > **PPH 2 %**, **PPN 2,2 %**. Perhitungannya ada di tiket **13**, yang kini tertahan oleh **P30**
 > dan **P8** saja.
+
+## ⛔ RALAT dan pertentangan — 2026-10-03
+
+1. **`DEDUCTION1/2` halaman polis.** `[keputusan work owner]` P29 / AC 26 / spec-penyimpanan AC 38:
+   persentase. XML memperlakukan nilai halaman polis sebagai **jumlah** (dikurangkan dari premi —
+   `CountNetPremi_act` langkah 4; dibagi 1,022 — `SetPPNPPH` langkah 4; kontrol layar `pxCurrency`).
+   Aturan prompt: ikuti WO, catat ⇒ kolom bergolongan **persen**, rumus diport apa adanya (AC 79).
+2. **`SetPPNPPH` langkah 4 BERSYARAT** — `.FlagPPH=="true"` (lewati syarat berikut) ATAU
+   `ListAgent.pxResults(1).STS_PKP == 1` (RD `BrowseClientName_RD` atas SourceOfBusiness). Port pertama
+   menganggapnya tanpa syarat — diperbaiki.
+3. Nilai master `TreatyIn.*` tidak tersedia (tiket 01 RALAT 1) — langkah yang membaginya dilewati.

@@ -1,6 +1,6 @@
 # 12: Layar jenjang ketiga — sembilan medan wajib SEKALIGUS terkunci
 
-**Status:** ready-for-agent
+**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
 **Blocked by:** 11
 
 > ⭐⭐ **LEPAS DARI BLOKIR.** `[penyimpangan sadar]` 2026-09-22 — dua baris ini semula berbunyi:
@@ -72,13 +72,13 @@ terkunci, dan itu tetap benar — tetapi **yang mengisinya terbaca di ekspor**. 
 
 ## Acceptance criteria
 
-- [ ] **AC 47** — layar jenjang ketiga **mewajibkan** satu medan yang tidak wajib di layar admin
-- [ ] **AC 48** — berkas **tidak dapat disimpan** bila medan wajib pada tingkat itu kosong
-- [ ] **AC 52** — pemegang jenjang ketiga **dapat mengisi tujuh medan**; ⛔ layarnya **bukan**
+- [x] **AC 47** — layar jenjang ketiga **mewajibkan** satu medan yang tidak wajib di layar admin
+- [x] **AC 48** — berkas **tidak dapat disimpan** bila medan wajib pada tingkat itu kosong
+- [ ] 🟡 **AC 52** — pemegang jenjang ketiga **dapat mengisi tujuh medan**; ⛔ layarnya **bukan**
       sepenuhnya hanya-baca
-- [ ] **AC 78** — **5** tempat yang menghapus pesan **sesudah** validasi memasangnya **ditahan**
+- [x] **AC 78** — **5** tempat yang menghapus pesan **sesudah** validasi memasangnya **ditahan**
       dan tidak dibangun
-- [ ] **AC 80** — ⭐ layar **dapat disimpan**; enam medan diisi langkah, tiga diketik underwriter
+- [x] **AC 80** — ⭐ layar **dapat disimpan**; enam medan diisi langkah, tiga diketik underwriter
       di layar sebelumnya *(AC 80 dicabut lalu diganti 2026-09-22 — lihat `spec.md`)*
 
 ## Butir `[terbuka]` yang menyentuh tiket ini
@@ -101,3 +101,10 @@ terkunci, dan itu tetap benar — tetapi **yang mengisinya terbaca di ekspor**. 
 ⭐ **Tiket ini semula ditulis lengkap walau berstatus `blocked`** — supaya begitu P18 dijawab,
 pekerjaannya sudah terumus. ⭐⭐ **P18 tidak pernah perlu dijawab**, dan pekerjaannya kini dapat
 diambil. Kalimat lama ⛔ *"Jangan ditandai `ready-for-agent` sebelum itu"* — **ditarik**.
+
+## Hasil implementasi 2026-10-03
+
+Layar atasan: seluruh medan terkunci kecuali DueTo, FlagPPH, No Offer Slip, Approval, Suggest,
+ProductionDate (enam; spec menyebut tujuh — AC 52 sebagian). Tombol: Sec Head selalu Submit; Dept Head
+IsApproved 1 → Generate nomor polis → ShowPolicyNoTreaty (OK = Submit) — posisi menggantikan
+`<ID-operator-1>` (tiket 05).

@@ -1,6 +1,6 @@
 # 16: Kerangka penyimpanan polis dan kunci generasi
 
-**Status:** ready-for-agent
+**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
 **Blocked by:** — *(dapat mulai segera)*
 **Menutup:** NB AC **1–7** *(7 AC)*
 **Sumber:** `nb-treaty-in\spec-penyimpanan-relasional.md` ID-5..ID-10
@@ -41,10 +41,16 @@ penyimpanan.
 
 ## Acceptance criteria
 
-- [ ] **AC 1** — menyimpan dua polis dengan `NOPOLIS` dan `PRODKE` sama **ditolak**
-- [ ] **AC 2** — polis baru tersimpan dengan `PRODKE = 0`
-- [ ] **AC 3** — `OLD_POLIS_ID` pada polis baru bernilai kosong
-- [ ] **AC 4** — dua baris tidak boleh berbagi `OLD_POLIS_ID` yang sama
-- [ ] **AC 5** — tabel generasi dan tabel akar **berbagi kunci utama**, tanpa kolom kunci tamu terpisah
-- [ ] **AC 6** — menyunting baris generasi yang sudah ditutup **ditolak**
-- [ ] **AC 7** — baris antar modul pada tabel akar **tidak saling menunjuk**
+- [ ] 🟡 **AC 1** — menyimpan dua polis dengan `NOPOLIS` dan `PRODKE` sama **ditolak**
+- [x] **AC 2** — polis baru tersimpan dengan `PRODKE = 0`
+- [x] **AC 3** — `OLD_POLIS_ID` pada polis baru bernilai kosong
+- [x] **AC 4** — dua baris tidak boleh berbagi `OLD_POLIS_ID` yang sama
+- [x] **AC 5** — tabel generasi dan tabel akar **berbagi kunci utama**, tanpa kolom kunci tamu terpisah
+- [ ] 🟡 **AC 6** — menyunting baris generasi yang sudah ditutup **ditolak**
+- [x] **AC 7** — baris antar modul pada tabel akar **tidak saling menunjuk**
+
+## Catatan implementasi 2026-10-03
+
+`TGL_TUTUP` tidak diisi saat realisasi NB selesai: generasi ditutup ketika generasi penerusnya lahir
+(endorsemen, di luar NB). Penyuntingan kasus yang sudah `Resolved-*` ditolak layanan
+(`ErrKasusTertutup`), dan `TGL_TUTUP` terisi ditolak repository (`ErrGenerasiTertutup`, AC 6).

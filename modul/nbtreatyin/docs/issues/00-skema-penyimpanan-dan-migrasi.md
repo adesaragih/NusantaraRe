@@ -1,6 +1,6 @@
 # 00: Skema penyimpanan dan migrasi — menunggu SENSUS PROPERTI, bukan lagi bahan dari DBA
 
-**Status:** needs-info — ⚠️ **yang ditunggu berubah**
+**Status:** selesai — sensus dicocokkan ulang ke XML; butir DBA tetap `[terbuka]` *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: needs-info — ⚠️ **yang ditunggu berubah**)*
 **Blocked by:** ⭐ **sensus properti `PolicyTreatyIn`** — ronde tersendiri, pekerjaan tim migrasi
 
 > ⭐⭐ **P1 dan P29 SUDAH TERJAWAB.** `[terverifikasi]` 2026-09-22 — dua baris ini semula berbunyi:
@@ -101,3 +101,16 @@ sekarang** dan menyesuaikan bentuk penyimpanan ketika ia tiba.
 
 ⚠️ Tiket ini **satu-satunya** yang boleh menyebut nama procedure dan parameter, dan itu pun hanya
 sebagai keterangan **apa yang ditunggu**. ⛔ Nol DDL, nol `CREATE TABLE`.
+
+## ⭐ Hasil implementasi 2026-10-03 — sensus dicocokkan ulang ke XML
+
+- Sensus properti dari rule TERJANGKAU (DataTransform, When, DecisionTable ikut disapu):
+  `docs/SENSUS-PROPERTI-POLICYTREATYIN.md` (bangkitan `docs/alat/sensus.py`).
+- Katalog kolom tunggal `backend/models/katalog.go` → migrasi 320-328 dan
+  `docs/STRUKTUR-TABEL-NB-TREATY-IN.md` dibangkitkan darinya (`docs/alat/skema.py`); uji
+  `repository/kolom_test.go` TestKatalogSepakatDenganDDL menagih kesepakatannya.
+- `T_GENERAL_POLIS` memuat **72** kolom katalog (69 medan `PolicyTreatyIn` + 3 halaman kerja:
+  `PositionNote`, `NBStatus`, `TreatyIn.ID`) ditambah kolom kunci/generasi. Tidak dibuat, dan sebabnya:
+  `TOTAL_*` (turunan baris; penjaga repo melarang nama ber-awalan TOTAL_ di migrasi), `LAYER*` (ID-22),
+  `isApprovedtoDeptHead` (P36, AC 64), `IsEDMInputOnNB` (hanya dipakai pembongkar JSON, AC 62),
+  `IDNewBisnis` (nol rule).

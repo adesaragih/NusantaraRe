@@ -914,6 +914,19 @@ dari luar. ⛔ Butir yang terasa seperti keputusan baru adalah salah tulis.
 
 ---
 
+### ⛔ RALAT dan pertentangan yang ditemukan saat implementasi — 2026-10-03
+
+> ⛔ Nomor AC tidak berubah dan bunyi lamanya **tidak dihapus**; yang dicatat di sini adalah apa yang
+> XML tunjukkan dan apa yang dibangun. Rinciannya di `docs/HASIL-IMPLEMENTASI.md` bab 4 dan tiket terkait.
+
+| AC | Bunyi lama (dikutip) | Temuan | Yang dibangun |
+| ---: | --- | --- | --- |
+| 8 | *"Sec Head menyetujui ⇒ berkas naik ke Dept Head. Test yang menemukan tujuan lain gagal."* | XML: `Decision13`/`CekLimitTreatyAcc_Act` (batas 200 juta) + `Decision8` membiarkan Sec Head menyelesaikan berkas bernomor | ⭐ **WO diikuti** (aturan prompt): selalu Dept Head. Mohon konfirmasi bila batas dikehendaki |
+| 26 | *"`DEDUCTION1` `DEDUCTION2` `BROKERAGE` `RNM_SHARE` dibaca sebagai persentase"* | rumus XML memakai `Deduction1/2` halaman polis sebagai jumlah (CountNetPremi_act 4, SetPPNPPH 4, `pxCurrency`); `RNM_SHARE` belum boleh dipakai | golongan simpan persen (WO); rumus diport apa adanya; nilai master yang tak tersedia → langkahnya dilewati |
+| 59 | *"Peringatan dipasang ketika jumlah berkas klaim terhubung lebih dari nol."* | `CheckDuplicateOffer` langkah 1-4 berlabel `//`, dipanggil tanpa parameter dari pembongkar JSON — peringatan tidak pernah menyala | tidak dapat dipenuhi seperti tertulis; `TreatyRealizationCheckDuplicate` dibangun |
+| 84 | *"Nilai kosong pada penanda persetujuan tidak menghentikan alur."* | `ListSuggest` mewajibkan Approval; tombol Submit hanya untuk 1/0 | tabel keputusan: kosong = disetujui (diuji); layar: Approval wajib (XML) |
+| 87 | *"Pengiriman ke layanan luar tidak dibangun sebelum muatannya diketahui."* | digantikan KEPUTUSAN-RONDE-12 butir 7 (P8 dicabut) | muatan 4 medan sesudah commit; sambungan `[terbuka]` |
+
 ## 8 · Out of Scope
 
 ### 8.1 Yang dikeluarkan, dan sebabnya

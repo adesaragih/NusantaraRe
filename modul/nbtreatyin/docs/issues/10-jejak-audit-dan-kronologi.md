@@ -1,6 +1,6 @@
 # 10: Jejak audit dan kronologi — identitas akses terpisah dari nama tampilan
 
-**Status:** ready-for-agent
+**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
 **Blocked by:** 03
 **Menutup:** AC 39 · 40 · 41 · 42 · 43 · 44 · 71 · 72 *(8 AC)* — US 15 · 16 · 20 · 40 · 41 · 42
 
@@ -36,15 +36,15 @@ seseorang berubah.
 
 ## Acceptance criteria
 
-- [ ] **AC 39** — penampung identitas operator diisi dari **identitas akses login**
-- [ ] **AC 40** — penampung nama diisi dari **nama tampilan**
-- [ ] **AC 41** — penampung identitas operator **terisi** pada setiap penulisan riwayat
-- [ ] **AC 42** — medan nama operator diisi dari **nama tampilan di setiap tahap**, termasuk tahap
+- [x] **AC 39** — penampung identitas operator diisi dari **identitas akses login**
+- [x] **AC 40** — penampung nama diisi dari **nama tampilan**
+- [x] **AC 41** — penampung identitas operator **terisi** pada setiap penulisan riwayat
+- [x] **AC 42** — medan nama operator diisi dari **nama tampilan di setiap tahap**, termasuk tahap
       jenjang ketiga
-- [ ] **AC 43** — setiap perpindahan tahap menulis **satu baris riwayat**
-- [ ] **AC 44** — pemberitahuan menyebut nama orang **dari data**; ⛔ tidak tertanam di dalam teks
-- [ ] **AC 71** — catatan pengguna tersimpan bersama tanggal dan operatornya
-- [ ] **AC 72** — riwayat dapat dibaca **berurutan waktu**
+- [x] **AC 43** — setiap perpindahan tahap menulis **satu baris riwayat**
+- [x] **AC 44** — pemberitahuan menyebut nama orang **dari data**; ⛔ tidak tertanam di dalam teks
+- [x] **AC 71** — catatan pengguna tersimpan bersama tanggal dan operatornya
+- [ ] 🟡 **AC 72** — riwayat dapat dibaca **berurutan waktu**
 
 ## Butir `[terbuka]` yang menyentuh tiket ini
 
@@ -64,3 +64,15 @@ seseorang berubah.
 ⚠️ `[penyimpangan sadar]` Mengisi penampung identitas operator adalah **perbaikan jejak audit**,
 bukan peniruan — kolomnya selama ini kosong. ⭐ Dan pengisian nama operator dari pengenal akun
 adalah **bug**, ⛔ bukan perbedaan maksud antar tahap *(P33)*.
+
+## ⛔ RALAT implementasi 2026-10-03
+
+1. **NBStatus.** Tujuh connector Flow menanam nama orang (`NB IS IN <nama>'S INBOX`). P40: nama dari
+   data. Berkas menunggu POSISI, bukan orang (AC 92) ⇒ teksnya memakai **nama posisi tujuan**
+   (`NB IS IN REASTREATYINSECHEAD'S INBOX`). Cabang DT yang memang memakai data (`pyUserName`,
+   `pxCreateOpName`) memakai nama tampilan dari `M_LOGIN_GO.NAME`. ⚠️ Tafsiran — mohon konfirmasi.
+2. `HISTORYAKSEPTASIPEGA.ID_PEGA` = `pzInsKey` (`ASM-FW-GISFW-WORK-NB NB-<n>`); `OPERATORID` = identitas
+   login; `USERNAME` = nama tampilan; ditulis di transaksi submit (AC 83). Nama tampilan kosong
+   menghasilkan kosong — tanpa jatuh-balik ke ID login (AC 40, 42).
+3. `HISTORYAKSEPTASIPRODUCTION` tidak ditulis kasus treaty: kedua kalang `SaveViewSuggest` bersyarat
+   `Quotation.BusinessFac == "F"`; treaty = "T". Catatan disimpan `T_POLIS_SUGGEST` (tiket 19).

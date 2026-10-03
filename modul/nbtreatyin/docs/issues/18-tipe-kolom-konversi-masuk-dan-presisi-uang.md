@@ -11,7 +11,7 @@
 ---
 
 
-**Status:** ⭐ **ready-for-agent** *(semula ~~blocked~~ — 23-09-2026 sore)*
+**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ⭐ **ready-for-agent** *(semula ~~blocked~~ — 23-09-2026 sore)*)*
 ~~**Blocked by:** **16** · ⛔ `[data DBA]` **presisi fisik belum diuji terhadap nilai terbesar** — dua belas digit di depan koma belum dibuktikan cukup~~ ⛔ **gugur 23-09-2026 sore**
 **Menutup:** NB AC **12–25** *(14 AC)*
 **Sumber:** `nb-treaty-in\spec-penyimpanan-relasional.md` ID-14..ID-20
@@ -54,20 +54,20 @@ dijalankan atasnya — hasil bawaan berarti gagal.
 
 ## Acceptance criteria
 
-- [ ] **AC 12** — kode tiga digit berawalan nol tersimpan dan terbaca utuh
-- [ ] **AC 13** — kode dua digit berawalan nol tersimpan utuh
-- [ ] **AC 14** — penggolong jenis usaha menemukan barisnya, bukan nilai bawaan
-- [ ] **AC 15** — penanda kosong tersimpan kosong, **bukan** nol dan bukan tak-bernilai
-- [ ] **AC 16** — penanda bernilai nol menghasilkan keputusan ditolak; nilai lain disetujui
-- [ ] **AC 17** — teks kosong pada medan uang tersimpan tak-bernilai
-- [ ] **AC 18** — teks kosong pada medan tanggal tersimpan tak-bernilai
-- [ ] **AC 19** — nilai uang berdesimal sembilan **dibulatkan pada desimal kedelapan**, bukan dipotong ke dua
-- [ ] **AC 20** — kolom uang berskala **delapan desimal**, ⭐ **tiga puluh digit di depan koma** *(`NUMBER(38,8)`; semula ~~dua belas~~ — dinaikkan 23-09-2026 sore)*
-- [ ] **AC 21** — tanggal delapan digit terurai benar
-- [ ] **AC 22** — cap waktu bersufiks zona terurai benar
-- [ ] **AC 23** — pengurutan menurut tanggal menghasilkan urutan kronologis, bukan leksikal
-- [ ] **AC 24** — nol kolom uang bertipe mengambang
-- [ ] **AC 25** — pembandingan uang memakai toleransi, bukan kesamaan persis
+- [ ] 🟡 **AC 12** — kode tiga digit berawalan nol tersimpan dan terbaca utuh
+- [ ] 🟡 **AC 13** — kode dua digit berawalan nol tersimpan utuh
+- [x] **AC 14** — penggolong jenis usaha menemukan barisnya, bukan nilai bawaan
+- [ ] 🟡 **AC 15** — penanda kosong tersimpan kosong, **bukan** nol dan bukan tak-bernilai
+- [x] **AC 16** — penanda bernilai nol menghasilkan keputusan ditolak; nilai lain disetujui
+- [x] **AC 17** — teks kosong pada medan uang tersimpan tak-bernilai
+- [x] **AC 18** — teks kosong pada medan tanggal tersimpan tak-bernilai
+- [x] **AC 19** — nilai uang berdesimal sembilan **dibulatkan pada desimal kedelapan**, bukan dipotong ke dua
+- [x] **AC 20** — kolom uang berskala **delapan desimal**, ⭐ **tiga puluh digit di depan koma** *(`NUMBER(38,8)`; semula ~~dua belas~~ — dinaikkan 23-09-2026 sore)*
+- [ ] ⛔ **AC 21** — tanggal delapan digit terurai benar
+- [ ] ⛔ **AC 22** — cap waktu bersufiks zona terurai benar
+- [x] **AC 23** — pengurutan menurut tanggal menghasilkan urutan kronologis, bukan leksikal
+- [x] **AC 24** — nol kolom uang bertipe mengambang
+- [ ] 🟡 **AC 25** — pembandingan uang memakai toleransi, bukan kesamaan persis
 
 ## ⛔ Kenapa tiket ini `blocked`
 
@@ -75,3 +75,12 @@ dijalankan atasnya — hasil bawaan berarti gagal.
 
 ⚠️ **Dan satu pertentangan di dalam spec, dicatat di sini karena spec tidak boleh disunting:**
 ~~`[terverifikasi]` spec EDM **AC 49** menuntut sembilan desimal, bertentangan dengan AC 58.~~ ✅ **DITUTUP 23-09-2026 sore.** AC 49 diselaraskan ke **delapan**; bunyi lamanya dikutip di spec EDM. ⭐ Pertentangan ini ditemukan **pelaksana ronde tiket**, dan laporannya terbukti tepat..
+
+## ⭐ Penerapan KEPUTUSAN-RONDE-12 dan catatan — 2026-10-03
+
+- **Butir 8** — nomor generasi `PRODKE NUMBER(10) DEFAULT 0` (bilangan bulat). ID-14: `INSTALLMENT_NO`
+  juga bilangan bulat `NUMBER(10)`.
+- **AC 15** — Oracle menyimpan `''` sebagai NULL; penanda kosong dibaca kembali sebagai `""` (setara di
+  halaman, tidak setara di SQL) — sebagian.
+- **AC 21-22** (format dokumen lama `YYYYMMDD`, cap waktu ` GMT`) milik pemuat dokumen lama — tiket 22,
+  belum dibangun.

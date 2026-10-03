@@ -414,6 +414,13 @@ Pemetaan kolomnya *(lengkap, dari naskah SQL)*:
 ⚠️ `B2B` dan `PERCENT_RNM` datang dari halaman **`OfferFacIn`** — bukti aturan ini **dipakai bersama
 modul Fac In**, bukan milik Treaty In sendiri.
 
+> ⛔⛔ **RALAT 2026-10-03 (implementasi) atas §4bis.1.** Premis *"dua tabel usulan ternyata sudah ada"*
+> tidak berlaku untuk **kasus treaty**: `SaveViewSuggest` menulis `HISTORYAKSEPTASIPRODUCTION` hanya
+> bila `Quotation.BusinessFac == "F"` — termasuk kalang berketerangan "UNTUK TREATY" — sedangkan treaty
+> bernilai "T". SuggestList treaty selama ini hanya hidup di dokumen JSON. ⇒ Tabel baris dokumen
+> `T_POLIS_SUGGEST` (migrasi 328) dibuat supaya catatan pengguna tidak hilang (spec AC 71). Keputusan
+> agen — mohon konfirmasi work owner.
+
 ### 4bis.2 ⭐⭐ Tabel datar yang diminta **sudah ada**: `TREATYINPRODUCTION`
 
 `RDBList\InsertTreatyInProdEDMT_SQL` menyisip ke `TREATYINPRODUCTION` dengan **58 kolom datar**,

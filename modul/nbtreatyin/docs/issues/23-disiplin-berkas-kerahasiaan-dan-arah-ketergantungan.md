@@ -1,6 +1,6 @@
 # 23: Disiplin berkas, kerahasiaan, dan arah ketergantungan
 
-**Status:** ready-for-agent
+**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
 **Blocked by:** — *(dapat mulai segera)*
 **Menutup:** NB AC **60–66** *(7 AC)*
 **Sumber:** `nb-treaty-in\spec-penyimpanan-relasional.md` ID-1 · ID-21 · ID-25 · Bab 9
@@ -39,10 +39,10 @@ Sebagian lewat seam `repository`, sebagian lewat pemeriksaan repositori otomatis
 
 ## Acceptance criteria
 
-- [ ] **AC 60** — nol nama orang tersalin ke berkas rancangan, spec, maupun test
-- [ ] **AC 61** — nol nomor polis ditulis apa adanya
-- [ ] **AC 62** — test berjalan di atas **data buatan**
-- [ ] **AC 63** — perubahan skema memerlukan **persetujuan manusia**
-- [ ] **AC 64** — tabel data umum menampung cacah medan yang ditetapkan spec
-- [ ] **AC 65** — bentuk gabungan ceding **boleh tidak sinkron** dengan barisnya, tanpa penjaga
-- [ ] **AC 66** — arah ketergantungan **tidak pernah dibalik**
+- [x] **AC 60** — nol nama orang tersalin ke berkas rancangan, spec, maupun test
+- [x] **AC 61** — nol nomor polis ditulis apa adanya
+- [x] **AC 62** — test berjalan di atas **data buatan**
+- [ ] ⛔ **AC 63** — perubahan skema memerlukan **persetujuan manusia**
+- [ ] 🟡 **AC 64** — tabel data umum menampung cacah medan yang ditetapkan spec
+- [x] **AC 65** — bentuk gabungan ceding **boleh tidak sinkron** dengan barisnya, tanpa penjaga
+- [x] **AC 66** — arah ketergantungan **tidak pernah dibalik**

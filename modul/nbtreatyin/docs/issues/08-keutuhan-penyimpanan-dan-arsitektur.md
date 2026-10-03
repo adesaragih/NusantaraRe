@@ -1,6 +1,6 @@
 # 08: Keutuhan penyimpanan — satu transaksi, skema eksplisit, arah ketergantungan
 
-**Status:** ready-for-agent
+**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
 **Blocked by:** 01
 **Menutup:** AC 29 · 30 · 60 · 83 · 90 *(5 AC)* — US 33 · 34
 
@@ -34,12 +34,12 @@ langkah mana pun membatalkan seluruhnya, dan tidak ada lagi berkas yang tersimpa
 
 ## Acceptance criteria
 
-- [ ] **AC 29** — seluruh urutan penyimpanan berada dalam **satu transaksi**; kegagalan di tengah
+- [ ] 🟡 **AC 29** — seluruh urutan penyimpanan berada dalam **satu transaksi**; kegagalan di tengah
       menyisakan **nol** baris
-- [ ] **AC 83** — kegagalan menyimpan riwayat **membatalkan seluruh transaksi**
-- [ ] **AC 30** — setiap query menyebut **skema secara eksplisit**
-- [ ] **AC 90** — keempat nama berejaan ganda diperlakukan sebagai **satu objek**
-- [ ] **AC 60** — arah ketergantungan `handlers → services → repository`; ⛔ tidak terbalik, tidak
+- [ ] 🟡 **AC 83** — kegagalan menyimpan riwayat **membatalkan seluruh transaksi**
+- [x] **AC 30** — setiap query menyebut **skema secara eksplisit**
+- [x] **AC 90** — keempat nama berejaan ganda diperlakukan sebagai **satu objek**
+- [x] **AC 60** — arah ketergantungan `handlers → services → repository`; ⛔ tidak terbalik, tidak
       memotong lapisan
 
 ## Perintah verifikasi

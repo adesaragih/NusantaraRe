@@ -11,7 +11,7 @@
 ---
 
 
-**Status:** ⭐ **ready-for-agent** *(semula ~~blocked~~ — 23-09-2026 sore)*
+**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ⭐ **ready-for-agent** *(semula ~~blocked~~ — 23-09-2026 sore)*)*
 ~~**Blocked by:** **16** · **17** · **18** · ⛔ `[data DBA]` **daftar kolom lengkap** — panduan bentuk dokumen dari DBA terbukti **basi**~~ ⛔ **gugur 23-09-2026 sore**
 **Menutup:** NB AC **26–44** *(19 AC)*
 **Sumber:** `nb-treaty-in\spec-penyimpanan-relasional.md` ID-21..ID-31
@@ -51,25 +51,25 @@ dinyatakan selesai — isinya yang tidak kosong berarti sensus medan belum lengk
 
 ## Acceptance criteria
 
-- [ ] **AC 26** — penanda lapisan **tidak** ada di tabel data umum
-- [ ] **AC 27** — tabel kuotasi menyimpan sepuluh medan, termasuk jenis kontrak dan kode bisnis
-- [ ] **AC 28** — satu baris per ceding, id dan nama terpisah
-- [ ] **AC 29** — bentuk gabungan di data umum tersimpan **persis** seperti di dokumen
-- [ ] **AC 30** — menghapus satu ceding menghapus **barisnya**, bukan menyunting teks gabungan
-- [ ] **AC 31** — polis proporsional tersimpan **tanpa** baris rincian angsuran bertingkat
-- [ ] **AC 32** — polis proporsional tersimpan **tanpa** baris lapisan
-- [ ] **AC 33** — menyimpan baris lapisan pada polis proporsional **ditolak**
-- [ ] **AC 34** — penanda lapisan tersimpan di tabel lapisan, bukan di data umum
-- [ ] **AC 35** — potongan pada lapisan bertipe **uang**
-- [ ] **AC 36** — penyebaran pada polis baru memakai presisi **sepuluh**
-- [ ] **AC 37** — tiga medan bagian tersimpan sebagai **persentase**
-- [ ] **AC 38** — medan potongan dan total bagian tersimpan sebagai **persentase**
-- [ ] **AC 39** — tabel riwayat usulan **tidak dibuat ulang**
-- [ ] **AC 40** — keterangan usulan dipotong pada batas panjangnya
-- [ ] **AC 41** — keputusan usulan diturunkan dari penandanya, per baris
-- [ ] **AC 42** — penanda per baris usulan tersimpan **terpisah** dari penanda tingkat polis
-- [ ] **AC 43** — kolom pelaku terisi dari identitas login
-- [ ] **AC 44** — kolom penanggung jawab terisi dari nama tampilan
+- [x] **AC 26** — penanda lapisan **tidak** ada di tabel data umum
+- [x] **AC 27** — tabel kuotasi menyimpan sepuluh medan, termasuk jenis kontrak dan kode bisnis
+- [x] **AC 28** — satu baris per ceding, id dan nama terpisah
+- [x] **AC 29** — bentuk gabungan di data umum tersimpan **persis** seperti di dokumen
+- [x] **AC 30** — menghapus satu ceding menghapus **barisnya**, bukan menyunting teks gabungan
+- [x] **AC 31** — polis proporsional tersimpan **tanpa** baris rincian angsuran bertingkat
+- [x] **AC 32** — polis proporsional tersimpan **tanpa** baris lapisan
+- [x] **AC 33** — menyimpan baris lapisan pada polis proporsional **ditolak**
+- [x] **AC 34** — penanda lapisan tersimpan di tabel lapisan, bukan di data umum
+- [x] **AC 35** — potongan pada lapisan bertipe **uang**
+- [x] **AC 36** — penyebaran pada polis baru memakai presisi **sepuluh**
+- [x] **AC 37** — tiga medan bagian tersimpan sebagai **persentase**
+- [ ] 🟡 **AC 38** — medan potongan dan total bagian tersimpan sebagai **persentase**
+- [x] **AC 39** — tabel riwayat usulan **tidak dibuat ulang**
+- [ ] ⛔ **AC 40** — keterangan usulan dipotong pada batas panjangnya
+- [ ] ⛔ **AC 41** — keputusan usulan diturunkan dari penandanya, per baris
+- [x] **AC 42** — penanda per baris usulan tersimpan **terpisah** dari penanda tingkat polis
+- [x] **AC 43** — kolom pelaku terisi dari identitas login
+- [x] **AC 44** — kolom penanggung jawab terisi dari nama tampilan
 
 ## ⛔ Kenapa tiket ini `blocked`
 
@@ -84,3 +84,17 @@ dinyatakan selesai — isinya yang tidak kosong berarti sensus medan belum lengk
 ⭐ **Yang dapat dikerjakan lebih dulu tanpa menunggu:** kerangka pemecah, penampung medan tak
 dikenal, dan seluruh AC yang tidak bergantung pada daftar kolom — ⚠️ tetapi **pekerjaan tidak
 dapat dinyatakan selesai** sampai penampung itu kosong.
+
+## ⭐ Penerapan KEPUTUSAN-RONDE-12 dan RALAT — 2026-10-03
+
+- **Butir 3/3b** — `BreakDownSpreadList` tidak disimpan dan tidak dihitung.
+- **Tabel `T_POLIS_SUGGEST` (migrasi 328) — keputusan AGEN, mohon konfirmasi work owner.** Rancangan
+  §4bis.1 menarik tabel usulan karena *"dua tabel usulan ternyata sudah ada"*. Untuk kasus treaty premis
+  itu tidak berlaku: `SaveViewSuggest` menulis `HISTORYAKSEPTASIPRODUCTION` hanya bila
+  `Quotation.BusinessFac == "F"`, dan treaty bernilai "T" — SuggestList treaty selama ini hanya hidup di
+  dokumen JSON. Tanpa tabel ini catatan pengguna hilang (spec AC 71). ⚠️ Peninjau spec membacanya
+  sebagai bertentangan dengan AC 39 (*"tabel riwayat baru gagal"*); tabel ini menyimpan baris dokumen
+  `SuggestList` (pemecah dokumen), bukan riwayat produksi.
+- **AC 38 — pertentangan dicatat.** DEDUCTION1/2 bergolongan persen (WO P29); `TOTAL_SHARE_PERCENTAGE_*`
+  tidak disimpan (turunan baris; penjaga repo melarang nama TOTAL_ di migrasi) — tidak dapat dipenuhi.
+- **AC 40-41** berlaku hanya pada `HISTORYAKSEPTASIPRODUCTION`, yang tidak ditulis kasus treaty.

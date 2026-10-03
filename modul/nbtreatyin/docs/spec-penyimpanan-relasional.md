@@ -690,6 +690,17 @@ dapat diuji dari luar.
 
 ---
 
+
+### ⛔ RALAT dan pertentangan yang ditemukan saat implementasi — 2026-10-03
+
+| AC | Bunyi lama (dikutip) | Temuan | Yang dibangun |
+| ---: | --- | --- | --- |
+| 15 | *"`IsApproved` bernilai `""` tersimpan sebagai `""`, bukan `NULL`"* | Oracle menyimpan `''` sebagai NULL | dibaca kembali `""`; setara di halaman, tidak di SQL |
+| 38 | *"`DEDUCTION1` `DEDUCTION2` `TOTAL_SHARE_PERCENTAGE_PREMIUM` `TOTAL_SHARE_PERCENTAGE_CLAIM` disimpan sebagai persen"* | `TOTAL_*` turunan baris spreading; penjaga repo melarang nama `TOTAL_` di migrasi | DEDUCTION1/2 persen; `TOTAL_*` dihitung saat dibaca (`HitungTotalSpreading`) |
+| 39 | *"`HISTORYAKSEPTASIPRODUCTION` tidak dibuat ulang"* | `SaveViewSuggest` hanya menulis bila `BusinessFac == "F"`; treaty "T" | ⚠️ `T_POLIS_SUGGEST` (baris dokumen SuggestList, bukan tabel riwayat) — keputusan agen, mohon konfirmasi WO |
+| 21-22, 52-59 | format dan pemuat dokumen lama | pemuat (tiket 22) belum dibangun | `T_POLIS_MEDAN_LAIN` (329) sudah ada tanpa penulis |
+
+
 ## 7 · Testing Decisions
 
 ### Apa yang membuat sebuah test baik di sini

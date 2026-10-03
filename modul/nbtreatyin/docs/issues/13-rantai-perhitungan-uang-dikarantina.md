@@ -11,7 +11,7 @@
 ---
 
 
-**Status:** ⭐ **ready-for-agent** *(semula ~~blocked~~ — 23-09-2026)* — ⚠️ **bukan lagi karena P18**
+**Status:** selesai *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ⭐ **ready-for-agent** *(semula ~~blocked~~ — 23-09-2026)* — ⚠️ **bukan lagi karena P18**)*
 ~~**Blocked by:** ⛔ **P30** *(aturan penjumlah yang hilang)* · ⛔ **P8** *(muatan efek keluar)*~~ ⛔ **penahan gugur 23-09-2026**
 
 > ⭐⭐ **SISI P18 DIBUKA.** `[penyimpangan sadar]` 2026-09-22 — dua baris ini semula berbunyi:
@@ -87,9 +87,9 @@ menunggu P18"*; sesudah P18 ditarik, **tidak ada lagi yang menunggu P18.**
 
 ## Acceptance criteria
 
-- [ ] **AC 79** — ⭐ rantai perhitungan **dibangun dari isi langkah yang terbaca di ekspor**;
+- [x] **AC 79** — ⭐ rantai perhitungan **dibangun dari isi langkah yang terbaca di ekspor**;
       ⛔ nol rumus yang ditebak *(AC 79 dicabut lalu diganti 2026-09-22 — lihat `spec.md`)*
-- [ ] **AC 87** — pengiriman ke layanan luar **tidak dibangun** sebelum muatannya diketahui
+- [x] **AC 87** — pengiriman ke layanan luar **tidak dibangun** sebelum muatannya diketahui
 
 ## Butir `[terbuka]` yang menyentuh tiket ini
 
@@ -109,3 +109,14 @@ didalilkan bila P18 tidak dijawab **gugur seluruhnya**. Bab itu dipertahankan se
 
 ⭐ **Yang dapat diambil sekarang:** seluruh rantai aritmetika uang. ⛔ **Yang masih ditahan:**
 pemanggilan `SumTSIPremiSpreadRNMMultiCob_Act` *(P30)* dan pengiriman ke layanan luar *(P8, AC 87)*.
+
+## ⭐ Penerapan KEPUTUSAN-RONDE-12 dan RALAT — 2026-10-03
+
+- **Butir 6 (P30 dicabut — milik Fac In)** dan **butir 7 (P8 dicabut — ikuti yang terbaca)**: tiket
+  ini tidak tertahan. Bunyi lama baris Blocker P30/P8 tetap dikutip di atas, tidak dihapus.
+- **AC 87 — RALAT.** Bunyi lama: *"pengiriman ke layanan luar tidak dibangun sebelum muatannya
+  diketahui"*. Digantikan butir 7: muatan **4 medan** (`CARI1` pzInsKey, `CARI2`/`CARI3` PolicyNo,
+  `CARI21` ProdDateTime `dd/MM/yyyy HH:mm:ss`) dibangun di `services/konversi.go`, dijalankan sesudah
+  commit, gagal **tidak** membatalkan simpan (`FlagErrorKonversi` verbatim ke layar), dilewati di luar
+  produksi. Sambungan nyatanya (kunci `M_LINK_SERVICE`, persetujuan) `[terbuka]` — PERMINTAAN-TIM-INTI C1.
+- **Butir 3/3b**: `BreakDownSpreading_Act` tidak dimigrasi (CountSpreading langkah 6).

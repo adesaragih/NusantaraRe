@@ -1,6 +1,6 @@
 # 15: Migrasi, paritas, dan jejak keputusan — tidak ada butir terbuka yang ditutup diam-diam
 
-**Status:** ready-for-agent
+**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
 **Blocked by:** 01 · 08 · 09 · 10
 **Menutup:** AC 68 · 70 · 93 · 94 · 95 · 96 *(6 AC)* — US 43 · 47 · 48
 
@@ -34,13 +34,13 @@ sehingga tidak ada yang terlupakan saat go-live.
 
 ## Acceptance criteria
 
-- [ ] **AC 68** — data lama **terbaca** di sistem baru; berkas lama dapat dibuka
-- [ ] **AC 70** — setiap penyimpangan dari perilaku lama **tercatat beserta alasannya**
-- [ ] **AC 93** — setiap acceptance criterion merujuk **bab asalnya**
-- [ ] **AC 94** — setiap acceptance criterion membawa **penanda**
-- [ ] **AC 95** — ⛔ butir terbuka **tidak ditutup**; tidak ada yang dinyatakan selesai tanpa
+- [ ] ⛔ **AC 68** — data lama **terbaca** di sistem baru; berkas lama dapat dibuka
+- [ ] ⛔ **AC 70** — setiap penyimpangan dari perilaku lama **tercatat beserta alasannya**
+- [ ] ⛔ **AC 93** — setiap acceptance criterion merujuk **bab asalnya**
+- [ ] ⛔ **AC 94** — setiap acceptance criterion membawa **penanda**
+- [ ] ⛔ **AC 95** — ⛔ butir terbuka **tidak ditutup**; tidak ada yang dinyatakan selesai tanpa
       pemiliknya
-- [ ] **AC 96** — ⛔ nilai berupa **nama orang** tidak muncul di artefak mana pun
+- [x] **AC 96** — ⛔ nilai berupa **nama orang** tidak muncul di artefak mana pun
 
 ## Butir `[terbuka]` yang menyentuh tiket ini
 

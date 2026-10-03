@@ -1,6 +1,6 @@
 # 06: Penggolongan jenis usaha — 36 baris, berhenti di yang pertama cocok, bawaan UNKNOWN
 
-**Status:** ready-for-agent
+**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
 **Blocked by:** 01
 **Menutup:** AC 19 · 20 · 21 · 22 · 66 · 67 · 75 · 76 *(8 AC)* — US 25 · 26 · 32
 
@@ -36,16 +36,16 @@ berkas tetap dapat diproses.
 
 ## Acceptance criteria
 
-- [ ] **AC 19** — penggolongan **berhenti di baris pertama yang cocok**
-- [ ] **AC 20** — kode yang tidak cocok baris mana pun menghasilkan **`"UNKNOWN"`**
-- [ ] **AC 21** — ke-**128** kode menghasilkan penggolongan yang sama seperti sistem lama
-- [ ] **AC 22** — syarat diambil dari **yang dijalankan**, ⛔ bukan dari keterangannya — termasuk
+- [x] **AC 19** — penggolongan **berhenti di baris pertama yang cocok**
+- [x] **AC 20** — kode yang tidak cocok baris mana pun menghasilkan **`"UNKNOWN"`**
+- [x] **AC 21** — ke-**128** kode menghasilkan penggolongan yang sama seperti sistem lama
+- [x] **AC 22** — syarat diambil dari **yang dijalankan**, ⛔ bukan dari keterangannya — termasuk
       pada **9** aturan yang bertentangan
-- [ ] **AC 66** — penanda `EDM` ⇒ jalur endorsemen; `POLICY` ⇒ polis baru; ⛔ keduanya **tidak**
+- [ ] ⛔ **AC 66** — penanda `EDM` ⇒ jalur endorsemen; `POLICY` ⇒ polis baru; ⛔ keduanya **tidak**
       menempuh cara penyimpanan yang sama
-- [ ] **AC 67** — penggolong lini jiwa dimigrasi apa adanya, **16** nilai kode tanpa perubahan
-- [ ] **AC 75** — berkas non-proporsional ditandai sesuai jenis proporsinya
-- [ ] **AC 76** — penanda penempatan keluar dipasang **hanya** pada dua kode yang dikenal
+- [x] **AC 67** — penggolong lini jiwa dimigrasi apa adanya, **16** nilai kode tanpa perubahan
+- [x] **AC 75** — berkas non-proporsional ditandai sesuai jenis proporsinya
+- [x] **AC 76** — penanda penempatan keluar dipasang **hanya** pada dua kode yang dikenal
 
 ## Butir `[terbuka]` yang menyentuh tiket ini
 
