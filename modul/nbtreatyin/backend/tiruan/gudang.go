@@ -35,6 +35,8 @@ type Gudang struct {
 	Kontrak map[string]models.BarisKontrak
 	Bisnis  map[string]models.BarisBisnis
 	Serupa  []string
+	Agen    []models.BarisAgen // RD BrowseAgentHierarkiList_RD (pemilih SOB)
+	PKPAgen map[string]string  // STS_PKP per ID agen; tak terdaftar = StsPKP
 	Tempat  []repository.PeranTempat
 	StsPKP  string
 	OJK     string
@@ -273,7 +275,12 @@ func (g *Gudang) NamaMataUang(_ context.Context, id string) (string, error) {
 func (g *Gudang) OJKGrupTreaty(context.Context, string) (string, error)   { return g.OJK, nil }
 func (g *Gudang) OldIDGrupTreaty(context.Context, string) (string, error) { return "UJI-OLD", nil }
 func (g *Gudang) KlienDariNama(context.Context, string) (string, error)   { return "", nil }
-func (g *Gudang) StsPKPAgen(context.Context, string) (string, error)      { return g.StsPKP, nil }
+func (g *Gudang) StsPKPAgen(_ context.Context, sobID string) (string, error) {
+	if v, ada := g.PKPAgen[sobID]; ada {
+		return v, nil
+	}
+	return g.StsPKP, nil
+}
 
 func (g *Gudang) BisnisDariKunci(_ context.Context, kunci string) (models.BarisBisnis, error) {
 	return g.Bisnis[kunci], nil
@@ -291,6 +298,19 @@ func (g *Gudang) DaftarJenisSpreading(context.Context) ([]models.Pilihan, error)
 func (g *Gudang) DaftarJenisReas(context.Context) ([]models.Pilihan, error)      { return nil, nil }
 func (g *Gudang) PolisSerupa(context.Context, *models.Halaman) ([]string, error) {
 	return g.Serupa, nil
+}
+
+func (g *Gudang) DaftarAgenHierarki(context.Context) ([]models.BarisAgen, error) {
+	return append([]models.BarisAgen(nil), g.Agen...), nil
+}
+
+func (g *Gudang) AgenHierarki(_ context.Context, id string) (models.BarisAgen, bool, error) {
+	for _, b := range g.Agen {
+		if b.ID == id {
+			return b, true, nil
+		}
+	}
+	return models.BarisAgen{}, false, nil
 }
 
 func (g *Gudang) CatatRiwayat(_ context.Context, _ *db.Tx, r models.Riwayat) error {

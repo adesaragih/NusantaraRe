@@ -55,6 +55,8 @@ type Gudang interface {
 	DaftarJenisSpreading(ctx context.Context) ([]models.Pilihan, error)
 	DaftarJenisReas(ctx context.Context) ([]models.Pilihan, error)
 	PolisSerupa(ctx context.Context, h *models.Halaman) ([]string, error)
+	DaftarAgenHierarki(ctx context.Context) ([]models.BarisAgen, error)
+	AgenHierarki(ctx context.Context, id string) (models.BarisAgen, bool, error)
 
 	CatatRiwayat(ctx context.Context, tx *db.Tx, r models.Riwayat) error
 	DaftarRiwayat(ctx context.Context, idPega string) ([]models.Riwayat, error)
