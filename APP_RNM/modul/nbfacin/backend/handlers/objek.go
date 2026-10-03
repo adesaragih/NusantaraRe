@@ -49,6 +49,47 @@ type objekKabel struct {
 	Occupations []okupasiKabel `json:"occupations"`
 	// tiket 41
 	FEA []feaKabel `json:"fea"`
+	// tiket 42 - lossRatio dan internalLossRecords BACA-SAJA: dikirim GET, diabaikan PUT.
+	LossRecords         []kerugianKabel `json:"lossRecords"`
+	LossRatio           lossRatioKabel  `json:"lossRatio"`
+	InternalLossRecords []klaimKabel    `json:"internalLossRecords"`
+}
+
+// kerugianKabel - kontrak `CatatanKerugian` frontend (tiket 42); uang teks desimal, dateOfLoss DD-MM-YYYY.
+type kerugianKabel struct {
+	DateOfLoss       string `json:"dateOfLoss"`
+	CoinsName        string `json:"coinsName"`
+	LossObject       string `json:"lossObject"`
+	Currency         string `json:"currency"`
+	Amount           string `json:"amount"`
+	Claim            string `json:"claim"`
+	PreventionOfLoss string `json:"preventionOfLoss"`
+	CauseOfLoss      string `json:"causeOfLoss"`
+	Remarks          string `json:"remarks"`
+	Detail           string `json:"detail"`
+}
+
+// lossRatioKabel - kontrak `LossRatio` frontend.
+type lossRatioKabel struct {
+	OneYearAmount        string `json:"oneYearAmount"`
+	OneYearPercent       string `json:"oneYearPercent"`
+	ThreeFiveYearAmount  string `json:"threeFiveYearAmount"`
+	ThreeFiveYearPercent string `json:"threeFiveYearPercent"`
+}
+
+// klaimKabel - kontrak `KlaimInternal` frontend. Selalu larik kosong (butir 83 / N-5): grid Pega tidak pernah terisi dan
+// rancangan tidak punya jalur ListCauseOfLossClaim.
+type klaimKabel struct {
+	DateOfLoss    string `json:"dateOfLoss"`
+	LocationNo    string `json:"locationNo"`
+	Location      string `json:"location"`
+	Currency      string `json:"currency"`
+	Premium       string `json:"premium"`
+	OSClaim       string `json:"osClaim"`
+	AcceptedClaim string `json:"acceptedClaim"`
+	IncurredClaim string `json:"incurredClaim"`
+	LossRatio     string `json:"lossRatio"`
+	Remark        string `json:"remark"`
 }
 
 // feaKabel - kontrak `BarisFEA` frontend (tiket 41).
@@ -133,7 +174,25 @@ func keKabel(o models.ObjekFire) objekKabel {
 		SurroundingRisk: sekitarKabel{Front: sisiKabel(s.Front), Left: sisiKabel(s.Left), Back: sisiKabel(s.Back),
 			Right: sisiKabel(s.Right), HousekeepingStatus: s.HousekeepingStatus, FloodAreaStatus: s.FloodAreaStatus,
 			FloodArea: s.FloodArea, HousekeepingRemark: s.HousekeepingRemark},
-		Items: keItemKabel(o.Items), Occupations: keOkupasiKabel(o.Occupations), FEA: keFEAKabel(o.FEA)}
+		Items: keItemKabel(o.Items), Occupations: keOkupasiKabel(o.Occupations), FEA: keFEAKabel(o.FEA),
+		LossRecords: keKerugianKabel(o.LossRecords), LossRatio: lossRatioKabel(o.LossRatio), InternalLossRecords: []klaimKabel{}}
+}
+
+// keKerugianKabel / keKerugianModel - CatatanKerugian <-> kerugianKabel; selalu larik ke luar.
+func keKerugianKabel(d []models.CatatanKerugian) []kerugianKabel {
+	hasil := make([]kerugianKabel, 0, len(d))
+	for _, c := range d {
+		hasil = append(hasil, kerugianKabel(c))
+	}
+	return hasil
+}
+
+func keKerugianModel(d []kerugianKabel) []models.CatatanKerugian {
+	hasil := make([]models.CatatanKerugian, 0, len(d))
+	for _, c := range d {
+		hasil = append(hasil, models.CatatanKerugian(c))
+	}
+	return hasil
 }
 
 // keFEAKabel / keFEAModel - BarisFEA <-> feaKabel; selalu larik ke luar.
@@ -200,7 +259,8 @@ func keModel(o objekKabel) models.ObjekFire {
 		SurroundingRisk: models.SurroundingRisk{Front: models.SisiRisiko(s.Front), Left: models.SisiRisiko(s.Left),
 			Back: models.SisiRisiko(s.Back), Right: models.SisiRisiko(s.Right), HousekeepingStatus: s.HousekeepingStatus,
 			FloodAreaStatus: s.FloodAreaStatus, FloodArea: s.FloodArea, HousekeepingRemark: s.HousekeepingRemark},
-		Items: keItemModel(o.Items), Occupations: keOkupasiModel(o.Occupations), FEA: keFEAModel(o.FEA)}
+		Items: keItemModel(o.Items), Occupations: keOkupasiModel(o.Occupations), FEA: keFEAModel(o.FEA),
+		LossRecords: keKerugianModel(o.LossRecords)}
 }
 
 func keObjekKabel(d []models.ObjekFire) daftarObjek {

@@ -15,7 +15,8 @@
 // Keputusan agent (tiket 39): K-1 hitung ulang premi / spreading saat TSI berubah (`CountPremi_ACT`,
 // `cekSpreadingFactIn`) = tab Coverage, bukan di sini. K-2 urutan baris Total = urutan muncul mata uang di daftar
 // item (Pega: urutan tabel CURRENCY). K-3 pesan Unit / TSI minus = teks sistem baru (field value Pega tidak ada di
-// korpus). K-4 daftar Condition = aturan properti `DDL\Condition.xml`; Adjustment Pct. (PctAdjust2) menunggu.
+// korpus). K-4 daftar Condition = `DDL\Condition.xml`; Adjustment Pct. (PctAdjust2) = `DDL\PctAdjust2.xml` ("100").
+// K-7 PctAdjust2 item baru = "100" (satu-satunya pilihan; data contoh selalu 100).
 // A133 (backend c3): Currency wajib - bertanda wajib, menahan Save; pesannya tampil sesudah Save dicoba.
 
 import { useEffect, useState } from 'react'
@@ -32,6 +33,7 @@ import {
   ITEM_KOSONG,
   OPSI_CONDITION,
   OPSI_PCT_ADJUST,
+  PCT_ADJUST_AWAL,
   TEKS_INWARD,
   TEKS_ITEM,
   TEKS_OBJEK,
@@ -40,11 +42,11 @@ import {
 /** Desimal tampilan grid (pxNumber 4 dp). */
 const DESIMAL_GRID = 4
 
-/** Item kosong (Add). `PctAdjustOther` awal 0 (nilai awal sel 36). */
+/** Item kosong (Add). `PctAdjustOther` awal 0 (nilai awal sel 36); `PctAdjust2` awal "100" (K-7). */
 export function itemBaru(): ItemObjek {
   return {
     itemTypeId: '', itemType: '', note: '', propertyYear: '', unit: '', condition: '', currency: '', tsi: '',
-    yearOfPlanting: '', noOfTree: '', areaHectar: '', remark: '', isAdjustable: false, pctAdjust2: '', pctAdjustOther: '0',
+    yearOfPlanting: '', noOfTree: '', areaHectar: '', remark: '', isAdjustable: false, pctAdjust2: PCT_ADJUST_AWAL, pctAdjustOther: '0',
   }
 }
 

@@ -42,6 +42,31 @@ type ObjekFire struct {
 	Occupations []OkupasiObjek
 	// Tiket 41 - .LocationList(n).FEAList (milik baris lokasi, bukan Property), T_FEALIST urut SEQ_NO (migrasi 190).
 	FEA []BarisFEA
+	// Tiket 42 - .Property.ListCauseOfLoss -> T_LISTCAUSEOFLOSS + T_COINSDATA urut SEQ_NO (migrasi 191); loss ratio
+	// baris lokasi T_LOCATIONLIST.LOSS_RATIO* - BACA-SAJA bagi layar, DIHITUNG services saat simpan (W-4,
+	// `DDL\SetLossRatio_Act.xml`; N-1 digantikan).
+	LossRecords []CatatanKerugian
+	LossRatio   LossRatio
+}
+
+// CatatanKerugian - satu .Property.ListCauseOfLoss(n) (kelas Data-CauseOfLoss). Uang = teks desimal bertitik (ADR-0003).
+// DateOfLoss: DD-MM-YYYY di batas services <-> handler; teks Pega di batas services <-> repository.
+type CatatanKerugian struct {
+	DateOfLoss       string // DATE_OF_LOSS       (.DateOfLoss, kolom baru 191)
+	CoinsName        string // T_COINSDATA.COINS_NAME (.CoinsData.CoinsName - kolom grid "Insured Name")
+	LossObject       string // LOSS_OBJECT        (kolom baru 191)
+	Currency         string // CURRENCY           (wajib, K-012)
+	Amount           string // AMOUNT             uang "Total of Loss" (kolom baru 191)
+	Claim            string // CLAIM              uang "Total Claim (100%)"
+	PreventionOfLoss string // PREVENTION_OF_LOSS uang (kolom baru 191)
+	CauseOfLoss      string // CAUSE_OF_LOSS      (kolom baru 191)
+	Remarks          string // REMARKS
+	Detail           string // DETAIL             "Loss Detail" (dilebarkan 500, A146)
+}
+
+// LossRatio - .LossRatio1Year* / .LossRatio35Year* baris lokasi. Amount = uang teks desimal; percent = teks rancangan.
+type LossRatio struct {
+	OneYearAmount, OneYearPercent, ThreeFiveYearAmount, ThreeFiveYearPercent string
 }
 
 // BarisFEA - satu .FEAList(n) (kelas Data-OfferFacIn-OfferFEAList); empat medan dari halaman tertanam .DataFEA.

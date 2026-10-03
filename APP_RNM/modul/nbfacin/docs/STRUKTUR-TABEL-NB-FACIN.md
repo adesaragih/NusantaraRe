@@ -1,8 +1,8 @@
 # Struktur Tabel — NB FacIn: PETA TABEL WARISAN yang dibaca + tabel yang dibuat
 
-Modul ini **membuat tiga belas tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
+Modul ini **membuat lima belas tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
 `T_QUOTATIONDATA` **sebagian** (migrasi 182/183, tiket 31 / butir 78.4), `T_CEDINGCOLIST` utuh (185, tiket 34), dan tabel tab Object FIRE (186, tiket 35: `T_LOCATIONLIST` /
-`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian; 189, tiket 40: `T_OCCUPATIONLIST` sebagian, `T_TABLEOFLIMIT` utuh; 190, tiket 41: `T_FEALIST` baru) — dan **menulis**
+`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian; 189, tiket 40: `T_OCCUPATIONLIST` sebagian, `T_TABLEOFLIMIT` utuh; 190, tiket 41: `T_FEALIST` baru; 191, tiket 42: `T_LISTCAUSEOFLOSS`, `T_COINSDATA` utuh) — dan **menulis**
 baris `T_WORK_POLIS` milik premiumlistlife (K-064; tidak dibuat, tidak dipetakan kolomnya di sini). Selebihnya ia hanya
 **membaca** lima belas tabel yang sudah ada — enam tabel limit
 akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), tabel bisnis `BUSINESS` (tiket 28), `MARKETINGOFFICER` (31), `AGENT`
@@ -183,7 +183,10 @@ Tiket 35 (tab Object FIRE) — migrasi `186_t_objek_fire.sql`, **sebagian** (pol
 uang `LOSS_RATIO*_AMOUNT` (presisi tim inti) dan kolom lain rancangan ditambah tiket 23. Jalur rancangan `LocationList`,
 induk `T_GENERAL_POLIS`. Satu baris per objek, urut `SEQ_NO`; diganti utuh tiap Save.
 
-| Kolom | Tipe | Tipe DDL (migrasi 186) | Isi |
+Tiket 42 — migrasi 191 menambah empat kolom loss ratio rancangan (`ALTER TABLE … ADD`); diisi **hasil hitung server** saat
+Save (W-4 / `SetLossRatio_Act`), tidak dari layar.
+
+| Kolom | Tipe | Tipe DDL (migrasi 186/191) | Isi |
 | --- | --- | --- | --- |
 | `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_LOCATIONLIST` (A92) |
 | `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
@@ -191,6 +194,10 @@ induk `T_GENERAL_POLIS`. Satu baris per objek, urut `SEQ_NO`; diganti utuh tiap 
 | `PARENT_ID` | teks | VARCHAR2(32) NOT NULL | = `T_GENERAL_POLIS.ID` (butir 76.1; FK) |
 | `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan baris grid, mulai 1 |
 | `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID (aplikasi v4, A106) |
+| `LOSS_RATIO1_YEAR_AMOUNT` | angka desimal | NUMBER(38,8) | LR 1 Year = ΣClaim/ΣAmount (≤ 365 hari), 8 desimal (A148) — **uang** |
+| `LOSS_RATIO1_YEAR_PERCENT` | teks | VARCHAR2(50) | %LR 1 Years = ΣClaim·100/ΣAmount (8 desimal, A148), teks desimal |
+| `LOSS_RATIO35_YEAR_AMOUNT` | angka desimal | NUMBER(38,8) | LR 3 - 5 Years (≤ 1825 hari, kumulatif) — **uang** |
+| `LOSS_RATIO35_YEAR_PERCENT` | teks | VARCHAR2(50) | %LR 3 - 5 Years, teks desimal |
 
 ## T_PROPERTY
 
@@ -199,23 +206,23 @@ empat kolom rancangan `OWNERSHIP`, `IS_PRODUCTION_PROCESS_FLAG`, `IS_HOT_WORK_PR
 (`ALTER TABLE … ADD`, tipe rancangan).
 Satu baris per lokasi (`UQ_T_PROPERTY_PARENT`). Boolean disimpan teks `true`/`false` (bentuk data fixture).
 
-| Kolom | Tipe | Tipe DDL (migrasi 186/187) | Isi |
+| Kolom | Tipe | Tipe DDL (migrasi 186/187/192) | Isi |
 | --- | --- | --- | --- |
 | `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_PROPERTY` |
 | `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
 | `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
 | `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_LOCATIONLIST.ID` |
-| `ALM_RISK_ID` | teks | VARCHAR2(50) | Risk Address ID — `.Property.AlmRiskID` (sel 39) |
+| `ALM_RISK_ID` | teks | VARCHAR2(100) | Risk Address ID — `.Property.AlmRiskID` (sel 39) — lebar 100 sejak migrasi 192 (butir 87/88; semula 50) |
 | `BUILDING_NO` | teks | VARCHAR2(50) | Building No. (sel 30) |
-| `COUNTRY` | teks | VARCHAR2(50) | Country (sel 32) |
+| `COUNTRY` | teks | VARCHAR2(100) | Country (sel 32) — lebar 100 sejak migrasi 192 (butir 87/88; semula 50) |
 | `IS_MATERIAL_DAMAGE` | teks | VARCHAR2(10) | Material Damage (sel 11) `true`/`false` |
 | `IS_TOP_RISK` | teks | VARCHAR2(10) | Top Risk (sel 12) `true`/`false` |
 | `OBJECT_NAME` | teks | VARCHAR2(500) | Object Name (sel 13) |
 | `OBJECT_NO` | teks | VARCHAR2(50) | Object No. (sel 5) |
 | `OBJECT_TYPE` | teks | VARCHAR2(50) | Object Type (sel 6, wajib) |
-| `PROVINCE` | teks | VARCHAR2(50) | Province (sel 38) |
-| `ROAD_NAME` | teks | VARCHAR2(500) | Address — `.Property.RoadName` (sel 29) |
-| `ROAD_TYPE` | teks | VARCHAR2(50) | Type — `.Property.RoadType` (sel 28) |
+| `PROVINCE` | teks | VARCHAR2(100) | Province (sel 38) — lebar 100 sejak migrasi 192 (butir 87/88; semula 50) |
+| `ROAD_NAME` | teks | VARCHAR2(4000) | Address — `.Property.RoadName` (sel 29) — lebar 4000 sejak migrasi 192 (butir 87/88; semula 500) |
+| `ROAD_TYPE` | teks | VARCHAR2(100) | Type — `.Property.RoadType` (sel 28) — lebar 100 sejak migrasi 192 (butir 87/88; semula 50) |
 | `CURRENCY_CODE` | teks | VARCHAR2(10) DEFAULT 'UNKNOWN' NOT NULL | K-069 (bawaan; tidak ditulis layar) |
 | `OWNERSHIP` | teks | VARCHAR2(50) | Ownership — `.Property.Ownership` (`RiskAround` sel 65); kode apa adanya (187) |
 | `IS_PRODUCTION_PROCESS_FLAG` | teks | VARCHAR2(10) | `.Property.IsProductionProcessFlag` (sel 77) `true`/`false` (187) |
@@ -226,17 +233,17 @@ Satu baris per lokasi (`UQ_T_PROPERTY_PARENT`). Boolean disimpan teks `true`/`fa
 
 Tiket 35 — migrasi 186, **utuh**. Satu baris per property (`UQ_T_RISKLOCATION_PARENT`).
 
-| Kolom | Tipe | Tipe DDL (migrasi 186) | Isi |
+| Kolom | Tipe | Tipe DDL (migrasi 186/192) | Isi |
 | --- | --- | --- | --- |
 | `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_RISKLOCATION` |
 | `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
 | `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
 | `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_PROPERTY.ID` |
-| `ASM_ADDRESS` | teks | VARCHAR2(50) | Risk Location — `.Property.RiskLocation.ASMAddress` (sel 40; kolom grid "Location") |
-| `ASM_CITY` | teks | VARCHAR2(50) | City (sel 36) |
-| `ASM_DISTRICT` | teks | VARCHAR2(50) | District (sel 37) |
-| `ASMRW` | teks | VARCHAR2(50) | Territory — `.Property.RiskLocation.ASMRW` (sel 35) |
-| `ASM_ZIP_CODE` | teks | VARCHAR2(50) | Zip Code (sel 31) |
+| `ASM_ADDRESS` | teks | VARCHAR2(4000) | Risk Location — `.Property.RiskLocation.ASMAddress` (sel 40; kolom grid "Location") — lebar 4000 sejak migrasi 192 (butir 87/88; semula 50) |
+| `ASM_CITY` | teks | VARCHAR2(100) | City (sel 36) — lebar 100 sejak migrasi 192 (butir 87/88; semula 50) |
+| `ASM_DISTRICT` | teks | VARCHAR2(100) | District (sel 37) — lebar 100 sejak migrasi 192 (butir 87/88; semula 50) |
+| `ASMRW` | teks | VARCHAR2(100) | Territory — `.Property.RiskLocation.ASMRW` (sel 35) — lebar 100 sejak migrasi 192 (butir 87/88; semula 50) |
+| `ASM_ZIP_CODE` | teks | VARCHAR2(100) | Zip Code (sel 31) — lebar 100 sejak migrasi 192 (butir 87/88; semula 50) |
 
 ## T_BUILDINGCONSTRUCTION
 
@@ -384,6 +391,42 @@ sistem = pola tabel berulang rancangan (T_ADDITIONALSHIP).
 | `TEAM_SOP_SAFETY` | teks | VARCHAR2(50) | Team & SOP Safety (`.DataFEA.TeamSOPSafety`) — kode apa adanya |
 | `TEAM_SOP_RISK_MANAGEMENT` | teks | VARCHAR2(50) | Team & SOP Risk Management (`.DataFEA.TeamSOPRiskManagement`) — kode apa adanya |
 | `INFO_FEA` | teks | VARCHAR2(500) | Others Info (`.InfoFEA`) |
+
+## T_LISTCAUSEOFLOSS
+
+Tiket 42 — migrasi 191, **utuh** (rancangan jalur `LocationList/Property/ListCauseOfLoss`, induk `T_PROPERTY`) + lima kolom
+**baru** (A145, amandemen loader `amandemenKerugian`). Banyak baris per property, urut `SEQ_NO`.
+
+| Kolom | Tipe | Tipe DDL (migrasi 191) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_LISTCAUSEOFLOSS` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_PROPERTY.ID` |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan catatan 1..n |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
+| `CLAIM` | angka desimal | NUMBER(38,8) | Total Claim (100%) — **uang** |
+| `CURRENCY` | teks | VARCHAR2(50) DEFAULT 'UNKNOWN' NOT NULL | Currency (`CURRENCY`, ≠ ITL); **wajib** (K-069 + K-012, pola A133) |
+| `DETAIL` | teks | VARCHAR2(500) | Loss Detail — dilebarkan dari rancangan 50 (A146) |
+| `REMARKS` | teks | VARCHAR2(500) | Remarks — apa adanya (`DDL\Remarks.xml`: Settled / Ex Gratia Payment / Withdraw / Others / --, dipakai frontend) |
+| `DATE_OF_LOSS` | teks | VARCHAR2(30) | **baru** — Date of Loss, teks Pega `YYYYMMDDTHHMMSS.mmm GMT` pukul 12:00 WIB (pola Begin date) |
+| `LOSS_OBJECT` | teks | VARCHAR2(500) | **baru** — Loss Object |
+| `AMOUNT` | angka desimal | NUMBER(38,8) | **baru** — Total of Loss (baca-saja di layar, N-2) — **uang** |
+| `PREVENTION_OF_LOSS` | angka desimal | NUMBER(38,8) | **baru** — Prevention Of Loss — **uang** |
+| `CAUSE_OF_LOSS` | teks | VARCHAR2(500) | **baru** — Cause of Loss |
+
+## T_COINSDATA
+
+Tiket 42 — migrasi 191, **utuh** (rancangan `.../ListCauseOfLoss/CoinsData`, satu halaman per catatan:
+`UQ_T_COINSDATA_PARENT`).
+
+| Kolom | Tipe | Tipe DDL (migrasi 191) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_COINSDATA` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_LISTCAUSEOFLOSS.ID` |
+| `COINS_NAME` | teks | VARCHAR2(500) | Insured Name grid — **selalu** nama tertanggung case (`SetLossRatio_Act` langkah 3.1) |
 
 ## MARKETINGOFFICER
 

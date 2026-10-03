@@ -97,3 +97,7 @@ selain 99999); `pyMaxRecords` **100**, paging aktif. **`RW.ZipCode`** = filter *
 | A120 | Tanpa identitas | pola lookup tiket 27/28/33 |
 | A121 | Saringan kosong dilewati (WHERE hanya untuk yang terisi); **semua kosong = 400** | perilaku Pega untuk parameter kosong tanpa "use null if empty" `[dugaan]`. Pega bila semua kosong TETAP mencari dengan kunci palsu `RoadName = "z"`, `ZipCode = "123456"` (`SearchRiskAddressAct` langkah "Jika filter kosong", baris 930–989) → hasil kosong; 400 = penyimpangan sadar (ralat: bukan "tidak mencari") |
 | A122 | Kelas `ASM-FW-GISFW-Int-RW` = tabel `POOLDATA.RW` | RDB-List kelas yang sama `NB FacIn\RDBList\BrowseRW_SQL.xml` membaca `FROM pooldata.rw`; aturan pemetaan kelas→tabel tidak ada di korpus `[dugaan]` |
+
+**Bug DEV 03-10-2026 (butir 87):** Save tab Object menolak Risk Location > 50 bita - rangkaian alamat dari popup ini
+selalu lebih panjang. Migrasi **192**: Risk Location (`ASM_ADDRESS`) dan Address (`ROAD_NAME`) VARCHAR2(4000) (=
+RISKADDRESS); delapan kolom alamat lain VARCHAR2(100) (ralat butir 88); batas validasi ikut 4000 / 100.

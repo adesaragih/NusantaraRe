@@ -12,9 +12,12 @@
 // korpus; nilai LR tampil apa adanya dari server (data contoh: semuanya 0). N-2 Total of Loss (`.Amount`) baca-saja
 // (Pega tanpa isian). N-3 Insured Name grid (`.CoinsData.CoinsName`) diisi nama tertanggung case saat Add `[dugaan]`
 // (Pega: pengisinya tidak ada di korpus; data contoh selalu terisi). N-4 Loss Detail bertanda wajib tanpa menahan
-// Save (pola L-2). N-5 Loss Record Internal = grid baca-saja dari server; di Pega pengisinya
+// Save (pola L-2). N-8 label / daftar Remarks = aturan properti `DDL\Remarks.xml`. N-5 Loss Record Internal = grid
+// baca-saja dari server (dikonfirmasi work owner 03-10-2026: "biarkan saja kosong"); di Pega pengisinya
 // (`MappingKlaimToLossRecord_Act`) tidak pernah terpanggil (tombol tersembunyi, pemanggil dikomentari) dan memakai
 // NOPOLIS ter-hardcode - pengisian otomatis menunggu keputusan work owner. N-6 Total Claim awal "0" (nilai awal sel 7).
+// N-9 Currency wajib per catatan (pola A133: kolom rancangan T_LISTCAUSEOFLOSS.CURRENCY NOT NULL DEFAULT 'UNKNOWN') -
+// bertanda wajib, menahan Save, pesan tampil sesudah Save dicoba.
 
 import { useEffect, useState } from 'react'
 
@@ -34,6 +37,7 @@ import {
   OPSI_REMARKS,
   TEKS_FORM_OPPORTUNITY,
   TEKS_INWARD,
+  TEKS_ITEM,
   TEKS_KERUGIAN,
   TEKS_OBJEK,
 } from '../labels'
@@ -54,9 +58,9 @@ export const lossRatioKosong = (): LossRatio => ({ oneYearAmount: '', oneYearPer
 /** Uang sah: kosong atau desimal bertitik. */
 export const uangSah = (v: string) => v.trim() === '' || desimalSah(v.trim())
 
-/** Ada catatan dengan uang tidak sah. */
+/** Ada catatan bergalat: Currency kosong (N-9) atau uang tidak sah. */
 export function adaGalatKerugian(r: CatatanKerugian[]): boolean {
-  return r.some((x) => !uangSah(x.claim) || !uangSah(x.preventionOfLoss))
+  return r.some((x) => x.currency.trim() === '' || !uangSah(x.claim) || !uangSah(x.preventionOfLoss))
 }
 
 function Tampil({ label, nilai }: { label: string; nilai: string }) {
@@ -68,7 +72,19 @@ function Tampil({ label, nilai }: { label: string; nilai: string }) {
   )
 }
 
-function FormKerugian({ r, ubah, insuredName, mataUang }: { r: CatatanKerugian; ubah: (r: CatatanKerugian) => void; insuredName: string; mataUang: string[] }) {
+function FormKerugian({
+  r,
+  ubah,
+  insuredName,
+  mataUang,
+  tandaiWajib,
+}: {
+  r: CatatanKerugian
+  ubah: (r: CatatanKerugian) => void
+  insuredName: string
+  mataUang: string[]
+  tandaiWajib: boolean
+}) {
   const set = (k: keyof CatatanKerugian) => (v: string) => ubah({ ...r, [k]: v })
   const opsiUang: Opsi[] = mataUang.map((m) => ({ value: m, label: m }))
   return (
@@ -84,7 +100,15 @@ function FormKerugian({ r, ubah, insuredName, mataUang }: { r: CatatanKerugian; 
             pesanFormat={TEKS_FORM_OPPORTUNITY.formatTanggal}
           />
           <Field label={F.lossObject.label} value={r.lossObject} onChange={set('lossObject')} />
-          <Pilih label={F.currency.label} value={r.currency} onChange={set('currency')} opsi={opsiUang} kosong={ITEM_KOSONG} />
+          <Pilih
+            label={F.currency.label}
+            value={r.currency}
+            onChange={set('currency')}
+            opsi={opsiUang}
+            kosong={ITEM_KOSONG}
+            required
+            error={tandaiWajib && r.currency.trim() === '' ? TEKS_ITEM.currencyWajib : undefined}
+          />
           <Field label={F.claim.label} value={r.claim} onChange={set('claim')} error={uangSah(r.claim) ? undefined : TEKS_KERUGIAN.uang} />
           <Field
             label={F.preventionOfLoss.label}
@@ -108,11 +132,14 @@ export function SubTabKerugian({
   lossRatio,
   insuredName,
   ubah,
+  tandaiWajib = false,
 }: {
   rows: CatatanKerugian[]
   lossRatio: LossRatio
   insuredName: string
   ubah: (rows: CatatanKerugian[]) => void
+  /** Save tab Object sudah dicoba. */
+  tandaiWajib?: boolean
 }) {
   const [terbuka, setTerbuka] = useState<number[]>([])
   const [mataUang, setMataUang] = useState<string[]>([])
@@ -197,7 +224,13 @@ export function SubTabKerugian({
               terbuka.includes(n) && (
                 <tr key={`d-${n}`} className="nbf-objek__detail">
                   <td colSpan={8}>
-                    <FormKerugian r={r} ubah={(baru) => ubah(rows.map((x, k) => (k === n ? baru : x)))} insuredName={insuredName} mataUang={mataUang} />
+                    <FormKerugian
+                      r={r}
+                      ubah={(baru) => ubah(rows.map((x, k) => (k === n ? baru : x)))}
+                      insuredName={insuredName}
+                      mataUang={mataUang}
+                      tandaiWajib={tandaiWajib}
+                    />
                   </td>
                 </tr>
               ),

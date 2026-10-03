@@ -95,7 +95,8 @@ section (dicari: nol `pyMatch*`); RD: filter `ZipCode/PROVINCENAME/CITYNAME/Dist
 DISTINCT, `pyMaxRecords` 10000. `.NATIONNAME` tidak ada di DDL `RW.txt` (kolomnya `NATION`); alias `NATION as "NATIONNAME"`
 ada di `RDBList\BrowseRW2_SQL.xml` (kelas RW yang sama) → `nationName` = `RW.NATION`.
 
-**Keputusan agent (menunggu konfirmasi):**
+**Keputusan agent — DISETUJUI work owner 03-10-2026** (butir 82, diteruskan sesi `nusantarare-0f`: *"setuju keputusan
+agent"*):
 
 | # | Keputusan | Dasar |
 | --- | --- | --- |

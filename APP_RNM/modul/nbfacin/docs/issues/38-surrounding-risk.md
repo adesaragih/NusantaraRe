@@ -88,7 +88,8 @@ sel 9 hanya mengirim `TYPE`, jadi RD memuat SEMUA okupasi FIRE (urut Name, OldID
 `.OldID`/`.Name` di dalamnya. Lebar Construction diukur dari `DDL\FrontConstruction.xml` (3 nilai standar, terpanjang
 215 bita; dua cara: tag `pyStandardValue` dan cacah baris = 3).
 
-**Keputusan agent (menunggu konfirmasi):**
+**Keputusan agent — DISETUJUI work owner 03-10-2026** (butir 82, diteruskan sesi `nusantarare-0f`: *"setuju keputusan
+agent"*):
 
 | # | Keputusan | Dasar |
 | --- | --- | --- |

@@ -13,7 +13,7 @@ Data Loss Record ikut Save tab Object.
 **Blocked by:** daftar Remarks (aturan properti tidak ada di korpus); rumus Loss Ratio (`SetLossRatio_Act` versi baris
 objek tidak ada); keputusan work owner atas pengisian Loss Record Internal.
 
-**Status:** frontend selesai 03-10-2026 (uji hijau); backend → sesi c3 (sesudah tiket 41).
+**Status:** frontend selesai 03-10-2026 (uji hijau); backend selesai 03-10-2026 (sesi c3; migrasi 191 ditulis, BELUM dijalankan).
 
 ## Bukti `[terverifikasi]` — `D:\migrasi\RNM\NB FacIn\`
 
@@ -57,5 +57,59 @@ objek tidak ada); keputusan work owner atas pengisian Loss Record Internal.
 
 - [x] Loss Record: grid + Tambah / Hapus + form + loss ratio; label diuji ke korpus.
 - [x] Loss Record Internal: grid baca-saja; label diuji.
-- [ ] Backend: simpan / baca ListCauseOfLoss; kirim loss ratio dan klaim internal.
+- [x] Backend: simpan / baca ListCauseOfLoss (migrasi 191); loss ratio dihitung server (W-4); klaim internal selalu [] (N-5).
 - [ ] Daftar Remarks; rumus LR; keputusan Loss Record Internal.
+
+## Keputusan work owner — 03-10-2026 (diteruskan sesi `nusantarare-0f`)
+
+- **W-4** (butir 84): Loss Ratio dihitung ulang server menurut `D:\migrasi\RNM\DDL\SetLossRatio_Act.xml` (kelas
+  LocationReinsurance); bila ΣAmount = 0, LR dan %LR tetap 0. Total of Loss tetap baca-saja seperti Pega.
+- **Loss Record Internal** (butir 83): *"biarkan saja kosong"* — N-5 dikonfirmasi; GET selalu `[]`, tanpa tabel, tanpa
+  pengisian dari DATAKLAIM.
+- Keputusan agent sesi 0f N-1…N-8 disetujui (butir 82). ⚠️ N-1 ("rumus LR tidak diport") **digantikan** W-4.
+
+## Backend (sesi c3, 03-10-2026) — disusun agent
+
+- `GET`/`PUT …/objek`: `lossRecords` (kunci persis `CatatanKerugian`) → tabel rancangan `T_LISTCAUSEOFLOSS` (+ lima kolom
+  baru) dan `T_COINSDATA` (satu per catatan), urut `SEQ_NO`. `lossRatio` dan `internalLossRecords` BACA-SAJA (badan PUT
+  diabaikan); `internalLossRecords` selalu `[]`.
+- **Saat PUT, per objek** (`services/kerugian.go`, `SetLossRatio_Act` `[terverifikasi]`):
+  - `coinsName` = nama tertanggung case (langkah 3.1, semua catatan);
+  - `dateOfLoss` DD-MM-YYYY → teks Pega `YYYYMMDDTHHMMSS.mmm GMT` pukul 12:00 WIB (pola Begin date; kontrol pxDateTime);
+  - Loss Ratio: tanggal acuan = hari ini Asia/Jakarta; ≤ 365 hari → Σ1, ≤ 1825 hari → Σ2 (kumulatif); hanya bila
+    ΣClaim ≠ 0: LR = ΣClaim/ΣAmount, %LR = ΣClaim·100/ΣAmount; ΣAmount = 0 → 0 (W-4); disimpan ke `T_LOCATIONLIST.LOSS_RATIO*`.
+- **Validasi PUT** (400 `baris[n].lossRecords[m].<medan>`): `currency` wajib dan ada di `CURRENCY` (≠ ITL);
+  `amount`/`claim`/`preventionOfLoss` kosong atau desimal ≤ 8; `dateOfLoss` kosong atau DD-MM-YYYY sah; lebar kolom; `detail`
+  tidak wajib (N-4); `remarks` tanpa enumerasi.
+- Migrasi **191** (`191_t_listcauseofloss.sql` + `_down`); loader `amandemenKerugian` + pelebaran `DETAIL` (skema 80 tabel /
+  **1.438** kolom). ⛔ Ditulis, **tidak dijalankan** agent.
+
+**Bukti `[terverifikasi]`:** `SetLossRatio_Act.xml` — enam syarat (`pyStepsPreCondParamsWhen`: IsB2B, ≤ 365, ≤ 1825, CARI8,
+Claim1, Claim2) dan delapan penanda `pyStepsPreCondition` (5 `true`, 1 `false`, 2 kosong); dihitung dua cara (baris dan
+kemunculan tag). ⚠️ Ralat: tulisan awal "enam penanda untuk tujuh syarat" salah hitung. Urutan elemen ekspor diacak, jadi
+penanda tidak dapat dipasangkan pasti ke langkahnya (jebakan sensus 6) — "langkah CARI8 mati" bersandar pada uraian sesi
+0f `[dugaan]`, tidak terbantah korpus. Kontrol
+`Section\InputCauseOfLoss_FacIn.xml`: DateOfLoss pxDateTime; LossObject / CauseOfLoss pxTextInput; PreventionOfLoss pxNumber 4
+desimal; Detail pxTextArea; Remarks pxDropdown. `.Amount` (Total of Loss) TIDAK ada di form itu — hanya di grid
+`Section\CauseOfLoss_FacIn.xml` (2 kemunculan). Fixture: 6 catatan, hanya Claim / Currency / Detail / Remarks / CoinsData
+berkunci (kolom rancangan diturunkan dari itu).
+
+**Keputusan agent (menunggu konfirmasi):**
+
+| # | Keputusan | Dasar |
+| --- | --- | --- |
+| A145 | Lima kolom baru `T_LISTCAUSEOFLOSS`: `DATE_OF_LOSS` VARCHAR2(30), `LOSS_OBJECT`/`CAUSE_OF_LOSS` VARCHAR2(500), `AMOUNT`/`PREVENTION_OF_LOSS` NUMBER(38,8) | medan ada di layar, tidak di rancangan (contoh tidak memuatnya); pola A110 / START_DATE_TIME / V-6 / ADR-0016 |
+| A146 | `DETAIL` dilebarkan 50 → 500 | pxTextArea "Loss Detail"; lebar rancangan diturunkan dari contoh kosong; pola V-6 catatan |
+| A147 | Catatan tanpa `dateOfLoss` tidak ikut dijumlah LR | permintaan sesi 0f; selisih tanggal tidak terdefinisi |
+| A148 | LR dan %LR dibulatkan setengah-ke-atas pada desimal ke-8; %LR = ΣClaim·100/ΣAmount (bukan (ΣClaim/ΣAmount)·100 yang sudah dibulatkan) | ADR-0016 (8 desimal); usul sesi 0f; tanpa float |
+| A149 | `dateOfLoss` disimpan teks Pega DateTime 12:00 WIB; dibaca balik juga bentuk Date 8 digit | kontrol pxDateTime; pola Begin date butir 78.1 |
+| A150 | `amount` (Total of Loss, baca-saja di layar, N-2) **diterima apa adanya** dari badan PUT (diperiksa desimal) dan disimpan | spesifikasi membolehkan "terima apa adanya atau abaikan"; mengabaikan akan menghapus nilai lama karena baris diganti utuh |
+| A151 | `amount` / `claim` / `preventionOfLoss` negatif → 400 | pola uang ≥ 0 tiket 39 (`tsi`, K-3); Pega `SetErrorMessageTSIObjectItem_Act` menolak minus untuk TSI — untuk kerugian `belum terverifikasi` |
+| A152 | Hasil LR yang tidak muat NUMBER(38,8) (ΣClaim jauh melebihi ΣAmount) → 400 `baris[n].lossRatio` | mencegah galat Oracle 500 saat simpan; temuan code review |
+
+⚠️ **Tidak diport:** langkah 1 `SetLossRatio_Act` (`pyWorkPage.IsB2B=="ASM"` → Detail catatan terakhir "No Info").
+⚠️ Catatan bertanggal sesudah hari ini (selisih negatif) ikut dijumlah — sama dengan perbandingan `<=` Pega.
+
+**Aturan properti (03-10-2026, diteruskan sesi 0f; butir 85):** `DDL\Remarks.xml` (ASM-FW-GISFW-DATA-CAUSEOFLOSS!REMARKS,
+PromptList) = Settled / Ex Gratia Payment / Withdraw / Others / -- (nilai = label) dipakai frontend; terpanjang 17 bita, muat
+di VARCHAR2(500). Backend tetap tanpa validasi enumerasi.

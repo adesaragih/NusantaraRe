@@ -61,7 +61,7 @@ func TestGantiObjek(t *testing.T) {
 		"lantai desimal": {[]models.ObjekFire{{ObjectType: "UJI", NumberOfFloor: "1.5"}}, "baris[0].numberOfFloor"},
 		"lantai teks":    {[]models.ObjekFire{{ObjectType: "UJI", NumberOfFloor: "dua"}}, "baris[0].numberOfFloor"},
 		"nama 501 bita":  {[]models.ObjekFire{{ObjectType: "UJI", ObjectName: strings.Repeat("U", 501)}}, "baris[0].objectName paling banyak 500"},
-		"lokasi 51":      {[]models.ObjekFire{{ObjectType: "UJI", RiskLocation: strings.Repeat("U", 51)}}, "baris[0].riskLocation paling banyak 50"},
+		"lokasi 4001":    {[]models.ObjekFire{{ObjectType: "UJI", RiskLocation: strings.Repeat("U", 4001)}}, "baris[0].riskLocation paling banyak 4000"},
 		"ownership 51":   {[]models.ObjekFire{{ObjectType: "UJI", Ownership: strings.Repeat("2", 51)}}, "baris[0].ownership paling banyak 50"},
 		"konstruksi 501": {[]models.ObjekFire{{ObjectType: "UJI", SurroundingRisk: models.SurroundingRisk{Back: models.SisiRisiko{Construction: strings.Repeat("U", 501)}}}}, "baris[0].surroundingRisk.back.construction paling banyak 500"},
 		"remark 501":     {[]models.ObjekFire{{ObjectType: "UJI", SurroundingRisk: models.SurroundingRisk{HousekeepingRemark: strings.Repeat("U", 501)}}}, "baris[0].surroundingRisk.housekeepingRemark paling banyak 500"},
@@ -133,5 +133,36 @@ func TestLebarSekitarSamaDenganMigrasi(t *testing.T) {
 	}
 	if diperiksa != 21 {
 		t.Errorf("%d medan diperiksa, mau 21 (ownership + 16 sisi + 4)", diperiksa)
+	}
+}
+
+// TestLebarAlamatRisiko - butir 87/88 (bug DEV): rangkaian Risk Location > 50 dan > 500 bita lolos; > 4000 -> 400;
+// City 100 lolos, 101 -> 400; Risk Location / Address 4000, delapan medan alamat lain 100, Building No tetap 50.
+func TestLebarAlamatRisiko(t *testing.T) {
+	for _, n := range []int{51, 501, 4000} {
+		o := models.ObjekFire{ObjectType: "UJI", RiskLocation: strings.Repeat("U", n), RoadName: strings.Repeat("U", n)}
+		if err := periksaObjek([]models.ObjekFire{o}); err != nil {
+			t.Errorf("%d bita ditolak: %v", n, err)
+		}
+	}
+	lebar := map[string]int{}
+	for _, l := range lebarObjek {
+		lebar[l.nama] = l.n
+	}
+	for nama, mau := range map[string]int{"riskLocation": 4000, "roadName": 4000, "territory": 100, "city": 100, "district": 100,
+		"zipCode": 100, "roadType": 100, "province": 100, "country": 100, "riskAddressId": 100} {
+		if lebar[nama] != mau {
+			t.Errorf("%s lebar %d, mau %d", nama, lebar[nama], mau)
+		}
+	}
+	if err := periksaObjek([]models.ObjekFire{{ObjectType: "UJI", City: strings.Repeat("U", 100)}}); err != nil {
+		t.Errorf("City 100 ditolak: %v", err)
+	}
+	if err := periksaObjek([]models.ObjekFire{{ObjectType: "UJI", City: strings.Repeat("U", 101)}}); !errors.Is(err, ErrMasukanObjek) ||
+		!strings.Contains(err.Error(), "baris[0].city paling banyak 100") {
+		t.Errorf("City 101: %v", err)
+	}
+	if lebar["buildingNo"] != 50 {
+		t.Errorf("buildingNo %d, mau 50", lebar["buildingNo"])
 	}
 }

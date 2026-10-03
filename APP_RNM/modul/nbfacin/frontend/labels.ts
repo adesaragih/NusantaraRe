@@ -702,10 +702,12 @@ export const OPSI_CONDITION = [
 export const CONDITION_KOSONG = 'Please Select'
 
 /**
- * Daftar Adjustment Pct. (PctAdjust2) - sumber Pega `associated`, aturan properti TIDAK ada di korpus.
- * ⚠️ Kosong sampai work owner menambahkan berkasnya (`DDL\`); nilai tersimpan tetap tampil lewat `Pilih`.
+ * Daftar Adjustment Pct. (PctAdjust2) - `[terverifikasi]` aturan properti `ASM-FW-GISFW-DATA-PROPERTYITEM!PCTADJUST2`
+ * (`D:\migrasi\RNM\DDL\PctAdjust2.xml`, pyTableOption LocalList): satu nilai "100". Data contoh: PctAdjust2 = 100
+ * di semua item -> nilai awal item baru "100" (keputusan agent K-7).
  */
-export const OPSI_PCT_ADJUST: { value: string; label: string }[] = []
+export const OPSI_PCT_ADJUST = [{ value: '100', label: '100' }]
+export const PCT_ADJUST_AWAL = '100'
 
 /** Teks Object Item. */
 export const TEKS_ITEM = {
@@ -795,12 +797,18 @@ export const FORM_FEA = {
 } as const
 
 /**
- * Daftar Private Team Fire Brigade / Team & SOP Safety / Team & SOP Risk Management - `associated`, aturan properti
- * (`DataFEA.*`) TIDAK ada di korpus. ⚠️ Kosong sampai work owner menambahkan berkasnya (`DDL\`).
+ * Daftar Private Team Fire Brigade / Team & SOP Safety / Team & SOP Risk Management - `[terverifikasi]` aturan properti
+ * `ASM-FW-GISFW-DATA-FEA!PRIVATEFIREBRIGADE` / `!TEAMSOPSAFETY` / `!TEAMSOPRISKMANAGEMENT` (PromptList,
+ * `D:\migrasi\RNM\DDL\PrivateFireBrigade.xml` dst.; tanpa baris kosong). Diuji `labels.test.ts`.
  */
-export const OPSI_FIRE_BRIGADE: { value: string; label: string }[] = []
-export const OPSI_SOP_SAFETY: { value: string; label: string }[] = []
-export const OPSI_SOP_RISIKO: { value: string; label: string }[] = []
+const OPSI_ADA_TIDAK = [
+  { value: 'Have', label: 'Have' },
+  { value: 'Not Have', label: 'Not Have' },
+  { value: 'No Info', label: 'No Info' },
+]
+export const OPSI_FIRE_BRIGADE = OPSI_ADA_TIDAK
+export const OPSI_SOP_SAFETY = OPSI_ADA_TIDAK
+export const OPSI_SOP_RISIKO = OPSI_ADA_TIDAK
 
 /** Teks sistem baru sub-tab FEA. */
 export const TEKS_FEA = {
@@ -833,14 +841,14 @@ export const FORM_KERUGIAN = {
   detail: { sel: '11', label: 'Loss Detail' },
 } as const
 
-/** Label medan `.Remarks` (sel 10) - di Pega dari deskripsi properti yang tidak ada di korpus; teks sistem baru. */
+/**
+ * Label medan `.Remarks` (sel 10, label dari aturan properti) - `[terverifikasi]` pyLabel "Remarks" aturan
+ * `ASM-FW-GISFW-DATA-CAUSEOFLOSS!REMARKS` (`D:\migrasi\RNM\DDL\Remarks.xml`, ditambahkan work owner 03-10-2026).
+ */
 export const LABEL_REMARKS = 'Remarks'
 
-/**
- * Daftar `.Remarks` - `associated`, aturan properti `Data-CauseOfLoss.Remarks` TIDAK ada di korpus. Data contoh berisi
- * "Settled" dan "--". ⚠️ Kosong sampai work owner menambahkan berkasnya.
- */
-export const OPSI_REMARKS: { value: string; label: string }[] = []
+/** Daftar `.Remarks` - PromptList aturan yang sama (tanpa baris kosong; nilai = label). Diuji `labels.test.ts`. */
+export const OPSI_REMARKS = ['Settled', 'Ex Gratia Payment', 'Withdraw', 'Others', '--'].map((v) => ({ value: v, label: v }))
 
 /** Loss ratio objek (`InputOfferFacInLossRatio`, baca-saja). Desimal tampilan = pxNumber Pega. */
 export const LOSS_RATIO = [

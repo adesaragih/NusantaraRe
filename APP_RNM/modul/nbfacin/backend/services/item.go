@@ -121,13 +121,23 @@ func periksaItem(n int, item []models.ItemObjek) []string {
 	return masalah
 }
 
-// periksaMataUang - setiap mata uang item ada di CURRENCY tanpa ITL (pilihan RD BrowseCurrency_RD). Butuh basis
-// data hanya bila ada item.
+// mataUangDi - kode mata uang beserta jalur medannya (untuk pesan 400).
+type mataUangDi struct{ jalur, kode string }
+
+// periksaMataUang - setiap mata uang item (tiket 39) dan catatan kerugian (tiket 42) ada di CURRENCY tanpa ITL
+// (pilihan RD BrowseCurrency_RD). Butuh basis data hanya bila ada item / catatan.
 func (s *Service) periksaMataUang(ctx context.Context, baris []models.ObjekFire) error {
 	var masalah []string
 	var sah map[string]bool
 	for n, o := range baris {
+		mataUang := make([]mataUangDi, 0, len(o.Items)+len(o.LossRecords))
 		for m, it := range o.Items {
+			mataUang = append(mataUang, mataUangDi{fmt.Sprintf("baris[%d].items[%d]", n, m), it.Currency})
+		}
+		for m, c := range o.LossRecords {
+			mataUang = append(mataUang, mataUangDi{fmt.Sprintf("baris[%d].lossRecords[%d]", n, m), c.Currency})
+		}
+		for _, mu := range mataUang {
 			if sah == nil {
 				if s.mataUang == nil {
 					return ErrPilihanItemTanpaDatabase
@@ -141,8 +151,8 @@ func (s *Service) periksaMataUang(ctx context.Context, baris []models.ObjekFire)
 					sah[c] = true
 				}
 			}
-			if !sah[it.Currency] {
-				masalah = append(masalah, fmt.Sprintf("baris[%d].items[%d].currency %q tidak ada di daftar mata uang", n, m, it.Currency))
+			if !sah[mu.kode] {
+				masalah = append(masalah, fmt.Sprintf("%s.currency %q tidak ada di daftar mata uang", mu.jalur, mu.kode))
 			}
 		}
 	}

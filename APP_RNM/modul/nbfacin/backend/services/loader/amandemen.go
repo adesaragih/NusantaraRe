@@ -71,6 +71,20 @@ var amandemenLebar = map[string]string{
 	"T_QUOTATIONDATA.CEDING_CO_NAME":   "VARCHAR2(4000)",
 	"T_OCCUPATIONLIST.OCCUPATION_ID":   "VARCHAR2(1000)",
 	"T_OCCUPATIONLIST.OCCUPATION_NAME": "VARCHAR2(1000)",
+	// Tiket 42 (A146): Loss Detail pxTextArea - rancangan 50 (diturunkan dari contoh kosong), pola V-6 catatan 500. Migrasi 191.
+	"T_LISTCAUSEOFLOSS.DETAIL": "VARCHAR2(500)",
+	// Butir 87/88 (perintah work owner 03-10-2026, bug DEV): Risk Location / Address = lebar sumber RISKADDRESS
+	// VARCHAR2(4000) (pola butir 80); delapan kolom alamat lain VARCHAR2(100). Migrasi 192.
+	"T_RISKLOCATION.ASM_ADDRESS":  "VARCHAR2(4000)",
+	"T_RISKLOCATION.ASM_CITY":     "VARCHAR2(100)",
+	"T_RISKLOCATION.ASM_DISTRICT": "VARCHAR2(100)",
+	"T_RISKLOCATION.ASMRW":        "VARCHAR2(100)",
+	"T_RISKLOCATION.ASM_ZIP_CODE": "VARCHAR2(100)",
+	"T_PROPERTY.ROAD_NAME":        "VARCHAR2(4000)",
+	"T_PROPERTY.ROAD_TYPE":        "VARCHAR2(100)",
+	"T_PROPERTY.PROVINCE":         "VARCHAR2(100)",
+	"T_PROPERTY.COUNTRY":          "VARCHAR2(100)",
+	"T_PROPERTY.ALM_RISK_ID":      "VARCHAR2(100)",
 }
 
 // T_ADDITIONALSHIP - kolom sistem sepola tabel berulang berjalur tunggal di DDL draf
@@ -235,6 +249,19 @@ var amandemenFEA = []kolomSkema{
 	{nama: "INFO_FEA", tipe: "VARCHAR2(500)", medan: "InfoFEA"},
 }
 
+// amandemenKerugian - tiket 42 (A145): lima medan CauseOfLoss yang ADA di layar
+// (`Section\InputCauseOfLoss_FacIn.xml`; Amount hanya di grid `Section\CauseOfLoss_FacIn.xml`) tetapi tidak di
+// rancangan T_LISTCAUSEOFLOSS (contoh data tidak
+// memuatnya). DateOfLoss teks Pega VARCHAR2(30) (pola START_DATE_TIME); teks 500 (pola V-6); uang NUMBER (pola
+// rancangan; migrasi NUMBER(38,8), ADR-0016). Migrasi 191.
+var amandemenKerugian = []kolomSkema{
+	{nama: "DATE_OF_LOSS", tipe: "VARCHAR2(30)", medan: "DateOfLoss"},
+	{nama: "LOSS_OBJECT", tipe: "VARCHAR2(500)", medan: "LossObject"},
+	{nama: "AMOUNT", tipe: "NUMBER", medan: "Amount"},
+	{nama: "PREVENTION_OF_LOSS", tipe: "NUMBER", medan: "PreventionOfLoss"},
+	{nama: "CAUSE_OF_LOSS", tipe: "VARCHAR2(500)", medan: "CauseOfLoss"},
+}
+
 // jalurFEA, lipatFEA - tiket 41: jalur FEAList di bawah baris lokasi; halaman .DataFEA dilipat (medan sendiri ikut).
 var (
 	jalurFEA = jalurSkema{jalur: "LocationList/FEAList", tabel: "T_FEALIST", induk: "T_LOCATIONLIST"}
@@ -259,6 +286,7 @@ func init() {
 	amandemenKolom["T_BUILDINGCONSTRUCTION"] = append(amandemenKolom["T_BUILDINGCONSTRUCTION"], amandemenBangunan...)
 	amandemenKolom["T_SURROUNDINGRISK"] = append(amandemenKolom["T_SURROUNDINGRISK"], amandemenSekitar...)
 	amandemenKolom["T_PROPERTYITEMLIST"] = append(amandemenKolom["T_PROPERTYITEMLIST"], amandemenItem...)
+	amandemenKolom["T_LISTCAUSEOFLOSS"] = append(amandemenKolom["T_LISTCAUSEOFLOSS"], amandemenKerugian...)
 	for _, k := range amandemenPenunjuk {
 		amandemenKolom[k.tabel] = append(amandemenKolom[k.tabel], kolomSkema{nama: k.nama, tipe: tipePenunjuk, medan: k.medan})
 	}

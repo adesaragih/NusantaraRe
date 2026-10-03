@@ -1,17 +1,19 @@
 package repository
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
 	"testing"
 
+	"nusantarare/inti/backend/db"
 	"nusantarare/modul/nbfacin/backend/models"
 )
 
 func tabelObjekUji() tabelObjek {
 	return tabelObjek{work: "UJI.W", general: "UJI.G", loc: "UJI.L", prop: "UJI.P", risk: "UJI.R", bang: "UJI.B", sekitar: "UJI.S", item: "UJI.I",
-		okupasi: "UJI.O", tol: "UJI.K", fea: "UJI.F"}
+		okupasi: "UJI.O", tol: "UJI.K", fea: "UJI.F", rugi: "UJI.C", koas: "UJI.D"}
 }
 
 // TestSQLObjek - tiket 35: baca urut SEQ_NO lewat case; hapus ANAK sebelum INDUK (FK tanpa
@@ -25,11 +27,12 @@ func TestSQLObjek(t *testing.T) {
 			t.Errorf("baca tanpa %q", harus)
 		}
 	}
-	if n := len(strings.Split(baca[len("SELECT "):strings.Index(baca, "\nFROM")], ",")); n != 49 {
-		t.Errorf("SELECT %d kolom, mau 49 (23 tiket 35 + 24 tiket 38 + kunci item tiket 39 + kunci FEA tiket 41)", n)
+	// Daftar kolom memuat TO_CHAR ber-NLS (koma di dalam kutip): dipastikan lewat isi, bukan dicacah koma.
+	if !strings.HasPrefix(baca, "SELECT "+strings.Join(kolomBacaObjek, ", ")+"\nFROM") {
+		t.Error("SELECT harus tepat daftar kolomBacaObjek")
 	}
 	hapus := sqlHapusObjek(tb)
-	urut := []string{"DELETE FROM UJI.K ", "DELETE FROM UJI.O ", "DELETE FROM UJI.I ", "DELETE FROM UJI.R ", "DELETE FROM UJI.B ", "DELETE FROM UJI.S ", "DELETE FROM UJI.P ", "DELETE FROM UJI.F ", "DELETE FROM UJI.L "}
+	urut := []string{"DELETE FROM UJI.D ", "DELETE FROM UJI.C ", "DELETE FROM UJI.K ", "DELETE FROM UJI.O ", "DELETE FROM UJI.I ", "DELETE FROM UJI.R ", "DELETE FROM UJI.B ", "DELETE FROM UJI.S ", "DELETE FROM UJI.P ", "DELETE FROM UJI.F ", "DELETE FROM UJI.L "}
 	if len(hapus) != len(urut) {
 		t.Fatalf("%d DELETE, mau %d", len(hapus), len(urut))
 	}
@@ -51,7 +54,7 @@ func TestSQLObjek(t *testing.T) {
 func TestSQLObjekMemakaiKolomMigrasi(t *testing.T) {
 	sql := bacaMigrasi(t, "186_t_objek_fire.sql") + "\n" + bacaMigrasi(t, "187_t_surroundingrisk.sql") + "\n" +
 		bacaMigrasi(t, "188_t_propertyitemlist.sql") + "\n" + bacaMigrasi(t, "189_t_occupationlist.sql") + "\n" +
-		bacaMigrasi(t, "190_t_fealist.sql")
+		bacaMigrasi(t, "190_t_fealist.sql") + "\n" + bacaMigrasi(t, "191_t_listcauseofloss.sql")
 	kolom := map[string]map[string]bool{}
 	for _, m := range regexp.MustCompile(`(?s)(?:CREATE TABLE|ALTER TABLE) \{skema\}\.(\w+) (?:ADD )?\((.*?)\n\)`).FindAllStringSubmatch(sql, -1) {
 		if kolom[m[1]] == nil {
@@ -67,9 +70,11 @@ func TestSQLObjekMemakaiKolomMigrasi(t *testing.T) {
 		t.Fatalf("migrasi 187 tak terbaca: %d kolom T_SURROUNDINGRISK", len(kolom["T_SURROUNDINGRISK"]))
 	}
 	tb := tabelObjek{loc: "T_LOCATIONLIST", prop: "T_PROPERTY", risk: "T_RISKLOCATION", bang: "T_BUILDINGCONSTRUCTION", sekitar: "T_SURROUNDINGRISK",
-		item: "T_PROPERTYITEMLIST", okupasi: "T_OCCUPATIONLIST", tol: "T_TABLEOFLIMIT", fea: "T_FEALIST"}
+		item: "T_PROPERTYITEMLIST", okupasi: "T_OCCUPATIONLIST", tol: "T_TABLEOFLIMIT", fea: "T_FEALIST",
+		rugi: "T_LISTCAUSEOFLOSS", koas: "T_COINSDATA"}
 	for _, q := range []string{sqlSisipLokasi(tb.loc), sqlSisipProperty(tb.prop), sqlSisipRisk(tb.risk), sqlSisipBangunan(tb.bang),
-		sqlSisipSekitar(tb.sekitar), sqlSisipItem(tb.item), sqlSisipOkupasi(tb.okupasi), sqlSisipTableOfLimit(tb.tol), sqlSisipFEA(tb.fea)} {
+		sqlSisipSekitar(tb.sekitar), sqlSisipItem(tb.item), sqlSisipOkupasi(tb.okupasi), sqlSisipTableOfLimit(tb.tol), sqlSisipFEA(tb.fea),
+		sqlSisipKerugian(tb.rugi), sqlSisipKoas(tb.koas)} {
 		m := regexp.MustCompile(`INSERT INTO (\w+) \(([^)]*)\) VALUES \((.*)\)$`).FindStringSubmatch(q)
 		if m == nil {
 			t.Fatalf("INSERT tak terbaca: %q", q)
@@ -80,16 +85,18 @@ func TestSQLObjekMemakaiKolomMigrasi(t *testing.T) {
 		}
 		for _, c := range cols {
 			if !kolom[m[1]][c] {
-				t.Errorf("%s.%s ditulis, tidak ada di 186-190", m[1], c)
+				t.Errorf("%s.%s ditulis, tidak ada di 186-191", m[1], c)
 			}
 		}
 	}
 	alias := map[string]string{"p": "T_PROPERTY", "r": "T_RISKLOCATION", "b": "T_BUILDINGCONSTRUCTION", "s": "T_SURROUNDINGRISK",
-		"i": "T_PROPERTYITEMLIST", "l": "T_LOCATIONLIST", "o": "T_OCCUPATIONLIST", "k": "T_TABLEOFLIMIT", "f": "T_FEALIST"}
-	for _, m := range regexp.MustCompile(`\b([prbsilokf])\.([A-Z_]+)\b`).FindAllStringSubmatch(sqlBacaObjek(tabelObjekUji())+"\n"+sqlBacaItem(tabelObjekUji())+
-		"\n"+sqlBacaOkupasi(tabelObjekUji())+"\n"+sqlBacaFEA(tabelObjekUji()), -1) {
+		"i": "T_PROPERTYITEMLIST", "l": "T_LOCATIONLIST", "o": "T_OCCUPATIONLIST", "k": "T_TABLEOFLIMIT", "f": "T_FEALIST",
+		"c": "T_LISTCAUSEOFLOSS", "d": "T_COINSDATA"}
+	for _, m := range regexp.MustCompile(`\b([prbsilokfcd])\.([A-Z_]+)\b`).FindAllStringSubmatch(sqlBacaObjek(tabelObjekUji())+"\n"+sqlBacaItem(tabelObjekUji())+
+		"\n"+sqlBacaOkupasi(tabelObjekUji())+"\n"+sqlBacaFEA(tabelObjekUji())+
+		"\n"+sqlBacaKerugian(tabelObjekUji()), -1) {
 		if !kolom[alias[m[1]]][m[2]] {
-			t.Errorf("%s.%s dibaca, tidak ada di 186-190", alias[m[1]], m[2])
+			t.Errorf("%s.%s dibaca, tidak ada di 186-191", alias[m[1]], m[2])
 		}
 	}
 }
@@ -111,13 +118,17 @@ func TestBacaObjekMemakaiKolomBernama(t *testing.T) {
 			t.Errorf("kunci %q dibaca tetapi tidak dipilih", m[1])
 		}
 	}
+	// tiket 42: amount loss ratio dibaca lewat kunci FmtDesimal ("l."+kolom).
+	for _, m := range regexp.MustCompile(`\{"(LOSS_RATIO[0-9]+_YEAR_AMOUNT)", &lr\.`).FindAllStringSubmatch(string(b), -1) {
+		dibaca[fmt.Sprintf(db.FmtDesimal, "l."+m[1])] = true
+	}
 	for _, k := range kolomBacaObjek {
 		if !dibaca[k] {
 			t.Errorf("kolom %s dipilih tetapi tidak dibaca", k)
 		}
 	}
-	if len(kolomBacaObjek) != 49 {
-		t.Errorf("%d kolom, mau 49 (23 tiket 35 + 4 T_PROPERTY + 20 T_SURROUNDINGRISK tiket 38 + kunci item + kunci FEA)", len(kolomBacaObjek))
+	if len(kolomBacaObjek) != 53 {
+		t.Errorf("%d kolom, mau 53 (23 tiket 35 + 4 T_PROPERTY + 20 T_SURROUNDINGRISK tiket 38 + kunci item + kunci FEA + 4 loss ratio)", len(kolomBacaObjek))
 	}
 }
 

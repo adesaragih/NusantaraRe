@@ -83,22 +83,26 @@ func lebarSekitar() []lebarMedan {
 		lebarMedan{"surroundingRisk.housekeepingRemark", func(o models.ObjekFire) string { return o.SurroundingRisk.HousekeepingRemark }, 500})
 }
 
-// lebarObjek - lebar kolom (BYTE) tiap medan teks (migrasi 186 = rancangan; 187 tiket 38).
+// lebarAlamatRingkas - butir 88: delapan kolom alamat risiko selain Risk Location / Address VARCHAR2(100) (migrasi 192).
+const lebarAlamatRingkas = 100
+
+// lebarObjek - lebar kolom (BYTE) tiap medan teks (migrasi 186 = rancangan; 187 tiket 38; alamat risiko migrasi 192:
+// riskLocation / roadName lebarRiskAddress 4000, delapan lainnya lebarAlamatRingkas 100 - butir 87/88).
 var lebarObjek = append([]lebarMedan{
 	{"objectNo", func(o models.ObjekFire) string { return o.ObjectNo }, 50},
 	{"objectType", func(o models.ObjekFire) string { return o.ObjectType }, 50},
 	{"objectName", func(o models.ObjekFire) string { return o.ObjectName }, 500},
-	{"roadType", func(o models.ObjekFire) string { return o.RoadType }, 50},
-	{"roadName", func(o models.ObjekFire) string { return o.RoadName }, 500},
+	{"roadType", func(o models.ObjekFire) string { return o.RoadType }, lebarAlamatRingkas},
+	{"roadName", func(o models.ObjekFire) string { return o.RoadName }, lebarRiskAddress},
 	{"buildingNo", func(o models.ObjekFire) string { return o.BuildingNo }, 50},
-	{"zipCode", func(o models.ObjekFire) string { return o.ZipCode }, 50},
-	{"country", func(o models.ObjekFire) string { return o.Country }, 50},
-	{"riskLocation", func(o models.ObjekFire) string { return o.RiskLocation }, 50},
-	{"territory", func(o models.ObjekFire) string { return o.Territory }, 50},
-	{"city", func(o models.ObjekFire) string { return o.City }, 50},
-	{"district", func(o models.ObjekFire) string { return o.District }, 50},
-	{"province", func(o models.ObjekFire) string { return o.Province }, 50},
-	{"riskAddressId", func(o models.ObjekFire) string { return o.RiskAddressID }, 50},
+	{"zipCode", func(o models.ObjekFire) string { return o.ZipCode }, lebarAlamatRingkas},
+	{"country", func(o models.ObjekFire) string { return o.Country }, lebarAlamatRingkas},
+	{"riskLocation", func(o models.ObjekFire) string { return o.RiskLocation }, lebarRiskAddress},
+	{"territory", func(o models.ObjekFire) string { return o.Territory }, lebarAlamatRingkas},
+	{"city", func(o models.ObjekFire) string { return o.City }, lebarAlamatRingkas},
+	{"district", func(o models.ObjekFire) string { return o.District }, lebarAlamatRingkas},
+	{"province", func(o models.ObjekFire) string { return o.Province }, lebarAlamatRingkas},
+	{"riskAddressId", func(o models.ObjekFire) string { return o.RiskAddressID }, lebarAlamatRingkas},
 	{"numberOfFloor", func(o models.ObjekFire) string { return o.NumberOfFloor }, 50},
 	{"roofType", func(o models.ObjekFire) string { return o.RoofType }, 50},
 	{"wallType", func(o models.ObjekFire) string { return o.WallType }, 50},
@@ -147,6 +151,7 @@ func periksaObjek(baris []models.ObjekFire) error {
 		masalah = append(masalah, periksaItem(i, o.Items)...)
 		masalah = append(masalah, periksaOkupasi(i, o.Occupations)...)
 		masalah = append(masalah, periksaFEA(i, o.FEA)...)
+		masalah = append(masalah, periksaKerugian(i, o.LossRecords)...)
 	}
 	if len(masalah) > 0 {
 		return fmt.Errorf("%w: %s", ErrMasukanObjek, strings.Join(masalah, "; "))
@@ -166,11 +171,22 @@ func (s *Service) BacaObjek(ctx context.Context, id string) ([]models.ObjekFire,
 	if errors.Is(err, repository.ErrKasusTidakAda) {
 		return nil, ErrKasusTidakAda
 	}
+	// dateOfLoss teks Pega -> DD-MM-YYYY ke larik catatan BARU per objek (larik catatan dari repository tidak diubah;
+	// medan LossRecords objek diganti).
+	for i := range baris {
+		rugi := make([]models.CatatanKerugian, len(baris[i].LossRecords))
+		for j, c := range baris[i].LossRecords {
+			c.DateOfLoss = tanggalKerugianKeKabel(c.DateOfLoss)
+			rugi[j] = c
+		}
+		baris[i].LossRecords = rugi
+	}
 	return baris, err
 }
 
 // GantiObjek - tombol Save tab Object: identitas (401) -> isian (400) -> basis data (503) ->
-// mata uang item di CURRENCY (400, tiket 39) -> case (404); daftar diganti utuh di satu transaksi, lalu dibaca ulang.
+// mata uang item / catatan kerugian di CURRENCY (400, tiket 39/42) -> siapkanKerugian (nama tertanggung, tanggal Pega,
+// Loss Ratio; tiket 42) -> case (404); daftar diganti utuh di satu transaksi, lalu dibaca ulang.
 func (s *Service) GantiObjek(ctx context.Context, pelaku inti.Pelaku, id string, baris []models.ObjekFire) ([]models.ObjekFire, error) {
 	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return nil, err
@@ -187,7 +203,11 @@ func (s *Service) GantiObjek(ctx context.Context, pelaku inti.Pelaku, id string,
 	if err := s.periksaMataUang(ctx, baris); err != nil {
 		return nil, err
 	}
-	err := s.transaksi(ctx, func(tx *db.Tx) error { return s.objek.GantiObjek(ctx, tx, id, baris) })
+	simpan, err := s.siapkanKerugian(ctx, id, baris)
+	if err != nil {
+		return nil, err
+	}
+	err = s.transaksi(ctx, func(tx *db.Tx) error { return s.objek.GantiObjek(ctx, tx, id, simpan) })
 	if errors.Is(err, repository.ErrKasusTidakAda) {
 		return nil, ErrKasusTidakAda
 	}

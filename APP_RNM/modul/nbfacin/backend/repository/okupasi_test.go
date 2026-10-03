@@ -17,10 +17,18 @@ func TestSQLOkupasi(t *testing.T) {
 			t.Errorf("baca okupasi tanpa %q", harus)
 		}
 	}
-	hapus := sqlHapusObjek(tabelObjekUji())
-	if !strings.HasPrefix(hapus[0], "DELETE FROM UJI.K WHERE PARENT_ID IN (SELECT o.ID FROM UJI.O o WHERE o.PARENT_TABLE = 'T_PROPERTY'") ||
-		!strings.HasPrefix(hapus[1], "DELETE FROM UJI.O o WHERE o.PARENT_TABLE = 'T_PROPERTY' AND o.PARENT_ID IN (") {
-		t.Errorf("hapus okupasi: %q / %q", hapus[0], hapus[1])
+	var hapusK, hapusO string
+	for _, q := range sqlHapusObjek(tabelObjekUji()) {
+		switch {
+		case strings.HasPrefix(q, "DELETE FROM UJI.K "):
+			hapusK = q
+		case strings.HasPrefix(q, "DELETE FROM UJI.O "):
+			hapusO = q
+		}
+	}
+	if !strings.HasPrefix(hapusK, "DELETE FROM UJI.K WHERE PARENT_ID IN (SELECT o.ID FROM UJI.O o WHERE o.PARENT_TABLE = 'T_PROPERTY'") ||
+		!strings.HasPrefix(hapusO, "DELETE FROM UJI.O o WHERE o.PARENT_TABLE = 'T_PROPERTY' AND o.PARENT_ID IN (") {
+		t.Errorf("hapus okupasi: %q / %q", hapusK, hapusO)
 	}
 	if indukOkupasi != "T_PROPERTY" || jalurOkupasi != "LocationList/Property/OccupationList" {
 		t.Error("PARENT_TABLE / SRC_PATH harus sama dengan isi loader")

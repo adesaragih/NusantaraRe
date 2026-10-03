@@ -76,6 +76,7 @@ describe('SubTabItem - aturan', () => {
     expect(galatItem(it1({ isAdjustable: true, pctAdjustOther: '60' })).pct).toBeUndefined()
     expect(galatItem(it1({ isAdjustable: true, pctAdjustOther: '100' })).pct).toBeUndefined()
     expect(galatItem(it1({ isAdjustable: false, pctAdjustOther: '5' })).pct).toBeUndefined()
+    expect(itemBaru().pctAdjust2).toBe('100')
   })
 
   it('tandaDesimal eksak', () => {

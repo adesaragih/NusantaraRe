@@ -91,7 +91,8 @@ table-of-limit dulu"*; `cariTableOfLimit` di frontend mendapat 404 sampai endpoi
 - `[pertanyaan terbuka]` Nama tabel `TABLEOFLIMIT` hanya dari kelas + berkas contoh `[dugaan]` (tidak ada SQL korpus);
   tipe TAHUN / BIZCODE / PCTLIMIT tidak diketahui (contoh "70,000 ") — DDL diminta lewat sesi 0f.
 
-**Keputusan agent (menunggu konfirmasi):**
+**Keputusan agent — DISETUJUI work owner 03-10-2026** (butir 82, diteruskan sesi `nusantarare-0f`: *"setuju keputusan
+agent"*):
 
 | # | Keputusan | Dasar |
 | --- | --- | --- |
@@ -103,3 +104,8 @@ table-of-limit dulu"*; `cariTableOfLimit` di frontend mendapat 404 sampai endpoi
 ⚠️ **Risiko tercatat:** simpan objek menghapus `T_RISKLOCATION` dan okupasi berinduk `T_PROPERTY` saja. Okupasi berinduk
 `T_RISKLOCATION` (jalur `RiskLocation/OccupationList`, hanya ditulis loader) akan **yatim** tanpa galat karena tanpa FK
 (A140). Belum terjadi: loader belum menulis ke Oracle; ditangani bersama tiket 23 / pemuat.
+
+**Keputusan work owner W-5 (03-10-2026, diteruskan sesi 0f; butir 86):** BusinessCode table-of-limit = **kode Group
+Business** (dipilih di Create opportunity). Kolom mana yang cocok dengan `TABLEOFLIMIT.BIZCODE` dibuktikan dari data contoh
+saat endpoint dibangun — belum dikerjakan. DDL `TABLEOFLIMIT.txt` (03-10-2026): seluruh kolom VARCHAR2(4000 BYTE) —
+PCTLIMIT dan TAHUN teks.

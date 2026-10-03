@@ -52,6 +52,12 @@ import {
   OPSI_FLOOD_AREA,
   OPSI_CONDITION,
   CONDITION_KOSONG,
+  OPSI_PCT_ADJUST,
+  OPSI_FIRE_BRIGADE,
+  OPSI_SOP_SAFETY,
+  OPSI_SOP_RISIKO,
+  OPSI_REMARKS,
+  LABEL_REMARKS,
   OPSI_TITLE_RISK,
   POPUP_SOB,
   SARING_PORTAL,
@@ -484,6 +490,10 @@ const BERKAS_SEKITAR_DDL = {
   FloodAreaStatus: { opsi: OPSI_FLOOD_STATUS, kosong: null },
   FloodArea: { opsi: OPSI_FLOOD_AREA, kosong: CONSTRUCTION_KOSONG as string | null },
   Condition: { opsi: OPSI_CONDITION, kosong: CONDITION_KOSONG as string | null },
+  PrivateFireBrigade: { opsi: OPSI_FIRE_BRIGADE, kosong: null },
+  TeamSOPSafety: { opsi: OPSI_SOP_SAFETY, kosong: null },
+  TeamSOPRiskManagement: { opsi: OPSI_SOP_RISIKO, kosong: null },
+  Remarks: { opsi: OPSI_REMARKS, kosong: null },
 }
 const adaSekitarDDL = Object.keys(BERKAS_SEKITAR_DDL).every((n) => existsSync(`${DDL}${n}.xml`))
 
@@ -671,5 +681,23 @@ describe.skipIf(!adaKerugian)('Loss Record + Loss Record Internal = korpus - tik
 
   it('uji ini menggigit: label salah tidak ditemukan', () => {
     expect(ada(form, '7', 'pyLabelFieldValue', 'Total Claim')).toBe(false)
+  })
+})
+
+describe.skipIf(!existsSync(`${DDL}PctAdjust2.xml`))('PctAdjust2 = LocalList aturan properti (DDL\\PctAdjust2.xml)', () => {
+  it('pyTableOption LocalList, satu nilai "100"', () => {
+    const xml = readFileSync(`${DDL}PctAdjust2.xml`, 'utf-8')
+    expect(xml).toContain('<pyTableOption>LocalList</pyTableOption>')
+    const isi = /<pyListValues[^>]*>([\s\S]*?)<\/pyListValues>/.exec(xml)?.[1] ?? ''
+    const nilai = [...isi.matchAll(/<pyLabel>([^<]*)<\/pyLabel>/g)].map((m) => m[1])
+    expect(nilai).toEqual(OPSI_PCT_ADJUST.map((o) => o.value))
+  })
+})
+
+describe.skipIf(!existsSync(`${DDL}Remarks.xml`))('label Remarks = pyLabel aturan properti (DDL\\Remarks.xml)', () => {
+  it('pyLabel aturan CAUSEOFLOSS!REMARKS = LABEL_REMARKS', () => {
+    const xml = readFileSync(`${DDL}Remarks.xml`, 'utf-8')
+    expect(xml).toContain('<pxInsName>ASM-FW-GISFW-DATA-CAUSEOFLOSS!REMARKS</pxInsName>')
+    expect(xml).toContain(`<pyLabel>${LABEL_REMARKS}</pyLabel>`)
   })
 })

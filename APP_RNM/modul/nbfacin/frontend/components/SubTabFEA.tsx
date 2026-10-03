@@ -9,7 +9,7 @@
 // Private Truck Brigade (Unit), Private Team Fire Brigade, Team & SOP Safety, Team & SOP Risk Management, Others
 // Info). M-2 jumlah unit = bilangan bulat >= 0 (pxNumber tanpa batas di XML); galat menahan Save. M-3 tombol Save di
 // atas grid FEA Pega (`SaveFacIn_Act`) tidak diulang - Save tab Object sudah menyimpan seluruh objek. M-4 tiga
-// dropdown menunggu aturan properti dari work owner.
+// dropdown = aturan properti `DDL\PrivateFireBrigade.xml` dst. (Have / Not Have / No Info).
 
 import { useState } from 'react'
 

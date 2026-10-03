@@ -57,10 +57,15 @@ ada di korpus).
 `nb-fire-1.json` `LocationList[0]` berkelas sama dan berkunci `FEAList`; nol jalur `FEA` di rancangan (`skema_gen.go`, dua
 cara: pencarian `FEA` di nama tabel / medan — satu-satunya kena `RateLifeAverage`, bukan FEA — dan di daftar jalur = 0).
 
-**Keputusan agent (menunggu konfirmasi):**
+**Keputusan agent — DISETUJUI work owner 03-10-2026** (butir 82, diteruskan sesi `nusantarare-0f`: *"setuju keputusan
+agent"*):
 
 | # | Keputusan | Dasar |
 | --- | --- | --- |
 | A142 | Tabel baru `T_FEALIST`, induk `T_LOCATIONLIST`, kolom sistem pola tabel berulang | rancangan tidak punya tabel FEA; pola T_ADDITIONALSHIP (butir 70) |
 | A143 | Lima jumlah unit `VARCHAR2(50)` teks; tiga kode dropdown `VARCHAR2(50)`; Others Info `VARCHAR2(500)` | angka teks pola A129 / NUMBER_OF_FLOOR; kode / catatan pola V-6 |
 | A144 | Halaman tertanam `.DataFEA` dilipat ke baris FEA (bukan tabel anak) | empat medan tunggal; pola lipatan V-39 (PolicyData) |
+
+**Aturan properti (03-10-2026, diteruskan sesi 0f):** `DDL\PrivateFireBrigade.xml`, `TeamSOPSafety.xml`,
+`TeamSOPRiskManagement.xml` = Have / Not Have / No Info (nilai = label) dipakai frontend; ≤ 11 bita, muat di kolom
+VARCHAR2(50). Backend tetap tanpa validasi enumerasi.

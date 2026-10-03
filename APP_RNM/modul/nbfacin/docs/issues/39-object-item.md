@@ -95,7 +95,8 @@ grid Total TSI per mata uang. Datanya ikut Save tab Object.
 - Kontrol: PropertyYear / Unit / TSIObjectItem / PctAdjustOther = pxNumber; Year / NoOfTree / AreaHectar = pxTextInput;
   Note / Remark = pxTextArea; Condition = pxDropdown.
 
-**Keputusan agent (menunggu konfirmasi):**
+**Keputusan agent — DISETUJUI work owner 03-10-2026** (butir 82, diteruskan sesi `nusantarare-0f`: *"setuju keputusan
+agent"*):
 
 | # | Keputusan | Dasar |
 | --- | --- | --- |
@@ -109,3 +110,7 @@ grid Total TSI per mata uang. Datanya ikut Save tab Object.
 Tidak diport: `.Property.TotalTSIList` (dihitung frontend, K-5; rancangan tidak punya tabelnya), `.PctAdjust1` (ada di
 section, tidak di kontrak), `.SubLimit` (dropdown `FacInKurs.pxResults`, kelas GrandTSI — ada di section baris 9108/9388,
 tidak di kontrak dan tidak di rancangan T_PROPERTYITEMLIST), hitung ulang premi (K-1).
+
+**Aturan properti (03-10-2026, diteruskan sesi 0f):** `DDL\Condition.xml` (1 Good / 2 Fair / 3 Poor) dan `DDL\PctAdjust2.xml`
+(satu nilai "100"; item baru di frontend berawal "100", K-7) dipakai frontend. Backend tetap tanpa validasi enumerasi;
+"100" lolos `pctAdjust2` desimal.

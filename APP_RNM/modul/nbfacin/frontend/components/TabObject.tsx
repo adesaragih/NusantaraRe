@@ -476,6 +476,7 @@ export default function TabObject({ caseId, insuredName = '' }: { caseId: string
                           lossRatio={x.data.lossRatio}
                           insuredName={insuredName}
                           ubah={(lossRecords) => ubah(x.kunci, { ...x.data, lossRecords })}
+                          tandaiWajib={cobaSimpan}
                         />
                       ) : sub === SUBTAB_OBJEK[6] ? (
                         <SubTabKlaimInternal rows={x.data.internalLossRecords} />

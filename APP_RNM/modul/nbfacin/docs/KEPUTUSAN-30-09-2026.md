@@ -1227,7 +1227,7 @@ DDL terverifikasi). Keputusan agent A116–A122 menunggu konfirmasi (`issues/36-
 | ---: | --- | --- |
 | 81 | W-1 (diteruskan sesi `nusantarare-0f`: Save memanggil prosedur `pooldata.InsertUpdateRISKADDRESS`) bertentangan dengan ADR-0043 (*"jangan ada lagi pemanggilan procedure, segala procedure hardcode dalam skrip"*). Ditanyakan langsung ke work owner di sesi ini (AskUserQuestion) | **"Port to Go, keep ADR-0043"** — W-1 diganti: INSERT dari Go di transaksi aplikasi; ID dengan ekspresi prosedur yang sama `GETCURRENTSITE \|\| LPAD(TO_CHAR(RISKADDRESS_SEQ.NEXTVAL),12,'0')` (fungsi hanya untuk awalan situs — isinya tidak ada di korpus); nol CALL prosedur, tanpa ROLLBACK tersembunyi |
 
-W-2 (akumulasi ditunda) dan W-3 (ID baru dikembalikan) tetap. Keputusan agent A123–A127 menunggu konfirmasi
+W-2 (akumulasi ditunda) dan W-3 (ID baru dikembalikan) tetap. Keputusan agent A123–A128 **disetujui** 03-10-2026 (butir 82)
 (`issues/37-add-alamat-risiko.md`). Tanpa migrasi.
 
 ## Tiket 38 — sub-tab Surrounding Risk (backend), diteruskan sesi `nusantarare-0f`
@@ -1236,7 +1236,7 @@ W-2 (akumulasi ditunda) dan W-3 (ID baru dikembalikan) tetap. Keputusan agent A1
 /api/nbfacin/occupation` menurut RD `BrowseOccupationFacInFIRE_RD` `[terverifikasi]`. Migrasi **187**: empat kolom rancangan
 `T_PROPERTY` (ALTER ADD) + `T_SURROUNDINGRISK` utuh dengan 18 kolom baru (amandemen loader `amandemenSekitar`; skema 79 tabel
 / **1.412** kolom). Ditulis, belum dijalankan — urutan DEV: 182 → 183 → 184 → 185 → 186 → **187**. Keputusan agent
-A129–A131 menunggu konfirmasi (`issues/38-surrounding-risk.md`). Tanpa keputusan work owner baru; daftar dropdown
+A129–A131 **disetujui** 03-10-2026 (butir 82; `issues/38-surrounding-risk.md`). Tanpa keputusan work owner baru; daftar dropdown
 (`DDL\FrontConstruction.xml`, `Ownership.xml`, `FloodAreaStatus.xml`, `HousekeepingStatus.xml`, `FloodArea.xml`,
 ditambahkan work owner) dipakai frontend saja — server tidak memvalidasi enumerasi.
 
@@ -1247,7 +1247,7 @@ amandemen loader `amandemenItem`; skema 79 tabel / **1.418** kolom). `TSI_OBJECT
 `PCT_ADJUST2`/`PCT_ADJUST_OTHER` persen `NUMBER(38,8)` — teks desimal di JSON, `apd` di Go, nol float. `GET
 /api/nbfacin/jenis-item-objek` (V_JN_OBJ_ITEM) dan `GET /api/nbfacin/mata-uang` (CURRENCY) menurut RD `[terverifikasi]`;
 DDL kedua objek warisan itu **tidak ada** — tipe kolomnya `belum terverifikasi` (diminta lewat sesi 0f). Ditulis, belum
-dijalankan — urutan DEV: … → 187 → **188**. Keputusan agent A132–A137 menunggu konfirmasi (`issues/39-object-item.md`);
+dijalankan — urutan DEV: … → 187 → **188**. Keputusan agent A132–A137 **disetujui** 03-10-2026 (butir 82; `issues/39-object-item.md`);
 A133 (mata uang wajib) bersandar pada K-069 + K-012 (ADR modul 0006 `Unknown` eksplisit, bukan `docs/bersama` ADR-0006).
 
 ## Tiket 40 — sub-tab Occupation (backend, sebagian), diteruskan sesi `nusantarare-0f`
@@ -1258,14 +1258,38 @@ A133 (mata uang wajib) bersandar pada K-069 + K-012 (ADR modul 0006 `Unknown` ek
 perintah sesi 0f (*"lanjut tiket 40 tanpa endpoint table-of-limit dulu"*): DDL TABLEOFLIMIT belum ada, dan
 `QuotationData.BusinessCode` hanya tersalin dari halaman `Quotation` (`SetCedingCo_Act`) yang asal BusinessCode-nya belum
 ditemukan. Ditulis,
-belum dijalankan — urutan DEV: … → 188 → **189**. Keputusan agent A138–A141 menunggu konfirmasi (`issues/40-occupation.md`).
+belum dijalankan — urutan DEV: … → 188 → **189**. Keputusan agent A138–A141 **disetujui** 03-10-2026 (butir 82; `issues/40-occupation.md`).
 
 ## Tiket 41 — sub-tab FEA (backend), diteruskan sesi `nusantarare-0f`
 
 `GET`/`PUT …/objek` membawa `fea` → tabel **baru** `T_FEALIST` (induk `T_LOCATIONLIST`), migrasi **190**; loader:
 `amandemenFEA` + jalur `LocationList/FEAList` + lipatan `.DataFEA` (skema 80 tabel / **1.433** kolom / 150 jalur).
-Ditulis, belum dijalankan — urutan DEV: … → 189 → **190**. Keputusan agent A142–A144 menunggu konfirmasi
+Ditulis, belum dijalankan — urutan DEV: … → 189 → **190**. Keputusan agent A142–A144 **disetujui** 03-10-2026 (butir 82)
 (`issues/41-fea.md`). Tanpa keputusan work owner baru.
+
+## Keputusan work owner — 3 Oktober 2026, tiket 36–42 (diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 82 | Keputusan agent sesi c3 A123–A144 dan sesi 0f tiket 36–42 (H-*, I-*, J-*, K-*, L-*, M-*, N-*) | **"setuju keputusan agent"** — semuanya DISETUJUI. ⚠️ A116–A122 (tiket 36) tidak termasuk rentang ini — tetap menunggu |
+| 83 | Loss Record Internal (N-5) | **"biarkan saja kosong"** — grid baca-saja, GET selalu `[]`, tanpa tabel dan tanpa pengisian dari DATAKLAIM |
+| 84 | W-4 Loss Ratio | Dihitung server menurut `DDL\SetLossRatio_Act.xml` (kelas LocationReinsurance); ΣAmount = 0 → LR dan %LR tetap 0; Total of Loss tetap baca-saja |
+| 85 | Aturan properti baru (`DDL\`) | `Condition.xml`, `PctAdjust2.xml` ("100", K-7), `PrivateFireBrigade` / `TeamSOPSafety` / `TeamSOPRiskManagement.xml` (Have / Not Have / No Info) dipakai frontend; backend tetap tanpa validasi enumerasi. Susulan: `Remarks.xml` (CAUSEOFLOSS!REMARKS, PromptList: Settled / Ex Gratia Payment / Withdraw / Others / --) juga dipakai frontend saja |
+| 86 | W-5 BusinessCode table-of-limit (tiket 40) | **= kode Group Business** (dipilih di Create opportunity); kolom yang cocok dengan `TABLEOFLIMIT.BIZCODE` dibuktikan dari data contoh saat endpoint dibangun. Tahun = tahun `T_GENERAL_POLIS.START_DATE_TIME`; Begin kosong → 409 |
+
+## Tiket 42 — sub-tab Loss Record (backend), diteruskan sesi `nusantarare-0f`
+
+`GET`/`PUT …/objek` membawa `lossRecords` → tabel rancangan `T_LISTCAUSEOFLOSS` (+ lima kolom baru, `DETAIL` 500) dan
+`T_COINSDATA`, migrasi **191**; loss ratio dihitung server saat PUT (butir 84) ke kolom rancangan `T_LOCATIONLIST.LOSS_RATIO*`
+(191 `ALTER ADD`); `internalLossRecords` selalu `[]` (butir 83). Skema loader 80 tabel / **1.438** kolom. Ditulis, belum
+dijalankan — urutan DEV: … → 190 → **191**. Keputusan agent A145–A149 menunggu konfirmasi (`issues/42-loss-record.md`).
+
+## Keputusan work owner — 3 Oktober 2026, bug DEV lebar alamat risiko (diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 87 | Save tab Object gagal di DEV: *"baris[0].riskLocation paling banyak 50 byte"* - Risk Location = rangkaian Title + Address + Territory + District + City + Province + Nation (`SetRiskIdDT_FacIn`) | **"ini perbaiki dlu, kolomnya buatin bisa sampe 4000"** - migrasi BARU **192** (186 sudah dijalankan di DEV, tidak diubah): sepuluh kolom yang diisi dari RISKADDRESS (`T_RISKLOCATION` ASM_ADDRESS / ASM_CITY / ASM_DISTRICT / ASMRW / ASM_ZIP_CODE; `T_PROPERTY` ROAD_NAME / ROAD_TYPE / PROVINCE / COUNTRY / ALM_RISK_ID) `MODIFY` ke VARCHAR2(4000) = lebar sumber RISKADDRESS (pola butir 80); batas validasi backend ikut 4000; `BUILDING_NO` tetap 50 (bukan dari RISKADDRESS); amandemen loader `amandemenLebar`. ⚠️ `_down` gagal (ORA-01441) bila sudah ada nilai panjang. ⚠️ **Diralat butir 88** |
+| 88 | Ralat butir 87 (pesan langsung work owner di sesi 0f, sebelum 192 di-commit / dijalankan) | **"ASM_ADDRESS, ROAD_NAME saja dilebarin segitu, yg lainnya 100 saja"** - 192: `T_RISKLOCATION.ASM_ADDRESS` (Risk Location) dan `T_PROPERTY.ROAD_NAME` (Address) VARCHAR2(4000); ASM_CITY / ASM_DISTRICT / ASMRW / ASM_ZIP_CODE / ROAD_TYPE / PROVINCE / COUNTRY / ALM_RISK_ID VARCHAR2(100); batas validasi 4000 / 100; BUILDING_NO tetap 50 |
 
 ## Yang belum diputuskan
 

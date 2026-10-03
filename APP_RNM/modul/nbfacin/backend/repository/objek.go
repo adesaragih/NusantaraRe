@@ -26,6 +26,8 @@ const (
 	TabelOccupationList       = "T_OCCUPATIONLIST"
 	TabelTableOfLimit         = "T_TABLEOFLIMIT"
 	TabelFEAList              = "T_FEALIST"
+	TabelListCauseOfLoss      = "T_LISTCAUSEOFLOSS"
+	TabelCoinsData            = "T_COINSDATA"
 	sequenceLocationList      = "SEQ_T_LOCATIONLIST"
 	sequenceProperty          = "SEQ_T_PROPERTY"
 	sequenceRiskLocation      = "SEQ_T_RISKLOCATION"
@@ -35,6 +37,8 @@ const (
 	sequenceOccupationList    = "SEQ_T_OCCUPATIONLIST"
 	sequenceTableOfLimit      = "SEQ_T_TABLEOFLIMIT"
 	sequenceFEAList           = "SEQ_T_FEALIST"
+	sequenceListCauseOfLoss   = "SEQ_T_LISTCAUSEOFLOSS"
+	sequenceCoinsData         = "SEQ_T_COINSDATA"
 	teksBenar, teksSalah      = "true", "false" // boolean Pega di IS_* (fixture)
 )
 
@@ -52,7 +56,7 @@ type ObjekOracle struct{ db *db.DB }
 // NewObjekOracle merakit penyimpan objek.
 func NewObjekOracle(d *db.DB) *ObjekOracle { return &ObjekOracle{db: d} }
 
-type tabelObjek struct{ work, general, loc, prop, risk, bang, sekitar, item, okupasi, tol, fea string }
+type tabelObjek struct{ work, general, loc, prop, risk, bang, sekitar, item, okupasi, tol, fea, rugi, koas string }
 
 func (r *ObjekOracle) tabel() (tabelObjek, error) {
 	var t tabelObjek
@@ -62,7 +66,7 @@ func (r *ObjekOracle) tabel() (tabelObjek, error) {
 	}{{TabelWorkPolis, &t.work}, {TabelGeneralPolis, &t.general}, {TabelLocationList, &t.loc}, {TabelProperty, &t.prop},
 		{TabelRiskLocation, &t.risk}, {TabelBuildingConstruction, &t.bang}, {TabelSurroundingRisk, &t.sekitar},
 		{TabelPropertyItemList, &t.item}, {TabelOccupationList, &t.okupasi}, {TabelTableOfLimit, &t.tol},
-		{TabelFEAList, &t.fea}} {
+		{TabelFEAList, &t.fea}, {TabelListCauseOfLoss, &t.rugi}, {TabelCoinsData, &t.koas}} {
 		q, err := r.db.Qualify(x.nama)
 		if err != nil {
 			return t, err
@@ -89,7 +93,10 @@ var kolomBacaObjek = []string{"p.OBJECT_NO", "p.OBJECT_TYPE", "p.OBJECT_NAME", "
 	"s.RIGHT_OCCUPATION", "s.RIGHT_CONSTRUCTION", "s.RIGHT_DISTANCE", "s.RIGHT_NOTE",
 	"s.HOUSEKEEPING_STATUS", "s.FLOOD_AREA_STATUS", "s.FLOOD_AREA", "s.HOUSEKEEPING_REMARK",
 	// tiket 39: kunci item (T_PROPERTYITEMLIST.PARENT_ID); tiket 41: kunci FEA (T_FEALIST.PARENT_ID)
-	"TO_CHAR(p.ID)", "TO_CHAR(l.ID)"}
+	"TO_CHAR(p.ID)", "TO_CHAR(l.ID)",
+	// tiket 42: loss ratio baris lokasi (baca-saja); amount uang lewat TO_CHAR TM9 ber-NLS titik
+	fmt.Sprintf(db.FmtDesimal, "l.LOSS_RATIO1_YEAR_AMOUNT"), "l.LOSS_RATIO1_YEAR_PERCENT",
+	fmt.Sprintf(db.FmtDesimal, "l.LOSS_RATIO35_YEAR_AMOUNT"), "l.LOSS_RATIO35_YEAR_PERCENT"}
 
 // sqlBacaObjek - satu baris per lokasi; anak tunggal lewat LEFT JOIN (UNIQUE PARENT_ID, 186/187).
 func sqlBacaObjek(t tabelObjek) string {
@@ -107,6 +114,8 @@ ORDER BY l.SEQ_NO`
 func sqlHapusObjek(t tabelObjek) []string {
 	prop := "SELECT p.ID FROM " + t.prop + " p JOIN " + t.loc + " l ON l.ID = p.PARENT_ID WHERE l.PARENT_ID = :1"
 	return []string{
+		"DELETE FROM " + t.koas + " WHERE PARENT_ID IN (SELECT c.ID FROM " + t.rugi + " c WHERE c.PARENT_ID IN (" + prop + "))",
+		"DELETE FROM " + t.rugi + " WHERE PARENT_ID IN (" + prop + ")",
 		"DELETE FROM " + t.tol + " WHERE PARENT_ID IN (SELECT o.ID FROM " + t.okupasi + " o WHERE " + syaratIndukOkupasi +
 			" AND o.PARENT_ID IN (" + prop + "))",
 		"DELETE FROM " + t.okupasi + " o WHERE " + syaratIndukOkupasi + " AND o.PARENT_ID IN (" + prop + ")",
@@ -126,8 +135,11 @@ func sqlPastikanGeneral(general string) string {
 	return "INSERT INTO " + general + " (ID) SELECT :1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM " + general + " WHERE ID = :2)"
 }
 
+// sqlSisipLokasi - :5..:8 loss ratio (tiket 42) hasil hitung services; amount uang lewat TO_NUMBER, percent teks.
 func sqlSisipLokasi(loc string) string {
-	return "INSERT INTO " + loc + " (ID, PARENT_ID, SEQ_NO, ROW_UID) VALUES (:1, :2, :3, :4)"
+	return "INSERT INTO " + loc + " (ID, PARENT_ID, SEQ_NO, ROW_UID, LOSS_RATIO1_YEAR_AMOUNT, LOSS_RATIO1_YEAR_PERCENT," +
+		" LOSS_RATIO35_YEAR_AMOUNT, LOSS_RATIO35_YEAR_PERCENT) VALUES (:1, :2, :3, :4, " + fmt.Sprintf(fmtAngkaMasuk, ":5") +
+		", :6, " + fmt.Sprintf(fmtAngkaMasuk, ":7") + ", :8)"
 }
 
 func sqlSisipProperty(prop string) string {
@@ -230,7 +242,18 @@ func (r *ObjekOracle) BacaObjek(ctx context.Context, id string) ([]models.ObjekF
 					Distance: v("s.RIGHT_DISTANCE"), Note: v("s.RIGHT_NOTE")},
 				HousekeepingStatus: v("s.HOUSEKEEPING_STATUS"), FloodAreaStatus: v("s.FLOOD_AREA_STATUS"),
 				FloodArea: v("s.FLOOD_AREA"), HousekeepingRemark: v("s.HOUSEKEEPING_REMARK")},
-			Items: []models.ItemObjek{}, Occupations: []models.OkupasiObjek{}, FEA: []models.BarisFEA{}})
+			Items: []models.ItemObjek{}, Occupations: []models.OkupasiObjek{}, FEA: []models.BarisFEA{},
+			LossRecords: []models.CatatanKerugian{}})
+		lr := &hasil[len(hasil)-1].LossRatio
+		lr.OneYearPercent, lr.ThreeFiveYearPercent = v("l.LOSS_RATIO1_YEAR_PERCENT"), v("l.LOSS_RATIO35_YEAR_PERCENT")
+		for _, d := range []struct {
+			kolom string
+			ke    *string
+		}{{"LOSS_RATIO1_YEAR_AMOUNT", &lr.OneYearAmount}, {"LOSS_RATIO35_YEAR_AMOUNT", &lr.ThreeFiveYearAmount}} {
+			if *d.ke, err = desimalTeks(TabelLocationList+" case "+id, d.kolom, teks[fmt.Sprintf(db.FmtDesimal, "l."+d.kolom)]); err != nil {
+				return nil, err
+			}
+		}
 		idProperty = append(idProperty, v("TO_CHAR(p.ID)"))
 		idLokasi = append(idLokasi, v("TO_CHAR(l.ID)"))
 	}
@@ -250,6 +273,10 @@ func (r *ObjekOracle) BacaObjek(ctx context.Context, id string) ([]models.ObjekF
 	if err != nil {
 		return nil, err
 	}
+	rugi, err := r.bacaKerugian(ctx, t, id)
+	if err != nil {
+		return nil, err
+	}
 	for i, l := range idLokasi {
 		if d, ada := fea[l]; ada {
 			hasil[i].FEA = d
@@ -264,6 +291,9 @@ func (r *ObjekOracle) BacaObjek(ctx context.Context, id string) ([]models.ObjekF
 		}
 		if d, ada := okupasi[p]; ada {
 			hasil[i].Occupations = d
+		}
+		if d, ada := rugi[p]; ada {
+			hasil[i].LossRecords = d
 		}
 	}
 	return hasil, nil
@@ -311,7 +341,8 @@ func (r *ObjekOracle) GantiObjek(ctx context.Context, tx *db.Tx, id string, bari
 			q, tabel string
 			arg      []any
 		}{
-			{sqlSisipLokasi(t.loc), TabelLocationList, []any{ids[0], id, i + 1, uid}},
+			{sqlSisipLokasi(t.loc), TabelLocationList, []any{ids[0], id, i + 1, uid, k(o.LossRatio.OneYearAmount),
+				k(o.LossRatio.OneYearPercent), k(o.LossRatio.ThreeFiveYearAmount), k(o.LossRatio.ThreeFiveYearPercent)}},
 			{sqlSisipProperty(t.prop), TabelProperty, []any{ids[1], ids[0], k(o.ObjectNo), k(o.ObjectType), k(o.ObjectName),
 				teksBool(o.IsMaterialDamage), teksBool(o.IsTopRisk), k(o.RoadType), k(o.RoadName), k(o.BuildingNo), k(o.Country),
 				k(o.Province), k(o.RiskAddressID), k(o.Ownership), teksBool(o.IsProductionProcess), teksBool(o.IsHotWorkProcess),
@@ -338,6 +369,9 @@ func (r *ObjekOracle) GantiObjek(ctx context.Context, tx *db.Tx, id string, bari
 			return err
 		}
 		if err := r.sisipFEA(ctx, tx, t, ids[0], o.FEA); err != nil {
+			return err
+		}
+		if err := r.sisipKerugian(ctx, tx, t, ids[1], o.LossRecords); err != nil {
 			return err
 		}
 	}

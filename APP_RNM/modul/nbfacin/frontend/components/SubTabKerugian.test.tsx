@@ -37,7 +37,10 @@ describe('SubTabKerugian', () => {
     expect([r.coinsName, r.claim, r.amount]).toEqual(['UJI', '0', ''])
     expect(['', '0', '12.5'].every(uangSah)).toBe(true)
     expect(uangSah('1,5')).toBe(false)
-    expect(adaGalatKerugian([{ ...r, preventionOfLoss: 'abc' }])).toBe(true)
+    expect(adaGalatKerugian([{ ...r, currency: 'USD', preventionOfLoss: 'abc' }])).toBe(true)
+    // N-9: Currency wajib per catatan.
+    expect(adaGalatKerugian([r])).toBe(true)
+    expect(adaGalatKerugian([{ ...r, currency: 'USD' }])).toBe(false)
   })
 })
 
