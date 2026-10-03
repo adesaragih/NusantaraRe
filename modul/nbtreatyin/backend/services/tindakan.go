@@ -105,9 +105,28 @@ type PermintaanHitung struct {
 	// Param - parameter aktivitas: Data ("Pct"/"Amount"), DiscountType,
 	// Result, Overidding, Action ("PREMIUM"/"CLAIM").
 	Param string `json:"param"`
+	// Urutan - action set sel yang memuat LEBIH DARI SATU refresh berhitung
+	// (mis. `.RiCommOgp`: `CountResult1_Act(Data="Pct")` lalu `CountOGPONP_Act`):
+	// dijalankan berurutan atas halaman yang sama, seperti clipboard Pega.
+	// Bila diisi, Aksi/Param diabaikan.
+	Urutan []LangkahHitung `json:"urutan,omitempty"`
 	// Indeks - Param.Index / Param.idx, berbasis 1.
 	Indeks  int             `json:"indeks"`
 	Halaman *models.Halaman `json:"halaman"`
+}
+
+// LangkahHitung - satu refresh dalam `PermintaanHitung.Urutan`.
+type LangkahHitung struct {
+	Aksi  string `json:"aksi"`
+	Param string `json:"param"`
+}
+
+// langkah - urutan refresh permintaan ini (satu langkah bila Urutan kosong).
+func (r PermintaanHitung) langkah() []LangkahHitung {
+	if len(r.Urutan) > 0 {
+		return r.Urutan
+	}
+	return []LangkahHitung{{Aksi: r.Aksi, Param: r.Param}}
 }
 
 // aksiHalaman, aksiParam, aksiIndeks - tiga bentuk tanda tangan aktivitas Pega
@@ -179,13 +198,20 @@ var aksiHitung = map[string]aksiFn{
 	},
 }
 
-// Hitung menjalankan satu refresh berhitung dan mengembalikan layarnya. Hasil
-// TIDAK disimpan - kecuali `CheckDataMkt`, yang di XML menutup dirinya dengan
-// `Obj-Save pyWorkPage` (langkah 5).
+// Hitung menjalankan refresh berhitung (satu, atau `Urutan` action set sel)
+// dan mengembalikan layarnya. Hasil TIDAK disimpan - kecuali `CheckDataMkt`,
+// yang di XML menutup dirinya dengan `Obj-Save pyWorkPage` (langkah 5).
 func (l *Layanan) Hitung(ctx context.Context, p inti.Pelaku, id string, r PermintaanHitung) (Layar, error) {
-	f, ada := aksiHitung[r.Aksi]
-	if !ada {
-		return Layar{}, fmt.Errorf("%w: aksi hitung %q", ErrPermintaanTidakSah, r.Aksi)
+	langkah := r.langkah()
+	fs := make([]aksiFn, len(langkah))
+	simpan := false
+	for i, s := range langkah {
+		f, ada := aksiHitung[s.Aksi]
+		if !ada {
+			return Layar{}, fmt.Errorf("%w: aksi hitung %q", ErrPermintaanTidakSah, s.Aksi)
+		}
+		fs[i] = f
+		simpan = simpan || s.Aksi == "CheckDataMkt"
 	}
 	k, h, err := l.kerjakan(ctx, p, id, r.Halaman)
 	if err != nil {
@@ -194,10 +220,14 @@ func (l *Layanan) Hitung(ctx context.Context, p inti.Pelaku, id string, r Permin
 	if err := l.pasangStsPKP(ctx, h); err != nil {
 		return Layar{}, err
 	}
-	if err := f(l, ctx, h, r); err != nil {
-		return Layar{}, err
+	for i, s := range langkah {
+		satu := r
+		satu.Aksi, satu.Param = s.Aksi, s.Param
+		if err := fs[i](l, ctx, h, satu); err != nil {
+			return Layar{}, err
+		}
 	}
-	if r.Aksi == "CheckDataMkt" {
+	if simpan {
 		if err := l.tulis(ctx, k, func(tx *db.Tx) error { return l.g.SimpanHalaman(ctx, tx, id, h) }); err != nil {
 			return Layar{}, err
 		}
