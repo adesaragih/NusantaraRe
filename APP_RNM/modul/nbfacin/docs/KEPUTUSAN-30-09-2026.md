@@ -1296,7 +1296,8 @@ dijalankan — urutan DEV: … → 190 → **191**. Keputusan agent A145–A152 
 | # | Butir | Keputusan |
 | ---: | --- | --- |
 | 90 | Keputusan agent A145–A152 (tiket 42) | **"setuju sesuai rekomendasi agent A145–A152"** — DISETUJUI |
-| 91 | Keputusan agent A116–A122 (tiket 36) | **"setuju A116–A122"** — DISETUJUI. Seluruh keputusan agent A99–A152 kini disetujui; A153–A154 (table-of-limit) menunggu |
+| 91 | Keputusan agent A116–A122 (tiket 36) | **"setuju A116–A122"** — DISETUJUI. Seluruh keputusan agent A99–A152 kini disetujui |
+| 92 | A153 saringan tahun Table of Limit (tiket 40): popup tombol mengirim Tahun kosong, autocomplete mengirim CurrentYear (= tahun Begin date) — AskUserQuestion di sesi 0f | **SARING tahun Begin date** (= implementasi `4b149fe5`, tanpa perubahan kode). A154 (0 / > 1 baris BUSINESS → 409) tetap menunggu |
 | 89 | Ralat W-5 (butir 86) sesudah melihat contoh `DDL\TABLEOFLIMIT.xml` (BIZCODE 10048, NOTE "EMPLOYERS LIABILITY"), AskUserQuestion di sesi 0f | **BIZCODE = `BUSINESS.ID` Class of Business** yang dipilih di form Opportunity — BUKAN Group Business. Form menyimpan NAMA (`T_NB_OPPORTUNITY.CLASS_OF_BUSINESS` = BUSINESS.NOTE), jadi ID diturunkan: `BUSINESS.ID WHERE NOTE = nama AND BUSINESSGROUPID = GROUP_BUSINESS_ID case`; 0 / > 1 baris → 409 |
 
 ## Yang belum diputuskan

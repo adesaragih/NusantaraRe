@@ -24,9 +24,11 @@ wajib. Datanya ikut Save tab Object.
   KDRiskExposure).
 - `Activity\SetDataOccupation.xml`: OccupationId = OldID, OccupationName = Name, TableOfLimit.Category = KDRiskExposure
   03 → III, 02 → II, 01 → I, lainnya "".
-- `Section\ChooseClassofContraction.xml`: RD `BrowseTableOfLimit_RD` (Tahun = `pyWorkPage.OfferFacIn.CurrentYear`,
-  Bizcode = `QuotationData.BusinessCode`, Category = baris); kolom Description (Limit tersembunyi); Choose →
-  `SetDataClassofConstraction` (Description, PctLimit) + `GetLowestPctLimit_ACT`.
+- `Section\ChooseClassofContraction.xml`: RD `BrowseTableOfLimit_RD` (Tahun **KOSONG** — `<pyValue/>` / `<Tahun/>`, filter
+  dibuang; Bizcode = `QuotationData.BusinessCode`, Category = baris); kolom Description (Limit tersembunyi); Choose →
+  `SetDataClassofConstraction` (Description, PctLimit) + `GetLowestPctLimit_ACT`. ⚠️ Ralat 03-10-2026 (sesi c3,
+  dikonfirmasi sesi 0f): tulisan awal "Tahun = `pyWorkPage.OfferFacIn.CurrentYear`" milik **autocomplete** Class of
+  Construction di `Section\OccupationItemFacIn_Section.xml` (data page `D_BrowseTableOfLimit`), bukan popup ini.
 - `Activity\GetLowestPctLimit_ACT.xml`: PctLimit terendah lintas objek → `OfferFacIn.Parameters.LowestPctLimit` dkk.
   (dipakai `CountFormulaRNM_Act` untuk MaxTreatyCapacity).
 - Data contoh: OccupationList 332 baris; TableOfLimit.PctLimit berkoma desimal.
@@ -134,5 +136,5 @@ menyebut CurrentYear "hanya di `Section\TableOfLimit.xml`" — salah; pencarian 
 
 | # | Keputusan | Dasar |
 | --- | --- | --- |
-| A153 | Endpoint **menyaring TAHUN = tahun Begin date** (WIB) — jalan autocomplete; Begin kosong → 409 | permintaan sesi 0f; korpus punya dua jalan (autocomplete bertahun, tombol tanpa tahun) dan tidak menyebut mana yang berlaku — ⚠️ **work owner diminta memilih**; tanpa saringan tahun = hapus satu syarat SQL |
+| A153 | Endpoint **menyaring TAHUN = tahun Begin date** (WIB) — jalan autocomplete; Begin kosong → 409 | ✅ **DISETUJUI work owner 03-10-2026** (butir 92: *SARING tahun Begin date*); korpus punya dua jalan (autocomplete bertahun, tombol tanpa tahun) |
 | A154 | NOTE dicocokkan persis; 0 / > 1 baris BUSINESS → 409 | arahan sesi 0f; nama tersimpan = BUSINESS.NOTE pilihan datalist (cobSah) |
