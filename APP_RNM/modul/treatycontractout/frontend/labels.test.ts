@@ -54,7 +54,8 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
     [GRID, 'pyLabelFieldValue', 7925, JENIS_REASURANSI_TCO.reinsuranceType],
     [GRID, 'pyLabelPreview', 7948, JENIS_REASURANSI_TCO.reinsuranceType],
     // tiket 03 - layar tahun treaty
-    ['Section\\GridTreatyContract.xml', 'pyValue', 1057, TAHUN_TCO.judul],
+    // Ditulis huruf kapital di awal kata (keputusan work owner 03-10-2026); korpus menulisnya kapital semua.
+    ['Section\\GridTreatyContract.xml', 'pyValue', 1057, TAHUN_TCO.judul.toUpperCase()],
     [FORM, 'pyValue', 5437, TAHUN_TCO.inputNewData],
     [GRID, 'pyValue', 17378, TAHUN_TCO.kolomUnderwritingYear],
     [GRID, 'pyValue', 17531, TAHUN_TCO.kolomTransactionYear],

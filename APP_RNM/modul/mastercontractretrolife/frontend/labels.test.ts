@@ -209,8 +209,8 @@ describe.skipIf(!adaKorpus)('label Master Contract Retro Life berbukti barisnya'
     expect(induk).toContain(`Master ${LABEL.MENU_MCRL.kelompok}`)
   })
 
-  it('judul halaman = GridRetrocessionLife b1082 tanpa "MASTER"', () => {
-    expect(baca(GRID, 1082)).toBe(`<pyValue>MASTER ${LABEL.TAHUN_MCRL.judul}</pyValue>`)
+  it('judul halaman = GridRetrocessionLife b1082 tanpa "MASTER", huruf kapital di awal kata (03-10-2026)', () => {
+    expect(baca(GRID, 1082)).toBe(`<pyValue>MASTER ${LABEL.TAHUN_MCRL.judul.toUpperCase()}</pyValue>`)
   })
 
   it('ikon tutup harness = pxIconCancel di keempat harness', () => {

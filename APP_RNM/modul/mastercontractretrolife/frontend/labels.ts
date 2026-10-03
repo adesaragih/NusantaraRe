@@ -44,9 +44,10 @@ export const UMUM_MCRL = {
 export const TAHUN_MCRL = {
   /**
    * `[tidak ada di korpus]` - `GridRetrocessionLife.xml` b1082 `<pyValue>` (sel b1017, format `Heading 1`)
-   * `MASTER CONTRACT RETRO LIFE` tanpa kata "MASTER" (keputusan work owner 03-10-2026, nama tampilan saja).
+   * `MASTER CONTRACT RETRO LIFE` tanpa kata "MASTER" (keputusan work owner 03-10-2026, nama tampilan saja), ditulis
+   * huruf kapital di awal kata seperti nama menu ("penulisannya udah jangan capital, ikuti Product Name Life").
    */
-  judul: 'CONTRACT RETRO LIFE',
+  judul: 'Contract Retro Life',
   /** `InputRetrocessionLife.xml` b8927 `<pyLabelFieldValue>` - label SEL tombol b8888 (`pyIncludeLabel` true). */
   labelSelAdd: 'End Period',
   /** `InputRetrocessionLife.xml` b9007 `<pyLabel>` - teks tombol b8888 (`NewInputTreatyYear_Life_Act`). */

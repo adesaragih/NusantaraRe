@@ -86,8 +86,11 @@ export const JENIS_REASURANSI_TCO = {
  * (`[dugaan kuat]`). Merapikannya adalah keputusan Product + UW, bukan kami.
  */
 export const TAHUN_TCO = {
-  /** `Section/GridTreatyContract.xml` b1057 `<pyValue>` — judul layar. */
-  judul: 'TREATY CONTRACT OUT',
+  /**
+   * `Section/GridTreatyContract.xml` b1057 `<pyValue>` `TREATY CONTRACT OUT` — judul layar, ditulis huruf kapital di awal
+   * kata seperti nama menu (keputusan work owner 03-10-2026 "penulisannya udah jangan capital, ikuti Product Name Life").
+   */
+  judul: 'Treaty Contract Out',
   /** `Section/InputDtlTreatyContact.xml` b5437 `<pyValue>` — judul form. */
   inputNewData: 'Input New Data',
 
