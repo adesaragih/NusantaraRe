@@ -26,11 +26,12 @@ func TestSkemaUkuran(t *testing.T) {
 		am += len(ks)
 	}
 	// Butir 72: +48 kolom penunjuk teks mentah (amandemenPenunjuk) -> 61 kolom amandemen.
-	if am != 61 || len(amandemenPenunjuk) != 48 || len(amandemenTabel) != 1 || len(amandemenJalur) != 1 {
-		t.Fatalf("amandemen %d kolom (%d penunjuk) / %d tabel / %d jalur, mau 61 (48) / 1 / 1", am, len(amandemenPenunjuk), len(amandemenTabel), len(amandemenJalur))
+	// Butir 76.2: +1 T_WORK_POLIS.LINI -> 62 (76.1/76.4 mengganti tipe/nama, tidak menambah).
+	if am != 62 || len(amandemenPenunjuk) != 48 || len(amandemenTabel) != 1 || len(amandemenJalur) != 1 {
+		t.Fatalf("amandemen %d kolom (%d penunjuk) / %d tabel / %d jalur, mau 62 (48) / 1 / 1", am, len(amandemenPenunjuk), len(amandemenTabel), len(amandemenJalur))
 	}
 	if len(skemaTabel) != 78+1 || n != 1329+am || len(jalurSumber) != 148+1 || len(warisMataUang) != 8 || len(penunjukKandidat) != 50 {
-		t.Fatalf("%d tabel, %d kolom, %d jalur, %d waris, %d penunjuk; mau 79/1390/149/8/50",
+		t.Fatalf("%d tabel, %d kolom, %d jalur, %d waris, %d penunjuk; mau 79/1391/149/8/50",
 			len(skemaTabel), n, len(jalurSumber), len(warisMataUang), len(penunjukKandidat))
 	}
 	unknown := 0
@@ -171,7 +172,8 @@ func TestSetiapKolomBerasal(t *testing.T) {
 	// ADDITIONAL_SHIP_REF_ID, POLICY_TSI, IDPEGA/COB_GROUP/SEQ_NO/ROW_UID T_ADDITIONALSHIP),
 	// repository +2 (ID, PARENT_ID). 817 + 327 + 166 + 32 = 1.342.
 	// Butir 72: medan +48 (kolom penunjuk teks mentah). 865 + 327 + 166 + 32 = 1.390.
-	mau := map[string]int{asalMedan: 865, asalFlatten: 327, asalRepository: 166, asalKosong: 32}
+	// Butir 76: repository +1 (LINI); empat kolom gabungan tetap repository. 865 + 327 + 167 + 32 = 1.391.
+	mau := map[string]int{asalMedan: 865, asalFlatten: 327, asalRepository: 167, asalKosong: 32}
 	for a, n := range mau {
 		if jumlah[a] != n {
 			t.Errorf("%s: %d kolom, mau %d", a, jumlah[a], n)
@@ -340,4 +342,54 @@ func punyaKolom(tb, kol string) bool {
 		}
 	}
 	return false
+}
+
+// TestAmandemenWorkPolis - butir 76: T_WORK_POLIS rancangan selaras dengan tabel yang ADA
+// (premiumlistlife 050/059/063, K-064). Dihitung dua jalan: daftar tabel anak dari
+// jalurSumber (init) vs daftar tertulis di bawah - keduanya 10.
+func TestAmandemenWorkPolis(t *testing.T) {
+	tipe := func(tb, nama string) string {
+		if i := indeksKolom(tb, nama); i >= 0 {
+			return skemaTabel[tb][i].tipe
+		}
+		return "(tidak ada)"
+	}
+	for _, tb := range []string{"T_WORK_POLIS", "T_GENERAL_POLIS"} {
+		if tipe(tb, "ID") != "VARCHAR2(32)" {
+			t.Errorf("%s.ID %s, mau VARCHAR2(32) (butir 76.1)", tb, tipe(tb, "ID"))
+		}
+	}
+	anak := []string{"T_CARGOLIST", "T_CEDINGCEDANTLIST", "T_CURRENCYLIST", "T_FACRETRODETAILS", "T_FACRETROLIST",
+		"T_LOCATIONLIST", "T_PERSONLIST", "T_QUOTATIONDATA", "T_SCORINGRISK", "T_VEHICLELIST"}
+	if strings.Join(anakIDKasus, ",") != strings.Join(anak, ",") {
+		t.Errorf("anak ber-PARENT_ID kasus %v, mau %v", anakIDKasus, anak)
+	}
+	for _, tb := range anak {
+		if tipe(tb, "PARENT_ID") != "VARCHAR2(32)" {
+			t.Errorf("%s.PARENT_ID %s", tb, tipe(tb, "PARENT_ID"))
+		}
+	}
+	// Tabel lain tetap surrogate NUMBER - penggantian tidak merembes.
+	if tipe("T_COVERAGELIST", "ID") != "NUMBER" || tipe("T_SHIP", "PARENT_ID") != "NUMBER" {
+		t.Error("ID/PARENT_ID tabel lain ikut berubah")
+	}
+	for lama, baru := range map[string]string{"POSISI": "POSITION VARCHAR2(255)", "STATUS_PROSES": "STATUS_WORK VARCHAR2(255)",
+		"TGL_INPUT": "TGL_CREATE DATE", "USERNAME": "CREATE_OP VARCHAR2(64)", "": "LINI VARCHAR2(255)"} {
+		n := strings.Fields(baru)
+		if lama != "" && tipe("T_WORK_POLIS", lama) != "(tidak ada)" {
+			t.Errorf("kolom rancangan %s masih ada (digabung butir 76.4)", lama)
+		}
+		if tipe("T_WORK_POLIS", n[0]) != n[1] {
+			t.Errorf("T_WORK_POLIS.%s %s, mau %s", n[0], tipe("T_WORK_POLIS", n[0]), n[1])
+		}
+		if asal, _ := asalKolom("T_WORK_POLIS", skemaTabel["T_WORK_POLIS"][indeksKolom("T_WORK_POLIS", n[0])]); asal != asalRepository {
+			t.Errorf("T_WORK_POLIS.%s asal %q, mau repository", n[0], asal)
+		}
+	}
+	if _, alasan := asalKolom("T_WORK_POLIS", skemaTabel["T_WORK_POLIS"][indeksKolom("T_WORK_POLIS", "ID")]); !strings.Contains(alasan, "NO_WORK") {
+		t.Errorf("asal T_WORK_POLIS.ID %q, mau aturan butir 76.1 (NO_WORK)", alasan)
+	}
+	if n := len(skemaTabel["T_WORK_POLIS"]); n != 19 {
+		t.Errorf("T_WORK_POLIS %d kolom, mau 19 (18 rancangan + LINI)", n)
+	}
 }

@@ -18,13 +18,13 @@ ChooseAccount.
 
 **Blocked by:** —
 
-**Status:** ready-for-human — dibangun 02-10-2026; diubah 02-10-2026 sore sesuai keputusan work owner atas A70/A71
-(butir 73); uji tanpa Oracle hijau; uji terhadap Oracle sungguhan **tidak** dijalankan
+**Status:** ready-for-human — dibangun 02-10-2026; diubah 02-10-2026 sore (butir 73) dan 03-10-2026 (butir 75: kembali
+tidak peka huruf); uji tanpa Oracle hijau; uji terhadap Oracle sungguhan **tidak** dijalankan
 
 ## Kontrak
 
-`GET /api/nbfacin/account?cari=<teks>&halaman=<n>` — `halaman` mulai 1 (kosong = 1). `cari` "mengandung", **peka huruf
-besar-kecil** (`uji` ≠ `UJI`); 15 baris per halaman (`"ukuran":15`).
+`GET /api/nbfacin/account?cari=<teks>&halaman=<n>` — `halaman` mulai 1 (kosong = 1). `cari` "mengandung", **tidak peka
+huruf besar-kecil** (`uji` = `Uji` = `UJI`, butir 75); 15 baris per halaman (`"ukuran":15`, butir 73.2 tetap).
 
 | Kode | Kapan | Badan |
 | --- | --- | --- |
@@ -36,8 +36,8 @@ besar-kecil** (`uji` ≠ `UJI`); 15 baris per halaman (`"ukuran":15`).
 ## Yang dibangun
 
 - [x] `repository/akun.go` — `SELECT ID, GROUPBUSINESSID, GROUPBUSINESS, INSUREDID, INSUREDNAME` saja, tabel lewat
-      `db.Qualify`; parameter terikat; pencarian `kolom LIKE :n ESCAPE '\'` **tanpa** `UPPER` (peka huruf), pola huruf apa adanya
-      dengan `\` `%` `_` diloloskan (escape sepola `PolaCari` modul master lain); cacah total dibaca terpisah (`COUNT(*)`, pola inbox claimlife)
+      `db.Qualify`; parameter terikat; pencarian `UPPER(kolom) LIKE :n ESCAPE '\'` dengan pola huruf besar (tidak peka huruf,
+      butir 75) dan `\` `%` `_` diloloskan (escape sepola `PolaCari` modul master lain); cacah total dibaca terpisah (`COUNT(*)`, pola inbox claimlife)
 - [x] `services` — `CariAkun` (validasi halaman/panjang cari, offset, 503 tanpa DB)
 - [x] `handlers` — rute, bentuk jawaban di atas
 - [x] `MODUL.md` *Tabel warisan* + `docs/STRUKTUR-TABEL-NB-FACIN.md` — `T_M_ACCOUNT` dibaca, tidak dibuat
@@ -48,15 +48,16 @@ besar-kecil** (`uji` ≠ `UJI`); 15 baris per halaman (`"ukuran":15`).
 | # | Keputusan | Dasar |
 | --- | --- | --- |
 | A69 | Kolom yang dicari: **tiga kolom yang tampil** — `INSUREDID`, `INSUREDNAME`, `GROUPBUSINESS` (OR) | Work owner hanya menjawab "mengandung", tidak menyebut kolomnya |
-| ~~A70~~ | ~~Tidak peka huruf besar-kecil (`UPPER` di kedua sisi)~~ → **DIUBAH work owner (butir 73.1): PEKA huruf** — `LIKE` tanpa `UPPER`, kolom dan pola apa adanya | kutipan work owner (diteruskan sesi 0f): **"harus peka besar kecil dong, 15 baris per halaman"** |
-| ~~A71~~ | ~~Ukuran halaman 20~~ → **DIUBAH work owner (butir 73.2): 15** | kutipan yang sama |
+| ~~A70~~ | ~~Tidak peka huruf besar-kecil (`UPPER` di kedua sisi)~~ → ~~DIUBAH work owner (butir 73.1): PEKA huruf — `LIKE` tanpa `UPPER`~~ → **DIUBAH LAGI work owner (butir 75): TIDAK peka huruf** — `UPPER(kolom) LIKE :n`, pola dibesarkan di Go (`strings.ToUpper`), bukan `UPPER(:n)` di SQL; bentuk yang dibangun semula untuk A70 dan diverifikasi sesi 0f | butir 73.1, kutipan **"harus peka besar kecil dong, 15 baris per halaman"** — **dibatalkan** butir 75, kutipan **"pada saat search Group Business, itukan ada isian untuk search, itu buatin tanpa liat huruf besar atau kecil"** (keduanya diteruskan sesi 0f) |
+| ~~A71~~ | ~~Ukuran halaman 20~~ → **DIUBAH work owner (butir 73.2): 15** — tetap berlaku sesudah butir 75 | kutipan butir 73 |
 | A72 | Urutan **`INSUREDID`, lalu `ID`** (deterministik; `INSUREDID` tidak dijamin unik) | urutan di gambar tidak terlihat jelas |
 | A73 | `cari` > 255 karakter → 400 | kolom terpanjang 255 karakter; masukan lebih panjang tidak mungkin cocok |
 
-⚠️ **Batas pengujian:** sifat "peka huruf" dan escape di sisi Oracle hanya diuji lewat **teks SQL** (tanpa `UPPER`/`LOWER`)
-dan pola bind (`TestSQLAkun`, `TestPolaCari`: `uji` dan `UJI` berpola berbeda), bukan dengan eksekusi Oracle. `[dugaan]`
-`LIKE` Oracle peka huruf bila `NLS_COMP` = `BINARY` (bawaan); bila instance memakai `NLS_COMP=LINGUISTIC` dengan `NLS_SORT`
-berakhiran `_CI`, hasilnya bisa tidak peka huruf — `belum terverifikasi` (tanya DBA).
+⚠️ **Batas pengujian:** sifat "tidak peka huruf" dan escape di sisi Oracle hanya diuji lewat **teks SQL** (tepat tiga
+`UPPER(kolom)`) dan pola bind (`TestSQLAkun`, `TestPolaCari`: `uji`, `Uji`, `UJI` berpola sama), bukan dengan eksekusi
+Oracle. `[dugaan]` huruf besar pola dibuat `strings.ToUpper` Go sedangkan kolom `UPPER` Oracle — untuk huruf non-ASCII
+keduanya dapat berbeda; belum diuji ke Oracle. ~~`[dugaan]` `LIKE` peka huruf bergantung `NLS_COMP`~~ — catatan masa butir 73.1, tidak
+relevan lagi sejak `UPPER` dipakai (teksnya utuh di register butir 73).
 
 ## Di luar tiket ini (menunggu work owner)
 

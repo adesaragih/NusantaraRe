@@ -1048,16 +1048,21 @@ Atas brief sesi `nusantarare-0f` dan DDL `BUSINESS.txt` dari work owner (`issues
 | A77 | Hanya filter C RD (`.BusinessGroupID = Param.Group`) yang dibangun; filter A/B tidak | brief "semua baris"; di satu-satunya section pemakai di folder `NB FacIn` (`InputLossRecord_Sec`) parameter `ID`/`Note`/`Group` kosong (`RNW Fac In` punya salinan bernama sama, tidak dibandingkan) |
 | A78 | `NOTE IS NOT NULL` | brief sesi 0f; **tidak ada di RD** — selisih dengan Pega, dicatat |
 
+**Ralat atas brief** `[terverifikasi]` `BrowseBusiness_RD.xml`: filter B adalah `.Note Contains Param.Note` dengan
+`pyCaseInsensitive` true — bukan `=`. `[dugaan]` `groupBusinessId` = `T_M_ACCOUNT.GROUPBUSINESSID` akun terpilih — belum
+terverifikasi dari korpus (section form Opportunity pemakai RD tidak ada di folder `NB FacIn`).
+
 ## Keputusan work owner — 3 Oktober 2026, Create opportunity (tiket 29), diteruskan sesi `nusantarare-0f`
 
 Diteruskan sesi agent `nusantarare-0f` (pilihan work owner lewat AskUserQuestion di sesi itu). Konteks: tombol
 `Create opportunity` di form Opportunity (tiket 29, frontend + tiket di-commit sesi 0f, `4064d0b`) memanggil kontrak
 `POST /api/nbfacin/opportunity` → 201 `{"caseId":"NB-…"}`; badan = `IsianOpportunity` (`frontend/api.ts`), tanggal bentuk
 kabel `DD-MM-YYYY`. ⛔ **Endpoint belum dibangun** — dicatat saja, atas permintaan sesi 0f ("jangan dibangun dulu").
+⛔ **74.1 DIRALAT butir 76** (3 Oktober 2026) — endpoint kini dibangun; lihat bab butir 76.
 
 | # | Butir | Pilihan work owner |
 | ---: | --- | --- |
-| 74.1 | Penyimpanan opportunity/case NB | **"Tunggu tabel flat (tiket 23)"** — **tidak ada** tabel sementara. `POST /api/nbfacin/opportunity` baru dibangun sesudah tabel flat tiket 23 ada; tiket 23 sendiri masih ⏸ ditahan (butir 66, presisi tim inti) |
+| 74.1 | Penyimpanan opportunity/case NB | **"Tunggu tabel flat (tiket 23)"** — **tidak ada** tabel sementara. `POST /api/nbfacin/opportunity` baru dibangun sesudah tabel flat tiket 23 ada; tiket 23 sendiri masih ⏸ ditahan (butir 66, presisi tim inti). → ⛔ **DIRALAT butir 76**: pilihan ini diambil atas premis keliru yang diteruskan sesi 0f (penyimpanan case dikira seluruhnya tertahan tiket 23), padahal `T_WORK_POLIS` sudah ada (premiumlistlife 050) |
 | 74.2 | Nomor case NB | **"Lanjut dari nomor terakhir Pega"** — penghitung mulai dari MAX nomor NB yang ada + 1; angka pastinya diisi saat migrasi dijalankan oleh work owner/DBA (⛔ agent tidak menjalankan `-migrate`, butir 65) |
 | 74.3 | Layar sesudah create ("lari ke flow nya") | Flow action `InwardFacultative` → section `InputInwardFacultative` — port berikutnya, **belum dimulai** |
 
@@ -1071,9 +1076,60 @@ kabel `DD-MM-YYYY`. ⛔ **Endpoint belum dibangun** — dicatat saja, atas permi
 sedangkan deret NB menurut klaim di atas **tanpa tahun**. Bagaimana nomor NB dipetakan ke kunci itu belum diputuskan —
 `belum terverifikasi`.
 
-**Ralat atas brief** `[terverifikasi]` `BrowseBusiness_RD.xml`: filter B adalah `.Note Contains Param.Note` dengan
-`pyCaseInsensitive` true — bukan `=`. `[dugaan]` `groupBusinessId` = `T_M_ACCOUNT.GROUPBUSINESSID` akun terpilih — belum
-terverifikasi dari korpus (section form Opportunity pemakai RD tidak ada di folder `NB FacIn`).
+## Keputusan work owner — 3 Oktober 2026, lookup akun kembali tidak peka huruf (tiket 27), diteruskan sesi `nusantarare-0f`
+
+Diteruskan sesi agent `nusantarare-0f` dengan kutipan work owner (disertai tangkapan layar kotak Search popup
+ChooseAccount): **"pada saat search Group Business, itukan ada isian untuk search, itu buatin tanpa liat huruf besar atau
+kecil"**.
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 75 | Peka huruf pencarian `GET /api/nbfacin/account` | **TIDAK peka huruf** — `UPPER(kolom) LIKE` pola huruf besar, `ESCAPE` tetap, parameter terikat, atas `INSUREDID`/`INSUREDNAME`/`GROUPBUSINESS`. **Membatalkan 73.1** — keputusan lama dikutip utuh: **"harus peka besar kecil dong, 15 baris per halaman"** (73.1 "DIUBAH: PEKA huruf"). Bagian "15 baris per halaman" (**73.2**) **tetap** |
+
+**Penerapan:** `repository/akun.go` (`PolaCari` kembali `strings.ToUpper`, `saringAkun` kembali `UPPER(kolom)`); uji
+`TestSQLAkun` (tepat tiga `UPPER(`), `TestPolaCari` (`uji`/`Uji`/`UJI` berpola sama). `[dugaan]` lama tetap: huruf besar
+dibuat `strings.ToUpper` Go sedangkan kolom `UPPER` Oracle — untuk huruf non-ASCII keduanya dapat berbeda.
+
+## Keputusan work owner — 3 Oktober 2026, case NB di `T_WORK_POLIS` yang ada (tiket 29 backend, tiket 23)
+
+Rencana sesi `nusantarare-0f` dijawab work owner **"setuju"** (diteruskan sesi 0f): case NB dibuat sekarang di
+`T_WORK_POLIS` yang ada, tiket 23 diselaraskan. Butir yang tidak boleh ditebak ditanyakan langsung ke work owner di sesi
+ini (AskUserQuestion, 3 Oktober 2026); pilihannya dikutip.
+
+| # | Butir | Pilihan work owner |
+| ---: | --- | --- |
+| 76.1 | `T_WORK_POLIS.ID`: tabel yang ada `VARCHAR2(32)` berisi pengenal work, rancangan `NUMBER` + `IDPEGA` | **"Follow existing table"** — ID = `NB-<n>` `VARCHAR2(32)`; `T_GENERAL_POLIS.ID` dan `PARENT_ID` 10 tabel anaknya ikut `VARCHAR2(32)`; `IDPEGA`/`JENIS_WORK`/`NO_WORK` tetap kolom tambahan; loader + uji disesuaikan |
+| 76.2 | Nilai `LINI` Fac In | **"FAC"** — preseden `T_WORK_CLAIM.LINI` (K-064) |
+| 76.3 | Penyimpanan isian opportunity | **"Own opportunity table"** — `T_NB_OPPORTUNITY` (migrasi 180), 1:1 dengan `T_WORK_POLIS.ID`. Dasar `[terverifikasi]`: opportunity di Pega kelas work tersendiri (`NB FacIn\ReportDefinition\GetListOpportunity.xml`: `ASM-FW-SFAGISFW-Work-Opportunity` INNER JOIN `ASM-FW-GISFW-Work-NB` pada `A.pzInsKey = .NBHandle`); rancangan flat tidak punya tabelnya |
+| 76.4 | Kolom rancangan yang bertumpuk dengan kolom yang ada | **"Merge into existing"** — `POSISI`→`POSITION`, `STATUS_PROSES`→`STATUS_WORK`, `TGL_INPUT`→`TGL_CREATE`, `USERNAME`→`CREATE_OP` |
+| 76.5 | Angka awal `SEQ_WORK_POLIS_NB` (tidak ada di repo) | **"Placeholder in migration"** — `181` memakai `START WITH {NB_MULAI}`; Oracle menolaknya sampai work owner/DBA menggantinya dengan (nomor NB Pega terakhir + 1); `-migrate` seluruh aplikasi berhenti di langkah itu sampai diisi — disengaja |
+
+**Penerapan:** `loader/amandemen.go` `selaraskanWorkPolis` + `aturan.go` (`TestAmandemenWorkPolis`; skema 79 tabel /
+**1.391** kolom; mutasi **67/67**); migrasi `180_t_nb_opportunity.sql`, `181_seq_work_polis_nb.sql` (+ `_down`) — **ditulis,
+tidak dijalankan**; `repository/casenb.go`, `services/opportunity.go`, `handlers` `POST /api/nbfacin/opportunity`
+→ 201 `{"caseId":"NB-<n>"}`. Pemetaan 18 kolom: tiket 23 bab *Penyelarasan*.
+
+**Keputusan agent — menunggu konfirmasi:**
+
+| # | Keputusan | Dasar |
+| --- | --- | --- |
+| A79 | `T_NB_OPPORTUNITY` berbagi PK dengan `T_WORK_POLIS` **tanpa** constraint FK | pola `T_PREMIUM_LIST` premiumlistlife 050/051; constraint lintas modul tidak diputuskan siapa pun |
+| A80 | Baris `T_WORK_POLIS` NB: `POSITION`, `STATUS_WORK`, `FLAG_ONGOING_POLICY`, `COVER_KEY` **kosong** | nilai awal case NB di Pega `belum terverifikasi` |
+| A81 | Tipe `T_NB_OPPORTUNITY`: salinan `T_M_ACCOUNT` bertipe sumber (CHAR), `CLASS_OF_BUSINESS` 4000 BYTE (`BUSINESS.NOTE`), teks lain 255, `DESCRIPTION` 4000; isian melebihi lebar → 400 | pola A73/A76 |
+| A82 | Tanpa identitas → **401**; pembuat = pengenal akun di `CREATE_OP` **dan** `CREATE_OP_NAME`; sesi login didahulukan, stub `X-Pelaku` hanya bila `AUTH_STUB` | pola `KasusPolis.Buat` premiumlistlife, ADR-U-0030 |
+| A83 | Isian disimpan **apa adanya** (tidak dipangkas; medan opsional berisi spasi saja tersimpan spasi, bukan NULL); wajib-isi = bukan hanya spasi; Type Of Facultative wajib bila Type Of Inward **persis** `Facultative`; tanggal `DD-MM-YYYY` ketat (31-02 ditolak), disimpan `DATE` tanpa jam | tiket 29; nilai `Facultative` `[dugaan]` dari frontend |
+| A84 | Nomor dari **sequence** (`SEQ_WORK_POLIS_NB`, `NEXTVAL`), bukan tabel penghitung ADR-0043 `(CLASS, JENIS, TAHUN)` | brief sesi 0f; preseden `SEQ_WORK_POLIS` premiumlistlife; deret NB tanpa tahun |
+| A85 | Kelahiran case NB **tidak** direkam ke jejak | satu-satunya penyimpan jejak (`inti/backend/jejak`) menulis `T_CLAIMLF_JEJAK` milik claimlife |
+
+**Risiko yang ditemukan — menunggu work owner:**
+- **R1** `[terverifikasi]` kotak masuk PremiumList Life membaca **seluruh** `T_WORK_POLIS` tanpa saringan `LINI`
+  (`premiumlistlife/backend/repository/polis_inbox.go`: cacah `WHERE (:1 IS NULL OR w.POSITION = :1)`, daftar `LEFT JOIN`
+  `T_PREMIUM_LIST`). Case `NB-…` (POSITION kosong) akan **muncul di tab "semua" kotak masuk Life**. endorsementlife
+  (`481_seq_work_edm_life.sql`) sengaja tidak menulis `T_WORK_POLIS` karena alasan yang sama. Perbaikannya di modul
+  premiumlistlife (saringan `LINI`) — **di luar lingkup sesi ini, tidak disunting**.
+- **R2** nbfacin MENULIS `T_WORK_POLIS` milik premiumlistlife dengan SQL sendiri (`repository/casenb.go`, tanpa kontrak
+  lintas modul) dan kelak `ALTER` kolom Fac In atasnya (tiket 23): perubahan premiumlistlife atas tabel itu (mis. kolom
+  NOT NULL baru) dapat mematahkan NB tanpa peringatan — koordinasi pemilik / tim inti.
 
 ## Yang belum diputuskan
 

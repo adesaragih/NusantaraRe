@@ -169,7 +169,7 @@ describe('FormOpportunity = gambar Pega (keadaan awal)', () => {
   })
 
   it('Create opportunity: medan wajib diperiksa dulu, urut layar; tanpa permintaan bila ada yang kosong', () => {
-    const awal = SUMBER.indexOf('function medanKosong()')
+    const awal = SUMBER.indexOf('function medanKosong(')
     const daftar = SUMBER.slice(awal, SUMBER.indexOf('return wajib.filter', awal))
     const urut = ['F.tanggalTutup', 'F.namaProspek', 'F.classOfBusiness', 'F.typeOfInward', 'F.typeOfFacultative', 'F.phase', 'F.statusBisnis']
     const letak = urut.map((u) => daftar.indexOf(u + ','))

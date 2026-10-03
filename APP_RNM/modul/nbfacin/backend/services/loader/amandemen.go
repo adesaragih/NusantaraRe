@@ -1,5 +1,7 @@
 package loader
 
+import "sort"
+
 // Amandemen rancangan - keputusan work owner 02-10-2026, butir 70 (diteruskan sesi
 // `nusantarare-0f`, "setuju") atas usulan `docs/USULAN-KOLOM-PENAMPUNG.md`. Workbook
 // dan DDL draf (`D:\migrasi\RNM\OUTPUT\08-flat\`) tetap READ-ONLY: kolom dan tabel di
@@ -20,7 +22,41 @@ var amandemenKolom = map[string][]kolomSkema{
 	"T_COVERAGELIST":    {{nama: "COVERAGE_INITIAL", tipe: "VARCHAR2(500)", medan: "CoverageInitial"}},
 	"T_CURRENCYLIST":    {{nama: "CURRENCY_REF_ID", tipe: "VARCHAR2(50)", turunan: true}},
 	"T_FR_CURRENCYLIST": {{nama: "POLICY_TSI", tipe: "NUMBER", turunan: true}},
+	// Butir 76.2: penanda lini K-064, tipe kolom yang ada (premiumlistlife 050).
+	"T_WORK_POLIS": {{nama: "LINI", tipe: "VARCHAR2(255)"}},
 }
+
+// Penyelarasan dengan T_WORK_POLIS yang ADA - butir 76 (keputusan work owner
+// 03-10-2026, AskUserQuestion di sesi ini). K-064: T_WORK_POLIS dan T_GENERAL_POLIS
+// adalah tabel yang SAMA dengan lini lain; T_WORK_POLIS sudah dibuat premiumlistlife
+// (050, diubah 057/059/063): ID VARCHAR2(32) NOT NULL berisi pengenal work, LINI,
+// POSITION, STATUS_WORK, FLAG_ONGOING_POLICY, COVER_KEY, CREATE_OP, CREATE_OP_NAME,
+// TGL_CREATE, TGL_UPDATE. Fac In menyambung, tidak membuat ulang.
+//
+//	76.1 ID mengikuti tabel yang ada: tipeIDKasus, isinya pengenal work (pyID =
+//	     NO_WORK, mis. NB-184351), bukan surrogate NUMBER. T_GENERAL_POLIS berbagi PK
+//	     (K-064 relasi 52, ID = ID) jadi ikut; PARENT_ID tabel yang berinduk salah satu
+//	     tabel itu juga (10 tabel, dihitung dari jalurSumber di init). IDPEGA,
+//	     JENIS_WORK, NO_WORK tetap kolom tambahan.
+//	76.4 Empat kolom rancangan DIGABUNG ke kolom yang ada, bertipe kolom yang ada -
+//	     tidak satu pun menyempit (VARCHAR2(100)/(20)/(50) -> (255)/(255)/(64); DATE ->
+//	     DATE). Arti kolom yang ada TIDAK diubah; pengisinya (repository, tiket 24)
+//	     menulis kolom pasangannya.
+const tipeIDKasus = "VARCHAR2(32)"
+
+var tabelIDKasus = []string{"T_WORK_POLIS", "T_GENERAL_POLIS"}
+
+var amandemenGabung = map[string]map[string]kolomSkema{
+	"T_WORK_POLIS": {
+		"POSISI":        {nama: "POSITION", tipe: "VARCHAR2(255)"},
+		"STATUS_PROSES": {nama: "STATUS_WORK", tipe: "VARCHAR2(255)"},
+		"TGL_INPUT":     {nama: "TGL_CREATE", tipe: "DATE"},
+		"USERNAME":      {nama: "CREATE_OP", tipe: "VARCHAR2(64)"},
+	},
+}
+
+// anakIDKasus - tabel yang PARENT_ID-nya diganti tipeIDKasus (diisi init; dibaca uji).
+var anakIDKasus []string
 
 // T_ADDITIONALSHIP - kolom sistem sepola tabel berulang berjalur tunggal di DDL draf
 // (ID, IDPEGA, COB_GROUP, PARENT_ID, SEQ_NO, ROW_UID; tanpa PARENT_TABLE/SRC_PATH,
@@ -159,6 +195,69 @@ func init() {
 		}
 	}
 	jalurSumber = append(jalurSumber, amandemenJalur...)
+	selaraskanWorkPolis()
+}
+
+// selaraskanWorkPolis - butir 76.1 dan 76.4. ⛔ Panic bila kolom sumber tidak ada, nama
+// tujuan sudah ada, atau tipe sudah sama: workbook berubah, amandemen ini harus ditinjau.
+func selaraskanWorkPolis() {
+	for t, peta := range amandemenGabung {
+		for lama, baru := range peta {
+			i := indeksKolom(t, lama)
+			if i < 0 || indeksKolom(t, baru.nama) >= 0 {
+				panic("loader: gabung " + t + "." + lama + " -> " + baru.nama + " tidak dapat diterapkan")
+			}
+			k := skemaTabel[t][i]
+			k.nama, k.tipe = baru.nama, baru.tipe
+			skemaTabel[t][i] = k
+		}
+	}
+	idKasus := map[string]bool{}
+	for _, t := range tabelIDKasus {
+		gantiTipe(t, "ID")
+		idKasus[t] = true
+	}
+	induk := map[string]map[string]bool{}
+	for _, j := range jalurSumber {
+		if induk[j.tabel] == nil {
+			induk[j.tabel] = map[string]bool{}
+		}
+		induk[j.tabel][j.induk] = true
+	}
+	for tabel, indukTabel := range induk {
+		berindukKasus := 0
+		for i := range indukTabel {
+			if idKasus[i] {
+				berindukKasus++
+			}
+		}
+		if berindukKasus == 0 || indeksKolom(tabel, "PARENT_ID") < 0 {
+			continue // T_GENERAL_POLIS: induk T_WORK_POLIS, berbagi PK tanpa PARENT_ID
+		}
+		if berindukKasus != len(indukTabel) {
+			panic("loader: " + tabel + " berinduk campuran - PARENT_ID tidak dapat satu tipe")
+		}
+		gantiTipe(tabel, "PARENT_ID")
+		anakIDKasus = append(anakIDKasus, tabel)
+	}
+	sort.Strings(anakIDKasus)
+}
+
+func indeksKolom(t, nama string) int {
+	for i, k := range skemaTabel[t] {
+		if k.nama == nama {
+			return i
+		}
+	}
+	return -1
+}
+
+func gantiTipe(t, nama string) {
+	i := indeksKolom(t, nama)
+	if i < 0 || skemaTabel[t][i].tipe == tipeIDKasus {
+		panic("loader: tipe " + t + "." + nama + " tidak dapat diganti " + tipeIDKasus)
+	}
+	skemaTabel[t][i].tipe = tipeIDKasus
 }
 
 // Riwayat penunjuk Idx*/Index*: P7 (butir 70) membuang sebagian; butir 71 mencabutnya

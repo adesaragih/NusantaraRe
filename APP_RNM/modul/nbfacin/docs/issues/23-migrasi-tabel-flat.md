@@ -12,9 +12,12 @@ migrasi ke Oracle mana pun (`-migrate`) hanya oleh work owner sendiri (butir 65)
 
 **Status:** needs-info — ⏸ ditahan; tidak satu berkas migrasi pun ditulis
 
-**Ditunggu oleh:** tiket 29 `POST /api/nbfacin/opportunity` (Create opportunity) — keputusan work owner 03-10-2026
+~~**Ditunggu oleh:** tiket 29 `POST /api/nbfacin/opportunity` (Create opportunity) — keputusan work owner 03-10-2026
 butir 74.1 "Tunggu tabel flat (tiket 23)": tanpa tabel sementara; nomor case NB lanjut dari nomor terakhir Pega (butir
-74.2).
+74.2).~~ ⛔ **Diralat butir 76** (03-10-2026): 74.1 diambil atas premis keliru (`T_WORK_POLIS` sudah ada, milik
+premiumlistlife). Tiket 29 kini **tidak** menunggu tiket ini — case NB ditulis ke `T_WORK_POLIS` yang ada + tabel
+`T_NB_OPPORTUNITY` (migrasi 180) + `SEQ_WORK_POLIS_NB` (181). Tiket ini tetap ditahan (presisi), dengan rancangan
+`T_WORK_POLIS` diselaraskan di bab di bawah.
 
 ## Yang menahan
 
@@ -41,9 +44,53 @@ butir 74.1 "Tunggu tabel flat (tiket 23)": tanpa tabel sementara; nomor case NB 
 - **Amandemen rancangan butir 70** ikut ditulis (tiket 22 bab *Amandemen rancangan*): tabel `T_ADDITIONALSHIP`, kolom
   `T_COVERAGELIST.COVERAGE_INITIAL`, `T_CURRENCYLIST.CURRENCY_REF_ID`, `T_FR_CURRENCYLIST.POLICY_TSI` (tipe = keputusan
   presisi) — 79 tabel; dan **butir 72**: 48 kolom penunjuk teks mentah `VARCHAR2(50)` di 16 tabel (daftar lengkap:
-  `loader/amandemen.go`, `amandemenPenunjuk`) — 1.390 kolom. ⚠️ Tipe kolom penunjuk tidak seragam di rancangan
+  `loader/amandemen.go`, `amandemenPenunjuk`) — 1.390 kolom (butir 76: skema loader 1.391 dengan `T_WORK_POLIS.LINI`, kolom yang sudah ada — tidak dibuat ulang). ⚠️ Tipe kolom penunjuk tidak seragam di rancangan
   gabungan: kolom kunci lama ber-`NUMBER` (mis. `T_FR_ANEKALIST.IDX_LOCATION`), kolom penunjuk butir 72 `VARCHAR2(50)`
   (mis. `T_ANEKALIST.IDX_LOCATION`) — dicatat, tidak diseragamkan agent. ⛔ Kolom `IsCedingConfirm` di `POOLDATA.HISTORYAKSEPTASIPRODUCTION` **bukan** milik rentang ini:
   tabel lama, diubah DBA (P4).
+
+## Penyelarasan dengan `T_WORK_POLIS` yang ada — butir 76 (keputusan work owner 03-10-2026)
+
+`[terverifikasi]` `T_WORK_POLIS` **sudah dibuat** premiumlistlife: `050_t_work_polis.sql` (ID VARCHAR2(32) NOT NULL PK, LINI,
+POSITION, STATUS VARCHAR2(255)), `057` (+FLAG_ONGOING_POLICY, SEQ_WORK_POLIS), `059` (+STATUS_WORK, COVER_KEY + FK diri,
+CREATE_OP VARCHAR2(64), CREATE_OP_NAME VARCHAR2(128), TGL_CREATE, TGL_UPDATE DATE; STATUS dibuang), `063` (STATUS →
+STATUS_WORK). K-064: tabel yang **sama**; Fac In menyambung. ⛔ Tiket ini **tidak** membuat `T_WORK_POLIS`; kolom yang belum
+ada ditambah lewat `ALTER TABLE … ADD` (nullable, K-064 konsekuensi 2). `T_GENERAL_POLIS` belum dibuat modul mana pun
+(`[terverifikasi]` grep seluruh `*.sql` 03-10-2026: nol) — tetap dibuat tiket ini, dengan `ID VARCHAR2(32)`.
+
+Pemetaan 18 kolom rancangan (`loader/skema_gen.go` = DDL draf) — dihitung dua cara: 1 sama + 4 digabung + 13 tambah = 18,
+dan `TestAmandemenWorkPolis` (19 kolom skema = 18 + `LINI`):
+
+| Kolom rancangan | Tipe rancangan | Kolom yang ada | Perlakuan (butir 76) |
+| --- | --- | --- | --- |
+| `ID` | NUMBER | `ID` VARCHAR2(32) NOT NULL | **sama**, tipe mengikuti yang ada (76.1); isi = `NO_WORK` (pyID, mis. `NB-184351`) |
+| `IDPEGA` | VARCHAR2(50) | — | tambah |
+| `JENIS_WORK` | VARCHAR2(10) | — | tambah |
+| `NO_WORK` | VARCHAR2(20) | — | tambah (isinya sama dengan `ID`; tetap kolom tambahan, 76.1) |
+| `POSISI` | VARCHAR2(100) | `POSITION` VARCHAR2(255) | **digabung** (76.4) |
+| `NOURUT` | NUMBER(3) | — | tambah — ⛔ tipe tersangkut presisi (penjaga tidak mengizinkan `NUMBER(3)`) |
+| `PUTARAN` | NUMBER | — | tambah — ⛔ presisi |
+| `STATUS_PROSES` | VARCHAR2(20) | `STATUS_WORK` VARCHAR2(255) | **digabung** (76.4) |
+| `STS_KONVERSI` | NUMBER | — | tambah — ⛔ presisi |
+| `TGL_KONVERSI` | DATE | — | tambah |
+| `TGL_INPUT` | DATE | `TGL_CREATE` DATE | **digabung** (76.4) |
+| `USERNAME` | VARCHAR2(50) | `CREATE_OP` VARCHAR2(64) | **digabung** (76.4) |
+| `DATE_TO_UW` | VARCHAR2(30) | — | tambah |
+| `ID_NEW_BISNIS` | VARCHAR2(20) | — | tambah |
+| `IS_FLAG_REJECT` | VARCHAR2(10) | — | tambah |
+| `PIC` | VARCHAR2(100) | — | tambah |
+| `POLICY_STATUS` | VARCHAR2(20) | — | tambah |
+| `SUBMIT_TO_UW` | VARCHAR2(30) | — | tambah |
+
+Kolom yang ada di luar rancangan: `LINI` — diisi `'FAC'` (76.2); `FLAG_ONGOING_POLICY`, `COVER_KEY`, `CREATE_OP_NAME`,
+`TGL_UPDATE` — milik premiumlistlife, **tidak** diisi loader (pengisiannya untuk data lama: `belum terverifikasi`).
+Penggabungan tidak menyempitkan satu kolom pun. **Rembetan 76.1:** `T_GENERAL_POLIS.ID` (PK bersama) dan `PARENT_ID` 10 tabel
+berinduk `T_GENERAL_POLIS` (`T_CARGOLIST`, `T_CEDINGCEDANTLIST`, `T_CURRENCYLIST`, `T_FACRETRODETAILS`, `T_FACRETROLIST`,
+`T_LOCATIONLIST`, `T_PERSONLIST`, `T_QUOTATIONDATA`, `T_SCORINGRISK`, `T_VEHICLELIST`) menjadi `VARCHAR2(32)` — dihitung
+dua cara (himpunan tabel = 10, baris jalur = 10; nol tabel berinduk campuran). Diterapkan di `loader/amandemen.go`
+(`selaraskanWorkPolis`) + `aturan.go`; mutasi 67/67 tertangkap.
+
+⚠️ **Terbuka:** `ALTER` atas tabel milik premiumlistlife dari rentang 180–219 — koordinasi dengan pemiliknya; kotak masuk
+PremiumList membaca **seluruh** `T_WORK_POLIS` tanpa saringan `LINI` (lihat register butir 76, risiko R1).
 
 ## Comments

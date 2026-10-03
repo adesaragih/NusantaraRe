@@ -16,9 +16,9 @@ import (
 	"nusantarare/modul/nbfacin/backend/services/kontrakfacin"
 )
 
-// berkasMigrasi adalah folder `migrations/` modul ini. Rentang tabel 180-219 belum
-// dipakai (modul ini hanya MEMBACA tabel POOLDATA yang sudah ada); isinya kini hanya
-// slot menu 962 (keputusan work owner butir 59).
+// berkasMigrasi adalah folder `migrations/` modul ini: 180 T_NB_OPPORTUNITY dan 181
+// SEQ_WORK_POLIS_NB (tiket 29, butir 76 - 181 berpenanda {NB_MULAI} yang wajib diisi
+// work owner/DBA sebelum dijalankan), slot menu 962 (butir 59).
 //
 //go:embed migrations/*.sql
 var berkasMigrasi embed.FS
@@ -45,7 +45,7 @@ func Pendaftaran() inti.Pendaftaran {
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
 			inti.Sediakan[kontrak.PenilaiPredikatFacIn](p, kontrakfacin.Predikat{})
 			inti.Sediakan[kontrak.MesinPremiFacIn](p, kontrakfacin.Premi{})
-			return Modul{svc: services.DariDasar(p.Dasar())}, nil
+			return Modul{svc: services.DariDasar(p.Dasar()), stubPelaku: p.Config().AuthStub}, nil
 		},
 	}
 }
@@ -53,8 +53,12 @@ func Pendaftaran() inti.Pendaftaran {
 // Modul memenuhi inti.Modul.
 type Modul struct {
 	svc *services.Service
+	// stubPelaku - config AuthStub: penunda identitas X-Pelaku (POST opportunity, tiket 29).
+	stubPelaku bool
 }
 
-func (Modul) Nama() string                                 { return Nama }
-func (m Modul) DaftarkanRute(mux *http.ServeMux)           { handlers.DaftarkanRute(mux, m.svc) }
+func (Modul) Nama() string { return Nama }
+func (m Modul) DaftarkanRute(mux *http.ServeMux) {
+	handlers.DaftarkanRute(mux, m.svc, m.stubPelaku)
+}
 func (Modul) JalankanPekerja(context.Context) inti.Pekerja { return inti.TanpaPekerja() }

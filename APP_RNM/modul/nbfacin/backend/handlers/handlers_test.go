@@ -30,7 +30,7 @@ func (l limitTiruan) MuatLimit(context.Context) ([]models.BarisLimitA, []models.
 func kirim(t *testing.T, svc *services.Service, metode, jalur, isi string) (int, map[string]any) {
 	t.Helper()
 	mux := http.NewServeMux()
-	DaftarkanRute(mux, svc)
+	DaftarkanRute(mux, svc, false)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, httptest.NewRequest(metode, jalur, strings.NewReader(isi)))
 	var jawab map[string]any
@@ -140,7 +140,7 @@ func TestCariAkun(t *testing.T) {
 		{ID: "UJI-ID-2", InsuredID: "UJI-INS-2"},
 	}})
 	mux := http.NewServeMux()
-	DaftarkanRute(mux, svc)
+	DaftarkanRute(mux, svc, false)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, httptest.NewRequest("GET", "/api/nbfacin/account?cari=uji&halaman=2", nil))
 	mau := `{"baris":[{"id":"UJI-ID-1","insuredId":"UJI-INS-1","insuredName":"UJI NAMA","groupBusinessId":"UJI-GB","groupBusiness":"UJI GRUP"},` +
@@ -184,7 +184,7 @@ func TestKelasBisnis(t *testing.T) {
 		{ID: "UJI-B2", Note: "UJI A"}, {ID: "UJI-B1", Note: "UJI b & <c>"},
 	}})
 	mux := http.NewServeMux()
-	DaftarkanRute(mux, svc)
+	DaftarkanRute(mux, svc, false)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, httptest.NewRequest("GET", "/api/nbfacin/class-of-business?groupBusinessId=UJI-GB", nil))
 	// Dibandingkan sesudah di-decode: encoder JSON Go meloloskan `&` `<` `>` menjadi \u00XX,

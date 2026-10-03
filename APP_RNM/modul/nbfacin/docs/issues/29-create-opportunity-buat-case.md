@@ -42,14 +42,36 @@ wajib diperiksa; bila lengkap, isian dikirim ke backend yang **membuat case NB**
 - **Estimated Closing Date berformat dd/mm/yyyy** (permintaan work owner 03-10-2026): kotak teks dd/mm/yyyy +
   tombol kalender (`components/TanggalDMY.tsx`) — `<input type="date">` bawaan mengikuti bahasa browser.
 
-## Tertahan
+## Backend (sesi c3, selesai 03-10-2026 — diverifikasi sesi 0f)
 
-- Endpoint `POST /api/nbfacin/opportunity` (backend sesi c3): sedang dikerjakan; migrasinya menunggu dijalankan
-  work owner di DEV, dengan nilai awal penghitung NB (nomor NB Pega terakhir + 1) yang diisi work owner/DBA.
-  Sampai itu, tombol menampilkan galat backend apa adanya.
-- "Lari ke flow": port section `InputInwardFacultative` — tiket berikutnya; sekarang sesudah case dibuat, nomor
-  case ditampilkan di form.
+- `POST /api/nbfacin/opportunity` → 201 `{"caseId":"NB-<n>"}`; 400 medan wajib/tanggal DD-MM-YYYY/panjang kolom;
+  **401 tanpa identitas login** (tambahan atas kontrak awal); 503 tanpa DB; 500 tanpa rincian. Ke-14 nama medan
+  `IsianOpportunity` cocok dengan `api.ts`.
+- Satu transaksi: nomor dari `SEQ_WORK_POLIS_NB`; baris `T_WORK_POLIS` yang ADA (ID `NB-<n>`, `LINI = 'FAC'`, pembuat
+  = pengenal akun, `TGL_CREATE/TGL_UPDATE`); isian ke tabel sendiri **`T_NB_OPPORTUNITY`** (opportunity = work class
+  tersendiri di Pega, `GetListOpportunity.xml`, ditaut lewat NBHandle).
+- Keputusan work owner yang ditanyakan langsung di sesi c3 (03-10-2026, register butir 76): ID ikut tabel yang ada
+  (VARCHAR2(32)), LINI `FAC`, tabel opportunity sendiri, empat kolom rancangan digabung ke kolom yang ada,
+  placeholder `{NB_MULAI}` di migrasi.
 
-**Status:** in-progress — frontend selesai 03-10-2026; backend dikerjakan sesi c3 (T_WORK_POLIS yang ada)
+## Yang harus dijalankan work owner (Oracle DEV)
+
+1. `180_t_nb_opportunity.sql` — membuat `T_NB_OPPORTUNITY`.
+2. `181_seq_work_polis_nb.sql` — ⛔ **ganti `{NB_MULAI}` dengan nomor NB Pega terakhir + 1 SEBELUM `-migrate`.**
+   Runner hanya mengganti `{skema}`; selama `{NB_MULAI}` masih ada, Oracle menolak dan `-migrate` SELURUH aplikasi
+   berhenti di 181 (pilihan work owner). Angka produksi tidak ada di repo (NB-184351 hanya contoh data uji).
+
+## Risiko terbuka
+
+- **R1 `[terverifikasi]`:** kotak masuk PremiumList Life membaca SELURUH `T_WORK_POLIS` tanpa saringan `LINI`
+  (`modul/premiumlistlife/backend/repository/polis_inbox.go`: `WHERE (:1 IS NULL OR w.POSITION = :1)`), jadi case NB
+  akan ikut tampil di tab "semua" kotak masuk Life. Perbaikannya di modul premiumlistlife (pemiliknya).
+- **R2:** nbfacin menulis tabel milik premiumlistlife dengan SQL sendiri, tanpa kontrak lintas modul.
+- A79–A85 (tanpa FK, status awal kosong, panjang kolom, 401, tanpa pangkas, sequence vs tabel penghitung ADR-0043,
+  tanpa jejak audit) menunggu konfirmasi work owner.
+- "Lari ke flow": port section `InputInwardFacultative` — tiket berikutnya; sesudah case dibuat, nomor case
+  ditampilkan di form.
+
+**Status:** ready-for-human — frontend + backend selesai 03-10-2026; menunggu migrasi 180/181 dijalankan work owner di DEV
 
 ## Comments

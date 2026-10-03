@@ -32,7 +32,7 @@ dipensiunkan 1 Oktober 2026.
 | Folder | Isi |
 | --- | --- |
 | `docs/` | spec, tiket (`issues/`), discovery, grilling — dipindah dari `jefri/OUTPUT FIX/` 30-09-2026 (`git mv`, isi tidak diubah). Asal tiap berkas dan tujuan tautan lamanya: `docs/PETA-ASAL.md` |
-| `backend/` | `modul.go`; `models/`, `repository/` (tabel limit `POOLDATA.M_LIMIT_*` dan akun `POOLDATA.T_M_ACCOUNT`, bisnis `POOLDATA.BUSINESS`, baca saja), `services/` (layanan + mesin: `premium`, `acceptance`, `rules`, `pembayaran`, `rekonsiliasi`, `kontrakfacin`; `loader` = seam `loader.Flatten` data lama, murni, tiket 22), `handlers/` (`POST /api/nbfacin/premi`, `POST /api/nbfacin/akseptasi/langkah`, `GET /api/nbfacin/account`, `GET /api/nbfacin/class-of-business`), `migrations/` (slot menu 962) |
+| `backend/` | `modul.go`; `models/`, `repository/` (tabel limit `POOLDATA.M_LIMIT_*` dan akun `POOLDATA.T_M_ACCOUNT`, bisnis `POOLDATA.BUSINESS`, baca saja; case NB: tulis `T_WORK_POLIS` milik premiumlistlife (K-064, LINI `FAC`) + `T_NB_OPPORTUNITY`, tiket 29), `services/` (layanan + mesin: `premium`, `acceptance`, `rules`, `pembayaran`, `rekonsiliasi`, `kontrakfacin`; `loader` = seam `loader.Flatten` data lama, murni, tiket 22), `handlers/` (`POST /api/nbfacin/premi`, `POST /api/nbfacin/akseptasi/langkah`, `GET /api/nbfacin/account`, `GET /api/nbfacin/class-of-business`, `POST /api/nbfacin/opportunity`), `migrations/` (180 `T_NB_OPPORTUNITY`, 181 `SEQ_WORK_POLIS_NB` — ⛔ penanda `{NB_MULAI}` wajib diisi sebelum dijalankan; slot menu 962) |
 | `frontend/` | `menu.ts`, `rute.tsx`, `labels.ts` (verbatim korpus, diuji), `api.ts`, `pages/CoverageCargo.tsx` |
 
 ## Migrasi

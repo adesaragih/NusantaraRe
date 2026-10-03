@@ -10,18 +10,70 @@ import (
 	"net/http"
 	"strconv"
 
+	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
 	"nusantarare/inti/backend/kontrak"
 	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/nbfacin/backend/services"
 )
 
-// DaftarkanRute memasang rute modul ini.
-func DaftarkanRute(mux *http.ServeMux, svc *services.Service) {
+// DaftarkanRute memasang rute modul ini. stubPelaku = config AuthStub (penunda
+// identitas X-Pelaku, inti/backend/pelaku_http.go); sesi login selalu didahulukan.
+func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc("POST /api/nbfacin/premi", hitungPremi(svc))
 	mux.HandleFunc("POST /api/nbfacin/akseptasi/langkah", langkahAkseptasi(svc))
 	mux.HandleFunc("GET /api/nbfacin/account", cariAkun(svc))
 	mux.HandleFunc("GET /api/nbfacin/class-of-business", kelasBisnis(svc))
+	mux.HandleFunc("POST /api/nbfacin/opportunity", buatOpportunity(svc, stubPelaku))
+}
+
+// isianOpportunity - badan POST /api/nbfacin/opportunity, kontrak frontend
+// `IsianOpportunity` (modul/nbfacin/frontend/api.ts); semua teks, tanggal DD-MM-YYYY.
+type isianOpportunity struct {
+	EstimatedClosingDate string `json:"estimatedClosingDate"`
+	BusinessProspectName string `json:"businessProspectName"`
+	AccountID            string `json:"accountId"`
+	InsuredID            string `json:"insuredId"`
+	GroupBusinessID      string `json:"groupBusinessId"`
+	GroupBusiness        string `json:"groupBusiness"`
+	ClassOfBusiness      string `json:"classOfBusiness"`
+	TypeOfInward         string `json:"typeOfInward"`
+	TypeOfFacultative    string `json:"typeOfFacultative"`
+	Phase                string `json:"phase"`
+	Stage                string `json:"stage"`
+	OpportunitySource    string `json:"opportunitySource"`
+	BusinessStatus       string `json:"businessStatus"`
+	Description          string `json:"description"`
+}
+
+// batasBadanOpportunity - badan terbesar yang diterima: 14 medan, terlebar 4000 bita.
+const batasBadanOpportunity = 64 << 10
+
+// buatOpportunity - POST /api/nbfacin/opportunity (tiket 29): 201 {"caseId":"NB-<n>"}.
+func buatOpportunity(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var b isianOpportunity
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, batasBadanOpportunity)).Decode(&b); err != nil {
+			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON isian opportunity yang sah")
+			return
+		}
+		id, err := svc.BuatOpportunity(r.Context(), inti.PelakuDari(r, stubPelaku), services.IsianOpportunity{
+			EstimatedClosingDate: b.EstimatedClosingDate, BusinessProspectName: b.BusinessProspectName,
+			AccountID: b.AccountID, InsuredID: b.InsuredID, GroupBusinessID: b.GroupBusinessID,
+			GroupBusiness: b.GroupBusiness, ClassOfBusiness: b.ClassOfBusiness, TypeOfInward: b.TypeOfInward,
+			TypeOfFacultative: b.TypeOfFacultative, Phase: b.Phase, Stage: b.Stage,
+			OpportunitySource: b.OpportunitySource, BusinessStatus: b.BusinessStatus, Description: b.Description,
+		})
+		if err != nil {
+			tulisGalat(w, err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(struct {
+			CaseID string `json:"caseId"`
+		}{id})
+	}
 }
 
 // barisKelasBisnis - satu pilihan Class Of Business (tiket 28); teks apa adanya, NULL = "".
@@ -205,12 +257,16 @@ func urai(w http.ResponseWriter, r *http.Request, tujuan any) bool {
 
 func tulisGalat(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, services.ErrMasukanAkun), errors.Is(err, services.ErrMasukanKelasBisnis):
+	case errors.Is(err, services.ErrMasukanAkun), errors.Is(err, services.ErrMasukanKelasBisnis),
+		errors.Is(err, services.ErrMasukanOpportunity):
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
+	case errors.Is(err, inti.ErrTanpaIdentitas):
+		galat.Tulis(w, http.StatusUnauthorized, err.Error())
 	case errors.Is(err, services.ErrTidakDapatDiproses):
 		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrTanpaDatabase), errors.Is(err, services.ErrTabelLimitTakTersedia),
-		errors.Is(err, services.ErrAkunTanpaDatabase), errors.Is(err, services.ErrKelasBisnisTanpaDatabase):
+		errors.Is(err, services.ErrAkunTanpaDatabase), errors.Is(err, services.ErrKelasBisnisTanpaDatabase),
+		errors.Is(err, services.ErrOpportunityTanpaDatabase):
 		galat.Tulis(w, http.StatusServiceUnavailable, err.Error())
 	default:
 		log.Printf("nbfacin: galat server: %v", err)

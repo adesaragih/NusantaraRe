@@ -35,13 +35,15 @@ type AkunOracle struct{ db *db.DB }
 // NewAkunOracle merakit pembaca tabel akun.
 func NewAkunOracle(d *db.DB) *AkunOracle { return &AkunOracle{db: d} }
 
-// PolaCari - "mengandung", PEKA huruf besar-kecil (keputusan work owner 02-10-2026,
-// "harus peka besar kecil dong" - A70 diubah): huruf apa adanya, wildcard LIKE
-// (`\` `%` `_`) diloloskan, lalu diapit `%`. Escape sepola PolaCari
-// masterproductnamelife (disalin; modul tidak saling mengimpor). Kosong (sesudah
-// dipangkas) = "" = tanpa saringan.
+// PolaCari - "mengandung", TIDAK peka huruf besar-kecil (keputusan work owner
+// 03-10-2026, butir 75 - "itu buatin tanpa liat huruf besar atau kecil", membatalkan
+// 73.1): huruf besar, wildcard LIKE (`\` `%` `_`) diloloskan, lalu diapit `%`. Escape
+// sepola PolaCari masterproductnamelife (disalin; modul tidak saling mengimpor).
+// Kosong (sesudah dipangkas) = "" = tanpa saringan. ⚠️ Huruf besar dibuat
+// strings.ToUpper Go, kolom dengan UPPER Oracle: untuk huruf non-ASCII keduanya dapat
+// berbeda (`[dugaan]`, belum diuji ke Oracle).
 func PolaCari(kata string) string {
-	k := strings.TrimSpace(kata)
+	k := strings.ToUpper(strings.TrimSpace(kata))
 	if k == "" {
 		return ""
 	}
@@ -49,9 +51,9 @@ func PolaCari(kata string) string {
 	return "%" + k + "%"
 }
 
-// saringAkun - A69: tiga kolom yang tampil di layar, OR, kolom apa adanya (peka huruf,
-// keputusan work owner); :1..:3 bernilai pola yang sama.
-const saringAkun = ` WHERE (INSUREDID LIKE :1 ESCAPE '\' OR INSUREDNAME LIKE :2 ESCAPE '\' OR GROUPBUSINESS LIKE :3 ESCAPE '\')`
+// saringAkun - A69: tiga kolom yang tampil di layar, OR, UPPER di sisi kolom (tidak peka
+// huruf, butir 75); :1..:3 bernilai pola yang sama.
+const saringAkun = ` WHERE (UPPER(INSUREDID) LIKE :1 ESCAPE '\' OR UPPER(INSUREDNAME) LIKE :2 ESCAPE '\' OR UPPER(GROUPBUSINESS) LIKE :3 ESCAPE '\')`
 
 // sqlCariAkun - satu halaman. A72: urut INSUREDID lalu ID (INSUREDID tidak dijamin unik).
 func sqlCariAkun(tabel string, saring bool) string {

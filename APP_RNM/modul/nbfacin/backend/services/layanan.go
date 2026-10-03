@@ -43,7 +43,8 @@ func DariDasar(d *inti.Dasar) *Service {
 		return Baru(nil)
 	}
 	return Baru(repository.NewLimitOracle(d.DB())).DenganAkun(repository.NewAkunOracle(d.DB())).
-		DenganKelasBisnis(repository.NewKelasBisnisOracle(d.DB()))
+		DenganKelasBisnis(repository.NewKelasBisnisOracle(d.DB())).
+		DenganCaseNB(repository.NewCaseNBOracle(d.DB()), d.DalamTransaksi)
 }
 
 // Service - layanan NB Fac In.
@@ -56,6 +57,10 @@ type Service struct {
 	akun repository.PembacaAkun
 	// kelasBisnis - pembaca POOLDATA.BUSINESS (tiket 28); nil = tanpa basis data (503).
 	kelasBisnis repository.PembacaKelasBisnis
+	// caseNB, transaksi - pembuat case NB (tiket 29) dan pembuka transaksinya
+	// (inti.Dasar.DalamTransaksi); nil = tanpa basis data (503).
+	caseNB    repository.PenulisCaseNB
+	transaksi Transaksi
 }
 
 // DenganAkun memasang pembaca tabel akun (tiket 27).
@@ -206,7 +211,7 @@ type HasilCariAkun struct {
 }
 
 // CariAkun - halaman ke-`halaman` (mulai 1) baris T_M_ACCOUNT yang "mengandung" `cari`
-// (PEKA huruf besar-kecil, keputusan work owner) di INSUREDID, INSUREDNAME, atau
+// (TIDAK peka huruf besar-kecil, butir 75) di INSUREDID, INSUREDNAME, atau
 // GROUPBUSINESS (A69); `cari` kosong = semua baris. Urutan INSUREDID, ID (A72).
 func (s *Service) CariAkun(ctx context.Context, cari string, halaman int) (HasilCariAkun, error) {
 	if halaman < 1 || halaman > halamanMaks || utf8.RuneCountInString(cari) > batasCari {
