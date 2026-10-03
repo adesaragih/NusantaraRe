@@ -15,7 +15,7 @@
 // Read-only, `pyReadOnlyCondition` KOSONG - beda dengan `Product Name` b3585 yang bersyarat `IsView`): Ceding
 // b4040, SOB b4428, R/I Risk Name b7362, Cause Of Loss b10626, Policy Holder b17062, Currency b28105. Nilainya
 // hanya dari daftar master → `set*_DT`, tidak diketik. Begitu pula sel `Bussines` (`.Name` b33504) dan `Benefit`
-// b33658 grid `PLAN LIST`: diisi autocomplete `Plan Name`, tidak diketik.
+// b33658 grid `PLAN LIST`: diisi pilihan `Plan Name` (dropdown, 03-10-2026), tidak diketik.
 // Keputusan work owner 02-10-2026 ("perubahan pada tampilan untuk semua Choose ubah jadi dropdown saja"): ketujuh
 // tombol `Choose*` + popup FlowAction-nya diganti `DropdownMaster` (termasuk `Choose R/I Rate` baris `PLAN LIST`).
 // Grid `OUTWARD` (wadah `1==2`) tidak dirender; isinya ditulis server (`hitungOutward`).
@@ -41,6 +41,7 @@ import {
   PILIHAN_DOKUMEN_KLAIM,
   PILIHAN_PEMBAYARAN,
   hitungMaxSumReasured,
+  potongPilihan,
   namaTreaty,
   salinBaris,
   salinProduk,
@@ -64,13 +65,14 @@ import {
   UWLIMIT_MPNL,
 } from '../labels'
 import { DialogEdit, DialogSimpan } from './Dialog'
+import DropdownCari from './DropdownCari'
 import DropdownMaster from './DropdownMaster'
 import Medan, { PilihanMedan, TANDA_KOSONG } from './Medan'
 import ModalRate from './ModalRate'
 import PanelLampiran from './PanelLampiran'
-import Saran from './Saran'
 
-const cariJenisPlan = async (kata: string) => (await cariPlan(kata)).daftar
+/** Daftar `Plan Name` (RD `BrowseProductTypeLife_RD`, dicari pada CoverName dan Business), dipotong BATAS_DROPDOWN. */
+const cariJenisPlan = async (kata: string) => potongPilihan((await cariPlan(kata)).daftar)
 
 /** Sel grid bersarang yang dapat disunting (`ro = ProductName.IsView=='true'`). */
 function SelIsi({ nilai, onUbah, readOnly, label }: { nilai: string; onUbah: (v: string) => void; readOnly: boolean; label: string }) {
@@ -409,34 +411,31 @@ export default function FormProduk({
             {p.planList.map((b, i) => (
               <tr key={i} className="inbox__baris">
                 <td>
-                  {/* Mode lihat: teks, seperti sel grid lain (keputusan work owner 03-10-2026). */}
-                  {lihat ? (
-                    b.plan
-                  ) : (
-                    <Saran<JenisPlan>
-                      labelAria={PLAN_MPNL.planName}
-                      nilai={b.plan}
-                      onKetik={(v) => {
-                        setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { plan: v, planId: '' }) }))
-                      }}
-                      cari={cariJenisPlan}
-                      teks={(t) => t.coverName}
-                      kunci={(t) => t.id}
-                      kolom={{
-                        judul: [SARAN_PLAN_MPNL.kolomId, SARAN_PLAN_MPNL.kolomCoverName, SARAN_PLAN_MPNL.kolomBusiness, SARAN_PLAN_MPNL.kolomBenefit],
-                        isi: (t) => [t.id, t.coverName, t.business, t.benefit],
-                      }}
-                      onPilih={(t) => {
-                        // Autocomplete b33198: `.CoverName` → `.Plan`, `.ID` → `.PlanID`, `.Business` → `.Name`, `.Benefit` → `.Benefit`.
-                        setP((x) => ({
-                          ...x,
-                          planList: ganti<BarisPlan>(x.planList, i, { plan: t.coverName, planId: t.id, name: t.business, benefit: t.benefit }),
-                        }))
-                      }}
-                    />
-                  )}
+                  {/* `Plan Name` b33121 sebagai dropdown (keputusan work owner 03-10-2026 "tolong ubah jadi model dropdown";
+                      XML: pxAutoComplete berisian bebas b33137). Kolom = `pyAdditionalFields` ber-`pyShow` true. */}
+                  <DropdownCari<JenisPlan>
+                    labelAria={PLAN_MPNL.planName}
+                    nilai={b.plan}
+                    lihat={lihat}
+                    lebar
+                    cari={cariJenisPlan}
+                    kunci={(t) => t.id}
+                    kolom={{
+                      judul: [SARAN_PLAN_MPNL.kolomId, SARAN_PLAN_MPNL.kolomCoverName, SARAN_PLAN_MPNL.kolomBusiness, SARAN_PLAN_MPNL.kolomBenefit],
+                      isi: (t) => [t.id, t.coverName, t.business, t.benefit],
+                      lebar: '6.5rem minmax(9rem, 2fr) minmax(9rem, 2fr) minmax(5rem, 1fr)',
+                    }}
+                    terpilih={(t) => t.id === b.planId}
+                    onPilih={(t) => {
+                      // b33198: `.CoverName` → `.Plan`, `.ID` → `.PlanID`, `.Business` → `.Name`, `.Benefit` → `.Benefit`.
+                      setP((x) => ({
+                        ...x,
+                        planList: ganti<BarisPlan>(x.planList, i, { plan: t.coverName, planId: t.id, name: t.business, benefit: t.benefit }),
+                      }))
+                    }}
+                  />
                 </td>
-                {/* `Bussines` (`.Name` b33504) dan `Benefit` b33658 SELALU baca-saja: diisi autocomplete `Plan Name`. */}
+                {/* `Bussines` (`.Name` b33504) dan `Benefit` b33658 SELALU baca-saja: diisi pilihan `Plan Name`. */}
                 <td>{b.name}</td>
                 <td>{b.benefit}</td>
                 <td>

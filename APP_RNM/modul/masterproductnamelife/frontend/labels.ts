@@ -195,7 +195,7 @@ export const PLAN_MPNL = {
 } as const
 
 /**
- * Kolom saran autocomplete `Plan Name` (`InboxProductName.xml` b33121 `pxAutoComplete`, RD `BrowseProductTypeLife_RD`):
+ * Kolom daftar `Plan Name` (`InboxProductName.xml` b33121 `pxAutoComplete` - dropdown sejak 03-10-2026, RD `BrowseProductTypeLife_RD`):
  * `pyAdditionalFields` b33213 `.ID`, b33247 `.CoverName`, b33280 `.Business`, b33313 `.Benefit` - semuanya `pyShow` true.
  * Labelnya label kolom RD sumber (`BrowseProductTypeLife_RD.xml` `pyFieldLabel`).
  */

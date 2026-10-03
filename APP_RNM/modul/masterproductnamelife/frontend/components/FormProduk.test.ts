@@ -72,7 +72,7 @@ describe('form produk - ketujuh pemilih master berupa dropdown (keputusan work o
 
   it('mode lihat: medan master tampil baca-saja seperti sebelumnya, sel R/I Rate PLAN LIST tetap teks', () => {
     const DROPDOWN = readFileSync(join(__dirname, 'DropdownMaster.tsx'), 'utf8')
-    expect(DROPDOWN).toContain('if (lihat) return <span>{nilai}</span>')
+    expect(readFileSync(join(__dirname, 'DropdownCari.tsx'), 'utf8')).toContain('if (lihat) return <span>{nilai}</span>')
     // Baris form: mode lihat = teks nilai, TIDAK pernah isian atau anak (dropdown, pilihan, area).
     const MEDAN = readFileSync(join(__dirname, 'Medan.tsx'), 'utf8')
     expect(MEDAN).toMatch(/if \(lihat\) \{\s*return \(\s*<div className="mpnl-medan mpnl-medan--lihat">/)
@@ -218,8 +218,9 @@ function dijagaLihat(kode: string, label: string): boolean {
 }
 
 describe('mode lihat: nol tambah/edit/delete - baru ada sesudah Edit (keputusan work owner 03-10-2026)', () => {
-  it('PLAN LIST mode lihat: sel Plan Name teks, bukan isian autocomplete', () => {
-    expect(KODE).toMatch(/\{lihat \? \(\s*b\.plan\s*\) : \(\s*<Saran<JenisPlan>/)
+  it('PLAN LIST mode lihat: sel Plan Name teks (dropdown merender teks di mode lihat)', () => {
+    const i = KODE.indexOf('<DropdownCari<JenisPlan>')
+    expect(KODE.slice(i, KODE.indexOf('/>', KODE.indexOf('onPilih=', i)))).toContain('lihat={lihat}')
   })
 
   it('PLAN LIST: Add dan Delete hanya di mode sunting; View Rate tetap', () => {
@@ -263,21 +264,25 @@ describe('Document List dipilih dari daftar (permintaan work owner 03-10-2026)',
   })
 })
 
-describe('Plan Name = autocomplete XML b33121 (permintaan work owner 03-10-2026 "samain dengan xml nya")', () => {
-  it('saran menampilkan empat kolom XML - ID, CoverName, Business, Benefit (pyShow true), urutan pyAdditionalFields', () => {
-    const i = KODE.indexOf('<Saran<JenisPlan>')
-    const saran = KODE.slice(i, KODE.indexOf('/>', KODE.indexOf('onPilih=', i)))
-    expect(saran).toMatch(
-      /kolom=\{\{\s*judul: \[SARAN_PLAN_MPNL\.kolomId, SARAN_PLAN_MPNL\.kolomCoverName, SARAN_PLAN_MPNL\.kolomBusiness, SARAN_PLAN_MPNL\.kolomBenefit\],\s*isi: \(t\) => \[t\.id, t\.coverName, t\.business, t\.benefit\],?\s*\}\}/,
+describe('Plan Name = dropdown (keputusan work owner 03-10-2026 "tolong ubah jadi model dropdown")', () => {
+  // Menyimpang dari XML b33121 (pxAutoComplete, isian bebas b33137): nilai hanya dari daftar `BrowseProductTypeLife_RD`.
+  const i = KODE.indexOf('<DropdownCari<JenisPlan>')
+  const dropdown = KODE.slice(i, KODE.indexOf('/>', KODE.indexOf('onPilih=', i)))
+
+  it('kolom daftar = pyAdditionalFields XML: ID, CoverName, Business, Benefit', () => {
+    expect(i).toBeGreaterThan(-1)
+    expect(dropdown).toMatch(
+      /judul: \[SARAN_PLAN_MPNL\.kolomId, SARAN_PLAN_MPNL\.kolomCoverName, SARAN_PLAN_MPNL\.kolomBusiness, SARAN_PLAN_MPNL\.kolomBenefit\],\s*isi: \(t\) => \[t\.id, t\.coverName, t\.business, t\.benefit\]/,
     )
-    // Memilih: .CoverName → .Plan, .ID → .PlanID, .Business → .Name, .Benefit → .Benefit (b33216, b33250, b33283, b33315).
-    expect(saran).toContain('{ plan: t.coverName, planId: t.id, name: t.business, benefit: t.benefit }')
   })
 
-  it('Saran merender kepala kolom dan satu sel per kolom bila `kolom` diberikan', () => {
-    const SARAN = readFileSync(join(__dirname, 'Saran.tsx'), 'utf8')
-    expect(SARAN).toContain('className="mpnl-saran__kepala"')
-    expect(SARAN).toContain('kolom.isi(t).map(')
+  it('memilih: .CoverName → .Plan, .ID → .PlanID, .Business → .Name, .Benefit → .Benefit (b33216, b33250, b33283, b33315)', () => {
+    expect(dropdown).toContain('{ plan: t.coverName, planId: t.id, name: t.business, benefit: t.benefit }')
+  })
+
+  it('tidak ada lagi isian ketik bebas (autocomplete Saran dihapus)', () => {
+    expect(KODE).not.toContain('<Saran')
+    expect(existsSync(join(__dirname, 'Saran.tsx'))).toBe(false)
   })
 })
 

@@ -76,6 +76,11 @@
   box-shadow: var(--mt-timbul-kecil);
 }
 
+/* Daftar berkolom banyak (`Plan Name`: ID, CoverName, Business, Benefit) - panel lebih lebar. */
+.mpnl .mpnl-dropdown--lebar > .mpnl-dropdown__panel {
+  max-width: min(760px, 92vw);
+}
+
 .mpnl .mpnl-dropdown--kanan > .mpnl-dropdown__panel {
   left: auto;
   right: 0;
@@ -84,13 +89,16 @@
 .mpnl .mpnl-dropdown__kepala,
 .mpnl .mpnl-dropdown__butir {
   display: grid;
-  grid-template-columns: 7em minmax(0, 1fr);
+  /* rem, bukan em: kepala berhuruf lebih kecil daripada baris - kolom harus tetap sejajar. */
+  grid-template-columns: 7rem minmax(0, 1fr);
   gap: 12px;
   padding: 6px 10px;
 }
 
 .mpnl .mpnl-dropdown__kepala {
-  margin-top: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
   border-radius: 8px;
   background: var(--mt-kepala-tabel);
   color: var(--mt-kepala-teks);
@@ -101,7 +109,7 @@
 .mpnl .mpnl-dropdown__daftar {
   max-height: 260px;
   overflow-y: auto;
-  margin: 4px 0 0;
+  margin: 8px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -130,64 +138,6 @@
   margin: 6px 2px 0;
   color: var(--mt-teks-redup);
   font-size: var(--fs-sm);
-}
-
-/* Autocomplete `pxAutoComplete` - daftar saran di bawah medan. */
-.mpnl .mpnl-saran {
-  position: relative;
-}
-
-.mpnl .mpnl-saran__daftar {
-  position: absolute;
-  z-index: 20;
-  left: 0;
-  right: 0;
-  max-height: 220px;
-  overflow-y: auto;
-  margin: 4px 0 0;
-  padding: 6px 0;
-  list-style: none;
-  background: var(--mt-latar);
-  border: 1px solid var(--mt-kilau);
-  border-radius: 12px;
-  box-shadow: var(--mt-timbul-kecil);
-}
-
-.mpnl .mpnl-saran__butir {
-  padding: 6px 12px;
-  cursor: pointer;
-}
-
-/* Saran berkolom (`Plan Name` b33121: ID, CoverName, Business, Benefit): kolom rata antar-baris lewat subgrid; daftar
-   boleh lebih lebar dari isiannya. */
-.mpnl .mpnl-saran__daftar--kolom {
-  display: grid;
-  grid-template-columns: repeat(var(--mpnl-saran-kolom), minmax(4em, max-content));
-  column-gap: 16px;
-  right: auto;
-  min-width: 100%;
-  width: max-content;
-  max-width: min(760px, 92vw);
-}
-
-.mpnl .mpnl-saran__daftar--kolom > .mpnl-saran__butir,
-.mpnl .mpnl-saran__daftar--kolom > .mpnl-saran__kepala {
-  display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: subgrid;
-}
-
-.mpnl .mpnl-saran__kepala {
-  padding: 4px 12px 6px;
-  border-bottom: 1px solid var(--mt-garis);
-  color: var(--mt-kepala-teks);
-  font-size: var(--fs-xs);
-  font-weight: 700;
-}
-
-.mpnl .mpnl-saran__butir:hover {
-  background: var(--mt-baris-hover);
-  color: var(--mt-aksen-teks);
 }
 
 /* Judul grid bersarang (`LIEN CLAUSE (Potongan Manfaat Klaim)`, `PLAN LIST`, ...). */
