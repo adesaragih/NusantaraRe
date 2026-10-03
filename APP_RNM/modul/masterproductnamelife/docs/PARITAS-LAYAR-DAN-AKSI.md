@@ -56,6 +56,12 @@ Sistem baru membaca `M_PRODUCT_LIFE.ID` + `JSONDATA` sendiri (P2) — kunci kolo
 Pesan: wadah b616 `STSSAVE==100` → `OutputParam.ERRMSG` b878; wadah b1269 `STSSAVE==99` → `ERRMSG` b1531 (dipakai `CopyProduct`); wadah b1921 `ProductName.ERRMSG!=''` → b2183.
 Baca-saja: medan ber-`ro = ProductName.IsView=='true'` (mode lihat sesudah `View`; `Edit` membukanya). *(Ralat audit 02-10-2026: tidak SETIAP medan - enam medan pemilih master SELALU baca-saja, `pyReadOnly` true + `pyEditOptions` Read-only + `pyReadOnlyCondition` kosong: Ceding b4040, SOB b4428, R/I Risk Name b7362, Cause Of Loss b10626, Policy Holder b17062, Currency b28105; nilainya hanya dari tombol `Choose*` *(sejak keputusan work owner 02-10-2026: dari dropdown master, §4)*. Sel `PLAN LIST` `Bussines` `.Name` b33504 dan `Benefit` b33658 juga selalu baca-saja. Lihat RALAT 02-10-2026.)*
 
+> ⭐ **`Plan Name` 03-10-2026 (*"coba cek plan name, samain dengan xml nya"*):** sel b33121 `pxAutoComplete` - baca-saja
+> hanya bila `ProductName.IsView=='true'` (b33492; `pyEditOptions` Read-only + kondisi), isian bebas boleh (b33137). Saran
+> kini berkolom seperti `pyAdditionalFields` ber-`pyShow` true: **ID** (b33213 → `.PlanID`), **CoverName** (b33247 →
+> `.Plan`), **Business** (b33280 → `.Name`), **Benefit** (b33313 → `.Benefit`), kepala = `pyFieldLabel` RD
+> `BrowseProductTypeLife_RD` (b568, b642, b583, b613); dicari pada CoverName dan Business (`pyUseForSearch` true).
+
 > ⭐ **`Document List` 03-10-2026:** dropdown dari 16 nilai PromptList properti `.Document` (XML dikirim work owner,
 > OQ-MPNL-05 sebagian terjawab); nilai lama di luar daftar tetap tampil bertanda, tidak dibuang; mode lihat teks.
 
