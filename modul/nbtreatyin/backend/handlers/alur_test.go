@@ -538,7 +538,7 @@ func TestHitungTidakMenyimpan(t *testing.T) {
 	id := u.buat()
 	h := halamanLengkap("")
 	h.Setel("PolicyTreatyIn.RiCommOgp", "10")
-	kode, isi := u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{"aksi": "CountResult1", "param": "Pct", "halaman": h})
+	kode, isi := u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{"urutan": []map[string]string{{"aksi": "CountResult1", "param": "Pct"}}, "halaman": h})
 	if kode != http.StatusOK {
 		t.Fatalf("%d %s", kode, isi)
 	}

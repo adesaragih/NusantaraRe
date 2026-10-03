@@ -163,7 +163,7 @@ func TestNonPropPilihBisnisHitungSimpanBacaKembali(t *testing.T) {
 	h.Setel("PolicyTreatyIn.Suggest", "UJI-catatan")
 	h.Setel("PolicyTreatyIn.NetPremium", "999999") // turunan: layar tidak pernah menulisnya
 	h.SetelDaftar(models.TabelXOL.Daftar, []models.Baris{{"GrossPremi": "UJI-KARANGAN"}})
-	kode, isi = u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{"aksi": "CountSpreading", "indeks": 1, "halaman": h})
+	kode, isi = u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{"urutan": []map[string]string{{"aksi": "CountSpreading"}}, "indeks": 1, "halaman": h})
 	if kode != http.StatusOK {
 		t.Fatalf("hitung: %d %s", kode, isi)
 	}

@@ -108,7 +108,7 @@ func TestSetPPNPPHMembacaStatusPKPAgen(t *testing.T) {
 		h.Setel("PolicyTreatyIn.Deduction1", "51.1")
 		h.Setel("PolicyTreatyIn.TypeTax", models.TypeTaxInclusive)
 		h.Setel("PolicyTreatyIn.FlagPPH", "")
-		kode, isi := u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{"aksi": "CountNetPremi", "halaman": h})
+		kode, isi := u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{"urutan": []map[string]string{{"aksi": "CountNetPremi"}}, "halaman": h})
 		if kode != http.StatusOK {
 			t.Fatalf("hitung: %d %s", kode, isi)
 		}

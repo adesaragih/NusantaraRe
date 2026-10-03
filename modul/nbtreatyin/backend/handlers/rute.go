@@ -92,13 +92,12 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		galat.Tulis(w, http.StatusNotFound, err.Error())
 	case errors.Is(err, services.ErrPermintaanTidakSah):
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, services.ErrDataKontrakTidakAda),
-		errors.Is(err, services.ErrTipeNomorKosong),
-		errors.Is(err, services.ErrOJKKosong),
-		errors.Is(err, services.ErrMasterXOLTidakAda),
-		errors.Is(err, services.ErrMasterXOLRusak):
-		// AC 37: kegagalan membaca data kontrak DITAMPILKAN kepada pengguna.
-		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
+	case galatData(err) != nil:
+		// AC 37: kegagalan membaca data kontrak DITAMPILKAN kepada pengguna -
+		// teks galat dasarnya saja. Rincian bungkusan (nama objek berskema,
+		// kolom katalog, nomor baris dokumen) hanya ke log, sama dengan 500.
+		log.Printf("nbtreatyin: %v", err)
+		galat.Tulis(w, http.StatusUnprocessableEntity, galatData(err).Error())
 	case errors.Is(err, services.ErrKasusTertutup),
 		errors.Is(err, services.ErrTahapBerubah),
 		errors.Is(err, services.ErrGenerasiTertutup),
@@ -110,6 +109,25 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		log.Printf("nbtreatyin: %v", err)
 		galat.Tulis(w, http.StatusInternalServerError, "gagal memproses permintaan NB Treaty In")
 	}
+}
+
+// galatDataDasar - galat data kontrak/master/nomor yang dijawab 422 (AC 37).
+var galatDataDasar = []error{
+	services.ErrDataKontrakTidakAda,
+	services.ErrTipeNomorKosong,
+	services.ErrOJKKosong,
+	services.ErrMasterXOLTidakAda,
+	services.ErrMasterXOLRusak,
+}
+
+// galatData - galat dasar `galatDataDasar` yang dibungkus `err`, atau nil.
+func galatData(err error) error {
+	for _, d := range galatDataDasar {
+		if errors.Is(err, d) {
+			return d
+		}
+	}
+	return nil
 }
 
 // bacaJSON membaca badan permintaan JSON (kosong = nilai nol).

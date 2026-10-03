@@ -19,7 +19,7 @@ func TestUbahTanggalMulaiMengisiTanggalAkhirSetahun(t *testing.T) {
 	h := halamanLengkap("")
 	h.Setel("PolicyTreatyIn.StartDate", "2026-10-15")
 	h.Setel("PolicyTreatyIn.EndDate", "2026-10-03")
-	kode, isi := u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{"aksi": "SystemSetOneYear", "halaman": h})
+	kode, isi := u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{"urutan": []map[string]string{{"aksi": "SystemSetOneYear"}}, "halaman": h})
 	if kode != http.StatusOK {
 		t.Fatalf("%d %s", kode, isi)
 	}

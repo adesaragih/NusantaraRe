@@ -101,53 +101,43 @@ func (l *Layanan) tulis(ctx context.Context, k models.Kasus, fn func(tx *db.Tx) 
 
 // ------------------------------------------------------------------ hitung
 
-// PermintaanHitung - satu refresh berhitung layar.
+// PermintaanHitung - action set satu sel layar: SATU bentuk, selalu `Urutan`
+// (temuan tinjauan P9). Sel yang memuat lebih dari satu refresh berhitung
+// (mis. `.RiCommOgp`: `CountResult1_Act(Data="Pct")` lalu `CountOGPONP_Act`)
+// menjalankannya berurutan atas halaman yang sama, seperti clipboard Pega;
+// sel satu refresh = urutan satu langkah.
 type PermintaanHitung struct {
-	// Aksi - nama aktivitas Pega tanpa akhiran `_Act` (lihat `aksiHitung`).
-	Aksi string `json:"aksi"`
-	// Param - parameter aktivitas: Data ("Pct"/"Amount"), DiscountType,
-	// Result, Overidding, Action ("PREMIUM"/"CLAIM").
-	Param string `json:"param"`
-	// Urutan - action set sel yang memuat LEBIH DARI SATU refresh berhitung
-	// (mis. `.RiCommOgp`: `CountResult1_Act(Data="Pct")` lalu `CountOGPONP_Act`):
-	// dijalankan berurutan atas halaman yang sama, seperti clipboard Pega.
-	// Bila diisi, Aksi/Param diabaikan.
-	Urutan []LangkahHitung `json:"urutan,omitempty"`
+	Urutan []LangkahHitung `json:"urutan"`
 	// Indeks - Param.Index / Param.idx, berbasis 1.
 	Indeks  int             `json:"indeks"`
 	Halaman *models.Halaman `json:"halaman"`
 }
 
-// LangkahHitung - satu refresh dalam `PermintaanHitung.Urutan`.
+// LangkahHitung - satu refresh berhitung.
 type LangkahHitung struct {
-	Aksi  string `json:"aksi"`
+	// Aksi - nama aktivitas Pega tanpa akhiran `_Act` (lihat `aksiHitung`).
+	Aksi string `json:"aksi"`
+	// Param - parameter aktivitas: Data ("Pct"/"Amount"), DiscountType,
+	// Result, Overidding, Action ("PREMIUM"/"CLAIM").
 	Param string `json:"param"`
-}
-
-// langkah - urutan refresh permintaan ini (satu langkah bila Urutan kosong).
-func (r PermintaanHitung) langkah() []LangkahHitung {
-	if len(r.Urutan) > 0 {
-		return r.Urutan
-	}
-	return []LangkahHitung{{Aksi: r.Aksi, Param: r.Param}}
 }
 
 // aksiHalaman, aksiParam, aksiIndeks - tiga bentuk tanda tangan aktivitas Pega
 // yang dipanggil refresh layar: tanpa parameter, dengan Param.<nama> teks,
 // dan dengan Param.Index/idx.
-type aksiFn = func(l *Layanan, ctx context.Context, h *models.Halaman, r PermintaanHitung) error
+type aksiFn = func(l *Layanan, ctx context.Context, h *models.Halaman, param string, indeks int) error
 
 func aksiHalaman(f func(*models.Halaman) error) aksiFn {
-	return func(_ *Layanan, _ context.Context, h *models.Halaman, _ PermintaanHitung) error { return f(h) }
+	return func(_ *Layanan, _ context.Context, h *models.Halaman, _ string, _ int) error { return f(h) }
 }
 
 func aksiParam(f func(*models.Halaman, string) error) aksiFn {
-	return func(_ *Layanan, _ context.Context, h *models.Halaman, r PermintaanHitung) error { return f(h, r.Param) }
+	return func(_ *Layanan, _ context.Context, h *models.Halaman, param string, _ int) error { return f(h, param) }
 }
 
 func aksiIndeks(f func(*models.Halaman, int) error) aksiFn {
-	return func(_ *Layanan, _ context.Context, h *models.Halaman, r PermintaanHitung) error {
-		return f(h, r.Indeks)
+	return func(_ *Layanan, _ context.Context, h *models.Halaman, _ string, indeks int) error {
+		return f(h, indeks)
 	}
 }
 
@@ -176,11 +166,11 @@ var aksiHitung = map[string]aksiFn{
 	"SystemSetOneYear":         aksiHalaman(tanpaGalat(models.SystemSetOneYear)),
 	"RemoveTypeTax":            aksiHalaman(tanpaGalat(models.RemoveTypeTax)),
 	"TreatyEnableDisableInput": aksiHalaman(tanpaGalat(models.TreatyEnableDisableInput)),
-	"FillPaymentInstallment": func(l *Layanan, _ context.Context, h *models.Halaman, _ PermintaanHitung) error {
+	"FillPaymentInstallment": func(l *Layanan, _ context.Context, h *models.Halaman, _ string, _ int) error {
 		return models.FillPaymentInstallment(h, l.jam())
 	},
 	// SetCurrency_act(CURR=.IDCurrency): RDB GetCurrency -> .Currency
-	"SetCurrency": func(l *Layanan, ctx context.Context, h *models.Halaman, _ PermintaanHitung) error {
+	"SetCurrency": func(l *Layanan, ctx context.Context, h *models.Halaman, _ string, _ int) error {
 		nama, err := l.g.NamaMataUang(ctx, h.Ambil(models.HalamanPolis+".IDCurrency"))
 		if err != nil {
 			return err
@@ -189,7 +179,7 @@ var aksiHitung = map[string]aksiFn{
 		return nil
 	},
 	// CheckDataMkt: Obj-Browse marketing officer (dilewati bila MOID kosong)
-	"CheckDataMkt": func(l *Layanan, ctx context.Context, h *models.Halaman, _ PermintaanHitung) error {
+	"CheckDataMkt": func(l *Layanan, ctx context.Context, h *models.Halaman, _ string, _ int) error {
 		var mo models.BarisMO
 		if id := h.Ambil(models.HalamanPolis + ".QuotationData.MOID"); id != "" {
 			var err error
@@ -202,14 +192,16 @@ var aksiHitung = map[string]aksiFn{
 	},
 }
 
-// Hitung menjalankan refresh berhitung (satu, atau `Urutan` action set sel)
-// dan mengembalikan layarnya. Hasil TIDAK disimpan - kecuali `CheckDataMkt`,
-// yang di XML menutup dirinya dengan `Obj-Save pyWorkPage` (langkah 5).
+// Hitung menjalankan action set sel (`Urutan`) dan mengembalikan layarnya.
+// Hasil TIDAK disimpan - kecuali `CheckDataMkt`, yang di XML menutup dirinya
+// dengan `Obj-Save pyWorkPage` (langkah 5).
 func (l *Layanan) Hitung(ctx context.Context, p inti.Pelaku, id string, r PermintaanHitung) (Layar, error) {
-	langkah := r.langkah()
-	fs := make([]aksiFn, len(langkah))
+	if len(r.Urutan) == 0 {
+		return Layar{}, fmt.Errorf("%w: urutan hitung kosong", ErrPermintaanTidakSah)
+	}
+	fs := make([]aksiFn, len(r.Urutan))
 	simpan := false
-	for i, s := range langkah {
+	for i, s := range r.Urutan {
 		f, ada := aksiHitung[s.Aksi]
 		if !ada {
 			return Layar{}, fmt.Errorf("%w: aksi hitung %q", ErrPermintaanTidakSah, s.Aksi)
@@ -224,10 +216,8 @@ func (l *Layanan) Hitung(ctx context.Context, p inti.Pelaku, id string, r Permin
 	if err := l.pasangStsPKP(ctx, h); err != nil {
 		return Layar{}, err
 	}
-	for i, s := range langkah {
-		satu := r
-		satu.Aksi, satu.Param = s.Aksi, s.Param
-		if err := fs[i](l, ctx, h, satu); err != nil {
+	for i, s := range r.Urutan {
+		if err := fs[i](l, ctx, h, s.Param, r.Indeks); err != nil {
 			return Layar{}, err
 		}
 	}

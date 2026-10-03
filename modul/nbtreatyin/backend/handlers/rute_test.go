@@ -95,9 +95,14 @@ func TestAlurHTTP(t *testing.T) {
 		t.Fatalf("validasi: %d %s", w.Code, w.Body)
 	}
 	// aksi hitung karangan -> 400
-	w = minta(t, s, "POST", jalur+"/hitung", "UJI-A", "ReasTreatyInAdmin", map[string]any{"aksi": "UJI-Karangan"})
+	w = minta(t, s, "POST", jalur+"/hitung", "UJI-A", "ReasTreatyInAdmin", map[string]any{"urutan": []map[string]string{{"aksi": "UJI-Karangan"}}})
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("aksi karangan: %d %s", w.Code, w.Body)
+	}
+	// SATU bentuk permintaan hitung: urutan kosong (termasuk bentuk lama aksi/param) -> 400
+	w = minta(t, s, "POST", jalur+"/hitung", "UJI-A", "ReasTreatyInAdmin", map[string]any{"aksi": "CountNetPremi"})
+	if w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), "urutan hitung kosong") {
+		t.Fatalf("tanpa urutan: %d %s", w.Code, w.Body)
 	}
 	// pilih bisnis atas kontrak yang tidak ada -> 422 (AC 37: galat ditampilkan)
 	w = minta(t, s, "POST", jalur+"/pilih-bisnis", "UJI-A", "ReasTreatyInAdmin", map[string]any{"idDetail": "UJI-X"})
