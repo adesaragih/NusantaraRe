@@ -158,8 +158,8 @@ var TabelGeneralPolis = Tabel{Nama: "T_GENERAL_POLIS", Kolom: []Kolom{
 	// (CountNetPremi_act langkah 4), dibagi 1,022 (SetPPNPPH langkah 4), label
 	// layar `pxCurrency`. Golongan simpan mengikuti WO; rumusnya diport apa
 	// adanya (AC 79). Dicatat di HASIL-IMPLEMENTASI bab 4 dan tiket 07.
-	kPersen(pt+"Deduction1", "DEDUCTION1"),
-	kPersen(pt+"Deduction2", "DEDUCTION2"),
+	kUang(pt+"Deduction1", "DEDUCTION1"), // K3 (03-10-2026): uang seperti XML (pxCurrency; CountNetPremi_act 4) - menggantikan P29 di atas, tiket 07
+	kUang(pt+"Deduction2", "DEDUCTION2"), // K3 (03-10-2026): uang seperti XML (pxCurrency; CountNetPremi_act 4) - menggantikan P29 di atas, tiket 07
 	kUang(pt+"BrokerageFee", "BROKERAGE_FEE"),
 	kUang(pt+"BrokerageFeeSebenarnya", "BROKERAGE_FEE_SEBENARNYA"),
 	kUang(pt+"PPHValue", "PPH_VALUE"),
