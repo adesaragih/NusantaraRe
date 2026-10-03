@@ -14,6 +14,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"nusantarare/inti/backend/db"
 	"nusantarare/modul/marketingofficer/backend/models"
@@ -21,7 +22,10 @@ import (
 
 // Objek Oracle modul ini.
 const (
-	TabelMO     = "MARKETINGOFFICER"
+	TabelMO = "MARKETINGOFFICER"
+	// TabelLog - log perubahan warisan; trigger `TRG_MARKETINGOFFICER_LOG` menyisipkan baris LAMA setiap UPDATE.
+	// Migrasi modul 760 menambah `LOG_TIME` (default SYSTIMESTAMP) dan `AKSES_LOGIN`.
+	TabelLog    = "MARKETINGOFFICER_LOG"
 	TabelLogin  = "M_LOGIN_GO"
 	TabelCabang = "BRANCH"
 	// SeqMO - sequence yang dipakai `PEGA_MARKETINGOFFICER` (bukan `MARKETINGOFFICER_SEQ`).
@@ -30,7 +34,7 @@ const (
 
 // DaftarTabelDitulis dan DaftarTabelDibacaSaja - penjaga modul.
 var (
-	DaftarTabelDitulis    = []string{TabelMO}
+	DaftarTabelDitulis    = []string{TabelMO, TabelLog}
 	DaftarTabelDibacaSaja = []string{TabelLogin, TabelCabang}
 )
 
@@ -39,6 +43,8 @@ var (
 	ErrTidakAda = errors.New("repository: row not found")
 	// ErrNomorMelampaui - nomor CURRENCY_SEQ tidak muat di 7 digit; ID tidak boleh dipotong seperti LPAD Pega.
 	ErrNomorMelampaui = errors.New("repository: CURRENCY_SEQ exceeds 7 digits; the marketing officer ID cannot be formed")
+	// ErrLogBelumDimigrasi - kolom LOG_TIME/AKSES_LOGIN MARKETINGOFFICER_LOG belum ada: migrasi 760 belum dijalankan.
+	ErrLogBelumDimigrasi = errors.New("repository: MARKETINGOFFICER_LOG has not been fixed yet - migration 760 has not run")
 )
 
 // Gudang membaca dan menulis Oracle.
@@ -373,4 +379,83 @@ func (g *Gudang) AmbilCabang(ctx context.Context, tx *db.Tx, id string) (models.
 		return models.Cabang{}, err
 	}
 	return satu(ctx, g.dari(tx), sqlAmbilCabang(t), pindaiCabang, id)
+}
+
+// kolomLog - urutan kolom SELECT log (`pindaiLog`): 14 kolom baris MO, lalu ACTION dan LOG_TIME.
+const kolomLog = `ID, CLIENTID, CLIENTNAME, CLIENTID2, MOLEADER, MOSTATUS, BRANCHPARENT, BRANCHDETAILID,
+	BRANCHDETAILNAME, TEAMGROUP, BRANCHSTATUS, AKSES_LOGIN, USERUPDATE, TO_CHAR(TANGGAL, 'YYYY-MM-DD HH24:MI'),
+	ACTION, TO_CHAR(LOG_TIME, 'YYYY-MM-DD HH24:MI:SS')`
+
+// kolomLogLama - sebelum migrasi 760: AKSES_LOGIN dan LOG_TIME belum ada (dibaca NULL).
+const kolomLogLama = `ID, CLIENTID, CLIENTNAME, CLIENTID2, MOLEADER, MOSTATUS, BRANCHPARENT, BRANCHDETAILID,
+	BRANCHDETAILNAME, TEAMGROUP, BRANCHSTATUS, NULL, USERUPDATE, TO_CHAR(TANGGAL, 'YYYY-MM-DD HH24:MI'), ACTION, NULL`
+
+// sqlLogMO - log satu MO, TERTUA lebih dulu: LOG_TIME (kosong = baris lama, lebih dulu), lalu TANGGAL, lalu ROWID.
+// Untuk baris lama tanpa LOG_TIME urutannya perkiraan.
+func sqlLogMO(t string) string {
+	return fmt.Sprintf(`SELECT %s FROM %s WHERE ID = :1 ORDER BY LOG_TIME NULLS FIRST, TANGGAL NULLS FIRST, ROWID`, kolomLog, t)
+}
+
+func sqlLogMOLama(t string) string {
+	return fmt.Sprintf(`SELECT %s FROM %s WHERE ID = :1 ORDER BY TANGGAL NULLS FIRST, ROWID`, kolomLogLama, t)
+}
+
+// sqlTandaiLog - baris log yang BARU disisipkan trigger untuk UPDATE ini (LOG_TIME terbesar ID itu, belum bertanda)
+// mendapat AKSES_LOGIN lama dan tanda ACTION. :3 dan :4 sama-sama ID (go-ora mengikat menurut urutan placeholder).
+func sqlTandaiLog(t string) string {
+	return fmt.Sprintf(`UPDATE %s SET ACTION = :1, AKSES_LOGIN = :2
+	  WHERE ID = :3 AND ACTION IS NULL AND LOG_TIME = (SELECT MAX(LOG_TIME) FROM %s WHERE ID = :4)`, t, t)
+}
+
+func pindaiLog(p pemindai) (models.BarisLog, error) {
+	var v [16]sql.NullString
+	tujuan := make([]any, len(v))
+	for i := range v {
+		tujuan[i] = &v[i]
+	}
+	if err := p.Scan(tujuan...); err != nil {
+		return models.BarisLog{}, err
+	}
+	return models.BarisLog{MarketingOfficer: models.MarketingOfficer{ID: v[0].String, ClientID: v[1].String,
+		ClientName: v[2].String, ClientID2: v[3].String, MOLeader: v[4].String, MOStatus: v[5].String,
+		BranchParent: v[6].String, BranchDetailID: v[7].String, BranchDetailName: v[8].String, TeamGroup: v[9].String,
+		BranchStatus: v[10].String, AksesLogin: v[11].String, UserUpdate: v[12].String, Tanggal: v[13].String},
+		Aksi: v[14].String, LogTime: v[15].String}, nil
+}
+
+// kolomBelumAda - ORA-00904: kolom migrasi 760 belum ada.
+func kolomBelumAda(err error) bool { return err != nil && strings.Contains(err.Error(), "ORA-00904") }
+
+// LogMO membaca log satu MO, tertua lebih dulu. Sebelum migrasi 760 dibaca tanpa LOG_TIME dan AKSES_LOGIN.
+func (g *Gudang) LogMO(ctx context.Context, id string) ([]models.BarisLog, error) {
+	t, err := g.nama(TabelLog)
+	if err != nil {
+		return nil, err
+	}
+	d, err := daftar(ctx, g.db, sqlLogMO(t), pindaiLog, id)
+	if kolomBelumAda(err) {
+		return daftar(ctx, g.db, sqlLogMOLama(t), pindaiLog, id)
+	}
+	return d, err
+}
+
+// TandaiLog mengisi AKSES_LOGIN lama dan tanda `UPDATE-GO` pada baris log UPDATE yang baru saja terjadi - di
+// transaksi yang sama. Nol baris (trigger tidak menulis) bukan galat; sebelum migrasi 760 = ErrLogBelumDimigrasi.
+func (g *Gudang) TandaiLog(ctx context.Context, tx *db.Tx, id, aksesLama string) error {
+	t, err := g.nama(TabelLog)
+	if err != nil {
+		return err
+	}
+	q := sqlTandaiLog(t)
+	if err := db.PeriksaSQL(q); err != nil {
+		return err
+	}
+	_, err = g.dari(tx).ExecContext(ctx, q, models.AksiGo, db.KosongJadiNil(aksesLama), id, id)
+	if kolomBelumAda(err) {
+		return ErrLogBelumDimigrasi
+	}
+	if err != nil {
+		return fmt.Errorf("repository: menandai log MO: %w", err)
+	}
+	return nil
 }

@@ -6,6 +6,7 @@ package tiruan
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -23,6 +24,11 @@ type Gudang struct {
 	Nomor int64
 	// Disisip dan Diperbarui - jejak tulisan untuk asersi uji.
 	Disisip, Diperbarui []models.MarketingOfficer
+	// Log - MARKETINGOFFICER_LOG per ID, tertua dulu; PerbaruiMO menirukan trigger warisan (baris LAMA, LOG_TIME
+	// berurutan, ACTION kosong).
+	Log map[string][]models.BarisLog
+	// detik - pencacah LOG_TIME tiruan.
+	detik int
 }
 
 // Baru menyusun gudang kosong.
@@ -82,6 +88,14 @@ func (g *Gudang) PerbaruiMO(_ context.Context, _ *db.Tx, m models.MarketingOffic
 		return repository.ErrTidakAda
 	}
 	m.ClientID, m.ClientName, m.BranchStatus, m.Tanggal = lama.ClientID, lama.ClientName, lama.BranchStatus, "2026-10-03 10:00"
+	// Trigger warisan: baris LAMA tanpa AKSES_LOGIN; LOG_TIME default (migrasi 760).
+	if g.Log == nil {
+		g.Log = map[string][]models.BarisLog{}
+	}
+	g.detik++
+	jejak := lama
+	jejak.AksesLogin = ""
+	g.Log[m.ID] = append(g.Log[m.ID], models.BarisLog{MarketingOfficer: jejak, LogTime: fmt.Sprintf("2026-10-03 10:00:%02d", g.detik)})
 	g.MO[m.ID] = m
 	g.Diperbarui = append(g.Diperbarui, m)
 	return nil
@@ -96,6 +110,20 @@ func (g *Gudang) aktifBila(cocok func(models.MarketingOfficer) bool, kecuali str
 	}
 	sort.Strings(out)
 	return out
+}
+
+// LogMO - log satu MO, tertua dulu.
+func (g *Gudang) LogMO(_ context.Context, id string) ([]models.BarisLog, error) {
+	return append([]models.BarisLog{}, g.Log[id]...), nil
+}
+
+// TandaiLog - seperti SQL: baris log terakhir yang belum bertanda.
+func (g *Gudang) TandaiLog(_ context.Context, _ *db.Tx, id, aksesLama string) error {
+	d := g.Log[id]
+	if n := len(d); n > 0 && d[n-1].Aksi == "" && d[n-1].LogTime != "" {
+		d[n-1].Aksi, d[n-1].AksesLogin = models.AksiGo, aksesLama
+	}
+	return nil
 }
 
 // AktifDenganClientID - baris aktif lain ber-Marketing Code itu.

@@ -54,6 +54,10 @@ type Gudang interface {
 	AmbilAkun(ctx context.Context, tx *dbTx, login string) (models.Akun, error)
 	DaftarCabang(ctx context.Context) ([]models.Cabang, error)
 	AmbilCabang(ctx context.Context, tx *dbTx, id string) (models.Cabang, error)
+	// LogMO - MARKETINGOFFICER_LOG satu MO, tertua lebih dulu.
+	LogMO(ctx context.Context, id string) ([]models.BarisLog, error)
+	// TandaiLog - AKSES_LOGIN lama + tanda UPDATE-GO pada baris log UPDATE yang baru terjadi (transaksi sama).
+	TandaiLog(ctx context.Context, tx *dbTx, id, aksesLama string) error
 }
 
 // Layanan memegang seluruh aturan modul ini di atas satu Gudang.
@@ -426,6 +430,11 @@ func (l *Layanan) Ubah(ctx context.Context, p inti.Pelaku, id string, isi models
 		if err := l.gudang.PerbaruiMO(ctx, tx, m); errors.Is(err, repository.ErrTidakAda) {
 			return ErrTidakAda
 		} else if err != nil {
+			return err
+		}
+		// Log perubahan (migrasi 760): trigger warisan sudah menyisipkan baris lama; AKSES_LOGIN lamanya diisi di
+		// sini. Sebelum 760 dijalankan simpan tetap berhasil - log saja yang tanpa Login Account.
+		if err := l.gudang.TandaiLog(ctx, tx, id, lama.AksesLogin); err != nil && !errors.Is(err, repository.ErrLogBelumDimigrasi) {
 			return err
 		}
 		hasil, err = l.gudang.AmbilMO(ctx, tx, id)

@@ -41,6 +41,30 @@ Tabel warisan Pega, **tanpa PK, unique, maupun FK** (DEV: 74 baris, 5 index non-
 | `USERUPDATE` | VARCHAR2(100) | ya | | jejak | `LOGIN_ID` pelaku |
 | `AKSES_LOGIN` | VARCHAR2(50) | ya | | email polis (Pega `SendEmailPolicy`) | `M_LOGIN_GO.LOGIN_ID`; akun > 50 karakter ditolak. Nilai lama Pega yang tidak ada di `M_LOGIN_GO` dibiarkan dan ditandai di layar |
 
+## MARKETINGOFFICER_LOG
+
+Log perubahan MO: trigger warisan `TRG_MARKETINGOFFICER_LOG` menyisipkan baris LAMA `MARKETINGOFFICER` setiap UPDATE
+(juga dari Pega). Tidak dibaca XML Pega mana pun. **Diperbaiki migrasi `760_marketingofficer_log.sql`** (izin work
+owner 03-10-2026: *"kamu boleh perbaiki MARKETINGOFFICER_LOG jika dibutuhkan"*): dua kolom di bawah ditambahkan;
+**trigger tidak disentuh**. Tabel di bab ini = kolom yang DIBUAT migrasi modul ini saja
+(`TestKolomDDLCocokDenganStruktur`); kolom warisan di bab berikutnya.
+
+| Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
+| --- | --- | --- | --- | --- | --- |
+| `LOG_TIME` | TIMESTAMP(6) | ya | | urutan dan waktu log perubahan | ditambah TANPA default (baris lama tetap kosong, ditandai "urutan perkiraan"), lalu `DEFAULT SYSTIMESTAMP` — setiap baris yang trigger sisipkan sesudahnya, juga dari Pega, bercap waktu |
+| `AKSES_LOGIN` | VARCHAR2(50) | ya | | pergantian Login Account di log | AKSES_LOGIN LAMA, diisi aplikasi Go pada baris log yang baru disisipkan trigger di transaksi UPDATE yang sama, bertanda `ACTION` = `UPDATE-GO`; baris tanpa tanda itu = tidak diketahui |
+
+### Kolom warisan MARKETINGOFFICER_LOG (tidak dibuat migrasi mana pun)
+
+DEV 03-10-2026: 35 baris untuk 29 MO, tanpa PK atau index; `ACTION` selalu kosong (trigger tidak mengisinya);
+`TANGGAL` hanya 3 terisi. Urutan baca log: `LOG_TIME` (kosong lebih dulu), lalu `TANGGAL` (kosong lebih dulu), lalu
+`ROWID` — untuk baris lama urutannya perkiraan.
+
+| Kolom | Tipe | Isi |
+| --- | --- | --- |
+| `ACTION` | VARCHAR2(10) | kosong (trigger, Pega, baris lama); `UPDATE-GO` = baris log perubahan lewat aplikasi Go, `AKSES_LOGIN`-nya sah |
+| `ID` … `BRANCHDETAILNAME` | sama dengan `MARKETINGOFFICER` tanpa `AKSES_LOGIN` | nilai LAMA baris itu |
+
 ## BRANCH
 
 Dibaca saja, hanya kolom di bawah. Tabel fisik kelas Pega `ASM-FW-GISFW-Int-BRANCHDETAIL` **tidak tercatat di XML**;

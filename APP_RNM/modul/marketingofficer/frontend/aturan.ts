@@ -1,14 +1,15 @@
 // Aturan layar Marketing Officer - fungsi murni, diuji tanpa DOM. Aturan sebenarnya dijaga backend
 // (`backend/services`); yang di sini hanya mencegah kiriman yang pasti ditolak dan menyusun tampilan.
 
-import type { BarisMO, Cabang, Isian, MarketingOfficer, OpsiLeader, Pilihan } from './api'
+import type { BarisMO, Cabang, Isian, MarketingOfficer, OpsiLeader, Pilihan, RuasBerubah } from './api'
 import { MO } from './labels'
 
 /** `CLIENTID2` baris leader. */
 export const NILAI_LEADER = 'LEADER'
 
-export function isianKosong(): Isian {
-  return { aksesLogin: '', leader: false, leaderId: '', branchParent: '', branchDetailId: '', aktif: true }
+/** Isian tambah; `leaderId` terisi = tambah anggota dari halaman anggota leader itu. */
+export function isianKosong(leaderId = ''): Isian {
+  return { aksesLogin: '', leader: false, leaderId, branchParent: '', branchDetailId: '', aktif: true }
 }
 
 /** Isian form ubah dari baris tersimpan. */
@@ -80,4 +81,51 @@ export function tandaAkun(b: Pick<BarisMO, 'statusAkun'>): string {
     default:
       return ''
   }
+}
+
+/** Satu leader di halaman depan beserta anggotanya (`CLIENTID2` = ID leader). */
+export interface KelompokLeader {
+  leader: BarisMO
+  anggota: BarisMO[]
+  aktif: number
+}
+
+/**
+ * Halaman depan: setiap baris leader (`CLIENTID2` = LEADER) beserta anggotanya; baris bukan leader yang `CLIENTID2`-nya
+ * kosong atau tidak menunjuk baris leader masuk `tanpaLeader`. Urutan mengikuti daftar dari backend.
+ */
+export function kelompokLeader(d: readonly BarisMO[]): { leader: KelompokLeader[]; tanpaLeader: BarisMO[] } {
+  const leader = d.filter((b) => b.clientId2 === NILAI_LEADER).map((l) => ({ leader: l, anggota: [] as BarisMO[], aktif: 0 }))
+  const peta = new Map(leader.map((k) => [k.leader.id, k]))
+  const tanpaLeader: BarisMO[] = []
+  for (const b of d) {
+    if (b.clientId2 === NILAI_LEADER) continue
+    const k = peta.get(b.clientId2)
+    if (k === undefined) {
+      tanpaLeader.push(b)
+      continue
+    }
+    k.anggota.push(b)
+    if (b.moStatus === '1') k.aktif++
+  }
+  return { leader, tanpaLeader }
+}
+
+/** Saring kelompok leader: status dan kata atas baris leadernya. */
+export function saringLeader(k: readonly KelompokLeader[], kueri: string, s: Saringan): KelompokLeader[] {
+  const lolos = new Set(saring(k.map((x) => x.leader), kueri, s).map((b) => b.id))
+  return k.filter((x) => lolos.has(x.leader.id))
+}
+
+/** Nilai satu kolom di log, terbaca: MOSTATUS Active/Inactive, CLIENTID2 LEADER, kosong. */
+export function teksNilaiLog(kolom: string, nilai: string): string {
+  if (nilai === '') return MO.kosongNilai
+  if (kolom === 'MOSTATUS') return nilai === '1' ? MO.aktif : nilai === '2' ? MO.nonaktif : nilai
+  if (kolom === 'CLIENTID2' && nilai === NILAI_LEADER) return MO.adalahLeader
+  return nilai
+}
+
+/** Label kolom di log; kolom tak dikenal tampil apa adanya. */
+export function labelRuas(r: Pick<RuasBerubah, 'kolom'>): string {
+  return MO.ruas[r.kolom] ?? r.kolom
 }

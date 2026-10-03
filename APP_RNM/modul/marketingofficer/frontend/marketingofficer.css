@@ -1,17 +1,129 @@
 /* Gaya modul Marketing Officer - SETIAP pemilih di bawah akar .marketingofficer (gaya.test.ts, cssmodul.guard).
-   Tanpa filter/transform/backdrop-filter: Modal tanpa portal akan terperangkap. */
+   Tampilan SAMA dengan Kelola User (permintaan work owner 03-10-2026 "tampilan sama dengan menu kelola user"):
+   neumorfisme rapi di atas alas #eef1f6, aksen navy, tombol utama merah bergradasi, status sebagai chip bertinta.
+   Nilainya disalin dari tema `.kelola-user` inti ke token `--mo-*` milik modul ini - TIDAK menumpang ke kelas inti
+   (keputusan work owner: CSS per modul tidak lagi menumpang di inti).
+   TANPA backdrop-filter, filter, atau transform: Modal tanpa portal akan terperangkap. */
 
 .marketingofficer {
   display: contents;
 }
 
+.marketingofficer .marketingofficer__akar {
+  --mo-latar: #eef1f6;
+  --mo-latar-tepi: #cfd7e5;
+  --mo-latar-atas: #f9fafd;
+  --mo-latar-bawah: #e4e9f3;
+  --mo-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --mo-lembut: #e9edf3;
+  --mo-lembut-tepi: #dde3ec;
+  --mo-teks: #101828;
+  --mo-teks-redup: #4f586b;
+  --mo-aksen: var(--primary-tanda);
+  --mo-aksen-teks: #2339a3;
+  --mo-aksen-lembut: #e3e8f6;
+  --mo-aksen-garis: #b9c5ee;
+  --mo-kepala-tabel: #dde4f2;
+  --mo-kepala-teks: #22326b;
+  --mo-kepala-garis: #c3cde2;
+  --mo-isi: #ffffff;
+  --mo-baris-hover: #e6ecfa;
+  --mo-garis: #e1e6ef;
+  --mo-tepi: #c8d1e1;
+  --mo-tombol: #d63a42;
+  --mo-tombol-ujung: #bf2f37;
+  --mo-tombol-hover: #c2333b;
+  --mo-tombol-hover-ujung: #a9282f;
+  --mo-terang: rgba(255, 255, 255, 0.92);
+  --mo-gelap: rgba(163, 177, 198, 0.55);
+  --mo-kilau: rgba(255, 255, 255, 0.7);
+  --mo-timbul: 8px 8px 18px var(--mo-gelap), -8px -8px 18px var(--mo-terang);
+  --mo-timbul-kecil: 4px 4px 9px var(--mo-gelap), -4px -4px 9px var(--mo-terang);
+  --mo-cekung-kecil: inset 2px 2px 4px var(--mo-gelap), inset -2px -2px 4px var(--mo-terang);
+  --mo-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --mo-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--mo-terang);
+  --mo-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --mo-sukses-latar: #e6f7ee;
+  --mo-sukses-tepi: #b7e8cc;
+  --mo-sukses-teks: #067647;
+  --mo-netral-latar: #e9edf3;
+  --mo-netral-tepi: #d5dce7;
+  --mo-netral-teks: #475467;
+  --mo-waspada-latar: #fbf3df;
+  --mo-waspada-tepi: #f1d58a;
+  --mo-waspada-teks: #a3410a;
+  --text-3: var(--mo-teks-redup);
+  color: var(--mo-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--mo-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--mo-latar-atas) 0%, var(--mo-latar-bawah) 100%);
+  box-shadow: var(--mo-bayang-akar);
+}
+
+:root[data-theme="dark"] .marketingofficer .marketingofficer__akar {
+  --mo-latar: #1b2130;
+  --mo-latar-tepi: #323b50;
+  --mo-latar-atas: #222a3b;
+  --mo-latar-bawah: #161b27;
+  --mo-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --mo-lembut: #181d2a;
+  --mo-lembut-tepi: #242b3a;
+  --mo-teks: #eef0f6;
+  --mo-teks-redup: #aab2c4;
+  --mo-aksen-teks: #aebcff;
+  --mo-aksen-lembut: #222b45;
+  --mo-aksen-garis: #3a4b8f;
+  --mo-kepala-tabel: #273152;
+  --mo-kepala-teks: #dbe2ff;
+  --mo-kepala-garis: #3a4670;
+  --mo-isi: #1f2638;
+  --mo-baris-hover: #2b3554;
+  --mo-garis: #2c3447;
+  --mo-tepi: #3a4459;
+  --mo-terang: rgba(255, 255, 255, 0.045);
+  --mo-gelap: rgba(0, 0, 0, 0.55);
+  --mo-kilau: rgba(255, 255, 255, 0.04);
+  --mo-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --mo-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--mo-terang);
+  --mo-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --mo-sukses-latar: #0d2a1f;
+  --mo-sukses-tepi: #1d5c40;
+  --mo-sukses-teks: #75e0a7;
+  --mo-netral-latar: #1f2533;
+  --mo-netral-tepi: #333c4f;
+  --mo-netral-teks: #c3cad8;
+  --mo-waspada-latar: #2b2112;
+  --mo-waspada-tepi: #6b4d17;
+  --mo-waspada-teks: #fec84b;
+}
+
+/* Judul dan teks redup. */
+.marketingofficer .inbox__judul,
+.marketingofficer .modal__title {
+  color: var(--mo-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.marketingofficer .muted {
+  color: var(--mo-teks-redup);
+}
+
+.marketingofficer :focus-visible {
+  outline: 2px solid var(--mo-aksen);
+  outline-offset: 2px;
+}
+
 .marketingofficer .marketingofficer__sub {
-  margin: 0 0 12px;
+  margin: -4px 0 14px;
 }
 
 .marketingofficer .marketingofficer__cari {
-  flex: 1 1 280px;
-  max-width: 440px;
+  width: min(360px, 100%);
 }
 
 .marketingofficer .marketingofficer__saring {
@@ -19,39 +131,285 @@
   gap: 4px;
 }
 
+.marketingofficer .marketingofficer__kembali {
+  margin-right: 10px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.marketingofficer .field__input {
+  background: var(--mo-isi);
+  border: 1px solid var(--mo-tepi);
+  border-radius: 12px;
+  box-shadow: var(--mo-cekung-kecil);
+  color: var(--mo-teks);
+}
+
+.marketingofficer .field__input:hover:not(:disabled) {
+  border-color: var(--mo-aksen-garis);
+}
+
+.marketingofficer .field__input:focus {
+  border-color: var(--mo-aksen);
+  box-shadow: var(--mo-cekung-kecil), var(--mo-cincin);
+  outline: none;
+}
+
+.marketingofficer .field__input--readonly,
+.marketingofficer .field__input--readonly:hover {
+  background: var(--mo-lembut);
+  border-color: var(--mo-lembut-tepi);
+  color: var(--mo-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.marketingofficer .btn {
+  border-radius: 999px;
+}
+
+.marketingofficer .btn--primary {
+  background: linear-gradient(180deg, var(--mo-tombol), var(--mo-tombol-ujung));
+  border-color: var(--mo-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--mo-bayang-tombol);
+}
+
+.marketingofficer .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--mo-tombol-hover), var(--mo-tombol-hover-ujung));
+  border-color: var(--mo-tombol-hover-ujung);
+}
+
+.marketingofficer .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.marketingofficer .btn--ghost {
+  background: var(--mo-isi);
+  border: 1px solid var(--mo-tepi);
+  color: var(--mo-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--mo-timbul-kecil);
+}
+
+.marketingofficer .btn--ghost:hover:not(:disabled) {
+  background: var(--mo-aksen-lembut);
+  border-color: var(--mo-aksen-garis);
+  color: var(--mo-aksen-teks);
+}
+
+.marketingofficer .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--mo-cekung-kecil);
+}
+
+.marketingofficer .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.marketingofficer .modal {
+  background: var(--mo-latar);
+  border: 1px solid var(--mo-kilau);
+  border-radius: 22px;
+  box-shadow: var(--mo-bayang-popup);
+}
+
+.marketingofficer .modal__head,
+.marketingofficer .modal__actions {
+  border-color: var(--mo-garis);
+}
+
+.marketingofficer .alert {
+  border-radius: 12px;
+}
+
+/* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
 .marketingofficer .marketingofficer__tabel {
-  overflow-x: auto;
+  background: var(--mo-isi);
+  border: 1px solid var(--mo-tepi);
+  border-radius: 18px;
+  box-shadow: var(--mo-timbul);
+}
+
+.marketingofficer .marketingofficer__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.marketingofficer .marketingofficer__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.marketingofficer .marketingofficer__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.marketingofficer .marketingofficer__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.marketingofficer .marketingofficer__tabel thead th {
+  background: var(--mo-kepala-tabel);
+  color: var(--mo-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--mo-kepala-garis);
+}
+
+.marketingofficer .marketingofficer__tabel td {
+  color: var(--mo-teks);
+  background: var(--mo-isi);
+  border-bottom-color: var(--mo-garis);
+}
+
+.marketingofficer .marketingofficer__tabel tbody tr:nth-child(even),
+.marketingofficer .marketingofficer__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.marketingofficer .marketingofficer__tabel tbody tr:nth-child(even) > td {
+  background: var(--mo-lembut);
+}
+
+.marketingofficer .marketingofficer__tabel tbody tr:hover > td {
+  background: var(--mo-baris-hover);
 }
 
 .marketingofficer .marketingofficer__kecil {
   display: block;
-  font-size: 12px;
+  font-size: var(--fs-xs);
 }
 
+.marketingofficer .marketingofficer__aksi {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+/* Status: chip bertinta warna statusnya, timbul tipis, bertitik. */
+.marketingofficer .marketingofficer__status {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.marketingofficer .marketingofficer__status .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 8px;
+  border: 1px solid transparent;
+  letter-spacing: 0.4px;
+  box-shadow: 2px 2px 5px var(--mo-gelap), -2px -2px 5px var(--mo-terang);
+}
+
+.marketingofficer .marketingofficer__status .badge::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.marketingofficer .marketingofficer__badge--aktif {
+  background: var(--mo-sukses-latar);
+  border-color: var(--mo-sukses-tepi);
+  color: var(--mo-sukses-teks);
+}
+
+.marketingofficer .marketingofficer__badge--nonaktif {
+  background: var(--mo-netral-latar);
+  border-color: var(--mo-netral-tepi);
+  color: var(--mo-netral-teks);
+}
+
+/* Tanda akun dan log perkiraan: chip waspada. */
 .marketingofficer .marketingofficer__tanda {
   display: inline-block;
   margin-left: 6px;
   padding: 1px 8px;
+  border: 1px solid var(--mo-waspada-tepi);
   border-radius: 999px;
-  font-size: 11px;
+  font-size: var(--fs-2xs);
   font-weight: 600;
-  color: #7a4b00;
-  background: #fff1cc;
+  color: var(--mo-waspada-teks);
+  background: var(--mo-waspada-latar);
 }
 
-:root[data-theme="dark"] .marketingofficer .marketingofficer__tanda {
-  color: #ffd98a;
-  background: #4a3a12;
-}
-
+/* Form: kotak centang TIMBUL KE DALAM. */
 .marketingofficer .marketingofficer__centang {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   min-height: 38px;
+  padding: 6px 12px;
+  border: 1px solid var(--mo-tepi);
+  border-radius: 16px;
+  background: var(--mo-isi);
+  box-shadow: var(--mo-cekung-kecil);
+}
+
+.marketingofficer .marketingofficer__centang input {
+  accent-color: var(--mo-aksen);
 }
 
 .marketingofficer .marketingofficer__catatan {
   margin: 4px 0 0;
-  font-size: 12px;
+  font-size: var(--fs-xs);
+}
+
+/* Log perubahan: setiap UPDATE satu kartu putih timbul tipis, terbaru di atas. */
+.marketingofficer .marketingofficer__log {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marketingofficer .marketingofficer__log-butir {
+  padding: 10px 14px;
+  border: 1px solid var(--mo-tepi);
+  border-radius: 14px;
+  background: var(--mo-isi);
+  box-shadow: var(--mo-timbul-kecil);
+}
+
+.marketingofficer .marketingofficer__log-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.marketingofficer .marketingofficer__log-tabel {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-xs);
+}
+
+.marketingofficer .marketingofficer__log-tabel th,
+.marketingofficer .marketingofficer__log-tabel td {
+  padding: 3px 8px 3px 0;
+  text-align: left;
+  vertical-align: top;
+  border-top: 1px solid var(--mo-garis);
+}
+
+.marketingofficer .marketingofficer__log-tabel th {
+  width: 160px;
+  color: var(--mo-teks-redup);
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .marketingofficer .marketingofficer__akar {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .marketingofficer .marketingofficer__tabel {
+    box-shadow: var(--mo-timbul-kecil);
+  }
 }

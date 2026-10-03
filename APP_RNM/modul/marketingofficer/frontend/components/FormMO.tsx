@@ -13,18 +13,21 @@ const tetap = () => undefined
 
 export default function FormMO({
   baris,
+  leaderAwal = '',
   onTutup,
   onTersimpan,
 }: {
   /** `null` = tambah. */
   baris: BarisMO | null
+  /** Tambah anggota dari halaman anggota seorang leader: leadernya terisi. */
+  leaderAwal?: string
   onTutup: () => void
   onTersimpan: (m: MarketingOfficer) => void
 }) {
   const baru = baris === null
   const [pilihan, setPilihan] = useState<Pilihan | null>(null)
   const [galatMuat, setGalatMuat] = useState<unknown>(null)
-  const [isi, setIsi] = useState<Isian>(() => (baris === null ? isianKosong() : isianDari(baris)))
+  const [isi, setIsi] = useState<Isian>(() => (baris === null ? isianKosong(leaderAwal) : isianDari(baris)))
   const [galatLokal, setGalatLokal] = useState<string | null>(null)
   const [galatSimpan, setGalatSimpan] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(false)

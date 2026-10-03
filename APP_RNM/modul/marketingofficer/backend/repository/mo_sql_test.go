@@ -97,3 +97,24 @@ func TestSemuaSQLBerskemaTanpaCommit(t *testing.T) {
 		t.Errorf("cabang aktif saja (BrowseBranchDetail_RD .Status = 1): %s", q)
 	}
 }
+
+// Log: tertua dulu (LOG_TIME kosong lebih dulu, lalu TANGGAL, lalu ROWID); jalur sebelum migrasi 760 tanpa kedua
+// kolom barunya; penanda hanya baris terakhir yang belum bertanda.
+func TestSQLLogMO(t *testing.T) {
+	if q := satuBaris(sqlLogMO("S.MARKETINGOFFICER_LOG")); !strings.HasSuffix(q, "WHERE ID = :1 ORDER BY LOG_TIME NULLS FIRST, TANGGAL NULLS FIRST, ROWID") ||
+		!strings.Contains(q, "ACTION, TO_CHAR(LOG_TIME, 'YYYY-MM-DD HH24:MI:SS') FROM") {
+		t.Errorf("log: %s", q)
+	}
+	if q := satuBaris(sqlLogMOLama("T")); strings.Contains(q, "LOG_TIME") || strings.Contains(q, "AKSES_LOGIN") {
+		t.Errorf("log lama menyebut kolom 760: %s", q)
+	}
+	q := satuBaris(sqlTandaiLog("T"))
+	if q != "UPDATE T SET ACTION = :1, AKSES_LOGIN = :2 WHERE ID = :3 AND ACTION IS NULL AND LOG_TIME = (SELECT MAX(LOG_TIME) FROM T WHERE ID = :4)" {
+		t.Errorf("tandai log: %s", q)
+	}
+	for _, s := range []string{sqlLogMO("S.T"), sqlLogMOLama("S.T"), sqlTandaiLog("S.T")} {
+		if err := db.PeriksaSQL(s); err != nil {
+			t.Error(err)
+		}
+	}
+}

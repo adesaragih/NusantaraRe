@@ -7,6 +7,7 @@
 //	GET  /api/marketing-officer/pilihan   pilihan form: akun aktif, leader aktif, Branch, Sub Branch
 //	POST /api/marketing-officer           tambah (INSERT)
 //	PUT  /api/marketing-officer/{id}      ubah (UPDATE) - nol hapus: nonaktif = MOSTATUS 2
+//	GET  /api/marketing-officer/{id}/log  log perubahan dari MARKETINGOFFICER_LOG, terbaru dulu
 package handlers
 
 import (
@@ -73,6 +74,13 @@ func daftarkan(mux *http.ServeMux, layanan func() *services.Layanan, adaDB func(
 			return
 		}
 		galat.TulisJSON(w, p)
+	})
+	pasang("GET "+Prefix+"/{id}/log", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, _ inti.Pelaku) {
+		riw, err := l.Riwayat(r.Context(), r.PathValue("id"))
+		if jawabGalat(w, err, "membaca log perubahan") {
+			return
+		}
+		galat.TulisJSON(w, riw)
 	})
 	pasang("POST "+Prefix, func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		var isi models.Isian

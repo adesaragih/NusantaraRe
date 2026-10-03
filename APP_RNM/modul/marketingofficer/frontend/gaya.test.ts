@@ -8,6 +8,8 @@ import { describe, expect, it } from 'vitest'
 
 const AKAR = __dirname
 const CSS = readFileSync(join(AKAR, 'marketingofficer.css'), 'utf8')
+/** CSS tanpa komentar - komentar boleh menyebut kelas inti atau properti terlarang sebagai penjelasan. */
+const ATURAN = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
 
 function berkas(dir: string, akhiran: string): string[] {
   return readdirSync(dir).flatMap((n) => {
@@ -27,8 +29,10 @@ describe('gaya modul Marketing Officer', () => {
   })
 
   it('SETIAP pemilih di bawah akar .marketingofficer - nol pemilih global', () => {
-    const tanpaKomentar = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
-    const pemilih = [...tanpaKomentar.matchAll(/([^{}]+)\{/g)].flatMap((m) => m[1]!.split(',').map((s) => s.trim()))
+    // Aturan `@media` bukan pemilih; pemilih DI DALAMNYA tetap diperiksa.
+    const pemilih = [...ATURAN.matchAll(/([^{}]+)\{/g)]
+      .flatMap((m) => m[1]!.split(',').map((s) => s.trim()))
+      .filter((p) => !p.startsWith('@'))
     expect(pemilih.length).toBeGreaterThan(5)
     for (const p of pemilih) {
       expect(p, p).toMatch(/^(:root\[data-theme="dark"\] )?\.marketingofficer(\s|$)/)
@@ -44,7 +48,15 @@ describe('gaya modul Marketing Officer', () => {
     for (const k of dipakai) expect(didefinisikan, k).toContain(k)
   })
 
+  it('tema Kelola User: halaman berakar .marketingofficer__akar dengan token --mo-* terang dan gelap', () => {
+    const halaman = readFileSync(join(AKAR, 'pages', 'MarketingOfficer.tsx'), 'utf8')
+    expect(halaman).toContain('<section className="inbox marketingofficer__akar">')
+    expect(CSS).toMatch(/^\.marketingofficer \.marketingofficer__akar \{[^}]*--mo-latar: #eef1f6;/m)
+    expect(CSS).toMatch(/^:root\[data-theme="dark"\] \.marketingofficer \.marketingofficer__akar \{[^}]*--mo-latar: #1b2130;/m)
+    expect(ATURAN).not.toMatch(/kelola-user/)
+  })
+
   it('nol properti yang memerangkap Modal tanpa portal', () => {
-    expect(CSS).not.toMatch(/(^|[\s;{])(-webkit-)?(backdrop-filter|filter|transform|translate|rotate|scale|perspective|will-change|contain)\s*:/m)
+    expect(ATURAN).not.toMatch(/(^|[\s;{])(-webkit-)?(backdrop-filter|filter|transform|translate|rotate|scale|perspective|will-change|contain)\s*:/m)
   })
 })

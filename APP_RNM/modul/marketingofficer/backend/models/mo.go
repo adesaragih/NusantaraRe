@@ -75,3 +75,18 @@ type Isian struct {
 	// Aktif - radio "Active".
 	Aktif bool `json:"aktif"`
 }
+
+// AksiGo - `MARKETINGOFFICER_LOG.ACTION` baris log perubahan lewat aplikasi Go: AKSES_LOGIN-nya sah (migrasi 760).
+// Kosong = baris dari trigger saja (Pega atau lama) - AKSES_LOGIN tidak diketahui.
+const AksiGo = "UPDATE-GO"
+
+// BarisLog adalah satu baris `MARKETINGOFFICER_LOG`: keadaan LAMA satu MO sebelum satu UPDATE (trigger warisan).
+type BarisLog struct {
+	MarketingOfficer
+	Aksi string `json:"aksi"`
+	// LogTime - `LOG_TIME` `YYYY-MM-DD HH:MI:SS`; kosong = baris lama sebelum migrasi 760 (urutan perkiraan).
+	LogTime string `json:"logTime"`
+}
+
+// AksesDiketahui menjawab apakah AKSES_LOGIN baris log ini sah.
+func (b BarisLog) AksesDiketahui() bool { return b.Aksi == AksiGo }

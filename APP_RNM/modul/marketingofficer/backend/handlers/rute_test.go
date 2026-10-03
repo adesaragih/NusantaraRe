@@ -86,3 +86,19 @@ func TestRuteTanpaDatabase503(t *testing.T) {
 		t.Errorf("tanpa Oracle: %d", w.Code)
 	}
 }
+
+func TestRuteLog(t *testing.T) {
+	g := tiruan.Contoh()
+	h := router(g, true)
+	badan := `{"aksesLogin":"UJI-MKT02","leader":false,"leaderId":"10000101","branchParent":"UJI-P00","branchDetailId":"UJI-B02","aktif":true}`
+	if w := kirim(t, h, "PUT", handlers.Prefix+"/10000103", badan); w.Code != 200 {
+		t.Fatalf("ubah %d %s", w.Code, w.Body.String())
+	}
+	w := kirim(t, h, "GET", handlers.Prefix+"/10000103/log", "")
+	if w.Code != 200 || !strings.Contains(w.Body.String(), `"kolom":"AKSES_LOGIN","sebelum":"UJIOPERATORLAMA","sesudah":"UJI-MKT02"`) {
+		t.Errorf("log %d %s", w.Code, w.Body.String())
+	}
+	if w := kirim(t, h, "GET", handlers.Prefix+"/19999999/log", ""); w.Code != http.StatusNotFound {
+		t.Errorf("log MO tidak ada: %d", w.Code)
+	}
+}

@@ -183,14 +183,23 @@ func ddlTabelLama(skema string) string {
 
 // Pasang membangun skema uji dari keadaan bersih.
 //
-// Urutannya: bongkar dulu, lalu jalankan migrasi yang sebenarnya, lalu buat
-// tabel tiruan warisan.
+// Urutannya: bongkar dulu, lalu tiruan warisan yang DIUBAH migrasi (Marketing
+// Officer), lalu jalankan migrasi yang sebenarnya, lalu buat tabel tiruan warisan
+// lainnya.
 func Pasang(ctx context.Context, db *sql.DB, skema string) error {
 	if err := samakanNLS(ctx, db); err != nil {
 		return err
 	}
 	if err := Bongkar(ctx, db, skema); err != nil {
 		return err
+	}
+
+	// Tiruan warisan Marketing Officer SEBELUM migrasi: migrasi modul marketingofficer 760 menambah kolom
+	// MARKETINGOFFICER_LOG (mo_tiruan.go, 03-10-2026).
+	for _, q := range ddlTiruanMarketingOfficer(skema) {
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			return fmt.Errorf("skemauji: membuat tiruan warisan Marketing Officer: %w", err)
+		}
 	}
 
 	repo, err := BukaRepositori()
@@ -254,6 +263,8 @@ func Bongkar(ctx context.Context, db *sql.DB, skema string) error {
 		namaTabelRetrosesi, namaTabelTahunTreaty, namaTabelSummaryPolis}
 	// Enam tiruan warisan Treaty Contract Out ikut dibongkar (aditif 28-09-2026).
 	tiruan = append(tiruan, namaTabelTiruanTCO...)
+	// Dua tiruan warisan Marketing Officer (03-10-2026); jalur mundur migrasinya menoleransi ORA-00942.
+	tiruan = append(tiruan, namaTabelTiruanMO...)
 	for _, nama := range tiruan {
 		q := fmt.Sprintf(`DROP TABLE %s.%s CASCADE CONSTRAINTS`, skema, nama)
 		if _, err := db.ExecContext(ctx, q); err != nil {

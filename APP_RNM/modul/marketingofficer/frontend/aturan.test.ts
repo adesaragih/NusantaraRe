@@ -1,16 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ambilDaftar, ambilPilihan, tambah, ubah, type BarisMO, type Pilihan } from './api'
+import { ambilDaftar, ambilLog, ambilPilihan, tambah, ubah, type BarisMO, type Pilihan } from './api'
 import {
   isianDari,
   isianKosong,
+  kelompokLeader,
+  labelRuas,
   leaderUntuk,
   periksa,
   saring,
   setelBranch,
   setelSubBranch,
+  saringLeader,
   subBranchUntuk,
   tandaAkun,
+  teksNilaiLog,
 } from './aturan'
 import { MO } from './labels'
 
@@ -94,12 +98,54 @@ describe('klien API Marketing Officer', () => {
     await ambilPilihan()
     await tambah(isi)
     await ubah('1/2', isi)
+    await ambilLog('1/2')
     expect(tertangkap.map((t) => `${t.init.method ?? 'GET'} ${t.url}`)).toEqual([
       'GET /api/marketing-officer',
       'GET /api/marketing-officer/pilihan',
       'POST /api/marketing-officer',
       'PUT /api/marketing-officer/1%2F2',
+      'GET /api/marketing-officer/1%2F2/log',
     ])
     expect(JSON.parse(String(tertangkap[2]?.init.body))).toEqual(isi)
+  })
+})
+
+describe('halaman depan leader, anggota, dan log (permintaan work owner 03-10-2026)', () => {
+  const d = [
+    baris({}),
+    baris({ id: '10000105', clientName: 'UJI Leader Dua', moStatus: '2' }),
+    baris({ id: '10000201', clientName: 'UJI Anggota Satu', clientId2: '10000101' }),
+    baris({ id: '10000202', clientName: 'UJI Anggota Dua', clientId2: '10000101', moStatus: '2' }),
+    baris({ id: '10000203', clientName: 'UJI Yatim', clientId2: '10000999' }),
+    baris({ id: '10000204', clientName: 'UJI Tanpa Leader', clientId2: '' }),
+  ]
+
+  it('kelompok: setiap leader beserta anggota dan cacah aktifnya; leader kosong/tak dikenal = tanpa leader', () => {
+    const k = kelompokLeader(d)
+    expect(k.leader.map((x) => [x.leader.id, x.anggota.map((a) => a.id), x.aktif])).toEqual([
+      ['10000101', ['10000201', '10000202'], 1],
+      ['10000105', [], 0],
+    ])
+    expect(k.tanpaLeader.map((b) => b.id)).toEqual(['10000203', '10000204'])
+  })
+
+  it('saring leader memakai baris leadernya', () => {
+    const k = kelompokLeader(d).leader
+    expect(saringLeader(k, '', 'aktif').map((x) => x.leader.id)).toEqual(['10000101'])
+    expect(saringLeader(k, 'dua', 'semua').map((x) => x.leader.id)).toEqual(['10000105'])
+  })
+
+  it('tambah anggota dari halaman leader: leadernya terisi', () => {
+    expect(isianKosong('10000101').leaderId).toBe('10000101')
+    expect(isianKosong().leaderId).toBe('')
+  })
+
+  it('log: label kolom dan nilai terbaca', () => {
+    expect(labelRuas({ kolom: 'AKSES_LOGIN' })).toBe('Login Account')
+    expect(labelRuas({ kolom: 'KOLOM_BARU' })).toBe('KOLOM_BARU')
+    expect(teksNilaiLog('MOSTATUS', '2')).toBe(MO.nonaktif)
+    expect(teksNilaiLog('CLIENTID2', 'LEADER')).toBe(MO.adalahLeader)
+    expect(teksNilaiLog('BRANCHDETAILNAME', '')).toBe(MO.kosongNilai)
+    expect(teksNilaiLog('TEAMGROUP', '2')).toBe('2')
   })
 })

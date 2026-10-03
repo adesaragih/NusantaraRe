@@ -57,4 +57,43 @@ export const MO = {
   galatAkun: 'Login Account is required',
   galatLeader: 'Leader is required, or tick Set as a leader',
   tersimpan: (id: string) => `Marketing officer ${id} saved.`,
+
+  // Halaman depan = daftar leader; anggota dibuka dari leadernya; log dari MARKETINGOFFICER_LOG (permintaan work owner
+  // 03-10-2026).
+  judulLeader: 'Leaders',
+  kolomAnggota: 'Members',
+  anggota: 'Members',
+  log: 'Log',
+  kembali: '← Leaders',
+  anggotaDari: (nama: string) => `Members of ${nama}`,
+  tanpaLeader: 'Without leader',
+  subTanpaLeader: 'Marketing officers whose leader is empty or is not a leader row.',
+  tambahAnggota: 'Add member',
+  kosongLeader: 'No leader yet.',
+  kosongAnggota: 'This leader has no members yet.',
+  hitungAnggota: (aktif: number, total: number) => `${aktif} active / ${total}`,
+
+  judulLog: (nama: string, id: string) => `Change log — ${nama} (${id})`,
+  memuatLog: 'Loading change log…',
+  logKosong: 'No change has been recorded for this marketing officer.',
+  tanpaPerubahan: 'Saved without field changes.',
+  oleh: 'by',
+  waktuTakDiketahui: 'time unknown',
+  perkiraan: 'older log entry: order and time are approximate',
+  catatanLog:
+    'Each entry is one update. Login Account changes are known only for updates made in this application.',
+  tutup: 'Close',
+  kosongNilai: '(empty)',
+  ruas: {
+    CLIENTNAME: 'Name Marketing',
+    CLIENTID: 'Marketing Code',
+    AKSES_LOGIN: 'Login Account',
+    CLIENTID2: 'Leader code',
+    MOLEADER: 'Leader',
+    BRANCHPARENT: 'Branch',
+    BRANCHDETAILID: 'Sub Branch code',
+    BRANCHDETAILNAME: 'Sub Branch',
+    TEAMGROUP: 'Team Group',
+    MOSTATUS: 'Active',
+  } as Record<string, string>,
 } as const

@@ -41,12 +41,17 @@ cadangan `760-899` dan `990-999`.
 - `AKSES_LOGIN` = `M_LOGIN_GO.LOGIN_ID` (akun aktif, maks. 50 karakter). `CLIENTID` (Marketing Code) =
   `M_LOGIN_GO.CONTACT_ID`, atau `CLIENTID` lama bila akun itu sudah punya baris MO; tidak pernah berubah.
 - Satu baris AKTIF per Marketing Code dan per akun. Leader harus baris `LEADER` aktif. Sub Branch dari `BRANCH`.
+- Layar (permintaan work owner 03-10-2026): halaman depan = daftar leader; dari leader dibuka anggotanya; setiap MO
+  punya log perubahan dari `MARKETINGOFFICER_LOG`. Tampilan sama dengan Kelola User (tema disalin ke CSS modul).
 - Rinciannya: `docs/STRUKTUR-TABEL-MARKETINGOFFICER.md` dan dokumentasi paket `backend/services`.
 
 ## Migrasi
 
-Rentang `760-799` tidak terpakai (nol tabel baru). Slot menu `990`: satu `UPDATE DIMIGRASI` baris modul ini, nol
-`INSERT`. Barisnya sendiri dibuat migrasi inti `906_m_nav_menu_marketingofficer.sql`.
+Rentang `760-799`: `760_marketingofficer_log.sql` memperbaiki tabel warisan `MARKETINGOFFICER_LOG` (izin work owner
+03-10-2026) - tambah `LOG_TIME` dan `AKSES_LOGIN`, trigger warisan tidak disentuh; nol tabel baru. Karena 760
+mengubahnya, `MARKETINGOFFICER_LOG` TIDAK terdaftar "Tabel warisan" di bawah, dan skema uji (`uji/skemauji`) membuat
+tiruannya sebelum migrasi. Slot menu `990`: satu `UPDATE DIMIGRASI` baris modul ini, nol `INSERT`. Barisnya sendiri
+dibuat migrasi inti `906_m_nav_menu_marketingofficer.sql`.
 
 ## Menjalankan uji modul ini saja
 

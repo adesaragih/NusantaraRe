@@ -102,3 +102,29 @@ export function tambah(isi: Isian): Promise<MarketingOfficer> {
 export function ubah(id: string, isi: Isian): Promise<MarketingOfficer> {
   return minta<MarketingOfficer>(`${PREFIX_MO}/${e(id)}`, { metode: 'PUT', badan: isi })
 }
+
+/** Satu kolom yang berubah - `services.RuasBerubah`; `kolom` = nama kolom MARKETINGOFFICER. */
+export interface RuasBerubah {
+  kolom: string
+  sebelum: string
+  sesudah: string
+}
+
+/** Satu UPDATE - `services.Perubahan`. `perkiraan` = baris log lama tanpa LOG_TIME (urutan dan waktu perkiraan). */
+export interface Perubahan {
+  waktu: string
+  oleh: string
+  perkiraan: boolean
+  ruas: RuasBerubah[]
+}
+
+/** Log perubahan satu MO dari MARKETINGOFFICER_LOG, terbaru dulu - `services.Riwayat`. */
+export interface Riwayat {
+  id: string
+  perubahan: Perubahan[]
+  jumlahLog: number
+}
+
+export function ambilLog(id: string): Promise<Riwayat> {
+  return minta<Riwayat>(`${PREFIX_MO}/${e(id)}/log`)
+}
