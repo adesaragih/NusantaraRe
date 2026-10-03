@@ -70,8 +70,10 @@ dinyatakan selesai — isinya yang tidak kosong berarti sensus medan belum lengk
 - [x] **AC 37** — tiga medan bagian tersimpan sebagai **persentase**
 - [ ] 🟡 **AC 38** — medan potongan dan total bagian tersimpan sebagai **persentase**
 - [x] **AC 39** — tabel riwayat usulan **tidak dibuat ulang**
-- [ ] ⛔ **AC 40** — keterangan usulan dipotong pada batas panjangnya
-- [ ] ⛔ **AC 41** — keputusan usulan diturunkan dari penandanya, per baris
+- [x] **AC 40** — keterangan usulan dipotong pada batas panjangnya *(RALAT P9 04-10-2026: semula
+  `- [ ] ⛔` — dibangun sejak K4; lihat bab RALAT P9)*
+- [x] **AC 41** — keputusan usulan diturunkan dari penandanya, per baris *(RALAT P9 04-10-2026: semula
+  `- [ ] ⛔` — dibangun sejak K4; lihat bab RALAT P9)*
 - [x] **AC 42** — penanda per baris usulan tersimpan **terpisah** dari penanda tingkat polis
 - [x] **AC 43** — kolom pelaku terisi dari identitas login
 - [x] **AC 44** — kolom penanggung jawab terisi dari nama tampilan
@@ -107,3 +109,35 @@ dapat dinyatakan selesai** sampai penampung itu kosong.
 - **AC 38 — pertentangan dicatat.** DEDUCTION1/2 bergolongan persen (WO P29); `TOTAL_SHARE_PERCENTAGE_*`
   tidak disimpan (turunan baris; penjaga repo melarang nama TOTAL_ di migrasi) — tidak dapat dipenuhi.
 - **AC 40-41** berlaku hanya pada `HISTORYAKSEPTASIPRODUCTION`, yang tidak ditulis kasus treaty.
+
+## ⛔ RALAT putaran 2 (P9, 04-10-2026) — bunyi yang bertentangan dengan kode dan keputusan WO
+
+Dasar: tinjauan spec P9 (temuan 3); PROMPT-NB-TREATY-IN-PUTARAN-2 bab 2 K3, K4. Baris **Status** tiket tidak
+diubah (paket konsolidasi).
+
+1. **AC 40 dan AC 41.** Bunyi lama, dikutip: *"- [ ] ⛔ **AC 40** — keterangan usulan dipotong pada batas
+   panjangnya"* dan *"- [ ] ⛔ **AC 41** — keputusan usulan diturunkan dari penandanya, per baris"*. Bunyi baru:
+   ✅ keduanya dibangun sejak K4 (paket P1) di `backend/models/usulan.go` `UsulanBelumTersimpan`:
+   `KETERANGAN` = 3990 KARAKTER pertama `.Suggest` (`potongKarakter`, `PanjangKeterangan`) dan `APPROVAL` per
+   baris (`approvalUsulan`: `"1"` → `Accept`, `"0"` → `Reject`, selain itu kosong). Bukti XML:
+   `Activity\SaveViewSuggest.xml` langkah 2.1.2 (`CARI9 = @if(.IsApproved="1","Accept",@if(.IsApproved="0","Reject",""))`,
+   `CARI10 = @substring(.Suggest,0,3990)`), `RDBList\InsertViewSuggest_SQL.xml` (`substr({CARI10},0,3990)`).
+   Uji: `models/usulan_test.go` TestUsulanBelumTersimpanMenurutSaveViewSuggest (3995 → 3990 karakter),
+   TestApprovalPerBarisHanyaAcceptReject; `handlers/alur_test.go`; `repository/polis_db_test.go`
+   TestRiwayatProduksiPulangPergi (tag db, belum dijalankan — K11).
+2. **AC 38 / DEDUCTION.** Bunyi lama, dikutip: *"**AC 38 — pertentangan dicatat.** DEDUCTION1/2 bergolongan
+   persen (WO P29); `TOTAL_SHARE_PERCENTAGE_*` tidak disimpan (turunan baris; penjaga repo melarang nama TOTAL_ di
+   migrasi) — tidak dapat dipenuhi."* Bunyi baru (`[keputusan work owner]` **K3** — rumus XML apa adanya):
+   `DEDUCTION1/2` **bergolongan uang** (`models/katalog.go` `kUang`, tipe fisik `NUMBER(38,8)`; RALAT AC 38
+   spec-penyimpanan paket P2). Bukti XML: sel `.Deduction1`/`.Deduction2` `pxCurrency` di
+   `Section\DetailPolicyTreatyIn.xml` dan `Section\DetailDeptHeadTreatyIn_UW.xml`; `Activity\CountNetPremi_act`
+   langkah 4 mengurangkan keduanya dari premi; `Activity\SetPPNPPH` langkah 4 membagi `.Deduction1` dengan
+   1,022. Pertentangan dengan P29 tetap tercatat di tiket 07. `TOTAL_SHARE_PERCENTAGE_*` tetap tidak disimpan
+   (turunan baris) — AC 38 tetap 🟡 untuk bagian itu.
+3. **HISTORYAKSEPTASIPRODUCTION.** Bunyi lama, dikutip: *"**AC 40-41** berlaku hanya pada
+   `HISTORYAKSEPTASIPRODUCTION`, yang tidak ditulis kasus treaty."* Bunyi baru (`[keputusan work owner]` **K4**):
+   kasus treaty **menulis** `HISTORYAKSEPTASIPRODUCTION` (`SaveViewSuggest` langkah 2 tanpa syarat
+   `Quotation.BusinessFac == "F"` — `[penyimpangan sadar]` K4) di transaksi submit, dan dibaca balik untuk grid
+   `Section\ListSuggest`; AC 40–41 berlaku dan ✅ (butir 1). Tiga penyimpangan lain — ditulis di ketiga jenjang,
+   `TGL_INP` jam 24, `NOURUT` dari repository — `[penyimpangan sadar — menunggu konfirmasi WO]` (tiket 10 bab P9,
+   PERMINTAAN-TIM-INTI F2).

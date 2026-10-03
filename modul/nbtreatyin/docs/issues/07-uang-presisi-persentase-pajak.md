@@ -133,3 +133,12 @@ Sesudah tiket ini, nilai uang tersimpan **berpresisi penuh**, ditampilkan besert
    BrokerageFee* tidak disentuh dan PPH/PPN tetap 0 (langkah 2); `"TRUE"` bukan `"true"`. Lewat HTTP:
    `handlers/logika_test.go` TestSetPPNPPHMembacaStatusPKPAgen (STS_PKP dari RD
    `BrowseClientName_RD`).
+
+## ⛔ RALAT putaran 2 (P9, 04-10-2026) — butir terbuka `DEDUCTION1/2` sudah ditutup paket P2
+
+Bunyi lama (RALAT P4 butir 2), dikutip: *"⚠️ Bagian "label dan penyajian mengikuti pemakaian XML" (kolom katalog
+`kPersen` DEDUCTION1/2, label layar) milik paket katalog/layar, bukan paket ini — butir terbuka."* Bunyi baru:
+**ditutup** oleh paket P2 (K3) — katalog `DEDUCTION1/2` `kUang` (`backend/models/katalog.go`), layar `pxCurrency`
+beserta kode mata uang (`frontend/medan.ts`); lihat bab RALAT `DEDUCTION1/2` di atas. Bukti XML: sel
+`.Deduction1`/`.Deduction2` `pxCurrency` di `Section\DetailPolicyTreatyIn.xml` dan
+`Section\DetailDeptHeadTreatyIn_UW.xml`.

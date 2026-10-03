@@ -1,7 +1,8 @@
 package repository
 
-// Uji pengurai dokumen master XOL (tanpa Oracle): hanya medan daftar K8
-// (`models.SkalarMasterXOL`, `models.DaftarMasterXOL`) yang sampai ke halaman;
+// Uji pengurai dokumen master XOL (tanpa Oracle): hanya medan master K8 - yang
+// dibaca rule terjangkau jalur NonProp (`models.SkalarMasterXOL`,
+// `models.DaftarMasterXOL`) - yang sampai ke halaman;
 // angka JSON dibaca sebagai TEKS (nol float); tanggal Pega dinormalkan; baris
 // kedua (M_TREATY_IN_EDM) menimpa kunci tingkat atas baris pertama, sama
 // dengan `adoptJSONObject` berurutan. Fixture fiktif UJI-.

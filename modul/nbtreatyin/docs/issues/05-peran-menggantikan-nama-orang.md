@@ -116,3 +116,29 @@ membawa AkunID + workbasket, dan M_LOGIN_GO hanya CODE organisasi/divisi/unit �
 Akibatnya: operator ber-work-group `ReasLife` yang juga anggota `ReasTreatyInAdmin` melihat daftar di sistem baru
 tetapi tidak di Pega. Yang dibutuhkan dari `[IAM]`: padanan work group untuk akun (atau konfirmasi bahwa syarat itu
 boleh dibuang). **Status tetap needs-info.**
+
+## ⭐ Putaran 2 — P9 (04-10-2026): kedua belas tempat terdaftar sebagai konstanta
+
+Dasar: tinjauan spec P9 (temuan 2, K16). Bunyi lama (Hasil implementasi, baris tabel), dikutip: *"| `ListSuggest
+.ProductionDate` (tampil + wajib) | `LISTSUGGEST_PRODUCTIONDATE` lewat tabel |"*; kode semula hanya mendaftarkan
+SATU tempat (`SemuaTempat = {TempatTanggalProduksi}`), dan label "NON EDM"/"EDM" disembunyikan keras di
+`frontend/nonprop.ts` (mengisi pemetaan kelak tidak memunculkannya). Bunyi baru: **kedua belas tempat** (grilling
+ronde 2 P28: `pyUserIdentifier` di `DetailDeptHeadTreatyIn_UW` 3×, `GeneralDeptHeadTreatyIn_UW` 3×, `ListSuggest`
+4×; `pxInsName` di `DetailPoliciesNonProportional` 2× — dibaca ulang dari XML 04-10-2026) terdaftar di
+`backend/models/peran_tempat.go` `DaftarTempat`; **pemetaan peran tetap kosong** (K12):
+
+| Kode | Section · sel | Syarat XML (identitas disamarkan) | Yang digerbang |
+| --- | --- | --- | --- |
+| `DETAILDEPTHEADTREATYIN_UW_SUBMIT_LETTERNO_TREATYINDEPTHEAD` | `DetailDeptHeadTreatyIn_UW` · Submit (`finishAssignment`) | `.IsApproved == 1 && pyUserIdentifier!='<ID-operator-1>' && LetterNo=='TREATYINDEPTHEAD'` | tidak dibaca — tombol = posisi kasus (`TombolUntuk`; AC 8, K2, P13) |
+| `DETAILDEPTHEADTREATYIN_UW_SUBMIT_LETTERNO_KOSONG` | idem · Submit (`GeneratePolicyNoTreaty_Act`) | `… !='<ID-operator-1>' && LetterNo==''` | idem |
+| `DETAILDEPTHEADTREATYIN_UW_SUBMIT_OPERATOR_1` | idem · Submit (`GeneratePolicyNoTreaty_Act`) | `.IsApproved == 1 && pyUserIdentifier=='<ID-operator-1>'` | idem |
+| `GENERALDEPTHEADTREATYIN_UW_SUBMIT_*` (3) | `GeneralDeptHeadTreatyIn_UW` · salinan sertakan tiga tombol yang sama | sama | idem |
+| `LISTSUGGEST_PRODUCTIONDATE_TAMPIL_OPERATOR_3` / `_4` | `ListSuggest` · `.ProductionDate` `pyVisible` | `.IsApproved == 1 && (pyUserIdentifier=='<ID-operator-3>' \|\| =='<ID-operator-4>')` | tampil + diterima dari layar (`models.TanggalProduksiTampil`, `frontend/tempat.ts`) |
+| `LISTSUGGEST_PRODUCTIONDATE_WAJIB_OPERATOR_3` / `_4` | `ListSuggest` · `.ProductionDate` `pyRequiredWhen` | sama | wajib bila juga tampil (`models.TanggalProduksiWajib` → `MedanWajibBerlaku`) |
+| `DETAILPOLICIESNONPROPORTIONAL_LABEL_NON_EDM` | `DetailPoliciesNonProportional` · LABEL "NON EDM" | `OperatorID.pxInsName = '<ID-operator-2>'` | label tampil bila tempat terbuka (`components/DetailNonProp.tsx`) |
+| `DETAILPOLICIESNONPROPORTIONAL_LABEL_EDM` | idem · LABEL "EDM" | sama | idem |
+
+Arah tiap tempat **tidak ditebak** dari bentuk `==`/`!=` (AC 82) — itu jawaban IAM. Uji:
+`models/peran_tempat_test.go` TestDuaBelasTempatTerdaftar, TestTanggalProduksiTampilDanWajibMenurutTempat;
+`handlers/alur_test.go` TestTempatBerperanTidakDitebak (kedua belas tempat tertunda), TestTanggalProduksiMengikutiPemetaanTempat
+(pemetaan uji UJI- dipulihkan); `frontend/tempat.test.ts`. **Status tetap needs-info.**

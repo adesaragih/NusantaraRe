@@ -11,9 +11,10 @@ package repository
 // baris. Maka `JSONDATA` `M_TREATY_IN` / `M_TREATY_IN_EDM` dibaca:
 //
 //   - BACA-SAJA (satu SELECT; nol INSERT/UPDATE, nol penulisan JSON di mana pun);
-//   - HANYA medan master daftar K8 (`models.SkalarMasterXOL`,
-//     `models.DaftarMasterXOL`) - selebihnya dibuang di sini, tidak pernah sampai
-//     ke halaman;
+//   - HANYA medan master yang DIBACA rule terjangkau jalur NB NonProp - ukuran K8
+//     tunggal `[menunggu konfirmasi WO]` (tiket 01 bab P9): `models.SkalarMasterXOL`,
+//     `models.DaftarMasterXOL`, setiap medan berkutip langkah XML - selebihnya
+//     dibuang di sini, tidak pernah sampai ke halaman;
 //   - di SATU fungsi (`MasterXOLDariJSON`) di balik `services.PembacaMasterTreaty`,
 //     supaya kelak diganti kontrak modul `treatyin` begitu tabel masternya terisi
 //     (PERMINTAAN-TIM-INTI bagian E).
@@ -105,7 +106,8 @@ func (g *Gudang) MasterXOLDariJSON(ctx context.Context, noOffer string) (models.
 	return uraiMasterXOL(isi)
 }
 
-// uraiMasterXOL mengurai dokumen berurutan dan menyaring medan K8.
+// uraiMasterXOL mengurai dokumen berurutan dan menyaring medan master K8
+// (`models.SkalarMasterXOL`, `models.DaftarMasterXOL`).
 func uraiMasterXOL(isi []string) (models.MasterXOL, error) {
 	m := models.MasterXOL{Nilai: map[string]string{}, Daftar: map[string][]models.Baris{}}
 	for n, s := range isi {

@@ -15,7 +15,10 @@ package models
 // `[penyimpangan sadar]` atas P29 - dicatat di tiket 01 dan PERMINTAAN-TIM-INTI E.
 //
 // ⛔ HANYA medan yang dibaca rule terjangkau jalur NonProp (nomor langkah di
-// komentar tiap medan). Medan dokumen lain tidak pernah sampai ke halaman.
+// komentar tiap medan) - SATU ukuran K8 di seluruh modul, `[menunggu konfirmasi
+// WO]` (tiket 01 bab P9, PERMINTAAN-TIM-INTI F1): lebih luas dari daftar harfiah
+// K8, yang memuat keluaran (`TreatyXOLList`) dan medan polis (`FlagPPH`,
+// `TypeTax`). Medan dokumen lain tidak pernah sampai ke halaman.
 // Nol penulisan: halaman `TreatyIn` tidak disimpan (katalog hanya memuat
 // `TreatyIn.ID`), dan tidak satu pun berkas menulis JSON.
 //

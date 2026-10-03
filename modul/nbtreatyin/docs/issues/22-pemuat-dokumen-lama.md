@@ -127,3 +127,27 @@ Medan yang sengaja **tidak** disimpan — dihitung per alasan di ringkasan, tida
    produksi butuh keputusan tersendiri.
 5. ⛔ `[data DBA]` empat angka butir 5 (cacah baris, tahun terawal, ukuran, PRODKE tertinggi) — tetap.
 6. Uji repository bertag `db` belum dijalankan (K11 kosong).
+
+## ⭐ Putaran 2 — P9 (04-10-2026): AC 59 / K17 tidak dapat mencapai 0 tanpa keputusan WO
+
+Dasar: tinjauan spec P9 (temuan 4) — bukan perbaikan kode. K17 mewajibkan jumlah medan tak dikenal di berkas CSV
+**0** sebelum pekerjaan dinyatakan selesai, tetapi sebagian medan dokumen lama **secara struktur** tidak punya
+tempat simpan di delapan tabel diagram (bab 0 butir 11–12). Pemuat tidak mengarang tempatnya; ia menulisnya ke
+CSV (`POLIS_ID`, `JALUR`, `NILAI`) dan kode keluarnya ≠ 0. Butir keputusan `[work owner]` yang dibutuhkan:
+
+1. **Medan dokumen lama tanpa kolom.** Dari panduan bentuk dokumen (`docs/dataguide-json-polis.json`, 378 jalur;
+   penambal — `DAFTAR-MEDAN-DARI-KORPUS-TREATY-IN.md` menyebut 394 batas bawah), dipetakan lewat katalog dan alasan
+   tertulis pemuat (`models.PecahDokumenLama`), **22 pola** tetap tak dikenal:
+   `EDMNo`, `EDMType`, `ProdKe`; `QuotationData.` `BranchCode`, `BranchName`, `BusinessType2`, `CedingCo`,
+   `CedingCoName`, `MarketingCode`, `OperatorID`, `SobLsg`, `SobName`, `StatusBusiness`, `StatusSyariah`,
+   `TeamGroup`, `TypeFacultative`; `ListInstallment().pyExpanded`, `TreatyXOLList().pyExpanded`; dan empat medan
+   `SuggestList()` (butir 2). Ditambah medan yang dibuang paket penyimpanan dari kolom (`IsOJKNopolis`,
+   `InstallmentList().PPN/PPh`; `docs/PERBANDINGAN-KOLOM-DIAGRAM.md` bab 11 butir 1). Pilihan per medan:
+   **(a)** tambah kolom lewat RALAT diagram grilling, **(b)** nyatakan dibuang dengan alasan tertulis (masuk
+   `Diabaikan` ringkasan, bukan CSV), atau **(c)** biarkan di CSV dan longgarkan syarat "wajib 0" K17.
+2. **`SuggestList` dokumen lama** (`Date`, `IsApproved`, `OperatorName`, `Suggest`) — butir terbuka 1 di atas:
+   salin ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION` lewat pemetaan `InsertViewSuggest_SQL` yang sama dengan jalur
+   biasa (`models.UsulanBelumTersimpan`), atau nyatakan dibuang. Belum diputuskan — tidak dikarang.
+
+Sampai kedua butir dijawab, AC 59 spec penyimpanan tetap 🟡 dan tiket ini tidak dapat dinyatakan selesai atas data
+nyata. Dicatat juga di PERMINTAAN-TIM-INTI bagian F3.

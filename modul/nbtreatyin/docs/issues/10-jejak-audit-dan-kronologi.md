@@ -118,3 +118,20 @@ baris `NOURUT` 1..5 dengan `AKSES_LOGIN` tiap jenjang), `repository/kolom_test.g
 
 AC 39, 40, 41, 42, 43, 44, 71: ✅ (seam HTTP + fungsi murni). AC 72 tetap 🟡 (pengurutan lawan Oracle).
 Butir terbuka: `DIV` tanpa sumber; tipe fisik `NOURUT` tabel lama belum dicek katalog.
+
+## ⭐ Putaran 2 — P9 (04-10-2026): tiga penyimpangan K4 `[penyimpangan sadar — menunggu konfirmasi WO]`
+
+Dasar: tinjauan spec P9 (temuan 5). Bunyi P1 di atas, dikutip: *"`[penyimpangan sadar]` (K4, grilling ID-31/AC 39):
+syarat `BusinessFac == "F"` tidak ditiru; baris ditulis pada submit **ketiga** jenjang yang menambahkannya (XML:
+hanya `InputPolicyTreatyInPost_Act` langkah 4); `TGL_INP` jam 24 (XML `hh` → `HH24` menyimpan jam sore sebagai
+pagi)."* RALAT penanda: yang berdasar keputusan WO (**K4**, grilling ID-31/AC 39) hanya syarat `BusinessFac`. Tiga
+penyimpangan berikut **dipertahankan** tetapi berstatus `[penyimpangan sadar — menunggu konfirmasi WO]`:
+
+| # | XML | Sistem baru | Dasar |
+| ---: | --- | --- | --- |
+| 1 | `SaveViewSuggest` hanya dari `InputPolicyTreatyInPost_Act` langkah 4 (pasca-submit **admin**) | baris yang ditambahkan pasca DT ditulis di submit **admin, Sec Head, Dept Head** | akibat langsung K4: `SuggestList` tidak punya tempat simpan lain di antara langkah (Pega menyimpan halaman utuh; di sini hanya delapan tabel diagram) — tanpa ini catatan jenjang atasan hilang (AC 71) |
+| 2 | `CARI5 = @FormatDateTime(.Date,"dd/MM/yyyy hh:mm:ss",…)` lalu `To_date(…,'DD/MM/YYYY HH24:MI:SS')` — jam sore tersimpan sebagai pagi | `TGL_INP` jam 24 apa adanya | layar (riwayat catatan) membaca balik tabel ini |
+| 3 | `CARI2 = .pxListSubscript` | `NOURUT` = MAX+1 per IDPEGA di bawah kunci kasus (`repository.CatatUsulan`) | dua submit serentak tidak berbagi nomor. **Nilainya SAMA dengan `.pxListSubscript`**: `SuggestList` dibangun ulang dari tabel berurut NOURUT dan catatan baru ditambahkan di ujung — uji `models/usulan_test.go` TestCatatanBaruBerposisiNourutBerikut, `handlers/alur_test.go` TestNourutUsulanSamaDenganSubskripSuggestList (lima submit tolak-naik-setuju: baris NOURUT j selalu di pxListSubscript j), `repository/polis_db_test.go` TestRiwayatProduksiPulangPergi (tag db) |
+
+Dicatat juga di PERMINTAAN-TIM-INTI bagian F2. Kode: `backend/models/usulan.go`, `backend/services/tindakan.go`
+(`Kirim`). AC tidak berubah status.

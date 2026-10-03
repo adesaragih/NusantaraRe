@@ -142,3 +142,29 @@ tersembunyi**.
    `PolicyTreatyIn` diagram, katalog paket penyimpanan); syarat tampil `DetailPoliciesNonProportional`
    (`!TreatyMasterInEDM || IsEDMInputOnNB == true`) selalu benar sesudah langkah 10, sehingga varian EDM
    subsection tidak terjangkau.
+
+## ⭐ Putaran 2 — P9 (04-10-2026): SATU ukuran K8 `[menunggu konfirmasi WO]`
+
+Dasar: tinjauan spec P9 (temuan 6–7): K8 sempat dipakai dengan dua ukuran — `models/masterxol.go` membaca medan
+di luar daftar harfiah K8 (butir 2 RALAT K8 di atas: `RNMShare`, `RnmShareDeducted`, `EDMState`, `ProportionType`,
+`Limits()` beserta `MDPList`/`Reinstatement_List`, tiga `*SummaryList`, tiga belas `Total*NP`), sedangkan status
+`ConvertHistoryDate` menolak dengan alasan *"di luar daftar medan pengecualian K8"*. Salah satunya keliru.
+
+**Ukuran yang dipakai di semua tempat:** K8 = **medan master yang DIBACA rule terjangkau jalur NB NonProp** —
+setiap medan di `backend/models/masterxol.go` berkutip langkah XML yang membacanya; sumbernya tetap hanya
+`JSONDATA` `M_TREATY_IN` / `M_TREATY_IN_EDM` (K8 butir 2), nol penulisan JSON (K8 butir 3), treaty keluar tetap ⛔
+(K8 butir 4). ⚠️ `[menunggu konfirmasi WO]` — tafsiran ini melampaui bunyi harfiah daftar K8 (`TreatyXOLList`,
+`SpreadingListXOL`, `Installment`, `RetroList`, `FacultativeShare`, `FlagPPH`, `TypeTax`); dicatat di
+PERMINTAAN-TIM-INTI bagian F1.
+
+Alasan di `docs/alat/status.json` dinilai ulang dengan ukuran yang sama:
+
+| Rule | Semula | Kini | Bukti XML |
+| --- | --- | --- | --- |
+| `Activity/ConvertHistoryDate` | (c) *"di luar daftar medan pengecualian K8"* | **(a)** efeknya dibaca nol rule NB | terjangkau di jalur NonProp (`SetTreatyIn_Act` 12 ← `TreatyRealizationCheckXOLList` 4), tetapi satu-satunya efeknya (`TreatyIn.CommentList().Date` +7 jam) dibaca NOL rule: `CommentList` hanya ada di `Activity\SetTreatyIn_Act.xml` (langkah 9, `revisionstate==1`) dan `Activity\ConvertHistoryDate.xml` |
+| `FetchMasterTreatyIn`, tiga baris `SpreadingRiskList(1)` `TreatyInputPctCommSpreading`, `CalculatePremi_Act` 1-2 | (c) | (c) tetap — jalur **Proporsional** (preACT 17 hanya bila BUKAN NonProportional; sel di wadah `.IsNewPolicyNonProp != 1`), di luar ukuran K8 | `InputPolicyTreatyInDetail_preACT` langkah 16/17 saling meniadakan |
+| `InputPolicyTreatyInDetail_preACT` 9-10, 13; `RDBList/BrowseTreatyInDetailJoinEDM` | *"P29"* | (c) — JSON tabel `M_TREATY_IN_DETAIL_EDM`, di luar dua tabel K8 butir 2 | `select JSONDATA as CLASSOFBUSINESS from pooldata.M_TREATY_IN_DETAIL_EDM where ID={TreatyIn.ID}` |
+| `SetTreatyIn_Act` 8-11 (`GetCurrentDate`, `SaveTreatyIn`) | (b) | (b) tetap — penulisan JSON master, dilarang K8 butir 3 | prasyarat `param.revisionstate==1`, tidak pernah dari NB |
+
+Medan yang dibaca `models/masterxol.go` tidak berubah (setiap medan sudah berkutip langkah XML). AC tidak berubah
+status.

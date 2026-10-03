@@ -151,3 +151,13 @@ IsApproved 1 → Generate nomor polis → ShowPolicyNoTreaty (OK = Submit) — p
 > '<ID-operator-4>'` → tempat berperan tiket 05). Hitungan putaran 1 ("enam") memasukkan tiga sel
 > `pyDisabled`; dasar "tujuh" tidak ditemukan. Subsection NonProp (wadah `.IsNewPolicyNonProp = 1`)
 > milik paket P5.
+
+## ⛔ RALAT putaran 2 (P9, 04-10-2026) — tempat `ProductionDate`
+
+Bunyi lama (Hasil implementasi P2, AC 52), dikutip: *"`ProductionDate` diterima hanya bila tampil (`IsApproved == 1`
++ tempat `LISTSUGGEST_PRODUCTIONDATE`, juga di layar admin) — `GabungMasukanLayar(h, masuk, posisi,
+tempatTanggalProduksi)`"*. Bunyi baru: syarat tampil `ListSuggest.ProductionDate` (`pyVisible`) dan syarat wajibnya
+(`pyRequiredWhen`) masing-masing DUA tempat berperan tiket 05 (`LISTSUGGEST_PRODUCTIONDATE_TAMPIL_OPERATOR_3/4`,
+`…_WAJIB_OPERATOR_3/4`); diterima bila `models.TanggalProduksiTampil(h, tempat)` —
+`GabungMasukanLayar(h, masuk, posisi, tempat)`; wajib lewat satu sumber `models.MedanWajibBerlaku` (layar, Save,
+submit). AC 52 tetap ✅.

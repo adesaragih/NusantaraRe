@@ -31,8 +31,8 @@
       "rule": [
         "ReportDefinition/GetListOpportunity"
       ],
-      "padanan": "pages/PortalNBTreatyIn.tsx form saring (submit/enter = Filter; Esc = kosongkan + muat ulang) -> GET /api/nb-treaty-in/kasus?cari=",
-      "status": "dibangun - ikon pengosong tanpa refresh tidak dibuat tombol tersendiri (padanannya Esc / mengosongkan isian)"
+      "padanan": "pages/PortalNBTreatyIn.tsx form saring (submit/enter = Filter; Esc = kosongkan + muat ulang) -> GET /api/nb-treaty-in/kasus?cari= -> Param.Search = filter G RD `.TextNoQuotation Contains` (pengenal kasus, tanpa beda huruf; models.CocokCariPortal), pyMaxRecords 500 (models.BatasDaftarPortal)",
+      "status": "dibangun - ikon pengosong tanpa refresh tidak dibuat tombol tersendiri (padanannya Esc / mengosongkan isian); filter C `.Name` (kelas CRM, ditulis nol rule) tidak dibangun - P9"
     },
     {
       "tombol": ".Name (tautan berkas)",
@@ -219,7 +219,7 @@
         "Activity/CekLimitTreatyAcc_Act"
       ],
       "padanan": "models.TombolUntuk menurut POSISI: Sec Head -> kirim; Dept Head -> POST /kasus/{id}/nomor-polis (services.TerbitkanNomor) -> Modal nomor polis",
-      "status": "dibangun - identitas diganti posisi (tiket 05); LetterNo dari CekLimitTreatyAcc_Act tidak dibangun (K2: Sec Head selalu naik)"
+      "status": "dibangun - identitas diganti posisi (tiket 05; ketiga syaratnya terdaftar sebagai tempat berperan models.TempatDetailDHSubmit* / TempatGeneralDHSubmit*, tidak dibaca layanan); LetterNo dari CekLimitTreatyAcc_Act tidak dibangun (K2: Sec Head selalu naik)"
     },
     {
       "tombol": "OK (nomor polis)",

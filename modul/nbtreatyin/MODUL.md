@@ -54,11 +54,14 @@ dipensiunkan 1 Oktober 2026.
   = nama tampilan (`M_LOGIN_GO.NAME`).
 - **Catatan usulan** (`PolicyTreatyIn.SuggestList`) = tabel lama `POOLDATA.HISTORYAKSEPTASIPRODUCTION`
   (keputusan work owner K4 03-10-2026; pengganti `SaveViewSuggest -> InsertViewSuggest_SQL`), ditulis
-  di transaksi submit SETIAP jenjang dan dibaca balik untuk layar - `[penyimpangan sadar]` di
+  di transaksi submit SETIAP jenjang dan dibaca balik untuk layar. `[penyimpangan sadar]` K4: syarat
+  `BusinessFac == "F"` tidak ditiru; `[penyimpangan sadar — menunggu konfirmasi WO]`: tiga jenjang,
+  TGL_INP 24 jam, NOURUT dari repository (= `.pxListSubscript`, terbukti uji) - rincian di
   `backend/models/usulan.go`. Tabel warisan: tidak dibuat, tidak diubah strukturnya.
 - **Peran pengganti nama orang** = konstanta kode `backend/models/peran_tempat.go`
   (`PemetaanPeranTempat`, keputusan work owner K16 03-10-2026 - BUKAN tabel), KOSONG sampai IAM
-  menjawab; tanpa baris = tempat tertunda (tiket 05). Peran pengguna dari `inti.Pelaku.Peran`.
+  menjawab; kedua belas tempat tiket 05 terdaftar di `DaftarTempat`; tanpa baris = tempat tertunda.
+  Peran pengguna dari `inti.Pelaku.Peran`.
 
 ## Migrasi
 

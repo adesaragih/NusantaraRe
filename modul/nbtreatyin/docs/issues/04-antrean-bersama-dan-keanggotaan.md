@@ -82,3 +82,23 @@ Uji seam HTTP: `backend/handlers/portal_test.go` `TestGerbangDaftarPortal` (admi
 Dept Head, keduanya, saring posisi, cari, bukan anggota, GroupLeader, tanpa peran);
 `backend/handlers/rute_test.go` `TestAlurHTTP` (daftar tanpa antrean ⇒ 403);
 `backend/repository/kolom_test.go` `TestSQLDaftarKasusPenampungUnik` (`POSITION_NOTE IN (...)`, penampung unik).
+
+## ⭐ Putaran 2 — P9 (04-10-2026): pencarian dan batas baris ikut RD `GetListOpportunity`
+
+Dasar: temuan paket P8 (*"BATAS BARIS 200 vs XML 500 & PENCARIAN lebih luas dari XML"*), tinjauan P9. XML
+`ReportDefinition\GetListOpportunity.xml`: logika `B AND D AND E AND F AND A AND (C OR G) AND F1`;
+C = `.Name Contains Param.Search`, G = `.TextNoQuotation Contains Param.Search` (keduanya `pyCaseInsensitive=true`);
+`pyMaxRecords` **500**.
+
+| Hal | Semula (putaran 1) | Kini |
+| --- | --- | --- |
+| Medan pencarian | pengenal kasus ATAU nama bisnis ATAU nama tertanggung | hanya filter **G** = pengenal kasus `NB-<n>` (`.TextNoQuotation`, filter B `Contains "NB-"`), tanpa beda huruf besar/kecil (`models.CocokCariPortal`, `repository.sqlDaftarKasus`) |
+| Filter C `.Name` | — | ⛔ tidak dibangun: `.Name` milik kelas CRM `ASM-FW-SFAGISFW-Work-Opportunity`, ditulis NOL rule korpus dan tak berkolom di diagram grilling (bab 0 butir 11) — butir terbuka |
+| Batas baris | 200 | **500** (`models.BatasDaftarPortal`) |
+
+RALAT bunyi uji di bab P8 di atas, dikutip: *"`backend/repository/kolom_test.go` `TestSQLDaftarKasusPenampungUnik`
+(`POSITION_NOTE IN (...)`, penampung unik)"* → kini `TestSQLDaftarKasusPenampungSamaDenganArgumen` (perilaku
+pengikatan: penampung unik = argumen, pencarian mengikat satu nilai; bukan teks SQL). Uji seam HTTP:
+`backend/handlers/portal_test.go` TestDaftarPortalSesuaiGetListOpportunity (cari huruf kecil menemukan pengenal;
+nama bisnis/tertanggung tidak; 501 kasus → 500 baris); uji db `repository/polis_db_test.go`
+TestDaftarKasusPortalMenurutGetListOpportunity (ditulis, tidak dijalankan — K11).

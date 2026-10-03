@@ -671,6 +671,13 @@ menyaring `PROPORTIONALTYPE` lebih dulu**, kalau tidak ia menjumlahkan persen de
 Rancangan kita tidak menularkannya — `T_GENERAL_POLIS.DEDUCTION1` dan `T_POLIS_XOL.DEDUCTION`
 sudah dua kolom terpisah.
 
+> ⛔ **RALAT (P9, 04-10-2026)** `[keputusan work owner]` **K3** — bunyi tabel di atas, dikutip: *"| `DEDUCTION1` | `.Deduction1` *(persen)* | `.Deduction` *(uang)* |"*. Bunyi baru: `.Deduction1` jalur prop
+> dipakai XML sebagai **jumlah uang** (rumus XML apa adanya, K3): sel `pxCurrency` di
+> `Section\DetailPolicyTreatyIn.xml` / `Section\DetailDeptHeadTreatyIn_UW.xml`, `CountNetPremi_act`
+> langkah 4 mengurangkannya dari premi, `SetPPNPPH` langkah 4 membaginya 1,022 — maka
+> `T_GENERAL_POLIS.DEDUCTION1/2` bergolongan uang (`models/katalog.go` `kUang`, paket P2). Label "persen"
+> berasal dari WO P29; pertentangannya tetap tercatat di tiket 07. Kedua kolom tetap terpisah.
+
 ⭐ Dan `LAYER*` pada polis proporsional **bernilai `"0"`, bukan kosong**.
 
 ### 4q.3 `DEDUCTION` di XOL adalah **uang** `[terverifikasi]`
