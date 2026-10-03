@@ -53,6 +53,7 @@ import {
   OPSI_CONDITION,
   OPSI_MINMAX,
   OPSI_KONDISI_DEDUCTIBLE,
+  POPUP_AKUMULASI as P_AKUM,
   OPSI_TYPE_DEDUCTIBLE,
   OPSI_TYPE_DEDUCTIBLE2,
   FORM_DEDUCTIBLE,
@@ -846,5 +847,40 @@ describe('Type Deductible (1/2) = aturan DATA-DEDUCTIBLE (dicari menurut pxInsNa
   })
   it.skipIf(t2 === '')('TypeDeductible2', () => {
     expect(daftarPrompt(t2)).toEqual(OPSI_TYPE_DEDUCTIBLE2.map((o) => [o.value, o.label]))
+  })
+})
+
+describe.skipIf(!existsSync(NBFACIN + 'Section\\CoverageItem.xml'))('Form Coverage - kontrol & syarat (tiket 46)', () => {
+  const form = readFileSync(NBFACIN + 'Section\\CoverageItem.xml', 'utf-8')
+  const sel = (n: string) => blokSel(form, n).join('\n')
+  it('Days = radio mendatar', () => {
+    expect(sel('26')).toContain('<pyFormat>pxRadioButtons</pyFormat>')
+    expect(sel('26')).toContain('<pyOrientation>horizontal</pyOrientation>')
+  })
+  it('Indemnity / Indemnity Unit / % Loss Limit ALWAYS (syarat sisa diabaikan); First Loss / EML OTHER', () => {
+    for (const n of ['28', '40', '44']) expect(sel(n)).toContain('<pyVisible>ALWAYS</pyVisible>')
+    for (const n of ['30', '42', '45']) expect(sel(n)).toContain('<pyVisible>OTHER</pyVisible>')
+  })
+  it('Copy Accumulation hanya coverage pertama; Choose Accumulation Code -> SearchAccumAct', () => {
+    expect(sel('19')).toContain('<pyCondition>.pxListSubscript==1</pyCondition>')
+    expect(sel('19')).toContain('<pyActivity>CopyAccumulationCode_Act</pyActivity>')
+    expect(sel('18')).toContain('<pyActivity>SearchAccumAct</pyActivity>')
+  })
+})
+
+describe.skipIf(!existsSync(NBFACIN + 'Section\\SearchRiskAccumCov.xml'))('Popup Choose Accumulation = SearchRiskAccumCov (tiket 46)', () => {
+  const xml = readFileSync(NBFACIN + 'Section\\SearchRiskAccumCov.xml', 'utf-8')
+  const cov = readFileSync(NBFACIN + 'Section\\CoverageItem.xml', 'utf-8')
+  const ada = (sel: string, tag: string, label: string) => blokSel(xml, sel).some((b) => b.includes(`<${tag}>${label}</${tag}>`))
+  it.each(
+    [P_AKUM.cari, P_AKUM.accumulationCode, P_AKUM.road, P_AKUM.zipCode, P_AKUM.czone, P_AKUM.filter, P_AKUM.bersih, ...P_AKUM.kolom, P_AKUM.pilih].map(
+      (u) => [u.label, u] as const,
+    ),
+  )('%s', (_, u) => {
+    expect(ada(u.sel, u.tag, u.label)).toBe(true)
+  })
+  it('judul jendela + RD grid sel 90', () => {
+    expect(cov).toContain(`<pyWindowName>${P_AKUM.judul}</pyWindowName>`)
+    expect(xml).toContain('SearchRiskAccumulation_RD')
   })
 })

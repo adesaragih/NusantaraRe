@@ -112,6 +112,29 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
     setTersimpan(false)
   }
 
+  /**
+   * Copy Accumulation (tiket 46) - `CopyAccumulationCode_Act`: Accumulation Code / Description coverage sumber disalin ke
+   * SETIAP coverage di SETIAP item objek (lokasi) yang sama (langkah 2 = PropertyItemList, 2.1 = CoverageList).
+   */
+  function salinAkumulasi(o: number, sumber: CoverageObjek) {
+    const { accumulationCode, accumulationDescription } = sumber
+    setObjek((d) =>
+      d === null
+        ? d
+        : d.map((x, a) =>
+            a !== o
+              ? x
+              : {
+                  ...x,
+                  items: x.items.map((it) =>
+                    it.coverages ? { ...it, coverages: it.coverages.map((cv) => ({ ...cv, accumulationCode, accumulationDescription })) } : it,
+                  ),
+                },
+          ),
+    )
+    setTersimpan(false)
+  }
+
   /** ‰ Total Net Rate diubah: simpan isian, lalu bagi ke coverage di backend (`CalculateNetRate_ACT`). */
   function ubahNetRate(o: number, i: number, v: string) {
     if (objek === null) return
@@ -304,6 +327,9 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                                                       c={c}
                                                       tsiItem={it.tsi}
                                                       item={{ isAdjustable: it.isAdjustable, pctAdjustOther: it.pctAdjustOther, currency: it.currency }}
+                                                      pertama={n === 0}
+                                                      zipRisiko={x.zipCode}
+                                                      onSalinAkumulasi={() => salinAkumulasi(o, c)}
                                                       ubah={(baru) => ubahCoverage(o, i, covs.map((y, k) => (k === n ? baru : y)))}
                                                     />
                                                   </td>

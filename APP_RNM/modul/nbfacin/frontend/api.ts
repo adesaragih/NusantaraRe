@@ -470,6 +470,12 @@ export interface CoverageObjek {
   conditions: string
   /** `.DeductibleList` (tahap C3, tiket 45). Boleh absen di data lama. */
   deductibles?: Deductible[]
+  /** `.Unit` Indemnity Unit (kode; tiket 46). Boleh absen. */
+  unit?: string
+  /** `.AccumulationCode` (tiket 46; Choose Accumulation Code / Copy Accumulation). Boleh absen. */
+  accumulationCode?: string
+  /** `.AccumulationDescription` = Accumulation Address (tiket 46). Boleh absen. */
+  accumulationDescription?: string
 }
 
 /** Satu deductible - `ASM-FW-GISFW-Data-Deductible`. Persen / uang = teks desimal. */
@@ -719,4 +725,32 @@ export function hitungNetRate(
   badan: { tsi: string; totalNetRate: string; coverages: CoverageObjek[]; isAdjustable?: boolean; pctAdjustOther?: string },
 ): Promise<{ coverages: CoverageObjek[]; totalNetRate: string; flagNetRate: boolean }> {
   return minta(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/hitung-net-rate`, { metode: 'POST', badan })
+}
+
+/** Saringan popup Choose Accumulation tahap 1 (RD `SearchRiskAccumulation_RD`; kosong = tidak menyaring). */
+export interface SaringAkumulasi {
+  /** `.ID` = (Accumulation Code). */
+  id: string
+  /** `.Note` Contains, tanpa peka huruf (Road). */
+  note: string
+  /** `.PostalCode` = (Zip Code; awal = zip lokasi risiko, `SearchAccumAct`). */
+  postalCode: string
+  /** `.CZone` =. */
+  czone: string
+}
+
+/** Satu baris hasil (grid sel 90). */
+export interface BarisAkumulasi {
+  id: string
+  /** `.AccumulationName` (kolom Type). */
+  accumulationName: string
+  /** `.Note` (kolom Description; ditulis ke AccumulationDescription). */
+  note: string
+}
+
+/** `GET /api/nbfacin/akumulasi` - tombol Filter (tiket 46). */
+export function cariAkumulasi(saring: SaringAkumulasi): Promise<{ baris: BarisAkumulasi[] }> {
+  const kueri: Record<string, string> = {}
+  for (const [k, v] of Object.entries(saring)) if (v.trim() !== '') kueri[k] = v.trim()
+  return minta<{ baris: BarisAkumulasi[] }>('/api/nbfacin/akumulasi', { kueri })
 }

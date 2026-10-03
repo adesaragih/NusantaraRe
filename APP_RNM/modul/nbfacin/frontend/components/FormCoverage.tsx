@@ -5,11 +5,18 @@
 // `CountPremi_ACT`, desimal eksak di backend) - mode "percent" (premi dari rate) kecuali Gross Premium yang diubah
 // (mode "amount", rate dihitung balik). Medan tampil per Coverage Basis mengikuti syarat sel `CoverageItem.xml`.
 //
-// Keputusan agent (tiket 43): P-1 Layering (basis 5), Zone / 4.2 Construction, Accumulation, Indemnity Unit, View
-// Indemnity Table = tahap berikut. P-2 pilihan Days = 365 / 366 (aturan `.Day` tidak ada di korpus; data contoh 365)
-// `[dugaan]`. P-3 tanda wajib ‰ Gross Rate tanpa menahan Save (pola L-2). P-4 jeda hitung 500 ms; jawaban lama dibuang.
+// Tata letak (tiket 46, ralat 03-10-2026 atas gambar layar Pega): blok atas berlabel kiri (sel 3-21: Coverage Basis,
+// Choose Coverage, Coverage = `.OLDID`, Accumulation Code / Address, Choose Accumulation Code + Copy Accumulation,
+// Conditions), lalu dua kolom berlabel kiri (sel 24: Days radio … % Limit of Liability; sel 36: % Pro Rate … Gross
+// Premium). Sel ber-`ALWAYS` dengan syarat sisa tetap tampil (Indemnity 28, Indemnity Unit 40, % Loss Limit 44);
+// sel `pyReadOnly` tanpa syarat = teks (Coverage, Accumulation, TSI, % Indemnity 41, % First Scale 42).
+//
+// Keputusan agent (tiket 43): P-1 Layering (basis 5), Zone / 4.2 Construction, View Indemnity Table (sel 50,
+// `ViewIndemnity_LA`), perubahan Indemnity Unit (`SetIndemnityRate_ACT`) = tahap berikut. P-2 (ralat) Days = radio
+// 365 / 366 / 360 menurut gambar layar (aturan `.Day` tidak ada di korpus). P-3 tanda wajib ‰ Gross Rate tanpa menahan
+// Save (pola L-2). P-4 jeda hitung 500 ms; jawaban lama dibuang.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 import { Area, Field, Gagal, Kosong, Memuat, Modal, Pilih } from '../../../../inti/frontend/components/ui/dasar'
 import { desimalSah } from '../../../../inti/frontend/lib/desimal'
@@ -17,7 +24,17 @@ import { formatNumber } from '../../../../inti/frontend/lib/format'
 import { cariCoverage, daftarMataUang, hitungCoverage, type BarisCoverage, type CoverageObjek, type ModeHitung } from '../api'
 import GridDeductible from './GridDeductible'
 import IsianUang from './IsianUang'
-import { FORM_COV as F, LABEL_COVERAGE_BASIS, OPSI_COVERAGE_BASIS, PILIHAN_PERIODE, POPUP_OKUPASI, TEKS_COVERAGE } from '../labels'
+import {
+  AKUMULASI_KOSONG,
+  FORM_COV as F,
+  LABEL_COVERAGE_BASIS,
+  OPSI_COVERAGE_BASIS,
+  OPSI_INDEMNITY_UNIT,
+  PILIHAN_DAY_COVERAGE,
+  POPUP_OKUPASI,
+  TEKS_COVERAGE,
+} from '../labels'
+import PopupAkumulasi from './PopupAkumulasi'
 
 const JEDA_MS = 500
 const DESIMAL = 4
@@ -46,11 +63,11 @@ export function adaGalatCoverage(c: CoverageObjek[]): boolean {
   return c.some((x) => MEDAN_ANGKA.some((k) => !angkaSah(x[k])))
 }
 
-function Tampil({ label, nilai }: { label: string; nilai: string }) {
+function Tampil({ label, nilai, angka }: { label: string; nilai: string; angka?: boolean }) {
   return (
     <div className="field">
       <span className="field__label">{label}</span>
-      <div className="nbf-inward__teks">{nilai}</div>
+      <div className={'nbf-inward__teks' + (angka ? ' nbf-angka' : '')}>{nilai}</div>
     </div>
   )
 }
@@ -122,6 +139,9 @@ export default function FormCoverage({
   c,
   tsiItem,
   item,
+  pertama,
+  onSalinAkumulasi,
+  zipRisiko = '',
   ubah,
 }: {
   caseId: string
@@ -130,9 +150,18 @@ export default function FormCoverage({
   tsiItem: string
   /** Item pemilik (PctAdjustment `CountPremi_ACT`; mata uang = awal deductible baru). */
   item?: { isAdjustable: boolean; pctAdjustOther: string; currency?: string }
+  /** Coverage pertama item - tombol Copy Accumulation (sel 19, `.pxListSubscript==1`). */
+  pertama?: boolean
+  /** Copy Accumulation: salin ke semua coverage di objek yang sama (`CopyAccumulationCode_Act`). */
+  onSalinAkumulasi?: () => void
+  /** Zip lokasi risiko objek (`RiskLocation.ASMZipCode`) - saringan awal & pemeriksaan Choose Accumulation. */
+  zipRisiko?: string
   ubah: (c: CoverageObjek) => void
 }) {
   const [pilih, setPilih] = useState(false)
+  const [pilihAkumulasi, setPilihAkumulasi] = useState(false)
+  // Nama grup radio Days unik per form (beberapa coverage dapat terbuka bersamaan).
+  const namaHari = `nbfacin-cov-day-${useId()}`
   const [menghitung, setMenghitung] = useState(false)
   const [galat, setGalat] = useState<unknown>(null)
   const nomor = useRef(0)
@@ -215,38 +244,62 @@ export default function FormCoverage({
   const b = c.coverageBasis
 
   return (
-    <div className="nbf-objek__isi">
-      <div className="nbf-opp__kolom">
-        <div className="nbf-opp__tumpuk">
-          <Pilih label={LABEL_COVERAGE_BASIS} value={b} onChange={set('coverageBasis')} opsi={OPSI_COVERAGE_BASIS} />
-          {b === '5' && <div className="alert alert--warn">{TEKS_COVERAGE.layeringBelum}</div>}
-          <div className="nbf-opp__tombol">
-            <button type="button" className="btn btn--sm" onClick={() => setPilih(true)}>
-              {F.pilihCoverage.label}
-            </button>
-          </div>
-          <Tampil label={F.coverage.label} nilai={[c.oldId, c.coverageNote].filter(Boolean).join(' - ')} />
-          <Area label={F.conditions.label} value={c.conditions} onChange={(v) => ubah({ ...c, conditions: v })} baris={2} />
+    <div className="nbf-objek__isi nbf-cov">
+      {/* Blok atas (sel 1, "Stacked with labels left"): sel 3 -> 21. */}
+      <div className="nbf-cov__atas nbf-labelkiri">
+        <Pilih label={LABEL_COVERAGE_BASIS} value={b} onChange={set('coverageBasis')} opsi={OPSI_COVERAGE_BASIS} />
+        <div className="nbf-opp__tombol">
+          <button type="button" className="btn btn--sm" onClick={() => setPilih(true)}>
+            {F.pilihCoverage.label}
+          </button>
         </div>
-        <div className="nbf-opp__tumpuk">
-          <Pilih
-            label={F.day.label}
-            value={c.day}
-            onChange={set('day')}
-            opsi={PILIHAN_PERIODE.day.map((d) => ({ value: d, label: d }))}
-          />
-          <Tampil label={F.tsi.label} nilai={formatNumber(c.tsi || tsiItem, DESIMAL)} />
-          {b === '2' && angka('indemnity', F.indemnity.label)}
+        {/* Sel 5 = `.OLDID` baca-saja. */}
+        <Tampil label={F.coverage.label} nilai={c.oldId} />
+        <Tampil label={F.accumulationCode.label} nilai={c.accumulationCode || AKUMULASI_KOSONG} />
+        <Tampil label={F.accumulationAddress.label} nilai={c.accumulationDescription || AKUMULASI_KOSONG} />
+        <div className="nbf-opp__tombol">
+          <button type="button" className="btn btn--sm" onClick={() => setPilihAkumulasi(true)}>
+            {F.pilihAkumulasi.label}
+          </button>
+          {/* Sel 19: hanya coverage pertama (`.pxListSubscript==1`). */}
+          {pertama && onSalinAkumulasi && (
+            <button type="button" className="btn btn--sm" onClick={onSalinAkumulasi}>
+              {F.salinAkumulasi.label}
+            </button>
+          )}
+        </div>
+        <Area label={F.conditions.label} value={c.conditions} onChange={(v) => ubah({ ...c, conditions: v })} baris={3} />
+      </div>
+      {b === '5' && <div className="alert alert--warn">{TEKS_COVERAGE.layeringBelum}</div>}
+      {/* Dua kolom (sel 22, "Inline grid double"): kiri sel 24 (26-35), kanan sel 36 (38-47). */}
+      <div className="nbf-cov__kolom">
+        <div className="nbf-cov__tumpuk nbf-labelkiri">
+          <div className="field">
+            <span className="field__label">{F.day.label}</span>
+            <div className="nbf-inward__radio" role="radiogroup" aria-label={F.day.label}>
+              {PILIHAN_DAY_COVERAGE.map((d) => (
+                <label key={d} className="nbf-inward__pilihan">
+                  <input type="radio" name={namaHari} value={d} checked={c.day === d} onChange={() => set('day')(d)} /> {d}
+                </label>
+              ))}
+            </div>
+          </div>
+          <Tampil label={F.tsi.label} nilai={formatNumber(c.tsi || tsiItem, DESIMAL)} angka />
+          {angka('indemnity', F.indemnity.label)}
           {angka('rate', F.rate.label, 'percent', true)}
           {b === '2' && angka('firstLoss', F.firstLoss.label)}
           {angkaDiskon('discountPercentage', F.discountPercentage.label, 'percent')}
-          {b === '2' && <Tampil label={F.tsiLiability.label} nilai={formatNumber(c.tsiLiability, DESIMAL)} />}
+          {b === '2' && <Tampil label={F.tsiLiability.label} nilai={formatNumber(c.tsiLiability, DESIMAL)} angka />}
           {angka('netRate', F.netRate.label)}
           {uang('limitOfLiability', F.limitOfLiability.label)}
           {angka('pctLol', F.pctLol.label)}
-          <Tampil label={F.proRate.label} nilai={formatNumber(c.proRatePercent, DESIMAL)} />
-          {angka('indemnityPercentage', F.indemnityPercentage.label)}
-          {b === '2' && angka('firstScale', F.firstScale.label)}
+        </div>
+        <div className="nbf-cov__tumpuk nbf-labelkiri">
+          <Tampil label={F.proRate.label} nilai={formatNumber(c.proRatePercent, DESIMAL)} angka />
+          <Pilih label={F.unit.label} value={c.unit ?? ''} onChange={(v) => ubah({ ...c, unit: v })} opsi={OPSI_INDEMNITY_UNIT} />
+          {/* Sel 41 / 42: baca-saja tanpa syarat. */}
+          <Tampil label={F.indemnityPercentage.label} nilai={formatNumber(c.indemnityPercentage, DESIMAL)} angka />
+          {b === '2' && <Tampil label={F.firstScale.label} nilai={formatNumber(c.firstScale, DESIMAL)} angka />}
           {(b === '4' || b === '5') && angka('sublimit', F.sublimit.label)}
           {angka('lostLimit', F.lostLimit.label)}
           {b === '3' && angka('emlPml', F.emlPml.label)}
@@ -263,6 +316,16 @@ export default function FormCoverage({
         mataUang={mataUang}
         ubah={(deductibles) => ubah({ ...c, deductibles })}
       />
+      {pilihAkumulasi && (
+        <PopupAkumulasi
+          zipRisiko={zipRisiko}
+          onTutup={() => setPilihAkumulasi(false)}
+          onPilih={(kode, alamat) => {
+            setPilihAkumulasi(false)
+            ubah({ ...c, accumulationCode: kode, accumulationDescription: alamat })
+          }}
+        />
+      )}
       {pilih && (
         <PopupCoverage
           onTutup={() => setPilih(false)}

@@ -21,16 +21,52 @@ describe('FormCoverage', () => {
     expect([c.coverageBasis, c.indemnityPercentage, c.coverage, c.oldId, c.coverageNote]).toEqual(['1', '100', 'ID1', '100815', 'UJI'])
   })
 
-  it('basis 1: medan umum; tanpa medan khusus First Loss / EML / Sub Limit', () => {
+  it('basis 1: medan umum (Indemnity / Indemnity Unit / % Loss Limit ALWAYS); tanpa First Loss / EML / Sub Limit', () => {
     const l = label(form())
     expect(l).toContain(LABEL_COVERAGE_BASIS)
-    for (const x of [F.coverage, F.day, F.tsi, F.rate, F.discountPercentage, F.netRate, F.indemnityPercentage, F.lostLimit, F.premium]) {
+    for (const x of [
+      F.coverage, F.accumulationCode, F.accumulationAddress, F.day, F.tsi, F.indemnity, F.rate, F.discountPercentage, F.netRate,
+      F.proRate, F.unit, F.indemnityPercentage, F.lostLimit, F.premium,
+    ]) {
       expect(l).toContain(x.label)
     }
-    for (const x of [F.firstLoss, F.firstScale, F.indemnity, F.emlPml, F.sublimit]) expect(l).not.toContain(x.label)
+    for (const x of [F.firstLoss, F.firstScale, F.emlPml, F.sublimit]) expect(l).not.toContain(x.label)
   })
 
-  it('basis 2 menampilkan First Loss / First Scale / Indemnity; basis 3 EML/PML; basis 4 Sub Limit; basis 5 pesan', () => {
+  it('urutan Pega: blok atas lalu kolom kiri (Days … % Limit of Liability) dan kanan (% Pro Rate … Gross Premium)', () => {
+    const l = label(form())
+    const urut = [
+      LABEL_COVERAGE_BASIS, F.coverage.label, F.accumulationCode.label, F.accumulationAddress.label, F.conditions.label,
+      F.day.label, F.tsi.label, F.indemnity.label, F.rate.label, F.discountPercentage.label, F.netRate.label,
+      F.limitOfLiability.label, F.pctLol.label, F.proRate.label, F.unit.label, F.indemnityPercentage.label,
+      F.lostLimit.label, F.discount.label, F.premium.label,
+    ]
+    expect(l.filter((x) => urut.includes(x as string))).toEqual(urut)
+  })
+
+  it('Days = radio mendatar 365 / 366 / 360 (bukan dropdown); Coverage = OLDID; Accumulation kosong = ---', () => {
+    const html = form({ ...coverageBaru({ id: 'ID1', oldId: 'FLEXAS', nama: 'UJI NAMA' }), day: '366' })
+    expect(html).toContain('role="radiogroup" aria-label="Days"')
+    for (const d of ['365', '366', '360']) expect(html).toMatch(new RegExp(`type="radio"[^>]*value="${d}"`))
+    expect(html).toMatch(/<input(?=[^>]*value="366")(?=[^>]*checked="")[^>]*type="radio"/)
+    expect(html).not.toMatch(/<input(?=[^>]*value="365")(?=[^>]*checked="")/)
+    expect(html).toContain('<div class="nbf-inward__teks">FLEXAS</div>')
+    expect(html).not.toContain('UJI NAMA')
+    expect(html.match(/<div class="nbf-inward__teks">---<\/div>/g)).toHaveLength(2)
+  })
+
+  it('% Indemnity dan TSI baca-saja (teks rata kanan); Copy Accumulation hanya coverage pertama', () => {
+    const html = form()
+    expect(html).toContain('<div class="nbf-inward__teks nbf-angka">100</div>')
+    expect(html).toContain(F.pilihAkumulasi.label)
+    expect(html).not.toContain(F.salinAkumulasi.label)
+    const pertama = renderToStaticMarkup(
+      <FormCoverage caseId="NB-1" c={coverageBaru()} tsiItem="1" pertama onSalinAkumulasi={() => {}} ubah={() => {}} />,
+    )
+    expect(pertama).toContain(F.salinAkumulasi.label)
+  })
+
+  it('basis 2 menampilkan First Loss / First Scale; basis 3 EML/PML; basis 4 Sub Limit; basis 5 pesan', () => {
     const l2 = label(form({ ...coverageBaru(), coverageBasis: '2' }))
     for (const x of [F.firstLoss, F.firstScale, F.indemnity, F.tsiLiability]) expect(l2).toContain(x.label)
     expect(label(form({ ...coverageBaru(), coverageBasis: '3' }))).toContain(F.emlPml.label)
@@ -40,7 +76,7 @@ describe('FormCoverage', () => {
 
   it('TSI tampil = TSI item (format Indonesia); Gross Rate bertanda wajib', () => {
     const html = form()
-    expect(html).toContain('>1.000.000</div>')
+    expect(html).toContain('nbf-angka">1.000.000</div>')
     expect(html).toMatch(new RegExp(`${F.rate.label.replace('‰', '‰')}<span class="field__req">\\*</span>`))
   })
 
@@ -99,5 +135,13 @@ describe('TabCoverage - net rate (tiket 44, CekNetRate_ACT)', () => {
     expect(SUMBER_TAB).toContain('hitungNetRate(caseId, {')
     expect(SUMBER_TAB).toContain('if (n === nomorNet.current) ubahCoverage(o, i, h.coverages)')
     expect(SUMBER_TAB).toContain('{bolehNetRate(covs) ? (')
+  })
+})
+
+describe('TabCoverage - Copy Accumulation (tiket 46, CopyAccumulationCode_Act)', () => {
+  it('salin ke setiap coverage di setiap item objek yang sama', () => {
+    expect(SUMBER_TAB).toContain('onSalinAkumulasi={() => salinAkumulasi(o, c)}')
+    expect(SUMBER_TAB).toContain('pertama={n === 0}')
+    expect(SUMBER_TAB).toMatch(/items: x\.items\.map\(\(it\) =>\s*it\.coverages \? \{ \.\.\.it, coverages: it\.coverages\.map\(\(cv\) => \(\{ \.\.\.cv, accumulationCode, accumulationDescription \}\)\) \} : it,/)
   })
 })

@@ -917,6 +917,10 @@ export const GRID_COVERAGE = [
 export const FORM_COV = {
   pilihCoverage: { sel: '4', tag: 'pyLabel', label: 'Choose Coverage' },
   coverage: { sel: '5', tag: 'pyLabelFieldValue', label: 'Coverage' },
+  accumulationCode: { sel: '14', tag: 'pyLabelFieldValue', label: 'Accumulation Code' },
+  accumulationAddress: { sel: '15', tag: 'pyLabelFieldValue', label: 'Accumulation Address' },
+  pilihAkumulasi: { sel: '18', tag: 'pyLabel', label: 'Choose Accumulation Code' },
+  salinAkumulasi: { sel: '19', tag: 'pyLabel', label: 'Copy Accumulation' },
   conditions: { sel: '20', tag: 'pyLabelFieldValue', label: 'Conditions' },
   day: { sel: '26', tag: 'pyLabelFieldValue', label: 'Days' },
   tsi: { sel: '27', tag: 'pyLabelFieldValue', label: 'TSI' },
@@ -929,6 +933,7 @@ export const FORM_COV = {
   limitOfLiability: { sel: '34', tag: 'pyLabelFieldValue', label: 'Limit of Liability' },
   pctLol: { sel: '35', tag: 'pyLabelFieldValue', label: '% Limit of Liability' },
   proRate: { sel: '39', tag: 'pyLabelFieldValue', label: '% Pro Rate' },
+  unit: { sel: '40', tag: 'pyLabelFieldValue', label: 'Indemnity Unit' },
   indemnityPercentage: { sel: '41', tag: 'pyLabelFieldValue', label: '% Indemnity' },
   firstScale: { sel: '42', tag: 'pyLabelFieldValue', label: '% First Scale' },
   sublimit: { sel: '43', tag: 'pyLabelFieldValue', label: '% Sub Limit' },
@@ -937,6 +942,22 @@ export const FORM_COV = {
   discount: { sel: '46', tag: 'pyLabelFieldValue', label: 'Discount' },
   premium: { sel: '47', tag: 'pyLabelFieldValue', label: 'Gross Premium' },
 } as const
+
+/**
+ * Days coverage (sel 26) = RADIO BUTTON mendatar (`pxRadioButtons`, `pyOrientation` horizontal), bukan dropdown. Daftar dari
+ * aturan properti `.Day` yang TIDAK ada di korpus -> urutan dan isi menurut gambar layar Pega dari work owner 03-10-2026
+ * (365, 366, 360). Ubah = `CountPremi_ACT` (percent / percent).
+ */
+export const PILIHAN_DAY_COVERAGE = ['365', '366', '360'] as const
+
+/**
+ * Indemnity Unit (sel 40, dropdown tanpa pilihan kosong) - daftar = aturan properti `ASM-FW-GISFW-DATA-COVERAGE!UNIT`,
+ * BELUM ada di korpus (data contoh hanya kode "0" / "1"; label tidak diketahui). Kosong sampai berkasnya dikirim.
+ */
+export const OPSI_INDEMNITY_UNIT: { value: string; label: string }[] = []
+
+/** Accumulation Code / Address kosong tampil "---" (gambar layar Pega 03-10-2026). */
+export const AKUMULASI_KOSONG = '---'
 
 /** Label Coverage Basis = pyLabel aturan `ASM-FW-GISFW-DATA-COVERAGE!COVERAGEBASIS` (`DDL\CoverageBasis.xml`). */
 export const LABEL_COVERAGE_BASIS = 'Coverage Basis'
@@ -1032,3 +1053,31 @@ export const OPSI_TYPE_DEDUCTIBLE2 = [
   { value: '4', label: '% Of TSI Whichever Is Higher' },
   { value: '0', label: 'NIL' },
 ]
+
+/**
+ * Popup Choose Accumulation (tiket 46) - harness `ChooseAccumulation_FacIn` (judul jendela "Choose Accumulation") ->
+ * section `SearchRiskAccumCov.xml`. Tahap 1 = jalur Report Definition `SearchRiskAccumulation_RD` (grid sel 90:
+ * `.ID` / `.AccumulationName` / `.Note`). Diuji `labels.test.ts`.
+ */
+export const POPUP_AKUMULASI = {
+  judul: 'Choose Accumulation',
+  cari: { sel: '1', tag: 'pyValue', label: 'Search Risk Accumulation' },
+  accumulationCode: { sel: '17', tag: 'pyLabelFieldValue', label: 'Accumulation Code' },
+  road: { sel: '21', tag: 'pyLabelFieldValue', label: 'Road' },
+  zipCode: { sel: '26', tag: 'pyLabelFieldValue', label: 'Zip Code' },
+  czone: { sel: '35', tag: 'pyLabelFieldValue', label: 'CZone' },
+  filter: { sel: '40', tag: 'pyLabel', label: 'Filter' },
+  bersih: { sel: '41', tag: 'pyLabel', label: 'Clear Column' },
+  kolom: [
+    { sel: '107', tag: 'pyValue', label: 'Accumulation Code' },
+    { sel: '108', tag: 'pyValue', label: 'Type' },
+    { sel: '109', tag: 'pyValue', label: 'Description' },
+  ],
+  pilih: { sel: '119', tag: 'pyLabel', label: 'Choose' },
+} as const
+
+export const TEKS_AKUMULASI = {
+  tanpaHasil: 'Tidak ada accumulation yang cocok.',
+  /** Pesan `SetDataAccum_Act` langkah 5 (verbatim, termasuk dua spasi dan ejaan "ZIpCode"). */
+  zipBeda: (risiko: string, dariId: string) => `ZIpCode Harus Sama dengan ZIpCode  Yang di Object Item >>>> ${risiko} != ${dariId}`,
+} as const
