@@ -6,7 +6,7 @@
 
 import { desimalSah, jumlahDesimal } from '../../../inti/frontend/lib/desimal'
 import type { Opsi } from '../../../inti/frontend/components/ui/dasar'
-import type { Produk, ProdukInward, ProdukUmum } from './api'
+import type { HasilSalinLama, Produk, ProdukInward, ProdukLama, ProdukUmum, StatusSalinLama } from './api'
 import { PEMBAYARAN_MPNL } from './labels'
 
 function umumKosong(): ProdukUmum {
@@ -181,3 +181,23 @@ export function tampilTanggal(teks: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(teks.trim())
   return m === null ? teks : `${m[3]}/${m[2]}/${m[1]}`
 }
+
+/** Copy Old - `Search` menyaring ID, Product Name, Ceding, Treaty Number, Treaty Name (tanpa membedakan huruf). */
+export function saringLama(daftar: readonly ProdukLama[], kata: string): ProdukLama[] {
+  const k = kata.trim().toUpperCase()
+  if (k === '') return [...daftar]
+  return daftar.filter((d) => [d.id, d.productName, d.ceding, d.treatyNumber, d.inwardName].some((v) => v.toUpperCase().includes(k)))
+}
+
+/** Copy Old - ID yang dikirim `Process Copy`: terpilih DAN boleh disalin, urutan daftar. */
+export function idBolehDisalin(daftar: readonly ProdukLama[], terpilih: ReadonlySet<string>): string[] {
+  return daftar.filter((d) => d.bolehDisalin && terpilih.has(d.id)).map((d) => d.id)
+}
+
+/** Copy Old - cacah hasil `Process Copy` per status. */
+export function ringkasSalin(hasil: readonly HasilSalinLama[]): Record<StatusSalinLama, number> {
+  const r: Record<StatusSalinLama, number> = { disalin: 0, sudahAda: 0, ditolak: 0, gagal: 0 }
+  for (const h of hasil) r[h.status]++
+  return r
+}
+

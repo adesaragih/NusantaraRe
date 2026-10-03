@@ -396,4 +396,29 @@ export const LAIN_MPNL = {
    * paling banyak `BATAS_DROPDOWN` baris; potongan DINYATAKAN, sisanya dicapai lewat `Search`.
    */
   dropdownTerpotong: 'Only the first 200 rows are shown. Type in Search to narrow the list.',
+  /** `[tidak ada di korpus]` - tombol di samping `Add` (permintaan work owner 03-10-2026), teks dari permintaannya. */
+  copyOld: 'Copy Old',
+  /** `[tidak ada di korpus]` - keterangan popup `Copy Old`. */
+  copyOldKeterangan:
+    'Products in the old (JSON) tables that are not in the new tables yet. Tick the ones to copy, then press Process Copy.',
+  /** `[tidak ada di korpus]` - tombol kaki popup `Copy Old` (permintaan work owner 03-10-2026). */
+  prosesCopy: 'Process Copy',
+  /** `[tidak ada di korpus]` - kotak centang kepala kolom popup `Copy Old` (pembaca layar). */
+  pilihSemua: 'Select all',
+  /** `[tidak ada di korpus]` - kotak centang satu baris popup `Copy Old` (pembaca layar), diikuti ID produk. */
+  pilihBaris: 'Select',
+  /** `[tidak ada di korpus]` - cacah baris tercentang popup `Copy Old`, didahului angkanya. */
+  dipilih: 'selected',
+  /** `[tidak ada di korpus]` - kolom alasan/catatan popup `Copy Old`. */
+  kolomCatatan: 'Notes',
+  /** `[tidak ada di korpus]` - popup `Copy Old` tanpa baris. */
+  copyOldKosong: 'All old products are already in the new tables.',
+  /** `[tidak ada di korpus]` - status hasil `Process Copy`. */
+  statusDisalin: 'Copied',
+  /** `[tidak ada di korpus]` - status hasil `Process Copy`. */
+  statusSudahAda: 'Already in the new tables',
+  /** `[tidak ada di korpus]` - status hasil `Process Copy`. */
+  statusDitolak: 'Cannot be copied',
+  /** `[tidak ada di korpus]` - status hasil `Process Copy`. */
+  statusGagal: 'Failed',
 } as const

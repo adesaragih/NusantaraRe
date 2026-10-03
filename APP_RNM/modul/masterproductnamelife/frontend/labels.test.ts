@@ -195,6 +195,19 @@ const BUKAN_KORPUS: readonly string[] = [
   'LAIN_MPNL.belum',
   'LAIN_MPNL.ulangi',
   'LAIN_MPNL.dropdownTerpotong',
+  // Copy Old (permintaan work owner 03-10-2026) - bukan layar Pega.
+  'LAIN_MPNL.copyOld',
+  'LAIN_MPNL.copyOldKeterangan',
+  'LAIN_MPNL.prosesCopy',
+  'LAIN_MPNL.pilihSemua',
+  'LAIN_MPNL.pilihBaris',
+  'LAIN_MPNL.dipilih',
+  'LAIN_MPNL.kolomCatatan',
+  'LAIN_MPNL.copyOldKosong',
+  'LAIN_MPNL.statusDisalin',
+  'LAIN_MPNL.statusSudahAda',
+  'LAIN_MPNL.statusDitolak',
+  'LAIN_MPNL.statusGagal',
 ]
 
 /** Nilai label untuk kunci `OBJEK.medan`. */
@@ -306,7 +319,9 @@ describe('tombol layar = tombol korpus', () => {
     BUKTI.filter((b) => b[3] === 'pyLabel' || b[3] === 'pySubmitLabel' || b[3] === 'pyCancelLabel').map((b) => b[0]),
   )
   // Ikon grid bawaan / salin baris / kirim ulang - beralasan di `labels.ts` (`LAIN_MPNL`).
-  const tambahanSah = new Set(['LAIN_MPNL.tambahBaris', 'LAIN_MPNL.hapusBaris', 'LAIN_MPNL.salinBaris', 'LAIN_MPNL.ulangi'])
+  const tambahanSah = new Set(['LAIN_MPNL.tambahBaris', 'LAIN_MPNL.hapusBaris', 'LAIN_MPNL.salinBaris', 'LAIN_MPNL.ulangi',
+    // Copy Old (permintaan work owner 03-10-2026).
+    'LAIN_MPNL.copyOld', 'LAIN_MPNL.prosesCopy'])
   // Keputusan work owner 02-10-2026 ("perubahan pada tampilan untuk semua Choose ubah jadi dropdown saja"): ketujuh
   // tombol `Choose*` dan tombol popup FlowAction `Choose*` (`Choose` baris, `Submit`, `Cancel`) diganti dropdown
   // master (`DropdownMaster`). Labelnya tetap berbukti korpus; tombolnya sengaja TIDAK dirender.

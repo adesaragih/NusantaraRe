@@ -7,6 +7,9 @@ import {
   PILIHAN_PEMBAYARAN,
   geserAktif,
   hitungMaxSumReasured,
+  idBolehDisalin,
+  ringkasSalin,
+  saringLama,
   jepitHalaman,
   namaTreaty,
   potongHalaman,
@@ -22,6 +25,7 @@ import {
   waktuPega,
 } from './bentuk'
 import { LAIN_MPNL } from './labels'
+import type { ProdukLama } from './api'
 
 describe('CountMaxSumReasured_Act - MAXSUMREASURED = MaxSumInsured - CedingLimit (eksak)', () => {
   it('mengurangi per digit, tanpa float', () => {
@@ -158,6 +162,38 @@ describe('mode lihat - nilai tampil seperti layar Pega (foto layar work owner 02
     expect(tampilTanggal('2023-08-01')).toBe('01/08/2023')
     expect(tampilTanggal('')).toBe('')
     expect(tampilTanggal('bukan tanggal')).toBe('bukan tanggal')
+  })
+})
+
+describe('Copy Old - popup produk lama (permintaan work owner 03-10-2026)', () => {
+  const lama = (id: string, ubah: Partial<ProdukLama> = {}): ProdukLama => ({
+    id, productName: `UJI PRODUK ${id}`, ceding: 'UJI CEDING', treatyNumber: `UJI-${id}`, inwardName: 'UJI TREATY',
+    createOp: 'UJI-OP', updateOp: 'UJI-OP', bolehDisalin: true, alasan: [], catatan: [], ...ubah,
+  })
+  const daftar = [lama('100901'), lama('100902', { ceding: 'UJI LAIN', bolehDisalin: false, alasan: ['UJI ALASAN'] }), lama('100903')]
+
+  it('Search menyaring ID, Product Name, Ceding, Treaty Number, Treaty Name - tanpa membedakan huruf', () => {
+    expect(saringLama(daftar, '').map((d) => d.id)).toEqual(['100901', '100902', '100903'])
+    expect(saringLama(daftar, 'lain').map((d) => d.id)).toEqual(['100902'])
+    expect(saringLama(daftar, ' uji-100903 ').map((d) => d.id)).toEqual(['100903'])
+    expect(saringLama(daftar, '10090').length).toBe(3)
+  })
+
+  it('yang dikirim Process Copy: hanya ID terpilih yang boleh disalin, urutan daftar', () => {
+    expect(idBolehDisalin(daftar, new Set(['100903', '100902', '100901', 'UJI-HILANG']))).toEqual(['100901', '100903'])
+    expect(idBolehDisalin(daftar, new Set())).toEqual([])
+  })
+
+  it('ringkasan hasil per status', () => {
+    expect(
+      ringkasSalin([
+        { id: '1', status: 'disalin', pesan: [] },
+        { id: '2', status: 'disalin', pesan: [] },
+        { id: '3', status: 'ditolak', pesan: ['x'] },
+        { id: '4', status: 'gagal', pesan: [] },
+        { id: '5', status: 'sudahAda', pesan: [] },
+      ]),
+    ).toEqual({ disalin: 2, sudahAda: 1, ditolak: 1, gagal: 1 })
   })
 })
 

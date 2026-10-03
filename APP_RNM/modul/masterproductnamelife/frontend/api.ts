@@ -304,6 +304,43 @@ export async function cariMaster(jenis: JenisMaster, cari: string, batas?: numbe
   return minta<Daftar<NilaiMaster>>(`${PREFIX_MPNL}/master/${e(jenis)}`, { kueri: { cari, batas } })
 }
 
+// ---------------------------------------------------------------------------
+// Copy Old (permintaan work owner 03-10-2026) - produk tabel JSON lama yang belum ada di tabel flat.
+// ---------------------------------------------------------------------------
+
+/** Satu baris popup `Copy Old`; `alasan` / `catatan` menyebut kolom, tidak pernah nilainya. */
+export interface ProdukLama {
+  id: string
+  productName: string
+  ceding: string
+  treatyNumber: string
+  inwardName: string
+  createOp: string
+  updateOp: string
+  bolehDisalin: boolean
+  alasan: string[]
+  catatan: string[]
+}
+
+export type StatusSalinLama = 'disalin' | 'sudahAda' | 'ditolak' | 'gagal'
+
+/** Hasil satu ID sesudah `Process Copy`. */
+export interface HasilSalinLama {
+  id: string
+  status: StatusSalinLama
+  pesan: string[]
+}
+
+/** Isi popup `Copy Old`: produk lama yang belum ada di tabel flat, urut ID. */
+export async function ambilProdukLama(): Promise<Daftar<ProdukLama>> {
+  return minta<Daftar<ProdukLama>>(`${PREFIX_MPNL}/produk-lama`)
+}
+
+/** `Process Copy`: salin ID yang dicentang ke tabel flat - satu transaksi per produk, hasil per ID. */
+export async function salinProdukLama(ids: string[]): Promise<{ hasil: HasilSalinLama[]; disalin: number }> {
+  return minta<{ hasil: HasilSalinLama[]; disalin: number }>(`${PREFIX_MPNL}/produk-lama/salin`, { metode: 'POST', badan: { ids } })
+}
+
 /** Autocomplete `Plan Name` b33121 (RD `BrowseProductTypeLife_RD`). */
 export async function cariPlan(cari: string): Promise<Daftar<JenisPlan>> {
   return minta<Daftar<JenisPlan>>(`${PREFIX_MPNL}/master-plan`, { kueri: { cari } })

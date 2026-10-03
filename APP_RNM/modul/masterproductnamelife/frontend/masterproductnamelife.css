@@ -198,6 +198,76 @@
   white-space: nowrap;
 }
 
+/* Popup `Copy Old` (permintaan work owner 03-10-2026): keterangan, ringkasan hasil, Search + cacah terpilih, tabel
+   bercentang dengan kepala menempel saat digulir. */
+.mpnl .mpnl-lama__keterangan {
+  margin: 0 0 12px;
+}
+
+.mpnl .mpnl-lama__ringkas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--mt-aksen-garis);
+  border-radius: 10px;
+  background: var(--mt-aksen-lembut);
+  color: var(--mt-teks);
+  font-weight: 600;
+}
+
+.mpnl .mpnl-lama__masalah {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  color: var(--mt-teks);
+  font-size: var(--fs-sm);
+}
+
+.mpnl .mpnl-lama__alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-bottom: 10px;
+}
+
+.mpnl .mpnl-lama__cari {
+  flex: 1 1 16rem;
+  max-width: 28rem;
+}
+
+.mpnl .mpnl-lama__cacah {
+  color: var(--mt-teks-redup);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.mpnl .mpnl-lama__centang {
+  width: 2.75rem;
+  text-align: center;
+}
+
+/* Alasan/catatan turun baris di dalam selnya - tabel tidak melebar keluar popup. */
+.mpnl .mpnl-lama__catatan {
+  min-width: 12rem;
+  max-width: 20rem;
+  color: var(--mt-teks-redup);
+  font-size: var(--fs-xs);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.mpnl .mpnl-lama__ditolak > td {
+  color: var(--mt-teks-redup);
+}
+
+.mpnl .mpnl-lama thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
 /* ------------------------------------------------ tata letak form produk
    Foto layar Pega work owner 02-10-2026: kartu TREATY NAME (b2934) di kiri - sisi umum, LIEN CLAUSE, DOCUMENT
    CLAIM; kartu INWARD (b16621) di kanan - baris atas lalu kolom kiri b21723 dan kanan b27004. Label di kiri,
