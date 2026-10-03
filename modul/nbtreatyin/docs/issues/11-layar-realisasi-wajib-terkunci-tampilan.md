@@ -80,3 +80,36 @@ dijawab.
   (Accept/Reject).
 - Tidak dibangun: tombol/layar Survey Report (penyimpanan survei tidak dirancang, `[terbuka]`),
   pemilih SOB (hanya untuk XOL Retro), Choose Business R (treaty keluar, JSON).
+
+> ⛔⛔ **RALAT.** 2026-10-03 (putaran 2, paket P3) — bunyi lama dikutip utuh lalu ditarik untuk butir
+> pemilih SOB:
+> > *"Tidak dibangun: tombol/layar Survey Report (penyimpanan survei tidak dirancang, `[terbuka]`),
+> > pemilih SOB (hanya untuk XOL Retro), Choose Business R (treaty keluar, JSON)."*
+> > *(status.json lama: "pemilih hierarki sumber bisnis/ceding hanya tampil bila ClaimType 'XOL
+> > Retro' (jalur retro, P29) — tidak dibangun")*
+>
+> ⭐ **Pemilih SOB DIBANGUN.** "Hanya tampil bila XOL Retro" bukan bukti tak terjangkau, dan P29
+> (data kontrak dari view, nol JSON) tidak menyentuh jalur ini: seluruh datanya relasional (tabel
+> `AGENT`). Bukti XML:
+> - `Section/DetailPolicyTreatyIn` (dan salinannya di `GeneralPolicyTreatyIn`, layar admin flow
+>   action `InboxPolicyTreatyIn`): tombol `Select Source Of Business`, pyVisible
+>   `.ClaimType = 'XOL Retro'`, click → showHarness `SOB` (pyUsingPage `pyWorkPage.Quotation`,
+>   pySubmitData Yes) + aktivitas `InputQuotation_PreAct(Acton=SOB)` → langkah 1 `btnSOB_DT`
+>   (`Quotation.btnQuotation = "SOB"`). Layar atasan tidak memuat tombol ini.
+> - `Harness/SOB` → `Section/SourceHierarki`: TreeGrid `TempBusinessSource.pxResults`,
+>   pyDeferLoadActivity `AgentSourceBizTreatyIn_Act` (langkah 3 `pxShowReport`
+>   `BrowseAgentHierarkiList_RD`), pyRowEditing masterDetail → `FlowAction/AgentSourceBizDetails`
+>   pra-proses `SearchHierarkiSourceBizAgent_PostDT`: `Quotation.SourceOfBusiness/SobName/
+>   SobLeader0/SobLeader1 = @if(.ChildCount > 0, "", ...)`.
+> - Akibat pada data kasus: `Quotation.SourceOfBusiness` (medan diagram `T_POLIS_QUOTATION`) dibaca
+>   `SetPPNPPH` langkah 1-3 (STS_PKP agen) → syarat PPH/PPN langkah 4.
+>
+> Dibangun: `models/sumberbisnis.go`, `repository/agen.go`, `services/sumberbisnis.go`, rute
+> `GET /sumber-bisnis` dan `POST /kasus/{id}/pilih-sumber-bisnis`, `components/PilihSumberBisnis.tsx`.
+> Tetap tidak dibangun, alasan (a) tak berpengaruh/tak terjangkau di NB: autocomplete `Search`
+> (`SearchSOB.CARI1`, dibaca nol rule); perluasan simpul (`Param.Leader` diisi hanya bila
+> `pyWorkPage.OfferTreatyIn.QuotationData.btnQuotation=="SOB"` — properti yang ditulis nol rule ⇒
+> setiap simpul = daftar akar yang sama); aktivitas tombol `Choose`
+> (`SearchHierarkiSourceBizAgentTreatyIn_Act` menulis `OfferTreatyIn.QuotationData.*`, dibaca nol
+> rule NB); cabang Ceding (`btnCedingCO_DT`/`BrowseCedingCo_RD`, hanya lewat `Acton=Ceding` yang
+> tak pernah dikirim).
