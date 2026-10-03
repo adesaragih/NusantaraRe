@@ -235,7 +235,8 @@ func (l *Layanan) SimpanDraf(ctx context.Context, p inti.Pelaku, id string, masu
 
 // PilihBisnis = tombol "Choose" popup `BusinessAndSOBList` -> `SetValue_Act`
 // (ID=.ID) -> `InputPolicyTreatyInDetail_preACT`, lalu `Obj-Save`. Bagian
-// yang dibangun: lihat `models/pilihbisnis.go`.
+// yang dibangun: lihat `models/pilihbisnis.go` dan `models/komisi.go`
+// (langkah 17).
 //
 // ⛔ Pembacaan kontrak yang gagal MENGHENTIKAN proses dan tidak menyimpan
 // apa pun (AC 36-38) - di Pega `pxRetrieveReportData` yang kosong mengisi
@@ -279,6 +280,15 @@ func (l *Layanan) PilihBisnis(ctx context.Context, p inti.Pelaku, id, idDetail s
 		return Layar{}, err
 	}
 	models.TerapkanBisnisPilih(h, bis) // 14.7-14.9
+	// langkah 17 (bukan NonProportional) -> TreatyInputPctCommSpreading:
+	// RiCommOgp dari baris view kontrak NoOffer (models/komisi.go).
+	if models.LangkahKomisiProporsional(h) {
+		baris, err := l.g.KomisiKontrak(ctx, h.Ambil(models.HalamanPolis+".NoOffer"))
+		if err != nil {
+			return Layar{}, err
+		}
+		models.TreatyInputPctCommSpreading(h, baris)
+	}
 	if err := l.tulis(ctx, k, func(tx *db.Tx) error { return l.g.SimpanHalaman(ctx, tx, id, h) }); err != nil {
 		return Layar{}, err
 	}

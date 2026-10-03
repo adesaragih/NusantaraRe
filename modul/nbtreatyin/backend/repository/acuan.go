@@ -169,6 +169,54 @@ func (g *Gudang) DetailKontrak(ctx context.Context, id string) (models.BarisKont
 	return pindaiKontrak(rows, ada)
 }
 
+// kolomKomisi - kolom view yang dibaca `TreatyInputPctCommSpreading` langkah
+// 2-2.1.1.1 (`models.TreatyInputPctCommSpreading`).
+var kolomKomisi = []string{"ID", models.KolomJenisTreaty, models.KolomGrupTreaty, models.KolomRIOGR, models.KolomRIONR}
+
+// KomisiKontrak = pengganti relasional `FetchMasterTreatyIn` untuk
+// `TreatyInputPctCommSpreading` (RDB `BrowseTreatyInJoinEDM`: JSON
+// `M_TREATY_IN` UNION ALL `M_TREATY_IN_EDM` `where ID = PolicyTreatyIn.NoOffer`).
+// Yang dibaca: baris view `TREATYINDETAILJOINEDM` (= TREATYINDETAIL UNION ALL
+// TREATYINDETAILEDM) ber-`TREATYID = NoOffer` - satu baris per
+// `Limits(n).Detail(m)` master - dengan kolom TREATYTYPE, TREATYGROUP, RIOGR,
+// RIONR. Syarat langkah 2.1/2.1.1.1 diterapkan `models`, bukan di SQL.
+//
+// ⚠️ Urutan Limits/Detail dokumen JSON tidak ada di view: ORDER BY ID
+// (lihat `models/komisi.go`). Nol baris = nol perubahan (kalang Pega atas
+// halaman kosong), bukan galat.
+func (g *Gudang) KomisiKontrak(ctx context.Context, treatyID string) ([]models.BarisKontrak, error) {
+	if strings.TrimSpace(treatyID) == "" {
+		return nil, nil // `where ID = NULL` - nol baris
+	}
+	tipe, err := g.tipeKolomObjek(ctx, viewDetailGabung)
+	if err != nil {
+		return nil, err
+	}
+	nama, _ := g.nama(viewDetailGabung)
+	eks, ada, err := pilihKolom(viewDetailGabung, tipe, kolomKomisi)
+	if err != nil {
+		return nil, err
+	}
+	q := fmt.Sprintf(`SELECT %s FROM %s WHERE TREATYID = :1 ORDER BY ID`, strings.Join(eks, ", "), nama)
+	if err := db.PeriksaSQL(q); err != nil {
+		return nil, err
+	}
+	rows, err := g.db.QueryContext(ctx, q, treatyID)
+	if err != nil {
+		return nil, fmt.Errorf("repository: membaca komisi kontrak: %w", err)
+	}
+	defer rows.Close()
+	var out []models.BarisKontrak
+	for rows.Next() {
+		b, err := pindaiKontrak(rows, ada)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, b)
+	}
+	return out, rows.Err()
+}
+
 // SaringanDetail - parameter RD `BrowseTreatyInDetail`; kosong = diabaikan
 // (aturan filter RD Pega).
 type SaringanDetail struct {

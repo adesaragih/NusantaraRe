@@ -41,6 +41,7 @@ type Gudang interface {
 	HariClosing(ctx context.Context, tx *db.Tx) (int, error)
 
 	DetailKontrak(ctx context.Context, id string) (models.BarisKontrak, error)
+	KomisiKontrak(ctx context.Context, treatyID string) ([]models.BarisKontrak, error)
 	DaftarDetailKontrak(ctx context.Context, s repository.SaringanDetail) ([]models.BarisKontrak, error)
 	IDMataUangDariNama(ctx context.Context, nama string) (string, error)
 	NamaMataUang(ctx context.Context, id string) (string, error)

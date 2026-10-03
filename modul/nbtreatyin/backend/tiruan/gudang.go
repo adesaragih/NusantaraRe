@@ -251,6 +251,19 @@ func (g *Gudang) DetailKontrak(_ context.Context, id string) (models.BarisKontra
 	return b, nil
 }
 
+// KomisiKontrak - baris `Kontrak` ber-TREATYID itu, berurut ID (sama dengan
+// repository).
+func (g *Gudang) KomisiKontrak(_ context.Context, treatyID string) ([]models.BarisKontrak, error) {
+	var out []models.BarisKontrak
+	for _, b := range g.Kontrak {
+		if treatyID != "" && b["TREATYID"] == treatyID {
+			out = append(out, b)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i]["ID"] < out[j]["ID"] })
+	return out, nil
+}
+
 func (g *Gudang) DaftarDetailKontrak(context.Context, repository.SaringanDetail) ([]models.BarisKontrak, error) {
 	var out []models.BarisKontrak
 	for _, b := range g.Kontrak {
