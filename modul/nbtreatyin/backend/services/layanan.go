@@ -217,11 +217,10 @@ func (l *Layanan) muat(ctx context.Context, id string) (models.Kasus, *models.Ha
 // Urutan Pega: data transform pra-proses lebih dulu, aktivitas pra-proses
 // sesudahnya. Bagian `InputPolicyTreatyInPre_Act` yang dibangun: langkah 2
 // (bisnis bila BizCode kosong), 3-4 dan 9 (tanggal; hari tutup buku dari
-// TANGGAL_CLOSING - lihat `models.GeserTanggalProduksi`). Langkah 1
-// (`SetCategoryAttach` - lampiran, tidak ada di layar realisasi) dan 10
-// (`TreatyRealizationCheckXOLList` -> `SetTreatyIn_Act`, pembongkar JSON, AC
-// 62) tidak dibangun; langkah 5-8 menyiapkan daftar pilihan spreading
-// (`Acuan`).
+// TANGGAL_CLOSING - lihat `models.GeserTanggalProduksi`), dan 10
+// (`TreatyRealizationCheckXOLList` - RALAT K8, `siapkanNonProp`). Langkah 1
+// (`SetCategoryAttach` - lampiran, tidak ada di layar realisasi) tidak
+// dibangun; langkah 5-8 menyiapkan daftar pilihan spreading (`Acuan`).
 //
 // Halaman master `TreatyIn` dimuat ulang dari view lewat `TreatyIn.ID` (P29).
 func (l *Layanan) siapkan(ctx context.Context, p inti.Pelaku, k models.Kasus, h *models.Halaman) error {

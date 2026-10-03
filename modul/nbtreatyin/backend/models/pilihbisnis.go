@@ -14,11 +14,13 @@ package models
 //
 // ⛔ Bagian JSON `InputPolicyTreatyInDetail_preACT` TIDAK dibangun
 // (`[keputusan work owner]` P29, PERTANYAAN-untuk-DBA "enam aktivitas yang
-// membongkar JSON tidak dimigrasi"): langkah 9-10 (`adoptJSONObject`), 13
-// (jadwal angsuran dari `TreatyIn.INSTALLMENT`), 16
-// (`InputPolicyTreatyInDetail_NonProp`), 17 (`TreatyInputPctCommSpreading` -
-// `FetchMasterTreatyIn`), 18 (`TreatyIn.LimitShareSummaryList`). Yang
-// dibangun: langkah 3-8, 11, 14, 15 - seluruhnya membaca view dan tabel acuan.
+// membongkar JSON tidak dimigrasi"): langkah 9-10 (`adoptJSONObject`
+// `M_TREATY_IN_DETAIL_EDM`), 13 (jadwal angsuran dari `TreatyIn.INSTALLMENT`),
+// 17 (`TreatyInputPctCommSpreading` - `FetchMasterTreatyIn`). Yang dibangun:
+// langkah 3-8, 11, 14, 15 - seluruhnya membaca view dan tabel acuan.
+// ⭐ RALAT K8 (03-10-2026): langkah 16 (`InputPolicyTreatyInDetail_NonProp`) dan
+// 18 (`TreatyIn.LimitShareSummaryList`) DIBANGUN - master XOL dibaca baca-saja
+// (`nonprop.go`, `nonprop_detail.go`, `services/nonprop.go`).
 
 import (
 	"strings"
