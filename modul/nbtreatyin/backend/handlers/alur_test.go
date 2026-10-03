@@ -299,10 +299,10 @@ func TestNourutUsulanSamaDenganSubskripSuggestList(t *testing.T) { // AC 39-44, 
 		if len(daftar) != i+1 || len(u.g.Usulan) != i+1 {
 			t.Fatalf("submit %d: %d baris SuggestList, %d baris tabel", i+1, len(daftar), len(u.g.Usulan))
 		}
-		for j, b := range daftar { // pxListSubscript = j+1
+		for j, b := range daftar { // posisi baris (berbasis 1) = j+1
 			c := u.g.Usulan[j]
 			if c.NoUrut != j+1 || c.Keterangan != b["Suggest"] || c.AksesLogin != b["OperatorID"] {
-				t.Fatalf("submit %d: pxListSubscript %d = %+v, baris tabel NOURUT %d = %+v", i+1, j+1, b, c.NoUrut, c)
+				t.Fatalf("submit %d: posisi baris (berbasis 1) %d = %+v, baris tabel NOURUT %d = %+v", i+1, j+1, b, c.NoUrut, c)
 			}
 		}
 		if daftar[i]["Suggest"] != fmt.Sprintf("UJI-catatan-%d", i+1) {

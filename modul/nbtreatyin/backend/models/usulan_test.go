@@ -114,7 +114,7 @@ func TestCatatanBaruBerposisiNourutBerikut(t *testing.T) {
 		}
 		// .pxListSubscript (berbasis 1) baris yang ditulis = n+1 = MAX(NOURUT)+1
 		if posisi := len(daftar); posisi != n+1 || daftar[posisi-1]["Suggest"] != "UJI-baru" {
-			t.Fatalf("n=%d: catatan baru di pxListSubscript %d, harap %d", n, posisi, n+1)
+			t.Fatalf("n=%d: catatan baru di posisi baris (berbasis 1) %d, harap %d", n, posisi, n+1)
 		}
 	}
 }
