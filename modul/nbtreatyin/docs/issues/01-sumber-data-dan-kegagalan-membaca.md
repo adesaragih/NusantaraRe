@@ -1,6 +1,6 @@
 # 01: Sumber data realisasi treaty — dibaca dari view relasional, gagal baca menghentikan proses
 
-**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
+**Status:** sebagian — dapat dikerjakan: uji bertag `db` pembacaan view `TREATYINDETAILJOINEDM` (AC 17, 89) belum ditulis; penahan pihak luar: K11 (skema uji Oracle), F1 (ukuran K8, menunggu konfirmasi WO); AC 57 ⛔ (b) K8 butir 4 *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** —
 **Menutup:** AC 15 · 16 · 17 · 36 · 37 · 38 · 57 · 58 · 89 *(9 AC)* — US 21 · 23 · 24 · 37
 

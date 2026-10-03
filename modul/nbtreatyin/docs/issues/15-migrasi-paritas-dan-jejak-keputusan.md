@@ -1,6 +1,6 @@
 # 15: Migrasi, paritas, dan jejak keputusan — tidak ada butir terbuka yang ditutup diam-diam
 
-**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
+**Status:** selesai — tertahan hanya pihak luar: AC 68 uji `db` ditulis, belum dijalankan (K11) dan pemuatan di produksi (F7, keputusan WO); AC 70, 93–95 📄 *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** 01 · 08 · 09 · 10
 **Menutup:** AC 68 · 70 · 93 · 94 · 95 · 96 *(6 AC)* — US 43 · 47 · 48
 
@@ -35,10 +35,10 @@ sehingga tidak ada yang terlupakan saat go-live.
 ## Acceptance criteria
 
 - [ ] 🟡 **AC 68** — data lama **terbaca** di sistem baru; berkas lama dapat dibuka *(putaran 2: pemuat tiket 22 dibangun — dokumen lama ditulis lewat `SimpanHalaman` dan dibaca `BacaHalaman`, `TestPemuatLamaMenulisLewatAntarmukaSama` bertag `db`, **belum dijalankan**, K11)*
-- [ ] ⛔ **AC 70** — setiap penyimpangan dari perilaku lama **tercatat beserta alasannya**
-- [ ] ⛔ **AC 93** — setiap acceptance criterion merujuk **bab asalnya**
-- [ ] ⛔ **AC 94** — setiap acceptance criterion membawa **penanda**
-- [ ] ⛔ **AC 95** — ⛔ butir terbuka **tidak ditutup**; tidak ada yang dinyatakan selesai tanpa
+- [x] 📄 **AC 70** — setiap penyimpangan dari perilaku lama **tercatat beserta alasannya** *(P10: 📄 butir dokumen — `docs/HASIL-IMPLEMENTASI.md` bab 2 dan 5)*
+- [x] 📄 **AC 93** — setiap acceptance criterion merujuk **bab asalnya** *(P10: 📄 butir dokumen — `docs/HASIL-IMPLEMENTASI.md` bab 2 dan 5)*
+- [x] 📄 **AC 94** — setiap acceptance criterion membawa **penanda** *(P10: 📄 butir dokumen — `docs/HASIL-IMPLEMENTASI.md` bab 2 dan 5)*
+- [x] 📄 **AC 95** — ⛔ butir terbuka **tidak ditutup**; tidak ada yang dinyatakan selesai tanpa
       pemiliknya
 - [x] **AC 96** — ⛔ nilai berupa **nama orang** tidak muncul di artefak mana pun
 

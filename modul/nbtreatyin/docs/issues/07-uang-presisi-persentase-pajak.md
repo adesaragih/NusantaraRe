@@ -1,6 +1,6 @@
 # 07: Uang — presisi penuh, persentase bukan uang, pajak brokerage apa adanya
 
-**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
+**Status:** selesai — tertahan hanya pihak luar: AC 23 uji `db` ditulis, belum dijalankan (K11); AC 26 ✅ (K3 + nol pembaca `BROKERAGE`/`RNM_SHARE`) *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** 01
 **Menutup:** AC 18 · 23 · 24 · 25 · 26 · 27 · 28 · 85 · 86 *(9 AC)* — US 21 · 22 · 36 · 38 · 39
 
@@ -38,7 +38,7 @@ Sesudah tiket ini, nilai uang tersimpan **berpresisi penuh**, ditampilkan besert
 - [ ] 🟡 **AC 23** — nilai uang disimpan **berpresisi penuh**
 - [x] **AC 24** — pembulatan **hanya** di titik penyajian, ⛔ tidak pernah di repository
 - [x] **AC 25** — uang **tidak pernah** diwakili tipe pecahan biner
-- [ ] 🟡 **AC 26** — empat medan itu dibaca sebagai **persentase**, bukan jumlah uang
+- [x] ✅ **AC 26** — empat medan itu dibaca sebagai **persentase**, bukan jumlah uang *(P10: ✅ — `Deduction1/2` uang menurut RALAT K3; `BROKERAGE`/`RNM_SHARE` nol pembaca di rule terjangkau, RALAT P4 butir 1)*
       > ⛔ **RALAT** 2026-10-03 (K3) — untuk `DEDUCTION1` `DEDUCTION2`: dibaca sebagai **jumlah uang**
       > seperti XML (golongan `uang`, layar `pxCurrency` + kode mata uang). `BROKERAGE`, `RNM_SHARE`
       > tetap seperti tertulis. Lihat RALAT spec AC 26 dan butir 1 di bawah.

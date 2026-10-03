@@ -11,7 +11,7 @@
 ---
 
 
-**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ⭐ **ready-for-agent** *(semula ~~blocked~~ — 23-09-2026 sore)*)*
+**Status:** sebagian — dapat dikerjakan: AC 25 (sisir pembandingan uang di port lawan XML → bukti/RALAT ID-20), AC 15 (bunyi baru RALAT: Oracle `''` ≡ NULL), AC 12 (uji `db` `GROUP_PANEL "006"` dibaca dari kolom); penahan pihak luar: K11 (AC 12, 13) *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 ~~**Blocked by:** **16** · ⛔ `[data DBA]` **presisi fisik belum diuji terhadap nilai terbesar** — dua belas digit di depan koma belum dibuktikan cukup~~ ⛔ **gugur 23-09-2026 sore**
 **Menutup:** NB AC **12–25** *(14 AC)*
 **Sumber:** `nb-treaty-in\spec-penyimpanan-relasional.md` ID-14..ID-20

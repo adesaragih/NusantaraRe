@@ -1,6 +1,6 @@
 # 10: Jejak audit dan kronologi — identitas akses terpisah dari nama tampilan
 
-**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
+**Status:** sebagian — dapat dikerjakan: uji bertag `db` urutan `DaftarRiwayat` (AC 72) belum ditulis; penahan pihak luar: K11, F2 (tiga penyimpangan K4, menunggu konfirmasi WO), B4 (`DIV` tanpa sumber di `inti.Pelaku`), C8 (tipe kolom fisik `HISTORYAKSEPTASIPRODUCTION`) *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** 03
 **Menutup:** AC 39 · 40 · 41 · 42 · 43 · 44 · 71 · 72 *(8 AC)* — US 15 · 16 · 20 · 40 · 41 · 42
 

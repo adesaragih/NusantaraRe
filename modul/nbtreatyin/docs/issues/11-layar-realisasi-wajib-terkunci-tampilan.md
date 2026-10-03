@@ -1,6 +1,6 @@
 # 11: Layar realisasi — medan wajib, medan terkunci, dan bagian yang tidak dibangun
 
-**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
+**Status:** selesai — tertahan hanya pihak luar: AC 45 `ProductionDate` lewat tempat berperan (K12); `DateofSurvey` ⛔ (b) K7; empat wadah 104 medan (spec §9.2 butir 17, Product & Underwriting) *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** 02
 **Menutup:** AC 45 · 46 · 49 · 50 · 51 · 53 · 54 · 55 · 56 · 77 *(10 AC)* — US 27 · 28 · 29 · 31 · 32
 

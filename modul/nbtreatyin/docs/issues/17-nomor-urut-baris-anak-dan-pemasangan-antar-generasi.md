@@ -1,6 +1,6 @@
 # 17: Nomor urut baris anak dan pemasangan antar generasi
 
-**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
+**Status:** sebagian — dapat dikerjakan: uji bertag `db` AC 9 belum memeriksa kolom `NOURUT` (tiga angsuran, hapus yang kedua → 1, 2 dibaca dari kolom); penahan pihak luar: K11 *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** **16**
 **Menutup:** NB AC **8–11** *(4 AC)*
 **Sumber:** `nb-treaty-in\spec-penyimpanan-relasional.md` ID-11..ID-13

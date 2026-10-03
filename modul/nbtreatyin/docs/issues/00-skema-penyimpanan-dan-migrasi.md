@@ -1,6 +1,6 @@
 # 00: Skema penyimpanan dan migrasi — menunggu SENSUS PROPERTI, bukan lagi bahan dari DBA
 
-**Status:** selesai — sensus dicocokkan ulang ke XML; butir DBA tetap `[terbuka]` *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: needs-info — ⚠️ **yang ditunggu berubah**)*
+**Status:** selesai — 0 AC; tertahan hanya pihak luar: butir `[data DBA]` (tipe tabel `TREATYINDETAIL`, empat angka pemuat — PERMINTAAN C3, C7) *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: selesai — sensus dicocokkan ulang ke XML, implementasi 2026-10-03; awalnya needs-info)*
 **Blocked by:** ⭐ **sensus properti `PolicyTreatyIn`** — ronde tersendiri, pekerjaan tim migrasi
 
 > ⭐⭐ **P1 dan P29 SUDAH TERJAWAB.** `[terverifikasi]` 2026-09-22 — dua baris ini semula berbunyi:

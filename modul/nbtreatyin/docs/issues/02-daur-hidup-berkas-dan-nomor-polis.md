@@ -1,6 +1,6 @@
 # 02: Daur hidup berkas realisasi dan nomor polis — satu nomor, sekali, tanpa bentrok
 
-**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
+**Status:** selesai — tertahan hanya pihak luar: AC 31 uji `db` ditulis, belum dijalankan (K11 skema uji Oracle) *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** 01
 **Menutup:** AC 31 · 59 · 73 · 74 *(4 AC)* — US 1 · 4 · 5
 

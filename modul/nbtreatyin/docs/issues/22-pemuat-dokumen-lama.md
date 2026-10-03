@@ -11,7 +11,7 @@
 ---
 
 
-**Status:** ⭐ **sebagian — dibangun** *(putaran 2, 03-10-2026, cabang `modul/nbtreatyin/p7-pemuat`; semula: ~~belum~~ *(implementasi 2026-10-03)* · ⭐ **ready-for-agent** *(semula ~~blocked~~ — 23-09-2026)*)*. Tersisa: uji repository bertag `db` belum dijalankan (K11 kosong) dan jumlah medan tak dikenal atas data nyata belum diketahui (AC 59) — lihat bab terakhir.
+**Status:** selesai — pemuat dibangun; tertahan hanya pihak luar: AC 55 uji `db` (K11), AC 59 keputusan WO F3, penanda `SUMBER='PEGA'` (F6), pemuatan di produksi (F7), `SEQ_WORK_POLIS` (C5), empat angka DBA (C7) *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: sebagian — dibangun, putaran 2 03-10-2026 cabang `modul/nbtreatyin/p7-pemuat`; awalnya ready-for-agent)*
 ~~**Blocked by:** **19** · **20** · ⛔ `[work owner]` **dokumen lama dipindahkan seluruhnya atau sebagian** — belum diputuskan~~ ⛔ **penahan gugur 23-09-2026**
 **Menutup:** NB AC **55–59** *(5 AC)*
 **Sumber:** `nb-treaty-in\spec-penyimpanan-relasional.md` ID-3

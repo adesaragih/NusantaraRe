@@ -1,6 +1,6 @@
 # 09: Tanggal — satu tipe, satu format, dan pengisian bawaan yang ditiru apa adanya
 
-**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
+**Status:** selesai — kelima AC ✅ *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** —
 **Menutup:** AC 32 · 33 · 34 · 35 · 69 *(5 AC)* — US 2 · 35 · 44
 

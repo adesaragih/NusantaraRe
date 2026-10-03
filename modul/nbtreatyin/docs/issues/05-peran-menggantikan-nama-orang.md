@@ -1,6 +1,6 @@
 # 05: Peran menggantikan nama orang — tertunda sampai pemetaan diterima
 
-**Status:** needs-info — mekanisme dibangun, pemetaan peran menunggu IAM *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: needs-info)*
+**Status:** needs-info — mekanisme dibangun (12 tempat di `models.DaftarTempat`, `PemetaanPeranTempat` kosong — K16); pemetaan peran menunggu IAM (**K12**, PERMINTAAN C2) *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; implementasi 2026-10-03; semula: needs-info)*
 **Blocked by:** pemetaan **nama → peran** dari `[IAM]` dan `[work owner]`
 **Menutup:** AC 12 · 13 · 81 · 82 · 91 *(5 AC)* — US 17 · 18
 

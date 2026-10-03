@@ -1,6 +1,6 @@
 # 21: Pulang-pergi dan dua bentuk dokumen
 
-**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
+**Status:** selesai — tertahan hanya pihak luar: AC 49–51 uji `db` ditulis, belum dijalankan (K11) *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** **18** · **19**
 **Menutup:** NB AC **49–54** *(6 AC)*
 **Sumber:** `nb-treaty-in\spec-penyimpanan-relasional.md` Bab 7

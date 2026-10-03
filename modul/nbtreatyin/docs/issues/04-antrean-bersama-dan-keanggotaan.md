@@ -1,6 +1,6 @@
 # 04: Antrean bersama dan pemeriksaan keanggotaan — bukan nomor urut daftar
 
-**Status:** selesai *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
+**Status:** selesai — klausa wadah `pyWorkGroup!='ReasLife'` tanpa padanan, menunggu IAM (K12, PERMINTAAN C6) *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; implementasi 2026-10-03, gerbang portal P8; awalnya ready-for-agent)*
 **Blocked by:** 03
 **Menutup:** AC 11 · 14 · 92 *(3 AC)* — US 3 · 8 · 19
 

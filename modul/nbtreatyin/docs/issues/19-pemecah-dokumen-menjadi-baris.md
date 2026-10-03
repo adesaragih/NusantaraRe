@@ -11,7 +11,7 @@
 ---
 
 
-**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ⭐ **ready-for-agent** *(semula ~~blocked~~ — 23-09-2026 sore)*)*
+**Status:** selesai — 19 AC ✅ (AC 38 ✅ sesudah RALAT K3); tabel warisan: F2, B4, C8 menunggu pihak luar *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 ~~**Blocked by:** **16** · **17** · **18** · ⛔ `[data DBA]` **daftar kolom lengkap** — panduan bentuk dokumen dari DBA terbukti **basi**~~ ⛔ **gugur 23-09-2026 sore**
 **Menutup:** NB AC **26–44** *(19 AC)*
 **Sumber:** `nb-treaty-in\spec-penyimpanan-relasional.md` ID-21..ID-31
@@ -68,7 +68,7 @@ dinyatakan selesai — isinya yang tidak kosong berarti sensus medan belum lengk
 - [x] **AC 35** — potongan pada lapisan bertipe **uang**
 - [x] **AC 36** — penyebaran pada polis baru memakai presisi **sepuluh**
 - [x] **AC 37** — tiga medan bagian tersimpan sebagai **persentase**
-- [ ] 🟡 **AC 38** — medan potongan dan total bagian tersimpan sebagai **persentase**
+- [x] ✅ **AC 38** — medan potongan dan total bagian tersimpan sebagai **persentase** *(P10: ✅ menurut RALAT K3 — `DEDUCTION1/2` uang, `TOTAL_SHARE_PERCENTAGE_*` persen turunan tak berkolom; `docs/PERBANDINGAN-KOLOM-DIAGRAM.md` bab 1e)*
 - [x] **AC 39** — tabel riwayat usulan **tidak dibuat ulang**
 - [x] **AC 40** — keterangan usulan dipotong pada batas panjangnya *(RALAT P9 04-10-2026: semula
   `- [ ] ⛔` — dibangun sejak K4; lihat bab RALAT P9)*

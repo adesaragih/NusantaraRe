@@ -1,6 +1,6 @@
 # 20: Transaksi tunggal dan skema eksplisit
 
-**Status:** sebagian *(implementasi 2026-10-03, cabang `modul/nbtreatyin/implementasi`; semula: ready-for-agent)*
+**Status:** sebagian — dapat dikerjakan: uji bertag `db` kegagalan menulis **tabel anak** membatalkan induk (AC 45) belum ditulis; penahan pihak luar: K11 (AC 45, 46) *(putaran 2, konsolidasi P10 04-10-2026 — rincian `docs/HASIL-IMPLEMENTASI.md` bab 9; semula: sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** **16** · **19**
 **Menutup:** NB AC **45–48** *(4 AC)*
 **Sumber:** `nb-treaty-in\spec-penyimpanan-relasional.md` ID-32..ID-35
