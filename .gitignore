@@ -1,0 +1,19 @@
+# Berkas yang tidak pernah masuk git. Dipindah dari akar repositori ke APP_RNM
+# (3 Oktober 2026) - akar repo kini hanya berisi APP_RNM. Pola relatif ke folder ini.
+
+# Konfigurasi lokal - .env memuat ORACLE_DSN beserta sandinya
+*.env
+
+# Dependensi dan hasil build frontend
+node_modules/
+dist/
+.vite/
+
+# Artefak build Go
+/bin/
+*.exe
+*.test
+*.out
+
+# Folder unggahan lokal (UNGGAHAN_DIR)
+/unggahan/
