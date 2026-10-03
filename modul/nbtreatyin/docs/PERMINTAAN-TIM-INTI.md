@@ -12,7 +12,7 @@
 
 | Bagian | Isi | Butir |
 | --- | --- | --- |
-| A | sudah dikerjakan — **mohon ditinjau** | A1, A2 |
+| A | sudah dikerjakan — **mohon ditinjau** (A3: juga mohon dinilai cakupan penjaganya) | A1–A3 |
 | B | konstanta dan kepemilikan bersama di `inti` | B1–B4 |
 | C | sambungan dan data yang menunggu pihak lain (DBA, IAM, operator lingkungan, tim inti) | C1–C8 |
 | D | berkas di luar wilayah yang termodifikasi pihak lain | D |
@@ -25,11 +25,16 @@
 > nbtreatyin menyala`) — **mohon ditinjau**. Dasar: keputusan work owner **K10** (PROMPT putaran 2
 > bab 2): perbaikan minimal dalam **satu commit terpisah** berawalan `inti:`. Kolom *Permintaan* di
 > bawah kini berarti **yang mohon ditinjau**, bukan yang mohon dikerjakan.
+>
+> **A3** (04-10-2026, paket P12) berbeda: dikerjakan **di dalam** `modul/nbtreatyin/` saja — penjaga claimlife
+> **tidak** disunting (di luar wilayah; K10 hanya mengizinkan A1 dan A2). Yang mohon dinilai adalah cakupan
+> penjaganya.
 
 | # | Berkas | Yang terjadi | Permintaan |
 | ---: | --- | --- | --- |
 | A1 | `frontend/daftar.menuTabel.test.ts` baris 90-92 | Uji gigit "modul frontend berbaris `DIMIGRASI='0'`" memakai **nbtreatyin** sebagai contoh modul yang belum dimigrasi. Modul ini sekarang menyalakan barisnya (slot menu `968`), sehingga hasilnya bukan lagi selisih yang diharapkan. | ✅ **Sudah dikerjakan di commit `88c303de`, mohon ditinjau**: contohnya diganti `edmtreatyin` (berbaris `DIMIGRASI='0'`, tanpa slot menu). *(semula: "Ganti contohnya dengan modul yang barisnya masih `DIMIGRASI='0'`.")* |
 | A2 | `modul/claimlife/backend/repository/batasanpemakaian_test.go:250` (`TestSetiapPemanggilBukaMemeriksaBolehDilewati`) | Sensus pemanggil `skemauji.Buka()` di seluruh repo: **17**, angka tertanam **16**. Pemanggil baru: `modul/nbtreatyin/backend/repository/polis_db_test.go` (uji repository lawan Oracle yang diminta brief; ia MEMERIKSA `BolehDilewati`). | ✅ **Sudah dikerjakan di commit `88c303de`, mohon ditinjau**: `const mau = 17` beserta komentar pemanggil barunya. *(semula: "Naikkan angkanya menjadi 17 (pemilik claimlife / tim inti).")* |
+| A3 | `modul/claimlife/backend/services/komite_statik_test.go` (`TestNolPenyimpanKeputusanKomiteDiKonteksIni`, regex `polaIndeksPosisi` = `IndexAdjustment\|IndexPremiumList\|pxListSubscript`) | Penjaga batas konteks Komite (claimlife tiket 10, AC 62: rujukan ke Komite memakai `KOMITE_ID`, bukan indeks posisi) memindai **seluruh** berkas `.go` repo secara **leksikal** — hanya baris berawalan `//` yang dibuang — dan menolak tokennya di mana pun. Merah baru karena modul ini: `handlers/alur_test.go` dan `models/usulan_test.go` (pesan galat uji), `models/dokumenlama.go` (teks alasan dan syarat penggolong), `models/dokumenlama_test.go` (kunci fixture JSON). Padahal modul ini **tidak** memakai nomor baris Pega sebagai kunci rujukan: pemuat dokumen lama (tiket 22) hanya **mengenali** properti nomor baris di baris daftar supaya **dibuang** — urutan baris diwakili `NOURUT` (spec-penyimpanan ID-11) — dan uji hanya menyebutnya di pesan. | ✅ **Dipatuhi di dalam modul, penjaga tidak disentuh**: daftar medan dokumen lama yang sengaja diabaikan beserta alasannya dipindah ke `backend/models/medan_abaikan_lama.json` (`go:embed`, perilaku penggolong dikunci `TestPenggolongMedanDiabaikan` + `testdata/penggolong_kasus.json`), fixture dokumen lama ke `backend/models/testdata/*.json`, pesan uji memakai "posisi baris (berbasis 1)". Penjaga kini hijau. **Mohon tim claimlife/inti menilai** apakah cakupan `polaIndeksPosisi` dibatasi ke konteks Komite (mis. `modul/claimlife/` dan `modul/komiteclaimlife/`, atau kode yang menulis/merujuk keputusan Komite): pemindaian leksikal se-repo juga menolak pemakaian sah di modul lain (membuang, melaporkan, menguji), dan kepatuhannya hanya bisa dicapai dengan memindahkan nama ke berkas non-`.go` yang tidak dibaca penjaga — hijaunya tidak menambah perlindungan apa pun bagi rujukan Komite. |
 
 ## B · Konstanta dan kepemilikan bersama
 
