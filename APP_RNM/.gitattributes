@@ -1,4 +1,5 @@
-# Akhiran baris dikunci LF hanya untuk dua jenis berkas kode.
+# Akhiran baris dikunci LF hanya untuk dua jenis berkas kode. Dipindah dari
+# akar repositori ke APP_RNM (3 Oktober 2026).
 # Sengaja BUKAN "text=auto" global: repositori ini memuat ribuan berkas
 # dokumen, dan normalisasi menyeluruh akan mengubah semuanya sekaligus.
 *.sql text eol=lf
