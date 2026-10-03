@@ -1,0 +1,101 @@
+/*
+ * Gaya modul NB Treaty In.
+ *
+ * ⛔ TERISOLASI: SETIAP pemilih diawali kelas akar `.nbtreatyin` (dipasang `rute.tsx` pada pembungkus seluruh
+ * halaman modul, `display: contents`). Kelas khusus modul berawalan `nbti__`. Nol rona baru: seluruh warna
+ * `var(--…)` dari palet inti, sehingga kedua tema ikut sendiri. Dijaga `gaya.test.ts`.
+ */
+
+.nbtreatyin {
+  display: contents;
+}
+
+/* Baris saringan portal dan popup pilih bisnis. */
+.nbtreatyin .nbti__saring {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 12px;
+  max-width: 520px;
+}
+
+/* Nomor kasus di daftar portal: tombol berupa tautan. */
+.nbtreatyin .nbti__tautan {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--text);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+/* Teks NBStatus kasus. */
+.nbtreatyin .nbti__status {
+  margin: 0 0 12px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+/* Medan hanya-baca: label di atas, nilai di bawah. */
+.nbtreatyin .nbti__medan .nbti__nilai {
+  display: block;
+  min-height: 1.6em;
+  padding: 6px 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* Kode mata uang pasangan angka uang (AC 85). */
+.nbtreatyin .nbti__kode {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+.nbtreatyin .nbti__dengan-kode {
+  display: contents;
+}
+
+.nbtreatyin .nbti__centang {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.nbtreatyin .nbti__radio {
+  display: flex;
+  gap: 16px;
+  padding: 6px 0;
+}
+
+.nbtreatyin .nbti__aksi {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 12px;
+}
+
+.nbtreatyin .nbti__pendek {
+  max-width: 120px;
+}
+
+.nbtreatyin .nbti__catatan {
+  white-space: pre-wrap;
+}
+
+.nbtreatyin .nbti__kaki {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin: 16px 0;
+}
+
+.nbtreatyin .nbti__nomor {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+}

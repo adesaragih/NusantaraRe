@@ -1,0 +1,3 @@
+-- Jalur mundur 320.
+DROP TABLE {skema}.T_GENERAL_POLIS CASCADE CONSTRAINTS
+/

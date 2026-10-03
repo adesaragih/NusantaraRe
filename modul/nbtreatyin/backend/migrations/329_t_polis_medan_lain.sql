@@ -1,0 +1,13 @@
+-- 329 - T_POLIS_MEDAN_LAIN: penampung medan tak dikenal (spec-penyimpanan ID-27;
+-- tiket 19, 22 AC 57, 59). Medan dokumen lama yang tidak punya kolom DISIMPAN,
+-- bukan dibuang. WAJIB KOSONG sebelum pekerjaan dinyatakan selesai.
+CREATE TABLE {skema}.T_POLIS_MEDAN_LAIN (
+  ID        VARCHAR2(32) NOT NULL,
+  POLIS_ID  VARCHAR2(32) NOT NULL,
+  JALUR     VARCHAR2(512),
+  NILAI     VARCHAR2(4000),
+  CONSTRAINT PK_POLIS_MEDAN_LAIN PRIMARY KEY (ID),
+  CONSTRAINT FK_POLIS_MEDAN_LAIN_POLIS FOREIGN KEY (POLIS_ID) REFERENCES {skema}.T_GENERAL_POLIS (ID),
+  CONSTRAINT UQ_POLIS_MEDAN_LAIN_JALUR UNIQUE (POLIS_ID, JALUR)
+)
+/
