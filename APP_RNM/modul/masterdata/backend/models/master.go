@@ -15,6 +15,8 @@ type Kolom struct {
 	Turunan bool
 	// HurufBesar - disimpan huruf besar (ACCUMULATION.NOTE: view asal `UPPER (b.JSONDATA.Note)`).
 	HurufBesar bool
+	// Tanggal - kolom DATE (jejak ubah): dibaca `TO_CHAR(..., 'YYYY-MM-DD HH24:MI:SS')`, ditulis SYSDATE.
+	Tanggal bool
 }
 
 // Rujukan - kolom yang menunjuk baris tabel lain: nilainya wajib ada di `Tabel.KolomKunci` (bila diisi), dan bila
@@ -44,7 +46,10 @@ type TabelMaster struct {
 	KolomStatus string
 	// IDOtomatis - ID dibuat backend (ACCUMULATION, M-4); selainnya diisi pengguna dan unik.
 	IDOtomatis bool
-	Rujukan    []Rujukan
+	// JejakTerpisah - tabel warisan yang tidak di-ALTER (MD-2): jejak ubah (dan status bila KolomStatus kosong) di
+	// T_MASTER_STATUS; selainnya kolom jejak tabel itu sendiri (migrasi 762).
+	JejakTerpisah bool
+	Rujukan       []Rujukan
 }
 
 // Baris - satu baris master di kabel: kunci JSON kolom -> nilai teks.
@@ -57,4 +62,9 @@ type Halaman struct {
 	Total  int
 	Nomor  int
 	Ukuran int
+}
+
+// SeluruhKolom - kolom data master lalu keempat kolom jejak ubah (KolomAudit): urutan kabel GET dan pindai baris.
+func (t TabelMaster) SeluruhKolom() []Kolom {
+	return append(append([]Kolom{}, t.Kolom...), KolomAudit...)
 }

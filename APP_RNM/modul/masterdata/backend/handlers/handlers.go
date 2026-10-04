@@ -65,7 +65,8 @@ func daftarTabel() http.HandlerFunc {
 		hasil := make([]tabelKabel, 0, len(models.DaftarMaster))
 		for _, t := range models.DaftarMaster {
 			tk := tabelKabel{Kunci: t.Kunci, Judul: t.Judul, IDOtomatis: t.IDOtomatis, Kolom: []kolomKabel{}}
-			for _, k := range t.Kolom {
+			// Kolom data, lalu keempat kolom jejak ubah (turunan, baca-saja; MD-7).
+			for _, k := range t.SeluruhKolom() {
 				tk.Kolom = append(tk.Kolom, kolomKabel{Kunci: k.JSON, Kolom: k.Nama, Lebar: k.Lebar, Wajib: k.Wajib, Turunan: k.Turunan})
 			}
 			hasil = append(hasil, tk)

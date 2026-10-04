@@ -28,7 +28,7 @@ lewat pull request yang disetujui tim inti — dua modul tidak boleh berbagi nom
 | Folder | Isi |
 | --- | --- |
 | `docs/` | rencana dan tiket (`issues/NN-<slug>.md`), `STRUKTUR-TABEL-MASTER-DATA.md` |
-| `backend/` | `models/` (daftar master + kolom), `repository/`, `services/`, `handlers/` (`GET /api/masterdata`, `GET` / `POST /api/masterdata/{tabel}`, `PUT /api/masterdata/{tabel}/{id}`, `PUT /api/masterdata/{tabel}/{id}/status`), `migrations/` (760 view → tabel flat + `STS_AKTIF`, 761 `T_MASTER_STATUS` (status NATION), slot menu 990), `modul.go` |
+| `backend/` | `models/` (daftar master + kolom), `repository/`, `services/`, `handlers/` (`GET /api/masterdata`, `GET` / `POST /api/masterdata/{tabel}`, `PUT /api/masterdata/{tabel}/{id}`, `PUT /api/masterdata/{tabel}/{id}/status`), `migrations/` (760 view → tabel flat + `STS_AKTIF`, 761 `T_MASTER_STATUS` (status NATION), 762 jejak ubah `CREATE_OP` / `TGL_CREATE` / `UPDATE_OP` / `TGL_UPDATE`, slot menu 990), `modul.go` |
 | `frontend/` | `menu.ts`, `rute.tsx`, `api.ts`, `labels.ts`, `masterdata.css`, `pages/HalamanMasterData.tsx` (tab per master), `components/` (`DaftarMaster`, `FormMaster`, `PilihRujukan`) — sesi 0f |
 
 ## Menjalankan uji modul ini saja
@@ -52,6 +52,6 @@ berpindah — keputusan work owner.
 
 | Tabel | Alasan |
 | --- | --- |
-| `NATION` | tabel negara warisan POOLDATA; Master Data menulis isinya (menu Nation) tanpa mengubah strukturnya - statusnya di T_MASTER_STATUS (761); nbfacin membacanya untuk saran Country (tiket 46) |
+| `NATION` | tabel negara warisan POOLDATA; Master Data menulis isinya (menu Nation) tanpa mengubah strukturnya - status dan jejak ubahnya di T_MASTER_STATUS (761 / 762); nbfacin membacanya untuk saran Country (tiket 46) |
 | `OBJECTITEMTYPE` | tabel jenis item objek warisan POOLDATA (sumber view V_JN_OBJ_ITEM); Master Data menulis isinya dan memakai ISACTIVE-nya |
 | `BRANCH` | tabel cabang warisan POOLDATA; Master Data hanya MEMBACA ID untuk rujukan City |

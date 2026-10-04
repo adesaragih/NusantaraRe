@@ -76,24 +76,28 @@ func (t *tiruan) IDAkumulasi(_ context.Context, _ *db.Tx, negara, zip string) (s
 	return negara + "-" + zip + "-00000" + string(rune('0'+t.urutan)), nil
 }
 
-func (t *tiruan) Sisip(_ context.Context, _ *db.Tx, m models.TabelMaster, b models.Baris) error {
+func (t *tiruan) Sisip(_ context.Context, _ *db.Tx, m models.TabelMaster, b models.Baris, akun string) error {
+	b["createOp"], b["tglCreate"] = akun, "UJI-TGL"
 	t.isi(m.Nama, b)
 	return nil
 }
 
-func (t *tiruan) Ubah(_ context.Context, _ *db.Tx, m models.TabelMaster, b models.Baris) error {
-	if _, ada := t.baris[m.Nama][b["id"]]; !ada {
+func (t *tiruan) Ubah(_ context.Context, _ *db.Tx, m models.TabelMaster, b models.Baris, akun string) error {
+	lama, ada := t.baris[m.Nama][b["id"]]
+	if !ada {
 		return repository.ErrBarisTidakAda
 	}
+	b["createOp"], b["updateOp"] = lama["createOp"], akun
 	t.baris[m.Nama][b["id"]] = b
 	return nil
 }
 
-func (t *tiruan) UbahStatus(_ context.Context, _ *db.Tx, m models.TabelMaster, id string, aktif bool) error {
-	if _, ada := t.baris[m.Nama][id]; !ada {
+func (t *tiruan) UbahStatus(_ context.Context, _ *db.Tx, m models.TabelMaster, id string, aktif bool, akun string) error {
+	b, ada := t.baris[m.Nama][id]
+	if !ada {
 		return repository.ErrBarisTidakAda
 	}
-	t.aktif[m.Nama][id] = aktif
+	t.aktif[m.Nama][id], b["updateOp"] = aktif, akun
 	return nil
 }
 
@@ -138,6 +142,13 @@ func TestMetadataMaster(t *testing.T) {
 	if !j.Tabel[6].IDOtomatis || !j.Tabel[1].Kolom[3].Turunan {
 		t.Errorf("sifat: %s", isi)
 	}
+	// MD-7: setiap master diakhiri keempat kolom jejak ubah, turunan (baca-saja).
+	for _, x := range j.Tabel {
+		n := len(x.Kolom)
+		if n < 4 || x.Kolom[n-4].Kunci != "createOp" || x.Kolom[n-1].Kunci != "tglUpdate" || !x.Kolom[n-3].Turunan {
+			t.Errorf("%s tanpa kolom jejak: %+v", x.Kunci, x.Kolom)
+		}
+	}
 }
 
 // TestTambahUbahStatusMaster - alur tambah / ubah / aktif-nonaktif + galat: 401 tanpa identitas, 404 master / baris,
@@ -146,7 +157,7 @@ func TestTambahUbahStatusMaster(t *testing.T) {
 	tr := baruTiruan()
 	svc := services.Baru(tr, tanpaOracle)
 	kode, isi := minta(t, svc, "POST", "/api/masterdata/province", `{"id":" P2 ","nationId":"INA","note":"UJI JAWA","nationName":"PALSU"}`, "UJI-USER")
-	if kode != 201 || isi != `{"id":"P2"}` || tr.baris["PROVINCE"]["P2"]["nationName"] != "INDONESIA" {
+	if kode != 201 || isi != `{"id":"P2"}` || tr.baris["PROVINCE"]["P2"]["nationName"] != "INDONESIA" || tr.baris["PROVINCE"]["P2"]["createOp"] != "UJI-USER" {
 		t.Fatalf("tambah: %d %s %v", kode, isi, tr.baris["PROVINCE"]["P2"])
 	}
 	for nama, u := range map[string]struct {
@@ -165,6 +176,8 @@ func TestTambahUbahStatusMaster(t *testing.T) {
 		"status tak ada":  {"PUT", "/api/masterdata/province/P9/status", `{"aktif":false}`, "UJI-USER", "tidak ada", 404},
 		"status badan":    {"PUT", "/api/masterdata/province/P2/status", `{"aktif":"tidak"}`, "UJI-USER", "aktif", 400},
 		"halaman":         {"GET", "/api/masterdata/province?halaman=0", "", "", "halaman", 400},
+		"pelaku panjang":  {"POST", "/api/masterdata/province", `{"id":"P3","note":"X"}`, strings.Repeat("U", 65), "akun pelaku paling banyak 64 byte", 400},
+		"jejak dikirim":   {"POST", "/api/masterdata/province", `{"id":"P4","note":"X","createOp":"PALSU"}`, "UJI-USER", "", 201},
 		"status daftar":   {"GET", "/api/masterdata/province?status=x", "", "", "status", 400},
 	} {
 		if kode, isi := minta(t, svc, u.metode, u.jalur, u.badan, u.pelaku); kode != u.kode || !strings.Contains(isi, u.pesan) {
@@ -172,7 +185,8 @@ func TestTambahUbahStatusMaster(t *testing.T) {
 		}
 	}
 	if kode, isi := minta(t, svc, "PUT", "/api/masterdata/province/P2", `{"id":"ABAIKAN","note":"UJI JAWA BARAT","nationId":""}`, "UJI-USER"); kode != 200 ||
-		isi != `{"id":"P2"}` || tr.baris["PROVINCE"]["P2"]["note"] != "UJI JAWA BARAT" || tr.baris["PROVINCE"]["P2"]["nationName"] != "" {
+		isi != `{"id":"P2"}` || tr.baris["PROVINCE"]["P2"]["note"] != "UJI JAWA BARAT" || tr.baris["PROVINCE"]["P2"]["nationName"] != "" ||
+		tr.baris["PROVINCE"]["P2"]["updateOp"] != "UJI-USER" {
 		t.Errorf("ubah: %d %s %v", kode, isi, tr.baris["PROVINCE"]["P2"])
 	}
 	if kode, isi := minta(t, svc, "PUT", "/api/masterdata/province/P2/status", `{"aktif":false}`, "UJI-USER"); kode != 200 || isi != `{"id":"P2","aktif":false}` {

@@ -3,8 +3,8 @@
 Modul `masterdata` (di luar dua puluh folder korpus; keputusan work owner 04-10-2026). Ia **membuat tujuh tabel** —
 tabel flat pengganti view warisan atas JSON `M_*`, migrasi **760** (dulu nbfacin 196, dipindah karena 196 ditahan
 work owner; MD-1): `PROVINCE`, `CITYINPUT`, `DISTRICTINPUT`, `ACCUMULATEDTYPE`, `CZONE`, `ACCUMULATION` — dan **menulis**
-tabel warisan yang tidak dibuatnya: `NATION` (statusnya di `T_MASTER_STATUS`, migrasi 761 — tabel warisan tidak
-diubah strukturnya, MD-2), `OBJECTITEMTYPE` (kolom status `ISACTIVE` sendiri), dan membaca `BRANCH` (rujukan City).
+tabel warisan yang tidak dibuatnya: `NATION` (status dan jejak ubahnya di `T_MASTER_STATUS`, migrasi 761 / 762 — tabel warisan tidak
+diubah strukturnya, MD-2), `OBJECTITEMTYPE` (kolom status `ISACTIVE` sendiri; jejak ubah di `T_MASTER_STATUS`), dan membaca `BRANCH` (rujukan City).
 Tabel ketujuh yang dibuatnya: `T_MASTER_STATUS`. View `CITY` / `DISTRICT` / `V_JN_OBJ_ITEM` TETAP view di atas tabel
 ini (keputusan work owner "Flat-kan CITYINPUT & DISTRICTINPUT saja"), jadi perubahan master langsung terlihat oleh
 pembacanya (popup / saran nbfacin).
@@ -23,6 +23,10 @@ Migrasi 760 — tabel flat bernama sama dengan view asalnya; isi disalin dari vi
 | `NOTE` | teks | VARCHAR2(4000) | nama provinsi; saran nbfacin |
 | `NATIONNAME` | teks | VARCHAR2(4000) | TURUNAN: `NATION.NOTE` ber-ID NATIONID (definisi view asal; M-5) |
 | `STS_AKTIF` | teks | VARCHAR2(1) DEFAULT '1' NOT NULL | status master: `'1'` aktif (bawaan), `'0'` nonaktif |
+| `CREATE_OP` | teks | VARCHAR2(64) | migrasi 762 — pembuat (akun pelaku, = M_LOGIN_GO.LOGIN_ID); kosong untuk baris salinan 760 (MD-7) |
+| `TGL_CREATE` | tanggal | DATE | migrasi 762 — tanggal buat (SYSDATE) |
+| `UPDATE_OP` | teks | VARCHAR2(64) | migrasi 762 — pengubah terakhir (ubah isian atau status) |
+| `TGL_UPDATE` | tanggal | DATE | migrasi 762 — tanggal ubah terakhir (SYSDATE) |
 
 ## CITYINPUT
 
@@ -38,6 +42,10 @@ Migrasi 760 — tabel flat bernama sama dengan view asalnya; isi disalin dari vi
 | `MOID` | teks | VARCHAR2(4000) | disalin dari view; diubah menu master |
 | `JABODETABEKSTATUS` | teks | VARCHAR2(4000) | disalin dari view; diubah menu master |
 | `STS_AKTIF` | teks | VARCHAR2(1) DEFAULT '1' NOT NULL | status master: `'1'` aktif (bawaan), `'0'` nonaktif |
+| `CREATE_OP` | teks | VARCHAR2(64) | migrasi 762 — pembuat (akun pelaku, = M_LOGIN_GO.LOGIN_ID); kosong untuk baris salinan 760 (MD-7) |
+| `TGL_CREATE` | tanggal | DATE | migrasi 762 — tanggal buat (SYSDATE) |
+| `UPDATE_OP` | teks | VARCHAR2(64) | migrasi 762 — pengubah terakhir (ubah isian atau status) |
+| `TGL_UPDATE` | tanggal | DATE | migrasi 762 — tanggal ubah terakhir (SYSDATE) |
 
 ## DISTRICTINPUT
 
@@ -49,6 +57,10 @@ Migrasi 760 — tabel flat bernama sama dengan view asalnya; isi disalin dari vi
 | `CITYID` | teks | VARCHAR2(4000) | rujukan `CITYINPUT.ID` |
 | `DISTRICTNAME` | teks | VARCHAR2(4000) | nama kecamatan (view DISTRICT) |
 | `STS_AKTIF` | teks | VARCHAR2(1) DEFAULT '1' NOT NULL | status master: `'1'` aktif (bawaan), `'0'` nonaktif |
+| `CREATE_OP` | teks | VARCHAR2(64) | migrasi 762 — pembuat (akun pelaku, = M_LOGIN_GO.LOGIN_ID); kosong untuk baris salinan 760 (MD-7) |
+| `TGL_CREATE` | tanggal | DATE | migrasi 762 — tanggal buat (SYSDATE) |
+| `UPDATE_OP` | teks | VARCHAR2(64) | migrasi 762 — pengubah terakhir (ubah isian atau status) |
+| `TGL_UPDATE` | tanggal | DATE | migrasi 762 — tanggal ubah terakhir (SYSDATE) |
 
 ## ACCUMULATEDTYPE
 
@@ -62,6 +74,10 @@ Migrasi 760 — tabel flat bernama sama dengan view asalnya; isi disalin dari vi
 | `NOTE` | teks | VARCHAR2(4000) | saringan saran nbfacin `IS NOT NULL` |
 | `TYPE` | teks | VARCHAR2(4000) | disalin dari view; diubah menu master |
 | `STS_AKTIF` | teks | VARCHAR2(1) DEFAULT '1' NOT NULL | status master: `'1'` aktif (bawaan), `'0'` nonaktif |
+| `CREATE_OP` | teks | VARCHAR2(64) | migrasi 762 — pembuat (akun pelaku, = M_LOGIN_GO.LOGIN_ID); kosong untuk baris salinan 760 (MD-7) |
+| `TGL_CREATE` | tanggal | DATE | migrasi 762 — tanggal buat (SYSDATE) |
+| `UPDATE_OP` | teks | VARCHAR2(64) | migrasi 762 — pengubah terakhir (ubah isian atau status) |
+| `TGL_UPDATE` | tanggal | DATE | migrasi 762 — tanggal ubah terakhir (SYSDATE) |
 
 ## CZONE
 
@@ -77,6 +93,10 @@ Migrasi 760 — tabel flat bernama sama dengan view asalnya; isi disalin dari vi
 | `TGLUPDATE` | teks | VARCHAR2(4000) | disalin dari view; tidak ditulis menu (format belum terverifikasi) |
 | `USERID` | teks | VARCHAR2(4000) | disalin dari view; tidak ditulis menu |
 | `STS_AKTIF` | teks | VARCHAR2(1) DEFAULT '1' NOT NULL | status master: `'1'` aktif (bawaan), `'0'` nonaktif |
+| `CREATE_OP` | teks | VARCHAR2(64) | migrasi 762 — pembuat (akun pelaku, = M_LOGIN_GO.LOGIN_ID); kosong untuk baris salinan 760 (MD-7) |
+| `TGL_CREATE` | tanggal | DATE | migrasi 762 — tanggal buat (SYSDATE) |
+| `UPDATE_OP` | teks | VARCHAR2(64) | migrasi 762 — pengubah terakhir (ubah isian atau status) |
+| `TGL_UPDATE` | tanggal | DATE | migrasi 762 — tanggal ubah terakhir (SYSDATE) |
 
 ## ACCUMULATION
 
@@ -98,11 +118,15 @@ Migrasi 760 — tabel flat bernama sama dengan view asalnya; isi disalin dari vi
 | `ACCUMULATIONTYPE` | teks | VARCHAR2(4000) | disalin dari view; diubah menu master |
 | `SYARIAHSTATUS` | teks | VARCHAR2(4000) | disalin dari view; diubah menu master |
 | `STS_AKTIF` | teks | VARCHAR2(1) DEFAULT '1' NOT NULL | status master: `'1'` aktif (bawaan), `'0'` nonaktif |
+| `CREATE_OP` | teks | VARCHAR2(64) | migrasi 762 — pembuat (akun pelaku, = M_LOGIN_GO.LOGIN_ID); kosong untuk baris salinan 760 (MD-7) |
+| `TGL_CREATE` | tanggal | DATE | migrasi 762 — tanggal buat (SYSDATE) |
+| `UPDATE_OP` | teks | VARCHAR2(64) | migrasi 762 — pengubah terakhir (ubah isian atau status) |
+| `TGL_UPDATE` | tanggal | DATE | migrasi 762 — tanggal ubah terakhir (SYSDATE) |
 
 ## NATION
 
 Tabel warisan `POOLDATA.NATION`, **tidak dibuat** modul ini (bab "Tabel warisan" `MODUL.md`). Sumber tipe
-`[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\NATION.txt`. Strukturnya TIDAK diubah; status di `T_MASTER_STATUS`. Ditulis menu master Nation;
+`[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\NATION.txt`. Strukturnya TIDAK diubah; status dan jejak ubah di `T_MASTER_STATUS`. Ditulis menu master Nation;
 dibaca saran Country popup akumulasi nbfacin. Kelas Int-NATION → tabel NATION `[dugaan]` (nama dan kolom sama persis).
 
 | Kolom | Tipe DDL | Dipakai |
@@ -114,15 +138,21 @@ dibaca saran Country popup akumulasi nbfacin. Kelas Int-NATION → tabel NATION 
 
 ## T_MASTER_STATUS
 
-Migrasi 761 (MD-2) — status aktif / nonaktif master yang tabelnya warisan TANPA kolom status (kini hanya `NATION`).
-Satu baris per (tabel, ID) yang statusnya pernah diubah lewat menu; **tanpa baris = aktif**. Pembaca (saran nbfacin)
-menyaring baris yang berstatus selain `'1'`.
+Migrasi 761 (MD-2) — status aktif / nonaktif master yang tabelnya warisan TANPA kolom status (kini hanya `NATION`), dan
+sejak 762 jejak ubah (MD-7) kedua tabel warisan yang tidak di-ALTER: `NATION` dan `OBJECTITEMTYPE`.
+Satu baris per (tabel, ID) yang ditambah, diubah, atau diubah statusnya lewat menu (sejak 762; 761 saja: hanya
+ubah status); **tanpa baris = aktif** (baris NATION yang disalin dari sistem lama). Pembaca (saran nbfacin) menyaring
+`NAMA_TABEL = 'NATION'` berstatus selain `'1'`.
 
-| Kolom | Tipe | Tipe DDL (migrasi 761) | Isi |
+| Kolom | Tipe | Tipe DDL (migrasi 761, diubah 762) | Isi |
 | --- | --- | --- | --- |
-| `NAMA_TABEL` | teks | VARCHAR2(30) NOT NULL | nama tabel master (`NATION`); PK bersama ID_BARIS |
-| `ID_BARIS` | teks | VARCHAR2(100) NOT NULL | ID baris master (NATION.ID VARCHAR2(10)) |
-| `STS_AKTIF` | teks | VARCHAR2(1) DEFAULT '1' NOT NULL | `'1'` aktif, `'0'` nonaktif |
+| `NAMA_TABEL` | teks | VARCHAR2(30) NOT NULL | nama tabel master (`NATION` / `OBJECTITEMTYPE`); PK bersama ID_BARIS |
+| `ID_BARIS` | teks | VARCHAR2(4000) NOT NULL | ID baris master (NATION.ID / OBJECTITEMTYPE.ID); dilebarkan 762 dari VARCHAR2(100) |
+| `STS_AKTIF` | teks | VARCHAR2(1) DEFAULT '1' NOT NULL | `'1'` aktif, `'0'` nonaktif (NATION; diabaikan untuk OBJECTITEMTYPE yang ber-ISACTIVE) |
+| `CREATE_OP` | teks | VARCHAR2(64) | migrasi 762 — pembuat (akun pelaku, = M_LOGIN_GO.LOGIN_ID); tabel warisan NATION / OBJECTITEMTYPE (MD-7) |
+| `TGL_CREATE` | tanggal | DATE | migrasi 762 — tanggal buat (SYSDATE) |
+| `UPDATE_OP` | teks | VARCHAR2(64) | migrasi 762 — pengubah terakhir (ubah isian atau status) |
+| `TGL_UPDATE` | tanggal | DATE | migrasi 762 — tanggal ubah terakhir (SYSDATE) |
 
 ## OBJECTITEMTYPE
 

@@ -2,7 +2,8 @@
 //
 // Modul DI LUAR dua puluh folder korpus (PANDUAN-TIM-PER-MODUL bab 5), keputusan work owner 04-10-2026: menu master
 // insert / update / aktif / nonaktif untuk tabel master yang dipakai NB FacIn (`docs/issues/01-rencana-master-data.md`).
-// Migrasinya: 760 (view warisan -> tabel flat bernama sama + STS_AKTIF), 761 (T_MASTER_STATUS: status NATION), dan
+// Migrasinya: 760 (view warisan -> tabel flat bernama sama + STS_AKTIF), 761 (T_MASTER_STATUS: status NATION), 762
+// (jejak ubah: CREATE_OP / TGL_CREATE / UPDATE_OP / TGL_UPDATE), dan
 // slot menu 990. Baris M_NAV_MENU-nya dari migrasi inti 904.
 package backend
 

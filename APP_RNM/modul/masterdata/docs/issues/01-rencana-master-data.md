@@ -5,7 +5,7 @@
 > misal manu master province, isi nya untu insert, update, aktif, non aktif kan data dari master itu."
 > Jawaban AskUserQuestion: penempatan **Modul baru 'masterdata'**; cakupan **Yang dipakai NB FacIn dulu**.
 
-**Status:** backend + pendaftaran (c3, `02-api-master-data.md`) dan frontend (0f, 04-10-2026) selesai; uji hijau. ⛔ Migrasi 904 / 760 / 761 / 990 belum dijalankan. ⚠️ MD-7 jejak ubah belum dibangun.
+**Status:** backend + pendaftaran (c3, `02-api-master-data.md`) dan frontend (0f, 04-10-2026) selesai; uji hijau. ⛔ Migrasi 904 / 760 / 761 / 762 / 990 belum dijalankan. ~~⚠️ MD-7 jejak ubah belum dibangun.~~ → dibangun (migrasi 762, sesi c3).
 
 ## Latar
 
@@ -31,7 +31,9 @@ Tahap berikut: BRANDDETAIL, VJ_M_TYPE_PROPERTY_PLAN, COVERAGE_FACIN (A179 → pe
 
 ## Keputusan agent — DISETUJUI work owner 04-10-2026
 
-> Jawaban work owner atas laporan sesi 0f (yang menyebut M-1 … M-8 dan MD-1 … MD-9): "setuju". Pengecualian: MD-7 (jejak ubah) memuat pilihan yang belum dijawab — tetap `[pertanyaan terbuka]`.
+> Jawaban work owner atas laporan sesi 0f (yang menyebut M-1 … M-8 dan MD-1 … MD-9): "setuju". ~~Pengecualian: MD-7 (jejak ubah) memuat pilihan yang belum dijawab — tetap `[pertanyaan terbuka]`.~~ MD-7 dijawab
+> kemudian (AskUserQuestion di sesi 0f): **"Kolom diubah oleh/tanggal"** — pembuat, tanggal buat, pengubah terakhir,
+> tanggal ubah terakhir per tabel master; tabel riwayat umum (tim inti) TIDAK dipilih. Dibangun: migrasi 762.
 
 Cakupan persetujuan di berkas ini: M-1 … M-8.
 
@@ -48,7 +50,8 @@ Cakupan persetujuan di berkas ini: M-1 … M-8.
 - **M-5** Kolom turunan (NATIONNAME, GROUPOFNAME, ACCUMULATIONNAME, PROVINCENAME, CITYNAME, …) diisi backend dari
   tabel rujukannya saat simpan — pengguna memilih rujukan, bukan mengetik namanya.
 - **M-6** Akses lewat Kelola User (gerbang menu `M_LOGIN_GO_MENU`), tanpa aturan peran baru.
-- **M-7** Jejak ubah (`inti/backend/jejak`) untuk setiap insert / update / ubah status.
+- ~~**M-7** Jejak ubah (`inti/backend/jejak`) untuk setiap insert / update / ubah status.~~ → MD-7: kolom
+  `CREATE_OP` / `TGL_CREATE` / `UPDATE_OP` / `TGL_UPDATE` (migrasi 762), hanya perubahan terakhir.
 - **M-8** (keputusan work owner 04-10-2026, AskUserQuestion: "Flat-kan CITYINPUT & DISTRICTINPUT saja") — view
   `CITY` / `DISTRICT` adalah gabungan CITYINPUT + DISTRICTINPUT + RWINPUT + PROVINCE + BRANCH (satu baris per kode pos);
   yang di-flat-kan dan diedit = `CITYINPUT` / `DISTRICTINPUT`, sedangkan `CITY` / `DISTRICT` tetap view sehingga

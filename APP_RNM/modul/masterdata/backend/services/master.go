@@ -39,7 +39,21 @@ const (
 	lebarNegara = 10
 	// KunciNegara - medan masukan tambahan akumulasi baru (bukan kolom; MD-4).
 	KunciNegara = "negara"
+	// lebarPelaku - CREATE_OP / UPDATE_OP VARCHAR2(64) = M_LOGIN_GO.LOGIN_ID (migrasi 762).
+	lebarPelaku = 64
 )
+
+// pelakuJejak - akun pelaku untuk jejak ubah (MD-7); wajib ada dan muat kolomnya.
+func pelakuJejak(p inti.Pelaku) (string, error) {
+	if err := inti.WajibIdentitas(p); err != nil {
+		return "", err
+	}
+	akun := strings.TrimSpace(p.AkunID)
+	if len(akun) > lebarPelaku {
+		return "", fmt.Errorf("%w: akun pelaku paling banyak %d byte", ErrMasukanMaster, lebarPelaku)
+	}
+	return akun, nil
+}
 
 // Transaksi - pembuka transaksi (inti.Dasar.DalamTransaksi).
 type Transaksi func(ctx context.Context, fn func(tx *db.Tx) error) error
@@ -97,7 +111,8 @@ func (s *Service) Daftar(ctx context.Context, kunci, kata, status string, nomor 
 // otomatis).
 func periksa(t models.TabelMaster, masukan map[string]string, baru bool) (models.Baris, error) {
 	sah := map[string]models.Kolom{}
-	for _, k := range t.Kolom {
+	// Kolom jejak ubah (MD-7) dikenal tetapi turunan: dikirim balik layar pun diabaikan, tidak ditolak.
+	for _, k := range t.SeluruhKolom() {
 		sah[k.JSON] = k
 	}
 	var masalah []string
@@ -175,7 +190,8 @@ func (s *Service) isiRujukan(ctx context.Context, t models.TabelMaster, b models
 
 // Tambah - baris baru berstatus aktif; mengembalikan ID-nya.
 func (s *Service) Tambah(ctx context.Context, pelaku inti.Pelaku, kunci string, masukan map[string]string) (string, error) {
-	if err := inti.WajibIdentitas(pelaku); err != nil {
+	akun, err := pelakuJejak(pelaku)
+	if err != nil {
 		return "", err
 	}
 	t, ada := models.CariMaster(kunci)
@@ -220,7 +236,7 @@ func (s *Service) Tambah(ctx context.Context, pelaku inti.Pelaku, kunci string, 
 			}
 			b["id"] = id
 		}
-		return s.simpan.Sisip(ctx, tx, t, b)
+		return s.simpan.Sisip(ctx, tx, t, b, akun)
 	})
 	if err != nil {
 		return "", err
@@ -230,7 +246,8 @@ func (s *Service) Tambah(ctx context.Context, pelaku inti.Pelaku, kunci string, 
 
 // Ubah - kolom data selain ID (ID dari rute; `id` di badan diabaikan).
 func (s *Service) Ubah(ctx context.Context, pelaku inti.Pelaku, kunci, id string, masukan map[string]string) error {
-	if err := inti.WajibIdentitas(pelaku); err != nil {
+	akun, err := pelakuJejak(pelaku)
+	if err != nil {
 		return err
 	}
 	t, ada := models.CariMaster(kunci)
@@ -248,7 +265,7 @@ func (s *Service) Ubah(ctx context.Context, pelaku inti.Pelaku, kunci, id string
 		return err
 	}
 	b["id"] = strings.TrimSpace(id)
-	err = s.transaksi(ctx, func(tx *db.Tx) error { return s.simpan.Ubah(ctx, tx, t, b) })
+	err = s.transaksi(ctx, func(tx *db.Tx) error { return s.simpan.Ubah(ctx, tx, t, b, akun) })
 	if errors.Is(err, repository.ErrBarisTidakAda) {
 		return fmt.Errorf("%w: %s %q", ErrBarisTidakAda, kunci, id)
 	}
@@ -257,14 +274,15 @@ func (s *Service) Ubah(ctx context.Context, pelaku inti.Pelaku, kunci, id string
 
 // UbahStatus - aktif / nonaktif (tanpa hapus).
 func (s *Service) UbahStatus(ctx context.Context, pelaku inti.Pelaku, kunci, id string, aktif bool) error {
-	if err := inti.WajibIdentitas(pelaku); err != nil {
+	akun, err := pelakuJejak(pelaku)
+	if err != nil {
 		return err
 	}
 	t, err := s.master(kunci)
 	if err != nil {
 		return err
 	}
-	err = s.transaksi(ctx, func(tx *db.Tx) error { return s.simpan.UbahStatus(ctx, tx, t, strings.TrimSpace(id), aktif) })
+	err = s.transaksi(ctx, func(tx *db.Tx) error { return s.simpan.UbahStatus(ctx, tx, t, strings.TrimSpace(id), aktif, akun) })
 	if errors.Is(err, repository.ErrBarisTidakAda) {
 		return fmt.Errorf("%w: %s %q", ErrBarisTidakAda, kunci, id)
 	}

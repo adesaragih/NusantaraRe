@@ -13,11 +13,17 @@ import { LABEL_KOLOM, RUJUKAN, TEKS } from './labels'
 
 const DAFTAR_GO = readFileSync(join(__dirname, '..', 'backend', 'models', 'daftar.go'), 'utf8')
 
-/** Blok tiap master di daftar.go: kunci -> teks bloknya. */
+/** Awal deklarasi kolom jejak ubah (MD-7) - dibaca terpisah, tidak ikut blok master terakhir. */
+const AWAL_AUDIT = DAFTAR_GO.indexOf('var KolomAudit')
+const ISI_MASTER = AWAL_AUDIT >= 0 ? DAFTAR_GO.slice(0, AWAL_AUDIT) : DAFTAR_GO
+/** Teks `var KolomAudit = []Kolom{ … }` (kosong bila tidak ada). */
+const BLOK_AUDIT = AWAL_AUDIT >= 0 ? DAFTAR_GO.slice(AWAL_AUDIT, DAFTAR_GO.indexOf('\n}', AWAL_AUDIT) + 2) : ''
+
+/** Blok tiap master di daftar.go (tanpa KolomAudit): kunci -> teks bloknya. */
 function blokMaster(): Map<string, string> {
   const m = new Map<string, string>()
-  const posisi = [...DAFTAR_GO.matchAll(/Kunci: "([a-z]+)"/g)].map((x) => ({ kunci: x[1]!, i: x.index ?? 0 }))
-  posisi.forEach((p, n) => m.set(p.kunci, DAFTAR_GO.slice(p.i, posisi[n + 1]?.i ?? DAFTAR_GO.length)))
+  const posisi = [...ISI_MASTER.matchAll(/Kunci: "([a-z]+)"/g)].map((x) => ({ kunci: x[1]!, i: x.index ?? 0 }))
+  posisi.forEach((p, n) => m.set(p.kunci, ISI_MASTER.slice(p.i, posisi[n + 1]?.i ?? ISI_MASTER.length)))
   return m
 }
 /**
@@ -35,13 +41,15 @@ describe('kamus label & rujukan = definisi master backend', () => {
     expect([...blok.keys()]).toEqual(['nation', 'province', 'city', 'district', 'czone', 'accumulatedtype', 'accumulation', 'objectitemtype'])
     expect(kunciJSON(blok.get('nation')!).sort()).toEqual(['id', 'nationInitial', 'note', 'oldId'])
     expect(kunciJSON(blok.get('objectitemtype')!)).toContain('group')
+    // Jejak ubah dibaca dari `var KolomAudit` sendiri, tidak bocor ke blok Object Item Type.
+    expect(kunciJSON(BLOK_AUDIT)).toEqual(['createOp', 'tglCreate', 'updateOp', 'tglUpdate'])
+    expect(kunciJSON(blok.get('objectitemtype')!)).not.toContain('createOp')
   })
-  it('setiap kolom backend punya label', () => {
-    const semua = new Set([...blok.values()].flatMap(kunciJSON))
+  const semua = new Set([...[...blok.values()].flatMap(kunciJSON), ...kunciJSON(BLOK_AUDIT)])
+  it('setiap kolom backend (termasuk jejak ubah) punya label', () => {
     expect([...semua].filter((k) => !(k in LABEL_KOLOM))).toEqual([])
   })
   it('setiap label (selain negara) dipakai kolom backend', () => {
-    const semua = new Set([...blok.values()].flatMap(kunciJSON))
     expect(Object.keys(LABEL_KOLOM).filter((k) => k !== KUNCI_NEGARA && !semua.has(k))).toEqual([])
   })
   it('setiap rujukan frontend = kolom master itu dan master tujuannya ada', () => {

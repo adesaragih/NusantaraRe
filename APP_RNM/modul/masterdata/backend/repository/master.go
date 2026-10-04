@@ -1,5 +1,9 @@
 // Package repository membaca dan menulis tabel master (modul Master Data) di Oracle. SQL dibangun dari daftar kolom
 // `models.DaftarMaster` - nama tabel / kolom hanya dari konstanta itu, nilai selalu lewat bind posisi.
+//
+// Setiap kueri membaca tabel master beralias `m`; tabel JejakTerpisah (NATION, OBJECTITEMTYPE - warisan, MD-2)
+// di-LEFT JOIN ke T_MASTER_STATUS beralias `s` untuk jejak ubah (MD-7) dan - bila tanpa kolom status - statusnya.
+// Tanggal ditulis SYSDATE di SQL dan dibaca TO_CHAR berformat tetap: tanpa zona / NLS di Go.
 package repository
 
 import (
@@ -25,20 +29,22 @@ const (
 	// sequenceAkumulasi - urutan ID ACCUMULATION (prosedur RDBMASTERACCUMULATION `accumulation_seq.nextval`; DDL
 	// sequence-nya tidak ada di korpus `[dugaan]` ada di skema).
 	sequenceAkumulasi = "ACCUMULATION_SEQ"
-	// TabelStatus - status master bertabel warisan tanpa kolom status (migrasi 761, MD-2); tanpa baris = aktif.
+	// TabelStatus - status dan jejak ubah master bertabel warisan (migrasi 761 / 762, MD-2); tanpa baris = aktif.
 	TabelStatus = "T_MASTER_STATUS"
+	// formatTanggal - TO_CHAR kolom jejak ubah.
+	formatTanggal = "YYYY-MM-DD HH24:MI:SS"
 )
 
-// Penyimpan - baca / tulis tabel master.
+// Penyimpan - baca / tulis tabel master. `akun` = pelaku (jejak ubah, MD-7).
 type Penyimpan interface {
 	Daftar(ctx context.Context, t models.TabelMaster, kata, status string, nomor, ukuran int) (models.Halaman, error)
 	Ada(ctx context.Context, t models.TabelMaster, id string) (bool, error)
 	AdaCatatanAkumulasi(ctx context.Context, note, zip string) (bool, error)
 	NilaiRujukan(ctx context.Context, r models.Rujukan, nilai string) (string, bool, error)
 	IDAkumulasi(ctx context.Context, tx *db.Tx, negara, zip string) (string, error)
-	Sisip(ctx context.Context, tx *db.Tx, t models.TabelMaster, b models.Baris) error
-	Ubah(ctx context.Context, tx *db.Tx, t models.TabelMaster, b models.Baris) error
-	UbahStatus(ctx context.Context, tx *db.Tx, t models.TabelMaster, id string, aktif bool) error
+	Sisip(ctx context.Context, tx *db.Tx, t models.TabelMaster, b models.Baris, akun string) error
+	Ubah(ctx context.Context, tx *db.Tx, t models.TabelMaster, b models.Baris, akun string) error
+	UbahStatus(ctx context.Context, tx *db.Tx, t models.TabelMaster, id string, aktif bool, akun string) error
 }
 
 // MasterOracle - Penyimpan atas Oracle.
@@ -56,19 +62,42 @@ func PolaCari(kata string) string {
 	return "%" + strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(k) + "%"
 }
 
-// ekspresiStatus - nilai status baris (alias tabel `m`): kolom status tabel itu, atau - bila tabelnya warisan tanpa
-// kolom status - baris T_MASTER_STATUS-nya (tanpa baris = aktif).
-func ekspresiStatus(t models.TabelMaster, tabelStatus string) string {
+// sumber - klausa FROM: master `m` (+ T_MASTER_STATUS `s` bila JejakTerpisah).
+func sumber(t models.TabelMaster, tabel, tabelStatus string) string {
+	if !t.JejakTerpisah {
+		return tabel + " m"
+	}
+	return tabel + " m LEFT JOIN " + tabelStatus + " s ON s.NAMA_TABEL = '" + t.Nama + "' AND s.ID_BARIS = m.ID"
+}
+
+// ekspresiStatus - nilai status baris: kolom status tabel itu, atau STS_AKTIF T_MASTER_STATUS (tanpa baris = aktif).
+func ekspresiStatus(t models.TabelMaster) string {
 	if t.KolomStatus != "" {
 		return "m." + t.KolomStatus
 	}
-	return "NVL((SELECT s.STS_AKTIF FROM " + tabelStatus + " s WHERE s.NAMA_TABEL = '" + t.Nama + "' AND s.ID_BARIS = m.ID), '" +
-		StatusAktif + "')"
+	return "NVL(s.STS_AKTIF, '" + StatusAktif + "')"
+}
+
+// kolomJejak - ekspresi terpilih keempat kolom jejak ubah.
+func kolomJejak(t models.TabelMaster) []string {
+	a := "m."
+	if t.JejakTerpisah {
+		a = "s."
+	}
+	out := make([]string, 0, len(models.KolomAudit))
+	for _, k := range models.KolomAudit {
+		if k.Tanggal {
+			out = append(out, "TO_CHAR("+a+k.Nama+", '"+formatTanggal+"')")
+			continue
+		}
+		out = append(out, a+k.Nama)
+	}
+	return out
 }
 
 // saring - syarat WHERE daftar: kata (Contains tidak peka huruf atas KolomCari, OR) dan status ("aktif" /
-// "nonaktif" / "" semua) atas `eks` (ekspresiStatus). Bind dibangun bersama syaratnya.
-func saring(t models.TabelMaster, eks, kata, status string) (string, []any) {
+// "nonaktif" / "" semua). Bind dibangun bersama syaratnya.
+func saring(t models.TabelMaster, kata, status string) (string, []any) {
 	var syarat []string
 	var arg []any
 	if pola := PolaCari(kata); pola != "" {
@@ -79,6 +108,7 @@ func saring(t models.TabelMaster, eks, kata, status string) (string, []any) {
 		}
 		syarat = append(syarat, "("+strings.Join(atau, " OR ")+")")
 	}
+	eks := ekspresiStatus(t)
 	switch status {
 	case "aktif":
 		syarat = append(syarat, eks+" = '"+StatusAktif+"'")
@@ -99,19 +129,20 @@ func namaKolom(t models.TabelMaster, alias string) []string {
 	return out
 }
 
-// sqlDaftar - kolom data + status, urut ID, halaman OFFSET / FETCH (dua bind terakhir).
-func sqlDaftar(tabel string, t models.TabelMaster, eks, where string, nBind int) string {
-	return "SELECT " + strings.Join(namaKolom(t, "m."), ", ") + ", " + eks + " FROM " + tabel + " m" + where +
-		" ORDER BY m.ID OFFSET :" + strconv.Itoa(nBind+1) + " ROWS FETCH NEXT :" + strconv.Itoa(nBind+2) + " ROWS ONLY"
+// sqlDaftar - kolom data, jejak ubah, status; urut ID, halaman OFFSET / FETCH (dua bind terakhir).
+func sqlDaftar(t models.TabelMaster, dari, where string, nBind int) string {
+	pilih := append(append(namaKolom(t, "m."), kolomJejak(t)...), ekspresiStatus(t))
+	return "SELECT " + strings.Join(pilih, ", ") + " FROM " + dari + where + " ORDER BY m.ID OFFSET :" + strconv.Itoa(nBind+1) +
+		" ROWS FETCH NEXT :" + strconv.Itoa(nBind+2) + " ROWS ONLY"
 }
 
-func sqlHitung(tabel, where string) string { return "SELECT COUNT(*) FROM " + tabel + " m" + where }
+func sqlHitung(dari, where string) string { return "SELECT COUNT(*) FROM " + dari + where }
 
-// sqlSisip - seluruh kolom data (urut daftar kolom) + status aktif bila tabelnya berkolom status (tanpa: tanpa
-// baris T_MASTER_STATUS = aktif).
+// sqlSisip - seluruh kolom data (urut daftar kolom) + status aktif bila tabelnya berkolom status + pembuat / tanggal
+// buat bila jejaknya di tabel itu (bind terakhir = pelaku).
 func sqlSisip(tabel string, t models.TabelMaster) string {
 	kolom := namaKolom(t, "")
-	nilai := make([]string, 0, len(t.Kolom)+1)
+	nilai := make([]string, 0, len(t.Kolom)+3)
 	for i := range t.Kolom {
 		nilai = append(nilai, ":"+strconv.Itoa(i+1))
 	}
@@ -119,30 +150,65 @@ func sqlSisip(tabel string, t models.TabelMaster) string {
 		kolom = append(kolom, t.KolomStatus)
 		nilai = append(nilai, "'"+StatusAktif+"'")
 	}
+	if !t.JejakTerpisah {
+		kolom = append(kolom, "CREATE_OP", "TGL_CREATE")
+		nilai = append(nilai, ":"+strconv.Itoa(len(t.Kolom)+1), "SYSDATE")
+	}
 	return "INSERT INTO " + tabel + " (" + strings.Join(kolom, ", ") + ") VALUES (" + strings.Join(nilai, ", ") + ")"
 }
 
-// sqlUbah - kolom data selain ID (urut daftar kolom), ID bind terakhir.
+// sqlUbah - kolom data selain ID (urut daftar kolom) [+ pengubah / tanggal ubah], ID bind terakhir.
 func sqlUbah(tabel string, t models.TabelMaster) string {
 	var set []string
 	for i, k := range t.Kolom[1:] {
 		set = append(set, k.Nama+" = :"+strconv.Itoa(i+1))
 	}
-	return "UPDATE " + tabel + " SET " + strings.Join(set, ", ") + " WHERE ID = :" + strconv.Itoa(len(t.Kolom))
+	n := len(t.Kolom)
+	if !t.JejakTerpisah {
+		set = append(set, "UPDATE_OP = :"+strconv.Itoa(n), "TGL_UPDATE = SYSDATE")
+		n++
+	}
+	return "UPDATE " + tabel + " SET " + strings.Join(set, ", ") + " WHERE ID = :" + strconv.Itoa(n)
 }
 
+// sqlStatus - kolom status [+ pengubah / tanggal ubah]: :1 status, [:2 pelaku], ID bind terakhir.
 func sqlStatus(tabel string, t models.TabelMaster) string {
-	return "UPDATE " + tabel + " SET " + t.KolomStatus + " = :1 WHERE ID = :2"
+	if t.JejakTerpisah {
+		return "UPDATE " + tabel + " SET " + t.KolomStatus + " = :1 WHERE ID = :2"
+	}
+	return "UPDATE " + tabel + " SET " + t.KolomStatus + " = :1, UPDATE_OP = :2, TGL_UPDATE = SYSDATE WHERE ID = :3"
 }
 
-// sqlUbahStatusTerpisah / sqlSisipStatusTerpisah - status di T_MASTER_STATUS: ubah barisnya, atau - bila belum ada
-// - sisipkan (dua pernyataan di transaksi yang sama; bukan MERGE supaya setiap nama tabel terbaca penjaga ADR-U-0033).
-func sqlUbahStatusTerpisah(tabelStatus string) string {
-	return "UPDATE " + tabelStatus + " SET STS_AKTIF = :1 WHERE NAMA_TABEL = :2 AND ID_BARIS = :3"
+// sqlUbahJejakTerpisah / sqlSisipJejakTerpisah - jejak (dan status bila `denganStatus`) di T_MASTER_STATUS: ubah
+// barisnya, atau - bila belum ada - sisipkan (dua pernyataan, bukan MERGE: penjaga ADR-U-0033). Bind: [status],
+// pelaku, nama tabel, ID.
+func sqlUbahJejakTerpisah(tabelStatus string, denganStatus bool) string {
+	set, n := "", 1
+	if denganStatus {
+		set, n = "STS_AKTIF = :1, ", 2
+	}
+	return "UPDATE " + tabelStatus + " SET " + set + "UPDATE_OP = :" + strconv.Itoa(n) + ", TGL_UPDATE = SYSDATE WHERE NAMA_TABEL = :" +
+		strconv.Itoa(n+1) + " AND ID_BARIS = :" + strconv.Itoa(n+2)
 }
 
-func sqlSisipStatusTerpisah(tabelStatus string) string {
-	return "INSERT INTO " + tabelStatus + " (STS_AKTIF, NAMA_TABEL, ID_BARIS) VALUES (:1, :2, :3)"
+func sqlSisipJejakTerpisah(tabelStatus string, denganStatus bool) string {
+	if denganStatus {
+		return "INSERT INTO " + tabelStatus + " (STS_AKTIF, UPDATE_OP, TGL_UPDATE, NAMA_TABEL, ID_BARIS) VALUES (:1, :2, SYSDATE, :3, :4)"
+	}
+	return "INSERT INTO " + tabelStatus + " (UPDATE_OP, TGL_UPDATE, NAMA_TABEL, ID_BARIS) VALUES (:1, SYSDATE, :2, :3)"
+}
+
+// sqlUbahBuatJejakTerpisah / sqlBuatJejakTerpisah - baris T_MASTER_STATUS saat master warisan ditambah: pembuat /
+// tanggal buat, status aktif. Baris sisa ber-(tabel, ID) sama - baris masternya dihapus di luar menu lalu ID-nya
+// ditambah lagi - DIATUR ULANG, tidak mewarisi status / pengubah lama dan tidak menabrak PK. Bind: pelaku, nama
+// tabel, ID.
+func sqlUbahBuatJejakTerpisah(tabelStatus string) string {
+	return "UPDATE " + tabelStatus + " SET STS_AKTIF = '" + StatusAktif + "', CREATE_OP = :1, TGL_CREATE = SYSDATE, " +
+		"UPDATE_OP = NULL, TGL_UPDATE = NULL WHERE NAMA_TABEL = :2 AND ID_BARIS = :3"
+}
+
+func sqlBuatJejakTerpisah(tabelStatus string) string {
+	return "INSERT INTO " + tabelStatus + " (CREATE_OP, TGL_CREATE, NAMA_TABEL, ID_BARIS) VALUES (:1, SYSDATE, :2, :3)"
 }
 
 func sqlRujukan(tabel string, r models.Rujukan) string {
@@ -164,25 +230,28 @@ func sqlIDAkumulasi(seq string) string {
 	return "SELECT :1 || '-' || :2 || '-' || LPAD(TO_CHAR(" + seq + ".NEXTVAL), 6, '0') FROM DUAL"
 }
 
-func (r *MasterOracle) tabel(t models.TabelMaster) (string, error) { return r.db.Qualify(t.Nama) }
+// namaBerskema - nama berskema tabel master dan T_MASTER_STATUS.
+func (r *MasterOracle) namaBerskema(t models.TabelMaster) (tabel, tabelStatus string, err error) {
+	if tabel, err = r.db.Qualify(t.Nama); err != nil {
+		return "", "", err
+	}
+	tabelStatus, err = r.db.Qualify(TabelStatus)
+	return tabel, tabelStatus, err
+}
 
 // Daftar - satu halaman master.
 func (r *MasterOracle) Daftar(ctx context.Context, t models.TabelMaster, kata, status string, nomor, ukuran int) (models.Halaman, error) {
-	tb, err := r.tabel(t)
+	tabel, tabelStatus, err := r.namaBerskema(t)
 	if err != nil {
 		return models.Halaman{}, err
 	}
-	st, err := r.db.Qualify(TabelStatus)
-	if err != nil {
-		return models.Halaman{}, err
-	}
-	eks := ekspresiStatus(t, st)
-	where, arg := saring(t, eks, kata, status)
+	dari := sumber(t, tabel, tabelStatus)
+	where, arg := saring(t, kata, status)
 	h := models.Halaman{Nomor: nomor, Ukuran: ukuran, Baris: []models.Baris{}, Aktif: []bool{}}
-	if err := r.db.QueryRowContext(ctx, sqlHitung(tb, where), arg...).Scan(&h.Total); err != nil {
+	if err := r.db.QueryRowContext(ctx, sqlHitung(dari, where), arg...).Scan(&h.Total); err != nil {
 		return h, fmt.Errorf("repository: hitung %s: %w", t.Nama, err)
 	}
-	baris, err := r.db.QueryContext(ctx, sqlDaftar(tb, t, eks, where, len(arg)), append(arg, (nomor-1)*ukuran, ukuran)...)
+	baris, err := r.db.QueryContext(ctx, sqlDaftar(t, dari, where, len(arg)), append(arg, (nomor-1)*ukuran, ukuran)...)
 	if err != nil {
 		return h, fmt.Errorf("repository: baca %s: %w", t.Nama, err)
 	}
@@ -198,8 +267,10 @@ func (r *MasterOracle) Daftar(ctx context.Context, t models.TabelMaster, kata, s
 	return h, baris.Err()
 }
 
+// pindai - kolom data, keempat kolom jejak, lalu status.
 func pindai(baris *sql.Rows, t models.TabelMaster) (models.Baris, bool, error) {
-	nilai := make([]sql.NullString, len(t.Kolom)+1)
+	kolom := t.SeluruhKolom()
+	nilai := make([]sql.NullString, len(kolom)+1)
 	tujuan := make([]any, len(nilai))
 	for i := range nilai {
 		tujuan[i] = &nilai[i]
@@ -208,15 +279,15 @@ func pindai(baris *sql.Rows, t models.TabelMaster) (models.Baris, bool, error) {
 		return nil, false, fmt.Errorf("repository: %s: %w", t.Nama, err)
 	}
 	b := models.Baris{}
-	for i, k := range t.Kolom {
+	for i, k := range kolom {
 		b[k.JSON] = nilai[i].String
 	}
-	return b, nilai[len(t.Kolom)].String == StatusAktif, nil
+	return b, nilai[len(kolom)].String == StatusAktif, nil
 }
 
 // Ada - ID sudah ada.
 func (r *MasterOracle) Ada(ctx context.Context, t models.TabelMaster, id string) (bool, error) {
-	tb, err := r.tabel(t)
+	tb, err := r.db.Qualify(t.Nama)
 	if err != nil {
 		return false, err
 	}
@@ -275,35 +346,56 @@ func argKolom(b models.Baris, kolom []models.Kolom) []any {
 	return arg
 }
 
-// Sisip - baris baru berstatus aktif.
-func (r *MasterOracle) Sisip(ctx context.Context, tx *db.Tx, t models.TabelMaster, b models.Baris) error {
-	tb, err := r.tabel(t)
+// Sisip - baris baru berstatus aktif, pembuat = `akun`.
+func (r *MasterOracle) Sisip(ctx context.Context, tx *db.Tx, t models.TabelMaster, b models.Baris, akun string) error {
+	tabel, tabelStatus, err := r.namaBerskema(t)
 	if err != nil {
 		return err
 	}
-	h, err := tx.ExecContext(ctx, sqlSisip(tb, t), argKolom(b, t.Kolom)...)
+	arg := argKolom(b, t.Kolom)
+	if !t.JejakTerpisah {
+		arg = append(arg, akun)
+	}
+	h, err := tx.ExecContext(ctx, sqlSisip(tabel, t), arg...)
 	if err != nil {
 		return fmt.Errorf("repository: sisip %s: %w", t.Nama, err)
 	}
-	return db.PastikanSatuBaris(h, t.Nama)
+	if err := db.PastikanSatuBaris(h, t.Nama); err != nil {
+		return err
+	}
+	if !t.JejakTerpisah {
+		return nil
+	}
+	return ubahAtauSisip(ctx, tx, t.Nama, sqlUbahBuatJejakTerpisah(tabelStatus), sqlBuatJejakTerpisah(tabelStatus),
+		akun, t.Nama, b["id"])
 }
 
-// Ubah - kolom data selain ID; ErrBarisTidakAda bila nol baris.
-func (r *MasterOracle) Ubah(ctx context.Context, tx *db.Tx, t models.TabelMaster, b models.Baris) error {
-	tb, err := r.tabel(t)
+// Ubah - kolom data selain ID, pengubah = `akun`; ErrBarisTidakAda bila nol baris.
+func (r *MasterOracle) Ubah(ctx context.Context, tx *db.Tx, t models.TabelMaster, b models.Baris, akun string) error {
+	tabel, tabelStatus, err := r.namaBerskema(t)
 	if err != nil {
 		return err
 	}
-	h, err := tx.ExecContext(ctx, sqlUbah(tb, t), append(argKolom(b, t.Kolom[1:]), b["id"])...)
+	arg := argKolom(b, t.Kolom[1:])
+	if !t.JejakTerpisah {
+		arg = append(arg, akun)
+	}
+	h, err := tx.ExecContext(ctx, sqlUbah(tabel, t), append(arg, b["id"])...)
 	if err != nil {
 		return fmt.Errorf("repository: ubah %s: %w", t.Nama, err)
 	}
-	return satuBaris(h, t.Nama)
+	if err := satuBaris(h, t.Nama); err != nil {
+		return err
+	}
+	if !t.JejakTerpisah {
+		return nil
+	}
+	return r.jejakTerpisah(ctx, tx, tabelStatus, t, b["id"], nil, akun)
 }
 
-// UbahStatus - aktif / nonaktif; ErrBarisTidakAda bila nol baris.
-func (r *MasterOracle) UbahStatus(ctx context.Context, tx *db.Tx, t models.TabelMaster, id string, aktif bool) error {
-	tb, err := r.tabel(t)
+// UbahStatus - aktif / nonaktif, pengubah = `akun`; ErrBarisTidakAda bila ID tidak ada.
+func (r *MasterOracle) UbahStatus(ctx context.Context, tx *db.Tx, t models.TabelMaster, id string, aktif bool, akun string) error {
+	tabel, tabelStatus, err := r.namaBerskema(t)
 	if err != nil {
 		return err
 	}
@@ -311,7 +403,8 @@ func (r *MasterOracle) UbahStatus(ctx context.Context, tx *db.Tx, t models.Tabel
 	if aktif {
 		nilai = StatusAktif
 	}
-	if t.KolomStatus == "" {
+	switch {
+	case t.KolomStatus == "":
 		ada, err := r.Ada(ctx, t, id)
 		if err != nil {
 			return err
@@ -319,27 +412,49 @@ func (r *MasterOracle) UbahStatus(ctx context.Context, tx *db.Tx, t models.Tabel
 		if !ada {
 			return ErrBarisTidakAda
 		}
-		st, err := r.db.Qualify(TabelStatus)
-		if err != nil {
-			return err
-		}
-		h, err := tx.ExecContext(ctx, sqlUbahStatusTerpisah(st), nilai, t.Nama, id)
+		return r.jejakTerpisah(ctx, tx, tabelStatus, t, id, &nilai, akun)
+	case t.JejakTerpisah:
+		h, err := tx.ExecContext(ctx, sqlStatus(tabel, t), nilai, id)
 		if err != nil {
 			return fmt.Errorf("repository: status %s: %w", t.Nama, err)
 		}
-		if n, err := h.RowsAffected(); err != nil || n > 0 {
+		if err := satuBaris(h, t.Nama); err != nil {
 			return err
 		}
-		if _, err := tx.ExecContext(ctx, sqlSisipStatusTerpisah(st), nilai, t.Nama, id); err != nil {
-			return fmt.Errorf("repository: status %s: %w", t.Nama, err)
-		}
-		return nil
+		return r.jejakTerpisah(ctx, tx, tabelStatus, t, id, nil, akun)
 	}
-	h, err := tx.ExecContext(ctx, sqlStatus(tb, t), nilai, id)
+	h, err := tx.ExecContext(ctx, sqlStatus(tabel, t), nilai, akun, id)
 	if err != nil {
 		return fmt.Errorf("repository: status %s: %w", t.Nama, err)
 	}
 	return satuBaris(h, t.Nama)
+}
+
+// jejakTerpisah - pengubah (dan status bila `status` terisi) baris T_MASTER_STATUS master warisan.
+func (r *MasterOracle) jejakTerpisah(ctx context.Context, tx *db.Tx, tabelStatus string, t models.TabelMaster, id string, status *string, akun string) error {
+	var arg []any
+	if status != nil {
+		arg = append(arg, *status)
+	}
+	arg = append(arg, akun, t.Nama, id)
+	return ubahAtauSisip(ctx, tx, t.Nama, sqlUbahJejakTerpisah(tabelStatus, status != nil),
+		sqlSisipJejakTerpisah(tabelStatus, status != nil), arg...)
+}
+
+// ubahAtauSisip - jalankan `ubah`; bila nol baris, `sisip` dengan bind yang sama (pengganti MERGE).
+func ubahAtauSisip(ctx context.Context, tx *db.Tx, tabel, ubah, sisip string, arg ...any) error {
+	h, err := tx.ExecContext(ctx, ubah, arg...)
+	if err != nil {
+		return fmt.Errorf("repository: jejak %s: %w", tabel, err)
+	}
+	n, err := h.RowsAffected()
+	if err != nil || n > 0 {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, sisip, arg...); err != nil {
+		return fmt.Errorf("repository: jejak %s: %w", tabel, err)
+	}
+	return nil
 }
 
 func satuBaris(h sql.Result, tabel string) error {

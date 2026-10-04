@@ -17,7 +17,7 @@ func kf(nama, json string) Kolom { return Kolom{Nama: nama, JSON: json, Lebar: l
 var DaftarMaster = []TabelMaster{
 	{
 		// NATION warisan tanpa kolom status: statusnya di T_MASTER_STATUS (migrasi 761, MD-2).
-		Kunci: "nation", Judul: "Nation", Nama: "NATION",
+		Kunci: "nation", Judul: "Nation", Nama: "NATION", JejakTerpisah: true,
 		Kolom: []Kolom{
 			{Nama: "ID", JSON: "id", Lebar: 10, Wajib: true}, {Nama: "OLDID", JSON: "oldId", Lebar: 6},
 			{Nama: "NOTE", JSON: "note", Lebar: 100, Wajib: true}, {Nama: "NATIONINITIAL", JSON: "nationInitial", Lebar: 20},
@@ -90,7 +90,7 @@ var DaftarMaster = []TabelMaster{
 		},
 	},
 	{
-		Kunci: "objectitemtype", Judul: "Object Item Type", Nama: "OBJECTITEMTYPE", KolomStatus: "ISACTIVE",
+		Kunci: "objectitemtype", Judul: "Object Item Type", Nama: "OBJECTITEMTYPE", KolomStatus: "ISACTIVE", JejakTerpisah: true,
 		Kolom: []Kolom{
 			{Nama: "ID", JSON: "id", Lebar: lebarFlat, Wajib: true},
 			{Nama: "OBJECTITEMTYPE", JSON: "objectItemType", Lebar: lebarFlat, Wajib: true}, kf("NOTE", "note"),
@@ -109,4 +109,15 @@ func CariMaster(kunci string) (TabelMaster, bool) {
 		}
 	}
 	return TabelMaster{}, false
+}
+
+// KolomAudit - jejak ubah setiap master (MD-7, keputusan work owner 04-10-2026 "Kolom diubah oleh/tanggal"; migrasi
+// 762): pembuat, tanggal buat, pengubah terakhir, tanggal ubah terakhir - TURUNAN (diisi backend dari pelaku, baca-saja
+// di layar). Nama kolom pola T_WORK_* (MD-10). Tabel JejakTerpisah: kolom yang sama di T_MASTER_STATUS.
+// ⚠️ Diletakkan di akhir berkas: uji label frontend (`masterdata.test.tsx`) membaca kunci JSON per blok master.
+var KolomAudit = []Kolom{
+	{Nama: "CREATE_OP", JSON: "createOp", Lebar: 64, Turunan: true},
+	{Nama: "TGL_CREATE", JSON: "tglCreate", Lebar: 19, Turunan: true, Tanggal: true},
+	{Nama: "UPDATE_OP", JSON: "updateOp", Lebar: 64, Turunan: true},
+	{Nama: "TGL_UPDATE", JSON: "tglUpdate", Lebar: 19, Turunan: true, Tanggal: true},
 }
