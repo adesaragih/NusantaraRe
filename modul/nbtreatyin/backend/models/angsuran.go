@@ -138,10 +138,22 @@ func CountPctInstallment(h *Halaman, idx int) error {
 
 // CountSpreading = `Activity/CountSpreading_Act` (Param.Index berbasis 1).
 //
+// ⛔ RALAT audit silang P3 (7.4): langkah 1-3 rule ini berlabel `//`
+// (dinonaktifkan) - port lama menjalankannya untuk baris `Param.Index`. Tidak ada
+// beda hasil (langkah 4.1 menulis keempat medan setiap baris dengan rumus yang
+// sama), tetapi langkah nonaktif tidak diport: `idx` hanya parameter tanda
+// tangan aksi sel (`.pxListSubscript`), tidak dibaca.
+//
+//	1 `//`  .SpreadingRiskList(Param.Index).SharePercentage == "" -> 100/@LengthOfPageList(..)
+//	2 `//`  .ClaimPercentage == "" -> .SharePercentage
+//	3 `//`  .PremiumSpreaded / .ClaimSpreaded baris Param.Index
+//	4       setiap baris: 4.1 isi %Share kosong, PremiumSpreaded, ClaimSpreaded; 4.2 jumlah
+//	5       empat total
+//
 // ⛔ Langkah 6 (`Call BreakDownSpreading_Act`) TIDAK DIBANGUN -
 // `[keputusan work owner]` 23-09-2026 butir 3b: "Itu tidak usah di migrasi
 // perhitungannya" (KEPUTUSAN-RONDE-12 butir 3/3b).
-func CountSpreading(h *Halaman, idx int) error {
+func CountSpreading(h *Halaman, _ int) error {
 	k := &kalkulator{}
 	p := polis{h, k}
 	daftar := h.AmbilDaftar(DaftarSpreading)
@@ -150,23 +162,8 @@ func CountSpreading(h *Halaman, idx int) error {
 	}
 	panjang := apd.New(int64(len(daftar)), 0)
 	net := p.n("NetPremium")
-	// (.ExcessLoss + .Claim - .SalvageValue)
+	// (Primary.ExcessLoss + Primary.Claim - Primary.SalvageValue)
 	klaim := k.Kurang(k.Tambah(p.n("ExcessLoss"), p.n("Claim")), p.n("SalvageValue"))
-	if idx >= 1 && idx <= len(daftar) {
-		b := daftar[idx-1]
-		// langkah 1: .SharePercentage == "" -> 100/@toDecimal(@LengthOfPageList(...))
-		// - presisi 10 di NB (spec-penyimpanan ID-28, AC 36; EDM 20).
-		if b["SharePercentage"] == "" {
-			b["SharePercentage"] = formatAngka(k.BagiBulat(seratus, panjang, presisiBagiRata))
-		}
-		// langkah 2: .ClaimPercentage == "" -> .SharePercentage
-		if b["ClaimPercentage"] == "" {
-			b["ClaimPercentage"] = b["SharePercentage"]
-		}
-		// langkah 3
-		b["PremiumSpreaded"] = formatAngka(k.Kali(net, k.BagiBulat(angkaBaris(k, b, "SharePercentage"), seratus, 10)))
-		b["ClaimSpreaded"] = formatAngka(k.Kali(klaim, k.BagiBulat(angkaBaris(k, b, "ClaimPercentage"), seratus, 10)))
-	}
 	// langkah 4: setiap baris
 	shareKlaim, nilaiKlaim := apd.New(0, 0), apd.New(0, 0)
 	sharePremi, nilaiPremi := apd.New(0, 0), apd.New(0, 0)
