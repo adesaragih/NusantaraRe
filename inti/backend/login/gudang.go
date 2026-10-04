@@ -111,9 +111,52 @@ func sqlWorkbasketAktif(wb string) string {
 	return fmt.Sprintf(`SELECT IS_ACTIVE FROM %s WHERE WORKBASKET_ID = :1`, wb)
 }
 
-func sqlSisipAkun(t string) string {
+// AwalanIDKontak dan sekuensIDKontak - CONTACT_ID `CON-n` (migrasi 905, keputusan work owner 03-10-2026 V1):
+// kode orang yang tidak pernah berubah, diberi Oracle di INSERT yang sama dengan akunnya.
+const (
+	AwalanIDKontak  = "CON-"
+	sekuensIDKontak = "M_LOGIN_GO_CONTACT_SEQ"
+)
+
+// sqlSisipAkun - `seq` = nama lengkap sequence CONTACT_ID. Awalannya bind :13 (nol literal di SQL), TERAKHIR
+// karena go-ora mengikat menurut urutan placeholder; nilainya disusun `nilaiSisipAkun`.
+func sqlSisipAkun(t, seq string) string {
 	return fmt.Sprintf(`INSERT INTO %s (LOGIN_ID, NAME, PASSWORD_HASH, ORGANIZATION_CODE, DIVISION_CODE,
-	    UNIT_CODE, IS_ACTIVE, MUST_CHANGE_PASSWORD) VALUES (:1, :2, :3, :4, :5, :6, :7, :8)`, t)
+	    UNIT_CODE, IS_ACTIVE, MUST_CHANGE_PASSWORD, EMAIL, PHONE_NUMBER, EMPLOYEE_ID, JOB_POSITION, CONTACT_ID)
+	  VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, :13 || %s.NEXTVAL)`, t, seq)
+}
+
+// nilaiSisipAkun - tiga belas nilai bind `sqlSisipAkun`, berurutan.
+func nilaiSisipAkun(a AkunBaru, hash string, wajibGanti bool) []any {
+	wajib := benderaTidak
+	if wajibGanti {
+		wajib = benderaYa
+	}
+	nilai := append([]any{a.ID, a.Nama, hash, db.KosongJadiNil(a.Organisasi), db.KosongJadiNil(a.Divisi),
+		db.KosongJadiNil(a.Unit), benderaYa, wajib}, nilaiKontak(a.Kontak)...)
+	return append(nilai, AwalanIDKontak)
+}
+
+// sqlPemakaiUsername dan sqlPemakaiEmail - :1 = nilai huruf kecil; memakai index unik LOWER(LOGIN_ID) dan
+// LOWER(EMAIL) migrasi 905. Username dan email diperiksa TERPISAH.
+func sqlPemakaiUsername(t string) string {
+	return fmt.Sprintf(`SELECT LOGIN_ID FROM %s WHERE LOWER(LOGIN_ID) = :1 ORDER BY LOGIN_ID`, t)
+}
+
+func sqlPemakaiEmail(t string) string {
+	return fmt.Sprintf(`SELECT LOGIN_ID FROM %s WHERE LOWER(EMAIL) = :1 ORDER BY LOGIN_ID`, t)
+}
+
+// galatGanda menerjemahkan ORA-00001 M_LOGIN_GO - pengaman terakhir bila dua simpan serentak lolos pemeriksaan
+// aplikasi: index email = ErrEmailSudahTerdaftar, PK atau index username = ErrAkunSudahAda. Bukan ORA-00001 = nil.
+func galatGanda(err error) error {
+	if err == nil || !strings.Contains(err.Error(), "ORA-00001") {
+		return nil
+	}
+	if strings.Contains(err.Error(), "UX_M_LOGIN_GO_EMAIL") {
+		return fmt.Errorf("%w: %v", ErrEmailSudahTerdaftar, err)
+	}
+	return fmt.Errorf("%w: %v", ErrAkunSudahAda, err)
 }
 
 func sqlSisipWorkbasket(t string) string {
@@ -154,6 +197,24 @@ func (g *GudangOracle) AmbilAkun(ctx context.Context, id string) (Akun, error) {
 	a.Organisasi, a.Divisi, a.Unit = org.String, div.String, unit.String
 	a.Aktif, a.WajibGantiSandi, a.Terkunci = aktif == benderaYa, wajib == benderaYa, kunci == 1
 	return a, nil
+}
+
+// PemakaiUsername membaca akun yang username-nya sama dengan `id`, tanpa beda huruf.
+func (g *GudangOracle) PemakaiUsername(ctx context.Context, id string) ([]string, error) {
+	return g.pemakai(ctx, "pemakai username", sqlPemakaiUsername, id)
+}
+
+// PemakaiEmail membaca akun yang email-nya sama dengan `email`, tanpa beda huruf.
+func (g *GudangOracle) PemakaiEmail(ctx context.Context, email string) ([]string, error) {
+	return g.pemakai(ctx, "pemakai email", sqlPemakaiEmail, email)
+}
+
+func (g *GudangOracle) pemakai(ctx context.Context, apa string, q func(string) string, nilai string) ([]string, error) {
+	t, err := g.nama(tabelLogin)
+	if err != nil {
+		return nil, err
+	}
+	return g.daftarTeks(ctx, apa, q(t), strings.ToLower(strings.TrimSpace(nilai)))
 }
 
 // Workbasket membaca WORKBASKET_ID aktif akun itu.
@@ -346,6 +407,10 @@ func (g *GudangOracle) BuatAkun(ctx context.Context, a AkunBaru, hash string, wa
 	if err != nil {
 		return err
 	}
+	seq, err := g.nama(sekuensIDKontak)
+	if err != nil {
+		return err
+	}
 	tx, err := g.db.Mulai(ctx)
 	if err != nil {
 		return err
@@ -355,15 +420,10 @@ func (g *GudangOracle) BuatAkun(ctx context.Context, a AkunBaru, hash string, wa
 			_ = tx.Rollback()
 		}
 	}()
-	wajib := benderaTidak
-	if wajibGanti {
-		wajib = benderaYa
-	}
 	langkah := []struct {
 		q    string
 		args []any
-	}{{sqlSisipAkun(t), []any{a.ID, a.Nama, hash, db.KosongJadiNil(a.Organisasi), db.KosongJadiNil(a.Divisi),
-		db.KosongJadiNil(a.Unit), benderaYa, wajib}}}
+	}{{sqlSisipAkun(t, seq), nilaiSisipAkun(a, hash, wajibGanti)}}
 	for _, w := range a.Workbasket {
 		langkah = append(langkah, struct {
 			q    string
@@ -381,8 +441,9 @@ func (g *GudangOracle) BuatAkun(ctx context.Context, a AkunBaru, hash string, wa
 			return err
 		}
 		if _, err = tx.ExecContext(ctx, s.q, s.args...); err != nil {
-			if strings.Contains(err.Error(), "ORA-00001") {
-				return fmt.Errorf("%w: %v", ErrAkunSudahAda, err)
+			if ganda := galatGanda(err); ganda != nil {
+				err = ganda
+				return err
 			}
 			return fmt.Errorf("login: membuat akun: %w", err)
 		}

@@ -2,7 +2,7 @@ package models
 
 // Lampiran produk (paket 8, tiket 08–09, PARITAS §6) - baris
 // `M_ATTACHMENTPRODUCTNAME` (`InsertAttachProdName_Sql` b84) beserta status
-// pengirimannya ke penyimpanan (stub outbox, P5, OQ-MPNL-10).
+// pengirimannya ke penyimpanan (outbox P5; stub lokal atau penyimpanan nyata - OQ-MPNL-10 dibalik 03-10-2026).
 
 // Status lampiran - terbaca lewat API (AC 36).
 const (
@@ -32,12 +32,22 @@ type Lampiran struct {
 	Galat string `json:"galat,omitempty"`
 }
 
-// ObjekPenyimpanan - satu baris `T_STORAGE_IMAGE` (`Insert_T_Storage_SQL` b85).
+// ObjekPenyimpanan - satu baris `T_STORAGE_IMAGE` (`Insert_T_Storage_SQL` b85, `GetLinkStorage_SQL` b85,
+// `Update_T_Storage_SQL` b85).
 type ObjekPenyimpanan struct {
-	ImageID   string
-	AppFolder string // `Folder + "/Doc/" + YYYY + "/" + MM + "/"` (`InsertGoogleStorage_Act` 8 b1339)
+	ImageID string
+	// AppFolder - sebelum dikirim: folder objek `Folder + "/Doc/" + YYYY + "/" + MM + "/"` (`InsertGoogleStorage_Act`
+	// 8 b1339); sesudah dikirim: `appfolder` jawaban layanan (b2473) - jalur objek PENUH berawalan skema gs + App.
+	// Objek yang dicatat stub lokal menyimpan foldernya saja.
+	AppFolder string
 	FileName  string // `yyyyMMdd-hhmmss-S - <nama>` (8 b1339)
 	AppName   string // `T_FOLDER_IMAGE.APPNAME` (`GetAppName_SQL` b58)
-	// DurasiDetik - `Durasi="1800"` (`ProductNameSaveAttachment` 2.4 b904) → `EXPDATE`.
+	// DurasiDetik - `Durasi="1800"` (`ProductNameSaveAttachment` 2.4 b904) yang dikirim ke layanan.
 	DurasiDetik int
+	// URLPublic - `URLImage` jawaban layanan (URL bertanda tangan, b2452); kosong = dicatat stub lokal.
+	URLPublic string
+	// Exp - `EXPDATE` berbentuk `DD/MM/YYYY HH24:MI:SS` GMT (To_date `Insert_T_Storage_SQL`); kosong = NULL.
+	Exp string
+	// TanggalUpload - `DateTime` jawaban geturl, `MM/DD/YYYY HH24:MI:SS` (`Update_T_Storage_SQL`); kosong = NULL.
+	TanggalUpload string
 }

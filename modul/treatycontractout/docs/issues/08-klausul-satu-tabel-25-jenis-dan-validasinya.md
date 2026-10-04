@@ -75,7 +75,7 @@ kebenaran untuk AC validasi**:
 | `TerrLimit` | `TerritorialLimit` |
 | `ExclutionTreaty` | `ID_Occupation`, `TerritorialLimit` |
 | `BordereAux` | `Method` |
-| **`LimitMB`** | `[terbuka]` — hari ini **nol validasi** |
+| **`LimitMB`** | nol validasi — **dilepas mengikuti XML** (keputusan 02-10-2026, di bawah) |
 | **`Portfolio`** | `[terbuka]` — hari ini **nol validasi** |
 
 ## ADR terkait
@@ -110,7 +110,8 @@ kebenaran untuk AC validasi**:
 - [ ] Pesan penolakan **menyebut field** yang kurang. *(AC 35 spec)*
 - [ ] `[terbuka]` Jenis **`LimitMB`** dan **`Portfolio`** **tidak** dinyatakan selesai sebelum
       aturan wajib-isinya ditetapkan Product + UW. Keduanya **tidak** dilepas sebagai "tanpa
-      validasi". *(AC 36 spec)*
+      validasi". *(AC 36 spec)* ⛔ **LimitMB ditutup 02-10-2026**: work owner memutuskan "ikuti XML-nya" —
+      nol wajib-isi seperti Pega (blok keputusan di bawah). Portfolio tetap ditahan.
 - [ ] ⚠️ Nilai uang (`Rp`, `Usd`, `MoreRp`, `MoreUsd`, `TreatyLimit`, `CoIns_Min`, `CoIns_Max`) dan
       persen (`Pct`, `PctMe`) bertipe **desimal**, bukan teks. *(AC 51, 52 spec; **ADR-0003**;
       penyimpangan sadar 6)*
@@ -403,3 +404,132 @@ saja**; ReinsType induk tidak pernah ikut.
   menggantinya wajib memakai jenis porsi.
 - Uji: tabel kebenaran repository (induk tidak pernah lolos), SQL tanpa `ID = :`, layanan (induk ditolak untuk anak Treaty
   Limit dan EPI), `TestKlausulAnakLamaBerReinsIndukTetapDapatDiedit`, uji pemilih frontend.
+
+## ⛔ Keputusan work owner bertanggal — 02-10-2026 (ReinsType anak = `TreatyContractSetReinsTypeList`)
+
+*Permintaan: "untuk child-nya ikuti XML-nya `TreatyContractSetReinsTypeList`, untuk semua child pada Treaty Desc". Activity itu
+diekspor work owner 02-10-2026 ke `Activity/TreatyContractSetReinsTypeList.xml` — menggantikan kedua blok 02-10-2026 di atas
+(porsi + induk, lalu porsi saja), yang hanya tebakan dari data DEV selama activity itu tidak ada.*
+
+**XML** (`@baseclass`, 4 langkah, nol `//`). 1 b267 `Page-Remove ReinsTypeList`; 2 b418 satu putaran, setiap anak langkah menimpa
+`ReinsTypeList.pxResults(n)`:
+
+| Langkah | Syarat | `.CARI1` / `.CARI2` |
+| --- | --- | --- |
+| 2.1 b418 | `@contains(InputData.CARIDESCFACIN," QS ")` b628 | 10028 QS (OR) · 10004 QS (R/I) · 10007 ORS |
+| 2.2 b668 | `" SPL "` b878 | 10248 SPL (OR) · 10249 SPL (RI) · 10007 ORS |
+| 2.3 b918 | `" XOL "` b1120 | 10028 QS (OR) · 10004 QS (R/I) · 10217 XL |
+| 2.4 b1160 | `"ORS"` b1284 | 10007 ORS |
+
+`InputData.CARIDESCFACIN` = `.ReinsTypeName` baris INDUK yang di-`Show Child` (`BrowseTreatyArrLimitParentList` langkah 1
+b368/b369). Pre-activity dipanggil tanpa parameter (`GridTreatyArrTreatyLimitList.xml` b2975, `pyHasActivityParam=false`);
+sel anak terikat `.ReinsTypeName` (b2935, nama = `.CARI2`), `.CARI1` → `ReinsTypeID` (b3019).
+
+**Yang dibangun.**
+- models `PilihanReinsAnakDari(namaInduk)` — tabel langkah 2.1–2.4 VERBATIM, semantik timpa-indeks Pega, `@contains` peka
+  huruf besar-kecil (spasi bagian dari kata); ID berulang tampil sekali. Uji `TestPilihanReinsAnakDariKorpus` menurunkan
+  ulang kata dan pasangan `.CARI1`/`.CARI2` dari XML.
+- services: `DaftarAnakTreatyLimit(ctx, pelaku, namaInduk)` tanpa baca master; nama tanpa kata yang cocok = daftar KOSONG
+  (seperti Pega). Simpan anak: baris induk dibaca dulu, `ReinsTypeID` wajib di daftar dari NAMA induk, nama tersimpan =
+  `.CARI2`. Baris anak lama yang ReinsType-nya tidak diganti tetap dapat di-Edit.
+- repository: saringan + SQL porsi dari master dibuang.
+- rute `GET …/jenis-reasuransi/anak-treaty-limit?namaInduk=`; frontend mengirim nama ReinsType baris induk.
+- Uji: models (tabel + korpus), services (`TestKlausulAnakMengikutiTreatyContractSetReinsTypeList`, Treaty Limit + EPI),
+  uji Oracle `tco_klausul_db_test.go` (induk "UJI QS TREATY", anak QS (OR)), frontend.
+
+## ⛔ Keputusan work owner bertanggal — 02-10-2026 (10014 Co-Ins Scale: dua grid seperti Pega)
+
+*Permintaan: "perbaiki yang Coins Scale, harusnya seperti pada gambar ini" — tangkapan layar Pega: judul `Co-Ins Scale`, dua
+grid yang dapat dilipat `Risk with Sum Insured less than USD 100.000.000` / `… more than …`, kolom `Co Insurance Share` dan
+`Treaty Limit`, tombol `Add` di kepala grid, `No items`, tombol `Close`. Sebelumnya layar kita SATU grid `CoinsPanel` berkolom
+`From`/`To`/`Treaty Limit`/`Modified Date`, dan `.SpreadingOrder` tidak pernah diisi.*
+
+**XML.**
+- `Section/GridTreatyArrangementCoins.xml`: judul b917; grid 1 b8708 dan grid 2 b12971, `pyExpanded` true.
+- Tiap grid menerima `Type` = `"Less Than"` b10055 / `"More Than"` b14320 (`TreatyDescID`, `TreatyYearID`, `Type`).
+- Kolom: `Co Insurance Share` b10180 / b14445 (sub-section `DetailCoinsShare`: `.CoIns_Min` b517 - `.CoIns_Max` b1272) dan
+  `Treaty Limit` b10340 / b14605.
+- Tombol: `Add` b10554 / b14815 di kepala kolom aksi → `NewTreatyArrCoins` (`Type`); `Edit` b11254 →
+  `SetTreatyArrExclustionCoins_Act` (`ID`).
+- `Activity/NewTreatyArrCoins.xml` b405/b406: `InputTreatyCoins.SpreadingOrder = Param.Type`. `SaveTreatyArrCoinsPanel_Act`
+  menyalin halaman itu utuh ke `SaveMasterProportionalArrg`.
+- `SetTreatyArrExclustionCoins_Act`: membaca `.SpreadingOrder` barisnya sendiri (b721/b1049).
+- `ReportDefinition/BrowseTreatyArrangement_CoinsPanel_RD.xml`: `C AND F2 AND F1` b564, `.SpreadingOrder = Param.Type`
+  b610/b612, urut `.TreatyLimit DESC` b653/b655.
+
+**Yang dibangun.**
+- models: `SubjenisCoinsLessThan`/`SubjenisCoinsMoreThan` (nilai `Param.Type` VERBATIM).
+- models: dua aturan `CoinsPanel` (wajib `CoIns_Min`, `CoIns_Max`, `TreatyLimit` tetap).
+- models: `SubjenisKlausulTCO` (CoinsPanel dari `.SpreadingOrder`, persis seperti saringan RD `=`) dan `UrutCoInsScaleTCO`
+  (`TreatyLimit` turun, kosong lebih dulu seperti Oracle `DESC`).
+- services: baris baru `SPREADINGORDER` = subjenis grid tombol `Add`-nya. Klien tidak dapat mengirim `SpreadingOrder`
+  (`ErrMedanBukanMilikJenis`); Edit tidak memindah baris ke grid lain (`ErrKlausulJenisBerubah`).
+- repository: `SpreadingOrder` menjadi kunci dobel (`SPREADINGORDER`).
+- frontend: judul bagian `Co-Ins Scale`; kedua grid BERTUMPUK (bukan tab, berbeda dengan 10013), masing-masing
+  `<details open>`.
+- frontend: kolom `Co Insurance Share` (`From - To`) + `Treaty Limit`; `Add` di kepala kolom aksi; `No items` di dalam tabel.
+  Form `From`/`To`/`Treaty Limit` tetap.
+
+⚠️ `[asumsi]` **Kunci dobel per grid** (`SpreadingOrder`, `CoIns_Min`, `CoIns_Max`): rentang share yang sama boleh ada di kedua
+grid dengan Treaty Limit berbeda. Gerbang dobel Pega ada di prosedur `SaveMasterProportionalArrg` (`OutputData.HASILD7`,
+`SaveTreatyArrCoinsPanel_Act` b1483), yang tidak ada di korpus — **konfirmasi work owner**.
+
+⚠️ Baris `CoinsPanel` dengan `.SpreadingOrder` kosong atau di luar kedua nilai tidak tampil di grid mana pun — sama seperti Pega.
+Contohnya baris yang disimpan layar kita sebelum perbaikan ini.
+
+**Uji.**
+- models: `TestCoinsPanelDuaGridCoInsScale`, `TestCoinsPanelKorpus` (baris korpus), `TestUrutCoInsScaleTCO`.
+- repository: `TestMedanSamaKlausulTCO`.
+- services: `TestKlausulCoInsScaleDuaGrid`.
+- frontend: `10014 Co-Ins Scale` dan `labels.test` (judul, kolom, Add/Edit kedua grid terhadap XML).
+
+## ⛔ Keputusan work owner bertanggal — 02-10-2026 (10017 MB Capacity / LimitMB: ikuti XML)
+
+*Pertanyaan: "MB Capacity kenapa enggak bisa?" — layar menampilkan "type LimitMB cannot be filled in yet: its required-field
+rules have not been set" (ditahan AC 36). Ditawarkan empat aturan wajib-isi; jawaban: **"ikuti XML-nya aja"**, disertai tangkapan
+layar form Pega.*
+
+**XML.**
+- Judul: `Section/GridTreatyArrangementLIMITMB.xml` `MB Capacity` b872.
+- Form (`OutputParam.DATASHOW` b1358), delapan medan:
+  - `Occupation` = dropdown `ID_Occupation` b1547 berteks `Choose` b1696, sumber `OccupLimitMB.pxResults` b1723. Saat berubah →
+    `SetOccupationLimitMB` b1669.
+  - `% TSI MB of TSI Property From` `.Pct` b1928 dan `… To` `.PctMe` b2169.
+  - `RNM TSI From (IDR)` `.Rp` b2410 dan `(USD)` `.Usd` b2651.
+  - `RNM TSI To (IDR)` `.MoreRp` b2892 dan `(USD)` `.MoreUsd` b3133.
+  - `.TerritorialLimit` b3374: Autocomplete atas `BrowseTreatyGroup_RD` b3485 yang menampilkan **dan menyimpan**
+    `.TreatyGroupName`.
+- Grid: enam kolom b8045–b8829 (`Occupation`, `% TSI MB Of Property From >`, `<= % TSI MB Of Property To`,
+  `RNM TSI From (USD) >`, `<= RNM TSI To (USD)`, `Limit Treaty Group`). `Add` b9041 di kepala, `Edit` b10428.
+- `Activity/SaveTreatyArrLimitMB_Act.xml`: **nol** `Property-Set-Messages`. Step 2 b379 keluar hanya bila halaman sudah
+  bermasalah; sisanya `Page-Copy` b620 → `SaveMasterProportionalArrg` b754.
+- `Activity/SetOccupationLimitMB.xml`: `"01"` b322 → `RESIDENTIAL RISK` b246, `"02"` b459 → `INDUSTRIAL RISK` b383, `"03"` b596
+  → `COMMERCIAL RISK` b520, `"04"` b733 → `AGRICULTURAL RISK` b657.
+- `NewTreatyArrLimitMB` tidak memeriksa kurs, dan form tidak punya aksi konversi.
+
+**Yang dibangun.**
+- models: aturan LimitMB tanpa `Ditahan`; `Medan` delapan urut XML; `Wajib` dan `KunciDobel` KOSONG.
+  - Gerbang dobel Pega hanya ada di prosedur, yang tidak ada di korpus.
+- models: `MedanMoreRp` / `MedanMoreUsd` (desimal, kolom `MORERP`/`MOREUSD` NUMBER yang sudah dibaca/ditulis repository);
+  `PilihanOccupationLimitMB` + `NamaOccupationLimitMB`.
+- services: nama Occupation MB diisi dari peta `SetOccupationLimitMB`, bukan master FIRE; ID di luar 01–04 ditolak
+  (`ErrPilihanDiLuarMaster`); ID kosong mengosongkan namanya.
+- services: `Pilihan("occupation-limitmb")` — empat pilihan tanpa baca DB.
+- frontend: `PilihOccupationMB` (dropdown inti `Choose`) dan `PilihGrupTreatyNama` (`PilihSaring` atas `GET /grup-treaty`,
+  nilai = nama, ID sebagai keterangan).
+- frontend: label form dan kepala grid VERBATIM (`LABEL_MEDAN_KHUSUS.LimitMB`, `KOLOM_GRID_KLAUSUL.LimitMB`); judul
+  `MB Capacity`.
+- frontend: `Add` di kepala dan `No items` (`addDiKepala`, sama dengan Co-Ins Scale); kepala kolom boleh terbungkus
+  (`tco-grid-rapat`) supaya keenam kolom muat.
+
+⚠️ `[asumsi]` Opsi dropdown Occupation = keempat ID yang dikenal `SetOccupationLimitMB`, ditampilkan dengan namanya.
+Dropdown Pega membaca `OccupLimitMB.pxResults` (tampil `.KDClassOccupation`), yang pengisinya tidak ada di korpus.
+
+⚠️ Baris kosong dapat disimpan — persis Pega. Data DEV `LimitMB` tidak dibaca untuk perubahan ini.
+
+**Uji.**
+- models: `TestLimitMBMengikutiXML`, `TestLimitMBKorpus` (nol `Property-Set-Messages`, peta Occupation per baris);
+  `TestPortfolioDitahan`.
+- services: `TestKlausulLimitMBMengikutiXML`.
+- Oracle: `tco_klausul_db_test.go` (LimitMB 200 + `MoreRp`; Portfolio 422) — dilewati tanpa Oracle.
+- frontend: `10017 MB Capacity`, `PilihMBCapacity.test.ts`, dan `labels.test` (26 baris XML).

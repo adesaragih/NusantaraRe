@@ -101,6 +101,23 @@ func (g *Gudang) CatatObjek(_ context.Context, _ *db.Tx, o models.ObjekPenyimpan
 	return nil
 }
 
+// AmbilObjek - `GetLinkStorage_SQL`.
+func (g *Gudang) AmbilObjek(_ context.Context, _ *db.Tx, imageID string) (models.ObjekPenyimpanan, bool, error) {
+	g.siapLampiran()
+	o, ada := g.Objek[imageID]
+	return o, ada, nil
+}
+
+// PerbaruiObjek - `Update_T_Storage_SQL`: URLPUBLIC, APPFOLDER, EXPDATE, TANGGAL_UPLOAD.
+func (g *Gudang) PerbaruiObjek(_ context.Context, _ *db.Tx, o models.ObjekPenyimpanan) error {
+	g.siapLampiran()
+	if lama, ada := g.Objek[o.ImageID]; ada {
+		lama.URLPublic, lama.AppFolder, lama.Exp, lama.TanggalUpload = o.URLPublic, o.AppFolder, o.Exp, o.TanggalUpload
+		g.Objek[o.ImageID] = lama
+	}
+	return nil
+}
+
 // HapusObjek - yang tidak ada bukan galat.
 func (g *Gudang) HapusObjek(_ context.Context, _ *db.Tx, imageID string) error {
 	delete(g.Objek, imageID)

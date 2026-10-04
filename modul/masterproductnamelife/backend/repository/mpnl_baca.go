@@ -55,14 +55,37 @@ func (g *Gudang) DaftarProduk(ctx context.Context) ([]models.RingkasanProduk, er
 }
 
 // AmbilProduk - satu produk utuh (tombol `View` b74798).
+//
+// ⛔ Di luar simpan (tx kosong) induk dan ketujuh anak dibaca di SATU transaksi baca-saja: satu potret data, bukan
+// delapan pernyataan READ COMMITTED yang dapat menampilkan induk lama dengan anak baru dari simpan yang berjalan
+// bersamaan (temuan /code-review 02-10-2026). Di dalam simpan, transaksi pemanggil dipakai.
 func (g *Gudang) AmbilProduk(ctx context.Context, tx *db.Tx, id string) (models.Produk, error) {
-	return g.bacaFlat(ctx, tx, id, false)
+	if tx.Terisi() {
+		return g.bacaFlat(ctx, tx, id, false)
+	}
+	baca, err := g.db.Mulai(ctx)
+	if err != nil {
+		return models.Produk{}, err
+	}
+	defer func() { _ = baca.Rollback() }()
+	if _, err := baca.ExecContext(ctx, sqlTransaksiBacaSaja); err != nil {
+		return models.Produk{}, fmt.Errorf("repository: opening a read-only snapshot: %w", err)
+	}
+	return g.bacaFlat(ctx, baca, id, false)
 }
+
+// sqlTransaksiBacaSaja - satu potret baca (Oracle: pernyataan PERTAMA transaksi).
+const sqlTransaksiBacaSaja = `SET TRANSACTION READ ONLY`
 
 // --- sumber JSON warisan (alat pindah) -------------------------------------------------
 
-// barisJSON - satu baris (ID, JSONDATA) tabel warisan.
-type barisJSON struct{ id, isi string }
+// barisJSON - satu baris (ID, JSONDATA) tabel warisan; `datar` = kolom datar `RIRISKID`, `RIRISK` `M_PRODUCT_LIFE`
+// (`SaveProductNameLIfeFlat` b84) bila dibaca.
+type barisJSON struct {
+	id, isi  string
+	datar    [2]string
+	adaDatar bool
+}
 
 func (g *Gudang) bacaBaris(ctx context.Context, tx *db.Tx, q string, args ...any) ([]barisJSON, error) {
 	rows, err := g.kueri(tx).QueryContext(ctx, q, args...)

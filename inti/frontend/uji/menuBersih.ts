@@ -78,13 +78,17 @@ function pernyataan(isi: string): string[] {
 
 const POLA_KELOMPOK =
   /^INSERT INTO \{skema\}\.M_NAV_MENU \([^)]*\)\s+SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, NULL, '([^']+)', '([^']+)', '([A-Z]+)', '([^']+)', (\d+), '([01])' FROM DUAL/
+// Baris modul DI LUAR korpus (`MODUL_LUAR_KORPUS`): bentuk datar sesudah 901, tanpa PARENT_ID (migrasi inti 906 dst.).
+// Keabsahannya - hanya `modulLuarKorpus` - dijaga skema tiruan Go; di sini hanya diterapkan.
+const POLA_KELOMPOK_DATAR =
+  /^INSERT INTO \{skema\}\.M_NAV_MENU \(ID, KODE, LABEL, GROUPMENU, MODUL, URUTAN, DIMIGRASI\)\s+SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, '([^']+)', '([^']+)', '([A-Z]+)', '([^']+)', (\d+), '([01])' FROM DUAL/
 const POLA_BUTIR = /^INSERT INTO \{skema\}\.M_NAV_MENU \([^)]*\)\s+SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, k\.ID, '([^']+)'/
 const HAPUS_BUTIR = "EXECUTE IMMEDIATE 'DELETE FROM {skema}.M_NAV_MENU WHERE PARENT_ID IS NOT NULL'"
-// Baris modul DI LUAR korpus - langkah inti sesudah 901 (904 masterdata), bentuk DATAR tanpa PARENT_ID.
-const POLA_MODUL_LUAR_KORPUS =
-  /^INSERT INTO \{skema\}\.M_NAV_MENU \(ID, KODE, LABEL, GROUPMENU, MODUL, URUTAN, DIMIGRASI\)\s+SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, '([^']+)', '([^']+)', '([A-Z]+)', '([^']+)', (\d+), '([01])' FROM DUAL/
 // Bentuk slot menu SESUDAH 901 saja (`WHERE KODE = '<modul>'`, berjangkar).
 const POLA_UBAH = /^UPDATE \{skema\}\.M_NAV_MENU SET DIMIGRASI = '([01])', TGL_UBAH = SYSDATE\s+WHERE KODE = '([^']+)'$/
+// Nama tampilan baris modul di slot menunya (keputusan work owner 03-10-2026). Keabsahannya - hanya baris
+// `labelTampilDisetujui`, teks persis - dijaga `inti/backend/penjaga`; di sini hanya diterapkan.
+const POLA_UBAH_LABEL = /^UPDATE \{skema\}\.M_NAV_MENU SET LABEL = '([^']+)', TGL_UBAH = SYSDATE\s+WHERE KODE = '([^']+)'$/
 
 /** Hasil bersih: baris modul, butir yang tersisa, dan cacah INSERT yang terbaca. */
 export interface MenuBersih {
@@ -103,7 +107,7 @@ export function menuBersih(berkas: readonly BerkasMigrasiMenu[] = berkasMenu()):
   for (const b of berkas) {
     for (const p of pernyataan(b.isi)) {
       if (p.startsWith('INSERT')) hasil.insert++
-      const k = POLA_KELOMPOK.exec(p) ?? POLA_MODUL_LUAR_KORPUS.exec(p)
+      const k = POLA_KELOMPOK.exec(p) ?? POLA_KELOMPOK_DATAR.exec(p)
       if (k !== null) {
         hasil.insertTerbaca++
         if (!hasil.baris.some((x) => x.kode === k[1])) {
@@ -126,6 +130,11 @@ export function menuBersih(berkas: readonly BerkasMigrasiMenu[] = berkasMenu()):
       const u = POLA_UBAH.exec(p)
       if (u !== null) {
         for (const x of hasil.baris) if (x.kode === u[2]) x.dimigrasi = u[1] === '1'
+        continue
+      }
+      const l = POLA_UBAH_LABEL.exec(p)
+      if (l !== null) {
+        for (const x of hasil.baris) if (x.kode === l[2]) x.label = l[1]!
         continue
       }
       hasil.takDikenal.push(`${b.nama}: ${p.slice(0, 80)}`)

@@ -98,8 +98,19 @@ menampung data dari M_UNIT, M_DIVISION, M_ORGANIZATION”; “simpan aja code ny
 | `LAST_LOGIN` | DATE | ya | | jejak | login berhasil terakhir |
 | `TGL_CREATE` | DATE | tidak | | jejak | `DEFAULT SYSDATE` |
 | `TGL_UPDATE` | DATE | ya | | jejak | |
+| `EMAIL` | teks | ya | | Kelola User | migrasi `904_m_login_go_kontak.sql` (03-10-2026, permintaan work owner *"tambahkan email, no hp, nik dan jabatan; buat dalam bahasa inggris"*) — alamat email, maks. 254; label layar `Email`. Sejak migrasi 905: disimpan huruf kecil dan unik tanpa beda huruf *("proteksi email sudah terdaftar")* — **bukan** jalan login |
+| `PHONE_NUMBER` | teks | ya | | Kelola User | migrasi 904 — nomor HP 8–15 digit, boleh diawali `+`, boleh spasi/tanda hubung; label `Phone Number` |
+| `EMPLOYEE_ID` | teks | ya | | Kelola User | migrasi 904 — NIK (Nomor Induk Karyawan, bukan NIK kependudukan), huruf/angka/titik/garis miring/tanda hubung, maks. 30; label `Employee ID (NIK)` |
+| `JOB_POSITION` | teks | ya | | Kelola User | migrasi 904 — jabatan, maks. 150; label `Position` |
+| `CONTACT_ID` | teks | tidak | UNIQUE | Kelola User; rancangan Kelola Marketing Officer (`MARKETINGOFFICER.CLIENTID`) | migrasi `905_m_login_go_contact_id.sql` (03-10-2026, keputusan work owner V1 *"M_LOGIN_GO ID nya pake CON-xxx"*) — `CON-n`, n dari `M_LOGIN_GO_CONTACT_SEQ` mulai 1001 *(di atas nomor kontak SFAGIS terbesar)*; diisi saat akun dibuat, **tidak pernah berubah**; label `Contact ID` |
 
-**Index:** PK.
+**Index:** PK; `UX_M_LOGIN_GO_CONTACT_ID` *(`CONTACT_ID`, unik)*; `UX_M_LOGIN_GO_LOGIN_ID` *(`LOWER(LOGIN_ID)`, unik —
+username tidak boleh hanya beda huruf)*; `UX_M_LOGIN_GO_EMAIL` *(`LOWER(EMAIL)`, unik)* — ketiganya migrasi 905.
+
+**Login** tetap dengan username (`LOGIN_ID`) saja — login lewat email **dibatalkan** work owner 03-10-2026
+*("LOGIN LEWAT EMAIL TIDAK JADI!!")*. Username dan email masing-masing unik tanpa beda huruf, diperiksa aplikasi
+saat menyimpan (pesan 409 `Username is already registered` / `Email is already registered to another account`);
+index unik di atas adalah pengaman terakhir.
 
 **Relasi:** tidak ada FK ke `M_ORGANIZATION`, `M_DIVISION`, `M_UNIT` *(keputusan work owner — ketiga master tidak
 dibuat migrasi aplikasi)*. Anaknya `M_LOGIN_GO_WORKBASKET` dan `M_LOGIN_GO_MENU` — **Hapus permanen** di Kelola User

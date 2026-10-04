@@ -112,8 +112,8 @@ func TestHTTPLampiranGalat(t *testing.T) {
 		id = k
 	}
 	if kode, b, _ := ambil(t, "GET", dasar+"/"+id+"/office"); kode != http.StatusServiceUnavailable ||
-		!strings.Contains(string(b), "OQ-MPNL-11") {
-		t.Errorf("View Office Online stub: %d %s", kode, b)
+		!strings.Contains(string(b), "View Office Online needs the file in storage") {
+		t.Errorf("View Office Online atas berkas stub lokal: %d %s", kode, b)
 	}
 	if kode, _, _ := ambil(t, "GET", srv.URL+pre+"/produk/100999/lampiran"); kode != http.StatusNotFound {
 		t.Errorf("produk tidak ada: %d", kode)

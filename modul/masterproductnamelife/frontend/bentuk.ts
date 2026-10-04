@@ -6,7 +6,7 @@
 
 import { desimalSah, jumlahDesimal } from '../../../inti/frontend/lib/desimal'
 import type { Opsi } from '../../../inti/frontend/components/ui/dasar'
-import type { Produk, ProdukInward, ProdukUmum } from './api'
+import type { HasilSalinLama, Produk, ProdukInward, ProdukLama, ProdukUmum, StatusSalinLama } from './api'
 import { PEMBAYARAN_MPNL } from './labels'
 
 function umumKosong(): ProdukUmum {
@@ -94,9 +94,59 @@ export const PILIHAN_PEMBAYARAN: readonly Opsi[] = [
   { value: '4', label: PEMBAYARAN_MPNL.monthly },
 ]
 
+/**
+ * `Document List` b15286 (grid `DOCUMENT CLAIM`) - daftar PromptList properti `.Document` kelas
+ * `ASM-FW-GISFW-Data-UnderwritingLimit` (`Rule-Obj-Property`, ruleset GISFW 01-01-91, `pyTableOption` PromptList,
+ * `pyPromptTableList` 16 baris; `pyStandardValue` = `pyLocalizedValue`). Rule ini tidak ada di korpus ekspor (OQ-MPNL-05);
+ * XML-nya dikirim work owner 03-10-2026: "untuk document list productname pilih dari list ini". Urutan = urutan rule.
+ */
+export const PILIHAN_DOKUMEN_KLAIM: readonly string[] = [
+  'Sertifikat peserta (Participant certificate)',
+  'Copy identitas diri KTP/SIM/Paspor (Copy of ID card/Driving license/Passport)',
+  'Copy kartu keluarga (Copy of family card)',
+  'Copy sertifikat kematian (Copy of death certificate)',
+  'Copy bukti pembayaran klaim (Copy of claim payment receipt)',
+  'Copy legalisir rincian biaya perawatan dari rumah sakit (Legalized copy of hospital treatment cost details)',
+  'Copy legalisir kwitansi biaya perawatan dari rumah sakit (Legalized copy of hospital payment receipts)',
+  'Surat pernyataan meninggal oleh dokter/rumah sakit (Doctor/Hospital death statement letter)',
+  'Surat keterangan meninggal oleh polisi (Police Statement for death)',
+  'Surat keterangan meninggal karena kecelakaan oleh polisi (Police Statement for accidental death)',
+  'Surat keterangan kepolisian untuk klaim akibat kecelakaan (Police Statement for accident claim)',
+  'Surat diagnosa dari dokter/rumah sakit (Doctor/Hospital diagnosis letter)',
+  'Surat pernyataan kesehatan / SPK (Health declaration form)',
+  'Formulir klaim dari perusahaan asuransi (Insurance claim form)',
+  'Laporan resume medis dokter/rumah sakit tentang perawatan/pembedahan peserta (Medical summary report from doctor/hospital regarding treatment/surgery)',
+  'Lain-lain (Others)',
+]
+
 /** `Premium Factor (%)` b25398 - visibilitas `OTHER ProductNameInward.PAYMENT==3`. */
 export function tampilPremiumFactor(payment: string): boolean {
   return payment.trim() === '3'
+}
+
+/**
+ * `View` lampiran di popup (permintaan work owner 03-10-2026, `[tidak ada di korpus]`): berkas yang dirender peramban -
+ * pdf dan gambar raster - beserta tipe isinya. ⛔ svg/html TIDAK: objek URL mewarisi asal aplikasi, isinya dapat
+ * menjalankan skrip.
+ */
+const VIEW_ONLINE: Readonly<Record<string, { jenis: 'pdf' | 'gambar'; mime: string }>> = {
+  pdf: { jenis: 'pdf', mime: 'application/pdf' },
+  png: { jenis: 'gambar', mime: 'image/png' },
+  jpg: { jenis: 'gambar', mime: 'image/jpeg' },
+  jpeg: { jenis: 'gambar', mime: 'image/jpeg' },
+  gif: { jenis: 'gambar', mime: 'image/gif' },
+  bmp: { jenis: 'gambar', mime: 'image/bmp' },
+  webp: { jenis: 'gambar', mime: 'image/webp' },
+}
+
+/** Jenis tampilan `View` untuk ekstensi `.pyFileMimeType`; null = tidak ditawarkan. */
+export function jenisViewOnline(ekstensi: string): 'pdf' | 'gambar' | null {
+  return Object.hasOwn(VIEW_ONLINE, ekstensi) ? VIEW_ONLINE[ekstensi]!.jenis : null
+}
+
+/** Tipe isi objek URL `View` - dari ekstensi, bukan dari jawaban server. */
+export function mimeViewOnline(ekstensi: string): string {
+  return Object.hasOwn(VIEW_ONLINE, ekstensi) ? VIEW_ONLINE[ekstensi]!.mime : ''
 }
 
 /** `View Office Online` b69291 - visibilitas `OTHER .pyFileMimeType = xls/xlsx/doc/docx/ppt/pptx`. */
@@ -145,4 +195,95 @@ export function salinBaris<T extends { asli?: string }>(daftar: readonly T[], i:
   const salin: T = { ...b }
   delete salin.asli
   return [...daftar, salin]
+}
+
+/**
+ * Dropdown master (pengganti tombol `Choose*`, keputusan work owner 02-10-2026): baris yang dirender paling banyak.
+ * Server diminta satu baris lebih untuk mengetahui daftar terpotong - master besar (`CLIENT` ratusan ribu baris)
+ * disaring lewat `Search` di dalam dropdown, bukan dimuat utuh.
+ */
+export const BATAS_DROPDOWN = 200
+
+/** Potong jawaban server (`batas` = BATAS_DROPDOWN + 1): `lebih` = masih ada baris yang tidak dirender. */
+export function potongPilihan<T>(daftar: readonly T[]): { tampil: T[]; lebih: boolean } {
+  return { tampil: daftar.slice(0, BATAS_DROPDOWN), lebih: daftar.length > BATAS_DROPDOWN }
+}
+
+/** Indeks aktif sesudah panah/Home/End (`langkah` ±1 / ±Infinity), dijepit ke daftar; daftar kosong = -1. */
+export function geserAktif(aktif: number, langkah: number, n: number): number {
+  if (n <= 0) return -1
+  return Math.min(n - 1, Math.max(0, aktif + langkah))
+}
+
+/**
+ * Mode lihat - angka seperti layar Pega (`Ceding's Limit` 250.000.000): pemisah ribuan titik, desimal koma. Dihitung
+ * dari TEKS kanonik (`-?digit[.digit]`), tanpa float; teks lain (data lama) tampil apa adanya.
+ */
+export function tampilAngka(teks: string): string {
+  const m = /^(-?)(\d+)(?:\.(\d+))?$/.exec(teks.trim())
+  if (m === null) return teks
+  const bulat = (m[2] ?? '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `${m[1] ?? ''}${bulat}${m[3] !== undefined ? `,${m[3]}` : ''}`
+}
+
+/** Mode lihat - tanggal `YYYY-MM-DD` tampil `DD/MM/YYYY` (`Begin Date` 01/08/2023 di Pega); teks lain apa adanya. */
+export function tampilTanggal(teks: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(teks.trim())
+  return m === null ? teks : `${m[3]}/${m[2]}/${m[1]}`
+}
+
+/** Copy Old - `Search` menyaring ID, Product Name, Ceding, Treaty Number, Treaty Name (tanpa membedakan huruf). */
+export function saringLama(daftar: readonly ProdukLama[], kata: string): ProdukLama[] {
+  const k = kata.trim().toUpperCase()
+  if (k === '') return [...daftar]
+  return daftar.filter((d) => [d.id, d.productName, d.ceding, d.treatyNumber, d.inwardName].some((v) => v.toUpperCase().includes(k)))
+}
+
+/** Copy Old - ID yang dikirim `Process Copy`: terpilih DAN boleh disalin, urutan daftar. */
+export function idBolehDisalin(daftar: readonly ProdukLama[], terpilih: ReadonlySet<string>): string[] {
+  return daftar.filter((d) => d.bolehDisalin && terpilih.has(d.id)).map((d) => d.id)
+}
+
+/** Copy Old - cacah hasil `Process Copy` per status. */
+export function ringkasSalin(hasil: readonly HasilSalinLama[]): Record<StatusSalinLama, number> {
+  const r: Record<StatusSalinLama, number> = { disalin: 0, sudahAda: 0, ditolak: 0, gagal: 0 }
+  for (const h of hasil) r[h.status]++
+  return r
+}
+
+/**
+ * `Add attachment` banyak berkas (permintaan work owner 03-10-2026): pilihan baru digabung ke yang sudah dipilih; nama
+ * yang sama (tanpa beda huruf besar - backend menolak nama ganda per produk) tidak digandakan, pilihan lama menang.
+ */
+export function gabungBerkas(lama: readonly File[], baru: readonly File[]): File[] {
+  const hasil = [...lama]
+  const ada = new Set(lama.map((f) => f.name.toLowerCase()))
+  for (const f of baru) {
+    const k = f.name.toLowerCase()
+    if (ada.has(k)) continue
+    ada.add(k)
+    hasil.push(f)
+  }
+  return hasil
+}
+
+/**
+ * Unggah SATU PER SATU, berurutan, lewat rute unggah yang ada (`Attach` b24 per berkas); kegagalan satu berkas
+ * dikumpulkan dan tidak menghentikan sisanya. `mulai` dipanggil sebelum tiap berkas (indeks dari 0).
+ */
+export async function unggahBerurutan(
+  berkas: readonly File[],
+  kirim: (f: File) => Promise<unknown>,
+  mulai?: (f: File, i: number) => void,
+): Promise<{ berkas: File; galat: unknown }[]> {
+  const gagal: { berkas: File; galat: unknown }[] = []
+  for (const [i, f] of berkas.entries()) {
+    mulai?.(f, i)
+    try {
+      await kirim(f)
+    } catch (galat) {
+      gagal.push({ berkas: f, galat })
+    }
+  }
+  return gagal
 }

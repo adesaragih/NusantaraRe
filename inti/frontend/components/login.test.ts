@@ -114,14 +114,28 @@ describe('tampilan loginbaru.html', () => {
   const login = readFileSync(join(__dirname, 'Login.tsx'), 'utf8')
   const css = readFileSync(join(__dirname, '..', 'styles.css'), 'utf8')
 
-  // ⛔ Tanpa animasi tanpa henti (laporan work owner 02-10-2026 "halaman ganti
-  // sandi masih kedip"): ilustrasi melayang menggambar ulang kartu kaca di
-  // setiap bingkai - layar login dan ganti sandi berkedip.
-  it('ilustrasi diam - nol animasi tanpa henti di layar login', () => {
+  // ⛔ Animasi loginbaru.html kembali (permintaan work owner 03-10-2026, asap
+  // kopi ikut bergerak) - HANYA di lapisan SVG terpisah. Animasi di dalam SVG
+  // utama menggambar ulang kartu kaca tiap bingkai: layar login dan ganti sandi
+  // berkedip (02-10-2026).
+  it('animasi hanya di lapisan terpisah; ilustrasi utama diam', () => {
     const ilustrasi = readFileSync(join(__dirname, 'IlustrasiLogin.tsx'), 'utf8')
-    expect(ilustrasi).not.toContain('melayang')
-    expect(css).not.toContain('halaman-masuk__melayang')
-    expect(css).not.toContain('@keyframes halaman-masuk')
+    const svg = [...ilustrasi.matchAll(/<svg\b[^>]*>/g)].map((m) => m[0])
+    expect(svg).toHaveLength(5)
+    // SVG pertama = ilustrasi utama: tanpa kelas, jadi tanpa animasi.
+    expect(svg[0]).not.toContain('className')
+    for (const s of svg.slice(1)) expect(s).toContain('className="halaman-masuk__lapis halaman-masuk__')
+    expect(svg.filter((s) => s.includes('halaman-masuk__melayang'))).toHaveLength(2)
+    expect(svg.filter((s) => s.includes('halaman-masuk__uap'))).toHaveLength(2)
+    // Satu-satunya pemilih halaman login (`.halaman-masuk*`) ber-`animation`: melayang dan uap.
+    const blok = css.slice(css.indexOf('HALAMAN LOGIN M_LOGIN_GO'))
+    const beranimasi = [...blok.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter((m) => /(^|[;\s])animation\s*:/.test(m[2] ?? '') && !/animation\s*:\s*none/.test(m[2] ?? ''))
+      .map((m) => (m[1] ?? '').trim())
+      .filter((p) => p.startsWith('.halaman-masuk'))
+    expect(beranimasi.sort()).toEqual(['.halaman-masuk__melayang', '.halaman-masuk__uap'])
+    expect(css).toContain('will-change: transform, opacity;')
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.halaman-masuk__melayang,\s*\.halaman-masuk__uap \{\s*animation: none;/)
   })
 
   it('teks layar login berbahasa Inggris', () => {

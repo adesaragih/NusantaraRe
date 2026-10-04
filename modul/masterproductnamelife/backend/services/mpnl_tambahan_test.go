@@ -244,3 +244,36 @@ func TestJudulGenerateSamaDenganKorpus(t *testing.T) {
 		t.Errorf("b1335 korpus: %q", baris[1334])
 	}
 }
+
+// Temuan /code-review 02-10-2026: baris `On Retention` dirakit SERVER dari master kontrak OR sesudah gerbang masukan -
+// nilai master yang tidak muat kolom flatnya ditolak BERKALIMAT (bukan galat teknis penulis), nol tulisan.
+func TestOutwardDariMasterTidakMuatDitolakBerkalimat(t *testing.T) {
+	l, g := layananMaster()
+	kontrakUji(g)
+	g.KontrakOR[0].ReinsTypeName = strings.Repeat("R", 101)
+	g.KontrakOR[0].TreatyYear = "UJI"
+	m := produkMasuk()
+	m.Umum.IsORS, m.HitungOutward, m.Inward.Mature = true, true, "2027-02-28"
+	_, err := l.SimpanProduk(context.Background(), pelakuUji, m, true)
+	pesan := services.Pesan(err)
+	for _, mau := range []string{"On Retention row 1: Reins Type is 101 bytes long; the column holds at most 100",
+		`On Retention row 1: Transaction Year "UJI" is not valid`} {
+		if !errors.Is(err, services.ErrMasukanTidakSah) || !strings.Contains(pesan, mau) {
+			t.Errorf("tanpa %q: %v", mau, err)
+		}
+	}
+	if g.Komit != 0 || len(g.Produk) != 0 {
+		t.Errorf("nol tulisan: komit %d, %d produk", g.Komit, len(g.Produk))
+	}
+}
+
+// Tahun 0 diterima time.Parse tetapi ditolak DATE Oracle (ORA-01841): ditolak gerbang tanggal, bukan 500.
+func TestTanggalTahunNolDitolak(t *testing.T) {
+	l, _ := layananMaster()
+	m := produkMasuk()
+	m.Inward.Mature = "0000-01-01"
+	_, err := l.SimpanProduk(context.Background(), pelakuUji, m, true)
+	if !strings.Contains(services.Pesan(err), `Expired Date "0000-01-01" is not a date`) {
+		t.Errorf("tahun 0: %v", err)
+	}
+}

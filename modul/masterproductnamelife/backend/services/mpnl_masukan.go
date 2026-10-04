@@ -98,7 +98,8 @@ func (p *periksa) tanggal(label string, v *string) {
 		return
 	}
 	for _, bentuk := range []string{utils.TanggalSaja, "02/01/2006"} {
-		if t, err := time.Parse(bentuk, s); err == nil {
+		// Tahun 0 diterima time.Parse, ditolak DATE Oracle (ORA-01841).
+		if t, err := time.Parse(bentuk, s); err == nil && t.Year() >= 1 {
 			*v = t.Format(utils.TanggalSaja)
 			return
 		}

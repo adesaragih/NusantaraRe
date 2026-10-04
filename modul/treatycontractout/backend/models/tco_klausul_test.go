@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -44,8 +45,11 @@ func TestAturanKlausulDuaPuluhLimaJenis(t *testing.T) {
 }
 
 func subjenisBawaan(id string) string {
-	if id == DescExclutionTreaty {
+	switch id {
+	case DescExclutionTreaty:
 		return SubjenisOccupation
+	case DescCoinsPanel:
+		return SubjenisCoinsLessThan
 	}
 	return ""
 }
@@ -85,9 +89,10 @@ func TestWajibIsiPerJenis(t *testing.T) {
 	}
 }
 
-// AC 36: LimitMB dan Portfolio TIDAK dilepas sebagai "tanpa validasi".
-func TestLimitMBDanPortfolioDitahan(t *testing.T) {
-	for _, j := range []string{"LimitMB", "Portfolio"} {
+// AC 36: Portfolio TIDAK dilepas sebagai "tanpa validasi". LimitMB dilepas mengikuti XML
+// [keputusan work owner 02-10-2026] - `TestLimitMBMengikutiXML`.
+func TestPortfolioDitahan(t *testing.T) {
+	for _, j := range []string{"Portfolio"} {
 		a, _ := AturanJenisKlausul(j, "")
 		if a.Ditahan == "" {
 			t.Errorf("%s dilepas tanpa aturan wajib-isi", j)
@@ -221,5 +226,158 @@ func TestSatuBarisHanyaTigaJenis(t *testing.T) {
 	sort.Strings(satu)
 	if got := strings.Join(satu, ","); got != "MaxCoinsPanel/10016,MinLOL/10015,MinLOLMB/10018" {
 		t.Errorf("jenis satu baris: %s", got)
+	}
+}
+
+// TestCoinsPanelDuaGridCoInsScale - Co-Ins Scale (`GridTreatyArrangementCoins.xml`) = DUA grid,
+// dibedakan `Param.Type` "Less Than" (b10055) / "More Than" (b14320) yang `NewTreatyArrCoins` b406
+// simpan di `.SpreadingOrder`; kunci dobel per grid.
+func TestCoinsPanelDuaGridCoInsScale(t *testing.T) {
+	for _, sub := range []string{SubjenisCoinsLessThan, SubjenisCoinsMoreThan} {
+		a, ok := CariAturanKlausul(DescCoinsPanel, false, sub)
+		if !ok {
+			t.Fatalf("CoinsPanel/%s tidak ada", sub)
+		}
+		if a.Jenis != "CoinsPanel" || strings.Join(a.Medan, ",") != "CoIns_Min,CoIns_Max,TreatyLimit" ||
+			strings.Join(a.Wajib, ",") != "CoIns_Min,CoIns_Max,TreatyLimit" ||
+			strings.Join(a.KunciDobel, ",") != "SpreadingOrder,CoIns_Min,CoIns_Max" {
+			t.Errorf("CoinsPanel/%s: %+v", sub, a)
+		}
+	}
+	if SubjenisCoinsLessThan != "Less Than" || SubjenisCoinsMoreThan != "More Than" {
+		t.Error("subjenis Co-Ins Scale bukan nilai Param.Type VERBATIM")
+	}
+	if _, ok := CariAturanKlausul(DescCoinsPanel, false, ""); ok {
+		t.Error("CoinsPanel tanpa subjenis diterima - grid mana?")
+	}
+	for k, mau := range map[string]string{"Less Than": "Less Than", "More Than": "More Than", "": "",
+		"less than": "", " More Than ": "More Than", "Lainnya": ""} {
+		if got := SubjenisKlausulTCO(KlausulTreaty{TreatyDescID: DescCoinsPanel, SpreadingOrder: k}); got != mau {
+			t.Errorf("SpreadingOrder %q -> %q, mau %q", k, got, mau)
+		}
+	}
+	if got := SubjenisKlausulTCO(KlausulTreaty{TreatyDescID: DescExclutionTreaty, IDClause: "UJI-1"}); got != SubjenisClause {
+		t.Errorf("exclusion: %q", got)
+	}
+	if got := SubjenisKlausulTCO(KlausulTreaty{TreatyDescID: DescEPI, SpreadingOrder: "Less Than"}); got != "" {
+		t.Errorf("jenis lain bersubjenis %q", got)
+	}
+	k := KlausulTreaty{SpreadingOrder: "More Than"}
+	if NilaiMedanKlausul(k, MedanSpreadingOrder) != "More Than" {
+		t.Error("SpreadingOrder tidak terbaca sebagai kunci dobel")
+	}
+}
+
+// TestCoinsPanelKorpus - nilai Type, simpanannya, saringan grid, dan urutannya ada di korpus.
+func TestCoinsPanelKorpus(t *testing.T) {
+	baris := func(rel string, n int) string {
+		b, err := os.ReadFile(akarKorpusTCO + `\` + rel)
+		if err != nil {
+			t.Skipf("korpus tidak terjangkau (%v)", err)
+		}
+		return strings.TrimSpace(strings.Split(strings.ReplaceAll(string(b), "\r\n", "\n"), "\n")[n-1])
+	}
+	grid := `Section\GridTreatyArrangementCoins.xml`
+	rd := `ReportDefinition\BrowseTreatyArrangement_CoinsPanel_RD.xml`
+	for _, c := range []struct {
+		rel string
+		n   int
+		mau string
+	}{
+		{grid, 10055, `<pyValue>"` + SubjenisCoinsLessThan + `"</pyValue>`},
+		{grid, 14320, `<pyValue>"` + SubjenisCoinsMoreThan + `"</pyValue>`},
+		{`Activity\NewTreatyArrCoins.xml`, 405, `<PropertiesName>InputTreatyCoins.SpreadingOrder</PropertiesName>`},
+		{`Activity\NewTreatyArrCoins.xml`, 406, `<PropertiesValue>Param.Type</PropertiesValue>`},
+		{rd, 610, `<pyFilterName>.SpreadingOrder</pyFilterName>`},
+		{rd, 612, `<pyFilterValue>Param.Type</pyFilterValue>`},
+		{rd, 653, `<pyFieldName>.TreatyLimit</pyFieldName>`},
+		{rd, 655, `<pySortType>DESC</pySortType>`},
+	} {
+		if got := baris(c.rel, c.n); got != c.mau {
+			t.Errorf("%s b%d: %s, mau %s", c.rel, c.n, got, c.mau)
+		}
+	}
+}
+
+// TestUrutCoInsScaleTCO - `TreatyLimit DESC`, kosong lebih dulu (Oracle NULLS FIRST), seri stabil.
+func TestUrutCoInsScaleTCO(t *testing.T) {
+	d := func(s string) *apd.Decimal {
+		v, _, _ := apd.NewFromString(s)
+		return v
+	}
+	b := []KlausulTreaty{{ID: "1", TreatyLimit: d("500")}, {ID: "2", TreatyLimit: d("1000.5")}, {ID: "3"},
+		{ID: "4", TreatyLimit: d("500.00")}, {ID: "5", TreatyLimit: d("99")}}
+	UrutCoInsScaleTCO(b)
+	var id []string
+	for _, k := range b {
+		id = append(id, k.ID)
+	}
+	if got := strings.Join(id, ","); got != "3,2,1,4,5" {
+		t.Errorf("urutan %s, mau 3,2,1,4,5", got)
+	}
+}
+
+// TestLimitMBMengikutiXML - MB Capacity (`GridTreatyArrangementLIMITMB.xml`) [keputusan work owner
+// 02-10-2026: "ikuti xml-nya aja"]: delapan medan form urut XML, NOL wajib-isi
+// (`SaveTreatyArrLimitMB_Act` tanpa `Property-Set-Messages`), tanpa kurs/konversi.
+func TestLimitMBMengikutiXML(t *testing.T) {
+	a, ok := CariAturanKlausul(DescLimitMB, false, "")
+	if !ok {
+		t.Fatal("LimitMB tidak ada")
+	}
+	if a.Jenis != "LimitMB" || a.Ditahan != "" || len(a.Wajib) != 0 || len(a.KunciDobel) != 0 || a.Berkurs || a.Konversi != "" ||
+		strings.Join(a.Medan, ",") != "ID_Occupation,Pct,PctMe,Rp,Usd,MoreRp,MoreUsd,TerritorialLimit" {
+		t.Errorf("LimitMB: %+v", a)
+	}
+	if err := PeriksaKlausulTCO(a, KlausulTreaty{}); err != nil {
+		t.Errorf("baris kosong ditolak, padahal Pega menyimpannya: %v", err)
+	}
+	var k KlausulTreaty
+	if err := IsiMedanKlausulTCO(a, &k, map[string]string{"MoreRp": "1000000,5", "MoreUsd": "65.25", "TerritorialLimit": "UJI GRUP"}); err != nil {
+		t.Fatal(err)
+	}
+	if NilaiMedanKlausul(k, MedanMoreRp) != "1000000.5" || NilaiMedanKlausul(k, MedanMoreUsd) != "65.25" || k.TerritorialLimit != "UJI GRUP" {
+		t.Errorf("isi: %+v", k)
+	}
+	if err := IsiMedanKlausulTCO(a, &k, map[string]string{"MoreUsd": "1.000,5"}); !errors.Is(err, ErrPersenBukanDesimal) {
+		t.Errorf("MoreUsd ganda: %v", err)
+	}
+	var ids []string
+	for _, p := range PilihanOccupationLimitMB {
+		ids = append(ids, p.ID+"="+p.Nama)
+	}
+	if got := strings.Join(ids, ","); got != "01=RESIDENTIAL RISK,02=INDUSTRIAL RISK,03=COMMERCIAL RISK,04=AGRICULTURAL RISK" {
+		t.Errorf("occupation MB: %s", got)
+	}
+	if n, ok := NamaOccupationLimitMB("03"); !ok || n != "COMMERCIAL RISK" {
+		t.Errorf("03 -> %q %v", n, ok)
+	}
+	if _, ok := NamaOccupationLimitMB("05"); ok {
+		t.Error("05 dikenal")
+	}
+}
+
+// TestLimitMBKorpus - nol validasi Save dan peta Occupation ada di korpus.
+func TestLimitMBKorpus(t *testing.T) {
+	baca := func(rel string) string {
+		b, err := os.ReadFile(akarKorpusTCO + `\` + rel)
+		if err != nil {
+			t.Skipf("korpus tidak terjangkau (%v)", err)
+		}
+		return strings.ReplaceAll(string(b), "\r\n", "\n")
+	}
+	if strings.Contains(baca(`Activity\SaveTreatyArrLimitMB_Act.xml`), "Property-Set-Messages") {
+		t.Error("SaveTreatyArrLimitMB_Act kini memeriksa medan - tinjau ulang Wajib LimitMB")
+	}
+	baris := strings.Split(baca(`Activity\SetOccupationLimitMB.xml`), "\n")
+	for i, p := range PilihanOccupationLimitMB {
+		when := []int{322, 459, 596, 733}[i]
+		nilai := []int{246, 383, 520, 657}[i]
+		if got := strings.TrimSpace(baris[when-1]); got != `<pyStepsPreCondParamsWhen>InputTreatyLimitMB.ID_Occupation=="`+p.ID+`"</pyStepsPreCondParamsWhen>` {
+			t.Errorf("b%d: %s", when, got)
+		}
+		if got := strings.TrimSpace(baris[nilai-1]); got != `<PropertiesValue>"`+p.Nama+`"</PropertiesValue>` {
+			t.Errorf("b%d: %s", nilai, got)
+		}
 	}
 }

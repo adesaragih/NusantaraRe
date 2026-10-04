@@ -6,18 +6,23 @@
 //   b64133 lampiran                                                        (PARITAS §6)
 //
 // Mode lihat (`ProductName.IsView == 'true'`, sesudah `View` b74798 → `SetProductName` 8 b2147): medan ber-`ro`
-// baca-saja, tombol `Choose*` (wadah `IsView!='true'`) dan `Save` tersembunyi, `Edit` tampil. Checkbox
-// `On Retention` dan tombol `Add`/`Delete` grid tidak ber-`ro` di XML.
+// baca-saja, dropdown master (pengganti tombol `Choose*`, wadah `IsView!='true'`) dan `Save` tidak dapat dipakai,
+// `Edit` tampil. Checkbox `On Retention` dan tombol `Add`/`Delete` grid tidak ber-`ro` di XML - tetapi keputusan work
+// owner 03-10-2026 ("jika view tidak tambah/edit/delete, saat klik edit baru bisa"): di mode lihat SEMUA aksi ubah
+// tersembunyi (Add/Delete/Copy row grid, Copy, Add attachment/Retry/Delete lampiran) dan On Retention mati; yang tetap:
+// Close, Edit, Generate, View Rate, dan aksi baca lampiran.
 // ⛔ Audit 02-10-2026: enam medan pemilih master SELALU baca-saja di XML (`pyReadOnly` true, `pyEditOptions`
 // Read-only, `pyReadOnlyCondition` KOSONG - beda dengan `Product Name` b3585 yang bersyarat `IsView`): Ceding
 // b4040, SOB b4428, R/I Risk Name b7362, Cause Of Loss b10626, Policy Holder b17062, Currency b28105. Nilainya
-// hanya diisi tombol `Choose*` → `set*_DT`. Begitu pula sel `Bussines` (`.Name` b33504) dan `Benefit` b33658
-// grid `PLAN LIST`: diisi autocomplete `Plan Name`, tidak diketik.
+// hanya dari daftar master → `set*_DT`, tidak diketik. Begitu pula sel `Bussines` (`.Name` b33504) dan `Benefit`
+// b33658 grid `PLAN LIST`: diisi pilihan `Plan Name` (dropdown, 03-10-2026), tidak diketik.
+// Keputusan work owner 02-10-2026 ("perubahan pada tampilan untuk semua Choose ubah jadi dropdown saja"): ketujuh
+// tombol `Choose*` + popup FlowAction-nya diganti `DropdownMaster` (termasuk `Choose R/I Rate` baris `PLAN LIST`).
 // Grid `OUTWARD` (wadah `1==2`) tidak dirender; isinya ditulis server (`hitungOutward`).
 
 import { useState, type ReactNode } from 'react'
 
-import { Area, Field, Gagal, Kosong, Pilih } from '../../../../inti/frontend/components/ui/dasar'
+import { Gagal, Kosong } from '../../../../inti/frontend/components/ui/dasar'
 import {
   cariPlan,
   simpanProduk,
@@ -27,16 +32,16 @@ import {
   type BarisLien,
   type BarisPlan,
   type BarisUWLimit,
-  type JenisMaster,
   type JenisPlan,
-  type NilaiMaster,
   type Produk,
   type ProdukInward,
   type ProdukUmum,
 } from '../api'
 import {
+  PILIHAN_DOKUMEN_KLAIM,
   PILIHAN_PEMBAYARAN,
   hitungMaxSumReasured,
+  potongPilihan,
   namaTreaty,
   salinBaris,
   salinProduk,
@@ -54,47 +59,25 @@ import {
   PEMILIH_MPNL,
   PESAN_MPNL,
   PLAN_MPNL,
+  SARAN_PLAN_MPNL,
   TOMBOL_MPNL,
   UMUM_MPNL,
   UWLIMIT_MPNL,
 } from '../labels'
 import { DialogEdit, DialogSimpan } from './Dialog'
+import DropdownCari from './DropdownCari'
+import DropdownMaster from './DropdownMaster'
+import Medan, { PilihanMedan, TANDA_KOSONG } from './Medan'
 import ModalRate from './ModalRate'
 import PanelLampiran from './PanelLampiran'
-import PemilihMaster from './PemilihMaster'
-import Saran from './Saran'
 
-/** Pemilih yang sedang terbuka: tombol pembukanya, jenis RD, dan penerima `set*_DT`. */
-interface PemilihTerbuka {
-  judul: string
-  jenis: JenisMaster
-  kolomNama?: string
-  pilih: (v: NilaiMaster) => void
-}
-
-const cariJenisPlan = async (kata: string) => (await cariPlan(kata)).daftar
-
-/** `pxDateTime` - tanggal `YYYY-MM-DD`; teks lama yang bukan tanggal tampil apa adanya (tidak dibuang). */
-function MedanTanggal({ label, value, onChange, readOnly }: { label: string; value: string; onChange: (v: string) => void; readOnly: boolean }) {
-  const iso = value === '' || /^\d{4}-\d{2}-\d{2}$/.test(value)
-  return (
-    <div className="field">
-      <label className="field__label">{label}</label>
-      <input
-        className="field__input"
-        type={iso ? 'date' : 'text'}
-        value={value}
-        readOnly={readOnly}
-        onChange={(e) => {
-          onChange(e.target.value)
-        }}
-      />
-    </div>
-  )
-}
+/** Daftar `Plan Name` (RD `BrowseProductTypeLife_RD`, dicari pada CoverName dan Business), dipotong BATAS_DROPDOWN. */
+const cariJenisPlan = async (kata: string) => potongPilihan((await cariPlan(kata)).daftar)
 
 /** Sel grid bersarang yang dapat disunting (`ro = ProductName.IsView=='true'`). */
 function SelIsi({ nilai, onUbah, readOnly, label }: { nilai: string; onUbah: (v: string) => void; readOnly: boolean; label: string }) {
+  // Mode lihat: teks seperti baris `Medan` (foto layar Pega work owner 02-10-2026), bukan isian baca-saja.
+  if (readOnly) return <span className={nilai === '' ? 'mpnl-nilai mpnl-nilai--kosong' : 'mpnl-nilai'}>{nilai === '' ? TANDA_KOSONG : nilai}</span>
   return (
     <input
       className="field__input mpnl-sel-isi"
@@ -134,7 +117,6 @@ export default function FormProduk({
   const [galat, setGalat] = useState<unknown>(null)
   const [menyimpan, setMenyimpan] = useState(false)
   const [dialog, setDialog] = useState<'simpan' | 'edit' | null>(null)
-  const [pemilih, setPemilih] = useState<PemilihTerbuka | null>(null)
   const [rate, setRate] = useState<string | null>(null)
 
   const u = p.umum
@@ -164,10 +146,6 @@ export default function FormProduk({
     }
   }
 
-  function bukaPemilih(judul: string, jenis: JenisMaster, pilih: (v: NilaiMaster) => void, kolomNama?: string): void {
-    setPemilih({ judul, jenis, pilih, kolomNama })
-  }
-
   async function simpan(): Promise<void> {
     if (menyimpan) return
     setMenyimpan(true)
@@ -194,231 +172,228 @@ export default function FormProduk({
     }
   }
 
-  /**
-   * Medan pemilih master: SELALU baca-saja (kepala berkas), diisi hanya lewat tombol `Choose*` (wadah
-   * `IsView!='true'`, tersembunyi di mode lihat) → penerima `set*_DT`.
-   */
-  function medanMaster(label: string, nilai: string, tombol: ReactNode) {
-    return (
-      <div className="mpnl-medan-pilih">
-        <Field label={label} value={nilai} onChange={() => undefined} readOnly />
-        {!lihat && tombol}
-      </div>
-    )
-  }
-
   return (
-    <section className="panel">
+    <section className="panel mpnl-form">
       {pesan !== null && <p className="mpnl-pesan">{pesan}</p>}
       {galat !== null && <Gagal galat={galat} />}
 
-      {/* ---- wadah b2573: sisi umum ---- */}
-      <div className="form-grid">
-        {/* `pyRequired` true b3585 (Product Name), b25362, b26054, b26268: tanda wajib `*` (keputusan work owner 02-10-2026). */}
-        <Field
-          label={UMUM_MPNL.productName}
-          value={u.productName}
-          required
-          readOnly={lihat}
-          onChange={(v) => {
-            // onChange `SetTreatyName_Act` b3686.
-            ubahUmum({ productName: v, inwardName: namaTreaty(v, w.policyHolderName) })
-          }}
-        />
-        <Field label={UMUM_MPNL.productCode} value={p.id} onChange={() => undefined} readOnly />
-        {medanMaster(
-          UMUM_MPNL.ceding,
-          u.ceding,
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => {
-              bukaPemilih(UMUM_MPNL.chooseCeding, 'ceding', (v) => {
-              ubahUmum({ ceding: v.nama, cedingId: v.id })
-              })
+      {/* ---- wadah b2573 (foto layar Pega work owner 02-10-2026): kartu TREATY NAME kiri, INWARD kanan ---- */}
+      <div className="mpnl-tata">
+        <section className="mpnl-kartu">
+          <h3 className="mpnl-kartu__judul">{UMUM_MPNL.judul}</h3>
+          {/* `pyRequired` true b3585 (Product Name), b25362, b26054, b26268: tanda wajib `*` (keputusan work owner 02-10-2026). */}
+          <Medan
+            label={UMUM_MPNL.productName}
+            required
+            nilai={u.productName}
+            lihat={lihat}
+            onUbah={(v) => {
+              // onChange `SetTreatyName_Act` b3686.
+              ubahUmum({ productName: v, inwardName: namaTreaty(v, w.policyHolderName) })
             }}
-          >
-            {UMUM_MPNL.chooseCeding}
-          </button>,
-        )}
-        {medanMaster(
-          UMUM_MPNL.sob,
-          u.sobName,
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => {
-              bukaPemilih(UMUM_MPNL.chooseSob, 'sob', (v) => {
-              ubahUmum({ sobName: v.nama, sobId: v.id })
-              })
-            }}
-          >
-            {UMUM_MPNL.chooseSob}
-          </button>,
-        )}
-        <Field label={UMUM_MPNL.deduction} value={u.riComm} readOnly={lihat} onChange={medanUmum('riComm')} />
-        {medanMaster(
-          UMUM_MPNL.riRisk,
-          u.riRisk,
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => {
-              bukaPemilih(UMUM_MPNL.chooseRiRisk, 'ri-risk', (v) => {
-              ubahUmum({ riRisk: v.nama, riRiskId: v.id })
-              })
-            }}
-          >
-            {UMUM_MPNL.chooseRiRisk}
-          </button>,
-        )}
-        <Field label={UMUM_MPNL.treatyName} value={u.inwardName} readOnly={lihat} onChange={medanUmum('inwardName')} />
-        <Field label={UMUM_MPNL.treatyNumber} value={u.treatyNumber} readOnly={lihat} onChange={medanUmum('treatyNumber')} />
-        {/* `Cause Of Loss` b10626: dropdown SELALU baca-saja - diisi `Choose Cause Of Loss` → `setCauseofLoss_DT`. */}
-        {medanMaster(
-          UMUM_MPNL.causeOfLoss,
-          u.cause,
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => {
-              bukaPemilih(UMUM_MPNL.chooseCause, 'penyebab', (v) => {
-              ubahUmum({ cause: v.nama, causeId: v.id })
-              })
-            }}
-          >
-            {UMUM_MPNL.chooseCause}
-          </button>,
-        )}
-      </div>
-
-      {/* `LIEN CLAUSE` b12201 - ikon grid bawaan b12373 (vis `IsView!='true'`). */}
-      <h4 className="mpnl-judul-grid">{LIEN_MPNL.judul}</h4>
-      <GridSederhana<BarisLien>
-        baris={p.lienClause}
-        lihat={lihat}
-        kolom={[
-          [LIEN_MPNL.usia, 'usia'],
-          [LIEN_MPNL.manfaat, 'manfaat'],
-        ]}
-        kosong={{ usia: '', manfaat: '' }}
-        onUbah={(d) => {
-          setP((x) => ({ ...x, lienClause: d }))
-        }}
-      />
-
-      {/* `DOCUMENT CLAIM` b14601 - `Document List` dropdown `associated` (daftar tak ikut ekspor, OQ-MPNL-05). */}
-      <h4 className="mpnl-judul-grid">{DOKUMEN_MPNL.judul}</h4>
-      <GridSederhana<BarisDokumen>
-        baris={p.documentClaim}
-        lihat={lihat}
-        kolom={[[DOKUMEN_MPNL.documentList, 'document']]}
-        kosong={{ document: '' }}
-        onUbah={(d) => {
-          setP((x) => ({ ...x, documentClaim: d }))
-        }}
-      />
-
-      {/* ---- sisi inward (halaman `ProductNameInward`) ---- */}
-      <div className="form-grid mpnl-bagian">
-        {/* `Choose Policy Holder` → `setPolicyHolder_DT` b2416 - TANPA `SetTreatyName_Act` (onChange b17168 milik
-            autocomplete yang selalu baca-saja, jadi tidak pernah terpicu). */}
-        {medanMaster(
-          INWARD_MPNL.policyHolder,
-          w.policyHolderName,
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => {
-              bukaPemilih(INWARD_MPNL.choosePolicyHolder, 'pemegang-polis', (v) => {
-              ubahInward({ policyHolderName: v.nama, policyHolder: v.id })
-              })
-            }}
-          >
-            {INWARD_MPNL.choosePolicyHolder}
-          </button>,
-        )}
-        <Field label={INWARD_MPNL.insured} value={w.insured} readOnly={lihat} onChange={medanInward('insured')} />
-        <Field label={INWARD_MPNL.addendumNo} value={w.addendumNo} readOnly={lihat} onChange={medanInward('addendumNo')} />
-        <Field label={INWARD_MPNL.addendum} value={w.addendumWord} readOnly={lihat} onChange={medanInward('addendumWord')} />
-        <Field label={INWARD_MPNL.amandementNo} value={w.amandementNo} readOnly={lihat} onChange={medanInward('amandementNo')} />
-        <Field label={INWARD_MPNL.amandement} value={w.amandementSchd} readOnly={lihat} onChange={medanInward('amandementSchd')} />
-        <Field label={INWARD_MPNL.maxExpiredClaim} value={w.maxExpiredClaim} readOnly={lihat} onChange={medanInward('maxExpiredClaim')} />
-        <MedanTanggal label={INWARD_MPNL.begin} value={w.begin} readOnly={lihat} onChange={medanInward('begin')} />
-        <MedanTanggal label={INWARD_MPNL.stnc} value={w.stnc} readOnly={lihat} onChange={medanInward('stnc')} />
-        <Field label={INWARD_MPNL.cedingRetention} value={w.cedingRetentionNum} readOnly={lihat} onChange={medanInward('cedingRetentionNum')} />
-        <Field label={INWARD_MPNL.cedingLimit} value={w.cedingLimit} readOnly={lihat} onChange={ubahHitung('cedingLimit')} />
-        <Field label={INWARD_MPNL.brokerage} value={w.brokerage} readOnly={lihat} onChange={medanInward('brokerage')} />
-        <Field label={INWARD_MPNL.minAge} value={w.minAge} readOnly={lihat} onChange={medanInward('minAge')} />
-        <Field label={INWARD_MPNL.maxAge} value={w.maxAge} readOnly={lihat} onChange={medanInward('maxAge')} />
-        <Field label={INWARD_MPNL.expiryAge} value={w.expiryAge} readOnly={lihat} onChange={medanInward('expiryAge')} />
-        <Field label={INWARD_MPNL.extraPremi} value={w.extraPremi} readOnly={lihat} onChange={medanInward('extraPremi')} />
-        <Field label={INWARD_MPNL.minSumInsured} value={w.minSumInsured} readOnly={lihat} onChange={medanInward('minSumInsured')} />
-        <Field label={INWARD_MPNL.maxSumInsured} value={w.maxSumInsured} readOnly={lihat} onChange={ubahHitung('maxSumInsured')} />
-        <Field label={INWARD_MPNL.maxSumReasured} value={w.maxSumReasured} readOnly={lihat} onChange={medanInward('maxSumReasured')} />
-        <Field label={INWARD_MPNL.rnmShare} value={w.rnmShare} readOnly={lihat} onChange={medanInward('rnmShare')} />
-        <span className="mpnl-catatan-medan">{INWARD_MPNL.ofSumReasured}</span>
-        <Field label={INWARD_MPNL.rnmLimit} value={w.rnmLimitNum} readOnly={lihat} onChange={medanInward('rnmLimitNum')} />
-        {tampilPremiumFactor(w.payment) && (
-          <Field label={INWARD_MPNL.premiumFactor} value={w.premiumFactor} required readOnly={lihat} onChange={medanInward('premiumFactor')} />
-        )}
-        {lihat ? (
-          // `ro = ProductName.IsView=='true'` b25611 - `Pilih` bersama tidak punya mode baca-saja.
-          <Field
-            label={INWARD_MPNL.payment}
-            value={PILIHAN_PEMBAYARAN.find((o) => o.value === w.payment)?.label ?? w.payment}
-            onChange={() => undefined}
-            readOnly
           />
-        ) : (
-          <Pilih label={INWARD_MPNL.payment} value={w.payment} opsi={[...PILIHAN_PEMBAYARAN]} onChange={medanInward('payment')} />
-        )}
-        <Area label={INWARD_MPNL.subjectTo} value={w.subjectTo} onChange={lihat ? () => undefined : medanInward('subjectTo')} />
-        <Field label={INWARD_MPNL.annuityInterest} value={w.annuityInterest} required readOnly={lihat} onChange={medanInward('annuityInterest')} />
-        <Field
-          label={INWARD_MPNL.premiumRefundFactor}
-          value={w.premiumRefundFactor}
-          required
-          readOnly={lihat}
-          onChange={medanInward('premiumRefundFactor')}
-        />
-        <Field label={INWARD_MPNL.maxDataReceive} value={w.maxDataReceive} readOnly={lihat} onChange={medanInward('maxDataReceive')} />
-        <MedanTanggal label={INWARD_MPNL.mature} value={w.mature} readOnly={lihat} onChange={medanInward('mature')} />
-        {/* `Birthday` b27960 - radio `associated` (pilihan tak ikut ekspor, OQ-MPNL-05): isian teks. */}
-        <Field label={INWARD_MPNL.birthday} value={w.birthday} readOnly={lihat} onChange={medanInward('birthday')} />
-        {medanMaster(
-          INWARD_MPNL.currency,
-          w.currency,
+          <Medan label={UMUM_MPNL.productCode} kode nilai={p.id} lihat={lihat} />
+          <Medan label={UMUM_MPNL.ceding} nilai={u.ceding} lihat={lihat}>
+            <DropdownMaster
+              labelAria={UMUM_MPNL.ceding}
+              jenis="ceding"
+              nilai={u.ceding}
+              lihat={lihat}
+              onPilih={(v) => {
+                ubahUmum({ ceding: v.nama, cedingId: v.id })
+              }}
+            />
+          </Medan>
+          <Medan label={UMUM_MPNL.sob} nilai={u.sobName} lihat={lihat}>
+            <DropdownMaster
+              labelAria={UMUM_MPNL.sob}
+              jenis="sob"
+              nilai={u.sobName}
+              lihat={lihat}
+              onPilih={(v) => {
+                ubahUmum({ sobName: v.nama, sobId: v.id })
+              }}
+            />
+          </Medan>
+          <Medan label={UMUM_MPNL.deduction} jenis="angka" nilai={u.riComm} lihat={lihat} onUbah={medanUmum('riComm')} />
+          <Medan label={UMUM_MPNL.riRisk} nilai={u.riRisk} lihat={lihat}>
+            <DropdownMaster
+              labelAria={UMUM_MPNL.riRisk}
+              jenis="ri-risk"
+              nilai={u.riRisk}
+              lihat={lihat}
+              onPilih={(v) => {
+                ubahUmum({ riRisk: v.nama, riRiskId: v.id })
+              }}
+            />
+          </Medan>
+          <Medan label={UMUM_MPNL.treatyName} nilai={u.inwardName} lihat={lihat} onUbah={medanUmum('inwardName')} />
+          <Medan label={UMUM_MPNL.treatyNumber} nilai={u.treatyNumber} lihat={lihat} onUbah={medanUmum('treatyNumber')} />
+          {/* `Cause Of Loss` b10626: SELALU baca-saja - diisi dari daftar master → `setCauseofLoss_DT`. */}
+          <Medan label={UMUM_MPNL.causeOfLoss} nilai={u.cause} lihat={lihat}>
+            <DropdownMaster
+              labelAria={UMUM_MPNL.causeOfLoss}
+              jenis="penyebab"
+              nilai={u.cause}
+              lihat={lihat}
+              onPilih={(v) => {
+                ubahUmum({ cause: v.nama, causeId: v.id })
+              }}
+            />
+          </Medan>
+
+          {/* `LIEN CLAUSE` b12201 - ikon grid bawaan b12373 (vis `IsView!='true'`). */}
+          <h4 className="mpnl-judul-grid">{LIEN_MPNL.judul}</h4>
+          <GridSederhana<BarisLien>
+            baris={p.lienClause}
+            lihat={lihat}
+            kolom={[
+              [LIEN_MPNL.usia, 'usia'],
+              [LIEN_MPNL.manfaat, 'manfaat'],
+            ]}
+            kosong={{ usia: '', manfaat: '' }}
+            onUbah={(d) => {
+              setP((x) => ({ ...x, lienClause: d }))
+            }}
+          />
+
+          {/* `DOCUMENT CLAIM` b14601 - `Document List` dropdown: PromptList properti `.Document` (XML dikirim work owner
+          03-10-2026, `PILIHAN_DOKUMEN_KLAIM`); nilai lama di luar daftar tetap tampil, tidak dibuang. */}
+          <h4 className="mpnl-judul-grid">{DOKUMEN_MPNL.judul}</h4>
+          <GridSederhana<BarisDokumen>
+            baris={p.documentClaim}
+            lihat={lihat}
+            kolom={[[DOKUMEN_MPNL.documentList, 'document', PILIHAN_DOKUMEN_KLAIM]]}
+            kosong={{ document: '' }}
+            onUbah={(d) => {
+              setP((x) => ({ ...x, documentClaim: d }))
+            }}
+          />
+        </section>
+
+        {/* ---- sisi inward (halaman `ProductNameInward`, wadah b16621) ---- */}
+        <section className="mpnl-kartu mpnl-kartu--lebar">
+          <h3 className="mpnl-kartu__judul">{INWARD_MPNL.judul}</h3>
+          {/* Pilihan Policy Holder → `setPolicyHolder_DT` b2416 - TANPA `SetTreatyName_Act` (onChange b17168 milik
+              autocomplete yang selalu baca-saja, jadi tidak pernah terpicu). */}
+          <Medan label={INWARD_MPNL.policyHolder} nilai={w.policyHolderName} lihat={lihat}>
+            <DropdownMaster
+              labelAria={INWARD_MPNL.policyHolder}
+              jenis="pemegang-polis"
+              nilai={w.policyHolderName}
+              lihat={lihat}
+              onPilih={(v) => {
+                ubahInward({ policyHolderName: v.nama, policyHolder: v.id })
+              }}
+            />
+          </Medan>
+          <Medan label={INWARD_MPNL.insured} nilai={w.insured} lihat={lihat} onUbah={medanInward('insured')} />
+          {/* Pasangan sebaris b18777 / b20095: `Addendum No.` + `Addendum`, `Amandement No.` + `Amandement`. */}
+          <div className="mpnl-dua-kolom">
+            <Medan label={INWARD_MPNL.addendumNo} jenis="angka" nilai={w.addendumNo} lihat={lihat} onUbah={medanInward('addendumNo')} />
+            <Medan label={INWARD_MPNL.addendum} nilai={w.addendumWord} lihat={lihat} onUbah={medanInward('addendumWord')} />
+            <Medan label={INWARD_MPNL.amandementNo} jenis="angka" nilai={w.amandementNo} lihat={lihat} onUbah={medanInward('amandementNo')} />
+            <Medan label={INWARD_MPNL.amandement} nilai={w.amandementSchd} lihat={lihat} onUbah={medanInward('amandementSchd')} />
+          </div>
+          <div className="mpnl-dua-kolom mpnl-dua-kolom--pisah">
+            <div className="mpnl-kolom">
+              {/* b21723 kolom kiri */}
+              <Medan label={INWARD_MPNL.maxExpiredClaim} jenis="angka" nilai={w.maxExpiredClaim} lihat={lihat} onUbah={medanInward('maxExpiredClaim')} />
+              <Medan label={INWARD_MPNL.begin} jenis="tanggal" nilai={w.begin} lihat={lihat} onUbah={medanInward('begin')} />
+              <Medan label={INWARD_MPNL.stnc} jenis="tanggal" nilai={w.stnc} lihat={lihat} onUbah={medanInward('stnc')} />
+              <Medan label={INWARD_MPNL.cedingRetention} jenis="angka" nilai={w.cedingRetentionNum} lihat={lihat} onUbah={medanInward('cedingRetentionNum')} />
+              <Medan label={INWARD_MPNL.cedingLimit} jenis="angka" nilai={w.cedingLimit} lihat={lihat} onUbah={ubahHitung('cedingLimit')} />
+              <Medan label={INWARD_MPNL.brokerage} jenis="angka" nilai={w.brokerage} lihat={lihat} onUbah={medanInward('brokerage')} />
+              <Medan label={INWARD_MPNL.minAge} jenis="angka" nilai={w.minAge} lihat={lihat} onUbah={medanInward('minAge')} />
+              <Medan label={INWARD_MPNL.maxAge} jenis="angka" nilai={w.maxAge} lihat={lihat} onUbah={medanInward('maxAge')} />
+              <Medan label={INWARD_MPNL.expiryAge} jenis="angka" nilai={w.expiryAge} lihat={lihat} onUbah={medanInward('expiryAge')} />
+              <Medan label={INWARD_MPNL.extraPremi} jenis="angka" nilai={w.extraPremi} lihat={lihat} onUbah={medanInward('extraPremi')} />
+              <Medan label={INWARD_MPNL.minSumInsured} jenis="angka" nilai={w.minSumInsured} lihat={lihat} onUbah={medanInward('minSumInsured')} />
+              <Medan label={INWARD_MPNL.maxSumInsured} jenis="angka" nilai={w.maxSumInsured} lihat={lihat} onUbah={ubahHitung('maxSumInsured')} />
+              <Medan label={INWARD_MPNL.maxSumReasured} jenis="angka" nilai={w.maxSumReasured} lihat={lihat} onUbah={medanInward('maxSumReasured')} />
+              <Medan
+                label={INWARD_MPNL.rnmShare}
+                jenis="angka"
+                nilai={w.rnmShare}
+                lihat={lihat}
+                onUbah={medanInward('rnmShare')}
+                catatan={<span className="mpnl-catatan-medan">{INWARD_MPNL.ofSumReasured}</span>}
+              />
+              <Medan label={INWARD_MPNL.rnmLimit} jenis="angka" nilai={w.rnmLimitNum} lihat={lihat} onUbah={medanInward('rnmLimitNum')} />
+              {tampilPremiumFactor(w.payment) && (
+                <Medan label={INWARD_MPNL.premiumFactor} jenis="angka" required nilai={w.premiumFactor} lihat={lihat} onUbah={medanInward('premiumFactor')} />
+              )}
+              {/* `ro = ProductName.IsView=='true'` b25611. */}
+              <Medan
+                label={INWARD_MPNL.payment}
+                nilai={w.payment}
+                tampil={PILIHAN_PEMBAYARAN.find((o) => o.value === w.payment)?.label ?? w.payment}
+                lihat={lihat}
+              >
+                <PilihanMedan labelAria={INWARD_MPNL.payment} value={w.payment} opsi={PILIHAN_PEMBAYARAN} onChange={medanInward('payment')} />
+              </Medan>
+              <Medan label={INWARD_MPNL.subjectTo} nilai={w.subjectTo} lihat={lihat}>
+                <textarea
+                  className="field__input mpnl-area"
+                  aria-label={INWARD_MPNL.subjectTo}
+                  rows={3}
+                  value={w.subjectTo}
+                  onChange={(e) => {
+                    ubahInward({ subjectTo: e.target.value })
+                  }}
+                />
+              </Medan>
+              <Medan label={INWARD_MPNL.annuityInterest} jenis="angka" required nilai={w.annuityInterest} lihat={lihat} onUbah={medanInward('annuityInterest')} />
+              <Medan
+                label={INWARD_MPNL.premiumRefundFactor}
+                jenis="angka"
+                required
+                nilai={w.premiumRefundFactor}
+                lihat={lihat}
+                onUbah={medanInward('premiumRefundFactor')}
+              />
+            </div>
+            <div className="mpnl-kolom">
+              {/* b27004 kolom kanan - `%` b27585 dan `X + n` b27773 ber-vis `OTHER 1=2` (mati, PARITAS §3.2). */}
+              <Medan label={INWARD_MPNL.maxDataReceive} jenis="angka" nilai={w.maxDataReceive} lihat={lihat} onUbah={medanInward('maxDataReceive')} />
+              <Medan label={INWARD_MPNL.mature} jenis="tanggal" nilai={w.mature} lihat={lihat} onUbah={medanInward('mature')} />
+              {/* `Birthday` b27960 - radio `associated` (pilihan tak ikut ekspor, OQ-MPNL-05): isian teks. */}
+              <Medan label={INWARD_MPNL.birthday} nilai={w.birthday} lihat={lihat} onUbah={medanInward('birthday')} />
+              <Medan label={INWARD_MPNL.currency} nilai={w.currency} lihat={lihat}>
+                <DropdownMaster
+                  labelAria={INWARD_MPNL.currency}
+                  jenis="mata-uang"
+                  nilai={w.currency}
+                  lihat={lihat}
+                  onPilih={(v) => {
+                    ubahInward({ currency: v.nama, currencyId: v.id })
+                  }}
+                />
+              </Medan>
+              <Medan label={INWARD_MPNL.extraMortality} jenis="angka" nilai={w.extraMortality} lihat={lihat} onUbah={medanInward('extraMortality')} />
+              <Medan label={INWARD_MPNL.maxContract} jenis="angka" nilai={w.maxContract} lihat={lihat} onUbah={medanInward('maxContract')} />
+              <Medan label={INWARD_MPNL.proportionalTable} jenis="angka" nilai={w.proportionalTable} lihat={lihat} onUbah={medanInward('proportionalTable')} />
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* ---- wadah b30995: PLAN LIST, FINANCIAL UNDERWRITING, UNDERWRITING LIMIT, On Retention - satu kartu ---- */}
+      <section className="mpnl-kartu mpnl-bagian">
+      <h4 className="mpnl-judul-grid">{PLAN_MPNL.judul}</h4>
+      {!lihat && (
+        <div className="aksi-baris">
           <button
             type="button"
             className="btn btn--ghost btn--sm"
             onClick={() => {
-              bukaPemilih(INWARD_MPNL.chooseCurrency, 'mata-uang', (v) => {
-              ubahInward({ currency: v.nama, currencyId: v.id })
-              })
+              setP((x) => ({ ...x, planList: [...x.planList, { plan: '', planId: '', name: '', benefit: '', riRate: '', riRateId: '' }] }))
             }}
           >
-            {INWARD_MPNL.chooseCurrency}
-          </button>,
-        )}
-        <Field label={INWARD_MPNL.extraMortality} value={w.extraMortality} readOnly={lihat} onChange={medanInward('extraMortality')} />
-        <Field label={INWARD_MPNL.maxContract} value={w.maxContract} readOnly={lihat} onChange={medanInward('maxContract')} />
-        <Field label={INWARD_MPNL.proportionalTable} value={w.proportionalTable} readOnly={lihat} onChange={medanInward('proportionalTable')} />
-      </div>
-
-      {/* ---- wadah b30995: PLAN LIST ---- */}
-      <h4 className="mpnl-judul-grid">{PLAN_MPNL.judul}</h4>
-      <div className="aksi-baris">
-        <button
-          type="button"
-          className="btn btn--ghost btn--sm"
-          onClick={() => {
-            setP((x) => ({ ...x, planList: [...x.planList, { plan: '', planId: '', name: '', benefit: '', riRate: '', riRateId: '' }] }))
-          }}
-        >
-          {PLAN_MPNL.add}
-        </button>
-      </div>
+            {PLAN_MPNL.add}
+          </button>
+        </div>
+      )}
       {p.planList.length === 0 ? (
         <Kosong pesan={LAIN_MPNL.kosong} />
       ) : (
@@ -436,18 +411,23 @@ export default function FormProduk({
             {p.planList.map((b, i) => (
               <tr key={i} className="inbox__baris">
                 <td>
-                  <Saran<JenisPlan>
+                  {/* `Plan Name` b33121 sebagai dropdown (keputusan work owner 03-10-2026 "tolong ubah jadi model dropdown";
+                      XML: pxAutoComplete berisian bebas b33137). Kolom = `pyAdditionalFields` ber-`pyShow` true. */}
+                  <DropdownCari<JenisPlan>
                     labelAria={PLAN_MPNL.planName}
                     nilai={b.plan}
-                    readOnly={lihat}
-                    onKetik={(v) => {
-                      setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { plan: v, planId: '' }) }))
-                    }}
+                    lihat={lihat}
+                    lebar
                     cari={cariJenisPlan}
-                    teks={(t) => t.coverName}
                     kunci={(t) => t.id}
+                    kolom={{
+                      judul: [SARAN_PLAN_MPNL.kolomId, SARAN_PLAN_MPNL.kolomCoverName, SARAN_PLAN_MPNL.kolomBusiness, SARAN_PLAN_MPNL.kolomBenefit],
+                      isi: (t) => [t.id, t.coverName, t.business, t.benefit],
+                      lebar: '6.5rem minmax(9rem, 2fr) minmax(9rem, 2fr) minmax(5rem, 1fr)',
+                    }}
+                    terpilih={(t) => t.id === b.planId}
                     onPilih={(t) => {
-                      // Autocomplete b33198: `.CoverName` → `.Plan`, `.ID` → `.PlanID`, `.Business` → `.Name`, `.Benefit` → `.Benefit`.
+                      // b33198: `.CoverName` → `.Plan`, `.ID` → `.PlanID`, `.Business` → `.Name`, `.Benefit` → `.Benefit`.
                       setP((x) => ({
                         ...x,
                         planList: ganti<BarisPlan>(x.planList, i, { plan: t.coverName, planId: t.id, name: t.business, benefit: t.benefit }),
@@ -455,10 +435,22 @@ export default function FormProduk({
                     }}
                   />
                 </td>
-                {/* `Bussines` (`.Name` b33504) dan `Benefit` b33658 SELALU baca-saja: diisi autocomplete `Plan Name`. */}
+                {/* `Bussines` (`.Name` b33504) dan `Benefit` b33658 SELALU baca-saja: diisi pilihan `Plan Name`. */}
                 <td>{b.name}</td>
                 <td>{b.benefit}</td>
-                <td>{b.riRate}</td>
+                <td>
+                  {/* `Choose R/I Rate` → `SetRIRate` 1 b249: `.RIRATEID ← id`, `.RIRATE ← usedby`. */}
+                  <DropdownMaster
+                    labelAria={PLAN_MPNL.riRate}
+                    jenis="ri-rate"
+                    kolomNama={PEMILIH_MPNL.kolomRiRateName}
+                    nilai={b.riRate}
+                    lihat={lihat}
+                    onPilih={(v) => {
+                      setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { riRate: v.nama, riRateId: v.id }) }))
+                    }}
+                  />
+                </td>
                 <td className="table__actions">
                   {tampilViewRate(b.riRate) && (
                     <button
@@ -475,30 +467,13 @@ export default function FormProduk({
                     <button
                       type="button"
                       className="btn btn--ghost btn--sm"
-                      onClick={() =>
-                        bukaPemilih(
-                          PLAN_MPNL.chooseRiRate,
-                          'ri-rate',
-                          (v) => {
-                            // `SetRIRate` 1 b249: `.RIRATEID ← id`, `.RIRATE ← usedby`.
-                            setP((x) => ({ ...x, planList: ganti<BarisPlan>(x.planList, i, { riRate: v.nama, riRateId: v.id }) }))
-                          },
-                          PEMILIH_MPNL.kolomRiRateName,
-                        )
-                      }
+                      onClick={() => {
+                        setP((x) => ({ ...x, planList: buang(x.planList, i) }))
+                      }}
                     >
-                      {PLAN_MPNL.chooseRiRate}
+                      {PLAN_MPNL.delete}
                     </button>
-                  )}{' '}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setP((x) => ({ ...x, planList: buang(x.planList, i) }))
-                    }}
-                  >
-                    {PLAN_MPNL.delete}
-                  </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -592,6 +567,7 @@ export default function FormProduk({
         <input
           type="checkbox"
           checked={u.isOrs}
+          disabled={lihat}
           onChange={(e) => {
             const v = e.target.checked
             setP((x) => ({ ...x, umum: { ...x.umum, isOrs: v }, hitungOutward: true }))
@@ -599,6 +575,7 @@ export default function FormProduk({
         />
         {UMUM_MPNL.onRetention}
       </label>
+      </section>
 
       {/* ---- wadah b57867: tombol bawah ---- */}
       <div className="aksi-baris mpnl-bagian">
@@ -627,18 +604,20 @@ export default function FormProduk({
             {TOMBOL_MPNL.edit}
           </button>
         )}{' '}
-        <button
-          type="button"
-          className="btn btn--ghost"
-          onClick={() => {
-            // DataTransform `CopyProduct` b59965; pesan 4 b236 di wadah b1269 (`STSSAVE==99`).
-            setP((x) => salinProduk(x))
-            setPesan(PESAN_MPNL.copy)
-            setGalat(null)
-          }}
-        >
-          {TOMBOL_MPNL.copy}
-        </button>{' '}
+        {!lihat && (
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => {
+              // DataTransform `CopyProduct` b59965; pesan 4 b236 di wadah b1269 (`STSSAVE==99`).
+              setP((x) => salinProduk(x))
+              setPesan(PESAN_MPNL.copy)
+              setGalat(null)
+            }}
+          >
+            {TOMBOL_MPNL.copy}
+          </button>
+        )}{' '}
         <button type="button" className="btn btn--ghost" onClick={() => void generate()}>
           {TOMBOL_MPNL.generate}
         </button>
@@ -667,7 +646,7 @@ export default function FormProduk({
       )}
 
       {/* ---- wadah b64133: lampiran (produk tersimpan) ---- */}
-      {p.id !== '' && <PanelLampiran produkId={p.id} />}
+      {p.id !== '' && <PanelLampiran produkId={p.id} lihat={lihat} />}
 
       {dialog === 'simpan' && (
         <DialogSimpan
@@ -689,17 +668,6 @@ export default function FormProduk({
           }}
           onTutup={() => {
             setDialog(null)
-          }}
-        />
-      )}
-      {pemilih !== null && (
-        <PemilihMaster
-          judul={pemilih.judul}
-          jenis={pemilih.jenis}
-          kolomNama={pemilih.kolomNama}
-          onPilih={pemilih.pilih}
-          onTutup={() => {
-            setPemilih(null)
           }}
         />
       )}
@@ -725,7 +693,8 @@ function GridSederhana<T extends { asli?: string }>({
 }: {
   baris: readonly T[]
   lihat: boolean
-  kolom: ReadonlyArray<readonly [label: string, medan: keyof T & string]>
+  /** Kolom: label, medan, dan (opsional) daftar pilihan - sel berpilihan menjadi pilihan di mode sunting. */
+  kolom: ReadonlyArray<readonly [label: string, medan: keyof T & string, opsi?: readonly string[]]>
   kosong: T
   onUbah: (d: T[]) => void
 }) {
@@ -754,14 +723,28 @@ function GridSederhana<T extends { asli?: string }>({
             <tbody>
               {baris.map((b, i) => (
                 <tr key={i} className="inbox__baris">
-                  {kolom.map(([l, m]) => (
+                  {kolom.map(([l, m, opsi]) => (
                     <td key={m}>
-                      <SelIsi
-                        label={l}
-                        nilai={String(b[m] ?? '')}
-                        readOnly={lihat}
-                        onUbah={(v) => onUbah(ganti<T>(baris, i, { [m]: v } as Partial<T>))}
-                      />
+                      {opsi !== undefined && !lihat ? (
+                        <>
+                          <PilihanMedan
+                            labelAria={l}
+                            value={String(b[m] ?? '')}
+                            opsi={opsi.map((v) => ({ value: v, label: v }))}
+                            kelas="field__input mpnl-sel-isi"
+                            onChange={(v) => onUbah(ganti<T>(baris, i, { [m]: v } as Partial<T>))}
+                          />
+                          {/* Kotak pilihan bawaan tidak membungkus teks: nama utuh nilai terpilih di bawahnya. */}
+                          {String(b[m] ?? '') !== '' && <div className="mpnl-sel-teks">{String(b[m] ?? '')}</div>}
+                        </>
+                      ) : (
+                        <SelIsi
+                          label={l}
+                          nilai={String(b[m] ?? '')}
+                          readOnly={lihat}
+                          onUbah={(v) => onUbah(ganti<T>(baris, i, { [m]: v } as Partial<T>))}
+                        />
+                      )}
                     </td>
                   ))}
                   <td className="table__actions">
@@ -799,7 +782,7 @@ function GridBerangka<T extends { asli?: string }>({
 }) {
   return (
     <>
-      <div className="aksi-baris">{tambah}</div>
+      {!lihat && <div className="aksi-baris">{tambah}</div>}
       {baris.length === 0 ? (
         <Kosong pesan={LAIN_MPNL.kosong} />
       ) : (
@@ -810,7 +793,7 @@ function GridBerangka<T extends { asli?: string }>({
                 {kolom.map(([l]) => (
                   <th key={l}>{l}</th>
                 ))}
-                <th className="table__actions" />
+                {!lihat && <th className="table__actions" />}
               </tr>
             </thead>
             <tbody>
@@ -826,12 +809,14 @@ function GridBerangka<T extends { asli?: string }>({
                       />
                     </td>
                   ))}
-                  <td className="table__actions">
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => onUbah(salinBaris(baris, i))}>
-                      {LAIN_MPNL.salinBaris}
-                    </button>{' '}
-                    {hapus(i)}
-                  </td>
+                  {!lihat && (
+                    <td className="table__actions">
+                      <button type="button" className="btn btn--ghost btn--sm" onClick={() => onUbah(salinBaris(baris, i))}>
+                        {LAIN_MPNL.salinBaris}
+                      </button>{' '}
+                      {hapus(i)}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

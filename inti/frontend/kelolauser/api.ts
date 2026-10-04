@@ -10,6 +10,8 @@ import { minta } from '../klien'
 /** Satu baris daftar — `login.RingkasAkun`. */
 export interface RingkasAkun {
   akunId: string
+  /** `CONTACT_ID` `CON-n` (migrasi 905) — diberi saat user dibuat, tidak pernah berubah. */
+  contactId: string
   nama: string
   organisasi: string
   divisi: string
@@ -19,6 +21,12 @@ export interface RingkasAkun {
   wajibGantiSandi: boolean
   /** `YYYY-MM-DD HH:MI` jam server; kosong = belum pernah login. */
   loginTerakhir: string
+  /** Kontak akun (migrasi 904, Kelola User 03-10-2026) — semuanya opsional; kosong = tidak diisi. */
+  email: string
+  telepon: string
+  /** NIK = Nomor Induk Karyawan (Employee ID). */
+  nik: string
+  jabatan: string
 }
 
 /** Satu akun beserta workbasket dan menunya — `login.RinciAkun`. */
@@ -60,6 +68,10 @@ export interface BadanUbah {
   unit: string
   workbasket: string[]
   menu: string[]
+  email: string
+  telepon: string
+  nik: string
+  jabatan: string
 }
 
 /** Badan buat: ubah + username + sandi awal yang diketik admin. */

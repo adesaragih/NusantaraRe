@@ -54,7 +54,37 @@ Sistem baru membaca `M_PRODUCT_LIFE.ID` + `JSONDATA` sendiri (P2) — kunci kolo
 ## 3. Form produk — `InboxProductName` mode form (wadah b2573, `DATASHOW = 1`)
 
 Pesan: wadah b616 `STSSAVE==100` → `OutputParam.ERRMSG` b878; wadah b1269 `STSSAVE==99` → `ERRMSG` b1531 (dipakai `CopyProduct`); wadah b1921 `ProductName.ERRMSG!=''` → b2183.
-Baca-saja: medan ber-`ro = ProductName.IsView=='true'` (mode lihat sesudah `View`; `Edit` membukanya). *(Ralat audit 02-10-2026: tidak SETIAP medan - enam medan pemilih master SELALU baca-saja, `pyReadOnly` true + `pyEditOptions` Read-only + `pyReadOnlyCondition` kosong: Ceding b4040, SOB b4428, R/I Risk Name b7362, Cause Of Loss b10626, Policy Holder b17062, Currency b28105; nilainya hanya dari tombol `Choose*`. Sel `PLAN LIST` `Bussines` `.Name` b33504 dan `Benefit` b33658 juga selalu baca-saja. Lihat RALAT 02-10-2026.)*
+Baca-saja: medan ber-`ro = ProductName.IsView=='true'` (mode lihat sesudah `View`; `Edit` membukanya). *(Ralat audit 02-10-2026: tidak SETIAP medan - enam medan pemilih master SELALU baca-saja, `pyReadOnly` true + `pyEditOptions` Read-only + `pyReadOnlyCondition` kosong: Ceding b4040, SOB b4428, R/I Risk Name b7362, Cause Of Loss b10626, Policy Holder b17062, Currency b28105; nilainya hanya dari tombol `Choose*` *(sejak keputusan work owner 02-10-2026: dari dropdown master, §4)*. Sel `PLAN LIST` `Bussines` `.Name` b33504 dan `Benefit` b33658 juga selalu baca-saja. Lihat RALAT 02-10-2026.)*
+
+> ⭐ **`Plan Name` 03-10-2026 (*"coba cek plan name, samain dengan xml nya"*):** sel b33121 `pxAutoComplete` - baca-saja
+> hanya bila `ProductName.IsView=='true'` (b33492; `pyEditOptions` Read-only + kondisi), isian bebas boleh (b33137). Saran
+> kini berkolom seperti `pyAdditionalFields` ber-`pyShow` true: **ID** (b33213 → `.PlanID`), **CoverName** (b33247 →
+> `.Plan`), **Business** (b33280 → `.Name`), **Benefit** (b33313 → `.Benefit`), kepala = `pyFieldLabel` RD
+> `BrowseProductTypeLife_RD` (b568, b642, b583, b613); dicari pada CoverName dan Business (`pyUseForSearch` true).
+> ⛔ *Lanjutan 03-10-2026 - keputusan work owner "tolong ubah jadi model dropdown":* Plan Name kini **dropdown**
+> (`components/DropdownCari.tsx`, mesin yang sama dengan pemilih master) - menyimpang dari isian bebas b33137: nilai hanya
+> dari daftar RD. Kolom, pencarian, dan penerima `set` tetap seperti di atas; `Saran.tsx` (autocomplete) dihapus.
+
+> ⭐ **`Document List` 03-10-2026:** dropdown dari 16 nilai PromptList properti `.Document` (XML dikirim work owner,
+> OQ-MPNL-05 sebagian terjawab); nilai lama di luar daftar tetap tampil bertanda, tidak dibuang; mode lihat teks.
+
+> ⛔ **Mode lihat 03-10-2026 - keputusan work owner:** *"TOLONG PERBAIKI, JIKA VIEW TIDAK TAMBAH/EDIT/DELETE SAAT KLIK EDIT
+> BARU BISA"*. Menyimpang dari XML (tombol `Add`/`Delete` grid dan checkbox `On Retention` tidak ber-`ro`): di mode lihat
+> SEMUA aksi ubah tersembunyi - `Add`/`Delete` PLAN LIST, `Add`/`Copy row`/`Delete` FINANCIAL UNDERWRITING dan UNDERWRITING
+> LIMIT, `Copy`, `Add attachment`/kirim ulang/`Delete` lampiran - dan `On Retention` mati; sel grid (termasuk `Plan Name`)
+> tampil teks. Tetap: `Close`, `Edit`, `Generate`, `View Rate`, `Refresh`, `Download All`, unduh berkas, `View Office
+> Online`. Sesudah `Edit` semuanya kembali. Penjaga `components/FormProduk.test.ts` (*mode lihat: nol tambah/edit/delete*).
+
+> ⭐ **Tata letak 02-10-2026 (foto layar Pega dari work owner):** *"sekarang isinya perbaiki mengikuti tata letak begini, kamu
+> tetep boleh berkreasi asal membuat jauh lebih baik"*. Wadah b2573 dirender sebagai dua kartu berdampingan, mengikuti
+> XML: **`TREATY NAME`** (`<pyTitle>` b2934): medan sisi umum, lalu `LIEN CLAUSE` dan `DOCUMENT CLAIM`; **`INWARD`**
+> (`<pyTitle>` b16621): `Policy Holder`, `Insured`, pasangan `Addendum No.`/`Addendum` dan `Amandement No.`/`Amandement`,
+> lalu **kolom kiri b21723** (`Max Notification Claim Expired` … `Premium Refund Factor (%)`) dan **kolom kanan b27004**
+> (`Max Production Data Receive` … `Proportional Table`; `%` b27585 dan `X + n` b27773 mati). Label di kiri, nilai di
+> kanan (`components/Medan.tsx`). Kreasi tambahan: mode lihat menampilkan TEKS (bukan isian baca-saja) - angka berpemisah
+> ribuan rata kanan, tanggal `DD/MM/YYYY`, kosong `—`; jenis tampilan = tipe kolom flat `mpnl_flat.go`; sel grid mode lihat
+> juga teks; kotak form sempit menumpuk kartu (container query). Penjaga: `components/FormProduk.test.ts` (urutan medan
+> = urutan baris XML per wadah, jenis tampilan = tipe kolom), `bentuk.test.ts` (`tampilAngka`, `tampilTanggal`).
 
 ### 3.1 Sisi umum — halaman `ProductName` → `M_PRODUCT_LIFE.JSONDATA`
 
@@ -102,6 +132,18 @@ Diisi di form yang **sama** (bukan harness `InwardProductName`). Disimpan `SaveP
 
 Setiap section pemilih: medan **`Search`** (`SearchPolicyHolder.CARI1`), Enter → `SearchPolicyHolder_act` 1 b236 `·` `CARI1 = @toUpperCase(CARI1)`; grid RD berparam `CARI1`; tombol baris **`Choose`** → DT/activity + `closeContainer`. FlowAction submit **`Submit`** / **`Cancel`** (bawaan, `pyCustomizeFALabels=false`).
 
+> ⚠️ **Keputusan work owner 02-10-2026 — tampilan pemilih diganti dropdown.** Kalimat work owner dikutip:
+> *"IKUTI REKOMENDASI! PERUBAHAN PADA TAMPILAN UNUK SEMUA CHOOSE UBAH JADI DROPDOWN SAJA"*. Ketujuh tombol `Choose*` (Ceding, SOB, R/I Risk, Cause of Loss, Policy Holder,
+> Currency, dan `Choose R/I Rate` baris `PLAN LIST`) beserta popup FlowAction-nya (`Search`, grid, `Choose` baris,
+> `Submit` / `Cancel`) **tidak dirender lagi**; gantinya `components/DropdownMaster.tsx` — medan itu sendiri membuka daftar.
+> **Tetap seperti tabel di bawah:** RD, saringan, urut, kolom `ID` / `Name` (`RIRate Name`), `Search` dihurufbesarkan
+> server (`Contains`), penerima `set*_DT` (ID + nama), nilai HANYA dari daftar master (medan tidak dapat diketik), dan mode
+> lihat (`IsView`) baca-saja. **Berubah:** daftar memuat paling banyak 200 baris (`BATAS_DROPDOWN`, server diminta 201);
+> bila terpotong, kalimat `Only the first 200 rows are shown. Type in Search to narrow the list.` tampil dan sisanya dicapai
+> lewat `Search` (master `CLIENT` ratusan ribu baris). Keyboard: Enter/Spasi/panah bawah membuka, panah/PageUp/PageDown
+> menggeser, Enter memilih, Escape/klik di luar menutup tanpa memilih. Penjaga: `components/FormProduk.test.ts`,
+> `labels.test.ts` (`digantiDropdown`), `bentuk.test.ts`.
+
 | Pemilih | FlowAction → Section | RD (bNNN) · saringan · urut | Kolom grid (VERBATIM) | `Choose` → set | Rute API | Keadaan |
 | --- | --- | --- | --- | --- | --- | --- |
 | Ceding | `ChooseCeding` b166 → `Ceding_Section` | `BrowseCedingCoLife_RD` b2533 (kelas `AGENT`): `B AND A AND C` — `.ID Contains "L0"` b570, `.ClientName Contains Param.CedingCoLeader` b587 (= `CARI1` b1372), `.StatusActive = 1` b607; urut `.ClientName ASC` b747 | `ID` b1502 · `Name` b1643 → `.ID`, `.ClientName` | `Choose` b2265 → `setCeding_DT` b2388: `CEDING ← clientname`, `CEDINGID ← clientid` | `GET …/master/ceding?cari=` | ✅ paket 2 |
@@ -143,6 +185,16 @@ Pesan statik VERBATIM: b66071 `Make sure the file name doesn't contain forbidden
 | **`Delete`** b69714 (vis `ALWAYS TreatyIn.ViewState !='1'`) | `DeleteAttacProdName_act` b69850 (`ID ← .ID`, `ImageID ← .type`): 1 b281 `·`; 2 b411 `·` `DeleteGoogleStorage_Act` (gagal → keluar b444); 3 b528 `·` RDB `DeleteAttachProdName_Sql`; 4 b700 `·` `LoadAttachmentProdName`; 5–7 **`//`** | `DeleteAttachProdName_Sql` b85 `delete M_ATTACHMENTPRODUCTNAME where treatyid = … and id = …`; `DeleteStorage_SQL` b85 `delete T_STORAGE_IMAGE where imageid = …` | `DELETE …/lampiran/{id}` | ✅ paket 8 |
 | `GetMimeType` (DecisionTable, dipanggil `InsertGoogleStorage_Act` b761) | 48 baris + `otherwise` | `inti/backend/unggah.MimeDariNamaFile` (salinan tabel yang sama) | — | ✅ paket 8 |
 | `ServiceGoogle` (ConnectREST, `pyBaseURLSetting = LinkService!LinkService` b161) · `LinkService` (SystemSettings) · `GetLinkService` · `GetTokenStorage_SQL` (`GET_TOKEN_STORAGE`) | — | — | — | ⏸️ paket 8 — **stub outbox**; nol alamat di berkas (ADR-0013) |
+
+> **Ralat 03-10-2026 (keputusan work owner *"untuk document masih belum berfungsi, ikuti dari XML nya aja"*, OQ-MPNL-10
+> dibalik):** baris `ServiceGoogle`/`LinkService`/`GetTokenStorage_SQL`, tautan nama berkas, `Download All`, dan `Delete` di
+> atas kini mengikuti XML bila `PELAKSANA_STORAGE=nyata` — `backend/services/mpnl_storage.go`: unggah
+> `InsertGoogleStorage_Act` (POST JSON ke alamat `M_LINK_SERVICE` "Google"/"upload", `T_STORAGE_IMAGE` dari jawaban), unduh
+> `GetUrlGoogleStorage_Act` (URL tersimpan selama `EXPDATE` belum lewat; selain itu "geturl" + `Update_T_Storage_SQL`), hapus
+> `DeleteGoogleStorage_Act` ("delete", gagal = rekam tetap). Bawaannya tetap stub. Lampiran Pega lama (berkas di penyimpanan
+> asal) terunduh hanya di mode nyata. `View Office Online` tetap stub (OQ-MPNL-11). Rincian: register OQ, bab 03-10-2026.
+> **Ralat 03-10-2026 sore:** penyimpanan nyata SELALU dipakai ("selalu nyata, ikut XML" — tanpa saklar); `View Office
+> Online` membuka penampil b1103 di tab baru lewat form GET (`penampilOffice.ts`, OQ-MPNL-11 dibalik).
 
 ## 7. Simpan — `SaveProductName_Act` (FlowAction `SaveProductName_Confirm` b101)
 
@@ -220,7 +272,10 @@ menjawab 503 bila Oracle tidak dikonfigurasi, galat berbadan `{"galat": "..."}`.
 | `pages/MasterProductNameLife.tsx` | mode daftar: `End Period` / `Add` / `Add New Data` b71865, grid `BrowseProduct_Life` 10 baris/halaman, `View` b74798 (§2) |
 | `components/FormProduk.tsx` | mode form: §3.1, §3.2, §5, tombol bawah §3.3; `SetTreatyName_Act`, `CountMaxSumReasured_Act`, `CopyProduct`, `CopyFinancialWriting`, `CopyUnderWritingLimit` di klien (`bentuk.ts`) |
 | `components/Saran.tsx` | `pxAutoComplete` `Ceding`, `SOB`, `R/I Risk Name`, `Policy Holder`, `Currency`, `Plan Name` |
-| `components/PemilihMaster.tsx` | ketujuh `Choose*` → `Search` / grid `ID` · `Name` (`RIRate Name`) / `Choose` / `Submit` · `Cancel` (§4) |
+| ~~`components/PemilihMaster.tsx`~~ | ketujuh `Choose*` → `Search` / grid `ID` · `Name` (`RIRate Name`) / `Choose` / `Submit` · `Cancel` (§4) — *dipensiunkan 02-10-2026 (keputusan work owner, §4)* |
+| `components/DialogCopyOld.tsx` | popup **Copy Old** (permintaan work owner 03-10-2026, bukan layar Pega): produk tabel JSON lama yang belum ada di tabel flat, centang, `Process Copy` |
+| `components/Medan.tsx` | baris label-kiri / nilai-kanan form (tata letak 02-10-2026, §3): mode lihat teks berformat, mode sunting isian; `PilihanMedan` untuk `Premium Payment Method` |
+| `components/DropdownMaster.tsx` | ketujuh pemilih master sebagai dropdown (keputusan work owner 02-10-2026, §4): `Search`, kepala `ID` · `Name` (`RIRate Name`), `set*_DT` |
 | `components/Dialog.tsx` | `SaveProductName_Confirm` (`Do you want to save the data?`, `Comment`, `Save` · `Cancel`), `EditProductName_Confirm` (`Do you want to Edit the data?`, `Edit` · `Cancel`) |
 | `components/ModalRate.tsx` | `View Rate` → `ViewRate` (`Outward List`, `ID` · `USEDBY` · `GENDER` · `CONTRACT` · `AGE` · `RATE`, `Submit` · `Cancel`) — data ⏸️ OQ-MPNL-03 *(ralat 01-10-2026, K1 keputusan work owner 01-10-2026: data view `RATE_LIFE` ✅)* |
 | `components/PanelLampiran.tsx` | §6 — hanya untuk produk ber-ID (tiket 08: produk dulu, lampiran menyusul) |
@@ -229,6 +284,8 @@ menjawab 503 bila Oracle tidak dikonfigurasi, galat berbadan `{"galat": "..."}`.
 tombol/tautan yang dirender bertekskan label berbukti dan ke-37 tombol korpus hidup (25 `pxButton` `InboxProductName`, tautan
 `View Office Online`, `Choose` pemilih, 10 tombol FlowAction) seluruhnya dirender. Delapan `pxButton` mati tidak dirender *(ralat audit 02-10-2026: dulu tertulis "Tujuh"; 33 − 25 = 8)*:
 `Inward` b75368 (`1=2`), `Add`/`View Reinstype`/`Delete` grid `OUTWARD` ×2 (wadah `1==2`), `Download` b67376 (`OTHER FALSE`).
+*(02-10-2026, keputusan work owner §4: tujuh `Choose*` + `Choose` / `Submit` / `Cancel` pemilih — 10 dari ke-37 — sengaja tidak
+dirender; `labels.test.ts` `digantiDropdown` memastikan kesepuluhnya tetap berbukti korpus dan TIDAK dirender.)*
 
 **Cek peramban 01-10-2026** (Chrome tanpa kepala lewat CDP, backend lokal TANPA `ORACLE_DSN` di port sendiri, Vite
 `--port 5199`): sidebar memuat tombol `Master Product Name Life`; grid menampilkan `End Period` + `Add` dan galat
@@ -239,6 +296,15 @@ false); `Save` membuka dialog berpertanyaan + `Comment` (`Cancel`/`Save`); `Choo
 `Cancel`/`Submit`, galat basis data dinyatakan); `Copy` menampilkan `Data sudah dicopy, silakan melakukan perubahan dan
 tekan SAVE untuk menyimpan`. Tanpa basis data tidak teramati: `View` baris grid, `Edit` (mode lihat), `View Rate`
 (butuh `RIRATE`), panel lampiran (butuh produk tersimpan) — keempatnya dijaga `labels.test.ts`.
+
+**Cek peramban 02-10-2026 — dropdown master** (Chrome tanpa kepala lewat CDP; backend `cmd/api` sendiri TANPA `ORACLE_DSN`
+untuk kerangka; rute modul dari server uji sementara di atas gudang tiruan berfixture `UJI-` — nol sentuhan DEV; berkas
+server uji dihapus sesudahnya): 15 / 15 lolos — form baru menampilkan enam dropdown berlabel verbatim dan nol tombol
+`Choose*`; klik membuka daftar dengan fokus di `Search`; `Search` menyaring lewat server; Enter, panah, dan klik mouse
+memilih (ID + nama), fokus kembali ke medan; Policy Holder 250 baris → 200 dirender + kalimat potongan; memilih Policy
+Holder tidak mengisi ulang `Treaty Name`; Escape / klik di luar menutup tanpa memilih; baris `PLAN LIST` baru membawa
+dropdown R/I Rate (`RIRate Name`), panel tetap di dalam kotak akar (rata kanan), `View Rate` tampil sesudah memilih; mode
+lihat (`View`) nol dropdown, medan baca-saja; tema gelap dan terang.
 
 ## 11. Commit per paket (cabang `dev`)
 

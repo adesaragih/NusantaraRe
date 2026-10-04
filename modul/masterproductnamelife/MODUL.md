@@ -11,6 +11,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | --- | --- |
 | Nama modul | `masterproductnamelife` |
 | Folder korpus | `Master Product Name Life` |
+| Nama tampilan | `Product Name Life` — keputusan work owner 03-10-2026 (kata "Master" dihapus, nama tampilan saja): label menu `M_NAV_MENU.LABEL` (slot menu 961), judul halaman, kartu Beranda. Kode modul, folder, rute API, dan `MODUL_AKTIF` tetap. |
 | GROUPMENU | `MASTER` |
 | Pemilik | `@PEMILIK-MASTERPRODUCTNAMELIFE` |
 | Status | dimigrasi |
@@ -86,11 +87,12 @@ Nilainya DIBACA dari sumber konstantanya, tidak diketik ulang.
 
 | Hal | Isi |
 | --- | --- |
-| Rute | `GET /produk`, `GET /produk/{id}`, `POST /produk`, `PUT /produk/{id}`, `POST /produk/generate`, `GET /master/{jenis}`, `GET /master-plan`, `GET /rate` (503, OQ-MPNL-03), `GET`/`POST /produk/{id}/lampiran`, `POST …/{lid}/ulangi`, `GET …/{lid}/unduh`, `GET …/unduh-semua`, `GET …/{lid}/office` (503, OQ-MPNL-11), `DELETE …/{lid}` — rincian `docs/PARITAS-LAYAR-DAN-AKSI.md` §9 *(ralat 01-10-2026, K1 keputusan work owner 01-10-2026: `GET /rate` dan `GET /master/ri-rate` = 200, view rate baca saja)* |
-| Tabel ditulis | `M_PRODUCT_LIFE` (`JSONDATA` + kolom datar `RIRISKID`, `RIRISK` — katalog DEV), `M_PRODUCTINWARD_LIFE` (`JSONDATA`), `M_ATTACHMENTPRODUCTNAME`, `T_STORAGE_IMAGE` (pelaksana stub), outbox bersama `T_LOG_SERVICE_RNM` (`MODUL = 'MASTERPRODUCTNAMELIFE'`) |
+| Rute | `GET /produk`, `GET /produk/{id}`, `POST /produk`, `PUT /produk/{id}`, `POST /produk/generate`, `GET /master/{jenis}`, `GET /master-plan`, `GET /rate` (503, OQ-MPNL-03), `GET`/`POST /produk/{id}/lampiran`, `POST …/{lid}/ulangi`, `GET …/{lid}/unduh`, `GET …/unduh-semua`, `GET …/{lid}/office` (503, OQ-MPNL-11), `DELETE …/{lid}`, `GET /produk-lama` + `POST /produk-lama/salin` (Copy Old, 03-10-2026) — rincian `docs/PARITAS-LAYAR-DAN-AKSI.md` §9 *(ralat 01-10-2026, K1 keputusan work owner 01-10-2026: `GET /rate` dan `GET /master/ri-rate` = 200, view rate baca saja)* |
+| Tabel ditulis | ⭐ sejak 02-10-2026 (K5, tiket 01): tabel flat `M_PRODUCTNAME_LIFE` + `M_PRODUCTNAME_LIFE_{LIEN,DOCCLAIM,PLAN,FINUW,UWLIMIT,OUTWARD,COMMENT}` (migrasi 140–147; 148 menambah empat kolom outward), `M_ATTACHMENTPRODUCTNAME`, `T_STORAGE_IMAGE` (pelaksana stub), outbox bersama `T_LOG_SERVICE_RNM` (`MODUL = 'MASTERPRODUCTNAMELIFE'`). *(Dulu: `M_PRODUCT_LIFE` `JSONDATA` + `RIRISKID`/`RIRISK`, `M_PRODUCTINWARD_LIFE` `JSONDATA` — kini hanya DIBACA jalur pindah `repository/mpnl_pindah.go`: alat pindah `backend/alat/pindahflat`, popup Copy Old (03-10-2026), dan penerbitan ID yang melewati ID produk lama; tidak pernah ditulis, ketiga view produk tidak dipakai - dijaga `TestMPNLAplikasiHanyaTabelFlat`.)* |
 | Tabel dibaca saja | `AGENT`, `CLIENT`, `CURRENCY`, `RIRISK_LIFE_SUMMARY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE`, `T_FOLDER_IMAGE`, `TREATYCONTRACT_LIFE`, `TREATYYEAR_LIFE` |
-| Pembaca hilir | view `PRODUCT_LIFE`, `PRODUCTINWARD_LIFE`, `DOCUMENTCLAIM_LIFE` (Claim Life) — setiap kunci yang dibacanya dijamin ada di `JSONDATA` (`docs/dba-view-produk-life.md`) |
-| Prosedur | `PEGA_M_PRODUCT_LIFE`, `PEGA_M_PRODUCT_INWARD_LIFE` **tidak** dipanggil (isinya ditiru di Go, satu transaksi, nol `COMMIT` di teks SQL) |
+| Pembaca hilir | ⚠️ ketiga view `PRODUCT_LIFE`, `PRODUCTINWARD_LIFE`, `DOCUMENTCLAIM_LIFE` **tidak** dibangun ulang (K7, keputusan work owner 02-10-2026) — tetap membaca `JSONDATA` tabel warisan yang berhenti diperbarui sesudah peralihan. Claim Life `ambangproduk.go` membaca `PRODUCTINWARD_LIFE`: **OQ-FLAT-04** |
+| Layanan luar | penyimpanan berkas lampiran `ServiceGoogle` (`upload`, `geturl`, `delete`) — SELALU, seperti XML (keputusan work owner 03-10-2026); alamat dari `M_LINK_SERVICE` saat jalan, token berlaku `GCP_IMAGE` dipakai ulang (`STORAGE_TOKEN_SALT` hanya untuk token baru), antrean `UNGGAHAN_DIR`. Penampil `View Office Online` (`penampilOffice.ts`, alamat literal b1103 — keputusan work owner 03-10-2026) |
+| Prosedur | `PEGA_M_PRODUCT_LIFE`, `PEGA_M_PRODUCT_INWARD_LIFE` **tidak** dipanggil (isinya ditiru di Go: satu baris induk + tujuh anak, satu transaksi, nol `COMMIT` di teks SQL) |
 
 ## Menjalankan uji modul ini saja
 

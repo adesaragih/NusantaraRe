@@ -21,7 +21,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { DESIMAL_TAK_DIBATASI, formatNumber } from '../../../../inti/frontend/lib/format'
-import { KLAUSUL_TCO, KURS_TCO, LABEL_MEDAN_KHUSUS, LABEL_MEDAN_KLAUSUL } from '../labels'
+import { JUDUL_GRID_KLAUSUL, KLAUSUL_TCO, KOLOM_GRID_KLAUSUL, KURS_TCO, LABEL_MEDAN_KHUSUS, LABEL_MEDAN_KLAUSUL } from '../labels'
 import {
   ambilKlausul,
   ambilKursTahun,
@@ -38,6 +38,7 @@ import {
 import { Field, Gagal, Kosong, Memuat, StripTab } from '../../../../inti/frontend/components/ui/dasar'
 import PilihJenisReasuransi from './PilihJenisReasuransi'
 import PilihJenisReasuransiSaring from './PilihJenisReasuransiSaring'
+import { PilihGrupTreatyNama, PilihOccupationMB } from './PilihMBCapacity'
 import PilihMasterKlausul from './PilihMasterKlausul'
 
 /** Label medan: penimpaan per jenis/subjenis, lalu bawaan, lalu nama medan. */
@@ -76,7 +77,7 @@ export function keMasukKlausul(a: AturanKlausul, descId: string, f: FormKlausul,
  * ini yang diberi pemisah ribuan; `Line`, `Layer`, kode, dan teks apa adanya.
  */
 export const MEDAN_DESIMAL_KLAUSUL: ReadonlySet<string> = new Set([
-  'Rp', 'Usd', 'Pct', 'PctMe', 'CoIns_Min', 'CoIns_Max', 'TreatyLimit',
+  'Rp', 'Usd', 'Pct', 'PctMe', 'CoIns_Min', 'CoIns_Max', 'TreatyLimit', 'MoreRp', 'MoreUsd',
 ])
 
 /** Isi sel grid satu medan: desimal berpemisah ribuan, sisanya apa adanya. */
@@ -97,11 +98,74 @@ export function aturanInduk(j: JenisKlausul): AturanKlausul[] {
 /**
  * Tab subjenis: jenis berinduk lebih dari satu (10013 Exclusion Treaty — Occupation, Clause, Object,
  * Periode) tampil sebagai tab, bukan bertumpuk ke bawah [keputusan work owner 02-10-2026]. Kosong =
- * tanpa tab.
+ * tanpa tab. ⚠️ Kecuali 10014 Co-Ins Scale: kedua gridnya BERTUMPUK, seperti Pega (`gridCoInsScale`).
  */
 export function tabSubjenis(j: JenisKlausul): string[] {
-  const induk = aturanInduk(j)
+  const induk = aturanInduk(j).filter((a) => !gridCoInsScale(a))
   return induk.length > 1 ? induk.map((a) => a.subjenis) : []
+}
+
+/**
+ * Grid Co-Ins Scale (10014, `Section/GridTreatyArrangementCoins.xml`) [keputusan work owner 02-10-2026:
+ * "harusnya seperti pada gambar ini"]: dua grid bertumpuk yang dapat dilipat (`pyExpanded` true),
+ * `Add` di kepala kolom aksi (b10554 / b14815 → `NewTreatyArrCoins` + `Type`), `No items` di dalam
+ * tabel, tanpa kolom Modified Date.
+ */
+export function gridCoInsScale(a: Pick<AturanKlausul, 'jenis'>): boolean {
+  return a.jenis === 'CoinsPanel'
+}
+
+/**
+ * `Add` di kepala kolom aksi grid, `No items` di dalam tabel, tanpa kolom Modified Date — seperti Pega untuk
+ * Co-Ins Scale (`GridTreatyArrangementCoins.xml` b10554) dan MB Capacity (`GridTreatyArrangementLIMITMB.xml` b9041).
+ */
+export function addDiKepala(a: Pick<AturanKlausul, 'jenis'>): boolean {
+  return a.jenis === 'CoinsPanel' || a.jenis === 'LimitMB'
+}
+
+/** Judul bagian di atas grid jenis: `Co-Ins Scale` (b917) untuk 10014; kosong untuk jenis lain. */
+export function judulBagianJenis(j: JenisKlausul): string {
+  return j.aturan.some(gridCoInsScale) ? KLAUSUL_TCO.coInsScale : ''
+}
+
+/** Judul satu grid: VERBATIM bila ada (`JUDUL_GRID_KLAUSUL`), selain itu nama jenis — subjenis. */
+export function judulGridAturan(a: Pick<AturanKlausul, 'jenis' | 'subjenis'>): string {
+  const judul: Readonly<Record<string, string>> = JUDUL_GRID_KLAUSUL
+  const kunci = a.subjenis !== '' ? `${a.jenis}/${a.subjenis}` : a.jenis
+  return judul[kunci] ?? `${a.jenis}${a.subjenis !== '' ? ` — ${a.subjenis}` : ''}`
+}
+
+/** Satu kolom data grid aturan. */
+export type KolomGrid = { kunci: string; label: string; isi: (k: Klausul) => string }
+
+/**
+ * Kolom data grid. Co-Ins Scale: `Co Insurance Share` (b10180, sel `DetailCoinsShare`: `.CoIns_Min`
+ * b517 - `.CoIns_Max` b1272) dan `Treaty Limit` (b10340, `.TreatyLimit`). Jenis lain: satu kolom per
+ * medan + Modified Date.
+ */
+export function kolomGridAturan(a: AturanKlausul): KolomGrid[] {
+  const medan = (m: string): KolomGrid => ({
+    kunci: m,
+    label: labelMedan(a, m),
+    isi: (k) => (m === 'ReinsTypeID' ? k.reinsTypeName || k.reinsTypeId : tampilMedanKlausul(m, k.medan[m] ?? '')),
+  })
+  const khusus: Readonly<Record<string, readonly (readonly [string, string])[]>> = KOLOM_GRID_KLAUSUL
+  const kolomKhusus = khusus[a.jenis]
+  if (kolomKhusus !== undefined) {
+    // MB Capacity: kepala grid berbeda dari label form (`KOLOM_GRID_KLAUSUL`).
+    return kolomKhusus.map(([m, label]) => ({ ...medan(m), label }))
+  }
+  if (gridCoInsScale(a)) {
+    return [
+      {
+        kunci: 'CoInsShare',
+        label: KLAUSUL_TCO.coInsuranceShare,
+        isi: (k) => `${tampilMedanKlausul('CoIns_Min', k.medan.CoIns_Min ?? '')} - ${tampilMedanKlausul('CoIns_Max', k.medan.CoIns_Max ?? '')}`,
+      },
+      medan('TreatyLimit'),
+    ]
+  }
+  return [...a.medan.map(medan), { kunci: 'TglUpdate', label: KLAUSUL_TCO.formModifiedDate, isi: (k) => k.tglUpdate }]
 }
 
 /** Aturan anak jenis, bila ada. */
@@ -132,8 +196,8 @@ export function rencanaKonversi(
 /**
  * Pemilih ReinsTypeID satu aturan. Treaty Limit ikut XML: `pxAutoComplete` di
  * grid induk (`GridTreatyArrangementTreatyLimit.xml` b3025, daftar induk) dan
- * anak (`GridTreatyArrTreatyLimitList.xml` b2892, jenis porsi saja tanpa induk —
- * dari penanda aturan `pilihanReins`). ⛔ SETIAP baris anak membawa penanda itu
+ * anak (`GridTreatyArrTreatyLimitList.xml` b2892, `TreatyContractSetReinsTypeList` atas nama
+ * ReinsType induk — dari penanda aturan `pilihanReins`). ⛔ SETIAP baris anak membawa penanda itu
  * [keputusan work owner 02-10-2026: ReinsType anak semua jenis = anak Treaty
  * Limit]. Induk jenis lain: dropdown daftar induk tiket 02.
  */
@@ -155,9 +219,12 @@ function FormMedan({
   tahunID,
   aturan,
   form,
+  namaInduk,
   onUbah,
 }: {
   tahunID: string
+  /** Nama ReinsType baris induk (baris anak) - masukan `TreatyContractSetReinsTypeList`. */
+  namaInduk: string
   aturan: AturanKlausul
   form: FormKlausul
   onUbah: (medan: string, nilai: string) => void
@@ -193,9 +260,17 @@ function FormMedan({
               label={label}
               value={form.medan[m] ?? ''}
               onChange={(v) => onUbah(m, v)}
-              anak={pemilih === 'saring-anak'}
+              namaIndukAnak={pemilih === 'saring-anak' ? namaInduk : undefined}
             />
           )
+        }
+        if (aturan.jenis === 'LimitMB' && m === 'ID_Occupation') {
+          // MB Capacity: dropdown `Choose` empat Occupation `SetOccupationLimitMB`; nama diisi server.
+          return <PilihOccupationMB key={m} label={label} value={form.medan[m] ?? ''} onChange={(v) => onUbah(m, v)} />
+        }
+        if (aturan.jenis === 'LimitMB' && m === 'TerritorialLimit') {
+          // MB Capacity: autocomplete `BrowseTreatyGroup_RD`, yang disimpan `TreatyGroupName`.
+          return <PilihGrupTreatyNama key={m} label={label} value={form.medan[m] ?? ''} onChange={(v) => onUbah(m, v)} />
         }
         if (m === 'ID_Occupation' || m === 'ID_Clause') {
           // Satu dropdown yang dapat difilter, tanpa kotak Search terpisah [keputusan work owner 02-10-2026].
@@ -243,6 +318,7 @@ function GridAturan({
   jenis,
   aturan,
   induk,
+  namaInduk = '',
   kursAda,
   onShowChild,
 }: {
@@ -250,6 +326,8 @@ function GridAturan({
   jenis: JenisKlausul
   aturan: AturanKlausul
   induk: string
+  /** Nama ReinsType baris induk (grid anak) — pilihan ReinsType anak dihitung darinya. */
+  namaInduk?: string
   /** Tiket 11: false = jenis berkurs tanpa kurs berlaku — `Add` nonaktif. */
   kursAda: boolean
   onShowChild?: (k: Klausul) => void
@@ -299,12 +377,24 @@ function GridAturan({
   }
 
   const baris = barisSubjenis(daftar?.daftar ?? [], aturan.subjenis)
-  return (
-    <div className="panel">
-      <h4 className="panel__title">
-        {aturan.jenis}
-        {aturan.subjenis !== '' ? ` — ${aturan.subjenis}` : ''}
-      </h4>
+  const coins = gridCoInsScale(aturan)
+  const kepala = addDiKepala(aturan)
+  const kolom = kolomGridAturan(aturan)
+  const tombolAdd = addTampil(aturan, daftar !== null, baris.length) && (
+    <button
+      type="button"
+      className={kepala ? 'btn btn--primary btn--sm' : 'btn btn--primary'}
+      disabled={aturan.berkurs && !kursAda}
+      onClick={() => {
+        setInfo(null)
+        setForm(formKlausulKosong(aturan))
+      }}
+    >
+      {KLAUSUL_TCO.add}
+    </button>
+  )
+  const isi = (
+    <>
       {galat !== null && <Gagal galat={galat} />}
       {info !== null && <p role="status">{info}</p>}
       {form !== null && (
@@ -313,6 +403,7 @@ function GridAturan({
             tahunID={tahunID}
             aturan={aturan}
             form={form}
+            namaInduk={namaInduk}
             onUbah={(m, v) => {
               setForm((f) => (f === null ? f : { ...f, medan: { ...f.medan, [m]: v } }))
             }}
@@ -334,49 +425,42 @@ function GridAturan({
           </div>
         </>
       )}
-      <div className="aksi-baris">
-        {addTampil(aturan, daftar !== null, baris.length) && (
-          <button
-            type="button"
-            className="btn btn--primary"
-            disabled={aturan.berkurs && !kursAda}
-            onClick={() => {
-              setInfo(null)
-              setForm(formKlausulKosong(aturan))
-            }}
-          >
-            {KLAUSUL_TCO.add}
-          </button>
-        )}
-        {aturan.anak && daftar !== null && (
-          <span>
-            {' '}
-            {KLAUSUL_TCO.totalPct}: {formatNumber(daftar.totalPct, DESIMAL_TAK_DIBATASI)}
-            {daftar.peringatan !== '' ? ` — ${daftar.peringatan}` : ''}
-          </span>
-        )}
-      </div>
+      {!kepala && (
+        <div className="aksi-baris">
+          {tombolAdd}
+          {aturan.anak && daftar !== null && (
+            <span>
+              {' '}
+              {KLAUSUL_TCO.totalPct}: {formatNumber(daftar.totalPct, DESIMAL_TAK_DIBATASI)}
+              {daftar.peringatan !== '' ? ` — ${daftar.peringatan}` : ''}
+            </span>
+          )}
+        </div>
+      )}
       {daftar === null && galat === null && <Memuat />}
-      {daftar !== null && baris.length === 0 && <Kosong pesan={KLAUSUL_TCO.kosong} />}
-      {baris.length > 0 && (
+      {!kepala && daftar !== null && baris.length === 0 && <Kosong pesan={KLAUSUL_TCO.kosong} />}
+      {(kepala ? daftar !== null : baris.length > 0) && (
         <div className="tco-tabel">
           <table className="inbox__tabel">
             <thead>
               <tr>
-                {aturan.medan.map((m) => (
-                  <th key={m}>{labelMedan(aturan, m)}</th>
+                {kolom.map((c) => (
+                  <th key={c.kunci}>{c.label}</th>
                 ))}
-                <th>{KLAUSUL_TCO.formModifiedDate}</th>
-                <th className="table__actions" />
+                <th className="table__actions">{kepala ? tombolAdd : null}</th>
               </tr>
             </thead>
             <tbody>
+              {baris.length === 0 && (
+                <tr>
+                  <td colSpan={kolom.length + 1}>{KLAUSUL_TCO.noItems}</td>
+                </tr>
+              )}
               {baris.map((k) => (
                 <tr key={k.id} className="inbox__baris">
-                  {aturan.medan.map((m) => (
-                    <td key={m}>{m === 'ReinsTypeID' ? k.reinsTypeName || k.reinsTypeId : tampilMedanKlausul(m, k.medan[m] ?? '')}</td>
+                  {kolom.map((c) => (
+                    <td key={c.kunci}>{c.isi(k)}</td>
                   ))}
-                  <td>{k.tglUpdate}</td>
                   <td className="table__actions">
                     <button type="button" className="btn btn--ghost btn--sm" onClick={() => {
                         setInfo(null)
@@ -399,6 +483,22 @@ function GridAturan({
           </table>
         </div>
       )}
+    </>
+  )
+  if (coins) {
+    return (
+      <details className="panel tco-lipat" open>
+        <summary>
+          <h4 className="panel__title">{judulGridAturan(aturan)}</h4>
+        </summary>
+        {isi}
+      </details>
+    )
+  }
+  return (
+    <div className={kepala ? 'panel tco-grid-rapat' : 'panel'}>
+      <h4 className="panel__title">{judulGridAturan(aturan)}</h4>
+      {isi}
     </div>
   )
 }
@@ -418,6 +518,7 @@ export default function PanelJenisKlausul({
   const [indukTerpilih, setIndukTerpilih] = useState<Klausul | null>(null)
   const anak = aturanAnak(jenis)
   const tab = tabSubjenis(jenis)
+  const judulBagian = judulBagianJenis(jenis)
   const [tabAktif, setTabAktif] = useState(tab[0] ?? '')
   const berkurs = jenisBerkurs(jenis)
   const [kurs, setKurs] = useState<KursTahun | null>(null)
@@ -453,6 +554,7 @@ export default function PanelJenisKlausul({
         </p>
       )}
       {berkurs && galatKurs !== null && <Gagal galat={galatKurs} />}
+      {judulBagian !== '' && <h3 className="panel__title">{judulBagian}</h3>}
       {tab.length > 0 && <StripTab tab={tab} aktif={tabAktif} onPilih={setTabAktif} />}
       {aturanInduk(jenis)
         .filter((a) => tab.length === 0 || a.subjenis === tabAktif)
@@ -475,6 +577,7 @@ export default function PanelJenisKlausul({
             jenis={jenis}
             aturan={anak}
             induk={indukTerpilih.reinsTypeId}
+            namaInduk={indukTerpilih.reinsTypeName}
             kursAda={kurs !== null}
           />
           <button type="button" className="btn btn--ghost btn--sm" onClick={() => setIndukTerpilih(null)}>

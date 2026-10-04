@@ -17,8 +17,9 @@ import (
 func TestKlausulLingkaranPenuh(t *testing.T) {
 	u, bersihkan := serverTCO(t)
 	defer bersihkan()
+	// Nama induk berkata " QS " -> pilihan anak QS (OR), QS (R/I), ORS (`TreatyContractSetReinsTypeList`).
 	u.isiJenis([]skemauji.JenisReasuransiUji{
-		{ID: "10003", Note: "UJI QUOTA SHARE", Tipe: "1", Flag: "active"},
+		{ID: "10003", Note: "UJI QS TREATY", Tipe: "1", Flag: "active"},
 		{ID: "10005", Note: "UJI SURPLUS", Tipe: "2", Flag: "active"},
 	})
 	if err := skemauji.IsiJenisKlausulTCO(u.ctx, u.sqlDBMentah(), u.skema, []skemauji.JenisKlausulUji{
@@ -70,13 +71,20 @@ func TestKlausulLingkaranPenuh(t *testing.T) {
 		!strings.Contains(badan, "Rp") {
 		t.Errorf("wajib: %d %s", kode, badan)
 	}
-	if kode, _ := u.minta(t, http.MethodPost, dasar, map[string]any{"descId": "10017", "medan": map[string]string{}}, true); kode != http.StatusUnprocessableEntity {
-		t.Errorf("LimitMB: %d", kode)
+	// MB Capacity mengikuti XML [keputusan work owner 02-10-2026]: tanpa wajib-isi; MORERP/MOREUSD NUMBER.
+	if kode, badan := u.minta(t, http.MethodPost, dasar, map[string]any{"descId": "10017", "medan": map[string]string{
+		"ID_Occupation": "01", "MoreRp": "5000000.5", "MoreUsd": "325.25", "TerritorialLimit": "UJI GRUP"}}, true); kode != http.StatusOK ||
+		!strings.Contains(badan, `"Occupation":"RESIDENTIAL RISK"`) || !strings.Contains(badan, `"MoreRp":"5000000.5"`) {
+		t.Errorf("LimitMB: %d %s", kode, badan)
+	}
+	if kode, _ := u.minta(t, http.MethodPost, dasar, map[string]any{"descId": "10002", "medan": map[string]string{}}, true); kode != http.StatusUnprocessableEntity {
+		t.Errorf("Portfolio tetap ditahan: %d", kode)
 	}
 	// Anak EpiList: Rp/Usd turunan; sembilan kolom khusus induk NULL di Oracle.
 	kode, badan = u.minta(t, http.MethodPost, dasar, map[string]any{"descId": "10009", "anak": true,
-		"parentReinsTypeId": "10003", "medan": map[string]string{"ReinsTypeID": "10005", "Pct": "25"}}, true)
-	if kode != http.StatusOK || !strings.Contains(badan, `"Rp":"250000.12500000"`) || !strings.Contains(badan, `"Usd":"16.12878018"`) {
+		"parentReinsTypeId": "10003", "medan": map[string]string{"ReinsTypeID": "10028", "Pct": "25"}}, true)
+	if kode != http.StatusOK || !strings.Contains(badan, `"Rp":"250000.12500000"`) || !strings.Contains(badan, `"Usd":"16.12878018"`) ||
+		!strings.Contains(badan, `"reinsTypeName":"QS (OR)"`) {
 		t.Fatalf("anak: %d %s", kode, badan)
 	}
 	var anak struct{ Klausul struct{ ID string } }
@@ -89,7 +97,7 @@ func TestKlausulLingkaranPenuh(t *testing.T) {
 		t.Errorf("anak tidak menulis NULL pada sembilan kolom induk: %d %v", nullInduk, err)
 	}
 	if kode, _ := u.minta(t, http.MethodPost, dasar, map[string]any{"descId": "10009", "anak": true,
-		"parentReinsTypeId": "10003", "medan": map[string]string{"ReinsTypeID": "10003", "Pct": "75.1"}}, true); kode != http.StatusUnprocessableEntity {
+		"parentReinsTypeId": "10003", "medan": map[string]string{"ReinsTypeID": "10004", "Pct": "75.1"}}, true); kode != http.StatusUnprocessableEntity {
 		t.Errorf("total anak > 100: %d", kode)
 	}
 	kode, badan = u.minta(t, http.MethodGet, dasar+"?descId=10009&induk=10003", nil, true)

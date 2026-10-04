@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AKAR_APLIKASI } from '../inti/frontend/uji/sumber'
 import { berkasMenu, menuBersih, type BarisMenuBersih } from '../inti/frontend/uji/menuBersih'
 import { ambilMenu } from '../inti/frontend/klien'
-import { FOLDER_KORPUS, KATALOG_MODUL, MODUL_LUAR_KORPUS } from './katalogKorpus'
+import { FOLDER_KORPUS, LABEL_MENU, LABEL_TAMPIL, MODUL_LUAR_KORPUS } from './katalogKorpus'
 import { MODUL_FRONTEND } from './daftar'
 
 // Penjaga DUA ARAH: HASIL BERSIH M_NAV_MENU (900 + 901 + slot menu modul) ↔
@@ -64,13 +64,12 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
     expect(BERSIH.insertTerbaca).toBe(BERSIH.insert)
     // Dan setiap pernyataan lain pun dikenal - bukan diabaikan diam-diam.
     expect(BERSIH.takDikenal).toEqual([])
-    expect(berkasMenu().map((b) => b.nama)).toEqual(
-      expect.arrayContaining(['900_m_nav_menu.sql', '901_m_nav_menu_datar.sql', '904_m_nav_menu_masterdata.sql']),
-    )
+    expect(berkasMenu().map((b) => b.nama)).toEqual(expect.arrayContaining(['900_m_nav_menu.sql', '901_m_nav_menu_datar.sql']))
   })
 
-  it('dua puluh baris modul korpus + baris modul luar korpus (904), nol butir anak (901)', () => {
-    expect(BERSIH.baris).toHaveLength(20 + Object.values(MODUL_LUAR_KORPUS).length)
+  it('dua puluh baris modul, nol butir anak (901)', () => {
+    // Dua puluh folder korpus + modul di luar korpus (Marketing Officer, migrasi inti 906 - keputusan work owner 03-10-2026).
+    expect(BERSIH.baris).toHaveLength(20 + Object.keys(MODUL_LUAR_KORPUS).length)
     expect(BERSIH.butir).toEqual([])
     for (const b of BERSIH.baris) expect(b.kode, b.label).toBe(b.modul)
   })
@@ -101,9 +100,18 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
     ])
   })
 
-  it('LABEL = FOLDER_KORPUS (20 folder korpus) + MODUL_LUAR_KORPUS', () => {
-    expect(new Set(BERSIH.baris.map((b) => b.label))).toEqual(new Set(Object.values(KATALOG_MODUL)))
+  it('LABEL = FOLDER_KORPUS (20 folder korpus), kecuali nama tampilan LABEL_TAMPIL', () => {
+    expect(new Set(BERSIH.baris.map((b) => b.label))).toEqual(new Set(Object.values(LABEL_MENU)))
+    // Keputusan work owner 03-10-2026 - SATU-SATUNYA nama tampilan; pasangan Go `labelTampilDisetujui` memuat yang sama.
+    expect(LABEL_TAMPIL).toEqual({ masterContractRetroLife: 'Contract Retro Life', masterProductNameLife: 'Product Name Life' })
+    for (const [k, v] of Object.entries(LABEL_TAMPIL)) expect(FOLDER_KORPUS[k as keyof typeof FOLDER_KORPUS]).toBe(`Master ${v}`)
     expect(Object.values(FOLDER_KORPUS)).toHaveLength(20)
+    expect(MODUL_LUAR_KORPUS).toEqual({
+      marketingOfficer: 'Marketing Officer',
+      companyDetail: 'Company Detail',
+      accounts: 'Accounts',
+      masterData: 'Master Data',
+    })
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In')
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In Adjustment')
   })

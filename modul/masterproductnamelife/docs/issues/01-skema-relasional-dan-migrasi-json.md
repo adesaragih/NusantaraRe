@@ -285,3 +285,64 @@ ulang di **transaksi yang sama** dengan induk. Kolom dan tipe persisnya: `STRUKT
 - [ ] Nilai yang tidak muat kolomnya (teks melebihi lebar, angka > 8 desimal atau > 30 digit bulat, bilangan `NUMBER(5)` tidak bulat)
       ditolak services **berkalimat** sebelum SQL tulis — tidak pernah dipotong atau dibulatkan Oracle diam-diam.
 
+### Pelaksanaan 02-10-2026
+
+| Paket | Commit | Isi |
+| ---: | --- | --- |
+| 1 | `95ccb0c` | baca ulang XML + bab ini, spec, OQ, RALAT, dba-view |
+| 2 | `873ebee` | DDL 140–147 + penjaga rentang + STRUKTUR + kaskade `MODUL.md` |
+| 3 | `bf9c4e0` | pemetaan flat, alat `pindahflat` (`-uji`/`-jalankan`), rekonsiliasi |
+| 4 | `353f9e80` *(sebagian terbawa commit kerja bersama `1e22ecd8`, `8914ad7e`)* | gudang, services, tiruan, uji ke tabel flat |
+| 5 | — | **dibatalkan** (K7: view tidak dibangun ulang) |
+| 6 | commit dokumen ini | `PANDUAN-PINDAH-FLAT.md`, `LAPORAN-MIGRASI-FLAT.md` (uji kering DEV: 0 gagal, menunggu OQ-FLAT-07) |
+
+### Ralat 02-10-2026 sesudah `/code-review` — premis K3 dan K4 keliru (uji kering DEV 18:50)
+
+Kalimat brief bab 0 dikutip: *"`OutwardList` 191 / 153 / maks 4 — **hanya 2 baris berisi**, 189 objek kosong"* dan K3
+*"1 `MATURE` bukan tanggal"*. Uji kering dengan aturan yang diperketat `/code-review` (`LAPORAN-MIGRASI-FLAT.md`): 189 objek
+itu kosong HANYA pada keenam kunci OR — keempat kunci `OUTWARDNAME`/`OUTWARDNAMEID`/`OUTWARDRATE`/`OUTWARDRATEID` berisi
+(OQ-FLAT-08); `MATURE` produk 100175 tanggal dalam bentuk lain (OQ-FLAT-09). Alat menahan `-jalankan` sampai keduanya
+diputuskan; K3 kini 1 nilai.
+
+### Keputusan work owner 02-10-2026 malam — *"ikuti rekomendasi"* (OQ-FLAT-01/02/07/08/09)
+
+K4 diralat: yang tidak dipindah hanya objek `OutwardList` yang **seluruh** kuncinya kosong; objek reasuradur outward
+(`OUTWARDNAMEID`, `OUTWARDNAME`, `OUTWARDRATEID`, `OUTWARDRATE` — empat kolom baru `M_PRODUCTNAME_LIFE_OUTWARD`, migrasi 146 *(Ralat 02-10-2026 malam: keempat kolom itu ditambah migrasi BARU `148_m_productname_life_outward_kolom` (`ALTER TABLE ... ADD`), bukan di 146 - 146 ternyata sudah dijalankan di DEV pukul 15:39 (`T_MIGRASI`), sehingga isinya dikembalikan ke bentuk yang dijalankan.)*)
+dipindah. K3 diralat: tanggal inward berbentuk lain **dikonversi** (OQ-FLAT-09), hanya nilai yang tidak terbaca yang
+di-NULL-kan. Uji kering DEV 20:46: gagal 0, OUTWARD 191 baris (`LAPORAN-MIGRASI-FLAT.md`).
+
+### Keputusan work owner 02-10-2026 malam — aplikasi hanya tabel flat, tanpa view
+
+Kalimat work owner dikutip: *"HANYA MODUL PRODUCTNAME LIFE!! UBAH SEMUA JANGAN ADA YANG SIMPAN KE TABLE JSON SIMPAN KE TABLE FLAT SEMUA. DAN JANGAN GUNAKAN TABLE VIEW NYA"*.
+
+| Jalur | Sebelum | Sesudah |
+| --- | --- | --- |
+| Simpan produk (Add / Edit / Copy → Save), komentar, baris outward | tabel flat | tabel flat (tidak berubah) |
+| Baca produk (grid, View) | tabel flat | tabel flat (tidak berubah) |
+| Penerbitan ID produk baru | induk flat **+ kedua tabel JSON** (ID terpakai dilewati) | **induk flat saja** |
+| Ketiga view produk (`PRODUCT_LIFE`, `PRODUCTINWARD_LIFE`, `DOCUMENTCLAIM_LIFE`) | tidak dipakai (K7) | tidak dipakai — kini dijaga uji |
+| Lampiran `M_ATTACHMENTPRODUCTNAME.DATA_JSON` | `NULL` | `NULL` (tidak berubah; isi lampiran bukan JSON) |
+| Alat pindah `backend/alat/pindahflat` | membaca tabel JSON, menulis tabel flat | sama — satu-satunya jalan 196 produk lama ke tabel flat |
+
+Penjaga `TestMPNLAplikasiHanyaTabelFlat`: kode produksi modul tidak menyebut kedua tabel JSON (kecuali definisi nama,
+alat pindah, dan kodek JSON-nya) dan tidak menyebut ketiga view produk. Akibatnya alat pindah wajib dijalankan sebelum
+aplikasi dipakai: ID produk lama baru terlihat oleh penerbitan ID setelah berada di induk flat. View master milik master
+lain (`CURRENCY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE`, `RIRISK_LIFE_SUMMARY`, `RATE_LIFE_SUMMARY`, `RATE_LIFE`) tetap
+dibaca untuk pilihan dropdown — bukan view produk modul ini.
+
+### Permintaan work owner 03-10-2026 — tombol Copy Old
+
+Kalimat work owner dikutip: *"TOLONG BUATKAN DI SAMPING TOMBOL ADD, TOMBOL "COPY OLD", FUNGSINYA UNTUK COPY DATA DARI TABEL LAMA YANG DARI JSON ... SAAT DI BUKA, MUNCUL POPUP, MUNCUL SEMUA LIST DARI TABEL LAMA YANG BELUM DI MIGRASI, DISETIAP LIST BISA DI CENTANG ... TOMBOL PROCESS COPY UNTUK MENGCOPY YANG DI CENTANG LALU MASUK KE TABLE BARU"*.
+
+| Hal | Dibangun |
+| --- | --- |
+| Tombol | `Copy Old` tepat di samping `Add` (halaman daftar) |
+| Popup | `GET /produk-lama`: SEMUA produk tabel JSON lama yang ID-nya belum ada di `M_PRODUCTNAME_LIFE`, urut ID, kolom grid + `Product Name` + `Notes`; `Search`, centang per baris, centang semua; produk yang ditolak rekonsiliasi tampil dengan alasannya (kolom, tanpa nilai) dan tidak dapat dicentang |
+| `Process Copy` | `POST /produk-lama/salin`: per produk SATU transaksi - tulis induk + tujuh anak, baca ulang, bandingkan; gagal satu tidak membatalkan yang lain; hasil per produk (`Copied` / `Already in the new tables` / `Cannot be copied` / `Failed`). Daftar dibaca ulang: yang tersalin hilang dari popup dan tampil di grid |
+| Aturan salin | SAMA dengan alat pindah: rekonsiliasi seluruh sumber, K3 (nilai tak sah dikosongkan, dicatat), OQ-FLAT-07 (`koma desimal`, `nol depan` diterima; jenis lain menolak), OQ-FLAT-09 (tanggal dikonversi, dicatat) |
+| Tabel JSON | hanya DIBACA (jalur pindah `mpnl_pindah.go`); tidak ada tulisan ke JSON maupun view |
+
+*Ralat atas bab sebelumnya (02-10-2026 malam), baris "Penerbitan ID produk baru → induk flat saja":* sejak Copy Old, ID produk
+baru kembali **melewati ID produk lama** (`idLamaTerpakai`, baca saja). Tanpa itu produk baru dapat merebut nomor produk lama
+yang belum disalin, dan produk lama itu tidak dapat lagi disalin dengan ID-nya.
+

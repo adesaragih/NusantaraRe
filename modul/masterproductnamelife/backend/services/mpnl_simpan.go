@@ -6,9 +6,9 @@ package services
 //
 //	1  b361  `·` PRE=false  UPDATEOP ← operator; POLICYHODER/POLICYHODERNAME ← inward
 //	6  b1370 `·` PRE=true `@PropertyHasValue(CREATEOP)` T=3 F=2  CREATEOP ← operator bila kosong
-//	8  b1625 `·` PRE=false  JSON halaman ProductName
-//	9  b1833 `·` PRE=false  simpan JSON - ID baru '1' ‖ LPAD(M_PRODUCT_LIFE_SEQ, 5) (P6)
-//	10 b2021 `·` PRE=false  kolom datar RIRISKID, RIRISK (R8)
+//	8  b1625 `·` PRE=false  JSON halaman ProductName → kini kolom induk + anak tabel flat (02-10-2026)
+//	9  b1833 `·` PRE=false  simpan - ID baru '1' ‖ LPAD(M_PRODUCT_LIFE_SEQ, 5) (P6)
+//	10 b2021 `·` PRE=false  kolom datar RIRISKID, RIRISK (R8) → kolom induk yang sama
 //	11 b2209 `·` PRE=false  ID dikembalikan, form ditutup
 //
 // ⛔ Baru = POST, ubah = PUT: identitas tidak pernah dari klien (ADR-0006).
@@ -143,47 +143,50 @@ func periksaUmum(pk *periksa, u *models.ProdukUmum) {
 // medannya (`desimal`, `tanggal`) dengan kalimatnya sendiri - tidak dilaporkan dua kali.
 func periksaPanjang(pk *periksa, m *models.Produk) {
 	for _, n := range repository.MasalahFlat(*m) {
-		label := n.Label
-		if n.Urut > 0 {
-			label = fmt.Sprintf("%s row %d: %s", judulGrid(n.Tabel), n.Urut, n.Label)
-		}
-		switch n.Jenis {
-		case repository.MasalahTerlaluPanjang:
-			pk.panjang(label, n.Nilai, n.Batas)
-		case repository.MasalahSkala:
-			pk.tolak("%s %q has more than %d decimal places", label, n.Nilai, repository.SkalaDesimalFlat)
-		case repository.MasalahDigitBulat:
-			pk.tolak("%s %q has more than %d digits before the decimal point", label, n.Nilai, repository.DigitBulatFlat)
-		case repository.MasalahBukanBulat:
-			pk.tolak("%s %q must be a whole number", label, n.Nilai)
-		case repository.MasalahDigitKecil:
-			pk.tolak("%s %q has more than %d digits", label, n.Nilai, repository.DigitKecilFlat)
-		case repository.MasalahBukanAngka, repository.MasalahBukanTanggal:
-			// Sudah ditolak gerbang medannya (`desimal`, `tanggal`) dengan kalimatnya sendiri - setiap medan angka dan
-			// tanggal yang dikirim klien melewati gerbang itu. Lolos ke penulis = ErrNilaiTidakMuat (422), lapis kedua.
-		default:
-			pk.tolak("%s %q is not valid", label, n.Nilai)
+		// Baris `On Retention` milik server: yang tersimpan sudah kanonik, yang dihitung ulang diperiksa periksaOutward.
+		if n.Tabel != repository.TabelFlatOutward {
+			laporMasalahKolom(pk, n, false)
 		}
 	}
 }
 
-// judulGrid - judul grid VERBATIM tabel anak (pesan baris).
-func judulGrid(tabel string) string {
-	switch tabel {
-	case repository.TabelFlatLien:
-		return judulLien
-	case repository.TabelFlatDokumen:
-		return judulDokumen
-	case repository.TabelFlatPlan:
-		return judulPlan
-	case repository.TabelFlatFinUW:
-		return judulFinUW
-	case repository.TabelFlatUWLimit:
-		return judulUWLimit
-	case repository.TabelFlatKomentar:
-		return judulKomentar
+// periksaOutward - baris `On Retention` yang dirakit SERVER dari master kontrak OR (`hitungOutward`, sesudah gerbang
+// masukan): setiap masalah kolomnya dilaporkan berkalimat, termasuk teks bukan angka - tidak satu gerbang medan pun
+// memeriksanya lebih dulu (temuan /code-review 02-10-2026).
+func periksaOutward(pk *periksa, m *models.Produk) {
+	for _, n := range repository.MasalahFlat(*m) {
+		if n.Tabel == repository.TabelFlatOutward {
+			laporMasalahKolom(pk, n, true)
+		}
+	}
+}
+
+// laporMasalahKolom - satu MasalahNilai menjadi kalimat berlabel VERBATIM (baris anak: judul grid + nomor baris).
+// `semuaJenis` = juga "bukan angka/tanggal" (nilai yang tidak melewati gerbang medan).
+func laporMasalahKolom(pk *periksa, n repository.MasalahNilai, semuaJenis bool) {
+	label := n.Label
+	if n.Urut > 0 {
+		label = fmt.Sprintf("%s row %d: %s", n.Judul, n.Urut, n.Label)
+	}
+	switch n.Jenis {
+	case repository.MasalahTerlaluPanjang:
+		pk.panjang(label, n.Nilai, n.Batas)
+	case repository.MasalahSkala:
+		pk.tolak("%s %q has more than %d decimal places", label, n.Nilai, repository.SkalaDesimalFlat)
+	case repository.MasalahDigitBulat:
+		pk.tolak("%s %q has more than %d digits before the decimal point", label, n.Nilai, repository.DigitBulatFlat)
+	case repository.MasalahBukanBulat:
+		pk.tolak("%s %q must be a whole number", label, n.Nilai)
+	case repository.MasalahDigitKecil:
+		pk.tolak("%s %q has more than %d digits", label, n.Nilai, repository.DigitKecilFlat)
+	case repository.MasalahBukanAngka, repository.MasalahBukanTanggal:
+		// Medan kiriman klien sudah ditolak gerbang medannya (`desimal`, `tanggal`) dengan kalimatnya sendiri. Lolos
+		// ke penulis = ErrNilaiTidakMuat (422), lapis kedua.
+		if semuaJenis {
+			pk.tolak("%s %q is not valid", label, n.Nilai)
+		}
 	default:
-		return judulOutward
+		pk.tolak("%s %q is not valid", label, n.Nilai)
 	}
 }
 
@@ -340,6 +343,11 @@ func (l *Layanan) SimpanProduk(ctx context.Context, p inti.Pelaku, m models.Prod
 		}
 		if perluHitungOutward(&m, baru) {
 			if err := l.hitungOutward(ctx, tx, &m); err != nil {
+				return err
+			}
+			var po periksa
+			periksaOutward(&po, &m)
+			if err := po.galat(); err != nil {
 				return err
 			}
 		}

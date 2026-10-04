@@ -33,7 +33,8 @@ func TestKelolaUserDariOracle(t *testing.T) {
 	}
 
 	// Isi awal 903 atas akun yang SUDAH ADA: 20 modul + Kelola User.
-	jalan(`INSERT INTO ` + skema + `.M_LOGIN_GO (LOGIN_ID, NAME, PASSWORD_HASH) VALUES ('UJI-LAMA', 'Uji Lama', 'x')`)
+	// CONTACT_ID NOT NULL sejak migrasi 905 - baris tiruan mengisinya sendiri.
+	jalan(`INSERT INTO ` + skema + `.M_LOGIN_GO (LOGIN_ID, NAME, PASSWORD_HASH, CONTACT_ID) VALUES ('UJI-LAMA', 'Uji Lama', 'x', 'CON-UJI-LAMA')`)
 	langkah, err := migrasi.PernyataanLangkah(os.DirFS("../../inti/backend"), "903_m_login_go_menu.sql")
 	if err != nil {
 		t.Fatal(err)
@@ -144,5 +145,31 @@ func TestKelolaUserDariOracle(t *testing.T) {
 		len(pil.Unit) != 1 || pil.Unit[0].Induk != "UJI-DIV" || len(pil.Workbasket) != 2 || len(pil.Menu) != 21 ||
 		pil.Menu[20].Kode != menu.KodeKelolaUser {
 		t.Errorf("pilihan %+v", pil)
+	}
+
+	// Identitas (migrasi 905, 03-10-2026): CONTACT_ID dari sequence, username dan email unik tanpa beda huruf, index
+	// unik sebagai pengaman terakhir, dan login TIDAK lewat email (dibatalkan work owner).
+	if len(daftar) == 2 && (!strings.HasPrefix(daftar[0].IDKontak, login.AwalanIDKontak) ||
+		!strings.HasPrefix(daftar[1].IDKontak, login.AwalanIDKontak) || daftar[0].IDKontak == daftar[1].IDKontak) {
+		t.Errorf("CONTACT_ID: %q dan %q", daftar[0].IDKontak, daftar[1].IDKontak)
+	}
+	if _, err := k.Ubah(ctx, "UJI-ADM", "UJI-ADM", login.IsianAkun{Nama: "Uji Adm", Organisasi: "UJI-ORG",
+		Menu: []string{menu.KodeKelolaUser, "claimlife"}, Kontak: login.Kontak{Email: " UJI.Adm@Nusantara.EXAMPLE "}}); err != nil {
+		t.Fatalf("email ADM: %v", err)
+	}
+	if _, _, err := l.Masuk(ctx, "uji.adm@nusantara.example", "Sandi-Admin-01"); !errors.Is(err, login.ErrKredensial) {
+		t.Errorf("masuk dengan email harus ditolak: %v", err)
+	}
+	if _, err := k.Ubah(ctx, "UJI-ADM", "UJI-B", login.IsianAkun{Nama: "Uji B Baru", Organisasi: "UJI-ORG",
+		Menu: []string{"claimlife"}, Kontak: login.Kontak{Email: "uji.adm@nusantara.example"}}); !errors.Is(err, login.ErrEmailSudahTerdaftar) {
+		t.Errorf("email ganda: %v", err)
+	}
+	if err := k.Buat(ctx, "UJI-ADM", login.AkunBaru{ID: "uji-b", Nama: "Uji b"}, "Sandi-Admin-01", true); !errors.Is(err, login.ErrAkunSudahAda) {
+		t.Errorf("username beda huruf: %v", err)
+	}
+	if _, err := sqlDB.ExecContext(ctx, `INSERT INTO `+skema+`.M_LOGIN_GO (LOGIN_ID, NAME, PASSWORD_HASH, CONTACT_ID, EMAIL)
+		VALUES ('UJI-GANDA', 'Uji Ganda', 'x', 'CON-UJI-GANDA', 'UJI.ADM@nusantara.example')`); err == nil ||
+		!strings.Contains(err.Error(), "UX_M_LOGIN_GO_EMAIL") {
+		t.Errorf("index unik email: %v", err)
 	}
 }

@@ -20,6 +20,11 @@ import {
   addTampil,
   tabSubjenis,
   rencanaKonversi,
+  gridCoInsScale,
+  addDiKepala,
+  judulBagianJenis,
+  judulGridAturan,
+  kolomGridAturan,
 } from './PanelJenisKlausul'
 
 const KODE = readFileSync(join(__dirname, 'PanelJenisKlausul.tsx'), 'utf8')
@@ -155,14 +160,14 @@ describe('tampilan desimal berpemisah ribuan (keputusan work owner 30-09-2026)',
 
 // ReinsType Treaty Limit ikut XML: `pxAutoComplete` di grid induk
 // (`GridTreatyArrangementTreatyLimit.xml` b3025, RD induk) dan anak
-// (`GridTreatyArrTreatyLimitList.xml` b2892, jenis porsi, tanpa induk
+// (`GridTreatyArrTreatyLimitList.xml` b2892, `TreatyContractSetReinsTypeList` atas nama induk
 // [keputusan work owner 30-09-2026]). Anak SETIAP jenis memakai pilihan yang
 // sama [keputusan work owner 02-10-2026]; induk jenis lain tetap dropdown.
 describe('pemilih ReinsType per aturan', () => {
   it('Treaty Limit induk: dapat difilter, daftar induk', () => {
     expect(pemilihReinsType(aturan({ jenis: 'TreatyLimit' }))).toBe('saring-induk')
   })
-  it('anak Treaty Limit: dapat difilter, daftar porsi - dari penanda ATURAN', () => {
+  it('anak Treaty Limit: dapat difilter, daftar anak - dari penanda ATURAN', () => {
     expect(pemilihReinsType(aturan({ jenis: 'TreatyLimitChild', anak: true, pilihanReins: 'anak-treaty-limit' }))).toBe('saring-anak')
     // Penandanya yang menentukan, bukan nama jenis.
     expect(pemilihReinsType(aturan({ jenis: 'TreatyLimitChild', anak: true }))).toBe('dropdown')
@@ -172,14 +177,14 @@ describe('pemilih ReinsType per aturan', () => {
       expect(pemilihReinsType(aturan({ jenis })), jenis).toBe('dropdown')
     }
   })
-  it('anak SETIAP jenis = anak Treaty Limit: dapat difilter, jenis porsi saja', () => {
+  it('anak SETIAP jenis = anak Treaty Limit: dapat difilter, daftar dari nama induk', () => {
     for (const jenis of ['PLAList', 'CashLossLimitList', 'FacInList', 'ExGratiaChildList', 'EpiList', 'ClaimCoorpChild']) {
       expect(pemilihReinsType(aturan({ jenis, anak: true, pilihanReins: 'anak-treaty-limit' })), jenis).toBe('saring-anak')
     }
   })
-  it('pemilih anak tidak menerima induk - daftar porsi saja [keputusan work owner 02-10-2026]', () => {
-    expect(KODE).toContain("anak={pemilih === 'saring-anak'}")
-    expect(KODE).not.toContain('anakTreatyLimitDari')
+  it('pemilih anak menerima NAMA induk (TreatyContractSetReinsTypeList) [keputusan work owner 02-10-2026]', () => {
+    expect(KODE).toContain("namaIndukAnak={pemilih === 'saring-anak' ? namaInduk : undefined}")
+    expect(KODE).toContain('namaInduk={indukTerpilih.reinsTypeName}')
   })
 })
 
@@ -196,7 +201,10 @@ describe('Add jenis satu baris', () => {
     expect(addTampil(aturan({ jenis: 'EPI' }), true, 3)).toBe(true)
   })
   it('tombol Add dirender lewat penjaga itu', () => {
-    expect(KODE).toContain('{addTampil(aturan, daftar !== null, baris.length) && (')
+    expect(KODE).toContain('const tombolAdd = addTampil(aturan, daftar !== null, baris.length) && (')
+    // Satu tombol, dua tempat: baris aksi (jenis lain) atau kepala kolom aksi (Co-Ins Scale).
+    expect(KODE.match(/\{KLAUSUL_TCO\.add\}/g)?.length).toBe(1)
+    expect(KODE.match(/tombolAdd\b/g)?.length).toBe(3)
   })
 })
 
@@ -221,5 +229,91 @@ describe('10013 Exclusion Treaty', () => {
   it('ID Occupation / ID Clause: PilihMasterKlausul, nol kotak Search', () => {
     expect(KODE).toContain('<PilihMasterKlausul')
     expect(KODE).not.toMatch(/cariPilihan\b|setCari|KLAUSUL_TCO\.cariPilihan/)
+  })
+})
+
+// 10014 Co-Ins Scale (`GridTreatyArrangementCoins.xml`) seperti tangkapan layar work owner 02-10-2026: judul
+// b917, DUA grid bertumpuk yang dapat dilipat (b8708 / b12971, `Param.Type` "Less Than" / "More Than"),
+// kolom Co Insurance Share (`DetailCoinsShare`: `.CoIns_Min` - `.CoIns_Max`) + Treaty Limit, `Add` di kepala.
+describe('10014 Co-Ins Scale', () => {
+  const coins: JenisKlausul = {
+    id: '10014', descName: 'UJI COINS PANEL', isXol: '0', statusAktif: '', catatan: '',
+    aturan: ['Less Than', 'More Than'].map((subjenis) =>
+      aturan({ jenis: 'CoinsPanel', subjenis, medan: ['CoIns_Min', 'CoIns_Max', 'TreatyLimit'], wajib: ['CoIns_Min', 'CoIns_Max', 'TreatyLimit'] })),
+  }
+  const epi: JenisKlausul = { ...coins, id: '10009', aturan: [aturan({}), aturan({ jenis: 'EpiList', anak: true })] }
+  it('dua grid bertumpuk, bukan tab', () => {
+    expect(tabSubjenis(coins)).toEqual([])
+    expect(aturanInduk(coins).map((a) => a.subjenis)).toEqual(['Less Than', 'More Than'])
+  })
+  it('judul bagian dan judul grid VERBATIM; jenis lain tetap', () => {
+    expect(judulBagianJenis(coins)).toBe('Co-Ins Scale')
+    expect(judulBagianJenis(epi)).toBe('')
+    expect(judulGridAturan(coins.aturan[0]!)).toBe('Risk with Sum Insured less than USD 100.000.000')
+    expect(judulGridAturan(coins.aturan[1]!)).toBe('Risk with Sum Insured more than USD 100.000.000')
+    expect(judulGridAturan(aturan({ jenis: 'ExclutionTreaty', subjenis: 'Clause' }))).toBe('ExclutionTreaty — Clause')
+    expect(judulGridAturan(aturan({}))).toBe('EPI')
+  })
+  it('kolom Co Insurance Share (From - To) dan Treaty Limit, tanpa Modified Date', () => {
+    const kolom = kolomGridAturan(coins.aturan[0]!)
+    expect(kolom.map((c) => c.label)).toEqual(['Co Insurance Share', 'Treaty Limit'])
+    const k = klausul({ subjenis: 'Less Than', medan: { CoIns_Min: '0', CoIns_Max: '12.5', TreatyLimit: '5000000' } })
+    expect(kolom.map((c) => c.isi(k))).toEqual(['0 - 12,5', '5.000.000'])
+  })
+  it('jenis lain: kolom medan + Modified Date, seperti sebelumnya', () => {
+    const kolom = kolomGridAturan(aturan({}))
+    expect(kolom.map((c) => c.label)).toEqual(['ReinsType', 'Line', 'Rp', 'Usd', 'Modified Date'])
+    expect(kolom[0]!.isi(klausul({}))).toBe('UJI QS')
+    expect(kolom[2]!.isi(klausul({ medan: { Rp: '1000000' } }))).toBe('1.000.000')
+  })
+  it('grid dapat dilipat (terbuka), Add di kepala kolom aksi, No items di dalam tabel', () => {
+    expect(gridCoInsScale(coins.aturan[0]!)).toBe(true)
+    expect(gridCoInsScale(aturan({}))).toBe(false)
+    expect(KODE).toContain('<details className="panel tco-lipat" open>')
+    expect(KODE).toContain('<th className="table__actions">{kepala ? tombolAdd : null}</th>')
+    expect(KODE).toContain('{KLAUSUL_TCO.noItems}')
+  })
+})
+
+// 10017 MB Capacity (`GridTreatyArrangementLIMITMB.xml`) mengikuti XML [keputusan work owner 02-10-2026]: delapan medan
+// form, dropdown Occupation `Choose`, autocomplete TerritorialLimit atas grup treaty, grid enam kolom, `Add` di kepala.
+describe('10017 MB Capacity', () => {
+  const mb = aturan({
+    jenis: 'LimitMB',
+    medan: ['ID_Occupation', 'Pct', 'PctMe', 'Rp', 'Usd', 'MoreRp', 'MoreUsd', 'TerritorialLimit'],
+    wajib: [],
+  })
+  it('label form VERBATIM', () => {
+    expect(mb.medan.map((m) => labelMedan(mb, m))).toEqual([
+      'Occupation', '% TSI MB of TSI Property From', '% TSI MB of TSI Property To', 'RNM TSI From (IDR)',
+      'RNM TSI From (USD)', 'RNM TSI To (IDR)', 'RNM TSI To (USD)', 'TerritorialLimit',
+    ])
+  })
+  it('judul grid dan kolom grid VERBATIM; RNM TSI IDR tidak tampil di grid', () => {
+    expect(judulGridAturan(mb)).toBe('MB Capacity')
+    const kolom = kolomGridAturan(mb)
+    expect(kolom.map((c) => c.label)).toEqual([
+      'Occupation', '% TSI MB Of Property From >', '<= % TSI MB Of Property To', 'RNM TSI From (USD) >',
+      '<= RNM TSI To (USD)', 'Limit Treaty Group',
+    ])
+    const k = klausul({ medan: { Occupation: 'INDUSTRIAL RISK', Pct: '10', PctMe: '25.5', Usd: '1000', MoreUsd: '325000.5',
+      TerritorialLimit: 'UJI GRUP' } })
+    expect(kolom.map((c) => c.isi(k))).toEqual(['INDUSTRIAL RISK', '10', '25,5', '1.000', '325.000,5', 'UJI GRUP'])
+  })
+  it('MoreRp / MoreUsd desimal berpemisah ribuan', () => {
+    expect(tampilMedanKlausul('MoreRp', '5000000')).toBe('5.000.000')
+    expect(tampilMedanKlausul('MoreUsd', '325.25')).toBe('325,25')
+  })
+  it('Add di kepala kolom aksi seperti Co-Ins Scale, tanpa grid lipat', () => {
+    expect(addDiKepala(mb)).toBe(true)
+    expect(addDiKepala(aturan({ jenis: 'CoinsPanel' }))).toBe(true)
+    expect(addDiKepala(aturan({}))).toBe(false)
+    expect(gridCoInsScale(mb)).toBe(false)
+  })
+  it('Occupation = dropdown Choose; TerritorialLimit = autocomplete grup treaty', () => {
+    expect(KODE).toContain('<PilihOccupationMB')
+    expect(KODE).toContain('<PilihGrupTreatyNama')
+    expect(KODE).toContain("aturan.jenis === 'LimitMB' && m === 'ID_Occupation'")
+    expect(KODE).toContain("aturan.jenis === 'LimitMB' && m === 'TerritorialLimit'")
   })
 })

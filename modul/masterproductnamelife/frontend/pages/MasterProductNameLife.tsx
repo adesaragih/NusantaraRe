@@ -8,12 +8,15 @@
 // RD `BrowseProduct_Life` (urut `.ID ASC` - server) dengan kolom `ID` · `Ceding` · `Treaty Number` · `Treaty Name`
 // · `Create Operator` · `Last Updated Operator` dan tombol baris `View` b74798 (`SetProductName` → mode lihat).
 // Mode form (`DATASHOW = 1`): `FormProduk`. Wadah grid b71574 ber-`IsFire` dengan `ALWAYS` → selalu tampil.
+// Tombol `Copy Old` di samping `Add` (permintaan work owner 03-10-2026, bukan layar Pega): popup `DialogCopyOld`
+// menyalin produk tabel JSON lama yang dicentang ke tabel flat; grid dimuat ulang bila ada yang tersalin.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Gagal, Halaman, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { ambilDaftarProduk, ambilProduk, type Produk, type RingkasanProduk } from '../api'
 import { UKURAN_HALAMAN_MPNL, jepitHalaman, potongHalaman, produkBaru } from '../bentuk'
+import DialogCopyOld from '../components/DialogCopyOld'
 import FormProduk from '../components/FormProduk'
 import { GRID_MPNL, LAIN_MPNL, MENU_MPNL } from '../labels'
 
@@ -31,6 +34,7 @@ export default function MasterProductNameLife() {
   const [halaman, setHalaman] = useState(1)
   const [form, setForm] = useState<FormTerbuka | null>(null)
   const [galatBuka, setGalatBuka] = useState<unknown>(null)
+  const [copyOld, setCopyOld] = useState(false)
   // Kunci pemasangan ulang form, dan nomor pembukaan terakhir (`Add`/`View`).
   const ke = useRef(0)
 
@@ -91,11 +95,28 @@ export default function MasterProductNameLife() {
             <button type="button" className="btn btn--primary" title={GRID_MPNL.tooltipAdd} onClick={() => buka(produkBaru(), false)}>
               {GRID_MPNL.add}
             </button>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => {
+                setCopyOld(true)
+              }}
+            >
+              {LAIN_MPNL.copyOld}
+            </button>
             {semua.length > 0 && (
               <Halaman halaman={halaman} ukuran={UKURAN_HALAMAN_MPNL} total={semua.length} onPindah={setHalaman} />
             )}
           </div>
           {galatBuka !== null && <Gagal galat={galatBuka} />}
+          {copyOld && (
+            <DialogCopyOld
+              onTutup={(adaYangDisalin) => {
+                setCopyOld(false)
+                if (adaYangDisalin) void muat()
+              }}
+            />
+          )}
           {daftar === null && galat === null && <Memuat />}
           {galat !== null && <Gagal galat={galat} />}
           {daftar !== null && semua.length === 0 && <Kosong pesan={LAIN_MPNL.kosong} />}

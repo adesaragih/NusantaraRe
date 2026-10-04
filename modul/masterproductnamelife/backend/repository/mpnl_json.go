@@ -200,6 +200,11 @@ var (
 			{kunci: "TREATYCONTRACTID", ambil: func(b *models.BarisOutward) *string { return &b.TreatyContractID }},
 			{kunci: "UNDERWRITINGYEAR", ambil: func(b *models.BarisOutward) *string { return &b.UnderwritingYear }},
 			{kunci: "OVR_COMM", ambil: func(b *models.BarisOutward) *string { return &b.OvrComm }},
+			// OQ-FLAT-08 (02-10-2026): kunci objek outward bukan-OR.
+			{kunci: "OUTWARDNAMEID", ambil: func(b *models.BarisOutward) *string { return &b.OutwardNameID }},
+			{kunci: "OUTWARDNAME", ambil: func(b *models.BarisOutward) *string { return &b.OutwardName }},
+			{kunci: "OUTWARDRATEID", ambil: func(b *models.BarisOutward) *string { return &b.OutwardRateID }},
+			{kunci: "OUTWARDRATE", ambil: func(b *models.BarisOutward) *string { return &b.OutwardRate }},
 		},
 		asli: func(b *models.BarisOutward) *string { return &b.Asli },
 	}

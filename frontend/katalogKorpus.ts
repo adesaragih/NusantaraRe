@@ -66,15 +66,42 @@ export const FOLDER_KORPUS = {
 } as const
 
 /**
- * Modul DI LUAR dua puluh folder korpus (`docs/bersama/PANDUAN-TIM-PER-MODUL.md` bab 5) — keputusan work owner,
- * baris `M_NAV_MENU`-nya dari langkah migrasi inti sesudah 901 (904 masterdata). Nama = `Folder korpus` di
- * `MODUL.md` modulnya (= `M_NAV_MENU.LABEL`). Dipisah dari `FOLDER_KORPUS` supaya katalog folder korpus tetap
- * berarti persis dua puluh folder `D:\XML\RNM_BRD\`.
+ * Nama TAMPILAN modul yang BUKAN nama folder korpus - keputusan work owner 03-10-2026 ("ganti nama modul ... hapus kata
+ * Master nya", nama tampilan saja; kode modul, folder, rute, dan MODUL_AKTIF tetap). Dipakai `M_NAV_MENU.LABEL` sesudah
+ * slot menu modulnya (959 / 961), `kelompok` menu modulnya, dan kartu Beranda. Pasangan Go: `labelTampilDisetujui`
+ * (`inti/backend/penjaga/menu_test.go`) - keduanya dikunci uji.
+ */
+export const LABEL_TAMPIL: Readonly<Partial<Record<keyof typeof FOLDER_KORPUS, string>>> = {
+  masterContractRetroLife: 'Contract Retro Life',
+  masterProductNameLife: 'Product Name Life',
+}
+
+/**
+ * Modul DI LUAR dua puluh folder korpus (`PANDUAN-TIM-PER-MODUL.md` bab 5) — nama menunya = `M_NAV_MENU.LABEL` barisnya,
+ * yang dibuat langkah inti tersendiri (bukan isi awal 900). Pasangan Go: `modulLuarKorpus`
+ * (`inti/backend/penjaga/menu_test.go`) - keduanya dikunci uji.
+ *
+ * Keputusan work owner 03-10-2026: modul `marketingofficer` (insert/update `MARKETINGOFFICER`), label "Marketing
+ * Officer", kelompok MASTER, baris menu migrasi inti 906. Keputusan work owner 04-10-2026: modul `companydetail`
+ * (layar Pega SFAGIS Company Detail, tabel datar CLIENT), label "Company Detail", kelompok MASTER, migrasi inti 907.
+ * Keputusan work owner 04-10-2026: modul `accounts` (layar Pega SFAGIS Account, tabel T_M_ACCOUNT), label "Accounts",
+ * kelompok MASTER, migrasi inti 908. Keputusan work owner 04-10-2026: "Modul baru 'masterdata'" (menu master insert /
+ * update / aktif / nonaktif), label "Master Data", kelompok MASTER, migrasi inti 904 (`904_m_nav_menu_masterdata`).
  */
 export const MODUL_LUAR_KORPUS = {
-  /** 04-10-2026: "Modul baru 'masterdata'" — menu master insert / update / aktif / nonaktif. */
+  marketingOfficer: 'Marketing Officer',
+  companyDetail: 'Company Detail',
+  accounts: 'Accounts',
   masterData: 'Master Data',
 } as const
 
-/** Seluruh modul yang punya tombol sidebar / kartu Beranda: folder korpus + modul di luar korpus. */
-export const KATALOG_MODUL = { ...FOLDER_KORPUS, ...MODUL_LUAR_KORPUS } as const
+/**
+ * Nama menu setiap modul: folder korpus dengan nama tampilan bila diputuskan (`LABEL_TAMPIL`), selain itu nama folder
+ * VERBATIM; lalu modul di luar korpus (`MODUL_LUAR_KORPUS`).
+ */
+export const LABEL_MENU = {
+  ...Object.fromEntries(
+    Object.entries(FOLDER_KORPUS).map(([k, v]) => [k, LABEL_TAMPIL[k as keyof typeof FOLDER_KORPUS] ?? v]),
+  ),
+  ...MODUL_LUAR_KORPUS,
+} as Readonly<Record<keyof typeof FOLDER_KORPUS | keyof typeof MODUL_LUAR_KORPUS, string>>

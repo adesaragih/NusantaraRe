@@ -117,6 +117,8 @@ var polaPernyataanFlat = []*regexp.Regexp{
 	regexp.MustCompile(`(?is)^CREATE\s+TABLE\s+\{skema\}\.M_PRODUCTNAME_LIFE\w*\s*\(`),
 	regexp.MustCompile(`(?is)^CREATE\s+(UNIQUE\s+)?INDEX\s+\{skema\}\.\w+\s+ON\s+\{skema\}\.M_PRODUCTNAME_LIFE\w*\s*\(`),
 	regexp.MustCompile(`(?is)^DROP\s+TABLE\s+\{skema\}\.M_PRODUCTNAME_LIFE\w*(\s+CASCADE\s+CONSTRAINTS)?(\s+PURGE)?$`),
+	// Kolom ditambah/dibuang pada tabel flat yang sudah dijalankan di DEV (148, OQ-FLAT-08) - berkas lama tidak diubah.
+	regexp.MustCompile(`(?is)^ALTER\s+TABLE\s+\{skema\}\.M_PRODUCTNAME_LIFE\w*\s+(ADD|DROP)\s*\(`),
 }
 
 // polaObjekWarisanProduk - kedua tabel JSON warisan dan ketiga view: tidak pernah disebut migrasi rentang ini.
@@ -165,7 +167,7 @@ func pelanggaranIsiMigrasi(nama, isi string) []string {
 		}
 		if !sah {
 			kata := strings.Fields(p)
-			hasil = append(hasil, "pernyataan di luar CREATE/DROP objek M_PRODUCTNAME_LIFE*: "+
+			hasil = append(hasil, "pernyataan di luar CREATE/ALTER/DROP objek M_PRODUCTNAME_LIFE*: "+
 				strings.Join(kata[:min(3, len(kata))], " "))
 		}
 	}
@@ -221,6 +223,9 @@ func TestMPNLAturanMigrasiMenggigit(t *testing.T) {
 		"CREATE OR REPLACE VIEW {skema}.PRODUCT_LIFE AS SELECT ID FROM {skema}.M_PRODUCTNAME_LIFE\n/\n",
 		"CREATE TABLE {skema}.M_PRODUCTNAME_LIFE_X (\n  A VARCHAR2(6),\n  CONSTRAINT FK_X FOREIGN KEY (A) REFERENCES {skema}.M_PRODUCT_LIFE (ID)\n)\n/\n",
 		"CREATE INDEX {skema}.IX_X ON {skema}.M_PRODUCTINWARD_LIFE (ID)\n/\n",
+		"ALTER TABLE {skema}.M_PRODUCT_LIFE ADD (X VARCHAR2(1))\n/\n",
+		"ALTER TABLE {skema}.M_PRODUCTNAME_LIFE_X MODIFY (A VARCHAR2(9))\n/\n",
+		"ALTER TABLE {skema}.M_PRODUCTNAME_LIFE_X ADD CONSTRAINT FK_X FOREIGN KEY (A) REFERENCES {skema}.M_PRODUCT_LIFE (ID)\n/\n",
 	} {
 		if len(pelanggaranIsiMigrasi("150_uji.sql", buruk)) == 0 {
 			t.Errorf("seharusnya ditolak: %q", buruk)
@@ -229,6 +234,8 @@ func TestMPNLAturanMigrasiMenggigit(t *testing.T) {
 	for _, baik := range []string{
 		"-- komentar\nCREATE TABLE {skema}.M_PRODUCTNAME_LIFE_X (\n  A VARCHAR2(6)\n)\n/\nCREATE INDEX {skema}.IX_X ON {skema}.M_PRODUCTNAME_LIFE_X (A)\n/\n",
 		"DROP TABLE {skema}.M_PRODUCTNAME_LIFE_X CASCADE CONSTRAINTS\n/\n",
+		"ALTER TABLE {skema}.M_PRODUCTNAME_LIFE_X ADD (\n  B VARCHAR2(100)\n)\n/\n",
+		"ALTER TABLE {skema}.M_PRODUCTNAME_LIFE_X DROP (B)\n/\n",
 	} {
 		if p := pelanggaranIsiMigrasi("150_uji.sql", baik); len(p) != 0 {
 			t.Errorf("seharusnya sah: %q: %v", baik, p)
@@ -368,10 +375,37 @@ func kolomCadangan(kolom []string) []string {
 	return hasil
 }
 
-// semuaKolomFisik - kolom tabel yang disebut SQL modul ini (bertambah tiap paket).
+// semuaKolomFisik - kolom tabel yang disebut SQL modul ini (bertambah tiap paket; tabel flat sejak 02-10-2026).
 func semuaKolomFisik() [][]string {
-	return append([][]string{KolomProduk, KolomInward, KolomLampiran, KolomObjek, KolomOutbox,
-		KolomKontrakTreaty, KolomTahunTreaty, KolomRate}, KolomMaster()...)
+	return append(append([][]string{KolomProduk, KolomInward, KolomLampiran, KolomObjek, KolomOutbox,
+		KolomKontrakTreaty, KolomTahunTreaty, KolomRate}, KolomMaster()...), kolomFlatSemua()...)
+}
+
+// kolomFlatSemua - nama kolom kedelapan tabel flat menurut spesifikasi Go (= DDL, TestKolomFlatCocokDenganDDL).
+func kolomFlatSemua() [][]string {
+	nama := func(n ...string) []string { return n }
+	induk := nama(KolomIDFlat, KolomIsORS)
+	for _, k := range KolomFlatInduk {
+		induk = append(induk, k.Nama)
+	}
+	hasil := [][]string{induk}
+	tambah := func(kolom []string) { hasil = append(hasil, append(nama(KolomProductID, KolomUrut), kolom...)) }
+	tambah(namaKolomFlat(AnakLien.Kolom))
+	tambah(namaKolomFlat(AnakDokumen.Kolom))
+	tambah(namaKolomFlat(AnakPlan.Kolom))
+	tambah(namaKolomFlat(AnakFinUW.Kolom))
+	tambah(namaKolomFlat(AnakUWLimit.Kolom))
+	tambah(namaKolomFlat(AnakOutward.Kolom))
+	tambah(namaKolomFlat(AnakKomentar.Kolom))
+	return hasil
+}
+
+func namaKolomFlat[T any](kolom []KolomFlat[T]) []string {
+	var hasil []string
+	for _, k := range kolom {
+		hasil = append(hasil, k.Nama)
+	}
+	return hasil
 }
 
 func TestMPNLNolKataCadanganOracle(t *testing.T) {
@@ -403,16 +437,60 @@ func pelanggaranAlamat(isi string) []string {
 	return hasil
 }
 
-// TestMPNLNolAlamatLayanan - ADR-0013 / brief bab 1: alamat layanan luar
-// (`ServiceGoogle`, `LinkService`, penampil `View Office Online`) TIDAK
-// dipanggil dan TIDAK ditulis ke berkas apa pun - kode, uji, dan frontend.
+// alamatDiizinkan - SATU-SATUNYA alamat literal modul ini, berkunci akhiran jalur berkas: penampil `View Office
+// Online` (`DownloadAttProdName_Act` 7 b1103 menulisnya literal), keputusan work owner 03-10-2026 "izinkan ditulis di
+// kode". Nilainya INANG alamat itu; berkasnya hanya boleh memuat SATU alamat, berinang itu. Jumlahnya dikunci.
+var alamatDiizinkan = map[string]string{
+	"frontend/penampilOffice.ts": "view.officeapps.live.com",
+}
+
+// pelanggaranBerkas - pelanggaranAlamat, dengan pengecualian bernama `alamatDiizinkan`; `dipakai` = pengecualian
+// berlaku untuk berkas ini.
+func pelanggaranBerkas(jalur, isi string) (hasil []string, dipakai bool) {
+	p := pelanggaranAlamat(isi)
+	for akhiran, inang := range alamatDiizinkan {
+		if strings.HasSuffix(jalur, akhiran) && len(p) == 1 && strings.Count(isi, p[0]+inang+"/") == 1 {
+			return nil, true
+		}
+	}
+	return p, false
+}
+
+// TestMPNLNolAlamatLayanan - ADR-0013 / brief bab 1: alamat layanan luar (`ServiceGoogle`, `LinkService`) TIDAK
+// ditulis ke berkas apa pun - kode, uji, dan frontend; alamatnya di-resolve dari `M_LINK_SERVICE` saat jalan. Satu
+// pengecualian bernama: penampil `View Office Online` (`alamatDiizinkan`).
 func TestMPNLNolAlamatLayanan(t *testing.T) {
+	dipakai := 0
 	for jalur, isi := range berkasModul(t, ".go", ".sql", ".ts", ".tsx", ".css") {
 		if strings.HasSuffix(jalur, "mpnl_penjaga_test.go") {
 			continue
 		}
-		if p := pelanggaranAlamat(isi); len(p) > 0 {
-			t.Errorf("%s memuat alamat atau env var %v - alamat layanan di-resolve saat jalan, stub tidak memanggilnya", jalur, p)
+		p, izin := pelanggaranBerkas(jalur, isi)
+		if izin {
+			dipakai++
+		}
+		if len(p) > 0 {
+			t.Errorf("%s memuat alamat atau env var %v - alamat layanan di-resolve saat jalan (M_LINK_SERVICE)", jalur, p)
+		}
+	}
+	if dipakai != len(alamatDiizinkan) {
+		t.Errorf("%d pengecualian alamat terpakai, petanya memuat %d - pengecualian mati dibuang", dipakai, len(alamatDiizinkan))
+	}
+}
+
+func TestMPNLPengecualianAlamatSempit(t *testing.T) {
+	skema := "https:" + "//"
+	sah := "export const P = '" + skema + "view.officeapps.live.com/op/view.aspx?src='"
+	if p, izin := pelanggaranBerkas("../../frontend/penampilOffice.ts", sah); len(p) != 0 || !izin {
+		t.Errorf("alamat penampil di berkasnya sah: %v %v", p, izin)
+	}
+	for _, k := range []struct{ jalur, isi string }{
+		{"../../frontend/bentuk.ts", sah},
+		{"../../frontend/penampilOffice.ts", sah + "\nconst Q = '" + skema + "contoh.invalid/'"},
+		{"../../frontend/penampilOffice.ts", "export const P = '" + skema + "contoh.invalid/x'"},
+	} {
+		if p, _ := pelanggaranBerkas(k.jalur, k.isi); len(p) == 0 {
+			t.Errorf("%s seharusnya tertangkap: %q", k.jalur, k.isi)
 		}
 	}
 }
@@ -634,5 +712,76 @@ func TestMPNLAturanViewRateMenggigit(t *testing.T) {
 		"\nfunc c() string { return MasterRate }\n"
 	if bad := fungsiRateMenulis(t, "x.go", src); len(bad) != 2 {
 		t.Errorf("ExecContext/UPDATE dan DELETE FROM atas view rate harus tertangkap, pembaca murni tidak: %v", bad)
+	}
+}
+
+// --- aplikasi hanya tabel flat (keputusan work owner 02-10-2026) ---------------
+//
+// Kalimat work owner dikutip: "UBAH SEMUA JANGAN ADA YANG SIMPAN KE TABLE JSON SIMPAN KE TABLE FLAT SEMUA. DAN JANGAN
+// GUNAKAN TABLE VIEW NYA" (sebelumnya K7: "semua simpan dan baca dari table flat"). Kode aplikasi - layar, services,
+// repository - tidak menyebut kedua tabel JSON warisan; satu-satunya pengecualian jalur pindah `mpnl_pindah.go` (alat
+// pindah, popup Copy Old 03-10-2026, dan pemeriksa ID produk lama - semuanya BACA saja) dan nama konstantanya. Ketiga
+// view produk tidak disebut kode mana pun.
+
+// polaTabelJSONProduk - kedua tabel JSON warisan, sebagai nama Oracle atau konstanta Go (`M_PRODUCT_LIFE_SEQ` -
+// sequence identitas - bukan tabel JSON dan tidak cocok `\b`).
+var polaTabelJSONProduk = regexp.MustCompile(`\b(M_PRODUCT_LIFE|M_PRODUCTINWARD_LIFE|TabelProduk|TabelInward|KolomProduk|KolomInward)\b`)
+
+// polaViewProduk - ketiga view DEV atas tabel JSON produk (K7: tidak dipakai, tidak dibangun ulang).
+var polaViewProduk = regexp.MustCompile(`\b(PRODUCT_LIFE|PRODUCTINWARD_LIFE|DOCUMENTCLAIM_LIFE)\b`)
+
+// boleh menyebut tabel JSON: definisi namanya, alat pindah, dan kodek JSON alat pindah (`UraiProduk` - nama tabel
+// hanya di kalimat galat; nol akses tabel).
+var bolehTabelJSON = []string{"/backend/repository/mpnl_tabel.go", "/backend/repository/mpnl_pindah.go",
+	"/backend/repository/mpnl_json.go"}
+
+func pelanggaranTabelJSON(jalur, isi string) []string {
+	var hasil []string
+	if w := polaViewProduk.FindString(isi); w != "" {
+		hasil = append(hasil, "menyebut view "+w)
+	}
+	for _, b := range bolehTabelJSON {
+		if strings.HasSuffix(jalur, b) {
+			return hasil
+		}
+	}
+	if w := polaTabelJSONProduk.FindString(isi); w != "" {
+		hasil = append(hasil, "menyebut tabel JSON "+w+" - aplikasi hanya membaca dan menulis tabel flat")
+	}
+	return hasil
+}
+
+func TestMPNLAplikasiHanyaTabelFlat(t *testing.T) {
+	n := 0
+	for jalur, isi := range kodeProduksi(t) {
+		n++
+		for _, p := range pelanggaranTabelJSON(jalur, isi) {
+			t.Errorf("%s: %s", jalur, p)
+		}
+	}
+	if n < 10 {
+		t.Fatalf("hanya %d berkas terbaca; pembacanya yang rusak", n)
+	}
+}
+
+func TestMPNLAturanTabelFlatMenggigit(t *testing.T) {
+	for _, k := range []struct{ jalur, isi string }{
+		{"x/backend/repository/mpnl_identitas.go", "for _, tabel := range []string{TabelFlatInduk, TabelProduk} {"},
+		{"x/backend/services/mpnl_simpan.go", "q := `SELECT 1 FROM POOLDATA.M_PRODUCTINWARD_LIFE`"},
+		{"x/backend/repository/mpnl_baca.go", "q := `SELECT ID FROM S.PRODUCT_LIFE`"},
+		{"x/backend/repository/mpnl_pindah.go", "q := `SELECT * FROM S.PRODUCTINWARD_LIFE`"},
+	} {
+		if len(pelanggaranTabelJSON(k.jalur, k.isi)) == 0 {
+			t.Errorf("seharusnya ditolak: %s %q", k.jalur, k.isi)
+		}
+	}
+	for _, k := range []struct{ jalur, isi string }{
+		{"x/backend/repository/mpnl_pindah.go", "q, err := g.siapkan(TabelProduk, sqlSemuaJSONUmum)"},
+		{"x/backend/repository/mpnl_identitas.go", "const SeqProduk = \"M_PRODUCT_LIFE_SEQ\""},
+		{"x/backend/repository/mpnl_flat.go", "TabelFlatInduk = \"M_PRODUCTNAME_LIFE\""},
+	} {
+		if p := pelanggaranTabelJSON(k.jalur, k.isi); len(p) != 0 {
+			t.Errorf("seharusnya sah: %s %q: %v", k.jalur, k.isi, p)
+		}
 	}
 }

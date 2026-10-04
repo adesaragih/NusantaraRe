@@ -23,6 +23,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
+	"nusantarare/modul/treatycontractout/backend/models"
 	"nusantarare/modul/treatycontractout/backend/repository"
 )
 
@@ -34,18 +35,11 @@ var (
 	// ErrPembacaJenisReasuransiBelumDisuntik - handler lupa memasang pembaca.
 	ErrPembacaJenisReasuransiBelumDisuntik = errors.New(
 		"services: reinsurance type master reader is not injected")
-	// ErrPilihanAnakTreatyLimitKosong - master tidak memuat satu pun jenis
-	// porsi aktif: pemilih ReinsType anak tanpa pilihan.
-	ErrPilihanAnakTreatyLimitKosong = errors.New(
-		"services: reinsurance type master REINSURANCETYPE has no active Treaty Limit child type")
 )
 
 // PembacaJenisReasuransiTCO membaca master tersaring.
 type PembacaJenisReasuransiTCO interface {
 	DaftarNonLife(ctx context.Context) ([]repository.JenisReasuransiTCO, error)
-	// DaftarAnakTreatyLimit - pilihan ReinsType baris anak, porsi saja
-	// (`models.PilihanReinsAnakTreatyLimit`).
-	DaftarAnakTreatyLimit(ctx context.Context) ([]repository.JenisReasuransiTCO, error)
 }
 
 // JenisReasuransi adalah satu pilihan untuk layar.
@@ -66,11 +60,6 @@ func (pembacaJenisReasuransiBelumDisuntik) DaftarNonLife(context.Context) (
 	return nil, ErrPembacaJenisReasuransiBelumDisuntik
 }
 
-func (pembacaJenisReasuransiBelumDisuntik) DaftarAnakTreatyLimit(context.Context) (
-	[]repository.JenisReasuransiTCO, error) {
-	return nil, ErrPembacaJenisReasuransiBelumDisuntik
-}
-
 type pembacaJenisReasuransiOracle struct{ svc *Service }
 
 func (p pembacaJenisReasuransiOracle) DaftarNonLife(ctx context.Context) (
@@ -79,14 +68,6 @@ func (p pembacaJenisReasuransiOracle) DaftarNonLife(ctx context.Context) (
 		return nil, db.ErrTanpaOracle
 	}
 	return repository.NewMasterJenisReasuransi(p.svc.DB()).DaftarNonLife(ctx)
-}
-
-func (p pembacaJenisReasuransiOracle) DaftarAnakTreatyLimit(ctx context.Context) (
-	[]repository.JenisReasuransiTCO, error) {
-	if !p.svc.PunyaDatabase() {
-		return nil, db.ErrTanpaOracle
-	}
-	return repository.NewMasterJenisReasuransi(p.svc.DB()).DaftarAnakTreatyLimit(ctx)
 }
 
 // PembacaJenisReasuransiOracle adalah pembaca sungguhan, dipasang handler.
@@ -131,24 +112,19 @@ func (j *JenisReasuransiTreaty) Daftar(ctx context.Context, pelaku inti.Pelaku) 
 	return out, nil
 }
 
-// DaftarAnakTreatyLimit mengembalikan pilihan ReinsType baris anak (ketujuh
-// grid `Show Child`): dua belas jenis porsi, Flag active, urutan `.Note`
-// [keputusan work owner 30-09-2026]; induk TIDAK ikut [keputusan work owner 02-10-2026].
-func (j *JenisReasuransiTreaty) DaftarAnakTreatyLimit(ctx context.Context, pelaku inti.Pelaku) (
+// DaftarAnakTreatyLimit mengembalikan pilihan ReinsType baris anak SEMUA grid
+// `Show Child` - `TreatyContractSetReinsTypeList` atas nama ReinsType induk
+// (`models.PilihanReinsAnakDari`) [keputusan work owner 02-10-2026]. Nol baca
+// master: isi daftar ditetapkan activity itu. Nama tanpa kata yang cocok =
+// daftar KOSONG (bukan galat), seperti Pega.
+func (j *JenisReasuransiTreaty) DaftarAnakTreatyLimit(_ context.Context, pelaku inti.Pelaku, namaInduk string) (
 	[]JenisReasuransi, error) {
 	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return nil, err
 	}
-	baris, err := j.pembaca.DaftarAnakTreatyLimit(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if len(baris) == 0 {
-		return nil, ErrPilihanAnakTreatyLimitKosong
-	}
-	out := make([]JenisReasuransi, 0, len(baris))
-	for _, b := range baris {
-		out = append(out, JenisReasuransi{ID: b.ID, Note: b.Note, Tipe: b.Tipe})
+	out := []JenisReasuransi{}
+	for _, p := range models.PilihanReinsAnakDari(namaInduk) {
+		out = append(out, JenisReasuransi{ID: p.ID, Note: p.Nama})
 	}
 	return out, nil
 }

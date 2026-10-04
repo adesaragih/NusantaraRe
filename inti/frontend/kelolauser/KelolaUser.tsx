@@ -138,6 +138,7 @@ export default function KelolaUser({
             <tr>
               <th>{KELOLA_USER.kolomAkun}</th>
               <th>{KELOLA_USER.kolomNama}</th>
+              <th>{KELOLA_USER.kolomJabatan}</th>
               <th>{KELOLA_USER.kolomJenjang}</th>
               <th>{KELOLA_USER.kolomStatus}</th>
               <th>{KELOLA_USER.kolomLogin}</th>
@@ -153,8 +154,15 @@ export default function KelolaUser({
                   <td>
                     {a.akunId}
                     {saya && <span className="muted"> ({KELOLA_USER.anda})</span>}
+                    {/* Contact ID di bawah username (migrasi 905), bukan kolom sendiri: tabel tidak melebar. */}
+                    {a.contactId !== '' && <div className="muted">{a.contactId}</div>}
                   </td>
-                  <td>{a.nama}</td>
+                  <td>
+                    {a.nama}
+                    {/* Email di bawah nama, bukan kolom sendiri: alamat panjang mendorong kolom Aksi keluar layar laptop. */}
+                    {a.email !== '' && <div className="muted">{a.email}</div>}
+                  </td>
+                  <td>{a.jabatan === '' ? <span className="muted">—</span> : a.jabatan}</td>
                   <td>{teksJenjang(a)}</td>
                   <td>
                     <Status a={a} />
@@ -229,6 +237,7 @@ export default function KelolaUser({
           key={form ?? ''}
           akunId={form}
           akunSaya={akunSaya}
+          daftar={daftar}
           onTutup={() => {
             setForm(undefined)
           }}

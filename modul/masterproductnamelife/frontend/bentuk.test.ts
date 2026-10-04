@@ -3,19 +3,34 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  BATAS_DROPDOWN,
+  PILIHAN_DOKUMEN_KLAIM,
   PILIHAN_PEMBAYARAN,
+  geserAktif,
   hitungMaxSumReasured,
+  idBolehDisalin,
+  ringkasSalin,
+  saringLama,
   jepitHalaman,
   namaTreaty,
   potongHalaman,
+  potongPilihan,
   produkBaru,
   salinBaris,
   salinProduk,
   tampilPremiumFactor,
   tampilViewOffice,
+  gabungBerkas,
+  unggahBerurutan,
+  jenisViewOnline,
+  mimeViewOnline,
+  tampilAngka,
+  tampilTanggal,
   tampilViewRate,
   waktuPega,
 } from './bentuk'
+import { LAIN_MPNL } from './labels'
+import type { ProdukLama } from './api'
 
 describe('CountMaxSumReasured_Act - MAXSUMREASURED = MaxSumInsured - CedingLimit (eksak)', () => {
   it('mengurangi per digit, tanpa float', () => {
@@ -76,6 +91,15 @@ describe('visibilitas XML', () => {
     expect(tampilViewOffice('pdf')).toBe(false)
   })
 
+  it('View online (permintaan work owner 03-10-2026): pdf dan gambar raster; svg/html/office tidak', () => {
+    expect(jenisViewOnline('pdf')).toBe('pdf')
+    expect(['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].map(jenisViewOnline)).toEqual(Array(6).fill('gambar'))
+    for (const x of ['svg', 'html', 'xlsx', 'docx', 'txt', '']) expect(jenisViewOnline(x)).toBeNull()
+    expect(mimeViewOnline('pdf')).toBe('application/pdf')
+    expect(mimeViewOnline('jpg')).toBe('image/jpeg')
+    expect(mimeViewOnline('svg')).toBe('')
+  })
+
   it('pilihan pembayaran = kode 1-4 GenerateUpload_Act b1141', () => {
     expect(PILIHAN_PEMBAYARAN.map((o) => [o.value, o.label])).toEqual([
       ['1', 'Annual'],
@@ -106,5 +130,135 @@ describe('waktuPega - `.Date` History b62561 (pxDateTime)', () => {
   it('teks lain tampil apa adanya', () => {
     expect(waktuPega('', 420)).toBe('')
     expect(waktuPega('bukan stempel', 420)).toBe('bukan stempel')
+  })
+})
+
+describe('dropdown master - pengganti tombol Choose* (keputusan work owner 02-10-2026)', () => {
+  it('server diminta BATAS_DROPDOWN + 1 baris: baris lebih = daftar terpotong, dinyatakan', () => {
+    const semua = Array.from({ length: BATAS_DROPDOWN + 1 }, (_, i) => i)
+    expect(potongPilihan(semua)).toEqual({ tampil: semua.slice(0, BATAS_DROPDOWN), lebih: true })
+    expect(potongPilihan(semua.slice(0, BATAS_DROPDOWN))).toEqual({ tampil: semua.slice(0, BATAS_DROPDOWN), lebih: false })
+    expect(potongPilihan([])).toEqual({ tampil: [], lebih: false })
+    // Kalimat potongan menyebut batas yang sama.
+    expect(LAIN_MPNL.dropdownTerpotong).toContain(String(BATAS_DROPDOWN))
+  })
+
+  it('panah atas/bawah dan PageUp/PageDown menggeser pilihan aktif tanpa keluar daftar', () => {
+    expect(geserAktif(-1, 1, 3)).toBe(0)
+    expect(geserAktif(0, 1, 3)).toBe(1)
+    expect(geserAktif(2, 1, 3)).toBe(2)
+    expect(geserAktif(0, -1, 3)).toBe(0)
+    expect(geserAktif(1, -Infinity, 3)).toBe(0)
+    expect(geserAktif(1, Infinity, 3)).toBe(2)
+    expect(geserAktif(5, 0, 3)).toBe(2)
+    expect(geserAktif(0, 1, 0)).toBe(-1)
+  })
+})
+
+describe('mode lihat - nilai tampil seperti layar Pega (foto layar work owner 02-10-2026)', () => {
+  it('angka: pemisah ribuan titik, desimal koma - eksak dari teks, tanpa float', () => {
+    expect(tampilAngka('250000000')).toBe('250.000.000')
+    expect(tampilAngka('1500000.30')).toBe('1.500.000,30')
+    expect(tampilAngka('-1234.5')).toBe('-1.234,5')
+    // Lebih dari 2^53 tetap eksak (bukan float): setiap digit utuh, berkelompok tiga. Hasil tidak ditulis literal -
+    // empat kelompok angka bertitik dibaca penjaga TestMPNLNolAlamatLayanan sebagai alamat IP.
+    const besar = tampilAngka('9007199254740993')
+    expect(besar.split('.').join('')).toBe('9007199254740993')
+    expect(besar.split('.').map((k) => k.length)).toEqual([1, 3, 3, 3, 3, 3])
+    expect(tampilAngka('180')).toBe('180')
+    expect(tampilAngka('0')).toBe('0')
+    // Teks yang bukan angka kanonik (data lama) tampil apa adanya - tidak ditebak.
+    expect(tampilAngka('12,5')).toBe('12,5')
+    expect(tampilAngka('')).toBe('')
+  })
+
+  it('tanggal YYYY-MM-DD tampil DD/MM/YYYY (`Begin Date` 01/08/2023 di Pega)', () => {
+    expect(tampilTanggal('2023-08-01')).toBe('01/08/2023')
+    expect(tampilTanggal('')).toBe('')
+    expect(tampilTanggal('bukan tanggal')).toBe('bukan tanggal')
+  })
+})
+
+describe('Copy Old - popup produk lama (permintaan work owner 03-10-2026)', () => {
+  const lama = (id: string, ubah: Partial<ProdukLama> = {}): ProdukLama => ({
+    id, productName: `UJI PRODUK ${id}`, ceding: 'UJI CEDING', treatyNumber: `UJI-${id}`, inwardName: 'UJI TREATY',
+    createOp: 'UJI-OP', updateOp: 'UJI-OP', bolehDisalin: true, alasan: [], catatan: [], ...ubah,
+  })
+  const daftar = [lama('100901'), lama('100902', { ceding: 'UJI LAIN', bolehDisalin: false, alasan: ['UJI ALASAN'] }), lama('100903')]
+
+  it('Search menyaring ID, Product Name, Ceding, Treaty Number, Treaty Name - tanpa membedakan huruf', () => {
+    expect(saringLama(daftar, '').map((d) => d.id)).toEqual(['100901', '100902', '100903'])
+    expect(saringLama(daftar, 'lain').map((d) => d.id)).toEqual(['100902'])
+    expect(saringLama(daftar, ' uji-100903 ').map((d) => d.id)).toEqual(['100903'])
+    expect(saringLama(daftar, '10090').length).toBe(3)
+  })
+
+  it('yang dikirim Process Copy: hanya ID terpilih yang boleh disalin, urutan daftar', () => {
+    expect(idBolehDisalin(daftar, new Set(['100903', '100902', '100901', 'UJI-HILANG']))).toEqual(['100901', '100903'])
+    expect(idBolehDisalin(daftar, new Set())).toEqual([])
+  })
+
+  it('ringkasan hasil per status', () => {
+    expect(
+      ringkasSalin([
+        { id: '1', status: 'disalin', pesan: [] },
+        { id: '2', status: 'disalin', pesan: [] },
+        { id: '3', status: 'ditolak', pesan: ['x'] },
+        { id: '4', status: 'gagal', pesan: [] },
+        { id: '5', status: 'sudahAda', pesan: [] },
+      ]),
+    ).toEqual({ disalin: 2, sudahAda: 1, ditolak: 1, gagal: 1 })
+  })
+})
+
+describe('Document List - PromptList properti `.Document` (XML dikirim work owner 03-10-2026)', () => {
+  it('16 nilai `pyStandardValue`, urutan `pyPromptTableList`, tanpa ganda', () => {
+    expect(PILIHAN_DOKUMEN_KLAIM).toEqual([
+      'Sertifikat peserta (Participant certificate)',
+      'Copy identitas diri KTP/SIM/Paspor (Copy of ID card/Driving license/Passport)',
+      'Copy kartu keluarga (Copy of family card)',
+      'Copy sertifikat kematian (Copy of death certificate)',
+      'Copy bukti pembayaran klaim (Copy of claim payment receipt)',
+      'Copy legalisir rincian biaya perawatan dari rumah sakit (Legalized copy of hospital treatment cost details)',
+      'Copy legalisir kwitansi biaya perawatan dari rumah sakit (Legalized copy of hospital payment receipts)',
+      'Surat pernyataan meninggal oleh dokter/rumah sakit (Doctor/Hospital death statement letter)',
+      'Surat keterangan meninggal oleh polisi (Police Statement for death)',
+      'Surat keterangan meninggal karena kecelakaan oleh polisi (Police Statement for accidental death)',
+      'Surat keterangan kepolisian untuk klaim akibat kecelakaan (Police Statement for accident claim)',
+      'Surat diagnosa dari dokter/rumah sakit (Doctor/Hospital diagnosis letter)',
+      'Surat pernyataan kesehatan / SPK (Health declaration form)',
+      'Formulir klaim dari perusahaan asuransi (Insurance claim form)',
+      'Laporan resume medis dokter/rumah sakit tentang perawatan/pembedahan peserta (Medical summary report from doctor/hospital regarding treatment/surgery)',
+      'Lain-lain (Others)',
+    ])
+    expect(new Set(PILIHAN_DOKUMEN_KLAIM).size).toBe(16)
+  })
+})
+
+
+describe('unggah banyak berkas (permintaan work owner 03-10-2026)', () => {
+  const f = (nama: string, isi = 'x'): File => new File([isi], nama)
+
+  it('pilihan digabung; nama sama (tanpa beda huruf besar) tidak digandakan - backend menolaknya', () => {
+    const a = f('UJI satu.pdf')
+    const hasil = gabungBerkas([a], [f('uji SATU.PDF'), f('UJI dua.jpg'), f('UJI dua.jpg')])
+    expect(hasil.map((x) => x.name)).toEqual(['UJI satu.pdf', 'UJI dua.jpg'])
+    expect(hasil[0]).toBe(a)
+  })
+
+  it('satu per satu, berurutan; yang gagal dikumpulkan dan sisanya tetap diunggah', async () => {
+    const dikirim: string[] = []
+    const mulai: string[] = []
+    const gagal = await unggahBerurutan(
+      [f('UJI a.pdf'), f('UJI b.pdf'), f('UJI c.pdf')],
+      async (x) => {
+        dikirim.push(x.name)
+        if (x.name === 'UJI b.pdf') throw new Error('UJI ditolak')
+      },
+      (x, i) => mulai.push(`${i}:${x.name}`),
+    )
+    expect(dikirim).toEqual(['UJI a.pdf', 'UJI b.pdf', 'UJI c.pdf'])
+    expect(mulai).toEqual(['0:UJI a.pdf', '1:UJI b.pdf', '2:UJI c.pdf'])
+    expect(gagal.map((g) => [g.berkas.name, (g.galat as Error).message])).toEqual([['UJI b.pdf', 'UJI ditolak']])
   })
 })

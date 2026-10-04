@@ -4,7 +4,7 @@
 >
 > ⭐ **Ralat 02-10-2026 (keputusan work owner, K5 — OQ-MPNL-01 flat):** kalimat P1 di bawah (*"modul ini **tidak membuat
 > satu tabel, sequence, maupun constraint pun**"*, *"Rentang migrasi `140`–`179` sengaja kosong"*) **tidak berlaku lagi**.
-> Migrasi 140–147 membuat tabel flat `M_PRODUCTNAME_LIFE` + tujuh anak — bab *"Tabel FLAT produk"* di ekor dokumen ini.
+> Migrasi 140–147 membuat tabel flat `M_PRODUCTNAME_LIFE` + tujuh anak (148 menambah empat kolom `OUTWARD*` ke anak outward) — bab *"Tabel FLAT produk"* di ekor dokumen ini.
 > Kedua tabel JSON di bawah tetap **dibaca, tidak dibuat** (`MODUL.md`), kini sebagai cadangan dan sumber alat pindah.
 
 **P1 (`RALAT-DEV-30-09-2026.md`)** — modul ini **tidak membuat satu tabel, sequence, maupun constraint pun**. Produk
@@ -70,7 +70,7 @@ saling membatalkan (`TestDokumenSTRUKTURSepakatAtasTabelBersama`).
 
 | Tabel | Sentuhan modul ini |
 | --- | --- |
-| `T_STORAGE_IMAGE` | ditulis pelaksana stub lampiran (`Insert_T_Storage_SQL` b85: `IMAGEID`, `URLPUBLIC` NULL, `APPFOLDER`, `EXPDATE`, `FILENAME`, `APPNAME`, `STORAGE = 'standard'`), dihapus `DeleteStorage_SQL` b85 |
+| `T_STORAGE_IMAGE` | ditulis pelaksana lampiran (`Insert_T_Storage_SQL` b85: `IMAGEID`, `URLPUBLIC`, `APPFOLDER`, `EXPDATE`, `FILENAME`, `APPNAME`, `STORAGE = 'standard'`; stub: `URLPUBLIC` NULL, nyata 03-10-2026: nilai jawaban `ServiceGoogle`), dibaca `GetLinkStorage_SQL` b85, diperbarui `Update_T_Storage_SQL` b85 (URL bertanda tangan baru, mode nyata), dihapus `DeleteStorage_SQL` b85 |
 | `T_LOG_SERVICE_RNM` | outbox bersama (Claim Life 015): `MODUL = 'MASTERPRODUCTNAMELIFE'`, `JENIS_EFEK = 'unggah-lampiran'` |
 | `T_FOLDER_IMAGE` | dibaca `APPNAME` (`GetAppName_SQL` b58) |
 | `AGENT`, `CLIENT`, `CURRENCY`, `RIRISK_LIFE_SUMMARY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE` | dibaca saja — pemilih master dan `PLAN LIST` (OQ-MPNL-04) |
@@ -78,7 +78,7 @@ saling membatalkan (`TestDokumenSTRUKTURSepakatAtasTabelBersama`).
 
 ---
 
-# Tabel FLAT produk — dibuat migrasi 140–147 *(keputusan work owner 02-10-2026, tiket 01 bab bertanggal)*
+# Tabel FLAT produk — dibuat migrasi 140–147, kolom outward tambahan migrasi 148 *(keputusan work owner 02-10-2026, tiket 01 bab bertanggal)*
 
 Kolom dan tipe di bawah dibaca penjaga inti `TestKolomDDLCocokDenganStruktur` / `TestGolonganTipeDDLCocokDenganStruktur`
 (kolom **Tipe**: golongan; kolom **DDL**: tipe fisik). Seluruh kolom NULLABLE kecuali kunci. Sumber = kunci halaman
@@ -210,7 +210,7 @@ Anak (migrasi 145) — `UnderwritingLimitList[*]` - grid b42075. PK (`PRODUCTID`
 
 ## M_PRODUCTNAME_LIFE_OUTWARD
 
-Anak (migrasi 146) — `OutwardList[*]` berisi - `GetReinsTypeOR_Life` 4.1 b770 (objek kosong tidak dipindah, K4). PK (`PRODUCTID`, `URUT`); FK `PRODUCTID` → `M_PRODUCTNAME_LIFE(ID)` `ON DELETE CASCADE`.
+Anak (migrasi 146; `OUTWARDNAMEID`, `OUTWARDNAME`, `OUTWARDRATEID`, `OUTWARDRATE` migrasi 148) — `OutwardList[*]` berisi - `GetReinsTypeOR_Life` 4.1 b770 (objek kosong tidak dipindah, K4). PK (`PRODUCTID`, `URUT`); FK `PRODUCTID` → `M_PRODUCTNAME_LIFE(ID)` `ON DELETE CASCADE`.
 
 | Kolom | Tipe | DDL | Sumber / isi |
 | --- | --- | --- | --- |
@@ -222,6 +222,10 @@ Anak (migrasi 146) — `OutwardList[*]` berisi - `GetReinsTypeOR_Life` 4.1 b770 
 | `TREATYCONTRACTID` | teks | VARCHAR2(100) | `TREATYCONTRACTID` |
 | `UNDERWRITINGYEAR` | bilangan bulat | NUMBER(5) | `UNDERWRITINGYEAR` |
 | `OVR_COMM` | angka desimal | NUMBER(38,8) | `OVR_COMM` - tanpa penulis di korpus, kosong (OQ-MPNL-09) |
+| `OUTWARDNAMEID` | teks | VARCHAR2(100) | `OUTWARDNAMEID` - objek outward bukan-OR (OQ-FLAT-08, keputusan work owner 02-10-2026); DEV angka ≤ 7 |
+| `OUTWARDNAME` | teks | VARCHAR2(1000) | `OUTWARDNAME` - reasuradur outward; DEV 4 nama berbeda ≤ 11 karakter |
+| `OUTWARDRATEID` | teks | VARCHAR2(100) | `OUTWARDRATEID` - DEV angka ≤ 7 |
+| `OUTWARDRATE` | teks | VARCHAR2(500) | `OUTWARDRATE` - DEV 3 rate berbeda ≤ 21 karakter |
 
 ## M_PRODUCTNAME_LIFE_COMMENT
 

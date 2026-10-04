@@ -5418,14 +5418,65 @@ textarea.field__input {
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
 }
-/* Panel ilustrasi: disembunyikan di layar sempit.
-   ⛔ Ilustrasinya DIAM (laporan work owner 02-10-2026 "halaman ganti sandi
-   masih kedip"): animasi melayang tanpa henti dari loginbaru.html menggambar
-   ulang kartu kaca (backdrop-filter) dan bayangan SVG di setiap bingkai -
-   terukur di Chrome headless: 62 rupa berbeda dalam 65 foto kartu, 1 rupa
-   tanpa animasi. */
+/* Panel ilustrasi: disembunyikan di layar sempit. */
 .halaman-masuk__panel {
   display: none;
+}
+/* Ilustrasi + lapisan beranimasi (permintaan work owner 03-10-2026: animasi
+   gerak loginbaru.html kembali, asap kopi ikut bergerak).
+   ⛔ Animasi HANYA pada `.halaman-masuk__lapis` - SVG transparan terpisah yang
+   bertumpuk tepat di atas ilustrasi diam dan bergerak sebagai LAPISAN KOMPOSIT
+   (`will-change`). Dulu gugus melayang beranimasi di dalam SVG utama: kartu
+   kaca (backdrop-filter) dan bayangan SVG digambar ulang tiap bingkai, layar
+   login/ganti sandi berkedip (02-10-2026: 62 rupa berbeda dalam 65 foto
+   kartu). Dijaga `login.test.ts`. */
+.halaman-masuk__ilustrasi {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+}
+.halaman-masuk__ilustrasi > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.halaman-masuk__ilustrasi > .halaman-masuk__lapis {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.halaman-masuk__melayang {
+  animation: halaman-masuk-melayang 6s ease-in-out infinite;
+}
+.halaman-masuk__melayang--tunda {
+  animation-delay: -3s;
+}
+@keyframes halaman-masuk-melayang {
+  50% {
+    transform: translateY(-10px);
+  }
+}
+/* Asap kopi: naik sambil memudar, dua garis bergantian. */
+.halaman-masuk__uap {
+  animation: halaman-masuk-uap 3.2s ease-in-out infinite;
+}
+.halaman-masuk__uap--tunda {
+  animation-delay: -1.6s;
+}
+@keyframes halaman-masuk-uap {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
 }
 .halaman-masuk__sisi-form {
   display: flex;
@@ -5601,11 +5652,6 @@ textarea.field__input {
     background: linear-gradient(160deg, var(--hm-panel-from), var(--hm-panel-to));
     overflow: hidden;
   }
-  .halaman-masuk__panel svg {
-    width: 100%;
-    max-width: 400px;
-    height: auto;
-  }
   .halaman-masuk__sisi-form {
     justify-content: center;
     padding: 40px;
@@ -5616,6 +5662,10 @@ textarea.field__input {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .halaman-masuk__melayang,
+  .halaman-masuk__uap {
+    animation: none;
+  }
   .halaman-masuk * {
     transition: none !important;
   }
@@ -5652,11 +5702,14 @@ textarea.field__input {
   background: var(--warning-bg);
   color: var(--warning-text);
 }
+/* Tombol aksi baris BERDERET ke samping (permintaan work owner 03-10-2026): sel
+   `.table__actions` sesempit isinya (`width: 1%`), jadi wadah yang boleh membungkus
+   menumpuk tombol satu per baris. Tabel lebar menggulir di dalam kotak Kelola User. */
 .kelola-user__aksi {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
-  gap: 4px;
+  gap: 6px;
 }
 .kelola-user__hapus {
   color: var(--danger-text);
@@ -6246,6 +6299,9 @@ textarea.field__input {
   color: var(--ku-kepala-teks);
   font-weight: 700;
   border-bottom: 1px solid var(--ku-kepala-garis);
+  /* Judul panjang ("Organisasi / Divisi / Unit") boleh dua baris, supaya tombol aksi yang berderet
+     ke samping (03-10-2026) tidak mendorong tabel melebihi kotak. */
+  white-space: normal;
 }
 .kelola-user .kelola-user__tabel td {
   color: var(--ku-teks);

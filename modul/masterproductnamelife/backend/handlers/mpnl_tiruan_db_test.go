@@ -101,7 +101,7 @@ func pasangDB(t *testing.T) *ujiDB {
 	return u
 }
 
-// ddlFlat - pernyataan berkas migrasi 140–147 modul ini (maju atau mundur), `{skema}` diganti skema uji.
+// ddlFlat - pernyataan berkas migrasi 140–148 modul ini (maju atau mundur), `{skema}` diganti skema uji.
 func ddlFlat(t *testing.T, mundur bool, skema string) []string {
 	t.Helper()
 	entri, err := os.ReadDir(filepath.Join("..", "migrations"))
@@ -118,9 +118,13 @@ func ddlFlat(t *testing.T, mundur bool, skema string) []string {
 			sumber["migrations/"+e.Name()] = &fstest.MapFile{Data: isi}
 		}
 	}
+	// Sembilan langkah - induk + tujuh anak (repository.DaftarTabelFlat; paket uji ini tidak mengimpor repository,
+	// penjaga inti TestHandlersTidakMengimporRepository) + 148 empat kolom outward. Kurang dari itu = skema uji
+	// sebagian: gagal, bukan diam.
+	const langkahFlat = 9
 	langkah, err := migrasi.Daftar(mundur, sumber)
-	if err != nil || len(langkah) == 0 {
-		t.Fatalf("membaca migrasi flat: %d langkah, %v", len(langkah), err)
+	if err != nil || len(langkah) != langkahFlat {
+		t.Fatalf("membaca migrasi flat: %d langkah (mau %d), %v", len(langkah), langkahFlat, err)
 	}
 	var hasil []string
 	for _, l := range langkah {
@@ -167,4 +171,19 @@ func (u *ujiDB) teks(t *testing.T, q string, args ...any) string {
 		t.Fatalf("membaca %q: %v", q, err)
 	}
 	return v.String
+}
+
+// isiMasterUji - satu nilai per pemilih master yang dipakai `badanUji` / `badanLengkap` (UJI-).
+func (u *ujiDB) isiMasterUji(t *testing.T) {
+	t.Helper()
+	for _, q := range []string{
+		`INSERT INTO {s}.AGENT VALUES ('L0UJI1', 'UJI CEDING SATU', '1')`,
+		`INSERT INTO {s}.AGENT VALUES ('L0SOB', 'UJI SOB', '1')`,
+		`INSERT INTO {s}.CLIENT VALUES ('UJI-ORG-1', 'UJI PEMEGANG', 'LIFE')`,
+		`INSERT INTO {s}.CURRENCY VALUES ('1', 'IDR')`,
+		`INSERT INTO {s}.RIRISK_LIFE_SUMMARY VALUES ('1000117', 'UJI RISK')`,
+		`INSERT INTO {s}.CAUSEOFLOSS_LIFE VALUES ('100004', 'ANY CAUSE')`,
+	} {
+		u.exec(t, q)
+	}
 }

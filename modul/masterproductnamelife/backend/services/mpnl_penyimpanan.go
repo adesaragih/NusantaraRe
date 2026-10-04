@@ -1,10 +1,10 @@
 package services
 
-// Penyimpanan berkas STUB (P5, OQ-MPNL-10) - pengganti `ServiceGoogle` +
-// `LinkService` + `GetTokenStorage_SQL`. Berkas ditahan di folder lokal
-// `UNGGAHAN_DIR/master-product-name-life/antre/<IMAGEID>`; "kirim" memindahnya
-// ke `…/simpan/<IMAGEID>` (meniru objek di penyimpanan). ⛔ Nol klien HTTP, nol
-// alamat layanan di kode maupun berkas apa pun.
+// Penyimpanan berkas STUB (P5) - untuk uji dan objek yang dicatatnya sebelum 03-10-2026; aplikasi memakai penyimpanan
+// nyata (`ServiceGoogle` + `LinkService` + token, `mpnl_storage.go`, keputusan work owner 03-10-2026). Berkas
+// ditahan di folder lokal `UNGGAHAN_DIR/master-product-name-life/antre/<IMAGEID>`; "kirim" memindahnya ke
+// `…/simpan/<IMAGEID>` (meniru objek di penyimpanan) dan objeknya dicatat apa adanya (URLPUBLIC kosong). ⛔ Nol
+// klien HTTP di berkas ini.
 
 import (
 	"context"
@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"nusantarare/inti/backend/unggah"
+	"nusantarare/modul/masterproductnamelife/backend/models"
 )
 
 const folderStub = "master-product-name-life"
@@ -58,36 +59,51 @@ func (p penyimpananLokal) BuangAntrean(_ context.Context, imageID string) {
 	}
 }
 
-func (p penyimpananLokal) Kirim(_ context.Context, imageID string) error {
-	sumber, err := p.jalur("antre", imageID)
+func (p penyimpananLokal) Kirim(_ context.Context, o models.ObjekPenyimpanan, _, _ string) (models.ObjekPenyimpanan, error) {
+	sumber, err := p.jalur("antre", o.ImageID)
 	if err != nil {
-		return err
+		return models.ObjekPenyimpanan{}, err
 	}
-	tujuan, _ := p.jalur("simpan", imageID)
+	tujuan, _ := p.jalur("simpan", o.ImageID)
 	if _, err := os.Stat(tujuan); err == nil {
-		return nil // sudah terkirim - idempoten
+		return o, nil // sudah terkirim - idempoten
 	}
 	if _, err := os.Stat(sumber); errors.Is(err, os.ErrNotExist) {
-		return ErrBerkasSumberHilang
+		return models.ObjekPenyimpanan{}, ErrBerkasSumberHilang
 	}
 	if err := os.MkdirAll(filepath.Dir(tujuan), 0o750); err != nil {
-		return fmt.Errorf("services: preparing the storage stub folder: %w", err)
+		return models.ObjekPenyimpanan{}, fmt.Errorf("services: preparing the storage stub folder: %w", err)
 	}
 	if err := os.Rename(sumber, tujuan); err != nil {
-		return fmt.Errorf("services: sending to the storage stub: %w", err)
+		return models.ObjekPenyimpanan{}, fmt.Errorf("services: sending to the storage stub: %w", err)
 	}
-	return nil
+	return o, nil
 }
 
-func (p penyimpananLokal) Buka(_ context.Context, imageID string) (io.ReadCloser, error) {
-	j, err := p.jalur("simpan", imageID)
+func (p penyimpananLokal) Buka(_ context.Context, o models.ObjekPenyimpanan) (io.ReadCloser, *models.ObjekPenyimpanan, error) {
+	j, err := p.jalur("simpan", o.ImageID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return os.Open(j)
+	f, err := os.Open(j)
+	if err != nil {
+		return nil, nil, err
+	}
+	return f, nil, nil
 }
 
-func (p penyimpananLokal) Hapus(_ context.Context, imageID string) error {
+// Tautan - berkas stub tidak punya URL bertanda tangan untuk penampil kantor.
+func (penyimpananLokal) Tautan(context.Context, models.ObjekPenyimpanan) (string, *models.ObjekPenyimpanan, error) {
+	return "", nil, ErrOfficeStub
+}
+
+func (p penyimpananLokal) Hapus(_ context.Context, imageID string, o *models.ObjekPenyimpanan) error {
+	if o != nil && strings.TrimSpace(o.URLPublic) != "" {
+		// Objek di penyimpanan nyata (unggahan Pega, atau mode nyata sebelumnya): stub tidak dapat menghapusnya, dan
+		// menghapus rekamnya saja meninggalkan objek yatim.
+		return galatStorage{jenis: ErrStorageBelumSiap, layar: ErrStorageBelumSiap.Error() + ": the attachment file is in " +
+			"storage; deleting it needs the storage service"}
+	}
 	for _, bagian := range []string{"simpan", "antre"} {
 		j, err := p.jalur(bagian, imageID)
 		if err != nil {
@@ -107,12 +123,15 @@ func (penyimpananBelumDisetel) SimpanAntrean(context.Context, string, io.Reader)
 	return ErrPenyimpananBelumDisetel
 }
 func (penyimpananBelumDisetel) BuangAntrean(context.Context, string) {}
-func (penyimpananBelumDisetel) Kirim(context.Context, string) error {
-	return ErrPenyimpananBelumDisetel
+func (penyimpananBelumDisetel) Kirim(context.Context, models.ObjekPenyimpanan, string, string) (models.ObjekPenyimpanan, error) {
+	return models.ObjekPenyimpanan{}, ErrPenyimpananBelumDisetel
 }
-func (penyimpananBelumDisetel) Buka(context.Context, string) (io.ReadCloser, error) {
-	return nil, ErrPenyimpananBelumDisetel
+func (penyimpananBelumDisetel) Buka(context.Context, models.ObjekPenyimpanan) (io.ReadCloser, *models.ObjekPenyimpanan, error) {
+	return nil, nil, ErrPenyimpananBelumDisetel
 }
-func (penyimpananBelumDisetel) Hapus(context.Context, string) error {
+func (penyimpananBelumDisetel) Tautan(context.Context, models.ObjekPenyimpanan) (string, *models.ObjekPenyimpanan, error) {
+	return "", nil, ErrPenyimpananBelumDisetel
+}
+func (penyimpananBelumDisetel) Hapus(context.Context, string, *models.ObjekPenyimpanan) error {
 	return ErrPenyimpananBelumDisetel
 }

@@ -38,5 +38,5 @@ Satu tempat untuk seluruh pertanyaan terbuka modul ini. Rincian dan buktinya tet
 Jawaban atas OQ-TCO-08 … 21 (brief `PROMPT-LANJUTAN-TREATY-CONTRACT-OUT-2.md` §1). Label kode yang semula
 `[keputusan kami]` / `[dugaan kuat]` untuk OQ yang ditutup kini `[keputusan work owner 29-09-2026]`.
 
-OQ spec yang tetap terbuka (di luar register ini): aturan LimitMB & Portfolio (AC 36), arti `QUARTER = '0'`, arti bisnis
+OQ spec yang tetap terbuka (di luar register ini): aturan Portfolio (AC 36; LimitMB ditutup 02-10-2026 — ikuti XML), arti `QUARTER = '0'`, arti bisnis
 istilah klausul.

@@ -14,8 +14,11 @@
 
 /** Menu - `M_NAV_MENU.LABEL` isi awal 900 = nama folder korpus. */
 export const MENU_MCRL = {
-  /** Nama folder korpus `D:\XML\RNM_BRD\Master Contract Retro Life`. */
-  kelompok: 'Master Contract Retro Life',
+  /**
+   * `[tidak ada di korpus]` - nama tampilan: folder korpus `D:\XML\RNM_BRD\Master Contract Retro Life` tanpa kata
+   * "Master" (keputusan work owner 03-10-2026, nama tampilan saja; migrasi 959). Kode modul tetap.
+   */
+  kelompok: 'Contract Retro Life',
 } as const
 
 /** Kosakata bersama beberapa panel. */
@@ -39,8 +42,12 @@ export const UMUM_MCRL = {
 
 /** Halaman awal - `Section/GridRetrocessionLife.xml` + `InputRetrocessionLife.xml` + `InputDtlRetrocessionLife.xml`. */
 export const TAHUN_MCRL = {
-  /** `GridRetrocessionLife.xml` b1082 `<pyValue>` (sel b1017, format `Heading 1`). */
-  judul: 'MASTER CONTRACT RETRO LIFE',
+  /**
+   * `[tidak ada di korpus]` - `GridRetrocessionLife.xml` b1082 `<pyValue>` (sel b1017, format `Heading 1`)
+   * `MASTER CONTRACT RETRO LIFE` tanpa kata "MASTER" (keputusan work owner 03-10-2026, nama tampilan saja), ditulis
+   * huruf kapital di awal kata seperti nama menu ("penulisannya udah jangan capital, ikuti Product Name Life").
+   */
+  judul: 'Contract Retro Life',
   /** `InputRetrocessionLife.xml` b8927 `<pyLabelFieldValue>` - label SEL tombol b8888 (`pyIncludeLabel` true). */
   labelSelAdd: 'End Period',
   /** `InputRetrocessionLife.xml` b9007 `<pyLabel>` - teks tombol b8888 (`NewInputTreatyYear_Life_Act`). */

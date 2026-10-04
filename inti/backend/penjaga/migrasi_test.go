@@ -291,11 +291,12 @@ func TestPernyataanMulaiDenganPerintah(t *testing.T) {
 		for _, m := range langkah {
 			for i, p := range m.Pernyataan {
 				kata := strings.ToUpper(strings.Fields(p)[0])
-				// Blok PL/SQL hanya dalam SATU bentuk: berpelindung katalog
-				// (`migrasi.BacaPerintahKatalog`, 901 menu datar) - dan
-				// perintah di dalamnya sendiri harus perintah SQL.
+				// Blok PL/SQL hanya dalam DUA bentuk: berpelindung katalog
+				// (`migrasi.BacaPerintahKatalog`, 901 menu datar) dan sequence
+				// dari kueri (`migrasi.BacaSequenceDariKueri`, 810 Company
+				// Detail) - dan perintah di dalamnya sendiri harus perintah SQL.
 				if kata == "DECLARE" {
-					perintah, alasan := pelanggaranBlokPLSQL(p, mundur)
+					perintah, alasan := perintahBlokPLSQL(p, mundur)
 					if alasan != "" {
 						t.Errorf("%s pernyataan %d: %s", m.Nama, i, alasan)
 						continue
@@ -407,9 +408,24 @@ func TestKolomCreateTableMembacaSeluruhTabel(t *testing.T) {
 // yang ditulis di dalam EXECUTE IMMEDIATE (bukan ADD CONSTRAINT).
 var polaTambahKolomSebaris = regexp.MustCompile(`(?i)^ALTER\s+TABLE\s+\S+\s+ADD\s*\(`)
 
-// pelanggaranBlokPLSQL menjawab perintah di dalam blok PL/SQL, atau mengapa
-// blok itu tidak sah (kosong = sah). Satu-satunya bentuk yang diterima:
-// berpelindung katalog (`migrasi.BacaPerintahKatalog`, 901 menu datar).
+// perintahBlokPLSQL menjawab perintah di dalam blok PL/SQL, atau mengapa blok
+// itu tidak sah (kosong = sah). Dua bentuk diterima: sequence dari kueri
+// (`migrasi.BacaSequenceDariKueri`, 810 Company Detail - jalur maju saja,
+// mundurnya cukup DROP SEQUENCE biasa) dan berpelindung katalog
+// (`pelanggaranBlokPLSQL`).
+func perintahBlokPLSQL(p string, mundur bool) (string, string) {
+	if s, ok := migrasi.BacaSequenceDariKueri(p); ok {
+		if mundur {
+			return "", "sequence dari kueri hanya untuk jalur maju; jalur mundur cukup DROP SEQUENCE " + s.Nama
+		}
+		return "CREATE SEQUENCE {skema}." + s.Nama, ""
+	}
+	return pelanggaranBlokPLSQL(p, mundur)
+}
+
+// pelanggaranBlokPLSQL menjawab perintah di dalam blok PL/SQL berpelindung
+// katalog (`migrasi.BacaPerintahKatalog`, 901 menu datar), atau mengapa blok
+// itu tidak sah (kosong = sah).
 func pelanggaranBlokPLSQL(p string, mundur bool) (string, string) {
 	pk, ok := migrasi.BacaPerintahKatalog(p)
 	if !ok || len(strings.Fields(pk.Perintah)) == 0 {
@@ -465,47 +481,26 @@ func TestAturanBlokPLSQLMenggigit(t *testing.T) {
 	}
 }
 
-// Setiap VIEW yang dibongkar migrasi jalur maju diganti tabel bernama sama di
-// LANGKAH YANG SAMA, dan pra-terbang mengenalinya (`migrasi.ViewDibongkarDulu`)
-// - kalau tidak, kolom view dibandingkan dengan CREATE TABLE dan seluruh
-// migrasi berhenti. Jawaban yang sudah diketahui: masterdata 760 mengganti
-// enam view (PROVINCE, CITYINPUT, DISTRICTINPUT, ACCUMULATEDTYPE, CZONE,
-// ACCUMULATION); dihitung juga dengan cara kedua - mencacah baris DROP VIEW.
-func TestViewDigantiTabelDikenaliPraTerbang(t *testing.T) {
-	langkah, err := migrasi.Daftar(false, berkasMigrasi)
-	if err != nil {
-		t.Fatal(err)
+// Bentuk kedua - sequence yang nilai awalnya dihitung dari data (810 Company Detail) - diterima di jalur maju dan
+// terbaca sebagai CREATE SEQUENCE; di jalur mundur DITOLAK (mundur cukup DROP SEQUENCE biasa).
+func TestBlokSequenceDariKueriHanyaJalurMaju(t *testing.T) {
+	blok := "DECLARE\n  n    NUMBER;\n  awal NUMBER;\nBEGIN\n  SELECT COUNT(*) INTO n FROM SYS.ALL_SEQUENCES\n" +
+		"   WHERE SEQUENCE_OWNER = UPPER('{skema}') AND SEQUENCE_NAME = 'SEQ_A';\n  IF n = 0 THEN\n" +
+		"    SELECT NVL(MAX(N), 0) + 1 INTO awal FROM (SELECT 1 N FROM {skema}.T_A);\n" +
+		"    EXECUTE IMMEDIATE 'CREATE SEQUENCE {skema}.SEQ_A START WITH ' || awal || ' INCREMENT BY 1 NOCACHE';\n" +
+		"  END IF;\nEND;"
+	perintah, alasan := perintahBlokPLSQL(blok, false)
+	if alasan != "" || perintah != "CREATE SEQUENCE {skema}.SEQ_A" {
+		t.Errorf("jalur maju: perintah %q, alasan %q", perintah, alasan)
 	}
-	polaDrop := regexp.MustCompile(`(?is)^DROP\s+VIEW\s+\{skema\}\.(\w+)$`)
-	var diganti []string
-	nBaris := 0
-	for _, m := range langkah {
-		for i, p := range m.Pernyataan {
-			for _, b := range strings.Split(p, "\n") {
-				if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(b)), "DROP VIEW ") {
-					nBaris++
-				}
-			}
-			d := polaDrop.FindStringSubmatch(strings.TrimSpace(p))
-			if d == nil {
-				continue
-			}
-			ketemu := false
-			for j := i + 1; j < len(m.Pernyataan); j++ {
-				if nama, _ := migrasi.KolomCreateTable(m.Pernyataan[j]); strings.EqualFold(nama, d[1]) {
-					ketemu = migrasi.ViewDibongkarDulu(m.Pernyataan, j, nama)
-					break
-				}
-			}
-			if !ketemu {
-				t.Errorf("%s: DROP VIEW %s tanpa CREATE TABLE bernama sama yang dikenali pra-terbang", m.Nama, d[1])
-				continue
-			}
-			diganti = append(diganti, strings.ToUpper(d[1]))
-		}
+	if _, alasan := perintahBlokPLSQL(blok, true); alasan == "" {
+		t.Error("jalur mundur menerima sequence dari kueri")
 	}
-	mau := "PROVINCE,CITYINPUT,DISTRICTINPUT,ACCUMULATEDTYPE,CZONE,ACCUMULATION"
-	if strings.Join(diganti, ",") != mau || nBaris != len(diganti) {
-		t.Errorf("view diganti %v (baris DROP VIEW %d), mau %s", diganti, nBaris, mau)
+	// Bentuk pertama tetap lewat jalan yang sama.
+	katalog := "DECLARE\n  n NUMBER;\nBEGIN\n  SELECT COUNT(*) INTO n FROM SYS.ALL_INDEXES\n" +
+		"   WHERE OWNER = UPPER('{skema}') AND TABLE_NAME = 'T_A' AND INDEX_NAME = 'IX_A';\n" +
+		"  IF n > 0 THEN\n    EXECUTE IMMEDIATE 'DROP INDEX {skema}.IX_A';\n  END IF;\nEND;"
+	if perintah, alasan := perintahBlokPLSQL(katalog, false); alasan != "" || perintah != "DROP INDEX {skema}.IX_A" {
+		t.Errorf("blok katalog: perintah %q, alasan %q", perintah, alasan)
 	}
 }

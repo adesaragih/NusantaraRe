@@ -76,14 +76,19 @@ func tulisGalatKelola(w http.ResponseWriter, err error, apa string) {
 	case errors.Is(err, ErrAkunTidakAda):
 		galat.Tulis(w, http.StatusNotFound, "akun tidak ada")
 	case errors.Is(err, ErrAkunSudahAda):
-		galat.Tulis(w, http.StatusConflict, "username sudah dipakai")
+		// Bahasa Inggris, sama dengan `KELOLA_USER.galatUsernameTerdaftar` (permintaan work owner 03-10-2026).
+		galat.Tulis(w, http.StatusConflict, "Username is already registered")
+	case errors.Is(err, ErrEmailSudahTerdaftar):
+		galat.Tulis(w, http.StatusConflict, strings.TrimPrefix(ErrEmailSudahTerdaftar.Error(), "login: "))
 	case errors.Is(err, ErrDiriSendiri), errors.Is(err, ErrAdminTerakhir):
 		galat.Tulis(w, http.StatusConflict, pesan)
 	case errors.Is(err, ErrAkunTidakSah):
 		galat.Tulis(w, http.StatusBadRequest,
 			"username hanya huruf, angka, titik, garis bawah, @, atau tanda hubung (maks. 64); nama wajib (maks. 150)")
 	case errors.Is(err, ErrSandiTerlaluPendek), errors.Is(err, ErrSandiTerlaluPanjang),
-		errors.Is(err, ErrMenuTidakDikenal), errors.Is(err, ErrJenjangTidakCocok), errors.Is(err, ErrMasterTidakAda):
+		errors.Is(err, ErrMenuTidakDikenal), errors.Is(err, ErrJenjangTidakCocok), errors.Is(err, ErrMasterTidakAda),
+		errors.Is(err, ErrEmailTidakSah), errors.Is(err, ErrTeleponTidakSah), errors.Is(err, ErrNIKTidakSah),
+		errors.Is(err, ErrJabatanTidakSah):
 		galat.Tulis(w, http.StatusBadRequest, pesan)
 	default:
 		log.Printf("login: kelola user - %s: %v", apa, err)
@@ -139,6 +144,8 @@ type isianPengguna struct {
 	Sandi      string   `json:"sandi"`
 	// WajibGanti - centang "Change Password Next Login"; tidak dikirim = wajib.
 	WajibGanti *bool `json:"wajibGanti"`
+	// Kontak - `email`, `telepon`, `nik`, `jabatan` (Kelola User 03-10-2026); opsional.
+	Kontak
 }
 
 // buatPengguna - sandi diketik admin; ⛔ tidak pernah ditulis ke log atau jawaban.
@@ -152,7 +159,7 @@ func (r *Rute) buatPengguna(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	a := AkunBaru{ID: m.AkunID, Nama: m.Nama, Organisasi: m.Organisasi, Divisi: m.Divisi, Unit: m.Unit,
-		Workbasket: m.Workbasket, Menu: m.Menu}
+		Workbasket: m.Workbasket, Menu: m.Menu, Kontak: m.Kontak}
 	wajib := m.WajibGanti == nil || *m.WajibGanti
 	if err := r.kelola.Buat(req.Context(), aktor, a, m.Sandi, wajib); err != nil {
 		tulisGalatKelola(w, err, "membuat akun")
@@ -181,7 +188,7 @@ func (r *Rute) ubahPengguna(w http.ResponseWriter, req *http.Request) {
 	}
 	id := req.PathValue("id")
 	rinci, err := r.kelola.Ubah(req.Context(), aktor, id, IsianAkun{Nama: m.Nama, Organisasi: m.Organisasi,
-		Divisi: m.Divisi, Unit: m.Unit, Workbasket: m.Workbasket, Menu: m.Menu})
+		Divisi: m.Divisi, Unit: m.Unit, Workbasket: m.Workbasket, Menu: m.Menu, Kontak: m.Kontak})
 	if err != nil {
 		tulisGalatKelola(w, err, "mengubah akun")
 		return

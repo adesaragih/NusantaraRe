@@ -145,6 +145,26 @@
   }
 }
 
+/* ------------------------------------------------------ grid dapat dilipat */
+/* 10014 Co-Ins Scale (`GridTreatyArrangementCoins.xml`, `pyExpanded` true): judul grid adalah tombol
+   lipat bawaan peramban; kedua grid bertumpuk berjarak. */
+.tco .tco-lipat > summary {
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.tco .tco-lipat > summary > .panel__title {
+  display: inline;
+}
+.tco .tco-lipat + .tco-lipat {
+  margin-top: 16px;
+}
+
+/* MB Capacity (10017, Add di kepala grid): kepala kolom boleh terbungkus, sehingga keenam kolom XML
+   (`GridTreatyArrangementLIMITMB.xml` b8045-b8829) muat tanpa digulir, seperti layar Pega. */
+.tco .tco-grid-rapat .tco-tabel > .inbox__tabel thead th {
+  white-space: normal;
+}
+
 /* --------------------------------------------- baris dibuka dan baris rinci */
 /* Dulu menumpang di inti (`.belah__baris--aktif`, `.inbox__rinci`); dipindah 02-10-2026. */
 /* Baris yang sedang dibuka. Memakai token yang SUDAH ada (--alt-row untuk

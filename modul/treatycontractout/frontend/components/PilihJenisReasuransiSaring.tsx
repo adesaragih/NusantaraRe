@@ -9,8 +9,9 @@
 //     dicari dan ditampilkan `.Note` (b3119-b3122), `.ID` tersembunyi (b3133)
 //   - anak `GridTreatyArrTreatyLimitList.xml` b2892: `ReinsTypeList` dari
 //     `TreatyContractSetReinsTypeList` (tak diekspor) — dicari `.CARI2` (nama,
-//     b3004), `.CARI1` (ID) ikut TAMPIL (b3017). Isinya jenis porsi saja, TANPA
-//     induk [keputusan work owner 30-09-2026, dikoreksi 02-10-2026], disaring server.
+//     b3004), `.CARI1` (ID) ikut TAMPIL (b3017). Isinya dihitung server dari
+//     NAMA ReinsType baris induk persis activity itu (" QS " / " SPL " / " XOL " /
+//     "ORS") - untuk SETIAP grid anak [keputusan work owner 02-10-2026].
 //
 // ⛔ Saringan di sini HANYA teks ketikan atas nama — aturan daftar (porsi,
 // blacklist, Flag) tetap milik server.
@@ -45,14 +46,14 @@ export default function PilihJenisReasuransiSaring({
   value,
   onChange,
   required,
-  anak = false,
+  namaIndukAnak,
 }: {
   label: string
   value: string
   onChange: (v: string) => void
   required?: boolean
-  /** true = pilihan ReinsType baris anak (porsi saja); false = daftar induk tiket 02. */
-  anak?: boolean
+  /** Diisi = pilihan ReinsType baris anak di bawah induk bernama ini; kosong = daftar induk tiket 02. */
+  namaIndukAnak?: string
 }) {
   const [daftar, setDaftar] = useState<JenisReasuransiTreaty[] | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
@@ -62,7 +63,8 @@ export default function PilihJenisReasuransiSaring({
     let hidup = true
     setDaftar(null)
     setGalat(null)
-    const baca = anak ? ambilJenisReasuransiAnakTreatyLimit() : ambilJenisReasuransiTreaty()
+    const baca =
+      namaIndukAnak === undefined ? ambilJenisReasuransiTreaty() : ambilJenisReasuransiAnakTreatyLimit(namaIndukAnak)
     baca.then(
       (h) => {
         if (hidup) setDaftar(h.daftar)
@@ -74,7 +76,7 @@ export default function PilihJenisReasuransiSaring({
     return () => {
       hidup = false
     }
-  }, [anak])
+  }, [namaIndukAnak])
 
   if (galat !== null) return <Gagal galat={galat} />
   const terpilih = daftar?.find((j) => j.id === value)
@@ -83,7 +85,7 @@ export default function PilihJenisReasuransiSaring({
       label={label}
       value={value}
       teksTerpilih={terpilih?.note ?? value}
-      opsi={daftar === null ? [] : opsiSaringJenisReasuransi(daftar, kata, anak)}
+      opsi={daftar === null ? [] : opsiSaringJenisReasuransi(daftar, kata, namaIndukAnak !== undefined)}
       memuat={daftar === null}
       onCari={setKata}
       onPilih={(o) => {

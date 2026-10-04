@@ -27,6 +27,8 @@ type AkunBaru struct {
 	Workbasket               []string
 	// Menu - KODE menu (`M_LOGIN_GO_MENU`); kosong = akun tanpa satu layar pun.
 	Menu []string
+	// Kontak - email, nomor HP, NIK, jabatan (migrasi 904); opsional.
+	Kontak
 }
 
 // Profil adalah identitas yang dikirim ke layar (`GET /api/auth/saya`).
@@ -81,4 +83,10 @@ type Gudang interface {
 	// BuatAkun menulis akun, workbasket, dan menunya dalam SATU transaksi;
 	// `wajibGanti` mengisi MUST_CHANGE_PASSWORD.
 	BuatAkun(ctx context.Context, a AkunBaru, hash string, wajibGanti bool) error
+	// PemakaiUsername - LOGIN_ID akun yang username-nya sama dengan `id`, tanpa beda huruf (migrasi 905); urut,
+	// kosong = belum dipakai.
+	PemakaiUsername(ctx context.Context, id string) ([]string, error)
+	// PemakaiEmail - LOGIN_ID akun yang EMAIL-nya sama dengan `email`, tanpa beda huruf (migrasi 905); urut,
+	// kosong = belum dipakai.
+	PemakaiEmail(ctx context.Context, email string) ([]string, error)
 }

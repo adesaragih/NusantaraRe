@@ -144,7 +144,6 @@ func TestSetiapMigrasiDiRentangAtauSlotModulnya(t *testing.T) {
 // menyentuh folder inti.
 func TestMenuHanyaDi900DanSlotMenuModulnya(t *testing.T) {
 	jatah := jatahSetiapModul(t)
-	maju, mundur := pernyataanPerLangkah(t, false), pernyataanPerLangkah(t, true)
 	menyentuh := 0
 	for nama, isi := range seluruhSQL(t, false) {
 		if !strings.Contains(strings.ToUpper(isi), "M_NAV_MENU") {
@@ -155,17 +154,14 @@ func TestMenuHanyaDi900DanSlotMenuModulnya(t *testing.T) {
 		n, _ := nomorBerkas(nama)
 		switch {
 		case pemilik == "inti":
-			// 900 (isi awal), 901 (bentuk datar, menu datar 30-09-2026), dan
-			// langkah inti BARIS MODUL DI LUAR KORPUS (904 masterdata, PANDUAN-TIM-PER-MODUL
-			// bab 5) - yang terakhir HANYA INSERT bentuk datar + DELETE mundurnya, dan
-			// diterapkan skema tiruan penjaga menu (`langkahMenu`). Langkah inti lain yang
-			// menyentuh M_NAV_MENU = menu yang tidak diperiksa siapa pun (temuan /code-review).
-			if strings.HasPrefix(nama, "900_") || strings.HasPrefix(nama, "901_") {
-				break
-			}
-			turun := strings.TrimSuffix(nama, ".sql") + "_down.sql"
-			for _, alasan := range pelanggaranLangkahLuarKorpus(maju[nama], mundur[turun]) {
-				t.Errorf("%s (inti) menyentuh M_NAV_MENU di luar 900 / 901: %s", nama, alasan)
+			// 900 (isi awal) dan 901 (bentuk datar, menu datar 30-09-2026)
+			// SAJA. Langkah inti lain yang menyentuh M_NAV_MENU tidak
+			// diterapkan skema tiruan penjaga menu (`langkahMenu`) - menu
+			// yang tidak diperiksa siapa pun (temuan /code-review).
+			// Plus langkah baris modul di luar korpus (`modulLuarKorpus`, PANDUAN-TIM-PER-MODUL bab 5) - juga
+			// diterapkan skema tiruan.
+			if !strings.HasPrefix(nama, "900_") && !strings.HasPrefix(nama, "901_") && !langkahMenuLuarKorpus(nama) {
+				t.Errorf("%s (inti) menyentuh M_NAV_MENU - hanya 900 (isi awal), 901 (bentuk datar), dan modulLuarKorpus; menu modul di slot menunya", nama)
 			}
 		case !jatah[pemilik].diSlot(n):
 			t.Errorf("%s (modul %s) menyentuh M_NAV_MENU di luar slot menunya %03d-%03d",
@@ -221,7 +217,9 @@ func pernyataanPerLangkah(t *testing.T, mundur bool) map[string][]string {
 // slot menu modul `modul` tidak sah; kosong = sah.
 //
 // Sah HANYA: maju `UPDATE ... SET DIMIGRASI = '1' ... WHERE KODE = '<modul>'`,
-// mundur yang sama dengan `'0'`. `INSERT INTO M_NAV_MENU` di slot = MERAH:
+// mundur yang sama dengan `'0'`; dan - untuk baris `labelTampilDisetujui`
+// (keputusan work owner 03-10-2026) - maju `UPDATE ... SET LABEL = '<nama
+// tampilan>' ... WHERE KODE = '<modul>'`, mundur kembali nama folder. `INSERT INTO M_NAV_MENU` di slot = MERAH:
 // baris modul sudah ada sejak 900 (satu per folder korpus), dan butir di bawah
 // modul dicabut keputusan work owner 30-09-2026.
 func pelanggaranSlotMenu(modul string, maju, mundur []string) []string {
@@ -230,6 +228,23 @@ func pelanggaranSlotMenu(modul string, maju, mundur []string) []string {
 		alasan = append(alasan, "berkas slot menu tanpa satu pun pernyataan")
 	}
 	periksa := func(arah, p, mauDimigrasi string) {
+		if m := polaUbahLabel.FindStringSubmatch(p); m != nil {
+			lt, disetujui := labelTampilDisetujui[modul]
+			mau := lt.tampil
+			if mauDimigrasi == "0" {
+				mau = lt.folder
+			}
+			switch {
+			case m[2] != modul:
+				alasan = append(alasan, fmt.Sprintf("%smengubah LABEL baris %s - slot ini milik %s", arah, m[2], modul))
+			case !disetujui:
+				alasan = append(alasan, arah+"mengubah LABEL baris "+modul+" - LABEL = nama folder korpus, kecuali "+
+					"nama tampilan labelTampilDisetujui (keputusan work owner)")
+			case m[1] != mau:
+				alasan = append(alasan, fmt.Sprintf("%smenyetel LABEL = '%s', mau '%s'", arah, m[1], mau))
+			}
+			return
+		}
 		if strings.Contains(strings.ToUpper(p), "INSERT INTO") {
 			alasan = append(alasan, arah+"INSERT INTO M_NAV_MENU di slot menu - satu modul satu baris, "+
 				"barisnya sudah ada sejak 900; slot hanya menyalakan DIMIGRASI: "+ringkas(p))
@@ -275,6 +290,26 @@ func TestAturanSlotMenuMenggigit(t *testing.T) {
 			"AND NOT EXISTS (SELECT 1 FROM {skema}.M_NAV_MENU b WHERE b.KODE = '" + butir + "')"
 	}
 	hapus := func(butir string) string { return "DELETE FROM {skema}.M_NAV_MENU WHERE KODE = '" + butir + "'" }
+	label := func(kode, teks string) string {
+		return "UPDATE {skema}.M_NAV_MENU SET LABEL = '" + teks + "', TGL_UBAH = SYSDATE\nWHERE KODE = '" + kode + "'"
+	}
+	// Nama tampilan (03-10-2026): sah hanya untuk baris labelTampilDisetujui, teksnya persis, mundur ke nama folder.
+	const ppn = "masterproductnamelife"
+	for _, k := range []struct {
+		nama, modul  string
+		maju, mundur []string
+		sah          bool
+	}{
+		{"nama tampilan disetujui", ppn, []string{label(ppn, "Product Name Life")}, []string{label(ppn, "Master Product Name Life")}, true},
+		{"nama tampilan lain", ppn, []string{label(ppn, "PNL")}, []string{label(ppn, "Master Product Name Life")}, false},
+		{"mundur bukan nama folder", ppn, []string{label(ppn, "Product Name Life")}, []string{label(ppn, "Product Name Life")}, false},
+		{"LABEL baris yang tidak disetujui", "alfa", []string{label("alfa", "A")}, []string{label("alfa", "Alfa")}, false},
+		{"LABEL modul lain dari slot ini", "alfa", []string{label(ppn, "Product Name Life")}, []string{label(ppn, "Master Product Name Life")}, false},
+	} {
+		if dapat := len(pelanggaranSlotMenu(k.modul, k.maju, k.mundur)) == 0; dapat != k.sah {
+			t.Errorf("%s: sah=%v, mau %v (%v)", k.nama, dapat, k.sah, pelanggaranSlotMenu(k.modul, k.maju, k.mundur))
+		}
+	}
 	for _, k := range []struct {
 		nama         string
 		maju, mundur []string
@@ -343,11 +378,12 @@ func TestSlotMenuBerjalanSesudah900(t *testing.T) {
 	}
 	// 901 (menu datar, milik inti) berjalan sesudah 900 dan SEBELUM slot mana
 	// pun - slot menu karena itu melihat tabel yang sudah datar. 902 (login,
-	// M_LOGIN_GO, 01-10-2026), 903 (menu per akun, M_LOGIN_GO_MENU), dan 904
-	// (baris menu masterdata, modul di luar korpus) juga milik inti dan juga
-	// sebelum slot - slot 990 masterdata melihat barisnya.
-	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql",
-		"904_m_nav_menu_masterdata.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
+	// M_LOGIN_GO, 01-10-2026), 903 (menu per akun, M_LOGIN_GO_MENU), 904 (kolom kontak M_LOGIN_GO, Kelola User
+	// 03-10-2026), 905 (CONTACT_ID, username dan email unik M_LOGIN_GO, 03-10-2026), dan 906 (baris menu modul luar korpus
+	// Marketing Officer, 03-10-2026), 907 (baris menu Company Detail, 04-10-2026), dan 908 (baris menu Accounts,
+	// 04-10-2026) juga milik inti dan juga sebelum slot. 904_m_nav_menu_masterdata (baris menu Master Data,
+	// 04-10-2026) berbagi nomor 904 dengan kolom kontak; pelari mengurut nama berkas, jadi ia berjalan sesudahnya.
+	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql", "904_m_login_go_kontak.sql", "904_m_nav_menu_masterdata.sql", "905_m_login_go_contact_id.sql", "906_m_nav_menu_marketingofficer.sql", "907_m_nav_menu_companydetail.sql", "908_m_nav_menu_accounts.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
 		t.Errorf("urutan pelari %v, mau %v", urut, mau)
 	}
 }

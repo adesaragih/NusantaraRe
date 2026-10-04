@@ -4,11 +4,10 @@
 // bangkitan mengimpornya dengan alias nama modul. Modul ini diserahkan lewat
 // `Pendaftaran()` (struktur tim satu folder per modul, 30-09-2026).
 //
-// ⛔ P1 (`docs/RALAT-DEV-30-09-2026.md`): nol DDL, nol tabel baru - produk tetap
-// JSON di `M_PRODUCT_LIFE` dan `M_PRODUCTINWARD_LIFE` seperti Pega, lampiran di
-// `M_ATTACHMENTPRODUCTNAME` (`docs/STRUKTUR-TABEL-MASTER-PRODUCT-NAME-LIFE.md`).
-// Satu-satunya migrasinya adalah slot menu 960 (`UPDATE DIMIGRASI`); rentang
-// tabel 140-179 sengaja kosong (`TestMPNLNolMigrasiDiRentang`).
+// ⭐ Sejak 02-10-2026 (K5, OQ-MPNL-01 flat; tiket 01 bab bertanggal): produk disimpan di tabel FLAT
+// `M_PRODUCTNAME_LIFE` + tujuh anak - migrasi 140–147 (`TestMPNLRentangHanyaTabelFlat`); kedua tabel JSON warisan
+// `M_PRODUCT_LIFE`/`M_PRODUCTINWARD_LIFE` hanya dibaca alat pindah `backend/alat/pindahflat`. Lampiran di
+// `M_ATTACHMENTPRODUCTNAME` (`docs/STRUKTUR-TABEL-MASTER-PRODUCT-NAME-LIFE.md`). Slot menu 960 (`UPDATE DIMIGRASI`).
 package backend
 
 import (
@@ -22,8 +21,7 @@ import (
 	"nusantarare/modul/masterproductnamelife/backend/services"
 )
 
-// berkasMigrasi adalah folder `migrations/` modul ini - hanya slot menu 960,
-// ditanam ke biner.
+// berkasMigrasi adalah folder `migrations/` modul ini - tabel flat 140–147 dan slot menu 960, ditanam ke biner.
 //
 //go:embed migrations/*.sql
 var berkasMigrasi embed.FS
@@ -45,7 +43,11 @@ func Pendaftaran() inti.Pendaftaran {
 		Nama:    Nama,
 		Migrasi: berkasMigrasi,
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
-			return Baru(services.DariDasar(p.Dasar()), p.Config().AuthStub), nil
+			cfg := p.Config()
+			// Penyimpanan lampiran SELALU `ServiceGoogle` seperti XML (keputusan work owner 03-10-2026 "selalu nyata,
+			// ikut XML"); garam hanya untuk token baru. ⛔ Garam tidak pernah dicetak.
+			svc := services.DariDasar(p.Dasar()).DenganGaramToken(cfg.StorageTokenSalt)
+			return Baru(svc, cfg.AuthStub), nil
 		},
 	}
 }
@@ -69,5 +71,5 @@ func (Modul) Nama() string { return Nama }
 func (m Modul) DaftarkanRute(mux *http.ServeMux) { handlers.DaftarkanRute(mux, m.svc, m.stubPelaku) }
 
 // JalankanPekerja - modul ini tidak punya pekerja latar: efek keluar lampiran
-// dikirim seketika sesudah rekam dan diulang lewat rute `ulangi` (stub, P5).
+// dikirim seketika sesudah rekam dan diulang lewat rute `ulangi` (P5).
 func (Modul) JalankanPekerja(context.Context) inti.Pekerja { return inti.TanpaPekerja() }

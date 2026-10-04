@@ -6,7 +6,7 @@
 //
 // ⛔ Prosedur `PEGA_M_PRODUCT_LIFE` dan `PEGA_M_PRODUCT_INWARD_LIFE` TIDAK
 // dipanggil (brief bab 1): logikanya ditiru di sini dan di repository -
-// upsert dikunci `ID`, `ID` baru dari sequence, kedua tabel dalam SATU
+// upsert dikunci `ID`, `ID` baru dari sequence, baris induk flat dan ketujuh anaknya dalam SATU
 // transaksi (P4). Transaksi dibuka di sini (`inti.Dasar.DalamTransaksi`),
 // satu per permintaan, nol COMMIT di SQL.
 package services
@@ -18,12 +18,48 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/layanan"
 	"nusantarare/modul/masterproductnamelife/backend/repository"
 )
 
 // Service adalah akar layanan Master Product Name Life.
 type Service struct {
 	*inti.Dasar
+	// garamToken - `STORAGE_TOKEN_SALT`, bahan token penyimpanan BARU (token berlaku di `GCP_IMAGE` dipakai ulang tanpa
+	// garam). ⛔ Tidak pernah dicetak, dicatat, atau masuk pesan galat.
+	garamToken string
+}
+
+// DenganGaramToken memasang garam token penyimpanan - dipanggil sekali dari `modul.go` dengan `STORAGE_TOKEN_SALT`
+// (`inti/backend/config`); boleh kosong.
+func (s *Service) DenganGaramToken(garam string) *Service {
+	salin := *s
+	salin.garamToken = garam
+	return &salin
+}
+
+// penyimpanan - penyimpanan berkas lampiran: SELALU nyata seperti XML (keputusan work owner 03-10-2026 "selalu nyata,
+// ikut XML"); alamat `M_LINK_SERVICE` dan token `GCP_IMAGE` dibaca saat jalan (tanpa Oracle gagal terang).
+func (s *Service) penyimpanan() PenyimpananBerkas {
+	alamat := func(ctx context.Context, k layanan.KunciLayanan) (string, error) {
+		if !s.PunyaDatabase() {
+			return "", db.ErrTanpaOracle
+		}
+		return layanan.AlamatLayanan(ctx, layanan.ResolverLinkServiceOracle(s), k)
+	}
+	token := func(ctx context.Context, app string) (string, error) {
+		if !s.PunyaDatabase() {
+			return "", db.ErrTanpaOracle
+		}
+		var tok string
+		err := s.DalamTransaksi(ctx, func(tx *db.Tx) error {
+			var err error
+			tok, err = tokenStorage(ctx, tx, layanan.NewPenyimpanToken(s.DB()), s.garamToken, app, time.Now())
+			return err
+		})
+		return tok, err
+	}
+	return PenyimpananGoogle(s.UnggahanDir(), alamat, token, nil, nil)
 }
 
 // DariDasar membuat Service di atas akar bersama yang disetel `cmd/api`.
@@ -45,7 +81,7 @@ type Layanan struct {
 	catat  func(string)
 	// jam - `@CurrentDateTime()` (tanggal baris komentar, waktu lampiran).
 	jam func() time.Time
-	// berkas - penyimpanan berkas lampiran (stub lokal; tiruan di uji).
+	// berkas - penyimpanan berkas lampiran (stub lokal atau nyata; tiruan di uji).
 	berkas PenyimpananBerkas
 }
 
@@ -76,5 +112,5 @@ func (l *Layanan) DenganJam(jam func() time.Time) *Layanan {
 // dipakai handlers (handlers tidak mengimpor repository).
 func LayananOracle(s *Service) *Layanan {
 	return BaruLayanan(repository.Baru(s.DB()), s.DalamTransaksi, func(baris string) { log.Print(baris) }).
-		DenganPenyimpanan(PenyimpananLokal(s.UnggahanDir()))
+		DenganPenyimpanan(s.penyimpanan())
 }

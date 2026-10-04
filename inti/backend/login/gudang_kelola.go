@@ -16,7 +16,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 
 	"nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/menu"
@@ -25,8 +24,9 @@ import (
 var _ GudangKelola = (*GudangOracle)(nil)
 
 func sqlDaftarAkun(t string, satu bool) string {
-	q := fmt.Sprintf(`SELECT LOGIN_ID, NAME, ORGANIZATION_CODE, DIVISION_CODE, UNIT_CODE, IS_ACTIVE,
-	        MUST_CHANGE_PASSWORD, CASE WHEN LOCKED_UNTIL > SYSDATE THEN 1 ELSE 0 END, LAST_LOGIN
+	q := fmt.Sprintf(`SELECT LOGIN_ID, CONTACT_ID, NAME, ORGANIZATION_CODE, DIVISION_CODE, UNIT_CODE, IS_ACTIVE,
+	        MUST_CHANGE_PASSWORD, CASE WHEN LOCKED_UNTIL > SYSDATE THEN 1 ELSE 0 END, LAST_LOGIN,
+	        EMAIL, PHONE_NUMBER, EMPLOYEE_ID, JOB_POSITION
 	   FROM %s`, t)
 	if satu {
 		return q + ` WHERE LOGIN_ID = :1`
@@ -51,8 +51,8 @@ func sqlHitungAdmin(login, mn string) string {
 
 func sqlUbahProfil(t string) string {
 	return fmt.Sprintf(`UPDATE %s SET NAME = :1, ORGANIZATION_CODE = :2, DIVISION_CODE = :3, UNIT_CODE = :4,
-	    TGL_UPDATE = SYSDATE
-	  WHERE LOGIN_ID = :5`, t)
+	    EMAIL = :5, PHONE_NUMBER = :6, EMPLOYEE_ID = :7, JOB_POSITION = :8, TGL_UPDATE = SYSDATE
+	  WHERE LOGIN_ID = :9`, t)
 }
 
 // sqlSetelAktif - :1 = bendera, :2 = LOGIN_ID. Versi sesi selalu naik.
@@ -105,14 +105,16 @@ type pemindai interface{ Scan(...any) error }
 
 func pindaiRingkas(p pemindai) (RingkasAkun, error) {
 	var r RingkasAkun
-	var org, div, unit, nama sql.NullString
+	var idKontak, org, div, unit, nama, email, telepon, nik, jabatan sql.NullString
 	var aktif, wajib string
 	var kunci int
 	var terakhir sql.NullTime
-	if err := p.Scan(&r.AkunID, &nama, &org, &div, &unit, &aktif, &wajib, &kunci, &terakhir); err != nil {
+	if err := p.Scan(&r.AkunID, &idKontak, &nama, &org, &div, &unit, &aktif, &wajib, &kunci, &terakhir,
+		&email, &telepon, &nik, &jabatan); err != nil {
 		return RingkasAkun{}, err
 	}
-	r.Nama, r.Organisasi, r.Divisi, r.Unit = nama.String, org.String, div.String, unit.String
+	r.IDKontak, r.Nama, r.Organisasi, r.Divisi, r.Unit = idKontak.String, nama.String, org.String, div.String, unit.String
+	r.Kontak = Kontak{Email: email.String, Telepon: telepon.String, NIK: nik.String, Jabatan: jabatan.String}
 	r.Aktif, r.WajibGantiSandi, r.Terkunci = aktif == benderaYa, wajib == benderaYa, kunci == 1
 	if terakhir.Valid {
 		r.LoginTerakhir = terakhir.Time.Format("2006-01-02 15:04")
@@ -240,8 +242,8 @@ func tulisTx(ctx context.Context, tx *db.Tx, q string, harusSatu bool, args ...a
 	}
 	hasil, err := tx.ExecContext(ctx, q, args...)
 	if err != nil {
-		if strings.Contains(err.Error(), "ORA-00001") {
-			return fmt.Errorf("login: isian ganda: %w", err)
+		if ganda := galatGanda(err); ganda != nil {
+			return ganda
 		}
 		return fmt.Errorf("login: menulis akun: %w", err)
 	}
@@ -262,8 +264,9 @@ func (g *GudangOracle) UbahAkun(ctx context.Context, id string, a IsianAkun) err
 		return err
 	}
 	return g.dalamTransaksiAdmin(ctx, t, func(tx *db.Tx) error {
-		if err := tulisTx(ctx, tx, sqlUbahProfil(t.login), true, a.Nama, db.KosongJadiNil(a.Organisasi),
-			db.KosongJadiNil(a.Divisi), db.KosongJadiNil(a.Unit), id); err != nil {
+		args := append([]any{a.Nama, db.KosongJadiNil(a.Organisasi), db.KosongJadiNil(a.Divisi), db.KosongJadiNil(a.Unit)},
+			nilaiKontak(a.Kontak)...)
+		if err := tulisTx(ctx, tx, sqlUbahProfil(t.login), true, append(args, id)...); err != nil {
 			return err
 		}
 		if err := tulisTx(ctx, tx, sqlHapusMilik(t.wb), false, id); err != nil {

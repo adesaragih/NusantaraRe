@@ -228,6 +228,8 @@ var kolomDariMedan = map[string]string{
 	models.MedanTerritorialLimit: "TERRITORIALLIMIT", models.MedanCoInsMin: "COINS_MIN", models.MedanCoInsMax: "COINS_MAX",
 	models.MedanTreatyLimit: "TREATYLIMIT", models.MedanIDOccupation: "ID_OCCUPATION", models.MedanOccupation: "OCCUPATION",
 	models.MedanIDClause: "ID_CLAUSE", models.MedanClause: "CLAUSE", models.MedanLayer: "LAYER",
+	// Bukan medan form - kunci dobel grid Co-Ins Scale (`models.MedanSpreadingOrder`).
+	models.MedanSpreadingOrder: "SPREADINGORDER",
 }
 
 // sqlCariDobelKlausulTCO - kandidat baris LAIN pada lingkup yang sama; kunci

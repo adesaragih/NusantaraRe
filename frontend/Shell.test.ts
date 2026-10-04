@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest'
 
 import { AKAR_APLIKASI, folderKorpusBelumDimigrasi } from '../inti/frontend/uji/sumber'
 import { MENU, MODUL_LAIN_TERLARANG } from '../inti/frontend/labels'
-import { KATALOG_MODUL, MODUL_LUAR_KORPUS } from './katalogKorpus'
+import { LABEL_MENU } from './katalogKorpus'
 import { MENU_TCO } from '../modul/treatycontractout/frontend/labels'
 import { ENTRI_MENU, MODUL_FRONTEND } from './daftar'
 import { KELOMPOK_CLAIMLIFE } from '../modul/claimlife/frontend/menu'
@@ -37,7 +37,7 @@ function tanpaKomentar(teks: string): string {
 const kode = tanpaKomentar(SUMBER)
 
 /** Nama kelompok yang Shell render, dibaca dari labelnya. */
-const KELOMPOK_SIDEBAR = Object.values(KATALOG_MODUL)
+const KELOMPOK_SIDEBAR = Object.values(LABEL_MENU)
 
 describe('menu hanya yang berbukti korpus', () => {
   it('kelompok sidebar TEPAT dua puluh', () => {
@@ -50,12 +50,15 @@ describe('menu hanya yang berbukti korpus', () => {
     // ⛔ DUA PULUH sejak brief menu M_NAV_MENU (30-09-2026): isi awal tabel
     // memuat satu kelompok per folder korpus, Treaty In dan Treaty In
     // Adjustment ikut (`frontend/daftar.menuTabel.test.ts` menjaga LABEL-nya).
-    // + modul di luar korpus sejak 04-10-2026 (904 masterdata, `MODUL_LUAR_KORPUS`).
-    expect(KELOMPOK_SIDEBAR).toHaveLength(20 + Object.values(MODUL_LUAR_KORPUS).length)
+    // Dua puluh folder korpus + Marketing Officer (modul di luar korpus, migrasi inti 906).
+    // + Company Detail (modul di luar korpus, migrasi inti 907).
+    // + Accounts (modul di luar korpus, migrasi inti 908).
+    // + Master Data (modul di luar korpus, migrasi inti 904).
+    expect(KELOMPOK_SIDEBAR).toHaveLength(24)
     // Dan seluruhnya disebut di Shell, supaya tidak ada kelompok yang
     // terdaftar di label tetapi tidak dirender.
     for (const nama of KELOMPOK_SIDEBAR) {
-      expect(Object.values(KATALOG_MODUL)).toContain(nama)
+      expect(Object.values(LABEL_MENU)).toContain(nama)
     }
   })
 
@@ -83,7 +86,7 @@ describe('menu hanya yang berbukti korpus', () => {
     // keputusan sepi.
     const label = modul.map((e) => e.label)
     expect(modul).toHaveLength(MODUL_FRONTEND.length)
-    for (const l of label) expect(Object.values(KATALOG_MODUL), l).toContain(l)
+    for (const l of label) expect(Object.values(LABEL_MENU), l).toContain(l)
     // Label butir navigasi lama tidak tampil lagi sebagai menu.
     for (const lama of ['Inbox Claim Life', 'Register', 'PremiumList', 'Inbox Komite']) {
       expect(label, lama).not.toContain(lama)

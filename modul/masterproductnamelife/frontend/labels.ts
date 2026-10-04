@@ -11,10 +11,13 @@
 //
 // Teks yang TIDAK ada di korpus ditandai `[tidak ada di korpus]` beserta alasannya; dijaga `labels.test.ts`.
 
-/** Menu - `M_NAV_MENU.LABEL` isi awal 900 = nama folder korpus. */
+/** Menu - `M_NAV_MENU.LABEL` sesudah slot 961. */
 export const MENU_MPNL = {
-  /** Nama folder korpus `D:\XML\RNM_BRD\Master Product Name Life`. */
-  kelompok: 'Master Product Name Life',
+  /**
+   * `[tidak ada di korpus]` - nama tampilan: folder korpus `D:\XML\RNM_BRD\Master Product Name Life` tanpa kata
+   * "Master" (keputusan work owner 03-10-2026, nama tampilan saja; migrasi 961). Kode modul tetap.
+   */
+  kelompok: 'Product Name Life',
 } as const
 
 
@@ -44,6 +47,8 @@ export const GRID_MPNL = {
 
 /** Form sisi umum - halaman `ProductName` (PARITAS §3.1). */
 export const UMUM_MPNL = {
+  /** `InboxProductName.xml` b2934 `<pyTitle>` - judul kartu sisi umum. */
+  judul: 'TREATY NAME',
   /** `InboxProductName.xml` b3620 `<pyLabelFieldValue>`. */
   productName: 'Product Name',
   /** `InboxProductName.xml` b3894 `<pyLabelFieldValue>`. */
@@ -76,6 +81,8 @@ export const UMUM_MPNL = {
 
 /** Form sisi inward - halaman `ProductNameInward` (PARITAS §3.2). */
 export const INWARD_MPNL = {
+  /** `InboxProductName.xml` b16621 `<pyTitle>` - judul kartu sisi inward. */
+  judul: 'INWARD',
   /** `InboxProductName.xml` b17097 `<pyLabelFieldValue>`. */
   policyHolder: 'Policy Holder',
   /** `InboxProductName.xml` b17827 `<pyLabel>`. */
@@ -190,6 +197,22 @@ export const PLAN_MPNL = {
   delete: 'Delete',
 } as const
 
+/**
+ * Kolom daftar `Plan Name` (`InboxProductName.xml` b33121 `pxAutoComplete` - dropdown sejak 03-10-2026, RD `BrowseProductTypeLife_RD`):
+ * `pyAdditionalFields` b33213 `.ID`, b33247 `.CoverName`, b33280 `.Business`, b33313 `.Benefit` - semuanya `pyShow` true.
+ * Labelnya label kolom RD sumber (`BrowseProductTypeLife_RD.xml` `pyFieldLabel`).
+ */
+export const SARAN_PLAN_MPNL = {
+  /** `BrowseProductTypeLife_RD.xml` b568 `<pyFieldLabel>`. */
+  kolomId: 'ID',
+  /** `BrowseProductTypeLife_RD.xml` b642 `<pyFieldLabel>`. */
+  kolomCoverName: 'CoverName',
+  /** `BrowseProductTypeLife_RD.xml` b583 `<pyFieldLabel>`. */
+  kolomBusiness: 'Business',
+  /** `BrowseProductTypeLife_RD.xml` b613 `<pyFieldLabel>`. */
+  kolomBenefit: 'Benefit',
+} as const
+
 /** Grid `FINANCIAL UNDERWRITING` - `ProductName.FinancialUnderwritingList`. */
 export const FINUW_MPNL = {
   /** `InboxProductName.xml` b37148 `<pyValue>`. */
@@ -276,7 +299,12 @@ export const EDIT_MPNL = {
   cancel: 'Cancel',
 } as const
 
-/** Tujuh pemilih master `Choose*` - teks sama di ketujuh section (`Ceding_Section` sebagai bukti; uji memeriksa ketujuhnya). */
+/**
+ * Tujuh pemilih master `Choose*` - teks sama di ketujuh section (`Ceding_Section` sebagai bukti; uji memeriksa ketujuhnya).
+ * Sejak keputusan work owner 02-10-2026 pemilihnya dropdown (`DropdownMaster`): `search` = isian saring, `kolom*` =
+ * kepala kolom daftar; `choose` / `submit` / `cancel` - dan ketujuh tombol `choose*` di objek medan - tetap berbukti
+ * korpus tetapi tidak dirender.
+ */
 export const PEMILIH_MPNL = {
   /** `Ceding_Section.xml` b513 `<pyLabelFieldValue>`. */
   search: 'Search',
@@ -382,4 +410,40 @@ export const LAIN_MPNL = {
   belum: 'Pending',
   /** `[tidak ada di korpus]` - kirim ulang lampiran gagal, tiket 08 AC 3 / tiket 09 AC 4 (`POST …/ulangi`). */
   ulangi: 'Retry',
+  /**
+   * `[tidak ada di korpus]` - dropdown master (pengganti tombol `Choose*`, keputusan work owner 02-10-2026) memuat
+   * paling banyak `BATAS_DROPDOWN` baris; potongan DINYATAKAN, sisanya dicapai lewat `Search`.
+   */
+  dropdownTerpotong: 'Only the first 200 rows are shown. Type in Search to narrow the list.',
+  /** `[tidak ada di korpus]` - tombol di samping `Add` (permintaan work owner 03-10-2026), teks dari permintaannya. */
+  copyOld: 'Copy Old',
+  /** `[tidak ada di korpus]` - keterangan popup `Copy Old`. */
+  copyOldKeterangan:
+    'Products in the old (JSON) tables that are not in the new tables yet. Tick the ones to copy, then press Process Copy.',
+  /** `[tidak ada di korpus]` - tombol kaki popup `Copy Old` (permintaan work owner 03-10-2026). */
+  prosesCopy: 'Process Copy',
+  /** `[tidak ada di korpus]` - kotak centang kepala kolom popup `Copy Old` (pembaca layar). */
+  pilihSemua: 'Select all',
+  /** `[tidak ada di korpus]` - kotak centang satu baris popup `Copy Old` (pembaca layar), diikuti ID produk. */
+  pilihBaris: 'Select',
+  /** `[tidak ada di korpus]` - cacah baris tercentang popup `Copy Old`, didahului angkanya. */
+  dipilih: 'selected',
+  /** `[tidak ada di korpus]` - kolom alasan/catatan popup `Copy Old`. */
+  kolomCatatan: 'Notes',
+  /** `[tidak ada di korpus]` - popup `Copy Old` tanpa baris. */
+  copyOldKosong: 'All old products are already in the new tables.',
+  /** `[tidak ada di korpus]` - status hasil `Process Copy`. */
+  statusDisalin: 'Copied',
+  /** `[tidak ada di korpus]` - status hasil `Process Copy`. */
+  statusSudahAda: 'Already in the new tables',
+  /** `[tidak ada di korpus]` - status hasil `Process Copy`. */
+  statusDitolak: 'Cannot be copied',
+  /** `[tidak ada di korpus]` - status hasil `Process Copy`. */
+  statusGagal: 'Failed',
+  /** `[tidak ada di korpus]` - kotak unggah banyak berkas + seret-lepas `Add attachment` (permintaan work owner 03-10-2026). */
+  seretBerkas: 'Drag and drop files here, or click to choose files',
+  /** `[tidak ada di korpus]` - kemajuan unggah banyak berkas, diikuti urutan dan nama berkas. */
+  mengunggah: 'Uploading',
+  /** `[tidak ada di korpus]` - membuang satu berkas dari pilihan unggah (belum diunggah). */
+  buangPilihan: 'Remove',
 } as const

@@ -86,11 +86,6 @@ func (j jenisKontrakUji) DaftarNonLife(context.Context) ([]repository.JenisReasu
 	return j, nil
 }
 
-// DaftarAnakTreatyLimit - kontrak tidak memakainya.
-func (j jenisKontrakUji) DaftarAnakTreatyLimit(context.Context) ([]repository.JenisReasuransiTCO, error) {
-	return nil, nil
-}
-
 func layananKontrak(g *gudangKontrakUji) *services.KontrakTreatyTCO {
 	return services.New(nil).KontrakTreatyTCO().DenganGudang(g).DenganTahun(tahunKontrakUji{}).
 		DenganJenis(jenisKontrakUji{{ID: "10003", Note: "UJI QUOTA SHARE", Tipe: "1"}}).

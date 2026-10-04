@@ -4,6 +4,7 @@ package services_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"sort"
 	"strings"
@@ -79,6 +80,7 @@ func (masterKlausulUji) JenisKlausul(_ context.Context, isXOL string) ([]reposit
 		{ID: "10001", DescName: "UJI TREATY LIMIT", IsXOL: "0"}, {ID: "10009", DescName: "UJI EPI", IsXOL: "0"},
 		{ID: "10013", DescName: "UJI EXCLUSION", IsXOL: "0"}, {ID: "10017", DescName: "UJI LIMIT MB", IsXOL: "1"},
 		{ID: "10015", DescName: "UJI MINIMUM LOL", IsXOL: "0"}, {ID: "10016", DescName: "UJI MAX COINS PANEL", IsXOL: "0"},
+		{ID: "10014", DescName: "UJI COINS PANEL", IsXOL: "0"},
 		{ID: "10018", DescName: "UJI MINIMUM LOL MB", IsXOL: "1"},
 		{ID: "10099", DescName: "UJI JENIS BARU", IsXOL: "1"},
 	}
@@ -117,7 +119,8 @@ func layananKlausul(g *gudangKlausulUji, dikunci *int) *services.KlausulTCO {
 	return services.New(nil).KlausulTCO().DenganGudang(g).DenganMaster(masterKlausulUji{}).
 		DenganTahun(tahunKlausulUji{dikunci: dikunci}).
 		DenganJenis(jenisKlausulUji{
-			{ID: "10003", Note: "UJI QUOTA SHARE", Tipe: "1"}, {ID: "10005", Note: "UJI SURPLUS", Tipe: "1"},
+			// Nama induk menentukan pilihan anak (`TreatyContractSetReinsTypeList`): " QS " -> QS (OR), QS (R/I), ORS.
+			{ID: "10003", Note: "UJI QS TREATY", Tipe: "1"}, {ID: "10005", Note: "UJI SURPLUS", Tipe: "1"},
 			// Porsi (awalan yang daftar induk singkirkan) - pilihan anak Treaty Limit.
 			{ID: "10004", Note: "UJI QS (R/I)", Tipe: "4"}, {ID: "10028", Note: "UJI QS (OR)", Tipe: "4"},
 		}).
@@ -132,16 +135,6 @@ func (j jenisKlausulUji) DaftarNonLife(context.Context) ([]repository.JenisReasu
 	var out []repository.JenisReasuransiTCO
 	for _, x := range j {
 		if repository.LolosSaringanNonLifeTCO(x.ID, repository.FlagJenisReasuransiAktif, x.Tipe) {
-			out = append(out, x)
-		}
-	}
-	return out, nil
-}
-
-func (j jenisKlausulUji) DaftarAnakTreatyLimit(context.Context) ([]repository.JenisReasuransiTCO, error) {
-	var out []repository.JenisReasuransiTCO
-	for _, x := range j {
-		if repository.LolosSaringanAnakTreatyLimitTCO(x.ID, repository.FlagJenisReasuransiAktif) {
 			out = append(out, x)
 		}
 	}
@@ -184,7 +177,7 @@ func TestKlausulTanpaIdentitasDanBawaan(t *testing.T) {
 func TestJenisKlausulDariMasterDenganAturan(t *testing.T) {
 	n := 0
 	d, err := layananKlausul(gudangKlausulKosong(), &n).JenisKlausul(context.Background(), pelakuUjiTCO, "0")
-	if err != nil || len(d) != 5 { // 10001, 10009, 10013, 10015, 10016
+	if err != nil || len(d) != 6 { // 10001, 10009, 10013, 10015, 10016, 10014
 		t.Fatalf("non-XOL: %+v %v", d, err)
 	}
 	for _, j := range d {
@@ -194,14 +187,18 @@ func TestJenisKlausulDariMasterDenganAturan(t *testing.T) {
 		if j.ID == "10013" && len(j.Aturan) != 4 {
 			t.Errorf("ExclutionTreaty subjenis %d, mau 4", len(j.Aturan))
 		}
+		if j.ID == "10014" && (len(j.Aturan) != 2 || j.Aturan[0].Subjenis != "Less Than" || j.Aturan[1].Subjenis != "More Than") {
+			t.Errorf("Co-Ins Scale: %+v", j.Aturan)
+		}
 	}
 	x, _ := layananKlausul(gudangKlausulKosong(), &n).JenisKlausul(context.Background(), pelakuUjiTCO, "1")
 	for _, j := range x {
 		if j.ID == "10099" && j.Catatan == "" {
 			t.Error("jenis master tanpa aturan tidak ditandai")
 		}
-		if j.ID == "10017" && j.Aturan[0].Ditahan == "" {
-			t.Error("LimitMB tidak ditahan")
+		// LimitMB dilepas mengikuti XML [keputusan work owner 02-10-2026].
+		if j.ID == "10017" && (j.Aturan[0].Ditahan != "" || len(j.Aturan[0].Medan) != 8 || len(j.Aturan[0].Wajib) != 0) {
+			t.Errorf("LimitMB: %+v", j.Aturan[0])
 		}
 	}
 }
@@ -230,7 +227,7 @@ func TestKlausulIndukEPI(t *testing.T) {
 		t.Fatal(err)
 	}
 	k := h.Klausul
-	if k.TreatyYearID != "1000001" || k.TreatyYear != "2026" || k.TreatyDescName != "UJI EPI" || k.ReinsTypeName != "UJI QUOTA SHARE" ||
+	if k.TreatyYearID != "1000001" || k.TreatyYear != "2026" || k.TreatyDescName != "UJI EPI" || k.ReinsTypeName != "UJI QS TREATY" ||
 		k.ParentReinsTypeID != "00" || k.Medan["Rp"] != "1000000.5" || k.Medan["Usd"] != "80000.04000000" ||
 		k.Kurs != "12.5" || n != 1 {
 		t.Errorf("induk: %+v kunci %d", k, n)
@@ -305,7 +302,7 @@ func TestKlausulDobelDanDitahan(t *testing.T) {
 	if !errors.Is(err, services.ErrKlausulDobel) || !strings.Contains(err.Error(), "Data has already been entered") || !strings.Contains(err.Error(), "10000009") {
 		t.Errorf("dobel: %v", err)
 	}
-	for _, desc := range []string{"10017", "10002"} {
+	for _, desc := range []string{"10002"} {
 		_, err := layananKlausul(gudangKlausulKosong(), &n).Simpan(context.Background(), pelakuUjiTCO, "1000001",
 			services.KlausulMasuk{DescID: desc, Medan: map[string]string{}})
 		if !errors.Is(err, models.ErrKlausulDitahan) {
@@ -441,7 +438,7 @@ func TestKlausulAnakTreatyLimitMemakaiPilihanPorsi(t *testing.T) {
 			Medan: map[string]string{"ReinsTypeID": reins, "Pct": pct}}
 	}
 	h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anak("10028", "30"))
-	if err != nil || h.Klausul.ReinsTypeName != "UJI QS (OR)" {
+	if err != nil || h.Klausul.ReinsTypeName != "QS (OR)" {
 		t.Fatalf("porsi QS (OR): %+v %v", h.Klausul, err)
 	}
 	// ⛔ Induknya sendiri BUKAN pilihan anak [keputusan work owner 02-10-2026].
@@ -465,7 +462,7 @@ func TestKlausulAnakTreatyLimitMemakaiPilihanPorsi(t *testing.T) {
 		return services.KlausulMasuk{DescID: "10009", Anak: true, ParentReinsTypeID: "10003",
 			Medan: map[string]string{"ReinsTypeID": reins, "Pct": pct}}
 	}
-	if h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anakEpi("10028", "10")); err != nil || h.Klausul.ReinsTypeName != "UJI QS (OR)" {
+	if h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anakEpi("10028", "10")); err != nil || h.Klausul.ReinsTypeName != "QS (OR)" {
 		t.Errorf("anak EPI berporsi: %+v %v", h.Klausul, err)
 	}
 	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", anakEpi("10003", "10")); !errors.Is(err, services.ErrJenisReasuransiDiLuarDaftar) {
@@ -576,5 +573,162 @@ func TestKlausulAnakLamaBerReinsIndukTetapDapatDiedit(t *testing.T) {
 	baru.ID, baru.Medan = "", map[string]string{"ReinsTypeID": "10003", "Pct": "5"}
 	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", baru); !errors.Is(err, services.ErrJenisReasuransiDiLuarDaftar) {
 		t.Errorf("baris baru ber-ReinsType induk: %v", err)
+	}
+}
+
+// `TreatyContractSetReinsTypeList` atas nama induk [keputusan work owner
+// 02-10-2026] - untuk SETIAP grid anak (di sini Treaty Limit dan EPI).
+func TestKlausulAnakMengikutiTreatyContractSetReinsTypeList(t *testing.T) {
+	g, n := gudangKlausulKosong(), 0
+	l := layananKlausul(g, &n)
+	for _, desc := range []string{"10001", "10009"} {
+		for _, induk := range []string{"10003", "10005"} { // "UJI QS TREATY", "UJI SURPLUS"
+			if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001",
+				services.KlausulMasuk{DescID: desc, Medan: map[string]string{"ReinsTypeID": induk, "Rp": "100"}}); err != nil {
+				t.Fatalf("induk %s/%s: %v", desc, induk, err)
+			}
+		}
+		anak := func(induk, reins string) error {
+			_, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", services.KlausulMasuk{DescID: desc, Anak: true,
+				ParentReinsTypeID: induk, Medan: map[string]string{"ReinsTypeID": reins, "Pct": "10"}})
+			return err
+		}
+		// Induk " QS ": QS (OR) 10028, QS (R/I) 10004, ORS 10007 (langkah 2.1 b418).
+		for _, reins := range []string{"10028", "10004", "10007"} {
+			if err := anak("10003", reins); err != nil {
+				t.Errorf("%s anak %s di bawah induk QS: %v", desc, reins, err)
+			}
+		}
+		for _, reins := range []string{"10248", "10217", "10005"} {
+			if err := anak("10003", reins); !errors.Is(err, services.ErrJenisReasuransiDiLuarDaftar) {
+				t.Errorf("%s anak %s di bawah induk QS: %v", desc, reins, err)
+			}
+		}
+		// Induk tanpa kata QS/SPL/XOL/ORS: daftar kosong - tidak satu pun diterima.
+		if err := anak("10005", "10028"); !errors.Is(err, services.ErrJenisReasuransiDiLuarDaftar) {
+			t.Errorf("%s anak di bawah induk tanpa kata: %v", desc, err)
+		}
+	}
+}
+
+// Co-Ins Scale (`GridTreatyArrangementCoins.xml`): DUA grid. `Type` dari tombol Add
+// disimpan server di `SPREADINGORDER` (`NewTreatyArrCoins` b406) - klien tidak
+// mengirimnya; baris tidak pindah grid; grid urut `TreatyLimit DESC` (RD b653/b655).
+func TestKlausulCoInsScaleDuaGrid(t *testing.T) {
+	g, n := gudangKlausulKosong(), 0
+	l := layananKlausul(g, &n)
+	coins := func(sub, min, max, limit string) services.KlausulMasuk {
+		return services.KlausulMasuk{DescID: "10014", Subjenis: sub,
+			Medan: map[string]string{"CoIns_Min": min, "CoIns_Max": max, "TreatyLimit": limit}}
+	}
+	h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", coins("Less Than", "0", "10", "5000000"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	kecil := h.Klausul.ID
+	if g.baris[kecil].SpreadingOrder != "Less Than" || h.Klausul.Subjenis != "Less Than" || h.Klausul.TreatyDescName != "UJI COINS PANEL" {
+		t.Errorf("less than: %+v tersimpan %q", h.Klausul, g.baris[kecil].SpreadingOrder)
+	}
+	if h, err = l.Simpan(context.Background(), pelakuUjiTCO, "1000001", coins("More Than", "0", "10", "2500000")); err != nil ||
+		g.baris[h.Klausul.ID].SpreadingOrder != "More Than" || h.Klausul.Subjenis != "More Than" {
+		t.Errorf("more than: %+v %v", h, err)
+	}
+	selundup := coins("Less Than", "10", "20", "1")
+	selundup.Medan["SpreadingOrder"] = "More Than"
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", selundup); !errors.Is(err, models.ErrMedanBukanMilikJenis) {
+		t.Errorf("SpreadingOrder dari klien: %v", err)
+	}
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", coins("", "10", "20", "1")); !errors.Is(err, models.ErrKlausulJenisTakDikenal) {
+		t.Errorf("tanpa grid: %v", err)
+	}
+	pindah := coins("More Than", "0", "10", "6000000")
+	pindah.ID = kecil
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", pindah); !errors.Is(err, services.ErrKlausulJenisBerubah) {
+		t.Errorf("pindah grid: %v", err)
+	}
+	ubah := coins("Less Than", "0", "15", "6000000")
+	ubah.ID = kecil
+	if h, err = l.Simpan(context.Background(), pelakuUjiTCO, "1000001", ubah); err != nil ||
+		g.baris[kecil].SpreadingOrder != "Less Than" || h.Klausul.Medan["CoIns_Max"] != "15" {
+		t.Errorf("edit: %+v %v", h, err)
+	}
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", coins("Less Than", "15", "30", "9000000")); err != nil {
+		t.Fatal(err)
+	}
+	// Baris warisan tanpa Treaty Limit: Oracle `DESC` = NULLS FIRST.
+	g.baris["10000099"] = models.KlausulTreaty{ID: "10000099", TreatyYearID: "1000001", TreatyDescID: "10014",
+		ParentReinsTypeID: "00", SpreadingOrder: "Less Than"}
+	d, err := l.Daftar(context.Background(), pelakuUjiTCO, "1000001", "10014", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var urut []string
+	for _, k := range d.Daftar {
+		urut = append(urut, k.Subjenis+"="+k.Medan["TreatyLimit"])
+	}
+	if got := strings.Join(urut, ","); got != "Less Than=,Less Than=9000000,Less Than=6000000,More Than=2500000" {
+		t.Errorf("urutan grid: %s", got)
+	}
+}
+
+// MB Capacity (LimitMB 10017) mengikuti XML [keputusan work owner 02-10-2026]: nol wajib-isi
+// (`SaveTreatyArrLimitMB_Act`), nama Occupation dari `SetOccupationLimitMB`, MoreRp/MoreUsd tersimpan.
+func TestKlausulLimitMBMengikutiXML(t *testing.T) {
+	g, n := gudangKlausulKosong(), 0
+	l := layananKlausul(g, &n)
+	mb := func(medan map[string]string) services.KlausulMasuk {
+		return services.KlausulMasuk{DescID: "10017", Medan: medan}
+	}
+	if h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", mb(map[string]string{})); err != nil || h.Klausul.ID == "" {
+		t.Fatalf("baris kosong (Pega menyimpannya): %+v %v", h, err)
+	}
+	h, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", mb(map[string]string{
+		"ID_Occupation": "02", "Pct": "10", "PctMe": "25,5", "Rp": "1000000", "Usd": "65", "MoreRp": "5000000",
+		"MoreUsd": "325.5", "TerritorialLimit": "UJI GRUP TREATY"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	k := h.Klausul
+	if k.Medan["Occupation"] != "INDUSTRIAL RISK" || k.Medan["MoreRp"] != "5000000" || k.Medan["MoreUsd"] != "325.5" ||
+		k.Medan["PctMe"] != "25.5" || k.Medan["TerritorialLimit"] != "UJI GRUP TREATY" || k.TreatyDescName != "UJI LIMIT MB" || k.Kurs != "" {
+		t.Errorf("MB: %+v", k)
+	}
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", mb(map[string]string{"ID_Occupation": "05"})); !errors.Is(err, services.ErrPilihanDiLuarMaster) {
+		t.Errorf("occupation di luar daftar: %v", err)
+	}
+	if _, err := l.Simpan(context.Background(), pelakuUjiTCO, "1000001", mb(map[string]string{"Occupation": "KARANGAN"})); !errors.Is(err, models.ErrMedanBukanMilikJenis) {
+		t.Errorf("nama occupation dari klien: %v", err)
+	}
+	ubah := mb(map[string]string{"ID_Occupation": "", "Pct": "10"})
+	ubah.ID = k.ID
+	if h, err = l.Simpan(context.Background(), pelakuUjiTCO, "1000001", ubah); err != nil || h.Klausul.Medan["Occupation"] != "" {
+		t.Errorf("occupation dikosongkan: %+v %v", h, err)
+	}
+	p, err := l.Pilihan(context.Background(), pelakuUjiTCO, "occupation-limitmb", "")
+	if err != nil || len(p) != 4 || p[0].ID != "01" || p[0].Nama != "RESIDENTIAL RISK" || p[3].Nama != "AGRICULTURAL RISK" {
+		t.Errorf("pilihan occupation MB: %+v %v", p, err)
+	}
+}
+
+// Kontrak layar: `medan` dan `wajib` SETIAP aturan larik, tidak pernah null - jenis tanpa wajib-isi
+// (LimitMB, keputusan work owner 02-10-2026) pernah mengirim `"wajib":null` dan layar Add jatuh
+// ("Cannot read properties of null (reading 'includes')").
+func TestAturanTampilTanpaNull(t *testing.T) {
+	n := 0
+	d, err := layananKlausul(gudangKlausulKosong(), &n).JenisKlausul(context.Background(), pelakuUjiTCO, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := json.Marshal(d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, buruk := range []string{`"medan":null`, `"wajib":null`} {
+		if strings.Contains(string(b), buruk) {
+			t.Errorf("jawaban jenis klausul memuat %s", buruk)
+		}
+	}
+	if !strings.Contains(string(b), `"jenis":"LimitMB"`) {
+		t.Fatal("LimitMB tidak ada di jawaban - uji tidak menggigit")
 	}
 }

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import { AKAR_APLIKASI, folderKorpusBelumDimigrasi } from '../inti/frontend/uji/sumber'
 import { menuTabelDariMigrasi } from '../inti/frontend/uji/menuBersih'
-import { FOLDER_KORPUS, KATALOG_MODUL } from './katalogKorpus'
+import { FOLDER_KORPUS, LABEL_MENU } from './katalogKorpus'
 import { daftarPalet, saringPalet, susunMenu } from '../inti/frontend/lib/daftarMenu'
 import { ENTRI_MENU, MODUL_FRONTEND } from './daftar'
 
@@ -33,7 +33,7 @@ describe('sidebar ↔ palet, dua arah', () => {
     expect(PALET.entri.map((e) => [e.modul, e.label])).toEqual([['beranda', 'Beranda'], ...dariSidebar])
     expect(dariSidebar).toHaveLength(MODUL_FRONTEND.length)
     // Label entri palet = LABEL tabel = nama folder korpus.
-    const sah = new Set<string>(Object.values(KATALOG_MODUL))
+    const sah = new Set<string>(Object.values(LABEL_MENU))
     for (const e of PALET.entri.slice(1)) expect(sah.has(e.label), e.label).toBe(true)
   })
 
@@ -98,7 +98,7 @@ describe('nol menu dikarang', () => {
     // yang tidak ada. Daftarnya pernyataan `Status` di MODUL.md setiap modul
     // (dulu angka 16 di sini, yang harus disunting setiap modul baru).
     const dapatDibuka = new Set(PALET.entri.map((e) => e.label))
-    const tanpaButir = Object.values(KATALOG_MODUL).filter((n) => !dapatDibuka.has(n))
+    const tanpaButir = Object.values(LABEL_MENU).filter((n) => !dapatDibuka.has(n))
     expect([...tanpaButir].sort()).toEqual(folderKorpusBelumDimigrasi())
     expect(tanpaButir.length).toBeGreaterThan(0)
     for (const nama of tanpaButir) {

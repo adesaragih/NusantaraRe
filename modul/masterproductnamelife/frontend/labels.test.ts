@@ -5,8 +5,9 @@
 //   - setiap kunci label berbukti XML ATAU terdaftar `[tidak ada di korpus]` - tidak keduanya, tidak nol;
 //   - setiap tombol/tautan yang layar render bertekskan label berbukti `pyLabel` / `pySubmitLabel` (atau teks
 //     bukan-korpus yang beralasan di `labels.ts`);
-//   - ke-25 tombol hidup `InboxProductName` + tautan `View Office Online` + tombol pemilih dan dialog SEMUANYA
-//     dirender - tidak ada aksi XML yang dilewati; ketujuh tombol mati beralasan di PARITAS.
+//   - ke-25 tombol hidup `InboxProductName` + tautan `View Office Online` + tombol dialog SEMUANYA dirender - tidak
+//     ada aksi XML yang dilewati; ketujuh tombol mati beralasan di PARITAS; tombol `Choose*` dan tombol popup
+//     pemilihnya sengaja TIDAK dirender (diganti dropdown, keputusan work owner 02-10-2026).
 // Korpus READ-ONLY - hanya dibaca. Bila korpus tidak terjangkau, uji korpus DILEWATI, bukan gagal.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
@@ -31,6 +32,7 @@ const F_CHOOSECEDING = 'FlowAction\\ChooseCeding.xml'
 const F_VIEWRATE = 'FlowAction\\ViewRate.xml'
 const F_PRODUCTNAMEATTACHCONTENT = 'FlowAction\\ProductNameAttachContent.xml'
 const A_GENERATEUPLOAD = 'Activity\\GenerateUpload_Act.xml'
+const R_BROWSEPRODUCTTYPELIFE = 'ReportDefinition\\BrowseProductTypeLife_RD.xml'
 const D_COPYPRODUCT = 'DataTransform\\CopyProduct.xml'
 
 type Bukti = readonly [kunci: string, berkas: string, baris: number, tag: string]
@@ -38,6 +40,11 @@ type Bukti = readonly [kunci: string, berkas: string, baris: number, tag: string
 /** Kunci `OBJEK.medan` → baris tag korpus yang ISINYA persis teks label (dibangkitkan dari korpus, PARITAS §0). */
 const BUKTI: readonly Bukti[] = [
   ['GRID_MPNL.labelSelAdd', S_INBOXPRODUCTNAME, 71783, 'pyLabelFieldValue'],
+  // Kolom saran `Plan Name` (b33213 .ID, b33247 .CoverName, b33280 .Business, b33313 .Benefit) - label kolom RD sumbernya.
+  ['SARAN_PLAN_MPNL.kolomId', R_BROWSEPRODUCTTYPELIFE, 568, 'pyFieldLabel'],
+  ['SARAN_PLAN_MPNL.kolomCoverName', R_BROWSEPRODUCTTYPELIFE, 642, 'pyFieldLabel'],
+  ['SARAN_PLAN_MPNL.kolomBusiness', R_BROWSEPRODUCTTYPELIFE, 583, 'pyFieldLabel'],
+  ['SARAN_PLAN_MPNL.kolomBenefit', R_BROWSEPRODUCTTYPELIFE, 613, 'pyFieldLabel'],
   ['GRID_MPNL.add', S_INBOXPRODUCTNAME, 71865, 'pyLabel'],
   ['GRID_MPNL.tooltipAdd', S_INBOXPRODUCTNAME, 71863, 'pyTooltip'],
   ['GRID_MPNL.kolomId', S_INBOXPRODUCTNAME, 72403, 'pyValue'],
@@ -47,6 +54,7 @@ const BUKTI: readonly Bukti[] = [
   ['GRID_MPNL.kolomCreateOp', S_INBOXPRODUCTNAME, 73025, 'pyValue'],
   ['GRID_MPNL.kolomUpdateOp', S_INBOXPRODUCTNAME, 73184, 'pyValue'],
   ['GRID_MPNL.view', S_INBOXPRODUCTNAME, 74798, 'pyLabel'],
+  ['UMUM_MPNL.judul', S_INBOXPRODUCTNAME, 2934, 'pyTitle'],
   ['UMUM_MPNL.productName', S_INBOXPRODUCTNAME, 3620, 'pyLabelFieldValue'],
   ['UMUM_MPNL.productCode', S_INBOXPRODUCTNAME, 3894, 'pyLabelFieldValue'],
   ['UMUM_MPNL.ceding', S_INBOXPRODUCTNAME, 4075, 'pyLabelFieldValue'],
@@ -61,6 +69,7 @@ const BUKTI: readonly Bukti[] = [
   ['UMUM_MPNL.causeOfLoss', S_INBOXPRODUCTNAME, 10661, 'pyLabelFieldValue'],
   ['UMUM_MPNL.chooseCause', S_INBOXPRODUCTNAME, 11360, 'pyLabel'],
   ['UMUM_MPNL.onRetention', S_INBOXPRODUCTNAME, 47312, 'pyCheckboxCaption'],
+  ['INWARD_MPNL.judul', S_INBOXPRODUCTNAME, 16621, 'pyTitle'],
   ['INWARD_MPNL.policyHolder', S_INBOXPRODUCTNAME, 17097, 'pyLabelFieldValue'],
   ['INWARD_MPNL.choosePolicyHolder', S_INBOXPRODUCTNAME, 17827, 'pyLabel'],
   ['INWARD_MPNL.insured', S_INBOXPRODUCTNAME, 18341, 'pyLabelFieldValue'],
@@ -181,7 +190,7 @@ const BUKTI_SEBAGIAN: ReadonlyArray<readonly [kunci: string, berkas: string, bar
 
 /** Kunci `[tidak ada di korpus]` - masing-masing beralasan di `labels.ts`. */
 const BUKAN_KORPUS: readonly string[] = [
-  'MENU_MPNL.kelompok', // nama FOLDER korpus, dibuktikan terpisah di bawah
+  'MENU_MPNL.kelompok', // nama tampilan = folder korpus tanpa "Master " (03-10-2026), dibuktikan terpisah di bawah
   'LAIN_MPNL.kosong',
   'LAIN_MPNL.terpotong',
   'LAIN_MPNL.tambahBaris',
@@ -191,6 +200,24 @@ const BUKAN_KORPUS: readonly string[] = [
   'LAIN_MPNL.gagal',
   'LAIN_MPNL.belum',
   'LAIN_MPNL.ulangi',
+  'LAIN_MPNL.dropdownTerpotong',
+  // Copy Old (permintaan work owner 03-10-2026) - bukan layar Pega.
+  'LAIN_MPNL.copyOld',
+  'LAIN_MPNL.copyOldKeterangan',
+  'LAIN_MPNL.prosesCopy',
+  'LAIN_MPNL.pilihSemua',
+  'LAIN_MPNL.pilihBaris',
+  'LAIN_MPNL.dipilih',
+  'LAIN_MPNL.kolomCatatan',
+  'LAIN_MPNL.copyOldKosong',
+  'LAIN_MPNL.statusDisalin',
+  'LAIN_MPNL.statusSudahAda',
+  'LAIN_MPNL.statusDitolak',
+  'LAIN_MPNL.statusGagal',
+  // Unggah banyak + seret-lepas (permintaan work owner 03-10-2026).
+  'LAIN_MPNL.seretBerkas',
+  'LAIN_MPNL.mengunggah',
+  'LAIN_MPNL.buangPilihan',
 ]
 
 /** Nilai label untuk kunci `OBJEK.medan`. */
@@ -230,7 +257,8 @@ describe.skipIf(!adaKorpus)('label Master Product Name Life berbukti barisnya', 
   })
 
   it('nama menu = nama folder korpus', () => {
-    expect(readdirSync(join(KORPUS, '..'))).toContain(LABEL.MENU_MPNL.kelompok)
+    // Keputusan work owner 03-10-2026: nama tampilan = nama folder korpus tanpa kata "Master".
+    expect(readdirSync(join(KORPUS, '..'))).toContain(`Master ${LABEL.MENU_MPNL.kelompok}`)
   })
 
   it('ketujuh section pemilih memuat Search, ID, Name / RIRate Name, Choose; ketujuh FlowAction Submit / Cancel', () => {
@@ -302,7 +330,26 @@ describe('tombol layar = tombol korpus', () => {
     BUKTI.filter((b) => b[3] === 'pyLabel' || b[3] === 'pySubmitLabel' || b[3] === 'pyCancelLabel').map((b) => b[0]),
   )
   // Ikon grid bawaan / salin baris / kirim ulang - beralasan di `labels.ts` (`LAIN_MPNL`).
-  const tambahanSah = new Set(['LAIN_MPNL.tambahBaris', 'LAIN_MPNL.hapusBaris', 'LAIN_MPNL.salinBaris', 'LAIN_MPNL.ulangi'])
+  const tambahanSah = new Set(['LAIN_MPNL.tambahBaris', 'LAIN_MPNL.hapusBaris', 'LAIN_MPNL.salinBaris', 'LAIN_MPNL.ulangi',
+    // Copy Old (permintaan work owner 03-10-2026).
+    'LAIN_MPNL.copyOld', 'LAIN_MPNL.prosesCopy',
+    // Unggah banyak berkas: buang satu berkas dari pilihan (permintaan work owner 03-10-2026).
+    'LAIN_MPNL.buangPilihan'])
+  // Keputusan work owner 02-10-2026 ("perubahan pada tampilan untuk semua Choose ubah jadi dropdown saja"): ketujuh
+  // tombol `Choose*` dan tombol popup FlowAction `Choose*` (`Choose` baris, `Submit`, `Cancel`) diganti dropdown
+  // master (`DropdownMaster`). Labelnya tetap berbukti korpus; tombolnya sengaja TIDAK dirender.
+  const digantiDropdown = new Set([
+    'UMUM_MPNL.chooseCeding',
+    'UMUM_MPNL.chooseSob',
+    'UMUM_MPNL.chooseRiRisk',
+    'UMUM_MPNL.chooseCause',
+    'INWARD_MPNL.choosePolicyHolder',
+    'INWARD_MPNL.chooseCurrency',
+    'PLAN_MPNL.chooseRiRate',
+    'PEMILIH_MPNL.choose',
+    'PEMILIH_MPNL.submit',
+    'PEMILIH_MPNL.cancel',
+  ])
 
   it('terbaca: ada tombol di layar', () => {
     expect(tombol.length).toBeGreaterThan(25)
@@ -324,10 +371,16 @@ describe('tombol layar = tombol korpus', () => {
 
   it('setiap tombol korpus hidup dirender - tidak ada aksi XML yang dilewati', () => {
     const dirender = new Set([...tombol.flatMap((t) => kunciTeks(t.isi)), ...kunciBatal()])
-    const hilang = [...berbuktiTombol].filter((k) => !dirender.has(k))
+    const hilang = [...berbuktiTombol].filter((k) => !dirender.has(k) && !digantiDropdown.has(k))
     expect(hilang).toEqual([])
     // 25 pxButton hidup InboxProductName + pxLink `View Office Online` + `Choose` pemilih + 10 tombol FlowAction
     // (`Save`/`Cancel`, `Edit`/`Cancel`, `Submit`/`Cancel` pemilih, `Submit`/`Cancel` View Rate, `Attach`/`Cancel`).
     expect(berbuktiTombol.size).toBe(25 + 1 + 1 + 10)
+  })
+
+  it('tombol Choose* dan tombol popup pemilih tidak dirender - diganti dropdown (keputusan work owner 02-10-2026)', () => {
+    const dirender = new Set([...tombol.flatMap((t) => kunciTeks(t.isi)), ...kunciBatal()])
+    expect([...digantiDropdown].filter((k) => !berbuktiTombol.has(k))).toEqual([])
+    expect([...digantiDropdown].filter((k) => dirender.has(k))).toEqual([])
   })
 })

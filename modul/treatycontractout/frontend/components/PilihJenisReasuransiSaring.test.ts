@@ -39,11 +39,11 @@ describe('opsi yang disaring ketikan — pyUseForSearch hanya pada nama', () => 
 })
 
 describe('sumber daftar', () => {
-  it('baris anak memakai daftar porsi (tanpa induk); lainnya daftar induk tiket 02', () => {
-    expect(SUMBER).toContain('anak ? ambilJenisReasuransiAnakTreatyLimit() : ambilJenisReasuransiTreaty()')
-    expect(SUMBER).toContain('}, [anak])')
-    // ⛔ Induk tidak pernah dikirim ke daftar anak [keputusan work owner 02-10-2026].
-    expect(SUMBER).not.toMatch(/AnakTreatyLimit\([^)]/)
+  it('baris anak: daftar dari NAMA induk (TreatyContractSetReinsTypeList); lainnya daftar induk tiket 02', () => {
+    expect(SUMBER).toContain('ambilJenisReasuransiAnakTreatyLimit(namaIndukAnak)')
+    expect(SUMBER).toContain('ambilJenisReasuransiTreaty()')
+    // Ganti induk = daftar dimuat ulang.
+    expect(SUMBER).toContain('}, [namaIndukAnak])')
   })
   it('memakai PilihSaring; nol literal ID porsi dan nol Number()', () => {
     expect(SUMBER).toContain('<PilihSaring')
@@ -62,12 +62,12 @@ describe('GET jenis-reasuransi/anak-treaty-limit', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })
-  it('memanggil jalur yang didaftarkan handler, TANPA induk', async () => {
+  it('mengirim NAMA induk ke jalur yang didaftarkan handler', async () => {
     vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response('{"daftar":[],"total":0}', { status: 200 }))))
-    await ambilJenisReasuransiAnakTreatyLimit()
+    await ambilJenisReasuransiAnakTreatyLimit('2019 QS 101M TRT')
     const url = String(vi.mocked(fetch).mock.calls[0]?.[0])
     expect(url).toContain('/api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit')
-    expect(url).not.toContain('induk')
+    expect(url).toContain('namaInduk=2019')
     const rute = readFileSync(join(__dirname, '..', '..', 'backend', 'handlers', 'rute_treaty_contract_out.go'), 'utf8')
     expect(rute).toContain('"GET /api/treaty-contract-out/jenis-reasuransi/anak-treaty-limit"')
   })

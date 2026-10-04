@@ -5,6 +5,7 @@ package login
 import (
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -123,5 +124,83 @@ func TestMigrasi903Mundur(t *testing.T) {
 	p := baca902(t, "903_m_login_go_menu_down.sql")
 	if mau := []string{"DROP TABLE {skema}.M_LOGIN_GO_MENU CASCADE CONSTRAINTS"}; !reflect.DeepEqual(p, mau) {
 		t.Errorf("903_down:\n dapat %q\n mau   %q", p, mau)
+	}
+}
+
+// Migrasi 904 - kolom kontak M_LOGIN_GO (Kelola User 03-10-2026): empat kolom berbahasa Inggris, semuanya
+// NULLABLE (akun lama tidak punya isinya), lebar = batas `PeriksaKontak`.
+func TestMigrasi904KolomKontak(t *testing.T) {
+	p := baca902(t, "904_m_login_go_kontak.sql")
+	if len(p) != 1 {
+		t.Fatalf("904 terbaca %d pernyataan, mau 1", len(p))
+	}
+	satu := strings.Join(strings.Fields(p[0]), " ")
+	mau := "ALTER TABLE {skema}.M_LOGIN_GO ADD ( EMAIL VARCHAR2(254), PHONE_NUMBER VARCHAR2(30), EMPLOYEE_ID VARCHAR2(30), JOB_POSITION VARCHAR2(150) )"
+	if satu != mau {
+		t.Errorf("904:\n dapat %q\n mau   %q", satu, mau)
+	}
+	if strings.Contains(strings.ToUpper(satu), "NOT NULL") {
+		t.Error("kolom kontak harus NULLABLE - akun yang sudah ada tidak punya isinya")
+	}
+	for _, k := range []struct {
+		kolom string
+		lebar int
+	}{{"EMAIL", PanjangMaksEmail}, {"PHONE_NUMBER", PanjangMaksTelepon}, {"EMPLOYEE_ID", PanjangMaksNIK}, {"JOB_POSITION", PanjangMaksJabatan}} {
+		if !strings.Contains(satu, k.kolom+" VARCHAR2("+strconv.Itoa(k.lebar)+")") {
+			t.Errorf("lebar kolom %s harus %d (batas PeriksaKontak)", k.kolom, k.lebar)
+		}
+	}
+}
+
+func TestMigrasi904Mundur(t *testing.T) {
+	p := baca902(t, "904_m_login_go_kontak_down.sql")
+	if mau := []string{"ALTER TABLE {skema}.M_LOGIN_GO DROP (EMAIL, PHONE_NUMBER, EMPLOYEE_ID, JOB_POSITION)"}; !reflect.DeepEqual(p, mau) {
+		t.Errorf("904_down:\n dapat %q\n mau   %q", p, mau)
+	}
+}
+
+// Migrasi 905 - CONTACT_ID, username unik, email unik (keputusan work owner 03-10-2026, V1): LOGIN_ID tetap username, kolom
+// baru CONTACT_ID `CON-n` buatan sequence yang mulai di atas nomor kontak SFAGIS terbesar (108 di DEV), akun lama
+// diberi nomor di migrasi yang sama, lalu NOT NULL dan unik. LOGIN_ID unik tanpa beda huruf ("proteksi username
+// sudah ada"). EMAIL disimpan huruf kecil dan unik tanpa beda huruf ("email sudah terdaftar"); login tetap username
+// saja - login lewat email dibatalkan work owner.
+func TestMigrasi905ContactIDDanEmailUnik(t *testing.T) {
+	p := baca902(t, "905_m_login_go_contact_id.sql")
+	var satu []string
+	for _, s := range p {
+		satu = append(satu, strings.Join(strings.Fields(s), " "))
+	}
+	mau := []string{
+		"CREATE SEQUENCE {skema}.M_LOGIN_GO_CONTACT_SEQ START WITH 1001 INCREMENT BY 1 NOCACHE",
+		"ALTER TABLE {skema}.M_LOGIN_GO ADD ( CONTACT_ID VARCHAR2(20) )",
+		"UPDATE {skema}.M_LOGIN_GO SET CONTACT_ID = 'CON-' || {skema}.M_LOGIN_GO_CONTACT_SEQ.NEXTVAL WHERE CONTACT_ID IS NULL",
+		"ALTER TABLE {skema}.M_LOGIN_GO MODIFY (CONTACT_ID NOT NULL)",
+		"CREATE UNIQUE INDEX {skema}.UX_M_LOGIN_GO_CONTACT_ID ON {skema}.M_LOGIN_GO (CONTACT_ID)",
+		"CREATE UNIQUE INDEX {skema}.UX_M_LOGIN_GO_LOGIN_ID ON {skema}.M_LOGIN_GO (LOWER(LOGIN_ID))",
+		"UPDATE {skema}.M_LOGIN_GO SET EMAIL = LOWER(EMAIL) WHERE EMAIL <> LOWER(EMAIL)",
+		"CREATE UNIQUE INDEX {skema}.UX_M_LOGIN_GO_EMAIL ON {skema}.M_LOGIN_GO (LOWER(EMAIL))",
+	}
+	if !reflect.DeepEqual(satu, mau) {
+		t.Errorf("905:\n dapat %q\n mau   %q", satu, mau)
+	}
+	// Aplikasi memberi nomor dengan sequence dan awalan yang SAMA dengan migrasi.
+	sisip := strings.Join(strings.Fields(sqlSisipAkun("T", "S")), " ")
+	nilai := nilaiSisipAkun(AkunBaru{ID: "UJI"}, "hash", true)
+	if !strings.Contains(sisip, ":13 || S.NEXTVAL)") || len(nilai) != 13 || nilai[12] != "CON-" ||
+		AwalanIDKontak != "CON-" || sekuensIDKontak != "M_LOGIN_GO_CONTACT_SEQ" {
+		t.Errorf("INSERT akun memberi CONTACT_ID dari %s berawalan %s (bind ke-13 %v): %s", sekuensIDKontak, AwalanIDKontak, nilai, sisip)
+	}
+}
+
+func TestMigrasi905Mundur(t *testing.T) {
+	p := baca902(t, "905_m_login_go_contact_id_down.sql")
+	mau := []string{
+		"DROP INDEX {skema}.UX_M_LOGIN_GO_EMAIL",
+		"DROP INDEX {skema}.UX_M_LOGIN_GO_LOGIN_ID",
+		"ALTER TABLE {skema}.M_LOGIN_GO DROP (CONTACT_ID)",
+		"DROP SEQUENCE {skema}.M_LOGIN_GO_CONTACT_SEQ",
+	}
+	if !reflect.DeepEqual(p, mau) {
+		t.Errorf("905_down:\n dapat %q\n mau   %q", p, mau)
 	}
 }

@@ -8,6 +8,8 @@
 //	GET  /api/master-product-name-life/master/{jenis}?cari=&batas=  tujuh pemilih master (`Choose*`, PARITAS §4); `batas` = autocomplete
 //	GET  /api/master-product-name-life/master-plan?cari=     autocomplete `Plan Name` (PLAN LIST)
 //	GET  /api/master-product-name-life/rate?riRateId=        tombol `View Rate` - view `RATE_LIFE` (K1)
+//	GET  /api/master-product-name-life/produk-lama           popup `Copy Old` (`rute_lama.go`, 03-10-2026)
+//	POST /api/master-product-name-life/produk-lama/salin     `Process Copy`
 package handlers
 
 import (
@@ -61,6 +63,7 @@ func daftarkan(mux *http.ServeMux, layanan func() *services.Layanan, adaDB func(
 	daftarkanBaca(pasang)
 	daftarkanTulis(pasang)
 	daftarkanLampiran(pasang)
+	daftarkanLama(pasang)
 }
 
 func daftarkanBaca(pasang func(string, rute)) {
@@ -149,12 +152,17 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusNotFound, services.Pesan(err))
 	case errors.Is(err, services.ErrNamaLampiranSudahAda), errors.Is(err, services.ErrLampiranBelumTerkirim),
 		errors.Is(err, services.ErrLampiranSudahTerkirim), errors.Is(err, services.ErrBerkasSumberHilang),
-		errors.Is(err, services.ErrBerkasTidakDiStub):
+		errors.Is(err, services.ErrBerkasTidakDiStub), errors.Is(err, services.ErrBerkasTidakDiStorage):
 		// 409: keadaan lampiran menolak aksi - kalimat menyebut yang harus dilakukan.
 		galat.Tulis(w, http.StatusConflict, services.Pesan(err))
-	case errors.Is(err, services.ErrOfficeStub), errors.Is(err, services.ErrPenyimpananBelumDisetel):
-		// 503: penampil kantor luar tidak dipanggil (OQ-MPNL-11) / folder stub belum disetel.
+	case errors.Is(err, services.ErrOfficeStub), errors.Is(err, services.ErrPenyimpananBelumDisetel),
+		errors.Is(err, services.ErrStorageBelumSiap):
+		// 503: berkas stub lokal tanpa URL untuk penampil kantor / folder antrean belum disetel / alamat, App, atau
+		// token penyimpanan tidak tersedia.
 		galat.Tulis(w, http.StatusServiceUnavailable, services.Pesan(err))
+	case errors.Is(err, services.ErrStorageGagal):
+		// 502: layanan penyimpanan nyata gagal - rinciannya di log layanan, tanpa alamat dan token.
+		galat.Tulis(w, http.StatusBadGateway, services.Pesan(err))
 	case errors.Is(err, services.ErrMasterTidakTerbaca):
 		// 503: master rujukan tidak terbaca - pesannya MENYEBUT objeknya, sebab Oracle hanya di log.
 		log.Printf("master product name life: %v", err)

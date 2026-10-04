@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   PREFIX_MPNL,
   ambilDaftarProduk,
+  ambilIsiLampiran,
   ambilLampiran,
   ambilProduk,
   ambilRate,
@@ -15,6 +16,7 @@ import {
   simpanProduk,
   ulangiLampiran,
 } from './api'
+import { PERAN } from '../../../inti/frontend/labels'
 import { produkBaru } from './bentuk'
 
 /** Satu panggilan `fetch` yang direkam. */
@@ -102,5 +104,35 @@ describe('pemilih dan lampiran', () => {
       ['GET', `${PREFIX_MPNL}/produk/100044/lampiran/L1/office`],
       ['DELETE', `${PREFIX_MPNL}/produk/100044/lampiran/L1`],
     ])
+  })
+})
+
+describe('isi lampiran untuk View (popup)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('GET rute unduh yang ada, berheader identitas, dijawab Blob', async () => {
+    vi.stubEnv('VITE_AUTH_STUB', 'true')
+    vi.stubEnv('VITE_STUB_PELAKU', 'UJI-ADMIN')
+    vi.stubEnv('VITE_STUB_PERAN', PERAN.admin)
+    const rekam: { url: string; headers: Record<string, string> }[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init: RequestInit) => {
+        rekam.push({ url, headers: (init.headers ?? {}) as Record<string, string> })
+        return new Response('isi-uji', { status: 200, headers: { 'Content-Type': 'application/pdf' } })
+      }),
+    )
+    const b = await ambilIsiLampiran('100044', 'L1')
+    expect(rekam.map((r) => r.url)).toEqual([`${PREFIX_MPNL}/produk/100044/lampiran/L1/unduh`])
+    expect(rekam[0]!.headers['X-Pelaku']).toBe('UJI-ADMIN')
+    expect(b).toBeInstanceOf(Blob)
+    expect(await b.text()).toBe('isi-uji')
+  })
+
+  it('penolakan backend membawa kalimatnya sendiri', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ galat: 'the storage service failed' }), { status: 502 })))
+    await expect(ambilIsiLampiran('100044', 'L1')).rejects.toThrow('the storage service failed')
   })
 })

@@ -30,17 +30,17 @@ func TestUWLimitPanjangSepertiDEVTetapDapatDisimpan(t *testing.T) {
 }
 
 // Keadaan DEV 02-10-2026: `M_PRODUCT_LIFE_SEQ` tertinggal dari data. Produk baru TIDAK lagi gagal 500 dan
-// tidak menimpa produk yang ada: ID terpakai dilewati ke nomor bebas berikut.
+// tidak menimpa produk yang ada: ID yang sudah dipakai induk flat dilewati ke nomor bebas berikut (sejak keputusan
+// work owner 02-10-2026 hanya induk flat yang diperiksa - produk lama sampai di sana lewat alat pindah).
 func TestProdukBaruMelewatiIDTerpakaiSaatSequenceTertinggal(t *testing.T) {
 	l, g := layananMaster()
 	lama := g.IsiJSON("100044", `{"ID":"100044","PRODUCTNAME":"UJI LAMA"}`, "")
-	g.IDWarisan["100045"] = true // ID baris JSON warisan (tabel inward) - juga tidak diterbitkan ulang
 	p, err := l.SimpanProduk(context.Background(), pelakuUji, produkMasuk(), true)
 	if err != nil {
 		t.Fatalf("produk baru tersimpan walau sequence tertinggal: %v", err)
 	}
-	if p.ID != "100046" {
-		t.Errorf("ID terpakai di salah satu tabel dilewati: dapat %q, mau 100046", p.ID)
+	if p.ID != "100045" {
+		t.Errorf("ID terpakai di induk flat dilewati: dapat %q, mau 100045", p.ID)
 	}
 	if g.Produk["100044"].Umum.ProductName != lama.Umum.ProductName || len(g.Produk) != 2 {
 		t.Error("produk lama ber-ID nomor sequence tidak tersentuh")
