@@ -57,9 +57,12 @@ func sqlIDPegaKasus(t string) string {
 	return fmt.Sprintf(`SELECT IDPEGA FROM %s WHERE ID = :1`, t)
 }
 
+// sqlSetelKolomDatarLama - kolom datar json_polis generasi yang baru dimuat;
+// hanya generasi terbuka (diagram F17, `syaratTerbuka`), sama dengan setiap
+// UPDATE T_GENERAL_POLIS lain.
 func sqlSetelKolomDatarLama(t string) string {
-	return fmt.Sprintf(`UPDATE %s SET IDPEGA = :1, NOENDORS = :2, TGL_INPUT = TO_DATE(:3, '%s'), USERNAME = :4 WHERE ID = :5`,
-		t, fmtTanggal)
+	return fmt.Sprintf(`UPDATE %s g SET IDPEGA = :1, NOENDORS = :2, TGL_INPUT = TO_DATE(:3, '%s'), USERNAME = :4 WHERE g.ID = :5 AND %s`,
+		t, fmtTanggal, syaratTerbuka(t))
 }
 
 // sqlAdaUsulanIDPega - penjaga dobel salinan SuggestList lama (F3): cacah

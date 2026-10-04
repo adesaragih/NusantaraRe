@@ -58,7 +58,7 @@ func TestPemuatTanpaJalurTulisTerpisah(t *testing.T) {
 			t.Errorf("lama.go memuat %q - jalur tulis terpisah dilarang (AC 56)", kata)
 		}
 	}
-	set := regexp.MustCompile(`UPDATE %S SET ([^\n]*?) WHERE`).FindAllStringSubmatch(s, -1)
+	set := regexp.MustCompile(`UPDATE %S(?: G)? SET ([^\n]*?) WHERE`).FindAllStringSubmatch(s, -1)
 	if len(set) != 1 {
 		t.Fatalf("harap tepat satu UPDATE (kolom datar json_polis), dapat %d", len(set))
 	}
@@ -69,6 +69,25 @@ func TestPemuatTanpaJalurTulisTerpisah(t *testing.T) {
 		case "IDPEGA", "NOENDORS", "TGL_INPUT", "USERNAME":
 		default:
 			t.Errorf("UPDATE pemuat menyentuh %s - di luar kolom datar json_polis (ID-21)", kol)
+		}
+	}
+}
+
+// Diagram sheet NB Treaty In Prop F17: "baris generasi lampau TIDAK BOLEH
+// disunting - itulah pembekuan OldData (P58)". SETIAP UPDATE atas
+// T_GENERAL_POLIS yang SQL-nya dirakit fungsi tersendiri hanya menyentuh
+// generasi terbuka (tanpa penerus yang OLD_POLIS_ID-nya menunjuknya);
+// `tulisInduk` dan `SetelNomorPolis` merakitnya di badan fungsi dengan
+// `syaratTerbuka` yang sama.
+func TestUbahGeneralPolisHanyaGenerasiTerbuka(t *testing.T) {
+	const tabel = "UJI_SKEMA.T_GENERAL_POLIS"
+	penjaga := "NOT EXISTS (SELECT 1 FROM UJI_SKEMA.T_GENERAL_POLIS s WHERE s.OLD_POLIS_ID = g.ID)"
+	for nama, q := range map[string]string{
+		"pindah posisi":          sqlPindahGenerasi(tabel),
+		"kolom datar json_polis": sqlSetelKolomDatarLama(tabel),
+	} {
+		if !strings.Contains(q, tabel+" g ") || !strings.Contains(q, penjaga) {
+			t.Errorf("%s: UPDATE T_GENERAL_POLIS tanpa penjaga generasi terbuka (F17):\n%s", nama, q)
 		}
 	}
 }
