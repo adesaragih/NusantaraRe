@@ -201,3 +201,30 @@ JSON (`TestKolomDokumenHanyaDiMasterXOLDariJSON`). Label *"`[menunggu konfirmasi
 
 Status: **selesai** — sisa penahan hanya pihak luar (K11); AC 57 ⛔ (b). *(Bunyi P11 dikutip: "sisa penahan hanya
 pihak luar (K11, F1); AC 57 ⛔ (b)".)*
+
+## ⛔ RALAT putaran 3 — audit silang W1 (04-10-2026): popup pilih bisnis membaca grid AKTIF
+
+`Section/BusinessAndSOBList` dibaca ulang: grid S11 (`pgRepPgSubSectionBusinessAndSOBListBB`, kelas
+`ASM-FW-GISFW-Int-TREATYINDETAIL`, RD `BrowseTreatyInDetail`) ber-`pyContainerVisibleWhen 1=2` — memo rule *"Hidden the
+old one, now use treatyindetail join edm"*. Grid yang tampil S16/S17: `pyGridProps/pyRDName` `BrowseTreatyJoinEDM`
+(kelas `ASM-FW-GISFW-Int-TREATYINDETAILJOINEDM`), `pyRDParams` `PROPORTIONALTYPE = .QuotationData.ProportionalType`
+(12 parameter lain kosong). RD `BrowseTreatyJoinEDM` filter H `.PROPORTIONTYPE = Param.PROPORTIONALTYPE` tanpa
+`pyUseNullIfEmpty` (kosong → diabaikan), urut `.TREATYID` ASC (`pySortOrder 1`), `pyMaxRecords` 500.
+
+1. **Rule sumber.** Bunyi lama (tabel "Rule Pega sumber"): *"Medan yang dipakai laporan | `ReportDefinition\BrowseTreatyInDetail.xml`
+   — **33 medan**"*. Bunyi baru: RD yang dipakai layar NB adalah **`ReportDefinition\BrowseTreatyJoinEDM.xml`** (pilih
+   bisnis `InputPolicyTreatyInDetail_preACT` langkah 1 `Param.pyReportName = "BrowseTreatyJoinEDM"`, dan grid popup).
+   Ke-33 `pyUIFields`-nya **sama persis** dengan `BrowseTreatyInDetail` (dibandingkan 04-10-2026), sehingga kesimpulan AC 17
+   dan 89 tidak berubah. `BrowseTreatyInDetail` kini **tidak dibangun — (a)** (`docs/alat/status.json`).
+2. **Sumber grid popup.** Bunyi lama (kode `repository/acuan.go` `DaftarDetailKontrak`): *"RD `BrowseTreatyInDetail` (kelas
+   `ASM-FW-GISFW-Int-TREATYINDETAIL`, tabel TREATYINDETAIL) - grid popup `Section/BusinessAndSOBList`. Popup tidak mengirim
+   parameter, sehingga filter A-L RD diabaikan; yang tersisa satu saringan teks nomor kontrak."* Bunyi baru:
+   `repository.DaftarBisnis` membaca **view** `TREATYINDETAILJOINEDM` (jadi kontrak EDM ikut tampil) dengan filter H atas
+   `PolicyTreatyIn.QuotationData.ProportionalType` kasus, `ORDER BY TREATYID`, ≤ 500 baris. Rute `GET /bisnis` diganti
+   `POST /kasus/{id}/bisnis` (isian layar ikut, `pySubmitData=Yes`; tanpa simpan; hanya posisi admin dan wadah
+   `.ClaimType != 'XOL Retro'`, selain itu 409). Kode tabel TREATYINDETAIL dibuang.
+3. Uji: `backend/handlers/daftarbisnis_test.go` (seam HTTP + tiruan) dan `backend/repository/kontrak_db_test.go`
+   `TestDaftarBisnisRDBrowseTreatyJoinEDM` (bertag `db`, `go vet -tags db` bersih, **belum dijalankan** — K11).
+
+AC tiket ini tidak berubah status: AC 15 ✅ (popup kini juga membaca view), AC 17 dan 89 🟡 K11.
+

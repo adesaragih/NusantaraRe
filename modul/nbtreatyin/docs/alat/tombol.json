@@ -78,19 +78,19 @@
       "tombol": "Choose Business",
       "section": "DetailPolicyTreatyIn",
       "tampil": "wadah .ClaimType != 'XOL Retro'; InputParam.CARI12 != 'treaty' && != 'TreatyPolicy' (InputParam kosong di NB)",
-      "aksi_xml": "click -> showHarness BusinessAndSOBList (popup) -> refresh",
+      "aksi_xml": "click -> showHarness BusinessAndSOBList (popup, pyWindowName 'Business And SOB List', pySubmitData Yes) -> refresh",
       "rule": [
         "Harness/BusinessAndSOBList",
         "Section/BusinessAndSOBList",
-        "ReportDefinition/BrowseTreatyInDetail"
+        "ReportDefinition/BrowseTreatyJoinEDM"
       ],
-      "padanan": "pages/LayarKasus.tsx (admin, bukanXOLRetro) -> components/PilihBisnis.tsx -> GET /api/nb-treaty-in/bisnis",
-      "status": "dibangun"
+      "padanan": "pages/LayarKasus.tsx (admin, bukanXOLRetro) -> components/PilihBisnis.tsx -> POST /api/nb-treaty-in/kasus/{id}/bisnis dengan isian layar (services.DaftarBisnis: kerjakan tanpa simpan, 409 bila bukan admin / ClaimType 'XOL Retro'; repository.DaftarBisnis: view TREATYINDETAILJOINEDM, filter H PROPORTIONTYPE = PolicyTreatyIn.QuotationData.ProportionalType - kosong diabaikan, ORDER BY TREATYID, <= 500)",
+      "status": "dibangun - RALAT audit silang P3 W1: bunyi lama rule 'ReportDefinition/BrowseTreatyInDetail' dan padanan 'GET /api/nb-treaty-in/bisnis' (tabel TREATYINDETAIL tanpa saringan) keliru - grid itu wadah S11 pyContainerVisibleWhen 1=2"
     },
     {
       "tombol": "Choose (popup bisnis)",
       "section": "BusinessAndSOBList",
-      "tampil": "selalu (dua grid; label 'For Treatyindetail join EDM' mati 1=2)",
+      "tampil": "selalu; SATU grid tampil - S16/S17 pyGridProps/pyRDName BrowseTreatyJoinEDM (grid lama S11 RD BrowseTreatyInDetail wadah pyContainerVisibleWhen 1=2; LABEL 'For Treatyindetail join EDM' pyCondition 1=2). RALAT audit silang P3 W1: bunyi lama 'selalu (dua grid; ...)'",
       "aksi_xml": "click -> runActivity SetValue_Act(ID=.ID) -> runScript opener.location.reload -> runScript window.close -> refresh",
       "rule": [
         "Activity/SetValue_Act",

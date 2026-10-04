@@ -206,3 +206,26 @@ Setiap sel `DetailPolicyTreatyIn` / `DetailDeptHeadTreatyIn_UW` dicocokkan ulang
   `models/layar.go` `wajibUangAdmin`, `wajibUangAtasan`; uji `TestMedanWajibIkutWadahTampil`.
 - Padanan setiap tombol/aksi dengan rule XML: `docs/alat/tombol.json` (INVENTARIS bab 13).
 - Format penyajian (K14) — tiket 07, AC 86.
+
+## ⛔ RALAT putaran 3 — audit silang W1 (04-10-2026): popup `Harness/BusinessAndSOBList`
+
+Popup tombol `Choose Business` dicocokkan ulang dengan `Section/BusinessAndSOBList` (grid AKTIF S16/S17, RD
+`BrowseTreatyJoinEDM`; grid S11 RD `BrowseTreatyInDetail` dan LABEL *"For Treatyindetail join EDM"* ber-`1=2`) dan
+showHarness `Section/DetailPolicyTreatyIn` (`pyWindowName`, `pySubmitData=Yes`). Selisih yang diperbaiki:
+
+| Sel / setelan | Bunyi XML | Sebelumnya |
+| --- | --- | --- |
+| judul jendela | `pyWindowName` *"Business And SOB List"* | *"Choose Business"* (label tombol) |
+| judul 25 kolom | LABEL baris 1: Treaty Offer ID, Contract Name, Class of Business, Source Of Business, Insured Name, Proportion Type, Treaty Type, Treaty Group, Treaty Year, Currency, Limit, Currency, Retention, Currency, EPI, Layer, *(kosong)*, Part of, *(kosong)*, Currency, MDP, Currency, Net Premium, Currency, Share RNM Value | nama kolom view (`TREATYID` …) |
+| saring | `pyGridFiltering true`, kolom 2-26 `pyColumnFilteringDropDown true` (kolom tombol `false`); nol kotak cari | kotak teks *"TREATYID"* + tombol *Filter* (buatan) |
+| urut | `pyGridSorting true`, kolom 2-26 `pyColumnSorting true`; kolom `.TREATYID` `pySortType ASC` | tidak dapat diurut |
+| paging | `pyPageMode Numeric`, `pyPageSize 50` | seluruh baris satu halaman |
+| isi | RD `BrowseTreatyJoinEDM` (view, filter H `ProportionalType` kasus, ≤ 500) | tabel TREATYINDETAIL tanpa saringan (tiket 01 RALAT W1) |
+| syarat buka | wadah tombol `.ClaimType != 'XOL Retro'`, hanya layar admin | dijaga layar saja; kini juga server (409) untuk isi popup dan Choose |
+
+Bunyi lama komentar `frontend/labels.ts` `KOLOM_BISNIS`: *"Kolom grid popup `BusinessAndSOBList` (nama kolom view, apa
+adanya)."* → bunyi baru: judul VERBATIM LABEL baris 1, `kolom` = properti sel baris 2 di bawahnya. Kode:
+`components/PilihBisnis.tsx`, `gridbisnis.ts`, `labels.ts`; uji `labels.test.ts` ("popup pilih bisnis"),
+`gridbisnis.test.ts`, `backend/handlers/daftarbisnis_test.go`. AC tiket ini tidak berubah status; AC 53 (bagian mati
+tidak dibangun) kini juga berlaku untuk grid S11 yang sebelumnya dibangun.
+
