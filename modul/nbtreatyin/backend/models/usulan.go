@@ -122,18 +122,9 @@ func UsulanBelumTersimpan(h *Halaman) []UsulanProduksi {
 		if b["IsSave"] != "" {
 			continue
 		}
-		out = append(out, UsulanProduksi{
-			TypePolis:    strings.ReplaceAll(AwalanKasus, "-", ""),
-			Posisi:       PosisiUsulanProduksi,
-			PIC:          b["OperatorName"],
-			TglInp:       b["Date"],
-			Type:         h.Ambil(HalamanQuotation + ".BusinessFac"), // CARI7; "T" sejak kasus lahir
-			Putaran:      PutaranUsulanProduksi,
-			Approval:     approvalUsulan(b["IsApproved"]),
-			Keterangan:   potongKarakter(b["Suggest"], PanjangKeterangan),
-			AksesLogin:   b["OperatorID"],
-			BusinessCode: h.Ambil(HalamanQuotation + ".BusinessCode"),
-		})
+		out = append(out, petaUsulan(b, strings.ReplaceAll(AwalanKasus, "-", ""),
+			h.Ambil(HalamanQuotation+".BusinessFac"), // CARI7; "T" sejak kasus lahir
+			h.Ambil(HalamanQuotation+".BusinessCode"), b["Date"]))
 		b["IsSave"] = TandaTersimpan
 	}
 	return out

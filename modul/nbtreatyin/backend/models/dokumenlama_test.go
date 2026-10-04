@@ -9,6 +9,8 @@ import (
 	_ "embed"
 	"encoding/json"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -348,5 +350,78 @@ func TestAngkaJSONTidakLewatFloat(t *testing.T) { // ADR-0003
 	}
 	if got := h.Halaman.Ambil("PolicyTreatyIn.PremiOgp"); got != "592629512.880000276" {
 		t.Errorf("angka JSON = %q, harap literal utuh", got)
+	}
+}
+
+// TestPanduanBentukDokumenNolMedanBelumDiputuskan - AC 59 (RALAT F3, WO
+// 04-10-2026: "nol medan yang BELUM DIPUTUSKAN"). Setiap jalur daun panduan
+// bentuk dokumen `docs/dataguide-json-polis.json` (`JSON_DATAGUIDE` atas
+// POOLDATA.JSON_POLIS, 378 jalur) dirakit menjadi satu dokumen fiktif lalu
+// dipecah: tiap medannya wajib berkolom, disalin ke riwayat produksi, atau
+// dibuang dengan keputusan tertulis. ⚠️ Panduan itu basi (diagram R45) -
+// medan di luar panduan baru terlihat saat uji-kering atas data nyata (F7).
+func TestPanduanBentukDokumenNolMedanBelumDiputuskan(t *testing.T) {
+	isi, err := os.ReadFile(filepath.Join("..", "..", "docs", "dataguide-json-polis.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var panduan []struct {
+		Jalur string `json:"o:path"`
+		Jenis string `json:"type"`
+	}
+	if err := json.Unmarshal(isi, &panduan); err != nil {
+		t.Fatal(err)
+	}
+	daftar := map[string]bool{}
+	for _, p := range panduan {
+		if p.Jenis == "array" {
+			daftar[p.Jalur] = true
+		}
+	}
+	akar := map[string]any{"pxObjClass": KelasDokumenTreatyIn}
+	daun := 0
+	for _, p := range panduan {
+		if p.Jenis == "object" || p.Jenis == "array" || p.Jalur == "$.pxObjClass" {
+			continue
+		}
+		daun++
+		ruas := strings.Split(strings.TrimPrefix(p.Jalur, "$."), ".")
+		simpul, jalur := akar, "$"
+		for i, r := range ruas {
+			jalur += "." + r
+			if i == len(ruas)-1 {
+				simpul[r] = "" // kosong sah untuk setiap golongan kolom
+				break
+			}
+			if daftar[jalur] {
+				xs, _ := simpul[r].([]any)
+				if len(xs) == 0 {
+					xs = []any{map[string]any{}}
+					simpul[r] = xs
+				}
+				simpul = xs[0].(map[string]any)
+				continue
+			}
+			anak, _ := simpul[r].(map[string]any)
+			if anak == nil {
+				anak = map[string]any{}
+				simpul[r] = anak
+			}
+			simpul = anak
+		}
+	}
+	if daun < 340 {
+		t.Fatalf("hanya %d jalur daun terbaca; panduannya yang rusak", daun)
+	}
+	dok, err := json.Marshal(akar)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h, err := PecahDokumenLama(barisUji(string(dok)))
+	if err != nil || len(h.Galat) > 0 {
+		t.Fatalf("%v %+v", err, h.Galat)
+	}
+	for _, m := range h.TakDikenal {
+		t.Errorf("medan belum diputuskan: %s", m.Pola)
 	}
 }

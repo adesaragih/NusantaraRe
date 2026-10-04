@@ -87,6 +87,9 @@ type HasilPecah struct {
 	Diabaikan map[string]int
 	// Galat - dokumen TIDAK dimuat bila terisi (K15, AC 58).
 	Galat []GalatDokumen
+	// Usulan - baris SuggestList dokumen yang disalin ke
+	// POOLDATA.HISTORYAKSEPTASIPRODUCTION (F3; `UsulanDokumenLama`).
+	Usulan []UsulanProduksi
 }
 
 // Galat struktural dokumen lama.
@@ -560,6 +563,19 @@ func PecahDokumenLama(b BarisJSONPolis) (HasilPecah, error) {
 			}
 			continue
 		}
+		// F3: anggota baris SuggestList disalin ke riwayat produksi
+		// (`UsulanDokumenLama`); `.Date` dibaca seperti kolom tanggal-waktu.
+		if nama, ok := anggotaUsulanLama(md.Pola); ok {
+			if nama == "Date" {
+				v, err := BacaTanggalLama(md.Nilai, GolTanggalWaktu)
+				if err != nil {
+					galat(md, err)
+					continue
+				}
+				p.setel(md, v)
+			}
+			continue
+		}
 		if alasan := alasanDiabaikan(md.Pola); alasan != "" {
 			hasil.Diabaikan[alasan]++
 			continue
@@ -577,5 +593,6 @@ func PecahDokumenLama(b BarisJSONPolis) (HasilPecah, error) {
 	if h.Ambil(HalamanPolis+".ProductionDate") == "" && b.TglProd != "" {
 		h.Setel(HalamanPolis+".ProductionDate", b.TglProd)
 	}
+	hasil.Usulan = UsulanDokumenLama(id, h)
 	return hasil, nil
 }
