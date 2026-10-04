@@ -1,8 +1,10 @@
 # Audit silang putaran 3 — NB Treaty In (`nbtreatyin`)
 
 Auditor independen (tidak ikut membangun modul ini), prompt putaran 3 bab 3.2. Cabang
-`modul/nbtreatyin/p3r-audit`. Audit dimulai dari integrasi `71e6b91a`, lalu digabung dengan
-`e4d847c0` (F4, K18, F2, F5, F8).
+`modul/nbtreatyin/p3r-audit`. Audit dimulai dari integrasi `71e6b91a`, lalu digabung dua kali:
+`e4d847c0` (R2 F4, R3 K18/F2/F5/F8) dan `97fcb333` (R1 F3: kolom `T_GENERAL_POLIS.EDM_TYPE`,
+medan dokumen lama, SuggestList lama). Layar dan pemuat diperiksa pada keadaan sesudah
+kedua penggabungan itu (bab 6.5).
 
 **Patokan: korpus XML READ-ONLY** `D:\NUSARE DEV\NusantaraRe\NB Treaty In (Done)\`. XML mentah
 dibaca dengan dua lapis escape dibuka. Salinan section tertanam `pyIncludedRuleXML` dibuang,
@@ -343,6 +345,41 @@ Bagian berikut sama dengan XML:
 - **Teks opsi.** Radio `.DueTo`, Approval, serta pilihan IsSurveyReport/StatementType/TypeTax/ClaimType:
   pilihannya ada di rule Property yang tidak terekspor, sehingga dirender sebagai teks bebas.
 
+### 6.5 Keadaan sesudah R1/R2/R3 (`97fcb333`)
+
+**Pemilih SOB (R2, F4).**
+
+- Hasil `SearchHierarkiSourceBizAgent_PostDT` kini dipegang layar dan dikirim pada Save/Submit.
+  `POST /pilih-sumber-bisnis` menjadi pencarian tanpa simpan. Ini sesuai XML: FA
+  `AgentSourceBizDetails` `pyActionTransformRule` hanya mengubah clipboard, dan tombol Choose
+  `SourceHierarki` (`runActivity` → `opener.location.reload` → `window.close`) tidak berisi
+  `Obj-Save`.
+- Satu uji paket itu (`hitungNetPremi`) disesuaikan ke aksi sel admin `CountOGPONP` (7.4).
+  Tidak ada selisih layar baru.
+
+**Kolom `T_GENERAL_POLIS.EDM_TYPE` (R1, F3).**
+
+- Kolom ini dibaca syarat kedua `InputPolicyTreatyInPre_Act` langkah 10
+  (`[.PolicyTreatyIn.EDMType=="3"] T->3`). Cocok dengan `PerluCekDaftarXOL`.
+- Fungsi itu juga menambah syarat ketiga, `QuotationData.ProportionalType != "Proportional"`,
+  yang **tidak ada di XML**. Penyimpangan ini ditandai `[penyimpangan sadar]` (penjaga AC 33),
+  tetapi tanpa keputusan WO yang dikutip. Lihat catatan 7.4.
+- Bukan medan layar.
+
+**Pemuat dokumen lama (R1, F3).**
+
+- Pemetaan `SuggestList` lama (`models/usulanlama.go`) sama dengan `SaveViewSuggest` langkah
+  2.1.2: CARI3 "Policy", CARI4 `.OperatorName`, CARI5 `.Date`, CARI8 2, CARI9 Accept/Reject,
+  dan CARI10 `@substring(.Suggest,0,3990)`.
+- Uji petik `pemakai.py` atas enam medan "dibuang" di `medan_abaikan_lama.json` bagian `pola`
+  cocok dengan bukti yang ditulis R1: `QuotationData.BusinessType`, `.SobName`,
+  `.CedingCoName`, `.TeamGroup`, `.BranchCode`, `IsOJKNopolis`.
+  - Pembaca terjangkau `.BusinessType` / `.SobName` hanya halaman `pyWorkPage.Quotation`, atau
+    langkah berlabel `//` (`CheckDataMkt` 6–7).
+  - `.CedingCoName` yang dibaca `TreatyRealizationCheckDuplicate` adalah
+    `.PolicyTreatyIn.CedingCoName`, yang berkolom.
+  - `.TeamGroup` di `BrowseMarketingOfficer_RD` adalah kolom tabel MO, bukan medan polis.
+
 ---
 
 ## 7 · Temuan WAJIB-BANGUN dan WAJIB-PERBAIKI
@@ -486,6 +523,10 @@ Tiga catatan lain:
   RALAT.
 - **Uji paket F4** `H/sumberbisnis_test.go` `hitungNetPremi` disesuaikan memakai aksi sel admin
   `CountOGPONP` di commit merge, karena `CountNetPremi` tidak lagi diterima.
+- **`PerluCekDaftarXOL`** (`models/nonprop_detail.go`) menambah syarat
+  `QuotationData.ProportionalType != "Proportional"` di luar XML `InputPolicyTreatyInPre_Act`
+  langkah 10. Penyimpangan ini ditandai sadar (penjaga AC 33), tetapi tanpa keputusan WO.
+  Perlu dicatat di HASIL bab 5, atau minta konfirmasi WO.
 
 ---
 
@@ -517,7 +558,15 @@ Audit ini tidak menyunting HASIL, PERMINTAAN, status.json, maupun INVENTARIS.
 | `82c1e4a1` | P10 — grid total NonProp, LABEL EDM |
 | `ecb8d771` | P5 — paginasi ListSuggest |
 | `3ae24c8a` | gabung implementasi `e4d847c0` (F4, K18, F2, F5, F8) + penyesuaian helper uji F4 |
+| `6cca634b` | dokumen ini (draf) |
+| `3eeeca5a` | gabung implementasi `97fcb333` (F3 dokumen lama, EDM_TYPE) |
 
-Verifikasi ada di laporan akhir subagen. Hasilnya: `go vet ./...`, `go vet -tags db
-./modul/nbtreatyin/...`, `go test ./modul/nbtreatyin/...` hijau, `npm run typecheck` 0 galat,
-dan `npx vitest run modul/nbtreatyin frontend/daftar` hijau.
+Verifikasi dijalankan sesudah penggabungan `97fcb333`:
+
+| Perintah | Hasil |
+| --- | --- |
+| `go vet ./...` | bersih |
+| `go vet -tags db ./modul/nbtreatyin/...` | bersih |
+| `go test ./...` | `nbtreatyin` hijau. Merah hanya baseline claimlife (`models`, `repository`, `services`) dan `inti/backend/penjaga` `TestNolAlamatLayananDiKode`, yang merah karena worktree tanpa `.env`. |
+| `npm run typecheck` | 0 galat |
+| `npx vitest run modul/nbtreatyin frontend/daftar` | 17 berkas, 111 uji lulus |
