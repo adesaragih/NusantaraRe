@@ -437,10 +437,18 @@ func TreatySetReinstatement(h *Halaman) error {
 // `IsNewPolicyNonProp==1` dan `.PolicyTreatyIn.EDMType` bukan "3".
 //
 // `[penyimpangan sadar]` ditambah: jenis proporsi `QuotationData` bukan
-// "Proportional". Penanda IsNewPolicyNonProp tidak pernah diturunkan kembali
-// oleh pra-proses (InputPolicyTreatyIn_preDT 4-5), sehingga berkas yang dipilih
-// ulang ke kontrak proporsional akan dibuatkan baris XOL - yang ditolak
-// penyimpanan (spec-penyimpanan AC 33, `PeriksaBentukSimpan`).
+// "Proportional". DASAR (diperiksa ulang audit silang P3 7.4, 04-10-2026):
+// spec-penyimpanan AC 33 `[terverifikasi]` (ID-35, hasil grilling) - "Menyimpan
+// baris XOL pada polis ber-`ProportionalType = 'Proportional'` ditolak"
+// (`PeriksaBentukSimpan`). Penanda IsNewPolicyNonProp TIDAK PERNAH diturunkan
+// pra-proses: `DataTransform/InputPolicyTreatyIn_preDT` langkah 4 `WHEN
+// .Quotation.ProportionalType=="NonProportional"` -> "1", langkah 5 `WHEN
+// .PolicyTreatyIn.IsNewPolicyNonProp != "1"` -> "0" (nilai "1" bertahan). Berkas
+// NonProp yang dipilih ulang ke kontrak proporsional (preDT 14: QuotationData =
+// Quotation "Proportional") akan dibuatkan baris XOL oleh langkah 10 apa adanya -
+// dan SETIAP Save/Submit-nya lalu ditolak AC 33 (jalan buntu). Syarat ketiga
+// mencegah baris yang penyimpanan tolak; perilaku Pega lain tidak berubah.
+// Dicatat di tiket 19 (AC 33).
 func PerluCekDaftarXOL(h *Halaman) bool {
 	return samaDenganSatu(h.Ambil(pt+"IsNewPolicyNonProp")) &&
 		h.Ambil(pt+"EDMType") != "3" &&

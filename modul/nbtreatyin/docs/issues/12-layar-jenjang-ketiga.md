@@ -161,3 +161,51 @@ tempatTanggalProduksi)`"*. Bunyi baru: syarat tampil `ListSuggest.ProductionDate
 `…_WAJIB_OPERATOR_3/4`); diterima bila `models.TanggalProduksiTampil(h, tempat)` —
 `GabungMasukanLayar(h, masuk, posisi, tempat)`; wajib lewat satu sumber `models.MedanWajibBerlaku` (layar, Save,
 submit). AC 52 tetap ✅.
+
+## ⛔ RALAT putaran 3 (paket R6, 04-10-2026) — audit silang P3 W2 dan 7.4
+
+### W2 — atasan menyunting grid spreading NonProp
+
+Bunyi lama (Hasil implementasi putaran 2, AC 52), dikutip: *"`models.medanAtasan` = `IsApproved`,
+`Suggest`; `ProductionDate` diterima hanya bila tampil"* dan baris tabel RALAT P2 *"**dua selalu
+(`.IsApproved`, `.Suggest`) + satu bersyarat (`.ProductionDate`)**"*; serta komentar kode lama
+`models.GabungMasukanLayar` *"Atasan  hanya `medanAtasan`; seluruh daftar terkunci"* dan
+`services/aksiposisi.go` *"Yang terbuka hanya radio `ListSuggest .IsApproved`"*.
+
+Bunyi baru: selain ketiga medan itu, pemegang layar `DetailDeptHeadTreatyIn_UW` dapat menyunting grid
+`SpreadingRiskList` subsection NonProp — **syarat XML sama dengan layar admin**: polis NonProp baru
+(wadah S88 `.IsNewPolicyNonProp = 1 && .ClaimType != 'XOL Retro'`), tombol Add/Delete bila
+`pyWorkPage.TreatyIn.FacultativeShare = 0 || = ''`, sel `.TreatyType` / `.SharePercentage` /
+`.ClaimPercentage` terkunci bila `FacultativeShare > 0`, sel %Share memicu refresh `CountSpreading_Act`.
+Grid Proporsional layar atasan (S96 `pyReadOnly=true` tanpa syarat) **tetap hanya-baca**.
+
+Bukti XML: `Section/DetailDeptHeadTreatyIn_UW.xml` S88 SUB_SECTION `DetailPoliciesNonProportional`
+(`pyReadOnly=false`, `pyEditOptions=Auto`) → `DetailPoliciesNonProportional` S1 →
+`DetailPolicyTreatyInNonProportional` S73 SUB_SECTION `SpreadingRiskList` (`pyReadOnly=false`,
+`Auto`) → `Section/SpreadingRiskList.xml` S2 (Add/Delete `pyVisible` FacultativeShare 0/'';
+`pyReadOnlyCondition pyWorkPage.TreatyIn.FacultativeShare >0`; CountSpreading_Act).
+Spec AC 52 di-RALAT sama (bunyi lama dikutip di `spec.md`); AC 52 tetap ✅.
+
+Dibangun: `models.SpreadingDariLayar(h, posisi)` (menggantikan `DaftarDariLayar`; kedua posisi),
+`models.GabungMasukanLayar` menerima daftar itu di cabang atasan, `services/aksiposisi.go` aksi
+`CountSpreading` terbuka di kedua layar hanya bila grid terbuka, `frontend` `DetailNonProp`
+`sunting={boleh}`. Kolom `.PremiumSpreaded` / `.ClaimSpreaded` tetap dihitung server (W5, tiket 11).
+Uji: `handlers/masukanlayar_test.go` `TestAtasanMenyuntingSpreadingNonProp`,
+`TestAtasanSpreadingTerkunciBilaFakultatifAtauProporsional`; `models/layar_daftar_test.go`
+`TestGabungMasukanDaftarMenurutGridXML`; `frontend/components/DetailNonProp.test.tsx`.
+
+### 7.4 — `FetchTreatyGroupOldID` langkah 3 menahan Submit Dept Head
+
+Sebelumnya tidak dibangun (status.json hanya menyebut langkah 6). Terjangkau: tombol Submit Dept Head
+(IsApproved 1) → `runActivity GeneratePolicyNoTreaty_Act` → langkah 11 (`TreatyGroupOldID==""`)
+`Call FetchTreatyGroupOldID` → langkah 2 `Param.Errmsg = "Cannot fetch Treaty Group ID, Contact IT"`,
+langkah 3 `Page-Set-Messages pyWorkPage` bila `pyWorkPage.PolicyTreatyIn.TreatyGroupID==""`. Nomor
+polis tetap dibentuk dan disimpan (langkah 30 `Obj-Save WithErrors=true`); halaman berpesan tidak dapat
+di-submit (OK `ShowPolicyNoTreaty` = finishAssignment).
+
+Dibangun: `models.GrupTreatyTakTerbaca`, `models.PesanGrupTreatyTakTerbaca` (VERBATIM);
+`services.validasiKirim` menahan submit Dept Head (tombol nomor polis) dengan pesan itu (422), berkas
+tetap di Dept Head. ⚠️ Di Oracle, TreatyGroupID kosong biasanya juga berarti `OJKBusinessID` kosong →
+`TerbitkanNomor` sudah berhenti lebih dulu (`ErrOJKKosong`); pesan ini menahan kasus yang OJK-nya
+terisi (mis. dokumen lama). Uji: `handlers/masukanlayar_test.go`
+`TestGrupTreatyKosongMenahanSubmitDeptHead` (tiruan `OldIDGrup` dapat diatur).

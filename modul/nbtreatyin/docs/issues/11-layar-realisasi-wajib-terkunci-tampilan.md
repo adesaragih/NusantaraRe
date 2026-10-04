@@ -229,3 +229,104 @@ adanya)."* → bunyi baru: judul VERBATIM LABEL baris 1, `kolom` = properti sel 
 `gridbisnis.test.ts`, `backend/handlers/daftarbisnis_test.go`. AC tiket ini tidak berubah status; AC 53 (bagian mati
 tidak dibangun) kini juga berlaku untuk grid S11 yang sebelumnya dibangun.
 
+## ⛔ RALAT putaran 3 (paket R6, 04-10-2026) — audit silang P3 W3–W6: masukan layar dan unsur layar
+
+Seluruhnya dibaca ulang ke XML (`Section/DetailPolicyTreatyIn`, `DetailDeptHeadTreatyIn_UW`,
+`SpreadingRiskList`, `DetailPolicyTreatyInNonProportional`, `SFAPortal_OpportunitiesList`).
+
+### W4 — medan dari sel / wadah TERSEMBUNYI tidak diterima
+
+Bunyi lama (komentar `models.medanAdmin`, dikutip): *"DAFTAR IZIN layar admin ... isian medan yang
+dapat diketik/dipilih di section"* — daftar tanpa syarat tampil: setiap medan di daftar diterima
+walau selnya tersembunyi. Bunyi baru: `medanAdmin` daftar izin **berurutan dengan syarat tampil sel dan
+wadahnya**, dinilai atas halaman yang sedang digabung:
+
+| Medan | Syarat tampil (XML) |
+| --- | --- |
+| medan uang, `.Installment` | wadah S19 `.IsNewPolicyNonProp != 1 && .IsNewPolicyListFormat != 1` |
+| `.IDCurrency` | sel `.IsNewPolicyNonProp != 1` |
+| `.FlagPPH`, `.TypeTax` | wadah S7 `.ClaimType != 'XOL Retro'`; `.TypeTax` juga sel `.FlagPPH = true` |
+| `.FlagRetroTreaty` | sel `.ClaimType != 'XOL Retro'` |
+| `.Quartal`, `.YearOfQuartal` | wadah S14 `.QuotationData.ProportionalType = 'Proportional'` |
+| `.QuotationData.IsSurveyReport` | sel `pyWorkPage.Quotation.ProportionalType != 'NonProportional'` |
+
+Polis NonProp baru: `PremiOgp` / `Deduction1` / `Deduction2` milik `InputPolicyTreatyInDetail_NonProp`
+18–19 tidak lagi dapat ditimpa kiriman layar. `.FlagPPH` yang berubah menjalankan `RemoveTypeTax_ACT`
+(change → runActivity) di server, supaya TypeTax tersembunyi tidak tertinggal.
+Uji: `models/layar_masukan_test.go` `TestMedanAdminTersembunyiTidakDiterima`,
+`TestFlagPPHDilepasMenghapusTypeTax`; `handlers/masukanlayar_test.go`
+`TestKirimanLayarTidakMenimpaUangMasterNonProp`.
+
+### W3 — hasil tombol Enable / Disable Input Type (pola F4, AC 49–51)
+
+Bunyi lama (`models.medanAdmin`, dikutip): *"// hasil tombol "Enable / Disable Input Type"
+(TreatyEnableDisableInput) "IsNewPolicyNonProp", "QuotationData.ProportionalType""* — diterima apa
+adanya. Bunyi baru: kedua medan (`.QuotationData.ProportionalType` sel `pyReadOnly=true`;
+`.IsNewPolicyNonProp` bukan sel) diterima **hanya bila `.TreatyType='XOL'`** (pyVisible tombol) **dan
+sama dengan hasil `TreatyEnableDisableInput` atas halaman server** (langkah 1 "NonProportional",
+langkah 2–4 selalu "0"). TreatyType bukan XOL: medan terkunci, kiriman diabaikan; nilai lain: **422**
+*"Nilai … bukan hasil tombol Enable / Disable Input Type (TreatyEnableDisableInput) - medan ini
+terkunci di layar"*. Uji: `TestEnableDisableHanyaHasilTombol`, `TestEnableDisableHanyaDariTombolXOL`.
+Ikutan: uji R5 `TestDaftarBisnisMenyaringJenisProporsiKasus` kini memakai nilai server / hasil tombol.
+
+### W5 — kolom hanya-baca daftar dari server; nilai bawaan sel
+
+Bunyi lama (komentar `GabungMasukanLayar`, dikutip): *"Admin `medanAdmin` (daftar izin), beserta
+daftar `DaftarDariLayar` (SpreadingRiskList, ListInstallment - baris boleh ditambah/dihapus, tombol
+Add/Delete layar admin)"*. Bunyi baru:
+
+- `.ListInstallment` (grid S45/S107 `pyEditingMode`/`pyRowEditing` `readOnly`) **tidak pernah**
+  diterima dari layar. Barisnya ditulis action set server (`models.TerapkanPemicu`, sesudah
+  `services.turunkan`): `.Installment` berubah → `FillPaymentInstallment`; sel uang ber-action set
+  `CountOGPONP_Act` berubah → langkah 10 `SetValidateInstallment_Act` (dan langkah 9 CountSpreading).
+- Grid spreading: `.PremiumSpreaded` / `.ClaimSpreaded` (`Read-only`) tidak diterima; ditulis
+  `CountSpreading_Act` langkah 4.1 bila sel %Share berubah / baris dihapus / baris baru ber-%Share,
+  selain itu nilai server (menurut urutan) bertahan. `[penyesuaian sadar]` baris dihapus tanpa ubahan
+  %Share dihitung ulang (baris tak berkunci); urutan beberapa refresh dalam satu kiriman tak terbaca —
+  `FillPaymentInstallment` memakai `BalanceDueTo` akhir.
+- `pyDefaultValue` sel terbuka (dua satu-satunya di layar NB selain label mati): `.QuotationData.
+  IsSurveyReport` "No", `.TypeTax` "Inclusive" — dipakai bila kosong dan sel tampil, saat layar admin
+  dirender dan sesudah kiriman digabung (`models.TerapkanNilaiBawaanSel`). `[tafsiran]` (bab 6.4
+  audit, "perlu cek"): `pyDefaultValue` sel Section = nilai kontrol bila properti kosong saat sel
+  dirender, lalu ikut terkirim bersama form; pemicunya hanya render sel - nol Activity/DataTransform
+  korpus yang MENGISI kedua medan itu (`RemoveTypeTax_ACT` hanya menghapus `.TypeTax`; rule lain
+  hanya membaca `.TypeTax=="Inclusive"` / `IsSurveyReport=="Yes"`).
+Uji: `TestKolomHanyaBacaSpreadingDariServer`, `TestAngsuranDariServer`, `TestNilaiBawaanSel`
+(models); `TestKolomHanyaBacaSpreadingTidakDariLayar`, `TestAngsuranDariActionSetServer`,
+`TestNilaiBawaanSelLayarAdmin` (handlers).
+
+### W6 — unsur layar tanpa dasar Section XML (bab 0 butir 7)
+
+**Dibuang** (nol sel XML): spanduk `NBStatus` layar kasus (`NBStatus` hanya kolom grid portal);
+kolom portal "Position" dan "No Polis" (grid `GetListOpportunity` tidak memuatnya); judul panel
+buatan "General", "Premium & Claim", "Spreading Risk", "Suggest", dan judul panel NonProp
+"Spreading Risk"/"Installment" — wadahnya `NOHEADER` / `pyIncludeHeader=false` (S2 berjudul
+"General" pun tanpa header). Yang tampil di XML dan dipertahankan: "Installment Data Information"
+(S45/S107 `pyIncludeHeader=true`), "Limits", "Share", "Total Spreaded", "Share Facultative"
+(NonProp, `pyIncludeHeader=true`), dan **LABEL Heading 4 "OGP" / "ONP"** (`pyIncludeLabel=true`
+wadah S24/S25 admin, S93/S94 atasan) — bagian uang kini dikelompokkan per wadah XML.
+
+**Dibangun (butir kecil):** ikon pengosong saring portal C[1.2] (pxIcon `pyiconclearfield`: click →
+setValue `""` → postValue, **tanpa** refresh); format sel grid master NonProp (`LimitShareSummaryList
+.Limit` pxNumber tanpa `pyDecimalPlaces`; `LimitFacShareSummaryList` seluruh sel tanpa Format → apa
+adanya); kolom pertama FIELD kosong grid `TotalLimitIOONP` (S7) dan `TotalFacShareRnmNP` (S57).
+
+**⛔ RALAT tautan `.Name`.** XML: kolom grid ke-2 LABEL "Name", sel `.Name` pxLink (`LabelPreview
+.Name`) click → `openWorkByHandle(.pzInsKey)`. `.Name` **ditulis nol rule** di korpus NB (sisir
+`PropertiesName` seluruh korpus: nol penulis properti kasus `.Name`) dan tak berkolom di delapan tabel
+— tautannya selalu tanpa teks, tidak dapat diklik. Bunyi lama (`tombol.json`, dikutip): *"`.Name`
+(tautan berkas) … dibangun … pages/PortalNBTreatyIn.tsx tautan"*. Bunyi baru: kolom "Name" **tidak
+dirender**; aksi `openWorkByHandle` (kunci berkas yang sama) dipasang di sel "Offer No"
+(`.TextNoQuotation` = pengenal kasus `NB-<n>`). `[penyimpangan sadar]` — tanpa ini berkas tak dapat
+dibuka dari portal.
+
+**Dipertahankan, dengan dasar bukan Section** (tidak ada padanan sel, tetapi dibutuhkan): panel
+"History" + `GET /kasus/{id}/riwayat` — spec **AC 72** (*"Riwayat dapat dibaca berurutan waktu"*);
+tombol "Kembali" — modul satu halaman (bab 0 butir 7): `openWorkByHandle` membuka berkas di area
+kerja portal Pega, padanannya kembali ke daftar; tombol "Cancel" modal nomor polis — tombol bawaan
+komponen `Modal` inti (menutup tanpa submit, sama dengan menutup jendela lokal ShowPolicyNoTreaty);
+teks daftar kosong portal — komponen `Kosong` inti; peringatan hanya-baca — layar bagi pelaku bukan
+anggota antrean (AC 11, 92).
+
+Uji: `frontend/pages/PortalNBTreatyIn.test.tsx`, `frontend/components/DetailNonProp.test.tsx`,
+`frontend/labels.test.ts` (BAGIAN), `frontend/medan.test.ts` (kelompok wadah uang).

@@ -152,3 +152,18 @@ diubah (paket konsolidasi).
    `Section\ListSuggest`; AC 40–41 berlaku dan ✅ (butir 1). Tiga penyimpangan lain — ditulis di ketiga jenjang,
    `TGL_INP` jam 24, `NOURUT` dari repository — `[penyimpangan sadar — disetujui WO 04-10-2026]` (F2; tiket 10 bab P9,
    PERMINTAAN-TIM-INTI F2).
+
+## Catatan putaran 3 (paket R6, 04-10-2026) — AC 33 sebagai dasar `PerluCekDaftarXOL`
+
+Audit silang P3 (bab 6.5, 7.4) mencatat syarat ketiga `models.PerluCekDaftarXOL`
+(`QuotationData.ProportionalType != "Proportional"`) di luar XML `InputPolicyTreatyInPre_Act` langkah 10
+(`[pyWorkPage.PolicyTreatyIn.IsNewPolicyNonProp==1]` dan `[.PolicyTreatyIn.EDMType=="3"]` → lewati),
+tanpa dasar tertulis. Diperiksa ulang: **dasarnya AC 33 ini** (`[terverifikasi]`, ID-35, hasil grilling)
+— penyimpanan menolak baris XOL pada polis `Proportional` (`PeriksaBentukSimpan`). Penanda
+`IsNewPolicyNonProp` tidak pernah diturunkan pra-proses (`DataTransform/InputPolicyTreatyIn_preDT`
+langkah 4 `WHEN .Quotation.ProportionalType=="NonProportional"` → "1"; langkah 5 `WHEN
+.PolicyTreatyIn.IsNewPolicyNonProp != "1"` → "0" — nilai "1" bertahan), sehingga berkas NonProp yang
+dipilih ulang ke kontrak proporsional akan dibuatkan baris XOL oleh langkah 10 apa adanya, lalu
+SETIAP Save/Submit-nya ditolak AC 33. Syarat ketiga mencegah baris yang AC 33 tolak; perilaku tetap
+(`[penyimpangan sadar]` berdasar AC 33). Dasar ditulis di komentar `models/nonprop_detail.go`; uji
+`models/nonprop_master_test.go` `TestPerluCekDaftarXOL` (kasus "penjaga AC 33").

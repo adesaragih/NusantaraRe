@@ -187,6 +187,9 @@ penggolongan jenis usaha, rumus pajak brokerage, pengecualian mata uang, dan ant
     > ⛔ **RALAT** 2026-10-03 (putaran 2, paket P2) — bunyi lama: *"mengisi tujuh medan keputusan
     > saya sendiri"* → bunyi baru: **mengisi putusan (`Approval`) dan catatan (`Suggest`)**, ditambah
     > `Production Date` hanya bila medan itu tampil baginya. Bukti: AC 52 RALAT.
+    > ⛔ **RALAT** 2026-10-04 (putaran 3, R6, W2) — ditambah: bagi polis NonProp baru, juga grid
+    > spreading subsection NonProp bila `TreatyIn.FacultativeShare` 0/'' (Add/Delete, %Share). Bukti:
+    > AC 52 RALAT 2026-10-04.
 12. **Sebagai** Kepala Departemen, **saya ingin** menyetujui berkas sebagai keputusan terakhir,
     **supaya** realisasi selesai dan polis terbentuk.
 13. **Sebagai** Kepala Departemen, **saya ingin** menolak berkas dan mengembalikannya ke admin,
@@ -538,6 +541,10 @@ lalu memutuskan.
 > ⛔ **RALAT** 2026-10-03 (putaran 2, paket P2) — bunyi lama: *"ia mengisi **tujuh medan** sendiri"*
 > → bunyi baru: ia mengisi **dua medan selalu** (`.IsApproved`, `.Suggest` di `ListSuggest`) dan
 > **satu bersyarat** (`.ProductionDate`); medan lain layarnya hanya-baca. Bukti: AC 52 RALAT.
+> ⛔ **RALAT** 2026-10-04 (putaran 3, R6, W2) — bunyi lama: *"medan lain layarnya hanya-baca"* → bunyi
+> baru: medan lain layarnya hanya-baca, **kecuali grid `SpreadingRiskList` subsection NonProp** (polis
+> NonProp baru, `TreatyIn.FacultativeShare` 0/'' — syarat sama dengan layar admin). Bukti: AC 52
+> RALAT 2026-10-04.
 
 ⭐ **Delapan puluh elemen mati dibuang tanpa ditanyakan** `[keputusan work owner]` **P44** —
 `[terverifikasi]` sebabnya struktural: `pyCondition` menempel pada **sel tunggal** dan
@@ -800,6 +807,38 @@ dari luar. ⛔ Butir yang terasa seperti keputusan baru adalah salah tulis.
     > Uji: `handlers/alur_test.go` `TestMedanTerkunciAtasanDanTurunanAdmin`, `models/layar_test.go`
     > `TestAtasanHanyaMengisiPutusanCatatanDanTanggalProduksiBersyarat`, `frontend/medan.test.ts`
     > "AC 52".
+    >
+    > ⛔ **RALAT** 2026-10-04 (putaran 3, paket R6, audit silang P3 W2) — bunyi lama RALAT P2 di atas,
+    > dikutip: *"Test yang menemukan layarnya sepenuhnya hanya-baca, **atau menemukan `DueTo`,
+    > `FlagPPH`, `No Offer Slip`, atau medan lain dapat diisi**, **gagal**."* dan *"Subsection NonProp di
+    > layar yang sama (wadah `.IsNewPolicyNonProp = 1 ...`) memuat sel `pxNumber` atas halaman master
+    > `pyWorkPage.TreatyIn.*` — dinilai paket P5; halaman `TreatyIn` tidak pernah diterima dari layar."*
+    > → **bunyi baru**: pemegang layar `DetailDeptHeadTreatyIn_UW` dapat mengisi `Approval`,
+    > `Suggest`, `Production Date` bersyarat (seperti di atas) **dan — bila polis NonProp baru — grid
+    > `SpreadingRiskList` subsection NonProp dengan syarat XML yang SAMA dengan layar admin**: tombol
+    > Add/Delete bila `pyWorkPage.TreatyIn.FacultativeShare = 0 || = ''`, sel `.TreatyType`,
+    > `.SharePercentage`, `.ClaimPercentage` terkunci bila `FacultativeShare > 0`, sel %Share
+    > memicu refresh `CountSpreading_Act`. Grid spreading **Proporsional** layar atasan tetap
+    > hanya-baca, dan halaman master `TreatyIn` tetap tidak pernah diterima dari layar. Test yang
+    > menemukan `DueTo`, `FlagPPH`, `No Offer Slip`, medan uang, grid Proporsional, atau grid NonProp
+    > ber-`FacultativeShare > 0` dapat diisi atasan **gagal**; test yang menemukan grid NonProp
+    > ber-`FacultativeShare` 0/'' terkunci bagi atasan **gagal**.
+    > Bukti XML (dibaca ulang 2026-10-04): `Section/DetailDeptHeadTreatyIn_UW.xml` wadah S88
+    > `.IsNewPolicyNonProp = 1 && .ClaimType != 'XOL Retro'` → sel SUB_SECTION
+    > `DetailPoliciesNonProportional` `pyReadOnly=false`, `pyEditOptions=Auto` →
+    > `Section/DetailPoliciesNonProportional.xml` S1 SUB_SECTION `DetailPolicyTreatyInNonProportional`
+    > (`pyReadOnly=false`, `Auto`) → `Section/DetailPolicyTreatyInNonProportional.xml` S73
+    > SUB_SECTION `SpreadingRiskList` (`pyReadOnly=false`, `Auto`) → `Section/SpreadingRiskList.xml`
+    > S2: `.pyTemplateButton` Add/Delete `pyVisible` `... && (pyWorkPage.TreatyIn.FacultativeShare = 0
+    > || pyWorkPage.TreatyIn.FacultativeShare = '')`; `.TreatyType`/`.SharePercentage`/
+    > `.ClaimPercentage` `pyEditOptions=Read-only` + `pyReadOnlyCondition
+    > pyWorkPage.TreatyIn.FacultativeShare >0`; %Share: change → refresh `CountSpreading_Act`
+    > (`SharePct`, `Index=.pxListSubscript`). Bandingkan grid Proporsional atasan S96: sel
+    > `pyReadOnly=true` TANPA syarat, tanpa tombol Add/Delete. Kolom `.PremiumSpreaded`/
+    > `.ClaimSpreaded` `Read-only` di kedua layar - dihitung server (`CountSpreading_Act` 4.1).
+    > Uji: `handlers/masukanlayar_test.go` `TestAtasanMenyuntingSpreadingNonProp`,
+    > `TestAtasanSpreadingTerkunciBilaFakultatifAtauProporsional`; `models/layar_daftar_test.go`
+    > `TestGabungMasukanDaftarMenurutGridXML`; `frontend/components/DetailNonProp.test.tsx` "W2".
 
 ### Layar — tampilan
 

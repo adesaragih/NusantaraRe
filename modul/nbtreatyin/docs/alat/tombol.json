@@ -31,8 +31,8 @@
       "rule": [
         "ReportDefinition/GetListOpportunity"
       ],
-      "padanan": "pages/PortalNBTreatyIn.tsx form saring (submit/enter = Filter; Esc = kosongkan + muat ulang) -> GET /api/nb-treaty-in/kasus?cari= -> Param.Search = filter G RD `.TextNoQuotation Contains` (pengenal kasus, tanpa beda huruf; models.CocokCariPortal), pyMaxRecords 500 (models.BatasDaftarPortal)",
-      "status": "dibangun - ikon pengosong tanpa refresh tidak dibuat tombol tersendiri (padanannya Esc / mengosongkan isian); filter C `.Name` (kelas CRM, ditulis nol rule) tidak dibangun - P9"
+      "padanan": "pages/PortalNBTreatyIn.tsx form saring (submit/enter = Filter; Esc = kosongkan + muat ulang; ikon pengosong C[1.2] pxIcon pyiconclearfield = tombol aria-label \"Clear field\": kosongkan isian TANPA muat ulang) -> GET /api/nb-treaty-in/kasus?cari= -> Param.Search = filter G RD `.TextNoQuotation Contains` (pengenal kasus, tanpa beda huruf; models.CocokCariPortal), pyMaxRecords 500 (models.BatasDaftarPortal)",
+      "status": "RALAT R6 audit silang P3 (04-10-2026): dibangun - ikon pengosong kini tombol tersendiri (setValue \"\" -> postValue, tanpa refresh; bunyi lama: \"ikon pengosong tanpa refresh tidak dibuat tombol tersendiri\"); filter C `.Name` (kelas CRM, ditulis nol rule) tidak dibangun - P9"
     },
     {
       "tombol": ".Name (tautan berkas)",
@@ -43,8 +43,8 @@
         "FlowAction/InboxPolicyTreatyIn",
         "FlowAction/DeptHeadTreatyIn_UW"
       ],
-      "padanan": "pages/PortalNBTreatyIn.tsx tautan -> GET /api/nb-treaty-in/kasus/{id} (services.BukaKasus: hanya-baca bila bukan anggota antrean)",
-      "status": "dibangun"
+      "padanan": "pages/PortalNBTreatyIn.tsx TabelPortal: tautan di sel \"Offer No\" (`.TextNoQuotation`) -> GET /api/nb-treaty-in/kasus/{id} (services.BukaKasus: hanya-baca bila bukan anggota antrean); kolom \"Name\" tidak dirender",
+      "status": "RALAT R6 audit silang P3 (04-10-2026): dibangun dengan penyimpangan sadar - `.Name` ditulis NOL rule korpus dan tak berkolom (tautan selalu tanpa teks), aksi openWorkByHandle (.pzInsKey, kunci berkas yang sama) dipindah ke sel Offer No (tiket 11 RALAT W6; bunyi lama status: \"dibangun\")"
     },
     {
       "tombol": "Select Source Of Business",
@@ -133,8 +133,8 @@
       "rule": [
         "DataTransform/TreatyEnableDisableInput"
       ],
-      "padanan": "pages/LayarKasus.tsx -> POST /kasus/{id}/hitung {aksi: TreatyEnableDisableInput} -> models.TreatyEnableDisableInput",
-      "status": "dibangun"
+      "padanan": "pages/LayarKasus.tsx -> POST /kasus/{id}/hitung {aksi: TreatyEnableDisableInput} -> models.TreatyEnableDisableInput (tanpa simpan; hasil dipegang layar); Save/Submit: models.terimaEnableDisable menerima IsNewPolicyNonProp / QuotationData.ProportionalType hanya bila TreatyType XOL dan sama dengan hasil DT atas halaman server (bukan XOL diabaikan, lain 422)",
+      "status": "RALAT R6 audit silang P3 (04-10-2026): dibangun - W3 (pola F4)"
     },
     {
       "tombol": "Save (bagian uang) / Save (kaki layar)",
@@ -151,8 +151,8 @@
       "tampil": "InputParam.CARI12 != 'treaty' && != 'TreatyPolicy' di wadah uang",
       "aksi_xml": "click -> addRow / deleteRow (.SpreadingRiskList)",
       "rule": [],
-      "padanan": "pages/LayarKasus.tsx (admin) mengubah daftar di klien; diterima server lewat models.GabungMasukanLayar saat Save/Submit/hitung",
-      "status": "dibangun"
+      "padanan": "pages/LayarKasus.tsx (admin) mengubah daftar di klien; diterima server lewat models.GabungMasukanLayar -> models.SpreadingDariLayar (admin: wadah S19) saat Save/Submit/hitung; kolom PremiumSpreaded/ClaimSpreaded tidak diterima - CountSpreading_Act 4.1 di server bila terpicu (models.TerapkanPemicu)",
+      "status": "RALAT R6 audit silang P3 (04-10-2026): dibangun - W5 kolom hanya-baca dari server"
     },
     {
       "tombol": "Submit (IsApproved==1)",
@@ -216,10 +216,11 @@
         "Activity/GeneratePolicyNoTreaty_Act",
         "FlowAction/ShowPolicyNoTreaty",
         "Section/ShowPolicyNoTreaty_SC",
-        "Activity/CekLimitTreatyAcc_Act"
+        "Activity/CekLimitTreatyAcc_Act",
+        "Activity/FetchTreatyGroupOldID"
       ],
-      "padanan": "models.TombolUntuk menurut POSISI: Sec Head -> kirim; Dept Head -> POST /kasus/{id}/nomor-polis (services.TerbitkanNomor) -> Modal nomor polis",
-      "status": "dibangun - identitas diganti posisi (tiket 05; ketiga syaratnya terdaftar sebagai tempat berperan models.TempatDetailDHSubmit* / TempatGeneralDHSubmit*, tidak dibaca layanan); LetterNo dari CekLimitTreatyAcc_Act tidak dibangun (K2: Sec Head selalu naik)"
+      "padanan": "models.TombolUntuk menurut POSISI: Sec Head -> kirim; Dept Head -> POST /kasus/{id}/nomor-polis (services.TerbitkanNomor) -> Modal nomor polis; GeneratePolicyNoTreaty_Act 11 -> FetchTreatyGroupOldID 3: TreatyGroupID kosong -> pesan \"Cannot fetch Treaty Group ID, Contact IT\" menahan OK/submit (services.validasiKirim, models.GrupTreatyTakTerbaca)",
+      "status": "dibangun - identitas diganti posisi (tiket 05; ketiga syaratnya terdaftar sebagai tempat berperan models.TempatDetailDHSubmit* / TempatGeneralDHSubmit*, tidak dibaca layanan); LetterNo dari CekLimitTreatyAcc_Act tidak dibangun (K2: Sec Head selalu naik); RALAT R6 audit silang P3 (04-10-2026): FetchTreatyGroupOldID langkah 3 dibangun (7.4)"
     },
     {
       "tombol": "OK (nomor polis)",
@@ -285,8 +286,8 @@
       "tampil": "lihat medan.ts",
       "aksi_xml": "change -> (postValue ->) refresh thisSection TANPA activity",
       "rule": [],
-      "padanan": "isian klien; layar dihitung ulang dari halaman",
-      "status": "dibangun (tanpa panggilan backend)"
+      "padanan": "isian klien; .QuotationData.IsSurveyReport diterima server hanya bila sel tampil (Quotation bukan NonProportional), pyDefaultValue \"No\" (models.TerapkanNilaiBawaanSel); .QuotationData.ProportionalType sel pyReadOnly - hanya hasil tombol Enable / Disable (W3)",
+      "status": "RALAT R6 audit silang P3 (04-10-2026): dibangun (tanpa panggilan backend) - W3, W4, W5"
     },
     {
       "tombol": ".StatementType / .QuotationData.NoOfferSlip / .FlagRetroTreaty / .TypeTax",
@@ -294,8 +295,8 @@
       "tampil": "lihat medan.ts",
       "aksi_xml": "change -> postValue",
       "rule": [],
-      "padanan": "isian klien; diterima server lewat models.GabungMasukanLayar (daftar izin admin)",
-      "status": "dibangun"
+      "padanan": "isian klien; diterima server lewat models.GabungMasukanLayar (daftar izin admin BERURUTAN dengan syarat tampil: FlagRetroTreaty `.ClaimType != XOL Retro`; TypeTax wadah S7 + `.FlagPPH = true`, pyDefaultValue \"Inclusive\")",
+      "status": "RALAT R6 audit silang P3 (04-10-2026): dibangun - W4 sel tersembunyi tidak diterima, W5 nilai bawaan sel"
     },
     {
       "tombol": ".EndDate",
@@ -316,8 +317,8 @@
       "rule": [
         "Activity/RemoveTypeTax_ACT"
       ],
-      "padanan": "medan.ts aksi [RemoveTypeTax] -> POST /hitung -> models.RemoveTypeTax",
-      "status": "dibangun"
+      "padanan": "medan.ts aksi [RemoveTypeTax] -> POST /hitung -> models.RemoveTypeTax; Save/Submit: FlagPPH yang berubah menjalankan RemoveTypeTax di server (models.GabungMasukanLayar), diterima hanya bila wadah S7 tampil",
+      "status": "RALAT R6 audit silang P3 (04-10-2026): dibangun - W4"
     },
     {
       "tombol": ".QuotationData.MOID",
@@ -386,8 +387,8 @@
       "rule": [
         "Activity/CountSpreading_Act"
       ],
-      "padanan": "LayarKasus.tsx InputAngka onBlur -> POST /hitung {aksi: CountSpreading, indeks} -> models.CountSpreading",
-      "status": "dibangun"
+      "padanan": "LayarKasus.tsx InputAngka onBlur -> POST /hitung {aksi: CountSpreading, indeks} -> models.CountSpreading (langkah 4-5; 1-3 berlabel // tidak diport); aksi terbuka hanya bila models.SpreadingDariLayar; Save/Submit: %Share berubah -> CountSpreading_Act 4.1 di server",
+      "status": "RALAT R6 audit silang P3 (04-10-2026): dibangun - W5, RALAT CountSpreading langkah 1-3"
     },
     {
       "tombol": ".Installment",
@@ -397,20 +398,20 @@
       "rule": [
         "Activity/FillPaymentInstallment"
       ],
-      "padanan": "LayarKasus.tsx -> POST /hitung {aksi: FillPaymentInstallment} -> models.FillPaymentInstallment",
-      "status": "dibangun"
+      "padanan": "LayarKasus.tsx -> POST /hitung {aksi: FillPaymentInstallment} -> models.FillPaymentInstallment; Save/Submit: Installment berubah -> FillPaymentInstallment di server (models.TerapkanPemicu); ListInstallment tidak pernah diterima dari layar",
+      "status": "RALAT R6 audit silang P3 (04-10-2026): dibangun - W5"
     },
     {
       "tombol": ".InstallmentPercentage / .Premium (grid angsuran)",
       "section": "DetailPolicyTreatyIn",
-      "tampil": "wadah uang admin; terkunci IsUW || IsClaim || IsShowOpenPolicyMarine || IsOldData = 1",
+      "tampil": "grid S45 `.ListInstallment` pyEditingMode / pyRowEditing / pyNextGenRowEditing readOnly (kedua layar); sel terkunci IsUW || IsClaim || IsShowOpenPolicyMarine || IsOldData = 1",
       "aksi_xml": "change -> refresh SetValidateInstallment_Act / CountPctInstallment_Act(idx=.InstallmentNo)",
       "rule": [
         "Activity/SetValidateInstallment_Act",
         "Activity/CountPctInstallment_Act"
       ],
-      "padanan": "LayarKasus.tsx InputAngka onBlur -> POST /hitung {aksi: SetValidateInstallment | CountPctInstallment, indeks}",
-      "status": "dibangun"
+      "padanan": "LayarKasus.tsx grid hanya-baca; POST /hitung SetValidateInstallment / CountPctInstallment ditolak 409 (services/aksiposisi.go); SetValidateInstallment_Act tetap berjalan sebagai CountOGPONP_Act langkah 10 (models.TerapkanPemicu saat sel uang berubah)",
+      "status": "RALAT R6 audit silang P3 (04-10-2026): tidak terpicu - grid readOnly (audit silang P3 P2; bunyi lama status: \"dibangun\", padanan \"LayarKasus.tsx InputAngka onBlur -> POST /hitung ...\")"
     },
     {
       "tombol": "sel ber-aksi layar atasan (.StartDate, .ShareValue, .PremiOgp, .RiCommOgp, ..., grid spreading/angsuran)",
@@ -418,8 +419,8 @@
       "tampil": "seluruhnya pyReadOnly (1==1) atau pyDisabled always",
       "aksi_xml": "change -> refresh CountResult1_Act / CountRiCommOgp_act / CountNetPremi_act / SetCurrency_act / CountSpreading_Act / ... (sel terkunci: event tidak pernah terpicu)",
       "rule": [],
-      "padanan": "medan.ts MEDAN_ATASAN_*: jenis tampil, tanpa aksi; server menolak isian (models.GabungMasukanLayar)",
-      "status": "tidak dibangun sebagai aksi - tidak terpicu (AC 49-52)"
+      "padanan": "medan.ts MEDAN_ATASAN_*: jenis tampil, tanpa aksi; server menolak isian (models.GabungMasukanLayar); KECUALI grid SpreadingRiskList subsection NonProp (baris 39-40: terbuka bagi atasan bila FacultativeShare 0/'' - W2)",
+      "status": "RALAT R6 audit silang P3 (04-10-2026): tidak dibangun sebagai aksi - tidak terpicu (AC 49-52); grid Proporsional S96 tetap hanya-baca"
     },
     {
       "tombol": "subsection DetailPolicyTreatyOutNonProportional",
@@ -460,23 +461,23 @@
     },
     {
       "tombol": "Add / Delete (section SpreadingRiskList NonProp)",
-      "section": "SpreadingRiskList (di DetailPolicyTreatyInNonProportional)",
+      "section": "SpreadingRiskList (di DetailPolicyTreatyInNonProportional; layar admin S17 DAN atasan S88)",
       "tampil": "InputParam.CARI12 != 'treaty' && != 'TreatyPolicy' && (TreatyIn.FacultativeShare = 0 || '')",
       "aksi_xml": "click -> addRow / deleteRow (.SpreadingRiskList)",
       "rule": [],
-      "padanan": "components/DetailNonProp.tsx (admin, spreadingTerbuka) -> diterima server models.DaftarDariLayar (NonProp: hanya bila FacultativeShare 0/'')",
-      "status": "dibangun (K8)"
+      "padanan": "components/DetailNonProp.tsx (sunting = pelaku boleh bekerja, admin MAUPUN atasan; spreadingTerbuka) -> diterima server models.SpreadingDariLayar (kedua posisi: wadah NonProp tampil dan FacultativeShare 0/''); bunyi lama padanan: \"components/DetailNonProp.tsx (admin, spreadingTerbuka) -> diterima server models.DaftarDariLayar (NonProp: hanya bila FacultativeShare 0/'')\"",
+      "status": "RALAT R6 audit silang P3 (04-10-2026): dibangun (K8) - W2 atasan juga"
     },
     {
       "tombol": ".SharePercentage / .ClaimPercentage (section SpreadingRiskList NonProp)",
-      "section": "SpreadingRiskList (di DetailPolicyTreatyInNonProportional)",
+      "section": "SpreadingRiskList (di DetailPolicyTreatyInNonProportional; layar admin S17 DAN atasan S88)",
       "tampil": "terkunci bila TreatyIn.FacultativeShare > 0",
       "aksi_xml": "change -> refresh CountSpreading_Act(SharePct, Index=.pxListSubscript, Type)",
       "rule": [
         "Activity/CountSpreading_Act"
       ],
-      "padanan": "DetailNonProp.tsx onBlur -> POST /hitung {aksi: CountSpreading, indeks} -> models.CountSpreading",
-      "status": "dibangun (K8)"
+      "padanan": "DetailNonProp.tsx onBlur -> POST /hitung {aksi: CountSpreading, indeks} -> models.CountSpreading; terbuka di kedua posisi (services.aksiTerbuka -> models.SpreadingDariLayar)",
+      "status": "RALAT R6 audit silang P3 (04-10-2026): dibangun (K8) - W2 atasan juga"
     },
     {
       "tombol": "grid ListInstallment (masterDetail InstallmentList)",
