@@ -1,34 +1,31 @@
--- 320 - T_GENERAL_POLIS: kolom Treaty In atas tabel BERSAMA FacIn + Treaty In (tiket 16).
---
--- KEPUTUSAN WORK OWNER 04-10-2026: T_GENERAL_POLIS adalah SATU tabel bersama FacIn dan
--- Treaty In. Tabel DASARNYA dibuat migrasi nbfacin 182_t_general_polis: ID VARCHAR2(32)
--- PK, IDPEGA VARCHAR2(50), COB_GROUP, START_DATE_TIME, OFFERING_DATE, END_DATE_TIME,
--- FOLLOWING - kolom itu milik nbfacin, tidak ditambah, diubah, atau dibuang di sini.
--- 182 WAJIB sudah berjalan sebelum 320 (PERMINTAAN-TIM-INTI C10). Baris lini lain
--- (T_WORK_POLIS.LINI = 'FAC') tetap ada; modul ini membaca kasus LINI = 'NONLIFE' saja.
+-- 320 - T_GENERAL_POLIS: satu baris per GENERASI polis treaty inward (tiket 16).
 --
 -- Kunci utama BERSAMA T_WORK_POLIS (tabel kasus lintas-lini milik premiumlistlife,
--- migrasi 050/059): ID adalah ID baris T_WORK_POLIS (spec-penyimpanan ID-7, AC 5).
--- FK_GENERAL_POLIS_WORK ditambah di sini - ASUMSI: 182 belum memilikinya (C10).
+-- migrasi 050/059): ID adalah ID baris T_WORK_POLIS, tanpa kolom kunci tamu
+-- tersendiri (spec-penyimpanan ID-7, AC 5).
 --
 -- Diagram grilling F12-F16: UNIQUE (NOPOLIS, PRODKE) dan UNIQUE (OLD_POLIS_ID).
 -- Kunci alami (NOPOLIS, PRODKE) unik - ditegakkan BASIS DATA (ID-8, AC 1).
--- NOPOLIS kosong selama realisasi belum bernomor (dan pada baris lini lain), jadi
--- indeks uniknya hanya memuat baris bernomor (indeks berfungsi CASE).
+-- NOPOLIS kosong selama realisasi belum bernomor, jadi indeks uniknya hanya
+-- memuat baris bernomor (indeks berfungsi CASE): dua draf tanpa nomor tidak bentrok
+-- (UNIQUE biasa menganggap (NULL, 0) dan (NULL, 0) kembar di Oracle).
 -- PRODKE bilangan bulat lebar (KEPUTUSAN-RONDE-12 butir 1 dan 8); NB selalu 0.
 -- OLD_POLIS_ID menunjuk generasi sebelumnya - unik, kosong di NB (ID-9, AC 3, 4).
 -- Generasi TERTUTUP = ada baris penerus yang OLD_POLIS_ID-nya menunjuk generasi
 -- ini; tidak boleh disunting (ID-10, AC 6) - tanpa kolom penanda (diagram).
 --
--- Kolom katalog DIBANGKITKAN dari backend/models/katalog.go (docs/alat/skema.py);
+-- Kolom lain DIBANGKITKAN dari backend/models/katalog.go (docs/alat/skema.py) -
+-- 79 medan PolicyTreatyIn + 7 kolom json_polis menurut diagram dan rancangan;
 -- LAYER* dicoret (diagram F26). Perbandingan: docs/PERBANDINGAN-KOLOM-DIAGRAM.md.
 -- Uang dan persen NUMBER(38,8) (KEPUTUSAN 23-09-2026 sore), tanggal DATE (P32),
--- kode dan penanda teks (ID-16, ID-17). Nol COMMIT, nol PL/SQL.
-ALTER TABLE {skema}.T_GENERAL_POLIS ADD (
+-- kode dan penanda teks (ID-16, ID-17). Nol COMMIT.
+CREATE TABLE {skema}.T_GENERAL_POLIS (
+  ID                        VARCHAR2(32) NOT NULL,
   NOPOLIS                   VARCHAR2(64),
   PRODKE                    NUMBER(10) DEFAULT 0 NOT NULL,
   NOENDORS                  VARCHAR2(64),
   OLD_POLIS_ID              VARCHAR2(32),
+  IDPEGA                    VARCHAR2(128),
   TGL_INPUT                 DATE,
   USERNAME                  VARCHAR2(64),
   POSITION_NOTE             VARCHAR2(64),
@@ -103,14 +100,12 @@ ALTER TABLE {skema}.T_GENERAL_POLIS ADD (
   RI_COMM_OGP               NUMBER(38,8),
   OVERIDDING_COMM_OGP       NUMBER(38,8),
   RI_COMM_ONP               NUMBER(38,8),
-  OVERIDDING_COMM_ONP       NUMBER(38,8)
+  OVERIDDING_COMM_ONP       NUMBER(38,8),
+  CONSTRAINT PK_GENERAL_POLIS PRIMARY KEY (ID),
+  CONSTRAINT FK_GENERAL_POLIS_WORK FOREIGN KEY (ID) REFERENCES {skema}.T_WORK_POLIS (ID),
+  CONSTRAINT FK_GENERAL_POLIS_OLD FOREIGN KEY (OLD_POLIS_ID) REFERENCES {skema}.T_WORK_POLIS (ID),
+  CONSTRAINT UQ_GENERAL_POLIS_OLD UNIQUE (OLD_POLIS_ID)
 )
-/
-ALTER TABLE {skema}.T_GENERAL_POLIS ADD CONSTRAINT FK_GENERAL_POLIS_WORK FOREIGN KEY (ID) REFERENCES {skema}.T_WORK_POLIS (ID)
-/
-ALTER TABLE {skema}.T_GENERAL_POLIS ADD CONSTRAINT FK_GENERAL_POLIS_OLD FOREIGN KEY (OLD_POLIS_ID) REFERENCES {skema}.T_WORK_POLIS (ID)
-/
-ALTER TABLE {skema}.T_GENERAL_POLIS ADD CONSTRAINT UQ_GENERAL_POLIS_OLD UNIQUE (OLD_POLIS_ID)
 /
 CREATE UNIQUE INDEX {skema}.UQ_GENERAL_POLIS_NOPOLIS ON {skema}.T_GENERAL_POLIS (CASE WHEN NOPOLIS IS NOT NULL THEN NOPOLIS END, CASE WHEN NOPOLIS IS NOT NULL THEN PRODKE END)
 /

@@ -11,14 +11,16 @@ Tabel yang **dibaca, tidak dibuat** modul ini dideklarasikan di `MODUL.md`.
 
 ## T_GENERAL_POLIS
 
-⛔ **Tabel BERSAMA FacIn + Treaty In** (keputusan work owner 04-10-2026). Tabel dasarnya dibuat migrasi `nbfacin` `182_t_general_polis`; tabel di bawah = kolom yang **ditambahkan** migrasi 320 (`ALTER TABLE ... ADD (`). Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7). Generasi tertutup = ada penerus yang `OLD_POLIS_ID`-nya menunjuk baris ini (ID-10). Baris lini lain (`T_WORK_POLIS.LINI = 'FAC'`) ada di tabel yang sama; modul ini hanya membaca kasus `LINI = 'NONLIFE'`.
+Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7). Generasi tertutup = ada penerus yang `OLD_POLIS_ID`-nya menunjuk baris ini (ID-10).
 
 | Kolom | Tipe | Null | Kunci | Golongan | Properti Pega |
 | --- | --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK, FK T_WORK_POLIS | kode | kasus |
 | `NOPOLIS` | teks | ya | UQ (NOPOLIS, PRODKE) | kode | `PolicyTreatyIn.PolicyNo` |
 | `PRODKE` | bilangan bulat | tidak | UQ (NOPOLIS, PRODKE) | cacah | generasi; NB = 0 |
 | `NOENDORS` | teks | ya |  | kode | json_polis |
 | `OLD_POLIS_ID` | teks | ya | UQ, FK T_WORK_POLIS | kode | generasi sebelumnya |
+| `IDPEGA` | teks | ya |  | kode | json_polis |
 | `TGL_INPUT` | DATE | ya |  | tanggal-waktu | json_polis |
 | `USERNAME` | teks | ya |  | kode | identitas akses login (P4) |
 | `POSITION_NOTE` | teks | ya |  | teks | `PositionNote` |
@@ -94,22 +96,6 @@ Tabel yang **dibaca, tidak dibuat** modul ini dideklarasikan di `MODUL.md`.
 | `OVERIDDING_COMM_OGP` | angka desimal | ya |  | persen | `OveriddingCommOgp` |
 | `RI_COMM_ONP` | angka desimal | ya |  | persen | `RiCommOnp` |
 | `OVERIDDING_COMM_ONP` | angka desimal | ya |  | persen | `OveriddingCommOnp` |
-
-### Kolom dasar T_GENERAL_POLIS — milik `nbfacin` 182, tidak dibuat modul ini
-
-Kolom yang dibuat migrasi `182_t_general_polis` (`nbfacin`). Modul ini **tidak** menambah, mengubah,
-atau membuang kolom ini (jalur mundur 320 hanya membuang kolom di tabel atas). Treaty In memakai
-dua di antaranya.
-
-| Kolom dasar | Tipe (182) | Dipakai Treaty In | Keterangan |
-| --- | --- | --- | --- |
-| ID | VARCHAR2(32), PK | ya | kunci bersama `T_WORK_POLIS` (ID-7); `FK_GENERAL_POLIS_WORK` ditambah 320 |
-| IDPEGA | VARCHAR2(50) | ya | `pyWorkPage.pzInsKey` (json_polis, ID-21); pelebaran diminta (PERMINTAAN C10) |
-| COB_GROUP | — | tidak | milik FacIn |
-| START_DATE_TIME | — | tidak | milik FacIn |
-| OFFERING_DATE | — | tidak | milik FacIn |
-| END_DATE_TIME | — | tidak | milik FacIn |
-| FOLLOWING | — | tidak | milik FacIn |
 
 ## T_POLIS_QUOTATION
 
