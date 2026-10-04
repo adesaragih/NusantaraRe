@@ -19,6 +19,7 @@
 import { Panel } from '../../../../inti/frontend/components/ui/dasar'
 import { MASTER, POLIS, daftar, nilai, type Baris, type Halaman, type Pilihan } from '../api'
 import { KOLOM_ANGSURAN, KOLOM_SPREADING, TOMBOL } from '../labels'
+import { labelTreatyType } from '../medan'
 import {
   JUDUL_NONPROP,
   KOLOM_FAKULTATIF,
@@ -37,7 +38,7 @@ import {
   type Kolom,
   type Total,
 } from '../nonprop'
-import { sajikan, type Sajian } from '../sajian'
+import { POLA_INTI, sajikan, type Sajian } from '../sajian'
 import { TEMPAT_LABEL_NON_EDM, tempatTerbuka, type Tempat } from '../tempat'
 import Wadah from './Wadah'
 
@@ -46,8 +47,6 @@ const ANGSURAN = POLIS + 'ListInstallment'
 
 /** pxNumber section NonProp dan SpreadingRiskList ber-`pyDecimalPlaces` 2 (K14). */
 const DUA: Sajian = { desimal: 2 }
-/** Section `InstallmentList`: `pyFormatType number` tanpa `pyDecimalPlaces` - pola inti. */
-const POLA_INTI: Sajian = {}
 const angka2 = (v: string | undefined) => sajikan(v ?? '', DUA)
 const TEKS = new Set(['Note', 'Currency'])
 
@@ -191,7 +190,7 @@ export default function DetailNonProp({
                       </select>
                     ) : (
                       // dropdown ro ber-RD BrowseReinsuranceType_RD: tampil .Note dari .ID
-                      opsiSpreading.find((o) => o.nilai === b.TreatyType)?.label || b.TreatyName || b.TreatyType || ''
+                      labelTreatyType(b, opsiSpreading)
                     )}
                   </td>
                   {(['SharePercentage', 'PremiumSpreaded', 'ClaimPercentage', 'ClaimSpreaded'] as const).map((k) => (

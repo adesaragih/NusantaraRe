@@ -45,21 +45,21 @@ export function tampilTombolSOB(h: Halaman): boolean {
   return nilai(h, POLIS + 'ClaimType') === KLAIM_XOL_RETRO
 }
 
-/** Jalur yang ditulis `SearchHierarkiSourceBizAgent_PostDT` langkah 1.1, 1.2, 4, 5. */
-export const JALUR_SUMBER_BISNIS = [
-  'Quotation.SourceOfBusiness',
-  'Quotation.SobName',
-  'Quotation.SobLeader0',
-  'Quotation.SobLeader1',
-] as const
+/** Jalur halaman tiap medan yang ditulis `SearchHierarkiSourceBizAgent_PostDT`
+ *  langkah 1.1, 1.2, 4, 5. */
+export const JALUR_SUMBER_BISNIS: Record<keyof HasilSumberBisnis, string> = {
+  sourceOfBusiness: 'Quotation.SourceOfBusiness',
+  sobName: 'Quotation.SobName',
+  sobLeader0: 'Quotation.SobLeader0',
+  sobLeader1: 'Quotation.SobLeader1',
+}
 
-/** Halaman layar dengan hasil klik dipegang: HANYA keempat jalur PostDT yang
- *  ada di jawaban ditulis; medan lain (termasuk `PolicyTreatyIn.*`) tidak disentuh. */
+/** Halaman layar dengan hasil klik dipegang: HANYA keempat jalur PostDT ditulis;
+ *  medan lain (termasuk `PolicyTreatyIn.*`) tidak disentuh. */
 export function pegangSumberBisnis(h: Halaman, hasil: HasilSumberBisnis): Halaman {
   let x = h
-  for (const j of JALUR_SUMBER_BISNIS) {
-    const v = hasil.nilai?.[j]
-    if (v !== undefined) x = setel(x, j, v)
+  for (const [k, j] of Object.entries(JALUR_SUMBER_BISNIS) as [keyof HasilSumberBisnis, string][]) {
+    x = setel(x, j, hasil[k] ?? '')
   }
   return x
 }

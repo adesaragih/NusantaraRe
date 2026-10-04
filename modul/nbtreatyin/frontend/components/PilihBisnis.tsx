@@ -27,8 +27,9 @@ import {
   type UrutBisnis,
 } from '../gridbisnis'
 import { JUDUL, KOLOM_BISNIS, TOMBOL } from '../labels'
-import { irisan, jumlahHalaman } from '../paginasi'
+import { irisan } from '../paginasi'
 import { sajikan } from '../sajian'
+import Paginasi from './Paginasi'
 
 const sel = (kolom: string, v: string) => (kolomUangBisnis(kolom) ? sajikan(v, {}) : v)
 
@@ -50,7 +51,6 @@ export default function PilihBisnis({
   const [urut, setUrut] = useState<UrutBisnis>(URUT_AWAL_BISNIS)
   const [hal, setHal] = useState(1)
   const tampil = useMemo(() => (baris === null ? [] : saringUrutBisnis(baris, saringan, urut)), [baris, saringan, urut])
-  const nHal = jumlahHalaman(tampil.length, BARIS_PER_HALAMAN_BISNIS)
 
   return (
     <Modal judul={JUDUL.pilihBisnis} onTutup={onTutup} penuh>
@@ -134,21 +134,7 @@ export default function PilihBisnis({
             </table>
           </div>
           {/* pyPageMode Numeric, pyPageSize 50 */}
-          {nHal > 1 && (
-            <div className="nbti__aksi">
-              {Array.from({ length: nHal }, (_, i) => i + 1).map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  className={n === Math.min(hal, nHal) ? 'btn btn--sm btn--primary' : 'btn btn--sm'}
-                  aria-current={n === Math.min(hal, nHal) ? 'page' : undefined}
-                  onClick={() => setHal(n)}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-          )}
+          <Paginasi jumlahBaris={tampil.length} ukuran={BARIS_PER_HALAMAN_BISNIS} hal={hal} onHal={setHal} />
         </>
       )}
     </Modal>
