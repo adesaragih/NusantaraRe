@@ -172,13 +172,11 @@ export default function MarketingOfficer() {
               : MO.anggotaDari(leaderTerbuka?.leader.clientName ?? '')}
         </h2>
       </header>
-      <p className="muted marketingofficer__sub">
-        {jenis === 'leader'
-          ? MO.sub
-          : jenis === 'tanpa'
-            ? MO.subTanpaLeader
-            : `${MO.code} ${leaderTerbuka?.leader.id ?? ''} · ${MO.hitungAnggota(leaderTerbuka?.aktif ?? 0, barisAnggota.length)}`}
-      </p>
+      {jenis === 'anggota' && (
+        <p className="muted marketingofficer__sub">
+          {`${MO.code} ${leaderTerbuka?.leader.id ?? ''} · ${MO.hitungAnggota(leaderTerbuka?.aktif ?? 0, barisAnggota.length)}`}
+        </p>
+      )}
 
       <div className="toolbar">
         <input

@@ -72,15 +72,17 @@ Kolom lain di DDL (`ID`, `MAX_LIMIT_*`, `BATAS_WAKTU`, `TGL_UPDATE`, `EFFECTIVE_
 ## T_M_ACCOUNT
 
 Tiket 27 (popup ChooseAccount). Sumber tipe `[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\T_M_ACCOUNT.txt` (ditambahkan work
-owner 02-10-2026); kelima kolom DDL dibaca — tidak ada kolom lain.
+owner 02-10-2026); kelima kolom DDL itu yang dibaca.
 
-| Kolom | Tipe DDL | Dibaca untuk |
-| --- | --- | --- |
-| `ID` | VARCHAR2(255 CHAR) | identitas baris akun |
-| `GROUPBUSINESSID` | VARCHAR2(32 CHAR) | id group business |
-| `GROUPBUSINESS` | VARCHAR2(64 CHAR) | kolom layar Group Business; dicari (A69) |
-| `INSUREDID` | VARCHAR2(255 CHAR) | kolom layar Insured ID; dicari; urutan (A72) |
-| `INSUREDNAME` | VARCHAR2(64 CHAR) | kolom layar Insured Name; dicari |
+Sejak merge `origin/dev` 04-10-2026 modul `accounts` mengubah tabel ini (migrasi 840-842: kolom `CREATEDATE`,
+`CREATEOP`, `DESCRIPTION`, kunci, sequence) dan menggambarkannya di `modul/accounts/docs/STRUKTUR-TABEL-ACCOUNTS.md`
+(satu tabel bersama = satu bentuk). Yang dibaca di sini:
+
+- `ID` — VARCHAR2(255 CHAR); identitas baris akun.
+- `GROUPBUSINESSID` — VARCHAR2(32 CHAR); id group business.
+- `GROUPBUSINESS` — VARCHAR2(64 CHAR); kolom layar Group Business; dicari (A69).
+- `INSUREDID` — VARCHAR2(255 CHAR); kolom layar Insured ID; dicari; urutan (A72).
+- `INSUREDNAME` — VARCHAR2(64 CHAR); kolom layar Insured Name; dicari.
 
 ## BUSINESS
 
@@ -531,11 +533,13 @@ Tiket 31 (pilihan Marketing Name). Tabel warisan `POOLDATA`, **baca saja**. Sumb
 `D:\migrasi\RNM\DDL\MARKETINGOFFICER.txt` (15 kolom; `PEGA_MARKETINGOFFICER.txt` adalah prosedur penulis tabel
 ini, bukan tabel). Hanya tiga kolom di bawah yang dibaca.
 
-| Kolom | Tipe DDL | Dibaca untuk |
-| --- | --- | --- |
-| `ID` | VARCHAR2(100) | nilai pilihan (`.ID`) → disimpan ke `T_QUOTATIONDATA.MOID`; urutan DESC |
-| `CLIENTNAME` | VARCHAR2(100) | teks pilihan (pyPrompt `.ClientName`) |
-| `MOSTATUS` | VARCHAR2(100) | saringan RD `.MOStatus = "1"` |
+Struktur lengkapnya digambarkan `modul/marketingofficer/docs/STRUKTUR-TABEL-MARKETINGOFFICER.md` — modul itu yang
+menyatakannya tabel warisan sejak merge `origin/dev` 04-10-2026 (satu tabel bersama = satu bentuk; baris warisannya di
+`MODUL.md` modul ini dicabut). Yang dibaca di sini:
+
+- `ID` — VARCHAR2(100); nilai pilihan (`.ID`) → disimpan ke `T_QUOTATIONDATA.MOID`; urutan DESC.
+- `CLIENTNAME` — VARCHAR2(100); teks pilihan (pyPrompt `.ClientName`).
+- `MOSTATUS` — VARCHAR2(100); saringan RD `.MOStatus = "1"`.
 
 ## AGENT
 

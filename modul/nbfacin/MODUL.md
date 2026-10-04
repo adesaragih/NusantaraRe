@@ -44,7 +44,7 @@ nol `INSERT` — menu datar 30-09-2026) saat modul mendapat layar pertamanya, di
 bab 6. Nomor selalu tiga digit.
 
 ⛔ **Urutan deploy saran akumulasi (tiket 46, MD-5)**: `repository/akumulasi.go` menyaring `STS_AKTIF = '1'` dan membaca
-`CITYINPUT` / `DISTRICTINPUT` / `T_MASTER_STATUS` — tabel milik **masterdata** 760 / 761, bukan modul ini. Sebelum
+`CITYINPUT` / `DISTRICTINPUT` / `T_MASTER_STATUS` — tabel milik **masterdata** 880 / 881 (dulu 760 / 761), bukan modul ini. Sebelum
 migrasi itu berjalan, saran Choose Accumulation gagal (ORA-00904 / ORA-00942). Urutannya: (1) biner yang memuat commit
 `072370f0`, (2) `-migrate` (904 → 760 → 761 → 762 → 990), (3) baru buka saran akumulasi. Membaca kegagalan dan sisa
 `*_SALIN`: `modul/masterdata/MODUL.md` bab "Urutan deploy".
@@ -69,9 +69,7 @@ kepemilikan tabel berpindah — keputusan work owner.
 | `M_LIMIT_ENGINEERINGG` | tabel limit akseptasi warisan POOLDATA; NB hanya MEMBACA empat kolom (tiket 20) |
 | `M_LIMIT_NONPROPANDENGG` | tabel limit akseptasi warisan POOLDATA; NB hanya MEMBACA empat kolom (tiket 20) |
 | `M_LIMIT_FINANCIALINS` | tabel limit akseptasi bentuk B warisan POOLDATA; NB hanya MEMBACA empat kolom (tiket 20) |
-| `T_M_ACCOUNT` | tabel akun warisan POOLDATA; NB hanya MEMBACA lima kolom untuk popup ChooseAccount (tiket 27) |
 | `BUSINESS` | tabel bisnis warisan POOLDATA; NB hanya MEMBACA tiga kolom untuk pilihan Class Of Business (tiket 28) dan kode bisnis Table of Limit (tiket 40) |
-| `MARKETINGOFFICER` | tabel marketing officer warisan POOLDATA; NB hanya MEMBACA tiga kolom untuk pilihan Marketing Name (tiket 31) |
 | `AGENT` | tabel agent warisan POOLDATA; NB hanya MEMBACA lima kolom untuk popup Change SOB (tiket 33) |
 | `RISKADDRESS` | tabel alamat risiko warisan POOLDATA; NB MEMBACA sembilan kolom (popup Choose Risk Address, tiket 36) dan MENYISIPKAN alamat baru (popup Add, tiket 37; tidak membuat tabel) |
 | `RW` | tabel kode pos/RW warisan POOLDATA; NB hanya MEMBACA (JOIN tiket 36, saran Zip Code tiket 37, popup akumulasi tiket 46) |
@@ -83,3 +81,8 @@ kepemilikan tabel berpindah — keputusan work owner.
 | `TABLEOFLIMIT` | tabel batas okupasi warisan POOLDATA; NB hanya MEMBACA lima kolom untuk popup Choose Class of Construction (tiket 40; TAHUN tidak disaring, A161) |
 | `CURRENCY` | tabel mata uang warisan POOLDATA; NB hanya MEMBACA kolom CURRENCY untuk pilihan dan pemeriksaan mata uang item (tiket 39) |
 | `COVERAGE` | tabel coverage warisan POOLDATA; NB hanya MEMBACA enam kolom untuk popup Choose Coverage (butir 96) dan lima coverage otomatis AddCoverageAutoFire (tiket 43) |
+
+Dicabut 04-10-2026 saat merge `origin/dev` (perintah work owner: "ikuti yang dari github, kalau bentrok dengan kerjaan
+saya disesuaikan"); NB tetap hanya MEMBACA keduanya: `T_M_ACCOUNT` - kini diubah migrasi modul `accounts` (840-842),
+jadi bukan lagi "tidak dibuat migrasi mana pun"; `MARKETINGOFFICER` - kini dinyatakan modul `marketingofficer` (satu
+tabel warisan hanya boleh dinyatakan satu modul).

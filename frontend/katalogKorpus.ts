@@ -86,7 +86,7 @@ export const LABEL_TAMPIL: Readonly<Partial<Record<keyof typeof FOLDER_KORPUS, s
  * (layar Pega SFAGIS Company Detail, tabel datar CLIENT), label "Company Detail", kelompok MASTER, migrasi inti 907.
  * Keputusan work owner 04-10-2026: modul `accounts` (layar Pega SFAGIS Account, tabel T_M_ACCOUNT), label "Accounts",
  * kelompok MASTER, migrasi inti 908. Keputusan work owner 04-10-2026: "Modul baru 'masterdata'" (menu master insert /
- * update / aktif / nonaktif), label "Master Data", kelompok MASTER, migrasi inti 904 (`904_m_nav_menu_masterdata`).
+ * update / aktif / nonaktif), label "Master Data", kelompok MASTER, migrasi inti 911 (`911_m_nav_menu_masterdata`, dulu 904).
  */
 export const MODUL_LUAR_KORPUS = {
   marketingOfficer: 'Marketing Officer',

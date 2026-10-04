@@ -1,4 +1,4 @@
--- Jalur mundur 760 - tabel flat dikembalikan menjadi VIEW warisan, teks view PERSIS `D:\migrasi\RNM\DDL\<NAMA>.txt`
+-- Jalur mundur 880 - tabel flat dikembalikan menjadi VIEW warisan, teks view PERSIS `D:\migrasi\RNM\DDL\<NAMA>.txt`
 -- (POOLDATA.<NAMA> diganti {skema}.<NAMA>; rujukan di dalamnya apa adanya). Isi tabel flat (termasuk STS_AKTIF dan
 -- perubahan menu Master Data) dibuang - view membaca M_* lagi. Urutan terbalik dari maju.
 DROP TABLE {skema}.ACCUMULATION

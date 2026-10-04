@@ -160,8 +160,10 @@ func TestMenuHanyaDi900DanSlotMenuModulnya(t *testing.T) {
 			// yang tidak diperiksa siapa pun (temuan /code-review).
 			// Plus langkah baris modul di luar korpus (`modulLuarKorpus`, PANDUAN-TIM-PER-MODUL bab 5) - juga
 			// diterapkan skema tiruan.
-			if !strings.HasPrefix(nama, "900_") && !strings.HasPrefix(nama, "901_") && !langkahMenuLuarKorpus(nama) {
-				t.Errorf("%s (inti) menyentuh M_NAV_MENU - hanya 900 (isi awal), 901 (bentuk datar), dan modulLuarKorpus; menu modul di slot menunya", nama)
+			// Plus langkah golongan menu (`langkahGolonganMenu`, 909 MASTER TREATY) - juga diterapkan skema tiruan.
+			_, golongan := langkahGolonganMenu[nama]
+			if !strings.HasPrefix(nama, "900_") && !strings.HasPrefix(nama, "901_") && !langkahMenuLuarKorpus(nama) && !golongan {
+				t.Errorf("%s (inti) menyentuh M_NAV_MENU - hanya 900 (isi awal), 901 (bentuk datar), modulLuarKorpus, dan langkahGolonganMenu; menu modul di slot menunya", nama)
 			}
 		case !jatah[pemilik].diSlot(n):
 			t.Errorf("%s (modul %s) menyentuh M_NAV_MENU di luar slot menunya %03d-%03d",
@@ -381,9 +383,10 @@ func TestSlotMenuBerjalanSesudah900(t *testing.T) {
 	// M_LOGIN_GO, 01-10-2026), 903 (menu per akun, M_LOGIN_GO_MENU), 904 (kolom kontak M_LOGIN_GO, Kelola User
 	// 03-10-2026), 905 (CONTACT_ID, username dan email unik M_LOGIN_GO, 03-10-2026), dan 906 (baris menu modul luar korpus
 	// Marketing Officer, 03-10-2026), 907 (baris menu Company Detail, 04-10-2026), dan 908 (baris menu Accounts,
-	// 04-10-2026) juga milik inti dan juga sebelum slot. 904_m_nav_menu_masterdata (baris menu Master Data,
-	// 04-10-2026) berbagi nomor 904 dengan kolom kontak; pelari mengurut nama berkas, jadi ia berjalan sesudahnya.
-	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql", "904_m_login_go_kontak.sql", "904_m_nav_menu_masterdata.sql", "905_m_login_go_contact_id.sql", "906_m_nav_menu_marketingofficer.sql", "907_m_nav_menu_companydetail.sql", "908_m_nav_menu_accounts.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
+	// 04-10-2026) juga milik inti dan juga sebelum slot. 910 (M_LOGIN_GO_CONTACT_SEQ mengikuti CON tertinggi,
+	// 04-10-2026) pun milik inti, begitu pula 911 (baris menu Master Data, dulu 904; sesudah 909 supaya URUTAN-nya
+	// menyambung golongan MASTER yang sudah dirapatkan).
+	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql", "904_m_login_go_kontak.sql", "905_m_login_go_contact_id.sql", "906_m_nav_menu_marketingofficer.sql", "907_m_nav_menu_companydetail.sql", "908_m_nav_menu_accounts.sql", "909_m_nav_menu_master_treaty.sql", "910_m_login_go_contact_seq_max.sql", "911_m_nav_menu_masterdata.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
 		t.Errorf("urutan pelari %v, mau %v", urut, mau)
 	}
 }

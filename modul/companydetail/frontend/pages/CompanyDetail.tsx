@@ -143,7 +143,6 @@ export default function CompanyDetail() {
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{CD.judul}</h2>
       </header>
-      <p className="muted companydetail__sub">{CD.sub}</p>
 
       <form
         className="toolbar"

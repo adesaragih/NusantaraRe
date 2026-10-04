@@ -39,7 +39,7 @@ const (
 	lebarNegara = 10
 	// KunciNegara - medan masukan tambahan akumulasi baru (bukan kolom; MD-4).
 	KunciNegara = "negara"
-	// lebarPelaku - CREATE_OP / UPDATE_OP VARCHAR2(64) = M_LOGIN_GO.LOGIN_ID (migrasi 762).
+	// lebarPelaku - CREATE_OP / UPDATE_OP VARCHAR2(64) = M_LOGIN_GO.LOGIN_ID (migrasi 882).
 	lebarPelaku = 64
 )
 

@@ -8,7 +8,6 @@ export const MENU_ACC = { kelompok: 'Accounts' } as const
 
 export const ACC = {
   judul: 'Accounts',
-  sub: 'Accounts in POOLDATA.T_M_ACCOUNT. An account is entered once - it cannot be edited or deleted.',
   tambah: 'Add',
   cari: 'Search ACC-n, Insured Name, Org ID, or Group Business',
   kosong: 'No account yet.',

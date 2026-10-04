@@ -96,7 +96,6 @@ export default function KelolaUser({
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{KELOLA_USER.judul}</h2>
       </header>
-      <p className="muted kelola-user__sub">{KELOLA_USER.sub}</p>
 
       <div className="toolbar">
         <input

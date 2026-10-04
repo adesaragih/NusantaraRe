@@ -3,7 +3,7 @@ package models
 // Daftar master tahap 1 (rencana `docs/issues/01-rencana-master-data.md`, cakupan "Yang dipakai NB FacIn dulu").
 //
 // Kolom dan lebar `[terverifikasi]` dari DDL `D:\migrasi\RNM\DDL\<NAMA>.txt`: NATION (TABEL), OBJECTITEMTYPE (TABEL),
-// dan tabel flat migrasi 760 (PROVINCE, ACCUMULATEDTYPE, CZONE, ACCUMULATION, CITYINPUT, DISTRICTINPUT - kolom view
+// dan tabel flat migrasi 880 (PROVINCE, ACCUMULATEDTYPE, CZONE, ACCUMULATION, CITYINPUT, DISTRICTINPUT - kolom view
 // asal, VARCHAR2(4000) A180). Rujukan turunan = definisi view asal: PROVINCE.NATIONNAME = Note M_Nation ber-ID
 // NationID; CZONE.GROUPOFNAME = Description CZONE ber-Code GroupOf; ACCUMULATION.ACCUMULATIONNAME = AccumulationType
 // ACCUMULATEDTYPE ber-ID Accumulation. ACCUMULATION.PROVINCE dari PROVINCE.NOTE ber-PROVINCEID `[dugaan]` (view asal
@@ -16,7 +16,7 @@ func kf(nama, json string) Kolom { return Kolom{Nama: nama, JSON: json, Lebar: l
 // DaftarMaster - urutan tampil.
 var DaftarMaster = []TabelMaster{
 	{
-		// NATION warisan tanpa kolom status: statusnya di T_MASTER_STATUS (migrasi 761, MD-2).
+		// NATION warisan tanpa kolom status: statusnya di T_MASTER_STATUS (migrasi 881, MD-2).
 		Kunci: "nation", Judul: "Nation", Nama: "NATION", JejakTerpisah: true,
 		Kolom: []Kolom{
 			{Nama: "ID", JSON: "id", Lebar: 10, Wajib: true}, {Nama: "OLDID", JSON: "oldId", Lebar: 6},
@@ -112,7 +112,7 @@ func CariMaster(kunci string) (TabelMaster, bool) {
 }
 
 // KolomAudit - jejak ubah setiap master (MD-7, keputusan work owner 04-10-2026 "Kolom diubah oleh/tanggal"; migrasi
-// 762): pembuat, tanggal buat, pengubah terakhir, tanggal ubah terakhir - TURUNAN (diisi backend dari pelaku, baca-saja
+// 882): pembuat, tanggal buat, pengubah terakhir, tanggal ubah terakhir - TURUNAN (diisi backend dari pelaku, baca-saja
 // di layar). Nama kolom pola T_WORK_* (MD-10). Tabel JejakTerpisah: kolom yang sama di T_MASTER_STATUS.
 // ⚠️ Diletakkan di akhir berkas: uji label frontend (`masterdata.test.tsx`) membaca kunci JSON per blok master.
 var KolomAudit = []Kolom{

@@ -67,7 +67,6 @@ export default function InboxKomite({
     <section className="inbox">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{INBOX_KOMITE.judul}</h2>
-        <p className="inbox__aturan">{INBOX_KOMITE.aturan}</p>
       </header>
       {sibuk && <Memuat />}
       {galat !== null && <Gagal galat={galat} />}

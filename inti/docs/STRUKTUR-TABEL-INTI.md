@@ -14,8 +14,8 @@ keputusan work owner 30-09-2026 *(“menu jangan ada model seperti child … kar
 `PROMPT-MENU-DATAR-PER-GROUPMENU.md`: lima butir anak dibuang, lalu kunci tamu, indeks, dan kolom `PARENT_ID`.
 
 **20 baris, satu per folder modul korpus**, ditambah baris modul DI LUAR korpus dari langkah inti sesudah 901
-(PANDUAN-TIM-PER-MODUL bab 5): **`904_m_nav_menu_masterdata.sql`** *(+ `_down`)* — `masterdata` / `Master Data`, `MASTER`
-urutan 4, `DIMIGRASI '0'` (keputusan work owner 04-10-2026, diteruskan sesi 0f; INSERT bentuk datar idempoten, jalur mundur
+(PANDUAN-TIM-PER-MODUL bab 5): **`911_m_nav_menu_masterdata.sql`** *(+ `_down`; dulu 904)* — `masterdata` / `Master Data`, `MASTER`
+urutan 6 (sesudah 909), `DIMIGRASI '0'` (keputusan work owner 04-10-2026, diteruskan sesi 0f; INSERT bentuk datar idempoten, jalur mundur
 `DELETE` baris itu dan akses `M_LOGIN_GO_MENU`-nya). Akses akunnya TIDAK masuk isi awal 903 — diberikan lewat Kelola User.
 Penjaga `menu_test.go` menerapkannya di skema tiruan; `rentang_test.go` hanya menerima INSERT bentuk itu + DELETE mundurnya.
 Sidebar menampilkan kepala `GROUPMENU` dan satu tombol per baris; klik tombol
@@ -26,7 +26,7 @@ membuka halaman awal modul *(`HALAMAN_AWAL_<X>` di `menu.ts` modul)*. Beranda ti
 | `ID` | bilangan bulat | tidak | PK | `GET /api/menu` | brief §1 — dari `SEQ_M_NAV_MENU` |
 | `KODE` | teks | tidak | UNIQUE | `GET /api/menu`, frontend | brief §1 — nama modul backend *(tabel nama modul)*, sama dengan `MODUL`; pembaca menyaring `KODE = MODUL` |
 | `LABEL` | teks | tidak | | sidebar, palet | brief §1 — VERBATIM nama folder korpus *(label tombol modul)* |
-| `GROUPMENU` | teks | tidak | CHECK | sidebar *(kepala bagian)* | permintaan work owner 30-09-2026 — `TREATY`, `FACULTATIVE`, `KLAIM`, `MASTER` |
+| `GROUPMENU` | teks | tidak | CHECK | sidebar *(kepala bagian)* | permintaan work owner 30-09-2026 — `TREATY`, `FACULTATIVE`, `KLAIM`, `MASTER`; `MASTER TREATY` ditambah migrasi `909` (work owner 04-10-2026: Treaty In, Treaty In Adjustment, Treaty Contract Out) |
 | `MODUL` | teks | tidak | | saringan `MODUL_AKTIF` | brief §1 — nama modul backend |
 | `URUTAN` | bilangan bulat | tidak | | urutan tampil | brief §1 — urutan di dalam `GROUPMENU` |
 | `STATUS_AKTIF` | teks | tidak | | saringan baca | brief §1 — `'1'` aktif *(bawaan)*, `'0'` nonaktif; konvensi data warisan |
@@ -102,7 +102,7 @@ menampung data dari M_UNIT, M_DIVISION, M_ORGANIZATION”; “simpan aja code ny
 | `PHONE_NUMBER` | teks | ya | | Kelola User | migrasi 904 — nomor HP 8–15 digit, boleh diawali `+`, boleh spasi/tanda hubung; label `Phone Number` |
 | `EMPLOYEE_ID` | teks | ya | | Kelola User | migrasi 904 — NIK (Nomor Induk Karyawan, bukan NIK kependudukan), huruf/angka/titik/garis miring/tanda hubung, maks. 30; label `Employee ID (NIK)` |
 | `JOB_POSITION` | teks | ya | | Kelola User | migrasi 904 — jabatan, maks. 150; label `Position` |
-| `CONTACT_ID` | teks | tidak | UNIQUE | Kelola User; rancangan Kelola Marketing Officer (`MARKETINGOFFICER.CLIENTID`) | migrasi `905_m_login_go_contact_id.sql` (03-10-2026, keputusan work owner V1 *"M_LOGIN_GO ID nya pake CON-xxx"*) — `CON-n`, n dari `M_LOGIN_GO_CONTACT_SEQ` mulai 1001 *(di atas nomor kontak SFAGIS terbesar)*; diisi saat akun dibuat, **tidak pernah berubah**; label `Contact ID` |
+| `CONTACT_ID` | teks | tidak | UNIQUE | Kelola User; rancangan Kelola Marketing Officer (`MARKETINGOFFICER.CLIENTID`) | migrasi `905_m_login_go_contact_id.sql` (03-10-2026, keputusan work owner V1 *"M_LOGIN_GO ID nya pake CON-xxx"*) — `CON-n`, n dari `M_LOGIN_GO_CONTACT_SEQ` mulai 1001 *(di atas nomor kontak SFAGIS terbesar)*; sejak migrasi `910_m_login_go_contact_seq_max.sql` (04-10-2026, *"ambil dari max con+1"*) sequence-nya dibuat ulang dengan nilai awal = CON tertinggi + 1 (minimal 1001), dihitung saat migrasi dijalankan; diisi saat akun dibuat, **tidak pernah berubah**; label `Contact ID` |
 
 **Index:** PK; `UX_M_LOGIN_GO_CONTACT_ID` *(`CONTACT_ID`, unik)*; `UX_M_LOGIN_GO_LOGIN_ID` *(`LOWER(LOGIN_ID)`, unik —
 username tidak boleh hanya beda huruf)*; `UX_M_LOGIN_GO_EMAIL` *(`LOWER(EMAIL)`, unik)* — ketiganya migrasi 905.

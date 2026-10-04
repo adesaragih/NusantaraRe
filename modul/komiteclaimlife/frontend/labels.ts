@@ -26,10 +26,6 @@ export const KOLOM_INBOX_KOMITE = {
 export const INBOX_KOMITE = {
   judul: 'Inbox Komite',
   kosong: 'Tidak ada kasus komite yang menunggu keputusan Anda.',
-  /** ⛔ Menyebut ATURANNYA, supaya daftar pendek tidak dikira data hilang. */
-  aturan:
-    'Hanya kasus yang tingkat berjalannya milik Anda: anggota pertama di tangga ' +
-    'yang belum memutuskan.',
 } as const
 
 export const KASUS_KOMITE = {

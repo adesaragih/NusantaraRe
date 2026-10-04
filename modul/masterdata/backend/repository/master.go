@@ -22,14 +22,14 @@ import (
 var ErrBarisTidakAda = errors.New("repository: baris master tidak ada")
 
 const (
-	// StatusAktif / StatusNonaktif - isi kolom status (STS_AKTIF migrasi 760/761; OBJECTITEMTYPE.ISACTIVE `'1'` =
+	// StatusAktif / StatusNonaktif - isi kolom status (STS_AKTIF migrasi 880/881; OBJECTITEMTYPE.ISACTIVE `'1'` =
 	// aktif `[terverifikasi]` RDBList GetObjectItembyName_SQL / GetDataObjectItem; `'0'` nonaktif `[dugaan]`).
 	StatusAktif    = "1"
 	StatusNonaktif = "0"
 	// sequenceAkumulasi - urutan ID ACCUMULATION (prosedur RDBMASTERACCUMULATION `accumulation_seq.nextval`; DDL
 	// sequence-nya tidak ada di korpus `[dugaan]` ada di skema).
 	sequenceAkumulasi = "ACCUMULATION_SEQ"
-	// TabelStatus - status dan jejak ubah master bertabel warisan (migrasi 761 / 762, MD-2); tanpa baris = aktif.
+	// TabelStatus - status dan jejak ubah master bertabel warisan (migrasi 881 / 882, MD-2); tanpa baris = aktif.
 	TabelStatus = "T_MASTER_STATUS"
 	// formatTanggal - TO_CHAR kolom jejak ubah.
 	formatTanggal = "YYYY-MM-DD HH24:MI:SS"

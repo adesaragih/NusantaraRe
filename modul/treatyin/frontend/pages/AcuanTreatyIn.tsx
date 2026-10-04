@@ -62,7 +62,6 @@ export default function AcuanTreatyIn() {
     <div className="inbox">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{MENU_TREATYIN.acuan}</h2>
-        <p className="trin__aturan">{ACUAN_TREATYIN.keterangan}</p>
       </header>
       <StripTab
         tab={HIMPUNAN_ACUAN}

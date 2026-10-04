@@ -84,8 +84,6 @@ export const BERANDA = {
   aktif: 'aktif',
   antrean: 'antrean',
   tanpaAntrean: 'belum ada kotak masuk',
-  // Tata letak workpage-template.html (29-09-2026) — sama-sama kerangka kami.
-  subjudul: 'Ringkasan antrean dan modul yang dapat Anda buka.',
   ringkasan: 'Antrean Claim Life',
   catatanTahap: 'Claim Life',
   judulModul: 'Modul',
@@ -184,7 +182,6 @@ export const PANJANG_MIN_SANDI = 10
  */
 export const KELOLA_USER = {
   judul: 'Kelola User',
-  sub: 'Akun login, workbasket, dan menu yang boleh dibuka setiap user. Perubahan berlaku pada permintaan berikutnya.',
   tambah: 'Tambah user',
   cari: 'Cari username, Contact ID, nama, atau email',
   kosong: 'Belum ada user.',

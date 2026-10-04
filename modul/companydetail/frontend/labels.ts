@@ -9,7 +9,6 @@ export const MENU_CD = { kelompok: 'Company Detail' } as const
 
 export const CD = {
   judul: 'Company Detail',
-  sub: 'Organizations in POOLDATA.CLIENT with their PIC and addresses - create and edit; organizations are never deleted.',
   create: 'Create',
   cari: 'Search organization name, ORG ID, or NPWP',
   tombolCari: 'Search',

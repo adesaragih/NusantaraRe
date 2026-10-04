@@ -42,8 +42,9 @@ describe('sidebar satu tombol per modul, dikelompokkan GROUPMENU', () => {
     expect(NAV).toContain('{KETERANGAN_BELUM_DIMIGRASI}')
   })
 
-  it('kepala bagian = GROUPMENU, urutan TREATY, FACULTATIVE, KLAIM, MASTER', () => {
-    expect(SEMUA.golongan.map((g) => g.kode)).toEqual(['TREATY', 'FACULTATIVE', 'KLAIM', 'MASTER'])
+  it('kepala bagian = GROUPMENU, urutan TREATY, FACULTATIVE, KLAIM, MASTER, MASTER TREATY', () => {
+    // MASTER TREATY - migrasi inti 909 (keputusan work owner 04-10-2026).
+    expect(SEMUA.golongan.map((g) => g.kode)).toEqual(['TREATY', 'FACULTATIVE', 'KLAIM', 'MASTER', 'MASTER TREATY'])
   })
 
   it('tidak ada elemen buka-tutup kelompok di sidebar', () => {

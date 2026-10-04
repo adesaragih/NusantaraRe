@@ -388,7 +388,7 @@ func praTerbangBentuk(ctx context.Context, d *db.DB, langkah []Langkah,
 				continue // akan dibuat; tidak ada bentuk untuk dibandingkan
 			}
 			// VIEW yang DIGANTI tabel bernama sama di langkah ini (DROP VIEW
-			// sebelum CREATE TABLE - masterdata 760): kolom view bukan bentuk
+			// sebelum CREATE TABLE - masterdata 880, dulu 760): kolom view bukan bentuk
 			// tabel yang hendak dibuat, dan tabelnya baru lahir sesudah view
 			// dibongkar. ALL_OBJECTS dan ALL_TAB_COLUMNS memuat view juga, jadi
 			// tanpa ini kolom view dibandingkan dengan CREATE TABLE dan seluruh

@@ -1,7 +1,7 @@
 // Menu modul Master Data.
 //
 // Menu DATAR (keputusan work owner 30-09-2026): satu modul satu menu - tombol "Master Data" di bawah GROUPMENU MASTER
-// (baris `M_NAV_MENU` migrasi inti 904, dinyalakan slot `990_menu_masterdata.sql`) membuka halaman awal di bawah.
+// (baris `M_NAV_MENU` migrasi inti 911, dinyalakan slot `996_menu_masterdata.sql`) membuka halaman awal di bawah.
 // Daftar per tabel master dibuka DARI DALAM halaman ini (rencana M-1), bukan tombol menu.
 //
 // `PENDAFTARAN_MENU` dibaca perakit `frontend/daftar.ts` lewat `import.meta.glob`.

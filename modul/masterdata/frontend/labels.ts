@@ -70,7 +70,7 @@ export const LABEL_KOLOM: Readonly<Record<string, string>> = {
   pctAdjustable2: 'Pct Adjustable 2',
   objectItemTypeIna: 'Object Item Type (INA)',
   group: 'Group',
-  // Jejak ubah (MD-7, migrasi 762) - turunan, baca-saja.
+  // Jejak ubah (MD-7, migrasi 882) - turunan, baca-saja.
   createOp: 'Dibuat oleh',
   tglCreate: 'Tanggal dibuat',
   updateOp: 'Diubah oleh',

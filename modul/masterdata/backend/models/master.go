@@ -7,7 +7,7 @@ type Kolom struct {
 	Nama string
 	// JSON - kunci kabel (camelCase).
 	JSON string
-	// Lebar - batas byte kolom (DDL / migrasi 760).
+	// Lebar - batas byte kolom (DDL / migrasi 880).
 	Lebar int
 	// Wajib - harus terisi saat simpan.
 	Wajib bool
@@ -47,7 +47,7 @@ type TabelMaster struct {
 	// IDOtomatis - ID dibuat backend (ACCUMULATION, M-4); selainnya diisi pengguna dan unik.
 	IDOtomatis bool
 	// JejakTerpisah - tabel warisan yang tidak di-ALTER (MD-2): jejak ubah (dan status bila KolomStatus kosong) di
-	// T_MASTER_STATUS; selainnya kolom jejak tabel itu sendiri (migrasi 762).
+	// T_MASTER_STATUS; selainnya kolom jejak tabel itu sendiri (migrasi 882).
 	JejakTerpisah bool
 	Rujukan       []Rujukan
 }

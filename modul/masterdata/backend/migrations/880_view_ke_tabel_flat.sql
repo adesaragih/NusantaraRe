@@ -1,4 +1,4 @@
--- 760 - Master Data: VIEW warisan atas JSON M_* -> TABEL flat BERNAMA SAMA, isi disalin dari view, + kolom status.
+-- 880 - Master Data: VIEW warisan atas JSON M_* -> TABEL flat BERNAMA SAMA, isi disalin dari view, + kolom status.
 --
 -- Keputusan work owner 04-10-2026 (diteruskan sesi nusantarare-0f): (1) view warisan dijadikan tabel flat bernama sama
 -- (register nbfacin butir 103) - dulu ditulis sebagai nbfacin 196, DIPINDAH ke modul ini karena 196 DITAHAN work owner

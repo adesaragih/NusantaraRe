@@ -1,4 +1,4 @@
--- Jalur mundur 762 - kolom jejak ubah dibuang. ID_BARIS T_MASTER_STATUS kembali VARCHAR2(100) (gagal ORA-01441 bila
+-- Jalur mundur 882 - kolom jejak ubah dibuang. ID_BARIS T_MASTER_STATUS kembali VARCHAR2(100) (gagal ORA-01441 bila
 -- sudah ada ID OBJECTITEMTYPE lebih dari 100 byte).
 ALTER TABLE {skema}.T_MASTER_STATUS MODIFY (
   ID_BARIS VARCHAR2(100)

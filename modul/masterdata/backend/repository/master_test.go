@@ -105,7 +105,7 @@ func TestSQLTulisMaster(t *testing.T) {
 	}
 }
 
-// TestJejakDiSetiapMaster - MD-7: tabel flat (760) membawa jejak sendiri; tepat NATION dan OBJECTITEMTYPE (warisan,
+// TestJejakDiSetiapMaster - MD-7: tabel flat (880) membawa jejak sendiri; tepat NATION dan OBJECTITEMTYPE (warisan,
 // MD-2) memakai T_MASTER_STATUS; keempat kunci jejak turunan.
 func TestJejakDiSetiapMaster(t *testing.T) {
 	var terpisah []string
