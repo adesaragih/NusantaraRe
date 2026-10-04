@@ -9,6 +9,8 @@ import (
 	_ "embed"
 	"encoding/json"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -106,10 +108,10 @@ func TestPecahDokumenProporsionalDatar(t *testing.T) { // AC 52, 55, 29, 69; ID-
 		"PolicyTreatyIn.UJIMedanFiktif":                   "UJI-nilai-lewat",
 		"PolicyTreatyIn.QuotationData.UJIFiktifQuotation": "",
 	}
-	if len(h.TakDikenal) != len(harapTak) {
-		t.Errorf("medan tak dikenal %+v, harap %v", h.TakDikenal, harapTak)
+	if len(h.BelumDiputuskan) != len(harapTak) {
+		t.Errorf("medan tak dikenal %+v, harap %v", h.BelumDiputuskan, harapTak)
 	}
-	for _, m := range h.TakDikenal {
+	for _, m := range h.BelumDiputuskan {
 		if v, ada := harapTak[m.Jalur]; !ada || v != m.Nilai {
 			t.Errorf("medan tak dikenal tak terduga %+v", m)
 		}
@@ -150,11 +152,12 @@ func TestPecahDokumenNonProporsionalBersarang(t *testing.T) { // AC 53; ID-26, I
 	if len(h.Halaman.AmbilDaftar(JalurAnak(HalamanPolis+".TreatyXOLList", 2, "ValueList"))) != 0 {
 		t.Error("ValueList kosong baris kedua harus tetap kosong")
 	}
-	// pyExpanded: tidak ada keputusan tertulis -> laporan, bukan dibuang.
-	if len(h.TakDikenal) != 1 || h.TakDikenal[0].Jalur != "PolicyTreatyIn.ListInstallment(1).pyExpanded" || h.TakDikenal[0].Nilai != "true" {
-		t.Errorf("medan tak dikenal %+v", h.TakDikenal)
+	// pyExpanded: keputusan F3 (InputPolicyTreatyInDetail_NonProp 12.1 menulis,
+	// nol pembaca) -> dibuang berbukti, bukan lagi "belum diputuskan".
+	if len(h.BelumDiputuskan) != 0 {
+		t.Errorf("medan belum diputuskan %+v", h.BelumDiputuskan)
 	}
-	if h.Diabaikan[AlasanOldData] != 1 || h.Diabaikan[AlasanSelisih] != 1 {
+	if h.Diabaikan[AlasanOldData] != 1 || h.Diabaikan[AlasanSelisih] != 1 || h.Diabaikan[AlasanF3KeadaanBaris] != 1 {
 		t.Errorf("diabaikan %v", h.Diabaikan)
 	}
 }
@@ -211,6 +214,8 @@ func TestPenggolongMedanDiabaikan(t *testing.T) {
 		"internal_pega": AlasanInternalPega, "nourut": AlasanNourut, "keadaan_layar": AlasanKeadaanLayar,
 		"turunan": AlasanTurunan, "pantulan_layer": AlasanPantulanLayer, "breakdown": AlasanBreakdown,
 		"persetujuan_dh": AlasanPersetujuanDH, "old_data": AlasanOldData, "selisih": AlasanSelisih,
+		"f3_tanpa_pembaca": AlasanF3TanpaPembaca, "f3_keadaan_baris": AlasanF3KeadaanBaris,
+		"f3_salinan_generasi": AlasanF3SalinanGenerasi,
 	} {
 		if v != uji.Alasan[kunci] {
 			t.Errorf("alasan %s = %q, harap %q", kunci, v, uji.Alasan[kunci])
@@ -239,6 +244,9 @@ func TestBerkasPenggolongCacatDitolak(t *testing.T) {
 		"alasan ruas tak terdefinisi":   `{"alasan": {"a": "UJI-a"}, "ruas": {"UJI": {"alasan": "b"}}}`,
 		"alasan skalar tak terdefinisi": `{"alasan": {"a": "UJI-a"}, "skalar_polis": {"UJI": ""}}`,
 		"medan JSON tak dikenal":        `{"alasan": {"a": "UJI-a"}, "simpull": {}}`,
+		"alasan pola tak terdefinisi":   `{"alasan": {"a": "UJI-a"}, "pola": {"UJI": {"alasan": "b", "bukti": "UJI-bukti"}}}`,
+		// F3: setiap keputusan per medan wajib berbukti XML.
+		"pola tanpa bukti": `{"alasan": {"a": "UJI-a"}, "pola": {"UJI": {"alasan": "a", "bukti": " "}}}`,
 	} {
 		if _, err := muatPenggolongAbaikan([]byte(isi)); err == nil {
 			t.Errorf("%s: harap ditolak", nama)
@@ -261,6 +269,9 @@ func TestPetaKatalogDokumenDigerakkanKatalog(t *testing.T) {
 		"PolicyTreatyIn.ListInstallment().InstallmentList().DueDate": GolTanggal,
 		"PolicyTreatyIn.TreatyXOLList().ValueList().Deduction":       GolUang, // ID-30: uang
 		"PolicyTreatyIn.SpreadingRiskList().SharePercentage":         GolPersen,
+		// F3 (a): dibaca syarat `InputPolicyTreatyInPre_Act` langkah 10
+		// (`.PolicyTreatyIn.EDMType=="3"` -> lewati langkah) - wajib berkolom.
+		"PolicyTreatyIn.EDMType": GolKode,
 	} {
 		if k, ada := peta[pola]; !ada || k.Golongan != gol {
 			t.Errorf("%s: %+v (ada %v), harap golongan %s", pola, k, ada, gol)
@@ -339,5 +350,89 @@ func TestAngkaJSONTidakLewatFloat(t *testing.T) { // ADR-0003
 	}
 	if got := h.Halaman.Ambil("PolicyTreatyIn.PremiOgp"); got != "592629512.880000276" {
 		t.Errorf("angka JSON = %q, harap literal utuh", got)
+	}
+}
+
+// TestPanduanBentukDokumenNolMedanBelumDiputuskan - AC 59 (RALAT F3, WO
+// 04-10-2026: "nol medan yang BELUM DIPUTUSKAN"). Setiap jalur daun panduan
+// bentuk dokumen `docs/dataguide-json-polis.json` (`JSON_DATAGUIDE` atas
+// POOLDATA.JSON_POLIS, 378 entri) dirakit menjadi satu dokumen fiktif lalu
+// dipecah: tiap medannya wajib berkolom, disalin ke riwayat produksi, atau
+// dibuang dengan keputusan tertulis. Jalur di bawah `OldData` (salinan halaman
+// PolicyTreatyIn generasi sebelumnya, rancangan 4ter.1) ikut dirakit di
+// tingkat polis: ia bentuk halaman yang sama, jadi wajib terputuskan juga di
+// sana (mis. `IsOJKNopolis` dan `InstallmentList().PPN` hanya tampak di bawah
+// OldData). ⚠️ Panduan itu basi (diagram R45) - medan di luar panduan baru
+// terlihat saat uji-kering atas data nyata (F7).
+func TestPanduanBentukDokumenNolMedanBelumDiputuskan(t *testing.T) {
+	isi, err := os.ReadFile(filepath.Join("..", "..", "docs", "dataguide-json-polis.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var mentah []struct {
+		Jalur string `json:"o:path"`
+		Jenis string `json:"type"`
+	}
+	if err := json.Unmarshal(isi, &mentah); err != nil {
+		t.Fatal(err)
+	}
+	panduan := mentah
+	for _, p := range mentah {
+		if j, ok := strings.CutPrefix(p.Jalur, "$.OldData."); ok && !strings.HasPrefix(j, "OldData") {
+			p.Jalur = "$." + j
+			panduan = append(panduan, p)
+		}
+	}
+	daftar := map[string]bool{}
+	for _, p := range panduan {
+		if p.Jenis == "array" {
+			daftar[p.Jalur] = true
+		}
+	}
+	akar := map[string]any{"pxObjClass": KelasDokumenTreatyIn}
+	daun := 0
+	for _, p := range panduan {
+		if p.Jenis == "object" || p.Jenis == "array" || p.Jalur == "$.pxObjClass" {
+			continue
+		}
+		daun++
+		ruas := strings.Split(strings.TrimPrefix(p.Jalur, "$."), ".")
+		simpul, jalur := akar, "$"
+		for i, r := range ruas {
+			jalur += "." + r
+			if i == len(ruas)-1 {
+				simpul[r] = "" // kosong sah untuk setiap golongan kolom
+				break
+			}
+			if daftar[jalur] {
+				xs, _ := simpul[r].([]any)
+				if len(xs) == 0 {
+					xs = []any{map[string]any{}}
+					simpul[r] = xs
+				}
+				simpul = xs[0].(map[string]any)
+				continue
+			}
+			anak, _ := simpul[r].(map[string]any)
+			if anak == nil {
+				anak = map[string]any{}
+				simpul[r] = anak
+			}
+			simpul = anak
+		}
+	}
+	if daun < 340 {
+		t.Fatalf("hanya %d jalur daun terbaca; panduannya yang rusak", daun)
+	}
+	dok, err := json.Marshal(akar)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h, err := PecahDokumenLama(barisUji(string(dok)))
+	if err != nil || len(h.Galat) > 0 {
+		t.Fatalf("%v %+v", err, h.Galat)
+	}
+	for _, m := range h.BelumDiputuskan {
+		t.Errorf("medan belum diputuskan: %s", m.Pola)
 	}
 }

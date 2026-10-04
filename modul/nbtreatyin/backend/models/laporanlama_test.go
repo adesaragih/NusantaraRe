@@ -1,8 +1,9 @@
 package models
 
-// Uji penulis laporan pemuat dokumen lama (tiket 22): berkas CSV medan tak
-// dikenal (K17: POLIS_ID, JALUR, NILAI - bukan tabel), berkas CSV galat
-// (AC 58), dan ringkasan yang dicetak (K15, AC 59).
+// Uji penulis laporan pemuat dokumen lama (tiket 22): berkas CSV ARSIP medan
+// tanpa kolom (F3, WO 04-10-2026: arsip audit pemuatan, bukan penampung -
+// POLIS_ID, JALUR, NILAI, KEPUTUSAN), berkas CSV galat (AC 58), dan
+// ringkasan yang dicetak (K15; AC 59 = nol medan BELUM DIPUTUSKAN).
 
 import (
 	"bytes"
@@ -21,9 +22,18 @@ func bacaCSV(t *testing.T, b *bytes.Buffer) [][]string {
 	return baris
 }
 
-func TestLaporanMedanTakDikenalBerkasCSV(t *testing.T) { // K17, AC 57
-	var tak, gal bytes.Buffer
-	l, err := LaporanPemuatBaru(&tak, &gal, true)
+// hitungKeputusan - cacah baris data arsip per nilai KEPUTUSAN.
+func hitungKeputusan(baris [][]string) map[string]int {
+	m := map[string]int{}
+	for _, b := range baris[1:] {
+		m[b[3]]++
+	}
+	return m
+}
+
+func TestLaporanArsipMedanTanpaKolomBerkasCSV(t *testing.T) { // F3; K17, AC 57, 59
+	var arsip, gal bytes.Buffer
+	l, err := LaporanPemuatBaru(&arsip, &gal, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,31 +43,55 @@ func TestLaporanMedanTakDikenalBerkasCSV(t *testing.T) { // K17, AC 57
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := l.Berhasil(h); err != nil {
+	if err := l.Berhasil(h, true); err != nil {
 		t.Fatal(err)
 	}
 	if err := l.Tutup(); err != nil {
 		t.Fatal(err)
 	}
-	baris := bacaCSV(t, &tak)
-	harap := [][]string{
-		{"POLIS_ID", "JALUR", "NILAI"},
-		{"UJI-77", "PolicyTreatyIn.QuotationData.UJIFiktifQuotation", ""},
-		{"UJI-77", "PolicyTreatyIn.UJIMedanFiktif", "UJI-a, \"b\"\nbaris kedua"}, // nilai utuh, tidak dibuang
+	baris := bacaCSV(t, &arsip)
+	if strings.Join(baris[0], ",") != "POLIS_ID,JALUR,NILAI,KEPUTUSAN" {
+		t.Fatalf("kepala arsip %q", baris[0])
 	}
-	if len(baris) != len(harap) {
-		t.Fatalf("CSV %q", baris)
+	// Setiap medan daun yang TIDAK masuk kolom tercatat beserta nilainya dan
+	// keputusannya - yang dibuang menurut keputusan tertulis juga (arsip audit,
+	// tidak hilang diam-diam). Fixture: pxObjClass 4 simpul, satu nomor baris
+	// Pega, Show, TotalPremium; dua medan fiktif tanpa keputusan.
+	harapCacah := map[string]int{
+		"dibuang: internal_pega": 4, "dibuang: nourut": 1, "dibuang: keadaan_layar": 1, "dibuang: turunan": 1,
+		KeputusanBelumDiputuskan: 2,
 	}
-	for i := range harap {
-		if strings.Join(baris[i], "|") != strings.Join(harap[i], "|") {
-			t.Errorf("baris %d = %q, harap %q", i, baris[i], harap[i])
+	cacah := hitungKeputusan(baris)
+	if len(cacah) != len(harapCacah) {
+		t.Errorf("keputusan arsip %v, harap %v", cacah, harapCacah)
+	}
+	for k, n := range harapCacah {
+		if cacah[k] != n {
+			t.Errorf("KEPUTUSAN %q: %d baris, harap %d", k, cacah[k], n)
+		}
+	}
+	ada := map[string]bool{}
+	for _, b := range baris[1:] {
+		ada[strings.Join(b, "|")] = true
+	}
+	for _, b := range [][]string{
+		{"UJI-77", "PolicyTreatyIn.UJIMedanFiktif", "UJI-a, \"b\"\nbaris kedua", KeputusanBelumDiputuskan}, // nilai utuh
+		{"UJI-77", "PolicyTreatyIn.QuotationData.UJIFiktifQuotation", "", KeputusanBelumDiputuskan},
+		{"UJI-77", "PolicyTreatyIn.Show", "true", "dibuang: keadaan_layar"},
+		{"UJI-77", "PolicyTreatyIn.TotalPremium", "592629512.880000276", "dibuang: turunan"},
+	} {
+		if !ada[strings.Join(b, "|")] {
+			t.Errorf("baris arsip %q tidak ada di %q", b, baris)
 		}
 	}
 	r := l.Ringkasan()
-	if r.Dimuat != 1 || r.MedanTakDikenal != 2 || r.Selesai() {
-		t.Errorf("ringkasan %+v; selesai harus false selama medan tak dikenal > 0 (AC 59)", r)
+	if r.Dimuat != 1 || r.MedanBelumDiputuskan != 2 || r.Selesai() {
+		t.Errorf("ringkasan %+v; selesai harus false selama medan belum diputuskan > 0 (AC 59)", r)
 	}
-	if !strings.Contains(r.Teks(), "Medan tak dikenal") || !strings.Contains(r.Teks(), "BELUM SELESAI") {
+	if r.DiabaikanPerAlasan[AlasanInternalPega] != 4 || r.DiabaikanPerAlasan[AlasanTurunan] != 1 {
+		t.Errorf("dibuang per alasan %v", r.DiabaikanPerAlasan)
+	}
+	if !strings.Contains(r.Teks(), "BELUM DIPUTUSKAN") || !strings.Contains(r.Teks(), "BELUM SELESAI") {
 		t.Errorf("teks ringkasan:\n%s", r.Teks())
 	}
 }
@@ -93,7 +127,7 @@ func TestLaporanGalatBerkasCSVDanTanggalAmbiguDihitung(t *testing.T) { // AC 58,
 		t.Errorf("baris galat tanggal %q", baris[1])
 	}
 	if len(bacaCSV(t, &tak)) != 1 {
-		t.Error("dokumen gagal tidak menulis medan tak dikenal")
+		t.Error("dokumen gagal tidak menulis arsip medan")
 	}
 	r := l.Ringkasan()
 	if r.DokumenGagal != 2 || r.TanggalAmbigu != 1 || r.BukanTreatyIn != 1 || r.Selesai() {
@@ -104,16 +138,19 @@ func TestLaporanGalatBerkasCSVDanTanggalAmbiguDihitung(t *testing.T) { // AC 58,
 	}
 }
 
-func TestRingkasanSelesaiHanyaBilaNolGalatDanNolTakDikenal(t *testing.T) { // AC 59
-	var tak, gal bytes.Buffer
-	l, _ := LaporanPemuatBaru(&tak, &gal, true)
+// F3: kode keluar pemuat bukan nol HANYA bila masih ada medan belum
+// diputuskan (atau galat) - medan yang dibuang menurut keputusan tertulis
+// tetap diarsipkan tanpa menahan selesai.
+func TestRingkasanSelesaiHanyaBilaNolGalatDanNolBelumDiputuskan(t *testing.T) { // AC 59
+	var arsip, gal bytes.Buffer
+	l, _ := LaporanPemuatBaru(&arsip, &gal, true)
 	d := strings.Replace(strings.Replace(dokumenUjiProp, `"UJIMedanFiktif": "UJI-nilai-lewat",`, ``, 1),
 		`"UJIFiktifQuotation": "",`, ``, 1)
 	h, err := PecahDokumenLama(barisUji(d))
-	if err != nil || len(h.TakDikenal) != 0 {
-		t.Fatalf("%v %+v", err, h.TakDikenal)
+	if err != nil || len(h.BelumDiputuskan) != 0 {
+		t.Fatalf("%v %+v", err, h.BelumDiputuskan)
 	}
-	_ = l.Berhasil(h)
+	_ = l.Berhasil(h, true)
 	l.SudahDimuat()
 	_ = l.Tutup()
 	r := l.Ringkasan()
@@ -121,8 +158,41 @@ func TestRingkasanSelesaiHanyaBilaNolGalatDanNolTakDikenal(t *testing.T) { // AC
 	if !r.Selesai() || r.AngkaKasusTerbesar != 0 || r.SudahDimuat != 1 {
 		t.Errorf("ringkasan %+v", r)
 	}
+	if n := len(bacaCSV(t, &arsip)) - 1; n != 7 {
+		t.Errorf("arsip tetap memuat 7 medan yang dibuang, dapat %d", n)
+	}
+	if !strings.Contains(r.Teks(), "STATUS: SELESAI") {
+		t.Errorf("teks ringkasan:\n%s", r.Teks())
+	}
 	if strings.Contains(r.Teks(), "Nomor kasus terbesar") {
 		t.Errorf("pyID di luar awalan %s tidak dilaporkan:\n%s", AwalanKasus, r.Teks())
+	}
+}
+
+// F3: SuggestList dokumen lama disalin ke HISTORYAKSEPTASIPRODUCTION; AKSES_LOGIN
+// dan PIC kosong ditulis apa adanya (NULL) dan DICATAT; dokumen yang IDPEGA-nya
+// sudah punya baris riwayat produksi dilewati salinannya (penjaga dobel).
+func TestRingkasanSalinanUsulanLama(t *testing.T) {
+	var arsip, gal bytes.Buffer
+	l, _ := LaporanPemuatBaru(&arsip, &gal, true)
+	h, err := PecahDokumenLama(barisUji(dokumenUjiUsulan))
+	if err != nil || len(h.Usulan) != 2 {
+		t.Fatalf("%v %+v", err, h.Usulan)
+	}
+	_ = l.Berhasil(h, true)
+	_ = l.Berhasil(h, false) // jalankan berikutnya: IDPEGA sudah punya baris
+	_ = l.Tutup()
+	r := l.Ringkasan()
+	if r.UsulanDisalin != 2 || r.UsulanTanpaAksesLogin != 1 || r.UsulanTanpaPIC != 1 || r.UsulanDokumenSudahAda != 1 {
+		t.Errorf("ringkasan usulan %+v", r)
+	}
+	if !r.Selesai() {
+		t.Errorf("AKSES_LOGIN/PIC kosong dicatat, bukan galat: %+v", r)
+	}
+	for _, s := range []string{"HISTORYAKSEPTASIPRODUCTION", "AKSES_LOGIN kosong", "PIC kosong"} {
+		if !strings.Contains(r.Teks(), s) {
+			t.Errorf("teks ringkasan tanpa %q:\n%s", s, r.Teks())
+		}
 	}
 }
 
@@ -139,7 +209,7 @@ func TestRingkasanMencetakNomorKasusTerbesarBerawalanKasus(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_ = l.Berhasil(h)
+		_ = l.Berhasil(h, true)
 	}
 	_ = l.Tutup()
 	r := l.Ringkasan()

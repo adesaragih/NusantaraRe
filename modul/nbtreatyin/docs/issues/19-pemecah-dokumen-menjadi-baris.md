@@ -43,6 +43,17 @@ bukan dibuang.
 > jalankan pemuat** (`POLIS_ID`, `JALUR`, `NILAI`) di folder keluaran operator — tiket 22,
 > `models/laporanlama.go`. Pemecah dokumen lama = `models.PecahDokumenLama` (digerakkan katalog).
 
+> ⛔ **RALAT putaran 3 (04-10-2026)** `[keputusan work owner]` **F3**. Bunyi lama, dikutip: *"⭐ **Penampung medan
+> tak dikenal** disediakan — medan dokumen yang tidak dikenal **disimpan**, bukan dibuang."* dan (*Cara mengujinya*)
+> *"⚠️ **Penampung medan tak dikenal wajib kosong** sebelum pekerjaan dinyatakan selesai"*. Bunyi baru: tidak ada
+> penampung — setiap medan dokumen tanpa kolom **diputuskan per medan** dari XML: berkolom bila dibaca rule NB
+> terjangkau (satu-satunya: `PolicyTreatyIn.EDMType` → `T_GENERAL_POLIS.EDM_TYPE`, syarat
+> `Activity\InputPolicyTreatyInPre_Act.xml` langkah 10), disalin (`SuggestList` →
+> `POOLDATA.HISTORYAKSEPTASIPRODUCTION`), atau **dibuang** dengan alasan + bukti
+> (`backend/models/medan_abaikan_lama.json` bagian `pola`). Berkas CSV pemuat = **arsip audit pemuatan**
+> (`POLIS_ID`, `JALUR`, `NILAI`, `KEPUTUSAN`); yang wajib nol: medan **belum diputuskan** (spec-penyimpanan RALAT
+> AC 59, ID-27; tiket 22 bab *Putaran 3*). Uji: `TestPanduanBentukDokumenNolMedanBelumDiputuskan`.
+
 ## Batas — yang TIDAK termasuk
 
 ⛔ Uji pulang-pergi dan dua bentuk dokumen — tiket **21**.

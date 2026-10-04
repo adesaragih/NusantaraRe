@@ -1002,6 +1002,26 @@ medannya **dibaca** rule NB terjangkau — dicatat di sini dengan buktinya. Tabe
 `PREMIUM_AFTER_PPH` / `PREMIUM_AFTER_PPN` / `PREMIUM_AFTER_TAX` di `T_POLIS_INSTALMENT` dan
 `PREMIUM_AFTER_PPH` di `T_POLIS_INSTALMENT_DETAIL` (§4.3; data guide).
 
+### 4sx.5 ⛔ RALAT putaran 3 — 04-10-2026 — F3: medan dokumen lama tanpa kolom
+
+`[keputusan work owner]` **F3** (PROMPT-NB-TREATY-IN-PUTARAN-3.md bab 2): setiap medan dokumen lama yang tidak
+berkolom dibaca ulang di XML — **(a)** dibaca rule NB terjangkau → wajib berkolom di salah satu dari 8 tabel;
+**(b)** tidak dibaca → dibuang (alasan + bukti di `backend/models/medan_abaikan_lama.json` bagian `pola`).
+
+| Tabel · kolom | Medan | Bukti (rule terjangkau) |
+| --- | --- | --- |
+| `T_GENERAL_POLIS.EDM_TYPE` ⭐ **ditambahkan** | `PolicyTreatyIn.EDMType` (data guide `$.EDMType`) | prasyarat `Activity\InputPolicyTreatyInPre_Act.xml` langkah 10: `.PolicyTreatyIn.EDMType=="3"` → lewati `Call TreatyRealizationCheckXOLList` (`models.PerluCekDaftarXOL`). §4.1 *penentu bentuk* sudah memuat `EDM_TYPE`; putaran 2 memetakannya hanya ke `QuotationData.EdmType` (J37) — properti lain (Pega peka huruf) |
+
+Bunyi lama 4sx.1, dikutip: *"`T_GENERAL_POLIS.BROKERAGE_FEE_SEBENARNYA` | `.BrokerageFeeSebenarnya` | rumus
+`SetPPNPPH` langkah 3"*; dan 4sx.3: *"`IS_OJK_NOPOLIS` (hanya ditulis `GeneratePolicyNoTreaty_Act` langkah 23),
+`BROKERAGE_FEE` (hanya ditulis `SetPPNPPH` langkah 3)"*. Bunyi baru: rumus dan penulis `.BrokerageFee` di
+`SetPPNPPH` langkah **4** (langkah 3 = `pxRetrieveReportData`); langkah 23 `GeneratePolicyNoTreaty_Act` berlabel
+**`//`**. Kolom 4sx.3 tetap dibuang; medan dokumen lamanya (`IsOJKNopolis`, `BrokerageFee`, `QuotationData.`
+`BusinessType`/`SobName`/`SobLeader0`/`SobLeader1`/`CedingCo`/`CedingCoName`/`MarketingCode`/`TeamGroup`/
+`BranchCode`/`BranchName`, `InstallmentList().PPN/PPh`) kini **diputuskan dibuang** berbukti, tidak lagi masuk
+laporan CSV sebagai butir terbuka. Daftar lengkap 25 pola: tiket 22 bab *Putaran 3*. Tetap **tepat delapan**
+`CREATE TABLE` (`repository/kolom_test.go`).
+
 ---
 
 ## 5 · Tiga hal yang **tidak** ditiru

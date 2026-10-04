@@ -67,6 +67,13 @@ type Medan struct {
 	nama   string
 }
 
+// MedanArsip - satu medan dokumen yang tidak ditulis ke kolom: Kunci = kunci
+// alasan keputusan tertulis (`medan_abaikan_lama.json`), "" = belum diputuskan.
+type MedanArsip struct {
+	Medan
+	Kunci string
+}
+
 // GalatDokumen - satu sebab dokumen tidak dimuat (AC 58).
 type GalatDokumen struct {
 	Jalur, Nilai string
@@ -80,13 +87,21 @@ type HasilPecah struct {
 	NoPolis string
 	Halaman *Halaman
 	Datar   KolomDatarLama
-	// TakDikenal - medan tanpa kolom dan tanpa keputusan tertulis; masuk
-	// berkas laporan CSV, TIDAK dibuang (K17, AC 57).
-	TakDikenal []Medan
-	// Diabaikan - alasan tertulis -> cacah medan yang sengaja tidak disimpan.
+	// BelumDiputuskan - medan tanpa kolom dan tanpa keputusan tertulis (AC 59
+	// RALAT F3: wajib nol sebelum pekerjaan dinyatakan selesai).
+	BelumDiputuskan []Medan
+	// Diabaikan - teks alasan tertulis -> cacah medan yang sengaja tidak disimpan.
 	Diabaikan map[string]int
+	// Arsip - SETIAP medan daun yang tidak ditulis ke kolom maupun ke riwayat
+	// produksi, urut dokumen, beserta kunci keputusannya ("" = belum
+	// diputuskan). Ditulis ke arsip CSV pemuat (F3: arsip audit pemuatan,
+	// bukan penampung; nilainya tidak hilang diam-diam - AC 57).
+	Arsip []MedanArsip
 	// Galat - dokumen TIDAK dimuat bila terisi (K15, AC 58).
 	Galat []GalatDokumen
+	// Usulan - baris SuggestList dokumen yang disalin ke
+	// POOLDATA.HISTORYAKSEPTASIPRODUCTION (F3; `UsulanDokumenLama`).
+	Usulan []UsulanProduksi
 }
 
 // Galat struktural dokumen lama.
@@ -134,13 +149,17 @@ var (
 //go:embed medan_abaikan_lama.json
 var berkasMedanAbaikanLama []byte
 
-// penggolongAbaikan - isi `medan_abaikan_lama.json` dengan rujukan alasan
-// sudah diselesaikan menjadi teksnya.
+// penggolongAbaikan - isi `medan_abaikan_lama.json`. Setiap golongan
+// memetakan nama ke KUNCI alasan (tercetak di arsip CSV); teksnya di `alasan`
+// (tercetak di ringkasan).
 type penggolongAbaikan struct {
 	alasan      map[string]string // kunci -> teks alasan
-	simpul      map[string]string // puncak -> teks; seluruh isi simpul
-	skalarPolis map[string]string // puncak skalar tingkat polis -> teks
+	simpul      map[string]string // puncak -> kunci; seluruh isi simpul
+	skalarPolis map[string]string // puncak skalar tingkat polis -> kunci
 	ruas        map[string]ruasAbaikan
+	// pola - keputusan F3 per medan: pola jalur PERSIS relatif PolicyTreatyIn
+	// -> kunci alasan; buktinya wajib ada di berkas (F3, WO 04-10-2026).
+	pola map[string]string
 }
 
 // ruasAbaikan - nama properti daun di mana pun; hanyaDiBarisDaftar = hanya
@@ -151,8 +170,9 @@ type ruasAbaikan struct {
 }
 
 // muatPenggolongAbaikan mengurai berkas data penggolong. Rujukan ke alasan
-// yang tidak terdefinisi dan medan JSON tak dikenal ditolak - berkas data
-// tidak diperiksa penyusun Go, jadi pemeriksaannya di sini.
+// yang tidak terdefinisi, keputusan per medan tanpa bukti, dan medan JSON
+// tak dikenal ditolak - berkas data tidak diperiksa penyusun Go, jadi
+// pemeriksaannya di sini.
 func muatPenggolongAbaikan(isi []byte) (penggolongAbaikan, error) {
 	var mentah struct {
 		Catatan     []string          `json:"catatan"`
@@ -163,6 +183,10 @@ func muatPenggolongAbaikan(isi []byte) (penggolongAbaikan, error) {
 			Alasan             string `json:"alasan"`
 			HanyaDiBarisDaftar bool   `json:"hanya_di_baris_daftar"`
 		} `json:"ruas"`
+		Pola map[string]struct {
+			Alasan string `json:"alasan"`
+			Bukti  string `json:"bukti"`
+		} `json:"pola"`
 	}
 	dek := json.NewDecoder(bytes.NewReader(isi))
 	dek.DisallowUnknownFields()
@@ -170,23 +194,28 @@ func muatPenggolongAbaikan(isi []byte) (penggolongAbaikan, error) {
 		return penggolongAbaikan{}, fmt.Errorf("models: medan_abaikan_lama.json: %w", err)
 	}
 	var galat error
-	teks := func(bagian, nama, kunci string) string {
-		s := mentah.Alasan[kunci]
-		if s == "" && galat == nil {
-			galat = fmt.Errorf("models: medan_abaikan_lama.json %s %q merujuk alasan tak terdefinisi %q", bagian, nama, kunci)
+	kunci := func(bagian, nama, k string) string {
+		if mentah.Alasan[k] == "" && galat == nil {
+			galat = fmt.Errorf("models: medan_abaikan_lama.json %s %q merujuk alasan tak terdefinisi %q", bagian, nama, k)
 		}
-		return s
+		return k
 	}
 	p := penggolongAbaikan{alasan: mentah.Alasan, simpul: map[string]string{},
-		skalarPolis: map[string]string{}, ruas: map[string]ruasAbaikan{}}
-	for nama, kunci := range mentah.Simpul {
-		p.simpul[nama] = teks("simpul", nama, kunci)
+		skalarPolis: map[string]string{}, ruas: map[string]ruasAbaikan{}, pola: map[string]string{}}
+	for nama, k := range mentah.Simpul {
+		p.simpul[nama] = kunci("simpul", nama, k)
 	}
-	for nama, kunci := range mentah.SkalarPolis {
-		p.skalarPolis[nama] = teks("skalar_polis", nama, kunci)
+	for nama, k := range mentah.SkalarPolis {
+		p.skalarPolis[nama] = kunci("skalar_polis", nama, k)
 	}
 	for nama, r := range mentah.Ruas {
-		p.ruas[nama] = ruasAbaikan{alasan: teks("ruas", nama, r.Alasan), hanyaDiBarisDaftar: r.HanyaDiBarisDaftar}
+		p.ruas[nama] = ruasAbaikan{alasan: kunci("ruas", nama, r.Alasan), hanyaDiBarisDaftar: r.HanyaDiBarisDaftar}
+	}
+	for nama, x := range mentah.Pola {
+		p.pola[nama] = kunci("pola", nama, x.Alasan)
+		if strings.TrimSpace(x.Bukti) == "" && galat == nil {
+			galat = fmt.Errorf("models: medan_abaikan_lama.json pola %q tanpa bukti XML (F3)", nama)
+		}
 	}
 	if galat != nil {
 		return penggolongAbaikan{}, galat
@@ -236,6 +265,13 @@ var (
 	AlasanOldData = teksAlasan("old_data")
 	// AlasanSelisih - TreatyDifference/TreatyXOLDifferenceList.
 	AlasanSelisih = teksAlasan("selisih")
+	// AlasanF3TanpaPembaca - F3: medan dokumen lama tanpa kolom yang nol
+	// dibaca rule NB terjangkau (bukti per medan di bagian `pola`).
+	AlasanF3TanpaPembaca = teksAlasan("f3_tanpa_pembaca")
+	// AlasanF3KeadaanBaris - F3: pyExpanded baris daftar.
+	AlasanF3KeadaanBaris = teksAlasan("f3_keadaan_baris")
+	// AlasanF3SalinanGenerasi - F3: EDMNo, ProdKe dokumen.
+	AlasanF3SalinanGenerasi = teksAlasan("f3_salinan_generasi")
 )
 
 // IndukDaftarBersarang - tabel cucu -> jalur daftar induknya di dokumen
@@ -293,22 +329,26 @@ func petaKatalogDokumen() (map[string]Kolom, error) {
 	return peta, nil
 }
 
-// alasanDiabaikan - alasan tertulis bila pola medan sengaja tidak disimpan
-// (daftarnya: `medan_abaikan_lama.json`).
+// kunciDibuang - KUNCI alasan bila pola medan sengaja tidak disimpan
+// (keputusan tertulis di `medan_abaikan_lama.json`); "" = belum diputuskan.
 //
 // Urutan pemeriksaan: (1) simpul utuh (OldData, TreatyDifference, ...) lebih
 // dulu - seluruh isinya, termasuk pxObjClass-nya, tercatat di bawah alasan
-// simpul itu; (2) ruas daun di mana pun (pxObjClass; nomor baris hanya di
-// baris daftar); (3) skalar tingkat polis saja. Medan lain = "" (tak dikenal).
-func alasanDiabaikan(pola string) string {
+// simpul itu; (2) keputusan F3 per medan (pola persis); (3) ruas daun di mana
+// pun (pxObjClass; nomor baris hanya di baris daftar); (4) skalar tingkat
+// polis saja.
+func kunciDibuang(pola string) string {
 	p := medanAbaikanLama
 	akar := strings.TrimPrefix(pola, HalamanPolis+".")
 	puncak := akar
 	if i := strings.IndexAny(akar, ".("); i >= 0 {
 		puncak = akar[:i]
 	}
-	if s, ada := p.simpul[puncak]; ada {
-		return s
+	if k, ada := p.simpul[puncak]; ada {
+		return k
+	}
+	if k, ada := p.pola[akar]; ada {
+		return k
 	}
 	ruas := pola[strings.LastIndex(pola, ".")+1:]
 	if r, ada := p.ruas[ruas]; ada && (!r.hanyaDiBarisDaftar || strings.Contains(pola, "()")) {
@@ -318,6 +358,12 @@ func alasanDiabaikan(pola string) string {
 		return ""
 	}
 	return p.skalarPolis[puncak]
+}
+
+// alasanDiabaikan - TEKS alasan tertulis bila pola medan sengaja tidak
+// disimpan; "" = belum diputuskan.
+func alasanDiabaikan(pola string) string {
+	return medanAbaikanLama.alasan[kunciDibuang(pola)]
 }
 
 // ---------------------------------------------------------------- pemecah
@@ -529,11 +575,26 @@ func PecahDokumenLama(b BarisJSONPolis) (HasilPecah, error) {
 			}
 			continue
 		}
-		if alasan := alasanDiabaikan(md.Pola); alasan != "" {
-			hasil.Diabaikan[alasan]++
+		// F3: anggota baris SuggestList disalin ke riwayat produksi
+		// (`UsulanDokumenLama`); `.Date` dibaca seperti kolom tanggal-waktu.
+		if nama, ok := anggotaUsulanLama(md.Pola); ok {
+			if nama == "Date" {
+				v, err := BacaTanggalLama(md.Nilai, GolTanggalWaktu)
+				if err != nil {
+					galat(md, err)
+					continue
+				}
+				p.setel(md, v)
+			}
 			continue
 		}
-		hasil.TakDikenal = append(hasil.TakDikenal, md)
+		kunci := kunciDibuang(md.Pola)
+		hasil.Arsip = append(hasil.Arsip, MedanArsip{Medan: md, Kunci: kunci})
+		if kunci != "" {
+			hasil.Diabaikan[teksAlasan(kunci)]++
+			continue
+		}
+		hasil.BelumDiputuskan = append(hasil.BelumDiputuskan, md)
 	}
 	if hasil.NoPolis == "" {
 		hasil.Galat = append(hasil.Galat, GalatDokumen{Jalur: "NOPOLIS", Err: ErrNoPolisKosong})
@@ -546,5 +607,6 @@ func PecahDokumenLama(b BarisJSONPolis) (HasilPecah, error) {
 	if h.Ambil(HalamanPolis+".ProductionDate") == "" && b.TglProd != "" {
 		h.Setel(HalamanPolis+".ProductionDate", b.TglProd)
 	}
+	hasil.Usulan = UsulanDokumenLama(id, h)
 	return hasil, nil
 }

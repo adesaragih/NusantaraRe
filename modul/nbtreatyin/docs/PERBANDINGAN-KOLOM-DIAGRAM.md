@@ -87,6 +87,11 @@ pihak) atau §4q5.7 (`REMARK`):
 | `SHARE_CURRENCY` | `PolicyTreatyIn.ShareCurrency` | tampil `DetailPolicyTreatyIn` dan `DetailDeptHeadTreatyIn_UW` (label *RNM Share*) — AC 64 |
 | `GROSS_CLAIM` | `PolicyTreatyIn.GrossClaim` | tampil `DetailPolicyTreatyIn` (*Claim 100%*); dibaca `CalculatePremi_Act` (`@divide(.GrossClaim*…RNMShareP,100,4)`) |
 | `BROKERAGE_FEE_SEBENARNYA` | `PolicyTreatyIn.BrokerageFeeSebenarnya` | dibaca rumus `SetPPNPPH` langkah 3 (`.PPHValue = .BrokerageFeeSebenarnya * @divide(2,100,8)`, `.PPNValue = … 2.2 …`) |
+| `EDM_TYPE` ⭐ *(putaran 3, F3)* | `PolicyTreatyIn.EDMType` | medan dokumen lama (data guide `$.EDMType`) **dibaca** prasyarat `Activity\InputPolicyTreatyInPre_Act.xml` langkah 10 (`.PolicyTreatyIn.EDMType=="3"` → lewati `Call TreatyRealizationCheckXOLList`; terjangkau, `models.PerluCekDaftarXOL`). Rancangan §4.1 *penentu bentuk* memuat `EDM_TYPE`; properti lain dari `QuotationData.EdmType` (`T_POLIS_QUOTATION.EDM_TYPE`, J37). RALAT rancangan §4sexies |
+
+> ⛔ **RALAT 04-10-2026 (F3)** — baris `BROKERAGE_FEE_SEBENARNYA` di atas, bunyi lama: *"dibaca rumus `SetPPNPPH`
+> langkah 3"*. Bunyi baru: langkah **4** (`Activity\SetPPNPPH.xml` `REPEATINGINDEX="4"`, prasyarat
+> `.FlagPPH=="true"` dan `ListAgent.pxResults(1).STS_PKP == 1`); langkah 3 = `pxRetrieveReportData`.
 
 ### 1d · Di luar rancangan — **dibuang**
 
@@ -94,6 +99,15 @@ pihak) atau §4q5.7 (`REMARK`):
 | --- | --- | --- |
 | `IS_OJK_NOPOLIS` | `PolicyTreatyIn.IsOJKNopolis` | hanya **ditulis** `GeneratePolicyNoTreaty_Act` langkah 23; nol pembaca terjangkau. ⚠️ ada di dokumen lama (data guide) → masuk laporan CSV pemuat (butir terbuka) |
 | `BROKERAGE_FEE` | `PolicyTreatyIn.BrokerageFee` | hanya **ditulis** `SetPPNPPH` langkah 3; nol pembaca |
+
+> ⛔ **RALAT 04-10-2026 (F3)** — dua baris di atas. Bunyi lama: *"hanya **ditulis** `GeneratePolicyNoTreaty_Act`
+> langkah 23 … ⚠️ ada di dokumen lama (data guide) → masuk laporan CSV pemuat (butir terbuka)"* dan *"hanya
+> **ditulis** `SetPPNPPH` langkah 3"*. Bunyi baru: langkah 23 `GeneratePolicyNoTreaty_Act` **berlabel `//`**
+> (`pyStepsBlockName`), jadi XML kini bahkan tidak menulisnya; `.BrokerageFee` ditulis `SetPPNPPH` langkah **4**.
+> Keduanya tetap tanpa kolom dan, sebagai medan dokumen lama, **dibuang** dengan bukti di
+> `backend/models/medan_abaikan_lama.json` bagian `pola` (keputusan WO F3) — tidak lagi butir terbuka.
+> (Di `docs/dataguide-json-polis.json` `IsOJKNopolis` hanya muncul di bawah `OldData` — `$.OldData.IsOJKNopolis`,
+> salinan generasi sebelumnya yang seluruhnya dibuang; keputusan tingkat polis berlaku bila muncul di data nyata.)
 
 ### 1e · Medan `PolicyTreatyIn` diagram yang **tidak** menjadi kolom di sini
 
@@ -108,6 +122,7 @@ pihak) atau §4q5.7 (`REMARK`):
 
 ⇒ Hitungan: 69 kolom katalog medan `PolicyTreatyIn` (termasuk `TGL_PROD`) + `NOPOLIS` + 9 medan tak
 berkolom (4 `LAYER*`, 4 `Total*`, `isApprovedtoDeptHead`) = **79** — angka diagram F10 (batas bawah, B119).
+⭐ Putaran 3 (F3): + `EDM_TYPE` (bab 1c) ⇒ 70 kolom katalog medan `PolicyTreatyIn`; 79 tetap batas bawah.
 
 ---
 
@@ -164,6 +179,13 @@ induk"*) = sepuluh.
 | `INSTALLMENT_NO` · `DUE_DATE` · `PAYMENT_DATE` · `INSTALLMENT_PERCENTAGE` · `PREMIUM` · `PAYMENT_TOTAL` · `PREMIUM_AFTER_PPH` · `PREMIUM_AFTER_PPN` · `PREMIUM_AFTER_TAX` · `CURRENCY` · `ID_CURRENCY` | dipertahankan / `PREMIUM_AFTER_PPH` **ditambah** | rancangan §4.3, diagram R58/R61; `PremiumAfterPPN/Tax` tampil `Section/InstallmentList`; ditulis `InputPolicyTreatyInDetail_NonProp` 20.4.1 dan preACT 18.3.4.2.1 |
 | ~~`PPN`~~ · ~~`PPH`~~ | **dibuang** | hanya ditulis preACT 18.3.4.2.1; nol pembaca. ⚠️ ada di dokumen lama (data guide) → laporan CSV pemuat (butir terbuka) |
 
+> ⛔ **RALAT 04-10-2026 (F3)** — baris di atas, bunyi lama: *"⚠️ ada di dokumen lama (data guide) → laporan CSV
+> pemuat (butir terbuka)"*. Bunyi baru: medan dokumen lama `ListInstallment().InstallmentList().PPN/PPh`
+> **dibuang** dengan bukti (`backend/models/medan_abaikan_lama.json` bagian `pola`: pembaca `.PPN/.PPh` di preACT
+> 18.3.4.1 adalah baris `ListInstallment` — kolom bab 4); tercatat di arsip CSV pemuat, bukan butir terbuka.
+> (Di `docs/dataguide-json-polis.json` keduanya hanya muncul di bawah `OldData` —
+> `$.OldData.ListInstallment.InstallmentList.PPN/PPh`; keputusan tingkat polis berlaku bila muncul di data nyata.)
+
 ## 6 · `T_POLIS_SPREADING` — `SpreadingRiskList()`, 9 medan (J67)
 
 `ID` · `POLIS_ID` · `NOURUT` + `TREATY_TYPE` · `TREATY_NAME` · `CURRENCY` · `CURRENCY_ID` ·
@@ -188,7 +210,8 @@ SAJA*) + 13 kolom `T_POLIS_XOL`. Tidak berubah.
 
 Tidak dibuat, tidak diubah strukturnya. Catatan `PolicyTreatyIn.SuggestList` ditulis ke sini
 (`repository/usulan.go`, pengganti `RDBList/InsertViewSuggest_SQL`) dan dibaca balik untuk layar
-`Section/ListSuggest` (K4). Pemetaan 15 kolom: `docs/STRUKTUR-TABEL-NB-TREATY-IN.md` bab tabel ini dan
+`Section/ListSuggest` (K4). ⭐ Putaran 3 (F3): `SuggestList` **dokumen lama** juga disalin ke sini oleh pemuat
+(tiket 22; `repository.SalinUsulanLama`, penjaga dobel menurut `IDPEGA`). Pemetaan 15 kolom: `docs/STRUKTUR-TABEL-NB-TREATY-IN.md` bab tabel ini dan
 `backend/models/usulan.go`.
 
 ---
@@ -223,6 +246,11 @@ Sapuan sel `Section` terjangkau (korpus, `graf.Graf.terjangkau()`), dicocokkan k
    di luar sepuluh + enam RALAT: `BranchCode`, `BusinessType2`, `SobLsg`, `StatusBusiness`, …, data guide)
    akan muncul di **laporan CSV** pemuat (K17) — wajib 0 sebelum selesai, jadi butuh keputusan work owner
    (tambah kolom lewat RALAT diagram, atau nyatakan dibuang).
+   ✅ **Diputuskan 04-10-2026 (F3)** — butir ini selesai: (a) `PolicyTreatyIn.EDMType` dibaca rule NB terjangkau
+   → kolom `T_GENERAL_POLIS.EDM_TYPE` (bab 1c); (b) 25 pola lain dibuang dengan alasan + bukti XML per medan
+   (`backend/models/medan_abaikan_lama.json` bagian `pola`; daftar dan bukti: tiket 22 bab *Putaran 3*);
+   `SuggestList` disalin ke `HISTORYAKSEPTASIPRODUCTION` (bab 9). CSV pemuat = arsip audit, bukan penampung;
+   yang wajib 0: medan **belum diputuskan** (RALAT spec-penyimpanan AC 59, ID-27).
 2. Tipe fisik kolom `HISTORYAKSEPTASIPRODUCTION` (terutama `NOURUT`, `PERCENT_RNM`) belum dicek ke
    katalog Oracle; pembacaan memakai `TO_NUMBER(NOURUT)`.
 3. `HISTORYAKSEPTASIPRODUCTION.DIV` (`OperatorID.pyOrgDivision`) tanpa sumber di `inti.Pelaku` — NULL.

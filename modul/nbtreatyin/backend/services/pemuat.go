@@ -21,6 +21,14 @@ package services
 //	TutupKasus      Resolved-Completed: dokumen JSON_POLIS hanya lahir di jalur
 //	                Decision8 "Nopolis not empty" -> Utility1 -> Utility2 -> End3
 //	                (Flow InputRealizationTreatyIn) - kasusnya sudah selesai.
+//	SalinUsulanLama SuggestList dokumen -> POOLDATA.HISTORYAKSEPTASIPRODUCTION
+//	                lewat `CatatUsulan` jalur biasa (F3, WO 04-10-2026), dengan
+//	                penjaga dobel menurut IDPEGA (IDPEGA = JSON_POLIS.IDPEGA =
+//	                pzInsKey kasus lama, sama dengan `InsertViewSuggest_SQL`).
+//
+// Baris hasil pemuat dikenali dari IDPEGA (`<kelas> <pyID>`, jalur biasa
+// menulis ID kasus) dan status Resolved-Completed - tanpa kolom penanda
+// SUMBER (F6, WO 04-10-2026: penanda `SUMBER='PEGA'` gugur).
 //
 // Gagal di tengah = dokumen itu tidak tersimpan sama sekali (P2, AC 45) dan
 // sebabnya masuk berkas laporan galat (AC 58). Jalankan ulang aman: kasus yang
@@ -57,8 +65,9 @@ func PemuatDariDasar(d *inti.Dasar) (*Pemuat, error) {
 var errSudahDimuat = errors.New("services: dokumen sudah dimuat")
 
 // Jalankan memuat seluruh dokumen generasi NB. `tulis` false = uji-kering:
-// hanya JSON_POLIS yang dibaca, nol pernyataan ke tabel baru - laporan
-// medan tak dikenal dan galat tetap ditulis lengkap.
+// hanya JSON_POLIS yang dibaca, nol pernyataan ke tabel mana pun - arsip
+// medan dan laporan galat tetap ditulis lengkap; salinan SuggestList dihitung
+// "siap disalin" (penjaga dobel IDPEGA hanya diperiksa saat menulis).
 //
 // Galat yang dikembalikan hanya galat yang menghentikan seluruh jalankan
 // (JSON_POLIS tidak terbaca, berkas laporan tidak dapat ditulis, dibatalkan);
@@ -111,8 +120,10 @@ func (p *Pemuat) Jalankan(ctx context.Context, tulis bool, lap *models.LaporanPe
 			continue
 		}
 		terlihat[h.ID] = "ROWID " + k
+		usulanDisalin := true // uji-kering: siap disalin
 		if tulis {
-			switch err := p.muat(ctx, b, h); {
+			disalin, err := p.muat(ctx, b, h)
+			switch {
 			case errors.Is(err, errSudahDimuat):
 				lap.SudahDimuat()
 				continue
@@ -122,17 +133,20 @@ func (p *Pemuat) Jalankan(ctx context.Context, tulis bool, lap *models.LaporanPe
 				}
 				continue
 			}
+			usulanDisalin = disalin
 		}
-		if err := lap.Berhasil(h); err != nil {
+		if err := lap.Berhasil(h, usulanDisalin); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// muat menulis satu dokumen dalam SATU transaksi (P2, AC 45-46).
-func (p *Pemuat) muat(ctx context.Context, b models.BarisJSONPolis, h models.HasilPecah) error {
-	return p.g.Transaksi(ctx, func(tx *db.Tx) error {
+// muat menulis satu dokumen dalam SATU transaksi (P2, AC 45-46). Hasil
+// pertama false = salinan SuggestList dilewati penjaga dobel IDPEGA (F3).
+func (p *Pemuat) muat(ctx context.Context, b models.BarisJSONPolis, h models.HasilPecah) (bool, error) {
+	usulanDisalin := false
+	err := p.g.Transaksi(ctx, func(tx *db.Tx) error {
 		ada, err := p.g.IDPegaKasus(ctx, tx, h.ID)
 		switch {
 		case err == nil && ada == b.IDPega:
@@ -154,6 +168,11 @@ func (p *Pemuat) muat(ctx context.Context, b models.BarisJSONPolis, h models.Has
 		if err := p.g.SetelKolomDatarLama(ctx, tx, h.ID, h.Datar); err != nil {
 			return err
 		}
-		return p.g.TutupKasus(ctx, tx, h.ID, models.AssignmentAdmin, models.StatusSelesai)
+		if err := p.g.TutupKasus(ctx, tx, h.ID, models.AssignmentAdmin, models.StatusSelesai); err != nil {
+			return err
+		}
+		usulanDisalin, err = p.g.SalinUsulanLama(ctx, tx, b.IDPega, h.Usulan)
+		return err
 	})
+	return usulanDisalin, err
 }

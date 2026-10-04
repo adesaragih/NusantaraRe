@@ -21,6 +21,8 @@ func TestSQLPemuatLamaBerskemaTanpaCommit(t *testing.T) {
 		"baca":   sqlBacaJSONPolis(tabel),
 		"idpega": sqlIDPegaKasus("UJI_SKEMA.T_GENERAL_POLIS"),
 		"datar":  sqlSetelKolomDatarLama("UJI_SKEMA.T_GENERAL_POLIS"),
+		// F3: penjaga dobel salinan SuggestList menurut IDPEGA.
+		"usulan": sqlAdaUsulanIDPega("UJI_SKEMA.HISTORYAKSEPTASIPRODUCTION"),
 	} {
 		if err := db.PeriksaSQL(q); err != nil {
 			t.Errorf("%s: %v", nama, err)
@@ -32,6 +34,11 @@ func TestSQLPemuatLamaBerskemaTanpaCommit(t *testing.T) {
 	// Generasi endorsemen bukan lingkup NB (edmtreatyin tiket 10).
 	if !strings.Contains(sqlKunciJSONPolis(tabel), "'0'") {
 		t.Error("kunci JSON_POLIS harus menyaring PRODKE 0")
+	}
+	// Penjaga dobel F3: dicari per IDPEGA (satu penampung), baca saja.
+	q := strings.ToUpper(sqlAdaUsulanIDPega("UJI_SKEMA.HISTORYAKSEPTASIPRODUCTION"))
+	if !strings.Contains(q, "WHERE IDPEGA = :1") || strings.Contains(q, ":2") || !strings.HasPrefix(strings.TrimSpace(q), "SELECT") {
+		t.Errorf("penjaga dobel salinan usulan: %s", q)
 	}
 }
 

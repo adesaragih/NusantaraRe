@@ -494,6 +494,20 @@ sebelum rancangan dinyatakan selesai**.
 > folder keluaran yang ditentukan operator (`MODUL.md` *Pemuat dokumen lama*, tiket 22). Medan tetap
 > tersimpan beserta nilainya, jumlahnya dicetak, dan **wajib 0** sebelum pekerjaan dinyatakan selesai.
 
+> ⛔ **RALAT putaran 3 — 04-10-2026** `[keputusan work owner]` **F3** (PROMPT-NB-TREATY-IN-PUTARAN-3.md
+> bab 2). Bunyi lama (RALAT K17 di atas), dikutip: *"Penampungnya **berkas laporan CSV per jalankan
+> pemuat** — `POLIS_ID`, `JALUR`, `NILAI` — … Medan tetap tersimpan beserta nilainya, jumlahnya dicetak,
+> dan **wajib 0** sebelum pekerjaan dinyatakan selesai."* Bunyi baru: **tidak ada penampung.** Setiap
+> medan dokumen lama tanpa kolom **diputuskan per medan** dari XML: (a) dibaca rule NB terjangkau →
+> berkolom di salah satu dari 8 tabel (bab 0 butir 12; satu-satunya: `PolicyTreatyIn.EDMType` →
+> `T_GENERAL_POLIS.EDM_TYPE`, dibaca syarat `InputPolicyTreatyInPre_Act` langkah 10), atau (b) tidak
+> dibaca → **dibuang** dengan alasan + bukti tertulis (`backend/models/medan_abaikan_lama.json` bagian
+> `pola`). `SuggestList` dokumen lama **disalin** ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION` (ID-31) dengan
+> penjaga dobel menurut `IDPEGA`. Berkas CSV pemuat tetap ditulis sebagai **arsip audit pemuatan**
+> (`nbtreatyin-arsip-medan-<stempel>.csv`: `POLIS_ID`, `JALUR`, `NILAI`, `KEPUTUSAN`) untuk setiap medan
+> yang tidak masuk kolom — bukan penampung untuk dimigrasi kelak. Yang wajib **0** sebelum pekerjaan
+> dinyatakan selesai: medan **belum diputuskan** (`KEPUTUSAN` = `BELUM DIPUTUSKAN`).
+
 **ID-27b** ⛔ **DICABUT 23-09-2026.** `[keputusan work owner]` Tabel sebaran tambahan **tidak ada** — keempat medannya turunan. Bunyi lamanya dikutip di blok kepala berkas ini.
 
 ⚠️ Sensus korpus **melewatkannya** — tidak satu pun aturan merujuk anggotanya. Ini persis jebakan
@@ -748,6 +762,19 @@ dapat diuji dari luar.
     yang menemukan medan tak dikenal tidak tertulis di berkas itu beserta nilainya **gagal**. AC 59:
     berkas itu wajib **nol baris data** sebelum pekerjaan dinyatakan selesai; pemuat mencetak jumlahnya
     dan keluar dengan kode bukan nol selama jumlahnya > 0.
+    ⛔ **RALAT AC 57 dan 59 — putaran 3, 04-10-2026** (`[keputusan work owner]` **F3**, RALAT ID-27). Bunyi
+    lama (RALAT K17 di atas), dikutip: *"AC 57: test yang menemukan medan tak dikenal tidak tertulis di
+    berkas itu beserta nilainya **gagal**. AC 59: berkas itu wajib **nol baris data** sebelum pekerjaan
+    dinyatakan selesai"*. Bunyi baru: berkas CSV = **arsip audit pemuatan** `POLIS_ID,JALUR,NILAI,KEPUTUSAN`,
+    bukan penampung. **AC 57**: test yang menemukan medan dokumen yang tidak masuk kolom tetapi tidak
+    tertulis di arsip beserta nilai dan keputusannya **gagal** (`TestLaporanArsipMedanTanpaKolomBerkasCSV`).
+    **AC 59**: **nol medan yang belum diputuskan** sebelum pekerjaan dinyatakan selesai — setiap medan
+    berkolom, disalin (`SuggestList` → `HISTORYAKSEPTASIPRODUCTION`), atau dibuang dengan alasan + bukti
+    XML (`backend/models/medan_abaikan_lama.json`); pemuat keluar dengan kode bukan nol hanya bila ada medan
+    `BELUM DIPUTUSKAN` atau dokumen gagal (`TestRingkasanSelesaiHanyaBilaNolGalatDanNolBelumDiputuskan`).
+    Seluruh jalur daun panduan bentuk dokumen (378 entri) sudah diputuskan (`TestPanduanBentukDokumenNolMedanBelumDiputuskan`);
+    panduan itu basi (diagram R45), jadi AC 59 atas data nyata baru dapat dipastikan pada uji-kering
+    pemuat (urutan F7 langkah 2, `MODUL.md` bab *Migrasi*) — tetap 🟡, penahannya kini F7/K11, bukan F3.
 
 ### Keamanan
 

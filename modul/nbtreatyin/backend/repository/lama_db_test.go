@@ -117,6 +117,71 @@ func TestPemuatLamaMenulisLewatAntarmukaSama(t *testing.T) { // AC 21, 22, 55, 5
 	}
 }
 
+// dokumenUjiLamaUsulan - dokumen lama dengan dua catatan SuggestList (F3):
+// baris pertama tanpa OperatorID (AKSES_LOGIN ditulis NULL, tidak dikarang).
+const dokumenUjiLamaUsulan = `{
+ "pxObjClass": "ASM-FW-GISFW-Data-PolicyTreatyIn",
+ "PolicyNo": "UJI-QP.T1.10.2017.90003",
+ "StartDate": "20171001",
+ "QuotationData": {"ProportionalType": "Proportional", "BusinessFac": "T", "BusinessCode": "UJI-B01"},
+ "SuggestList": [
+  {"Date": "20171002T020000.000 GMT", "IsApproved": "1", "OperatorName": "UJI-PENGGUNA A", "Suggest": "UJI-catatan satu"},
+  {"Date": "20171003T100000.000 GMT", "IsApproved": "0", "OperatorName": "UJI-PENGGUNA B", "Suggest": "UJI-catatan dua", "OperatorID": "UJI-AKUN-B"}
+ ]
+}`
+
+// F3 (WO 04-10-2026): SuggestList dokumen lama disalin ke riwayat produksi
+// lewat `CatatUsulan` jalur biasa, dengan penjaga dobel menurut IDPEGA -
+// salinan kedua (pemuat diulang) tidak menggandakan baris. Nilai harapan dari
+// `SaveViewSuggest` langkah 2.1.2 (dihitung tangan, lihat models
+// TestSuggestListLamaDisalinMenurutSaveViewSuggest), dibaca LANGSUNG dari kolom.
+func TestPemuatLamaMenyalinSuggestListSekaliMenurutIDPega(t *testing.T) {
+	sqlDB, skema, ctx, d := pasang(t)
+	g := repository.Baru(d)
+	b := models.BarisJSONPolis{IDPega: "ASM-FW-GISFW-WORK-NB UJI-990003", NoPolis: "UJI-QP.T1.10.2017.90003",
+		ProdKe: "0", DataJSON: []byte(dokumenUjiLamaUsulan)}
+	t.Cleanup(func() {
+		_, _ = sqlDB.ExecContext(ctx, fmt.Sprintf(`DELETE FROM %s.HISTORYAKSEPTASIPRODUCTION WHERE IDPEGA = :1`, skema), b.IDPega)
+	})
+	h := muatLama(t, ctx, d, g, b)
+	for i, harapDisalin := range []bool{true, false} {
+		var disalin bool
+		if err := dalamTx(t, ctx, d, func(tx *intidb.Tx) error {
+			var err error
+			disalin, err = g.SalinUsulanLama(ctx, tx, b.IDPega, h.Usulan)
+			return err
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if disalin != harapDisalin {
+			t.Errorf("salinan ke-%d: disalin %v, harap %v (penjaga dobel IDPEGA)", i+1, disalin, harapDisalin)
+		}
+	}
+	rows, err := sqlDB.QueryContext(ctx, fmt.Sprintf(`SELECT TO_CHAR(NOURUT), TYPE_POLIS, POSISI, PIC,
+	        TO_CHAR(TGL_INP, 'YYYY-MM-DD HH24:MI:SS'), TYPE, PUTARAN, APPROVAL, KETERANGAN,
+	        NVL(AKSES_LOGIN, '<NULL>'), BUSINESS_CODE
+	   FROM %s.HISTORYAKSEPTASIPRODUCTION WHERE IDPEGA = :1 ORDER BY TO_NUMBER(NOURUT)`, skema), b.IDPega)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var dapat []string
+	for rows.Next() {
+		var v [11]string
+		if err := rows.Scan(&v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7], &v[8], &v[9], &v[10]); err != nil {
+			t.Fatal(err)
+		}
+		dapat = append(dapat, fmt.Sprint(v))
+	}
+	harap := []string{
+		fmt.Sprint([11]string{"1", "UJI", "Policy", "UJI-PENGGUNA A", "2017-10-02 09:00:00", "T", "2", "Accept", "UJI-catatan satu", "<NULL>", "UJI-B01"}),
+		fmt.Sprint([11]string{"2", "UJI", "Policy", "UJI-PENGGUNA B", "2017-10-03 17:00:00", "T", "2", "Reject", "UJI-catatan dua", "UJI-AKUN-B", "UJI-B01"}),
+	}
+	if fmt.Sprint(dapat) != fmt.Sprint(harap) {
+		t.Errorf("riwayat produksi\n dapat %v\n harap %v", dapat, harap)
+	}
+}
+
 func TestPemuatLamaNonProporsionalBersarang(t *testing.T) { // AC 50, 53
 	_, _, ctx, d := pasang(t)
 	g := repository.Baru(d)
