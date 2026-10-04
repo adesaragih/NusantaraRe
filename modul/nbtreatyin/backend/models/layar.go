@@ -10,7 +10,10 @@ package models
 // `DataTransform/DeptHeadTreatyIn_UW_postDT`, `DataTransform/
 // AddToListCommentsPolicyTreatyIn_DT` - INVENTARIS-XML.md bab 5 dan 7.
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
 // ---------------------------------------------------------------- medan wajib
 
@@ -298,7 +301,7 @@ func GabungMasukanLayar(h, masuk *Halaman, posisi string, tempat map[string]bool
 	}
 	if SpreadingDariLayar(h, posisi) { // nonprop_layar.go
 		if b, ada := masuk.Daftar[DaftarSpreading]; ada {
-			h.SetelDaftar(DaftarSpreading, salinBaris(b))
+			p.Spreading = gabungSpreading(h, b)
 		}
 	}
 	if v, ada := masuk.Nilai[jalurTanggalProduksi]; ada && TanggalProduksiTampil(h, tempat) {
@@ -309,11 +312,89 @@ func GabungMasukanLayar(h, masuk *Halaman, posisi string, tempat map[string]bool
 
 // PemicuLayar - action set sel layar yang DIPICU perubahan kiriman (nilai
 // kiriman yang diterima berbeda dari halaman server), diputar ulang di server
-// oleh `TerapkanPemicu` sesudah medan turunan dihitung.
+// oleh `TerapkanPemicu` sesudah medan turunan dihitung (W5 audit silang P3:
+// kolom hanya-baca daftar tidak pernah diterima dari layar).
 type PemicuLayar struct {
 	// Spreading - sel `.SharePercentage` / `.ClaimPercentage` grid spreading
-	// berubah, atau baris dihapus: refresh `CountSpreading_Act`.
+	// berubah, baris baru membawa %Share, atau baris dihapus: refresh
+	// `CountSpreading_Act`.
 	Spreading bool
+}
+
+// kolomHitungSpreading - kolom `Read-only` grid spreading yang hanya ditulis
+// `CountSpreading_Act` langkah 4.1 (sel C[2.3]/C[2.5] `DetailPolicyTreatyIn` S30,
+// `SpreadingRiskList`, `DetailDeptHeadTreatyIn_UW` S96).
+var kolomHitungSpreading = []string{"PremiumSpreaded", "ClaimSpreaded"}
+
+// gabungSpreading menerima baris grid spreading kiriman layar `kiriman`
+// (Add/Delete, sel `.TreatyType` / `.SharePercentage` / `.ClaimPercentage`)
+// TANPA kolom hanya-baca-nya, dan menjawab apakah `CountSpreading_Act` terpicu.
+//
+//   - terpicu (sel %Share / %Share Claim berubah dibanding baris server di
+//     urutan yang sama, baris baru membawa %Share, atau baris dihapus - urutan
+//     bergeser): kolom hanya-baca dikosongkan, `TerapkanPemicu` menghitungnya
+//     (langkah 4.1 seluruh baris);
+//   - tidak terpicu (hanya `.TreatyType` berubah, atau baris baru tanpa
+//     %Share): kolom hanya-baca = nilai server di urutan yang sama; baris baru
+//     kosong - di Pega pun baris itu kosong sampai refresh berikutnya.
+//
+// ⚠️ `[penyesuaian sadar]` Baris yang dihapus TANPA perubahan %Share dihitung
+// ulang: baris tak berkunci, nilai server tidak dapat dipasangkan lagi
+// menurut urutan. Hasilnya sama dengan nilai server selama NetPremium / klaim
+// belum berubah sejak refresh terakhir.
+func gabungSpreading(h *Halaman, kiriman []Baris) bool {
+	lama := h.AmbilDaftar(DaftarSpreading)
+	baru := salinBaris(kiriman)
+	terpicu := len(baru) < len(lama)
+	for i, b := range baru {
+		for _, k := range kolomHitungSpreading {
+			delete(b, k)
+		}
+		if i < len(lama) {
+			terpicu = terpicu || nilaiBerubah(lama[i]["SharePercentage"], b["SharePercentage"]) ||
+				nilaiBerubah(lama[i]["ClaimPercentage"], b["ClaimPercentage"])
+		} else {
+			terpicu = terpicu || b["SharePercentage"] != "" || b["ClaimPercentage"] != ""
+		}
+	}
+	if !terpicu {
+		for i := 0; i < len(baru) && i < len(lama); i++ {
+			for _, k := range kolomHitungSpreading {
+				if v, ada := lama[i][k]; ada {
+					baru[i][k] = v
+				}
+			}
+		}
+	}
+	h.SetelDaftar(DaftarSpreading, baru)
+	return terpicu
+}
+
+// nilaiBerubah - isian sel berubah = event `change` sel Pega: teks yang
+// dikirim layar berbeda dari teks yang server kirimkan (layar mengirim nilai
+// mentah apa adanya, `frontend/components/InputAngka.tsx`). Bukan pembandingan
+// dua nilai uang (spec-penyimpanan AC 25): tidak ada rumus yang bergantung
+// pada selisihnya, hanya ada/tidaknya ketikan.
+func nilaiBerubah(lama, baru string) bool {
+	return strings.TrimSpace(lama) != strings.TrimSpace(baru)
+}
+
+// TerapkanPemicu memutar ulang di server action set sel yang dipicu kiriman
+// layar (`PemicuLayar`), atas halaman yang medan turunannya sudah dihitung
+// (`services.turunkan` - NetPremium, BalanceDueTo):
+//
+//	Spreading  `CountSpreading_Act` langkah 4-5 (langkah 1-3 berlabel `//`)
+//
+// Total spreading selalu = jumlah baris (`HitungTotalSpreading`, langkah 4.2/5).
+// `sekarang` menggantikan `@CurrentDateTime()` (FillPaymentInstallment).
+func TerapkanPemicu(h *Halaman, p PemicuLayar, sekarang time.Time) error {
+	_ = sekarang
+	if p.Spreading {
+		if err := CountSpreading(h, 0); err != nil {
+			return err
+		}
+	}
+	return HitungTotalSpreading(h)
 }
 
 func salinBaris(b []Baris) []Baris {

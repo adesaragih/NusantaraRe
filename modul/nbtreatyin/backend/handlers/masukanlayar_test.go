@@ -113,3 +113,42 @@ func TestAtasanSpreadingTerkunciBilaFakultatifAtauProporsional(t *testing.T) {
 		t.Fatalf("Proporsional: grid atasan pyReadOnly, kiriman diabaikan: %v", sp)
 	}
 }
+
+// simpanOK - tombol Save admin; kode 200 diharapkan.
+func (u *uji) simpanOK(id string, h *models.Halaman) {
+	u.t.Helper()
+	if kode, isi := u.simpan(id, h); kode != http.StatusOK {
+		u.t.Fatalf("simpan: %d %s", kode, isi)
+	}
+}
+
+// W5 - kolom `.PremiumSpreaded` / `.ClaimSpreaded` (sel `Read-only`
+// `DetailPolicyTreatyIn` S30) tidak pernah diterima dari layar: ditulis
+// `CountSpreading_Act` langkah 4.1 di server bila sel %Share memicunya, selain
+// itu nilai tersimpan bertahan. Hitung tangan: halamanLengkap -> CountNetPremi_act
+// langkah 4: NetPremium = (1000 - 0) + (0 - 0) - 0 - 0 - 0 - 0 = 1000;
+// 1000 x @divide(60,100,10) = 600; klaim (0 + 0 - 0) x 60% = 0.
+func TestKolomHanyaBacaSpreadingTidakDariLayar(t *testing.T) {
+	u := baru(t)
+	id := u.buat()
+	h := halamanLengkap("1")
+	h.SetelDaftar(models.DaftarSpreading, []models.Baris{
+		{"TreatyType": "UJI-A", "SharePercentage": "60", "ClaimPercentage": "60", "PremiumSpreaded": "999999", "ClaimSpreaded": "999999"},
+	})
+	u.simpanOK(id, h)
+	sp := u.g.Halaman[id].AmbilDaftar(models.DaftarSpreading)
+	if len(sp) != 1 {
+		t.Fatalf("SpreadingRiskList %v", sp)
+	}
+	angkaSamaTeks(t, "PremiumSpreaded (Save pertama)", sp[0]["PremiumSpreaded"], "600")
+	angkaSamaTeks(t, "ClaimSpreaded (Save pertama)", sp[0]["ClaimSpreaded"], "0")
+
+	// %Share tetap, kolom hanya-baca dipalsukan: nilai server bertahan.
+	h.SetelDaftar(models.DaftarSpreading, []models.Baris{
+		{"TreatyType": "UJI-A", "SharePercentage": "60", "ClaimPercentage": "60", "PremiumSpreaded": "1", "ClaimSpreaded": "1"},
+	})
+	u.simpanOK(id, h)
+	sp = u.g.Halaman[id].AmbilDaftar(models.DaftarSpreading)
+	angkaSamaTeks(t, "PremiumSpreaded (Save kedua)", sp[0]["PremiumSpreaded"], "600")
+	angkaSamaTeks(t, "ClaimSpreaded (Save kedua)", sp[0]["ClaimSpreaded"], "0")
+}

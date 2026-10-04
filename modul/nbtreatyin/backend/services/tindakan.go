@@ -47,7 +47,10 @@ func (l *Layanan) kerjakan(ctx context.Context, p inti.Pelaku, id string, masuk 
 	// `ListSuggest.ProductionDate` hanya diterima bila tampil bagi pelaku
 	// (tempat berperan tiket 05; AC 52, 81).
 	// Pemetaan kosong (K12, K16) = tempat tertunda = medan tidak diterima.
-	models.GabungMasukanLayar(h, masuk, k.PositionNote, tempatPelaku(p))
+	pemicu, err := models.GabungMasukanLayar(h, masuk, k.PositionNote, tempatPelaku(p))
+	if err != nil {
+		return models.Kasus{}, nil, err
+	}
 	if k.PositionNote == models.PosisiAdmin {
 		// F4: pilihan Source Of Business yang dipegang layar (sumberbisnis.go).
 		if err := l.terimaSumberBisnis(ctx, h, masuk); err != nil {
@@ -56,6 +59,11 @@ func (l *Layanan) kerjakan(ctx context.Context, p inti.Pelaku, id string, masuk 
 		if err := l.turunkan(ctx, h); err != nil {
 			return models.Kasus{}, nil, err
 		}
+	}
+	// W5: kolom hanya-baca daftar dari server - action set sel yang dipicu
+	// kiriman diputar ulang SESUDAH NetPremium / BalanceDueTo dihitung.
+	if err := models.TerapkanPemicu(h, pemicu, l.jam()); err != nil {
+		return models.Kasus{}, nil, err
 	}
 	return k, h, nil
 }

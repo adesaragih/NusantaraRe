@@ -18,7 +18,10 @@ package models
 //	grid `.ListInstallment` (S45 / S107): `pyEditingMode` / `pyRowEditing` `readOnly`
 //	  di kedua layar - TIDAK PERNAH diterima (W5; baris dari FillPaymentInstallment)
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestGabungMasukanDaftarMenurutGridXML(t *testing.T) {
 	kiriman := func() *Halaman {
@@ -60,4 +63,108 @@ func TestGabungMasukanDaftarMenurutGridXML(t *testing.T) {
 			t.Errorf("%s: SpreadingDariLayar %v (aksi CountSpreading terbuka)", tt.nama, got)
 		}
 	}
+}
+
+// W5 - kolom `.PremiumSpreaded` / `.ClaimSpreaded` grid spreading `Read-only`
+// (DetailPolicyTreatyIn S30 C[2.3]/C[2.5], SpreadingRiskList, DetailDeptHeadTreatyIn_UW
+// S96): nilainya TIDAK PERNAH dari layar. Ia hanya ditulis `CountSpreading_Act`
+// langkah 4.1, yang terpicu sel `.SharePercentage` / `.ClaimPercentage`
+// (change -> refresh) - selain itu nilai server (tersimpan) yang bertahan.
+//
+//	4.1  .SharePercentage = @if(.SharePercentage=="",(100/@LengthOfPageList(..)),.SharePercentage)
+//	     .ClaimPercentage = @if(.ClaimPercentage == "",.SharePercentage,.ClaimPercentage)
+//	     .PremiumSpreaded = Primary.NetPremium * @divide(.SharePercentage,100,10)
+//	     .ClaimSpreaded   = (Primary.ExcessLoss + Primary.Claim - Primary.SalvageValue)* @divide(.ClaimPercentage,100,10)
+//	4.2/5 total = jumlah keempat kolom
+//
+// Hitung tangan: NetPremium 1000, Claim 200 (ExcessLoss, SalvageValue 0).
+func TestKolomHanyaBacaSpreadingDariServer(t *testing.T) {
+	tersimpan := func() *Halaman {
+		h := HalamanBaru()
+		h.Setel("PolicyTreatyIn.NetPremium", "1000")
+		h.Setel("PolicyTreatyIn.Claim", "200")
+		h.SetelDaftar(DaftarSpreading, []Baris{
+			{"TreatyType": "UJI-A", "SharePercentage": "60", "ClaimPercentage": "60", "PremiumSpreaded": "600", "ClaimSpreaded": "120"},
+			{"TreatyType": "UJI-B", "SharePercentage": "40", "ClaimPercentage": "40", "PremiumSpreaded": "400", "ClaimSpreaded": "80"},
+		})
+		return h
+	}
+	jalankan := func(t *testing.T, baris []Baris) *Halaman {
+		t.Helper()
+		h := tersimpan()
+		m := HalamanBaru()
+		m.SetelDaftar(DaftarSpreading, baris)
+		p, err := GabungMasukanLayar(h, m, PosisiAdmin, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := TerapkanPemicu(h, p, time.Date(2026, 10, 3, 0, 0, 0, 0, time.UTC)); err != nil {
+			t.Fatal(err)
+		}
+		return h
+	}
+	cek := func(t *testing.T, h *Halaman, harap [][2]string, total [4]string) {
+		t.Helper()
+		b := h.AmbilDaftar(DaftarSpreading)
+		if len(b) != len(harap) {
+			t.Fatalf("%d baris, harap %d: %v", len(b), len(harap), b)
+		}
+		for i, w := range harap {
+			if !samaNilai(b[i]["PremiumSpreaded"], w[0]) || !samaNilai(b[i]["ClaimSpreaded"], w[1]) {
+				t.Errorf("baris %d: Premium/ClaimSpreaded %q/%q, harap %q/%q", i+1, b[i]["PremiumSpreaded"], b[i]["ClaimSpreaded"], w[0], w[1])
+			}
+		}
+		for i, j := range []string{"TotalSharePercentagePremium", "TotalPremium", "TotalSharePercentageClaim", "TotalClaim"} {
+			if got := h.Ambil("PolicyTreatyIn." + j); !samaNilai(got, total[i]) {
+				t.Errorf("%s = %q, harap %s", j, got, total[i])
+			}
+		}
+	}
+	t.Run("kolom hanya-baca palsu, %Share tetap: nilai tersimpan", func(t *testing.T) {
+		h := jalankan(t, []Baris{
+			{"TreatyType": "UJI-A", "SharePercentage": "60", "ClaimPercentage": "60", "PremiumSpreaded": "999", "ClaimSpreaded": "999"},
+			{"TreatyType": "UJI-C", "SharePercentage": "40", "ClaimPercentage": "40", "PremiumSpreaded": "999"},
+		})
+		cek(t, h, [][2]string{{"600", "120"}, {"400", "80"}}, [4]string{"100", "1000", "100", "200"})
+		if got := h.AmbilDaftar(DaftarSpreading)[1]["TreatyType"]; got != "UJI-C" {
+			t.Errorf("sel .TreatyType terbuka: %q", got)
+		}
+	})
+	t.Run("%Share berubah: CountSpreading_Act 4.1 seluruh baris", func(t *testing.T) {
+		h := jalankan(t, []Baris{
+			{"TreatyType": "UJI-A", "SharePercentage": "60", "ClaimPercentage": "60", "PremiumSpreaded": "999"},
+			{"TreatyType": "UJI-B", "SharePercentage": "50", "ClaimPercentage": "40", "PremiumSpreaded": "999"},
+		})
+		cek(t, h, [][2]string{{"600", "120"}, {"500", "80"}}, [4]string{"110", "1100", "100", "200"})
+	})
+	t.Run("Add tanpa %Share: tidak ada refresh, baris baru kosong", func(t *testing.T) {
+		h := jalankan(t, []Baris{
+			{"TreatyType": "UJI-A", "SharePercentage": "60", "ClaimPercentage": "60"},
+			{"TreatyType": "UJI-B", "SharePercentage": "40", "ClaimPercentage": "40"},
+			{"TreatyType": "UJI-C", "PremiumSpreaded": "999"},
+		})
+		cek(t, h, [][2]string{{"600", "120"}, {"400", "80"}, {"", ""}}, [4]string{"100", "1000", "100", "200"})
+	})
+	t.Run("Add dengan %Share: 4.1 mengisi %Share Claim kosong", func(t *testing.T) {
+		h := jalankan(t, []Baris{
+			{"TreatyType": "UJI-A", "SharePercentage": "60", "ClaimPercentage": "60"},
+			{"TreatyType": "UJI-B", "SharePercentage": "40", "ClaimPercentage": "40"},
+			{"TreatyType": "UJI-C", "SharePercentage": "10"},
+		})
+		cek(t, h, [][2]string{{"600", "120"}, {"400", "80"}, {"100", "20"}}, [4]string{"110", "1100", "110", "220"})
+	})
+	t.Run("Delete: baris bergeser, dihitung ulang", func(t *testing.T) {
+		h := jalankan(t, []Baris{{"TreatyType": "UJI-B", "SharePercentage": "40", "ClaimPercentage": "40", "PremiumSpreaded": "999"}})
+		cek(t, h, [][2]string{{"400", "80"}}, [4]string{"40", "400", "40", "80"})
+	})
+}
+
+// samaNilai - dua teks angka sama nilainya ("" hanya sama dengan "").
+func samaNilai(a, b string) bool {
+	if a == "" || b == "" {
+		return a == b
+	}
+	x, err1 := AngkaTeks("a", a)
+	y, err2 := AngkaTeks("b", b)
+	return err1 == nil && err2 == nil && x.Cmp(y) == 0
 }
