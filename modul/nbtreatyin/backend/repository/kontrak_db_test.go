@@ -221,3 +221,84 @@ func TestDetailKontrakMengisiKe33MedanRD(t *testing.T) {
 		t.Fatalf("komisi kontrak %+v", k)
 	}
 }
+
+// Grid AKTIF popup `Section/BusinessAndSOBList` = RD `BrowseTreatyJoinEDM`
+// (audit silang P3 W1): filter H `.PROPORTIONTYPE = Param.PROPORTIONALTYPE`
+// tanpa `pyUseNullIfEmpty` (kosong -> diabaikan) dan tanpa `pyCaseInsensitive`,
+// urut `.TREATYID` ASC (`pySortOrder 1`), `pyMaxRecords` 500.
+func TestDaftarBisnisRDBrowseTreatyJoinEDM(t *testing.T) {
+	sqlDB, skema, ctx, d := pasang(t)
+	g := repository.Baru(d)
+	if jenisObjekView(t, ctx, sqlDB, skema) != "" {
+		// view sungguhan: setiap baris berjenis proporsi itu, jumlah = min(cacah, 500).
+		for _, jenis := range []string{"Proportional", "NonProportional", ""} {
+			var cacah int
+			q := fmt.Sprintf(`SELECT COUNT(*) FROM %s.%s`, skema, viewKontrak)
+			var args []any
+			if jenis != "" {
+				q += ` WHERE PROPORTIONTYPE = :1`
+				args = append(args, jenis)
+			}
+			if err := sqlDB.QueryRowContext(ctx, q, args...).Scan(&cacah); err != nil {
+				t.Fatal(err)
+			}
+			b, err := g.DaftarBisnis(ctx, models.SaringanBisnis{JenisProporsi: jenis})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(b) != min(cacah, 500) {
+				t.Errorf("jenis %q: %d baris, harap min(%d, 500)", jenis, len(b), cacah)
+			}
+			for _, x := range b {
+				if jenis != "" && x["PROPORTIONTYPE"] != jenis {
+					t.Errorf("jenis %q: baris %s berjenis %q", jenis, x["ID"], x["PROPORTIONTYPE"])
+				}
+			}
+		}
+		return
+	}
+	pasangTiruanView(t, ctx, sqlDB, skema)
+	sisip := func(id, treaty, jenis string) {
+		t.Helper()
+		if _, err := sqlDB.ExecContext(ctx, fmt.Sprintf(`INSERT INTO %s.%s (ID, TREATYID, PROPORTIONTYPE) VALUES (:1, :2, :3)`,
+			skema, viewKontrak), id, treaty, sql.NullString{String: jenis, Valid: jenis != ""}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	sisip("UJI-B-1", "UJI-T-B", "Proportional")
+	sisip("UJI-B-2", "UJI-T-A", "Proportional")
+	sisip("UJI-B-3", "UJI-T-C", "NonProportional")
+	sisip("UJI-B-4", "UJI-T-D", "")
+	idDari := func(jenis string) []string {
+		t.Helper()
+		b, err := g.DaftarBisnis(ctx, models.SaringanBisnis{JenisProporsi: jenis})
+		if err != nil {
+			t.Fatal(err)
+		}
+		out := []string{}
+		for _, x := range b {
+			out = append(out, x["ID"])
+		}
+		return out
+	}
+	for jenis, harap := range map[string][]string{
+		"Proportional":    {"UJI-B-2", "UJI-B-1"},
+		"NonProportional": {"UJI-B-3"},
+		"":                {"UJI-B-2", "UJI-B-1", "UJI-B-3", "UJI-B-4"},
+		"proportional":    {},
+	} {
+		if got := idDari(jenis); strings.Join(got, ",") != strings.Join(harap, ",") {
+			t.Errorf("jenis %q: %v, harap %v", jenis, got, harap)
+		}
+	}
+	// pyMaxRecords 500: 502 baris Proportional -> 500 pertama menurut TREATYID.
+	if _, err := sqlDB.ExecContext(ctx, fmt.Sprintf(`INSERT INTO %s.%s (ID, TREATYID, PROPORTIONTYPE)
+		SELECT 'UJI-C-' || LPAD(LEVEL, 3, '0'), 'UJI-T-Z' || LPAD(LEVEL, 3, '0'), 'Proportional' FROM DUAL CONNECT BY LEVEL <= 500`,
+		skema, viewKontrak)); err != nil {
+		t.Fatal(err)
+	}
+	got := idDari("Proportional")
+	if len(got) != 500 || got[0] != "UJI-B-2" || got[1] != "UJI-B-1" || got[499] != "UJI-C-498" {
+		t.Fatalf("batas 500: %d baris, awal %v, akhir %q", len(got), got[:min(2, len(got))], got[len(got)-1])
+	}
+}

@@ -42,7 +42,7 @@ type Gudang interface {
 
 	DetailKontrak(ctx context.Context, id string) (models.BarisKontrak, error)
 	KomisiKontrak(ctx context.Context, treatyID string) ([]models.BarisKontrak, error)
-	DaftarDetailKontrak(ctx context.Context, s repository.SaringanDetail) ([]models.BarisKontrak, error)
+	DaftarBisnis(ctx context.Context, s models.SaringanBisnis) ([]models.BarisKontrak, error)
 	IDMataUangDariNama(ctx context.Context, nama string) (string, error)
 	NamaMataUang(ctx context.Context, id string) (string, error)
 	OJKGrupTreaty(ctx context.Context, grupID string) (string, error)

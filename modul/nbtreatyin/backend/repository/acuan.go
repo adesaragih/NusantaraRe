@@ -29,8 +29,8 @@ import (
 	"nusantarare/modul/nbtreatyin/backend/models"
 )
 
-// KolomRDDetail - 33 kolom RD `BrowseTreatyJoinEDM` / `BrowseTreatyInDetail`
-// (urutan RD), ditambah dua kolom view yang dibaca halaman master.
+// KolomRDDetail - 33 kolom RD `BrowseTreatyJoinEDM` (`pyUIFields`, urutan RD) -
+// dibaca pilih bisnis (`DetailKontrak`) dan grid popup (`DaftarBisnis`).
 var KolomRDDetail = []string{
 	"ID", "TREATYID", "TREATYCONTRACTNAME", "PROPORTIONTYPE", "TREATYTYPE", "TREATYGROUP",
 	"TREATYGROUPID", "CLASSOFBUSINESSID", "CLASSOFBUSINESS", "LIMITCURRENCY", "LIMITVALUE",
@@ -43,8 +43,9 @@ var KolomRDDetail = []string{
 // kolomMasterView - kolom view untuk halaman TreatyIn (`TerapkanMasterKontrak`).
 var kolomMasterView = []string{"COMMENCEMENT", "TERMINATION"}
 
-// batasDaftarDetail - baris terbanyak popup pilih bisnis.
-const batasDaftarDetail = 500
+// batasDaftarBisnis - baris terbanyak popup pilih bisnis: RD `BrowseTreatyJoinEDM`
+// `pyContent/pyMaxRecords` 500.
+const batasDaftarBisnis = 500
 
 // tipeKolom - cache tipe kolom per objek (nama berskema).
 var tipeKolom sync.Map // map[string]map[string]string
@@ -217,37 +218,38 @@ func (g *Gudang) KomisiKontrak(ctx context.Context, treatyID string) ([]models.B
 	return out, rows.Err()
 }
 
-// SaringanDetail - parameter RD `BrowseTreatyInDetail`; kosong = diabaikan
-// (aturan filter RD Pega).
-type SaringanDetail struct {
-	// TreatyID - filter I `.TREATYID Contains Param.TREATYID`.
-	TreatyID string
-}
-
-// DaftarDetailKontrak = RD `BrowseTreatyInDetail` (kelas
-// `ASM-FW-GISFW-Int-TREATYINDETAIL`, tabel TREATYINDETAIL) - grid popup
-// `Section/BusinessAndSOBList`. Popup tidak mengirim parameter, sehingga
-// filter A-L RD diabaikan; yang tersisa satu saringan teks nomor kontrak.
-func (g *Gudang) DaftarDetailKontrak(ctx context.Context, s SaringanDetail) ([]models.BarisKontrak, error) {
-	tipe, err := g.tipeKolomObjek(ctx, tabelDetail)
+// DaftarBisnis = RD `BrowseTreatyJoinEDM` (kelas
+// `ASM-FW-GISFW-Int-TREATYINDETAILJOINEDM`, view TREATYINDETAILJOINEDM) - grid
+// AKTIF popup `Section/BusinessAndSOBList` (`pyGridProps/pyRDName`). Grid lama
+// RD `BrowseTreatyInDetail` (tabel TREATYINDETAIL) ber-`pyContainerVisibleWhen
+// 1=2` ("Hidden the old one, now use treatyindetail join edm") - tidak dibaca.
+//
+//   - WHERE: grid hanya mengisi `pyRDParams` PROPORTIONALTYPE
+//     (`models.SaringanBisnis`); filter H `.PROPORTIONTYPE =
+//     Param.PROPORTIONALTYPE` tanpa `pyUseNullIfEmpty` (= false) -> kosong
+//     diabaikan; tanpa `pyCaseInsensitive` -> `=` apa adanya. Filter lain
+//     berparameter kosong -> diabaikan.
+//   - ORDER BY: `pyUIFields` `.TREATYID` `pySortType ASC`, `pySortOrder 1`
+//     (satu-satunya urutan RD). `ID` hanya pemutus seri supaya hasil tetap.
+//   - batas `pyContent/pyMaxRecords` 500 (`batasDaftarBisnis`).
+func (g *Gudang) DaftarBisnis(ctx context.Context, s models.SaringanBisnis) ([]models.BarisKontrak, error) {
+	tipe, err := g.tipeKolomObjek(ctx, viewDetailGabung)
 	if err != nil {
 		return nil, err
 	}
-	nama, _ := g.nama(tabelDetail)
-	eks, ada, err := pilihKolom(tabelDetail, tipe, KolomRDDetail)
+	nama, _ := g.nama(viewDetailGabung)
+	eks, ada, err := pilihKolom(viewDetailGabung, tipe, KolomRDDetail)
 	if err != nil {
 		return nil, err
 	}
-	var q string
+	saring := ""
 	var args []any
-	if s.TreatyID != "" {
-		q = fmt.Sprintf(`SELECT %s FROM %s WHERE UPPER(TREATYID) LIKE :1 ORDER BY TREATYID, ID FETCH FIRST %d ROWS ONLY`,
-			strings.Join(eks, ", "), nama, batasDaftarDetail)
-		args = append(args, "%"+strings.ToUpper(s.TreatyID)+"%")
-	} else {
-		q = fmt.Sprintf(`SELECT %s FROM %s ORDER BY TREATYID, ID FETCH FIRST %d ROWS ONLY`,
-			strings.Join(eks, ", "), nama, batasDaftarDetail)
+	if s.JenisProporsi != "" {
+		saring = " WHERE PROPORTIONTYPE = :1"
+		args = append(args, s.JenisProporsi)
 	}
+	q := fmt.Sprintf(`SELECT %s FROM %s%s ORDER BY TREATYID, ID FETCH FIRST %d ROWS ONLY`,
+		strings.Join(eks, ", "), nama, saring, batasDaftarBisnis)
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}

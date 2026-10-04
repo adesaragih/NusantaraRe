@@ -320,10 +320,24 @@ func (g *Gudang) KomisiKontrak(_ context.Context, treatyID string) ([]models.Bar
 	return out, nil
 }
 
-func (g *Gudang) DaftarDetailKontrak(context.Context, repository.SaringanDetail) ([]models.BarisKontrak, error) {
+// DaftarBisnis - baris `Kontrak` menurut aturan yang sama dengan repository:
+// filter H `PROPORTIONTYPE = JenisProporsi` (kosong = diabaikan), urut
+// TREATYID lalu ID, paling banyak 500.
+func (g *Gudang) DaftarBisnis(_ context.Context, s models.SaringanBisnis) ([]models.BarisKontrak, error) {
 	var out []models.BarisKontrak
 	for _, b := range g.Kontrak {
-		out = append(out, b)
+		if s.JenisProporsi == "" || b["PROPORTIONTYPE"] == s.JenisProporsi {
+			out = append(out, b)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i]["TREATYID"] != out[j]["TREATYID"] {
+			return out[i]["TREATYID"] < out[j]["TREATYID"]
+		}
+		return out[i]["ID"] < out[j]["ID"]
+	})
+	if len(out) > 500 {
+		out = out[:500]
 	}
 	return out, nil
 }

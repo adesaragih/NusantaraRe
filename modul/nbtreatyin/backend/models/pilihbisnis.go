@@ -31,9 +31,31 @@ import (
 	"nusantarare/inti/backend/utils"
 )
 
-// BarisKontrak adalah satu baris view `TREATYINDETAILJOINEDM` /
-// `TREATYINDETAIL`: nilai teks per NAMA KOLOM view (ID, TREATYID, ...).
+// BarisKontrak adalah satu baris view `TREATYINDETAILJOINEDM`: nilai teks per
+// NAMA KOLOM view (ID, TREATYID, ...).
 type BarisKontrak = Baris
+
+// SaringanBisnis - parameter grid AKTIF popup `Section/BusinessAndSOBList`
+// (`pyGridProps/pyRDName` `BrowseTreatyJoinEDM`). Dari ke-13 `pyRDParams` grid
+// itu hanya `PROPORTIONALTYPE` yang berisi (`.QuotationData.ProportionalType`);
+// ke-12 lainnya kosong, sehingga filter A-G, I-L RD diabaikan.
+type SaringanBisnis struct {
+	// JenisProporsi - filter H `.PROPORTIONTYPE = Param.PROPORTIONALTYPE`
+	// (tanpa `pyUseNullIfEmpty` = false: kosong -> syarat diabaikan).
+	JenisProporsi string
+}
+
+// SaringanPopupBisnis membaca parameter grid popup dari halaman kerja: kelas
+// harness `ASM-FW-GISFW-Data-PolicyTreatyIn`, jadi `.QuotationData.ProportionalType`
+// = `PolicyTreatyIn.QuotationData.ProportionalType`.
+func SaringanPopupBisnis(h *Halaman) SaringanBisnis {
+	return SaringanBisnis{JenisProporsi: h.Ambil(HalamanPolis + ".QuotationData.ProportionalType")}
+}
+
+// TampilPilihBisnis = wadah tombol `Choose Business` `Section/DetailPolicyTreatyIn`:
+// `pyContainerVisibleWhen` `.ClaimType != 'XOL Retro'` - kebalikan persis tombol
+// `Select Source Of Business` (`.ClaimType = 'XOL Retro'`).
+func TampilPilihBisnis(h *Halaman) bool { return !TampilPilihSumberBisnis(h) }
 
 // TerapkanDetailKontrak = `InputPolicyTreatyInDetail_preACT` langkah 3, 5, 6, 11
 // atas baris pertama hasil RD `BrowseTreatyJoinEDM` (filter `.ID = Param.ID`).
