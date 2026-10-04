@@ -131,8 +131,12 @@ func TestHitungHanyaAksiSelTerbukaDiLayarPosisi(t *testing.T) {
 	u := baru(t)
 	id := u.buat()
 	h := halamanLengkap("")
-	for aksi, harap := range map[string]int{"CountOGPONP": http.StatusOK, "CountNetPremi": http.StatusConflict,
-		"CountRiCommOgp": http.StatusConflict, "CountOverridingCommOnp": http.StatusConflict} {
+	// Grid S45 `.ListInstallment` pyEditingMode readOnly: sel ber-aksi SetValidateInstallment_Act /
+	// CountPctInstallment_Act tidak pernah terpicu (SetValidateInstallment tetap dijalankan
+	// CountOGPONP_Act langkah 10).
+	for aksi, harap := range map[string]int{"CountOGPONP": http.StatusOK, "FillPaymentInstallment": http.StatusOK,
+		"CountNetPremi": http.StatusConflict, "CountRiCommOgp": http.StatusConflict, "CountOverridingCommOnp": http.StatusConflict,
+		"SetValidateInstallment": http.StatusConflict, "CountPctInstallment": http.StatusConflict} {
 		kode, isi := u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{"urutan": []map[string]string{{"aksi": aksi, "param": "Amount"}}, "halaman": h})
 		if kode != harap {
 			t.Errorf("admin %s: %d, harap %d (%s)", aksi, kode, harap, isi)

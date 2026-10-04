@@ -12,8 +12,10 @@ package services
 //	       (CalculatePremi_Act), sel uang (CountOGPONP_Act, CountResult1_Act,
 //	       CountResult2Ogp_act, CountResult1Onp_Act, CountResult2Onp_act), grid
 //	       spreading (CountSpreading_Act), Installment (FillPaymentInstallment),
-//	       grid angsuran (SetValidateInstallment_Act, CountPctInstallment_Act),
-//	       radio Approval dan tombol Submit (SetDueTo_act).
+//	       radio Approval dan tombol Submit (SetDueTo_act). Grid S45
+//	       `.ListInstallment` ber-pyEditingMode/pyRowEditing `readOnly` (kedua layar):
+//	       sel ber-aksi SetValidateInstallment_Act / CountPctInstallment_Act di
+//	       dalamnya tidak pernah terpicu.
 //	Atasan `Section/DetailDeptHeadTreatyIn_UW`: SELURUH sel ber-refresh
 //	       `pyReadOnly` (CountNetPremi_act, CountRiCommOgp_act, CountRiCommOnp_act,
 //	       CountOverridingCommOgp_Act, CountOverridingCommOnp_Act, ...) - tidak
@@ -31,8 +33,7 @@ var aksiAdmin = map[string]bool{
 	"SystemSetOneYear": true, "RemoveTypeTax": true, "ProtectDate": true, "CheckDataMkt": true,
 	"SetCurrency": true, "TreatyEnableDisableInput": true, "CalculatePremi": true,
 	"CountOGPONP": true, "CountResult1": true, "CountResult2Ogp": true, "CountResult1Onp": true,
-	"CountResult2Onp": true, "CountSpreading": true, "FillPaymentInstallment": true,
-	"SetValidateInstallment": true, "CountPctInstallment": true, "SetDueTo": true,
+	"CountResult2Onp": true, "CountSpreading": true, "FillPaymentInstallment": true, "SetDueTo": true,
 }
 
 var aksiAtasan = map[string]bool{"SetDueTo": true}
