@@ -11,7 +11,7 @@ import { useState } from 'react'
 import { Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { useAmbil } from '../ambil'
 import { buatKasus, daftarKasus } from '../api'
-import { JUDUL, JUDUL_POSISI, KOLOM_PORTAL, PORTAL, TOMBOL } from '../labels'
+import { JUDUL_POSISI, KOLOM_PORTAL, PORTAL, TOMBOL } from '../labels'
 
 export default function PortalNBTreatyIn({ onBuka, pesan }: { onBuka: (id: string) => void; pesan?: string }) {
   const [cari, setCari] = useState('')
@@ -37,7 +37,7 @@ export default function PortalNBTreatyIn({ onBuka, pesan }: { onBuka: (id: strin
   return (
     <div className="inbox">
       <header className="inbox__kepala">
-        <h2 className="inbox__judul">{JUDUL.portal}</h2>
+        <h2 className="inbox__judul">{PORTAL.judul}</h2>
         <button type="button" className="btn btn--primary" disabled={sibuk} onClick={() => void buat()}>
           {TOMBOL.create}
         </button>
@@ -53,7 +53,7 @@ export default function PortalNBTreatyIn({ onBuka, pesan }: { onBuka: (id: strin
         <input
           className="field__input"
           aria-label={PORTAL.filter}
-          placeholder={PORTAL.filter}
+          placeholder={PORTAL.placeholder}
           value={cari}
           onChange={(e) => setCari(e.target.value)}
           // `.FilterTermForOpportunity` esc -> setValue "" -> refresh (enter = submit form)

@@ -120,9 +120,10 @@ export const MEDAN_ADMIN_UMUM: Medan[] = [
   { jalur: POLIS + 'QuotationData.IsSurveyReport', label: 'Survey Report', jenis: 'teks', tampil: bukanNonProp },
   { jalur: POLIS + 'StatementType', label: 'Statement Type', jenis: 'teks' },
   { jalur: POLIS + 'QuotationData.NoOfferSlip', label: 'No Offer Slip', jenis: 'area' },
-  { jalur: POLIS + 'FlagRetroTreaty', label: 'FlagRetroTreaty', jenis: 'centang', tampil: bukanXOLRetro },
+  // pyCheckboxCaption sel `.FlagRetroTreaty` / `.FlagPPH` (label sel = teks bawaan "Checkbox")
+  { jalur: POLIS + 'FlagRetroTreaty', label: 'Overiding Commision', jenis: 'centang', tampil: bukanXOLRetro },
   // change -> postValue -> runActivity RemoveTypeTax_ACT
-  { jalur: POLIS + 'FlagPPH', label: 'FlagPPH', jenis: 'centang', tampil: bukanXOLRetro, aksi: [{ aksi: 'RemoveTypeTax' }] },
+  { jalur: POLIS + 'FlagPPH', label: 'With Tax', jenis: 'centang', tampil: bukanXOLRetro, aksi: [{ aksi: 'RemoveTypeTax' }] },
   {
     jalur: POLIS + 'TypeTax',
     label: 'Type Tax',
@@ -139,8 +140,9 @@ export const MEDAN_ADMIN_UMUM: Medan[] = [
   { jalur: POLIS + 'TreatyType', label: 'Treaty Type', jenis: 'tampil' },
   { jalur: POLIS + 'TreatyYear', label: 'UW Year', jenis: 'tampil', tampil: bukanNonPropBaru },
   // pyFormatType number tanpa desimal (mode baca); pyShowReadonlyFormatting false
-  { jalur: POLIS + 'Quartal', label: '.Quartal', jenis: 'teks', tampil: proporsionalQD, sajian: UANG },
-  { jalur: POLIS + 'YearOfQuartal', label: 'YearOfQuartal', jenis: 'teks', tampil: proporsionalQD },
+  // sel tanpa label - LABEL tampil di depannya: "Q" [Quartal] "/" [YearOfQuartal] "U/Y" [TreatyYear]
+  { jalur: POLIS + 'Quartal', label: 'Q', jenis: 'teks', tampil: proporsionalQD, sajian: UANG },
+  { jalur: POLIS + 'YearOfQuartal', label: '/', jenis: 'teks', tampil: proporsionalQD },
   // sel `.TreatyYear` kedua, sesudah label "U/Y" (tampil ALWAYS)
   { jalur: POLIS + 'TreatyYear', label: 'U/Y', jenis: 'tampil', tampil: proporsionalQD },
   // change -> postValue -> refresh CheckDataMkt
@@ -159,7 +161,8 @@ export const MEDAN_ADMIN_UMUM: Medan[] = [
   ...dalamWadah(nonProporsionalQD, [
     { jalur: POLIS + 'LayerType', label: 'LayerType', jenis: 'tampil' },
     { jalur: POLIS + 'Layer', label: 'Layer', jenis: 'tampil' },
-    { jalur: POLIS + 'LayerPartType', label: 'LayerPartType', jenis: 'tampil' },
+    // LABEL "Of" di depan sel (pyVisible ALWAYS)
+    { jalur: POLIS + 'LayerPartType', label: 'Of', jenis: 'tampil' },
     { jalur: POLIS + 'LayerPart', label: 'LayerPart', jenis: 'tampil' },
   ]),
   { jalur: POLIS + 'Remark', label: 'Remark', jenis: 'area' },
@@ -250,7 +253,7 @@ export const MEDAN_ATASAN_UMUM: Medan[] = [
   { jalur: POLIS + 'DueTo', label: 'Due To Us / You', jenis: 'tampil' },
   { jalur: POLIS + 'QuotationData.IsSurveyReport', label: 'Survey Report', jenis: 'tampil', tampil: bukanNonProp },
   { jalur: POLIS + 'StatementType', label: 'Statement Type', jenis: 'tampil' },
-  { jalur: POLIS + 'FlagPPH', label: 'FlagPPH', jenis: 'centang', kunci: true },
+  { jalur: POLIS + 'FlagPPH', label: 'Include Tax', jenis: 'centang', kunci: true },
   { jalur: POLIS + 'TypeTax', label: 'Type Tax', jenis: 'tampil', tampil: tidakKosong(POLIS + 'TypeTax') },
   { jalur: POLIS + 'QuotationData.NoOfferSlip', label: 'No Offer Slip', jenis: 'tampil' },
   { jalur: POLIS + 'ShareCurrency', label: 'RNM Share', jenis: 'tampil' },
@@ -262,8 +265,8 @@ export const MEDAN_ATASAN_UMUM: Medan[] = [
   { jalur: POLIS + 'InsuredName', label: 'InsuredName', jenis: 'tampil' },
   { jalur: POLIS + 'TreatyType', label: 'Treaty Type', jenis: 'tampil' },
   { jalur: POLIS + 'TreatyYear', label: 'UW Year', jenis: 'tampil', tampil: bukanNonPropBaru },
-  { jalur: POLIS + 'Quartal', label: '.Quartal', jenis: 'tampil', tampil: proporsionalQD, sajian: BULAT_POLOS },
-  { jalur: POLIS + 'YearOfQuartal', label: 'YearOfQuartal', jenis: 'tampil', tampil: proporsionalQD, sajian: BULAT_POLOS },
+  { jalur: POLIS + 'Quartal', label: 'Q', jenis: 'tampil', tampil: proporsionalQD, sajian: BULAT_POLOS },
+  { jalur: POLIS + 'YearOfQuartal', label: '/', jenis: 'tampil', tampil: proporsionalQD, sajian: BULAT_POLOS },
   { jalur: POLIS + 'TreatyYear', label: 'U/Y', jenis: 'tampil', tampil: proporsionalQD },
   {
     jalur: POLIS + 'MarketingOfficer',
@@ -278,7 +281,8 @@ export const MEDAN_ATASAN_UMUM: Medan[] = [
   ...dalamWadah(nonProporsionalQD, [
     { jalur: POLIS + 'LayerType', label: 'LayerType', jenis: 'tampil' },
     { jalur: POLIS + 'Layer', label: 'Layer', jenis: 'tampil' },
-    { jalur: POLIS + 'LayerPartType', label: 'LayerPartType', jenis: 'tampil' },
+    // LABEL "Of" di depan sel (pyVisible ALWAYS)
+    { jalur: POLIS + 'LayerPartType', label: 'Of', jenis: 'tampil' },
     { jalur: POLIS + 'LayerPart', label: 'LayerPart', jenis: 'tampil' },
   ]),
   { jalur: POLIS + 'Remark', label: 'Remark', jenis: 'tampil' },

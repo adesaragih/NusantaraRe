@@ -165,7 +165,8 @@ export default function DetailNonProp({
                   <td>
                     {terbuka ? (
                       <select className="field__input" value={b.TreatyType ?? ''} onChange={(e) => onUbahBaris(SPREADING, i, 'TreatyType', e.target.value)}>
-                        <option value="" />
+                        {/* pyNoSelectionText */}
+                        <option value="">{TOMBOL.pilihKosong}</option>
                         {opsiSpreading.map((o) => (
                           <option key={o.nilai} value={o.nilai}>
                             {o.label}
@@ -173,7 +174,8 @@ export default function DetailNonProp({
                         ))}
                       </select>
                     ) : (
-                      (b.TreatyName ?? b.TreatyType ?? '')
+                      // dropdown ro ber-RD BrowseReinsuranceType_RD: tampil .Note dari .ID
+                      opsiSpreading.find((o) => o.nilai === b.TreatyType)?.label || b.TreatyName || b.TreatyType || ''
                     )}
                   </td>
                   {(['SharePercentage', 'PremiumSpreaded', 'ClaimPercentage', 'ClaimSpreaded'] as const).map((k) => (

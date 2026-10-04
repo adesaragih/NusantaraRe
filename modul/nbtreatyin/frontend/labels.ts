@@ -15,8 +15,10 @@ export const JUDUL = {
   deptHead: 'Acceptance by Dept. Head',
   pilihBisnis: 'Choose Business',
   sumberBisnis: 'Source Of Business',
-  tolak: 'Decline',
-  nomorPolis: 'Policy No',
+  /** FlowAction `PolicyTreatyInDeclineConfirm` pyLabel. */
+  tolak: 'Confirm Decline NB',
+  /** FlowAction `ShowPolicyNoTreaty` pyLabel. */
+  nomorPolis: 'Show PolicyNo',
   riwayat: 'History',
   catatan: 'Suggest',
 } as const
@@ -43,21 +45,28 @@ export const TOMBOL = {
   delete: 'Delete',
   enableDisable: 'Enable / Disable Input Type',
   kembali: 'Kembali',
+  /** pyNoSelectionText dropdown `.TreatyType` grid spreading. */
+  pilihKosong: 'Choose',
 } as const
 
-/** Kolom daftar portal (`SFAPortal_OpportunitiesList`). */
+/** Kolom daftar portal (`SFAPortal_OpportunitiesList`, LABEL judul grid). `posisi`
+ *  dan `nopol` TIDAK ada di grid XML - temuan audit silang P3 (keputusan WO). */
 export const KOLOM_PORTAL = {
-  id: 'No',
-  bisnis: 'Business',
-  tertanggung: 'Insured',
+  id: 'Offer No',
+  bisnis: 'Group Business',
+  tertanggung: 'Insured Name',
   marketing: 'Marketing',
-  status: 'NB Status',
+  status: 'Status',
   posisi: 'Position',
   nopol: 'No Polis',
 } as const
 
 export const PORTAL = {
+  /** LABEL `SFAPortalOpportunitiesHeader` C[1.1]. */
+  judul: 'Opportunity',
+  /** `.FilterTermForOpportunity` pyLabelFor (nama aksesibel) dan pyPlaceholder. */
   filter: 'Filter Term for Opportunity',
+  placeholder: 'NB-1234 or Name',
   kosong: 'Belum ada berkas realisasi treaty yang terbuka.',
   kosongPetunjuk: 'Tombol Create membuat berkas baru di antrean admin.',
   hanyaBaca: 'Berkas ini menunggu di antrean lain atau sudah selesai - hanya-baca.',
@@ -99,44 +108,48 @@ export const BAGIAN = {
   umum: 'General',
   uang: 'Premium & Claim',
   spreading: 'Spreading Risk',
-  angsuran: 'Installment',
+  /** wadah S45 grid `.ListInstallment` (pyIncludeHeader, pyTitle). */
+  angsuran: 'Installment Data Information',
   usulan: 'Suggest',
 } as const
 
-/** Kolom grid SpreadingRiskList. */
+/** Kolom grid SpreadingRiskList - LABEL judul dan kaki grid (`SpreadingRiskList` S2,
+ *  sama di DetailPolicyTreatyIn dan DetailDeptHeadTreatyIn_UW). */
 export const KOLOM_SPREADING = {
-  treatyType: 'Treaty Type',
-  share: '%Share',
-  premium: 'Premium Spreaded',
-  claimPct: '%Share Claim',
-  claim: 'Claim Spreaded',
-  totalShare: 'Total %Share',
+  treatyType: 'Type Treaty',
+  share: '% Share',
+  premium: 'Premium',
+  claimPct: '% Share',
+  claim: 'Claim',
+  totalShare: 'Total',
   totalPremium: 'Total Premium',
   totalShareClaim: 'Total %Share Claim',
   totalClaim: 'Total Claim',
 } as const
 
-/** Kolom grid ListInstallment. */
+/** Kolom grid ListInstallment - LABEL judul grid S45. */
 export const KOLOM_ANGSURAN = {
-  no: 'Installment No',
+  no: 'No',
   dueDate: 'Due Date',
-  pct: 'Installment %',
-  premium: 'Premium',
-  total: 'Payment Total',
+  pct: '% Installment',
+  premium: 'Premium Nusantara Re',
+  total: 'Total Payment',
   installment: 'Installment',
 } as const
 
 /** Kolom grid SuggestList (ListSuggest). */
 export const KOLOM_USULAN = {
   tanggal: 'Date',
-  operator: 'Operator',
+  operator: 'PIC',
   putusan: 'Approval',
   catatan: 'Suggest',
 } as const
 
-/** `PolicyTreatyInDeclineConfirm` - hanya dua tombol di XML; kalimatnya
- *  milik label rule yang tidak terekspor. */
-export const KONFIRMASI_TOLAK = 'Decline?'
+/** LABEL (Heading 2) `Section/PolicyTreatyInDeclineConfirm` - VERBATIM. */
+export const KONFIRMASI_TOLAK = 'Are you sure you want to decline this NB'
+
+/** LABEL `Section/ShowPolicyNoTreaty_SC` di antara pyID dan PolicyNo - VERBATIM. */
+export const NOMOR_DIAKSEP = 'telah diaksep menjadi'
 
 /**
  * Label pilihan Approval. Nilai "1"/"0" VERBATIM `DecisionTable/isApproved`;

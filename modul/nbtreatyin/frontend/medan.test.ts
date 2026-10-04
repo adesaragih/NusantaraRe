@@ -39,16 +39,29 @@ describe('medan layar NB Treaty In - syarat tampil', () => {
   })
 
   it('admin FlagRetroTreaty tampil bila ClaimType != "XOL Retro" (DetailPolicyTreatyIn pyVisible)', () => {
-    expect(tampil(MEDAN_ADMIN_UMUM, {})).toContain('FlagRetroTreaty')
-    expect(tampil(MEDAN_ADMIN_UMUM, { [P + 'ClaimType']: 'XOL Retro' })).not.toContain('FlagRetroTreaty')
+    expect(tampil(MEDAN_ADMIN_UMUM, {})).toContain('Overiding Commision')
+    expect(tampil(MEDAN_ADMIN_UMUM, { [P + 'ClaimType']: 'XOL Retro' })).not.toContain('Overiding Commision')
+  })
+
+  // Audit silang P3: sel tanpa pyLabelFieldValue memakai teks yang TAMPIL di XML -
+  // pyCheckboxCaption kotak centang, LABEL "Q" / "/" / "U/Y" / "Of" di depan sel.
+  it('teks tampil XML: caption kotak centang dan LABEL pendamping sel tanpa label', () => {
+    expect(cari(MEDAN_ADMIN_UMUM, 'FlagRetroTreaty').label).toBe('Overiding Commision')
+    expect(cari(MEDAN_ADMIN_UMUM, 'FlagPPH').label).toBe('With Tax')
+    expect(cari(MEDAN_ATASAN_UMUM, 'FlagPPH').label).toBe('Include Tax')
+    for (const ms of [MEDAN_ADMIN_UMUM, MEDAN_ATASAN_UMUM]) {
+      expect(cari(ms, 'Quartal').label).toBe('Q')
+      expect(cari(ms, 'YearOfQuartal').label).toBe('/')
+      expect(cari(ms, 'LayerPartType').label).toBe('Of')
+    }
   })
 
   it('admin FlagPPH dan Type Tax di wadah ".ClaimType != XOL Retro"; Type Tax juga bila FlagPPH true', () => {
-    expect(tampil(MEDAN_ADMIN_UMUM, {})).toContain('FlagPPH')
+    expect(tampil(MEDAN_ADMIN_UMUM, {})).toContain('With Tax')
     expect(tampil(MEDAN_ADMIN_UMUM, {})).not.toContain('Type Tax')
     expect(tampil(MEDAN_ADMIN_UMUM, { [P + 'FlagPPH']: 'true' })).toContain('Type Tax')
     const retro = tampil(MEDAN_ADMIN_UMUM, { [P + 'FlagPPH']: 'true', [P + 'ClaimType']: 'XOL Retro' })
-    expect(retro).not.toContain('FlagPPH')
+    expect(retro).not.toContain('With Tax')
     expect(retro).not.toContain('Type Tax')
   })
 
@@ -59,12 +72,12 @@ describe('medan layar NB Treaty In - syarat tampil', () => {
   it('Quartal / YearOfQuartal / U/Y hanya Proportional, Layer* hanya NonProportional (wadah, kedua layar)', () => {
     for (const ms of [MEDAN_ADMIN_UMUM, MEDAN_ATASAN_UMUM]) {
       const prop = tampil(ms, { [P + 'QuotationData.ProportionalType']: 'Proportional' })
-      expect(prop).toEqual(expect.arrayContaining(['.Quartal', 'YearOfQuartal', 'U/Y']))
+      expect(prop).toEqual(expect.arrayContaining(['Q', '/', 'U/Y']))
       expect(prop).not.toContain('LayerType')
       const np = tampil(ms, { [P + 'QuotationData.ProportionalType']: 'NonProportional' })
-      expect(np).not.toContain('.Quartal')
+      expect(np).not.toContain('Q')
       expect(np).not.toContain('U/Y')
-      expect(np).toEqual(expect.arrayContaining(['LayerType', 'Layer', 'LayerPartType', 'LayerPart']))
+      expect(np).toEqual(expect.arrayContaining(['LayerType', 'Layer', 'Of', 'LayerPart']))
     }
   })
 

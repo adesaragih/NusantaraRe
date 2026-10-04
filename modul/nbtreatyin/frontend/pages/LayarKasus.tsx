@@ -49,6 +49,7 @@ import {
   KOLOM_SPREADING,
   KOLOM_USULAN,
   KONFIRMASI_TOLAK,
+  NOMOR_DIAKSEP,
   PESAN,
   PILIHAN_APPROVAL,
   PORTAL,
@@ -283,7 +284,8 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
           halaman={h}
           sunting={admin && boleh}
           tempat={layar.tempat}
-          opsiSpreading={acuan?.spreading ?? []}
+          // `SpreadingRiskList` .TreatyType: pyListSource reportdefinition BrowseReinsuranceType_RD (.ID / .Note)
+          opsiSpreading={acuan?.jenisReas ?? []}
           onUbahBaris={ubahBaris}
           onSetelDaftar={(j, b) => setH(setelDaftar(h, j, b))}
           onRefresh={(aksi, indeks) => refresh([{ aksi }], indeks)}
@@ -331,15 +333,19 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
                           value={b.TreatyType ?? ''}
                           onChange={(e) => ubahBaris(SPREADING, i, 'TreatyType', e.target.value)}
                         >
-                          <option value="" />
+                          {/* pyNoSelectionText */}
+                          <option value="">{TOMBOL.pilihKosong}</option>
                           {(acuan?.spreading ?? []).map((o) => (
                             <option key={o.nilai} value={o.nilai}>
                               {o.label}
                             </option>
                           ))}
                         </select>
+                      ) : admin ? (
+                        b.TreatyName || b.TreatyType || ''
                       ) : (
-                        (b.TreatyName ?? b.TreatyType ?? '')
+                        // DetailDeptHeadTreatyIn_UW .TreatyType: dropdown ro, BrowseReinsuranceType_RD (.ID -> .Note)
+                        (acuan?.jenisReas ?? []).find((o) => o.nilai === b.TreatyType)?.label || b.TreatyType || ''
                       )}
                     </td>
                     <td>{persenSpreading(b, i, 'SharePercentage', KOLOM_SPREADING.share)}</td>
@@ -408,47 +414,12 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
                 {angsuran.map((b, i) => (
                   <tr key={i}>
                     <td>{b.InstallmentNo ?? ''}</td>
-                    <td>
-                      {ubahAdmin ? (
-                        <input
-                          type="date"
-                          className="field__input"
-                          aria-label={KOLOM_ANGSURAN.dueDate}
-                          value={(b.DueDate ?? '').slice(0, 10)}
-                          onChange={(e) => ubahBaris(ANGSURAN, i, 'DueDate', e.target.value)}
-                        />
-                      ) : (
-                        sajikan(b.DueDate ?? '', SAJIAN_ANGSURAN.dueDate)
-                      )}
-                    </td>
-                    <td>
-                      {ubahAdmin ? (
-                        // change -> refresh SetValidateInstallment_Act
-                        <InputAngka
-                          label={KOLOM_ANGSURAN.pct}
-                          value={b.InstallmentPercentage ?? ''}
-                          sajian={SAJIAN_ANGSURAN.persen}
-                          onChange={(v) => ubahBaris(ANGSURAN, i, 'InstallmentPercentage', v)}
-                          onBlur={() => refresh([{ aksi: 'SetValidateInstallment' }])}
-                        />
-                      ) : (
-                        sel(b.InstallmentPercentage, SAJIAN_ANGSURAN.persen)
-                      )}
-                    </td>
-                    <td>
-                      {ubahAdmin ? (
-                        // change -> refresh CountPctInstallment_Act(idx=.InstallmentNo)
-                        <InputAngka
-                          label={KOLOM_ANGSURAN.premium}
-                          value={b.Premium ?? ''}
-                          sajian={SAJIAN_ANGSURAN.premium}
-                          onChange={(v) => ubahBaris(ANGSURAN, i, 'Premium', v)}
-                          onBlur={() => refresh([{ aksi: 'CountPctInstallment' }], Number(b.InstallmentNo) || i + 1)}
-                        />
-                      ) : (
-                        sel(b.Premium, SAJIAN_ANGSURAN.premium, true)
-                      )}
-                    </td>
+                    {/* Grid S45 `.ListInstallment` kedua layar: pyEditingMode/pyRowEditing
+                        readOnly - sel ber-aksi SetValidateInstallment_Act / CountPctInstallment_Act
+                        tidak pernah terpicu; baris diisi FillPaymentInstallment (audit silang P3). */}
+                    <td>{sajikan(b.DueDate ?? '', SAJIAN_ANGSURAN.dueDate)}</td>
+                    <td>{sel(b.InstallmentPercentage, SAJIAN_ANGSURAN.persen)}</td>
+                    <td>{sel(b.Premium, SAJIAN_ANGSURAN.premium, true)}</td>
                     <td>{sel(b.PaymentTotal, SAJIAN_ANGSURAN.total, true)}</td>
                   </tr>
                 ))}
@@ -635,12 +606,10 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
             </button>
           }
         >
-          <dl className="nbti__nomor">
-            <dt>pyID</dt>
-            <dd>{nomor.id}</dd>
-            <dt>PolicyNo</dt>
-            <dd>{nomor.policyNo}</dd>
-          </dl>
+          {/* Section ShowPolicyNoTreaty_SC: pyWorkPage.pyID, LABEL "telah diaksep menjadi", PolicyNo */}
+          <p className="nbti__nomor">
+            <strong>{nomor.id}</strong> {NOMOR_DIAKSEP} <strong>{nomor.policyNo}</strong>
+          </p>
         </Modal>
       )}
     </div>

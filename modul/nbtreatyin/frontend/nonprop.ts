@@ -126,7 +126,8 @@ export const TOTAL_FAKULTATIF: Total[] = [
 export const KOLOM_RINCI: Kolom[] = [
   k('DueDate', 'Payment Date'),
   k('InstallmentPercentage', 'Percentage'),
-  k('Currency', 'Currency'),
+  // LABEL judul kolom ke-3 Section InstallmentList kosong
+  k('Currency', ''),
   k('Premium', 'Balance Before Tax'),
   k('PremiumAfterPPN', 'Balance Before Withholding Tax (PPH 2.2)'),
   k('PremiumAfterTax', 'Balance Due To'),
