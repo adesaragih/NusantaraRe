@@ -944,17 +944,22 @@ export const FORM_COV = {
 } as const
 
 /**
- * Days coverage (sel 26) = RADIO BUTTON mendatar (`pxRadioButtons`, `pyOrientation` horizontal), bukan dropdown. Daftar dari
- * aturan properti `.Day` yang TIDAK ada di korpus -> urutan dan isi menurut gambar layar Pega dari work owner 03-10-2026
- * (365, 366, 360). Ubah = `CountPremi_ACT` (percent / percent).
+ * Days coverage (sel 26) = RADIO BUTTON mendatar (`pxRadioButtons`, `pyOrientation` horizontal), bukan dropdown. Daftar =
+ * PromptList aturan `ASM-FW-GISFW-DATA-COVERAGE!DAY` (`DDL\Day.xml`, dikirim work owner 04-10-2026; sama dengan gambar
+ * layar). Ubah = `CountPremi_ACT` (percent / percent). Diuji `labels.test.ts`.
  */
 export const PILIHAN_DAY_COVERAGE = ['365', '366', '360'] as const
 
 /**
- * Indemnity Unit (sel 40, dropdown tanpa pilihan kosong) - daftar = aturan properti `ASM-FW-GISFW-DATA-COVERAGE!UNIT`,
- * BELUM ada di korpus (data contoh hanya kode "0" / "1"; label tidak diketahui). Kosong sampai berkasnya dikirim.
+ * Indemnity Unit (sel 40, dropdown `pyHasNoSelection` false) - PromptList aturan `ASM-FW-GISFW-DATA-COVERAGE!UNIT`
+ * (`DDL\Unit.xml`, 04-10-2026). Tanpa pilihan kosong: browser menampilkan pilihan pertama, sehingga nilai kosong = "0"
+ * (gambar layar "Day (s)"; data contoh mayoritas "0"). Diuji `labels.test.ts`.
  */
-export const OPSI_INDEMNITY_UNIT: { value: string; label: string }[] = []
+export const OPSI_INDEMNITY_UNIT = [
+  { value: '0', label: 'Day (s)' },
+  { value: '1', label: 'Month (s)' },
+  { value: '2', label: 'Year (s)' },
+]
 
 /** Accumulation Code / Address kosong tampil "---" (gambar layar Pega 03-10-2026). */
 export const AKUMULASI_KOSONG = '---'
@@ -1062,10 +1067,20 @@ export const OPSI_TYPE_DEDUCTIBLE2 = [
 export const POPUP_AKUMULASI = {
   judul: 'Choose Accumulation',
   cari: { sel: '1', tag: 'pyValue', label: 'Search Risk Accumulation' },
+  /** Judul bar tata letak saringan (`pyTitle`). */
+  kondisi: 'Conditions',
   accumulationCode: { sel: '17', tag: 'pyLabelFieldValue', label: 'Accumulation Code' },
+  policyNo: { sel: '20', tag: 'pyLabelFieldValue', label: 'Policy No' },
   road: { sel: '21', tag: 'pyLabelFieldValue', label: 'Road' },
   zipCode: { sel: '26', tag: 'pyLabelFieldValue', label: 'Zip Code' },
+  country: { sel: '27', tag: 'pyLabelFieldValue', label: 'Country' },
+  province: { sel: '28', tag: 'pyLabelFieldValue', label: 'Province' },
+  accumType: { sel: '29', tag: 'pyLabelFieldValue', label: 'Accum. Type' },
+  city: { sel: '32', tag: 'pyLabelFieldValue', label: 'City' },
+  district: { sel: '33', tag: 'pyLabelFieldValue', label: 'District' },
+  area: { sel: '34', tag: 'pyLabelFieldValue', label: 'Area' },
   czone: { sel: '35', tag: 'pyLabelFieldValue', label: 'CZone' },
+  keyword: { sel: '36', tag: 'pyLabelFieldValue', label: 'Key Word' },
   filter: { sel: '40', tag: 'pyLabel', label: 'Filter' },
   bersih: { sel: '41', tag: 'pyLabel', label: 'Clear Column' },
   kolom: [
@@ -1075,6 +1090,32 @@ export const POPUP_AKUMULASI = {
   ],
   pilih: { sel: '119', tag: 'pyLabel', label: 'Choose' },
 } as const
+
+/**
+ * Key Word popup accumulation (sel 36, dropdown dengan pilihan kosong bertulisan kosong) - PromptList aturan
+ * `ASM-FW-GISFW-INT-ACCUMULATION!KEYWORD` (`DDL\Keyword.xml`, 04-10-2026). Diuji `labels.test.ts`.
+ */
+export const OPSI_KEYWORD = [
+  'APARTEMEN/RUMAH SUSUN',
+  'BUSINESS CENTRE / OFFICE BUILDING',
+  'DESA/DUSUN',
+  'HOTEL/RESORT',
+  'KAWASAN BERIKAT/INDUSTRI',
+  'KAWASAN PERGUDANGAN',
+  'KAWASAN WISATA',
+  'KOMPLEKS/KAV.PERUMAHAN/ VILLA/PEMUKIMAN',
+  'MAL/SHOPPING CENTRE/TRADE CENTRE',
+  'PASAR TRADISIONAL',
+  'RESTORAN',
+  'RUKO/RUKAN',
+  'RUMAH IBADAH',
+  'RUMAH SAKIT',
+  'STASIUN',
+  'SUPERMARKET/HYPERMARKET',
+  'TEMPAT KURSUS/SEKOLAH/AKADEMI/UNIVERSITAS',
+  'TERMINAL',
+  'ZONA LAIN-LAIN',
+].map((k) => ({ value: k, label: k }))
 
 export const TEKS_AKUMULASI = {
   tanpaHasil: 'Tidak ada accumulation yang cocok.',

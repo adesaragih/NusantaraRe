@@ -54,6 +54,9 @@ import {
   OPSI_MINMAX,
   OPSI_KONDISI_DEDUCTIBLE,
   POPUP_AKUMULASI as P_AKUM,
+  OPSI_INDEMNITY_UNIT,
+  PILIHAN_DAY_COVERAGE,
+  OPSI_KEYWORD,
   OPSI_TYPE_DEDUCTIBLE,
   OPSI_TYPE_DEDUCTIBLE2,
   FORM_DEDUCTIBLE,
@@ -873,7 +876,11 @@ describe.skipIf(!existsSync(NBFACIN + 'Section\\SearchRiskAccumCov.xml'))('Popup
   const cov = readFileSync(NBFACIN + 'Section\\CoverageItem.xml', 'utf-8')
   const ada = (sel: string, tag: string, label: string) => blokSel(xml, sel).some((b) => b.includes(`<${tag}>${label}</${tag}>`))
   it.each(
-    [P_AKUM.cari, P_AKUM.accumulationCode, P_AKUM.road, P_AKUM.zipCode, P_AKUM.czone, P_AKUM.filter, P_AKUM.bersih, ...P_AKUM.kolom, P_AKUM.pilih].map(
+    [
+      P_AKUM.cari, P_AKUM.accumulationCode, P_AKUM.policyNo, P_AKUM.road, P_AKUM.zipCode, P_AKUM.country, P_AKUM.province,
+      P_AKUM.accumType, P_AKUM.city, P_AKUM.district, P_AKUM.area, P_AKUM.czone, P_AKUM.keyword, P_AKUM.filter, P_AKUM.bersih,
+      ...P_AKUM.kolom, P_AKUM.pilih,
+    ].map(
       (u) => [u.label, u] as const,
     ),
   )('%s', (_, u) => {
@@ -882,5 +889,21 @@ describe.skipIf(!existsSync(NBFACIN + 'Section\\SearchRiskAccumCov.xml'))('Popup
   it('judul jendela + RD grid sel 90', () => {
     expect(cov).toContain(`<pyWindowName>${P_AKUM.judul}</pyWindowName>`)
     expect(xml).toContain('SearchRiskAccumulation_RD')
+    expect(xml).toContain(`<pyTitle>${P_AKUM.kondisi}</pyTitle>`)
+  })
+})
+
+describe('Unit / Day / Keyword = PromptList aturan properti (dicari menurut pxInsName, tiket 46)', () => {
+  const unit = aturanDDL('ASM-FW-GISFW-DATA-COVERAGE!UNIT')
+  const day = aturanDDL('ASM-FW-GISFW-DATA-COVERAGE!DAY')
+  const kw = aturanDDL('ASM-FW-GISFW-INT-ACCUMULATION!KEYWORD')
+  it.skipIf(unit === '')('Indemnity Unit', () => {
+    expect(daftarPrompt(unit)).toEqual(OPSI_INDEMNITY_UNIT.map((o) => [o.value, o.label]))
+  })
+  it.skipIf(day === '')('Days', () => {
+    expect(daftarPrompt(day)).toEqual(PILIHAN_DAY_COVERAGE.map((d) => [d, d]))
+  })
+  it.skipIf(kw === '')('Key Word', () => {
+    expect(daftarPrompt(kw)).toEqual(OPSI_KEYWORD.map((o) => [o.value, o.label]))
   })
 })

@@ -727,19 +727,35 @@ export function hitungNetRate(
   return minta(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/hitung-net-rate`, { metode: 'POST', badan })
 }
 
-/** Saringan popup Choose Accumulation tahap 1 (RD `SearchRiskAccumulation_RD`; kosong = tidak menyaring). */
+/**
+ * Saringan popup Choose Accumulation (`SearchRiskAccumCov`; kosong = tidak menyaring). Backend menjalankan
+ * `GetDataAccumulation_act`: City / District / Policy No terisi DAN Zip Code kosong -> jalur SQL (grid sel 48), selain
+ * itu RD `SearchRiskAccumulation_RD` (grid sel 90).
+ */
 export interface SaringAkumulasi {
-  /** `.ID` = (Accumulation Code). */
+  /** `SearchAccumulation.ID` (Accumulation Code). */
   id: string
-  /** `.Note` Contains, tanpa peka huruf (Road). */
+  /** `SearchAccumulation.CenterTransStatus` (Policy No). */
+  policyNo: string
+  /** `SearchAccumulation.Note` (Road; RD Contains tanpa peka huruf). */
   note: string
-  /** `.PostalCode` = (Zip Code; awal = zip lokasi risiko, `SearchAccumAct`). */
+  /** `SearchAccumulation.PostalCode` (Zip Code; awal = zip lokasi risiko; memilih Area menimpanya). */
   postalCode: string
-  /** `.CZone` =. */
+  /** `SearchAccumulation.SyariahStatus` (= NationInitial Country terpilih). */
+  syariahStatus: string
+  /** `SearchAccumulation.ProvinceID` (Province terpilih). */
+  provinceId: string
+  /** `InputFilter.City` (ID City terpilih). */
+  cityId: string
+  /** `InputFilter.District` (ID District terpilih). */
+  districtId: string
+  /** `SearchAccumulation.CZone`. */
   czone: string
+  /** `SearchAccumulation.Keyword`. */
+  keyword: string
 }
 
-/** Satu baris hasil (grid sel 90). */
+/** Satu baris hasil (grid sel 90 `.ID` / `.AccumulationName` / `.Note`, atau sel 48 `.CARI1` / `.CARI2` / `.CARI3`). */
 export interface BarisAkumulasi {
   id: string
   /** `.AccumulationName` (kolom Type). */
@@ -753,4 +769,26 @@ export function cariAkumulasi(saring: SaringAkumulasi): Promise<{ baris: BarisAk
   const kueri: Record<string, string> = {}
   for (const [k, v] of Object.entries(saring)) if (v.trim() !== '') kueri[k] = v.trim()
   return minta<{ baris: BarisAkumulasi[] }>('/api/nbfacin/akumulasi', { kueri })
+}
+
+/** Jenis saran autocomplete popup accumulation - satu per RD sel 27-35 `SearchRiskAccumCov`. */
+export type JenisSaranAkumulasi = 'nation' | 'province' | 'accumtype' | 'city' | 'district' | 'area' | 'czone'
+
+/** Satu saran: `label` = teks yang ditulis ke kotak; `id` / `ekstra` = nilai yang disalin Pega saat memilih. */
+export interface SaranAkumulasi {
+  id: string
+  label: string
+  /** nation: `.NationInitial`; area: `.ZipCode`. */
+  ekstra?: string
+}
+
+/**
+ * `GET /api/nbfacin/akumulasi/saran/{jenis}?q=&induk=` - `induk` = saringan berantai Pega: province <- nama Country,
+ * city <- ProvinceID, district <- nama City, area <- nama District.
+ */
+export function saranAkumulasi(jenis: JenisSaranAkumulasi, q: string, induk = ''): Promise<{ baris: SaranAkumulasi[] }> {
+  const kueri: Record<string, string> = {}
+  if (q.trim() !== '') kueri.q = q.trim()
+  if (induk.trim() !== '') kueri.induk = induk.trim()
+  return minta<{ baris: SaranAkumulasi[] }>(`/api/nbfacin/akumulasi/saran/${jenis}`, { kueri })
 }

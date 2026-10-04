@@ -39,13 +39,16 @@ import PopupAkumulasi from './PopupAkumulasi'
 const JEDA_MS = 500
 const DESIMAL = 4
 
-/** Coverage kosong: basis Sum Insured, % Indemnity 100 (`AddCoverageAutoFire`). */
+/**
+ * Coverage kosong: basis Sum Insured, % Indemnity 100 (`AddCoverageAutoFire`); Indemnity Unit "0" = pilihan pertama yang
+ * dikirim dropdown tanpa pilihan kosong (K-6).
+ */
 export function coverageBaru(b?: BarisCoverage): CoverageObjek {
   return {
     coverage: b?.id ?? '', oldId: b?.oldId ?? '', coverageNote: b?.nama ?? '', coverageBasis: '1', day: '', tsi: '',
     indemnity: '', rate: '', rateOjk: '', firstLoss: '', discountPercentage: '', tsiLiability: '', netRate: '',
     limitOfLiability: '', pctLol: '', proRatePercent: '', indemnityPercentage: '100', firstScale: '', sublimit: '',
-    lostLimit: '', emlPml: '', discount: '', premium: '', conditions: '',
+    lostLimit: '', emlPml: '', discount: '', premium: '', conditions: '', unit: '0',
   }
 }
 
@@ -296,7 +299,24 @@ export default function FormCoverage({
         </div>
         <div className="nbf-cov__tumpuk nbf-labelkiri">
           <Tampil label={F.proRate.label} nilai={formatNumber(c.proRatePercent, DESIMAL)} angka />
-          <Pilih label={F.unit.label} value={c.unit ?? ''} onChange={(v) => ubah({ ...c, unit: v })} opsi={OPSI_INDEMNITY_UNIT} />
+          {/* Sel 40: tanpa pilihan kosong (`pyHasNoSelection` false) - kosong tampil sebagai pilihan pertama "0". */}
+          <div className="field">
+            <label className="field__label" htmlFor={`${namaHari}-unit`}>
+              {F.unit.label}
+            </label>
+            <select
+              id={`${namaHari}-unit`}
+              className="field__input"
+              value={c.unit || OPSI_INDEMNITY_UNIT[0]!.value}
+              onChange={(e) => ubah({ ...c, unit: e.target.value })}
+            >
+              {OPSI_INDEMNITY_UNIT.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
           {/* Sel 41 / 42: baca-saja tanpa syarat. */}
           <Tampil label={F.indemnityPercentage.label} nilai={formatNumber(c.indemnityPercentage, DESIMAL)} angka />
           {b === '2' && <Tampil label={F.firstScale.label} nilai={formatNumber(c.firstScale, DESIMAL)} angka />}
