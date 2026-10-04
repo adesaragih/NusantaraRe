@@ -703,6 +703,11 @@ var presisiSah = map[string]string{
 	"NUMBER(5)":    "AGE, umur peserta dalam tahun; M_NAV_MENU.URUTAN, urutan di dalam GROUPMENU",
 	"NUMBER(10)":   "M_NAV_MENU.ID, identitas dari sequence - brief menu 30-09-2026 (PARENT_ID dibuang 901)",
 	"NUMBER(19)":   "T_CLAIMLF_DOCUMENT.ID, identitas dari sequence",
+
+	// Modul nbtreatyin (migrasi 320-327): diagram grilling sheet NB Treaty In
+	// Prop F20 "uang · persen -> skala MINIMAL 9 desimal (P29)" dan J69 "NB:
+	// 100 / jumlah baris presisi 10" - perintah work owner 04-10-2026.
+	"NUMBER(38,10)": "uang dan persen NB Treaty In - diagram NB Treaty In Prop F20/J69, perintah work owner 04-10-2026",
 }
 
 // ⛔ Tidak satu pun kolom bertipe NUMBER tanpa presisi.
