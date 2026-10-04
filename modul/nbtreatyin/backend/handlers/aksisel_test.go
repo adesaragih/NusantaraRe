@@ -114,3 +114,42 @@ func TestNomorPolisMemakaiOJKTerisiDanMengisiGrupLama(t *testing.T) {
 		t.Fatalf("TreatyGroupOldID = %q, harap UJI-OLD (FetchTreatyGroupOldID langkah 6)", got)
 	}
 }
+
+// Aksi refresh yang dapat terpicu per layar (action set sel TERBUKA):
+//
+//	DetailPolicyTreatyIn (admin)  sel isian ber-refresh: CountOGPONP_Act,
+//	                              CountResult1/1Onp/2Ogp/2Onp, CalculatePremi_Act, ...
+//	DetailDeptHeadTreatyIn_UW     SELURUH sel ber-refresh `pyReadOnly` (CountNetPremi_act,
+//	                              CountRiCommOgp_act, CountOverridingComm*_Act, ...) -
+//	                              tidak pernah terpicu; yang terbuka hanya radio
+//	                              `ListSuggest .IsApproved` -> runActivity SetDueTo_act
+//	                              (CekLimitTreatyAcc_Act K2; Protection_Act tak ada di korpus)
+//
+// Server menolak aksi di luar layar posisi berkas (409) - termasuk CheckDataMkt,
+// yang menyimpan halaman (Obj-Save) dan tidak boleh menjadi jalan simpan bagi atasan.
+func TestHitungHanyaAksiSelTerbukaDiLayarPosisi(t *testing.T) {
+	u := baru(t)
+	id := u.buat()
+	h := halamanLengkap("")
+	for aksi, harap := range map[string]int{"CountOGPONP": http.StatusOK, "CountNetPremi": http.StatusConflict,
+		"CountRiCommOgp": http.StatusConflict, "CountOverridingCommOnp": http.StatusConflict} {
+		kode, isi := u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{"urutan": []map[string]string{{"aksi": aksi, "param": "Amount"}}, "halaman": h})
+		if kode != harap {
+			t.Errorf("admin %s: %d, harap %d (%s)", aksi, kode, harap, isi)
+		}
+	}
+	if kode, isi := u.kirim(id, admin, halamanLengkap("1")); kode != http.StatusOK {
+		t.Fatalf("admin menyetujui: %d %s", kode, isi)
+	}
+	sebelum := u.g.Halaman[id].Ambil("PolicyTreatyIn.Suggest")
+	for aksi, harap := range map[string]int{"SetDueTo": http.StatusOK, "CheckDataMkt": http.StatusConflict,
+		"CountOGPONP": http.StatusConflict, "CountNetPremi": http.StatusConflict} {
+		kode, isi := u.panggil("POST", "/kasus/"+id+"/hitung", secHead, map[string]any{"urutan": []map[string]string{{"aksi": aksi}}, "halaman": putusan("1")})
+		if kode != harap {
+			t.Errorf("Sec Head %s: %d, harap %d (%s)", aksi, kode, harap, isi)
+		}
+	}
+	if got := u.g.Halaman[id].Ambil("PolicyTreatyIn.Suggest"); got != sebelum {
+		t.Fatalf("atasan tidak menyimpan lewat hitung: Suggest %q -> %q", sebelum, got)
+	}
+}

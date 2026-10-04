@@ -90,7 +90,8 @@ func TestTanggalProduksiDariTanggalClosing(t *testing.T) {
 }
 
 // SetPPNPPH langkah 1-3 (RD BrowseClientName_RD -> STS_PKP) mengendalikan
-// langkah 4 lewat refresh layar. FlagPPH kosong: hanya agen PKP yang berjalan.
+// langkah 4 lewat refresh layar (sel `.Deduction1` admin: refresh CountOGPONP_Act ->
+// CountNetPremi_act langkah 1). FlagPPH kosong: hanya agen PKP yang berjalan.
 // 0,025 x (1000 + 600) = 40; 51,1 / 1,022 = 50; PPH 50 x 0,02 = 1; PPN 50 x 0,022 = 1,1.
 func TestSetPPNPPHMembacaStatusPKPAgen(t *testing.T) {
 	for _, tt := range []struct {
@@ -108,7 +109,7 @@ func TestSetPPNPPHMembacaStatusPKPAgen(t *testing.T) {
 		h.Setel("PolicyTreatyIn.Deduction1", "51.1")
 		h.Setel("PolicyTreatyIn.TypeTax", models.TypeTaxInclusive)
 		h.Setel("PolicyTreatyIn.FlagPPH", "")
-		kode, isi := u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{"urutan": []map[string]string{{"aksi": "CountNetPremi"}}, "halaman": h})
+		kode, isi := u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{"urutan": []map[string]string{{"aksi": "CountOGPONP"}}, "halaman": h})
 		if kode != http.StatusOK {
 			t.Fatalf("hitung: %d %s", kode, isi)
 		}

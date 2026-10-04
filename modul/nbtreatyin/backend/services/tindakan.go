@@ -213,6 +213,11 @@ func (l *Layanan) Hitung(ctx context.Context, p inti.Pelaku, id string, r Permin
 	if err != nil {
 		return Layar{}, err
 	}
+	for _, s := range r.Urutan { // aksiposisi.go
+		if !aksiTerbuka(k.PositionNote, s.Aksi) {
+			return Layar{}, fmt.Errorf("%w: aksi %q", ErrTindakanTakAdaDiPosisi, s.Aksi)
+		}
+	}
 	if err := l.pasangStsPKP(ctx, h); err != nil {
 		return Layar{}, err
 	}
