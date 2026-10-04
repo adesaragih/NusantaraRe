@@ -1365,6 +1365,13 @@ migrasi **195** (`ALTER ADD`) — ditulis, belum dijalankan; urutan DEV … → 
 Tanpa keputusan agent baru. Endpoint `GET /api/nbfacin/akumulasi` menunggu DDL sumber `Int-ACCUMULATION`
 (`issues/46-coverage-tata-letak-akumulasi.md`).
 
+## Tiket 46 — popup Choose Accumulation Code (backend butir 2–3), diteruskan sesi `nusantarare-0f`
+
+`GET /api/nbfacin/akumulasi` (jalur RD / SQL `GetDataAccumulation_act`) dan `GET /api/nbfacin/akumulasi/saran/{jenis}`
+(city / district / area; nation / province / accumtype / czone → 501 menunggu DDL). Tanpa migrasi; baca view `ACCUMULATION`
+(DDL work owner 04-10-2026), `CITY`, `DISTRICT`, tabel `RW`, `JSON_POLIS`. Keputusan agent A172–A178 **menunggu
+konfirmasi** (`issues/46-coverage-tata-letak-akumulasi.md`).
+
 ## Bug DEV — 3 Oktober 2026, popup Choose Class of Construction kosong (diteruskan sesi `nusantarare-0f`)
 
 | # | Butir | Keputusan |

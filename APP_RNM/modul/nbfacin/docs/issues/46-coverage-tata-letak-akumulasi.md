@@ -128,7 +128,51 @@ Code / Address dengan tombol Choose Accumulation Code (popup pencarian) dan Copy
 - [x] Choose menolak accumulation yang zip-nya beda dengan pesan Pega.
 - [x] Backend: simpan tiga medan (sesi c3, 03-10-2026; migrasi 195 ditulis, belum dijalankan).
 - [x] Popup memuat seluruh saringan (gambar layar kedua); Indemnity Unit / Key Word dari PromptList korpus.
-- [ ] Backend: `GET /api/nbfacin/akumulasi` + `…/akumulasi/saran/{jenis}` (sesi c3).
+- [x] Backend: `GET /api/nbfacin/akumulasi` dan saran city / district / area (sesi c3, 04-10-2026).
+- [ ] Saran nation / province / accumtype / czone (menunggu DDL sumbernya, A178).
+
+## Backend butir 2–3 (sesi c3, 04-10-2026)
+
+Tanpa migrasi. `repository/akumulasi.go`, `services/akumulasi.go`, `handlers/akumulasi.go`.
+
+**`GET /api/nbfacin/akumulasi`** → `{ baris: [{ id, accumulationName, note }] }`; parameter dipangkas, > 255 karakter → 400;
+503 tanpa basis data. Jalur `[terverifikasi]` `Activity\GetDataAccumulation_act.xml` (dibaca utuh, sub-langkah 6.1–6.7):
+- `postalCode` terisi, atau `cityId` / `districtId` / `policyNo` semuanya kosong → **RD** `SearchRiskAccumulation_RD`:
+  view `ACCUMULATION` INNER JOIN `RW` atas ZIPCODE, DISTINCT sebelas kolom laporan, saringan diisi saja: `ID =`, `NOTE`
+  Contains tidak peka huruf, `CZONE =`, `KEYWORD =`, `ZIPCODE =` (= `.PostalCode`), `PROVINCEID =`; ≤ 500.
+- selain itu → **SQL**: `districtId` → `GetAccumulationDistrict_SQL`; `cityId` → `GetAccumulationProvince_SQL` (persis:
+  `accumulation where ZIPCODE in (select zipcode from rw where cityid|DISTRICTID = …)`, accumulationName = kolom
+  `ACCUMULATIONTYPE`); `policyNo` → `GetSummaryRiskAccumPolis_Sql` + langkah 6.6 (unik menurut AccumulationCode;
+  accumulationName / note dari `ACCUMULATION`).
+
+**`GET /api/nbfacin/akumulasi/saran/{jenis}?q=&induk=`** → `{ baris: [{ id, label, ekstra? }] }`. Medan cari / nilai
+pilih `[terverifikasi]` `Section\SearchRiskAccumCov.xml` (`pyUseForSearch`, `pyPropertyTarget`):
+- `city` — view `CITY`: label `NOTE` (cari), id `ID` (→ `InputFilter.City`), induk `PROVINCEID`; DISTINCT (ID, NOTE).
+- `district` — view `DISTRICT`: label `DISTRICTNAME` (cari), id `ID` (→ `InputFilter.District`), induk `CITYNAME` (nama kota).
+- `area` — tabel `RW`: label `NOTE` (cari), ekstra `ZIPCODE` (→ `InputFilter.PostalCode`), `STS_AKTIF = '1'`; id kosong.
+- `nation` / `province` / `accumtype` / `czone` → **501** (A178). 400 jenis tak dikenal; 503.
+
+**Bukti yang dicari dan hasilnya:**
+- `GetAccumulation_SQL` kelas Int-ACCUMULATION (langkah 6.5, SyariahStatus) **TIDAK ADA** di korpus `[terverifikasi]` —
+  hanya `ASM-FW-GISFW-INT-ACCUMULATION_LIFE!ASM!GETACCUMULATION_SQL` (3 salinan).
+- Tabel kelas Int-NATION / PROVINCE / ACCUMULATEDTYPE: hanya `M_NATION` / `M_PROVINCE` / `M_ACCUMULATEDTYPE` (ID, OLDID,
+  JSONDATA) — kunci JSON tidak ditebak; view `CITY` me-LEFT JOIN objek `PROVINCE` yang DDL-nya tidak ada. Int-CZONE: tabel
+  `czone` hanya terlihat di SQL (`id`, `code`), DDL tidak ada; RD menyaring `.GroupOf` yang kolomnya tidak terverifikasi.
+- BrowseRW_RD: pyParameters `City, District, Province, Teritory, ZipCode`; layar mengirim `DistrictName` → saringan D
+  dibuang di Pega (A177). `.ID` bukan kolom laporan RD.
+
+### Keputusan agent (menunggu konfirmasi)
+
+| # | Keputusan | Dasar |
+| --- | --- | --- |
+| A172 | Jalur: kecamatan > kota (RDB-List kemudian menimpa `pyReportContentPage` `[dugaan]`); `policyNo` bersama kota / kecamatan → hasil kosong; `syariahStatus` diterima tetapi diabaikan | Langkah 6.2–6.4 menulis halaman yang sama berurutan; langkah 6.6 lalu memindai baris kota / kecamatan tanpa CARI10 → satu baris kosong; langkah 6.5 memanggil aturan yang tidak ada, RD tidak menyaring syariah |
+| A173 | Saringan RD C `.AccumulationName = Param.Coverage` tidak dipakai | Sumber param `SearchAccumulation.AccumulationType` tidak pernah terisi (K-8 sesi 0f) |
+| A174 | Urutan hasil `ID, NOTE` (RD / SQL tanpa urutan); jalur SQL ikut dibatasi 500 | Hasil deterministik; RDB-List tanpa batas, grid Pega berpaging |
+| A175 | Jalur nomor polis: SQL korpus dipersempit ke AccumulationCode (JSON_TABLE jalur sama), subkueri nama / note memakai `MAX` (SQL asal ORA-01427 bila ID ganda), kode kosong dibuang, urut kode | Langkah 6.6 hanya memakai CARI10 / 12 / 13; SELECT biasa (ADR-0043) |
+| A176 | Saran: `q` dicocokkan **Contains tidak peka huruf** atas kolom label (medan `pyUseForSearch`); paling banyak 50; urut label | Mode cocok autocomplete tidak tertulis di korpus; pola A124 (saran RW 50) |
+| A177 | Saran `area` **tanpa** saringan induk (`induk` diabaikan), seperti Pega | Param layar `DistrictName` bukan param RD (`District`) → saringan dibuang di Pega `[terverifikasi]` |
+| A178 | Saran `nation` / `province` / `accumtype` / `czone` → 501 sampai DDL sumbernya ada | Tabel / view kelas Int-NATION / PROVINCE / ACCUMULATEDTYPE / CZONE tidak ada di `DDL\` |
+| — | Kelas Int-CITY / Int-DISTRICT = view `CITY` / `DISTRICT` `[dugaan]` | Nama dan kolom sama persis; tidak ada SQL kelas itu yang menyebut tabelnya |
 
 ## Backend butir 1 (sesi c3, 03-10-2026)
 

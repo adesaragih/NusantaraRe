@@ -4,9 +4,9 @@ Modul ini **membuat tujuh belas tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tik
 `T_QUOTATIONDATA` **sebagian** (migrasi 182/183, tiket 31 / butir 78.4), `T_CEDINGCOLIST` utuh (185, tiket 34), dan tabel tab Object FIRE (186, tiket 35: `T_LOCATIONLIST` /
 `T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian; 189, tiket 40: `T_OCCUPATIONLIST` sebagian, `T_TABLEOFLIMIT` utuh; 190, tiket 41: `T_FEALIST` baru; 191, tiket 42: `T_LISTCAUSEOFLOSS`, `T_COINSDATA` utuh; 193, tiket 43: `T_COVERAGELIST` sebagian; 194, tiket 45: `T_DEDUCTIBLELIST` sebagian) — dan **menulis**
 baris `T_WORK_POLIS` milik premiumlistlife (K-064; tidak dibuat, tidak dipetakan kolomnya di sini). Selebihnya ia hanya
-**membaca** tujuh belas tabel / view yang sudah ada — enam tabel limit
+**membaca** dua puluh satu tabel / view yang sudah ada — enam tabel limit
 akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), tabel bisnis `BUSINESS` (tiket 28), `MARKETINGOFFICER` (31), `AGENT`
-(33), `RISKADDRESS` (36; juga DISISIPI tiket 37), `RW` (36/37), `OCCUPATION` (38), `V_JN_OBJ_ITEM` dan `CURRENCY` (39), `TABLEOFLIMIT` (40), `COVERAGE` (43) — sama dengan bab "Tabel warisan" `MODUL.md`. Enam tabel limit akseptasi yang sudah ada
+(33), `RISKADDRESS` (36; juga DISISIPI tiket 37), `RW` (36/37), `OCCUPATION` (38), `V_JN_OBJ_ITEM` dan `CURRENCY` (39), `TABLEOFLIMIT` (40), `COVERAGE` (43), view `ACCUMULATION` / `CITY` / `DISTRICT` dan tabel `JSON_POLIS` (46) — sama dengan bab "Tabel warisan" `MODUL.md`. Enam tabel limit akseptasi yang sudah ada
 di `POOLDATA`, dengan nama tabel dan kolom **verbatim**. Berkas ini **peta**, bukan DDL: hanya kolom yang dibaca
 repository (`backend/repository/limit.go`). Ke-enamnya dinyatakan di `MODUL.md` bab "Tabel warisan: dibaca, tidak
 dibuat".
@@ -557,7 +557,8 @@ DDL `D:\migrasi\RNM\DDL\RISKADDRESS.txt` (16 kolom, semua VARCHAR2(4000), tanpa 
 ## RW
 
 Tiket 36/37. Tabel warisan `POOLDATA.RW`, **baca saja** — JOIN RD tiket 36 dan saran Zip Code tiket 37; JOIN RD (`ASM-FW-GISFW-Int-RW`, prefix `RW`, INNER JOIN
-`.PostalCode = RW.ZipCode`; kelas → tabel `[dugaan]`). Sumber tipe `[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\RW.txt` (19 kolom;
+`.PostalCode = RW.ZipCode`; kelas → tabel `[terverifikasi]` sejak tiket 46: `RDBList\CheckZipCode_SQL.xml` kelas Int-RW
+"from rw"); tiket 46: popup akumulasi (JOIN RD, subkueri jalur kota / kecamatan, saran Area). Sumber tipe `[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\RW.txt` (19 kolom;
 `RDBMASTERRW.txt` adalah prosedur penulisnya).
 
 | Kolom | Tipe DDL | Dibaca untuk |
@@ -568,7 +569,62 @@ Tiket 36/37. Tabel warisan `POOLDATA.RW`, **baca saja** — JOIN RD tiket 36 dan
 | `CITYNAME` | VARCHAR2(4000) | City saran Zip Code |
 | `PROVINCENAME` | VARCHAR2(4000) | Province saran Zip Code |
 | `NATION` | VARCHAR2(100) | Country saran Zip Code — RD `.NATIONNAME`; alias `NATION as "NATIONNAME"` `[terverifikasi]` `RDBList\BrowseRW2_SQL.xml` |
-| `STS_AKTIF` | VARCHAR2(10) | saringan RD `= "1"` (tiket 37) |
+| `STS_AKTIF` | VARCHAR2(10) | saringan RD `= "1"` (tiket 37; saran Area tiket 46) |
+| `CITYID` | VARCHAR2(4000) | tiket 46 — `GetAccumulationProvince_SQL` `where cityid = ...` |
+| `DISTRICTID` | VARCHAR2(4000) | tiket 46 — `GetAccumulationDistrict_SQL` `where DISTRICTID = ...` |
+| `CZONE` | VARCHAR2(4000) | tiket 46 — kolom laporan BrowseRW_RD (ikut DISTINCT saran Area) |
+
+## ACCUMULATION
+
+Tiket 46 (popup Choose Accumulation Code). **View** warisan `POOLDATA.ACCUMULATION`, **baca saja**. Sumber
+`[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\ACCUMULATION.txt` (04-10-2026) — `SELECT DISTINCT` atas JSON `m_accumulation`
+`WHERE JSONDATA.IsActive IS NULL`; tipe kolom TIDAK tertulis (nilai JSON) — dibaca sebagai teks, `belum terverifikasi`.
+Kelas → view `[terverifikasi]`: RDBList kelas `ASM-FW-GISFW-Int-ACCUMULATION` "from accumulation"; `.PostalCode` = `ZIPCODE`
+(`RDBList\SearchAccumulationbypersetase_SQL.xml`: `ZIPCODE as "PostalCode"`), `.ProvinceName` = `PROVINCE`.
+
+| Kolom | Dibaca untuk |
+| --- | --- |
+| `ID` | `id`; saringan RD `.ID =`; jalur SQL CARI1 |
+| `ACCUMULATIONNAME` | `accumulationName` jalur RD dan jalur nomor polis |
+| `ACCUMULATIONTYPE` | `accumulationName` jalur kota / kecamatan (CARI2 SQL korpus = accumulationtype) |
+| `NOTE` | `note`; saringan RD `.Note` Contains tidak peka huruf |
+| `CZONE`, `KEYWORD`, `ZIPCODE`, `PROVINCEID` | saringan RD (`=`); `ZIPCODE` juga JOIN `RW` dan jalur kota / kecamatan |
+| `ACCUMULATION`, `CZONEID`, `SCOPEAREA`, `PROVINCE` | kolom laporan RD (ikut DISTINCT), tidak dikirim |
+
+## CITY
+
+Tiket 46 (saran City popup akumulasi, `BrowseCityInput_RD`). **View** warisan `POOLDATA.CITY`, **baca saja**. Sumber
+`[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\CITY.txt` (view atas CITYINPUT + DISTRICTINPUT + RWINPUT + PROVINCE + BRANCH;
+tipe kolom tidak tertulis). Kelas Int-CITY → view CITY `[dugaan]` (nama dan kolom sama persis; tidak ada SQL kelas itu).
+
+| Kolom | Dibaca untuk |
+| --- | --- |
+| `ID` | `id` (→ `cityId` pencarian) |
+| `NOTE` | `label`; medan cari |
+| `PROVINCEID` | saringan induk (ProvinceID terpilih) |
+
+## DISTRICT
+
+Tiket 46 (saran District, `BrowseDistrictInputC_RD`). **View** warisan `POOLDATA.DISTRICT`, **baca saja**. Sumber
+`[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\DISTRICT.txt` (view atas DISTRICTINPUT + RWINPUT + CityInput). Kelas → view
+`[dugaan]` (seperti CITY).
+
+| Kolom | Dibaca untuk |
+| --- | --- |
+| `ID` | `id` (→ `districtId` pencarian) |
+| `DISTRICTNAME` | `label`; medan cari |
+| `CITYNAME` | saringan induk (NAMA kota terpilih) |
+| `CITYID` | kolom laporan RD (ikut DISTINCT) |
+
+## JSON_POLIS
+
+Tiket 46 (pencarian akumulasi menurut nomor polis, `RDBList\GetSummaryRiskAccumPolis_Sql.xml`). Tabel warisan
+`POOLDATA.JSON_POLIS`, **baca saja**. Sumber tipe `[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\JSON_POLIS.txt`.
+
+| Kolom | Tipe DDL | Dibaca untuk |
+| --- | --- | --- |
+| `NOPOLIS` | VARCHAR2(100) NOT NULL | saringan `= policyNo` |
+| `DATA_JSON` | CLOB (JSON) | `JSON_TABLE` `$.LocationList[*].Property.PropertyItemList[*].CoverageList[*].AccumulationCode` |
 
 ## OCCUPATION
 

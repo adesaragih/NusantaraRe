@@ -207,3 +207,19 @@ type BarisOccupation struct {
 	Name           string // OCCUPATION.NAME
 	KdRiskExposure string // OCCUPATION.KDRISKEXPOSURE - SetDataOccupation: 03 -> III, 02 -> II, 01 -> I (tiket 40)
 }
+
+// SaringAkumulasi - saringan popup Choose Accumulation Code (tiket 46); kosong = tidak menyaring.
+type SaringAkumulasi struct {
+	ID, PolicyNo, Note, PostalCode, SyariahStatus, ProvinceID, CityID, DistrictID, CZone, Keyword string
+}
+
+// BarisAkumulasi - satu hasil pencarian akumulasi: .ID / .AccumulationName / .Note (jalur RD) atau CARI1 / CARI2 / CARI3
+// (jalur SQL).
+type BarisAkumulasi struct {
+	ID, AccumulationName, Note string
+}
+
+// SaranAkumulasi - satu saran autocomplete popup akumulasi: Label = nilai yang ditulis ke kotak (medan cari).
+type SaranAkumulasi struct {
+	ID, Label, Ekstra string
+}

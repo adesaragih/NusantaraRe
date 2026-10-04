@@ -43,6 +43,8 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc("GET /api/nbfacin/coverage-otomatis", coverageOtomatis(svc))
 	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/hitung-coverage", hitungCoverage(svc))
 	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/hitung-net-rate", hitungNetRate(svc))
+	mux.HandleFunc("GET /api/nbfacin/akumulasi", cariAkumulasi(svc))
+	mux.HandleFunc("GET /api/nbfacin/akumulasi/saran/{jenis}", saranAkumulasi(svc))
 }
 
 // isianOpportunity - badan POST /api/nbfacin/opportunity, kontrak frontend
@@ -281,7 +283,7 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		errors.Is(err, services.ErrMasukanObjek), errors.Is(err, services.ErrMasukanRisk),
 		errors.Is(err, services.ErrMasukanRW), errors.Is(err, services.ErrMasukanAlamat),
 		errors.Is(err, services.ErrMasukanOccupation), errors.Is(err, services.ErrMasukanTableOfLimit),
-		errors.Is(err, services.ErrMasukanCoverage):
+		errors.Is(err, services.ErrMasukanCoverage), errors.Is(err, services.ErrMasukanAkumulasi):
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, inti.ErrTanpaIdentitas):
 		galat.Tulis(w, http.StatusUnauthorized, err.Error())
@@ -289,6 +291,8 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		galat.Tulis(w, http.StatusNotFound, err.Error())
 	case errors.Is(err, services.ErrTableOfLimitTidakSiap), errors.Is(err, services.ErrPeriodeKasus):
 		galat.Tulis(w, http.StatusConflict, err.Error())
+	case errors.Is(err, services.ErrSaranBelumTersedia):
+		galat.Tulis(w, http.StatusNotImplemented, err.Error())
 	case errors.Is(err, services.ErrTidakDapatDiproses):
 		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrTanpaDatabase), errors.Is(err, services.ErrTabelLimitTakTersedia),
@@ -298,7 +302,8 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		errors.Is(err, services.ErrSOBTanpaDatabase), errors.Is(err, services.ErrObjekTanpaDatabase),
 		errors.Is(err, services.ErrRiskTanpaDatabase), errors.Is(err, services.ErrRWTanpaDatabase),
 		errors.Is(err, services.ErrOccupationTanpaDatabase), errors.Is(err, services.ErrPilihanItemTanpaDatabase),
-		errors.Is(err, services.ErrTableOfLimitTanpaDatabase), errors.Is(err, services.ErrCoverageTanpaDatabase):
+		errors.Is(err, services.ErrTableOfLimitTanpaDatabase), errors.Is(err, services.ErrCoverageTanpaDatabase),
+		errors.Is(err, services.ErrAkumulasiTanpaDatabase):
 		galat.Tulis(w, http.StatusServiceUnavailable, err.Error())
 	default:
 		log.Printf("nbfacin: galat server: %v", err)
