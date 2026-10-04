@@ -71,6 +71,7 @@ import {
   type Medan,
 } from '../medan'
 import { tampilNonProp } from '../nonprop'
+import { BARIS_PER_HALAMAN_USULAN, irisan, jumlahHalaman } from '../paginasi'
 import { sajikan, type Sajian } from '../sajian'
 import { tampilTanggalProduksi } from '../tempat'
 
@@ -94,6 +95,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
   const [popupSOB, setPopupSOB] = useState(false)
   const [konfirmasi, setKonfirmasi] = useState(false)
   const [nomor, setNomor] = useState<NomorPolis | null>(null)
+  const [halUsulan, setHalUsulan] = useState(1)
 
   const terima = useCallback((ly: Layar) => {
     setLayar(ly)
@@ -492,7 +494,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
               </tr>
             </thead>
             <tbody>
-              {usulan.map((b, i) => (
+              {irisan(usulan, halUsulan, BARIS_PER_HALAMAN_USULAN).map((b, i) => (
                 <tr key={i}>
                   <td>{sajikan(b.Date ?? '', 'tanggal')}</td>
                   <td>{b.OperatorName ?? ''}</td>
@@ -503,6 +505,22 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
             </tbody>
           </table>
         </div>
+        {/* pyGridPaginator - pyPageMode Numeric, pyPageSizeOther 5 */}
+        {jumlahHalaman(usulan.length, BARIS_PER_HALAMAN_USULAN) > 1 && (
+          <div className="nbti__aksi">
+            {Array.from({ length: jumlahHalaman(usulan.length, BARIS_PER_HALAMAN_USULAN) }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                type="button"
+                className={n === halUsulan ? 'btn btn--sm btn--primary' : 'btn btn--sm'}
+                aria-current={n === halUsulan ? 'page' : undefined}
+                onClick={() => setHalUsulan(n)}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        )}
       </Panel>
 
       {riwayat.length > 0 && (
