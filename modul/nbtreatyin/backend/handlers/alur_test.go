@@ -264,7 +264,7 @@ func TestTanggaPenuhDanNomorPolisSekali(t *testing.T) { // AC 6-9, 31, 73, 74
 	}
 }
 
-// K4 [penyimpangan sadar - menunggu konfirmasi WO]: NOURUT diberikan
+// K4 [penyimpangan sadar — disetujui WO 04-10-2026] (F2): NOURUT diberikan
 // gudang (MAX+1 per IDPEGA), XML `InsertViewSuggest_SQL` memakai
 // `.pxListSubscript` (SaveViewSuggest 2.1.2 CARI2). Bukti keduanya sama
 // sepanjang tangga (tolak-naik-setuju, tiga jenjang): sesudah SETIAP submit,

@@ -346,7 +346,7 @@ func (l *Layanan) PilihBisnis(ctx context.Context, p inti.Pelaku, id, idDetail s
 // yang baru ditambahkan pasca DT ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION`
 // (`models.UsulanBelumTersimpan`, K4) - tanpa syarat `BusinessFac == "F"`
 // (`[penyimpangan sadar]` K4) dan di KETIGA jenjang, TGL_INP 24 jam, NOURUT
-// repository (`[penyimpangan sadar — menunggu konfirmasi WO]`); rinciannya di
+// repository (`[penyimpangan sadar — disetujui WO 04-10-2026]`); rinciannya di
 // models/usulan.go.
 //
 // lalu connector flow (`models.Langkah`). Semuanya SATU transaksi (AC 29, 83).

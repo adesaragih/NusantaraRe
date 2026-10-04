@@ -1,6 +1,6 @@
 # 01: Sumber data realisasi treaty — dibaca dari view relasional, gagal baca menghentikan proses
 
-**Status:** selesai — penahan tersisa hanya pihak luar: **K11** (skema uji Oracle — uji bertag `db` AC 17, 89 sudah ditulis, belum dijalankan) dan **F1** (ukuran K8, menunggu konfirmasi WO); AC 57 ⛔ (b) K8 butir 4 *(putaran 2, paket P11 04-10-2026; semula: sebagian — konsolidasi P10 04-10-2026; sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
+**Status:** selesai — penahan tersisa hanya pihak luar: **K11** (skema uji Oracle — uji bertag `db` AC 17, 89 sudah ditulis, belum dijalankan) dan **F1** (ukuran K8 — ⭐ disetujui WO 04-10-2026, putaran 3; bukan penahan lagi); AC 57 ⛔ (b) K8 butir 4 *(putaran 2, paket P11 04-10-2026; semula: sebagian — konsolidasi P10 04-10-2026; sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** —
 **Menutup:** AC 15 · 16 · 17 · 36 · 37 · 38 · 57 · 58 · 89 *(9 AC)* — US 21 · 23 · 24 · 37
 
@@ -143,7 +143,7 @@ tersembunyi**.
    (`!TreatyMasterInEDM || IsEDMInputOnNB == true`) selalu benar sesudah langkah 10, sehingga varian EDM
    subsection tidak terjangkau.
 
-## ⭐ Putaran 2 — P9 (04-10-2026): SATU ukuran K8 `[menunggu konfirmasi WO]`
+## ⭐ Putaran 2 — P9 (04-10-2026): SATU ukuran K8 — disetujui WO 04-10-2026 (F1)
 
 Dasar: tinjauan spec P9 (temuan 6–7): K8 sempat dipakai dengan dua ukuran — `models/masterxol.go` membaca medan
 di luar daftar harfiah K8 (butir 2 RALAT K8 di atas: `RNMShare`, `RnmShareDeducted`, `EDMState`, `ProportionType`,
@@ -153,7 +153,7 @@ di luar daftar harfiah K8 (butir 2 RALAT K8 di atas: `RNMShare`, `RnmShareDeduct
 **Ukuran yang dipakai di semua tempat:** K8 = **medan master yang DIBACA rule terjangkau jalur NB NonProp** —
 setiap medan di `backend/models/masterxol.go` berkutip langkah XML yang membacanya; sumbernya tetap hanya
 `JSONDATA` `M_TREATY_IN` / `M_TREATY_IN_EDM` (K8 butir 2), nol penulisan JSON (K8 butir 3), treaty keluar tetap ⛔
-(K8 butir 4). ⚠️ `[menunggu konfirmasi WO]` — tafsiran ini melampaui bunyi harfiah daftar K8 (`TreatyXOLList`,
+(K8 butir 4). ✅ Disetujui WO 04-10-2026 (F1, putaran 3; semula *"`[menunggu konfirmasi WO]`"*) — tafsiran ini melampaui bunyi harfiah daftar K8 (`TreatyXOLList`,
 `SpreadingListXOL`, `Installment`, `RetroList`, `FacultativeShare`, `FlagPPH`, `TypeTax`); dicatat di
 PERMINTAAN-TIM-INTI bagian F1.
 
@@ -186,3 +186,18 @@ K11 kosong), lewat pemanggil `skemauji.Buka()` yang sudah ada (`pasang`, sensus 
   `RIOGR`/`RIONR` lewat `KomisiKontrak`.
 
 Status: **selesai** — sisa penahan hanya pihak luar (K11, F1); AC 57 ⛔ (b).
+
+## ⭐ Putaran 3 (04-10-2026): F1 diputuskan — ukuran K8 tunggal disetujui WO
+
+`[keputusan work owner]` **F1** (PROMPT-NB-TREATY-IN-PUTARAN-3 bab 2): ukuran K8 bab P9 **disetujui** sesuai tafsiran
+yang dibangun (medan master yang dibaca rule terjangkau jalur NonProp, termasuk `Share()`, `Installment()`,
+`FacultativeShareList()`, `Limits()`, ringkasan layer; `TreatyXOLList` tidak dibaca karena keluaran). Syaratnya
+dipenuhi commit `23db3bc9`: daftar medan **tertutup** `models.MedanMasterXOL` berkutip langkah XML
+(`TestDaftarMedanMasterXOLTertutup`), uji yang gagal bila `repository.MasterXOLDariJSON` mengembalikan medan di luar
+daftar (`TestUraiMasterXOLHanyaMedanDaftarTertutup`, `TestMasterXOLDariJSONHanyaMengembalikanHasilUrai`), satu pembaca
+JSON (`TestKolomDokumenHanyaDiMasterXOLDariJSON`). Label *"`[menunggu konfirmasi WO]`"* diganti di tiket ini,
+`backend/repository/masterxol.go`, PERMINTAAN-TIM-INTI F1, dan empat baris `docs/alat/status.json`
+(`CalculatePremi_Act`, `ConvertHistoryDate`, `FetchMasterTreatyIn`, `TreatyInputPctCommSpreading`).
+
+Status: **selesai** — sisa penahan hanya pihak luar (K11); AC 57 ⛔ (b). *(Bunyi P11 dikutip: "sisa penahan hanya
+pihak luar (K11, F1); AC 57 ⛔ (b)".)*

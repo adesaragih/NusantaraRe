@@ -12,7 +12,7 @@ package repository
 //
 //   - BACA-SAJA (satu SELECT; nol INSERT/UPDATE, nol penulisan JSON di mana pun);
 //   - HANYA medan master yang DIBACA rule terjangkau jalur NB NonProp - ukuran K8
-//     tunggal `[menunggu konfirmasi WO]` (tiket 01 bab P9): `models.SkalarMasterXOL`,
+//     tunggal, disetujui WO 04-10-2026 (F1; tiket 01 bab P9): `models.SkalarMasterXOL`,
 //     `models.DaftarMasterXOL`, setiap medan berkutip langkah XML - selebihnya
 //     dibuang di sini, tidak pernah sampai ke halaman;
 //   - di SATU fungsi (`MasterXOLDariJSON`) di balik `services.PembacaMasterTreaty`,
