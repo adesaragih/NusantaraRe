@@ -270,8 +270,12 @@ var medanAdmin = func() map[string]bool {
 // `TanggalProduksiTampil` atas IsApproved (sesudah digabung) dan `tempat`
 // berperan pelaku (tiket 05).
 //
-// Halaman Quotation dan TreatyIn tidak pernah diterima dari layar: Quotation
-// diisi pilih bisnis dan CheckDataMkt; TreatyIn dibaca dari view.
+// Halaman Quotation dan TreatyIn tidak pernah diterima dari layar DI SINI:
+// Quotation diisi pilih bisnis dan CheckDataMkt; TreatyIn dibaca dari view.
+// Satu-satunya kekecualian - keempat medan `SearchHierarkiSourceBizAgent_PostDT`
+// (pemilih Source Of Business, F4) - diterima terpisah oleh
+// `services.terimaSumberBisnis`, hanya bila ClaimType 'XOL Retro' dan cocok
+// dengan RD `BrowseAgentHierarkiList_RD` yang dijalankan ulang.
 func GabungMasukanLayar(h, masuk *Halaman, posisi string, tempat map[string]bool) {
 	if masuk == nil {
 		return

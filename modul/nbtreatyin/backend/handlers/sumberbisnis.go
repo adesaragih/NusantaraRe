@@ -11,7 +11,8 @@ import (
 )
 
 // badanSumberBisnis - klik satu baris TreeGrid beserta halaman layar
-// (showHarness `pySubmitData=Yes`: isian layar ikut terkirim).
+// (showHarness `pySubmitData=Yes`: isian layar ikut terkirim). Klik = pencarian
+// tanpa simpan (F4): jawabannya nilai PostDT yang dipegang layar.
 type badanSumberBisnis struct {
 	Halaman *models.Halaman `json:"halaman"`
 	// IDAgen - `.ID` baris RD `BrowseAgentHierarkiList_RD` yang diklik.
@@ -35,10 +36,10 @@ func (h *rute) pilihSumberBisnis(w http.ResponseWriter, r *http.Request) {
 	if !bacaJSON(w, r, &b) {
 		return
 	}
-	ly, err := h.l.PilihSumberBisnis(r.Context(), h.pelaku(r), r.PathValue("id"), b.IDAgen, b.Halaman)
+	hasil, err := h.l.PilihSumberBisnis(r.Context(), h.pelaku(r), r.PathValue("id"), b.IDAgen, b.Halaman)
 	if err != nil {
 		tulisGalat(w, err)
 		return
 	}
-	galat.TulisJSON(w, ly)
+	galat.TulisJSON(w, hasil)
 }

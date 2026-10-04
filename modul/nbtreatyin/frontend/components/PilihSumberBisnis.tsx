@@ -5,10 +5,15 @@
 //
 //   klik nama baris  = pyRowEditing masterDetail -> flow action `AgentSourceBizDetails`
 //                      -> pra-proses `SearchHierarkiSourceBizAgent_PostDT` (backend
-//                      `POST .../pilih-sumber-bisnis`); simpul beranak MENGOSONGKAN
-//                      sumber bisnis - apa adanya
+//                      `POST .../pilih-sumber-bisnis`, TANPA simpan - F4); simpul
+//                      beranak MENGOSONGKAN sumber bisnis - apa adanya
 //   tombol Choose    = tampil `.ChildCount = 0`; `window.close` + `opener.location.reload`
-//                      -> popup ditutup dan layar memuat hasil klik baris
+//                      -> popup ditutup
+//
+// ⭐ F4 (IKUTI XML): PostDT hanya menulis clipboard (`pyWorkPage.Quotation.*`, nol
+// Obj-Save). Hasilnya DIPEGANG state layar (`pegangSumberBisnis`) dan ikut terkirim
+// pada Save/Submit (dan refresh) - disimpan saat itu, bukan saat klik. XML tidak
+// menjalankan refresh berhitung sesudah klik/Choose: layar pun tidak.
 //
 // ⛔ Tidak dibangun, dengan bukti XML:
 //   - autocomplete "Search" (`SearchSOB.CARI1`, RD `BrowseAgentNusaRe_RD`): nilainya
@@ -23,12 +28,40 @@
 
 import { Gagal, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import { useAmbil } from '../ambil'
-import { KLAIM_XOL_RETRO, POLIS, daftarSumberBisnis, nilai, type BarisAgen, type Halaman } from '../api'
+import {
+  KLAIM_XOL_RETRO,
+  POLIS,
+  daftarSumberBisnis,
+  nilai,
+  setel,
+  type BarisAgen,
+  type Halaman,
+  type HasilSumberBisnis,
+} from '../api'
 import { JUDUL, KOLOM_SOB, TOMBOL } from '../labels'
 
 /** pyVisible tombol `Select Source Of Business`: `.ClaimType = 'XOL Retro'`. */
 export function tampilTombolSOB(h: Halaman): boolean {
   return nilai(h, POLIS + 'ClaimType') === KLAIM_XOL_RETRO
+}
+
+/** Jalur yang ditulis `SearchHierarkiSourceBizAgent_PostDT` langkah 1.1, 1.2, 4, 5. */
+export const JALUR_SUMBER_BISNIS = [
+  'Quotation.SourceOfBusiness',
+  'Quotation.SobName',
+  'Quotation.SobLeader0',
+  'Quotation.SobLeader1',
+] as const
+
+/** Halaman layar dengan hasil klik dipegang: HANYA keempat jalur PostDT yang
+ *  ada di jawaban ditulis; medan lain (termasuk `PolicyTreatyIn.*`) tidak disentuh. */
+export function pegangSumberBisnis(h: Halaman, hasil: HasilSumberBisnis): Halaman {
+  let x = h
+  for (const j of JALUR_SUMBER_BISNIS) {
+    const v = hasil.nilai?.[j]
+    if (v !== undefined) x = setel(x, j, v)
+  }
+  return x
 }
 
 /** pyVisible tombol `Choose`: `.ChildCount = 0` (kosong = 0). */
@@ -42,7 +75,7 @@ export default function PilihSumberBisnis({
   onPilih,
   onTutup,
 }: {
-  /** `Quotation.SourceOfBusiness` saat ini - baris yang sedang terpilih. */
+  /** `Quotation.SourceOfBusiness` yang dipegang layar - baris yang sedang terpilih. */
   terpilih: string
   sibuk: boolean
   /** Klik baris; `tutup` = lewat tombol Choose (popup ditutup sesudahnya). */

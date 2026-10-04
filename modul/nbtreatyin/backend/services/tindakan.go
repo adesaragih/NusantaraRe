@@ -21,7 +21,9 @@ import (
 )
 
 // kerjakan memuat kasus untuk ditindak: terbuka, pelaku anggota antreannya,
-// halaman dipra-proses dan digabung dengan kiriman layar.
+// halaman dipra-proses dan digabung dengan kiriman layar. Di layar admin,
+// pilihan Source Of Business yang dipegang layar diterima sesudah penggabungan
+// (`terimaSumberBisnis`, F4) dan sebelum medan turunan dihitung.
 func (l *Layanan) kerjakan(ctx context.Context, p inti.Pelaku, id string, masuk *models.Halaman) (models.Kasus, *models.Halaman, error) {
 	if err := l.periksaPelaku(p); err != nil {
 		return models.Kasus{}, nil, err
@@ -47,6 +49,10 @@ func (l *Layanan) kerjakan(ctx context.Context, p inti.Pelaku, id string, masuk 
 	// Pemetaan kosong (K12, K16) = tempat tertunda = medan tidak diterima.
 	models.GabungMasukanLayar(h, masuk, k.PositionNote, tempatPelaku(p))
 	if k.PositionNote == models.PosisiAdmin {
+		// F4: pilihan Source Of Business yang dipegang layar (sumberbisnis.go).
+		if err := l.terimaSumberBisnis(ctx, h, masuk); err != nil {
+			return models.Kasus{}, nil, err
+		}
 		if err := l.turunkan(ctx, h); err != nil {
 			return models.Kasus{}, nil, err
 		}
@@ -351,7 +357,7 @@ func (l *Layanan) PilihBisnis(ctx context.Context, p inti.Pelaku, id, idDetail s
 // yang baru ditambahkan pasca DT ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION`
 // (`models.UsulanBelumTersimpan`, K4) - tanpa syarat `BusinessFac == "F"`
 // (`[penyimpangan sadar]` K4) dan di KETIGA jenjang, TGL_INP 24 jam, NOURUT
-// repository (`[penyimpangan sadar — menunggu konfirmasi WO]`); rinciannya di
+// repository (`[penyimpangan sadar — disetujui WO 04-10-2026]`); rinciannya di
 // models/usulan.go.
 //
 // lalu connector flow (`models.Langkah`). Semuanya SATU transaksi (AC 29, 83).

@@ -58,7 +58,7 @@
         "Section/SourceHierarki",
         "Activity/AgentSourceBizTreatyIn_Act"
       ],
-      "padanan": "pages/LayarKasus.tsx (admin, tampilTombolSOB: ClaimType XOL Retro) -> components/PilihSumberBisnis.tsx -> GET /api/nb-treaty-in/sumber-bisnis (services.DaftarSumberBisnis)",
+      "padanan": "pages/LayarKasus.tsx (admin, tampilTombolSOB: ClaimType XOL Retro) -> components/PilihSumberBisnis.tsx -> GET /api/nb-treaty-in/sumber-bisnis (services.DaftarSumberBisnis); XML tanpa refresh sesudah pilih (hanya showHarness) - layar pun tidak (F4)",
       "status": "dibangun paket P3 (RALAT tiket 11) - CATATAN-PUTARAN-2 §2c"
     },
     {
@@ -71,8 +71,8 @@
         "FlowAction/AgentSourceBizDetails",
         "DataTransform/SearchHierarkiSourceBizAgent_PostDT"
       ],
-      "padanan": "components/PilihSumberBisnis.tsx klik baris / Choose -> POST /api/nb-treaty-in/kasus/{id}/pilih-sumber-bisnis (services.PilihSumberBisnis: SearchHierarkiSourceBizAgent_PostDT)",
-      "status": "dibangun paket P3 - aktivitas tombol Choose (menulis OfferTreatyIn.QuotationData.*, dibaca nol rule NB) tidak (RALAT tiket 11)"
+      "padanan": "components/PilihSumberBisnis.tsx klik baris / Choose -> POST /api/nb-treaty-in/kasus/{id}/pilih-sumber-bisnis (services.PilihSumberBisnis: SearchHierarkiSourceBizAgent_PostDT TANPA simpan) -> hasil dipegang state LayarKasus (pegangSumberBisnis) -> ikut Save/Submit/refresh (services.terimaSumberBisnis: cocok dengan BrowseAgentHierarkiList_RD yang dijalankan ulang, selain itu 422) - F4",
+      "status": "dibangun paket P3 - aktivitas tombol Choose (menulis OfferTreatyIn.QuotationData.*, dibaca nol rule NB) tidak (RALAT tiket 11); F4 putaran 3 (R2): klik tidak menyimpan, disimpan bersama Save/Submit"
     },
     {
       "tombol": "Choose Business",
@@ -142,7 +142,7 @@
       "tampil": "bagian uang: InputParam.CARI12 != 'treaty' && != 'TreatyPolicy' di wadah uang; kaki: selalu",
       "aksi_xml": "click -> save",
       "rule": [],
-      "padanan": "pages/LayarKasus.tsx satu tombol Save (admin) -> PUT /api/nb-treaty-in/kasus/{id} (services.SimpanDraf; medan wajib ditegakkan - AC 48)",
+      "padanan": "pages/LayarKasus.tsx satu tombol Save (admin) -> PUT /api/nb-treaty-in/kasus/{id} (services.SimpanDraf; medan wajib ditegakkan - AC 48); membawa pilihan Source Of Business yang dipegang layar (F4, services.terimaSumberBisnis)",
       "status": "dibangun - dua tombol XML beraksi sama, dibangun satu"
     },
     {
@@ -167,7 +167,7 @@
         "Activity/InsertHistoryAkseptasiPega",
         "Activity/TreatyRealizationCheckDuplicate"
       ],
-      "padanan": "pages/LayarKasus.tsx tombol kirim (models.TombolUntuk = kirim; bolehKerja = anggota antrean) -> POST /kasus/{id}/kirim -> services.Kirim: SetDueTo -> validasi wajib/pesan -> PascaAdmin -> cekDuplikat -> riwayat -> connector",
+      "padanan": "pages/LayarKasus.tsx tombol kirim (models.TombolUntuk = kirim; bolehKerja = anggota antrean) -> POST /kasus/{id}/kirim -> services.Kirim: SetDueTo -> validasi wajib/pesan -> PascaAdmin -> cekDuplikat -> riwayat -> connector; membawa pilihan Source Of Business yang dipegang layar (F4, services.terimaSumberBisnis)",
       "status": "dibangun"
     },
     {
