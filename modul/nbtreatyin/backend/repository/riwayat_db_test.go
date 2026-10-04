@@ -9,7 +9,7 @@ package repository_test
 // tiket 08). ⛔ Belum pernah dijalankan: skema uji K11 kosong (PERMINTAAN C4).
 //
 // Tabel itu WARISAN `POOLDATA`, tidak dibuat migrasi modul ini. Bila skema uji
-// tidak memuatnya, uji membuat TIRUAN tujuh kolom yang ditulis
+// tidak memuatnya, uji membuat TIRUAN (`buatTiruan`, keputusan WO U1) tujuh kolom yang ditulis
 // `CatatRiwayat` (`ID_PEGA, TGL_TRANSFER, STATUS, USERNAME, WORKBASKET,
 // ID_KOMITE` = INSERT rule XML + `OPERATORID`, kolom yang ada di katalog -
 // PROMPT putaran 2 bab 1) dan membuangnya lagi. `TGL_TRANSFER` = `sysdate` di
@@ -28,31 +28,23 @@ import (
 	"nusantarare/modul/nbtreatyin/backend/repository"
 )
 
+// tiruan uji, bukan tabel aplikasi (bila DBA tidak menyediakannya di skema uji):
+// riwayat akseptasi warisan `POOLDATA.HISTORYAKSEPTASIPEGA`.
 const tabelRiwayatPega = "HISTORYAKSEPTASIPEGA"
 
 // siapkanRiwayatPega memastikan tabel riwayat ada di skema uji: tabel yang
 // disediakan DBA dipakai apa adanya (baris UJI- dihapus sesudah uji), selain
-// itu tiruan dibuat lalu dibuang.
+// itu tiruan dibuat lewat `buatTiruan` (U1: berpagar POOLDATA, dibuang
+// sesudah uji).
 func siapkanRiwayatPega(t *testing.T, ctx context.Context, sqlDB *sql.DB, skema string) {
 	t.Helper()
-	var ada int
-	if err := sqlDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM ALL_TABLES WHERE OWNER = UPPER(:1) AND TABLE_NAME = :2`,
-		skema, tabelRiwayatPega).Scan(&ada); err != nil {
-		t.Fatal(err)
-	}
-	if ada > 0 {
+	kolom := []string{"ID_PEGA VARCHAR2(1000)", "TGL_TRANSFER DATE", "STATUS VARCHAR2(1000)", "USERNAME VARCHAR2(1000)",
+		"WORKBASKET VARCHAR2(1000)", "ID_KOMITE VARCHAR2(1000)", "OPERATORID VARCHAR2(1000)"}
+	if !buatTiruan(t, ctx, sqlDB, skema, tabelRiwayatPega, kolom) {
 		t.Cleanup(func() {
 			_, _ = sqlDB.ExecContext(ctx, fmt.Sprintf(`DELETE FROM %s.%s WHERE ID_PEGA LIKE '%%UJI-NB-%%'`, skema, tabelRiwayatPega))
 		})
-		return
 	}
-	q := fmt.Sprintf(`CREATE TABLE %s.%s (ID_PEGA VARCHAR2(1000), TGL_TRANSFER DATE, STATUS VARCHAR2(1000),
-		USERNAME VARCHAR2(1000), WORKBASKET VARCHAR2(1000), ID_KOMITE VARCHAR2(1000), OPERATORID VARCHAR2(1000))`,
-		skema, tabelRiwayatPega)
-	if _, err := sqlDB.ExecContext(ctx, q); err != nil {
-		t.Fatalf("tiruan %s: %v", tabelRiwayatPega, err)
-	}
-	t.Cleanup(func() { _, _ = sqlDB.ExecContext(ctx, fmt.Sprintf(`DROP TABLE %s.%s PURGE`, skema, tabelRiwayatPega)) })
 }
 
 // AC 72: "Riwayat dapat dibaca berurutan waktu. Test yang menemukan urutan

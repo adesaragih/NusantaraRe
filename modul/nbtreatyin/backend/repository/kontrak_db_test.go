@@ -7,7 +7,8 @@ package repository_test
 // dijalankan: skema uji K11 kosong (PERMINTAAN C4).
 //
 // View itu WARISAN `POOLDATA` (TREATYINDETAIL UNION ALL TREATYINDETAILEDM),
-// tidak dibuat migrasi modul ini. Dua keadaan skema uji:
+// tidak dibuat migrasi modul ini. Dua keadaan skema uji (tiruan lewat
+// `buatTiruan`, keputusan WO U1):
 //
 //   - view SUNGGUHAN disediakan DBA di skema uji -> AC 89 diperiksa lawan
 //     katalognya, AC 17 lawan baris pertama yang ke-33 kolom RD-nya terisi;
@@ -34,6 +35,8 @@ import (
 	"nusantarare/modul/nbtreatyin/backend/repository"
 )
 
+// tiruan uji, bukan tabel aplikasi (bila DBA tidak menyediakan view warisan di
+// skema uji): view kontrak `POOLDATA.TREATYINDETAILJOINEDM`.
 const viewKontrak = "TREATYINDETAILJOINEDM"
 
 // kolomViewDibaca - setiap kolom view yang DIBACA modul: 33 kolom RD
@@ -65,8 +68,9 @@ func jenisObjekView(t *testing.T, ctx context.Context, sqlDB *sql.DB, skema stri
 	return jenis.String
 }
 
-// pasangTiruanView membuat tiruan berbentuk katalog (39 kolom) dan membuangnya
-// sesudah uji. Dipanggil HANYA bila objeknya tidak ada.
+// pasangTiruanView membuat tiruan berbentuk katalog (39 kolom) lewat
+// `buatTiruan` (U1: berpagar POOLDATA, dibuang sesudah uji). Dipanggil HANYA
+// bila objeknya tidak ada.
 func pasangTiruanView(t *testing.T, ctx context.Context, sqlDB *sql.DB, skema string) {
 	t.Helper()
 	var kolom []string
@@ -85,11 +89,9 @@ func pasangTiruanView(t *testing.T, ctx context.Context, sqlDB *sql.DB, skema st
 	if len(kolom) != 39 { // spec §5.1: view 39 kolom
 		t.Fatalf("tiruan %d kolom, view 39", len(kolom))
 	}
-	q := fmt.Sprintf(`CREATE TABLE %s.%s (%s)`, skema, viewKontrak, strings.Join(kolom, ", "))
-	if _, err := sqlDB.ExecContext(ctx, q); err != nil {
-		t.Fatalf("tiruan %s: %v", viewKontrak, err)
+	if !buatTiruan(t, ctx, sqlDB, skema, viewKontrak, kolom) {
+		t.Fatalf("%s sudah ada - tiruan tidak dibuat", viewKontrak)
 	}
-	t.Cleanup(func() { _, _ = sqlDB.ExecContext(ctx, fmt.Sprintf(`DROP TABLE %s.%s PURGE`, skema, viewKontrak)) })
 }
 
 // AC 89: "Modul ini membaca 39 kolom view; nol medan yang dipakai tidak

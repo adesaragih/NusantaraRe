@@ -40,6 +40,10 @@ func pasang(t *testing.T) (*sql.DB, string, context.Context, *intidb.DB) {
 		t.Fatalf("memasang skema uji: %v", err)
 	}
 	t.Cleanup(func() { _ = skemauji.Bongkar(ctx, sqlDB, skema) })
+	// `BacaHalaman` membaca SuggestList dari tabel warisan
+	// HISTORYAKSEPTASIPRODUCTION (K4) - tidak dibuat migrasi mana pun, jadi
+	// tanpa tiruan setiap uji yang membuka halaman gagal ORA-00942.
+	siapkanRiwayatProduksi(t, ctx, sqlDB, skema)
 	repo, err := skemauji.BukaRepositori()
 	if err != nil {
 		t.Fatal(err)
@@ -67,7 +71,7 @@ func TestPulangPergiHalamanLewatKatalog(t *testing.T) {
 	const id = "UJI-NB-1"
 	h := models.HalamanBaru()
 	h.Setel("PositionNote", models.PosisiAdmin)
-	h.Setel("PolicyTreatyIn.PremiOgp", "830.82191780804")
+	h.Setel("PolicyTreatyIn.PremiOgp", "830.82191781") // 8 desimal = skala penuh NUMBER(38,8)
 	h.Setel("PolicyTreatyIn.RiCommOgp", "12.5")
 	h.Setel("PolicyTreatyIn.StartDate", "2026-10-01")
 	h.Setel("PolicyTreatyIn.StatementDate", "2026-10-03 09:15:00")
@@ -91,7 +95,7 @@ func TestPulangPergiHalamanLewatKatalog(t *testing.T) {
 		t.Fatal(err)
 	}
 	for j, harap := range map[string]string{
-		"PolicyTreatyIn.PremiOgp":                  "830.82191780804", // presisi penuh (AC 23)
+		"PolicyTreatyIn.PremiOgp":                  "830.82191781", // skala penuh; 38 digit: TestUangPresisiPenuhTanpaPembulatanRepository (AC 23)
 		"PolicyTreatyIn.RiCommOgp":                 "12.5",
 		"PolicyTreatyIn.StartDate":                 "2026-10-01",
 		"PolicyTreatyIn.StatementDate":             "2026-10-03 09:15:00",
@@ -163,8 +167,8 @@ func TestDaftarKasusPortalMenurutGetListOpportunity(t *testing.T) { // P8, temua
 	}
 }
 
-func TestNomorPolisSekaliDanUnik(t *testing.T) { // AC 31, 74
-	_, _, ctx, d := pasang(t)
+func TestNomorPolisSekaliDanUnik(t *testing.T) { // spec AC 31, 74; spec-penyimpanan AC 1
+	sqlDB, skema, ctx, d := pasang(t)
 	g := repository.Baru(d)
 	for i := 1; i <= 2; i++ {
 		id := fmt.Sprintf("UJI-NB-NO-%d", i)
@@ -182,13 +186,35 @@ func TestNomorPolisSekaliDanUnik(t *testing.T) { // AC 31, 74
 	if err := dalamTx(t, ctx, d, func(tx *intidb.Tx) error { return g.SetelNomorPolis(ctx, tx, "UJI-NB-NO-2", "UJI-QR.T1.10.2026.00001") }); err == nil {
 		t.Fatal("dua berkas bernomor sama (PRODKE sama) harus ditolak indeks unik")
 	}
+	// Spec-penyimpanan AC 1: "Test yang menemukan keduanya tersimpan gagal" -
+	// kolom dibaca LANGSUNG: berkas kedua tetap tanpa nomor.
+	q := fmt.Sprintf(`SELECT NOPOLIS FROM %s.T_GENERAL_POLIS WHERE ID = :1`, skema)
+	if got := kolomTeks(t, ctx, sqlDB, q, "UJI-NB-NO-2"); got != "<NULL>" {
+		t.Fatalf("berkas kedua tersimpan bernomor %s padahal ditolak", got)
+	}
+	// Kuncinya PASANGAN (NOPOLIS, PRODKE): nomor sama pada PRODKE lain diterima.
+	if _, err := sqlDB.ExecContext(ctx, fmt.Sprintf(`UPDATE %s.T_GENERAL_POLIS SET PRODKE = 1 WHERE ID = 'UJI-NB-NO-2'`, skema)); err != nil {
+		t.Fatal(err)
+	}
+	if err := dalamTx(t, ctx, d, func(tx *intidb.Tx) error { return g.SetelNomorPolis(ctx, tx, "UJI-NB-NO-2", "UJI-QR.T1.10.2026.00001") }); err != nil {
+		t.Fatalf("nomor sama dengan PRODKE berbeda harus diterima: %v", err)
+	}
 }
 
-func TestGenerasiTertutupDitolakDanPembatalanUtuh(t *testing.T) { // ID-10, AC 29
+func TestGenerasiTertutupDitolakDanPembatalanUtuh(t *testing.T) { // ID-10, spec AC 29, spec-penyimpanan AC 6
 	sqlDB, skema, ctx, d := pasang(t)
 	g := repository.Baru(d)
 	const id = "UJI-NB-TUTUP"
-	if err := dalamTx(t, ctx, d, func(tx *intidb.Tx) error { return g.SisipKasus(ctx, tx, id, "UJI-AKUN", "UJI") }); err != nil {
+	awal := models.HalamanBaru()
+	awal.Setel("PositionNote", models.PosisiAdmin)
+	awal.Setel("PolicyTreatyIn.PremiOgp", "100")
+	awal.SetelDaftar(models.DaftarSpreading, []models.Baris{{"TreatyType": "UJI-AWAL"}})
+	if err := dalamTx(t, ctx, d, func(tx *intidb.Tx) error {
+		if err := g.SisipKasus(ctx, tx, id, "UJI-AKUN", "UJI"); err != nil {
+			return err
+		}
+		return g.SimpanHalaman(ctx, tx, id, awal)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	// pembatalan: kasus kedua disisipkan lalu transaksi digagalkan
@@ -215,24 +241,32 @@ func TestGenerasiTertutupDitolakDanPembatalanUtuh(t *testing.T) { // ID-10, AC 2
 	if k, err := g.Keadaan(ctx, nil, id); err != nil || !k.GenerasiTertutup {
 		t.Fatalf("keadaan generasi berpenerus: %+v %v", k, err)
 	}
-	err = dalamTx(t, ctx, d, func(tx *intidb.Tx) error { return g.SimpanHalaman(ctx, tx, id, models.HalamanBaru()) })
+	ubah := models.HalamanBaru()
+	ubah.Setel("PositionNote", models.PosisiAdmin)
+	ubah.Setel("PolicyTreatyIn.PremiOgp", "999")
+	ubah.SetelDaftar(models.DaftarSpreading, []models.Baris{{"TreatyType": "UJI-UBAH"}})
+	err = dalamTx(t, ctx, d, func(tx *intidb.Tx) error { return g.SimpanHalaman(ctx, tx, id, ubah) })
 	if !errors.Is(err, repository.ErrGenerasiTertutup) {
 		t.Fatalf("generasi tertutup: %v", err)
+	}
+	// Spec-penyimpanan AC 6: "Test yang menemukan perubahan tersimpan gagal" -
+	// induk dan anak dibaca LANGSUNG dari kolom.
+	if p := kolomTeks(t, ctx, sqlDB, fmt.Sprintf(`SELECT %s FROM %s.T_GENERAL_POLIS WHERE ID = :1`,
+		fmt.Sprintf(intidb.FmtDesimal, "PREMI_OGP"), skema), id); p != "100" {
+		t.Errorf("PREMI_OGP generasi tertutup = %s, harap 100", p)
+	}
+	if tt := kolomTeks(t, ctx, sqlDB, fmt.Sprintf(`SELECT LISTAGG(TREATY_TYPE, ',') WITHIN GROUP (ORDER BY NOURUT)
+		FROM %s.T_POLIS_SPREADING WHERE POLIS_ID = :1`, skema), id); tt != "UJI-AWAL" {
+		t.Errorf("spreading generasi tertutup = %s, harap UJI-AWAL", tt)
 	}
 }
 
 // K4, AC 39-44: catatan SuggestList ditulis ke tabel WARISAN
 // HISTORYAKSEPTASIPRODUCTION dan dibaca kembali berurut NOURUT. Tabel itu
-// TIDAK dibuat migrasi modul ini - bila skema uji tidak memuatnya, uji dilewati.
+// TIDAK dibuat migrasi modul ini - `pasang` memakai tabel DBA bila ada, selain
+// itu tiruan uji (`siapkanRiwayatProduksi`, U1).
 func TestRiwayatProduksiPulangPergi(t *testing.T) {
 	sqlDB, skema, ctx, d := pasang(t)
-	var ada int
-	if err := sqlDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM ALL_TABLES WHERE OWNER = UPPER(:1) AND TABLE_NAME = 'HISTORYAKSEPTASIPRODUCTION'`, skema).Scan(&ada); err != nil {
-		t.Fatal(err)
-	}
-	if ada == 0 {
-		t.Skip("lewati: tabel warisan HISTORYAKSEPTASIPRODUCTION tidak ada di skema uji (tidak dibuat migrasi modul ini)")
-	}
 	g := repository.Baru(d)
 	const id = "UJI-NB-USUL"
 	panjang := ""
@@ -274,7 +308,7 @@ func TestRiwayatProduksiPulangPergi(t *testing.T) {
 		_ = rows.Scan(&n)
 		no = append(no, n)
 	}
-	// K4 [penyimpangan sadar - menunggu konfirmasi WO]: NOURUT j = pxListSubscript j
+	// K4 [penyimpangan sadar — disetujui WO 04-10-2026] (F2): NOURUT j = pxListSubscript j
 	// SuggestList yang dibangun ulang (c[0] = NOURUT 1, c[1] = NOURUT 2) - sama
 	// dengan CARI2 `.pxListSubscript` SaveViewSuggest.
 	if fmt.Sprint(no) != "[1 2]" {
