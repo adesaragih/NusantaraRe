@@ -82,10 +82,15 @@ export const LABEL_TAMPIL: Readonly<Partial<Record<keyof typeof FOLDER_KORPUS, s
  * (`inti/backend/penjaga/menu_test.go`) - keduanya dikunci uji.
  *
  * Keputusan work owner 03-10-2026: modul `marketingofficer` (insert/update `MARKETINGOFFICER`), label "Marketing
- * Officer", kelompok MASTER, baris menu migrasi inti 906.
+ * Officer", kelompok MASTER, baris menu migrasi inti 906. Keputusan work owner 04-10-2026: modul `companydetail`
+ * (layar Pega SFAGIS Company Detail, tabel datar CLIENT), label "Company Detail", kelompok MASTER, migrasi inti 907.
+ * Keputusan work owner 04-10-2026: modul `accounts` (layar Pega SFAGIS Account, tabel T_M_ACCOUNT), label "Accounts",
+ * kelompok MASTER, migrasi inti 908.
  */
 export const MODUL_LUAR_KORPUS = {
   marketingOfficer: 'Marketing Officer',
+  companyDetail: 'Company Detail',
+  accounts: 'Accounts',
 } as const
 
 /**

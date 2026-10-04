@@ -98,9 +98,13 @@ type labelTampil struct{ folder, tampil string }
 // (`langkahMenu`). Barisnya lahir SESUDAH 903, jadi isi awal hak menu tidak menagihnya - admin memberi hak lewat
 // Kelola User.
 //
-// Keputusan work owner 03-10-2026: modul `marketingofficer`, label "Marketing Officer", kelompok MASTER.
+// Keputusan work owner 03-10-2026: modul `marketingofficer`, label "Marketing Officer", kelompok MASTER (906).
+// Keputusan work owner 04-10-2026: modul `companydetail`, label "Company Detail", kelompok MASTER (907).
+// Keputusan work owner 04-10-2026: modul `accounts`, label "Accounts", kelompok MASTER (908).
 var modulLuarKorpus = map[string]string{
 	"marketingofficer": "906_m_nav_menu_marketingofficer.sql",
+	"companydetail":    "907_m_nav_menu_companydetail.sql",
+	"accounts":         "908_m_nav_menu_accounts.sql",
 }
 
 // langkahMenuLuarKorpus menjawab apakah berkas inti `nama` membuat baris modul luar korpus.

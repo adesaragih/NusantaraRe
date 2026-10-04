@@ -56,6 +56,11 @@ interface OpsiMinta {
   badan?: unknown
   /** Parameter kueri; nilai `undefined` dilewati. */
   kueri?: Record<string, string | number | undefined>
+  /**
+   * Batas waktu permintaan INI (ms); kosong = `BATAS_WAKTU_MS`. Hanya untuk operasi admin yang memang berat
+   * (Company Detail Copy Old membaca dokumen Pega: 17-23 detik di DEV, 04-10-2026).
+   */
+  batasWaktuMs?: number
 }
 
 export function rakitURL(jalur: string, kueri?: OpsiMinta['kueri']): string {
@@ -85,7 +90,7 @@ export async function minta<T>(jalur: string, opsi: OpsiMinta = {}): Promise<T> 
   const kendali = new AbortController()
   const jam = setTimeout(() => {
     kendali.abort()
-  }, BATAS_WAKTU_MS)
+  }, opsi.batasWaktuMs ?? BATAS_WAKTU_MS)
   let jawab: Response
   try {
     jawab = await fetch(rakitURL(jalur, opsi.kueri), {

@@ -380,8 +380,9 @@ func TestSlotMenuBerjalanSesudah900(t *testing.T) {
 	// pun - slot menu karena itu melihat tabel yang sudah datar. 902 (login,
 	// M_LOGIN_GO, 01-10-2026), 903 (menu per akun, M_LOGIN_GO_MENU), 904 (kolom kontak M_LOGIN_GO, Kelola User
 	// 03-10-2026), 905 (CONTACT_ID, username dan email unik M_LOGIN_GO, 03-10-2026), dan 906 (baris menu modul luar korpus
-	// Marketing Officer, 03-10-2026) juga milik inti dan juga sebelum slot.
-	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql", "904_m_login_go_kontak.sql", "905_m_login_go_contact_id.sql", "906_m_nav_menu_marketingofficer.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
+	// Marketing Officer, 03-10-2026), 907 (baris menu Company Detail, 04-10-2026), dan 908 (baris menu Accounts,
+	// 04-10-2026) juga milik inti dan juga sebelum slot.
+	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql", "904_m_login_go_kontak.sql", "905_m_login_go_contact_id.sql", "906_m_nav_menu_marketingofficer.sql", "907_m_nav_menu_companydetail.sql", "908_m_nav_menu_accounts.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
 		t.Errorf("urutan pelari %v, mau %v", urut, mau)
 	}
 }

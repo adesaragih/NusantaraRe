@@ -291,11 +291,12 @@ func TestPernyataanMulaiDenganPerintah(t *testing.T) {
 		for _, m := range langkah {
 			for i, p := range m.Pernyataan {
 				kata := strings.ToUpper(strings.Fields(p)[0])
-				// Blok PL/SQL hanya dalam SATU bentuk: berpelindung katalog
-				// (`migrasi.BacaPerintahKatalog`, 901 menu datar) - dan
-				// perintah di dalamnya sendiri harus perintah SQL.
+				// Blok PL/SQL hanya dalam DUA bentuk: berpelindung katalog
+				// (`migrasi.BacaPerintahKatalog`, 901 menu datar) dan sequence
+				// dari kueri (`migrasi.BacaSequenceDariKueri`, 810 Company
+				// Detail) - dan perintah di dalamnya sendiri harus perintah SQL.
 				if kata == "DECLARE" {
-					perintah, alasan := pelanggaranBlokPLSQL(p, mundur)
+					perintah, alasan := perintahBlokPLSQL(p, mundur)
 					if alasan != "" {
 						t.Errorf("%s pernyataan %d: %s", m.Nama, i, alasan)
 						continue
@@ -407,9 +408,24 @@ func TestKolomCreateTableMembacaSeluruhTabel(t *testing.T) {
 // yang ditulis di dalam EXECUTE IMMEDIATE (bukan ADD CONSTRAINT).
 var polaTambahKolomSebaris = regexp.MustCompile(`(?i)^ALTER\s+TABLE\s+\S+\s+ADD\s*\(`)
 
-// pelanggaranBlokPLSQL menjawab perintah di dalam blok PL/SQL, atau mengapa
-// blok itu tidak sah (kosong = sah). Satu-satunya bentuk yang diterima:
-// berpelindung katalog (`migrasi.BacaPerintahKatalog`, 901 menu datar).
+// perintahBlokPLSQL menjawab perintah di dalam blok PL/SQL, atau mengapa blok
+// itu tidak sah (kosong = sah). Dua bentuk diterima: sequence dari kueri
+// (`migrasi.BacaSequenceDariKueri`, 810 Company Detail - jalur maju saja,
+// mundurnya cukup DROP SEQUENCE biasa) dan berpelindung katalog
+// (`pelanggaranBlokPLSQL`).
+func perintahBlokPLSQL(p string, mundur bool) (string, string) {
+	if s, ok := migrasi.BacaSequenceDariKueri(p); ok {
+		if mundur {
+			return "", "sequence dari kueri hanya untuk jalur maju; jalur mundur cukup DROP SEQUENCE " + s.Nama
+		}
+		return "CREATE SEQUENCE {skema}." + s.Nama, ""
+	}
+	return pelanggaranBlokPLSQL(p, mundur)
+}
+
+// pelanggaranBlokPLSQL menjawab perintah di dalam blok PL/SQL berpelindung
+// katalog (`migrasi.BacaPerintahKatalog`, 901 menu datar), atau mengapa blok
+// itu tidak sah (kosong = sah).
 func pelanggaranBlokPLSQL(p string, mundur bool) (string, string) {
 	pk, ok := migrasi.BacaPerintahKatalog(p)
 	if !ok || len(strings.Fields(pk.Perintah)) == 0 {
@@ -462,5 +478,29 @@ func TestAturanBlokPLSQLMenggigit(t *testing.T) {
 		if _, alasan := pelanggaranBlokPLSQL(k.p, k.mundur); (alasan == "") != k.sah {
 			t.Errorf("%s: sah=%v, mau %v (%s)", k.nama, alasan == "", k.sah, alasan)
 		}
+	}
+}
+
+// Bentuk kedua - sequence yang nilai awalnya dihitung dari data (810 Company Detail) - diterima di jalur maju dan
+// terbaca sebagai CREATE SEQUENCE; di jalur mundur DITOLAK (mundur cukup DROP SEQUENCE biasa).
+func TestBlokSequenceDariKueriHanyaJalurMaju(t *testing.T) {
+	blok := "DECLARE\n  n    NUMBER;\n  awal NUMBER;\nBEGIN\n  SELECT COUNT(*) INTO n FROM SYS.ALL_SEQUENCES\n" +
+		"   WHERE SEQUENCE_OWNER = UPPER('{skema}') AND SEQUENCE_NAME = 'SEQ_A';\n  IF n = 0 THEN\n" +
+		"    SELECT NVL(MAX(N), 0) + 1 INTO awal FROM (SELECT 1 N FROM {skema}.T_A);\n" +
+		"    EXECUTE IMMEDIATE 'CREATE SEQUENCE {skema}.SEQ_A START WITH ' || awal || ' INCREMENT BY 1 NOCACHE';\n" +
+		"  END IF;\nEND;"
+	perintah, alasan := perintahBlokPLSQL(blok, false)
+	if alasan != "" || perintah != "CREATE SEQUENCE {skema}.SEQ_A" {
+		t.Errorf("jalur maju: perintah %q, alasan %q", perintah, alasan)
+	}
+	if _, alasan := perintahBlokPLSQL(blok, true); alasan == "" {
+		t.Error("jalur mundur menerima sequence dari kueri")
+	}
+	// Bentuk pertama tetap lewat jalan yang sama.
+	katalog := "DECLARE\n  n NUMBER;\nBEGIN\n  SELECT COUNT(*) INTO n FROM SYS.ALL_INDEXES\n" +
+		"   WHERE OWNER = UPPER('{skema}') AND TABLE_NAME = 'T_A' AND INDEX_NAME = 'IX_A';\n" +
+		"  IF n > 0 THEN\n    EXECUTE IMMEDIATE 'DROP INDEX {skema}.IX_A';\n  END IF;\nEND;"
+	if perintah, alasan := perintahBlokPLSQL(katalog, false); alasan != "" || perintah != "DROP INDEX {skema}.IX_A" {
+		t.Errorf("blok katalog: perintah %q, alasan %q", perintah, alasan)
 	}
 }

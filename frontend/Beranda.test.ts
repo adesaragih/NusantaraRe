@@ -13,7 +13,9 @@ describe('kartuModul', () => {
     // 20 sejak brief menu M_NAV_MENU (30-09-2026): Treaty In dan Treaty In
     // Adjustment - kedua folder korpus terakhir - masuk FOLDER_KORPUS (dulu MODUL).
     // + Marketing Officer, modul di luar korpus (migrasi inti 906, keputusan work owner 03-10-2026).
-    expect(kartuModul()).toHaveLength(21)
+    // + Company Detail, modul di luar korpus (migrasi inti 907, keputusan work owner 04-10-2026).
+    // + Accounts, modul di luar korpus (migrasi inti 908, keputusan work owner 04-10-2026).
+    expect(kartuModul()).toHaveLength(23)
   })
 
   it('modul dimigrasi bertujuan, yang belum dimigrasi tanpa', () => {
