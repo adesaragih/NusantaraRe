@@ -10,6 +10,8 @@ package repository
 // `TestPemuatTanpaJalurTulisTerpisah`). Berkas ini hanya menambah satu
 // pembaruan: empat kolom datar json_polis (ID-21) yang jalur biasa tidak
 // pernah tulis karena di sistem baru ia lahir dari sesi, bukan dari dokumen.
+// Salinan SuggestList dokumen lama (F3) ditulis lewat `CatatUsulan` jalur
+// biasa; di sini hanya penjaga dobelnya (`SalinUsulanLama`, baca IDPEGA).
 //
 // `[terverifikasi]` bentuk baris: procedure `PEGA_JSON_POLIS_TREATYIN`
 // (PERTANYAAN-untuk-DBA P1 §2) - `IDPEGA`, `DATA_JSON` CLOB, `TGL_INPUT`
@@ -58,6 +60,42 @@ func sqlIDPegaKasus(t string) string {
 func sqlSetelKolomDatarLama(t string) string {
 	return fmt.Sprintf(`UPDATE %s SET IDPEGA = :1, NOENDORS = :2, TGL_INPUT = TO_DATE(:3, '%s'), USERNAME = :4 WHERE ID = :5`,
 		t, fmtTanggal)
+}
+
+// sqlAdaUsulanIDPega - penjaga dobel salinan SuggestList lama (F3): cacah
+// baris riwayat produksi ber-IDPEGA itu.
+func sqlAdaUsulanIDPega(t string) string {
+	return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE IDPEGA = :1`, t)
+}
+
+// SalinUsulanLama menyalin baris SuggestList dokumen lama ke
+// POOLDATA.HISTORYAKSEPTASIPRODUCTION (`[keputusan work owner]` F3
+// 04-10-2026) lewat penulis yang SAMA dengan jalur biasa (`CatatUsulan`,
+// pengganti `InsertViewSuggest_SQL`; ID-3, AC 56), di transaksi pemuatan
+// dokumen itu. Penjaga dobel menurut IDPEGA: bila IDPEGA itu sudah punya
+// baris riwayat produksi, tidak ada yang ditulis dan hasilnya false -
+// pemuat yang diulang tidak menggandakan baris. NOURUT = 1..n berurut baris
+// dokumen (`CatatUsulan` MAX+1 dari nol = `.pxListSubscript` langkah 2.1.2).
+func (g *Gudang) SalinUsulanLama(ctx context.Context, tx *db.Tx, idPega string, baris []models.UsulanProduksi) (bool, error) {
+	if len(baris) == 0 {
+		return true, nil
+	}
+	t, err := g.nama(tabelRiwayatProduksi)
+	if err != nil {
+		return false, err
+	}
+	q := sqlAdaUsulanIDPega(t)
+	if err := db.PeriksaSQL(q); err != nil {
+		return false, err
+	}
+	var n int
+	if err := g.pembaca(tx).QueryRowContext(ctx, q, idPega).Scan(&n); err != nil {
+		return false, fmt.Errorf("repository: memeriksa riwayat produksi IDPEGA: %w", err)
+	}
+	if n > 0 {
+		return false, nil
+	}
+	return true, g.CatatUsulan(ctx, tx, idPega, baris)
 }
 
 // KunciJSONPolis - kunci baca (ROWID) setiap baris generasi NB di JSON_POLIS.

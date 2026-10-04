@@ -3,13 +3,19 @@ package models
 // Untuk apa berkas ini: LAPORAN PEMUAT DOKUMEN LAMA - tiket 22.
 //
 // `[keputusan work owner]` K17 (PROMPT-NB-TREATY-IN-PUTARAN-2.md bab 2): medan
-// tak dikenal TIDAK ditampung di tabel (`T_POLIS_MEDAN_LAIN` dihapus - bukan
-// tabel diagram grilling) melainkan di BERKAS LAPORAN CSV per jalankan,
-// kolom `POLIS_ID`, `JALUR`, `NILAI`, di folder keluaran yang ditentukan
-// operator. Medannya tetap tersimpan (tidak dibuang) dan jumlahnya WAJIB 0
-// sebelum pekerjaan dinyatakan selesai (spec-penyimpanan AC 57, 59).
-// Laporan galat juga berkas, bukan tabel (AC 58; K15: tanggal ambigu tidak
-// ditebak, jumlahnya dilaporkan).
+// dokumen tanpa kolom TIDAK ditampung di tabel (`T_POLIS_MEDAN_LAIN` dihapus -
+// bukan tabel diagram grilling) melainkan di BERKAS CSV per jalankan, di
+// folder keluaran yang ditentukan operator.
+//
+// `[keputusan work owner]` F3 (04-10-2026, PROMPT-NB-TREATY-IN-PUTARAN-3.md
+// bab 2): setiap medan dokumen lama tanpa kolom diputuskan per medan - dibuang
+// dengan alasan + bukti (`medan_abaikan_lama.json`) - dan berkas CSV itu
+// menjadi ARSIP AUDIT PEMUATAN, bukan penampung: kolom `POLIS_ID`, `JALUR`,
+// `NILAI`, `KEPUTUSAN` untuk SETIAP medan yang tidak ditulis ke kolom (yang
+// dibuang menurut keputusan tertulis dan yang belum diputuskan). AC 59 (RALAT
+// F3): yang wajib 0 sebelum pekerjaan dinyatakan selesai adalah medan BELUM
+// DIPUTUSKAN. Laporan galat juga berkas, bukan tabel (AC 58; K15: tanggal
+// ambigu tidak ditebak, jumlahnya dilaporkan).
 //
 // Murni: hanya menulis ke io.Writer yang diberikan pemanggil. Ringkasan yang
 // dicetak hanya memuat cacah dan pola jalur - NILAI medan (dapat berupa nama
@@ -27,8 +33,17 @@ import (
 
 // Kepala kedua berkas laporan.
 var (
-	KepalaLaporanTakDikenal = []string{"POLIS_ID", "JALUR", "NILAI"}
-	KepalaLaporanGalat      = []string{"IDPEGA", "NOPOLIS", "JALUR", "NILAI", "SEBAB"}
+	KepalaArsipMedan   = []string{"POLIS_ID", "JALUR", "NILAI", "KEPUTUSAN"}
+	KepalaLaporanGalat = []string{"IDPEGA", "NOPOLIS", "JALUR", "NILAI", "SEBAB"}
+)
+
+// Nilai kolom KEPUTUSAN arsip medan.
+const (
+	// KeputusanBelumDiputuskan - medan tanpa kolom dan tanpa keputusan
+	// tertulis; menahan selesai (AC 59).
+	KeputusanBelumDiputuskan = "BELUM DIPUTUSKAN"
+	// awalanDibuang + kunci alasan `medan_abaikan_lama.json`.
+	awalanDibuang = "dibuang: "
 )
 
 // ErrIDKasusDipakai - ID kasus (pyID) sudah dipakai baris T_GENERAL_POLIS
@@ -89,18 +104,32 @@ type RingkasanPemuat struct {
 	// GalatPerJenis - jenis -> cacah sebab (satu dokumen dapat membawa beberapa).
 	GalatPerJenis map[string]int
 	// TanggalAmbigu - cacah NILAI tanggal ambigu (K15).
-	TanggalAmbigu      int
+	TanggalAmbigu int
+	// DiabaikanPerAlasan - teks alasan keputusan tertulis -> cacah medan dibuang.
 	DiabaikanPerAlasan map[string]int
-	// MedanTakDikenal - baris berkas CSV medan tak dikenal (AC 59: wajib 0).
-	MedanTakDikenal   int
-	TakDikenalPerPola map[string]int
+	// MedanBelumDiputuskan - baris arsip berkeputusan BELUM DIPUTUSKAN (AC 59
+	// RALAT F3: wajib 0).
+	MedanBelumDiputuskan   int
+	BelumDiputuskanPerPola map[string]int
+	// UsulanDisalin - baris SuggestList dokumen lama yang ditulis (atau siap
+	// ditulis) ke POOLDATA.HISTORYAKSEPTASIPRODUCTION (F3).
+	UsulanDisalin int
+	// UsulanTanpaAksesLogin, UsulanTanpaPIC - baris yang disalin dengan
+	// AKSES_LOGIN / PIC kosong (NULL): isi baris dokumen tidak memuatnya dan
+	// nilainya tidak dikarang (F3).
+	UsulanTanpaAksesLogin int
+	UsulanTanpaPIC        int
+	// UsulanDokumenSudahAda - dokumen yang IDPEGA-nya sudah punya baris riwayat
+	// produksi: salinan SuggestList-nya dilewati (penjaga dobel, F3).
+	UsulanDokumenSudahAda int
 	// AngkaKasusTerbesar - nomor terbesar pyID berawalan `NB-` yang dimuat:
 	// SEQ_WORK_POLIS (`IDKasusBerikut`) wajib dimajukan melewatinya.
 	AngkaKasusTerbesar int64
 }
 
-// Selesai - nol dokumen gagal dan nol medan tak dikenal (AC 59, K17).
-func (r RingkasanPemuat) Selesai() bool { return r.DokumenGagal == 0 && r.MedanTakDikenal == 0 }
+// Selesai - nol dokumen gagal dan nol medan BELUM DIPUTUSKAN (AC 59 RALAT
+// F3). Medan yang dibuang menurut keputusan tertulis tidak menahan selesai.
+func (r RingkasanPemuat) Selesai() bool { return r.DokumenGagal == 0 && r.MedanBelumDiputuskan == 0 }
 
 func tulisPeta(b *strings.Builder, m map[string]int) {
 	k := make([]string, 0, len(m))
@@ -116,9 +145,9 @@ func tulisPeta(b *strings.Builder, m map[string]int) {
 // Teks - ringkasan yang dicetak alat pemuat.
 func (r RingkasanPemuat) Teks() string {
 	var b strings.Builder
-	mode, dimuat := "UJI-KERING (nol tulisan)", "Siap dimuat"
+	mode, dimuat, disalin := "UJI-KERING (nol tulisan)", "Siap dimuat", "siap disalin"
 	if r.Tulis {
-		mode, dimuat = "JALANKAN (satu transaksi per dokumen)", "Dimuat"
+		mode, dimuat, disalin = "JALANKAN (satu transaksi per dokumen)", "Dimuat", "disalin"
 	}
 	fmt.Fprintf(&b, "Pemuat dokumen lama NB Treaty In - %s\n", mode)
 	fmt.Fprintf(&b, "Baris JSON_POLIS PRODKE 0/kosong dibaca          : %d\n", r.BarisDibaca)
@@ -132,34 +161,39 @@ func (r RingkasanPemuat) Teks() string {
 	fmt.Fprintf(&b, "Dokumen gagal (berkas laporan galat)             : %d\n", r.DokumenGagal)
 	tulisPeta(&b, r.GalatPerJenis)
 	fmt.Fprintf(&b, "Tanggal ambigu, tidak ditebak (K15)              : %d nilai\n", r.TanggalAmbigu)
-	fmt.Fprintf(&b, "Medan diabaikan menurut keputusan tertulis:\n")
+	fmt.Fprintf(&b, "Catatan SuggestList %-29s: %d baris -> POOLDATA.HISTORYAKSEPTASIPRODUCTION (F3)\n", disalin, r.UsulanDisalin)
+	fmt.Fprintf(&b, "    AKSES_LOGIN kosong (baris dokumen tanpa OperatorID, ditulis NULL): %d\n", r.UsulanTanpaAksesLogin)
+	fmt.Fprintf(&b, "    PIC kosong (baris dokumen tanpa OperatorName, ditulis NULL)      : %d\n", r.UsulanTanpaPIC)
+	fmt.Fprintf(&b, "    dokumen dilewati - IDPEGA sudah punya baris riwayat produksi    : %d\n", r.UsulanDokumenSudahAda)
+	fmt.Fprintf(&b, "Medan dibuang menurut keputusan tertulis (arsip CSV, KEPUTUSAN dibuang):\n")
 	tulisPeta(&b, r.DiabaikanPerAlasan)
-	fmt.Fprintf(&b, "Medan tak dikenal (berkas CSV POLIS_ID,JALUR,NILAI): %d  - WAJIB 0 sebelum pekerjaan dinyatakan selesai (K17, AC 59)\n", r.MedanTakDikenal)
-	tulisPeta(&b, r.TakDikenalPerPola)
+	fmt.Fprintf(&b, "Medan BELUM DIPUTUSKAN (arsip CSV, KEPUTUSAN %s): %d  - WAJIB 0 sebelum pekerjaan dinyatakan selesai (AC 59, F3)\n",
+		KeputusanBelumDiputuskan, r.MedanBelumDiputuskan)
+	tulisPeta(&b, r.BelumDiputuskanPerPola)
 	if r.AngkaKasusTerbesar > 0 {
 		fmt.Fprintf(&b, "Nomor kasus terbesar yang dimuat: %s%d - SEQ_WORK_POLIS wajib dimajukan melewatinya sebelum kasus baru dibuat\n",
 			AwalanKasus, r.AngkaKasusTerbesar)
 	}
 	if r.Selesai() {
-		b.WriteString("STATUS: SELESAI - nol dokumen gagal, nol medan tak dikenal\n")
+		b.WriteString("STATUS: SELESAI - nol dokumen gagal, nol medan belum diputuskan\n")
 	} else {
-		b.WriteString("STATUS: BELUM SELESAI - periksa berkas laporan galat dan medan tak dikenal\n")
+		b.WriteString("STATUS: BELUM SELESAI - periksa berkas laporan galat dan medan BELUM DIPUTUSKAN di arsip\n")
 	}
 	return b.String()
 }
 
 // LaporanPemuat - dua berkas CSV satu jalankan beserta ringkasannya.
 type LaporanPemuat struct {
-	takDikenal, galat *csv.Writer
-	r                 RingkasanPemuat
+	arsip, galat *csv.Writer
+	r            RingkasanPemuat
 }
 
 // LaporanPemuatBaru menulis kepala kedua berkas. `tulis` = mode `-jalankan`.
-func LaporanPemuatBaru(takDikenal, galat io.Writer, tulis bool) (*LaporanPemuat, error) {
-	l := &LaporanPemuat{takDikenal: csv.NewWriter(takDikenal), galat: csv.NewWriter(galat), r: RingkasanPemuat{
-		Tulis: tulis, GalatPerJenis: map[string]int{}, DiabaikanPerAlasan: map[string]int{}, TakDikenalPerPola: map[string]int{},
+func LaporanPemuatBaru(arsip, galat io.Writer, tulis bool) (*LaporanPemuat, error) {
+	l := &LaporanPemuat{arsip: csv.NewWriter(arsip), galat: csv.NewWriter(galat), r: RingkasanPemuat{
+		Tulis: tulis, GalatPerJenis: map[string]int{}, DiabaikanPerAlasan: map[string]int{}, BelumDiputuskanPerPola: map[string]int{},
 	}}
-	if err := l.takDikenal.Write(KepalaLaporanTakDikenal); err != nil {
+	if err := l.arsip.Write(KepalaArsipMedan); err != nil {
 		return nil, err
 	}
 	if err := l.galat.Write(KepalaLaporanGalat); err != nil {
@@ -198,19 +232,41 @@ func (l *LaporanPemuat) Gagal(b BarisJSONPolis, g []GalatDokumen) error {
 	return nil
 }
 
-// Berhasil mencatat dokumen yang dimuat (atau siap dimuat) dan menulis
-// medan tak dikenalnya ke berkas CSV (K17, AC 57).
-func (l *LaporanPemuat) Berhasil(h HasilPecah) error {
+// Berhasil mencatat dokumen yang dimuat (atau siap dimuat), menulis setiap
+// medannya yang tidak masuk kolom ke arsip CSV beserta keputusannya (F3, K17,
+// AC 57), dan mencatat salinan SuggestList-nya. `usulanDisalin` false =
+// penjaga dobel melewati salinan karena IDPEGA sudah punya baris riwayat
+// produksi (`repository.SalinUsulanLama`).
+func (l *LaporanPemuat) Berhasil(h HasilPecah, usulanDisalin bool) error {
 	l.r.Dimuat++
 	for a, n := range h.Diabaikan {
 		l.r.DiabaikanPerAlasan[a] += n
 	}
-	for _, m := range h.TakDikenal {
-		l.r.MedanTakDikenal++
-		l.r.TakDikenalPerPola[m.Pola]++
-		if err := l.takDikenal.Write([]string{h.ID, m.Jalur, m.Nilai}); err != nil {
+	for _, m := range h.Arsip {
+		keputusan := KeputusanBelumDiputuskan
+		if m.Kunci != "" {
+			keputusan = awalanDibuang + m.Kunci
+		} else {
+			l.r.MedanBelumDiputuskan++
+			l.r.BelumDiputuskanPerPola[m.Pola]++
+		}
+		if err := l.arsip.Write([]string{h.ID, m.Jalur, m.Nilai, keputusan}); err != nil {
 			return err
 		}
+	}
+	switch {
+	case usulanDisalin:
+		l.r.UsulanDisalin += len(h.Usulan)
+		for _, u := range h.Usulan {
+			if u.AksesLogin == "" {
+				l.r.UsulanTanpaAksesLogin++
+			}
+			if u.PIC == "" {
+				l.r.UsulanTanpaPIC++
+			}
+		}
+	case len(h.Usulan) > 0:
+		l.r.UsulanDokumenSudahAda++
 	}
 	if strings.HasPrefix(h.ID, AwalanKasus) {
 		if n, err := strconv.ParseInt(strings.TrimPrefix(h.ID, AwalanKasus), 10, 64); err == nil && n > l.r.AngkaKasusTerbesar {
@@ -225,9 +281,9 @@ func (l *LaporanPemuat) SudahDimuat() { l.r.SudahDimuat++ }
 
 // Tutup mengosongkan penyangga kedua berkas.
 func (l *LaporanPemuat) Tutup() error {
-	l.takDikenal.Flush()
+	l.arsip.Flush()
 	l.galat.Flush()
-	return errors.Join(l.takDikenal.Error(), l.galat.Error())
+	return errors.Join(l.arsip.Error(), l.galat.Error())
 }
 
 // Ringkasan - salinan cacah saat ini.

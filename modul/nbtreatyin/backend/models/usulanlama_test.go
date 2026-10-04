@@ -34,8 +34,8 @@ func TestSuggestListLamaDisalinMenurutSaveViewSuggest(t *testing.T) { // F3; AC 
 		t.Fatalf("%v %+v", err, h.Galat)
 	}
 	// Anggota SuggestList punya tujuan (riwayat produksi): bukan "belum diputuskan".
-	if len(h.TakDikenal) != 0 {
-		t.Errorf("medan belum diputuskan %+v", h.TakDikenal)
+	if len(h.BelumDiputuskan) != 0 {
+		t.Errorf("medan belum diputuskan %+v", h.BelumDiputuskan)
 	}
 	if len(h.Usulan) != 2 {
 		t.Fatalf("hanya baris ber-IsSave kosong yang disalin (langkah 2.1 `.IsSave==\"\"`), dapat %d: %+v", len(h.Usulan), h.Usulan)

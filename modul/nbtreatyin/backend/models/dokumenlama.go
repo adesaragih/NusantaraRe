@@ -67,6 +67,13 @@ type Medan struct {
 	nama   string
 }
 
+// MedanArsip - satu medan dokumen yang tidak ditulis ke kolom: Kunci = kunci
+// alasan keputusan tertulis (`medan_abaikan_lama.json`), "" = belum diputuskan.
+type MedanArsip struct {
+	Medan
+	Kunci string
+}
+
 // GalatDokumen - satu sebab dokumen tidak dimuat (AC 58).
 type GalatDokumen struct {
 	Jalur, Nilai string
@@ -80,11 +87,16 @@ type HasilPecah struct {
 	NoPolis string
 	Halaman *Halaman
 	Datar   KolomDatarLama
-	// TakDikenal - medan tanpa kolom dan tanpa keputusan tertulis; masuk
-	// berkas laporan CSV, TIDAK dibuang (K17, AC 57).
-	TakDikenal []Medan
-	// Diabaikan - alasan tertulis -> cacah medan yang sengaja tidak disimpan.
+	// BelumDiputuskan - medan tanpa kolom dan tanpa keputusan tertulis (AC 59
+	// RALAT F3: wajib nol sebelum pekerjaan dinyatakan selesai).
+	BelumDiputuskan []Medan
+	// Diabaikan - teks alasan tertulis -> cacah medan yang sengaja tidak disimpan.
 	Diabaikan map[string]int
+	// Arsip - SETIAP medan daun yang tidak ditulis ke kolom maupun ke riwayat
+	// produksi, urut dokumen, beserta kunci keputusannya ("" = belum
+	// diputuskan). Ditulis ke arsip CSV pemuat (F3: arsip audit pemuatan,
+	// bukan penampung; nilainya tidak hilang diam-diam - AC 57).
+	Arsip []MedanArsip
 	// Galat - dokumen TIDAK dimuat bila terisi (K15, AC 58).
 	Galat []GalatDokumen
 	// Usulan - baris SuggestList dokumen yang disalin ke
@@ -576,11 +588,13 @@ func PecahDokumenLama(b BarisJSONPolis) (HasilPecah, error) {
 			}
 			continue
 		}
-		if alasan := alasanDiabaikan(md.Pola); alasan != "" {
-			hasil.Diabaikan[alasan]++
+		kunci := kunciDibuang(md.Pola)
+		hasil.Arsip = append(hasil.Arsip, MedanArsip{Medan: md, Kunci: kunci})
+		if kunci != "" {
+			hasil.Diabaikan[teksAlasan(kunci)]++
 			continue
 		}
-		hasil.TakDikenal = append(hasil.TakDikenal, md)
+		hasil.BelumDiputuskan = append(hasil.BelumDiputuskan, md)
 	}
 	if hasil.NoPolis == "" {
 		hasil.Galat = append(hasil.Galat, GalatDokumen{Jalur: "NOPOLIS", Err: ErrNoPolisKosong})

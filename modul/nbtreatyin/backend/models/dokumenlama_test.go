@@ -108,10 +108,10 @@ func TestPecahDokumenProporsionalDatar(t *testing.T) { // AC 52, 55, 29, 69; ID-
 		"PolicyTreatyIn.UJIMedanFiktif":                   "UJI-nilai-lewat",
 		"PolicyTreatyIn.QuotationData.UJIFiktifQuotation": "",
 	}
-	if len(h.TakDikenal) != len(harapTak) {
-		t.Errorf("medan tak dikenal %+v, harap %v", h.TakDikenal, harapTak)
+	if len(h.BelumDiputuskan) != len(harapTak) {
+		t.Errorf("medan tak dikenal %+v, harap %v", h.BelumDiputuskan, harapTak)
 	}
-	for _, m := range h.TakDikenal {
+	for _, m := range h.BelumDiputuskan {
 		if v, ada := harapTak[m.Jalur]; !ada || v != m.Nilai {
 			t.Errorf("medan tak dikenal tak terduga %+v", m)
 		}
@@ -154,8 +154,8 @@ func TestPecahDokumenNonProporsionalBersarang(t *testing.T) { // AC 53; ID-26, I
 	}
 	// pyExpanded: keputusan F3 (InputPolicyTreatyInDetail_NonProp 12.1 menulis,
 	// nol pembaca) -> dibuang berbukti, bukan lagi "belum diputuskan".
-	if len(h.TakDikenal) != 0 {
-		t.Errorf("medan belum diputuskan %+v", h.TakDikenal)
+	if len(h.BelumDiputuskan) != 0 {
+		t.Errorf("medan belum diputuskan %+v", h.BelumDiputuskan)
 	}
 	if h.Diabaikan[AlasanOldData] != 1 || h.Diabaikan[AlasanSelisih] != 1 || h.Diabaikan[AlasanF3KeadaanBaris] != 1 {
 		t.Errorf("diabaikan %v", h.Diabaikan)
@@ -421,7 +421,7 @@ func TestPanduanBentukDokumenNolMedanBelumDiputuskan(t *testing.T) {
 	if err != nil || len(h.Galat) > 0 {
 		t.Fatalf("%v %+v", err, h.Galat)
 	}
-	for _, m := range h.TakDikenal {
+	for _, m := range h.BelumDiputuskan {
 		t.Errorf("medan belum diputuskan: %s", m.Pola)
 	}
 }
