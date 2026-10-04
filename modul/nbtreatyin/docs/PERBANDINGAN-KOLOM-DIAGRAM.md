@@ -37,6 +37,14 @@ kolom persis) dan `TestSQLTidakMenyebutKolomYangDibuang`. Tabel putaran 1 di lua
 `POOLDATA.HISTORYAKSEPTASIPRODUCTION` (Prop J74–J78, NonProp J89–J93) — tabel **warisan**, ditulis dan
 dibaca, tidak dibuat (MODUL.md *Tabel warisan*), lihat bab 9.
 
+> ⛔ **RALAT 04-10-2026 — tipe kolom uang dan persen** (perintah WO *"buat sesuai yang di sheet NB Treaty In Prop"*).
+> Diagram sheet *NB Treaty In Prop* sel **F20**: *"uang · persen → angka presisi tetap, skala MINIMAL 9 desimal (P29)"*.
+> Bunyi lama (migrasi 320, 323–327 dan dokumen ini): *"`NUMBER(38,8)`"*. Bunyi baru: **`NUMBER(38,10)`** di seluruh delapan
+> tabel (skala 10: bagi rata spreading NB presisi 10, J69). Nama kolom, cacah kolom, dan **tepat delapan** `CREATE TABLE`
+> tidak berubah; `T_GENERAL_POLIS` tetap tabel Treaty sendiri lewat `CREATE TABLE` di migrasi 320 (perintah WO
+> 04-10-2026, tabrakan nama dengan `nbfacin` 182: PERMINTAAN-TIM-INTI C10). Kepatuhan butir demi butir seluruh sheet
+> (B5–B122): `docs/KEPATUHAN-SHEET-NB-TREATY-IN-PROP.md`.
+
 ---
 
 ## 1 · `T_GENERAL_POLIS` — 79 medan `PolicyTreatyIn` + 7 kolom `json_polis` (F10–F11)

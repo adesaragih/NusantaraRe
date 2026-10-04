@@ -901,6 +901,9 @@ mengurangi terhadap **nol**, bukan terhadap angka yang bermakna.
 
 ### 4q5.5 `[keputusan work owner]` Presisi uang — **`NUMBER(20,8)`**
 
+> ⛔ **RALAT 04-10-2026** — digantikan **`NUMBER(38,10)`** (diagram sheet NB Treaty In Prop F20 *"skala MINIMAL 9
+> desimal"*, perintah WO 04-10-2026). Lihat §4sx.6.
+
 ⚠️ Ini **menyempurnakan P29**, dan sebagian membalikkannya. Bunyi lama dikutip:
 
 > ⛔ *"P29 — ikuti apa adanya, jangan bulatkan. Skala kolom uang minimal 9 desimal."*
@@ -1021,6 +1024,24 @@ Bunyi lama 4sx.1, dikutip: *"`T_GENERAL_POLIS.BROKERAGE_FEE_SEBENARNYA` | `.Brok
 `BranchCode`/`BranchName`, `InstallmentList().PPN/PPh`) kini **diputuskan dibuang** berbukti, tidak lagi masuk
 laporan CSV sebagai butir terbuka. Daftar lengkap 25 pola: tiket 22 bab *Putaran 3*. Tetap **tepat delapan**
 `CREATE TABLE` (`repository/kolom_test.go`).
+
+### 4sx.6 ⛔ RALAT putaran 3 — 04-10-2026 — presisi uang dan persen `NUMBER(38,10)` (diagram F20)
+
+`[perintah work owner]` 04-10-2026: *"Baca dan pelajari sheet NB Treaty In Prop … buat sesuai yang di sheet NB Treaty
+In Prop."* Sel **F20** sheet itu, dikutip apa adanya: *"uang · persen → angka presisi tetap, skala MINIMAL 9 desimal
+(P29: galat lama diikuti apa adanya, tidak dibulatkan)"*; sel **J69**: *"NB: 100 / jumlah baris presisi 10 · ditiru
+apa adanya"*.
+
+Bunyi lama §4q5.5 (dan KEPUTUSAN 23-09-2026 sore di spec-penyimpanan), dikutip: *"Yang berlaku sekarang:
+**`NUMBER(20,8)`**"* → *"`NUMBER(38,8)` … desimalnya tetap delapan"*; tabel §4q5.5: *"skala kolom uang | minimal **9** |
+**8**"*. Bunyi baru: **`NUMBER(38,10)`** untuk setiap kolom uang dan persen di **delapan** tabel — skala 10 (≥ 9 menurut
+F20, kembali ke §4q.1; 10 supaya `SharePercentage`/`ClaimPercentage` hasil bagi rata NB presisi 10 dan
+`@divide(…,100,10)` `CountSpreading_Act` langkah 3–4 tersimpan utuh, J69), 28 digit di depan koma (≥ 17 digit sentinel
+§KEPUTUSAN 23-09 sore). Galat lama `592.629.512,880000276` kini **utuh** (P29 harfiah); nilai berdesimal > 10 tetap
+dibulatkan Oracle di desimal kesebelas. Tipe tabel lain, kolom, dan cacah `CREATE TABLE` (**tepat delapan**) tidak
+berubah. Kode dan uji: `docs/alat/skema.py` `TIPE_DESIMAL`; `repository/kolom_test.go`
+`TestSkalaUangPersenMinimalSembilanDiSemuaTabel`; penjaga inti `TestNolNumberTanpaPresisi` (`presisiSah`,
+PERMINTAAN-TIM-INTI A5). Kepatuhan seluruh sheet: `docs/KEPATUHAN-SHEET-NB-TREATY-IN-PROP.md`.
 
 ---
 

@@ -2,6 +2,21 @@
 
 > ⛔ **`T_POLIS_BREAKDOWN_SPREAD` DIBATALKAN 23-09-2026.** `[keputusan work owner]` Tabel itu **tidak ada**. Keempat medannya turunan: dua dari master `POOLDATA.PROPORTIONALARRG`, dua dihitung dari `TotalPremium` dan `TotalClaim` yang sudah tersimpan. Rujukan di bawah dicoret, bunyinya tidak dihapus.
 
+> ⛔⛔ **RALAT 04-10-2026 — presisi uang dan persen `NUMBER(38,10)`** `[perintah work owner]` *"Baca dan pelajari
+> sheet NB Treaty In Prop … buat sesuai yang di sheet NB Treaty In Prop."* Diagram grilling
+> (`Diagram-Skema-Tabel-NusantaraRe.xlsx` sheet *NB Treaty In Prop*) sel **F20**, dikutip apa adanya: *"uang · persen →
+> angka presisi tetap, skala MINIMAL 9 desimal (P29: galat lama diikuti apa adanya, tidak dibulatkan)"*; sel **J69**:
+> *"NB: 100 / jumlah baris presisi 10 · ditiru apa adanya"*. Bunyi lama di berkas ini (ID-14, ID-15, AC 19, 20, 20b, 55,
+> bab *KEPUTUSAN 23-09-2026 sore — Presisi*), dikutip: *"`NUMBER(38,8)` … **desimalnya tetap delapan**"*. Bunyi baru:
+> **`NUMBER(38,10)`** di seluruh delapan tabel — skala **10** (≥ 9 menurut F20; 10 supaya hasil bagi rata spreading NB
+> presisi 10 tersimpan utuh, J69), **28 digit di depan koma** (≥ 17 digit sentinel `99999999999999999.99`).
+> Akibat: galat lama `592.629.512,880000276` (9 desimal) **tersimpan utuh** — AC 19 kembali ke bunyi aslinya; pembulatan
+> hanya pada desimal **kesebelas** ke atas (AC 20b, 55). Kode: `docs/alat/skema.py` `TIPE_DESIMAL`, migrasi 320,
+> 323–327; uji `repository/kolom_test.go` `TestKatalogSepakatDenganDDL`, `TestSkalaUangPersenMinimalSembilanDiSemuaTabel`;
+> uji db `TestUangPresisiPenuhTanpaPembulatanRepository`, `TestSpreadingBagiRataPresisiSepuluhUtuhDiKolom`,
+> `TestPemuatLamaMenulisLewatAntarmukaSama` (K11). Penjaga inti `TestNolNumberTanpaPresisi` menerima `NUMBER(38,10)`
+> (PERMINTAAN-TIM-INTI A5). Kepatuhan butir demi butir: `docs/KEPATUHAN-SHEET-NB-TREATY-IN-PROP.md`.
+
 ---
 
 
@@ -351,7 +366,7 @@ dokumen. Itulah kunci pasangan antar generasi.
 
 | Golongan | Tipe | Dasar |
 | --- | --- | --- |
-| uang · persen | ⭐ **`NUMBER(38,8)`** *(semula ~~`NUMBER(20,8)`~~ — dinaikkan 23-09-2026 sore; **desimalnya tetap delapan**, yang berubah hanya sisi kiri koma)* | P29 disempurnakan 23-09-2026 · ADR-0003 |
+| uang · persen | ⛔ **`NUMBER(38,10)`** *(RALAT 04-10-2026, diagram F20 "skala MINIMAL 9" + J69; semula ~~`NUMBER(38,8)`~~, sebelumnya ~~`NUMBER(20,8)`~~)* | P29 · diagram F20 · ADR-0003 |
 | tanggal | `DATE` | dua format masuk |
 | cacah | bilangan bulat | `NOURUT` `PRODKE` `INSTALLMENT_NO` |
 | ⭐ kode | **teks** | nol di depan wajib utuh |
@@ -367,6 +382,12 @@ lebih dari delapan **dibulatkan saat dimuat**; `ShareValue` yang bersimpan 24 de
 
 ⭐ Ekor galat `2,76 × 10⁻⁷` **tetap terlihat** — ia jatuh di desimal ketujuh. ⛔ `[terbuka]`
 Dua belas digit di depan koma **belum diuji** terhadap nilai terbesar yang pernah tersimpan.
+
+> ⛔ **RALAT 04-10-2026 (diagram F20)** — paragraf di atas, dikutip: *"`NUMBER(38,8)` … lebih dari delapan
+> **dibulatkan saat dimuat**"*. Bunyi baru: **`NUMBER(38,10)`**; ekor galat `2,76 × 10⁻⁷` dan seluruh
+> `592.629.512,880000276` **utuh** (P29 secara harfiah); yang berdesimal > 10 (`ShareValue` 24, `PremiumSpreaded` 20)
+> tetap dibulatkan di desimal kesebelas — tidak ada skala tetap yang memuat 24 desimal tanpa memotong sisi kiri di
+> bawah 17 digit sentinel.
 
 `[terverifikasi]` Galat yang dimaksud nyata di data produksi: premi angsuran
 `148.157.378,220000069` dikali empat menghasilkan `592.629.512,880000276`, sementara nilai
@@ -644,11 +665,20 @@ dapat diuji dari luar.
     `592629512.88000028` — dibulatkan pada desimal kedelapan, **bukan** dipotong ke
     `592629512.88`. Test yang menemukan `592629512.88` **gagal**. *(ID-15)*
     ⚠️ Bunyi lama dikutip: ~~*"tersimpan dan terbaca kembali tanpa kehilangan satu digit pun"*~~.
+    > ⛔ **RALAT 04-10-2026 (diagram F20, `NUMBER(38,10)`)** — bunyi lama: *"tersimpan sebagai `592629512.88000028`
+    > — dibulatkan pada desimal kedelapan"*. Bunyi baru: `592629512.880000276` tersimpan dan terbaca kembali
+    > **utuh** (9 desimal ≤ skala 10). Test yang menemukan `592629512.88000028` atau `592629512.88` **gagal**
+    > (`TestPemuatLamaMenulisLewatAntarmukaSama`, `TestUangPresisiPenuhTanpaPembulatanRepository`; K11).
 20. `[keputusan work owner]` Kolom uang bertipe `NUMBER(38,8)` *(semula ~~`NUMBER(20,8)`~~)* — delapan angka di belakang koma,
     dua belas di depan. Test yang menemukan skala lain **gagal**. *(ID-14)*
     ⚠️ Bunyi lama dikutip: ~~*"menerima sekurangnya sembilan angka di belakang koma"*~~.
+    > ⛔ **RALAT 04-10-2026 (diagram F20)** — bunyi lama: *"`NUMBER(38,8)` — delapan angka di belakang koma"*.
+    > Bunyi baru: **`NUMBER(38,10)`** — sepuluh di belakang koma, 28 di depan; sejalan bunyi aslinya *"menerima
+    > sekurangnya sembilan angka di belakang koma"*. Test yang menemukan skala < 9 atau tipe desimal yang tidak seragam
+    > di delapan tabel **gagal** (`TestSkalaUangPersenMinimalSembilanDiSemuaTabel`, `TestKatalogSepakatDenganDDL`).
 20b. `[terverifikasi]` Nilai berdesimal lebih dari delapan **dibulatkan, bukan ditolak**. Test yang
     menemukan kegagalan pemuatan pada `ShareValue` berdesimal 24 **gagal**. *(ID-15)*
+    > ⛔ **RALAT 04-10-2026 (diagram F20)** — *"lebih dari delapan"* → **lebih dari sepuluh** (`NUMBER(38,10)`).
 21. `[terverifikasi]` Tanggal berformat `YYYYMMDD` terurai benar. Test yang menemukan kegagalan urai
     **gagal**. *(ID-19)*
 22. `[terverifikasi]` Cap waktu Pega bersufiks ` GMT` terurai benar. Test yang menemukan kegagalan
@@ -748,6 +778,8 @@ dapat diuji dari luar.
     menemukan nilai dibulatkan ke dua desimal **gagal**. *(ID-15)*
     ⚠️ Bunyi lama dikutip: ~~*"dimuat tanpa mengubah satu pun nilai uang"*~~ — tidak lagi benar
     secara harfiah sejak presisi ditetapkan `NUMBER(38,8)` *(semula ~~`NUMBER(20,8)`~~)*.
+    > ⛔ **RALAT 04-10-2026 (diagram F20)** — *"pembulatan hanya terjadi pada desimal kesembilan ke atas,
+    > mengikuti `NUMBER(38,8)`"* → pembulatan hanya pada desimal **kesebelas** ke atas, mengikuti **`NUMBER(38,10)`**.
 56. `[terverifikasi]` Pemuat migrasi menulis lewat antarmuka `repository` yang sama dengan
     penyimpanan biasa. Test yang menemukan jalur tulis terpisah **gagal**. *(ID-3)*
 57. `[terverifikasi]` Medan dokumen yang tidak dikenal tersimpan di penampung, bukan dibuang. Test
@@ -1036,6 +1068,10 @@ Bunyi lama: ~~*"dipindahkan seluruhnya atau sebagian — belum diputuskan"*~~.
 ## ⭐ KEPUTUSAN 23-09-2026 sore — presisi uang dan daftar medan
 
 ### Presisi — **`NUMBER(38,8)`**
+
+> ⛔ **RALAT 04-10-2026** — skala delapan di bab ini digantikan **`NUMBER(38,10)`** (diagram sheet NB Treaty In Prop
+> F20 *"skala MINIMAL 9 desimal"* + J69; lihat blok RALAT di kepala berkas). Sisi kiri koma menjadi 28 digit — tetap di
+> atas 17 digit sentinel di tabel bukti di bawah.
 
 `[keputusan work owner]` *"Selesaikan, jangan jadi permasalahan."*
 
