@@ -9,7 +9,10 @@
   "breakdown": "BreakDownSpreadList - tidak dimigrasi (KEPUTUSAN-RONDE-12 butir 3/3b)",
   "persetujuan_dh": "isApprovedtoDeptHead - tidak dibangun (spec AC 64)",
   "old_data": "OldData - diganti penunjuk OLD_POLIS_ID, kosong di NB (rancangan 4ter.1, ID-9)",
-  "selisih": "TreatyDifference/TreatyXOLDifferenceList - selisih endorsemen, nol baris di NB (rancangan 4ter.2)"
+  "selisih": "TreatyDifference/TreatyXOLDifferenceList - selisih endorsemen, nol baris di NB (rancangan 4ter.2)",
+  "f3_tanpa_pembaca": "F3 (WO 04-10-2026) - medan dokumen lama tanpa kolom, nol dibaca rule NB terjangkau: dibuang, nilainya hanya di arsip CSV pemuat (bukti per medan: medan_abaikan_lama.json bagian pola)",
+  "f3_keadaan_baris": "F3 (WO 04-10-2026) - pyExpanded: keadaan bentang baris grid layar, nol dibaca rule NB: dibuang (bukti per medan: medan_abaikan_lama.json bagian pola)",
+  "f3_salinan_generasi": "F3 (WO 04-10-2026) - EDMNo/ProdKe: turunan/salinan kunci generasi (NOPOLIS, PRODKE json_polis), nol dibaca rule NB: dibuang (bukti per medan: medan_abaikan_lama.json bagian pola)"
  },
  "kasus": [
   {"pola": "PolicyTreatyIn.Show", "harap": "keadaan_layar"},
@@ -42,6 +45,35 @@
   {"pola": "PolicyTreatyIn.QuotationData.isApprovedtoDeptHead", "harap": ""},
   {"pola": "PolicyTreatyIn.ShowUJI", "harap": ""},
   {"pola": "PolicyTreatyIn.UJIMedanFiktif", "harap": ""},
-  {"pola": "PolicyTreatyIn.ListInstallment().pyExpanded", "harap": ""}
+  {"pola": "PolicyTreatyIn.EDMNo", "harap": "f3_salinan_generasi"},
+  {"pola": "PolicyTreatyIn.ProdKe", "harap": "f3_salinan_generasi"},
+  {"pola": "PolicyTreatyIn.QuotationData.BranchCode", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.QuotationData.BranchName", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.QuotationData.BusinessType2", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.QuotationData.CedingCo", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.QuotationData.CedingCoName", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.QuotationData.MarketingCode", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.QuotationData.OperatorID", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.QuotationData.SobLsg", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.QuotationData.SobName", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.QuotationData.StatusBusiness", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.QuotationData.StatusSyariah", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.QuotationData.TeamGroup", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.QuotationData.TypeFacultative", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.QuotationData.BusinessType", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.QuotationData.SobLeader0", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.QuotationData.SobLeader1", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.IsOJKNopolis", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.BrokerageFee", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.pyMessageLabel", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.ListInstallment().InstallmentList().PPN", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.ListInstallment().InstallmentList().PPh", "harap": "f3_tanpa_pembaca"},
+  {"pola": "PolicyTreatyIn.ListInstallment().pyExpanded", "harap": "f3_keadaan_baris"},
+  {"pola": "PolicyTreatyIn.TreatyXOLList().pyExpanded", "harap": "f3_keadaan_baris"},
+  {"pola": "PolicyTreatyIn.SpreadingRiskList().pyExpanded", "harap": ""},
+  {"pola": "PolicyTreatyIn.QuotationData.CedingCoList().CedingCo", "harap": ""},
+  {"pola": "PolicyTreatyIn.ListInstallment().PPNUJI", "harap": ""},
+  {"pola": "PolicyTreatyIn.OldData.QuotationData.BranchCode", "harap": "old_data"},
+  {"pola": "PolicyTreatyIn.TreatyDifference.ListInstallment().pyExpanded", "harap": "selisih"}
  ]
 }

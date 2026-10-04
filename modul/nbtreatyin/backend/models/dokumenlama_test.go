@@ -150,11 +150,12 @@ func TestPecahDokumenNonProporsionalBersarang(t *testing.T) { // AC 53; ID-26, I
 	if len(h.Halaman.AmbilDaftar(JalurAnak(HalamanPolis+".TreatyXOLList", 2, "ValueList"))) != 0 {
 		t.Error("ValueList kosong baris kedua harus tetap kosong")
 	}
-	// pyExpanded: tidak ada keputusan tertulis -> laporan, bukan dibuang.
-	if len(h.TakDikenal) != 1 || h.TakDikenal[0].Jalur != "PolicyTreatyIn.ListInstallment(1).pyExpanded" || h.TakDikenal[0].Nilai != "true" {
-		t.Errorf("medan tak dikenal %+v", h.TakDikenal)
+	// pyExpanded: keputusan F3 (InputPolicyTreatyInDetail_NonProp 12.1 menulis,
+	// nol pembaca) -> dibuang berbukti, bukan lagi "belum diputuskan".
+	if len(h.TakDikenal) != 0 {
+		t.Errorf("medan belum diputuskan %+v", h.TakDikenal)
 	}
-	if h.Diabaikan[AlasanOldData] != 1 || h.Diabaikan[AlasanSelisih] != 1 {
+	if h.Diabaikan[AlasanOldData] != 1 || h.Diabaikan[AlasanSelisih] != 1 || h.Diabaikan[AlasanF3KeadaanBaris] != 1 {
 		t.Errorf("diabaikan %v", h.Diabaikan)
 	}
 }
@@ -211,6 +212,8 @@ func TestPenggolongMedanDiabaikan(t *testing.T) {
 		"internal_pega": AlasanInternalPega, "nourut": AlasanNourut, "keadaan_layar": AlasanKeadaanLayar,
 		"turunan": AlasanTurunan, "pantulan_layer": AlasanPantulanLayer, "breakdown": AlasanBreakdown,
 		"persetujuan_dh": AlasanPersetujuanDH, "old_data": AlasanOldData, "selisih": AlasanSelisih,
+		"f3_tanpa_pembaca": AlasanF3TanpaPembaca, "f3_keadaan_baris": AlasanF3KeadaanBaris,
+		"f3_salinan_generasi": AlasanF3SalinanGenerasi,
 	} {
 		if v != uji.Alasan[kunci] {
 			t.Errorf("alasan %s = %q, harap %q", kunci, v, uji.Alasan[kunci])
@@ -239,6 +242,9 @@ func TestBerkasPenggolongCacatDitolak(t *testing.T) {
 		"alasan ruas tak terdefinisi":   `{"alasan": {"a": "UJI-a"}, "ruas": {"UJI": {"alasan": "b"}}}`,
 		"alasan skalar tak terdefinisi": `{"alasan": {"a": "UJI-a"}, "skalar_polis": {"UJI": ""}}`,
 		"medan JSON tak dikenal":        `{"alasan": {"a": "UJI-a"}, "simpull": {}}`,
+		"alasan pola tak terdefinisi":   `{"alasan": {"a": "UJI-a"}, "pola": {"UJI": {"alasan": "b", "bukti": "UJI-bukti"}}}`,
+		// F3: setiap keputusan per medan wajib berbukti XML.
+		"pola tanpa bukti": `{"alasan": {"a": "UJI-a"}, "pola": {"UJI": {"alasan": "a", "bukti": " "}}}`,
 	} {
 		if _, err := muatPenggolongAbaikan([]byte(isi)); err == nil {
 			t.Errorf("%s: harap ditolak", nama)
@@ -261,6 +267,9 @@ func TestPetaKatalogDokumenDigerakkanKatalog(t *testing.T) {
 		"PolicyTreatyIn.ListInstallment().InstallmentList().DueDate": GolTanggal,
 		"PolicyTreatyIn.TreatyXOLList().ValueList().Deduction":       GolUang, // ID-30: uang
 		"PolicyTreatyIn.SpreadingRiskList().SharePercentage":         GolPersen,
+		// F3 (a): dibaca syarat `InputPolicyTreatyInPre_Act` langkah 10
+		// (`.PolicyTreatyIn.EDMType=="3"` -> lewati langkah) - wajib berkolom.
+		"PolicyTreatyIn.EDMType": GolKode,
 	} {
 		if k, ada := peta[pola]; !ada || k.Golongan != gol {
 			t.Errorf("%s: %+v (ada %v), harap golongan %s", pola, k, ada, gol)

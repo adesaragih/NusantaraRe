@@ -33,6 +33,7 @@ Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7). Genera
 | `SUGGEST_DATE` | DATE | ya |  | tanggal-waktu | `SuggestDate` |
 | `OPERATOR_NAME` | teks | ya |  | teks | `OperatorName` |
 | `IS_NEW_POLICY_NON_PROP` | teks | ya |  | penanda | `IsNewPolicyNonProp` |
+| `EDM_TYPE` | teks | ya |  | kode | `EDMType` |
 | `IS_EDM_INPUT_ON_NB` | teks | ya |  | penanda | `IsEDMInputOnNB` |
 | `HAS_FAC_OUT` | teks | ya |  | penanda | `HasFacOut` |
 | `FLAG_PPH` | teks | ya |  | penanda | `FlagPPH` |
@@ -85,8 +86,8 @@ Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7). Genera
 | `BALANCE_DUE_TO` | angka desimal | ya |  | uang | `BalanceDueTo` |
 | `BALANCE_BEFORE_TAX` | angka desimal | ya |  | uang | `BalanceBeforeTax` |
 | `BALANCE_BEFORE_PPH` | angka desimal | ya |  | uang | `BalanceBeforePPH` |
-| `DEDUCTION1` | angka desimal | ya |  | persen | `Deduction1` |
-| `DEDUCTION2` | angka desimal | ya |  | persen | `Deduction2` |
+| `DEDUCTION1` | angka desimal | ya |  | uang | `Deduction1` |
+| `DEDUCTION2` | angka desimal | ya |  | uang | `Deduction2` |
 | `BROKERAGE_FEE_SEBENARNYA` | angka desimal | ya |  | uang | `BrokerageFeeSebenarnya` |
 | `PPH_VALUE` | angka desimal | ya |  | uang | `PPHValue` |
 | `PPN_VALUE` | angka desimal | ya |  | uang | `PPNValue` |

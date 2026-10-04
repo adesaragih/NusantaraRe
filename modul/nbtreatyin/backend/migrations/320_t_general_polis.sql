@@ -38,6 +38,7 @@ CREATE TABLE {skema}.T_GENERAL_POLIS (
   SUGGEST_DATE              DATE,
   OPERATOR_NAME             VARCHAR2(128),
   IS_NEW_POLICY_NON_PROP    VARCHAR2(16),
+  EDM_TYPE                  VARCHAR2(16),
   IS_EDM_INPUT_ON_NB        VARCHAR2(16),
   HAS_FAC_OUT               VARCHAR2(16),
   FLAG_PPH                  VARCHAR2(16),

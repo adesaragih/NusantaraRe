@@ -33,8 +33,12 @@ package models
 //   - BreakDownSpreadList - KEPUTUSAN-RONDE-12 butir 3/3b (tidak dimigrasi).
 //   - isApprovedtoDeptHead - P36, AC 64.
 //   - IsOJKNopolis, BrokerageFee - hanya DITULIS (GeneratePolicyNoTreaty_Act
-//     langkah 23; SetPPNPPH langkah 3), nol pembaca; di luar diagram/rancangan.
+//     langkah 23 berlabel `//`; SetPPNPPH langkah 4), nol pembaca; di luar
+//     diagram/rancangan.
 //   - Show, ViewState, pxResults - keadaan layar, bukan data.
+//
+// Medan dokumen lama lain tanpa kolom: keputusan F3 per medan (WO
+// 04-10-2026) - dibuang berbukti di `medan_abaikan_lama.json` bagian `pola`.
 
 import (
 	"errors"
@@ -113,6 +117,12 @@ var TabelGeneralPolis = Tabel{Nama: "T_GENERAL_POLIS", Kolom: []Kolom{
 	kTglWaktu(pt+"SuggestDate", "SUGGEST_DATE"),
 	kTeks(pt+"OperatorName", "OPERATOR_NAME", 128),
 	kPenanda(pt+"IsNewPolicyNonProp", "IS_NEW_POLICY_NON_PROP"),
+	// RALAT F3 (WO 04-10-2026) - rancangan §4.1 penentu bentuk EDM_TYPE;
+	// medan dokumen lama (data guide `$.EDMType`) DIBACA syarat
+	// `InputPolicyTreatyInPre_Act` langkah 10 (`.PolicyTreatyIn.EDMType=="3"`
+	// -> lewati `TreatyRealizationCheckXOLList`; `PerluCekDaftarXOL`). Properti
+	// lain dari `QuotationData.EdmType` (T_POLIS_QUOTATION.EDM_TYPE, J37).
+	kKode(pt+"EDMType", "EDM_TYPE", 16),
 	// rancangan §4.1 - ditulis dan dibaca InputPolicyTreatyInDetail_NonProp
 	// langkah 10-11 (jalur XOL, K8)
 	kPenanda(pt+"IsEDMInputOnNB", "IS_EDM_INPUT_ON_NB"),
@@ -182,7 +192,7 @@ var TabelGeneralPolis = Tabel{Nama: "T_GENERAL_POLIS", Kolom: []Kolom{
 	// adanya (AC 79). Dicatat di HASIL-IMPLEMENTASI bab 4 dan tiket 07.
 	kUang(pt+"Deduction1", "DEDUCTION1"), // K3 (03-10-2026): uang seperti XML (pxCurrency; CountNetPremi_act 4) - menggantikan P29 di atas, tiket 07
 	kUang(pt+"Deduction2", "DEDUCTION2"), // K3 (03-10-2026): uang seperti XML (pxCurrency; CountNetPremi_act 4) - menggantikan P29 di atas, tiket 07
-	// RALAT - dibaca rumus SetPPNPPH langkah 3 (.PPHValue/.PPNValue =
+	// RALAT - dibaca rumus SetPPNPPH langkah 4 (.PPHValue/.PPNValue =
 	// .BrokerageFeeSebenarnya * ...)
 	kUang(pt+"BrokerageFeeSebenarnya", "BROKERAGE_FEE_SEBENARNYA"),
 	kUang(pt+"PPHValue", "PPH_VALUE"),
