@@ -356,21 +356,32 @@ func TestAngkaJSONTidakLewatFloat(t *testing.T) { // ADR-0003
 // TestPanduanBentukDokumenNolMedanBelumDiputuskan - AC 59 (RALAT F3, WO
 // 04-10-2026: "nol medan yang BELUM DIPUTUSKAN"). Setiap jalur daun panduan
 // bentuk dokumen `docs/dataguide-json-polis.json` (`JSON_DATAGUIDE` atas
-// POOLDATA.JSON_POLIS, 378 jalur) dirakit menjadi satu dokumen fiktif lalu
+// POOLDATA.JSON_POLIS, 378 entri) dirakit menjadi satu dokumen fiktif lalu
 // dipecah: tiap medannya wajib berkolom, disalin ke riwayat produksi, atau
-// dibuang dengan keputusan tertulis. ⚠️ Panduan itu basi (diagram R45) -
-// medan di luar panduan baru terlihat saat uji-kering atas data nyata (F7).
+// dibuang dengan keputusan tertulis. Jalur di bawah `OldData` (salinan halaman
+// PolicyTreatyIn generasi sebelumnya, rancangan 4ter.1) ikut dirakit di
+// tingkat polis: ia bentuk halaman yang sama, jadi wajib terputuskan juga di
+// sana (mis. `IsOJKNopolis` dan `InstallmentList().PPN` hanya tampak di bawah
+// OldData). ⚠️ Panduan itu basi (diagram R45) - medan di luar panduan baru
+// terlihat saat uji-kering atas data nyata (F7).
 func TestPanduanBentukDokumenNolMedanBelumDiputuskan(t *testing.T) {
 	isi, err := os.ReadFile(filepath.Join("..", "..", "docs", "dataguide-json-polis.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var panduan []struct {
+	var mentah []struct {
 		Jalur string `json:"o:path"`
 		Jenis string `json:"type"`
 	}
-	if err := json.Unmarshal(isi, &panduan); err != nil {
+	if err := json.Unmarshal(isi, &mentah); err != nil {
 		t.Fatal(err)
+	}
+	panduan := mentah
+	for _, p := range mentah {
+		if j, ok := strings.CutPrefix(p.Jalur, "$.OldData."); ok && !strings.HasPrefix(j, "OldData") {
+			p.Jalur = "$." + j
+			panduan = append(panduan, p)
+		}
 	}
 	daftar := map[string]bool{}
 	for _, p := range panduan {

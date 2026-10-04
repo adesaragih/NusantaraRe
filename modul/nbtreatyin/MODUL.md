@@ -68,7 +68,8 @@ dipensiunkan 1 Oktober 2026.
 Rentang `320-359`: 320-327 - TEPAT delapan tabel diagram grilling (`Diagram-Skema-Tabel-NusantaraRe.xlsx`
 sheet *NB Treaty In Prop* / *NonProp*), bangkitan `docs/alat/skema.py` dari katalog. Tidak ada tabel lain
 (bab 0 butir 11 PROMPT putaran 2; K4, K16, K17): catatan usulan ke tabel warisan di bawah, pemetaan
-peran-tempat konstanta kode, medan tak dikenal pemuat dokumen lama ke berkas laporan CSV.
+peran-tempat konstanta kode, medan dokumen lama tanpa kolom diputuskan per medan (F3) dan diarsipkan di
+berkas CSV pemuat.
 Perbandingan kolom lawan diagram: `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`. Slot menu `968`: satu `UPDATE DIMIGRASI` baris modul ini, nol `INSERT`.
 
 | Migrasi | Tabel yang dibuat | Sheet diagram |
@@ -81,6 +82,25 @@ Perbandingan kolom lawan diagram: `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`. Slot men
 | 325 | `T_POLIS_SPREADING` | Prop J66–J69 · NonProp J71–J74 |
 | 326 | `T_POLIS_XOL` | NonProp J76–J80 (NonProp saja) |
 | 327 | `T_POLIS_XOL_LAYER` | NonProp R82–R87 (NonProp saja) |
+
+`T_GENERAL_POLIS.EDM_TYPE` (`PolicyTreatyIn.EDMType`) ditambahkan putaran 3 (F3, RALAT rancangan §4sexies):
+medan dokumen lama yang dibaca syarat `InputPolicyTreatyInPre_Act` langkah 10.
+
+### Urutan resmi migrasi dan pemuatan dokumen lama (F7, keputusan work owner 04-10-2026)
+
+Agen **tidak** menjalankan migrasi maupun pemuatan apa pun. Urutannya:
+
+1. **Migrasi 320–327 oleh work owner** (`-migrate`; menolak `IS_PEGA_PROD=true`, ADR-U-0005). Sebelumnya
+   selesaikan tabrakan nama `T_GENERAL_POLIS` (`PERMINTAAN-TIM-INTI.md` C10 / K18).
+2. **Uji-kering pemuat di skema uji** (K11) — tanpa `-jalankan`; hanya `JSON_POLIS` yang dibaca, arsip medan
+   dan laporan galat ditulis (bab *Pemuat dokumen lama*).
+3. **F3 tuntas**: arsip uji-kering nol baris `KEPUTUSAN = BELUM DIPUTUSKAN` dan nol dokumen gagal (kode
+   keluar 0). Medan baru yang muncul diputuskan per medan dengan bukti XML di
+   `backend/models/medan_abaikan_lama.json` (bagian `pola`) atau diberi kolom lewat RALAT (bab 0 butir 12).
+4. **Pemuatan produksi oleh WO/DBA** (`-jalankan`, satu transaksi per dokumen, aman diulang). Sesudahnya
+   `SEQ_WORK_POLIS` dimajukan melewati nomor kasus terbesar yang dicetak pemuat (C5).
+
+spec AC 68 (berkas lama dapat dibuka) tetap 🟡 sampai langkah 4.
 
 ## Tabel warisan yang dibaca dan ditulis
 
@@ -101,7 +121,7 @@ Tidak dibuat dan tidak diubah strukturnya oleh modul ini; ditulis hanya bila dia
 Memindah seluruh dokumen polis generasi NB (`PRODKE 0`) dari `POOLDATA.JSON_POLIS` ke 8 tabel diagram
 grilling - setiap polis, tanpa penyaring (KEPUTUSAN-RONDE-12 butir 5). Dijalankan **manusia** dari akar
 repo, sesudah lingkungan dimuat seperti `cmd/api` (`ORACLE_DSN`, `ORACLE_SCHEMA`, `IS_PEGA_PROD`); tidak
-pernah berjalan saat aplikasi menyala. Migrasi 320-327 wajib sudah dijalankan work owner sebelum `-jalankan`.
+pernah berjalan saat aplikasi menyala. Urutan resmi (F7): bab *Migrasi* di atas.
 
 ```powershell
 go run ./modul/nbtreatyin/backend/alat/pemuatlama -keluaran D:\laporan-pemuat            # uji-kering
@@ -111,21 +131,25 @@ go run ./modul/nbtreatyin/backend/alat/pemuatlama -keluaran D:\laporan-pemuat -j
 | Flag | Arti |
 | --- | --- |
 | `-keluaran <folder>` | wajib; folder berkas laporan, dibuat bila belum ada |
-| `-jalankan` | tulis ke tabel baru, satu transaksi per dokumen, aman diulang (kasus ber-IDPEGA sama dilewati). Tanpa flag ini: uji-kering - hanya `JSON_POLIS` yang dibaca, nol pernyataan ke tabel baru. Ditolak bila `IS_PEGA_PROD=true` |
+| `-jalankan` | tulis ke tabel baru, satu transaksi per dokumen, aman diulang (kasus ber-IDPEGA sama dilewati). Tanpa flag ini: uji-kering - hanya `JSON_POLIS` yang dibaca, nol pernyataan ke tabel mana pun. Ditolak bila `IS_PEGA_PROD=true` |
 
 Berkas per jalankan (`<stempel>` = `YYYYMMDD-HHMMSS`):
 
 | Berkas | Kolom | Aturan |
 | --- | --- | --- |
-| `nbtreatyin-medan-tak-dikenal-<stempel>.csv` | `POLIS_ID`, `JALUR`, `NILAI` | medan dokumen tanpa kolom katalog dan tanpa keputusan tertulis - disimpan di sini, bukan tabel (K17). **Wajib 0 baris data** sebelum pekerjaan dinyatakan selesai (spec-penyimpanan AC 57, 59) |
+| `nbtreatyin-arsip-medan-<stempel>.csv` | `POLIS_ID`, `JALUR`, `NILAI`, `KEPUTUSAN` | **arsip audit pemuatan** (F3), bukan penampung: setiap medan dokumen yang tidak ditulis ke kolom maupun ke riwayat produksi, `dibuang: <kunci alasan>` (keputusan tertulis berbukti, `backend/models/medan_abaikan_lama.json`) atau `BELUM DIPUTUSKAN`. Baris `BELUM DIPUTUSKAN` **wajib 0** sebelum pekerjaan dinyatakan selesai (spec-penyimpanan AC 57, 59, RALAT F3) |
 | `nbtreatyin-galat-<stempel>.csv` | `IDPEGA`, `NOPOLIS`, `JALUR`, `NILAI`, `SEBAB` | dokumen yang tidak dimuat beserta sebabnya (AC 58); tanggal ambigu tidak ditebak (K15) |
 
-Ringkasan dicetak ke layar (cacah per jenis galat, per alasan medan diabaikan, per pola medan tak dikenal,
-nomor kasus `NB-` terbesar yang dimuat - `SEQ_WORK_POLIS` wajib dimajukan melewatinya). Kode keluar 0
-hanya bila nol dokumen gagal dan nol medan tak dikenal. Penulisan lewat antarmuka yang sama dengan
-aplikasi (`SisipKasus`, `SimpanHalaman`, `SetelNomorPolis`, `TutupKasus`, ditambah kolom datar
-json_polis); `JSON_POLIS` hanya dibaca. Generasi endorsemen (`PRODKE > 0`) milik pemuat EDM
-(`modul/edmtreatyin`, tiket 10) dan hanya dihitung.
+Ringkasan dicetak ke layar (cacah per jenis galat, per alasan medan dibuang, per pola medan belum
+diputuskan, baris SuggestList yang disalin beserta cacah AKSES_LOGIN/PIC kosong dan dokumen yang salinannya
+dilewati penjaga dobel, nomor kasus `NB-` terbesar yang dimuat - `SEQ_WORK_POLIS` wajib dimajukan
+melewatinya). Kode keluar 0 hanya bila nol dokumen gagal dan nol medan belum diputuskan. Penulisan lewat
+antarmuka yang sama dengan aplikasi (`SisipKasus`, `SimpanHalaman`, `SetelNomorPolis`, `TutupKasus`,
+`CatatUsulan`, ditambah kolom datar json_polis); `JSON_POLIS` hanya dibaca. `SuggestList` dokumen lama
+disalin ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION` (F3, pemetaan `SaveViewSuggest` langkah 2) kecuali IDPEGA-nya
+sudah punya baris di sana (penjaga dobel `repository.SalinUsulanLama`). Baris hasil pemuat dikenali dari
+`IDPEGA` (`<kelas> <pyID>`) dan status `Resolved-Completed` - tanpa kolom penanda (F6). Generasi endorsemen
+(`PRODKE > 0`) milik pemuat EDM (`modul/edmtreatyin`, tiket 10) dan hanya dihitung.
 
 ## Menjalankan uji modul ini saja
 

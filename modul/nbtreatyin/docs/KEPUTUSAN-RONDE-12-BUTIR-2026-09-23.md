@@ -268,6 +268,22 @@ membaca satu tempat saja.
 2. Baris hasil migrasi tetap ditandai `SUMBER='PEGA'` dan **beku** — ⛔ perintah bangun ulang
    proyeksi tidak boleh menyentuhnya. Aturan ini sekarang berlaku atas **seluruh** data historis,
    bukan sebagian, sehingga taruhannya naik.
+
+   > ⛔ **RALAT 04-10-2026 — F6** `[keputusan work owner]` (PROMPT-NB-TREATY-IN-PUTARAN-3.md bab 2 F6;
+   > `PERMINTAAN-TIM-INTI.md` F6). Bunyi lama, dikutip apa adanya: *"Baris hasil migrasi tetap ditandai
+   > `SUMBER='PEGA'` dan **beku**"*. Bunyi baru: penanda `SUMBER='PEGA'` **gugur** — tidak ada kolom
+   > `SUMBER` di diagram grilling (`Diagram-Skema-Tabel-NusantaraRe.xlsx` sheet *NB Treaty In Prop* /
+   > *NonProp*, F9–F33) dan tidak dibuat (bab 0 butir 11–12). Baris hasil pemuat dokumen lama (NB
+   > tiket 22) **dikenali dari `IDPEGA` dan status**: `T_GENERAL_POLIS.IDPEGA` berisi
+   > `JSON_POLIS.IDPEGA` apa adanya, berbentuk `<kelas> <pyID>` = `pyWorkPage.pzInsKey` kasus Pega
+   > (`RDBList\SavePolisTreatyIn_SQL.xml`: `PEGA_JSON_POLIS_TREATYIN({pyWorkPage.pzInsKey}, …)`;
+   > `repository.SetelKolomDatarLama`), sedangkan jalur biasa menulis ID kasus `NB-<n>`
+   > (`repository/kasus.go` `sqlSisipGenerasi`); kasusnya `Resolved-Completed` (`TutupKasus` — dokumen
+   > JSON_POLIS hanya lahir di jalur `Decision8` *Nopolis not empty* → `Utility1` → `End3`, Flow
+   > `InputRealizationTreatyIn`). Larangan bangun ulang proyeksi menyentuh baris itu (milik modul EDM)
+   > memakai pengenal yang sama — `IDPEGA` dan status — bukan kolom penanda. Bukti uji: `repository/lama_db_test.go`
+   > `TestPemuatLamaMenulisLewatAntarmukaSama` (IDPEGA kelas + `Resolved-Completed`; bertag `db`, belum
+   > dijalankan — K11).
 3. Angka selisih lama **disimpan apa adanya**, tidak dihitung ulang — keputusan lama yang tetap
    berlaku dan sekarang berlaku menyeluruh.
 4. Tiga tiket kehilangan penahannya: NB 22 · EDM 09 · EDM 10, seluruhnya
