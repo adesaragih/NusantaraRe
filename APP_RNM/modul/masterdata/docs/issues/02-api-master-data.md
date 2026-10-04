@@ -67,7 +67,11 @@ membawa status); nation lewat `T_MASTER_STATUS`; pencarian akumulasi (jalur RD, 
 akumulasi aktif. Object Item Type sudah menyaring `ISACTIVE = '1'` sejak tiket 39 (RD BrowseV_JN_OBJ_ITEM). Area (RW)
 memakai `STS_AKTIF` RW sendiri.
 
-## Keputusan agent (menunggu konfirmasi)
+## Keputusan agent — DISETUJUI work owner 04-10-2026
+
+> Jawaban work owner atas laporan sesi 0f (yang menyebut M-1 … M-8 dan MD-1 … MD-9): "setuju". Pengecualian: MD-7 (jejak ubah) memuat pilihan yang belum dijawab — tetap `[pertanyaan terbuka]`.
+
+Cakupan persetujuan di berkas ini: MD-1 … MD-9.
 
 | # | Keputusan | Dasar |
 | --- | --- | --- |

@@ -29,7 +29,11 @@ OBJECTITEMTYPE). Tabel flat = salinan saat migrasi; agar datanya tetap terbarui,
 
 Tahap berikut: BRANDDETAIL, VJ_M_TYPE_PROPERTY_PLAN, COVERAGE_FACIN (A179 → pemilik = modul ini).
 
-## Keputusan agent (menunggu konfirmasi)
+## Keputusan agent — DISETUJUI work owner 04-10-2026
+
+> Jawaban work owner atas laporan sesi 0f (yang menyebut M-1 … M-8 dan MD-1 … MD-9): "setuju". Pengecualian: MD-7 (jejak ubah) memuat pilihan yang belum dijawab — tetap `[pertanyaan terbuka]`.
+
+Cakupan persetujuan di berkas ini: M-1 … M-8.
 
 - **M-1** Modul `masterdata`, GROUPMENU `MASTER`, migrasi `760-799`, slot menu `990-991`, prefix `/api/masterdata`.
   Satu menu "Master Data" (menu datar, 1 modul 1 menu); di dalam halaman, satu tab / daftar per tabel master.
