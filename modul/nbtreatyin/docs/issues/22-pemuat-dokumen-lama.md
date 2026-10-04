@@ -167,8 +167,19 @@ Acuan: `PROMPT-NB-TREATY-IN-PUTARAN-3.md` bab 0 dan bab 2 (**F3**, **F6**, **F7*
    `Activity\SaveViewSuggest.xml` langkah 2 "UNTUK TREATY" (2.1 `.IsSave==""`; 2.1.2 CARI1..CARI10 →
    `RDBList\InsertViewSuggest_SQL.xml`), penulis `CatatUsulan` jalur biasa, **penjaga dobel menurut `IDPEGA`**
    (`repository.SalinUsulanLama`: IDPEGA yang sudah punya baris tidak disalin lagi — pemuat diulang tidak
-   menggandakan baris). `AKSES_LOGIN` / `PIC` dari isi baris (`OperatorID` / `OperatorName`) bila ada; kosong
-   ditulis apa adanya (NULL) dan dihitung di ringkasan — tidak dikarang. `CARI7`/`BUSINESS_CODE`
+   menggandakan baris). ~~`AKSES_LOGIN` / `PIC` dari isi baris (`OperatorID` / `OperatorName`) bila ada; kosong
+   ditulis apa adanya (NULL) dan dihitung di ringkasan — tidak dikarang.~~ ⛔ RALAT (tinjauan spec P3 (c)3,
+   04-10-2026), bunyi lama dikutip: *"`AKSES_LOGIN` / `PIC` dari isi baris (`OperatorID` / `OperatorName`) bila
+   ada; kosong ditulis apa adanya (NULL) dan dihitung di ringkasan — tidak dikarang."* Bunyi baru: **`PIC`** dari
+   `.OperatorName` baris (kosong = NULL, dihitung); **`AKSES_LOGIN` selalu NULL** — anggota `OperatorID` baris
+   SuggestList **tidak terbukti**: `docs/dataguide-json-polis.json` hanya memuat `$.SuggestList.Date`,
+   `.Suggest`, `.IsApproved`, `.pxObjClass`, `.OperatorName` (juga `$.OldData.SuggestList.*` sama), dan
+   penulis barisnya `DataTransform\AddToListCommentsPolicyTreatyIn_DT.xml` hanya menulis `.Suggest`,
+   `.IsApproved`, `.Date`, `.OperatorName`; XML `AKSES_LOGIN` = `OperatorID.pyUserIdentifier` operator yang
+   menjalankan `SaveViewSuggest` (sesi), bukan anggota baris. `OperatorID` di baris dokumen (bila ada) =
+   medan **BELUM DIPUTUSKAN** di arsip, tidak dipetakan (`models/usulanlama.go`;
+   `TestOperatorIDBarisUsulanTidakDipetakan`, `TestSuggestListLamaDisalinMenurutSaveViewSuggest`; db
+   `TestPemuatLamaMenyalinSuggestListSekaliMenurutIDPega` — AKSES_LOGIN `<NULL>`, belum dijalankan K11). `CARI7`/`BUSINESS_CODE`
    (`Quotation.BusinessFac/BusinessCode`) dari `QuotationData` dokumen = salinan halaman `Quotation`
    (`Activity\GeneratePolicyNoTreaty_Act.xml` langkah 10 Page-Copy). `TGL_INP` dari `.Date` lewat
    `BacaTanggalLama` (jam dinding Asia/Jakarta, 24 jam — F2 butir 2); tanggal ambigu = galat dokumen (K15).
@@ -197,7 +208,7 @@ penjaga claimlife `polaIndeksPosisi`); uji `TestPenggolongMedanDiabaikan`,
 | Medan (relatif `PolicyTreatyIn`) | (a)/(b) | Tempat / keputusan | Bukti XML |
 | --- | :---: | --- | --- |
 | `EDMType` | **a** | **kolom** `T_GENERAL_POLIS.EDM_TYPE` (RALAT rancangan §4sexies; rancangan §4.1 *penentu bentuk* `EDM_TYPE`) | `Activity\InputPolicyTreatyInPre_Act.xml` langkah 10 prasyarat `.PolicyTreatyIn.EDMType=="3"` → lewati `Call TreatyRealizationCheckXOLList` (terjangkau; `models.PerluCekDaftarXOL`) |
-| `SuggestList().Date/IsApproved/OperatorName/Suggest` (+ `OperatorID`, `IsSave`) | — | **disalin** `HISTORYAKSEPTASIPRODUCTION` (butir 1) | `SaveViewSuggest` langkah 2.1–2.1.4; `InsertViewSuggest_SQL` |
+| `SuggestList().Date/IsApproved/OperatorName/Suggest` (+ `IsSave`) | — | **disalin** `HISTORYAKSEPTASIPRODUCTION` (butir 1); `AKSES_LOGIN` NULL *(RALAT P3 (c)3: bunyi lama "(+ `OperatorID`, `IsSave`)" — `OperatorID` baris tidak ada di dataguide maupun `AddToListCommentsPolicyTreatyIn_DT`)* | `SaveViewSuggest` langkah 2.1–2.1.4; `InsertViewSuggest_SQL`; `AddToListCommentsPolicyTreatyIn_DT` |
 | `EDMNo` | b | dibuang `f3_salinan_generasi` | 0 rujukan korpus NB; rancangan §4.1 `EDM_NO` = turunan NOPOLIS + PRODKE (P55) |
 | `ProdKe` | b | dibuang `f3_salinan_generasi` | 0 rujukan korpus NB; generasi di kolom `PRODKE` (`SavePolisTreatyIn_SQL` `'0'`) |
 | `IsOJKNopolis` | b | dibuang `f3_tanpa_pembaca` | satu-satunya rujukan `GeneratePolicyNoTreaty_Act` langkah 23 `.IsOJKNopolis = "1"` — **berlabel `//`**; nol pembaca |

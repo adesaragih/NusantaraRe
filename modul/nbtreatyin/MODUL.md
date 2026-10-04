@@ -38,8 +38,7 @@ dipensiunkan 1 Oktober 2026.
 ## Aturan (ringkas)
 
 - **Sumber data kontrak** = view `POOLDATA.TREATYINDETAILJOINEDM` — pilih bisnis dan grid popup
-  (RD `BrowseTreatyJoinEDM`, putaran 3 R5) — bukan JSONDATA (P29). Nol penulisan JSON. *(Bunyi lama:
-  "dan tabel `TREATYINDETAIL` (grid popup)" — gugur: grid lama S11 `BusinessAndSOBList` berwadah `1=2`.)*
+  (RD `BrowseTreatyJoinEDM`, putaran 3 R5) — bukan JSONDATA (P29). Nol penulisan JSON.
   ⭐ Pengecualian K8 (03-10-2026): master jalur NonProp/XOL dibaca BACA-SAJA dari `JSONDATA`
   `M_TREATY_IN` / `M_TREATY_IN_EDM` di satu fungsi `repository.MasterXOLDariJSON`
   (`services.PembacaMasterTreaty`, kelak kontrak modul `treatyin`); treaty keluar tidak dibaca.
@@ -150,7 +149,8 @@ Berkas per jalankan (`<stempel>` = `YYYYMMDD-HHMMSS`):
 | `nbtreatyin-galat-<stempel>.csv` | `IDPEGA`, `NOPOLIS`, `JALUR`, `NILAI`, `SEBAB` | dokumen yang tidak dimuat beserta sebabnya (AC 58); tanggal ambigu tidak ditebak (K15) |
 
 Ringkasan dicetak ke layar (cacah per jenis galat, per alasan medan dibuang, per pola medan belum
-diputuskan, baris SuggestList yang disalin beserta cacah AKSES_LOGIN/PIC kosong dan dokumen yang salinannya
+diputuskan, baris SuggestList yang disalin beserta cacah PIC kosong (AKSES_LOGIN selalu NULL - baris dokumen
+tanpa anggota operator) dan dokumen yang salinannya
 dilewati penjaga dobel, nomor kasus `NB-` terbesar yang dimuat - `SEQ_WORK_POLIS` wajib dimajukan
 melewatinya). Kode keluar 0 hanya bila nol dokumen gagal dan nol medan belum diputuskan. Penulisan lewat
 antarmuka yang sama dengan aplikasi (`SisipKasus`, `SimpanHalaman`, `SetelNomorPolis`, `TutupKasus`,

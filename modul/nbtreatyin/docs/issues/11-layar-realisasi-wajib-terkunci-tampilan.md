@@ -175,8 +175,9 @@ dijawab.
 > `TestKlikSimpulBeranakMengosongkan`, `TestKlikSumberBisnisDitolak`,
 > `TestSaveMenyimpanSumberBisnisYangCocok`, `TestNilaiSumberBisnisPalsuDitolak`,
 > `TestSumberBisnisTerkunciBilaBukanXOLRetro`, `TestSaveSimpulBeranakMenghapusSumberBisnis`,
-> `TestPilihanDipegangMenggerakkanPPNPPH`), `models/sumberbisnis_test.go` (`TestSumberBisnisKiriman`,
-> `TestCocokHasilPostDT`), `frontend/components/pilihSumberBisnis.test.ts` ("F4").
+> `TestPilihanDipegangMenggerakkanPPNPPH`), `models/sumberbisnis_test.go` (`TestKirimanSumberBisnis` -
+> R7: satu pola kiriman terkunci `models.TerimaKirimanTerkunci`, empat medan = `models.SumberBisnisPostDT`),
+> `frontend/components/pilihSumberBisnis.test.ts` ("F4").
 
 > ⛔ **RALAT** 2026-10-03 (putaran 2, paket P2) — dua butir lain kalimat yang sama: Survey Report →
 > **K7** (tidak ada tabel di diagram grilling; tetap tidak dibangun); `Choose Business R` dan subsection
@@ -266,7 +267,9 @@ adanya. Bunyi baru: kedua medan (`.QuotationData.ProportionalType` sel `pyReadOn
 sama dengan hasil `TreatyEnableDisableInput` atas halaman server** (langkah 1 "NonProportional",
 langkah 2–4 selalu "0"). TreatyType bukan XOL: medan terkunci, kiriman diabaikan; nilai lain: **422**
 *"Nilai … bukan hasil tombol Enable / Disable Input Type (TreatyEnableDisableInput) - medan ini
-terkunci di layar"*. Uji: `TestEnableDisableHanyaHasilTombol`, `TestEnableDisableHanyaDariTombolXOL`.
+terkunci di layar"*. Uji: `TestEnableDisableHanyaDariTombolXOL` (R7: pola yang sama dengan Source Of
+Business, `models.KirimanEnableDisable` + `models.TerimaKirimanTerkunci`; kedua medan dicocokkan sekaligus;
+uji models pengulang seam HTTP dihapus - tinjauan standards P3 C10).
 Ikutan: uji R5 `TestDaftarBisnisMenyaringJenisProporsiKasus` kini memakai nilai server / hasil tombol.
 
 ### W5 — kolom hanya-baca daftar dari server; nilai bawaan sel
@@ -291,9 +294,10 @@ Add/Delete layar admin)"*. Bunyi baru:
   dirender, lalu ikut terkirim bersama form; pemicunya hanya render sel - nol Activity/DataTransform
   korpus yang MENGISI kedua medan itu (`RemoveTypeTax_ACT` hanya menghapus `.TypeTax`; rule lain
   hanya membaca `.TypeTax=="Inclusive"` / `IsSurveyReport=="Yes"`).
-Uji: `TestKolomHanyaBacaSpreadingDariServer`, `TestAngsuranDariServer`, `TestNilaiBawaanSel`
-(models); `TestKolomHanyaBacaSpreadingTidakDariLayar`, `TestAngsuranDariActionSetServer`,
-`TestNilaiBawaanSelLayarAdmin` (handlers).
+Uji (seam HTTP; R7 C10: uji models pengulangnya dihapus): `TestKolomHanyaBacaSpreadingTidakDariLayar`,
+`TestSpreadingDipicuSelPersen`, `TestAngsuranDariActionSetServer`, `TestNilaiBawaanSelLayarAdmin`.
+R7 (PERMINTAAN H2): anggota baris spreading bukan sel (`TreatyName`, `Currency`, `CurrencyID`,
+`SplitRNMSharePct`) tidak diterima dari layar - `TestAnggotaBarisSpreadingDariServer`.
 
 ### W6 — unsur layar tanpa dasar Section XML (bab 0 butir 7)
 
