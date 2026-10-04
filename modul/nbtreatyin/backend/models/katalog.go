@@ -11,9 +11,7 @@ package models
 //
 // ⛔⛔ TABEL DAN KOLOM MENGIKUTI DIAGRAM GRILLING (bab 0 butir 11-12 PROMPT
 // putaran 2, keputusan work owner 03-10-2026): tepat delapan tabel
-// (`Diagram-Skema-Tabel-NusantaraRe.xlsx` sheet NB Treaty In Prop/NonProp;
-// T_GENERAL_POLIS tabel BERSAMA FacIn - dasar nbfacin 182, kolom katalognya
-// ditambah migrasi 320 lewat ALTER ADD, keputusan WO 04-10-2026),
+// (`Diagram-Skema-Tabel-NusantaraRe.xlsx` sheet NB Treaty In Prop/NonProp),
 // kolom menurut diagram + `docs/rancangan-tabel-datar-treaty-in.md`. Kolom di
 // luar keduanya HANYA bila XML membuktikan medannya DIBACA rule NB terjangkau
 // (syarat, rumus, sel Section) - masing-masing bertanda `RALAT` di bawah dan

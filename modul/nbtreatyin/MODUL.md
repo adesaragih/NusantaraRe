@@ -65,31 +65,24 @@ dipensiunkan 1 Oktober 2026.
 
 ## Migrasi
 
-Rentang `320-359`: 320-327 - delapan tabel diagram grilling (`Diagram-Skema-Tabel-NusantaraRe.xlsx`
-sheet *NB Treaty In Prop* / *NonProp*), bangkitan `docs/alat/skema.py` dari katalog: **tepat tujuh `CREATE TABLE`**
-(`T_POLIS_*`, 321-327) + **`T_GENERAL_POLIS` tabel BERSAMA FacIn + Treaty In** (320 = `ALTER TABLE ... ADD (` kolom
-Treaty atas tabel dasar `nbfacin` 182; keputusan WO 04-10-2026). Tidak ada tabel lain
+Rentang `320-359`: 320-327 - TEPAT delapan tabel diagram grilling (`Diagram-Skema-Tabel-NusantaraRe.xlsx`
+sheet *NB Treaty In Prop* / *NonProp*), bangkitan `docs/alat/skema.py` dari katalog. Tidak ada tabel lain
 (bab 0 butir 11 PROMPT putaran 2; K4, K16, K17): catatan usulan ke tabel warisan di bawah, pemetaan
 peran-tempat konstanta kode, medan dokumen lama tanpa kolom diputuskan per medan (F3) dan diarsipkan di
 berkas CSV pemuat.
 Perbandingan kolom lawan diagram: `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`. Slot menu `968`: satu `UPDATE DIMIGRASI` baris modul ini, nol `INSERT`.
 
-⛔ **Dependensi — tulis di deskripsi PR (K18, `docs/PERMINTAAN-TIM-INTI.md` C10).** RALAT 04-10-2026 — bunyi lama,
-dikutip: *"**Penahan migrasi** … `POOLDATA.T_GENERAL_POLIS` sudah ada: tabel FacIn 7 kolom … diagram grilling memberi
-nama itu ke Treaty In. Sampai WO dan pemilik `nbfacin` memutuskan C10, `-migrate` dengan modul ini aktif **berhenti di
-pra-terbang inti**"*. Bunyi baru (dasar: keputusan work owner 04-10-2026): `T_GENERAL_POLIS` SATU tabel bersama FacIn
-dan Treaty In. Tabel dasarnya dibuat migrasi `nbfacin` `182_t_general_polis` (`ID VARCHAR2(32)` PK, `IDPEGA
-VARCHAR2(50)`, `COB_GROUP`, `START_DATE_TIME`, `OFFERING_DATE`, `END_DATE_TIME`, `FOLLOWING`; sudah berjalan di
-`POOLDATA`, berkasnya belum di repo). **Migrasi 182 wajib di-merge ke `dev` sebelum PR modul ini** — tanpa itu 320
-gagal `ORA-00942` di skema bersih. 320 menambah 79 kolom Treaty (tanpa `ID`/`IDPEGA`) lewat `ALTER ... ADD (` biasa
-(nol PL/SQL), lalu `FK_GENERAL_POLIS_WORK`, `FK_GENERAL_POLIS_OLD`, `UQ_GENERAL_POLIS_OLD`, indeks
-`UQ_GENERAL_POLIS_NOPOLIS`; `320_down` hanya membuang milik Treaty, tidak menyentuh kolom maupun baris FacIn. Pra-terbang
-inti hanya membandingkan `CREATE TABLE`, jadi tidak menahan. Dikunci `backend/migrasi_test.go`. Baris FacIn
-(`T_WORK_POLIS.LINI = 'FAC'`) tidak terbaca: daftar portal, `Keadaan`, `KunciKasus` menyaring `LINI = 'NONLIFE'`.
+⛔ **Penahan migrasi — tulis di deskripsi PR (K18, `docs/PERMINTAAN-TIM-INTI.md` C10).** `POOLDATA.T_GENERAL_POLIS`
+sudah ada: tabel FacIn 7 kolom dari migrasi `182_t_general_polis` (`nbfacin`, di luar repo ini); diagram grilling
+memberi nama itu ke Treaty In. Sampai WO dan pemilik `nbfacin` memutuskan C10, `-migrate` dengan modul ini aktif
+**berhenti di pra-terbang inti** (`praTerbangBentuk`) sebelum satu pernyataan pun dikirim — seluruh langkah yang
+belum tercatat, semua modul, ikut tertahan — dengan galat *"tabel T_GENERAL_POLIS sudah ada … tetapi BENTUKNYA
+BERBEDA"*; tidak ada yang berubah. Migrasi 320 sengaja tanpa blok PL/SQL (koreksi WO 04-10-2026); bentuk yang
+dibandingkan pra-terbang dikunci `backend/migrasi_test.go`.
 
 | Migrasi | Tabel yang dibuat | Sheet diagram |
 | --- | --- | --- |
-| 320 | — (`ALTER ADD` kolom Treaty atas `T_GENERAL_POLIS` bersama, dasar `nbfacin` 182) | Prop + NonProp F9–F33 |
+| 320 | `T_GENERAL_POLIS` | Prop + NonProp F9–F33 |
 | 321 | `T_POLIS_QUOTATION` | Prop + NonProp J35–J38 |
 | 322 | `T_POLIS_CEDING` | Prop + NonProp R40–R50 |
 | 323 | `T_POLIS_INSTALMENT` | Prop J52–J56 · NonProp J52–J55 |
@@ -106,8 +99,7 @@ medan dokumen lama yang dibaca syarat `InputPolicyTreatyInPre_Act` langkah 10.
 Agen **tidak** menjalankan migrasi maupun pemuatan apa pun. Urutannya:
 
 1. **Migrasi 320–327 oleh work owner** (`-migrate`; menolak `IS_PEGA_PROD=true`, ADR-U-0005). Sebelumnya
-   migrasi `nbfacin` `182_t_general_polis` harus sudah ada di `dev` dan berjalan (`T_GENERAL_POLIS` tabel bersama,
-   `PERMINTAAN-TIM-INTI.md` C10 / K18; di `POOLDATA` sudah).
+   selesaikan tabrakan nama `T_GENERAL_POLIS` (`PERMINTAAN-TIM-INTI.md` C10 / K18).
 2. **Uji-kering pemuat di skema uji** (K11) — tanpa `-jalankan`; hanya `JSON_POLIS` yang dibaca, arsip medan
    dan laporan galat ditulis (bab *Pemuat dokumen lama*).
 3. **F3 tuntas**: arsip uji-kering nol baris `KEPUTUSAN = BELUM DIPUTUSKAN` dan nol dokumen gagal (kode
@@ -124,8 +116,7 @@ Tidak dibuat dan tidak diubah strukturnya oleh modul ini; ditulis hanya bila dia
 
 | Tabel | Akses | Dasar |
 | --- | --- | --- |
-| `T_WORK_POLIS`, `SEQ_WORK_POLIS` | tulis + baca | akar diagram (B5); milik premiumlistlife; lintas-lini — modul ini hanya baris `LINI = 'NONLIFE'` |
-| `T_GENERAL_POLIS` (tabel dasar: `ID`, `IDPEGA`, + 5 kolom FacIn) | tulis + baca `ID`, `IDPEGA`; kolom Treaty ditambahkan 320 | tabel bersama FacIn + Treaty In, dasar milik `nbfacin` 182 (keputusan WO 04-10-2026; C10). Tidak di bab penjaga *Tabel warisan* karena 320 mengubahnya (`ALTER ADD`) |
+| `T_WORK_POLIS`, `SEQ_WORK_POLIS` | tulis + baca | akar diagram (B5); milik premiumlistlife |
 | `HISTORYAKSEPTASIPEGA` | tulis + baca | riwayat akseptasi (`InsertHistoryAkseptasiPega_Sql`, diagram Prop F98–F99) |
 | `HISTORYAKSEPTASIPRODUCTION` | tulis + baca | catatan usulan (`SaveViewSuggest -> InsertViewSuggest_SQL`, diagram Prop J74–J76; K4) |
 | `GENERATE_SEQUENCE_NUMBER` | tulis lewat `inti/backend/penomor` | deret nomor polis (padanan `PROC_GENERATE_SEQUENCE_NUMBER`); diagram F103/F118 menyebutnya "dibaca saja" — penulisan lewat penomor bersama disetujui WO 04-10-2026 (`docs/PERMINTAAN-TIM-INTI.md` F8; RALAT catatan di `docs/rancangan-tabel-datar-treaty-in.md` §4bis.4) |

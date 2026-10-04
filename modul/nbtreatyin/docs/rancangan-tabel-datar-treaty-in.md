@@ -124,21 +124,6 @@ T_WORK_POLIS                        akar, LINTAS-LINI          (nama ditetapkan 
 
 ⚠️ **Nama tabel adalah usulan**, tunduk pada standar penamaan DBA.
 
-> ⛔ **RALAT 04-10-2026** `[keputusan work owner]` — `T_GENERAL_POLIS` **tabel BERSAMA FacIn + Treaty In**. Bunyi
-> lama, dikutip dari pohon di atas: *"`+- T_GENERAL_POLIS                inti, satu baris per generasi`"* (tersirat:
-> tabel milik Treaty In, dibuat migrasi modul ini — migrasi 320 semula `CREATE TABLE` 81 kolom). Bunyi baru:
-> `T_GENERAL_POLIS` adalah SATU tabel fisik bersama FacIn dan Treaty In, satu baris per generasi polis lini mana pun.
-> Tabel **dasarnya** dibuat migrasi `nbfacin` `182_t_general_polis` (sudah dijalankan di `POOLDATA`): `ID VARCHAR2(32)`
-> PK, `IDPEGA VARCHAR2(50)`, `COB_GROUP`, `START_DATE_TIME`, `OFFERING_DATE`, `END_DATE_TIME`, `FOLLOWING`. Migrasi
-> 320 `nbtreatyin` hanya **menambah** kolom Treaty (`ALTER TABLE … ADD (`; seluruh kolom §4.1 + kunci generasi kecuali
-> `ID` dan `IDPEGA`, yang dipakai dari tabel dasar) beserta FK `ID`/`OLD_POLIS_ID` → `T_WORK_POLIS`, `UNIQUE
-> (OLD_POLIS_ID)`, dan indeks unik `(NOPOLIS, PRODKE)`; jalur mundurnya hanya membuang milik Treaty. Lini dibedakan
-> `T_WORK_POLIS.LINI` (`'NONLIFE'` Treaty, `'FAC'` FacIn); modul ini hanya membaca kasus lininya. Lebar `IDPEGA`
-> mengikuti 182 (50) — pzInsKey Treaty dapat sampai 53, pelebaran diminta ke pemilik `nbfacin` (PERMINTAAN-TIM-INTI
-> C10). Dasar: keputusan work owner 04-10-2026 (mengalahkan bab 0 butir 11 / K18 PROMPT putaran 3), sejalan
-> keputusan `nbfacin` K-064 (*"`T_WORK_POLIS` dan `T_GENERAL_POLIS` adalah tabel fisik yang SAMA dengan Treaty In"*).
-> Tujuh tabel anak `T_POLIS_*` tetap dibuat modul ini (`CREATE TABLE` 321–327).
-
 ### 3.1 ⭐⭐ Sarang serupa-diri — kenapa dua tingkat cukup satu tabel
 
 Dua daftar di dalam dokumen bersarang ke dalam dirinya sendiri, **dengan medan yang sama persis**:

@@ -4,10 +4,8 @@ package repository
 // memegang koneksi dan penomor bersama, beserta nama tabel dan bantuan kecil
 // yang dipakai seluruh berkas paket ini.
 //
-// Tabel MILIK modul ini (migrasi 321-327): anak-anak T_POLIS_*. T_GENERAL_POLIS
-// adalah tabel BERSAMA FacIn + Treaty In (keputusan WO 04-10-2026): tabel dasar
-// milik nbfacin 182, kolom Treaty ditambah 320 (ALTER ADD); baris lini lain
-// disaring lewat T_WORK_POLIS.LINI. Tabel MILIK modul lain yang ditulis:
+// Tabel MILIK modul ini (migrasi 320-329): T_GENERAL_POLIS dan anak-anaknya
+// T_POLIS_*. Tabel MILIK modul lain yang ditulis:
 // T_WORK_POLIS (premiumlistlife 050/059 - tabel kasus lintas-lini, dipakai
 // bersama sesuai rancangan §2). Tabel WARISAN Pega yang dibaca: view
 // TREATYINDETAILJOINEDM, CURRENCY, MARKETINGOFFICER,
