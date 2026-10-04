@@ -2,17 +2,18 @@ import { describe, expect, it } from 'vitest'
 
 import { BERANDA, KETERANGAN_BELUM_DIMIGRASI } from '../inti/frontend/labels'
 import { folderKorpusBelumDimigrasi } from '../inti/frontend/uji/sumber'
-import { FOLDER_KORPUS } from './katalogKorpus'
+import { FOLDER_KORPUS, MODUL_LUAR_KORPUS } from './katalogKorpus'
 import { kartuModul, ringkasanAntrean, type AntreanTahap } from './Beranda'
 
 // Uji Beranda — butir bg.
 
 describe('kartuModul', () => {
-  it('dua puluh kartu, satu per kelompok MODUL', () => {
+  it('dua puluh kartu folder korpus + satu per modul di luar korpus', () => {
     // 18 sejak Treaty Contract Out ditambahkan (28-09-2026).
     // 20 sejak brief menu M_NAV_MENU (30-09-2026): Treaty In dan Treaty In
     // Adjustment - kedua folder korpus terakhir - masuk FOLDER_KORPUS (dulu MODUL).
-    expect(kartuModul()).toHaveLength(20)
+    // + modul di luar korpus sejak 04-10-2026 (904 masterdata, `MODUL_LUAR_KORPUS`).
+    expect(kartuModul()).toHaveLength(20 + Object.values(MODUL_LUAR_KORPUS).length)
   })
 
   it('modul dimigrasi bertujuan, yang belum dimigrasi tanpa', () => {

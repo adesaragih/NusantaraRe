@@ -1379,6 +1379,20 @@ konfirmasi** (`issues/46-coverage-tata-letak-akumulasi.md`).
 | 102 | Keputusan agent A172–A178 (tiket 46) | **"setuju A172–A178"** — DISETUJUI. A178 (saran 501) kemudian diganti butir 103 |
 | 103 | DDL `NATION` (tabel), `PROVINCE` / `ACCUMULATEDTYPE` / `CZONE` (view atas JSON M_*) dikirim; view warisan lain | **"dll nya sudah ditambah, tapi itu msh bentuk view table, km bisa ga buatin jadi flat tabel, isi datanya di copy dari view table itu, jadi nnti di list in yang masih view tabel, trus dibuatin tabel nya masing2 dengan nama yang sama seperti view nya."** — dikerjakan sebagian: migrasi **196** (PROVINCE, ACCUMULATEDTYPE, CZONE, ACCUMULATION → tabel flat bernama sama, DROP VIEW; jalur mundur memulihkan view persis DDL) dan saran ketujuh jenis. Sisanya (CITY, DISTRICT, V_JN_OBJ_ITEM — tipe tabel dasar tanpa DDL; COVERAGE_FACIN, BRANDDETAIL, VJ_M_TYPE_PROPERTY_PLAN — tidak dibaca nbfacin) ditunda A179; tipe kolom A180 `[dugaan]` — keduanya menunggu konfirmasi (`issues/46`). ⚠️ Tabel flat = salinan saat migrasi; perubahan `M_*` tidak lagi terbawa. ⛔ 196 menghapus objek di skema sasaran — ditulis, work owner yang menjalankan |
 
+## Keputusan work owner — 4 Oktober 2026, modul Master Data (diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 104 | Menu master insert / update / aktif / nonaktif tabel flat | **Modul baru `masterdata`**, cakupan "Yang dipakai NB FacIn dulu" (AskUserQuestion di sesi 0f). Pengguna sesi c3 mengizinkan sesi ini menyentuh inti / frontend ("Semua, tandai untuk tim inti") |
+| 105 | CITY / DISTRICT | **"Flat-kan CITYINPUT & DISTRICTINPUT saja"** — CITY / DISTRICT tetap view gabungan; RWINPUT "tidak usah" |
+| 106 | Migrasi 196 | Work owner **menahan** 196 (belum dijalankan) → 196 **DIPINDAH** ke `masterdata` 760 (MD-1) dan dihapus dari nbfacin; tabel PROVINCE / ACCUMULATEDTYPE / CZONE / ACCUMULATION kini milik Master Data (peta kolom `modul/masterdata/docs/STRUKTUR-TABEL-MASTER-DATA.md`); NATION pindah ke bab "Tabel warisan" `modul/masterdata/MODUL.md` |
+
+Akibat di nbfacin (sesi c3): saran / popup akumulasi hanya baris AKTIF menu Master Data (MD-5) — province / accumtype /
+czone `STS_AKTIF`, city / district lewat `CITYINPUT` / `DISTRICTINPUT`, nation lewat `T_MASTER_STATUS`, pencarian
+akumulasi ketiga jalur. Keputusan agent MD-1 … MD-9 menunggu konfirmasi (`modul/masterdata/docs/issues/02-api-master-data.md`).
+A179 (ditunda) sebagian terjawab: CITYINPUT / DISTRICTINPUT diflat-kan, CITY / DISTRICT / V_JN_OBJ_ITEM tetap view;
+COVERAGE_FACIN / BRANDDETAIL / VJ_M_TYPE_PROPERTY_PLAN tahap berikut Master Data.
+
 ## Bug DEV — 3 Oktober 2026, popup Choose Class of Construction kosong (diteruskan sesi `nusantarare-0f`)
 
 | # | Butir | Keputusan |

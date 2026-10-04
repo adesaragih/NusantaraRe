@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AKAR_APLIKASI } from '../inti/frontend/uji/sumber'
 import { berkasMenu, menuBersih, type BarisMenuBersih } from '../inti/frontend/uji/menuBersih'
 import { ambilMenu } from '../inti/frontend/klien'
-import { FOLDER_KORPUS } from './katalogKorpus'
+import { FOLDER_KORPUS, KATALOG_MODUL, MODUL_LUAR_KORPUS } from './katalogKorpus'
 import { MODUL_FRONTEND } from './daftar'
 
 // Penjaga DUA ARAH: HASIL BERSIH M_NAV_MENU (900 + 901 + slot menu modul) ↔
@@ -64,11 +64,13 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
     expect(BERSIH.insertTerbaca).toBe(BERSIH.insert)
     // Dan setiap pernyataan lain pun dikenal - bukan diabaikan diam-diam.
     expect(BERSIH.takDikenal).toEqual([])
-    expect(berkasMenu().map((b) => b.nama)).toEqual(expect.arrayContaining(['900_m_nav_menu.sql', '901_m_nav_menu_datar.sql']))
+    expect(berkasMenu().map((b) => b.nama)).toEqual(
+      expect.arrayContaining(['900_m_nav_menu.sql', '901_m_nav_menu_datar.sql', '904_m_nav_menu_masterdata.sql']),
+    )
   })
 
-  it('dua puluh baris modul, nol butir anak (901)', () => {
-    expect(BERSIH.baris).toHaveLength(20)
+  it('dua puluh baris modul korpus + baris modul luar korpus (904), nol butir anak (901)', () => {
+    expect(BERSIH.baris).toHaveLength(20 + Object.values(MODUL_LUAR_KORPUS).length)
     expect(BERSIH.butir).toEqual([])
     for (const b of BERSIH.baris) expect(b.kode, b.label).toBe(b.modul)
   })
@@ -99,8 +101,8 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
     ])
   })
 
-  it('LABEL = FOLDER_KORPUS (20 folder korpus)', () => {
-    expect(new Set(BERSIH.baris.map((b) => b.label))).toEqual(new Set(Object.values(FOLDER_KORPUS)))
+  it('LABEL = FOLDER_KORPUS (20 folder korpus) + MODUL_LUAR_KORPUS', () => {
+    expect(new Set(BERSIH.baris.map((b) => b.label))).toEqual(new Set(Object.values(KATALOG_MODUL)))
     expect(Object.values(FOLDER_KORPUS)).toHaveLength(20)
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In')
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In Adjustment')

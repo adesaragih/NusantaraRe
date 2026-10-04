@@ -13,7 +13,12 @@ GROUPMENU isinya TREATY, FACULTATIVE, KLAIM, MASTER”)*, `PROMPT-MENU-DARI-TABE
 keputusan work owner 30-09-2026 *(“menu jangan ada model seperti child … karena 1 modul 1 menu”)*,
 `PROMPT-MENU-DATAR-PER-GROUPMENU.md`: lima butir anak dibuang, lalu kunci tamu, indeks, dan kolom `PARENT_ID`.
 
-**20 baris, satu per folder modul korpus.** Sidebar menampilkan kepala `GROUPMENU` dan satu tombol per baris; klik tombol
+**20 baris, satu per folder modul korpus**, ditambah baris modul DI LUAR korpus dari langkah inti sesudah 901
+(PANDUAN-TIM-PER-MODUL bab 5): **`904_m_nav_menu_masterdata.sql`** *(+ `_down`)* — `masterdata` / `Master Data`, `MASTER`
+urutan 4, `DIMIGRASI '0'` (keputusan work owner 04-10-2026, diteruskan sesi 0f; INSERT bentuk datar idempoten, jalur mundur
+`DELETE` baris itu dan akses `M_LOGIN_GO_MENU`-nya). Akses akunnya TIDAK masuk isi awal 903 — diberikan lewat Kelola User.
+Penjaga `menu_test.go` menerapkannya di skema tiruan; `rentang_test.go` hanya menerima INSERT bentuk itu + DELETE mundurnya.
+Sidebar menampilkan kepala `GROUPMENU` dan satu tombol per baris; klik tombol
 membuka halaman awal modul *(`HALAMAN_AWAL_<X>` di `menu.ts` modul)*. Beranda tidak di tabel ini.
 
 | Kolom | Tipe | Null | Kunci | Dipakai | Sumber |

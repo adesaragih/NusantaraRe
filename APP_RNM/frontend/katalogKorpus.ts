@@ -64,3 +64,17 @@ export const FOLDER_KORPUS = {
   treatyIn: 'Treaty In',
   treatyInAdjustment: 'Treaty In Adjustment',
 } as const
+
+/**
+ * Modul DI LUAR dua puluh folder korpus (`docs/bersama/PANDUAN-TIM-PER-MODUL.md` bab 5) — keputusan work owner,
+ * baris `M_NAV_MENU`-nya dari langkah migrasi inti sesudah 901 (904 masterdata). Nama = `Folder korpus` di
+ * `MODUL.md` modulnya (= `M_NAV_MENU.LABEL`). Dipisah dari `FOLDER_KORPUS` supaya katalog folder korpus tetap
+ * berarti persis dua puluh folder `D:\XML\RNM_BRD\`.
+ */
+export const MODUL_LUAR_KORPUS = {
+  /** 04-10-2026: "Modul baru 'masterdata'" — menu master insert / update / aktif / nonaktif. */
+  masterData: 'Master Data',
+} as const
+
+/** Seluruh modul yang punya tombol sidebar / kartu Beranda: folder korpus + modul di luar korpus. */
+export const KATALOG_MODUL = { ...FOLDER_KORPUS, ...MODUL_LUAR_KORPUS } as const

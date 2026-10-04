@@ -72,7 +72,6 @@ kepemilikan tabel berpindah — keputusan work owner.
 | `CITY` | view kota warisan POOLDATA; NB hanya MEMBACA tiga kolom untuk saran City popup akumulasi (tiket 46) |
 | `DISTRICT` | view kecamatan warisan POOLDATA; NB hanya MEMBACA empat kolom untuk saran District popup akumulasi (tiket 46) |
 | `JSON_POLIS` | tabel polis JSON warisan POOLDATA; NB hanya MEMBACA NOPOLIS / DATA_JSON untuk cari akumulasi menurut nomor polis (tiket 46) |
-| `NATION` | tabel negara warisan POOLDATA; NB hanya MEMBACA tiga kolom untuk saran Country popup akumulasi (tiket 46) |
 | `OCCUPATION` | tabel okupasi warisan POOLDATA; NB hanya MEMBACA empat kolom untuk saran Occupation Surrounding Risk (tiket 38) dan popup Choose Occupation (tiket 40) |
 | `V_JN_OBJ_ITEM` | view jenis item objek warisan POOLDATA; NB hanya MEMBACA empat kolom untuk pilihan Object Item Type (tiket 39) |
 | `TABLEOFLIMIT` | tabel batas okupasi warisan POOLDATA; NB hanya MEMBACA lima kolom untuk popup Choose Class of Construction (tiket 40; TAHUN tidak disaring, A161) |

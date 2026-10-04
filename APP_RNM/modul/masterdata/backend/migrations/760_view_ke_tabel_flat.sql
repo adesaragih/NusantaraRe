@@ -1,17 +1,21 @@
--- 196 - keputusan work owner butir 103 (04-10-2026): VIEW warisan yang dibaca nbfacin diganti TABEL flat BERNAMA SAMA,
--- isinya disalin dari view itu. Tahap ini: empat view atas JSON M_* - PROVINCE, ACCUMULATEDTYPE, CZONE, ACCUMULATION
--- (DDL `D:\migrasi\RNM\DDL\<NAMA>.txt`). CITY / DISTRICT / COVERAGE_FACIN / BRANDDETAIL / VJ_M_TYPE_PROPERTY_PLAN belum (A179).
+-- 760 - Master Data: VIEW warisan atas JSON M_* -> TABEL flat BERNAMA SAMA, isi disalin dari view, + kolom status.
 --
--- Per view: (1) tabel _SALIN berkolom sama, (2) salin isi view, (3) DROP VIEW, (4) CREATE TABLE bernama view, (5) salin
--- balik, (6) DROP tabel _SALIN. Tabel akhir dibuat dengan CREATE TABLE eksplisit (bukan CTAS / RENAME) supaya penjaga
--- kolom membacanya. Urutan PROVINCE dulu: view CITY me-LEFT JOIN PROVINCE (view FORCE, tetap sah atas tabel bernama sama).
+-- Keputusan work owner 04-10-2026 (diteruskan sesi nusantarare-0f): (1) view warisan dijadikan tabel flat bernama sama
+-- (register nbfacin butir 103) - dulu ditulis sebagai nbfacin 196, DIPINDAH ke modul ini karena 196 DITAHAN work owner
+-- (belum dijalankan) dan tabelnya kini milik Master Data (MD-1); (2) "Flat-kan CITYINPUT & DISTRICTINPUT saja" - CITY /
+-- DISTRICT TETAP view gabungan di atasnya, RWINPUT tidak disentuh; (3) menu master insert / update / aktif / nonaktif
+-- (M-3): setiap tabel flat lahir dengan STS_AKTIF VARCHAR2(1) DEFAULT '1' NOT NULL ('1' aktif, '0' nonaktif).
 --
--- Tipe: setiap kolom keempat view = JSON dot-notation (`a.JSONDATA.<kunci>`), yang dikembalikan Oracle sebagai
--- VARCHAR2(4000) - sifat Oracle, BUKAN tertulis di korpus `[dugaan]` (A180): periksa dulu di DEV
--- `SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, DATA_LENGTH FROM ALL_TAB_COLUMNS WHERE TABLE_NAME IN ('PROVINCE',
--- 'ACCUMULATEDTYPE', 'CZONE', 'ACCUMULATION')` sebelum menjalankan.
--- ⚠️ Menghapus objek (DROP VIEW) di skema sasaran; sesudahnya tabel = SALINAN saat migrasi - perubahan M_* (JSON) tidak
--- lagi terbawa. Ditulis, TIDAK dijalankan agent. Nol COMMIT (ADR-U-0029).
+-- Per view: tabel _SALIN berkolom view -> salin isi view -> DROP VIEW -> CREATE TABLE bernama view (kolom view +
+-- STS_AKTIF; eksplisit supaya penjaga kolom membacanya) -> salin balik (STS_AKTIF = DEFAULT '1') -> DROP _SALIN.
+-- Urutan: PROVINCE lebih dulu (view CITY me-LEFT JOIN PROVINCE / CITYINPUT / DISTRICTINPUT; view FORCE tetap sah atas
+-- tabel bernama sama), lalu CITYINPUT, DISTRICTINPUT, ACCUMULATEDTYPE, CZONE, ACCUMULATION (view ACCUMULATION hanya
+-- menyalin baris `IsActive IS NULL`).
+-- Tipe: setiap kolom view = JSON dot-notation -> VARCHAR2(4000) `[dugaan]` sifat Oracle (A180) - periksa dulu di DEV:
+-- SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, DATA_LENGTH FROM ALL_TAB_COLUMNS WHERE TABLE_NAME IN ('PROVINCE',
+-- 'CITYINPUT', 'DISTRICTINPUT', 'ACCUMULATEDTYPE', 'CZONE', 'ACCUMULATION').
+-- ⚠️ DROP VIEW di skema sasaran; sesudahnya tabel = salinan saat migrasi, perubahan M_* tidak terbawa (menu Master
+-- Data yang memperbaruinya). Ditulis, TIDAK dijalankan agent. Nol COMMIT (ADR-U-0029).
 CREATE TABLE {skema}.PROVINCE_SALIN (
   ID         VARCHAR2(4000),
   NATIONID   VARCHAR2(4000),
@@ -27,12 +31,63 @@ CREATE TABLE {skema}.PROVINCE (
   ID         VARCHAR2(4000),
   NATIONID   VARCHAR2(4000),
   NOTE       VARCHAR2(4000),
-  NATIONNAME VARCHAR2(4000)
+  NATIONNAME VARCHAR2(4000),
+  STS_AKTIF  VARCHAR2(1) DEFAULT '1' NOT NULL
 )
 /
 INSERT INTO {skema}.PROVINCE (ID, NATIONID, NOTE, NATIONNAME) SELECT ID, NATIONID, NOTE, NATIONNAME FROM {skema}.PROVINCE_SALIN
 /
 DROP TABLE {skema}.PROVINCE_SALIN
+/
+CREATE TABLE {skema}.CITYINPUT_SALIN (
+  ID                VARCHAR2(4000),
+  PROVINCEID        VARCHAR2(4000),
+  NOTE              VARCHAR2(4000),
+  BRANCHID          VARCHAR2(4000),
+  EMAIL             VARCHAR2(4000),
+  MOID              VARCHAR2(4000),
+  JABODETABEKSTATUS VARCHAR2(4000)
+)
+/
+INSERT INTO {skema}.CITYINPUT_SALIN (ID, PROVINCEID, NOTE, BRANCHID, EMAIL, MOID, JABODETABEKSTATUS) SELECT ID, PROVINCEID, NOTE, BRANCHID, EMAIL, MOID, JABODETABEKSTATUS FROM {skema}.CITYINPUT
+/
+DROP VIEW {skema}.CITYINPUT
+/
+CREATE TABLE {skema}.CITYINPUT (
+  ID                VARCHAR2(4000),
+  PROVINCEID        VARCHAR2(4000),
+  NOTE              VARCHAR2(4000),
+  BRANCHID          VARCHAR2(4000),
+  EMAIL             VARCHAR2(4000),
+  MOID              VARCHAR2(4000),
+  JABODETABEKSTATUS VARCHAR2(4000),
+  STS_AKTIF         VARCHAR2(1) DEFAULT '1' NOT NULL
+)
+/
+INSERT INTO {skema}.CITYINPUT (ID, PROVINCEID, NOTE, BRANCHID, EMAIL, MOID, JABODETABEKSTATUS) SELECT ID, PROVINCEID, NOTE, BRANCHID, EMAIL, MOID, JABODETABEKSTATUS FROM {skema}.CITYINPUT_SALIN
+/
+DROP TABLE {skema}.CITYINPUT_SALIN
+/
+CREATE TABLE {skema}.DISTRICTINPUT_SALIN (
+  ID           VARCHAR2(4000),
+  CITYID       VARCHAR2(4000),
+  DISTRICTNAME VARCHAR2(4000)
+)
+/
+INSERT INTO {skema}.DISTRICTINPUT_SALIN (ID, CITYID, DISTRICTNAME) SELECT ID, CITYID, DISTRICTNAME FROM {skema}.DISTRICTINPUT
+/
+DROP VIEW {skema}.DISTRICTINPUT
+/
+CREATE TABLE {skema}.DISTRICTINPUT (
+  ID           VARCHAR2(4000),
+  CITYID       VARCHAR2(4000),
+  DISTRICTNAME VARCHAR2(4000),
+  STS_AKTIF    VARCHAR2(1) DEFAULT '1' NOT NULL
+)
+/
+INSERT INTO {skema}.DISTRICTINPUT (ID, CITYID, DISTRICTNAME) SELECT ID, CITYID, DISTRICTNAME FROM {skema}.DISTRICTINPUT_SALIN
+/
+DROP TABLE {skema}.DISTRICTINPUT_SALIN
 /
 CREATE TABLE {skema}.ACCUMULATEDTYPE_SALIN (
   ID               VARCHAR2(4000),
@@ -51,7 +106,8 @@ CREATE TABLE {skema}.ACCUMULATEDTYPE (
   ACCUMULATIONTYPE VARCHAR2(4000),
   KEYWORD          VARCHAR2(4000),
   NOTE             VARCHAR2(4000),
-  TYPE             VARCHAR2(4000)
+  TYPE             VARCHAR2(4000),
+  STS_AKTIF        VARCHAR2(1) DEFAULT '1' NOT NULL
 )
 /
 INSERT INTO {skema}.ACCUMULATEDTYPE (ID, ACCUMULATIONTYPE, KEYWORD, NOTE, TYPE) SELECT ID, ACCUMULATIONTYPE, KEYWORD, NOTE, TYPE FROM {skema}.ACCUMULATEDTYPE_SALIN
@@ -79,7 +135,8 @@ CREATE TABLE {skema}.CZONE (
   GROUPOF     VARCHAR2(4000),
   GROUPOFNAME VARCHAR2(4000),
   TGLUPDATE   VARCHAR2(4000),
-  USERID      VARCHAR2(4000)
+  USERID      VARCHAR2(4000),
+  STS_AKTIF   VARCHAR2(1) DEFAULT '1' NOT NULL
 )
 /
 INSERT INTO {skema}.CZONE (ID, CODE, DESCRIPTION, GROUPOF, GROUPOFNAME, TGLUPDATE, USERID) SELECT ID, CODE, DESCRIPTION, GROUPOF, GROUPOFNAME, TGLUPDATE, USERID FROM {skema}.CZONE_SALIN
@@ -119,7 +176,8 @@ CREATE TABLE {skema}.ACCUMULATION (
   PROVINCEID       VARCHAR2(4000),
   ZIPCODE          VARCHAR2(4000),
   ACCUMULATIONTYPE VARCHAR2(4000),
-  SYARIAHSTATUS    VARCHAR2(4000)
+  SYARIAHSTATUS    VARCHAR2(4000),
+  STS_AKTIF        VARCHAR2(1) DEFAULT '1' NOT NULL
 )
 /
 INSERT INTO {skema}.ACCUMULATION (ID, ACCUMULATION, ACCUMULATIONNAME, NOTE, KEYWORD, SCOPEAREA, CZONE, CZONEID, PROVINCE, PROVINCEID, ZIPCODE, ACCUMULATIONTYPE, SYARIAHSTATUS) SELECT ID, ACCUMULATION, ACCUMULATIONNAME, NOTE, KEYWORD, SCOPEAREA, CZONE, CZONEID, PROVINCE, PROVINCEID, ZIPCODE, ACCUMULATIONTYPE, SYARIAHSTATUS FROM {skema}.ACCUMULATION_SALIN

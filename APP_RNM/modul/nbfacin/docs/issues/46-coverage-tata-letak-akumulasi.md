@@ -130,7 +130,8 @@ Code / Address dengan tombol Choose Accumulation Code (popup pencarian) dan Copy
 - [x] Popup memuat seluruh saringan (gambar layar kedua); Indemnity Unit / Key Word dari PromptList korpus.
 - [x] Backend: `GET /api/nbfacin/akumulasi` dan saran city / district / area (sesi c3, 04-10-2026).
 - [x] Saran nation / province / accumtype / czone (DDL 04-10-2026; sesi c3).
-- [ ] Migrasi 196 (view → tabel flat) dijalankan di DEV (work owner).
+- [ ] ~~Migrasi 196 (view → tabel flat) dijalankan di DEV~~ → 196 DIPINDAH ke modul `masterdata` (760, + CITYINPUT /
+  DISTRICTINPUT, + STS_AKTIF) — register butir 106; jalankan 904 → 760 → 761 → 990.
 - [ ] CITY / DISTRICT / V_JN_OBJ_ITEM / COVERAGE_FACIN / BRANDDETAIL / VJ_M_TYPE_PROPERTY_PLAN → tabel flat (A179, menunggu).
 
 ## Tabel flat dan saran lengkap (sesi c3, 04-10-2026; butir 102–103)

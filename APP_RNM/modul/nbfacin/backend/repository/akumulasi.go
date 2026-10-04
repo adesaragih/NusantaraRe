@@ -34,7 +34,16 @@ const (
 	TabelDistrict     = "DISTRICT"
 	// TabelNation, TabelProvince, TabelAccumulatedType, TabelCZone - saran tiket 46 (NATION tabel warisan; tiga lainnya
 	// tabel flat migrasi 196, sebelumnya view atas JSON M_*).
-	TabelNation          = "NATION"
+	TabelNation = "NATION"
+	// TabelCityInput, TabelDistrictInput, TabelMasterStatus - tabel milik modul Master Data (760 / 761) yang menyimpan
+	// status aktif master yang dibaca saran ini (view CITY / DISTRICT tidak membawa status; NATION warisan tanpa kolom
+	// status). StatusMasterAktif - '1' aktif (M-3).
+	TabelCityInput     = "CITYINPUT"
+	TabelDistrictInput = "DISTRICTINPUT"
+	TabelMasterStatus  = "T_MASTER_STATUS"
+	StatusMasterAktif  = "1"
+	// syaratMasterAktif - tabel flat master berkolom STS_AKTIF sendiri.
+	syaratMasterAktif    = "STS_AKTIF = '" + StatusMasterAktif + "'"
 	TabelProvince        = "PROVINCE"
 	TabelAccumulatedType = "ACCUMULATEDTYPE"
 	TabelCZone           = "CZONE"
@@ -72,6 +81,7 @@ func saringRD(s models.SaringAkumulasi) (syarat []string, arg []any) {
 		arg = append(arg, nilai)
 		syarat = append(syarat, "a."+kolom+" = :"+strconv.Itoa(len(arg)))
 	}
+	syarat = append(syarat, "a.STS_AKTIF = '"+StatusMasterAktif+"'") // MD-5: baris aktif menu Master Data
 	tambah("ID", s.ID)
 	if pola := PolaCari(s.Note); pola != "" {
 		arg = append(arg, pola)
@@ -104,8 +114,8 @@ func sqlAkumulasiWilayah(acc, rw string, kecamatan bool) string {
 	if kecamatan {
 		kolom = "DISTRICTID"
 	}
-	return "SELECT ID, ACCUMULATIONTYPE, NOTE FROM " + acc + " WHERE ZIPCODE IN (SELECT ZIPCODE FROM " + rw + " WHERE " + kolom +
-		" = :1) ORDER BY ID, NOTE FETCH FIRST :2 ROWS ONLY"
+	return "SELECT ID, ACCUMULATIONTYPE, NOTE FROM " + acc + " WHERE " + syaratMasterAktif + " AND ZIPCODE IN (SELECT ZIPCODE FROM " +
+		rw + " WHERE " + kolom + " = :1) ORDER BY ID, NOTE FETCH FIRST :2 ROWS ONLY"
 }
 
 // sqlAkumulasiPolis - GetSummaryRiskAccumPolis_Sql dipersempit ke yang dipakai langkah 6.6 (AccumulationCode -> CARI1,
@@ -117,7 +127,8 @@ func sqlAkumulasiPolis(polis, acc string) string {
 		"(SELECT MAX(x.NOTE) FROM " + acc + " x WHERE x.ID = j.ACCUMULATIONCODE) FROM (SELECT DISTINCT jt.ACCUMULATIONCODE FROM " +
 		polis + " p, JSON_TABLE(p.DATA_JSON, '$.LocationList[*]' COLUMNS (NESTED PATH '$.Property.PropertyItemList[*]' COLUMNS " +
 		"(NESTED PATH '$.CoverageList[*]' COLUMNS (ACCUMULATIONCODE VARCHAR2(100) PATH '$.AccumulationCode')))) jt " +
-		"WHERE p.NOPOLIS = :1 AND jt.ACCUMULATIONCODE IS NOT NULL) j ORDER BY j.ACCUMULATIONCODE FETCH FIRST :2 ROWS ONLY"
+		"WHERE p.NOPOLIS = :1 AND jt.ACCUMULATIONCODE IS NOT NULL AND EXISTS (SELECT 1 FROM " + acc + " x WHERE x.ID = jt.ACCUMULATIONCODE " +
+		"AND x." + syaratMasterAktif + ")) j ORDER BY j.ACCUMULATIONCODE FETCH FIRST :2 ROWS ONLY"
 }
 
 // saranRD - satu autocomplete: tabel, kolom laporan RD (`unik` = pyGetDistinctRows), kolom id / label (medan cari,
@@ -132,6 +143,9 @@ type saranRD struct {
 	syaratTetap       string
 	kolomInduk        string
 	urut              string
+	// aktif / tabelAktif - saringan baris AKTIF menu Master Data (MD-5, 04-10-2026): teks SQL tetap; `%s` diganti nama
+	// berskema `tabelAktif` (kosong = tanpa tabel lain).
+	aktif, tabelAktif string
 }
 
 // daftarSaran - jenis -> RD (`Section\SearchRiskAccumCov.xml`, `ReportDefinition\*`) `[terverifikasi]`:
@@ -151,23 +165,28 @@ type saranRD struct {
 //     `District` (pyParameters: City, District, Province, Teritory, ZipCode) sehingga saringan D dibuang (A177). `.ID`
 //     bukan kolom laporan RD -> id kosong.
 var daftarSaran = map[string]saranRD{
-	"city": {tabel: TabelCity, kolom: "ID, NOTE", unik: true, id: "ID", label: "NOTE", kolomInduk: "PROVINCEID"},
+	"city": {tabel: TabelCity, kolom: "ID, NOTE", unik: true, id: "ID", label: "NOTE", kolomInduk: "PROVINCEID",
+		aktif: "ID IN (SELECT c.ID FROM %s c WHERE c.STS_AKTIF = '" + StatusMasterAktif + "')", tabelAktif: TabelCityInput},
 	"district": {tabel: TabelDistrict, kolom: "ID, CITYID, DISTRICTNAME, CITYNAME", unik: true, id: "ID", label: "DISTRICTNAME",
-		kolomInduk: "CITYNAME"},
+		kolomInduk: "CITYNAME", aktif: "ID IN (SELECT d.ID FROM %s d WHERE d.STS_AKTIF = '" + StatusMasterAktif + "')",
+		tabelAktif: TabelDistrictInput},
 	"area": {tabel: TabelRW, kolom: "ZIPCODE, CZONE, NOTE, DISTRICTNAME, CITYNAME, PROVINCENAME, NATION", unik: true, id: "''",
 		label: "NOTE", ekstra: "ZIPCODE", tetap: "STS_AKTIF", nilaiTetap: StatusRWAktif},
-	"nation":   {tabel: TabelNation, kolom: "ID, NOTE, NATIONINITIAL", id: "ID", label: "NOTE", ekstra: "NATIONINITIAL"},
-	"province": {tabel: TabelProvince, kolom: "ID, NATIONID, NOTE, NATIONNAME", id: "ID", label: "NOTE", kolomInduk: "NATIONNAME"},
+	"nation": {tabel: TabelNation, kolom: "ID, NOTE, NATIONINITIAL", id: "ID", label: "NOTE", ekstra: "NATIONINITIAL",
+		aktif: "NOT EXISTS (SELECT 1 FROM %s s WHERE s.NAMA_TABEL = '" + TabelNation + "' AND s.ID_BARIS = ID AND s.STS_AKTIF <> '" +
+			StatusMasterAktif + "')", tabelAktif: TabelMasterStatus},
+	"province": {tabel: TabelProvince, kolom: "ID, NATIONID, NOTE, NATIONNAME", id: "ID", label: "NOTE", kolomInduk: "NATIONNAME",
+		aktif: syaratMasterAktif},
 	"accumtype": {tabel: TabelAccumulatedType, kolom: "ID, ACCUMULATIONTYPE, KEYWORD, NOTE, TYPE", id: "ID", label: "ACCUMULATIONTYPE",
-		syaratTetap: "NOTE IS NOT NULL"},
+		syaratTetap: "NOTE IS NOT NULL", aktif: syaratMasterAktif},
 	"czone": {tabel: TabelCZone, kolom: "DESCRIPTION, ID, GROUPOF, CODE, GROUPOFNAME", id: "ID", label: "CODE",
-		syaratTetap: "GROUPOF IS NOT NULL", urut: "DESCRIPTION"},
+		syaratTetap: "GROUPOF IS NOT NULL", urut: "DESCRIPTION", aktif: syaratMasterAktif},
 }
 
 // sqlSaran - SELECT id, label, ekstra dari kolom laporan (DISTINCT bila RD-nya); saringan tetap / induk / kata (Contains tidak peka
 // huruf atas kolom label, A176) hanya bila ada; urut label, ekstra, lalu id. Syarat dan nilai bind dibangun BERSAMA
 // (pola saringRD) - urutan placeholder dan nilai tidak dapat bergeser.
-func sqlSaran(t string, s saranRD, induk, pola string) (string, []any) {
+func sqlSaran(t string, s saranRD, aktif, induk, pola string) (string, []any) {
 	var syarat []string
 	var arg []any
 	bind := func(v any) string { arg = append(arg, v); return ":" + strconv.Itoa(len(arg)) }
@@ -176,6 +195,9 @@ func sqlSaran(t string, s saranRD, induk, pola string) (string, []any) {
 	}
 	if s.syaratTetap != "" {
 		syarat = append(syarat, s.syaratTetap)
+	}
+	if aktif != "" {
+		syarat = append(syarat, aktif)
 	}
 	if induk != "" && s.kolomInduk != "" {
 		syarat = append(syarat, s.kolomInduk+" = "+bind(induk))
@@ -244,7 +266,15 @@ func (r *AkumulasiOracle) Saran(ctx context.Context, jenis, kata, induk string) 
 	if err != nil {
 		return nil, err
 	}
-	q, arg := sqlSaran(t, s, induk, PolaCari(kata))
+	aktif := s.aktif
+	if s.tabelAktif != "" {
+		ta, err := r.db.Qualify(s.tabelAktif)
+		if err != nil {
+			return nil, err
+		}
+		aktif = fmt.Sprintf(s.aktif, ta)
+	}
+	q, arg := sqlSaran(t, s, aktif, induk, PolaCari(kata))
 	baris, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: baca %s: %w", s.tabel, err)

@@ -1,6 +1,6 @@
--- Jalur mundur 196 - tabel flat dikembalikan menjadi VIEW warisan, teks view PERSIS `D:\migrasi\RNM\DDL\<NAMA>.txt`
--- (POOLDATA. diganti {skema}.; rujukan M_* di dalamnya apa adanya). Isi tabel flat dibuang - view membaca M_* lagi.
--- Urutan terbalik dari maju.
+-- Jalur mundur 760 - tabel flat dikembalikan menjadi VIEW warisan, teks view PERSIS `D:\migrasi\RNM\DDL\<NAMA>.txt`
+-- (POOLDATA.<NAMA> diganti {skema}.<NAMA>; rujukan di dalamnya apa adanya). Isi tabel flat (termasuk STS_AKTIF dan
+-- perubahan menu Master Data) dibuang - view membaca M_* lagi. Urutan terbalik dari maju.
 DROP TABLE {skema}.ACCUMULATION
 /
 CREATE OR REPLACE FORCE VIEW {skema}.ACCUMULATION
@@ -82,6 +82,40 @@ AS
           a.JSONDATA.Note,
           a.JSONDATA.TYPE
      FROM m_accumulatedtype a
+/
+DROP TABLE {skema}.DISTRICTINPUT
+/
+CREATE OR REPLACE FORCE VIEW {skema}.DISTRICTINPUT
+(
+   ID,
+   CITYID,
+   DISTRICTNAME
+)
+AS
+   SELECT a.JSONDATA.ID, a.JSONDATA.CityID, a.JSONDATA.DistrictName
+     FROM M_DISTRICT a
+/
+DROP TABLE {skema}.CITYINPUT
+/
+CREATE OR REPLACE FORCE VIEW {skema}.CITYINPUT
+(
+   ID,
+   PROVINCEID,
+   NOTE,
+   BRANCHID,
+   EMAIL,
+   MOID,
+   JABODETABEKSTATUS
+)
+AS
+   SELECT a.JSONDATA.ID,
+          a.JSONDATA.ProvinceID,
+          a.JSONDATA.Note,
+          a.JSONDATA.BranchID,
+          a.JSONDATA.Email,
+          a.JSONDATA.MOID,
+          a.JSONDATA.JABODETABEKStatus
+     FROM m_city a
 /
 DROP TABLE {skema}.PROVINCE
 /

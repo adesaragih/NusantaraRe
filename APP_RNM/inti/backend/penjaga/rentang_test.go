@@ -144,6 +144,7 @@ func TestSetiapMigrasiDiRentangAtauSlotModulnya(t *testing.T) {
 // menyentuh folder inti.
 func TestMenuHanyaDi900DanSlotMenuModulnya(t *testing.T) {
 	jatah := jatahSetiapModul(t)
+	maju, mundur := pernyataanPerLangkah(t, false), pernyataanPerLangkah(t, true)
 	menyentuh := 0
 	for nama, isi := range seluruhSQL(t, false) {
 		if !strings.Contains(strings.ToUpper(isi), "M_NAV_MENU") {
@@ -154,12 +155,17 @@ func TestMenuHanyaDi900DanSlotMenuModulnya(t *testing.T) {
 		n, _ := nomorBerkas(nama)
 		switch {
 		case pemilik == "inti":
-			// 900 (isi awal) dan 901 (bentuk datar, menu datar 30-09-2026)
-			// SAJA. Langkah inti lain yang menyentuh M_NAV_MENU tidak
-			// diterapkan skema tiruan penjaga menu (`langkahMenu`) - menu
-			// yang tidak diperiksa siapa pun (temuan /code-review).
-			if !strings.HasPrefix(nama, "900_") && !strings.HasPrefix(nama, "901_") {
-				t.Errorf("%s (inti) menyentuh M_NAV_MENU - hanya 900 (isi awal) dan 901 (bentuk datar); menu modul di slot menunya", nama)
+			// 900 (isi awal), 901 (bentuk datar, menu datar 30-09-2026), dan
+			// langkah inti BARIS MODUL DI LUAR KORPUS (904 masterdata, PANDUAN-TIM-PER-MODUL
+			// bab 5) - yang terakhir HANYA INSERT bentuk datar + DELETE mundurnya, dan
+			// diterapkan skema tiruan penjaga menu (`langkahMenu`). Langkah inti lain yang
+			// menyentuh M_NAV_MENU = menu yang tidak diperiksa siapa pun (temuan /code-review).
+			if strings.HasPrefix(nama, "900_") || strings.HasPrefix(nama, "901_") {
+				break
+			}
+			turun := strings.TrimSuffix(nama, ".sql") + "_down.sql"
+			for _, alasan := range pelanggaranLangkahLuarKorpus(maju[nama], mundur[turun]) {
+				t.Errorf("%s (inti) menyentuh M_NAV_MENU di luar 900 / 901: %s", nama, alasan)
 			}
 		case !jatah[pemilik].diSlot(n):
 			t.Errorf("%s (modul %s) menyentuh M_NAV_MENU di luar slot menunya %03d-%03d",
@@ -337,9 +343,11 @@ func TestSlotMenuBerjalanSesudah900(t *testing.T) {
 	}
 	// 901 (menu datar, milik inti) berjalan sesudah 900 dan SEBELUM slot mana
 	// pun - slot menu karena itu melihat tabel yang sudah datar. 902 (login,
-	// M_LOGIN_GO, 01-10-2026) dan 903 (menu per akun, M_LOGIN_GO_MENU) juga
-	// milik inti dan juga sebelum slot.
-	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
+	// M_LOGIN_GO, 01-10-2026), 903 (menu per akun, M_LOGIN_GO_MENU), dan 904
+	// (baris menu masterdata, modul di luar korpus) juga milik inti dan juga
+	// sebelum slot - slot 990 masterdata melihat barisnya.
+	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql",
+		"904_m_nav_menu_masterdata.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
 		t.Errorf("urutan pelari %v, mau %v", urut, mau)
 	}
 }

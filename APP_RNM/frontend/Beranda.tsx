@@ -23,7 +23,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { BERANDA, KETERANGAN_BELUM_DIMIGRASI, PERAN_ID } from '../inti/frontend/labels'
-import { FOLDER_KORPUS } from './katalogKorpus'
+import { FOLDER_KORPUS, KATALOG_MODUL } from './katalogKorpus'
 import { TAHAP } from '../modul/claimlife/frontend/labels'
 import {
   IkonBerkasCari,
@@ -66,7 +66,7 @@ export interface KartuModul {
  * NONAKTIF tidak tampil, seperti kelompoknya di sidebar. `null` = semua.
  */
 export function kartuModul(aktif: readonly string[] | null = null): KartuModul[] {
-  return Object.values(FOLDER_KORPUS).flatMap((nama) => {
+  return Object.values(KATALOG_MODUL).flatMap((nama) => {
     const milik = ENTRI_MENU.filter((e) => e.kelompok === nama)
     const pertama = milik.find((e) => halamanAktif(e.modul, aktif))
     if (milik.length > 0 && pertama === undefined) return []
