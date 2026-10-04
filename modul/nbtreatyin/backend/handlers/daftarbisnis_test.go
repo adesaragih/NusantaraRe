@@ -63,17 +63,22 @@ func halamanProporsi(jenis string) *models.Halaman {
 	return h
 }
 
-// Filter H atas `PolicyTreatyIn.QuotationData.ProportionalType` isian layar
-// (showHarness `pySubmitData=Yes`: nilai layar saat tombol diklik).
+// Filter H atas `PolicyTreatyIn.QuotationData.ProportionalType` halaman kasus
+// saat tombol diklik (showHarness `pySubmitData=Yes`). Sel medan itu
+// `pyReadOnly=true`: nilainya salinan `Quotation` (InputPolicyTreatyIn_preDT 14)
+// atau hasil tombol Enable / Disable Input Type yang dipegang layar
+// (`TreatyEnableDisableInput`, hanya bila TreatyType XOL - W3 audit silang P3).
 func TestDaftarBisnisMenyaringJenisProporsiKasus(t *testing.T) {
 	u := baru(t)
 	kontrakPopup(u)
 	id := u.buat()
-	if got := u.idBisnis(id, halamanProporsi("Proportional")); !slices.Equal(got, []string{"UJI-D-P1", "UJI-D-P2"}) {
+	u.g.Halaman[id].Setel("Quotation.ProportionalType", "Proportional")
+	if got := u.idBisnis(id, nil); !slices.Equal(got, []string{"UJI-D-P1", "UJI-D-P2"}) {
 		t.Errorf("Proportional: %v", got)
 	}
+	u.g.Halaman[id].Setel("PolicyTreatyIn.TreatyType", "XOL")
 	if got := u.idBisnis(id, halamanProporsi("NonProportional")); !slices.Equal(got, []string{"UJI-D-N1"}) {
-		t.Errorf("NonProportional: %v", got)
+		t.Errorf("NonProportional (hasil Enable / Disable Input Type): %v", got)
 	}
 }
 

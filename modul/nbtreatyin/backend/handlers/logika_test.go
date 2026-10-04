@@ -107,8 +107,10 @@ func TestSetPPNPPHMembacaStatusPKPAgen(t *testing.T) {
 		h := halamanLengkap("")
 		h.Setel("PolicyTreatyIn.PremiOnp", "600")
 		h.Setel("PolicyTreatyIn.Deduction1", "51.1")
-		h.Setel("PolicyTreatyIn.TypeTax", models.TypeTaxInclusive)
 		h.Setel("PolicyTreatyIn.FlagPPH", "")
+		// TypeTax di sel tersembunyi (`.FlagPPH = true` salah) tidak diterima dari
+		// layar (W4 audit silang P3) - nilainya dari halaman server.
+		u.g.Halaman[id].Setel("PolicyTreatyIn.TypeTax", models.TypeTaxInclusive)
 		kode, isi := u.panggil("POST", "/kasus/"+id+"/hitung", admin, map[string]any{"urutan": []map[string]string{{"aksi": "CountOGPONP"}}, "halaman": h})
 		if kode != http.StatusOK {
 			t.Fatalf("hitung: %d %s", kode, isi)

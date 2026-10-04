@@ -10,6 +10,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -21,9 +22,12 @@ import (
 )
 
 // kerjakan memuat kasus untuk ditindak: terbuka, pelaku anggota antreannya,
-// halaman dipra-proses dan digabung dengan kiriman layar. Di layar admin,
-// pilihan Source Of Business yang dipegang layar diterima sesudah penggabungan
-// (`terimaSumberBisnis`, F4) dan sebelum medan turunan dihitung.
+// halaman dipra-proses dan digabung dengan kiriman layar (hanya sel / wadah /
+// grid yang terbuka - W2-W4 audit silang P3). Di layar admin, pilihan Source Of
+// Business yang dipegang layar diterima sesudah penggabungan
+// (`terimaSumberBisnis`, F4) dan sebelum medan turunan dihitung. Terakhir,
+// action set sel yang dipicu kiriman ditulis ulang ke daftar
+// (`models.TerapkanPemicu`, W5): kolom hanya-baca grid tidak pernah dari layar.
 func (l *Layanan) kerjakan(ctx context.Context, p inti.Pelaku, id string, masuk *models.Halaman) (models.Kasus, *models.Halaman, error) {
 	if err := l.periksaPelaku(p); err != nil {
 		return models.Kasus{}, nil, err
@@ -48,6 +52,11 @@ func (l *Layanan) kerjakan(ctx context.Context, p inti.Pelaku, id string, masuk 
 	// (tempat berperan tiket 05; AC 52, 81).
 	// Pemetaan kosong (K12, K16) = tempat tertunda = medan tidak diterima.
 	pemicu, err := models.GabungMasukanLayar(h, masuk, k.PositionNote, tempatPelaku(p))
+	var gk *models.GalatKiriman
+	if errors.As(err, &gk) {
+		// W3: nilai medan terkunci yang bukan hasil tombolnya (pola F4) - 422.
+		return models.Kasus{}, nil, &GalatValidasi{Pesan: []string{gk.Pesan}}
+	}
 	if err != nil {
 		return models.Kasus{}, nil, err
 	}
@@ -75,7 +84,10 @@ func (l *Layanan) kerjakan(ctx context.Context, p inti.Pelaku, id string, masuk 
 //	SetPPNPPH langkah 1-3   STS_PKP agen sumber bisnis
 //	SetCurrency_act         Currency <- nama mata uang IDCurrency
 //	CountNetPremi_act       NetPremium, Balance*, PPN/PPH, BrokerageFee*, DueTo
-//	CountSpreading_Act 4-5  total spreading (jumlah baris)
+//	CountSpreading_Act 4.2-5  total spreading (jumlah baris)
+//
+// Baris daftar (PremiumSpreaded, ListInstallment) yang dipicu kiriman ditulis
+// SESUDAHNYA oleh `models.TerapkanPemicu` (memakai NetPremium / BalanceDueTo ini).
 //
 // Ketiganya rumus yang sama yang dijalankan refresh layar, dan hasilnya
 // bergantung pada isian saja - menjalankannya lagi tidak mengubah nilai yang
@@ -485,6 +497,14 @@ func (l *Layanan) kirim(ctx context.Context, p inti.Pelaku, id string, masuk *mo
 // berpesan tidak dapat di-submit, sama dengan Pega.
 func (l *Layanan) validasiKirim(ctx context.Context, p inti.Pelaku, h *models.Halaman, posisi string) error {
 	pesan := models.MedanWajibKosong(h, posisi, tempatPelaku(p))
+	// 7.4 audit silang P3: tombol Submit Dept Head (IsApproved 1) menjalankan
+	// GeneratePolicyNoTreaty_Act lebih dulu (TerbitkanNomor); langkah 11 ->
+	// FetchTreatyGroupOldID langkah 3 memasang pesan halaman bila TreatyGroupID
+	// kosong - halaman berpesan tidak dapat di-submit (OK = finishAssignment).
+	if posisi == models.PosisiDeptHead && models.TombolUntuk(h, posisi) == models.TombolNomorPolis &&
+		models.GrupTreatyTakTerbaca(h) {
+		pesan = append(pesan, models.PesanGrupTreatyTakTerbaca)
+	}
 	if posisi == models.PosisiAdmin {
 		// Rantai layar admin dijalankan atas SALINAN: hanya pesannya yang
 		// diambil, nilai yang akan disimpan tidak berubah.

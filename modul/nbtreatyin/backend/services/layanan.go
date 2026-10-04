@@ -203,6 +203,10 @@ func (l *Layanan) BukaKasus(ctx context.Context, p inti.Pelaku, id string) (Laya
 		if err := l.siapkan(ctx, p, k, h); err != nil {
 			return Layar{}, err
 		}
+		if k.PositionNote == models.PosisiAdmin {
+			// W5: `pyDefaultValue` sel terbuka layar admin saat dirender.
+			models.TerapkanNilaiBawaanSel(h)
+		}
 	}
 	return l.layar(ctx, p, k, h, boleh)
 }

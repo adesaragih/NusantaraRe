@@ -227,47 +227,162 @@ var medanAtasan = []string{
 // jalurTanggalProduksi - `Section/ListSuggest` `.ProductionDate`.
 const jalurTanggalProduksi = HalamanPolis + ".ProductionDate"
 
-// medanAdmin - DAFTAR IZIN layar admin (`DetailPolicyTreatyIn` + `ListSuggest`):
+// pemicu - action set sel isian admin yang ikut menulis DAFTAR (diputar ulang
+// server, `TerapkanPemicu`).
+type pemicu int
+
+const (
+	tanpaPemicu pemicu = iota
+	// pemicuUang - change -> refresh `CountOGPONP_Act` (langkah 9 CountSpreading_Act
+	// per baris spreading, 10 SetValidateInstallment_Act).
+	pemicuUang
+	// pemicuAngsuran - change -> refresh `FillPaymentInstallment(Installment=.Installment)`.
+	pemicuAngsuran
+)
+
+// medanIsianAdmin - satu sel isian TERBUKA layar admin: jalur relatif
+// `PolicyTreatyIn`, syarat tampil (`pyVisible` sel DAN `pyContainerVisibleWhen`
+// wadahnya; nil = selalu), dan action set yang menulis daftar.
+type medanIsianAdmin struct {
+	medan  string
+	tampil func(*Halaman) bool
+	pemicu pemicu
+}
+
+// medanAdmin - DAFTAR IZIN layar admin (`DetailPolicyTreatyIn` + `ListSuggest`),
+// medan yang dapat diketik/dipilih (kolom "Kunci" kosong atau bersyarat yang tidak
+// pernah benar bagi kasus treaty - IsUW), BERURUTAN: syarat tampil sebuah medan
+// hanya membaca medan di atasnya (ClaimType -> FlagPPH -> TypeTax), dinilai atas
+// halaman yang sedang digabung - persis sel yang tampil di layar saat itu.
 //
-//	isian   medan yang dapat diketik/dipilih di section (kolom "Kunci" kosong
-//	        atau bersyarat yang tidak pernah benar bagi kasus treaty - IsUW)
-//	tombol  hasil `TreatyEnableDisableInput`
+// W4 audit silang P3: medan di sel / wadah TERSEMBUNYI tidak diterima (sel
+// tersembunyi tidak ter-render dan tidak pernah mengirim nilai):
+//
+//	S19  `.IsNewPolicyNonProp != 1 && .IsNewPolicyListFormat != 1`  medan uang, .Installment
+//	     (polis NonProp baru: PremiOgp, Deduction1/2 milik
+//	     InputPolicyTreatyInDetail_NonProp 18-19, bukan layar)
+//	S7   `.ClaimType != 'XOL Retro'`  .FlagPPH, .TypeTax (sel: `.FlagPPH = true`)
+//	sel  `.ClaimType != 'XOL Retro'`  .FlagRetroTreaty
+//	S14  `.QuotationData.ProportionalType = 'Proportional'`  .Quartal, .YearOfQuartal
+//	sel  `.IsNewPolicyNonProp != 1`  .IDCurrency
+//	sel  `pyWorkPage.Quotation.ProportionalType != 'NonProportional'`  .QuotationData.IsSurveyReport
 //
 // Medan TURUNAN (NetPremium, Balance*, PPN/PPH, BrokerageFee*, DueTo,
 // Currency) TIDAK diterima dari layar - services menghitungnya ulang dari
-// isian (`services.turunkan`).
+// isian (`services.turunkan`). Hasil tombol Enable / Disable Input Type
+// (`IsNewPolicyNonProp`, `QuotationData.ProportionalType`): `terimaEnableDisable`.
 //
 // ⛔ DAFTAR IZIN, bukan daftar larangan (temuan tinjauan 2026-10-03): medan
 // milik server - hasil pilih bisnis (NoOffer, TreatyGroupID, OJKBusinessID,
 // BizCode, SOB, CedingCo, ...), StatementDate (`ALWAYS`), PolicyNo - tidak
 // pernah dapat ditimpa layar, termasuk yang tidak tampil.
-var medanAdmin = func() map[string]bool {
-	m := map[string]bool{}
-	for _, n := range []string{
-		// isian
-		"StartDate", "EndDate", "QuotationData.IsSurveyReport", "StatementType", "QuotationData.NoOfferSlip",
-		"FlagRetroTreaty", "FlagPPH", "TypeTax", "Quartal", "YearOfQuartal", "QuotationData.MOID",
-		"IDCurrency", "ClaimType", "ClaimPaymentType", "Remark", "GrossPremium", "GrossClaim",
-		"PremiOgp", "RiCommOgp", "ResultOgp1", "OveriddingCommOgp", "ResultOgp2",
+var medanAdmin = func() []medanIsianAdmin {
+	m := []medanIsianAdmin{}
+	for _, n := range []string{"StartDate", "EndDate", "StatementType", "QuotationData.NoOfferSlip",
+		"QuotationData.MOID", "ClaimType", "ClaimPaymentType", "Remark", "IsApproved", "Suggest"} {
+		m = append(m, medanIsianAdmin{medan: n})
+	}
+	m = append(m,
+		medanIsianAdmin{medan: "QuotationData.IsSurveyReport", tampil: bukanNonProp},
+		medanIsianAdmin{medan: "FlagRetroTreaty", tampil: bukanXOLRetro},
+		medanIsianAdmin{medan: "FlagPPH", tampil: bukanXOLRetro},
+		medanIsianAdmin{medan: "TypeTax", tampil: dan(bukanXOLRetro, flagPPH)},
+		medanIsianAdmin{medan: "Quartal", tampil: proporsionalQD},
+		medanIsianAdmin{medan: "YearOfQuartal", tampil: proporsionalQD},
+		medanIsianAdmin{medan: "IDCurrency", tampil: bukanNonPropBaru},
+		// GrossPremium/GrossClaim: CalculatePremi_Act -> CountNetPremi_act (tanpa daftar)
+		medanIsianAdmin{medan: "GrossPremium", tampil: wadahUangAdmin},
+		medanIsianAdmin{medan: "GrossClaim", tampil: wadahUangAdmin},
+		// OutstandingClaim: sel tanpa action set
+		medanIsianAdmin{medan: "OutstandingClaim", tampil: wadahUangAdmin},
+		medanIsianAdmin{medan: "Installment", tampil: wadahUangAdmin, pemicu: pemicuAngsuran},
+	)
+	for _, n := range []string{"PremiOgp", "RiCommOgp", "ResultOgp1", "OveriddingCommOgp", "ResultOgp2",
 		"PremiOnp", "RiCommOnp", "ResultOnp1", "OveriddingCommOnp", "ResultOnp2",
-		"Claim", "OutstandingClaim", "SalvageValue", "ExcessLoss", "Deduction1", "Deduction2",
-		"Installment", "IsApproved", "Suggest",
-		// hasil tombol "Enable / Disable Input Type" (TreatyEnableDisableInput)
-		"IsNewPolicyNonProp", "QuotationData.ProportionalType",
-	} {
-		m[HalamanPolis+"."+n] = true
+		"Claim", "SalvageValue", "ExcessLoss", "Deduction1", "Deduction2"} {
+		m = append(m, medanIsianAdmin{medan: n, tampil: wadahUangAdmin, pemicu: pemicuUang})
 	}
 	return m
 }()
 
-// GabungMasukanLayar menyalin nilai kiriman layar `masuk` ke halaman
-// tersimpan `h`, HANYA untuk medan yang boleh diubah di posisi itu.
+// GalatKiriman - kiriman layar memuat nilai yang tidak mungkin dihasilkan sel
+// / tombol layar itu (pola F4). Services menjawabnya 422.
+type GalatKiriman struct{ Pesan string }
+
+func (e *GalatKiriman) Error() string { return "models: kiriman layar tidak sah: " + e.Pesan }
+
+// jalurEnableDisable - dua medan yang hanya ditulis `TreatyEnableDisableInput`.
+var jalurEnableDisable = []string{pt + "IsNewPolicyNonProp", pt + "QuotationData.ProportionalType"}
+
+// PesanEnableDisableTidakCocok - pesan 422 W3.
+func PesanEnableDisableTidakCocok(jalur, nilai string) string {
+	return "Nilai " + jalur + " \"" + nilai + "\" bukan hasil tombol Enable / Disable Input Type " +
+		"(TreatyEnableDisableInput) - medan ini terkunci di layar"
+}
+
+// terimaEnableDisable = W3 audit silang P3 (pola F4): `.QuotationData.
+// ProportionalType` (sel `pyReadOnly=true`, `pyEditOptions=Read-only`) dan
+// `.IsNewPolicyNonProp` (bukan sel layar) hanya diubah DataTransform
+// `TreatyEnableDisableInput` - tombol "Enable / Disable Input Type", pyVisible
+// `.TreatyType='XOL'`, click -> refresh (TANPA simpan; hasilnya dipegang layar
+// sampai Save/Submit).
 //
-//	Admin   `medanAdmin` (daftar izin), beserta daftar `DaftarDariLayar`
-//	        (SpreadingRiskList, ListInstallment - baris boleh ditambah/dihapus,
-//	        tombol Add/Delete layar admin). ⛔ RALAT K8: TreatyXOLList tidak
-//	        tampil di section mana pun - tidak lagi diterima dari layar.
-//	Atasan  hanya `medanAtasan`; seluruh daftar terkunci
+//   - tidak dikirim / sama dengan halaman server: tidak ada perubahan;
+//   - TreatyType bukan XOL: tombol tak tampil, medan TERKUNCI - kiriman
+//     diabaikan (pola AC 49-51);
+//   - selain itu diterima hanya bila SAMA dengan hasil DT atas halaman server
+//     (langkah 1 "NonProportional", langkah 2-4 selalu "0"); lain -> GalatKiriman.
+func terimaEnableDisable(h, masuk *Halaman) error {
+	dt := h.Salin()
+	TreatyEnableDisableInput(dt)
+	xol := h.Ambil(pt+"TreatyType") == "XOL"
+	for _, j := range jalurEnableDisable {
+		v, ada := masuk.Nilai[j]
+		if !ada || v == h.Ambil(j) || !xol {
+			continue
+		}
+		if v != dt.Ambil(j) {
+			return &GalatKiriman{Pesan: PesanEnableDisableTidakCocok(j, v)}
+		}
+		h.Setel(j, v)
+	}
+	return nil
+}
+
+// TerapkanNilaiBawaanSel = `pyDefaultValue` sel terbuka `Section/DetailPolicyTreatyIn`
+// (juga salinannya `GeneralPolicyTreatyIn`): nilai yang dipakai bila medan
+// kosong saat sel DIRENDER - hanya bila selnya tampil. Dua satu-satunya di layar
+// NB (sisanya label mati `1=2` dan grid master baca-saja):
+//
+//	.QuotationData.IsSurveyReport  "No"         pyCondition `pyWorkPage.Quotation.ProportionalType != 'NonProportional'`
+//	.TypeTax                       "Inclusive"  wadah S7 `.ClaimType != 'XOL Retro'`, pyCondition `.FlagPPH = true`
+//
+// Layar atasan (`DetailDeptHeadTreatyIn_UW`) tidak memuat `pyDefaultValue` sel
+// terbuka. Dipanggil saat layar admin dirender (`services.BukaKasus`) dan
+// sesudah kiriman admin digabung (sel baru tampil, mis. FlagPPH dicentang).
+func TerapkanNilaiBawaanSel(h *Halaman) {
+	if bukanNonProp(h) && h.Ambil(pt+"QuotationData.IsSurveyReport") == "" {
+		h.Setel(pt+"QuotationData.IsSurveyReport", "No")
+	}
+	if bukanXOLRetro(h) && flagPPH(h) && h.Ambil(pt+"TypeTax") == "" {
+		h.Setel(pt+"TypeTax", TypeTaxInclusive)
+	}
+}
+
+// GabungMasukanLayar menyalin nilai kiriman layar `masuk` ke halaman
+// tersimpan `h`, HANYA untuk medan yang boleh diubah di posisi itu, dan
+// menjawab action set yang dipicu kiriman (`PemicuLayar`).
+//
+//	Admin   `terimaEnableDisable` (W3), lalu `medanAdmin` (daftar izin
+//	        berurutan, hanya sel yang TAMPIL - W4); `.FlagPPH` yang berubah
+//	        menjalankan `RemoveTypeTax_ACT` (change -> runActivity); nilai bawaan
+//	        sel (`TerapkanNilaiBawaanSel`).
+//	Atasan  hanya `medanAtasan`
+//	Daftar  `.SpreadingRiskList` bila gridnya terbuka (`SpreadingDariLayar`,
+//	        kedua posisi - W2), TANPA kolom hanya-baca (W5). `.ListInstallment`
+//	        (grid `readOnly`) TIDAK PERNAH dari layar - barisnya ditulis action
+//	        set server (`TerapkanPemicu`). ⛔ RALAT K8: TreatyXOLList tidak tampil
+//	        di section mana pun - tidak diterima dari layar.
 //
 // Kedua layar: `.ProductionDate` (`ListSuggest`) diterima hanya bila tampil -
 // `TanggalProduksiTampil` atas IsApproved (sesudah digabung) dan `tempat`
@@ -293,11 +408,30 @@ func GabungMasukanLayar(h, masuk *Halaman, posisi string, tempat map[string]bool
 			}
 		}
 	} else {
-		for j, v := range masuk.Nilai {
-			if medanAdmin[j] {
-				h.Setel(j, v)
+		if err := terimaEnableDisable(h, masuk); err != nil {
+			return p, err
+		}
+		for _, m := range medanAdmin {
+			j := pt + m.medan
+			v, ada := masuk.Nilai[j]
+			if !ada || (m.tampil != nil && !m.tampil(h)) {
+				continue
+			}
+			berubah := nilaiBerubah(h.Ambil(j), v)
+			h.Setel(j, v)
+			if !berubah {
+				continue
+			}
+			switch {
+			case m.pemicu == pemicuUang:
+				p.Uang = true
+			case m.pemicu == pemicuAngsuran:
+				p.Angsuran = true
+			case m.medan == "FlagPPH":
+				RemoveTypeTax(h) // change -> runActivity RemoveTypeTax_ACT
 			}
 		}
+		TerapkanNilaiBawaanSel(h)
 	}
 	if SpreadingDariLayar(h, posisi) { // nonprop_layar.go
 		if b, ada := masuk.Daftar[DaftarSpreading]; ada {
@@ -319,6 +453,10 @@ type PemicuLayar struct {
 	// berubah, baris baru membawa %Share, atau baris dihapus: refresh
 	// `CountSpreading_Act`.
 	Spreading bool
+	// Uang - sel uang ber-action set `CountOGPONP_Act` berubah (admin).
+	Uang bool
+	// Angsuran - sel `.Installment` berubah: refresh `FillPaymentInstallment`.
+	Angsuran bool
 }
 
 // kolomHitungSpreading - kolom `Read-only` grid spreading yang hanya ditulis
@@ -381,15 +519,32 @@ func nilaiBerubah(lama, baru string) bool {
 
 // TerapkanPemicu memutar ulang di server action set sel yang dipicu kiriman
 // layar (`PemicuLayar`), atas halaman yang medan turunannya sudah dihitung
-// (`services.turunkan` - NetPremium, BalanceDueTo):
+// (`services.turunkan` - NetPremium, BalanceDueTo; CountNetPremi_act adalah
+// langkah 7 CountOGPONP_Act):
 //
+//	Angsuran   `FillPaymentInstallment` (baris disusun ulang; DueDate = sekarang)
+//	Uang       `CountOGPONP_Act` langkah 10 `SetValidateInstallment_Act` (3.1 Premium /
+//	           PaymentTotal per baris) - bila Installment tidak ikut berubah - dan
+//	           langkah 9 `CountSpreading_Act`
 //	Spreading  `CountSpreading_Act` langkah 4-5 (langkah 1-3 berlabel `//`)
 //
+// ⚠️ `[penyesuaian sadar]` Urutan beberapa refresh dalam satu kiriman tidak
+// terbaca; Installment yang berubah bersama sel uang dihitung ulang dengan
+// BalanceDueTo akhir (FillPaymentInstallment sesudah sel uang).
 // Total spreading selalu = jumlah baris (`HitungTotalSpreading`, langkah 4.2/5).
-// `sekarang` menggantikan `@CurrentDateTime()` (FillPaymentInstallment).
+// `sekarang` menggantikan `@CurrentDateTime()` (FillPaymentInstallment 3.5).
 func TerapkanPemicu(h *Halaman, p PemicuLayar, sekarang time.Time) error {
-	_ = sekarang
-	if p.Spreading {
+	switch {
+	case p.Angsuran:
+		if err := FillPaymentInstallment(h, sekarang); err != nil {
+			return err
+		}
+	case p.Uang:
+		if err := SetValidateInstallment(h); err != nil {
+			return err
+		}
+	}
+	if p.Uang || p.Spreading {
 		if err := CountSpreading(h, 0); err != nil {
 			return err
 		}

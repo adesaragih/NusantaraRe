@@ -42,8 +42,10 @@ type Gudang struct {
 	PKPAgen map[string]string  // STS_PKP per ID agen; tak terdaftar = StsPKP
 	StsPKP  string
 	OJK     string
-	urutPol int
-	Closing int
+	// OldIDGrup - hasil RDB `FetchTreatyGroupOLDID` (`OldIDGrupTreaty`).
+	OldIDGrup string
+	urutPol   int
+	Closing   int
 	// Master - tiruan `services.PembacaMasterTreaty` (master XOL per nomor
 	// kontrak, K8); MasterRusak memaksa `ErrMasterXOLRusak`.
 	Master      map[string]models.MasterXOL
@@ -56,14 +58,15 @@ type Gudang struct {
 // Baru menyusun gudang kosong.
 func Baru() *Gudang {
 	return &Gudang{
-		Kasus:   map[string]models.Kasus{},
-		Halaman: map[string]*models.Halaman{},
-		Nama:    map[string]string{},
-		Kontrak: map[string]models.BarisKontrak{},
-		Bisnis:  map[string]models.BarisBisnis{},
-		Master:  map[string]models.MasterXOL{},
-		Closing: 25,
-		OJK:     "UJI-OJK",
+		Kasus:     map[string]models.Kasus{},
+		Halaman:   map[string]*models.Halaman{},
+		Nama:      map[string]string{},
+		Kontrak:   map[string]models.BarisKontrak{},
+		Bisnis:    map[string]models.BarisBisnis{},
+		Master:    map[string]models.MasterXOL{},
+		Closing:   25,
+		OJK:       "UJI-OJK",
+		OldIDGrup: "UJI-OLD",
 	}
 }
 
@@ -354,7 +357,7 @@ func (g *Gudang) NamaMataUang(_ context.Context, id string) (string, error) {
 }
 
 func (g *Gudang) OJKGrupTreaty(context.Context, string) (string, error)   { return g.OJK, nil }
-func (g *Gudang) OldIDGrupTreaty(context.Context, string) (string, error) { return "UJI-OLD", nil }
+func (g *Gudang) OldIDGrupTreaty(context.Context, string) (string, error) { return g.OldIDGrup, nil }
 func (g *Gudang) KlienDariNama(context.Context, string) (string, error)   { return "", nil }
 func (g *Gudang) StsPKPAgen(_ context.Context, sobID string) (string, error) {
 	if v, ada := g.PKPAgen[sobID]; ada {

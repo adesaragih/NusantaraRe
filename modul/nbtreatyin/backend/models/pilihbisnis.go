@@ -142,6 +142,22 @@ func SetelOJK(h *Halaman, ojkBusinessID string) {
 	h.Setel(HalamanPolis+".OJKBusinessID", ojkBusinessID)
 }
 
+// PesanGrupTreatyTakTerbaca - VERBATIM `FetchTreatyGroupOldID` langkah 2
+// (`Param.Errmsg`).
+const PesanGrupTreatyTakTerbaca = "Cannot fetch Treaty Group ID, Contact IT"
+
+// GrupTreatyTakTerbaca = `FetchTreatyGroupOldID` langkah 3 sebagaimana
+// dipanggil `GeneratePolicyNoTreaty_Act` langkah 11 (prasyarat
+// `pyWorkPage.PolicyTreatyIn.TreatyGroupOldID==""`): `Page-Set-Messages
+// pyWorkPage` (Param.Errmsg) bila `pyWorkPage.PolicyTreatyIn.TreatyGroupID==""`.
+// Langkah 4-6 tetap berjalan (RDB `FetchTreatyGroupOLDID` atas ID kosong -> nol
+// baris -> TreatyGroupOldID tetap kosong), dan nomor polis tetap dibentuk
+// (langkah 30 `Obj-Save WithErrors=true`), maka keadaan ini bertahan di setiap
+// klik Submit berikutnya.
+func GrupTreatyTakTerbaca(h *Halaman) bool {
+	return h.Ambil(HalamanPolis+".TreatyGroupOldID") == "" && h.Ambil(HalamanPolis+".TreatyGroupID") == ""
+}
+
 // SetelGrupLama = `FetchTreatyGroupOldID` langkah 6 (dipanggil
 // `GeneratePolicyNoTreaty_Act`; langkah 7 preACT berlabel `//`).
 func SetelGrupLama(h *Halaman, oldID string) {
