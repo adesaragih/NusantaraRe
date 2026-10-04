@@ -27,13 +27,14 @@ import {
   TOTAL_SPREADED,
   daftarMaster,
   jalurRnmShare,
+  kolomTotal,
   spreadingTerbuka,
   tampilFakultatif,
   type Kolom,
   type Total,
 } from '../nonprop'
 import { sajikan, type Sajian } from '../sajian'
-import { TEMPAT_LABEL_EDM, TEMPAT_LABEL_NON_EDM, tempatTerbuka, type Tempat } from '../tempat'
+import { TEMPAT_LABEL_NON_EDM, tempatTerbuka, type Tempat } from '../tempat'
 
 const SPREADING = POLIS + 'SpreadingRiskList'
 const ANGSURAN = POLIS + 'ListInstallment'
@@ -81,7 +82,7 @@ function Totals({ h, daftarTotal }: { h: Halaman; daftarTotal: Total[] }) {
         <Grid
           key={t.daftar}
           baris={daftarMaster(h, t.daftar)}
-          kolom={[{ m: 'Currency', label: t.label }, { m: 'Value', label: JUDUL_NONPROP.value }, ...(t.tambahan ?? [])]}
+          kolom={kolomTotal(t)}
         />
       ))}
     </div>
@@ -235,7 +236,8 @@ export default function DetailNonProp({
           </div>
         ))}
       </Panel>
-      {tempatTerbuka(tempat, TEMPAT_LABEL_EDM) && <p className="nbti__label-np">{JUDUL_NONPROP.edm}</p>}
+      {/* LABEL "EDM": wadah S2 `TreatyMasterInEDM && IsEDMInputOnNB != true` - mustahil sesudah
+          InputPolicyTreatyInDetail_NonProp langkah 10 (audit silang P3), tidak dirender. */}
     </>
   )
 }

@@ -4,7 +4,18 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Halaman } from './api'
-import { jalurRnmShare, polisNonPropBaru, spreadingTerbuka, tampilFakultatif, tampilNonProp } from './nonprop'
+import {
+  TOTAL_LIMIT,
+  TOTAL_SHARE,
+  TOTAL_SPREADED,
+  jalurRnmShare,
+  kolomTotal,
+  polisNonPropBaru,
+  spreadingTerbuka,
+  tampilFakultatif,
+  tampilNonProp,
+  type Total,
+} from './nonprop'
 
 const hal = (nilai: Record<string, string>): Halaman => ({ nilai, daftar: {} })
 
@@ -39,5 +50,29 @@ describe('subsection DetailPoliciesNonProportional', () => {
     expect(spreadingTerbuka(hal({}))).toBe(true)
     expect(spreadingTerbuka(hal({ 'TreatyIn.FacultativeShare': '0' }))).toBe(true)
     expect(spreadingTerbuka(hal({ 'TreatyIn.FacultativeShare': '2.5' }))).toBe(false)
+  })
+})
+
+// Audit silang P3: judul grid total `DetailPolicyTreatyInNonProportional` - LABEL
+// judul berada di atas kolom `.Value` dan kolom `.Currency` tanpa judul
+// (TotalLimitDeductblNP: [ "", "Total Deductible" ]; TotalShareDeductionNP:
+// [ "", "Total Brokerage", "Total PPN", "Total PPH" ]), KECUALI grid Total Spreaded:
+// [ "Total OR Net Premium", "Value" ].
+describe('grid total NonProp: judul kolom = LABEL XML', () => {
+  const cari = (ts: Total[], d: string): Total => {
+    const t = ts.find((x) => x.daftar === d)
+    if (!t) throw new Error(`grid total ${d} tidak ada`)
+    return t
+  }
+  const judul = (t: Total) => kolomTotal(t).map((k) => k.label)
+  it('label di atas kolom Value, Currency tanpa judul', () => {
+    expect(judul(cari(TOTAL_LIMIT, 'TotalLimitDeductblNP'))).toEqual(['', 'Total Deductible'])
+    const potongan = cari(TOTAL_SHARE, 'TotalShareDeductionNP')
+    expect(judul(potongan)).toEqual(['', 'Total Brokerage', 'Total PPN', 'Total PPH'])
+    expect(kolomTotal(potongan).map((k) => k.m)).toEqual(['Currency', 'Value', 'TotalPPNValue', 'TotalPPHValue'])
+  })
+  it('Total Spreaded: label di atas Currency, "Value" di atas Value', () => {
+    expect(judul(cari(TOTAL_SPREADED, 'TotalSpreadedNetPremi'))).toEqual(['Total OR Net Premium', 'Value'])
+    expect(judul(cari(TOTAL_SPREADED, 'TotalSpreadedNetPremiRI'))).toEqual(['Total R/I Net Premium', 'Value'])
   })
 })

@@ -122,6 +122,16 @@ export const TOTAL_FAKULTATIF: Total[] = [
   { daftar: 'TotalFacShareNetNP', label: 'Total Net Premi' },
 ]
 
+/** Kolom grid total: LABEL judul di atas kolom `.Value`, kolom `.Currency` tanpa
+ *  judul - kecuali grid Total Spreaded (label di atas `.Currency`, "Value" di atas
+ *  `.Value`). LABEL judul `DetailPolicyTreatyInNonProportional` (audit silang P3). */
+export function kolomTotal(t: Total): Kolom[] {
+  const dasar = t.daftar.startsWith('TotalSpreaded')
+    ? [k('Currency', t.label), k('Value', 'Value')]
+    : [k('Currency', ''), k('Value', t.label)]
+  return [...dasar, ...(t.tambahan ?? [])]
+}
+
 /** Section `InstallmentList` (flow action `InstallmentList`, hanya-baca) - rincian satu angsuran. */
 export const KOLOM_RINCI: Kolom[] = [
   k('DueDate', 'Payment Date'),
