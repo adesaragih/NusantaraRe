@@ -137,6 +137,19 @@ go run ./cmd/api                        # atau .\bin\api.exe
    dapat mengirim empat permintaan itu sebelum `/api/modul-aktif` menjawab; jawabannya diabaikan
    begitu daftarnya tiba.
 
+⛔ **Urutan deploy Master Data (04-10-2026, `masterdata` 760–762; tinjau tim inti)** — kode yang membaca tabel
+baru sebelum migrasinya berjalan gagal (ORA-00904 / ORA-00942):
+
+1. Pasang biner yang memuat commit `072370f0` — pelari migrasi melewati pra-terbang untuk VIEW yang diganti tabel
+   bernama sama di langkah yang sama (`DROP VIEW` sebelum `CREATE TABLE`). Biner lebih lama berhenti di pra-terbang
+   760 ("kolom yang diminta migrasi tetapi tidak ada: [STS_AKTIF]") selama PROVINCE dkk. masih VIEW, dan karena
+   pra-terbang memeriksa SEMUA langkah tertunda, migrasi modul lain ikut tertahan.
+2. `-migrate` (work owner): 904 → 760 → 761 → 762 → 990.
+3. Baru sesudahnya buka layar Master Data dan saran akumulasi nbfacin (Choose Accumulation).
+
+Bila `-migrate` gagal **sesudah** pra-terbang, periksa sisa `*_SALIN` sebelum mengulang — tabel keadaan dan jalan
+keluarnya di `modul/masterdata/MODUL.md` bab "Urutan deploy".
+
 Memecah modul ke **proses berbeda** di belakang reverse proxy (per awalan rute di atas) belum
 didukung: frontend membaca `/api/modul-aktif` dari satu backend saja. `[pertanyaan terbuka]`
 
