@@ -72,7 +72,6 @@ export default function Accounts() {
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{ACC.judul}</h2>
       </header>
-      <p className="muted accounts__sub">{ACC.sub}</p>
 
       <div className="toolbar">
         <input

@@ -11,7 +11,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | --- | --- |
 | Nama modul | `treatycontractout` |
 | Folder korpus | `Treaty Contract Out` |
-| GROUPMENU | `MASTER` |
+| GROUPMENU | `MASTER TREATY` |
 | Pemilik | `@PEMILIK-TREATYCONTRACTOUT` |
 | Status | dimigrasi |
 | Rentang migrasi | `300-319` |

@@ -24,7 +24,9 @@ import (
 // yang work owner tulis ("TREATY, FACULTATIVE, KLAIM, MASTER"), bukan urutan
 // abjad `ORDER BY GROUPMENU`. `inti/backend/penjaga/menu_test.go` membandingkannya
 // dengan CHECK di migrasi 900.
-var Golongan = []string{"TREATY", "FACULTATIVE", "KLAIM", "MASTER"}
+// MASTER TREATY - migrasi inti 909 (perintah work owner 04-10-2026): Treaty In, Treaty In Adjustment, Treaty
+// Contract Out; tampil sesudah MASTER.
+var Golongan = []string{"TREATY", "FACULTATIVE", "KLAIM", "MASTER", "MASTER TREATY"}
 
 // Baris adalah satu baris MODUL `M_NAV_MENU` yang aktif (`KODE = MODUL`).
 type Baris struct {

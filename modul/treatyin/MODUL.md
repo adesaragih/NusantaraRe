@@ -62,7 +62,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | --- | --- |
 | Nama modul | `treatyin` |
 | Folder korpus | `Treaty In` |
-| GROUPMENU | `TREATY` |
+| GROUPMENU | `MASTER TREATY` |
 | Pemilik | `@PEMILIK-TREATYIN` |
 | Status | dimigrasi |
 | Rentang migrasi | `400-439` |

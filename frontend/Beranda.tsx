@@ -159,7 +159,6 @@ export default function Beranda({
           <h2 className="beranda__judul">
             {BERANDA.salam}, {masuk.akunID}
           </h2>
-          <p className="beranda__peran">{BERANDA.subjudul}</p>
         </div>
       </section>
 
