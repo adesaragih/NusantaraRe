@@ -53,7 +53,7 @@ describe('menu hanya yang berbukti korpus', () => {
     // Dua puluh folder korpus + Marketing Officer (modul di luar korpus, migrasi inti 906).
     // + Company Detail (modul di luar korpus, migrasi inti 907).
     // + Accounts (modul di luar korpus, migrasi inti 908).
-    expect(KELOMPOK_SIDEBAR).toHaveLength(23)
+    expect(KELOMPOK_SIDEBAR).toHaveLength(24)
     // Dan seluruhnya disebut di Shell, supaya tidak ada kelompok yang
     // terdaftar di label tetapi tidak dirender.
     for (const nama of KELOMPOK_SIDEBAR) {

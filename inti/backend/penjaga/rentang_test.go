@@ -385,7 +385,7 @@ func TestSlotMenuBerjalanSesudah900(t *testing.T) {
 	// Marketing Officer, 03-10-2026), 907 (baris menu Company Detail, 04-10-2026), dan 908 (baris menu Accounts,
 	// 04-10-2026) juga milik inti dan juga sebelum slot. 910 (M_LOGIN_GO_CONTACT_SEQ mengikuti CON tertinggi,
 	// 04-10-2026) pun milik inti.
-	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql", "904_m_login_go_kontak.sql", "905_m_login_go_contact_id.sql", "906_m_nav_menu_marketingofficer.sql", "907_m_nav_menu_companydetail.sql", "908_m_nav_menu_accounts.sql", "909_m_nav_menu_master_treaty.sql", "910_m_login_go_contact_seq_max.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
+	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql", "904_m_login_go_kontak.sql", "905_m_login_go_contact_id.sql", "906_m_nav_menu_marketingofficer.sql", "907_m_nav_menu_companydetail.sql", "908_m_nav_menu_accounts.sql", "909_m_nav_menu_master_treaty.sql", "910_m_login_go_contact_seq_max.sql", "911_m_nav_menu_aggregate.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
 		t.Errorf("urutan pelari %v, mau %v", urut, mau)
 	}
 }

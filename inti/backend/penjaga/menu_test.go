@@ -128,6 +128,7 @@ var modulLuarKorpus = map[string]string{
 	"marketingofficer": "906_m_nav_menu_marketingofficer.sql",
 	"companydetail":    "907_m_nav_menu_companydetail.sql",
 	"accounts":         "908_m_nav_menu_accounts.sql",
+	"aggregate":        "911_m_nav_menu_aggregate.sql",
 }
 
 // langkahMenuLuarKorpus menjawab apakah berkas inti `nama` membuat baris modul luar korpus.

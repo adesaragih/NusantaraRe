@@ -215,6 +215,13 @@ func Pasang(ctx context.Context, db *sql.DB, skema string) error {
 			return fmt.Errorf("skemauji: membuat tiruan warisan Accounts: %w", err)
 		}
 	}
+	// Tiruan warisan Aggregate SEBELUM migrasi: migrasi modul aggregate 880 membaca nomor AGG terbesar AGGREGATE
+	// (aggregate_tiruan.go, 04-10-2026).
+	for _, q := range ddlTiruanAggregate(skema) {
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			return fmt.Errorf("skemauji: membuat tiruan warisan Aggregate: %w", err)
+		}
+	}
 
 	repo, err := BukaRepositori()
 	if err != nil {
@@ -281,6 +288,8 @@ func Bongkar(ctx context.Context, db *sql.DB, skema string) error {
 	tiruan = append(tiruan, namaTabelTiruanMO...)
 	// Tiruan warisan Accounts (04-10-2026); jalur mundur 840-842 menoleransi ORA-00942 / ORA-02289.
 	tiruan = append(tiruan, namaTabelTiruanAccounts...)
+	// Tiruan warisan Aggregate (04-10-2026); jalur mundur 880 hanya DROP SEQUENCE.
+	tiruan = append(tiruan, namaTabelTiruanAggregate...)
 	for _, nama := range tiruan {
 		q := fmt.Sprintf(`DROP TABLE %s.%s CASCADE CONSTRAINTS`, skema, nama)
 		if _, err := db.ExecContext(ctx, q); err != nil {

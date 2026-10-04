@@ -91,6 +91,7 @@ export const MODUL_LUAR_KORPUS = {
   marketingOfficer: 'Marketing Officer',
   companyDetail: 'Company Detail',
   accounts: 'Accounts',
+  aggregate: 'Aggregate',
 } as const
 
 /**

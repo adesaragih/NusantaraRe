@@ -1,0 +1,644 @@
+/* Gaya modul Aggregate - SETIAP pemilih di bawah akar .aggregate (gaya.test.ts).
+   Tema sama dengan modul Company Detail: neumorfisme rapi di atas alas #eef1f6, aksen navy, tombol utama merah
+   bergradasi. Nilainya disalin ke token `--ag-*` milik modul ini - TIDAK menumpang ke kelas inti atau modul lain
+   (keputusan work owner: CSS per modul tidak menumpang di inti).
+   TANPA backdrop-filter, filter, atau transform: Modal tanpa portal akan terperangkap. */
+
+.aggregate {
+  display: contents;
+}
+
+.aggregate .aggregate__akar {
+  --ag-latar: #eef1f6;
+  --ag-latar-tepi: #cfd7e5;
+  --ag-latar-atas: #f9fafd;
+  --ag-latar-bawah: #e4e9f3;
+  --ag-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --ag-lembut: #e9edf3;
+  --ag-lembut-tepi: #dde3ec;
+  --ag-teks: #101828;
+  --ag-teks-redup: #4f586b;
+  --ag-aksen: var(--primary-tanda);
+  --ag-aksen-teks: #2339a3;
+  --ag-aksen-lembut: #e3e8f6;
+  --ag-aksen-garis: #b9c5ee;
+  --ag-kepala-tabel: #dde4f2;
+  --ag-kepala-teks: #22326b;
+  --ag-kepala-garis: #c3cde2;
+  --ag-isi: #ffffff;
+  --ag-baris-hover: #e6ecfa;
+  --ag-garis: #e1e6ef;
+  --ag-tepi: #c8d1e1;
+  --ag-tombol: #d63a42;
+  --ag-tombol-ujung: #bf2f37;
+  --ag-tombol-hover: #c2333b;
+  --ag-tombol-hover-ujung: #a9282f;
+  --ag-terang: rgba(255, 255, 255, 0.92);
+  --ag-gelap: rgba(163, 177, 198, 0.55);
+  --ag-kilau: rgba(255, 255, 255, 0.7);
+  --ag-timbul: 8px 8px 18px var(--ag-gelap), -8px -8px 18px var(--ag-terang);
+  --ag-timbul-kecil: 4px 4px 9px var(--ag-gelap), -4px -4px 9px var(--ag-terang);
+  --ag-cekung-kecil: inset 2px 2px 4px var(--ag-gelap), inset -2px -2px 4px var(--ag-terang);
+  --ag-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --ag-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--ag-terang);
+  --ag-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --ag-sukses-latar: #e6f7ee;
+  --ag-sukses-tepi: #b7e8cc;
+  --ag-sukses-teks: #067647;
+  --ag-netral-latar: #e9edf3;
+  --ag-netral-tepi: #d5dce7;
+  --ag-netral-teks: #475467;
+  --ag-waspada-latar: #fbf3df;
+  --ag-waspada-tepi: #f1d58a;
+  --ag-waspada-teks: #a3410a;
+  --ag-seri-0: #4f46e5;
+  --ag-seri-1: #0d9488;
+  --ag-seri-2: #f59e0b;
+  --ag-seri-3: #e11d48;
+  --ag-seri-4: #0ea5e9;
+  --ag-seri-5: #8b5cf6;
+  --ag-seri-6: #65a30d;
+  --ag-seri-7: #64748b;
+  --ag-lintasan: #e8ecf4;
+  --text-3: var(--ag-teks-redup);
+  color: var(--ag-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--ag-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--ag-latar-atas) 0%, var(--ag-latar-bawah) 100%);
+  box-shadow: var(--ag-bayang-akar);
+}
+
+:root[data-theme="dark"] .aggregate .aggregate__akar {
+  --ag-latar: #1b2130;
+  --ag-latar-tepi: #323b50;
+  --ag-latar-atas: #222a3b;
+  --ag-latar-bawah: #161b27;
+  --ag-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --ag-lembut: #181d2a;
+  --ag-lembut-tepi: #242b3a;
+  --ag-teks: #eef0f6;
+  --ag-teks-redup: #aab2c4;
+  --ag-aksen-teks: #aebcff;
+  --ag-aksen-lembut: #222b45;
+  --ag-aksen-garis: #3a4b8f;
+  --ag-kepala-tabel: #273152;
+  --ag-kepala-teks: #dbe2ff;
+  --ag-kepala-garis: #3a4670;
+  --ag-isi: #1f2638;
+  --ag-baris-hover: #2b3554;
+  --ag-garis: #2c3447;
+  --ag-tepi: #3a4459;
+  --ag-terang: rgba(255, 255, 255, 0.045);
+  --ag-gelap: rgba(0, 0, 0, 0.55);
+  --ag-kilau: rgba(255, 255, 255, 0.04);
+  --ag-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --ag-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--ag-terang);
+  --ag-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --ag-sukses-latar: #0d2a1f;
+  --ag-sukses-tepi: #1d5c40;
+  --ag-sukses-teks: #75e0a7;
+  --ag-netral-latar: #1f2533;
+  --ag-netral-tepi: #333c4f;
+  --ag-netral-teks: #c3cad8;
+  --ag-waspada-latar: #2b2112;
+  --ag-waspada-tepi: #6b4d17;
+  --ag-waspada-teks: #fec84b;
+  --ag-seri-0: #818cf8;
+  --ag-seri-1: #2dd4bf;
+  --ag-seri-2: #fbbf24;
+  --ag-seri-3: #fb7185;
+  --ag-seri-4: #38bdf8;
+  --ag-seri-5: #a78bfa;
+  --ag-seri-6: #a3e635;
+  --ag-seri-7: #94a3b8;
+  --ag-lintasan: #252d40;
+}
+
+/* Judul dan teks redup. */
+.aggregate .inbox__judul,
+.aggregate .modal__title {
+  color: var(--ag-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.aggregate .muted {
+  color: var(--ag-teks-redup);
+}
+
+.aggregate :focus-visible {
+  outline: 2px solid var(--ag-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.aggregate .field__input {
+  background: var(--ag-isi);
+  border: 1px solid var(--ag-tepi);
+  border-radius: 12px;
+  box-shadow: var(--ag-cekung-kecil);
+  color: var(--ag-teks);
+}
+
+.aggregate .field__input:hover:not(:disabled) {
+  border-color: var(--ag-aksen-garis);
+}
+
+.aggregate .field__input:focus {
+  border-color: var(--ag-aksen);
+  box-shadow: var(--ag-cekung-kecil), var(--ag-cincin);
+  outline: none;
+}
+
+.aggregate .field__input--readonly,
+.aggregate .field__input--readonly:hover {
+  background: var(--ag-lembut);
+  border-color: var(--ag-lembut-tepi);
+  color: var(--ag-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.aggregate .btn {
+  border-radius: 999px;
+}
+
+.aggregate .btn--primary {
+  background: linear-gradient(180deg, var(--ag-tombol), var(--ag-tombol-ujung));
+  border-color: var(--ag-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--ag-bayang-tombol);
+}
+
+.aggregate .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--ag-tombol-hover), var(--ag-tombol-hover-ujung));
+  border-color: var(--ag-tombol-hover-ujung);
+}
+
+.aggregate .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.aggregate .btn--ghost {
+  background: var(--ag-isi);
+  border: 1px solid var(--ag-tepi);
+  color: var(--ag-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--ag-timbul-kecil);
+}
+
+.aggregate .btn--ghost:hover:not(:disabled) {
+  background: var(--ag-aksen-lembut);
+  border-color: var(--ag-aksen-garis);
+  color: var(--ag-aksen-teks);
+}
+
+.aggregate .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--ag-cekung-kecil);
+}
+
+.aggregate .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.aggregate .modal {
+  background: var(--ag-latar);
+  border: 1px solid var(--ag-kilau);
+  border-radius: 22px;
+  box-shadow: var(--ag-bayang-popup);
+}
+
+.aggregate .modal__head,
+.aggregate .modal__actions {
+  border-color: var(--ag-garis);
+}
+
+.aggregate .alert {
+  border-radius: 12px;
+}
+
+/* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
+.aggregate .aggregate__tabel {
+  background: var(--ag-isi);
+  border: 1px solid var(--ag-tepi);
+  border-radius: 18px;
+  box-shadow: var(--ag-timbul);
+}
+
+.aggregate .aggregate__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.aggregate .aggregate__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.aggregate .aggregate__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.aggregate .aggregate__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.aggregate .aggregate__tabel thead th {
+  background: var(--ag-kepala-tabel);
+  color: var(--ag-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--ag-kepala-garis);
+}
+
+.aggregate .aggregate__tabel td {
+  color: var(--ag-teks);
+  background: var(--ag-isi);
+  border-bottom-color: var(--ag-garis);
+}
+
+.aggregate .aggregate__tabel tbody tr:nth-child(even),
+.aggregate .aggregate__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.aggregate .aggregate__tabel tbody tr:nth-child(even) > td {
+  background: var(--ag-lembut);
+}
+
+.aggregate .aggregate__tabel tbody tr:hover > td {
+  background: var(--ag-baris-hover);
+}
+
+/* Tombol aksi SEBARIS ke samping (permintaan work owner 03-10-2026 "buat ke samping aja"): tidak turun ke bawah;
+   tabel yang lebih lebar dari layar menggulir di dalam akar. */
+.aggregate .aggregate__aksi {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.aggregate .aggregate__tabel td.table__actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.aggregate .aggregate__cari {
+  width: min(360px, 100%);
+}
+
+.aggregate .aggregate__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.aggregate .aggregate__baris {
+  cursor: pointer;
+}
+
+.aggregate .aggregate__halaman {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  white-space: nowrap;
+}
+
+/* Kartu: chart, Master ID, dan grid pratinjau. */
+.aggregate .aggregate__kartu {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--ag-isi);
+  border: 1px solid var(--ag-tepi);
+  border-radius: 18px;
+  box-shadow: var(--ag-timbul);
+}
+
+.aggregate .aggregate__judul-kartu {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ag-teks);
+}
+
+/* Chart batang horizontal bertumpuk: Ceding > Treaty Type > Coverage. */
+.aggregate .aggregate__chart-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.aggregate .aggregate__remah {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 6px 0 0 -8px;
+  font-size: 13px;
+}
+
+.aggregate .aggregate__remah-tombol {
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ag-aksen-teks);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.aggregate .aggregate__remah-tombol:hover:not(:disabled) {
+  background: var(--ag-aksen-lembut);
+}
+
+.aggregate .aggregate__remah-tombol:disabled {
+  color: var(--ag-teks);
+  cursor: default;
+}
+
+.aggregate .aggregate__remah-pisah {
+  color: var(--ag-teks-redup);
+}
+
+.aggregate .aggregate__kpi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.aggregate .aggregate__kpi-item {
+  display: flex;
+  flex: 1 1 180px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  background: var(--ag-lembut);
+  border: 1px solid var(--ag-lembut-tepi);
+  border-radius: 14px;
+}
+
+.aggregate .aggregate__kpi-label {
+  font-size: 12px;
+  color: var(--ag-teks-redup);
+}
+
+.aggregate .aggregate__kpi-nilai {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ag-aksen-teks);
+  overflow-wrap: anywhere;
+}
+
+.aggregate .aggregate__chart-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.aggregate .aggregate__legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aggregate .aggregate__legenda li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aggregate .aggregate__tanda {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.aggregate .aggregate__batang-daftar {
+  max-height: 440px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.aggregate .aggregate__batang {
+  display: grid;
+  grid-template-columns: minmax(140px, 260px) minmax(120px, 1fr) minmax(130px, auto) 64px 14px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.aggregate .aggregate__batang--buka {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.aggregate .aggregate__batang--buka:hover {
+  background: var(--ag-baris-hover);
+}
+
+.aggregate .aggregate__batang-nama {
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.aggregate .aggregate__lintasan {
+  display: flex;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--ag-lintasan);
+}
+
+.aggregate .aggregate__ruas {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.aggregate .aggregate__ruas + .aggregate__ruas {
+  border-left: 2px solid var(--ag-isi);
+}
+
+.aggregate .aggregate__ruas--0 {
+  background: var(--ag-seri-0);
+}
+
+.aggregate .aggregate__ruas--1 {
+  background: var(--ag-seri-1);
+}
+
+.aggregate .aggregate__ruas--2 {
+  background: var(--ag-seri-2);
+}
+
+.aggregate .aggregate__ruas--3 {
+  background: var(--ag-seri-3);
+}
+
+.aggregate .aggregate__ruas--4 {
+  background: var(--ag-seri-4);
+}
+
+.aggregate .aggregate__ruas--5 {
+  background: var(--ag-seri-5);
+}
+
+.aggregate .aggregate__ruas--6 {
+  background: var(--ag-seri-6);
+}
+
+.aggregate .aggregate__ruas--7 {
+  background: var(--ag-seri-7);
+}
+
+.aggregate .aggregate__batang-nilai {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.aggregate .aggregate__batang-persen {
+  text-align: right;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ag-teks-redup);
+}
+
+.aggregate .aggregate__chevron {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--ag-teks-redup);
+}
+
+@media (max-width: 720px) {
+  .aggregate .aggregate__batang {
+    grid-template-columns: 1fr auto 56px;
+    gap: 6px 10px;
+  }
+
+  .aggregate .aggregate__lintasan {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .aggregate .aggregate__chevron {
+    display: none;
+  }
+}
+
+/* Grid lebar (40 kolom TempCSV): menggulir di dalam kotaknya, kepala menempel di atas. */
+.aggregate .aggregate__gulir {
+  overflow: auto;
+  max-height: 60vh;
+}
+
+.aggregate .aggregate__grid {
+  width: max-content;
+  min-width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+
+.aggregate .aggregate__grid th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 6px 8px;
+  text-align: left;
+  white-space: nowrap;
+  background: var(--ag-kepala-tabel);
+  color: var(--ag-kepala-teks);
+  border-bottom: 1px solid var(--ag-kepala-garis);
+}
+
+.aggregate .aggregate__grid th.aggregate__angka {
+  text-align: right;
+}
+
+.aggregate .aggregate__grid td {
+  padding: 4px 8px;
+  white-space: nowrap;
+  color: var(--ag-teks);
+  background: var(--ag-isi);
+  border-bottom: 1px solid var(--ag-garis);
+}
+
+.aggregate .aggregate__grid tbody tr:nth-child(even) > td {
+  background: var(--ag-lembut);
+}
+
+.aggregate .aggregate__grid tbody tr.aggregate__total > td {
+  font-weight: 700;
+  background: var(--ag-aksen-lembut);
+}
+
+/* Layar unggah: Master ID, Template, Upload CSV, Save, Close sebaris. */
+.aggregate .aggregate__aksi-unggah {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.aggregate .aggregate__berkas {
+  display: none;
+}
+
+.aggregate .aggregate__tolak {
+  max-height: 220px;
+  margin: 0;
+  padding-left: 18px;
+  overflow: auto;
+}
+
+/* Popup Master ID dan rincian. */
+.aggregate .aggregate__master {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.aggregate .aggregate__master-alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.aggregate .aggregate__master-tabel {
+  max-height: 55vh;
+}
+
+.aggregate .aggregate__rincian {
+  min-height: 120px;
+}
