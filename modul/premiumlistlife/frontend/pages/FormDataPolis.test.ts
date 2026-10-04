@@ -160,3 +160,18 @@ describe('tata letak seragam Premium List Detail (02-10-2026)', () => {
     expect(BERKAS.match(/className="pl-dp-kolom-tiga"/g)?.length).toBe(1)
   })
 })
+
+describe('Underwriting Policy dan Marketing Note sebagai text area (03-10-2026)', () => {
+  it('kedua layar memakai AreaTeks untuk keduanya, terkunci pun tetap text area', () => {
+    const penawaran = readFileSync(join(__dirname, 'FormPenawaran.tsx'), 'utf8')
+    for (const sumber of [BERKAS, penawaran]) {
+      expect(sumber).toMatch(/<AreaTeks[\s\S]{0,80}ketentuanUnderwriting/)
+      expect(sumber).toMatch(/<AreaTeks[\s\S]{0,80}keteranganMarketing/)
+    }
+    expect(BERKAS).not.toContain('tampil(LABEL_DATA_POLIS.ketentuanUnderwriting')
+    expect(BERKAS).not.toContain('tampil(LABEL_DATA_POLIS.keteranganMarketing')
+    const area = readFileSync(join(__dirname, '..', 'components', 'AreaTeks.tsx'), 'utf8')
+    expect(area).toContain('<textarea')
+    expect(area).toContain('readOnly={readOnly}')
+  })
+})

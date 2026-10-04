@@ -23,10 +23,10 @@ import {
   type KontrakMasuk,
   type TahunTreaty,
 } from '../api'
-import { KONTRAK_MCRL, UMUM_MCRL } from '../labels'
-import { jepitHalaman, operatorKini, potongHalaman, sel, selAngka, selTanggal, selWaktu, waktuKini } from '../tampilan'
+import { KONTRAK_MCRL, TAHUN_MCRL, UMUM_MCRL } from '../labels'
+import { operatorKini, sel, selAngka, selTanggal, selWaktu, waktuKini } from '../tampilan'
 import { Field, Gagal, Kosong, Memuat, Pilih } from '../../../../inti/frontend/components/ui/dasar'
-import { KepalaPanel, Penomoran } from './Bingkai'
+import { KepalaPanel } from './Bingkai'
 import KonfirmasiHapus from './KonfirmasiHapus'
 import PanelBusiness from './PanelBusiness'
 import PanelReinsurer from './PanelReinsurer'
@@ -75,13 +75,27 @@ export function opsiJenis(daftar: readonly JenisReasuransi[]): { value: string; 
   return daftar.map((j) => ({ value: j.id, label: j.note.trim() === '' ? j.id : j.note }))
 }
 
+/**
+ * Jenis yang BELUM dipakai kontrak lain di tahun treaty ini - satu REINS TYPE
+ * satu kontrak per tahun (keputusan work owner 04-10-2026). Jenis milik kontrak
+ * yang sedang diubah (`idSendiri`) tetap tersedia. Server menolak hal yang sama
+ * (`PesanJenisGanda`).
+ */
+export function jenisTersedia(
+  daftarJenis: readonly JenisReasuransi[],
+  kontrak: readonly Kontrak[],
+  idSendiri: string,
+): JenisReasuransi[] {
+  const terpakai = new Set(kontrak.filter((k) => k.id !== idSendiri).map((k) => k.reinsTypeId.trim()))
+  return daftarJenis.filter((j) => !terpakai.has(j.id.trim()))
+}
+
 /** Popup yang dibuka dari satu baris kontrak - `Reinsurer List` atau `Business List`. */
 type Anak = { jenis: 'reinsurer' | 'business'; kontrak: Kontrak }
 
 export default function PanelKontrak({ tahun, onTutup }: { tahun: TahunTreaty; onTutup: () => void }) {
   const [jawab, setJawab] = useState<JawabanKontrak | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
-  const [halaman, setHalaman] = useState(1)
   const [form, setForm] = useState<FormKontrak | null>(null)
   const [galatForm, setGalatForm] = useState<unknown>(null)
   const [menyimpan, setMenyimpan] = useState(false)
@@ -97,7 +111,6 @@ export default function PanelKontrak({ tahun, onTutup }: { tahun: TahunTreaty; o
       const j = await ambilKontrak(tahun.id)
       setJawab(j)
       setGalat(null)
-      setHalaman((h) => jepitHalaman(h, j.daftar.length))
     } catch (e) {
       setGalat(e)
     }
@@ -176,22 +189,42 @@ export default function PanelKontrak({ tahun, onTutup }: { tahun: TahunTreaty; o
 
   return (
     <section className="panel">
-      <KepalaPanel judul={KONTRAK_MCRL.judul} medan={[[KONTRAK_MCRL.idTreatyYear, induk.id]]} onTutup={onTutup} />
+      {/* ID Treaty Year PALING DEPAN, lalu Underwriting Year dan Transaction Year
+          (keputusan work owner 04-10-2026) - label sama dengan halaman depan. */}
+      <KepalaPanel
+        judul={KONTRAK_MCRL.judul}
+        medan={[
+          [KONTRAK_MCRL.idTreatyYear, induk.id],
+          [TAHUN_MCRL.formUnderwritingYear, induk.underwritingYear],
+          [TAHUN_MCRL.formTransactionYear, induk.treatyYear],
+        ]}
+        onTutup={onTutup}
+      />
 
       {form !== null && (
         <div className="panel">
           {galatForm !== null && <Gagal galat={galatForm} />}
           {galatJenis !== null && <Gagal galat={galatJenis} />}
           <div className="form-grid">
-            <Field label={KONTRAK_MCRL.formInputor} value={form.userId} onChange={() => undefined} readOnly />
-            <Field label={KONTRAK_MCRL.formModifiedDate} value={selWaktu(form.tglUpdate)} onChange={() => undefined} readOnly />
-            <Pilih label={KONTRAK_MCRL.formReinsType} value={form.reinsTypeId} onChange={ubah('reinsTypeId')} opsi={opsiJenis(jenis)} required />
-            <Field label={KONTRAK_MCRL.formTreatyStart} value={selTanggal(induk.startDate)} onChange={() => undefined} readOnly />
-            <Field label={KONTRAK_MCRL.formTreatyEnd} value={selTanggal(induk.endDate)} onChange={() => undefined} readOnly />
+            <Pilih
+              label={KONTRAK_MCRL.formReinsType}
+              value={form.reinsTypeId}
+              onChange={ubah('reinsTypeId')}
+              opsi={opsiJenis(jenisTersedia(jenis, daftar, form.id))}
+              required
+            />
+            {/*
+              TREATY START / TREATY END SENGAJA tidak ditampilkan di form (keputusan
+              work owner 04-10-2026). Nilainya tetap disalin server dari tahun treaty
+              (`KontrakMasuk.keModel`) dan tetap tampil di kolom grid.
+            */}
             <Field label={KONTRAK_MCRL.formMinIdr} value={form.bIdr} onChange={ubah('bIdr')} required />
             <Field label={KONTRAK_MCRL.formMaxIdr} value={form.idr} onChange={ubah('idr')} required />
             <Field label={KONTRAK_MCRL.formMinUsd} value={form.bUsd} onChange={ubah('bUsd')} required />
-            <Field label={KONTRAK_MCRL.formMaxUsd} value={form.usd} onChange={ubah('usd')} />
+            <Field label={KONTRAK_MCRL.formMaxUsd} value={form.usd} onChange={ubah('usd')} required />
+            {/* Modified Date dan Inputor di PALING AKHIR (keputusan work owner 04-10-2026). */}
+            <Field label={KONTRAK_MCRL.formModifiedDate} value={selWaktu(form.tglUpdate)} onChange={() => undefined} readOnly />
+            <Field label={KONTRAK_MCRL.formInputor} value={form.userId} onChange={() => undefined} readOnly />
           </div>
           <div className="aksi-baris">
             <button type="button" className="btn btn--primary" disabled={menyimpan} onClick={() => void simpan()}>
@@ -217,7 +250,6 @@ export default function PanelKontrak({ tahun, onTutup }: { tahun: TahunTreaty; o
         <button type="button" className="btn btn--primary" onClick={() => buka(formKontrakBaru(operatorKini(), waktuKini(new Date())))}>
           {KONTRAK_MCRL.add}
         </button>
-        <Penomoran halaman={halaman} total={daftar.length} onPindah={setHalaman} />
       </div>
       {jawab === null && galat === null && <Memuat />}
       {galat !== null && <Gagal galat={galat} />}
@@ -239,7 +271,7 @@ export default function PanelKontrak({ tahun, onTutup }: { tahun: TahunTreaty; o
               </tr>
             </thead>
             <tbody>
-              {potongHalaman(daftar, halaman).map((k) => (
+              {daftar.map((k) => (
                 <tr key={k.id} className="inbox__baris">
                   <td>{sel(k.id)}</td>
                   <td>{sel(k.reinsTypeName)}</td>

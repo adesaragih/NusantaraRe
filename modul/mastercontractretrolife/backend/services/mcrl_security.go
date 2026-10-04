@@ -16,6 +16,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/cockroachdb/apd/v3"
 
@@ -86,6 +87,26 @@ func (l *Layanan) SimpanSecurity(ctx context.Context, p inti.Pelaku, reinsurerID
 		}
 		s.TreatyYearID, s.TreatyContractID, s.TreatyReinsurerID = induk.TreatyYearID, induk.TreatyContractID, induk.ID
 		s.UserID = p.AkunID
+		// ⛔ Aturan Reinsurer List berlaku juga di sini (keputusan work owner
+		// 04-10-2026): satu nama sekali per reinsurer induk, dan total share
+		// security TIDAK BOLEH melebihi 100.
+		saudara, err := l.gudang.DaftarSecurity(ctx, tx, induk.TreatyYearID, induk.TreatyContractID, induk.ID)
+		if err != nil {
+			return err
+		}
+		share := []*apd.Decimal{s.PctShare}
+		for _, x := range saudara {
+			if x.ID == m.ID {
+				continue
+			}
+			if strings.TrimSpace(x.ReinsurerID) == strings.TrimSpace(s.ReinsurerID) {
+				return fmt.Errorf("%w: %s", ErrMasukanTidakSah, fmt.Sprintf(PesanSecurityGanda, s.ReinsurerName))
+			}
+			share = append(share, x.PctShare)
+		}
+		if err := periksaShareMaks(share); err != nil {
+			return err
+		}
 		if !ubah {
 			if s.ID, err = l.gudang.SisipSecurity(ctx, tx, s); err != nil {
 				return err

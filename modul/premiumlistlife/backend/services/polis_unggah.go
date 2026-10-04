@@ -134,7 +134,13 @@ func PemisahCSV(awal string) rune {
 // setelah menyembunyikan judulnya; nomor baris berkas mentah akan meleset
 // satu, dan meleset satu di berkas seribu baris lebih buruk daripada tidak
 // ada nomor sama sekali.
-func BacaCSVUnggah(r io.Reader) ([]models.BarisUnggah, error) {
+func BacaCSVUnggah(r io.Reader, tipe string) ([]models.BarisUnggah, error) {
+	// Kolom wajib bergantung pada Type polis (keputusan work owner 03-10-2026);
+	// Type yang tidak dikenal ditolak SEBELUM berkasnya dibaca.
+	wajib, err := models.KolomWajibUnggah(tipe)
+	if err != nil {
+		return nil, err
+	}
 	br := bufio.NewReaderSize(io.LimitReader(r, BatasUkuranUnggahCSV), ukuranIntipJudul)
 	// Galat Peek (berkas lebih pendek dari jendela) bukan galat: yang dipakai
 	// hanya bita yang sempat terbaca.
@@ -176,7 +182,7 @@ func BacaCSVUnggah(r io.Reader) ([]models.BarisUnggah, error) {
 	// barisnya - seribu kalimat yang mengatakan satu hal, dan orang harus
 	// membaca seribu untuk menemukan satu.
 	var hilang []string
-	for _, k := range models.KolomWajibUnggah() {
+	for _, k := range wajib {
 		if !lihat[k] {
 			hilang = append(hilang, k)
 		}
@@ -259,7 +265,11 @@ func (u *UnggahPremiumList) Tinjau(ctx context.Context, pelaku inti.Pelaku,
 	if polisID == "" {
 		return HasilTinjauUnggah{}, fmt.Errorf("%w: id polis kosong", galat.ErrPermintaanTidakSah)
 	}
-	_, hasil, err := periksaBerkas(berkas)
+	tipe, err := u.tipeUnggah(ctx, polisID)
+	if err != nil {
+		return HasilTinjauUnggah{}, err
+	}
+	_, hasil, err := periksaBerkas(berkas, tipe)
 	if err != nil {
 		return HasilTinjauUnggah{}, err
 	}
@@ -277,7 +287,7 @@ func (u *UnggahPremiumList) Tinjau(ctx context.Context, pelaku inti.Pelaku,
 // memakai pengurai atau validator berbeda akan berselisih, dan selisihnya
 // berarti berkas yang lolos tinjauan lalu ditolak saat simpan - atau, jauh
 // lebih buruk, sebaliknya.
-func periksaBerkas(berkas io.Reader) ([]models.BarisUnggah, models.HasilUnggah, error) {
+func periksaBerkas(berkas io.Reader, tipe string) ([]models.BarisUnggah, models.HasilUnggah, error) {
 	if berkas == nil {
 		// ⛔ Galat permintaan, bukan penolakan korpus: "Please Upload CSV File
 		// into attachment" milik langkah 11/33 yang ter-remark (sensus
@@ -285,13 +295,18 @@ func periksaBerkas(berkas io.Reader) ([]models.BarisUnggah, models.HasilUnggah, 
 		return nil, models.HasilUnggah{}, fmt.Errorf("%w: berkas CSV tidak disertakan",
 			galat.ErrPermintaanTidakSah)
 	}
-	baris, err := BacaCSVUnggah(berkas)
+	baris, err := BacaCSVUnggah(berkas, tipe)
 	if err != nil {
 		return nil, models.HasilUnggah{}, err
 	}
-	// OQ-PL-12 (GILIRAN-17): langkah 2 - uang kosong = 0 SEBELUM validasi.
+	// OQ-PL-12 (GILIRAN-17): langkah 2 - uang kosong = 0 SEBELUM validasi
+	// (kecuali kolom uang wajib - lihat `models.IsiNolUangKosong`).
 	models.IsiNolUangKosong(baris)
-	return baris, models.ValidasiUnggah(baris), nil
+	hasil, err := models.ValidasiUnggah(tipe, baris)
+	if err != nil {
+		return nil, models.HasilUnggah{}, err
+	}
+	return baris, hasil, nil
 }
 
 // HasilSimpanUnggah adalah jawaban penyimpanan.
@@ -340,7 +355,11 @@ func (u *UnggahPremiumList) Simpan(ctx context.Context, pelaku inti.Pelaku,
 	// ⚠️ Barisnya diambil dari pengurai yang SAMA, bukan dibaca ulang dari
 	// `berkas`: aliran itu sudah habis terbaca, dan membacanya dua kali
 	// menuntut menahan seluruh berkas di memori.
-	baris, hasil, err := periksaBerkas(berkas)
+	tipe, err := u.tipeUnggah(ctx, polisID)
+	if err != nil {
+		return HasilSimpanUnggah{}, err
+	}
+	baris, hasil, err := periksaBerkas(berkas, tipe)
 	if err != nil {
 		return HasilSimpanUnggah{}, err
 	}
@@ -362,6 +381,11 @@ func (u *UnggahPremiumList) Simpan(ctx context.Context, pelaku inti.Pelaku,
 		if err != nil {
 			return err
 		}
+		// Rekap summary dihitung ulang dari peserta yang baru - bukan saat
+		// Confirm (keputusan work owner 03-10-2026).
+		if err := u.svc.SummaryPremiumList().perbaruiRekapDalam(ctx, tx, polisID); err != nil {
+			return err
+		}
 		keluar = HasilSimpanUnggah{
 			CacahBaris:    hasil.CacahBaris,
 			CacahDisimpan: disimpan,
@@ -374,4 +398,20 @@ func (u *UnggahPremiumList) Simpan(ctx context.Context, pelaku inti.Pelaku,
 		return HasilSimpanUnggah{}, err
 	}
 	return keluar, nil
+}
+
+// tipeUnggah membaca `Type` polis - penentu kolom wajib unggahan (keputusan
+// work owner 03-10-2026). MEMBACA saja: tanpa transaksi, tanpa tulis.
+func (u *UnggahPremiumList) tipeUnggah(ctx context.Context, polisID string) (string, error) {
+	if u == nil || u.svc == nil || !u.svc.PunyaDatabase() {
+		return "", db.ErrTanpaOracle
+	}
+	d, err := repository.NewPenawaran(u.svc.DB()).BacaDataPolis(ctx, polisID)
+	if errors.Is(err, repository.ErrHeaderPolisTidakAda) {
+		return "", fmt.Errorf("%w: %s", ErrPolisTakDitemukan, polisID)
+	}
+	if err != nil {
+		return "", err
+	}
+	return d.Type, nil
 }

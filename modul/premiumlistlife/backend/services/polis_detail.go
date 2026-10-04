@@ -50,6 +50,11 @@ type HalamanPesertaPolis struct {
 	// satu di Go, satu di TypeScript - akan berselisih, dan selisihnya
 	// muncul sebagai angka di bawah judul kolom yang salah.
 	Kolom []string `json:"kolom"`
+	// KolomAngka - nama kolom ber-jenis ANGKA (`models.KolomPesertaAngka`):
+	// layar memberinya pemisah ribuan (keputusan work owner 03-10-2026). Jenis
+	// kolom ditentukan di Go, tidak ditebak dari isi sel - nomor sertifikat yang
+	// kebetulan berupa angka tidak boleh ikut berpemisah.
+	KolomAngka []string `json:"kolomAngka"`
 	// Baris adalah baris peserta halaman ini.
 	Baris []models.BarisPeserta `json:"baris"`
 	// Total adalah cacah SELURUH peserta polis, bukan yang di halaman ini.
@@ -145,11 +150,12 @@ func (d *DetailPolis) Peserta(ctx context.Context, pelaku inti.Pelaku, polisID s
 		return HalamanPesertaPolis{}, err
 	}
 	return HalamanPesertaPolis{
-		Kolom:   models.NamaKolomGridTampil(),
-		Baris:   hal.Baris,
-		Total:   hal.Total,
-		Halaman: halaman,
-		Ukuran:  ukuran,
+		Kolom:      models.NamaKolomGridTampil(),
+		KolomAngka: models.NamaKolomGridAngka(),
+		Baris:      hal.Baris,
+		Total:      hal.Total,
+		Halaman:    halaman,
+		Ukuran:     ukuran,
 	}, nil
 }
 

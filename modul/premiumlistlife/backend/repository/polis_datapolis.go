@@ -30,8 +30,9 @@ import (
 // DataPolisTersimpan adalah isian data polis yang sudah ada di header.
 type DataPolisTersimpan struct {
 	models.IsianDataPolis
-	// WPC - DIBACA saja (dihitung `WPCLife_Act` / `POOLDATA.GETQUARTER`, belum
-	// dibawa).
+	// WPC - DIBACA saja di sini; ditulis saat Confirm (`TulisWPC`, rumus
+	// `models.WPCPolis` pengganti `WPCLife_Act` / `POOLDATA.GETQUARTER`,
+	// 03-10-2026). Kosong sampai polisnya jadi.
 	WPC *time.Time
 }
 
@@ -190,7 +191,7 @@ func sqlBatasProduk(tabel string) string {
 // pesan galat menunjuk baris yang pemakai lihat.
 func sqlPesertaBatas(detail string) string {
 	return fmt.Sprintf(`SELECT d.NAME_OF_INSURED, %s, %s FROM %s d
-	  WHERE d.PREMIUM_LIST_ID = :1 ORDER BY d.CERTIFICATE_NO, d.ID`,
+	  WHERE d.PREMIUM_LIST_ID = :1 ORDER BY d.ID`,
 		fmt.Sprintf(db.FmtDesimal, "d.ENTRY_AGE"), fmt.Sprintf(db.FmtDesimal, "d.SUM_INSURED"), detail)
 }
 
@@ -272,4 +273,28 @@ func tanggalAtauNil(t *time.Time) any {
 		return nil
 	}
 	return *t
+}
+
+// sqlTulisWPC mengisi WPC baris utama header satu polis.
+func sqlTulisWPC(polis string) string {
+	return fmt.Sprintf(`UPDATE %s SET WPC = :1 WHERE ID = :2`, polis)
+}
+
+// TulisWPC menulis WPC polis (`models.WPCPolis`) - saat Confirm, sesudah PL
+// Number terbit, di transaksi pemanggil (keputusan work owner 03-10-2026,
+// pengganti `WPCLife_Act` / `POOLDATA.GETQUARTER`).
+func (r *Penawaran) TulisWPC(ctx context.Context, tx *db.Tx, id string, wpc time.Time) error {
+	polis, err := r.db.Qualify("T_PREMIUM_LIST")
+	if err != nil {
+		return err
+	}
+	q := sqlTulisWPC(polis)
+	if err := db.PeriksaSQL(q); err != nil {
+		return err
+	}
+	hasil, err := tx.ExecContext(ctx, q, wpc, id)
+	if err != nil {
+		return fmt.Errorf("repository: menulis WPC: %w", err)
+	}
+	return db.PastikanSatuBaris(hasil, "WPC polis")
 }

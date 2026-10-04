@@ -157,7 +157,12 @@ func (f *FormDataPolis) Simpan(ctx context.Context, pelaku inti.Pelaku, polisID 
 	}
 	repo := repository.NewPenawaran(f.svc.DB())
 	if err := f.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
-		return repo.SimpanDataPolis(ctx, tx, polisID, siap)
+		if err := repo.SimpanDataPolis(ctx, tx, polisID, siap); err != nil {
+			return err
+		}
+		// Rekap summary dihitung dan disimpan di SINI, bukan saat Confirm -
+		// Type ikut menentukannya (keputusan work owner 03-10-2026).
+		return f.svc.SummaryPremiumList().perbaruiRekapDalam(ctx, tx, polisID)
 	}); err != nil {
 		return nil, err
 	}

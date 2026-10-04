@@ -88,6 +88,13 @@ export interface AkibatKeputusanPolis {
   tahapTujuan: string
   /** Terisi bila kasus DITUTUP. */
   statusWork: string
+  /**
+   * PL Number yang terbit (Confirm di Input Premium Detail); kosong selain itu.
+   * Layar menampilkannya sebelum kembali ke kotak masuk (03-10-2026).
+   */
+  plNumber?: string
+  /** WPC `YYYY-MM-DD` yang dihitung bersama PL Number (03-10-2026). */
+  wpc?: string
 }
 
 /**
@@ -205,6 +212,11 @@ export interface HalamanPesertaPolis {
    * sebagai angka di bawah judul kolom yang salah.
    */
   kolom: string[]
+  /**
+   * Kolom ber-jenis ANGKA (dari server) — diberi pemisah ribuan (03-10-2026).
+   * Opsional: server lama tidak mengirimnya, dan tanpa itu tidak ada pemisah.
+   */
+  kolomAngka?: string[]
   baris: BarisPesertaPolis[]
   total: number
   halaman: number

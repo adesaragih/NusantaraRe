@@ -154,6 +154,7 @@ const BUKTI: readonly Bukti[] = [
 const BUKAN_KORPUS: readonly string[] = [
   'MENU_MCRL.kelompok', // nama tampilan = folder korpus tanpa "Master " (03-10-2026), dibuktikan terpisah di bawah
   'TAHUN_MCRL.judul', // b1082 tanpa "MASTER " (03-10-2026), dibuktikan terpisah di bawah
+  'TAHUN_MCRL.tanggalMundur', // proteksi tanggal mundur, keputusan work owner 04-10-2026
   'UMUM_MCRL.tutup',
   'UMUM_MCRL.kosong',
   'UMUM_MCRL.terpotong',

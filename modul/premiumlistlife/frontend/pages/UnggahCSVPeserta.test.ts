@@ -120,3 +120,11 @@ describe('ringkasan tinjauan', () => {
     expect(s).toContain('Nothing was saved')
   })
 })
+
+describe('panel unggah ringkas (03-10-2026)', () => {
+  it('satu baris; aturan format dilipat, bukan dibuang', () => {
+    expect(SUMBER).toContain('<details className="pl-unggah__aturan">')
+    expect(SUMBER).toMatch(/<details className="pl-unggah__aturan">[\s\S]{0,200}UNGGAH_CSV\.aturanPemisah/)
+    expect(SUMBER).toContain('className="panel__title pl-unggah__judul"')
+  })
+})

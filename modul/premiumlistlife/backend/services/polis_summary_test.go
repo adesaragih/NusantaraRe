@@ -45,14 +45,24 @@ func badanFungsi(t *testing.T, teks, kepala string) string {
 
 // TestSimpanDalamUrutanTerkunci - AC 24 spec.
 //
-// ⛔ Urutannya bagian dari kebenaran: nomor lebih dahulu (salinan warisan
-// berkunci `PL_NUMBER`), rekap sesudah nomor, warisan paling akhir.
+// ⛔ Urutannya bagian dari kebenaran: rekap TERSIMPAN dibaca lebih dahulu
+// (tanpa rekap, Confirm ditolak sebelum penghitung nomor dikunci), lalu
+// nomor (salinan warisan berkunci `PL_NUMBER`), warisan paling akhir.
+//
+// ⛔ [keputusan work owner 03-10-2026] Confirm TIDAK menghitung rekap: ia
+// dihitung saat Save Data / simpan peserta CSV (`perbaruiRekapDalam`).
 func TestSimpanDalamUrutanTerkunci(t *testing.T) {
 	badan := badanFungsi(t, sumberSummary(t), "func (s *SummaryPremiumList) simpanDalam(")
+	for _, larangan := range []string{"s.rekapDalam(", "ringkas.GantiRekap(", "perbaruiRekapDalam("} {
+		if strings.Contains(badan, larangan) {
+			t.Errorf("simpanDalam (Confirm) masih menghitung rekap lewat %s", larangan)
+		}
+	}
 	urut := []string{
+		"ringkas.BacaRekap(",
+		"ErrSummaryBelumAda",
 		"s.nomor.terbitkanDalam(",
-		"s.rekapDalam(",
-		"ringkas.GantiRekap(",
+		"ringkas.TulisNomorRekap(",
 		"ringkas.KepalaSummaryWarisan(",
 		"summaryWarisan.Ganti(",
 		"ringkas.SumberWarisan(",
@@ -165,5 +175,48 @@ func TestSummaryTanpaOracleDitolakTerang(t *testing.T) {
 	}
 	if _, err := s.Submit(context.Background(), inti.Pelaku{}, "P1", time.Now()); err == nil {
 		t.Error("Submit tanpa identitas diterima")
+	}
+}
+
+// TestRekapDihitungSaatSave - keputusan work owner 03-10-2026: rekap dihitung
+// dan disimpan di transaksi Save Data DAN simpan peserta CSV, dan rekap yang
+// tidak dapat dihitung DIHAPUS (bukan dibiarkan usang).
+func TestRekapDihitungSaatSave(t *testing.T) {
+	for berkas, kepala := range map[string]string{
+		"polis_datapolis.go": "func (f *FormDataPolis) Simpan(",
+		"polis_unggah.go":    "func (u *UnggahPremiumList) Simpan(",
+	} {
+		isi, err := os.ReadFile(berkas)
+		if err != nil {
+			t.Fatal(err)
+		}
+		badan := badanFungsi(t, string(isi), kepala)
+		iTx := strings.Index(badan, "DalamTransaksi(")
+		iRekap := strings.Index(badan, ".perbaruiRekapDalam(ctx, tx, polisID)")
+		if iTx < 0 || iRekap < iTx {
+			t.Errorf("%s: rekap tidak diperbarui di dalam transaksi simpan", berkas)
+		}
+	}
+	badan := badanFungsi(t, sumberSummary(t), "func (s *SummaryPremiumList) perbaruiRekapDalam(")
+	for _, jejak := range []string{"ringkas.HapusRekap(", "ringkas.GantiRekap(",
+		"repository.ErrPolisTanpaPeserta", "penomor.ErrTipePLTanpaCabang"} {
+		if !strings.Contains(badan, jejak) {
+			t.Errorf("perbaruiRekapDalam tanpa %s", jejak)
+		}
+	}
+}
+
+// TestWPCDitulisSaatConfirm - WPC dihitung di Go (tanpa POOLDATA.GETQUARTER)
+// dan ditulis SESUDAH nomor terbit, di transaksi Confirm (03-10-2026).
+func TestWPCDitulisSaatConfirm(t *testing.T) {
+	badan := badanFungsi(t, sumberSummary(t), "func (s *SummaryPremiumList) simpanDalam(")
+	iNomor := strings.Index(badan, "s.nomor.terbitkanDalam(")
+	iWPC := strings.Index(badan, "models.WPCPolis(identitas.Tipe, nomor.Periode)")
+	iTulis := strings.Index(badan, ".TulisWPC(ctx, tx, polisID, wpc)")
+	if iNomor < 0 || iWPC < iNomor || iTulis < iWPC {
+		t.Errorf("WPC tidak dihitung lalu ditulis sesudah nomor terbit (nomor=%d wpc=%d tulis=%d)", iNomor, iWPC, iTulis)
+	}
+	if strings.Contains(badan, "GETQUARTER") {
+		t.Error("simpanDalam masih memanggil POOLDATA.GETQUARTER")
 	}
 }

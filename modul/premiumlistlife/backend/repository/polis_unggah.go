@@ -27,7 +27,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"nusantarare/inti/backend/db"
@@ -57,9 +56,20 @@ import (
 // rahasia dan tidak perlu tidak-dapat-ditebak: ia pengenal baris, bukan kunci
 // penyimpanan. (Bandingkan `models.ImageIDBaru`, yang justru HARUS tidak
 // dapat ditebak dan karena itu memakai GUID.)
+//
+// ⭐ BERURUT [keputusan work owner 03-10-2026: "urutan peserta sama dengan
+// csv-nya"]: 24 heksa pertama MD5 nomor kasus, lalu nomor baris CSV DELAPAN
+// digit berawalan nol (`BatasBarisUnggah` 20.000 jauh di bawah 10^8). Di
+// dalam satu polis `ORDER BY ID` karena itu sama dengan urutan baris berkas -
+// tanpa kolom baru, jadi tanpa migrasi. Tetap 32 karakter heksa huruf besar,
+// tetap deterministik, dan (polis, baris) tetap tidak bertabrakan: awalan
+// 96-bit milik polis, akhiran milik baris.
+//
+// ⚠️ Baris yang diunggah SEBELUM 03-10-2026 masih berpengenal lama (MD5
+// penuh) dan baru berurutan sesudah diunggah ulang.
 func PengenalPesertaUnggah(polisID string, nomorBaris int) string {
-	sum := md5.Sum([]byte(polisID + "\x00peserta\x00" + strconv.Itoa(nomorBaris)))
-	return strings.ToUpper(hex.EncodeToString(sum[:]))
+	sum := md5.Sum([]byte(polisID + "\x00peserta"))
+	return strings.ToUpper(hex.EncodeToString(sum[:]))[:24] + fmt.Sprintf("%08d", nomorBaris)
 }
 
 // PesertaUnggah menyimpan peserta hasil unggahan.
@@ -196,7 +206,7 @@ func ekspresiSisipPeserta() (kolom, penanda string, cacah int) {
 	for _, c := range kolomBulatPeserta {
 		tambah(c.Kolom, ":%d")
 	}
-	for _, c := range models.KolomUangUnggah {
+	for _, c := range models.KolomUangTersimpan() {
 		tambah(c, ":%d")
 	}
 	return strings.Join(k, ", "), strings.Join(p, ", "), cacah
@@ -239,7 +249,7 @@ func nilaiSisipPeserta(id, polisID string, b models.BarisUnggah) []any {
 	// ⛔ Uang dikirim sebagai TEKS DESIMAL apa adanya. Mengubahnya menjadi
 	// `float64` di sini membuang angka di belakang koma tepat sebelum
 	// tersimpan - sesudah seluruh validasi menyatakannya utuh.
-	for _, c := range models.KolomUangUnggah {
+	for _, c := range models.KolomUangTersimpan() {
 		arg = append(arg, ambil(c))
 	}
 	return arg

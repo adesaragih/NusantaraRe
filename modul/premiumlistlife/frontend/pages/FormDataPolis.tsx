@@ -32,6 +32,7 @@ import {
   type PilihanKode,
 } from '../api'
 import { KOLOM_PRODUK, LABEL_DATA_POLIS, TEKS_PILIH, TEKS_TOMBOL_PILIH } from '../labels'
+import AreaTeks from '../components/AreaTeks'
 import IsianTanggal from '../components/IsianTanggal'
 import { tanggalTampil } from '../tanggal'
 import '../premiumlistlife.css'
@@ -84,12 +85,18 @@ export default function FormDataPolis({
   polisID,
   bernomor,
   onTersimpan,
+  onBelumTersimpan,
 }: {
   polisID: string
   /** PL_NUMBER sudah terbit — `Choose Product Name` tampil hanya bila belum. */
   bernomor: boolean
   /** Dipanggil sesudah tersimpan — kepala halaman (Type) ikut dimuat ulang. */
   onTersimpan: () => void
+  /**
+   * Dilapori `true` selama isian di layar BERBEDA dari yang terakhir tersimpan
+   * — Confirm dikunci selama itu (keputusan work owner 03-10-2026).
+   */
+  onBelumTersimpan?: (belum: boolean) => void
 }) {
   const [data, setData] = useState<DataPolis | null>(null)
   const [offer, setOffer] = useState<PenawaranPolis | null>(null)
@@ -99,10 +106,20 @@ export default function FormDataPolis({
   const [sibuk, setSibuk] = useState(false)
   const [tersimpan, setTersimpan] = useState(false)
   const [popup, setPopup] = useState<Popup | null>(null)
+  // Isian terakhir yang TERSIMPAN (dimuat atau sesudah Save Data), sebagai teks -
+  // pembanding "ada perubahan yang belum disimpan".
+  const [dasar, setDasar] = useState('')
+  const belumTersimpan = isi !== null && dasar !== '' && JSON.stringify(isi) !== dasar
+  useEffect(() => {
+    onBelumTersimpan?.(belumTersimpan)
+  }, [belumTersimpan, onBelumTersimpan])
+  // Layar ditinggalkan: tidak ada lagi perubahan yang menahan Confirm.
+  useEffect(() => () => onBelumTersimpan?.(false), [onBelumTersimpan])
 
   const terima = useCallback((d: DataPolis) => {
     setData(d)
     setIsi(isiDariDataPolis(d))
+    setDasar(JSON.stringify(isiDariDataPolis(d)))
   }, [])
 
   useEffect(() => {
@@ -228,7 +245,7 @@ export default function FormDataPolis({
               required
             />
             <div className="pl-dp-lebar">
-              {tampil(LABEL_DATA_POLIS.ketentuanUnderwriting, offer.ketentuanUnderwriting)}
+              <AreaTeks label={LABEL_DATA_POLIS.ketentuanUnderwriting} value={offer.ketentuanUnderwriting} readOnly />
             </div>
           </div>
         </div>
@@ -304,7 +321,7 @@ export default function FormDataPolis({
               Life.
             */}
             <div className="pl-dp-lebar">{tampil(LABEL_DATA_POLIS.statusUpdate, offer.statusUpdate)}</div>
-            <div className="pl-dp-lebar">{tampil(LABEL_DATA_POLIS.keteranganMarketing, offer.keteranganMarketing)}</div>
+            <div className="pl-dp-lebar"><AreaTeks label={LABEL_DATA_POLIS.keteranganMarketing} value={offer.keteranganMarketing} readOnly /></div>
           </div>
         </div>
       </div>

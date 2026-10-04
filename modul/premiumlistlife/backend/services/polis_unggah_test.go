@@ -25,6 +25,7 @@ func judulLengkap(tambahan ...string) []string {
 		"RETROCESSION_VALUATION_BEGIN_DATE", "RETROCESSION_VALUATION_EXPIRED_DATE",
 		"SUM_INSURED", "CEDING_RETENTION", "SUM_REASURED", "SHARE_NUSANTARA_RE",
 		"GROSS_PREMIUM", "NET_PREMIUM",
+		"ENTRY_AGE",
 	}
 	return append(k, tambahan...)
 }
@@ -53,12 +54,13 @@ func barisUji(sertifikat string) []string {
 		"01/01/2026", "01/01/2026", "01/01/2026",
 		"01/01/2026", "31/12/2026", "01/01/2026", "31/12/2026",
 		"1000.50", "100.25", "900.25", "50.5", "200.75", "180.5",
+		"30",
 	}
 }
 
 func TestBacaCSVUnggahMemberiNomorBarisData(t *testing.T) {
 	isi := csvUji(judulLengkap(), barisUji("UJI-C1"), barisUji("UJI-C2"))
-	baris, err := BacaCSVUnggah(strings.NewReader(isi))
+	baris, err := bacaQR(strings.NewReader(isi))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +83,7 @@ func TestBacaCSVUnggahMenaikkanHurufJudul(t *testing.T) {
 	j := judulLengkap()
 	j[0] = strings.ToLower(j[0])
 	isi := csvUji(j, barisUji("UJI-C1"))
-	baris, err := BacaCSVUnggah(strings.NewReader(isi))
+	baris, err := bacaQR(strings.NewReader(isi))
 	if err != nil {
 		t.Fatalf("judul huruf kecil ditolak: %v", err)
 	}
@@ -97,7 +99,7 @@ func TestBacaCSVUnggahMenaikkanHurufJudul(t *testing.T) {
 // ditolak seluruhnya, dengan pesan yang menuduh kolom yang terlihat ada.
 func TestBOMExcelDibuang(t *testing.T) {
 	isi := string(rune(0xFEFF)) + csvUji(judulLengkap(), barisUji("UJI-C1"))
-	baris, err := BacaCSVUnggah(strings.NewReader(isi))
+	baris, err := bacaQR(strings.NewReader(isi))
 	if err != nil {
 		t.Fatalf("berkas ber-BOM ditolak: %v", err)
 	}
@@ -117,7 +119,7 @@ func TestBacaCSVUnggahMenolakYangTidakTerbaca(t *testing.T) {
 		{"judul ganda", csvUji(append(judulLengkap(), "DOB"), barisUji("UJI-C1")), ErrCSVJudulGanda},
 		{"kolom wajib hilang", "CERTIFICATE_NO\nUJI-C1\n", ErrCSVKolomKurang},
 	} {
-		_, err := BacaCSVUnggah(strings.NewReader(k.isi))
+		_, err := bacaQR(strings.NewReader(k.isi))
 		if !errors.Is(err, k.mauIs) {
 			t.Errorf("%s: galat %v, mau %v", k.apa, err, k.mauIs)
 		}
@@ -137,7 +139,7 @@ func TestKolomHilangDilaporkanSekaliDanMenyebutNamanya(t *testing.T) {
 			tanpa = append(tanpa, k)
 		}
 	}
-	_, err := BacaCSVUnggah(strings.NewReader(csvUji(tanpa, barisUji("UJI-C1")[:len(tanpa)])))
+	_, err := bacaQR(strings.NewReader(csvUji(tanpa, barisUji("UJI-C1")[:len(tanpa)])))
 	if !errors.Is(err, ErrCSVKolomKurang) {
 		t.Fatalf("galat %v, mau ErrCSVKolomKurang", err)
 	}
@@ -149,7 +151,7 @@ func TestKolomHilangDilaporkanSekaliDanMenyebutNamanya(t *testing.T) {
 // TestBarisKosongDiUjungDilewati - penyunting menambahkannya sendiri.
 func TestBarisKosongDiUjungDilewati(t *testing.T) {
 	isi := csvUji(judulLengkap(), barisUji("UJI-C1")) + "\n\n"
-	baris, err := BacaCSVUnggah(strings.NewReader(isi))
+	baris, err := bacaQR(strings.NewReader(isi))
 	if err != nil {
 		t.Fatalf("baris kosong di ujung menolak berkas: %v", err)
 	}
@@ -193,7 +195,7 @@ func TestSimpanMemvalidasiUlang(t *testing.T) {
 		t.Fatal("fungsi Simpan tidak ditemukan")
 	}
 	badan := isi[a:]
-	if !strings.Contains(badan, "periksaBerkas(berkas)") {
+	if !strings.Contains(badan, "periksaBerkas(berkas, tipe)") {
 		t.Error("Simpan tidak memvalidasi ulang berkasnya; klien yang dapat " +
 			"melewatkan tinjauan dapat menyimpan apa saja")
 	}
@@ -227,7 +229,7 @@ func TestPeriksaBerkasMengisiNolSebelumValidasi(t *testing.T) {
 	if j := strings.Index(badan[1:], "\nfunc "); j >= 0 {
 		badan = badan[:j+1]
 	}
-	nol, val := strings.Index(badan, "models.IsiNolUangKosong(baris)"), strings.Index(badan, "models.ValidasiUnggah(baris)")
+	nol, val := strings.Index(badan, "models.IsiNolUangKosong(baris)"), strings.Index(badan, "models.ValidasiUnggah(tipe, baris)")
 	if nol < 0 || val < 0 || nol > val {
 		t.Errorf("periksaBerkas harus memanggil IsiNolUangKosong SEBELUM ValidasiUnggah (nol=%d, validasi=%d)", nol, val)
 	}

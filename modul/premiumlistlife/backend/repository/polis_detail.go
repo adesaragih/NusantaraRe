@@ -54,13 +54,13 @@ func ekspresiKolomPeserta(kolom []models.KolomPeserta) string {
 
 // sqlGridPeserta merakit pembacaan satu halaman grid.
 //
-// ⚠️ Urutannya `CERTIFICATE_NO` lalu `ID` - nomor sertifikat yang dilihat
-// orang, dengan pemutus seri supaya baris tidak berpindah sendiri di antara
-// dua halaman.
+// ⚠️ Urutannya `ID` - yaitu urutan baris berkas CSV (`PengenalPesertaUnggah`,
+// keputusan work owner 03-10-2026; dulu `CERTIFICATE_NO` lalu `ID`). `ID`
+// unik, jadi baris tidak berpindah sendiri di antara dua halaman.
 func sqlGridPeserta(detail string, kolom []models.KolomPeserta) string {
 	return fmt.Sprintf(`SELECT %s FROM %s d
 	  WHERE d.PREMIUM_LIST_ID = :1
-	  ORDER BY d.CERTIFICATE_NO, d.ID
+	  ORDER BY d.ID
 	  OFFSET :2 ROWS FETCH NEXT :3 ROWS ONLY`,
 		ekspresiKolomPeserta(kolom), detail)
 }

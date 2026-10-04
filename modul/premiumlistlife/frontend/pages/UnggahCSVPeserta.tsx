@@ -115,13 +115,14 @@ export default function UnggahCSVPeserta({
 
   return (
     <section className="panel pl-unggah">
-      <h3 className="panel__title">{UNGGAH_CSV.judul}</h3>
-
-      <p className="panel__note" role="note">
-        {UNGGAH_CSV.aturanPemisah}
-      </p>
-
+      {/*
+        RINGKAS, SATU BARIS (permintaan work owner 03-10-2026: "lebih sederhana
+        sehingga tidak makan tempat"): judul, berkas, aturan format, tombol.
+        ⛔ Aturan pemisah TETAP dinyatakan di muka — dilipat di "CSV format",
+        bukan dibuang; terbuka, ia turun ke baris sendiri selebar panel.
+      */}
       <div className="pl-unggah__baris">
+        <h3 className="panel__title pl-unggah__judul">{UNGGAH_CSV.judul}</h3>
         <input
           ref={pilih}
           className="pl-unggah__berkas"
@@ -132,6 +133,12 @@ export default function UnggahCSVPeserta({
             pilihBerkas(e.target.files?.[0] ?? null)
           }}
         />
+        <details className="pl-unggah__aturan">
+          <summary>{UNGGAH_CSV.formatCsv}</summary>
+          <p className="panel__note" role="note">
+            {UNGGAH_CSV.aturanPemisah}
+          </p>
+        </details>
         <button
           type="button"
           className="btn btn--ghost"

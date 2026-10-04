@@ -15,14 +15,18 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { ambilReinsurer, simpanReinsurer, type JawabanReinsurer, type Kontrak, type Reinsurer, type ReinsurerMasuk } from '../api'
 import { REINSURER_MCRL, UMUM_MCRL } from '../labels'
-import { jepitHalaman, operatorKini, potongHalaman, sel, selAngka, selWaktu } from '../tampilan'
+import { operatorKini, sel, selAngka, selWaktu } from '../tampilan'
 import { Field, Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { PilihSaring } from '../../../../inti/frontend/components/ui/pilihSaring'
-import { KepalaPanel, Penomoran } from './Bingkai'
+import { KepalaPanel } from './Bingkai'
 import { useCariReinsurer } from './cariMaster'
 import KonfirmasiHapus from './KonfirmasiHapus'
 import PanelSecurity from './PanelSecurity'
 import { useHapus } from './useHapus'
+import { kelasTotal, reinsurerTersedia } from './aturanDaftar'
+
+// Diekspor ulang - pemakai lama (uji, panel Security) tetap berlaku.
+export { kelasTotal, reinsurerTersedia }
 
 /** Isian form - `InputSecurityLife.*`. */
 export interface FormReinsurer {
@@ -61,15 +65,9 @@ export function keReinsurerMasuk(f: FormReinsurer): ReinsurerMasuk {
   }
 }
 
-/** Kelas baris total - mencolok bila total ≠ 100 (tiket 05 AC 19). */
-export function kelasTotal(totalBukan100: boolean): string {
-  return totalBukan100 ? 'mcrl-total mcrl-total--bukan100' : 'mcrl-total'
-}
-
 export default function PanelReinsurer({ kontrak, onTutup }: { kontrak: Kontrak; onTutup: () => void }) {
   const [jawab, setJawab] = useState<JawabanReinsurer | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
-  const [halaman, setHalaman] = useState(1)
   const [form, setForm] = useState<FormReinsurer | null>(null)
   const [galatForm, setGalatForm] = useState<unknown>(null)
   const [menyimpan, setMenyimpan] = useState(false)
@@ -82,7 +80,6 @@ export default function PanelReinsurer({ kontrak, onTutup }: { kontrak: Kontrak;
       const j = await ambilReinsurer(kontrak.id)
       setJawab(j)
       setGalat(null)
-      setHalaman((h) => jepitHalaman(h, j.daftar.length))
     } catch (e) {
       setGalat(e)
     }
@@ -138,7 +135,8 @@ export default function PanelReinsurer({ kontrak, onTutup }: { kontrak: Kontrak;
         judul={REINSURER_MCRL.judul}
         medan={[
           [REINSURER_MCRL.idTreatyYear, induk.idTreatyYear],
-          [REINSURER_MCRL.idReinsType, induk.id],
+          // `ID Reins Type` (ID kontrak) SENGAJA tidak ditampilkan - keputusan
+          // work owner 04-10-2026 (sama dengan Business List).
           [REINSURER_MCRL.reinsType, induk.reinsTypeName],
         ]}
         onTutup={onTutup}
@@ -148,12 +146,11 @@ export default function PanelReinsurer({ kontrak, onTutup }: { kontrak: Kontrak;
         <div className="panel">
           {galatForm !== null && <Gagal galat={galatForm} />}
           <div className="form-grid">
-            <Field label={REINSURER_MCRL.formInputor} value={form.userId} onChange={() => undefined} readOnly />
             <PilihSaring
               label={REINSURER_MCRL.formReinsurerName}
               value={form.reinsurerId}
               teksTerpilih={form.reinsurerName || form.reinsurerId}
-              opsi={master.pilihan}
+              opsi={reinsurerTersedia(master.pilihan, daftar, form.id)}
               memuat={master.memuat}
               onCari={master.cari}
               onPilih={(o) => {
@@ -164,6 +161,8 @@ export default function PanelReinsurer({ kontrak, onTutup }: { kontrak: Kontrak;
             <Field label={REINSURER_MCRL.formShare} value={form.pctShare} onChange={ubah('pctShare')} required />
             <Field label={REINSURER_MCRL.formDiscount} value={form.komisi} onChange={ubah('komisi')} required />
             <Field label={REINSURER_MCRL.formOvrComm} value={form.ovrComm} onChange={ubah('ovrComm')} required />
+            {/* Inputor di PALING AKHIR - seragam di semua form (04-10-2026). */}
+            <Field label={REINSURER_MCRL.formInputor} value={form.userId} onChange={() => undefined} readOnly />
           </div>
           <div className="aksi-baris">
             <button type="button" className="btn btn--primary" disabled={menyimpan} onClick={() => void simpan()}>
@@ -189,7 +188,6 @@ export default function PanelReinsurer({ kontrak, onTutup }: { kontrak: Kontrak;
         <button type="button" className="btn btn--primary" onClick={() => buka(formReinsurerBaru(operatorKini()))}>
           {REINSURER_MCRL.add}
         </button>
-        <Penomoran halaman={halaman} total={daftar.length} onPindah={setHalaman} />
       </div>
       {jawab === null && galat === null && <Memuat />}
       {galat !== null && <Gagal galat={galat} />}
@@ -210,7 +208,7 @@ export default function PanelReinsurer({ kontrak, onTutup }: { kontrak: Kontrak;
               </tr>
             </thead>
             <tbody>
-              {potongHalaman(daftar, halaman).map((r) => (
+              {daftar.map((r) => (
                 <tr key={r.id} className="inbox__baris">
                   <td>{sel(r.id)}</td>
                   <td>{sel(r.reinsurerName)}</td>

@@ -24,6 +24,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
+	"nusantarare/modul/premiumlistlife/backend/models"
 	"nusantarare/modul/premiumlistlife/backend/services"
 )
 
@@ -107,6 +108,11 @@ func jawabGalatUnggahPolis(w http.ResponseWriter, err error) bool {
 		// 400: berkasnya yang tidak dapat dibaca sama sekali - berbeda dari
 		// berkas yang terbaca tetapi isinya ditolak (409).
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
+		return true
+	case errors.Is(err, models.ErrTipeUnggahTakDikenal):
+		// 409: berkasnya mungkin benar - polisnya yang belum siap (Type
+		// menentukan kolom wajib; keputusan work owner 03-10-2026).
+		galat.Tulis(w, http.StatusConflict, err.Error())
 		return true
 	}
 	return jawabGalatPolis(w, err)

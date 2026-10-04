@@ -26,7 +26,7 @@ const barisFormatCeding = `1;UJI-POL-1;UJI PEMEGANG;UJI-C1;UJI PESERTA A;F;08/03
 	`10000;10000;"10,70944011";0;"0,535472006";0;"10,1739681";;31/10/2026;31/10/2026`
 
 func TestFormatCedingTitikKomaDiterima(t *testing.T) {
-	baris, err := BacaCSVUnggah(strings.NewReader(judulFormatCeding + "\r\n" + barisFormatCeding + "\r\n"))
+	baris, err := bacaQR(strings.NewReader(judulFormatCeding + "\r\n" + barisFormatCeding + "\r\n"))
 	if err != nil {
 		t.Fatalf("format ceding ditolak: %v", err)
 	}
@@ -37,6 +37,8 @@ func TestFormatCedingTitikKomaDiterima(t *testing.T) {
 	for k, mau := range map[string]string{
 		"GROSS_PREMIUM":      "10.70944011",
 		"NET_PREMIUM":        "10.1739681",
+		"RI_ADMIN_FEE":       "0.535472006",
+		"DEDUCTION":          "0",
 		"SHARE_NUSANTARA_RE": "10000",
 		"CERTIFICATE_NO":     "UJI-C1",
 	} {
@@ -45,7 +47,7 @@ func TestFormatCedingTitikKomaDiterima(t *testing.T) {
 		}
 	}
 	models.IsiNolUangKosong(baris)
-	if h := models.ValidasiUnggah(baris); !h.Lolos() {
+	if h := validasiQR(baris); !h.Lolos() {
 		t.Errorf("baris format ceding ditolak validasi: %+v", h.Ditolak)
 	}
 }
@@ -71,15 +73,15 @@ func TestPemisahCSVDitebakDariJudul(t *testing.T) {
 // berpemisah koma bisa berarti seribu; ia tetap DITOLAK, bukan ditebak.
 func TestKomaTetapDitolakDiBerkasBerpemisahKoma(t *testing.T) {
 	r := barisUji("UJI-C1")
-	r[len(r)-2] = `"200,75"`
-	baris, err := BacaCSVUnggah(strings.NewReader(csvUji(judulLengkap(), r)))
+	r[len(r)-3] = `"200,75"` // GROSS_PREMIUM (ENTRY_AGE di ujung)
+	baris, err := bacaQR(strings.NewReader(csvUji(judulLengkap(), r)))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if baris[0].Nilai["GROSS_PREMIUM"] != "200,75" {
 		t.Errorf("koma di berkas berpemisah koma diubah: %q", baris[0].Nilai["GROSS_PREMIUM"])
 	}
-	if h := models.ValidasiUnggah(baris); h.Lolos() {
+	if h := validasiQR(baris); h.Lolos() {
 		t.Error("koma di berkas berpemisah koma lolos validasi")
 	}
 }
@@ -89,7 +91,7 @@ func TestShareGrossDidahulukanLaluShare(t *testing.T) {
 	isi := barisUji("UJI-C1")
 	dua := append(append([]string{}, isi...), "77.5")
 	satu := append(append([]string{}, isi...), "")
-	baris, err := BacaCSVUnggah(strings.NewReader(csvUji(judul, dua, satu)))
+	baris, err := bacaQR(strings.NewReader(csvUji(judul, dua, satu)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,15 +103,31 @@ func TestShareGrossDidahulukanLaluShare(t *testing.T) {
 	}
 }
 
-func TestTanpaShareSamaSekaliTetapDitolak(t *testing.T) {
-	var tanpa []string
-	for _, k := range judulLengkap() {
+func TestTanpaShareTidakLagiWajib(t *testing.T) {
+	// Sejak 03-10-2026 SHARE_NUSANTARA_RE bukan kolom wajib (keputusan work
+	// owner): berkas tanpanya diterima, dan sel uangnya menjadi 0.
+	var judul []string
+	var isi []string
+	for i, k := range judulLengkap() {
 		if k != "SHARE_NUSANTARA_RE" {
-			tanpa = append(tanpa, k)
+			judul = append(judul, k)
+			isi = append(isi, barisUji("UJI-C1")[i])
 		}
 	}
-	_, err := BacaCSVUnggah(strings.NewReader(strings.Join(tanpa, ",") + "\n"))
-	if !errors.Is(err, ErrCSVKolomKurang) || !strings.Contains(err.Error(), "SHARE_NUSANTARA_RE") {
-		t.Errorf("galat %v, mau ErrCSVKolomKurang yang menyebut SHARE_NUSANTARA_RE", err)
+	baris, err := bacaQR(strings.NewReader(csvUji(judul, isi)))
+	if err != nil {
+		t.Fatalf("berkas tanpa SHARE_NUSANTARA_RE ditolak: %v", err)
+	}
+	models.IsiNolUangKosong(baris)
+	if h := validasiQR(baris); !h.Lolos() {
+		t.Errorf("baris tanpa SHARE_NUSANTARA_RE ditolak: %+v", h.Ditolak)
+	}
+}
+
+// Type kosong ditolak SEBELUM berkasnya dibaca (keputusan work owner 03-10-2026).
+func TestBacaCSVTanpaTipeDitolak(t *testing.T) {
+	_, err := BacaCSVUnggah(strings.NewReader(csvUji(judulLengkap(), barisUji("UJI-C1"))), "")
+	if !errors.Is(err, models.ErrTipeUnggahTakDikenal) {
+		t.Errorf("galat %v, mau ErrTipeUnggahTakDikenal", err)
 	}
 }

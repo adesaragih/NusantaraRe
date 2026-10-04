@@ -50,6 +50,9 @@ func (m KontrakMasuk) keModel(th models.TahunTreaty) (models.Kontrak, error) {
 	bidr := w.teks("MINIMUM LIMIT (IDR)", m.BIDR)
 	idr := w.teks("MAXIMUM LIMIT (IDR)", m.IDR)
 	busd := w.teks("MINIMUM LIMIT (USD)", m.BUSD)
+	// MAXIMUM LIMIT (USD) WAJIB sejak 04-10-2026 (keputusan work owner; di Pega
+	// boleh kosong).
+	usd := w.teks("MAXIMUM LIMIT (USD)", m.USD)
 	if err := w.galat(PesanKosongSemua); err != nil {
 		return k, err
 	}
@@ -63,7 +66,7 @@ func (m KontrakMasuk) keModel(th models.TahunTreaty) (models.Kontrak, error) {
 	if k.BUSD, err = desimal("MINIMUM LIMIT (USD)", busd); err != nil {
 		return k, err
 	}
-	if k.USD, err = desimal("MAXIMUM LIMIT (USD)", m.USD); err != nil {
+	if k.USD, err = desimal("MAXIMUM LIMIT (USD)", usd); err != nil {
 		return k, err
 	}
 	if err := periksaLayer("IDR", k.BIDR.Text('f'), k.IDR.Text('f'), k.BIDR.Cmp(k.IDR)); err != nil {
@@ -142,6 +145,15 @@ func (l *Layanan) SimpanKontrak(ctx context.Context, p inti.Pelaku, tahunID stri
 			return err
 		}
 		k.UserID = p.AkunID
+		// ⛔ Satu REINS TYPE satu kontrak per tahun treaty (keputusan work owner
+		// 04-10-2026). Kontrak yang sedang diubah tidak dihitung sebagai ganda.
+		saudara, err := l.gudang.DaftarKontrak(ctx, tx, tahunID)
+		if err != nil {
+			return err
+		}
+		if models.JenisKontrakGanda(saudara, m.ID, k.ReinsTypeID) {
+			return fmt.Errorf("%w: %s", ErrMasukanTidakSah, fmt.Sprintf(PesanJenisGanda, k.ReinsTypeName))
+		}
 		if !ubah {
 			if k.ID, err = l.gudang.SisipKontrak(ctx, tx, k); err != nil {
 				return err

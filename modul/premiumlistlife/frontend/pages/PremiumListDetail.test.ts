@@ -90,8 +90,9 @@ describe('hanya kolom yang berisi (02-10-2026)', () => {
     expect(selPeserta('0')).toBe('0')
   })
 
-  it('jumlah kolom tersembunyi dinyatakan di layar', () => {
-    expect(SUMBER).toContain('empty columns hidden')
+  it('keterangan jumlah tidak ditampilkan, kecuali grid memotong baris (03-10-2026)', () => {
+    expect(SUMBER).not.toContain('empty columns hidden')
+    expect(SUMBER).toContain('hal.total > hal.baris.length')
   })
 })
 

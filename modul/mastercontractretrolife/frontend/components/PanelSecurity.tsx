@@ -14,13 +14,14 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { ambilSecurity, simpanSecurity, type JawabanSecurity, type Reinsurer, type SecurityMasuk, type SecurityReinsurer } from '../api'
-import { SECURITY_MCRL, UMUM_MCRL } from '../labels'
-import { jepitHalaman, operatorKini, potongHalaman, sel, selAngka, selWaktu } from '../tampilan'
+import { REINSURER_MCRL, SECURITY_MCRL, UMUM_MCRL } from '../labels'
+import { operatorKini, sel, selAngka, selWaktu } from '../tampilan'
 import { Field, Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { PilihSaring } from '../../../../inti/frontend/components/ui/pilihSaring'
-import { KepalaPanel, Penomoran } from './Bingkai'
+import { KepalaPanel } from './Bingkai'
 import { useCariReinsurer } from './cariMaster'
 import KonfirmasiHapus from './KonfirmasiHapus'
+import { kelasTotal, reinsurerTersedia } from './aturanDaftar'
 import { useHapus } from './useHapus'
 
 /** Isian form - `InputSecurityReinsurerLife.*`. */
@@ -51,7 +52,6 @@ export function keSecurityMasuk(f: FormSecurity): SecurityMasuk {
 export default function PanelSecurity({ reinsurer, onTutup }: { reinsurer: Reinsurer; onTutup: () => void }) {
   const [jawab, setJawab] = useState<JawabanSecurity | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
-  const [halaman, setHalaman] = useState(1)
   const [form, setForm] = useState<FormSecurity | null>(null)
   const [galatForm, setGalatForm] = useState<unknown>(null)
   const [menyimpan, setMenyimpan] = useState(false)
@@ -63,7 +63,6 @@ export default function PanelSecurity({ reinsurer, onTutup }: { reinsurer: Reins
       const j = await ambilSecurity(reinsurer.id)
       setJawab(j)
       setGalat(null)
-      setHalaman((h) => jepitHalaman(h, j.daftar.length))
     } catch (e) {
       setGalat(e)
     }
@@ -109,11 +108,8 @@ export default function PanelSecurity({ reinsurer, onTutup }: { reinsurer: Reins
     <section className="panel">
       <KepalaPanel
         judul={SECURITY_MCRL.judul}
-        medan={[
-          [SECURITY_MCRL.idReinsurer, induk.id],
-          [SECURITY_MCRL.reinsurerName, induk.reinsurerName],
-          [SECURITY_MCRL.pctShare, selAngka(induk.pctShare)],
-        ]}
+        // Kepala hanya Reinsurer Name - ID Reinsurer & PCT Share disembunyikan (work owner 04-10-2026).
+        medan={[[SECURITY_MCRL.reinsurerName, induk.reinsurerName]]}
         onTutup={onTutup}
       />
 
@@ -121,12 +117,11 @@ export default function PanelSecurity({ reinsurer, onTutup }: { reinsurer: Reins
         <div className="panel">
           {galatForm !== null && <Gagal galat={galatForm} />}
           <div className="form-grid">
-            <Field label={SECURITY_MCRL.formInputor} value={form.userId} onChange={() => undefined} readOnly />
             <PilihSaring
               label={SECURITY_MCRL.formSecurityReinsurerName}
               value={form.reinsurerId}
               teksTerpilih={form.reinsurerName || form.reinsurerId}
-              opsi={master.pilihan}
+              opsi={reinsurerTersedia(master.pilihan, daftar, form.id)}
               memuat={master.memuat}
               onCari={master.cari}
               onPilih={(o) => {
@@ -142,6 +137,8 @@ export default function PanelSecurity({ reinsurer, onTutup }: { reinsurer: Reins
               }}
               required
             />
+            {/* Inputor di PALING AKHIR - seragam di semua form (04-10-2026). */}
+            <Field label={SECURITY_MCRL.formInputor} value={form.userId} onChange={() => undefined} readOnly />
           </div>
           <div className="aksi-baris">
             <button type="button" className="btn btn--primary" disabled={menyimpan} onClick={() => void simpan()}>
@@ -167,7 +164,6 @@ export default function PanelSecurity({ reinsurer, onTutup }: { reinsurer: Reins
         <button type="button" className="btn btn--primary" onClick={() => buka(formSecurityBaru(operatorKini()))}>
           {SECURITY_MCRL.add}
         </button>
-        <Penomoran halaman={halaman} total={daftar.length} onPindah={setHalaman} />
       </div>
       {jawab === null && galat === null && <Memuat />}
       {galat !== null && <Gagal galat={galat} />}
@@ -187,7 +183,7 @@ export default function PanelSecurity({ reinsurer, onTutup }: { reinsurer: Reins
               </tr>
             </thead>
             <tbody>
-              {potongHalaman(daftar, halaman).map((s) => (
+              {daftar.map((s) => (
                 <tr key={s.id} className="inbox__baris">
                   <td>{sel(s.id)}</td>
                   <td>{sel(s.reinsurerName)}</td>
@@ -215,6 +211,13 @@ export default function PanelSecurity({ reinsurer, onTutup }: { reinsurer: Reins
             </tbody>
           </table>
         </div>
+      )}
+      {/* Total share security - sama dengan Reinsurer List (keputusan work owner 04-10-2026). */}
+      {jawab !== null && daftar.length > 0 && jawab.totalShare !== undefined && (
+        <p className={kelasTotal(jawab.totalBukan100 === true)} role={jawab.totalBukan100 === true ? 'alert' : undefined}>
+          <span>{REINSURER_MCRL.totalShare}</span> <strong>{selAngka(jawab.totalShare)}</strong>
+          {jawab.totalBukan100 === true && <span className="mcrl-total__tanda">{REINSURER_MCRL.totalBukan100}</span>}
+        </p>
       )}
 
       {hapusan.konfirmasi !== null && (

@@ -69,7 +69,7 @@ func TestSqlBatasProdukDanPeserta(t *testing.T) {
 	if !strings.Contains(b, "WHERE ID = :1") || !strings.Contains(b, "TO_CHAR(MINAGE, 'TM9'") {
 		t.Errorf("batas produk bukan GetRateProductLife:\n%s", b)
 	}
-	if !strings.Contains(p, "ORDER BY d.CERTIFICATE_NO, d.ID") {
+	if !strings.Contains(p, "ORDER BY d.ID") {
 		t.Error("urutan peserta bukan urutan grid - nomor \"at list\" menunjuk baris lain")
 	}
 }

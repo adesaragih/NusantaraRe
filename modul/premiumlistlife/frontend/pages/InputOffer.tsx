@@ -24,15 +24,15 @@
 
 import { useEffect, useState } from 'react'
 
-import { KEPUTUSAN_POLIS } from '../labels'
-import { Gagal } from '../../../../inti/frontend/components/ui/dasar'
+import { HASIL_NOMOR_PL, KEPUTUSAN_POLIS, KONFIRMASI_KEPUTUSAN } from '../labels'
+import { Gagal, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import {
   ambilPeriodeProduksi,
-  bolehRejectDiTahap,
   putuskanPenawaran,
   TAHAP_POLIS,
   type AkibatKeputusanPolis,
 } from '../api'
+import { tanggalTampil } from '../tanggal'
 import FormPenawaran from './FormPenawaran'
 import '../premiumlistlife.css'
 
@@ -61,16 +61,43 @@ export function judulKeputusan(tahap: string): string {
 export default function InputOffer({
   polisID,
   tahap,
+  confirmTerkunci = false,
   onSelesai,
 }: {
   polisID: string
   /** Tahap berjalan — `pyWorkStatus`, bukan posisi layar. */
   tahap: string
+  /**
+   * Confirm DIKUNCI: form Premium List Detail punya perubahan yang belum
+   * disimpan (keputusan work owner 03-10-2026) - Confirm memakai data yang
+   * TERSIMPAN, jadi perubahan di layar akan diabaikan diam-diam.
+   */
+  confirmTerkunci?: boolean
   onSelesai: () => void
 }) {
   const [akibat, setAkibat] = useState<AkibatKeputusanPolis | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(false)
+  // Keputusan yang menunggu dikonfirmasi lewat popup (03-10-2026): tombol
+  // Decision TIDAK langsung menjalankan apa pun — mencegah tertekan tanpa sengaja.
+  const [tanya, setTanya] = useState<typeof KEPUTUSAN_POLIS.confirm | typeof KEPUTUSAN_POLIS.decline | null>(null)
+
+  // PL Number yang baru terbit — popup hasil sebelum kembali ke kotak masuk.
+  const [nomorTerbit, setNomorTerbit] = useState<string | null>(null)
+  const [wpcTerbit, setWpcTerbit] = useState('')
+
+  /** Tombol "Yes" popup: baru di sini keputusannya benar-benar dikirim. */
+  function lanjutkan(): void {
+    if (tanya === null) return
+    // Perubahan belum disimpan muncul SESUDAH popup terbuka: Confirm tetap ditahan.
+    if (tanya === KEPUTUSAN_POLIS.confirm && confirmTerkunci) {
+      setTanya(null)
+      return
+    }
+    const keputusan = tanya
+    setTanya(null)
+    void jalankan(() => putuskanPenawaran(polisID, keputusan))
+  }
   // ⛔ Periode produksi DITAMPILKAN sebelum menyimpan - AC tiket 02.
   // Kosong berarti belum terbaca; galatnya dinyatakan, bukan disembunyikan,
   // sebab 503 di sini berarti POOLDATA.TANGGAL_CLOSING kosong.
@@ -99,6 +126,13 @@ export default function InputOffer({
     try {
       const hasil = await kerja()
       setAkibat(hasil)
+      // PL Number yang baru terbit DITAMPILKAN dulu; kembali ke kotak masuk
+      // sesudah popupnya ditutup (keputusan work owner 03-10-2026).
+      if ((hasil.plNumber ?? '').trim() !== '') {
+        setWpcTerbit(hasil.wpc ?? '')
+        setNomorTerbit(hasil.plNumber ?? '')
+        return
+      }
       // Kasus yang tertutup atau berpindah tidak lagi milik layar ini — dan
       // sejak butir bq setiap keputusan yang berhasil menutup atau memindahkan.
       onSelesai()
@@ -160,38 +194,89 @@ export default function InputOffer({
           <button
             type="button"
             className="btn btn--primary"
-            disabled={sibuk}
+            disabled={sibuk || confirmTerkunci}
             onClick={() => {
-              void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.confirm))
+              setTanya(KEPUTUSAN_POLIS.confirm)
             }}
           >
             {KEPUTUSAN_POLIS.confirm}
           </button>
-          {/* ⛔ Hanya bila tahapnya punya konektornya — lihat kepala berkas. */}
-          {bolehRejectDiTahap(tahap) && (
-            <button
-              type="button"
-              className="btn"
-              disabled={sibuk}
-              onClick={() => {
-                void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.reject))
-              }}
-            >
-              {KEPUTUSAN_POLIS.reject}
-            </button>
-          )}
+          {/*
+            ⛔ Tombol `Reject` (Transition9, kembali ke Input Offer Life) SENGAJA
+            tidak ditampilkan di tahap mana pun — keputusan work owner
+            03-10-2026. Jalurnya di backend tetap ada (`models.TransisiPenawaran`).
+          */}
           <button
             type="button"
             className="btn btn--danger"
             disabled={sibuk}
             onClick={() => {
-              void jalankan(() => putuskanPenawaran(polisID, KEPUTUSAN_POLIS.decline))
+              setTanya(KEPUTUSAN_POLIS.decline)
             }}
           >
             {KEPUTUSAN_POLIS.decline}
           </button>
         </div>
+        {/* Sebab Confirm terkunci DIKATAKAN, bukan dibiarkan ditebak. */}
+        {confirmTerkunci && (
+          <p className="pl-offer__kurang" role="status">
+            {KONFIRMASI_KEPUTUSAN.belumTersimpan}
+          </p>
+        )}
       </section>
+
+      {tanya !== null && (
+        <Modal
+          judul={
+            tanya === KEPUTUSAN_POLIS.confirm ? KONFIRMASI_KEPUTUSAN.judulConfirm : KONFIRMASI_KEPUTUSAN.judulDecline
+          }
+          onTutup={() => {
+            setTanya(null)
+          }}
+          aksi={
+            tanya === KEPUTUSAN_POLIS.decline ? (
+              <button type="button" className="btn btn--danger" disabled={sibuk} onClick={lanjutkan}>
+                {KONFIRMASI_KEPUTUSAN.ya}
+              </button>
+            ) : (
+              <button type="button" className="btn btn--primary" disabled={sibuk} onClick={lanjutkan}>
+                {KONFIRMASI_KEPUTUSAN.ya}
+              </button>
+            )
+          }
+        >
+          <p>{kalimatKonfirmasi(tanya, tahap)}</p>
+        </Modal>
+      )}
+
+      {/*
+        Hasil Confirm yang menerbitkan PL Number — DITAMPILKAN sebelum kembali
+        ke kotak masuk; setiap cara menutup (OK, X, Escape, klik luar) baru
+        kemudian meninggalkan layar (keputusan work owner 03-10-2026).
+      */}
+      {nomorTerbit !== null && (
+        <Modal
+          judul={HASIL_NOMOR_PL.judul}
+          labelBatal={HASIL_NOMOR_PL.ok}
+          onTutup={() => {
+            setNomorTerbit(null)
+            onSelesai()
+          }}
+        >
+          {/* PL Number dan WPC bersama (03-10-2026). */}
+          <dl className="pl-hasil" role="status">
+            <dt>{HASIL_NOMOR_PL.labelNomor}</dt>
+            <dd className="pl-hasil-nomor">{nomorTerbit}</dd>
+            {wpcTerbit !== '' && (
+              <>
+                <dt>{HASIL_NOMOR_PL.labelWpc}</dt>
+                <dd className="pl-hasil-nomor">{tanggalTampil(wpcTerbit)}</dd>
+              </>
+            )}
+          </dl>
+          <p>{HASIL_NOMOR_PL.kalimat}</p>
+        </Modal>
+      )}
     </section>
   )
 }
@@ -208,4 +293,10 @@ export function periodeTampil(periode: string): string {
   const bulan = m?.[2]
   if (tahun === undefined || bulan === undefined) return periode
   return `${bulan.padStart(2, '0')}/${tahun}`
+}
+
+/** Kalimat popup konfirmasi: AKIBAT keputusannya di tahap ini (03-10-2026). */
+export function kalimatKonfirmasi(keputusan: string, tahap: string): string {
+  if (keputusan === KEPUTUSAN_POLIS.decline) return KONFIRMASI_KEPUTUSAN.decline
+  return tahap === TAHAP_POLIS.detail ? KONFIRMASI_KEPUTUSAN.confirmDetail : KONFIRMASI_KEPUTUSAN.confirmPenawaran
 }
