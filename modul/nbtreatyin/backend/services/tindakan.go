@@ -220,7 +220,7 @@ func (l *Layanan) Hitung(ctx context.Context, p inti.Pelaku, id string, r Permin
 		return Layar{}, err
 	}
 	for _, s := range r.Urutan { // aksiposisi.go
-		if !aksiTerbuka(k.PositionNote, s.Aksi) {
+		if !aksiTerbuka(k.PositionNote, s.Aksi, h) {
 			return Layar{}, fmt.Errorf("%w: aksi %q", ErrTindakanTakAdaDiPosisi, s.Aksi)
 		}
 	}

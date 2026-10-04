@@ -276,9 +276,10 @@ var medanAdmin = func() map[string]bool {
 // (pemilih Source Of Business, F4) - diterima terpisah oleh
 // `services.terimaSumberBisnis`, hanya bila ClaimType 'XOL Retro' dan cocok
 // dengan RD `BrowseAgentHierarkiList_RD` yang dijalankan ulang.
-func GabungMasukanLayar(h, masuk *Halaman, posisi string, tempat map[string]bool) {
+func GabungMasukanLayar(h, masuk *Halaman, posisi string, tempat map[string]bool) (PemicuLayar, error) {
+	var p PemicuLayar
 	if masuk == nil {
-		return
+		return p, nil
 	}
 	if posisi != PosisiAdmin {
 		// Hanya medan yang DIKIRIM layar: medan yang tidak ada di kiriman
@@ -294,15 +295,25 @@ func GabungMasukanLayar(h, masuk *Halaman, posisi string, tempat map[string]bool
 				h.Setel(j, v)
 			}
 		}
-		for _, d := range DaftarDariLayar(h) { // nonprop_layar.go
-			if b, ada := masuk.Daftar[d]; ada {
-				h.SetelDaftar(d, salinBaris(b))
-			}
+	}
+	if SpreadingDariLayar(h, posisi) { // nonprop_layar.go
+		if b, ada := masuk.Daftar[DaftarSpreading]; ada {
+			h.SetelDaftar(DaftarSpreading, salinBaris(b))
 		}
 	}
 	if v, ada := masuk.Nilai[jalurTanggalProduksi]; ada && TanggalProduksiTampil(h, tempat) {
 		h.Setel(jalurTanggalProduksi, v)
 	}
+	return p, nil
+}
+
+// PemicuLayar - action set sel layar yang DIPICU perubahan kiriman (nilai
+// kiriman yang diterima berbeda dari halaman server), diputar ulang di server
+// oleh `TerapkanPemicu` sesudah medan turunan dihitung.
+type PemicuLayar struct {
+	// Spreading - sel `.SharePercentage` / `.ClaimPercentage` grid spreading
+	// berubah, atau baris dihapus: refresh `CountSpreading_Act`.
+	Spreading bool
 }
 
 func salinBaris(b []Baris) []Baris {

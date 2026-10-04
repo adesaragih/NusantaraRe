@@ -19,9 +19,14 @@ package services
 //	Atasan `Section/DetailDeptHeadTreatyIn_UW`: SELURUH sel ber-refresh
 //	       `pyReadOnly` (CountNetPremi_act, CountRiCommOgp_act, CountRiCommOnp_act,
 //	       CountOverridingCommOgp_Act, CountOverridingCommOnp_Act, ...) - tidak
-//	       pernah terpicu. Yang terbuka hanya radio `ListSuggest .IsApproved`
+//	       pernah terpicu. Yang terbuka: radio `ListSuggest .IsApproved`
 //	       (runActivity SetDueTo_act; CekLimitTreatyAcc_Act K2; Protection_Act
-//	       tidak ada di korpus).
+//	       tidak ada di korpus), dan - W2 audit silang P3 - sel %Share
+//	       `Section/SpreadingRiskList` subsection NonProp (wadah S88, refresh
+//	       CountSpreading_Act) bila `TreatyIn.FacultativeShare` 0 / ''.
+//
+// `CountSpreading` di KEDUA layar hanya bila grid spreadingnya terbuka
+// (`models.SpreadingDariLayar`, syarat yang sama dengan penerimaan daftarnya).
 //
 // ⛔ Aksi di luar layar posisi berkas ditolak `ErrTindakanTakAdaDiPosisi`:
 // `CheckDataMkt` menyimpan halaman (Obj-Save langkah 5) dan tidak boleh
@@ -33,13 +38,17 @@ var aksiAdmin = map[string]bool{
 	"SystemSetOneYear": true, "RemoveTypeTax": true, "ProtectDate": true, "CheckDataMkt": true,
 	"SetCurrency": true, "TreatyEnableDisableInput": true, "CalculatePremi": true,
 	"CountOGPONP": true, "CountResult1": true, "CountResult2Ogp": true, "CountResult1Onp": true,
-	"CountResult2Onp": true, "CountSpreading": true, "FillPaymentInstallment": true, "SetDueTo": true,
+	"CountResult2Onp": true, "FillPaymentInstallment": true, "SetDueTo": true,
 }
 
 var aksiAtasan = map[string]bool{"SetDueTo": true}
 
-// aksiTerbuka - aksi refresh `aksi` dapat terpicu di layar posisi `posisi`.
-func aksiTerbuka(posisi, aksi string) bool {
+// aksiTerbuka - aksi refresh `aksi` dapat terpicu di layar posisi `posisi`
+// atas halaman `h` (sesudah kiriman layar digabung).
+func aksiTerbuka(posisi, aksi string, h *models.Halaman) bool {
+	if aksi == "CountSpreading" {
+		return models.SpreadingDariLayar(h, posisi)
+	}
 	if posisi == models.PosisiAdmin {
 		return aksiAdmin[aksi]
 	}
