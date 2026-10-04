@@ -61,3 +61,574 @@
   color: var(--success-text);
   border-color: var(--success-border);
 }
+
+/* =========================================================================
+   LAYAR DAFTAR KONTRAK DAN FORM KONTRAK — ronde layar 1 (3 Oktober 2026)
+   ========================================================================= */
+
+/* Sel yang kosong karena kolomnya BELUM punya rumah di model baru - bukan
+   karena datanya hilang. Dipakai "Position To" dan pengenal kontrak baru.
+   --text-3 di atas --surface 5,20:1 terang, 5,66:1 gelap; di atas baris zebra
+   --alt-row 4,59:1 dan 4,83:1. Keempatnya lolos AA. */
+.treatyin .trin__redup {
+  color: var(--text-3);
+  font-style: italic;
+}
+
+/* Keterangan di bawah layar: apa yang BELUM dibangun, dan kenapa. Ia bukan
+   galat - jadi bukan --danger - dan bukan data - jadi bukan --text. */
+.treatyin .trin__catatan {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+/* Galat ATURAN LAYAR, bukan galat backend.
+   ⛔ Sengaja TIDAK memakai `.alert--error`: blok itu milik cabang `Gagal`,
+   yang menyatakan backend menolak atau tidak terjangkau. Mencampurnya adalah
+   salah diagnosa yang `dasar.tsx` baris 344 catat. Bentuknya berbeda - garis
+   kiri, bukan kotak penuh - supaya bedanya terlihat sebelum teksnya dibaca.
+   --danger-text di atas --danger-bg: 6,03:1 terang, 7,55:1 gelap. */
+.treatyin .trin__galat {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--danger);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  font-size: 14px;
+}
+
+/* Kepala form: pengenal dan radio jenis reasuransi sebaris. */
+.treatyin .trin__kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+  margin-bottom: 16px;
+}
+
+.treatyin .trin__id {
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+/* Radio Proportional / Non Proportional - ia yang menentukan strip tab mana
+   yang tampil, jadi ia diberi kotak sendiri alih-alih hilang di antara medan. */
+.treatyin .trin__radio {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+
+.treatyin .trin__radio legend {
+  padding: 0 6px;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+.treatyin .trin__radio label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+}
+
+/* Medan berpasangan tombol "Choose …". Tombolnya sejajar dasar medan, bukan
+   dasar labelnya. */
+.treatyin .trin__pilih-luar {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.treatyin .trin__pilih-luar .field {
+  flex: 1 1 auto;
+}
+
+.treatyin .trin__centang {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: end;
+  padding-bottom: 8px;
+  color: var(--text);
+}
+
+/* Deret tombol: aksi baris tabel, dan tombol Apply. */
+.treatyin .trin__aksi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.treatyin table .trin__aksi {
+  margin-top: 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * Perapian tata letak — 3 Oktober 2026
+ * ------------------------------------------------------------------ */
+
+/* ⛔ DUA KOLOM, DIKUNCI. `.form-grid` inti beralih ke TIGA kolom pada
+   min-width 1400px. Medan form ini disusun BERPASANGAN kiri-kanan
+   (nama↔mulai, rujukan↔berakhir, wilayah↔tahun), dan kolom ketiga
+   membuat tiap pasangan bergeser satu tempat - pecah justru di lebar
+   yang dipakai orang (layar rujukan ~1900px). Inti tidak disunting;
+   pengunciannya dilakukan dari sini, berakar `.treatyin`. */
+/* ⚠️ DIBATASI 861px KE ATAS — RALAT 3 Oktober 2026.
+   Bentuk sebelumnya tanpa media query, dan kekhususannya (dua kelas)
+   MENIMPA aturan inti `@media (max-width: 860px) { .form-grid { 1fr } }`.
+   Akibatnya tab Reporting Period bertahan DUA kolom di lebar telepon —
+   persis cacat yang aturan inti itu ada untuk mencegahnya ("kotak isian
+   yang terlalu ramping untuk diisi"). Penguncian hanya diperlukan untuk
+   menahan lompatan ke TIGA kolom di >=1400px; di bawah 861px inti sudah
+   benar dan tidak boleh diganggu. */
+@media (min-width: 861px) {
+  .treatyin .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ⛔ STRIP TAB TIDAK MEMBUNGKUS. `.tabs` inti memakai `flex-wrap: wrap`;
+   dengan 11 tab (proporsional) dan 12 (non-proporsional) tab terakhir
+   jatuh ke baris kedua dan strip itu terbaca sebagai rusak. Digulir
+   mendatar, seperti di ekspor - satu baris, selalu. */
+.treatyin .tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.treatyin .tabs__item {
+  flex: 0 0 auto;
+}
+
+/* Kepala panel yang membawa aksinya sendiri - judul kiri, tombol kanan,
+   sebaris. Dipakai grid Rate of Exchange, dan bentuknya sama dengan
+   kepala grid di ekspor. */
+.treatyin .trin__panel-kepala {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.treatyin .trin__panel-kepala .panel__title {
+  margin: 0;
+}
+
+/* Keterangan KAKI - asal-usul layar dan kolom yang belum punya rumah.
+   Redup dan kecil: ia bukan isi layar, dan sebelumnya tiga paragraf
+   prosa pengembang memenuhi layar yang datanya nol. */
+.treatyin .trin__kaki {
+  margin: 4px 0 0;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+}
+
+/* Keadaan kosong DI DALAM tabel: kepalanya tetap terlihat, jadi selnya
+   tidak perlu setinggi kartu penuh. */
+.treatyin .trin__tabel .kosong {
+  padding: 28px 16px;
+}
+
+/* Lebar kolom tidak seragam.
+
+   ⚠️ RALAT 3 Oktober 2026 — kalimat di sini pernah berbunyi *"mengikuti
+   ekspor"*. **Ekspor tidak menyatakannya.** Sapuan atas sel yang sungguh
+   memiliki tiap kolom (sesudah `<pyIncludedRuleXML>` dibuang) membaca
+   kesembilan sel baris saring daftar — `SearchFilter.CARI2`, `CARI10`,
+   `CARIREINSTYPE`, `CARI4`, `CARI5`, `CARI6`, `CARI7`, `CARI8`,
+   `CARISTATUSACCEPT` — dan kesembilannya **`pyWidth=130`, seragam**,
+   `pyWrap=false`. Hal yang sama berlaku pada kedua belas medan form.
+
+   Jadi lebar yang berbeda di bawah adalah **keputusan rupa KITA**, bukan
+   salinan. Ia dipertahankan karena berguna — pengenal dan tanggal memang
+   tidak butuh ruang yang sama dengan nama kontrak — tetapi ia TIDAK boleh
+   mengaku berasal dari ekspor. Lebar yang sungguh berbeda di ekspor hanya
+   ada di grid uang (`.Currency` 193 : `.Value` 349) dan tanggal
+   (`.Date` 80); keduanya dipakai di grid Rate of Exchange di bawah.
+
+   ⛔ Dan satu hal yang MEMANG dari ekspor dibetulkan di sini: `pyWrap=false`
+   pada kesembilan sel. Isi sel **tidak membungkus** — tabel yang melebihi
+   kartunya digulir, bukan diperas. */
+/* ⛔ RALAT 3 Oktober 2026 — KESEMBILAN KOLOM HARUS MUAT TANPA GULIR MENDATAR.
+   Bentuk sebelumnya memberi `min-width: 12rem` pada tiga kolom teks DAN
+   `white-space: nowrap` pada SELURUH sel. Dengan nama kontrak sepanjang
+   "WHOLE ACCOUNT RISK AND CATASTROPHE EXCESS OF LOSS REINSURANCE 2025",
+   tabelnya melar jauh melewati kartunya: hanya DUA kolom terlihat, tujuh
+   sisanya di balik gulir mendatar. Daftar yang menyembunyikan tujuh dari
+   sembilan kolomnya bukan daftar.
+
+   `pyWrap=false` di ekspor TETAP dihormati di tempat ia berarti - pengenal,
+   tanggal, dan jenis tidak boleh terpotong di tengah. Tetapi tiga kolom teks
+   panjang MEMBUNGKUS, sebab Pega merender pada lebar tetap dan kita tidak. */
+.treatyin .trin__tabel {
+  table-layout: fixed;
+  width: 100%;
+}
+.treatyin .trin__k--id {
+  width: 6%;
+  white-space: nowrap;
+}
+/* ⛔ `sifatProporsi` TIDAK nowrap. "Non Proportional" dua kata; pada 9%
+   ia lebih lebar dari selnya, dan `nowrap` membuatnya MELUBER ke kolom
+   sebelahnya alih-alih turun baris - di layar terbaca "Non Proportional IBS
+   REINSURANCE BROKERS" seolah satu nilai. Pengenal dan tanggal tetap nowrap:
+   keduanya satu kata, dan pemenggalannya merusak arti. */
+.treatyin .trin__k--sifatProporsi {
+  width: 9%;
+}
+.treatyin .trin__k--tanggalMulai,
+.treatyin .trin__k--tanggalBerakhir {
+  width: 9%;
+  white-space: nowrap;
+}
+.treatyin .trin__k--posisiKe {
+  width: 7%;
+}
+.treatyin .trin__k--keadaanSiklusHidup {
+  width: 9%;
+}
+/* Tiga kolom teks panjang: MEMBUNGKUS, dan berbagi sisa lebar. */
+.treatyin .trin__k--namaKontrak {
+  width: 16%;
+}
+.treatyin .trin__k--idAsalBisnis,
+.treatyin .trin__k--idCedant {
+  width: 11%;
+}
+.treatyin .trin__tabel td {
+  overflow-wrap: anywhere;
+}
+
+/* Sel lebih rapat: dengan 25 baris per halaman, bantalan bawaan 14px
+   membuat satu halaman menuntut dua layar penuh untuk dibaca. */
+.treatyin .trin__tabel td,
+.treatyin .trin__tabel th {
+  padding: 7px 10px;
+  vertical-align: top;
+}
+
+/* Baris penyaring - kerangkanya ada supaya kolomnya tidak bergeser saat
+   dibuka; isinya menyusul bersama tiket yang membangunnya. */
+.treatyin .trin__baris-saring td {
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* =========================================================================
+   RONDE LAYAR 2 — lanjutan
+   ========================================================================= */
+
+/* ⛔ DICABUT 3 Oktober 2026. Dulu di sini berdiri `white-space: nowrap` atas
+   SELURUH sel `.trin__tabel`, dengan alasan `pyWrap=false` di ekspor. Alasan
+   itu benar tentang Pega dan salah tentang kita: Pega merender pada lebar
+   tetap, tabel ini tidak. Akibatnya tujuh dari sembilan kolom tersembunyi di
+   balik gulir mendatar. Penggantinya di blok lebar kolom di atas - nowrap
+   hanya pada pengenal, jenis, dan tanggal. */
+
+/* Tombol aksi tidak pernah terpotong, berapa pun sempit kolomnya. */
+.treatyin .trin__tabel .trin__aksi {
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------------------------------
+   FORM KONTRAK — dua kolom yang MENGALIR SENDIRI
+
+   ⛔ `.form-grid` dikunci dua kolom di atas, dan itu perlu tetapi TIDAK
+   cukup. `.form-grid` mengisi BARIS DEMI BARIS: sel ke-1 kiri, ke-2 kanan,
+   ke-3 kiri lagi. Susunan rujukan bukan itu — kolom kanannya LEBIH PANJANG
+   (tujuh butir lawan lima), dan tiga butir terakhirnya (`Ceding`,
+   `RNM as Treaty Leader`, `Source of Business`) berdiri tanpa pasangan.
+
+   Grid pengisi baris hanya dapat menirunya dengan SEL KOSONG yang
+   disisipkan tangan — dan sel kosong yang disisipkan tangan bergeser
+   diam-diam setiap kali satu medan ditambahkan, tanpa satu uji pun
+   berbunyi. Dua kolom yang mengalir sendiri tidak punya cacat itu.
+   ------------------------------------------------------------------------- */
+.treatyin .trin__dwikolom {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+  align-items: start;
+}
+
+/* ⚠️ Batas 900px adalah keputusan KITA, bukan salinan: layar rujukan tidak
+   responsif sama sekali (lebarnya ~1900px tetap). Di bawah 900px dua kolom
+   membuat kotak isian lebih pendek daripada isi yang diketik ke dalamnya. */
+@media (max-width: 899px) {
+  .treatyin .trin__dwikolom {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.treatyin .trin__kolom {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* `pyWidth=0` + `pyWidthUse=true` pada `TeritorialScope` dan
+   `BordereauxNote` — nol di Pega berarti "tanpa lebar tetap", selnya yang
+   menentukan. Itu SATU-SATUNYA pembedaan lebar yang ekspor nyatakan di
+   form ini, dan ia dipakai: keduanya mengisi kolomnya.
+
+   ⚠️ TINGGINYA keputusan kita. `pyHeight=21` di ekspor adalah tinggi BARIS
+   kontrol, bukan tinggi kotaknya. */
+.treatyin .trin__kolom .field textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+/* -------------------------------------------------------------------------
+   GRID RATE OF EXCHANGE — perbandingan lebar DARI ekspor
+
+     .Currency  W=193     .Value  W=349     .Date  W=80
+     193 : 349 : 80 : 80  ->  27% : 48% : 12,5% : 12,5%
+
+   Diterjemahkan ke persen, bukan piksel: tata letak kita responsif dan Pega
+   tidak. Yang dibawa perbandingannya, bukan angkanya.
+   ------------------------------------------------------------------------- */
+.treatyin .trin__tabel-kurs {
+  table-layout: fixed;
+  width: 100%;
+}
+.treatyin .trin__kol-mata-uang {
+  width: 27%;
+}
+.treatyin .trin__kol-nilai {
+  width: 48%;
+}
+.treatyin .trin__kol-tanggal {
+  width: 12.5%;
+}
+
+/* -------------------------------------------------------------------------
+   IKON SARING PER KOLOM
+
+   `pyColumnFilteringDropDown` bernilai `true` pada 1.049 sel dan `false`
+   hanya pada 6 di seluruh berkas — jadi praktis setiap kolom punya, dan
+   ikonnya dipasang pada kesembilannya.
+   ------------------------------------------------------------------------- */
+.treatyin .trin__kepala-kolom {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.treatyin .trin__ikon-saring {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-3);
+  cursor: pointer;
+  line-height: 1;
+}
+
+/* --accent-text di atas --surface-2 (latar kepala tabel): 4,97:1 terang,
+   7,17:1 gelap — angka yang `styles.css` sendiri catat untuk pasangan ini. */
+.treatyin .trin__ikon-saring[aria-pressed='true'],
+.treatyin .trin__ikon-saring:hover {
+  color: var(--accent-text);
+}
+
+.treatyin .trin__baris-saring input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 3px 6px;
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+/* Penomoran halaman dan aksi, di kanan baris kepala. */
+.treatyin .trin__kepala-kanan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* -------------------------------------------------------------------------
+   TAB YANG BELUM DIBANGUN — sengaja BUKAN `.kosong`
+
+   `.kosong` menyatakan *"belum ada DATA"*. Tab yang belum dibangun
+   menyatakan *"belum ada KODE"*. Keduanya bukan hal yang sama, dan yang
+   salah membacanya akan menagih hal yang salah — menagih pemuatan data
+   padahal yang kurang layarnya. Tepi putus-putus, bukan ikon keranjang
+   kosong: bedanya terlihat sebelum teksnya dibaca.
+   ------------------------------------------------------------------------- */
+.treatyin .trin__belum {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 28px 20px;
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.treatyin .trin__belum-judul {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.treatyin .trin__belum-petunjuk {
+  margin: 0 auto;
+  max-width: 460px;
+  font-size: 14px;
+  color: var(--text-3);
+}
+
+/* ⛔ KOLOM AKSI: 7% lalu 9% KEDUANYA TERLALU SEMPIT — tombolnya tetap
+   terpotong ("Edi", "iew", "op"). Baris terlebar memuat TIGA tombol
+   (View Copy Revision); pada lebar tabel dengan bilah sisi terpasang, 9%
+   hanya ~135px sementara ketiganya menuntut ~190px.
+   Sisa persis: 6+16+9+11+11+9+9+7+9 = 87, jadi 13 di sini dan jumlahnya 100. */
+.treatyin .trin__tabel th:last-child,
+.treatyin .trin__tabel td:last-child {
+  width: 13%;
+}
+
+/* ⛔ KEPALA KOLOM BOLEH MEMBUNGKUS, ISINYA TIDAK. "Commencement" dan
+   "Termination" bertabrakan ketika kepalanya ikut `nowrap` — judul panjang
+   tidak punya tempat, sementara isinya (17/09/26) justru butuh satu baris. */
+.treatyin .trin__tabel th {
+  white-space: normal;
+  line-height: 1.3;
+}
+
+/* ⛔ Tombol aksi SATU BARIS, TIDAK PERNAH membungkus. `flex-wrap: wrap`
+   membuatnya menumpuk ke bawah ketika kolomnya sempit, lalu terpotong di tepi
+   kartu - dua cacat sekaligus dari satu properti. */
+.treatyin .trin__tabel .trin__aksi {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+.treatyin .trin__tabel .trin__aksi .btn {
+  padding: 2px 8px;
+}
+
+/* Kartu daftar tidak menelan layar. `.table-wrap` inti memberi
+   `max-height: 62vh`; dengan 25 baris yang kini lebih rapat, 52vh sudah
+   memuat lebih banyak baris daripada sebelumnya sambil menyisakan ruang
+   untuk apa pun di bawahnya. */
+.treatyin .trin__tabel-daftar-bungkus {
+  max-height: 52vh;
+  min-height: 0;
+}
+
+/* Kepala kolom sedikit lebih kecil: "Commencement" dan "Termination"
+   bersebelahan, dan pada lebar kolom tanggal keduanya nyaris bersentuhan. */
+.treatyin .trin__tabel th {
+  font-size: var(--fs-xs);
+  padding-right: 14px;
+}
+
+/* Lipatan keterangan kaki: tertutup secara bawaan, dan ringkasannya satu
+   baris redup yang tidak bersaing dengan isi tabel. */
+.treatyin .trin__kaki-lipat {
+  margin-top: 10px;
+}
+.treatyin .trin__kaki-lipat > summary {
+  cursor: pointer;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  padding: 2px 0;
+}
+.treatyin .trin__kaki-lipat > summary:hover {
+  color: var(--text-2);
+}
+
+/* =========================================================================
+   KOLOM AKSI — perbaikan ketiga, dan kali ini sebabnya BUKAN lebar kolom
+   =========================================================================
+
+   ⛔ Dua percobaan sebelumnya menaikkan persen kolom (7 → 9 → 13) dan
+   tombolnya TETAP rusak - kini terbaca "Edi" "iew" "op" "vis". Sebabnya
+   bukan kolomnya kurang lebar: `display: flex` memberi tiap tombol
+   `flex-shrink: 1`, jadi ketika deretnya lebih lebar dari selnya, tombolnya
+   DIPERAS, bukan meluap. Menaikkan persen hanya menunda peras itu.
+
+   Yang menyelesaikannya dua properti pada TOMBOLNYA, bukan pada kolomnya:
+   `flex: 0 0 auto` (jangan menyusut) dan `white-space: nowrap` (teksnya
+   jangan dipenggal). */
+.treatyin .trin__tabel .trin__aksi .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 2px 9px;
+  font-size: var(--fs-xs);
+}
+
+/* Dan lebarnya disetel dalam satuan TETAP, bukan persen: yang menentukan
+   adalah lebar tiga tombol, dan itu tidak berubah ketika layar berubah.
+   `table-layout: fixed` menerima campuran rem dan persen - sisanya dibagi
+   di antara kolom berpersen. */
+.treatyin .trin__tabel th:last-child,
+.treatyin .trin__tabel td:last-child {
+  width: 13.5rem;
+}
+
+/* ---------------------------------------------------------------------
+ * Tab TEKS — Exclusions dan Special Conditions.
+ *
+ * ⛔ DAPAT DIGULIR, bukan satu baris yang terpotong. Terukur: isinya
+ * mencapai 23.453 aksara (`Exclusions`), dan sel yang memotongnya
+ * menyembunyikan teks tanpa memberi tahu siapa pun bahwa ada yang
+ * disembunyikan. Tingginya dibatasi supaya tab lain tetap terjangkau
+ * tanpa menggulir satu layar penuh.
+ *
+ * `white-space: pre-wrap` — teksnya memuat baris baru sungguhan
+ * (`Section 1 - Fire\nContingent Business…`), dan membuangnya menyatukan
+ * daftar berpasal menjadi satu paragraf yang tidak terbaca.
+ * ------------------------------------------------------------------ */
+.treatyin .trin__teks {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* Keterangan ejaan: dari mana teks ini datang, dan apa yang TIDAK terlihat. */
+.treatyin .trin__teks-asal {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ⛔ Peringatan ejaan lain SENGAJA tidak redup. Ia menyatakan ada teks yang
+   pembacanya TIDAK lihat, dan itu bukan keterangan sampingan. */
+.treatyin .trin__teks-lain {
+  display: block;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  font-size: 12px;
+}

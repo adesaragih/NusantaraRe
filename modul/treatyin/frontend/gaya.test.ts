@@ -24,7 +24,40 @@ const RUTE = readFileSync(join(AKAR, 'rute.tsx'), 'utf8')
 const INTI = readFileSync(join(AKAR, '..', '..', '..', 'inti', 'frontend', 'styles.css'), 'utf8')
 
 /** Kelas khusus modul ini: wajib hidup di berkas modul, dan nol jejak di inti. */
-const KELAS_MODUL = ['trin__aturan', 'trin__lencana'] as const
+const KELAS_MODUL = [
+  'trin__aturan',
+  'trin__lencana',
+  // Ronde layar 1 — kelas kedua layar baru.
+  'trin__redup',
+  'trin__catatan',
+  'trin__galat',
+  'trin__kepala',
+  'trin__id',
+  'trin__radio',
+  'trin__pilih-luar',
+  'trin__centang',
+  'trin__aksi',
+  // Ronde layar 2 — tata letak.
+  'trin__dwikolom',
+  'trin__kolom',
+  'trin__panel-kepala',
+  'trin__kaki',
+  'trin__tabel',
+  'trin__tabel-kurs',
+  'trin__kol-mata-uang',
+  'trin__kol-nilai',
+  'trin__kol-tanggal',
+  'trin__kepala-kolom',
+  'trin__kepala-kanan',
+  'trin__ikon-saring',
+  'trin__baris-saring',
+  'trin__belum',
+  'trin__belum-judul',
+  'trin__belum-petunjuk',
+  'trin__teks',
+  'trin__teks-asal',
+  'trin__teks-lain',
+] as const
 
 /** Setiap berkas di bawah folder frontend modul (rekursif). */
 function berkas(d = AKAR): string[] {

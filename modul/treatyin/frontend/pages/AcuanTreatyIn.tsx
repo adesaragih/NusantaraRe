@@ -4,7 +4,7 @@
 // menyatakan `L-4` ("tidak ada spesifikasi layar di mana pun") dan melarang
 // mengarang layar untuk memenuhi bentuk irisan tegak: layar yang dikarang
 // dipakai sebagai kriteria selesai oleh orang yang tidak tahu ia karangan.
-// Halaman ini TIDAK mengarang alur kontrak - ia memperlihatkan isi keenam tabel
+// Halaman ini TIDAK mengarang alur kontrak - ia memperlihatkan isi kelima tabel
 // acuan yang tiket 15 buat, tidak lebih.
 //
 // Rupa (02-10-2026): isinya duduk di dalam `Panel` - kartu bertepi yang sudah
@@ -36,7 +36,7 @@ function LencanaAktif({ nilai }: { nilai: string }) {
 }
 
 export default function AcuanTreatyIn() {
-  const [himpunan, setHimpunan] = useState<HimpunanAcuan>('mata-uang')
+  const [himpunan, setHimpunan] = useState<HimpunanAcuan>('jenis-potongan')
   const [baris, setBaris] = useState<Acuan[] | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
 
@@ -71,40 +71,53 @@ export default function AcuanTreatyIn() {
       />
       {/* Judul panel = himpunan yang sedang terbuka. Tanpa itu, isi tabel dan
           tab yang dipilih hanya terhubung lewat ingatan pembacanya. */}
+      {galat !== null && <Gagal galat={galat} />}
+
+      {/* ⛔ Disamakan dengan kedua layar baru (ronde layar 2): kepala kolom
+          SELALU dirender, termasuk saat nol baris. Sebelumnya seluruh
+          <table> disembunyikan ketika kosong, sehingga rancangan tabelnya
+          tidak terlihat sama sekali — dan satu modul yang memperlihatkan
+          kolomnya di dua layar lalu menyembunyikannya di layar ketiga punya
+          dua bahasa visual. */}
       <Panel judul={LABEL_HIMPUNAN[himpunan]}>
-        {galat !== null && <Gagal galat={galat} />}
-        {baris === null && galat === null && <Memuat />}
-        {baris !== null && baris.length === 0 && (
-          <Kosong pesan={ACUAN_TREATYIN.kosong} petunjuk={ACUAN_TREATYIN.kosongPetunjuk} />
-        )}
-        {baris !== null && baris.length > 0 && (
-          // `.table-wrap` menggulir tabel yang lebih lebar dari kartunya, dan
-          // ia pula yang membuat `thead` sticky bekerja (lihat styles.css).
-          <div className="table-wrap">
-            <table>
-              <thead>
+        <div className="table-wrap">
+          <table className="trin__tabel">
+            <thead>
+              <tr>
+                <th scope="col">{ACUAN_TREATYIN.kolomKode}</th>
+                <th scope="col">{ACUAN_TREATYIN.kolomNama}</th>
+                <th scope="col">{ACUAN_TREATYIN.kolomAktif}</th>
+                {bersusun && <th scope="col">{ACUAN_TREATYIN.kolomInduk}</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {baris === null && galat === null && (
                 <tr>
-                  <th scope="col">{ACUAN_TREATYIN.kolomKode}</th>
-                  <th scope="col">{ACUAN_TREATYIN.kolomNama}</th>
-                  <th scope="col">{ACUAN_TREATYIN.kolomAktif}</th>
-                  {bersusun && <th scope="col">{ACUAN_TREATYIN.kolomInduk}</th>}
+                  <td colSpan={bersusun ? 4 : 3}>
+                    <Memuat />
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {baris.map((b) => (
-                  <tr key={b.id}>
-                    <td>{b.kode}</td>
-                    <td>{b.nama}</td>
-                    <td>
-                      <LencanaAktif nilai={b.aktif} />
-                    </td>
-                    {bersusun && <td>{b.idInduk ?? ''}</td>}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              )}
+              {baris !== null && baris.length === 0 && (
+                <tr>
+                  <td colSpan={bersusun ? 4 : 3}>
+                    <Kosong pesan={ACUAN_TREATYIN.kosong} petunjuk={ACUAN_TREATYIN.kosongPetunjuk} />
+                  </td>
+                </tr>
+              )}
+              {baris?.map((b) => (
+                <tr key={b.id}>
+                  <td>{b.kode}</td>
+                  <td>{b.nama}</td>
+                  <td>
+                    <LencanaAktif nilai={b.aktif} />
+                  </td>
+                  {bersusun && <td>{b.idInduk ?? ''}</td>}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Panel>
     </div>
   )

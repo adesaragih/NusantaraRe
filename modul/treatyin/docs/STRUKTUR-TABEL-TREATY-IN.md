@@ -27,11 +27,17 @@ adalah BENTUKNYA — nama, tipe, dan constraint yang tertulis — bukan bahwa Or
 
 ## Cacah
 
+> ⛔ **RALAT 4 Oktober 2026 — `MATA_UANG` dan `MATA_UANG_KONTRAK` DICABUT**
+> (migrasi `434`, `KEPUTUSAN-PENYELARASAN-REPO.md` §16). Kurs dan daftar mata
+> uang dibaca dari `TREATYEXCHANGEYEARLY`. Himpunan acuan kini **lima**, bukan
+> enam, dan tiket `20` kehilangan tabelnya — lihat §16 untuk akibatnya pada
+> tiket `57` dan `INV-44`.
+
 | | Tabel | Kolom | Tiket |
 | --- | --- | ---: | --- |
-| Tabel acuan | `MATA_UANG`, `JENIS_POTONGAN`, `KELAS_BISNIS`, `KELOMPOK_TREATY`, `BAHAYA`, `JENIS_REASURANSI` | 25 | `15` |
+| Tabel acuan | `JENIS_POTONGAN`, `KELAS_BISNIS`, `KELOMPOK_TREATY`, `BAHAYA`, `JENIS_REASURANSI` | 25 | `15` |
 | Identitas kontrak | `KONTRAK`, `VERSI_KONTRAK` | 57 | `14` · `01` |
-| Uang dan periode | `MATA_UANG_KONTRAK`, `RETENSI_CEDANT`, `EGNPI`, `TERMIN` | 31 | `20` `22` `23` `27` |
+| Uang dan periode | `RETENSI_CEDANT`, `EGNPI`, `TERMIN` | 31 | `20` `22` `23` `27` |
 | Periode dan portofolio | `PORTOFOLIO`, `PERIODE_PELAPORAN`, `PERIODE_AKUMULASI` | 18 | `24` `25` `26` |
 | Tanggungan | `SKALA_KOASURANSI`, `BATAS_PER_BAHAYA`, `DOKUMEN_KONTRAK` | 15 | `28` `29` `30` |
 | Layer | `LAYER`, `NILAI_MDP`, `NILAI_MDP_MINIMUM`, `PEMULIHAN_LIMIT` | 38 | `31` |
@@ -48,10 +54,10 @@ judul §-nya masing-masing — kecuali `VERSI_KONTRAK`, yang bertambah satu (lih
 ditambahkan migrasi `440` modul `treatyinadjustment` (tiket `01`) dan **belum ada di `KAMUS-KOLOM.md`**
 — utang hulu yang ditagih ke pemilik `SPEC-MODEL-DATA.md` §10.2.
 
-**Sequence:** `SEQ_TRIN_KONTRAK`, `SEQ_TRIN_VERSI_KONTRAK`, `SEQ_TRIN_MATA_UANG`,
+**Sequence:** `SEQ_TRIN_KONTRAK`, `SEQ_TRIN_VERSI_KONTRAK`,
 `SEQ_TRIN_JENIS_POTONGAN`, `SEQ_TRIN_JENIS_REASURANSI`, `SEQ_TRIN_BAHAYA`,
 `SEQ_TRIN_KELOMPOK_TREATY`, `SEQ_TRIN_KELAS_BISNIS` (berkas `402`), ditambah satu per tabel anak di
-berkas `415`: `SEQ_TRIN_MATA_UANG_KONTRAK`, `SEQ_TRIN_RETENSI_CEDANT`, `SEQ_TRIN_EGNPI`,
+berkas `415`: `SEQ_TRIN_RETENSI_CEDANT`, `SEQ_TRIN_EGNPI`,
 `SEQ_TRIN_PORTOFOLIO`, `SEQ_TRIN_PERIODE_PELAPORAN`, `SEQ_TRIN_PERIODE_AKUMULASI`, `SEQ_TRIN_TERMIN`,
 `SEQ_TRIN_SKALA_KOASURANSI`, `SEQ_TRIN_BATAS_PER_BAHAYA`, `SEQ_TRIN_DOKUMEN_KONTRAK`,
 `SEQ_TRIN_LAYER`, `SEQ_TRIN_NILAI_MDP`, `SEQ_TRIN_NILAI_MDP_MINIMUM`, `SEQ_TRIN_PEMULIHAN_LIMIT`,
@@ -69,7 +75,7 @@ simpan.
 
 **Index:** `IX_VERSI_KONTRAK_KONTRAK` · `IX_VERSI_KONTRAK_DASAR` *(dipasang migrasi `440` modul
 `treatyinadjustment`)* · `IX_NILAI_MDP_LAYER` · `IX_NILAI_MDP_MIN_LAYER` · `IX_PEMULIHAN_LIMIT_LAYER` ·
-`IX_JEJAK_PERUBAHAN_VERSI` · `IX_MATA_UANG_KONTRAK_MU` · `IX_RETENSI_CEDANT_KLP` ·
+`IX_JEJAK_PERUBAHAN_VERSI` · `IX_RETENSI_CEDANT_KLP` ·
 `IX_EGNPI_KELOMPOK` · `IX_EGNPI_KELAS_BISNIS` · `IX_BATAS_PER_BAHAYA_BHY` · `IX_DETAIL_PROP_KLP` ·
 `IX_POTONGAN_JENIS` · `IX_NILAI_PB_BAGIAN` · `IX_NILAI_PB_MIN_BAGIAN` · `IX_NILAI_CAD_PREMI_DP`.
 
@@ -82,11 +88,11 @@ Yang **tidak** demikian ada dua rupa, dan keduanya ber-index eksplisit:
 
 | Rupa | Index |
 | --- | --- |
-| kunci asing ke **tabel acuan** — tidak pernah memimpin kunci alami | `IX_MATA_UANG_KONTRAK_MU`, `IX_RETENSI_CEDANT_KLP`, `IX_EGNPI_KELOMPOK`, `IX_EGNPI_KELAS_BISNIS`, `IX_BATAS_PER_BAHAYA_BHY` |
+| kunci asing ke **tabel acuan** — tidak pernah memimpin kunci alami | `IX_RETENSI_CEDANT_KLP`, `IX_EGNPI_KELOMPOK`, `IX_EGNPI_KELAS_BISNIS`, `IX_BATAS_PER_BAHAYA_BHY` |
 | anak yang **tidak punya kunci alami** sama sekali | `IX_NILAI_MDP_LAYER`, `IX_NILAI_MDP_MIN_LAYER`, `IX_PEMULIHAN_LIMIT_LAYER`, `IX_JEJAK_PERUBAHAN_VERSI`, `IX_VERSI_KONTRAK_KONTRAK` |
 
 ⚠️ **Kelima index tabel acuan tidak ada di `ddl-usulan/`.** Ia ditambahkan di sini sebab kunci asing
-tanpa index membuat penghapusan baris acuan — satu `BAHAYA`, satu `MATA_UANG` — memindai seluruh tabel
+tanpa index membuat penghapusan baris acuan — satu `BAHAYA` — memindai seluruh tabel
 anak, dan pada sebagian versi Oracle menguncinya. Dicatat di
 [`KEPUTUSAN-PENYELARASAN-REPO.md`](KEPUTUSAN-PENYELARASAN-REPO.md) butir 5. Dijaga
 `TestSetiapKunciAsingTerlayaniIndex`.
@@ -96,10 +102,8 @@ anak, dan pada sebagian versi Oracle menguncinya. Dicatat di
 | Anak | Kolom | Induk | ON DELETE | Invarian |
 | --- | --- | --- | --- | --- |
 | `VERSI_KONTRAK` | `ID_KONTRAK` | `KONTRAK` | **tanpa** | INV-18 |
-| `VERSI_KONTRAK` | `KODE_MATA_UANG_KONTRAK` | `MATA_UANG` | **tanpa** | INV-44 |
 | `VERSI_KONTRAK` | `ID_VERSI_KONTRAK_DASAR` | `VERSI_KONTRAK` | **tanpa** | INV-18 |
 | `JENIS_REASURANSI` | `ID_INDUK` | `JENIS_REASURANSI` | **tanpa** | INV-18 |
-| `MATA_UANG_KONTRAK` | `ID_VERSI_KONTRAK` · `KODE_MATA_UANG` | `VERSI_KONTRAK` · `MATA_UANG` | **tanpa** | INV-18 · INV-44 |
 | `RETENSI_CEDANT` | `ID_VERSI_KONTRAK` · `ID_KELOMPOK_TREATY` | `VERSI_KONTRAK` · `KELOMPOK_TREATY` | **tanpa** | INV-18 |
 | `EGNPI` | `ID_VERSI_KONTRAK` · `ID_KELOMPOK_TREATY` · `ID_KELAS_BISNIS` | `VERSI_KONTRAK` · `KELOMPOK_TREATY` · `KELAS_BISNIS` | **tanpa** | INV-18 |
 | `PORTOFOLIO` · `PERIODE_PELAPORAN` · `PERIODE_AKUMULASI` · `TERMIN` · `SKALA_KOASURANSI` · `DOKUMEN_KONTRAK` · `LAYER` · `JEJAK_PERUBAHAN` | `ID_VERSI_KONTRAK` | `VERSI_KONTRAK` | **tanpa** | INV-18 |
@@ -128,7 +132,6 @@ Tabelnya milik modul ini; satu kolomnya dibawa modul itu. Sebabnya: papan tiket 
 | `VERSI_KONTRAK` | `ID_KONTRAK` + `NOMOR_URUT_VERSI` | INV-04 |
 | keenam tabel acuan | `KODE` | INV-68 |
 | `LAYER` | `ID_VERSI_KONTRAK` + `NOMOR_LAYER` + `BAGIAN_LAYER` | INV-05 |
-| `MATA_UANG_KONTRAK` | `ID_VERSI_KONTRAK` + `KODE_MATA_UANG` | INV-07 |
 | `RETENSI_CEDANT` · `EGNPI` | `ID_VERSI_KONTRAK` + `ID_KELOMPOK_TREATY` + `KODE_MATA_UANG` | INV-08 · INV-09 |
 | `PERIODE_PELAPORAN` · `PERIODE_AKUMULASI` | `ID_VERSI_KONTRAK` + `PERIODE` | INV-10 · INV-11 |
 | `TERMIN` | `ID_VERSI_KONTRAK` + `NOMOR_TERMIN` + `KODE_MATA_UANG` | INV-12 |
@@ -222,15 +225,6 @@ ADR-0056 (K-4), bukan ketidakmampuan basis data. Bila pemilik proses memutuskan 
 invarian sebaris, keduanya calon pertama.
 
 ---
-
-## MATA_UANG
-
-| Kolom | Tipe | Null | Kunci | Sumber |
-| --- | --- | --- | --- | --- |
-| `ID_MATA_UANG` | bilangan bulat | tidak | PK | keputusan tiket 15 — ADR-0038, himpunan yang dapat bertambah |
-| `KODE` | teks | tidak | UQ | keputusan tiket 15 — ADR-0038, himpunan yang dapat bertambah — **kunci alami**, **Bentuk — tak berinduk**: unik di seluruh tabel |
-| `NAMA` | teks | tidak |  | keputusan tiket 15 — ADR-0038, himpunan yang dapat bertambah |
-| `AKTIF` | teks | tidak |  | keputusan tiket 15 — ADR-0038, himpunan yang dapat bertambah — nilai lama **tidak pernah dihapus**; ia dimatikan |
 
 ## JENIS_POTONGAN
 
@@ -344,17 +338,6 @@ invarian sebaris, keduanya calon pertama.
 | `SIFAT_MATERIAL_ADDENDUM` | teks | ya |  | korpus `EDMMaterialType` — dua nilai **`MATERIAL`** / **`TIDAK_MATERIAL`**. **Masukan, bukan turunan** (`GRL-20`; `GRL-12` BATAL). Beku sejak `AJUKAN`, berjejak selama `DRAFT` (`KTV-1` Adjustment) |
 | `ID_DOKUMEN_ADDENDUM` | bilangan bulat | ya |  | keputusan tiket 14 — **baru**, tidak ada di sistem lama — satu dokumen memayungi banyak versi, **lintas kontrak** (`DB-3`, `DB-4` dibantah). **Persetujuan tetap per versi** |
 | `ID_VERSI_KONTRAK_DASAR` | bilangan bulat | ya | FK | keputusan tiket 01 **papan Adjustment** — rujukan ke versi berlaku terakhir saat versi ini dibuat; kosong = versi pertama. Ditambahkan migrasi `440` modul `treatyinadjustment` |
-
-## MATA_UANG_KONTRAK
-
-| Kolom | Tipe | Null | Kunci | Sumber |
-| --- | --- | --- | --- | --- |
-| `ID_MATA_UANG_KONTRAK` | bilangan bulat | tidak | PK | keputusan tiket 20 — **baru**, tidak ada di sistem lama |
-| `ID_VERSI_KONTRAK` | bilangan bulat | tidak | FK UQ | keputusan tiket 20 — **baru**, tidak ada di sistem lama |
-| `KODE_MATA_UANG` | bilangan bulat | tidak | FK UQ | korpus `CurrencyID` — **kunci alami**; `Currency` (nama) tidak disimpan — INV-59 |
-| `KURS` | angka desimal | tidak |  | korpus `Conversion` — INV-38: selalu lebih besar dari nol |
-| `TANGGAL_MULAI_BERLAKU` | DATE | tidak |  | korpus `PeriodStart` — batas inklusif, ADR-0022 |
-| `TANGGAL_AKHIR_BERLAKU` | DATE | tidak |  | korpus `PeriodEnd` — batas inklusif |
 
 ## RETENSI_CEDANT
 
@@ -597,3 +580,517 @@ invarian sebaris, keduanya calon pertama.
 | `ID_JENIS_POTONGAN` | bilangan bulat | tidak | FK UQ | korpus `Comment` — §14.2 |
 | `DASAR_PERHITUNGAN` | teks | tidak |  | keputusan tiket 37 — **baru**, tidak ada di sistem lama — §14.2 |
 | `PERSEN_POTONGAN` | angka desimal | tidak |  | korpus `DeductionPct` — §14.2 |
+
+## KELAS_BISNIS_LAYER
+
+Tiket `65`. Struktur dari `ERD-TREATY-IN-DAN-EDM.html` baris relasi **4** — `T_TREATY_LIMIT_COB`,
+induk `T_TREATY_LIMIT_DETAIL` lewat `LIMIT_DETAIL_ID`, `CASCADE`. Jalur Pega
+`TreatyIn.Limits.Detail.COBList`, tingkat bukti **DAUN-RELATIF**.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_KELAS_BISNIS_LAYER` | bilangan bulat | tidak | PK | keputusan tiket 65 — **baru**, tidak ada di sistem lama |
+| `ID_DETAIL_PROPORSIONAL` | bilangan bulat | tidak | FK | ERD baris 4 `LIMIT_DETAIL_ID` — induknya — **kunci alami** di dalamnya, **belum bernomor** |
+| `ID_KELAS_BISNIS` | bilangan bulat | tidak | FK | korpus `COBList[].ClassOfBusinessID` — **kunci alami** di dalam induknya, **belum bernomor**. ⛔ `ClassOfBusiness` (nama) **TIDAK** ikut disalin — INV-59; namanya dibaca lewat join |
+
+## KELOMPOK_LAYER
+
+Tiket `67`. Struktur dari ERD baris relasi **9** — `T_TREATY_LIMIT_GROUP`, induk `T_TREATY_LIMITS`
+lewat `LIMIT_ID`, `CASCADE`. Jalur Pega `TreatyIn.Limits.TreatyGroupList`, bukti **DAUN-RELATIF**.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_KELOMPOK_LAYER` | bilangan bulat | tidak | PK | keputusan tiket 67 — **baru**, tidak ada di sistem lama |
+| `ID_LAYER` | bilangan bulat | tidak | FK | ERD baris 9 `LIMIT_ID` — induknya — **kunci alami** di dalamnya, **belum bernomor** |
+| `ID_KELOMPOK_TREATY` | bilangan bulat | tidak | FK | korpus `TreatyGroupList[].TreatyGroupID` — **kunci alami** di dalam induknya, **belum bernomor**. ⛔ `TreatyGroup` (nama) **TIDAK** ikut disalin — INV-59 |
+
+## KELAS_BISNIS_KELOMPOK
+
+Tiket `68`. Struktur dari ERD baris relasi **10** — `T_TREATY_LIMIT_GROUP_COB`, induk
+`T_TREATY_LIMIT_GROUP` lewat `LIMIT_GROUP_ID`, `CASCADE`. Jalur Pega
+`TreatyIn.Limits.TreatyGroupList.ClassOfBusinessList` — **kedalaman keempat**, bukti
+**DAUN-RELATIF**.
+
+⚠️ **Ia BUKAN kembaran `KELAS_BISNIS_LAYER`.** Yang satu menjawab *"kelas apa saja yang ditanggung
+rincian proporsional ini"*, yang lain *"kelas apa saja yang ditanggung kelompok treaty X **di
+dalam** layer ini"*. ERD menempatkan keduanya pada kedalaman yang berbeda, dan menggabungkannya
+melahirkan satu kolom induk yang separuh waktu kosong — bentuk yang `ADR-0041` tolak.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_KELAS_BISNIS_KELOMPOK` | bilangan bulat | tidak | PK | keputusan tiket 68 — **baru**, tidak ada di sistem lama |
+| `ID_KELOMPOK_LAYER` | bilangan bulat | tidak | FK | ERD baris 10 `LIMIT_GROUP_ID` — induknya — **kunci alami** di dalamnya, **belum bernomor** |
+| `ID_KELAS_BISNIS` | bilangan bulat | tidak | FK | korpus `ClassOfBusinessList[]` — **kunci alami** di dalam induknya, **belum bernomor** |
+
+## PENCAPAIAN
+
+Tiket `69`. **Induknya `KONTRAK`, dan ERD menulis sebaliknya** — uraian keputusannya di kepala
+migrasi `423_pencapaian.sql`. Ringkasnya: ERD baris **6** menempatkannya di bawah
+`T_TREATY_LIMIT_DETAIL` dengan bukti yang ia sendiri tandai **DAUN-RELATIF** (*"lemah"*),
+sementara tabel Oracle yang sungguh hidup berkunci tingkat kontrak —
+`RDBList/GetAchievement.xml` menyaring `SUBSTR(NOOFFER,1,7)`, dan nol kolomnya menunjuk rincian
+layer. `ERD.md` §2.9 menulis `KONTRAK`, dan bukti SQL sejalan dengannya.
+
+Perilaku hapus **tolak** (`ERD.md` §2.9) — pencapaian adalah angka yang pernah dibukukan.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_PENCAPAIAN` | bilangan bulat | tidak | PK | keputusan tiket 69 — **baru**, tidak ada di sistem lama |
+| `ID_KONTRAK` | bilangan bulat | tidak | FK | `ERD.md` §2.9 — induknya. Menggantikan `NOOFFER`/`NOPOLIS` yang di sistem lama berupa teks |
+| `TRIWULAN` | bilangan bulat | tidak |  | korpus `ACHIEVEMENT.QUARTER` — **kunci alami** di dalam induknya, **belum bernomor** |
+| `TAHUN_TRIWULAN` | bilangan bulat | tidak |  | korpus `ACHIEVEMENT.QUARTERYEAR` — ikut **kunci alami** |
+| `KODE_MATA_UANG` | teks | tidak |  | korpus `ACHIEVEMENT.CURRENCY` — ikut **kunci alami** |
+| `PREMI` | angka desimal | ya |  | korpus `ACHIEVEMENT.PREMIUM` |
+| `KOMISI_REASURANSI` | angka desimal | ya |  | korpus `ACHIEVEMENT.RICOMM` |
+| `BROKERAGE` | angka desimal | ya |  | korpus `ACHIEVEMENT.BROKERAGE` |
+| `PREMI_BERSIH` | angka desimal | ya |  | korpus `ACHIEVEMENT.NETPREMIUM` |
+| `KLAIM_DIBAYAR` | angka desimal | ya |  | korpus `ACHIEVEMENT.PAIDCLAIM` |
+| `CASH_CALL_KLAIM` | angka desimal | ya |  | korpus `LOG_ACHIEVEMENT.CASHCALLCLAIM` — ⛔ **hanya ada di tabel log**, dan karena itu hilang bila hanya `ACHIEVEMENT` yang dipindahkan |
+| `KLAIM_OUTSTANDING` | angka desimal | ya |  | korpus `ACHIEVEMENT.OUTSTANDINGCLAIM` |
+
+⛔ **Empat kolom sistem lama yang TIDAK dibawa**, masing-masing dengan sebabnya:
+`INCUREDCLAIM`, `TOTAL`, `LOSSRATIO` — **turunan**, `INV-58`, dihitung saat dibaca.
+`SOBNAME`, `TREATYGROUPNAME`, `TREATYTYPE` — **salinan atribut kontrak dan layer**, `INV-59`;
+dibaca lewat kunci asingnya. `PXCREATEOPNAME` dan `INSERTDATE` pindah ke `JEJAK_PERUBAHAN`
+(tiket `39`), yang sudah ada.
+
+## RINCIAN_ANGSURAN
+
+Tiket `70`. Struktur dari ERD baris relasi **27** — `T_TREATY_INSTALLMENT_ITEM`, induk
+`T_TREATY_INSTALLMENT` lewat `INSTALLMENT_ID`, `CASCADE`. Jalur Pega
+`TreatyIn.ValueDifference.Installment.InstallmentList` — ⚠️ **hanya terbaca lewat salinan**, bukti
+**DAUN-RELATIF**.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_RINCIAN_ANGSURAN` | bilangan bulat | tidak | PK | keputusan tiket 70 — **baru**, tidak ada di sistem lama |
+| `ID_TERMIN` | bilangan bulat | tidak | FK | ERD baris 27 `INSTALLMENT_ID` — induknya — **kunci alami** di dalamnya, **belum bernomor** |
+| `NOMOR_URUT_RINCIAN` | bilangan bulat | tidak |  | keputusan tiket 70 — **baru** — ikut **kunci alami**, **belum bernomor** |
+| `TANGGAL_JATUH_TEMPO` | DATE | ya |  | korpus `InstallmentList[].DueDate` |
+| `PERSEN_ANGSURAN` | angka desimal | ya |  | korpus `InstallmentList[].InstallmentPct` — INV-41 ditegakkan services, bukan `CHECK` (ADR-0056) |
+| `TANGGAL_BAYAR` | DATE | ya |  | korpus `InstallmentList[].PaymentDate` — kosong berarti **belum dibayar**, keadaan normal |
+| `WPC` | teks | ya |  | korpus `InstallmentList[].WPC` — ⚠️ **nama apa adanya**; kepanjangannya tidak ada di satu berkas pun, korpus sudah disapu habis (`CONTEXT.md` §2.10). Menamainya dengan tebakan lebih buruk daripada menyimpannya begini |
+
+## ARSIP_MUATAN_KELUAR
+
+Tiket `74`, prasyarat tiket `42`. Struktur dari ERD baris relasi **39** —
+`T_TREATY_OUTBOUND_ARCHIVE`, induk `TREATY_IN` lewat `TREATY_IN_ID`. ⚠️ ERD menulis kolom
+`ON DELETE`-nya **"di Go"**: ia tidak meresepkan aturan hapus tingkat basis data. Di sini
+diwujudkan **tolak** — arsip yang lenyap bersama kontraknya berhenti menjadi arsip.
+
+⛔ **`INV-61` berlaku keras**: kolom `MUATAN` **tidak punya jalur baca aplikasi**. Basis data tidak
+dapat menegakkannya; yang menjaganya tinjauan kode dan uji.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_ARSIP_MUATAN_KELUAR` | bilangan bulat | tidak | PK | keputusan tiket 74 — **baru**, tidak ada di sistem lama |
+| `ID_KONTRAK` | bilangan bulat | tidak | FK | ERD baris 39 `TREATY_IN_ID` — induknya |
+| `TUJUAN` | teks | tidak |  | korpus — salah satu dari `PEGA_TREATY_IN`, `PEGA_M_TREATY_IN_EDM`, `PEGA_M_TREATY_IN_DETAIL`, `PEGA_M_TREATY_IN_DETAIL_EDM` |
+| `DIKIRIM_PADA` | DATE | tidak |  | keputusan tiket 74 — **baru** |
+| `BERHASIL` | teks | tidak |  | keputusan tiket 74 — **baru** — pengiriman yang **gagal di hilir tetap terarsip**; arsip yang hanya memuat yang berhasil tidak menyelesaikan satu pun perselisihan |
+| `MUATAN` | teks | tidak |  | korpus — 175 argumen, apa adanya. ⚠️ `VARCHAR2(4000 CHAR)`, bukan CLOB: muatan yang melampauinya **DITOLAK** basis data, dan penolakan lebih baik daripada pemotongan diam-diam — arsip yang terpotong adalah arsip yang berbohong |
+
+## CATATAN_PERSETUJUAN
+
+Tiket `54`, dan ia melepas `49` `55` `56`. Dari `ddl-usulan/13_CATATAN_PERSETUJUAN.sql` dan
+`SPEC-MODEL-DATA.md` §10.20 — kelas lama `Data-SuggestList`.
+
+⛔ **Perilaku hapus `tolak`**, dan ia **satu-satunya** anak `VERSI_KONTRAK` di `ERD.md` §2.3 yang
+begitu; sepuluh lainnya `ikut hapus`. Sebabnya dikutip utuh dari §2.3: *"jejak yang dapat dihapus
+bersama bendanya bukan jejak."*
+
+⛔ **Nol kunci alami, dan itu KEPUTUSAN — bukan tagihan.** Dua keputusan pada versi yang sama, oleh
+orang yang sama, pada hari yang sama adalah keadaan yang sah; yang membedakan barisnya urutan
+waktu, bukan sebuah nilai. Ia karena itu **tidak** ikut daftar tagihan `SPEC-MODEL-DATA.md` §13.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_CATATAN_PERSETUJUAN` | bilangan bulat | tidak | PK | keputusan tiket 54 — **baru**, tidak ada di sistem lama |
+| `ID_VERSI_KONTRAK` | bilangan bulat | tidak | FK | menggantung pada **versi**, bukan kontrak — §10.20 |
+| `WAKTU_KEPUTUSAN` | DATE | tidak |  | korpus `Date` |
+| `NAMA_PEMUTUS` | teks | tidak |  | korpus `OperatorName` — ⚠️ **teks, bukan kunci asing**: fakta historis siapa memutuskan apa dan kapan (§12.5, `ADR-0045`). Sekeluarga dengan `PELAKU` di `JEJAK_PERUBAHAN` |
+| `DISETUJUI` | teks | tidak |  | korpus `IsApproved` — himpunan tertutup, ditegakkan services (`ADR-0056`), bukan `CHECK` |
+| `ALASAN` | teks | ya |  | korpus `Suggest` |
+
+⛔ **Baris PERISTIWA tidak masuk ke sini.** §10.20a mencabut usul nilai enumerasi ketiga
+`PERISTIWA`: ia akan membuat separuh kolom kosong pada separuh baris dan mencemari `INV-28`, yang
+menghitung satu baris per perpindahan. Rumahnya `PERISTIWA_KONTRAK` — yang sampai hari ini masih
+yatim, nol tiket menghasilkannya.
+
+## MIGRASI_KORELASI · MIGRASI_PENDARATAN · MIGRASI_NILAI_DITOLAK
+
+Tiket `71` `72` `73`, migrasi `428`. ⛔ **BERTENGGAT terhadap tiket `44`** — tiket itu memuat data
+pertama, dan sesudahnya ketiganya kehilangan sebagian gunanya selamanya.
+
+⚠️ **Ketiganya tidak punya kotak di ERD, dan itu wajar.** ERD menyatakan dirinya *"POTRET SISTEM
+LAMA, BUKAN RANCANGAN"*; ketiganya **perkakas sistem baru**. ERD tetap menyebutnya di daftar
+*"7 tabel tanpa jalur Pega … tidak digambar, dilaporkan di sini"*, dan satu punya baris relasi
+(baris 38, `LANDING_ID`, ON DELETE **"di Go"**).
+
+### MIGRASI_KORELASI — jembatan pengenal, **nol kunci asing**
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_MIGRASI_KORELASI` | bilangan bulat | tidak | PK | keputusan tiket 71 — **baru** |
+| `KUNCI_PEGA` | teks | ya |  | `pzInsKey` |
+| `ID_PEGA` | teks | ya |  | `TreatyIn.ID` |
+| `ID_WARISAN` | teks | ya |  | `TreatyIn.OLDID` — jejak pemindahan **sebelumnya**, dipindahkan sebagai isi |
+| `ID_KONTRAK_BARU` | bilangan bulat | ya |  | ⚠️ **nilai, BUKAN kunci asing** — lihat di bawah |
+| `DIPINDAHKAN_PADA` | DATE | tidak |  | keputusan tiket 71 — **baru** |
+
+### MIGRASI_PENDARATAN — bentuk lama apa adanya, **nol kunci asing**
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_MIGRASI_PENDARATAN` | bilangan bulat | tidak | PK | keputusan tiket 72 — **baru** |
+| `KUNCI_WARISAN` | teks | tidak |  | pengenal dokumen warisan |
+| `MUATAN` | teks | tidak |  | `M_TREATY_IN.JSONDATA` apa adanya — ⛔ `INV-61`: **nol jalur baca aplikasi** |
+| `MENDARAT_PADA` | DATE | tidak |  | keputusan tiket 72 — **baru** |
+
+### MIGRASI_NILAI_DITOLAK — anak pendaratan, perilaku hapus **tolak**
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_MIGRASI_NILAI_DITOLAK` | bilangan bulat | tidak | PK | keputusan tiket 73 — **baru** |
+| `ID_MIGRASI_PENDARATAN` | bilangan bulat | tidak | FK | ERD baris 38 `LANDING_ID` |
+| `JALUR_SIMPUL` | teks | tidak |  | jalur simpul di dalam muatan |
+| `NILAI_MENTAH` | teks | tidak |  | apa adanya — **tidak dibulatkan, tidak dibuang** |
+| `SEBAB_DITOLAK` | teks | tidak |  | keputusan tiket 73 — **baru** |
+
+⛔ **Kenapa dua yang pertama tanpa kunci asing.** Jejak asal-usul harus **bertahan melewati**
+penghapusan barisnya. Kunci asing memaksa salah satu dari dua, dan keduanya merusak: `ikut hapus`
+menghapus jejaknya bersama barisnya, `tolak` membuat baris yang salah muat **tidak dapat dibuang**.
+Pada `MIGRASI_PENDARATAN` ada sebab kedua yang berdiri sendiri: muatan yang **gagal diurai** justru
+belum punya baris baru untuk ditunjuk. Ongkosnya dibayar dan dinyatakan: basis data tidak menjaga
+keterhubungannya; yang menjaganya uji rekonsiliasi tiket `44`.
+
+⚠️ **`MIGRASI_NILAI_DITOLAK` `tolak`, bukan `ikut hapus` — ini MENGOREKSI tiket `73`.** ERD baris 38
+menulis `"di Go"`: ia tidak meresepkan aturan tingkat basis data. Dipilih `tolak` dengan alasan yang
+sudah dipakai migrasi `425` untuk arsip — catatan forensik yang lenyap bersama induknya berhenti
+menjadi catatan forensik tepat saat ia paling dibutuhkan.
+
+## PENYEBARAN · RINCIAN_PENYEBARAN · NILAI_PENYEBARAN
+
+Tiket `38`, migrasi `429`. Dari `ddl-usulan/{38,40,41}` dan `KAMUS-KOLOM.md` §10.6–§10.8.
+Perilaku hapus seluruhnya dari `ERD.md` §2.5 (rantai induk, `ikut hapus`) dan §2.7 (rujukan acuan,
+`tolak`).
+
+⛔ **Kunci alaminya DIPASANG**, berbeda dari enam tabel ronde 6 yang ditahan: ketiganya sudah
+bernomor di `Z00_KUNCI_ALAMI.sql` — `INV-16` untuk kedua `UQ_PENYEBARAN`, `INV-65` untuk
+`UQ_RINCIAN_PENYEBARAN`. ⚠️ `NILAI_PENYEBARAN` **tidak** dapat nomor, jadi ia ikut tagihan §13.
+
+### PENYEBARAN — induk polimorfik
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_PENYEBARAN` | bilangan bulat | tidak | PK | keputusan tiket 38 — **baru** |
+| `ID_BAGIAN` | bilangan bulat | ya | FK UQ | salah satu dari **dua** pelekatan; tepat satu terisi, dijaga `CK_PENYEBARAN_INDUK` |
+| `ID_DETAIL_PROPORSIONAL` | bilangan bulat | ya | FK UQ | pelekatan kedua, idem |
+| `ID_JENIS_REASURANSI` | bilangan bulat | tidak | FK UQ | tabel acuan — hapus `tolak`, §2.7 |
+| `ID_JENIS_REASURANSI_INDUK` | bilangan bulat | ya |  | penyebaran bersusun; ⚠️ **tanpa kunci asing** — sasarannya baris di tabel yang sama dan `ddl-usulan` pun tidak memasangnya |
+| `PERSEN_PENYEBARAN` | angka desimal | tidak |  | `NUMBER(38,20)` dipersempit ke `NUMBER(38,8)` — `KTV-A` |
+
+### RINCIAN_PENYEBARAN
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_RINCIAN_PENYEBARAN` | bilangan bulat | tidak | PK | keputusan tiket 38 — **baru** |
+| `ID_PENYEBARAN` | bilangan bulat | tidak | FK UQ | induknya, `ikut hapus` §2.5 |
+| `ID_JENIS_REASURANSI` | bilangan bulat | tidak | FK UQ | **kunci alami** `INV-65`; hapus `tolak` §2.7 |
+| `PERSEN_RINCIAN` | angka desimal | tidak |  | `KTV-A` |
+
+### NILAI_PENYEBARAN
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID_NILAI_PENYEBARAN` | bilangan bulat | tidak | PK | keputusan tiket 38 — **baru** |
+| `ID_RINCIAN_PENYEBARAN` | bilangan bulat | tidak | FK | induknya, `ikut hapus` §2.5 |
+| `NILAI` | angka desimal | tidak |  | `KTV-A` |
+| `KODE_MATA_UANG` | teks | tidak |  | ⚠️ **teks, bukan kunci asing** — mengikuti kelima paket uang yang sudah berdiri (`NILAI_MDP` dan saudaranya). `ERD.md` §2.7 menyatakan relasinya `tolak`; menormalkan satu tabel saja membuat dua bentuk untuk satu fakta. **Dicatat, bukan ditambal sendirian** |
+
+⛔ **`INV-32`, `INV-33`, `INV-52` tetap tidak dipasang** — ketiganya menuntut materialized view
+`REFRESH ON COMMIT`, dan `F-13` menyatakan modul ini belum punya pemantau kebasiannya.
+
+## M_TREATYIN_* — sembilan tabel PENDARATAN tab Treaty In
+
+Migrasi `430` (tabel) dan `431` (sequence), 3 Oktober 2026.
+
+⛔ **BUKAN tabel model baru, dan tidak menggantikan satu pun.** `PERIODE_PELAPORAN`, `PORTOFOLIO`,
+`EGNPI`, `RETENSI_CEDANT`, `TERMIN`, `RINCIAN_ANGSURAN`, dan `PERIODE_AKUMULASI` tetap berdiri
+persis seperti sebelumnya. Kedelapan tabel di bawah **mendaratkan larik di dalam
+`POOLDATA.M_TREATY_IN.JSONDATA` apa adanya**, supaya layar berhenti mengurai CLOB pada setiap
+pembacaan. Keduanya hidup berdampingan sampai pemindahan tiket `44` selesai. Polanya sama dengan
+`MIGRASI_PENDARATAN`.
+
+⚠️ **Kedelapannya tidak punya kotak di ERD, dan itu wajar** — ERD menggambar entitas sistem lama,
+bukan tabel pendaratan. Lihat alasan yang sama pada `MIGRASI_KORELASI` di atas.
+
+### Ukuran — SELURUH 1.854 dokumen
+
+Disapu dengan mengurai ke-1.854 dokumen **secara utuh sebagai JSON**; nol dokumen gagal urai.
+Bukan contoh 300, bukan contoh 66.
+
+| Tabel | Larik JSON | Baris | Kontrak |
+| --- | --- | ---: | ---: |
+| `M_TREATYIN_REPORTINGPERIOD` | `ReportingPeriodList` | 4.548 | 1.137 |
+| `M_TREATYIN_PORTFOLIO` | `Portfolio` | 1.925 | 845 |
+| `M_TREATYIN_ACCUMULATION` | `AccumulationList` | 60 | 18 |
+| `M_TREATYIN_EGNPI` | `EGNPI` | 2.298 | 846 |
+| `M_TREATYIN_RETENTION` | `Retention` | 2.511 | 808 |
+| `M_TREATYIN_INSTALLMENT` | `Installment` | 796 | 768 |
+| `M_TREATYIN_INSTALLMENTITEM` | `Installment[].InstallmentList` | 3.033 | 768 |
+| `M_TREATYIN_COMMENT` | `CommentList` | 11.365 | 1.837 |
+| `M_TREATYIN_COINSCALE` | `CoInScale` | 702 | 186 |
+| | **TOTAL** | **27.238** | |
+
+### Tiga kolom struktur, sama di kesembilan tabel
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | `NUMBER(19)` | tidak | PK | `SEQ_MTI_<TAB>` — INV-02 |
+| `MASTERID` | `VARCHAR2(100 CHAR)` | tidak | UQ(1) | `M_TREATY_IN.ID` — ⚠️ **nilai, BUKAN kunci asing**, lihat di bawah |
+| `URUTAN` | `NUMBER(10)` | tidak | UQ(2) | indeks elemen di dalam lariknya, dari 0 |
+
+⛔ **`MASTERID` bukan kunci asing sebab ia TIDAK DAPAT menjadi kunci asing.** `POOLDATA.TREATY_IN`
+tidak punya kunci utama maupun `UNIQUE` pada `ID` — kolomnya bahkan `NULLABLE` — sehingga Oracle
+menolaknya dengan ORA-02270. Uraian lengkap beserta **syarat pembalikannya** di
+[`KEPUTUSAN-PENYELARASAN-REPO.md`](KEPUTUSAN-PENYELARASAN-REPO.md) §12.
+
+⛔ **`URUTAN` bukan hiasan.** Larik Pega **berurut**: `Installment` nomor 1, 2, 3 bukan himpunan.
+Urutan yang hilang tidak terlihat sampai seseorang membandingkan layar dengan sistem lama.
+
+⚠️ **`UNIQUE (MASTERID, URUTAN)` adalah invarian PEMUAT, bukan invarian bisnis**, jadi ia tidak
+menagih nomor di `SPEC-INVARIAN.md` — aturan `Z00_KUNCI_ALAMI.sql` berlaku untuk yang kedua. Ia ada
+sebab pemuatnya wajib **idempoten**, dan idempotensi yang hanya dijaga kode pemanggil benar sampai
+dua pemuat berjalan bersamaan.
+
+### Kolom isi — seluruhnya `VARCHAR2`, dan panjang yang MENGUKURNYA
+
+Setiap nilai di dalam `JSONDATA` adalah string JSON, termasuk yang terlihat seperti angka dan
+tanggal. Kolom "maks" di bawah adalah panjang **terpanjang yang benar-benar ada** di ke-1.854
+dokumen; lebar kolomnya diberi kelonggaran di atas angka itu.
+
+| Tabel | Kunci JSON → kolom | maks | lebar |
+| --- | --- | ---: | ---: |
+| `REPORTINGPERIOD` | `AutoCalculate` | 5 | 50 |
+| | `ConfirmationDue` | 8 | 50 |
+| | `InitialDate` | 23 | 50 |
+| | `Period` | 4 | 50 |
+| | `SettlementDue` | 8 | 50 |
+| | `SubmissionDue` | 8 | 50 |
+| | `pxObjClass` → `PXOBJCLASS` | 39 | 200 |
+| `PORTFOLIO` | `Description` | **869** | 4000 |
+| | `Type` | 7 | 100 |
+| | `TypePortfolio` | 10 | 100 |
+| | `pxObjClass` | 35 | 200 |
+| `ACCUMULATION` | `Period` | 3 | 50 |
+| | `ReportDate` | 23 | 50 |
+| | `SubDays` | 2 | 50 |
+| | `SubDueDate` | 23 | 50 |
+| | `pxObjClass` | 38 | 200 |
+| `EGNPI` | `Amount` | 20 | 100 |
+| | `AmountIDR` | 25 | 100 |
+| | `AsDate` | 8 | 50 |
+| | `ClassOfBusiness` | 32 | 200 |
+| | `Currency` | 3 | 50 |
+| | `CurrencyID` | 5 | 50 |
+| | `Note` | **2.025** | 4000 |
+| | `Proportion` | 24 | 100 |
+| | `TreatyGroup` | 23 | 200 |
+| | `TreatyGroupID` | 5 | 50 |
+| | `pyTemplateRichTextEditor` | 3 | 50 |
+| | `pxObjClass` | 31 | 200 |
+| `RETENTION` | `Amount` | 13 | 100 |
+| | `ClassOfBusiness` | 32 | 200 |
+| | `Currency` | **9** ⚠️ | 50 |
+| | `CurrencyID` | 5 | 50 |
+| | `Note` | **1.568** | 4000 |
+| | `TreatyGroup` | 23 | 200 |
+| | `TreatyGroupID` | 5 | 50 |
+| | `pxObjClass` | 35 | 200 |
+| `INSTALLMENT` | `AmountTotal` | **61** ⚠️ | 200 |
+| | `Currency` | 3 | 50 |
+| | `PctTotal` | 18 | 100 |
+| | `pxListSubscript` | 1 | 50 |
+| | `pxObjClass` | 37 | 200 |
+| `INSTALLMENTITEM` | `IDINDUK` — kunci asing ke induknya | — | `NUMBER(19)` |
+| | `Amount` | 60 | 200 |
+| | `Currency` | 3 | 50 |
+| | `DueDate` | 8 | 50 |
+| | `Installment` | 1 | 50 |
+| | `InstallmentPct` | 18 | 100 |
+| | `PaymentDate` | 8 | 50 |
+| | `WPC` | 2 | 50 |
+| | `pxObjClass` | 37 | 200 |
+| `COMMENT` | `Date` → **`TANGGAL`** | 23 | 50 |
+| | `ConvertDate` | 1 | 50 |
+| | `HasHistory` | 1 | 50 |
+| | `IsApproved` | 16 | 100 |
+| | `OperatorName` | 17 | 200 |
+| | `Suggest` | **2.171** | 4000 |
+| | `pxObjClass` | 29 | 200 |
+
+⚠️ **Dua angka yang menjelaskan kenapa seluruhnya teks:**
+
+- `Installment.AmountTotal` terpanjang **61 aksara** —
+  `1323411750.0000008394305684816601000000000000000000000000000`. `NUMBER(38,8)` akan
+  **membulatkannya, diam-diam**, dan hasilnya tetap terlihat seperti angka yang masuk akal.
+  Di sisi Go, `encoding/json` tanpa `UseNumber()` melakukan kerusakan yang sama lewat `float64`;
+  `TestAngkaPanjangTidakDibulatkan` menguncinya.
+- `Retention.Currency` terpanjang **9 aksara**, isinya **`1/04/2023`** — tanggal di dalam kolom
+  mata uang. Ia harus mendarat apa adanya supaya dapat **ditemukan**, bukan ditolak di pintu.
+
+⛔ **`Date` menjadi `TANGGAL`.** `DATE` kata cadangan Oracle (ORA-00923),
+`TestNolKataCadanganOracleSebagaiKolom`. Sepuluh nama berisiko lain — `TYPE`, `PERIOD`, `NOTE`,
+`AMOUNT`, `INSTALLMENT`, `DESCRIPTION`, `CURRENCY`, `SUGGEST`, `PROPORTION`, `URUTAN` — diuji satu
+per satu dengan `SELECT 1 AS <nama> FROM DUAL` di Oracle DEV, dan kesepuluhnya lolos.
+
+### M_TREATYIN_COINSCALE — tabel pendaratan KESEMBILAN, tab Co-Ins Scale
+
+Migrasi `432` (tabel) dan `433` (sequence), 3 Oktober 2026. Mengikuti pola kedelapan tabel di atas
+tanpa satu pun kekecualian.
+
+| Kolom | Tipe | Null | Kunci | Sumber · maks terukur |
+| --- | --- | --- | --- | --- |
+| `ID` | `NUMBER(19)` | tidak | PK | `SEQ_MTI_COINSCALE` — INV-02 |
+| `MASTERID` | `VARCHAR2(100 CHAR)` | tidak | UQ(1) | `M_TREATY_IN.ID` — nilai, bukan kunci asing |
+| `URUTAN` | `NUMBER(10)` | tidak | UQ(2) | indeks elemen, dari 0 |
+| `COINSHARE` | `VARCHAR2(200 CHAR)` | ya | | `CoInShare` — **17** |
+| `PCTLIMIT` | `VARCHAR2(50 CHAR)` | ya | | `PctLimit` — 3 |
+| `PXCREATEDATETIME` | `VARCHAR2(50 CHAR)` | ya | | `pxCreateDateTime` — 23 |
+| `PXCREATEOPNAME` | `VARCHAR2(200 CHAR)` | ya | | `pxCreateOpName` — 24 |
+| `PXCREATEOPERATOR` | `VARCHAR2(200 CHAR)` | ya | | `pxCreateOperator` — 17 |
+| `PXCREATESYSTEMID` | `VARCHAR2(100 CHAR)` | ya | | `pxCreateSystemID` — 13 |
+| `PXOBJCLASS` | `VARCHAR2(200 CHAR)` | ya | | `pxObjClass` — 35 |
+
+**702 baris dari 186 kontrak**, terbanyak 5 per kontrak.
+
+⛔ **`COINSHARE` TEKS, dan itu bukan kemalasan.** Nilainya PITA, bukan bilangan:
+`>=30% up to < 50%`, `>=25%`. Kolom angka akan menolak seluruh 702 barisnya, dan pemformat angka
+di layar mengembalikannya apa adanya justru untuk kasus ini.
+
+⚠️ **Keempat medan jejak Pega dibawa**, meski rancangannya menyebut *"dua medan saja"*: keempatnya
+ada pada **701 dari 702** elemen, dan ia satu-satunya catatan siapa yang menyusun skala itu dan
+kapan — pertanyaan yang akan ditanyakan, sebab Co-Ins Scale adalah tab yang angkanya
+dinegosiasikan.
+
+## Empat tab dari `M_TREATY_IN2` — NOL tabel baru
+
+Tab **Limits · Share · Event Limits · RNM Share** dibaca dari `POOLDATA.M_TREATY_IN2`, tabel
+warisan datar 41 kolom, **satu baris per layer**. ⛔ **Nol tabel pendaratan dibuat untuk
+keempatnya**, nol pemuatan, nol migrasi menyentuhnya — `repository/warisan_in2.go` BACA SAJA.
+
+| | |
+| --- | ---: |
+| baris | 7.281 |
+| kontrak | **1.340 dari 1.854** |
+| `(MASTERID, LAYER)` berbeda | 2.540 |
+
+⚠️ **Jangkauannya tidak penuh, dan layar mengatakannya.** 510 kontrak punya `Limits[]` berisi di
+dokumennya (1.210 elemen) tanpa satu baris pun di tabel ini. Grid kosong di keempat tab itu
+karena itu **tidak boleh** berbunyi *"kontrak ini memang tidak punya"*.
+
+Pemetaan kolom demi kolom, dua garis buktinya, penggolongan angkanya, dan kesepuluh kolom kepala
+yang tidak ditampilkan: [`PEMETAAN-M-TREATY-IN2.md`](PEMETAAN-M-TREATY-IN2.md).
+
+⛔ **Pemindaian 41 kolom BERPOSISI** adalah kode paling mudah rusak di jalur ini: satu medan yang
+tergeser memindahkan seluruh nilai sesudahnya ke kolom tetangganya, dan hasilnya tetap berupa grid
+yang terisi rapi. `TestPindaiLayerSejajarDenganDaftarKolom` mengadu komentar tiap penugasan dengan
+daftar kolomnya satu per satu.
+
+### ⛔ `AchievementLists` TIDAK ada di sini, dan itu temuan
+
+Rancangan ronde ini mendaftarnya sebagai tabel kesembilan, `M_TREATYIN_ACHIEVEMENT`, berinduk
+`MASTERID`. Sapuan menemukan ia **tidak ada sebagai kunci puncak** — **nol kemunculan** di 1.854
+dokumen. Jalur sebenarnya:
+
+| Jalur | Kemunculan | Kosong |
+| --- | ---: | ---: |
+| `Limits[].Detail[].AchievementLists` | 1.961 | 859 |
+| `RevisionHistory[].Limits[].Detail[].AchievementLists` | 3 | 0 |
+
+Butirnya milik **satu baris `Limits[].Detail[]`**, bukan milik kontrak. Tabel berinduk `MASTERID`
+saja **tidak dapat menyatakan butir itu milik baris limit yang mana**, dan yang kehilangan induknya
+bukan sekadar kurang rapi: angka pencapaian yang menempel pada limit yang salah **terbaca benar**.
+Induknya hidup di `M_TREATY_IN2` — tabel warisan yang berbeda, 7.281 baris — sehingga tabelnya
+menuntut keputusan yang belum diambil: apakah `M_TREATY_IN2` ikut didaratkan.
+
+`TestAchievementBukanTabelPendaratan` menolak penambahannya diam-diam.
+
+### Jalur tulis, dan tiga sifat yang dituntut darinya
+
+Satu-satunya penulis kedelapan tabel ini adalah `repository/pendaratan_muat.go`, dikemudikan
+`services.MuatSatuKontrak` dan dijalankan `backend/pemuat/jalankan.go`.
+
+| Sifat | Diwujudkan di | Dibuktikan oleh |
+| --- | --- | --- |
+| **idempoten** | `KosongkanKontrak` berjalan sebelum setiap sisip, di transaksi yang sama; `UNIQUE (MASTERID, URUTAN)` jaring keduanya | `TestMuatDuaKaliTidakMenggandakan`, `TestUrutanGandaDitolakConstraint` |
+| **terbalikkan** | `KosongkanKontrak`, dan `alat/kosongkan-tab-treatyin.sql` untuk seluruh tabel — `DELETE`, bukan `TRUNCATE` | `TestKosongkanMengembalikanKeNolTanpaMenyentuhKontrakLain` |
+| **tercocokkan** | cacah baris diadu dengan cacah elemen dokumen, **di dalam transaksi**, sebelum diikat | `TestSepuluhKontrakNyataMuatDanCocok` |
+
+⚠️ **`DELETE`, bukan `TRUNCATE`.** `TRUNCATE` ber-DDL dan karena itu **mengikat transaksinya**;
+pemuat yang gagal di tengah lalu `ROLLBACK` tidak akan mendapatkan kembali apa yang `TRUNCATE`
+buang.
+
+### Jalur baca — DUA BELAS tab berisi, satu mekanisme untuk prop dan non-prop
+
+| Tab | Sumber hari ini | Pembaca |
+| --- | --- | --- |
+| Reporting Period | `M_TREATYIN_REPORTINGPERIOD` | `repository.BacaPeriodePelaporan` |
+| Portfolio | `M_TREATYIN_PORTFOLIO` | `repository.BacaPortofolio` |
+| Accumulation | `M_TREATYIN_ACCUMULATION` | `repository.BacaAkumulasi` |
+| EGNPI | `M_TREATYIN_EGNPI` | `repository.BacaEgnpi` |
+| Maximum Retention | `M_TREATYIN_RETENTION` | `repository.BacaRetensi` |
+| Installment | `M_TREATYIN_INSTALLMENTITEM` | `repository.BacaAngsuran` |
+| Information & Submit | `M_TREATYIN_COMMENT` | `repository.BacaCatatan` |
+| Co-Ins Scale | `M_TREATYIN_COINSCALE` | `repository.BacaSkalaKoasuransi` |
+| **Limits · Share · Event Limits · RNM Share** | **`M_TREATY_IN2`** *(warisan, baca saja)* | `repository.BacaLayerWarisan` — satu seam, empat proyeksi |
+| Rate of Exchange | ⚠️ **masih `JSONDATA.CurrencyList`** | `repository.BacaKontrakWarisan` |
+| **Exclusions · Special Conditions** | **`M_TREATY_IN.JSONDATA`** — Jalan B, keputusan §15 | `services.PilihTabTeks`, dipilih menurut cabang |
+| Retro · Value Difference · Achievement In IDR | `.trin__belum` — lihat sebabnya di bawah | — |
+
+**Yang masih `.trin__belum`, dan sebabnya BERBEDA tiap tab:**
+
+| Tab | Sebab |
+| --- | --- |
+| Retro | **DITUNDA** oleh pemilik proses 4 Oktober 2026 ([`KEPUTUSAN` §14](KEPUTUSAN-PENYELARASAN-REPO.md)) — 2 kontrak dari 1.854 tidak cukup merancang tiga tabel bersarang. ⛔ Kedua kontraknya **DITANDAI**: `1000493` dan `1000755`, lihat §14.1 |
+| Value Difference | ia **objek** berisi `EGNPI`/`Limits`/`Share` dan sembilan `Total*` — potret nilai sebelum perubahan, bukan teks. Dikeluarkan dari tab teks oleh [`KEPUTUSAN` §15](KEPUTUSAN-PENYELARASAN-REPO.md); ia milik tiket `06`/`11`/`13` (`NILAI_SELISIH`) |
+| Achievement In IDR | induknya `Limits[].Detail[]` di `M_TREATY_IN2`, bukan kontrak — lihat bab `AchievementLists` di bawah |
+
+### Dua tab TEKS — Jalan B, nol tabel
+
+**Exclusions** dan **Special Conditions** dibaca dari `M_TREATY_IN.JSONDATA` lewat jalur warisan
+yang sudah ada. ⛔ **Nol tabel pendaratan untuk keduanya** — keputusan
+[§15](KEPUTUSAN-PENYELARASAN-REPO.md): layarnya baca-saja, dokumennya sudah ditarik untuk medan
+lain, dan isinya sampai **23.453 aksara** sehingga Jalan A pun menuntut `CLOB`.
+
+| Tab | Ejaan proporsional | Ejaan non-proporsional | Ejaan ketiga |
+| --- | --- | --- | --- |
+| Exclusions | `ExclusionsP` 1.155 | `Exclusions` 896 | — |
+| Special Conditions | `SpecialConditionsP` 1.022 | `SpecialConditions` 686 | ⚠️ `SpecialConditionsp` **292** |
+
+⛔ **Ejaannya BUKAN sinonim.** Dari **303** dokumen yang punya lebih dari satu ejaan
+`SpecialConditions*`, **nol** yang isinya identik. Karena itu: ejaan yang sesuai cabang dipakai;
+bila ia tidak ada hasilnya **kosong**, bukan ejaan lain; dan ejaan lain yang berisi **disebut di
+layar**. Uraiannya beserta sebarannya di [`KEPUTUSAN` §15.1](KEPUTUSAN-PENYELARASAN-REPO.md).
+
+⚠️ Cabangnya dibaca dari **kolom** `TREATY_IN.PROPORTIONTYPE`, bukan dari kunci `ProportionType`
+di dalam dokumen — kuncinya tidak ada pada tiga kontrak (`1001854`–`1001856`).
+
+⛔ **SATU MEKANISME untuk prop dan non-prop.** Nol cabang menurut `PROPORTIONTYPE` di jalur baca,
+dan tidak boleh ada: yang membedakan kedua cabang adalah tab mana yang **ditampilkan**, bukan dari
+mana isinya dibaca. Tab yang kosong mengembalikan nol baris, bukan galat.
+
+⛔ **`ORDER BY URUTAN` di ketiga kueri.** Tanpanya Oracle bebas mengembalikan baris dalam urutan
+apa pun, dan `Q 1`/`Q 2`/`Q 3` yang tertukar **terbaca benar**.
+`TestUrutanBarisSamaDenganUrutanDokumen` mengadunya dengan dokumen, bukan dengan dirinya sendiri.
+
+⚠️ **Rate of Exchange tetap di JSON, dan itu bukan kelalaian.** Ronde pemindahan melarang membuat
+tabelnya atas dasar `TREATYEXCHANGEYEARLY` sudah melayaninya; sapuan menemukan dasar itu keliru —
+tabel tersebut 140 baris per **tahun** dan nol kolomnya menunjuk kontrak, sementara `CurrencyList`
+**3.465 elemen di 1.844 kontrak**. Melepaskannya dari JSON menuntut tabel kesembilan, dan
+keputusan itu belum diambil. `4-erd-dan-tabel-datar/KOREKSI-ERD-VERSUS-POOLDATA.md` §12.
+
+⛔ **Kunci JSON tanpa kolom dilaporkan, bukan ditelan.** Pega menambah properti tanpa memberi tahu
+siapa pun, dan kunci baru yang tidak punya kolom hilang **tanpa galat** — pemuatnya tetap hijau dan
+cacah barisnya tetap cocok. `repository.KunciTakTerpetakan` mencarinya pada setiap pemuatan.

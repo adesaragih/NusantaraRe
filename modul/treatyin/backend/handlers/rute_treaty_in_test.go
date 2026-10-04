@@ -23,11 +23,31 @@ type gudangTiruan struct {
 	galat   error
 	// Tiket 40 - nil berarti versinya yang pertama.
 	versiDasar *models.VersiKontrak
+	// Tiket 42.
+	bukti models.BuktiArsip
+	// Layar daftar kontrak.
+	daftar []models.BarisDaftarKontrak
+	// Layar daftar WARISAN (`TREATY_IN`).
+	barisWarisan   []models.BarisDaftarWarisan
+	cacahWarisan   int
+	kontrakWarisan models.KontrakWarisan
 }
 
 // Tiket 32.
 func (g gudangTiruan) CatatPemulihanLimit(context.Context, int64, []models.PemulihanLimit) error {
 	return g.galat
+}
+
+// Tiket 42.
+func (g gudangTiruan) SimpanArsipMuatanKeluar(context.Context, models.ArsipMuatanKeluar) error {
+	return g.galat
+}
+
+func (g gudangTiruan) BuktiArsipKontrak(context.Context, int64) (models.BuktiArsip, error) {
+	if g.galat != nil {
+		return models.BuktiArsip{}, g.galat
+	}
+	return g.bukti, nil
 }
 
 // Tiket 40.
@@ -72,7 +92,7 @@ func minta(t *testing.T, h http.Handler, jalur, pelaku string) *httptest.Respons
 func TestTanpaBasisDataMenjawab503(t *testing.T) {
 	h := handlers.RouterDengan(services.LayananDengan(gudangTiruan{}), false, true)
 
-	w := minta(t, h, handlers.Prefix+"/acuan/mata-uang", "AKUN-UJI")
+	w := minta(t, h, handlers.Prefix+"/acuan/jenis-potongan", "AKUN-UJI")
 
 	if w.Code != http.StatusServiceUnavailable {
 		t.Fatalf("mau 503, dapat %d", w.Code)
@@ -82,14 +102,14 @@ func TestTanpaBasisDataMenjawab503(t *testing.T) {
 func TestTanpaIdentitasMenjawab401(t *testing.T) {
 	h := handlers.RouterDengan(services.LayananDengan(gudangTiruan{}), true, true)
 
-	w := minta(t, h, handlers.Prefix+"/acuan/mata-uang", "")
+	w := minta(t, h, handlers.Prefix+"/acuan/jenis-potongan", "")
 
 	if w.Code != http.StatusUnauthorized {
 		t.Fatalf("mau 401, dapat %d (badan %s)", w.Code, w.Body.String())
 	}
 }
 
-// Himpunan di luar keenam menjawab 404, dan pesannya MENYEBUT yang diminta -
+// Himpunan di luar KELIMA menjawab 404, dan pesannya MENYEBUT yang diminta -
 // penolakan yang tidak menyebut apa yang ditolak membuat pemanggilnya menebak.
 func TestHimpunanTakDikenalMenjawab404(t *testing.T) {
 	h := handlers.RouterDengan(services.LayananDengan(gudangTiruan{}), true, true)
@@ -110,14 +130,15 @@ func TestHimpunanTakDikenalMenjawab404(t *testing.T) {
 	}
 }
 
-// Uji POSITIF: keenam himpunan menjawab 200 berbadan daftar.
-func TestKeenamHimpunanMenjawab200(t *testing.T) {
+// Uji POSITIF: KELIMA himpunan menjawab 200 berbadan daftar.
+// `mata-uang` dicabut 4 Oktober 2026 — migrasi 434.
+func TestKelimaHimpunanMenjawab200(t *testing.T) {
 	h := handlers.RouterDengan(
 		services.LayananDengan(gudangTiruan{isi: []models.Acuan{{ID: 7, Kode: "IDR", Nama: "Rupiah", Aktif: "1"}}}),
 		true, true)
 
 	for _, himpunan := range []string{
-		"mata-uang", "jenis-potongan", "kelas-bisnis", "kelompok-treaty", "bahaya", "jenis-reasuransi",
+		"jenis-potongan", "kelas-bisnis", "kelompok-treaty", "bahaya", "jenis-reasuransi",
 	} {
 		w := minta(t, h, handlers.Prefix+"/acuan/"+himpunan, "AKUN-UJI")
 		if w.Code != http.StatusOK {
@@ -181,4 +202,81 @@ func (g gudangTiruan) CatatKetentuanProporsional(_ context.Context, _, _, _ int6
 	}
 	_ = jenis
 	return nil
+}
+
+// Layar daftar kontrak — ronde layar 1.
+func (g gudangTiruan) DaftarKontrak(context.Context) ([]models.BarisDaftarKontrak, error) {
+	if g.galat != nil {
+		return nil, g.galat
+	}
+	return g.daftar, nil
+}
+
+// Layar daftar WARISAN — jalur baca `TREATY_IN`.
+func (g gudangTiruan) CacahKontrakWarisan(context.Context) (int, error) {
+	if g.galat != nil {
+		return 0, g.galat
+	}
+	return g.cacahWarisan, nil
+}
+
+func (g gudangTiruan) DaftarKontrakWarisan(_ context.Context, offset, batas int) ([]models.BarisDaftarWarisan, error) {
+	if g.galat != nil {
+		return nil, g.galat
+	}
+	// Memotong seperti basis data memotong, supaya uji penomoran halaman
+	// menguji penomorannya - bukan tiruan yang selalu mengembalikan semua.
+	if offset >= len(g.barisWarisan) {
+		return []models.BarisDaftarWarisan{}, nil
+	}
+	akhir := offset + batas
+	if akhir > len(g.barisWarisan) {
+		akhir = len(g.barisWarisan)
+	}
+	return append([]models.BarisDaftarWarisan{}, g.barisWarisan[offset:akhir]...), nil
+}
+
+// Satu kontrak WARISAN.
+func (g gudangTiruan) BacaKontrakWarisan(_ context.Context, id string) (models.KontrakWarisan, error) {
+	if g.galat != nil {
+		return models.KontrakWarisan{}, g.galat
+	}
+	return g.kontrakWarisan, nil
+}
+
+// Tab yang PINDAH ke tabel pendaratan migrasi 430.
+func (g gudangTiruan) BacaPeriodePelaporan(_ context.Context, _ string) ([]models.BarisPeriodeWarisan, error) {
+	return nil, nil
+}
+
+func (g gudangTiruan) BacaPortofolio(_ context.Context, _ string) ([]models.BarisPortofolioWarisan, error) {
+	return nil, nil
+}
+
+func (g gudangTiruan) BacaAkumulasi(_ context.Context, _ string) ([]models.BarisAkumulasiWarisan, error) {
+	return nil, nil
+}
+
+// Empat tab pendaratan berikutnya — tiruan datar; perilakunya diuji di
+// `services`, bukan di sini.
+func (g gudangTiruan) BacaEgnpi(_ context.Context, _ string) ([]models.BarisEgnpiWarisan, error) {
+	return nil, nil
+}
+func (g gudangTiruan) BacaRetensi(_ context.Context, _ string) ([]models.BarisRetensiWarisan, error) {
+	return nil, nil
+}
+func (g gudangTiruan) BacaAngsuran(_ context.Context, _ string) ([]models.BarisAngsuranWarisan, error) {
+	return nil, nil
+}
+func (g gudangTiruan) BacaCatatan(_ context.Context, _ string) ([]models.BarisCatatanWarisan, error) {
+	return nil, nil
+}
+
+// Empat tab dari `M_TREATY_IN2` - satu seam untuk keempatnya.
+func (g gudangTiruan) BacaLayerWarisan(_ context.Context, _ string) ([]models.BarisLayerWarisan, error) {
+	return nil, nil
+}
+
+func (g gudangTiruan) BacaSkalaKoasuransi(_ context.Context, _ string) ([]models.BarisSkalaKoasuransiWarisan, error) {
+	return nil, nil
 }

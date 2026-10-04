@@ -104,6 +104,16 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, services.ErrNomorUrutVersiGanda):
 		// 409: keadaan DATA menolak - INV-04. Pesannya menyebut nomornya.
 		galat.Tulis(w, http.StatusConflict, services.Pesan(err))
+	case services.WarisanTidakAda(err):
+		// 404: pengenalnya tidak menunjuk kontrak warisan mana pun.
+		galat.Tulis(w, http.StatusNotFound, services.Pesan(err))
+	case services.WarisanJSONRusak(err):
+		// 500, dan pesannya MENYEBUT KONTRAKNYA. Dokumen warisan yang tidak
+		// dapat diurai bukan kesalahan pemanggil — ia cacat data yang harus
+		// dapat ditemukan, dan "invalid character" tanpa pengenal membuat
+		// yang menyelidiki memeriksa 1.854 dokumen.
+		log.Printf("treaty in: %v", err)
+		galat.Tulis(w, http.StatusInternalServerError, services.Pesan(err))
 	case errors.Is(err, services.ErrKontrakTidakAda):
 		galat.Tulis(w, http.StatusNotFound, services.Pesan(err))
 	case errors.Is(err, services.ErrHimpunanTidakAda):

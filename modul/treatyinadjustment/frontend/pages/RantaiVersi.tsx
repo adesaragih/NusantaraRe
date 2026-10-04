@@ -73,6 +73,7 @@ export default function RantaiVersi() {
     <div className="inbox">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{MENU_TREATYINADJUSTMENT.rantaiVersi}</h2>
+        <p className="tria__aturan">{RANTAI_VERSI.keterangan}</p>
       </header>
       {/* Judul panel menyebut kontrak yang sedang dibuka begitu ada yang
           dipilih - rantai versi tanpa nama kontraknya menuntut pembacanya

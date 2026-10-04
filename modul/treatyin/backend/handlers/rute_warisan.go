@@ -51,6 +51,40 @@ func daftarkanWarisan(pasang func(string, rute)) {
 		tulis(w, hasil, err)
 	})
 
+	// Tiket 42 — arsip disimpan. SATU arah: menulis.
+	pasang("POST "+Prefix+"/kontrak/{id}/arsip", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		id, ok := pengenal(w, r)
+		if !ok {
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, batasBadanJSON)
+		var a models.ArsipMuatanKeluar
+		if err := json.NewDecoder(r.Body).Decode(&a); err != nil {
+			galat.Tulis(w, http.StatusBadRequest, "request body must be valid JSON")
+			return
+		}
+		a.IDKontrak = id
+		if jawabGalat(w, l.SimpanArsipMuatanKeluar(r.Context(), p, a)) {
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	// Tiket 42 — BUKTI arsipnya ada. BUKAN isinya.
+	//
+	// ⛔ NOL rute yang mengembalikan muatan, dan itu pernyataan keputusan:
+	// `ADR-0034` menyatakan arsipnya disimpan dan jalur bacanya tidak ada.
+	// Siapa pun yang menambahkan `GET .../arsip/{n}/muatan` membalikkan ADR
+	// itu tanpa membukanya — dan `TestArsipTidakPunyaJalurBaca` akan merah.
+	pasang("GET "+Prefix+"/kontrak/{id}/arsip", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		id, ok := pengenal(w, r)
+		if !ok {
+			return
+		}
+		bukti, err := l.BuktiArsipKontrak(r.Context(), p, id)
+		tulis(w, bukti, err)
+	})
+
 	// Tiket 41 — identitas kontrak dalam bentuk sistem lama, diturunkan.
 	pasang("GET "+Prefix+"/kontrak/{id}/bentuk-lama", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		id, ok := pengenal(w, r)

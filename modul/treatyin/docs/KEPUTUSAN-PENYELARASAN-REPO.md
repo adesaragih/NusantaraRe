@@ -192,3 +192,229 @@ dijalankan, dan membiarkannya menunggu di folder `alat/` membuatnya terbaca seba
 masih berlaku. Isinya tercatat di sini: 29 `DROP TABLE`, 29 `DROP SEQUENCE`, dan satu `DELETE` atas
 `T_MIGRASI`. Bila kelak dibutuhkan lagi, ia dibangkitkan ulang dari daftar tabel di
 `STRUKTUR-TABEL-TREATY-IN.md`.
+
+---
+
+## 12 · `MASTERID` BUKAN kunci asing — tabel pendaratan tab Treaty In
+
+**Keputusan, 3 Oktober 2026.** Migrasi `430` membuat delapan tabel `M_TREATYIN_*` yang
+mendaratkan larik di dalam `POOLDATA.M_TREATY_IN.JSONDATA`. Rancangannya menyebut `MASTERID`
+sebagai **kunci asing ke `TREATY_IN.ID`**. Kunci asing itu **tidak dibuat**, dan sebabnya bukan
+selera.
+
+### 12.1 Kenapa — diukur, bukan diperkirakan
+
+Tiga kueri katalog di POOLDATA, 3 Oktober 2026:
+
+| Kueri | Hasil |
+| --- | --- |
+| `all_constraints` untuk `TREATY_IN`, `constraint_type IN ('P','U')` | **nol baris** |
+| `all_indexes` untuk `TREATY_IN` | satu, `INDEX_ID (ID)`, **NONUNIQUE** |
+| `all_tab_columns` untuk `TREATY_IN.ID` | `VARCHAR2(100)`, **`NULLABLE = Y`** |
+
+Oracle menolak `REFERENCES {skema}.TREATY_IN (ID)` dengan **ORA-02270** selama kolom rujukannya
+tidak memimpin kunci utama maupun `UNIQUE`. Ini bukan pilihan rancangan yang dapat ditimbang —
+pernyataannya **tidak dapat dijalankan**.
+
+⚠️ Datanya sendiri bersih: ke-1.854 `ID` unik dan terisi, panjang maksimum 7, dan nol baris
+`M_TREATY_IN` tanpa pasangan di `TREATY_IN`. **Yang hilang constraintnya, bukan integritasnya** —
+dan karena itu memasang kunci asing akan berhasil andai `TREATY_IN` boleh disentuh.
+
+### 12.2 Yang dipilih sebagai gantinya
+
+| | |
+| --- | --- |
+| **Apa** | `MASTERID VARCHAR2(100 CHAR) NOT NULL` pada kedelapan tabel, memimpin `UNIQUE (MASTERID, URUTAN)` — yang sekaligus melayani indexnya. Nol klausa `REFERENCES`. |
+| **Siapa yang menjaga keterhubungan** | pemuat (`services.MuatSatuKontrak`), yang hanya pernah menulis `MASTERID` yang baru saja ia baca dari `M_TREATY_IN.ID`, dan rekonsiliasinya, yang mengadu cacah baris dengan cacah elemen dokumen. |
+| **Perilaku hapus dari kontrak** | `ikut hapus`, dijalankan `repository.KosongkanKontrak` — bukan oleh basis data. |
+| **Satu kunci asing yang ADA** | `FK_MTI_INSTALLMENTITEM_1`, `M_TREATYIN_INSTALLMENTITEM.IDINDUK` → `M_TREATYIN_INSTALLMENT.ID`, `ON DELETE CASCADE`. Keduanya tabel baru, jadi di sana tidak ada penghalang. |
+| **Preseden di modul ini** | `MIGRASI_KORELASI.ID_KONTRAK_BARU` dan `MIGRASI_PENDARATAN.KUNCI_WARISAN` — keduanya **nilai, bukan kunci asing**, dengan sebab yang berbeda (jejak asal-usul harus bertahan melewati penghapusan barisnya). Bentuknya sama; alasannya tidak, dan itu disebut supaya tidak terbaca sebagai satu aturan. |
+| **Ongkos yang dibayar** | basis data **tidak** menolak `MASTERID` yang menunjuk kontrak yang tidak ada, dan **tidak** membersihkan baris pendaratan ketika barisan `TREATY_IN` dibuang oleh jalur lain. Keduanya nyata. |
+
+### 12.3 Syarat pembalikan
+
+Keputusan ini **dibalik** begitu salah satu dari dua hal terjadi:
+
+1. **`POOLDATA.TREATY_IN` memperoleh kunci utama atau `UNIQUE` pada `ID`** — oleh siapa pun, atas
+   sebab apa pun. Sejak saat itu `ORA-02270` berhenti berlaku, dan kedelapan `MASTERID` menjadi
+   kunci asing lewat migrasi `ALTER TABLE ... ADD CONSTRAINT FK_MTI_<TAB>_MST`, perilaku hapus
+   `ON DELETE CASCADE`, didaftarkan di `TestPerilakuHapusSesuaiERD`.
+2. **Sumber pendaratan berpindah dari `TREATY_IN` ke `KONTRAK`/`VERSI_KONTRAK` model baru** —
+   yang punya kunci utama sejak migrasi `401`. Pada titik itu `MASTERID` berganti menjadi
+   `ID_VERSI_KONTRAK NUMBER(19)` dengan kunci asing biasa, dan kedelapan tabel berhenti menjadi
+   tabel pendaratan.
+
+⛔ Sampai salah satunya terjadi, **jangan "memperbaiki" ketiadaan kunci asing ini dengan menyentuh
+`TREATY_IN`.** DDL terhadap tabel warisan dilarang, dan `TestPendaratanTidakMerujukTabelWarisanDenganKunciAsing`
+menolak jalan pintasnya.
+
+---
+
+## 13 · Persen SHARE tampil **8 desimal** — bukan 2, bukan tanpa batas
+
+**Keputusan pemilik proses, 4 Oktober 2026**, menjawab
+[`PERTANYAAN-TERBUKA-PERSEN-SHARE.md`](PERTANYAAN-TERBUKA-PERSEN-SHARE.md).
+
+| | |
+| --- | --- |
+| **Apa** | `labels.ts` memperoleh `DESIMAL_PERSEN_SHARE = 8`, dipakai cabang `case 'persenShare'` di `selAngka` menggantikan `DESIMAL_TAK_DIBATASI`. `DESIMAL_UANG = 4` dan `DESIMAL_PERSEN = 2` **tidak berubah**. |
+| **Kena pada** | `CESSIONPCT` · `RNMSHARE` · `QSOR` · `QSRI` · `BROKERAGEPERCENTP` (dari `M_TREATY_IN2`) dan `PctLimit` (tab Co-Ins Scale) — persen yang beberapa barisnya **dijumlahkan dan harus menghasilkan 100**. |
+| **TIDAK kena pada** | `MDP_RATIO` · `ADJ_RATE` · `ROL`, yang tetap 2 desimal: ketiganya tidak dijumlahkan menjadi 100, dan dua di antaranya memang melampaui 100 (109,6 dan 199,4 terukur). |
+| **Kenapa bukan 2** | `SD-05`/`BR-01` benar — tiga share `33,333` berjumlah tepat 100, tiga share `33,33` tidak. |
+| **Kenapa bukan tanpa batas** | `2,825601535925207120348922139444%` (30 desimal, nyata di satu kontrak) tidak terbaca di dalam sel grid. Dan penyimpanannya **hanya 8 desimal** — `NUMBER(38,8)`, dijaga `TestNolNumberTanpaPresisi`: menampilkan 30 berarti mengaku lebih teliti daripada yang sistem simpan. |
+| **Kenapa 8** | sama persis dengan batas penyimpanan, dan untuk share seberapa pun realistis sifat jumlah-tepat-100 tetap terjaga. |
+| **Pembalikan** | ganti satu angka di `labels.ts`. Nilai tersimpan tidak pernah diformat, jadi perubahan tampilan tidak menyentuh satu baris data pun — itulah sebab §13 murah dibalik dan tidak perlu syarat tambahan. |
+
+### 13.1 ⚠️ Satu dari dua alasan penolakan 2 desimal TIDAK terpenuhi oleh 8 — diukur
+
+Pertanyaannya menolak 2 desimal dengan **dua** alasan. Yang kedua (`SD-05`/`BR-01`) terpenuhi oleh 8.
+Yang **pertama tidak**, dan itu diukur sesudah keputusan diterapkan:
+
+| Batas desimal | `formatPersen('99.999999999999900', n)` |
+| ---: | --- |
+| 2 · 6 · **8** · 10 · 12 | `100%` |
+| 13 ke atas, dan tanpa batas | `99,9999999999999%` |
+
+Pembulatannya setengah-ke-atas dan limpahannya merambat, jadi `PctTotal` `99.999999999999900`
+**tetap tampil `100%` pada 8 desimal** — persis hal yang alasan pertama ingin cegah. Selisihnya
+baru terlihat pada **13 desimal**, yang melampaui presisi penyimpanan.
+
+⛔ **Keputusan 8 tetap dijalankan apa adanya**, sebab alasan keduanya berdiri sendiri dan kuat.
+Yang dicatat di sini: **jangan mengira `PctTotal` yang tampil `100%` sudah pasti tepat 100.**
+Nilai yang tersimpan tetap utuh di tabel pendaratan (teks, nol tafsir), jadi pemeriksaan presisi
+penuh dilakukan di sana, bukan di layar.
+
+⚠️ **Ditagih balik ke pemilik proses:** bila selisih `PctTotal` memang harus terlihat di layar,
+ia menuntut perlakuan tersendiri — bukan perubahan `DESIMAL_PERSEN_SHARE`, sebab 13 desimal akan
+melanggar batas penyimpanan yang jadi alasan kedua. `TestPersenShareDipotongPadaDelapan`
+mengunci perilaku yang berlaku hari ini, lengkap dengan kasus `100%`-nya.
+
+### 13.2 Pita tidak diberi tanda `%` kedua
+
+Diperbaiki bersama §13, sebab ia muncul saat mengujinya: `formatPersen` mengembalikan teks
+bukan-angka apa adanya **lalu menempelkan `%`**, sehingga pita `>=30% up to < 50%` menjadi
+`>=30% up to < 50%%`. `selAngka` kini memeriksa lebih dulu apakah nilainya angka murni.
+
+⛔ Ini **bukan pemformat kedua** — `format.ts` tidak disentuh; yang berubah hanya **apakah** ia
+dipanggil. Hari ini hanya `CoInShare` berbentuk pita dan ia digolongkan `teks`, jadi jalur ini
+tidak pernah terpicu; penjaganya ada untuk salah-golong berikutnya, yang jaraknya satu huruf.
+
+---
+
+## 14 · Tab Retro **DITUNDA**, dan kedua kontraknya **DITANDAI**
+
+**Keputusan pemilik proses, 4 Oktober 2026**, menjawab
+[`PERTANYAAN-TERBUKA-RETRO.md`](PERTANYAAN-TERBUKA-RETRO.md).
+
+| | |
+| --- | --- |
+| **Apa** | nol tabel, nol pemuat, nol layar untuk Retro. Tabnya **tetap** `.trin__belum` — yang kurang kodenya, bukan datanya. |
+| **Kenapa** | **2 kontrak dari 1.854** tidak cukup untuk merancang tiga tabel bersarang. Model yang diturunkan dari dua contoh akan salah di tempat yang tidak ada contoh ketiga untuk membantahnya, dan ongkos salahnya mahal: tiga tabel, satu pemuat, satu rekonsiliasi, dan presisi yang tidak dapat dipersempit lagi sesudah data masuk. Delapan dari tujuh belas medannya turunan (`Total*`, `INV-58`), jadi isi nyatanya sekitar sembilan. |
+| **Penandaannya** | `repository/warisan_retro.go` — `KontrakRetroTertunda = ["1000493", "1000755"]`, `LarikRetroTertunda`, dan `AlasanRetroTertunda`. Keduanya `NonProportional`, 2 elemen masing-masing. |
+| **Pembalikan** | begitu kontrak **ketiga** memperoleh `RetroList`, dasar penundaan berubah dan keputusan ini ditinjau ulang — bukan daftarnya yang diperbarui. |
+
+### 14.1 Penandaannya disapu MESIN, dalam tiga lapis
+
+Catatan yang hanya hidup di dokumen dibaca oleh yang mencarinya. Yang diperlukan di sini adalah
+sesuatu yang lewat di depan yang **tidak** mencarinya — orang yang menyimpulkan *"27.238 cocok,
+selesai"*. Tiga lapis, dan ketiganya diperlukan:
+
+| Lapis | Wujud | Kapan ia bicara |
+| --- | --- | --- |
+| **1 · daftar** | `repository.KontrakRetroTertunda` | saat seseorang `grep` pengenalnya |
+| **2 · uji** | `TestKontrakRetroTertundaMasihDuaItu` (`-tags db`) — **mengukur ulang dari Oracle**, menyaring calon dengan `DBMS_LOB.INSTR` lalu **mengurai JSON** atas kunci puncak | tiap `make test-db-treatyin` |
+| **3 · pemuat** | `cetakPenandaRetro()` di `backend/pemuat/jalankan.go`, tercetak pada **tiap `-cocokkan`** | saat rekonsiliasi dijalankan |
+
+⛔ Lapis 2 sengaja **tidak** mempercayai penyaringan teks saja: kunci dapat muncul bersarang, dan
+sapuan substring atas dokumen bersarang sudah pernah menipu ronde ini sekali — `EGNPI` terbaca
+155 padahal 846. Yang memutuskan pengurai JSON, atas kunci puncak.
+
+Lapis 2 juga menagih hal kedua: **nol tabel pendaratan boleh memuat `RetroList`.** Bila suatu
+hari ada, penanda ini dan tabelnya saling membantah, dan ujinya merah.
+
+### 14.2 ⛔ Kewajiban bila Retro kelak dibangun
+
+**`ShareSumary` WAJIB diadili lebih dulu: turunan dari `Share`, atau bukan.** Bila turunan,
+`INV-58` melarangnya dan yang tersisa **dua** tabel, bukan tiga. Kewajiban ini ditulis di sini
+dan bukan ditinggalkan sebagai hal yang diingat orang.
+
+*(Ejaan `ShareSumary` adalah ejaan ekspor apa adanya, bukan salah ketik berkas ini.)*
+
+### 14.3 Kapan penandanya dihapus
+
+**Bersama tabelnya, dalam ronde yang sama** — berkas `warisan_retro.go`, ujinya, dan panggilan
+`cetakPenandaRetro()` sekaligus. Jangan lebih awal: tenggang waktu saat penandanya sudah hilang
+tetapi datanya belum pindah adalah persis lubang yang penanda ini ada untuk mencegahnya.
+
+---
+
+## 15 · Tab teks lewat **Jalan B** — isinya tetap di `JSONDATA`
+
+**Keputusan pemilik proses, 4 Oktober 2026**, menjawab
+[`PERTANYAAN-TERBUKA-TAB-TEKS.md`](PERTANYAAN-TERBUKA-TAB-TEKS.md).
+
+| | |
+| --- | --- |
+| **Apa** | **nol tabel pendaratan** untuk Exclusions dan Special Conditions. Kelima kuncinya dibaca dari `M_TREATY_IN.JSONDATA` lewat jalur warisan yang sudah ada (`jsonWarisan`), dipilih menurut cabang di `services/tab_teks.go`. |
+| **Kenapa** | layarnya hari ini **baca-saja**, dan nol tiket meminta penyuntingan. Dokumennya sudah ditarik untuk medan lain, jadi satu medan `CLOB` lagi dari dokumen yang sama **nol tambahan perjalanan** ke basis data. Jalan A tetap menuntut `CLOB` — isinya mencapai 23.453 aksara, jauh di atas batas `VARCHAR2` 4.000 — sehingga keunggulan utamanya hilang sementara ongkosnya (satu migrasi, satu pemuat, satu rekonsiliasi) dibayar penuh. |
+| **`ValueDifference` DIKELUARKAN** | ia **objek** berisi `EGNPI`/`Limits`/`Share` dan sembilan medan `Total*` — potret nilai sebelum perubahan, bukan teks yang pemakai ketik. Menaruhnya di tab teks salah dua kali: bentuknya bukan teks, artinya bukan medan layar. Ia milik pertanyaan lain — apakah riwayat nilai ikut dipindahkan sama sekali — wilayah tiket `06`/`11`/`13` (`NILAI_SELISIH`). Tab Value Difference **tetap** `.trin__belum`. |
+| **Pembalikan** | **begitu ada tiket yang membuat tab itu dapat DISUNTING sebelum tiket `44` selesai, Jalan A terbayar** — menulis satu baris jauh lebih aman daripada menulis ulang dokumen 158 KB yang 174 medan lain menumpanginya. Datanya tetap di dokumen, jadi perpindahan ke A **tidak kehilangan apa pun**. |
+
+### 15.1 ⛔ Ejaan dipilih menurut CABANG, dan tidak pernah jatuh ke ejaan lain
+
+Terukur atas 1.854 dokumen: dari **303** dokumen yang punya lebih dari satu ejaan
+`SpecialConditions*`, **nol** yang isinya identik. Ejaan lain **bukan salinan yang basi** —
+ia teks yang berbeda.
+
+Aturannya:
+
+1. ejaan yang **sesuai cabang** dipakai — `…P` proporsional, telanjang non-proporsional;
+2. bila ia **tidak ada**, hasilnya **kosong** — bukan ejaan lain;
+3. ejaan lain yang berisi tetap **disebut di layar**, sebab pembacanya berhak tahu ada teks yang
+   tidak ia lihat.
+
+Sebarannya, terukur:
+
+| | Exclusions | Special Conditions |
+| --- | ---: | ---: |
+| ejaan cabang ada — proporsional | 1.027 / 1.079 | 896 / 1.079 |
+| ejaan cabang ada — non-proporsional | 719 / 772 | 509 / 772 |
+| **ejaan LAIN juga berisi** | 175 + 126 = **301** | 157 + 93 = **250** |
+| **ejaan cabang kosong, ejaan lain ada** | 2 + 2 = **4** | 20 + 33 = **53** |
+| nol ejaan sama sekali | 50 + 51 = 101 | 163 + 230 = 393 |
+
+⚠️ **Ejaan ketiga `SpecialConditionsp`** — huruf kecil di akhir, **bukan salah ketik**: 292
+dokumen memakainya, **170 proporsional dan 122 non-proporsional**. Karena ia dipakai kedua
+cabang, ia tidak terikat cabang mana pun dan **tidak pernah terpilih**; bila berisi, ia selalu
+muncul sebagai "ejaan lain".
+
+### 15.2 Cabang dibaca dari KOLOM, bukan dari dokumen
+
+`SifatProporsional` membaca `TREATY_IN.PROPORTIONTYPE`. Terukur: kolomnya terisi pada seluruh
+1.854 baris, sedangkan kunci `ProportionType` **di dalam dokumen TIDAK ADA pada tiga** —
+`1001854`, `1001855`, `1001856`. Memilih ejaan dengan kunci yang kadang hilang berarti ketiga
+kontrak itu diam-diam diperlakukan sebagai non-proporsional.
+
+*(Ketiganya tidak punya satu pun dari kelima kunci teks, jadi tidak ada teks yang terkena hari
+ini — tetapi andaiannya tetap salah, dan andaian yang salah tanpa akibat adalah andaian yang
+akan berakibat nanti.)*
+
+### 15.3 Tampilan
+
+Teks **dapat digulir** (`.trin__teks`, `max-height: 60vh`, `white-space: pre-wrap`), bukan satu
+baris yang terpotong: isinya mencapai 23.453 aksara dan memuat baris baru sungguhan. Kosong
+memakai `Kosong` (*"belum ada DATA"*), **bukan** `.trin__belum` — datanya memang tidak ada,
+kodenya ada.
+
+## 16 · `MATA_UANG` dan `MATA_UANG_KONTRAK` **DICABUT** — kurs dari `TREATYEXCHANGEYEARLY`
+
+| | |
+| --- | --- |
+| **Apa** | Migrasi `434` membuang tabel `MATA_UANG`, `MATA_UANG_KONTRAK`, kunci asing `FK_VERSI_KONTRAK_MATA_UANG`, dan kedua sequence-nya. Himpunan acuan turun dari **enam menjadi lima**: `jenis-potongan`, `kelas-bisnis`, `kelompok-treaty`, `bahaya`, `jenis-reasuransi`. |
+| **Kenapa** | Keputusan pemilik proses 4 Oktober 2026: daftar mata uang dan kursnya diambil dari **`TREATYEXCHANGEYEARLY`** — tabel warisan yang sudah hidup, 140 baris, 25 mata uang, terbagi per `TREATYYEAR` — seperti yang layar lama lakukan. Dua tabel model baru itu tidak dipakai lagi. |
+| **Aman, dan itu terukur** | Keduanya **nol baris** pada hari pencabutan, dan kunci asing yang masuk hanya dua — satu di antaranya ikut terbawa tabelnya sendiri. Nol data hilang. |
+| **Akibat 1 — tiket 20 kehilangan tabelnya** | `MATA_UANG_KONTRAK` adalah tabel tiket `20`. Dua uji Oracle yang membuktikannya (`TestTiket20KursMataUangGandaDitolak` dan pasangan positifnya) dicabut bersamanya. Lapisan skema tiket `20` karena itu **mundur**, dan itu dinyatakan di sini alih-alih ditemukan orang lain di ledger. |
+| **Akibat 2 — tiket 57 TIDAK PUNYA RUMAH** | Tiket `57` menuntut kurs **dibekukan** pada versi yang disetujui: *"ubah baris kurs tahunan lalu buka versi disetujui → angkanya tidak berubah"*. `TREATYEXCHANGEYEARLY` adalah justru baris kurs tahunan itu — master bersama yang boleh berubah — dan `MATA_UANG_KONTRAK.KURS` adalah tempat pembekuannya. Sesudah pencabutan ini **tidak ada tempat beku**. Siapa pun yang mengerjakan `57` harus memutuskan di mana lebih dulu. |
+| **Akibat 3 — `INV-44` tidak lagi ditegakkan basis data** | Kolom `VERSI_KONTRAK.KODE_MATA_UANG_KONTRAK` **tetap ada** dan kini tanpa penjaga: ia dulu menunjuk `MATA_UANG.ID_MATA_UANG`. Mengubah artinya menjadi kode `TREATYEXCHANGEYEARLY` adalah pekerjaan tiket `20`, bukan migrasi ini. |
+| **Satu penjaga yang ikut diperbaiki** | `TestPerilakuHapusSesuaiERD` menilai kunci asing dari teks `CREATE` di migrasi; `DROP` tidak terlihat olehnya, sehingga ia **lulus sambil menagih tiga kunci asing yang sudah tidak ada**. Pembacanya kini mengenal pencabutan, dan **posisi yang menentukan** — migrasi `420` membongkar lalu memasang ulang 21 kunci asing, dan membaca "ada DROP" saja akan membuang kedua puluh satunya. |
+| **Pembalikan** | `434_cabut_mata_uang_down.sql` membangun keduanya kembali utuh beserta kedua kunci asingnya, bentuk disalin apa adanya dari `400`/`402`/`403`. Selama keduanya nol baris, pembalikan tidak kehilangan apa pun. Yang perlu ikut dibalik: lima himpunan acuan kembali enam (`models/acuan.go`, `repository/acuan.go`, `services.go`, `frontend/api.ts`, `labels.ts`), dan kedua uji tiket `20`. |

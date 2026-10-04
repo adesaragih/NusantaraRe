@@ -61,6 +61,52 @@ type Gudang interface {
 	// Tiket 41 TIDAK menambah apa pun di sini: identitas bentuk lama
 	// DITURUNKAN di services dari BacaKontrak. Menambah kueri tersendiri
 	// berarti dua pembaca untuk kolom yang sama (INV-60).
+
+	// Tiket 42 - arsip muatan keluar. Perhatikan bentuk nilai baliknya:
+	// yang kedua `models.BuktiArsip`, yang TIDAK punya ruas muatan. Seam ini
+	// karena itu tidak dapat mengembalikan isi arsip tanpa seseorang
+	// menyunting struct-nya - INV-61 diwujudkan, bukan sekadar ditulis.
+	SimpanArsipMuatanKeluar(ctx context.Context, a models.ArsipMuatanKeluar) error
+	BuktiArsipKontrak(ctx context.Context, idKontrak int64) (models.BuktiArsip, error)
+
+	// Layar daftar kontrak — ronde layar 1. Kesembilan kolomnya dibaca dari
+	// `Section/InputTreatyInOffer.xml`; jejaknya per kolom di
+	// `models.BarisDaftarKontrak`.
+	DaftarKontrak(ctx context.Context) ([]models.BarisDaftarKontrak, error)
+
+	// Layar daftar dari tabel WARISAN `TREATY_IN` — jalur TERPISAH, dan
+	// sengaja: yang di atas membaca model BARU (hari ini nol baris), kedua
+	// di bawah membaca sistem LAMA (1.854 baris). Menyatukannya menghapus
+	// perbedaan itu tepat ketika ia mulai penting (tiket 59).
+	//
+	// ⛔ BACA SAJA. Nol penulisan terhadap `TREATY_IN` di seluruh seam ini.
+	CacahKontrakWarisan(ctx context.Context) (int, error)
+	DaftarKontrakWarisan(ctx context.Context, offset, batas int) ([]models.BarisDaftarWarisan, error)
+	BacaKontrakWarisan(ctx context.Context, id string) (models.KontrakWarisan, error)
+
+	// Tab yang sudah PINDAH dari `JSONDATA` ke tabel pendaratan migrasi 430.
+	//
+	// ⛔ Ketiganya seam TERPISAH dari `BacaKontrakWarisan`, dan itu
+	// disengaja: kontrak yang dokumennya hilang tetap harus membuka tabnya,
+	// dan tab yang tabelnya kosong tetap harus membuka kontraknya. Satu
+	// panggilan yang mengembalikan semuanya mengikat kedua kegagalan itu
+	// menjadi satu.
+	BacaPeriodePelaporan(ctx context.Context, masterID string) ([]models.BarisPeriodeWarisan, error)
+	BacaPortofolio(ctx context.Context, masterID string) ([]models.BarisPortofolioWarisan, error)
+	BacaAkumulasi(ctx context.Context, masterID string) ([]models.BarisAkumulasiWarisan, error)
+
+	// Empat tab dari `M_TREATY_IN2` — Limits · Share · Event Limits ·
+	// RNM Share. SATU seam untuk keempatnya, sebab keempatnya PROYEKSI atas
+	// baris yang sama: empat seam berarti empat kueri untuk satu baca, dan
+	// empat kesempatan agar yang satu melihat layer yang lain tidak.
+	BacaLayerWarisan(ctx context.Context, masterID string) ([]models.BarisLayerWarisan, error)
+
+	// Tab Co-Ins Scale - tabel pendaratan kesembilan, migrasi 432.
+	BacaSkalaKoasuransi(ctx context.Context, masterID string) ([]models.BarisSkalaKoasuransiWarisan, error)
+	BacaEgnpi(ctx context.Context, masterID string) ([]models.BarisEgnpiWarisan, error)
+	BacaRetensi(ctx context.Context, masterID string) ([]models.BarisRetensiWarisan, error)
+	BacaAngsuran(ctx context.Context, masterID string) ([]models.BarisAngsuranWarisan, error)
+	BacaCatatan(ctx context.Context, masterID string) ([]models.BarisCatatanWarisan, error)
 }
 
 // Layanan memegang aturan modul ini di atas satu Gudang.
@@ -72,9 +118,9 @@ func LayananOracle(s *Service) *Layanan { return &Layanan{gudang: repository.Bar
 // LayananDengan merakit Layanan di atas Gudang mana pun - dipakai uji.
 func LayananDengan(g Gudang) *Layanan { return &Layanan{gudang: g} }
 
-// himpunanSah adalah keenam himpunan acuan, DISEBUT satu per satu.
+// himpunanSah adalah KELIMA himpunan acuan, DISEBUT satu per satu.
+// `mata-uang` dicabut 4 Oktober 2026 — migrasi 434.
 var himpunanSah = map[models.Himpunan]bool{
-	models.HimpunanMataUang:        true,
 	models.HimpunanJenisPotongan:   true,
 	models.HimpunanKelasBisnis:     true,
 	models.HimpunanKelompokTreaty:  true,

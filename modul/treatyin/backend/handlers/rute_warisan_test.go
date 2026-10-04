@@ -151,3 +151,45 @@ func TestKetigaRuteBaruMenolakTanpaIdentitas(t *testing.T) {
 		}
 	}
 }
+
+// ------------------------------------------------------------------ tiket 42
+
+func TestRuteArsipMenyimpanDanMenunjukkanAda(t *testing.T) {
+	h := handlers.RouterDengan(services.LayananDengan(gudangTiruan{
+		bukti: models.BuktiArsip{Cacah: 2, TerakhirDikirim: "2026-10-02T09:15:00Z",
+			Tujuan: []string{"PEGA_TREATY_IN"}},
+	}), true, true)
+
+	w := kirim(t, h, http.MethodPost, "/api/treaty-in/kontrak/7/arsip", "AKUN-UJI",
+		badan(`{"tujuan":"PEGA_TREATY_IN","dikirimPada":"2026-10-02T09:15:00Z","berhasil":true,"muatan":"{}"}`))
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("simpan: kode %d, mau 204. Badan: %s", w.Code, w.Body.String())
+	}
+
+	w = kirim(t, h, http.MethodGet, "/api/treaty-in/kontrak/7/arsip", "AKUN-UJI", nil)
+	if w.Code != http.StatusOK {
+		t.Fatalf("bukti: kode %d, mau 200", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), `"cacah":2`) {
+		t.Errorf("badan tidak menyebut cacahnya: %s", w.Body.String())
+	}
+	// ⛔ Dan ia TIDAK membawa muatan — INV-61 terlihat di permukaan HTTP juga.
+	for _, terlarang := range []string{"muatan", "payload"} {
+		if strings.Contains(strings.ToLower(w.Body.String()), terlarang) {
+			t.Errorf("jawaban memuat %q; arsip tidak punya jalur baca: %s", terlarang, w.Body.String())
+		}
+	}
+}
+
+func TestRuteArsipMenolakTujuanAsing(t *testing.T) {
+	h := handlers.RouterDengan(services.LayananDengan(gudangTiruan{}), true, true)
+
+	w := kirim(t, h, http.MethodPost, "/api/treaty-in/kontrak/7/arsip", "AKUN-UJI",
+		badan(`{"tujuan":"GUDANG_LAIN","dikirimPada":"2026-10-02T09:15:00Z","muatan":"{}"}`))
+	if w.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("kode %d, mau 422. Badan: %s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "GUDANG_LAIN") {
+		t.Errorf("penolakan tidak menyebut tujuan yang ditolak: %s", w.Body.String())
+	}
+}

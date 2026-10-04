@@ -23,7 +23,6 @@ import (
 // Nama tabelnya adalah nama spec apa adanya (`KEPUTUSAN-PENYELARASAN-REPO.md`
 // butir 3), bukan berawalan `T_`.
 var tabelAcuan = map[models.Himpunan]string{
-	models.HimpunanMataUang:        "MATA_UANG",
 	models.HimpunanJenisPotongan:   "JENIS_POTONGAN",
 	models.HimpunanKelasBisnis:     "KELAS_BISNIS",
 	models.HimpunanKelompokTreaty:  "KELOMPOK_TREATY",
@@ -31,10 +30,9 @@ var tabelAcuan = map[models.Himpunan]string{
 	models.HimpunanJenisReasuransi: "JENIS_REASURANSI",
 }
 
-// kolomKunci memetakan himpunan ke nama kolom kunci utamanya. Keenamnya
+// kolomKunci memetakan himpunan ke nama kolom kunci utamanya. Kelimanya
 // berbeda (`ID_MATA_UANG`, `ID_BAHAYA`, ...) - `KAMUS-KOLOM.md` §10.22.
 var kolomKunci = map[models.Himpunan]string{
-	models.HimpunanMataUang:        "ID_MATA_UANG",
 	models.HimpunanJenisPotongan:   "ID_JENIS_POTONGAN",
 	models.HimpunanKelasBisnis:     "ID_KELAS_BISNIS",
 	models.HimpunanKelompokTreaty:  "ID_KELOMPOK_TREATY",

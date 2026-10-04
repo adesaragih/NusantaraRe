@@ -19,7 +19,7 @@ simpan yang belum ada. Yang selesai artefak skemanya.
 mana pun. Uraiannya di [`docs/KEPUTUSAN-TIKET-02-03.md`](docs/KEPUTUSAN-TIKET-02-03.md).
 
 ℹ️ **Layar modul ini ada karena mendaftarkan modul menuntutnya** `[keputusan work owner 01-10-2026]` —
-baca-saja, nol alur karangan (`L-4`).
+baca-saja, nol alur karangan (~~`L-4`~~ — **dicabut 3 Oktober 2026**; lihat bab di bawah. Layar modul ini belum dibangun dari ekspornya, dan itu kini pekerjaan yang tertunda, bukan larangan).
 
 ⛔ **Tabel di bawah dibaca penjaga** (`inti/backend/penjaga`): rentang migrasi dan slot menu. Ubah
 nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak boleh berbagi nomor.
@@ -28,7 +28,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | --- | --- |
 | Nama modul | `treatyinadjustment` |
 | Folder korpus | `Treaty In Adjustment` |
-| GROUPMENU | `MASTER TREATY` |
+| GROUPMENU | `TREATY` |
 | Pemilik | `@PEMILIK-TREATYINADJUSTMENT` |
 | Status | dimigrasi |
 | Rentang migrasi | `440-479` |
@@ -86,3 +86,47 @@ BESARAN_DAPAT_DISESUAIKAN 1--<   NILAI_SELISIH   [hapus: tolak]        SEKAT
 `NILAI_SELISIH` **tidak ada di `ddl-usulan/` maupun `KAMUS-KOLOM.md`** — kolomnya belum diputuskan
 siapa pun. Tiket `06` dan `13` bersandar padanya. Begitu tabelnya lahir, yang pertama masuk tabel di
 atas sebagai kaskade.
+
+## ⛔ `L-4` DICABUT — 3 Oktober 2026
+
+`L-4` berbunyi: ***"tidak ada spesifikasi layar di mana pun."*** Atas dasar itu papan melarang
+menyentuh UI, dan dua ronde menolak membangun layar.
+
+**Pernyataan itu salah, dan sudah salah sejak awal.** Spesifikasinya ada di ekspor Pega 2026-09,
+dan cacahnya dapat diperiksa dalam satu perintah:
+
+| Modul | `Section/` | `Harness/` |
+|---|---:|---:|
+| Treaty In | **50** | **3** |
+| Treaty In Adjustment | **68** | **6** |
+
+```bash
+ls "D:/XML_NURE/Treaty In/Section"/*.xml | wc -l            # 50
+ls "D:/XML_NURE/Treaty In/Harness"/*.xml | wc -l            # 3
+ls "D:/XML_NURE/Treaty In Adjustment/Section"/*.xml | wc -l # 68
+ls "D:/XML_NURE/Treaty In Adjustment/Harness"/*.xml | wc -l # 6
+```
+
+Yang tidak ada bukan spesifikasinya, melainkan **pembacaannya**. Di dalam berkas itu tata letaknya
+tertulis lengkap: `<pyValue>` properti yang diikat sebuah kontrol, `<pyLabelFor>` medan milik
+sebuah label, `<pyPropertyTarget>` properti yang diisi pemilih, `<pyGridProps>` bentuk tabelnya.
+
+> ### Larangan yang TETAP berlaku
+>
+> **Jangan mengarang layar.** Yang berubah hanya alasannya: dulu tidak boleh karena tidak ada
+> acuannya, kini tidak boleh karena **acuannya ada dan harus dibaca**. Tiap medan yang dibangun
+> membawa jejaknya — nama rule dan posisi bitanya — di `frontend/labels.ts`.
+
+**Tiga jebakan yang dicatat saat pencabutan ini, supaya ronde berikutnya tidak kejeblos:**
+
+1. **`<pyIncludedRuleXML>` dibuang lebih dulu.** Ekspor Pega menyematkan salinan utuh rule anak;
+   sapuan datar membaca medan milik anak sebagai milik induk. Pada
+   `Section/InputTreatyInOffer.xml` salinan itu **899.307 bita** dari 8.194.691.
+2. **Berkas Section membundel indeks rule LAIN.** Caption `Treaty Contract Name`,
+   `Contract Ref No`, `Teritorial Scope`, `Bordereaux Note`, `Accounting Mode`, dan `Treaty Year`
+   muncul di `InputTreatyInOffer.xml` tetapi `pzIndexOwnerKey`-nya **`TREATYINNONPROPORTIONAL`**.
+   Menyimpulkan pemilik sebuah medan dari **nama berkasnya** dapat salah total.
+3. **Blok bergaris mati tidak dibangun.** Pega tidak dapat mengomentari tata letak, jadi blok
+   dimatikan dengan kondisi mustahil — `1=2`, `1==2`, `Never` pada `pyContainerVisibleWhen` /
+   `pyVisibleWhen` / `pyRowVisibleCondition`. ⚠️ `pyDisabledWhen>1=2` artinya **kebalikannya**:
+   tidak pernah dinonaktifkan. Jangan tertukar.
