@@ -36,9 +36,6 @@ func pasang(t *testing.T) (*sql.DB, string, context.Context, *intidb.DB) {
 	if err := sqlDB.PingContext(ctx); err != nil {
 		t.Skipf("lewati: oracle tidak terjangkau: %v", err)
 	}
-	// T_GENERAL_POLIS tabel dasar bersama nbfacin 182 (WO 04-10-2026): 320
-	// hanya ALTER ... ADD ( atasnya - tabel dasar harus ada sebelum Pasang.
-	siapkanGeneralPolisDasar(t, ctx, sqlDB, skema)
 	if err := skemauji.Pasang(ctx, sqlDB, skema); err != nil {
 		t.Fatalf("memasang skema uji: %v", err)
 	}

@@ -28,13 +28,8 @@ import (
 type Gudang struct {
 	mu sync.Mutex
 
-	urut  int
-	Kasus map[string]models.Kasus
-	// Lini - `T_WORK_POLIS.LINI` per ID kasus; tak terdaftar = `models.LiniKasus`.
-	// T_GENERAL_POLIS/T_WORK_POLIS BERSAMA lini lain (keputusan WO 04-10-2026):
-	// baris ber-LINI lain (FacIn 'FAC') disaring Keadaan, KunciKasus, dan
-	// DaftarKasus - sama dengan `w.LINI = :n` di SQL repository.
-	Lini    map[string]string
+	urut    int
+	Kasus   map[string]models.Kasus
 	Halaman map[string]*models.Halaman
 	Riwayat []models.Riwayat
 	// Usulan - baris POOLDATA.HISTORYAKSEPTASIPRODUCTION (catatan SuggestList).
@@ -64,7 +59,6 @@ type Gudang struct {
 func Baru() *Gudang {
 	return &Gudang{
 		Kasus:     map[string]models.Kasus{},
-		Lini:      map[string]string{},
 		Halaman:   map[string]*models.Halaman{},
 		Nama:      map[string]string{},
 		Kontrak:   map[string]models.BarisKontrak{},
@@ -148,22 +142,16 @@ func (g *Gudang) SisipKasus(_ context.Context, _ *db.Tx, id, pembuat, _ string) 
 
 func (g *Gudang) Keadaan(_ context.Context, _ *db.Tx, id string) (models.Kasus, error) {
 	k, ada := g.Kasus[id]
-	if !ada || !g.liniSendiri(id) {
+	if !ada {
 		return models.Kasus{}, repository.ErrKasusTidakAda
 	}
 	return k, nil
 }
 
-// liniSendiri - baris T_WORK_POLIS ber-LINI kasus modul ini (`models.LiniKasus`).
-func (g *Gudang) liniSendiri(id string) bool {
-	l, ada := g.Lini[id]
-	return !ada || l == models.LiniKasus
-}
-
 // KunciKasus - tahap kasus masih tahap yang dibaca.
 func (g *Gudang) KunciKasus(_ context.Context, _ *db.Tx, id, statusHarap string) error {
 	k, ada := g.Kasus[id]
-	if !ada || !g.liniSendiri(id) {
+	if !ada {
 		return repository.ErrKasusTidakAda
 	}
 	if k.StatusWork != statusHarap {
@@ -201,7 +189,7 @@ func (g *Gudang) TutupKasus(_ context.Context, _ *db.Tx, id, statusLama, statusA
 func (g *Gudang) DaftarKasus(_ context.Context, s models.SaringanKasus) ([]models.RingkasanKasus, error) {
 	var out []models.RingkasanKasus
 	for id, k := range g.Kasus {
-		if !g.liniSendiri(id) || k.Tertutup() || (s.Posisi != "" && k.PositionNote != s.Posisi) {
+		if k.Tertutup() || (s.Posisi != "" && k.PositionNote != s.Posisi) {
 			continue
 		}
 		if s.Antrean != nil && !slices.Contains(s.Antrean, k.PositionNote) {

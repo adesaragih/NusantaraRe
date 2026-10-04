@@ -83,23 +83,3 @@ func siapkanRiwayatProduksi(t *testing.T, ctx context.Context, sqlDB *sql.DB, sk
 		})
 	}
 }
-
-// tiruan uji, bukan tabel aplikasi: tabel DASAR `T_GENERAL_POLIS` bersama
-// FacIn + Treaty In (keputusan WO 04-10-2026). Ia dibuat migrasi `nbfacin`
-// `182_t_general_polis`, yang belum ada di repo; migrasi 320 modul ini hanya
-// `ALTER TABLE ... ADD (` kolom Treaty atasnya. Tanpa tabel dasar,
-// `skemauji.Pasang` gagal di 320 (ORA-00942). Bila skema uji sudah memuatnya
-// (182 sudah di repo/dijalankan DBA), tabel itu dipakai apa adanya.
-const tabelGeneralPolisDasar = "T_GENERAL_POLIS"
-
-// siapkanGeneralPolisDasar - tujuh kolom dasar 182 (ID VARCHAR2(32) PK, IDPEGA
-// VARCHAR2(50) - keputusan WO 04-10-2026); tipe lima kolom FacIn lainnya dari
-// draf `nbfacin` (`services/loader/skema_gen.go`). DIPANGGIL SEBELUM
-// `skemauji.Pasang`: pembuangannya (t.Cleanup) berjalan SESUDAH
-// `skemauji.Bongkar` membuang tujuh tabel anak dan kolom Treaty (320_down).
-func siapkanGeneralPolisDasar(t *testing.T, ctx context.Context, sqlDB *sql.DB, skema string) {
-	t.Helper()
-	buatTiruan(t, ctx, sqlDB, skema, tabelGeneralPolisDasar, []string{
-		"ID VARCHAR2(32) NOT NULL PRIMARY KEY", "IDPEGA VARCHAR2(50)", "COB_GROUP VARCHAR2(20)",
-		"START_DATE_TIME VARCHAR2(30)", "OFFERING_DATE VARCHAR2(30)", "END_DATE_TIME VARCHAR2(30)", "FOLLOWING VARCHAR2(50)"})
-}

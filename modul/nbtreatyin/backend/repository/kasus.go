@@ -78,15 +78,11 @@ func sqlKeadaan(kerja, gen string) string {
 	        CASE WHEN %s THEN 0 ELSE 1 END, w.CREATE_OP,
 	        TO_CHAR(w.TGL_CREATE, '%s')
 	   FROM %s w JOIN %s g ON g.ID = w.ID
-	  WHERE w.ID = :1 AND w.LINI = :2`, syaratTerbuka(gen), fmtTanggal, kerja, gen)
+	  WHERE w.ID = :1`, syaratTerbuka(gen), fmtTanggal, kerja, gen)
 }
 
 // Keadaan membaca keadaan kerja satu kasus. Di dalam transaksi bila `tx`
 // terisi, supaya keputusan dan tulisannya melihat baris yang sama.
-//
-// ⛔ T_WORK_POLIS dan T_GENERAL_POLIS BERSAMA lini lain (keputusan WO
-// 04-10-2026; tabel dasar nbfacin 182): kasus ber-LINI lain (FacIn 'FAC')
-// dijawab ErrKasusTidakAda, sama dengan daftar portal.
 func (g *Gudang) Keadaan(ctx context.Context, tx *db.Tx, id string) (models.Kasus, error) {
 	kerja, err := g.nama(tabelKerja)
 	if err != nil {
@@ -103,7 +99,7 @@ func (g *Gudang) Keadaan(ctx context.Context, tx *db.Tx, id string) (models.Kasu
 	var k models.Kasus
 	var pos, status, catatan, nopol, op, lahir sql.NullString
 	var tutup int
-	err = g.pembaca(tx).QueryRowContext(ctx, q, id, models.LiniKasus).Scan(&k.ID, &pos, &status, &catatan, &nopol, &tutup, &op, &lahir)
+	err = g.pembaca(tx).QueryRowContext(ctx, q, id).Scan(&k.ID, &pos, &status, &catatan, &nopol, &tutup, &op, &lahir)
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.Kasus{}, ErrKasusTidakAda
 	}
@@ -114,12 +110,6 @@ func (g *Gudang) Keadaan(ctx context.Context, tx *db.Tx, id string) (models.Kasu
 	k.NoPolis, k.CreateOp, k.TglCreate = teks(nopol), teks(op), teks(lahir)
 	k.GenerasiTertutup = tutup == 1
 	return k, nil
-}
-
-// sqlKunciKasus - kunci baris kasus lini modul ini saja (baris FacIn
-// `LINI = 'FAC'` di tabel bersama tidak pernah dikunci, apalagi ditulis).
-func sqlKunciKasus(kerja string) string {
-	return fmt.Sprintf(`SELECT STATUS_WORK FROM %s WHERE ID = :1 AND LINI = :2 FOR UPDATE`, kerja)
 }
 
 // KunciKasus mengunci baris kasus (`FOR UPDATE`) di transaksi pemanggil dan
@@ -133,12 +123,12 @@ func (g *Gudang) KunciKasus(ctx context.Context, tx *db.Tx, id, statusHarap stri
 	if err != nil {
 		return err
 	}
-	q := sqlKunciKasus(kerja)
+	q := fmt.Sprintf(`SELECT STATUS_WORK FROM %s WHERE ID = :1 FOR UPDATE`, kerja)
 	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
 	var status sql.NullString
-	err = tx.QueryRowContext(ctx, q, id, models.LiniKasus).Scan(&status)
+	err = tx.QueryRowContext(ctx, q, id).Scan(&status)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrKasusTidakAda
 	}
