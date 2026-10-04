@@ -135,9 +135,18 @@ export function pilihBisnis(id: string, idDetail: string, halaman: Halaman): Pro
   return minta<Layar>(`${kasus(id)}/pilih-bisnis`, { metode: 'POST', badan: { idDetail, halaman } })
 }
 
-/** Klik satu baris popup `SOB` - pra-proses `SearchHierarkiSourceBizAgent_PostDT`. */
-export function pilihSumberBisnis(id: string, idAgen: string, halaman: Halaman): Promise<Layar> {
-  return minta<Layar>(`${kasus(id)}/pilih-sumber-bisnis`, { metode: 'POST', badan: { idAgen, halaman } })
+/** Jawaban klik satu baris popup `SOB` - `services.HasilSumberBisnis`: nilai yang
+ *  ditulis `SearchHierarkiSourceBizAgent_PostDT`, per jalur halaman (`Quotation.*`). */
+export interface HasilSumberBisnis {
+  nilai: Record<string, string>
+}
+
+/** Klik satu baris popup `SOB` - pra-proses `SearchHierarkiSourceBizAgent_PostDT`,
+ *  TANPA simpan (F4): hasilnya dipegang layar (`pegangSumberBisnis`) dan ikut
+ *  terkirim pada Save/Submit/refresh; server menerimanya hanya bila cocok dengan
+ *  RD `BrowseAgentHierarkiList_RD` yang dijalankan ulang. */
+export function pilihSumberBisnis(id: string, idAgen: string, halaman: Halaman): Promise<HasilSumberBisnis> {
+  return minta<HasilSumberBisnis>(`${kasus(id)}/pilih-sumber-bisnis`, { metode: 'POST', badan: { idAgen, halaman } })
 }
 
 export function terbitkanNomor(id: string, halaman: Halaman): Promise<NomorPolis> {

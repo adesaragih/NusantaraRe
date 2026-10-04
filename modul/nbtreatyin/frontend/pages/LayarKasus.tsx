@@ -40,7 +40,7 @@ import DetailNonProp from '../components/DetailNonProp'
 import InputAngka from '../components/InputAngka'
 import KotakMedan from '../components/KotakMedan'
 import PilihBisnis from '../components/PilihBisnis'
-import PilihSumberBisnis, { tampilTombolSOB } from '../components/PilihSumberBisnis'
+import PilihSumberBisnis, { pegangSumberBisnis, tampilTombolSOB } from '../components/PilihSumberBisnis'
 import {
   BAGIAN,
   JUDUL,
@@ -260,7 +260,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
                 {TOMBOL.chooseBusiness}
               </button>
             )}
-            {/* `.ClaimType = 'XOL Retro'`; click -> showHarness SOB (paket P3) */}
+            {/* `.ClaimType = 'XOL Retro'`; click -> showHarness SOB (paket P3; F4: pilihan dipegang layar) */}
             {tampilTombolSOB(h) && (
               <button type="button" className="btn" onClick={() => setPopupSOB(true)}>
                 {TOMBOL.selectSOB}
@@ -593,7 +593,12 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
           onTutup={() => setPopupSOB(false)}
           onPilih={(idAgen, tutup) => {
             if (tutup) setPopupSOB(false)
-            void jalankan(() => pilihSumberBisnis(id, idAgen, h), terima)
+            // Klik baris = PostDT TANPA simpan (F4): hasilnya dipegang state layar dan
+            // ikut Save/Submit/refresh. XML tidak menjalankan refresh sesudahnya.
+            void jalankan(
+              () => pilihSumberBisnis(id, idAgen, h),
+              (hasil) => setH((x) => (x ? pegangSumberBisnis(x, hasil) : x)),
+            )
           }}
         />
       )}
