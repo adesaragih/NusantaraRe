@@ -13,7 +13,10 @@
 // server), dan nilai kosong di depan pada urutan naik. Kolom `pxCurrency` diurut menurut nilai
 // desimalnya tanpa `Number` (spec §5.6: uang tidak pernah float).
 
+import { desimalSah, jumlahDesimal } from '../../../inti/frontend/lib/desimal'
+
 import type { BarisKontrak } from './api'
+import { tandaTeks } from './tanda'
 
 /** `pyPageSize` grid. */
 export const BARIS_PER_HALAMAN_BISNIS = 50
@@ -34,40 +37,17 @@ const KOLOM_UANG = new Set(['LIMITVALUE', 'RETENTIONVALUE', 'EPIVALUE', 'MDPVALU
 /** Saringan aktif per kolom; "" atau tidak ada = kolom itu tidak disaring. */
 export type SaringanKolom = Record<string, string>
 
-const ANGKA = /^([+-]?)(\d*)(?:\.(\d*))?$/
+/** Lawan tanda teks desimal sah (`12` -> `-12`, `-1.5` -> `1.5`). */
+function lawan(s: string): string {
+  const t = s.trim()
+  return t.startsWith('-') ? t.slice(1) : '-' + t.replace(/^\+/, '')
+}
 
-/** Bandingkan dua angka desimal teks (`-12.50`, `.5`) tanpa float; `null` bila salah satunya bukan angka. */
+/** Bandingkan dua angka desimal teks (`-12.50`, `.5`) tanpa float - tanda selisih eksak
+ *  `jumlahDesimal` (inti/frontend/lib/desimal.ts); `null` bila salah satunya bukan angka. */
 function bandingAngka(a: string, b: string): number | null {
-  const pa = urai(a)
-  const pb = urai(b)
-  if (pa === null || pb === null) return null
-  if (pa.tanda !== pb.tanda) return pa.tanda < pb.tanda ? -1 : 1
-  const mutlak = bandingMutlak(pa, pb)
-  return pa.tanda < 0 ? -mutlak : mutlak
-}
-
-interface Urai {
-  tanda: -1 | 0 | 1
-  bulat: string
-  pecahan: string
-}
-
-function urai(s: string): Urai | null {
-  const m = ANGKA.exec(s.trim())
-  if (m === null || ((m[2] ?? '') === '' && (m[3] ?? '') === '')) return null
-  const bulat = (m[2] ?? '').replace(/^0+/, '')
-  const pecahan = (m[3] ?? '').replace(/0+$/, '')
-  if (bulat === '' && pecahan === '') return { tanda: 0, bulat: '', pecahan: '' }
-  return { tanda: m[1] === '-' ? -1 : 1, bulat, pecahan }
-}
-
-function bandingMutlak(a: Urai, b: Urai): number {
-  if (a.bulat.length !== b.bulat.length) return a.bulat.length < b.bulat.length ? -1 : 1
-  if (a.bulat !== b.bulat) return a.bulat < b.bulat ? -1 : 1
-  const n = Math.max(a.pecahan.length, b.pecahan.length)
-  const fa = a.pecahan.padEnd(n, '0')
-  const fb = b.pecahan.padEnd(n, '0')
-  return fa === fb ? 0 : fa < fb ? -1 : 1
+  if (!desimalSah(a) || !desimalSah(b)) return null
+  return tandaTeks(jumlahDesimal([a.trim(), lawan(b)]).total)
 }
 
 function bandingTeks(a: string, b: string): number {

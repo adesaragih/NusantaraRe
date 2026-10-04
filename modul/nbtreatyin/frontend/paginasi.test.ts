@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { BARIS_PER_HALAMAN_USULAN, irisan, jumlahHalaman } from './paginasi'
+import { BARIS_PER_HALAMAN_USULAN, halamanTerjepit, irisan, jumlahHalaman } from './paginasi'
 
 describe('paginasi grid ListSuggest', () => {
   const baris = Array.from({ length: 12 }, (_, i) => i + 1)
@@ -17,5 +17,7 @@ describe('paginasi grid ListSuggest', () => {
   it('halaman di luar rentang dijepit', () => {
     expect(irisan(baris, 9, 5)).toEqual([11, 12])
     expect(irisan(baris, 0, 5)).toEqual([1, 2, 3, 4, 5])
+    expect(halamanTerjepit(9, 3)).toBe(3)
+    expect(halamanTerjepit(0, 3)).toBe(1)
   })
 })

@@ -58,9 +58,13 @@ func halamanXOLRetro() *models.Halaman {
 	return h
 }
 
-// hasilKlik - jawaban klik baris: nilai yang ditulis PostDT, per jalur halaman.
-type hasilKlik struct {
-	Nilai map[string]string `json:"nilai"`
+// hasilKlik - jawaban klik baris: keempat medan yang ditulis PostDT
+// (`models.SumberBisnisPostDT`), dipetakan ke jalur halaman `Quotation.*`.
+var jalurHasilKlik = map[string]string{
+	"sourceOfBusiness": "Quotation.SourceOfBusiness",
+	"sobName":          "Quotation.SobName",
+	"sobLeader0":       "Quotation.SobLeader0",
+	"sobLeader1":       "Quotation.SobLeader1",
 }
 
 func (u *uji) klikSOB(id string, p pelakuUji, idAgen string, h *models.Halaman) (int, string) {
@@ -74,11 +78,19 @@ func (u *uji) klikSOBNilai(id, idAgen string, h *models.Halaman) map[string]stri
 	if kode != http.StatusOK {
 		u.t.Fatalf("klik %s: %d %s", idAgen, kode, isi)
 	}
-	var k hasilKlik
+	var k map[string]string
 	if err := json.Unmarshal([]byte(isi), &k); err != nil {
 		u.t.Fatalf("%v: %s", err, isi)
 	}
-	return k.Nilai
+	out := map[string]string{}
+	for kunci, v := range k {
+		j, ada := jalurHasilKlik[kunci]
+		if !ada {
+			u.t.Fatalf("jawaban klik memuat medan di luar PostDT: %q", kunci)
+		}
+		out[j] = v
+	}
+	return out
 }
 
 // pegang - layar memegang hasil klik di halamannya (state layar).

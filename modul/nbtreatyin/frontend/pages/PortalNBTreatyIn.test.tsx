@@ -17,7 +17,7 @@ import { KOLOM_PORTAL, PORTAL } from '../labels'
 import PortalNBTreatyIn, { TabelPortal } from './PortalNBTreatyIn'
 
 const baris: RingkasanKasus = {
-  id: 'NB-1',
+  id: 'UJI-NB-1',
   businessName: 'UJI BISNIS',
   insuredName: 'UJI TERTANGGUNG',
   marketingName: 'UJI MO',
@@ -42,8 +42,8 @@ describe('portal NB Treaty In = SFAPortal_OpportunitiesList', () => {
 
   it('isi sel: .TextNoQuotation (tautan pembuka berkas), BusinessName, InsuredName, MarketingName, NBStatus', () => {
     const sel = [...html.matchAll(/<td[^>]*>(.*?)<\/td>/g)].map((m) => (m[1] ?? '').replace(/<[^>]+>/g, ''))
-    expect(sel).toEqual(['NB-1', 'UJI BISNIS', 'UJI TERTANGGUNG', 'UJI MO', 'UJI STATUS'])
-    expect(html).toContain('<button type="button" class="nbti__tautan">NB-1</button>')
+    expect(sel).toEqual(['UJI-NB-1', 'UJI BISNIS', 'UJI TERTANGGUNG', 'UJI MO', 'UJI STATUS'])
+    expect(html).toContain('<button type="button" class="nbti__tautan">UJI-NB-1</button>')
   })
 
   it('baris saringan: kotak, ikon pengosong (pyiconclearfield), tombol Filter', () => {

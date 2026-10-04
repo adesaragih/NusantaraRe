@@ -17,9 +17,13 @@ package models
 //	BUSINESS_CODE Quotation.BusinessCode       halaman Quotation (Page-Copy
 //	                                           GeneratePolicyNoTreaty_Act 10)
 //	AKSES_LOGIN OperatorID.pyUserIdentifier - operator yang menjalankan
-//	              SaveViewSuggest; untuk catatan lama diambil dari isi baris
-//	              (`OperatorID`) BILA ADA - tidak dikarang; kosong = NULL,
-//	              dihitung di ringkasan pemuat
+//	              SaveViewSuggest (sesi, bukan isi baris). Catatan lama SELALU
+//	              NULL: baris SuggestList tidak punya anggota operator -
+//	              `docs/dataguide-json-polis.json` hanya `$.SuggestList.Date`,
+//	              `.Suggest`, `.IsApproved`, `.pxObjClass`, `.OperatorName`, dan
+//	              penulis barisnya `DataTransform/AddToListCommentsPolicyTreatyIn_DT`
+//	              hanya menulis `.Suggest`, `.IsApproved`, `.Date`, `.OperatorName`
+//	              (tinjauan spec P3 (c)3; RALAT tiket 22). Tidak dikarang.
 //	PIC (CARI4) .OperatorName baris - kosong = NULL, dihitung
 //	TGL_INP (CARI5) .Date baris - cap waktu Pega dibaca `BacaTanggalLama`
 //	              (jam dinding Asia/Jakarta, 24 jam - F2 butir 2); format lain
@@ -40,7 +44,6 @@ var medanUsulanLama = map[string]string{
 	"IsApproved":   "APPROVAL (CARI9)",
 	"OperatorName": "PIC (CARI4)",
 	"Suggest":      "KETERANGAN (CARI10)",
-	"OperatorID":   "AKSES_LOGIN",
 	"IsSave":       "penanda langkah 2.1 (.IsSave == \"\")",
 }
 
@@ -58,19 +61,38 @@ func anggotaUsulanLama(pola string) (string, bool) {
 	return nama, dikenal
 }
 
+// kasusUsulan - nilai halaman kerja yang dibaca langkah 2.1.2 (sama untuk
+// setiap baris SuggestList kasus itu) - jalur biasa (`UsulanBelumTersimpan`)
+// dan dokumen lama (`UsulanDokumenLama`).
+type kasusUsulan struct {
+	// TypePolis - CARI1 `@replaceAll(pyWorkIDPrefix,"-","")`.
+	TypePolis string
+	// BusinessFac - CARI7 `Quotation.BusinessFac` (dokumen: QuotationData).
+	BusinessFac string
+	// BusinessCode - `Quotation.BusinessCode` (dokumen: QuotationData).
+	BusinessCode string
+}
+
 // petaUsulan = `SaveViewSuggest` langkah 2.1.2 untuk satu baris SuggestList.
-func petaUsulan(b Baris, typePolis, bisnisFac, kodeBisnis, tglInp string) UsulanProduksi {
+// Tanggal saja (dokumen lama, dibaca `BacaTanggalLama`) = tengah malam, sama
+// dengan konversi kolom tanggal repository. AKSES_LOGIN = `.OperatorID` baris
+// yang ditulis `TambahCatatan` jalur biasa (lihat `UsulanBelumTersimpan`).
+func petaUsulan(b Baris, k kasusUsulan) UsulanProduksi {
+	tgl := b["Date"]
+	if len(tgl) == len("2006-01-02") {
+		tgl += " 00:00:00"
+	}
 	return UsulanProduksi{
-		TypePolis:    typePolis,
+		TypePolis:    k.TypePolis,
 		Posisi:       PosisiUsulanProduksi,
 		PIC:          b["OperatorName"],
-		TglInp:       tglInp,
-		Type:         bisnisFac,
+		TglInp:       tgl,
+		Type:         k.BusinessFac,
 		Putaran:      PutaranUsulanProduksi,
 		Approval:     approvalUsulan(b["IsApproved"]),
 		Keterangan:   potongKarakter(b["Suggest"], PanjangKeterangan),
 		AksesLogin:   b["OperatorID"],
-		BusinessCode: kodeBisnis,
+		BusinessCode: k.BusinessCode,
 	}
 }
 
@@ -79,18 +101,20 @@ func petaUsulan(b Baris, typePolis, bisnisFac, kodeBisnis, tglInp string) Usulan
 // (`IDKasusDariIDPega`); `.Date` baris sudah dibaca `BacaTanggalLama` oleh
 // pemecah. Halaman tidak diubah: penanda IsSave milik jalur biasa.
 func UsulanDokumenLama(id string, h *Halaman) []UsulanProduksi {
-	typePolis := strings.ReplaceAll(strings.TrimRight(id, "0123456789"), "-", "")
 	q := HalamanPolis + ".QuotationData."
+	k := kasusUsulan{
+		TypePolis:    strings.ReplaceAll(strings.TrimRight(id, "0123456789"), "-", ""),
+		BusinessFac:  h.Ambil(q + "BusinessFac"),
+		BusinessCode: h.Ambil(q + "BusinessCode"),
+	}
 	var out []UsulanProduksi
 	for _, b := range h.AmbilDaftar(DaftarUsulan) {
 		if b["IsSave"] != "" {
 			continue
 		}
-		tgl := b["Date"]
-		if len(tgl) == len("2006-01-02") {
-			tgl += " 00:00:00" // tanggal saja = tengah malam, sama dengan konversi kolom tanggal repository
-		}
-		out = append(out, petaUsulan(b, typePolis, h.Ambil(q+"BusinessFac"), h.Ambil(q+"BusinessCode"), tgl))
+		u := petaUsulan(b, k)
+		u.AksesLogin = "" // NULL: baris dokumen lama tanpa anggota operator (lihat kepala berkas)
+		out = append(out, u)
 	}
 	return out
 }

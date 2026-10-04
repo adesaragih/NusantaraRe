@@ -135,10 +135,13 @@ export function pilihBisnis(id: string, idDetail: string, halaman: Halaman): Pro
   return minta<Layar>(`${kasus(id)}/pilih-bisnis`, { metode: 'POST', badan: { idDetail, halaman } })
 }
 
-/** Jawaban klik satu baris popup `SOB` - `services.HasilSumberBisnis`: nilai yang
- *  ditulis `SearchHierarkiSourceBizAgent_PostDT`, per jalur halaman (`Quotation.*`). */
+/** Jawaban klik satu baris popup `SOB` - `models.SumberBisnisPostDT`: keempat medan
+ *  `Quotation.*` yang ditulis `SearchHierarkiSourceBizAgent_PostDT` (langkah 1.1, 1.2, 4, 5). */
 export interface HasilSumberBisnis {
-  nilai: Record<string, string>
+  sourceOfBusiness: string
+  sobName: string
+  sobLeader0: string
+  sobLeader1: string
 }
 
 /** Klik satu baris popup `SOB` - pra-proses `SearchHierarkiSourceBizAgent_PostDT`,

@@ -34,6 +34,9 @@ export interface FormatAngka {
 /** Sajian satu sel: angka berformat, atau tanggal. */
 export type Sajian = FormatAngka | 'tanggal'
 
+/** pxNumber tanpa `pyDecimalPlaces` - pola angka inti (dipakai grid NonProp dan `InstallmentList`). */
+export const POLA_INTI: Sajian = {}
+
 const ANGKA = /^[+-]?(\d+\.?\d*|\.\d+)$/
 
 /** Teks tampilan sebuah angka menurut format selnya. Teks bukan angka apa adanya. */

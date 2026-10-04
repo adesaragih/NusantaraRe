@@ -227,8 +227,9 @@ var medanAtasan = []string{
 // jalurTanggalProduksi - `Section/ListSuggest` `.ProductionDate`.
 const jalurTanggalProduksi = HalamanPolis + ".ProductionDate"
 
-// pemicu - action set sel isian admin yang ikut menulis DAFTAR (diputar ulang
-// server, `TerapkanPemicu`).
+// pemicu - action set sel isian admin yang dijalankan server bila kiriman sel
+// itu berubah: yang menulis DAFTAR diputar ulang `TerapkanPemicu`; yang menulis
+// medan halaman dijalankan saat digabung.
 type pemicu int
 
 const (
@@ -238,6 +239,9 @@ const (
 	pemicuUang
 	// pemicuAngsuran - change -> refresh `FillPaymentInstallment(Installment=.Installment)`.
 	pemicuAngsuran
+	// pemicuHapusTypeTax - sel `.FlagPPH`: change -> runActivity `RemoveTypeTax_ACT`
+	// (menulis medan halaman, bukan daftar - dijalankan saat digabung).
+	pemicuHapusTypeTax
 )
 
 // medanIsianAdmin - satu sel isian TERBUKA layar admin: jalur relatif
@@ -270,7 +274,7 @@ type medanIsianAdmin struct {
 // Medan TURUNAN (NetPremium, Balance*, PPN/PPH, BrokerageFee*, DueTo,
 // Currency) TIDAK diterima dari layar - services menghitungnya ulang dari
 // isian (`services.turunkan`). Hasil tombol Enable / Disable Input Type
-// (`IsNewPolicyNonProp`, `QuotationData.ProportionalType`): `terimaEnableDisable`.
+// (`IsNewPolicyNonProp`, `QuotationData.ProportionalType`): `KirimanEnableDisable`.
 //
 // ⛔ DAFTAR IZIN, bukan daftar larangan (temuan tinjauan 2026-10-03): medan
 // milik server - hasil pilih bisnis (NoOffer, TreatyGroupID, OJKBusinessID,
@@ -285,7 +289,7 @@ var medanAdmin = func() []medanIsianAdmin {
 	m = append(m,
 		medanIsianAdmin{medan: "QuotationData.IsSurveyReport", tampil: bukanNonProp},
 		medanIsianAdmin{medan: "FlagRetroTreaty", tampil: bukanXOLRetro},
-		medanIsianAdmin{medan: "FlagPPH", tampil: bukanXOLRetro},
+		medanIsianAdmin{medan: "FlagPPH", tampil: bukanXOLRetro, pemicu: pemicuHapusTypeTax},
 		medanIsianAdmin{medan: "TypeTax", tampil: dan(bukanXOLRetro, flagPPH)},
 		medanIsianAdmin{medan: "Quartal", tampil: proporsionalQD},
 		medanIsianAdmin{medan: "YearOfQuartal", tampil: proporsionalQD},
@@ -305,48 +309,53 @@ var medanAdmin = func() []medanIsianAdmin {
 	return m
 }()
 
-// GalatKiriman - kiriman layar memuat nilai yang tidak mungkin dihasilkan sel
-// / tombol layar itu (pola F4). Services menjawabnya 422.
-type GalatKiriman struct{ Pesan string }
+// HasilEnableDisable - dua medan yang hanya ditulis `TreatyEnableDisableInput`.
+type HasilEnableDisable struct {
+	IsNewPolicyNonProp string
+	ProportionalType   string
+}
 
-func (e *GalatKiriman) Error() string { return "models: kiriman layar tidak sah: " + e.Pesan }
+const (
+	jalurIsNewNonProp    = pt + "IsNewPolicyNonProp"
+	jalurJenisProporsiQD = pt + "QuotationData.ProportionalType"
+)
 
-// jalurEnableDisable - dua medan yang hanya ditulis `TreatyEnableDisableInput`.
-var jalurEnableDisable = []string{pt + "IsNewPolicyNonProp", pt + "QuotationData.ProportionalType"}
+func bacaEnableDisable(h *Halaman) HasilEnableDisable {
+	return HasilEnableDisable{IsNewPolicyNonProp: h.Ambil(jalurIsNewNonProp), ProportionalType: h.Ambil(jalurJenisProporsiQD)}
+}
+
+func tulisEnableDisable(h *Halaman, x HasilEnableDisable) {
+	h.Setel(jalurIsNewNonProp, x.IsNewPolicyNonProp)
+	h.Setel(jalurJenisProporsiQD, x.ProportionalType)
+}
 
 // PesanEnableDisableTidakCocok - pesan 422 W3.
-func PesanEnableDisableTidakCocok(jalur, nilai string) string {
-	return "Nilai " + jalur + " \"" + nilai + "\" bukan hasil tombol Enable / Disable Input Type " +
+func PesanEnableDisableTidakCocok(x HasilEnableDisable) string {
+	return "Nilai " + jalurIsNewNonProp + " \"" + x.IsNewPolicyNonProp + "\" / " + jalurJenisProporsiQD + " \"" +
+		x.ProportionalType + "\" bukan hasil tombol Enable / Disable Input Type " +
 		"(TreatyEnableDisableInput) - medan ini terkunci di layar"
 }
 
-// terimaEnableDisable = W3 audit silang P3 (pola F4): `.QuotationData.
-// ProportionalType` (sel `pyReadOnly=true`, `pyEditOptions=Read-only`) dan
-// `.IsNewPolicyNonProp` (bukan sel layar) hanya diubah DataTransform
-// `TreatyEnableDisableInput` - tombol "Enable / Disable Input Type", pyVisible
-// `.TreatyType='XOL'`, click -> refresh (TANPA simpan; hasilnya dipegang layar
-// sampai Save/Submit).
-//
-//   - tidak dikirim / sama dengan halaman server: tidak ada perubahan;
-//   - TreatyType bukan XOL: tombol tak tampil, medan TERKUNCI - kiriman
-//     diabaikan (pola AC 49-51);
-//   - selain itu diterima hanya bila SAMA dengan hasil DT atas halaman server
-//     (langkah 1 "NonProportional", langkah 2-4 selalu "0"); lain -> GalatKiriman.
-func terimaEnableDisable(h, masuk *Halaman) error {
-	dt := h.Salin()
-	TreatyEnableDisableInput(dt)
-	xol := h.Ambil(pt+"TreatyType") == "XOL"
-	for _, j := range jalurEnableDisable {
-		v, ada := masuk.Nilai[j]
-		if !ada || v == h.Ambil(j) || !xol {
-			continue
-		}
-		if v != dt.Ambil(j) {
-			return &GalatKiriman{Pesan: PesanEnableDisableTidakCocok(j, v)}
-		}
-		h.Setel(j, v)
+// KirimanEnableDisable = W3 audit silang P3, pola F4 (`TerimaKirimanTerkunci`):
+// `.QuotationData.ProportionalType` (sel `pyReadOnly=true`,
+// `pyEditOptions=Read-only`) dan `.IsNewPolicyNonProp` (bukan sel layar) hanya
+// diubah DataTransform `TreatyEnableDisableInput` - tombol "Enable / Disable
+// Input Type", pyVisible `.TreatyType='XOL'`, click -> refresh (TANPA simpan;
+// hasilnya dipegang layar sampai Save/Submit). Hasil hitung ulang = DT atas
+// halaman server (langkah 1 "NonProportional", langkah 2-4 selalu "0").
+func KirimanEnableDisable(h *Halaman) KirimanTerkunci[HasilEnableDisable] {
+	return KirimanTerkunci[HasilEnableDisable]{
+		Jalur:  []string{jalurIsNewNonProp, jalurJenisProporsiQD},
+		Tampil: h.Ambil(pt+"TreatyType") == "XOL",
+		Baca:   bacaEnableDisable,
+		Tulis:  tulisEnableDisable,
+		Pesan:  PesanEnableDisableTidakCocok,
+		HitungUlang: func() ([]HasilEnableDisable, error) {
+			dt := h.Salin()
+			TreatyEnableDisableInput(dt)
+			return []HasilEnableDisable{bacaEnableDisable(dt)}, nil
+		},
 	}
-	return nil
 }
 
 // TerapkanNilaiBawaanSel = `pyDefaultValue` sel terbuka `Section/DetailPolicyTreatyIn`
@@ -373,7 +382,7 @@ func TerapkanNilaiBawaanSel(h *Halaman) {
 // tersimpan `h`, HANYA untuk medan yang boleh diubah di posisi itu, dan
 // menjawab action set yang dipicu kiriman (`PemicuLayar`).
 //
-//	Admin   `terimaEnableDisable` (W3), lalu `medanAdmin` (daftar izin
+//	Admin   `KirimanEnableDisable` (W3, pola F4), lalu `medanAdmin` (daftar izin
 //	        berurutan, hanya sel yang TAMPIL - W4); `.FlagPPH` yang berubah
 //	        menjalankan `RemoveTypeTax_ACT` (change -> runActivity); nilai bawaan
 //	        sel (`TerapkanNilaiBawaanSel`).
@@ -408,7 +417,7 @@ func GabungMasukanLayar(h, masuk *Halaman, posisi string, tempat map[string]bool
 			}
 		}
 	} else {
-		if err := terimaEnableDisable(h, masuk); err != nil {
+		if _, err := TerimaKirimanTerkunci(h, masuk, KirimanEnableDisable(h)); err != nil {
 			return p, err
 		}
 		for _, m := range medanAdmin {
@@ -422,12 +431,12 @@ func GabungMasukanLayar(h, masuk *Halaman, posisi string, tempat map[string]bool
 			if !berubah {
 				continue
 			}
-			switch {
-			case m.pemicu == pemicuUang:
+			switch m.pemicu {
+			case pemicuUang:
 				p.Uang = true
-			case m.pemicu == pemicuAngsuran:
+			case pemicuAngsuran:
 				p.Angsuran = true
-			case m.medan == "FlagPPH":
+			case pemicuHapusTypeTax:
 				RemoveTypeTax(h) // change -> runActivity RemoveTypeTax_ACT
 			}
 		}
@@ -464,9 +473,33 @@ type PemicuLayar struct {
 // `SpreadingRiskList`, `DetailDeptHeadTreatyIn_UW` S96).
 var kolomHitungSpreading = []string{"PremiumSpreaded", "ClaimSpreaded"}
 
+// selSpreading - satu-satunya anggota baris spreading yang berupa SEL terbuka
+// grid (`DetailPolicyTreatyIn` S30, `SpreadingRiskList`): `.TreatyType`
+// (dropdown, `pyValue .TreatyType`; `.TreatyName` hanya `pyPrompt` daftar
+// pilihan - tidak ditulis sel), `.SharePercentage`, `.ClaimPercentage`.
+var selSpreading = []string{"TreatyType", "SharePercentage", "ClaimPercentage"}
+
+// anggotaServerSpreading - anggota baris spreading yang BUKAN sel grid dan
+// tidak ditulis action set sel mana pun (`CountSpreading_Act` hanya menulis
+// SharePercentage/ClaimPercentage/PremiumSpreaded/ClaimSpreaded). Penulisnya
+// hanya aktivitas server saat pilih bisnis:
+//
+//	TreatyName        `TreatyInputPctCommSpreading` (baris 1 = `.SpreadingType` master)
+//	Currency, CurrencyID, SplitRNMSharePct
+//	                  `TreatyNonPropSetSpreading` langkah 3, 4.1, 6
+//	                  (`InputPolicyTreatyInDetail_NonProp` 23)
+//
+// Pengerasan tercatat (PERMINTAAN H2): nilainya TIDAK diterima dari layar.
+// Baris kiriman membawa nilai baris server apa adanya (layar menyalin baris
+// utuh); nilai itu dipakai hanya bila SAMA dengan baris server yang belum
+// terpakai, berurutan (`pasangAnggotaServer`) - sehingga Delete tetap membawa
+// nilai barisnya sendiri. Baris baru (Add membuat baris kosong) atau nilai
+// yang tidak ada di server: kosong.
+var anggotaServerSpreading = []string{"TreatyName", "Currency", "CurrencyID", "SplitRNMSharePct"}
+
 // gabungSpreading menerima baris grid spreading kiriman layar `kiriman`
-// (Add/Delete, sel `.TreatyType` / `.SharePercentage` / `.ClaimPercentage`)
-// TANPA kolom hanya-baca-nya, dan menjawab apakah `CountSpreading_Act` terpicu.
+// (Add/Delete, sel `selSpreading`) TANPA kolom hanya-baca dan tanpa
+// `anggotaServerSpreading`, dan menjawab apakah `CountSpreading_Act` terpicu.
 //
 //   - terpicu (sel %Share / %Share Claim berubah dibanding baris server di
 //     urutan yang sama, baris baru membawa %Share, atau baris dihapus - urutan
@@ -482,12 +515,18 @@ var kolomHitungSpreading = []string{"PremiumSpreaded", "ClaimSpreaded"}
 // belum berubah sejak refresh terakhir.
 func gabungSpreading(h *Halaman, kiriman []Baris) bool {
 	lama := h.AmbilDaftar(DaftarSpreading)
-	baru := salinBaris(kiriman)
+	baru := make([]Baris, len(kiriman))
+	for i, k := range kiriman {
+		baru[i] = Baris{}
+		for _, m := range selSpreading {
+			if v, ada := k[m]; ada {
+				baru[i][m] = v
+			}
+		}
+	}
+	pasangAnggotaServer(lama, kiriman, baru)
 	terpicu := len(baru) < len(lama)
 	for i, b := range baru {
-		for _, k := range kolomHitungSpreading {
-			delete(b, k)
-		}
 		if i < len(lama) {
 			terpicu = terpicu || nilaiBerubah(lama[i]["SharePercentage"], b["SharePercentage"]) ||
 				nilaiBerubah(lama[i]["ClaimPercentage"], b["ClaimPercentage"])
@@ -506,6 +545,38 @@ func gabungSpreading(h *Halaman, kiriman []Baris) bool {
 	}
 	h.SetelDaftar(DaftarSpreading, baru)
 	return terpicu
+}
+
+// pasangAnggotaServer mengisi `anggotaServerSpreading` baris `baru` dari baris
+// server `lama`: baris kiriman ke-i dipasangkan dengan baris server berikutnya
+// (belum terpakai, berurutan) yang keempat anggotanya SAMA dengan yang dibawa
+// kiriman; kiriman tanpa nilai keempatnya, atau tanpa pasangan = kosong.
+func pasangAnggotaServer(lama, kiriman, baru []Baris) {
+	sama := func(a, b Baris) bool {
+		for _, m := range anggotaServerSpreading {
+			if a[m] != b[m] {
+				return false
+			}
+		}
+		return true
+	}
+	j := 0
+	for i, k := range kiriman {
+		if sama(k, Baris{}) {
+			continue // baris baru / tanpa nilai server: tidak memakai pasangan
+		}
+		for c := j; c < len(lama); c++ {
+			if sama(lama[c], k) {
+				for _, m := range anggotaServerSpreading {
+					if v, ada := lama[c][m]; ada {
+						baru[i][m] = v
+					}
+				}
+				j = c + 1
+				break
+			}
+		}
+	}
 }
 
 // nilaiBerubah - isian sel berubah = event `change` sel Pega: teks yang

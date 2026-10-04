@@ -43,10 +43,6 @@ var KolomRDDetail = []string{
 // kolomMasterView - kolom view untuk halaman TreatyIn (`TerapkanMasterKontrak`).
 var kolomMasterView = []string{"COMMENCEMENT", "TERMINATION"}
 
-// batasDaftarBisnis - baris terbanyak popup pilih bisnis: RD `BrowseTreatyJoinEDM`
-// `pyContent/pyMaxRecords` 500.
-const batasDaftarBisnis = 500
-
 // tipeKolom - cache tipe kolom per objek (nama berskema).
 var tipeKolom sync.Map // map[string]map[string]string
 
@@ -231,7 +227,7 @@ func (g *Gudang) KomisiKontrak(ctx context.Context, treatyID string) ([]models.B
 //     berparameter kosong -> diabaikan.
 //   - ORDER BY: `pyUIFields` `.TREATYID` `pySortType ASC`, `pySortOrder 1`
 //     (satu-satunya urutan RD). `ID` hanya pemutus seri supaya hasil tetap.
-//   - batas `pyContent/pyMaxRecords` 500 (`batasDaftarBisnis`).
+//   - batas `pyContent/pyMaxRecords` 500 (`models.BatasDaftarBisnis`).
 func (g *Gudang) DaftarBisnis(ctx context.Context, s models.SaringanBisnis) ([]models.BarisKontrak, error) {
 	tipe, err := g.tipeKolomObjek(ctx, viewDetailGabung)
 	if err != nil {
@@ -249,7 +245,7 @@ func (g *Gudang) DaftarBisnis(ctx context.Context, s models.SaringanBisnis) ([]m
 		args = append(args, s.JenisProporsi)
 	}
 	q := fmt.Sprintf(`SELECT %s FROM %s%s ORDER BY TREATYID, ID FETCH FIRST %d ROWS ONLY`,
-		strings.Join(eks, ", "), nama, saring, batasDaftarBisnis)
+		strings.Join(eks, ", "), nama, saring, models.BatasDaftarBisnis)
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}

@@ -154,6 +154,187 @@ func TestKolomHanyaBacaSpreadingTidakDariLayar(t *testing.T) {
 	angkaSamaTeks(t, "ClaimSpreaded (Save kedua)", sp[0]["ClaimSpreaded"], "0")
 }
 
+// spreadingDasar - kasus admin dengan dua baris spreading tersimpan sesudah Save:
+// A 60/60, B 40/40; NetPremium 1000 (halamanLengkap), klaim 0 -> PremiumSpreaded
+// 600 / 400 (CountSpreading_Act 4.1), ClaimSpreaded 0.
+func spreadingDasar(t *testing.T) (*uji, string, *models.Halaman) {
+	t.Helper()
+	u := baru(t)
+	id := u.buat()
+	h := halamanLengkap("1")
+	h.SetelDaftar(models.DaftarSpreading, []models.Baris{
+		{"TreatyType": "UJI-A", "SharePercentage": "60", "ClaimPercentage": "60"},
+		{"TreatyType": "UJI-B", "SharePercentage": "40", "ClaimPercentage": "40"},
+	})
+	u.simpanOK(id, h)
+	return u, id, h
+}
+
+// simpanSpreading - Save admin; jawabannya halaman layar (total spreading
+// tanpa kolom - hanya di layar).
+func (u *uji) simpanSpreading(id string, h *models.Halaman) *models.Halaman {
+	u.t.Helper()
+	kode, isi := u.simpan(id, h)
+	if kode != http.StatusOK {
+		u.t.Fatalf("simpan: %d %s", kode, isi)
+	}
+	return layarDari(u.t, isi).Halaman
+}
+
+// cekSpreading - PremiumSpreaded per baris tersimpan dan dua total di layar
+// (`CountSpreading_Act` 4.2/5: TotalSharePercentagePremium, TotalPremium).
+func cekSpreading(t *testing.T, u *uji, id string, ly *models.Halaman, premi []string, totalPct, totalPremi string) {
+	t.Helper()
+	s := ly
+	b := u.g.Halaman[id].AmbilDaftar(models.DaftarSpreading)
+	if len(b) != len(premi) {
+		t.Fatalf("%d baris, harap %d: %v", len(b), len(premi), b)
+	}
+	for i, w := range premi {
+		if w == "" {
+			if b[i]["PremiumSpreaded"] != "" {
+				t.Errorf("baris %d PremiumSpreaded %q, harap kosong", i+1, b[i]["PremiumSpreaded"])
+			}
+			continue
+		}
+		angkaSamaTeks(t, "PremiumSpreaded", b[i]["PremiumSpreaded"], w)
+	}
+	angkaSamaTeks(t, "TotalSharePercentagePremium", s.Ambil("PolicyTreatyIn.TotalSharePercentagePremium"), totalPct)
+	angkaSamaTeks(t, "TotalPremium", s.Ambil("PolicyTreatyIn.TotalPremium"), totalPremi)
+}
+
+// W5 lanjutan (dipindah dari uji models, C10): sel %Share memicu
+// `CountSpreading_Act` (change -> refresh) atas SELURUH baris; Add tanpa %Share
+// tidak memicu (baris baru kosong sampai refresh berikutnya); Delete menggeser
+// baris dan dihitung ulang. 4.1 `.ClaimPercentage = @if(.ClaimPercentage == "",
+// .SharePercentage, ...)`. Hitung tangan dengan NetPremium 1000.
+func TestSpreadingDipicuSelPersen(t *testing.T) {
+	t.Run("Share B 50: 600 / 500, total 110 / 1100", func(t *testing.T) {
+		u, id, h := spreadingDasar(t)
+		h.SetelDaftar(models.DaftarSpreading, []models.Baris{
+			{"TreatyType": "UJI-A", "SharePercentage": "60", "ClaimPercentage": "60", "PremiumSpreaded": "999"},
+			{"TreatyType": "UJI-B", "SharePercentage": "50", "ClaimPercentage": "40", "PremiumSpreaded": "999"},
+		})
+		cekSpreading(t, u, id, u.simpanSpreading(id, h), []string{"600", "500"}, "110", "1100")
+	})
+	t.Run("Add tanpa Share: tidak terpicu, baris baru kosong", func(t *testing.T) {
+		u, id, h := spreadingDasar(t)
+		h.SetelDaftar(models.DaftarSpreading, []models.Baris{
+			{"TreatyType": "UJI-A", "SharePercentage": "60", "ClaimPercentage": "60"},
+			{"TreatyType": "UJI-B", "SharePercentage": "40", "ClaimPercentage": "40"},
+			{"TreatyType": "UJI-C", "PremiumSpreaded": "999"},
+		})
+		cekSpreading(t, u, id, u.simpanSpreading(id, h), []string{"600", "400", ""}, "100", "1000")
+	})
+	t.Run("Add dengan Share 10: 4.1 mengisi Share Claim, 100", func(t *testing.T) {
+		u, id, h := spreadingDasar(t)
+		h.SetelDaftar(models.DaftarSpreading, []models.Baris{
+			{"TreatyType": "UJI-A", "SharePercentage": "60", "ClaimPercentage": "60"},
+			{"TreatyType": "UJI-B", "SharePercentage": "40", "ClaimPercentage": "40"},
+			{"TreatyType": "UJI-C", "SharePercentage": "10"},
+		})
+		cekSpreading(t, u, id, u.simpanSpreading(id, h), []string{"600", "400", "100"}, "110", "1100")
+		angkaSamaTeks(t, "ClaimPercentage baris 3", u.g.Halaman[id].AmbilDaftar(models.DaftarSpreading)[2]["ClaimPercentage"], "10")
+	})
+	t.Run("Delete A: B bergeser ke baris 1, 400", func(t *testing.T) {
+		u, id, h := spreadingDasar(t)
+		h.SetelDaftar(models.DaftarSpreading, []models.Baris{
+			{"TreatyType": "UJI-B", "SharePercentage": "40", "ClaimPercentage": "40", "PremiumSpreaded": "999"},
+		})
+		cekSpreading(t, u, id, u.simpanSpreading(id, h), []string{"400"}, "40", "400")
+	})
+}
+
+// Pengerasan tercatat (PERMINTAAN H2): anggota baris spreading yang BUKAN sel
+// grid - `.TreatyName` (hanya `pyPrompt` dropdown; ditulis
+// `TreatyInputPctCommSpreading`), `.Currency`, `.CurrencyID`,
+// `.SplitRNMSharePct` (ditulis `TreatyNonPropSetSpreading` 3/4.1/6) - tidak
+// ditulis action set sel mana pun (`CountSpreading_Act` hanya %Share dan
+// kolom Spreaded), jadi TIDAK diterima dari layar: nilainya nilai baris server,
+// mengikuti barisnya sendiri saat Delete; baris Add / nilai karangan kosong.
+func TestAnggotaBarisSpreadingDariServer(t *testing.T) {
+	anggota := []string{"TreatyName", "Currency", "CurrencyID", "SplitRNMSharePct"}
+	a := map[string]string{"TreatyName": "UJI NAMA A", "Currency": "IDR", "CurrencyID": "UJI-ID-IDR", "SplitRNMSharePct": "30"}
+	bb := map[string]string{"TreatyName": "UJI NAMA B", "Currency": "USD", "CurrencyID": "UJI-ID-USD", "SplitRNMSharePct": "20"}
+	kosong := map[string]string{}
+	// isiServer - nilai yang ditulis aktivitas pilih bisnis ke baris tersimpan.
+	isiServer := func(u *uji, id string) {
+		b := u.g.Halaman[id].AmbilDaftar(models.DaftarSpreading)
+		for i, isi := range []map[string]string{a, bb} {
+			for kk, v := range isi {
+				b[i][kk] = v
+			}
+		}
+	}
+	// salinLayar - layar menyalin baris server utuh (LayarKasus `ubahBaris`).
+	salinLayar := func(u *uji, id string) []models.Baris {
+		var out []models.Baris
+		for _, b := range u.g.Halaman[id].AmbilDaftar(models.DaftarSpreading) {
+			x := models.Baris{}
+			for kk, v := range b {
+				x[kk] = v
+			}
+			out = append(out, x)
+		}
+		return out
+	}
+	cek := func(t *testing.T, u *uji, id string, harap []map[string]string) {
+		t.Helper()
+		b := u.g.Halaman[id].AmbilDaftar(models.DaftarSpreading)
+		if len(b) != len(harap) {
+			t.Fatalf("%d baris, harap %d", len(b), len(harap))
+		}
+		for i, w := range harap {
+			for _, m := range anggota {
+				if b[i][m] != w[m] {
+					t.Errorf("baris %d %s = %q, harap %q", i+1, m, b[i][m], w[m])
+				}
+			}
+		}
+	}
+
+	t.Run("dibawa layar apa adanya: bertahan", func(t *testing.T) {
+		u, id, h := spreadingDasar(t)
+		isiServer(u, id)
+		rows := salinLayar(u, id)
+		rows[1]["SharePercentage"] = "50"
+		h.SetelDaftar(models.DaftarSpreading, rows)
+		u.simpanOK(id, h)
+		cek(t, u, id, []map[string]string{a, bb})
+	})
+	t.Run("nilai karangan dan Add tiruan baris A: kosong", func(t *testing.T) {
+		u, id, h := spreadingDasar(t)
+		isiServer(u, id)
+		rows := salinLayar(u, id)
+		rows[1]["TreatyName"] = "UJI KARANGAN"
+		rows[1]["SplitRNMSharePct"] = "99"
+		tiruA := models.Baris{"TreatyType": "UJI-C"}
+		for kk, v := range a {
+			tiruA[kk] = v
+		}
+		h.SetelDaftar(models.DaftarSpreading, append(rows, tiruA))
+		u.simpanOK(id, h)
+		cek(t, u, id, []map[string]string{a, kosong, kosong})
+	})
+	t.Run("Delete A: baris B membawa anggotanya sendiri", func(t *testing.T) {
+		u, id, h := spreadingDasar(t)
+		isiServer(u, id)
+		h.SetelDaftar(models.DaftarSpreading, salinLayar(u, id)[1:])
+		u.simpanOK(id, h)
+		cek(t, u, id, []map[string]string{bb})
+	})
+	t.Run("anggota di luar sel dan server tidak diterima", func(t *testing.T) {
+		u, id, h := spreadingDasar(t)
+		rows := salinLayar(u, id)
+		rows[0]["UJISelundupan"] = "x"
+		h.SetelDaftar(models.DaftarSpreading, rows)
+		u.simpanOK(id, h)
+		if _, ada := u.g.Halaman[id].AmbilDaftar(models.DaftarSpreading)[0]["UJISelundupan"]; ada {
+			t.Fatal("anggota di luar sel / server diterima dari layar")
+		}
+	})
+}
+
 // W4 - polis NonProp baru: medan uang berada di wadah S19 `.IsNewPolicyNonProp
 // != 1 && .IsNewPolicyListFormat != 1` yang TERSEMBUNYI; nilainya milik
 // InputPolicyTreatyInDetail_NonProp 18-19 (PremiOgp 3000, Deduction1 306.6,

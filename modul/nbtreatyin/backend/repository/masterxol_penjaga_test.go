@@ -160,6 +160,42 @@ func TestKolomDokumenHanyaDiMasterXOLDariJSON(t *testing.T) {
 	}
 }
 
+// F1 (tinjauan spec P3 (c)2): layar modul tidak pernah menyentuh kolom dokumen
+// JSON master - nol kemunculan di `modul/nbtreatyin/frontend/` (kode maupun
+// komentar, huruf besar maupun kecil). Data master sampai ke layar hanya lewat
+// halaman kerja hasil `MasterXOLDariJSON` (daftar medan tertutup).
+func TestFrontendTanpaKolomDokumen(t *testing.T) {
+	akar := filepath.Join("..", "..", "frontend")
+	diperiksa := 0
+	err := filepath.WalkDir(akar, func(p string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		switch filepath.Ext(p) {
+		case ".ts", ".tsx", ".css", ".json":
+		default:
+			return nil
+		}
+		diperiksa++
+		isi, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		for i, b := range strings.Split(string(isi), "\n") {
+			if strings.Contains(strings.ToUpper(b), kataKolomDokumen) {
+				t.Errorf("%s:%d memakai %s - layar tidak membaca kolom dokumen master (F1)", filepath.ToSlash(p), i+1, kataKolomDokumen)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diperiksa < 20 { // frontend/ memuat >30 berkas .ts/.tsx
+		t.Fatalf("hanya %d berkas diperiksa - jalannya salah, bukan layarnya bersih", diperiksa)
+	}
+}
+
 func TestMasterXOLDariJSONHanyaMengembalikanHasilUrai(t *testing.T) {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, "masterxol.go", nil, 0)

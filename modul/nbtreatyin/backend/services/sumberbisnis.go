@@ -28,13 +28,6 @@ func (l *Layanan) DaftarSumberBisnis(ctx context.Context, p inti.Pelaku) ([]mode
 	return l.g.DaftarAgenHierarki(ctx)
 }
 
-// HasilSumberBisnis - jawaban klik satu baris: nilai yang ditulis PostDT per
-// jalur halaman (`Quotation.SourceOfBusiness`, `.SobName`, `.SobLeader0`,
-// `.SobLeader1`). Layar memegangnya dan mengirimnya kembali pada Save/Submit.
-type HasilSumberBisnis struct {
-	Nilai map[string]string `json:"nilai"`
-}
-
 // PilihSumberBisnis = klik satu baris TreeGrid popup `SOB` - PENCARIAN TANPA
 // SIMPAN:
 //
@@ -51,7 +44,7 @@ type HasilSumberBisnis struct {
 //
 // ⭐ F4: PostDT dan aktivitas `Choose` tidak ber-Obj-Save - hasilnya hanya ada
 // di clipboard sampai Save/Submit layar utama. Maka di sini NOL penyimpanan:
-// layar memegang `HasilSumberBisnis` dan mengirimnya bersama Save/Submit, dan
+// layar memegang `models.SumberBisnisPostDT` dan mengirimnya bersama Save/Submit, dan
 // server menerimanya hanya bila cocok dengan RD yang dijalankan ulang
 // (`terimaSumberBisnis`).
 //
@@ -61,62 +54,42 @@ type HasilSumberBisnis struct {
 // menutup popup. XML tidak menjalankan refresh berhitung apa pun sesudah klik
 // atau Choose (tombol `Select Source Of Business` hanya `showHarness`, tanpa
 // `refresh` - berbeda dengan `Choose Business`).
-func (l *Layanan) PilihSumberBisnis(ctx context.Context, p inti.Pelaku, id, idAgen string, masuk *models.Halaman) (HasilSumberBisnis, error) {
+func (l *Layanan) PilihSumberBisnis(ctx context.Context, p inti.Pelaku, id, idAgen string, masuk *models.Halaman) (models.SumberBisnisPostDT, error) {
 	if strings.TrimSpace(idAgen) == "" {
-		return HasilSumberBisnis{}, fmt.Errorf("%w: ID sumber bisnis kosong", ErrPermintaanTidakSah)
+		return models.SumberBisnisPostDT{}, fmt.Errorf("%w: ID sumber bisnis kosong", ErrPermintaanTidakSah)
 	}
 	k, h, err := l.kerjakan(ctx, p, id, masuk)
 	if err != nil {
-		return HasilSumberBisnis{}, err
+		return models.SumberBisnisPostDT{}, err
 	}
 	if k.PositionNote != models.PosisiAdmin {
-		return HasilSumberBisnis{}, ErrTindakanTakAdaDiPosisi
+		return models.SumberBisnisPostDT{}, ErrTindakanTakAdaDiPosisi
 	}
 	if !models.TampilPilihSumberBisnis(h) {
-		return HasilSumberBisnis{}, fmt.Errorf("%w: tombol Select Source Of Business tampil hanya bila ClaimType '%s'",
+		return models.SumberBisnisPostDT{}, fmt.Errorf("%w: tombol Select Source Of Business tampil hanya bila ClaimType '%s'",
 			ErrTindakanTakAdaDiPosisi, models.KlaimXOLRetro)
 	}
 	b, ada, err := l.g.AgenHierarki(ctx, idAgen)
 	if err != nil {
-		return HasilSumberBisnis{}, err
+		return models.SumberBisnisPostDT{}, err
 	}
 	if !ada {
-		return HasilSumberBisnis{}, fmt.Errorf("%w: sumber bisnis %q tidak ada di daftar BrowseAgentHierarkiList_RD", ErrPermintaanTidakSah, idAgen)
+		return models.SumberBisnisPostDT{}, fmt.Errorf("%w: sumber bisnis %q tidak ada di daftar BrowseAgentHierarkiList_RD", ErrPermintaanTidakSah, idAgen)
 	}
-	nilai, err := models.HasilPostDT(b)
-	if err != nil {
-		return HasilSumberBisnis{}, err
-	}
-	return HasilSumberBisnis{Nilai: nilai}, nil
+	return models.HasilPostDT(b)
 }
 
 // terimaSumberBisnis = F4: pilihan Source Of Business yang dipegang layar admin
 // (hasil klik `PilihSumberBisnis`) ikut kiriman Save/Submit/refresh dan
-// diterima di sini - dipanggil `kerjakan` sesudah isian layar digabung dan
-// SEBELUM medan turunan dihitung (`turunkan` -> `SetPPNPPH`), sehingga status
-// PKP memakai nilai yang dipegang layar saat itu.
-//
-//   - tidak ada pilihan baru (`Quotation.SourceOfBusiness` tidak dikirim atau
-//     sama dengan tersimpan) -> tidak berbuat apa pun;
-//   - ClaimType (isian layar) bukan 'XOL Retro' -> tombolnya tidak tampil, medan
-//     itu TERKUNCI: kiriman diabaikan, nilai tersimpan dipakai (pola AC 49-51
-//     `GabungMasukanLayar`);
-//   - selain itu RD `BrowseAgentHierarkiList_RD` DIJALANKAN ULANG dan pilihan
-//     diterima hanya bila sama persis dengan hasil PostDT salah satu barisnya
-//     (`models.CocokHasilPostDT`); tidak cocok -> 422 berpesan jelas.
+// diterima dengan pola kiriman terkunci (`models.KirimanSumberBisnis` +
+// `models.TerimaKirimanTerkunci`; RD `BrowseAgentHierarkiList_RD` DIJALANKAN
+// ULANG hanya bila ada pilihan baru) - dipanggil `kerjakan` sesudah isian layar
+// digabung dan SEBELUM medan turunan dihitung (`turunkan` -> `SetPPNPPH`),
+// sehingga status PKP memakai nilai yang dipegang layar saat itu. Tidak cocok
+// -> `models.GalatKiriman` (422, `jawabKiriman`).
 func (l *Layanan) terimaSumberBisnis(ctx context.Context, h, masuk *models.Halaman) error {
-	pilihan, berubah := models.SumberBisnisKiriman(h, masuk)
-	if !berubah || !models.TampilPilihSumberBisnis(h) {
-		return nil
-	}
-	daftar, err := l.g.DaftarAgenHierarki(ctx)
-	if err != nil {
-		return err
-	}
-	if !models.CocokHasilPostDT(daftar, pilihan) {
-		id := pilihan[models.HalamanQuotation+".SourceOfBusiness"]
-		return &GalatValidasi{Pesan: []string{models.PesanSumberBisnisTidakCocok(id)}}
-	}
-	models.TerapkanPilihanSumberBisnis(h, pilihan)
-	return nil
+	_, err := models.TerimaKirimanTerkunci(h, masuk, models.KirimanSumberBisnis(h, func() ([]models.BarisAgen, error) {
+		return l.g.DaftarAgenHierarki(ctx)
+	}))
+	return err
 }

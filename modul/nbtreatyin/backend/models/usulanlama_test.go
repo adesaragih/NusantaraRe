@@ -22,7 +22,7 @@ const dokumenUjiUsulan = `{
   {"pxObjClass": "UJI-kelas", "Date": "20171002T020000.000 GMT", "IsApproved": "1",
    "OperatorName": "UJI-PENGGUNA A", "Suggest": "UJI-catatan satu"},
   {"Date": "20171003T100000.000 GMT", "IsApproved": "0", "OperatorName": "",
-   "Suggest": "UJI-catatan dua", "OperatorID": "UJI-AKUN-B"},
+   "Suggest": "UJI-catatan dua"},
   {"Date": "20171004T000000.000 GMT", "IsApproved": "", "OperatorName": "UJI-PENGGUNA C",
    "Suggest": "UJI-sudah tersimpan", "IsSave": "Yes"}
  ]
@@ -46,12 +46,14 @@ func TestSuggestListLamaDisalinMenurutSaveViewSuggest(t *testing.T) { // F3; AC 
 	//   (dokumen: QuotationData = salinan Quotation, GeneratePolicyNoTreaty_Act 10)
 	//   CARI5 .Date: 2017-10-02 02:00 GMT = 09:00 WIB (24 jam, F2 butir 2)
 	//   CARI8 2 · CARI9 "1" -> "Accept", "0" -> "Reject" · CARI10 .Suggest
-	//   AKSES_LOGIN: OperatorID baris bila ada, tidak dikarang; BUSINESS_CODE Quotation.BusinessCode
+	//   AKSES_LOGIN: NULL - baris SuggestList tidak punya anggota operator (dataguide:
+	//   Date, Suggest, IsApproved, pxObjClass, OperatorName; AddToListCommentsPolicyTreatyIn_DT
+	//   menulis .Suggest/.IsApproved/.Date/.OperatorName); BUSINESS_CODE Quotation.BusinessCode
 	harap := []UsulanProduksi{
 		{TypePolis: "UJI", Posisi: "Policy", PIC: "UJI-PENGGUNA A", TglInp: "2017-10-02 09:00:00", Type: "T",
 			Putaran: "2", Approval: "Accept", Keterangan: "UJI-catatan satu", BusinessCode: "UJI-B01"},
 		{TypePolis: "UJI", Posisi: "Policy", PIC: "", TglInp: "2017-10-03 17:00:00", Type: "T",
-			Putaran: "2", Approval: "Reject", Keterangan: "UJI-catatan dua", AksesLogin: "UJI-AKUN-B", BusinessCode: "UJI-B01"},
+			Putaran: "2", Approval: "Reject", Keterangan: "UJI-catatan dua", BusinessCode: "UJI-B01"},
 	}
 	for i, u := range h.Usulan {
 		if u != harap[i] {
@@ -72,5 +74,23 @@ func TestSuggestListLamaTanggalAmbiguMenggagalkanDokumen(t *testing.T) { // K15,
 	}
 	if len(h.Galat) != 1 || h.Galat[0].Jalur != "PolicyTreatyIn.SuggestList(1).Date" || !errors.Is(h.Galat[0].Err, ErrTanggalAmbigu) {
 		t.Errorf("galat %+v", h.Galat)
+	}
+}
+
+// Anggota baris SuggestList di luar dataguide (mis. `OperatorID`) bukan anggota
+// yang dikenal: tidak dipetakan ke AKSES_LOGIN, dan masuk arsip sebagai
+// "belum diputuskan" - medan tak berbukti tidak dikarang (tinjauan spec P3 (c)3).
+func TestOperatorIDBarisUsulanTidakDipetakan(t *testing.T) {
+	d := `{"pxObjClass": "ASM-FW-GISFW-Data-PolicyTreatyIn", "PolicyNo": "UJI-QP.T1.10.2017.00001",
+	 "SuggestList": [{"Date": "20171002T020000.000 GMT", "Suggest": "UJI-x", "OperatorID": "UJI-AKUN"}]}`
+	h, err := PecahDokumenLama(barisUji(d))
+	if err != nil || len(h.Galat) > 0 {
+		t.Fatalf("%v %+v", err, h.Galat)
+	}
+	if len(h.Usulan) != 1 || h.Usulan[0].AksesLogin != "" {
+		t.Fatalf("AKSES_LOGIN wajib kosong (NULL): %+v", h.Usulan)
+	}
+	if len(h.BelumDiputuskan) != 1 {
+		t.Fatalf("OperatorID baris SuggestList = belum diputuskan, dapat %+v", h.BelumDiputuskan)
 	}
 }

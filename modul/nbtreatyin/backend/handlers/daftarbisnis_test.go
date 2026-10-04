@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"slices"
+	"strings"
 	"testing"
 
 	"nusantarare/modul/nbtreatyin/backend/models"
@@ -186,5 +187,28 @@ func TestPilihBisnisDitolakBilaTombolTakTampil(t *testing.T) {
 	}
 	if got := u.g.Halaman[id].Ambil("PolicyTreatyIn.NoOffer"); got != "" {
 		t.Fatalf("pilih bisnis yang ditolak tidak boleh menyimpan: NoOffer %q", got)
+	}
+}
+
+// Pola F4 (pengerasan tercatat, PERMINTAAN H2): tombol `Choose` hanya ada di
+// baris grid AKTIF popup (`SetValue_Act(ID=.ID)`), jadi `idDetail` diterima hanya
+// bila ada di RD `BrowseTreatyJoinEDM` yang dijalankan ulang dengan saringan
+// kasus ini. UJI-D-N1 ada di view, tetapi tersaring keluar (filter H
+// PROPORTIONTYPE = Proportional) - 422 dan nol simpanan; UJI-D-P1 di daftar - 200.
+func TestPilihBisnisDiLuarDaftarPopupDitolak(t *testing.T) {
+	u := baru(t)
+	kontrakPopup(u)
+	id := u.buat()
+	u.g.Halaman[id].Setel("Quotation.ProportionalType", "Proportional")
+	sebelum := len(u.g.Panggil)
+	kode, isi := u.panggil("POST", "/kasus/"+id+"/pilih-bisnis", admin, map[string]any{"idDetail": "UJI-D-N1"})
+	if kode != http.StatusUnprocessableEntity || !strings.Contains(isi, "tidak ada di daftar popup Choose Business") {
+		t.Fatalf("ID di luar daftar popup tersaring: %d %s", kode, isi)
+	}
+	if slices.Contains(u.g.Panggil[sebelum:], "SimpanHalaman") || u.g.Halaman[id].Ambil("PolicyTreatyIn.NoOffer") != "" {
+		t.Fatal("pilihan yang ditolak tidak boleh menyimpan")
+	}
+	if kode, isi := u.panggil("POST", "/kasus/"+id+"/pilih-bisnis", admin, map[string]any{"idDetail": "UJI-D-P1"}); kode != http.StatusOK {
+		t.Fatalf("ID di daftar popup: %d %s", kode, isi)
 	}
 }

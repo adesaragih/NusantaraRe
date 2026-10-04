@@ -73,29 +73,29 @@ func sqlAdaUsulanIDPega(t string) string {
 // 04-10-2026) lewat penulis yang SAMA dengan jalur biasa (`CatatUsulan`,
 // pengganti `InsertViewSuggest_SQL`; ID-3, AC 56), di transaksi pemuatan
 // dokumen itu. Penjaga dobel menurut IDPEGA: bila IDPEGA itu sudah punya
-// baris riwayat produksi, tidak ada yang ditulis dan hasilnya false -
-// pemuat yang diulang tidak menggandakan baris. NOURUT = 1..n berurut baris
-// dokumen (`CatatUsulan` MAX+1 dari nol = `.pxListSubscript` langkah 2.1.2).
-func (g *Gudang) SalinUsulanLama(ctx context.Context, tx *db.Tx, idPega string, baris []models.UsulanProduksi) (bool, error) {
+// baris riwayat produksi, tidak ada yang ditulis (`UsulanDilewati`) - pemuat
+// yang diulang tidak menggandakan baris. NOURUT = 1..n berurut baris dokumen
+// (`CatatUsulan` MAX+1 dari nol = `.pxListSubscript` langkah 2.1.2).
+func (g *Gudang) SalinUsulanLama(ctx context.Context, tx *db.Tx, idPega string, baris []models.UsulanProduksi) (models.NasibUsulan, error) {
 	if len(baris) == 0 {
-		return true, nil
+		return models.UsulanTanpaBaris, nil
 	}
 	t, err := g.nama(tabelRiwayatProduksi)
 	if err != nil {
-		return false, err
+		return models.UsulanTanpaBaris, err
 	}
 	q := sqlAdaUsulanIDPega(t)
 	if err := db.PeriksaSQL(q); err != nil {
-		return false, err
+		return models.UsulanTanpaBaris, err
 	}
 	var n int
 	if err := g.pembaca(tx).QueryRowContext(ctx, q, idPega).Scan(&n); err != nil {
-		return false, fmt.Errorf("repository: memeriksa riwayat produksi IDPEGA: %w", err)
+		return models.UsulanTanpaBaris, fmt.Errorf("repository: memeriksa riwayat produksi IDPEGA: %w", err)
 	}
 	if n > 0 {
-		return false, nil
+		return models.UsulanDilewati, nil
 	}
-	return true, g.CatatUsulan(ctx, tx, idPega, baris)
+	return models.UsulanDisalin, g.CatatUsulan(ctx, tx, idPega, baris)
 }
 
 // KunciJSONPolis - kunci baca (ROWID) setiap baris generasi NB di JSON_POLIS.

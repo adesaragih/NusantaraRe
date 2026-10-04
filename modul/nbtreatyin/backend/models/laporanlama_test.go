@@ -43,7 +43,7 @@ func TestLaporanArsipMedanTanpaKolomBerkasCSV(t *testing.T) { // F3; K17, AC 57,
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := l.Berhasil(h, true); err != nil {
+	if err := l.Berhasil(h, UsulanDisalin); err != nil {
 		t.Fatal(err)
 	}
 	if err := l.Tutup(); err != nil {
@@ -150,7 +150,7 @@ func TestRingkasanSelesaiHanyaBilaNolGalatDanNolBelumDiputuskan(t *testing.T) { 
 	if err != nil || len(h.BelumDiputuskan) != 0 {
 		t.Fatalf("%v %+v", err, h.BelumDiputuskan)
 	}
-	_ = l.Berhasil(h, true)
+	_ = l.Berhasil(h, UsulanDisalin)
 	l.SudahDimuat()
 	_ = l.Tutup()
 	r := l.Ringkasan()
@@ -169,9 +169,10 @@ func TestRingkasanSelesaiHanyaBilaNolGalatDanNolBelumDiputuskan(t *testing.T) { 
 	}
 }
 
-// F3: SuggestList dokumen lama disalin ke HISTORYAKSEPTASIPRODUCTION; AKSES_LOGIN
-// dan PIC kosong ditulis apa adanya (NULL) dan DICATAT; dokumen yang IDPEGA-nya
-// sudah punya baris riwayat produksi dilewati salinannya (penjaga dobel).
+// F3: SuggestList dokumen lama disalin ke HISTORYAKSEPTASIPRODUCTION; PIC kosong
+// ditulis apa adanya (NULL) dan DICATAT; AKSES_LOGIN selalu NULL (tanpa anggota
+// sumber); dokumen yang IDPEGA-nya sudah punya baris riwayat produksi dilewati
+// salinannya (penjaga dobel); dokumen tanpa baris tidak dicatat.
 func TestRingkasanSalinanUsulanLama(t *testing.T) {
 	var arsip, gal bytes.Buffer
 	l, _ := LaporanPemuatBaru(&arsip, &gal, true)
@@ -179,17 +180,18 @@ func TestRingkasanSalinanUsulanLama(t *testing.T) {
 	if err != nil || len(h.Usulan) != 2 {
 		t.Fatalf("%v %+v", err, h.Usulan)
 	}
-	_ = l.Berhasil(h, true)
-	_ = l.Berhasil(h, false) // jalankan berikutnya: IDPEGA sudah punya baris
+	_ = l.Berhasil(h, UsulanDisalin)
+	_ = l.Berhasil(h, UsulanDilewati) // jalankan berikutnya: IDPEGA sudah punya baris
 	_ = l.Tutup()
 	r := l.Ringkasan()
-	if r.UsulanDisalin != 2 || r.UsulanTanpaAksesLogin != 1 || r.UsulanTanpaPIC != 1 || r.UsulanDokumenSudahAda != 1 {
+	_ = l.Berhasil(HasilPecah{}, UsulanTanpaBaris)
+	if r = l.Ringkasan(); r.Usulan != (RingkasanUsulan{Disalin: 2, TanpaPIC: 1, DokumenSudahAda: 1}) {
 		t.Errorf("ringkasan usulan %+v", r)
 	}
 	if !r.Selesai() {
 		t.Errorf("AKSES_LOGIN/PIC kosong dicatat, bukan galat: %+v", r)
 	}
-	for _, s := range []string{"HISTORYAKSEPTASIPRODUCTION", "AKSES_LOGIN kosong", "PIC kosong"} {
+	for _, s := range []string{"HISTORYAKSEPTASIPRODUCTION", "AKSES_LOGIN selalu NULL", "PIC kosong"} {
 		if !strings.Contains(r.Teks(), s) {
 			t.Errorf("teks ringkasan tanpa %q:\n%s", s, r.Teks())
 		}
@@ -209,7 +211,7 @@ func TestRingkasanMencetakNomorKasusTerbesarBerawalanKasus(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_ = l.Berhasil(h, true)
+		_ = l.Berhasil(h, UsulanDisalin)
 	}
 	_ = l.Tutup()
 	r := l.Ringkasan()

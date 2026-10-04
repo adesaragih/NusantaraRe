@@ -13,7 +13,7 @@
 //     `components/DetailNonProp.tsx`; tertunda selama pemetaan IAM kosong.)
 
 import { KLAIM_XOL_RETRO, MASTER, POLIS, nilai, type Baris, type Halaman } from './api'
-import type { Sajian } from './sajian'
+import { POLA_INTI, type Sajian } from './sajian'
 import { nolTeks, positifTeks } from './tanda'
 
 /** `.IsNewPolicyNonProp = 1` - kontainer proporsional tersembunyi, subsection NonProp tampil. */
@@ -45,8 +45,6 @@ export interface Kolom {
 
 const k = (m: string, label: string, format?: Sajian | 'mentah'): Kolom =>
   format === undefined ? { m, label } : { m, label, format }
-/** pxNumber tanpa `pyDecimalPlaces`. */
-const POLA_INTI: Sajian = {}
 
 /** Grid "Limits" - `pyWorkPage.TreatyIn.LimitSummaryList`. */
 export const KOLOM_LIMIT: Kolom[] = [
@@ -134,11 +132,14 @@ export const TOTAL_FAKULTATIF: Total[] = [
   { daftar: 'TotalFacShareNetNP', label: 'Total Net Premi' },
 ]
 
+/** Grid Total Spreaded (`TOTAL_SPREADED`) - label di atas kolom `.Currency`. */
+export const gridTotalSpreaded = (t: Total) => TOTAL_SPREADED.some((x) => x.daftar === t.daftar)
+
 /** Kolom grid total: LABEL judul di atas kolom `.Value`, kolom `.Currency` tanpa
  *  judul - kecuali grid Total Spreaded (label di atas `.Currency`, "Value" di atas
  *  `.Value`). LABEL judul `DetailPolicyTreatyInNonProportional` (audit silang P3). */
 export function kolomTotal(t: Total): Kolom[] {
-  const dasar = t.daftar.startsWith('TotalSpreaded')
+  const dasar = gridTotalSpreaded(t)
     ? [k('Currency', t.label), k('Value', 'Value')]
     : [k('Currency', ''), k('Value', t.label)]
   return [...(t.kosongAwal ? [k('', '')] : []), ...dasar, ...(t.tambahan ?? [])]

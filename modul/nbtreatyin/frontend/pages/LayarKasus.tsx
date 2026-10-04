@@ -39,6 +39,7 @@ import {
 import DetailNonProp from '../components/DetailNonProp'
 import InputAngka from '../components/InputAngka'
 import KotakMedan from '../components/KotakMedan'
+import Paginasi from '../components/Paginasi'
 import PilihBisnis from '../components/PilihBisnis'
 import PilihSumberBisnis, { pegangSumberBisnis, tampilTombolSOB } from '../components/PilihSumberBisnis'
 import Wadah from '../components/Wadah'
@@ -65,6 +66,7 @@ import {
   SAJIAN_ANGSURAN,
   SAJIAN_SPREADING,
   bukanXOLRetro,
+  labelTreatyType,
   medanTampil,
   wadahUangAdmin,
   wadahUangAtasan,
@@ -72,7 +74,7 @@ import {
   type Medan,
 } from '../medan'
 import { tampilNonProp } from '../nonprop'
-import { BARIS_PER_HALAMAN_USULAN, irisan, jumlahHalaman } from '../paginasi'
+import { BARIS_PER_HALAMAN_USULAN, irisan } from '../paginasi'
 import { sajikan, type Sajian } from '../sajian'
 import { tampilTanggalProduksi } from '../tempat'
 
@@ -352,11 +354,10 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
                             </option>
                           ))}
                         </select>
-                      ) : admin ? (
-                        b.TreatyName || b.TreatyType || ''
                       ) : (
-                        // DetailDeptHeadTreatyIn_UW .TreatyType: dropdown ro, BrowseReinsuranceType_RD (.ID -> .Note)
-                        (acuan?.jenisReas ?? []).find((o) => o.nilai === b.TreatyType)?.label || b.TreatyType || ''
+                        // admin: dropdown ListSpreading (pyPrompt .TreatyName); DetailDeptHeadTreatyIn_UW
+                        // .TreatyType: dropdown ro, BrowseReinsuranceType_RD (.ID -> .Note)
+                        labelTreatyType(b, (admin ? acuan?.spreading : acuan?.jenisReas) ?? [])
                       )}
                     </td>
                     <td>{persenSpreading(b, i, 'SharePercentage', KOLOM_SPREADING.share)}</td>
@@ -516,21 +517,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
           </table>
         </div>
         {/* pyGridPaginator - pyPageMode Numeric, pyPageSizeOther 5 */}
-        {jumlahHalaman(usulan.length, BARIS_PER_HALAMAN_USULAN) > 1 && (
-          <div className="nbti__aksi">
-            {Array.from({ length: jumlahHalaman(usulan.length, BARIS_PER_HALAMAN_USULAN) }, (_, i) => i + 1).map((n) => (
-              <button
-                key={n}
-                type="button"
-                className={n === halUsulan ? 'btn btn--sm btn--primary' : 'btn btn--sm'}
-                aria-current={n === halUsulan ? 'page' : undefined}
-                onClick={() => setHalUsulan(n)}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        )}
+        <Paginasi jumlahBaris={usulan.length} ukuran={BARIS_PER_HALAMAN_USULAN} hal={halUsulan} onHal={setHalUsulan} />
       </Wadah>
 
       {/* Panel History: bukan Section XML - dasar spec AC 72 ("Riwayat dapat dibaca berurutan

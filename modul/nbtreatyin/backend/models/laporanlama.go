@@ -111,20 +111,47 @@ type RingkasanPemuat struct {
 	// RALAT F3: wajib 0).
 	MedanBelumDiputuskan   int
 	BelumDiputuskanPerPola map[string]int
-	// UsulanDisalin - baris SuggestList dokumen lama yang ditulis (atau siap
-	// ditulis) ke POOLDATA.HISTORYAKSEPTASIPRODUCTION (F3).
-	UsulanDisalin int
-	// UsulanTanpaAksesLogin, UsulanTanpaPIC - baris yang disalin dengan
-	// AKSES_LOGIN / PIC kosong (NULL): isi baris dokumen tidak memuatnya dan
-	// nilainya tidak dikarang (F3).
-	UsulanTanpaAksesLogin int
-	UsulanTanpaPIC        int
-	// UsulanDokumenSudahAda - dokumen yang IDPEGA-nya sudah punya baris riwayat
-	// produksi: salinan SuggestList-nya dilewati (penjaga dobel, F3).
-	UsulanDokumenSudahAda int
+	// Usulan - salinan SuggestList dokumen lama ke riwayat produksi (F3).
+	Usulan RingkasanUsulan
 	// AngkaKasusTerbesar - nomor terbesar pyID berawalan `NB-` yang dimuat:
 	// SEQ_WORK_POLIS (`IDKasusBerikut`) wajib dimajukan melewatinya.
 	AngkaKasusTerbesar int64
+}
+
+// RingkasanUsulan - cacah salinan SuggestList dokumen lama ke
+// POOLDATA.HISTORYAKSEPTASIPRODUCTION (F3).
+type RingkasanUsulan struct {
+	// Disalin - baris yang ditulis (atau siap ditulis). AKSES_LOGIN setiap
+	// baris NULL: anggota sumbernya tidak ada di dokumen (`usulanlama.go`).
+	Disalin int
+	// TanpaPIC - baris yang disalin dengan PIC kosong (NULL): baris dokumen
+	// tanpa `OperatorName`; nilainya tidak dikarang.
+	TanpaPIC int
+	// DokumenSudahAda - dokumen yang IDPEGA-nya sudah punya baris riwayat
+	// produksi: salinannya dilewati (penjaga dobel).
+	DokumenSudahAda int
+}
+
+// NasibUsulan - akibat salinan SuggestList satu dokumen (F3).
+type NasibUsulan int
+
+const (
+	// UsulanTanpaBaris - dokumen tanpa baris SuggestList yang disalin
+	// (langkah 2.1 `.IsSave == ""`).
+	UsulanTanpaBaris NasibUsulan = iota
+	// UsulanDisalin - baris ditulis (atau, uji-kering, siap ditulis).
+	UsulanDisalin
+	// UsulanDilewati - penjaga dobel: IDPEGA sudah punya baris riwayat produksi.
+	UsulanDilewati
+)
+
+// NasibUsulanUjiKering - uji-kering tidak menulis apa pun: baris yang ada siap
+// disalin.
+func NasibUsulanUjiKering(h HasilPecah) NasibUsulan {
+	if len(h.Usulan) == 0 {
+		return UsulanTanpaBaris
+	}
+	return UsulanDisalin
 }
 
 // Selesai - nol dokumen gagal dan nol medan BELUM DIPUTUSKAN (AC 59 RALAT
@@ -161,10 +188,10 @@ func (r RingkasanPemuat) Teks() string {
 	fmt.Fprintf(&b, "Dokumen gagal (berkas laporan galat)             : %d\n", r.DokumenGagal)
 	tulisPeta(&b, r.GalatPerJenis)
 	fmt.Fprintf(&b, "Tanggal ambigu, tidak ditebak (K15)              : %d nilai\n", r.TanggalAmbigu)
-	fmt.Fprintf(&b, "Catatan SuggestList %-29s: %d baris -> POOLDATA.HISTORYAKSEPTASIPRODUCTION (F3)\n", disalin, r.UsulanDisalin)
-	fmt.Fprintf(&b, "    AKSES_LOGIN kosong (baris dokumen tanpa OperatorID, ditulis NULL): %d\n", r.UsulanTanpaAksesLogin)
-	fmt.Fprintf(&b, "    PIC kosong (baris dokumen tanpa OperatorName, ditulis NULL)      : %d\n", r.UsulanTanpaPIC)
-	fmt.Fprintf(&b, "    dokumen dilewati - IDPEGA sudah punya baris riwayat produksi    : %d\n", r.UsulanDokumenSudahAda)
+	fmt.Fprintf(&b, "Catatan SuggestList %-29s: %d baris -> POOLDATA.HISTORYAKSEPTASIPRODUCTION (F3)\n", disalin, r.Usulan.Disalin)
+	b.WriteString("    AKSES_LOGIN selalu NULL (anggota sumbernya tidak ada di dokumen lama)\n")
+	fmt.Fprintf(&b, "    PIC kosong (baris dokumen tanpa OperatorName, ditulis NULL)      : %d\n", r.Usulan.TanpaPIC)
+	fmt.Fprintf(&b, "    dokumen dilewati - IDPEGA sudah punya baris riwayat produksi    : %d\n", r.Usulan.DokumenSudahAda)
 	fmt.Fprintf(&b, "Medan dibuang menurut keputusan tertulis (arsip CSV, KEPUTUSAN dibuang):\n")
 	tulisPeta(&b, r.DiabaikanPerAlasan)
 	fmt.Fprintf(&b, "Medan BELUM DIPUTUSKAN (arsip CSV, KEPUTUSAN %s): %d  - WAJIB 0 sebelum pekerjaan dinyatakan selesai (AC 59, F3)\n",
@@ -234,10 +261,9 @@ func (l *LaporanPemuat) Gagal(b BarisJSONPolis, g []GalatDokumen) error {
 
 // Berhasil mencatat dokumen yang dimuat (atau siap dimuat), menulis setiap
 // medannya yang tidak masuk kolom ke arsip CSV beserta keputusannya (F3, K17,
-// AC 57), dan mencatat salinan SuggestList-nya. `usulanDisalin` false =
-// penjaga dobel melewati salinan karena IDPEGA sudah punya baris riwayat
-// produksi (`repository.SalinUsulanLama`).
-func (l *LaporanPemuat) Berhasil(h HasilPecah, usulanDisalin bool) error {
+// AC 57), dan mencatat nasib salinan SuggestList-nya (`NasibUsulan`;
+// `repository.SalinUsulanLama`).
+func (l *LaporanPemuat) Berhasil(h HasilPecah, usulan NasibUsulan) error {
 	l.r.Dimuat++
 	for a, n := range h.Diabaikan {
 		l.r.DiabaikanPerAlasan[a] += n
@@ -254,19 +280,16 @@ func (l *LaporanPemuat) Berhasil(h HasilPecah, usulanDisalin bool) error {
 			return err
 		}
 	}
-	switch {
-	case usulanDisalin:
-		l.r.UsulanDisalin += len(h.Usulan)
+	switch usulan {
+	case UsulanDisalin:
+		l.r.Usulan.Disalin += len(h.Usulan)
 		for _, u := range h.Usulan {
-			if u.AksesLogin == "" {
-				l.r.UsulanTanpaAksesLogin++
-			}
 			if u.PIC == "" {
-				l.r.UsulanTanpaPIC++
+				l.r.Usulan.TanpaPIC++
 			}
 		}
-	case len(h.Usulan) > 0:
-		l.r.UsulanDokumenSudahAda++
+	case UsulanDilewati:
+		l.r.Usulan.DokumenSudahAda++
 	}
 	if strings.HasPrefix(h.ID, AwalanKasus) {
 		if n, err := strconv.ParseInt(strings.TrimPrefix(h.ID, AwalanKasus), 10, 64); err == nil && n > l.r.AngkaKasusTerbesar {

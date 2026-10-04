@@ -28,7 +28,7 @@
 //   - grid `Breakdown Spreading` (`.BreakDownSpreadList`) - K9 (KEPUTUSAN-RONDE-12
 //     butir 3/3b): breakdown spreading tidak dimigrasi.
 
-import { KLAIM_XOL_RETRO, POLIS, nilai, type Halaman } from './api'
+import { KLAIM_XOL_RETRO, POLIS, nilai, type Baris, type Halaman, type Pilihan } from './api'
 import { BAGIAN } from './labels'
 import type { Sajian } from './sajian'
 import { negatifTeks } from './tanda'
@@ -376,6 +376,13 @@ export const MEDAN_ATASAN_TOTAL: Medan[] = dalamWadah(wadahUangAtasan, [
 
 /** Sajian sel grid spreading `.SpreadingRiskList` kedua layar: pxNumber 4 desimal
  *  (persen tersunting `pyShowReadonlyFormatting=true`), total footer 4 desimal. */
+/** Teks sel `.TreatyType` grid spreading yang tidak dapat disunting: dropdown ro - label
+ *  pilihan daftar acuannya (`.ID` -> `.Note` / `.TreatyName`), lalu `.TreatyName` baris,
+ *  lalu kode apa adanya. Satu pencari untuk layar admin, layar atasan, dan grid NonProp. */
+export function labelTreatyType(b: Baris, opsi: Pilihan[]): string {
+  return opsi.find((o) => o.nilai === b.TreatyType)?.label || b.TreatyName || b.TreatyType || ''
+}
+
 export const SAJIAN_SPREADING = {
   persen: { desimal: 4, formatSaatSunting: true } as Sajian,
   uang: { desimal: 4 } as Sajian,
