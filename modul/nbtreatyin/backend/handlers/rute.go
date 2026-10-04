@@ -9,12 +9,12 @@
 //	GET  /api/nb-treaty-in/kasus/{id}                 buka assignment (pra-proses)
 //	PUT  /api/nb-treaty-in/kasus/{id}                 Save layar admin
 //	POST /api/nb-treaty-in/kasus/{id}/hitung          refresh berhitung (Count*, ...)
+//	POST /api/nb-treaty-in/kasus/{id}/bisnis          grid popup BusinessAndSOBList (RD BrowseTreatyJoinEDM; tanpa simpan)
 //	POST /api/nb-treaty-in/kasus/{id}/pilih-bisnis    Choose popup BusinessAndSOBList
 //	POST /api/nb-treaty-in/kasus/{id}/pilih-sumber-bisnis  klik baris popup SOB (XOL Retro) - PostDT tanpa simpan (F4)
 //	POST /api/nb-treaty-in/kasus/{id}/nomor-polis     GeneratePolicyNoTreaty_Act
 //	POST /api/nb-treaty-in/kasus/{id}/kirim           finishAssignment
 //	GET  /api/nb-treaty-in/kasus/{id}/riwayat         HISTORYAKSEPTASIPEGA
-//	GET  /api/nb-treaty-in/bisnis                     grid popup BusinessAndSOBList
 //	GET  /api/nb-treaty-in/sumber-bisnis              grid popup SOB (BrowseAgentHierarkiList_RD)
 //	GET  /api/nb-treaty-in/acuan                      daftar pilihan layar
 package handlers
@@ -47,12 +47,12 @@ func DaftarkanRute(mux *http.ServeMux, l *services.Layanan, stubPelaku bool) {
 	mux.HandleFunc("GET "+Prefix+"/kasus/{id}", h.buka)
 	mux.HandleFunc("PUT "+Prefix+"/kasus/{id}", h.simpan)
 	mux.HandleFunc("POST "+Prefix+"/kasus/{id}/hitung", h.hitung)
+	mux.HandleFunc("POST "+Prefix+"/kasus/{id}/bisnis", h.bisnis)
 	mux.HandleFunc("POST "+Prefix+"/kasus/{id}/pilih-bisnis", h.pilihBisnis)
 	mux.HandleFunc("POST "+Prefix+"/kasus/{id}/pilih-sumber-bisnis", h.pilihSumberBisnis)
 	mux.HandleFunc("POST "+Prefix+"/kasus/{id}/nomor-polis", h.nomorPolis)
 	mux.HandleFunc("POST "+Prefix+"/kasus/{id}/kirim", h.kirim)
 	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/riwayat", h.riwayat)
-	mux.HandleFunc("GET "+Prefix+"/bisnis", h.bisnis)
 	mux.HandleFunc("GET "+Prefix+"/sumber-bisnis", h.sumberBisnis)
 	mux.HandleFunc("GET "+Prefix+"/acuan", h.acuan)
 }
@@ -262,7 +262,11 @@ func (h *rute) riwayat(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *rute) bisnis(w http.ResponseWriter, r *http.Request) {
-	out, err := h.l.DaftarBisnis(r.Context(), h.pelaku(r), r.URL.Query().Get("cari"))
+	var b badanHalaman
+	if !bacaJSON(w, r, &b) {
+		return
+	}
+	out, err := h.l.DaftarBisnis(r.Context(), h.pelaku(r), r.PathValue("id"), b.Halaman)
 	if err != nil {
 		tulisGalat(w, err)
 		return

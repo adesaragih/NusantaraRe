@@ -313,6 +313,14 @@ potongan · lapisan.
 merujuk **33 medan**, dan **ke-33-nya ada di view**. ⛔ Nol medan yang dipakai tetapi tidak
 tersedia.
 
+> ⛔ **RALAT** 2026-10-04 (putaran 3, audit silang W1) — bunyi lama: *"`ReportDefinition\BrowseTreatyInDetail.xml`
+> merujuk **33 medan**"* (sebagai RD yang dipakai). Bunyi baru: RD yang dipakai layar NB adalah
+> **`ReportDefinition\BrowseTreatyJoinEDM.xml`** (kelas `…Int-TREATYINDETAILJOINEDM`, membaca view ini): pilih bisnis
+> (`InputPolicyTreatyInDetail_preACT` langkah 1 `Param.pyReportName = "BrowseTreatyJoinEDM"`) dan grid AKTIF popup
+> `Section/BusinessAndSOBList` (S16/S17, filter H `.PROPORTIONTYPE = .QuotationData.ProportionalType`, kosong
+> diabaikan; urut `.TREATYID`; `pyMaxRecords` 500). Grid `BrowseTreatyInDetail` (tabel TREATYINDETAIL) ber-wadah `1=2`
+> dan tidak dibangun. Ke-33 `pyUIFields` kedua RD sama persis, jadi uji kecukupan di atas tetap berlaku.
+
 ⚠️ **Kenapa ini menyelesaikan masalah pokok:** `[terverifikasi]` naskah
 `@ASM.GetPageJSONString()` — kini diterima — ternyata **tidak memilih apa pun**; ia memotret
 seluruh halaman langkah. ⛔ Jadi isi kolom dokumen **bukan skema**, melainkan potret. ⭐ View
@@ -1193,6 +1201,10 @@ lain dan **tidak boleh dipinjam** *(P8)*.
 > `DATA_JSON` Pega; sumber relasional yang dibaca modul sudah `NUMBER`. Kolom uang tabel baru tetap
 > `NUMBER(38,8)` (spec penyimpanan AC 20). ⛔ Tipe tabel `TREATYINDETAIL` belum tercakup
 > (`PERMINTAAN-TIM-INTI.md` C3).
+> ⛔ **RALAT** 2026-10-04 (putaran 3, audit silang W1) atas kalimat terakhir: modul **tidak membaca** tabel
+> `TREATYINDETAIL` lagi — satu-satunya pembacanya, grid lama popup (`Section/BusinessAndSOBList` S11, RD
+> `BrowseTreatyInDetail`), ber-wadah `pyContainerVisibleWhen 1=2`; popup membaca view di atas. Tipe tabel itu tidak
+> lagi dibutuhkan.
 >
 > **Butir 7** — bunyi lama: *"**format penyajian** uang — desimal dan pemisah ribuan | `[work owner]`"*.
 > ⭐ **Diputus K14** (PROMPT putaran 2 bab 2): ikuti yang ditampilkan layar XML (`pyFormat`/kontrol

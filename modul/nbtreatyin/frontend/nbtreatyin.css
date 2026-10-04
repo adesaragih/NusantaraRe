@@ -18,6 +18,21 @@
   max-width: 520px;
 }
 
+/* Popup pilih bisnis: judul kolom yang dapat diurut, dan saringan per kolom. */
+.nbtreatyin .nbti__urut {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.nbtreatyin .nbti__saring-kolom {
+  min-width: 6em;
+}
+
 /* Nomor kasus di daftar portal: tombol berupa tautan. */
 .nbtreatyin .nbti__tautan {
   background: none;

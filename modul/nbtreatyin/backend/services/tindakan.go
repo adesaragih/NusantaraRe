@@ -298,8 +298,9 @@ func (l *Layanan) PilihBisnis(ctx context.Context, p inti.Pelaku, id, idDetail s
 	if err != nil {
 		return Layar{}, err
 	}
-	if k.PositionNote != models.PosisiAdmin {
-		return Layar{}, ErrTindakanTakAdaDiPosisi
+	// `Choose` hidup hanya di dalam popup tombol `Choose Business` (layanan.go).
+	if err := bolehPilihBisnis(k, h); err != nil {
+		return Layar{}, err
 	}
 	b, err := l.g.DetailKontrak(ctx, idDetail)
 	if err != nil {

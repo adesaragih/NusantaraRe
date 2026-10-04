@@ -8,7 +8,7 @@ package repository
 // T_POLIS_*. Tabel MILIK modul lain yang ditulis:
 // T_WORK_POLIS (premiumlistlife 050/059 - tabel kasus lintas-lini, dipakai
 // bersama sesuai rancangan §2). Tabel WARISAN Pega yang dibaca: view
-// TREATYINDETAILJOINEDM dan TREATYINDETAIL, CURRENCY, MARKETINGOFFICER,
+// TREATYINDETAILJOINEDM, CURRENCY, MARKETINGOFFICER,
 // REINSURANCETYPE, TREATYGROUP, BUSINESS, CLIENT, AGENT, TREATYINPRODUCTION;
 // yang ditulis: HISTORYAKSEPTASIPEGA (riwayat, sama dengan Pega). Seluruhnya
 // lewat `db.Qualify` - skema eksplisit (AC 30).
@@ -31,7 +31,6 @@ import (
 const (
 	tabelKerja         = "T_WORK_POLIS"
 	viewDetailGabung   = "TREATYINDETAILJOINEDM"
-	tabelDetail        = "TREATYINDETAIL"
 	tabelMataUang      = "CURRENCY"
 	tabelMO            = "MARKETINGOFFICER"
 	tabelJenisReas     = "REINSURANCETYPE"

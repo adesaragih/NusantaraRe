@@ -344,10 +344,37 @@ func (l *Layanan) DaftarAcuan(ctx context.Context, p inti.Pelaku) (Acuan, error)
 	return a, nil
 }
 
-// DaftarBisnis - grid popup `BusinessAndSOBList` (RD `BrowseTreatyInDetail`).
-func (l *Layanan) DaftarBisnis(ctx context.Context, p inti.Pelaku, cari string) ([]models.BarisKontrak, error) {
-	if err := l.periksaPelaku(p); err != nil {
+// DaftarBisnis - isi grid AKTIF popup `BusinessAndSOBList` (RD
+// `BrowseTreatyJoinEDM`, view TREATYINDETAILJOINEDM - `repository.DaftarBisnis`).
+//
+// Tombol `Choose Business` (`Section/DetailPolicyTreatyIn`) = showHarness
+// `pySubmitData=Yes`: isian layar dikirim lebih dulu, lalu grid membaca
+// `.QuotationData.ProportionalType` halaman kerja. Maka halaman kiriman
+// digabung seperti tindakan lain (`kerjakan`: keanggotaan, kasus terbuka,
+// medan admin), TANPA simpan - showHarness tidak ber-Obj-Save.
+//
+// Tombol itu hanya ada di layar admin dan hanya bila wadahnya tampil
+// (`.ClaimType != 'XOL Retro'`); selain itu 409, sama dengan `PilihBisnis`.
+func (l *Layanan) DaftarBisnis(ctx context.Context, p inti.Pelaku, id string, masuk *models.Halaman) ([]models.BarisKontrak, error) {
+	k, h, err := l.kerjakan(ctx, p, id, masuk)
+	if err != nil {
 		return nil, err
 	}
-	return l.g.DaftarDetailKontrak(ctx, repository.SaringanDetail{TreatyID: strings.TrimSpace(cari)})
+	if err := bolehPilihBisnis(k, h); err != nil {
+		return nil, err
+	}
+	return l.g.DaftarBisnis(ctx, models.SaringanPopupBisnis(h))
+}
+
+// bolehPilihBisnis - tombol `Choose Business` ada di posisi kasus dan tampil
+// menurut isian layar.
+func bolehPilihBisnis(k models.Kasus, h *models.Halaman) error {
+	if k.PositionNote != models.PosisiAdmin {
+		return ErrTindakanTakAdaDiPosisi
+	}
+	if !models.TampilPilihBisnis(h) {
+		return fmt.Errorf("%w: tombol Choose Business tidak tampil bila ClaimType '%s'",
+			ErrTindakanTakAdaDiPosisi, models.KlaimXOLRetro)
+	}
+	return nil
 }

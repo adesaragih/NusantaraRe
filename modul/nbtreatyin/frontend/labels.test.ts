@@ -4,7 +4,17 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { BAGIAN, JUDUL, KOLOM_ANGSURAN, KOLOM_PORTAL, KOLOM_SPREADING, KOLOM_USULAN, KONFIRMASI_TOLAK, PORTAL } from './labels'
+import {
+  BAGIAN,
+  JUDUL,
+  KOLOM_ANGSURAN,
+  KOLOM_BISNIS,
+  KOLOM_PORTAL,
+  KOLOM_SPREADING,
+  KOLOM_USULAN,
+  KONFIRMASI_TOLAK,
+  PORTAL,
+} from './labels'
 import { KOLOM_RINCI } from './nonprop'
 
 describe('label layar = LABEL XML', () => {
@@ -63,5 +73,38 @@ describe('label layar = LABEL XML', () => {
     ])
     expect(PORTAL.judul).toBe('Opportunity')
     expect(PORTAL.placeholder).toBe('NB-1234 or Name')
+  })
+
+  it('popup pilih bisnis: Section BusinessAndSOBList grid aktif (BrowseTreatyJoinEDM) baris 1 LABEL / baris 2 sel, pyWindowName', () => {
+    // judul baris 1 sel 322-346 dan properti baris 2 sel 349-373, sel demi sel (sel 321/348 = tombol Choose)
+    expect(KOLOM_BISNIS.map((k) => [k.judul, k.kolom])).toEqual([
+      ['Treaty Offer ID', 'TREATYID'],
+      ['Contract Name', 'TREATYCONTRACTNAME'],
+      ['Class of Business', 'CLASSOFBUSINESS'],
+      ['Source Of Business', 'SOB'],
+      ['Insured Name', 'CEDING'],
+      ['Proportion Type', 'PROPORTIONTYPE'],
+      ['Treaty Type', 'TREATYTYPE'],
+      ['Treaty Group', 'TREATYGROUP'],
+      ['Treaty Year', 'TREATYYEAR'],
+      ['Currency', 'LIMITCURRENCY'],
+      ['Limit', 'LIMITVALUE'],
+      ['Currency', 'RETENTIONCURRENCY'],
+      ['Retention', 'RETENTIONVALUE'],
+      ['Currency', 'EPICURRENCY'],
+      ['EPI', 'EPIVALUE'],
+      ['Layer', 'LAYERTYPE'],
+      ['', 'LAYER'],
+      ['Part of', 'LAYERPARTTYPE'],
+      ['', 'LAYERPART'],
+      ['Currency', 'MDPCURRENCY'],
+      ['MDP', 'MDPVALUE'],
+      ['Currency', 'NETPREMICURRENCY'],
+      ['Net Premium', 'NETPREMIVALUE'],
+      ['Currency', 'SHARECURRENCY'],
+      ['Share RNM Value', 'SHAREVALUE'],
+    ])
+    // showHarness tombol Choose Business (DetailPolicyTreatyIn) pyWindowName
+    expect(JUDUL.pilihBisnis).toBe('Business And SOB List')
   })
 })
