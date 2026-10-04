@@ -1,5 +1,11 @@
 # 18: Tipe kolom, konversi masuk, dan presisi uang
 
+> ⛔ **RALAT 04-10-2026 (paket p3r-sheetprop)** — perintah WO *"buat sesuai yang di sheet NB Treaty In Prop"*; diagram
+> sheet *NB Treaty In Prop* sel F20: *"uang · persen → angka presisi tetap, skala MINIMAL 9 desimal (P29)"*. Bunyi lama
+> di tiket ini: *"`NUMBER(38,8)` … delapan desimal"*. Bunyi baru: **`NUMBER(38,10)`** (skala 10 — J69 NB presisi 10;
+> 28 digit di depan koma). AC 19 kembali utuh (`592629512.880000276`), AC 20b/55: pembulatan di desimal kesebelas.
+> Bukti: `docs/KEPATUHAN-SHEET-NB-TREATY-IN-PROP.md` baris F20, J69; RALAT spec-penyimpanan ID-14.
+
 > ## ⭐ PENAHAN GUGUR — 23 September 2026 sore
 >
 > `[keputusan work owner]` *"Selesaikan, jangan jadi permasalahan."* ⭐ Presisi dinaikkan ke **`NUMBER(38,8)`** — **30 digit di depan koma**, delapan di belakang, batas tertinggi Oracle. Dasarnya sapuan korpus: ambang dagang nyata sudah **tepat di batas** 12 digit *(`181500000000.00` · `150000000000.00`)*, dan ada sentinel **17 digit** *(`99999999999999999.99`)*. Penjumlahan lintas mata uang dapat melewati keduanya. ⭐ `NUMBER` di Oracle berpanjang **berubah-ubah** — hanya digit bermakna yang tersimpan, sehingga pelebaran ini **tidak memakan ruang tambahan**. Butir ditutup oleh bukti, bukan oleh DBA.
