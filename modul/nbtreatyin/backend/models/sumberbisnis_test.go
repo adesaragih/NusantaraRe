@@ -81,3 +81,63 @@ func TestPostDTTanpaTombolSOBHanyaLeader(t *testing.T) {
 		t.Fatalf("langkah 4 selalu jalan: %q", h.Ambil("Quotation.SobLeader0"))
 	}
 }
+
+// F4: pilihan baru hanya bila layar MENGIRIM `Quotation.SourceOfBusiness` yang
+// berbeda dari halaman server; tiga medan lain (tanpa kolom, nol pembaca NB)
+// bukan pemicu. Medan yang tidak dikirim bernilai "".
+func TestSumberBisnisKiriman(t *testing.T) {
+	h := HalamanBaru()
+	h.Setel("Quotation.SourceOfBusiness", "UJI-AG-1")
+	masuk := HalamanBaru()
+	if _, berubah := SumberBisnisKiriman(h, masuk); berubah {
+		t.Fatal("jalur tidak dikirim: tidak berubah")
+	}
+	if _, berubah := SumberBisnisKiriman(h, nil); berubah {
+		t.Fatal("tanpa kiriman: tidak berubah")
+	}
+	masuk.Setel("Quotation.SourceOfBusiness", "UJI-AG-1")
+	masuk.Setel("Quotation.SobName", "UJI NAMA LAIN")
+	if _, berubah := SumberBisnisKiriman(h, masuk); berubah {
+		t.Fatal("SourceOfBusiness sama: SobName saja bukan pilihan baru")
+	}
+	masuk.Setel("Quotation.SourceOfBusiness", "")
+	p, berubah := SumberBisnisKiriman(h, masuk)
+	if !berubah || len(p) != 4 || p["Quotation.SourceOfBusiness"] != "" || p["Quotation.SobName"] != "UJI NAMA LAIN" ||
+		p["Quotation.SobLeader1"] != "" {
+		t.Fatalf("berubah %v, pilihan %v", berubah, p)
+	}
+}
+
+// Kecocokan = hasil PostDT baris (ChildCount 0 -> ID/ClientName/Leader0/"";
+// ChildCount > 0 -> kosong semua). Baris ChildCount bukan angka tidak dapat
+// diklik (PostDT gagal) - tidak pernah cocok.
+func TestCocokHasilPostDT(t *testing.T) {
+	daftar := []BarisAgen{
+		{ID: "UJI-AG-1", ClientName: "UJI SUMBER SATU", ChildCount: "0"},
+		{ID: "UJI-AG-3", ClientName: "UJI SUMBER TIGA", ChildCount: "UJI-BUKAN-ANGKA"},
+	}
+	p := func(id, nama, l0, l1 string) map[string]string {
+		return map[string]string{"Quotation.SourceOfBusiness": id, "Quotation.SobName": nama,
+			"Quotation.SobLeader0": l0, "Quotation.SobLeader1": l1}
+	}
+	for _, tt := range []struct {
+		pilihan map[string]string
+		harap   bool
+	}{
+		{p("UJI-AG-1", "UJI SUMBER SATU", "", ""), true},
+		{p("UJI-AG-1", "UJI SUMBER SATU", "", "UJI-L1"), false},
+		{p("UJI-AG-3", "UJI SUMBER TIGA", "", ""), false},
+		{p("", "", "", ""), false}, // tidak ada simpul beranak
+	} {
+		if got := CocokHasilPostDT(daftar, tt.pilihan); got != tt.harap {
+			t.Errorf("%v: %v, harap %v", tt.pilihan, got, tt.harap)
+		}
+	}
+	daftar = append(daftar, BarisAgen{ID: "UJI-AG-2", ClientName: "UJI SUMBER DUA", ChildCount: "2"})
+	if !CocokHasilPostDT(daftar, p("", "", "", "")) {
+		t.Fatal("kosong semua = hasil klik simpul beranak")
+	}
+	if CocokHasilPostDT(daftar, p("UJI-AG-2", "UJI SUMBER DUA", "", "")) {
+		t.Fatal("simpul beranak tidak pernah menghasilkan ID-nya")
+	}
+}

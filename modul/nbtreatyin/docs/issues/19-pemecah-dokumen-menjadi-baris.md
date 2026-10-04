@@ -150,5 +150,5 @@ diubah (paket konsolidasi).
    kasus treaty **menulis** `HISTORYAKSEPTASIPRODUCTION` (`SaveViewSuggest` langkah 2 tanpa syarat
    `Quotation.BusinessFac == "F"` — `[penyimpangan sadar]` K4) di transaksi submit, dan dibaca balik untuk grid
    `Section\ListSuggest`; AC 40–41 berlaku dan ✅ (butir 1). Tiga penyimpangan lain — ditulis di ketiga jenjang,
-   `TGL_INP` jam 24, `NOURUT` dari repository — `[penyimpangan sadar — menunggu konfirmasi WO]` (tiket 10 bab P9,
+   `TGL_INP` jam 24, `NOURUT` dari repository — `[penyimpangan sadar — disetujui WO 04-10-2026]` (F2; tiket 10 bab P9,
    PERMINTAAN-TIM-INTI F2).

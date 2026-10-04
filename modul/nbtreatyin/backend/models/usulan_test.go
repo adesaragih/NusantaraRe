@@ -90,7 +90,7 @@ func TestBarisCatatanDariRiwayatProduksi(t *testing.T) { // AC 42, 71
 	}
 }
 
-// K4 [penyimpangan sadar - menunggu konfirmasi WO]: NOURUT diberikan
+// K4 [penyimpangan sadar — disetujui WO 04-10-2026] (F2): NOURUT diberikan
 // repository (MAX+1 per IDPEGA, di bawah kunci kasus), XML memakai
 // `.pxListSubscript` (SaveViewSuggest 2.1.2 CARI2). Keduanya SAMA: SuggestList
 // dibangun ulang dari tabel berurut NOURUT 1..n (BarisCatatan, ber-IsSave),

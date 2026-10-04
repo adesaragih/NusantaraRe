@@ -50,7 +50,9 @@ func pindaiAgen(sc interface{ Scan(...any) error }) (models.BarisAgen, error) {
 }
 
 // DaftarAgenHierarki = RD `BrowseAgentHierarkiList_RD` dengan `Param.Leader`
-// kosong (keadaan NB) - grid TreeGrid `Section/SourceHierarki`.
+// kosong (keadaan NB) - grid TreeGrid `Section/SourceHierarki`, dan pencarian
+// yang DIJALANKAN ULANG saat Save/Submit untuk mencocokkan pilihan Source Of
+// Business yang dipegang layar (F4, `services.terimaSumberBisnis`).
 func (g *Gudang) DaftarAgenHierarki(ctx context.Context) ([]models.BarisAgen, error) {
 	t, err := g.nama(tabelAgen)
 	if err != nil {

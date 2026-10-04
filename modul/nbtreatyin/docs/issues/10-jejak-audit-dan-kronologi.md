@@ -1,6 +1,6 @@
 # 10: Jejak audit dan kronologi — identitas akses terpisah dari nama tampilan
 
-**Status:** selesai — penahan tersisa hanya pihak luar: **K11** (skema uji Oracle — uji bertag `db` AC 72 sudah ditulis, belum dijalankan), **F2** (tiga penyimpangan K4, menunggu konfirmasi WO), **B4** (`DIV` tanpa sumber di `inti.Pelaku`), **C8** (tipe kolom fisik `HISTORYAKSEPTASIPRODUCTION`, DBA) *(putaran 2, paket P11 04-10-2026; semula: sebagian — konsolidasi P10 04-10-2026; sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
+**Status:** selesai — penahan tersisa hanya pihak luar: **K11** (skema uji Oracle — uji bertag `db` AC 72 sudah ditulis, belum dijalankan), **F2** (tiga penyimpangan K4 — ⭐ disetujui WO 04-10-2026, putaran 3; bukan penahan lagi), **B4** (`DIV` tanpa sumber di `inti.Pelaku`), **C8** (tipe kolom fisik `HISTORYAKSEPTASIPRODUCTION`, DBA) *(putaran 2, paket P11 04-10-2026; semula: sebagian — konsolidasi P10 04-10-2026; sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** 03
 **Menutup:** AC 39 · 40 · 41 · 42 · 43 · 44 · 71 · 72 *(8 AC)* — US 15 · 16 · 20 · 40 · 41 · 42
 
@@ -119,13 +119,13 @@ baris `NOURUT` 1..5 dengan `AKSES_LOGIN` tiap jenjang), `repository/kolom_test.g
 AC 39, 40, 41, 42, 43, 44, 71: ✅ (seam HTTP + fungsi murni). AC 72 tetap 🟡 (pengurutan lawan Oracle).
 Butir terbuka: `DIV` tanpa sumber; tipe fisik `NOURUT` tabel lama belum dicek katalog.
 
-## ⭐ Putaran 2 — P9 (04-10-2026): tiga penyimpangan K4 `[penyimpangan sadar — menunggu konfirmasi WO]`
+## ⭐ Putaran 2 — P9 (04-10-2026): tiga penyimpangan K4 `[penyimpangan sadar — disetujui WO 04-10-2026]`
 
 Dasar: tinjauan spec P9 (temuan 5). Bunyi P1 di atas, dikutip: *"`[penyimpangan sadar]` (K4, grilling ID-31/AC 39):
 syarat `BusinessFac == "F"` tidak ditiru; baris ditulis pada submit **ketiga** jenjang yang menambahkannya (XML:
 hanya `InputPolicyTreatyInPost_Act` langkah 4); `TGL_INP` jam 24 (XML `hh` → `HH24` menyimpan jam sore sebagai
 pagi)."* RALAT penanda: yang berdasar keputusan WO (**K4**, grilling ID-31/AC 39) hanya syarat `BusinessFac`. Tiga
-penyimpangan berikut **dipertahankan** tetapi berstatus `[penyimpangan sadar — menunggu konfirmasi WO]`:
+penyimpangan berikut **dipertahankan** dan berstatus `[penyimpangan sadar — disetujui WO 04-10-2026]` (F2, putaran 3 — semula *"menunggu konfirmasi WO"*):
 
 | # | XML | Sistem baru | Dasar |
 | ---: | --- | --- | --- |
@@ -146,3 +146,17 @@ waktu); `DaftarRiwayat` wajib mengembalikan urutan waktu `2026-10-01 09:00:00`, 
 selain itu tiruan (lihat tiket 08 bab P11).
 
 Status: **selesai** — sisa penahan hanya pihak luar (K11, F2, B4, C8).
+
+## ⭐ Putaran 3 (04-10-2026): F2 diputuskan — ketiga penyimpangan K4 disetujui WO
+
+`[keputusan work owner]` **F2** (PROMPT-NB-TREATY-IN-PUTARAN-3 bab 2): ketiga penyimpangan di bab P9 **disetujui** —
+(1) catatan usulan ditulis di submit ketiga jenjang, sebab tanpa `T_POLIS_SUGGEST` usulan atasan tidak punya tempat
+lain; (2) `TGL_INP` 24 jam (pola `hh` Pega ambigu, kolom DATE); (3) `NOURUT` dari repository (terbukti sama dengan
+`pxListSubscript`). Penanda *"`[penyimpangan sadar — menunggu konfirmasi WO]`"* diganti
+`[penyimpangan sadar — disetujui WO 04-10-2026]` di tiket ini, tiket 19, `MODUL.md`, PERMINTAAN-TIM-INTI F2,
+`backend/models/usulan.go`, `backend/services/tindakan.go`, uji `models/usulan_test.go`, `handlers/alur_test.go`,
+`repository/polis_db_test.go`, dan `docs/alat/status.json` (`Activity/SaveViewSuggest`). Nol perubahan perilaku; AC
+tidak berubah status.
+
+Status: **selesai** — sisa penahan hanya pihak luar (K11, B4, C8). *(Bunyi P11 dikutip: "sisa penahan hanya pihak
+luar (K11, F2, B4, C8)".)*

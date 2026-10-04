@@ -10,7 +10,7 @@
 //	PUT  /api/nb-treaty-in/kasus/{id}                 Save layar admin
 //	POST /api/nb-treaty-in/kasus/{id}/hitung          refresh berhitung (Count*, ...)
 //	POST /api/nb-treaty-in/kasus/{id}/pilih-bisnis    Choose popup BusinessAndSOBList
-//	POST /api/nb-treaty-in/kasus/{id}/pilih-sumber-bisnis  klik baris popup SOB (XOL Retro)
+//	POST /api/nb-treaty-in/kasus/{id}/pilih-sumber-bisnis  klik baris popup SOB (XOL Retro) - PostDT tanpa simpan (F4)
 //	POST /api/nb-treaty-in/kasus/{id}/nomor-polis     GeneratePolicyNoTreaty_Act
 //	POST /api/nb-treaty-in/kasus/{id}/kirim           finishAssignment
 //	GET  /api/nb-treaty-in/kasus/{id}/riwayat         HISTORYAKSEPTASIPEGA

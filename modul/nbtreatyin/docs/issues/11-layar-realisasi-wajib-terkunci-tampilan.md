@@ -114,6 +114,70 @@ dijawab.
 > rule NB); cabang Ceding (`btnCedingCO_DT`/`BrowseCedingCo_RD`, hanya lewat `Acton=Ceding` yang
 > tak pernah dikirim).
 
+> ⛔⛔ **RALAT** 2026-10-04 (putaran 3, paket R2 — F4, keputusan WO 04-10-2026: **ikuti XML**) — dua
+> bunyi lama RALAT paket P3 di atas dikutip apa adanya:
+> > *"Dibangun: `models/sumberbisnis.go`, `repository/agen.go`, `services/sumberbisnis.go`, rute
+> > `GET /sumber-bisnis` dan `POST /kasus/{id}/pilih-sumber-bisnis`, `components/PilihSumberBisnis.tsx`."*
+> > *"Akibat pada data kasus: `Quotation.SourceOfBusiness` (medan diagram `T_POLIS_QUOTATION`) dibaca
+> > `SetPPNPPH` langkah 1-3 (STS_PKP agen) → syarat PPH/PPN langkah 4."*
+> >
+> > (kode P3, `services/sumberbisnis.go`: *"`[penyesuaian sadar]` Pega memegang hasil PostDT di
+> > clipboard sampai Save/Submit layar utama ... jadi hasilnya DISIMPAN saat klik"*)
+>
+> ⭐ **Bunyi baru.** Klik baris **tidak menyimpan**. `POST /kasus/{id}/pilih-sumber-bisnis` menjadi
+> **pencarian tanpa simpan**: menjalankan `btnSOB_DT` + `SearchHierarkiSourceBizAgent_PostDT` atas
+> baris RD yang dibaca ulang, lalu menjawab keempat nilai `Quotation.SourceOfBusiness/SobName/
+> SobLeader0/SobLeader1`. Layar **memegang** nilai itu (`pegangSumberBisnis`) dan mengirimnya
+> bersama **Save / Submit** (dan refresh). Server (`services.terimaSumberBisnis`, dari `kerjakan`
+> layar admin) menerimanya **hanya** bila:
+> 1. `Quotation.SourceOfBusiness` kiriman berbeda dari nilai server (selain itu tak ada pilihan baru;
+>    tiga medan lain tanpa kolom dan tanpa pembaca NB tidak diambil dari layar);
+> 2. ClaimType isian layar **`XOL Retro`** — selain itu tombolnya tak tampil, medan **terkunci**:
+>    kiriman diabaikan, nilai tersimpan dipakai (pola AC 49–51);
+> 3. sama persis dengan hasil PostDT salah satu baris RD `BrowseAgentHierarkiList_RD` yang
+>    **dijalankan ulang** di server (filter efektif NB `LEADER0 IS NULL AND STATUSACTIVE IS NULL`);
+>    kosong-semua sah hanya bila RD memuat simpul beranak (`ChildCount > 0`). Tidak cocok → **422**
+>    *"Source Of Business "…" tidak cocok dengan hasil pencarian hierarki sumber bisnis
+>    (BrowseAgentHierarkiList_RD) - pilih ulang lewat tombol Select Source Of Business"*.
+>
+> Yang tersimpan hanya medan berkolom: `SOURCE_OF_BUSINESS` (`T_POLIS_QUOTATION`); `SobName`,
+> `SobLeader0`, `SobLeader1` tetap tanpa kolom (katalog: dibuang). Ralat kecil bunyi P3 kedua:
+> `SetPPNPPH` langkah 1 membaca **`pyWorkPage.PolicyTreatyIn.QuotationData.SourceOfBusiness`**
+> (`Param.ID`), bukan `Quotation.SourceOfBusiness`.
+>
+> **Bukti XML** (dibaca ulang 2026-10-04):
+> - `DataTransform/SearchHierarkiSourceBizAgent_PostDT.xml`: langkah 1 `WHEN
+>   pyWorkPage.Quotation.btnQuotation=="SOB"` → 1.1 `pyWorkPage.Quotation.SourceOfBusiness =
+>   @if(.ChildCount > 0, "", .ID)`, 1.2 `.SobName = @if(.ChildCount > 0, "", .ClientName)`; langkah 4–5
+>   `SobLeader0/SobLeader1 = @if(.ChildCount > 0, "", .Leader0/.Leader1)` — **nol Obj-Save**.
+>   `FlowAction/AgentSourceBizDetails.xml` hanya `pyPreProcessingTransformRule` (dan
+>   `pyActionTransformRule`) = PostDT itu.
+> - `Section/SourceHierarki.xml` tombol `Choose` (pyVisible `.ChildCount = 0`): `runActivity
+>   SearchHierarkiSourceBizAgentTreatyIn_Act` → `runScript opener.location.reload` → `runScript
+>   window.close`; aktivitas itu (langkah 1–4) hanya menulis `pyWorkPage.OfferTreatyIn.QuotationData.*`
+>   dan `Local.*` — **nol Obj-Save**. `Harness/SOB.xml` tak memuat tombol lain.
+> - `Section/DetailPolicyTreatyIn.xml` tombol `Select Source Of Business`: satu-satunya perilaku
+>   `click → showHarness SOB` (`pySubmitData=Yes`, `InputQuotation_PreAct`) — **tanpa `refresh`**
+>   (bandingkan `Choose Business`: `showHarness` lalu `refresh`). Jadi XML **tidak menjalankan refresh
+>   berhitung** sesudah klik/Choose; layar baru pun tidak — PPN/PPH berubah pada refresh berikutnya
+>   yang dipicu pengguna, atau pada Save/Submit (turunan dihitung ulang server, AC 49).
+> - `Activity/SetPPNPPH.xml` langkah 1 `Param.ID = pyWorkPage.PolicyTreatyIn.QuotationData.
+>   SourceOfBusiness`; penyalinnya hanya `InputPolicyTreatyIn_preDT` langkah 14
+>   (`PolicyTreatyIn.QuotationData = pyWorkPage.Quotation`), preACT 14.9, `GeneratePolicyNoTreaty_Act`
+>   langkah 10. ⚠️ `[penyesuaian sadar]`: apakah `opener.location.reload` membuat mesin Pega
+>   menjalankan ulang pra-proses itu **tidak ada di korpus**. Di sini pra-proses dijalankan ulang di
+>   setiap permintaan atas data tersimpan, maka pilihan yang dipegang layar disalin ke `QuotationData`
+>   sesudah diterima (`models.SalinKeQuotationData`) supaya `SetPPNPPH` memakai nilai layar saat
+>   refresh/Save/Submit — bukan nilai tersimpan — dan supaya pilihan tidak tertimpa salinan lama
+>   (`NilaiQuotation`, ID-23).
+>
+> Uji: `handlers/sumberbisnis_test.go` (`TestKlikBarisSumberBisnisTidakMenyimpan`,
+> `TestKlikSimpulBeranakMengosongkan`, `TestKlikSumberBisnisDitolak`,
+> `TestSaveMenyimpanSumberBisnisYangCocok`, `TestNilaiSumberBisnisPalsuDitolak`,
+> `TestSumberBisnisTerkunciBilaBukanXOLRetro`, `TestSaveSimpulBeranakMenghapusSumberBisnis`,
+> `TestPilihanDipegangMenggerakkanPPNPPH`), `models/sumberbisnis_test.go` (`TestSumberBisnisKiriman`,
+> `TestCocokHasilPostDT`), `frontend/components/pilihSumberBisnis.test.ts` ("F4").
+
 > ⛔ **RALAT** 2026-10-03 (putaran 2, paket P2) — dua butir lain kalimat yang sama: Survey Report →
 > **K7** (tidak ada tabel di diagram grilling; tetap tidak dibangun); `Choose Business R` dan subsection
 > NonProp → **paket P5** (K8). Pemilih SOB: RALAT paket P3 di atas.
