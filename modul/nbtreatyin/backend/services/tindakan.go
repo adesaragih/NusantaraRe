@@ -52,18 +52,13 @@ func (l *Layanan) kerjakan(ctx context.Context, p inti.Pelaku, id string, masuk 
 	// (tempat berperan tiket 05; AC 52, 81).
 	// Pemetaan kosong (K12, K16) = tempat tertunda = medan tidak diterima.
 	pemicu, err := models.GabungMasukanLayar(h, masuk, k.PositionNote, tempatPelaku(p))
-	var gk *models.GalatKiriman
-	if errors.As(err, &gk) {
-		// W3: nilai medan terkunci yang bukan hasil tombolnya (pola F4) - 422.
-		return models.Kasus{}, nil, &GalatValidasi{Pesan: []string{gk.Pesan}}
-	}
 	if err != nil {
-		return models.Kasus{}, nil, err
+		return models.Kasus{}, nil, jawabKiriman(err)
 	}
 	if k.PositionNote == models.PosisiAdmin {
 		// F4: pilihan Source Of Business yang dipegang layar (sumberbisnis.go).
 		if err := l.terimaSumberBisnis(ctx, h, masuk); err != nil {
-			return models.Kasus{}, nil, err
+			return models.Kasus{}, nil, jawabKiriman(err)
 		}
 		if err := l.turunkan(ctx, h); err != nil {
 			return models.Kasus{}, nil, err
@@ -75,6 +70,18 @@ func (l *Layanan) kerjakan(ctx context.Context, p inti.Pelaku, id string, masuk 
 		return models.Kasus{}, nil, err
 	}
 	return k, h, nil
+}
+
+// jawabKiriman - SATU jalur galat pola kiriman terkunci (F4): nilai yang bukan
+// hasil tombol/popup yang dihitung ulang di server (`models.GalatKiriman` -
+// Enable / Disable, Source Of Business, Choose popup bisnis) dijawab 422
+// sebagai pesan validasi layar. Galat lain diteruskan apa adanya.
+func jawabKiriman(err error) error {
+	var gk *models.GalatKiriman
+	if errors.As(err, &gk) {
+		return &GalatValidasi{Pesan: []string{gk.Pesan}}
+	}
+	return err
 }
 
 // turunkan menghitung ULANG di server medan turunan layar admin dari
@@ -313,6 +320,15 @@ func (l *Layanan) PilihBisnis(ctx context.Context, p inti.Pelaku, id, idDetail s
 	// `Choose` hidup hanya di dalam popup tombol `Choose Business` (layanan.go).
 	if err := bolehPilihBisnis(k, h); err != nil {
 		return Layar{}, err
+	}
+	// Pola F4: `Choose` hanya ada di baris grid popup - RD `BrowseTreatyJoinEDM`
+	// tersaring kasus ini (`DaftarBisnis`) dijalankan ulang; ID di luarnya 422.
+	daftar, err := l.g.DaftarBisnis(ctx, models.SaringanPopupBisnis(h))
+	if err != nil {
+		return Layar{}, err
+	}
+	if err := models.PeriksaPilihanBisnis(daftar, idDetail); err != nil {
+		return Layar{}, jawabKiriman(err)
 	}
 	b, err := l.g.DetailKontrak(ctx, idDetail)
 	if err != nil {

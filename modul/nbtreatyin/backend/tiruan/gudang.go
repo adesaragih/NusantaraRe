@@ -325,7 +325,7 @@ func (g *Gudang) KomisiKontrak(_ context.Context, treatyID string) ([]models.Bar
 
 // DaftarBisnis - baris `Kontrak` menurut aturan yang sama dengan repository:
 // filter H `PROPORTIONTYPE = JenisProporsi` (kosong = diabaikan), urut
-// TREATYID lalu ID, paling banyak 500.
+// TREATYID lalu ID, paling banyak `models.BatasDaftarBisnis`.
 func (g *Gudang) DaftarBisnis(_ context.Context, s models.SaringanBisnis) ([]models.BarisKontrak, error) {
 	var out []models.BarisKontrak
 	for _, b := range g.Kontrak {
@@ -339,8 +339,8 @@ func (g *Gudang) DaftarBisnis(_ context.Context, s models.SaringanBisnis) ([]mod
 		}
 		return out[i]["ID"] < out[j]["ID"]
 	})
-	if len(out) > 500 {
-		out = out[:500]
+	if len(out) > models.BatasDaftarBisnis {
+		out = out[:models.BatasDaftarBisnis]
 	}
 	return out, nil
 }

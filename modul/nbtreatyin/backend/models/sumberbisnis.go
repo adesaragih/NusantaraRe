@@ -20,8 +20,8 @@ package models
 //
 // F4 (keputusan WO 04-10-2026: IKUTI XML) - hasil PostDT DIPEGANG layar dan
 // disimpan bersama Save/Submit admin: `HasilPostDT` (klik), lalu
-// `SumberBisnisKiriman` + `CocokHasilPostDT` + `TerapkanPilihanSumberBisnis`
-// (Save/Submit/refresh, `services.terimaSumberBisnis`).
+// `KirimanSumberBisnis` (pola `TerimaKirimanTerkunci`, Save/Submit/refresh,
+// `services.terimaSumberBisnis`).
 
 import "fmt"
 
@@ -99,80 +99,101 @@ func TerapkanSumberBisnis(h *Halaman, b BarisAgen) error {
 	return nil
 }
 
+// SumberBisnisPostDT - keempat medan `Quotation.*` yang ditulis
+// `SearchHierarkiSourceBizAgent_PostDT` (langkah 1.1, 1.2, 4, 5). Inilah yang
+// DIPEGANG layar sampai Save/Submit (F4) - PostDT hanya menulis clipboard,
+// nol Obj-Save.
+type SumberBisnisPostDT struct {
+	SourceOfBusiness string `json:"sourceOfBusiness"`
+	SobName          string `json:"sobName"`
+	SobLeader0       string `json:"sobLeader0"`
+	SobLeader1       string `json:"sobLeader1"`
+}
+
 // MedanSumberBisnis - medan halaman Quotation yang ditulis PostDT.
 var MedanSumberBisnis = []string{"SourceOfBusiness", "SobName", "SobLeader0", "SobLeader1"}
 
+const jq = HalamanQuotation + "."
+
+// BacaSumberBisnis - keempat medan PostDT dari halaman.
+func BacaSumberBisnis(h *Halaman) SumberBisnisPostDT {
+	return SumberBisnisPostDT{
+		SourceOfBusiness: h.Ambil(jq + "SourceOfBusiness"),
+		SobName:          h.Ambil(jq + "SobName"),
+		SobLeader0:       h.Ambil(jq + "SobLeader0"),
+		SobLeader1:       h.Ambil(jq + "SobLeader1"),
+	}
+}
+
+// TerapkanPilihanSumberBisnis menulis keempat medan ke `Quotation.<medan>`
+// (persis hasil PostDT) lalu ke salinannya `PolicyTreatyIn.QuotationData.<medan>`
+// (`SalinKeQuotationData`).
+func TerapkanPilihanSumberBisnis(h *Halaman, x SumberBisnisPostDT) {
+	h.Setel(jq+"SourceOfBusiness", x.SourceOfBusiness)
+	h.Setel(jq+"SobName", x.SobName)
+	h.Setel(jq+"SobLeader0", x.SobLeader0)
+	h.Setel(jq+"SobLeader1", x.SobLeader1)
+	SalinKeQuotationData(h, MedanSumberBisnis...)
+}
+
 // HasilPostDT = tombol `Select Source Of Business` (`btnSOB_DT` langkah 1) lalu
-// klik baris `b` (`SearchHierarkiSourceBizAgent_PostDT`): nilai keempat
-// `MedanSumberBisnis` yang ditulis PostDT, per jalur halaman
-// (`Quotation.<medan>`). Inilah yang DIPEGANG layar sampai Save/Submit (F4) -
-// PostDT hanya menulis clipboard, nol Obj-Save.
-func HasilPostDT(b BarisAgen) (map[string]string, error) {
+// klik baris `b` (`SearchHierarkiSourceBizAgent_PostDT`).
+func HasilPostDT(b BarisAgen) (SumberBisnisPostDT, error) {
 	h := HalamanBaru()
 	TombolSOB(h)
 	if err := TerapkanSumberBisnis(h, b); err != nil {
-		return nil, err
+		return SumberBisnisPostDT{}, err
 	}
-	out := make(map[string]string, len(MedanSumberBisnis))
-	for _, m := range MedanSumberBisnis {
-		out[HalamanQuotation+"."+m] = h.Ambil(HalamanQuotation + "." + m)
-	}
-	return out, nil
+	return BacaSumberBisnis(h), nil
 }
 
 // ---------------------------------------------------------------- F4: Save/Submit
 
-// SumberBisnisKiriman - pilihan Source Of Business yang dipegang layar
-// (`masuk`, kiriman Save/Submit/refresh admin) BILA berbeda dari halaman server
-// `h` (tersimpan + pra-proses). Pembanding = `Quotation.SourceOfBusiness`,
-// satu-satunya medan PostDT yang berkolom (T_POLIS_QUOTATION.SOURCE_OF_BUSINESS)
-// dan yang dibaca rule NB (`SetPPNPPH` langkah 1, lewat salinan QuotationData).
-// Jalur itu tidak dikirim, atau sama = tidak ada pilihan baru: tiga medan
-// lainnya (tanpa kolom, nol pembaca NB) tidak diambil dari layar.
+// KirimanSumberBisnis = F4 dengan pola `TerimaKirimanTerkunci`: pilihan Source
+// Of Business yang dipegang layar admin ikut kiriman Save/Submit/refresh.
 //
-// `pilihan` memuat keempat `MedanSumberBisnis` per jalur halaman; medan yang
-// tidak dikirim bernilai "".
-func SumberBisnisKiriman(h, masuk *Halaman) (pilihan map[string]string, berubah bool) {
-	j := HalamanQuotation + ".SourceOfBusiness"
-	if masuk == nil {
-		return nil, false
+//   - pembeda = `Quotation.SourceOfBusiness`, satu-satunya medan PostDT yang
+//     berkolom (T_POLIS_QUOTATION.SOURCE_OF_BUSINESS) dan yang dibaca rule NB
+//     (`SetPPNPPH` langkah 1, lewat salinan QuotationData); tiga medan lainnya
+//     (tanpa kolom, nol pembaca NB) bukan pemicu;
+//   - ClaimType (isian layar) bukan 'XOL Retro' -> tombol tidak tampil, medan
+//     TERKUNCI (pola AC 49-51);
+//   - hasil hitung ulang = PostDT atas setiap baris `daftar` (RD
+//     `BrowseAgentHierarkiList_RD` yang dijalankan ulang): pilihan kosong
+//     semua cocok dengan simpul beranak mana pun (`ChildCount > 0`); baris yang
+//     ChildCount-nya bukan angka tidak dapat diklik (PostDT gagal) - dilewati;
+//   - diterima -> keempat medan ditulis ke Quotation dan salinan QuotationData
+//     (`TerapkanPilihanSumberBisnis`).
+func KirimanSumberBisnis(h *Halaman, daftar func() ([]BarisAgen, error)) KirimanTerkunci[SumberBisnisPostDT] {
+	return KirimanTerkunci[SumberBisnisPostDT]{
+		Jalur:   jalurSumberBisnis(),
+		Tampil:  TampilPilihSumberBisnis(h),
+		Baca:    BacaSumberBisnis,
+		Tulis:   TerapkanPilihanSumberBisnis,
+		Berubah: func(k, s SumberBisnisPostDT) bool { return k.SourceOfBusiness != s.SourceOfBusiness },
+		Pesan:   func(k SumberBisnisPostDT) string { return PesanSumberBisnisTidakCocok(k.SourceOfBusiness) },
+		HitungUlang: func() ([]SumberBisnisPostDT, error) {
+			d, err := daftar()
+			if err != nil {
+				return nil, err
+			}
+			out := make([]SumberBisnisPostDT, 0, len(d))
+			for _, b := range d {
+				if x, err := HasilPostDT(b); err == nil {
+					out = append(out, x)
+				}
+			}
+			return out, nil
+		},
 	}
-	v, ada := masuk.Nilai[j]
-	if !ada || v == h.Ambil(j) {
-		return nil, false
-	}
-	pilihan = make(map[string]string, len(MedanSumberBisnis))
-	for _, m := range MedanSumberBisnis {
-		pilihan[HalamanQuotation+"."+m] = masuk.Ambil(HalamanQuotation + "." + m)
-	}
-	return pilihan, true
 }
 
-// CocokHasilPostDT - adakah baris `daftar` (RD `BrowseAgentHierarkiList_RD`
-// yang dijalankan ulang) yang hasil `HasilPostDT`-nya SAMA PERSIS dengan
-// `pilihan` di keempat medan. Pilihan kosong semua cocok dengan simpul
-// beranak mana pun (`ChildCount > 0`); pilihan berisi hanya dengan baris
-// ChildCount 0 ber-ID, ClientName, dan Leader0 itu. Baris yang ChildCount-nya
-// bukan angka tidak dapat diklik (PostDT gagal) - dilewati.
-func CocokHasilPostDT(daftar []BarisAgen, pilihan map[string]string) bool {
-	for _, b := range daftar {
-		hasil, err := HasilPostDT(b)
-		if err != nil {
-			continue
-		}
-		sama := true
-		for _, m := range MedanSumberBisnis {
-			j := HalamanQuotation + "." + m
-			if hasil[j] != pilihan[j] {
-				sama = false
-				break
-			}
-		}
-		if sama {
-			return true
-		}
+func jalurSumberBisnis() []string {
+	out := make([]string, len(MedanSumberBisnis))
+	for i, m := range MedanSumberBisnis {
+		out[i] = jq + m
 	}
-	return false
+	return out
 }
 
 // PesanSumberBisnisTidakCocok - pesan validasi (422) bila pilihan yang dipegang
@@ -180,16 +201,6 @@ func CocokHasilPostDT(daftar []BarisAgen, pilihan map[string]string) bool {
 func PesanSumberBisnisTidakCocok(id string) string {
 	return fmt.Sprintf("Source Of Business %q tidak cocok dengan hasil pencarian hierarki sumber bisnis "+
 		"(BrowseAgentHierarkiList_RD) - pilih ulang lewat tombol Select Source Of Business", id)
-}
-
-// TerapkanPilihanSumberBisnis menulis pilihan yang sudah dicocokkan ke
-// `Quotation.<medan>` (persis hasil PostDT) lalu ke salinannya
-// `PolicyTreatyIn.QuotationData.<medan>` (`SalinKeQuotationData`).
-func TerapkanPilihanSumberBisnis(h *Halaman, pilihan map[string]string) {
-	for _, m := range MedanSumberBisnis {
-		h.Setel(HalamanQuotation+"."+m, pilihan[HalamanQuotation+"."+m])
-	}
-	SalinKeQuotationData(h, MedanSumberBisnis...)
 }
 
 // SalinKeQuotationData menyalin medan `Quotation.<m>` ke salinannya

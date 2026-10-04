@@ -45,11 +45,37 @@ type SaringanBisnis struct {
 	JenisProporsi string
 }
 
+// BatasDaftarBisnis - baris terbanyak grid popup pilih bisnis: RD
+// `BrowseTreatyJoinEDM` `pyContent/pyMaxRecords` 500. Dipakai repository dan
+// tiruan uji.
+const BatasDaftarBisnis = 500
+
 // SaringanPopupBisnis membaca parameter grid popup dari halaman kerja: kelas
 // harness `ASM-FW-GISFW-Data-PolicyTreatyIn`, jadi `.QuotationData.ProportionalType`
 // = `PolicyTreatyIn.QuotationData.ProportionalType`.
 func SaringanPopupBisnis(h *Halaman) SaringanBisnis {
 	return SaringanBisnis{JenisProporsi: h.Ambil(HalamanPolis + ".QuotationData.ProportionalType")}
+}
+
+// PeriksaPilihanBisnis - pola F4 (`kirimanterkunci.go`) untuk tombol `Choose`
+// popup `Section/BusinessAndSOBList`: tombol itu hanya ada di baris grid AKTIF
+// (RD `BrowseTreatyJoinEDM`, `SetValue_Act(ID=.ID)`), jadi `idDetail` diterima
+// hanya bila ada di `daftar` - grid yang dijalankan ulang di server dengan
+// saringan kasus ini (`SaringanPopupBisnis`, batas `pyMaxRecords`). Selain itu
+// `GalatKiriman` (422).
+func PeriksaPilihanBisnis(daftar []BarisKontrak, idDetail string) error {
+	for _, b := range daftar {
+		if b["ID"] == idDetail {
+			return nil
+		}
+	}
+	return &GalatKiriman{Pesan: PesanBisnisTidakDiDaftar(idDetail)}
+}
+
+// PesanBisnisTidakDiDaftar - pesan 422 `PeriksaPilihanBisnis`.
+func PesanBisnisTidakDiDaftar(idDetail string) string {
+	return "Bisnis \"" + idDetail + "\" tidak ada di daftar popup Choose Business (BrowseTreatyJoinEDM) " +
+		"untuk kasus ini - pilih ulang dari daftar"
 }
 
 // TampilPilihBisnis = wadah tombol `Choose Business` `Section/DetailPolicyTreatyIn`:
