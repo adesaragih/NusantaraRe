@@ -516,7 +516,8 @@ func periksaProdKe(prodke string) error {
 //
 // ⛔ Nilai lama tidak dihitung ulang dan tidak dibulatkan (AC 55, P29):
 // teks desimal dibawa apa adanya; pembulatan hanya terjadi di Oracle pada
-// desimal kesembilan (NUMBER(38,8), AC 19, 20b). Satu-satunya pengisian:
+// desimal KESEBELAS (NUMBER(38,10) - diagram NB Treaty In Prop F20 "skala
+// MINIMAL 9"; AC 19, 20b). Satu-satunya pengisian:
 // EndDate kosong = StartDate (`[keputusan work owner]` spec AC 69, §5.8).
 func PecahDokumenLama(b BarisJSONPolis) (HasilPecah, error) {
 	dek := json.NewDecoder(bytes.NewReader(b.DataJSON))

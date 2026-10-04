@@ -12,7 +12,9 @@ T_POLIS_SPREADING, T_POLIS_XOL, T_POLIS_XOL_LAYER. Tabel lain tidak dibangkitkan
     python skema.py
 
 Aturan penjaga repo yang dipatuhi (inti/backend/penjaga, claimlife):
-  - NUMBER hanya (38,8) / (5) / (10); penanda VARCHAR2, bukan NUMBER(1)
+  - NUMBER hanya (38,10) / (5) / (10); penanda VARCHAR2, bukan NUMBER(1)
+    (uang/persen NUMBER(38,10): diagram sheet NB Treaty In Prop F20 "skala MINIMAL 9
+    desimal" + J69 "NB: 100 / jumlah baris presisi 10" - perintah WO 04-10-2026)
   - CREATE di kolom 0, satu kolom per baris, `)` sendiri di barisnya, pemisah `/`
   - {skema} di setiap pernyataan, nol COMMIT, nol kata "total_*" dan nol kata
     persetujuan berbahasa Inggris yang dilarang penjaga skema
@@ -26,6 +28,11 @@ MODUL = os.path.normpath(os.path.join(DIR, "..", ".."))
 KATALOG = os.path.join(MODUL, "backend", "models", "katalog.go")
 MIGRASI = os.path.join(MODUL, "backend", "migrations")
 STRUKTUR = os.path.join(MODUL, "docs", "STRUKTUR-TABEL-NB-TREATY-IN.md")
+
+# Diagram sheet NB Treaty In Prop F20 + J69 (perintah WO 04-10-2026): skala >= 9,
+# dipilih 10 supaya hasil bagi rata spreading NB (presisi 10) tersimpan utuh;
+# 28 digit di depan koma (>= 17 digit sentinel 99999999999999999.99).
+TIPE_DESIMAL = "NUMBER(38,10)"
 
 GOL = {"kTeks": "teks", "kKode": "kode", "kPenanda": "penanda", "kUang": "uang", "kPersen": "persen",
        "kTgl": "tanggal", "kTglWaktu": "tanggal-waktu", "kCacah": "cacah"}
@@ -47,7 +54,7 @@ def baca_katalog():
 def tipe_ddl(k):
     g = k["gol"]
     if g in ("uang", "persen"):
-        return "NUMBER(38,8)"
+        return TIPE_DESIMAL
     if g in ("tanggal", "tanggal-waktu"):
         return "DATE"
     if g == "cacah":
@@ -115,7 +122,9 @@ def main():
         "Kolom lain DIBANGKITKAN dari backend/models/katalog.go (docs/alat/skema.py) -",
         "79 medan PolicyTreatyIn + 7 kolom json_polis menurut diagram dan rancangan;",
         "LAYER* dicoret (diagram F26). Perbandingan: docs/PERBANDINGAN-KOLOM-DIAGRAM.md.",
-        "Uang dan persen NUMBER(38,8) (KEPUTUSAN 23-09-2026 sore), tanggal DATE (P32),",
+        "Uang dan persen NUMBER(38,10) - diagram sheet NB Treaty In Prop F20 (skala",
+        "MINIMAL 9 desimal, P29) dan J69 (NB bagi rata presisi 10); RALAT NUMBER(38,8)",
+        "KEPUTUSAN 23-09-2026 sore (perintah WO 04-10-2026). Tanggal DATE (P32),",
         "kode dan penanda teks (ID-16, ID-17). Nol COMMIT.",
     ], [
         blok("T_GENERAL_POLIS", kunci, g["kolom"], [
@@ -176,7 +185,8 @@ def main():
          "Acuan bentuk tabel modul `nbtreatyin`. **Dibangkitkan** `docs/alat/skema.py` dari",
          "`backend/models/katalog.go` — jangan disunting tangan; sunting katalognya.", "",
          "Tipe ditulis sebagai kategori logis: teks · angka desimal · bilangan bulat · DATE.",
-         "Uang dan persen **angka desimal** `NUMBER(38,8)`, tidak pernah float (ADR-0003).",
+         "Uang dan persen **angka desimal** `NUMBER(38,10)` — skala minimal 9 (diagram sheet NB Treaty In Prop F20),",
+         "10 supaya bagi rata spreading NB presisi 10 tersimpan utuh (J69); tidak pernah float (ADR-0003).",
          "Golongan (uang / persen / kode / penanda / tanggal) ada di kolom *Golongan*.", "",
          "Tabel yang **dibaca, tidak dibuat** modul ini dideklarasikan di `MODUL.md`.", ""]
 

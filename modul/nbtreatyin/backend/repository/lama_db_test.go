@@ -86,7 +86,7 @@ func TestPemuatLamaMenulisLewatAntarmukaSama(t *testing.T) { // AC 21, 22, 55, 5
 		t.Fatal(err)
 	}
 	for nama, pasangan := range map[string][2]string{
-		"PREMI_OGP (AC 19, 55: 8 desimal, bukan 2)": {premi, "592629512.88000028"},
+		"PREMI_OGP (AC 19, 55; F20 skala 10: utuh)": {premi, "592629512.880000276"},
 		"START_DATE (AC 21)":                        {mulai, "2017-10-01"},
 		"END_DATE (AC 69)":                          {akhir, "2017-10-01"},
 		"STATEMENT_DATE (AC 22)":                    {statement, "2017-10-01 00:00:00"},

@@ -4,7 +4,8 @@ Acuan bentuk tabel modul `nbtreatyin`. **Dibangkitkan** `docs/alat/skema.py` dar
 `backend/models/katalog.go` — jangan disunting tangan; sunting katalognya.
 
 Tipe ditulis sebagai kategori logis: teks · angka desimal · bilangan bulat · DATE.
-Uang dan persen **angka desimal** `NUMBER(38,8)`, tidak pernah float (ADR-0003).
+Uang dan persen **angka desimal** `NUMBER(38,10)` — skala minimal 9 (diagram sheet NB Treaty In Prop F20),
+10 supaya bagi rata spreading NB presisi 10 tersimpan utuh (J69); tidak pernah float (ADR-0003).
 Golongan (uang / persen / kode / penanda / tanggal) ada di kolom *Golongan*.
 
 Tabel yang **dibaca, tidak dibuat** modul ini dideklarasikan di `MODUL.md`.

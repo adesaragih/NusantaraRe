@@ -181,7 +181,10 @@ func TestKatalogSepakatDenganDDL(t *testing.T) {
 	tipe := func(g models.Golongan) string {
 		switch {
 		case g.Desimal():
-			return "NUMBER(38,8)"
+			// Diagram sheet NB Treaty In Prop F20: "uang · persen -> angka
+			// presisi tetap, skala MINIMAL 9 desimal (P29)"; J69: NB membagi
+			// rata spreading presisi 10 - skala 10 menyimpannya utuh.
+			return "NUMBER(38,10)"
 		case g.Tanggal():
 			return "DATE"
 		case g == models.GolCacah:
@@ -206,7 +209,7 @@ func TestKatalogSepakatDenganDDL(t *testing.T) {
 				t.Errorf("%s.%s ada di katalog, tidak di DDL", tb.Nama, k.Kolom)
 				continue
 			}
-			if !strings.HasPrefix(got, tipe(k.Golongan)) {
+			if mau := tipe(k.Golongan); got != mau && !(mau == "VARCHAR2" && strings.HasPrefix(got, mau+"(")) {
 				t.Errorf("%s.%s bertipe %s, golongan %s menuntut %s", tb.Nama, k.Kolom, got, k.Golongan, tipe(k.Golongan))
 			}
 		}
@@ -411,5 +414,41 @@ func TestSQLTidakMenyebutKolomYangDibuang(t *testing.T) {
 	}
 	if dibaca < 5 {
 		t.Fatalf("hanya %d berkas terbaca", dibaca)
+	}
+}
+
+// Diagram sheet NB Treaty In Prop F20 (perintah WO 04-10-2026 "buat sesuai
+// yang di sheet"): setiap kolom NUMBER berskala di delapan tabel - uang dan
+// persen - berskala MINIMAL 9, dan SATU tipe yang sama di seluruh tabel.
+func TestSkalaUangPersenMinimalSembilanDiSemuaTabel(t *testing.T) {
+	berkas, err := filepath.Glob(filepath.Join("..", "migrations", "32*.sql"))
+	if err != nil || len(berkas) == 0 {
+		t.Fatalf("migrasi tidak terbaca: %v", err)
+	}
+	pola := regexp.MustCompile(`(?m)^\s+([A-Z][A-Z0-9_]*)\s+NUMBER\((\d+),\s*(\d+)\)`)
+	tipe := map[string]bool{}
+	n := 0
+	for _, b := range berkas {
+		if strings.HasSuffix(b, "_down.sql") {
+			continue
+		}
+		isi, err := os.ReadFile(b)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, m := range pola.FindAllStringSubmatch(string(isi), -1) {
+			n++
+			skala, _ := strconv.Atoi(m[3])
+			if skala < 9 {
+				t.Errorf("%s kolom %s NUMBER(%s,%s): skala < 9 (diagram F20)", filepath.Base(b), m[1], m[2], m[3])
+			}
+			tipe["NUMBER("+m[2]+","+m[3]+")"] = true
+		}
+	}
+	if n < 60 {
+		t.Fatalf("hanya %d kolom NUMBER berskala terbaca; pembacanya rusak", n)
+	}
+	if len(tipe) != 1 {
+		t.Errorf("tipe desimal tidak seragam di delapan tabel: %v", tipe)
 	}
 }

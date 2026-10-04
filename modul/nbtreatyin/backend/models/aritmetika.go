@@ -22,7 +22,8 @@ package models
 // ⚠️ PEMBAGIAN `/` TANPA `@divide`: Pega membaginya dengan BigDecimal; konteks
 // presisinya tidak ada di ekspor. Di sini presisi penuh sistem
 // (`utils.DecimalPrecision` = 38), setengah-ke-atas. Hasilnya disimpan ke
-// kolom NUMBER(38,8) (spec-penyimpanan ID-14), jadi selisih di digit ke-38
+// kolom NUMBER(38,10) (spec-penyimpanan ID-14; diagram NB Treaty In Prop F20),
+// jadi selisih di digit ke-38
 // tidak pernah sampai ke penyimpanan.
 
 import (

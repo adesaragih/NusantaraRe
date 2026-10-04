@@ -71,7 +71,7 @@ func TestPulangPergiHalamanLewatKatalog(t *testing.T) {
 	const id = "UJI-NB-1"
 	h := models.HalamanBaru()
 	h.Setel("PositionNote", models.PosisiAdmin)
-	h.Setel("PolicyTreatyIn.PremiOgp", "830.82191781") // 8 desimal = skala penuh NUMBER(38,8)
+	h.Setel("PolicyTreatyIn.PremiOgp", "830.82191781") // 8 desimal; skala NUMBER(38,10) memuatnya utuh
 	h.Setel("PolicyTreatyIn.RiCommOgp", "12.5")
 	h.Setel("PolicyTreatyIn.StartDate", "2026-10-01")
 	h.Setel("PolicyTreatyIn.StatementDate", "2026-10-03 09:15:00")
@@ -95,7 +95,7 @@ func TestPulangPergiHalamanLewatKatalog(t *testing.T) {
 		t.Fatal(err)
 	}
 	for j, harap := range map[string]string{
-		"PolicyTreatyIn.PremiOgp":                  "830.82191781", // skala penuh; 38 digit: TestUangPresisiPenuhTanpaPembulatanRepository (AC 23)
+		"PolicyTreatyIn.PremiOgp":                  "830.82191781", // utuh; 38 digit: TestUangPresisiPenuhTanpaPembulatanRepository (AC 23)
 		"PolicyTreatyIn.RiCommOgp":                 "12.5",
 		"PolicyTreatyIn.StartDate":                 "2026-10-01",
 		"PolicyTreatyIn.StatementDate":             "2026-10-03 09:15:00",

@@ -7,7 +7,10 @@ package repository_test
 // bukan sekadar pulang-pergi beberapa medan.
 //
 //   - spec AC 23            uang berpresisi penuh: 38 digit utuh; pembulatan
-//                           hanya di desimal ke-9 (NUMBER(38,8), AC 55), bukan 2
+//                           hanya di desimal ke-11 (NUMBER(38,10), diagram NB
+//                           Treaty In Prop F20 "skala MINIMAL 9"; AC 55), bukan 2;
+//                           galat lama 592629512.880000276 (P29) utuh
+//   - diagram J69           bagi rata spreading NB presisi 10 utuh di kolom
 //   - spec AC 29, peny. 46  kegagalan di tengah urutan simpan = NOL baris di
 //                           kesembilan tabel (T_WORK_POLIS + delapan diagram)
 //   - peny. AC 49           polis proporsional: SETIAP kolom katalog kembali sama
@@ -30,9 +33,9 @@ import (
 	"nusantarare/modul/nbtreatyin/backend/repository"
 )
 
-// uangPenuh - 30 digit bulat + 8 desimal = 38 digit, batas NUMBER(38,8);
+// uangPenuh - 28 digit bulat + 10 desimal = 38 digit, batas NUMBER(38,10);
 // float64 hanya membawa ~16 digit, jadi setiap jalur float merusaknya.
-const uangPenuh = "123456789012345678901234567890.12345678"
+const uangPenuh = "1234567890123456789012345678.1234567891"
 
 // nilaiUji - nilai UJI- satu kolom katalog menurut golongannya; `i` memvariasikan
 // nilai antarkolom supaya kolom yang tertukar ketahuan.
@@ -47,7 +50,7 @@ func nilaiUji(k models.Kolom, i int) string {
 	case models.GolUang:
 		return []string{uangPenuh, "-0.5", "0.00000001", "1500000000.25"}[i%4]
 	case models.GolPersen:
-		return []string{"12.5", "0.00000001", "100", "33.33333333"}[i%4]
+		return []string{"12.5", "0.0000000001", "100", "33.3333333333"}[i%4]
 	case models.GolTanggal:
 		return fmt.Sprintf("2026-%02d-%02d", 1+i%12, 1+i%28)
 	case models.GolTanggalWaktu:
@@ -239,9 +242,11 @@ func TestUrutanBarisAnakMenurutNourut(t *testing.T) {
 
 // Spec AC 23: "Nilai uang disimpan berpresisi penuh. Test yang menemukan
 // pembulatan di lapisan repository gagal." Kolom dibaca LANGSUNG dan lewat
-// `BacaHalaman`: 38 digit kembali utuh; 11 desimal dibulatkan Oracle di
-// desimal ke-9 (NUMBER(38,8), KEPUTUSAN 23-09-2026; spec-penyimpanan AC 55),
-// bukan ke 2 desimal; 8 desimal kecil tidak menjadi 0.
+// `BacaHalaman`: 38 digit kembali utuh; galat lama 9 desimal (P29,
+// `592629512.880000276`) utuh; 11 desimal dibulatkan Oracle di desimal ke-11
+// (NUMBER(38,10) - diagram sheet NB Treaty In Prop F20 "skala MINIMAL 9
+// desimal", RALAT NUMBER(38,8) 23-09-2026; spec-penyimpanan AC 55), bukan ke
+// 2 desimal; 10 desimal kecil tidak menjadi 0.
 func TestUangPresisiPenuhTanpaPembulatanRepository(t *testing.T) {
 	sqlDB, skema, ctx, d := pasang(t)
 	g := repository.Baru(d)
@@ -250,9 +255,9 @@ func TestUangPresisiPenuhTanpaPembulatanRepository(t *testing.T) {
 	h.Setel("PositionNote", models.PosisiAdmin)
 	harap := map[string][2]string{ // properti -> {masuk, kolom}
 		"PolicyTreatyIn.PremiOgp":   {uangPenuh, uangPenuh},
-		"PolicyTreatyIn.PremiOnp":   {"830.82191780804", "830.82191781"},
-		"PolicyTreatyIn.NetPremium": {"0.00000001", "0.00000001"},
-		"PolicyTreatyIn.ResultOgp1": {"-592629512.880000276", "-592629512.88000028"},
+		"PolicyTreatyIn.PremiOnp":   {"830.82191780806", "830.8219178081"},
+		"PolicyTreatyIn.NetPremium": {"0.0000000001", "0.0000000001"},
+		"PolicyTreatyIn.ResultOgp1": {"-592629512.880000276", "-592629512.880000276"},
 	}
 	for p, v := range harap {
 		h.Setel(p, v[0])
@@ -328,6 +333,28 @@ func TestKegagalanDiTengahTidakMenyisakanBarisDiTabelManaPun(t *testing.T) {
 		}
 		if n := kolomTeks(t, ctx, sqlDB, q, args...); n != "0" {
 			t.Errorf("%s: %s baris tersisa sesudah pembatalan", tabel, n)
+		}
+	}
+}
+
+// Diagram sheet NB Treaty In Prop J69: "NB: 100 / jumlah baris presisi 10 ·
+// ditiru apa adanya" - hasil bagi rata tiga baris (`33.3333333333`, nilai
+// tangan 100/3 dipotong 10 desimal) tersimpan UTUH di SHARE_PERCENTAGE dan
+// CLAIM_PERCENTAGE, bukan dibulatkan ke 8 desimal (F20: skala minimal 9).
+func TestSpreadingBagiRataPresisiSepuluhUtuhDiKolom(t *testing.T) {
+	sqlDB, skema, ctx, d := pasang(t)
+	g := repository.Baru(d)
+	const id = "UJI-NB-SPREAD10"
+	h := models.HalamanBaru()
+	h.Setel("PositionNote", models.PosisiAdmin)
+	baris := models.Baris{"TreatyType": "UJI-1", "SharePercentage": "33.3333333333", "ClaimPercentage": "33.3333333333"}
+	h.SetelDaftar(models.DaftarSpreading, []models.Baris{baris, baris, baris})
+	simpanKasusBaru(t, ctx, d, g, id, h)
+	for _, kol := range []string{"SHARE_PERCENTAGE", "CLAIM_PERCENTAGE"} {
+		got := rapikan(kolomTeks(t, ctx, sqlDB, fmt.Sprintf(`SELECT %s FROM %s.T_POLIS_SPREADING WHERE POLIS_ID = :1 AND NOURUT = 1`,
+			fmt.Sprintf(intidb.FmtDesimal, kol), skema), id))
+		if got != "33.3333333333" {
+			t.Errorf("%s = %s, harap 33.3333333333 (J69 presisi 10 utuh)", kol, got)
 		}
 	}
 }

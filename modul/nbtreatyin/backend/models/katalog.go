@@ -52,14 +52,17 @@ const (
 	GolTeks         Golongan = "teks"
 	GolKode         Golongan = "kode"    // teks - nol di depan bermakna (ID-16)
 	GolPenanda      Golongan = "penanda" // teks - "" berbeda dari "0" (ID-17)
-	GolUang         Golongan = "uang"    // NUMBER(38,8)
-	GolPersen       Golongan = "persen"  // NUMBER(38,8) - 12.5 = 12,5 persen
+	GolUang         Golongan = "uang"    // NUMBER(38,10)
+	GolPersen       Golongan = "persen"  // NUMBER(38,10) - 12.5 = 12,5 persen
 	GolTanggal      Golongan = "tanggal" // DATE, tanggal saja
 	GolTanggalWaktu Golongan = "tanggal-waktu"
 	GolCacah        Golongan = "cacah" // NUMBER(10)
 )
 
-// Desimal - golongan bertipe NUMBER(38,8).
+// Desimal - golongan bertipe NUMBER(38,10): diagram sheet NB Treaty In Prop F20
+// "uang · persen -> angka presisi tetap, skala MINIMAL 9 desimal (P29)", dan
+// J69 "NB: 100 / jumlah baris presisi 10" tersimpan utuh (perintah WO
+// 04-10-2026; RALAT NUMBER(38,8) KEPUTUSAN 23-09-2026 sore).
 func (g Golongan) Desimal() bool { return g == GolUang || g == GolPersen }
 
 // Tanggal - golongan bertipe DATE.

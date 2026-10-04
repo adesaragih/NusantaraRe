@@ -7,7 +7,7 @@
 // (`models/katalog.go`). Konversi terjadi SEKALI, di sini (ADR-U-0022,
 // spec-penyimpanan ID-14):
 //
-//	uang, persen   teks desimal  <-> NUMBER(38,8)  lewat koefisien / 10^skala
+//	uang, persen   teks desimal  <-> NUMBER(38,10) lewat koefisien / 10^skala
 //	tanggal        "2006-01-02"  <-> DATE
 //	tanggal-waktu  "2006-01-02 15:04:05" <-> DATE
 //	kode, penanda, teks           <-> VARCHAR2 apa adanya ("006" tetap "006")
