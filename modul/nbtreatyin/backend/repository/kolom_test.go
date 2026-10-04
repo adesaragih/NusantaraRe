@@ -8,7 +8,9 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -158,7 +160,9 @@ func TestKatalogSepakatDenganDDL(t *testing.T) {
 		t.Fatalf("migrasi tidak terbaca: %v", err)
 	}
 	ddl := map[string]map[string]string{}
-	pola := regexp.MustCompile(`(?s)CREATE TABLE \{skema\}\.(\w+) \((.*?)\n\)`)
+	// CREATE TABLE tujuh tabel T_POLIS_* dan ALTER ... ADD ( kolom Treaty atas
+	// T_GENERAL_POLIS bersama (keputusan WO 04-10-2026; tabel dasar nbfacin 182).
+	pola := regexp.MustCompile(`(?s)(?:CREATE TABLE \{skema\}\.(\w+) \(|ALTER TABLE \{skema\}\.(\w+) ADD \()(.*?)\n\)`)
 	for _, b := range berkas {
 		if strings.HasSuffix(b, "_down.sql") {
 			continue
@@ -168,14 +172,18 @@ func TestKatalogSepakatDenganDDL(t *testing.T) {
 			t.Fatal(err)
 		}
 		for _, m := range pola.FindAllStringSubmatch(string(isi), -1) {
-			kol := map[string]string{}
-			for _, baris := range strings.Split(m[2], "\n") {
+			nama := m[1] + m[2]
+			kol := ddl[nama]
+			if kol == nil {
+				kol = map[string]string{}
+			}
+			for _, baris := range strings.Split(m[3], "\n") {
 				f := strings.Fields(strings.TrimSuffix(strings.TrimSpace(baris), ","))
 				if len(f) >= 2 && f[0] != "CONSTRAINT" {
 					kol[f[0]] = f[1]
 				}
 			}
-			ddl[m[1]] = kol
+			ddl[nama] = kol
 		}
 	}
 	tipe := func(g models.Golongan) string {
@@ -269,15 +277,26 @@ func TestSQLRiwayatProduksiMengikutiInsertViewSuggest(t *testing.T) {
 	}
 }
 
-// kolomDDL membaca CREATE TABLE seluruh migrasi maju modul ini: tabel -> kolom.
-func kolomDDL(t *testing.T) map[string][]string {
+// kolomDDL membaca migrasi maju modul ini: `buat` = CREATE TABLE (tabel ->
+// kolom), `tambah` = ALTER TABLE ... ADD ( (tabel -> kolom yang ditambahkan).
+func kolomDDL(t *testing.T) (buat, tambah map[string][]string) {
 	t.Helper()
 	berkas, err := filepath.Glob(filepath.Join("..", "migrations", "*.sql"))
 	if err != nil || len(berkas) == 0 {
 		t.Fatalf("migrasi tidak terbaca: %v", err)
 	}
-	pola := regexp.MustCompile(`(?s)CREATE TABLE \{skema\}\.(\w+) \((.*?)\n\)`)
-	hasil := map[string][]string{}
+	polaBuat := regexp.MustCompile(`(?s)CREATE TABLE \{skema\}\.(\w+) \((.*?)\n\)`)
+	polaTambah := regexp.MustCompile(`(?s)ALTER TABLE \{skema\}\.(\w+) ADD \((.*?)\n\)`)
+	kolom := func(badan string) []string {
+		var kol []string
+		for _, baris := range strings.Split(badan, "\n") {
+			if f := strings.Fields(strings.TrimSpace(baris)); len(f) >= 2 && f[0] != "CONSTRAINT" {
+				kol = append(kol, f[0])
+			}
+		}
+		return kol
+	}
+	buat, tambah = map[string][]string{}, map[string][]string{}
 	for _, b := range berkas {
 		if strings.HasSuffix(b, "_down.sql") {
 			continue
@@ -286,27 +305,32 @@ func kolomDDL(t *testing.T) map[string][]string {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, m := range pola.FindAllStringSubmatch(string(isi), -1) {
-			if _, ganda := hasil[m[1]]; ganda {
+		for _, m := range polaBuat.FindAllStringSubmatch(string(isi), -1) {
+			if _, ganda := buat[m[1]]; ganda {
 				t.Fatalf("%s dibuat dua kali", m[1])
 			}
-			var kol []string
-			for _, baris := range strings.Split(m[2], "\n") {
-				if f := strings.Fields(strings.TrimSpace(baris)); len(f) >= 2 && f[0] != "CONSTRAINT" {
-					kol = append(kol, f[0])
-				}
-			}
-			hasil[m[1]] = kol
+			buat[m[1]] = kolom(m[2])
+		}
+		for _, m := range polaTambah.FindAllStringSubmatch(string(isi), -1) {
+			tambah[m[1]] = append(tambah[m[1]], kolom(m[2])...)
 		}
 	}
-	return hasil
+	return buat, tambah
 }
 
-// Bab 0 butir 11-12 PROMPT putaran 2: TEPAT delapan tabel diagram grilling
+// Bab 0 butir 11-12 PROMPT putaran 2: delapan tabel diagram grilling
 // (Diagram-Skema-Tabel-NusantaraRe.xlsx sheet NB Treaty In Prop/NonProp), dan
 // kolomnya mengikuti diagram + rancangan-tabel-datar; kolom di luar keduanya
 // hanya yang XML buktikan DIBACA rule terjangkau (RALAT rancangan,
 // docs/PERBANDINGAN-KOLOM-DIAGRAM.md).
+//
+// ⛔ KEPUTUSAN WO 04-10-2026 (mengalahkan bab 0 butir 11 / K18 putaran 3):
+// T_GENERAL_POLIS adalah tabel BERSAMA FacIn + Treaty In; tabel dasarnya (ID,
+// IDPEGA, COB_GROUP, START_DATE_TIME, OFFERING_DATE, END_DATE_TIME, FOLLOWING)
+// dibuat migrasi nbfacin 182. Jadi TEPAT TUJUH CREATE TABLE (T_POLIS_*) +
+// kolom Treaty T_GENERAL_POLIS lewat ALTER ... ADD ( 320; kolom Treaty
+// T_GENERAL_POLIS = kolom ALTER 320 + kolom dasar yang dipakai (ID, IDPEGA),
+// persis daftar diagram di bawah.
 func TestTabelDanKolomMengikutiDiagramGrilling(t *testing.T) {
 	daftar := func(s string) []string { return strings.Fields(s) }
 	angsuran := "INSTALLMENT_NO DUE_DATE INSTALLMENT_PERCENTAGE PREMIUM PAYMENT_TOTAL PREMIUM_AFTER_PPH PREMIUM_AFTER_PPN PREMIUM_AFTER_TAX CURRENCY ID_CURRENCY "
@@ -341,13 +365,31 @@ func TestTabelDanKolomMengikutiDiagramGrilling(t *testing.T) {
 		"T_POLIS_XOL":       daftar("ID POLIS_ID NOURUT " + xol),
 		"T_POLIS_XOL_LAYER": daftar("ID XOL_ID NOURUT LAYER LAYER_TYPE LAYER_PART LAYER_PART_TYPE " + xol),
 	}
-	ddl := kolomDDL(t)
-	if len(ddl) != 8 {
-		var nama []string
-		for n := range ddl {
-			nama = append(nama, n)
+	buat, tambah := kolomDDL(t)
+	var nama []string
+	for n := range buat {
+		nama = append(nama, n)
+	}
+	sort.Strings(nama)
+	tujuh := []string{"T_POLIS_CEDING", "T_POLIS_INSTALMENT", "T_POLIS_INSTALMENT_DETAIL", "T_POLIS_QUOTATION",
+		"T_POLIS_SPREADING", "T_POLIS_XOL", "T_POLIS_XOL_LAYER"}
+	if !reflect.DeepEqual(nama, tujuh) {
+		t.Fatalf("TEPAT tujuh CREATE TABLE T_POLIS_* (T_GENERAL_POLIS = tabel dasar bersama nbfacin 182), dapat %d: %v", len(nama), nama)
+	}
+	if len(tambah) != 1 || len(tambah["T_GENERAL_POLIS"]) == 0 {
+		t.Fatalf("ALTER ... ADD ( hanya atas T_GENERAL_POLIS bersama, dapat %v", tambah)
+	}
+	for _, k := range tambah["T_GENERAL_POLIS"] {
+		for _, d := range []string{"ID", "IDPEGA", "COB_GROUP", "START_DATE_TIME", "OFFERING_DATE", "END_DATE_TIME", "FOLLOWING"} {
+			if k == d {
+				t.Errorf("320 menambah kolom dasar FacIn %s (milik nbfacin 182)", k)
+			}
 		}
-		t.Fatalf("TEPAT delapan CREATE TABLE (diagram grilling), dapat %d: %v", len(ddl), nama)
+	}
+	// Kolom dasar nbfacin 182 yang dibaca/ditulis Treaty: ID, IDPEGA.
+	ddl := map[string][]string{"T_GENERAL_POLIS": append([]string{"ID", "IDPEGA"}, tambah["T_GENERAL_POLIS"]...)}
+	for n, k := range buat {
+		ddl[n] = k
 	}
 	for tabel, mau := range harap {
 		ada, dibuat := ddl[tabel]

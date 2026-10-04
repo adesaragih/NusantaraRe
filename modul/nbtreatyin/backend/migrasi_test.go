@@ -1,32 +1,32 @@
 package backend
 
-// K18 (PROMPT putaran 3 bab 2; koreksi WO 04-10-2026) - TANPA Oracle.
+// T_GENERAL_POLIS BERSAMA FacIn + Treaty In - TANPA Oracle.
 //
-// `POOLDATA.T_GENERAL_POLIS` sudah ada, dibuat migrasi `182_t_general_polis`
-// milik `nbfacin` (di luar repo ini) dengan TUJUH kolom: ID, IDPEGA, COB_GROUP,
-// START_DATE_TIME, OFFERING_DATE, END_DATE_TIME, FOLLOWING. Diagram grilling
-// memberi nama itu ke Treaty In (PERMINTAAN-TIM-INTI C10).
+// ⛔ KEPUTUSAN WORK OWNER 04-10-2026 (mengalahkan bab 0 butir 11 dan K18
+// PROMPT putaran 3): `T_GENERAL_POLIS` adalah SATU tabel bersama FacIn dan
+// Treaty In. Tabel DASARNYA dibuat migrasi `182_t_general_polis` milik
+// `nbfacin` (sudah dijalankan di POOLDATA; berkasnya belum di repo) dengan
+// tujuh kolom: ID (VARCHAR2(32), PK), IDPEGA (VARCHAR2(50)), COB_GROUP,
+// START_DATE_TIME, OFFERING_DATE, END_DATE_TIME, FOLLOWING. Migrasi 320 modul
+// ini TIDAK membuat tabel itu: ia hanya MENAMBAH kolom Treaty lewat
+// `ALTER TABLE {skema}.T_GENERAL_POLIS ADD (` biasa, lalu constraint dan
+// indeks Treaty. Jalur mundurnya hanya membuang milik Treaty.
 //
-// ⛔ Koreksi WO: migrasi 320 TIDAK diberi blok PL/SQL penjaga. Penjaganya sudah
-// ada di inti: `praTerbangBentuk` (`inti/backend/migrasi/migrasi.go`) memeriksa
-// SELURUH langkah yang belum tercatat SEBELUM satu pernyataan pun dikirim -
-// setiap CREATE TABLE diurai `KolomCreateTable`, dan bila tabelnya sudah ada,
-// kolom DDL dibandingkan kolom katalog Oracle lewat `SelisihKolom`; selisih
-// apa pun menghentikan migrasi dengan galat:
+// Yang dibuktikan di sini atas berkas tertanam yang SAMA dengan `-migrate`:
 //
-//	repository: migrasi <langkah>: tabel <T> sudah ada di skema <S> tetapi
-//	BENTUKNYA BERBEDA - kolom yang diminta migrasi tetapi tidak ada: [...];
-//	kolom yang ada tetapi tidak diminta: [...]. Migrasi dihentikan sebelum
-//	satu pernyataan pun dikirim; tidak ada yang diubah
-//
-// `praTerbangBentuk` sendiri butuh Oracle (katalog); uji di sini membuktikan
-// dua bagian murninya atas migrasi 320 yang sebenarnya (berkas tertanam yang
-// sama dengan `-migrate`): (1) CREATE TABLE 320 terurai PERSIS menjadi kolom
-// T_GENERAL_POLIS modul ini, dan (2) bentuk tujuh kolom FacIn menghasilkan
-// selisih tidak kosong di kedua arah - isi pesan galat di atas.
+//  1. 320 nol CREATE TABLE - pra-terbang inti (`praTerbangBentuk`, hanya
+//     membandingkan CREATE TABLE) tidak lagi menolak tabel dasar FacIn;
+//  2. kolom yang DITAMBAHKAN 320 terbaca pengurai inti `KolomAlterTambah`
+//     (pembanding STRUKTUR inti memakainya) PERSIS sama dengan pembacaan
+//     cara lain, dan ditambah kolom dasar yang dipakai (ID, IDPEGA) sama
+//     PERSIS dengan kolom Treaty (kunci + katalog medan);
+//  3. tidak satu pun kolom dasar FacIn ditambahkan, dibuang, atau disebut
+//     jalur mundur.
 
 import (
 	"reflect"
+	"regexp"
+	"sort"
 	"strings"
 	"testing"
 
@@ -34,65 +34,74 @@ import (
 	"nusantarare/modul/nbtreatyin/backend/models"
 )
 
-const langkah320 = "320_t_general_polis.sql"
+const (
+	langkah320      = "320_t_general_polis.sql"
+	langkah320Turun = "320_t_general_polis_down.sql"
+)
 
-// kolomFacIn182 - bentuk `POOLDATA.T_GENERAL_POLIS` yang dibuat migrasi 182
-// `nbfacin` (PROMPT putaran 3 bab 2 K18, katalog dicek 04-10-2026).
-var kolomFacIn182 = []string{"ID", "IDPEGA", "COB_GROUP", "START_DATE_TIME", "OFFERING_DATE", "END_DATE_TIME", "FOLLOWING"}
+// kolomDasarFacIn182 - tujuh kolom tabel dasar yang dibuat migrasi 182
+// `nbfacin` (keputusan WO 04-10-2026; katalog POOLDATA dicek 04-10-2026).
+var kolomDasarFacIn182 = []string{"ID", "IDPEGA", "COB_GROUP", "START_DATE_TIME", "OFFERING_DATE", "END_DATE_TIME", "FOLLOWING"}
 
-// kolomKunciGeneralPolis - kolom T_GENERAL_POLIS di luar katalog medan
-// (`models.TabelGeneralPolis`): kunci bersama T_WORK_POLIS (ID, ID-7), kunci
-// generasi (NOPOLIS, PRODKE, NOENDORS, OLD_POLIS_ID; ID-8, ID-9), dan kolom
-// json_polis (IDPEGA, TGL_INPUT, USERNAME; ID-21) - urutan DDL 320.
+// kolomDasarDipakaiTreaty - kolom tabel dasar yang DIBACA/DITULIS Treaty In:
+// ID (kunci bersama T_WORK_POLIS, ID-7) dan IDPEGA (json_polis, ID-21).
+var kolomDasarDipakaiTreaty = []string{"ID", "IDPEGA"}
+
+// kolomKunciGeneralPolis - kolom T_GENERAL_POLIS Treaty di luar katalog medan
+// (`models.TabelGeneralPolis`): kunci bersama (ID), kunci generasi (NOPOLIS,
+// PRODKE, NOENDORS, OLD_POLIS_ID; ID-8, ID-9), dan kolom json_polis (IDPEGA,
+// TGL_INPUT, USERNAME; ID-21).
 var kolomKunciGeneralPolis = []string{"ID", "NOPOLIS", "PRODKE", "NOENDORS", "OLD_POLIS_ID", "IDPEGA", "TGL_INPUT", "USERNAME"}
 
-// kolomDDL320 menguraikan CREATE TABLE langkah 320 dengan pengurai
-// pra-terbang inti; gagal bila jumlahnya bukan tepat satu.
-func kolomDDL320(t *testing.T) (string, []string) {
+func pernyataan(t *testing.T, nama string) []string {
 	t.Helper()
-	p, err := migrasi.PernyataanLangkah(berkasMigrasi, langkah320)
+	p, err := migrasi.PernyataanLangkah(berkasMigrasi, nama)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var nama string
+	if len(p) == 0 {
+		t.Fatalf("%s: nol pernyataan", nama)
+	}
+	return p
+}
+
+// kolomAlter320 - kolom yang ditambahkan 320 menurut pengurai INTI.
+func kolomAlter320(t *testing.T) []string {
+	t.Helper()
 	var kolom []string
 	n := 0
-	for _, s := range p {
-		if tb, k := migrasi.KolomCreateTable(s); tb != "" {
+	for _, s := range pernyataan(t, langkah320) {
+		if tb, k := migrasi.KolomAlterTambah(s); tb != "" {
 			n++
-			nama, kolom = tb, k
-		} else if strings.Contains(strings.ToUpper(s), "CREATE TABLE") {
-			// pra-terbang menolak CREATE TABLE yang tidak terurai dengan galat
-			// lain ("tidak dapat diurai") - bukan pesan bentuk yang dimaksud K18.
-			t.Fatalf("%s: CREATE TABLE tidak terurai KolomCreateTable:\n%s", langkah320, s)
+			if tb != models.TabelGeneralPolis.Nama {
+				t.Fatalf("%s menambah kolom ke %s, harap %s", langkah320, tb, models.TabelGeneralPolis.Nama)
+			}
+			kolom = append(kolom, k...)
 		}
 	}
 	if n != 1 {
-		t.Fatalf("%s: %d CREATE TABLE terurai, harap tepat 1", langkah320, n)
+		t.Fatalf("%s: %d ALTER TABLE ... ADD ( terurai, harap tepat 1", langkah320, n)
 	}
-	return nama, kolom
+	return kolom
 }
 
-// kolomDeklarasi320 membaca kolom CREATE TABLE 320 dengan cara LAIN dari
-// pengurai inti: badan dipecah pada koma tingkat atas (bukan per baris), lalu
-// setiap deklarasi selain CONSTRAINT diambil nama pertamanya. Pengurai inti
-// membaca SATU kolom per baris; kolom kedua di baris yang sama tidak terlihat
-// olehnya - dan karena itu juga tidak dibandingkan pra-terbang.
-func kolomDeklarasi320(t *testing.T) []string {
+// kolomAlterCaraLain membaca badan `ADD (...)` dengan cara LAIN dari pengurai
+// inti: dipecah pada koma TINGKAT ATAS (bukan setiap koma), lalu nama pertama
+// tiap deklarasi. Pengurai inti memecah pada setiap koma dan hanya mengenali
+// potongan yang diawali nama kolom - kolom yang luput darinya tidak terlihat
+// pembanding STRUKTUR mana pun.
+func kolomAlterCaraLain(t *testing.T) []string {
 	t.Helper()
-	p, err := migrasi.PernyataanLangkah(berkasMigrasi, langkah320)
-	if err != nil {
-		t.Fatal(err)
-	}
+	pola := regexp.MustCompile(`(?is)^ALTER\s+TABLE\s+\{skema\}\.T_GENERAL_POLIS\s+ADD\s*\((.*)\)\s*$`)
 	var kolom []string
-	for _, s := range p {
-		m := migrasi.PolaCreateTabel.FindStringSubmatch(s)
+	for _, s := range pernyataan(t, langkah320) {
+		m := pola.FindStringSubmatch(strings.TrimSpace(s))
 		if m == nil {
 			continue
 		}
 		dalam, awal := 0, 0
 		var potong []string
-		for i, c := range m[2] {
+		for i, c := range m[1] {
 			switch c {
 			case '(':
 				dalam++
@@ -100,100 +109,25 @@ func kolomDeklarasi320(t *testing.T) []string {
 				dalam--
 			case ',':
 				if dalam == 0 {
-					potong = append(potong, m[2][awal:i])
+					potong = append(potong, m[1][awal:i])
 					awal = i + 1
 				}
 			}
 		}
-		potong = append(potong, m[2][awal:])
+		potong = append(potong, m[1][awal:])
 		for _, d := range potong {
-			f := strings.Fields(strings.ToUpper(d))
-			if len(f) == 0 || f[0] == "CONSTRAINT" {
-				continue
+			if f := strings.Fields(strings.ToUpper(d)); len(f) > 0 {
+				kolom = append(kolom, f[0])
 			}
-			kolom = append(kolom, f[0])
 		}
 	}
 	return kolom
 }
 
-// (1) Pengurai pra-terbang membaca 320 persis: nama T_GENERAL_POLIS, kolom =
-// kunci + katalog medan, dan = setiap deklarasi kolom di badan DDL (nol kolom
-// tersembunyi dari pra-terbang; baris CONSTRAINT bukan kolom). Sesudah 320
-// berjalan, katalog Oracle = kolom DDL ini, sehingga menjalankan ulang tidak
-// ditolak (SelisihKolom kosong -> `bentukCocok`).
-func TestMigrasi320TeruraiPraTerbangPersisKolomGeneralPolis(t *testing.T) {
-	nama, kolom := kolomDDL320(t)
-	if nama != models.TabelGeneralPolis.Nama {
-		t.Fatalf("tabel terurai %q, harap %q", nama, models.TabelGeneralPolis.Nama)
-	}
-	harap := append([]string{}, kolomKunciGeneralPolis...)
-	for _, k := range models.TabelGeneralPolis.Kolom {
-		harap = append(harap, k.Kolom)
-	}
-	if !reflect.DeepEqual(kolom, harap) {
-		t.Fatalf("kolom terurai pra-terbang (%d):\n %v\nharap kunci + katalog (%d):\n %v", len(kolom), kolom, len(harap), harap)
-	}
-	if dekl := kolomDeklarasi320(t); !reflect.DeepEqual(kolom, dekl) {
-		t.Fatalf("pra-terbang membaca %d kolom, badan DDL mendeklarasikan %d - kolom yang tidak terbaca "+
-			"pengurai inti tidak pernah dibandingkan bentuknya:\n terurai %v\n deklarasi %v", len(kolom), len(dekl), kolom, dekl)
-	}
-	if kurang, lebih := migrasi.SelisihKolom(kolom, kolom); len(kurang) != 0 || len(lebih) != 0 {
-		t.Fatalf("bentuk 320 lawan dirinya sendiri harus cocok: kurang %v, lebih %v", kurang, lebih)
-	}
-}
-
-// (2) Bentuk FacIn tujuh kolom diberikan ke pembanding inti `SelisihKolom`
-// (yang dipanggil `praTerbangBentuk`): kedua daftar dalam pesan galat terisi -
-// pra-terbang menghentikan migrasi 320 sebelum apa pun berubah. Nilai harapan
-// ditulis tangan dari tujuh kolom K18, bukan dihitung ulang.
-func TestPraTerbangMenolakTGeneralPolisBentukFacIn(t *testing.T) {
-	_, kolom := kolomDDL320(t)
-	kurang, lebih := migrasi.SelisihKolom(kolom, kolomFacIn182)
-
-	// "kolom yang ada tetapi tidak diminta" - lima kolom FacIn, terurut.
-	if harap := []string{"COB_GROUP", "END_DATE_TIME", "FOLLOWING", "OFFERING_DATE", "START_DATE_TIME"}; !reflect.DeepEqual(lebih, harap) {
-		t.Errorf("kolom yang ada tetapi tidak diminta = %v, harap %v", lebih, harap)
-	}
-	// "kolom yang diminta migrasi tetapi tidak ada" - seluruh kolom 320 kecuali
-	// dua yang kebetulan bernama sama (ID, IDPEGA).
-	if len(kurang) != len(kolom)-2 {
-		t.Errorf("kolom yang diminta tetapi tidak ada: %d, harap %d (320 tanpa ID, IDPEGA)", len(kurang), len(kolom)-2)
-	}
-	for _, k := range []string{"NOPOLIS", "PRODKE", "OLD_POLIS_ID", "POSITION_NOTE", "PREMI_OGP", "OVERIDDING_COMM_ONP"} {
-		if !mengandung(kurang, k) {
-			t.Errorf("%s tidak disebut sebagai kolom yang diminta tetapi tidak ada: %v", k, kurang)
-		}
-	}
-	for _, k := range []string{"ID", "IDPEGA"} {
-		if mengandung(kurang, k) {
-			t.Errorf("%s ada di kedua bentuk, tidak boleh disebut kurang", k)
-		}
-	}
-	// Syarat penolakan `praTerbangBentuk`: len(kurang) > 0 || len(lebih) > 0.
-	if len(kurang) == 0 && len(lebih) == 0 {
-		t.Fatal("bentuk FacIn lolos pra-terbang - migrasi 320 akan melewati tabel milik nbfacin")
-	}
-}
-
-// Koreksi WO 04-10-2026: 320 tetap DDL biasa - nol blok PL/SQL (penjaga ada
-// di pra-terbang inti, bukan di berkas migrasi).
-func TestMigrasi320TanpaBlokPLSQL(t *testing.T) {
-	p, err := migrasi.PernyataanLangkah(berkasMigrasi, langkah320)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, s := range p {
-		atas := strings.ToUpper(s)
-		if !strings.HasPrefix(atas, "CREATE TABLE ") && !strings.HasPrefix(atas, "CREATE UNIQUE INDEX ") {
-			t.Errorf("%s memuat pernyataan selain CREATE TABLE / CREATE UNIQUE INDEX:\n%s", langkah320, s)
-		}
-		for _, kata := range []string{"BEGIN", "DECLARE", "EXECUTE IMMEDIATE"} {
-			if strings.Contains(atas, kata) {
-				t.Errorf("%s memuat %s - koreksi WO 04-10-2026: tanpa blok PL/SQL", langkah320, kata)
-			}
-		}
-	}
+func terurut(s []string) []string {
+	out := append([]string{}, s...)
+	sort.Strings(out)
+	return out
 }
 
 func mengandung(daftar []string, s string) bool {
@@ -203,4 +137,126 @@ func mengandung(daftar []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// (1) Nol CREATE TABLE di 320: tabelnya milik dasar bersama (nbfacin 182).
+// Setiap pernyataan adalah ALTER atas T_GENERAL_POLIS atau CREATE UNIQUE INDEX
+// atasnya; nol PL/SQL (penjaga inti `pelanggaranBlokPLSQL` menolak kolom baru
+// lewat blok di jalur maju).
+func TestMigrasi320HanyaMengubahTabelBersama(t *testing.T) {
+	for _, s := range pernyataan(t, langkah320) {
+		atas := strings.ToUpper(s)
+		if tb, _ := migrasi.KolomCreateTable(s); tb != "" || strings.Contains(atas, "CREATE TABLE") {
+			t.Errorf("%s membuat tabel - T_GENERAL_POLIS adalah tabel dasar bersama nbfacin 182 (WO 04-10-2026):\n%s", langkah320, s)
+		}
+		if !strings.HasPrefix(atas, "ALTER TABLE {SKEMA}.T_GENERAL_POLIS ") &&
+			!strings.HasPrefix(atas, "CREATE UNIQUE INDEX {SKEMA}.UQ_GENERAL_POLIS_NOPOLIS ON {SKEMA}.T_GENERAL_POLIS ") {
+			t.Errorf("%s memuat pernyataan selain ALTER TABLE / CREATE UNIQUE INDEX atas T_GENERAL_POLIS:\n%s", langkah320, s)
+		}
+		for _, kata := range []string{"BEGIN", "DECLARE", "EXECUTE IMMEDIATE", " MODIFY"} {
+			if strings.Contains(atas, kata) {
+				t.Errorf("%s memuat %q - kolom Treaty ditambah ALTER ... ADD ( biasa, kolom FacIn tidak diubah", langkah320, kata)
+			}
+		}
+		// ALTER bukan "pernyataan buat": galatnya (mis. ORA-01430 kolom sudah
+		// ada) TIDAK ditelan pelari migrasi inti.
+		if strings.HasPrefix(atas, "ALTER") && migrasi.PernyataanBuat(s) {
+			t.Errorf("ALTER dianggap pernyataan CREATE oleh pelari inti: %s", migrasi.RingkasPernyataan(s))
+		}
+	}
+}
+
+// (2) Kolom yang ditambahkan 320 + kolom dasar yang dipakai = kolom Treaty
+// (kunci + katalog medan) PERSIS; pengurai inti membaca setiap deklarasi.
+func TestMigrasi320MenambahPersisKolomTreaty(t *testing.T) {
+	alter := kolomAlter320(t)
+	if lain := kolomAlterCaraLain(t); !reflect.DeepEqual(alter, lain) {
+		t.Fatalf("pengurai inti membaca %d kolom, badan ADD mendeklarasikan %d - kolom yang luput tidak "+
+			"terlihat pembanding STRUKTUR:\n inti %v\n deklarasi %v", len(alter), len(lain), alter, lain)
+	}
+	for _, k := range alter {
+		if mengandung(kolomDasarFacIn182, k) {
+			t.Errorf("320 menambah kolom dasar FacIn %s - kolom itu milik nbfacin 182", k)
+		}
+	}
+	harap := append([]string{}, kolomKunciGeneralPolis...)
+	for _, k := range models.TabelGeneralPolis.Kolom {
+		harap = append(harap, k.Kolom)
+	}
+	dapat := append(append([]string{}, kolomDasarDipakaiTreaty...), alter...)
+	if !reflect.DeepEqual(terurut(dapat), terurut(harap)) {
+		t.Fatalf("ALTER 320 + kolom dasar dipakai (%d):\n %v\nharap kunci + katalog Treaty (%d):\n %v",
+			len(dapat), terurut(dapat), len(harap), terurut(harap))
+	}
+	// Nilai tangan: 6 kolom kunci/generasi/json_polis Treaty + katalog.
+	if len(alter) != 6+len(models.TabelGeneralPolis.Kolom) {
+		t.Fatalf("320 menambah %d kolom, harap 6 + %d katalog", len(alter), len(models.TabelGeneralPolis.Kolom))
+	}
+	for _, k := range models.TabelGeneralPolis.Kolom {
+		if mengandung(kolomDasarFacIn182, k.Kolom) {
+			t.Errorf("katalog Treaty memuat kolom dasar FacIn %s", k.Kolom)
+		}
+	}
+}
+
+// Constraint dan indeks Treaty (diagram F12-F16; ID-7..ID-9): FK OLD_POLIS_ID,
+// UQ OLD_POLIS_ID, FK ID -> T_WORK_POLIS (shared PK; ASUMSI: 182 belum
+// memilikinya - PERMINTAAN C10), indeks unik NOPOLIS/PRODKE bernomor.
+func TestMigrasi320ConstraintTreaty(t *testing.T) {
+	gabung := strings.Join(pernyataan(t, langkah320), "\n/\n")
+	for _, w := range []string{
+		"ALTER TABLE {skema}.T_GENERAL_POLIS ADD CONSTRAINT FK_GENERAL_POLIS_OLD FOREIGN KEY (OLD_POLIS_ID) REFERENCES {skema}.T_WORK_POLIS (ID)",
+		"ALTER TABLE {skema}.T_GENERAL_POLIS ADD CONSTRAINT UQ_GENERAL_POLIS_OLD UNIQUE (OLD_POLIS_ID)",
+		"ALTER TABLE {skema}.T_GENERAL_POLIS ADD CONSTRAINT FK_GENERAL_POLIS_WORK FOREIGN KEY (ID) REFERENCES {skema}.T_WORK_POLIS (ID)",
+		"CREATE UNIQUE INDEX {skema}.UQ_GENERAL_POLIS_NOPOLIS ON {skema}.T_GENERAL_POLIS (CASE WHEN NOPOLIS IS NOT NULL THEN NOPOLIS END, CASE WHEN NOPOLIS IS NOT NULL THEN PRODKE END)",
+	} {
+		if !strings.Contains(gabung, w) {
+			t.Errorf("%s tidak memuat:\n %s", langkah320, w)
+		}
+	}
+	// Kunci utama milik tabel dasar (182) - 320 tidak membuatnya ulang.
+	if strings.Contains(strings.ToUpper(gabung), "PRIMARY KEY") {
+		t.Errorf("%s membuat PRIMARY KEY - PK(ID) milik tabel dasar nbfacin 182", langkah320)
+	}
+}
+
+// polaPengenal - kata pengenal SQL utuh.
+var polaPengenal = regexp.MustCompile(`[A-Za-z_][A-Za-z0-9_$#]*`)
+
+// (3) Jalur mundur 320 hanya membuang milik Treaty: nol DROP TABLE, nol kolom
+// dasar FacIn disebut (kata utuh), dan kolom yang dibuang = kolom yang
+// ditambahkan 320 persis.
+func TestMigrasi320TurunHanyaMembuangMilikTreaty(t *testing.T) {
+	turun := pernyataan(t, langkah320Turun)
+	polaBuang := regexp.MustCompile(`(?is)^ALTER\s+TABLE\s+\{skema\}\.T_GENERAL_POLIS\s+DROP\s*\((.*)\)\s*$`)
+	var dibuang []string
+	for _, s := range turun {
+		atas := strings.ToUpper(s)
+		if strings.Contains(atas, "DROP TABLE") || strings.Contains(atas, "TRUNCATE") || strings.Contains(atas, "DELETE") {
+			t.Errorf("%s membuang tabel/baris - tabel dasar dan baris FacIn tidak disentuh:\n%s", langkah320Turun, s)
+		}
+		for _, kata := range polaPengenal.FindAllString(atas, -1) {
+			if mengandung(kolomDasarFacIn182, kata) {
+				t.Errorf("%s menyebut kolom dasar FacIn %s:\n%s", langkah320Turun, kata, s)
+			}
+		}
+		if m := polaBuang.FindStringSubmatch(strings.TrimSpace(s)); m != nil {
+			for _, k := range strings.Split(m[1], ",") {
+				if k = strings.ToUpper(strings.TrimSpace(k)); k != "" {
+					dibuang = append(dibuang, k)
+				}
+			}
+		}
+	}
+	if alter := kolomAlter320(t); !reflect.DeepEqual(terurut(dibuang), terurut(alter)) {
+		t.Fatalf("kolom dibuang jalur mundur (%d) != kolom ditambah 320 (%d):\n %v\n %v",
+			len(dibuang), len(alter), terurut(dibuang), terurut(alter))
+	}
+	gabung := strings.Join(turun, "\n")
+	for _, w := range []string{"DROP INDEX {skema}.UQ_GENERAL_POLIS_NOPOLIS", "DROP CONSTRAINT FK_GENERAL_POLIS_WORK",
+		"DROP CONSTRAINT FK_GENERAL_POLIS_OLD", "DROP CONSTRAINT UQ_GENERAL_POLIS_OLD"} {
+		if !strings.Contains(gabung, w) {
+			t.Errorf("%s tidak memuat %q", langkah320Turun, w)
+		}
+	}
 }

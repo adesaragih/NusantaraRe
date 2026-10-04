@@ -5,15 +5,18 @@ Sumber tunggal: backend/models/katalog.go (Kolom properti -> kolom -> golongan).
 TestTabelDanKolomMengikutiDiagramGrilling) menagih bahwa DDL, katalog, dan diagram
 grilling tetap sepakat.
 
-⛔ TEPAT DELAPAN TABEL (bab 0 butir 11 PROMPT putaran 2): T_GENERAL_POLIS,
+⛔ DELAPAN TABEL diagram (bab 0 butir 11 PROMPT putaran 2): T_GENERAL_POLIS,
 T_POLIS_QUOTATION, T_POLIS_CEDING, T_POLIS_INSTALMENT, T_POLIS_INSTALMENT_DETAIL,
 T_POLIS_SPREADING, T_POLIS_XOL, T_POLIS_XOL_LAYER. Tabel lain tidak dibangkitkan.
+KEPUTUSAN WORK OWNER 04-10-2026: T_GENERAL_POLIS adalah tabel BERSAMA FacIn + Treaty
+In - tabel dasarnya dibuat migrasi nbfacin 182; 320 hanya ALTER ... ADD ( kolom
+Treaty. Jadi tepat TUJUH CREATE TABLE (T_POLIS_*) + satu ALTER ADD.
 
     python skema.py
 
 Aturan penjaga repo yang dipatuhi (inti/backend/penjaga, claimlife):
   - NUMBER hanya (38,8) / (5) / (10); penanda VARCHAR2, bukan NUMBER(1)
-  - CREATE di kolom 0, satu kolom per baris, `)` sendiri di barisnya, pemisah `/`
+  - CREATE/ALTER di kolom 0, satu kolom per baris, `)` sendiri di barisnya, pemisah `/`
   - {skema} di setiap pernyataan, nol COMMIT, nol kata "total_*" dan nol kata
     persetujuan berbahasa Inggris yang dilarang penjaga skema
   - LF, tanpa BOM; pengenal <= 30 byte
@@ -79,11 +82,12 @@ def blok(nama, kolom_kunci, kolom, constraint):
     return "\n".join(baris)
 
 
-def tulis(nama_berkas, kepala, pernyataan, turun):
+def tulis(nama_berkas, kepala, pernyataan, turun, kepala_turun=None):
     os.makedirs(MIGRASI, exist_ok=True)
     isi = "\n".join("-- " + x if x else "--" for x in kepala) + "\n" + "\n/\n".join(pernyataan) + "\n/\n"
     open(os.path.join(MIGRASI, nama_berkas + ".sql"), "w", encoding="utf-8", newline="\n").write(isi)
-    isi_turun = f"-- Jalur mundur {nama_berkas[:3]}.\n" + "\n/\n".join(turun) + "\n/\n"
+    kepala_turun = kepala_turun or [f"Jalur mundur {nama_berkas[:3]}."]
+    isi_turun = "\n".join("-- " + x for x in kepala_turun) + "\n" + "\n/\n".join(turun) + "\n/\n"
     open(os.path.join(MIGRASI, nama_berkas + "_down.sql"), "w", encoding="utf-8", newline="\n").write(isi_turun)
 
 
@@ -92,41 +96,64 @@ def main():
     g = t["T_GENERAL_POLIS"]
 
     # ------------------------------------------------------------ 320
-    kunci = [("ID", "VARCHAR2(32) NOT NULL"), ("NOPOLIS", "VARCHAR2(64)"), ("PRODKE", "NUMBER(10) DEFAULT 0 NOT NULL"),
-             ("NOENDORS", "VARCHAR2(64)"), ("OLD_POLIS_ID", "VARCHAR2(32)"), ("IDPEGA", "VARCHAR2(128)"),
+    # ⛔ KEPUTUSAN WORK OWNER 04-10-2026: T_GENERAL_POLIS adalah SATU tabel BERSAMA
+    # FacIn + Treaty In. Tabel DASARNYA (ID VARCHAR2(32) PK, IDPEGA VARCHAR2(50),
+    # COB_GROUP, START_DATE_TIME, OFFERING_DATE, END_DATE_TIME, FOLLOWING) dibuat
+    # migrasi nbfacin 182_t_general_polis. 320 hanya MENAMBAH kolom Treaty
+    # (ALTER ... ADD ( biasa - penjaga inti pelanggaranBlokPLSQL menolak kolom
+    # lewat blok) lalu constraint dan indeks Treaty. ID dan IDPEGA dipakai dari
+    # tabel dasar, tidak ditambah ulang.
+    kunci = [("NOPOLIS", "VARCHAR2(64)"), ("PRODKE", "NUMBER(10) DEFAULT 0 NOT NULL"),
+             ("NOENDORS", "VARCHAR2(64)"), ("OLD_POLIS_ID", "VARCHAR2(32)"),
              ("TGL_INPUT", "DATE"), ("USERNAME", "VARCHAR2(64)")]
+    tambah = kunci + [(k["kolom"], tipe_ddl(k)) for k in g["kolom"]]
+    lebar = max(len(n) for n, _ in tambah) + 2
+    alter = ["ALTER TABLE {skema}.T_GENERAL_POLIS ADD ("]
+    for i, (n, tp) in enumerate(tambah):
+        alter.append(f"  {n.ljust(lebar)}{tp}" + ("," if i < len(tambah) - 1 else ""))
+    alter.append(")")
     tulis("320_t_general_polis", [
-        "320 - T_GENERAL_POLIS: satu baris per GENERASI polis treaty inward (tiket 16).",
+        "320 - T_GENERAL_POLIS: kolom Treaty In atas tabel BERSAMA FacIn + Treaty In (tiket 16).",
+        "",
+        "KEPUTUSAN WORK OWNER 04-10-2026: T_GENERAL_POLIS adalah SATU tabel bersama FacIn dan",
+        "Treaty In. Tabel DASARNYA dibuat migrasi nbfacin 182_t_general_polis: ID VARCHAR2(32)",
+        "PK, IDPEGA VARCHAR2(50), COB_GROUP, START_DATE_TIME, OFFERING_DATE, END_DATE_TIME,",
+        "FOLLOWING - kolom itu milik nbfacin, tidak ditambah, diubah, atau dibuang di sini.",
+        "182 WAJIB sudah berjalan sebelum 320 (PERMINTAAN-TIM-INTI C10). Baris lini lain",
+        "(T_WORK_POLIS.LINI = 'FAC') tetap ada; modul ini membaca kasus LINI = 'NONLIFE' saja.",
         "",
         "Kunci utama BERSAMA T_WORK_POLIS (tabel kasus lintas-lini milik premiumlistlife,",
-        "migrasi 050/059): ID adalah ID baris T_WORK_POLIS, tanpa kolom kunci tamu",
-        "tersendiri (spec-penyimpanan ID-7, AC 5).",
+        "migrasi 050/059): ID adalah ID baris T_WORK_POLIS (spec-penyimpanan ID-7, AC 5).",
+        "FK_GENERAL_POLIS_WORK ditambah di sini - ASUMSI: 182 belum memilikinya (C10).",
         "",
         "Diagram grilling F12-F16: UNIQUE (NOPOLIS, PRODKE) dan UNIQUE (OLD_POLIS_ID).",
         "Kunci alami (NOPOLIS, PRODKE) unik - ditegakkan BASIS DATA (ID-8, AC 1).",
-        "NOPOLIS kosong selama realisasi belum bernomor, jadi indeks uniknya hanya",
-        "memuat baris bernomor (indeks berfungsi CASE): dua draf tanpa nomor tidak bentrok",
-        "(UNIQUE biasa menganggap (NULL, 0) dan (NULL, 0) kembar di Oracle).",
+        "NOPOLIS kosong selama realisasi belum bernomor (dan pada baris lini lain), jadi",
+        "indeks uniknya hanya memuat baris bernomor (indeks berfungsi CASE).",
         "PRODKE bilangan bulat lebar (KEPUTUSAN-RONDE-12 butir 1 dan 8); NB selalu 0.",
         "OLD_POLIS_ID menunjuk generasi sebelumnya - unik, kosong di NB (ID-9, AC 3, 4).",
         "Generasi TERTUTUP = ada baris penerus yang OLD_POLIS_ID-nya menunjuk generasi",
         "ini; tidak boleh disunting (ID-10, AC 6) - tanpa kolom penanda (diagram).",
         "",
-        "Kolom lain DIBANGKITKAN dari backend/models/katalog.go (docs/alat/skema.py) -",
-        "79 medan PolicyTreatyIn + 7 kolom json_polis menurut diagram dan rancangan;",
+        "Kolom katalog DIBANGKITKAN dari backend/models/katalog.go (docs/alat/skema.py);",
         "LAYER* dicoret (diagram F26). Perbandingan: docs/PERBANDINGAN-KOLOM-DIAGRAM.md.",
         "Uang dan persen NUMBER(38,8) (KEPUTUSAN 23-09-2026 sore), tanggal DATE (P32),",
-        "kode dan penanda teks (ID-16, ID-17). Nol COMMIT.",
+        "kode dan penanda teks (ID-16, ID-17). Nol COMMIT, nol PL/SQL.",
     ], [
-        blok("T_GENERAL_POLIS", kunci, g["kolom"], [
-            "CONSTRAINT PK_GENERAL_POLIS PRIMARY KEY (ID)",
-            "CONSTRAINT FK_GENERAL_POLIS_WORK FOREIGN KEY (ID) REFERENCES {skema}.T_WORK_POLIS (ID)",
-            "CONSTRAINT FK_GENERAL_POLIS_OLD FOREIGN KEY (OLD_POLIS_ID) REFERENCES {skema}.T_WORK_POLIS (ID)",
-            "CONSTRAINT UQ_GENERAL_POLIS_OLD UNIQUE (OLD_POLIS_ID)",
-        ]),
+        "\n".join(alter),
+        "ALTER TABLE {skema}.T_GENERAL_POLIS ADD CONSTRAINT FK_GENERAL_POLIS_WORK FOREIGN KEY (ID) REFERENCES {skema}.T_WORK_POLIS (ID)",
+        "ALTER TABLE {skema}.T_GENERAL_POLIS ADD CONSTRAINT FK_GENERAL_POLIS_OLD FOREIGN KEY (OLD_POLIS_ID) REFERENCES {skema}.T_WORK_POLIS (ID)",
+        "ALTER TABLE {skema}.T_GENERAL_POLIS ADD CONSTRAINT UQ_GENERAL_POLIS_OLD UNIQUE (OLD_POLIS_ID)",
         "CREATE UNIQUE INDEX {skema}.UQ_GENERAL_POLIS_NOPOLIS ON {skema}.T_GENERAL_POLIS "
         "(CASE WHEN NOPOLIS IS NOT NULL THEN NOPOLIS END, CASE WHEN NOPOLIS IS NOT NULL THEN PRODKE END)",
-    ], ["DROP TABLE {skema}.T_GENERAL_POLIS CASCADE CONSTRAINTS"])
+    ], [
+        "DROP INDEX {skema}.UQ_GENERAL_POLIS_NOPOLIS",
+        "ALTER TABLE {skema}.T_GENERAL_POLIS DROP CONSTRAINT UQ_GENERAL_POLIS_OLD",
+        "ALTER TABLE {skema}.T_GENERAL_POLIS DROP CONSTRAINT FK_GENERAL_POLIS_OLD",
+        "ALTER TABLE {skema}.T_GENERAL_POLIS DROP CONSTRAINT FK_GENERAL_POLIS_WORK",
+        "ALTER TABLE {skema}.T_GENERAL_POLIS DROP (\n" + ",\n".join(f"  {n}" for n, _ in tambah) + "\n)",
+    ], kepala_turun=["Jalur mundur 320 - HANYA milik Treaty In: indeks, constraint, dan kolom yang",
+                     "ditambahkan 320. Tabel dasar dan kolom FacIn (nbfacin 182) tidak disentuh."])
 
     # ------------------------------------------------------------ 321 quotation (1:1)
     q = t["T_POLIS_QUOTATION"]
@@ -190,16 +217,30 @@ def main():
         w.append("")
 
     sect("T_GENERAL_POLIS", [
-        ("ID", "teks", "tidak", "PK, FK T_WORK_POLIS", "kode", "kasus"),
         ("NOPOLIS", "teks", "ya", "UQ (NOPOLIS, PRODKE)", "kode", "`PolicyTreatyIn.PolicyNo`"),
         ("PRODKE", "bilangan bulat", "tidak", "UQ (NOPOLIS, PRODKE)", "cacah", "generasi; NB = 0"),
         ("NOENDORS", "teks", "ya", "", "kode", "json_polis"),
         ("OLD_POLIS_ID", "teks", "ya", "UQ, FK T_WORK_POLIS", "kode", "generasi sebelumnya"),
-        ("IDPEGA", "teks", "ya", "", "kode", "json_polis"),
         ("TGL_INPUT", "DATE", "ya", "", "tanggal-waktu", "json_polis"),
         ("USERNAME", "teks", "ya", "", "kode", "identitas akses login (P4)"),
-    ], g["kolom"], "Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7). "
-                   "Generasi tertutup = ada penerus yang `OLD_POLIS_ID`-nya menunjuk baris ini (ID-10).")
+    ], g["kolom"], "⛔ **Tabel BERSAMA FacIn + Treaty In** (keputusan work owner 04-10-2026). Tabel dasarnya dibuat "
+                   "migrasi `nbfacin` `182_t_general_polis`; tabel di bawah = kolom yang **ditambahkan** migrasi 320 "
+                   "(`ALTER TABLE ... ADD (`). Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` "
+                   "(ID-7). Generasi tertutup = ada penerus yang `OLD_POLIS_ID`-nya menunjuk baris ini (ID-10). "
+                   "Baris lini lain (`T_WORK_POLIS.LINI = 'FAC'`) ada di tabel yang sama; modul ini hanya membaca "
+                   "kasus `LINI = 'NONLIFE'`.")
+    w.extend(["### Kolom dasar T_GENERAL_POLIS — milik `nbfacin` 182, tidak dibuat modul ini", "",
+              "Kolom yang dibuat migrasi `182_t_general_polis` (`nbfacin`). Modul ini **tidak** menambah, mengubah,",
+              "atau membuang kolom ini (jalur mundur 320 hanya membuang kolom di tabel atas). Treaty In memakai",
+              "dua di antaranya.", "",
+              "| Kolom dasar | Tipe (182) | Dipakai Treaty In | Keterangan |", "| --- | --- | --- | --- |",
+              "| ID | VARCHAR2(32), PK | ya | kunci bersama `T_WORK_POLIS` (ID-7); `FK_GENERAL_POLIS_WORK` ditambah 320 |",
+              "| IDPEGA | VARCHAR2(50) | ya | `pyWorkPage.pzInsKey` (json_polis, ID-21); pelebaran diminta (PERMINTAAN C10) |",
+              "| COB_GROUP | — | tidak | milik FacIn |",
+              "| START_DATE_TIME | — | tidak | milik FacIn |",
+              "| OFFERING_DATE | — | tidak | milik FacIn |",
+              "| END_DATE_TIME | — | tidak | milik FacIn |",
+              "| FOLLOWING | — | tidak | milik FacIn |", ""])
     sect("T_POLIS_QUOTATION", [("POLIS_ID", "teks", "tidak", "PK, FK T_GENERAL_POLIS", "kode", "induk")],
          q["kolom"], "Halaman `Quotation` / `PolicyTreatyIn.QuotationData`, 1:1 (ID-23).")
     for nama, induk, cat in [
