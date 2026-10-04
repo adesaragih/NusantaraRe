@@ -11,6 +11,15 @@ Frontend dibangun sesi 0f.
 
 ## Pendaftaran (inti, langkah 1)
 
+- ⚠️ **Pelari migrasi (inti, 04-10-2026, sesudah bukti DEV dari sesi 0f: keenam objek masih `VIEW`)**:
+  `inti/backend/migrasi/migrasi.go` pra-terbang membandingkan kolom objek bernama sama dengan setiap `CREATE TABLE` yang
+  belum tercatat - dan `SYS.ALL_OBJECTS` / `SYS.ALL_TAB_COLUMNS` memuat VIEW. Tanpa perbaikan, 760 berhenti di
+  pra-terbang ("kolom yang diminta migrasi tetapi tidak ada: [STS_AKTIF]") dan SELURUH migrasi tertunda ikut tertahan.
+  Perbaikan: perbandingan dilewati hanya bila objeknya VIEW **dan** langkah yang sama membongkarnya (`DROP VIEW
+  {skema}.X`) sebelum `CREATE TABLE {skema}.X` (`ViewDibongkarDulu`, `adalahView`); tabel yang sudah berdiri tetap
+  dibandingkan. Uji: `TestViewDibongkarDulu` (migrasi) dan `TestViewDigantiTabelDikenaliPraTerbang` (penjaga, jawaban
+  diketahui: enam view 760). Jalur Oracle `adalahView` belum teruji tanpa basis data. 760 TIDAK diubah.
+
 - `inti/backend/migrations/904_m_nav_menu_masterdata.sql` (+ `_down`): baris `M_NAV_MENU` `masterdata` / `Master Data`,
   `MASTER`, URUTAN 4 (MASTER sudah berisi mastercontractretrolife 1, masterproductnamelife 2, treatycontractout 3),
   `DIMIGRASI '0'`; bentuk datar idempoten. Akses akun TIDAK diisi (Kelola User, M-6).

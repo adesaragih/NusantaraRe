@@ -464,3 +464,48 @@ func TestAturanBlokPLSQLMenggigit(t *testing.T) {
 		}
 	}
 }
+
+// Setiap VIEW yang dibongkar migrasi jalur maju diganti tabel bernama sama di
+// LANGKAH YANG SAMA, dan pra-terbang mengenalinya (`migrasi.ViewDibongkarDulu`)
+// - kalau tidak, kolom view dibandingkan dengan CREATE TABLE dan seluruh
+// migrasi berhenti. Jawaban yang sudah diketahui: masterdata 760 mengganti
+// enam view (PROVINCE, CITYINPUT, DISTRICTINPUT, ACCUMULATEDTYPE, CZONE,
+// ACCUMULATION); dihitung juga dengan cara kedua - mencacah baris DROP VIEW.
+func TestViewDigantiTabelDikenaliPraTerbang(t *testing.T) {
+	langkah, err := migrasi.Daftar(false, berkasMigrasi)
+	if err != nil {
+		t.Fatal(err)
+	}
+	polaDrop := regexp.MustCompile(`(?is)^DROP\s+VIEW\s+\{skema\}\.(\w+)$`)
+	var diganti []string
+	nBaris := 0
+	for _, m := range langkah {
+		for i, p := range m.Pernyataan {
+			for _, b := range strings.Split(p, "\n") {
+				if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(b)), "DROP VIEW ") {
+					nBaris++
+				}
+			}
+			d := polaDrop.FindStringSubmatch(strings.TrimSpace(p))
+			if d == nil {
+				continue
+			}
+			ketemu := false
+			for j := i + 1; j < len(m.Pernyataan); j++ {
+				if nama, _ := migrasi.KolomCreateTable(m.Pernyataan[j]); strings.EqualFold(nama, d[1]) {
+					ketemu = migrasi.ViewDibongkarDulu(m.Pernyataan, j, nama)
+					break
+				}
+			}
+			if !ketemu {
+				t.Errorf("%s: DROP VIEW %s tanpa CREATE TABLE bernama sama yang dikenali pra-terbang", m.Nama, d[1])
+				continue
+			}
+			diganti = append(diganti, strings.ToUpper(d[1]))
+		}
+	}
+	mau := "PROVINCE,CITYINPUT,DISTRICTINPUT,ACCUMULATEDTYPE,CZONE,ACCUMULATION"
+	if strings.Join(diganti, ",") != mau || nBaris != len(diganti) {
+		t.Errorf("view diganti %v (baris DROP VIEW %d), mau %s", diganti, nBaris, mau)
+	}
+}
