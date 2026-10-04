@@ -30,6 +30,11 @@ package models
 //   - `Page-New InputXOL` MENGGANTI halaman - nilai CARI sebelumnya hilang;
 //   - langkah berlabel `//` dinonaktifkan (tidak diport);
 //   - langkah perulangan bersyarat `.Currency==...` dievaluasi per baris.
+//
+// Keanehan rumus yang ditiru apa adanya (`⚠️ Ditiru apa adanya` di bawah dan di
+// nonprop_detail.go) - `[keputusan work owner]` F5 04-10-2026 - didaftar beserta
+// langkah XML-nya di docs/PERMINTAAN-TIM-INTI.md bagian G (G1-G17) untuk
+// ditinjau Finance/Product; diubah hanya lewat keputusan tertulis per butir.
 
 import (
 	"strings"

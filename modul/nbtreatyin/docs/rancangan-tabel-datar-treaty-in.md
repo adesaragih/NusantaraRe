@@ -491,6 +491,21 @@ Pemetaan penuh ada di sheet **`Treaty In Prop`** dan **`Treaty In NonProp`** pad
 
 ⚠️ **Dua dari empat ditulis tanpa awalan skema** — menambah bukti pelanggaran ketetapan 6.
 
+> ⛔ **RALAT catatan diagram — putaran 3, 04-10-2026** `[keputusan work owner]` **F8**. Diagram grilling
+> (`Diagram-Skema-Tabel-NusantaraRe.xlsx`, sheet *NB Treaty In Prop* sel F103 dan *NB Treaty In NonProp* sel F118)
+> menulis, dikutip apa adanya: *"dibaca saja: TANGGAL_CLOSING · GENERATE_SEQUENCE_NUMBER · CURRENCY · BUSINESS ·
+> REINSURANCETYPE · TREATYGROUP · M_TREATY_IN_EDM · ⚠ DATAPEGA.PC_ASM_FW_GCNMFW_WORK = skema KEDUA"*. Bunyi baru untuk
+> `GENERATE_SEQUENCE_NUMBER`: **ditulis** — penerbitan nomor polis memajukan penghitung deret lewat penomor bersama
+> `inti/backend/penomor` (`UrutNomorBerikut`: `SELECT … FOR UPDATE`, lalu `INSERT`/`UPDATE` baris deret), padanan
+> `PROC_GENERATE_SEQUENCE_NUMBER` Pega yang juga menulis tabel itu; disetujui WO 04-10-2026. Bukti XML:
+> `Activity\GeneratePolicyNoTreaty_Act.xml` `pySteps(27)` (*"generate MM.YYYY DAN SEQUENCE"*, `RDB-List`
+> `RequestType = GetSequenceNumber_SQL`) → `RDBList\GetSequenceNumber_SQL.xml`
+> `POOLDATA.PROC_GENERATE_SEQUENCE_NUMBER({ParamSeq.CARI1},{ParamSeq.CARI2},TO_DATE({ParamSeq.CARI3},'DD/MM/YYYY'),
+> {ParamSeq.HASIL1 out},{ParamSeq.HASIL2 out})`. Procedure itu sendiri tidak dipanggil (spec-penyimpanan AC 48); rule
+> NB tidak menulis tabel itu dengan SQL langsung — karena itu ia tidak masuk tabel *sasaran tulis langsung* di atas.
+> ⛔ Berkas Excel diagram **tidak** disunting. Kode: `backend/repository/riwayat.go` `TerbitkanNomorPolis`; uji
+> `backend/repository/nomorpolis_db_test.go` (`-tags=db`, K11). Tabel lain di sel itu tetap dibaca saja.
+
 ---
 
 ## 4ter · ⭐ KEPUTUSAN 23 September 2026 — `OldData` dan `TreatyDifference`

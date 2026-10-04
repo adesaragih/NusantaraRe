@@ -26,22 +26,22 @@ package models
 //	  2.1.4 .IsSave = "Yes"
 //
 // `[penyimpangan sadar]` terhadap XML, ditulis juga di tiket 10 dan
-// PERMINTAAN-TIM-INTI:
+// PERMINTAAN-TIM-INTI (butir 2-4 = F2, PROMPT putaran 3 bab 2):
 //  1. Syarat langkah 2 `Quotation.BusinessFac == "F"` TIDAK ditiru - kasus
 //     treaty bernilai "T", sehingga di Pega kalang ini tidak pernah menulis
 //     (`[keputusan work owner]` K4 03-10-2026, grilling ID-31 / AC 39).
-//  2. `[penyimpangan sadar — menunggu konfirmasi WO]` XML memanggilnya HANYA
+//  2. `[penyimpangan sadar — disetujui WO 04-10-2026]` XML memanggilnya HANYA
 //     dari `InputPolicyTreatyInPost_Act` langkah 4 (pasca-submit admin);
 //     sistem baru menulis baris yang ditambahkan SETIAP submit (admin, Sec
 //     Head, Dept Head) di transaksi submit itu. Akibat langsung K4: SuggestList
 //     tidak punya tempat simpan lain di antara langkah (halaman Pega disimpan
 //     utuh; di sini hanya delapan tabel diagram) - tanpa penulisan per jenjang,
 //     catatan atasan hilang (AC 71).
-//  3. `[penyimpangan sadar — menunggu konfirmasi WO]` TGL_INP: XML memformat
+//  3. `[penyimpangan sadar — disetujui WO 04-10-2026]` TGL_INP: XML memformat
 //     `hh` (jam 12) lalu `To_date(..,'HH24')` - catatan sore tersimpan sebagai
 //     pagi. Di sini jam 24 apa adanya: layar (riwayat catatan) membaca balik
 //     tabel ini, dan Pega menampilkan `.Date` halaman.
-//  4. `[penyimpangan sadar — menunggu konfirmasi WO]` NOURUT diberikan
+//  4. `[penyimpangan sadar — disetujui WO 04-10-2026]` NOURUT diberikan
 //     repository (MAX+1 di bawah kunci kasus), bukan `.pxListSubscript`
 //     halaman - dua submit serentak tidak berbagi nomor. Nilainya SAMA dengan
 //     `.pxListSubscript` baris itu: SuggestList dibangun ulang dari tabel

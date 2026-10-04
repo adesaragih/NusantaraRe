@@ -55,7 +55,7 @@ dipensiunkan 1 Oktober 2026.
 - **Catatan usulan** (`PolicyTreatyIn.SuggestList`) = tabel lama `POOLDATA.HISTORYAKSEPTASIPRODUCTION`
   (keputusan work owner K4 03-10-2026; pengganti `SaveViewSuggest -> InsertViewSuggest_SQL`), ditulis
   di transaksi submit SETIAP jenjang dan dibaca balik untuk layar. `[penyimpangan sadar]` K4: syarat
-  `BusinessFac == "F"` tidak ditiru; `[penyimpangan sadar — menunggu konfirmasi WO]`: tiga jenjang,
+  `BusinessFac == "F"` tidak ditiru; `[penyimpangan sadar — disetujui WO 04-10-2026]` (F2): tiga jenjang,
   TGL_INP 24 jam, NOURUT dari repository (= `.pxListSubscript`, terbukti uji) - rincian di
   `backend/models/usulan.go`. Tabel warisan: tidak dibuat, tidak diubah strukturnya.
 - **Peran pengganti nama orang** = konstanta kode `backend/models/peran_tempat.go`
@@ -70,6 +70,14 @@ sheet *NB Treaty In Prop* / *NonProp*), bangkitan `docs/alat/skema.py` dari kata
 (bab 0 butir 11 PROMPT putaran 2; K4, K16, K17): catatan usulan ke tabel warisan di bawah, pemetaan
 peran-tempat konstanta kode, medan tak dikenal pemuat dokumen lama ke berkas laporan CSV.
 Perbandingan kolom lawan diagram: `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`. Slot menu `968`: satu `UPDATE DIMIGRASI` baris modul ini, nol `INSERT`.
+
+⛔ **Penahan migrasi — tulis di deskripsi PR (K18, `docs/PERMINTAAN-TIM-INTI.md` C10).** `POOLDATA.T_GENERAL_POLIS`
+sudah ada: tabel FacIn 7 kolom dari migrasi `182_t_general_polis` (`nbfacin`, di luar repo ini); diagram grilling
+memberi nama itu ke Treaty In. Sampai WO dan pemilik `nbfacin` memutuskan C10, `-migrate` dengan modul ini aktif
+**berhenti di pra-terbang inti** (`praTerbangBentuk`) sebelum satu pernyataan pun dikirim — seluruh langkah yang
+belum tercatat, semua modul, ikut tertahan — dengan galat *"tabel T_GENERAL_POLIS sudah ada … tetapi BENTUKNYA
+BERBEDA"*; tidak ada yang berubah. Migrasi 320 sengaja tanpa blok PL/SQL (koreksi WO 04-10-2026); bentuk yang
+dibandingkan pra-terbang dikunci `backend/migrasi_test.go`.
 
 | Migrasi | Tabel yang dibuat | Sheet diagram |
 | --- | --- | --- |
@@ -91,7 +99,7 @@ Tidak dibuat dan tidak diubah strukturnya oleh modul ini; ditulis hanya bila dia
 | `T_WORK_POLIS`, `SEQ_WORK_POLIS` | tulis + baca | akar diagram (B5); milik premiumlistlife |
 | `HISTORYAKSEPTASIPEGA` | tulis + baca | riwayat akseptasi (`InsertHistoryAkseptasiPega_Sql`, diagram Prop F98–F99) |
 | `HISTORYAKSEPTASIPRODUCTION` | tulis + baca | catatan usulan (`SaveViewSuggest -> InsertViewSuggest_SQL`, diagram Prop J74–J76; K4) |
-| `GENERATE_SEQUENCE_NUMBER` | tulis lewat `inti/backend/penomor` | deret nomor polis (padanan `PROC_GENERATE_SEQUENCE_NUMBER`); diagram F103 menyebutnya "dibaca saja" — `docs/PERMINTAAN-TIM-INTI.md` F8 |
+| `GENERATE_SEQUENCE_NUMBER` | tulis lewat `inti/backend/penomor` | deret nomor polis (padanan `PROC_GENERATE_SEQUENCE_NUMBER`); diagram F103/F118 menyebutnya "dibaca saja" — penulisan lewat penomor bersama disetujui WO 04-10-2026 (`docs/PERMINTAAN-TIM-INTI.md` F8; RALAT catatan di `docs/rancangan-tabel-datar-treaty-in.md` §4bis.4) |
 | `TANGGAL_CLOSING`, `KODE_PRODUKSI`, `CURRENCY`, `BUSINESS`, `REINSURANCETYPE`, `TREATYGROUP`, `MARKETINGOFFICER`, `CLIENT`, `AGENT`, `M_LOGIN_GO`, view `TREATYINDETAILJOINEDM`, `TREATYINDETAIL`, `TREATYINPRODUCTION` | baca | RD/RDB terjangkau; `TREATYINPRODUCTION` ditulis modul EDM |
 | `M_TREATY_IN`, `M_TREATY_IN_EDM` | baca (JSON, satu fungsi `repository.MasterXOLDariJSON`) | K8 |
 | `JSON_POLIS` | baca (pemuat dokumen lama saja) | tiket 22 |
@@ -135,6 +143,24 @@ Dari akar repo:
 go test ./modul/nbtreatyin/...
 npx vitest run modul/nbtreatyin
 ```
+
+Uji lawan Oracle (`-tags=db`, seam repository; belum masuk `make test-db` — PERMINTAAN A4):
+
+```powershell
+go test -tags=db ./modul/nbtreatyin/...
+```
+
+| Env | Isi (nama saja — nilai tidak pernah ditulis di repo) |
+| --- | --- |
+| `ORACLE_DSN` | sambungan ke instance yang memuat skema uji |
+| `ORACLE_SCHEMA` | skema uji **kosong** dari DBA — **bukan** `POOLDATA` dan tidak memuat kata itu (PERMINTAAN C9) |
+| `ORACLE_SKEMA_UJI` | `true` — pengakuan sadar: uji memasang migrasi semua modul lalu **membuang** tabelnya di skema itu |
+| `IS_PEGA_PROD` | tidak `true` (ditolak) |
+
+Tanpa `ORACLE_DSN` seluruh uji db **melewati**; dengan DSN tetapi skema tidak diakui atau memuat `POOLDATA`, uji
+**gagal** (bukan melewati). Objek warisan yang tidak ada di skema uji dibuat tiruan sementara lalu dibuang (U1,
+`backend/repository/tiruan_db_test.go`) — kecuali view `TREATYINDETAILJOINEDM` untuk spec AC 89, yang menuntut view
+sungguhan.
 
 ## Pernyataan untuk penjaga
 
