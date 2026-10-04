@@ -61,6 +61,10 @@ func TestSQLSaranAkumulasi(t *testing.T) {
 		{"city", true, true, "SELECT ID, NOTE, '' FROM (SELECT DISTINCT ID, NOTE FROM UJI.T WHERE PROVINCEID = :1 AND UPPER(NOTE) LIKE :2 ESCAPE '\\') ORDER BY NOTE, '', ID FETCH FIRST :3 ROWS ONLY"},
 		{"city", false, false, "SELECT ID, NOTE, '' FROM (SELECT DISTINCT ID, NOTE FROM UJI.T) ORDER BY NOTE, '', ID FETCH FIRST :1 ROWS ONLY"},
 		{"district", true, false, "SELECT ID, DISTRICTNAME, '' FROM (SELECT DISTINCT ID, CITYID, DISTRICTNAME, CITYNAME FROM UJI.T WHERE CITYNAME = :1) ORDER BY DISTRICTNAME, '', ID FETCH FIRST :2 ROWS ONLY"},
+		{"nation", false, true, "SELECT ID, NOTE, NATIONINITIAL FROM (SELECT ID, NOTE, NATIONINITIAL FROM UJI.T WHERE UPPER(NOTE) LIKE :1 ESCAPE '\\') ORDER BY NOTE, NATIONINITIAL, ID FETCH FIRST :2 ROWS ONLY"},
+		{"province", true, false, "SELECT ID, NOTE, '' FROM (SELECT ID, NATIONID, NOTE, NATIONNAME FROM UJI.T WHERE NATIONNAME = :1) ORDER BY NOTE, '', ID FETCH FIRST :2 ROWS ONLY"},
+		{"accumtype", true, false, "SELECT ID, ACCUMULATIONTYPE, '' FROM (SELECT ID, ACCUMULATIONTYPE, KEYWORD, NOTE, TYPE FROM UJI.T WHERE NOTE IS NOT NULL) ORDER BY ACCUMULATIONTYPE, '', ID FETCH FIRST :1 ROWS ONLY"},
+		{"czone", false, true, "SELECT ID, CODE, '' FROM (SELECT DESCRIPTION, ID, GROUPOF, CODE, GROUPOFNAME FROM UJI.T WHERE GROUPOF IS NOT NULL AND UPPER(CODE) LIKE :1 ESCAPE '\\') ORDER BY DESCRIPTION, CODE, '', ID FETCH FIRST :2 ROWS ONLY"},
 		{"area", true, true, "SELECT '', NOTE, ZIPCODE FROM (SELECT DISTINCT ZIPCODE, CZONE, NOTE, DISTRICTNAME, CITYNAME, PROVINCENAME, NATION FROM UJI.T WHERE STS_AKTIF = :1 AND UPPER(NOTE) LIKE :2 ESCAPE '\\') ORDER BY NOTE, ZIPCODE, '' FETCH FIRST :3 ROWS ONLY"},
 	} {
 		induk, pola := "", ""
@@ -78,18 +82,17 @@ func TestSQLSaranAkumulasi(t *testing.T) {
 			t.Errorf("%s induk %v kata %v:\n%s\nmau\n%s", u.jenis, u.induk, u.kata, q, u.mau)
 		}
 	}
-	for _, j := range []string{"city", "district", "area"} {
+	for _, j := range []string{"city", "district", "area", "nation", "province", "accumtype", "czone"} {
 		if !JenisSaranDidukung(j) {
 			t.Errorf("%s mestinya didukung", j)
 		}
 	}
-	for _, j := range []string{"nation", "province", "accumtype", "czone", "x"} {
-		if JenisSaranDidukung(j) {
-			t.Errorf("%s mestinya belum didukung (DDL tidak ada)", j)
-		}
+	if JenisSaranDidukung("x") {
+		t.Error("x mestinya tidak dikenal")
 	}
 	if daftarSaran["city"].tabel != "CITY" || daftarSaran["district"].tabel != "DISTRICT" || daftarSaran["area"].tabel != "RW" ||
-		TabelAccumulation != "ACCUMULATION" || TabelJSONPolis != "JSON_POLIS" || BatasAkumulasi != 500 || BatasSaranAkumulasi != 50 {
+		TabelAccumulation != "ACCUMULATION" || daftarSaran["nation"].tabel != "NATION" ||
+		daftarSaran["province"].tabel != "PROVINCE" || daftarSaran["accumtype"].tabel != "ACCUMULATEDTYPE" || daftarSaran["czone"].tabel != "CZONE" || TabelJSONPolis != "JSON_POLIS" || BatasAkumulasi != 500 || BatasSaranAkumulasi != 50 {
 		t.Error("nama tabel DDL / batas berubah")
 	}
 }

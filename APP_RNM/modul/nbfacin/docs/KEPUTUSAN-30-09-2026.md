@@ -1369,8 +1369,15 @@ Tanpa keputusan agent baru. Endpoint `GET /api/nbfacin/akumulasi` menunggu DDL s
 
 `GET /api/nbfacin/akumulasi` (jalur RD / SQL `GetDataAccumulation_act`) dan `GET /api/nbfacin/akumulasi/saran/{jenis}`
 (city / district / area; nation / province / accumtype / czone → 501 menunggu DDL). Tanpa migrasi; baca view `ACCUMULATION`
-(DDL work owner 04-10-2026), `CITY`, `DISTRICT`, tabel `RW`, `JSON_POLIS`. Keputusan agent A172–A178 **menunggu
+(DDL work owner 04-10-2026), `CITY`, `DISTRICT`, tabel `RW`, `JSON_POLIS`. Keputusan agent A172–A178 ✅ **disetujui butir 102** (A178 diganti butir 103) — sebelumnya **menunggu
 konfirmasi** (`issues/46-coverage-tata-letak-akumulasi.md`).
+
+## Keputusan work owner — 4 Oktober 2026, akumulasi dan view warisan → tabel flat (diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 102 | Keputusan agent A172–A178 (tiket 46) | **"setuju A172–A178"** — DISETUJUI. A178 (saran 501) kemudian diganti butir 103 |
+| 103 | DDL `NATION` (tabel), `PROVINCE` / `ACCUMULATEDTYPE` / `CZONE` (view atas JSON M_*) dikirim; view warisan lain | **"dll nya sudah ditambah, tapi itu msh bentuk view table, km bisa ga buatin jadi flat tabel, isi datanya di copy dari view table itu, jadi nnti di list in yang masih view tabel, trus dibuatin tabel nya masing2 dengan nama yang sama seperti view nya."** — dikerjakan sebagian: migrasi **196** (PROVINCE, ACCUMULATEDTYPE, CZONE, ACCUMULATION → tabel flat bernama sama, DROP VIEW; jalur mundur memulihkan view persis DDL) dan saran ketujuh jenis. Sisanya (CITY, DISTRICT, V_JN_OBJ_ITEM — tipe tabel dasar tanpa DDL; COVERAGE_FACIN, BRANDDETAIL, VJ_M_TYPE_PROPERTY_PLAN — tidak dibaca nbfacin) ditunda A179; tipe kolom A180 `[dugaan]` — keduanya menunggu konfirmasi (`issues/46`). ⚠️ Tabel flat = salinan saat migrasi; perubahan `M_*` tidak lagi terbawa. ⛔ 196 menghapus objek di skema sasaran — ditulis, work owner yang menjalankan |
 
 ## Bug DEV — 3 Oktober 2026, popup Choose Class of Construction kosong (diteruskan sesi `nusantarare-0f`)
 

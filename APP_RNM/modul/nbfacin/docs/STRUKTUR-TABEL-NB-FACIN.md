@@ -1,12 +1,12 @@
 # Struktur Tabel — NB FacIn: PETA TABEL WARISAN yang dibaca + tabel yang dibuat
 
-Modul ini **membuat tujuh belas tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
+Modul ini **membuat dua puluh satu tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tiket 29 / butir 76.3), `T_GENERAL_POLIS` /
 `T_QUOTATIONDATA` **sebagian** (migrasi 182/183, tiket 31 / butir 78.4), `T_CEDINGCOLIST` utuh (185, tiket 34), dan tabel tab Object FIRE (186, tiket 35: `T_LOCATIONLIST` /
-`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian; 189, tiket 40: `T_OCCUPATIONLIST` sebagian, `T_TABLEOFLIMIT` utuh; 190, tiket 41: `T_FEALIST` baru; 191, tiket 42: `T_LISTCAUSEOFLOSS`, `T_COINSDATA` utuh; 193, tiket 43: `T_COVERAGELIST` sebagian; 194, tiket 45: `T_DEDUCTIBLELIST` sebagian) — dan **menulis**
+`T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian; 189, tiket 40: `T_OCCUPATIONLIST` sebagian, `T_TABLEOFLIMIT` utuh; 190, tiket 41: `T_FEALIST` baru; 191, tiket 42: `T_LISTCAUSEOFLOSS`, `T_COINSDATA` utuh; 193, tiket 43: `T_COVERAGELIST` sebagian; 194, tiket 45: `T_DEDUCTIBLELIST` sebagian; 196, butir 103: `PROVINCE`, `ACCUMULATEDTYPE`, `CZONE`, `ACCUMULATION` — tabel flat pengganti view warisan) — dan **menulis**
 baris `T_WORK_POLIS` milik premiumlistlife (K-064; tidak dibuat, tidak dipetakan kolomnya di sini). Selebihnya ia hanya
 **membaca** dua puluh satu tabel / view yang sudah ada — enam tabel limit
 akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), tabel bisnis `BUSINESS` (tiket 28), `MARKETINGOFFICER` (31), `AGENT`
-(33), `RISKADDRESS` (36; juga DISISIPI tiket 37), `RW` (36/37), `OCCUPATION` (38), `V_JN_OBJ_ITEM` dan `CURRENCY` (39), `TABLEOFLIMIT` (40), `COVERAGE` (43), view `ACCUMULATION` / `CITY` / `DISTRICT` dan tabel `JSON_POLIS` (46) — sama dengan bab "Tabel warisan" `MODUL.md`. Enam tabel limit akseptasi yang sudah ada
+(33), `RISKADDRESS` (36; juga DISISIPI tiket 37), `RW` (36/37), `OCCUPATION` (38), `V_JN_OBJ_ITEM` dan `CURRENCY` (39), `TABLEOFLIMIT` (40), `COVERAGE` (43), view `CITY` / `DISTRICT`, tabel `JSON_POLIS` dan `NATION` (46) — sama dengan bab "Tabel warisan" `MODUL.md`. Enam tabel limit akseptasi yang sudah ada
 di `POOLDATA`, dengan nama tabel dan kolom **verbatim**. Berkas ini **peta**, bukan DDL: hanya kolom yang dibaca
 repository (`backend/repository/limit.go`). Ke-enamnya dinyatakan di `MODUL.md` bab "Tabel warisan: dibaca, tidak
 dibuat".
@@ -507,6 +507,24 @@ per coverage, urut `SEQ_NO`. Tanpa kolom yang belum dipakai layar (`FLAG_CURRENC
 | `TYPE_DEDUCTIBLE` | angka bulat | NUMBER(5) | kode pyStandardValue 0–7 (`DDL\TypeDeductible.xml`, A170) |
 | `TYPE_DEDUCTIBLE2` | angka bulat | NUMBER(5) | kode (`DDL\TypeDeductible2.xml`, bila MinMax 3) |
 
+## Kolom status aktif objek master (bahan menu master)
+
+Permintaan work owner 04-10-2026 (diteruskan sesi 0f): menu master insert / update / aktif-nonaktif untuk tabel flat —
+penempatan belum diputuskan. Catatan ini **hanya** mendaftar status yang SUDAH ada di DDL `D:\migrasi\RNM\DDL\<NAMA>.txt`
+`[terverifikasi]`, dihitung dua cara (grep pola nama kolom + urai daftar kolom DDL; keduanya sama). Arti nilainya
+`belum terverifikasi` kecuali disebut.
+
+| Objek | Kolom / saringan status di DDL | Catatan |
+| --- | --- | --- |
+| `ACCUMULATION` | tidak ada kolom; view menyaring `JSONDATA.IsActive IS NULL` | baris nonaktif TIDAK ikut tersalin ke tabel flat 196 — status hidup di JSON `M_ACCUMULATION` |
+| `PROVINCE`, `ACCUMULATEDTYPE`, `CZONE`, `NATION`, `DISTRICT`, `COVERAGE_FACIN` | tidak ada | — |
+| `CITY` | `JABODETABEKSTATUS` | bukan status aktif `[dugaan]` (nama) |
+| `COVERAGE` | `ACTIVESTATUS`, `STATUS`, `STATUSMAINCOVER`, `TRANSWORKSHOPSTATUS` | `ACTIVESTATUS = 1 / NULL` = aktif menurut RD BrowseCoverageFacIn_RD (butir 96) |
+| `RW` | `STS_AKTIF` VARCHAR2(10) | `"1"` = aktif (saringan RD BrowseRW_RD) |
+| `V_JN_OBJ_ITEM` (tabel `OBJECTITEMTYPE`) | `ISACTIVE` | nilai `belum terverifikasi` |
+| `BRANDDETAIL` | `ISACTIVE`, `ACTIVESTATUS` (JSON `IsActive`, `ActiveStatus`) | tidak dibaca modul mana pun |
+| `VJ_M_TYPE_PROPERTY_PLAN` | `STS_AKTIF` (JSON `STS_AKTIF`) | tidak dibaca modul mana pun |
+
 ## MARKETINGOFFICER
 
 Tiket 31 (pilihan Marketing Name). Tabel warisan `POOLDATA`, **baca saja**. Sumber tipe `[terverifikasi]`: DDL
@@ -576,20 +594,60 @@ Tiket 36/37. Tabel warisan `POOLDATA.RW`, **baca saja** — JOIN RD tiket 36 dan
 
 ## ACCUMULATION
 
-Tiket 46 (popup Choose Accumulation Code). **View** warisan `POOLDATA.ACCUMULATION`, **baca saja**. Sumber
-`[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\ACCUMULATION.txt` (04-10-2026) — `SELECT DISTINCT` atas JSON `m_accumulation`
-`WHERE JSONDATA.IsActive IS NULL`; tipe kolom TIDAK tertulis (nilai JSON) — dibaca sebagai teks, `belum terverifikasi`.
-Kelas → view `[terverifikasi]`: RDBList kelas `ASM-FW-GISFW-Int-ACCUMULATION` "from accumulation"; `.PostalCode` = `ZIPCODE`
-(`RDBList\SearchAccumulationbypersetase_SQL.xml`: `ZIPCODE as "PostalCode"`), `.ProvinceName` = `PROVINCE`.
+Tiket 46 / butir 103 — migrasi **196**: VIEW warisan atas JSON `m_accumulation` diganti **TABEL flat bernama sama**, isi disalin dari view saat migrasi (sesudahnya perubahan `m_accumulation` tidak lagi terbawa). Kolom = kolom view `D:\migrasi\RNM\DDL\ACCUMULATION.txt` `[terverifikasi]`; tipe VARCHAR2(4000) = tipe hasil JSON dot-notation Oracle `[dugaan]` (A180). Jalur mundur memulihkan view persis teks DDL. View aslinya `SELECT DISTINCT ... WHERE JSONDATA.IsActive IS NULL`. Popup Choose Accumulation Code. Kelas → objek `[terverifikasi]`: RDBList kelas `ASM-FW-GISFW-Int-ACCUMULATION` "from accumulation"; `.PostalCode` = `ZIPCODE` (`RDBList\SearchAccumulationbypersetase_SQL.xml`: `ZIPCODE as "PostalCode"`), `.ProvinceName` = `PROVINCE`.
 
-| Kolom | Dibaca untuk |
-| --- | --- |
-| `ID` | `id`; saringan RD `.ID =`; jalur SQL CARI1 |
-| `ACCUMULATIONNAME` | `accumulationName` jalur RD dan jalur nomor polis |
-| `ACCUMULATIONTYPE` | `accumulationName` jalur kota / kecamatan (CARI2 SQL korpus = accumulationtype) |
-| `NOTE` | `note`; saringan RD `.Note` Contains tidak peka huruf |
-| `CZONE`, `KEYWORD`, `ZIPCODE`, `PROVINCEID` | saringan RD (`=`); `ZIPCODE` juga JOIN `RW` dan jalur kota / kecamatan |
-| `ACCUMULATION`, `CZONEID`, `SCOPEAREA`, `PROVINCE` | kolom laporan RD (ikut DISTINCT), tidak dikirim |
+| Kolom | Tipe | Tipe DDL (migrasi 196) | Isi |
+| --- | --- | --- | --- |
+| `ID` | teks | VARCHAR2(4000) | `id`; saringan RD `.ID =`; jalur SQL CARI1 |
+| `ACCUMULATION` | teks | VARCHAR2(4000) | kolom laporan RD (DISTINCT) |
+| `ACCUMULATIONNAME` | teks | VARCHAR2(4000) | `accumulationName` jalur RD dan nomor polis |
+| `NOTE` | teks | VARCHAR2(4000) | `note`; saringan RD Contains tidak peka huruf |
+| `KEYWORD` | teks | VARCHAR2(4000) | saringan RD `=` |
+| `SCOPEAREA` | teks | VARCHAR2(4000) | kolom laporan RD (DISTINCT) |
+| `CZONE` | teks | VARCHAR2(4000) | saringan RD `=` |
+| `CZONEID` | teks | VARCHAR2(4000) | kolom laporan RD (DISTINCT) |
+| `PROVINCE` | teks | VARCHAR2(4000) | kolom laporan RD (DISTINCT) |
+| `PROVINCEID` | teks | VARCHAR2(4000) | saringan RD `=` |
+| `ZIPCODE` | teks | VARCHAR2(4000) | saringan RD `=`; JOIN `RW`; jalur kota / kecamatan |
+| `ACCUMULATIONTYPE` | teks | VARCHAR2(4000) | `accumulationName` jalur kota / kecamatan (CARI2 SQL korpus) |
+| `SYARIAHSTATUS` | teks | VARCHAR2(4000) | tidak dibaca |
+
+## PROVINCE
+
+Tiket 46 / butir 103 — migrasi **196**: VIEW warisan atas JSON `M_PROVINCE` diganti **TABEL flat bernama sama**, isi disalin dari view saat migrasi (sesudahnya perubahan `M_PROVINCE` tidak lagi terbawa). Kolom = kolom view `D:\migrasi\RNM\DDL\PROVINCE.txt` `[terverifikasi]`; tipe VARCHAR2(4000) = tipe hasil JSON dot-notation Oracle `[dugaan]` (A180). Jalur mundur memulihkan view persis teks DDL. Saran Province popup akumulasi (`BrowseProvince2_RD`); view `CITY` me-LEFT JOIN-nya.
+
+| Kolom | Tipe | Tipe DDL (migrasi 196) | Isi |
+| --- | --- | --- | --- |
+| `ID` | teks | VARCHAR2(4000) | `id` saran |
+| `NATIONID` | teks | VARCHAR2(4000) | kolom laporan RD |
+| `NOTE` | teks | VARCHAR2(4000) | `label`; medan cari |
+| `NATIONNAME` | teks | VARCHAR2(4000) | saringan induk (nama negara) |
+
+## ACCUMULATEDTYPE
+
+Tiket 46 / butir 103 — migrasi **196**: VIEW warisan atas JSON `M_ACCUMULATEDTYPE` diganti **TABEL flat bernama sama**, isi disalin dari view saat migrasi (sesudahnya perubahan `M_ACCUMULATEDTYPE` tidak lagi terbawa). Kolom = kolom view `D:\migrasi\RNM\DDL\ACCUMULATEDTYPE.txt` `[terverifikasi]`; tipe VARCHAR2(4000) = tipe hasil JSON dot-notation Oracle `[dugaan]` (A180). Jalur mundur memulihkan view persis teks DDL. Saran Accum. Type (`BrowseAccumulatedType_RD`).
+
+| Kolom | Tipe | Tipe DDL (migrasi 196) | Isi |
+| --- | --- | --- | --- |
+| `ID` | teks | VARCHAR2(4000) | `id` saran |
+| `ACCUMULATIONTYPE` | teks | VARCHAR2(4000) | `label`; medan cari |
+| `KEYWORD` | teks | VARCHAR2(4000) | kolom laporan RD |
+| `NOTE` | teks | VARCHAR2(4000) | saringan tetap `IS NOT NULL` |
+| `TYPE` | teks | VARCHAR2(4000) | kolom laporan RD |
+
+## CZONE
+
+Tiket 46 / butir 103 — migrasi **196**: VIEW warisan atas JSON `M_CZONE` diganti **TABEL flat bernama sama**, isi disalin dari view saat migrasi (sesudahnya perubahan `M_CZONE` tidak lagi terbawa). Kolom = kolom view `D:\migrasi\RNM\DDL\CZONE.txt` `[terverifikasi]`; tipe VARCHAR2(4000) = tipe hasil JSON dot-notation Oracle `[dugaan]` (A180). Jalur mundur memulihkan view persis teks DDL. Saran CZone (`BrowseCZoneIsNotNull_RD`).
+
+| Kolom | Tipe | Tipe DDL (migrasi 196) | Isi |
+| --- | --- | --- | --- |
+| `ID` | teks | VARCHAR2(4000) | `id` saran |
+| `CODE` | teks | VARCHAR2(4000) | `label`; medan cari |
+| `DESCRIPTION` | teks | VARCHAR2(4000) | urutan RD (pySortOrder 1) |
+| `GROUPOF` | teks | VARCHAR2(4000) | saringan tetap `IS NOT NULL` |
+| `GROUPOFNAME` | teks | VARCHAR2(4000) | kolom laporan RD |
+| `TGLUPDATE` | teks | VARCHAR2(4000) | tidak dibaca |
+| `USERID` | teks | VARCHAR2(4000) | tidak dibaca |
 
 ## CITY
 
@@ -625,6 +683,16 @@ Tiket 46 (pencarian akumulasi menurut nomor polis, `RDBList\GetSummaryRiskAccumP
 | --- | --- | --- |
 | `NOPOLIS` | VARCHAR2(100) NOT NULL | saringan `= policyNo` |
 | `DATA_JSON` | CLOB (JSON) | `JSON_TABLE` `$.LocationList[*].Property.PropertyItemList[*].CoverageList[*].AccumulationCode` |
+
+## NATION
+
+Tiket 46 (saran Country popup akumulasi, `BrowseNation_RD`). Tabel warisan `POOLDATA.NATION`, **baca saja**. Sumber tipe `[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\NATION.txt` (04-10-2026, sudah TABEL). Kelas Int-NATION → tabel NATION `[dugaan]` (nama dan kolom sama persis).
+
+| Kolom | Tipe DDL | Dibaca untuk |
+| --- | --- | --- |
+| `ID` | VARCHAR2(10 BYTE) NOT NULL | `id` saran |
+| `NOTE` | VARCHAR2(100 BYTE) | `label`; medan cari |
+| `NATIONINITIAL` | VARCHAR2(20 BYTE) | `ekstra` (→ SearchAccumulation.SyariahStatus) |
 
 ## OCCUPATION
 

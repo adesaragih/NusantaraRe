@@ -291,8 +291,6 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		galat.Tulis(w, http.StatusNotFound, err.Error())
 	case errors.Is(err, services.ErrTableOfLimitTidakSiap), errors.Is(err, services.ErrPeriodeKasus):
 		galat.Tulis(w, http.StatusConflict, err.Error())
-	case errors.Is(err, services.ErrSaranBelumTersedia):
-		galat.Tulis(w, http.StatusNotImplemented, err.Error())
 	case errors.Is(err, services.ErrTidakDapatDiproses):
 		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrTanpaDatabase), errors.Is(err, services.ErrTabelLimitTakTersedia),

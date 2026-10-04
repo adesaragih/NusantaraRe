@@ -1,6 +1,7 @@
 package repository
 
-// Popup Choose Accumulation Code (tiket 46) - pencarian akumulasi dan saran autocomplete.
+// Popup Choose Accumulation Code (tiket 46) - pencarian akumulasi dan saran autocomplete. ACCUMULATION / PROVINCE /
+// ACCUMULATEDTYPE / CZONE = tabel flat migrasi 196 (sebelumnya view atas JSON M_*; butir 103), nama dan kolom sama.
 //
 // Kelas -> tabel `[terverifikasi]`: ASM-FW-GISFW-Int-ACCUMULATION = view POOLDATA.ACCUMULATION (`RDBList\
 // GetAccumulationProvince_SQL.xml` dan kawan-kawan "from accumulation"; DDL `DDL\ACCUMULATION.txt` 04-10-2026: SELECT
@@ -31,6 +32,12 @@ const (
 	TabelJSONPolis    = "JSON_POLIS"
 	TabelCity         = "CITY"
 	TabelDistrict     = "DISTRICT"
+	// TabelNation, TabelProvince, TabelAccumulatedType, TabelCZone - saran tiket 46 (NATION tabel warisan; tiga lainnya
+	// tabel flat migrasi 196, sebelumnya view atas JSON M_*).
+	TabelNation          = "NATION"
+	TabelProvince        = "PROVINCE"
+	TabelAccumulatedType = "ACCUMULATEDTYPE"
+	TabelCZone           = "CZONE"
 	// BatasAkumulasi - pyMaxRecords SearchRiskAccumulation_RD (juga dipakai jalur SQL, A174).
 	BatasAkumulasi = 500
 	// BatasSaranAkumulasi - saran autocomplete paling banyak 50 (pola A124; RD 1.500.000 / 150.000 / 10.000, A176).
@@ -113,17 +120,29 @@ func sqlAkumulasiPolis(polis, acc string) string {
 		"WHERE p.NOPOLIS = :1 AND jt.ACCUMULATIONCODE IS NOT NULL) j ORDER BY j.ACCUMULATIONCODE FETCH FIRST :2 ROWS ONLY"
 }
 
-// saranRD - satu autocomplete: tabel, kolom DISTINCT laporan RD, kolom id / label (medan cari, pyUseForSearch) /
-// ekstra, saringan tetap, kolom induk.
+// saranRD - satu autocomplete: tabel, kolom laporan RD (`unik` = pyGetDistinctRows), kolom id / label (medan cari,
+// pyUseForSearch) / ekstra, saringan tetap ber-bind (`tetap = nilaiTetap`) atau tanpa bind (`syaratTetap`, teks SQL
+// tetap), kolom induk, dan urutan RD (`urut`; kosong = label).
 type saranRD struct {
 	tabel             string
-	distinct          string
+	kolom             string
+	unik              bool
 	id, label, ekstra string
 	tetap, nilaiTetap string
+	syaratTetap       string
 	kolomInduk        string
+	urut              string
 }
 
 // daftarSaran - jenis -> RD (`Section\SearchRiskAccumCov.xml`, `ReportDefinition\*`) `[terverifikasi]`:
+//   - nation   BrowseNation_RD: cari .Note, ekstra .NationInitial (-> SearchAccumulation.SyariahStatus); saringan
+//     `.ID = Param.ID OR .Note = Param.Note` dikirim kosong -> dibuang; tanpa DISTINCT. Tabel NATION (DDL NATION.txt).
+//   - province BrowseProvince2_RD: cari .Note, id .ID (-> SearchAccumulation.ProvinceID), induk NationName =
+//     SearchAccumulation.Nation (NAMA negara); tanpa DISTINCT.
+//   - accumtype BrowseAccumulatedType_RD: cari .AccumulationType; `.AccumulationType = Param.AccType` dikirim kosong ->
+//     dibuang; `.Note IS NOT NULL` tetap; tanpa DISTINCT.
+//   - czone    BrowseCZoneIsNotNull_RD: cari .Code; `.GroupOf IS NOT NULL` tetap; GroupOfName / Code dikirim kosong ->
+//     dibuang; urut .Description ASC (pySortOrder 1); tanpa DISTINCT.
 //   - city     BrowseCityInput_RD: cari .Note, induk PROVINCEID = SearchAccumulation.ProvinceID, DISTINCT (ID, Note).
 //   - district BrowseDistrictInputC_RD: cari .DistrictName, induk CityName = SearchAccumulation.City (NAMA kota),
 //     DISTINCT (ID, CityID, DistrictName, CityName).
@@ -132,14 +151,20 @@ type saranRD struct {
 //     `District` (pyParameters: City, District, Province, Teritory, ZipCode) sehingga saringan D dibuang (A177). `.ID`
 //     bukan kolom laporan RD -> id kosong.
 var daftarSaran = map[string]saranRD{
-	"city": {tabel: TabelCity, distinct: "ID, NOTE", id: "ID", label: "NOTE", kolomInduk: "PROVINCEID"},
-	"district": {tabel: TabelDistrict, distinct: "ID, CITYID, DISTRICTNAME, CITYNAME", id: "ID", label: "DISTRICTNAME",
+	"city": {tabel: TabelCity, kolom: "ID, NOTE", unik: true, id: "ID", label: "NOTE", kolomInduk: "PROVINCEID"},
+	"district": {tabel: TabelDistrict, kolom: "ID, CITYID, DISTRICTNAME, CITYNAME", unik: true, id: "ID", label: "DISTRICTNAME",
 		kolomInduk: "CITYNAME"},
-	"area": {tabel: TabelRW, distinct: "ZIPCODE, CZONE, NOTE, DISTRICTNAME, CITYNAME, PROVINCENAME, NATION", id: "''", label: "NOTE",
-		ekstra: "ZIPCODE", tetap: "STS_AKTIF", nilaiTetap: StatusRWAktif},
+	"area": {tabel: TabelRW, kolom: "ZIPCODE, CZONE, NOTE, DISTRICTNAME, CITYNAME, PROVINCENAME, NATION", unik: true, id: "''",
+		label: "NOTE", ekstra: "ZIPCODE", tetap: "STS_AKTIF", nilaiTetap: StatusRWAktif},
+	"nation":   {tabel: TabelNation, kolom: "ID, NOTE, NATIONINITIAL", id: "ID", label: "NOTE", ekstra: "NATIONINITIAL"},
+	"province": {tabel: TabelProvince, kolom: "ID, NATIONID, NOTE, NATIONNAME", id: "ID", label: "NOTE", kolomInduk: "NATIONNAME"},
+	"accumtype": {tabel: TabelAccumulatedType, kolom: "ID, ACCUMULATIONTYPE, KEYWORD, NOTE, TYPE", id: "ID", label: "ACCUMULATIONTYPE",
+		syaratTetap: "NOTE IS NOT NULL"},
+	"czone": {tabel: TabelCZone, kolom: "DESCRIPTION, ID, GROUPOF, CODE, GROUPOFNAME", id: "ID", label: "CODE",
+		syaratTetap: "GROUPOF IS NOT NULL", urut: "DESCRIPTION"},
 }
 
-// sqlSaran - SELECT id, label, ekstra dari DISTINCT kolom laporan; saringan tetap / induk / kata (Contains tidak peka
+// sqlSaran - SELECT id, label, ekstra dari kolom laporan (DISTINCT bila RD-nya); saringan tetap / induk / kata (Contains tidak peka
 // huruf atas kolom label, A176) hanya bila ada; urut label, ekstra, lalu id. Syarat dan nilai bind dibangun BERSAMA
 // (pola saringRD) - urutan placeholder dan nilai tidak dapat bergeser.
 func sqlSaran(t string, s saranRD, induk, pola string) (string, []any) {
@@ -148,6 +173,9 @@ func sqlSaran(t string, s saranRD, induk, pola string) (string, []any) {
 	bind := func(v any) string { arg = append(arg, v); return ":" + strconv.Itoa(len(arg)) }
 	if s.tetap != "" {
 		syarat = append(syarat, s.tetap+" = "+bind(s.nilaiTetap))
+	}
+	if s.syaratTetap != "" {
+		syarat = append(syarat, s.syaratTetap)
 	}
 	if induk != "" && s.kolomInduk != "" {
 		syarat = append(syarat, s.kolomInduk+" = "+bind(induk))
@@ -164,7 +192,14 @@ func sqlSaran(t string, s saranRD, induk, pola string) (string, []any) {
 		ekstra = s.ekstra
 	}
 	urut := s.label + ", " + ekstra + ", " + s.id
-	return "SELECT " + s.id + ", " + s.label + ", " + ekstra + " FROM (SELECT DISTINCT " + s.distinct + " FROM " + t + where +
+	if s.urut != "" {
+		urut = s.urut + ", " + urut
+	}
+	pilih := "SELECT "
+	if s.unik {
+		pilih = "SELECT DISTINCT "
+	}
+	return "SELECT " + s.id + ", " + s.label + ", " + ekstra + " FROM (" + pilih + s.kolom + " FROM " + t + where +
 		") ORDER BY " + urut + " FETCH FIRST " + bind(BatasSaranAkumulasi) + " ROWS ONLY", arg
 }
 

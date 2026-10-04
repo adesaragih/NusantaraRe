@@ -72,7 +72,8 @@ func TestCariAkumulasi(t *testing.T) {
 	}
 }
 
-// TestSaranAkumulasi - tiket 46 butir 3: bentuk {baris:[{id,label,ekstra?}]}; jenis tanpa DDL -> 501; tak dikenal -> 400.
+// TestSaranAkumulasi - tiket 46 butir 3: bentuk {baris:[{id,label,ekstra?}]}; ketujuh jenis dilayani (A178 diganti DDL
+// 04-10-2026); tak dikenal -> 400.
 func TestSaranAkumulasi(t *testing.T) {
 	var jalur string
 	svc := services.Baru(nil).DenganAkumulasi(akumulasiTiruan{&jalur})
@@ -80,9 +81,9 @@ func TestSaranAkumulasi(t *testing.T) {
 	if kode != 200 || isi != `{"baris":[{"id":"","label":"UJI AREA","ekstra":"12345"},{"id":"C1","label":"UJI KOTA"}]}` || jalur != "area:jl|UJI KEC" {
 		t.Fatalf("%d %s %q", kode, isi, jalur)
 	}
-	for _, j := range []string{"nation", "province", "accumtype", "czone"} {
-		if kode, isi := minta(t, svc, "GET", "/api/nbfacin/akumulasi/saran/"+j, "", ""); kode != 501 || !strings.Contains(isi, "belum terverifikasi") {
-			t.Errorf("%s: %d %s", j, kode, isi)
+	for _, j := range []string{"nation", "province", "accumtype", "czone", "city", "district"} {
+		if kode, _ := minta(t, svc, "GET", "/api/nbfacin/akumulasi/saran/"+j+"?q=x", "", ""); kode != 200 || jalur != j+":x|" {
+			t.Errorf("%s: %d %q", j, kode, jalur)
 		}
 	}
 	if kode, _ := minta(t, svc, "GET", "/api/nbfacin/akumulasi/saran/x", "", ""); kode != 400 {

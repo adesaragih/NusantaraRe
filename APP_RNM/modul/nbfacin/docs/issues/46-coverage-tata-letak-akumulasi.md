@@ -129,7 +129,32 @@ Code / Address dengan tombol Choose Accumulation Code (popup pencarian) dan Copy
 - [x] Backend: simpan tiga medan (sesi c3, 03-10-2026; migrasi 195 ditulis, belum dijalankan).
 - [x] Popup memuat seluruh saringan (gambar layar kedua); Indemnity Unit / Key Word dari PromptList korpus.
 - [x] Backend: `GET /api/nbfacin/akumulasi` dan saran city / district / area (sesi c3, 04-10-2026).
-- [ ] Saran nation / province / accumtype / czone (menunggu DDL sumbernya, A178).
+- [x] Saran nation / province / accumtype / czone (DDL 04-10-2026; sesi c3).
+- [ ] Migrasi 196 (view → tabel flat) dijalankan di DEV (work owner).
+- [ ] CITY / DISTRICT / V_JN_OBJ_ITEM / COVERAGE_FACIN / BRANDDETAIL / VJ_M_TYPE_PROPERTY_PLAN → tabel flat (A179, menunggu).
+
+## Tabel flat dan saran lengkap (sesi c3, 04-10-2026; butir 102–103)
+
+- **Saran ketujuh jenis** (`repository/akumulasi.go` `daftarSaran`) `[terverifikasi]` `Section\SearchRiskAccumCov.xml` +
+  RD: `nation` (tabel `NATION`; cari `.Note`, ekstra `.NationInitial` → SyariahStatus; `.ID OR .Note` dikirim kosong →
+  dibuang), `province` (`PROVINCE`; cari `.Note`, id `.ID` → ProvinceID, induk `NATIONNAME` = nama negara), `accumtype`
+  (`ACCUMULATEDTYPE`; cari `.AccumulationType`, tetap `NOTE IS NOT NULL`), `czone` (`CZONE`; cari `.Code`, tetap `GROUPOF
+  IS NOT NULL`, urut `DESCRIPTION`). Keempat RD tanpa DISTINCT (pyGetDistinctRows false) — diikuti. Jalur 501 dicabut.
+- **Migrasi 196** (ditulis, belum dijalankan; urutan … → 195 → **196**): view `PROVINCE`, `ACCUMULATEDTYPE`, `CZONE`,
+  `ACCUMULATION` → tabel flat bernama sama. Per view: tabel `_SALIN` → salin isi view → `DROP VIEW` → `CREATE TABLE` nama
+  view (kolom eksplisit, terbaca penjaga) → salin balik → `DROP TABLE _SALIN`; PROVINCE lebih dulu (view CITY me-JOIN-nya).
+  Jalur mundur: `DROP TABLE` lalu `CREATE OR REPLACE FORCE VIEW` **persis** teks `DDL\<NAMA>.txt` (diperiksa: keempatnya
+  sama setelah `POOLDATA.` → `{skema}.`). Kepemilikan: `ACCUMULATION` keluar dari bab "Tabel warisan" `MODUL.md`
+  (keputusan work owner); `NATION` masuk sebagai tabel warisan.
+- ⚠️ Konsekuensi: tabel flat = salinan saat migrasi; perubahan `M_*` (JSON, mis. prosedur `RDBMASTERACCUMULATION` dari
+  Add New akumulasi Pega) tidak lagi terlihat. `DROP VIEW` berlaku untuk SIAPA PUN yang membaca skema sasaran.
+
+### Keputusan agent butir 103 (menunggu konfirmasi)
+
+| # | Keputusan | Dasar |
+| --- | --- | --- |
+| A179 | Migrasi 196 hanya empat view atas JSON yang DIBACA nbfacin. **Ditunda:** `CITY` / `DISTRICT` — view atas `CITYINPUT` / `DISTRICTINPUT` / `RWINPUT` / `BRANCH` / `PROVINCE` yang DDL-nya tidak ada, sehingga tipe kolom tabel flat tidak dapat ditulis tanpa menebak; `V_JN_OBJ_ITEM` (DDL view dikirim 04-10-2026) — view atas tabel `POOLDATA.OBJECTITEMTYPE` yang DDL-nya tidak ada (`PCTADJUSTABLE1/2` mungkin NUMBER — tidak ditebak); `COVERAGE_FACIN` (tidak dibaca lagi sejak butir 96), `BRANDDETAIL`, `VJ_M_TYPE_PROPERTY_PLAN` (tidak dibaca modul mana pun di repo) — memasukkannya ke migrasi nbfacin berarti nbfacin memiliki objek yang tidak dipakainya | Penjaga kepemilikan (`TestTabelBukanMilikKitaTidakDibuat`); CLAUDE.md §4.5 (tipe tidak ditebak). Dibutuhkan: DDL tabel dasar `CITYINPUT`, `DISTRICTINPUT`, `RWINPUT`, `BRANCH`, `OBJECTITEMTYPE` (atau keluaran `ALL_TAB_COLUMNS` view CITY / DISTRICT / V_JN_OBJ_ITEM dari DEV), dan keputusan modul pemilik tiga view sisanya |
+| A180 | Tipe kolom keempat tabel flat = `VARCHAR2(4000)` | Setiap kolom view = JSON dot-notation, yang dikembalikan Oracle sebagai VARCHAR2(4000) — sifat Oracle, bukan dari korpus `[dugaan]`. Sebelum menjalankan, periksa di DEV: `SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, DATA_LENGTH FROM ALL_TAB_COLUMNS WHERE TABLE_NAME IN ('PROVINCE','ACCUMULATEDTYPE','CZONE','ACCUMULATION')` |
 
 ## Backend butir 2–3 (sesi c3, 04-10-2026)
 
@@ -161,7 +186,7 @@ pilih `[terverifikasi]` `Section\SearchRiskAccumCov.xml` (`pyUseForSearch`, `pyP
 - BrowseRW_RD: pyParameters `City, District, Province, Teritory, ZipCode`; layar mengirim `DistrictName` → saringan D
   dibuang di Pega (A177). `.ID` bukan kolom laporan RD.
 
-### Keputusan agent (menunggu konfirmasi)
+### Keputusan agent — ✅ A172–A178 DISETUJUI work owner 04-10-2026 (butir 102; A178 kemudian diganti butir 103)
 
 | # | Keputusan | Dasar |
 | --- | --- | --- |
@@ -171,7 +196,7 @@ pilih `[terverifikasi]` `Section\SearchRiskAccumCov.xml` (`pyUseForSearch`, `pyP
 | A175 | Jalur nomor polis: SQL korpus dipersempit ke AccumulationCode (JSON_TABLE jalur sama), subkueri nama / note memakai `MAX` (SQL asal ORA-01427 bila ID ganda), kode kosong dibuang, urut kode | Langkah 6.6 hanya memakai CARI10 / 12 / 13; SELECT biasa (ADR-0043) |
 | A176 | Saran: `q` dicocokkan **Contains tidak peka huruf** atas kolom label (medan `pyUseForSearch`); paling banyak 50; urut label | Mode cocok autocomplete tidak tertulis di korpus; pola A124 (saran RW 50) |
 | A177 | Saran `area` **tanpa** saringan induk (`induk` diabaikan), seperti Pega | Param layar `DistrictName` bukan param RD (`District`) → saringan dibuang di Pega `[terverifikasi]` |
-| A178 | Saran `nation` / `province` / `accumtype` / `czone` → 501 sampai DDL sumbernya ada | Tabel / view kelas Int-NATION / PROVINCE / ACCUMULATEDTYPE / CZONE tidak ada di `DDL\` |
+| ~~A178~~ | ~~Saran `nation` / `province` / `accumtype` / `czone` → 501 sampai DDL sumbernya ada~~ | Tabel / view kelas Int-NATION / PROVINCE / ACCUMULATEDTYPE / CZONE tidak ada di `DDL\` | ⛔ **DIGANTI** butir 103: DDL dikirim 04-10-2026, ketujuh saran kini dilayani.
 | — | Kelas Int-CITY / Int-DISTRICT = view `CITY` / `DISTRICT` `[dugaan]` | Nama dan kolom sama persis; tidak ada SQL kelas itu yang menyebut tabelnya |
 
 ## Backend butir 1 (sesi c3, 03-10-2026)

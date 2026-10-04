@@ -28,18 +28,11 @@ import (
 // ErrMasukanAkumulasi - parameter popup akumulasi tidak sah (terlalu panjang / jenis saran tak dikenal). 400.
 var ErrMasukanAkumulasi = errors.New("services: parameter akumulasi tidak sah")
 
-// ErrSaranBelumTersedia - jenis saran yang sumbernya belum terverifikasi (nation / province / accumtype / czone: DDL
-// tidak ada, A178). 501.
-var ErrSaranBelumTersedia = errors.New("services: sumber saran ini belum terverifikasi (DDL belum ada)")
-
 // ErrAkumulasiTanpaDatabase - ACCUMULATION / RW / CITY / DISTRICT / JSON_POLIS tidak terbaca. 503.
 var ErrAkumulasiTanpaDatabase = errors.New("services: basis data tidak dikonfigurasi, akumulasi tidak terbaca")
 
 // lebarParamAkumulasi - batas tiap parameter kueri (pola A73).
 const lebarParamAkumulasi = 255
-
-// jenisSaranMenunggu - jenis saran yang diminta kontrak tetapi sumbernya belum ada di DDL (A178).
-var jenisSaranMenunggu = map[string]bool{"nation": true, "province": true, "accumtype": true, "czone": true}
 
 // DenganAkumulasi memasang pembaca akumulasi (tiket 46).
 func (s *Service) DenganAkumulasi(a repository.PembacaAkumulasi) *Service {
@@ -98,9 +91,6 @@ func (s *Service) CariAkumulasi(ctx context.Context, f models.SaringAkumulasi) (
 func (s *Service) SaranAkumulasi(ctx context.Context, jenis, kata, induk string) ([]models.SaranAkumulasi, error) {
 	if err := periksaParamAkumulasi(paramAkumulasi{"q", &kata}, paramAkumulasi{"induk", &induk}); err != nil {
 		return nil, err
-	}
-	if jenisSaranMenunggu[jenis] {
-		return nil, fmt.Errorf("%w: %s", ErrSaranBelumTersedia, jenis)
 	}
 	if !repository.JenisSaranDidukung(jenis) {
 		return nil, fmt.Errorf("%w: jenis saran %q tidak dikenal", ErrMasukanAkumulasi, jenis)
