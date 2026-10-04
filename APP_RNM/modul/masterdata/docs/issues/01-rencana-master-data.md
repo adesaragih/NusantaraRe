@@ -5,7 +5,7 @@
 > misal manu master province, isi nya untu insert, update, aktif, non aktif kan data dari master itu."
 > Jawaban AskUserQuestion: penempatan **Modul baru 'masterdata'**; cakupan **Yang dipakai NB FacIn dulu**.
 
-**Status:** rencana. Backend + pendaftaran modul (inti) = sesi c3; frontend = sesi 0f.
+**Status:** backend + pendaftaran (c3, `02-api-master-data.md`) dan frontend (0f, 04-10-2026) selesai; uji hijau. ⛔ Migrasi 904 / 760 / 761 / 990 belum dijalankan. ⚠️ MD-7 jejak ubah belum dibangun.
 
 ## Latar
 

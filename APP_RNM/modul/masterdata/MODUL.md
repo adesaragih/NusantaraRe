@@ -29,7 +29,7 @@ lewat pull request yang disetujui tim inti — dua modul tidak boleh berbagi nom
 | --- | --- |
 | `docs/` | rencana dan tiket (`issues/NN-<slug>.md`), `STRUKTUR-TABEL-MASTER-DATA.md` |
 | `backend/` | `models/` (daftar master + kolom), `repository/`, `services/`, `handlers/` (`GET /api/masterdata`, `GET` / `POST /api/masterdata/{tabel}`, `PUT /api/masterdata/{tabel}/{id}`, `PUT /api/masterdata/{tabel}/{id}/status`), `migrations/` (760 view → tabel flat + `STS_AKTIF`, 761 `T_MASTER_STATUS` (status NATION), slot menu 990), `modul.go` |
-| `frontend/` | `menu.ts`, `rute.tsx`, `pages/` — KERANGKA sesi c3 (halaman placeholder), layar dibangun sesi 0f |
+| `frontend/` | `menu.ts`, `rute.tsx`, `api.ts`, `labels.ts`, `masterdata.css`, `pages/HalamanMasterData.tsx` (tab per master), `components/` (`DaftarMaster`, `FormMaster`, `PilihRujukan`) — sesi 0f |
 
 ## Menjalankan uji modul ini saja
 
