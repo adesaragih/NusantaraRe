@@ -371,11 +371,20 @@ func alasanDiabaikan(pola string) string {
 // polaPyID - pyID kasus: awalan huruf, tanda hubung, nomor (`NB-77`).
 var polaPyID = regexp.MustCompile(`^[A-Z][A-Z0-9]*-\d+$`)
 
+// PanjangIDPega - lebar `T_GENERAL_POLIS.IDPEGA`: kolom DASAR tabel bersama
+// yang dibuat migrasi nbfacin 182 (VARCHAR2(50), keputusan WO 04-10-2026).
+// pzInsKey Treaty = kelas 20 karakter + spasi + pyID (<= 32) = sampai 53;
+// pelebaran diminta ke pemilik nbfacin (PERMINTAAN-TIM-INTI C10).
+const PanjangIDPega = 50
+
 // IDKasusDariIDPega mengambil pyID dari `pyWorkPage.pzInsKey`
 // (`<kelas> <pyID>`, `KunciInstans`). pyID menjadi ID T_WORK_POLIS - diagram
 // grilling: T_WORK_POLIS "diambil dari pyWorkPage.pzInsKey".
 func IDKasusDariIDPega(idpega string) (string, error) {
 	s := strings.TrimSpace(idpega)
+	if len(s) > PanjangIDPega {
+		return "", fmt.Errorf("%w: %q lebih dari %d karakter (T_GENERAL_POLIS.IDPEGA dasar nbfacin 182)", ErrIDPega, idpega, PanjangIDPega)
+	}
 	i := strings.LastIndex(s, " ")
 	if i <= 0 {
 		return "", fmt.Errorf("%w: %q", ErrIDPega, idpega)
