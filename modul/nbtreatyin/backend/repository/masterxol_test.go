@@ -8,8 +8,13 @@ package repository
 // dengan `adoptJSONObject` berurutan. Fixture fiktif UJI-.
 
 import (
+	"encoding/json"
 	"errors"
+	"regexp"
+	"strings"
 	"testing"
+
+	"nusantarare/modul/nbtreatyin/backend/models"
 )
 
 const dokumenUji = `{
@@ -101,5 +106,96 @@ func TestUraiMasterXOLBarisBerikutMenimpa(t *testing.T) {
 func TestUraiMasterXOLRusak(t *testing.T) {
 	if _, err := uraiMasterXOL([]string{`{"RNMShare": `}); !errors.Is(err, ErrMasterXOLRusak) {
 		t.Fatalf("dokumen rusak: %v", err)
+	}
+}
+
+// dokumenMaksimal - dokumen master UJI- yang memuat SETIAP medan daftar
+// tertutup (`models.MedanMasterXOL`) beserta medan di luar daftar di setiap
+// tingkat: skalar dan daftar akar lain, keluaran `TreatyXOLList` (F1: tidak
+// dibaca), medan polis (`FlagPPH`, `TypeTax`), anggota baris lain, dan daftar
+// bersarang lain.
+func dokumenMaksimal(t *testing.T) string {
+	t.Helper()
+	baris := func(anggota []string, anak map[string][]string) map[string]any {
+		r := map[string]any{"UjiAnggotaLuar": "UJI-LUAR", "UjiAnakLuar": []any{map[string]any{"A": "UJI-LUAR"}}}
+		for _, a := range anggota {
+			r[a] = "UJI-" + a
+		}
+		for nama, ang := range anak {
+			var sub []any
+			for i := 0; i < 2; i++ {
+				rr := map[string]any{"UjiAnggotaLuar": "UJI-LUAR"}
+				for _, a := range ang {
+					rr[a] = "UJI-" + a
+				}
+				sub = append(sub, rr)
+			}
+			r[nama] = sub
+		}
+		return r
+	}
+	dok := map[string]any{
+		"UjiSkalarLuar": "UJI-LUAR", "FlagPPH": "1", "TypeTax": "Inclusive", "pxObjClass": "UJI-KELAS",
+		"UjiDaftarLuar": []any{map[string]any{"A": "UJI-LUAR"}},
+		"TreatyXOLList": []any{map[string]any{"GrossPremi": "1", "ValueList": []any{map[string]any{"Layer": "1"}}}},
+		"CommentList":   []any{map[string]any{"Suggest": "UJI-LUAR"}},
+	}
+	for _, s := range models.SkalarMasterXOL {
+		dok[s] = "UJI-" + s
+	}
+	for nama, sk := range models.DaftarMasterXOL {
+		dok[nama] = []any{baris(sk.Anggota, sk.Anak), baris(sk.Anggota, sk.Anak)}
+	}
+	b, err := json.Marshal(dok)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(b)
+}
+
+var polaSubskrip = regexp.MustCompile(`\(\d+\)`)
+
+// F1: keluaran pengurai - dan karenanya keluaran `MasterXOLDariJSON`
+// (`TestMasterXOLDariJSONHanyaMengembalikanHasilUrai`) - HANYA memuat medan
+// daftar tertutup `models.MedanMasterXOL`. Uji ini GAGAL bila satu saja medan
+// di luar daftar sampai ke halaman.
+func TestUraiMasterXOLHanyaMedanDaftarTertutup(t *testing.T) {
+	m, err := uraiMasterXOL([]string{dokumenMaksimal(t)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	boleh := map[string]bool{}
+	daftarBoleh := map[string]bool{}
+	for _, j := range models.MedanMasterXOL() {
+		boleh[j] = true
+		for i := strings.LastIndex(j, "."); i > 0; i = strings.LastIndex(j[:i], ".") {
+			daftarBoleh[j[:i]] = true
+		}
+	}
+	dapat := map[string]bool{}
+	for k := range m.Nilai {
+		dapat[k] = true
+		if !boleh[k] {
+			t.Errorf("skalar %s di luar daftar tertutup", k)
+		}
+	}
+	for k, bs := range m.Daftar {
+		jalur := polaSubskrip.ReplaceAllString(k, "")
+		if !daftarBoleh[jalur] {
+			t.Errorf("daftar %s di luar daftar tertutup", k)
+		}
+		for _, b := range bs {
+			for a := range b {
+				dapat[jalur+"."+a] = true
+				if !boleh[jalur+"."+a] {
+					t.Errorf("medan %s.%s di luar daftar tertutup", k, a)
+				}
+			}
+		}
+	}
+	for j := range boleh {
+		if !dapat[j] {
+			t.Errorf("medan daftar %s tidak terbaca dari dokumen yang memuatnya", j)
+		}
 	}
 }

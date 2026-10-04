@@ -15,10 +15,12 @@ package models
 // `[penyimpangan sadar]` atas P29 - dicatat di tiket 01 dan PERMINTAAN-TIM-INTI E.
 //
 // ⛔ HANYA medan yang dibaca rule terjangkau jalur NonProp (nomor langkah di
-// komentar tiap medan) - SATU ukuran K8 di seluruh modul, `[menunggu konfirmasi
-// WO]` (tiket 01 bab P9, PERMINTAAN-TIM-INTI F1): lebih luas dari daftar harfiah
-// K8, yang memuat keluaran (`TreatyXOLList`) dan medan polis (`FlagPPH`,
-// `TypeTax`). Medan dokumen lain tidak pernah sampai ke halaman.
+// komentar tiap medan) - SATU ukuran K8 di seluruh modul, `[keputusan work
+// owner]` F1 (PROMPT putaran 3 bab 2, disetujui 04-10-2026): lebih luas dari
+// daftar harfiah K8, yang memuat keluaran (`TreatyXOLList`) dan medan polis
+// (`FlagPPH`, `TypeTax`). Daftarnya TERTUTUP (`MedanMasterXOL`, dikunci uji
+// `TestDaftarMedanMasterXOLTertutup`); medan dokumen lain tidak pernah sampai
+// ke halaman (`repository.TestUraiMasterXOLHanyaMedanDaftarTertutup`).
 // Nol penulisan: halaman `TreatyIn` tidak disimpan (katalog hanya memuat
 // `TreatyIn.ID`), dan tidak satu pun berkas menulis JSON.
 //
@@ -26,7 +28,10 @@ package models
 // `Nilai` ("RNMShare"), PageList di `Daftar` ("Share"), daftar bersarang lewat
 // `JalurAnak` ("Share(1).GrossPremiumList").
 
-import "strings"
+import (
+	"sort"
+	"strings"
+)
 
 // MasterXOL adalah isi master satu kontrak treaty untuk jalur XOL.
 type MasterXOL struct {
@@ -41,24 +46,35 @@ type SkemaDaftarMaster struct {
 	Anak    map[string][]string
 }
 
-// mataNilai - anggota `(Currency, Value)` daftar total per mata uang.
+// Singkatan kutipan: "NonProp" = Activity `InputPolicyTreatyInDetail_NonProp`,
+// "preACT" = `InputPolicyTreatyInDetail_preACT`, "Section" = Section
+// `DetailPolicyTreatyInNonProportional` (grid `pyPageListProperty =
+// pyWorkPage.TreatyIn.<daftar>`). Diperiksa ulang ke korpus XML 04-10-2026 (F1).
+
+// mataNilai - anggota `(Currency, Value)` daftar total per mata uang: kolom
+// grid total Section (`.Currency`, `.Value`).
 var mataNilai = []string{"Currency", "Value"}
 
-// ringkasLapisan - anggota baris ringkasan layer (`LimitShareSummaryList`,
-// `LimitFacShareSummaryList`): grid section `DetailPolicyTreatyInNonProportional`
-// "Share" / "Share Facultative" dan `InputPolicyTreatyInDetail_preACT` 18.1.
+// ringkasLapisan - anggota baris ringkasan layer, kolom grid Section "Share" /
+// "Share Facultative": Note, MDP, MDP2 dibaca Section saja; Limit, Limit2,
+// Deductible, Deductible2, NetPremi, NetPremi2 juga preACT 18.1
+// (`@if(.Limit>0,"IDR","")`, `@divide(.Deductible,...)`, `.NetPremi + .PPNValue`).
 var ringkasLapisan = []string{"Note", "Limit", "Limit2", "MDP", "MDP2", "Deductible", "Deductible2", "NetPremi", "NetPremi2"}
 
 // SkalarMasterXOL - medan skalar master yang dibaca.
 var SkalarMasterXOL = []string{
-	// TreatyNonPropSetSpreading 4.1 (`@divide(.Pct,TreatyIn.RNMShare,20)`),
-	// CountNetPremi_act 3, CountResult1_Act 4; section "% RNM Share".
+	// TreatyNonPropSetSpreading 4.1 (`@divide(.Pct,pyWorkPage.TreatyIn.RNMShare,20)`),
+	// CountNetPremi_act 3, CountResult1_Act 4 (bersyarat NonProportional);
+	// sel Section "% RNM Share" (tampil bila FacultativeShare = 0).
 	"RNMShare",
-	// section DetailPolicyTreatyInNonProportional "% RNM Share" (FacultativeShare != 0).
+	// sel Section "% RNM Share" (tampil bila FacultativeShare != 0).
 	"RnmShareDeducted",
-	// NonProp 14, 21, 22; TreatyNonPropSetSpreading 7; section "Share Facultative".
+	// NonProp 14, 21, 22; TreatyNonPropSetSpreading 7; Section SpreadingRiskList
+	// (pyCondition / pyReadOnlyCondition `pyWorkPage.TreatyIn.FacultativeShare >0`);
+	// wadah Section "Share Facultative" (`FacultativeShare>0`).
 	"FacultativeShare",
-	// When `TreatyMasterInEDM` (NonProp 10-11; DetailPoliciesNonProportional).
+	// When `TreatyMasterInEDM` (`EDMState` = "1"|"2"|"3"; NonProp 10-11; wadah
+	// Section DetailPoliciesNonProportional).
 	"EDMState",
 	// SetTreatyIn_Act 13 (`TreatyIn.ProportionType=="NonProportional"`).
 	"ProportionType",
@@ -66,62 +82,110 @@ var SkalarMasterXOL = []string{
 
 // DaftarMasterXOL - PageList master yang dibaca, beserta anggotanya.
 var DaftarMasterXOL = map[string]SkemaDaftarMaster{
-	// NonProp 16; InsertToTreatyXOLList 3.2, 3.7; RetroShare 2.2, 2.3.3, 2.3.7;
-	// TreatyNonPropSetSpreading 2-4, 7.
 	"Share": {
+		// LayerType, Layer, LayerPartType, LayerPart: InsertToTreatyXOLList 3.7.2,
+		// RetroShare 2.3.7.2. SpreadingTypeXOL, SpreadingTypeIDXOL:
+		// TreatyNonPropSetSpreading 3, 4, 7; RetroShare 2.2.
 		Anggota: []string{"LayerType", "Layer", "LayerPartType", "LayerPart", "SpreadingTypeXOL", "SpreadingTypeIDXOL"},
 		Anak: map[string][]string{
+			// GrossPremiumList, NetPremiumList, DeductionTotalList, RnmLimitList,
+			// DeductionList: NonProp 16.1-16.4; InsertToTreatyXOLList 3.2.3.x.
 			"GrossPremiumList":   mataNilai,
 			"NetPremiumList":     mataNilai,
 			"DeductionTotalList": mataNilai,
 			"RnmLimitList":       mataNilai,
 			"DeductionList":      {"Currency", "Deduction"},
-			"SpreadingListXOL":   {"ReinsTypeID", "ReinsTypeName", "Pct"},
+			// TreatyNonPropSetSpreading 2 (ReinsTypeID, ReinsTypeName), 4.1 (.Pct);
+			// NonProp 9 (`Share(1).SpreadingListXOL(1).Pct`, `(2).Pct`).
+			"SpreadingListXOL": {"ReinsTypeID", "ReinsTypeName", "Pct"},
 		},
 	},
-	// NonProp 20; InsertToTreatyXOLList 3; RetroShare 2.3.
 	"Installment": {
+		// NonProp 20.1, 20.3; InsertToTreatyXOLList 3.1, 3.3; RetroShare 2.3.1.
 		Anggota: []string{"Currency", "AmountTotal", "PctTotal"},
 		Anak: map[string][]string{
+			// NonProp 20.4.1 (.Installment, .PaymentDate, .InstallmentPct,
+			// .Amount, .Currency).
 			"InstallmentList": {"Installment", "PaymentDate", "InstallmentPct", "Amount", "Currency"},
 		},
 	},
-	// NonProp 17; RetroShare 2.3.3.3, 2.3.7.4.
 	"FacultativeShareList": {
 		Anak: map[string][]string{
-			"GrossPremiumList":   mataNilai,
+			// RetroShare 2.3.7.4.
+			"GrossPremiumList": mataNilai,
+			// NonProp 17.1.
 			"DeductionTotalList": mataNilai,
-			"DeductionList":      {"Currency", "Deduction"},
+			// RetroShare 2.3.3.3, 2.3.7.4.4.
+			"DeductionList": {"Currency", "Deduction"},
 		},
 	},
-	// TreatySetReinstatement 1.1 / SetReinstatementPct (dipanggil SetTreatyIn_Act 13).
 	"Limits": {
+		// TreatySetReinstatement 1 (kalang `TreatyIn.Limits`), dipanggil
+		// SetTreatyIn_Act 13; SetReinstatementPct 2 (.ReinstatementValue),
+		// 3.1 (.ReinstatementNote, .Limit, .Limit2).
 		Anggota: []string{"ReinstatementValue", "ReinstatementNote", "Limit", "Limit2"},
 		Anak: map[string][]string{
-			"MDPList":            mataNilai,
+			// SetReinstatementPct 3.2-3.3 (`.MDPList(n).Currency/Value`).
+			"MDPList": mataNilai,
+			// TreatySetReinstatement 1.1 (`.Reinstatement_List(1).ReinstatementValue == ""`).
 			"Reinstatement_List": {"ReinstatementValue"},
 		},
 	},
-	// preACT 18 (FlagPPH); NonProp 7-8 (FlagRetroTreaty); section grid "Share".
-	"LimitShareSummaryList":    {Anggota: ringkasLapisan},
+	// ringkasLapisan; NonProp 8.1 (FlagRetroTreaty); preACT 18.1; grid Section
+	// "Share". NetPremiAfterPPN/PPH(2): sel grid "Share" - ditimpa preACT 18.1
+	// HANYA bila FlagPPH == "true"; selain itu Section menampilkan nilai dokumen
+	// master (`adoptJSONObject` NonProp 6).
+	"LimitShareSummaryList": {Anggota: append(append([]string{}, ringkasLapisan...),
+		"NetPremiAfterPPN", "NetPremiAfterPPH", "NetPremiAfterPPN2", "NetPremiAfterPPH2")},
+	// ringkasLapisan; NonProp 7 (disalin ke LimitShareSummaryList bila
+	// FlagRetroTreaty); grid Section "Share Facultative".
 	"LimitFacShareSummaryList": {Anggota: ringkasLapisan},
-	// section grid "Limits".
+	// grid Section "Limits".
 	"LimitSummaryList": {Anggota: []string{"Note", "Limit", "Limit2", "Deductible", "Deductible2", "MDP", "MDP2"}},
-	// section: total per mata uang. TotalShareNetNP / TotalShareDeductionNP juga
-	// dibaca preACT 18.2-18.3; TotalShareNetNP NonProp 9; TotalFacShareDeductionNP NonProp 7.
-	"TotalLimitIOONP":          {Anggota: mataNilai},
-	"TotalLimitDeductblNP":     {Anggota: mataNilai},
-	"TotalLimitMDPNP":          {Anggota: mataNilai},
-	"TotalShareRnmNP":          {Anggota: mataNilai},
-	"TotalShareGrossNP":        {Anggota: mataNilai},
-	"TotalShareDeductionNP":    {Anggota: mataNilai},
-	"TotalShareNetNP":          {Anggota: mataNilai},
-	"TotalSpreadedNetPremi":    {Anggota: mataNilai},
-	"TotalSpreadedNetPremiRI":  {Anggota: mataNilai},
-	"TotalFacShareRnmNP":       {Anggota: mataNilai},
-	"TotalFacShareGrossNP":     {Anggota: mataNilai},
+	// Total per mata uang - grid total Section (mataNilai).
+	"TotalLimitIOONP":      {Anggota: mataNilai},
+	"TotalLimitDeductblNP": {Anggota: mataNilai},
+	"TotalLimitMDPNP":      {Anggota: mataNilai},
+	"TotalShareRnmNP":      {Anggota: mataNilai},
+	"TotalShareGrossNP":    {Anggota: mataNilai},
+	// + preACT 18.3 (`.Currency`); TotalPPNValue/TotalPPHValue: sel grid
+	// "Total Brokerage", ditimpa preACT 18.3.1-18.3.2 hanya bila FlagPPH == "true".
+	"TotalShareDeductionNP": {Anggota: []string{"Currency", "Value", "TotalPPNValue", "TotalPPHValue"}},
+	// + preACT 18.2 (`.Currency`); TotalNetPremiAfterPPN/Tax: sel grid "Total Net
+	// Premi", ditimpa preACT 18.2 hanya bila FlagPPH == "true". (NonProp 9 membaca
+	// SALINAN dari TotalFacShareDeductionNP yang ditimpa NonProp 7.)
+	"TotalShareNetNP": {Anggota: []string{"Currency", "Value", "TotalNetPremiAfterPPN", "TotalNetPremiAfterTax"}},
+	// grid Section "Total Spreaded" (NonProp 9 MENULIS `(1).Value`, bukan membaca).
+	"TotalSpreadedNetPremi":   {Anggota: mataNilai},
+	"TotalSpreadedNetPremiRI": {Anggota: mataNilai},
+	"TotalFacShareRnmNP":      {Anggota: mataNilai},
+	"TotalFacShareGrossNP":    {Anggota: mataNilai},
+	// + NonProp 7 (disalin ke TotalShareNetNP bila FlagRetroTreaty).
 	"TotalFacShareDeductionNP": {Anggota: mataNilai},
 	"TotalFacShareNetNP":       {Anggota: mataNilai},
+}
+
+// MedanMasterXOL - DAFTAR TERTUTUP medan master yang boleh dibaca dari dokumen
+// JSON (F1): setiap skalar `SkalarMasterXOL`, setiap anggota PageList
+// `DaftarMasterXOL` ("Share.LayerType"), dan setiap anggota daftar bersarang
+// ("Share.GrossPremiumList.Currency"), berurut. Uji
+// `TestDaftarMedanMasterXOLTertutup` mengunci isinya, dan
+// `repository.TestUraiMasterXOLHanyaMedanDaftarTertutup` gagal bila pembaca
+// JSON mengembalikan medan di luar daftar ini.
+func MedanMasterXOL() []string {
+	out := append([]string{}, SkalarMasterXOL...)
+	for nama, sk := range DaftarMasterXOL {
+		for _, a := range sk.Anggota {
+			out = append(out, nama+"."+a)
+		}
+		for anak, anggota := range sk.Anak {
+			for _, a := range anggota {
+				out = append(out, nama+"."+anak+"."+a)
+			}
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 // TanggalMasterXOL - anggota master bertipe tanggal (masuk halaman sebagai
