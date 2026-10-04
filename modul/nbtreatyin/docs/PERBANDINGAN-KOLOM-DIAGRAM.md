@@ -17,14 +17,24 @@
 | di luar keduanya, medannya hanya **ditulis**, atau pembacanya hanya langkah berlabel `//`, atau hanya jalur treaty keluar (K8 butir 4) | **dibuang** |
 | dicoret / ditetapkan lain oleh diagram atau keputusan work owner | **tidak dibuat**, sebab dikutip |
 
-Hasil: **tepat delapan `CREATE TABLE`** di migrasi modul (320–327), ditagih
-`repository/kolom_test.go` `TestTabelDanKolomMengikutiDiagramGrilling` (nama tabel, jumlah tabel, dan
-kolom persis) dan `TestSQLTidakMenyebutKolomYangDibuang`. Tabel putaran 1 di luar diagram — 328
+> ⛔ **RALAT 04-10-2026** `[keputusan work owner]` — bunyi lama, dikutip: *"Hasil: **tepat delapan `CREATE TABLE`** di
+> migrasi modul (320–327)"*; baris tabel 1 *"`T_GENERAL_POLIS` | 320 | … | 1:1 shared PK `T_WORK_POLIS`"*; bab 1a
+> *"`ID` … dipertahankan | PK + FK `T_WORK_POLIS`"* dan *"`IDPEGA` · `TGL_INPUT` · `USERNAME` … dipertahankan"*. Bunyi
+> baru: `T_GENERAL_POLIS` adalah SATU tabel **bersama FacIn + Treaty In**; tabel dasarnya (`ID VARCHAR2(32)` PK,
+> `IDPEGA VARCHAR2(50)`, `COB_GROUP`, `START_DATE_TIME`, `OFFERING_DATE`, `END_DATE_TIME`, `FOLLOWING`) dibuat
+> migrasi `nbfacin` `182_t_general_polis`; 320 hanya `ALTER TABLE … ADD (` kolom Treaty (semua kolom bab 1 kecuali
+> `ID` dan `IDPEGA`, yang dipakai dari tabel dasar) + constraint/indeks Treaty. Daftar kolom Treaty **tidak berubah**.
+> Dasar: keputusan WO 04-10-2026 (mengalahkan bab 0 butir 11 / K18 PROMPT putaran 3); PERMINTAAN-TIM-INTI C10.
+
+Hasil: **tepat tujuh `CREATE TABLE`** (`T_POLIS_*`, 321–327) + **`T_GENERAL_POLIS` bersama** lewat `ALTER ADD` (320),
+ditagih `repository/kolom_test.go` `TestTabelDanKolomMengikutiDiagramGrilling` (nama tabel, jumlah tabel, dan
+kolom persis — untuk `T_GENERAL_POLIS`: kolom ALTER 320 + `ID`, `IDPEGA` dasar), `backend/migrasi_test.go`, dan
+`TestSQLTidakMenyebutKolomYangDibuang`. Tabel putaran 1 di luar diagram — 328
 `T_POLIS_SUGGEST`, 329 `T_POLIS_MEDAN_LAIN`, 330 `M_NBTRIN_PERAN_TEMPAT` — **dihapus** (K4, K17, K16).
 
 | # | Tabel | Migrasi | Sheet / sel diagram | Bentuk |
 | ---: | --- | --- | --- | --- |
-| 1 | `T_GENERAL_POLIS` | 320 | Prop/NonProp F9–F33 | 1:1 shared PK `T_WORK_POLIS`, satu baris per generasi |
+| 1 | `T_GENERAL_POLIS` **bersama** (dasar `nbfacin` 182) | 320 `ALTER ADD` | Prop/NonProp F9–F33 | 1:1 shared PK `T_WORK_POLIS`, satu baris per generasi; baris FacIn (`LINI='FAC'`) di tabel yang sama, tidak dibaca modul ini |
 | 2 | `T_POLIS_QUOTATION` | 321 | J35–J38 | 1:1 `POLIS_ID` |
 | 3 | `T_POLIS_CEDING` | 322 | O39, R40–R50 | 1:N `QUOTATION_ID` |
 | 4 | `T_POLIS_INSTALMENT` | 323 | Prop J52–J56 · NonProp J52–J55 | 1:N `POLIS_ID` |
@@ -45,12 +55,12 @@ dibaca, tidak dibuat (MODUL.md *Tabel warisan*), lihat bab 9.
 
 | Kolom | Asal | Diagram / rancangan | Keputusan | Bukti |
 | --- | --- | --- | --- | --- |
-| `ID` | `pyWorkPage.pzInsKey` → `T_WORK_POLIS.ID` | F9 *SHARED PK* | dipertahankan | PK + FK `T_WORK_POLIS` |
+| `ID` | `pyWorkPage.pzInsKey` → `T_WORK_POLIS.ID` | F9 *SHARED PK* | dipertahankan — **kolom dasar `nbfacin` 182** (RALAT 04-10-2026) | PK milik 182; FK `T_WORK_POLIS` ditambah 320 |
 | `NOPOLIS` | `PolicyTreatyIn.PolicyNo` / json_polis | F11–F12 kunci alami | dipertahankan | `UNIQUE (NOPOLIS, PRODKE)` (F16) = indeks unik fungsi `CASE` — `UNIQUE` biasa menganggap dua draf `(NULL, 0)` kembar di Oracle |
 | `PRODKE` | json_polis | F12, F22 cacah | dipertahankan | `NUMBER(10) DEFAULT 0`; NB = 0 |
 | `NOENDORS` | json_polis | F11, rancangan §2 | dipertahankan | |
 | `OLD_POLIS_ID` | penunjuk generasi | F13–F16 | dipertahankan | FK `T_WORK_POLIS`, `UNIQUE (OLD_POLIS_ID)` |
-| `IDPEGA` · `TGL_INPUT` · `USERNAME` | json_polis | F11, rancangan §2 | dipertahankan | `USERNAME` = identitas login (P4) |
+| `IDPEGA` · `TGL_INPUT` · `USERNAME` | json_polis | F11, rancangan §2 | dipertahankan; `IDPEGA` = **kolom dasar `nbfacin` 182** `VARCHAR2(50)` (RALAT 04-10-2026) | `USERNAME` = identitas login (P4); pelebaran `IDPEGA` diminta (C10) |
 | `TGL_PROD` | `PolicyTreatyIn.ProductionDate` / json_polis | F11, rancangan §4.1 *PRODUCTION_DATE* | dipertahankan | satu kolom untuk keduanya (ID-21) |
 | ~~`TGL_TUTUP`~~ | — (bukan medan Pega) | ✗ | **dibuang** | ID-10: generasi lampau tidak disunting, *"ditegakkan di services, bukan di tabel"*. Tertutup kini = ada baris penerus yang `OLD_POLIS_ID`-nya menunjuk generasi ini (`repository.syaratTerbuka`) |
 

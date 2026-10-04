@@ -26,7 +26,7 @@
 5. Penyimpangan sadar
 6. Rule yang tetap tidak dibangun
 7. Jalur Proporsional dan NonProporsional — dari layar sampai tersimpan
-8. Tabel: delapan `CREATE TABLE` dan tabel warisan
+8. Tabel: tujuh `CREATE TABLE` + `T_GENERAL_POLIS` bersama (`ALTER`) dan tabel warisan
 9. Status tiket 00–23
 10. Perintah verifikasi
 
@@ -57,6 +57,7 @@ Penahan setiap AC yang belum ✅:
 | **F7** — urutan resmi pemuatan dokumen lama (WO/DBA; langkah 2 = uji-kering di skema uji, K11) | 🟡 68 | 🟡 59 |
 | **keputusan WO tertulis** — tetap ⛔ | ⛔ 57 (K8 butir 4: treaty keluar JSON `M_TREATY_OUT`), ⛔ 66 ((a) `isFOR` nol efek, bukti XML) | — |
 | **K13** — migrasi 968 tercatat di `POOLDATA` oleh pihak lain | — (penahan migrasi, bukan AC; bab 8) | — |
+| **K18 / C10** — `T_GENERAL_POLIS` tabel bersama (WO 04-10-2026): migrasi `nbfacin` 182 wajib di `dev` sebelum PR modul | — (penahan PR/migrasi, bukan AC; bab 8) | — |
 
 Rule terjangkau (176, `docs/alat/status.json`): **103 dibangun** · 73 tidak dibangun = **(a) 36**, **(b) 35**,
 **(c) 2** (bab 6).
@@ -384,16 +385,24 @@ Rute lama yang **dihapus** putaran 3: `GET /bisnis` (R5, kini `POST /kasus/{id}/
 `handlers/daftarbisnis_test.go:168` TestRuteDaftarBisnisLamaTidakAda). `POST /kasus/{id}/pilih-sumber-bisnis` tetap
 ada tetapi tidak lagi menyimpan (F4).
 
-## 8 · Tabel: delapan `CREATE TABLE` dan tabel warisan
+## 8 · Tabel: tujuh `CREATE TABLE` + `T_GENERAL_POLIS` bersama (`ALTER`) dan tabel warisan
 
-Tepat **delapan** `CREATE TABLE` di migrasi modul (`backend/migrations/320`–`327`), sama dengan diagram grilling
-`Diagram-Skema-Tabel-NusantaraRe.xlsx` (bab 0 butir 11), ditagih `repository/kolom_test.go:310` TestTabelDanKolomMengikutiDiagramGrilling
-(nama, jumlah, kolom persis; *"TEPAT delapan CREATE TABLE"*) — **tidak dilemahkan** putaran 3. Nol tabel baru.
-Perbandingan kolom: `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`.
+> ⛔ **RALAT 04-10-2026** `[keputusan work owner]` — bunyi lama, dikutip: *"Tepat **delapan** `CREATE TABLE` di migrasi
+> modul (`backend/migrations/320`–`327`), sama dengan diagram grilling … (nama, jumlah, kolom persis; *"TEPAT delapan
+> CREATE TABLE"*) — **tidak dilemahkan** putaran 3."* Bunyi baru di bawah. Dasar: keputusan WO 04-10-2026 —
+> `T_GENERAL_POLIS` SATU tabel BERSAMA FacIn dan Treaty In (mengalahkan bab 0 butir 11 dan K18 PROMPT putaran 3);
+> tabel dasarnya dibuat migrasi `nbfacin` `182_t_general_polis`.
+
+Delapan tabel diagram grilling `Diagram-Skema-Tabel-NusantaraRe.xlsx` (bab 0 butir 11), nol tabel baru: **tepat
+tujuh `CREATE TABLE`** (`T_POLIS_*`, migrasi `321`–`327`) + **`T_GENERAL_POLIS` bersama** — 320 hanya
+`ALTER TABLE {skema}.T_GENERAL_POLIS ADD (` kolom Treaty atas tabel dasar `nbfacin` 182. Ditagih
+`repository/kolom_test.go` TestTabelDanKolomMengikutiDiagramGrilling (tepat tujuh CREATE dengan nama persis + kolom
+ALTER 320 + kolom dasar yang dipakai `ID`, `IDPEGA` = daftar diagram persis) dan `backend/migrasi_test.go` (bab di
+bawah) — kolom per tabel tetap dibandingkan persis, tidak dilemahkan. Perbandingan kolom: `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`.
 
 | # | Migrasi | Tabel | Kolom | Sheet `NB Treaty In Prop` | Sheet `NB Treaty In NonProp` | Relasi | PERBANDINGAN |
 | ---: | --- | --- | ---: | --- | --- | --- | --- |
-| 1 | `320_t_general_polis.sql` | `T_GENERAL_POLIS` | 81 | F9–F33, ringkasan K108 | F9–F33, ringkasan K123 | 1:1 shared PK `T_WORK_POLIS`; `UNIQUE (OLD_POLIS_ID)`, `UNIQUE (NOPOLIS, PRODKE)` (indeks fungsi `CASE`) | bab 1 |
+| 1 | `320_t_general_polis.sql` | `T_GENERAL_POLIS` **bersama** (dasar `nbfacin` 182; 320 = `ALTER ADD`) | 79 + 2 dasar | F9–F33, ringkasan K108 | F9–F33, ringkasan K123 | 1:1 shared PK `T_WORK_POLIS`; `UNIQUE (OLD_POLIS_ID)`, `UNIQUE (NOPOLIS, PRODKE)` (indeks fungsi `CASE`) | bab 1 |
 | 2 | `321_t_polis_quotation.sql` | `T_POLIS_QUOTATION` | 17 | G34, J35–J38, K109 | G34, J35–J38, K124 | 1:1 `POLIS_ID` | bab 2 |
 | 3 | `322_t_polis_ceding.sql` | `T_POLIS_CEDING` | 5 | O39, R40–R50, K110 | O39, R40–R50, K125 | 1:N `QUOTATION_ID` | bab 3 |
 | 4 | `323_t_polis_instalment.sql` | `T_POLIS_INSTALMENT` | 17 | G51, J52–J56, K111 | G51, J52–J55, K126 | 1:N `POLIS_ID` | bab 4 |
@@ -402,25 +411,34 @@ Perbandingan kolom: `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`.
 | 7 | `326_t_polis_xol.sql` | `T_POLIS_XOL` | 16 | J71–J72 (nol baris) | G75, J76–J80, K130 | 1:N `POLIS_ID` · NonProp saja | bab 7 |
 | 8 | `327_t_polis_xol_layer.sql` | `T_POLIS_XOL_LAYER` | 20 | J71–J72 (nol baris) | O81, R82–R87, K131 | 1:N `XOL_ID` · NonProp saja | bab 8 |
 
-*Kolom* = definisi kolom di `CREATE TABLE` (termasuk kunci dan `NOURUT`).
+*Kolom* = definisi kolom di `CREATE TABLE` (termasuk kunci dan `NOURUT`); untuk `T_GENERAL_POLIS` = kolom yang
+ditambahkan `ALTER ADD` 320 + kolom dasar 182 yang dipakai Treaty (`ID`, `IDPEGA`). Lima kolom dasar lain
+(`COB_GROUP`, `START_DATE_TIME`, `OFFERING_DATE`, `END_DATE_TIME`, `FOLLOWING`) milik FacIn, tidak dibaca/ditulis.
 
-**Perubahan kolom putaran 3 — satu:** `T_GENERAL_POLIS.EDM_TYPE` (`VARCHAR2(16)`, `migrations/320_t_general_polis.sql:41`;
+**Perubahan kolom putaran 3 — satu:** `T_GENERAL_POLIS.EDM_TYPE` (`VARCHAR2(16)`, `migrations/320_t_general_polis.sql:44`;
 katalog `models/katalog.go:125`), medan `PolicyTreatyIn.EDMType` dokumen lama. Bukti XML: dibaca
 prasyarat `Activity/InputPolicyTreatyInPre_Act` **langkah 10** (`[.PolicyTreatyIn.EDMType=="3"]` → lewati
 `Call TreatyRealizationCheckXOLList`), terjangkau dari FlowAction `InboxPolicyTreatyIn`/`DeptHeadTreatyIn_UW`
 (`models.PerluCekDaftarXOL`). RALAT rancangan §4sexies (rancangan §4.1 *penentu bentuk* sudah memuat `EDM_TYPE`);
-keputusan WO F3 butir (a). 320 kini 81 kolom = 8 kunci + 73 katalog `models.TabelGeneralPolis`.
+keputusan WO F3 butir (a). Kolom Treaty `T_GENERAL_POLIS` = 8 kunci + 73 katalog `models.TabelGeneralPolis` = 81;
+sejak tabel bersama, 79 di antaranya ditambahkan `ALTER ADD` 320, `ID`/`IDPEGA` dari tabel dasar 182.
 
-**K18 — tabrakan nama `T_GENERAL_POLIS` (PERMINTAAN C10), penahan migrasi:** `POOLDATA.T_GENERAL_POLIS` sudah ada
-(FacIn, migrasi `182_t_general_polis` di luar repo, 7 kolom). Modul tidak mengganti nama dan tidak menyentuh tabel itu.
-Penjaganya pra-terbang inti `praTerbangBentuk` (`inti/backend/migrasi/migrasi.go:353`): `-migrate`
-berhenti sebelum satu pernyataan pun dikirim dengan galat *"… sudah ada … tetapi BENTUKNYA BERBEDA …"*. Dikunci tanpa
-Oracle di `backend/migrasi_test.go`: `migrasi_test.go:125` TestMigrasi320TeruraiPraTerbangPersisKolomGeneralPolis,
-`migrasi_test.go:150` TestPraTerbangMenolakTGeneralPolisBentukFacIn (5 kolom lebih, 79 kurang),
-`migrasi_test.go:181` TestMigrasi320TanpaBlokPLSQL (koreksi WO: tanpa PL/SQL). Temuan untuk tim inti: `KolomCreateTable`
-membaca satu kolom per baris (C10).
+**K18 / C10 — `T_GENERAL_POLIS` tabel bersama (keputusan WO 04-10-2026).** ⛔ RALAT — bunyi lama, dikutip:
+*"**K18 — tabrakan nama `T_GENERAL_POLIS` (PERMINTAAN C10), penahan migrasi:** … Modul tidak mengganti nama dan tidak
+menyentuh tabel itu. Penjaganya pra-terbang inti `praTerbangBentuk` … `-migrate` berhenti sebelum satu pernyataan pun
+dikirim"*. Bunyi baru: bukan tabrakan — tabel bersama. 320 = `ALTER ADD` 79 kolom Treaty + `FK_GENERAL_POLIS_WORK`,
+`FK_GENERAL_POLIS_OLD`, `UQ_GENERAL_POLIS_OLD`, indeks `UQ_GENERAL_POLIS_NOPOLIS`; `320_down` hanya membuang milik
+Treaty (nol `DROP TABLE`, nol kolom FacIn). Pra-terbang inti tidak menahan lagi (nol `CREATE TABLE`). Dikunci tanpa
+Oracle: `backend/migrasi_test.go` TestMigrasi320HanyaMengubahTabelBersama, TestMigrasi320MenambahPersisKolomTreaty
+(`KolomAlterTambah` = pemecahan koma tingkat atas; + `ID`/`IDPEGA` = kunci + katalog persis),
+TestMigrasi320ConstraintTreaty, TestMigrasi320TurunHanyaMembuangMilikTreaty. Baris FacIn (`T_WORK_POLIS.LINI = 'FAC'`)
+tidak terbaca modul ini: daftar portal, `Keadaan`, `KunciKasus` menyaring `LINI = 'NONLIFE'` —
+`handlers/lini_test.go` TestBarisLiniFACTidakTampilDanTidakTerjangkau, `repository/lini_test.go`
+TestGerbangKasusMenyaringLini, db `repository/lini_db_test.go` (K11). `IDPEGA` kolom dasar `VARCHAR2(50)`: pemuat menolak
+pzInsKey > 50 (`models.PanjangIDPega`; pelebaran diminta, C10). **Dependensi:** migrasi `nbfacin` 182 wajib di-merge
+ke `dev` sebelum PR modul ini (C10).
 
-**Migrasi yang dijalankan WO** (agen tidak menjalankan apa pun): 320–327 sesudah C10 diputuskan; 968 (slot menu)
+**Migrasi yang dijalankan WO** (agen tidak menjalankan apa pun): 320–327 sesudah migrasi `nbfacin` 182 ada di `dev` dan sudah berjalan (C10; di `POOLDATA` sudah); 968 (slot menu)
 **sudah tercatat** di `POOLDATA` 03-10-2026 oleh pihak lain (**K13**, belum diketahui).
 
 Tabel lama yang disentuh — **tidak dibuat, tidak diubah strukturnya**:
@@ -469,8 +487,8 @@ selesai.
 | 23 | selesai | peny. 63 📄 |
 
 Hasil: **23 tiket selesai**, **05 needs-info** (K12). **Pekerjaan yang masih dapat dikerjakan tanpa pihak luar: tidak
-ada.** Sisa penahan: K11 (skema uji, C9; `make test-db` A4), K12 (IAM), K13 (968 di `POOLDATA`), K18/C10 (tabrakan
-`T_GENERAL_POLIS`), F7 (pemuatan produksi oleh WO/DBA), konfirmasi WO butir H PERMINTAAN.
+ada.** Sisa penahan: K11 (skema uji, C9; `make test-db` A4), K12 (IAM), K13 (968 di `POOLDATA`), K18/C10 (dependensi migrasi
+`nbfacin` 182 — `T_GENERAL_POLIS` tabel bersama), F7 (pemuatan produksi oleh WO/DBA), konfirmasi WO butir H PERMINTAAN.
 
 ## 10 · Perintah verifikasi
 
