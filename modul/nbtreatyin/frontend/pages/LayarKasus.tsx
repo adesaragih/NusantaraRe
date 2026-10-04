@@ -568,6 +568,8 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
 
       {popupBisnis && (
         <PilihBisnis
+          id={id}
+          halaman={h}
           onTutup={() => setPopupBisnis(false)}
           onPilih={(idDetail) => {
             setPopupBisnis(false)

@@ -168,8 +168,10 @@ export function riwayatKasus(id: string): Promise<Riwayat[]> {
   return minta<Riwayat[]>(`${kasus(id)}/riwayat`)
 }
 
-export function daftarBisnis(cari: string): Promise<BarisKontrak[]> {
-  return minta<BarisKontrak[]>(`${PREFIX_NBTREATYIN}/bisnis`, { kueri: { cari: cari || undefined } })
+/** Isi grid popup `BusinessAndSOBList` (RD `BrowseTreatyJoinEDM`): showHarness `pySubmitData=Yes`
+ *  mengirim isian layar - server menyaring dengan `QuotationData.ProportionalType`-nya, tanpa simpan. */
+export function daftarBisnis(id: string, halaman: Halaman): Promise<BarisKontrak[]> {
+  return minta<BarisKontrak[]>(`${kasus(id)}/bisnis`, { metode: 'POST', badan: { halaman } })
 }
 
 /** Isi TreeGrid popup `SOB` (`Section/SourceHierarki`). */

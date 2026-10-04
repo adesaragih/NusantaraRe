@@ -13,7 +13,8 @@ export const JUDUL = {
   admin: 'Input Realitation',
   secHead: 'Acceptance by Head. Treaty',
   deptHead: 'Acceptance by Dept. Head',
-  pilihBisnis: 'Choose Business',
+  /** showHarness tombol `Choose Business` (`DetailPolicyTreatyIn`) `pyWindowName` - judul jendela popup. */
+  pilihBisnis: 'Business And SOB List',
   sumberBisnis: 'Source Of Business',
   /** FlowAction `PolicyTreatyInDeclineConfirm` pyLabel. */
   tolak: 'Confirm Decline NB',
@@ -75,33 +76,36 @@ export const PORTAL = {
 /** Judul kolom TreeGrid `Section/SourceHierarki` (pyCaption, `.ClientName`). */
 export const KOLOM_SOB = 'Source of Business Name'
 
-/** Kolom grid popup `BusinessAndSOBList` (nama kolom view, apa adanya). */
+/** Kolom grid AKTIF popup `Section/BusinessAndSOBList` (RD `BrowseTreatyJoinEDM`), urutan sel:
+ *  `kolom` = properti sel baris 2 (kolom view), `judul` = LABEL sel baris 1 di atasnya, VERBATIM -
+ *  termasuk dua judul KOSONG (`.LAYER`, `.LAYERPART`) dan "Insured Name" untuk `.CEDING`.
+ *  ⛔ RALAT audit silang P3 W1: bunyi lama "nama kolom view, apa adanya" (judul = nama kolom) keliru. */
 export const KOLOM_BISNIS = [
-  'TREATYID',
-  'TREATYCONTRACTNAME',
-  'CLASSOFBUSINESS',
-  'SOB',
-  'CEDING',
-  'PROPORTIONTYPE',
-  'TREATYTYPE',
-  'TREATYGROUP',
-  'TREATYYEAR',
-  'LIMITCURRENCY',
-  'LIMITVALUE',
-  'RETENTIONCURRENCY',
-  'RETENTIONVALUE',
-  'EPICURRENCY',
-  'EPIVALUE',
-  'LAYERTYPE',
-  'LAYER',
-  'LAYERPARTTYPE',
-  'LAYERPART',
-  'MDPCURRENCY',
-  'MDPVALUE',
-  'NETPREMICURRENCY',
-  'NETPREMIVALUE',
-  'SHARECURRENCY',
-  'SHAREVALUE',
+  { kolom: 'TREATYID', judul: 'Treaty Offer ID' },
+  { kolom: 'TREATYCONTRACTNAME', judul: 'Contract Name' },
+  { kolom: 'CLASSOFBUSINESS', judul: 'Class of Business' },
+  { kolom: 'SOB', judul: 'Source Of Business' },
+  { kolom: 'CEDING', judul: 'Insured Name' },
+  { kolom: 'PROPORTIONTYPE', judul: 'Proportion Type' },
+  { kolom: 'TREATYTYPE', judul: 'Treaty Type' },
+  { kolom: 'TREATYGROUP', judul: 'Treaty Group' },
+  { kolom: 'TREATYYEAR', judul: 'Treaty Year' },
+  { kolom: 'LIMITCURRENCY', judul: 'Currency' },
+  { kolom: 'LIMITVALUE', judul: 'Limit' },
+  { kolom: 'RETENTIONCURRENCY', judul: 'Currency' },
+  { kolom: 'RETENTIONVALUE', judul: 'Retention' },
+  { kolom: 'EPICURRENCY', judul: 'Currency' },
+  { kolom: 'EPIVALUE', judul: 'EPI' },
+  { kolom: 'LAYERTYPE', judul: 'Layer' },
+  { kolom: 'LAYER', judul: '' },
+  { kolom: 'LAYERPARTTYPE', judul: 'Part of' },
+  { kolom: 'LAYERPART', judul: '' },
+  { kolom: 'MDPCURRENCY', judul: 'Currency' },
+  { kolom: 'MDPVALUE', judul: 'MDP' },
+  { kolom: 'NETPREMICURRENCY', judul: 'Currency' },
+  { kolom: 'NETPREMIVALUE', judul: 'Net Premium' },
+  { kolom: 'SHARECURRENCY', judul: 'Currency' },
+  { kolom: 'SHAREVALUE', judul: 'Share RNM Value' },
 ] as const
 
 export const BAGIAN = {
