@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest'
 
 import type { Halaman } from './api'
 import {
+  KELOMPOK_UANG_ADMIN,
+  KELOMPOK_UANG_ATASAN,
   MEDAN_ADMIN_UANG,
   MEDAN_ADMIN_UMUM,
   MEDAN_ATASAN_TOTAL,
@@ -194,5 +196,25 @@ describe('medan layar NB Treaty In - penyajian (AC 85, K3, K14)', () => {
     expect(cari(MEDAN_ATASAN_UMUM, 'Quartal').sajian).toEqual({ desimal: 0, ribuan: false })
     expect(cari(MEDAN_ATASAN_UMUM, 'YearOfQuartal').sajian).toEqual({ desimal: 0, ribuan: false })
     expect(cari(MEDAN_ADMIN_UMUM, 'YearOfQuartal').sajian).toBeUndefined()
+  })
+})
+
+// W6 audit silang P3: wadah bagian uang tanpa judul buatan. Satu-satunya judul di
+// dalamnya LABEL sel ber-`pyIncludeLabel=true` (Heading 4) "OGP" / "ONP" di atas
+// wadah S24/S25 (admin) dan S93/S94 (atasan); pengelompokan sel = wadah XML.
+describe('bagian uang: kelompok wadah XML dan LABEL OGP / ONP', () => {
+  const jalur = (ms: Medan[]) => ms.map((m) => m.jalur.replace(P, ''))
+  it('admin: S20 Gross, S24 OGP, S25 ONP, S26-S28 klaim/saldo/potongan', () => {
+    expect(KELOMPOK_UANG_ADMIN.map((k) => k.judul ?? '')).toEqual(['', 'OGP', 'ONP', ''])
+    expect(jalur((KELOMPOK_UANG_ADMIN[1]?.medan ?? []))).toEqual(['PremiOgp', 'RiCommOgp', 'ResultOgp1', 'OveriddingCommOgp', 'ResultOgp2'])
+    expect(jalur((KELOMPOK_UANG_ADMIN[2]?.medan ?? []))).toEqual(['PremiOnp', 'RiCommOnp', 'ResultOnp1', 'OveriddingCommOnp', 'ResultOnp2'])
+    expect(KELOMPOK_UANG_ADMIN.flatMap((k) => k.medan)).toEqual(MEDAN_ADMIN_UANG)
+  })
+  it('atasan: S91 Gross, S93 OGP (sampai saldo), S94 ONP (sampai PPN)', () => {
+    expect(KELOMPOK_UANG_ATASAN.map((k) => k.judul ?? '')).toEqual(['', 'OGP', 'ONP'])
+    expect(jalur((KELOMPOK_UANG_ATASAN[1]?.medan ?? [])).slice(-5)).toEqual(['NetPremium', 'BalanceDueTo', 'BalanceBeforeTax', 'BalanceBeforePPH', 'BalanceDueTo'])
+    expect(jalur((KELOMPOK_UANG_ATASAN[2]?.medan ?? []))[0]).toBe('PremiOnp')
+    expect(jalur((KELOMPOK_UANG_ATASAN[2]?.medan ?? [])).slice(-2)).toEqual(['PPHValue', 'PPNValue'])
+    expect(KELOMPOK_UANG_ATASAN.flatMap((k) => k.medan)).toEqual(MEDAN_ATASAN_UANG)
   })
 })

@@ -13,6 +13,7 @@
 //     `components/DetailNonProp.tsx`; tertunda selama pemetaan IAM kosong.)
 
 import { KLAIM_XOL_RETRO, MASTER, POLIS, nilai, type Baris, type Halaman } from './api'
+import type { Sajian } from './sajian'
 import { nolTeks, positifTeks } from './tanda'
 
 /** `.IsNewPolicyNonProp = 1` - kontainer proporsional tersembunyi, subsection NonProp tampil. */
@@ -33,13 +34,19 @@ export const tampilFakultatif = (h: Halaman) => positifTeks(nilai(h, MASTER + 'F
  */
 export const spreadingTerbuka = (h: Halaman) => fakultatifNol(h)
 
-/** Satu kolom grid: anggota baris dan label sel VERBATIM. */
+/** Satu kolom grid: anggota baris, label sel VERBATIM, dan format sel bila BUKAN
+ *  pxNumber `pyDecimalPlaces` 2 (bawaan grid master, K14): `{}` = pxNumber tanpa
+ *  `pyDecimalPlaces` (pola inti), `'mentah'` = sel tanpa Format (apa adanya). */
 export interface Kolom {
   m: string
   label: string
+  format?: Sajian | 'mentah'
 }
 
-const k = (m: string, label: string): Kolom => ({ m, label })
+const k = (m: string, label: string, format?: Sajian | 'mentah'): Kolom =>
+  format === undefined ? { m, label } : { m, label, format }
+/** pxNumber tanpa `pyDecimalPlaces`. */
+const POLA_INTI: Sajian = {}
 
 /** Grid "Limits" - `pyWorkPage.TreatyIn.LimitSummaryList`. */
 export const KOLOM_LIMIT: Kolom[] = [
@@ -52,10 +59,11 @@ export const KOLOM_LIMIT: Kolom[] = [
   k('MDP2', 'MDP (USD)'),
 ]
 
-/** Grid "Share" - `pyWorkPage.TreatyIn.LimitShareSummaryList`. */
+/** Grid "Share" - `pyWorkPage.TreatyIn.LimitShareSummaryList` (S20). Sel `.Limit` pxNumber
+ *  TANPA `pyDecimalPlaces`, sel angka lain 2 (audit silang P3 W6). */
 export const KOLOM_SHARE: Kolom[] = [
   k('Note', 'Note'),
-  k('Limit', '100% Limit (IDR)'),
+  k('Limit', '100% Limit (IDR)', POLA_INTI),
   k('Limit2', '100% Limit (USD)'),
   k('MDP', 'MDP (IDR)'),
   k('MDP2', 'MDP (USD)'),
@@ -69,28 +77,32 @@ export const KOLOM_SHARE: Kolom[] = [
   k('NetPremiAfterPPH2', 'Net After PPH(USD)'),
 ]
 
-/** Grid "Share Facultative" - `pyWorkPage.TreatyIn.LimitFacShareSummaryList`. */
+/** Grid "Share Facultative" - `pyWorkPage.TreatyIn.LimitFacShareSummaryList` (S52):
+ *  seluruh sel FIELD TANPA Format (bukan pxNumber) - nilai apa adanya (audit silang P3 W6). */
 export const KOLOM_FAKULTATIF: Kolom[] = [
   k('Note', 'Note'),
-  k('Limit', '100% Limit (IDR)'),
-  k('Limit2', '100% Limit (USD)'),
-  k('MDP', 'MDP (IDR)'),
-  k('MDP2', 'MDP (USD)'),
-  k('Deductible', 'Brokerage (IDR)'),
-  k('Deductible2', 'Brokerage (USD)'),
-  k('NetPremi', 'Net Premi (IDR)'),
-  k('NetPremi2', 'Net Premi (USD)'),
+  k('Limit', '100% Limit (IDR)', 'mentah'),
+  k('Limit2', '100% Limit (USD)', 'mentah'),
+  k('MDP', 'MDP (IDR)', 'mentah'),
+  k('MDP2', 'MDP (USD)', 'mentah'),
+  k('Deductible', 'Brokerage (IDR)', 'mentah'),
+  k('Deductible2', 'Brokerage (USD)', 'mentah'),
+  k('NetPremi', 'Net Premi (IDR)', 'mentah'),
+  k('NetPremi2', 'Net Premi (USD)', 'mentah'),
 ]
 
-/** Satu grid total per mata uang: daftar master, label, dan kolom tambahan. */
+/** Satu grid total per mata uang: daftar master, label, kolom tambahan, dan kolom
+ *  pertama FIELD tanpa properti (`kosongAwal`: S7 TotalLimitIOONP dan S57
+ *  TotalFacShareRnmNP C[2.1]; judul C[1.3] di atas `.Value`). */
 export interface Total {
   daftar: string
   label: string
   tambahan?: Kolom[]
+  kosongAwal?: boolean
 }
 
 export const TOTAL_LIMIT: Total[] = [
-  { daftar: 'TotalLimitIOONP', label: 'Total Limit' },
+  { daftar: 'TotalLimitIOONP', label: 'Total Limit', kosongAwal: true },
   { daftar: 'TotalLimitDeductblNP', label: 'Total Deductible' },
   { daftar: 'TotalLimitMDPNP', label: 'Total MDP' },
 ]
@@ -116,7 +128,7 @@ export const TOTAL_SPREADED: Total[] = [
 ]
 
 export const TOTAL_FAKULTATIF: Total[] = [
-  { daftar: 'TotalFacShareRnmNP', label: 'Total Limit' },
+  { daftar: 'TotalFacShareRnmNP', label: 'Total Limit', kosongAwal: true },
   { daftar: 'TotalFacShareGrossNP', label: 'Total MDP' },
   { daftar: 'TotalFacShareDeductionNP', label: 'Total Brokerage' },
   { daftar: 'TotalFacShareNetNP', label: 'Total Net Premi' },
@@ -129,7 +141,7 @@ export function kolomTotal(t: Total): Kolom[] {
   const dasar = t.daftar.startsWith('TotalSpreaded')
     ? [k('Currency', t.label), k('Value', 'Value')]
     : [k('Currency', ''), k('Value', t.label)]
-  return [...dasar, ...(t.tambahan ?? [])]
+  return [...(t.kosongAwal ? [k('', '')] : []), ...dasar, ...(t.tambahan ?? [])]
 }
 
 /** Section `InstallmentList` (flow action `InstallmentList`, hanya-baca) - rincian satu angsuran. */
@@ -153,7 +165,6 @@ export const JUDUL_NONPROP = {
   fakultatif: 'Share Facultative',
   rnmShare: '% RNM Share',
   fakultatifPersen: '% Share Facultative',
-  installment: 'Installment',
   currency: 'Currency',
   value: 'Value',
 } as const

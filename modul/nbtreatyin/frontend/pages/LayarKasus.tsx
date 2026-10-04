@@ -41,6 +41,7 @@ import InputAngka from '../components/InputAngka'
 import KotakMedan from '../components/KotakMedan'
 import PilihBisnis from '../components/PilihBisnis'
 import PilihSumberBisnis, { pegangSumberBisnis, tampilTombolSOB } from '../components/PilihSumberBisnis'
+import Wadah from '../components/Wadah'
 import {
   BAGIAN,
   JUDUL,
@@ -56,10 +57,10 @@ import {
   TOMBOL,
 } from '../labels'
 import {
-  MEDAN_ADMIN_UANG,
+  KELOMPOK_UANG_ADMIN,
+  KELOMPOK_UANG_ATASAN,
   MEDAN_ADMIN_UMUM,
   MEDAN_ATASAN_TOTAL,
-  MEDAN_ATASAN_UANG,
   MEDAN_ATASAN_UMUM,
   SAJIAN_ANGSURAN,
   SAJIAN_SPREADING,
@@ -243,7 +244,6 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
         </button>
       </header>
       {!boleh && <div className="alert alert--info">{PORTAL.hanyaBaca}</div>}
-      {nilai(h, 'NBStatus') && <div className="nbti__status">{nilai(h, 'NBStatus')}</div>}
       {galat !== null && <Gagal galat={galat} />}
       {info && <div className="alert alert--ok">{info}</div>}
       {(layar.pesan ?? []).length > 0 && (
@@ -254,7 +254,8 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
         </div>
       )}
 
-      <Panel judul={BAGIAN.umum}>
+      {/* S2 (pyTitle "General", NOHEADER: tanpa judul) */}
+      <Wadah>
         {ubahAdmin && (
           <div className="nbti__aksi">
             {/* wadah `.ClaimType != 'XOL Retro'`; click -> showHarness BusinessAndSOBList -> refresh */}
@@ -278,13 +279,14 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
           </div>
         )}
         <div className="form-grid">{medanTampil(admin ? MEDAN_ADMIN_UMUM : MEDAN_ATASAN_UMUM, h).map(kotak)}</div>
-      </Panel>
+      </Wadah>
 
       {/* subsection `DetailPoliciesNonProportional` - wadah `.IsNewPolicyNonProp = 1 && .ClaimType != 'XOL Retro'` (K8) */}
       {tampilNonProp(h) && (
         <DetailNonProp
           halaman={h}
-          sunting={admin && boleh}
+          // W2: subsection NonProp ber-`pyEditOptions=Auto` di KEDUA layar (admin S17, atasan S88)
+          sunting={boleh}
           tempat={layar.tempat}
           // `SpreadingRiskList` .TreatyType: pyListSource reportdefinition BrowseReinsuranceType_RD (.ID / .Note)
           opsiSpreading={acuan?.jenisReas ?? []}
@@ -295,13 +297,20 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
       )}
 
       {wadahUang && (
-        <Panel judul={BAGIAN.uang}>
-          <div className="form-grid">{medanTampil(admin ? MEDAN_ADMIN_UANG : MEDAN_ATASAN_UANG, h).map(kotak)}</div>
-        </Panel>
+        // wadah S19 / S90 NOHEADER; LABEL Heading 4 "OGP" / "ONP" di atas wadah selnya
+        <Wadah>
+          {(admin ? KELOMPOK_UANG_ADMIN : KELOMPOK_UANG_ATASAN).map((k, i) => (
+            <div key={i}>
+              {k.judul && <h4>{k.judul}</h4>}
+              <div className="form-grid">{medanTampil(k.medan, h).map(kotak)}</div>
+            </div>
+          ))}
+        </Wadah>
       )}
 
       {wadahUang && (
-        <Panel judul={BAGIAN.spreading}>
+        // wadah S29/S30 dan S95/S96 NOHEADER - tanpa judul
+        <Wadah>
           {ubahAdmin && (
             // click -> addRow
             <button
@@ -381,7 +390,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
             </table>
           </div>
           {!admin && <div className="form-grid">{medanTampil(MEDAN_ATASAN_TOTAL, h).map(kotak)}</div>}
-        </Panel>
+        </Wadah>
       )}
 
       {wadahUang && (
@@ -431,7 +440,8 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
         </Panel>
       )}
 
-      <Panel judul={BAGIAN.usulan}>
+      {/* SUB_SECTION ListSuggest - wadah NOHEADER, tanpa judul */}
+      <Wadah>
         {boleh && (
           <div className="form-grid">
             <div className="field">
@@ -521,8 +531,10 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
             ))}
           </div>
         )}
-      </Panel>
+      </Wadah>
 
+      {/* Panel History: bukan Section XML - dasar spec AC 72 ("Riwayat dapat dibaca berurutan
+          waktu"; GET /kasus/{id}/riwayat), dicatat di tiket 11 (W6 audit silang P3). */}
       {riwayat.length > 0 && (
         <Panel judul={JUDUL.riwayat}>
           <div className="table-wrap">

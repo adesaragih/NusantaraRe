@@ -38,6 +38,9 @@ describe('label layar = LABEL XML', () => {
       'Total Payment',
     ])
     expect(BAGIAN.angsuran).toBe('Installment Data Information')
+    // W6: wadah lain layar realisasi NOHEADER (pyIncludeHeader=false) - nol judul buatan
+    // ("General", "Premium & Claim", "Spreading Risk", "Suggest"); LABEL Heading 4 S24/S25.
+    expect(Object.values(BAGIAN)).toEqual(['Installment Data Information', 'OGP', 'ONP'])
   })
 
   it('ListSuggest: Date, PIC, Approval, Suggest', () => {

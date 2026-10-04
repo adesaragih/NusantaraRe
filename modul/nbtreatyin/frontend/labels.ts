@@ -50,16 +50,17 @@ export const TOMBOL = {
   pilihKosong: 'Choose',
 } as const
 
-/** Kolom daftar portal (`SFAPortal_OpportunitiesList`, LABEL judul grid). `posisi`
- *  dan `nopol` TIDAK ada di grid XML - temuan audit silang P3 (keputusan WO). */
+/** Kolom daftar portal (`SFAPortal_OpportunitiesList`, LABEL judul grid `GetListOpportunity`).
+ *  ⛔ RALAT W6 audit silang P3: kolom "Position" / "No Polis" (tanpa sel XML) DIBUANG.
+ *  Kolom XML ke-2 "Name" (`.Name` pxLink `openWorkByHandle(.pzInsKey)`) tidak dirender:
+ *  `.Name` ditulis NOL rule korpus dan tak berkolom - tautannya pindah ke "Offer No"
+ *  (`.TextNoQuotation` = pengenal kasus yang sama; RALAT tiket 11). */
 export const KOLOM_PORTAL = {
   id: 'Offer No',
   bisnis: 'Group Business',
   tertanggung: 'Insured Name',
   marketing: 'Marketing',
   status: 'Status',
-  posisi: 'Position',
-  nopol: 'No Polis',
 } as const
 
 export const PORTAL = {
@@ -68,6 +69,10 @@ export const PORTAL = {
   /** `.FilterTermForOpportunity` pyLabelFor (nama aksesibel) dan pyPlaceholder. */
   filter: 'Filter Term for Opportunity',
   placeholder: 'NB-1234 or Name',
+  /** Nama aksesibel ikon pengosong C[1.2] (pxIcon `pyImage webwb/pyiconclearfield.png`,
+   *  `pyIncludeLabel=false` - tanpa teks tampil). */
+  bersihkan: 'Clear field',
+  /** Teks daftar kosong - komponen `Kosong` inti (tiket 11: dasar unsur bawaan inti). */
   kosong: 'Belum ada berkas realisasi treaty yang terbuka.',
   kosongPetunjuk: 'Tombol Create membuat berkas baru di antrean admin.',
   hanyaBaca: 'Berkas ini menunggu di antrean lain atau sudah selesai - hanya-baca.',
@@ -108,13 +113,15 @@ export const KOLOM_BISNIS = [
   { kolom: 'SHAREVALUE', judul: 'Share RNM Value' },
 ] as const
 
+/** Judul di dalam layar realisasi yang TAMPIL di XML. ⛔ RALAT W6 audit silang P3: judul
+ *  buatan "General", "Premium & Claim", "Spreading Risk", "Suggest" DIBUANG - wadahnya
+ *  `NOHEADER` / `pyIncludeHeader=false` (S2 berjudul "General" pun tanpa header). */
 export const BAGIAN = {
-  umum: 'General',
-  uang: 'Premium & Claim',
-  spreading: 'Spreading Risk',
-  /** wadah S45 grid `.ListInstallment` (pyIncludeHeader, pyTitle). */
+  /** wadah S45 / S107 grid `.ListInstallment` (pyIncludeHeader=true, pyTitle). */
   angsuran: 'Installment Data Information',
-  usulan: 'Suggest',
+  /** LABEL sel `pyIncludeLabel=true` (Heading 4) wadah S24/S93 dan S25/S94. */
+  ogp: 'OGP',
+  onp: 'ONP',
 } as const
 
 /** Kolom grid SpreadingRiskList - LABEL judul dan kaki grid (`SpreadingRiskList` S2,

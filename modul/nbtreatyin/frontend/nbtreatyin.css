@@ -44,13 +44,6 @@
   font: inherit;
 }
 
-/* Teks NBStatus kasus. */
-.nbtreatyin .nbti__status {
-  margin: 0 0 12px;
-  color: var(--text-2);
-  font-size: var(--fs-sm);
-}
-
 /* Medan hanya-baca: label di atas, nilai di bawah. */
 .nbtreatyin .nbti__medan .nbti__nilai {
   display: block;

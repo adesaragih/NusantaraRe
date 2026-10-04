@@ -29,6 +29,7 @@
 //     butir 3/3b): breakdown spreading tidak dimigrasi.
 
 import { KLAIM_XOL_RETRO, POLIS, nilai, type Halaman } from './api'
+import { BAGIAN } from './labels'
 import type { Sajian } from './sajian'
 import { negatifTeks } from './tanda'
 
@@ -329,6 +330,38 @@ function medanAtasanUang(): Medan[] {
     t('PPNValue', 'PPN 2.2%'),
   ]
 }
+
+// ------------------------------------------------------------------ kelompok wadah uang
+
+/** Satu wadah sel bagian uang; `judul` = LABEL `pyIncludeLabel=true` (Heading 4) bila ada. */
+export interface Kelompok {
+  judul?: string
+  medan: Medan[]
+}
+
+/** Potong `ms` menurut jalur: dari medan `dari` (inklusif) sampai sebelum `sampai`. */
+function antara(ms: Medan[], dari: string, sampai?: string): Medan[] {
+  const i = ms.findIndex((m) => m.jalur === POLIS + dari)
+  const j = sampai === undefined ? ms.length : ms.findIndex((m) => m.jalur === POLIS + sampai)
+  return ms.slice(i, j)
+}
+
+/** Wadah bagian uang admin (`DetailPolicyTreatyIn` S19 - W6 audit silang P3, tanpa judul
+ *  buatan): S20 Gross, S24 LABEL "OGP", S25 LABEL "ONP", S26-S28 klaim/saldo/potongan/pajak. */
+export const KELOMPOK_UANG_ADMIN: Kelompok[] = [
+  { medan: antara(MEDAN_ADMIN_UANG, 'GrossPremium', 'PremiOgp') },
+  { judul: BAGIAN.ogp, medan: antara(MEDAN_ADMIN_UANG, 'PremiOgp', 'PremiOnp') },
+  { judul: BAGIAN.onp, medan: antara(MEDAN_ADMIN_UANG, 'PremiOnp', 'Claim') },
+  { medan: antara(MEDAN_ADMIN_UANG, 'Claim') },
+]
+
+/** Wadah bagian uang atasan (`DetailDeptHeadTreatyIn_UW` S90): S91 Gross, S93 LABEL "OGP"
+ *  (sampai Balance*), S94 LABEL "ONP" (sampai PPN). */
+export const KELOMPOK_UANG_ATASAN: Kelompok[] = [
+  { medan: antara(MEDAN_ATASAN_UANG, 'GrossPremium', 'PremiOgp') },
+  { judul: BAGIAN.ogp, medan: antara(MEDAN_ATASAN_UANG, 'PremiOgp', 'PremiOnp') },
+  { judul: BAGIAN.onp, medan: antara(MEDAN_ATASAN_UANG, 'PremiOnp') },
+]
 
 /** Total berlabel di bawah grid spreading layar atasan (`.TotalSharePercentagePremium`
  *  dst., pxNumber 2 desimal). Di layar admin sel yang sama berwadah `1=2` (mati). */

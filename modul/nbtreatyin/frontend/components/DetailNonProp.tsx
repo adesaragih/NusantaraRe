@@ -11,10 +11,14 @@
 // EDM yang tak terjangkau) tampil hanya bagi `OperatorID.pxInsName = <ID-operator-2>`
 // di XML - di sini DIGERBANG tempat berperan tiket 05 (`tempat.ts`), tertunda
 // selama pemetaan IAM kosong; begitu pemetaannya diisi, label ikut tampil.
+//
+// Judul wadah hanya yang ber-`pyIncludeHeader=true` (S1 Limits, S19 Share, S41 Total
+// Spreaded, S51 Share Facultative); S73 (SpreadingRiskList) dan S74 (angsuran) NOHEADER -
+// `Wadah` tanpa judul (W6 audit silang P3).
 
 import { Panel } from '../../../../inti/frontend/components/ui/dasar'
 import { MASTER, POLIS, daftar, nilai, type Baris, type Halaman, type Pilihan } from '../api'
-import { BAGIAN, KOLOM_ANGSURAN, KOLOM_SPREADING, TOMBOL } from '../labels'
+import { KOLOM_ANGSURAN, KOLOM_SPREADING, TOMBOL } from '../labels'
 import {
   JUDUL_NONPROP,
   KOLOM_FAKULTATIF,
@@ -35,6 +39,7 @@ import {
 } from '../nonprop'
 import { sajikan, type Sajian } from '../sajian'
 import { TEMPAT_LABEL_NON_EDM, tempatTerbuka, type Tempat } from '../tempat'
+import Wadah from './Wadah'
 
 const SPREADING = POLIS + 'SpreadingRiskList'
 const ANGSURAN = POLIS + 'ListInstallment'
@@ -46,14 +51,23 @@ const POLA_INTI: Sajian = {}
 const angka2 = (v: string | undefined) => sajikan(v ?? '', DUA)
 const TEKS = new Set(['Note', 'Currency'])
 
+/** Teks satu sel grid: kolom tanpa properti kosong; Note/Currency apa adanya; format
+ *  kolom (`Kolom.format`) bila ada; selain itu sajian grid. */
+function teksSel(b: Baris, c: Kolom, sajian: Sajian): string {
+  if (c.m === '') return ''
+  const v = b[c.m] ?? ''
+  if (TEKS.has(c.m) || c.format === 'mentah') return v
+  return sajikan(v, c.m === 'DueDate' ? 'tanggal' : (c.format ?? sajian))
+}
+
 function Grid({ baris, kolom, sajian = DUA }: { baris: Baris[]; kolom: Kolom[]; sajian?: Sajian }) {
   return (
     <div className="table-wrap">
       <table>
         <thead>
           <tr>
-            {kolom.map((c) => (
-              <th key={c.m} scope="col">
+            {kolom.map((c, j) => (
+              <th key={`${c.m}-${j}`} scope="col">
                 {c.label}
               </th>
             ))}
@@ -62,10 +76,8 @@ function Grid({ baris, kolom, sajian = DUA }: { baris: Baris[]; kolom: Kolom[]; 
         <tbody>
           {baris.map((b, i) => (
             <tr key={i}>
-              {kolom.map((c) => (
-                <td key={c.m}>
-                  {TEKS.has(c.m) ? (b[c.m] ?? '') : sajikan(b[c.m] ?? '', c.m === 'DueDate' ? 'tanggal' : sajian)}
-                </td>
+              {kolom.map((c, j) => (
+                <td key={`${c.m}-${j}`}>{teksSel(b, c, sajian)}</td>
               ))}
             </tr>
           ))}
@@ -91,7 +103,9 @@ function Totals({ h, daftarTotal }: { h: Halaman; daftarTotal: Total[] }) {
 
 export interface PropsDetailNonProp {
   halaman: Halaman
-  /** Layar admin dan pelaku boleh bekerja - grid spreading dapat disunting. */
+  /** Pelaku boleh bekerja di layar ini - admin MAUPUN atasan (W2 audit silang P3:
+   *  `DetailDeptHeadTreatyIn_UW` S88 menyertakan subsection ini ber-`pyEditOptions=Auto`);
+   *  grid spreading lalu terbuka menurut `spreadingTerbuka` (FacultativeShare 0/''). */
   sunting: boolean
   /** Tempat berperan pelaku (`Layar.tempat`, tiket 05). */
   tempat: Tempat
@@ -142,7 +156,8 @@ export default function DetailNonProp({
         </Panel>
       )}
 
-      <Panel judul={BAGIAN.spreading}>
+      {/* S73 NOHEADER: SUB_SECTION `SpreadingRiskList` tanpa judul wadah */}
+      <Wadah>
         {terbuka && (
           <button type="button" className="btn btn--sm" onClick={() => onSetelDaftar(SPREADING, [...spreading, {} as Baris])}>
             {TOMBOL.add}
@@ -218,9 +233,10 @@ export default function DetailNonProp({
             </tfoot>
           </table>
         </div>
-      </Panel>
+      </Wadah>
 
-      <Panel judul={JUDUL_NONPROP.installment}>
+      {/* S74 NOHEADER (pyIncludeHeader=false): tanpa judul wadah; "Installment" = label sel */}
+      <Wadah>
         <div className="field nbti__medan">
           <span className="field__label">{KOLOM_ANGSURAN.installment}</span>
           <span className="nbti__nilai">{nilai(h, POLIS + 'Installment')}</span>
@@ -235,7 +251,7 @@ export default function DetailNonProp({
             <Grid baris={daftar(h, `${ANGSURAN}(${i + 1}).InstallmentList`)} kolom={KOLOM_RINCI} sajian={POLA_INTI} />
           </div>
         ))}
-      </Panel>
+      </Wadah>
       {/* LABEL "EDM": wadah S2 `TreatyMasterInEDM && IsEDMInputOnNB != true` - mustahil sesudah
           InputPolicyTreatyInDetail_NonProp langkah 10 (audit silang P3), tidak dirender. */}
     </>

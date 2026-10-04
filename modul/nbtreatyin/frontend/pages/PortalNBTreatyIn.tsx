@@ -5,13 +5,56 @@
 // ⛔ Bagian portal CRM yang lain - ringkasan prospek (`SFAPortal_
 // OpportunitiesList_Header`, bersyarat tampil `1=2`), Stage view/List view -
 // milik modul CRM dan tidak dibangun.
+//
+// W6 audit silang P3 (dibaca ulang 04-10-2026): grid `GetListOpportunity` -
+// LABEL "Offer No" (`.TextNoQuotation`), "Name" (`.Name`), "Group Business",
+// "Insured Name", "Marketing", "Status". Kolom "Position" / "No Polis" (tanpa sel
+// XML) dibuang. ⛔ RALAT tiket 11: kolom "Name" (pxLink `.Name` -> `openWorkByHandle
+// .pzInsKey`) tidak dirender - `.Name` ditulis nol rule korpus, tak berkolom, jadi
+// tautannya selalu tanpa teks; pembuka berkas (kunci yang sama) dipasang di sel
+// "Offer No". Teks daftar kosong = komponen `Kosong` inti.
 
 import { useState } from 'react'
 
 import { Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { useAmbil } from '../ambil'
-import { buatKasus, daftarKasus } from '../api'
-import { JUDUL_POSISI, KOLOM_PORTAL, PORTAL, TOMBOL } from '../labels'
+import { buatKasus, daftarKasus, type RingkasanKasus } from '../api'
+import { KOLOM_PORTAL, PORTAL, TOMBOL } from '../labels'
+
+/** Grid `GetListOpportunity` - kolom VERBATIM `SFAPortal_OpportunitiesList` C[1.x]/C[2.x]. */
+export function TabelPortal({ baris, onBuka }: { baris: RingkasanKasus[]; onBuka: (id: string) => void }) {
+  return (
+    <div className="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">{KOLOM_PORTAL.id}</th>
+            <th scope="col">{KOLOM_PORTAL.bisnis}</th>
+            <th scope="col">{KOLOM_PORTAL.tertanggung}</th>
+            <th scope="col">{KOLOM_PORTAL.marketing}</th>
+            <th scope="col">{KOLOM_PORTAL.status}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {baris.map((b) => (
+            <tr key={b.id}>
+              <td>
+                {/* `.TextNoQuotation`; tautan openWorkByHandle (dari sel `.Name`, RALAT tiket 11) */}
+                <button type="button" className="nbti__tautan" onClick={() => onBuka(b.id)}>
+                  {b.id}
+                </button>
+              </td>
+              <td>{b.businessName}</td>
+              <td>{b.insuredName}</td>
+              <td>{b.marketingName}</td>
+              <td>{b.nbStatus}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
 
 export default function PortalNBTreatyIn({ onBuka, pesan }: { onBuka: (id: string) => void; pesan?: string }) {
   const [cari, setCari] = useState('')
@@ -64,6 +107,10 @@ export default function PortalNBTreatyIn({ onBuka, pesan }: { onBuka: (id: strin
             }
           }}
         />
+        {/* ikon pengosong C[1.2]: click -> setValue .FilterTermForOpportunity "" -> postValue, TANPA refresh */}
+        <button type="button" className="btn btn--ghost" aria-label={PORTAL.bersihkan} onClick={() => setCari('')}>
+          ×
+        </button>
         <button type="submit" className="btn">
           {TOMBOL.filter}
         </button>
@@ -71,40 +118,7 @@ export default function PortalNBTreatyIn({ onBuka, pesan }: { onBuka: (id: strin
       {galat !== null && <Gagal galat={galat} />}
       {baris === null && galat === null && <Memuat />}
       {baris !== null && baris.length === 0 && <Kosong pesan={PORTAL.kosong} petunjuk={PORTAL.kosongPetunjuk} />}
-      {baris !== null && baris.length > 0 && (
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">{KOLOM_PORTAL.id}</th>
-                <th scope="col">{KOLOM_PORTAL.bisnis}</th>
-                <th scope="col">{KOLOM_PORTAL.tertanggung}</th>
-                <th scope="col">{KOLOM_PORTAL.marketing}</th>
-                <th scope="col">{KOLOM_PORTAL.status}</th>
-                <th scope="col">{KOLOM_PORTAL.posisi}</th>
-                <th scope="col">{KOLOM_PORTAL.nopol}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {baris.map((b) => (
-                <tr key={b.id}>
-                  <td>
-                    <button type="button" className="nbti__tautan" onClick={() => onBuka(b.id)}>
-                      {b.id}
-                    </button>
-                  </td>
-                  <td>{b.businessName}</td>
-                  <td>{b.insuredName}</td>
-                  <td>{b.marketingName}</td>
-                  <td>{b.nbStatus}</td>
-                  <td>{JUDUL_POSISI[b.positionNote] ?? b.positionNote}</td>
-                  <td>{b.noPolis}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {baris !== null && baris.length > 0 && <TabelPortal baris={baris} onBuka={onBuka} />}
     </div>
   )
 }
