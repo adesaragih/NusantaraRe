@@ -141,6 +141,17 @@ describe('medan layar NB Treaty In - aksi sel (action set XML, berurutan)', () =
     }
     expect(cari(MEDAN_ADMIN_UANG, 'OutstandingClaim').aksi).toBeUndefined()
   })
+
+  // Audit silang putaran 3: action set sel `Section/DetailPolicyTreatyIn` -
+  // `.EndDate` change -> refresh ProtectDate; `.FlagPPH` change -> runActivity
+  // RemoveTypeTax_ACT; `.QuotationData.MOID` change -> refresh CheckDataMkt;
+  // `.IDCurrency` change -> refresh SetCurrency_act(CURR=.IDCurrency).
+  it('EndDate, FlagPPH, Marketing Officer, Currency admin: satu aksi XML masing-masing', () => {
+    expect(cari(MEDAN_ADMIN_UMUM, 'EndDate').aksi).toEqual([{ aksi: 'ProtectDate' }])
+    expect(cari(MEDAN_ADMIN_UMUM, 'FlagPPH').aksi).toEqual([{ aksi: 'RemoveTypeTax' }])
+    expect(cari(MEDAN_ADMIN_UMUM, 'QuotationData.MOID').aksi).toEqual([{ aksi: 'CheckDataMkt' }])
+    expect(cari(MEDAN_ADMIN_UMUM, 'IDCurrency').aksi).toEqual([{ aksi: 'SetCurrency' }])
+  })
 })
 
 describe('medan layar NB Treaty In - penyajian (AC 85, K3, K14)', () => {
