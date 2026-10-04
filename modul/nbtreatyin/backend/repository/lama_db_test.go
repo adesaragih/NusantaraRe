@@ -117,8 +117,9 @@ func TestPemuatLamaMenulisLewatAntarmukaSama(t *testing.T) { // AC 21, 22, 55, 5
 	}
 }
 
-// dokumenUjiLamaUsulan - dokumen lama dengan dua catatan SuggestList (F3):
-// baris pertama tanpa OperatorID (AKSES_LOGIN ditulis NULL, tidak dikarang).
+// dokumenUjiLamaUsulan - dokumen lama dengan dua catatan SuggestList (F3).
+// AKSES_LOGIN ditulis NULL: baris SuggestList tidak punya anggota operator
+// (dataguide; AddToListCommentsPolicyTreatyIn_DT) - tidak dikarang.
 const dokumenUjiLamaUsulan = `{
  "pxObjClass": "ASM-FW-GISFW-Data-PolicyTreatyIn",
  "PolicyNo": "UJI-QP.T1.10.2017.90003",
@@ -126,7 +127,7 @@ const dokumenUjiLamaUsulan = `{
  "QuotationData": {"ProportionalType": "Proportional", "BusinessFac": "T", "BusinessCode": "UJI-B01"},
  "SuggestList": [
   {"Date": "20171002T020000.000 GMT", "IsApproved": "1", "OperatorName": "UJI-PENGGUNA A", "Suggest": "UJI-catatan satu"},
-  {"Date": "20171003T100000.000 GMT", "IsApproved": "0", "OperatorName": "UJI-PENGGUNA B", "Suggest": "UJI-catatan dua", "OperatorID": "UJI-AKUN-B"}
+  {"Date": "20171003T100000.000 GMT", "IsApproved": "0", "OperatorName": "UJI-PENGGUNA B", "Suggest": "UJI-catatan dua"}
  ]
 }`
 
@@ -144,8 +145,8 @@ func TestPemuatLamaMenyalinSuggestListSekaliMenurutIDPega(t *testing.T) {
 		_, _ = sqlDB.ExecContext(ctx, fmt.Sprintf(`DELETE FROM %s.HISTORYAKSEPTASIPRODUCTION WHERE IDPEGA = :1`, skema), b.IDPega)
 	})
 	h := muatLama(t, ctx, d, g, b)
-	for i, harapDisalin := range []bool{true, false} {
-		var disalin bool
+	for i, harapDisalin := range []models.NasibUsulan{models.UsulanDisalin, models.UsulanDilewati} {
+		var disalin models.NasibUsulan
 		if err := dalamTx(t, ctx, d, func(tx *intidb.Tx) error {
 			var err error
 			disalin, err = g.SalinUsulanLama(ctx, tx, b.IDPega, h.Usulan)
@@ -175,7 +176,7 @@ func TestPemuatLamaMenyalinSuggestListSekaliMenurutIDPega(t *testing.T) {
 	}
 	harap := []string{
 		fmt.Sprint([11]string{"1", "UJI", "Policy", "UJI-PENGGUNA A", "2017-10-02 09:00:00", "T", "2", "Accept", "UJI-catatan satu", "<NULL>", "UJI-B01"}),
-		fmt.Sprint([11]string{"2", "UJI", "Policy", "UJI-PENGGUNA B", "2017-10-03 17:00:00", "T", "2", "Reject", "UJI-catatan dua", "UJI-AKUN-B", "UJI-B01"}),
+		fmt.Sprint([11]string{"2", "UJI", "Policy", "UJI-PENGGUNA B", "2017-10-03 17:00:00", "T", "2", "Reject", "UJI-catatan dua", "<NULL>", "UJI-B01"}),
 	}
 	if fmt.Sprint(dapat) != fmt.Sprint(harap) {
 		t.Errorf("riwayat produksi\n dapat %v\n harap %v", dapat, harap)

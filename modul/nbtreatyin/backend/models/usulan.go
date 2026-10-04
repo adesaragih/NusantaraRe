@@ -122,9 +122,11 @@ func UsulanBelumTersimpan(h *Halaman) []UsulanProduksi {
 		if b["IsSave"] != "" {
 			continue
 		}
-		out = append(out, petaUsulan(b, strings.ReplaceAll(AwalanKasus, "-", ""),
-			h.Ambil(HalamanQuotation+".BusinessFac"), // CARI7; "T" sejak kasus lahir
-			h.Ambil(HalamanQuotation+".BusinessCode"), b["Date"]))
+		out = append(out, petaUsulan(b, kasusUsulan{
+			TypePolis:    strings.ReplaceAll(AwalanKasus, "-", ""),
+			BusinessFac:  h.Ambil(HalamanQuotation + ".BusinessFac"), // CARI7; "T" sejak kasus lahir
+			BusinessCode: h.Ambil(HalamanQuotation + ".BusinessCode"),
+		}))
 		b["IsSave"] = TandaTersimpan
 	}
 	return out

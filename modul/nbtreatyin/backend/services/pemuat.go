@@ -120,9 +120,9 @@ func (p *Pemuat) Jalankan(ctx context.Context, tulis bool, lap *models.LaporanPe
 			continue
 		}
 		terlihat[h.ID] = "ROWID " + k
-		usulanDisalin := true // uji-kering: siap disalin
+		usulan := models.NasibUsulanUjiKering(h)
 		if tulis {
-			disalin, err := p.muat(ctx, b, h)
+			nasib, err := p.muat(ctx, b, h)
 			switch {
 			case errors.Is(err, errSudahDimuat):
 				lap.SudahDimuat()
@@ -133,19 +133,19 @@ func (p *Pemuat) Jalankan(ctx context.Context, tulis bool, lap *models.LaporanPe
 				}
 				continue
 			}
-			usulanDisalin = disalin
+			usulan = nasib
 		}
-		if err := lap.Berhasil(h, usulanDisalin); err != nil {
+		if err := lap.Berhasil(h, usulan); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// muat menulis satu dokumen dalam SATU transaksi (P2, AC 45-46). Hasil
-// pertama false = salinan SuggestList dilewati penjaga dobel IDPEGA (F3).
-func (p *Pemuat) muat(ctx context.Context, b models.BarisJSONPolis, h models.HasilPecah) (bool, error) {
-	usulanDisalin := false
+// muat menulis satu dokumen dalam SATU transaksi (P2, AC 45-46) dan
+// menjawab nasib salinan SuggestList-nya (F3, penjaga dobel IDPEGA).
+func (p *Pemuat) muat(ctx context.Context, b models.BarisJSONPolis, h models.HasilPecah) (models.NasibUsulan, error) {
+	var usulan models.NasibUsulan
 	err := p.g.Transaksi(ctx, func(tx *db.Tx) error {
 		ada, err := p.g.IDPegaKasus(ctx, tx, h.ID)
 		switch {
@@ -171,8 +171,8 @@ func (p *Pemuat) muat(ctx context.Context, b models.BarisJSONPolis, h models.Has
 		if err := p.g.TutupKasus(ctx, tx, h.ID, models.AssignmentAdmin, models.StatusSelesai); err != nil {
 			return err
 		}
-		usulanDisalin, err = p.g.SalinUsulanLama(ctx, tx, b.IDPega, h.Usulan)
+		usulan, err = p.g.SalinUsulanLama(ctx, tx, b.IDPega, h.Usulan)
 		return err
 	})
-	return usulanDisalin, err
+	return usulan, err
 }
