@@ -386,7 +386,13 @@ Bagian berikut sama dengan XML:
 
 **WAJIB-BANGUN: nol** (bab 4).
 
+> ⭐ **Keadaan sesudah putaran 3 (konsolidasi P3K, 04-10-2026): W1–W6 dan 7.4 seluruhnya diperbaiki** di
+> paket R5 (W1) dan R6 (W2–W6, 7.4), digabung ke integrasi `312f3b1c` dan `724ef8eb`. Penanda per butir di bawah;
+> isi temuan tidak diubah.
+
 ### W1 · WAJIB-PERBAIKI (besar) — popup pilih bisnis membaca sumber yang salah
+
+> ✅ **Diperbaiki putaran 3** — paket **R5**: `258bf1af` (server: `repository.DaftarBisnis` RD `BrowseTreatyJoinEDM`, filter `PROPORTIONTYPE`, `POST /kasus/{id}/bisnis`; uji `handlers/daftarbisnis_test.go`, db `TestDaftarBisnisRDBrowseTreatyJoinEDM`), `f06b1790` (layar: judul dan 25 kolom XML, saring/urut per kolom, 50/halaman), `312f3b1c` (RALAT spec §5.1, tiket 01/11, status.json, tombol.json).
 
 - **Bukti XML.** `Section/BusinessAndSOBList`:
   - Grid lama S11 (`pgRepPgSubSectionBusinessAndSOBListBB`, kelas `TREATYINDETAIL`, RD
@@ -419,6 +425,8 @@ Bagian berikut sama dengan XML:
 
 ### W2 · WAJIB-PERBAIKI (besar, butuh RALAT spec) — grid spreading NonProp tersunting di layar atasan
 
+> ✅ **Diperbaiki putaran 3** — paket **R6**: `172ddb44` (server: cabang atasan menerima `SpreadingRiskList` NonProp bila `FacultativeShare` 0/'', `CountSpreading` di aksi atasan), `5b8c929d` (layar), `724ef8eb` (RALAT spec AC 52, US 11, §5.11; AC 52 tetap ✅).
+
 - **Bukti XML:**
   - `DetailDeptHeadTreatyIn_UW` menyertakan `DetailPoliciesNonProportional` dengan sel
     SUB_SECTION `pyReadOnly=false`, `pyEditOptions=Auto`. Begitu pula
@@ -439,6 +447,8 @@ Bagian berikut sama dengan XML:
 
 ### W3 · WAJIB-PERBAIKI (sedang) — server menerima medan terkunci hasil tombol Enable/Disable
 
+> ✅ **Diperbaiki putaran 3** — paket **R6** `eaa49344`: diterima hanya bila TreatyType XOL dan sama dengan `TreatyEnableDisableInput` atas halaman server; lainnya 422 (`TestEnableDisableHanyaDariTombolXOL`).
+
 - **Bukti XML.** Sel `.QuotationData.ProportionalType` `pyReadOnly=true`
   (`pyEditOptions=Read-only`). `IsNewPolicyNonProp` bukan sel layar. Keduanya hanya diubah DT
   `TreatyEnableDisableInput` (tombol bertampil `.TreatyType='XOL'`, refresh tanpa simpan).
@@ -449,6 +459,8 @@ Bagian berikut sama dengan XML:
   `TestEnableDisableSelaluNol`.
 
 ### W4 · WAJIB-PERBAIKI (sedang) — server menerima medan di wadah/sel yang TERSEMBUNYI
+
+> ✅ **Diperbaiki putaran 3** — paket **R6** `eaa49344`: daftar izin admin + syarat tampil sel/wadah (S19, S7, S14, `IDCurrency`, `IsSurveyReport`); FlagPPH berubah → `RemoveTypeTax` (`TestMedanAdminTersembunyiTidakDiterima`, `TestKirimanLayarTidakMenimpaUangMasterNonProp`).
 
 - **Bukti XML:**
   - S19 `.IsNewPolicyNonProp != 1 && .IsNewPolicyListFormat != 1` membungkus seluruh medan uang
@@ -466,6 +478,8 @@ Bagian berikut sama dengan XML:
 
 ### W5 · WAJIB-PERBAIKI (sedang, butuh keputusan) — kolom hanya-baca di daftar dari layar dan nilai bawaan sel
 
+> ✅ **Diperbaiki putaran 3** — paket **R6** `174d5557` (kolom hanya-baca spreading dihitung server, `CountSpreading_Act` 4.1) dan `eaa49344` (`ListInstallment` tidak diterima dari layar; `pyDefaultValue` `IsSurveyReport` "No", `TypeTax` "Inclusive"). Dua `[penyesuaian sadar]` tercatat di HASIL bab 5b butir 32.
+
 - **Kolom hanya-baca diterima dari layar.**
   - Grid spreading `.PremiumSpreaded`/`.ClaimSpreaded` `Read-only`, dan grid angsuran seluruhnya
     `readOnly`. Meski begitu, `DaftarDariLayar` menerima kedua daftar utuh. `turunkan` hanya
@@ -477,6 +491,8 @@ Bagian berikut sama dengan XML:
   `pyDefaultValue="Inclusive"` tidak diterapkan. Perilaku runtime Pega perlu cek.
 
 ### W6 · WAJIB-PERBAIKI (kecil–sedang, butuh keputusan WO, bab 0 butir 7) — unsur layar tanpa dasar Section XML
+
+> ✅ **Diperbaiki putaran 3** — paket **R6** `5b8c929d` (layar) dan `724ef8eb` (RALAT tiket 11, tombol.json): spanduk NBStatus, kolom portal Position/No Polis, judul panel buatan dibuang; ikon pengosong saring, format grid master NonProp, kolom kosong pertama grid total dibangun; tautan `.Name` → "Offer No" `[penyimpangan sadar]` (HASIL bab 5b butir 33); panel History, tombol Kembali, Cancel modal dipertahankan dengan dasar tertulis.
 
 Unsur yang ada di kode tetapi tidak di Section XML:
 
@@ -498,6 +514,8 @@ Tiga hal kecil yang juga belum dibangun:
 - kolom kosong pertama grid TotalLimitIOONP/TotalFacShareRnmNP.
 
 ### 7.4 Catatan untuk status.json (bukan WAJIB-PERBAIKI kode)
+
+> ✅ **Diperbaiki putaran 3** — paket **R6** `eaa49344` (`FetchTreatyGroupOldID` langkah 3 menahan Submit Dept Head, `TestGrupTreatyKosongMenahanSubmitDeptHead`), `97e4ddfc` (langkah 1–3 `//` `CountSpreading` tidak lagi diport), `724ef8eb` (`PerluCekDaftarXOL` berdasar spec-penyimpanan AC 33, tiket 19). Kelima aktivitas tak terpicu **ditetapkan kategori (a)** di status.json oleh konsolidasi P3K `7052dcb4` (HASIL bab 6: dibangun 103, (a) 36, (b) 35, (c) 2).
 
 Lima activity berstatus "dibangun" ternyata **tidak pernah terpicu** dari layar. Fungsinya ada
 di `models` dan kini berujian, tetapi aksi hitungnya ditolak server:
@@ -533,6 +551,10 @@ Tiga catatan lain:
 ## 8 · RALAT dokumen yang diperlukan (untuk orkestrator)
 
 Audit ini tidak menyunting HASIL, PERMINTAAN, status.json, maupun INVENTARIS.
+
+> ✅ **Seluruh RALAT di tabel ini sudah diterapkan putaran 3**: status.json `TreatyInInputVis`, `GetCurrentDate`, lima
+> baris 7.4, dan INVENTARIS dibangkitkan ulang (P3K `7052dcb4`); HASIL bab 6 disamakan (P3K); tombol.json, INVENTARIS
+> popup, `labels.ts` (R5 `312f3b1c`, `f06b1790`); spec AC 52 (R6 `724ef8eb` — W2 dibangun, bukan menunggu keputusan).
 
 | Dokumen | Bunyi lama | Bunyi baru | Bukti |
 | --- | --- | --- | --- |

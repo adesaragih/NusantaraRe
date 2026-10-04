@@ -37,8 +37,9 @@ dipensiunkan 1 Oktober 2026.
 
 ## Aturan (ringkas)
 
-- **Sumber data kontrak** = view `POOLDATA.TREATYINDETAILJOINEDM` (pilih bisnis) dan tabel
-  `TREATYINDETAIL` (grid popup) — bukan JSONDATA (P29). Nol penulisan JSON.
+- **Sumber data kontrak** = view `POOLDATA.TREATYINDETAILJOINEDM` — pilih bisnis dan grid popup
+  (RD `BrowseTreatyJoinEDM`, putaran 3 R5) — bukan JSONDATA (P29). Nol penulisan JSON. *(Bunyi lama:
+  "dan tabel `TREATYINDETAIL` (grid popup)" — gugur: grid lama S11 `BusinessAndSOBList` berwadah `1=2`.)*
   ⭐ Pengecualian K8 (03-10-2026): master jalur NonProp/XOL dibaca BACA-SAJA dari `JSONDATA`
   `M_TREATY_IN` / `M_TREATY_IN_EDM` di satu fungsi `repository.MasterXOLDariJSON`
   (`services.PembacaMasterTreaty`, kelak kontrak modul `treatyin`); treaty keluar tidak dibaca.
@@ -120,7 +121,7 @@ Tidak dibuat dan tidak diubah strukturnya oleh modul ini; ditulis hanya bila dia
 | `HISTORYAKSEPTASIPEGA` | tulis + baca | riwayat akseptasi (`InsertHistoryAkseptasiPega_Sql`, diagram Prop F98–F99) |
 | `HISTORYAKSEPTASIPRODUCTION` | tulis + baca | catatan usulan (`SaveViewSuggest -> InsertViewSuggest_SQL`, diagram Prop J74–J76; K4) |
 | `GENERATE_SEQUENCE_NUMBER` | tulis lewat `inti/backend/penomor` | deret nomor polis (padanan `PROC_GENERATE_SEQUENCE_NUMBER`); diagram F103/F118 menyebutnya "dibaca saja" — penulisan lewat penomor bersama disetujui WO 04-10-2026 (`docs/PERMINTAAN-TIM-INTI.md` F8; RALAT catatan di `docs/rancangan-tabel-datar-treaty-in.md` §4bis.4) |
-| `TANGGAL_CLOSING`, `KODE_PRODUKSI`, `CURRENCY`, `BUSINESS`, `REINSURANCETYPE`, `TREATYGROUP`, `MARKETINGOFFICER`, `CLIENT`, `AGENT`, `M_LOGIN_GO`, view `TREATYINDETAILJOINEDM`, `TREATYINDETAIL`, `TREATYINPRODUCTION` | baca | RD/RDB terjangkau; `TREATYINPRODUCTION` ditulis modul EDM |
+| `TANGGAL_CLOSING`, `KODE_PRODUKSI`, `CURRENCY`, `BUSINESS`, `REINSURANCETYPE`, `TREATYGROUP`, `MARKETINGOFFICER`, `CLIENT`, `AGENT`, `M_LOGIN_GO`, view `TREATYINDETAILJOINEDM`, `TREATYINPRODUCTION` | baca | RD/RDB terjangkau; `TREATYINPRODUCTION` ditulis modul EDM |
 | `M_TREATY_IN`, `M_TREATY_IN_EDM` | baca (JSON, satu fungsi `repository.MasterXOLDariJSON`) | K8 |
 | `JSON_POLIS` | baca (pemuat dokumen lama saja) | tiket 22 |
 
