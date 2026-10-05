@@ -907,6 +907,14 @@ export const GRID_COV_TOTAL = [
   { sel: '54', label: 'Total Gross Rate' },
 ] as const
 
+/**
+ * Ringkasan seluruh coverage kasus (permintaan work owner 05-10-2026, gambar layar Pega) - `NB FacIn\Section\
+ * SummaryCoverage_Section.xml`: grid per Object Item Type + Currency (`TempTotalItem.pxResults`) dan grid per Currency
+ * (`TempTotal.pxResults`, Rate = `.TotalNetRate`). Diuji `TabCoverage.test.tsx`.
+ */
+export const RINGKASAN_COV_ITEM = ['Object Item Type', 'Currency', 'Total TSI', 'Total Premium'] as const
+export const RINGKASAN_COV_MATA_UANG = ['Currency', 'Total TSI', 'Total Premium', 'Rate'] as const
+
 export const GRID_COVERAGE = [
   { sel: '16', label: 'Coverage' },
   { sel: '17', label: '‰ Standard Rate' },
@@ -1118,7 +1126,225 @@ export const OPSI_KEYWORD = [
 ].map((k) => ({ value: k, label: k }))
 
 export const TEKS_AKUMULASI = {
-  tanpaHasil: 'Tidak ada accumulation yang cocok.',
+  tanpaHasil: 'Tidak ada accumulation yang cocok. Coba longgarkan kondisi pencarian.',
+  /** Keterangan di bawah judul popup (tampilan dirapikan 04-10-2026, permintaan work owner). */
+  sub: 'Isi satu atau beberapa kondisi, lalu tekan Filter. Accumulation yang dipilih harus ber-Zip sama dengan lokasi risiko.',
+  zipLokasi: 'Zip lokasi risiko',
+  zipKosong: 'belum diisi',
+  kondisiAktif: (n: number) => `${n} kondisi aktif`,
+  hasil: (n: number) => `${n} accumulation ditemukan`,
+  petunjukAwal: 'Hasil pencarian tampil di sini.',
+  pertama: 'Pertama',
+  sebelumnya: 'Sebelumnya',
+  berikutnya: 'Berikutnya',
+  terakhir: 'Terakhir',
+  navigasiHalaman: 'Navigasi halaman hasil',
+  /** "Menampilkan 11–20 dari 35 data" (10 per halaman). */
+  menampilkan: (halaman: number, ukuran: number, total: number) =>
+    `Menampilkan ${(halaman - 1) * ukuran + 1}–${Math.min(halaman * ukuran, total)} dari ${total} data`,
+  zipSesuai: 'Zip sesuai',
+  zipBerbeda: 'Zip berbeda',
+  kolomZip: 'Zip',
   /** Pesan `SetDataAccum_Act` langkah 5 (verbatim, termasuk dua spasi dan ejaan "ZIpCode"). */
   zipBeda: (risiko: string, dariId: string) => `ZIpCode Harus Sama dengan ZIpCode  Yang di Object Item >>>> ${risiko} != ${dariId}`,
+} as const
+
+/**
+ * Add New accumulation (tiket 46, permintaan work owner 04-10-2026 dengan gambar layar) - tombol sel 39
+ * `SearchRiskAccumCov` (pre-DT `InputAccumulationAdd_PreDT`, `GetCzone_Act`) membuka sub-section
+ * `NB FacIn\Section\InputAccumulationCov.xml`; Choose Zip Code = flow action `ChooseZipCode` -> section
+ * `ChooseZipCodeDtl` (RD `BrowseRiskAddressZipCode_RD`). Diuji `labels.test.ts`.
+ */
+export const TAMBAH_AKUMULASI = {
+  tambahBaru: { sel: '39', tag: 'pyLabel', label: 'Add New' },
+  accumulationType: { sel: '10', tag: 'pyLabelFieldValue', label: 'Accumulation Type' },
+  province: { sel: '13', tag: 'pyLabelFieldValue', label: 'Province' },
+  scopeArea: { sel: '16', tag: 'pyLabelFieldValue', label: 'Scope Area' },
+  crestaZone: { sel: '17', tag: 'pyLabelFieldValue', label: 'Cresta Zone' },
+  primaryZip: { sel: '20', tag: 'pyLabelFieldValue', label: 'Primary Zip Code' },
+  pilihZip: { sel: '21', tag: 'pyLabel', label: 'Choose Zip Code' },
+  keyword: { sel: '24', tag: 'pyLabelFieldValue', label: 'Key Word' },
+  note: { sel: '25', tag: 'pyLabelFieldValue', label: 'Accumulation Description' },
+  simpan: { sel: '28', tag: 'pyLabel', label: 'Save' },
+  tutup: { sel: '29', tag: 'pyLabel', label: 'Close' },
+  /** Kolom grid `ChooseZipCodeDtl` + tombol Choose sel 23. */
+  kolomZip: ['Zip Code', 'City', 'Province', 'Nation'],
+  pilih: 'Choose',
+} as const
+
+/** Pilihan kosong Key Word / Scope Area di form Add New (`pyNoSelectionText` "--"). */
+export const PILIHAN_KOSONG_TAMBAH = '--'
+
+/**
+ * Scope Area (sel 16, dropdown wajib) - PromptList aturan `ASM-FW-GISFW-INT-ACCUMULATION!SCOPEAREA` (`DDL\ScopeArea.xml`,
+ * dikirim work owner 04-10-2026). Diuji `labels.test.ts`.
+ */
+export const OPSI_SCOPE_AREA = ['AREA', 'DISTRICT', 'CITY', 'PROVINCE', 'COUNTRY'].map((v) => ({ value: v, label: v }))
+
+export const TEKS_TAMBAH_AKUMULASI = {
+  judul: 'Add New Accumulation',
+  sub: 'Isi data accumulation baru. Primary Zip Code dipilih lewat tombol Choose Zip Code; Cresta Zone mengikuti zip.',
+  wajib: 'Wajib diisi.',
+  pilihDariSaran: 'Pilih dari daftar saran.',
+  /** Pesan `SaveAccumulation_Act` langkah 10 (verbatim). */
+  tidakLengkap: "Postal code, Nation, CZone and Accumulation Description can't be null!",
+  /** Pesan prosedur `RDBMASTERACCUMULATION` bila Note + zip sudah ada (verbatim, tanpa tag HTML). */
+  ganda: 'Error master item Akumulasi Sudah Ada',
+  menyimpan: 'Menyimpan…',
+  cariZip: 'Cari zip code',
+  /** Kepala panel Choose Zip Code. */
+  judulZip: 'Choose Zip Code',
+  provinsiZip: 'Province',
+  semuaProvinsi: 'Semua province',
+  tutupZip: 'Tutup daftar zip code',
+  petunjukZip: 'Daftar mengikuti Province yang dipilih di form. Pilih satu zip untuk mengisi Primary Zip Code dan Cresta Zone.',
+  tanpaZip: 'Tidak ada zip code yang cocok.',
+  zipBelum: '---',
+} as const
+
+/**
+ * Tab Clauses kasus FIRE (tiket 47) - `NB FacIn\Section\InputInwardFacultativeDtl.xml` tab "Clauses" (`IsFire`) ->
+ * `InputDtlClause_FacIn` (sel 209 Choose Clause; grid `.ClauseList` -> `InputClauseFire_FacIn` per baris); popup harness
+ * `ChooseClauseFire` -> section `ChooseClauseFire`; local action `InputClauseFire_ViewDtl` ("Isi Klasula"). Diuji
+ * `labels.test.ts`.
+ */
+export const KLAUSA = {
+  pilihKlausa: { sel: '209', tag: 'pyLabel', label: 'Choose Clause' },
+  clauseCode: { sel: '3', tag: 'pyLabelFieldValue', label: 'Clause Code' },
+  totalArgumen: { sel: '5', tag: 'pyLabelFieldValue', label: 'Total Argument' },
+  title: { sel: '6', tag: 'pyLabelFieldValue', label: 'Title' },
+  description: { sel: '8', tag: 'pyLabelFieldValue', label: 'Description' },
+  lihatArgumen: { sel: '9', tag: 'pyLabel', label: 'See Clause and Argument' },
+  /** Popup ChooseClauseFire. */
+  language: { sel: '3', tag: 'pyLabelFieldValue', label: 'Language' },
+  keyword: { sel: '4', tag: 'pyLabelFieldValue', label: 'Key word' },
+  cari: { sel: '7', tag: 'pyLabel', label: 'Search' },
+  submit: { sel: '8', tag: 'pyLabel', label: 'Submit' },
+  kolomPilih: ['Clause ID', 'Title', 'Description'],
+  /** Local action InputClauseFire_ViewDtl. */
+  judulArgumen: 'Isi Klasula',
+  kolomArgumen: ['No. Argumen', 'Deskripsi Argumen', 'Isi Argumen'],
+  simpan: 'Save',
+} as const
+
+/**
+ * Language popup Choose Clause (`Clause.ClauseLanguageID`) - PromptList aturan `ASM-FW-GISFW-DATA-CLAUSE!CLAUSELANGUAGEID`
+ * (`DDL\ClauseLanguageID.xml`, dikirim work owner 05-10-2026): kode 0 / 1 / 2. "Indonesia" terpilih di gambar layar
+ * Pega DEV -> awal "0". Diuji `labels.test.ts`.
+ */
+export const OPSI_BAHASA_KLAUSA = [
+  { value: '0', label: 'Indonesia' },
+  { value: '1', label: 'Inggris' },
+  { value: '2', label: 'Dual Bahasa' },
+]
+export const BAHASA_KLAUSA_AWAL = '0'
+
+export const TEKS_KLAUSA = {
+  judulPilih: 'Pilih Klausula Fire',
+  kosong: 'Belum ada klausa. Tekan Choose Clause untuk menambah.',
+  tanpaHasil: 'Tidak ada klausa yang cocok.',
+  dipilih: (n: number) => `${n} klausa dipilih`,
+  hapus: 'Hapus klausa',
+  memuat: 'Memuat…',
+  tersimpan: 'Klausa tersimpan.',
+  sudahAda: 'Sudah ada di daftar klausa',
+} as const
+
+/**
+ * Tab Spreading kasus FIRE (tiket 48) - `NB FacIn\Section\InputInwardFacultativeDtl.xml` tab "Spreading" (`!IsLife`):
+ * sel 80 % Share RNM, blok "Copy Spreading", `CoverageSpreadingList` (lokasi) -> `PropertyItemListCoverageSpreading` (item +
+ * total per lokasi) -> `InputCoverageSpreadingFire` (coverage) -> `SpreadingItem` + `InputDtlSpreadingCoverage_FacIn`
+ * (baris spreading); `SummarySpreading_Section` (ringkasan). Gambar layar Pega DEV work owner 05-10-2026.
+ */
+export const SPREADING = {
+  percentShare: '% Share RNM',
+  judulCopy: 'Copy Spreading',
+  kolomTemplate: ['Type Treaty', '% Share'],
+  tambah: 'Add',
+  hapus: 'Delete',
+  salinSemua: 'Copy To All Spreading',
+  kolomLokasi: ['No.', 'Object Name', 'Location'],
+  kolomItem: ['Object Item Type', 'Currency', 'TSI Object Item', 'Total Gross Premium', 'Total Premium RNM'],
+  kolomCoverage: ['Coverage', '‰ Standard Rate', 'Gross Premium', 'Premium RNM'],
+  detailCoverage: {
+    tsi: 'TSI 100%',
+    tsiLiability: 'TSI Liability',
+    tsiNusantaraRe: 'TSI Nusantara Re',
+    premium: 'Gross Premium',
+    premiNusantaraRe: 'Premium Nusantara Re',
+  },
+  kolomSpreading: ['Type Treaty', '% Share', 'TSI 100% Spreaded', 'TSI Spreaded (RNM)', 'Limit Of Liability', 'Premium Spreaded'],
+  kolomTotal: [
+    'Currency',
+    'Treaty Name',
+    '(%) Share',
+    'Total TSI Top Risk Spreaded',
+    'Total TSI Spreaded',
+    'Total Limit of Liability',
+    'Total Premium Spreaded',
+  ],
+  kolomRingkasanTreaty: [
+    'Currency',
+    'Treaty Name',
+    '(%) Share',
+    'Total TSI Top Risk Spreaded',
+    'Total TSI Spreaded',
+    'Total Limit of Liability',
+    'Total First Loss',
+    'Total Premium Spreaded',
+  ],
+  kolomRingkasanMataUang: ['Currency', 'Total TSI Top Risk Spreaded', 'Total TSI Spreaded', 'Total Limit of Liability', 'Total Premium Spreaded'],
+  simpan: 'Save',
+} as const
+
+export const TEKS_SPREADING = {
+  menghitung: 'Menghitung…',
+  shareLebih: 'Total % Share Copy Spreading melebihi 100.',
+  percentShareLebih: '% Share RNM paling besar 100.',
+  pilihTreaty: '--',
+  kosong: 'Belum ada spreading.',
+  tersimpan: 'Spreading tersimpan.',
+  angka: 'Isi angka (pemisah desimal titik).',
+  /** Pesan Pega verbatim - `Activity\CalcultePersentageSpeading_Act.xml` langkah "check same treaty type". */
+  treatySama: "Treaty Type can't be same",
+} as const
+
+/**
+ * Tab Inw Fac Cedant Panels FIRE (tiket 49) - `NB FacIn\Section\InputInwardFacultativeDtl.xml` baris 60510-67588
+ * (pyLabelFieldValue Source of Business / Share Cedant Type / % Share RNM / Total TSI RNM / Total Premi RNM; kepala grid
+ * "Ceding" / "% Share"; tombol "Add" / "Delete"); "Choose Ceding" = pyLabel + pyWindowName `Section\CedingCedant.xml`.
+ * Diuji `TabCedant.test.tsx`.
+ */
+export const CEDANT = {
+  sob: 'Source of Business',
+  shareCedantType: 'Share Cedant Type',
+  percentShare: '% Share RNM',
+  totalTsi: 'Total TSI RNM',
+  totalPremi: 'Total Premi RNM',
+  kolomCeding: 'Ceding',
+  kolomShare: '% Share',
+  tambah: 'Add',
+  hapus: 'Delete',
+  pilihCeding: 'Choose Ceding',
+  judulPilih: 'Choose Ceding',
+} as const
+
+/** `DDL\ShareCedantType.xml` (aturan properti `ASM-FW-GISFW-DATA-OFFERFACIN!SHARECEDANTTYPE`, pyPromptTableList). */
+export const OPSI_SHARE_CEDANT_TYPE = [
+  { value: '0', label: 'Gross' },
+  { value: '1', label: 'Share RNM' },
+] as const
+
+export const TEKS_CEDANT = {
+  kosong: 'No items',
+  simpan: 'Save',
+  menyimpan: 'Menyimpan…',
+  tersimpan: 'Cedant tersimpan.',
+  typeWajib: 'Share Cedant Type wajib dipilih.',
+  /** Pesan Pega verbatim - `Activity\ProtectShareCedant_Act.xml`. */
+  shareTidakSah: '% Share cedant more than 100 or less than 0!',
+  cedingKosong: "Ceding on list inward facultative cedant can't be null!",
+  listKosong: "List Inward facultative cedant can't be null!",
+  /** Pesan Pega verbatim - `Activity\SetTSIPremiCedant_Act.xml` (`.ShareCeding>100`); berlaku TANPA gerbang. */
+  nilaiLebih: "Value can't be more than 100 or less than 0!",
 } as const

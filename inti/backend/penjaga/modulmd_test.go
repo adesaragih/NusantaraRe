@@ -243,13 +243,24 @@ func rentangNomor(nilai string) (awal, akhir int, err error) {
 	return awal, akhir, nil
 }
 
-// rentangModul - rentang migrasi dan slot menu sebuah modul (R2, R3).
-func rentangModul(t *testing.T, m modulMD) (migrasi, slot [2]int) {
+// tanpaSlot - nilai `Slot menu` modul luar korpus tanpa slot (keputusan work owner 04-10-2026).
+const tanpaSlot = "—"
+
+// rentangModul - rentang migrasi dan slot menu sebuah modul (R2, R3). `Slot menu` — sah HANYA untuk modul luar
+// korpus (`modulLuarKorpus`): barisnya lahir di langkah inti, DIMIGRASI '1'.
+func rentangModul(t *testing.T, m modulMD) (migrasi, slot [2]int, kosong bool) {
 	t.Helper()
 	for kunci, tuju := range map[string]*[2]int{"Rentang migrasi": &migrasi, "Slot menu": &slot} {
 		nilai, ada := m.kunci[kunci]
 		if !ada {
 			t.Fatalf("%s tanpa baris %q", m.jalur, kunci)
+		}
+		if kunci == "Slot menu" && strings.Trim(strings.TrimSpace(nilai), "`") == tanpaSlot {
+			if _, luar := modulLuarKorpus[m.folder]; !luar {
+				t.Fatalf("%s: `Slot menu` %s hanya untuk modul luar korpus (modulLuarKorpus)", m.jalur, tanpaSlot)
+			}
+			kosong = true
+			continue
 		}
 		a, b, err := rentangNomor(nilai)
 		if err != nil {
@@ -257,7 +268,7 @@ func rentangModul(t *testing.T, m modulMD) (migrasi, slot [2]int) {
 		}
 		*tuju = [2]int{a, b}
 	}
-	return migrasi, slot
+	return migrasi, slot, kosong
 }
 
 // --- Agregat pernyataan, dibaca penjaga di paket ini ------------------------

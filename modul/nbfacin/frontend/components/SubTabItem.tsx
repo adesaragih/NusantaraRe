@@ -123,39 +123,51 @@ function FormItem({
   const opsiJenis: Opsi[] = jenis.map((j) => ({ value: j.kode, label: j.nama }))
   const opsiUang: Opsi[] = mataUang.map((m) => ({ value: m, label: m }))
   return (
-    <div className="nbf-objek__isi">
-      <div className="nbf-opp__kolom">
-        <div className="nbf-opp__tumpuk">
-          <Pilih
-            label={F.itemType.label}
-            value={i.itemTypeId}
-            onChange={(v) => ubah(pilihJenis(i, jenis.find((j) => j.kode === v), v))}
-            opsi={opsiJenis}
-            kosong={ITEM_KOSONG}
-          />
-          <Area label={F.note.label} value={i.note} onChange={set('note')} baris={2} />
-          <Field label={F.year.label} value={i.propertyYear} onChange={set('propertyYear')} />
-          <Field label={F.unit.label} value={i.unit} onChange={set('unit')} error={g.unit} />
-          <Pilih label={F.condition.label} value={i.condition} onChange={set('condition')} opsi={OPSI_CONDITION} kosong={CONDITION_KOSONG} />
-          <Pilih
-            label={F.currency.label}
-            value={i.currency}
-            onChange={set('currency')}
-            opsi={opsiUang}
-            kosong={ITEM_KOSONG}
-            required
-            error={tandaiWajib ? g.currency : undefined}
-          />
-          <IsianUang label={F.tsi.label} value={i.tsi} onChange={set('tsi')} error={g.tsi} />
-        </div>
-        <div className="nbf-opp__tumpuk">
-          <Field label={F.yearOfPlanting.label} value={i.yearOfPlanting} onChange={set('yearOfPlanting')} />
-          <Field label={F.noOfTree.label} value={i.noOfTree} onChange={set('noOfTree')} />
-          <Field label={F.areaHectar.label} value={i.areaHectar} onChange={set('areaHectar')} />
-          <Area label={`${F.remark.label} ${i.itemType}`.trim()} value={i.remark} onChange={set('remark')} baris={2} />
-          <label className="nbf-inward__pilihan">
-            <input type="checkbox" checked={i.isAdjustable} onChange={(e) => ubah(setelAdjustable(i, e.target.checked))} /> {F.adjustable.label}
-          </label>
+    // Tata letak = gambar layar Pega (work owner 05-10-2026): label di atas, baris Year/Unit(s)/Condition,
+    // Currency/TSI, Year of Planting/No of Trees/Area; Adjustable kiri, Adjustment Pct. kanan.
+    <div className="nbf-objek__isi nbf-item-form">
+      <div className="nbf-item-form__baris nbf-item-form__baris--jenis">
+        <Pilih
+          label={F.itemType.label}
+          value={i.itemTypeId}
+          onChange={(v) => ubah(pilihJenis(i, jenis.find((j) => j.kode === v), v))}
+          opsi={opsiJenis}
+          kosong={ITEM_KOSONG}
+        />
+      </div>
+      <div className="nbf-item-form__lebar">
+        <Area label={F.note.label} value={i.note} onChange={set('note')} baris={3} />
+      </div>
+      <div className="nbf-item-form__baris nbf-item-form__baris--unit">
+        <Field label={F.year.label} value={i.propertyYear} onChange={set('propertyYear')} />
+        <Field label={F.unit.label} value={i.unit} onChange={set('unit')} error={g.unit} />
+        <Pilih label={F.condition.label} value={i.condition} onChange={set('condition')} opsi={OPSI_CONDITION} kosong={CONDITION_KOSONG} />
+      </div>
+      <div className="nbf-item-form__baris nbf-item-form__baris--uang">
+        <Pilih
+          label={F.currency.label}
+          value={i.currency}
+          onChange={set('currency')}
+          opsi={opsiUang}
+          kosong={ITEM_KOSONG}
+          required
+          error={tandaiWajib ? g.currency : undefined}
+        />
+        <IsianUang label={F.tsi.label} value={i.tsi} onChange={set('tsi')} error={g.tsi} />
+      </div>
+      <div className="nbf-item-form__baris nbf-item-form__baris--tanam">
+        <Field label={F.yearOfPlanting.label} value={i.yearOfPlanting} onChange={set('yearOfPlanting')} />
+        <Field label={F.noOfTree.label} value={i.noOfTree} onChange={set('noOfTree')} />
+        <Field label={F.areaHectar.label} value={i.areaHectar} onChange={set('areaHectar')} />
+      </div>
+      <div className="nbf-item-form__lebar">
+        <Area label={`${F.remark.label} ${i.itemType}`.trim()} value={i.remark} onChange={set('remark')} baris={3} />
+      </div>
+      <div className="nbf-item-form__kaki">
+        <label className="nbf-inward__pilihan">
+          <input type="checkbox" checked={i.isAdjustable} onChange={(e) => ubah(setelAdjustable(i, e.target.checked))} /> {F.adjustable.label}
+        </label>
+        <div className="nbf-item-form__pct">
           {i.isAdjustable ? (
             <Field label={F.pctAdjust.label} value={i.pctAdjustOther} onChange={set('pctAdjustOther')} error={g.pct} />
           ) : (
@@ -204,7 +216,7 @@ export default function SubTabItem({
 
   return (
     <div className="nbf-objek__isi">
-      <div className="table-wrap">
+      <div className="nbf-cov-wrap">
         <table className="nbf-tabel">
           <thead>
             <tr>
@@ -284,7 +296,7 @@ export default function SubTabItem({
         </table>
       </div>
 
-      <div className="table-wrap">
+      <div className="nbf-cov-wrap">
         <table className="nbf-tabel">
           <thead>
             <tr>

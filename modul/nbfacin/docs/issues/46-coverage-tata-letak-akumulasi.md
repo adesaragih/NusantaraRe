@@ -102,7 +102,9 @@ Code / Address dengan tombol Choose Accumulation Code (popup pencarian) dan Copy
 
 - **K-1** (ralat 04-10-2026) Popup memuat seluruh saringan seperti gambar layar kedua. Tahap berikut: Add New, Summary
   (.Note), Accumulation Risk, Risk Accumulation report, Adjustment.
-- **K-2** Hasil tanpa paging 10 baris (grid Pega berpaging 10; hasil maks. 500).
+- ~~**K-2** Hasil tanpa paging 10 baris~~ — diganti 04-10-2026 (work owner: "hasil nya buat page, 10 list per page"): hasil
+  dipaging 10 baris di layar, sama dengan grid Pega; backend tetap mengirim maks. 500 sekaligus. Tampilan popup juga
+  dirapikan (kepala + zip lokasi, kartu Conditions 4 kolom ringkas, tanda Zip sesuai / berbeda per baris).
 - **K-3** Copy Accumulation menyalin di layar (belum tersimpan sampai Save), sama dengan perubahan lain di tab Coverage.
 - **K-4** Perubahan Indemnity Unit (`SetIndemnityRate_ACT`) dan View Indemnity Table (`ViewIndemnity_LA`) = tahap
   berikut.
@@ -216,3 +218,64 @@ ORA-00904.
 - Butir 2 (`GET /api/nbfacin/akumulasi`) **tidak dikerjakan**: sumber kelas `Int-ACCUMULATION` tetap belum terverifikasi.
   `DDL\RDBMASTERACCUMULATION.txt` `[terverifikasi]` adalah PROSEDUR penulis `M_ACCUMULATION` (ID, JSONDATA; ID =
   negara-zip-urutan) — bukan sumber baca RD; `DDL\M_ACCUMULATION.txt` ber-JSON. Kunci JSON tidak ditebak.
+
+## Add New accumulation (04-10-2026)
+
+Permintaan work owner: "tombol add accumulationnya mana? itu contoh saat di klik tombol add" (gambar layar Pega DEV).
+
+Bukti `[terverifikasi]` — `D:\migrasi\RNM\NB FacIn\`:
+- `SearchRiskAccumCov` sel 39 "Add New": pre-DT `InputAccumulationAdd_PreDT` (mengosongkan isian, `CARI30 = 1`) +
+  `GetCzone_Act` (Cresta Zone dari zip saringan: RDBList `GetAccumulationZipcode_SQL`).
+- `Section\InputAccumulationCov.xml`: Accumulation Type* (sel 10) + Add (12), Province* (13), Scope Area* (16), Cresta
+  Zone* (17), Primary Zip Code* baca-saja (20) + Choose Zip Code (21), Key Word* (24), Accumulation Description* (25),
+  Save (28, `SaveAccumulation_Act` → RDBList `UpdateMasterAccumulation` → PROSEDUR `RDBMASTERACCUMULATION`), Close (29,
+  `CancelInputAccumulation_Act`).
+- `FlowAction\ChooseZipCode` → `Section\ChooseZipCodeDtl` (RD `BrowseRiskAddressZipCode_RD`; Choose → `SetPostalCode_Act`:
+  PostalCode, NationInitial lewat `SetCountryID_Act`, lalu `GetCzone_Act`).
+- Aturan properti `.ScopeArea` TIDAK ada di korpus (dicari menurut pxInsName di NB FacIn dan `DDL\`).
+
+Frontend (sesi 0f): `components/FormTambahAkumulasi.tsx` (+ uji), `PopupAkumulasi.tsx` (tombol Add New, mode tambah),
+`api.ts` (`tambahAkumulasi`, `czoneDariZip`, `cariZipAkumulasi`), `labels.ts` (`TAMBAH_AKUMULASI`, `OPSI_SCOPE_AREA` kosong,
+`TEKS_TAMBAH_AKUMULASI`). Backend = sesi c3 (`POST …/akumulasi`, `GET …/akumulasi/czone`, `GET …/akumulasi/zipcode`;
+simpan lewat mesin `inti/backend/master`, ADR-0043 tanpa CALL).
+
+Keputusan agent (menunggu konfirmasi):
+- ~~**T-1** Choose Zip Code = panel di dalam form~~ — DICABUT 04-10-2026 (work owner: "saat klik choose zipcode,
+  dibuatin pop up aja dong, jgn dibwh gini"): popup di atas popup Choose Accumulation lewat portal ke `document.body`
+  (kelas modal inti, akar `.nbfacin`, Escape ditangkap di fase capture `window` supaya hanya popup zip yang tertutup).
+- **T-2** Save berhasil → accumulation baru langsung dipakai coverage dan popup ditutup (Pega menulisnya ke coverage lalu
+  kembali ke mode cari tanpa menutup popup).
+- **T-3** Save ganda (Note + zip sudah ada) menampilkan pesan prosedur dan TIDAK menulis apa pun ke coverage (Pega menulis
+  "UNKNOWNID").
+- **T-4** Tombol "Add" tipe akumulasi baru (`ModalAccumulation_FacIn` → `RDBMASTERACCUMULATEDTYPE`) = tahap berikut; menu
+  Master Accumulated Type menggantikannya.
+- **T-5** Province dari tabel PROVINCE (RD `BrowseProvince_RD` kelas PROVINCE yang dipakai section tidak ada di korpus).
+- ⛔ Scope Area (wajib) belum berpilihan sampai XML aturan `.ScopeArea` dikirim work owner.
+
+### Backend Add New (sesi c3, 04-10-2026)
+
+- `POST /api/nbfacin/akumulasi` badan `{accumulation, accumulationType, note, keyword, scopeArea, cZone, cZoneId,
+  provinceId, zipCode, negara}` (teks; kunci asing 400) → 201 `{id, note}` (note huruf besar). Identitas wajib (401).
+  Urutan periksa = `SaveAccumulation_Act` `[terverifikasi]`: zip / negara (CARI34) / CZone / Note kosong → 400 pesan
+  verbatim "Postal code, Nation, CZone and Accumulation Description can't be null!"; lalu wajib section → 400
+  "<medan> wajib diisi"; lalu mesin master inti (`services.Tambah` master "accumulation": rujukan Accumulation Type /
+  Province harus ada, lebar, ganda Note + zip → 409 pesan verbatim prosedur "Error master item Akumulasi Sudah Ada",
+  ID negara-zip-urutan, Note huruf besar, CREATE_OP = pelaku). Tanpa basis data → 503.
+- `GET /api/nbfacin/akumulasi/czone?zip=` → `{cZoneId, cZone}`; zip kosong / tanpa CZone = string kosong.
+- `GET /api/nbfacin/akumulasi/zipcode?provinceName=&q=&halaman=` → `{baris: [{zipCode, city, province, nation,
+  nationInitial}], total, halaman, ukuran: 15}` (A185; halaman ≥ 1, bawaan 1, bukan angka / < 1 → 400, di luar jangkauan
+  → baris kosong).
+- Saran `accumtype` kini ber-`ekstra` = `NOTE` (kolom tambahan `.Note` → AccumulationName di section).
+- Berkas: `repository/akumulasibaru.go` (+ uji), `services/akumulasibaru.go`, `services/layanan.go` (penambah = mesin
+  `inti/backend/master/services`), `handlers/akumulasi.go`, `handlers.go` (rute, peta galat), `handlers/akumulasibaru_test.go`,
+  `models/objek.go`, `repository/akumulasi.go` (+ uji saran).
+
+| # | Keputusan agent (menunggu konfirmasi) | Alasan |
+| --- | --- | --- |
+| A181 | ~~CZone dari zip: baris pertama urut ID; hanya CZONE aktif; RW tidak disaring~~ → **diganti 04-10-2026** (work owner: "pada saat add new, ada kolom Cresta Zone, itu otomatis keisi dari tabel rw, diambil dari zcone zipcode yang dipilih"): `cZone` = `RW.CZONE` ber-`ZIPCODE` zip itu — beberapa nilai → `MIN` sesudah NULL / spasi dibuang; ~~`RW.STS_AKTIF` TIDAK disaring~~ → **HANYA RW AKTIF** (`STS_AKTIF = '1'`; work owner 04-10-2026: "yang aktif saja, dan di dalam master datanya tidak ada yg czone nya kosong"); `cZoneId` = `MIN(CZONE.ID)` ber-`CODE` itu bila ada, tanpa syarat aktif, selain itu ""; zip kosong / tanpa CZONE di RW → keduanya "" | MENYIMPANG dari `GetAccumulationZipcode_SQL` `[terverifikasi]` (CZONE yang CODE-nya ada di RW zip itu, baris 1) — kueri itu kosong bila CZONE RW tidak ada / tidak aktif di tabel CZONE `[dugaan]` sebab Cresta Zone kosong di DEV. Saringan aktif = saringan RD BrowseRW / saran area. Save (POST) TIDAK memeriksa cZone / cZoneId ke tabel CZONE (mesin master: kolom biasa; rujukan hanya Accumulation Type dan Province) — nilai RW yang tak ada di CZONE tetap tersimpan, dengan cZoneId kosong |
+| A182 | Zip Code: `q` = Contains tidak peka huruf atas zip (tambahan); hasil **DISTINCT** atas lima kolom tampil; urut zip, kota, provinsi, negara; NationInitial = `MAX` NATION ber-`ID = IDNATION OR NOTE = NATIONNAME`; maks 100 | RD tanpa DISTINCT atas RISKADDRESS (satu baris per alamat) → 100 baris bisa satu zip berulang; SetCountryID_Act pxResults(1) tanpa urutan; CARI33 / CARI38 = IDNation / NationName `[dugaan kuat]` (`ChooseZipCodeDtl`) |
+| A183 | Wajib section (Accumulation Type, Province, Key Word, Scope Area) diperiksa backend juga, sesudah wajib Pega | Layar menandainya wajib; korpus tanpa pesan untuk itu |
+| A184 | `ACCUMULATIONNAME` tetap TURUNAN `ACCUMULATEDTYPE.ACCUMULATIONTYPE` (mesin master), bukan `.Note` seperti section | View warisan `DDL\ACCUMULATION.txt` (yang dibaca semua pembaca) menurunkan AccumulationName dari AccumulationType tipe — JSON AccumulationName dari form tidak pernah terlihat lewat view. `accumulationType` (nama tipe) disimpan ke kolom ACCUMULATIONTYPE seperti JSON asal |
+| A185 | Choose Zip Code **berhalaman di server**, 15 baris (work owner 04-10-2026: "ada page nya, 15 list perpage, datanya diambil dari kolom riskaddress berdasarkan ProvinceName yang dipilih"); `total` = COUNT atas kueri yang sama; urut kelima kolom (halaman stabil); batas pyMaxRecords 100 DICABUT. Saringan provinsi TETAP **Contains** tidak peka huruf seperti RD (bukan "="): "berdasarkan ProvinceName yang dipilih" tidak menyebut cara cocok, dan RD `.ProvinceName Contains Param.ProvinceName` satu-satunya bukti — akibatnya nama provinsi yang menjadi bagian nama lain ikut (mis. "PAPUA" juga "PAPUA BARAT"), sama dengan Pega | Gambar Pega DEV "Page 1 of 2421" (10 baris) = RD dipakai berhalaman; ⚠️ total di sini menghitung baris DISTINCT (A182), Pega menghitung baris RISKADDRESS mentah — jumlah halaman berbeda |
+| A187 | Choose Zip Code hanya zip yang punya baris **RW AKTIF ber-CZONE terisi**: `EXISTS (RW r WHERE r.ZIPCODE = a.POSTALCODE AND r.STS_AKTIF = '1' AND TRIM(r.CZONE) IS NOT NULL)` — untuk hitungan dan halaman sekaligus (satu kueri dasar); zip terpilih selalu ber-Cresta Zone | Work owner 04-10-2026: "yang aktif saja, dan di dalam master datanya tidak ada yg czone nya kosong" (tafsiran sesi 9d `[dugaan]`, ditawarkan untuk dibatalkan). MENYIMPANG dari RD BrowseRiskAddressZipCode_RD (tidak menyaring RW). Kolom zip `[terverifikasi]` DDL: `RISKADDRESS.POSTALCODE`, `RW.ZIPCODE` |
+| A186 | `scopeArea` wajib salah satu dari `AREA, DISTRICT, CITY, PROVINCE, COUNTRY` (selain itu 400) | `DDL\ScopeArea.xml` (ASM-FW-GISFW-INT-ACCUMULATION!SCOPEAREA, pyStandardValue) `[terverifikasi]`, dikirim work owner 04-10-2026; layar Pega = daftar pilihan. Menu Master Accumulation (mesin inti) belum memeriksa daftar ini |

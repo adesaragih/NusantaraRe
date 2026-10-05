@@ -54,7 +54,9 @@ describe('Inward Facultative tahap 1 = tangkapan layar kasus FIRE + XML Periode'
     expect(HTML).toContain('<div class="nbf-inward__teks">UJI INSURED</div>')
     expect(HTML).toContain('<div class="nbf-inward__teks">UJI GRUP</div>')
     expect(HTML).not.toContain('UJI COB')
-    expect(HTML).toMatch(/<option value="Facultative In" selected="">Facultative In<\/option>/)
+    // Type facultative baca-saja (work owner 05-10-2026: "tidak bisa dipilih lgi, krn awalnya sudah dipilih").
+    expect(HTML).toContain('<div class="nbf-inward__teks">Facultative In</div>')
+    expect(HTML).not.toContain('<option value="Facultative In"')
     expect(HTML).toContain(`value="${hariIniKabel().replace(/-/g, '/')}"`)
   })
 

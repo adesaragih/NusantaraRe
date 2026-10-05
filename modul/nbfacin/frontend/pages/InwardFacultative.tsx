@@ -48,7 +48,10 @@ import {
 } from '../api'
 import PopupCedingCoList from '../components/PopupCedingCoList'
 import PopupPilihAgent from '../components/PopupPilihAgent'
+import TabClauses from '../components/TabClauses'
 import TabCoverage from '../components/TabCoverage'
+import TabSpreading from '../components/TabSpreading'
+import TabCedant from '../components/TabCedant'
 import TabObject from '../components/TabObject'
 import TanggalDMY from '../components/TanggalDMY'
 import {
@@ -106,8 +109,6 @@ const kunciTanggal = (kabel: string) => kabel.slice(6) + kabel.slice(3, 5) + kab
 export function endSebelumBegin(mulai: string, selesai: string): boolean {
   return mulai !== '' && selesai !== '' && kunciTanggal(selesai) < kunciTanggal(mulai)
 }
-
-const satu = (nilai: string): Opsi[] => (nilai === '' ? [] : [{ value: nilai, label: nilai }])
 
 /** Medan tampil-saja (label kiri, teks kanan) seperti pxDisplayText Pega. */
 function Tampil({ label, nilai }: { label: string; nilai: string }) {
@@ -266,7 +267,7 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
       {tersimpan && <div className="alert alert--ok">{TEKS_INWARD.tersimpan}</div>}
       <Gagal galat={galatSimpan} />
 
-      <section className="panel">
+      <section className="panel nbf-inward">
         <h4 className="panel__title">{P.judul.label}</h4>
         <div className="nbf-opp__kolom">
           <div className="nbf-opp__tumpuk">
@@ -305,7 +306,8 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
           </div>
           <div className="nbf-opp__tumpuk">
             <Tampil label={P.classOfBusiness.label} nilai={op.groupBusiness ?? ''} />
-            <Pilih label={P.typeFacultative.label} value={typeFac} onChange={setTypeFac} opsi={satu(op.typeOfFacultative ?? '')} />
+            {/* Baca-saja: sudah dipilih di Create opportunity (work owner 05-10-2026). Nilainya tetap ikut Save for later. */}
+            <Tampil label={P.typeFacultative.label} nilai={typeFac} />
             <div className="nbf-inward__baris-tombol">
               <Tampil label={P.sourceOfBusiness.label} nilai={sob.nama} />
               <button type="button" className="btn btn--sm" onClick={() => setPilihSob(true)}>
@@ -337,7 +339,7 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
             <Radio label={P.day.label} nama="nbfacin-day" pilihan={PILIHAN_PERIODE.day} value={hari} onChange={setHari} />
           </div>
         </div>
-        <div className="nbf-inward__csv">
+        <div className="nbf-inward__csv nbf-inward__bilah">
           <strong>{P.judulCsv.label}</strong>
           <div className="nbf-opp__tombol">
             <TombolNonaktif label={P.downloadTemplateCsv.label} />
@@ -349,8 +351,11 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
         </div>
       </section>
 
-      <section className="panel">
-        <label className="nbf-inward__pilihan">
+      {/* Pemisah General <-> Show Detail: kotak kosong berlatar (work owner 05-10-2026). */}
+      <div className="nbf-inward__pemisah" aria-hidden="true" />
+
+      <section className="panel nbf-inward__rinci">
+        <label className="nbf-inward__pilihan nbf-inward__sakelar">
           <input type="checkbox" checked={detail} onChange={(e) => setDetail(e.target.checked)} /> {SHOW_DETAIL}
         </label>
         {detail && (
@@ -360,6 +365,12 @@ export default function InwardFacultative({ kasus, onBatal }: { kasus: KasusBaru
               <TabObject caseId={kasus.caseId} insuredName={insured} />
             ) : tab === 'Coverage' && kasusFire ? (
               <TabCoverage caseId={kasus.caseId} />
+            ) : tab === 'Clauses' && kasusFire ? (
+              <TabClauses caseId={kasus.caseId} />
+            ) : tab === 'Spreading' && kasusFire ? (
+              <TabSpreading caseId={kasus.caseId} />
+            ) : tab === 'Inw Fac Cedant Panels' && kasusFire ? (
+              <TabCedant caseId={kasus.caseId} />
             ) : (
               <BelumTersedia apa={`${TEKS_INWARD.isiTab} ${tab}`} />
             )}

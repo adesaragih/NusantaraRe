@@ -57,6 +57,8 @@ import {
   OPSI_INDEMNITY_UNIT,
   PILIHAN_DAY_COVERAGE,
   OPSI_KEYWORD,
+  OPSI_SCOPE_AREA,
+  OPSI_BAHASA_KLAUSA,
   OPSI_TYPE_DEDUCTIBLE,
   OPSI_TYPE_DEDUCTIBLE2,
   FORM_DEDUCTIBLE,
@@ -905,5 +907,19 @@ describe('Unit / Day / Keyword = PromptList aturan properti (dicari menurut pxIn
   })
   it.skipIf(kw === '')('Key Word', () => {
     expect(daftarPrompt(kw)).toEqual(OPSI_KEYWORD.map((o) => [o.value, o.label]))
+  })
+})
+
+describe('Scope Area = PromptList aturan properti (dicari menurut pxInsName, tiket 46 Add New)', () => {
+  const xml = aturanDDL('ASM-FW-GISFW-INT-ACCUMULATION!SCOPEAREA')
+  it.skipIf(xml === '')('Scope Area', () => {
+    expect(daftarPrompt(xml)).toEqual(OPSI_SCOPE_AREA.map((o) => [o.value, o.label]))
+  })
+})
+
+describe('Language Choose Clause = PromptList ClauseLanguageID (dicari menurut pxInsName, tiket 47)', () => {
+  const xml = aturanDDL('ASM-FW-GISFW-DATA-CLAUSE!CLAUSELANGUAGEID')
+  it.skipIf(xml === '')('Language', () => {
+    expect(daftarPrompt(xml)).toEqual(OPSI_BAHASA_KLAUSA.map((o) => [o.value, o.label]))
   })
 })

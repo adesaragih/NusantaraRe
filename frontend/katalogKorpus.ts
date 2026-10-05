@@ -86,13 +86,22 @@ export const LABEL_TAMPIL: Readonly<Partial<Record<keyof typeof FOLDER_KORPUS, s
  * (layar Pega SFAGIS Company Detail, tabel datar CLIENT), label "Company Detail", kelompok MASTER, migrasi inti 907.
  * Keputusan work owner 04-10-2026: modul `accounts` (layar Pega SFAGIS Account, tabel T_M_ACCOUNT), label "Accounts",
  * kelompok MASTER, migrasi inti 908. Keputusan work owner 04-10-2026: "Modul baru 'masterdata'" (menu master insert /
- * update / aktif / nonaktif), label "Master Data", kelompok MASTER, migrasi inti 911 (`911_m_nav_menu_masterdata`, dulu 904).
+ * update / aktif / nonaktif), label "Master Data", migrasi inti 911 - lalu DIPECAH (keputusan work owner 04-10-2026:
+ * "bukan di satuin begini, di pisah per sub modul", "8 modul terpisah"): delapan modul `master<nama>` satu menu per
+ * master di kelompok MASTER, baris menu migrasi inti 912-919; baris 'masterdata' dihapus 920.
  */
 export const MODUL_LUAR_KORPUS = {
   marketingOfficer: 'Marketing Officer',
   companyDetail: 'Company Detail',
   accounts: 'Accounts',
-  masterData: 'Master Data',
+  masterNation: 'Nation',
+  masterProvince: 'Province',
+  masterCity: 'City',
+  masterDistrict: 'District',
+  masterCzone: 'CZone',
+  masterAccumulatedType: 'Accumulated Type',
+  masterAccumulation: 'Accumulation',
+  masterObjectItemType: 'Object Item Type',
 } as const
 
 /**

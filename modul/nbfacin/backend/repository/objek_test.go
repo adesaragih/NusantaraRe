@@ -13,7 +13,7 @@ import (
 
 func tabelObjekUji() tabelObjek {
 	return tabelObjek{work: "UJI.W", general: "UJI.G", loc: "UJI.L", prop: "UJI.P", risk: "UJI.R", bang: "UJI.B", sekitar: "UJI.S", item: "UJI.I",
-		okupasi: "UJI.O", tol: "UJI.K", fea: "UJI.F", rugi: "UJI.C", koas: "UJI.D", cov: "UJI.V", ded: "UJI.E"}
+		okupasi: "UJI.O", tol: "UJI.K", fea: "UJI.F", rugi: "UJI.C", koas: "UJI.D", cov: "UJI.V", ded: "UJI.E", spread: "UJI.X"}
 }
 
 // TestSQLObjek - tiket 35: baca urut SEQ_NO lewat case; hapus ANAK sebelum INDUK (FK tanpa
@@ -32,7 +32,7 @@ func TestSQLObjek(t *testing.T) {
 		t.Error("SELECT harus tepat daftar kolomBacaObjek")
 	}
 	hapus := sqlHapusObjek(tb)
-	urut := []string{"DELETE FROM UJI.D ", "DELETE FROM UJI.C ", "DELETE FROM UJI.K ", "DELETE FROM UJI.O ", "DELETE FROM UJI.E ", "DELETE FROM UJI.V ", "DELETE FROM UJI.I ", "DELETE FROM UJI.R ", "DELETE FROM UJI.B ", "DELETE FROM UJI.S ", "DELETE FROM UJI.P ", "DELETE FROM UJI.F ", "DELETE FROM UJI.L "}
+	urut := []string{"DELETE FROM UJI.D ", "DELETE FROM UJI.C ", "DELETE FROM UJI.K ", "DELETE FROM UJI.O ", "DELETE FROM UJI.E ", "DELETE FROM UJI.X ", "DELETE FROM UJI.V ", "DELETE FROM UJI.I ", "DELETE FROM UJI.R ", "DELETE FROM UJI.B ", "DELETE FROM UJI.S ", "DELETE FROM UJI.P ", "DELETE FROM UJI.F ", "DELETE FROM UJI.L "}
 	if len(hapus) != len(urut) {
 		t.Fatalf("%d DELETE, mau %d", len(hapus), len(urut))
 	}

@@ -212,7 +212,21 @@ func (s *Service) GantiObjek(ctx context.Context, pelaku inti.Pelaku, id string,
 	if err := s.siapkanCoverage(ctx, id, simpan); err != nil {
 		return nil, err
 	}
-	err = s.transaksi(ctx, func(tx *db.Tx) error { return s.objek.GantiObjek(ctx, tx, id, simpan) })
+	err = s.transaksi(ctx, func(tx *db.Tx) error {
+		// Spreading coverage (tiket 48, K48-7) dibaca sebelum objek ditulis ulang, dipasang lagi sesudahnya.
+		var lama models.KasusSpreading
+		if s.spreading != nil {
+			k, err := s.spreading.BacaSpreading(ctx, tx, id)
+			if err != nil {
+				return err
+			}
+			lama = k
+		}
+		if err := s.objek.GantiObjek(ctx, tx, id, simpan); err != nil {
+			return err
+		}
+		return s.pertahankanSpreading(ctx, tx, id, lama)
+	})
 	if errors.Is(err, repository.ErrKasusTidakAda) {
 		return nil, ErrKasusTidakAda
 	}

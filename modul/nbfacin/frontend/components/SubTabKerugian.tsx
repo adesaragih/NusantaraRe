@@ -89,38 +89,38 @@ function FormKerugian({
   const set = (k: keyof CatatanKerugian) => (v: string) => ubah({ ...r, [k]: v })
   const opsiUang: Opsi[] = mataUang.map((m) => ({ value: m, label: m }))
   return (
-    <div className="nbf-objek__isi">
-      <div className="nbf-opp__kolom">
-        <div className="nbf-opp__tumpuk">
-          <Tampil label={F.insuredName.label} nilai={insuredName} />
-          <TanggalDMY
-            label={F.dateOfLoss.label}
-            value={r.dateOfLoss}
-            onChange={set('dateOfLoss')}
-            labelKalender={TEKS_FORM_OPPORTUNITY.kalender}
-            pesanFormat={TEKS_FORM_OPPORTUNITY.formatTanggal}
-          />
-          <Field label={F.lossObject.label} value={r.lossObject} onChange={set('lossObject')} />
-          <Pilih
-            label={F.currency.label}
-            value={r.currency}
-            onChange={set('currency')}
-            opsi={opsiUang}
-            kosong={ITEM_KOSONG}
-            required
-            error={tandaiWajib && r.currency.trim() === '' ? TEKS_ITEM.currencyWajib : undefined}
-          />
-          <IsianUang label={F.claim.label} value={r.claim} onChange={set('claim')} error={uangSah(r.claim) ? undefined : TEKS_KERUGIAN.uang} />
-          <IsianUang
-            label={F.preventionOfLoss.label}
-            value={r.preventionOfLoss}
-            onChange={set('preventionOfLoss')}
-            error={uangSah(r.preventionOfLoss) ? undefined : TEKS_KERUGIAN.uang}
-          />
-        </div>
-        <div className="nbf-opp__tumpuk">
-          <Field label={F.causeOfLoss.label} value={r.causeOfLoss} onChange={set('causeOfLoss')} />
-          <Pilih label={LABEL_REMARKS} value={r.remarks} onChange={set('remarks')} opsi={OPSI_REMARKS} />
+    <div className="nbf-objek__isi nbf-ringkas nbf-rugi-form">
+      {/* Tata letak = gambar layar Pega (work owner 05-10-2026): dua kolom - Insured Name | Date of Loss, Loss Object |
+          Currency, Total Claim (100%) | Prevention Of Loss, Cause of Loss | Remarks; Loss Detail selebar form. */}
+      <div className="nbf-rugi-form__grid">
+        <Tampil label={F.insuredName.label} nilai={insuredName} />
+        <TanggalDMY
+          label={F.dateOfLoss.label}
+          value={r.dateOfLoss}
+          onChange={set('dateOfLoss')}
+          labelKalender={TEKS_FORM_OPPORTUNITY.kalender}
+          pesanFormat={TEKS_FORM_OPPORTUNITY.formatTanggal}
+        />
+        <Field label={F.lossObject.label} value={r.lossObject} onChange={set('lossObject')} />
+        <Pilih
+          label={F.currency.label}
+          value={r.currency}
+          onChange={set('currency')}
+          opsi={opsiUang}
+          kosong={ITEM_KOSONG}
+          required
+          error={tandaiWajib && r.currency.trim() === '' ? TEKS_ITEM.currencyWajib : undefined}
+        />
+        <IsianUang label={F.claim.label} value={r.claim} onChange={set('claim')} error={uangSah(r.claim) ? undefined : TEKS_KERUGIAN.uang} />
+        <IsianUang
+          label={F.preventionOfLoss.label}
+          value={r.preventionOfLoss}
+          onChange={set('preventionOfLoss')}
+          error={uangSah(r.preventionOfLoss) ? undefined : TEKS_KERUGIAN.uang}
+        />
+        <Field label={F.causeOfLoss.label} value={r.causeOfLoss} onChange={set('causeOfLoss')} />
+        <Pilih label={LABEL_REMARKS} value={r.remarks} onChange={set('remarks')} opsi={OPSI_REMARKS} />
+        <div className="nbf-rugi-form__lebar">
           <Area label={F.detail.label} value={r.detail} onChange={set('detail')} required baris={3} />
         </div>
       </div>
@@ -160,7 +160,7 @@ export function SubTabKerugian({
 
   return (
     <div className="nbf-objek__isi">
-      <div className="table-wrap">
+      <div className="nbf-cov-wrap">
         <table className="nbf-tabel">
           <thead>
             <tr>
@@ -239,7 +239,7 @@ export function SubTabKerugian({
           </tbody>
         </table>
       </div>
-      <div className="nbf-opp__kolom">
+      <div className="nbf-ringkas nbf-ringkas__grid nbf-ringkas__grid--empat">
         {LOSS_RATIO.map((l) => (
           <Tampil key={l.sel} label={l.label} nilai={formatNumber(lossRatio[l.kunci], l.desimal)} />
         ))}
@@ -251,7 +251,7 @@ export function SubTabKerugian({
 export function SubTabKlaimInternal({ rows }: { rows: KlaimInternal[] }) {
   return (
     <div className="nbf-objek__isi">
-      <div className="table-wrap">
+      <div className="nbf-cov-wrap">
         <table className="nbf-tabel">
           <thead>
             <tr>

@@ -223,3 +223,13 @@ type BarisAkumulasi struct {
 type SaranAkumulasi struct {
 	ID, Label, Ekstra string
 }
+
+// CZoneZip - CZone pertama sebuah zip (form Add New akumulasi, GetCzone_Act): ID -> CZoneID, Code -> CZone.
+type CZoneZip struct {
+	ID, Code string
+}
+
+// ZipAkumulasi - satu saran Zip Code form Add New akumulasi (BrowseRiskAddressZipCode_RD + SetCountryID_Act).
+type ZipAkumulasi struct {
+	ZipCode, City, Province, Nation, NationInitial string
+}

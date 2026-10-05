@@ -45,6 +45,19 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/hitung-net-rate", hitungNetRate(svc))
 	mux.HandleFunc("GET /api/nbfacin/akumulasi", cariAkumulasi(svc))
 	mux.HandleFunc("GET /api/nbfacin/akumulasi/saran/{jenis}", saranAkumulasi(svc))
+	mux.HandleFunc("POST /api/nbfacin/akumulasi", tambahAkumulasi(svc, stubPelaku))
+	mux.HandleFunc("GET /api/nbfacin/akumulasi/czone", czoneZip(svc))
+	mux.HandleFunc("GET /api/nbfacin/akumulasi/zipcode", cariZipAkumulasi(svc))
+	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}/klausa", bacaKlausa(svc))
+	mux.HandleFunc("PUT /api/nbfacin/kasus/{caseId}/klausa", simpanKlausa(svc, stubPelaku))
+	mux.HandleFunc("GET /api/nbfacin/klausa", cariKlausa(svc))
+	mux.HandleFunc("GET /api/nbfacin/klausa/{id}/argumen", argumenKlausa(svc))
+	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}/spreading", bacaSpreading(svc))
+	mux.HandleFunc("PUT /api/nbfacin/kasus/{caseId}/spreading", simpanSpreading(svc, stubPelaku))
+	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/spreading/hitung-share", hitungShareSpreading(svc))
+	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/spreading/salin", salinSpreading(svc))
+	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}/cedant", bacaCedant(svc))
+	mux.HandleFunc("PUT /api/nbfacin/kasus/{caseId}/cedant", simpanCedant(svc, stubPelaku))
 }
 
 // isianOpportunity - badan POST /api/nbfacin/opportunity, kontrak frontend
@@ -283,13 +296,16 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		errors.Is(err, services.ErrMasukanObjek), errors.Is(err, services.ErrMasukanRisk),
 		errors.Is(err, services.ErrMasukanRW), errors.Is(err, services.ErrMasukanAlamat),
 		errors.Is(err, services.ErrMasukanOccupation), errors.Is(err, services.ErrMasukanTableOfLimit),
-		errors.Is(err, services.ErrMasukanCoverage), errors.Is(err, services.ErrMasukanAkumulasi):
+		errors.Is(err, services.ErrMasukanCoverage), errors.Is(err, services.ErrMasukanAkumulasi),
+		errors.Is(err, services.ErrWajibAkumulasi), errors.Is(err, services.ErrMasukanKlausa),
+		errors.Is(err, services.ErrMasukanSpreading), errors.Is(err, services.ErrMasukanCedant):
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, inti.ErrTanpaIdentitas):
 		galat.Tulis(w, http.StatusUnauthorized, err.Error())
 	case errors.Is(err, services.ErrKasusTidakAda):
 		galat.Tulis(w, http.StatusNotFound, err.Error())
-	case errors.Is(err, services.ErrTableOfLimitTidakSiap), errors.Is(err, services.ErrPeriodeKasus):
+	case errors.Is(err, services.ErrTableOfLimitTidakSiap), errors.Is(err, services.ErrPeriodeKasus),
+		errors.Is(err, services.ErrAkumulasiSudahAda), errors.Is(err, services.ErrSpreadingBerubah):
 		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrTidakDapatDiproses):
 		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
@@ -301,7 +317,8 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		errors.Is(err, services.ErrRiskTanpaDatabase), errors.Is(err, services.ErrRWTanpaDatabase),
 		errors.Is(err, services.ErrOccupationTanpaDatabase), errors.Is(err, services.ErrPilihanItemTanpaDatabase),
 		errors.Is(err, services.ErrTableOfLimitTanpaDatabase), errors.Is(err, services.ErrCoverageTanpaDatabase),
-		errors.Is(err, services.ErrAkumulasiTanpaDatabase):
+		errors.Is(err, services.ErrAkumulasiTanpaDatabase), errors.Is(err, services.ErrKlausaTanpaDatabase),
+		errors.Is(err, services.ErrSpreadingTanpaDatabase), errors.Is(err, services.ErrCedantTanpaDatabase):
 		galat.Tulis(w, http.StatusServiceUnavailable, err.Error())
 	default:
 		log.Printf("nbfacin: galat server: %v", err)

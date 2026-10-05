@@ -151,54 +151,53 @@ export default function SubTabSekitar({ o, ubah }: { o: ObjekFire; ubah: (o: Obj
   const setSisi = (k: KunciSisi, sisi: SisiRisiko) => setS({ [k]: sisi } as Partial<SurroundingRisk>)
 
   return (
-    <div className="nbf-objek__isi">
-      {SISI_SEKITAR.map((x) => {
-        const sisi = s[x.kunci]
-        return (
-          <section key={x.kunci} className="nbf-sekitar__sisi">
-            <h5 className="nbf-objek__judul">{x.judul}</h5>
-            <div className="nbf-opp__kolom">
-              <div className="nbf-opp__tumpuk">
-                <IsianOccupation label={MEDAN_SISI.occupation} sisi={sisi} ubah={(v) => setSisi(x.kunci, v)} />
-                <div className="nbf-sekitar__sebaris">
-                  <Pilih
-                    label={MEDAN_SISI.construction}
-                    value={sisi.construction}
-                    onChange={(v) => setSisi(x.kunci, { ...sisi, construction: v })}
-                    opsi={OPSI_CONSTRUCTION}
-                    kosong={CONSTRUCTION_KOSONG}
-                  />
-                  <Field
-                    label={MEDAN_SISI.distance}
-                    type="number"
-                    value={sisi.distance}
-                    onChange={(v) => setSisi(x.kunci, { ...sisi, distance: v })}
-                    error={jarakMinus(sisi.distance) ? TEKS_SEKITAR.jarakMinus : undefined}
-                  />
-                </div>
+    <div className="nbf-objek__isi nbf-ringkas">
+      {/* Empat sisi = kartu 2 x 2 (Front | Left, Back | Right); tata letak dirapikan work owner 05-10-2026. */}
+      <div className="nbf-sekitar__grid">
+        {SISI_SEKITAR.map((x) => {
+          const sisi = s[x.kunci]
+          return (
+            <section key={x.kunci} className="nbf-sekitar__sisi">
+              <h5 className="nbf-objek__judul">{x.judul}</h5>
+              <IsianOccupation label={MEDAN_SISI.occupation} sisi={sisi} ubah={(v) => setSisi(x.kunci, v)} />
+              <div className="nbf-sekitar__sebaris">
+                <Pilih
+                  label={MEDAN_SISI.construction}
+                  value={sisi.construction}
+                  onChange={(v) => setSisi(x.kunci, { ...sisi, construction: v })}
+                  opsi={OPSI_CONSTRUCTION}
+                  kosong={CONSTRUCTION_KOSONG}
+                />
+                <Field
+                  label={MEDAN_SISI.distance}
+                  type="number"
+                  value={sisi.distance}
+                  onChange={(v) => setSisi(x.kunci, { ...sisi, distance: v })}
+                  error={jarakMinus(sisi.distance) ? TEKS_SEKITAR.jarakMinus : undefined}
+                />
               </div>
-              <div className="nbf-opp__tumpuk">
-                <Tampil label={MEDAN_SISI.note} nilai={sisi.note} />
-              </div>
-            </div>
-          </section>
-        )
-      })}
+              <Tampil label={MEDAN_SISI.note} nilai={sisi.note} />
+            </section>
+          )
+        })}
+      </div>
 
-      <div className="nbf-opp__kolom">
-        <div className="nbf-opp__tumpuk">
+      <div className="nbf-sekitar__grid">
+        <section className="nbf-sekitar__sisi">
           <h5 className="nbf-objek__judul">{L.judul.label}</h5>
           <div className="nbf-sekitar__sebaris">
             <Pilih label={L.ownership.label} value={o.ownership} onChange={(v) => ubah({ ...o, ownership: v })} opsi={OPSI_OWNERSHIP} />
             <Pilih label={L.housekeepingStatus.label} value={s.housekeepingStatus} onChange={(v) => setS({ housekeepingStatus: v })} opsi={OPSI_HOUSEKEEPING} />
           </div>
-          <Pilih label={L.floodAreaStatus.label} value={s.floodAreaStatus} onChange={(v) => setS({ floodAreaStatus: v })} opsi={OPSI_FLOOD_STATUS} />
-          {s.floodAreaStatus === FLOOD_STATUS_TAMPIL && (
-            <Pilih label={L.floodArea.label} value={s.floodArea} onChange={(v) => setS({ floodArea: v })} opsi={OPSI_FLOOD_AREA} kosong={CONSTRUCTION_KOSONG} />
-          )}
+          <div className="nbf-sekitar__sebaris">
+            <Pilih label={L.floodAreaStatus.label} value={s.floodAreaStatus} onChange={(v) => setS({ floodAreaStatus: v })} opsi={OPSI_FLOOD_STATUS} />
+            {s.floodAreaStatus === FLOOD_STATUS_TAMPIL && (
+              <Pilih label={L.floodArea.label} value={s.floodArea} onChange={(v) => setS({ floodArea: v })} opsi={OPSI_FLOOD_AREA} kosong={CONSTRUCTION_KOSONG} />
+            )}
+          </div>
           <Area label={L.housekeepingRemark.label} value={s.housekeepingRemark} onChange={(v) => setS({ housekeepingRemark: v })} baris={2} />
-        </div>
-        <div className="nbf-opp__tumpuk">
+        </section>
+        <section className="nbf-sekitar__sisi">
           <h5 className="nbf-objek__judul">{L.judul.label}</h5>
           <p className="nbf-sekitar__faktor">{TEKS_SEKITAR.faktorRisiko}</p>
           <div className="nbf-sekitar__centang">
@@ -206,7 +205,7 @@ export default function SubTabSekitar({ o, ubah }: { o: ObjekFire; ubah: (o: Obj
             <Centang label={L.hotWork.label} checked={o.isHotWorkProcess} onChange={(v) => ubah({ ...o, isHotWorkProcess: v })} />
             <Centang label={L.flammable.label} checked={o.isFlammableItem} onChange={(v) => ubah({ ...o, isFlammableItem: v })} />
           </div>
-        </div>
+        </section>
       </div>
     </div>
   )

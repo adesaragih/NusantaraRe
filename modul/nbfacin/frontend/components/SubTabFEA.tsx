@@ -40,18 +40,19 @@ function FormFEA({ b, ubah }: { b: BarisFEA; ubah: (b: BarisFEA) => void }) {
     <Field key={k} label={F[k].label} value={b[k]} onChange={set(k)} error={unitSah(b[k]) ? undefined : TEKS_FEA.unit} />
   )
   return (
-    <div className="nbf-objek__isi">
-      <div className="nbf-opp__kolom">
-        <div className="nbf-opp__tumpuk">{MEDAN_UNIT.map(unit)}</div>
-        <div className="nbf-opp__tumpuk">
-          <Pilih label={F.privateFireBrigade.label} value={b.privateFireBrigade} onChange={set('privateFireBrigade')} opsi={OPSI_FIRE_BRIGADE} />
-          <Pilih label={F.teamSopSafety.label} value={b.teamSopSafety} onChange={set('teamSopSafety')} opsi={OPSI_SOP_SAFETY} />
-          <Pilih
-            label={F.teamSopRiskManagement.label}
-            value={b.teamSopRiskManagement}
-            onChange={set('teamSopRiskManagement')}
-            opsi={OPSI_SOP_RISIKO}
-          />
+    <div className="nbf-objek__isi nbf-ringkas">
+      {/* Grid 3 kolom = layout InputFEA_IsUW (pyValue 3); Others Info selebar form. */}
+      <div className="nbf-ringkas__grid">
+        {MEDAN_UNIT.map(unit)}
+        <Pilih label={F.privateFireBrigade.label} value={b.privateFireBrigade} onChange={set('privateFireBrigade')} opsi={OPSI_FIRE_BRIGADE} />
+        <Pilih label={F.teamSopSafety.label} value={b.teamSopSafety} onChange={set('teamSopSafety')} opsi={OPSI_SOP_SAFETY} />
+        <Pilih
+          label={F.teamSopRiskManagement.label}
+          value={b.teamSopRiskManagement}
+          onChange={set('teamSopRiskManagement')}
+          opsi={OPSI_SOP_RISIKO}
+        />
+        <div className="nbf-ringkas__lebar">
           <Area label={F.info.label} value={b.info} onChange={set('info')} baris={3} />
         </div>
       </div>
@@ -63,7 +64,7 @@ export default function SubTabFEA({ fea, ubah }: { fea: BarisFEA[]; ubah: (fea: 
   const [terbuka, setTerbuka] = useState<number[]>([])
   return (
     <div className="nbf-objek__isi">
-      <div className="table-wrap">
+      <div className="nbf-cov-wrap">
         <table className="nbf-tabel">
           <thead>
             <tr>

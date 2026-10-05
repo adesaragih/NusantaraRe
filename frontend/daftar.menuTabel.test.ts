@@ -110,7 +110,14 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
       marketingOfficer: 'Marketing Officer',
       companyDetail: 'Company Detail',
       accounts: 'Accounts',
-      masterData: 'Master Data',
+      masterNation: 'Nation',
+      masterProvince: 'Province',
+      masterCity: 'City',
+      masterDistrict: 'District',
+      masterCzone: 'CZone',
+      masterAccumulatedType: 'Accumulated Type',
+      masterAccumulation: 'Accumulation',
+      masterObjectItemType: 'Object Item Type',
     })
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In')
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In Adjustment')

@@ -15,8 +15,9 @@ describe('kartuModul', () => {
     // + Marketing Officer, modul di luar korpus (migrasi inti 906, keputusan work owner 03-10-2026).
     // + Company Detail, modul di luar korpus (migrasi inti 907, keputusan work owner 04-10-2026).
     // + Accounts, modul di luar korpus (migrasi inti 908, keputusan work owner 04-10-2026).
-    // + Master Data, modul di luar korpus (migrasi inti 911, keputusan work owner 04-10-2026).
-    expect(kartuModul()).toHaveLength(24)
+    // + delapan modul master (Nation … Object Item Type, migrasi inti 912-919, keputusan work owner 04-10-2026 "8 modul
+    // terpisah"; Master Data 911 dipensiunkan 920).
+    expect(kartuModul()).toHaveLength(31)
   })
 
   it('modul dimigrasi bertujuan, yang belum dimigrasi tanpa', () => {

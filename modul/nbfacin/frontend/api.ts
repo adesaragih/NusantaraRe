@@ -792,3 +792,272 @@ export function saranAkumulasi(jenis: JenisSaranAkumulasi, q: string, induk = ''
   if (induk.trim() !== '') kueri.induk = induk.trim()
   return minta<{ baris: SaranAkumulasi[] }>(`/api/nbfacin/akumulasi/saran/${jenis}`, { kueri })
 }
+
+/** Badan `POST /api/nbfacin/akumulasi` - Add New accumulation (port `SaveAccumulation_Act` + RDBMASTERACCUMULATION). */
+export interface AkumulasiBaru {
+  /** `InputAccumulation.Accumulation` = ID tipe akumulasi (ACCUMULATEDTYPE.ID). */
+  accumulation: string
+  /** `InputAccumulation.AccumulationType` = nama tipe. */
+  accumulationType: string
+  /** Accumulation Description (`.Note`; disimpan huruf besar). */
+  note: string
+  keyword: string
+  scopeArea: string
+  /** Cresta Zone (`.CZone` = CZONE.CODE) dan ID-nya (`.CZoneID`). */
+  cZone: string
+  cZoneId: string
+  provinceId: string
+  /** Primary Zip Code (`.PostalCode`). */
+  zipCode: string
+  /** NationInitial dari zip terpilih (`InputData.CARI34` -> awalan ID). */
+  negara: string
+}
+
+/** `POST /api/nbfacin/akumulasi` -> ID baru + Note tersimpan. */
+export function tambahAkumulasi(isi: AkumulasiBaru): Promise<{ id: string; note: string }> {
+  return minta<{ id: string; note: string }>('/api/nbfacin/akumulasi', { metode: 'POST', badan: isi })
+}
+
+/** `GET /api/nbfacin/akumulasi/czone?zip=` - Cresta Zone awal dari zip (`GetCzone_Act`, `GetAccumulationZipcode_SQL`). */
+export function czoneDariZip(zip: string): Promise<{ cZoneId: string; cZone: string }> {
+  return minta<{ cZoneId: string; cZone: string }>('/api/nbfacin/akumulasi/czone', { kueri: { zip: zip.trim() } })
+}
+
+/** Satu baris Choose Zip Code (`BrowseRiskAddressZipCode_RD`). */
+export interface BarisZipAkumulasi {
+  zipCode: string
+  city: string
+  province: string
+  nation: string
+  /** NationInitial (`SetCountryID_Act`) - awalan ID akumulasi. */
+  nationInitial: string
+}
+
+/** Satu halaman Choose Zip Code (paging server, 15 baris - permintaan work owner 04-10-2026). */
+export interface HalamanZipAkumulasi {
+  baris: BarisZipAkumulasi[]
+  total: number
+  halaman: number
+  ukuran: number
+}
+
+/** `GET /api/nbfacin/akumulasi/zipcode?provinceName=&q=&halaman=`. */
+export function cariZipAkumulasi(provinceName: string, q: string, halaman: number): Promise<HalamanZipAkumulasi> {
+  const kueri: Record<string, string | number> = { halaman }
+  if (provinceName.trim() !== '') kueri.provinceName = provinceName.trim()
+  if (q.trim() !== '') kueri.q = q.trim()
+  return minta<HalamanZipAkumulasi>('/api/nbfacin/akumulasi/zipcode', { kueri })
+}
+
+/** Satu argumen klausa (`ASM-FW-GISFW-Data-Argument`; SearchClauseArgFireSQL atas M_ARGCLAUSEFIRE). */
+export interface ArgumenKlausa {
+  argumentNumber: string
+  argumentDescription: string
+  /** Isi argumen (awal = DefaultValue). */
+  argumentValue: string
+}
+
+/** Satu baris `pyWorkPage.ClauseList` kasus (`ASM-FW-GISFW-Data-Clause`, `SearchClauseFireSQL_PostAct`). */
+export interface KlausaKasus {
+  clauseCode: string
+  clauseTitle: string
+  clauseDescription: string
+  /** Kode bahasa "0" Indonesia / "1" Inggris / "2" lain (`SearchClauseFireSQL_PostAct`). */
+  clauseLanguage: string
+  clauseLanguageId: string
+  /** Isi klausa sesudah argumen diterapkan. */
+  clauseContent: string
+  /** Isi klausa asli (`.Text` master) - dasar penggantian argumen. */
+  clauseContentTemp: string
+  argumentCount: string
+  argumentList: ArgumenKlausa[]
+}
+
+/** Satu hasil popup Choose Clause (`SearchClauseListOutput`, kelas Int-CLAUSE). */
+export interface HasilKlausa {
+  id: string
+  title: string
+  /** `.Info` (kolom Description). */
+  info: string
+  /** `.Text` - isi klausa. */
+  text: string
+  language: string
+  /** Jumlah argumen (RetrieveArgumentNumberClauseSQL). */
+  argumentCount: string
+}
+
+/** `GET /api/nbfacin/klausa?bahasa=&q=&halaman=` - popup Choose Clause (tiket 47). */
+export function cariKlausa(
+  bahasa: string,
+  q: string,
+  halaman: number,
+): Promise<{ baris: HasilKlausa[]; total: number; halaman: number; ukuran: number }> {
+  const kueri: Record<string, string | number> = { halaman }
+  if (bahasa.trim() !== '') kueri.bahasa = bahasa.trim()
+  if (q.trim() !== '') kueri.q = q.trim()
+  return minta('/api/nbfacin/klausa', { kueri })
+}
+
+/** `GET /api/nbfacin/klausa/{id}/argumen` - argumen + nilai bawaan (ViewClauseArgFireSQL). */
+export function argumenKlausa(id: string): Promise<{ baris: ArgumenKlausa[] }> {
+  return minta(`/api/nbfacin/klausa/${encodeURIComponent(id)}/argumen`)
+}
+
+/** `GET /api/nbfacin/kasus/{caseId}/klausa` - ClauseList kasus. */
+export function ambilKlausaKasus(caseId: string): Promise<{ baris: KlausaKasus[] }> {
+  return minta(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/klausa`)
+}
+
+/** `PUT /api/nbfacin/kasus/{caseId}/klausa` - simpan ClauseList kasus (Save tab, `SaveFacIn_Act`). */
+export function simpanKlausaKasus(caseId: string, baris: KlausaKasus[]): Promise<{ baris: KlausaKasus[] }> {
+  return minta(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/klausa`, { metode: 'PUT', badan: { baris } })
+}
+
+/** Satu pilihan Type Treaty (`GetTreatyName` -> SpreadingList1). */
+export interface TreatySpreading {
+  id: string
+  name: string
+}
+
+/** Satu baris template Copy Spreading. */
+export interface TemplateSpreading {
+  treatyType: string
+  treatyName: string
+  sharePercentage: string
+}
+
+/** Satu baris `CoverageList(k).SpreadingList` (`ASM-FW-GISFW-Data-SpreadingRisk`). Angka = teks desimal. */
+export interface BarisSpreading {
+  treatyType: string
+  treatyName: string
+  sharePercentage: string
+  tsiGrossSpreaded: string
+  tsiSpreaded: string
+  claimEstimation: string
+  premiumSpreaded: string
+}
+
+export interface CoverageSpreading {
+  oldId: string
+  coverageBasis: string
+  rate: string
+  premium: string
+  discount: string
+  tsi: string
+  tsiLiability: string
+  tsiNusantaraRe: string
+  premiNusantaraRe: string
+  spreading: BarisSpreading[]
+}
+
+export interface ItemSpreading {
+  itemType: string
+  currency: string
+  tsi: string
+  totalGrossPremi: string
+  totalPremiumRnm: string
+  coverages: CoverageSpreading[]
+}
+
+/** Satu baris total per lokasi (`Property.TotalTSIPremiSpreadRNM`) / ringkasan per treaty (`TotalSpreadingCurrency`). */
+export interface TotalSpreading {
+  currency: string
+  treatyType: string
+  treatyName: string
+  sharePercentage: string
+  claimSpreaded: string
+  tsiSpreaded: string
+  claimEstimation: string
+  /** Hanya ringkasan per treaty (Total First Loss). */
+  claimAmountIdr?: string
+  premiumSpreaded: string
+}
+
+export interface LokasiSpreading {
+  objectNo: string
+  objectName: string
+  location: string
+  items: ItemSpreading[]
+  total: TotalSpreading[]
+}
+
+/** Ringkasan per mata uang (`TotalSpreadAll`). */
+export interface RingkasanMataUangSpreading {
+  currency: string
+  tsiTopRisk: string
+  tsi: string
+  lol: string
+  premium: string
+}
+
+/** `GET /api/nbfacin/kasus/{caseId}/spreading` (tiket 48, kontrak usulan sesi 0f). */
+export interface TampilanSpreading {
+  percentShare: string
+  treaty: TreatySpreading[]
+  template: TemplateSpreading[]
+  lokasi: LokasiSpreading[]
+  ringkasanTreaty: TotalSpreading[]
+  ringkasanMataUang: RingkasanMataUangSpreading[]
+  pesan: string[]
+}
+
+const jalurSpreading = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/spreading`
+
+export function ambilSpreading(caseId: string): Promise<TampilanSpreading> {
+  return minta<TampilanSpreading>(jalurSpreading(caseId))
+}
+
+/** % Share RNM diubah: hitung TSI / premi Nusantara Re + spreading otomatis (`GetKapasitasTreaty`); tidak menyimpan. */
+export function hitungShareSpreading(caseId: string, percentShare: string): Promise<TampilanSpreading> {
+  return minta<TampilanSpreading>(`${jalurSpreading(caseId)}/hitung-share`, { metode: 'POST', badan: { percentShare } })
+}
+
+/** Copy To All Spreading (`CopyToAllSpreadingFire_ACT`); tidak menyimpan. */
+export function salinSpreading(caseId: string, percentShare: string, template: TemplateSpreading[]): Promise<TampilanSpreading> {
+  return minta<TampilanSpreading>(`${jalurSpreading(caseId)}/salin`, { metode: 'POST', badan: { percentShare, template } })
+}
+
+/** Save tab Spreading (`IsThereAnyObjectLocation_Act`): hitung ulang lalu simpan. */
+export function simpanSpreading(caseId: string, isi: TampilanSpreading): Promise<TampilanSpreading> {
+  return minta<TampilanSpreading>(jalurSpreading(caseId), {
+    metode: 'PUT',
+    badan: { percentShare: isi.percentShare, template: isi.template, lokasi: isi.lokasi },
+  })
+}
+
+/** Satu baris `.OfferFacIn.CedingCedantList` (tiket 49). % Share = teks desimal. */
+export interface BarisCedant {
+  cedingCo: string
+  cedingCoName: string
+  shareCeding: string
+}
+
+/** `GET /api/nbfacin/kasus/{caseId}/cedant` (tiket 49, kontrak usulan sesi 0f). Angka = teks desimal. */
+export interface TampilanCedant {
+  /** `.OfferFacIn.QuotationData.SobName`. */
+  sobName: string
+  /** `.OfferFacIn.ShareCedantType`: "" | "0" (Gross) | "1" (Share RNM). */
+  shareCedantType: string
+  /** `.OfferFacIn.PercentShare` (baca-saja di tab ini). */
+  percentShare: string
+  /** `.OfferFacIn.TotalTSINusaReSpreading`. */
+  totalTsiRnm: string
+  /** `.OfferFacIn.TotalPremiNusaRe`. */
+  totalPremiRnm: string
+  /** Proteksi `ProtectShareCedant_Act` berlaku (IsGroup == "Group" atau FlagOnGoingPolicy == 2). */
+  wajib: boolean
+  cedant: BarisCedant[]
+  /** Ceding Co tab General (`QuotationData.CedingCoList`, atau CedingCo tunggal) - sumber Add pertama. */
+  cedingUmum: BarisCedant[]
+}
+
+const jalurCedant = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/cedant`
+
+export function ambilCedant(caseId: string): Promise<TampilanCedant> {
+  return minta<TampilanCedant>(jalurCedant(caseId))
+}
+
+/** Save tab Cedant: simpan Share Cedant Type + grid; backend menjalankan SetShareOfCeding dan proteksi. */
+export function simpanCedant(caseId: string, isi: { shareCedantType: string; cedant: BarisCedant[] }): Promise<TampilanCedant> {
+  return minta<TampilanCedant>(jalurCedant(caseId), { metode: 'PUT', badan: isi })
+}

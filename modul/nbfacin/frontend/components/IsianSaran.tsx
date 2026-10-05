@@ -54,7 +54,7 @@ export default function IsianSaran({
   }, [value, ketik])
 
   return (
-    <div className="field">
+    <div className="field nbf-saran">
       <label className="field__label">{label}</label>
       <input
         className="field__input"
@@ -67,7 +67,7 @@ export default function IsianSaran({
         }}
       />
       {saran.length > 0 ? (
-        <ul className="nbf-tambah-risk__saran" role="listbox" aria-label={label}>
+        <ul className="nbf-saran__daftar" role="listbox" aria-label={label}>
           {saran.map((s, i) => (
             <li key={`${i}-${s.id}`}>
               <button

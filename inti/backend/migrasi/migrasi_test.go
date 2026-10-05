@@ -111,7 +111,7 @@ func TestNamaObjekDibuatTerbaca(t *testing.T) {
 }
 
 // View yang diganti tabel bernama sama dikenali hanya bila DROP VIEW-nya
-// datang SEBELUM CREATE TABLE di langkah yang sama (masterdata 880, dulu 760).
+// datang SEBELUM CREATE TABLE di langkah yang sama (masterprovince 880, dulu masterdata 760).
 func TestViewDibongkarDulu(t *testing.T) {
 	p := pecahPernyataan("CREATE TABLE {skema}.P_SALIN (\n  ID VARCHAR2(10)\n)\n/\n" +
 		"-- komentar\nDROP VIEW {skema}.Province\n/\nCREATE TABLE {skema}.PROVINCE (\n  ID VARCHAR2(10)\n)\n/\n" +

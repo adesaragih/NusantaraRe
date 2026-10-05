@@ -92,7 +92,7 @@ function PopupOkupasi({ onTutup, onPilih }: { onTutup: () => void; onPilih: (b: 
         <Field label={POPUP_OKUPASI.cari.label} value={kotak} onChange={setKotak} />
       </div>
       {hasil && hasil.length > u && <Halaman halaman={halaman} ukuran={u} total={hasil.length} onPindah={setHalaman} />}
-      <div className="table-wrap">
+      <div className="nbf-cov-wrap">
         <table className="nbf-tabel">
           <thead>
             <tr>
@@ -159,7 +159,7 @@ function PopupKonstruksi({
 
   return (
     <Modal judul={F.pilihKonstruksi.label} onTutup={onTutup} lebar>
-      <div className="table-wrap">
+      <div className="nbf-cov-wrap">
         <table className="nbf-tabel">
           <thead>
             <tr>
@@ -208,7 +208,7 @@ export default function SubTabOkupasi({
   return (
     <div className="nbf-objek__isi">
       {pesan && <div className="alert alert--warn">{pesan}</div>}
-      <div className="table-wrap">
+      <div className="nbf-cov-wrap">
         <table className="nbf-tabel">
           <thead>
             <tr>
@@ -270,34 +270,40 @@ export default function SubTabOkupasi({
               terbuka.includes(n) && (
                 <tr key={`d-${n}`} className="nbf-objek__detail">
                   <td colSpan={5}>
-                    <div className="nbf-objek__isi">
-                      <div className="nbf-opp__tombol">
-                        <button type="button" className="btn btn--sm" onClick={() => setPopup({ jenis: 'okupasi', n })}>
-                          {F.pilihOkupasi.label}
-                        </button>
+                    <div className="nbf-objek__isi nbf-ringkas">
+                      <div className="nbf-ringkas__grid">
+                        <div className="nbf-opp__tombol nbf-ringkas__lebar">
+                          <button type="button" className="btn btn--sm" onClick={() => setPopup({ jenis: 'okupasi', n })}>
+                            {F.pilihOkupasi.label}
+                          </button>
+                        </div>
+                        <Tampil label={F.occupationId.label} nilai={o.occupationId} />
+                        <div className="nbf-ringkas__dua">
+                          <Tampil label={F.occupationName.label} nilai={o.occupationName} />
+                        </div>
+                        <div className="nbf-opp__tombol nbf-ringkas__lebar">
+                          <button
+                            type="button"
+                            className="btn btn--sm"
+                            onClick={() => {
+                              // Hanya ditahan bila Occupation belum dipilih sama sekali. Category kosong (KDRiskExposure
+                              // selain 01/02/03) TETAP membuka popup - Pega pun membukanya; backend membuang saringan
+                              // kategori yang kosong (perbaikan 03-10-2026).
+                              if (o.occupationId === '') {
+                                setPesan(TEKS_OKUPASI.pilihOkupasiDulu)
+                                return
+                              }
+                              setPesan(null)
+                              setPopup({ jenis: 'konstruksi', n })
+                            }}
+                          >
+                            {F.pilihKonstruksi.label}
+                          </button>
+                        </div>
+                        <div className="nbf-ringkas__dua">
+                          <Tampil label={F.konstruksi.label} nilai={o.constructionClass} wajib />
+                        </div>
                       </div>
-                      <Tampil label={F.occupationId.label} nilai={o.occupationId} />
-                      <Tampil label={F.occupationName.label} nilai={o.occupationName} />
-                      <div className="nbf-opp__tombol">
-                        <button
-                          type="button"
-                          className="btn btn--sm"
-                          onClick={() => {
-                            // Hanya ditahan bila Occupation belum dipilih sama sekali. Category kosong (KDRiskExposure
-                            // selain 01/02/03) TETAP membuka popup - Pega pun membukanya; backend membuang saringan
-                            // kategori yang kosong (perbaikan 03-10-2026).
-                            if (o.occupationId === '') {
-                              setPesan(TEKS_OKUPASI.pilihOkupasiDulu)
-                              return
-                            }
-                            setPesan(null)
-                            setPopup({ jenis: 'konstruksi', n })
-                          }}
-                        >
-                          {F.pilihKonstruksi.label}
-                        </button>
-                      </div>
-                      <Tampil label={F.konstruksi.label} nilai={o.constructionClass} wajib />
                     </div>
                   </td>
                 </tr>

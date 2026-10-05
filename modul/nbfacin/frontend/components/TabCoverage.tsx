@@ -20,7 +20,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { Gagal, Memuat } from '../../../../inti/frontend/components/ui/dasar'
-import { jumlahDesimal } from '../../../../inti/frontend/lib/desimal'
+import { desimalSah, jumlahDesimal } from '../../../../inti/frontend/lib/desimal'
 import { formatNumber } from '../../../../inti/frontend/lib/format'
 import { ambilObjek, coverageOtomatis, hitungNetRate, simpanObjek, type CoverageObjek, type ObjekFire } from '../api'
 import {
@@ -30,6 +30,8 @@ import {
   GRID_COVERAGE,
   GRID_OBJEK,
   OLDID_NET_RATE,
+  RINGKASAN_COV_ITEM,
+  RINGKASAN_COV_MATA_UANG,
   SIMPAN_COVERAGE,
   TEKS_FORM_OPPORTUNITY,
   TEKS_INWARD,
@@ -47,11 +49,97 @@ export function totalPremiItem(coverages: CoverageObjek[] | undefined, dariServe
   return jumlahDesimal(coverages.map((c) => c.premium)).total
 }
 
+/** Satu baris ringkasan per Object Item Type + Currency (`TempTotalItem.pxResults`). */
+export interface RingkasanItemCoverage {
+  itemType: string
+  currency: string
+  tsi: string
+  premium: string
+}
+
+/** Satu baris ringkasan per Currency (`TempTotal.pxResults`). */
+export interface RingkasanMataUangCoverage {
+  currency: string
+  tsi: string
+  premium: string
+  rate: string
+}
+
+/** Teks desimal -> bilangan bulat + jumlah digit pecahan. */
+function keBulat(t: string): [bigint, number] {
+  const negatif = t.startsWith('-')
+  const [bulat = '0', pecahan = ''] = (negatif || t.startsWith('+') ? t.slice(1) : t).split('.')
+  const n = BigInt((bulat === '' ? '0' : bulat) + pecahan)
+  return [negatif ? -n : n, pecahan.length]
+}
+
+/** a / b dibulatkan setengah-ke-atas menjauhi nol (apd RoundHalfUp backend). */
+function bagiBulat(a: bigint, b: bigint): bigint {
+  const negatif = a < 0n !== b < 0n
+  const pa = a < 0n ? -a : a
+  const pb = b < 0n ? -b : b
+  const q = (2n * pa + pb) / (2n * pb)
+  return negatif ? -q : q
+}
+
+/**
+ * Rate ringkasan per Currency = `@if(TSI = 0, 0, @divide(Premium, TSI, 20) * 1000)` (SumTSIPremiSpreadedRNM_FIRE_Act),
+ * eksak tanpa float: bagi 20 desimal setengah-ke-atas, x 1000, simpan 8 desimal - sama dengan `TotalPerMataUang`
+ * backend untuk grid total per lokasi.
+ */
+export function ratePerMil(premium: string, tsi: string): string {
+  if (!desimalSah(premium.trim()) || !desimalSah(tsi.trim())) return ''
+  const [p, sp] = keBulat(premium.trim())
+  const [t, st] = keBulat(tsi.trim())
+  if (t === 0n) return '0'
+  const q20 = bagiBulat(p * 10n ** BigInt(st + 20), t * 10n ** BigInt(sp))
+  const r8 = bagiBulat(q20 * 1000n, 10n ** 12n)
+  const negatif = r8 < 0n
+  const digit = (negatif ? -r8 : r8).toString().padStart(9, '0')
+  return (negatif ? '-' : '') + digit.slice(0, -8) + '.' + digit.slice(-8)
+}
+
+/**
+ * Ringkasan seluruh lokasi (`SumTSIPremiSpreadedRNM_FIRE_Act`): per item, TSI = `.TSIObjectItem` dan Premium =
+ * `.TotalGrossPremi` (= Σ Premium coverage); dikelompokkan per (ItemType, Currency) dan per Currency, urut kemunculan.
+ */
+export function ringkasanCoverage(objek: ObjekFire[]): { item: RingkasanItemCoverage[]; mataUang: RingkasanMataUangCoverage[] } {
+  const item: { itemType: string; currency: string; tsi: string[]; premium: string[] }[] = []
+  const uang: { currency: string; tsi: string[]; premium: string[] }[] = []
+  for (const x of objek) {
+    for (const it of x.items) {
+      const premi = totalPremiItem(it.coverages, it.totalGrossPremi)
+      let a = item.find((r) => r.itemType === it.itemType && r.currency === it.currency)
+      if (!a) item.push((a = { itemType: it.itemType, currency: it.currency, tsi: [], premium: [] }))
+      a.tsi.push(it.tsi)
+      a.premium.push(premi)
+      let b = uang.find((r) => r.currency === it.currency)
+      if (!b) uang.push((b = { currency: it.currency, tsi: [], premium: [] }))
+      b.tsi.push(it.tsi)
+      b.premium.push(premi)
+    }
+  }
+  return {
+    item: item.map((r) => ({ itemType: r.itemType, currency: r.currency, tsi: jumlahDesimal(r.tsi).total, premium: jumlahDesimal(r.premium).total })),
+    mataUang: uang.map((r) => {
+      const tsi = jumlahDesimal(r.tsi).total
+      const premium = jumlahDesimal(r.premium).total
+      return { currency: r.currency, tsi, premium, rate: ratePerMil(premium, tsi) }
+    }),
+  }
+}
+
 /** Tombol buka/tutup baris. */
 function Buka({ buka, onKlik }: { buka: boolean; onKlik: () => void }) {
   return (
-    <button type="button" className="btn btn--ghost btn--sm" aria-label={TEKS_OBJEK.bukaBaris} aria-expanded={buka} onClick={onKlik}>
-      {buka ? '▾' : '▸'}
+    <button
+      type="button"
+      className={'btn btn--ghost btn--sm nbf-buka' + (buka ? ' nbf-buka--terbuka' : '')}
+      aria-label={TEKS_OBJEK.bukaBaris}
+      aria-expanded={buka}
+      onClick={onKlik}
+    >
+      ▸
     </button>
   )
 }
@@ -199,12 +287,13 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
   }
 
   if (objek === null) return galat ? <Gagal galat={galat} /> : <Memuat />
+  const ringkasan = ringkasanCoverage(objek)
 
   return (
-    <div className="nbf-objek">
+    <div className="nbf-objek nbf-cov-tab">
       <Gagal galat={galat} />
       {tersimpan && <div className="alert alert--ok">{TEKS_INWARD.tersimpan}</div>}
-      <div className="table-wrap">
+      <div className="nbf-cov-wrap">
         <table className="nbf-tabel">
           <thead>
             <tr>
@@ -223,7 +312,7 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
               </tr>
             )}
             {objek.map((x, o) => [
-              <tr key={`o${o}`}>
+              <tr key={`o${o}`} className={terbuka.includes(`o${o}`) ? 'nbf-baris--terbuka' : undefined}>
                 <td>
                   <Buka buka={terbuka.includes(`o${o}`)} onKlik={() => setTerbuka((t) => balik(t, `o${o}`))} />
                 </td>
@@ -234,8 +323,8 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
               terbuka.includes(`o${o}`) && (
                 <tr key={`od${o}`} className="nbf-objek__detail">
                   <td colSpan={4}>
-                    <div className="nbf-objek__isi">
-                      <div className="table-wrap">
+                    <div className="nbf-objek__isi nbf-lapis nbf-lapis--objek">
+                      <div className="nbf-cov-wrap">
                         <table className="nbf-tabel">
                           <thead>
                             <tr>
@@ -256,7 +345,7 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                             {x.items.map((it, i) => {
                               const covs = it.coverages ?? []
                               return [
-                                <tr key={`i${i}`}>
+                                <tr key={`i${i}`} className={terbuka.includes(`i${o}-${i}`) ? 'nbf-baris--terbuka' : undefined}>
                                   <td>
                                     <Buka buka={terbuka.includes(`i${o}-${i}`)} onKlik={() => setTerbuka((t) => balik(t, `i${o}-${i}`))} />
                                   </td>
@@ -275,7 +364,7 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                                 terbuka.includes(`i${o}-${i}`) && (
                                   <tr key={`id${i}`} className="nbf-objek__detail">
                                     <td colSpan={6}>
-                                      <div className="table-wrap">
+                                      <div className="nbf-cov-wrap nbf-lapis nbf-lapis--item">
                                         <table className="nbf-tabel">
                                           <thead>
                                             <tr>
@@ -299,14 +388,16 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                                               </tr>
                                             )}
                                             {covs.map((c, n) => [
-                                              <tr key={`c${n}`}>
+                                              <tr key={`c${n}`} className={terbuka.includes(`c${o}-${i}-${n}`) ? 'nbf-baris--terbuka' : undefined}>
                                                 <td>
                                                   <Buka
                                                     buka={terbuka.includes(`c${o}-${i}-${n}`)}
                                                     onKlik={() => setTerbuka((t) => balik(t, `c${o}-${i}-${n}`))}
                                                   />
                                                 </td>
-                                                <td>{c.oldId}</td>
+                                                <td>
+                                                  <span className="nbf-cov-kode">{c.oldId}</span>
+                                                </td>
                                                 <td className="nbf-angka">{formatNumber(c.rateOjk, DESIMAL)}</td>
                                                 <td className="nbf-angka">{formatNumber(c.premium, DESIMAL)}</td>
                                                 <td className="table__actions">
@@ -347,7 +438,7 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                           </tbody>
                         </table>
                       </div>
-                      <div className="table-wrap">
+                      <div className="nbf-cov-wrap">
                         <table className="nbf-tabel">
                           <thead>
                             <tr>
@@ -383,6 +474,65 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
           </tbody>
         </table>
       </div>
+      {/* Ringkasan seluruh coverage (SummaryCoverage_Section) - hijau seperti Pega, ikut berubah saat premi diubah. */}
+      <section className="nbf-cov-ringkasan">
+        <div className="nbf-cov-wrap">
+          <table className="nbf-tabel">
+            <thead>
+              <tr>
+                {RINGKASAN_COV_ITEM.map((k) => (
+                  <th key={k} scope="col">
+                    {k}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ringkasan.item.length === 0 && (
+                <tr>
+                  <td colSpan={4}>{TEKS_INWARD.kosong}</td>
+                </tr>
+              )}
+              {ringkasan.item.map((r) => (
+                <tr key={`${r.itemType}|${r.currency}`}>
+                  <td>{r.itemType}</td>
+                  <td>{r.currency}</td>
+                  <td className="nbf-angka">{formatNumber(r.tsi, DESIMAL)}</td>
+                  <td className="nbf-angka">{formatNumber(r.premium, DESIMAL)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="nbf-cov-wrap">
+          <table className="nbf-tabel">
+            <thead>
+              <tr>
+                {RINGKASAN_COV_MATA_UANG.map((k) => (
+                  <th key={k} scope="col">
+                    {k}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ringkasan.mataUang.length === 0 && (
+                <tr>
+                  <td colSpan={4}>{TEKS_INWARD.kosong}</td>
+                </tr>
+              )}
+              {ringkasan.mataUang.map((r) => (
+                <tr key={r.currency}>
+                  <td>{r.currency}</td>
+                  <td className="nbf-angka">{formatNumber(r.tsi, DESIMAL)}</td>
+                  <td className="nbf-angka">{formatNumber(r.premium, DESIMAL)}</td>
+                  <td className="nbf-angka">{formatNumber(r.rate, DESIMAL)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
       <div className="nbf-objek__kaki">
         <button type="button" className="btn btn--primary" onClick={() => void simpan()} disabled={menyimpan}>
           {menyimpan ? TEKS_FORM_OPPORTUNITY.menyimpan : SIMPAN_COVERAGE}

@@ -206,89 +206,101 @@ function ObjectAddress({ o, ubah, galatType }: { o: ObjekFire; ubah: (o: ObjekFi
   const set = (k: keyof ObjekFire) => (v: string) => ubah({ ...o, [k]: v })
   const [pilihRisk, setPilihRisk] = useState(false)
   return (
-    <div className="nbf-objek__isi">
-      <div className="nbf-opp__kolom">
-        <div className="nbf-opp__tumpuk">
-          <Field label={A.objectNo.label} value={o.objectNo} onChange={set('objectNo')} />
-          <Pilih
-            label={A.objectType.label}
-            value={o.objectType}
-            onChange={(v) => ubah(gantiObjectType(o, v))}
-            opsi={OPSI_TYPE}
-            kosong={A.objectTypeKosong.label}
-            required
-            error={galatType ? TEKS_OBJEK.typeWajib : undefined}
+    // Dirapikan work owner 05-10-2026: tiga kartu (objek, Risk Address, bangunan), dua kolom sama lebar, isian ringkas.
+    <div className="nbf-objek__isi nbf-ringkas nbf-alamat">
+      <section className="nbf-alamat__blok">
+        <div className="nbf-opp__kolom">
+          <div className="nbf-opp__tumpuk">
+            <Field label={A.objectNo.label} value={o.objectNo} onChange={set('objectNo')} />
+            <Pilih
+              label={A.objectType.label}
+              value={o.objectType}
+              onChange={(v) => ubah(gantiObjectType(o, v))}
+              opsi={OPSI_TYPE}
+              kosong={A.objectTypeKosong.label}
+              required
+              error={galatType ? TEKS_OBJEK.typeWajib : undefined}
+            />
+            {o.objectType === OBJECT_TYPE_LAINNYA && <Field label={A.objectName.label} value={o.objectName} onChange={set('objectName')} />}
+          </div>
+          <div className="nbf-opp__tumpuk">
+            <Centang label={A.materialDamage.label} checked={o.isMaterialDamage} onChange={(v) => ubah({ ...o, isMaterialDamage: v })} />
+            <Centang label={A.topRisk.label} checked={o.isTopRisk} onChange={(v) => ubah({ ...o, isTopRisk: v })} />
+          </div>
+        </div>
+      </section>
+
+      <section className="nbf-alamat__blok">
+        {/* Tombol Choose / Clear di atas judul Risk Address (work owner 05-10-2026). */}
+        <div className="nbf-alamat__kepala">
+          <div className="nbf-opp__tombol">
+            <button type="button" className="btn btn--sm" onClick={() => setPilihRisk(true)}>
+              {A.chooseRisk.label}
+            </button>
+            <button type="button" className="btn btn--sm" onClick={() => ubah(kosongkanRisk(o))}>
+              {A.clearRisk.label}
+            </button>
+          </div>
+          <h5 className="nbf-objek__judul">{A.judulRisk.label}</h5>
+        </div>
+        {pilihRisk && (
+          <PopupRiskAddress
+            awal={saringDari(o)}
+            onTutup={() => setPilihRisk(false)}
+            onPilih={(b) => {
+              ubah(terapkanRisk(o, b))
+              setPilihRisk(false)
+            }}
+            onBaru={(a, id) => {
+              ubah(terapkanAlamatBaru(o, a, id))
+              setPilihRisk(false)
+            }}
           />
-          {o.objectType === OBJECT_TYPE_LAINNYA && <Field label={A.objectName.label} value={o.objectName} onChange={set('objectName')} />}
+        )}
+        <div className="nbf-opp__kolom">
+          <div className="nbf-opp__tumpuk">
+            <Tampil label={A.type.label} nilai={o.roadType} />
+            <Tampil label={A.address.label} nilai={o.roadName} />
+            <Field label={A.buildingNo.label} value={o.buildingNo} onChange={set('buildingNo')} />
+            <Tampil label={A.zipCode.label} nilai={o.zipCode} />
+            <Tampil label={A.country.label} nilai={o.country} />
+          </div>
+          <div className="nbf-opp__tumpuk">
+            <Tampil label={A.territory.label} nilai={o.territory} />
+            <Tampil label={A.city.label} nilai={o.city} />
+            <Tampil label={A.district.label} nilai={o.district} />
+            <Tampil label={A.province.label} nilai={o.province} />
+            <Tampil label={A.riskAddressId.label} nilai={o.riskAddressId} />
+          </div>
         </div>
-        <div className="nbf-opp__tumpuk">
-          <Centang label={A.materialDamage.label} checked={o.isMaterialDamage} onChange={(v) => ubah({ ...o, isMaterialDamage: v })} />
-          <Centang label={A.topRisk.label} checked={o.isTopRisk} onChange={(v) => ubah({ ...o, isTopRisk: v })} />
-        </div>
-      </div>
-
-      <div className="nbf-opp__tombol">
-        <button type="button" className="btn btn--sm" onClick={() => setPilihRisk(true)}>
-          {A.chooseRisk.label}
-        </button>
-        <button type="button" className="btn btn--sm" onClick={() => ubah(kosongkanRisk(o))}>
-          {A.clearRisk.label}
-        </button>
-      </div>
-      {pilihRisk && (
-        <PopupRiskAddress
-          awal={saringDari(o)}
-          onTutup={() => setPilihRisk(false)}
-          onPilih={(b) => {
-            ubah(terapkanRisk(o, b))
-            setPilihRisk(false)
-          }}
-          onBaru={(a, id) => {
-            ubah(terapkanAlamatBaru(o, a, id))
-            setPilihRisk(false)
-          }}
-        />
-      )}
-
-      <h5 className="nbf-objek__judul">{A.judulRisk.label}</h5>
-      <div className="nbf-opp__kolom">
-        <div className="nbf-opp__tumpuk">
-          <Tampil label={A.type.label} nilai={o.roadType} />
-          <Tampil label={A.address.label} nilai={o.roadName} />
-          <Field label={A.buildingNo.label} value={o.buildingNo} onChange={set('buildingNo')} />
-          <Tampil label={A.zipCode.label} nilai={o.zipCode} />
-          <Tampil label={A.country.label} nilai={o.country} />
+        {/* Risk Location memanjang sampai tepi kanan kotak Risk Address ID (work owner 05-10-2026). */}
+        <div className="nbf-alamat__lokasi">
           <Tampil label={A.riskLocation.label} nilai={o.riskLocation} />
         </div>
-        <div className="nbf-opp__tumpuk">
-          <Tampil label={A.territory.label} nilai={o.territory} />
-          <Tampil label={A.city.label} nilai={o.city} />
-          <Tampil label={A.district.label} nilai={o.district} />
-          <Tampil label={A.province.label} nilai={o.province} />
-          <Tampil label={A.riskAddressId.label} nilai={o.riskAddressId} />
-        </div>
-      </div>
+      </section>
 
-      <h5 className="nbf-objek__judul">{A.judulBangunan.label}</h5>
-      <div className="nbf-opp__kolom">
-        <div className="nbf-opp__tumpuk">
-          <Field
-            label={A.numberOfFloor.label}
-            type="number"
-            value={o.numberOfFloor}
-            onChange={set('numberOfFloor')}
-            error={lantaiMinus(o.numberOfFloor) ? TEKS_OBJEK.lantaiMinus : undefined}
-          />
-          <Pilih label={A.roofType.label} value={o.roofType} onChange={set('roofType')} opsi={denganTersimpan(OPSI_ROOF_TYPE, o.roofType)} kosong={BANGUNAN_KOSONG} />
-          <Pilih label={A.wallType.label} value={o.wallType} onChange={set('wallType')} opsi={denganTersimpan(OPSI_WALL_TYPE, o.wallType)} kosong={BANGUNAN_KOSONG} />
-          <Pilih label={A.floorType.label} value={o.floorType} onChange={set('floorType')} opsi={denganTersimpan(OPSI_FLOOR_TYPE, o.floorType)} kosong={BANGUNAN_KOSONG} />
+      <section className="nbf-alamat__blok">
+        <h5 className="nbf-objek__judul">{A.judulBangunan.label}</h5>
+        <div className="nbf-opp__kolom">
+          <div className="nbf-opp__tumpuk">
+            <Field
+              label={A.numberOfFloor.label}
+              type="number"
+              value={o.numberOfFloor}
+              onChange={set('numberOfFloor')}
+              error={lantaiMinus(o.numberOfFloor) ? TEKS_OBJEK.lantaiMinus : undefined}
+            />
+            <Pilih label={A.roofType.label} value={o.roofType} onChange={set('roofType')} opsi={denganTersimpan(OPSI_ROOF_TYPE, o.roofType)} kosong={BANGUNAN_KOSONG} />
+            <Pilih label={A.wallType.label} value={o.wallType} onChange={set('wallType')} opsi={denganTersimpan(OPSI_WALL_TYPE, o.wallType)} kosong={BANGUNAN_KOSONG} />
+            <Pilih label={A.floorType.label} value={o.floorType} onChange={set('floorType')} opsi={denganTersimpan(OPSI_FLOOR_TYPE, o.floorType)} kosong={BANGUNAN_KOSONG} />
+          </div>
+          <div className="nbf-opp__tumpuk">
+            <Field label={A.partitionType.label} value={o.partitionType} onChange={set('partitionType')} />
+            <Field label={A.supportWallType.label} value={o.supportWallType} onChange={set('supportWallType')} />
+            <Field label={A.otherType.label} value={o.otherType} onChange={set('otherType')} />
+          </div>
         </div>
-        <div className="nbf-opp__tumpuk">
-          <Field label={A.partitionType.label} value={o.partitionType} onChange={set('partitionType')} />
-          <Field label={A.supportWallType.label} value={o.supportWallType} onChange={set('supportWallType')} />
-          <Field label={A.otherType.label} value={o.otherType} onChange={set('otherType')} />
-        </div>
-      </div>
+      </section>
     </div>
   )
 }
@@ -405,10 +417,10 @@ export default function TabObject({ caseId, insuredName = '' }: { caseId: string
   const tampil = baris.slice((hal - 1) * GRID_OBJEK.ukuran, hal * GRID_OBJEK.ukuran)
 
   return (
-    <div className="nbf-objek">
+    <div className="nbf-objek nbf-obj-tab">
       <Gagal galat={galat} />
       {tersimpan && <div className="alert alert--ok">{TEKS_INWARD.tersimpan}</div>}
-      <div className="table-wrap">
+      <div className="nbf-cov-wrap">
         <table className="nbf-tabel">
           <thead>
             <tr>
@@ -434,18 +446,18 @@ export default function TabObject({ caseId, insuredName = '' }: { caseId: string
             {tampil.map((x) => {
               const sub = terbuka[x.kunci]
               return [
-                <tr key={x.kunci}>
+                <tr key={x.kunci} className={sub !== undefined ? 'nbf-baris--terbuka' : undefined}>
                   <td>
                     <button
                       type="button"
-                      className="btn btn--ghost btn--sm"
+                      className={'btn btn--ghost btn--sm nbf-buka' + (sub !== undefined ? ' nbf-buka--terbuka' : '')}
                       aria-label={TEKS_OBJEK.bukaBaris}
                       aria-expanded={sub !== undefined}
                       onClick={() =>
                         setTerbuka((t) => (t[x.kunci] === undefined ? { ...t, [x.kunci]: SUBTAB_OBJEK[0] } : tanpa(t, x.kunci)))
                       }
                     >
-                      {sub === undefined ? '▸' : '▾'}
+                      ▸
                     </button>
                   </td>
                   <td>
@@ -463,6 +475,7 @@ export default function TabObject({ caseId, insuredName = '' }: { caseId: string
                 sub !== undefined && (
                   <tr key={`${x.kunci}-detail`} className="nbf-objek__detail">
                     <td colSpan={6}>
+                      <div className="nbf-lapis nbf-lapis--objek">
                       <StripTab tab={SUBTAB_OBJEK} aktif={sub} onPilih={(t) => setTerbuka((s) => ({ ...s, [x.kunci]: t }))} />
                       {sub === SUBTAB_OBJEK[0] ? (
                         <ObjectAddress o={x.data} ubah={(d) => ubah(x.kunci, d)} galatType={cobaSimpan && x.data.objectType === ''} />
@@ -491,6 +504,7 @@ export default function TabObject({ caseId, insuredName = '' }: { caseId: string
                       ) : (
                         <BelumTersedia apa={`${TEKS_INWARD.isiTab} ${sub}`} />
                       )}
+                      </div>
                     </td>
                   </tr>
                 ),

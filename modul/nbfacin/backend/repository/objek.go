@@ -57,7 +57,7 @@ type ObjekOracle struct{ db *db.DB }
 func NewObjekOracle(d *db.DB) *ObjekOracle { return &ObjekOracle{db: d} }
 
 type tabelObjek struct {
-	work, general, loc, prop, risk, bang, sekitar, item, okupasi, tol, fea, rugi, koas, cov, ded string
+	work, general, loc, prop, risk, bang, sekitar, item, okupasi, tol, fea, rugi, koas, cov, ded, spread string
 }
 
 func (r *ObjekOracle) tabel() (tabelObjek, error) {
@@ -68,7 +68,8 @@ func (r *ObjekOracle) tabel() (tabelObjek, error) {
 	}{{TabelWorkPolis, &t.work}, {TabelGeneralPolis, &t.general}, {TabelLocationList, &t.loc}, {TabelProperty, &t.prop},
 		{TabelRiskLocation, &t.risk}, {TabelBuildingConstruction, &t.bang}, {TabelSurroundingRisk, &t.sekitar},
 		{TabelPropertyItemList, &t.item}, {TabelOccupationList, &t.okupasi}, {TabelTableOfLimit, &t.tol},
-		{TabelFEAList, &t.fea}, {TabelListCauseOfLoss, &t.rugi}, {TabelCoinsData, &t.koas}, {TabelCoverageList, &t.cov}, {TabelDeductibleList, &t.ded}} {
+		{TabelFEAList, &t.fea}, {TabelListCauseOfLoss, &t.rugi}, {TabelCoinsData, &t.koas}, {TabelCoverageList, &t.cov}, {TabelDeductibleList, &t.ded},
+		{TabelSpreadingList, &t.spread}} {
 		q, err := r.db.Qualify(x.nama)
 		if err != nil {
 			return t, err
@@ -122,6 +123,8 @@ func sqlHapusObjek(t tabelObjek) []string {
 			" AND o.PARENT_ID IN (" + prop + "))",
 		"DELETE FROM " + t.okupasi + " o WHERE " + syaratIndukOkupasi + " AND o.PARENT_ID IN (" + prop + ")",
 		sqlHapusDeductible(t),
+		// tiket 48: T_SPREADINGLIST ber-FK ke coverage (migrasi 198); dipertahankan ulang services (K48-7).
+		sqlHapusSpreading(t.spread, t.cov, t.item, t.prop, t.loc),
 		sqlHapusCoverage(t),
 		"DELETE FROM " + t.item + " WHERE PARENT_ID IN (" + prop + ")",
 		"DELETE FROM " + t.risk + " WHERE PARENT_ID IN (" + prop + ")",

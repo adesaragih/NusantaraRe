@@ -29,7 +29,8 @@ func tipeAkhirMigrasi(t *testing.T) map[string]map[string]string {
 	for _, berkas := range []string{"182_t_general_polis.sql", "183_t_quotationdata.sql", "184_t_quotationdata_sob.sql", "185_t_cedingcolist.sql",
 		"186_t_objek_fire.sql", "187_t_surroundingrisk.sql", "188_t_propertyitemlist.sql", "189_t_occupationlist.sql",
 		"191_t_listcauseofloss.sql", "192_lebar_alamat_risiko.sql",
-		"193_t_coveragelist.sql", "194_t_deductiblelist.sql", "195_t_coveragelist_unit_akumulasi.sql"} {
+		"193_t_coveragelist.sql", "194_t_deductiblelist.sql", "195_t_coveragelist_unit_akumulasi.sql",
+		"198_spreading.sql", "199_cedant.sql"} {
 		b, err := os.ReadFile("../../migrations/" + berkas)
 		if err != nil {
 			t.Fatal(err)
@@ -97,12 +98,20 @@ func TestMigrasiFlatSebagianCocokRancangan(t *testing.T) {
 		"T_DEDUCTIBLELIST.AMOUNT": "NUMBER(38,8)", "T_DEDUCTIBLELIST.PCT_DEDUCTIBLE": "NUMBER(38,8)",
 		"T_DEDUCTIBLELIST.PCT_DEDUCTIBLE2": "NUMBER(38,8)", "T_DEDUCTIBLELIST.TYPE_DEDUCTIBLE": "NUMBER(5)",
 		"T_DEDUCTIBLELIST.TYPE_DEDUCTIBLE2": "NUMBER(5)",
+		// tiket 48 (198): persen / uang (ADR-0016) - rancangan NUMBER polos.
+		"T_GENERAL_POLIS.PERCENT_SHARE": "NUMBER(38,8)", "T_COVERAGELIST.TSI_NUSANTARA_RE": "NUMBER(38,8)",
+		"T_COVERAGELIST.PREMI_NUSANTARA_RE": "NUMBER(38,8)",
+		// tiket 49 (199): kode -> NUMBER(5) (A170); ShareOfCeding teks "N%" apa adanya (pola PCT_LIMIT); PARENT_ID = PK
+		// teks T_GENERAL_POLIS (butir 76.1); persen NUMBER(38,8).
+		"T_GENERAL_POLIS.SHARE_CEDANT_TYPE": "NUMBER(5)", "T_QUOTATIONDATA.SHARE_OF_CEDING": "VARCHAR2(50)",
+		"T_CEDINGCEDANTLIST.ID": "NUMBER(19)", "T_CEDINGCEDANTLIST.PARENT_ID": "VARCHAR2(32)",
+		"T_CEDINGCEDANTLIST.SHARE_CEDING": "NUMBER(38,8)",
 	}
 	akhir := tipeAkhirMigrasi(t)
 	diperiksa := 0
 	for _, tabel := range []string{"T_GENERAL_POLIS", "T_QUOTATIONDATA", "T_CEDINGCOLIST", "T_LOCATIONLIST",
 		"T_PROPERTY", "T_RISKLOCATION", "T_BUILDINGCONSTRUCTION", "T_SURROUNDINGRISK", "T_PROPERTYITEMLIST", "T_OCCUPATIONLIST", "T_TABLEOFLIMIT",
-		"T_LISTCAUSEOFLOSS", "T_COINSDATA", "T_COVERAGELIST", "T_DEDUCTIBLELIST"} {
+		"T_LISTCAUSEOFLOSS", "T_COINSDATA", "T_COVERAGELIST", "T_DEDUCTIBLELIST", "T_CEDINGCEDANTLIST"} {
 		for k, tipe := range akhir[tabel] {
 			// "VARCHAR2(10)" dari "VARCHAR2(10) DEFAULT 'UNKNOWN' NOT NULL" - tipe saja yang dibandingkan.
 			if i := indeksKolom(tabel, k); i >= 0 && strings.HasPrefix(skemaTabel[tabel][i].tipe, tipe+" ") {
@@ -126,7 +135,7 @@ func TestMigrasiFlatSebagianCocokRancangan(t *testing.T) {
 	}
 	// Dibuat UTUH: setiap kolom rancangan (sesudah amandemen) ada di migrasi.
 	for _, tabel := range []string{"T_CEDINGCOLIST", "T_RISKLOCATION", "T_BUILDINGCONSTRUCTION", "T_SURROUNDINGRISK", "T_TABLEOFLIMIT", "T_LISTCAUSEOFLOSS",
-		"T_COINSDATA"} {
+		"T_COINSDATA", "T_CEDINGCEDANTLIST"} {
 		for _, k := range skemaTabel[tabel] {
 			if akhir[tabel][k.nama] == "" {
 				t.Errorf("%s.%s rancangan tidak dibuat migrasi", tabel, k.nama)
@@ -138,8 +147,10 @@ func TestMigrasiFlatSebagianCocokRancangan(t *testing.T) {
 	// + 6 baru, 188) + 10 T_OCCUPATIONLIST + 7 T_TABLEOFLIMIT (189) = 139.
 	// + 4 T_LOCATIONLIST (191) + 15 T_LISTCAUSEOFLOSS + 5 T_COINSDATA (191) + 2 T_PROPERTYITEMLIST + 34 T_COVERAGELIST
 	// (193) = 199. + 18 T_DEDUCTIBLELIST (194) = 217. + 3 T_COVERAGELIST (195) = 220.
-	if diperiksa != 220 {
-		t.Errorf("%d kolom diperiksa, mau 220", diperiksa)
+	// + 1 T_GENERAL_POLIS + 2 T_COVERAGELIST (198) = 223. + 1 T_GENERAL_POLIS + 1 T_QUOTATIONDATA + 9 T_CEDINGCEDANTLIST
+	// (199) = 234.
+	if diperiksa != 234 {
+		t.Errorf("%d kolom diperiksa, mau 234", diperiksa)
 	}
 	// Butir 87/88: Risk Location / Address VARCHAR2(4000), delapan kolom alamat lain VARCHAR2(100) sesudah 192.
 	for tk, mau := range map[string]string{"T_RISKLOCATION.ASM_ADDRESS": "VARCHAR2(4000)", "T_PROPERTY.ROAD_NAME": "VARCHAR2(4000)",

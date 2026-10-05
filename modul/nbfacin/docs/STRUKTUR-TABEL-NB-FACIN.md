@@ -4,7 +4,7 @@ Modul ini **membuat tujuh belas tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tik
 `T_QUOTATIONDATA` **sebagian** (migrasi 182/183, tiket 31 / butir 78.4), `T_CEDINGCOLIST` utuh (185, tiket 34), dan tabel tab Object FIRE (186, tiket 35: `T_LOCATIONLIST` /
 `T_PROPERTY` sebagian, `T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` utuh; 187, tiket 38: `T_SURROUNDINGRISK` utuh; 188, tiket 39: `T_PROPERTYITEMLIST` sebagian; 189, tiket 40: `T_OCCUPATIONLIST` sebagian, `T_TABLEOFLIMIT` utuh; 190, tiket 41: `T_FEALIST` baru; 191, tiket 42: `T_LISTCAUSEOFLOSS`, `T_COINSDATA` utuh; 193, tiket 43: `T_COVERAGELIST` sebagian; 194, tiket 45: `T_DEDUCTIBLELIST` sebagian) — dan **menulis**
 baris `T_WORK_POLIS` milik premiumlistlife (K-064; tidak dibuat, tidak dipetakan kolomnya di sini). Selebihnya ia hanya
-**membaca** dua puluh satu tabel / view yang sudah ada (lima di antaranya — `ACCUMULATION`, `PROVINCE`, `ACCUMULATEDTYPE`, `CZONE` milik Master Data dan `NATION` warisan yang ditulis Master Data — digambarkan di `modul/masterdata/docs/STRUKTUR-TABEL-MASTER-DATA.md`) — enam tabel limit
+**membaca** dua puluh satu tabel / view yang sudah ada (lima di antaranya — `ACCUMULATION`, `PROVINCE`, `ACCUMULATEDTYPE`, `CZONE` milik `masterprovince` (dulu Master Data) dan `NATION` yang ditulis `masternation` — digambarkan di `modul/masterprovince/docs/STRUKTUR-TABEL-MASTER-DATA.md`) — enam tabel limit
 akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), tabel bisnis `BUSINESS` (tiket 28), `MARKETINGOFFICER` (31), `AGENT`
 (33), `RISKADDRESS` (36; juga DISISIPI tiket 37), `RW` (36/37), `OCCUPATION` (38), `V_JN_OBJ_ITEM` dan `CURRENCY` (39), `TABLEOFLIMIT` (40), `COVERAGE` (43), view `CITY` / `DISTRICT`, tabel `JSON_POLIS` dan `NATION` (46) — sama dengan bab "Tabel warisan" `MODUL.md`. Enam tabel limit akseptasi yang sudah ada
 di `POOLDATA`, dengan nama tabel dan kolom **verbatim**. Berkas ini **peta**, bukan DDL: hanya kolom yang dibaca
@@ -138,6 +138,8 @@ dijaga `TestMigrasiFlatSebagianCocokRancangan`). Berbagi PK dengan `T_WORK_POLIS
 | `OFFERING_DATE` | teks | VARCHAR2(30) | Offering date — `.PolicyData.OfferingDate`, teks Pega `YYYYMMDD` |
 | `END_DATE_TIME` | teks | VARCHAR2(30) | End date — `.PolicyData.EndDateTime`, teks Pega |
 | `FOLLOWING` | teks | VARCHAR2(50) | Old Policy Number — `.Following` (sel 72), tampil saja |
+| `PERCENT_SHARE` | angka desimal | NUMBER(38,8) | tiket 48 (migrasi 198) — % Share RNM `.OfferFacIn.PercentShare` (tab Spreading sel 80), 0–100 |
+| `SHARE_CEDANT_TYPE` | angka bulat | NUMBER(5) | tiket 49 (migrasi 199) — Share Cedant Type `.OfferFacIn.ShareCedantType`: 0 Gross, 1 Share RNM (`DDL\ShareCedantType.xml`); kosong = belum dipilih |
 
 ## T_QUOTATIONDATA
 
@@ -161,6 +163,7 @@ per case (`UQ_T_QUOTATIONDATA_PARENT`, A87); `PARENT_ID` → `T_GENERAL_POLIS.ID
 | `CEDING_CO` | teks | VARCHAR2(1000) | gabungan `;` kode Ceding Co — `.QuotationData.CedingCo`; migrasi **185** (`ALTER … ADD`, butir 80) |
 | `CEDING_CO_NAME` | teks | VARCHAR2(4000) | Ceding co name — `.QuotationData.CedingCoName` (sel 49), gabungan `;` nama dari `AGENT` (tiket 34); 183 VARCHAR2(500), dilebarkan migrasi **185** (butir 80) |
 | `GROUP_NAME` | teks | VARCHAR2(500) | Group Name — `.QuotationData.GroupName` (sel 56), tampil saja |
+| `SHARE_OF_CEDING` | teks | VARCHAR2(50) | tiket 49 (migrasi 199) — `.QuotationData.ShareOfCeding`, teks Pega apa adanya: "100%" (Gross) atau % Share RNM + "%" (Share RNM), `SetShareOfCeding`; rancangan NUMBER, contoh 94/94 berbentuk "N%" |
 
 ## T_CEDINGCOLIST
 
@@ -178,6 +181,54 @@ rancangan, ID/PARENT_ID NUMBER(19) (A92). Satu baris per ceding, urut pilih; dig
 | `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID — baris aplikasi v4 acak (A106), baris loader v5 |
 | `CEDING_CO` | teks | VARCHAR2(50) | kode `AGENT.ID` — `.CedingCoList(n).CedingCo` |
 | `CEDING_CO_NAME` | teks | VARCHAR2(500) | nama dari `AGENT.CLIENTNAME` — `.CedingCoList(n).CedingCoName` |
+
+## T_CEDINGCEDANTLIST
+
+Tiket 49 (tab Inw Fac Cedant Panels) — **dibuat utuh** modul ini, migrasi `199_cedant.sql` (+ `SEQ_T_CEDINGCEDANTLIST`,
+indeks `IX_CEDINGCEDANTLIST_PARENT`). Tabel RANCANGAN (jalur `CedingCedantList`, induk `T_GENERAL_POLIS`, kelas
+Data-Quotation). Satu baris per cedant, urut grid; diganti utuh tiap Save tab Cedant. `CurrencyList` per cedant
+(`T_CEDING_CURRENCYLIST`) belum dibuat (C-1).
+
+| Kolom | Tipe | Tipe DDL (migrasi 199) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_CEDINGCEDANTLIST` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan (diisi loader) |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan (diisi loader) |
+| `PARENT_ID` | teks | VARCHAR2(32) NOT NULL | = `T_GENERAL_POLIS.ID` (FK tanpa `ON DELETE`) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan grid, mulai 1 |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID v4 acak (A106) |
+| `CEDING_CO` | teks | VARCHAR2(50) | kode `AGENT.ID` — `.CedingCedantList(n).CedingCo` (Choose Ceding) |
+| `CEDING_CO_NAME` | teks | VARCHAR2(500) | nama — `.CedingCedantList(n).CedingCoName` |
+| `SHARE_CEDING` | angka desimal | NUMBER(38,8) | % Share cedant — `.CedingCedantList(n).ShareCeding`, 0–100 |
+
+## T_CLAUSELIST
+
+Tiket 47 (tab Clauses kasus FIRE) — **dibuat utuh** modul ini, migrasi `197_t_clauselist.sql` (+ `SEQ_T_CLAUSELIST`, indeks
+`IX_CLAUSELIST_PARENT`). `pyWorkPage.ClauseList` (kelas Data-Clause) di akar kasus, induk `T_GENERAL_POLIS`, BESERTA
+`.ClauseList(n).ArgumentList` dalam satu tabel (K47-4, work owner 05-10-2026 "bisa jadi 1 tabel aja"): **satu baris per
+argumen**, kolom klausa berulang; klausa tanpa argumen = satu baris ber-`ARGUMENT_SEQ_NO` kosong. TIDAK ada di workbook
+rancangan — rancangan agent berpola rancangan (K47-1). Lebar teks 4000 (K47-2). Diganti utuh tiap Save tab.
+
+| Kolom | Tipe | Tipe DDL (migrasi 197) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_CLAUSELIST` (satu per baris argumen) |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | teks | VARCHAR2(32) NOT NULL | = `T_GENERAL_POLIS.ID` (ID kasus; FK tanpa `ON DELETE`) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan klausa, mulai 1 — sama di semua baris satu klausa |
+| `ARGUMENT_SEQ_NO` | angka bulat | NUMBER(5) | urutan argumen di klausa itu, mulai 1; kosong = klausa tanpa argumen |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID v4 acak (A106) |
+| `CLAUSE_CODE` | teks | VARCHAR2(4000) | `.ClauseCode` = `.ID` view `CLAUSE` (JSON `ID` `M_CLAUSE`) hasil Choose Clause |
+| `CLAUSE_TITLE` | teks | VARCHAR2(4000) | `.ClauseTitle` |
+| `CLAUSE_DESCRIPTION` | teks | VARCHAR2(4000) | `.ClauseDescription` (= `.Info` hasil cari) |
+| `CLAUSE_LANGUAGE` | teks | VARCHAR2(10) | `.ClauseLanguage` "0" Indonesia / "1" Inggris / "2" lain (PostAct) |
+| `CLAUSE_LANGUAGE_ID` | teks | VARCHAR2(4000) | `.ClauseLanguageID` (= `.Language` hasil cari) |
+| `CLAUSE_CONTENT` | teks | VARCHAR2(4000) | `.ClauseContent` — isi sesudah argumen diganti; > 4000 bita ditolak (400) |
+| `CLAUSE_CONTENT_TEMP` | teks | VARCHAR2(4000) | `.ClauseContentTemp` — isi asli (`.Text`), dasar penggantian |
+| `ARGUMENT_COUNT` | teks | VARCHAR2(50) | `.ArgumentCount` — teks angka (RetrieveArgumentNumberClauseSQL `count(*)`) |
+| `ARGUMENT_NUMBER` | teks | VARCHAR2(4000) | `.ArgumentList(n).ArgumentNumber` (`M_ARGCLAUSEFIRE` JSON `ArgumentNumber`) |
+| `ARGUMENT_DESCRIPTION` | teks | VARCHAR2(4000) | `.ArgumentList(n).ArgumentDescription` (JSON `Description`) |
+| `ARGUMENT_VALUE` | teks | VARCHAR2(4000) | `.ArgumentList(n).ArgumentValue` — Isi Argumen (awal JSON `DefaultValue`) |
 
 ## T_LOCATIONLIST
 
@@ -385,6 +436,34 @@ medan kontrak ADA di rancangan — tanpa kolom baru. Medan uang / rate / persen 
 | `UNIT` | teks | VARCHAR2(50) | tiket 46 (migrasi 195 `ALTER ADD`) — `.Unit` Indemnity Unit, kode apa adanya |
 | `ACCUMULATION_CODE` | teks | VARCHAR2(50) | tiket 46 (195) — `.AccumulationCode` (Choose / Copy Accumulation) |
 | `ACCUMULATION_DESCRIPTION` | teks | VARCHAR2(500) | tiket 46 (195) — `.AccumulationDescription` = Accumulation Address |
+| `TSI_NUSANTARA_RE` | angka desimal | NUMBER(38,8) | tiket 48 (198) — `.TSINusantaraRe` = PercentShare × TSILiability / 100 (CountPremiAndTSIRNMFireMBU_ACT langkah 6) |
+| `PREMI_NUSANTARA_RE` | angka desimal | NUMBER(38,8) | tiket 48 (198) — `.PremiNusantaraRe` = PercentShare × Premium / 100 − PercentShare × Discount / 100 |
+
+## T_SPREADINGLIST
+
+Tiket 48 (tab Spreading FIRE) — **dibuat sebagian** modul ini, migrasi `198_spreading.sql` (+ `SEQ_T_SPREADINGLIST`, indeks
+`IX_T_SPREADINGLIST_PARENT`). Tabel RANCANGAN (jalur `LocationList/Property/PropertyItemList/CoverageList/SpreadingList`,
+induk `T_COVERAGELIST`, kelas Data-SpreadingRisk); kolom = yang ditulis tab Spreading NB FIRE. Diganti utuh tiap Save tab
+Spreading; dipertahankan menurut posisi saat Save tab Object (K48-7). Total spreading TIDAK disimpan (K-067).
+
+| Kolom | Tipe | Tipe DDL (migrasi 198) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_SPREADINGLIST` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_COVERAGELIST.ID` (FK tanpa `ON DELETE`) |
+| `PARENT_TABLE` | teks | VARCHAR2(30) | `T_COVERAGELIST` (pola loader) |
+| `SRC_PATH` | teks | VARCHAR2(200) | jalur rancangan di atas |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan baris di coverage, mulai 1 |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID v4 acak (A106) |
+| `TREATY_TYPE` | teks | VARCHAR2(50) | `.TreatyType` — ID jenis reasuransi (REINSURANCETYPE / PROPORTIONALARRG.REINSTYPEID; "10007" ORS, "10015" FACOUT) |
+| `TREATY_NAME` | teks | VARCHAR2(500) | `.TreatyName` |
+| `SHARE_PERCENTAGE` | angka desimal | NUMBER(38,8) | `.SharePercentage` (%) |
+| `TSI_SPREADED` | angka desimal | NUMBER(38,8) | `.TSISpreaded` = Share × TSINusantaraRe / 100 (DT SetTSIPremiSpreaded_FacIn "percent") |
+| `TSI_GROSS_SPREADED` | angka desimal | NUMBER(38,8) | `.TSIGrossSpreaded` = Share × TSI × PercentShare / 10000 |
+| `PREMIUM_SPREADED` | angka desimal | NUMBER(38,8) | `.PremiumSpreaded` = Share × PremiNusantaraRe / 100 |
+| `CLAIM_ESTIMATION` | angka desimal | NUMBER(38,8) | `.ClaimEstimation` = LimitofLiability × PercentShare / 100 × Share / 100 (SumTSIPremiSpreadedRNM_FIRE_Act) |
+| `CURRENCY_CODE` | teks | VARCHAR2(10) DEFAULT 'UNKNOWN' NOT NULL | = `CURRENCY` item (pola T_COVERAGELIST) |
 
 ## T_OCCUPATIONLIST
 
@@ -598,7 +677,7 @@ Tiket 36/37. Tabel warisan `POOLDATA.RW`, **baca saja** — JOIN RD tiket 36 dan
 
 ## Tabel master akumulasi (ACCUMULATION, PROVINCE, ACCUMULATEDTYPE, CZONE)
 
-Tiket 46 — **dipindah ke modul `masterdata`** (04-10-2026, MD-1): tabel flat migrasi `masterdata` 760 (dulu nbfacin 196, ditahan sebelum dijalankan), kolom dan status `STS_AKTIF` di `modul/masterdata/docs/STRUKTUR-TABEL-MASTER-DATA.md`. nbfacin hanya MEMBACA (saran / popup akumulasi; baris aktif saja). Penyaring aktif ikut membaca tabel Master Data
+Tiket 46 — **dipindah ke modul `masterdata`** (04-10-2026, MD-1), kini **`masterprovince`** (pemecahan delapan modul master, 04-10-2026): tabel flat migrasi 880 (dulu masterdata 760, dulu nbfacin 196, ditahan sebelum dijalankan), kolom dan status `STS_AKTIF` di `modul/masterprovince/docs/STRUKTUR-TABEL-MASTER-DATA.md`. nbfacin hanya MEMBACA (saran / popup akumulasi; baris aktif saja). Penyaring aktif ikut membaca tabel Master Data
 `CITYINPUT` / `DISTRICTINPUT` (`STS_AKTIF`, untuk view CITY / DISTRICT) dan `T_MASTER_STATUS` (NATION) — MD-5.
 
 ## CITY

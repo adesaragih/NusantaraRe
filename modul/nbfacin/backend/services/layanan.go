@@ -14,6 +14,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/kontrak"
+	masterservices "nusantarare/inti/backend/master/services"
 	"nusantarare/inti/backend/uang"
 	"nusantarare/modul/nbfacin/backend/models"
 	"nusantarare/modul/nbfacin/backend/repository"
@@ -57,7 +58,11 @@ func DariDasar(d *inti.Dasar) *Service {
 		DenganPilihanItem(repository.NewPilihanItemOracle(d.DB())).
 		DenganTableOfLimit(repository.NewTableOfLimitOracle(d.DB())).
 		DenganCoverage(repository.NewCoverageOracle(d.DB())).
-		DenganAkumulasi(repository.NewAkumulasiOracle(d.DB()))
+		DenganAkumulasi(repository.NewAkumulasiOracle(d.DB())).
+		DenganAddAkumulasi(repository.NewAddAkumulasiOracle(d.DB()), masterservices.DariDasar(d)).
+		DenganKlausa(repository.NewKlausaOracle(d.DB())).
+		DenganSpreading(repository.NewSpreadingOracle(d.DB())).
+		DenganCedant(repository.NewCedantOracle(d.DB()))
 }
 
 // Service - layanan NB Fac In.
@@ -99,7 +104,17 @@ type Service struct {
 	coverage repository.PembacaCoverage
 	// akumulasi - popup Choose Accumulation Code (tiket 46); nil = tanpa basis data (503).
 	akumulasi repository.PembacaAkumulasi
-	jam       func() time.Time
+	// addAkumulasi, penambahMaster - form Add New akumulasi (tiket 46): pembaca CZone / Zip Code dan penambah master
+	// ACCUMULATION (mesin inti); nil = tanpa basis data (503).
+	addAkumulasi   repository.PembacaAddAkumulasi
+	penambahMaster PenambahMaster
+	// klausa - ClauseList kasus dan argumen klausa (tiket 47); nil = tanpa basis data (503).
+	klausa repository.PenyimpanKlausa
+	// spreading - tab Spreading (tiket 48); nil = tanpa basis data (503), dan Save Object tidak mempertahankan spreading.
+	spreading repository.PenyimpanSpreading
+	// cedant - tab Inw Fac Cedant Panels (tiket 49); nil = tanpa basis data (503).
+	cedant repository.PenyimpanCedant
+	jam    func() time.Time
 }
 
 // DenganAkun memasang pembaca tabel akun (tiket 27).

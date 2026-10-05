@@ -155,6 +155,8 @@ type saranRD struct {
 //     SearchAccumulation.Nation (NAMA negara); tanpa DISTINCT.
 //   - accumtype BrowseAccumulatedType_RD: cari .AccumulationType; `.AccumulationType = Param.AccType` dikirim kosong ->
 //     dibuang; `.Note IS NOT NULL` tetap; tanpa DISTINCT.
+//     Ekstra .Note (form Add New `Section\InputAccumulationCov.xml`: kolom tambahan .Note -> InputAccumulation.AccumulationName,
+//     .ID -> InputAccumulation.Accumulation `[terverifikasi]`, 04-10-2026).
 //   - czone    BrowseCZoneIsNotNull_RD: cari .Code; `.GroupOf IS NOT NULL` tetap; GroupOfName / Code dikirim kosong ->
 //     dibuang; urut .Description ASC (pySortOrder 1); tanpa DISTINCT.
 //   - city     BrowseCityInput_RD: cari .Note, induk PROVINCEID = SearchAccumulation.ProvinceID, DISTINCT (ID, Note).
@@ -178,7 +180,7 @@ var daftarSaran = map[string]saranRD{
 	"province": {tabel: TabelProvince, kolom: "ID, NATIONID, NOTE, NATIONNAME", id: "ID", label: "NOTE", kolomInduk: "NATIONNAME",
 		aktif: syaratMasterAktif},
 	"accumtype": {tabel: TabelAccumulatedType, kolom: "ID, ACCUMULATIONTYPE, KEYWORD, NOTE, TYPE", id: "ID", label: "ACCUMULATIONTYPE",
-		syaratTetap: "NOTE IS NOT NULL", aktif: syaratMasterAktif},
+		ekstra: "NOTE", syaratTetap: "NOTE IS NOT NULL", aktif: syaratMasterAktif},
 	"czone": {tabel: TabelCZone, kolom: "DESCRIPTION, ID, GROUPOF, CODE, GROUPOFNAME", id: "ID", label: "CODE",
 		syaratTetap: "GROUPOF IS NOT NULL", urut: "DESCRIPTION", aktif: syaratMasterAktif},
 }

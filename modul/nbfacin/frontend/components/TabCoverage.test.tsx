@@ -1,6 +1,6 @@
 // Paritas tab Coverage FIRE (tiket 43, C1). Data uji sintetis; uang = teks desimal.
 
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -8,7 +8,9 @@ import { describe, expect, it } from 'vitest'
 
 import { FORM_COV as F, LABEL_COVERAGE_BASIS, TEKS_COVERAGE } from '../labels'
 import FormCoverage, { adaGalatCoverage, angkaSah, coverageBaru } from './FormCoverage'
-import { bolehNetRate, totalPremiItem } from './TabCoverage'
+import { bolehNetRate, ratePerMil, ringkasanCoverage, totalPremiItem } from './TabCoverage'
+import { RINGKASAN_COV_ITEM, RINGKASAN_COV_MATA_UANG } from '../labels'
+import type { ObjekFire } from '../api'
 
 const SUMBER_TAB = readFileSync(join(__dirname, 'TabCoverage.tsx'), 'utf8').replace(/\r\n/g, '\n')
 const SUMBER_FORM = readFileSync(join(__dirname, 'FormCoverage.tsx'), 'utf8').replace(/\r\n/g, '\n')
@@ -143,5 +145,41 @@ describe('TabCoverage - Copy Accumulation (tiket 46, CopyAccumulationCode_Act)',
     expect(SUMBER_TAB).toContain('onSalinAkumulasi={() => salinAkumulasi(o, c)}')
     expect(SUMBER_TAB).toContain('pertama={n === 0}')
     expect(SUMBER_TAB).toMatch(/items: x\.items\.map\(\(it\) =>\s*it\.coverages \? \{ \.\.\.it, coverages: it\.coverages\.map\(\(cv\) => \(\{ \.\.\.cv, accumulationCode, accumulationDescription \}\)\) \} : it,/)
+  })
+})
+
+describe('Ringkasan seluruh coverage (SummaryCoverage_Section + SumTSIPremiSpreadedRNM_FIRE_Act)', () => {
+  const KORPUS_RINGKASAN = 'D:\\migrasi\\RNM\\NB FacIn\\Section\\SummaryCoverage_Section.xml'
+  it.skipIf(!existsSync(KORPUS_RINGKASAN))('label dua grid = korpus', () => {
+    const xml = readFileSync(KORPUS_RINGKASAN, 'utf-8')
+    for (const t of [...RINGKASAN_COV_ITEM, ...RINGKASAN_COV_MATA_UANG]) expect(xml).toContain(`<pyValue>${t}</pyValue>`)
+  })
+
+  it('Rate = Premium / TSI (20 desimal) x 1000, TSI 0 -> 0, eksak', () => {
+    // Angka gambar layar Pega 05-10-2026 (TSI 50.000.000.000, premi 9.391.000.000).
+    expect(ratePerMil('9391000000', '50000000000')).toBe('187.82000000')
+    expect(ratePerMil('1', '3')).toBe('333.33333333')
+    expect(ratePerMil('2', '3')).toBe('666.66666667')
+    expect(ratePerMil('5', '0')).toBe('0')
+    expect(ratePerMil('', '10')).toBe('')
+  })
+
+  it('dikelompokkan per (Object Item Type, Currency) dan per Currency, urut kemunculan, lintas lokasi', () => {
+    const it1 = (itemType: string, currency: string, tsi: string, premi: string[]) =>
+      ({ itemType, currency, tsi, totalGrossPremi: '', coverages: premi.map((p) => ({ premium: p })) }) as unknown as ObjekFire['items'][number]
+    const o = (items: ObjekFire['items']) => ({ items }) as unknown as ObjekFire
+    const r = ringkasanCoverage([
+      o([it1('UJI A', 'IDR', '100', ['1', '2']), it1('UJI B', 'IDR', '50', ['0.5'])]),
+      o([it1('UJI A', 'IDR', '25.5', ['4']), it1('UJI A', 'USD', '10', ['1'])]),
+    ])
+    expect(r.item).toEqual([
+      { itemType: 'UJI A', currency: 'IDR', tsi: '125.5', premium: '7' },
+      { itemType: 'UJI B', currency: 'IDR', tsi: '50', premium: '0.5' },
+      { itemType: 'UJI A', currency: 'USD', tsi: '10', premium: '1' },
+    ])
+    expect(r.mataUang.map((m) => [m.currency, m.tsi, m.premium, m.rate])).toEqual([
+      ['IDR', '175.5', '7.5', '42.73504274'],
+      ['USD', '10', '1', '100.00000000'],
+    ])
   })
 })

@@ -14,9 +14,15 @@ keputusan work owner 30-09-2026 *(“menu jangan ada model seperti child … kar
 `PROMPT-MENU-DATAR-PER-GROUPMENU.md`: lima butir anak dibuang, lalu kunci tamu, indeks, dan kolom `PARENT_ID`.
 
 **20 baris, satu per folder modul korpus**, ditambah baris modul DI LUAR korpus dari langkah inti sesudah 901
-(PANDUAN-TIM-PER-MODUL bab 5): **`911_m_nav_menu_masterdata.sql`** *(+ `_down`; dulu 904)* — `masterdata` / `Master Data`, `MASTER`
-urutan 6 (sesudah 909), `DIMIGRASI '0'` (keputusan work owner 04-10-2026, diteruskan sesi 0f; INSERT bentuk datar idempoten, jalur mundur
-`DELETE` baris itu dan akses `M_LOGIN_GO_MENU`-nya). Akses akunnya TIDAK masuk isi awal 903 — diberikan lewat Kelola User.
+(PANDUAN-TIM-PER-MODUL bab 5): **`912`–`919_m_nav_menu_master<nama>.sql`** *(+ `_down`)* — delapan modul master
+(`masternation` / `Nation`, `masterprovince` / `Province`, `mastercity` / `City`, `masterdistrict` / `District`,
+`masterczone` / `CZone`, `masteraccumulatedtype` / `Accumulated Type`, `masteraccumulation` / `Accumulation`,
+`masterobjectitemtype` / `Object Item Type`), `MASTER` urutan 6–13 (sesudah 909), `DIMIGRASI '1'` — modul luar korpus TANPA
+slot menu (keputusan work owner 04-10-2026, diteruskan sesi 9d: "8 modul terpisah", "Modul luar korpus tanpa slot"; INSERT
+bentuk datar idempoten, jalur mundur `DELETE` baris itu dan akses `M_LOGIN_GO_MENU`-nya). **`920_m_nav_menu_masterdata_pensiun.sql`**
+— modul `masterdata` dihapus: hak menunya disalin ke delapan menu ("Ya, salin otomatis"), lalu hak dan barisnya dibuang
+(`911_m_nav_menu_masterdata`, dulu 904, ikut dibuang; di DEV yang sudah menjalankannya, 920 yang membuang barisnya).
+Akses akun lain TIDAK masuk isi awal 903 — diberikan lewat Kelola User.
 Penjaga `menu_test.go` menerapkannya di skema tiruan; `rentang_test.go` hanya menerima INSERT bentuk itu + DELETE mundurnya.
 Sidebar menampilkan kepala `GROUPMENU` dan satu tombol per baris; klik tombol
 membuka halaman awal modul *(`HALAMAN_AWAL_<X>` di `menu.ts` modul)*. Beranda tidak di tabel ini.
