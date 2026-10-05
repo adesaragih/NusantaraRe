@@ -47,6 +47,15 @@ export const HALAMAN_KELOLA_USER = 'kelolauser'
 export const KODE_MENU_KELOLA_USER = 'kelolauser'
 
 /**
+ * Halaman Template Manager (keputusan work owner 04-10-2026) - menu APLIKASI seperti Kelola User: pengelola berkas
+ * templat unduhan semua menu, tampil HANYA bagi pemegang menunya.
+ */
+export const HALAMAN_TEMPLATE_MANAGER = 'templatemanager'
+
+/** KODE menu Template Manager - `menu.KodeTemplateManager` di backend, dikirim di golongan ADMIN. */
+export const KODE_MENU_TEMPLATE_MANAGER = 'templatemanager'
+
+/**
  * Modul yang boleh dipasang untuk akun yang login: modul aktif (MODUL_AKTIF)
  * yang menunya ia pegang (`M_LOGIN_GO_MENU`). Padanan gerbang 403 backend -
  * layar modul yang tidak boleh dibuka tidak dipasang, jadi tidak satu pun

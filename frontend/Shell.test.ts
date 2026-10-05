@@ -51,7 +51,14 @@ describe('menu hanya yang berbukti korpus', () => {
     // memuat satu kelompok per folder korpus, Treaty In dan Treaty In
     // Adjustment ikut (`frontend/daftar.menuTabel.test.ts` menjaga LABEL-nya).
     // Dua puluh folder korpus + Marketing Officer (modul di luar korpus, migrasi inti 906).
-    expect(KELOMPOK_SIDEBAR).toHaveLength(21)
+    // + Company Detail (modul di luar korpus, migrasi inti 907).
+    // + Accounts (modul di luar korpus, migrasi inti 908).
+    // + Aggregate (911), Bordereaux (913), Adjuster Consultant (915).
+    // + Treaty Group OJK (916), Treaty Group (917), Business Group (918).
+    // + Treaty Exchange Yearly (919).
+    // + Treaty Description (920).
+    // + Reinsurance Type (921).
+    expect(KELOMPOK_SIDEBAR).toHaveLength(32)
     // Dan seluruhnya disebut di Shell, supaya tidak ada kelompok yang
     // terdaftar di label tetapi tidak dirender.
     for (const nama of KELOMPOK_SIDEBAR) {
@@ -66,7 +73,8 @@ describe('menu hanya yang berbukti korpus', () => {
     // Menggantikan "kelima butir menu lama tetap, dan seluruhnya berbukti".
     // Kelola User (01-10-2026) juga TIDAK dihitung - ia menu aplikasi, bukan
     // modul korpus (`daftar.kelolauser.test.ts`).
-    const modul = ENTRI_MENU.filter((e) => e.modul !== 'beranda' && e.modul !== 'kelolauser')
+    // Template Manager (04-10-2026) sama: menu aplikasi.
+    const modul = ENTRI_MENU.filter((e) => e.modul !== 'beranda' && e.modul !== 'kelolauser' && e.modul !== 'templatemanager')
     // Lima sejak tiket 03 Treaty Contract Out. Sempat tujuh (tiket 04, 08);
     // tco5 [keputusan work owner 29-09-2026]: kelompok Treaty Contract Out
     // SATU butir "Treaty Contract Out" - ReinsType dan Description popup form

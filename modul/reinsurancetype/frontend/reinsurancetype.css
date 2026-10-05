@@ -1,0 +1,632 @@
+/* Gaya modul Reinsurance Type - SETIAP pemilih di bawah akar .reinsurancetype (gaya.test.ts). Fondasi tema
+   (token terang/gelap, isian, tombol, tabel, kolom aksi menempel, tampilan View) disalin dari modul Bordereaux supaya
+   tampilannya seragam; nol pemilih global, nol properti yang memerangkap Modal. */
+
+.reinsurancetype {
+  display: contents;
+}
+
+.reinsurancetype .reinsurancetype__akar {
+  --rt-latar: #eef1f6;
+  --rt-seri-0: #4f46e5;
+  --rt-seri-1: #0d9488;
+  --rt-seri-2: #f59e0b;
+  --rt-seri-3: #64748b;
+  --rt-lintasan: #e8ecf4;
+  --rt-latar-tepi: #cfd7e5;
+  --rt-latar-atas: #f9fafd;
+  --rt-latar-bawah: #e4e9f3;
+  --rt-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --rt-lembut: #e9edf3;
+  --rt-lembut-tepi: #dde3ec;
+  --rt-teks: #101828;
+  --rt-teks-redup: #4f586b;
+  --rt-aksen: var(--primary-tanda);
+  --rt-aksen-teks: #2339a3;
+  --rt-aksen-lembut: #e3e8f6;
+  --rt-aksen-garis: #b9c5ee;
+  --rt-kepala-tabel: #dde4f2;
+  --rt-kepala-teks: #22326b;
+  --rt-kepala-garis: #c3cde2;
+  --rt-isi: #ffffff;
+  --rt-baris-hover: #e6ecfa;
+  --rt-garis: #e1e6ef;
+  --rt-tepi: #c8d1e1;
+  --rt-tombol: #d63a42;
+  --rt-tombol-ujung: #bf2f37;
+  --rt-tombol-hover: #c2333b;
+  --rt-tombol-hover-ujung: #a9282f;
+  --rt-terang: rgba(255, 255, 255, 0.92);
+  --rt-gelap: rgba(163, 177, 198, 0.55);
+  --rt-kilau: rgba(255, 255, 255, 0.7);
+  --rt-timbul: 8px 8px 18px var(--rt-gelap), -8px -8px 18px var(--rt-terang);
+  --rt-timbul-kecil: 4px 4px 9px var(--rt-gelap), -4px -4px 9px var(--rt-terang);
+  --rt-cekung-kecil: inset 2px 2px 4px var(--rt-gelap), inset -2px -2px 4px var(--rt-terang);
+  --rt-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --rt-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--rt-terang);
+  --rt-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --rt-sukses-latar: #e6f7ee;
+  --rt-sukses-tepi: #b7e8cc;
+  --rt-sukses-teks: #067647;
+  --rt-netral-latar: #e9edf3;
+  --rt-netral-tepi: #d5dce7;
+  --rt-netral-teks: #475467;
+  --rt-waspada-latar: #fbf3df;
+  --rt-waspada-tepi: #f1d58a;
+  --rt-waspada-teks: #a3410a;
+  --text-3: var(--rt-teks-redup);
+  color: var(--rt-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--rt-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--rt-latar-atas) 0%, var(--rt-latar-bawah) 100%);
+  box-shadow: var(--rt-bayang-akar);
+}
+
+:root[data-theme="dark"] .reinsurancetype .reinsurancetype__akar {
+  --rt-latar: #1b2130;
+  --rt-seri-0: #818cf8;
+  --rt-seri-1: #2dd4bf;
+  --rt-seri-2: #fbbf24;
+  --rt-seri-3: #94a3b8;
+  --rt-lintasan: #252d40;
+  --rt-latar-tepi: #323b50;
+  --rt-latar-atas: #222a3b;
+  --rt-latar-bawah: #161b27;
+  --rt-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --rt-lembut: #181d2a;
+  --rt-lembut-tepi: #242b3a;
+  --rt-teks: #eef0f6;
+  --rt-teks-redup: #aab2c4;
+  --rt-aksen-teks: #aebcff;
+  --rt-aksen-lembut: #222b45;
+  --rt-aksen-garis: #3a4b8f;
+  --rt-kepala-tabel: #273152;
+  --rt-kepala-teks: #dbe2ff;
+  --rt-kepala-garis: #3a4670;
+  --rt-isi: #1f2638;
+  --rt-baris-hover: #2b3554;
+  --rt-garis: #2c3447;
+  --rt-tepi: #3a4459;
+  --rt-terang: rgba(255, 255, 255, 0.045);
+  --rt-gelap: rgba(0, 0, 0, 0.55);
+  --rt-kilau: rgba(255, 255, 255, 0.04);
+  --rt-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --rt-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--rt-terang);
+  --rt-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --rt-sukses-latar: #0d2a1f;
+  --rt-sukses-tepi: #1d5c40;
+  --rt-sukses-teks: #75e0a7;
+  --rt-netral-latar: #1f2533;
+  --rt-netral-tepi: #333c4f;
+  --rt-netral-teks: #c3cad8;
+  --rt-waspada-latar: #2b2112;
+  --rt-waspada-tepi: #6b4d17;
+  --rt-waspada-teks: #fec84b;
+}
+
+/* Judul dan teks redup. */
+.reinsurancetype .inbox__judul,
+.reinsurancetype .modal__title {
+  color: var(--rt-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.reinsurancetype .muted {
+  color: var(--rt-teks-redup);
+}
+
+.reinsurancetype :focus-visible {
+  outline: 2px solid var(--rt-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.reinsurancetype .field__input {
+  background: var(--rt-isi);
+  border: 1px solid var(--rt-tepi);
+  border-radius: 12px;
+  box-shadow: var(--rt-cekung-kecil);
+  color: var(--rt-teks);
+}
+
+.reinsurancetype .field__input:hover:not(:disabled) {
+  border-color: var(--rt-aksen-garis);
+}
+
+.reinsurancetype .field__input:focus {
+  border-color: var(--rt-aksen);
+  box-shadow: var(--rt-cekung-kecil), var(--rt-cincin);
+  outline: none;
+}
+
+.reinsurancetype .field__input--readonly,
+.reinsurancetype .field__input--readonly:hover {
+  background: var(--rt-lembut);
+  border-color: var(--rt-lembut-tepi);
+  color: var(--rt-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.reinsurancetype .btn {
+  border-radius: 999px;
+}
+
+.reinsurancetype .btn--primary {
+  background: linear-gradient(180deg, var(--rt-tombol), var(--rt-tombol-ujung));
+  border-color: var(--rt-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--rt-bayang-tombol);
+}
+
+.reinsurancetype .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--rt-tombol-hover), var(--rt-tombol-hover-ujung));
+  border-color: var(--rt-tombol-hover-ujung);
+}
+
+.reinsurancetype .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.reinsurancetype .btn--ghost {
+  background: var(--rt-isi);
+  border: 1px solid var(--rt-tepi);
+  color: var(--rt-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--rt-timbul-kecil);
+}
+
+.reinsurancetype .btn--ghost:hover:not(:disabled) {
+  background: var(--rt-aksen-lembut);
+  border-color: var(--rt-aksen-garis);
+  color: var(--rt-aksen-teks);
+}
+
+.reinsurancetype .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--rt-cekung-kecil);
+}
+
+.reinsurancetype .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.reinsurancetype .modal {
+  background: var(--rt-latar);
+  border: 1px solid var(--rt-kilau);
+  border-radius: 22px;
+  box-shadow: var(--rt-bayang-popup);
+}
+
+.reinsurancetype .modal__head,
+.reinsurancetype .modal__actions {
+  border-color: var(--rt-garis);
+}
+
+.reinsurancetype .alert {
+  border-radius: 12px;
+}
+
+/* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
+.reinsurancetype .reinsurancetype__tabel {
+  background: var(--rt-isi);
+  border: 1px solid var(--rt-tepi);
+  border-radius: 18px;
+  box-shadow: var(--rt-timbul);
+}
+
+.reinsurancetype .reinsurancetype__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.reinsurancetype .reinsurancetype__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.reinsurancetype .reinsurancetype__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.reinsurancetype .reinsurancetype__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.reinsurancetype .reinsurancetype__tabel thead th {
+  background: var(--rt-kepala-tabel);
+  color: var(--rt-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--rt-kepala-garis);
+}
+
+.reinsurancetype .reinsurancetype__tabel td {
+  color: var(--rt-teks);
+  background: var(--rt-isi);
+  border-bottom-color: var(--rt-garis);
+}
+
+.reinsurancetype .reinsurancetype__tabel tbody tr:nth-child(even),
+.reinsurancetype .reinsurancetype__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.reinsurancetype .reinsurancetype__tabel tbody tr:nth-child(even) > td {
+  background: var(--rt-lembut);
+}
+
+.reinsurancetype .reinsurancetype__tabel tbody tr:hover > td {
+  background: var(--rt-baris-hover);
+}
+
+/* Tombol aksi SEBARIS ke samping (permintaan work owner 03-10-2026 "buat ke samping aja"): tidak turun ke bawah;
+   tabel yang lebih lebar dari layar menggulir di dalam akar. */
+.reinsurancetype .reinsurancetype__aksi {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.reinsurancetype .reinsurancetype__tabel td.table__actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.reinsurancetype .reinsurancetype__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.reinsurancetype .reinsurancetype__hapus {
+  color: var(--rt-tombol);
+}
+
+.reinsurancetype .reinsurancetype__halaman {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  white-space: nowrap;
+}
+
+.reinsurancetype .reinsurancetype__badge {
+  margin-left: 10px;
+  background: var(--rt-aksen-lembut);
+  color: var(--rt-aksen-teks);
+}
+
+/* Kartu: form header, tab, riwayat. */
+.reinsurancetype .reinsurancetype__kartu {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--rt-isi);
+  border: 1px solid var(--rt-tepi);
+  border-radius: 18px;
+  box-shadow: var(--rt-timbul);
+}
+
+.reinsurancetype .reinsurancetype__judul-kartu {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--rt-teks);
+}
+
+/* View: nilai saja, kisi label di atas nilai. */
+.reinsurancetype .reinsurancetype__ringkas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 24px;
+  margin: 0;
+}
+
+.reinsurancetype .reinsurancetype__ringkas dt,
+.reinsurancetype .reinsurancetype__treaty-isi dt {
+  font-size: 12px;
+  color: var(--rt-teks-redup);
+}
+
+.reinsurancetype .reinsurancetype__ringkas dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Kolom tombol baris MENEMPEL di kanan saat tabel digulir (pola Treaty Contract Out, permintaan work owner
+   04-10-2026 "tidak perlu scroll ke kanan buat aksesnya"). */
+.reinsurancetype .reinsurancetype__tabel th.table__actions,
+.reinsurancetype .reinsurancetype__tabel td.table__actions {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  box-shadow: -8px 0 10px -8px rgba(16, 24, 40, 0.25);
+}
+
+.reinsurancetype .reinsurancetype__tabel {
+  width: max-content;
+  min-width: 100%;
+}
+
+.reinsurancetype .reinsurancetype__tabel th.table__actions,
+.reinsurancetype .reinsurancetype__tabel td.table__actions {
+  padding-right: 16px;
+  padding-left: 14px;
+}
+
+.reinsurancetype .reinsurancetype__tabel td {
+  white-space: nowrap;
+}
+
+/* Daftar menggulir di dalam kotaknya; kolom Action menempel di kanan. */
+.reinsurancetype .reinsurancetype__gulir {
+  overflow: auto;
+  max-height: 68vh;
+}
+
+/* Toolbar daftar: cari, saringan status, tombol Add. */
+.reinsurancetype .reinsurancetype__alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 12px;
+}
+
+.reinsurancetype .reinsurancetype__cari {
+  width: min(340px, 100%);
+}
+
+/* Saringan status Active / Inactive / All: tombol segmen. */
+.reinsurancetype .reinsurancetype__segmen {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--rt-tepi);
+  border-radius: 999px;
+  background: var(--rt-lembut);
+}
+
+.reinsurancetype .reinsurancetype__segmen-butir {
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--rt-teks-redup);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reinsurancetype .reinsurancetype__segmen-butir--aktif {
+  background: var(--rt-isi);
+  color: var(--rt-teks);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.14);
+}
+
+/* Status baris. */
+.reinsurancetype .reinsurancetype__status {
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid var(--rt-sukses-tepi);
+  border-radius: 999px;
+  background: var(--rt-sukses-latar);
+  color: var(--rt-sukses-teks);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.reinsurancetype .reinsurancetype__status--nonaktif {
+  border-color: var(--rt-netral-tepi);
+  background: var(--rt-netral-latar);
+  color: var(--rt-netral-teks);
+}
+
+/* Kolom Status: ruang di kanan supaya badge tidak tertutup kolom Action yang menempel. */
+.reinsurancetype .reinsurancetype__tabel .reinsurancetype__kolom-status {
+  min-width: 96px;
+  padding-right: 22px;
+}
+
+.reinsurancetype .reinsurancetype__baris--nonaktif > td {
+  color: var(--rt-teks-redup);
+}
+
+/* Teks panjang (alamat) boleh turun baris di tabel. */
+.reinsurancetype .reinsurancetype__alamat {
+  min-width: 220px;
+  max-width: 360px;
+  white-space: normal;
+}
+
+/* Form Add / Edit di popup. */
+.reinsurancetype .reinsurancetype__form {
+  display: grid;
+  gap: 14px;
+}
+
+.reinsurancetype .reinsurancetype__form textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.reinsurancetype .reinsurancetype__catatan {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Saringan Type dan Flag di toolbar daftar. */
+.reinsurancetype .reinsurancetype__saring {
+  width: min(200px, 100%);
+}
+
+/* Form: dua kolom (Type / Flag, Code / No Urut) yang turun satu kolom di layar sempit. */
+.reinsurancetype .reinsurancetype__baris {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .reinsurancetype .reinsurancetype__baris {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* View (permintaan work owner 05-10-2026 "rapihin"): kepala nama + lencana, kartu rincian, jejak di kaki. */
+.reinsurancetype .reinsurancetype__lihat {
+  display: grid;
+  gap: 16px;
+}
+
+.reinsurancetype .reinsurancetype__lihat-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 1px solid var(--rt-aksen-garis);
+  border-radius: 16px;
+  background: var(--rt-aksen-lembut);
+}
+
+.reinsurancetype .reinsurancetype__lihat-mata {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.reinsurancetype .reinsurancetype__lihat-kode {
+  margin: 0;
+  color: var(--rt-aksen-teks);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.reinsurancetype .reinsurancetype__lihat-nama {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+}
+
+.reinsurancetype .reinsurancetype__lencana {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px solid var(--rt-tepi);
+  border-radius: 999px;
+  background: var(--rt-isi);
+  color: var(--rt-teks);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.reinsurancetype .reinsurancetype__lihat-kartu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.reinsurancetype .reinsurancetype__lihat-kartu .reinsurancetype__kartu {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .reinsurancetype .reinsurancetype__lihat-kartu {
+    grid-template-columns: 1fr;
+  }
+}
+
+.reinsurancetype .reinsurancetype__pasangan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.reinsurancetype .reinsurancetype__pasangan dt {
+  color: var(--rt-teks-redup);
+  font-size: 12px;
+}
+
+.reinsurancetype .reinsurancetype__pasangan dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.reinsurancetype .reinsurancetype__nilai-besar {
+  font-size: 19px;
+}
+
+.reinsurancetype .reinsurancetype__jejak {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Lencana Flag: active hijau, inactive abu, nilai warisan lain netral. */
+.reinsurancetype .reinsurancetype__lencana--aktif {
+  border-color: var(--rt-sukses-tepi);
+  background: var(--rt-sukses-latar);
+  color: var(--rt-sukses-teks);
+}
+
+.reinsurancetype .reinsurancetype__lencana--nonaktif {
+  border-color: var(--rt-netral-tepi);
+  background: var(--rt-netral-latar);
+  color: var(--rt-netral-teks);
+}
+
+.reinsurancetype .reinsurancetype__baris--nonaktif > td {
+  color: var(--rt-teks-redup);
+}
+
+/* View: label kecil SOA Name di kepala, ubin Code / No Urut / Group Type (hanya yang terisi). */
+.reinsurancetype .reinsurancetype__label-kecil {
+  margin-right: 8px;
+  color: var(--rt-teks-redup);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.reinsurancetype .reinsurancetype__lihat-nama {
+  color: var(--rt-teks);
+  font-weight: 600;
+}
+
+.reinsurancetype .reinsurancetype__ubin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.reinsurancetype .reinsurancetype__ubin > div {
+  padding: 12px 16px;
+  border: 1px solid var(--rt-tepi);
+  border-radius: 14px;
+  background: var(--rt-isi);
+  box-shadow: var(--rt-timbul-kecil);
+}
+
+.reinsurancetype .reinsurancetype__ubin dt {
+  color: var(--rt-teks-redup);
+  font-size: 12px;
+}
+
+.reinsurancetype .reinsurancetype__ubin dd {
+  margin: 4px 0 0;
+  color: var(--rt-teks);
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}

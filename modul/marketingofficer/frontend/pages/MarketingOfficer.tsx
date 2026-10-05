@@ -5,11 +5,13 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
+import { useBolehUbah } from '../../../../inti/frontend/lib/hakMenu'
 import { ambilDaftar, type BarisMO, type MarketingOfficer as BarisTersimpan } from '../api'
 import { SARINGAN_AWAL, kelompokLeader, saring, saringLeader, tandaAkun, type Saringan } from '../aturan'
 import FormMO from '../components/FormMO'
 import LogMO from '../components/LogMO'
 import { MO } from '../labels'
+import { NAMA_MO } from '../menu'
 
 const SARINGAN: { nilai: Saringan; label: string }[] = [
   { nilai: 'semua', label: MO.saringSemua },
@@ -67,6 +69,8 @@ function SelCabang({ b }: { b: BarisMO }) {
 }
 
 export default function MarketingOfficer() {
+  // Menu View only (M_LOGIN_GO_MENU.HAK, 04-10-2026): tanpa Add dan Edit; daftar, anggota, dan Log tetap.
+  const bolehUbah = useBolehUbah(NAMA_MO)
   const [daftar, setDaftar] = useState<BarisMO[] | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [kueri, setKueri] = useState('')
@@ -137,16 +141,18 @@ export default function MarketingOfficer() {
       >
         {MO.log}
       </button>
-      <button
-        type="button"
-        className="btn btn--ghost"
-        onClick={() => {
-          setPesan(null)
-          setForm({ baris: b })
-        }}
-      >
-        {MO.ubah}
-      </button>
+      {bolehUbah && (
+        <button
+          type="button"
+          className="btn btn--ghost"
+          onClick={() => {
+            setPesan(null)
+            setForm({ baris: b })
+          }}
+        >
+          {MO.ubah}
+        </button>
+      )}
     </span>
   )
 
@@ -172,13 +178,11 @@ export default function MarketingOfficer() {
               : MO.anggotaDari(leaderTerbuka?.leader.clientName ?? '')}
         </h2>
       </header>
-      <p className="muted marketingofficer__sub">
-        {jenis === 'leader'
-          ? MO.sub
-          : jenis === 'tanpa'
-            ? MO.subTanpaLeader
-            : `${MO.code} ${leaderTerbuka?.leader.id ?? ''} · ${MO.hitungAnggota(leaderTerbuka?.aktif ?? 0, barisAnggota.length)}`}
-      </p>
+      {jenis === 'anggota' && (
+        <p className="muted marketingofficer__sub">
+          {`${MO.code} ${leaderTerbuka?.leader.id ?? ''} · ${MO.hitungAnggota(leaderTerbuka?.aktif ?? 0, barisAnggota.length)}`}
+        </p>
+      )}
 
       <div className="toolbar">
         <input
@@ -218,16 +222,18 @@ export default function MarketingOfficer() {
             {`${MO.tanpaLeader} (${kelompok.tanpaLeader.length})`}
           </button>
         )}
-        <button
-          type="button"
-          className="btn btn--primary"
-          onClick={() => {
-            setPesan(null)
-            setForm({ baris: null, leaderAwal: jenis === 'anggota' ? leaderTerbuka?.leader.id : undefined })
-          }}
-        >
-          {jenis === 'anggota' ? MO.tambahAnggota : MO.tambah}
-        </button>
+        {bolehUbah && (
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={() => {
+              setPesan(null)
+              setForm({ baris: null, leaderAwal: jenis === 'anggota' ? leaderTerbuka?.leader.id : undefined })
+            }}
+          >
+            {jenis === 'anggota' ? MO.tambahAnggota : MO.tambah}
+          </button>
+        )}
       </div>
 
       {pesan !== null && (

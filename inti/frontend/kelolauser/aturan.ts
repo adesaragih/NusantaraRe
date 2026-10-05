@@ -27,6 +27,8 @@ export interface IsianForm {
   unit: string
   workbasket: string[]
   menu: string[]
+  /** Bagian dari `menu` yang View only (migrasi 914). */
+  menuLihat: string[]
   /** Centang "Change Password Next Login" (tab Security). */
   wajibGanti: boolean
   /** Kontak akun (Kelola User 03-10-2026) — opsional. */
@@ -50,6 +52,7 @@ export function isianKosong(): IsianForm {
     unit: '',
     workbasket: [],
     menu: [],
+    menuLihat: [],
     // User baru bawaannya WAJIB mengganti password yang diketik admin.
     wajibGanti: true,
     email: '',
@@ -70,6 +73,7 @@ export function isianDari(r: RinciAkun): IsianForm {
     unit: r.unit,
     workbasket: [...r.workbasket],
     menu: [...r.menu],
+    menuLihat: [...(r.menuLihat ?? [])],
     wajibGanti: r.wajibGantiSandi,
     email: r.email,
     telepon: r.telepon,
@@ -183,6 +187,8 @@ export function badanUbah(isi: IsianForm): BadanUbah {
     unit: isi.unit,
     workbasket: [...isi.workbasket],
     menu: [...isi.menu],
+    // Menu yang dicabut tidak ikut terkirim sebagai View only.
+    menuLihat: isi.menuLihat.filter((k) => isi.menu.includes(k)),
     email: isi.email.trim(),
     telepon: isi.telepon.trim(),
     nik: isi.nik.trim(),

@@ -83,7 +83,30 @@ var (
 	polaUbahDimigrasiLama = regexp.MustCompile(`(?s)^UPDATE \{skema\}\.M_NAV_MENU SET DIMIGRASI = '([01])', TGL_UBAH = SYSDATE\s+` +
 		`WHERE KODE = '([^']+)' AND PARENT_ID IS NULL$`)
 	polaKonstrain = regexp.MustCompile(`CONSTRAINT (\w+) `)
+	// polaCekGolongan - isi CHECK GROUPMENU (CREATE TABLE 900 dan ALTER ... ADD CONSTRAINT 909).
+	polaCekGolongan = regexp.MustCompile(`CONSTRAINT CK_M_NAV_MENU_GROUPMENU CHECK \(GROUPMENU IN \(([^)]*)\)\)`)
+	// polaTambahCekGolongan - CHECK GROUPMENU dibuat ulang (langkahGolonganMenu): pernyataan biasa, bukan blok.
+	polaTambahCekGolongan = regexp.MustCompile(`^ALTER TABLE \{skema\}\.M_NAV_MENU ADD CONSTRAINT CK_M_NAV_MENU_GROUPMENU ` +
+		`CHECK \(GROUPMENU IN \(([^)]*)\)\)$`)
+	// polaUbahGolongan - baris modul pindah golongan (langkahGolonganMenu): GROUPMENU dan URUTAN sekaligus.
+	polaUbahGolongan = regexp.MustCompile(`(?s)^UPDATE \{skema\}\.M_NAV_MENU SET GROUPMENU = '([^']+)', URUTAN = (\d+), ` +
+		`TGL_UBAH = SYSDATE\s+WHERE KODE = '([^']+)'$`)
 )
+
+// langkahGolonganMenu - langkah inti yang MENGUBAH GOLONGAN menu (CHECK GROUPMENU dan baris yang pindah golongan),
+// diterapkan skema tiruan seperti 900/901. Keputusan work owner 04-10-2026: golongan MASTER TREATY.
+var langkahGolonganMenu = map[string]string{
+	"909_m_nav_menu_master_treaty.sql": "MASTER TREATY: Treaty In, Treaty In Adjustment, Treaty Contract Out",
+}
+
+// isiCekGolongan - nilai-nilai CHECK GROUPMENU berurutan.
+func isiCekGolongan(daftar string) []string {
+	var isi []string
+	for _, v := range strings.Split(daftar, ",") {
+		isi = append(isi, strings.Trim(strings.TrimSpace(v), "'"))
+	}
+	return isi
+}
 
 // labelTampil - nama tampilan baris modul yang BUKAN nama folder korpus.
 type labelTampil struct{ folder, tampil string }
@@ -98,9 +121,31 @@ type labelTampil struct{ folder, tampil string }
 // (`langkahMenu`). Barisnya lahir SESUDAH 903, jadi isi awal hak menu tidak menagihnya - admin memberi hak lewat
 // Kelola User.
 //
-// Keputusan work owner 03-10-2026: modul `marketingofficer`, label "Marketing Officer", kelompok MASTER.
+// Keputusan work owner 03-10-2026: modul `marketingofficer`, label "Marketing Officer", kelompok MASTER (906).
+// Keputusan work owner 04-10-2026: modul `companydetail`, label "Company Detail", kelompok MASTER (907).
+// Keputusan work owner 04-10-2026: modul `accounts`, label "Accounts", kelompok MASTER (908).
 var modulLuarKorpus = map[string]string{
 	"marketingofficer": "906_m_nav_menu_marketingofficer.sql",
+	"companydetail":    "907_m_nav_menu_companydetail.sql",
+	"accounts":         "908_m_nav_menu_accounts.sql",
+	"aggregate":        "911_m_nav_menu_aggregate.sql",
+	"bordereaux":       "913_m_nav_menu_bordereaux.sql",
+	// Keputusan work owner 05-10-2026: modul `adjusterconsultant`, label "Adjuster Consultant", kelompok MASTER (915).
+	"adjusterconsultant": "915_m_nav_menu_adjusterconsultant.sql",
+	// Keputusan work owner 05-10-2026: tiga modul master tabel warisan, kelompok MASTER - `treatygroupojk` "Treaty Group
+	// OJK" (916), `treatygroup` "Treaty Group" (917), `businessgroup` "Business Group" (918).
+	"treatygroupojk": "916_m_nav_menu_treatygroupojk.sql",
+	"treatygroup":    "917_m_nav_menu_treatygroup.sql",
+	"businessgroup":  "918_m_nav_menu_businessgroup.sql",
+	// Keputusan work owner 05-10-2026: modul `treatyexchangeyearly`, label "Treaty Exchange Yearly", kelompok MASTER
+	// TREATY (919) - tanpa migrasi sendiri (`tandaTanpaMigrasi`), barisnya langsung menyala.
+	"treatyexchangeyearly": "919_m_nav_menu_treatyexchangeyearly.sql",
+	// Keputusan work owner 05-10-2026: modul `treatydescription` (TREATYDESC), label "Treaty Description", kelompok
+	// MASTER TREATY (920).
+	"treatydescription": "920_m_nav_menu_treatydescription.sql",
+	// Keputusan work owner 05-10-2026: modul `reinsurancetype` (REINSURANCETYPE, master jenis reasuransi), label
+	// "Reinsurance Type", kelompok MASTER TREATY (921) - tanpa migrasi sendiri, barisnya langsung menyala.
+	"reinsurancetype": "921_m_nav_menu_reinsurancetype.sql",
 }
 
 // langkahMenuLuarKorpus menjawab apakah berkas inti `nama` membuat baris modul luar korpus.
@@ -133,8 +178,23 @@ type skemaMenu struct {
 	// konstrain - constraint lain CREATE TABLE (PK, UQ, CK): ada di katalog
 	// tiruan, jadi blok yang memeriksanya dievaluasi seperti di Oracle.
 	konstrain map[string]bool
-	indeks    map[string]string // nama -> kolom
-	baris     []barisMenu
+	// golongan - isi CHECK GROUPMENU yang berlaku (kosong sesudah CHECK dibuang).
+	golongan []string
+	indeks   map[string]string // nama -> kolom
+	baris    []barisMenu
+}
+
+// golonganSah - nilai GROUPMENU yang diterima CHECK yang berlaku (tanpa CHECK: apa pun).
+func (s *skemaMenu) golonganSah(g string) bool {
+	if !s.konstrain["CK_M_NAV_MENU_GROUPMENU"] {
+		return true
+	}
+	for _, x := range s.golongan {
+		if x == g {
+			return true
+		}
+	}
+	return false
 }
 
 func skemaMenuKosong() *skemaMenu {
@@ -176,6 +236,38 @@ func (s *skemaMenu) terapkan(p string) error {
 				s.konstrain[m[1]] = true
 			}
 		}
+		if m := polaCekGolongan.FindStringSubmatch(p); m != nil {
+			s.golongan = isiCekGolongan(m[1])
+		}
+		return nil
+	}
+	if m := polaTambahCekGolongan.FindStringSubmatch(p); m != nil {
+		if s.konstrain["CK_M_NAV_MENU_GROUPMENU"] {
+			return fmt.Errorf("ORA-02264: CK_M_NAV_MENU_GROUPMENU sudah ada")
+		}
+		isi := isiCekGolongan(m[1])
+		for _, b := range s.baris {
+			sah := false
+			for _, g := range isi {
+				sah = sah || g == b.golongan
+			}
+			if !sah {
+				return fmt.Errorf("ORA-02293: baris %s ber-GROUPMENU %q di luar CHECK baru", b.kode, b.golongan)
+			}
+		}
+		s.konstrain["CK_M_NAV_MENU_GROUPMENU"], s.golongan = true, isi
+		return nil
+	}
+	if m := polaUbahGolongan.FindStringSubmatch(p); m != nil {
+		i := s.cari(m[3])
+		if i < 0 || s.baris[i].induk != "" {
+			return fmt.Errorf("UPDATE GROUPMENU atas %s - baris modul itu tidak (belum) ada", m[3])
+		}
+		if !s.golonganSah(m[1]) {
+			return fmt.Errorf("ORA-02290: GROUPMENU %q melanggar CHECK", m[1])
+		}
+		u, _ := strconv.Atoi(m[2])
+		s.baris[i].golongan, s.baris[i].urutan = m[1], u
 		return nil
 	}
 	if m := polaIndeksMenu.FindStringSubmatch(p); m != nil {
@@ -288,6 +380,7 @@ func perintahDikenal(q string) bool {
 	switch q {
 	case "DELETE FROM {skema}.M_NAV_MENU WHERE PARENT_ID IS NOT NULL",
 		"ALTER TABLE {skema}.M_NAV_MENU DROP CONSTRAINT FK_M_NAV_MENU_INDUK",
+		"ALTER TABLE {skema}.M_NAV_MENU DROP CONSTRAINT CK_M_NAV_MENU_GROUPMENU",
 		"ALTER TABLE {skema}.M_NAV_MENU DROP COLUMN PARENT_ID",
 		"ALTER TABLE {skema}.M_NAV_MENU ADD (PARENT_ID NUMBER(10))",
 		"ALTER TABLE {skema}.M_NAV_MENU ADD CONSTRAINT FK_M_NAV_MENU_INDUK FOREIGN KEY (PARENT_ID) REFERENCES {skema}.M_NAV_MENU (ID)":
@@ -315,6 +408,12 @@ func (s *skemaMenu) terapkanPerintah(q string) error {
 			return fmt.Errorf("ORA-02443: FK_M_NAV_MENU_INDUK tidak ada")
 		}
 		s.fk = false
+	case q == "ALTER TABLE {skema}.M_NAV_MENU DROP CONSTRAINT CK_M_NAV_MENU_GROUPMENU":
+		if !s.konstrain["CK_M_NAV_MENU_GROUPMENU"] {
+			return fmt.Errorf("ORA-02443: CK_M_NAV_MENU_GROUPMENU tidak ada")
+		}
+		delete(s.konstrain, "CK_M_NAV_MENU_GROUPMENU")
+		s.golongan = nil
 	case strings.HasPrefix(q, "DROP INDEX {skema}."):
 		nama := strings.TrimPrefix(q, "DROP INDEX {skema}.")
 		if _, ada := s.indeks[nama]; !ada {
@@ -375,7 +474,8 @@ func langkahMenu(t *testing.T, hanyaIsiAwal bool) []migrasi.Langkah {
 		pemilik := berkasMigrasi.modul(m.Nama)
 		n, _ := nomorBerkas(m.Nama)
 		isiAwal := pemilik == "inti" && strings.HasPrefix(m.Nama, "900_")
-		datar := !hanyaIsiAwal && pemilik == "inti" && (strings.HasPrefix(m.Nama, "901_") || langkahMenuLuarKorpus(m.Nama))
+		_, golongan := langkahGolonganMenu[m.Nama]
+		datar := !hanyaIsiAwal && pemilik == "inti" && (strings.HasPrefix(m.Nama, "901_") || langkahMenuLuarKorpus(m.Nama) || golongan)
 		slotModul := !hanyaIsiAwal && pemilik != "inti" && jatah[pemilik].diSlot(n)
 		if isiAwal || datar || slotModul {
 			out = append(out, m)
@@ -450,21 +550,21 @@ func TestMigrasiIntiDiRentang900(t *testing.T) {
 // CHECK GROUPMENU memuat PERSIS empat golongan permintaan work owner, dan
 // setiap baris modul memakai salah satunya.
 func TestCheckGroupMenu(t *testing.T) {
-	polaCheck := regexp.MustCompile(`CONSTRAINT CK_M_NAV_MENU_GROUPMENU CHECK \(GROUPMENU IN \(([^)]*)\)\)`)
-	var isi []string
+	adaCek := false
 	for _, p := range pernyataanMenu(t, true) {
-		if nama, _ := migrasi.KolomCreateTable(p); nama != "M_NAV_MENU" {
-			continue
-		}
-		m := polaCheck.FindStringSubmatch(p)
-		if m == nil {
-			t.Fatal("CREATE TABLE M_NAV_MENU tanpa CHECK GROUPMENU")
-		}
-		for _, v := range strings.Split(m[1], ",") {
-			isi = append(isi, strings.Trim(strings.TrimSpace(v), "'"))
+		if nama, _ := migrasi.KolomCreateTable(p); nama == "M_NAV_MENU" {
+			adaCek = polaCekGolongan.MatchString(p)
 		}
 	}
-	if !reflect.DeepEqual(isi, golonganMenu) {
+	if !adaCek {
+		t.Fatal("CREATE TABLE M_NAV_MENU tanpa CHECK GROUPMENU")
+	}
+	// CHECK yang BERLAKU sesudah seluruh langkah menu (900, lalu langkahGolonganMenu 909 dst.).
+	s := skemaSesudah(t, skemaMenuKosong(), "langkah menu", pernyataanMenu(t, false))
+	if !s.konstrain["CK_M_NAV_MENU_GROUPMENU"] {
+		t.Fatal("CHECK GROUPMENU hilang sesudah seluruh langkah menu")
+	}
+	if isi := s.golongan; !reflect.DeepEqual(isi, golonganMenu) {
 		t.Errorf("CHECK GROUPMENU = %v, mau %v", isi, golonganMenu)
 	}
 	sah := map[string]bool{}
@@ -499,6 +599,9 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 	kode := map[string]bool{}
 	urutanTerakhir := map[string]int{}
 	var label []string
+	// Label modul luar korpus: foldernya - bila ada di korpus (Bordereaux ditambah work owner 04-10-2026 SESUDAH dua
+	// puluh folder awal) - tidak dihitung sebagai folder modul korpus.
+	labelLuar := map[string]bool{}
 	tampil := 0
 	for _, k := range kelompok {
 		if kode[k.kode] {
@@ -517,6 +620,8 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 		}
 		if !luar {
 			label = append(label, folder) // modul luar korpus tidak punya folder korpus
+		} else {
+			labelLuar[k.label] = true
 		}
 		if mau := strings.ToLower(strings.ReplaceAll(folder, " ", "")); k.kode != mau || k.modul != mau {
 			t.Errorf("baris %q: KODE %q, MODUL %q, mau keduanya %q (tabel nama modul)", folder, k.kode, k.modul, mau)
@@ -550,7 +655,7 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 		}
 		_, errA := os.Stat(filepath.Join(akarKorpus, e.Name(), "Activity"))
 		_, errS := os.Stat(filepath.Join(akarKorpus, e.Name(), "Section"))
-		if errA == nil && errS == nil {
+		if errA == nil && errS == nil && !labelLuar[e.Name()] {
 			folder = append(folder, e.Name())
 		}
 	}
@@ -779,6 +884,10 @@ func TestSkemaTiruanMenangkapLangkahTanpaPelindung(t *testing.T) {
 // 903 karena langkah inti selain 900/901 tidak boleh menyebut tabel menu
 // (`TestMenuHanyaDi900DanSlotMenuModulnya`); penjaga inilah yang menahannya
 // tetap sama.
+// menuAplikasiSesudah903 - menu aplikasi yang lahir SESUDAH isi awal 903: akun lama tidak otomatis memegangnya,
+// haknya diberikan lewat Kelola User (Template Manager, keputusan work owner 04-10-2026).
+var menuAplikasiSesudah903 = map[string]bool{menu.KodeTemplateManager: true}
+
 func TestIsiAwalMenuAkunMemuatSemuaMenu(t *testing.T) {
 	var isi string
 	for _, p := range langkahInti(t, "903_m_login_go_menu.sql") {
@@ -801,7 +910,9 @@ func TestIsiAwalMenuAkunMemuatSemuaMenu(t *testing.T) {
 		}
 	}
 	for _, a := range menu.MenuAplikasi {
-		mau = append(mau, a.Kode)
+		if !menuAplikasiSesudah903[a.Kode] { // lahir sesudah 903 - hak menu lewat Kelola User
+			mau = append(mau, a.Kode)
+		}
 	}
 	sort.Strings(dapat)
 	sort.Strings(mau)

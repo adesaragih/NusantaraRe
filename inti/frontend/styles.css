@@ -4678,6 +4678,43 @@ textarea.field__input {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Kepala golongan = TOMBOL buka-tutup (permintaan work owner 05-10-2026:
+   "untuk yang GROUP nya buat bisa buka tutup"). Klik menyembunyikan atau
+   menampilkan tombol modul golongan itu; panah menunjuk ke bawah saat terbuka,
+   ke kanan saat tertutup. Panel terciut tetap memakai <p> garis pemisah. */
+button.shell__golongan-judul {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font-family: inherit;
+  line-height: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+button.shell__golongan-judul:focus-visible {
+  outline: 2px solid var(--primary-tanda);
+  outline-offset: -2px;
+}
+.shell__golongan-teks {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shell__golongan-panah {
+  display: grid;
+  flex: none;
+  transition: transform 0.15s ease;
+}
+.shell__golongan--tutup .shell__golongan-panah {
+  transform: rotate(-90deg);
+}
 /* GET /api/menu sedang dimuat atau gagal - keadaannya tampil di tempat menu. */
 .shell__menu-keadaan {
   margin-top: 12px;
@@ -5702,11 +5739,14 @@ textarea.field__input {
   background: var(--warning-bg);
   color: var(--warning-text);
 }
+/* Tombol aksi baris BERDERET ke samping (permintaan work owner 03-10-2026): sel
+   `.table__actions` sesempit isinya (`width: 1%`), jadi wadah yang boleh membungkus
+   menumpuk tombol satu per baris. Tabel lebar menggulir di dalam kotak Kelola User. */
 .kelola-user__aksi {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
-  gap: 4px;
+  gap: 6px;
 }
 .kelola-user__hapus {
   color: var(--danger-text);
@@ -5752,8 +5792,8 @@ textarea.field__input {
 }
 .kelola-user__kisi {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 6px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(236px, 1fr));
+  gap: 6px 12px;
 }
 .kelola-user__butir {
   display: flex;
@@ -5767,6 +5807,172 @@ textarea.field__input {
 }
 .kelola-user__butir:has(input:disabled) {
   cursor: not-allowed;
+}
+/* Satu menu: kotak centang + nama, dan (bila modulnya mendukung) tombol segmen Full / View only - migrasi 914,
+   04-10-2026. Tinggi baris seragam supaya kisi rapi. */
+.kelola-user__butir-menu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 38px;
+  padding: 4px 6px 4px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  transition: background var(--speed), border-color var(--speed);
+}
+.kelola-user__butir-menu:hover {
+  background: var(--surface-2);
+}
+.kelola-user__butir-menu--dipilih {
+  border-color: var(--border);
+  background: var(--surface);
+}
+.kelola-user__butir-menu .kelola-user__butir {
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+}
+.kelola-user__butir-menu .kelola-user__butir input {
+  margin-top: 0;
+  flex: none;
+}
+.kelola-user__nama-menu {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  line-height: 1.3;
+}
+.kelola-user__tanda {
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: var(--fs-2xs);
+  white-space: nowrap;
+}
+/* Workbasket: nama di atas, kode kecil di bawahnya. */
+.kelola-user__nama-wb {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+.kelola-user__kode-wb {
+  color: var(--text-3);
+  font-size: var(--fs-2xs);
+  overflow-wrap: anywhere;
+}
+.kelola-user__hak {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+.kelola-user__hak:has(:disabled) {
+  opacity: 0.45;
+}
+.kelola-user__hak-pilih {
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-3);
+  font: inherit;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.kelola-user__hak-pilih:not(:disabled):not(.kelola-user__hak-pilih--aktif):hover {
+  color: var(--text);
+}
+.kelola-user__hak-pilih:disabled {
+  cursor: not-allowed;
+}
+/* Pilihan aktif SOLID: Full biru (primer), View only kuning tua - kontras teks aman di tema terang dan gelap. */
+.kelola-user__hak-pilih--aktif {
+  background: var(--primary);
+  color: var(--on-primary);
+  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.2);
+}
+.kelola-user__hak-pilih--lihat.kelola-user__hak-pilih--aktif {
+  background: var(--warning-text);
+  color: var(--surface);
+}
+
+/* ======================================================================
+   TEMPLATE MANAGER — berkas templat unduhan semua menu (keputusan work owner
+   04-10-2026). Token yang sudah ada saja; nol warna baru. TANPA
+   backdrop-filter/filter/transform: Modal dirender di dalam akar ini.
+   ====================================================================== */
+.templat-manager__cari {
+  width: min(320px, 100%);
+}
+.templat-manager__grup {
+  width: min(220px, 100%);
+}
+.templat-manager__grup-kartu {
+  margin-bottom: 20px;
+}
+.templat-manager__judul-grup {
+  margin: 0 0 8px;
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+.templat-manager__tabel td {
+  vertical-align: top;
+}
+.templat-manager__kecil {
+  display: block;
+  font-size: var(--fs-xs);
+}
+.templat-manager__aksi {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+.templat-manager__badge--aktif {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+.templat-manager__info {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 14px;
+  margin: 0 0 14px;
+}
+.templat-manager__info dt {
+  color: var(--text-3);
+}
+.templat-manager__info dd {
+  margin: 0;
+}
+.templat-manager__cek {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.templat-manager__cek ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+.templat-manager__cek--lolos {
+  color: var(--success-text);
+}
+.templat-manager__cek--gagal {
+  color: var(--danger-text);
+}
+.templat-manager__cek--peringatan {
+  color: var(--warning-text);
 }
 
 /* ======================================================================
@@ -5908,6 +6114,11 @@ textarea.field__input {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.12em;
+}
+/* Kepala golongan yang dapat dibuka-tutup (05-10-2026): sorot seperti butir menu. */
+.shell__sidebar button.shell__golongan-judul:hover {
+  background: var(--sb-hover);
+  color: var(--sb-aktif-teks);
 }
 /* Mode terciut: judul golongan sudah menjadi garis di aturan lama; garis
    pembatas golongan di atas sudah cukup, jadi garis judulnya dihapus supaya
@@ -6296,6 +6507,9 @@ textarea.field__input {
   color: var(--ku-kepala-teks);
   font-weight: 700;
   border-bottom: 1px solid var(--ku-kepala-garis);
+  /* Judul panjang ("Organisasi / Divisi / Unit") boleh dua baris, supaya tombol aksi yang berderet
+     ke samping (03-10-2026) tidak mendorong tabel melebihi kotak. */
+  white-space: normal;
 }
 .kelola-user .kelola-user__tabel td {
   color: var(--ku-teks);

@@ -184,8 +184,8 @@ func ddlTabelLama(skema string) string {
 // Pasang membangun skema uji dari keadaan bersih.
 //
 // Urutannya: bongkar dulu, lalu tiruan warisan yang DIUBAH migrasi (Marketing
-// Officer), lalu jalankan migrasi yang sebenarnya, lalu buat tabel tiruan warisan
-// lainnya.
+// Officer, Company Detail), lalu jalankan migrasi yang sebenarnya, lalu buat tabel
+// tiruan warisan lainnya.
 func Pasang(ctx context.Context, db *sql.DB, skema string) error {
 	if err := samakanNLS(ctx, db); err != nil {
 		return err
@@ -199,6 +199,34 @@ func Pasang(ctx context.Context, db *sql.DB, skema string) error {
 	for _, q := range ddlTiruanMarketingOfficer(skema) {
 		if _, err := db.ExecContext(ctx, q); err != nil {
 			return fmt.Errorf("skemauji: membuat tiruan warisan Marketing Officer: %w", err)
+		}
+	}
+	// Tiruan warisan Company Detail SEBELUM migrasi: migrasi modul companydetail 802-808 mengubah CLIENT,
+	// CLIENT_PICLIST, CLIENT_ADDRESS, trigger M_CLIENT, dan view NATION (companydetail_tiruan.go, 04-10-2026).
+	for _, q := range ddlTiruanCompanyDetail(skema) {
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			return fmt.Errorf("skemauji: membuat tiruan warisan Company Detail: %w", err)
+		}
+	}
+	// Tiruan warisan Accounts SEBELUM migrasi: migrasi modul accounts 840-842 mengubah T_M_ACCOUNT
+	// (accounts_tiruan.go, 04-10-2026).
+	for _, q := range ddlTiruanAccounts(skema) {
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			return fmt.Errorf("skemauji: membuat tiruan warisan Accounts: %w", err)
+		}
+	}
+	// Tiruan warisan Aggregate SEBELUM migrasi: migrasi modul aggregate 880 membaca nomor AGG terbesar AGGREGATE
+	// (aggregate_tiruan.go, 04-10-2026).
+	for _, q := range ddlTiruanAggregate(skema) {
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			return fmt.Errorf("skemauji: membuat tiruan warisan Aggregate: %w", err)
+		}
+	}
+	// Tiruan warisan Adjuster Consultant SEBELUM migrasi: migrasi modul adjusterconsultant 870 menambah kolom
+	// IS_ACTIVE (adjusterconsultant_tiruan.go, 05-10-2026).
+	for _, q := range ddlTiruanAdjuster(skema) {
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			return fmt.Errorf("skemauji: membuat tiruan warisan Adjuster Consultant: %w", err)
 		}
 	}
 
@@ -265,6 +293,12 @@ func Bongkar(ctx context.Context, db *sql.DB, skema string) error {
 	tiruan = append(tiruan, namaTabelTiruanTCO...)
 	// Dua tiruan warisan Marketing Officer (03-10-2026); jalur mundur migrasinya menoleransi ORA-00942.
 	tiruan = append(tiruan, namaTabelTiruanMO...)
+	// Tiruan warisan Accounts (04-10-2026); jalur mundur 840-842 menoleransi ORA-00942 / ORA-02289.
+	tiruan = append(tiruan, namaTabelTiruanAccounts...)
+	// Tiruan warisan Aggregate (04-10-2026); jalur mundur 880 hanya DROP SEQUENCE.
+	tiruan = append(tiruan, namaTabelTiruanAggregate...)
+	// Tiruan warisan Adjuster Consultant (05-10-2026); jalur mundur 870 membuang kolom IS_ACTIVE.
+	tiruan = append(tiruan, namaTabelTiruanAdjuster...)
 	for _, nama := range tiruan {
 		q := fmt.Sprintf(`DROP TABLE %s.%s CASCADE CONSTRAINTS`, skema, nama)
 		if _, err := db.ExecContext(ctx, q); err != nil {
@@ -291,6 +325,23 @@ func Bongkar(ctx context.Context, db *sql.DB, skema string) error {
 	defer func() { _ = repo.Close() }()
 	if _, err := migrasi.Bongkar(ctx, repo, daftar.SumberMigrasi()...); err != nil {
 		return fmt.Errorf("skemauji: membongkar migrasi: %w", err)
+	}
+
+	// Tiruan Company Detail dibongkar SESUDAH migrasi mundur (companydetail_tiruan.go): jalur mundur 808 dan 802
+	// membutuhkannya. View dulu, lalu tabel (trigger ikut tabelnya).
+	for _, nama := range namaViewTiruanCompanyDetail {
+		if _, err := db.ExecContext(ctx, fmt.Sprintf(`DROP VIEW %s.%s`, skema, nama)); err != nil {
+			if !strings.Contains(err.Error(), "ORA-00942") {
+				return fmt.Errorf("skemauji: membongkar tiruan %s: %w", nama, err)
+			}
+		}
+	}
+	for _, nama := range namaTabelTiruanCompanyDetail {
+		if _, err := db.ExecContext(ctx, fmt.Sprintf(`DROP TABLE %s.%s CASCADE CONSTRAINTS`, skema, nama)); err != nil {
+			if !strings.Contains(err.Error(), "ORA-00942") {
+				return fmt.Errorf("skemauji: membongkar tiruan %s: %w", nama, err)
+			}
+		}
 	}
 
 	// Tabel pencatat migrasi ikut dibuang supaya skema uji benar-benar bersih.

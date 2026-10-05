@@ -106,7 +106,20 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
     expect(LABEL_TAMPIL).toEqual({ masterContractRetroLife: 'Contract Retro Life', masterProductNameLife: 'Product Name Life' })
     for (const [k, v] of Object.entries(LABEL_TAMPIL)) expect(FOLDER_KORPUS[k as keyof typeof FOLDER_KORPUS]).toBe(`Master ${v}`)
     expect(Object.values(FOLDER_KORPUS)).toHaveLength(20)
-    expect(MODUL_LUAR_KORPUS).toEqual({ marketingOfficer: 'Marketing Officer' })
+    expect(MODUL_LUAR_KORPUS).toEqual({
+      marketingOfficer: 'Marketing Officer',
+      companyDetail: 'Company Detail',
+      accounts: 'Accounts',
+      aggregate: 'Aggregate',
+      bordereaux: 'Bordereaux',
+      adjusterConsultant: 'Adjuster Consultant',
+      treatyGroupOjk: 'Treaty Group OJK',
+      treatyGroup: 'Treaty Group',
+      businessGroup: 'Business Group',
+      treatyExchangeYearly: 'Treaty Exchange Yearly',
+      treatyDescription: 'Treaty Description',
+      reinsuranceType: 'Reinsurance Type',
+    })
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In')
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In Adjustment')
   })

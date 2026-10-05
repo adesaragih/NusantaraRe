@@ -1,0 +1,587 @@
+/* Gaya modul Company Detail - SETIAP pemilih di bawah akar .companydetail (gaya.test.ts).
+   Tema sama dengan modul Marketing Officer dan Kelola User: neumorfisme rapi di atas alas #eef1f6, aksen navy,
+   tombol utama merah bergradasi. Nilainya disalin ke token `--cd-*` milik modul ini - TIDAK menumpang ke kelas inti
+   atau modul lain (keputusan work owner: CSS per modul tidak menumpang di inti).
+   TANPA backdrop-filter, filter, atau transform: Modal tanpa portal akan terperangkap. */
+
+.companydetail {
+  display: contents;
+}
+
+.companydetail .companydetail__akar {
+  --cd-latar: #eef1f6;
+  --cd-latar-tepi: #cfd7e5;
+  --cd-latar-atas: #f9fafd;
+  --cd-latar-bawah: #e4e9f3;
+  --cd-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --cd-lembut: #e9edf3;
+  --cd-lembut-tepi: #dde3ec;
+  --cd-teks: #101828;
+  --cd-teks-redup: #4f586b;
+  --cd-aksen: var(--primary-tanda);
+  --cd-aksen-teks: #2339a3;
+  --cd-aksen-lembut: #e3e8f6;
+  --cd-aksen-garis: #b9c5ee;
+  --cd-kepala-tabel: #dde4f2;
+  --cd-kepala-teks: #22326b;
+  --cd-kepala-garis: #c3cde2;
+  --cd-isi: #ffffff;
+  --cd-baris-hover: #e6ecfa;
+  --cd-garis: #e1e6ef;
+  --cd-tepi: #c8d1e1;
+  --cd-tombol: #d63a42;
+  --cd-tombol-ujung: #bf2f37;
+  --cd-tombol-hover: #c2333b;
+  --cd-tombol-hover-ujung: #a9282f;
+  --cd-terang: rgba(255, 255, 255, 0.92);
+  --cd-gelap: rgba(163, 177, 198, 0.55);
+  --cd-kilau: rgba(255, 255, 255, 0.7);
+  --cd-timbul: 8px 8px 18px var(--cd-gelap), -8px -8px 18px var(--cd-terang);
+  --cd-timbul-kecil: 4px 4px 9px var(--cd-gelap), -4px -4px 9px var(--cd-terang);
+  --cd-cekung-kecil: inset 2px 2px 4px var(--cd-gelap), inset -2px -2px 4px var(--cd-terang);
+  --cd-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --cd-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--cd-terang);
+  --cd-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --cd-sukses-latar: #e6f7ee;
+  --cd-sukses-tepi: #b7e8cc;
+  --cd-sukses-teks: #067647;
+  --cd-netral-latar: #e9edf3;
+  --cd-netral-tepi: #d5dce7;
+  --cd-netral-teks: #475467;
+  --cd-waspada-latar: #fbf3df;
+  --cd-waspada-tepi: #f1d58a;
+  --cd-waspada-teks: #a3410a;
+  --text-3: var(--cd-teks-redup);
+  color: var(--cd-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--cd-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--cd-latar-atas) 0%, var(--cd-latar-bawah) 100%);
+  box-shadow: var(--cd-bayang-akar);
+}
+
+:root[data-theme="dark"] .companydetail .companydetail__akar {
+  --cd-latar: #1b2130;
+  --cd-latar-tepi: #323b50;
+  --cd-latar-atas: #222a3b;
+  --cd-latar-bawah: #161b27;
+  --cd-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --cd-lembut: #181d2a;
+  --cd-lembut-tepi: #242b3a;
+  --cd-teks: #eef0f6;
+  --cd-teks-redup: #aab2c4;
+  --cd-aksen-teks: #aebcff;
+  --cd-aksen-lembut: #222b45;
+  --cd-aksen-garis: #3a4b8f;
+  --cd-kepala-tabel: #273152;
+  --cd-kepala-teks: #dbe2ff;
+  --cd-kepala-garis: #3a4670;
+  --cd-isi: #1f2638;
+  --cd-baris-hover: #2b3554;
+  --cd-garis: #2c3447;
+  --cd-tepi: #3a4459;
+  --cd-terang: rgba(255, 255, 255, 0.045);
+  --cd-gelap: rgba(0, 0, 0, 0.55);
+  --cd-kilau: rgba(255, 255, 255, 0.04);
+  --cd-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --cd-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--cd-terang);
+  --cd-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --cd-sukses-latar: #0d2a1f;
+  --cd-sukses-tepi: #1d5c40;
+  --cd-sukses-teks: #75e0a7;
+  --cd-netral-latar: #1f2533;
+  --cd-netral-tepi: #333c4f;
+  --cd-netral-teks: #c3cad8;
+  --cd-waspada-latar: #2b2112;
+  --cd-waspada-tepi: #6b4d17;
+  --cd-waspada-teks: #fec84b;
+}
+
+/* Judul dan teks redup. */
+.companydetail .inbox__judul,
+.companydetail .modal__title {
+  color: var(--cd-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.companydetail .muted {
+  color: var(--cd-teks-redup);
+}
+
+.companydetail :focus-visible {
+  outline: 2px solid var(--cd-aksen);
+  outline-offset: 2px;
+}
+
+.companydetail .companydetail__sub {
+  margin: -4px 0 14px;
+}
+
+.companydetail .companydetail__cari {
+  width: min(360px, 100%);
+}
+
+.companydetail .companydetail__saring {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.companydetail .companydetail__kembali {
+  margin-right: 10px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.companydetail .field__input {
+  background: var(--cd-isi);
+  border: 1px solid var(--cd-tepi);
+  border-radius: 12px;
+  box-shadow: var(--cd-cekung-kecil);
+  color: var(--cd-teks);
+}
+
+.companydetail .field__input:hover:not(:disabled) {
+  border-color: var(--cd-aksen-garis);
+}
+
+.companydetail .field__input:focus {
+  border-color: var(--cd-aksen);
+  box-shadow: var(--cd-cekung-kecil), var(--cd-cincin);
+  outline: none;
+}
+
+.companydetail .field__input--readonly,
+.companydetail .field__input--readonly:hover {
+  background: var(--cd-lembut);
+  border-color: var(--cd-lembut-tepi);
+  color: var(--cd-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.companydetail .btn {
+  border-radius: 999px;
+}
+
+.companydetail .btn--primary {
+  background: linear-gradient(180deg, var(--cd-tombol), var(--cd-tombol-ujung));
+  border-color: var(--cd-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--cd-bayang-tombol);
+}
+
+.companydetail .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--cd-tombol-hover), var(--cd-tombol-hover-ujung));
+  border-color: var(--cd-tombol-hover-ujung);
+}
+
+.companydetail .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.companydetail .btn--ghost {
+  background: var(--cd-isi);
+  border: 1px solid var(--cd-tepi);
+  color: var(--cd-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--cd-timbul-kecil);
+}
+
+.companydetail .btn--ghost:hover:not(:disabled) {
+  background: var(--cd-aksen-lembut);
+  border-color: var(--cd-aksen-garis);
+  color: var(--cd-aksen-teks);
+}
+
+.companydetail .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--cd-cekung-kecil);
+}
+
+.companydetail .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.companydetail .modal {
+  background: var(--cd-latar);
+  border: 1px solid var(--cd-kilau);
+  border-radius: 22px;
+  box-shadow: var(--cd-bayang-popup);
+}
+
+.companydetail .modal__head,
+.companydetail .modal__actions {
+  border-color: var(--cd-garis);
+}
+
+.companydetail .alert {
+  border-radius: 12px;
+}
+
+/* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
+.companydetail .companydetail__tabel {
+  background: var(--cd-isi);
+  border: 1px solid var(--cd-tepi);
+  border-radius: 18px;
+  box-shadow: var(--cd-timbul);
+}
+
+.companydetail .companydetail__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.companydetail .companydetail__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.companydetail .companydetail__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.companydetail .companydetail__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.companydetail .companydetail__tabel thead th {
+  background: var(--cd-kepala-tabel);
+  color: var(--cd-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--cd-kepala-garis);
+}
+
+.companydetail .companydetail__tabel td {
+  color: var(--cd-teks);
+  background: var(--cd-isi);
+  border-bottom-color: var(--cd-garis);
+}
+
+.companydetail .companydetail__tabel tbody tr:nth-child(even),
+.companydetail .companydetail__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.companydetail .companydetail__tabel tbody tr:nth-child(even) > td {
+  background: var(--cd-lembut);
+}
+
+.companydetail .companydetail__tabel tbody tr:hover > td {
+  background: var(--cd-baris-hover);
+}
+
+.companydetail .companydetail__kecil {
+  display: block;
+  font-size: var(--fs-xs);
+}
+
+/* Tombol aksi SEBARIS ke samping (permintaan work owner 03-10-2026 "buat ke samping aja"): tidak turun ke bawah;
+   tabel yang lebih lebar dari layar menggulir di dalam akar. */
+.companydetail .companydetail__aksi {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.companydetail .companydetail__tabel td.table__actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* Status: chip bertinta warna statusnya, timbul tipis, bertitik. */
+.companydetail .companydetail__status {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.companydetail .companydetail__status .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 8px;
+  border: 1px solid transparent;
+  letter-spacing: 0.4px;
+  box-shadow: 2px 2px 5px var(--cd-gelap), -2px -2px 5px var(--cd-terang);
+}
+
+.companydetail .companydetail__status .badge::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.companydetail .companydetail__badge--aktif {
+  background: var(--cd-sukses-latar);
+  border-color: var(--cd-sukses-tepi);
+  color: var(--cd-sukses-teks);
+}
+
+.companydetail .companydetail__badge--nonaktif {
+  background: var(--cd-netral-latar);
+  border-color: var(--cd-netral-tepi);
+  color: var(--cd-netral-teks);
+}
+
+/* Tanda akun dan log perkiraan: chip waspada. */
+.companydetail .companydetail__tanda {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border: 1px solid var(--cd-waspada-tepi);
+  border-radius: 999px;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  color: var(--cd-waspada-teks);
+  background: var(--cd-waspada-latar);
+}
+
+/* Form: kotak centang TIMBUL KE DALAM. */
+.companydetail .companydetail__centang {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 6px 12px;
+  border: 1px solid var(--cd-tepi);
+  border-radius: 16px;
+  background: var(--cd-isi);
+  box-shadow: var(--cd-cekung-kecil);
+}
+
+.companydetail .companydetail__centang input {
+  accent-color: var(--cd-aksen);
+}
+
+.companydetail .companydetail__catatan {
+  margin: 4px 0 0;
+  font-size: var(--fs-xs);
+}
+
+/* Log perubahan: setiap UPDATE satu kartu putih timbul tipis, terbaru di atas. */
+@media (max-width: 640px) {
+  .companydetail .companydetail__akar {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .companydetail .companydetail__tabel {
+    box-shadow: var(--cd-timbul-kecil);
+  }
+}
+
+/* Form organisasi: tiga bagian (Company Detail, PIC, Address) bertepi lembut. */
+.companydetail .companydetail__form {
+  display: grid;
+  gap: 18px;
+}
+
+.companydetail .companydetail__bagian {
+  margin: 0;
+  padding: 16px 18px 18px;
+  border: 1px solid var(--cd-tepi);
+  border-radius: 18px;
+  background: var(--cd-lembut);
+  box-shadow: var(--cd-timbul-kecil);
+  display: grid;
+  gap: 12px;
+}
+
+.companydetail .companydetail__judul-bagian {
+  padding: 0 8px;
+  color: var(--cd-kepala-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+}
+
+.companydetail .companydetail__gulir {
+  overflow-x: auto;
+}
+
+.companydetail .companydetail__grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 6px 4px;
+}
+
+.companydetail .companydetail__grid th {
+  text-align: left;
+  font-size: 12px;
+  color: var(--cd-kepala-teks);
+  white-space: nowrap;
+}
+
+.companydetail .companydetail__grid td {
+  vertical-align: top;
+  min-width: 120px;
+}
+
+.companydetail .companydetail__grid td:last-child {
+  min-width: 0;
+}
+
+.companydetail .companydetail__induk {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.companydetail .companydetail__induk > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.companydetail .companydetail__induk-hapus {
+  margin-bottom: 2px;
+}
+
+.companydetail .companydetail__alamat {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--cd-garis);
+  border-radius: 14px;
+  background: var(--cd-isi);
+}
+
+.companydetail .companydetail__alamat-kepala {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.companydetail .companydetail__isian {
+  display: grid;
+  gap: 4px;
+}
+
+.companydetail .companydetail__isian--lebar textarea {
+  resize: vertical;
+}
+
+.companydetail .companydetail__telfax {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+
+.companydetail .companydetail__nomor {
+  display: grid;
+  grid-template-columns: minmax(150px, 180px) minmax(150px, 220px) minmax(160px, 1fr) auto;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Kode area: dropdown + isian "Others" berbagi satu kolom grid nomor. */
+.companydetail .companydetail__kode {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.companydetail .companydetail__kode > .field__input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.companydetail .companydetail__aksi-form {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.companydetail .companydetail__halaman {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  white-space: nowrap;
+}
+
+/* View: pasangan label dan nilai, hanya dibaca. */
+.companydetail .companydetail__lihat {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px 20px;
+}
+
+.companydetail .companydetail__ruas {
+  display: grid;
+  gap: 2px;
+}
+
+.companydetail .companydetail__nilai {
+  color: var(--cd-teks);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.companydetail .companydetail__teks-panjang {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Peringatan nama: title di dalam nama, dan tanda Same/Similar di popup pemeriksaan nama. */
+.companydetail .companydetail__peringatan {
+  margin: 4px 0 0;
+  padding: 6px 10px;
+  border: 1px solid var(--cd-waspada-tepi);
+  border-radius: 10px;
+  background: var(--cd-waspada-latar);
+  color: var(--cd-waspada-teks);
+  font-size: 12.5px;
+}
+
+.companydetail .companydetail__tanda--sama {
+  border-color: var(--cd-waspada-tepi);
+  background: var(--cd-waspada-latar);
+  color: var(--cd-waspada-teks);
+}
+
+/* Popup Copy Old. */
+.companydetail .companydetail__lama {
+  display: grid;
+  gap: 10px;
+}
+
+.companydetail .companydetail__lama-alat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.companydetail .companydetail__lama-tabel {
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.companydetail .companydetail__lama-centang {
+  width: 36px;
+  text-align: center;
+}
+
+.companydetail .companydetail__lama-ringkas {
+  display: flex;
+  gap: 14px;
+  font-weight: 600;
+}
+
+.companydetail .companydetail__lama-masalah {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--cd-waspada-teks);
+}
+
+@media (max-width: 760px) {
+  .companydetail .companydetail__alamat-kepala,
+  .companydetail .companydetail__nomor {
+    grid-template-columns: 1fr;
+  }
+}

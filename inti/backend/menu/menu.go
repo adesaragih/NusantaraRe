@@ -15,6 +15,7 @@
 package menu
 
 import (
+	"context"
 	"sort"
 
 	inti "nusantarare/inti/backend"
@@ -24,7 +25,9 @@ import (
 // yang work owner tulis ("TREATY, FACULTATIVE, KLAIM, MASTER"), bukan urutan
 // abjad `ORDER BY GROUPMENU`. `inti/backend/penjaga/menu_test.go` membandingkannya
 // dengan CHECK di migrasi 900.
-var Golongan = []string{"TREATY", "FACULTATIVE", "KLAIM", "MASTER"}
+// MASTER TREATY - migrasi inti 909 (perintah work owner 04-10-2026): Treaty In, Treaty In Adjustment, Treaty
+// Contract Out; tampil sesudah MASTER.
+var Golongan = []string{"TREATY", "FACULTATIVE", "KLAIM", "MASTER", "MASTER TREATY"}
 
 // Baris adalah satu baris MODUL `M_NAV_MENU` yang aktif (`KODE = MODUL`).
 type Baris struct {
@@ -120,11 +123,26 @@ const GolonganAdmin = "ADMIN"
 // kelola pengguna. Pemegangnya adalah admin.
 const KodeKelolaUser = "kelolauser"
 
+// KodeTemplateManager adalah KODE menu Template Manager (keputusan work owner
+// 04-10-2026): pengelola berkas templat unduhan semua menu
+// (`inti/backend/templat`). Pemegangnya, mis. tim IT, boleh mengunggah versi baru.
+const KodeTemplateManager = "templatemanager"
+
 // MenuAplikasi adalah menu milik aplikasi, bukan modul korpus: hidup di kode
 // seperti Beranda, tampil di golongan `GolonganAdmin` hanya bagi akun yang
 // memegang KODE-nya.
 var MenuAplikasi = []Modul{
 	{Kode: KodeKelolaUser, Label: "Kelola User", Modul: KodeKelolaUser, Urutan: 1, Dimigrasi: true},
+	{Kode: KodeTemplateManager, Label: "Template Manager", Modul: KodeTemplateManager, Urutan: 2, Dimigrasi: true},
+}
+
+// BolehUbah menjawab apakah permintaan ini boleh MENULIS lewat menu `kode` (keputusan work owner 04-10-2026):
+// false bila akun hasil login memegang menu itu dengan hak LIHAT (`M_LOGIN_GO_MENU.HAK`, migrasi 914) - JUGA
+// superadmin (keputusan work owner 05-10-2026 "ikuti B": View only berlaku juga untuk superadmin; Kelola User sendiri tidak pernah LIHAT, jadi superadmin selalu dapat
+// mengembalikan aksesnya). Permintaan tanpa sesi (AUTH_STUB, uji) = true; gerbang menu tetap menjaga apakah menunya
+// dimiliki sama sekali.
+func BolehUbah(ctx context.Context, kode string) bool {
+	return !inti.PunyaMenu(inti.MenuLihatDari(ctx), kode)
 }
 
 // SaringMenuUntukAkun menyisakan menu yang KODE-nya dimiliki akun

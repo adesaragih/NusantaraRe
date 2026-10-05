@@ -84,8 +84,6 @@ export const BERANDA = {
   aktif: 'aktif',
   antrean: 'antrean',
   tanpaAntrean: 'belum ada kotak masuk',
-  // Tata letak workpage-template.html (29-09-2026) — sama-sama kerangka kami.
-  subjudul: 'Ringkasan antrean dan modul yang dapat Anda buka.',
   ringkasan: 'Antrean Claim Life',
   catatanTahap: 'Claim Life',
   judulModul: 'Modul',
@@ -184,7 +182,6 @@ export const PANJANG_MIN_SANDI = 10
  */
 export const KELOLA_USER = {
   judul: 'Kelola User',
-  sub: 'Akun login, workbasket, dan menu yang boleh dibuka setiap user. Perubahan berlaku pada permintaan berikutnya.',
   tambah: 'Tambah user',
   cari: 'Cari username, Contact ID, nama, atau email',
   kosong: 'Belum ada user.',
@@ -233,6 +230,12 @@ export const KELOLA_USER = {
   pilihSemua: 'Pilih semua',
   kosongkan: 'Kosongkan',
   menuDiriSendiri: 'Kelola User tidak dapat dicabut dari akun Anda sendiri.',
+  // Hak menu (migrasi 914, keputusan work owner 04-10-2026).
+  hakMenu: (label: string) => `Akses ${label}`,
+  hakPenuh: 'Full',
+  hakLihat: 'View only',
+  catatanHak: 'View only: menu tampil dan dapat dibaca, tetapi tombol tambah, ubah, dan hapus tidak ada.',
+  hakPilihDulu: 'Centang menunya dulu untuk memilih Full atau View only.',
   simpan: 'Simpan',
   menyimpan: 'Menyimpan…',
   batal: 'Batal',
@@ -272,6 +275,53 @@ export const KELOLA_USER = {
   dibukaKunci: (akun: string) => `Kunci user ${akun} dibuka.`,
   memuat: 'Memuat daftar user…',
   memuatPilihan: 'Memuat pilihan…',
+} as const
+
+/** Template Manager (keputusan work owner 04-10-2026) - pengelola berkas templat unduhan semua menu. */
+export const TEMPLATE_MANAGER = {
+  judul: 'Template Manager',
+  cari: 'Search menu or template',
+  semuaMenu: 'All menus',
+  memuat: 'Loading templates…',
+  kosong: 'No template is registered yet.',
+  tidakCocok: 'No template matches the search.',
+  jumlah: (n: number) => `${n} template${n === 1 ? '' : 's'}`,
+  kolomNama: 'Template',
+  kolomBerkas: 'Active file',
+  kolomKolom: 'Columns',
+  kolomVersi: 'Version',
+  kolomUnggah: 'Uploaded',
+  kolomAksi: 'Action',
+  bawaan: 'built-in',
+  unduh: 'Download',
+  unggah: 'Upload',
+  riwayat: 'History',
+  judulUnggah: 'Upload new version',
+  untuk: 'For',
+  dipakaiDi: 'Used in',
+  syarat: 'Requirement',
+  syaratTeks: (ekstensi: string, pemisah: string, kolom: number) =>
+    [ekstensi, pemisah === '' ? '' : `separator ${pemisah}`, kolom > 0 ? `${kolom} columns` : ''].filter((s) => s !== '').join(' · '),
+  pilihBerkas: 'Choose file',
+  memeriksa: 'Checking file…',
+  hasilCek: 'Check result',
+  lolos: (kolom: number) => (kolom > 0 ? `${kolom} columns, matches the upload of this menu` : 'File accepted'),
+  perbedaan: (n: number) => `${n} column title${n === 1 ? '' : 's'} differ from the active version:`,
+  kolomKe: (n: number) => `column ${n}`,
+  catatan: 'Note',
+  catatanPetunjuk: 'Why is this version uploaded?',
+  simpan: (versi: number) => `Save as v${versi}`,
+  menyimpan: 'Saving…',
+  batal: 'Cancel',
+  tutup: 'Close',
+  tersimpan: (versi: number) => `Saved as version ${versi}. Users now download this file.`,
+  judulRiwayat: 'Version history',
+  memuatRiwayat: 'Loading history…',
+  kolomCatatan: 'Note',
+  aktif: 'ACTIVE',
+  aktifkan: 'Activate',
+  diaktifkan: (versi: number) => (versi === 0 ? 'The built-in file is active again.' : `Version ${versi} is active again.`),
+  aplikasi: '(application)',
 } as const
 
 // ---------------------------------------------------------------------------

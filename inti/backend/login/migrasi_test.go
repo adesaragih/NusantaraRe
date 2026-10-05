@@ -192,6 +192,32 @@ func TestMigrasi905ContactIDDanEmailUnik(t *testing.T) {
 	}
 }
 
+// Migrasi 910 - M_LOGIN_GO_CONTACT_SEQ mengikuti nomor CON tertinggi (perintah work owner 04-10-2026: "seq con kelola
+// user, script-nya ambil dari max con+1"): sequence 905 (angka tetap 1001) dibuang lalu dibuat lagi dengan nilai
+// awal = CON tertinggi M_LOGIN_GO + 1, tidak pernah di bawah 1001 (jaminan 905: di atas nomor kontak SFAGIS).
+// Polanya = awalan yang ditulis aplikasi (AwalanIDKontak) dan nama sequence yang dipakai INSERT akun.
+func TestMigrasi910ContactSeqIkutCONTertinggi(t *testing.T) {
+	p := baca902(t, "910_m_login_go_contact_seq_max.sql")
+	if len(p) != 2 || p[0] != "DROP SEQUENCE {skema}."+sekuensIDKontak {
+		t.Fatalf("910: mau DROP SEQUENCE lalu satu blok, dapat %q", p)
+	}
+	s, ok := migrasi.BacaSequenceDariKueri(p[1])
+	if !ok {
+		t.Fatalf("910 pernyataan 2 bukan blok sequence dari kueri:\n%s", p[1])
+	}
+	q := strings.Join(strings.Fields(s.Kueri), " ")
+	mau := "SELECT GREATEST(NVL(MAX(TO_NUMBER(REGEXP_SUBSTR(CONTACT_ID, '^" + AwalanIDKontak +
+		"([0-9]+)$', 1, 1, NULL, 1))), 0), 1000) + 1 FROM {skema}.M_LOGIN_GO"
+	if s.Nama != sekuensIDKontak || q != mau || s.Opsi != "INCREMENT BY 1 NOCACHE" {
+		t.Errorf("910:\n dapat %s %q %q\n mau   %s %q %q", s.Nama, q, s.Opsi, sekuensIDKontak, mau, "INCREMENT BY 1 NOCACHE")
+	}
+	// Mundur TIDAK mengembalikan angka lama (nomor CON bentrok dengan akun yang sudah ada); sequence-nya tetap.
+	if d := baca902(t, "910_m_login_go_contact_seq_max_down.sql"); len(d) != 1 ||
+		d[0] != "ALTER SEQUENCE {skema}."+sekuensIDKontak+" NOCACHE" {
+		t.Errorf("910_down: %q", d)
+	}
+}
+
 func TestMigrasi905Mundur(t *testing.T) {
 	p := baca902(t, "905_m_login_go_contact_id_down.sql")
 	mau := []string{

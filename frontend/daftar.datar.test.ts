@@ -12,8 +12,12 @@ import { ENTRI_MENU, MODUL_FRONTEND } from './daftar'
 
 // Menu DATAR - [keputusan work owner 30-09-2026] (`PROMPT-MENU-DATAR-PER-GROUPMENU.md`):
 // "menu jangan ada model seperti child ... 1 modul 1 menu". Di bawah kepala
-// GROUPMENU: satu tombol per modul, tanpa kelompok yang dilipat, tanpa anak,
-// tanpa panah buka-tutup. Klik tombol modul membuka halaman awalnya.
+// GROUPMENU: satu tombol per modul, tanpa anak. Klik tombol modul membuka
+// halaman awalnya.
+//
+// ⛔ DIRALAT 05-10-2026 (permintaan work owner "untuk yang GROUP nya buat bisa
+// buka tutup"): KEPALA GOLONGAN kini dapat dibuka-tutup. Yang tetap dilarang:
+// modul berlipat dengan anak (`KelompokMenu`, `kelompok__*`, `lipatMenu.ts`).
 //
 // Menggantikan uji penanda `datar` Treaty Contract Out (`butirDatar`): yang
 // dulu satu pengecualian kini aturan untuk semua modul.
@@ -42,16 +46,30 @@ describe('sidebar satu tombol per modul, dikelompokkan GROUPMENU', () => {
     expect(NAV).toContain('{KETERANGAN_BELUM_DIMIGRASI}')
   })
 
-  it('kepala bagian = GROUPMENU, urutan TREATY, FACULTATIVE, KLAIM, MASTER', () => {
-    expect(SEMUA.golongan.map((g) => g.kode)).toEqual(['TREATY', 'FACULTATIVE', 'KLAIM', 'MASTER'])
+  it('kepala bagian = GROUPMENU, urutan TREATY, FACULTATIVE, KLAIM, MASTER, MASTER TREATY', () => {
+    // MASTER TREATY - migrasi inti 909 (keputusan work owner 04-10-2026).
+    expect(SEMUA.golongan.map((g) => g.kode)).toEqual(['TREATY', 'FACULTATIVE', 'KLAIM', 'MASTER', 'MASTER TREATY'])
   })
 
-  it('tidak ada elemen buka-tutup kelompok di sidebar', () => {
-    for (const terlarang of ['KelompokMenu', 'aria-expanded', 'kelompok__panah', 'kelompok__judul', 'IkonChevron', 'kelompok__isi']) {
+  it('kepala golongan adalah tombol buka-tutup yang mengendalikan daftar modulnya (05-10-2026)', () => {
+    expect(NAV).toContain('className="shell__golongan-judul"')
+    expect(NAV).toContain('aria-expanded={!tutup}')
+    expect(NAV).toContain('aria-controls={idDaftar}')
+    expect(NAV).toContain('id={idDaftar}')
+    expect(NAV).toContain('hidden={tutup}')
+    expect(NAV).toContain('setTertutup((t) => alihkanGolongan(t, g.kode))')
+    // Panel terciut (ikon saja): kepala golongan hanya garis, jadi tak ada yang dilipat.
+    expect(NAV).toContain('const tutup = !terciut && tertutup.has(g.kode)')
+  })
+
+  it('modul tetap datar: tidak ada modul berlipat dengan anak', () => {
+    for (const terlarang of ['KelompokMenu', 'kelompok__panah', 'kelompok__judul', 'kelompok__isi']) {
       expect(NAV, terlarang).not.toContain(terlarang)
     }
     expect(existsSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'KelompokMenu.tsx'))).toBe(false)
     expect(existsSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'lib', 'lipatMenu.ts'))).toBe(false)
+    // Satu-satunya aria-expanded di sidebar milik kepala golongan.
+    expect(NAV.split('aria-expanded').length - 1).toBe(1)
   })
 })
 

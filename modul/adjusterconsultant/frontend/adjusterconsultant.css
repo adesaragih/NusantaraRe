@@ -1,0 +1,572 @@
+/* Gaya modul Adjuster Consultant - SETIAP pemilih di bawah akar .adjusterconsultant (gaya.test.ts). Fondasi tema
+   (token terang/gelap, isian, tombol, tabel, kolom aksi menempel, tampilan View) disalin dari modul Bordereaux supaya
+   tampilannya seragam; nol pemilih global, nol properti yang memerangkap Modal. */
+
+.adjusterconsultant {
+  display: contents;
+}
+
+.adjusterconsultant .adjusterconsultant__akar {
+  --ac-latar: #eef1f6;
+  --ac-seri-0: #4f46e5;
+  --ac-seri-1: #0d9488;
+  --ac-seri-2: #f59e0b;
+  --ac-seri-3: #64748b;
+  --ac-lintasan: #e8ecf4;
+  --ac-latar-tepi: #cfd7e5;
+  --ac-latar-atas: #f9fafd;
+  --ac-latar-bawah: #e4e9f3;
+  --ac-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --ac-lembut: #e9edf3;
+  --ac-lembut-tepi: #dde3ec;
+  --ac-teks: #101828;
+  --ac-teks-redup: #4f586b;
+  --ac-aksen: var(--primary-tanda);
+  --ac-aksen-teks: #2339a3;
+  --ac-aksen-lembut: #e3e8f6;
+  --ac-aksen-garis: #b9c5ee;
+  --ac-kepala-tabel: #dde4f2;
+  --ac-kepala-teks: #22326b;
+  --ac-kepala-garis: #c3cde2;
+  --ac-isi: #ffffff;
+  --ac-baris-hover: #e6ecfa;
+  --ac-garis: #e1e6ef;
+  --ac-tepi: #c8d1e1;
+  --ac-tombol: #d63a42;
+  --ac-tombol-ujung: #bf2f37;
+  --ac-tombol-hover: #c2333b;
+  --ac-tombol-hover-ujung: #a9282f;
+  --ac-terang: rgba(255, 255, 255, 0.92);
+  --ac-gelap: rgba(163, 177, 198, 0.55);
+  --ac-kilau: rgba(255, 255, 255, 0.7);
+  --ac-timbul: 8px 8px 18px var(--ac-gelap), -8px -8px 18px var(--ac-terang);
+  --ac-timbul-kecil: 4px 4px 9px var(--ac-gelap), -4px -4px 9px var(--ac-terang);
+  --ac-cekung-kecil: inset 2px 2px 4px var(--ac-gelap), inset -2px -2px 4px var(--ac-terang);
+  --ac-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --ac-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--ac-terang);
+  --ac-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --ac-sukses-latar: #e6f7ee;
+  --ac-sukses-tepi: #b7e8cc;
+  --ac-sukses-teks: #067647;
+  --ac-netral-latar: #e9edf3;
+  --ac-netral-tepi: #d5dce7;
+  --ac-netral-teks: #475467;
+  --ac-waspada-latar: #fbf3df;
+  --ac-waspada-tepi: #f1d58a;
+  --ac-waspada-teks: #a3410a;
+  /* Kepala grid format Excel adjusterconsultant 2025 - biru muda Excel dilembutkan (perintah work owner 05-10-2026: "jangan
+     terlalu kaku"). */
+  --ac-excel-kepala: #eaf2fc;
+  --ac-excel-grup: #dde9f9;
+  --ac-excel-kepala-teks: #1f2d4d;
+  --ac-excel-garis: rgba(31, 45, 77, 0.1);
+  --ac-excel-aksen: #6f97e8;
+  --text-3: var(--ac-teks-redup);
+  color: var(--ac-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--ac-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--ac-latar-atas) 0%, var(--ac-latar-bawah) 100%);
+  box-shadow: var(--ac-bayang-akar);
+}
+
+:root[data-theme="dark"] .adjusterconsultant .adjusterconsultant__akar {
+  --ac-latar: #1b2130;
+  --ac-seri-0: #818cf8;
+  --ac-seri-1: #2dd4bf;
+  --ac-seri-2: #fbbf24;
+  --ac-seri-3: #94a3b8;
+  --ac-lintasan: #252d40;
+  --ac-latar-tepi: #323b50;
+  --ac-latar-atas: #222a3b;
+  --ac-latar-bawah: #161b27;
+  --ac-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --ac-lembut: #181d2a;
+  --ac-lembut-tepi: #242b3a;
+  --ac-teks: #eef0f6;
+  --ac-teks-redup: #aab2c4;
+  --ac-aksen-teks: #aebcff;
+  --ac-aksen-lembut: #222b45;
+  --ac-aksen-garis: #3a4b8f;
+  --ac-kepala-tabel: #273152;
+  --ac-kepala-teks: #dbe2ff;
+  --ac-kepala-garis: #3a4670;
+  --ac-isi: #1f2638;
+  --ac-baris-hover: #2b3554;
+  --ac-garis: #2c3447;
+  --ac-tepi: #3a4459;
+  --ac-terang: rgba(255, 255, 255, 0.045);
+  --ac-gelap: rgba(0, 0, 0, 0.55);
+  --ac-kilau: rgba(255, 255, 255, 0.04);
+  --ac-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --ac-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--ac-terang);
+  --ac-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --ac-sukses-latar: #0d2a1f;
+  --ac-sukses-tepi: #1d5c40;
+  --ac-sukses-teks: #75e0a7;
+  --ac-netral-latar: #1f2533;
+  --ac-netral-tepi: #333c4f;
+  --ac-netral-teks: #c3cad8;
+  --ac-waspada-latar: #2b2112;
+  --ac-waspada-tepi: #6b4d17;
+  --ac-waspada-teks: #fec84b;
+  --ac-excel-kepala: #1c2b43;
+  --ac-excel-grup: #223554;
+  --ac-excel-kepala-teks: #dbe6f7;
+  --ac-excel-garis: rgba(255, 255, 255, 0.08);
+  --ac-excel-aksen: #7aa2ff;
+}
+
+/* Judul dan teks redup. */
+.adjusterconsultant .inbox__judul,
+.adjusterconsultant .modal__title {
+  color: var(--ac-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.adjusterconsultant .muted {
+  color: var(--ac-teks-redup);
+}
+
+.adjusterconsultant :focus-visible {
+  outline: 2px solid var(--ac-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.adjusterconsultant .field__input {
+  background: var(--ac-isi);
+  border: 1px solid var(--ac-tepi);
+  border-radius: 12px;
+  box-shadow: var(--ac-cekung-kecil);
+  color: var(--ac-teks);
+}
+
+.adjusterconsultant .field__input:hover:not(:disabled) {
+  border-color: var(--ac-aksen-garis);
+}
+
+.adjusterconsultant .field__input:focus {
+  border-color: var(--ac-aksen);
+  box-shadow: var(--ac-cekung-kecil), var(--ac-cincin);
+  outline: none;
+}
+
+.adjusterconsultant .field__input--readonly,
+.adjusterconsultant .field__input--readonly:hover {
+  background: var(--ac-lembut);
+  border-color: var(--ac-lembut-tepi);
+  color: var(--ac-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.adjusterconsultant .btn {
+  border-radius: 999px;
+}
+
+.adjusterconsultant .btn--primary {
+  background: linear-gradient(180deg, var(--ac-tombol), var(--ac-tombol-ujung));
+  border-color: var(--ac-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--ac-bayang-tombol);
+}
+
+.adjusterconsultant .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--ac-tombol-hover), var(--ac-tombol-hover-ujung));
+  border-color: var(--ac-tombol-hover-ujung);
+}
+
+.adjusterconsultant .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.adjusterconsultant .btn--ghost {
+  background: var(--ac-isi);
+  border: 1px solid var(--ac-tepi);
+  color: var(--ac-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--ac-timbul-kecil);
+}
+
+.adjusterconsultant .btn--ghost:hover:not(:disabled) {
+  background: var(--ac-aksen-lembut);
+  border-color: var(--ac-aksen-garis);
+  color: var(--ac-aksen-teks);
+}
+
+.adjusterconsultant .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--ac-cekung-kecil);
+}
+
+.adjusterconsultant .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.adjusterconsultant .modal {
+  background: var(--ac-latar);
+  border: 1px solid var(--ac-kilau);
+  border-radius: 22px;
+  box-shadow: var(--ac-bayang-popup);
+}
+
+.adjusterconsultant .modal__head,
+.adjusterconsultant .modal__actions {
+  border-color: var(--ac-garis);
+}
+
+.adjusterconsultant .alert {
+  border-radius: 12px;
+}
+
+/* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
+.adjusterconsultant .adjusterconsultant__tabel {
+  background: var(--ac-isi);
+  border: 1px solid var(--ac-tepi);
+  border-radius: 18px;
+  box-shadow: var(--ac-timbul);
+}
+
+.adjusterconsultant .adjusterconsultant__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.adjusterconsultant .adjusterconsultant__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.adjusterconsultant .adjusterconsultant__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.adjusterconsultant .adjusterconsultant__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.adjusterconsultant .adjusterconsultant__tabel thead th {
+  background: var(--ac-kepala-tabel);
+  color: var(--ac-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--ac-kepala-garis);
+}
+
+.adjusterconsultant .adjusterconsultant__tabel td {
+  color: var(--ac-teks);
+  background: var(--ac-isi);
+  border-bottom-color: var(--ac-garis);
+}
+
+.adjusterconsultant .adjusterconsultant__tabel tbody tr:nth-child(even),
+.adjusterconsultant .adjusterconsultant__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.adjusterconsultant .adjusterconsultant__tabel tbody tr:nth-child(even) > td {
+  background: var(--ac-lembut);
+}
+
+.adjusterconsultant .adjusterconsultant__tabel tbody tr:hover > td {
+  background: var(--ac-baris-hover);
+}
+
+/* Tombol aksi SEBARIS ke samping (permintaan work owner 03-10-2026 "buat ke samping aja"): tidak turun ke bawah;
+   tabel yang lebih lebar dari layar menggulir di dalam akar. */
+.adjusterconsultant .adjusterconsultant__aksi {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.adjusterconsultant .adjusterconsultant__tabel td.table__actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.adjusterconsultant .adjusterconsultant__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.adjusterconsultant .adjusterconsultant__hapus {
+  color: var(--ac-tombol);
+}
+
+.adjusterconsultant .adjusterconsultant__halaman {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  white-space: nowrap;
+}
+
+.adjusterconsultant .adjusterconsultant__badge {
+  margin-left: 10px;
+  background: var(--ac-aksen-lembut);
+  color: var(--ac-aksen-teks);
+}
+
+/* Kartu: form header, tab, riwayat. */
+.adjusterconsultant .adjusterconsultant__kartu {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--ac-isi);
+  border: 1px solid var(--ac-tepi);
+  border-radius: 18px;
+  box-shadow: var(--ac-timbul);
+}
+
+.adjusterconsultant .adjusterconsultant__judul-kartu {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ac-teks);
+}
+
+/* View: nilai saja, kisi label di atas nilai. */
+.adjusterconsultant .adjusterconsultant__ringkas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 24px;
+  margin: 0;
+}
+
+.adjusterconsultant .adjusterconsultant__ringkas dt,
+.adjusterconsultant .adjusterconsultant__treaty-isi dt {
+  font-size: 12px;
+  color: var(--ac-teks-redup);
+}
+
+.adjusterconsultant .adjusterconsultant__ringkas dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Kolom tombol baris MENEMPEL di kanan saat tabel digulir (pola Treaty Contract Out, permintaan work owner
+   04-10-2026 "tidak perlu scroll ke kanan buat aksesnya"). */
+.adjusterconsultant .adjusterconsultant__tabel th.table__actions,
+.adjusterconsultant .adjusterconsultant__tabel td.table__actions {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  box-shadow: -8px 0 10px -8px rgba(16, 24, 40, 0.25);
+}
+
+.adjusterconsultant .adjusterconsultant__tabel {
+  width: max-content;
+  min-width: 100%;
+}
+
+.adjusterconsultant .adjusterconsultant__tabel th.table__actions,
+.adjusterconsultant .adjusterconsultant__tabel td.table__actions {
+  padding-right: 16px;
+  padding-left: 14px;
+}
+
+.adjusterconsultant .adjusterconsultant__tabel td {
+  white-space: nowrap;
+}
+
+/* Daftar menggulir di dalam kotaknya; kolom Action menempel di kanan. */
+.adjusterconsultant .adjusterconsultant__gulir {
+  overflow: auto;
+  max-height: 68vh;
+}
+
+/* Toolbar daftar: cari, saringan status, tombol Add. */
+.adjusterconsultant .adjusterconsultant__alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 12px;
+}
+
+.adjusterconsultant .adjusterconsultant__cari {
+  width: min(340px, 100%);
+}
+
+/* Saringan status Active / Inactive / All: tombol segmen. */
+.adjusterconsultant .adjusterconsultant__segmen {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--ac-tepi);
+  border-radius: 999px;
+  background: var(--ac-lembut);
+}
+
+.adjusterconsultant .adjusterconsultant__segmen-butir {
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ac-teks-redup);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.adjusterconsultant .adjusterconsultant__segmen-butir--aktif {
+  background: var(--ac-isi);
+  color: var(--ac-teks);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.14);
+}
+
+/* Status baris. */
+.adjusterconsultant .adjusterconsultant__status {
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid var(--ac-sukses-tepi);
+  border-radius: 999px;
+  background: var(--ac-sukses-latar);
+  color: var(--ac-sukses-teks);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.adjusterconsultant .adjusterconsultant__status--nonaktif {
+  border-color: var(--ac-netral-tepi);
+  background: var(--ac-netral-latar);
+  color: var(--ac-netral-teks);
+}
+
+/* Kolom Status: ruang di kanan supaya badge tidak tertutup kolom Action yang menempel. */
+.adjusterconsultant .adjusterconsultant__tabel .adjusterconsultant__kolom-status {
+  min-width: 96px;
+  padding-right: 22px;
+}
+
+.adjusterconsultant .adjusterconsultant__baris--nonaktif > td {
+  color: var(--ac-teks-redup);
+}
+
+/* Teks panjang (alamat) boleh turun baris di tabel. */
+.adjusterconsultant .adjusterconsultant__alamat {
+  min-width: 220px;
+  max-width: 360px;
+  white-space: normal;
+}
+
+/* Form Add / Edit di popup. */
+.adjusterconsultant .adjusterconsultant__form {
+  display: grid;
+  gap: 14px;
+}
+
+.adjusterconsultant .adjusterconsultant__form textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.adjusterconsultant .adjusterconsultant__catatan {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* View (permintaan work owner 05-10-2026: "buat rapih, contoh treaty exchange yearly") - kepala beraksen dan lencana,
+   kartu berdampingan berisi pasangan label-nilai dua kolom, jejak ubah satu baris di kaki; blok ini diturunkan dari
+   treatyexchangeyearly.css. */
+.adjusterconsultant .adjusterconsultant__lihat {
+  display: grid;
+  gap: 16px;
+}
+
+.adjusterconsultant .adjusterconsultant__lihat-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 1px solid var(--ac-aksen-garis);
+  border-radius: 16px;
+  background: var(--ac-aksen-lembut);
+}
+
+.adjusterconsultant .adjusterconsultant__lihat-mata {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.adjusterconsultant .adjusterconsultant__lihat-kode {
+  margin: 0;
+  color: var(--ac-aksen-teks);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.adjusterconsultant .adjusterconsultant__lihat-nama {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+}
+
+.adjusterconsultant .adjusterconsultant__lencana {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px solid var(--ac-tepi);
+  border-radius: 999px;
+  background: var(--ac-isi);
+  color: var(--ac-teks);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.adjusterconsultant .adjusterconsultant__lihat-kartu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.adjusterconsultant .adjusterconsultant__lihat-kartu .adjusterconsultant__kartu {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .adjusterconsultant .adjusterconsultant__lihat-kartu {
+    grid-template-columns: 1fr;
+  }
+}
+
+.adjusterconsultant .adjusterconsultant__pasangan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.adjusterconsultant .adjusterconsultant__pasangan dt {
+  color: var(--ac-teks-redup);
+  font-size: 12px;
+}
+
+.adjusterconsultant .adjusterconsultant__pasangan dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.adjusterconsultant .adjusterconsultant__nilai-besar {
+  font-size: 19px;
+}
+
+.adjusterconsultant .adjusterconsultant__jejak {
+  margin: 0;
+  font-size: 12px;
+}
+
+.adjusterconsultant .adjusterconsultant__lihat-kartu .adjusterconsultant__kartu--penuh {
+  grid-column: 1 / -1;
+}

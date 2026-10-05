@@ -23,6 +23,7 @@
 import { useState, type ReactNode } from 'react'
 
 import { Gagal, Kosong } from '../../../../inti/frontend/components/ui/dasar'
+import { useBolehUbah } from '../../../../inti/frontend/lib/hakMenu'
 import {
   cariPlan,
   simpanProduk,
@@ -64,6 +65,7 @@ import {
   UMUM_MPNL,
   UWLIMIT_MPNL,
 } from '../labels'
+import { NAMA_MPNL } from '../menu'
 import { DialogEdit, DialogSimpan } from './Dialog'
 import DropdownCari from './DropdownCari'
 import DropdownMaster from './DropdownMaster'
@@ -112,7 +114,9 @@ export default function FormProduk({
   onTersimpan: () => void
 }) {
   const [p, setP] = useState<Produk>(awal)
-  const [lihat, setLihat] = useState(lihatAwal)
+  // Menu View only (M_LOGIN_GO_MENU.HAK, 04-10-2026): form selalu mode lihat dan tanpa tombol Edit.
+  const bolehUbah = useBolehUbah(NAMA_MPNL)
+  const [lihat, setLihat] = useState(lihatAwal || !bolehUbah)
   const [pesan, setPesan] = useState<string | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [menyimpan, setMenyimpan] = useState(false)
@@ -593,7 +597,7 @@ export default function FormProduk({
             {TOMBOL_MPNL.save}
           </button>
         )}{' '}
-        {lihat && (
+        {lihat && bolehUbah && (
           <button
             type="button"
             className="btn btn--primary"

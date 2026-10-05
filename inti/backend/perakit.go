@@ -26,6 +26,7 @@ import (
 	"sort"
 
 	"nusantarare/inti/backend/config"
+	"nusantarare/inti/backend/templat"
 )
 
 // Kontrak adalah kunci satu kontrak lintas modul: jenis antarmukanya.
@@ -65,6 +66,23 @@ type Pendaftaran struct {
 	// Bangun merakit modul di atas akar bersama. Dipanggil SESUDAH setiap
 	// penyedia kontrak yang dibutuhkannya dibangun.
 	Bangun func(p *Perakitan) (Modul, error)
+	// Templat - slot berkas templat unduhan modul ini, dikelola menu Template
+	// Manager (`inti/backend/templat`, keputusan work owner 04-10-2026). Slot
+	// dari SEMUA modul terdaftar dirakit, juga modul yang tidak aktif.
+	Templat []templat.Slot
+	// HakLihat - nil = menu modul ini selalu berakses PENUH. Terisi = modul MENDAFTAR untuk akses LIHAT
+	// (`M_LOGIN_GO_MENU.HAK`, keputusan work owner 04-10-2026): Kelola User menawarkan pilihan Lihat/Penuh, gerbang
+	// `cmd/api` menolak rute tulis bagi pemegang LIHAT, dan layar modul menyembunyikan tombol tulisnya. Hanya modul
+	// yang sudah selesai yang mendaftar - modul yang belum selesai tidak berubah perilakunya.
+	HakLihat *HakLihat
+}
+
+// HakLihat - pernyataan satu modul untuk akses menu LIHAT.
+type HakLihat struct {
+	// Bebas - pola rute modul ini (persis seperti didaftarkan ke mux, mis. `POST /api/aggregate/pratinjau`) yang TETAP
+	// boleh dipakai pemegang LIHAT: POST yang hanya membaca, atau keputusan alur kerja yang dijaga modulnya sendiri
+	// (mis. Approve/Reject Checker). Selain GET/HEAD dan pola ini, pemegang LIHAT dijawab 403.
+	Bebas []string
 }
 
 // Perakitan adalah yang diterima `Bangun` satu modul: akar bersama,

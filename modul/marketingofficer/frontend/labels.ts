@@ -7,7 +7,6 @@ export const MENU_MO = { kelompok: 'Marketing Officer' } as const
 
 export const MO = {
   judul: 'Marketing Officer',
-  sub: 'Marketing officers in POOLDATA.MARKETINGOFFICER - add and edit only; deactivate instead of delete.',
   tambah: 'Add marketing officer',
   cari: 'Search code, name, marketing code, login account, leader, or sub branch',
   saringSemua: 'All',
@@ -67,7 +66,6 @@ export const MO = {
   kembali: '← Leaders',
   anggotaDari: (nama: string) => `Members of ${nama}`,
   tanpaLeader: 'Without leader',
-  subTanpaLeader: 'Marketing officers whose leader is empty or is not a leader row.',
   tambahAnggota: 'Add member',
   kosongLeader: 'No leader yet.',
   kosongAnggota: 'This leader has no members yet.',

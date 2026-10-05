@@ -38,7 +38,7 @@ export const GOLONGAN_MENU: readonly string[] = (() => {
   const go = readFileSync(join(AKAR_APLIKASI, 'inti', 'backend', 'menu', 'menu.go'), 'utf8')
   const isi = /var Golongan = \[\]string\{([^}]*)\}/.exec(go)?.[1]
   if (isi === undefined) throw new Error('menuBersih: var Golongan tidak terbaca dari inti/backend/menu/menu.go')
-  return [...isi.matchAll(/"([A-Z]+)"/g)].map((m) => m[1]!)
+  return [...isi.matchAll(/"([A-Z][A-Z ]*)"/g)].map((m) => m[1]!)
 })()
 
 /** Setiap migrasi maju yang menyebut M_NAV_MENU, urutan nama berkas = urutan pelari. */
@@ -81,13 +81,18 @@ const POLA_KELOMPOK =
 // Baris modul DI LUAR korpus (`MODUL_LUAR_KORPUS`): bentuk datar sesudah 901, tanpa PARENT_ID (migrasi inti 906 dst.).
 // Keabsahannya - hanya `modulLuarKorpus` - dijaga skema tiruan Go; di sini hanya diterapkan.
 const POLA_KELOMPOK_DATAR =
-  /^INSERT INTO \{skema\}\.M_NAV_MENU \(ID, KODE, LABEL, GROUPMENU, MODUL, URUTAN, DIMIGRASI\)\s+SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, '([^']+)', '([^']+)', '([A-Z]+)', '([^']+)', (\d+), '([01])' FROM DUAL/
+  /^INSERT INTO \{skema\}\.M_NAV_MENU \(ID, KODE, LABEL, GROUPMENU, MODUL, URUTAN, DIMIGRASI\)\s+SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, '([^']+)', '([^']+)', '([A-Z][A-Z ]*)', '([^']+)', (\d+), '([01])' FROM DUAL/
 const POLA_BUTIR = /^INSERT INTO \{skema\}\.M_NAV_MENU \([^)]*\)\s+SELECT \{skema\}\.SEQ_M_NAV_MENU\.NEXTVAL, k\.ID, '([^']+)'/
 const HAPUS_BUTIR = "EXECUTE IMMEDIATE 'DELETE FROM {skema}.M_NAV_MENU WHERE PARENT_ID IS NOT NULL'"
 // Bentuk slot menu SESUDAH 901 saja (`WHERE KODE = '<modul>'`, berjangkar).
 const POLA_UBAH = /^UPDATE \{skema\}\.M_NAV_MENU SET DIMIGRASI = '([01])', TGL_UBAH = SYSDATE\s+WHERE KODE = '([^']+)'$/
 // Nama tampilan baris modul di slot menunya (keputusan work owner 03-10-2026). Keabsahannya - hanya baris
 // `labelTampilDisetujui`, teks persis - dijaga `inti/backend/penjaga`; di sini hanya diterapkan.
+// Baris modul pindah golongan (langkah inti 909 MASTER TREATY): GROUPMENU dan URUTAN sekaligus.
+const POLA_UBAH_GOLONGAN =
+  /^UPDATE \{skema\}\.M_NAV_MENU SET GROUPMENU = '([^']+)', URUTAN = (\d+), TGL_UBAH = SYSDATE\s+WHERE KODE = '([^']+)'$/
+// CHECK GROUPMENU dibuat ulang (909) - tidak mengubah baris.
+const TAMBAH_CEK_GOLONGAN = 'ALTER TABLE {skema}.M_NAV_MENU ADD CONSTRAINT CK_M_NAV_MENU_GROUPMENU CHECK'
 const POLA_UBAH_LABEL = /^UPDATE \{skema\}\.M_NAV_MENU SET LABEL = '([^']+)', TGL_UBAH = SYSDATE\s+WHERE KODE = '([^']+)'$/
 
 /** Hasil bersih: baris modul, butir yang tersisa, dan cacah INSERT yang terbaca. */
@@ -125,6 +130,17 @@ export function menuBersih(berkas: readonly BerkasMigrasiMenu[] = berkasMenu()):
       // Blok berpelindung katalog 901: hanya DELETE butir yang mengubah baris.
       if (p.startsWith('DECLARE') && p.includes('EXECUTE IMMEDIATE')) {
         if (p.includes(HAPUS_BUTIR)) hasil.butir = []
+        continue
+      }
+      if (p.startsWith(TAMBAH_CEK_GOLONGAN)) continue
+      const g = POLA_UBAH_GOLONGAN.exec(p)
+      if (g !== null) {
+        for (const x of hasil.baris) {
+          if (x.kode === g[3]) {
+            x.golongan = g[1]!
+            x.urutan = Number(g[2])
+          }
+        }
         continue
       }
       const u = POLA_UBAH.exec(p)

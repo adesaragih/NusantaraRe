@@ -315,21 +315,31 @@ export default function FormPengguna({
                   </button>
                 </div>
                 <div className="kelola-user__kisi">
-                  {pilihan.workbasket.map((w) => (
-                    <label key={w.kode} className="kelola-user__butir">
-                      <input
-                        type="checkbox"
-                        checked={isi.workbasket.includes(w.kode)}
-                        onChange={(e) => {
-                          ubah({ workbasket: alihkan(isi.workbasket, w.kode, e.target.checked) })
-                        }}
-                      />
-                      <span>
-                        {w.kode}
-                        {w.nama !== '' && w.nama !== w.kode && <span className="muted"> — {w.nama}</span>}
-                      </span>
-                    </label>
-                  ))}
+                  {pilihan.workbasket.map((w) => {
+                    const dipilih = isi.workbasket.includes(w.kode)
+                    // Nama di atas, kode workbasket kecil di bawahnya (tampilan sama dengan kartu menu, 05-10-2026).
+                    const nama = w.nama !== '' && w.nama !== w.kode ? w.nama : ''
+                    return (
+                      <div
+                        key={w.kode}
+                        className={dipilih ? 'kelola-user__butir-menu kelola-user__butir-menu--dipilih' : 'kelola-user__butir-menu'}
+                      >
+                        <label className="kelola-user__butir">
+                          <input
+                            type="checkbox"
+                            checked={dipilih}
+                            onChange={(e) => {
+                              ubah({ workbasket: alihkan(isi.workbasket, w.kode, e.target.checked) })
+                            }}
+                          />
+                          <span className="kelola-user__nama-wb">
+                            <span>{nama === '' ? w.kode : nama}</span>
+                            {nama !== '' && <span className="kelola-user__kode-wb">{w.kode}</span>}
+                          </span>
+                        </label>
+                      </div>
+                    )
+                  })}
                 </div>
               </fieldset>
 
@@ -364,31 +374,75 @@ export default function FormPengguna({
                     <div className="kelola-user__kisi">
                       {g.menu.map((m) => {
                         const terkunci = diriSendiri && m.kode === KODE_MENU_KELOLA_USER
+                        const dipilih = isi.menu.includes(m.kode)
+                        const lihat = isi.menuLihat.includes(m.kode)
                         return (
-                          <label
+                          <div
                             key={m.kode}
-                            className="kelola-user__butir"
-                            title={terkunci ? KELOLA_USER.menuDiriSendiri : undefined}
+                            className={dipilih ? 'kelola-user__butir-menu kelola-user__butir-menu--dipilih' : 'kelola-user__butir-menu'}
                           >
-                            <input
-                              type="checkbox"
-                              checked={isi.menu.includes(m.kode)}
-                              disabled={terkunci}
-                              onChange={(e) => {
-                                ubah({ menu: alihkan(isi.menu, m.kode, e.target.checked) })
-                              }}
-                            />
-                            <span>
-                              {m.label}
-                              {!m.dimigrasi && <span className="muted"> — {KETERANGAN_BELUM_DIMIGRASI}</span>}
-                            </span>
-                          </label>
+                            <label className="kelola-user__butir" title={terkunci ? KELOLA_USER.menuDiriSendiri : undefined}>
+                              <input
+                                type="checkbox"
+                                checked={dipilih}
+                                disabled={terkunci}
+                                onChange={(e) => {
+                                  ubah({ menu: alihkan(isi.menu, m.kode, e.target.checked) })
+                                }}
+                              />
+                              <span className="kelola-user__nama-menu">
+                                {m.label}
+                                {!m.dimigrasi && <span className="kelola-user__tanda">{KETERANGAN_BELUM_DIMIGRASI}</span>}
+                              </span>
+                            </label>
+                            {/* Full / View only (migrasi 914): hanya menu modul yang mendaftar; aktif bila menunya dipilih. */}
+                            {m.bisaLihat === true && (
+                              <div
+                                className="kelola-user__hak"
+                                role="radiogroup"
+                                aria-label={KELOLA_USER.hakMenu(m.label)}
+                                title={dipilih ? KELOLA_USER.catatanHak : KELOLA_USER.hakPilihDulu}
+                              >
+                                <button
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={!lihat}
+                                  disabled={!dipilih}
+                                  className={!lihat ? 'kelola-user__hak-pilih kelola-user__hak-pilih--aktif' : 'kelola-user__hak-pilih'}
+                                  onClick={() => {
+                                    ubah({ menuLihat: alihkan(isi.menuLihat, m.kode, false) })
+                                  }}
+                                >
+                                  {KELOLA_USER.hakPenuh}
+                                </button>
+                                <button
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={lihat}
+                                  disabled={!dipilih}
+                                  className={
+                                    lihat
+                                      ? 'kelola-user__hak-pilih kelola-user__hak-pilih--lihat kelola-user__hak-pilih--aktif'
+                                      : 'kelola-user__hak-pilih kelola-user__hak-pilih--lihat'
+                                  }
+                                  onClick={() => {
+                                    ubah({ menuLihat: alihkan(isi.menuLihat, m.kode, true) })
+                                  }}
+                                >
+                                  {KELOLA_USER.hakLihat}
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         )
                       })}
                     </div>
                   </div>
                 ))}
                 {diriSendiri && <p className="muted kelola-user__catatan">{KELOLA_USER.menuDiriSendiri}</p>}
+                {pilihan.menu.some((m) => m.bisaLihat === true) && (
+                  <p className="muted kelola-user__catatan">{KELOLA_USER.catatanHak}</p>
+                )}
               </fieldset>
             </>
           )}

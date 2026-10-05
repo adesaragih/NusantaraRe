@@ -28,7 +28,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | --- | --- |
 | Nama modul | `treatyinadjustment` |
 | Folder korpus | `Treaty In Adjustment` |
-| GROUPMENU | `TREATY` |
+| GROUPMENU | `MASTER TREATY` |
 | Pemilik | `@PEMILIK-TREATYINADJUSTMENT` |
 | Status | dimigrasi |
 | Rentang migrasi | `440-479` |

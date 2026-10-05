@@ -1,0 +1,269 @@
+/* Gaya modul Accounts - SETIAP pemilih di bawah akar .accounts (accounts.test.ts, cssmodul.guard).
+   Tampilan SAMA dengan Kelola User (permintaan work owner 04-10-2026 "tampilan modul accounts samain dengan kelola
+   user"): neumorfisme rapi di atas alas #eef1f6, aksen navy, tombol utama merah bergradasi, tabel kartu timbul.
+   Nilainya disalin dari tema `.kelola-user` inti ke token `--acc-*` milik modul ini - TIDAK menumpang ke kelas inti
+   (keputusan work owner: CSS per modul tidak lagi menumpang di inti). Pola salinan: Marketing Officer.
+   TANPA backdrop-filter, filter, atau transform: Modal tanpa portal akan terperangkap. */
+
+.accounts {
+  display: contents;
+}
+
+.accounts .accounts__akar {
+  --acc-latar: #eef1f6;
+  --acc-latar-tepi: #cfd7e5;
+  --acc-latar-atas: #f9fafd;
+  --acc-latar-bawah: #e4e9f3;
+  --acc-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --acc-lembut: #e9edf3;
+  --acc-lembut-tepi: #dde3ec;
+  --acc-teks: #101828;
+  --acc-teks-redup: #4f586b;
+  --acc-aksen: var(--primary-tanda);
+  --acc-aksen-teks: #2339a3;
+  --acc-aksen-lembut: #e3e8f6;
+  --acc-aksen-garis: #b9c5ee;
+  --acc-kepala-tabel: #dde4f2;
+  --acc-kepala-teks: #22326b;
+  --acc-kepala-garis: #c3cde2;
+  --acc-isi: #ffffff;
+  --acc-baris-hover: #e6ecfa;
+  --acc-garis: #e1e6ef;
+  --acc-tepi: #c8d1e1;
+  --acc-tombol: #d63a42;
+  --acc-tombol-ujung: #bf2f37;
+  --acc-tombol-hover: #c2333b;
+  --acc-tombol-hover-ujung: #a9282f;
+  --acc-terang: rgba(255, 255, 255, 0.92);
+  --acc-gelap: rgba(163, 177, 198, 0.55);
+  --acc-kilau: rgba(255, 255, 255, 0.7);
+  --acc-timbul: 8px 8px 18px var(--acc-gelap), -8px -8px 18px var(--acc-terang);
+  --acc-timbul-kecil: 4px 4px 9px var(--acc-gelap), -4px -4px 9px var(--acc-terang);
+  --acc-cekung-kecil: inset 2px 2px 4px var(--acc-gelap), inset -2px -2px 4px var(--acc-terang);
+  --acc-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --acc-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--acc-terang);
+  --acc-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --text-3: var(--acc-teks-redup);
+  color: var(--acc-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--acc-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--acc-latar-atas) 0%, var(--acc-latar-bawah) 100%);
+  box-shadow: var(--acc-bayang-akar);
+}
+
+:root[data-theme="dark"] .accounts .accounts__akar {
+  --acc-latar: #1b2130;
+  --acc-latar-tepi: #323b50;
+  --acc-latar-atas: #222a3b;
+  --acc-latar-bawah: #161b27;
+  --acc-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --acc-lembut: #181d2a;
+  --acc-lembut-tepi: #242b3a;
+  --acc-teks: #eef0f6;
+  --acc-teks-redup: #aab2c4;
+  --acc-aksen-teks: #aebcff;
+  --acc-aksen-lembut: #222b45;
+  --acc-aksen-garis: #3a4b8f;
+  --acc-kepala-tabel: #273152;
+  --acc-kepala-teks: #dbe2ff;
+  --acc-kepala-garis: #3a4670;
+  --acc-isi: #1f2638;
+  --acc-baris-hover: #2b3554;
+  --acc-garis: #2c3447;
+  --acc-tepi: #3a4459;
+  --acc-terang: rgba(255, 255, 255, 0.045);
+  --acc-gelap: rgba(0, 0, 0, 0.55);
+  --acc-kilau: rgba(255, 255, 255, 0.04);
+  --acc-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --acc-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--acc-terang);
+  --acc-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+}
+
+/* Judul dan teks redup. */
+.accounts .inbox__judul,
+.accounts .modal__title {
+  color: var(--acc-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.accounts .muted {
+  color: var(--acc-teks-redup);
+}
+
+.accounts :focus-visible {
+  outline: 2px solid var(--acc-aksen);
+  outline-offset: 2px;
+}
+
+.accounts .accounts__sub {
+  margin: -4px 0 14px;
+}
+
+.accounts .accounts__cari {
+  width: min(360px, 100%);
+}
+
+.accounts .accounts__kecil {
+  display: block;
+  font-size: var(--fs-xs);
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.accounts .field__input {
+  background: var(--acc-isi);
+  border: 1px solid var(--acc-tepi);
+  border-radius: 12px;
+  box-shadow: var(--acc-cekung-kecil);
+  color: var(--acc-teks);
+}
+
+.accounts .field__input:hover:not(:disabled) {
+  border-color: var(--acc-aksen-garis);
+}
+
+.accounts .field__input:focus {
+  border-color: var(--acc-aksen);
+  box-shadow: var(--acc-cekung-kecil), var(--acc-cincin);
+  outline: none;
+}
+
+/* Isian hanya-baca (Org ID, Owner): abu lembut bertulisan redup, terbedakan dari isian yang dapat diketik. */
+.accounts .field__input--readonly,
+.accounts .field__input--readonly:hover {
+  background: var(--acc-lembut);
+  border-color: var(--acc-lembut-tepi);
+  color: var(--acc-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.accounts .btn {
+  border-radius: 999px;
+}
+
+.accounts .btn--primary {
+  background: linear-gradient(180deg, var(--acc-tombol), var(--acc-tombol-ujung));
+  border-color: var(--acc-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--acc-bayang-tombol);
+}
+
+.accounts .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--acc-tombol-hover), var(--acc-tombol-hover-ujung));
+  border-color: var(--acc-tombol-hover-ujung);
+}
+
+.accounts .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.accounts .btn--ghost {
+  background: var(--acc-isi);
+  border: 1px solid var(--acc-tepi);
+  color: var(--acc-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--acc-timbul-kecil);
+}
+
+.accounts .btn--ghost:hover:not(:disabled) {
+  background: var(--acc-aksen-lembut);
+  border-color: var(--acc-aksen-garis);
+  color: var(--acc-aksen-teks);
+}
+
+.accounts .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--acc-cekung-kecil);
+}
+
+.accounts .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.accounts .modal {
+  background: var(--acc-latar);
+  border: 1px solid var(--acc-kilau);
+  border-radius: 22px;
+  box-shadow: var(--acc-bayang-popup);
+}
+
+.accounts .modal__head,
+.accounts .modal__actions {
+  border-color: var(--acc-garis);
+}
+
+.accounts .alert {
+  border-radius: 12px;
+}
+
+.accounts .accounts__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
+.accounts .accounts__tabel {
+  background: var(--acc-isi);
+  border: 1px solid var(--acc-tepi);
+  border-radius: 18px;
+  box-shadow: var(--acc-timbul);
+}
+
+.accounts .accounts__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.accounts .accounts__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.accounts .accounts__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.accounts .accounts__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.accounts .accounts__tabel thead th {
+  background: var(--acc-kepala-tabel);
+  color: var(--acc-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--acc-kepala-garis);
+}
+
+.accounts .accounts__tabel td {
+  color: var(--acc-teks);
+  background: var(--acc-isi);
+  border-bottom-color: var(--acc-garis);
+}
+
+.accounts .accounts__tabel tbody tr:nth-child(even),
+.accounts .accounts__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.accounts .accounts__tabel tbody tr:nth-child(even) > td {
+  background: var(--acc-lembut);
+}
+
+.accounts .accounts__tabel tbody tr:hover > td {
+  background: var(--acc-baris-hover);
+}
+
+@media (max-width: 640px) {
+  .accounts .accounts__akar {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .accounts .accounts__tabel {
+    box-shadow: var(--acc-timbul-kecil);
+  }
+}
