@@ -1,0 +1,565 @@
+/* Gaya modul Business Group - SETIAP pemilih di bawah akar .businessgroup (gaya.test.ts). Fondasi tema
+   (token terang/gelap, isian, tombol, tabel, kolom aksi menempel, tampilan View) disalin dari modul Bordereaux supaya
+   tampilannya seragam; nol pemilih global, nol properti yang memerangkap Modal. */
+
+.businessgroup {
+  display: contents;
+}
+
+.businessgroup .businessgroup__akar {
+  --bg-latar: #eef1f6;
+  --bg-seri-0: #4f46e5;
+  --bg-seri-1: #0d9488;
+  --bg-seri-2: #f59e0b;
+  --bg-seri-3: #64748b;
+  --bg-lintasan: #e8ecf4;
+  --bg-latar-tepi: #cfd7e5;
+  --bg-latar-atas: #f9fafd;
+  --bg-latar-bawah: #e4e9f3;
+  --bg-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --bg-lembut: #e9edf3;
+  --bg-lembut-tepi: #dde3ec;
+  --bg-teks: #101828;
+  --bg-teks-redup: #4f586b;
+  --bg-aksen: var(--primary-tanda);
+  --bg-aksen-teks: #2339a3;
+  --bg-aksen-lembut: #e3e8f6;
+  --bg-aksen-garis: #b9c5ee;
+  --bg-kepala-tabel: #dde4f2;
+  --bg-kepala-teks: #22326b;
+  --bg-kepala-garis: #c3cde2;
+  --bg-isi: #ffffff;
+  --bg-baris-hover: #e6ecfa;
+  --bg-garis: #e1e6ef;
+  --bg-tepi: #c8d1e1;
+  --bg-tombol: #d63a42;
+  --bg-tombol-ujung: #bf2f37;
+  --bg-tombol-hover: #c2333b;
+  --bg-tombol-hover-ujung: #a9282f;
+  --bg-terang: rgba(255, 255, 255, 0.92);
+  --bg-gelap: rgba(163, 177, 198, 0.55);
+  --bg-kilau: rgba(255, 255, 255, 0.7);
+  --bg-timbul: 8px 8px 18px var(--bg-gelap), -8px -8px 18px var(--bg-terang);
+  --bg-timbul-kecil: 4px 4px 9px var(--bg-gelap), -4px -4px 9px var(--bg-terang);
+  --bg-cekung-kecil: inset 2px 2px 4px var(--bg-gelap), inset -2px -2px 4px var(--bg-terang);
+  --bg-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --bg-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--bg-terang);
+  --bg-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --bg-sukses-latar: #e6f7ee;
+  --bg-sukses-tepi: #b7e8cc;
+  --bg-sukses-teks: #067647;
+  --bg-netral-latar: #e9edf3;
+  --bg-netral-tepi: #d5dce7;
+  --bg-netral-teks: #475467;
+  --bg-waspada-latar: #fbf3df;
+  --bg-waspada-tepi: #f1d58a;
+  --bg-waspada-teks: #a3410a;
+  --text-3: var(--bg-teks-redup);
+  color: var(--bg-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--bg-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--bg-latar-atas) 0%, var(--bg-latar-bawah) 100%);
+  box-shadow: var(--bg-bayang-akar);
+}
+
+:root[data-theme="dark"] .businessgroup .businessgroup__akar {
+  --bg-latar: #1b2130;
+  --bg-seri-0: #818cf8;
+  --bg-seri-1: #2dd4bf;
+  --bg-seri-2: #fbbf24;
+  --bg-seri-3: #94a3b8;
+  --bg-lintasan: #252d40;
+  --bg-latar-tepi: #323b50;
+  --bg-latar-atas: #222a3b;
+  --bg-latar-bawah: #161b27;
+  --bg-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --bg-lembut: #181d2a;
+  --bg-lembut-tepi: #242b3a;
+  --bg-teks: #eef0f6;
+  --bg-teks-redup: #aab2c4;
+  --bg-aksen-teks: #aebcff;
+  --bg-aksen-lembut: #222b45;
+  --bg-aksen-garis: #3a4b8f;
+  --bg-kepala-tabel: #273152;
+  --bg-kepala-teks: #dbe2ff;
+  --bg-kepala-garis: #3a4670;
+  --bg-isi: #1f2638;
+  --bg-baris-hover: #2b3554;
+  --bg-garis: #2c3447;
+  --bg-tepi: #3a4459;
+  --bg-terang: rgba(255, 255, 255, 0.045);
+  --bg-gelap: rgba(0, 0, 0, 0.55);
+  --bg-kilau: rgba(255, 255, 255, 0.04);
+  --bg-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --bg-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--bg-terang);
+  --bg-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --bg-sukses-latar: #0d2a1f;
+  --bg-sukses-tepi: #1d5c40;
+  --bg-sukses-teks: #75e0a7;
+  --bg-netral-latar: #1f2533;
+  --bg-netral-tepi: #333c4f;
+  --bg-netral-teks: #c3cad8;
+  --bg-waspada-latar: #2b2112;
+  --bg-waspada-tepi: #6b4d17;
+  --bg-waspada-teks: #fec84b;
+}
+
+/* Judul dan teks redup. */
+.businessgroup .inbox__judul,
+.businessgroup .modal__title {
+  color: var(--bg-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.businessgroup .muted {
+  color: var(--bg-teks-redup);
+}
+
+.businessgroup :focus-visible {
+  outline: 2px solid var(--bg-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.businessgroup .field__input {
+  background: var(--bg-isi);
+  border: 1px solid var(--bg-tepi);
+  border-radius: 12px;
+  box-shadow: var(--bg-cekung-kecil);
+  color: var(--bg-teks);
+}
+
+.businessgroup .field__input:hover:not(:disabled) {
+  border-color: var(--bg-aksen-garis);
+}
+
+.businessgroup .field__input:focus {
+  border-color: var(--bg-aksen);
+  box-shadow: var(--bg-cekung-kecil), var(--bg-cincin);
+  outline: none;
+}
+
+.businessgroup .field__input--readonly,
+.businessgroup .field__input--readonly:hover {
+  background: var(--bg-lembut);
+  border-color: var(--bg-lembut-tepi);
+  color: var(--bg-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.businessgroup .btn {
+  border-radius: 999px;
+}
+
+.businessgroup .btn--primary {
+  background: linear-gradient(180deg, var(--bg-tombol), var(--bg-tombol-ujung));
+  border-color: var(--bg-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--bg-bayang-tombol);
+}
+
+.businessgroup .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--bg-tombol-hover), var(--bg-tombol-hover-ujung));
+  border-color: var(--bg-tombol-hover-ujung);
+}
+
+.businessgroup .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.businessgroup .btn--ghost {
+  background: var(--bg-isi);
+  border: 1px solid var(--bg-tepi);
+  color: var(--bg-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--bg-timbul-kecil);
+}
+
+.businessgroup .btn--ghost:hover:not(:disabled) {
+  background: var(--bg-aksen-lembut);
+  border-color: var(--bg-aksen-garis);
+  color: var(--bg-aksen-teks);
+}
+
+.businessgroup .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--bg-cekung-kecil);
+}
+
+.businessgroup .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.businessgroup .modal {
+  background: var(--bg-latar);
+  border: 1px solid var(--bg-kilau);
+  border-radius: 22px;
+  box-shadow: var(--bg-bayang-popup);
+}
+
+.businessgroup .modal__head,
+.businessgroup .modal__actions {
+  border-color: var(--bg-garis);
+}
+
+.businessgroup .alert {
+  border-radius: 12px;
+}
+
+/* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
+.businessgroup .businessgroup__tabel {
+  background: var(--bg-isi);
+  border: 1px solid var(--bg-tepi);
+  border-radius: 18px;
+  box-shadow: var(--bg-timbul);
+}
+
+.businessgroup .businessgroup__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.businessgroup .businessgroup__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.businessgroup .businessgroup__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.businessgroup .businessgroup__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.businessgroup .businessgroup__tabel thead th {
+  background: var(--bg-kepala-tabel);
+  color: var(--bg-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--bg-kepala-garis);
+}
+
+.businessgroup .businessgroup__tabel td {
+  color: var(--bg-teks);
+  background: var(--bg-isi);
+  border-bottom-color: var(--bg-garis);
+}
+
+.businessgroup .businessgroup__tabel tbody tr:nth-child(even),
+.businessgroup .businessgroup__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.businessgroup .businessgroup__tabel tbody tr:nth-child(even) > td {
+  background: var(--bg-lembut);
+}
+
+.businessgroup .businessgroup__tabel tbody tr:hover > td {
+  background: var(--bg-baris-hover);
+}
+
+/* Tombol aksi SEBARIS ke samping (permintaan work owner 03-10-2026 "buat ke samping aja"): tidak turun ke bawah;
+   tabel yang lebih lebar dari layar menggulir di dalam akar. */
+.businessgroup .businessgroup__aksi {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.businessgroup .businessgroup__tabel td.table__actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.businessgroup .businessgroup__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.businessgroup .businessgroup__hapus {
+  color: var(--bg-tombol);
+}
+
+.businessgroup .businessgroup__halaman {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  white-space: nowrap;
+}
+
+.businessgroup .businessgroup__badge {
+  margin-left: 10px;
+  background: var(--bg-aksen-lembut);
+  color: var(--bg-aksen-teks);
+}
+
+/* Kartu: form header, tab, riwayat. */
+.businessgroup .businessgroup__kartu {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--bg-isi);
+  border: 1px solid var(--bg-tepi);
+  border-radius: 18px;
+  box-shadow: var(--bg-timbul);
+}
+
+.businessgroup .businessgroup__judul-kartu {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--bg-teks);
+}
+
+/* View: nilai saja, kisi label di atas nilai. */
+.businessgroup .businessgroup__ringkas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 24px;
+  margin: 0;
+}
+
+.businessgroup .businessgroup__ringkas dt,
+.businessgroup .businessgroup__treaty-isi dt {
+  font-size: 12px;
+  color: var(--bg-teks-redup);
+}
+
+.businessgroup .businessgroup__ringkas dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Kolom tombol baris MENEMPEL di kanan saat tabel digulir (pola Treaty Contract Out, permintaan work owner
+   04-10-2026 "tidak perlu scroll ke kanan buat aksesnya"). */
+.businessgroup .businessgroup__tabel th.table__actions,
+.businessgroup .businessgroup__tabel td.table__actions {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  box-shadow: -8px 0 10px -8px rgba(16, 24, 40, 0.25);
+}
+
+.businessgroup .businessgroup__tabel {
+  width: max-content;
+  min-width: 100%;
+}
+
+.businessgroup .businessgroup__tabel th.table__actions,
+.businessgroup .businessgroup__tabel td.table__actions {
+  padding-right: 16px;
+  padding-left: 14px;
+}
+
+.businessgroup .businessgroup__tabel td {
+  white-space: nowrap;
+}
+
+/* Daftar menggulir di dalam kotaknya; kolom Action menempel di kanan. */
+.businessgroup .businessgroup__gulir {
+  overflow: auto;
+  max-height: 68vh;
+}
+
+/* Toolbar daftar: cari, saringan status, tombol Add. */
+.businessgroup .businessgroup__alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 12px;
+}
+
+.businessgroup .businessgroup__cari {
+  width: min(340px, 100%);
+}
+
+/* Saringan status Active / Inactive / All: tombol segmen. */
+.businessgroup .businessgroup__segmen {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--bg-tepi);
+  border-radius: 999px;
+  background: var(--bg-lembut);
+}
+
+.businessgroup .businessgroup__segmen-butir {
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--bg-teks-redup);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.businessgroup .businessgroup__segmen-butir--aktif {
+  background: var(--bg-isi);
+  color: var(--bg-teks);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.14);
+}
+
+/* Status baris. */
+.businessgroup .businessgroup__status {
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid var(--bg-sukses-tepi);
+  border-radius: 999px;
+  background: var(--bg-sukses-latar);
+  color: var(--bg-sukses-teks);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.businessgroup .businessgroup__status--nonaktif {
+  border-color: var(--bg-netral-tepi);
+  background: var(--bg-netral-latar);
+  color: var(--bg-netral-teks);
+}
+
+/* Kolom Status: ruang di kanan supaya badge tidak tertutup kolom Action yang menempel. */
+.businessgroup .businessgroup__tabel .businessgroup__kolom-status {
+  min-width: 96px;
+  padding-right: 22px;
+}
+
+.businessgroup .businessgroup__baris--nonaktif > td {
+  color: var(--bg-teks-redup);
+}
+
+/* Teks panjang (alamat) boleh turun baris di tabel. */
+.businessgroup .businessgroup__alamat {
+  min-width: 220px;
+  max-width: 360px;
+  white-space: normal;
+}
+
+/* Form Add / Edit di popup. */
+.businessgroup .businessgroup__form {
+  display: grid;
+  gap: 14px;
+}
+
+.businessgroup .businessgroup__form textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.businessgroup .businessgroup__catatan {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Saringan Treaty Group di toolbar daftar. */
+.businessgroup .businessgroup__saring {
+  width: min(320px, 100%);
+}
+
+/* View (permintaan work owner 05-10-2026: "buat rapih, contoh treaty exchange yearly") - kepala beraksen dan lencana,
+   kartu berdampingan berisi pasangan label-nilai dua kolom, jejak ubah satu baris di kaki; blok ini diturunkan dari
+   treatyexchangeyearly.css. */
+.businessgroup .businessgroup__lihat {
+  display: grid;
+  gap: 16px;
+}
+
+.businessgroup .businessgroup__lihat-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 1px solid var(--bg-aksen-garis);
+  border-radius: 16px;
+  background: var(--bg-aksen-lembut);
+}
+
+.businessgroup .businessgroup__lihat-mata {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.businessgroup .businessgroup__lihat-kode {
+  margin: 0;
+  color: var(--bg-aksen-teks);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.businessgroup .businessgroup__lihat-nama {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+}
+
+.businessgroup .businessgroup__lencana {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px solid var(--bg-tepi);
+  border-radius: 999px;
+  background: var(--bg-isi);
+  color: var(--bg-teks);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.businessgroup .businessgroup__lihat-kartu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.businessgroup .businessgroup__lihat-kartu .businessgroup__kartu {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .businessgroup .businessgroup__lihat-kartu {
+    grid-template-columns: 1fr;
+  }
+}
+
+.businessgroup .businessgroup__pasangan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.businessgroup .businessgroup__pasangan dt {
+  color: var(--bg-teks-redup);
+  font-size: 12px;
+}
+
+.businessgroup .businessgroup__pasangan dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.businessgroup .businessgroup__nilai-besar {
+  font-size: 19px;
+}
+
+.businessgroup .businessgroup__jejak {
+  margin: 0;
+  font-size: 12px;
+}
+
+.businessgroup .businessgroup__lihat-kartu .businessgroup__kartu--penuh {
+  grid-column: 1 / -1;
+}

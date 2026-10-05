@@ -1,0 +1,575 @@
+/* Gaya modul Treaty Group - SETIAP pemilih di bawah akar .treatygroup (gaya.test.ts). Fondasi tema
+   (token terang/gelap, isian, tombol, tabel, kolom aksi menempel, tampilan View) disalin dari modul Bordereaux supaya
+   tampilannya seragam; nol pemilih global, nol properti yang memerangkap Modal. */
+
+.treatygroup {
+  display: contents;
+}
+
+.treatygroup .treatygroup__akar {
+  --tg-latar: #eef1f6;
+  --tg-seri-0: #4f46e5;
+  --tg-seri-1: #0d9488;
+  --tg-seri-2: #f59e0b;
+  --tg-seri-3: #64748b;
+  --tg-lintasan: #e8ecf4;
+  --tg-latar-tepi: #cfd7e5;
+  --tg-latar-atas: #f9fafd;
+  --tg-latar-bawah: #e4e9f3;
+  --tg-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --tg-lembut: #e9edf3;
+  --tg-lembut-tepi: #dde3ec;
+  --tg-teks: #101828;
+  --tg-teks-redup: #4f586b;
+  --tg-aksen: var(--primary-tanda);
+  --tg-aksen-teks: #2339a3;
+  --tg-aksen-lembut: #e3e8f6;
+  --tg-aksen-garis: #b9c5ee;
+  --tg-kepala-tabel: #dde4f2;
+  --tg-kepala-teks: #22326b;
+  --tg-kepala-garis: #c3cde2;
+  --tg-isi: #ffffff;
+  --tg-baris-hover: #e6ecfa;
+  --tg-garis: #e1e6ef;
+  --tg-tepi: #c8d1e1;
+  --tg-tombol: #d63a42;
+  --tg-tombol-ujung: #bf2f37;
+  --tg-tombol-hover: #c2333b;
+  --tg-tombol-hover-ujung: #a9282f;
+  --tg-terang: rgba(255, 255, 255, 0.92);
+  --tg-gelap: rgba(163, 177, 198, 0.55);
+  --tg-kilau: rgba(255, 255, 255, 0.7);
+  --tg-timbul: 8px 8px 18px var(--tg-gelap), -8px -8px 18px var(--tg-terang);
+  --tg-timbul-kecil: 4px 4px 9px var(--tg-gelap), -4px -4px 9px var(--tg-terang);
+  --tg-cekung-kecil: inset 2px 2px 4px var(--tg-gelap), inset -2px -2px 4px var(--tg-terang);
+  --tg-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --tg-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--tg-terang);
+  --tg-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --tg-sukses-latar: #e6f7ee;
+  --tg-sukses-tepi: #b7e8cc;
+  --tg-sukses-teks: #067647;
+  --tg-netral-latar: #e9edf3;
+  --tg-netral-tepi: #d5dce7;
+  --tg-netral-teks: #475467;
+  --tg-waspada-latar: #fbf3df;
+  --tg-waspada-tepi: #f1d58a;
+  --tg-waspada-teks: #a3410a;
+  --text-3: var(--tg-teks-redup);
+  color: var(--tg-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--tg-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--tg-latar-atas) 0%, var(--tg-latar-bawah) 100%);
+  box-shadow: var(--tg-bayang-akar);
+}
+
+:root[data-theme="dark"] .treatygroup .treatygroup__akar {
+  --tg-latar: #1b2130;
+  --tg-seri-0: #818cf8;
+  --tg-seri-1: #2dd4bf;
+  --tg-seri-2: #fbbf24;
+  --tg-seri-3: #94a3b8;
+  --tg-lintasan: #252d40;
+  --tg-latar-tepi: #323b50;
+  --tg-latar-atas: #222a3b;
+  --tg-latar-bawah: #161b27;
+  --tg-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --tg-lembut: #181d2a;
+  --tg-lembut-tepi: #242b3a;
+  --tg-teks: #eef0f6;
+  --tg-teks-redup: #aab2c4;
+  --tg-aksen-teks: #aebcff;
+  --tg-aksen-lembut: #222b45;
+  --tg-aksen-garis: #3a4b8f;
+  --tg-kepala-tabel: #273152;
+  --tg-kepala-teks: #dbe2ff;
+  --tg-kepala-garis: #3a4670;
+  --tg-isi: #1f2638;
+  --tg-baris-hover: #2b3554;
+  --tg-garis: #2c3447;
+  --tg-tepi: #3a4459;
+  --tg-terang: rgba(255, 255, 255, 0.045);
+  --tg-gelap: rgba(0, 0, 0, 0.55);
+  --tg-kilau: rgba(255, 255, 255, 0.04);
+  --tg-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --tg-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--tg-terang);
+  --tg-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --tg-sukses-latar: #0d2a1f;
+  --tg-sukses-tepi: #1d5c40;
+  --tg-sukses-teks: #75e0a7;
+  --tg-netral-latar: #1f2533;
+  --tg-netral-tepi: #333c4f;
+  --tg-netral-teks: #c3cad8;
+  --tg-waspada-latar: #2b2112;
+  --tg-waspada-tepi: #6b4d17;
+  --tg-waspada-teks: #fec84b;
+}
+
+/* Judul dan teks redup. */
+.treatygroup .inbox__judul,
+.treatygroup .modal__title {
+  color: var(--tg-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.treatygroup .muted {
+  color: var(--tg-teks-redup);
+}
+
+.treatygroup :focus-visible {
+  outline: 2px solid var(--tg-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.treatygroup .field__input {
+  background: var(--tg-isi);
+  border: 1px solid var(--tg-tepi);
+  border-radius: 12px;
+  box-shadow: var(--tg-cekung-kecil);
+  color: var(--tg-teks);
+}
+
+.treatygroup .field__input:hover:not(:disabled) {
+  border-color: var(--tg-aksen-garis);
+}
+
+.treatygroup .field__input:focus {
+  border-color: var(--tg-aksen);
+  box-shadow: var(--tg-cekung-kecil), var(--tg-cincin);
+  outline: none;
+}
+
+.treatygroup .field__input--readonly,
+.treatygroup .field__input--readonly:hover {
+  background: var(--tg-lembut);
+  border-color: var(--tg-lembut-tepi);
+  color: var(--tg-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.treatygroup .btn {
+  border-radius: 999px;
+}
+
+.treatygroup .btn--primary {
+  background: linear-gradient(180deg, var(--tg-tombol), var(--tg-tombol-ujung));
+  border-color: var(--tg-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--tg-bayang-tombol);
+}
+
+.treatygroup .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--tg-tombol-hover), var(--tg-tombol-hover-ujung));
+  border-color: var(--tg-tombol-hover-ujung);
+}
+
+.treatygroup .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.treatygroup .btn--ghost {
+  background: var(--tg-isi);
+  border: 1px solid var(--tg-tepi);
+  color: var(--tg-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--tg-timbul-kecil);
+}
+
+.treatygroup .btn--ghost:hover:not(:disabled) {
+  background: var(--tg-aksen-lembut);
+  border-color: var(--tg-aksen-garis);
+  color: var(--tg-aksen-teks);
+}
+
+.treatygroup .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--tg-cekung-kecil);
+}
+
+.treatygroup .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.treatygroup .modal {
+  background: var(--tg-latar);
+  border: 1px solid var(--tg-kilau);
+  border-radius: 22px;
+  box-shadow: var(--tg-bayang-popup);
+}
+
+.treatygroup .modal__head,
+.treatygroup .modal__actions {
+  border-color: var(--tg-garis);
+}
+
+.treatygroup .alert {
+  border-radius: 12px;
+}
+
+/* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
+.treatygroup .treatygroup__tabel {
+  background: var(--tg-isi);
+  border: 1px solid var(--tg-tepi);
+  border-radius: 18px;
+  box-shadow: var(--tg-timbul);
+}
+
+.treatygroup .treatygroup__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.treatygroup .treatygroup__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.treatygroup .treatygroup__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.treatygroup .treatygroup__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.treatygroup .treatygroup__tabel thead th {
+  background: var(--tg-kepala-tabel);
+  color: var(--tg-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--tg-kepala-garis);
+}
+
+.treatygroup .treatygroup__tabel td {
+  color: var(--tg-teks);
+  background: var(--tg-isi);
+  border-bottom-color: var(--tg-garis);
+}
+
+.treatygroup .treatygroup__tabel tbody tr:nth-child(even),
+.treatygroup .treatygroup__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.treatygroup .treatygroup__tabel tbody tr:nth-child(even) > td {
+  background: var(--tg-lembut);
+}
+
+.treatygroup .treatygroup__tabel tbody tr:hover > td {
+  background: var(--tg-baris-hover);
+}
+
+/* Tombol aksi SEBARIS ke samping (permintaan work owner 03-10-2026 "buat ke samping aja"): tidak turun ke bawah;
+   tabel yang lebih lebar dari layar menggulir di dalam akar. */
+.treatygroup .treatygroup__aksi {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.treatygroup .treatygroup__tabel td.table__actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.treatygroup .treatygroup__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.treatygroup .treatygroup__hapus {
+  color: var(--tg-tombol);
+}
+
+.treatygroup .treatygroup__halaman {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  white-space: nowrap;
+}
+
+.treatygroup .treatygroup__badge {
+  margin-left: 10px;
+  background: var(--tg-aksen-lembut);
+  color: var(--tg-aksen-teks);
+}
+
+/* Kartu: form header, tab, riwayat. */
+.treatygroup .treatygroup__kartu {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--tg-isi);
+  border: 1px solid var(--tg-tepi);
+  border-radius: 18px;
+  box-shadow: var(--tg-timbul);
+}
+
+.treatygroup .treatygroup__judul-kartu {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tg-teks);
+}
+
+/* View: nilai saja, kisi label di atas nilai. */
+.treatygroup .treatygroup__ringkas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 24px;
+  margin: 0;
+}
+
+.treatygroup .treatygroup__ringkas dt,
+.treatygroup .treatygroup__treaty-isi dt {
+  font-size: 12px;
+  color: var(--tg-teks-redup);
+}
+
+.treatygroup .treatygroup__ringkas dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Kolom tombol baris MENEMPEL di kanan saat tabel digulir (pola Treaty Contract Out, permintaan work owner
+   04-10-2026 "tidak perlu scroll ke kanan buat aksesnya"). */
+.treatygroup .treatygroup__tabel th.table__actions,
+.treatygroup .treatygroup__tabel td.table__actions {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  box-shadow: -8px 0 10px -8px rgba(16, 24, 40, 0.25);
+}
+
+.treatygroup .treatygroup__tabel {
+  width: max-content;
+  min-width: 100%;
+}
+
+.treatygroup .treatygroup__tabel th.table__actions,
+.treatygroup .treatygroup__tabel td.table__actions {
+  padding-right: 16px;
+  padding-left: 14px;
+}
+
+.treatygroup .treatygroup__tabel td {
+  white-space: nowrap;
+}
+
+/* Daftar menggulir di dalam kotaknya; kolom Action menempel di kanan. */
+.treatygroup .treatygroup__gulir {
+  overflow: auto;
+  max-height: 68vh;
+}
+
+/* Toolbar daftar: cari, saringan status, tombol Add. */
+.treatygroup .treatygroup__alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 12px;
+}
+
+.treatygroup .treatygroup__cari {
+  width: min(340px, 100%);
+}
+
+/* Saringan status Active / Inactive / All: tombol segmen. */
+.treatygroup .treatygroup__segmen {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--tg-tepi);
+  border-radius: 999px;
+  background: var(--tg-lembut);
+}
+
+.treatygroup .treatygroup__segmen-butir {
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--tg-teks-redup);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.treatygroup .treatygroup__segmen-butir--aktif {
+  background: var(--tg-isi);
+  color: var(--tg-teks);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.14);
+}
+
+/* Status baris. */
+.treatygroup .treatygroup__status {
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid var(--tg-sukses-tepi);
+  border-radius: 999px;
+  background: var(--tg-sukses-latar);
+  color: var(--tg-sukses-teks);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.treatygroup .treatygroup__status--nonaktif {
+  border-color: var(--tg-netral-tepi);
+  background: var(--tg-netral-latar);
+  color: var(--tg-netral-teks);
+}
+
+/* Kolom Status: ruang di kanan supaya badge tidak tertutup kolom Action yang menempel. */
+.treatygroup .treatygroup__tabel .treatygroup__kolom-status {
+  min-width: 96px;
+  padding-right: 22px;
+}
+
+.treatygroup .treatygroup__baris--nonaktif > td {
+  color: var(--tg-teks-redup);
+}
+
+/* Teks panjang (alamat) boleh turun baris di tabel. */
+.treatygroup .treatygroup__alamat {
+  min-width: 220px;
+  max-width: 360px;
+  white-space: normal;
+}
+
+/* Form Add / Edit di popup. */
+.treatygroup .treatygroup__form {
+  display: grid;
+  gap: 14px;
+}
+
+.treatygroup .treatygroup__form textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.treatygroup .treatygroup__catatan {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Saringan OJK Business di toolbar daftar. */
+.treatygroup .treatygroup__saring {
+  width: min(280px, 100%);
+}
+
+/* View: daftar grup bisnis anak di bawah ringkasan. */
+.treatygroup .treatygroup__judul-anak {
+  margin-top: 20px;
+}
+
+.treatygroup .treatygroup__tabel-anak {
+  width: 100%;
+  min-width: 0;
+}
+
+/* View (permintaan work owner 05-10-2026: "buat rapih, contoh treaty exchange yearly") - kepala beraksen dan lencana,
+   kartu berdampingan berisi pasangan label-nilai dua kolom, jejak ubah satu baris di kaki; blok ini diturunkan dari
+   treatyexchangeyearly.css. */
+.treatygroup .treatygroup__lihat {
+  display: grid;
+  gap: 16px;
+}
+
+.treatygroup .treatygroup__lihat-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 1px solid var(--tg-aksen-garis);
+  border-radius: 16px;
+  background: var(--tg-aksen-lembut);
+}
+
+.treatygroup .treatygroup__lihat-mata {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.treatygroup .treatygroup__lihat-kode {
+  margin: 0;
+  color: var(--tg-aksen-teks);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.treatygroup .treatygroup__lihat-nama {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+}
+
+.treatygroup .treatygroup__lencana {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px solid var(--tg-tepi);
+  border-radius: 999px;
+  background: var(--tg-isi);
+  color: var(--tg-teks);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.treatygroup .treatygroup__lihat-kartu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.treatygroup .treatygroup__lihat-kartu .treatygroup__kartu {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .treatygroup .treatygroup__lihat-kartu {
+    grid-template-columns: 1fr;
+  }
+}
+
+.treatygroup .treatygroup__pasangan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.treatygroup .treatygroup__pasangan dt {
+  color: var(--tg-teks-redup);
+  font-size: 12px;
+}
+
+.treatygroup .treatygroup__pasangan dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.treatygroup .treatygroup__nilai-besar {
+  font-size: 19px;
+}
+
+.treatygroup .treatygroup__jejak {
+  margin: 0;
+  font-size: 12px;
+}
+
+.treatygroup .treatygroup__lihat-kartu .treatygroup__kartu--penuh {
+  grid-column: 1 / -1;
+}

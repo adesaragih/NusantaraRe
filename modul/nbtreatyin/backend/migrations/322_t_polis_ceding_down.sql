@@ -1,0 +1,3 @@
+-- Jalur mundur 322.
+DROP TABLE {skema}.T_POLIS_CEDING CASCADE CONSTRAINTS
+/

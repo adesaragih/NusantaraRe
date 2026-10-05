@@ -1,7 +1,7 @@
 // Form organisasi Company Detail - padanan layar Pega SFAGIS Company Detail (screenshot work owner 03-10-2026):
 // bagian Company Detail (NPWP, Parent organization, COUNTRY*, Title, Organization Name*, Business Field*, Note),
-// grid PIC (Name*, Position*, Gender, Email, Date of birth, Phone number), dan grid Address (Type, Address, Phone and
-// Fax). ORG ID hanya ditampilkan: backend yang membentuknya saat Create.
+// grid PIC (Name* - dropdown akun login aktif, Position*, Gender, Email, Date of birth, Phone number), dan grid
+// Address (Type, Address, Phone and Fax). ORG ID hanya ditampilkan: backend yang membentuknya saat Create.
 
 import { useCallback, useEffect, useState } from 'react'
 
@@ -17,6 +17,7 @@ import {
   type Detail,
   type Isian,
   type PeriksaNama,
+  type Pilihan,
   type PilihanForm,
 } from '../api'
 import {
@@ -25,7 +26,12 @@ import {
   gantiDi,
   isianDari,
   isianKosong,
+  jabatanAkun,
+  KODE_LAIN,
+  kodeAreaLain,
+  opsiAkun,
   opsiDari,
+  opsiKodeArea,
   opsiNegara,
   opsiTitle,
   periksa,
@@ -64,6 +70,41 @@ function PilihKecil({
         </option>
       ))}
     </select>
+  )
+}
+
+/**
+ * Kode area satu nomor: dropdown kodehp + "Others" yang membuka isian kode sendiri (perintah work owner 05-10-2026).
+ * Kode terpasang yang tidak ada di daftar langsung tampil sebagai Others.
+ */
+function KodeArea({ kode, value, onChange }: { kode: Pilihan[]; value: string; onChange: (v: string) => void }) {
+  const [lain, setLain] = useState(() => kodeAreaLain(kode, value))
+  const modeLain = lain || kodeAreaLain(kode, value)
+  return (
+    <div className="companydetail__kode">
+      <PilihKecil
+        label={CD.kodeArea}
+        value={modeLain ? KODE_LAIN : value}
+        opsi={opsiKodeArea(kode, modeLain ? '' : value)}
+        onChange={(v) => {
+          setLain(v === KODE_LAIN)
+          onChange(v === KODE_LAIN ? '' : v)
+        }}
+      />
+      {modeLain && (
+        <input
+          className="field__input"
+          aria-label={CD.isiKodeArea}
+          placeholder={CD.isiKodeArea}
+          inputMode="tel"
+          maxLength={10}
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value)
+          }}
+        />
+      )}
+    </div>
   )
 }
 
@@ -180,7 +221,6 @@ export default function FormCompany({
     )
   }
 
-  const opsiPosisi = pilihan.position.filter((p) => p.aktif && p.kode !== '000')
   const galatNamaTitle = galatTitle(isi.nama, pilihan.title, detail?.nama)
 
   return (
@@ -267,6 +307,7 @@ export default function FormCompany({
                 kosong={CD.pilih}
               />
               <div>
+                {/* Edit: Organization Name tidak boleh diubah (perintah work owner 05-10-2026); backend menolaknya juga. */}
                 <Field
                   label={CD.organizationName}
                   value={isi.nama}
@@ -274,6 +315,7 @@ export default function FormCompany({
                     // Huruf besar saat diketik (perintah work owner 04-10-2026); backend menegakkannya juga.
                     ubahIsi({ nama: v.toUpperCase() })
                   }}
+                  readOnly={!baru}
                   required
                 />
                 {galatNamaTitle !== null && (
@@ -340,24 +382,26 @@ export default function FormCompany({
                       return (
                         <tr key={p.userIdentifier === '' ? `baru-${i}` : p.userIdentifier}>
                           <td>
-                            <input
-                              className="field__input"
-                              aria-label={CD.name}
+                            {/* Name dari akun login aktif M_LOGIN_GO (perintah work owner 05-10-2026). */}
+                            <PilihKecil
+                              label={CD.name}
                               value={p.nama}
-                              onChange={(e) => {
-                                ganti({ nama: e.target.value })
+                              opsi={opsiAkun(pilihan.akun, p.nama)}
+                              onChange={(v) => {
+                                // Position = JOB_POSITION akun yang dipilih; nama PIC lama (bukan akun) membawa
+                                // position-nya sendiri.
+                                const jabatan = jabatanAkun(pilihan.akun, v)
+                                ganti(jabatan === undefined ? { nama: v } : { nama: v, position: jabatan })
                               }}
                             />
                           </td>
                           <td>
+                            {/* Position dari akun login yang dipilih (perintah work owner 05-10-2026) - tidak diketik. */}
                             <input
-                              className="field__input"
+                              className="field__input field__input--readonly"
                               aria-label={CD.position}
-                              list="companydetail-posisi"
                               value={p.position}
-                              onChange={(e) => {
-                                ganti({ position: e.target.value })
-                              }}
+                              readOnly
                             />
                           </td>
                           <td>
@@ -420,11 +464,6 @@ export default function FormCompany({
                 </table>
               </div>
             )}
-            <datalist id="companydetail-posisi">
-              {opsiPosisi.map((p) => (
-                <option key={p.kode} value={p.label} />
-              ))}
-            </datalist>
             <button
               type="button"
               className="btn btn--ghost"
@@ -501,10 +540,9 @@ export default function FormCompany({
                               gantiNomor({ type: v })
                             }}
                           />
-                          <PilihKecil
-                            label={CD.kodeArea}
+                          <KodeArea
+                            kode={pilihan.kodeArea}
                             value={t.code}
-                            opsi={opsiDari(pilihan.kodeArea, t.code, true)}
                             onChange={(v) => {
                               gantiNomor({ code: v })
                             }}

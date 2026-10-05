@@ -208,12 +208,20 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 	// Pemeriksaan per berkas tidak dapat salah potong: satu berkas
 	// dikecualikan dengan namanya, sisanya utuh.
 	const berkasOutbox = "015_t_log_service_rnm"
-	dokumenDiOutbox := 0
+	// Template Manager (keputusan work owner 04-10-2026): ISI adalah BERKAS templat utuh (CSV/XLSX yang diunduh
+	// pengguna), bukan atribut klaim dan bukan dokumen JSON. Pengecualiannya SATU kolom BLOB di SATU tabel, dan
+	// berkas itu tidak boleh memuat CLOB atau JSON.
+	const berkasTemplat = "912_m_template_file"
+	dokumenDiOutbox, blobTemplat := 0, 0
 	for nama, isi := range seluruhSQL(t, false) {
 		atas := strings.ToUpper(isi)
 		if strings.Contains(nama, berkasOutbox) {
 			dokumenDiOutbox += strings.Count(atas, "CLOB")
 			continue
+		}
+		if strings.Contains(nama, berkasTemplat) && !strings.Contains(nama, "_down") {
+			blobTemplat += len(regexp.MustCompile(`(?m)^\s*ISI\s+BLOB\s+NOT NULL,$`).FindAllString(atas, -1))
+			atas = regexp.MustCompile(`(?m)^\s*ISI\s+BLOB\s+NOT NULL,$`).ReplaceAllString(atas, "")
 		}
 		for _, tipe := range []string{" JSON", "CLOB", "BLOB", "JSON_KLAIM"} {
 			if strings.Contains(atas, tipe) {
@@ -221,6 +229,9 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 					nama, tipe)
 			}
 		}
+	}
+	if blobTemplat != 1 {
+		t.Errorf("M_TEMPLATE_FILE memuat %d kolom ISI BLOB, mau tepat 1", blobTemplat)
 	}
 	// Dan outbox-nya memang hanya punya SATU kolom dokumen.
 	if dokumenDiOutbox != 1 {

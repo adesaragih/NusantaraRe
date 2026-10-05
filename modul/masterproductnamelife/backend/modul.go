@@ -42,6 +42,9 @@ func Pendaftaran() inti.Pendaftaran {
 	return inti.Pendaftaran{
 		Nama:    Nama,
 		Migrasi: berkasMigrasi,
+		// Akses menu LIHAT (keputusan work owner 04-10-2026): modul selesai, ikut gerbang tulis `cmd/api`. Generate hanya
+		// menyusun CSV dari isi form (ekspor), jadi bebas.
+		HakLihat: &inti.HakLihat{Bebas: []string{"POST " + handlers.Prefix + "/produk/generate"}},
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
 			cfg := p.Config()
 			// Penyimpanan lampiran SELALU `ServiceGoogle` seperti XML (keputusan work owner 03-10-2026 "selalu nyata,

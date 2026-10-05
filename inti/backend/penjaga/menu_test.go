@@ -128,6 +128,24 @@ var modulLuarKorpus = map[string]string{
 	"marketingofficer": "906_m_nav_menu_marketingofficer.sql",
 	"companydetail":    "907_m_nav_menu_companydetail.sql",
 	"accounts":         "908_m_nav_menu_accounts.sql",
+	"aggregate":        "911_m_nav_menu_aggregate.sql",
+	"bordereaux":       "913_m_nav_menu_bordereaux.sql",
+	// Keputusan work owner 05-10-2026: modul `adjusterconsultant`, label "Adjuster Consultant", kelompok MASTER (915).
+	"adjusterconsultant": "915_m_nav_menu_adjusterconsultant.sql",
+	// Keputusan work owner 05-10-2026: tiga modul master tabel warisan, kelompok MASTER - `treatygroupojk` "Treaty Group
+	// OJK" (916), `treatygroup` "Treaty Group" (917), `businessgroup` "Business Group" (918).
+	"treatygroupojk": "916_m_nav_menu_treatygroupojk.sql",
+	"treatygroup":    "917_m_nav_menu_treatygroup.sql",
+	"businessgroup":  "918_m_nav_menu_businessgroup.sql",
+	// Keputusan work owner 05-10-2026: modul `treatyexchangeyearly`, label "Treaty Exchange Yearly", kelompok MASTER
+	// TREATY (919) - tanpa migrasi sendiri (`tandaTanpaMigrasi`), barisnya langsung menyala.
+	"treatyexchangeyearly": "919_m_nav_menu_treatyexchangeyearly.sql",
+	// Keputusan work owner 05-10-2026: modul `treatydescription` (TREATYDESC), label "Treaty Description", kelompok
+	// MASTER TREATY (920).
+	"treatydescription": "920_m_nav_menu_treatydescription.sql",
+	// Keputusan work owner 05-10-2026: modul `reinsurancetype` (REINSURANCETYPE, master jenis reasuransi), label
+	// "Reinsurance Type", kelompok MASTER TREATY (921) - tanpa migrasi sendiri, barisnya langsung menyala.
+	"reinsurancetype": "921_m_nav_menu_reinsurancetype.sql",
 }
 
 // langkahMenuLuarKorpus menjawab apakah berkas inti `nama` membuat baris modul luar korpus.
@@ -581,6 +599,9 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 	kode := map[string]bool{}
 	urutanTerakhir := map[string]int{}
 	var label []string
+	// Label modul luar korpus: foldernya - bila ada di korpus (Bordereaux ditambah work owner 04-10-2026 SESUDAH dua
+	// puluh folder awal) - tidak dihitung sebagai folder modul korpus.
+	labelLuar := map[string]bool{}
 	tampil := 0
 	for _, k := range kelompok {
 		if kode[k.kode] {
@@ -599,6 +620,8 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 		}
 		if !luar {
 			label = append(label, folder) // modul luar korpus tidak punya folder korpus
+		} else {
+			labelLuar[k.label] = true
 		}
 		if mau := strings.ToLower(strings.ReplaceAll(folder, " ", "")); k.kode != mau || k.modul != mau {
 			t.Errorf("baris %q: KODE %q, MODUL %q, mau keduanya %q (tabel nama modul)", folder, k.kode, k.modul, mau)
@@ -632,7 +655,7 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 		}
 		_, errA := os.Stat(filepath.Join(akarKorpus, e.Name(), "Activity"))
 		_, errS := os.Stat(filepath.Join(akarKorpus, e.Name(), "Section"))
-		if errA == nil && errS == nil {
+		if errA == nil && errS == nil && !labelLuar[e.Name()] {
 			folder = append(folder, e.Name())
 		}
 	}
@@ -861,6 +884,10 @@ func TestSkemaTiruanMenangkapLangkahTanpaPelindung(t *testing.T) {
 // 903 karena langkah inti selain 900/901 tidak boleh menyebut tabel menu
 // (`TestMenuHanyaDi900DanSlotMenuModulnya`); penjaga inilah yang menahannya
 // tetap sama.
+// menuAplikasiSesudah903 - menu aplikasi yang lahir SESUDAH isi awal 903: akun lama tidak otomatis memegangnya,
+// haknya diberikan lewat Kelola User (Template Manager, keputusan work owner 04-10-2026).
+var menuAplikasiSesudah903 = map[string]bool{menu.KodeTemplateManager: true}
+
 func TestIsiAwalMenuAkunMemuatSemuaMenu(t *testing.T) {
 	var isi string
 	for _, p := range langkahInti(t, "903_m_login_go_menu.sql") {
@@ -883,7 +910,9 @@ func TestIsiAwalMenuAkunMemuatSemuaMenu(t *testing.T) {
 		}
 	}
 	for _, a := range menu.MenuAplikasi {
-		mau = append(mau, a.Kode)
+		if !menuAplikasiSesudah903[a.Kode] { // lahir sesudah 903 - hak menu lewat Kelola User
+			mau = append(mau, a.Kode)
+		}
 	}
 	sort.Strings(dapat)
 	sort.Strings(mau)

@@ -8,7 +8,7 @@ import { menuTabelDariMigrasi } from '../inti/frontend/uji/menuBersih'
 import { FOLDER_KORPUS } from './katalogKorpus'
 import { kartuModul } from './Beranda'
 import { ambilModulAktif } from '../inti/frontend/klien'
-import { daftarPalet, KODE_MENU_KELOLA_USER, susunMenu } from '../inti/frontend/lib/daftarMenu'
+import { daftarPalet, KODE_MENU_KELOLA_USER, KODE_MENU_TEMPLATE_MANAGER, susunMenu } from '../inti/frontend/lib/daftarMenu'
 import { ENTRI_MENU, halamanAktif, MODUL_BACKEND, MODUL_FRONTEND } from './daftar'
 
 // MODUL_AKTIF di frontend - refactor bentuk B paket 6.
@@ -108,9 +108,10 @@ describe('nama modul sama dengan backend', () => {
   it('setiap entri menu punya pemilik yang terdaftar', () => {
     for (const e of ENTRI_MENU) {
       expect(Object.keys(MODUL_BACKEND)).toContain(e.modul)
-      // Menu aplikasi Kelola User: `pemilik` adalah KODE menunya, bukan modul
+      // Menu aplikasi Kelola User dan Template Manager: `pemilik` adalah KODE menunya, bukan modul
       // backend - ia tidak tunduk pada MODUL_AKTIF (`daftar.kelolauser.test.ts`).
-      expect(e.pemilik === KODE_MENU_KELOLA_USER ? null : e.pemilik).toBe(MODUL_BACKEND[e.modul])
+      const menuAplikasi = e.pemilik === KODE_MENU_KELOLA_USER || e.pemilik === KODE_MENU_TEMPLATE_MANAGER
+      expect(menuAplikasi ? null : e.pemilik).toBe(MODUL_BACKEND[e.modul])
     }
   })
 })

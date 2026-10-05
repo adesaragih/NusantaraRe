@@ -93,6 +93,7 @@ func (g *gudangTiruan) UbahAkun(_ context.Context, id string, isi IsianAkun) err
 		a.Nama, a.Organisasi, a.Divisi, a.Unit = isi.Nama, isi.Organisasi, isi.Divisi, isi.Unit
 		g.tulisKontak(id, isi.Kontak)
 		g.workbasket[id], g.menu[id] = isi.Workbasket, isi.Menu
+		g.aturMenuLihat(id, isi.MenuLihat)
 	})
 }
 func (g *gudangTiruan) SetelAktif(_ context.Context, id string, aktif bool) error {
@@ -300,7 +301,8 @@ func TestKelolaPilihanMenuUrutSidebar(t *testing.T) {
 	for _, m := range p.Menu {
 		dapat = append(dapat, m.Golongan+"/"+m.Kode)
 	}
-	mau := []string{"TREATY/premiumlistlife", "KLAIM/claimfacin", "KLAIM/claimlife", menu.GolonganAdmin + "/" + menu.KodeKelolaUser}
+	mau := []string{"TREATY/premiumlistlife", "KLAIM/claimfacin", "KLAIM/claimlife", menu.GolonganAdmin + "/" + menu.KodeKelolaUser,
+		menu.GolonganAdmin + "/" + menu.KodeTemplateManager}
 	if !reflect.DeepEqual(dapat, mau) {
 		t.Errorf("menu pilihan %v, mau %v", dapat, mau)
 	}
@@ -399,5 +401,50 @@ func TestKelolaAturSandi(t *testing.T) {
 		if _, err := k.AturSandi(ctxUji, "UJI-ADMIN", kasus.id, kasus.sandi, false); !errors.Is(err, kasus.mau) {
 			t.Errorf("%s %q: %v, mau %v", kasus.id, kasus.sandi, err, kasus.mau)
 		}
+	}
+}
+
+// Hak menu LIHAT (migrasi 914, keputusan work owner 04-10-2026): hanya untuk menu yang ikut dipilih dan milik modul
+// yang mendaftar; tersimpan, terbaca kembali, dan ikut di profil.
+func TestKelolaHakLihat(t *testing.T) {
+	g := gudangUji(t)
+	k := kelolaUji(g).DenganHakLihat([]string{"claimlife"})
+	p, err := k.Pilihan(ctxUji)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, m := range p.Menu {
+		if m.BisaLihat != (m.Kode == "claimlife") {
+			t.Errorf("menu %s bisaLihat %v", m.Kode, m.BisaLihat)
+		}
+	}
+	isi := IsianAkun{Nama: "Uji Kunci", Menu: []string{"claimlife", "premiumlistlife"}, MenuLihat: []string{"claimlife", " "}}
+	r, err := k.Ubah(ctxUji, "UJI-ADMIN", "UJI-KUNCI", isi)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(r.MenuLihat, []string{"claimlife"}) || !reflect.DeepEqual(g.menuLihat["UJI-KUNCI"], []string{"claimlife"}) {
+		t.Errorf("menu lihat %v / %v", r.MenuLihat, g.menuLihat["UJI-KUNCI"])
+	}
+	for nama, lihat := range map[string][]string{
+		"modul belum mendaftar":   {"premiumlistlife"},
+		"menu tidak ikut dipilih": {"claimfacin"},
+	} {
+		isi.MenuLihat = lihat
+		if _, err := k.Ubah(ctxUji, "UJI-ADMIN", "UJI-KUNCI", isi); !errors.Is(err, ErrHakLihatTidakSah) {
+			t.Errorf("%s: %v", nama, err)
+		}
+	}
+	baru := AkunBaru{ID: "UJI-LIHAT", Nama: "Uji Lihat", Menu: []string{"claimlife"}, MenuLihat: []string{"claimlife"}}
+	if err := k.Buat(ctxUji, "UJI-ADMIN", baru, "Sandi-Admin-01", false); err != nil {
+		t.Fatal(err)
+	}
+	prof, err := NewLayanan(g, nil).profil(ctxUji, *g.akun["UJI-LIHAT"])
+	if err != nil || !reflect.DeepEqual(prof.MenuLihat, []string{"claimlife"}) {
+		t.Errorf("profil menu lihat %v %v", prof.MenuLihat, err)
+	}
+	if err := kelolaUji(g).Buat(ctxUji, "UJI-ADMIN", AkunBaru{ID: "UJI-LIHAT-2", Nama: "X", Menu: []string{"claimlife"},
+		MenuLihat: []string{"claimlife"}}, "Sandi-Admin-01", false); !errors.Is(err, ErrHakLihatTidakSah) {
+		t.Errorf("tanpa DenganHakLihat semua menu penuh: %v", err)
 	}
 }

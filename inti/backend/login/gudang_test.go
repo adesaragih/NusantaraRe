@@ -27,6 +27,9 @@ func TestSQLGudangBersihDanBerbind(t *testing.T) {
 		"menu":       sqlMenu("S.M_LOGIN_GO_MENU"),
 		"wb semua":   sqlWorkbasketSemua("S.M_LOGIN_GO_WORKBASKET"),
 		"sisip menu": sqlSisipMenu("S.M_LOGIN_GO_MENU"),
+		// Hak menu (migrasi 914, 04-10-2026).
+		"menu lihat":     sqlMenuLihat("S.M_LOGIN_GO_MENU"),
+		"sisip menu hak": sqlSisipMenuHak("S.M_LOGIN_GO_MENU"),
 		// Identitas (migrasi 905, 03-10-2026).
 		"pemakai username": sqlPemakaiUsername("S.M_LOGIN_GO"),
 		"pemakai email":    sqlPemakaiEmail("S.M_LOGIN_GO"),

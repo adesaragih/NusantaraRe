@@ -134,9 +134,14 @@ func main() {
 		log.Fatalf("konfigurasi: %v", err)
 	}
 
+	pasangTemplat, err := rakitTemplat(dasar, daftar.SlotTemplat(), cfg.AuthStub)
+	if err != nil {
+		log.Fatalf("templat: %v", err)
+	}
+
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           rakitMux(dasar, terdaftar, aktif, cfg.AuthStub, rakitLogin(dasar, cfg)),
+		Handler:           rakitMux(dasar, terdaftar, aktif, cfg.AuthStub, rakitLogin(dasar, cfg), daftar.HakLihat(), pasangTemplat),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 

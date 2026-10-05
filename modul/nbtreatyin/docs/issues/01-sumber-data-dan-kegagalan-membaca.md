@@ -1,6 +1,6 @@
 # 01: Sumber data realisasi treaty — dibaca dari view relasional, gagal baca menghentikan proses
 
-**Status:** ready-for-agent
+**Status:** selesai — penahan tersisa hanya pihak luar: **K11** (skema uji Oracle — uji bertag `db` AC 17, 89 sudah ditulis, belum dijalankan) dan **F1** (ukuran K8 — ⭐ disetujui WO 04-10-2026, putaran 3; bukan penahan lagi); AC 57 ⛔ (b) K8 butir 4 *(putaran 2, paket P11 04-10-2026; semula: sebagian — konsolidasi P10 04-10-2026; sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** —
 **Menutup:** AC 15 · 16 · 17 · 36 · 37 · 38 · 57 · 58 · 89 *(9 AC)* — US 21 · 23 · 24 · 37
 
@@ -35,15 +35,15 @@ berkas yang tersimpan dari pembacaan yang gagal.
 
 ## Acceptance criteria
 
-- [ ] **AC 15** — data dibaca dari sumber relasional, bukan dari dokumen
-- [ ] **AC 16** — sistem baru **tidak menulis** dokumen
-- [ ] **AC 17** — ke-**33** medan yang dipakai laporan tersedia
-- [ ] **AC 89** — nol medan yang dipakai tetapi tidak tersedia
-- [ ] **AC 36** — kegagalan pembacaan **menghentikan** proses
-- [ ] **AC 37** — kegagalan pembacaan **menampilkan galat kepada pengguna**
-- [ ] **AC 38** — nol kasus tersimpan dari pembacaan yang gagal
-- [ ] **AC 57** — penempatan keluar **dapat dibaca** dari konteks ini
-- [ ] **AC 58** — penempatan keluar **tidak pernah ditulis** dari sini
+- [x] **AC 15** — data dibaca dari sumber relasional, bukan dari dokumen
+- [x] **AC 16** — sistem baru **tidak menulis** dokumen
+- [ ] 🟡 **AC 17** — ke-**33** medan yang dipakai laporan tersedia *(P11: `repository/kontrak_db_test.go` `TestDetailKontrakMengisiKe33MedanRD` — K11)*
+- [ ] 🟡 **AC 89** — nol medan yang dipakai tetapi tidak tersedia *(P11: `repository/kontrak_db_test.go` `TestViewKontrakMemuatSetiapKolomYangDibaca` — K11, view sungguhan di skema uji: PERMINTAAN C4)*
+- [x] **AC 36** — kegagalan pembacaan **menghentikan** proses
+- [x] **AC 37** — kegagalan pembacaan **menampilkan galat kepada pengguna**
+- [x] **AC 38** — nol kasus tersimpan dari pembacaan yang gagal
+- [ ] ⛔ **AC 57** — penempatan keluar **dapat dibaca** dari konteks ini
+- [x] **AC 58** — penempatan keluar **tidak pernah ditulis** dari sini
 
 ## Butir `[terbuka]` yang menyentuh tiket ini
 
@@ -64,3 +64,167 @@ berkas yang tersimpan dari pembacaan yang gagal.
 ⚠️ `[penyimpangan sadar]` Menghentikan proses saat gagal baca **berbeda** dari perilaku Pega.
 Alasannya tertulis di `spec.md` §5.9: **kegagalan yang terlihat lebih murah daripada yang
 tersembunyi**.
+
+## ⛔ RALAT implementasi 2026-10-03
+
+1. **Nilai master `TreatyIn.*` tidak ada di view.** Bunyi lama (Hasil): *"data dibaca dari sumber
+   relasional"*. Benar untuk 33 kolom RD — tetapi `TreatyIn.RNMShareP`, `RNMShare`,
+   `BrokeragePercentP`, `CurrencyList`, `INSTALLMENT`, `Limits/Share` milik JSON master (P29) dan
+   **tidak punya kolom padanan**; `RNM_SHARE` view belum boleh dipakai dalam perhitungan
+   (PERTANYAAN-untuk-DBA). Langkah rantai uang yang membaginya **dilewati selama nilainya kosong**
+   (`models.MasterTersedia`) — penyimpangan sadar, dicatat.
+2. **`InputPolicyTreatyInDetail_preACT` dibangun sebagian** — langkah 3-8, 11, 14, 15 (seluruhnya
+   membaca view dan tabel acuan); langkah 9-10, 13, 16-18 (JSON master) tidak.
+   `pxResults(1).CURRENCYID` bukan kolom RD maupun view → ID mata uang selalu dicari menurut nama
+   (langkah 4).
+3. **AC 57 tidak dapat dipenuhi seperti tertulis.** Seluruh bagian treaty keluar
+   (`InputPolicyTreatyOutDetail_*`, `BusinessAndSOBListRetro`, `DetailPolicyTreatyOutNonProportional`)
+   membaca JSON `M_TREATY_OUT` (P29). Data treaty keluar tidak dapat ditampilkan tanpa sumber
+   relasional baru — `[terbuka]`.
+
+## ⛔ RALAT putaran 2 (P4, 03-10-2026) — `TreatyInputPctCommSpreading`
+
+1. **RALAT atas RALAT 2 di atas.** Bunyi lama: *"langkah 9-10, 13, 16-18 (JSON master) tidak."* Bunyi
+   baru: langkah **17** (`Activity\TreatyInputPctCommSpreading.xml`, syarat preACT
+   `pyWorkPage.Quotation.ProportionalType=="NonProportional"` benar → lewati) **dibangun sebagian dari
+   view**. Bukti XML: langkah 1 `FetchMasterTreatyIn` memuat JSON master `where ID =
+   PolicyTreatyIn.NoOffer` (`RDBList\BrowseTreatyInJoinEDM`); langkah 2 kalang `TreatyIn.Limits`
+   (2.1 syarat `PolicyTreatyIn.TreatyType==.TreatyType`), 2.1.1 kalang `.Detail` (2.1.1.1 syarat
+   `.TreatyGroup==PolicyTreatyIn.TreatyGroupName`): `RiCommOgp = @replaceAll(.RIOGR,",",".")` lalu
+   **ditimpa** `RiCommOgp = @replaceAll(.RIONR,",",".")`. Keempat medan itu kolom view
+   `TREATYINDETAILJOINEDM` (`TREATYTYPE`, `TREATYGROUP`, `RIOGR`, `RIONR`) ⇒ dibaca
+   `repository.KomisiKontrak` (baris ber-`TREATYID = NoOffer`, lewat `pilihKolom`), diterapkan
+   `models.TreatyInputPctCommSpreading`, dipanggil `services.PilihBisnis`. Hasil akhir = RIONR,
+   RiCommOnp tidak disentuh — ditiru apa adanya. Uji: `models/komisi_test.go`,
+   `handlers/logika_test.go` TestPilihBisnisKomisiOgpDariRIONRView.
+2. **Tetap tidak dibangun, alasan (c):** tiga baris `SpreadingRiskList(1).SharePercentage/TreatyType/
+   TreatyName = .SpreadingTotalPct/.SpreadingTypeID/.SpreadingType` — bukan kolom view (39 kolom =
+   33 kolom RD + `BROKERAGE` `COMMENCEMENT` `TERMINATION` `RIOGR` `RIONR` `RNM_SHARE`), hanya di JSON
+   master; pengecualian baca-JSON K8 terbatas pada medan jalur NonProp/XOL. Langkah 3
+   `BreakDownSpreading_Act` (K9) dan 4 (berlabel `//`) tidak.
+3. ⚠️ Urutan `Limits/Detail` dokumen tidak ada di view: baris dibaca `ORDER BY ID`, baris cocok
+   terakhir menang (sama dengan kalang Pega bila hanya satu baris cocok).
+
+## ⛔ RALAT K8 — master jalur NonProp/XOL (putaran 2, 03-10-2026)
+
+`[keputusan work owner]` **K8** (PROMPT-NB-TREATY-IN-PUTARAN-2 bab 2; PESAN-KOREKSI-PUTARAN-2 bagian D).
+
+1. **`[penyimpangan sadar]` atas P29.** Bunyi lama (RALAT 2026-10-03 butir 1): *"`TreatyIn.RNMShareP`,
+   `RNMShare`, `BrokeragePercentP`, `CurrencyList`, `INSTALLMENT`, `Limits/Share` milik JSON master (P29) dan
+   **tidak punya kolom padanan**"*. Bunyi baru: untuk jalur **NonProporsional / XOL saja**, master dibaca
+   **BACA-SAJA** dari `JSONDATA` `M_TREATY_IN` / `M_TREATY_IN_EDM` — persis SQL `RDBList\BrowseTreatyIn`
+   (`select JSONDATA ... from pooldata.M_TREATY_IN where ID={TreatyIn.ID} union all ... M_TREATY_IN_edm ...`)
+   dan `RDBList\BrowseTreatyInJoinEDM` — di **SATU** fungsi `repository.MasterXOLDariJSON`, di balik
+   `services.PembacaMasterTreaty` (kelak kontrak modul `treatyin`, PERMINTAAN-TIM-INTI bagian E). Hanya
+   medan daftar `models.SkalarMasterXOL` / `models.DaftarMasterXOL` yang lolos (selebihnya dibuang di
+   pengurai). Dasar: medan itu tidak ada di view, dan tabel master relasional `treatyin` (`KONTRAK`,
+   `LAYER`, `BAGIAN`, `PEMULIHAN_LIMIT`, `TERMIN`, `POTONGAN`) nol baris (dicek 03-10-2026).
+2. **Daftar medan K8 lawan XML.** K8 menyebut `TreatyIn.TreatyXOLList`, `Share().SpreadingListXOL`,
+   `Installment`, `RetroList`, `FacultativeShare`, `FlagPPH`, `TypeTax`. Dari XML: `TreatyXOLList` adalah
+   KELUARAN (`PolicyTreatyIn.TreatyXOLList`, bukan medan master); `FlagPPH`/`TypeTax` dibaca dari halaman
+   POLIS (`pyWorkPage.PolicyTreatyIn.*`, isian layar admin), bukan master; `RetroList` hanya dibaca
+   `TreatyNonPropSetSpreading` langkah 8-9 yang berlabel `//` — **tidak dibaca**. Selebihnya yang dibaca
+   rule terjangkau (nomor langkah di `models/masterxol.go`): `Share()` beserta `GrossPremiumList`,
+   `NetPremiumList`, `DeductionList`, `DeductionTotalList`, `RnmLimitList`, `SpreadingListXOL`;
+   `Installment().InstallmentList`; `FacultativeShare`, `FacultativeShareList()`; `RNMShare`; `EDMState`;
+   `ProportionType`; `Limits()` (pemulihan); ringkasan dan total yang ditampilkan subsection
+   `DetailPolicyTreatyInNonProportional`.
+3. **Kegagalan membaca master** saat pilih bisnis = **422, nol simpanan** (AC 36-38, sama dengan view).
+   Saat pra-proses (`TreatyRealizationCheckXOLList`) mengikuti XML: master kosong, pesan
+   `"Error fetching XolList"`.
+4. **AC 57 tetap ⛔** (K8 butir 4): treaty keluar — `RDBList\BrowseTreatyOut`
+   `select JSONDATA as CLASSOFBUSINESS from pooldata.M_treaty_out where ID={pyWorkPage.PolicyTreatyIn.NoOffer}`.
+   **AC 58 tetap ✅**: nol penulisan treaty keluar maupun master treaty masuk.
+5. **RALAT butir 2 di atas:** `InputPolicyTreatyInDetail_preACT` langkah **16 dan 18 dibangun** (K8);
+   langkah 17 sebagian dari view (RALAT P4 di atas); langkah 9-10 (`M_TREATY_IN_DETAIL_EDM` — bukan tabel
+   K8) dan 13 tetap tidak.
+6. `IsEDMInputOnNB` (NonProp langkah 10) disimpan di kolom `T_GENERAL_POLIS.IS_EDM_INPUT_ON_NB` (medan
+   `PolicyTreatyIn` diagram, katalog paket penyimpanan); syarat tampil `DetailPoliciesNonProportional`
+   (`!TreatyMasterInEDM || IsEDMInputOnNB == true`) selalu benar sesudah langkah 10, sehingga varian EDM
+   subsection tidak terjangkau.
+
+## ⭐ Putaran 2 — P9 (04-10-2026): SATU ukuran K8 — disetujui WO 04-10-2026 (F1)
+
+Dasar: tinjauan spec P9 (temuan 6–7): K8 sempat dipakai dengan dua ukuran — `models/masterxol.go` membaca medan
+di luar daftar harfiah K8 (butir 2 RALAT K8 di atas: `RNMShare`, `RnmShareDeducted`, `EDMState`, `ProportionType`,
+`Limits()` beserta `MDPList`/`Reinstatement_List`, tiga `*SummaryList`, tiga belas `Total*NP`), sedangkan status
+`ConvertHistoryDate` menolak dengan alasan *"di luar daftar medan pengecualian K8"*. Salah satunya keliru.
+
+**Ukuran yang dipakai di semua tempat:** K8 = **medan master yang DIBACA rule terjangkau jalur NB NonProp** —
+setiap medan di `backend/models/masterxol.go` berkutip langkah XML yang membacanya; sumbernya tetap hanya
+`JSONDATA` `M_TREATY_IN` / `M_TREATY_IN_EDM` (K8 butir 2), nol penulisan JSON (K8 butir 3), treaty keluar tetap ⛔
+(K8 butir 4). ✅ Disetujui WO 04-10-2026 (F1, putaran 3; semula *"`[menunggu konfirmasi WO]`"*) — tafsiran ini melampaui bunyi harfiah daftar K8 (`TreatyXOLList`,
+`SpreadingListXOL`, `Installment`, `RetroList`, `FacultativeShare`, `FlagPPH`, `TypeTax`); dicatat di
+PERMINTAAN-TIM-INTI bagian F1.
+
+Alasan di `docs/alat/status.json` dinilai ulang dengan ukuran yang sama:
+
+| Rule | Semula | Kini | Bukti XML |
+| --- | --- | --- | --- |
+| `Activity/ConvertHistoryDate` | (c) *"di luar daftar medan pengecualian K8"* | **(a)** efeknya dibaca nol rule NB | terjangkau di jalur NonProp (`SetTreatyIn_Act` 12 ← `TreatyRealizationCheckXOLList` 4), tetapi satu-satunya efeknya (`TreatyIn.CommentList().Date` +7 jam) dibaca NOL rule: `CommentList` hanya ada di `Activity\SetTreatyIn_Act.xml` (langkah 9, `revisionstate==1`) dan `Activity\ConvertHistoryDate.xml` |
+| `FetchMasterTreatyIn`, tiga baris `SpreadingRiskList(1)` `TreatyInputPctCommSpreading`, `CalculatePremi_Act` 1-2 | (c) | (c) tetap — jalur **Proporsional** (preACT 17 hanya bila BUKAN NonProportional; sel di wadah `.IsNewPolicyNonProp != 1`), di luar ukuran K8 | `InputPolicyTreatyInDetail_preACT` langkah 16/17 saling meniadakan |
+| `InputPolicyTreatyInDetail_preACT` 9-10, 13; `RDBList/BrowseTreatyInDetailJoinEDM` | *"P29"* | (c) — JSON tabel `M_TREATY_IN_DETAIL_EDM`, di luar dua tabel K8 butir 2 | `select JSONDATA as CLASSOFBUSINESS from pooldata.M_TREATY_IN_DETAIL_EDM where ID={TreatyIn.ID}` |
+| `SetTreatyIn_Act` 8-11 (`GetCurrentDate`, `SaveTreatyIn`) | (b) | (b) tetap — penulisan JSON master, dilarang K8 butir 3 | prasyarat `param.revisionstate==1`, tidak pernah dari NB |
+
+Medan yang dibaca `models/masterxol.go` tidak berubah (setiap medan sudah berkutip langkah XML). AC tidak berubah
+status.
+
+## ⭐ Putaran 2 — paket P11 (04-10-2026): uji `db` pembacaan view
+
+`backend/repository/kontrak_db_test.go` (bertag `db`, ditulis dan dikompilasi `go vet -tags db`, **belum dijalankan** —
+K11 kosong), lewat pemanggil `skemauji.Buka()` yang sudah ada (`pasang`, sensus penjaga claimlife tetap 17):
+
+- **AC 89** `TestViewKontrakMemuatSetiapKolomYangDibaca`: ke-37 kolom yang dibaca modul (33 kolom RD
+  `BrowseTreatyJoinEDM` = `repository.KolomRDDetail`, `COMMENCEMENT`, `TERMINATION`, `RIOGR`, `RIONR`) ada di
+  `ALL_TAB_COLUMNS` view `TREATYINDETAILJOINEDM` skema uji, dan `DetailKontrak` atas ID yang tidak ada menghasilkan
+  galat ID — bukan galat "kolom … tidak ada". Menuntut view **sungguhan**: bila DBA tidak menyediakannya di skema
+  uji, uji MELEWATI (tiruan buatan uji tidak membuktikan apa pun tentang view itu).
+- **AC 17** `TestDetailKontrakMengisiKe33MedanRD`: view sungguhan → baris pertama yang ke-33 kolom RD-nya terisi
+  dibaca `DetailKontrak`, tak satu pun kosong; tanpa view → tiruan 39 kolom berbentuk katalog (fakta
+  `ALL_TAB_COLUMNS` 03-10-2026, PROMPT putaran 2 bab 1) diisi satu baris `UJI-` lalu dibuang: setiap kolom terbaca
+  persis (angka `TM9` bertitik, `.5` → `0.5`, `DATE` → `YYYY-MM-DD HH24:MI:SS`), `RNM_SHARE` tidak dibaca (AC 26),
+  `RIOGR`/`RIONR` lewat `KomisiKontrak`.
+
+Status: **selesai** — sisa penahan hanya pihak luar (K11, F1); AC 57 ⛔ (b).
+
+## ⭐ Putaran 3 (04-10-2026): F1 diputuskan — ukuran K8 tunggal disetujui WO
+
+`[keputusan work owner]` **F1** (PROMPT-NB-TREATY-IN-PUTARAN-3 bab 2): ukuran K8 bab P9 **disetujui** sesuai tafsiran
+yang dibangun (medan master yang dibaca rule terjangkau jalur NonProp, termasuk `Share()`, `Installment()`,
+`FacultativeShareList()`, `Limits()`, ringkasan layer; `TreatyXOLList` tidak dibaca karena keluaran). Syaratnya
+dipenuhi commit `23db3bc9`: daftar medan **tertutup** `models.MedanMasterXOL` berkutip langkah XML
+(`TestDaftarMedanMasterXOLTertutup`), uji yang gagal bila `repository.MasterXOLDariJSON` mengembalikan medan di luar
+daftar (`TestUraiMasterXOLHanyaMedanDaftarTertutup`, `TestMasterXOLDariJSONHanyaMengembalikanHasilUrai`), satu pembaca
+JSON (`TestKolomDokumenHanyaDiMasterXOLDariJSON`). Label *"`[menunggu konfirmasi WO]`"* diganti di tiket ini,
+`backend/repository/masterxol.go`, PERMINTAAN-TIM-INTI F1, dan empat baris `docs/alat/status.json`
+(`CalculatePremi_Act`, `ConvertHistoryDate`, `FetchMasterTreatyIn`, `TreatyInputPctCommSpreading`).
+
+Status: **selesai** — sisa penahan hanya pihak luar (K11); AC 57 ⛔ (b). *(Bunyi P11 dikutip: "sisa penahan hanya
+pihak luar (K11, F1); AC 57 ⛔ (b)".)*
+
+## ⛔ RALAT putaran 3 — audit silang W1 (04-10-2026): popup pilih bisnis membaca grid AKTIF
+
+`Section/BusinessAndSOBList` dibaca ulang: grid S11 (`pgRepPgSubSectionBusinessAndSOBListBB`, kelas
+`ASM-FW-GISFW-Int-TREATYINDETAIL`, RD `BrowseTreatyInDetail`) ber-`pyContainerVisibleWhen 1=2` — memo rule *"Hidden the
+old one, now use treatyindetail join edm"*. Grid yang tampil S16/S17: `pyGridProps/pyRDName` `BrowseTreatyJoinEDM`
+(kelas `ASM-FW-GISFW-Int-TREATYINDETAILJOINEDM`), `pyRDParams` `PROPORTIONALTYPE = .QuotationData.ProportionalType`
+(12 parameter lain kosong). RD `BrowseTreatyJoinEDM` filter H `.PROPORTIONTYPE = Param.PROPORTIONALTYPE` tanpa
+`pyUseNullIfEmpty` (kosong → diabaikan), urut `.TREATYID` ASC (`pySortOrder 1`), `pyMaxRecords` 500.
+
+1. **Rule sumber.** Bunyi lama (tabel "Rule Pega sumber"): *"Medan yang dipakai laporan | `ReportDefinition\BrowseTreatyInDetail.xml`
+   — **33 medan**"*. Bunyi baru: RD yang dipakai layar NB adalah **`ReportDefinition\BrowseTreatyJoinEDM.xml`** (pilih
+   bisnis `InputPolicyTreatyInDetail_preACT` langkah 1 `Param.pyReportName = "BrowseTreatyJoinEDM"`, dan grid popup).
+   Ke-33 `pyUIFields`-nya **sama persis** dengan `BrowseTreatyInDetail` (dibandingkan 04-10-2026), sehingga kesimpulan AC 17
+   dan 89 tidak berubah. `BrowseTreatyInDetail` kini **tidak dibangun — (a)** (`docs/alat/status.json`).
+2. **Sumber grid popup.** Bunyi lama (kode `repository/acuan.go` `DaftarDetailKontrak`): *"RD `BrowseTreatyInDetail` (kelas
+   `ASM-FW-GISFW-Int-TREATYINDETAIL`, tabel TREATYINDETAIL) - grid popup `Section/BusinessAndSOBList`. Popup tidak mengirim
+   parameter, sehingga filter A-L RD diabaikan; yang tersisa satu saringan teks nomor kontrak."* Bunyi baru:
+   `repository.DaftarBisnis` membaca **view** `TREATYINDETAILJOINEDM` (jadi kontrak EDM ikut tampil) dengan filter H atas
+   `PolicyTreatyIn.QuotationData.ProportionalType` kasus, `ORDER BY TREATYID`, ≤ 500 baris. Rute `GET /bisnis` diganti
+   `POST /kasus/{id}/bisnis` (isian layar ikut, `pySubmitData=Yes`; tanpa simpan; hanya posisi admin dan wadah
+   `.ClaimType != 'XOL Retro'`, selain itu 409). Kode tabel TREATYINDETAIL dibuang.
+3. Uji: `backend/handlers/daftarbisnis_test.go` (seam HTTP + tiruan) dan `backend/repository/kontrak_db_test.go`
+   `TestDaftarBisnisRDBrowseTreatyJoinEDM` (bertag `db`, `go vet -tags db` bersih, **belum dijalankan** — K11).
+
+AC tiket ini tidak berubah status: AC 15 ✅ (popup kini juga membaca view), AC 17 dan 89 🟡 K11.
+

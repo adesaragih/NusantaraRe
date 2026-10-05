@@ -137,6 +137,15 @@ type Pilihan struct {
 	Aktif bool `json:"aktif"`
 }
 
+// Akun adalah satu akun login AKTIF `M_LOGIN_GO` (milik inti, dibaca saja) - pilihan PIC Name (perintah work owner
+// 05-10-2026). `CLIENT_PICLIST.NICKNAME` menyimpan `Nama`-nya, seperti nama PIC lama Pega; `POSITION` menyimpan
+// `Jabatan`-nya (`JOB_POSITION`).
+type Akun struct {
+	LoginID string `json:"loginId"`
+	Nama    string `json:"nama"`
+	Jabatan string `json:"jabatan"`
+}
+
 // Negara adalah satu baris `NATION`.
 type Negara struct {
 	ID            string `json:"id"`

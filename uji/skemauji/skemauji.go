@@ -215,6 +215,20 @@ func Pasang(ctx context.Context, db *sql.DB, skema string) error {
 			return fmt.Errorf("skemauji: membuat tiruan warisan Accounts: %w", err)
 		}
 	}
+	// Tiruan warisan Aggregate SEBELUM migrasi: migrasi modul aggregate 880 membaca nomor AGG terbesar AGGREGATE
+	// (aggregate_tiruan.go, 04-10-2026).
+	for _, q := range ddlTiruanAggregate(skema) {
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			return fmt.Errorf("skemauji: membuat tiruan warisan Aggregate: %w", err)
+		}
+	}
+	// Tiruan warisan Adjuster Consultant SEBELUM migrasi: migrasi modul adjusterconsultant 870 menambah kolom
+	// IS_ACTIVE (adjusterconsultant_tiruan.go, 05-10-2026).
+	for _, q := range ddlTiruanAdjuster(skema) {
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			return fmt.Errorf("skemauji: membuat tiruan warisan Adjuster Consultant: %w", err)
+		}
+	}
 
 	repo, err := BukaRepositori()
 	if err != nil {
@@ -281,6 +295,10 @@ func Bongkar(ctx context.Context, db *sql.DB, skema string) error {
 	tiruan = append(tiruan, namaTabelTiruanMO...)
 	// Tiruan warisan Accounts (04-10-2026); jalur mundur 840-842 menoleransi ORA-00942 / ORA-02289.
 	tiruan = append(tiruan, namaTabelTiruanAccounts...)
+	// Tiruan warisan Aggregate (04-10-2026); jalur mundur 880 hanya DROP SEQUENCE.
+	tiruan = append(tiruan, namaTabelTiruanAggregate...)
+	// Tiruan warisan Adjuster Consultant (05-10-2026); jalur mundur 870 membuang kolom IS_ACTIVE.
+	tiruan = append(tiruan, namaTabelTiruanAdjuster...)
 	for _, nama := range tiruan {
 		q := fmt.Sprintf(`DROP TABLE %s.%s CASCADE CONSTRAINTS`, skema, nama)
 		if _, err := db.ExecContext(ctx, q); err != nil {

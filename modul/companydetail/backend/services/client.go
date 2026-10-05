@@ -74,6 +74,8 @@ type Gudang interface {
 	GantiAlamat(ctx context.Context, tx *dbTx, clientID string, baris []models.BarisAlamat) error
 	DaftarPilihan(ctx context.Context) ([]models.Pilihan, error)
 	DaftarNegara(ctx context.Context) ([]models.Negara, error)
+	// DaftarAkunAktif - akun login aktif M_LOGIN_GO (pilihan PIC Name).
+	DaftarAkunAktif(ctx context.Context) ([]models.Akun, error)
 	CariInduk(ctx context.Context, kueri, kecuali string) ([]models.BarisDaftar, error)
 	// DaftarNamaOrg - seluruh organisasi bernama (pemeriksaan nama sama/mirip).
 	DaftarNamaOrg(ctx context.Context) ([]models.BarisDaftar, error)
@@ -120,12 +122,17 @@ type PilihanForm struct {
 	KodeArea      []models.Pilihan `json:"kodeArea"`
 	Gender        []models.Pilihan `json:"gender"`
 	Negara        []models.Negara  `json:"negara"`
+	// Akun - pilihan PIC Name: akun login aktif M_LOGIN_GO (perintah work owner 05-10-2026).
+	Akun []models.Akun `json:"akun"`
 }
 
 // referensi - pilihan yang dipakai pemeriksa isian.
 type referensi struct {
 	enum   map[string]map[string]models.Pilihan // jenis -> kode -> pilihan
 	negara map[string]models.Negara             // CLIENT.COUNTRY -> negara
+	akun   []models.Akun                        // akun login aktif
+	// jabatanAkun - NAME akun login aktif -> JOB_POSITION-nya (nama kembar boleh berbeda jabatan).
+	jabatanAkun map[string]map[string]bool
 }
 
 func (r referensi) ada(jenis, kode string) (models.Pilihan, bool) {
@@ -147,7 +154,19 @@ func (l *Layanan) muatReferensi(ctx context.Context) (referensi, []models.Piliha
 	if err != nil {
 		return referensi{}, nil, nil, err
 	}
-	r := referensi{enum: map[string]map[string]models.Pilihan{}, negara: map[string]models.Negara{}}
+	akun, err := l.gudang.DaftarAkunAktif(ctx)
+	if err != nil {
+		return referensi{}, nil, nil, err
+	}
+	r := referensi{enum: map[string]map[string]models.Pilihan{}, negara: map[string]models.Negara{}, akun: akun,
+		jabatanAkun: map[string]map[string]bool{}}
+	for _, a := range akun {
+		n := strings.TrimSpace(a.Nama)
+		if r.jabatanAkun[n] == nil {
+			r.jabatanAkun[n] = map[string]bool{}
+		}
+		r.jabatanAkun[n][strings.TrimSpace(a.Jabatan)] = true
+	}
 	for _, p := range pil {
 		if r.enum[p.Jenis] == nil {
 			r.enum[p.Jenis] = map[string]models.Pilihan{}
@@ -190,13 +209,13 @@ func (l *Layanan) Daftar(ctx context.Context, kueri string, halaman, ukuran int)
 
 // Pilihan menyusun isi dropdown form.
 func (l *Layanan) Pilihan(ctx context.Context) (PilihanForm, error) {
-	_, pil, neg, err := l.muatReferensi(ctx)
+	r, pil, neg, err := l.muatReferensi(ctx)
 	if err != nil {
 		return PilihanForm{}, err
 	}
 	f := PilihanForm{Title: []models.Pilihan{}, BusinessField: []models.Pilihan{}, Position: []models.Pilihan{},
 		AddressType: []models.Pilihan{}, Telfax: []models.Pilihan{}, KodeArea: []models.Pilihan{},
-		Gender: []models.Pilihan{}, Negara: neg}
+		Gender: []models.Pilihan{}, Negara: neg, Akun: r.akun}
 	tujuan := map[string]*[]models.Pilihan{models.JenisTitle: &f.Title, models.JenisBidangUsaha: &f.BusinessField,
 		models.JenisPosisi: &f.Position, models.JenisAlamat: &f.AddressType, models.JenisTelfax: &f.Telfax,
 		models.JenisKodeHP: &f.KodeArea, models.JenisGender: &f.Gender}
@@ -207,6 +226,9 @@ func (l *Layanan) Pilihan(ctx context.Context) (PilihanForm, error) {
 	}
 	if f.Negara == nil {
 		f.Negara = []models.Negara{}
+	}
+	if f.Akun == nil {
+		f.Akun = []models.Akun{}
 	}
 	return f, nil
 }
@@ -293,6 +315,9 @@ func TanggalDariKabel(s string) (string, bool) {
 
 var polaEmail = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
 
+// polaKodeArea - kode area "Others" yang diisi sendiri: angka, boleh diawali + (mis. `0999`, `+62`).
+var polaKodeArea = regexp.MustCompile(`^\+?[0-9]+$`)
+
 // polaNomorPIC - USERIDENTIFIER buatan aplikasi ini.
 var polaNomorPIC = regexp.MustCompile(`^` + models.AwalanPIC + `([0-9]+)$`)
 
@@ -313,19 +338,27 @@ func rapikan(isi models.Isian) models.Isian {
 // ulang terhadap daftar pilihan (nilai lama Pega boleh tetap).
 func (l *Layanan) isiOrg(ctx context.Context, tx *dbTx, o *models.Organisasi, isi models.Isian, r referensi,
 	lama *models.Organisasi) error {
-	if isi.Nama == "" {
-		return tolak("Organization Name is required")
+	// Edit: Organization Name tidak boleh diubah (perintah work owner 05-10-2026). Nama yang dikirim harus sama
+	// (tanpa beda huruf/spasi) dan NAME tersimpan tetap apa adanya - 4.472 nama lama Pega (DEV) yang memuat
+	// PT/CV/PD/UD ikut tetap.
+	if lama != nil {
+		if isi.Nama != strings.ToUpper(strings.TrimSpace(lama.Nama)) {
+			return tolak("Organization Name cannot be changed")
+		}
+		o.Nama = lama.Nama
+	} else {
+		if isi.Nama == "" {
+			return tolak("Organization Name is required")
+		}
+		if len(isi.Nama) > LebarNama {
+			return tolak("Organization Name is longer than %d bytes", LebarNama)
+		}
+		// Title tidak boleh ada di nama (work owner 04-10-2026: "ga boleh disimpan dong").
+		if t := TitleDiNama(isi.Nama, kataTitle(r)); t != "" {
+			return tolak("Organization Name must not contain the title %s - choose it in Title", t)
+		}
+		o.Nama = isi.Nama
 	}
-	if len(isi.Nama) > LebarNama {
-		return tolak("Organization Name is longer than %d bytes", LebarNama)
-	}
-	// Title tidak boleh ada di nama (work owner 04-10-2026: "ga boleh disimpan dong"). Edit: hanya bila nama DIUBAH -
-	// 4.472 nama lama Pega (DEV) memuat PT/CV/PD/UD dan tetap dapat disimpan selama namanya tidak disentuh.
-	namaBerubah := lama == nil || isi.Nama != strings.ToUpper(strings.TrimSpace(lama.Nama))
-	if t := TitleDiNama(isi.Nama, kataTitle(r)); t != "" && namaBerubah {
-		return tolak("Organization Name must not contain the title %s - choose it in Title", t)
-	}
-	o.Nama = isi.Nama
 
 	o.Title = ""
 	if isi.Title != "" {
@@ -434,6 +467,23 @@ func susunPIC(masuk, lama []models.PIC, r referensi) ([]models.PIC, error) {
 		if len(p.Nama) > LebarPICNama {
 			return nil, tolak("PIC row %d: Name is longer than %d bytes", ke, LebarPICNama)
 		}
+		lamaPIC, adaLama := lamaPer[p.UserIdentifier]
+		if p.UserIdentifier != "" && !adaLama {
+			return nil, tolak("PIC row %d does not belong to this organization", ke)
+		}
+		// Name dipilih dari akun login aktif dan Position = JOB_POSITION akun itu (perintah work owner 05-10-2026); PIC
+		// lama Pega yang namanya tidak diubah tetap boleh.
+		if !(adaLama && p.Nama == strings.TrimSpace(lamaPIC.Nama)) {
+			jabatan, ada := r.jabatanAkun[p.Nama]
+			switch {
+			case !ada:
+				return nil, tolak("PIC row %d: Name %s is not an active user in the login list", ke, p.Nama)
+			case p.Position == "":
+				return nil, tolak("PIC row %d: %s has no Job Position - fill it in Kelola User", ke, p.Nama)
+			case !jabatan[p.Position]:
+				return nil, tolak("PIC row %d: Position must be the Job Position of %s in Kelola User", ke, p.Nama)
+			}
+		}
 		if p.Position == "" {
 			return nil, tolak("PIC row %d: Position is required", ke)
 		}
@@ -450,10 +500,6 @@ func susunPIC(masuk, lama []models.PIC, r referensi) ([]models.PIC, error) {
 		}
 		if len(p.Phone) > LebarPICTelepon {
 			return nil, tolak("PIC row %d: Phone number is longer than %d bytes", ke, LebarPICTelepon)
-		}
-		lamaPIC, adaLama := lamaPer[p.UserIdentifier]
-		if p.UserIdentifier != "" && !adaLama {
-			return nil, tolak("PIC row %d does not belong to this organization", ke)
 		}
 		if sebelum, ganda := dipakai[p.UserIdentifier]; ganda && p.UserIdentifier != "" {
 			return nil, tolak("PIC row %d repeats PIC row %d", ke, sebelum)
@@ -559,13 +605,16 @@ func susunAlamat(masuk []models.Alamat, lama []models.BarisAlamat, r referensi, 
 			if !r.aktif(models.JenisTelfax, t.Jenis) && !(adaAsal && jenisLama[a.Asal][t.Jenis]) {
 				return nil, tolak("%s: type %s is not in the phone and fax type list", nomor, t.Jenis)
 			}
-			if t.Code != "" {
-				if _, ada := r.ada(models.JenisKodeHP, t.Code); !ada && !(adaAsal && kodeLama[a.Asal][t.Code]) {
-					return nil, tolak("%s: area code %s is not in the area code list", nomor, t.Code)
-				}
-			}
 			if len(t.Jenis) > LebarJenis || len(t.Code) > LebarJenis {
 				return nil, tolak("%s: the type or area code is longer than %d bytes", nomor, LebarJenis)
+			}
+			// Kode area: dari daftar kodehp, atau "Others" diisi sendiri (perintah work owner 05-10-2026) - angka, boleh
+			// diawali +. Kode lama Pega baris ini tetap boleh.
+			if t.Code != "" {
+				_, ada := r.ada(models.JenisKodeHP, t.Code)
+				if !ada && !(adaAsal && kodeLama[a.Asal][t.Code]) && !polaKodeArea.MatchString(t.Code) {
+					return nil, tolak("%s: area code %s must be digits (a leading + is allowed)", nomor, t.Code)
+				}
 			}
 			b := dasar
 			b.TelfaxType, b.TelfaxCode, b.TelfaxNo = t.Jenis, t.Code, t.No

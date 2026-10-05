@@ -21,7 +21,7 @@ cadangan `760-899` dan `990-999`.
 | Pemilik | `@PEMILIK-MARKETINGOFFICER` |
 | Status | dimigrasi |
 | Rentang migrasi | `760-799` |
-| Slot menu | `990-991` |
+| Slot menu | `990-990` |
 | Prefix rute API | `/api/marketing-officer` |
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |

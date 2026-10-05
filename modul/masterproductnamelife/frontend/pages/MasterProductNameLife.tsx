@@ -14,11 +14,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Gagal, Halaman, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
+import { useBolehUbah } from '../../../../inti/frontend/lib/hakMenu'
 import { ambilDaftarProduk, ambilProduk, type Produk, type RingkasanProduk } from '../api'
 import { UKURAN_HALAMAN_MPNL, jepitHalaman, potongHalaman, produkBaru } from '../bentuk'
 import DialogCopyOld from '../components/DialogCopyOld'
 import FormProduk from '../components/FormProduk'
 import { GRID_MPNL, LAIN_MPNL, MENU_MPNL } from '../labels'
+import { NAMA_MPNL } from '../menu'
 
 /** Form yang terbuka: halamannya dan `IsView` awal. */
 interface FormTerbuka {
@@ -29,6 +31,8 @@ interface FormTerbuka {
 }
 
 export default function MasterProductNameLife() {
+  // Menu View only (M_LOGIN_GO_MENU.HAK, 04-10-2026): tanpa Add; View tetap (form mode lihat tanpa Edit).
+  const bolehUbah = useBolehUbah(NAMA_MPNL)
   const [daftar, setDaftar] = useState<RingkasanProduk[] | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [halaman, setHalaman] = useState(1)
@@ -91,19 +95,25 @@ export default function MasterProductNameLife() {
       ) : (
         <>
           <div className="aksi-baris mpnl-aksi-grid">
-            <span className="mpnl-label-sel">{GRID_MPNL.labelSelAdd}</span>
-            <button type="button" className="btn btn--primary" title={GRID_MPNL.tooltipAdd} onClick={() => buka(produkBaru(), false)}>
-              {GRID_MPNL.add}
-            </button>
-            <button
-              type="button"
-              className="btn btn--ghost"
-              onClick={() => {
-                setCopyOld(true)
-              }}
-            >
-              {LAIN_MPNL.copyOld}
-            </button>
+            {bolehUbah && (
+              <>
+                <span className="mpnl-label-sel">{GRID_MPNL.labelSelAdd}</span>
+                <button type="button" className="btn btn--primary" title={GRID_MPNL.tooltipAdd} onClick={() => buka(produkBaru(), false)}>
+                  {GRID_MPNL.add}
+                </button>
+              </>
+            )}
+            {bolehUbah && (
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() => {
+                  setCopyOld(true)
+                }}
+              >
+                {LAIN_MPNL.copyOld}
+              </button>
+            )}
             {semua.length > 0 && (
               <Halaman halaman={halaman} ukuran={UKURAN_HALAMAN_MPNL} total={semua.length} onPindah={setHalaman} />
             )}

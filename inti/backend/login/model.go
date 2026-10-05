@@ -27,6 +27,8 @@ type AkunBaru struct {
 	Workbasket               []string
 	// Menu - KODE menu (`M_LOGIN_GO_MENU`); kosong = akun tanpa satu layar pun.
 	Menu []string
+	// MenuLihat - bagian dari Menu yang dipegang dengan hak LIHAT saja (`M_LOGIN_GO_MENU.HAK`, migrasi 914).
+	MenuLihat []string
 	// Kontak - email, nomor HP, NIK, jabatan (migrasi 904); opsional.
 	Kontak
 }
@@ -45,7 +47,16 @@ type Profil struct {
 	// Menu - KODE menu yang boleh dibuka (`M_LOGIN_GO_MENU`, Kelola User
 	// 01-10-2026): modul, dan `kelolauser` bagi admin.
 	Menu []string `json:"menu"`
+	// MenuLihat - bagian dari Menu yang hanya boleh DILIHAT (`M_LOGIN_GO_MENU.HAK = 'LIHAT'`, migrasi 914, keputusan
+	// work owner 04-10-2026): layar modul menyembunyikan tombol tulisnya. Selalu terisi, kosong = semua penuh.
+	MenuLihat []string `json:"menuLihat"`
 }
+
+// Hak menu (`M_LOGIN_GO_MENU.HAK`, migrasi 914).
+const (
+	HakLihat = "LIHAT"
+	HakPenuh = "PENUH"
+)
 
 var (
 	// ErrAkunTidakAda - LOGIN_ID tidak ada di M_LOGIN_GO.
@@ -55,6 +66,8 @@ var (
 	// ErrMenuBelumDimigrasi - tabel M_LOGIN_GO_MENU belum ada: migrasi 903
 	// belum dijalankan. Login menjawab 503 yang menyebutnya.
 	ErrMenuBelumDimigrasi = errors.New("login: tabel M_LOGIN_GO_MENU belum ada - migrasi 903 belum dijalankan (-migrate, oleh work owner)")
+	// ErrHakBelumDimigrasi - kolom M_LOGIN_GO_MENU.HAK belum ada (migrasi 914) saat menyimpan menu ber-hak LIHAT.
+	ErrHakBelumDimigrasi = errors.New("login: kolom M_LOGIN_GO_MENU.HAK belum ada - migrasi 914 belum dijalankan (-migrate, oleh work owner)")
 )
 
 // Gudang membaca dan menulis M_LOGIN_GO, M_LOGIN_GO_WORKBASKET, dan membaca
@@ -65,6 +78,9 @@ type Gudang interface {
 	Workbasket(ctx context.Context, id string) ([]string, error)
 	// Menu - KODE menu akun itu (M_LOGIN_GO_MENU), berurutan.
 	Menu(ctx context.Context, id string) ([]string, error)
+	// MenuLihat - KODE menu akun itu yang ber-hak LIHAT (migrasi 914), berurutan. Sebelum migrasi 914 = kosong:
+	// setiap menu berarti penuh, seperti sebelumnya.
+	MenuLihat(ctx context.Context, id string) ([]string, error)
 	// CatatGagal menaikkan FAILED_COUNT dan mengunci sesudah BatasGagal.
 	CatatGagal(ctx context.Context, id string) error
 	// CatatBerhasil menolkan FAILED_COUNT, mencabut kunci, mengisi LAST_LOGIN.
