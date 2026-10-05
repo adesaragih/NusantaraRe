@@ -85,13 +85,29 @@ export const LABEL_TAMPIL: Readonly<Partial<Record<keyof typeof FOLDER_KORPUS, s
  * Officer", kelompok MASTER, baris menu migrasi inti 906. Keputusan work owner 04-10-2026: modul `companydetail`
  * (layar Pega SFAGIS Company Detail, tabel datar CLIENT), label "Company Detail", kelompok MASTER, migrasi inti 907.
  * Keputusan work owner 04-10-2026: modul `accounts` (layar Pega SFAGIS Account, tabel T_M_ACCOUNT), label "Accounts",
- * kelompok MASTER, migrasi inti 908.
+ * kelompok MASTER, migrasi inti 908. Keputusan work owner 05-10-2026: modul `adjusterconsultant` (layar master Pega
+ * MstAdjusterConsultant, tabel ADJUSTERCONSULTANT), label "Adjuster Consultant", kelompok MASTER, migrasi inti 915.
+ * Keputusan work owner 05-10-2026: tiga modul master tabel warisan, kelompok MASTER - `treatygroupojk` (TREATYGROUPOJK)
+ * "Treaty Group OJK" migrasi inti 916, `treatygroup` (TREATYGROUP) "Treaty Group" 917, `businessgroup` (BUSINESSGROUP)
+ * "Business Group" 918. Keputusan work owner 05-10-2026: modul `treatyexchangeyearly` (TREATYEXCHANGEYEARLY, kurs
+ * tahunan), label "Treaty Exchange Yearly", kelompok MASTER TREATY, migrasi inti 919 (tanpa migrasi modul).
+ * Keputusan work owner 05-10-2026: modul `treatydescription` (TREATYDESC, master jenis klausul treaty), label "Treaty
+ * Description", kelompok MASTER TREATY, migrasi inti 920. Keputusan work owner 05-10-2026: modul `reinsurancetype`
+ * (REINSURANCETYPE, master jenis reasuransi), label "Reinsurance Type", kelompok MASTER TREATY, migrasi inti 921.
  */
 export const MODUL_LUAR_KORPUS = {
   marketingOfficer: 'Marketing Officer',
   companyDetail: 'Company Detail',
   accounts: 'Accounts',
   aggregate: 'Aggregate',
+  bordereaux: 'Bordereaux',
+  adjusterConsultant: 'Adjuster Consultant',
+  treatyGroupOjk: 'Treaty Group OJK',
+  treatyGroup: 'Treaty Group',
+  businessGroup: 'Business Group',
+  treatyExchangeYearly: 'Treaty Exchange Yearly',
+  treatyDescription: 'Treaty Description',
+  reinsuranceType: 'Reinsurance Type',
 } as const
 
 /**

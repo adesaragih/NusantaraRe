@@ -26,6 +26,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/config"
+	"nusantarare/inti/backend/templat"
 )
 
 // terdaftar diisi fungsi `init` setiap berkas bangkitan `modul_<nama>_gen.go`.
@@ -67,6 +68,28 @@ func SumberMigrasi() []fs.FS {
 		}
 	}
 	return append(sumber, inti.SumberMigrasi())
+}
+
+// SlotTemplat - slot templat unduhan dari SEMUA modul terdaftar (Template
+// Manager, keputusan work owner 04-10-2026), urut nama modul.
+func SlotTemplat() []templat.Slot {
+	var slot []templat.Slot
+	for _, p := range Terdaftar() {
+		slot = append(slot, p.Templat...)
+	}
+	return slot
+}
+
+// HakLihat - modul terdaftar yang mendukung akses menu LIHAT (keputusan work owner 04-10-2026): nama modul (= KODE
+// menunya) ke pola rute yang tetap boleh dipakai pemegang LIHAT. Modul tanpa pernyataan tidak ada di peta ini.
+func HakLihat() map[string][]string {
+	hasil := map[string][]string{}
+	for _, p := range Terdaftar() {
+		if p.HakLihat != nil {
+			hasil[p.Nama] = append([]string{}, p.HakLihat.Bebas...)
+		}
+	}
+	return hasil
 }
 
 // NamaLama memetakan nama modul SEBELUM tabel nama modul (keputusan work

@@ -30,6 +30,8 @@ func Pendaftaran() inti.Pendaftaran {
 	return inti.Pendaftaran{
 		Nama:    Nama,
 		Migrasi: berkasMigrasi,
+		// Akses menu LIHAT (keputusan work owner 04-10-2026): modul selesai, ikut gerbang tulis `cmd/api`.
+		HakLihat: &inti.HakLihat{},
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
 			return Modul{svc: services.DariDasar(p.Dasar()), stubPelaku: p.Config().AuthStub}, nil
 		},

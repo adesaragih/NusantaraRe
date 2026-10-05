@@ -20,6 +20,8 @@ export const AG = {
   halaman: (h: number, total: number) => `Page ${h} of ${total}`,
   sebelumnya: '‹ Previous',
   berikutnya: 'Next ›',
+  /** Kepala kolom nomor grid berkepala dua baris. */
+  no: 'No',
 
   tanggalInput: 'Tanggal Input',
   cedingCode: 'Ceding Code',
@@ -121,4 +123,41 @@ export const LABEL_KOLOM: Readonly<Record<string, string>> = {
   RNM_VALUE_IN_USD: 'RNM Value (USD)',
   REMARK: 'Remark',
   ID: 'ID',
+}
+
+/**
+ * Kepala grid dua baris (perintah work owner 05-10-2026: "lakukan grouping sama seperti bordereaux"): pasangan
+ * NoR (jumlah risiko) dan IA (nilai) dikelompokkan per kategori, lalu Total dan RNM. `[grup, judul bawah]`; kolom yang
+ * tidak ada di sini tanpa grup - judul `LABEL_KOLOM`-nya menempati dua baris. Caption Pega lengkap tetap di
+ * `LABEL_KOLOM` (dipakai sebagai `title` sel kepala).
+ */
+export const GRUP_KOLOM: Readonly<Record<string, readonly [string, string]>> = {
+  NOR_BUILDINGS: ['Buildings', 'NoR'],
+  BUILDINGS: ['Buildings', 'IA'],
+  NOR_STOCKS: ['Stocks', 'NoR'],
+  STOCKS: ['Stocks', 'IA'],
+  NOR_MACHINERY: ['Machinery', 'NoR'],
+  MACHINERY: ['Machinery', 'IA'],
+  NOR_OTHER_CONTENTS: ['Other Contents', 'NoR'],
+  OTHER_CONTENTS: ['Other Contents', 'IA'],
+  NOR_CONSEQUENTIAL_LOSS: ['Consequential Loss', 'NoR'],
+  CONSEQUENTIAL_LOSS: ['Consequential Loss', 'IA'],
+  NOR_RESIDENTIAL: ['Residential', 'NoR'],
+  RESIDENTIAL: ['Residential', 'IA'],
+  NOR_COMMERCIAL: ['Commercial', 'NoR'],
+  COMMERCIAL: ['Commercial', 'IA'],
+  NOR_INDUSTRIAL: ['Industrial', 'NoR'],
+  INDUSTRIAL: ['Industrial', 'IA'],
+  NOR_AGRICULTURE: ['Agriculture', 'NoR'],
+  AGRICULTURE: ['Agriculture', 'IA'],
+  NOR_MISCELLANEOUS: ['Miscellaneous', 'NoR'],
+  MISCELLANEOUS: ['Miscellaneous', 'IA'],
+  NOR_UTILITIES: ['Utilities', 'NoR'],
+  UTILITIES: ['Utilities', 'IA'],
+  TOTAL_NO_OF_RISK: ['Total', 'No of Risk'],
+  TOTAL_IN_AMOUNT: ['Total', 'In Amount'],
+  TOTAL_IN_AMOUNT_IN_USD: ['Total', 'In Amount (USD)'],
+  RNM_SHARE: ['RNM', 'Share'],
+  RNM_VALUE: ['RNM', 'Value'],
+  RNM_VALUE_IN_USD: ['RNM', 'Value (USD)'],
 }

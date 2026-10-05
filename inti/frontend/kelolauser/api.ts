@@ -33,6 +33,8 @@ export interface RingkasAkun {
 export interface RinciAkun extends RingkasAkun {
   workbasket: string[]
   menu: string[]
+  /** Bagian dari `menu` yang View only (`M_LOGIN_GO_MENU.HAK = 'LIHAT'`, migrasi 914). Tidak ada = backend lama. */
+  menuLihat?: string[]
 }
 
 /** Satu pilihan dropdown master; `induk` = CODE organisasi/divisi pemiliknya. */
@@ -49,6 +51,8 @@ export interface OpsiMenu {
   /** GROUPMENU (TREATY, …) atau ADMIN untuk menu aplikasi. */
   golongan: string
   dimigrasi: boolean
+  /** Modul yang mendukung akses View only (04-10-2026): pilihan Full / View only tampil di sampingnya. */
+  bisaLihat?: boolean
 }
 
 /** Isi pilihan form — `login.PilihanKelola`. Master hanya yang aktif. */
@@ -68,6 +72,8 @@ export interface BadanUbah {
   unit: string
   workbasket: string[]
   menu: string[]
+  /** Bagian dari `menu` yang View only. */
+  menuLihat: string[]
   email: string
   telepon: string
   nik: string

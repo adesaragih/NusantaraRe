@@ -133,12 +133,43 @@ apa aja yang bisa diakses sama user nya”)*. Migrasi `903_m_login_go_menu.sql` 
 | Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
 | --- | --- | --- | --- | --- | --- |
 | `LOGIN_ID` | teks | tidak | PK, FK | sidebar, gerbang 403 | → `M_LOGIN_GO.LOGIN_ID`, tanpa `ON DELETE` |
-| `MENU_KODE` | teks | tidak | PK | sidebar, gerbang 403 | `M_NAV_MENU.KODE` (nama modul) atau menu aplikasi `kelolauser` — tanpa FK; diperiksa aplikasi saat menyimpan |
+| `MENU_KODE` | teks | tidak | PK | sidebar, gerbang 403 | `M_NAV_MENU.KODE` (nama modul) atau menu aplikasi `kelolauser`, `templatemanager` *(sejak 04-10-2026)* — tanpa FK; diperiksa aplikasi saat menyimpan |
 | `TGL_CREATE` | DATE | tidak | | jejak | `DEFAULT SYSDATE` |
+| `HAK` | teks | tidak | | gerbang tulis `cmd/api`, tombol layar | `PENUH` atau `LIHAT` *(migrasi 914, keputusan work owner 04-10-2026)*; `DEFAULT 'PENUH'`, `CK_M_LOGIN_GO_MENU_HAK` |
 
 **Index:** PK *(`LOGIN_ID`, `MENU_KODE`)*.
+
+**Hak per menu (914):** `LIHAT` = hanya membaca. Gerbang `cmd/api` menolak `POST`/`PUT`/`DELETE` modul itu kecuali rute
+yang modulnya bebaskan, dan layar modul menyembunyikan tombol tulis. `LIHAT` hanya untuk menu modul yang mendaftar
+(`inti.Pendaftaran.HakLihat`); menu lain dan menu aplikasi selalu `PENUH`. `LIHAT` berlaku juga bagi pemegang `kelolauser`
+*(keputusan work owner 05-10-2026)* — Kelola User sendiri tidak pernah `LIHAT`, jadi ia selalu dapat mengembalikan aksesnya.
 
 **Isi awal 903:** setiap akun yang sudah ada mendapat **semua** menu — dua puluh modul dan `kelolauser` *(keputusan work
 owner)*; daftarnya dijaga `TestIsiAwalMenuAkunMemuatSemuaMenu`. Pemegang `kelolauser` adalah admin. Kelola User menolak
 admin membuang `kelolauser` dari dirinya sendiri, menonaktifkan atau menghapus dirinya, dan perubahan yang menyisakan
 nol akun aktif ber-`kelolauser`.
+`templatemanager` lahir sesudah 903, jadi akun lama tidak otomatis memegangnya — haknya diberikan lewat Kelola User.
+
+## M_TEMPLATE_FILE
+
+Berkas templat unduhan berversi milik menu aplikasi **Template Manager** *(keputusan work owner 04-10-2026: “menu untuk
+pengelola file templete unduhan … bukan cuman untuk bordereaux, tapi untuk semua menu yang memiliki template”)*. Migrasi
+`912_m_template_file.sql` *(+ `_down`)*. Padanan Pega: Rule-File-Binary yang dicari menurut nama lalu diambil yang
+terbaru. Slot templat didaftarkan modul (`inti.Pendaftaran.Templat`); slot tanpa baris aktif memakai **berkas bawaan**
+modulnya, jadi tabel kosong tidak mengubah perilaku apa pun.
+
+| Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
+| --- | --- | --- | --- | --- | --- |
+| `ID` | bilangan bulat | tidak | PK | — | `SEQ_M_TEMPLATE_FILE` |
+| `KODE` | teks | tidak | UNIQUE | Template Manager, unduh templat | kode slot modul, mis. `bordereaux.premi.fire` — tanpa FK; diperiksa katalog slot |
+| `VERSI` | bilangan bulat | tidak | UNIQUE | Riwayat versi | 1, 2, … per `KODE` *(MAX + 1 dalam transaksi unggah)* |
+| `NAMA_BERKAS` | teks | tidak | | Riwayat versi | nama berkas yang diunggah *(tanpa jalur)*; nama unduhan pengguna tetap nama slot |
+| `UKURAN` | bilangan bulat | tidak | | Riwayat versi | byte |
+| `JUMLAH_KOLOM` | bilangan bulat | ya | | Riwayat versi | kolom header CSV; kosong untuk slot bukan CSV |
+| `ISI` | berkas | tidak | | unduh templat | BLOB — isi berkas utuh, maks. 1 MB; satu-satunya kolom berkas *(pengecualian bernama di `TestKolomUangDesimalDanNolJSON`)* |
+| `CATATAN` | teks | ya | | Riwayat versi | catatan pengunggah, maks. 500 huruf |
+| `AKTIF` | teks | tidak | CHECK | unduh templat | `'1'` versi yang dipakai — paling banyak satu per `KODE`; `'0'` *(bawaan)* |
+| `DIUNGGAH_OLEH` | teks | tidak | | Riwayat versi | `M_LOGIN_GO.LOGIN_ID` pengunggah |
+| `TGL_UNGGAH` | DATE | tidak | | Riwayat versi | `DEFAULT SYSDATE` |
+
+**Index:** PK *(`ID`)*; `UX_M_TEMPLATE_FILE_VERSI` *(`KODE`, `VERSI`)*.

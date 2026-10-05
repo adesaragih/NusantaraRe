@@ -58,6 +58,10 @@ func sqlMenu(t string) string {
 	return fmt.Sprintf(`SELECT MENU_KODE FROM %s WHERE LOGIN_ID = :1 ORDER BY MENU_KODE`, t)
 }
 
+func sqlMenuLihat(t string) string {
+	return fmt.Sprintf(`SELECT MENU_KODE FROM %s WHERE LOGIN_ID = :1 AND HAK = :2 ORDER BY MENU_KODE`, t)
+}
+
 // sqlCatatGagal - atomik di satu pernyataan, jadi dua percobaan serentak
 // tetap terhitung dua. Kunci yang SUDAH lewat waktunya memulai hitungan dari
 // satu lagi. Oracle membaca nilai LAMA di setiap ekspresi SET.
@@ -167,6 +171,29 @@ func sqlSisipMenu(t string) string {
 	return fmt.Sprintf(`INSERT INTO %s (LOGIN_ID, MENU_KODE) VALUES (:1, :2)`, t)
 }
 
+func sqlSisipMenuHak(t string) string {
+	return fmt.Sprintf(`INSERT INTO %s (LOGIN_ID, MENU_KODE, HAK) VALUES (:1, :2, :3)`, t)
+}
+
+// sisipMenu - SQL dan nilai sisip satu menu akun. PENUH memakai DEFAULT kolom HAK (dan tetap jalan sebelum migrasi
+// 914); LIHAT menulis HAK.
+func sisipMenu(t, id, kode string, lihat []string) (string, []any) {
+	for _, l := range lihat {
+		if l == kode {
+			return sqlSisipMenuHak(t), []any{id, kode, HakLihat}
+		}
+	}
+	return sqlSisipMenu(t), []any{id, kode}
+}
+
+// galatHak - kolom HAK belum ada (ORA-00904) = migrasi 914 belum dijalankan.
+func galatHak(err error) error {
+	if err != nil && strings.Contains(err.Error(), "ORA-00904") {
+		return fmt.Errorf("%w: %v", ErrHakBelumDimigrasi, err)
+	}
+	return err
+}
+
 func (g *GudangOracle) nama(logis string) (string, error) { return g.db.Qualify(logis) }
 
 func (g *GudangOracle) baris(ctx context.Context, q string, args []any, tujuan ...any) error {
@@ -249,6 +276,20 @@ func (g *GudangOracle) Menu(ctx context.Context, id string) ([]string, error) {
 	out, err := g.daftarTeks(ctx, "menu", sqlMenu(t), id)
 	if err != nil && strings.Contains(err.Error(), "ORA-00942") {
 		return nil, fmt.Errorf("%w: %v", ErrMenuBelumDimigrasi, err)
+	}
+	return out, err
+}
+
+// MenuLihat membaca KODE menu ber-hak LIHAT akun itu. Kolom HAK belum ada (migrasi 914 belum dijalankan) = kosong:
+// setiap menu tetap berarti penuh, jadi login tidak terhalang menunggu -migrate.
+func (g *GudangOracle) MenuLihat(ctx context.Context, id string) ([]string, error) {
+	t, err := g.nama(tabelLoginMn)
+	if err != nil {
+		return nil, err
+	}
+	out, err := g.daftarTeks(ctx, "menu lihat", sqlMenuLihat(t), id, HakLihat)
+	if err != nil && strings.Contains(err.Error(), "ORA-00904") {
+		return []string{}, nil
 	}
 	return out, err
 }
@@ -431,10 +472,11 @@ func (g *GudangOracle) BuatAkun(ctx context.Context, a AkunBaru, hash string, wa
 		}{sqlSisipWorkbasket(l), []any{a.ID, w}})
 	}
 	for _, m := range a.Menu {
+		q, args := sisipMenu(mn, a.ID, m, a.MenuLihat)
 		langkah = append(langkah, struct {
 			q    string
 			args []any
-		}{sqlSisipMenu(mn), []any{a.ID, m}})
+		}{q, args})
 	}
 	for _, s := range langkah {
 		if err = db.PeriksaSQL(s.q); err != nil {
@@ -443,6 +485,10 @@ func (g *GudangOracle) BuatAkun(ctx context.Context, a AkunBaru, hash string, wa
 		if _, err = tx.ExecContext(ctx, s.q, s.args...); err != nil {
 			if ganda := galatGanda(err); ganda != nil {
 				err = ganda
+				return err
+			}
+			if hak := galatHak(err); hak != err {
+				err = hak
 				return err
 			}
 			return fmt.Errorf("login: membuat akun: %w", err)

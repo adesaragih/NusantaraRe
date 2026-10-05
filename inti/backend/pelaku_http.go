@@ -59,6 +59,21 @@ func AksesMenuDari(ctx context.Context) (kode []string, ada bool) {
 	return kode, ada
 }
 
+type kunciMenuLihat struct{}
+
+// DenganMenuLihat menaruh KODE menu yang akun hasil login pegang dengan hak LIHAT saja (`M_LOGIN_GO_MENU.HAK`,
+// migrasi 914, keputusan work owner 04-10-2026) - hanya middleware login yang memanggilnya, bersama
+// `DenganAksesMenu`. Aturannya dibaca lewat `menu.BolehUbah`.
+func DenganMenuLihat(ctx context.Context, kode []string) context.Context {
+	return context.WithValue(ctx, kunciMenuLihat{}, append([]string{}, kode...))
+}
+
+// MenuLihatDari membaca menu ber-hak LIHAT akun hasil login; kosong = tidak ada (atau permintaan tanpa sesi).
+func MenuLihatDari(ctx context.Context) []string {
+	kode, _ := ctx.Value(kunciMenuLihat{}).([]string)
+	return kode
+}
+
 // PunyaMenu menjawab apakah `kode` ada di daftar menu.
 func PunyaMenu(daftar []string, kode string) bool {
 	for _, k := range daftar {

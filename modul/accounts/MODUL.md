@@ -20,8 +20,8 @@ cadangan `760-899` dan `990-999`.
 | GROUPMENU | `MASTER` |
 | Pemilik | `@PEMILIK-ACCOUNTS` |
 | Status | dimigrasi |
-| Rentang migrasi | `840-879` |
-| Slot menu | `994-995` |
+| Rentang migrasi | `840-849` |
+| Slot menu | `994-994` |
 | Prefix rute API | `/api/accounts` |
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |

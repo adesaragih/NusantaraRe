@@ -443,6 +443,11 @@ export interface ProfilLogin {
    * nama modul, dan `kelolauser` bagi admin.
    */
   menu: string[]
+  /**
+   * Bagian dari `menu` yang hanya boleh DILIHAT (`M_LOGIN_GO_MENU.HAK = 'LIHAT'`, migrasi 914, keputusan work owner
+   * 04-10-2026). Tidak ada = backend versi lama: semua penuh.
+   */
+  menuLihat?: string[]
 }
 
 /** `GET /api/auth/saya` - 401 bila belum login atau sesi berakhir. */

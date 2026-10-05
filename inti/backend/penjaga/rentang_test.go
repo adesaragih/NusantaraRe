@@ -59,6 +59,9 @@ type jatahModul struct {
 func (j jatahModul) diMigrasi(n int) bool { return n >= j.migrasi[0] && n <= j.migrasi[1] }
 func (j jatahModul) diSlot(n int) bool    { return n >= j.slot[0] && n <= j.slot[1] }
 
+// tanpaMigrasi - modul `—` (tandaTanpaMigrasi): nol nomor; setiap berkas migrasinya ditolak R2.
+func (j jatahModul) tanpaMigrasi() bool { return j.migrasi == [2]int{} && j.slot == [2]int{} }
+
 // jatahSetiapModul membaca jatah setiap modul dan menolak bentuk yang salah.
 func jatahSetiapModul(t *testing.T) map[string]jatahModul {
 	t.Helper()
@@ -83,6 +86,9 @@ func TestRentangMigrasiDanSlotMenuTidakBerbagiNomor(t *testing.T) {
 	}
 	semua := []rentang{{"inti (900-949)", awalInti, akhirInti}}
 	for m, j := range jatah {
+		if j.tanpaMigrasi() {
+			continue
+		}
 		if j.migrasi[0] < 1 || j.migrasi[1] >= awalInti {
 			t.Errorf("modul %s: rentang migrasi %03d-%03d di luar 001-899 (900-999 milik inti dan slot menu)",
 				m, j.migrasi[0], j.migrasi[1])
@@ -353,6 +359,24 @@ func TestAturanRentangMenggigit(t *testing.T) {
 	}
 }
 
+// Modul TANPA migrasi sendiri (keputusan work owner 05-10-2026, `treatyexchangeyearly`: seluruh nomor 001-899 dan
+// 950-999 sudah terbagi, dan modul lain tidak boleh disentuh) menulis `—` di kedua kunci; barisnya dibuat migrasi inti.
+// Setengah `—` ditolak, dan modul `—` yang ternyata punya berkas migrasi tertangkap R2.
+func TestModulTanpaMigrasi(t *testing.T) {
+	m := modulMD{folder: "tiruan", jalur: "modul/tiruan/MODUL.md", kunci: map[string]string{"Rentang migrasi": "—", "Slot menu": "`—`"}}
+	mig, slot := rentangModul(t, m)
+	j := jatahModul{migrasi: mig, slot: slot}
+	if !j.tanpaMigrasi() || j.diMigrasi(1) || j.diSlot(950) {
+		t.Errorf("modul tanpa migrasi: %+v", j)
+	}
+	if (jatahModul{migrasi: [2]int{1, 29}, slot: [2]int{950, 951}}).tanpaMigrasi() {
+		t.Error("modul berjatah dianggap tanpa migrasi")
+	}
+	if _, err := jatahDari("—", "`950-951`"); err == nil {
+		t.Error("setengah `—` harus ditolak")
+	}
+}
+
 // ⛔ R3: di skema uji dari NOL, 900 (CREATE TABLE M_NAV_MENU + isi awal)
 // berjalan SEBELUM slot menu 95x mana pun - pelari mengurutkan nama berkas
 // sebagai teks, dan tiga digit menjamin urutan itu. Diperiksa lewat pelari
@@ -360,7 +384,7 @@ func TestAturanRentangMenggigit(t *testing.T) {
 // tiruan yang punya berkas slot menu, bukan dengan membandingkan teks sendiri.
 func TestSlotMenuBerjalanSesudah900(t *testing.T) {
 	for m, j := range jatahSetiapModul(t) {
-		if j.slot[0] <= 900 {
+		if !j.tanpaMigrasi() && j.slot[0] <= 900 {
 			t.Errorf("modul %s: slot menu %03d tidak sesudah 900", m, j.slot[0])
 		}
 	}
@@ -384,8 +408,8 @@ func TestSlotMenuBerjalanSesudah900(t *testing.T) {
 	// 03-10-2026), 905 (CONTACT_ID, username dan email unik M_LOGIN_GO, 03-10-2026), dan 906 (baris menu modul luar korpus
 	// Marketing Officer, 03-10-2026), 907 (baris menu Company Detail, 04-10-2026), dan 908 (baris menu Accounts,
 	// 04-10-2026) juga milik inti dan juga sebelum slot. 910 (M_LOGIN_GO_CONTACT_SEQ mengikuti CON tertinggi,
-	// 04-10-2026) pun milik inti.
-	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql", "904_m_login_go_kontak.sql", "905_m_login_go_contact_id.sql", "906_m_nav_menu_marketingofficer.sql", "907_m_nav_menu_companydetail.sql", "908_m_nav_menu_accounts.sql", "909_m_nav_menu_master_treaty.sql", "910_m_login_go_contact_seq_max.sql", "911_m_nav_menu_aggregate.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
+	// 04-10-2026) pun milik inti, begitu pula 912 (M_TEMPLATE_FILE, Template Manager 04-10-2026) dan 913 (baris menu Bordereaux).
+	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql", "904_m_login_go_kontak.sql", "905_m_login_go_contact_id.sql", "906_m_nav_menu_marketingofficer.sql", "907_m_nav_menu_companydetail.sql", "908_m_nav_menu_accounts.sql", "909_m_nav_menu_master_treaty.sql", "910_m_login_go_contact_seq_max.sql", "911_m_nav_menu_aggregate.sql", "912_m_template_file.sql", "913_m_nav_menu_bordereaux.sql", "914_m_login_go_menu_hak.sql", "915_m_nav_menu_adjusterconsultant.sql", "916_m_nav_menu_treatygroupojk.sql", "917_m_nav_menu_treatygroup.sql", "918_m_nav_menu_businessgroup.sql", "919_m_nav_menu_treatyexchangeyearly.sql", "920_m_nav_menu_treatydescription.sql", "921_m_nav_menu_reinsurancetype.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
 		t.Errorf("urutan pelari %v, mau %v", urut, mau)
 	}
 }

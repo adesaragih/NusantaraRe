@@ -479,6 +479,18 @@
   width: 100%;
 }
 
+/* Kode area: dropdown + isian "Others" berbagi satu kolom grid nomor. */
+.companydetail .companydetail__kode {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.companydetail .companydetail__kode > .field__input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 .companydetail .companydetail__aksi-form {
   display: flex;
   justify-content: flex-end;

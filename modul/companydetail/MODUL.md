@@ -21,7 +21,7 @@ cadangan `760-899` dan `990-999`.
 | Pemilik | `@PEMILIK-COMPANYDETAIL` |
 | Status | dimigrasi |
 | Rentang migrasi | `800-839` |
-| Slot menu | `992-993` |
+| Slot menu | `992-992` |
 | Prefix rute API | `/api/company-detail` |
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |

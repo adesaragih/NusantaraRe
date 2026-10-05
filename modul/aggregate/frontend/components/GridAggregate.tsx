@@ -1,12 +1,15 @@
 // Grid baris AGGREGATE - padanan grid TempCSV `ShowAggregateList` (pratinjau unggah) dan rincian satu unggahan.
-// Kolom dan urutannya `KOLOM_GRID`. HANYA DIBACA (work owner 04-10-2026: "upload csv nya read only"); angka tampil
+// Kolom dan urutannya `KOLOM_GRID`; kepala dua baris dengan grup NoR/IA per kategori, Total, dan RNM (`GRUP_KOLOM`,
+// perintah work owner 05-10-2026 "grouping sama seperti bordereaux"). HANYA DIBACA (work owner 04-10-2026: "upload csv nya read only"); angka tampil
 // format Indonesia dua desimal, nilai penuh di `title`. Berhalaman di peramban seperti `pyGridPaginator` Pega.
 
 import { useState } from 'react'
 
 import type { Baris } from '../api'
-import { barisTotal, formatAngka, jumlahHalaman, KOLOM_GRID } from '../aturan'
-import { AG, LABEL_KOLOM } from '../labels'
+import { barisTotal, formatAngka, jumlahHalaman, KOLOM_GRID, susunKepala } from '../aturan'
+import { AG, GRUP_KOLOM, LABEL_KOLOM } from '../labels'
+
+const KEPALA = susunKepala(KOLOM_GRID, GRUP_KOLOM, LABEL_KOLOM)
 
 const UKURAN = 100
 
@@ -17,15 +20,28 @@ export default function GridAggregate({ baris, sertaID = false }: { baris: Baris
   const awal = (kini - 1) * UKURAN
   return (
     <>
-      <div className="aggregate__gulir">
+      <div className="aggregate__gulir aggregate__gulir--grid">
         <table className="inbox__tabel aggregate__grid">
           <thead>
             <tr>
-              <th>#</th>
-              {sertaID && <th>{LABEL_KOLOM['ID']}</th>}
-              {KOLOM_GRID.map((k) => (
-                <th key={k.nama} className={k.angka ? 'aggregate__angka' : undefined}>
-                  {LABEL_KOLOM[k.nama] ?? k.nama}
+              <th rowSpan={2}>{AG.no}</th>
+              {sertaID && <th rowSpan={2}>{LABEL_KOLOM['ID']}</th>}
+              {KEPALA.baris1.map((s) => (
+                <th
+                  key={s.kunci}
+                  colSpan={s.colSpan}
+                  rowSpan={s.rowSpan}
+                  title={s.grup ? undefined : s.judul}
+                  className={s.grup ? 'aggregate__kepala-grup' : undefined}
+                >
+                  {s.teks}
+                </th>
+              ))}
+            </tr>
+            <tr>
+              {KEPALA.baris2.map((s) => (
+                <th key={s.kunci} title={s.judul}>
+                  {s.teks}
                 </th>
               ))}
             </tr>

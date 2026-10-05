@@ -64,8 +64,12 @@ func (l *Layanan) profil(ctx context.Context, a Akun) (Profil, error) {
 	if menu == nil {
 		menu = []string{}
 	}
+	lihat, err := l.gudang.MenuLihat(ctx, a.ID)
+	if err != nil {
+		return Profil{}, err
+	}
 	return Profil{AkunID: a.ID, Nama: a.Nama, Peran: peran, Organisasi: a.Organisasi,
-		Divisi: a.Divisi, Unit: a.Unit, WajibGantiSandi: a.WajibGantiSandi, Menu: menu}, nil
+		Divisi: a.Divisi, Unit: a.Unit, WajibGantiSandi: a.WajibGantiSandi, Menu: menu, MenuLihat: irisan(lihat, menu)}, nil
 }
 
 // Masuk memeriksa akun dan sandi lalu menerbitkan token sesi.
@@ -301,4 +305,19 @@ func (l *Layanan) buat(ctx context.Context, a AkunBaru, sandi string, wajibGanti
 		return err
 	}
 	return l.gudang.BuatAkun(ctx, a, hash, wajibGanti)
+}
+
+// irisan - isi `a` yang juga ada di `b`, urutan `a`; selalu terisi (bukan nil).
+func irisan(a, b []string) []string {
+	ada := map[string]bool{}
+	for _, x := range b {
+		ada[x] = true
+	}
+	out := []string{}
+	for _, x := range a {
+		if ada[x] {
+			out = append(out, x)
+		}
+	}
+	return out
 }

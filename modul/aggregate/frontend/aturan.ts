@@ -59,16 +59,55 @@ export const KOLOM_GRID: readonly KolomGrid[] = [
   teks('REMARK'),
 ]
 
+/** Satu sel kepala grid. */
+export interface SelKepala {
+  kunci: string
+  teks: string
+  /** Caption Pega lengkap (title). */
+  judul: string
+  colSpan: number
+  rowSpan: number
+  /** Sel judul grup (baris pertama, di atas kolom-kolomnya). */
+  grup: boolean
+  angka: boolean
+}
+
+/**
+ * Susun kepala grid dua baris seperti grid Bordereaux (perintah work owner 05-10-2026): kolom bergrup bersebelahan
+ * digabung di baris pertama, judul bawahnya di baris kedua; kolom tanpa grup menempati dua baris. `grup` dan `label`
+ * diberikan pemanggil (`GRUP_KOLOM`, `LABEL_KOLOM`).
+ */
+export function susunKepala(
+  kolom: readonly KolomGrid[],
+  grup: Readonly<Record<string, readonly [string, string]>>,
+  label: Readonly<Record<string, string>>,
+): { baris1: SelKepala[]; baris2: SelKepala[] } {
+  const baris1: SelKepala[] = []
+  const baris2: SelKepala[] = []
+  for (const k of kolom) {
+    const judul = label[k.nama] ?? k.nama
+    const g = grup[k.nama]
+    if (g === undefined) {
+      baris1.push({ kunci: k.nama, teks: judul, judul, colSpan: 1, rowSpan: 2, grup: false, angka: k.angka })
+      continue
+    }
+    baris2.push({ kunci: k.nama, teks: g[1], judul, colSpan: 1, rowSpan: 1, grup: false, angka: k.angka })
+    const akhir = baris1[baris1.length - 1]
+    if (akhir !== undefined && akhir.grup && akhir.teks === g[0]) akhir.colSpan++
+    else baris1.push({ kunci: `grup:${k.nama}`, teks: g[0], judul: g[0], colSpan: 1, rowSpan: 1, grup: true, angka: false })
+  }
+  return { baris1, baris2 }
+}
+
 /** Assessment Zone baris jumlah per mata uang - tidak disimpan. */
 export const ZONA_TOTAL = 'Total :'
-/** Kepala template CSV - kepala berkas contoh work owner (pemisah `;`, 38 kolom). */
-export const KEPALA_TEMPLATE =
-  'ASSESMENT ZONE;TREATY TYPE;COVERAGE;AS AT;UW YEAR;CEDING CODE;CEDING NAME;CURRENCY;TO USD;NOR BUILDINGS;BUILDINGS;' +
-  'NOR STOCKS;STOCKS;NOR MACHINERY;MACHINERY;NOR OTHER CONTENTS;OTHER CONTENTS;NOR CONSEQUENTIAL LOSS;' +
-  'CONSEQUENTIAL LOSS;NOR RESIDENTIAL;RESIDENTIAL;NOR COMMERCIAL;COMMERCIAL;NOR INDUSTRIAL;INDUSTRIAL;NOR AGRICULTURE;' +
-  'AGRICULTURE;NOR MISCELLANEOUS;MISCELLANEOUS;NOR UTILITIES;UTILITIES;TOTAL NO OF RISK;TOTAL IN AMOUNT;' +
-  'TOTAL IN AMOUNT IN USD;RNM SHARE;RNM VALUE;RNM VALUE IN USD;REMARK'
+/**
+ * Templat Upload CSV dikelola Template Manager (keputusan work owner 04-10-2026): kode slotnya = `KodeTemplat` di
+ * `backend/modul.go`; berkas bawaannya `backend/templat/aggregate.csv` (header 38 kolom, pemisah `;`).
+ */
+export const KODE_TEMPLAT = 'aggregate.upload'
 
+/** Nama berkas unduhan - sama dengan `NamaUnduhan` slot di backend. */
 export const NAMA_TEMPLATE = 'aggregate.csv'
 
 export function barisTotal(b: Baris): boolean {

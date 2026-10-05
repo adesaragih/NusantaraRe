@@ -111,6 +111,14 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
       companyDetail: 'Company Detail',
       accounts: 'Accounts',
       aggregate: 'Aggregate',
+      bordereaux: 'Bordereaux',
+      adjusterConsultant: 'Adjuster Consultant',
+      treatyGroupOjk: 'Treaty Group OJK',
+      treatyGroup: 'Treaty Group',
+      businessGroup: 'Business Group',
+      treatyExchangeYearly: 'Treaty Exchange Yearly',
+      treatyDescription: 'Treaty Description',
+      reinsuranceType: 'Reinsurance Type',
     })
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In')
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In Adjustment')
