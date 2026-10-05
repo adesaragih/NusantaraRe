@@ -1,6 +1,6 @@
 # 10: Jejak audit dan kronologi — identitas akses terpisah dari nama tampilan
 
-**Status:** ready-for-agent
+**Status:** selesai — penahan tersisa hanya pihak luar: **K11** (skema uji Oracle — uji bertag `db` AC 72 sudah ditulis, belum dijalankan), **F2** (tiga penyimpangan K4 — ⭐ disetujui WO 04-10-2026, putaran 3; bukan penahan lagi), **B4** (`DIV` tanpa sumber di `inti.Pelaku`), **C8** (tipe kolom fisik `HISTORYAKSEPTASIPRODUCTION`, DBA) *(putaran 2, paket P11 04-10-2026; semula: sebagian — konsolidasi P10 04-10-2026; sebagian, implementasi 2026-10-03; awalnya ready-for-agent)*
 **Blocked by:** 03
 **Menutup:** AC 39 · 40 · 41 · 42 · 43 · 44 · 71 · 72 *(8 AC)* — US 15 · 16 · 20 · 40 · 41 · 42
 
@@ -36,15 +36,15 @@ seseorang berubah.
 
 ## Acceptance criteria
 
-- [ ] **AC 39** — penampung identitas operator diisi dari **identitas akses login**
-- [ ] **AC 40** — penampung nama diisi dari **nama tampilan**
-- [ ] **AC 41** — penampung identitas operator **terisi** pada setiap penulisan riwayat
-- [ ] **AC 42** — medan nama operator diisi dari **nama tampilan di setiap tahap**, termasuk tahap
+- [x] **AC 39** — penampung identitas operator diisi dari **identitas akses login**
+- [x] **AC 40** — penampung nama diisi dari **nama tampilan**
+- [x] **AC 41** — penampung identitas operator **terisi** pada setiap penulisan riwayat
+- [x] **AC 42** — medan nama operator diisi dari **nama tampilan di setiap tahap**, termasuk tahap
       jenjang ketiga
-- [ ] **AC 43** — setiap perpindahan tahap menulis **satu baris riwayat**
-- [ ] **AC 44** — pemberitahuan menyebut nama orang **dari data**; ⛔ tidak tertanam di dalam teks
-- [ ] **AC 71** — catatan pengguna tersimpan bersama tanggal dan operatornya
-- [ ] **AC 72** — riwayat dapat dibaca **berurutan waktu**
+- [x] **AC 43** — setiap perpindahan tahap menulis **satu baris riwayat**
+- [x] **AC 44** — pemberitahuan menyebut nama orang **dari data**; ⛔ tidak tertanam di dalam teks
+- [x] **AC 71** — catatan pengguna tersimpan bersama tanggal dan operatornya
+- [ ] 🟡 **AC 72** — riwayat dapat dibaca **berurutan waktu** *(P11: `repository/riwayat_db_test.go` `TestDaftarRiwayatBerurutWaktu` — K11)*
 
 ## Butir `[terbuka]` yang menyentuh tiket ini
 
@@ -64,3 +64,99 @@ seseorang berubah.
 ⚠️ `[penyimpangan sadar]` Mengisi penampung identitas operator adalah **perbaikan jejak audit**,
 bukan peniruan — kolomnya selama ini kosong. ⭐ Dan pengisian nama operator dari pengenal akun
 adalah **bug**, ⛔ bukan perbedaan maksud antar tahap *(P33)*.
+
+## ⛔ RALAT implementasi 2026-10-03
+
+1. **NBStatus.** Tujuh connector Flow menanam nama orang (`NB IS IN <nama>'S INBOX`). P40: nama dari
+   data. Berkas menunggu POSISI, bukan orang (AC 92) ⇒ teksnya memakai **nama posisi tujuan**
+   (`NB IS IN REASTREATYINSECHEAD'S INBOX`). Cabang DT yang memang memakai data (`pyUserName`,
+   `pxCreateOpName`) memakai nama tampilan dari `M_LOGIN_GO.NAME`. ~~⚠️ Tafsiran — mohon konfirmasi.~~
+   ⇒ **Dijawab K5 (PROMPT-NB-TREATY-IN-PUTARAN-2 bab 2, 03-10-2026): Ya** — `NBStatus` memakai nama
+   posisi. Uji: `handlers/alur_test.go` TestTanggaPenuhDanNomorPolisSekali
+   (`NB IS IN REASTREATYINSECHEAD'S INBOX`), `models/tangga_test.go` TestTeksNBStatus.
+2. `HISTORYAKSEPTASIPEGA.ID_PEGA` = `pzInsKey` (`ASM-FW-GISFW-WORK-NB NB-<n>`); `OPERATORID` = identitas
+   login; `USERNAME` = nama tampilan; ditulis di transaksi submit (AC 83). Nama tampilan kosong
+   menghasilkan kosong — tanpa jatuh-balik ke ID login (AC 40, 42).
+3. `HISTORYAKSEPTASIPRODUCTION` tidak ditulis kasus treaty: kedua kalang `SaveViewSuggest` bersyarat
+   `Quotation.BusinessFac == "F"`; treaty = "T". Catatan disimpan `T_POLIS_SUGGEST` (tiket 19).
+
+## ⭐ Putaran 2 — paket penyimpanan (03-10-2026)
+
+Dasar: PROMPT-NB-TREATY-IN-PUTARAN-2 bab 0 butir 11–12, bab 2 K4/K16/K17; rincian kolom `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`.
+
+⛔ **RALAT atas RALAT butir 3** di atas. Bunyi lama, dikutip: *"`HISTORYAKSEPTASIPRODUCTION` tidak ditulis
+kasus treaty: kedua kalang `SaveViewSuggest` bersyarat `Quotation.BusinessFac == "F"`; treaty = "T". Catatan
+disimpan `T_POLIS_SUGGEST` (tiket 19)."*
+
+Bunyi baru (`[keputusan work owner]` **K4**): `T_POLIS_SUGGEST` di luar diagram grilling — **dihapus**.
+Catatan `SuggestList` **ditulis ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION`** (pengganti
+`SaveViewSuggest` langkah 2 → `RDBList\InsertViewSuggest_SQL`) dan **dibaca balik** untuk grid
+`Section\ListSuggest`:
+
+| Kolom | Isi | XML |
+| --- | --- | --- |
+| `IDPEGA` | `pzInsKey` (`ASM-FW-GISFW-WORK-NB NB-<n>`) | `{pyWorkPage.pzInsKey}` |
+| `TYPE_POLIS` | `NB` | `@replaceAll(pyWorkIDPrefix,"-","")` |
+| `NOURUT` | berikutnya per `IDPEGA` di bawah kunci kasus | `.pxListSubscript` |
+| `POSISI` · `PUTARAN` | `Policy` · `2` | CARI3 · CARI8 kalang "UNTUK TREATY" |
+| `PIC` | **nama tampilan** penulis catatan (AC 40, 44; P33) | `.OperatorName` |
+| `TGL_INP` | `.Date` catatan | CARI5 |
+| `TYPE` | `Quotation.BusinessFac` (`T`) | CARI7 |
+| `APPROVAL` | `1` → `Accept`, `0` → `Reject`, selain itu kosong — **per baris** (AC 41, 42) | CARI9 |
+| `KETERANGAN` | 3990 karakter pertama `.Suggest` (AC 40) | `substr(CARI10,0,3990)` |
+| `AKSES_LOGIN` | **identitas login** penulis (AC 39, 43; P4) | `OperatorID.pyUserIdentifier` |
+| `BUSINESS_CODE` | `Quotation.BusinessCode` | |
+| `DIV` · `B2B` · `PERCENT_RNM` | NULL | `pyOrgDivision` tanpa sumber di inti; `OfferFacIn` halaman Fac |
+
+`[penyimpangan sadar]` (K4, grilling ID-31/AC 39): syarat `BusinessFac == "F"` tidak ditiru; baris ditulis
+pada submit **ketiga** jenjang yang menambahkannya (XML: hanya `InputPolicyTreatyInPost_Act` langkah 4);
+`TGL_INP` jam 24 (XML `hh` → `HH24` menyimpan jam sore sebagai pagi). Uji: `models/usulan_test.go`,
+`handlers/alur_test.go` (`TestAdminMenolakDiselesaikanDitolak`, `TestTanggaPenuhDanNomorPolisSekali` — lima
+baris `NOURUT` 1..5 dengan `AKSES_LOGIN` tiap jenjang), `repository/kolom_test.go`
+`TestSQLRiwayatProduksiMengikutiInsertViewSuggest`, `polis_db_test.go` `TestRiwayatProduksiPulangPergi`
+(`-tags db`, belum dijalankan — K11).
+
+AC 39, 40, 41, 42, 43, 44, 71: ✅ (seam HTTP + fungsi murni). AC 72 tetap 🟡 (pengurutan lawan Oracle).
+Butir terbuka: `DIV` tanpa sumber; tipe fisik `NOURUT` tabel lama belum dicek katalog.
+
+## ⭐ Putaran 2 — P9 (04-10-2026): tiga penyimpangan K4 `[penyimpangan sadar — disetujui WO 04-10-2026]`
+
+Dasar: tinjauan spec P9 (temuan 5). Bunyi P1 di atas, dikutip: *"`[penyimpangan sadar]` (K4, grilling ID-31/AC 39):
+syarat `BusinessFac == "F"` tidak ditiru; baris ditulis pada submit **ketiga** jenjang yang menambahkannya (XML:
+hanya `InputPolicyTreatyInPost_Act` langkah 4); `TGL_INP` jam 24 (XML `hh` → `HH24` menyimpan jam sore sebagai
+pagi)."* RALAT penanda: yang berdasar keputusan WO (**K4**, grilling ID-31/AC 39) hanya syarat `BusinessFac`. Tiga
+penyimpangan berikut **dipertahankan** dan berstatus `[penyimpangan sadar — disetujui WO 04-10-2026]` (F2, putaran 3 — semula *"menunggu konfirmasi WO"*):
+
+| # | XML | Sistem baru | Dasar |
+| ---: | --- | --- | --- |
+| 1 | `SaveViewSuggest` hanya dari `InputPolicyTreatyInPost_Act` langkah 4 (pasca-submit **admin**) | baris yang ditambahkan pasca DT ditulis di submit **admin, Sec Head, Dept Head** | akibat langsung K4: `SuggestList` tidak punya tempat simpan lain di antara langkah (Pega menyimpan halaman utuh; di sini hanya delapan tabel diagram) — tanpa ini catatan jenjang atasan hilang (AC 71) |
+| 2 | `CARI5 = @FormatDateTime(.Date,"dd/MM/yyyy hh:mm:ss",…)` lalu `To_date(…,'DD/MM/YYYY HH24:MI:SS')` — jam sore tersimpan sebagai pagi | `TGL_INP` jam 24 apa adanya | layar (riwayat catatan) membaca balik tabel ini |
+| 3 | `CARI2 = .pxListSubscript` | `NOURUT` = MAX+1 per IDPEGA di bawah kunci kasus (`repository.CatatUsulan`) | dua submit serentak tidak berbagi nomor. **Nilainya SAMA dengan `.pxListSubscript`**: `SuggestList` dibangun ulang dari tabel berurut NOURUT dan catatan baru ditambahkan di ujung — uji `models/usulan_test.go` TestCatatanBaruBerposisiNourutBerikut, `handlers/alur_test.go` TestNourutUsulanSamaDenganSubskripSuggestList (lima submit tolak-naik-setuju: baris NOURUT j selalu di pxListSubscript j), `repository/polis_db_test.go` TestRiwayatProduksiPulangPergi (tag db) |
+
+Dicatat juga di PERMINTAAN-TIM-INTI bagian F2. Kode: `backend/models/usulan.go`, `backend/services/tindakan.go`
+(`Kirim`). AC tidak berubah status.
+
+## ⭐ Putaran 2 — paket P11 (04-10-2026): uji `db` AC 72
+
+`backend/repository/riwayat_db_test.go` `TestDaftarRiwayatBerurutWaktu` (bertag `db`, **belum dijalankan** — K11):
+tiga baris ditulis `CatatRiwayat` (`TGL_TRANSFER = SYSDATE`, padanan `sysdate` `InsertHistoryAkseptasiPega_Sql`),
+lalu waktunya digeser sehingga urutan TULIS berlawanan dengan urutan WAKTU (pertama ditulis = terakhir menurut
+waktu); `DaftarRiwayat` wajib mengembalikan urutan waktu `2026-10-01 09:00:00`, `2026-10-02 08:30:00`,
+`2026-10-03 10:00:00` — pembacaan berurut sisip/ROWID saja gagal. Tabel warisan dipakai bila ada di skema uji,
+selain itu tiruan (lihat tiket 08 bab P11).
+
+Status: **selesai** — sisa penahan hanya pihak luar (K11, F2, B4, C8).
+
+## ⭐ Putaran 3 (04-10-2026): F2 diputuskan — ketiga penyimpangan K4 disetujui WO
+
+`[keputusan work owner]` **F2** (PROMPT-NB-TREATY-IN-PUTARAN-3 bab 2): ketiga penyimpangan di bab P9 **disetujui** —
+(1) catatan usulan ditulis di submit ketiga jenjang, sebab tanpa `T_POLIS_SUGGEST` usulan atasan tidak punya tempat
+lain; (2) `TGL_INP` 24 jam (pola `hh` Pega ambigu, kolom DATE); (3) `NOURUT` dari repository (terbukti sama dengan
+`pxListSubscript`). Penanda *"`[penyimpangan sadar — menunggu konfirmasi WO]`"* diganti
+`[penyimpangan sadar — disetujui WO 04-10-2026]` di tiket ini, tiket 19, `MODUL.md`, PERMINTAAN-TIM-INTI F2,
+`backend/models/usulan.go`, `backend/services/tindakan.go`, uji `models/usulan_test.go`, `handlers/alur_test.go`,
+`repository/polis_db_test.go`, dan `docs/alat/status.json` (`Activity/SaveViewSuggest`). Nol perubahan perilaku; AC
+tidak berubah status.
+
+Status: **selesai** — sisa penahan hanya pihak luar (K11, B4, C8). *(Bunyi P11 dikutip: "sisa penahan hanya pihak
+luar (K11, F2, B4, C8)".)*

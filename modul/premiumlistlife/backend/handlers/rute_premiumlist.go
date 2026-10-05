@@ -117,6 +117,12 @@ type isiKeputusanPolis struct {
 type jawabanAkibat struct {
 	TahapTujuan string `json:"tahapTujuan"`
 	StatusWork  string `json:"statusWork"`
+	// PLNumber - nomor yang terbit bila keputusannya menyimpan polis (Confirm
+	// di Input Premium Detail); kosong selain itu. Layar menampilkannya
+	// sebelum kembali ke kotak masuk (03-10-2026).
+	PLNumber string `json:"plNumber"`
+	// WPC `YYYY-MM-DD` yang dihitung bersama PL Number; kosong selain itu.
+	WPC string `json:"wpc"`
 }
 
 // putuskanPenawaran melayani POST .../keputusan.
@@ -131,17 +137,17 @@ func putuskanPenawaran(svc *services.Service, stubPelaku bool) http.HandlerFunc 
 			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
 			return
 		}
-		akibat, err := svc.Penawaran().
+		akibat, simpan, err := svc.Penawaran().
 			DenganJejak(jejak.PerekamJejakOracle(svc)).
 			DenganPenyalur(services.PenyalurPremiumListOracle(svc)).
-			Putuskan(r.Context(), inti.PelakuDari(r, stubPelaku),
+			PutuskanDenganNomor(r.Context(), inti.PelakuDari(r, stubPelaku),
 				r.PathValue("id"), isi.Keputusan, time.Now())
 		// jawabGalatPenawaran: `Confirm` di tahap penawaran dapat ditolak
 		// karena isian Input Offer belum lengkap (tiket 01 bagian 3).
 		if jawabGalatPenawaran(w, err) {
 			return
 		}
-		tulisAkibat(w, akibat)
+		tulisAkibat(w, akibat, simpan.Nomor.Nomor, simpan.WPC)
 	}
 }
 
@@ -281,12 +287,14 @@ func submitRekapPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	}
 }
 
-func tulisAkibat(w http.ResponseWriter, a models.AkibatKeputusan) {
+func tulisAkibat(w http.ResponseWriter, a models.AkibatKeputusan, nomorPL, wpc string) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(jawabanAkibat{
 		TahapTujuan: a.TahapTujuan,
 		StatusWork:  a.StatusWork,
+		PLNumber:    nomorPL,
+		WPC:         wpc,
 	})
 }
 
@@ -330,6 +338,7 @@ func jawabGalatPolis(w http.ResponseWriter, err error) bool {
 		// membaca ulang nomornya.
 		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrRekapKosong),
+		errors.Is(err, services.ErrSummaryBelumAda),
 		errors.Is(err, services.ErrSubmitBukanTahapSummary):
 		// 409: keadaan DATA polis yang belum siap, bukan permintaan yang salah.
 		galat.Tulis(w, http.StatusConflict, err.Error())
@@ -415,6 +424,9 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	// Tiket 03 bagian 2 - data polis layar Input Premium Detail (rute_datapolis.go).
 	mux.HandleFunc("GET /api/polis-life/cari-marketing", cariMarketingPolis(svc, stubPelaku))
 	mux.HandleFunc("GET /api/polis-life/cari-rislip", cariRISlipPolis(svc, stubPelaku))
+	mux.HandleFunc("GET /api/polis-life/rincian-produk", rincianProdukPolis(svc, stubPelaku))
+	mux.HandleFunc("GET /api/polis-life/rate-produk", rateProdukPolis(svc, stubPelaku))
+	mux.HandleFunc("GET /api/polis-life/risk-produk", riskProdukPolis(svc, stubPelaku))
 	mux.HandleFunc("GET /api/polis-life/{id}/data-polis", bacaDataPolis(svc, stubPelaku))
 	mux.HandleFunc("PUT /api/polis-life/{id}/data-polis", simpanDataPolis(svc, stubPelaku))
 	mux.HandleFunc("GET /api/polis-life/{id}/cari-produk", cariProdukPolis(svc, stubPelaku))

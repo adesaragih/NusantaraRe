@@ -472,6 +472,9 @@ func golonganDDL(tipe string) string {
 		return "tanggal"
 	case strings.HasPrefix(t, "NUMBER"), strings.HasPrefix(t, "INTEGER"):
 		return "angka"
+	case t == "BLOB":
+		// Satu-satunya: M_TEMPLATE_FILE.ISI (Template Manager, 04-10-2026) - dijaga TestKolomUangDesimalDanNolJSON.
+		return "berkas"
 	default:
 		return "lain:" + t
 	}
@@ -494,6 +497,8 @@ func golonganStruktur(tipe string) string {
 	case strings.Contains(t, "desimal"), strings.Contains(t, "bulat"),
 		strings.Contains(t, "angka"):
 		return "angka"
+	case t == "berkas":
+		return "berkas"
 	default:
 		return "lain:" + t
 	}
@@ -608,6 +613,13 @@ func tipeMenurutDDL(t *testing.T) map[string]map[string]string {
 var polaAwalModify = regexp.MustCompile(
 	`(?i)^ALTER\s+TABLE\s+\{skema\}\.([A-Z][A-Z0-9_]*)\s+MODIFY\s*\($`)
 
+// modifyTabelWarisan - tabel WARISAN (tidak dibuat CREATE migrasi mana pun) yang boleh di-MODIFY, beserta sebabnya.
+// Bentuk lengkapnya tidak diketahui DDL repo, jadi blok MODIFY-nya dilewati, bukan diterapkan.
+var modifyTabelWarisan = map[string]string{
+	"BORDEREAUX_CLAIM_AVIATION": "892: kolom spread NUMBER(10,4) warisan tak muat nominal, dilebarkan ke NUMBER(38,8) (04-10-2026)",
+	"BORDEREAUX_PREMI_AVIATION": "892: kolom spread NUMBER(10,4) warisan tak muat nominal, dilebarkan ke NUMBER(38,8) (04-10-2026)",
+}
+
 // terapkanAlterModify menimpa tipe kolom dengan bentuk sesudah ALTER MODIFY.
 func terapkanAlterModify(t *testing.T, hasil map[string]map[string]string) {
 	t.Helper()
@@ -622,8 +634,10 @@ func terapkanAlterModify(t *testing.T, hasil map[string]map[string]string) {
 			if m := polaAwalModify.FindStringSubmatch(b); m != nil {
 				tabel = strings.ToUpper(m[1])
 				if hasil[tabel] == nil {
-					t.Errorf("%s: MODIFY atas tabel %s yang tidak pernah dibuat CREATE",
-						nama, tabel)
+					if _, boleh := modifyTabelWarisan[tabel]; !boleh {
+						t.Errorf("%s: MODIFY atas tabel %s yang tidak pernah dibuat CREATE",
+							nama, tabel)
+					}
 					tabel = ""
 				}
 				continue
@@ -703,6 +717,11 @@ var presisiSah = map[string]string{
 	"NUMBER(5)":    "AGE, umur peserta dalam tahun; M_NAV_MENU.URUTAN, urutan di dalam GROUPMENU",
 	"NUMBER(10)":   "M_NAV_MENU.ID, identitas dari sequence - brief menu 30-09-2026 (PARENT_ID dibuang 901)",
 	"NUMBER(19)":   "T_CLAIMLF_DOCUMENT.ID, identitas dari sequence",
+
+	// Modul nbtreatyin (migrasi 320-327): diagram grilling sheet NB Treaty In
+	// Prop F20 "uang · persen -> skala MINIMAL 9 desimal (P29)" dan J69 "NB:
+	// 100 / jumlah baris presisi 10" - perintah work owner 04-10-2026.
+	"NUMBER(38,10)": "uang dan persen NB Treaty In - diagram NB Treaty In Prop F20/J69, perintah work owner 04-10-2026",
 }
 
 // ⛔ Tidak satu pun kolom bertipe NUMBER tanpa presisi.

@@ -21,10 +21,21 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { DETAIL_POLIS, JUDUL_KOLOM_PESERTA, KOLOM_PALING_KANAN, URUTAN_KOLOM_PESERTA } from '../labels'
-import { Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
+import {
+  DETAIL_POLIS,
+  JUDUL_KOLOM_PESERTA,
+  KOLOM_PALING_KANAN,
+  KOLOM_SELALU_TAMPIL,
+  LABEL_TAB_PESERTA,
+  TAB_PESERTA,
+  URUTAN_KOLOM_PESERTA,
+  type TabPeserta,
+} from '../labels'
+import { Gagal, Kosong, Memuat, StripTab } from '../../../../inti/frontend/components/ui/dasar'
 import FormDataPolis from './FormDataPolis'
 import UnggahCSVPeserta from './UnggahCSVPeserta'
+import PanelSummary from '../components/PanelSummary'
+import { pemisahRibuan } from '../angka'
 import { tanggalTampil } from '../tanggal'
 import { periodeTampil } from './InputOffer'
 import '../premiumlistlife.css'
@@ -61,7 +72,8 @@ export function kolomBerisi(
   kolom: readonly string[],
   baris: readonly { nilai: Record<string, string | undefined> }[],
 ): string[] {
-  return kolom.filter((k) => baris.some((b) => adaIsi(b.nilai[k])))
+  // KOLOM_SELALU_TAMPIL tetap tampil walau kosong (05-10-2026).
+  return kolom.filter((k) => KOLOM_SELALU_TAMPIL.includes(k) || baris.some((b) => adaIsi(b.nilai[k])))
 }
 
 /**
@@ -89,6 +101,15 @@ function adaIsi(nilai: string | undefined): boolean {
   return s !== '' && !POLA_NOL.test(s)
 }
 
+/**
+ * Isi sel grid peserta untuk tampil: kolom ANGKA diberi pemisah ribuan,
+ * selainnya tanggal ISO menjadi dd/mm/yyyy (teks lain apa adanya).
+ */
+export function selAngkaAtauTanggal(nilai: string | undefined, angka: boolean): string | undefined {
+  if (nilai === undefined) return undefined
+  return angka ? pemisahRibuan(nilai) : tanggalTampil(nilai)
+}
+
 /** Sel kosong ditandai, bukan dibiarkan kosong (ADR-U-0027). */
 export function selPeserta(nilai: string | undefined): string {
   return nilai === undefined || nilai.trim() === '' ? '—' : nilai
@@ -102,11 +123,23 @@ export function kalimatNomor(kepala: KepalaPolis | null): string {
     : kepala.plNumber
 }
 
-export default function PremiumListDetail({ polisID }: { polisID: string }) {
+export default function PremiumListDetail({
+  polisID,
+  onBelumTersimpan,
+}: {
+  polisID: string
+  /** Diteruskan ke form data polis - Confirm dikunci selama ada perubahan belum disimpan. */
+  onBelumTersimpan?: (belum: boolean) => void
+}) {
   const [kepala, setKepala] = useState<KepalaPolis | null>(null)
   const [hal, setHal] = useState<HalamanPesertaPolis | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(true)
+  // Naik setiap Save Data / Calculate CSV berhasil: panel Summary dibaca ulang.
+  // Calculate CSV menghitung rekap; Save Data yang mengganti Type MENGHAPUSNYA
+  // (keputusan work owner 05-10-2026) - panel lalu menyatakan summary belum ada.
+  const [versiSummary, setVersiSummary] = useState(0)
+  const [tab, setTab] = useState<TabPeserta>('rincian')
   // Periode produksi di kepala, seperti Input Offer Life (02-10-2026). Galatnya
   // DINYATAKAN: 503 berarti POOLDATA.TANGGAL_CLOSING kosong.
   const [periode, setPeriode] = useState('')
@@ -152,9 +185,10 @@ export default function PremiumListDetail({ polisID }: { polisID: string }) {
   }, [muat])
 
   const bernomor = kepala !== null && kepala.plNumber.trim() !== ''
-  // Hanya kolom yang berisi (02-10-2026); sisanya dihitung dan dinyatakan.
+  // Hanya kolom yang berisi (02-10-2026).
   const tampilKolom = hal === null ? [] : susunKolom(kolomBerisi(hal.kolom, hal.baris))
-  const tersembunyi = hal === null ? 0 : hal.kolom.length - tampilKolom.length
+  // Kolom angka (dari server) diberi pemisah ribuan - keputusan work owner 03-10-2026.
+  const kolomAngka = new Set(hal?.kolomAngka ?? [])
 
   return (
     <section className="pl-detail">
@@ -191,8 +225,10 @@ export default function PremiumListDetail({ polisID }: { polisID: string }) {
       <FormDataPolis
         polisID={polisID}
         bernomor={bernomor}
+        onBelumTersimpan={onBelumTersimpan}
         onTersimpan={() => {
           void muat()
+          setVersiSummary((v) => v + 1)
         }}
       />
 
@@ -206,55 +242,72 @@ export default function PremiumListDetail({ polisID }: { polisID: string }) {
         polisID={polisID}
         onTersimpan={() => {
           void muat()
+          setVersiSummary((v) => v + 1)
         }}
       />
 
+      {/*
+        DUA TAB dalam satu panel (keputusan work owner 03-10-2026): rincian
+        peserta dan rekap Summary — bukan dua tabel bertumpuk. Tab Summary
+        dirender (dan dibaca ulang dari server) hanya saat dibuka, dan dibaca
+        ulang sesudah setiap Save (`versiSummary`).
+      */}
       <section className="panel">
         <h3 className="panel__title">Participants</h3>
-        {sibuk && <Memuat />}
-        {galat !== null && <Gagal galat={galat} />}
+        <StripTab tab={TAB_PESERTA} aktif={tab} onPilih={setTab} label={(t) => LABEL_TAB_PESERTA[t]} />
+        {tab === 'summary' && <PanelSummary key={versiSummary} polisID={polisID} />}
+        {tab === 'rincian' && (
+          <>
+            {sibuk && <Memuat />}
+            {galat !== null && <Gagal galat={galat} />}
 
-        {hal !== null && hal.baris.length === 0 && (
-          <Kosong pesan="This policy has no participant rows yet." />
-        )}
+            {hal !== null && hal.baris.length === 0 && (
+              <Kosong pesan="This policy has no participant rows yet." />
+            )}
 
-        {hal !== null && hal.baris.length > 0 && (
-          <div className="pl-offer__riwayat-gulir">
-            <table className="inbox__tabel">
-              <thead>
-                <tr>
-                  {tampilKolom.map((k) => (
-                    <th key={k}>{judulKolom(k)}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {hal.baris.map((b) => (
-                  <tr key={b.id}>
-                    {tampilKolom.map((k) => (
-                      <td key={k}>{selPeserta(tanggalTampil(b.nilai[k]))}</td>
+            {hal !== null && hal.baris.length > 0 && (
+              <div className="pl-offer__riwayat-gulir">
+                <table className="inbox__tabel">
+                  <thead>
+                    <tr>
+                      {tampilKolom.map((k) => (
+                        <th key={k}>{judulKolom(k)}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {hal.baris.map((b) => (
+                      <tr key={b.id}>
+                        {tampilKolom.map((k) => (
+                          <td key={k}>{selPeserta(selAngkaAtauTanggal(b.nilai[k], kolomAngka.has(k)))}</td>
+                        ))}
+                      </tr>
                     ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
-        {hal !== null && hal.baris.length > 0 && (
-          <p className="panel__note pl-detail__cacah" role="status">
-            {hal.baris.length} of {hal.total}
-            {tersembunyi > 0 && ` · ${tersembunyi} empty columns hidden`}
-          </p>
-        )}
+            {/*
+              Keterangan jumlah baris dan kolom tersembunyi TIDAK ditampilkan
+              (keputusan work owner 03-10-2026). ⛔ Kecuali grid MEMOTONG baris:
+              peserta yang tidak tampil harus dinyatakan, bukan hilang diam-diam.
+            */}
+            {hal !== null && hal.baris.length > 0 && hal.total > hal.baris.length && (
+              <p className="panel__note pl-detail__cacah" role="status">
+                {hal.baris.length} of {hal.total}
+              </p>
+            )}
 
-        {/*
-          ⛔ Selisih kolom grid vs `PL_Detail_Sec` (REINSTYPENAME,
-          RetrocadedShare) SENGAJA TIDAK ditampilkan lagi — keputusan work owner
-          02-10-2026: catatan pengembang, bukan informasi pemakai. Jawabannya
-          tetap tercatat di `models.MedanGridTanpaKolom` dan tetap dikirim
-          server (`kepala.medanTanpaKolom`).
-        */}
+            {/*
+              ⛔ Selisih kolom grid vs `PL_Detail_Sec` (REINSTYPENAME,
+              RetrocadedShare) SENGAJA TIDAK ditampilkan lagi — keputusan work owner
+              02-10-2026: catatan pengembang, bukan informasi pemakai. Jawabannya
+              tetap tercatat di `models.MedanGridTanpaKolom` dan tetap dikirim
+              server (`kepala.medanTanpaKolom`).
+            */}
+          </>
+        )}
       </section>
     </section>
   )

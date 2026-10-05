@@ -26,7 +26,7 @@ func TestIsiNolUangKosongSepertiLangkah2(t *testing.T) {
 		t.Errorf("nilai terisi atau kolom bukan uang ikut diubah: %v", n)
 	}
 	// Enam kolom wajib yang kosong kini lolos "HARUS ADA", seperti Pega.
-	if h := ValidasiUnggah(baris); hasTolakKolom(h, "NET_PREMIUM") {
+	if h := validasiQR(baris); hasTolakKolom(h, "NET_PREMIUM") {
 		t.Errorf("NET_PREMIUM kosong masih ditolak sesudah diisi 0: %+v", h)
 	}
 }

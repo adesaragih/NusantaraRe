@@ -37,6 +37,9 @@ var (
 	ErrAdminTerakhir = errors.New("login: harus tersisa minimal satu akun aktif yang memegang Kelola User")
 	// ErrMenuTidakDikenal - KODE menu bukan baris modul tabel menu maupun menu aplikasi.
 	ErrMenuTidakDikenal = errors.New("login: menu tidak dikenal")
+	// ErrHakLihatTidakSah - hak LIHAT untuk menu yang tidak dipegang akun, atau milik modul yang belum mendaftar
+	// akses Lihat (`inti.Pendaftaran.HakLihat`).
+	ErrHakLihatTidakSah = errors.New("login: akses View only hanya untuk menu yang dipilih dan mendukungnya")
 )
 
 // RingkasAkun adalah satu baris daftar Kelola User.
@@ -64,6 +67,8 @@ type RinciAkun struct {
 	RingkasAkun
 	Workbasket []string `json:"workbasket"`
 	Menu       []string `json:"menu"`
+	// MenuLihat - bagian dari Menu yang ber-hak LIHAT (migrasi 914); selalu terisi.
+	MenuLihat []string `json:"menuLihat"`
 }
 
 // IsianAkun adalah isian ubah akun. `LOGIN_ID` tidak dapat diubah.
@@ -72,6 +77,8 @@ type IsianAkun struct {
 	Organisasi, Divisi, Unit string
 	Workbasket               []string
 	Menu                     []string
+	// MenuLihat - bagian dari Menu yang ber-hak LIHAT (migrasi 914).
+	MenuLihat []string
 	Kontak
 }
 
@@ -89,6 +96,9 @@ type OpsiMenu struct {
 	Label     string `json:"label"`
 	Golongan  string `json:"golongan"`
 	Dimigrasi bool   `json:"dimigrasi"`
+	// BisaLihat - menu modul yang mendaftar akses Lihat (`inti.Pendaftaran.HakLihat`): Kelola User menawarkan
+	// pilihan View only / Full di sampingnya.
+	BisaLihat bool `json:"bisaLihat"`
 }
 
 // PilihanKelola adalah isi pilihan form Kelola User. Master hanya yang aktif.
@@ -131,12 +141,34 @@ type Kelola struct {
 	layanan *Layanan
 	gudang  GudangKelola
 	menu    menu.PembacaMenu
+	// bisaLihat - KODE menu modul yang mendaftar akses Lihat (`DenganHakLihat`).
+	bisaLihat map[string]bool
 }
 
 // NewKelola menyusunnya. `m` membaca baris modul tabel menu - sumber KODE
 // menu yang sah, bersama `menu.MenuAplikasi`.
 func NewKelola(g GudangKelola, m menu.PembacaMenu) *Kelola {
 	return &Kelola{layanan: NewLayanan(g, nil), gudang: g, menu: m}
+}
+
+// DenganHakLihat menyebut KODE menu modul yang mendukung akses LIHAT (`daftar.HakLihat`, keputusan work owner
+// 04-10-2026). Menu lain selalu penuh.
+func (k *Kelola) DenganHakLihat(kode []string) *Kelola {
+	k.bisaLihat = map[string]bool{}
+	for _, x := range kode {
+		k.bisaLihat[x] = true
+	}
+	return k
+}
+
+// periksaHakLihat - setiap menu LIHAT harus ikut dipilih dan milik modul yang mendaftar.
+func (k *Kelola) periksaHakLihat(menuDipilih, lihat []string) error {
+	for _, x := range lihat {
+		if !inti.PunyaMenu(menuDipilih, x) || !k.bisaLihat[x] {
+			return fmt.Errorf("%w: %s", ErrHakLihatTidakSah, x)
+		}
+	}
+	return nil
 }
 
 // bersih membuang isian kosong dan ganda, lalu mengurutkan.
@@ -227,7 +259,12 @@ func (k *Kelola) Rinci(ctx context.Context, id string) (RinciAkun, error) {
 	if err != nil {
 		return RinciAkun{}, err
 	}
-	return RinciAkun{RingkasAkun: r, Workbasket: bersih(wb), Menu: bersih(mn)}, nil
+	ml, err := k.gudang.MenuLihat(ctx, id)
+	if err != nil {
+		return RinciAkun{}, err
+	}
+	mn = bersih(mn)
+	return RinciAkun{RingkasAkun: r, Workbasket: bersih(wb), Menu: mn, MenuLihat: irisan(bersih(ml), mn)}, nil
 }
 
 // Pilihan menyusun isi dropdown dan kotak centang form.
@@ -256,7 +293,8 @@ func (k *Kelola) Pilihan(ctx context.Context) (PilihanKelola, error) {
 	})
 	p.Menu = []OpsiMenu{}
 	for _, b := range baris {
-		p.Menu = append(p.Menu, OpsiMenu{Kode: b.Kode, Label: b.Label, Golongan: b.Golongan, Dimigrasi: b.Dimigrasi})
+		p.Menu = append(p.Menu, OpsiMenu{Kode: b.Kode, Label: b.Label, Golongan: b.Golongan, Dimigrasi: b.Dimigrasi,
+			BisaLihat: k.bisaLihat[b.Kode]})
 	}
 	for _, a := range menu.MenuAplikasi {
 		p.Menu = append(p.Menu, OpsiMenu{Kode: a.Kode, Label: a.Label, Golongan: menu.GolonganAdmin, Dimigrasi: true})
@@ -270,13 +308,16 @@ func (k *Kelola) Buat(ctx context.Context, aktor string, a AkunBaru, sandi strin
 	if err := PeriksaSandiBaru(sandi); err != nil {
 		return err
 	}
-	a.Workbasket, a.Menu = bersih(a.Workbasket), bersih(a.Menu)
+	a.Workbasket, a.Menu, a.MenuLihat = bersih(a.Workbasket), bersih(a.Menu), bersih(a.MenuLihat)
 	a.Organisasi, a.Divisi, a.Unit = strings.TrimSpace(a.Organisasi), strings.TrimSpace(a.Divisi), strings.TrimSpace(a.Unit)
 	a.Kontak = RapikanKontak(a.Kontak)
 	if err := PeriksaKontak(a.Kontak); err != nil {
 		return err
 	}
 	if err := k.PeriksaMenu(ctx, a.Menu); err != nil {
+		return err
+	}
+	if err := k.periksaHakLihat(a.Menu, a.MenuLihat); err != nil {
 		return err
 	}
 	return k.layanan.buat(ctx, a, sandi, wajibGanti)
@@ -326,7 +367,7 @@ func (k *Kelola) Ubah(ctx context.Context, aktor, id string, isi IsianAkun) (Rin
 		return RinciAkun{}, ErrAkunTidakSah
 	}
 	isi.Organisasi, isi.Divisi, isi.Unit = strings.TrimSpace(isi.Organisasi), strings.TrimSpace(isi.Divisi), strings.TrimSpace(isi.Unit)
-	isi.Workbasket, isi.Menu = bersih(isi.Workbasket), bersih(isi.Menu)
+	isi.Workbasket, isi.Menu, isi.MenuLihat = bersih(isi.Workbasket), bersih(isi.Menu), bersih(isi.MenuLihat)
 	isi.Kontak = RapikanKontak(isi.Kontak)
 	if err := PeriksaKontak(isi.Kontak); err != nil {
 		return RinciAkun{}, err
@@ -354,6 +395,9 @@ func (k *Kelola) Ubah(ctx context.Context, aktor, id string, isi IsianAkun) (Rin
 	}
 	isi.Workbasket = bersih(append(isi.Workbasket, selisih(wbSemua, wbAktif)...))
 	if err := k.PeriksaMenu(ctx, isi.Menu); err != nil {
+		return RinciAkun{}, err
+	}
+	if err := k.periksaHakLihat(isi.Menu, isi.MenuLihat); err != nil {
 		return RinciAkun{}, err
 	}
 	if err := k.gudang.UbahAkun(ctx, id, isi); err != nil {

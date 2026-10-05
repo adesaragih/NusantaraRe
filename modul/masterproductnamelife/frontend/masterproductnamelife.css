@@ -481,6 +481,12 @@
   margin-top: 18px;
 }
 
+/* Pembungkus tabel: tabel lebar menggulir di dalam kotaknya, bukan melebarkan halaman. */
+.mpnl .mpnl-tabel {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 /* ================================================================ soft UI
    TEMA SAMA DENGAN TREATY CONTRACT OUT - permintaan work owner 02-10-2026: "tema nya masih ga
    sesuai, tolong samain tema nya untuk productname life, samain dengan treaty contract out".

@@ -50,7 +50,7 @@ func TestBenderaTanpaKonektorDijawab409(t *testing.T) {
 // keadaan "menunggu" yang dapat dilihat layar.
 func TestJawabanAkibatTanpaPenandaMenunggu(t *testing.T) {
 	w := httptest.NewRecorder()
-	tulisAkibat(w, models.AkibatKeputusan{TahapTujuan: models.TahapPolisDetail})
+	tulisAkibat(w, models.AkibatKeputusan{TahapTujuan: models.TahapPolisDetail}, "", "")
 	var isi map[string]any
 	if err := json.Unmarshal(w.Body.Bytes(), &isi); err != nil {
 		t.Fatal(err)
@@ -60,5 +60,19 @@ func TestJawabanAkibatTanpaPenandaMenunggu(t *testing.T) {
 	}
 	if isi["tahapTujuan"] != models.TahapPolisDetail {
 		t.Errorf("tahapTujuan = %v", isi["tahapTujuan"])
+	}
+}
+
+// TestJawabanAkibatMembawaPLNumber - layar menampilkan nomor yang terbit
+// sebelum kembali ke kotak masuk (03-10-2026).
+func TestJawabanAkibatMembawaPLNumber(t *testing.T) {
+	w := httptest.NewRecorder()
+	tulisAkibat(w, models.AkibatKeputusan{StatusWork: models.StatusPolisSelesai}, "RNML-QRUJI.10.26.00001", "2027-01-31")
+	var isi map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &isi); err != nil {
+		t.Fatal(err)
+	}
+	if isi["plNumber"] != "RNML-QRUJI.10.26.00001" || isi["wpc"] != "2027-01-31" || isi["statusWork"] != models.StatusPolisSelesai {
+		t.Errorf("jawaban %s", w.Body.String())
 	}
 }

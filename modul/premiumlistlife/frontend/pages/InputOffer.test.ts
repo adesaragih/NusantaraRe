@@ -35,8 +35,9 @@ describe('Reject hanya di tahap yang punya konektornya', () => {
     expect(bolehRejectDiTahap(TAHAP_POLIS.summary)).toBe(false)
   })
 
-  it('layar memagarinya, bukan hanya backend', () => {
-    expect(SUMBER).toContain('bolehRejectDiTahap(tahap)')
+  it('tombol Reject tidak ditampilkan di tahap mana pun (keputusan work owner 03-10-2026)', () => {
+    expect(SUMBER).not.toContain('KEPUTUSAN_POLIS.reject')
+    expect(SUMBER).not.toContain('bolehRejectDiTahap(tahap) && (')
   })
 })
 
@@ -51,8 +52,11 @@ describe('Decision3 tidak ditanyakan (butir bq)', () => {
 
   it('setiap keputusan yang berhasil melepas kasus dari layar ini', () => {
     // Sesudah bq, `Confirm` selalu menutup (Offer) atau memindahkan
-    // (Premium) — tidak ada keadaan "menunggu" yang menahan layar.
-    expect(SUMBER).toMatch(/setAkibat\(hasil\)\s*\n\s*onSelesai\(\)/)
+    // (Premium) — tidak ada keadaan "menunggu" yang menahan layar. Sejak
+    // 03-10-2026 keputusan yang menerbitkan PL Number melepasnya SESUDAH
+    // popup nomornya ditutup; selebihnya langsung.
+    expect(SUMBER).toMatch(/setAkibat\(hasil\)[\s\S]{0,400}\n\s*onSelesai\(\)\n\s*\} catch/)
+    expect(SUMBER).toMatch(/setNomorTerbit\(null\)\n\s*onSelesai\(\)/)
   })
 })
 
@@ -108,5 +112,60 @@ describe('period di tahap Input Premium Detail (02-10-2026)', () => {
     const io = readFileSync(join(__dirname, 'InputOffer.tsx'), 'utf8')
     expect(io).not.toContain('pl-keputusan__meta')
     expect(io).toContain('{!diDetail && galatPeriode !== null')
+  })
+})
+
+describe('konfirmasi tombol Decision (03-10-2026)', () => {
+  it('tombol hanya membuka popup — tidak langsung memutuskan', () => {
+    const io = readFileSync(join(__dirname, 'InputOffer.tsx'), 'utf8')
+    expect(io).toContain('setTanya(KEPUTUSAN_POLIS.confirm)')
+    expect(io).toContain('setTanya(KEPUTUSAN_POLIS.decline)')
+    // Satu-satunya pemanggil putuskanPenawaran adalah tombol "Yes" di popup.
+    expect(io.match(/putuskanPenawaran\(/g)?.length).toBe(1)
+    expect(io).toContain('<Modal')
+  })
+
+  it('kalimatnya menyebut akibat per tahap', async () => {
+    const { kalimatKonfirmasi } = await import('./InputOffer')
+    const { KONFIRMASI_KEPUTUSAN } = await import('../labels')
+    expect(kalimatKonfirmasi(KEPUTUSAN_POLIS.confirm, TAHAP_POLIS.detail)).toBe(KONFIRMASI_KEPUTUSAN.confirmDetail)
+    expect(kalimatKonfirmasi(KEPUTUSAN_POLIS.confirm, TAHAP_POLIS.penawaran)).toBe(KONFIRMASI_KEPUTUSAN.confirmPenawaran)
+    expect(kalimatKonfirmasi(KEPUTUSAN_POLIS.decline, TAHAP_POLIS.detail)).toBe(KONFIRMASI_KEPUTUSAN.decline)
+    expect(KONFIRMASI_KEPUTUSAN.confirmDetail).toContain('PL Number')
+  })
+})
+
+describe('PL Number ditampilkan sebelum kembali ke kotak masuk (03-10-2026)', () => {
+  it('nomor yang terbit membuka popup; kembali ke kotak masuk hanya saat popup ditutup', () => {
+    const io = readFileSync(join(__dirname, 'InputOffer.tsx'), 'utf8')
+    expect(io).toContain('setNomorTerbit(hasil.plNumber')
+    expect(io).toMatch(/if \(\(hasil\.plNumber \?\? ''\)\.trim\(\) !== ''\) \{[\s\S]{0,160}return\n/)
+    expect(io).toMatch(/onTutup=\{\(\) => \{\n\s*setNomorTerbit\(null\)\n\s*onSelesai\(\)/)
+    expect(io).toContain('HASIL_NOMOR_PL.judul')
+  })
+})
+
+describe('Confirm terkunci selama ada perubahan belum disimpan (03-10-2026)', () => {
+  it('form melapor, rute meneruskan, Confirm dikunci dan alasannya dikatakan', () => {
+    const io = readFileSync(join(__dirname, 'InputOffer.tsx'), 'utf8')
+    const form = readFileSync(join(__dirname, 'FormDataPolis.tsx'), 'utf8')
+    const detail = readFileSync(join(__dirname, 'PremiumListDetail.tsx'), 'utf8')
+    const rute = readFileSync(join(__dirname, '..', 'rute.tsx'), 'utf8')
+    expect(form).toContain('JSON.stringify(isi) !== dasar')
+    expect(form).toContain('onBelumTersimpan?.(belumTersimpan)')
+    expect(detail).toContain('onBelumTersimpan={onBelumTersimpan}')
+    expect(rute).toContain('onBelumTersimpan={setDataBelumTersimpan}')
+    expect(rute).toContain('confirmTerkunci={polis.tahap === TAHAP_POLIS.detail && dataBelumTersimpan}')
+    expect(io).toContain('disabled={sibuk || confirmTerkunci}')
+    expect(io).toContain('KONFIRMASI_KEPUTUSAN.belumTersimpan')
+  })
+})
+
+describe('WPC ditampilkan bersama PL Number (03-10-2026)', () => {
+  it('popup hasil memuat PL Number dan WPC (dd/mm/yyyy)', () => {
+    const io = readFileSync(join(__dirname, 'InputOffer.tsx'), 'utf8')
+    expect(io).toContain("setWpcTerbit(hasil.wpc ?? '')")
+    expect(io).toContain('{tanggalTampil(wpcTerbit)}')
+    expect(io).toContain('HASIL_NOMOR_PL.labelWpc')
   })
 })

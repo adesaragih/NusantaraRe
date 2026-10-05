@@ -6,15 +6,19 @@ import Login, { KerangkaMasuk, pesanGagalLogin } from '../inti/frontend/componen
 import { Shell } from '../inti/frontend/components/Shell'
 import { ApiFailure, ambilMenu, ambilModulAktif, ambilSesiSaya, keluarLogin, type ProfilLogin } from '../inti/frontend/klien'
 import KelolaUser from '../inti/frontend/kelolauser/KelolaUser'
+import TemplateManager from '../inti/frontend/templat/TemplateManager'
 import { LOGIN } from '../inti/frontend/labels'
 import {
   HALAMAN_KELOLA_USER,
+  HALAMAN_TEMPLATE_MANAGER,
   KODE_MENU_KELOLA_USER,
+  KODE_MENU_TEMPLATE_MANAGER,
   modulDipasang,
   modulUntukAkun,
   type KeadaanMenuTabel,
 } from '../inti/frontend/lib/daftarMenu'
 import { bolehMasukStub, PERISTIWA_SESI_BERAKHIR, pelakuStub, sesiDariProfil, type Sesi } from '../inti/frontend/store/sesi'
+import { HAK_PENUH, KonteksHakMenu, type HakMenu } from '../inti/frontend/lib/hakMenu'
 import { ENTRI_MENU, halamanAktif, MODUL_FRONTEND, type Halaman } from './daftar'
 
 // App = identitas + Shell.
@@ -127,6 +131,14 @@ export default function App() {
     [modulAktif, menuAkun],
   )
   const bolehKelola = menuAkun !== null && menuAkun.includes(KODE_MENU_KELOLA_USER)
+  // Template Manager (04-10-2026): sama dengan Kelola User - hanya bagi pemegang menunya.
+  const bolehTemplat = menuAkun !== null && menuAkun.includes(KODE_MENU_TEMPLATE_MANAGER)
+  // Hak menu View only (migrasi 914, 04-10-2026): dibaca layar modul lewat `useBolehUbah`.
+  const menuLihat = !stub && profil && Array.isArray(profil.menuLihat) ? profil.menuLihat : null
+  const hakMenu = useMemo<HakMenu>(
+    () => (menuLihat === null ? HAK_PENUH : { lihat: menuLihat }),
+    [menuLihat],
+  )
   // Admin mengubah akunnya sendiri: profil (menu) dan sidebar dibaca ulang.
   const segarkanDiri = useCallback(() => {
     ambilSesiSaya().then(setProfil, () => {
@@ -143,7 +155,10 @@ export default function App() {
     if (!halamanAktif(halaman, modulBoleh) || (halaman === HALAMAN_KELOLA_USER && !bolehKelola)) {
       setHalaman('beranda')
     }
-  }, [halaman, modulBoleh, bolehKelola])
+    if (halaman === HALAMAN_TEMPLATE_MANAGER && !bolehTemplat) {
+      setHalaman('beranda')
+    }
+  }, [halaman, modulBoleh, bolehKelola, bolehTemplat])
 
   if (!stub && galatSesi !== null) {
     return (
@@ -230,6 +245,7 @@ export default function App() {
     >
       {halaman === 'beranda' && <Beranda masuk={masuk} onBuka={setHalaman} modulAktif={modulBoleh} />}
       {halaman === HALAMAN_KELOLA_USER && bolehKelola && <KelolaUser akunSaya={masuk.akunID} onDiriBerubah={segarkanDiri} />}
+      {halaman === HALAMAN_TEMPLATE_MANAGER && bolehTemplat && <TemplateManager />}
       {/*
         Refactor bentuk B (30-09-2026): setiap modul AKTIF merender halamannya
         sendiri (`modul/<nama>/rute.tsx`) dan menyimpan keadaannya sendiri -
@@ -237,9 +253,11 @@ export default function App() {
         terpasang selama modulnya aktif, jadi keadaan itu bertahan saat pemakai
         pindah halaman, persis seperti ketika ia hidup di sini.
       */}
-      {MODUL_FRONTEND.filter((m) => modulDipasang(m.nama, modulBoleh)).map((m) => (
-        <m.Rute key={m.nama} halaman={halaman} masuk={masuk} onPindah={setHalaman} ketukMenu={ketukMenu} />
-      ))}
+      <KonteksHakMenu.Provider value={hakMenu}>
+        {MODUL_FRONTEND.filter((m) => modulDipasang(m.nama, modulBoleh)).map((m) => (
+          <m.Rute key={m.nama} halaman={halaman} masuk={masuk} onPindah={setHalaman} ketukMenu={ketukMenu} />
+        ))}
+      </KonteksHakMenu.Provider>
     </Shell>
   )
 }

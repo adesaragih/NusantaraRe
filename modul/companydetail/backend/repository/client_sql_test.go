@@ -97,3 +97,17 @@ func TestSeluruhSQLLolosPeriksa(t *testing.T) {
 		}
 	}
 }
+
+// Pilihan PIC Name: akun login AKTIF saja, urut nama; M_LOGIN_GO hanya dibaca.
+func TestDaftarAkunAktif(t *testing.T) {
+	q := satuBaris(sqlDaftarAkunAktif("S.M_LOGIN_GO"))
+	mau := "SELECT LOGIN_ID, NAME, JOB_POSITION FROM S.M_LOGIN_GO WHERE IS_ACTIVE = :1 ORDER BY UPPER(NAME), LOGIN_ID"
+	if q != mau {
+		t.Errorf("akun:\n dapat %s\n mau   %s", q, mau)
+	}
+	for _, tb := range DaftarTabelDitulis {
+		if tb == TabelLogin {
+			t.Errorf("%s tidak boleh ditulis", TabelLogin)
+		}
+	}
+}

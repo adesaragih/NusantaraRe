@@ -57,19 +57,15 @@ func TestKontrakWajibEnamMedanVerbatim(t *testing.T) {
 	}
 }
 
-func TestKontrakUSDBolehKosongSelisihDihitung(t *testing.T) {
+// MAXIMUM LIMIT (USD) WAJIB sejak 04-10-2026 (keputusan work owner) - dulu
+// boleh kosong (NULL).
+func TestKontrakUSDKosongDitolak(t *testing.T) {
 	g := gudangKontrak()
 	m := kontrakLengkap()
-	m.BIDR, m.IDR, m.USD = "1000000000.25", "1500000000.10", ""
-	k, err := layananUji(g).SimpanKontrak(context.Background(), pelaku, "UJI-T1", m)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if k.IDRSelisih == nil || k.IDRSelisih.Text('f') != "499999999.85" {
-		t.Errorf("IDR_SELISIH = %v, mau IDR - B_IDR = 499999999.85 (K5)", k.IDRSelisih)
-	}
-	if k.USD != nil || k.USDSelisih != nil {
-		t.Errorf("USD kosong: USD %v USD_SELISIH %v, mau keduanya NULL", k.USD, k.USDSelisih)
+	m.USD = " "
+	_, err := layananUji(g).SimpanKontrak(context.Background(), pelaku, "UJI-T1", m)
+	if !errors.Is(err, services.ErrWajibIsi) {
+		t.Errorf("USD kosong: galat %v, mau ErrWajibIsi", err)
 	}
 }
 

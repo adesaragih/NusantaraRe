@@ -21,11 +21,13 @@ inti 912.
 | GROUPMENU | `MASTER` |
 | Pemilik | `@PEMILIK-MASTERNATION` |
 | Status | dimigrasi |
-| Rentang migrasi | `884-885` |
+| Rentang migrasi | — |
 | Slot menu | — |
 | Prefix rute API | `/api/master-nation` |
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |
+
+> Merge `origin/dev` 05-10-2026: `Rentang migrasi` `884-885` dilepas menjadi `—` (tanda modul tanpa migrasi sendiri, `tandaTanpaMigrasi`) - modul ini tidak punya satu pun berkas migrasi, dan nomor 880-899 sudah dipakai `aggregate` / `bordereaux` dari GitHub. Bila kelak butuh migrasi, minta jatah baru ke tim inti.
 
 ## Isi folder
 

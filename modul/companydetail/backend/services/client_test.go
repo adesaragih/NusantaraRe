@@ -134,7 +134,7 @@ func TestCreateDitolakTanpaTulisan(t *testing.T) {
 		{"title nonaktif", func(i *models.Isian) { i.Title = "TN." }, "Title TN. is not in the title list"},
 		{"parent tidak ada", func(i *models.Isian) { i.ParentID = "UJI-TIDAK-ADA" }, "Parent organization UJI-TIDAK-ADA not found"},
 		{"PIC tanpa nama", func(i *models.Isian) { i.PIC[1].Nama = "" }, "PIC row 2: Name is required"},
-		{"PIC tanpa position", func(i *models.Isian) { i.PIC[0].Position = "" }, "PIC row 1: Position is required"},
+		{"PIC tanpa position", func(i *models.Isian) { i.PIC[0].Position = "" }, "PIC row 1: UJI Kontak A has no Job Position"},
 		{"PIC email salah", func(i *models.Isian) { i.PIC[0].Email = "uji-tanpa-at" }, "PIC row 1: Email format is not valid"},
 		{"PIC tanggal salah", func(i *models.Isian) { i.PIC[0].DateOfBirth = "1990-01-15" }, "Date of birth must be DD-MM-YYYY"},
 		{"PIC gender asing", func(i *models.Isian) { i.PIC[0].Gender = "9" }, "Gender 9 is not in the gender list"},
@@ -146,7 +146,8 @@ func TestCreateDitolakTanpaTulisan(t *testing.T) {
 		{"telfax nonaktif", func(i *models.Isian) { i.Alamat[0].Telfax[0].Jenis = "2" }, "type 2 is not in the phone and fax type list"},
 		{"telfax EMAIL dihapus", func(i *models.Isian) { i.Alamat[0].Telfax[0].Jenis = "6" }, "type 6 is not in the phone and fax type list"},
 		{"telfax tanpa nomor", func(i *models.Isian) { i.Alamat[0].Telfax[1].No = "" }, "Phone and Fax 2: the number is required"},
-		{"kode area asing", func(i *models.Isian) { i.Alamat[0].Telfax[0].Code = "0999" }, "area code 0999 is not in"},
+		{"kode area Others bukan angka", func(i *models.Isian) { i.Alamat[0].Telfax[0].Code = "02A" }, "area code 02A must be digits"},
+		{"kode area Others terlalu panjang", func(i *models.Isian) { i.Alamat[0].Telfax[0].Code = "+6202199999" }, "longer than 10 bytes"},
 		{"asal alamat asing", func(i *models.Isian) { i.Alamat[0].Asal = "UJI Jalan Lain" }, "Address row 1 does not belong"},
 	} {
 		g := tiruan.Contoh()
@@ -333,24 +334,124 @@ func TestKemiripanNama(t *testing.T) {
 	}
 }
 
-// Title di nama: Edit nama lama yang tidak disentuh tetap boleh; nama yang diubah dan memuat title ditolak; title
-// nonaktif (sapaan orang) tidak dihitung.
-func TestTitleDiNamaSaatUbah(t *testing.T) {
+// Organization Name tidak boleh diubah saat Edit (perintah work owner 05-10-2026): nama yang dikirim sama (tanpa
+// beda huruf/spasi) diterima dan NAME tersimpan tetap apa adanya - juga nama lama Pega yang memuat title; nama lain
+// atau kosong ditolak tanpa menulis apa pun.
+func TestNamaTidakBolehDiubah(t *testing.T) {
 	g := tiruan.Contoh()
 	o := g.Org[anak]
 	o.Nama = "PT. UJI Anak Usaha"
 	g.Org[anak] = o
 	isi := func(nama string) models.Isian {
-		return models.Isian{Nama: nama, Title: o.Title, Country: o.Country, BusinessField: o.BusinessField, ParentID: o.ParentID}
+		return models.Isian{Nama: nama, Title: o.Title, Country: o.Country, BusinessField: o.BusinessField,
+			ParentID: o.ParentID, Note: "UJI catatan ubah"}
 	}
 	l := layanan(g)
-	if _, err := l.Ubah(ctx, admin, anak, isi("pt. uji anak usaha")); err != nil {
-		t.Errorf("nama lama tidak diubah: %v", err)
+	if _, err := l.Ubah(ctx, admin, anak, isi(" pt. uji anak usaha ")); err != nil {
+		t.Fatalf("nama sama: %v", err)
 	}
-	if _, err := l.Ubah(ctx, admin, anak, isi("PT UJI Anak Usaha Baru")); !errors.Is(err, services.ErrMasukanTidakSah) {
-		t.Errorf("nama diubah dengan title: %v", err)
+	if n := g.Org[anak].Nama; n != "PT. UJI Anak Usaha" {
+		t.Errorf("NAME tersimpan berubah jadi %q", n)
 	}
-	if _, err := l.Ubah(ctx, admin, anak, isi("UJI NY Trading")); err != nil {
+	for _, nama := range []string{"UJI Anak Usaha Baru", "PT UJI Anak Usaha Baru", ""} {
+		sebelum := g.Org[anak]
+		_, err := l.Ubah(ctx, admin, anak, models.Isian{Nama: nama, Title: o.Title, Country: o.Country,
+			BusinessField: o.BusinessField, ParentID: o.ParentID, Note: "UJI tidak boleh tertulis"})
+		if !errors.Is(err, services.ErrMasukanTidakSah) || !strings.Contains(err.Error(), "cannot be changed") {
+			t.Errorf("nama %q: %v", nama, err)
+		}
+		if g.Org[anak] != sebelum {
+			t.Errorf("nama %q ditolak tetapi organisasi tertulis %+v", nama, g.Org[anak])
+		}
+	}
+}
+
+// Title nonaktif (sapaan orang, mis. NY) tidak dihitung sebagai title di nama.
+func TestTitleNonaktifDiNamaBoleh(t *testing.T) {
+	isi := isianBaru()
+	isi.Nama = "UJI NY Trading"
+	if _, err := layanan(tiruan.Contoh()).Tambah(ctx, admin, isi); err != nil {
 		t.Errorf("title nonaktif NY ikut dihitung: %v", err)
+	}
+}
+
+// PIC Name dipilih dari akun login AKTIF M_LOGIN_GO (perintah work owner 05-10-2026: "untuk name pada company detail,
+// dropdown dari tabel login"). Nama PIC lama Pega yang tidak diubah tetap boleh walau bukan akun login.
+func TestPICNamaDariAkunLogin(t *testing.T) {
+	g := tiruan.Contoh()
+	l := layanan(g)
+	p, err := l.Pilihan(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Akun) == 0 || !reflect.DeepEqual(p.Akun, g.Akun) {
+		t.Errorf("pilihan akun %+v", p.Akun)
+	}
+	isi := isianBaru()
+	isi.PIC[1].Nama = "UJI Bukan Akun"
+	if _, err := l.Tambah(ctx, admin, isi); !errors.Is(err, services.ErrMasukanTidakSah) || !strings.Contains(err.Error(), "PIC row 2") {
+		t.Errorf("nama bukan akun login: %v", err)
+	}
+	if len(g.Disisip) != 0 {
+		t.Errorf("ditolak tetapi tertulis %+v", g.Disisip)
+	}
+	d, err := l.Ambil(ctx, anak)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ubah := models.Isian{Nama: d.Nama, Title: d.Title, Country: d.Country, BusinessField: d.BusinessField,
+		ParentID: d.ParentID, PIC: d.PIC}
+	if _, err := l.Ubah(ctx, admin, anak, ubah); err != nil {
+		t.Errorf("PIC lama bukan akun, tidak diubah: %v", err)
+	}
+	ubah.PIC[0].Nama = "UJI Kontak Lama Diganti"
+	if _, err := l.Ubah(ctx, admin, anak, ubah); !errors.Is(err, services.ErrMasukanTidakSah) || !strings.Contains(err.Error(), "PIC row 1") {
+		t.Errorf("PIC lama diganti nama bukan akun: %v", err)
+	}
+	ubah.PIC[0].Nama = "UJI Kontak A"
+	if _, err := l.Ubah(ctx, admin, anak, ubah); err != nil {
+		t.Errorf("PIC lama diganti akun login: %v", err)
+	}
+	if n := g.PIC[anak][0].Nama; n != "UJI Kontak A" {
+		t.Errorf("NICKNAME tersimpan %q", n)
+	}
+}
+
+// PIC Position = JOB_POSITION akun login yang dipilih (perintah work owner 05-10-2026: "Position ambil dari tabel login
+// sesuai orang yg dipilih"); akun tanpa JOB_POSITION ditolak dengan petunjuk ke Kelola User.
+func TestPICPositionDariAkunLogin(t *testing.T) {
+	for _, k := range []struct {
+		nama, nama2, posisi2, galat string
+	}{
+		{"posisi bukan jabatan akun", "UJI Kontak B", "Direktur", "PIC row 2: Position must be the Job Position of UJI Kontak B"},
+		{"akun tanpa jabatan", "UJI Tanpa Jabatan", "", "PIC row 2: UJI Tanpa Jabatan has no Job Position - fill it in Kelola User"},
+	} {
+		g := tiruan.Contoh()
+		isi := isianBaru()
+		isi.PIC[1].Nama, isi.PIC[1].Position = k.nama2, k.posisi2
+		_, err := layanan(g).Tambah(ctx, admin, isi)
+		if !errors.Is(err, services.ErrMasukanTidakSah) || !strings.Contains(err.Error(), k.galat) {
+			t.Errorf("%s: %v", k.nama, err)
+		}
+		if len(g.Disisip) != 0 {
+			t.Errorf("%s: ditolak tetapi tertulis", k.nama)
+		}
+	}
+}
+
+// Kode area "Others" (perintah work owner 05-10-2026: "tambahin others, bisa isi sendiri"): kode di luar daftar kodehp
+// diterima bila berupa angka (boleh diawali +) dan disimpan apa adanya di TELFAX_CODE.
+func TestKodeAreaOthers(t *testing.T) {
+	for _, kode := range []string{"0999", "+62"} {
+		g := tiruan.Contoh()
+		isi := isianBaru()
+		isi.Alamat[0].Telfax[0].Code = " " + kode + " "
+		d, err := layanan(g).Tambah(ctx, admin, isi)
+		if err != nil {
+			t.Fatalf("kode %s: %v", kode, err)
+		}
+		if c := g.Alamat[d.ID][0].TelfaxCode; c != kode {
+			t.Errorf("TELFAX_CODE %q, mau %q", c, kode)
+		}
 	}
 }

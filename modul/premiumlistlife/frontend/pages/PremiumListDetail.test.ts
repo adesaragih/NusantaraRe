@@ -87,11 +87,15 @@ describe('hanya kolom yang berisi (02-10-2026)', () => {
 
   it('kolom tampil bila SATU baris saja bukan nol; sel nolnya tetap ditulis 0', () => {
     expect(kolomBerisi(['CLAIM'], [...baris, { nilai: { CLAIM: '12.5' } }])).toEqual(['CLAIM'])
+    // SUM_AT_RISK_GROSS dan RISK selalu tampil walau kosong / nol (05-10-2026).
+    expect(kolomBerisi(['CLAIM', 'SUM_AT_RISK_GROSS', 'RISK'], baris)).toEqual(['SUM_AT_RISK_GROSS', 'RISK'])
+    expect(susunKolom(['RISK', 'GROSS_PREMIUM', 'SUM_AT_RISK_GROSS'])).toEqual(['SUM_AT_RISK_GROSS', 'RISK', 'GROSS_PREMIUM'])
     expect(selPeserta('0')).toBe('0')
   })
 
-  it('jumlah kolom tersembunyi dinyatakan di layar', () => {
-    expect(SUMBER).toContain('empty columns hidden')
+  it('keterangan jumlah tidak ditampilkan, kecuali grid memotong baris (03-10-2026)', () => {
+    expect(SUMBER).not.toContain('empty columns hidden')
+    expect(SUMBER).toContain('hal.total > hal.baris.length')
   })
 })
 

@@ -5,17 +5,21 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
+import { useBolehUbah } from '../../../../inti/frontend/lib/hakMenu'
 import { ambilDaftar, ambilHak, ambilPilihan, type Detail, type Halaman, type Hak, type PilihanForm } from '../api'
 import { jumlahHalaman, labelKode } from '../aturan'
 import DialogCopyOld from '../components/DialogCopyOld'
 import FormCompany from '../components/FormCompany'
 import LihatCompany from '../components/LihatCompany'
 import { CD } from '../labels'
+import { NAMA_CD } from '../menu'
 
 /** Tampilan halaman: daftar, View satu organisasi, atau form (`id` null = Create). */
 type Tampilan = { jenis: 'daftar' } | { jenis: 'lihat'; id: string } | { jenis: 'form'; id: string | null }
 
 export default function CompanyDetail() {
+  // Menu View only (M_LOGIN_GO_MENU.HAK, 04-10-2026): tanpa Create dan Edit; View tetap.
+  const bolehUbah = useBolehUbah(NAMA_CD)
   const [tampilan, setTampilan] = useState<Tampilan>({ jenis: 'daftar' })
   const [ketik, setKetik] = useState('')
   const [kueri, setKueri] = useState('')
@@ -108,7 +112,7 @@ export default function CompanyDetail() {
             onKembali={() => {
               setTampilan({ jenis: 'daftar' })
             }}
-            onUbah={buka}
+            onUbah={bolehUbah ? buka : undefined}
           />
         )}
       </section>
@@ -165,7 +169,7 @@ export default function CompanyDetail() {
           {CD.tombolCari}
         </button>
         <span className="toolbar__spacer" />
-        {hak.copyOld && (
+        {hak.copyOld && bolehUbah && (
           <button
             type="button"
             className="btn btn--ghost"
@@ -177,15 +181,17 @@ export default function CompanyDetail() {
             {CD.copyOld}
           </button>
         )}
-        <button
-          type="button"
-          className="btn btn--primary"
-          onClick={() => {
-            buka(null)
-          }}
-        >
-          {CD.create}
-        </button>
+        {bolehUbah && (
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={() => {
+              buka(null)
+            }}
+          >
+            {CD.create}
+          </button>
+        )}
       </form>
 
       {copyOld && (
@@ -243,15 +249,17 @@ export default function CompanyDetail() {
                         >
                           {CD.lihat}
                         </button>
-                        <button
-                          type="button"
-                          className="btn btn--ghost"
-                          onClick={() => {
-                            buka(b.id)
-                          }}
-                        >
-                          {CD.ubah}
-                        </button>
+                        {bolehUbah && (
+                          <button
+                            type="button"
+                            className="btn btn--ghost"
+                            onClick={() => {
+                              buka(b.id)
+                            }}
+                          >
+                            {CD.ubah}
+                          </button>
+                        )}
                       </span>
                     </td>
                   </tr>

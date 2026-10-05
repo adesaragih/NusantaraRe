@@ -7,6 +7,7 @@ package services_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"nusantarare/modul/mastercontractretrolife/backend/models"
@@ -100,5 +101,40 @@ func TestEksposurKosongBilaShareKosong(t *testing.T) {
 	}
 	if got, ada := j.Eksposur["UJI-S1"]; !ada || got != "" {
 		t.Errorf("share NULL: eksposur %q (ada=%v), mau \"\"", got, ada)
+	}
+}
+
+// Aturan Reinsurer List berlaku di Security (04-10-2026): nama sekali per
+// reinsurer induk, total share <= 100, total tampil + peringatan bukan 100.
+func TestSecurityNamaGandaDanTotalShare(t *testing.T) {
+	g := gudangSecurity(t)
+	l := layananUji(g)
+	m := securityLengkap()
+	m.PctShare = "60"
+	if _, err := l.SimpanSecurity(context.Background(), pelaku, "UJI-R1", m); err != nil {
+		t.Fatal(err)
+	}
+	m.PctShare = "10"
+	if _, err := l.SimpanSecurity(context.Background(), pelaku, "UJI-R1", m); !errors.Is(err, services.ErrMasukanTidakSah) ||
+		!strings.Contains(err.Error(), "is already in this security list") {
+		t.Errorf("nama ganda: galat %v", err)
+	}
+	satu := securityLengkap()
+	satu.ReinsurerID, satu.ReinsurerName, satu.PctShare = "UJI-L01", "UJI REASURANSI SATU", "50"
+	if _, err := l.SimpanSecurity(context.Background(), pelaku, "UJI-R1", satu); !errors.Is(err, services.ErrMasukanTidakSah) ||
+		!strings.Contains(err.Error(), "cannot be more than 100%") {
+		t.Errorf("60 + 50: galat %v, mau ditolak", err)
+	}
+	j, err := l.DaftarSecurity(context.Background(), pelaku, "UJI-R1")
+	if err != nil || j.TotalShare != "60" || !j.TotalBukan100 {
+		t.Errorf("total 60: %q bukan100 %v, %v", j.TotalShare, j.TotalBukan100, err)
+	}
+	satu.PctShare = "40"
+	if _, err := l.SimpanSecurity(context.Background(), pelaku, "UJI-R1", satu); err != nil {
+		t.Fatalf("60 + 40 ditolak: %v", err)
+	}
+	j, err = l.DaftarSecurity(context.Background(), pelaku, "UJI-R1")
+	if err != nil || j.TotalShare != "100" || j.TotalBukan100 {
+		t.Errorf("total 100: %q bukan100 %v, %v", j.TotalShare, j.TotalBukan100, err)
 	}
 }

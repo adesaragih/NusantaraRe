@@ -153,6 +153,14 @@ func (l *Layanan) SimpanBusiness(ctx context.Context, p inti.Pelaku, kontrakID s
 		if err := l.periksaRate(ctx, b.RIRateID, !ubah || b.RIRateID != rateLama); err != nil {
 			return err
 		}
+		// ⛔ Satu Business Name sekali per kontrak (keputusan work owner 04-10-2026).
+		saudara, err := l.gudang.DaftarBusiness(ctx, tx, k.IDTreatyYear, k.ID)
+		if err != nil {
+			return err
+		}
+		if models.BusinessGanda(saudara, m.ID, b.BizCode) {
+			return fmt.Errorf("%w: %s", ErrMasukanTidakSah, fmt.Sprintf(PesanBusinessGanda, b.BizName))
+		}
 		salinanInduk(&b, k, th)
 		b.UserID = p.AkunID
 		if !ubah {
@@ -196,9 +204,19 @@ func (l *Layanan) sasaranSalin(ctx context.Context, tx *db.Tx, businessID string
 	}
 	p := PratinjauSalin{Business: b, ReinsTypeID: b.ReinsTypeID, Sasaran: []models.Kontrak{}}
 	for _, k := range semua {
-		if k.ReinsTypeID != b.ReinsTypeID {
-			p.Sasaran = append(p.Sasaran, k)
+		if k.ReinsTypeID == b.ReinsTypeID {
+			continue
 		}
+		// ⛔ Kontrak yang SUDAH punya business ini dilewati - salinan tidak boleh
+		// menciptakan Business Name ganda (keputusan work owner 04-10-2026).
+		isi, err := l.gudang.DaftarBusiness(ctx, tx, k.IDTreatyYear, k.ID)
+		if err != nil {
+			return PratinjauSalin{}, err
+		}
+		if models.BusinessGanda(isi, "", b.BizCode) {
+			continue
+		}
+		p.Sasaran = append(p.Sasaran, k)
 	}
 	return p, nil
 }

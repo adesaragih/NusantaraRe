@@ -26,7 +26,7 @@ func TestEmpatTanggalTidakWajibTetapiDiperiksaBentuknya(t *testing.T) {
 	opsional := []string{"STNC", "START_DATE", "EFFECTIVE_DATE",
 		"RETROCESSION_VALUATION_BEGIN_DATE", "RETROCESSION_VALUATION_EXPIRED_DATE"}
 	for _, k := range opsional {
-		if slices.Contains(KolomWajibUnggah(), k) {
+		if slices.Contains(kolomWajibQR(), k) {
 			t.Errorf("%s masih kolom judul wajib", k)
 		}
 	}
@@ -34,11 +34,11 @@ func TestEmpatTanggalTidakWajibTetapiDiperiksaBentuknya(t *testing.T) {
 	for _, k := range opsional {
 		delete(b.Nilai, k)
 	}
-	if h := ValidasiUnggah([]BarisUnggah{b}); !h.Lolos() {
+	if h := validasiQR([]BarisUnggah{b}); !h.Lolos() {
 		t.Errorf("baris tanpa empat tanggal opsional ditolak: %+v", h.Ditolak)
 	}
 	b.Nilai["EFFECTIVE_DATE"] = "2026-01-01"
-	h := ValidasiUnggah([]BarisUnggah{b})
+	h := validasiQR([]BarisUnggah{b})
 	if len(h.Ditolak) != 1 || h.Ditolak[0].Kolom != "EFFECTIVE_DATE" {
 		t.Errorf("tanggal opsional berbentuk salah tidak ditolak tepat: %+v", h.Ditolak)
 	}

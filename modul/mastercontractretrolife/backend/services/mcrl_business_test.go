@@ -176,3 +176,32 @@ func TestSalinSemuaGagalDiTengahTidakAdaYangLahir(t *testing.T) {
 		t.Errorf("gagal di tengah: %v, %d business (mau 1 - atomik, R4)", err, len(g.Business))
 	}
 }
+
+// Satu Business Name sekali per kontrak (04-10-2026): simpan ganda ditolak.
+func TestBusinessGandaDalamKontrakDitolak(t *testing.T) {
+	g := gudangSalinSemua() // UJI-K1 sudah punya UJI-B01 (UJI-BZ)
+	_, err := layananUji(g).SimpanBusiness(context.Background(), pelaku, "UJI-K1", businessLengkap())
+	if !errors.Is(err, services.ErrMasukanTidakSah) || !strings.Contains(err.Error(), "is already in this business list") {
+		t.Errorf("business ganda: galat %v", err)
+	}
+	// Mengubah business itu sendiri tanpa mengganti namanya tetap boleh.
+	m := businessLengkap()
+	m.ID = "UJI-BZ"
+	if _, err := layananUji(g).SimpanBusiness(context.Background(), pelaku, "UJI-K1", m); err != nil {
+		t.Errorf("ubah tanpa ganti nama ditolak: %v", err)
+	}
+}
+
+// Copy to all Reinstype melewati kontrak yang SUDAH punya business itu.
+func TestSalinSemuaMelewatiKontrakYangSudahPunya(t *testing.T) {
+	g := gudangSalinSemua()
+	g.Business["UJI-BZ2"] = models.Business{ID: "UJI-BZ2", TreatyYearID: "UJI-T1", TreatyContractID: "UJI-K2",
+		ReinsTypeID: "10197", BizCode: "UJI-B01", BizName: "UJI BUSINESS SATU"}
+	p, err := layananUji(g).PratinjauSalinSemua(context.Background(), pelaku, "UJI-BZ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Sasaran) != 1 || p.Sasaran[0].ID != "UJI-K3" {
+		t.Errorf("sasaran %v, mau hanya UJI-K3 (UJI-K2 sudah punya UJI-B01)", p.Sasaran)
+	}
+}

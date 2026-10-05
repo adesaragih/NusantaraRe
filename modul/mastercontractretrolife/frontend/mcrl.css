@@ -30,6 +30,11 @@
   font-weight: 600;
 }
 
+/* Tombol yang didorong ke ujung KANAN baris tombol (`View Rate` form Business, 04-10-2026). */
+.mcrl .mcrl-aksi-kanan {
+  margin-left: auto;
+}
+
 /* Baris tombol `Add` + `pyGridPaginator` di atas grid. */
 .mcrl .mcrl-aksi-grid {
   display: flex;

@@ -29,13 +29,13 @@ describe('sel', () => {
     expect(sel('UJI-1')).toBe('UJI-1')
   })
 
-  it('tanggal YYYY-MM-DD → DD-MM-YYYY', () => {
-    expect(selTanggal('2026-01-31')).toBe('31-01-2026')
+  it('tanggal YYYY-MM-DD → DD/MM/YYYY', () => {
+    expect(selTanggal('2026-01-31')).toBe('31/01/2026')
     expect(selTanggal('')).toBe('—')
   })
 
-  it('waktu YYYY-MM-DD HH:MM:SS → DD-MM-YYYY HH:MM:SS', () => {
-    expect(selWaktu('2026-09-30 10:05:07')).toBe('30-09-2026 10:05:07')
+  it('waktu YYYY-MM-DD HH:MM:SS → DD/MM/YYYY HH:MM:SS', () => {
+    expect(selWaktu('2026-09-30 10:05:07')).toBe('30/09/2026 10:05:07')
     expect(selWaktu('')).toBe('—')
   })
 

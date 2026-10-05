@@ -5,15 +5,19 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { Gagal, Halaman, Kosong, Memuat, UKURAN_HALAMAN } from '../../../../inti/frontend/components/ui/dasar'
+import { useBolehUbah } from '../../../../inti/frontend/lib/hakMenu'
 import { ambilDaftar, ambilPilihan, type Account, type GroupBusiness, type HalamanDaftar } from '../api'
 import { atauStrip } from '../aturan'
 import FormAccount from '../components/FormAccount'
 import { ACC } from '../labels'
+import { NAMA_ACC } from '../menu'
 
 /** Jeda ketik sebelum server ditanya. */
 const JEDA_MS = 300
 
 export default function Accounts() {
+  // Menu View only (M_LOGIN_GO_MENU.HAK, 04-10-2026): tanpa tombol Add; backend juga menolak tulisnya.
+  const bolehUbah = useBolehUbah(NAMA_ACC)
   const [kata, setKata] = useState('')
   const [cari, setCari] = useState('')
   const [halaman, setHalaman] = useState(1)
@@ -85,16 +89,18 @@ export default function Accounts() {
           }}
         />
         <span className="toolbar__spacer" />
-        <button
-          type="button"
-          className="btn btn--primary"
-          onClick={() => {
-            setPesan(null)
-            setFormBuka(true)
-          }}
-        >
-          {ACC.tambah}
-        </button>
+        {bolehUbah && (
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={() => {
+              setPesan(null)
+              setFormBuka(true)
+            }}
+          >
+            {ACC.tambah}
+          </button>
+        )}
       </div>
 
       {pesan !== null && (

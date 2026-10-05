@@ -1,0 +1,16 @@
+-- 322 - T_POLIS_CEDING <- QuotationData.CedingCoList (ID-24; tiket 19 AC 28-30).
+-- Anak T_POLIS_QUOTATION lewat QUOTATION_ID = POLIS_ID quotation (diagram O39);
+-- CEDING_CO_ID <- .CedingCo, CEDING_CO_NAME <- .CedingCoName (diagram R43).
+-- NOURUT = nomor urut baris di dalam induknya, unik per induk (ID-11, AC 8, 10);
+-- kunci pasangan antar generasi, bukan kunci dagang (ID-13, AC 11).
+CREATE TABLE {skema}.T_POLIS_CEDING (
+  ID              VARCHAR2(32) NOT NULL,
+  QUOTATION_ID    VARCHAR2(32) NOT NULL,
+  NOURUT          NUMBER(5) NOT NULL,
+  CEDING_CO_ID    VARCHAR2(64),
+  CEDING_CO_NAME  VARCHAR2(255),
+  CONSTRAINT PK_POLIS_CEDING PRIMARY KEY (ID),
+  CONSTRAINT FK_POLIS_CEDING_QUOTATION FOREIGN KEY (QUOTATION_ID) REFERENCES {skema}.T_POLIS_QUOTATION (POLIS_ID),
+  CONSTRAINT UQ_POLIS_CEDING_NOURUT UNIQUE (QUOTATION_ID, NOURUT)
+)
+/

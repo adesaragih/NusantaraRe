@@ -8,6 +8,7 @@ package services_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/cockroachdb/apd/v3"
@@ -126,22 +127,40 @@ func TestReinsurerUbahTetapDiKontraknya(t *testing.T) {
 }
 
 // ⛔ Total share TIDAK memblokir (tiket 05 AC, `[keputusan work owner]`).
-func TestTotalShareDijumlahDanTidakMemblokir(t *testing.T) {
+// Total share kontrak TIDAK BOLEH melebihi 100 (keputusan work owner
+// 04-10-2026; dulu hanya diperingatkan). Di bawah 100 tetap boleh, dengan
+// peringatan `TotalBukan100`; tepat 100 tanpa peringatan.
+func TestTotalShareTidakBolehLebih100(t *testing.T) {
 	g := gudangReinsurer()
 	l := layananUji(g)
-	for _, share := range []string{"60", "50"} {
-		m := reinsurerLengkap()
-		m.PctShare = share
-		if _, err := l.SimpanReinsurer(context.Background(), pelaku, "UJI-K1", m); err != nil {
-			t.Fatalf("share %s: %v (total > 100 tidak boleh memblokir)", share, err)
-		}
-	}
-	j, err := l.DaftarReinsurer(context.Background(), pelaku, "UJI-K1")
+	m := reinsurerLengkap()
+	m.PctShare = "60"
+	r1, err := l.SimpanReinsurer(context.Background(), pelaku, "UJI-K1", m)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if j.TotalShare != "110" || !j.TotalBukan100 {
-		t.Errorf("total %q bukan100 %v, mau 110 / true", j.TotalShare, j.TotalBukan100)
+	j, err := l.DaftarReinsurer(context.Background(), pelaku, "UJI-K1")
+	if err != nil || j.TotalShare != "60" || !j.TotalBukan100 {
+		t.Errorf("total 60: %q bukan100 %v, %v", j.TotalShare, j.TotalBukan100, err)
+	}
+	dua := reinsurerLengkap()
+	dua.ReinsurerID, dua.ReinsurerName, dua.PctShare = "UJI-L02", "UJI REASURANSI DUA", "50"
+	if _, err := l.SimpanReinsurer(context.Background(), pelaku, "UJI-K1", dua); !errors.Is(err, services.ErrMasukanTidakSah) ||
+		!strings.Contains(err.Error(), "cannot be more than 100%") {
+		t.Errorf("60 + 50: galat %v, mau ditolak", err)
+	}
+	dua.PctShare = "40"
+	if _, err := l.SimpanReinsurer(context.Background(), pelaku, "UJI-K1", dua); err != nil {
+		t.Fatalf("60 + 40 = 100 ditolak: %v", err)
+	}
+	j, err = l.DaftarReinsurer(context.Background(), pelaku, "UJI-K1")
+	if err != nil || j.TotalShare != "100" || j.TotalBukan100 {
+		t.Errorf("total 100: %q bukan100 %v, %v", j.TotalShare, j.TotalBukan100, err)
+	}
+	// Mengubah baris yang ada memakai nilai BARUNYA: 60 -> 70 membuat 110, ditolak.
+	m.ID, m.PctShare = r1.ID, "70"
+	if _, err := l.SimpanReinsurer(context.Background(), pelaku, "UJI-K1", m); !errors.Is(err, services.ErrMasukanTidakSah) {
+		t.Errorf("ubah 60 -> 70 (total 110): galat %v, mau ditolak", err)
 	}
 }
 
@@ -170,5 +189,23 @@ func TestLaporanTotalShareBukan100(t *testing.T) {
 	d, _ = layananUji(g).LaporanTotalShareBukan100(context.Background(), pelaku, "UJI-TAHUN-LAIN")
 	if len(d) != 0 {
 		t.Errorf("saringan tahun: %v", d)
+	}
+}
+
+// Satu Reinsurer Name sekali per kontrak (04-10-2026).
+func TestReinsurerGandaDalamKontrakDitolak(t *testing.T) {
+	l := layananUji(gudangReinsurer())
+	r, err := l.SimpanReinsurer(context.Background(), pelaku, "UJI-K1", reinsurerLengkap())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := l.SimpanReinsurer(context.Background(), pelaku, "UJI-K1", reinsurerLengkap()); !errors.Is(err, services.ErrMasukanTidakSah) ||
+		!strings.Contains(err.Error(), "is already in this reinsurer list") {
+		t.Errorf("reinsurer ganda: galat %v", err)
+	}
+	m := reinsurerLengkap()
+	m.ID, m.PctShare = r.ID, "45"
+	if _, err := l.SimpanReinsurer(context.Background(), pelaku, "UJI-K1", m); err != nil {
+		t.Errorf("ubah tanpa ganti nama ditolak: %v", err)
 	}
 }

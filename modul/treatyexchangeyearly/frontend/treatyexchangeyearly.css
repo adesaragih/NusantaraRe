@@ -1,0 +1,572 @@
+/* Gaya modul Treaty Exchange Yearly - SETIAP pemilih di bawah akar .treatyexchangeyearly (gaya.test.ts). Fondasi tema
+   (token terang/gelap, isian, tombol, tabel, kolom aksi menempel, tampilan View) disalin dari modul Bordereaux supaya
+   tampilannya seragam; nol pemilih global, nol properti yang memerangkap Modal. */
+
+.treatyexchangeyearly {
+  display: contents;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__akar {
+  --tey-latar: #eef1f6;
+  --tey-seri-0: #4f46e5;
+  --tey-seri-1: #0d9488;
+  --tey-seri-2: #f59e0b;
+  --tey-seri-3: #64748b;
+  --tey-lintasan: #e8ecf4;
+  --tey-latar-tepi: #cfd7e5;
+  --tey-latar-atas: #f9fafd;
+  --tey-latar-bawah: #e4e9f3;
+  --tey-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --tey-lembut: #e9edf3;
+  --tey-lembut-tepi: #dde3ec;
+  --tey-teks: #101828;
+  --tey-teks-redup: #4f586b;
+  --tey-aksen: var(--primary-tanda);
+  --tey-aksen-teks: #2339a3;
+  --tey-aksen-lembut: #e3e8f6;
+  --tey-aksen-garis: #b9c5ee;
+  --tey-kepala-tabel: #dde4f2;
+  --tey-kepala-teks: #22326b;
+  --tey-kepala-garis: #c3cde2;
+  --tey-isi: #ffffff;
+  --tey-baris-hover: #e6ecfa;
+  --tey-garis: #e1e6ef;
+  --tey-tepi: #c8d1e1;
+  --tey-tombol: #d63a42;
+  --tey-tombol-ujung: #bf2f37;
+  --tey-tombol-hover: #c2333b;
+  --tey-tombol-hover-ujung: #a9282f;
+  --tey-terang: rgba(255, 255, 255, 0.92);
+  --tey-gelap: rgba(163, 177, 198, 0.55);
+  --tey-kilau: rgba(255, 255, 255, 0.7);
+  --tey-timbul: 8px 8px 18px var(--tey-gelap), -8px -8px 18px var(--tey-terang);
+  --tey-timbul-kecil: 4px 4px 9px var(--tey-gelap), -4px -4px 9px var(--tey-terang);
+  --tey-cekung-kecil: inset 2px 2px 4px var(--tey-gelap), inset -2px -2px 4px var(--tey-terang);
+  --tey-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --tey-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--tey-terang);
+  --tey-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --tey-sukses-latar: #e6f7ee;
+  --tey-sukses-tepi: #b7e8cc;
+  --tey-sukses-teks: #067647;
+  --tey-netral-latar: #e9edf3;
+  --tey-netral-tepi: #d5dce7;
+  --tey-netral-teks: #475467;
+  --tey-waspada-latar: #fbf3df;
+  --tey-waspada-tepi: #f1d58a;
+  --tey-waspada-teks: #a3410a;
+  --text-3: var(--tey-teks-redup);
+  color: var(--tey-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--tey-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--tey-latar-atas) 0%, var(--tey-latar-bawah) 100%);
+  box-shadow: var(--tey-bayang-akar);
+}
+
+:root[data-theme="dark"] .treatyexchangeyearly .treatyexchangeyearly__akar {
+  --tey-latar: #1b2130;
+  --tey-seri-0: #818cf8;
+  --tey-seri-1: #2dd4bf;
+  --tey-seri-2: #fbbf24;
+  --tey-seri-3: #94a3b8;
+  --tey-lintasan: #252d40;
+  --tey-latar-tepi: #323b50;
+  --tey-latar-atas: #222a3b;
+  --tey-latar-bawah: #161b27;
+  --tey-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --tey-lembut: #181d2a;
+  --tey-lembut-tepi: #242b3a;
+  --tey-teks: #eef0f6;
+  --tey-teks-redup: #aab2c4;
+  --tey-aksen-teks: #aebcff;
+  --tey-aksen-lembut: #222b45;
+  --tey-aksen-garis: #3a4b8f;
+  --tey-kepala-tabel: #273152;
+  --tey-kepala-teks: #dbe2ff;
+  --tey-kepala-garis: #3a4670;
+  --tey-isi: #1f2638;
+  --tey-baris-hover: #2b3554;
+  --tey-garis: #2c3447;
+  --tey-tepi: #3a4459;
+  --tey-terang: rgba(255, 255, 255, 0.045);
+  --tey-gelap: rgba(0, 0, 0, 0.55);
+  --tey-kilau: rgba(255, 255, 255, 0.04);
+  --tey-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --tey-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--tey-terang);
+  --tey-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --tey-sukses-latar: #0d2a1f;
+  --tey-sukses-tepi: #1d5c40;
+  --tey-sukses-teks: #75e0a7;
+  --tey-netral-latar: #1f2533;
+  --tey-netral-tepi: #333c4f;
+  --tey-netral-teks: #c3cad8;
+  --tey-waspada-latar: #2b2112;
+  --tey-waspada-tepi: #6b4d17;
+  --tey-waspada-teks: #fec84b;
+}
+
+/* Judul dan teks redup. */
+.treatyexchangeyearly .inbox__judul,
+.treatyexchangeyearly .modal__title {
+  color: var(--tey-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.treatyexchangeyearly .muted {
+  color: var(--tey-teks-redup);
+}
+
+.treatyexchangeyearly :focus-visible {
+  outline: 2px solid var(--tey-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.treatyexchangeyearly .field__input {
+  background: var(--tey-isi);
+  border: 1px solid var(--tey-tepi);
+  border-radius: 12px;
+  box-shadow: var(--tey-cekung-kecil);
+  color: var(--tey-teks);
+}
+
+.treatyexchangeyearly .field__input:hover:not(:disabled) {
+  border-color: var(--tey-aksen-garis);
+}
+
+.treatyexchangeyearly .field__input:focus {
+  border-color: var(--tey-aksen);
+  box-shadow: var(--tey-cekung-kecil), var(--tey-cincin);
+  outline: none;
+}
+
+.treatyexchangeyearly .field__input--readonly,
+.treatyexchangeyearly .field__input--readonly:hover {
+  background: var(--tey-lembut);
+  border-color: var(--tey-lembut-tepi);
+  color: var(--tey-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.treatyexchangeyearly .btn {
+  border-radius: 999px;
+}
+
+.treatyexchangeyearly .btn--primary {
+  background: linear-gradient(180deg, var(--tey-tombol), var(--tey-tombol-ujung));
+  border-color: var(--tey-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--tey-bayang-tombol);
+}
+
+.treatyexchangeyearly .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--tey-tombol-hover), var(--tey-tombol-hover-ujung));
+  border-color: var(--tey-tombol-hover-ujung);
+}
+
+.treatyexchangeyearly .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.treatyexchangeyearly .btn--ghost {
+  background: var(--tey-isi);
+  border: 1px solid var(--tey-tepi);
+  color: var(--tey-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--tey-timbul-kecil);
+}
+
+.treatyexchangeyearly .btn--ghost:hover:not(:disabled) {
+  background: var(--tey-aksen-lembut);
+  border-color: var(--tey-aksen-garis);
+  color: var(--tey-aksen-teks);
+}
+
+.treatyexchangeyearly .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--tey-cekung-kecil);
+}
+
+.treatyexchangeyearly .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.treatyexchangeyearly .modal {
+  background: var(--tey-latar);
+  border: 1px solid var(--tey-kilau);
+  border-radius: 22px;
+  box-shadow: var(--tey-bayang-popup);
+}
+
+.treatyexchangeyearly .modal__head,
+.treatyexchangeyearly .modal__actions {
+  border-color: var(--tey-garis);
+}
+
+.treatyexchangeyearly .alert {
+  border-radius: 12px;
+}
+
+/* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
+.treatyexchangeyearly .treatyexchangeyearly__tabel {
+  background: var(--tey-isi);
+  border: 1px solid var(--tey-tepi);
+  border-radius: 18px;
+  box-shadow: var(--tey-timbul);
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__tabel thead th {
+  background: var(--tey-kepala-tabel);
+  color: var(--tey-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--tey-kepala-garis);
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__tabel td {
+  color: var(--tey-teks);
+  background: var(--tey-isi);
+  border-bottom-color: var(--tey-garis);
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__tabel tbody tr:nth-child(even),
+.treatyexchangeyearly .treatyexchangeyearly__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__tabel tbody tr:nth-child(even) > td {
+  background: var(--tey-lembut);
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__tabel tbody tr:hover > td {
+  background: var(--tey-baris-hover);
+}
+
+/* Tombol aksi SEBARIS ke samping (permintaan work owner 03-10-2026 "buat ke samping aja"): tidak turun ke bawah;
+   tabel yang lebih lebar dari layar menggulir di dalam akar. */
+.treatyexchangeyearly .treatyexchangeyearly__aksi {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__tabel td.table__actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__hapus {
+  color: var(--tey-tombol);
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__halaman {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  white-space: nowrap;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__badge {
+  margin-left: 10px;
+  background: var(--tey-aksen-lembut);
+  color: var(--tey-aksen-teks);
+}
+
+/* Kartu: form header, tab, riwayat. */
+.treatyexchangeyearly .treatyexchangeyearly__kartu {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--tey-isi);
+  border: 1px solid var(--tey-tepi);
+  border-radius: 18px;
+  box-shadow: var(--tey-timbul);
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__judul-kartu {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tey-teks);
+}
+
+/* View: nilai saja, kisi label di atas nilai. */
+.treatyexchangeyearly .treatyexchangeyearly__ringkas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 24px;
+  margin: 0;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__ringkas dt,
+.treatyexchangeyearly .treatyexchangeyearly__treaty-isi dt {
+  font-size: 12px;
+  color: var(--tey-teks-redup);
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__ringkas dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Kolom tombol baris MENEMPEL di kanan saat tabel digulir (pola Treaty Contract Out, permintaan work owner
+   04-10-2026 "tidak perlu scroll ke kanan buat aksesnya"). */
+.treatyexchangeyearly .treatyexchangeyearly__tabel th.table__actions,
+.treatyexchangeyearly .treatyexchangeyearly__tabel td.table__actions {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  box-shadow: -8px 0 10px -8px rgba(16, 24, 40, 0.25);
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__tabel {
+  width: max-content;
+  min-width: 100%;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__tabel th.table__actions,
+.treatyexchangeyearly .treatyexchangeyearly__tabel td.table__actions {
+  padding-right: 16px;
+  padding-left: 14px;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__tabel td {
+  white-space: nowrap;
+}
+
+/* Daftar menggulir di dalam kotaknya; kolom Action menempel di kanan. */
+.treatyexchangeyearly .treatyexchangeyearly__gulir {
+  overflow: auto;
+  max-height: 68vh;
+}
+
+/* Toolbar daftar: cari, saringan status, tombol Add. */
+.treatyexchangeyearly .treatyexchangeyearly__alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 12px;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__cari {
+  width: min(340px, 100%);
+}
+
+/* Saringan status Active / Inactive / All: tombol segmen. */
+.treatyexchangeyearly .treatyexchangeyearly__segmen {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--tey-tepi);
+  border-radius: 999px;
+  background: var(--tey-lembut);
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__segmen-butir {
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--tey-teks-redup);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__segmen-butir--aktif {
+  background: var(--tey-isi);
+  color: var(--tey-teks);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.14);
+}
+
+/* Status baris. */
+.treatyexchangeyearly .treatyexchangeyearly__status {
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid var(--tey-sukses-tepi);
+  border-radius: 999px;
+  background: var(--tey-sukses-latar);
+  color: var(--tey-sukses-teks);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__status--nonaktif {
+  border-color: var(--tey-netral-tepi);
+  background: var(--tey-netral-latar);
+  color: var(--tey-netral-teks);
+}
+
+/* Kolom Status: ruang di kanan supaya badge tidak tertutup kolom Action yang menempel. */
+.treatyexchangeyearly .treatyexchangeyearly__tabel .treatyexchangeyearly__kolom-status {
+  min-width: 96px;
+  padding-right: 22px;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__baris--nonaktif > td {
+  color: var(--tey-teks-redup);
+}
+
+/* Teks panjang (alamat) boleh turun baris di tabel. */
+.treatyexchangeyearly .treatyexchangeyearly__alamat {
+  min-width: 220px;
+  max-width: 360px;
+  white-space: normal;
+}
+
+/* Form Add / Edit di popup. */
+.treatyexchangeyearly .treatyexchangeyearly__form {
+  display: grid;
+  gap: 14px;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__form textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__catatan {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Saringan tahun treaty di toolbar daftar. */
+.treatyexchangeyearly .treatyexchangeyearly__saring {
+  width: min(200px, 100%);
+}
+
+/* Form: dua kolom (tahun / mata uang, tanggal, kurs) yang turun satu kolom di layar sempit. */
+.treatyexchangeyearly .treatyexchangeyearly__baris {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .treatyexchangeyearly .treatyexchangeyearly__baris {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* View (permintaan work owner 05-10-2026 "rapihin"): kepala mata uang + lencana, dua kartu berdampingan, jejak di kaki. */
+.treatyexchangeyearly .treatyexchangeyearly__lihat {
+  display: grid;
+  gap: 16px;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__lihat-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 1px solid var(--tey-aksen-garis);
+  border-radius: 16px;
+  background: var(--tey-aksen-lembut);
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__lihat-mata {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__lihat-kode {
+  margin: 0;
+  color: var(--tey-aksen-teks);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__lihat-nama {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__lencana {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px solid var(--tey-tepi);
+  border-radius: 999px;
+  background: var(--tey-isi);
+  color: var(--tey-teks);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__lihat-kartu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__lihat-kartu .treatyexchangeyearly__kartu {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .treatyexchangeyearly .treatyexchangeyearly__lihat-kartu {
+    grid-template-columns: 1fr;
+  }
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__pasangan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__pasangan dt {
+  color: var(--tey-teks-redup);
+  font-size: 12px;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__pasangan dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__nilai-besar {
+  font-size: 19px;
+}
+
+.treatyexchangeyearly .treatyexchangeyearly__jejak {
+  margin: 0;
+  font-size: 12px;
+}

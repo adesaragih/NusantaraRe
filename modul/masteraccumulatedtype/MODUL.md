@@ -21,11 +21,13 @@ inti 917.
 | GROUPMENU | `MASTER` |
 | Pemilik | `@PEMILIK-MASTERACCUMULATEDTYPE` |
 | Status | dimigrasi |
-| Rentang migrasi | `892-893` |
+| Rentang migrasi | — |
 | Slot menu | — |
 | Prefix rute API | `/api/master-accumulated-type` |
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |
+
+> Merge `origin/dev` 05-10-2026: `Rentang migrasi` `892-893` dilepas menjadi `—` (tanda modul tanpa migrasi sendiri, `tandaTanpaMigrasi`) - modul ini tidak punya satu pun berkas migrasi, dan nomor 880-899 sudah dipakai `aggregate` / `bordereaux` dari GitHub. Bila kelak butuh migrasi, minta jatah baru ke tim inti.
 
 ## Isi folder
 

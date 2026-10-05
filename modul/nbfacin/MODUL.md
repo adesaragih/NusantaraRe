@@ -70,7 +70,6 @@ kepemilikan tabel berpindah — keputusan work owner.
 | `M_LIMIT_NONPROPANDENGG` | tabel limit akseptasi warisan POOLDATA; NB hanya MEMBACA empat kolom (tiket 20) |
 | `M_LIMIT_FINANCIALINS` | tabel limit akseptasi bentuk B warisan POOLDATA; NB hanya MEMBACA empat kolom (tiket 20) |
 | `BUSINESS` | tabel bisnis warisan POOLDATA; NB hanya MEMBACA tiga kolom untuk pilihan Class Of Business (tiket 28) dan kode bisnis Table of Limit (tiket 40) |
-| `AGENT` | tabel agent warisan POOLDATA; NB hanya MEMBACA lima kolom untuk popup Change SOB (tiket 33) |
 | `RISKADDRESS` | tabel alamat risiko warisan POOLDATA; NB MEMBACA sembilan kolom (popup Choose Risk Address, tiket 36) dan MENYISIPKAN alamat baru (popup Add, tiket 37; tidak membuat tabel) |
 | `RW` | tabel kode pos/RW warisan POOLDATA; NB hanya MEMBACA (JOIN tiket 36, saran Zip Code tiket 37, popup akumulasi tiket 46) |
 | `CITY` | view kota warisan POOLDATA; NB hanya MEMBACA tiga kolom untuk saran City popup akumulasi (tiket 46) |
@@ -79,10 +78,11 @@ kepemilikan tabel berpindah — keputusan work owner.
 | `OCCUPATION` | tabel okupasi warisan POOLDATA; NB hanya MEMBACA empat kolom untuk saran Occupation Surrounding Risk (tiket 38) dan popup Choose Occupation (tiket 40) |
 | `V_JN_OBJ_ITEM` | view jenis item objek warisan POOLDATA; NB hanya MEMBACA empat kolom untuk pilihan Object Item Type (tiket 39) |
 | `TABLEOFLIMIT` | tabel batas okupasi warisan POOLDATA; NB hanya MEMBACA lima kolom untuk popup Choose Class of Construction (tiket 40; TAHUN tidak disaring, A161) |
-| `CURRENCY` | tabel mata uang warisan POOLDATA; NB hanya MEMBACA kolom CURRENCY untuk pilihan dan pemeriksaan mata uang item (tiket 39) |
 | `COVERAGE` | tabel coverage warisan POOLDATA; NB hanya MEMBACA enam kolom untuk popup Choose Coverage (butir 96) dan lima coverage otomatis AddCoverageAutoFire (tiket 43) |
 
 Dicabut 04-10-2026 saat merge `origin/dev` (perintah work owner: "ikuti yang dari github, kalau bentrok dengan kerjaan
 saya disesuaikan"); NB tetap hanya MEMBACA keduanya: `T_M_ACCOUNT` - kini diubah migrasi modul `accounts` (840-842),
 jadi bukan lagi "tidak dibuat migrasi mana pun"; `MARKETINGOFFICER` - kini dinyatakan modul `marketingofficer` (satu
-tabel warisan hanya boleh dinyatakan satu modul).
+tabel warisan hanya boleh dinyatakan satu modul). Merge `origin/dev` 05-10-2026: `AGENT` ikut dicabut - kini dinyatakan modul `bordereaux`
+(Cedant, popup Choose Master Treaty); NB tetap hanya MEMBACA lima kolomnya untuk popup Change SOB (tiket 33). `CURRENCY` juga dicabut - kini dinyatakan modul
+`treatyexchangeyearly`; NB tetap hanya MEMBACA kolom CURRENCY untuk pilihan dan pemeriksaan mata uang item (tiket 39).

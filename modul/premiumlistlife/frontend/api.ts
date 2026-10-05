@@ -88,6 +88,13 @@ export interface AkibatKeputusanPolis {
   tahapTujuan: string
   /** Terisi bila kasus DITUTUP. */
   statusWork: string
+  /**
+   * PL Number yang terbit (Confirm di Input Premium Detail); kosong selain itu.
+   * Layar menampilkannya sebelum kembali ke kotak masuk (03-10-2026).
+   */
+  plNumber?: string
+  /** WPC `YYYY-MM-DD` yang dihitung bersama PL Number (03-10-2026). */
+  wpc?: string
 }
 
 /**
@@ -205,6 +212,11 @@ export interface HalamanPesertaPolis {
    * sebagai angka di bawah judul kolom yang salah.
    */
   kolom: string[]
+  /**
+   * Kolom ber-jenis ANGKA (dari server) — diberi pemisah ribuan (03-10-2026).
+   * Opsional: server lama tidak mengirimnya, dan tanpa itu tidak ada pemisah.
+   */
+  kolomAngka?: string[]
   baris: BarisPesertaPolis[]
   total: number
   halaman: number
@@ -605,15 +617,19 @@ export interface DataPolis {
   dateReceived: string | null
   /** Dibaca saja (WPCLife_Act belum dibawa). */
   wpc: string | null
-  /** Pesan SavePremiumList_Act langkah 9 sesudah Save Data (data tetap tersimpan). */
-  peringatan: string[] | null
+  /**
+   * true sesudah Save Data yang mengganti Type / Product Name: rekap summary dihapus server dan
+   * Calculate CSV wajib dijalankan ulang sebelum Confirm (keputusan work owner
+   * 05-10-2026). Selalu false saat membaca.
+   */
+  rekapDihapus?: boolean
   pilihan: { type: PilihanKode[]; proRateType: PilihanKode[] }
 }
 
 /** Badan `PUT .../data-polis`. */
 export type IsiDataPolis = Omit<
   DataPolis,
-  'caseId' | 'tahap' | 'bolehDisimpan' | 'wpc' | 'peringatan' | 'pilihan' | 'dateReceived'
+  'caseId' | 'tahap' | 'bolehDisimpan' | 'wpc' | 'rekapDihapus' | 'pilihan' | 'dateReceived'
 > & {
   /** `YYYY-MM-DD` (masukan `type="date"`); kosong = belum diisi. */
   dateReceived: string
@@ -670,6 +686,76 @@ export async function cariRISlipPolis(cari: string): Promise<BarisRujukanPolis[]
 
 /** Data polis → badan simpan. */
 export function isiDariDataPolis(d: DataPolis): IsiDataPolis {
-  const { caseId: _c, tahap: _t, bolehDisimpan: _b, wpc: _w, peringatan: _r, pilihan: _p, ...isi } = d
+  const { caseId: _c, tahap: _t, bolehDisimpan: _b, wpc: _w, rekapDihapus: _r, pilihan: _p, ...isi } = d
   return { ...isi, dateReceived: tanggalMasukan(d.dateReceived) }
+}
+
+/** Satu medan isi Product Name; `jenis` menentukan cara tampil. */
+export interface MedanRincianProduk {
+  label: string
+  /** Teks dari server: angka bertitik desimal, tanggal `YYYY-MM-DD`. */
+  nilai: string
+  jenis: 'teks' | 'angka' | 'tanggal'
+}
+
+/** Isi satu Product Name - tabel Master Product Name Life (05-10-2026). */
+export interface RincianProduk {
+  bagian: { judul: string; medan: MedanRincianProduk[] }[]
+  grid: {
+    judul: string
+    kolom: { label: string; jenis: MedanRincianProduk['jenis'] }[]
+    baris: string[][]
+    /** Kolom tersembunyi per baris - PLAN LIST: RIRATEID (View Rate). */
+    kunci?: string[]
+  }[]
+  /** Kunci View R/I Risk (`RIRISK_LIFE.IDUSEDBY`); kosong = produk tanpa R/I Risk. */
+  riRiskId?: string
+}
+
+/** Satu baris rate - view `RATE_LIFE` (dialog View Rate Master Product Name Life). */
+export interface BarisRateProduk {
+  id: string
+  usedBy: string
+  gender: string
+  contract: string
+  age: string
+  rate: string
+}
+
+/** Isi satu R/I Rate; `terpotong` = lebih dari 500 baris, sisanya tidak dibawa. */
+export interface RateProduk {
+  baris: BarisRateProduk[]
+  terpotong: boolean
+}
+
+/** Satu baris R/I Risk - view `RIRISK_LIFE`. */
+export interface BarisRiskProduk {
+  id: string
+  usedBy: string
+  age: string
+  year: string
+  month: string
+  risk: string
+  contract: string
+}
+
+/** Isi satu R/I Risk; `terpotong` = lebih dari 500 baris, sisanya tidak dibawa. */
+export interface RiskProduk {
+  baris: BarisRiskProduk[]
+  terpotong: boolean
+}
+
+/** View R/I Risk di popup Product Name (05-10-2026) - baca-saja. */
+export async function ambilRiskProduk(riRiskId: string): Promise<RiskProduk> {
+  return minta<RiskProduk>('/api/polis-life/risk-produk', { kueri: { id: riRiskId } })
+}
+
+/** View Rate baris PLAN LIST di popup Product Name (05-10-2026) - baca-saja. */
+export async function ambilRateProduk(riRateId: string): Promise<RateProduk> {
+  return minta<RateProduk>('/api/polis-life/rate-produk', { kueri: { id: riRateId } })
+}
+
+/** Tombol View di samping Product Name - baca-saja. */
+export async function ambilRincianProduk(id: string): Promise<RincianProduk> {
+  return minta<RincianProduk>('/api/polis-life/rincian-produk', { kueri: { id } })
 }

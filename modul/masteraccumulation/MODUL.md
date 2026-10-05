@@ -21,11 +21,13 @@ inti 918.
 | GROUPMENU | `MASTER` |
 | Pemilik | `@PEMILIK-MASTERACCUMULATION` |
 | Status | dimigrasi |
-| Rentang migrasi | `894-895` |
+| Rentang migrasi | — |
 | Slot menu | — |
 | Prefix rute API | `/api/master-accumulation` |
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |
+
+> Merge `origin/dev` 05-10-2026: `Rentang migrasi` `894-895` dilepas menjadi `—` (tanda modul tanpa migrasi sendiri, `tandaTanpaMigrasi`) - modul ini tidak punya satu pun berkas migrasi, dan nomor 880-899 sudah dipakai `aggregate` / `bordereaux` dari GitHub. Bila kelak butuh migrasi, minta jatah baru ke tim inti.
 
 ## Isi folder
 

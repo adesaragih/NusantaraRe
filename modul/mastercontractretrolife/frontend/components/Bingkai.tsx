@@ -47,7 +47,7 @@ export function KepalaPanel({
   )
 }
 
-/** `pyGridPaginator` - 10 baris per halaman; tidak tampil untuk grid kosong. */
+/** `pyGridPaginator` - 10 baris per halaman. ⚠️ TIDAK DIPAKAI sejak 04-10-2026 (keputusan work owner: semua daftar modul ini tanpa paginasi). */
 export function Penomoran({ halaman, total, onPindah }: { halaman: number; total: number; onPindah: (h: number) => void }) {
   if (total === 0) return null
   return <Halaman halaman={halaman} ukuran={UKURAN_HALAMAN_MCRL} total={total} onPindah={onPindah} />

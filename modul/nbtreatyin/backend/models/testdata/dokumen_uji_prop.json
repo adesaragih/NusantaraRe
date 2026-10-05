@@ -1,0 +1,33 @@
+{
+ "pxObjClass": "ASM-FW-GISFW-Data-PolicyTreatyIn",
+ "PolicyNo": "UJI-QP.T1.10.2017.00001",
+ "NoOffer": "UJI-OFR-1",
+ "IsApproved": "1",
+ "PremiOgp": "592629512.880000276",
+ "StartDate": "20171001",
+ "EndDate": "",
+ "StatementDate": "20170930T170000.000 GMT",
+ "CedingCo": "UJI-C1; UJI-C2; ",
+ "CedingCoName": "UJI-CEDING A; UJI-CEDING B; ",
+ "Show": "true",
+ "TotalPremium": "592629512.880000276",
+ "UJIMedanFiktif": "UJI-nilai-lewat",
+ "QuotationData": {
+  "pxObjClass": "ASM-FW-GISFW-Data-Quotation",
+  "ProportionalType": "Proportional",
+  "GroupPanel": "006",
+  "BusinessOldId": "01",
+  "UJIFiktifQuotation": "",
+  "CedingCoList": [
+   {"pxObjClass": "UJI-kelas", "CedingCo": "UJI-C1", "CedingCoName": "UJI-CEDING A"},
+   {"CedingCo": "UJI-C2", "CedingCoName": "UJI-CEDING B"}
+  ]
+ },
+ "ListInstallment": [
+  {"pxObjClass": "UJI-kelas", "pxListSubscript": "1", "InstallmentNo": "1", "DueDate": "20171101", "Premium": "148157378.220000069"},
+  {"InstallmentNo": "2", "DueDate": "20171201", "Premium": "148157378.220000069"}
+ ],
+ "SpreadingRiskList": [
+  {"TreatyType": "UJI-10015", "SharePercentage": "100", "PremiumSpreaded": "592629512.880000276"}
+ ]
+}

@@ -17,7 +17,12 @@ describe('kartuModul', () => {
     // + Accounts, modul di luar korpus (migrasi inti 908, keputusan work owner 04-10-2026).
     // + delapan modul master (Nation … Object Item Type, migrasi inti 912-919, keputusan work owner 04-10-2026 "8 modul
     // terpisah"; Master Data 911 dipensiunkan 920).
-    expect(kartuModul()).toHaveLength(31)
+    // + Aggregate (911), Bordereaux (913), Adjuster Consultant (915, keputusan work owner 05-10-2026).
+    // + Treaty Group OJK (916), Treaty Group (917), Business Group (918, keputusan work owner 05-10-2026).
+    // + Treaty Exchange Yearly (919, MASTER TREATY, keputusan work owner 05-10-2026).
+    // + Treaty Description (920, MASTER TREATY, keputusan work owner 05-10-2026).
+    // + Reinsurance Type (921, MASTER TREATY, keputusan work owner 05-10-2026).
+    expect(kartuModul()).toHaveLength(40)
   })
 
   it('modul dimigrasi bertujuan, yang belum dimigrasi tanpa', () => {

@@ -2,7 +2,19 @@
 // (`backend/services`); yang di sini hanya mencegah kiriman yang pasti ditolak dan menyusun tampilan.
 
 import type { Opsi } from '../../../inti/frontend/components/ui/dasar'
-import type { Alamat, Detail, HasilSalinLama, Isian, Negara, OrgLama, PIC, Pilihan, StatusSalinLama, Telfax } from './api'
+import type {
+  Akun,
+  Alamat,
+  Detail,
+  HasilSalinLama,
+  Isian,
+  Negara,
+  OrgLama,
+  PIC,
+  Pilihan,
+  StatusSalinLama,
+  Telfax,
+} from './api'
 import { CD } from './labels'
 
 /** Isian Create: tanpa PIC dan alamat. */
@@ -107,6 +119,43 @@ export function opsiNegara(negara: Negara[], terpasang: string, namaTerpasang = 
     opsi.push({ value: terpasang, label: CD.nilaiLama(namaTerpasang === '' ? terpasang : namaTerpasang) })
   }
   return opsi
+}
+
+/**
+ * Opsi PIC Name: nama akun login aktif (perintah work owner 05-10-2026: "dropdown dari tabel login"). Nilainya NAMA
+ * (`CLIENT_PICLIST.NICKNAME` menyimpan nama); nama kembar tampil sekali. Nama PIC lama Pega yang bukan akun tetap
+ * terbaca sebagai nilai lama.
+ */
+export function opsiAkun(akun: Akun[], terpasang: string): Opsi[] {
+  const opsi: Opsi[] = []
+  for (const a of akun) {
+    if (!opsi.some((o) => o.value === a.nama)) opsi.push({ value: a.nama, label: a.nama })
+  }
+  if (terpasang !== '' && !opsi.some((o) => o.value === terpasang)) {
+    opsi.push({ value: terpasang, label: CD.nilaiLama(terpasang) })
+  }
+  return opsi
+}
+
+/** JOB_POSITION akun bernama `nama` (PIC Position, perintah work owner 05-10-2026); `undefined` = bukan akun login. */
+export function jabatanAkun(akun: Akun[], nama: string): string | undefined {
+  return akun.find((a) => a.nama === nama)?.jabatan
+}
+
+/** Nilai opsi "Others" kode area - bukan kode sungguhan, tidak pernah dikirim. */
+export const KODE_LAIN = '__lain__'
+
+/**
+ * Opsi kode area: kodehp aktif (dan nilai lama yang terpasang) + "Others" untuk kode yang diisi sendiri (perintah
+ * work owner 05-10-2026: "tambahin others, bisa isi sendiri").
+ */
+export function opsiKodeArea(kode: Pilihan[], terpasang: string): Opsi[] {
+  return [...opsiDari(kode, terpasang, true), { value: KODE_LAIN, label: CD.lainnya }]
+}
+
+/** Kode area terpasang yang tidak ada di daftar kodehp = "Others" yang diisi sendiri. */
+export function kodeAreaLain(kode: Pilihan[], terpasang: string): boolean {
+  return terpasang !== '' && !kode.some((p) => p.kode === terpasang)
 }
 
 /** Label sebuah kode di daftar pilihan; kode tak dikenal dikembalikan apa adanya. */

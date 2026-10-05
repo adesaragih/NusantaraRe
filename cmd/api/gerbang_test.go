@@ -31,7 +31,7 @@ func muxGerbang(t *testing.T, stub bool) http.Handler {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return rakitMux(inti.NewDasar(nil), terdaftar, aktif, stub, rakitLogin(inti.NewDasar(nil), config.Config{}))
+	return rakitMux(inti.NewDasar(nil), terdaftar, aktif, stub, rakitLogin(inti.NewDasar(nil), config.Config{}), daftar.HakLihat())
 }
 
 // kodeDengan - kode jawaban satu permintaan GET; `menu` nil = tanpa sesi.
