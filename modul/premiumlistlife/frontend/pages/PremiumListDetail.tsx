@@ -25,6 +25,7 @@ import {
   DETAIL_POLIS,
   JUDUL_KOLOM_PESERTA,
   KOLOM_PALING_KANAN,
+  KOLOM_SELALU_TAMPIL,
   LABEL_TAB_PESERTA,
   TAB_PESERTA,
   URUTAN_KOLOM_PESERTA,
@@ -71,7 +72,8 @@ export function kolomBerisi(
   kolom: readonly string[],
   baris: readonly { nilai: Record<string, string | undefined> }[],
 ): string[] {
-  return kolom.filter((k) => baris.some((b) => adaIsi(b.nilai[k])))
+  // KOLOM_SELALU_TAMPIL tetap tampil walau kosong (05-10-2026).
+  return kolom.filter((k) => KOLOM_SELALU_TAMPIL.includes(k) || baris.some((b) => adaIsi(b.nilai[k])))
 }
 
 /**
@@ -133,8 +135,9 @@ export default function PremiumListDetail({
   const [hal, setHal] = useState<HalamanPesertaPolis | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(true)
-  // Naik setiap Save Data / Save peserta CSV berhasil: panel Summary dibaca ulang
-  // (rekapnya dihitung server saat itu - keputusan work owner 03-10-2026).
+  // Naik setiap Save Data / Calculate CSV berhasil: panel Summary dibaca ulang.
+  // Calculate CSV menghitung rekap; Save Data yang mengganti Type MENGHAPUSNYA
+  // (keputusan work owner 05-10-2026) - panel lalu menyatakan summary belum ada.
   const [versiSummary, setVersiSummary] = useState(0)
   const [tab, setTab] = useState<TabPeserta>('rincian')
   // Periode produksi di kepala, seperti Input Offer Life (02-10-2026). Galatnya

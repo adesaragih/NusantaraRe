@@ -424,6 +424,9 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	// Tiket 03 bagian 2 - data polis layar Input Premium Detail (rute_datapolis.go).
 	mux.HandleFunc("GET /api/polis-life/cari-marketing", cariMarketingPolis(svc, stubPelaku))
 	mux.HandleFunc("GET /api/polis-life/cari-rislip", cariRISlipPolis(svc, stubPelaku))
+	mux.HandleFunc("GET /api/polis-life/rincian-produk", rincianProdukPolis(svc, stubPelaku))
+	mux.HandleFunc("GET /api/polis-life/rate-produk", rateProdukPolis(svc, stubPelaku))
+	mux.HandleFunc("GET /api/polis-life/risk-produk", riskProdukPolis(svc, stubPelaku))
 	mux.HandleFunc("GET /api/polis-life/{id}/data-polis", bacaDataPolis(svc, stubPelaku))
 	mux.HandleFunc("PUT /api/polis-life/{id}/data-polis", simpanDataPolis(svc, stubPelaku))
 	mux.HandleFunc("GET /api/polis-life/{id}/cari-produk", cariProdukPolis(svc, stubPelaku))

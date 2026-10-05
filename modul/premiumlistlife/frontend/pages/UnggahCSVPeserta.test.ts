@@ -34,6 +34,10 @@ describe('dua langkah', () => {
     // mengabaikan galat.
     expect(SUMBER).toContain('tinjau.lolos && !sibuk')
     expect(SUMBER).toContain('disabled={!bolehSimpan}')
+    // Batas produk kini penolakan Validate CSV (05-10-2026): tidak ada lagi
+    // peringatan sesudah Calculate CSV; tombolnya mati bila tinjauan tidak lolos.
+    expect(SUMBER).toContain('const bolehSimpan = tinjau !== null && tinjau.lolos && !sibuk')
+    expect(SUMBER).not.toContain('peringatan')
   })
 
   it('sebab tombol simpan mati DIKATAKAN', () => {

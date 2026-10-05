@@ -73,13 +73,15 @@ func TestPemisahCSVDitebakDariJudul(t *testing.T) {
 // berpemisah koma bisa berarti seribu; ia tetap DITOLAK, bukan ditebak.
 func TestKomaTetapDitolakDiBerkasBerpemisahKoma(t *testing.T) {
 	r := barisUji("UJI-C1")
-	r[len(r)-3] = `"200,75"` // GROSS_PREMIUM (ENTRY_AGE di ujung)
+	// SUM_INSURED, bukan GROSS_PREMIUM: untuk QR GROSS_PREMIUM kini DIHITUNG dan
+	// bentuk nilainya di CSV tidak diperiksa (05-10-2026).
+	r[17] = `"1000,50"`
 	baris, err := bacaQR(strings.NewReader(csvUji(judulLengkap(), r)))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if baris[0].Nilai["GROSS_PREMIUM"] != "200,75" {
-		t.Errorf("koma di berkas berpemisah koma diubah: %q", baris[0].Nilai["GROSS_PREMIUM"])
+	if baris[0].Nilai["SUM_INSURED"] != "1000,50" {
+		t.Errorf("koma di berkas berpemisah koma diubah: %q", baris[0].Nilai["SUM_INSURED"])
 	}
 	if h := validasiQR(baris); h.Lolos() {
 		t.Error("koma di berkas berpemisah koma lolos validasi")

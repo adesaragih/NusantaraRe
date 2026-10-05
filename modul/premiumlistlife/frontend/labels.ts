@@ -121,6 +121,7 @@ export const JUDUL_KOLOM_PESERTA: Record<string, string> = {
   EXPIRED_DATE: 'Expired Date',
   CURRENT_AGE: 'Current Age',
   PERIOD_MM: 'Period MM',
+  POLICY_NO: 'Policy No',
   POLICY_HOLDER: 'Policy Holder',
   EFFECTIVE_DATE: 'Effective Date',
   WPC: 'WPC',
@@ -171,9 +172,15 @@ export const URUTAN_KOLOM_PESERTA: readonly string[] = [
   'POLICY_NO', 'POLICY_HOLDER', 'CERTIFICATE_NO', 'NAME_OF_INSURED', 'SEX', 'DOB', 'ENTRY_AGE', 'CURRENT_AGE',
   'PLAN', 'BEGIN_DATE', 'EXPIRED_DATE', 'GROSS_VALUATION_BEGIN_DATE', 'GROSS_VALUATION_EXPIRED_DATE',
   'PERIOD_MM', 'UW_STATUS', 'EM_PERCENT', 'CURRENCY', 'SUM_INSURED', 'CEDING_RETENTION',
-  'SUM_REASURED', 'SHARE_NUSANTARA_RE_GROSS', 'SUM_AT_RISK_GROSS', 'GROSS_PREMIUM', 'DEDUCTION',
+  'SUM_REASURED', 'SHARE_NUSANTARA_RE_GROSS', 'SUM_AT_RISK_GROSS', 'RISK', 'GROSS_PREMIUM', 'DEDUCTION',
   'RI_ADMIN_FEE', 'BROKERAGE_FEE', 'NET_PREMIUM', 'FACTOR',
 ]
+
+/**
+ * Kolom grid peserta yang SELALU tampil walau seluruhnya kosong / nol
+ * (permintaan work owner 05-10-2026) - RISK kosong di tahun pertama Type QR.
+ */
+export const KOLOM_SELALU_TAMPIL: readonly string[] = ['SUM_AT_RISK_GROSS', 'RISK']
 
 /** Kolom grid peserta yang selalu PALING KANAN, urut seperti ini (02-10-2026). */
 export const KOLOM_PALING_KANAN = ['STNC', 'WPC'] as const
@@ -456,6 +463,8 @@ export const LABEL_DATA_POLIS = {
   statusUpdate: 'Status Update',
   keteranganMarketing: 'Marketing Note',
   simpan: 'Save Data',
+  // Save Data mengganti Type / Product Name → rekap summary dihapus server (keputusan work owner 05-10-2026).
+  rekapDihapus: 'Type or Product Name changed - please run Calculate CSV again before Confirm.',
 } as const
 
 /** Kolom grid popup Choose Product Name — `Section/ChooseProdName.xml`. */
@@ -479,3 +488,30 @@ export const TEKS_PILIH = '-- choose --'
  * Nama lengkapnya (mis. "Choose Product Name") tetap di `aria-label` dan `title`.
  */
 export const TEKS_TOMBOL_PILIH = 'Choose'
+
+/**
+ * Tombol + popup isi Product Name (permintaan work owner 05-10-2026). Sumbernya
+ * tabel Master Product Name Life; judul dan label kolom datang dari server.
+ */
+export const RINCIAN_PRODUK = {
+  tombol: 'View',
+  namaTombol: 'View Product Name details',
+  judul: 'Product Name Details',
+  kosong: 'No items',
+  tutup: 'Close',
+  // View Rate baris PLAN LIST (05-10-2026) - kepala kolom = grid `ViewRate` Master Product Name Life.
+  viewRate: 'View Rate',
+  tutupRate: 'Hide Rate',
+  judulRate: 'R/I Rate',
+  rateTerpotong: 'Only the first 500 rows are shown.',
+  kolomRate: ['ID', 'USEDBY', 'GENDER', 'CONTRACT', 'AGE', 'RATE'],
+  // View R/I Risk (05-10-2026) - kepala kolom = kolom view RIRISK_LIFE.
+  viewRisk: 'View R/I Risk',
+  tutupRisk: 'Hide R/I Risk',
+  // Teks pendek tombol yang menempel di kotak R/I Risk Name; nama lengkap di aria-label.
+  tutupSingkat: 'Hide',
+  judulRisk: 'R/I Risk',
+  // Label medan R/I Risk Name yang dikirim server (repository BagianRincianProduk) - letak tombol View.
+  medanRisk: 'R/I Risk Name',
+  kolomRisk: ['ID', 'USEDBY', 'AGE', 'YEAR', 'MONTH', 'RISK', 'CONTRACT'],
+}

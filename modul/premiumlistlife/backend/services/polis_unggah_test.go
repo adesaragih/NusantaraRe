@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"nusantarare/modul/premiumlistlife/backend/models"
 )
 
 // bacaBerkasLayanan membaca satu berkas layanan untuk penjaga statik.
@@ -26,6 +28,8 @@ func judulLengkap(tambahan ...string) []string {
 		"SUM_INSURED", "CEDING_RETENTION", "SUM_REASURED", "SHARE_NUSANTARA_RE",
 		"GROSS_PREMIUM", "NET_PREMIUM",
 		"ENTRY_AGE",
+		// QR: PERIOD_MM wajib di judul (Calculate CSV, 05-10-2026).
+		"PERIOD_MM",
 	}
 	return append(k, tambahan...)
 }
@@ -55,6 +59,7 @@ func barisUji(sertifikat string) []string {
 		"01/01/2026", "31/12/2026", "01/01/2026", "31/12/2026",
 		"1000.50", "100.25", "900.25", "50.5", "200.75", "180.5",
 		"30",
+		"12",
 	}
 }
 
@@ -182,6 +187,22 @@ func TestTinjauTidakMenyentuhApaPun(t *testing.T) {
 			t.Errorf("Tinjau memuat %q - ia harus MEMBACA saja", jejak)
 		}
 	}
+	// Tinjau dan Simpan SATU jalan; Validate CSV TANPA hitung QR - hanya bentuk
+	// dan batas usia / sum insured (keputusan work owner 05-10-2026). Jalan itu
+	// pun tidak menulis.
+	if !strings.Contains(badan, "u.periksaDanHitung(ctx, polisID, berkas, tipe, false)") {
+		t.Error("Tinjau tidak memakai periksaDanHitung tanpa hitung QR")
+	}
+	c := strings.Index(isi, "func (u *UnggahPremiumList) periksaDanHitung(")
+	d := strings.Index(isi, "// HasilSimpanUnggah adalah jawaban penyimpanan.")
+	if c < 0 || d < c {
+		t.Fatal("periksaDanHitung tidak ditemukan")
+	}
+	for _, jejak := range []string{"DalamTransaksi", "ExecContext", "INSERT", "DELETE", "UPDATE"} {
+		if strings.Contains(isi[c:d], jejak) {
+			t.Errorf("periksaDanHitung memuat %q - ia harus MEMBACA saja", jejak)
+		}
+	}
 }
 
 // TestSimpanMemvalidasiUlang - tinjauan yang lolos bukan izin menyimpan.
@@ -195,7 +216,9 @@ func TestSimpanMemvalidasiUlang(t *testing.T) {
 		t.Fatal("fungsi Simpan tidak ditemukan")
 	}
 	badan := isi[a:]
-	if !strings.Contains(badan, "periksaBerkas(berkas, tipe)") {
+	// Simpan → periksaDanHitung → periksaBerkas (keputusan work owner 05-10-2026).
+	if !strings.Contains(badan, "u.periksaDanHitung(ctx, polisID, berkas, tipe, true)") ||
+		!strings.Contains(isi, "baris, hasil, err := periksaBerkas(berkas, tipe)") {
 		t.Error("Simpan tidak memvalidasi ulang berkasnya; klien yang dapat " +
 			"melewatkan tinjauan dapat menyimpan apa saja")
 	}
@@ -232,5 +255,25 @@ func TestPeriksaBerkasMengisiNolSebelumValidasi(t *testing.T) {
 	nol, val := strings.Index(badan, "models.IsiNolUangKosong(baris)"), strings.Index(badan, "models.ValidasiUnggah(tipe, baris)")
 	if nol < 0 || val < 0 || nol > val {
 		t.Errorf("periksaBerkas harus memanggil IsiNolUangKosong SEBELUM ValidasiUnggah (nol=%d, validasi=%d)", nol, val)
+	}
+}
+
+// TestRingkasPenolakan - 409 Calculate CSV menyebut baris, kolom, dan pesan
+// (05-10-2026), dibatasi supaya tidak menjadi seribu kalimat.
+func TestRingkasPenolakan(t *testing.T) {
+	d := []models.Penolakan{{Baris: 1, Kolom: "RATE", Pesan: "No rate found for age 2, contract 1 in R/I Rate UJI-1"}}
+	got := RingkasPenolakan(d)
+	if got != "Calculate CSV rejected 1 row(s); nothing was saved. Row 1 RATE: No rate found for age 2, contract 1 in R/I Rate UJI-1." {
+		t.Errorf("ringkasan = %q", got)
+	}
+	var banyak []models.Penolakan
+	for i := 1; i <= 12; i++ {
+		banyak = append(banyak, models.Penolakan{Baris: i, Kolom: "RATE", Pesan: "UJI"})
+	}
+	if got := RingkasPenolakan(banyak); !strings.HasSuffix(got, " ... and 2 more.") {
+		t.Errorf("ringkasan tidak dibatasi: %q", got)
+	}
+	if RingkasPenolakan(nil) != "" {
+		t.Error("tanpa penolakan tetap berkalimat")
 	}
 }

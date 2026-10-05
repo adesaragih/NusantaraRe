@@ -480,6 +480,7 @@ func ValidasiUnggah(tipe string, baris []BarisUnggah) (HasilUnggah, error) {
 		return HasilUnggah{}, err
 	}
 	hasil := HasilUnggah{CacahBaris: len(baris), Ditolak: []Penolakan{}}
+	hitungQR := HitungPesertaPerTipe(tipe)
 	tolak := func(b int, kolom, pesan, sebab string) {
 		hasil.Ditolak = append(hasil.Ditolak, Penolakan{
 			Baris: b, Kolom: kolom, Pesan: pesan, Sebab: sebab})
@@ -530,7 +531,12 @@ func ValidasiUnggah(tipe string, baris []BarisUnggah) (HasilUnggah, error) {
 		// 3. Uang lain - hanya bentuknya, bila terisi. ⛔ Korpus menyatakan
 		// aturan titik enam kali dan menegakkannya sekali - lihat
 		// `ErrUangBerkoma`.
+		// Type QR: kolom yang DIHITUNG Calculate CSV tidak diperiksa - nilainya
+		// di CSV diabaikan dan ditimpa (keputusan work owner 05-10-2026).
 		for _, k := range KolomUangTersimpan() {
+			if hitungQR && kolomHasilQR[k] {
+				continue
+			}
 			if v := ambil(k); !sudah[k] && v != "" {
 				periksaBentuk(b.Nomor, k, k+" bukan angka yang sah", jenisUang, v)
 			}
@@ -555,13 +561,22 @@ func KolomWajibUnggah(tipe string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	nama := make([]string, 0, len(wajib))
+	nama := make([]string, 0, len(wajib)+1)
 	for _, w := range wajib {
 		nama = append(nama, w.Kolom)
+	}
+	// Type QR: PERIOD_MM wajib ADA DI JUDUL (penentu CONTRACT rate/risk);
+	// isinya diperiksa di tahap hitung, bukan sebagai "HARUS ADA" (keputusan
+	// work owner 05-10-2026).
+	if HitungPesertaPerTipe(tipe) {
+		nama = append(nama, KolomPeriodeQR)
 	}
 	sort.Strings(nama)
 	return nama, nil
 }
+
+// KolomPeriodeQR - kolom judul tambahan yang wajib untuk Type QR.
+const KolomPeriodeQR = "PERIOD_MM"
 
 // KolomUangUnggahTambahan - kolom uang CSV yang IKUT DISIMPAN di luar ke-32
 // kolom `ValidasiUploadPL_act` (keputusan work owner 03-10-2026: summary
@@ -571,7 +586,10 @@ func KolomWajibUnggah(tipe string) ([]string, error) {
 // ⚠️ TERPISAH dari `KolomUangUnggah`, dengan sengaja: daftar itu tiruan
 // langkah 2 Pega (diisi 0 bila kosong, dijaga uji paritas). Kolom di sini
 // TIDAK diisi 0 - kosong disimpan NULL, dan rekap membacanya sebagai nol.
-var KolomUangUnggahTambahan = []string{"DEDUCTION", "RI_ADMIN_FEE", "SUM_AT_RISK_GROSS", "FACTOR"}
+//
+// RATE ikut sejak 05-10-2026: Calculate CSV Type QR menghitungnya dan
+// `T_PREMIUM_LIST_DETAIL.RATE` (migrasi 052) harus benar-benar tertulis.
+var KolomUangUnggahTambahan = []string{"DEDUCTION", "RI_ADMIN_FEE", "SUM_AT_RISK_GROSS", "FACTOR", "RATE"}
 
 // KolomUangTersimpan - seluruh kolom uang unggahan yang divalidasi bentuknya,
 // dinormalkan desimal komanya, dan disimpan: `KolomUangUnggah` lalu

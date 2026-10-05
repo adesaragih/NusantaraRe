@@ -86,7 +86,12 @@ func simpanUnggahPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc 
 		if errors.Is(err, services.ErrUnggahanDitolak) {
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(http.StatusConflict)
-			_ = json.NewEncoder(w).Encode(hasil)
+			// `galat` - ringkasan penolakan yang dibaca klien inti; rate/risk
+			// QR baru diperiksa di sini, bukan saat Validate CSV (05-10-2026).
+			_ = json.NewEncoder(w).Encode(struct {
+				services.HasilSimpanUnggah
+				Galat string `json:"galat"`
+			}{hasil, services.RingkasPenolakan(hasil.Ditolak)})
 			return
 		}
 		if jawabGalatUnggahPolis(w, err) {
@@ -108,6 +113,11 @@ func jawabGalatUnggahPolis(w http.ResponseWriter, err error) bool {
 		// 400: berkasnya yang tidak dapat dibaca sama sekali - berbeda dari
 		// berkas yang terbaca tetapi isinya ditolak (409).
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
+		return true
+	case errors.Is(err, models.ErrSyaratHitungQR):
+		// 409: syarat hitung Type QR (produk / plan / master rate-risk) belum
+		// terpenuhi - pesannya menyebut apa yang perlu dibetulkan (05-10-2026).
+		galat.Tulis(w, http.StatusConflict, sesudahSebab(err, models.ErrSyaratHitungQR))
 		return true
 	case errors.Is(err, models.ErrTipeUnggahTakDikenal):
 		// 409: berkasnya mungkin benar - polisnya yang belum siap (Type

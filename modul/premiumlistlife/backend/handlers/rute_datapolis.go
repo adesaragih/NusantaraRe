@@ -3,10 +3,13 @@ package handlers
 // Pintu HTTP data polis layar Input Premium Detail - tiket 03 bagian 2.
 //
 //	GET /api/polis-life/{id}/data-polis          isian + pilihan
-//	PUT /api/polis-life/{id}/data-polis          Save Data = SavePremiumList_Act
+//	PUT /api/polis-life/{id}/data-polis          Save Data: medan wajib + WPC (05-10-2026)
 //	GET /api/polis-life/{id}/cari-produk?cari=   popup Choose Product Name
 //	GET /api/polis-life/cari-marketing?cari=     autocomplete Marketing Officer
 //	GET /api/polis-life/cari-rislip?cari=        autocomplete R/I SLIP RNM No.
+//	GET /api/polis-life/rincian-produk?id=       isi Product Name (tombol View, 05-10-2026)
+//	GET /api/polis-life/rate-produk?id=          isi R/I Rate baris PLAN LIST (05-10-2026)
+//	GET /api/polis-life/risk-produk?id=          isi R/I Risk Name produk (05-10-2026)
 //
 // Billing Name dan Retrocessionaire memakai `GET /api/polis-life/cari-ceding`
 // - report definition yang sama (BrowseCedingCoLife_RD).
@@ -26,6 +29,7 @@ import (
 	"nusantarare/inti/backend/galat"
 	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/premiumlistlife/backend/models"
+	"nusantarare/modul/premiumlistlife/backend/repository"
 	"nusantarare/modul/premiumlistlife/backend/services"
 )
 
@@ -123,7 +127,7 @@ func simpanDataPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		}
 		pelaku := inti.PelakuDari(r, stubPelaku)
 		form := svc.FormDataPolis()
-		peringatan, err := form.Simpan(r.Context(), pelaku, r.PathValue("id"), isi)
+		rekapDihapus, err := form.Simpan(r.Context(), pelaku, r.PathValue("id"), isi)
 		if jawabGalatDataPolis(w, err) {
 			return
 		}
@@ -131,8 +135,9 @@ func simpanDataPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		if jawabGalatDataPolis(w, err) {
 			return
 		}
-		// Pesan langkah 9 SavePremiumList_Act - data TETAP tersimpan (200).
-		hasil.Peringatan = peringatan
+		// Type / Product Name berganti → rekap summary dihapus; layar meminta Calculate CSV
+		// ulang sebelum Confirm (keputusan work owner 05-10-2026).
+		hasil.RekapDihapus = rekapDihapus
 		galat.TulisJSON(w, hasil)
 	}
 }
@@ -160,6 +165,58 @@ func cariMarketingPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc
 		}
 		hasil, err := svc.FormDataPolis().CariMarketing(r.Context(), inti.PelakuDari(r, stubPelaku),
 			r.URL.Query().Get("cari"))
+		if jawabGalatDataPolis(w, err) {
+			return
+		}
+		galat.TulisJSON(w, hasil)
+	}
+}
+
+// rincianProdukPolis - tombol View di samping Product Name (05-10-2026).
+func rincianProdukPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !svc.PunyaDatabase() {
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			return
+		}
+		hasil, err := svc.FormDataPolis().RincianProduk(r.Context(), inti.PelakuDari(r, stubPelaku),
+			r.URL.Query().Get("id"))
+		if errors.Is(err, repository.ErrRincianProdukTidakAda) {
+			galat.Tulis(w, http.StatusNotFound, "Product not found in Master Product Name Life.")
+			return
+		}
+		if jawabGalatDataPolis(w, err) {
+			return
+		}
+		galat.TulisJSON(w, hasil)
+	}
+}
+
+// rateProdukPolis - View Rate di popup Product Name (05-10-2026).
+func rateProdukPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !svc.PunyaDatabase() {
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			return
+		}
+		hasil, err := svc.FormDataPolis().RateProduk(r.Context(), inti.PelakuDari(r, stubPelaku),
+			r.URL.Query().Get("id"))
+		if jawabGalatDataPolis(w, err) {
+			return
+		}
+		galat.TulisJSON(w, hasil)
+	}
+}
+
+// riskProdukPolis - View R/I Risk di popup Product Name (05-10-2026).
+func riskProdukPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !svc.PunyaDatabase() {
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			return
+		}
+		hasil, err := svc.FormDataPolis().RiskProduk(r.Context(), inti.PelakuDari(r, stubPelaku),
+			r.URL.Query().Get("id"))
 		if jawabGalatDataPolis(w, err) {
 			return
 		}

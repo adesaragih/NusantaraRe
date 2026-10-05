@@ -184,6 +184,8 @@ func NamaKolomGridPeserta() []string {
 // work owner, tetapi aturan lainnya TETAP: tidak pernah masuk fixture,
 // tiket, atau log.
 var KolomGridTambahan = []KolomPeserta{
+	// POLICY_NO dari CSV, kolom paling depan grid (permintaan work owner 05-10-2026).
+	{"POLICY_NO", KolomPesertaTeks},
 	{"NAME_OF_INSURED", KolomPesertaTeks},
 	{"DOB", KolomPesertaTanggal},
 	{"GROSS_VALUATION_BEGIN_DATE", KolomPesertaTanggal},

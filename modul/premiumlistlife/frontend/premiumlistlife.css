@@ -480,3 +480,35 @@
 .pl-hasil > dd {
   margin: 0;
 }
+
+/* Tombol pilih + tombol View berdampingan di kanan kotak isian Product Name (05-10-2026). */
+.pl-dp-pilih--dua {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.pl-dp-pilih > .btn:not(:last-child) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* Popup isi Product Name (05-10-2026): bagian bertumpuk, tabel menggulir di dalam kotaknya. */
+.pl-rincian__bagian + .pl-rincian__bagian {
+  margin-top: 16px;
+}
+
+.pl-rincian__lebar {
+  grid-column: 1 / -1;
+}
+
+.pl-rincian__tabel {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Tabel rate di bawah PLAN LIST popup Product Name (05-10-2026). */
+.pl-rincian__rate {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}

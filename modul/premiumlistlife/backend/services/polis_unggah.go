@@ -32,6 +32,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	inti "nusantarare/inti/backend"
@@ -269,7 +270,11 @@ func (u *UnggahPremiumList) Tinjau(ctx context.Context, pelaku inti.Pelaku,
 	if err != nil {
 		return HasilTinjauUnggah{}, err
 	}
-	_, hasil, err := periksaBerkas(berkas, tipe)
+	// Jalan yang SAMA dengan Simpan, TANPA hitung Type QR: Validate CSV hanya
+	// memeriksa bentuk/kolom wajib dan batas USIA + SUM INSURED produk
+	// (keputusan work owner 05-10-2026). Rate/risk dan syarat produk QR
+	// diperiksa Calculate CSV.
+	_, hasil, err := u.periksaDanHitung(ctx, polisID, berkas, tipe, false)
 	if err != nil {
 		return HasilTinjauUnggah{}, err
 	}
@@ -307,6 +312,107 @@ func periksaBerkas(berkas io.Reader, tipe string) ([]models.BarisUnggah, models.
 		return nil, models.HasilUnggah{}, err
 	}
 	return baris, hasil, nil
+}
+
+// periksaDanHitung - periksaBerkas, lalu untuk SEMUA Type memeriksa batas
+// umur / sum insured produk (`models.PeriksaBatasProduk`, SavePremiumList_Act
+// 6-8.2), lalu - hanya bila `hitung` (Calculate CSV) dan Type QR - menghitung
+// kolom peserta (`models.HitungPesertaQR`), dan menggabungkan seluruh
+// penolakannya. Dipakai Tinjau (hitung=false) DAN Simpan (hitung=true) - satu
+// jalan (keputusan work owner 05-10-2026): peserta di luar batas membuat
+// Validate tidak lolos, sehingga Calculate CSV tidak dapat diklik; Validate
+// CSV tidak memeriksa rate/risk.
+//
+// ⛔ MEMBACA saja: nol transaksi, nol tulisan. Hasil hitungan ditulis ke
+// `baris[i].Nilai`; Simpan yang menyimpannya.
+//
+// Syarat polis P1-P4 yang gagal → `models.ErrSyaratHitungQR` (409 berpesan),
+// seluruh unggahan ditolak.
+func (u *UnggahPremiumList) periksaDanHitung(ctx context.Context, polisID string, berkas io.Reader,
+	tipe string, hitung bool) ([]models.BarisUnggah, models.HasilUnggah, error) {
+
+	baris, hasil, err := periksaBerkas(berkas, tipe)
+	if err != nil {
+		return nil, models.HasilUnggah{}, err
+	}
+	rujukan := repository.NewRujukan(u.svc.DB())
+	// Kepala polis dibaca SEKALI: Type, Product Name ID, Class of Business,
+	// Premium Payment Method, R/I SLIP RNM.
+	kepala, err := rujukan.KepalaUnggah(ctx, polisID)
+	if errors.Is(err, repository.ErrHeaderPolisTidakAda) {
+		return nil, models.HasilUnggah{}, fmt.Errorf("%w: %s", ErrPolisTakDitemukan, polisID)
+	}
+	if err != nil {
+		return nil, models.HasilUnggah{}, err
+	}
+	// Baris yang sudah ditolak tidak dicek ulang: validasi bentuk → batas → hitung.
+	lewati := map[int]bool{}
+	tandai := func() {
+		for _, p := range hasil.Ditolak {
+			lewati[p.Baris] = true
+		}
+	}
+	tandai()
+	// Batas produk - semua Type. Produk kosong / tidak ada di
+	// M_PRODUCTNAME_LIFE tidak diperiksa (Type QR ditolak syarat hitung saat
+	// Calculate CSV).
+	if kepala.ProductNameID != "" {
+		batas, ada, err := rujukan.BatasProduk(ctx, kepala.ProductNameID)
+		if err != nil {
+			return nil, models.HasilUnggah{}, err
+		}
+		if ada {
+			hasil.Ditolak = append(hasil.Ditolak,
+				models.PeriksaBatasProduk(tipe, kepala.RISlipRNM, batas, baris, lewati)...)
+		}
+	}
+	// Hitung Type QR - Calculate CSV saja. Baris yang melewati batas tidak
+	// dihitung (penolakan rate yang hanya akibat umur tidak ditambahkan).
+	if hitung && models.HitungPesertaPerTipe(tipe) {
+		tandai()
+		m, err := u.masterQR(ctx, rujukan, kepala)
+		if err != nil {
+			return nil, models.HasilUnggah{}, err
+		}
+		hasil.Ditolak = append(hasil.Ditolak, models.HitungPesertaQR(m, baris, lewati)...)
+	}
+	// Urut nomor baris - penolakan satu peserta tampil berdekatan.
+	sort.SliceStable(hasil.Ditolak, func(i, j int) bool { return hasil.Ditolak[i].Baris < hasil.Ditolak[j].Baris })
+	return baris, hasil, nil
+}
+
+// masterQR membaca bahan hitung Type QR SEKALI per polis dan menegakkan
+// syarat P1-P4.
+func (u *UnggahPremiumList) masterQR(ctx context.Context, rujukan *repository.Rujukan,
+	kepala repository.KepalaUnggah) (models.MasterQR, error) {
+
+	if kepala.ProductNameID == "" {
+		return models.MasterQR{}, fmt.Errorf("%w: choose the Product Name and press Save Data before Calculate CSV",
+			models.ErrSyaratHitungQR)
+	}
+	param, plan, err := rujukan.BahanHitungQR(ctx, kepala.ProductNameID)
+	if errors.Is(err, repository.ErrRincianProdukTidakAda) {
+		return models.MasterQR{}, fmt.Errorf("%w: product %s is not found in Master Product Name Life",
+			models.ErrSyaratHitungQR, kepala.ProductNameID)
+	}
+	if err != nil {
+		return models.MasterQR{}, err
+	}
+	param.BusinessName = kepala.BusinessName
+	param.ProRateType = kepala.ProRateType
+	pl, err := models.PlanCocokQR(param, plan)
+	if err != nil {
+		return models.MasterQR{}, err
+	}
+	rate, err := rujukan.RateHitungQR(ctx, strings.TrimSpace(pl.RIRateID))
+	if err != nil {
+		return models.MasterQR{}, err
+	}
+	risk, err := rujukan.RiskHitungQR(ctx, param.RIRiskID)
+	if err != nil {
+		return models.MasterQR{}, err
+	}
+	return models.SiapkanMasterQR(param, plan, rate, risk)
 }
 
 // HasilSimpanUnggah adalah jawaban penyimpanan.
@@ -359,7 +465,9 @@ func (u *UnggahPremiumList) Simpan(ctx context.Context, pelaku inti.Pelaku,
 	if err != nil {
 		return HasilSimpanUnggah{}, err
 	}
-	baris, hasil, err := periksaBerkas(berkas, tipe)
+	// Type QR: kolom peserta DIHITUNG di sini, sebelum transaksi (keputusan
+	// work owner 05-10-2026); Type lain nilainya tetap dari CSV.
+	baris, hasil, err := u.periksaDanHitung(ctx, polisID, berkas, tipe, true)
 	if err != nil {
 		return HasilSimpanUnggah{}, err
 	}
@@ -397,6 +505,8 @@ func (u *UnggahPremiumList) Simpan(ctx context.Context, pelaku inti.Pelaku,
 	if err != nil {
 		return HasilSimpanUnggah{}, err
 	}
+	// Batas produk (SavePremiumList_Act 6-8.2) TIDAK diperiksa lagi di sini:
+	// ia penolakan periksaDanHitung di atas (keputusan work owner 05-10-2026).
 	return keluar, nil
 }
 
@@ -414,4 +524,26 @@ func (u *UnggahPremiumList) tipeUnggah(ctx context.Context, polisID string) (str
 		return "", err
 	}
 	return d.Type, nil
+}
+
+// batasRingkasPenolakan - penolakan paling banyak yang disebut di ringkasan.
+const batasRingkasPenolakan = 10
+
+// RingkasPenolakan menyusun satu kalimat dari penolakan Calculate CSV - untuk
+// kunci `galat` jawaban 409 (keputusan work owner 05-10-2026: rate/risk QR
+// tidak diperiksa Validate CSV, jadi penolakannya baru muncul di sini).
+func RingkasPenolakan(d []models.Penolakan) string {
+	if len(d) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "Calculate CSV rejected %d row(s); nothing was saved.", len(models.HasilUnggah{Ditolak: d}.BarisDitolak()))
+	for i, p := range d {
+		if i == batasRingkasPenolakan {
+			fmt.Fprintf(&b, " ... and %d more.", len(d)-i)
+			break
+		}
+		fmt.Fprintf(&b, " Row %d %s: %s.", p.Baris, p.Kolom, strings.TrimSuffix(p.Pesan, "."))
+	}
+	return b.String()
 }

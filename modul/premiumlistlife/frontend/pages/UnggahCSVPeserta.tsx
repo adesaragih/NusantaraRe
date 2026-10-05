@@ -93,6 +93,9 @@ export default function UnggahCSVPeserta({
     setSibuk(true)
     setGalat(null)
     try {
+      // Batas umur / sum insured produk (SavePremiumList_Act 6-8.2) sudah
+      // menjadi penolakan Validate CSV - tombol ini mati selama ada yang
+      // melewati batas (keputusan work owner 05-10-2026).
       const h = await simpanUnggahPolis(polisID, berkas)
       setKabar(
         `${String(h.cacahDisimpan)} participants saved` +
