@@ -4,7 +4,8 @@
 -- Keputusan work owner 06-10-2026 butir 2: VIEW POOLDATA.RICOMM_LIFE harus dibuang lebih dulu. Selama view itu ada,
 -- pra-terbang pelari (`praTerbangBentuk` / `objekAda`, inti/backend/migrasi/migrasi.go) menghitung objek APA PUN di
 -- ALL_OBJECTS: view bernama sama dengan kolom yang sama membuat CREATE TABLE dilewati (ORA-00955 "sudah ada") dan
--- langkah 924 tercatat selesai TANPA tabel. Karena itu DROP VIEW tidak boleh ada di run -migrate yang sama.
+-- CREATE INDEX sesudahnya gagal atas view (ORA-01702), sehingga -migrate berhenti tanpa tabel. DROP VIEW tidak boleh
+-- ada di run -migrate yang sama (pelari tidak menjalankan DDL objek warisan). Urutan: docs/LANGKAH-WO-RICOMMLIFE.md.
 --
 -- Fakta DEV (dicek work owner 06-10-2026): view RICOMM_LIFE = SELECT a.ID, a.JSONDATA.IDUSEDBY, a.JSONDATA.USEDBY,
 -- a.JSONDATA.CONTRACT, a.JSONDATA.YEAR, a.JSONDATA.COMM FROM M_RICOMM_LIFE a; satu-satunya dependensinya M_RICOMM_LIFE;
