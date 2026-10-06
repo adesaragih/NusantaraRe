@@ -2,8 +2,9 @@ package repository
 
 // Pindah JSON -> flat ringkasan (keputusan work owner 06-10-2026 K-F1/K-F2; alat `backend/alat/pindahflat`, pola
 // ricommlife / masterproductnamelife): `M_RATE_LIFE_SUMMARY` (JSON warisan; data DEV MASIH BERUBAH - cacahnya dibaca
-// saat berjalan, tidak pernah ditanam) -> tabel flat `RATE_LIFE_SUMMARY` (migrasi inti 926), SEMUA enam kolom view, isi
-// APA ADANYA (teks JSON tanpa dipangkas, seperti `a.JSONDATA.X`) - termasuk TYPE dan FLAG.
+// saat berjalan, tidak pernah ditanam) -> tabel flat `RATE_LIFE_SUMMARY` (migrasi inti 926), kolom view selain FLAG, isi
+// APA ADANYA (teks JSON tanpa dipangkas, seperti `a.JSONDATA.X`) - termasuk TYPE. FLAG TIDAK disalin (RALAT R5: tidak
+// digunakan, keputusan work owner 06-10-2026; nilainya tetap di JSON).
 //
 //	-uji       (bawaan) hanya SELECT; nol tulisan; laporan AGREGAT: cacah sumber dan flat SAAT itu, baru / berubah /
 //	           sama / konflik / dilewati, panjang maksimum (byte) tiap kolom lawan lebar kolom flat, ID baris - tidak
@@ -18,8 +19,8 @@ package repository
 //	          ... kecuali `-sejak` diberikan dan MODIFIEDDATE sumber TIDAK lebih baru dari batas itu (atau kosong /
 //	          tidak terbaca): `dilewati` - ringkasan lama yang tidak ada di flat dianggap DIHAPUS aplikasi, tidak
 //	          dihidupkan lagi, dilaporkan.
-//	sama      keenam kolom sama persis                              -> dilewati
-//	berubah   beda, dan MODIFIEDDATE sumber LEBIH BARU dari flat     -> flat diperbarui keenam kolom (Pega lebih baru)
+//	sama      kelima kolom sama persis                              -> dilewati
+//	berubah   beda, dan MODIFIEDDATE sumber LEBIH BARU dari flat     -> flat diperbarui kelima kolom (Pega lebih baru)
 //	konflik   beda, dan MODIFIEDDATE flat sama / lebih baru / salah satunya kosong atau tidak terbaca -> TIDAK ditimpa,
 //	          dilaporkan (tulisan aplikasi sesudah pemindahan tidak pernah ditimpa diam-diam)
 //	flat saja ID hanya di flat (ringkasan baru aplikasi)            -> dibiarkan
@@ -51,7 +52,7 @@ var (
 )
 
 // LebarKolomFlat - lebar (byte) kolom tabel flat `RATE_LIFE_SUMMARY` menurut migrasi 926 - diikat uji ke DDL-nya.
-var LebarKolomFlat = map[string]int{"ID": 10, "USEDBY": 500, "TYPE": 100, "MODIFIEDDATE": 50, "OPERATORID": 200, "FLAG": 100}
+var LebarKolomFlat = map[string]int{"ID": 10, "USEDBY": 500, "TYPE": 100, "MODIFIEDDATE": 50, "OPERATORID": 200}
 
 // PeriksaMode - `-jalankan` ditolak bila IS_PEGA_PROD=true; uji kering selalu boleh.
 func PeriksaMode(jalankan, pegaProduksi bool) error {
@@ -64,10 +65,10 @@ func PeriksaMode(jalankan, pegaProduksi bool) error {
 // BarisJSON - satu baris `M_RATE_LIFE_SUMMARY`.
 type BarisJSON struct{ ID, JSON string }
 
-// RingkasanFlat - satu baris tabel flat, keenam kolom (nil = NULL).
+// RingkasanFlat - satu baris tabel flat, kelima kolom (nil = NULL).
 type RingkasanFlat struct {
-	ID                                           string
-	UsedBy, Type, ModifiedDate, OperatorID, Flag *string
+	ID                                     string
+	UsedBy, Type, ModifiedDate, OperatorID *string
 }
 
 func samaTeks(a, b *string) bool {
@@ -77,10 +78,10 @@ func samaTeks(a, b *string) bool {
 	return *a == *b
 }
 
-// Sama - keenam kolom sama persis.
+// Sama - kelima kolom sama persis.
 func (r RingkasanFlat) Sama(l RingkasanFlat) bool {
 	return r.ID == l.ID && samaTeks(r.UsedBy, l.UsedBy) && samaTeks(r.Type, l.Type) && samaTeks(r.ModifiedDate, l.ModifiedDate) &&
-		samaTeks(r.OperatorID, l.OperatorID) && samaTeks(r.Flag, l.Flag)
+		samaTeks(r.OperatorID, l.OperatorID)
 }
 
 // WaktuPega - stempel MODIFIEDDATE (`20261006T040628.169 GMT`, atau `YYYYMMDD`) -> waktu; ok=false bila kosong /
@@ -146,7 +147,7 @@ func (l LaporanPindah) Teks() string {
 	fmt.Fprintf(&b, "  dilewati, tidak lebih baru dari -sejak dan tidak ada di flat (dihapus aplikasi?): %d%s\n", len(l.Dilewati), daftarID(l.Dilewati))
 	fmt.Fprintf(&b, "  hanya di tabel flat (dibiarkan): %d\n", l.FlatSaja)
 	fmt.Fprintf(&b, "  panjang maksimum sumber (byte) / lebar kolom:\n")
-	for _, k := range KolomViewRingkasan {
+	for _, k := range KolomRingkasanFlat {
 		fmt.Fprintf(&b, "    %-13s %4d / %d\n", k, l.PanjangMaks[k], LebarKolomFlat[k])
 	}
 	fmt.Fprintf(&b, "  tidak muat: %d\n", len(l.TidakMuat))
@@ -239,7 +240,7 @@ func RencanaPindah(sumber []BarisJSON, flat []RingkasanFlat, sejak string) (Lapo
 		for _, x := range []struct {
 			kolom string
 			ke    **string
-		}{{"USEDBY", &r.UsedBy}, {"TYPE", &r.Type}, {"MODIFIEDDATE", &r.ModifiedDate}, {"OPERATORID", &r.OperatorID}, {"FLAG", &r.Flag}} {
+		}{{"USEDBY", &r.UsedBy}, {"TYPE", &r.Type}, {"MODIFIEDDATE", &r.ModifiedDate}, {"OPERATORID", &r.OperatorID}} {
 			v, ok := NilaiJSON(b.JSON, x.kolom)
 			if !ok {
 				jsonSah = false
@@ -303,19 +304,19 @@ func SqlSumberJSON(t string) string {
 	return fmt.Sprintf(`SELECT ID, %s FROM %s ORDER BY ID`, KolomJSON, t)
 }
 
-// SqlSemuaRingkasanFlat - seluruh tabel flat, keenam kolom.
+// SqlSemuaRingkasanFlat - seluruh tabel flat, kelima kolom.
 func SqlSemuaRingkasanFlat(t string) string {
-	return fmt.Sprintf(`SELECT ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID, FLAG FROM %s ORDER BY ID`, t)
+	return fmt.Sprintf(`SELECT ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID FROM %s ORDER BY ID`, t)
 }
 
-// SqlSisipRingkasanFlat - satu baris pindahan, keenam kolom apa adanya.
+// SqlSisipRingkasanFlat - satu baris pindahan, kelima kolom apa adanya.
 func SqlSisipRingkasanFlat(t string) string {
-	return fmt.Sprintf(`INSERT INTO %s (ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID, FLAG) VALUES (:1, :2, :3, :4, :5, :6)`, t)
+	return fmt.Sprintf(`INSERT INTO %s (ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID) VALUES (:1, :2, :3, :4, :5)`, t)
 }
 
-// SqlPerbaruiRingkasanFlat - delta `berubah`: keenam kolom dari sumber yang lebih baru.
+// SqlPerbaruiRingkasanFlat - delta `berubah`: kelima kolom dari sumber yang lebih baru.
 func SqlPerbaruiRingkasanFlat(t string) string {
-	return fmt.Sprintf(`UPDATE %s SET USEDBY = :1, TYPE = :2, MODIFIEDDATE = :3, OPERATORID = :4, FLAG = :5 WHERE ID = :6`, t)
+	return fmt.Sprintf(`UPDATE %s SET USEDBY = :1, TYPE = :2, MODIFIEDDATE = :3, OPERATORID = :4 WHERE ID = :5`, t)
 }
 
 // SqlCacah - cacah baris.
@@ -397,12 +398,12 @@ func (g *Gudang) bacaRencana(ctx context.Context, tx *db.Tx, n nama) ([]BarisJSO
 	defer func() { _ = rows.Close() }()
 	var flat []RingkasanFlat
 	for rows.Next() {
-		var v [6]sql.NullString
-		if err := rows.Scan(&v[0], &v[1], &v[2], &v[3], &v[4], &v[5]); err != nil {
+		var v [5]sql.NullString
+		if err := rows.Scan(&v[0], &v[1], &v[2], &v[3], &v[4]); err != nil {
 			return nil, nil, bungkus(err, "memindai RATE_LIFE_SUMMARY")
 		}
 		flat = append(flat, RingkasanFlat{ID: v[0].String, UsedBy: teksNull(v[1]), Type: teksNull(v[2]),
-			ModifiedDate: teksNull(v[3]), OperatorID: teksNull(v[4]), Flag: teksNull(v[5])})
+			ModifiedDate: teksNull(v[3]), OperatorID: teksNull(v[4])})
 	}
 	return sumber, flat, bungkus(rows.Err(), "membaca RATE_LIFE_SUMMARY")
 }
@@ -446,13 +447,13 @@ func (g *Gudang) PindahFlat(ctx context.Context, jalankan bool, sejak string) (L
 	}
 	for _, r := range sisip {
 		if _, err := g.tulis(ctx, tx, TabelRingkasan, SqlSisipRingkasanFlat(n.tabelRingkasan), "memindah ringkasan", r.ID,
-			nilaiArg(r.UsedBy), nilaiArg(r.Type), nilaiArg(r.ModifiedDate), nilaiArg(r.OperatorID), nilaiArg(r.Flag)); err != nil {
+			nilaiArg(r.UsedBy), nilaiArg(r.Type), nilaiArg(r.ModifiedDate), nilaiArg(r.OperatorID)); err != nil {
 			return lap, err
 		}
 	}
 	for _, r := range ubah {
 		if _, err := g.tulis(ctx, tx, TabelRingkasan, SqlPerbaruiRingkasanFlat(n.tabelRingkasan), "memperbarui ringkasan",
-			nilaiArg(r.UsedBy), nilaiArg(r.Type), nilaiArg(r.ModifiedDate), nilaiArg(r.OperatorID), nilaiArg(r.Flag), r.ID); err != nil {
+			nilaiArg(r.UsedBy), nilaiArg(r.Type), nilaiArg(r.ModifiedDate), nilaiArg(r.OperatorID), r.ID); err != nil {
 			return lap, err
 		}
 	}

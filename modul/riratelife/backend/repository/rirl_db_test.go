@@ -140,7 +140,7 @@ func layananOracle(u *ujiDB) *services.Layanan {
 var penuhDB = services.Aktor{AkunID: "UJI-ADMIN", Penuh: true}
 
 // Rumus ID: SEQ_M_RATE_LIFE_SUMMARY mulai 100, tetapi 100 terpakai di JSON warisan -> ID baru 101. Pulang-pergi tabel
-// flat: Add menulis USEDBY/OPERATORID/MODIFIEDDATE, TYPE dan FLAG NULL; Edit tidak menyentuh TYPE/FLAG.
+// flat: Add menulis USEDBY/OPERATORID/MODIFIEDDATE, TYPE NULL; Edit tidak menyentuh TYPE. Tabel flat tanpa FLAG.
 func TestDBRumusIDDanPulangPergi(t *testing.T) {
 	u := pasang(t)
 	l := layananOracle(u)
@@ -148,15 +148,15 @@ func TestDBRumusIDDanPulangPergi(t *testing.T) {
 	if err != nil || r.ID != "101" || r.OperatorID != "UJI-ADMIN" || r.UsedBy != "UJI RATE DB" {
 		t.Fatalf("Add %+v %v", r, err)
 	}
-	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RATE_LIFE_SUMMARY WHERE ID = '101' AND TYPE IS NULL AND FLAG IS NULL`); n != 1 {
-		t.Errorf("TYPE/FLAG baris baru harus NULL (%d)", n)
+	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RATE_LIFE_SUMMARY WHERE ID = '101' AND TYPE IS NULL`); n != 1 {
+		t.Errorf("TYPE baris baru harus NULL (%d)", n)
 	}
-	u.exec(t, `INSERT INTO {s}.RATE_LIFE_SUMMARY (ID, USEDBY, TYPE, FLAG) VALUES ('200', 'UJI PINDAHAN', 'L', 'PM')`)
+	u.exec(t, `INSERT INTO {s}.RATE_LIFE_SUMMARY (ID, USEDBY, TYPE) VALUES ('200', 'UJI PINDAHAN', 'L')`)
 	if _, err := l.Simpan(u.ctx, penuhDB, "200", models.Isian{UsedBy: "UJI PINDAHAN 2"}); err != nil {
 		t.Fatal(err)
 	}
-	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RATE_LIFE_SUMMARY WHERE ID = '200' AND USEDBY = 'UJI PINDAHAN 2' AND TYPE = 'L' AND FLAG = 'PM'`); n != 1 {
-		t.Error("Edit mengubah TYPE/FLAG atau tidak menulis nama")
+	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RATE_LIFE_SUMMARY WHERE ID = '200' AND USEDBY = 'UJI PINDAHAN 2' AND TYPE = 'L'`); n != 1 {
+		t.Error("Edit mengubah TYPE atau tidak menulis nama")
 	}
 	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.M_RATE_LIFE_SUMMARY`); n != 1 {
 		t.Errorf("M_RATE_LIFE_SUMMARY berubah (%d baris)", n)
@@ -231,7 +231,7 @@ func TestDBPindahFlat(t *testing.T) {
 		t.Errorf("ulang %+v %v", lap, err)
 	}
 	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RATE_LIFE_SUMMARY WHERE ID = '100' AND USEDBY = 'UJI RATE LAMA' AND TYPE = 'L'
-		AND MODIFIEDDATE = '20240102T030405.000 GMT' AND OPERATORID = 'UJI-LAMA' AND FLAG = 'AP'`); n != 1 {
+		AND MODIFIEDDATE = '20240102T030405.000 GMT' AND OPERATORID = 'UJI-LAMA'`); n != 1 {
 		t.Error("pindahan tidak apa adanya")
 	}
 	for _, q := range ddl926(t, true, u.skema) {
@@ -244,7 +244,8 @@ func TestDBPindahFlat(t *testing.T) {
 
 // Delta (cutover): sesudah pemindahan penuh, Pega mengubah 100 (lebih baru) dan menulis 110 baru; aplikasi menghapus
 // ringkasan 120 (ada di JSON, lebih lama dari -sejak) dan mengubah 130 sesudah Pega - putaran delta memperbarui 100,
-// menyisip 110, melewati 120, dan melaporkan 130 sebagai konflik tanpa menimpanya. FLAG/TYPE ikut apa adanya.
+// menyisip 110, melewati 120, dan melaporkan 130 sebagai konflik tanpa menimpanya. TYPE ikut apa adanya; FLAG di JSON
+// tidak dipindah (RALAT R5).
 func TestDBPindahDelta(t *testing.T) {
 	u := pasang(t)
 	g := repository.Baru(u.repo)
@@ -264,8 +265,8 @@ func TestDBPindahDelta(t *testing.T) {
 		lap.CacahSumber != 4 || lap.CacahFlatSesudah != 3 {
 		t.Fatalf("delta %+v %v", lap, err)
 	}
-	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RATE_LIFE_SUMMARY WHERE (ID = '100' AND USEDBY = 'UJI RATE LAMA 2' AND FLAG = 'PM' AND TYPE = 'L')
-		OR (ID = '110' AND FLAG = 'AP') OR (ID = '130' AND USEDBY = 'UJI KONFLIK APLIKASI')`); n != 3 {
+	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RATE_LIFE_SUMMARY WHERE (ID = '100' AND USEDBY = 'UJI RATE LAMA 2' AND TYPE = 'L')
+		OR ID = '110' OR (ID = '130' AND USEDBY = 'UJI KONFLIK APLIKASI')`); n != 3 {
 		t.Errorf("hasil delta %d", n)
 	}
 	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RATE_LIFE_SUMMARY WHERE ID = '120'`); n != 0 {

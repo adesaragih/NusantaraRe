@@ -178,12 +178,12 @@ func SqlAdaIDRingkasan(flat, json string) string {
 	return fmt.Sprintf(`SELECT COUNT(*) FROM (SELECT ID FROM %s WHERE ID = :1 UNION ALL SELECT ID FROM %s WHERE ID = :2)`, flat, json)
 }
 
-// SqlSisipRingkasan - ringkasan baru di tabel flat; TYPE dan FLAG tidak ditulis (NULL, K-F2).
+// SqlSisipRingkasan - ringkasan baru di tabel flat; TYPE tidak ditulis (NULL, K-F2).
 func SqlSisipRingkasan(t string) string {
 	return fmt.Sprintf(`INSERT INTO %s (ID, %s, %s, %s) VALUES (:1, :2, :3, :4)`, t, KolomUsedBy, KolomOperatorID, KolomModified)
 }
 
-// SqlUbahRingkasan - Edit: USEDBY, OPERATORID, MODIFIEDDATE; TYPE dan FLAG baris pindahan tetap.
+// SqlUbahRingkasan - Edit: USEDBY, OPERATORID, MODIFIEDDATE; TYPE baris pindahan tetap.
 func SqlUbahRingkasan(t string) string {
 	return fmt.Sprintf(`UPDATE %s SET %s = :1, %s = :2, %s = :3 WHERE ID = :4`, t, KolomUsedBy, KolomOperatorID, KolomModified)
 }
@@ -417,7 +417,7 @@ func (g *Gudang) SisipRingkasan(ctx context.Context, tx *db.Tx, r models.Ringkas
 	return err
 }
 
-// UbahRingkasan - Edit: hanya USEDBY, OPERATORID, MODIFIEDDATE di tabel flat; TYPE dan FLAG tetap. ErrTidakAda bila
+// UbahRingkasan - Edit: hanya USEDBY, OPERATORID, MODIFIEDDATE di tabel flat; TYPE tetap. ErrTidakAda bila
 // ID tidak ada.
 func (g *Gudang) UbahRingkasan(ctx context.Context, tx *db.Tx, r models.Ringkasan) error {
 	n, err := g.nama()

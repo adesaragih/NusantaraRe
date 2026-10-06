@@ -49,7 +49,7 @@ func jsonRing(usedby, modified, flag string) string {
 	return s + `}`
 }
 
-// Pemindahan penuh (tanpa -sejak): FLAG dan TYPE disalin APA ADANYA (AP/PM/PY dari data DEV); panjang maksimum per kolom
+// Pemindahan penuh (tanpa -sejak): TYPE disalin APA ADANYA, FLAG TIDAK disalin (RALAT R5); panjang maksimum per kolom
 // dilaporkan; nilai yang TIDAK MUAT menahan -jalankan (nol pemotongan, tanpa nilai di laporan); cacah = saat itu.
 func TestRencanaPindahPenuh(t *testing.T) {
 	panjang := strings.Repeat("N", 501)
@@ -69,10 +69,13 @@ func TestRencanaPindahPenuh(t *testing.T) {
 		t.Errorf("laporan %+v sisip %d", lap, len(sisip))
 	}
 	if !sisip[0].Sama(RingkasanFlat{ID: "101", UsedBy: p("UJI RATE A"), Type: p("L"), ModifiedDate: p("20240102T030405.000 GMT"),
-		OperatorID: p("UJI-A"), Flag: p("AP")}) || *sisip[1].Flag != "PM" || *sisip[2].Flag != "PY" || sisip[2].Type != nil {
-		t.Errorf("FLAG/TYPE apa adanya %+v", sisip)
+		OperatorID: p("UJI-A")}) || sisip[2].Type != nil {
+		t.Errorf("TYPE apa adanya %+v", sisip)
 	}
-	if lap.PanjangMaks["USEDBY"] != 501 || lap.PanjangMaks["MODIFIEDDATE"] != 23 || lap.PanjangMaks["ID"] != 11 || lap.PanjangMaks["FLAG"] != 2 {
+	if _, ada := lap.PanjangMaks["FLAG"]; ada {
+		t.Error("FLAG dibaca alat pindah")
+	}
+	if lap.PanjangMaks["USEDBY"] != 501 || lap.PanjangMaks["MODIFIEDDATE"] != 23 || lap.PanjangMaks["ID"] != 11 {
 		t.Errorf("panjang maks %v", lap.PanjangMaks)
 	}
 	if len(lap.TidakMuat) != 2 || lap.TidakMuat[0] != "103 USEDBY: 501 byte > 500" || lap.TidakMuat[1] != "12345678901 ID: 11 byte > 10" {
@@ -104,11 +107,11 @@ func TestRencanaPindahDelta(t *testing.T) {
 		{ID: "208", JSON: jsonRing("UJI LAMA TANPA WAKTU", "", "")},   // tidak di flat, tanpa stempel -> dilewati
 	}
 	flat := []RingkasanFlat{
-		{ID: "201", UsedBy: p("UJI SAMA"), ModifiedDate: p(lama), Flag: p("AP")},
-		{ID: "202", UsedBy: p("UJI PEGA"), ModifiedDate: p(tengah), Flag: p("AP")},
-		{ID: "203", UsedBy: p("UJI APLIKASI SUDAH UBAH"), ModifiedDate: p(baru), Flag: p("AP")},
-		{ID: "204", UsedBy: p("UJI WAKTU SAMA X"), ModifiedDate: p(tengah), Flag: p("AP")},
-		{ID: "205", UsedBy: p("UJI LAIN"), Flag: p("AP")},
+		{ID: "201", UsedBy: p("UJI SAMA"), ModifiedDate: p(lama)},
+		{ID: "202", UsedBy: p("UJI PEGA"), ModifiedDate: p(tengah)},
+		{ID: "203", UsedBy: p("UJI APLIKASI SUDAH UBAH"), ModifiedDate: p(baru)},
+		{ID: "204", UsedBy: p("UJI WAKTU SAMA X"), ModifiedDate: p(tengah)},
+		{ID: "205", UsedBy: p("UJI LAIN")},
 		{ID: "900", UsedBy: p("UJI RINGKASAN APLIKASI"), ModifiedDate: p(baru)},
 	}
 	lap, sisip, ubah, err := RencanaPindah(sumber, flat, tengah)
@@ -129,7 +132,7 @@ func TestRencanaPindahDelta(t *testing.T) {
 	if lap.FlatSaja != 1 || lap.CacahSumber != 8 || lap.CacahFlat != 6 || !lap.BolehDitulis() || lap.BatasBerikut != baru {
 		t.Errorf("laporan %+v", lap)
 	}
-	if len(sisip) != 1 || sisip[0].ID != "206" || len(ubah) != 1 || ubah[0].ID != "202" || *ubah[0].Flag != "PM" || *ubah[0].UsedBy != "UJI PEGA UBAH" {
+	if len(sisip) != 1 || sisip[0].ID != "206" || len(ubah) != 1 || ubah[0].ID != "202" || *ubah[0].UsedBy != "UJI PEGA UBAH" {
 		t.Errorf("sisip %+v ubah %+v", sisip, ubah)
 	}
 	// Tanpa -sejak: ringkasan yang tidak ada di flat disisip (pemindahan penuh pertama).

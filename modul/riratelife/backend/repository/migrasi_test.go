@@ -44,15 +44,22 @@ func TestMigrasi926TeruraiDanBerpasangan(t *testing.T) {
 		t.Fatalf("926 maju %d pernyataan, mau 2 (CREATE TABLE + indeks pengaman)", len(maju))
 	}
 	nama, kolom := migrasi.KolomCreateTable(maju[0])
-	if nama != TabelRingkasan || !slices.Equal(kolom, KolomViewRingkasan) {
-		t.Fatalf("KolomCreateTable = %s %v, mau %s %v", nama, kolom, TabelRingkasan, KolomViewRingkasan)
+	if nama != TabelRingkasan || !slices.Equal(kolom, KolomRingkasanFlat) {
+		t.Fatalf("KolomCreateTable = %s %v, mau %s %v", nama, kolom, TabelRingkasan, KolomRingkasanFlat)
+	}
+	// RALAT R5: FLAG tidak digunakan - tidak ada di DDL tabel flat (jalur mundur tetap memulihkan view lengkap).
+	if slices.Contains(kolom, "FLAG") || strings.Contains(maju[0], "FLAG") {
+		t.Errorf("DDL 926 memuat FLAG:\n%s", maju[0])
+	}
+	if len(LebarKolomFlat) != len(KolomRingkasanFlat) {
+		t.Errorf("LebarKolomFlat %v, kolom flat %v", LebarKolomFlat, KolomRingkasanFlat)
 	}
 	ddl := satuBaris(maju[0])
 	if strings.Count(ddl, "NOT NULL") != 1 || !strings.Contains(ddl, "CONSTRAINT PK_RATE_LIFE_SUMMARY PRIMARY KEY (ID)") {
 		t.Errorf("PK / NULLABLE:\n%s", ddl)
 	}
 	// Lebar alat pindah = lebar DDL, dan semua kolom teks (view: semua VARCHAR2).
-	for _, k := range KolomViewRingkasan {
+	for _, k := range KolomRingkasanFlat {
 		m := regexp.MustCompile(k + ` VARCHAR2\((\d+)\)`).FindStringSubmatch(ddl)
 		if m == nil || m[1] != fmt.Sprint(LebarKolomFlat[k]) {
 			t.Errorf("%s: DDL %v, LebarKolomFlat %d", k, m, LebarKolomFlat[k])

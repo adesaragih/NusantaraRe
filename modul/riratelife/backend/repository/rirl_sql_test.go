@@ -57,6 +57,17 @@ func TestSqlTulisRingkasan(t *testing.T) {
 		"NVL(MAX(TO_NUMBER(REGEXP_SUBSTR(ID, '^[0-9]+$'))), 0)) FROM (SELECT ID FROM S.RATE_LIFE_SUMMARY UNION ALL SELECT ID FROM S.M_RATE_LIFE_SUMMARY)")
 	memuat(t, "ada ringkasan", SqlAdaIDRingkasan("S.RATE_LIFE_SUMMARY", "S.M_RATE_LIFE_SUMMARY"),
 		"SELECT COUNT(*) FROM (SELECT ID FROM S.RATE_LIFE_SUMMARY WHERE ID = :1 UNION ALL SELECT ID FROM S.M_RATE_LIFE_SUMMARY WHERE ID = :2)")
+	// RALAT R5: nol FLAG di SQL tabel flat - repository maupun alat pindah.
+	for _, q := range []string{SqlSisipRingkasan("T"), SqlUbahRingkasan("T"), SqlDaftar("T", "", false), SqlAmbil("T"),
+		SqlSemuaRingkasanFlat("T"), SqlSisipRingkasanFlat("T"), SqlPerbaruiRingkasanFlat("T"), kolomRingkasan} {
+		if strings.Contains(q, "FLAG") {
+			t.Errorf("SQL tabel flat memuat FLAG: %s", q)
+		}
+	}
+	memuat(t, "pindah sisip", SqlSisipRingkasanFlat("S.RATE_LIFE_SUMMARY"),
+		"INSERT INTO S.RATE_LIFE_SUMMARY (ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID) VALUES (:1, :2, :3, :4, :5)")
+	memuat(t, "pindah ubah", SqlPerbaruiRingkasanFlat("S.RATE_LIFE_SUMMARY"),
+		"UPDATE S.RATE_LIFE_SUMMARY SET USEDBY = :1, TYPE = :2, MODIFIEDDATE = :3, OPERATORID = :4 WHERE ID = :5")
 	memuat(t, "baca json rate", SqlBacaJSON("S.M_RATE_LIFE"), "SELECT JSONDATA FROM S.M_RATE_LIFE WHERE ID = :1 FOR UPDATE")
 	memuat(t, "tulis json", SqlTulisJSON("S.M_RATE_LIFE"), "UPDATE S.M_RATE_LIFE SET JSONDATA = :1 WHERE ID = :2")
 	memuat(t, "rate milik", SqlIDRateMilik("S.RATE_LIFE"), "SELECT ID FROM S.RATE_LIFE WHERE IDUSEDBY = :1")

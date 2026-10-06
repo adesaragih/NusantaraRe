@@ -13,7 +13,7 @@ package repository
 // Tabel yang DITULIS.
 const (
 	// TabelRingkasan - TABEL FLAT `RATE_LIFE_SUMMARY` (migrasi inti 926, K-F1), kelas
-	// `ASM-FW-GISFW-Int-RATE_LIFE_SUMMARY`. Kolom = KolomViewRingkasan.
+	// `ASM-FW-GISFW-Int-RATE_LIFE_SUMMARY`. Kolom = KolomRingkasanFlat.
 	TabelRingkasan = "RATE_LIFE_SUMMARY"
 	// TabelRate - kelas `ASM-FW-GISFW-Int-M_RATE_LIFE` (`AddToListSummary_Act` b1833); `ID VARCHAR2(10)`,
 	// `JSONDATA CLOB` (katalog DEV).
@@ -29,9 +29,13 @@ const TabelRingkasanJSON = "M_RATE_LIFE_SUMMARY"
 
 // KolomViewRingkasan - kolom VIEW warisan `RATE_LIFE_SUMMARY` menurut definisinya (ALL_VIEWS, owner POOLDATA, dibaca WO
 // 06-10-2026): `SELECT a.ID, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.MODIFIEDDATE, a.JSONDATA.OPERATORID,
-// a.JSONDATA.FLAG FROM M_RATE_LIFE_SUMMARY a`. Tabel flat 926 memuat PERSIS kolom ini (K-F2); selain ID = kunci
-// `M_RATE_LIFE_SUMMARY.JSONDATA` yang dibaca alat pindah.
+// a.JSONDATA.FLAG FROM M_RATE_LIFE_SUMMARY a`. SEJARAH: dipakai jalur mundur 926 (view dipulihkan persis).
 var KolomViewRingkasan = []string{"ID", "USEDBY", "TYPE", "MODIFIEDDATE", "OPERATORID", "FLAG"}
+
+// KolomRingkasanFlat - kolom tabel flat 926 = kolom view TANPA FLAG (RALAT R5: keputusan work owner 06-10-2026 "kolom
+// FLAG tidak digunakan"; nilai lama tetap di `M_RATE_LIFE_SUMMARY.JSONDATA`). Selain ID = kunci JSON yang dibaca alat
+// pindah.
+var KolomRingkasanFlat = []string{"ID", "USEDBY", "TYPE", "MODIFIEDDATE", "OPERATORID"}
 
 // KolomViewRate - kolom view `RATE_LIFE` (katalog DEV, `modul/claimlife/docs/KATALOG-TABEL-PESERTA-DAN-TREATY.md`);
 // selain ID = kunci `M_RATE_LIFE.JSONDATA`.
@@ -48,8 +52,8 @@ const (
 	SeqRate      = "SEQ_M_RATE_LIFE"
 )
 
-// Kolom tabel flat ringkasan yang ditulis modul (XML `InboxSummaryRIRate`). `TYPE` dan `FLAG` TIDAK ditulis (tidak ada
-// di XML, K-F2): baris baru NULL, baris pindahan apa adanya.
+// Kolom tabel flat ringkasan yang ditulis modul (XML `InboxSummaryRIRate`). `TYPE` TIDAK ditulis (tidak ada di XML,
+// K-F2): baris baru NULL, Edit tidak menimpa, baris pindahan apa adanya. FLAG tidak ada di tabel flat (RALAT R5).
 const (
 	KolomUsedBy     = "USEDBY"
 	KolomOperatorID = "OPERATORID"
