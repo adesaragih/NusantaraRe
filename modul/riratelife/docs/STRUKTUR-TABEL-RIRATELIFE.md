@@ -1,44 +1,54 @@
 # Struktur tabel — R/I Rate Life
 
-Modul `riratelife` (perintah work owner 05-10-2026) menulis dua tabel fisik warisan Pega dan membaca dua view di
-atasnya; nol tabel baru, nol DDL pada objek warisan, nol migrasi modul. Satu-satunya objek baru = dua sequence ID
-(migrasi inti 923, K2). Nama objek dan kunci JSON ditulis SEKALI di `backend/repository/rirl_tabel.go`.
+Modul `riratelife` (perintah work owner 05-10-2026). **RALAT R4 (06-10-2026, `MODUL.md`)**: ringkasan kini disimpan di
+**tabel flat `RATE_LIFE_SUMMARY`** (migrasi inti `926`) yang menggantikan VIEW warisan bernama sama - keputusan work
+owner K-F1/K-F2. Rincian rate tetap di tabel JSON warisan `M_RATE_LIFE` + view `RATE_LIFE` (tidak berubah). Nama
+objek dan kunci JSON ditulis SEKALI di `backend/repository/rirl_tabel.go`.
 
 | Objek | Jenis | Ditulis | Dibaca | Pembaca lain |
 | --- | --- | --- | --- | --- |
-| `M_RATE_LIFE_SUMMARY` | tabel (JSON), 339 baris DEV | Add, Edit, Delete, Simpan Upload | ID terpakai / ID tertinggi | — |
-| `M_RATE_LIFE` | tabel (JSON), 96.038-98.305 baris DEV | Edit (salinan nama), Delete, Simpan Upload, Rate Detail tambah / ubah | ID terpakai / ID tertinggi | — |
-| `RATE_LIFE_SUMMARY` | view, 6 kolom | — | grid, nama kembar | `mastercontractretrolife`, `masterproductnamelife` (ID, USEDBY) |
+| `RATE_LIFE_SUMMARY` | **tabel flat** (926), PK `ID`, 6 kolom | Add, Edit, Delete, Simpan Upload, Rate Detail Save (OPERATORID/MODIFIEDDATE), alat pindahflat | grid, nama kembar, ID terpakai | `mastercontractretrolife`, `masterproductnamelife` (`SELECT ID, USEDBY` - tidak diubah) |
+| `M_RATE_LIFE_SUMMARY` | tabel JSON warisan, 339 baris DEV | **tidak pernah** (K-F1) | alat pindahflat; ID terpakai / ID tertinggi | prosedur Pega `PEGA_M_RATE_LIFE_SUMMARY` |
+| `M_RATE_LIFE` | tabel JSON warisan, 96.038-98.305 baris DEV | Edit (salinan nama), Delete, Simpan Upload, Rate Detail tambah / ubah | ID terpakai / ID tertinggi | — |
 | `RATE_LIFE` | view, 8 kolom | — | Rate Detail, jumlah rate, kembar upload | `mastercontractretrolife`, `masterproductnamelife`, Pega `GetRateRetro` (IDUSEDBY) |
 | `SEQ_M_RATE_LIFE_SUMMARY` | sequence (923) | NEXTVAL | — | — |
 | `SEQ_M_RATE_LIFE` | sequence (923) | NEXTVAL | — | — |
 
-Bukti: `RATE_LIFE` = `SELECT a.ID, a.JSONDATA.IDUSEDBY, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.GENDER,
-a.JSONDATA.CONTRACT, a.JSONDATA.AGE, a.JSONDATA.RATE FROM M_RATE_LIFE a` dan agregatnya
-(`modul/claimlife/docs/KATALOG-TABEL-PESERTA-DAN-TREATY.md` b118-b140); `RATE_LIFE_SUMMARY.ID` VARCHAR2(10)
-(`modul/masterproductnamelife/docs/STRUKTUR-TABEL-MASTER-PRODUCT-NAME-LIFE.md` b180); objek ada di DEV
-(`modul/masterproductnamelife/docs/OQ-MASTER-PRODUCT-NAME-LIFE.md` b51).
+**ID ringkasan baru**: `SEQ_M_RATE_LIFE_SUMMARY` (923, sudah jalan di DEV). `MaksID`/`AdaID` memeriksa tabel flat
+**DAN** `M_RATE_LIFE_SUMMARY`: ringkasan yang masih di JSON (belum dipindah, atau ditulis Pega sesudah cutover) tetap
+dihitung terpakai, sehingga ID baru aplikasi tidak pernah sama dengan ID yang kelak dibawa alat pindah (yang akan
+menolak putaran bila ID sama berisi beda). Membaca JSON warisan untuk ini aman: SELECT saja.
 
-✅ **RALAT R1** (MODUL.md, 06-10-2026): definisi view `RATE_LIFE_SUMMARY` dibaca WO dari `ALL_VIEWS` (owner POOLDATA):
-`SELECT a.ID, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.MODIFIEDDATE, a.JSONDATA.OPERATORID, a.JSONDATA.FLAG
-FROM M_RATE_LIFE_SUMMARY a`. Asumsi A1 terbukti.
+## RATE_LIFE_SUMMARY
 
-⚠️ View atas CLOB tanpa indeks: setiap kueri `RATE_LIFE ... WHERE IDUSEDBY = :n` mengurai seluruh JSON. Modul ini
-membaca kunci kembar upload SEKALI per unggah (daftar IN), dan Delete/Edit memilih baris lewat view
-(`ID IN (SELECT ID FROM RATE_LIFE WHERE IDUSEDBY = :n)`) supaya maknanya sama dengan pembaca lain.
+Tabel flat (migrasi inti `926_rate_life_summary_flat.sql`). Kolom = PERSIS keenam kolom VIEW warisan
+(`SELECT a.ID, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.MODIFIEDDATE, a.JSONDATA.OPERATORID, a.JSONDATA.FLAG
+FROM M_RATE_LIFE_SUMMARY a`, ALL_VIEWS dibaca WO 06-10-2026 - semua VARCHAR2; K-F2). Semua NULLABLE kecuali PK;
+wajib-isi ditegakkan Go. Alat pindah melaporkan panjang maksimum (byte) tiap kolom di sumber dan MENOLAK `-jalankan`
+bila ada nilai yang tidak muat - nol pemotongan.
+
+| Kolom | Tipe | DDL | Bukti lebar dan isi |
+| --- | --- | --- | --- |
+| `ID` | teks | VARCHAR2(10) NOT NULL, PK | `RATE_LIFE_SUMMARY.ID` VARCHAR2(10) (`modul/masterproductnamelife/docs/STRUKTUR-TABEL-MASTER-PRODUCT-NAME-LIFE.md` b180); `.ID` RIRate.xml b1089; `SEQ_M_RATE_LIFE_SUMMARY` |
+| `USEDBY` | teks | VARCHAR2(500) | "R/I RATE NAME" `.USEDBY` RIRate.xml b1273 (tanpa pyMax; lebar layar 200 px). Preseden yang menyalin nilai ini: `M_PRODUCTNAME_LIFE_PLAN.RIRATE` VARCHAR2(500) (STRUKTUR MPNL b181, `.RIRATE ← .USEDBY`). Isian baru dibatasi Go `BatasNama` 200 byte |
+| `TYPE` | teks | VARCHAR2(100) | **[penyimpangan sadar]** tidak ada di XML, data DEV tidak terdokumentasi di repo → preseden K6 teks; tidak ditulis modul (baris baru NULL), baris pindahan apa adanya |
+| `MODIFIEDDATE` | teks | VARCHAR2(50) | "MODIFY DATE" `.MODIFIEDDATE` RIRate.xml b10879; bentuk Pega `YYYYMMDDTHHMMSS.mmm GMT` = 23 byte. **[penyimpangan sadar]** lebar data lama tidak terdokumentasi → K6 teks 50 |
+| `OPERATORID` | teks | VARCHAR2(200) | "MODIFY OPERATOR" `.OPERATORID` RIRate.xml b10709; Go menulis akun login dipotong `BatasNama` 200 byte. **[penyimpangan sadar]** lebar data lama tidak terdokumentasi |
+| `FLAG` | teks | VARCHAR2(100) | **[penyimpangan sadar]** seperti `TYPE` |
+
+**Indeks `IX_RATE_LIFE_SUMMARY_NAMA` = `UPPER(TRIM(USEDBY))`** (fungsi): dipakai SETIAP Save dan Simpan Upload
+(`SqlPemakaiNama` - nama tidak kembar tanpa beda huruf, pencocokan upload). Sekaligus PENGAMAN migrasi: bila view lama
+belum dibuang, CREATE TABLE 926 dilewati pra-terbang (ORA-00955), lalu `CREATE INDEX` atas view gagal ORA-01702 dan
+`-migrate` berhenti keras tanpa mencatat 926 (`docs/LANGKAH-WO-RIRATELIFE-FLAT.md`).
 
 ## M_RATE_LIFE_SUMMARY
 
-Tabel warisan (dinyatakan di `MODUL.md`, bukan dibuat migrasi).
+Tabel warisan (dinyatakan di `MODUL.md`), dibaca saja sejak RALAT R4.
 
 | Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
 | --- | --- | --- | --- | --- | --- |
-| `ID` | VARCHAR2(10) | ? | | "ID" | `SEQ_M_RATE_LIFE_SUMMARY` (nomor terpakai dilewati) |
-| `JSONDATA` | CLOB | ? | | JSON | sisip `JSON_OBJECT`, ubah `JSON_MERGEPATCH` (ubah: baca-ubah-tulis, RALAT R3) |
-
-Kunci JSON yang ditulis (terbukti, RALAT R1): `USEDBY` ("R/I RATE NAME", wajib, tidak kembar), `OPERATORID` (akun login),
-`MODIFIEDDATE` (format Pega `YYYYMMDDTHHMMSS.mmm GMT`). Kunci lain dibiarkan; `TYPE` dan `FLAG` tidak ditulis
-(tidak ada di XML).
+| `ID` | VARCHAR2(10) | ? | | ID terpakai, sumber pindah | prosedur Pega / `SEQ_M_RATE_LIFE_SUMMARY` (sebelum R4) |
+| `JSONDATA` | CLOB | ? | | sumber pindah | kunci `USEDBY`, `TYPE`, `MODIFIEDDATE`, `OPERATORID`, `FLAG` (RALAT R1) |
 
 ## M_RATE_LIFE
 
@@ -52,19 +62,6 @@ Tabel warisan (dinyatakan di `MODUL.md`, bukan dibuat migrasi).
 Kunci JSON yang ditulis (terbukti dari view): `IDUSEDBY` (ID ringkasan), `USEDBY`, `GENDER` (U/M/F), `CONTRACT`
 (0-120 atau tidak ditulis), `AGE` (0-120), `RATE` (teks berkoma desimal). `TYPE` tidak pernah ditulis (NULL di
 seluruh baris DEV). Rate Detail (`InboxRIRate`): `GENDER` dan `AGE` boleh kosong (kunci tidak ditulis), `CONTRACT` wajib.
-
-## RATE_LIFE_SUMMARY
-
-View warisan (dinyatakan di `MODUL.md`), dibaca saja.
-
-| Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
-| --- | --- | --- | --- | --- | --- |
-| `ID` | VARCHAR2(10) | ? | | "ID" | `M_RATE_LIFE_SUMMARY.ID` |
-| `USEDBY` | VARCHAR2(4000) | ? | | "R/I RATE NAME" | `JSONDATA.USEDBY` (terbukti, R1) |
-| `OPERATORID` | VARCHAR2(4000) | ? | | "MODIFY OPERATOR" | `JSONDATA.OPERATORID` (terbukti, R1) |
-| `MODIFIEDDATE` | VARCHAR2(4000) | ? | | "MODIFY DATE" | `JSONDATA.MODIFIEDDATE` (terbukti, R1) |
-| `TYPE` | VARCHAR2 | ? | | tidak dipakai | `JSONDATA.TYPE` — tidak dirujuk XML (R1) |
-| `FLAG` | VARCHAR2 | ? | | tidak dipakai | `JSONDATA.FLAG` — tidak dirujuk XML (R1) |
 
 ## RATE_LIFE
 
