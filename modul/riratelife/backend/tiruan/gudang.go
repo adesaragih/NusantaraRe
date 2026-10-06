@@ -254,19 +254,8 @@ func (g *Gudang) rateMilik(idUsedBy string) []models.Rate {
 			out = append(out, r)
 		}
 	}
-	sort.Slice(out, func(a, b int) bool {
-		x, y := out[a], out[b]
-		if x.Gender != y.Gender {
-			return x.Gender < y.Gender
-		}
-		if angka(x.Contract) != angka(y.Contract) {
-			return angka(x.Contract) < angka(y.Contract)
-		}
-		if angka(x.Age) != angka(y.Age) {
-			return angka(x.Age) < angka(y.Age)
-		}
-		return x.ID < y.ID
-	})
+	// Seperti SqlDaftarRate: ID angka menurun.
+	sort.Slice(out, func(a, b int) bool { return angka(out[a].ID) > angka(out[b].ID) })
 	return out
 }
 
@@ -282,8 +271,8 @@ func (g *Gudang) DaftarRate(_ context.Context, idUsedBy string, halaman int) ([]
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	semua := g.rateMilik(idUsedBy)
-	awal := min((halaman-1)*models.UkuranHalaman, len(semua))
-	return semua[awal:min(awal+models.UkuranHalaman, len(semua))], len(semua), nil
+	awal := min((halaman-1)*models.UkuranHalamanRate, len(semua))
+	return semua[awal:min(awal+models.UkuranHalamanRate, len(semua))], len(semua), nil
 }
 
 // RateDari memenuhi services.Gudang.
@@ -305,5 +294,18 @@ func (g *Gudang) SisipRate(_ context.Context, _ *db.Tx, r models.Rate) error {
 		return repository.ErrKembar
 	}
 	g.Rate[r.ID] = r
+	return nil
+}
+
+// UbahRate memenuhi services.Gudang - GENDER, CONTRACT, AGE, RATE baris milik r.IDUsedBy.
+func (g *Gudang) UbahRate(_ context.Context, _ *db.Tx, r models.Rate) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	lama, ada := g.Rate[r.ID]
+	if !ada || lama.IDUsedBy != r.IDUsedBy {
+		return repository.ErrTidakAda
+	}
+	lama.Gender, lama.Contract, lama.Age, lama.Rate = r.Gender, r.Contract, r.Age, r.Rate
+	g.Rate[r.ID] = lama
 	return nil
 }

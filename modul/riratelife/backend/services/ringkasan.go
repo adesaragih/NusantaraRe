@@ -185,7 +185,7 @@ func (l *Layanan) Hapus(ctx context.Context, a Aktor, id string) (models.HasilHa
 	return models.HasilHapus{ID: id, RateTerhapus: n}, nil
 }
 
-// DaftarRate - satu halaman Rate Detail ringkasan id (baca saja; jalur tulisnya Upload).
+// DaftarRate - satu halaman Rate Detail ringkasan id (20 per halaman, `pyPageSizeOther` b10206).
 func (l *Layanan) DaftarRate(ctx context.Context, id string, halaman int) (models.Halaman[models.Rate], error) {
 	id = strings.TrimSpace(id)
 	if halaman < 1 {
@@ -201,5 +201,5 @@ func (l *Layanan) DaftarRate(ctx context.Context, id string, halaman int) (model
 	if d == nil {
 		d = []models.Rate{}
 	}
-	return models.Halaman[models.Rate]{Daftar: d, Total: total, Halaman: halaman, Ukuran: models.UkuranHalaman}, nil
+	return models.Halaman[models.Rate]{Daftar: d, Total: total, Halaman: halaman, Ukuran: models.UkuranHalamanRate}, nil
 }

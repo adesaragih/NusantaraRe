@@ -63,7 +63,15 @@ func TestSqlRate(t *testing.T) {
 		t.Error("TYPE tidak boleh ditulis")
 	}
 	memuat(t, "detail", SqlDaftarRate("S.RATE_LIFE"), "SELECT ID, IDUSEDBY, USEDBY, GENDER, CONTRACT, AGE, RATE FROM S.RATE_LIFE WHERE IDUSEDBY = :1",
-		"ORDER BY GENDER, TO_NUMBER(REGEXP_SUBSTR(TRIM(CONTRACT), '^[0-9]+$')) NULLS FIRST", "ID OFFSET :2 ROWS FETCH NEXT :3 ROWS ONLY")
+		"ORDER BY TO_NUMBER(REGEXP_SUBSTR(ID, '^[0-9]+$')) DESC NULLS LAST, ID DESC OFFSET :2 ROWS FETCH NEXT :3 ROWS ONLY")
+	u := satuBaris(SqlUbahRate("S.M_RATE_LIFE", "S.RATE_LIFE"))
+	memuat(t, "ubah rate", u, "UPDATE S.M_RATE_LIFE SET JSONDATA = JSON_MERGEPATCH(JSONDATA, JSON_OBJECT('GENDER' VALUE :1, 'CONTRACT' VALUE :2, 'AGE' VALUE :3, 'RATE' VALUE :4 NULL ON NULL) RETURNING CLOB)",
+		"WHERE ID = :5 AND ID IN (SELECT ID FROM S.RATE_LIFE WHERE IDUSEDBY = :6)")
+	for _, k := range []string{"'TYPE'", "'IDUSEDBY'", "'USEDBY'"} {
+		if strings.Contains(u, k) {
+			t.Errorf("ubah rate tidak boleh menulis %s", k)
+		}
+	}
 	memuat(t, "kunci", SqlRateDari("S.RATE_LIFE", 3), "WHERE IDUSEDBY IN (:1, :2, :3)")
 }
 
@@ -71,6 +79,9 @@ func TestSqlRate(t *testing.T) {
 func TestPeriksaTulis(t *testing.T) {
 	if err := PeriksaTulis(ViewRingkasan, "DELETE FROM X.RATE_LIFE_SUMMARY"); !errors.Is(err, ErrBacaSaja) {
 		t.Errorf("view ditulis: %v", err)
+	}
+	if err := PeriksaTulis(TabelRate, SqlUbahRate("X.M_RATE_LIFE", "X.RATE_LIFE")); err != nil {
+		t.Errorf("ubah rate: %v", err)
 	}
 	if err := PeriksaTulis(ViewRate, SqlDaftarRate("V")); err != nil {
 		t.Errorf("SELECT view: %v", err)

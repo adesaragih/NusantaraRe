@@ -6,7 +6,9 @@
 //	POST   /api/ri-rate-life                                    Save - Add (ID dari SEQ_M_RATE_LIFE_SUMMARY)
 //	PUT    /api/ri-rate-life/{id}                               Save - Edit (`EditListSummary_DT`)
 //	DELETE /api/ri-rate-life/{id}                               Delete (`DeleteSummaryDetail`) beserta rate-nya
-//	GET    /api/ri-rate-life/{id}/rate?halaman=                 Rate Detail (`InboxRIRate`)
+//	GET    /api/ri-rate-life/{id}/rate?halaman=                 Rate Detail (`InboxRIRate`, 20 per halaman)
+//	POST   /api/ri-rate-life/{id}/rate                          Rate Detail Save - tambah baris (`AddToList_Act`)
+//	PUT    /api/ri-rate-life/{id}/rate/{rateId}                 Rate Detail Save - ubah baris (`EditList_DT`)
 //	POST   /api/ri-rate-life/unggah/pratinjau                   View Upload (`ViewCSVResult_RIRate`) - tanpa menulis
 //	POST   /api/ri-rate-life/unggah                             Simpan Upload (`SubmitRIRate_Act`)
 //
@@ -133,6 +135,27 @@ func daftarkan(mux *http.ServeMux, layanan func() *services.Layanan, adaDB func(
 		}
 		galat.TulisJSON(w, d)
 	})
+	simpanRate := func(w http.ResponseWriter, r *http.Request, l *services.Layanan, a services.Aktor, idRate string) {
+		var isi models.IsianRate
+		if !bacaBadan(w, r, &isi, batasBadan) {
+			return
+		}
+		hasil, err := l.SimpanRate(r.Context(), a, r.PathValue("id"), idRate, isi)
+		if jawabGalat(w, err, "menyimpan rate") {
+			return
+		}
+		galat.TulisJSON(w, hasil)
+	}
+	pasang("POST "+Prefix+"/{id}/rate", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, a services.Aktor) {
+		simpanRate(w, r, l, a, "")
+	})
+	pasang("PUT "+Prefix+"/{id}/rate/{rateId}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, a services.Aktor) {
+		if strings.TrimSpace(r.PathValue("rateId")) == "" {
+			galat.Tulis(w, http.StatusNotFound, "rate row not found in this R/I rate")
+			return
+		}
+		simpanRate(w, r, l, a, r.PathValue("rateId"))
+	})
 	pasang("POST "+Prefix+"/unggah/pratinjau", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, a services.Aktor) {
 		var p services.PermintaanUnggah
 		if !bacaBadan(w, r, &p, batasBadanUnggah) {
@@ -182,6 +205,8 @@ func jawabGalat(w http.ResponseWriter, err error, apa string) bool {
 		return false
 	case errors.Is(err, services.ErrTidakAda):
 		galat.Tulis(w, http.StatusNotFound, "R/I rate summary not found")
+	case errors.Is(err, services.ErrRateTidakAda):
+		galat.Tulis(w, http.StatusNotFound, "rate row not found in this R/I rate")
 	case errors.Is(err, services.ErrDilarang):
 		galat.Tulis(w, http.StatusForbidden, pesan(err, services.ErrDilarang))
 	case errors.Is(err, services.ErrMasukanTidakSah):

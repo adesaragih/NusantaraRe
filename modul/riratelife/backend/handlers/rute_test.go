@@ -109,3 +109,64 @@ func TestRuteUnggah(t *testing.T) {
 		t.Errorf("terlalu besar %d", w.Code)
 	}
 }
+
+// Rate Detail (View Detail.xml `InboxRIRate`): tambah dan ubah baris; R/I RATE NAME dari ringkasan yang dilihat.
+func TestRuteRateDetail(t *testing.T) {
+	g := tiruan.Contoh()
+	h := router(g, true)
+	w := kirim(h, "POST", handlers.Prefix+"/101/rate", `{"gender":"f","contract":"2","age":"","rate":"0.125"}`, "UJI-ADMIN")
+	if w.Code != 200 || !strings.Contains(w.Body.String(), `"id":"9001"`) || !strings.Contains(w.Body.String(), `"usedby":"UJI RATE A"`) ||
+		!strings.Contains(w.Body.String(), `"idUsedBy":"101"`) || !strings.Contains(w.Body.String(), `"rate":"0,125"`) {
+		t.Fatalf("tambah %d %s", w.Code, w.Body.String())
+	}
+	if r := g.Ringkasan["101"]; r.OperatorID != "UJI-ADMIN" || r.UsedBy != "UJI RATE A" {
+		t.Errorf("ringkasan sesudah tambah %+v", r)
+	}
+	if w := kirim(h, "GET", handlers.Prefix+"/101/rate", "", "UJI-ADMIN"); w.Code != 200 || !strings.Contains(w.Body.String(), `"ukuran":20`) ||
+		!strings.Contains(w.Body.String(), `"total":4`) || strings.Index(w.Body.String(), `"9001"`) > strings.Index(w.Body.String(), `"9000"`) {
+		t.Errorf("detail urut ID turun %s", w.Body.String())
+	}
+	// Kunci (GENDER, AGE, CONTRACT) kembar di ringkasan yang sama - 9000 = U/30/1.
+	if w := kirim(h, "POST", handlers.Prefix+"/101/rate", `{"gender":"U","contract":"01","age":"30","rate":"1"}`, "UJI-ADMIN"); w.Code != 422 ||
+		!strings.Contains(w.Body.String(), "already exists in R/I RATE NAME UJI RATE A (rate ID 9000)") {
+		t.Errorf("kembar %d %s", w.Code, w.Body.String())
+	}
+	// Kunci sama di ringkasan lain boleh (9100 milik 102).
+	if w := kirim(h, "POST", handlers.Prefix+"/101/rate", `{"gender":"F","contract":"2","age":"40","rate":"1"}`, "UJI-ADMIN"); w.Code != 200 {
+		t.Errorf("kunci ringkasan lain %d %s", w.Code, w.Body.String())
+	}
+	if w := kirim(h, "POST", handlers.Prefix+"/101/rate", `{"gender":"U","contract":"","age":"1","rate":"1"}`, "UJI-ADMIN"); w.Code != 422 ||
+		!strings.Contains(w.Body.String(), "CONTRACT is required") {
+		t.Errorf("contract wajib %d %s", w.Code, w.Body.String())
+	}
+	if w := kirim(h, "POST", handlers.Prefix+"/101/rate", `{"contract":"1","rate":"1","usedby":"LAIN"}`, "UJI-ADMIN"); w.Code != 400 {
+		t.Errorf("nama dari isian ditolak %d", w.Code)
+	}
+	// Ubah: 9003 (M/30/1) -> M/31/1, rate berkoma; nama tetap dari ringkasan.
+	if w := kirim(h, "PUT", handlers.Prefix+"/101/rate/9003", `{"gender":"M","contract":"1","age":"31","rate":"0,8"}`, "UJI-ADMIN"); w.Code != 200 ||
+		!strings.Contains(w.Body.String(), `"age":"31"`) {
+		t.Errorf("ubah %d %s", w.Code, w.Body.String())
+	}
+	if r := g.Rate["9003"]; r.Age != "31" || r.Rate != "0,8" || r.UsedBy != "UJI RATE A" {
+		t.Errorf("rate sesudah ubah %+v", r)
+	}
+	// Ubah tanpa mengganti kunci sendiri bukan kembar.
+	if w := kirim(h, "PUT", handlers.Prefix+"/101/rate/9003", `{"gender":"M","contract":"1","age":"31","rate":"0,9"}`, "UJI-ADMIN"); w.Code != 200 {
+		t.Errorf("ubah kunci sendiri %d %s", w.Code, w.Body.String())
+	}
+	if w := kirim(h, "PUT", handlers.Prefix+"/101/rate/9003", `{"gender":"U","contract":"1","age":"30","rate":"1"}`, "UJI-ADMIN"); w.Code != 422 {
+		t.Errorf("ubah jadi kembar %d %s", w.Code, w.Body.String())
+	}
+	// 9100 milik ringkasan 102, bukan 101.
+	if w := kirim(h, "PUT", handlers.Prefix+"/101/rate/9100", `{"contract":"1","rate":"1"}`, "UJI-ADMIN"); w.Code != 404 {
+		t.Errorf("rate ringkasan lain %d %s", w.Code, w.Body.String())
+	}
+	if w := kirim(h, "POST", handlers.Prefix+"/999/rate", `{"contract":"1","rate":"1"}`, "UJI-ADMIN"); w.Code != 404 {
+		t.Errorf("ringkasan tidak ada %d", w.Code)
+	}
+	for _, m := range []struct{ metode, jalur string }{{"POST", "/101/rate"}, {"PUT", "/101/rate/9000"}} {
+		if w := kirim(h, m.metode, handlers.Prefix+m.jalur, `{"contract":"9","rate":"1"}`, "UJI-LIHAT", handlers.KodeMenu); w.Code != 403 {
+			t.Errorf("%s View only %d", m.metode, w.Code)
+		}
+	}
+}

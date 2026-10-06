@@ -8,7 +8,8 @@
 //     ringkasan lewat nama.
 //   - ID baru dari sequence Oracle (K2) - nomor yang sudah terpakai dilewati (preseden `aggregate`).
 //   - OPERATORID = akun login; MODIFIEDDATE = format Pega `YYYYMMDDTHHMMSS.mmm GMT` (ASUMSI A3).
-//   - Rate Detail (`setIDUsedBy_Act` b11415 + harness `InboxRIRate` b11444, judul "Rate Detail" b11446): baca saja.
+//   - Rate Detail (`setIDUsedBy_Act` b11415 + harness `InboxRIRate` b11444, judul "Rate Detail" b11446): grid 20 per
+//     halaman, tambah dan ubah satu baris (View Detail.xml, work owner 06-10-2026) - ratedetail.go.
 //   - Upload CSV / View Upload / Simpan Upload (b2949, b3467, b4511): aturan dirancang dari label format b5305 (K3).
 //   - Hak menu Full / View only: View only tanpa Add, Edit, Delete, Upload.
 package services
@@ -46,6 +47,8 @@ type dbTx = db.Tx
 var (
 	// ErrTidakAda - ID ringkasan tidak ada.
 	ErrTidakAda = errors.New("services: ringkasan R/I rate tidak ada")
+	// ErrRateTidakAda - baris rate tidak ada di ringkasan itu.
+	ErrRateTidakAda = errors.New("services: baris rate tidak ada")
 	// ErrMasukanTidakSah - isian ditolak; pesannya untuk pengguna.
 	ErrMasukanTidakSah = errors.New("services: masukan tidak sah")
 	// ErrDilarang - aktor tidak berhak; pesannya untuk pengguna.
@@ -83,6 +86,7 @@ type Gudang interface {
 	DaftarRate(ctx context.Context, idUsedBy string, halaman int) ([]models.Rate, int, error)
 	RateDari(ctx context.Context, tx *dbTx, ids []string) ([]models.Rate, error)
 	SisipRate(ctx context.Context, tx *dbTx, r models.Rate) error
+	UbahRate(ctx context.Context, tx *dbTx, r models.Rate) error
 }
 
 // Layanan adalah aturan modul di atas Gudang.
