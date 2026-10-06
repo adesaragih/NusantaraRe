@@ -38,6 +38,8 @@ export const RC = {
   galatContract: 'CONTRACT is required',
   galatYear: 'YEAR is required',
   galatComm: 'COMM is required',
+  galatYearEmpat: 'YEAR must be exactly 4 digits from 1000 to 9999',
+  galatCommNegatif: 'COMM must not be negative',
   detailTersimpan: (id: string) => `R/I comm detail ${id} saved.`,
   tutup: 'Close',
   kosongDetail: 'No R/I comm detail rows for this R/I comm.',
@@ -70,7 +72,7 @@ export const RC = {
   belumAdaBerkas: 'Choose a CSV file with Upload CSV first.',
   galatBerkas: 'Choose a .csv file of at most 4 MB.',
   catatanUnggah:
-    'The first row is the header. Separator ; (a COMM may use a decimal comma) or , (a COMM with a decimal comma must be quoted, e.g. "0,5"). CONTRACT a whole number, YEAR a whole number of at most 4 digits, COMM a number with at most 8 decimals.',
+    'The first row is the header. Separator ; (a COMM may use a decimal comma) or , (a COMM with a decimal comma must be quoted, e.g. "0,5"). CONTRACT a whole number from 0 to 99999, YEAR exactly 4 digits (1000-9999), COMM a number that is not negative with at most 8 decimals.',
   ringkasanBaru: 'new',
   barisSah: (n: number) => `${n} valid row${n === 1 ? '' : 's'}`,
   barisGalat: (n: number) => `${n} row${n === 1 ? '' : 's'} with errors`,

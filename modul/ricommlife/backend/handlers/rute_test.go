@@ -88,7 +88,7 @@ func TestRuteRingkasan(t *testing.T) {
 func TestRuteDetail(t *testing.T) {
 	g := tiruan.Contoh()
 	h := router(g, true)
-	w := kirim(h, "POST", handlers.Prefix+"/1000003/detail", `{"contract":"2","year":"1","comm":"0,125"}`, "UJI-ADMIN")
+	w := kirim(h, "POST", handlers.Prefix+"/1000003/detail", `{"contract":"2","year":"2021","comm":"0,125"}`, "UJI-ADMIN")
 	if w.Code != 200 || !strings.Contains(w.Body.String(), `"id":"1000044"`) || !strings.Contains(w.Body.String(), `"usedby":"UJI COMM RETRO"`) ||
 		!strings.Contains(w.Body.String(), `"idUsedBy":"1000003"`) || !strings.Contains(w.Body.String(), `"comm":"0.125"`) {
 		t.Fatalf("tambah %d %s", w.Code, w.Body.String())
@@ -97,22 +97,22 @@ func TestRuteDetail(t *testing.T) {
 		strings.Index(w.Body.String(), `"1000040"`) > strings.Index(w.Body.String(), `"1000044"`) {
 		t.Errorf("detail urut ID naik %s", w.Body.String())
 	}
-	if w := kirim(h, "POST", handlers.Prefix+"/1000003/detail", `{"contract":"1","year":"1","comm":"1"}`, "UJI-ADMIN"); w.Code != 422 ||
+	if w := kirim(h, "POST", handlers.Prefix+"/1000003/detail", `{"contract":"1","year":"2021","comm":"1"}`, "UJI-ADMIN"); w.Code != 422 ||
 		!strings.Contains(w.Body.String(), "already exists") {
 		t.Errorf("kembar %d %s", w.Code, w.Body.String())
 	}
-	if w := kirim(h, "POST", handlers.Prefix+"/1000003/detail", `{"contract":"9","year":"9","comm":"1","usedby":"LAIN"}`, "UJI-ADMIN"); w.Code != 400 {
+	if w := kirim(h, "POST", handlers.Prefix+"/1000003/detail", `{"contract":"9","year":"2029","comm":"1","usedby":"LAIN"}`, "UJI-ADMIN"); w.Code != 400 {
 		t.Errorf("nama dari isian ditolak %d", w.Code)
 	}
-	if w := kirim(h, "PUT", handlers.Prefix+"/1000003/detail/1000041", `{"contract":"1","year":"3","comm":"10.5"}`, "UJI-ADMIN"); w.Code != 200 ||
-		!strings.Contains(w.Body.String(), `"year":"3"`) {
+	if w := kirim(h, "PUT", handlers.Prefix+"/1000003/detail/1000041", `{"contract":"1","year":"2023","comm":"10.5"}`, "UJI-ADMIN"); w.Code != 200 ||
+		!strings.Contains(w.Body.String(), `"year":"2023"`) {
 		t.Errorf("ubah %d %s", w.Code, w.Body.String())
 	}
-	if w := kirim(h, "PUT", handlers.Prefix+"/1000003/detail/1000042", `{"contract":"1","year":"9","comm":"1"}`, "UJI-ADMIN"); w.Code != 404 {
+	if w := kirim(h, "PUT", handlers.Prefix+"/1000003/detail/1000042", `{"contract":"1","year":"2029","comm":"1"}`, "UJI-ADMIN"); w.Code != 404 {
 		t.Errorf("baris ringkasan lain %d %s", w.Code, w.Body.String())
 	}
 	for _, m := range []struct{ metode, jalur string }{{"POST", "/1000003/detail"}, {"PUT", "/1000003/detail/1000040"}} {
-		if w := kirim(h, m.metode, handlers.Prefix+m.jalur, `{"contract":"9","year":"9","comm":"1"}`, "UJI-LIHAT", handlers.KodeMenu); w.Code != 403 {
+		if w := kirim(h, m.metode, handlers.Prefix+m.jalur, `{"contract":"9","year":"2029","comm":"1"}`, "UJI-LIHAT", handlers.KodeMenu); w.Code != 403 {
 			t.Errorf("%s View only %d", m.metode, w.Code)
 		}
 	}
@@ -130,7 +130,7 @@ func TestRuteUnggah(t *testing.T) {
 		!strings.Contains(w.Body.String(), "Row 2: YEAR must be") {
 		t.Errorf("simpan galat %d %s", w.Code, w.Body.String())
 	}
-	sah := csvJSON("USEDBY;CONTRACT;YEAR;COMM\nUJI X;1;1;0,5\n")
+	sah := csvJSON("USEDBY;CONTRACT;YEAR;COMM\nUJI X;1;2021;0,5\n")
 	for _, jalur := range []string{"/unggah", "/unggah/pratinjau"} {
 		if w := kirim(h, "POST", handlers.Prefix+jalur, sah, "UJI-LIHAT", handlers.KodeMenu); w.Code != 403 {
 			t.Errorf("%s View only %d", jalur, w.Code)

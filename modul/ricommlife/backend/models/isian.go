@@ -28,7 +28,7 @@ type IsianKomisi struct {
 const (
 	// MaksContract - NUMBER(5).
 	MaksContract = 99999
-	// DigitYear - `pyMax` 4 b2206 (lebih sempit dari NUMBER(5)).
+	// DigitYear - `pyMax` 4 b2206; YEAR TEPAT 4 angka (NormalYear).
 	DigitYear = 4
 	// DigitBulatComm / SkalaComm - NUMBER(38,8): 30 angka di depan koma, 8 di belakang.
 	DigitBulatComm = 30
@@ -78,7 +78,8 @@ func DesimalKanonik(s string) (kanonik string, bulat, pecahan int, ok bool) {
 	return kanonik, bulat, len(p), true
 }
 
-// NormalContract - CONTRACT wajib, bulat 0..MaksContract.
+// NormalContract - CONTRACT wajib, bulat 0..MaksContract. [penyimpangan sadar - menunggu WO]: pxNumber b1907 tanpa
+// presisi (`Precision` kosong b2089).
 func NormalContract(s string) (string, error) {
 	if strings.TrimSpace(s) == "" {
 		return "", errors.New("CONTRACT is required")
@@ -90,24 +91,29 @@ func NormalContract(s string) (string, error) {
 	return k, nil
 }
 
-// NormalYear - YEAR wajib, bulat paling banyak DigitYear angka (pyMax 4).
+// NormalYear - YEAR wajib, TEPAT DigitYear angka tanpa nol depan (1000-9999). XML hanya memberi batas atas (pyMax 4
+// b2206); "tepat 4" = [penyimpangan sadar - menunggu WO] (bawaan keputusan work owner 06-10-2026). Nol depan ditolak:
+// kolom NUMBER(5) tidak dapat menyimpannya, jadi `0026` tidak akan pulang sebagai 4 angka.
 func NormalYear(s string) (string, error) {
 	t := strings.TrimSpace(s)
 	if t == "" {
 		return "", errors.New("YEAR is required")
 	}
-	k, ok := BulatKanonik(t)
-	if !ok || len(t) > DigitYear {
-		return "", fmt.Errorf("YEAR must be a whole number of at most %d digits (got %q)", DigitYear, t)
+	if !polaBulat.MatchString(t) || len(t) != DigitYear || t[0] == '0' {
+		return "", fmt.Errorf("YEAR must be exactly %d digits from 1000 to 9999 (got %q)", DigitYear, t)
 	}
-	return k, nil
+	return t, nil
 }
 
-// NormalComm - COMM wajib, desimal tak bertanda yang muat NUMBER(38,8); koma atau titik desimal.
+// NormalComm - COMM wajib, desimal TIDAK NEGATIF (tanda `-` ditolak) yang muat NUMBER(38,8); koma atau titik desimal;
+// tanpa batas 100. [penyimpangan sadar - menunggu WO]: XML tanpa presisi/rentang (`InboxRIComm` b2392).
 func NormalComm(s string) (string, error) {
 	t := strings.TrimSpace(s)
 	if t == "" {
 		return "", errors.New("COMM is required")
+	}
+	if strings.HasPrefix(t, "-") {
+		return "", fmt.Errorf("COMM must not be negative (got %q)", t)
 	}
 	k, bulat, pecahan, ok := DesimalKanonik(t)
 	if !ok {

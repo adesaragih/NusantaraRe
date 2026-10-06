@@ -25,17 +25,17 @@ func TestPeriksaMode(t *testing.T) {
 func TestRencanaPindah(t *testing.T) {
 	sumber := []BarisJSON{
 		{ID: "1000001", JSON: `{"IDUSEDBY":"1000003","USEDBY":"UJI COMM","CONTRACT":"1","YEAR":"2026","COMM":"12.5"}`},
-		{ID: "1000002", JSON: `{"IDUSEDBY":1000003,"USEDBY":"UJI COMM","CONTRACT":"05","YEAR":1,"COMM":"0,5"}`},
-		{ID: "1000004", JSON: `{"IDUSEDBY":"1000003","USEDBY":"UJI COMM","CONTRACT":"1","YEAR":"2","COMM":"RAHASIA-UJI"}`},
-		{ID: "1000005", JSON: `{"IDUSEDBY":"1000003","USEDBY":"UJI COMM","CONTRACT":"2","YEAR":"2"}`},
-		{ID: "1000006", JSON: `{"IDUSEDBY":"1000003","USEDBY":"UJI COMM","CONTRACT":"3","YEAR":"3","COMM":"1"}`},
-		{ID: "1000007", JSON: `{"IDUSEDBY":"1000003","USEDBY":"UJI COMM","CONTRACT":"4","YEAR":"4","COMM":"1"}`},
+		{ID: "1000002", JSON: `{"IDUSEDBY":1000003,"USEDBY":"UJI COMM","CONTRACT":"05","YEAR":2021,"COMM":"0,5"}`},
+		{ID: "1000004", JSON: `{"IDUSEDBY":"1000003","USEDBY":"UJI COMM","CONTRACT":"1","YEAR":"2022","COMM":"RAHASIA-UJI"}`},
+		{ID: "1000005", JSON: `{"IDUSEDBY":"1000003","USEDBY":"UJI COMM","CONTRACT":"2","YEAR":"2022"}`},
+		{ID: "1000006", JSON: `{"IDUSEDBY":"1000003","USEDBY":"UJI COMM","CONTRACT":"3","YEAR":"2023","COMM":"1"}`},
+		{ID: "1000007", JSON: `{"IDUSEDBY":"1000003","USEDBY":"UJI COMM","CONTRACT":"4","YEAR":"2024","COMM":"1"}`},
 		{ID: "1000008", JSON: `bukan json`},
 	}
 	flat := []models.Komisi{
-		{ID: "1000006", IDUsedBy: "1000003", UsedBy: "UJI COMM", Contract: "3", Year: "3", Comm: "1"},
-		{ID: "1000007", IDUsedBy: "1000003", UsedBy: "UJI COMM", Contract: "4", Year: "4", Comm: "2"},
-		{ID: "1000099", IDUsedBy: "1000003", UsedBy: "UJI COMM", Contract: "9", Year: "9", Comm: "9"},
+		{ID: "1000006", IDUsedBy: "1000003", UsedBy: "UJI COMM", Contract: "3", Year: "2023", Comm: "1"},
+		{ID: "1000007", IDUsedBy: "1000003", UsedBy: "UJI COMM", Contract: "4", Year: "2024", Comm: "2"},
+		{ID: "1000099", IDUsedBy: "1000003", UsedBy: "UJI COMM", Contract: "9", Year: "2029", Comm: "9"},
 	}
 	lap, tulis := RencanaPindah(sumber, flat, false)
 	if lap.Sumber != 7 || lap.AkanDitulis != 3 || lap.SudahSama != 1 || lap.FlatSaja != 1 ||
@@ -44,8 +44,8 @@ func TestRencanaPindah(t *testing.T) {
 	}
 	mau := []models.Komisi{
 		{ID: "1000001", IDUsedBy: "1000003", UsedBy: "UJI COMM", Contract: "1", Year: "2026", Comm: "12.5"},
-		{ID: "1000002", IDUsedBy: "1000003", UsedBy: "UJI COMM", Contract: "5", Year: "1", Comm: "0.5"},
-		{ID: "1000005", IDUsedBy: "1000003", UsedBy: "UJI COMM", Contract: "2", Year: "2", Comm: ""},
+		{ID: "1000002", IDUsedBy: "1000003", UsedBy: "UJI COMM", Contract: "5", Year: "2021", Comm: "0.5"},
+		{ID: "1000005", IDUsedBy: "1000003", UsedBy: "UJI COMM", Contract: "2", Year: "2022", Comm: ""},
 	}
 	if len(tulis) != len(mau) {
 		t.Fatalf("tulis %+v", tulis)

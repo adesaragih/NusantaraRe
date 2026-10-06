@@ -34,15 +34,19 @@ func TestBentukIDRumusProsedur(t *testing.T) {
 	}
 }
 
-// InboxRIComm: CONTRACT b1923, YEAR b2201, COMM b2412 wajib; YEAR pyMax 4 b2206; COMM muat NUMBER(38,8).
+// InboxRIComm: CONTRACT b1923, YEAR b2201, COMM b2412 wajib. Bawaan [penyimpangan sadar - menunggu WO]: CONTRACT
+// 0-99999, YEAR TEPAT 4 angka (pyMax 4 b2206 hanya batas atas), COMM tidak negatif tanpa batas 100, muat NUMBER(38,8).
 func TestPeriksaIsianKomisi(t *testing.T) {
-	got, err := models.PeriksaIsianKomisi(models.IsianKomisi{Contract: " 05 ", Year: "0002", Comm: "007,500"})
-	if err != nil || got != (models.IsianKomisi{Contract: "5", Year: "2", Comm: "7.5"}) {
+	got, err := models.PeriksaIsianKomisi(models.IsianKomisi{Contract: " 05 ", Year: " 2026 ", Comm: "007,500"})
+	if err != nil || got != (models.IsianKomisi{Contract: "5", Year: "2026", Comm: "7.5"}) {
 		t.Fatalf("sah %+v %v", got, err)
 	}
-	if got, err := models.PeriksaIsianKomisi(models.IsianKomisi{Contract: "0", Year: "2026", Comm: "0.12345678"}); err != nil ||
-		got.Comm != "0.12345678" || got.Year != "2026" {
-		t.Errorf("batas pecahan %+v %v", got, err)
+	if got, err := models.PeriksaIsianKomisi(models.IsianKomisi{Contract: "99999", Year: "1000", Comm: "0.12345678"}); err != nil ||
+		got.Comm != "0.12345678" || got.Year != "1000" || got.Contract != "99999" {
+		t.Errorf("batas %+v %v", got, err)
+	}
+	if got, err := models.PeriksaIsianKomisi(models.IsianKomisi{Contract: "0", Year: "9999", Comm: "250"}); err != nil || got.Comm != "250" {
+		t.Errorf("COMM di atas 100 boleh %+v %v", got, err)
 	}
 	if _, err := models.PeriksaIsianKomisi(models.IsianKomisi{}); err == nil ||
 		err.Error() != "CONTRACT is required; YEAR is required; COMM is required" {
@@ -52,14 +56,18 @@ func TestPeriksaIsianKomisi(t *testing.T) {
 		isi models.IsianKomisi
 		mau string
 	}{
-		{models.IsianKomisi{Contract: "1.5", Year: "1", Comm: "1"}, "CONTRACT must be a whole number from 0 to 99999"},
-		{models.IsianKomisi{Contract: "100000", Year: "1", Comm: "1"}, "CONTRACT must be a whole number"},
-		{models.IsianKomisi{Contract: "1", Year: "12345", Comm: "1"}, "YEAR must be a whole number of at most 4 digits"},
-		{models.IsianKomisi{Contract: "1", Year: "-1", Comm: "1"}, "YEAR must be a whole number"},
-		{models.IsianKomisi{Contract: "1", Year: "1", Comm: "1,234.5"}, "COMM must be a number"},
-		{models.IsianKomisi{Contract: "1", Year: "1", Comm: "-1"}, "COMM must be a number"},
-		{models.IsianKomisi{Contract: "1", Year: "1", Comm: "0.123456789"}, "at most 30 digits before and 8 after"},
-		{models.IsianKomisi{Contract: "1", Year: "1", Comm: strings.Repeat("9", 31)}, "at most 30 digits before"},
+		{models.IsianKomisi{Contract: "1.5", Year: "2026", Comm: "1"}, "CONTRACT must be a whole number from 0 to 99999"},
+		{models.IsianKomisi{Contract: "100000", Year: "2026", Comm: "1"}, "CONTRACT must be a whole number"},
+		{models.IsianKomisi{Contract: "-1", Year: "2026", Comm: "1"}, "CONTRACT must be a whole number"},
+		{models.IsianKomisi{Contract: "1", Year: "12345", Comm: "1"}, "YEAR must be exactly 4 digits"},
+		{models.IsianKomisi{Contract: "1", Year: "202", Comm: "1"}, "YEAR must be exactly 4 digits"},
+		{models.IsianKomisi{Contract: "1", Year: "0026", Comm: "1"}, "YEAR must be exactly 4 digits from 1000 to 9999"},
+		{models.IsianKomisi{Contract: "1", Year: "-202", Comm: "1"}, "YEAR must be exactly 4 digits"},
+		{models.IsianKomisi{Contract: "1", Year: "2026", Comm: "1,234.5"}, "COMM must be a number"},
+		{models.IsianKomisi{Contract: "1", Year: "2026", Comm: "-1"}, "COMM must not be negative"},
+		{models.IsianKomisi{Contract: "1", Year: "2026", Comm: "-0,5"}, "COMM must not be negative"},
+		{models.IsianKomisi{Contract: "1", Year: "2026", Comm: "0.123456789"}, "at most 30 digits before and 8 after"},
+		{models.IsianKomisi{Contract: "1", Year: "2026", Comm: strings.Repeat("9", 31)}, "at most 30 digits before"},
 	} {
 		if _, err := models.PeriksaIsianKomisi(k.isi); err == nil || !strings.Contains(err.Error(), k.mau) {
 			t.Errorf("%+v: galat %v, mau %q", k.isi, err, k.mau)
@@ -79,7 +87,7 @@ func TestDesimalKanonik(t *testing.T) {
 			t.Errorf("%q diterima: %q", salah, got)
 		}
 	}
-	if models.KunciKomisi("05", " 1") != models.KunciKomisi("5", "1") || models.KunciKomisi("1", "2") == models.KunciKomisi("2", "1") {
+	if models.KunciKomisi("05", " 2026") != models.KunciKomisi("5", "2026") || models.KunciKomisi("1", "2") == models.KunciKomisi("2", "1") {
 		t.Error("KunciKomisi")
 	}
 }
@@ -95,9 +103,9 @@ func pesanGalat(g []models.GalatBaris) string {
 // Format excel b5569: USEDBY, CONTRACT, YEAR, COMM. Pemisah `;` - COMM berkoma desimal boleh tanpa kutip.
 func TestUraiCSVTitikKoma(t *testing.T) {
 	teks := string(rune(0xFEFF)) + "USEDBY;CONTRACT;YEAR;COMM\r\n" +
-		"UJI COMM A; 1 ;05;0,75\r\n" +
+		"UJI COMM A; 1 ; 2025 ;0,75\r\n" +
 		"\r\n" +
-		"UJI COMM A;2;1;12.5\r\n" +
+		"UJI COMM A;2;2025;12.5\r\n" +
 		";;;\r\n" +
 		"uji comm b;10;2026;20\r\n"
 	b, g, err := models.UraiCSV(teks)
@@ -105,8 +113,8 @@ func TestUraiCSVTitikKoma(t *testing.T) {
 		t.Fatalf("galat %v %s", err, pesanGalat(g))
 	}
 	mau := []models.BarisCSV{
-		{Baris: 2, UsedBy: "UJI COMM A", Contract: "1", Year: "5", Comm: "0.75"},
-		{Baris: 4, UsedBy: "UJI COMM A", Contract: "2", Year: "1", Comm: "12.5"},
+		{Baris: 2, UsedBy: "UJI COMM A", Contract: "1", Year: "2025", Comm: "0.75"},
+		{Baris: 4, UsedBy: "UJI COMM A", Contract: "2", Year: "2025", Comm: "12.5"},
 		{Baris: 6, UsedBy: "uji comm b", Contract: "10", Year: "2026", Comm: "20"},
 	}
 	if len(b) != len(mau) {
@@ -122,14 +130,14 @@ func TestUraiCSVTitikKoma(t *testing.T) {
 // Pemisah `,`: kolom kepala dalam urutan apa pun; COMM berkoma desimal WAJIB dikutip.
 func TestUraiCSVKomaDanKutip(t *testing.T) {
 	teks := "comm,year,contract,usedby\n" +
-		"\"0,125\",1,2,UJI COMM A\n" +
-		"0,125,2,2,UJI COMM A\n" +
-		"0.125,3,2,UJI COMM A\n"
+		"\"0,125\",2021,2,UJI COMM A\n" +
+		"0,125,2022,2,UJI COMM A\n" +
+		"0.125,2023,2,UJI COMM A\n"
 	b, g, err := models.UraiCSV(teks)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(b) != 2 || b[0].Comm != "0.125" || b[1].Comm != "0.125" || b[1].Year != "3" {
+	if len(b) != 2 || b[0].Comm != "0.125" || b[1].Comm != "0.125" || b[1].Year != "2023" {
 		t.Errorf("baris %+v", b)
 	}
 	if len(g) != 1 || g[0].Baris != 3 || !strings.Contains(g[0].Pesan, "has 5 columns, expected 4") ||
@@ -140,17 +148,18 @@ func TestUraiCSVKomaDanKutip(t *testing.T) {
 
 func TestUraiCSVGalatPerBaris(t *testing.T) {
 	teks := "USEDBY;CONTRACT;YEAR;COMM\n" +
-		";1;1;1\n" + // 2 nama kosong
-		"UJI;;1;1\n" + // 3 contract kosong
+		";1;2021;1\n" + // 2 nama kosong
+		"UJI;;2021;1\n" + // 3 contract kosong
 		"UJI;1;;1\n" + // 4 year kosong
-		"UJI;1;12345;1\n" + // 5 year > 4 angka
-		"UJI;1,5;1;1\n" + // 6 contract pecahan
-		"UJI;1;2;abc\n" + // 7 comm bukan angka
-		"UJI;1;3;\n" + // 8 comm kosong
-		"UJI;1;6;1\n" + // 9 sah
-		"uji ;01;6;2\n" + // 10 kembar baris 9 (tanpa beda huruf, nol depan)
-		"UJI;2;6;2\n" + // 11 sah: CONTRACT beda
-		strings.Repeat("A", models.BatasNama+1) + ";1;7;1\n" // 12 nama terlalu panjang
+		"UJI;1;26;1\n" + // 5 year bukan 4 angka
+		"UJI;1,5;2021;1\n" + // 6 contract pecahan
+		"UJI;1;2022;abc\n" + // 7 comm bukan angka
+		"UJI;1;2023;\n" + // 8 comm kosong
+		"UJI;1;2026;1\n" + // 9 sah
+		"uji ;01;2026;2\n" + // 10 kembar baris 9 (tanpa beda huruf, nol depan)
+		"UJI;2;2026;2\n" + // 11 sah: CONTRACT beda
+		strings.Repeat("A", models.BatasNama+1) + ";1;2027;1\n" + // 12 nama terlalu panjang
+		"UJI;3;2026;-1\n" // 13 comm negatif
 	b, g, err := models.UraiCSV(teks)
 	if err != nil {
 		t.Fatal(err)
@@ -162,12 +171,13 @@ func TestUraiCSVGalatPerBaris(t *testing.T) {
 		2:  "USEDBY is required",
 		3:  "CONTRACT is required",
 		4:  "YEAR is required",
-		5:  "YEAR must be a whole number of at most 4 digits",
+		5:  "YEAR must be exactly 4 digits",
 		6:  "CONTRACT must be a whole number",
 		7:  "COMM must be a number",
 		8:  "COMM is required",
 		10: "duplicates row 9",
 		12: "USEDBY is longer than 200 characters",
+		13: "COMM must not be negative",
 	}
 	if len(g) != len(mau) {
 		t.Errorf("jumlah galat %d: %s", len(g), pesanGalat(g))
@@ -181,13 +191,13 @@ func TestUraiCSVGalatPerBaris(t *testing.T) {
 
 func TestUraiCSVGalatBerkas(t *testing.T) {
 	kasus := map[string]string{
-		"":                                       "the CSV file is empty",
-		"\n\n":                                   "the CSV file is empty",
-		"USEDBY;CONTRACT;YEAR\nA;1;1":            "header must be USEDBY, CONTRACT, YEAR, COMM",
-		"USEDBY;CONTRACT;YEAR;COMM;X\n":          "header must be USEDBY, CONTRACT, YEAR, COMM",
-		"USEDBY;USEDBY;YEAR;COMM\n":              "header must be USEDBY, CONTRACT, YEAR, COMM",
-		"USEDBY;CONTRACT;YEAR;COMM\n":            "the CSV file has no data rows",
-		"USEDBY,CONTRACT,YEAR,COMM\n\"A,1,1,1\n": "cannot be read",
+		"":                               "the CSV file is empty",
+		"\n\n":                           "the CSV file is empty",
+		"USEDBY;CONTRACT;YEAR\nA;1;2026": "header must be USEDBY, CONTRACT, YEAR, COMM",
+		"USEDBY;CONTRACT;YEAR;COMM;X\n":  "header must be USEDBY, CONTRACT, YEAR, COMM",
+		"USEDBY;USEDBY;YEAR;COMM\n":      "header must be USEDBY, CONTRACT, YEAR, COMM",
+		"USEDBY;CONTRACT;YEAR;COMM\n":    "the CSV file has no data rows",
+		"USEDBY,CONTRACT,YEAR,COMM\n\"A,1,2026,1\n": "cannot be read",
 	}
 	for teks, mau := range kasus {
 		_, _, err := models.UraiCSV(teks)
@@ -195,7 +205,7 @@ func TestUraiCSVGalatBerkas(t *testing.T) {
 			t.Errorf("%q: %v, mau %q", teks, err, mau)
 		}
 	}
-	banyak := "USEDBY;CONTRACT;YEAR;COMM\n" + strings.Repeat("A;1;1;1\n", models.MaksBarisCSV+1)
+	banyak := "USEDBY;CONTRACT;YEAR;COMM\n" + strings.Repeat("A;1;2026;1\n", models.MaksBarisCSV+1)
 	if _, _, err := models.UraiCSV(banyak); err == nil || !strings.Contains(err.Error(), "at most 10000 rows") {
 		t.Errorf("terlalu banyak: %v", err)
 	}

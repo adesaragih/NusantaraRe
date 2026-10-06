@@ -7,7 +7,7 @@ import { RC } from './labels'
 /** `pyPageSize` 50 (ringkasan b10081, detail b9716) - sama dengan backend `models.UkuranHalaman`. */
 export const UKURAN_HALAMAN = 50
 
-/** YEAR `pyMax` 4 (`InboxRIComm` b2206) - sama dengan backend `models.DigitYear`. */
+/** YEAR `pyMax` 4 (`InboxRIComm` b2206); TEPAT 4 angka [penyimpangan sadar - menunggu WO] - backend `models.NormalYear`. */
 export const DIGIT_YEAR = 4
 
 /** Form R/I COMM DETAIL kosong (Clear Field `clearInputFieldRIComm_act` b1123 / Cancel `NewData_DT` b3258). */
@@ -23,11 +23,14 @@ export function isianDariKomisi(k: Komisi): IsianKomisi {
   return { contract: k.contract.trim(), year: k.year.trim(), comm: tampilDesimal(k.comm.trim()) }
 }
 
-/** Pemeriksaan awal form detail: CONTRACT (b1923), YEAR (b2201), COMM (b2412) wajib; `null` = boleh dikirim. */
+/** Pemeriksaan awal form detail: CONTRACT (b1923), YEAR (b2201), COMM (b2412) wajib; YEAR tepat 4 angka, COMM tidak
+ * negatif (backend memeriksa ulang semuanya); `null` = boleh dikirim. */
 export function periksaIsianKomisi(isi: IsianKomisi): string | null {
   if (isi.contract.trim() === '') return RC.galatContract
   if (isi.year.trim() === '') return RC.galatYear
   if (isi.comm.trim() === '') return RC.galatComm
+  if (!/^[1-9][0-9]{3}$/.test(isi.year.trim())) return RC.galatYearEmpat
+  if (isi.comm.trim().startsWith('-')) return RC.galatCommNegatif
   return null
 }
 

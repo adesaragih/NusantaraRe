@@ -55,7 +55,7 @@ func TestSitusTidakTepatSatu(t *testing.T) {
 	}
 	g := tiruan.Contoh()
 	g.SeqKomisi = 1234567
-	if _, err := layanan(g).SimpanKomisi(ctx, penuh, "1000003", "", models.IsianKomisi{Contract: "9", Year: "9", Comm: "1"}); !errors.Is(err, models.ErrIDTidakSah) {
+	if _, err := layanan(g).SimpanKomisi(ctx, penuh, "1000003", "", models.IsianKomisi{Contract: "9", Year: "2029", Comm: "1"}); !errors.Is(err, models.ErrIDTidakSah) {
 		t.Errorf("nomor 7 angka: %v", err)
 	}
 }
@@ -87,7 +87,7 @@ func TestValidasiNamaDanHak(t *testing.T) {
 		if _, err := l.Hapus(ctx, a, "1000003"); !errors.Is(err, services.ErrDilarang) {
 			t.Errorf("hapus %+v: %v", a, err)
 		}
-		if _, err := l.SimpanKomisi(ctx, a, "1000003", "", models.IsianKomisi{Contract: "1", Year: "9", Comm: "1"}); !errors.Is(err, services.ErrDilarang) {
+		if _, err := l.SimpanKomisi(ctx, a, "1000003", "", models.IsianKomisi{Contract: "1", Year: "2029", Comm: "1"}); !errors.Is(err, services.ErrDilarang) {
 			t.Errorf("detail %+v: %v", a, err)
 		}
 		if _, err := l.Pratinjau(ctx, a, services.PermintaanUnggah{CSV: "x"}); !errors.Is(err, services.ErrDilarang) {
@@ -166,36 +166,36 @@ func TestDaftarDanDetail(t *testing.T) {
 func TestSimpanKomisi(t *testing.T) {
 	g := tiruan.Contoh()
 	l := layanan(g)
-	k, err := l.SimpanKomisi(ctx, penuh, "1000003", "", models.IsianKomisi{Contract: "02", Year: "1", Comm: "7,50"})
+	k, err := l.SimpanKomisi(ctx, penuh, "1000003", "", models.IsianKomisi{Contract: "02", Year: "2021", Comm: "7,50"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	mau := models.Komisi{ID: "1000044", IDUsedBy: "1000003", UsedBy: "UJI COMM RETRO", Contract: "2", Year: "1", Comm: "7.5"}
+	mau := models.Komisi{ID: "1000044", IDUsedBy: "1000003", UsedBy: "UJI COMM RETRO", Contract: "2", Year: "2021", Comm: "7.5"}
 	if k != mau || g.Komisi["1000044"] != mau {
 		t.Errorf("tambah %+v / %+v", k, g.Komisi["1000044"])
 	}
 	if r := g.Ringkasan["1000003"]; r.OperatorID != "UJI-ADMIN" || r.ModifiedDate != "20261006T030405.600 GMT" {
 		t.Errorf("ringkasan sesudah tambah %+v", r)
 	}
-	if _, err := l.SimpanKomisi(ctx, penuh, "1000003", "", models.IsianKomisi{Contract: "1", Year: "02", Comm: "1"}); !errors.Is(err, services.ErrMasukanTidakSah) ||
-		!strings.Contains(err.Error(), "CONTRACT 1, YEAR 2 already exists in R/I COMM NAME UJI COMM RETRO (ID 1000041)") {
+	if _, err := l.SimpanKomisi(ctx, penuh, "1000003", "", models.IsianKomisi{Contract: "01", Year: "2022", Comm: "1"}); !errors.Is(err, services.ErrMasukanTidakSah) ||
+		!strings.Contains(err.Error(), "CONTRACT 1, YEAR 2022 already exists in R/I COMM NAME UJI COMM RETRO (ID 1000041)") {
 		t.Errorf("kembar %v", err)
 	}
 	// Kunci sama di ringkasan lain boleh (1000042 = 2/1 milik 1000004).
-	if _, err := l.SimpanKomisi(ctx, penuh, "1000004", "", models.IsianKomisi{Contract: "1", Year: "1", Comm: "1"}); err != nil {
+	if _, err := l.SimpanKomisi(ctx, penuh, "1000004", "", models.IsianKomisi{Contract: "1", Year: "2021", Comm: "1"}); err != nil {
 		t.Errorf("kunci ringkasan lain %v", err)
 	}
-	if _, err := l.SimpanKomisi(ctx, penuh, "1000003", "1000041", models.IsianKomisi{Contract: "1", Year: "2", Comm: "11"}); err != nil ||
+	if _, err := l.SimpanKomisi(ctx, penuh, "1000003", "1000041", models.IsianKomisi{Contract: "1", Year: "2022", Comm: "11"}); err != nil ||
 		g.Komisi["1000041"].Comm != "11" || g.Komisi["1000041"].UsedBy != "UJI COMM RETRO" {
 		t.Errorf("ubah sendiri %v %+v", err, g.Komisi["1000041"])
 	}
-	if _, err := l.SimpanKomisi(ctx, penuh, "1000003", "1000041", models.IsianKomisi{Contract: "1", Year: "1", Comm: "1"}); !errors.Is(err, services.ErrMasukanTidakSah) {
+	if _, err := l.SimpanKomisi(ctx, penuh, "1000003", "1000041", models.IsianKomisi{Contract: "1", Year: "2021", Comm: "1"}); !errors.Is(err, services.ErrMasukanTidakSah) {
 		t.Errorf("ubah jadi kembar %v", err)
 	}
-	if _, err := l.SimpanKomisi(ctx, penuh, "1000003", "1000042", models.IsianKomisi{Contract: "8", Year: "8", Comm: "1"}); !errors.Is(err, services.ErrKomisiTidakAda) {
+	if _, err := l.SimpanKomisi(ctx, penuh, "1000003", "1000042", models.IsianKomisi{Contract: "8", Year: "2028", Comm: "1"}); !errors.Is(err, services.ErrKomisiTidakAda) {
 		t.Errorf("baris ringkasan lain %v", err)
 	}
-	if _, err := l.SimpanKomisi(ctx, penuh, "999", "", models.IsianKomisi{Contract: "8", Year: "8", Comm: "1"}); !errors.Is(err, services.ErrTidakAda) {
+	if _, err := l.SimpanKomisi(ctx, penuh, "999", "", models.IsianKomisi{Contract: "8", Year: "2028", Comm: "1"}); !errors.Is(err, services.ErrTidakAda) {
 		t.Errorf("ringkasan tak ada %v", err)
 	}
 	if _, err := l.SimpanKomisi(ctx, penuh, "1000003", "", models.IsianKomisi{}); !errors.Is(err, services.ErrMasukanTidakSah) ||
@@ -210,9 +210,9 @@ const kepala = "USEDBY;CONTRACT;YEAR;COMM\n"
 func TestPratinjau(t *testing.T) {
 	g := tiruan.Contoh()
 	teks := kepala +
-		"uji comm retro;1;01;9\n" + // 2 kembar 1000040
-		"uji comm retro;3;1;0,9\n" + // 3 sah, ringkasan 1000003
-		"UJI COMM BARU;1;1;1.5\n" // 4 sah, ringkasan baru
+		"uji comm retro;01;2021;9\n" + // 2 kembar 1000040 (CONTRACT nol depan)
+		"uji comm retro;3;2021;0,9\n" + // 3 sah, ringkasan 1000003
+		"UJI COMM BARU;1;2021;1.5\n" // 4 sah, ringkasan baru
 	h, err := layanan(g).Pratinjau(ctx, penuh, services.PermintaanUnggah{CSV: teks})
 	if err != nil {
 		t.Fatal(err)
@@ -236,16 +236,16 @@ func TestPratinjau(t *testing.T) {
 func TestSimpanUnggah(t *testing.T) {
 	g := tiruan.Contoh()
 	l := layanan(g)
-	_, err := l.SimpanUnggah(ctx, penuh, services.PermintaanUnggah{CSV: kepala + "UJI COMM RETRO;1;1;1\nUJI BARU;1;x;1\n"})
+	_, err := l.SimpanUnggah(ctx, penuh, services.PermintaanUnggah{CSV: kepala + "UJI COMM RETRO;1;2021;1\nUJI BARU;1;x;1\n"})
 	if !errors.Is(err, services.ErrMasukanTidakSah) || !strings.Contains(err.Error(),
-		"The upload was not saved. Row 2: CONTRACT 1, YEAR 1 already exists") || !strings.Contains(err.Error(), "Row 3: YEAR must be") {
+		"The upload was not saved. Row 2: CONTRACT 1, YEAR 2021 already exists") || !strings.Contains(err.Error(), "Row 3: YEAR must be") {
 		t.Errorf("tolak %v", err)
 	}
 	if len(g.Ringkasan) != 2 || len(g.Komisi) != 3 {
 		t.Fatal("ditolak tetapi tertulis")
 	}
 	h, err := l.SimpanUnggah(ctx, penuh, services.PermintaanUnggah{CSV: kepala +
-		"Uji Comm Retro;3;1;\"0,25\"\nUJI BARU;1;1;2.5\nUJI BARU;1;2;3\n"})
+		"Uji Comm Retro;3;2021;\"0,25\"\nUJI BARU;1;2021;2.5\nUJI BARU;1;2022;3\n"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -259,9 +259,9 @@ func TestSimpanUnggah(t *testing.T) {
 		t.Errorf("ringkasan lama diperbarui %+v", r)
 	}
 	mau := map[string]models.Komisi{
-		"1000044": {ID: "1000044", IDUsedBy: "1000003", UsedBy: "UJI COMM RETRO", Contract: "3", Year: "1", Comm: "0.25"},
-		"1000045": {ID: "1000045", IDUsedBy: "1000005", UsedBy: "UJI BARU", Contract: "1", Year: "1", Comm: "2.5"},
-		"1000046": {ID: "1000046", IDUsedBy: "1000005", UsedBy: "UJI BARU", Contract: "1", Year: "2", Comm: "3"},
+		"1000044": {ID: "1000044", IDUsedBy: "1000003", UsedBy: "UJI COMM RETRO", Contract: "3", Year: "2021", Comm: "0.25"},
+		"1000045": {ID: "1000045", IDUsedBy: "1000005", UsedBy: "UJI BARU", Contract: "1", Year: "2021", Comm: "2.5"},
+		"1000046": {ID: "1000046", IDUsedBy: "1000005", UsedBy: "UJI BARU", Contract: "1", Year: "2022", Comm: "3"},
 	}
 	for id, k := range mau {
 		if g.Komisi[id] != k {
@@ -273,7 +273,7 @@ func TestSimpanUnggah(t *testing.T) {
 func TestUnggahNamaGandaDanKalimat(t *testing.T) {
 	g := tiruan.Contoh()
 	g.Ringkasan["1000009"] = models.Ringkasan{ID: "1000009", UsedBy: "uji comm b "}
-	h, err := layanan(g).Pratinjau(ctx, penuh, services.PermintaanUnggah{CSV: kepala + "UJI COMM B;1;1;1\n"})
+	h, err := layanan(g).Pratinjau(ctx, penuh, services.PermintaanUnggah{CSV: kepala + "UJI COMM B;1;2021;1\n"})
 	if err != nil || h.Sah || len(h.Galat) != 1 || !strings.Contains(h.Galat[0].Pesan, "matches more than one R/I comm summary (IDs 1000004, 1000009)") {
 		t.Errorf("%+v %v", h, err)
 	}

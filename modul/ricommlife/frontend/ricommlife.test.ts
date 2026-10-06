@@ -85,15 +85,19 @@ describe('aturan R/I Comm Life', () => {
     expect(berkasSah('uji.csv', MAKS_BYTES_CSV + 1)).toBe(false)
   })
 
-  it('detail: CONTRACT, YEAR, COMM wajib; YEAR pyMax 4; Edit mengisi form berkoma desimal', () => {
+  it('detail: CONTRACT, YEAR, COMM wajib; YEAR tepat 4 angka; COMM tidak negatif tanpa batas 100; Edit mengisi form berkoma desimal', () => {
     expect(DIGIT_YEAR).toBe(4)
     expect(periksaIsianKomisi(ISIAN_KOMISI_KOSONG)).toBe(RC.galatContract)
     expect(periksaIsianKomisi({ contract: '1', year: '', comm: '' })).toBe(RC.galatYear)
-    expect(periksaIsianKomisi({ contract: '1', year: '2', comm: ' ' })).toBe(RC.galatComm)
+    expect(periksaIsianKomisi({ contract: '1', year: '2026', comm: ' ' })).toBe(RC.galatComm)
     expect(periksaIsianKomisi({ contract: '0', year: '2026', comm: '0,5' })).toBeNull()
-    expect(isianDariKomisi({ id: '1000044', idUsedBy: '1000003', usedby: 'UJI', contract: ' 2', year: '1 ', comm: '12.5' })).toEqual({
+    expect(periksaIsianKomisi({ contract: '0', year: '26', comm: '1' })).toBe(RC.galatYearEmpat)
+    expect(periksaIsianKomisi({ contract: '0', year: '0026', comm: '1' })).toBe(RC.galatYearEmpat)
+    expect(periksaIsianKomisi({ contract: '0', year: '2026', comm: '-1' })).toBe(RC.galatCommNegatif)
+    expect(periksaIsianKomisi({ contract: '0', year: '2026', comm: '250' })).toBeNull()
+    expect(isianDariKomisi({ id: '1000044', idUsedBy: '1000003', usedby: 'UJI', contract: ' 2', year: '2021 ', comm: '12.5' })).toEqual({
       contract: '2',
-      year: '1',
+      year: '2021',
       comm: '12,5',
     })
     expect(tampilDesimal('0.125')).toBe('0,125')
@@ -147,7 +151,7 @@ describe('klien R/I Comm Life', () => {
     await ambilDetail('1000003', 1)
     await ambilDetail('1000003', 2)
     await tambahDetail('1000003', { contract: '1', year: '2026', comm: '0,5' })
-    await ubahDetail('1000003', '1000044', { contract: '2', year: '1', comm: '1' })
+    await ubahDetail('1000003', '1000044', { contract: '2', year: '2025', comm: '1' })
     await pratinjauUnggah('a;b')
     await simpanUnggah('a;b')
     expect(panggil).toEqual([
@@ -160,7 +164,7 @@ describe('klien R/I Comm Life', () => {
       'GET /api/ri-comm-life/1000003/detail',
       'GET /api/ri-comm-life/1000003/detail?halaman=2',
       'POST /api/ri-comm-life/1000003/detail {"contract":"1","year":"2026","comm":"0,5"}',
-      'PUT /api/ri-comm-life/1000003/detail/1000044 {"contract":"2","year":"1","comm":"1"}',
+      'PUT /api/ri-comm-life/1000003/detail/1000044 {"contract":"2","year":"2025","comm":"1"}',
       'POST /api/ri-comm-life/unggah/pratinjau {"csv":"a;b"}',
       'POST /api/ri-comm-life/unggah {"csv":"a;b"}',
     ])

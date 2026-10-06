@@ -62,9 +62,9 @@ func Contoh() *Gudang {
 		g.Ringkasan[r.ID] = r
 	}
 	for _, k := range []models.Komisi{
-		{ID: "1000040", IDUsedBy: "1000003", UsedBy: "UJI COMM RETRO", Contract: "1", Year: "1", Comm: "12.5"},
-		{ID: "1000041", IDUsedBy: "1000003", UsedBy: "UJI COMM RETRO", Contract: "1", Year: "2", Comm: "10"},
-		{ID: "1000042", IDUsedBy: "1000004", UsedBy: "UJI COMM B", Contract: "2", Year: "1", Comm: "0.5"},
+		{ID: "1000040", IDUsedBy: "1000003", UsedBy: "UJI COMM RETRO", Contract: "1", Year: "2021", Comm: "12.5"},
+		{ID: "1000041", IDUsedBy: "1000003", UsedBy: "UJI COMM RETRO", Contract: "1", Year: "2022", Comm: "10"},
+		{ID: "1000042", IDUsedBy: "1000004", UsedBy: "UJI COMM B", Contract: "2", Year: "2021", Comm: "0.5"},
 	} {
 		g.Komisi[k.ID] = k
 	}
