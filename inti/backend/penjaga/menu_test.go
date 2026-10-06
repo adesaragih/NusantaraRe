@@ -149,6 +149,9 @@ var modulLuarKorpus = map[string]string{
 	// Perintah work owner 05-10-2026: modul `riratelife` (M_RATE_LIFE_SUMMARY, ringkasan rate reasuransi life), label
 	// "R/I Rate Life", kelompok MASTER TREATY (922) - tanpa migrasi sendiri, barisnya langsung menyala.
 	"riratelife": "922_m_nav_menu_riratelife.sql",
+	// Perintah work owner 06-10-2026: modul `ricommlife` (M_RICOMM_LIFE_SUMMARY + tabel flat RICOMM_LIFE 924), label
+	// "R/I Comm Life", kelompok MASTER TREATY URUTAN 10 (925) - tanpa migrasi sendiri, barisnya langsung menyala.
+	"ricommlife": "925_m_nav_menu_ricommlife.sql",
 }
 
 // langkahMenuLuarKorpus menjawab apakah berkas inti `nama` membuat baris modul luar korpus.
