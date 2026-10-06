@@ -45,8 +45,8 @@ func TestValidasiNama(t *testing.T) {
 	g := tiruan.Contoh()
 	l := layanan(g)
 	for isi, mau := range map[string]string{
-		"  ":                               "R/I RATE NAME is required",
-		" uji rate a ":                     "R/I RATE NAME uji rate a is already used by ID 101",
+		"  ":                                    "R/I RATE NAME is required",
+		" uji rate a ":                          "R/I RATE NAME uji rate a is already used by ID 101",
 		strings.Repeat("A", models.BatasNama+1): "longer than 200",
 	} {
 		if _, err := l.Simpan(ctx, penuh, "", models.Isian{UsedBy: isi}); !errors.Is(err, services.ErrMasukanTidakSah) ||

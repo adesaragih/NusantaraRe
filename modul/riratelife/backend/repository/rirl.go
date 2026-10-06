@@ -143,7 +143,9 @@ func SqlJumlah(v string) string {
 }
 
 // SqlAmbil - satu ringkasan.
-func SqlAmbil(v string) string { return fmt.Sprintf(`SELECT %s FROM %s WHERE ID = :1`, kolomRingkasan, v) }
+func SqlAmbil(v string) string {
+	return fmt.Sprintf(`SELECT %s FROM %s WHERE ID = :1`, kolomRingkasan, v)
+}
 
 // SqlPemakaiNama - ringkasan lain bernama sama (tanpa beda huruf dan spasi tepi), selain kecualiID.
 func SqlPemakaiNama(v string) string {
@@ -189,7 +191,9 @@ func SqlHapusRate(t, v string) string {
 }
 
 // SqlJumlahRate - jumlah baris rate milik ringkasan.
-func SqlJumlahRate(v string) string { return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE IDUSEDBY = :1`, v) }
+func SqlJumlahRate(v string) string {
+	return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE IDUSEDBY = :1`, v)
+}
 
 // urutRate - urutan stabil grid Rate Detail: GENDER, CONTRACT, AGE (angka; kosong dulu), ID.
 const urutRate = `GENDER, TO_NUMBER(REGEXP_SUBSTR(TRIM(CONTRACT), '^[0-9]+$')) NULLS FIRST,
