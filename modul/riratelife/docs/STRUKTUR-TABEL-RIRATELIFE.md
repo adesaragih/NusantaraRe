@@ -7,7 +7,7 @@ atasnya; nol tabel baru, nol DDL pada objek warisan, nol migrasi modul. Satu-sat
 | Objek | Jenis | Ditulis | Dibaca | Pembaca lain |
 | --- | --- | --- | --- | --- |
 | `M_RATE_LIFE_SUMMARY` | tabel (JSON), 339 baris DEV | Add, Edit, Delete, Simpan Upload | ID terpakai / ID tertinggi | — |
-| `M_RATE_LIFE` | tabel (JSON), 96.038-98.305 baris DEV | Edit (salinan nama), Delete, Simpan Upload | ID terpakai / ID tertinggi | — |
+| `M_RATE_LIFE` | tabel (JSON), 96.038-98.305 baris DEV | Edit (salinan nama), Delete, Simpan Upload, Rate Detail tambah / ubah | ID terpakai / ID tertinggi | — |
 | `RATE_LIFE_SUMMARY` | view, 6 kolom | — | grid, nama kembar | `mastercontractretrolife`, `masterproductnamelife` (ID, USEDBY) |
 | `RATE_LIFE` | view, 8 kolom | — | Rate Detail, jumlah rate, kembar upload | `mastercontractretrolife`, `masterproductnamelife`, Pega `GetRateRetro` (IDUSEDBY) |
 | `SEQ_M_RATE_LIFE_SUMMARY` | sequence (923) | NEXTVAL | — | — |
@@ -47,11 +47,11 @@ Tabel warisan (dinyatakan di `MODUL.md`, bukan dibuat migrasi).
 | Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
 | --- | --- | --- | --- | --- | --- |
 | `ID` | VARCHAR2(10) | tidak | unik (data) | rate ID | `SEQ_M_RATE_LIFE` (nomor terpakai dilewati) |
-| `JSONDATA` | CLOB | ? | | JSON | sisip `JSON_OBJECT(... ABSENT ON NULL)`; Edit nama `JSON_MERGEPATCH` kunci `USEDBY` |
+| `JSONDATA` | CLOB | ? | | JSON | sisip `JSON_OBJECT(... ABSENT ON NULL)`; Edit nama `JSON_MERGEPATCH` kunci `USEDBY`; Rate Detail Edit `JSON_MERGEPATCH` kunci `GENDER`, `CONTRACT`, `AGE`, `RATE` (kosong = kunci dibuang) |
 
 Kunci JSON yang ditulis (terbukti dari view): `IDUSEDBY` (ID ringkasan), `USEDBY`, `GENDER` (U/M/F), `CONTRACT`
 (0-120 atau tidak ditulis), `AGE` (0-120), `RATE` (teks berkoma desimal). `TYPE` tidak pernah ditulis (NULL di
-seluruh baris DEV).
+seluruh baris DEV). Rate Detail (`InboxRIRate`): `GENDER` dan `AGE` boleh kosong (kunci tidak ditulis), `CONTRACT` wajib.
 
 ## RATE_LIFE_SUMMARY
 

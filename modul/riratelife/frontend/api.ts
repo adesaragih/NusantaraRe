@@ -129,6 +129,28 @@ export function ambilRate(id: string, halaman: number): Promise<Halaman<Rate>> {
   })
 }
 
+/** Isian form Rate Detail - `models.IsianRate` (R/I RATE NAME dan IDUSEDBY diambil server dari ringkasan). */
+export interface IsianRate {
+  gender: string
+  contract: string
+  age: string
+  rate: string
+}
+
+/** Rate Detail Save - tambah baris (`AddToList_Act`). */
+export function tambahRate(id: string, isi: IsianRate): Promise<Rate> {
+  return minta(`${PREFIX_RR}/${encodeURIComponent(id)}/rate`, { metode: 'POST', badan: isi, batasWaktuMs: BATAS_BERAT_MS })
+}
+
+/** Rate Detail Save - ubah baris (`EditList_DT`). */
+export function ubahRate(id: string, idRate: string, isi: IsianRate): Promise<Rate> {
+  return minta(`${PREFIX_RR}/${encodeURIComponent(id)}/rate/${encodeURIComponent(idRate)}`, {
+    metode: 'PUT',
+    badan: isi,
+    batasWaktuMs: BATAS_BERAT_MS,
+  })
+}
+
 /** View Upload - tanpa menulis. */
 export function pratinjauUnggah(csv: string): Promise<HasilUnggah> {
   return minta(`${PREFIX_RR}/unggah/pratinjau`, { metode: 'POST', badan: { csv }, batasWaktuMs: BATAS_BERAT_MS })

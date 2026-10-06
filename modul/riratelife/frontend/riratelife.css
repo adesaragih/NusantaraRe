@@ -649,3 +649,33 @@
   white-space: normal;
   color: var(--rr-waspada-teks);
 }
+
+/* Form Rate Detail (section InboxRIRate "R/I RATE DETAIL"): judul kecil, radio GENDER sebaris, baris yang sedang
+   di-Edit ditandai. */
+.riratelife .riratelife__subjudul {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.riratelife .riratelife__pilihan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.riratelife .riratelife__radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.riratelife .riratelife__baris--pilih td {
+  background: var(--rr-aksen-lembut);
+}

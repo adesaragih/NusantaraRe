@@ -328,7 +328,7 @@ export default function RIRateLife() {
         </>
       )}
 
-      {popup?.jenis === 'detail' && <RateDetail ringkasan={popup.baris} onTutup={() => setPopup(null)} />}
+      {popup?.jenis === 'detail' && <RateDetail ringkasan={popup.baris} bolehUbah={bolehUbah} onTutup={() => setPopup(null)} />}
       {popup?.jenis === 'hapus' && (
         <KonfirmasiHapus
           ringkasan={popup.baris}

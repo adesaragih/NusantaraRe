@@ -1,7 +1,7 @@
 // Label modul R/I Rate Life - bahasa Inggris, VERBATIM dari section Pega `InboxSummaryRIRate` (RIRate.xml) bila ada:
 // judul "R/I RATE SUMMARY" b382, "R/I RATE NAME" b1242, kolom "MODIFY OPERATOR" b9748 / "MODIFY DATE" b9894, tombol
 // Save b1809 / Cancel b2109 / Upload CSV b2949 / View Upload b3467 / Simpan Upload b4511 / Edit b11109 / Detail b11398 /
-// Delete b12238, popup "Rate Detail" b11446, label format b5305.
+// Delete b12238, popup "Rate Detail" b11446, label format b5305. Rate Detail: section `InboxRIRate` (View Detail.xml).
 
 /** Nama menu - `M_NAV_MENU.LABEL` baris modul ini (migrasi inti 922). */
 export const MENU_RR = { kelompok: 'R/I Rate Life' } as const
@@ -25,6 +25,17 @@ export const RR = {
   simpanUnggah: 'Simpan Upload',
   format: 'Format excel : USEDBY, CONTRACT, GENDER, AGE, RATE',
   judulDetail: 'Rate Detail',
+  // Section `InboxRIRate` (View Detail.xml): judul b367, tombol Clear Field b1064, placeholder CONTRACT/AGE b2145 dan
+  // RATE b2583.
+  judulRincian: 'R/I RATE DETAIL',
+  bersihkan: 'Clear Field',
+  contohBulat: '0',
+  contohRate: '0,0000',
+  idRateOtomatis: 'Generated when saved',
+  modeUbahRate: (id: string) => `Editing rate ID ${id}`,
+  galatContract: 'CONTRACT is required',
+  galatRate: 'RATE is required',
+  rateTersimpan: (id: string) => `Rate ${id} saved.`,
   tutup: 'Close',
 
   idOtomatis: 'Generated when saved',
