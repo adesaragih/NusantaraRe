@@ -78,7 +78,7 @@ func pasang(t *testing.T) *ujiDB {
 		`CREATE SEQUENCE {s}.SEQ_M_RATE_LIFE_SUMMARY START WITH 100`,
 		`CREATE SEQUENCE {s}.SEQ_M_RATE_LIFE START WITH 9000`,
 		// 100 ada di JSON warisan (belum dipindah): ID baru harus melewatinya.
-		`INSERT INTO {s}.M_RATE_LIFE_SUMMARY (ID, JSONDATA) VALUES ('100', '{"USEDBY":"UJI RATE LAMA","TYPE":"L","MODIFIEDDATE":"20240102T030405.000 GMT","OPERATORID":"UJI-LAMA","FLAG":"1"}')`,
+		`INSERT INTO {s}.M_RATE_LIFE_SUMMARY (ID, JSONDATA) VALUES ('100', '{"USEDBY":"UJI RATE LAMA","TYPE":"L","MODIFIEDDATE":"20240102T030405.000 GMT","OPERATORID":"UJI-LAMA","FLAG":"AP"}')`,
 	} {
 		u.exec(t, q)
 	}
@@ -151,11 +151,11 @@ func TestDBRumusIDDanPulangPergi(t *testing.T) {
 	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RATE_LIFE_SUMMARY WHERE ID = '101' AND TYPE IS NULL AND FLAG IS NULL`); n != 1 {
 		t.Errorf("TYPE/FLAG baris baru harus NULL (%d)", n)
 	}
-	u.exec(t, `INSERT INTO {s}.RATE_LIFE_SUMMARY (ID, USEDBY, TYPE, FLAG) VALUES ('200', 'UJI PINDAHAN', 'L', '1')`)
+	u.exec(t, `INSERT INTO {s}.RATE_LIFE_SUMMARY (ID, USEDBY, TYPE, FLAG) VALUES ('200', 'UJI PINDAHAN', 'L', 'PM')`)
 	if _, err := l.Simpan(u.ctx, penuhDB, "200", models.Isian{UsedBy: "UJI PINDAHAN 2"}); err != nil {
 		t.Fatal(err)
 	}
-	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RATE_LIFE_SUMMARY WHERE ID = '200' AND USEDBY = 'UJI PINDAHAN 2' AND TYPE = 'L' AND FLAG = '1'`); n != 1 {
+	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RATE_LIFE_SUMMARY WHERE ID = '200' AND USEDBY = 'UJI PINDAHAN 2' AND TYPE = 'L' AND FLAG = 'PM'`); n != 1 {
 		t.Error("Edit mengubah TYPE/FLAG atau tidak menulis nama")
 	}
 	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.M_RATE_LIFE_SUMMARY`); n != 1 {
@@ -220,18 +220,18 @@ func TestDBPindahFlat(t *testing.T) {
 	if sidTx == "" || sidTx != sidKon {
 		t.Errorf("SID transaksi %q, koneksi %q", sidTx, sidKon)
 	}
-	lap, err := g.PindahFlat(u.ctx, false)
-	if err != nil || lap.Sumber != 1 || lap.AkanDitulis != 1 || lap.Ditulis || lap.PanjangMaks["MODIFIEDDATE"] != 23 {
+	lap, err := g.PindahFlat(u.ctx, false, "")
+	if err != nil || lap.CacahSumber != 1 || len(lap.Baru) != 1 || lap.Ditulis || lap.PanjangMaks["MODIFIEDDATE"] != 23 {
 		t.Fatalf("uji kering %+v %v", lap, err)
 	}
-	if lap, err = g.PindahFlat(u.ctx, true); err != nil || !lap.Ditulis {
+	if lap, err = g.PindahFlat(u.ctx, true, ""); err != nil || !lap.Ditulis {
 		t.Fatalf("jalankan %+v %v", lap, err)
 	}
-	if lap, err = g.PindahFlat(u.ctx, true); err != nil || lap.SudahSama != 1 || lap.AkanDitulis != 0 {
+	if lap, err = g.PindahFlat(u.ctx, true, ""); err != nil || len(lap.Sama) != 1 || len(lap.Baru)+len(lap.Berubah) != 0 {
 		t.Errorf("ulang %+v %v", lap, err)
 	}
 	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RATE_LIFE_SUMMARY WHERE ID = '100' AND USEDBY = 'UJI RATE LAMA' AND TYPE = 'L'
-		AND MODIFIEDDATE = '20240102T030405.000 GMT' AND OPERATORID = 'UJI-LAMA' AND FLAG = '1'`); n != 1 {
+		AND MODIFIEDDATE = '20240102T030405.000 GMT' AND OPERATORID = 'UJI-LAMA' AND FLAG = 'AP'`); n != 1 {
 		t.Error("pindahan tidak apa adanya")
 	}
 	for _, q := range ddl926(t, true, u.skema) {
@@ -239,5 +239,36 @@ func TestDBPindahFlat(t *testing.T) {
 	}
 	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RATE_LIFE_SUMMARY WHERE ID = '100' AND TYPE = 'L'`); n != 1 {
 		t.Error("view tidak dipulihkan")
+	}
+}
+
+// Delta (cutover): sesudah pemindahan penuh, Pega mengubah 100 (lebih baru) dan menulis 110 baru; aplikasi menghapus
+// ringkasan 120 (ada di JSON, lebih lama dari -sejak) dan mengubah 130 sesudah Pega - putaran delta memperbarui 100,
+// menyisip 110, melewati 120, dan melaporkan 130 sebagai konflik tanpa menimpanya. FLAG/TYPE ikut apa adanya.
+func TestDBPindahDelta(t *testing.T) {
+	u := pasang(t)
+	g := repository.Baru(u.repo)
+	u.exec(t, `INSERT INTO {s}.M_RATE_LIFE_SUMMARY (ID, JSONDATA) VALUES ('120', '{"USEDBY":"UJI DIHAPUS","MODIFIEDDATE":"20240102T030405.000 GMT","FLAG":"PY"}')`)
+	u.exec(t, `INSERT INTO {s}.M_RATE_LIFE_SUMMARY (ID, JSONDATA) VALUES ('130', '{"USEDBY":"UJI KONFLIK","MODIFIEDDATE":"20240102T030405.000 GMT","FLAG":"PM"}')`)
+	lap, err := g.PindahFlat(u.ctx, true, "")
+	if err != nil || len(lap.Baru) != 3 {
+		t.Fatalf("penuh %+v %v", lap, err)
+	}
+	batas := lap.BatasBerikut
+	u.exec(t, `DELETE FROM {s}.RATE_LIFE_SUMMARY WHERE ID = '120'`)
+	u.exec(t, `UPDATE {s}.RATE_LIFE_SUMMARY SET USEDBY = 'UJI KONFLIK APLIKASI', MODIFIEDDATE = '20261006T050000.000 GMT' WHERE ID = '130'`)
+	u.exec(t, `UPDATE {s}.M_RATE_LIFE_SUMMARY SET JSONDATA = '{"USEDBY":"UJI RATE LAMA 2","TYPE":"L","MODIFIEDDATE":"20261006T040628.169 GMT","OPERATORID":"UJI-PEGA","FLAG":"PM"}' WHERE ID = '100'`)
+	u.exec(t, `INSERT INTO {s}.M_RATE_LIFE_SUMMARY (ID, JSONDATA) VALUES ('110', '{"USEDBY":"UJI PEGA BARU","MODIFIEDDATE":"20261006T040628.169 GMT","FLAG":"AP"}')`)
+	lap, err = g.PindahFlat(u.ctx, true, batas)
+	if err != nil || !lap.Ditulis || len(lap.Baru) != 1 || len(lap.Berubah) != 1 || len(lap.Dilewati) != 1 || len(lap.Konflik) != 1 ||
+		lap.CacahSumber != 4 || lap.CacahFlatSesudah != 3 {
+		t.Fatalf("delta %+v %v", lap, err)
+	}
+	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RATE_LIFE_SUMMARY WHERE (ID = '100' AND USEDBY = 'UJI RATE LAMA 2' AND FLAG = 'PM' AND TYPE = 'L')
+		OR (ID = '110' AND FLAG = 'AP') OR (ID = '130' AND USEDBY = 'UJI KONFLIK APLIKASI')`); n != 3 {
+		t.Errorf("hasil delta %d", n)
+	}
+	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RATE_LIFE_SUMMARY WHERE ID = '120'`); n != 0 {
+		t.Error("ringkasan yang dihapus aplikasi hidup lagi")
 	}
 }

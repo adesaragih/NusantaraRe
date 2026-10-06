@@ -22,7 +22,7 @@ const (
 	KolomJSON = "JSONDATA"
 )
 
-// TabelRingkasanJSON - `M_RATE_LIFE_SUMMARY` (JSON warisan, 339 baris DEV): DIBACA saja (K-F1) - sumber alat
+// TabelRingkasanJSON - `M_RATE_LIFE_SUMMARY` (JSON warisan; data DEV masih berubah): DIBACA saja (K-F1) - sumber alat
 // pindahflat dan pemeriksa ID terpakai (MaksID/AdaID), supaya ID baru tidak bertabrakan dengan ringkasan Pega yang
 // belum / akan dipindah.
 const TabelRingkasanJSON = "M_RATE_LIFE_SUMMARY"

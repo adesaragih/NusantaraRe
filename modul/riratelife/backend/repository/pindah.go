@@ -1,17 +1,31 @@
 package repository
 
 // Pindah JSON -> flat ringkasan (keputusan work owner 06-10-2026 K-F1/K-F2; alat `backend/alat/pindahflat`, pola
-// ricommlife / masterproductnamelife): `M_RATE_LIFE_SUMMARY` (JSON, 339 baris DEV) -> tabel flat `RATE_LIFE_SUMMARY`
-// (migrasi inti 926), SEMUA enam kolom view, isi APA ADANYA (teks JSON tanpa dipangkas, seperti `a.JSONDATA.X`).
+// ricommlife / masterproductnamelife): `M_RATE_LIFE_SUMMARY` (JSON warisan; data DEV MASIH BERUBAH - cacahnya dibaca
+// saat berjalan, tidak pernah ditanam) -> tabel flat `RATE_LIFE_SUMMARY` (migrasi inti 926), SEMUA enam kolom view, isi
+// APA ADANYA (teks JSON tanpa dipangkas, seperti `a.JSONDATA.X`) - termasuk TYPE dan FLAG.
 //
-//	-uji       (bawaan) hanya SELECT; nol tulisan; laporan AGREGAT: cacah, panjang maksimum (byte) tiap kolom di
-//	           sumber lawan lebar kolom flat, ID baris yang gagal - tidak pernah nilainya.
-//	-jalankan  ditolak bila IS_PEGA_PROD=true, bila ada nilai yang TIDAK MUAT (nol pemotongan), bila ada kegagalan lain,
-//	           dan bila tabel flat memuat ID yang sama dengan isi BERBEDA (tulisan aplikasi tidak pernah ditimpa). SATU
-//	           koneksi terkunci (`db.Koneksi`, SesiPindah) untuk seluruh putaran: setelan sesi lalu transaksi yang lebih
-//	           dulu MENGUNCI tabel flat; baris yang sudah ada dan sama dilewati - aman diulang (mis. sesudah Pega
-//	           menulis ringkasan baru, risiko cutover MODUL.md).
+//	-uji       (bawaan) hanya SELECT; nol tulisan; laporan AGREGAT: cacah sumber dan flat SAAT itu, baru / berubah /
+//	           sama / konflik / dilewati, panjang maksimum (byte) tiap kolom lawan lebar kolom flat, ID baris - tidak
+//	           pernah nilainya.
+//	-jalankan  ditolak bila IS_PEGA_PROD=true, bila ada nilai yang TIDAK MUAT (nol pemotongan), dan bila ada kegagalan.
+//	           SATU koneksi terkunci (`db.Koneksi`, SesiPindah) untuk seluruh putaran: setelan sesi lalu transaksi yang
+//	           lebih dulu MENGUNCI tabel flat.
 //
+// ATURAN DELTA (keputusan work owner 06-10-2026: cutover delta) - dibandingkan per ID terhadap isi tabel flat SAAT itu:
+//
+//	baru      ID belum ada di flat                                  -> disisip
+//	          ... kecuali `-sejak` diberikan dan MODIFIEDDATE sumber TIDAK lebih baru dari batas itu (atau kosong /
+//	          tidak terbaca): `dilewati` - ringkasan lama yang tidak ada di flat dianggap DIHAPUS aplikasi, tidak
+//	          dihidupkan lagi, dilaporkan.
+//	sama      keenam kolom sama persis                              -> dilewati
+//	berubah   beda, dan MODIFIEDDATE sumber LEBIH BARU dari flat     -> flat diperbarui keenam kolom (Pega lebih baru)
+//	konflik   beda, dan MODIFIEDDATE flat sama / lebih baru / salah satunya kosong atau tidak terbaca -> TIDAK ditimpa,
+//	          dilaporkan (tulisan aplikasi sesudah pemindahan tidak pernah ditimpa diam-diam)
+//	flat saja ID hanya di flat (ringkasan baru aplikasi)            -> dibiarkan
+//
+// Konflik dan dilewati tidak menahan `-jalankan` (yang lain tetap ditulis); keduanya disebut ID-nya untuk diperiksa WO.
+// Laporan menyebut `batas delta berikutnya` = MODIFIEDDATE sumber terbaru, untuk `-sejak` putaran berikutnya.
 // M_RATE_LIFE_SUMMARY tidak pernah ditulis.
 
 import (
@@ -22,6 +36,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"nusantarare/inti/backend/db"
 )
@@ -29,8 +44,10 @@ import (
 var (
 	// ErrPindahDiProduksi - `-jalankan` di lingkungan IS_PEGA_PROD=true.
 	ErrPindahDiProduksi = errors.New("repository: moving R/I rate summaries to the flat table is refused when IS_PEGA_PROD=true")
-	// ErrPindahTidakLolos - rencana memuat nilai tidak muat, kegagalan, atau baris flat berbeda; nol tulisan.
+	// ErrPindahTidakLolos - rencana memuat nilai tidak muat atau kegagalan; nol tulisan.
 	ErrPindahTidakLolos = errors.New("repository: the move plan did not pass; nothing was written")
+	// ErrSejakTidakTerbaca - `-sejak` bukan stempel Pega.
+	ErrSejakTidakTerbaca = errors.New("repository: -sejak must be a Pega timestamp like 20261006T040628.169 GMT")
 )
 
 // LebarKolomFlat - lebar (byte) kolom tabel flat `RATE_LIFE_SUMMARY` menurut migrasi 926 - diikat uji ke DDL-nya.
@@ -47,7 +64,7 @@ func PeriksaMode(jalankan, pegaProduksi bool) error {
 // BarisJSON - satu baris `M_RATE_LIFE_SUMMARY`.
 type BarisJSON struct{ ID, JSON string }
 
-// RingkasanFlat - satu baris tabel flat, keenam kolom view (nil = NULL).
+// RingkasanFlat - satu baris tabel flat, keenam kolom (nil = NULL).
 type RingkasanFlat struct {
 	ID                                           string
 	UsedBy, Type, ModifiedDate, OperatorID, Flag *string
@@ -66,36 +83,67 @@ func (r RingkasanFlat) Sama(l RingkasanFlat) bool {
 		samaTeks(r.OperatorID, l.OperatorID) && samaTeks(r.Flag, l.Flag)
 }
 
+// WaktuPega - stempel MODIFIEDDATE (`20261006T040628.169 GMT`, atau `YYYYMMDD`) -> waktu; ok=false bila kosong /
+// bentuk lain.
+func WaktuPega(s *string) (time.Time, bool) {
+	if s == nil {
+		return time.Time{}, false
+	}
+	t := strings.TrimSpace(*s)
+	if w, err := time.Parse("20060102T150405.000 MST", t); err == nil {
+		return w, true
+	}
+	if w, err := time.Parse("20060102", t); err == nil {
+		return w, true
+	}
+	return time.Time{}, false
+}
+
 // LaporanPindah - laporan agregat satu putaran.
 type LaporanPindah struct {
-	Mode        string
-	Sumber      int
-	AkanDitulis int
-	SudahSama   int
-	FlatSaja    int
+	Mode string
+	// CacahSumber / CacahFlat - cacah baris SAAT dijalankan (sebelum menulis); CacahFlatSesudah - sesudah commit.
+	CacahSumber, CacahFlat, CacahFlatSesudah int
+	Baru, Berubah, Sama                      []string
+	// Konflik - beda, flat sama / lebih baru / stempel tak terbaca: TIDAK ditimpa.
+	Konflik []string
+	// Dilewati - tidak ada di flat, MODIFIEDDATE sumber tidak lebih baru dari `-sejak`: dianggap dihapus aplikasi.
+	Dilewati []string
+	FlatSaja int
+	// Sejak - batas `-sejak` yang dipakai ("" = tanpa batas); BatasBerikut - MODIFIEDDATE sumber terbaru.
+	Sejak, BatasBerikut string
 	// PanjangMaks - kolom -> panjang maksimum (byte) di sumber.
 	PanjangMaks map[string]int
 	// TidakMuat - "ID KOLOM: n byte > lebar" (tanpa nilai).
 	TidakMuat []string
-	// Berbeda - ID sumber yang sudah ada di tabel flat dengan isi BERBEDA.
-	Berbeda []string
 	// Gagal - "ID KOLOM: jenis" (tanpa nilai).
 	Gagal   []string
 	Ditulis bool
 }
 
-// BolehDitulis - nol tidak muat, nol kegagalan, nol baris flat berbeda.
-func (l LaporanPindah) BolehDitulis() bool {
-	return len(l.TidakMuat) == 0 && len(l.Gagal) == 0 && len(l.Berbeda) == 0
+// BolehDitulis - nol tidak muat, nol kegagalan. Konflik dan dilewati dilaporkan, tidak menahan.
+func (l LaporanPindah) BolehDitulis() bool { return len(l.TidakMuat) == 0 && len(l.Gagal) == 0 }
+
+func daftarID(id []string) string {
+	if len(id) == 0 {
+		return ""
+	}
+	return " " + strings.Join(id, " ")
 }
 
-// Teks - laporan untuk operator (agregat).
+// Teks - laporan untuk operator (agregat; ID dan nama kolom, tidak pernah nilai).
 func (l LaporanPindah) Teks() string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "pindahflat R/I Rate Life ringkasan (%s)\n", l.Mode)
-	fmt.Fprintf(&b, "  sumber M_RATE_LIFE_SUMMARY: %d\n", l.Sumber)
-	fmt.Fprintf(&b, "  baris yang (akan) ditulis: %d\n", l.AkanDitulis)
-	fmt.Fprintf(&b, "  sudah ada dan sama (dilewati): %d\n", l.SudahSama)
+	fmt.Fprintf(&b, "  cacah saat dijalankan: sumber M_RATE_LIFE_SUMMARY %d, flat RATE_LIFE_SUMMARY %d\n", l.CacahSumber, l.CacahFlat)
+	if l.Sejak != "" {
+		fmt.Fprintf(&b, "  -sejak: %s\n", l.Sejak)
+	}
+	fmt.Fprintf(&b, "  baru (disisip): %d\n", len(l.Baru))
+	fmt.Fprintf(&b, "  berubah (sumber lebih baru, diperbarui): %d%s\n", len(l.Berubah), daftarID(l.Berubah))
+	fmt.Fprintf(&b, "  sama (dilewati): %d\n", len(l.Sama))
+	fmt.Fprintf(&b, "  konflik (TIDAK ditimpa, periksa): %d%s\n", len(l.Konflik), daftarID(l.Konflik))
+	fmt.Fprintf(&b, "  dilewati, tidak lebih baru dari -sejak dan tidak ada di flat (dihapus aplikasi?): %d%s\n", len(l.Dilewati), daftarID(l.Dilewati))
 	fmt.Fprintf(&b, "  hanya di tabel flat (dibiarkan): %d\n", l.FlatSaja)
 	fmt.Fprintf(&b, "  panjang maksimum sumber (byte) / lebar kolom:\n")
 	for _, k := range KolomViewRingkasan {
@@ -105,17 +153,23 @@ func (l LaporanPindah) Teks() string {
 	for _, g := range l.TidakMuat {
 		fmt.Fprintf(&b, "    %s\n", g)
 	}
-	fmt.Fprintf(&b, "  tabel flat berbeda: %d %s\n", len(l.Berbeda), strings.Join(l.Berbeda, " "))
 	fmt.Fprintf(&b, "  gagal: %d\n", len(l.Gagal))
 	for _, g := range l.Gagal {
 		fmt.Fprintf(&b, "    %s\n", g)
+	}
+	if l.BatasBerikut != "" {
+		fmt.Fprintf(&b, "  batas delta berikutnya (-sejak): %s\n", l.BatasBerikut)
+	}
+	if l.Ditulis {
+		fmt.Fprintf(&b, "  cacah flat sesudah: %d\n", l.CacahFlatSesudah)
 	}
 	fmt.Fprintf(&b, "  ditulis: %v\n", l.Ditulis)
 	return b.String()
 }
 
 // NilaiJSON - nilai kunci seperti `a.JSONDATA.<kunci>` view: teks APA ADANYA (tanpa dipangkas), angka dan boolean
-// sebagai teks literalnya; kunci tidak ada / null / teks kosong / objek / larik = nil. ok=false bila JSONDATA bukan objek JSON.
+// sebagai teks literalnya; kunci tidak ada / null / teks kosong / objek / larik = nil. ok=false bila JSONDATA bukan
+// objek JSON.
 func NilaiJSON(jsonData, kunci string) (*string, bool) {
 	obj := map[string]json.RawMessage{}
 	if t := strings.TrimSpace(jsonData); t == "" {
@@ -142,15 +196,25 @@ func NilaiJSON(jsonData, kunci string) (*string, bool) {
 	return &t, true
 }
 
-// RencanaPindah - laporan dan baris yang akan disisipkan, dari sumber JSON dan isi tabel flat saat ini. Murni.
-func RencanaPindah(sumber []BarisJSON, flat []RingkasanFlat) (LaporanPindah, []RingkasanFlat) {
-	lap := LaporanPindah{Sumber: len(sumber), PanjangMaks: map[string]int{}}
+// RencanaPindah - laporan, baris yang disisip, dan baris yang diperbarui (aturan delta di kepala berkas), dari sumber
+// JSON dan isi tabel flat saat ini. sejak = "" tanpa batas. Murni.
+func RencanaPindah(sumber []BarisJSON, flat []RingkasanFlat, sejak string) (LaporanPindah, []RingkasanFlat, []RingkasanFlat, error) {
+	lap := LaporanPindah{CacahSumber: len(sumber), CacahFlat: len(flat), PanjangMaks: map[string]int{}, Sejak: strings.TrimSpace(sejak)}
+	var batas time.Time
+	if lap.Sejak != "" {
+		w, ok := WaktuPega(&lap.Sejak)
+		if !ok {
+			return lap, nil, nil, ErrSejakTidakTerbaca
+		}
+		batas = w
+	}
 	ada := map[string]RingkasanFlat{}
 	for _, f := range flat {
 		ada[f.ID] = f
 	}
 	dipakai := map[string]bool{}
-	var tulis []RingkasanFlat
+	var sisip, ubah []RingkasanFlat
+	var terbaru time.Time
 	for _, b := range sumber {
 		id := b.ID
 		gagal := false
@@ -196,24 +260,38 @@ func RencanaPindah(sumber []BarisJSON, flat []RingkasanFlat) (LaporanPindah, []R
 			continue
 		}
 		dipakai[id] = true
-		if f, sudah := ada[id]; sudah {
-			if f.Sama(r) {
-				lap.SudahSama++
-			} else {
-				lap.Berbeda = append(lap.Berbeda, id)
-			}
-			continue
+		wSumber, okSumber := WaktuPega(r.ModifiedDate)
+		if okSumber && wSumber.After(terbaru) {
+			terbaru, lap.BatasBerikut = wSumber, *r.ModifiedDate
 		}
-		tulis = append(tulis, r)
+		f, sudah := ada[id]
+		switch {
+		case !sudah && lap.Sejak != "" && (!okSumber || !wSumber.After(batas)):
+			lap.Dilewati = append(lap.Dilewati, id)
+		case !sudah:
+			lap.Baru = append(lap.Baru, id)
+			sisip = append(sisip, r)
+		case f.Sama(r):
+			lap.Sama = append(lap.Sama, id)
+		default:
+			wFlat, okFlat := WaktuPega(f.ModifiedDate)
+			if okSumber && okFlat && wSumber.After(wFlat) {
+				lap.Berubah = append(lap.Berubah, id)
+				ubah = append(ubah, r)
+			} else {
+				lap.Konflik = append(lap.Konflik, id)
+			}
+		}
 	}
 	for id := range ada {
 		if !dipakai[id] {
 			lap.FlatSaja++
 		}
 	}
-	sort.Strings(lap.Berbeda)
-	lap.AkanDitulis = len(tulis)
-	return lap, tulis
+	for _, d := range [][]string{lap.Baru, lap.Berubah, lap.Sama, lap.Konflik, lap.Dilewati} {
+		sort.Strings(d)
+	}
+	return lap, sisip, ubah, nil
 }
 
 // SqlSesiNLS - setelan sesi alat pindah (kolom semua teks; lapis kedua untuk konversi implisit), di koneksi yang SAMA
@@ -234,6 +312,14 @@ func SqlSemuaRingkasanFlat(t string) string {
 func SqlSisipRingkasanFlat(t string) string {
 	return fmt.Sprintf(`INSERT INTO %s (ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID, FLAG) VALUES (:1, :2, :3, :4, :5, :6)`, t)
 }
+
+// SqlPerbaruiRingkasanFlat - delta `berubah`: keenam kolom dari sumber yang lebih baru.
+func SqlPerbaruiRingkasanFlat(t string) string {
+	return fmt.Sprintf(`UPDATE %s SET USEDBY = :1, TYPE = :2, MODIFIEDDATE = :3, OPERATORID = :4, FLAG = :5 WHERE ID = :6`, t)
+}
+
+// SqlCacah - cacah baris.
+func SqlCacah(t string) string { return fmt.Sprintf(`SELECT COUNT(*) FROM %s`, t) }
 
 // SqlKunciRingkasan - kunci tabel flat sepanjang transaksi alat pindah.
 func SqlKunciRingkasan(t string) string { return fmt.Sprintf(`LOCK TABLE %s IN EXCLUSIVE MODE`, t) }
@@ -321,8 +407,9 @@ func (g *Gudang) bacaRencana(ctx context.Context, tx *db.Tx, n nama) ([]BarisJSO
 	return sumber, flat, bungkus(rows.Err(), "membaca RATE_LIFE_SUMMARY")
 }
 
-// PindahFlat - satu putaran alat pindah (lihat kepala berkas): SELURUHNYA di satu koneksi (SesiPindah).
-func (g *Gudang) PindahFlat(ctx context.Context, jalankan bool) (LaporanPindah, error) {
+// PindahFlat - satu putaran alat pindah (lihat kepala berkas): SELURUHNYA di satu koneksi (SesiPindah). sejak = ""
+// pemindahan penuh; selain itu batas delta (`-sejak`).
+func (g *Gudang) PindahFlat(ctx context.Context, jalankan bool, sejak string) (LaporanPindah, error) {
 	mode := "uji"
 	if jalankan {
 		mode = "jalankan"
@@ -349,23 +436,33 @@ func (g *Gudang) PindahFlat(ctx context.Context, jalankan bool) (LaporanPindah, 
 	if err != nil {
 		return LaporanPindah{Mode: mode}, err
 	}
-	lap, tulis := RencanaPindah(sumber, flat)
+	lap, sisip, ubah, err := RencanaPindah(sumber, flat, sejak)
 	lap.Mode = mode
-	if !jalankan {
-		return lap, nil
+	if err != nil || !jalankan {
+		return lap, err
 	}
 	if !lap.BolehDitulis() {
 		return lap, ErrPindahTidakLolos
 	}
-	for _, r := range tulis {
+	for _, r := range sisip {
 		if _, err := g.tulis(ctx, tx, TabelRingkasan, SqlSisipRingkasanFlat(n.tabelRingkasan), "memindah ringkasan", r.ID,
 			nilaiArg(r.UsedBy), nilaiArg(r.Type), nilaiArg(r.ModifiedDate), nilaiArg(r.OperatorID), nilaiArg(r.Flag)); err != nil {
 			return lap, err
 		}
 	}
+	for _, r := range ubah {
+		if _, err := g.tulis(ctx, tx, TabelRingkasan, SqlPerbaruiRingkasanFlat(n.tabelRingkasan), "memperbarui ringkasan",
+			nilaiArg(r.UsedBy), nilaiArg(r.Type), nilaiArg(r.ModifiedDate), nilaiArg(r.OperatorID), nilaiArg(r.Flag), r.ID); err != nil {
+			return lap, err
+		}
+	}
+	c, err := g.satuNilai(ctx, tx, TabelRingkasan, SqlCacah(n.tabelRingkasan))
+	if err != nil {
+		return lap, err
+	}
 	if err := tx.Commit(); err != nil {
 		return lap, fmt.Errorf("repository: menutup transaksi pindah: %w", err)
 	}
-	lap.Ditulis = true
+	lap.CacahFlatSesudah, lap.Ditulis = angka(c), true
 	return lap, nil
 }
