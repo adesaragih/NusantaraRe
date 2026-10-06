@@ -2,7 +2,7 @@
 
 > ⚠️ **Urutan merge: PR ini LEBIH DULU, lalu `modul/ricommlife/implementasi`** (`modul/ricommlife/docs/PR-RICOMMLIFE.md`).
 > Kedua cabang membawa `inti/backend/db/koneksi.go` identik (`91221b2f` = `349be34d`); uji coba merge ricommlife di atas
-> ujung cabang ini bersih (MODUL.md bab "Urutan merge").
+> ujung cabang ini: satu konflik kecil di `rentang_test.go` (MODUL.md bab "Urutan merge").
 
 ## Summary
 

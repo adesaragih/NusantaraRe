@@ -113,6 +113,14 @@ sama-sama mengubah ringkasan yang sama, versi yang MODIFIEDDATE-nya lebih baru m
 `inti/backend/db/koneksi.go` identik (commit `91221b2f` di sini = `349be34d` di ricommlife), migrasi inti 926 di sini
 dan 924/925 di ricommlife. PR: `docs/PR-RIRATELIFE-FLAT.md`.
 
+**Uji coba merge (06-10-2026)** - worktree sementara dari ujung riratelife, `git merge --no-commit
+modul/ricommlife/implementasi`: `inti/backend/db/koneksi.go` bersih (identik). SATU konflik, di
+`inti/backend/penjaga/rentang_test.go` (`TestSlotMenuBerjalanSesudah900`, daftar urutan pelari - kedua cabang menambah
+berkasnya sendiri). Penyelesaian: satu daftar berurutan `… "923_seq_rate_life.sql", "924_ricomm_life.sql",
+"925_m_nav_menu_ricommlife.sql", "926_rate_life_summary_flat.sql", "952_menu_tiruan.sql"`. Sesudahnya `go vet ./...`
+bersih dan `go test ./...` = baseline (3 paket claimlife), ditambah `TestNolAlamatLayananDiKode` yang gagal HANYA karena
+worktree sementara tidak memuat berkas `.env` (tidak masuk git) - bukan akibat merge.
+
 ## Isi folder
 
 | Folder | Isi |
