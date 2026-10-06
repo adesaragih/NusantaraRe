@@ -15,7 +15,7 @@
 -- Jalankan bagian 1-3 sebagai pemilik POOLDATA (atau DBA). Lanjut ke bagian 4 HANYA bila bagian 2 dan 3 nol baris;
 -- bila tidak nol: BERHENTI dan laporkan ke work owner (objek itu akan rusak / perlu dibangun ulang).
 
--- 1. Catat definisi view sebelum dibuang (bandingkan dengan fakta DEV di atas) dan cacah sumbernya (339 di DEV).
+-- 1. Catat definisi view sebelum dibuang (bandingkan dengan fakta DEV di atas) dan cacah sumbernya saat ini.
 SELECT OWNER, VIEW_NAME, TEXT FROM SYS.ALL_VIEWS WHERE OWNER = 'POOLDATA' AND VIEW_NAME = 'RATE_LIFE_SUMMARY';
 SELECT COUNT(*) FROM POOLDATA.M_RATE_LIFE_SUMMARY;
 

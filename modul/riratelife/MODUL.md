@@ -43,8 +43,8 @@ RATE_LIFE_SUMMARY"*. Sesudah ditanya:
 
 - **K-F1:** VIEW `RATE_LIFE_SUMMARY` **DIGANTI TABEL FLAT bernama sama** `RATE_LIFE_SUMMARY` (migrasi inti `926`, pola
   `RICOMM_LIFE`): berkas DBA pelepas view terpisah SEBELUM `-migrate`; `_down` = DROP TABLE lalu CREATE VIEW definisi
-  asli; alat pindah uji-kering bawaan, `-jalankan` ditolak bila `IS_PEGA_PROD=true`. `M_RATE_LIFE_SUMMARY` (JSON, 339
-  baris DEV) TIDAK disentuh: cadangan + sumber alat pindah.
+  asli; alat pindah uji-kering bawaan, `-jalankan` ditolak bila `IS_PEGA_PROD=true`. `M_RATE_LIFE_SUMMARY` (JSON, cacah
+  masih berubah) TIDAK disentuh: cadangan + sumber alat pindah.
 - **K-F2:** SEMUA 6 kolom view ikut, isi apa adanya (`ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID, FLAG`, semua
   VARCHAR2). Modul tidak menulis `TYPE`/`FLAG` (tidak di XML): baris baru NULL, baris pindahan apa adanya.
 
@@ -64,6 +64,54 @@ jalankan alat pindah ULANG berkala (aman diulang: baris sama dilewati; ID sama b
 diperiksa). ID baru aplikasi tidak bertabrakan dengan ID Pega yang belum dipindah: `MaksID`/`AdaID` ringkasan memeriksa
 tabel flat DAN `M_RATE_LIFE_SUMMARY`. Rincian rate yang ditulis Pega tetap terlihat (view `RATE_LIFE` tidak berubah),
 tetapi ringkasannya baru tampil sesudah dipindah.
+
+**Fakta DEV (dicek WO 06-10-2026, baca-saja):** `M_RATE_LIFE_SUMMARY` 347 baris dan MASIH BERUBAH (MODIFIEDDATE terbaru
+`20261006T040628.169 GMT`) - dokumen dan alat tidak menanam angka baris; panjang maksimum isi ID 7, USEDBY 99,
+MODIFIEDDATE 23, OPERATORID 17, FLAG 2, TYPE kosong di semua baris (lebar 926 cukup - **[terverifikasi data DEV
+06-10-2026]**); `UPPER(TRIM(USEDBY))` kembar = 0; dependensi / sinonim / grant view = nol.
+
+### Keputusan FLAG (dan TYPE) — [penyimpangan sadar - menunggu WO]
+
+Isi FLAG DEV: `AP` 230, `PM` 106, `PY` 1, kosong 10. Pengisinya **tidak ditemukan**. Dicari: `D:\NUSARE DEV\Menu RI
+Rate Life\RIRate.xml` dan `View Detail.xml` (satu-satunya `Flag` = `pyParameterSetFlag` b6 / b5, bukan properti),
+`D:\PEGA`, `D:\Leo\PEGA`, `D:\NUSARE DEV` (termasuk `Backup\`, tanpa `node_modules`) - nol berkas rule
+`BrowseRateLifeSummary` / `AddToListSummary_Act` / `SubmitRIRate_Act`; catatan inventaris RD `BrowseRateLifeSummary`
+(`D:\NUSARE DEV\Backup\jefri\OUTPUT FIX\03-celah\02-reportdefinition-nb.md` b246) hanya menyebut kolom `.ID, .USEDBY,
+.OPERATORID, .MODIFIEDDATE, .TYPE` - tanpa FLAG. Maka, tanpa mengarang:
+
+- ringkasan BARU: FLAG (dan TYPE) kosong / NULL;
+- Edit: hanya USEDBY, OPERATORID, MODIFIEDDATE yang ditulis - FLAG dan TYPE lama TIDAK ditimpa (`SqlUbahRingkasan`, uji
+  `TestSqlTulisRingkasan`, `-tags=db` `TestDBRumusIDDanPulangPergi`);
+- alat pindah menyalin FLAG dan TYPE APA ADANYA (uji `TestRencanaPindahPenuh` dengan AP/PM/PY, `-tags=db`).
+
+**Pertanyaan untuk WO:** (1) apa arti `AP`, `PM`, `PY` (dugaan, belum terbukti: jenis/status rate)? (2) siapa yang
+mengisinya (layar / proses Pega mana)? (3) haruskah ringkasan baru dari aplikasi diberi FLAG, dan nilainya apa? (4)
+apakah pembaca lain perlu menyaring FLAG (MPNL saat ini membaca `ID, USEDBY` tanpa saringan FLAG)?
+
+### Cutover delta (alat pindah)
+
+Cacah dibaca SAAT berjalan (sumber dan flat), tidak ada angka tetap. Putaran pertama tanpa `-sejak` (penuh); putaran
+berikutnya `-sejak="<batas delta berikutnya>"` dari laporan putaran sebelumnya. Per ID:
+
+| Keadaan | Tindakan |
+| --- | --- |
+| tidak ada di flat, MODIFIEDDATE sumber lebih baru dari `-sejak` (atau tanpa `-sejak`) | **baru** - disisip |
+| tidak ada di flat, MODIFIEDDATE sumber tidak lebih baru dari `-sejak` / kosong | **dilewati** - dianggap dihapus aplikasi, tidak dihidupkan lagi, dilaporkan |
+| keenam kolom sama | **sama** - dilewati |
+| beda, MODIFIEDDATE sumber lebih baru dari flat | **berubah** - flat diperbarui keenam kolom (Pega lebih baru), ID dilaporkan |
+| beda, MODIFIEDDATE flat sama / lebih baru / salah satu kosong atau tidak terbaca | **konflik** - TIDAK ditimpa, ID dilaporkan untuk diperiksa WO |
+| hanya di flat | dibiarkan (ringkasan baru aplikasi) |
+
+Aplikasi tetap hanya menulis tabel flat (MODIFIEDDATE = waktu simpan), sehingga tulisan aplikasi sesudah pemindahan
+selalu lebih baru dari salinan Pega yang lama → konflik, bukan ditimpa. ⚠️ Batas aturan: bila Pega DAN aplikasi
+sama-sama mengubah ringkasan yang sama, versi yang MODIFIEDDATE-nya lebih baru menang dan ID-nya tercantum di laporan
+(`berubah` atau `konflik`). Alasan utama tetap: bekukan Pega.
+
+### Urutan merge
+
+**`modul/riratelife/implementasi` di-merge LEBIH DULU, lalu `modul/ricommlife/implementasi`.** Kedua cabang membawa
+`inti/backend/db/koneksi.go` identik (commit `91221b2f` di sini = `349be34d` di ricommlife), migrasi inti 926 di sini
+dan 924/925 di ricommlife. PR: `docs/PR-RIRATELIFE-FLAT.md`.
 
 ## Isi folder
 
@@ -151,6 +199,6 @@ npx vitest run modul/riratelife
 
 | Tabel | Alasan |
 | --- | --- |
-| `M_RATE_LIFE_SUMMARY` | tabel fisik warisan Pega (ringkasan R/I rate life, JSON, 339 baris DEV); sejak RALAT R4 (K-F1 06-10-2026) DIBACA saja - cadangan, sumber alat pindahflat, dan pemeriksa ID terpakai; nol DDL, nol tulis |
+| `M_RATE_LIFE_SUMMARY` | tabel fisik warisan Pega (ringkasan R/I rate life, JSON, cacah masih berubah); sejak RALAT R4 (K-F1 06-10-2026) DIBACA saja - cadangan, sumber alat pindahflat, dan pemeriksa ID terpakai; nol DDL, nol tulis |
 | `M_RATE_LIFE` | tabel fisik warisan Pega (baris rate, JSON); disisipkan Simpan Upload dan Rate Detail Save, diubah Rate Detail Edit, dihapus Delete ringkasan; nol DDL |
 | `RATE_LIFE` | view warisan atas `M_RATE_LIFE`; dibaca Rate Detail, Delete, dan pemeriksa kembar upload |
