@@ -146,6 +146,9 @@ var modulLuarKorpus = map[string]string{
 	// Keputusan work owner 05-10-2026: modul `reinsurancetype` (REINSURANCETYPE, master jenis reasuransi), label
 	// "Reinsurance Type", kelompok MASTER TREATY (921) - tanpa migrasi sendiri, barisnya langsung menyala.
 	"reinsurancetype": "921_m_nav_menu_reinsurancetype.sql",
+	// Perintah work owner 05-10-2026: modul `riratelife` (M_RATE_LIFE_SUMMARY, ringkasan rate reasuransi life), label
+	// "R/I Rate Life", kelompok MASTER TREATY (922) - tanpa migrasi sendiri, barisnya langsung menyala.
+	"riratelife": "922_m_nav_menu_riratelife.sql",
 }
 
 // langkahMenuLuarKorpus menjawab apakah berkas inti `nama` membuat baris modul luar korpus.
@@ -623,7 +626,9 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 		} else {
 			labelLuar[k.label] = true
 		}
-		if mau := strings.ToLower(strings.ReplaceAll(folder, " ", "")); k.kode != mau || k.modul != mau {
+		// Garis miring ikut dibuang (perintah work owner 05-10-2026: label "R/I Rate Life" -> modul `riratelife`;
+		// nama folder Go tidak boleh memuat `/`).
+		if mau := strings.ToLower(strings.NewReplacer(" ", "", "/", "").Replace(folder)); k.kode != mau || k.modul != mau {
 			t.Errorf("baris %q: KODE %q, MODUL %q, mau keduanya %q (tabel nama modul)", folder, k.kode, k.modul, mau)
 		}
 		// URUTAN 1, 2, 3, ... di dalam golongannya, menurut urutan berkas.
