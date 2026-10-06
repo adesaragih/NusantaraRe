@@ -475,7 +475,7 @@ func TestPilihBisnis(t *testing.T) { // tiket 01; AC 36-38
 		"Quotation.BusinessType":       "",
 		"TreatyIn.ID":                  "UJI-D1",
 		"PolicyTreatyIn.OJKBusinessID": "UJI-OJK",
-		"PolicyTreatyIn.LayerType":     "", // diagram F26: dicoret dari T_GENERAL_POLIS
+		"PolicyTreatyIn.LayerType":     "", // diagram F26: dicoret dari T_GENERAL_POLIS_TREATY
 	} {
 		if got := h.Ambil(j); got != harap {
 			t.Errorf("tersimpan %s = %q, harap %q", j, got, harap)

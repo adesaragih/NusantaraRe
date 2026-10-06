@@ -105,6 +105,22 @@ func (l *Layanan) pilihBisnisNonProp(ctx context.Context, h *models.Halaman) err
 	return rusak(models.PPNPPHLapisanXOL(h))
 }
 
+// pajakNonProp - `[keputusan work owner 06-10-2026]` With Tax / Type Tax berubah sesudah Choose Business:
+// pajak polis NonProp baru dihitung ulang dengan menjalankan lagi preACT 16 dan 18 (`pilihBisnisNonProp`),
+// satu-satunya tempat XML menghitungnya (sel `.TypeTax` hanya postValue, `.FlagPPH` hanya RemoveTypeTax_ACT).
+// Isian pengguna yang ikut ditulis ulang langkah 13 dan 23 - StartDate, EndDate, %Share spreading -
+// dikembalikan (`models.SimpanIsianNonProp`).
+func (l *Layanan) pajakNonProp(ctx context.Context, h *models.Halaman) error {
+	if !models.PolisNonPropBaru(h) || !nonPropDipilih(h) {
+		return nil
+	}
+	isian := models.SimpanIsianNonProp(h)
+	if err := l.pilihBisnisNonProp(ctx, h); err != nil {
+		return err
+	}
+	return isian.Kembalikan(h)
+}
+
 // siapkanNonProp - bagian NonProp pra-proses (dipanggil `siapkan` sesudah
 // `muatMaster`):
 //

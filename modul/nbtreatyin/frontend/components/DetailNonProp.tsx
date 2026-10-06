@@ -18,7 +18,7 @@
 
 import { Panel } from '../../../../inti/frontend/components/ui/dasar'
 import { MASTER, POLIS, daftar, nilai, type Baris, type Halaman, type Pilihan } from '../api'
-import { KOLOM_ANGSURAN, KOLOM_SPREADING, TOMBOL } from '../labels'
+import { KOLOM_ANGSURAN, KOLOM_SPREADING } from '../labels'
 import { labelTreatyType } from '../medan'
 import {
   JUDUL_NONPROP,
@@ -38,8 +38,9 @@ import {
   type Kolom,
   type Total,
 } from '../nonprop'
-import { POLA_INTI, sajikan, type Sajian } from '../sajian'
+import { kelasAngka, POLA_INTI, sajikan, type Sajian } from '../sajian'
 import { TEMPAT_LABEL_NON_EDM, tempatTerbuka, type Tempat } from '../tempat'
+import InputAngka from './InputAngka'
 import Wadah from './Wadah'
 
 const SPREADING = POLIS + 'SpreadingRiskList'
@@ -66,7 +67,12 @@ function Grid({ baris, kolom, sajian = DUA }: { baris: Baris[]; kolom: Kolom[]; 
         <thead>
           <tr>
             {kolom.map((c, j) => (
-              <th key={`${c.m}-${j}`} scope="col">
+              <th
+                key={`${c.m}-${j}`}
+                scope="col"
+                // kepala ikut rata kanan bila kolomnya berisi angka, sejajar dengan selnya
+                className={baris.some((b) => kelasAngka(b[c.m]) !== undefined) ? 'nbti__angka' : undefined}
+              >
                 {c.label}
               </th>
             ))}
@@ -76,7 +82,9 @@ function Grid({ baris, kolom, sajian = DUA }: { baris: Baris[]; kolom: Kolom[]; 
           {baris.map((b, i) => (
             <tr key={i}>
               {kolom.map((c, j) => (
-                <td key={`${c.m}-${j}`}>{teksSel(b, c, sajian)}</td>
+                <td key={`${c.m}-${j}`} className={kelasAngka(b[c.m])}>
+                  {teksSel(b, c, sajian)}
+                </td>
               ))}
             </tr>
           ))}
@@ -110,7 +118,6 @@ export interface PropsDetailNonProp {
   tempat: Tempat
   opsiSpreading: Pilihan[]
   onUbahBaris: (jalur: string, i: number, kunci: string, v: string) => void
-  onSetelDaftar: (jalur: string, b: Baris[]) => void
   onRefresh: (aksi: string, indeks: number) => void
 }
 
@@ -120,7 +127,6 @@ export default function DetailNonProp({
   tempat,
   opsiSpreading,
   onUbahBaris,
-  onSetelDaftar,
   onRefresh,
 }: PropsDetailNonProp) {
   const spreading = daftar(h, SPREADING)
@@ -157,49 +163,33 @@ export default function DetailNonProp({
 
       {/* S73 NOHEADER: SUB_SECTION `SpreadingRiskList` tanpa judul wadah */}
       <Wadah>
-        {terbuka && (
-          <button type="button" className="btn btn--sm" onClick={() => onSetelDaftar(SPREADING, [...spreading, {} as Baris])}>
-            {TOMBOL.add}
-          </button>
-        )}
+        {/* perintah work owner 06-10-2026: Add / Delete dibuang, Treaty Type hanya-baca ("ga boleh di ubah lagi") */}
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
                 <th scope="col">{KOLOM_SPREADING.treatyType}</th>
-                <th scope="col">{KOLOM_SPREADING.share}</th>
-                <th scope="col">{KOLOM_SPREADING.premium}</th>
-                <th scope="col">{KOLOM_SPREADING.claimPct}</th>
-                <th scope="col">{KOLOM_SPREADING.claim}</th>
-                {terbuka && <th scope="col" />}
+                <th scope="col" className="nbti__angka">{KOLOM_SPREADING.share}</th>
+                <th scope="col" className="nbti__angka">{KOLOM_SPREADING.premium}</th>
+                <th scope="col" className="nbti__angka">{KOLOM_SPREADING.claimPct}</th>
+                <th scope="col" className="nbti__angka">{KOLOM_SPREADING.claim}</th>
               </tr>
             </thead>
             <tbody>
               {spreading.map((b, i) => (
                 <tr key={i}>
                   <td>
-                    {terbuka ? (
-                      <select className="field__input" value={b.TreatyType ?? ''} onChange={(e) => onUbahBaris(SPREADING, i, 'TreatyType', e.target.value)}>
-                        {/* pyNoSelectionText */}
-                        <option value="">{TOMBOL.pilihKosong}</option>
-                        {opsiSpreading.map((o) => (
-                          <option key={o.nilai} value={o.nilai}>
-                            {o.label}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      // dropdown ro ber-RD BrowseReinsuranceType_RD: tampil .Note dari .ID
-                      labelTreatyType(b, opsiSpreading)
-                    )}
+                    {/* hanya-baca: dropdown ro ber-RD BrowseReinsuranceType_RD - tampil .Note dari .ID */}
+                    {labelTreatyType(b, opsiSpreading)}
                   </td>
                   {(['SharePercentage', 'PremiumSpreaded', 'ClaimPercentage', 'ClaimSpreaded'] as const).map((k) => (
-                    <td key={k}>
+                    <td key={k} className="nbti__angka">
                       {terbuka && (k === 'SharePercentage' || k === 'ClaimPercentage') ? (
-                        <input
-                          className="field__input"
+                        <InputAngka
+                          label={k === 'SharePercentage' ? KOLOM_SPREADING.share : KOLOM_SPREADING.claimPct}
                           value={b[k] ?? ''}
-                          onChange={(e) => onUbahBaris(SPREADING, i, k, e.target.value)}
+                          sajian={DUA}
+                          onChange={(v) => onUbahBaris(SPREADING, i, k, v)}
                           onBlur={() => onRefresh('CountSpreading', i + 1)}
                         />
                       ) : (
@@ -207,27 +197,16 @@ export default function DetailNonProp({
                       )}
                     </td>
                   ))}
-                  {terbuka && (
-                    <td>
-                      <button
-                        type="button"
-                        className="btn btn--sm btn--danger"
-                        onClick={() => onSetelDaftar(SPREADING, spreading.filter((_, j) => j !== i))}
-                      >
-                        {TOMBOL.delete}
-                      </button>
-                    </td>
-                  )}
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr>
                 <td>{KOLOM_SPREADING.totalShare}</td>
-                <td>{angka2(nilai(h, POLIS + 'TotalSharePercentagePremium'))}</td>
-                <td>{angka2(nilai(h, POLIS + 'TotalPremium'))}</td>
-                <td>{angka2(nilai(h, POLIS + 'TotalSharePercentageClaim'))}</td>
-                <td>{angka2(nilai(h, POLIS + 'TotalClaim'))}</td>
+                <td className="nbti__angka">{angka2(nilai(h, POLIS + 'TotalSharePercentagePremium'))}</td>
+                <td className="nbti__angka">{angka2(nilai(h, POLIS + 'TotalPremium'))}</td>
+                <td className="nbti__angka">{angka2(nilai(h, POLIS + 'TotalSharePercentageClaim'))}</td>
+                <td className="nbti__angka">{angka2(nilai(h, POLIS + 'TotalClaim'))}</td>
               </tr>
             </tfoot>
           </table>

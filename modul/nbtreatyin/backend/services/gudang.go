@@ -46,6 +46,7 @@ type Gudang interface {
 	IDMataUangDariNama(ctx context.Context, nama string) (string, error)
 	NamaMataUang(ctx context.Context, id string) (string, error)
 	OJKGrupTreaty(ctx context.Context, grupID string) (string, error)
+	GrupBisnisDariGrupTreaty(ctx context.Context, grupID string) (string, error)
 	OldIDGrupTreaty(ctx context.Context, grupID string) (string, error)
 	KlienDariNama(ctx context.Context, nama string) (string, error)
 	StsPKPAgen(ctx context.Context, sobID string) (string, error)

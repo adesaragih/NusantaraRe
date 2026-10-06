@@ -38,7 +38,7 @@ var aksiAdmin = map[string]bool{
 	"SystemSetOneYear": true, "RemoveTypeTax": true, "ProtectDate": true, "CheckDataMkt": true,
 	"SetCurrency": true, "TreatyEnableDisableInput": true, "CalculatePremi": true,
 	"CountOGPONP": true, "CountResult1": true, "CountResult2Ogp": true, "CountResult1Onp": true,
-	"CountResult2Onp": true, "FillPaymentInstallment": true, "SetDueTo": true,
+	"CountResult2Onp": true, "FillPaymentInstallment": true, "SetDueTo": true, "HitungPajak": true,
 }
 
 var aksiAtasan = map[string]bool{"SetDueTo": true}

@@ -10,7 +10,7 @@
 // Medan wajib datang dari backend (`medanWajib`). Padanan setiap tombol/aksi
 // dengan rule XML: `docs/alat/tombol.json`.
 
-import { useCallback, useState } from 'react'
+import { Fragment, useCallback, useState, type ReactNode } from 'react'
 
 import { Gagal, Memuat, Modal, Panel, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
 import { useAmbilBatal } from '../ambil'
@@ -42,6 +42,7 @@ import KotakMedan from '../components/KotakMedan'
 import Paginasi from '../components/Paginasi'
 import PilihBisnis from '../components/PilihBisnis'
 import PilihSumberBisnis, { pegangSumberBisnis, tampilTombolSOB } from '../components/PilihSumberBisnis'
+import SurveiHistoris from '../components/SurveiHistoris'
 import Wadah from '../components/Wadah'
 import {
   BAGIAN,
@@ -58,10 +59,7 @@ import {
   TOMBOL,
 } from '../labels'
 import {
-  KELOMPOK_UANG_ADMIN,
-  KELOMPOK_UANG_ATASAN,
   MEDAN_ADMIN_UMUM,
-  MEDAN_ATASAN_TOTAL,
   MEDAN_ATASAN_UMUM,
   SAJIAN_ANGSURAN,
   SAJIAN_SPREADING,
@@ -76,6 +74,8 @@ import {
 import { tampilNonProp } from '../nonprop'
 import { BARIS_PER_HALAMAN_USULAN, irisan } from '../paginasi'
 import { sajikan, type Sajian } from '../sajian'
+import { TATA_UANG_ADMIN, TATA_UANG_ATASAN, TOTAL_ATASAN, deretQ, tataUmum } from '../tataletak'
+import { aktifTombolSurvei, DAFTAR_SURVEI, tampilTombolSurvei } from '../survei'
 import { tampilTanggalProduksi } from '../tempat'
 
 const SPREADING = POLIS + 'SpreadingRiskList'
@@ -96,6 +96,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
   const [info, setInfo] = useState('')
   const [popupBisnis, setPopupBisnis] = useState(false)
   const [popupSOB, setPopupSOB] = useState(false)
+  const [popupSurvei, setPopupSurvei] = useState(false)
   const [konfirmasi, setKonfirmasi] = useState(false)
   const [nomor, setNomor] = useState<NomorPolis | null>(null)
   const [halUsulan, setHalUsulan] = useState(1)
@@ -117,7 +118,12 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
   )
 
   if (galat !== null && layar === null) return <Gagal galat={galat} />
-  if (layar === null || h === null) return <Memuat />
+  if (layar === null || h === null)
+    return (
+      <div className="inbox nbti__akar">
+        <Memuat />
+      </div>
+    )
 
   const posisi = layar.kasus.positionNote
   const admin = posisi === 'ReasTreatyInAdmin'
@@ -150,14 +156,9 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
     if (m.aksi && boleh) refresh(m.aksi, undefined, baru)
   }
 
-  /** Sel angka hanya-baca grid: nilai berformat, kode mata uang bila uang (AC 85). */
-  const kodeMU = nilai(h, POLIS + 'Currency')
-  const sel = (v: string | undefined, s: Sajian, uang = false) => (
-    <>
-      {uang && kodeMU && (v ?? '') !== '' && <span className="nbti__kode">{kodeMU}</span>}
-      {sajikan(v ?? '', s)}
-    </>
-  )
+  /** Sel angka hanya-baca grid: nilai berformat. Kode mata uang tidak diulang di setiap sel - sudah tampil di
+   *  medan Currency (perintah work owner 05-10-2026: "banyak sekali tulisan IDR"). */
+  const sel = (v: string | undefined, s: Sajian) => sajikan(v ?? '', s)
 
   const kotak = (m: Medan, i: number) => (
     <KotakMedan
@@ -171,6 +172,25 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
       onUbah={ubah}
       onSelesai={selesai}
     />
+  )
+
+  /** Satu kolom label-kiri (tata letak Pega): deret "Q / U/Y" satu baris; `sesudah[jalur]` dirender tepat
+   *  di bawah medannya (tombol Survey Report). */
+  const kolom = (ms: Medan[], sesudah: Record<string, ReactNode> = {}) => (
+    <div className="nbti__kolom">
+      {deretQ(ms).map((x, i) =>
+        Array.isArray(x) ? (
+          <div key={`deret-${i}`} className="nbti__deret">
+            {x.map(kotak)}
+          </div>
+        ) : (
+          <Fragment key={`${x.jalur}-${i}`}>
+            {kotak(x, i)}
+            {sesudah[x.jalur]}
+          </Fragment>
+        ),
+      )}
+    </div>
   )
 
   const ubahBaris = (jalur: string, i: number, kunci: string, v: string) =>
@@ -235,8 +255,40 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
       sel(b[k], SAJIAN_SPREADING.persen)
     )
 
+  // sel 22 `DetailPolicyTreatyIn` / `DetailDeptHeadTreatyIn_UW`: showHarness popup Historical Survey Report
+  const tombolSurvei = tampilTombolSurvei(h) ? (
+    <div className="nbti__tombol-survei">
+      <button type="button" className="btn btn--sm" disabled={!aktifTombolSurvei(h)} onClick={() => setPopupSurvei(true)}>
+        {TOMBOL.surveyReport}
+      </button>
+    </div>
+  ) : null
+
+  const aksiUmum = ubahAdmin ? (
+    <div className="nbti__aksi">
+      {/* wadah `.ClaimType != 'XOL Retro'`; click -> showHarness BusinessAndSOBList -> refresh */}
+      {bukanXOLRetro(h) && (
+        <button type="button" className="btn" onClick={() => setPopupBisnis(true)}>
+          {TOMBOL.chooseBusiness}
+        </button>
+      )}
+      {/* `.ClaimType = 'XOL Retro'`; click -> showHarness SOB (paket P3; F4: pilihan dipegang layar) */}
+      {tampilTombolSOB(h) && (
+        <button type="button" className="btn" onClick={() => setPopupSOB(true)}>
+          {TOMBOL.selectSOB}
+        </button>
+      )}
+      {/* `.TreatyType='XOL'`; click -> refresh (pra-DT TreatyEnableDisableInput) */}
+      {nilai(h, POLIS + 'TreatyType') === 'XOL' && (
+        <button type="button" className="btn" onClick={() => refresh([{ aksi: 'TreatyEnableDisableInput' }])}>
+          {TOMBOL.enableDisable}
+        </button>
+      )}
+    </div>
+  ) : null
+
   return (
-    <div className="inbox nbti__layar">
+    <div className="inbox nbti__layar nbti__akar">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">
           {JUDUL_POSISI[posisi] ?? JUDUL.portal} — {layar.kasus.id}
@@ -258,29 +310,20 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
 
       {/* S2 (pyTitle "General", NOHEADER: tanpa judul) */}
       <Wadah>
-        {ubahAdmin && (
-          <div className="nbti__aksi">
-            {/* wadah `.ClaimType != 'XOL Retro'`; click -> showHarness BusinessAndSOBList -> refresh */}
-            {bukanXOLRetro(h) && (
-              <button type="button" className="btn" onClick={() => setPopupBisnis(true)}>
-                {TOMBOL.chooseBusiness}
-              </button>
-            )}
-            {/* `.ClaimType = 'XOL Retro'`; click -> showHarness SOB (paket P3; F4: pilihan dipegang layar) */}
-            {tampilTombolSOB(h) && (
-              <button type="button" className="btn" onClick={() => setPopupSOB(true)}>
-                {TOMBOL.selectSOB}
-              </button>
-            )}
-            {/* `.TreatyType='XOL'`; click -> refresh (pra-DT TreatyEnableDisableInput) */}
-            {nilai(h, POLIS + 'TreatyType') === 'XOL' && (
-              <button type="button" className="btn" onClick={() => refresh([{ aksi: 'TreatyEnableDisableInput' }])}>
-                {TOMBOL.enableDisable}
-              </button>
-            )}
-          </div>
-        )}
-        <div className="form-grid">{medanTampil(admin ? MEDAN_ADMIN_UMUM : MEDAN_ATASAN_UMUM, h).map(kotak)}</div>
+        {/* tombol aksi paling atas; lalu kolom kiri / kanan, Remark melebar (tata letak Pega) */}
+        {aksiUmum}
+        {(() => {
+          const t = tataUmum(medanTampil(admin ? MEDAN_ADMIN_UMUM : MEDAN_ATASAN_UMUM, h))
+          return (
+            <>
+              <div className="nbti__dua-kolom">
+                {kolom(t.kiri, { [POLIS + 'QuotationData.IsSurveyReport']: tombolSurvei })}
+                {kolom(t.kanan)}
+              </div>
+              {t.bawah.length > 0 && <div className="nbti__baris-penuh">{kolom(t.bawah)}</div>}
+            </>
+          )
+        })()}
       </Wadah>
 
       {/* subsection `DetailPoliciesNonProportional` - wadah `.IsNewPolicyNonProp = 1 && .ClaimType != 'XOL Retro'` (K8) */}
@@ -293,7 +336,6 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
           // `SpreadingRiskList` .TreatyType: pyListSource reportdefinition BrowseReinsuranceType_RD (.ID / .Note)
           opsiSpreading={acuan?.jenisReas ?? []}
           onUbahBaris={ubahBaris}
-          onSetelDaftar={(j, b) => setH(setelDaftar(h, j, b))}
           onRefresh={(aksi, indeks) => refresh([{ aksi }], indeks)}
         />
       )}
@@ -301,96 +343,81 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
       {wadahUang && (
         // wadah S19 / S90 NOHEADER; LABEL Heading 4 "OGP" / "ONP" di atas wadah selnya
         <Wadah>
-          {(admin ? KELOMPOK_UANG_ADMIN : KELOMPOK_UANG_ATASAN).map((k, i) => (
-            <div key={i}>
-              {k.judul && <h4>{k.judul}</h4>}
-              <div className="form-grid">{medanTampil(k.medan, h).map(kotak)}</div>
-            </div>
-          ))}
+          {/* tata letak Pega: Gross Premium 100% | Claim 100%, lalu kolom OGP dan kolom ONP */}
+          {(() => {
+            const t = admin ? TATA_UANG_ADMIN : TATA_UANG_ATASAN
+            const atasKanan = medanTampil(t.atasKanan, h)
+            return (
+              <>
+                <div className="nbti__dua-kolom">
+                  {kolom(medanTampil(t.atasKiri, h))}
+                  {atasKanan.length > 0 && kolom(atasKanan)}
+                </div>
+                <div className="nbti__dua-kolom">
+                  {[t.kiri, t.kanan].map((ks, i) => (
+                    <div key={i} className="nbti__kolom-grup">
+                      {ks.map((k, j) => (
+                        <Fragment key={j}>
+                          {k.judul && <h4>{k.judul}</h4>}
+                          {kolom(medanTampil(k.medan, h))}
+                        </Fragment>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )
+          })()}
         </Wadah>
       )}
 
       {wadahUang && (
         // wadah S29/S30 dan S95/S96 NOHEADER - tanpa judul
         <Wadah>
-          {ubahAdmin && (
-            // click -> addRow
-            <button
-              type="button"
-              className="btn btn--sm"
-              onClick={() => setH(setelDaftar(h, SPREADING, [...spreading, {} as Baris]))}
-            >
-              {TOMBOL.add}
-            </button>
-          )}
+          {/* perintah work owner 06-10-2026: Add / Delete dibuang, Treaty Type hanya-baca ("ga boleh di ubah lagi") */}
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th scope="col">{KOLOM_SPREADING.treatyType}</th>
-                  <th scope="col">{KOLOM_SPREADING.share}</th>
-                  <th scope="col">{KOLOM_SPREADING.premium}</th>
-                  <th scope="col">{KOLOM_SPREADING.claimPct}</th>
-                  <th scope="col">{KOLOM_SPREADING.claim}</th>
-                  {ubahAdmin && <th scope="col" />}
+                  <th scope="col" className="nbti__angka">{KOLOM_SPREADING.share}</th>
+                  <th scope="col" className="nbti__angka">{KOLOM_SPREADING.premium}</th>
+                  <th scope="col" className="nbti__angka">{KOLOM_SPREADING.claimPct}</th>
+                  <th scope="col" className="nbti__angka">{KOLOM_SPREADING.claim}</th>
                 </tr>
               </thead>
               <tbody>
                 {spreading.map((b, i) => (
                   <tr key={i}>
                     <td>
-                      {ubahAdmin ? (
-                        <select
-                          className="field__input"
-                          aria-label={KOLOM_SPREADING.treatyType}
-                          value={b.TreatyType ?? ''}
-                          onChange={(e) => ubahBaris(SPREADING, i, 'TreatyType', e.target.value)}
-                        >
-                          {/* pyNoSelectionText */}
-                          <option value="">{TOMBOL.pilihKosong}</option>
-                          {(acuan?.spreading ?? []).map((o) => (
-                            <option key={o.nilai} value={o.nilai}>
-                              {o.label}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        // admin: dropdown ListSpreading (pyPrompt .TreatyName); DetailDeptHeadTreatyIn_UW
-                        // .TreatyType: dropdown ro, BrowseReinsuranceType_RD (.ID -> .Note)
-                        labelTreatyType(b, (admin ? acuan?.spreading : acuan?.jenisReas) ?? [])
-                      )}
+                      {/* hanya-baca: label .ID ListSpreading / BrowseReinsuranceType_RD, selain itu .TreatyName */}
+                      {labelTreatyType(b, (admin ? acuan?.spreading : acuan?.jenisReas) ?? [])}
                     </td>
-                    <td>{persenSpreading(b, i, 'SharePercentage', KOLOM_SPREADING.share)}</td>
-                    <td>{sel(b.PremiumSpreaded, SAJIAN_SPREADING.uang, true)}</td>
-                    <td>{persenSpreading(b, i, 'ClaimPercentage', KOLOM_SPREADING.claimPct)}</td>
-                    <td>{sel(b.ClaimSpreaded, SAJIAN_SPREADING.uang, true)}</td>
-                    {ubahAdmin && (
-                      <td>
-                        {/* click -> deleteRow */}
-                        <button
-                          type="button"
-                          className="btn btn--sm btn--danger"
-                          onClick={() => setH(setelDaftar(h, SPREADING, spreading.filter((_, j) => j !== i)))}
-                        >
-                          {TOMBOL.delete}
-                        </button>
-                      </td>
-                    )}
+                    <td className="nbti__angka">{persenSpreading(b, i, 'SharePercentage', KOLOM_SPREADING.share)}</td>
+                    <td className="nbti__angka">{sel(b.PremiumSpreaded, SAJIAN_SPREADING.uang)}</td>
+                    <td className="nbti__angka">{persenSpreading(b, i, 'ClaimPercentage', KOLOM_SPREADING.claimPct)}</td>
+                    <td className="nbti__angka">{sel(b.ClaimSpreaded, SAJIAN_SPREADING.uang)}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr>
                   <td>{KOLOM_SPREADING.totalShare}</td>
-                  <td>{sel(nilai(h, POLIS + 'TotalSharePercentagePremium'), SAJIAN_SPREADING.total)}</td>
-                  <td>{sel(nilai(h, POLIS + 'TotalPremium'), SAJIAN_SPREADING.total, true)}</td>
-                  <td>{sel(nilai(h, POLIS + 'TotalSharePercentageClaim'), SAJIAN_SPREADING.total)}</td>
-                  <td>{sel(nilai(h, POLIS + 'TotalClaim'), SAJIAN_SPREADING.total, true)}</td>
+                  <td className="nbti__angka">{sel(nilai(h, POLIS + 'TotalSharePercentagePremium'), SAJIAN_SPREADING.total)}</td>
+                  <td className="nbti__angka">{sel(nilai(h, POLIS + 'TotalPremium'), SAJIAN_SPREADING.total)}</td>
+                  <td className="nbti__angka">{sel(nilai(h, POLIS + 'TotalSharePercentageClaim'), SAJIAN_SPREADING.total)}</td>
+                  <td className="nbti__angka">{sel(nilai(h, POLIS + 'TotalClaim'), SAJIAN_SPREADING.total)}</td>
                 </tr>
               </tfoot>
             </table>
           </div>
-          {!admin && <div className="form-grid">{medanTampil(MEDAN_ATASAN_TOTAL, h).map(kotak)}</div>}
+          {!admin && (
+            <div className="nbti__dua-kolom nbti__total">
+              {TOTAL_ATASAN.map((ms, i) => (
+                <Fragment key={i}>{kolom(medanTampil(ms, h))}</Fragment>
+              ))}
+            </div>
+          )}
         </Wadah>
       )}
 
@@ -417,9 +444,9 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
                 <tr>
                   <th scope="col">{KOLOM_ANGSURAN.no}</th>
                   <th scope="col">{KOLOM_ANGSURAN.dueDate}</th>
-                  <th scope="col">{KOLOM_ANGSURAN.pct}</th>
-                  <th scope="col">{KOLOM_ANGSURAN.premium}</th>
-                  <th scope="col">{KOLOM_ANGSURAN.total}</th>
+                  <th scope="col" className="nbti__angka">{KOLOM_ANGSURAN.pct}</th>
+                  <th scope="col" className="nbti__angka">{KOLOM_ANGSURAN.premium}</th>
+                  <th scope="col" className="nbti__angka">{KOLOM_ANGSURAN.total}</th>
                 </tr>
               </thead>
               <tbody>
@@ -430,9 +457,9 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
                         readOnly - sel ber-aksi SetValidateInstallment_Act / CountPctInstallment_Act
                         tidak pernah terpicu; baris diisi FillPaymentInstallment (audit silang P3). */}
                     <td>{sajikan(b.DueDate ?? '', SAJIAN_ANGSURAN.dueDate)}</td>
-                    <td>{sel(b.InstallmentPercentage, SAJIAN_ANGSURAN.persen)}</td>
-                    <td>{sel(b.Premium, SAJIAN_ANGSURAN.premium, true)}</td>
-                    <td>{sel(b.PaymentTotal, SAJIAN_ANGSURAN.total, true)}</td>
+                    <td className="nbti__angka">{sel(b.InstallmentPercentage, SAJIAN_ANGSURAN.persen)}</td>
+                    <td className="nbti__angka">{sel(b.Premium, SAJIAN_ANGSURAN.premium)}</td>
+                    <td className="nbti__angka">{sel(b.PaymentTotal, SAJIAN_ANGSURAN.total)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -444,7 +471,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
       {/* SUB_SECTION ListSuggest - wadah NOHEADER, tanpa judul */}
       <Wadah>
         {boleh && (
-          <div className="form-grid">
+          <div className="nbti__kolom nbti__usulan">
             <div className="field">
               <span className="field__label">
                 {KOLOM_USULAN.putusan}
@@ -565,6 +592,15 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
         </div>
       )}
 
+      {popupSurvei && (
+        <SurveiHistoris
+          halaman={h}
+          admin={admin}
+          sunting={ubahAdmin}
+          onSetel={(b) => setH(setelDaftar(h, DAFTAR_SURVEI, b))}
+          onTutup={() => setPopupSurvei(false)}
+        />
+      )}
       {popupBisnis && (
         <PilihBisnis
           id={id}

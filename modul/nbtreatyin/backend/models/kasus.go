@@ -2,7 +2,7 @@ package models
 
 // Untuk apa berkas ini: BENTUK DATA KASUS yang dipertukarkan repository,
 // services, dan handlers - keadaan kerja satu kasus (`T_WORK_POLIS` +
-// `T_GENERAL_POLIS`), baris daftar portal, dan pengenal kasus.
+// `T_GENERAL_POLIS_TREATY`), baris daftar portal, dan pengenal kasus.
 //
 // Pengenal kasus `NB-<n>`: `[terverifikasi]` filter RD `GetListOpportunity`
 // (`.TextNoQuotation Contains "NB-"` bersama `A.Quotation.BusinessFac = T`) -

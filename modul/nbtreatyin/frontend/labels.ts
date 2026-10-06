@@ -15,6 +15,8 @@ export const JUDUL = {
   deptHead: 'Acceptance by Dept. Head',
   /** showHarness tombol `Choose Business` (`DetailPolicyTreatyIn`) `pyWindowName` - judul jendela popup. */
   pilihBisnis: 'Business And SOB List',
+  /** showHarness tombol `Survey Report` `pyWindowName`. */
+  surveiHistoris: 'Historical Survey Report',
   sumberBisnis: 'Source Of Business',
   /** FlowAction `PolicyTreatyInDeclineConfirm` pyLabel. */
   tolak: 'Confirm Decline NB',
@@ -45,6 +47,8 @@ export const TOMBOL = {
   add: 'Add',
   delete: 'Delete',
   enableDisable: 'Enable / Disable Input Type',
+  /** Tombol sel 22 `Section/DetailPolicyTreatyIn` (LABEL). */
+  surveyReport: 'Survey Report',
   kembali: 'Kembali',
   /** pyNoSelectionText dropdown `.TreatyType` grid spreading. */
   pilihKosong: 'Choose',
@@ -173,9 +177,64 @@ export const PILIHAN_APPROVAL = [
   { value: '0', label: 'Reject' },
 ] as const
 
+/** Prompt values property `.ClaimType` (pxDropdown pyListSource `associated`; screenshot work owner 05-10-2026):
+ *  nilai standar disimpan, teks prompt ditampilkan. */
+export const PILIHAN_CLAIM_TYPE: { value: string; label: string }[] = [
+  { value: 'SOA', label: 'SOA' },
+  { value: 'CashLoss', label: 'Cash Loss' },
+  { value: 'XOL', label: 'XOL' },
+  { value: 'XOL Retro', label: 'XOL Retro' },
+]
+
+/** Prompt values property `.StatementType` (pxDropdown pyListSource `associated`; screenshot work owner 06-10-2026). */
+export const PILIHAN_STATEMENT_TYPE: { value: string; label: string }[] = [
+  { value: 'SOA', label: 'Statement of Account' },
+  { value: 'LPC', label: 'Loss Participation Clause' },
+  { value: 'PC', label: 'Profit Commission' },
+  { value: 'SC', label: 'Sliding Scale' },
+]
+
+/** Prompt values property `.TypeTax` (pxRadioButtons pyListSource `associated`; screenshot work owner 06-10-2026). */
+export const PILIHAN_TYPE_TAX: { value: string; label: string }[] = [
+  { value: 'Inclusive', label: 'Inclusive' },
+  { value: 'Exclusive', label: 'Exclusive' },
+]
+
+/** Prompt values property `.QuotationData.IsSurveyReport` (pxRadioButtons; screenshot work owner 06-10-2026). */
+export const PILIHAN_SURVEY_REPORT: { value: string; label: string }[] = [
+  { value: 'Yes', label: 'Yes' },
+  { value: 'No', label: 'No' },
+]
+
+/** Prompt values property `.ClaimPaymentType` (sumber sama dengan `PILIHAN_CLAIM_TYPE`). */
+export const PILIHAN_CLAIM_PAYMENT_TYPE: { value: string; label: string }[] = [
+  { value: 'Claim', label: 'Claim' },
+  { value: 'AdjusterFee', label: 'Adjuster Fee' },
+  { value: 'Salvage', label: 'Salvage' },
+  { value: 'Adjustment', label: 'Adjustment' },
+  { value: 'Retro', label: 'XOL Retro' },
+]
+
+/** Judul grid `Section/HistoricalSurveyReportDtl` (LABEL baris 1) dan medan Insured Name di atasnya. */
+export const KOLOM_SURVEI = {
+  tertanggung: 'Insured Name',
+  tanggal: 'Date of Survey',
+  oleh: 'Surveyed by (Ceding Company)',
+  lossPrevention: 'Loss Prevention',
+  remarks: 'Remarks',
+} as const
+
+/** Prompt values property `.Remarks` (pxDropdown pyListSource `associated`; screenshot work owner 06-10-2026). */
+export const PILIHAN_REMARKS_SURVEI: { value: string; label: string }[] = [
+  { value: '1', label: 'Satisfied' },
+  { value: '0', label: 'Unsatisfied' },
+]
+
 export const PESAN = {
   tersimpan: 'Tersimpan.',
   terkirim: 'Berkas dikirim.',
+  /** `.DateofSurvey` wajib (`Section/InputHistoricalSurveyReportDtl`). */
+  surveiTanpaTanggal: 'Date of Survey wajib diisi pada baris',
   opsiTerbuka:
     'Pilihan medan ini didefinisikan di rule Property yang tidak ada di korpus; nilai diketik apa adanya.',
 } as const

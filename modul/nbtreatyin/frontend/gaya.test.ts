@@ -52,7 +52,9 @@ function pemilihCSS(css: string): string[] {
 }
 
 function terisolasi(p: string): boolean {
-  return p === '.nbtreatyin' || p.startsWith('.nbtreatyin ') || p.startsWith(':where(.nbtreatyin ')
+  // Tema gelap skin Kelola User (05-10-2026): `:root[data-theme="dark"] .nbtreatyin …` tetap di bawah akar modul.
+  const q = p.startsWith(':root[data-theme="dark"] ') ? p.slice(':root[data-theme="dark"] '.length) : p
+  return q === '.nbtreatyin' || q.startsWith('.nbtreatyin ') || q.startsWith(':where(.nbtreatyin ')
 }
 
 /** Kelas dari `daftar` yang masih disebut pemilih di `css`. */
@@ -80,6 +82,8 @@ describe('gaya modul NB Treaty In', () => {
   it('aturan isolasi menggigit', () => {
     const contoh = pemilihCSS('table { x: 1 } .nbtreatyin .a, .b { y: 2 } .nbtreatyin :is(.c, .d):disabled { z: 3 } @media (max-width: 1px) { .e { w: 4 } }')
     expect(contoh.filter((p) => !terisolasi(p))).toEqual(['table', '.b', '.e'])
+    const gelap = pemilihCSS(':root[data-theme="dark"] .nbtreatyin .a { x: 1 } :root[data-theme="dark"] .a { y: 2 }')
+    expect(gelap.filter((p) => !terisolasi(p))).toEqual([':root[data-theme="dark"] .a'])
   })
 
   it('kelas khusus modul ini tidak menumpang di inti/frontend/styles.css', () => {

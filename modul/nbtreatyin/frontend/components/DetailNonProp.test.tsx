@@ -17,6 +17,8 @@ import { describe, expect, it } from 'vitest'
 import type { Baris, Halaman } from '../api'
 import DetailNonProp from './DetailNonProp'
 
+// Sel angka rata kanan (`nbti__angka`, perintah work owner 06-10-2026); format nilainya tidak berubah.
+
 const hal = (nilai: Record<string, string>, daftar: Record<string, Baris[]> = {}): Halaman => ({ nilai, daftar })
 
 const render = (h: Halaman, sunting: boolean) =>
@@ -27,7 +29,6 @@ const render = (h: Halaman, sunting: boolean) =>
       tempat={{}}
       opsiSpreading={[]}
       onUbahBaris={() => {}}
-      onSetelDaftar={() => {}}
       onRefresh={() => {}}
     />,
   )
@@ -52,12 +53,18 @@ describe('DetailNonProp = DetailPolicyTreatyInNonProportional', () => {
     expect(html).not.toContain('Spreading Risk')
   })
 
-  it('W2: grid spreading tersunting bila layar boleh disunting dan FacultativeShare 0', () => {
-    expect(render(dasar, true)).toContain('>Add</button>')
-    expect(render(dasar, true)).toContain('>Delete</button>')
-    expect(render(dasar, false)).not.toContain('>Add</button>')
+  // Perintah work owner 06-10-2026: Add / Delete dibuang dan Treaty Type hanya-baca ("ga boleh di ubah lagi");
+  // yang tetap tersunting (W2: layar boleh disunting dan FacultativeShare 0) hanya %Share / %Share Claim.
+  it('W2: tanpa Add / Delete, Treaty Type hanya-baca; %Share tersunting bila boleh dan FacultativeShare 0', () => {
+    const html = render(dasar, true)
+    expect(html).not.toContain('>Add</button>')
+    expect(html).not.toContain('>Delete</button>')
+    expect(html).not.toContain('<select')
+    expect(html).toContain('UJI-SPR')
+    expect(html).toMatch(/<input[^>]*nbti__angka/)
+    expect(render(dasar, false)).not.toMatch(/<input[^>]*nbti__angka/)
     const fak = hal({ 'TreatyIn.FacultativeShare': '5' }, spreading)
-    expect(render(fak, true)).not.toContain('>Add</button>')
+    expect(render(fak, true)).not.toMatch(/<input[^>]*nbti__angka/)
   })
 
   it('format sel grid master: Share .Limit tanpa desimal tetap, Share Facultative apa adanya', () => {
@@ -69,8 +76,8 @@ describe('DetailNonProp = DetailPolicyTreatyInNonProportional', () => {
       },
     )
     const html = render(h, false)
-    expect(html).toContain('<td>1.000</td><td>7,00</td>')
-    expect(html).toContain('<td>UJI-F</td><td>2500.5</td><td>3</td>')
+    expect(html).toContain('<td class="nbti__angka">1.000</td><td class="nbti__angka">7,00</td>')
+    expect(html).toContain('<td>UJI-F</td><td class="nbti__angka">2500.5</td><td class="nbti__angka">3</td>')
   })
 
   it('TotalLimitIOONP dan TotalFacShareRnmNP: kolom pertama FIELD kosong, judul di atas .Value', () => {
@@ -82,8 +89,9 @@ describe('DetailNonProp = DetailPolicyTreatyInNonProportional', () => {
       },
     )
     const html = render(h, false)
-    expect(html).toContain('<th scope="col"></th><th scope="col"></th><th scope="col">Total Limit</th>')
-    expect(html).toContain('<td></td><td>IDR</td><td>5.000,00</td>')
-    expect(html).toContain('<td></td><td>USD</td><td>7,00</td>')
+    // kepala kolom angka rata kanan, sejajar dengan selnya
+    expect(html).toContain('<th scope="col"></th><th scope="col"></th><th scope="col" class="nbti__angka">Total Limit</th>')
+    expect(html).toContain('<td></td><td>IDR</td><td class="nbti__angka">5.000,00</td>')
+    expect(html).toContain('<td></td><td>USD</td><td class="nbti__angka">7,00</td>')
   })
 })

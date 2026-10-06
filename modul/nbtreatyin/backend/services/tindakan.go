@@ -63,6 +63,11 @@ func (l *Layanan) kerjakan(ctx context.Context, p inti.Pelaku, id string, masuk 
 		if err := l.turunkan(ctx, h); err != nil {
 			return models.Kasus{}, nil, err
 		}
+		if pemicu.Pajak {
+			if err := l.pajakNonProp(ctx, h); err != nil {
+				return models.Kasus{}, nil, err
+			}
+		}
 	}
 	// W5: kolom hanya-baca daftar dari server - action set sel yang dipicu
 	// kiriman diputar ulang SESUDAH NetPremium / BalanceDueTo dihitung.
@@ -223,6 +228,9 @@ var aksiHitung = map[string]aksiFn{
 		models.TerapkanMO(h, mo)
 		return nil
 	},
+	// sel `.TypeTax` - `[keputusan work owner 06-10-2026]` pajak dihitung ulang saat diubah (XML hanya
+	// postValue). Hitungannya dijalankan `kerjakan` (pemicu Pajak); aksi ini hanya putaran ke server.
+	"HitungPajak": aksiHalaman(func(*models.Halaman) error { return nil }),
 }
 
 // Hitung menjalankan action set sel (`Urutan`) dan mengembalikan layarnya.
@@ -291,8 +299,11 @@ func (l *Layanan) SimpanDraf(ctx context.Context, p inti.Pelaku, id string, masu
 		return Layar{}, ErrTindakanTakAdaDiPosisi
 	}
 	// `[keputusan work owner]` AC 48: "Berkas tidak dapat disimpan bila medan
-	// wajib pada tingkat itu kosong" - juga tombol Save, bukan hanya Submit.
-	if kosong := models.MedanWajibKosong(h, k.PositionNote, tempatPelaku(p)); len(kosong) > 0 {
+	// wajib pada tingkat itu kosong" - juga tombol Save, bukan hanya Submit. Medan UANG wajib yang kosong
+	// diisi 0 lebih dulu (permintaan work owner 06-10-2026).
+	models.IsiNolWajibUang(h, k.PositionNote, tempatPelaku(p))
+	// Approval dan Suggest wajib saat Submit saja, bukan halangan Save (permintaan work owner 06-10-2026).
+	if kosong := models.MedanWajibKosongSimpan(h, k.PositionNote, tempatPelaku(p)); len(kosong) > 0 {
 		return Layar{}, &GalatValidasi{Pesan: kosong}
 	}
 	if err := l.tulis(ctx, k, func(tx *db.Tx) error { return l.g.SimpanHalaman(ctx, tx, id, h) }); err != nil {
@@ -323,7 +334,11 @@ func (l *Layanan) PilihBisnis(ctx context.Context, p inti.Pelaku, id, idDetail s
 	}
 	// Pola F4: `Choose` hanya ada di baris grid popup - RD `BrowseTreatyJoinEDM`
 	// tersaring kasus ini (`DaftarBisnis`) dijalankan ulang; ID di luarnya 422.
-	daftar, err := l.g.DaftarBisnis(ctx, models.SaringanPopupBisnis(h))
+	// ID dicari langsung (saringan kolom popup bekerja di server, keputusan WO 06-10-2026): baris yang sah =
+	// baris view yang dapat dikembalikan RD dengan filter H kasus ini, bukan hanya 500 baris pertama.
+	s := models.SaringanPopupBisnis(h)
+	s.ID = idDetail
+	daftar, err := l.g.DaftarBisnis(ctx, s)
 	if err != nil {
 		return Layar{}, err
 	}
@@ -358,6 +373,14 @@ func (l *Layanan) PilihBisnis(ctx context.Context, p inti.Pelaku, id, idDetail s
 		return Layar{}, err
 	}
 	models.TerapkanBisnisPilih(h, bis) // 14.7-14.9
+	// [keputusan work owner 06-10-2026] Class of Business kosong: Group Business dari tabel BUSINESS (ID grup)
+	if h.Ambil(models.HalamanQuotation+".BusinessName") == "" {
+		nama, err := l.g.GrupBisnisDariGrupTreaty(ctx, h.Ambil(models.HalamanPolis+".TreatyGroupID"))
+		if err != nil {
+			return Layar{}, err
+		}
+		models.IsiGrupBisnis(h, nama)
+	}
 	// 16 (NonProportional) dan 18 - K8, nonprop.go (16 dan 17 saling meniadakan;
 	// 18 hanya berbuat bila master XOL termuat).
 	if err := l.pilihBisnisNonProp(ctx, h); err != nil {
@@ -512,6 +535,8 @@ func (l *Layanan) kirim(ctx context.Context, p inti.Pelaku, id string, masuk *mo
 // dipasang rantai layar (Property-Set-Messages / Page-Set-Messages): halaman
 // berpesan tidak dapat di-submit, sama dengan Pega.
 func (l *Layanan) validasiKirim(ctx context.Context, p inti.Pelaku, h *models.Halaman, posisi string) error {
+	// medan UANG wajib yang kosong diisi 0 lebih dulu (permintaan work owner 06-10-2026); tersimpan bersama halaman
+	models.IsiNolWajibUang(h, posisi, tempatPelaku(p))
 	pesan := models.MedanWajibKosong(h, posisi, tempatPelaku(p))
 	// 7.4 audit silang P3: tombol Submit Dept Head (IsApproved 1) menjalankan
 	// GeneratePolicyNoTreaty_Act lebih dulu (TerbitkanNomor); langkah 11 ->

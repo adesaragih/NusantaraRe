@@ -64,3 +64,34 @@ func SpreadingDariLayar(h *Halaman, posisi string) bool {
 	}
 	return posisi == PosisiAdmin && wadahUangAdmin(h)
 }
+
+// IsianNonProp - isian layar yang ikut ditulis ulang preACT 16 saat pajak NonProp dihitung ulang
+// (`services.pajakNonProp`, `[keputusan work owner 06-10-2026]`): langkah 13 StartDate/EndDate dan
+// langkah 23 %Share / %Share Claim spreading.
+type IsianNonProp struct {
+	mulai, akhir string
+	spreading    []Baris
+}
+
+// SimpanIsianNonProp mencatat isian layar sebelum preACT 16 dijalankan ulang.
+func SimpanIsianNonProp(h *Halaman) IsianNonProp {
+	return IsianNonProp{h.Ambil(pt + "StartDate"), h.Ambil(pt + "EndDate"), salinBaris(h.AmbilDaftar(DaftarSpreading))}
+}
+
+// Kembalikan memasang lagi isian yang dicatat. %Share kembali ke baris ber-Treaty Type sama di urutan
+// yang sama (baris spreading milik server); spreading lalu dihitung ulang (`CountSpreading_Act`).
+func (s IsianNonProp) Kembalikan(h *Halaman) error {
+	h.Setel(pt+"StartDate", s.mulai)
+	h.Setel(pt+"EndDate", s.akhir)
+	baru := h.AmbilDaftar(DaftarSpreading)
+	for i, r := range baru {
+		if i >= len(s.spreading) || s.spreading[i]["TreatyType"] != r["TreatyType"] {
+			continue
+		}
+		for _, m := range selSpreading {
+			r[m] = s.spreading[i][m]
+		}
+	}
+	h.SetelDaftar(DaftarSpreading, baru)
+	return CountSpreading(h, 0)
+}

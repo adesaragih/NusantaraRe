@@ -43,6 +43,31 @@ type SaringanBisnis struct {
 	// JenisProporsi - filter H `.PROPORTIONTYPE = Param.PROPORTIONALTYPE`
 	// (tanpa `pyUseNullIfEmpty` = false: kosong -> syarat diabaikan).
 	JenisProporsi string
+	// Kolom - saringan kolom popup yang diketik pengguna (keputusan work owner 06-10-2026): nama kolom view ->
+	// teks "memuat", tidak membedakan huruf besar/kecil, dipakai di query SEBELUM batas 500 - tanpa itu
+	// kontrak di luar 500 baris pertama (urut TREATYID) tidak pernah dapat dipilih. Hanya `KolomSaringBisnis`.
+	Kolom map[string]string
+	// ID - satu baris view (pemeriksaan tombol Choose, pola F4); kosong = semua.
+	ID string
+}
+
+// KolomSaringBisnis - kolom grid popup `Section/BusinessAndSOBList` (kolom 2-26) yang boleh disaring.
+var KolomSaringBisnis = []string{
+	"TREATYID", "TREATYCONTRACTNAME", "CLASSOFBUSINESS", "SOB", "CEDING", "PROPORTIONTYPE", "TREATYTYPE",
+	"TREATYGROUP", "TREATYYEAR", "LIMITCURRENCY", "LIMITVALUE", "RETENTIONCURRENCY", "RETENTIONVALUE",
+	"EPICURRENCY", "EPIVALUE", "LAYERTYPE", "LAYER", "LAYERPARTTYPE", "LAYERPART", "MDPCURRENCY", "MDPVALUE",
+	"NETPREMICURRENCY", "NETPREMIVALUE", "SHARECURRENCY", "SHAREVALUE",
+}
+
+// SaringanKolomSah - saringan kiriman layar: hanya kolom `KolomSaringBisnis`, teks dipangkas, kosong dibuang.
+func SaringanKolomSah(masuk map[string]string) map[string]string {
+	out := map[string]string{}
+	for _, k := range KolomSaringBisnis {
+		if v := strings.TrimSpace(masuk[k]); v != "" {
+			out[k] = v
+		}
+	}
+	return out
 }
 
 // BatasDaftarBisnis - baris terbanyak grid popup pilih bisnis: RD
@@ -106,6 +131,13 @@ func TerapkanDetailKontrak(h *Halaman, b BarisKontrak) {
 	p("SOB", b["SOBID"])
 	p("CedingCoName", b["CEDING"])
 	p("CedingCo", b["CEDINGID"])
+	// [keputusan work owner 06-10-2026] Quotation.InsuredName = CEDING kontrak terpilih: di Pega nilainya dibawa
+	// kasus portal SFA (di luar korpus), tidak diisi rule NB Treaty In mana pun. Dasar: RDB
+	// TreatyRealizationCheckDuplicate mencocokkan INSUREDNAME produksi dengan CedingCoName. CEDING kosong =
+	// nilai Quotation yang ada dipertahankan.
+	if b["CEDING"] != "" {
+		q("InsuredName", b["CEDING"])
+	}
 	p("InsuredID", h.Ambil(HalamanQuotation+".InsuredID"))
 	p("InsuredName", h.Ambil(HalamanQuotation+".InsuredName"))
 	p("NoOffer", b["TREATYID"])
@@ -144,7 +176,7 @@ func TerapkanDetailKontrak(h *Halaman, b BarisKontrak) {
 // ⭐ LAYER* tingkat polis juga diisi di sini: di Pega ia PANTULAN baris
 // pertama view (`InputPolicyTreatyInDetail_preACT` langkah 3:
 // `PolicyTreatyIn.LayerType = pyReportContentPage.pxResults(1).LAYERTYPE`, dst.)
-// dan tidak punya kolom di T_GENERAL_POLIS (diagram grilling F26, ID-22) -
+// dan tidak punya kolom di T_GENERAL_POLIS_TREATY (diagram grilling F26, ID-22) -
 // maka dibaca balik dari baris view yang sama (TreatyIn.ID) setiap layar
 // dibuka. Nilainya layer PERTAMA saja (pxResults(1)), sama dengan Pega.
 func TerapkanMasterKontrak(h *Halaman, b BarisKontrak) {
@@ -242,6 +274,15 @@ func KunciCariBisnis(nama string, langkahPra bool) string {
 // BarisBisnis adalah hasil pertama `GetOldIDBusiness_SQL` (CARI1 oldid,
 // CARI2 GROUPPANEL, CARI3 ID); kosong semua bila tidak ada baris.
 type BarisBisnis struct{ OldID, GroupPanel, ID string }
+
+// IsiGrupBisnis - [keputusan work owner 06-10-2026] kontrak tanpa Class of Business: Group Business (portal
+// `GetListOpportunity` = Quotation.BusinessName) diisi nama grup bisnis dari tabel BUSINESS. Class of Business
+// yang terisi (preACT langkah 3) tidak pernah ditimpa; nama kosong = tidak ada perubahan.
+func IsiGrupBisnis(h *Halaman, nama string) {
+	if h.Ambil(HalamanQuotation+".BusinessName") == "" && nama != "" {
+		h.Setel(HalamanQuotation+".BusinessName", nama)
+	}
+}
 
 // TerapkanBisnisPilih = preACT langkah 14.7-14.9.
 func TerapkanBisnisPilih(h *Halaman, b BarisBisnis) {

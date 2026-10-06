@@ -91,7 +91,7 @@ Rule terjangkau (176, `docs/alat/status.json`): **103 dibangun** · 73 tidak dib
 | 27-28 | ✅ | `models/hitung_test.go:89` TestPajakBrokerageInclusiveDibagi1022, `models/hitung_test.go:99` TestPajakBrokerageSelainInclusiveApaAdanya, `models/hitung_test.go:134` TestTypeTaxHurufKecilMenggeserBalance; `models/setppnpph_test.go:20` TestSetPPNPPHNilaiXML |
 | 29 | 🟡 | satu transaksi (`DalamTransaksi`, `services/gudang.go:98`); tiruan `handlers/alur_test.go:355` TestSatuTransaksiPembatalanUtuh; Oracle `repository/pulangpergi_db_test.go:301` TestKegagalanDiTengahTidakMenyisakanBarisDiTabelManaPun (kegagalan sesudah seluruh tulisan ⇒ nol baris di kesembilan tabel), `repository/polis_db_test.go:204` TestGenerasiTertutupDitolakDanPembatalanUtuh — **K11** |
 | 30 | ✅ | `db.Qualify` di setiap SQL; penjaga `inti/backend/penjaga/lintasaplikasi_test.go:541` TestNolNamaTabelTelanjangDiQuery |
-| 31 | 🟡 | indeks unik fungsi `CASE (NOPOLIS, PRODKE)` (`migrations/320_t_general_polis.sql:110`) + penomor `FOR UPDATE`; `repository/nomorpolis_db_test.go:102` TestNomorPolisDariDeretTanpaBentrok (deret penomor bersama, F8), `repository/polis_db_test.go:170` TestNomorPolisSekaliDanUnik — **K11** |
+| 31 | 🟡 | indeks unik fungsi `CASE (NOPOLIS, PRODKE)` (`migrations/320_t_general_polis_treaty.sql:117`) + penomor `FOR UPDATE`; `repository/nomorpolis_db_test.go:102` TestNomorPolisDariDeretTanpaBentrok (deret penomor bersama, F8), `repository/polis_db_test.go:170` TestNomorPolisSekaliDanUnik — **K11** |
 | 32-33 | ✅ | kolom `DATE` (DDL 320–327); satu format tukar (`repository/kolom_test.go:75` TestNilaiTulisMenolakMasukanRusak); tampilan satu format `frontend/sajian.test.ts:51` "AC 33" |
 | 34-35 | ✅ | `models.PraprosesAdmin` (`models/polisaturan.go:36`); `models/tangga_test.go:125` TestPraprosesAdminTanggalKosongHariIni. `SystemSetOneYear_DT` hanya saat admin mengubah StartDate (`models/tanggal_test.go:10` TestSetahunDari29FebruariJatuhPada28Februari, `handlers/tanggal_test.go:16` TestUbahTanggalMulaiMengisiTanggalAkhirSetahun) |
 | 36-38 | ✅ | `handlers/alur_test.go:435` TestPilihBisnis (422, nol simpan); `handlers/nonprop_test.go:207` TestNonPropMasterTidakAdaMenghentikanPilihBisnis; popup bisnis tanpa simpan `handlers/daftarbisnis_test.go:149` TestDaftarBisnisTidakMenyimpan |
@@ -147,8 +147,8 @@ Rule terjangkau (176, `docs/alat/status.json`): **103 dibangun** · 73 tidak dib
 
 | AC | Status | Bukti / alasan |
 | ---: | :---: | --- |
-| 1 | 🟡 | indeks unik fungsi `CASE` (`migrations/320_t_general_polis.sql:110`); `repository/polis_db_test.go:170` TestNomorPolisSekaliDanUnik (dua baris bernomor-generasi sama ditolak Oracle) — **K11** |
-| 2-5 | ✅ | `SisipKasus` PRODKE 0, `OLD_POLIS_ID` NULL + `UNIQUE` (`migrations/320_t_general_polis.sql:7`), PK bersama `T_WORK_POLIS` — `repository/kolom_test.go:313` TestTabelDanKolomMengikutiDiagramGrilling |
+| 1 | 🟡 | indeks unik fungsi `CASE` (`migrations/320_t_general_polis_treaty.sql:117`); `repository/polis_db_test.go:170` TestNomorPolisSekaliDanUnik (dua baris bernomor-generasi sama ditolak Oracle) — **K11** |
+| 2-5 | ✅ | `SisipKasus` PRODKE 0, `OLD_POLIS_ID` NULL + `UNIQUE` (`migrations/320_t_general_polis_treaty.sql:12`), PK bersama `T_WORK_POLIS` — `repository/kolom_test.go:313` TestTabelDanKolomMengikutiDiagramGrilling |
 | 6 | 🟡 | generasi tertutup = ada penerus (`repository.syaratTerbuka`, `repository/polis.go:135`) → `ErrGenerasiTertutup`; `repository/polis_db_test.go:204` TestGenerasiTertutupDitolakDanPembatalanUtuh (perubahan tidak tersimpan, dibaca langsung) — **K11** |
 | 7 | ✅ | nol kunci tamu NB↔EDM di `T_WORK_POLIS` |
 | 8, 10 | ✅ | `NOURUT` + `UNIQUE (induk, NOURUT)` di setiap tabel anak (DDL 322–327) — `repository/kolom_test.go:313` TestTabelDanKolomMengikutiDiagramGrilling |
@@ -164,7 +164,7 @@ Rule terjangkau (176, `docs/alat/status.json`): **103 dibangun** · 73 tidak dib
 | 21-22 | ✅ | `models.BacaTanggalLama` (`models/nilaipega.go:80`); `models/dokumenlama_test.go:18` TestBacaTanggalLama, `models/dokumenlama_test.go:39` TestTanggalAmbiguTidakDitebak (K15) |
 | 23-24 | ✅ | kolom `DATE`; nol FLOAT (penjaga `inti/backend/penjaga/migrasi_test.go:179` TestKolomUangDesimalDanNolJSON) |
 | 25 | ✅ | RALAT P11 (AC 25 + ID-20): nol pembandingan dua nilai uang hidup — `models/pembandingan_uang_test.go:97` TestPortTidakMembandingkanDuaNilaiUang, `models/pembandingan_uang_test.go:156` TestTandaUangLawanNolEksakSepertiXML |
-| 26 | ✅ | tanpa `LAYER*` di `T_GENERAL_POLIS` (diagram F26) — `repository/kolom_test.go:313` TestTabelDanKolomMengikutiDiagramGrilling; `handlers/alur_test.go:435` TestPilihBisnis (dibaca balik dari view) |
+| 26 | ✅ | tanpa `LAYER*` di `T_GENERAL_POLIS_TREATY` (diagram F26) — `repository/kolom_test.go:313` TestTabelDanKolomMengikutiDiagramGrilling; `handlers/alur_test.go:435` TestPilihBisnis (dibaca balik dari view) |
 | 27 | ✅ | `T_POLIS_QUOTATION` = 10 medan diagram J37 + 6 RALAT berbukti XML (`docs/PERBANDINGAN-KOLOM-DIAGRAM.md` bab 2) — `repository/kolom_test.go:313` TestTabelDanKolomMengikutiDiagramGrilling |
 | 28 | ✅ | `T_POLIS_CEDING` `CEDING_CO_ID` + `CEDING_CO_NAME` (`migrations/322_t_polis_ceding.sql`, diagram R43) |
 | 29-30 | ✅ | disalin apa adanya (`models/dokumenlama_test.go:70` TestPecahDokumenProporsionalDatar); ceding dihapus per baris |
@@ -176,7 +176,7 @@ Rule terjangkau (176, `docs/alat/status.json`): **103 dibangun** · 73 tidak dib
 | 38 | ✅ | RALAT K3: `DEDUCTION1/2` uang; `TOTAL_SHARE_PERCENTAGE_*` persen turunan (`HitungTotalSpreading`, `models/angsuran.go:197`), tak berkolom |
 | 39 | ✅ | K4: tabel warisan ditulis, tidak dibuat (`MODUL.md` *Tabel warisan*); `repository/kolom_test.go:246` TestSQLRiwayatProduksiMengikutiInsertViewSuggest |
 | 40-41 | ✅ | `models/usulan_test.go:12` TestUsulanBelumTersimpanMenurutSaveViewSuggest, `models/usulan_test.go:66` TestApprovalPerBarisHanyaAcceptReject; dokumen lama `models/usulanlama_test.go:31` TestSuggestListLamaDisalinMenurutSaveViewSuggest; db `repository/polis_db_test.go:268` TestRiwayatProduksiPulangPergi (K11) |
-| 42 | ✅ | `APPROVAL` per baris terpisah dari `T_GENERAL_POLIS.IS_APPROVED` — `models/usulan_test.go:76` TestBarisCatatanDariRiwayatProduksi |
+| 42 | ✅ | `APPROVAL` per baris terpisah dari `T_GENERAL_POLIS_TREATY.IS_APPROVED` — `models/usulan_test.go:76` TestBarisCatatanDariRiwayatProduksi |
 | 43-44 | ✅ | `AKSES_LOGIN` = identitas login, `PIC` = nama tampilan — `models/usulan_test.go:12` TestUsulanBelumTersimpanMenurutSaveViewSuggest, `handlers/alur_test.go:155` TestAdminMenolakDiselesaikanDitolak |
 | 45 | 🟡 | satu transaksi; pembatalan atas tiruan (`handlers/alur_test.go:355` TestSatuTransaksiPembatalanUtuh); Oracle `repository/penyimpanan_db_test.go:175` TestGagalTulisTabelAnakMembatalkanInduk — **K11** |
 | 46 | 🟡 | satu transaksi per tindakan, nol `COMMIT` di repository; `repository/pulangpergi_db_test.go:301` TestKegagalanDiTengahTidakMenyisakanBarisDiTabelManaPun, `repository/polis_db_test.go:204` TestGenerasiTertutupDitolakDanPembatalanUtuh — **K11** |
@@ -236,7 +236,7 @@ bukti, dan penahan. Status "lama" = HASIL putaran 2 (`27910561`).
 | 49-51 | 🟡 | 🟡 | semula satu uji pulang-pergi sebagian medan → tiga uji SETIAP kolom / setiap layer / urutan `NOURUT` (`repository/pulangpergi_db_test.go`) — K11 |
 | 57 | ✅ | ✅ | **RALAT AC 57 + ID-27 (F3)** — bunyi lama K17: *"test yang menemukan medan tak dikenal tidak tertulis di berkas itu beserta nilainya gagal"* → CSV = **arsip audit** `POLIS_ID,JALUR,NILAI,KEPUTUSAN`; uji `TestLaporanMedanTakDikenalBerkasCSV` → `TestLaporanArsipMedanTanpaKolomBerkasCSV` |
 | 59 | 🟡 | 🟡 | **RALAT AC 59 + ID-27 (F3)** — bunyi lama K17: *"berkas itu wajib nol baris data"* → "nol medan **belum diputuskan**"; penahan **F3 → F7** langkah 2 (uji-kering, K11) |
-| 64 | ✅ | ✅ | kolom baru `T_GENERAL_POLIS.EDM_TYPE` (F3, bab 8) |
+| 64 | ✅ | ✅ | kolom baru `T_GENERAL_POLIS_TREATY.EDM_TYPE` (F3, bab 8) |
 | 19-20, 20b, 37 | ✅ | ✅ | **RALAT 04-10-2026 (p3r-sheetprop, diagram Prop F20)**: `NUMBER(38,8)` → `NUMBER(38,10)`; AC 19 kembali *"tanpa kehilangan satu digit pun"* untuk `592629512.880000276`; 20b "> 8" → "> 10" desimal |
 | 55 | 🟡 | 🟡 | pembulatan "desimal kesembilan" → "kesebelas" (`NUMBER(38,10)`) — K11 |
 | 6 | 🟡 | 🟡 | + `UPDATE` kolom datar pemuat lama hanya generasi terbuka (diagram F17; `repository/lama_test.go:82` TestUbahGeneralPolisHanyaGenerasiTerbuka) — K11 |
@@ -370,14 +370,14 @@ setiap tombol → activity: `docs/INVENTARIS-XML.md` bab 13 (`docs/alat/tombol.j
 
 | Tahap | Proporsional | NonProporsional / XOL |
 | --- | --- | --- |
-| Buat kasus | `POST /kasus` → `BuatKasus` (`services/layanan.go:144`): `T_WORK_POLIS` (`NB-<SEQ_WORK_POLIS>`) + `T_GENERAL_POLIS`, `BusinessFac` "T", posisi `ReasTreatyInAdmin` | sama |
+| Buat kasus | `POST /kasus` → `BuatKasus` (`services/layanan.go:144`): `T_WORK_POLIS` (`NB-<SEQ_WORK_POLIS>`) + `T_GENERAL_POLIS_TREATY`, `BusinessFac` "T", posisi `ReasTreatyInAdmin` | sama |
 | Buka layar | `GET /kasus/{id}` → `BukaKasus` (`services/layanan.go:193`): pra-proses admin/atasan; `LAYER*` dibaca balik dari view | + `IsNewPolicyNonProp` 1 (dan bukan `EDMType` 3, bukan `Proportional` — bab 5 butir 30) → `TreatyRealizationCheckXOLList`: master dibaca ulang, `InsertToTreatyXOLList(RetroShare)` |
 | Popup pilih bisnis (tombol *Choose Business*, admin, ClaimType ≠ `XOL Retro`) | `POST /kasus/{id}/bisnis` → `DaftarBisnis` (`services/layanan.go:362`): RD `BrowseTreatyJoinEDM` atas view `TREATYINDETAILJOINEDM`, filter H `PROPORTIONTYPE = QuotationData.ProportionalType` (kosong diabaikan), urut `TREATYID`, ≤ 500; tanpa simpan; judul "Business And SOB List", 25 kolom XML, saring/urut per kolom, 50 per halaman (R5) | sama |
 | Pilih bisnis | `POST /kasus/{id}/pilih-bisnis` → `PilihBisnis` (`services/tindakan.go:312`): `DetailKontrak`, `BUSINESS` (`GetOldIDBusiness_SQL`), komisi `RIONR`, preACT 1–6, 8, 11, 14, 15, 19; gagal baca → 422 | + preACT 16/18 → `pilihBisnisNonProp` (`services/nonprop.go:89`); master tidak ada → 422 |
 | Pemilih SOB (ClaimType `XOL Retro`) — **F4** | `GET /sumber-bisnis` (pohon `BrowseAgentHierarkiList_RD`); `POST /kasus/{id}/pilih-sumber-bisnis` = **pencarian tanpa simpan** (jawab nilai `SearchHierarkiSourceBizAgent_PostDT`); layar memegang pilihan; **disimpan bersama Save/Submit** sesudah dicocokkan ulang di server (`terimaSumberBisnis`); hanya `SOURCE_OF_BUSINESS` berkolom | sama |
 | Hitung (refresh sel) | `POST /kasus/{id}/hitung` → `Hitung` (`services/tindakan.go:231`): hanya aksi sel yang **terbuka** di layar posisi (`aksiTerbuka`, `services/aksiposisi.go:48`; lainnya 409) — tidak menyimpan | + `CountSpreading` grid `SpreadingRiskList` NonProp, juga bagi atasan bila `FacultativeShare` 0/'' (W2) |
 | Simpan draf | `PUT /kasus/{id}` (admin) → `SimpanDraf` (`services/tindakan.go:285`): masukan disaring sel tampil+terbuka (W3/W4/W5), pilihan SOB dicocokkan, medan wajib, `PeriksaBentukSimpan`, `SimpanHalaman` | sama; `TreatyXOLList`/`ListInstallment` tidak diterima dari layar |
-| Tersimpan di | `T_GENERAL_POLIS`, `T_POLIS_QUOTATION`, `T_POLIS_CEDING`, `T_POLIS_INSTALMENT`, `T_POLIS_SPREADING` (XOL dan rincian angsuran **ditolak**, AC 31–33) | + `T_POLIS_INSTALMENT_DETAIL`, `T_POLIS_XOL`, `T_POLIS_XOL_LAYER`; halaman master tidak disimpan |
+| Tersimpan di | `T_GENERAL_POLIS_TREATY`, `T_POLIS_QUOTATION`, `T_POLIS_CEDING`, `T_POLIS_INSTALMENT`, `T_POLIS_SPREADING` (XOL dan rincian angsuran **ditolak**, AC 31–33) | + `T_POLIS_INSTALMENT_DETAIL`, `T_POLIS_XOL`, `T_POLIS_XOL_LAYER`; halaman master tidak disimpan |
 | Submit admin | `POST /kasus/{id}/kirim` → `Kirim` (`services/tindakan.go:407`): DT `isApproved`; Approval wajib (K6); `TreatyRealizationCheckDuplicate`; riwayat `HISTORYAKSEPTASIPEGA`; catatan `HISTORYAKSEPTASIPRODUCTION`; NBStatus — satu transaksi | sama |
 | Sec Head / Dept Head | Sec Head setuju → Dept Head (K2); tolak → admin. Dept Head: `POST /kasus/{id}/nomor-polis` → `TerbitkanNomor` (`services/tindakan.go:593`; penomor bersama, F8) → submit (ditahan pesan grup treaty kosong, 7.4) → `Resolved-Completed` → konversi Arasapas | + atasan menyunting grid spreading NonProp bersyarat (W2) |
 | Riwayat | `GET /kasus/{id}/riwayat` (panel History; dasar AC 72) | sama |
@@ -403,12 +403,12 @@ Selisih yang diperbaiki: **(1) F20** — uang dan persen `NUMBER(38,8)` → **`N
 `repository/kolom_test.go:423` TestSkalaUangPersenMinimalSembilanDiSemuaTabel; penjaga inti `TestNolNumberTanpaPresisi`
 menerima `NUMBER(38,10)` (satu entri `presisiSah`, commit `inti:` tersendiri — PERMINTAAN A5). **(2) F17** — `UPDATE`
 kolom datar pemuat lama kini juga hanya menyentuh generasi terbuka (`repository/lama_test.go:82`
-TestUbahGeneralPolisHanyaGenerasiTerbuka). `T_GENERAL_POLIS` tetap tabel Treaty sendiri lewat `CREATE TABLE` di
+TestUbahGeneralPolisHanyaGenerasiTerbuka). `T_GENERAL_POLIS_TREATY` tetap tabel Treaty sendiri lewat `CREATE TABLE` di
 migrasi 320 (perintah WO 04-10-2026; keputusan "tabel bersama FacIn" dibatalkan) — tepat delapan `CREATE TABLE`.
 
 | # | Migrasi | Tabel | Kolom | Sheet `NB Treaty In Prop` | Sheet `NB Treaty In NonProp` | Relasi | PERBANDINGAN |
 | ---: | --- | --- | ---: | --- | --- | --- | --- |
-| 1 | `320_t_general_polis.sql` | `T_GENERAL_POLIS` | 81 | F9–F33, ringkasan K108 | F9–F33, ringkasan K123 | 1:1 shared PK `T_WORK_POLIS`; `UNIQUE (OLD_POLIS_ID)`, `UNIQUE (NOPOLIS, PRODKE)` (indeks fungsi `CASE`) | bab 1 |
+| 1 | `320_t_general_polis_treaty.sql` | `T_GENERAL_POLIS_TREATY` | 81 | F9–F33, ringkasan K108 | F9–F33, ringkasan K123 | 1:1 shared PK `T_WORK_POLIS`; `UNIQUE (OLD_POLIS_ID)`, `UNIQUE (NOPOLIS, PRODKE)` (indeks fungsi `CASE`) | bab 1 |
 | 2 | `321_t_polis_quotation.sql` | `T_POLIS_QUOTATION` | 17 | G34, J35–J38, K109 | G34, J35–J38, K124 | 1:1 `POLIS_ID` | bab 2 |
 | 3 | `322_t_polis_ceding.sql` | `T_POLIS_CEDING` | 5 | O39, R40–R50, K110 | O39, R40–R50, K125 | 1:N `QUOTATION_ID` | bab 3 |
 | 4 | `323_t_polis_instalment.sql` | `T_POLIS_INSTALMENT` | 17 | G51, J52–J56, K111 | G51, J52–J55, K126 | 1:N `POLIS_ID` | bab 4 |
@@ -419,14 +419,14 @@ migrasi 320 (perintah WO 04-10-2026; keputusan "tabel bersama FacIn" dibatalkan)
 
 *Kolom* = definisi kolom di `CREATE TABLE` (termasuk kunci dan `NOURUT`).
 
-**Perubahan kolom putaran 3 — satu:** `T_GENERAL_POLIS.EDM_TYPE` (`VARCHAR2(16)`, `migrations/320_t_general_polis.sql:41`;
+**Perubahan kolom putaran 3 — satu:** `T_GENERAL_POLIS_TREATY.EDM_TYPE` (`VARCHAR2(16)`, `migrations/320_t_general_polis_treaty.sql:48`;
 katalog `models/katalog.go:125`), medan `PolicyTreatyIn.EDMType` dokumen lama. Bukti XML: dibaca
 prasyarat `Activity/InputPolicyTreatyInPre_Act` **langkah 10** (`[.PolicyTreatyIn.EDMType=="3"]` → lewati
 `Call TreatyRealizationCheckXOLList`), terjangkau dari FlowAction `InboxPolicyTreatyIn`/`DeptHeadTreatyIn_UW`
 (`models.PerluCekDaftarXOL`). RALAT rancangan §4sexies (rancangan §4.1 *penentu bentuk* sudah memuat `EDM_TYPE`);
 keputusan WO F3 butir (a). 320 kini 81 kolom = 8 kunci + 73 katalog `models.TabelGeneralPolis`.
 
-**K18 — tabrakan nama `T_GENERAL_POLIS` (PERMINTAAN C10), penahan migrasi:** `POOLDATA.T_GENERAL_POLIS` sudah ada
+**K18 — ✅ SELESAI 05-10-2026:** perintah work owner 05-10-2026: tabel induk NB Treaty In diganti nama `T_GENERAL_POLIS_TREATY` (migrasi `320_t_general_polis_treaty`); `T_GENERAL_POLIS` tetap milik `nbfacin` dan tidak dipakai modul ini. Dikunci `migrasi_test.go` TestMigrasiMemakaiTGeneralPolisTreatyBukanTabelFacIn (menggantikan TestPraTerbangMenolakTGeneralPolisBentukFacIn). *Riwayat* — tabrakan nama `T_GENERAL_POLIS` (PERMINTAAN C10), penahan migrasi: `POOLDATA.T_GENERAL_POLIS` sudah ada
 (FacIn, migrasi `182_t_general_polis` di luar repo, 7 kolom). Modul tidak mengganti nama dan tidak menyentuh tabel itu.
 Penjaganya pra-terbang inti `praTerbangBentuk` (`inti/backend/migrasi/migrasi.go:353`): `-migrate`
 berhenti sebelum satu pernyataan pun dikirim dengan galat *"… sudah ada … tetapi BENTUKNYA BERBEDA …"*. Dikunci tanpa
@@ -485,7 +485,7 @@ selesai.
 
 Hasil: **23 tiket selesai**, **05 needs-info** (K12). **Pekerjaan yang masih dapat dikerjakan tanpa pihak luar: tidak
 ada.** Sisa penahan: K11 (skema uji, C9; `make test-db` A4), K12 (IAM), K13 (968 di `POOLDATA`), K18/C10 (tabrakan
-`T_GENERAL_POLIS`), F7 (pemuatan produksi oleh WO/DBA), konfirmasi WO butir H PERMINTAAN.
+`T_GENERAL_POLIS_TREATY`), F7 (pemuatan produksi oleh WO/DBA), konfirmasi WO butir H PERMINTAAN.
 
 ## 10 · Perintah verifikasi
 

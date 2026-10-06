@@ -1,7 +1,7 @@
 package repository
 
 // Untuk apa berkas ini: KASUS - baris `T_WORK_POLIS` (tabel kasus lintas-lini,
-// premiumlistlife 050/059) dan baris generasi `T_GENERAL_POLIS` yang berbagi
+// premiumlistlife 050/059) dan baris generasi `T_GENERAL_POLIS_TREATY` yang berbagi
 // kunci utama dengannya (spec-penyimpanan ID-7). Padanan work object
 // `ASM-FW-GISFW-Work-NB` Pega: `createWork` tombol Create portal, perpindahan
 // assignment `Flow/InputRealizationTreatyIn`, dan daftar portal
@@ -37,8 +37,9 @@ func sqlSisipKerja(t string) string {
 }
 
 func sqlSisipGenerasi(t string) string {
-	return fmt.Sprintf(`INSERT INTO %s (ID, PRODKE, IDPEGA, TGL_INPUT, USERNAME, POSITION_NOTE)
-		VALUES (:1, 0, :2, SYSDATE, :3, :4)`, t)
+	// IDPEGA dibuang 06-10-2026 (keputusan work owner: sama dengan ID)
+	return fmt.Sprintf(`INSERT INTO %s (ID, PRODKE, TGL_INPUT, USERNAME, POSITION_NOTE)
+		VALUES (:1, 0, SYSDATE, :2, :3)`, t)
 }
 
 // SisipKasus melahirkan kasus di posisi admin - connector `Start1 ->
@@ -66,7 +67,7 @@ func (g *Gudang) SisipKasus(ctx context.Context, tx *db.Tx, id, pembuat, namaPem
 		return err
 	}
 	hasil, err = jalankan(ctx, tx, "menyisipkan generasi polis", sqlSisipGenerasi(gen),
-		id, id, db.KosongJadiNil(pembuat), models.PosisiAdmin)
+		id, db.KosongJadiNil(pembuat), models.PosisiAdmin)
 	if err != nil {
 		return err
 	}

@@ -42,6 +42,8 @@ type Gudang struct {
 	PKPAgen map[string]string  // STS_PKP per ID agen; tak terdaftar = StsPKP
 	StsPKP  string
 	OJK     string
+	// GrupBisnis - nama grup bisnis per TreatyGroupID (`GrupBisnisDariGrupTreaty`).
+	GrupBisnis map[string]string
 	// OldIDGrup - hasil RDB `FetchTreatyGroupOLDID` (`OldIDGrupTreaty`).
 	OldIDGrup string
 	urutPol   int
@@ -58,15 +60,16 @@ type Gudang struct {
 // Baru menyusun gudang kosong.
 func Baru() *Gudang {
 	return &Gudang{
-		Kasus:     map[string]models.Kasus{},
-		Halaman:   map[string]*models.Halaman{},
-		Nama:      map[string]string{},
-		Kontrak:   map[string]models.BarisKontrak{},
-		Bisnis:    map[string]models.BarisBisnis{},
-		Master:    map[string]models.MasterXOL{},
-		Closing:   25,
-		OJK:       "UJI-OJK",
-		OldIDGrup: "UJI-OLD",
+		Kasus:      map[string]models.Kasus{},
+		Halaman:    map[string]*models.Halaman{},
+		Nama:       map[string]string{},
+		Kontrak:    map[string]models.BarisKontrak{},
+		Bisnis:     map[string]models.BarisBisnis{},
+		Master:     map[string]models.MasterXOL{},
+		GrupBisnis: map[string]string{},
+		Closing:    25,
+		OJK:        "UJI-OJK",
+		OldIDGrup:  "UJI-OLD",
 	}
 }
 
@@ -328,8 +331,21 @@ func (g *Gudang) KomisiKontrak(_ context.Context, treatyID string) ([]models.Bar
 // TREATYID lalu ID, paling banyak `models.BatasDaftarBisnis`.
 func (g *Gudang) DaftarBisnis(_ context.Context, s models.SaringanBisnis) ([]models.BarisKontrak, error) {
 	var out []models.BarisKontrak
+	kolom := models.SaringanKolomSah(s.Kolom)
 	for _, b := range g.Kontrak {
-		if s.JenisProporsi == "" || b["PROPORTIONTYPE"] == s.JenisProporsi {
+		if s.JenisProporsi != "" && b["PROPORTIONTYPE"] != s.JenisProporsi {
+			continue
+		}
+		if s.ID != "" && b["ID"] != s.ID {
+			continue
+		}
+		cocok := true
+		for k, v := range kolom {
+			if !strings.Contains(strings.ToUpper(b[k]), strings.ToUpper(v)) {
+				cocok = false
+			}
+		}
+		if cocok {
 			out = append(out, b)
 		}
 	}
@@ -356,7 +372,10 @@ func (g *Gudang) NamaMataUang(_ context.Context, id string) (string, error) {
 	return strings.TrimPrefix(id, "UJI-ID-"), nil
 }
 
-func (g *Gudang) OJKGrupTreaty(context.Context, string) (string, error)   { return g.OJK, nil }
+func (g *Gudang) OJKGrupTreaty(context.Context, string) (string, error) { return g.OJK, nil }
+func (g *Gudang) GrupBisnisDariGrupTreaty(_ context.Context, grupID string) (string, error) {
+	return g.GrupBisnis[grupID], nil
+}
 func (g *Gudang) OldIDGrupTreaty(context.Context, string) (string, error) { return g.OldIDGrup, nil }
 func (g *Gudang) KlienDariNama(context.Context, string) (string, error)   { return "", nil }
 func (g *Gudang) StsPKPAgen(_ context.Context, sobID string) (string, error) {
@@ -371,7 +390,8 @@ func (g *Gudang) BisnisDariKunci(_ context.Context, kunci string) (models.BarisB
 }
 
 func (g *Gudang) MO(_ context.Context, id string) (models.BarisMO, error) {
-	return models.BarisMO{ID: id, ClientID: "UJI-MKT", ClientName: "UJI-MO", TeamGroup: "1"}, nil
+	return models.BarisMO{ID: id, ClientID: "UJI-MKT", ClientName: "UJI-MO", TeamGroup: "1",
+		BranchDetailID: "UJI-CAB", BranchDetailName: "UJI-CABANG"}, nil
 }
 
 func (g *Gudang) DaftarMataUang(context.Context) ([]models.Pilihan, error) {

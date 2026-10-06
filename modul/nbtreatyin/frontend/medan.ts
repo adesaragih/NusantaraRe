@@ -29,11 +29,34 @@
 //     butir 3/3b): breakdown spreading tidak dimigrasi.
 
 import { KLAIM_XOL_RETRO, POLIS, nilai, type Baris, type Halaman, type Pilihan } from './api'
-import { BAGIAN } from './labels'
+import {
+  BAGIAN,
+  PILIHAN_CLAIM_PAYMENT_TYPE,
+  PILIHAN_CLAIM_TYPE,
+  PILIHAN_STATEMENT_TYPE,
+  PILIHAN_SURVEY_REPORT,
+  PILIHAN_TYPE_TAX,
+} from './labels'
 import type { Sajian } from './sajian'
 import { negatifTeks } from './tanda'
 
-export type JenisMedan = 'tampil' | 'teks' | 'angka' | 'tanggal' | 'area' | 'centang' | 'mataUang' | 'mo'
+export type JenisMedan =
+  | 'tampil'
+  | 'teks'
+  | 'angka'
+  | 'tanggal'
+  | 'area'
+  | 'centang'
+  | 'mataUang'
+  | 'mo'
+  | 'pilihan'
+  | 'radio'
+
+/** Satu pilihan dropdown: nilai standar disimpan, teks prompt ditampilkan. */
+export interface OpsiMedan {
+  value: string
+  label: string
+}
 
 /** Satu refresh berhitung (`POST .../hitung`): aksi backend + parameternya. */
 export interface Aksi {
@@ -55,6 +78,13 @@ export interface Medan {
   mataUang?: string
   /** Penyajian nilai (K14): format angka sel, atau tanggal (AC 33). */
   sajian?: Sajian
+  /** Daftar pilihan pxDropdown / pxRadioButtons ber-pyListSource `associated` (prompt values property). */
+  opsi?: OpsiMedan[]
+}
+
+/** Teks prompt sebuah nilai standar; nilai di luar daftar tampil apa adanya (tidak dibuang). */
+export function teksPilihan(opsi: OpsiMedan[], v: string): string {
+  return opsi.find((o) => o.value === v)?.label ?? v
 }
 
 const v = (h: Halaman, m: string) => nilai(h, POLIS + m)
@@ -100,9 +130,11 @@ function dalamWadah(wadah: (h: Halaman) => boolean, ms: Medan[]): Medan[] {
 //   `pyShowReadonlyFormatting=true` mode sunting -> formatSaatSunting
 
 const UANG: Sajian = {}
-const UANG_SUNTING: Sajian = { formatSaatSunting: true }
 const DUA: Sajian = { desimal: 2 }
-const DUA_SUNTING: Sajian = { desimal: 2, formatSaatSunting: true }
+/** Bagian uang (Gross, OGP, ONP, klaim, saldo, potongan, pajak) - perintah work owner 06-10-2026: nol / kosong
+ *  tampil "0", angka terisi 4 angka di belakang koma; menggantikan K14 (`pyDecimalPlaces` 2 / pola inti). */
+const UANG4: Sajian = { desimal: 4, nolPolos: true }
+const UANG4_SUNTING: Sajian = { desimal: 4, nolPolos: true, formatSaatSunting: true }
 /** pxTextInput `pyFormatType number`, `pyDecimalPlaces 0`, `pySeparators false`. */
 const BULAT_POLOS: Sajian = { desimal: 0, ribuan: false }
 const TGL: Sajian = 'tanggal'
@@ -118,18 +150,30 @@ export const MEDAN_ADMIN_UMUM: Medan[] = [
   { jalur: POLIS + 'SOBName', label: 'Source Of Business', jenis: 'tampil' },
   { jalur: POLIS + 'TreatyGroupName', label: 'Treaty Group', jenis: 'tampil', tampil: bukanNonPropBaru },
   // pyReadOnly `IsUW` (workbasket ReasFacIn*) - tidak pernah benar bagi admin treaty
-  { jalur: POLIS + 'QuotationData.IsSurveyReport', label: 'Survey Report', jenis: 'teks', tampil: bukanNonProp },
-  { jalur: POLIS + 'StatementType', label: 'Statement Type', jenis: 'teks' },
+  // pxRadioButtons (prompt values property: Yes / No)
+  {
+    jalur: POLIS + 'QuotationData.IsSurveyReport',
+    label: 'Survey Report',
+    jenis: 'radio',
+    opsi: PILIHAN_SURVEY_REPORT,
+    tampil: bukanNonProp,
+  },
+  // pxDropdown pyListSource `associated`, pyHasNoSelection true (prompt values property)
+  { jalur: POLIS + 'StatementType', label: 'Statement Type', jenis: 'pilihan', opsi: PILIHAN_STATEMENT_TYPE },
   { jalur: POLIS + 'QuotationData.NoOfferSlip', label: 'No Offer Slip', jenis: 'area' },
   // pyCheckboxCaption sel `.FlagRetroTreaty` / `.FlagPPH` (label sel = teks bawaan "Checkbox")
   { jalur: POLIS + 'FlagRetroTreaty', label: 'Overiding Commision', jenis: 'centang', tampil: bukanXOLRetro },
   // change -> postValue -> runActivity RemoveTypeTax_ACT
   { jalur: POLIS + 'FlagPPH', label: 'With Tax', jenis: 'centang', tampil: bukanXOLRetro, aksi: [{ aksi: 'RemoveTypeTax' }] },
+  // pxRadioButtons pyListSource `associated` (prompt values property: Inclusive / Exclusive). XML hanya
+  // postValue; keputusan work owner 06-10-2026: pilihan langsung menghitung ulang pajak (server, pemicu Pajak)
   {
     jalur: POLIS + 'TypeTax',
     label: 'Type Tax',
-    jenis: 'teks',
+    jenis: 'radio',
+    opsi: PILIHAN_TYPE_TAX,
     tampil: (h) => bukanXOLRetro(h) && v(h, 'FlagPPH') === 'true',
+    aksi: [{ aksi: 'HitungPajak' }],
   },
   { jalur: POLIS + 'ShareCurrency', label: 'RNM Share', jenis: 'tampil' },
   { jalur: POLIS + 'ShareValue', label: 'ShareValue', jenis: 'tampil', mataUang: POLIS + 'ShareCurrency', sajian: UANG },
@@ -157,8 +201,9 @@ export const MEDAN_ADMIN_UMUM: Medan[] = [
     tampil: bukanNonPropBaru,
     aksi: [{ aksi: 'SetCurrency' }],
   },
-  { jalur: POLIS + 'ClaimType', label: 'Claim Type', jenis: 'teks' },
-  { jalur: POLIS + 'ClaimPaymentType', label: 'Payment Type', jenis: 'teks' },
+  // pxDropdown pyListSource `associated`, pyHasNoSelection true (prompt values property)
+  { jalur: POLIS + 'ClaimType', label: 'Claim Type', jenis: 'pilihan', opsi: PILIHAN_CLAIM_TYPE },
+  { jalur: POLIS + 'ClaimPaymentType', label: 'Payment Type', jenis: 'pilihan', opsi: PILIHAN_CLAIM_PAYMENT_TYPE },
   ...dalamWadah(nonProporsionalQD, [
     { jalur: POLIS + 'LayerType', label: 'LayerType', jenis: 'tampil' },
     { jalur: POLIS + 'Layer', label: 'Layer', jenis: 'tampil' },
@@ -170,7 +215,7 @@ export const MEDAN_ADMIN_UMUM: Medan[] = [
 ]
 
 /** Satu medan uang tersunting layar admin. */
-const uangAdmin = (m: string, label: string, aksi?: Aksi[], sajian: Sajian = UANG_SUNTING, uang = true): Medan => ({
+const uangAdmin = (m: string, label: string, aksi?: Aksi[], sajian: Sajian = UANG4_SUNTING, uang = true): Medan => ({
   jalur: POLIS + m,
   label,
   jenis: 'angka',
@@ -185,31 +230,31 @@ const OGPONP: Aksi[] = [{ aksi: 'CountOGPONP' }]
 /** Medan uang layar admin - bagian "Old Soa Input Format" (wadah
  *  `.IsNewPolicyNonProp != 1 && .IsNewPolicyListFormat != 1`). */
 export const MEDAN_ADMIN_UANG: Medan[] = dalamWadah(wadahUangAdmin, [
-  uangAdmin('GrossPremium', 'Gross Premium 100%', [{ aksi: 'CalculatePremi', param: 'PREMIUM' }], DUA_SUNTING),
-  uangAdmin('GrossClaim', 'Claim 100%', [{ aksi: 'CalculatePremi', param: 'CLAIM' }], DUA_SUNTING),
+  uangAdmin('GrossPremium', 'Gross Premium 100%', [{ aksi: 'CalculatePremi', param: 'PREMIUM' }], UANG4_SUNTING),
+  uangAdmin('GrossClaim', 'Claim 100%', [{ aksi: 'CalculatePremi', param: 'CLAIM' }], UANG4_SUNTING),
   uangAdmin('PremiOgp', 'Premi Ogp', OGPONP),
-  uangAdmin('RiCommOgp', '(%) Deduction In A (OGP)', lalu('CountResult1', 'Pct'), DUA_SUNTING, false),
+  uangAdmin('RiCommOgp', '(%) Deduction In A (OGP)', lalu('CountResult1', 'Pct'), UANG4_SUNTING, false),
   uangAdmin('ResultOgp1', 'Deduction In A (OGP)', lalu('CountResult1', 'Amount')),
-  uangAdmin('OveriddingCommOgp', '(%) Deduction In B (OGP)', lalu('CountResult2Ogp', 'Pct'), DUA_SUNTING, false),
+  uangAdmin('OveriddingCommOgp', '(%) Deduction In B (OGP)', lalu('CountResult2Ogp', 'Pct'), UANG4_SUNTING, false),
   uangAdmin('ResultOgp2', 'Deduction In B (OGP)', lalu('CountResult2Ogp', 'Amount')),
   uangAdmin('PremiOnp', 'Premi Onp', OGPONP),
-  uangAdmin('RiCommOnp', '(%) Deduction In A (ONP)', lalu('CountResult1Onp', 'Pct'), DUA_SUNTING, false),
+  uangAdmin('RiCommOnp', '(%) Deduction In A (ONP)', lalu('CountResult1Onp', 'Pct'), UANG4_SUNTING, false),
   uangAdmin('ResultOnp1', 'Deduction In A (ONP)', lalu('CountResult1Onp', 'Amount')),
-  uangAdmin('OveriddingCommOnp', '(%) Deduction In B (ONP)', lalu('CountResult2Onp', 'Pct'), DUA_SUNTING, false),
+  uangAdmin('OveriddingCommOnp', '(%) Deduction In B (ONP)', lalu('CountResult2Onp', 'Pct'), UANG4_SUNTING, false),
   uangAdmin('ResultOnp2', 'Deduction In B (ONP)', lalu('CountResult2Onp', 'Amount')),
   uangAdmin('Claim', 'Claim', OGPONP),
   uangAdmin('OutstandingClaim', 'Outstanding Claim'),
   uangAdmin('SalvageValue', 'Salvage', OGPONP),
   uangAdmin('ExcessLoss', 'Excess Loss', OGPONP),
-  { jalur: POLIS + 'NetPremium', label: 'Total Premium Before Claim', jenis: 'tampil', mataUang: mu, sajian: UANG },
-  { jalur: POLIS + 'BalanceDueTo', label: 'Balance Due To You', jenis: 'tampil', tampil: saldoNegatif, mataUang: mu, sajian: UANG },
+  { jalur: POLIS + 'NetPremium', label: 'Total Premium Before Claim', jenis: 'tampil', mataUang: mu, sajian: UANG4 },
+  { jalur: POLIS + 'BalanceDueTo', label: 'Balance Due To You', jenis: 'tampil', tampil: saldoNegatif, mataUang: mu, sajian: UANG4 },
   {
     jalur: POLIS + 'BalanceBeforeTax',
     label: 'Balance Before Tax',
     jenis: 'tampil',
     tampil: (h) => !saldoNegatif(h),
     mataUang: mu,
-    sajian: UANG,
+    sajian: UANG4,
   },
   {
     jalur: POLIS + 'BalanceBeforePPH',
@@ -217,7 +262,7 @@ export const MEDAN_ADMIN_UANG: Medan[] = dalamWadah(wadahUangAdmin, [
     jenis: 'tampil',
     tampil: (h) => !saldoNegatif(h),
     mataUang: mu,
-    sajian: UANG,
+    sajian: UANG4,
   },
   {
     jalur: POLIS + 'BalanceDueTo',
@@ -225,13 +270,13 @@ export const MEDAN_ADMIN_UANG: Medan[] = dalamWadah(wadahUangAdmin, [
     jenis: 'tampil',
     tampil: (h) => !saldoNegatif(h),
     mataUang: mu,
-    sajian: UANG,
+    sajian: UANG4,
   },
   // K3: pxCurrency, dipakai rumus sebagai jumlah uang (CountNetPremi_act langkah 4)
   uangAdmin('Deduction1', 'Deduction1', OGPONP),
   uangAdmin('Deduction2', 'Deduction2', OGPONP),
-  { jalur: POLIS + 'PPHValue', label: 'PPH 2%', jenis: 'tampil', mataUang: mu, sajian: UANG },
-  { jalur: POLIS + 'PPNValue', label: 'PPN 2.2%', jenis: 'tampil', mataUang: mu, sajian: UANG },
+  { jalur: POLIS + 'PPHValue', label: 'PPH 2%', jenis: 'tampil', mataUang: mu, sajian: UANG4 },
+  { jalur: POLIS + 'PPNValue', label: 'PPN 2.2%', jenis: 'tampil', mataUang: mu, sajian: UANG4 },
 ])
 
 // ------------------------------------------------------------------ atasan
@@ -252,8 +297,15 @@ export const MEDAN_ATASAN_UMUM: Medan[] = [
     { jalur: POLIS + 'ProductionDate', label: 'Production Date', jenis: 'tampil', sajian: TGL },
   ]),
   { jalur: POLIS + 'DueTo', label: 'Due To Us / You', jenis: 'tampil' },
-  { jalur: POLIS + 'QuotationData.IsSurveyReport', label: 'Survey Report', jenis: 'tampil', tampil: bukanNonProp },
-  { jalur: POLIS + 'StatementType', label: 'Statement Type', jenis: 'tampil' },
+  // radio / dropdown Read-only: teks prompt nilai tersimpan
+  {
+    jalur: POLIS + 'QuotationData.IsSurveyReport',
+    label: 'Survey Report',
+    jenis: 'tampil',
+    opsi: PILIHAN_SURVEY_REPORT,
+    tampil: bukanNonProp,
+  },
+  { jalur: POLIS + 'StatementType', label: 'Statement Type', jenis: 'tampil', opsi: PILIHAN_STATEMENT_TYPE },
   { jalur: POLIS + 'FlagPPH', label: 'Include Tax', jenis: 'centang', kunci: true },
   { jalur: POLIS + 'TypeTax', label: 'Type Tax', jenis: 'tampil', tampil: tidakKosong(POLIS + 'TypeTax') },
   { jalur: POLIS + 'QuotationData.NoOfferSlip', label: 'No Offer Slip', jenis: 'tampil' },
@@ -277,8 +329,9 @@ export const MEDAN_ATASAN_UMUM: Medan[] = [
   },
   { jalur: POLIS + 'QuotationData.ProportionalType', label: 'Proportional Type', jenis: 'tampil', tampil: bukanNonPropBaru },
   { jalur: POLIS + 'Currency', label: 'Currency', jenis: 'tampil', tampil: bukanNonPropBaru },
-  { jalur: POLIS + 'ClaimType', label: 'Claim Type', jenis: 'tampil' },
-  { jalur: POLIS + 'ClaimPaymentType', label: 'Claim Payment Type', jenis: 'tampil' },
+  // dropdown Read-only: teks prompt nilai tersimpan
+  { jalur: POLIS + 'ClaimType', label: 'Claim Type', jenis: 'tampil', opsi: PILIHAN_CLAIM_TYPE },
+  { jalur: POLIS + 'ClaimPaymentType', label: 'Claim Payment Type', jenis: 'tampil', opsi: PILIHAN_CLAIM_PAYMENT_TYPE },
   ...dalamWadah(nonProporsionalQD, [
     { jalur: POLIS + 'LayerType', label: 'LayerType', jenis: 'tampil' },
     { jalur: POLIS + 'Layer', label: 'Layer', jenis: 'tampil' },
@@ -295,7 +348,7 @@ export const MEDAN_ATASAN_UMUM: Medan[] = [
 export const MEDAN_ATASAN_UANG: Medan[] = dalamWadah(wadahUangAtasan, medanAtasanUang())
 
 function medanAtasanUang(): Medan[] {
-  const t = (m: string, label: string, sajian: Sajian = UANG, uang = true): Medan => ({
+  const t = (m: string, label: string, sajian: Sajian = UANG4, uang = true): Medan => ({
     jalur: POLIS + m,
     label,
     jenis: 'tampil',
@@ -303,11 +356,11 @@ function medanAtasanUang(): Medan[] {
     sajian,
   })
   return [
-    t('GrossPremium', 'Gross Premium 100%', DUA),
+    t('GrossPremium', 'Gross Premium 100%', UANG4),
     t('PremiOgp', 'Premi Ogp'),
-    t('RiCommOgp', 'Deduction In A (OGP)', DUA, false),
+    t('RiCommOgp', 'Deduction In A (OGP)', UANG4, false),
     t('ResultOgp1', 'ResultOgp1'),
-    t('OveriddingCommOgp', 'Deduction In B (OGP)', DUA, false),
+    t('OveriddingCommOgp', 'Deduction In B (OGP)', UANG4, false),
     t('ResultOgp2', 'ResultOgp2'),
     t('Claim', 'Claim'),
     t('OutstandingClaim', 'Outstanding Claim'),
@@ -319,9 +372,9 @@ function medanAtasanUang(): Medan[] {
     { ...t('BalanceBeforePPH', 'Balance Before Withholding Tax (PPH 2.2)'), tampil: (h) => !saldoNegatif(h) },
     { ...t('BalanceDueTo', 'Balance Due To Us'), tampil: (h) => !saldoNegatif(h) },
     t('PremiOnp', 'Premi Onp'),
-    t('RiCommOnp', 'Deduction In A (ONP)', DUA, false),
+    t('RiCommOnp', 'Deduction In A (ONP)', UANG4, false),
     t('ResultOnp1', 'ResultOnp1'),
-    t('OveriddingCommOnp', 'Deduction In B (ONP)', DUA, false),
+    t('OveriddingCommOnp', 'Deduction In B (ONP)', UANG4, false),
     t('ResultOnp2', 'ResultOnp2'),
     // K3: pxCurrency, jumlah uang
     t('Deduction1', 'Deduction1'),

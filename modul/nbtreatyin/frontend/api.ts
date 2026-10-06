@@ -172,9 +172,11 @@ export function riwayatKasus(id: string): Promise<Riwayat[]> {
 }
 
 /** Isi grid popup `BusinessAndSOBList` (RD `BrowseTreatyJoinEDM`): showHarness `pySubmitData=Yes`
- *  mengirim isian layar - server menyaring dengan `QuotationData.ProportionalType`-nya, tanpa simpan. */
-export function daftarBisnis(id: string, halaman: Halaman): Promise<BarisKontrak[]> {
-  return minta<BarisKontrak[]>(`${kasus(id)}/bisnis`, { metode: 'POST', badan: { halaman } })
+ *  mengirim isian layar - server menyaring dengan `QuotationData.ProportionalType`-nya, tanpa simpan.
+ *  `saringan` (nama kolom view -> teks) dicari di SERVER sebelum batas 500 baris (keputusan work owner
+ *  06-10-2026), supaya kontrak di luar 500 baris pertama dapat ditemukan. */
+export function daftarBisnis(id: string, halaman: Halaman, saringan: Record<string, string> = {}): Promise<BarisKontrak[]> {
+  return minta<BarisKontrak[]>(`${kasus(id)}/bisnis`, { metode: 'POST', badan: { halaman, saringan } })
 }
 
 /** Isi TreeGrid popup `SOB` (`Section/SourceHierarki`). */

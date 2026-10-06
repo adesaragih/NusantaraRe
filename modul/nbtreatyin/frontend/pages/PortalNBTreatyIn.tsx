@@ -24,8 +24,8 @@ import { KOLOM_PORTAL, PORTAL, TOMBOL } from '../labels'
 /** Grid `GetListOpportunity` - kolom VERBATIM `SFAPortal_OpportunitiesList` C[1.x]/C[2.x]. */
 export function TabelPortal({ baris, onBuka }: { baris: RingkasanKasus[]; onBuka: (id: string) => void }) {
   return (
-    <div className="table-wrap">
-      <table>
+    <div className="table-wrap nbti__tabel-portal-wadah">
+      <table className="nbti__tabel-portal">
         <thead>
           <tr>
             <th scope="col">{KOLOM_PORTAL.id}</th>
@@ -38,16 +38,16 @@ export function TabelPortal({ baris, onBuka }: { baris: RingkasanKasus[]; onBuka
         <tbody>
           {baris.map((b) => (
             <tr key={b.id}>
-              <td>
+              <td data-label={KOLOM_PORTAL.id}>
                 {/* `.TextNoQuotation`; tautan openWorkByHandle (dari sel `.Name`, RALAT tiket 11) */}
                 <button type="button" className="nbti__tautan" onClick={() => onBuka(b.id)}>
                   {b.id}
                 </button>
               </td>
-              <td>{b.businessName}</td>
-              <td>{b.insuredName}</td>
-              <td>{b.marketingName}</td>
-              <td>{b.nbStatus}</td>
+              <td data-label={KOLOM_PORTAL.bisnis}>{b.businessName}</td>
+              <td data-label={KOLOM_PORTAL.tertanggung}>{b.insuredName}</td>
+              <td data-label={KOLOM_PORTAL.marketing}>{b.marketingName}</td>
+              <td data-label={KOLOM_PORTAL.status}>{b.nbStatus !== '' && <span className="nbti__status">{b.nbStatus}</span>}</td>
             </tr>
           ))}
         </tbody>
@@ -78,7 +78,7 @@ export default function PortalNBTreatyIn({ onBuka, pesan }: { onBuka: (id: strin
   }
 
   return (
-    <div className="inbox">
+    <div className="inbox nbti__akar">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{PORTAL.judul}</h2>
         <button type="button" className="btn btn--primary" disabled={sibuk} onClick={() => void buat()}>

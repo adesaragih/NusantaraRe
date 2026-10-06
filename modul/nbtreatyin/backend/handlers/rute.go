@@ -146,6 +146,8 @@ type badanHalaman struct {
 	Halaman *models.Halaman `json:"halaman"`
 	// IDDetail - ID baris view kontrak (pilih bisnis).
 	IDDetail string `json:"idDetail"`
+	// Saringan - saringan kolom popup Choose Business (nama kolom view -> teks).
+	Saringan map[string]string `json:"saringan"`
 }
 
 func (h *rute) daftar(w http.ResponseWriter, r *http.Request) {
@@ -266,7 +268,7 @@ func (h *rute) bisnis(w http.ResponseWriter, r *http.Request) {
 	if !bacaJSON(w, r, &b) {
 		return
 	}
-	out, err := h.l.DaftarBisnis(r.Context(), h.pelaku(r), r.PathValue("id"), b.Halaman)
+	out, err := h.l.DaftarBisnis(r.Context(), h.pelaku(r), r.PathValue("id"), b.Halaman, b.Saringan)
 	if err != nil {
 		tulisGalat(w, err)
 		return

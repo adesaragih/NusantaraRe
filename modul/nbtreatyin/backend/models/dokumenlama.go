@@ -49,11 +49,11 @@ type BarisJSONPolis struct {
 }
 
 // KolomDatarLama - kolom datar json_polis yang ditulis apa adanya ke
-// T_GENERAL_POLIS di luar katalog (ID-21). NOPOLIS ditulis lewat
+// T_GENERAL_POLIS_TREATY di luar katalog (ID-21). NOPOLIS ditulis lewat
 // `SetelNomorPolis`, PRODKE selalu 0 (`SisipKasus`), TGL_PROD lewat katalog
 // (`ProductionDate`).
 type KolomDatarLama struct {
-	IDPega, NoEndors, TglInput, Username string
+	NoEndors, TglInput, Username string
 }
 
 // Medan - satu medan daun dokumen. Jalur memakai notasi properti Pega
@@ -82,7 +82,7 @@ type GalatDokumen struct {
 
 // HasilPecah - keluaran pemecah untuk satu dokumen.
 type HasilPecah struct {
-	// ID - kunci T_WORK_POLIS / T_GENERAL_POLIS = pyID dari IDPEGA.
+	// ID - kunci T_WORK_POLIS / T_GENERAL_POLIS_TREATY = pyID dari IDPEGA.
 	ID      string
 	NoPolis string
 	Halaman *Halaman
@@ -549,7 +549,7 @@ func PecahDokumenLama(b BarisJSONPolis) (HasilPecah, error) {
 	p.objek(HalamanPolis, HalamanPolis, m)
 	hasil := HasilPecah{
 		ID: id, NoPolis: strings.TrimSpace(b.NoPolis), Halaman: p.h, Diabaikan: map[string]int{},
-		Datar: KolomDatarLama{IDPega: b.IDPega, NoEndors: b.NoEndors, TglInput: b.TglInput, Username: b.Username},
+		Datar: KolomDatarLama{NoEndors: b.NoEndors, TglInput: b.TglInput, Username: b.Username},
 	}
 	galat := func(m Medan, err error) {
 		hasil.Galat = append(hasil.Galat, GalatDokumen{Jalur: m.Jalur, Nilai: m.Nilai, Err: err})

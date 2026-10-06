@@ -359,7 +359,7 @@ func (l *Layanan) DaftarAcuan(ctx context.Context, p inti.Pelaku) (Acuan, error)
 //
 // Tombol itu hanya ada di layar admin dan hanya bila wadahnya tampil
 // (`.ClaimType != 'XOL Retro'`); selain itu 409, sama dengan `PilihBisnis`.
-func (l *Layanan) DaftarBisnis(ctx context.Context, p inti.Pelaku, id string, masuk *models.Halaman) ([]models.BarisKontrak, error) {
+func (l *Layanan) DaftarBisnis(ctx context.Context, p inti.Pelaku, id string, masuk *models.Halaman, saringan map[string]string) ([]models.BarisKontrak, error) {
 	k, h, err := l.kerjakan(ctx, p, id, masuk)
 	if err != nil {
 		return nil, err
@@ -367,7 +367,9 @@ func (l *Layanan) DaftarBisnis(ctx context.Context, p inti.Pelaku, id string, ma
 	if err := bolehPilihBisnis(k, h); err != nil {
 		return nil, err
 	}
-	return l.g.DaftarBisnis(ctx, models.SaringanPopupBisnis(h))
+	s := models.SaringanPopupBisnis(h)
+	s.Kolom = models.SaringanKolomSah(saringan) // keputusan WO 06-10-2026: saringan dicari di server
+	return l.g.DaftarBisnis(ctx, s)
 }
 
 // bolehPilihBisnis - tombol `Choose Business` ada di posisi kasus dan tampil

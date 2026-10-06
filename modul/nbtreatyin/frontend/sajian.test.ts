@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { sajikan, sajikanAngka } from './sajian'
+import { nilaiNol, sajikan, sajikanAngka } from './sajian'
 
 describe('sajikanAngka - pyDecimalPlaces terbaca: tepat N desimal', () => {
   it('2 desimal: dipadankan dan dibulatkan setengah ke atas, titik ribuan koma desimal', () => {
@@ -59,5 +59,30 @@ describe('sajikan - per jenis sajian sel', () => {
 
   it('angka: diteruskan ke sajikanAngka', () => {
     expect(sajikan('1000', { desimal: 2 })).toBe('1.000,00')
+  })
+})
+
+// Perintah work owner 06-10-2026 (bagian uang OGP / ONP): nilai nol atau kosong tampil "0" (bukan "0,00" / kosong),
+// angka yang terisi tampil 4 angka di belakang koma.
+describe('nolPolos - bagian uang', () => {
+  const F = { desimal: 4, nolPolos: true }
+  it('nol dan kosong tampil 0', () => {
+    for (const v of ['', '0', '0.0000', '-0', '.0']) expect(sajikan(v, F)).toBe('0')
+  })
+  it('angka terisi tampil 4 desimal', () => {
+    expect(sajikan('1234.5', F)).toBe('1.234,5000')
+    expect(sajikan('-0.5', F)).toBe('-0,5000')
+    expect(sajikan('12', F)).toBe('12,0000')
+  })
+  it('tanpa nolPolos tetap pola lama', () => {
+    expect(sajikan('0', { desimal: 2 })).toBe('0,00')
+    expect(sajikan('', { desimal: 2 })).toBe('')
+  })
+})
+
+describe('nilaiNol - placeholder "0"', () => {
+  it('kosong dan nol', () => {
+    for (const v of ['', ' ', '0', '-0', '0.0000', '.0', undefined]) expect(nilaiNol(v)).toBe(true)
+    for (const v of ['0.0001', '5', 'UJI']) expect(nilaiNol(v)).toBe(false)
   })
 })

@@ -193,7 +193,7 @@ func TestKatalogSepakatDenganDDL(t *testing.T) {
 		return "VARCHAR2"
 	}
 	bukanKatalog := map[string]bool{"ID": true, "POLIS_ID": true, "NOURUT": true, "INSTALMENT_ID": true, "XOL_ID": true,
-		"QUOTATION_ID": true, "NOPOLIS": true, "PRODKE": true, "NOENDORS": true, "OLD_POLIS_ID": true, "IDPEGA": true,
+		"QUOTATION_ID": true, "NOPOLIS": true, "PRODKE": true, "NOENDORS": true, "OLD_POLIS_ID": true,
 		"TGL_INPUT": true, "USERNAME": true}
 	for _, tb := range models.SemuaTabel {
 		kol, ada := ddl[tb.Nama]
@@ -315,9 +315,10 @@ func TestTabelDanKolomMengikutiDiagramGrilling(t *testing.T) {
 	angsuran := "INSTALLMENT_NO DUE_DATE INSTALLMENT_PERCENTAGE PREMIUM PAYMENT_TOTAL PREMIUM_AFTER_PPH PREMIUM_AFTER_PPN PREMIUM_AFTER_TAX CURRENCY ID_CURRENCY "
 	xol := "CURRENCY ID_CURRENCY GROSS_PREMI NET_PREMI DEDUCTION DUE_TO DUE_TO_VALUE BROKERAGE_FEE_SEBENARNYA PPH_VALUE PPN_VALUE NET_PREMI_AFTER_PPH NET_PREMI_AFTER_PPN NET_PREMI_AFTER_TAX"
 	harap := map[string][]string{
-		"T_GENERAL_POLIS": daftar(
+		"T_GENERAL_POLIS_TREATY": daftar(
 			// kunci + json_polis (diagram F11-F16)
-			"ID NOPOLIS PRODKE NOENDORS OLD_POLIS_ID IDPEGA TGL_INPUT USERNAME TGL_PROD " +
+			// IDPEGA DIBUANG (keputusan work owner 06-10-2026: sama dengan ID)
+			"ID NOPOLIS PRODKE NOENDORS OLD_POLIS_ID TGL_INPUT USERNAME TGL_PROD " +
 				// PolicyTreatyIn - rancangan §4.1
 				"NO_OFFER MASTER_ID IS_APPROVED SUGGEST SUGGEST_DATE OPERATOR_NAME IS_NEW_POLICY_NON_PROP IS_EDM_INPUT_ON_NB " +
 				"HAS_FAC_OUT FLAG_PPH FLAG_RETRO_TREATY DUE_TO TYPE_TAX STATEMENT_TYPE TREATY_GROUP_ID TREATY_GROUP_NAME " +
@@ -335,7 +336,10 @@ func TestTabelDanKolomMengikutiDiagramGrilling(t *testing.T) {
 		"T_POLIS_QUOTATION": daftar("POLIS_ID PROPORTIONAL_TYPE MO_ID BUSINESS_CODE BUSINESS_OLD_ID GROUP_PANEL " +
 			"SOURCE_OF_BUSINESS TYPE EDM_TYPE OLD_POLICY_NO MARKETING_NAME " +
 			// RALAT - dibaca rule terjangkau / tampil di Section NB
-			"BUSINESS_NAME BUSINESS_FAC INSURED_ID INSURED_NAME NO_OFFER_SLIP IS_SURVEY_REPORT"),
+			"BUSINESS_NAME BUSINESS_FAC INSURED_ID INSURED_NAME NO_OFFER_SLIP IS_SURVEY_REPORT " +
+			// RALAT 06-10-2026 (keputusan work owner): semua yang ditulis CheckDataMkt langkah 4 disimpan;
+			// TEAM_GROUP dibaca aturan tim Sec Head
+			"MARKETING_CODE TEAM_GROUP BRANCH_CODE BRANCH_NAME"),
 		"T_POLIS_CEDING":            daftar("ID QUOTATION_ID NOURUT CEDING_CO_ID CEDING_CO_NAME"),
 		"T_POLIS_INSTALMENT":        daftar("ID POLIS_ID NOURUT " + angsuran + "PPN PPH PAYMENT_TOTAL_AFTER_PPN PAYMENT_TOTAL_AFTER_TAX"),
 		"T_POLIS_INSTALMENT_DETAIL": daftar("ID INSTALMENT_ID NOURUT " + angsuran + "PAYMENT_DATE"),
@@ -343,14 +347,18 @@ func TestTabelDanKolomMengikutiDiagramGrilling(t *testing.T) {
 			"SPLIT_RNM_SHARE_PCT CLAIM_PERCENTAGE PREMIUM_SPREADED CLAIM_SPREADED"),
 		"T_POLIS_XOL":       daftar("ID POLIS_ID NOURUT " + xol),
 		"T_POLIS_XOL_LAYER": daftar("ID XOL_ID NOURUT LAYER LAYER_TYPE LAYER_PART LAYER_PART_TYPE " + xol),
+		// Keputusan work owner 06-10-2026 (membatalkan K7): PolicyTreatyIn.QuotationData.SurveyReportList -
+		// popup Historical Survey Report (`Section/HistoricalSurveyReportDtl`): .DateofSurvey .SurveyedBy
+		// .LossPrevention .Remarks. Tabel kesembilan, di luar diagram grilling.
+		"T_POLIS_SURVEY": daftar("ID POLIS_ID NOURUT DATE_OF_SURVEY SURVEYED_BY LOSS_PREVENTION REMARKS"),
 	}
 	ddl := kolomDDL(t)
-	if len(ddl) != 8 {
+	if len(ddl) != 9 {
 		var nama []string
 		for n := range ddl {
 			nama = append(nama, n)
 		}
-		t.Fatalf("TEPAT delapan CREATE TABLE (diagram grilling), dapat %d: %v", len(ddl), nama)
+		t.Fatalf("TEPAT sembilan CREATE TABLE (delapan diagram grilling + T_POLIS_SURVEY), dapat %d: %v", len(ddl), nama)
 	}
 	for tabel, mau := range harap {
 		ada, dibuat := ddl[tabel]
