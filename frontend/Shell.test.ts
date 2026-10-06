@@ -58,7 +58,8 @@ describe('menu hanya yang berbukti korpus', () => {
     // + Treaty Exchange Yearly (919).
     // + Treaty Description (920).
     // + Reinsurance Type (921).
-    expect(KELOMPOK_SIDEBAR).toHaveLength(32)
+    // + R/I Rate Life (922).
+    expect(KELOMPOK_SIDEBAR).toHaveLength(33)
     // Dan seluruhnya disebut di Shell, supaya tidak ada kelompok yang
     // terdaftar di label tetapi tidak dirender.
     for (const nama of KELOMPOK_SIDEBAR) {

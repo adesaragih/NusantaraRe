@@ -20,7 +20,8 @@ describe('kartuModul', () => {
     // + Treaty Exchange Yearly (919, MASTER TREATY, keputusan work owner 05-10-2026).
     // + Treaty Description (920, MASTER TREATY, keputusan work owner 05-10-2026).
     // + Reinsurance Type (921, MASTER TREATY, keputusan work owner 05-10-2026).
-    expect(kartuModul()).toHaveLength(32)
+    // + R/I Rate Life (922, MASTER TREATY, perintah work owner 05-10-2026).
+    expect(kartuModul()).toHaveLength(33)
   })
 
   it('modul dimigrasi bertujuan, yang belum dimigrasi tanpa', () => {

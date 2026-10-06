@@ -119,6 +119,7 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
       treatyExchangeYearly: 'Treaty Exchange Yearly',
       treatyDescription: 'Treaty Description',
       reinsuranceType: 'Reinsurance Type',
+      riRateLife: 'R/I Rate Life',
     })
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In')
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In Adjustment')
