@@ -70,11 +70,18 @@ dilewati, lalu `CREATE INDEX` atas view gagal (ORA-01702) dan `-migrate` berhent
 SEBELUM aplikasi menulis rincian: baris yang ditulis aplikasi tidak ada di `M_RICOMM_LIFE` dan hilang. `cmd/api
 -migrate-down` dipagari skema uji - bukan jalur mundur DEV.
 
+## Urutan merge
+
+**`modul/riratelife/implementasi` di-merge LEBIH DULU, lalu cabang ini (`modul/ricommlife/implementasi`)** - keputusan
+work owner 06-10-2026. Kedua cabang membawa `inti/backend/db/koneksi.go` identik (`349be34d` di sini = `91221b2f` di
+riratelife), migrasi inti 924/925 di sini dan 926 di riratelife (nomor tidak bertabrakan). Uji coba merge cabang ini di
+atas ujung riratelife: bersih (PR: `docs/PR-RICOMMLIFE.md`).
+
 ## Isi folder
 
 | Folder | Isi |
 | --- | --- |
-| `docs/` | `STRUKTUR-TABEL-RICOMMLIFE.md` (bukti tipe kolom, indeks), `DBA-LEPAS-VIEW-RICOMM_LIFE.sql` (langkah DBA), `LANGKAH-WO-RICOMMLIFE.md` (urutan WO) |
+| `docs/` | `STRUKTUR-TABEL-RICOMMLIFE.md` (bukti tipe kolom, indeks), `DBA-LEPAS-VIEW-RICOMM_LIFE.sql` (langkah DBA), `LANGKAH-WO-RICOMMLIFE.md` (urutan WO), `PR-RICOMMLIFE.md` |
 | `backend/` | `models/` `repository/` `services/` `handlers/` `tiruan/` `alat/pindahflat/` `modul.go` (tanpa `migrations/`) |
 | `frontend/` | `pages/` `components/` `labels.ts` `api.ts` `aturan.ts` `ricommlife.css` `menu.ts` `rute.tsx` dan `*.test.ts` |
 
