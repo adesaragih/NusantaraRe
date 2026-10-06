@@ -62,9 +62,10 @@ func bungkus(err error, apa string) error {
 	return fmt.Errorf("repository: %s: %w", apa, err)
 }
 
-// PeriksaTulis - lapis penjaga: pernyataan bukan SELECT hanya boleh atas objek DaftarTabelDitulis.
+// PeriksaTulis - lapis penjaga: pernyataan bukan SELECT hanya boleh atas objek DaftarTabelDitulis; satu-satunya
+// pernyataan sesi yang boleh = SqlSesiNLS (alat pindah).
 func PeriksaTulis(objek, q string) error {
-	if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(q)), "SELECT ") {
+	if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(q)), "SELECT ") || q == SqlSesiNLS {
 		return nil
 	}
 	for _, t := range DaftarTabelDitulis {
@@ -248,16 +249,27 @@ func PecahDesimal(kanonik string) (any, int64) {
 	return koef, int64(len(pecahan))
 }
 
-// angkaBaca - teks `TM9` Oracle -> bentuk kanonik models (`.5` -> `0.5`); bentuk lain apa adanya.
-func angkaBaca(s string) string {
+// AngkaOracle - teks angka dari Oracle -> bentuk kanonik models, diurai di Go TANPA bergantung NLS sesi: titik ATAU
+// koma desimal (satu pemisah, mis. bila argumen NLS `TO_CHAR` tidak berlaku), pecahan tanpa nol depan (`TM9` menulis
+// `.5` / `,5`) dan tanda minus. Bentuk lain (bukan angka) apa adanya.
+func AngkaOracle(s string) string {
 	s = strings.TrimSpace(s)
-	if strings.HasPrefix(s, ".") {
-		s = "0" + s
+	minus := strings.HasPrefix(s, "-")
+	t := strings.TrimPrefix(s, "-")
+	if strings.Count(t, ",") == 1 && !strings.Contains(t, ".") {
+		t = strings.Replace(t, ",", ".", 1)
 	}
-	if k, _, _, ok := models.DesimalKanonik(s); ok {
-		return k
+	if strings.HasPrefix(t, ".") {
+		t = "0" + t
 	}
-	return s
+	k, _, _, ok := models.DesimalKanonik(t)
+	if !ok {
+		return s
+	}
+	if minus && k != "0" {
+		return "-" + k
+	}
+	return k
 }
 
 type pemindai interface{ Scan(...any) error }
@@ -332,8 +344,8 @@ func keRingkasan(b [][]string) []models.Ringkasan {
 func keKomisi(b [][]string) []models.Komisi {
 	out := make([]models.Komisi, 0, len(b))
 	for _, s := range b {
-		out = append(out, models.Komisi{ID: s[0], IDUsedBy: s[1], UsedBy: s[2], Contract: angkaBaca(s[3]),
-			Year: angkaBaca(s[4]), Comm: angkaBaca(s[5])})
+		out = append(out, models.Komisi{ID: s[0], IDUsedBy: s[1], UsedBy: s[2], Contract: AngkaOracle(s[3]),
+			Year: AngkaOracle(s[4]), Comm: AngkaOracle(s[5])})
 	}
 	return out
 }

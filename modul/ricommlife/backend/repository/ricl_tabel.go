@@ -61,7 +61,7 @@ const (
 	JSONComm     = "COMM"
 )
 
-// fmtAngka - kolom NUMBER sebagai teks tanpa bergantung NLS sesi (`TM9` menulis `.5`; dirapikan angkaBaca).
+// fmtAngka - kolom NUMBER sebagai teks tanpa bergantung NLS sesi (`TM9` menulis `.5`; diurai Go AngkaOracle).
 const fmtAngka = `TO_CHAR(%s, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''')`
 
 // Kolom yang dibaca (nol `SELECT *`).

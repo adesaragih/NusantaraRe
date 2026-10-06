@@ -71,8 +71,8 @@ func TestSqlKomisiFlat(t *testing.T) {
 		}
 	}
 	for masuk, mau := range map[string]string{".5": "0.5", "12.50": "12.5", "7": "7", "": ""} {
-		if got := angkaBaca(masuk); got != mau {
-			t.Errorf("angkaBaca(%q) = %q mau %q", masuk, got, mau)
+		if got := AngkaOracle(masuk); got != mau {
+			t.Errorf("AngkaOracle(%q) = %q mau %q", masuk, got, mau)
 		}
 	}
 }
@@ -158,5 +158,25 @@ func TestKolomCocokDenganView(t *testing.T) {
 		if !slices.Contains(KolomViewRingkasan, k) {
 			t.Errorf("kolom ringkasan %s tidak ada di view", k)
 		}
+	}
+}
+
+// Butir 4: angka dari Oracle diurai di Go tanpa bergantung NLS sesi - titik ATAU koma desimal, `TM9` tanpa nol depan.
+func TestAngkaOracleTanpaNLS(t *testing.T) {
+	for masuk, mau := range map[string]string{
+		".5": "0.5", ",5": "0.5", "12.50": "12.5", "12,50": "12.5", "7": "7", "2026": "2026", " 0 ": "0",
+		"123456789012345678901234567890.12345678": "123456789012345678901234567890.12345678",
+		"123456789012345678901234567890,12345678": "123456789012345678901234567890.12345678",
+		"-1.5": "-1.5", "-,5": "-0.5", "": "", "1.234,5": "1.234,5", "abc": "abc",
+	} {
+		if got := AngkaOracle(masuk); got != mau {
+			t.Errorf("AngkaOracle(%q) = %q mau %q", masuk, got, mau)
+		}
+	}
+	if err := PeriksaTulis("SESI", SqlSesiNLS); err != nil {
+		t.Errorf("setelan sesi pindah ditolak penjaga: %v", err)
+	}
+	if err := PeriksaTulis("SESI", "ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY'"); !errors.Is(err, ErrBacaSaja) {
+		t.Errorf("pernyataan sesi lain harus ditolak: %v", err)
 	}
 }

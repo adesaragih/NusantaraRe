@@ -5,8 +5,8 @@ package repository_test
 // Seam repository R/I Comm Life terhadap Oracle NYATA (skema uji; POOLDATA tidak pernah menjadi sasaran -
 // `uji/skemauji`). Tanpa ORACLE_DSN MELEWATI. Tabel flat RICOMM_LIFE dari berkas migrasi inti 924 YANG SAMA dengan
 // produksi; objek warisan ditiru di sini (bentuk dicek work owner 06-10-2026): M_RICOMM_LIFE_SUMMARY (JSON) + view
-// RICOMM_LIFE_SUMMARY, M_RICOMM_LIFE (JSON), M_SITE_DATABASE, dan dua sequence warisan. Sesi sengaja ber-NLS koma:
-// angka tidak boleh bergantung NLS. Fixture UJI-.
+// RICOMM_LIFE_SUMMARY, M_RICOMM_LIFE (JSON), M_SITE_DATABASE, dan dua sequence warisan. Angka tidak bergantung
+// NLS sesi pool (fmtAngka berargumen NLS, AngkaOracle di Go); alat pindah memakai satu koneksi (SesiPindah). Fixture UJI-.
 //
 // ⚠️ Koneksi lewat `skemauji.BukaRepositori()`, BUKAN `skemauji.Buka()` (penjaga Claim Life
 // `TestSetiapPemanggilBukaMemeriksaBolehDilewati` mengunci cacah pemanggilnya).
@@ -25,6 +25,7 @@ import (
 	"nusantarare/inti/backend/migrasi"
 	"nusantarare/modul/ricommlife/backend/models"
 	"nusantarare/modul/ricommlife/backend/repository"
+	"nusantarare/modul/ricommlife/backend/services"
 	"nusantarare/uji/skemauji"
 )
 
@@ -81,14 +82,13 @@ func pasang(t *testing.T) *ujiDB {
 		`INSERT INTO {s}.M_SITE_DATABASE (ID, CURRENT_SITE) VALUES (1, '1')`,
 		`INSERT INTO {s}.M_SITE_DATABASE (ID, CURRENT_SITE) VALUES (2, '0')`,
 		`INSERT INTO {s}.M_RICOMM_LIFE_SUMMARY (ID, JSONDATA) VALUES ('1000003', '{"MODIFIEDDATE":"20181205T073755.559 GMT","OPERATORID":"UJI-LAMA","pxObjClass":"ASM-FW-GISFW-Int-RICOMM_LIFE_SUMMARY","USEDBY":"UJI COMM RETRO"}')`,
-		`INSERT INTO {s}.M_RICOMM_LIFE (ID, JSONDATA) VALUES ('1000001', '{"IDUSEDBY":"1000003","USEDBY":"UJI COMM RETRO","CONTRACT":"1","YEAR":"2","COMM":"0.5"}')`,
+		`INSERT INTO {s}.M_RICOMM_LIFE (ID, JSONDATA) VALUES ('1000001', '{"IDUSEDBY":"1000003","USEDBY":"UJI COMM RETRO","CONTRACT":"1","YEAR":"2022","COMM":"0.5"}')`,
 	} {
 		u.exec(t, q)
 	}
 	for _, q := range ddl924(t, false, u.skema) {
 		u.exec(t, q)
 	}
-	u.exec(t, `ALTER SESSION SET NLS_NUMERIC_CHARACTERS = ',.'`)
 	t.Cleanup(func() {
 		u.bongkar(t)
 		_ = repo.Close()
@@ -157,7 +157,7 @@ func TestSeamRepositoryOracle(t *testing.T) {
 		}
 		for _, k := range []models.Komisi{
 			{ID: "1000044", IDUsedBy: "1000003", UsedBy: "UJI COMM RETRO 2", Contract: "1", Year: "2026", Comm: "0.5"},
-			{ID: "1000045", IDUsedBy: "1000003", UsedBy: "UJI COMM RETRO 2", Contract: "99999", Year: "1", Comm: "123456789012345678901234567890.12345678"},
+			{ID: "1000045", IDUsedBy: "1000003", UsedBy: "UJI COMM RETRO 2", Contract: "99999", Year: "2021", Comm: "123456789012345678901234567890.12345678"},
 		} {
 			if err := g.SisipKomisi(u.ctx, tx, k); err != nil {
 				return err
@@ -181,7 +181,7 @@ func TestSeamRepositoryOracle(t *testing.T) {
 	if err != nil || total != 2 || len(d) != 2 || d[0].Comm != "12.25" || d[0].Contract != "2" || d[1].Comm != "123456789012345678901234567890.12345678" {
 		t.Errorf("rincian %+v %d %v", d, total, err)
 	}
-	if err := g.UbahKomisi(u.ctx, nil, models.Komisi{ID: "1000044", IDUsedBy: "1000005", Contract: "1", Year: "1", Comm: "1"}); !errors.Is(err, repository.ErrTidakAda) {
+	if err := g.UbahKomisi(u.ctx, nil, models.Komisi{ID: "1000044", IDUsedBy: "1000005", Contract: "1", Year: "2021", Comm: "1"}); !errors.Is(err, repository.ErrTidakAda) {
 		t.Errorf("ubah milik ringkasan lain %v", err)
 	}
 	var n int
@@ -216,7 +216,7 @@ func TestSeamPindahFlatOracle(t *testing.T) {
 		t.Errorf("ulang %+v %v", lap, err)
 	}
 	d, _, err := g.DaftarKomisi(u.ctx, "1000003", 1)
-	if err != nil || len(d) != 1 || d[0] != (models.Komisi{ID: "1000001", IDUsedBy: "1000003", UsedBy: "UJI COMM RETRO", Contract: "1", Year: "2", Comm: "0.5"}) {
+	if err != nil || len(d) != 1 || d[0] != (models.Komisi{ID: "1000001", IDUsedBy: "1000003", UsedBy: "UJI COMM RETRO", Contract: "1", Year: "2022", Comm: "0.5"}) {
 		t.Errorf("hasil pindah %+v %v", d, err)
 	}
 	// Jalur mundur 924 memulihkan view atas M_RICOMM_LIFE.
@@ -226,5 +226,122 @@ func TestSeamPindahFlatOracle(t *testing.T) {
 	var id string
 	if err := u.repo.QueryRowContext(u.ctx, fmt.Sprintf(`SELECT ID FROM %s.RICOMM_LIFE WHERE IDUSEDBY = '1000003'`, u.skema)).Scan(&id); err != nil || id != "1000001" {
 		t.Errorf("view dipulihkan %q %v", id, err)
+	}
+}
+
+// layananOracle - aturan modul di atas Oracle uji; transaksi = db.Tx sungguhan (Commit / Rollback).
+func layananOracle(u *ujiDB) *services.Layanan {
+	return services.BaruLayanan(repository.Baru(u.repo), func(ctx context.Context, fn func(tx *db.Tx) error) error {
+		tx, err := u.repo.Mulai(ctx)
+		if err != nil {
+			return err
+		}
+		if err := fn(tx); err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+		return tx.Commit()
+	})
+}
+
+func (u *ujiDB) cacah(t *testing.T, q string) int {
+	t.Helper()
+	var n int
+	if err := u.repo.QueryRowContext(u.ctx, strings.ReplaceAll(q, "{s}", u.skema)).Scan(&n); err != nil {
+		t.Fatalf("%.50s: %v", q, err)
+	}
+	return n
+}
+
+var penuhDB = services.Aktor{AkunID: "UJI-ADMIN", Penuh: true}
+
+// Rumus ID lewat layanan: ringkasan = site 1 || LPAD(M_RICOMM_LIFE_SUMMARY_SEQ 5) = 1000005; rincian = site 1 ||
+// LPAD(M_RICOMM_LIFE_SEQ 44) = 1000044. Pulang-pergi kolom flat (CONTRACT/YEAR/COMM desimal) lewat layanan.
+func TestDBRumusIDDanPulangPergi(t *testing.T) {
+	u := pasang(t)
+	l := layananOracle(u)
+	r, err := l.Simpan(u.ctx, penuhDB, "", models.Isian{UsedBy: "UJI COMM DB"})
+	if err != nil || r.ID != "1000005" || r.OperatorID != "UJI-ADMIN" {
+		t.Fatalf("ringkasan %+v %v", r, err)
+	}
+	k, err := l.SimpanKomisi(u.ctx, penuhDB, r.ID, "", models.IsianKomisi{Contract: "99999", Year: "2026", Comm: "0,00000001"})
+	if err != nil || k.ID != "1000044" {
+		t.Fatalf("rincian %+v %v", k, err)
+	}
+	d, err := l.DaftarKomisi(u.ctx, r.ID, 1)
+	if err != nil || d.Total != 1 || d.Daftar[0] != (models.Komisi{ID: "1000044", IDUsedBy: "1000005", UsedBy: "UJI COMM DB",
+		Contract: "99999", Year: "2026", Comm: "0.00000001"}) {
+		t.Errorf("pulang-pergi %+v %v", d, err)
+	}
+}
+
+// Satu transaksi ringkasan + rincian: kegagalan di tengah (ID rincian kembar, ORA-00001) membatalkan KEDUANYA.
+func TestDBTransaksiGagalRollbackKeduanya(t *testing.T) {
+	u := pasang(t)
+	g := repository.Baru(u.repo)
+	ring0, kom0 := u.cacah(t, `SELECT COUNT(*) FROM {s}.M_RICOMM_LIFE_SUMMARY`), u.cacah(t, `SELECT COUNT(*) FROM {s}.RICOMM_LIFE`)
+	err := u.dalamTx(t, func(tx *db.Tx) error {
+		if err := g.SisipRingkasan(u.ctx, tx, models.Ringkasan{ID: "1000009", UsedBy: "UJI GAGAL", OperatorID: "UJI-A",
+			ModifiedDate: "20261006T030405.600 GMT"}); err != nil {
+			return err
+		}
+		k := models.Komisi{ID: "1000090", IDUsedBy: "1000009", UsedBy: "UJI GAGAL", Contract: "1", Year: "2026", Comm: "1"}
+		if err := g.SisipKomisi(u.ctx, tx, k); err != nil {
+			return err
+		}
+		return g.SisipKomisi(u.ctx, tx, k)
+	})
+	if !errors.Is(err, repository.ErrKembar) {
+		t.Fatalf("mau ErrKembar, dapat %v", err)
+	}
+	if r, k := u.cacah(t, `SELECT COUNT(*) FROM {s}.M_RICOMM_LIFE_SUMMARY`), u.cacah(t, `SELECT COUNT(*) FROM {s}.RICOMM_LIFE`); r != ring0 || k != kom0 {
+		t.Errorf("rollback: ringkasan %d->%d, rincian %d->%d", ring0, r, kom0, k)
+	}
+}
+
+// Kembar (CONTRACT, YEAR) di satu ringkasan ditolak; Delete ringkasan menghapus rinciannya (berantai, satu transaksi).
+func TestDBKembarDanDeleteBerantai(t *testing.T) {
+	u := pasang(t)
+	l := layananOracle(u)
+	if _, err := l.SimpanKomisi(u.ctx, penuhDB, "1000003", "", models.IsianKomisi{Contract: "1", Year: "2026", Comm: "1"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := l.SimpanKomisi(u.ctx, penuhDB, "1000003", "", models.IsianKomisi{Contract: "01", Year: "2026", Comm: "2"}); !errors.Is(err, services.ErrMasukanTidakSah) {
+		t.Errorf("kembar %v", err)
+	}
+	if _, err := l.SimpanKomisi(u.ctx, penuhDB, "1000003", "", models.IsianKomisi{Contract: "2", Year: "2026", Comm: "2"}); err != nil {
+		t.Fatal(err)
+	}
+	h, err := l.Hapus(u.ctx, penuhDB, "1000003")
+	if err != nil || h.KomisiTerhapus != 2 {
+		t.Fatalf("hapus %+v %v", h, err)
+	}
+	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RICOMM_LIFE WHERE IDUSEDBY = '1000003'`) +
+		u.cacah(t, `SELECT COUNT(*) FROM {s}.M_RICOMM_LIFE_SUMMARY WHERE ID = '1000003'`); n != 0 {
+		t.Errorf("sisa sesudah Delete berantai %d", n)
+	}
+}
+
+// Butir 4: ALTER SESSION alat pindah dan transaksinya berjalan di koneksi YANG SAMA (SID sama, NLS berlaku di tx).
+func TestDBSesiPindahSatuKoneksi(t *testing.T) {
+	u := pasang(t)
+	kon, tx, err := repository.Baru(u.repo).SesiPindah(u.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = kon.Close() }()
+	defer func() { _ = tx.Rollback() }()
+	var nls, sidTx, sidKon string
+	if err := tx.QueryRowContext(u.ctx, `SELECT VALUE FROM SYS.NLS_SESSION_PARAMETERS WHERE PARAMETER = 'NLS_NUMERIC_CHARACTERS'`).Scan(&nls); err != nil || nls != ".," {
+		t.Errorf("NLS di transaksi %q %v", nls, err)
+	}
+	if err := tx.QueryRowContext(u.ctx, `SELECT SYS_CONTEXT('USERENV', 'SID') FROM DUAL`).Scan(&sidTx); err != nil {
+		t.Fatal(err)
+	}
+	if err := kon.QueryRowContext(u.ctx, `SELECT SYS_CONTEXT('USERENV', 'SID') FROM DUAL`).Scan(&sidKon); err != nil {
+		t.Fatal(err)
+	}
+	if sidTx == "" || sidTx != sidKon {
+		t.Errorf("SID transaksi %q, koneksi %q - harus satu koneksi", sidTx, sidKon)
 	}
 }

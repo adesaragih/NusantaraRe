@@ -230,7 +230,41 @@ func (g *Gudang) bacaSumber(ctx context.Context, tx *db.Tx, n nama) ([]BarisJSON
 	return out, bungkus(rows.Err(), "membaca M_RICOMM_LIFE")
 }
 
-// PindahFlat - satu putaran alat pindah (lihat kepala berkas).
+func mode(jalankan bool) string {
+	if jalankan {
+		return "jalankan"
+	}
+	return "uji"
+}
+
+// SqlSesiNLS - setelan sesi alat pindah: titik desimal. Pembacaan dan penulisan angka sudah tidak bergantung NLS
+// (`fmtAngka` berargumen NLS, AngkaOracle di Go, `TO_NUMBER` atas teks angka murni); setelan ini lapis kedua untuk
+// konversi implisit, dan karena itu WAJIB berlaku di koneksi yang sama dengan transaksinya (SesiPindah).
+const SqlSesiNLS = `ALTER SESSION SET NLS_NUMERIC_CHARACTERS = '.,'`
+
+// SesiPindah - SATU koneksi terkunci (`db.Koneksi`, `*sql.Conn`): ALTER SESSION lalu transaksi di koneksi yang SAMA.
+// Pemanggil menutup keduanya (Rollback / Commit, lalu Close).
+func (g *Gudang) SesiPindah(ctx context.Context) (*db.Koneksi, *db.Tx, error) {
+	if err := siap("SESI", SqlSesiNLS); err != nil {
+		return nil, nil, err
+	}
+	kon, err := g.db.Koneksi(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	if _, err := kon.ExecContext(ctx, SqlSesiNLS); err != nil {
+		_ = kon.Close()
+		return nil, nil, bungkus(err, "menyetel sesi pindah")
+	}
+	tx, err := kon.Mulai(ctx)
+	if err != nil {
+		_ = kon.Close()
+		return nil, nil, err
+	}
+	return kon, tx, nil
+}
+
+// PindahFlat - satu putaran alat pindah (lihat kepala berkas): SELURUHNYA di satu koneksi (SesiPindah).
 func (g *Gudang) PindahFlat(ctx context.Context, jalankan, terimaNormalisasi bool) (LaporanPindah, error) {
 	n, err := g.nama()
 	if err != nil {
@@ -239,6 +273,12 @@ func (g *Gudang) PindahFlat(ctx context.Context, jalankan, terimaNormalisasi boo
 	if err := PeriksaMode(jalankan, g.db.PegaProduksi()); err != nil {
 		return LaporanPindah{Mode: "jalankan"}, err
 	}
+	kon, tx, err := g.SesiPindah(ctx)
+	if err != nil {
+		return LaporanPindah{Mode: mode(jalankan)}, err
+	}
+	defer func() { _ = kon.Close() }()
+	defer func() { _ = tx.Rollback() }()
 	rencana := func(tx *db.Tx) (LaporanPindah, []models.Komisi, error) {
 		sumber, err := g.bacaSumber(ctx, tx, n)
 		if err != nil {
@@ -252,15 +292,11 @@ func (g *Gudang) PindahFlat(ctx context.Context, jalankan, terimaNormalisasi boo
 		return lap, tulis, nil
 	}
 	if !jalankan {
-		lap, _, err := rencana(nil)
+		// Uji kering: hanya SELECT di dalam transaksi koneksi ini; ditutup Rollback.
+		lap, _, err := rencana(tx)
 		lap.Mode = "uji"
 		return lap, err
 	}
-	tx, err := g.db.Mulai(ctx)
-	if err != nil {
-		return LaporanPindah{Mode: "jalankan"}, err
-	}
-	defer func() { _ = tx.Rollback() }()
 	if _, err := g.tulis(ctx, tx, TabelKomisi, SqlKunciKomisi(n.tabelKomisi), "mengunci RICOMM_LIFE"); err != nil {
 		return LaporanPindah{Mode: "jalankan"}, err
 	}
