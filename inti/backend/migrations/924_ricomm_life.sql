@@ -7,7 +7,8 @@
 -- ⛔ PRASYARAT: VIEW POOLDATA.RICOMM_LIFE sudah dibuang DBA lewat
 -- `modul/ricommlife/docs/DBA-LEPAS-VIEW-RICOMM_LIFE.sql` SEBELUM `-migrate`. Selama view itu ada, pra-terbang pelari
 -- (`praTerbangBentuk`/`objekAda`) menemukan objek bernama sama dengan kolom yang sama, CREATE TABLE dijawab ORA-00955
--- dan DILEWATI, lalu langkah ini tercatat selesai tanpa tabel. Urutan langkah work owner: modul/ricommlife/MODUL.md.
+-- dan DILEWATI; CREATE INDEX sesudahnya lalu gagal atas view (ORA-01702), -migrate berhenti dan 924 TIDAK tercatat.
+-- Langkah WO + pemulihan: modul/ricommlife/docs/LANGKAH-WO-RICOMMLIFE.md.
 --
 -- Tipe ikut section Pega `InboxRIComm` (kelas ASM-FW-GISFW-Int-RI_COMM_LIFE); XML tidak memberi presisi, jadi
 -- preseden K6 (TestNolNumberTanpaPresisi): CONTRACT (pxNumber b1907) dan YEAR (pyMax 4 b2206) bilangan bulat
