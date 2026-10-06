@@ -313,3 +313,229 @@ punya migrasinya**, bukan tabel yang berdiri di instans.
 ⚠️ **Ronde 5 menaikkan penyebut tanpa menaikkan pembilang** — 13 entitas yang hilang mendapat
 tiketnya, nol mendapat tabelnya. **Ronde 6 menaikkan pembilangnya**: delapan dari 13 kini punya
 migrasinya, dan `ERD-TREATY-IN-DAN-EDM.html` yang menjadi acuan strukturnya.
+
+---
+
+## Ronde 5 Oktober 2026 — layar disamakan dengan Pega, prop DAN non-prop
+
+**Nol migrasi, nol tabel baru, nol tulisan ke tabel warisan.** Yang berubah jalur baca dan layar.
+
+| Yang dibangun | Di mana |
+| --- | --- |
+| Syarat tampil tab, bercabang | `labels.ts` `SYARAT_TAB_*`, `tabUntuk(jenis, syarat)` |
+| `AccountingModeNonProp` — properti kedua | repository → models → api → layar |
+| `Bordereaux` menjadi proporsional-saja | `FormKontrakTreatyIn.tsx` |
+| Panel `Total Retention Amount` + `Update Total` (mati) | `services.TotalRetensiPerMataUang` + layar |
+| Medan tanggal kosong tidak lagi berbunyi `dd/mm/yyyy` | `TanggalRedup` + `treatyin.css` |
+
+| Uji | Sebelum | Sesudah |
+| --- | ---: | ---: |
+| frontend `treatyin` | 107 | **128** |
+| Go `services` (non-db) | — | **+7** |
+| Oracle `repository` (`//go:build db`) | — | **+4** |
+
+⛔ **Nol `Commit`, nol `DROP`, nol teardown.** Keempat uji Oracle baru **baca-saja**.
+
+### Yang TIDAK dibangun, dan sebabnya ditulis
+
+| | Sebabnya |
+| --- | --- |
+| Enam dari tujuh panel total §6 | masukannya tidak pasti di jalur baca kita — KEPUTUSAN §23 |
+| `RNM Share` turun menjadi panel | ekspor berkata ia panel; §0 melarang menghapus tab — pertanyaan §3 |
+| Keempat label `Accounting Mode` | `Rule-Obj-Property`-nya tidak diekspor — pertanyaan §1 |
+| `Update Total` pada empat tab lain | dicatat di `TOTAL_RETENSI.tabLain` — KEPUTUSAN §22 |
+| `EDMEffective` · `IsProRate` · `ProRateDays` | nol sumber data; mesin pro rata `GRL-15` | 
+| Syarat `TreatyMasterInEDM` atas `RNM as Treaty Leader` | 659 kontrak punya datanya — pertanyaan §6 |
+
+⚠️ **Nol tiket ditandai `selesai`** — status tetap milik pemilik proses.
+
+---
+
+## Ronde 5 Oktober 2026 (kedua) — layar disamakan dengan dokumen desain
+
+**43 tangkapan layar Pega berisi data nyata**, kedua cabang. Nol migrasi, nol tabel baru, nol
+tulisan ke tabel warisan.
+
+| Yang dibangun | Bukti |
+| --- | --- |
+| Panel `Existing Policy for Master ID` + jalur bacanya | gambar 01/26, SQL rule ditelusuri, diadu 2 kontrak |
+| Label `Accounting Mode` (3 dari 4) dan `Bordereaux` (1 dari 2) | gambar 01, 26 |
+| `dd/mm/yyyy` untuk medan kepala | gambar 01 |
+| `RNM Share` sebagai sub-tab `Share` | gambar 16/17/34 |
+| `View File` menjadi modal | gambar 25 — permintaan perubahan |
+| Tombol `Upload` (mati) dan `View` (hidup) per kategori | gambar 24/42 |
+| Judul kolom 4 tab diralat | gambar 02, 19, 26, 29 |
+
+| Uji | Sebelum | Sesudah |
+| --- | ---: | ---: |
+| frontend `treatyin` | 128 | **148** |
+| Go `services` | +7 | **+13** |
+| Oracle `repository` treatyin | 89 | **93** |
+
+### ⛔ Yang TIDAK dibangun, dan sebabnya ditulis
+
+| | Sebabnya |
+| --- | --- |
+| Tab `Limits` prop bersarang 3 tingkat + 11 sub-tab | 3 entitas nol di jalur baca — KEPUTUSAN §32 |
+| Panel total EGNPI/Limits/Share/Installment | masukan belum pasti — KEPUTUSAN §23 |
+| `Update Total` pada 4 tab lain, `Update Value`, `Update Summary` | menunggu panel totalnya |
+| Aturan angka per medan | `pyDecimalPlaces` tidak diekspor — KEPUTUSAN §30 |
+| Retro | §17 tetap berlaku; gambar 37 nol baris — KEPUTUSAN §31 |
+| Label `risk` dan `nonreporting` | nol di 43 gambar, nol di korpus — pertanyaan §7 |
+| `Achievement In IDR`, `Decline offer` | belum punya sumber |
+
+⚠️ **Nol tiket ditandai `selesai`.**
+
+---
+
+## Ronde 5 Oktober 2026 (ketiga) — `M_TREATY_IN2` dicabut sebagai sumber
+
+**Nol migrasi, nol tabel baru, nol tulisan warisan.** Yang berubah: dari mana keempat tab dibaca.
+
+| | Sebelum | Sesudah |
+| --- | --- | --- |
+| Sumber Limits · Share · Event Limits · RNM Share | `M_TREATY_IN2` | **`M_TREATY_IN.JSONDATA`** |
+| Kontrak tercakup | 1.340 | **1.850** |
+| Kolom Event Limits | 3 | **9** |
+| Kueri Go ke `M_TREATY_IN2` | 1 jalur baca + 1 alat | **0** |
+| Uji db `treatyin/repository` | 93 | **98** (−7 dicabut, +12 baru) |
+
+⭐ Penjaga baru `TestNolKueriMTreatyIn2` menyapu seluruh berkas Go; dibuktikan merah dengan
+berkas palsu, lalu hijau lagi sesudah dicabut.
+
+### ⛔ Yang DIHENTIKAN
+
+**§23 desimal per kolom TIDAK dibangun.** Bacaan "padankan sampai presisi kolom" tidak cocok
+dengan bunyi ronde 69 — ronde itu sudah memadankan ke presisi **per jenis kolom** (6 · 3 · 2 · 1)
+dan pemilik proyek menolak persis perilaku itu. Pertanyaannya di
+`PERTANYAAN-TERBUKA-LAYAR-PEGA.md` §11, dengan dua jawaban yang mungkin dan konsekuensi
+masing-masing. **Nol baris aturan angka diubah.**
+
+### Yang masih terbuka
+
+Label `risk` · label `nonreporting` · `pyDecimalPlaces` tiap kontrol · Achievement In IDR ·
+Decline offer · panel total EGNPI/Limits/Share/Installment · pohon tiga tingkat tab Limits
+proporsional (bentuknya kini **terbaca**, §36.3 — yang belum ada layarnya).
+
+⚠️ **Nol tiket ditandai `selesai`.**
+
+---
+
+## Ronde 5 Oktober 2026 (keempat) — §24 dan pohon tab Limits
+
+| Yang dibangun | Bukti |
+| --- | --- |
+| §24 desimal **per kolom**, nol di ekor dipertahankan | gambar 01·26·29·38 |
+| `padankanDesimal` di lapis modul | `format.ts` nol tersentuh |
+| Tab **Limits** pohon tiga tingkat, dua bentuk puncak | 18 gambar + sapuan dokumen |
+| `Class of Business` sebagai tingkat ketiga | `Detail[].COBList[]` |
+
+| Uji | Sebelum | Sesudah |
+| --- | ---: | ---: |
+| frontend `treatyin` | 150 | **166** |
+| Oracle `treatyin/repository` | 96 | **98** |
+
+### ⛔ Yang TIDAK dibangun
+
+`Treaty Type` dropdown (tingkatnya tidak cocok — §14) · 11 sub-tab Limits · panel
+`Summary of Limit`/`Total All Layers` (menunggu jawaban `PremiumEarnedList`/`MDPList`) ·
+desimal kolom Limits/Share/RNM Share (nol di gambar).
+
+### ⚠️ Yang DILAPORKAN, bukan diperbaiki
+
+Tiga uji di `inti/backend/penjaga` MERAH akibat migrasi `436` — penjaga lintas-aplikasi yang
+belum diajari pergantian nama. Bukan modul ini, dan melonggarkan penjaga lintas-aplikasi
+sepihak bukan keputusan saya.
+
+⚠️ **Nol tiket ditandai `selesai`.**
+
+---
+
+## Ronde 5 Oktober 2026 (kelima) — pemetaan skema acuan, NOL kode
+
+⛔ **Nol migrasi, nol DDL, nol perubahan jalur baca/model/layar/uji.** Satu dokumen keluarannya:
+[`PEMETAAN-SKEMA-NUSANTARARE.md`](PEMETAAN-SKEMA-NUSANTARARE.md).
+
+| Temuan | |
+| --- | --- |
+| ⭐⭐ Acuan memodelkan **objek Pega yang BERBEDA** | `PolicyTreatyIn` (polis) lawan `TreatyIn` (kontrak master) |
+| ⭐ Acuan menaruh `TREATY_IN` + `M_TREATY_IN` **di luar pohonnya** | NB Prop B85/F98 — "tidak dirancang ulang" |
+| Padanan lulus syarat bukti | **NOL** — 6 calon dicatat supaya tidak dicari dua kali |
+| Tabel acuan | **40**, bukan 44 (ukuran sendiri) |
+| `T_TREATY_*` di acuan | **NOL kali** |
+| ⭐ Bentrok `LAYER` | **BUKAN bentrok — keduanya sepakat** |
+| ⚠️ Bentrok presisi | nyata; acuan mengatur **penyimpanan**, §24 mengatur **tampilan**; dikutip, nol rekomendasi |
+| ⭐ Berkas kolom lengkap | **ditemukan** di `modul/nbtreatyin/docs/`, tetapi memakai nama tabel LAMA |
+| ⭐ Oracle nol bentuk ber-skema untuk rename sequence | dibuktikan ORA-02286/01765/04043 — **cacat penjaganya** |
+
+⚠️ **Tiga uji `inti/backend/penjaga` MERAH**, seluruhnya akibat migrasi `436`, nol disentuh —
+KEPUTUSAN §26.
+
+⚠️ **Nol tiket ditandai `selesai`.**
+
+---
+
+## Ronde 5 Oktober 2026 (keenam) — tombol `Add`, dan RENCANA perpindahan skema
+
+| Yang dibangun | Bukti |
+| --- | --- |
+| Tombol `Add` di kepala grid EGNPI dan Accumulation, **mati** | gambar 19, 29 |
+| Uji berkunci nama tab — tab baru tidak akan lupa | `GRID_BERTOMBOL_TAMBAH` |
+| ⭐ [`RENCANA-PINDAH-SKEMA.md`](RENCANA-PINDAH-SKEMA.md) — 7 tahap | — |
+
+| Uji | Sebelum | Sesudah |
+| --- | ---: | ---: |
+| frontend `treatyin` | 166 | **172** |
+
+### ⭐ §0.1 terjawab dengan data: kemungkinan **2**
+
+Irisan kunci puncak `JSON_POLIS` ↔ `M_TREATY_IN` hanya **14 dari 312/140**, tujuh di antaranya
+perabot Pega. Satu kontrak master memegang sampai **385 polis** (1.854 → 38.314). `T_GENERAL_POLIS`
+berkunci `(NOPOLIS, PRODKE)` **tidak dapat** menampungnya. Kontrak master butuh **akarnya
+sendiri**, sejajar `T_GENERAL_POLIS` di bawah `T_WORK_POLIS` yang sudah lintas-lini — dan bentuk
+itu **diminta**, bukan dikarang.
+
+### ⛔ Yang TIDAK dilakukan
+
+Nol migrasi · nol DDL · `436` tidak dibalikkan · tiga penjaga lintas-aplikasi tidak disentuh ·
+tombol `Add` pada tiga grid yang gambarnya TIDAK punya (Portfolio · Co-Ins Scale ·
+Maximum Retention) tidak dipasang.
+
+⚠️ **Nol tiket ditandai `selesai`.**
+
+---
+
+## Ronde 5 Oktober 2026 (ketujuh) — layar dipecah, pemilih diberi papan tik
+
+| | Sebelum | Sesudah |
+| --- | ---: | ---: |
+| `FormKontrakTreatyIn.tsx` | 1.826 baris | **752** |
+| `frontend/components/` | tidak ada | **12 berkas**, terbesar 184 |
+| vitest `treatyin` | 172 | **187** (+15 uji baru; pemecahan mengubah **NOL**) |
+
+⭐ `PremiumEarnedList`/`MDPList` **terjawab dengan mengukur**: maksimum 2 elemen, dan setiap
+larik berpanjang 2 bermata uang berbeda. Panel `Summary of Limit` dan `Total All Layers` terbuka.
+
+⛔ **Yang TIDAK dibangun:** layar `Event Limits` dan ketujuh tab lain — ronde ini habis di
+pemecahan, pemulihan dari kesalahan skrip saya sendiri, dan papan tik. Dinyatakan, bukan
+disamarkan.
+
+⚠️ Tiga penjaga `./inti/...` tetap merah — dua cacat penjaga (terbukti `ORA-01765`), satu
+menunggu Tahap 2. Bukan milik modul ini.
+
+---
+
+## Ronde 6 Oktober 2026 — cacat mata uang kedua ditutup, Event Limits dibentuk ulang
+
+| | |
+| --- | --- |
+| `nilaiPertama` → `nilaiKe` | **empat** medan, bukan dua: `Limit2`/`Deductible2` tidak pernah dibaca sama sekali |
+| Bukti Oracle | `1000003` 7/7 baris · seluruh korpus **MDP 106 · PremiEarned 100** |
+| Activity panel total | **menghitung**, jumlah per slot mata uang — siap dibangun, belum dibangun |
+| Tab Event Limits | grid 9 kolom → **empat baris berlabel** (gambar 28) |
+| db `treatyin/repository` | 98 → **106** |
+
+⚠️ **RALAT:** tab tanpa layar ada **tiga** (Retro · Achievement In IDR · Value Difference),
+bukan delapan. Sisanya sudah merender; yang kurang bentuknya.
+
+⚠️ **DUA AGEN DI SATU POHON, dan ronde ini bertabrakan langsung** — lihat laporan.

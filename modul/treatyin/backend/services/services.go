@@ -95,18 +95,56 @@ type Gudang interface {
 	BacaPortofolio(ctx context.Context, masterID string) ([]models.BarisPortofolioWarisan, error)
 	BacaAkumulasi(ctx context.Context, masterID string) ([]models.BarisAkumulasiWarisan, error)
 
-	// Empat tab dari `M_TREATY_IN2` — Limits · Share · Event Limits ·
-	// RNM Share. SATU seam untuk keempatnya, sebab keempatnya PROYEKSI atas
-	// baris yang sama: empat seam berarti empat kueri untuk satu baca, dan
-	// empat kesempatan agar yang satu melihat layer yang lain tidak.
-	BacaLayerWarisan(ctx context.Context, masterID string) ([]models.BarisLayerWarisan, error)
+	// ⭐ KEEMPAT TAB — Limits · Share · Event Limits · RNM Share — dibaca
+	// dari TABEL PENDARATAN sejak 6 Oktober 2026, keputusan pemilik proses:
+	// nilai dari JSONDATA dilarang keras.
+	//
+	// Dua seam, bukan satu: bentuk PIPIH melayani empat tab sekaligus,
+	// bentuk POHON melayani tab Limits proporsional. Keduanya membaca
+	// tabel yang sama tetapi merangkainya berbeda, dan menyatukannya akan
+	// memaksa yang satu membongkar bentuk yang lain.
+	BacaLayerPendaratan(ctx context.Context, masterID string) ([]models.BarisLayerWarisan, error)
+	BacaPohonLimitsPendaratan(ctx context.Context, masterID string) ([]map[string]any, error)
+
+	// ⭐ MEDAN KEPALA dari tabel pendaratan, 6 Oktober 2026. Sesudahnya NOL
+	// nilai layar Treaty In datang dari `M_TREATY_IN.JSONDATA`.
+	//
+	// ⛔ Grid Rate of Exchange TIDAK ikut mendarat: sumbernya
+	// `TREATYEXCHANGEYEARLY`, tabel warisan yang sudah hidup — keputusan
+	// pemilik proses 4 dan 6 Oktober 2026. Ia berkunci TAHUN, bukan kontrak,
+	// jadi seamnya menerima `TREATYYEAR` dan bukan `MASTERID`.
+	BacaRevisiPendaratan(ctx context.Context, masterID string) (repository.RevisiPendaratan, error)
+	BacaKursTahunan(ctx context.Context, tahunTreaty string) ([]models.BarisKursWarisan, error)
 
 	// Tab Co-Ins Scale - tabel pendaratan kesembilan, migrasi 432.
 	BacaSkalaKoasuransi(ctx context.Context, masterID string) ([]models.BarisSkalaKoasuransiWarisan, error)
+
+	// Panel Attachment - `M_ATTACHMENTTREATY_2`, tabel WARISAN, BACA SAJA.
+	// Katalognya seam TERPISAH: ia tidak bergantung kontrak, dan satu
+	// pembacaan melayani seluruh panel.
+	BacaLampiranKontrak(ctx context.Context, masterID string) ([]models.BarisLampiranWarisan, error)
+	BacaKatalogKategoriLampiran(ctx context.Context) (map[string]string, error)
 	BacaEgnpi(ctx context.Context, masterID string) ([]models.BarisEgnpiWarisan, error)
 	BacaRetensi(ctx context.Context, masterID string) ([]models.BarisRetensiWarisan, error)
+	// ⭐ Panel `Existing Policy for Master ID` — `TREATYINPRODUCTION`, baca-saja.
+	BacaPolisProduksi(ctx context.Context, masterID string) ([]models.BarisPolisProduksi, error)
 	BacaAngsuran(ctx context.Context, masterID string) ([]models.BarisAngsuranWarisan, error)
 	BacaCatatan(ctx context.Context, masterID string) ([]models.BarisCatatanWarisan, error)
+
+	// Isi pemilih "Choose Ceding" dan "Choose Source of Business".
+	//
+	// ⛔ Keduanya seam TERPISAH dan tidak bergantung kontrak mana pun: satu
+	// pembacaan melayani seluruh pemilih, dan menautkannya ke
+	// `BacaKontrakWarisan` berarti menarik 94 baris setiap kali satu kontrak
+	// dibuka.
+	BacaDaftarCedant(ctx context.Context) ([]models.PilihanWarisan, error)
+	BacaDaftarAsalBisnis(ctx context.Context) ([]models.PilihanWarisan, error)
+	// Isi dropdown `Treaty Type` tab Limits — `BrowseReinsuranceType_RD`.
+	BacaDaftarJenisTreaty(ctx context.Context) ([]models.PilihanWarisan, error)
+	// `Treaty Group` dan mata uang tab Limits — `BrowseTreatyGroup_RD`,
+	// `BrowseCurrencyTreatyIn_RD`.
+	BacaDaftarKelompokTreaty(ctx context.Context) ([]models.PilihanWarisan, error)
+	BacaDaftarMataUangLimit(ctx context.Context) ([]models.PilihanWarisan, error)
 }
 
 // Layanan memegang aturan modul ini di atas satu Gudang.

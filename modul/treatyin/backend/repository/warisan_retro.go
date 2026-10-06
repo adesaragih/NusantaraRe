@@ -1,40 +1,55 @@
 package repository
 
-// PENANDA — kontrak yang satu cabang datanya SENGAJA ditinggalkan.
+// AMBANG PEMBALIKAN §17 — Retro tidak dibangun karena JARANG.
 //
-// ⛔ Berkas ini ada supaya sebuah lubang tidak menjadi diam. Keputusan
-// pemilik proses 4 Oktober 2026 menunda tab Retro
-// (`docs/KEPUTUSAN-PENYELARASAN-REPO.md` §14): dua kontrak dari 1.854 tidak
-// cukup untuk merancang tiga tabel bersarang. Keputusan itu benar, dan ia
-// punya ongkos — dua kontrak akan terlihat "selesai dipindahkan" pada
-// rekonsiliasi tiket `44` padahal `RetroList`-nya tidak ikut.
+// ⛔ Berkas ini pernah berjudul "penanda pekerjaan tertunda" dan artinya
+// BERUBAH 4 Oktober 2026. Keputusan §14 menunda Retro; keputusan §17
+// menggantikannya dengan **tidak dibangun, karena jarang**. Tidak ada lagi
+// pekerjaan yang menunggu — yang ada **ambang yang diawasi**.
 //
-// ⚠️ Penandaannya WAJIB dapat disapu mesin, dan tidak boleh bergantung pada
-// ingatan siapa pun. Tiga hal mewujudkannya, dan ketiganya diperlukan:
+// ⛔ DAN SEBABNYA BUKAN KODE MATI. Ronde sebelumnya hendak mencabut Retro
+// atas dasar penjaga `1=2` di `Section/ShareRetro.xml`, dan verifikasi
+// membatalkan dasar itu: ketiga penjaga membungkus sebuah tombol, satu blok
+// `BAR`, dan satu tombol kepala — **nol yang membungkus tabnya**. Tab
+// non-prop berdiri tanpa syarat tampil sama sekali; tab prop bersyarat
+// `TreatyIn.IsMultipleRetro`, sebuah syarat DATA. `FlowAction/ShareRetro.xml`
+// berbunyi `pyRuleAvailable = Yes`. **Retro HIDUP di Pega.**
 //
-//	1. daftar di bawah — dapat di-`grep`, dan menyebut sebabnya di tempat;
-//	2. `TestKontrakRetroTertundaMasihDuaItu` (`-tags db`) MENGUKUR ULANG dari
-//	   Oracle dan merah begitu kontrak ketiga muncul atau salah satu hilang;
-//	3. pemuat mencetaknya pada tiap `-cocokkan`, sehingga ia lewat di depan
-//	   mata orang yang sedang merekonsiliasi — bukan hanya tersimpan.
+// ⚠️ §17 berdiri di atas DUA angka, jadi DUA penjaga mengukurnya ulang dari
+// Oracle — `TestAmbangRetroJarangMasihDuaKontrak` dan
+// `TestAmbangRetroMultipleMasihLima`. Satu angka yang dijaga dan satu yang
+// dihafal adalah keputusan yang setengahnya dapat basi tanpa suara.
 //
-// ⛔ JANGAN menghapus daftar ini ketika tab Retro dibangun. Yang dihapus
-// nanti adalah seluruh berkasnya, bersama ujinya, dalam ronde yang sama
-// dengan tabelnya — supaya tidak ada tenggang waktu saat penandanya hilang
-// tetapi datanya belum pindah.
+// ⛔ JANGAN menghapus berkas ini ketika Retro kelak dibangun. Yang dihapus
+// nanti adalah seluruh berkasnya bersama kedua ujinya, dalam ronde yang
+// sama dengan tabelnya.
 
-// KontrakRetroTertunda adalah kontrak yang punya `RetroList` berisi.
+// KontrakRetroJarang adalah kontrak yang punya `RetroList` berisi.
 //
 // Terukur 4 Oktober 2026 atas SELURUH 1.854 dokumen, diurai utuh sebagai
 // JSON: hanya kedua pengenal ini, keduanya `NonProportional`, masing-masing
 // 2 elemen — 4 elemen seluruhnya.
-var KontrakRetroTertunda = []string{"1000493", "1000755"}
+//
+// ⛔ AMBANG PEMBALIKAN: kontrak KETIGA. Lihat §17.
+var KontrakRetroJarang = []string{"1000493", "1000755"}
 
-// LarikRetroTertunda adalah kunci larik yang ditinggalkan di dokumen.
-const LarikRetroTertunda = "RetroList"
+// LarikRetroJarang adalah kunci larik yang tidak dibangun.
+const LarikRetroJarang = "RetroList"
 
-// AlasanRetroTertunda ikut tercetak bersama penandanya, supaya yang membaca
-// peringatannya tidak perlu mencari dokumen untuk tahu sebabnya.
-const AlasanRetroTertunda = "tab Retro ditunda (KEPUTUSAN §14): 2 kontrak dari 1.854 tidak cukup " +
-	"merancang 3 tabel bersarang; 8 dari 17 medannya turunan (INV-58). `RetroList` kontrak di " +
-	"bawah TIDAK ikut dimuat, jadi rekonsiliasi tiket 44 tidak boleh menghitungnya selesai."
+// KunciRetroMultiple adalah penjaga tampil tab Retro cabang proporsional.
+//
+// ⚠️ Ia syarat DATA, bukan penjaga mati — dan itu pokok §17.
+const KunciRetroMultiple = "IsMultipleRetro"
+
+// AmbangRetroMultiple adalah cacah dokumen ber-`IsMultipleRetro = "true"`
+// pada 4 Oktober 2026.
+//
+// ⛔ AMBANG PEMBALIKAN: kontrak KEENAM. Lihat §17.
+const AmbangRetroMultiple = 5
+
+// AlasanRetroJarang ikut tercetak bersama ambangnya, supaya yang membacanya
+// tidak perlu mencari dokumen untuk tahu sebabnya.
+const AlasanRetroJarang = "tab Retro TIDAK dibangun karena JARANG (KEPUTUSAN §17), bukan karena " +
+	"kode mati - `pyRuleAvailable = Yes` dan nol penjaga `1=2` membungkus tabnya. " +
+	"`IsMultipleRetro` true pada 5 dari 1.854; `RetroList` berisi pada 2 kontrak di bawah. " +
+	"Ambang pembalikan: kontrak keenam ber-IsMultipleRetro, atau ketiga ber-RetroList."

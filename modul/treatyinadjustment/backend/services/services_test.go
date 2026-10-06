@@ -18,6 +18,19 @@ type gudangTiruan struct {
 	versi    map[int64][]models.Versi
 	disentuh int
 	galat    error
+
+	// Panel Attachment - galatnya TERPISAH dari `galat`, sebab kontrak yang
+	// rantai versinya gagal dibaca tetap harus membuka lampirannya.
+	lampiran        []models.BarisLampiranWarisan
+	katalogKategori map[string]string
+	riwayat         []models.BarisRiwayatWarisan
+	galatLampiran   error
+
+	// Layar Adjustment - galatnya TERPISAH lagi: daftar penyesuaian dan
+	// rantai versi model baru dibaca dari tabel yang berbeda.
+	daftarPenyesuaian []models.BarisPenyesuaian
+	penyesuaian       map[string]models.Penyesuaian
+	galatPenyesuaian  error
 }
 
 func (g *gudangTiruan) DaftarKontrak(context.Context) ([]models.Kontrak, error) {
@@ -132,4 +145,18 @@ func TestGalatGudangDiteruskan(t *testing.T) {
 	if _, err := l.RantaiVersi(context.Background(), pelakuAda, 1); !errors.Is(err, bocor) {
 		t.Errorf("RantaiVersi tidak meneruskan galat gudang; dapat %v", err)
 	}
+}
+
+// Panel Attachment - `M_ATTACHMENTTREATY_2`, tabel warisan.
+func (g *gudangTiruan) BacaLampiranKontrak(_ context.Context, _ string) ([]models.BarisLampiranWarisan, error) {
+	return g.lampiran, g.galatLampiran
+}
+
+func (g *gudangTiruan) BacaKatalogKategoriLampiran(_ context.Context) (map[string]string, error) {
+	return g.katalogKategori, g.galatLampiran
+}
+
+// Panel History - `T_VIEW_COMMENT`, tabel warisan.
+func (g *gudangTiruan) BacaRiwayatKontrak(_ context.Context, _ string) ([]models.BarisRiwayatWarisan, error) {
+	return g.riwayat, g.galatLampiran
 }

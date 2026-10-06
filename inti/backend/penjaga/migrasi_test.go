@@ -65,7 +65,22 @@ func TestSetiapPernyataanSahDanBerskema(t *testing.T) {
 				if strings.TrimSpace(p) == "" {
 					t.Errorf("%s pernyataan %d kosong", m.Nama, i)
 				}
-				if !strings.Contains(p, "{skema}") {
+				// ⛔ SATU pengecualian, dan Oracle yang memaksakannya:
+				// `RENAME lama TO baru` TIDAK MENERIMA awalan skema. Menulis
+				// `RENAME {skema}.A TO B` memberi ORA-01765 ("specified owner
+				// does not match that of the table"), jadi pernyataan yang
+				// mematuhi ADR-U-0033 di sini adalah pernyataan yang tidak
+				// dapat dijalankan.
+				//
+				// ⚠️ Pengecualiannya SESEMPIT bentuknya: hanya pernyataan yang
+				// DIMULAI `RENAME `. `ALTER TABLE {skema}.X RENAME TO Y` —
+				// bentuk untuk tabel dan index — tetap wajib berskema, dan
+				// memang sudah.
+				berskema := strings.Contains(p, "{skema}")
+				if !berskema && strings.HasPrefix(strings.ToUpper(strings.TrimSpace(p)), "RENAME ") {
+					berskema = true
+				}
+				if !berskema {
 					t.Errorf("%s pernyataan %d tidak menyebut skema (ADR-U-0033): %.60s",
 						m.Nama, i, p)
 				}
@@ -208,11 +223,31 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 	// Pemeriksaan per berkas tidak dapat salah potong: satu berkas
 	// dikecualikan dengan namanya, sisanya utuh.
 	const berkasOutbox = "015_t_log_service_rnm"
+	// ⭐ PENGECUALIAN KEDUA, 6 Oktober 2026 — dan ia menegakkan larangan
+	// ini, bukan melonggarkannya.
+	//
+	// Larangannya berbunyi *"atribut klaim harus menjadi KOLOM BERNAMA"*:
+	// yang dilarang menyembunyikan atribut berstruktur di dalam satu blob.
+	// Kelima `CLOB` di `439` justru KOLOM BERNAMA — satu per ejaan medan
+	// teks bebas tab `Exclusions` dan `Special Conditions`, yang terukur
+	// mencapai 23.453 aksara sementara `VARCHAR2` Oracle berhenti di 4.000.
+	//
+	// ⛔ Alternatifnya MEMOTONG teks tanpa bersuara, dan itu kehilangan
+	// data yang baru ketahuan bertahun kemudian.
+	//
+	// ⚠️ Cacahnya DIPATOK: tepat lima, tidak boleh bertambah diam-diam.
+	const berkasTeksPanjang = "439_akar_dan_nilai_sisa"
+	const clobTeksPanjang = 5
 	dokumenDiOutbox := 0
+	teksPanjang := 0
 	for nama, isi := range seluruhSQL(t, false) {
 		atas := strings.ToUpper(isi)
 		if strings.Contains(nama, berkasOutbox) {
 			dokumenDiOutbox += strings.Count(atas, "CLOB")
+			continue
+		}
+		if strings.Contains(nama, berkasTeksPanjang) {
+			teksPanjang += strings.Count(atas, "CLOB")
 			continue
 		}
 		for _, tipe := range []string{" JSON", "CLOB", "BLOB", "JSON_KLAIM"} {
@@ -221,6 +256,11 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 					nama, tipe)
 			}
 		}
+	}
+	// Dan kelima kolom teks panjang itu memang LIMA, tidak lebih.
+	if teksPanjang != clobTeksPanjang {
+		t.Errorf("%s memuat %d kolom CLOB, mau tepat %d (kelima ejaan medan teks panjang)",
+			berkasTeksPanjang, teksPanjang, clobTeksPanjang)
 	}
 	// Dan outbox-nya memang hanya punya SATU kolom dokumen.
 	if dokumenDiOutbox != 1 {
@@ -304,7 +344,12 @@ func TestPernyataanMulaiDenganPerintah(t *testing.T) {
 					kata = strings.ToUpper(strings.Fields(perintah)[0])
 				}
 				switch kata {
-				case "CREATE", "ALTER", "DROP", "INSERT", "UPDATE", "DELETE", "SELECT":
+				// ⭐ `RENAME` ditambahkan 06-10-2026. Ia perintah DDL Oracle
+				// sepenuhnya, dan satu-satunya cara menamai ulang SEQUENCE:
+				// Oracle tidak punya `ALTER SEQUENCE … RENAME TO`. Daftar ini
+				// sekadar belum pernah bertemu dengannya sampai migrasi
+				// `436_nama_tabel_tab.sql`.
+				case "CREATE", "ALTER", "DROP", "INSERT", "UPDATE", "DELETE", "SELECT", "RENAME":
 				default:
 					t.Errorf("%s pernyataan %d mulai dengan %q, bukan perintah SQL",
 						m.Nama, i, kata)

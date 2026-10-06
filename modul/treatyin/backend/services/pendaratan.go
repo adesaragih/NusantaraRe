@@ -125,3 +125,71 @@ func RingkasTakTerpetakan(hasil []HasilMuat) map[string][]string {
 	}
 	return out
 }
+
+// MuatSatuPenyesuaian mendaratkan SATU dokumen `M_TREATY_IN_EDM` beserta
+// KEDUA sisinya, lalu mencocokkannya tanpa keluar dari transaksi.
+//
+// ⛔ Dibuat 6 Oktober 2026. Sebelum ini nol jalur memuat korpus Adjustment,
+// sehingga layar Adjustment membaca tabel yang tidak pernah ada isinya —
+// dan `MuatPenyesuaian` di repository tidak punya satu pun pemanggil.
+//
+// ---------------------------------------------------------------------
+// MENGAPA PENCOCOKANNYA TIDAK DAPAT MEMAKAI `MuatSatuKontrak`
+// ---------------------------------------------------------------------
+// Satu dokumen Adjustment mendarat sebagai DUA kontrak: `id` dan
+// `id#LAMA`. `CacahBarisKontrak` menyaring satu `MASTERID` saja, jadi
+// memakainya apa adanya akan melaporkan sisi `Old` sebagai 0 di tabel dan
+// menyimpulkan pemuatnya rusak.
+//
+// ⚠️ Kedua sisi karena itu DIJUMLAHKAN di kedua ruas — dokumen dan tabel.
+// Itu menukar satu hal, dan ditukar sadar: selisih yang saling meniadakan
+// antar-sisi tidak akan terlihat. Yang menutupnya cacah PER SISI di bawah,
+// yang dikembalikan terpisah supaya pemanggil dapat mencetaknya.
+func MuatSatuPenyesuaian(ctx context.Context, g *repository.Gudang, tx *db.Tx, id string) (HasilMuat, error) {
+	h := HasilMuat{MasterID: id}
+
+	teks, err := g.BacaDokumenPenyesuaianMentah(ctx, id)
+	if err != nil {
+		return h, err
+	}
+	doc, err := repository.UraiDokumen(teks)
+	if err != nil {
+		return h, fmt.Errorf("services: penyesuaian %s: %w", id, err)
+	}
+
+	h.DiDokumen = repository.CacahLarik(doc)
+	h.TakTerpetakan = repository.KunciTakTerpetakan(doc)
+	lama, adaLama := doc["OLDDATA"].(map[string]any)
+	if adaLama {
+		for t, n := range repository.CacahLarik(lama) {
+			h.DiDokumen[t] += n
+		}
+		// ⛔ Kunci tak terpetakan sisi `Old` IKUT dilaporkan. Sisi itu
+		// dokumen Pega yang utuh, dan kunci baru dapat muncul di sana
+		// lebih dulu.
+		for t, k := range repository.KunciTakTerpetakan(lama) {
+			h.TakTerpetakan[t] = append(h.TakTerpetakan[t], k...)
+		}
+	}
+
+	if _, err := g.MuatPenyesuaian(ctx, tx, id, doc); err != nil {
+		return h, err
+	}
+
+	h.DiTabel, err = g.CacahBarisKontrak(ctx, tx, id)
+	if err != nil {
+		return h, err
+	}
+	if adaLama {
+		sisiLama, err := g.CacahBarisKontrak(ctx, tx, id+repository.AkhiranSisiLama)
+		if err != nil {
+			return h, err
+		}
+		for t, n := range sisiLama {
+			h.DiTabel[t] += n
+		}
+	}
+
+	h.Selisih = selisihCacah(h.DiDokumen, h.DiTabel)
+	return h, nil
+}

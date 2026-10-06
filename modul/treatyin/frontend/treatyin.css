@@ -103,9 +103,23 @@
 .treatyin .trin__kepala {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  /* ⛔ RATA ATAS, bukan tengah. Tabel "Existing Policy" di kanan jauh lebih
+     tinggi daripada blok ID + Reinsurance Type di kiri; `center` membuat
+     keduanya melayang di tengah tinggi tabel, dan itu persis yang pemilik
+     proses tolak. Di Pega keduanya duduk di pojok kiri atas. */
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 12px 24px;
   margin-bottom: 16px;
+}
+
+/* Blok kiri: ID di atas, pilihan jenis reasuransi di bawahnya. Bertumpuk,
+   bukan sebaris — lebarnya dengan begitu tidak ikut menekan tabel kanan. */
+.treatyin .trin__kepala-kiri {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
 }
 
 .treatyin .trin__id {
@@ -631,4 +645,359 @@
   border-left: 3px solid var(--accent);
   background: var(--panel);
   font-size: 12px;
+}
+
+/* ---------------------------------------------------------------------
+ * Panel Attachment + deret tombol.
+ *
+ * Spanduk biru `Recommended safe substitute should be . or _` disalin dari
+ * `Section/WorkAttachments.xml`. ⛔ Ia ATURAN nama berkas, bukan hiasan —
+ * ditegakkan `services.NamaBerkasAman`, dan warnanya di sini hanya membuat
+ * aturannya terbaca sebelum seseorang mengunggah.
+ * ------------------------------------------------------------------ */
+.treatyin .trin__spanduk {
+  display: block;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  font-size: 12px;
+}
+
+/* ⚠️ Deret tombol Save · Close · Actions MEMAKAI ULANG `.trin__aksi` yang
+   sudah ada (baris 164) — nol aturan baru. Kelasnya sudah berarti "deret
+   tombol" di berkas ini, dan aturan kedua dengan nama yang sama hanya akan
+   menimpa dirinya sendiri tergantung urutan. */
+
+/* ---------------------------------------------------------------------
+ * Pemilih "Choose Ceding" / "Choose Source of Business".
+ *
+ * ⛔ Daftarnya DIBATASI tingginya dan digulir. 131 baris cedant di dalam modal
+ * tanpa batas tinggi mendorong tombol Batal ke luar layar, dan yang
+ * memilih harus menggulir seluruh halaman untuk membatalkan.
+ * ------------------------------------------------------------------ */
+.treatyin .trin__pemilih {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+/* ⚠️ Penanda nama KEMBAR — nama yang dipakai lebih dari satu pengenal.
+   Warnanya peringatan, bukan galat: datanya memang begitu, dan yang
+   memilih perlu melihatnya, bukan dicegah. */
+.treatyin .trin__kembar {
+  color: var(--warning, #b45309);
+  cursor: help;
+}
+
+/* ===========================================================================
+   MEDAN TANGGAL KOSONG — `dd/mm/yyyy` tidak boleh terbaca sebagai nilai
+   ===========================================================================
+
+   ⛔ Masalahnya: `<input type="date">` yang kosong menuliskan `dd/mm/yyyy`
+   sendiri. Di layar yang penuh medan terisi, teks itu terbaca seperti isi —
+   kontrak tanpa tanggal terlihat seolah bertanggal.
+
+   ⚠️ `FieldTanggal` ada di `inti/frontend/components/ui/dasar.tsx`, berkas
+   yang DIPAKAI BERSAMA dan tidak disunting. Kaitnya karena itu dipasang di
+   `FormKontrakTreatyIn.tsx` — `TanggalRedup` menambahkan
+   `.trin__tanggal--kosong` selama nilainya kosong.
+
+   ⛔ Mengapa kait itu PERLU, dan bukan kemalasan: tidak ada pemilih CSS yang
+   membedakan medan tanggal kosong dari yang terisi. `:placeholder-shown`
+   tidak cocok untuk `type="date"`; medan tanggal kosong tanpa `required`
+   itu `:valid`, jadi `:invalid` juga tidak cocok; dan React menyetel
+   `value` sebagai PROPERTI, bukan atribut, jadi `[value='']` tidak cocok
+   pula. Ketiganya diperiksa sebelum kait ini dipilih.
+
+   ⚠️ BATASNYA: `::-webkit-datetime-edit` hanya ada di Chromium dan WebKit.
+   Di Firefox `dd/mm/yyyy` tetap tampak, dan tidak ada padanan standarnya.
+
+   ⭐ Tetap DAPAT DIISI dan tetap TERBACA:
+   - `:focus` membatalkan aturannya, jadi begitu medan disentuh angkanya
+     kembali terlihat saat diketik;
+   - kelasnya hilang begitu nilainya tidak kosong, jadi tanggal yang terisi
+     tidak pernah tersentuh aturan ini;
+   - ikon pemilih tanggal TIDAK disembunyikan — yang transparan hanya teks
+     `::-webkit-datetime-edit`, sehingga medannya masih jelas dapat diklik.
+   =========================================================================== */
+
+.treatyin .trin__tanggal {
+  display: contents;
+}
+
+.treatyin .trin__tanggal--kosong input[type='date']:not(:focus)::-webkit-datetime-edit {
+  color: transparent;
+}
+
+/* ===========================================================================
+   PANEL `Existing Policy for Master ID` — kanan atas layar
+   ===========================================================================
+
+   ⛔ Letaknya dari gambar `01` dan `26` dokumen desain: sejajar dengan blok
+   `ID` / `Reinsurance Type`, di sisi KANAN, bukan di bawahnya.
+
+   ⚠️ Lebarnya dibatasi, dan itu disengaja: panel ini berkolom empat yang
+   seluruhnya pendek (`Q1`, `2025`, nomor polis), dan membiarkannya selebar
+   layar memberi empat kolom sempit di tepi kiri dengan ruang kosong panjang
+   di kanan — justru bentuk yang gambarnya tidak perlihatkan.
+   =========================================================================== */
+
+.treatyin .trin__polis {
+  margin-left: auto;
+  min-width: 24rem;
+  max-width: 34rem;
+}
+
+.treatyin .trin__polis-judul {
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Di layar sempit ia turun ke bawah dan memakai lebar penuh — empat kolom
+   pendek di dalam 24rem pada telepon akan terpotong. */
+@media (max-width: 52rem) {
+  .treatyin .trin__polis {
+    margin-left: 0;
+    min-width: 0;
+    max-width: none;
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * Pemilih yang DAPAT DIKETIK — "Choose Ceding" dan "Choose Source of
+ * Business". Kotaknya menerima ketikan, daftarnya menyaring.
+ *
+ * ⛔ Daftarnya MENGAMBANG (`position: absolute`). Bila ia ikut mengalir,
+ * medan di bawahnya terdorong turun setiap kali daftarnya terbuka, dan
+ * seluruh kolom bergoyang saat mengetik.
+ * ------------------------------------------------------------------ */
+.treatyin .trin__ketikpilih {
+  position: relative;
+}
+
+.treatyin .trin__ketikpilih-daftar {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 2px 0 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 12%);
+}
+
+.treatyin .trin__ketikpilih-baris {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.treatyin .trin__ketikpilih-baris:hover,
+.treatyin .trin__ketikpilih-baris:focus {
+  background: var(--surface-2);
+}
+
+.treatyin .trin__ketikpilih-kosong {
+  padding: 7px 10px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+/* ===========================================================================
+   TAB LIMITS — POHON TIGA TINGKAT
+   ===========================================================================
+
+   ⛔ Susunannya dari 18 gambar (`02`–`15` prop, `30`–`33` non-prop), dan
+   kedua cabang BERBEDA di puncak: prop mengelompok menurut `Kind of Treaty`,
+   non-prop menurut `Layers`.
+
+   ⚠️ `<details>`/`<summary>` dipakai, bukan tombol buka-tutup buatan sendiri:
+   keduanya sudah dapat dioperasikan papan ketik dan sudah dibacakan pembaca
+   layar sebagai "dapat dilipat" tanpa satu baris ARIA pun. Tiruan buatan
+   sendiri harus mengulang keduanya, dan yang mengulang selalu tertinggal.
+   =========================================================================== */
+
+.treatyin .trin__pohon {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.treatyin .trin__pohon-kepala {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--trin-pohon-kepala, rgba(127, 127, 127, 0.12));
+}
+
+.treatyin .trin__pohon-tingkat {
+  border-left: 2px solid var(--trin-pohon-garis, rgba(127, 127, 127, 0.35));
+  margin-left: 0.25rem;
+  padding-left: 0.6rem;
+}
+
+.treatyin .trin__pohon-tingkat > summary {
+  cursor: pointer;
+  padding: 0.3rem 0;
+  font-weight: 600;
+}
+
+/* Medan tingkat layer — dua kolom, label di kiri. */
+.treatyin .trin__pohon-medan {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) 1fr;
+  gap: 0.15rem 0.75rem;
+  margin: 0.35rem 0 0.6rem;
+  font-size: 0.85rem;
+}
+
+.treatyin .trin__pohon-medan dt {
+  font-weight: 600;
+}
+
+.treatyin .trin__pohon-medan dd {
+  margin: 0;
+}
+
+.treatyin .trin__pohon-daun {
+  margin: 0.2rem 0 0.5rem;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+}
+
+/* Di telepon label dan nilai menumpuk — dua kolom di 320px memberi label
+   terpotong di sebelah nilai terpotong. */
+@media (max-width: 32rem) {
+  .treatyin .trin__pohon-medan {
+    grid-template-columns: 1fr;
+  }
+  .treatyin .trin__pohon-medan dd {
+    margin-bottom: 0.3rem;
+  }
+}
+
+/* Baris AKTIF pemilih bercari — yang panah geser dan yang Enter pilih.
+   ⚠️ Berbeda dari `:hover`: papan tik tidak menghasilkan hover, dan tanpa
+   kelas ini yang memakai papan tik tidak melihat di mana ia berada. */
+.treatyin .trin__ketikpilih-baris--aktif {
+  background: var(--trin-pilih-aktif, rgba(127, 127, 127, 0.18));
+}
+
+/* Tab Event Limits — empat baris berlabel per layer (gambar 28).
+   ⚠️ Tiga kolom: label · mata uang · nilai. Nilainya rata KANAN, sebab
+   angka yang rata kiri tidak dapat dibandingkan sekilas antar baris. */
+.treatyin .trin__ev {
+  margin-bottom: 0.9rem;
+}
+
+.treatyin .trin__ev-kepala {
+  margin: 0 0 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.treatyin .trin__ev-medan {
+  margin: 0;
+}
+
+.treatyin .trin__ev-baris {
+  display: grid;
+  grid-template-columns: minmax(12rem, max-content) 4rem 1fr;
+  gap: 0.2rem 0.75rem;
+  align-items: baseline;
+  font-size: 0.85rem;
+}
+
+.treatyin .trin__ev-baris dt {
+  font-weight: 600;
+}
+
+.treatyin .trin__ev-baris dd {
+  margin: 0;
+}
+
+.treatyin .trin__ev-nilai {
+  text-align: right;
+  max-width: 18rem;
+}
+
+@media (max-width: 32rem) {
+  .treatyin .trin__ev-baris {
+    grid-template-columns: 1fr auto;
+  }
+  .treatyin .trin__ev-baris dt {
+    grid-column: 1 / -1;
+  }
+  .treatyin .trin__ev-nilai {
+    text-align: left;
+  }
+}
+
+
+/* ---------------------------------------------------------------------
+ * MODE FORM (6 Oktober 2026) — `<fieldset disabled>` mematikan seluruh isian
+ * di mode `lihat`. Bingkai bawaan fieldset dibuang supaya tata letak sama
+ * persis di kedua mode; yang berbeda hanya dapat-tidaknya diisi.
+ * ------------------------------------------------------------------ */
+.treatyin .trin__mode {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* ---------------------------------------------------------------------
+ * TAB LIMITS PROPORSIONAL — tiga tingkat dari ekspor (`labelsLimitsProp.ts`).
+ * ------------------------------------------------------------------ */
+.treatyin .trin__limit-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 0 8px 14px;
+  border-left: 2px solid var(--border);
+}
+.treatyin .trin__limit-medan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4px 12px;
+  max-width: 640px;
+}
+.treatyin .trin__limit-medan .field {
+  flex: 1 1 200px;
+}
+.treatyin .trin__limit-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.treatyin .trin__limit-grid {
+  width: 100%;
+}
+.treatyin .trin__limit-hapus {
+  margin-left: 12px;
+}
+
+/* Angka rata kanan, digit tabular — sel grid Limits proporsional. */
+.treatyin .trin__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }

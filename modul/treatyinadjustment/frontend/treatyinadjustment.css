@@ -46,3 +46,269 @@
   color: var(--text-3);
   font-style: italic;
 }
+
+/* ---------------------------------------------------------------------
+ * Panel Attachment — tabel, spanduk, catatan, dan deret tombol.
+ *
+ * ⛔ Semua berakar `.treatyinadjustment`, dan NOL aturan baru masuk ke
+ * `inti/frontend/styles.css`. Dijaga `gaya.test.ts`.
+ * ------------------------------------------------------------------ */
+.treatyinadjustment .tria__tabel {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.treatyinadjustment .tria__tabel th,
+.treatyinadjustment .tria__tabel td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+/* Spanduk biru `Recommended safe substitute should be . or _`.
+   ⛔ Ia ATURAN nama berkas, bukan hiasan — ditegakkan di pintu masuk
+   (`services.NamaBerkasAman`), dan KEPUTUSAN §18 menetapkan ia tidak
+   berlaku surut atas 43 baris yang sudah tersimpan. */
+.treatyinadjustment .tria__spanduk {
+  display: block;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  font-size: 12px;
+}
+
+/* Catatan empat kategori yang kodenya belum dipastikan. SENGAJA tidak
+   redup: ia menyatakan ada kategori yang namanya tidak diketahui, dan itu
+   bukan keterangan sampingan. */
+.treatyinadjustment .tria__catatan {
+  display: block;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  font-size: 12px;
+}
+
+.treatyinadjustment .tria__aksi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0;
+}
+
+/* ---------------------------------------------------------------------
+ * Layar Adjustment — `Section/InputTreatyInAdjustment.xml`.
+ *
+ * ⛔ Bentuknya DITIRU dari `modul/treatyin/frontend/treatyin.css`
+ * (`.trin__dwikolom`, `.trin__belum`, `.trin__teks`, `.trin__radio`) supaya
+ * dua modul yang menampilkan form yang sama terlihat sama. Ditiru, bukan
+ * diimpor: gaya tiap modul berakar di kelasnya sendiri.
+ * ------------------------------------------------------------------ */
+
+/* Old Data ‖ New Data BERDAMPINGAN (@181268) — lama di kiri, baru di kanan.
+   Pada layar sempit keduanya bertumpuk, LAMA tetap di atas: urutan baca
+   yang sama dengan kiri-ke-kanan. */
+.treatyinadjustment .tria__bandingan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .treatyinadjustment .tria__bandingan {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.treatyinadjustment .tria__sisi {
+  min-width: 0;
+}
+/* Panel Old ditandai garis tepi redup — membedakan sisi tanpa warna baru,
+   dan TANPA mengubah angka di dalamnya: kedua panel memakai pemformat
+   yang sama, jadi beda yang terlihat hanya beda data. */
+.treatyinadjustment .tria__sisi--lama .panel__title {
+  border-left-color: var(--text-3);
+}
+
+/* Dua kolom yang mengalir sendiri — kolom kanan New LEBIH PANJANG. */
+.treatyinadjustment .tria__dwikolom {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+  align-items: start;
+}
+@media (max-width: 720px) {
+  .treatyinadjustment .tria__dwikolom {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.treatyinadjustment .tria__kolom {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Kepala mode detail. */
+.treatyinadjustment .tria__kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 24px;
+}
+.treatyinadjustment .tria__radio {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.treatyinadjustment .tria__radio label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.treatyinadjustment .tria__label-jenis {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+.treatyinadjustment .tria__centang {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0 8px;
+  color: var(--text);
+}
+
+/* Medan yang kuncinya TIDAK ADA di dokumen — ditandai, bukan kotak kosong.
+   Miring + --text-3 (5,20:1 terang, 5,66:1 gelap) seperti `.tria__redup`. */
+.treatyinadjustment .tria__tak-ada {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-3);
+}
+
+/* ⛔ Tanggal KOSONG tidak menampilkan `dd/mm/yyyy`. `<input type="date">`
+   kosong menggambar topeng isiannya; React menyinkronkan atribut `value`,
+   jadi `[value=""]` menangkap tepat yang kosong. Topengnya kembali saat
+   fokus — pemakai yang mengisi tetap melihat bentuk yang diminta.
+   Dipasang lewat CSS modul karena `FieldTanggal` milik inti. */
+.treatyinadjustment input[type="date"][value=""]:not(:focus) {
+  color: transparent;
+}
+.treatyinadjustment input[type="date"][value=""]:not(:focus)::-webkit-datetime-edit {
+  color: transparent;
+}
+
+/* Tab yang belum ada KODENYA — bertepi putus-putus, bukan `Kosong`. */
+.treatyinadjustment .tria__belum {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0;
+  padding: 24px 20px;
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.treatyinadjustment .tria__belum-judul {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.treatyinadjustment .tria__belum-petunjuk {
+  margin: 0 auto;
+  max-width: 460px;
+  font-size: 14px;
+  color: var(--text-3);
+}
+
+/* Tab satu teks panjang — Exclusions, Special Conditions. */
+.treatyinadjustment .tria__teks {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* Grid berspesifikasi dan nilai tunggal di bawahnya. */
+.treatyinadjustment .tria__grid {
+  margin-bottom: 12px;
+}
+.treatyinadjustment .tria__subjudul {
+  margin: 12px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+/* Angka rata kanan — digit satuan sejajar antar baris, dan antar panel. */
+.treatyinadjustment .tria__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.treatyinadjustment .tria__tabel td.tria__angka {
+  text-align: right;
+}
+.treatyinadjustment .tria__nilai {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+.treatyinadjustment .tria__nilai-label {
+  font-weight: 600;
+  color: var(--text-2);
+}
+.treatyinadjustment .tria__nilai-awalan {
+  color: var(--text-2);
+}
+.treatyinadjustment .tria__prorata {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+  margin: 4px 0 12px;
+  font-size: 13px;
+}
+
+/* Blok kerangka tab — butir mengalir sejajar (medan, label, tombol) dan
+   butir lebar (grid, blok anak, kotak "belum dibangun") mengambil satu
+   baris penuh. Urutannya urutan Section ekspor. */
+.treatyinadjustment .tria__blok {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 16px;
+  width: 100%;
+}
+.treatyinadjustment .tria__blok > .tria__grid,
+.treatyinadjustment .tria__blok > .tria__blok,
+.treatyinadjustment .tria__blok > .tria__belum,
+.treatyinadjustment .tria__blok > .tria__subjudul,
+.treatyinadjustment .tria__blok > .field--lebar {
+  flex-basis: 100%;
+}
+.treatyinadjustment .tria__blok > .field {
+  flex: 0 1 240px;
+  min-width: 160px;
+}
+/* Sel label ekspor (`Pro Rate:`, `/`, `%`, `Total ROL`). */
+.treatyinadjustment .tria__teks-sel {
+  padding-bottom: 10px;
+  font-size: 13px;
+  color: var(--text-2);
+}

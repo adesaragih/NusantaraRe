@@ -92,6 +92,12 @@ nol `INSERT` — menu datar 30-09-2026) saat modul mendapat layar pertamanya, di
 `backend/migrations/` modul ini sendiri — bentuk SQL-nya di `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`
 bab 6. Nomor selalu tiga digit.
 
+⚠️ **Dua pencabutan hidup di rentang ini**, dan keduanya mengikuti pola yang sama: berkas
+pencabutan BARU, bukan menghapus migrasi lama dari riwayat. `434_cabut_mata_uang.sql`
+([`KEPUTUSAN` §16](docs/KEPUTUSAN-PENYELARASAN-REPO.md)) dan `435_cabut_nilai_selisih.sql`
+([§19](docs/KEPUTUSAN-PENYELARASAN-REPO.md)) — yang kedua memindahkan tabelnya ke modul
+Adjustment, bukan membuangnya.
+
 ⚠️ **`backend/pemuat/jalankan.go` bertanda `//go:build ignore`, dan itu disengaja.** Ia `package
 main` yang memuat delapan tabel pendaratan ke POOLDATA, dijalankan dengan
 `go run modul/treatyin/backend/pemuat/jalankan.go`. Ia **tidak** dapat tinggal di `cmd/`:
@@ -118,6 +124,10 @@ dikutip dari sana, dan `TestPerilakuHapusSesuaiERD` mengadu ke-32 kunci asing de
 | `426_` | `VERSI_KONTRAK` → `NILAI_SELISIH`, `NILAI_SEBELUM_PRO_RATE` *(dua)* — `ERD.md` §2.6 |
 | `429_` | `BAGIAN` → `PENYEBARAN` · `DETAIL_PROPORSIONAL` → `PENYEBARAN` · `PENYEBARAN` → `RINCIAN_PENYEBARAN` · `RINCIAN_PENYEBARAN` → `NILAI_PENYEBARAN` *(empat)* — `ERD.md` §2.5 |
 | `430_` | `M_TREATYIN_INSTALLMENT` → `M_TREATYIN_INSTALLMENTITEM` *(satu)* — ⚠️ **bukan dari `ERD.md` §2**, lihat di bawah |
+| `437_` | delapan relasi antar tabel pendaratan anak *(delapan)* — ⚠️ **bukan dari `ERD.md` §2**, lihat di bawah |
+| `438_` | `T_TREATY_LIMIT_DETAIL` → `T_TREATY_LIMIT_AMOUNT` · `T_TREATY_SHARE` → `T_TREATY_SHARE_AMOUNT` · `T_TREATY_FAC_SHARE` → `T_TREATY_FAC_SHARE_AMOUNT` *(tiga)* — alasan yang sama dengan `437_` |
+| `439_` | `T_TREATY_LIMITS` → `T_TREATY_LIMIT_MEASURE` *(satu)* — alasan yang sama dengan `437_` |
+| `438_` | `T_TREATY_LIMIT_DETAIL` → `T_TREATY_LIMIT_AMOUNT` · `T_TREATY_SHARE` → `T_TREATY_SHARE_AMOUNT` · `T_TREATY_FAC_SHARE` → `T_TREATY_FAC_SHARE_AMOUNT` *(tiga)* — ⚠️ **bukan dari `ERD.md` §2**, sebab yang sama dengan `437_` |
 
 ⚠️ **Seluruhnya di SATU berkas, `420_perilaku_hapus_erd.sql`, dan itu disengaja.** Kaskadenya
 sempat disunting langsung ke migrasi `403`–`418`; sesudah pemilik proses menyatakan POOLDATA adalah
@@ -165,6 +175,30 @@ dapat dikutip untuknya. Yang mengikat adalah **bentuk datanya**: `InstallmentLis
 elemen `Installment`, dan rincian angsuran tanpa terminnya tidak berarti apa pun. Alasan yang sama
 sudah dipakai migrasi `424_` untuk pasangan `TERMIN` → `RINCIAN_ANGSURAN`, yang memodelkan dua
 tingkat yang sama persis.
+
+⛔ **Kaskade `437_` berdiri di atas alasan yang SAMA dengan `430_`, dan buktinya juga bukan dokumen.**
+Ketiga belas tabel yang `437_anak_treaty_in.sql` buat adalah tabel **pendaratan** tingkat kedua dan
+ketiga — ia mendaratkan larik yang hidup DI DALAM elemen larik lain di `M_TREATY_IN.JSONDATA`.
+Namanya dan induknya dikutip dari `Diagram-Skema-Tabel-TreatyIn-dan-EDM-v2.xlsx`, yang pemilik proses
+tetapkan 5 Oktober 2026 sebagai sumber nama tabel modul ini; `ERD.md` §2 tidak memuat satu baris pun
+untuknya, sebab ia menggambar entitas sistem lama, bukan bentuk dokumennya.
+
+Yang mengikat adalah **bentuk datanya**, persis seperti `430_` dan `424_`: `Detail[]` hidup di dalam
+elemen `Limits[]`, `COBList[]` di dalam elemen `Detail[]`, dan sebuah kelas bisnis tanpa detail
+limitnya tidak berarti apa pun. Kedelapan relasinya:
+
+⛔ Daftarnya ditulis sebagai butir, **bukan tabel** — pembaca bab ini (`kaskadePerModul`)
+mengurai setiap tabel markdown di bawah judul ini sebagai daftar awalan berkas, dan tabel kedua di
+sini akan dibacanya sebagai awalan yang cacat.
+
+- `T_TREATY_LIMITS` → `T_TREATY_LIMIT_DETAIL`, `T_TREATY_LIMIT_GROUP`
+- `T_TREATY_LIMIT_DETAIL` → `T_TREATY_LIMIT_COB`, `T_TREATY_LIMIT_ACHIEVEMENT`
+- `T_TREATY_LIMIT_GROUP` → `T_TREATY_LIMIT_GROUP_COB`
+- `T_TREATY_SHARE` → `T_TREATY_SHARE_SPREADING`, `T_TREATY_SHARE_DEDUCTION`
+- `T_TREATY_FAC_SHARE` → `T_TREATY_FAC_SHARE_DEDUCTION`
+
+⚠️ Dan batasnya sama pula: dari kontrak ke tabel **tingkat pertama** `437_` tidak memasang kunci
+asing, dengan sebab yang dinyatakan di alinea berikut. `ikut hapus` di sana dijalankan pemuat.
 
 ⚠️ **Dari kontrak ke kedelapan tabel, `ikut hapus` TIDAK dijalankan basis data.** `MASTERID` bukan
 kunci asing, sebab `POOLDATA.TREATY_IN` tidak punya kunci utama maupun `UNIQUE` pada `ID` — diukur

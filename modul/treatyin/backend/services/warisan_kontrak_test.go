@@ -75,15 +75,24 @@ func TestBacaWarisanJSONLengkap(t *testing.T) {
 		t.Fatalf("mau diterima, dapat %v", err)
 	}
 	for _, p := range []struct{ nama, dapat, mau string }{
-		{"Bordeaux", k.Bordereaux, "reporting"},
+		// ⭐ LABEL, bukan nilai tersimpan — gambar 01 dokumen desain
+		// memperlihatkan `reporting` tampil sebagai "Reporting" dan
+		// `underwriting` sebagai "Underwriting Year".
+		{"Bordeaux", k.Bordereaux, "Reporting"},
 		{"BordereauxNote", k.BordereauxCatatan, "Not Reporting"},
-		{"AccountingMode", k.CaraPembukuan, "underwriting"},
+		{"AccountingMode", k.CaraPembukuan, "Underwriting Year"},
 		{"ContractRefNo", k.NomorRujukan, "N0XM000221"},
 		{"TreatyLeader", k.PemimpinTreaty, "false"},
 		// ⭐ Terjemahan yang SAMA dengan layar daftar — satu penerjemah.
 		{"sifat proporsi", k.SifatProporsi, "Non Proportional"},
-		{"tanggal mulai", k.TanggalMulai, "01/01/19"},
-		{"tanggal berakhir", k.TanggalBerakhir, "31/12/19"},
+		// ⛔ MEDAN KEPALA — empat digit tahun. Gambar 01:
+		// `Commencement 01/01/2025`, sementara grid di layar yang sama
+		// berbunyi `01/01/25`.
+		{"tanggal mulai", k.TanggalMulai, "01/01/2019"},
+		{"tanggal berakhir", k.TanggalBerakhir, "31/12/2019"},
+		// ⚠️ Nilai TERSIMPAN tetap terbawa — jalur tulis memerlukannya.
+		{"Bordeaux asli", k.BordereauxAsli, "reporting"},
+		{"AccountingMode asli", k.CaraPembukuanAsli, "underwriting"},
 	} {
 		if p.dapat != p.mau {
 			t.Errorf("%s = %q, mau %q", p.nama, p.dapat, p.mau)

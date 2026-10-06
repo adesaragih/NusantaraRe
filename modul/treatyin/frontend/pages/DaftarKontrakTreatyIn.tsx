@@ -23,6 +23,7 @@ import { useEffect, useState } from 'react'
 import { Gagal, Halaman, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { ambilDaftarWarisan, type BarisDaftarWarisan } from '../api'
 import { DAFTAR_KONTRAK, KOLOM_DAFTAR } from '../labels'
+import type { ModeForm } from '../mode'
 
 /**
  * Tombol aksi sebuah baris, dan susunannya bergantung KEADAAN barisnya.
@@ -37,6 +38,17 @@ export function aksiUntuk(keadaan: string): readonly string[] {
     return [DAFTAR_KONTRAK.lihat, DAFTAR_KONTRAK.salin, DAFTAR_KONTRAK.revisi]
   }
   return [DAFTAR_KONTRAK.edit, DAFTAR_KONTRAK.lihat]
+}
+
+/**
+ * Mode form yang dibuka sebuah tombol aksi baris.
+ *
+ * ⭐ `Edit` → `ubah` (seluruh fungsi form hidup), `View` → `lihat`.
+ * `Copy`/`Revision` membuat kontrak BARU dari yang ada — alur itu belum
+ * dibangun, jadi keduanya membuka kontrak sumbernya dalam mode `lihat`.
+ */
+export function modeUntuk(aksi: string): ModeForm {
+  return aksi === DAFTAR_KONTRAK.edit ? 'ubah' : 'lihat'
 }
 
 /**
@@ -92,7 +104,7 @@ export interface DaftarKontrakProps {
    * ⛔ Pengenalnya TEKS. `TREATY_IN.ID` adalah `VARCHAR2(100)`, dan ke-1.854
    * nilainya kebetulan berupa angka tujuh digit — kebetulan bukan jaminan.
    */
-  onBuka: (id: string) => void
+  onBuka: (id: string, mode: ModeForm) => void
   /** Membuka form kosong — tombol `Add`. */
   onTambah: () => void
 }
@@ -263,7 +275,7 @@ export default function DaftarKontrakTreatyIn({ onBuka, onTambah }: DaftarKontra
                         type="button"
                         className="btn btn--ghost btn--sm"
                         onClick={() => {
-                          onBuka(b.id)
+                          onBuka(b.id, modeUntuk(a))
                         }}
                       >
                         {a}
@@ -277,21 +289,6 @@ export default function DaftarKontrakTreatyIn({ onBuka, onTambah }: DaftarKontra
         </div>
       </section>
 
-      {/* ⛔ KETERANGAN ASAL-USUL DILIPAT, BUKAN DIBUANG.
-          Keempat kalimat ini benar dan berguna — dari mana barisnya dibaca,
-          kenapa "Position To" sering kosong, kenapa Ceding berupa nama di
-          sini dan pengenal di model baru. Tetapi sebagai empat baris prosa
-          padat di bawah tabel, ia terbaca sebagai catatan rilis dan memakan
-          layar yang isinya data. Dilipat: yang mencarinya menemukannya,
-          yang tidak tidak terganggu. */}
-      <details className="trin__kaki-lipat">
-        <summary>{DAFTAR_KONTRAK.kakiJudul}</summary>
-        <p className="trin__kaki">{DAFTAR_KONTRAK.catatanSumber}</p>
-        <p className="trin__kaki">
-          {DAFTAR_KONTRAK.keterangan} {DAFTAR_KONTRAK.catatanPosisiKe}{' '}
-          {DAFTAR_KONTRAK.catatanNama}
-        </p>
-      </details>
-    </div>
+          </div>
   )
 }

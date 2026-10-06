@@ -1,5 +1,24 @@
 # Pemetaan `M_TREATY_IN2` → empat tab, kolom demi kolom
 
+> ## ⛔⛔ BERKAS INI CATATAN SEJARAH, 5 Oktober 2026
+>
+> **`M_TREATY_IN2` DICABUT sebagai sumber.** Keempat tab — Limits · Share · Event Limits ·
+> RNM Share — kini dibaca dari **`M_TREATY_IN.JSONDATA`**, satu-satunya sumber isi kontrak.
+> Keputusan pemilik proses; penjaga `TestNolKueriMTreatyIn2` menolak kueri baru ke tabel ini.
+>
+> **Berkas ini TIDAK dihapus**, dan sebabnya dua:
+>
+> 1. Ia memuat pengukuran ke-41 kolom yang masih dipakai untuk menafsirkan data lama.
+> 2. Pemetaan di sini menjadi **bahan bukti** bagi pemetaan jalur dokumen yang
+>    menggantikannya — nilai tiap kolom diadu dengan nilai tiap jalur, dan hasilnya tercatat di
+>    `repository/warisan_layer_dokumen.go`.
+>
+> ⭐ Satu dugaan di berkas ini **TERJAWAB** oleh pengaduan itu: `CEDANT_RETENTION` ↔
+> `.Deductible`, yang §5 di bawah beri keyakinan **51%**, cocok **70,6%** atas 1.340 kontrak —
+> dan gambar `30` dokumen desain memberi kolom `Deductible ( IDR )` dengan nama itu di layar.
+>
+> ⚠️ Tabelnya **tetap ada** di Oracle (7.281 baris) dan **tetap terlarang disentuh**.
+
 **3 Oktober 2026.** Empat tab — **Limits · Share · Event Limits · RNM Share** — dibaca dari satu
 tabel warisan. **Nol tabel baru, nol pemuatan.**
 

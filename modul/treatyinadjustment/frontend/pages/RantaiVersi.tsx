@@ -33,7 +33,17 @@ function Redup({ teks }: { teks: string }) {
   return <span className="tria__redup">{teks}</span>
 }
 
-export default function RantaiVersi() {
+/**
+ * ⛔ `onPilihWarisan` melaporkan NOMOR KONTRAK WARISAN, bukan `id` model
+ * baru. `M_ATTACHMENTTREATY_2.TREATYID` dan `T_VIEW_COMMENT.MASTERID`
+ * keduanya pengenal sistem lama bertipe teks; mengirim `id` ke sana
+ * mengembalikan nol baris tanpa satu pun galat.
+ */
+export interface RantaiVersiProps {
+  onPilihWarisan?: (nomorWarisan: string) => void
+}
+
+export default function RantaiVersi({ onPilihWarisan }: RantaiVersiProps = {}) {
   const [kontrak, setKontrak] = useState<Kontrak[] | null>(null)
   const [pilih, setPilih] = useState('')
   const [versi, setVersi] = useState<Versi[] | null>(null)
@@ -89,7 +99,14 @@ export default function RantaiVersi() {
             <Pilih
               label={RANTAI_VERSI.pilihKontrak}
               value={pilih}
-              onChange={setPilih}
+              onChange={(v) => {
+                setPilih(v)
+                // ⭐ Satu pemilih, dua layar. Membangun daftar kontrak
+                // warisan KEDUA akan melahirkan dua kebenaran tentang
+                // kontrak mana yang ada.
+                const dipilih = kontrak.find((k) => String(k.id) === v)
+                onPilihWarisan?.(dipilih?.nomorKontrakWarisan ?? '')
+              }}
               opsi={kontrak.map((k) => ({ value: String(k.id), label: labelKontrak(k) }))}
             />
           </div>

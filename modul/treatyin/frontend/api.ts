@@ -146,6 +146,23 @@ export interface KontrakWarisan {
   bordereaux: string
   bordereauxCatatan: string
   caraPembukuan: string
+  /** Nilai TERSIMPAN di balik label — jalur tulis memerlukannya. */
+  caraPembukuanAsli: string
+  bordereauxAsli: string
+  caraPembukuanNonPropAsli: string
+  /**
+   * ⛔ `AccountingModeNonProp` — properti KEDUA, bukan medan yang sama.
+   * Cabang non-proporsional membaca yang ini; nilainya `loss` / `risk`,
+   * bukan `underwriting` / `accounting`.
+   */
+  caraPembukuanNonProp: string
+  /**
+   * ⭐ Tiga nilai yang memutuskan TAB MANA yang dirender, apa adanya dari
+   * dokumen. Kosong berarti kuncinya tidak ada, dan itu BUKAN `false`.
+   */
+  retroBerganda: string
+  edmState: string
+  edmJenisMaterial: string
   nomorRujukan: string
   pemimpinTreaty: string
   adaDiJson: Record<string, boolean>
@@ -168,6 +185,18 @@ export interface KontrakWarisan {
   /** Empat tab berikutnya — dari tabel pendaratan yang sama. */
   egnpi: BarisEgnpiWarisan[]
   retensi: BarisRetensiWarisan[]
+  /**
+   * ⭐ Panel `Total Retention Amount` — DITURUNKAN dari `retensi` oleh
+   * services, menurut `Activity/TreatyInNPSetTotal.xml` cabang
+   * `param.type=retention`: jumlah `Amount` per mata uang, berurut
+   * kemunculan pertama.
+   */
+  totalRetensi: BarisTotalRetensiWarisan[]
+  /**
+   * ⭐ Panel `Existing Policy for Master ID` — kanan atas, KEDUA cabang
+   * (gambar 01 dan 26 dokumen desain).
+   */
+  polisProduksi: BarisPolisProduksi[]
   angsuran: BarisAngsuranWarisan[]
   catatan: BarisCatatanWarisan[]
 
@@ -182,6 +211,10 @@ export interface KontrakWarisan {
    * tidak punya limit"*. Layar menyatakan bedanya lewat petunjuk kosong.
    */
   layer: BarisLayerWarisan[]
+  /** POHON tab Limits proporsional — `Limits[] → Detail[] → daftar`, apa adanya. */
+  limitsPohon: SimpulLimit[]
+  /** Pilihan dropdown kepala: nilai TERSIMPAN ↔ label tampil. */
+  opsiKepala: OpsiKepala
 
   /** Tab Co-Ins Scale — 186 dari 1.854 kontrak, 702 baris. */
   skalaKoasuransi: BarisSkalaKoasuransiWarisan[]
@@ -192,6 +225,40 @@ export interface KontrakWarisan {
    */
   pengecualian: TabTeksWarisan
   syaratKhusus: TabTeksWarisan
+
+  /**
+   * Panel Attachment — dari `M_ATTACHMENTTREATY_2`, tabel WARISAN 43 baris.
+   * Nol tabel baru.
+   */
+  lampiran: BarisLampiranWarisan[]
+  kategoriLampiran: BarisKategoriLampiran[]
+}
+
+/** Satu berkas yang terlampir pada kontrak ini. */
+export interface BarisLampiranWarisan {
+  id: string
+  kodeKategori: string
+  namaKategori: string
+  namaBerkas: string
+  jenisMime: string
+  idSimpanan: string
+  diunggah: string
+  pengunggah: string
+}
+
+/**
+ * Satu baris panel Attachment: Category + Count.
+ *
+ * ⛔ `dipastikan` menyatakan apakah pasangan kode↔nama ini TERBUKTI. Empat
+ * kode (`00003` `00004` `00008` `00009`) punya nol baris dan namanya tidak
+ * ada di korpus; layar menandainya alih-alih menebak, sebab berkas yang
+ * mendarat di kategori yang salah baru ketahuan bertahun kemudian.
+ */
+export interface BarisKategoriLampiran {
+  kode: string
+  nama: string
+  cacah: number
+  dipastikan: boolean
 }
 
 /**
@@ -225,6 +292,11 @@ export interface BarisLayerWarisan {
   idAsalBisnis: string
   asalBisnis: string
   kelompokTreaty: string
+  /**
+   * ⭐ Tingkat KETIGA pohon tab Limits — `Detail[].COBList[]`.
+   * Larik kosong berarti treaty group itu memang nol kelas bisnis.
+   */
+  kelasBisnis: string[]
   namaKontrak: string
   tanggalMulai: string
   tanggalBerakhir: string
@@ -248,6 +320,17 @@ export interface BarisLayerWarisan {
   riogr: string
   persenBrokerage: string
   gempa: string
+  /**
+   * ⭐ Tiga batas Event Limits yang `M_TREATY_IN2` tidak punya, beserta
+   * keempat mata uangnya — gambar 28 dokumen desain.
+   */
+  batasRSMD: string
+  batasBanjirJab: string
+  batasBanjirNas: string
+  mataUangRSMD: string
+  mataUangGempa: string
+  mataUangBanjirJab: string
+  mataUangBanjirNas: string
   rnmShare: string
   mataUangLimit: string
   liabilityRNM: string
@@ -279,6 +362,32 @@ export interface BarisEgnpiWarisan {
   keterangan: string
   proporsi: string
   kelompokTreaty: string
+}
+
+/**
+ * Satu baris panel `Existing Policy for Master ID`.
+ *
+ * ⛔ Dari `TREATYINPRODUCTION` lewat SQL rule
+ * `FetchTreatyInProductionUsingNooffer`, dicocokkan atas TUJUH aksara
+ * pertama `NOOFFER`.
+ */
+export interface BarisPolisProduksi {
+  nomorPolis: string
+  pegaID: string
+  kuartal: string
+  tahunKuartal: string
+}
+
+/**
+ * Satu baris panel `Total Retention Amount`.
+ *
+ * ⛔ TURUNAN — nol kolom, nol kunci JSON, nol tabel memuatnya.
+ */
+export interface BarisTotalRetensiWarisan {
+  /** Kolom pertama panel, yang judulnya adalah nama panelnya. */
+  mataUang: string
+  /** Kolom `Value` — jumlah, sebagai teks. */
+  nilai: string
 }
 
 /** Satu baris tab Maximum Retention. */
@@ -325,6 +434,40 @@ export interface BarisPeriodeWarisan {
   jatuhTempoKirim: string
   jatuhTempoKonfirmasi: string
   jatuhTempoBayar: string
+  /**
+   * Bentuk TERSIMPAN (`YYYYMMDD`, tanggal WIB) — untuk KOTAK tanggal. Medan
+   * di atas bentuk tampil, untuk dibaca. Terjemahan tampil yang dimasukkan
+   * ke kotak tanggal membuat kotaknya kosong.
+   */
+  tanggalAwalAsli: string
+  jatuhTempoKirimAsli: string
+  jatuhTempoKonfirmasiAsli: string
+  jatuhTempoBayarAsli: string
+}
+
+/** Isian kepala tab Reporting Period — dikirim tombol Apply. */
+export interface MasukanPeriodePelaporan {
+  mulai: string
+  akhir: string
+  periode: string
+  interval: string
+  penyerahan: string
+  konfirmasi: string
+  pelunasan: string
+}
+
+/** Jawaban Apply: baris baru, atau pesan per medan (`Property-Set-Messages`). */
+export interface HasilPeriodePelaporan {
+  baris: BarisPeriodeWarisan[]
+  galat: Record<string, string>
+}
+
+/**
+ * `POST /api/treaty-in/hitung/periode-pelaporan` — tombol Apply,
+ * `Activity/TreatyInSetReport.xml`. Rumusnya di services, bukan di sini.
+ */
+export async function hitungPeriodePelaporan(m: MasukanPeriodePelaporan): Promise<HasilPeriodePelaporan> {
+  return minta<HasilPeriodePelaporan>(`${PREFIX_TREATYIN}/hitung/periode-pelaporan`, { metode: 'POST', badan: m })
 }
 
 /** Satu baris tab Portfolio — dari `Portfolio`, 152/300. */
@@ -345,4 +488,92 @@ export interface BarisAkumulasiWarisan {
 /** `GET /api/treaty-in/kontrak-warisan/{id}` - satu kontrak warisan. */
 export async function ambilKontrakWarisan(id: string): Promise<KontrakWarisan> {
   return minta<KontrakWarisan>(`${PREFIX_TREATYIN}/kontrak-warisan/${encodeURIComponent(id)}`)
+}
+
+// ===========================================================================
+// Isi pemilih "Choose Ceding" dan "Choose Source of Business"
+//
+// ⛔ Keduanya KATALOG — nol parameter kontrak. Isinya sama untuk setiap
+// kontrak, jadi ia diambil sekali ketika pemilihnya dibuka, bukan ikut
+// menumpang pada pembacaan kontrak.
+// ===========================================================================
+
+/** Satu baris pemilih: pengenal yang DITULIS, beserta namanya. */
+export interface PilihanWarisan {
+  id: string
+  nama: string
+  /**
+   * ⚠️ Benar bila nama ini dipakai LEBIH DARI SATU pengenal. Terukur
+   * 4 Oktober 2026: `REASURANSI MAIPARK INDONESIA` punya 3, tujuh nama lain
+   * punya 2. Layar WAJIB menandainya — pemilih yang menampilkan dua baris
+   * bernama sama tanpa penjelasan terbaca sebagai kesalahan layar, dan yang
+   * memilih akan menebak.
+   */
+  kembar: boolean
+}
+
+/** `GET /api/treaty-in/warisan/cedant` - 131 baris, urut nama lalu pengenal. */
+export async function ambilDaftarCedant(): Promise<PilihanWarisan[]> {
+  return minta<PilihanWarisan[]>(`${PREFIX_TREATYIN}/warisan/cedant`)
+}
+
+/** `GET /api/treaty-in/warisan/asal-bisnis` - 96 baris, urutan sama. */
+export async function ambilDaftarAsalBisnis(): Promise<PilihanWarisan[]> {
+  return minta<PilihanWarisan[]>(`${PREFIX_TREATYIN}/warisan/asal-bisnis`)
+}
+
+/**
+ * `GET /api/treaty-in/warisan/jenis-treaty` — isi dropdown `Treaty Type` tab
+ * Limits: `REINSURANCETYPE` lewat `BrowseReinsuranceType_RD` (Flag `active`,
+ * ID menurun). `id` = `.TreatyTypeID`, `nama` = `.Note`.
+ */
+export async function ambilDaftarJenisTreaty(): Promise<PilihanWarisan[]> {
+  return minta<PilihanWarisan[]>(`${PREFIX_TREATYIN}/warisan/jenis-treaty`)
+}
+
+/**
+ * Isi SELURUH dropdown tab Limits proporsional — tiga RD Pega:
+ * `jenisTreaty` (`BrowseReinsuranceType_RD`, REINSURANCETYPE),
+ * `kelompokTreaty` (`BrowseTreatyGroup_RD`, TREATYGROUP: `id` = `.ID`,
+ * `nama` = `.TreatyGroupName`), `mataUang` (`BrowseCurrencyTreatyIn_RD` /
+ * `BrowseCurrency_RD`, CURRENCY tanpa ITL: `id` = `.ID`, `nama` = `.Currency`).
+ */
+export interface OpsiLimits {
+  jenisTreaty: PilihanWarisan[]
+  kelompokTreaty: PilihanWarisan[]
+  mataUang: PilihanWarisan[]
+}
+
+/** `GET /api/treaty-in/warisan/opsi-limits`. */
+export async function ambilOpsiLimits(): Promise<OpsiLimits> {
+  return minta<OpsiLimits>(`${PREFIX_TREATYIN}/warisan/opsi-limits`)
+}
+
+/**
+ * Satu simpul pohon Limits: medan TEKS apa adanya, atau larik simpul.
+ *
+ * ⛔ Kunci yang TIDAK ADA di dokumen tidak muncul — `kunci in simpul` yang
+ * salah berarti "tidak ada di sistem lama", bukan "kosong".
+ */
+export interface SimpulLimit {
+  [kunci: string]: string | SimpulLimit[]
+}
+
+/** Satu pilihan dropdown — nilai TERSIMPAN dan labelnya. */
+export interface OpsiPilihan {
+  value: string
+  label: string
+}
+
+/** Pilihan ketiga dropdown kepala. Labelnya disusun services, bukan di sini. */
+export interface OpsiKepala {
+  bordereaux: OpsiPilihan[]
+  caraPembukuan: OpsiPilihan[]
+  caraPembukuanNonProp: OpsiPilihan[]
+  periodePelaporan: OpsiPilihan[]
+}
+
+/** `GET /api/treaty-in/warisan/opsi-kepala` — juga untuk kontrak BARU. */
+export async function ambilOpsiKepala(): Promise<OpsiKepala> {
+  return minta<OpsiKepala>(`${PREFIX_TREATYIN}/warisan/opsi-kepala`)
 }

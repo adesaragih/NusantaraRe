@@ -109,11 +109,11 @@ func TestButirAngsuranDiratakanBerurut(t *testing.T) {
 		t.Fatal(err)
 	}
 	cacah := repository.CacahLarik(doc)
-	if cacah["M_TREATYIN_INSTALLMENT"] != 2 {
-		t.Errorf("induk angsuran %d, mau 2", cacah["M_TREATYIN_INSTALLMENT"])
+	if cacah["T_TREATY_INSTALLMENT"] != 2 {
+		t.Errorf("induk angsuran %d, mau 2", cacah["T_TREATY_INSTALLMENT"])
 	}
-	if cacah["M_TREATYIN_INSTALLMENTITEM"] != 3 {
-		t.Errorf("butir angsuran %d, mau 3", cacah["M_TREATYIN_INSTALLMENTITEM"])
+	if cacah["T_TREATY_INSTALLMENT_ITEM"] != 3 {
+		t.Errorf("butir angsuran %d, mau 3", cacah["T_TREATY_INSTALLMENT_ITEM"])
 	}
 }
 
@@ -127,7 +127,7 @@ func TestKunciBaruDilaporkanBukanDitelan(t *testing.T) {
 		t.Fatal(err)
 	}
 	asing := repository.KunciTakTerpetakan(doc)
-	daftar, ada := asing["M_TREATYIN_RETENTION"]
+	daftar, ada := asing["T_TREATY_RETENTION"]
 	if !ada {
 		t.Fatalf("kunci baru tidak dilaporkan; yang dilaporkan: %v", asing)
 	}
@@ -187,8 +187,9 @@ func TestPetaPendaratanSejajarDanUnik(t *testing.T) {
 			}
 		}
 	}
-	if len(repository.PetaPendaratan) != 9 {
-		t.Errorf("%d tabel pendaratan, mau 9", len(repository.PetaPendaratan))
+	// 22 + 3 (migrasi 438) + 4 (migrasi 439) = 29.
+	if len(repository.PetaPendaratan) != 29 {
+		t.Errorf("%d tabel pendaratan, mau 29", len(repository.PetaPendaratan))
 	}
 }
 
@@ -197,10 +198,10 @@ func TestPetaPendaratanSejajarDanUnik(t *testing.T) {
 // angsuran tanpa satu pun galat.
 func TestIndeksAngsuranMenunjukTabelYangBenar(t *testing.T) {
 	p := repository.PetaPendaratan
-	if p[repository.IndeksAngsuran].Tabel != "M_TREATYIN_INSTALLMENT" {
+	if p[repository.IndeksAngsuran].Tabel != "T_TREATY_INSTALLMENT" {
 		t.Errorf("IndeksAngsuran menunjuk %s", p[repository.IndeksAngsuran].Tabel)
 	}
-	if p[repository.IndeksButirAngsuran].Tabel != "M_TREATYIN_INSTALLMENTITEM" {
+	if p[repository.IndeksButirAngsuran].Tabel != "T_TREATY_INSTALLMENT_ITEM" {
 		t.Errorf("IndeksButirAngsuran menunjuk %s", p[repository.IndeksButirAngsuran].Tabel)
 	}
 	// Anaknya SESUDAH induknya; pemuat bersandar pada urutan itu.
@@ -219,6 +220,211 @@ func TestKunciDateDipetakanKeTanggal(t *testing.T) {
 			if p.Kolom[j] == "DATE" {
 				t.Errorf("%s: kolom DATE kata cadangan Oracle (ORA-00923)", p.Tabel)
 			}
+		}
+	}
+}
+
+// ⛔ `CacahLarik` HARUS mengenal KEEMPAT bentuk yang `MuatKontrak` tangani.
+//
+// Ronde 6 Oktober 2026 menemukannya buta terhadap dua di antaranya —
+// `LarikGabung` dan `Akar`, yaitu sembilan tabel migrasi 438/439. Kebutaan
+// itu TIDAK memunculkan galat: rekonsiliasi hanya melaporkan "dokumen
+// memberi 0", dan selisihnya terbaca sebagai pemuat yang rusak.
+//
+// ⚠️ Dokumen ujinya DIBANGKITKAN DARI PETA, bukan ditulis tangan. Dokumen
+// tulisan tangan berhenti menyebut tabel ke-31 pada hari tabel itu lahir,
+// dan berhentinya tidak terlihat.
+func TestCacahLarikMengenalKeempatBentuk(t *testing.T) {
+	// Satu elemen berisi apa pun — isinya tidak dibaca, hanya dicacah.
+	el := func() map[string]any { return map[string]any{"Currency": "IDR"} }
+
+	// Dibangun dua lintasan: induk lebih dulu, supaya elemen anak dapat
+	// disisipkan ke dalam elemen induk yang sudah ada.
+	doc := map[string]any{}
+	indukEl := map[string]map[string]any{}
+	for _, p := range repository.PetaPendaratan {
+		if p.Induk != "" || p.Akar {
+			continue
+		}
+		e := el()
+		indukEl[p.Tabel] = e
+		switch {
+		case len(p.LarikGabung) > 0:
+			for _, nama := range p.LarikGabung {
+				doc[nama] = []any{el()}
+			}
+			// Elemen pertama larik gabung pertama menjadi wakil induknya.
+			indukEl[p.Tabel] = doc[p.LarikGabung[0]].([]any)[0].(map[string]any)
+		default:
+			doc[p.Larik] = []any{e}
+		}
+	}
+	for _, p := range repository.PetaPendaratan {
+		if p.Induk == "" {
+			continue
+		}
+		ind, ada := indukEl[p.Induk]
+		if !ada {
+			t.Fatalf("%s berinduk %s yang tidak ada di peta", p.Tabel, p.Induk)
+		}
+		e := el()
+		if len(p.LarikGabung) > 0 {
+			for _, nama := range p.LarikGabung {
+				ind[nama] = []any{el()}
+			}
+			e = ind[p.LarikGabung[0]].([]any)[0].(map[string]any)
+		} else {
+			ind[p.KunciAnak] = []any{e}
+		}
+		indukEl[p.Tabel] = e
+	}
+
+	cacah := repository.CacahLarik(doc)
+	for _, p := range repository.PetaPendaratan {
+		mau := 1
+		if len(p.LarikGabung) > 0 {
+			mau = len(p.LarikGabung)
+		}
+		if cacah[p.Tabel] != mau {
+			t.Errorf("%s: CacahLarik %d, dokumen uji memberi %d — "+
+				"bentuk %s tidak dikenali", p.Tabel, cacah[p.Tabel], mau, bentuk(p))
+		}
+	}
+}
+
+// bentuk menamai salah satu dari keempat bentuk pendaratan, untuk pesan galat.
+func bentuk(p repository.Pendaratan) string {
+	switch {
+	case p.Akar:
+		return "Akar"
+	case p.Induk == "" && len(p.LarikGabung) > 0:
+		return "LarikGabung akar"
+	case p.Induk == "":
+		return "Larik akar"
+	case len(p.LarikGabung) > 0:
+		return "LarikGabung anak"
+	default:
+		return "Larik anak"
+	}
+}
+
+// ⛔ `KunciTakTerpetakan` TIDAK boleh menyebut kunci yang menampung tabel
+// ANAK — itu larik, bukan kolom yang hilang.
+//
+// Sampai 6 Oktober 2026 ia mengecualikan SATU kunci anak
+// (`InstallmentList`) lewat tetapan tulisan tangan, sehingga ketiga belas
+// kunci anak lain dilaporkan asing pada hampir setiap dokumen. Daftar yang
+// selalu memuat belasan nama palsu membuat nama sungguhan — properti baru
+// dari Pega, yang justru menjadi alasan daftar ini ada — tidak terlihat.
+func TestKunciAnakBukanKunciAsing(t *testing.T) {
+	// Dokumen yang tiap tabel induknya memuat larik anaknya, dibangkitkan
+	// dari peta supaya tabel ke-30 tidak terlewat pada hari ia lahir.
+	doc := map[string]any{}
+	el := map[string]map[string]any{}
+	for _, p := range repository.PetaPendaratan {
+		if p.Induk != "" || p.Akar {
+			continue
+		}
+		e := map[string]any{}
+		if len(p.LarikGabung) > 0 {
+			for _, n := range p.LarikGabung {
+				doc[n] = []any{map[string]any{}}
+			}
+			e = doc[p.LarikGabung[0]].([]any)[0].(map[string]any)
+		} else {
+			doc[p.Larik] = []any{e}
+		}
+		el[p.Tabel] = e
+	}
+	for _, p := range repository.PetaPendaratan {
+		if p.Induk == "" {
+			continue
+		}
+		ind := el[p.Induk]
+		if ind == nil {
+			t.Fatalf("%s berinduk %s yang tidak ada", p.Tabel, p.Induk)
+		}
+		e := map[string]any{}
+		if len(p.LarikGabung) > 0 {
+			for _, n := range p.LarikGabung {
+				ind[n] = []any{map[string]any{}}
+			}
+			e = ind[p.LarikGabung[0]].([]any)[0].(map[string]any)
+		} else {
+			ind[p.KunciAnak] = []any{e}
+		}
+		el[p.Tabel] = e
+	}
+
+	asing := repository.KunciTakTerpetakan(doc)
+	for tabel, k := range asing {
+		t.Errorf("%s: %v dilaporkan asing, padahal dokumen uji HANYA memuat "+
+			"kunci anak dan larik tingkat pertama", tabel, k)
+	}
+}
+
+// ⭐ Dan penjaga yang SEBENARNYA tetap bekerja: kunci yang betul-betul baru
+// tetap dilaporkan, termasuk di dalam tabel ANAK — yang dulu tidak pernah
+// diperiksa sama sekali.
+func TestKunciBaruDiTabelAnakTetapDilaporkan(t *testing.T) {
+	doc, err := repository.UraiDokumen(
+		`{"Installment":[{"AmountTotal":"1","InstallmentList":[{"Installment":"1","KunciAnakYangBelumPernahAda":"x"}]}]}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	asing := repository.KunciTakTerpetakan(doc)
+	k := asing["T_TREATY_INSTALLMENT_ITEM"]
+	if len(k) != 1 || k[0] != "KunciAnakYangBelumPernahAda" {
+		t.Errorf("T_TREATY_INSTALLMENT_ITEM asing = %v, mau [KunciAnakYangBelumPernahAda]", k)
+	}
+	if len(asing["T_TREATY_INSTALLMENT"]) != 0 {
+		t.Errorf("induk ikut terlapor asing: %v", asing["T_TREATY_INSTALLMENT"])
+	}
+}
+
+// ⛔ Daftar kolom PEMBACA tidak boleh menyebut kolom yang peta tidak isi.
+//
+// `pendaratan_akar.go` memegang daftarnya SENDIRI (`kolomRevisi`,
+// `kolomTeksRevisi`) karena ia membedakan `VARCHAR2` dari `CLOB` — pembedaan
+// yang peta tidak punya. Dua daftar untuk satu tabel akan berselisih, dan
+// selisihnya DIAM dalam dua arah:
+//
+//   - kolom di pembaca yang TIDAK ada di peta -> `NULL` selamanya, sebab
+//     nol yang mengisinya; atau ORA-00904 bila kolomnya pun tak ada.
+//   - kolom di peta yang tidak ada di pembaca -> terisi di tabel tetapi
+//     tidak pernah sampai ke layar.
+//
+// ⚠️ Yang diuji hanya arah PERTAMA. Arah kedua SAH: peta boleh mendaratkan
+// kolom yang layar belum perlukan, dan menuntut keduanya sama akan memaksa
+// layar membaca kolom yang tidak ia pakai.
+func TestKolomRevisiAdaDiPeta(t *testing.T) {
+	var peta *repository.Pendaratan
+	for i := range repository.PetaPendaratan {
+		if repository.PetaPendaratan[i].Tabel == "T_TREATY_REVISION" {
+			peta = &repository.PetaPendaratan[i]
+			break
+		}
+	}
+	if peta == nil {
+		t.Fatal("T_TREATY_REVISION tidak ada di peta")
+	}
+	diPeta := map[string]string{} // KOLOM -> kunci dokumen
+	for i, k := range peta.Kolom {
+		diPeta[k] = peta.Kunci[i]
+	}
+	for _, p := range repository.KolomRevisiUntukUji() {
+		kunci, ada := diPeta[p[0]]
+		if !ada {
+			t.Errorf("pembaca menyebut kolom %s yang peta TIDAK isi — "+
+				"ia akan NULL selamanya", p[0])
+			continue
+		}
+		// ⭐ Ejaan dokumennya juga diadu: pembaca memakai ejaan itu sebagai
+		// KUNCI petanya, dan kunci yang meleset membuat medan hilang dari
+		// layar tanpa satu pun galat.
+		if kunci != p[1] {
+			t.Errorf("kolom %s: pembaca memakai ejaan %q, peta mengisinya dari %q",
+				p[0], p[1], kunci)
 		}
 	}
 }

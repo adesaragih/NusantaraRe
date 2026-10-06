@@ -12,6 +12,7 @@ import (
 
 	"nusantarare/modul/treatyin/backend/handlers"
 	"nusantarare/modul/treatyin/backend/models"
+	"nusantarare/modul/treatyin/backend/repository"
 	"nusantarare/modul/treatyin/backend/services"
 )
 
@@ -27,6 +28,10 @@ type gudangTiruan struct {
 	bukti models.BuktiArsip
 	// Layar daftar kontrak.
 	daftar []models.BarisDaftarKontrak
+	// Isi kedua pemilih "Choose …".
+	cedant      []models.PilihanWarisan
+	jenisTreaty []models.PilihanWarisan
+	asalBisnis  []models.PilihanWarisan
 	// Layar daftar WARISAN (`TREATY_IN`).
 	barisWarisan   []models.BarisDaftarWarisan
 	cacahWarisan   int
@@ -262,6 +267,12 @@ func (g gudangTiruan) BacaAkumulasi(_ context.Context, _ string) ([]models.Baris
 func (g gudangTiruan) BacaEgnpi(_ context.Context, _ string) ([]models.BarisEgnpiWarisan, error) {
 	return nil, nil
 }
+
+// Panel `Existing Policy for Master ID` — nol baris, keadaan gambar 01.
+func (g gudangTiruan) BacaPolisProduksi(_ context.Context, _ string) ([]models.BarisPolisProduksi, error) {
+	return nil, nil
+}
+
 func (g gudangTiruan) BacaRetensi(_ context.Context, _ string) ([]models.BarisRetensiWarisan, error) {
 	return nil, nil
 }
@@ -272,11 +283,50 @@ func (g gudangTiruan) BacaCatatan(_ context.Context, _ string) ([]models.BarisCa
 	return nil, nil
 }
 
-// Empat tab dari `M_TREATY_IN2` - satu seam untuk keempatnya.
-func (g gudangTiruan) BacaLayerWarisan(_ context.Context, _ string) ([]models.BarisLayerWarisan, error) {
-	return nil, nil
+// Isi kedua pemilih "Choose …" — katalog, nol ketergantungan kontrak.
+func (g gudangTiruan) BacaDaftarCedant(_ context.Context) ([]models.PilihanWarisan, error) {
+	return g.cedant, nil
+}
+func (g gudangTiruan) BacaDaftarAsalBisnis(_ context.Context) ([]models.PilihanWarisan, error) {
+	return g.asalBisnis, nil
+}
+func (g gudangTiruan) BacaDaftarJenisTreaty(_ context.Context) ([]models.PilihanWarisan, error) {
+	return g.jenisTreaty, nil
+}
+func (g gudangTiruan) BacaDaftarKelompokTreaty(_ context.Context) ([]models.PilihanWarisan, error) {
+	return g.jenisTreaty, nil
+}
+func (g gudangTiruan) BacaDaftarMataUangLimit(_ context.Context) ([]models.PilihanWarisan, error) {
+	return g.jenisTreaty, nil
 }
 
 func (g gudangTiruan) BacaSkalaKoasuransi(_ context.Context, _ string) ([]models.BarisSkalaKoasuransiWarisan, error) {
+	return nil, nil
+}
+
+// ⭐ Keempat tab dari TABEL PENDARATAN — keputusan 6 Oktober 2026.
+func (g gudangTiruan) BacaLayerPendaratan(_ context.Context, _ string) ([]models.BarisLayerWarisan, error) {
+	return nil, nil
+}
+
+func (g gudangTiruan) BacaPohonLimitsPendaratan(_ context.Context, _ string) ([]map[string]any, error) {
+	return nil, nil
+}
+
+// ⭐ Medan kepala dan grid Rate of Exchange — juga dari pendaratan.
+func (g gudangTiruan) BacaRevisiPendaratan(_ context.Context, _ string) (repository.RevisiPendaratan, error) {
+	return repository.RevisiPendaratan{}, nil
+}
+
+func (g gudangTiruan) BacaKursTahunan(_ context.Context, _ string) ([]models.BarisKursWarisan, error) {
+	return nil, nil
+}
+
+// Panel Attachment.
+func (g gudangTiruan) BacaLampiranKontrak(_ context.Context, _ string) ([]models.BarisLampiranWarisan, error) {
+	return nil, nil
+}
+
+func (g gudangTiruan) BacaKatalogKategoriLampiran(_ context.Context) (map[string]string, error) {
 	return nil, nil
 }

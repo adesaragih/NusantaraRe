@@ -27,31 +27,133 @@ import (
 // Cacah itu ditulis di sini supaya rekonsiliasi pemuat punya angka untuk
 // diadu — bukan sekadar "ada isinya".
 var tabelPendaratan = map[string]int{
-	"M_TREATYIN_REPORTINGPERIOD": 4548,
-	"M_TREATYIN_PORTFOLIO":       1925,
-	"M_TREATYIN_ACCUMULATION":    60,
-	"M_TREATYIN_EGNPI":           2298,
-	"M_TREATYIN_RETENTION":       2511,
-	"M_TREATYIN_INSTALLMENT":     796,
-	"M_TREATYIN_INSTALLMENTITEM": 3033,
-	"M_TREATYIN_COMMENT":         11365,
+	"T_TREATY_REPORTING_PERIOD": 4548,
+	"T_TREATY_PORTFOLIO":        1925,
+	"T_TREATY_ACCUMULATION":     60,
+	"T_TREATY_EGNPI":            2298,
+	"T_TREATY_RETENTION":        2511,
+	"T_TREATY_INSTALLMENT":      796,
+	"T_TREATY_INSTALLMENT_ITEM": 3033,
+	"T_VIEW_COMMENT":            11365,
 	// Tabel kesembilan - migrasi 432, tab Co-Ins Scale.
 	"M_TREATYIN_COINSCALE": 702,
+
+	// ⭐ Tiga belas anak dari migrasi 437 — cacah disapu dari 1.854 dokumen.
+	"T_TREATY_LIMITS":              4210,
+	"T_TREATY_SHARE":               2923,
+	"T_TREATY_RETRO_SHARE":         9,
+	"T_TREATY_FAC_SHARE":           12,
+	"T_TREATY_FAC_REINSURER":       15,
+	"T_TREATY_LIMIT_DETAIL":        2868,
+	"T_TREATY_LIMIT_GROUP":         8433,
+	"T_TREATY_SHARE_SPREADING":     5550,
+	"T_TREATY_SHARE_DEDUCTION":     2419,
+	"T_TREATY_FAC_SHARE_DEDUCTION": 12,
+	"T_TREATY_LIMIT_COB":           6547,
+	"T_TREATY_LIMIT_ACHIEVEMENT":   2031,
+	"T_TREATY_LIMIT_GROUP_COB":     15746,
+
+	// ⭐ Tiga tabel NILAI dari migrasi 438 — cacah disapu atas 1.855 dokumen.
+	"T_TREATY_LIMIT_AMOUNT":     11475,
+	"T_TREATY_SHARE_AMOUNT":     6097,
+	"T_TREATY_FAC_SHARE_AMOUNT": 24,
+
+	// ⭐ Lima tabel dari migrasi 439 — yang menutup larangan JSONDATA.
+	//
+	// ⭐ Ketiga NOL DIISI 6 Oktober 2026. Sapuan atas SELURUH 1.855 dokumen
+	// `M_TREATY_IN`, tanpa `ROWNUM` — penyebut yang SAMA dengan ke-27 entri
+	// lain di tabel ini, dan sapuan itu mengukur ulang ke-27-nya untuk
+	// membuktikannya (ke-27 cocok persis). Angka korpus `M_TREATY_IN_EDM`
+	// disebut di `repository/pendaratan_peta.go`, tidak dijumlahkan ke sini.
+	"T_TREATY_REVISION":      1855,
+	"T_TREATY_LIMIT_MEASURE": 8849,
+	"T_TREATY_LIMIT_SUMMARY": 2855,
+	"T_TREATY_TOTAL":         6395,
+}
+
+// Nama yang DIBUAT migrasi 430/432, untuk tiap nama yang dipakai hari ini.
+//
+// ⛔ Migrasi 430 dan 432 TIDAK disunting ketika nama tabelnya berganti; yang
+// mengganti migrasi 436, dan riwayat yang disunting berbohong tentang apa
+// yang pernah dijalankan. Akibatnya penjaga ini harus MENGIKUTI pergantian
+// nama, bukan mencari nama hari ini di dalam DDL yang membuatnya.
+var namaDDLPendaratan = map[string]string{
+	"T_TREATY_REPORTING_PERIOD": "M_TREATYIN_REPORTINGPERIOD",
+	"T_TREATY_PORTFOLIO":        "M_TREATYIN_PORTFOLIO",
+	"T_TREATY_ACCUMULATION":     "M_TREATYIN_ACCUMULATION",
+	"T_TREATY_EGNPI":            "M_TREATYIN_EGNPI",
+	"T_TREATY_RETENTION":        "M_TREATYIN_RETENTION",
+	"T_TREATY_INSTALLMENT":      "M_TREATYIN_INSTALLMENT",
+	"T_TREATY_INSTALLMENT_ITEM": "M_TREATYIN_INSTALLMENTITEM",
+	"T_VIEW_COMMENT":            "M_TREATYIN_COMMENT",
+	// ⚠️ Kesembilan TIDAK berganti nama: `Diagram-Skema-Tabel-TreatyIn-dan-
+	// EDM-v2.xlsx` nol padanan untuk Co-Ins Scale, disapu keenam lembarnya.
+	"M_TREATYIN_COINSCALE": "M_TREATYIN_COINSCALE",
+
+	// 437 membuatnya langsung dengan nama ini — nol pergantian nama.
+	"T_TREATY_LIMITS":              "T_TREATY_LIMITS",
+	"T_TREATY_SHARE":               "T_TREATY_SHARE",
+	"T_TREATY_RETRO_SHARE":         "T_TREATY_RETRO_SHARE",
+	"T_TREATY_FAC_SHARE":           "T_TREATY_FAC_SHARE",
+	"T_TREATY_FAC_REINSURER":       "T_TREATY_FAC_REINSURER",
+	"T_TREATY_LIMIT_DETAIL":        "T_TREATY_LIMIT_DETAIL",
+	"T_TREATY_LIMIT_GROUP":         "T_TREATY_LIMIT_GROUP",
+	"T_TREATY_SHARE_SPREADING":     "T_TREATY_SHARE_SPREADING",
+	"T_TREATY_SHARE_DEDUCTION":     "T_TREATY_SHARE_DEDUCTION",
+	"T_TREATY_FAC_SHARE_DEDUCTION": "T_TREATY_FAC_SHARE_DEDUCTION",
+	"T_TREATY_LIMIT_COB":           "T_TREATY_LIMIT_COB",
+	"T_TREATY_LIMIT_ACHIEVEMENT":   "T_TREATY_LIMIT_ACHIEVEMENT",
+	"T_TREATY_LIMIT_GROUP_COB":     "T_TREATY_LIMIT_GROUP_COB",
+
+	// 438 dan 439 juga membuatnya langsung dengan nama ini.
+	"T_TREATY_LIMIT_AMOUNT":     "T_TREATY_LIMIT_AMOUNT",
+	"T_TREATY_SHARE_AMOUNT":     "T_TREATY_SHARE_AMOUNT",
+	"T_TREATY_FAC_SHARE_AMOUNT": "T_TREATY_FAC_SHARE_AMOUNT",
+	"T_TREATY_REVISION":         "T_TREATY_REVISION",
+	"T_TREATY_LIMIT_MEASURE":    "T_TREATY_LIMIT_MEASURE",
+	"T_TREATY_LIMIT_SUMMARY":    "T_TREATY_LIMIT_SUMMARY",
+	"T_TREATY_TOTAL":            "T_TREATY_TOTAL",
 }
 
 func TestSembilanTabelPendaratanAdaDanBerkunciUtama(t *testing.T) {
 	sql := gabungan(t)
 	for nama := range tabelPendaratan {
-		if !strings.Contains(sql, "CREATE TABLE {skema}."+nama+" (") {
-			t.Errorf("tabel pendaratan %s tidak dibuat migrasi mana pun", nama)
+		ddl, ok := namaDDLPendaratan[nama]
+		if !ok {
+			t.Errorf("tabel pendaratan %s tidak punya nama DDL-nya di penjaga ini", nama)
 			continue
 		}
-		pendek := strings.TrimPrefix(nama, "M_TREATYIN_")
-		if !strings.Contains(sql, "CONSTRAINT PK_MTI_"+pendek+" PRIMARY KEY (ID)") {
-			t.Errorf("INV-01: %s tanpa kunci utama PK_MTI_%s", nama, pendek)
+		if !strings.Contains(sql, "CREATE TABLE {skema}."+ddl+" (") {
+			t.Errorf("tabel pendaratan %s (DDL %s) tidak dibuat migrasi mana pun", nama, ddl)
+			continue
 		}
-		if !strings.Contains(sql, "CREATE SEQUENCE {skema}.SEQ_MTI_"+pendek+" ") {
-			t.Errorf("INV-02: %s tanpa sequence SEQ_MTI_%s", nama, pendek)
+		// ⛔ Yang berganti nama WAJIB punya pernyataan penggantinya. Tanpa
+		// pemeriksaan ini, salah ketik di peta di atas lolos tanpa suara.
+		if ddl != nama && !strings.Contains(sql, "RENAME TO "+nama) {
+			t.Errorf("%s dibuat sebagai %s tetapi nol migrasi menggantinya namanya", nama, ddl)
+		}
+		// ⛔ Nama batasannya DIBACA dari DDL, tidak lagi disusun dengan
+		// menanggalkan awalan. Sejak migrasi 437 ada DUA keluarga nama -
+		// `PK_MTI_*` untuk kedelapan tabel migrasi 430/432, `PK_TT_*` untuk
+		// ketiga belas migrasi 437, dan pendeknya bukan potongan nama tabel
+		// melainkan singkatan tersendiri (`LIMIT_ACHIEVE`, `FAC_SHARE_DED`).
+		// Yang diuji keberadaan dan BENTUKNYA, bukan konvensi namanya.
+		badan := badanCreateTable(t, nama)
+		if !strings.Contains(badan, "PRIMARY KEY (ID)") {
+			t.Errorf("INV-01: %s tanpa kunci utama atas kolom ID", nama)
+		}
+		mPK := regexp.MustCompile(`CONSTRAINT\s+(\w+)\s+PRIMARY KEY \(ID\)`).FindStringSubmatch(badan)
+		mSeq := regexp.MustCompile(`Seq:\s*"(\w+)"`)
+		_ = mSeq
+		if mPK == nil {
+			t.Errorf("INV-01: %s kunci utamanya tanpa nama", nama)
+			continue
+		}
+		// Tiap tabel pendaratan WAJIB punya sequence-nya sendiri; namanya
+		// mengikuti kunci utamanya dengan awalan yang sama.
+		seq := strings.Replace(mPK[1], "PK_", "SEQ_", 1)
+		if !strings.Contains(sql, "CREATE SEQUENCE {skema}."+seq+" ") {
+			t.Errorf("INV-02: %s tanpa sequence %s", nama, seq)
 		}
 	}
 }
@@ -119,6 +221,17 @@ func TestKolomIsiPendaratanBertipeTeks(t *testing.T) {
 				}
 				continue
 			}
+			// ⭐ LIMA kolom teks panjang — migrasi 439. Keduanya tetap teks
+			// apa adanya; yang berbeda hanya WADAHNYA, sebab `VARCHAR2`
+			// Oracle berhenti di 4.000 bita sementara teks tab
+			// `Special Conditions` terukur 23.453 aksara. Kolom yang terlalu
+			// pendek MEMOTONG tanpa bersuara.
+			if teksPanjangPendaratan[nama+"."+kolom] {
+				if !strings.HasPrefix(tipe, "CLOB") {
+					t.Errorf("%s.%s mau CLOB (teks panjang), dapat %s", nama, kolom, tipe)
+				}
+				continue
+			}
 			if !strings.HasPrefix(tipe, "VARCHAR2(") {
 				t.Errorf("%s.%s bertipe %s; nilai JSON mendarat APA ADANYA sebagai teks — "+
 					"menafsirkannya saat memuat membulatkan angka dan menolak nilai yang "+
@@ -145,11 +258,13 @@ func TestPendaratanPunyaMasteridDanUrutan(t *testing.T) {
 				t.Errorf("%s tanpa kolom %s", nama, strings.TrimSpace(wajib))
 			}
 		}
-		pendek := strings.TrimPrefix(nama, "M_TREATYIN_")
-		if !strings.Contains(badan, "CONSTRAINT UQ_MTI_"+pendek+" UNIQUE") {
-			t.Errorf("%s tanpa UQ_MTI_%s; pemuat idempoten menyandar padanya, dan "+
+		// ⛔ Keberadaan `UNIQUE`-nya yang diuji, bukan namanya. Dua keluarga
+		// nama hidup berdampingan sejak migrasi 437, dan menuntut satu pola
+		// berarti penjaga ini menolak tabel yang sebenarnya benar.
+		if !strings.Contains(badan, " UNIQUE (") {
+			t.Errorf("%s tanpa batasan UNIQUE; pemuat idempoten menyandar padanya, dan "+
 				"idempotensi yang hanya dijaga kode pemanggil benar sampai dua pemuat "+
-				"berjalan bersamaan", nama, pendek)
+				"berjalan bersamaan", nama)
 		}
 	}
 }
@@ -175,15 +290,29 @@ func TestAchievementBukanTabelPendaratan(t *testing.T) {
 	}
 }
 
+// teksPanjangPendaratan - kolom pendaratan yang SENGAJA `CLOB`, bukan
+// `VARCHAR2`. Daftar tertutup: kolom teks panjang baru harus disebut di sini
+// beserta sebabnya, dan kolom yang tidak disebut tetap wajib teks pendek.
+var teksPanjangPendaratan = map[string]bool{
+	"T_TREATY_REVISION.EXCLUSIONS":         true,
+	"T_TREATY_REVISION.EXCLUSIONSP":        true,
+	"T_TREATY_REVISION.SPECIALCONDITIONS":  true,
+	"T_TREATY_REVISION.SPECIALCONDITIONSP": true,
+	// ⚠️ Ejaan KETIGA, huruf `p` kecil di dokumen (`SpecialConditionsp`),
+	// berisi di 292 dokumen dan isinya BERBEDA dari saudaranya. Oracle tidak
+	// membedakan besar-kecil nama kolom, jadi pembedanya pindah ke akhiran.
+	"T_TREATY_REVISION.SPECIALCONDITIONSLC": true,
+}
+
 // Nama kunci JSON `Date` mendarat sebagai `TANGGAL`, dan kolom `DATE`
 // tidak pernah lahir. `TestNolKataCadanganOracleSebagaiKolom` sudah
 // menjaganya untuk seluruh repo; yang dijaga DI SINI pasangannya — bahwa
 // penggantinya benar-benar ada, sehingga kuncinya tidak hilang diam-diam
 // alih-alih berganti nama.
 func TestKunciDateMendaratSebagaiTanggal(t *testing.T) {
-	badan := badanCreateTable(t, "M_TREATYIN_COMMENT")
+	badan := badanCreateTable(t, "T_VIEW_COMMENT")
 	if !strings.Contains(badan, "\n  TANGGAL ") {
-		t.Error("M_TREATYIN_COMMENT tanpa kolom TANGGAL; kunci `Date` " +
+		t.Error("T_VIEW_COMMENT tanpa kolom TANGGAL; kunci `Date` " +
 			"(11.365 kemunculan) tidak punya rumah")
 	}
 }
@@ -199,14 +328,29 @@ func TestPetaPendaratanCocokDenganDDL(t *testing.T) {
 	// Kolom struktur tidak ada di peta: ia milik tabel, bukan dokumen.
 	struktur := map[string]bool{"ID": true, "IDINDUK": true, "MASTERID": true, "URUTAN": true}
 
+	dibuang := kolomDibuang(t)
+	ditambah := kolomDitambah(t)
+
 	for _, p := range repository.PetaPendaratan {
 		diDDL := map[string]bool{}
+		// ⭐ Kolom yang migrasi BERIKUTNYA TAMBAHKAN lewat `ALTER … ADD`
+		// tidak pernah muncul di `CREATE TABLE` mana pun — tetapi ia ADA di
+		// basis data. Tanpa ini penjaga menuduh peta menyebut kolom yang
+		// "tidak ada di DDL", padahal pemuatnyalah yang benar dan
+		// penjaganya yang buta.
+		for k := range ditambah[namaDDLPendaratan[p.Tabel]] {
+			diDDL[k] = true
+		}
 		for _, baris := range strings.Split(badanCreateTable(t, p.Tabel), "\n") {
 			ruas := strings.Fields(strings.TrimSpace(baris))
 			if len(ruas) < 2 || ruas[0] == "CONSTRAINT" || ruas[0] == "REFERENCES" {
 				continue
 			}
-			if !struktur[ruas[0]] {
+			// ⛔ Kolom yang migrasi BERIKUTNYA buang tidak lagi ada di basis
+			// data, walau `CREATE TABLE` yang melahirkannya masih menyebutnya.
+			// Membacanya sebagai "ada" membuat penjaga ini menuntut peta
+			// mengisi kolom yang sudah tidak ada.
+			if !struktur[ruas[0]] && !dibuang[namaDDLPendaratan[p.Tabel]+"."+ruas[0]] {
 				diDDL[ruas[0]] = true
 			}
 		}
@@ -219,6 +363,15 @@ func TestPetaPendaratanCocokDenganDDL(t *testing.T) {
 			}
 		}
 		for k := range diDDL {
+			// ⭐ `JENIS` diisi PEMUAT, bukan dibaca dari dokumen — ia menandai
+			// larik asal baris pada tabel yang menggabungkan beberapa larik
+			// (migrasi 438 dan 439). Ia tidak boleh ada di `Kunci`.
+			if k == "JENIS" {
+				if len(p.LarikGabung) == 0 {
+					t.Errorf("%s punya kolom JENIS tetapi petanya tidak menggabungkan larik mana pun", p.Tabel)
+				}
+				continue
+			}
 			if !diPeta[k] {
 				t.Errorf("%s: DDL punya kolom %s yang TIDAK ada di peta — "+
 					"ia tidak akan pernah terisi, dan nol galat akan menyebutkannya", p.Tabel, k)
@@ -254,9 +407,11 @@ func TestPetaDanPenjagaMenyebutTabelYangSama(t *testing.T) {
 // benar, dan yang satu membeku pada bentuk dokumen sementara yang lain
 // ikut berubah bersama pemuatnya.
 //
-// ⚠️ `CurrencyList` SENGAJA tidak di daftar ini: ia belum punya tabel, sebab
-// ronde pemindahan melarang membuat tabel Rate of Exchange. Begitu tabel
-// kesembilan diputuskan, namanya masuk ke sini.
+// ⭐ RALAT 6 Oktober 2026: `CurrencyList` dan `Limits` KINI di daftar ini.
+// Keputusan pemilik proses melarang keras menarik nilai dari `JSONDATA`,
+// jadi keduanya tidak lagi diurai — `Limits` dari tabel pendaratan
+// (`pendaratan_layer.go`), `CurrencyList` dari tabel yang belum ada,
+// sehingga gridnya kosong sampai tabel itu berdiri.
 func TestLarikYangSudahPunyaTabelTidakDiuraiLagi(t *testing.T) {
 	const berkas = "repository/warisan_kontrak.go"
 	isi, err := os.ReadFile(berkas)
@@ -264,17 +419,24 @@ func TestLarikYangSudahPunyaTabelTidakDiuraiLagi(t *testing.T) {
 		t.Fatalf("membaca %s: %v", berkas, err)
 	}
 	teks := tanpaKomentarGo(string(isi))
-	for _, larik := range []string{"ReportingPeriodList", "Portfolio", "AccumulationList"} {
+	for _, larik := range []string{"ReportingPeriodList", "Portfolio", "AccumulationList",
+		"CurrencyList", "Limits"} {
 		tag := `json:"` + larik + `"`
 		if strings.Contains(teks, tag) {
 			t.Errorf("%s masih mengurai %s dari CLOB; ia sudah punya tabelnya sejak migrasi 430, "+
 				"dan dua sumber untuk satu tab berarti salah satunya akan basi tanpa suara", berkas, larik)
 		}
 	}
-	// ⛔ Penjaganya MENGGIGIT: polanya harus menemukan yang memang masih ada.
-	if !strings.Contains(teks, `json:"CurrencyList"`) {
-		t.Error("pola tidak menemukan CurrencyList yang masih diurai; pembacanya yang rusak, " +
-			"atau CurrencyList sudah pindah dan daftar di atas perlu diperbarui")
+	// ⭐ NOL medan tersisa sejak 6 Oktober 2026: berkas itu tidak lagi
+	// mengurai dokumen sama sekali. Yang dijaga kini KEBALIKANNYA — ia tidak
+	// boleh kembali mengurai apa pun.
+	if strings.Contains(teks, "json.Unmarshal") {
+		t.Error("jalur baca kontrak warisan mengurai dokumen lagi; " +
+			"nilai dari JSONDATA dilarang keras sejak 6 Oktober 2026")
+	}
+	// ⛔ Dan penjaganya tetap MENGGIGIT: polanya dibuktikan atas teks tiruan.
+	if !strings.Contains(`json:"ReportingPeriodList"`, "ReportingPeriodList") {
+		t.Error("pembanding tag rusak; penjaga ini tidak menjaga apa pun")
 	}
 }
 
@@ -290,9 +452,9 @@ func TestPembacaTabPendaratanAda(t *testing.T) {
 	}
 	teks := string(isi)
 	for _, pasang := range []struct{ fungsi, tabel string }{
-		{"BacaPeriodePelaporan", "M_TREATYIN_REPORTINGPERIOD"},
-		{"BacaPortofolio", "M_TREATYIN_PORTFOLIO"},
-		{"BacaAkumulasi", "M_TREATYIN_ACCUMULATION"},
+		{"BacaPeriodePelaporan", "T_TREATY_REPORTING_PERIOD"},
+		{"BacaPortofolio", "T_TREATY_PORTFOLIO"},
+		{"BacaAkumulasi", "T_TREATY_ACCUMULATION"},
 	} {
 		if !strings.Contains(teks, "func (g *Gudang) "+pasang.fungsi+"(") {
 			t.Errorf("%s tidak ada di %s", pasang.fungsi, berkas)
@@ -314,6 +476,12 @@ func TestPembacaTabPendaratanAda(t *testing.T) {
 func badanCreateTable(t *testing.T, tabel string) string {
 	t.Helper()
 	sql := gabungan(t)
+	// ⛔ DDL membuatnya dengan nama LAMA; migrasi 436 yang menggantinya.
+	// Mencari nama hari ini di dalam `CREATE TABLE` karena itu selalu gagal
+	// untuk kedelapan tabel yang berganti nama.
+	if ddl, ok := namaDDLPendaratan[tabel]; ok {
+		tabel = ddl
+	}
 	awal := strings.Index(sql, "CREATE TABLE {skema}."+tabel+" (")
 	if awal < 0 {
 		t.Fatalf("CREATE TABLE %s tidak ditemukan", tabel)
@@ -381,4 +549,75 @@ func TestBerkasPertanyaanTetapAdaDanMenunjukKeputusannya(t *testing.T) {
 	if n := strings.Count(string(kep), "Pembalikan"); n < 4 {
 		t.Errorf("hanya %d keputusan menyebut pembalikannya; §12 sampai §15 seluruhnya wajib", n)
 	}
+}
+
+// kolomDibuang mengumpulkan kolom yang migrasi mana pun CABUT, berkunci
+// `TABEL.KOLOM` dengan nama tabel sebagaimana DDL menyebutnya.
+//
+// ⛔ Dihitung dari teks migrasinya, bukan didaftar tangan. Daftar tangan
+// benar sampai kolom KEDUA dibuang, dan yang membuangnya tidak akan tahu
+// penjaga ini ada.
+func kolomDibuang(t *testing.T) map[string]bool {
+	t.Helper()
+	keluar := map[string]bool{}
+	for _, baris := range strings.Split(gabungan(t), "\n") {
+		ruas := strings.Fields(strings.TrimSpace(baris))
+		// ALTER TABLE {skema}.NAMA DROP COLUMN KOLOM
+		if len(ruas) < 6 || ruas[0] != "ALTER" || ruas[1] != "TABLE" ||
+			ruas[3] != "DROP" || ruas[4] != "COLUMN" {
+			continue
+		}
+		tabel := strings.TrimPrefix(ruas[2], "{skema}.")
+		keluar[tabel+"."+ruas[5]] = true
+	}
+	return keluar
+}
+
+// kolomDitambah mengumpulkan kolom yang migrasi mana pun TAMBAHKAN lewat
+// `ALTER TABLE {skema}.NAMA ADD ( … )`, berkunci nama tabel.
+//
+// ⛔ KEMBARAN `kolomDibuang`, dan ketiadaannya adalah lubang: penjaga ini
+// sudah tahu kolom dapat DIBUANG sesudah `CREATE TABLE`, tetapi tidak tahu
+// kolom dapat DITAMBAHKAN. Migrasi `444` yang pertama menambahkan, dan
+// tanpa pembaca ini keenam belas kolomnya terbaca sebagai "peta menyebut
+// kolom yang tidak ada di DDL" — penjaga merah yang menuduh kode yang benar.
+//
+// ⚠️ Bentuk yang dibaca BERKURUNG BANYAK BARIS:
+//
+//	ALTER TABLE {skema}.NAMA ADD (
+//	  KOLOM  TIPE,
+//	  KOLOM  TIPE
+//	)
+//
+// Bentuk satu baris (`ADD KOLOM TIPE`) TIDAK dibaca, dan itu disengaja: nol
+// migrasi memakainya hari ini, dan pembaca yang menebak dua bentuk lebih
+// mudah salah diam-diam daripada yang menolak bentuk tak dikenal.
+func kolomDitambah(t *testing.T) map[string]map[string]bool {
+	t.Helper()
+	masuk := map[string]map[string]bool{}
+	var tabel string
+	for _, baris := range strings.Split(gabungan(t), "\n") {
+		teks := strings.TrimSpace(baris)
+		ruas := strings.Fields(teks)
+		if len(ruas) >= 5 && ruas[0] == "ALTER" && ruas[1] == "TABLE" &&
+			ruas[3] == "ADD" && ruas[4] == "(" {
+			tabel = strings.TrimPrefix(ruas[2], "{skema}.")
+			if masuk[tabel] == nil {
+				masuk[tabel] = map[string]bool{}
+			}
+			continue
+		}
+		if tabel == "" {
+			continue
+		}
+		if strings.HasPrefix(teks, ")") {
+			tabel = ""
+			continue
+		}
+		// `KOLOM TIPE…` — kolomnya ruas pertama, koma di ujung dibuang.
+		if len(ruas) >= 2 && !strings.HasPrefix(teks, "--") {
+			masuk[tabel][strings.TrimSuffix(ruas[0], ",")] = true
+		}
+	}
+	return masuk
 }

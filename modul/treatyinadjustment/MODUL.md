@@ -45,9 +45,9 @@ dipensiunkan 1 Oktober 2026.
 
 | Folder | Isi |
 | --- | --- |
-| `docs/` | `STRUKTUR-TABEL-TREATY-IN-ADJUSTMENT.md`, `KEPUTUSAN-TIKET-02-03.md`, `issues/` (tiket `01`, `02`, `03`, `05`) |
+| `docs/` | `STRUKTUR-TABEL-TREATY-IN-ADJUSTMENT.md`, `KEPUTUSAN-TIKET-02-03.md`, `LAYAR-ADJUSTMENT.md`, `PERTANYAAN-TERBUKA-LAYAR-ADJUSTMENT.md`, `issues/` (tiket `01`, `02`, `03`, `05`) |
 | `backend/` | `modul.go` (`Pendaftaran()`), `models/`, `repository/`, `services/`, `handlers/`, `migrations/` |
-| `frontend/` | `menu.ts`, `rute.tsx`, `api.ts`, `labels.ts`, `pages/RantaiVersi.tsx` |
+| `frontend/` | `menu.ts`, `rute.tsx`, `api.ts`, `labels.ts`, `labelsPenyesuaian.ts`, `pages/` (`PenyesuaianKontrak.tsx`, `RantaiVersi.tsx`, `LampiranKontrak.tsx`), `komponen/SisiPenyesuaian.tsx` |
 
 ## Migrasi
 
@@ -61,19 +61,31 @@ bab 6. Nomor selalu tiga digit.
 
 ### Kaskade ON DELETE CASCADE
 
-**Nol kaskade di modul ini**, dan itu keputusan yang dikutip, bukan bawaan yang dibiarkan.
+⚠️ **RALAT 4 Oktober 2026.** Bab ini pernah berbunyi *"nol kaskade di modul ini"*, dan tabelnya
+sengaja kosong. Itu benar selama modul ini tidak punya tabel sendiri. **Keputusan pemilik proses
+4 Oktober 2026** ([`treatyin/docs/KEPUTUSAN-PENYELARASAN-REPO.md` §19](../treatyin/docs/KEPUTUSAN-PENYELARASAN-REPO.md))
+memindahkan `NILAI_SELISIH` dan `NILAI_SEBELUM_PRO_RATE` ke sini, dan keduanya membawa kaskadenya.
 
-Modul ini punya satu kunci asing sendiri: `VERSI_KONTRAK.ID_VERSI_KONTRAK_DASAR` →
-`VERSI_KONTRAK` (migrasi `440`). `4-erd-dan-tabel-datar/ERD.md` §2.2 menyatakannya **[hapus: tolak]**
-— *"menghapus versi dasar akan membuat seluruh baris selisih kehilangan artinya"* — sehingga ia
-berdiri tanpa klausa `ON DELETE`.
+Modul ini punya **tiga** kunci asing. Yang pertama miliknya sejak awal:
+`VERSI_KONTRAK.ID_VERSI_KONTRAK_DASAR` → `VERSI_KONTRAK` (migrasi `440`).
+`4-erd-dan-tabel-datar/ERD.md` §2.2 menyatakannya **[hapus: tolak]** — *"menghapus versi dasar
+akan membuat seluruh baris selisih kehilangan artinya"* — sehingga ia berdiri tanpa klausa
+`ON DELETE`.
 
 | Awalan berkas | Relasi |
 | --- | --- |
+| `442_` | `VERSI_KONTRAK` → `NILAI_SELISIH` · `VERSI_KONTRAK` → `NILAI_SEBELUM_PRO_RATE` *(dua)* — `ERD.md` §2.6, ERD HTML baris 36 dan 37 |
 
-Tabel di atas **sengaja kosong**, dan itu bukan kelalaian: tabel kosong menyatakan **nol berkas
-modul ini yang boleh memuat `ON DELETE CASCADE`**, dan `TestKaskadeHanyaPadaRelasiTerdaftar` akan
-menolak yang pertama kali menambahkannya tanpa mendaftarkannya di sini.
+⛔ **Daftar-IZIN, bukan pencabutan.** Berkas di luar `442_` tetap ditolak oleh
+`TestKaskadeHanyaPadaRelasiTerdaftar` (penjaga inti) dan `TestKaskadeHanyaPadaBerkasTerdaftar`
+(penjaga modul ini). Yang berubah isinya, bukan aturannya.
+
+⛔ **`TestNolTabelBaru` juga menjadi daftar-izin**, bukan dicabut: kedua tabel itu boleh, tabel
+ketiga tetap ditolak. Riwayat penolakan pertamanya — migrasi ini pernah ditulis sebagai `442_`
+lalu dipindah ke `treatyin/426_` — tercatat di kepala `treatyin/.../426_nilai_selisih.sql`.
+
+⚠️ **DITAGIH ke pemilik spec:** `treaty-in/SPEC-MODEL-DATA.md` masih menyatakan model datanya
+**SATU**, dan pesan penjaga lama mengutipnya. Pernyataan itu kini tidak lagi benar seluruhnya.
 
 ⚠️ **Relasi kedua modul ini akan punya belum dapat dibuat.** `ERD.md` §2.6 menyatakan dua relasi
 yang melintasi sekat, dan **keduanya** menuju `NILAI_SELISIH`:
@@ -130,3 +142,98 @@ sebuah label, `<pyPropertyTarget>` properti yang diisi pemilih, `<pyGridProps>` 
    dimatikan dengan kondisi mustahil — `1=2`, `1==2`, `Never` pada `pyContainerVisibleWhen` /
    `pyVisibleWhen` / `pyRowVisibleCondition`. ⚠️ `pyDisabledWhen>1=2` artinya **kebalikannya**:
    tidak pernah dinonaktifkan. Jangan tertukar.
+
+## Kunci alami `NILAI_SELISIH` dan `NILAI_SEBELUM_PRO_RATE` — tiket 76 dan 77
+
+Migrasi `443`. Keduanya berkunci alami **(`ID_VERSI_KONTRAK`, `KODE_BESARAN`, `KODE_MATA_UANG`)** —
+`UQ_NILAI_SELISIH` dan `UQ_NILAI_SEBELUM_PRO_RATE`.
+
+⛔ **Mata uang ADA DI DALAM kunci**, dan itu `ADR-0048` butir 3. Uji positif
+`TestTiket76BesaranSamaDuaMataUangDiterima` membuktikannya: besaran yang sama dalam IDR dan USD
+adalah **dua fakta yang sah**, dan `UQ` tanpa mata uang akan menolak yang kedua — menolaknya
+diam-diam, sebab setiap uji negatif tetap hijau.
+
+### ⚠️ Nomor invariannya BELUM ADA, dan itu ditagih
+
+`Z00_KUNCI_ALAMI.sql` berbunyi *"constraint tanpa invarian tidak punya tempat untuk gagal"*, dan
+`SPEC-INVARIAN.md` berhenti di **`INV-71`**. Kedua tiket menyatakan apa adanya *"kunci alaminya
+belum punya nomor invarian"* sebagai persyaratan yang diketahui, bukan sebagai penghalang — dan
+daftar periksa keduanya tetap menuntut kuncinya.
+
+⛔ **Nomornya TIDAK dikarang di repo.** Memberi `INV-72`/`INV-73` dari sini berarti mengambil
+wewenang pemilik `SPEC-INVARIAN.md`, dan nomor yang ditetapkan di dua tempat akan bertabrakan.
+**Tagihan:** dua nomor invarian untuk kedua kunci alami di atas.
+
+### ⚠️ `INV-58` dan kenapa `NILAI_SEBELUM_PRO_RATE` BUKAN pelanggarannya
+
+*(Daftar periksa tiket 77 menuntut alasan ini berdiri di `MODUL.md`, bukan hanya di tiketnya.)*
+
+`INV-58` melarang menyimpan nilai turunan. Tabel ini **tampak turunan dan ia bukan**, dan sebabnya
+`GRL-15`: **mesin pro rata sengaja TIDAK dibangun kembali.**
+
+Diukur 5 Oktober 2026 di `Activity/TreatyEDMProRateCalculation.xml` — satu-satunya rule di modul
+ini yang menyentuh `ValueBeforeProrate`, dan langkahnya berbunyi persis:
+
+```
+pyStepsDescription : Copy value from ValueDifference to ValueBeforeProrate
+PropertiesName     : TreatyIn.ValueBeforeProrate
+PropertiesValue    : TreatyIn.ValueDifference
+```
+
+Ia **SALINAN yang diambil sebelum mesin pro rata mengubah angkanya** — bukan hasil hitungan. Dan
+karena mesin itu tidak akan ada di sistem baru, angkanya **tidak dapat dipulihkan dengan
+menghitung mundur**. Inilah pengecualian yang `INV-58` sediakan: **fakta terbukukan yang membawa
+penunjuk asalnya**.
+
+⛔ `TestTiket77BarisTetapSahWalauProRataTidakDipakai` menjaga pernyataan itu: baris tetap sah pada
+versi yang `MEMAKAI_PRORATA`-nya **tidak** disetel. Tiket 77 menulis sebabnya sendiri — *"tabel
+yang menolak baris itu mengaku dirinya hasil hitungan."*
+
+### ⛔ Satu tuntutan tiket 77 yang TIDAK dapat dipenuhi — `MATA_UANG`
+
+Tiket 77 menuntut kunci asing kedua:
+
+```
+MATA_UANG  1--<  NILAI_SEBELUM_PRO_RATE   [hapus: tolak]
+```
+
+`MATA_UANG` **dicabut** migrasi `434` ([`KEPUTUSAN` §16](../treatyin/docs/KEPUTUSAN-PENYELARASAN-REPO.md)):
+kurs dan daftar mata uang kini dari `TREATYEXCHANGEYEARLY`. Kunci asing ke tabel yang tidak ada
+tidak dapat dipasang, dan membangunnya kembali dilarang §16.
+
+Jadi `KODE_MATA_UANG` berdiri sebagai **teks di dalam kunci alami, tanpa kunci asing** — setengah
+dari yang tiket 77 tuntut, dan setengahnya dinyatakan alih-alih disamarkan. Polanya sama dengan
+`KODE_BESARAN` terhadap `BESARAN_DAPAT_DISESUAIKAN`, penghalang yang tiket 76 catat sendiri.
+
+**SIAPA DAPAT MENJAWAB:** pemilik proses — apakah `INV-44` masih menuntut daftar mata uang
+berupa tabel sesudah §16, dan bila ya, tabel mana yang menggantikan `MATA_UANG`.
+**SYARAT PEMBALIKAN:** begitu daftar mata uang punya tabel lagi, kedua kolom itu dinaikkan
+menjadi kunci asing `tolak` lewat migrasi korektif — dan **harus sebelum tiket 06 memuat data**,
+sebab kode yang tidak punya padanan akan menolak.
+
+## Layar Adjustment — 5 Oktober 2026
+
+Halaman awal modul kini layar `InputTreatyInAdjustment` sistem lama: daftar
+penyesuaian, lalu **Old Data ‖ New Data** berdampingan, Attachment, deret tombol,
+History. Catatan ukurnya di [`docs/LAYAR-ADJUSTMENT.md`](docs/LAYAR-ADJUSTMENT.md).
+
+⛔ Datanya dari `TREATY_IN_EDM` + `M_TREATY_IN_EDM` — tabel warisan, **baca saja**,
+nol migrasi. Bukan `VERSI_KONTRAK`: diukur nol baris. Rute
+`GET /api/treaty-in-adjustment/penyesuaian-warisan` dan `…/penyesuaian-warisan/satu?id=`
+(pengenalnya bergaris miring, jadi lewat parameter kueri).
+
+⛔ Panel Old **nol medan dapat disunting**. Panel New dapat disunting di mode Edit
+menurut `pyReadOnlyCondition` ekspornya, tetapi tombol Save **mati** — nol yang
+terkirim. `NILAI_SELISIH` dan `NILAI_SEBELUM_PRO_RATE` tetap nol baris: tab Value
+Difference menampilkan nilai TERSIMPAN dokumen, bukan hitung ulang.
+
+Pertanyaan terbukanya: [`docs/PERTANYAAN-TERBUKA-LAYAR-ADJUSTMENT.md`](docs/PERTANYAAN-TERBUKA-LAYAR-ADJUSTMENT.md).
+
+### Isi tab dibangkitkan dari ekspor
+
+`alat/ekstrak_kerangka.py` membaca Section ekspor, membuang `<pyIncludedRuleXML>` dengan
+**menghitung kedalaman sarang**, lalu menulis dua berkas bangkitan — ⛔ jangan disunting tangan:
+`frontend/ekspor/kerangka.gen.ts` (37 tab: blok, grid, medan, desimal per sel, syarat) dan
+`backend/repository/kunci_kerangka_gen.go` (daftar-izin kunci). Desimal per kolom mengikuti
+ekspor (keputusan pemilik proses 5 Oktober 2026). Isi Retro tidak dibangun (§17). Uraian:
+[`docs/LAYAR-ADJUSTMENT.md`](docs/LAYAR-ADJUSTMENT.md) §6.

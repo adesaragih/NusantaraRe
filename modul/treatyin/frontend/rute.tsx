@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 import type { PropsRute, RuteModul } from '../../../inti/frontend/modul'
 import type { HalamanTreatyIn } from './menu'
+import type { ModeForm } from './mode'
 import AcuanTreatyIn from './pages/AcuanTreatyIn'
 import DaftarKontrakTreatyIn from './pages/DaftarKontrakTreatyIn'
 import FormKontrakTreatyIn from './pages/FormKontrakTreatyIn'
@@ -17,14 +18,20 @@ export function RuteTreatyIn({ halaman }: PropsRute<HalamanTreatyIn>) {
   // BARU (tombol `Add`), dan ia dibedakan dari `null` supaya "belum memilih"
   // tidak tertukar dengan "memilih yang baru".
   const [dibuka, setDibuka] = useState<string | null>(null)
+  // ⭐ Mode form — `Edit`/`Add` membuka `ubah`, `View` membuka `lihat`.
+  const [mode, setMode] = useState<ModeForm>('lihat')
 
   return (
     // Akar gaya modul: semua aturan `treatyin.css` diawali `.treatyin` (`display: contents`).
     <div className="treatyin">
       {halaman === 'treatyin-kontrak' && dibuka === null && (
         <DaftarKontrakTreatyIn
-          onBuka={setDibuka}
+          onBuka={(id, m) => {
+            setMode(m)
+            setDibuka(id)
+          }}
           onTambah={() => {
+            setMode('ubah')
             setDibuka('')
           }}
         />
@@ -32,6 +39,7 @@ export function RuteTreatyIn({ halaman }: PropsRute<HalamanTreatyIn>) {
       {halaman === 'treatyin-kontrak' && dibuka !== null && (
         <FormKontrakTreatyIn
           idKontrak={dibuka}
+          mode={mode}
           onKembali={() => {
             setDibuka(null)
           }}

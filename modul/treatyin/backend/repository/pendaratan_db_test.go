@@ -139,9 +139,63 @@ func TestSepuluhKontrakNyataMuatDanCocok(t *testing.T) {
 	}
 	t.Logf("TOTAL %d baris mendarat dari 10 kontrak", total)
 
-	if asing := services.RingkasTakTerpetakan(hasil); len(asing) != 0 {
-		t.Errorf("kunci JSON tanpa kolom ditemukan pada 10 kontrak: %v; "+
-			"kunci tanpa kolom mendarat sebagai ketiadaan, dan cacah barisnya tetap cocok", asing)
+	// ⛔ `pxObjClass` SENGAJA tidak mendarat. Ia nama kelas Pega, dan
+	// kolomnya dicabut migrasi 436 atas keputusan pemilik proses 5 Oktober
+	// 2026: menyimpan nama kelas sistem lama di dalam tabel model baru
+	// mengundang orang menurunkan perilaku darinya.
+	//
+	// ⚠ Ia DISEBUT di sini, bukan disaring di `RingkasTakTerpetakan`.
+	// Penjaga yang dilonggarkan di sumbernya berhenti melaporkan kunci
+	// BERIKUTNYA yang hilang; daftar sengaja-diabaikan di tempat
+	// pemeriksaannya tetap berbunyi untuk yang lain.
+	// ⛔ Kunci yang SENGAJA tidak menjadi kolom, dan ketiganya beralasan
+	// berbeda:
+	//
+	//   pxObjClass / pxListSubscript / pyTemplate*  perabot Pega, dicabut
+	//       migrasi 436 atas keputusan pemilik proses.
+	//   KunciAnak                                   BUKAN kolom melainkan
+	//       TABEL ANAKNYA SENDIRI. Melaporkannya sebagai hilang membuat
+	//       penjaga ini merah pada struktur yang justru benar.
+	sengaja := map[string]bool{"pxObjClass": true, "pxListSubscript": true}
+	for _, p := range repository.PetaPendaratan {
+		if p.KunciAnak != "" {
+			sengaja[p.KunciAnak] = true
+		}
+	}
+	// ⚠️ TERTUNDA, bukan terlewat. Ketujuh belas larik di bawah milik TUJUH
+	// tabel yang `Diagram-Skema-Tabel-TreatyIn-dan-EDM-v2.xlsx` sebut tetapi
+	// jalur sumbernya TERPOTONG di dalam selnya sendiri — berbunyi `| Tr`,
+	// `| TreatyIn.Limi`, putus di tengah kata. Ketujuhnya menggabungkan
+	// beberapa larik, dan daftarnya tidak lengkap di mana pun:
+	//
+	//   T_TREATY_LIMIT_AMOUNT · T_TREATY_LIMIT_MEASURE · T_TREATY_SHARE_AMOUNT
+	//   T_TREATY_TOTAL · T_TREATY_LIMIT_SUMMARY · T_TREATY_FAC_SHARE_AMOUNT
+	//   T_TREATY_SHARE_SPREAD_AMOUNT
+	//
+	// ⛔ Didaftar di sini SUPAYA penjaga ini tetap berbunyi untuk larik
+	// BERIKUTNYA yang kehilangan rumahnya. Menghapus pemeriksaannya akan
+	// menyembunyikan yang kedelapan.
+	for _, k := range []string{
+		"MDPList", "PremiumEarnedList", "EgnpiTotalList", "Reinstatement_List",
+		"LayerList", "GrossPremiumList", "NetPremiumList", "DeductionTotalList",
+		"ClassofBusinessList", "RnmGrossPremiDisplay", "RnmLimitList", "RnmLimitListDisplay",
+		"RNMSpreadedListXOL", "RNMSpreadedListRIXOL", "RNMSpreadedListNetXOL",
+		"RNMSpreadedListNetRIXOL", "RNMSpreadedListGrossXOL", "RNMSpreadedListGrossRIXOL",
+		"RNMSpreadedListDeductXOL", "RNMSpreadedListDeductRIXOL",
+	} {
+		sengaja[k] = true
+	}
+	for tabel, kunci := range services.RingkasTakTerpetakan(hasil) {
+		var nyata []string
+		for _, k := range kunci {
+			if !sengaja[k] && !strings.HasPrefix(k, "pyTemplate") {
+				nyata = append(nyata, k)
+			}
+		}
+		if len(nyata) != 0 {
+			t.Errorf("%s: kunci JSON tanpa kolom %v; kunci tanpa kolom mendarat "+
+				"sebagai ketiadaan, dan cacah barisnya tetap cocok", tabel, nyata)
+		}
 	}
 }
 
@@ -230,14 +284,14 @@ func TestButirAngsuranMenunjukIndukYangMelahirkannya(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if h.DiTabel["M_TREATYIN_INSTALLMENTITEM"] == 0 {
+			if h.DiTabel["T_TREATY_INSTALLMENT_ITEM"] == 0 {
 				continue
 			}
 			diuji++
 			var yatim int
-			q := `SELECT COUNT(*) FROM ` + cfg.OracleSchema + `.M_TREATYIN_INSTALLMENTITEM b
+			q := `SELECT COUNT(*) FROM ` + cfg.OracleSchema + `.T_TREATY_INSTALLMENT_ITEM b
 			       WHERE b.MASTERID = :1
-			         AND NOT EXISTS (SELECT 1 FROM ` + cfg.OracleSchema + `.M_TREATYIN_INSTALLMENT i
+			         AND NOT EXISTS (SELECT 1 FROM ` + cfg.OracleSchema + `.T_TREATY_INSTALLMENT i
 			                          WHERE i.ID = b.IDINDUK AND i.MASTERID = b.MASTERID)`
 			if err := tx.QueryRowContext(ctx, q, id).Scan(&yatim); err != nil {
 				t.Fatal(err)
@@ -264,9 +318,9 @@ func TestUrutanGandaDitolakConstraint(t *testing.T) {
 	if _, err := services.MuatSatuKontrak(ctx, g, tx, id); err != nil {
 		t.Fatal(err)
 	}
-	q := `INSERT INTO ` + cfg.OracleSchema + `.M_TREATYIN_COMMENT (ID, MASTERID, URUTAN)
-	      SELECT ` + cfg.OracleSchema + `.SEQ_MTI_COMMENT.NEXTVAL, MASTERID, URUTAN
-	        FROM ` + cfg.OracleSchema + `.M_TREATYIN_COMMENT WHERE MASTERID = :1 AND ROWNUM = 1`
+	q := `INSERT INTO ` + cfg.OracleSchema + `.T_VIEW_COMMENT (ID, MASTERID, URUTAN)
+	      SELECT ` + cfg.OracleSchema + `.SEQ_TV_COMMENT.NEXTVAL, MASTERID, URUTAN
+	        FROM ` + cfg.OracleSchema + `.T_VIEW_COMMENT WHERE MASTERID = :1 AND ROWNUM = 1`
 	_, err := tx.ExecContext(ctx, q, id)
 	if err == nil {
 		t.Fatal("urutan ganda DITERIMA; UQ_MTI_COMMENT tidak menjaga apa pun")
@@ -347,7 +401,19 @@ func ringkasCacah(m map[string]int) map[string]int {
 	out := map[string]int{}
 	for k, v := range m {
 		if v != 0 {
-			out[k[len("M_TREATYIN_"):]] = v
+			// ⛔ Potong menurut AWALAN yang benar-benar ada, bukan pada
+			// posisi tetap. Nama tabel berganti dari `M_TREATYIN_*` menjadi
+			// `T_TREATY_*` (migrasi 436), dan potongan berposisi tetap
+			// menghasilkan kunci cacat seperti `PORTING_PERIOD` — yang tetap
+			// terbaca sebagai nama tabel sampai seseorang membacanya pelan.
+			pendek := k
+			for _, awalan := range []string{"M_TREATYIN_", "T_TREATY_", "T_VIEW_"} {
+				if strings.HasPrefix(pendek, awalan) {
+					pendek = strings.TrimPrefix(pendek, awalan)
+					break
+				}
+			}
+			out[pendek] = v
 		}
 	}
 	return out

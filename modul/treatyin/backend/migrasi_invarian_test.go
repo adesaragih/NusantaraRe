@@ -302,18 +302,19 @@ func TestPerilakuHapusSesuaiERD(t *testing.T) {
 		// lenyap bersama kontraknya berhenti menjadi arsip. Sebabnya di kepala
 		// migrasi 425.
 		"FK_ARSIP_MUATAN_KELUAR_1": tolak,
-		// §2.6 — MENGIKAT, dan ERD HTML baris 36 sepakat. Berkasnya `426_`,
-		// tiketnya papan Adjustment (76, 77); tabelnya berdiri di modul ini
-		// sebab model datanya SATU — lihat kepala migrasi 426.
+		// ⛔ `FK_NILAI_SELISIH_1` dan `FK_NILAI_SEBELUM_PRO_RATE_1` PINDAH
+		// ke `modul/treatyinadjustment` 4 Oktober 2026 bersama tabelnya —
+		// KEPUTUSAN §19, migrasi 435 mencabut dan 442 membangun ulang.
 		//
-		// ⚠️ Relasi KEDUA yang §2.6 tuntut — `BESARAN_DAPAT_DISESUAIKAN 1--<
-		// NILAI_SELISIH [hapus: tolak]` — TIDAK dapat dipasang: tabel induknya
-		// tidak ada di mana pun. `KODE_BESARAN` berdiri sebagai teks, dan
-		// ketiadaan kunci asingnya dinyatakan di kepala migrasi 426.
-		"FK_NILAI_SELISIH_1": "ON DELETE CASCADE", // ERD.md §2.6 · ERD baris 36
-		// §2.6 tidak menyebutnya; diambil dari aturan saudara secabangnya.
-		// Induknya VERSI_KONTRAK, bukan KONTRAK — sebabnya di kepala 426.
-		"FK_NILAI_SEBELUM_PRO_RATE_1": "ON DELETE CASCADE", // ERD baris 37
+		// Barisnya IKUT PINDAH, tidak digandakan: dua tempat yang
+		// menyatakan perilaku hapus yang sama akan berselisih, dan yang
+		// salah satunya basi tidak akan berbunyi. Keduanya kini ada di
+		// `modul/treatyinadjustment/backend/migrasi_invarian_test.go`.
+		//
+		// ⚠️ Yang TIDAK ikut pindah: alasan rancangannya. Kepala migrasi
+		// `426` tetap di modul ini — kardinalitas 1:N, penghalang
+		// `BESARAN_DAPAT_DISESUAIKAN`, dan INV-58 — dan `442` menunjuk
+		// balik ke sana alih-alih menyalinnya.
 		// §2.3 — MENGIKAT, dan ia SATU-SATUNYA anak VERSI_KONTRAK di §2.3
 		// yang `tolak`; sepuluh lainnya `ikut hapus`. Sebabnya dikutip utuh
 		// di kepala migrasi 427: "jejak yang dapat dihapus bersama bendanya
@@ -378,7 +379,44 @@ func TestPerilakuHapusSesuaiERD(t *testing.T) {
 		// kunci utama maupun UNIQUE pada `ID` (ia bahkan NULLABLE), dan
 		// Oracle menolak merujuk kolom semacam itu dengan ORA-02270.
 		// `MODUL.md` bab kaskade dan `KEPUTUSAN-PENYELARASAN-REPO.md` §12.
+		// ⚠ Nama DDL-nya, bukan nama hari ini: migrasi 436 menggantinya
+		// menjadi `FK_TT_INSTALLMENT_ITEM_1`, dan penjaga ini membaca DDL.
 		"FK_MTI_INSTALLMENTITEM_1": "ON DELETE CASCADE",
+
+		// ⭐ DELAPAN kunci asing migrasi 437 — pohon anak `TREATY_IN` menurut
+		// `Diagram-Skema-Tabel-TreatyIn-dan-EDM-v2.xlsx`, keputusan pemilik
+		// proses 6 Oktober 2026 ("puncaknya tetap TREATY_IN, anak-anaknya
+		// mengikuti xlsx"). Tiap satu menyebut sel asalnya.
+		//
+		// ⛔ Tautan ke AKAR tidak ada di sini, dan itu disengaja: xlsx menulis
+		// `FK TREATY_IN_ID -> TREATY_IN.ID` pada tiap anak tingkat pertama,
+		// tetapi `TREATY_IN` nol kunci utama dan nol kunci unik — `ORA-02270`.
+		// Anak tingkat pertama karena itu menaut dengan `MASTERID` teks.
+		// Kedelapan di bawah seluruhnya antar tabel MILIK modul ini, jadi
+		// keduanya dapat dipasang sungguhan.
+		"FK_TT_LIMIT_DETAIL":    "ON DELETE CASCADE", // K23  -> T_TREATY_LIMITS
+		"FK_TT_LIMIT_GROUP":     "ON DELETE CASCADE", // K40  -> T_TREATY_LIMITS
+		"FK_TT_LIMIT_COB":       "ON DELETE CASCADE", // O27  -> T_TREATY_LIMIT_DETAIL
+		"FK_TT_LIMIT_ACHIEVE":   "ON DELETE CASCADE", // O35  -> T_TREATY_LIMIT_DETAIL
+		"FK_TT_LIMIT_GRP_COB":   "ON DELETE CASCADE", // O44  -> T_TREATY_LIMIT_GROUP
+		"FK_TT_SHARE_SPREADING": "ON DELETE CASCADE", // K54  -> T_TREATY_SHARE
+		"FK_TT_SHARE_DEDUCTION": "ON DELETE CASCADE", // K67  -> T_TREATY_SHARE
+		"FK_TT_FAC_SHARE_DED":   "ON DELETE CASCADE", // K80  -> T_TREATY_FAC_SHARE
+
+		// ⭐ Migrasi `438` — tiga tabel NILAI, dan ketiganya menaut tabel
+		// MILIK modul ini, jadi kunci asingnya nyata seperti kedelapan di
+		// atas. Dibangun sesudah cacah elemennya diukur atas SELURUH 1.855
+		// dokumen: 11.475 · 6.097 · 24.
+		"FK_TT_LIMIT_AMOUNT":     "ON DELETE CASCADE", // -> T_TREATY_LIMIT_DETAIL
+		"FK_TT_SHARE_AMOUNT":     "ON DELETE CASCADE", // -> T_TREATY_SHARE
+		"FK_TT_FAC_SHARE_AMOUNT": "ON DELETE CASCADE", // -> T_TREATY_FAC_SHARE
+
+		// ⭐ Migrasi 439 — satu-satunya kunci asing barunya. `MDPList`,
+		// `PremiumEarnedList`, dan `EgnpiTotalList` hidup di dalam elemen
+		// `Limits[]`, jadi induknya `T_TREATY_LIMITS`, bukan `_DETAIL`.
+		// Alasan kaskadenya sama dengan ketiga di atas: besaran sebuah layer
+		// tanpa layernya tidak berarti apa pun.
+		"FK_TT_LIMIT_MEASURE": "ON DELETE CASCADE", // -> T_TREATY_LIMITS
 	}
 
 	sql := gabungan(t)
@@ -458,9 +496,17 @@ func TestPerilakuHapusSesuaiERD(t *testing.T) {
 // PENDARATAN tidak digambar di sana. Penyebut 28 tetap, dan pembilang
 // "bukan dari §2" naik dari 4 menjadi 5.
 func TestCacahKaskadeSesuaiTabelYangAda(t *testing.T) {
+	// 6 Oktober 2026, ketiga kalinya: 40 -> 43. Ketiga yang baru dari migrasi
+	// `438` (`LIMIT_AMOUNT`, `SHARE_AMOUNT`, `FAC_SHARE_AMOUNT`), dan seperti
+	// `437` ia tidak bersumber dari ERD — tabel PENDARATAN tidak digambar di
+	// sana. Penyebut 28 tetap; "bukan dari §2" naik dari 13 menjadi 16.
+	//
+	// 6 Oktober 2026, keempat kalinya: 43 -> 44. Yang ke-44
+	// `FK_TT_LIMIT_MEASURE` dari migrasi `439`, sebab yang sama persis.
+	// "bukan dari §2" naik dari 16 menjadi 17.
 	n := strings.Count(strings.ToUpper(tanpaKomentar(gabungan(t))), "ON DELETE CASCADE")
-	if n != 32 {
-		t.Errorf("ON DELETE CASCADE ditemukan %d, mau 32 (ERD.md §2: 28 relasi ikut hapus, "+
+	if n != 44 {
+		t.Errorf("ON DELETE CASCADE ditemukan %d, mau 44 (ERD.md §2: 28 relasi ikut hapus, "+
 			"1 di antaranya tabelnya belum dibuat; ditambah 4 dari ERD HTML baris 4, 9, 10, 27, "+
 			"ditambah 1 tabel pendaratan migrasi 430 yang tidak ada di ERD mana pun)", n)
 	}
@@ -779,13 +825,28 @@ func TestWarisanHanyaDibaca(t *testing.T) {
 	// ⛔ `M_TREATY_IN2` TIDAK tertangkap oleh pola `M_TREATY_IN`: `` sesudah
 	// `IN` tidak cocok di depan angka `2`. Itu sebabnya ia disebut sendiri,
 	// bukan diandaikan ikut terjaga.
+	// ⭐ DIPERLUAS 6 Oktober 2026 ke dua tabel warisan yang sudah dibaca modul
+	// ini tetapi belum dijaga di sini: `M_ATTACHMENTTREATY_2` (panel
+	// Attachment) dan `TREATYINPRODUCTION` (panel Existing Policy).
+	//
+	// ⚠️ Sebabnya ditemukan saat menyapu gerbang berangka PERSIS: keduanya
+	// dijaga HANYA oleh cacah barisnya di uji `db`, dan cacah itu kini
+	// dilonggarkan menjadi LANTAI sebab Pega sendiri menambah barisnya.
+	// Melonggarkannya tanpa memasang penjaga tulis yang sesungguhnya akan
+	// meninggalkan keduanya tanpa penjaga sama sekali.
 	for _, tabel := range []string{
 		"TREATY_IN", "M_TREATY_IN", "M_TREATY_IN2",
 		"TREATYEXCHANGEYEARLY", "M_TREATY_IN_DETAIL",
+		"M_ATTACHMENTTREATY_2", "TREATYINPRODUCTION",
+		// ⭐ 6 Oktober 2026 — isi dropdown `Treaty Type` tab Limits.
+		"REINSURANCETYPE", "TREATYGROUP", "CURRENCY",
 	} {
 		t.Run(tabel, func(t *testing.T) { warisanHanyaDibaca(t, tabel) })
 	}
 }
+
+// namaKolomJuga - tabel warisan yang namanya juga dipakai sebagai kolom.
+var namaKolomJuga = map[string]bool{"TREATYGROUP": true, "CURRENCY": true}
 
 func warisanHanyaDibaca(t *testing.T, tabel string) {
 	t.Helper()
@@ -854,8 +915,15 @@ func warisanHanyaDibaca(t *testing.T, tabel string) {
 	}
 
 	// Dan ia tidak boleh disebut di migrasi mana pun.
+	//
+	// ⚠️ `TREATYGROUP` dan `CURRENCY` juga NAMA KOLOM sah di migrasi modul
+	// ini; untuk keduanya yang dicari hanya penyebutan sebagai TABEL.
+	sebut := regexp.MustCompile(`\b` + tabel + `\b`)
+	if namaKolomJuga[tabel] {
+		sebut = regexp.MustCompile(`(?i)\b(TABLE|REFERENCES|INTO|UPDATE|FROM|JOIN)\s+[^\s;(]*\b` + tabel + `\b`)
+	}
 	for nama, isi := range seluruhMigrasi(t) {
-		if regexp.MustCompile(`\b` + tabel + `\b`).MatchString(tanpaKomentar(isi)) {
+		if sebut.MatchString(tanpaKomentar(isi)) {
 			t.Errorf("%s menyebut %s; tabel warisan TIDAK dimiliki modul ini, dan "+
 				"menuliskannya di migrasi berarti `migrate` berikutnya mencoba membuatnya", nama, tabel)
 		}

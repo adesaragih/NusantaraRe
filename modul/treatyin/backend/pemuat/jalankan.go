@@ -57,6 +57,11 @@ func main() {
 		ikat      = flag.Bool("ikat", false, "COMMIT tiap kontrak yang cocok; tanpa ini seluruhnya dibatalkan")
 		kosongkan = flag.Bool("kosongkan", false, "kosongkan kedelapan tabel, nol pemuatan")
 		cocokkan  = flag.Bool("cocokkan", false, "cetak cacah baris kedelapan tabel, nol tulisan")
+		// ⭐ 6 Oktober 2026 — korpus KEDUA. `M_TREATY_IN_EDM` mendarat ke
+		// tabel yang SAMA, dibedakan `MASTERID` berakhiran `#LAMA`, dan
+		// sampai hari ini nol jalur memuatnya.
+		penyesuaian = flag.Bool("penyesuaian", false,
+			"muat dari M_TREATY_IN_EDM (kedua sisi New/Old), bukan M_TREATY_IN")
 	)
 	flag.Parse()
 
@@ -93,15 +98,19 @@ func main() {
 		return
 	}
 
-	daftar := pilihKontrak(ctx, g, *semua, *batas, *kontrak)
+	daftar := pilihKontrak(ctx, g, *semua, *batas, *kontrak, *penyesuaian)
 	if len(daftar) == 0 {
-		log.Fatal("nol kontrak dipilih; pakai -semua, -batas, atau -kontrak")
+		log.Fatal("nol dokumen dipilih; pakai -semua, -batas, atau -kontrak")
 	}
-	fmt.Printf("%d kontrak dipilih\n", len(daftar))
-	jalankanPemuatan(ctx, d, g, daftar, *ikat)
+	korpus := repository.TabelDokumenPendaratan
+	if *penyesuaian {
+		korpus = repository.TabelDokumenPenyesuaian
+	}
+	fmt.Printf("%d dokumen dipilih dari %s\n", len(daftar), korpus)
+	jalankanPemuatan(ctx, d, g, daftar, *ikat, *penyesuaian)
 }
 
-func pilihKontrak(ctx context.Context, g *repository.Gudang, semua bool, batas int, daftar string) []string {
+func pilihKontrak(ctx context.Context, g *repository.Gudang, semua bool, batas int, daftar string, penyesuaian bool) []string {
 	if strings.TrimSpace(daftar) != "" {
 		var out []string
 		for _, s := range strings.Split(daftar, ",") {
@@ -117,9 +126,13 @@ func pilihKontrak(ctx context.Context, g *repository.Gudang, semua bool, batas i
 	} else if n == 0 {
 		return nil
 	}
-	id, err := g.DaftarMasterID(ctx, n)
+	ambil := g.DaftarMasterID
+	if penyesuaian {
+		ambil = g.DaftarMasterIDPenyesuaian
+	}
+	id, err := ambil(ctx, n)
 	if err != nil {
-		log.Fatalf("mendaftar kontrak: %v", err)
+		log.Fatalf("mendaftar dokumen: %v", err)
 	}
 	return id
 }
@@ -131,7 +144,7 @@ func pilihKontrak(ctx context.Context, g *repository.Gudang, semua bool, batas i
 // itu mengunci lama, membengkakkan undo, dan - yang terburuk - membuat satu
 // kontrak rusak membatalkan 1.853 yang baik. Yang gagal dicatat namanya dan
 // dilewati; sisanya tetap jalan.
-func jalankanPemuatan(ctx context.Context, d *db.DB, g *repository.Gudang, daftar []string, ikat bool) {
+func jalankanPemuatan(ctx context.Context, d *db.DB, g *repository.Gudang, daftar []string, ikat, penyesuaian bool) {
 	mulai := time.Now()
 	var (
 		hasil          []services.HasilMuat
@@ -143,7 +156,11 @@ func jalankanPemuatan(ctx context.Context, d *db.DB, g *repository.Gudang, dafta
 		if err != nil {
 			log.Fatalf("membuka transaksi: %v", err)
 		}
-		h, err := services.MuatSatuKontrak(ctx, g, tx, id)
+		muat := services.MuatSatuKontrak
+		if penyesuaian {
+			muat = services.MuatSatuPenyesuaian
+		}
+		h, err := muat(ctx, g, tx, id)
 		if err != nil {
 			_ = tx.Rollback()
 			gagal++
@@ -193,10 +210,27 @@ func jalankanPemuatan(ctx context.Context, d *db.DB, g *repository.Gudang, dafta
 	}
 }
 
+// jalankanPengosongan membuang muatan KEDUA korpus.
+//
+// ⛔ Mendaftar dari keduanya, bukan dari `M_TREATY_IN` saja — dan itu RALAT
+// 6 Oktober 2026, lahir bersama `-penyesuaian`. Sejak korpus Adjustment ikut
+// mendarat ke tabel yang SAMA, pengosongan yang hanya menapaki satu korpus
+// meninggalkan setiap baris `M_TREATY_IN_EDM` berdiri — termasuk sisi
+// `#LAMA`-nya — dan sisa itu terlihat persis seperti muatan yang sah.
+//
+// ⚠️ Sisi `#LAMA` DISEBUT sendiri. `KosongkanKontrak` menyaring satu
+// `MASTERID`, dan `id#LAMA` adalah `MASTERID` yang berbeda dari `id`.
 func jalankanPengosongan(ctx context.Context, d *db.DB, g *repository.Gudang, ikat bool) {
 	id, err := g.DaftarMasterID(ctx, 0)
 	if err != nil {
 		log.Fatalf("mendaftar kontrak: %v", err)
+	}
+	edm, err := g.DaftarMasterIDPenyesuaian(ctx, 0)
+	if err != nil {
+		log.Fatalf("mendaftar penyesuaian: %v", err)
+	}
+	for _, e := range edm {
+		id = append(id, e, e+repository.AkhiranSisiLama)
 	}
 	tx, err := d.Mulai(ctx)
 	if err != nil {
@@ -256,21 +290,21 @@ func cetakCacah(ctx context.Context, g *repository.Gudang) {
 		tandaTotal = "⚠️"
 	}
 	fmt.Printf("  %s %-28s %7d  (sapuan: %d)\n", tandaTotal, "TOTAL", total, mau)
-	cetakPenandaRetro()
+	cetakAmbangRetro()
 }
 
-// cetakPenandaRetro menaruh lubang yang DISENGAJA di depan mata orang yang
+// cetakAmbangRetro menaruh ambang pembalikan §17 di depan mata orang yang
 // sedang merekonsiliasi.
 //
 // ⛔ Dicetak pada tiap `-cocokkan`, bukan disimpan di dokumen saja. Catatan
 // yang hanya ada di berkas dibaca oleh yang mencarinya; yang ini lewat di
 // depan yang TIDAK mencarinya, dan itulah yang diperlukan - orang yang
 // menyimpulkan "27.238 cocok, selesai" justru yang harus melihatnya.
-func cetakPenandaRetro() {
+func cetakAmbangRetro() {
 	fmt.Println()
-	fmt.Println("⚠️ ", repository.AlasanRetroTertunda)
-	for _, id := range repository.KontrakRetroTertunda {
-		fmt.Printf("     kontrak %s - larik %s TIDAK dimuat%s", id, repository.LarikRetroTertunda, "\n")
+	fmt.Println("⚠️ ", repository.AlasanRetroJarang)
+	for _, id := range repository.KontrakRetroJarang {
+		fmt.Printf("     kontrak %s - larik %s TIDAK dibangun%s", id, repository.LarikRetroJarang, "\n")
 	}
 }
 

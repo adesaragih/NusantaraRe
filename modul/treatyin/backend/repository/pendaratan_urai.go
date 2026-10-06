@@ -90,23 +90,35 @@ func BarisLarik(doc map[string]any, nama string) []map[string]any {
 // `pyTemplateRichTextEditor` sudah punya kolom, jadi pengecualian akan
 // menyembunyikan saudaranya yang berikutnya.
 func KunciTakTerpetakan(doc map[string]any) map[string][]string {
+	elemen := elemenPerTabel(doc)
 	out := map[string][]string{}
-	for i, p := range PetaPendaratan {
-		var baris []map[string]any
-		if i == IndeksButirAngsuran {
-			baris = butirAngsuran(doc)
-		} else {
-			baris = BarisLarik(doc, p.Larik)
-		}
+	for _, p := range PetaPendaratan {
 		dikenal := map[string]bool{}
 		for _, k := range p.Kunci {
+			// ⭐ Jalur BERTITIK dikenal lewat segmen PERTAMANYA.
+			// `ValueDifference.RNMShare` memakai kunci akar
+			// `ValueDifference`; tanpa ini halaman tertanam itu
+			// dilaporkan asing pada setiap dokumen yang punya.
+			if i := strings.IndexByte(k, '.'); i > 0 {
+				dikenal[k[:i]] = true
+				continue
+			}
 			dikenal[k] = true
 		}
-		if i == IndeksAngsuran {
-			dikenal[LarikAnakAngsuran] = true // anak, bukan kolom
+		// Kunci yang menampung tabel ANAK bukan kolom yang hilang — ia
+		// larik yang mendarat ke tabelnya sendiri.
+		for k := range kunciAnak[p.Tabel] {
+			dikenal[k] = true
+		}
+		if p.Akar {
+			// Tabel skalar akar melihat SELURUH dokumen, termasuk setiap
+			// larik tingkat pertama. Larik itu milik tabel lain.
+			for k := range larikTingkatPertama {
+				dikenal[k] = true
+			}
 		}
 		asing := map[string]bool{}
-		for _, el := range baris {
+		for _, el := range elemen[p.Tabel] {
 			for k := range el {
 				if !dikenal[k] {
 					asing[k] = true
@@ -125,6 +137,57 @@ func KunciTakTerpetakan(doc map[string]any) map[string][]string {
 	}
 	return out
 }
+
+// kunciAnak memetakan nama tabel INDUK -> himpunan kunci larik anaknya.
+//
+// ⛔ DIBANGKITKAN dari peta, bukan ditulis tangan. Bentuk sebelumnya
+// mengecualikan SATU kunci anak (`InstallmentList`) lewat tetapan
+// `LarikAnakAngsuran`, sehingga ke-13 kunci anak lain — `Detail`,
+// `TreatyGroupList`, `MDPList`, `DeductionList`, … — dilaporkan sebagai
+// "kunci tanpa kolom" pada hampir setiap dokumen.
+//
+// ⚠️ Akibatnya bukan sekadar berisik: daftar itu gunanya MEMPERLIHATKAN
+// properti baru dari Pega, dan daftar yang selalu memuat dua puluh nama
+// palsu membuat nama ke-21 yang sungguhan tidak terlihat siapa pun.
+var kunciAnak = func() map[string]map[string]bool {
+	m := map[string]map[string]bool{}
+	for _, p := range PetaPendaratan {
+		if p.Induk == "" {
+			continue
+		}
+		if m[p.Induk] == nil {
+			m[p.Induk] = map[string]bool{}
+		}
+		if len(p.LarikGabung) > 0 {
+			for _, n := range p.LarikGabung {
+				m[p.Induk][n] = true
+			}
+			continue
+		}
+		m[p.Induk][p.KunciAnak] = true
+	}
+	return m
+}()
+
+// larikTingkatPertama adalah setiap kunci larik di PUNCAK dokumen yang
+// sudah punya tabelnya sendiri — yang harus tidak terlihat oleh tabel
+// skalar akar.
+var larikTingkatPertama = func() map[string]bool {
+	m := map[string]bool{}
+	for _, p := range PetaPendaratan {
+		if p.Induk != "" || p.Akar {
+			continue
+		}
+		if len(p.LarikGabung) > 0 {
+			for _, n := range p.LarikGabung {
+				m[n] = true
+			}
+			continue
+		}
+		m[p.Larik] = true
+	}
+	return m
+}()
 
 // butirAngsuran meratakan `Installment[].InstallmentList` menjadi satu
 // daftar, dalam urutan baca.
@@ -146,14 +209,94 @@ func butirAngsuran(doc map[string]any) []map[string]any {
 
 // CacahLarik menghitung elemen tiap larik di SATU dokumen - angka yang
 // rekonsiliasi adu dengan cacah baris di tabelnya.
+//
+// ---------------------------------------------------------------------
+// ⛔ RALAT 6 Oktober 2026 — fungsi ini BUTA terhadap migrasi 438 dan 439.
+// ---------------------------------------------------------------------
+// Bentuk sebelumnya hanya mengenal DUA dari empat bentuk yang `MuatKontrak`
+// tangani: larik akar (`Larik`) dan larik anak (`Induk` + `KunciAnak`). Dua
+// bentuk yang lahir bersama migrasi 438/439 — `LarikGabung` (beberapa larik
+// ke satu tabel) dan `Akar` (dokumen itu sendiri sebagai satu baris) —
+// jatuh ke cabang `p.Induk == ""` dan dihitung lewat `BarisLarik(doc, "")`,
+// yang selalu mengembalikan NOL.
+//
+// ⚠️ Akibatnya BUKAN galat, dan itu yang membuatnya berbahaya:
+// rekonsiliasi akan melaporkan "dokumen memberi 0" untuk sembilan tabel
+// yang pemuatnya justru mengisi, lalu SELISIHNYA dibaca sebagai kerusakan
+// pemuat. Yang rusak justru pembandingnya.
+//
+// ⛔ Keempat cabang di bawah kini CERMINAN `MuatKontrak` satu lawan satu,
+// dengan urutan `switch` yang sama. Keduanya harus berubah bersama; yang
+// menjaganya `TestCacahLarikMengenalKeempatBentuk`.
 func CacahLarik(doc map[string]any) map[string]int {
 	out := map[string]int{}
-	for i, p := range PetaPendaratan {
-		if i == IndeksButirAngsuran {
-			out[p.Tabel] = len(butirAngsuran(doc))
-			continue
+	for tabel, baris := range elemenPerTabel(doc) {
+		out[tabel] = len(baris)
+	}
+	return out
+}
+
+// elemenPerTabel menapaki dokumen sekali dan mengembalikan elemen yang akan
+// mendarat di tiap tabel.
+//
+// ⛔ SATU penapak untuk `CacahLarik` DAN `KunciTakTerpetakan`. Keduanya dulu
+// menapaki pohonnya sendiri-sendiri, dan keduanya buta terhadap bentuk yang
+// berbeda — yang pertama terhadap `Akar` dan `LarikGabung`, yang kedua
+// terhadap SELURUH tabel anak kecuali butir angsuran. Dua penapak untuk satu
+// pohon akan berselisih lagi; yang ini tidak dapat.
+//
+// ⚠️ Urutan `switch` di bawah CERMINAN `MuatKontrak` satu lawan satu.
+// Keduanya harus berubah bersama; yang menjaganya
+// `TestCacahLarikMengenalKeempatBentuk`.
+func elemenPerTabel(doc map[string]any) map[string][]map[string]any {
+	// SEJAJAR urutan peta — anak membacanya untuk menemukan lariknya di
+	// dalam induk, jadi induk harus sudah terisi lebih dulu.
+	elemen := map[string][]map[string]any{}
+	for _, p := range PetaPendaratan {
+		var baris []map[string]any
+		switch {
+		case p.Akar:
+			// Dokumennya SENDIRI satu-satunya elemen — `URUTAN` 0.
+			baris = []map[string]any{doc}
+		case p.Induk == "" && len(p.LarikGabung) > 0:
+			for _, nama := range p.LarikGabung {
+				baris = append(baris, BarisLarik(doc, nama)...)
+			}
+		case p.Induk == "":
+			baris = BarisLarik(doc, p.Larik)
+		case len(p.LarikGabung) > 0:
+			for _, el := range elemen[p.Induk] {
+				for _, nama := range p.LarikGabung {
+					baris = append(baris, larikObjek(el, nama)...)
+				}
+			}
+		default:
+			for _, el := range elemen[p.Induk] {
+				baris = append(baris, larikObjek(el, p.KunciAnak)...)
+			}
 		}
-		out[p.Tabel] = len(BarisLarik(doc, p.Larik))
+		elemen[p.Tabel] = baris
+	}
+	return elemen
+}
+
+// larikObjek mengambil larik bernama `kunci` dari satu elemen, hanya
+// anggotanya yang berupa objek.
+//
+// ⚠️ Anggota yang BUKAN objek dilewati diam-diam, sama seperti di
+// `MuatKontrak`. Nol anggota semacam itu di korpus hari ini; yang penting
+// kedua tempat memperlakukannya SAMA, sebab beda perlakuan di sini
+// muncul sebagai selisih rekonsiliasi yang tak dapat dijelaskan.
+func larikObjek(el map[string]any, kunci string) []map[string]any {
+	larik, ok := el[kunci].([]any)
+	if !ok {
+		return nil
+	}
+	out := make([]map[string]any, 0, len(larik))
+	for _, e := range larik {
+		if o, ok := e.(map[string]any); ok {
+			out = append(out, o)
+		}
 	}
 	return out
 }

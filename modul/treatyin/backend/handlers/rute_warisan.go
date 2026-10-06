@@ -20,6 +20,51 @@ import (
 )
 
 func daftarkanWarisan(pasang func(string, rute)) {
+	// Pilihan dropdown kepala (nilai tersimpan ↔ label) — juga untuk kontrak
+	// BARU, yang belum punya dokumen untuk membawanya.
+	// Tombol `Apply` tab Reporting Period — `Activity/TreatyInSetReport.xml`.
+	// MURNI menghitung dari isian layar: nol baca, nol tulis basis data.
+	// Isian kosong dijawab 200 berisi pesan per medan, persis Activity-nya.
+	pasang("POST "+Prefix+"/hitung/periode-pelaporan", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		var m services.MasukanPeriodePelaporan
+		if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
+			galat.Tulis(w, http.StatusBadRequest, "request body must be valid JSON")
+			return
+		}
+		hasil, err := l.HitungPeriodePelaporan(p, m)
+		tulis(w, hasil, err)
+	})
+	pasang("GET "+Prefix+"/warisan/opsi-kepala", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		hasil, err := l.OpsiKepala(p)
+		tulis(w, hasil, err)
+	})
+	// Isi kedua pemilih "Choose …" — keputusan pemilik proses 4 Oktober 2026.
+	//
+	// ⛔ NOL parameter kontrak. Keduanya katalog: isinya sama untuk setiap
+	// kontrak, dan menggantungkannya pada `{id}` berarti menarik 94 baris
+	// setiap kali satu kontrak dibuka.
+	//
+	// ⚠ Larik KOSONG dijawab 200, bukan 404. "Belum ada cedant tercatat"
+	// adalah jawaban yang sah, bukan sumber daya yang hilang.
+	pasang("GET "+Prefix+"/warisan/cedant", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		hasil, err := l.DaftarCedant(r.Context(), p)
+		tulis(w, hasil, err)
+	})
+	pasang("GET "+Prefix+"/warisan/asal-bisnis", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		hasil, err := l.DaftarAsalBisnis(r.Context(), p)
+		tulis(w, hasil, err)
+	})
+	// Isi SELURUH dropdown tab Limits (Treaty Type, Treaty Group, mata uang).
+	pasang("GET "+Prefix+"/warisan/opsi-limits", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		hasil, err := l.OpsiLimits(r.Context(), p)
+		tulis(w, hasil, err)
+	})
+	// Isi dropdown `Treaty Type` tab Limits — katalog, sama seperti di atas.
+	pasang("GET "+Prefix+"/warisan/jenis-treaty", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		hasil, err := l.DaftarJenisTreaty(r.Context(), p)
+		tulis(w, hasil, err)
+	})
+
 	// Tiket 32 — SELURUH pemulihan sebuah layer sekaligus.
 	pasang("PUT "+Prefix+"/layer/{id}/pemulihan", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		id, ok := pengenalLayer(w, r)

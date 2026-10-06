@@ -57,6 +57,7 @@ const KELAS_MODUL = [
   'trin__teks',
   'trin__teks-asal',
   'trin__teks-lain',
+  'trin__spanduk',
 ] as const
 
 /** Setiap berkas di bawah folder frontend modul (rekursif). */

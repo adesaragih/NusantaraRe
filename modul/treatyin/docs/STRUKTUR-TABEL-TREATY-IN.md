@@ -1094,3 +1094,84 @@ keputusan itu belum diambil. `4-erd-dan-tabel-datar/KOREKSI-ERD-VERSUS-POOLDATA.
 ⛔ **Kunci JSON tanpa kolom dilaporkan, bukan ditelan.** Pega menambah properti tanpa memberi tahu
 siapa pun, dan kunci baru yang tidak punya kolom hilang **tanpa galat** — pemuatnya tetap hijau dan
 cacah barisnya tetap cocok. `repository.KunciTakTerpetakan` mencarinya pada setiap pemuatan.
+
+## M_ATTACHMENTTREATY_2 — panel Attachment, tabel WARISAN
+
+⛔ **NOL tabel baru, NOL migrasi.** Lampiran sudah relasional di sistem lama; aturan *"tabel baru
+hanya untuk struktur tab ber-JSON"* tidak berlaku padanya. `repository/warisan_lampiran.go`
+**BACA SAJA** — dijaga `TestWarisanHanyaDibaca`.
+
+| | |
+| --- | ---: |
+| baris | **43** |
+| `TREATYID` berbeda | 7 — **6 cocok** ke `TREATY_IN.ID`, **1 yatim** |
+| kolom | `ID` `TREATYID` `CATEGORY` `FILENAME` `FILEMIMETYPE` `DATA_JSON`(CLOB) `DATEINPUT` `USERNAME` `CATEGORY_ID` `T_STORAGE_ID` |
+
+⚠️ **`DATA_JSON` TIDAK dibaca.** Ia memuat muatan berkasnya; panel hanya menampilkan daftar, dan
+menariknya pada tiap pembukaan form berarti memindahkan berkas yang tidak ada yang minta.
+Berkasnya sendiri hidup di `T_STORAGE_IMAGE`, lewat `T_STORAGE_ID`.
+
+### Kategori — tujuh terbukti, empat belum
+
+Pasangan kode↔nama **dibaca dari data**, bukan dihafal: tabelnya menyimpan `CATEGORY_ID` dan
+`CATEGORY` berdampingan.
+
+| Kode | Nama | Baris |
+| --- | --- | ---: |
+| `00000` | Others | 5 |
+| `00001` | Analysed Email | 10 |
+| `00002` | Approval Email | 14 |
+| `00005` | Summary Treaty Leader | 10 |
+| `00006` | Assessment Inward Treaty Form / Format Analisa Treaty | 2 |
+| `00007` | Pega Proportional Calculation /Perhitungan Pega Proportional | 1 |
+| `00010` | Offer Email | 1 |
+
+⛔ **`00003` `00004` `00008` `00009` — nol baris, dan namanya TIDAK ADA di korpus kedua modul.**
+Keempatnya tampil dengan **kodenya, tanpa nama**, ditandai belum dipastikan. Empat nama yang
+belum berumah disebut terpisah di layar. Menebak pasangannya menaruh berkas di kategori yang
+salah, dan itu baru ketahuan bertahun kemudian —
+[`PERTANYAAN-TERBUKA-KODE-KATEGORI-LAMPIRAN.md`](PERTANYAAN-TERBUKA-KODE-KATEGORI-LAMPIRAN.md).
+
+⭐ Pertanyaannya **dapat terjawab sendiri**: begitu salah satu kode muncul di data lengkap dengan
+`CATEGORY`-nya, katalog membacanya dan penandanya lepas tanpa perubahan kode.
+`TestKatalogKategoriTerbacaDariData` merah pada hari itu.
+
+### Aturan nama berkas — spanduk biru
+
+*"Recommended safe substitute should be . or _"* (`Section/WorkAttachments.xml`) adalah **aturan**:
+huruf, angka, titik, garis bawah, tanda hubung. Ditegakkan `services.NamaBerkasAman` untuk
+unggahan **baru**, dan diuji dua arah — yang ditolak dan yang diterima.
+
+⚠️ **Tidak surut.** Diukur terhadap ke-43 nama yang sudah tersimpan: **6 lolos, 37 tidak**.
+Menolak 86% dari yang sudah ada berarti menutup pintu yang sistem lama buka.
+
+### Panel History — nol pembacaan baru
+
+Date · PIC · Approval · Comment berpadanan satu-satu dengan `M_TREATYIN_COMMENT`
+(`TANGGAL` · `OPERATORNAME` · `ISAPPROVED` · `SUGGEST`), tabel pendaratan yang **sudah** terisi
+11.365 baris. `repository.BacaCatatan` dipakai ulang apa adanya.
+
+### Modul Adjustment
+
+`Section/ShowAttachmentTreaty.xml`, `WorkAttachments.xml`, dan `TreatyInActionButtons.xml` ada di
+**kedua** ekspor, jadi pembacaannya ada di kedua modul —
+`modul/treatyinadjustment/backend/repository/warisan_lampiran.go`. ⛔ **Bukan impor silang**:
+`TestModulTidakMengimporModulLain` menolaknya, dan dua modul yang berbagi kode repository
+berbagi juga jadwal rilisnya. Kesamaannya **dinyatakan** di kepala kedua berkas alih-alih
+disembunyikan; yang tidak boleh menyimpang hanya nama tabel dan nama kolomnya.
+
+## ⛔ `NILAI_SELISIH` + `NILAI_SEBELUM_PRO_RATE` — PINDAH ke modul Adjustment
+
+Keduanya **tidak lagi milik modul ini** sejak 4 Oktober 2026
+([`KEPUTUSAN` §19](KEPUTUSAN-PENYELARASAN-REPO.md)). `435_cabut_nilai_selisih.sql` mencabutnya;
+`treatyinadjustment/.../442_nilai_selisih.sql` membangunnya kembali dengan bentuk yang **identik**
+— `diff` tanpa komentar mengembalikan nol selisih.
+
+⚠️ **Kepala `426_nilai_selisih.sql` TETAP DI MODUL INI**, dan itu disengaja. Ia memuat empat
+alasan rancangan yang masih mengikat — kardinalitas 1:N lawan 1:1 ERD, penghalang
+`BESARAN_DAPAT_DISESUAIKAN`, induk `VERSI_KONTRAK` lawan `KONTRAK`, dan INV-58 (tabel bernama
+`NILAI_SELISIH` tanpa kolom selisih). `442` **menunjuk balik** ke sana alih-alih menyalinnya dan
+membiarkan salinannya membeku.
+
+Keduanya **nol baris** sebelum dan sesudah pemindahan, jadi tidak ada yang hilang. Barisnya di
+`TestPerilakuHapusSesuaiERD` ikut pindah, tidak digandakan.

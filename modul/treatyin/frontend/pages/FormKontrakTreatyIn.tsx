@@ -18,12 +18,11 @@
 // Co-Ins Scale (@1095716), dan satu SALINAN KEDUA "Account Reporting Period"
 // (@1300558). Yang dibangun salinan hidupnya, @45828.
 
-import { useEffect, useState } from 'react'
+import {  useEffect, useState } from 'react'
 
 import {
   Area,
   Field,
-  FieldTanggal,
   Gagal,
   Kosong,
   Memuat,
@@ -31,171 +30,63 @@ import {
   Pilih,
   StripTab,
 } from '../../../../inti/frontend/components/ui/dasar'
-import { formatNumber, formatPersen } from '../../../../inti/frontend/lib/format'
 import {
+  ambilDaftarAsalBisnis,
+  ambilDaftarCedant,
   ambilKontrakWarisan,
-  type BarisLayerWarisan,
-  type BarisPeriodeWarisan,
+  ambilOpsiKepala,
   type KontrakWarisan,
-  type TabTeksWarisan,
+  type OpsiKepala,
 } from '../api'
+import type { ModeForm } from '../mode'
 import {
   FORM_KONTRAK,
-  REPORTING_PERIOD,
+  SYARAT_TAB_NON_PROPORSIONAL,
+  SYARAT_TAB_PROPORSIONAL,
+  type SyaratTabKontrak,
   TAB_NON_PROPORSIONAL,
   TAB_PROPORSIONAL,
-  KOLOM_PORTOFOLIO,
   KOLOM_AKUMULASI,
   KOLOM_EGNPI,
   KOLOM_RETENSI,
   KOLOM_ANGSURAN,
   KOLOM_CATATAN,
-  KOLOM_LIMITS,
-  KOLOM_SHARE,
-  KOLOM_EVENT_LIMITS,
-  KOLOM_RNM_SHARE,
   KOLOM_COIN_SCALE,
-  JENIS_LIMITS,
-  JENIS_SHARE,
-  JENIS_EVENT_LIMITS,
-  JENIS_RNM_SHARE,
   JENIS_COIN_SCALE,
-  DESIMAL_UANG,
-  DESIMAL_PERSEN,
-  DESIMAL_PERSEN_SHARE,
-  type JenisAngka,
+  JENIS_EGNPI,
+  JENIS_RETENSI,
+  JENIS_ANGSURAN,
+  GRID_TAMBAH,
 } from '../labels'
 
-/**
- * Satu sel grid, diformat menurut GOLONGAN kolomnya.
- *
- * ⛔ Pemformatnya `inti/frontend/lib/format.ts` — dipanggil, tidak ditulis
- * ulang. Ia bekerja pada DIGIT, bukan pada float, sehingga nilai uang
- * berdigit banyak (`LIMIT_100` mencapai 1,8 triliun) tidak kehilangan angka
- * terakhirnya diam-diam. Teks yang bukan angka dikembalikan APA ADANYA —
- * itulah yang menjaga `>=30% up to < 50%` dan nilai aneh warisan tetap
- * terlihat mentah alih-alih berpura-pura nol.
- *
- * ⛔ Pemformatan HANYA di lapis tampilan. Nilai tersimpan tetap teks apa
- * adanya; `repository` dan `services` tidak menyentuhnya.
- */
-export function selAngka(jenis: JenisAngka, nilai: string): string {
-  switch (jenis) {
-    case 'uang':
-      return formatNumber(nilai, DESIMAL_UANG)
-    case 'persen':
-      if (!angkaMurni(nilai)) return nilai
-      return formatPersen(nilai, DESIMAL_PERSEN)
-    case 'persenShare':
-      // ⛔ DELAPAN desimal — keputusan pemilik proses 4 Oktober 2026,
-      // `KEPUTUSAN-PENYELARASAN-REPO.md` §13. Sama persis dengan batas
-      // penyimpanan `NUMBER(38,8)`: menampilkan lebih berarti mengaku lebih
-      // teliti daripada yang sistem simpan, menampilkan kurang menutupi
-      // selisih yang orang cari ketika memeriksa.
-      if (!angkaMurni(nilai)) return nilai
-      return formatPersen(nilai, DESIMAL_PERSEN_SHARE)
-    default:
-      return nilai
-  }
-}
+// ⭐ KOMPONEN DIPECAH 5 Oktober 2026 — pemindahan MURNI, nol perubahan
+// perilaku. Contohnya `modul/masterproductnamelife`, yang komponen
+// terbesarnya 372 baris sementara layar ini dahulu 1.826 dalam satu berkas.
+import MedanTakAda from '../components/MedanTakAda'
+import PanelHistory from '../components/PanelHistory'
+import PanelPolisProduksi from '../components/PanelPolisProduksi'
+import PanelTotalRetensi from '../components/PanelTotalRetensi'
+import TanggalRedup from '../components/TanggalRedup'
+import { barisAngka, selAngka } from '../components/angka'
+import PanelLampiran from '../components/PanelLampiran'
+import PohonLimits from '../components/PohonLimits'
+import TabLimitsProp from '../components/TabLimitsProp'
+import SubTabShare, { PanelRnmShare } from '../components/TabShare'
+import TabGridWarisan from '../components/TabGridWarisan'
+import TabPortofolio from '../components/TabPortofolio'
+import TabTeksPanjang from '../components/TabTeksPanjang'
+import TabEventLimits from '../components/TabEventLimits'
+import DropdownWarisan from '../components/DropdownWarisan'
+import TabReportingPeriod from '../components/TabReportingPeriod'
 
-/**
- * ⛔ Nilai yang BUKAN angka tidak boleh diberi tanda `%`.
- *
- * `formatPersen` mengembalikan teks bukan-angka apa adanya lalu MENEMPELKAN
- * `%` padanya — benar untuk nilai kosong, salah untuk pita seperti
- * `>=30% up to < 50%`, yang menjadi `>=30% up to < 50%%` dengan dua tanda.
- *
- * ⚠️ Ini BUKAN pemformat kedua: ia hanya memutuskan APAKAH `formatPersen`
- * dipanggil. `format.ts` tidak disentuh — aturannya dipenuhi lewat argumen
- * dan lewat pemanggilan, persis seperti yang ronde ini tuntut.
- *
- * Hari ini hanya `CoInShare` yang berbentuk pita, dan ia digolongkan `teks`
- * sehingga tidak melewati jalur ini sama sekali. Penjaga ini ada untuk
- * salah-golong BERIKUTNYA — satu huruf di `JENIS_*` sudah cukup.
- */
-function angkaMurni(nilai: string): boolean {
-  return /^[+-]?\d*(?:\.\d*)?$/.test(nilai.trim()) && /\d/.test(nilai)
-}
+// ⛔ DIEKSPOR ULANG, bukan didefinisikan di sini: uji yang mengimpornya dari
+// halaman ini tetap berjalan tanpa disunting — itulah bukti pemindahannya
+// murni.
+export { padankanDesimal, selAngka } from '../components/angka'
 
-/**
- * Tab yang isinya SATU medan teks panjang — Exclusions, Special Conditions.
- *
- * ⛔ Jalan B, keputusan §15: teksnya dibaca dari `JSONDATA`, nol tabel
- * pendaratan. Yang dikerjakan layar hanya menampilkannya.
- *
- * ⛔ TIGA keadaan, dan ketiganya terlihat berbeda:
- *
- *   ada isinya            teksnya, dapat digulir, plus ejaan asalnya.
- *   ejaan cabang kosong   `Kosong` — "belum ada DATA". TIDAK diisi dari
- *                         ejaan lain: isinya BERBEDA, bukan salinan basi.
- *   ejaan lain juga ada   peringatan yang MENYEBUT ejaannya, supaya
- *                         pembacanya tahu ada teks yang ia tidak lihat.
- */
-function TabTeksPanjang({
-  judul,
-  tab,
-  petunjukKosong,
-}: {
-  judul: string
-  tab: TabTeksWarisan | undefined
-  petunjukKosong: string
-}) {
-  const isi = tab?.isi ?? ''
-  const lain = tab?.ejaanLain ?? []
-  return (
-    <Panel judul={judul}>
-      {lain.length > 0 && (
-        <span className="trin__teks-lain" role="note">
-          {FORM_KONTRAK.ejaanLainBerisi} {lain.join(', ')}
-        </span>
-      )}
-      {isi === '' ? (
-        <Kosong pesan={FORM_KONTRAK.tanpaTeks} petunjuk={petunjukKosong} />
-      ) : (
-        <>
-          <span className="trin__teks-asal">
-            {FORM_KONTRAK.ejaanDipakai} {tab?.ejaan}
-          </span>
-          <div className="trin__teks" tabIndex={0}>
-            {isi}
-          </div>
-        </>
-      )}
-    </Panel>
-  )
-}
 
-/** Menyusun baris grid dari baris layer, satu nilai per kolom. */
-function barisLayer(
-  layer: readonly BarisLayerWarisan[],
-  ambil: (b: BarisLayerWarisan) => readonly string[],
-  jenis: readonly JenisAngka[],
-): string[][] {
-  return layer.map((b) => ambil(b).map((v, i) => selAngka(jenis[i] ?? 'teks', v)))
-}
 
-/**
- * Medan yang KUNCINYA tidak ada di dokumen warisan kontrak ini.
- *
- * ⛔ MATI dengan keterangan, bukan kotak kosong. Kotak kosong terbaca
- * "belum diisi"; medan mati terbaca "tidak ada di sistem lama". Bedanya
- * menentukan apa yang orang tagih — dan sapuan 3 Oktober 2026 menemukan ia
- * BUKAN kasus langka: `ContractRefNo` tidak ada di 1.112 dari 1.854 kontrak,
- * `TreatyLeader` di 1.195.
- *
- * Pola yang sama sudah dipakai tombol `Choose Ceding`, dan sebabnya tertulis
- * di sana.
- */
-function MedanTakAda({ label }: { label: string }) {
-  return (
-    <div className="field">
-      <label className="field__label">{label}</label>
-      <input className="field__input" type="text" value="" readOnly disabled />
-      <span className="trin__redup">{FORM_KONTRAK.takAdaDiWarisan}</span>
-    </div>
-  )
-}
+
 
 /**
  * Susunan dua kolom form, **dalam urutan rujukan**.
@@ -235,8 +126,24 @@ export const NON_PROPORSIONAL = 'Non Proportional'
  * dan supaya perbedaan kedua himpunan menjadi hal yang gagal bila seseorang
  * kelak meratakannya.
  */
-export function tabUntuk(jenis: string): readonly string[] {
-  return jenis === NON_PROPORSIONAL ? TAB_NON_PROPORSIONAL : TAB_PROPORSIONAL
+export function tabUntuk(jenis: string, syarat?: SyaratTabKontrak): readonly string[] {
+  const nonProp = jenis === NON_PROPORSIONAL
+  const semua = nonProp ? TAB_NON_PROPORSIONAL : TAB_PROPORSIONAL
+  // ⛔ Syaratnya BERCABANG. `Retro` ada di kedua daftar dan hanya yang
+  // proporsional bersyarat — lihat `SYARAT_TAB_*` di `labels.ts`.
+  const syaratCabang = nonProp ? SYARAT_TAB_NON_PROPORSIONAL : SYARAT_TAB_PROPORSIONAL
+  // ⛔ Kontrak BARU (nol `syarat`) memperlihatkan SELURUH tab.
+  //
+  // Syarat tampil dibaca dari dokumen kontrak; kontrak yang belum punya
+  // dokumen tidak punya jawabannya, dan menyembunyikan tab karena
+  // pertanyaannya belum dapat dijawab menyembunyikannya SELAMANYA — tab
+  // yang tersembunyi tidak pernah diisi, dan yang tidak pernah diisi tidak
+  // pernah memenuhi syaratnya.
+  if (syarat === undefined) return semua
+  return semua.filter((t) => {
+    const uji = syaratCabang[t]
+    return uji === undefined || uji(syarat)
+  })
 }
 
 /** Satu baris grid Rate of Exchange; kosong adalah keadaan awal yang sah. */
@@ -245,174 +152,6 @@ interface BarisKurs {
   nilaiKeIDR: string
   berlakuDari: string
   berlakuSampai: string
-}
-
-/**
- * Grid satu tab yang isinya dibaca dari dokumen warisan.
- *
- * ⛔ Kolomnya DISEBUT pemanggilnya, tidak disimpulkan dari barisnya: baris
- * boleh nol, dan kepala kolom harus tetap terlihat. Layar yang
- * menyembunyikan kolomnya ketika kosong tidak memperlihatkan rancangannya
- * sendiri.
- */
-function TabGridWarisan({
-  judul,
-  kolom,
-  baris,
-  petunjukKosong,
-}: {
-  judul: string
-  kolom: readonly string[]
-  baris: readonly (readonly string[])[]
-  petunjukKosong: string
-}) {
-  return (
-    <Panel judul={judul}>
-      <div className="table-wrap">
-        <table className="trin__tabel">
-          <thead>
-            <tr>
-              {kolom.map((k) => (
-                <th key={k} scope="col">
-                  {k}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {baris.length === 0 && (
-              <tr>
-                <td colSpan={kolom.length}>
-                  <Kosong pesan={FORM_KONTRAK.tanpaBaris} petunjuk={petunjukKosong} />
-                </td>
-              </tr>
-            )}
-            {baris.map((b, i) => (
-              <tr key={i}>
-                {b.map((v, j) => (
-                  <td key={j}>{v}</td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Panel>
-  )
-}
-
-/** Isi tab Reporting Period — satu-satunya tab yang dibangun ronde ini. */
-function TabReportingPeriod({ baris: barisWarisan }: { baris: readonly BarisPeriodeWarisan[] }) {
-  const [mulai, setMulai] = useState('')
-  const [akhir, setAkhir] = useState('')
-  const [periode, setPeriode] = useState('')
-  const [penyerahan, setPenyerahan] = useState('')
-  const [konfirmasi, setKonfirmasi] = useState('')
-  const [pelunasan, setPelunasan] = useState('')
-  const [galat, setGalat] = useState('')
-  // ⭐ Grid ini DIISI dari dokumen warisan, dan tombol Apply menambah ke
-  // atasnya. `ReportingPeriodList` berisi di 225 dari 300 dokumen yang
-  // disapu; keenam kolomnya sama persis dengan yang layar lama tampilkan.
-  const barisAwal: readonly string[][] = barisWarisan.map((b) => [
-    b.periode,
-    b.hitungOtomatis,
-    b.tanggalAwal,
-    b.jatuhTempoKirim,
-    b.jatuhTempoKonfirmasi,
-    b.jatuhTempoBayar,
-  ])
-  const [baris, setBaris] = useState<readonly string[][]>(barisAwal)
-
-  // ⛔ Pesan galatnya DISALIN apa adanya dari ekspor; lihat `labels.ts`.
-  // Jangan diperhalus — pemakai yang mengenali kalimat lamanya tahu ia sedang
-  // ditolak oleh aturan yang sama, bukan oleh aturan baru yang mirip.
-  function terapkan() {
-    if (mulai === '' || penyerahan === '') {
-      setGalat(REPORTING_PERIOD.galatKosong)
-      return
-    }
-    setGalat('')
-    // ⚠️ Perhitungan jatuh temponya BELUM dibangun: ia menuntut tabel
-    // PERIODE_PELAPORAN terisi (tiket 25) dan aturan hari kerjanya, dan
-    // keduanya belum ada. Baris sengaja tidak dikarang.
-    setBaris(barisAwal)
-  }
-
-  return (
-    <Panel judul={REPORTING_PERIOD.judul}>
-      <div className="form-grid">
-        <FieldTanggal label={REPORTING_PERIOD.mulai} value={mulai} onChange={setMulai} />
-        <FieldTanggal label={REPORTING_PERIOD.akhir} value={akhir} onChange={setAkhir} />
-        <Pilih
-          label={REPORTING_PERIOD.periode}
-          value={periode}
-          onChange={setPeriode}
-          opsi={[{ value: REPORTING_PERIOD.periodeNilai, label: REPORTING_PERIOD.periodeNilai }]}
-        />
-        <Field
-          label={`${REPORTING_PERIOD.penyerahan} (${REPORTING_PERIOD.hari})`}
-          value={penyerahan}
-          onChange={setPenyerahan}
-        />
-        <Field
-          label={`${REPORTING_PERIOD.konfirmasi} (${REPORTING_PERIOD.hari})`}
-          value={konfirmasi}
-          onChange={setKonfirmasi}
-        />
-        <Field
-          label={`${REPORTING_PERIOD.pelunasan} (${REPORTING_PERIOD.hari})`}
-          value={pelunasan}
-          onChange={setPelunasan}
-        />
-      </div>
-
-      <div className="trin__aksi">
-        <button type="button" className="btn btn--primary" onClick={terapkan}>
-          {REPORTING_PERIOD.terapkan}
-        </button>
-      </div>
-
-      {/* ⛔ Galat masukan, BUKAN cabang <Gagal>. `Gagal` menyatakan backend
-          menolak atau tidak terjangkau; ini aturan layar. Mencampurnya adalah
-          salah diagnosa yang `dasar.tsx` baris 344 catat. */}
-      {galat !== '' && (
-        <p className="trin__galat" role="alert">
-          {galat}
-        </p>
-      )}
-
-      {baris.length === 0 ? (
-        <Kosong
-          pesan={REPORTING_PERIOD.tanpaBaris}
-          petunjuk="Perhitungan jatuh tempo menuntut PERIODE_PELAPORAN terisi (tiket 25); barisnya tidak dikarang."
-        />
-      ) : (
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">{REPORTING_PERIOD.kolomPeriode}</th>
-                <th scope="col">{REPORTING_PERIOD.kolomOtomatis}</th>
-                <th scope="col">{REPORTING_PERIOD.kolomTanggalAwal}</th>
-                <th scope="col">{REPORTING_PERIOD.kolomPenyerahan}</th>
-                <th scope="col">{REPORTING_PERIOD.kolomKonfirmasi}</th>
-                <th scope="col">{REPORTING_PERIOD.kolomPelunasan}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {baris.map((b, i) => (
-                <tr key={i}>
-                  {b.map((c, j) => (
-                    <td key={j}>{c}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </Panel>
-  )
 }
 
 export interface FormKontrakProps {
@@ -424,10 +163,32 @@ export interface FormKontrakProps {
    * kolom `ID` di sana `VARCHAR2(100)`.
    */
   idKontrak: string
+  /**
+   * ⭐ `ubah` dari tombol `Edit` (dan `Add`), `lihat` dari `View`. Mode lihat
+   * mematikan seluruh isian lewat `<fieldset disabled>` dan tidak merender
+   * tombol `Add`/`Delete` tabel.
+   */
+  mode?: ModeForm
   onKembali: () => void
 }
 
-export default function FormKontrakTreatyIn({ idKontrak, onKembali }: FormKontrakProps) {
+export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKembali }: FormKontrakProps) {
+  const bisaUbah = mode === 'ubah'
+  // Pilihan dropdown kepala — nilai TERSIMPAN ↔ label, disusun services.
+  // Kontrak yang dibuka membawanya; kontrak BARU memintanya sendiri.
+  const [opsi, setOpsi] = useState<OpsiKepala | null>(null)
+  useEffect(() => {
+    if (idKontrak !== '') return
+    let dibuang = false
+    ambilOpsiKepala()
+      .then((o) => {
+        if (!dibuang) setOpsi(o)
+      })
+      .catch(() => undefined)
+    return () => {
+      dibuang = true
+    }
+  }, [idKontrak])
   // Kontrak warisan yang sedang dibuka; null selama memuat, dan tetap null
   // untuk kontrak BARU (pengenal kosong) — yang memang tidak punya warisan.
   const [warisan, setWarisan] = useState<KontrakWarisan | null>(null)
@@ -443,6 +204,11 @@ export default function FormKontrakTreatyIn({ idKontrak, onKembali }: FormKontra
   const [mulai, setMulai] = useState('')
   const [berakhir, setBerakhir] = useState('')
   const [pembukuan, setPembukuan] = useState('')
+  // ⛔ MEDAN KEDUA, bukan medan yang sama. `AccountingModeNonProp` berdiri
+  // sendiri di ekspor dengan `pyCondition` cabangnya sendiri; satu keadaan
+  // untuk keduanya akan membuat berpindah cabang menimpa nilai cabang yang
+  // ditinggalkan.
+  const [pembukuanNonProp, setPembukuanNonProp] = useState('')
   const [cedant, setCedant] = useState('')
   const [asalBisnis, setAsalBisnis] = useState('')
   const [pemimpin, setPemimpin] = useState(false)
@@ -450,7 +216,10 @@ export default function FormKontrakTreatyIn({ idKontrak, onKembali }: FormKontra
   // dari keadaan kosong. `CurrencyList` berisi di 297 dari 300 dokumen yang
   // disapu — "No items" selama ini bukan karena datanya tidak ada, melainkan
   // karena tidak ada yang membacanya.
-  const kurs: BarisKurs[] = warisan?.kurs ?? []
+  const [kurs, setKurs] = useState<BarisKurs[]>([])
+  // Sel grid kurs yang sedang diketik (`baris:kolom`), atau null. Dipakai
+  // supaya pemformat tidak melawan pengetik — lihat catatan di gridnya.
+  const [selDiketik, setSelDiketik] = useState<string | null>(null)
 
   // ⛔ Mengisi SELURUH medan dari kontrak nyata, termasuk radio jenisnya.
   // Radio itu memilih strip tab, dan tiket ronde ini menyebutnya: ia
@@ -469,15 +238,27 @@ export default function FormKontrakTreatyIn({ idKontrak, onKembali }: FormKontra
       .then((k) => {
         if (dibuang) return
         setWarisan(k)
+        setOpsi(k.opsiKepala)
+        // ⛔ `?? []` BUKAN hiasan, dan bukan pula ketidakpercayaan pada
+        // backend. Ia lapis kedua dari galat yang menghentikan halaman
+        // 6 Oktober 2026 — `Cannot read properties of null (reading
+        // 'length')` — ketika jawaban memuat `"kurs": null`. Seluruh medan
+        // larik lain di layar ini sudah dibaca lewat `?? []`; yang satu ini
+        // lewat `useState`, dan itulah sebabnya hanya ia yang jatuh.
+        setKurs(k.kurs ?? [])
         setJenis(k.sifatProporsi === NON_PROPORSIONAL ? NON_PROPORSIONAL : PROPORSIONAL)
         setNama(k.namaKontrak)
         setRujukan(k.nomorRujukan)
         setWilayah(k.lingkupWilayah)
-        setBordereaux(k.bordereaux)
+        // ⛔ NILAI TERSIMPAN, bukan label tampil — dropdown memegang nilai dan
+        // menampilkan label dari `opsiKepala`. Mengisinya dengan label
+        // (`Underwriting Year`) memberi "tidak ada di daftar referensi".
+        setBordereaux(k.bordereauxAsli)
         setBordereauxNote(k.bordereauxCatatan)
         setMulai(k.tanggalMulai)
         setBerakhir(k.tanggalBerakhir)
-        setPembukuan(k.caraPembukuan)
+        setPembukuan(k.caraPembukuanAsli)
+        setPembukuanNonProp(k.caraPembukuanNonPropAsli)
         setCedant(k.cedant)
         setAsalBisnis(k.asalBisnis)
         // `TreatyLeader` tersimpan sebagai TEKS `"true"`/`"false"`, bukan
@@ -498,22 +279,54 @@ export default function FormKontrakTreatyIn({ idKontrak, onKembali }: FormKontra
   /** Kunci itu ADA di dokumen kontrak ini? Kontrak baru: tidak relevan. */
   const adaKunci = (kunci: string) => warisan === null || (warisan.adaDiJson[kunci] ?? false)
 
-  const tab = tabUntuk(jenis)
+  // ⭐ Syarat tampil tab — dari dokumen kontrak, nol untuk kontrak baru.
+  const syaratTab: SyaratTabKontrak | undefined =
+    warisan === null
+      ? undefined
+      : {
+          retroBerganda: warisan.retroBerganda,
+          edmState: warisan.edmState,
+          edmJenisMaterial: warisan.edmJenisMaterial,
+        }
+  const tab = tabUntuk(jenis, syaratTab)
   const [tabAktif, setTabAktif] = useState<string>(tab[0] ?? '')
   const tabTampil = tab.includes(tabAktif) ? tabAktif : (tab[0] ?? '')
 
   /**
-   * `Treaty Year` — baca-saja, DITURUNKAN dari tanggal mulai.
+   * `Treaty Year` — baca-saja, dan TIDAK DIFORMAT.
    *
-   * ⚠️ Rumusnya BELUM diverifikasi di ekspor: `TreatyIn.TreatyYear` ada
-   * sebagai properti, tetapi aktivitas yang menghitungnya belum ditelusuri.
-   * Yang ditampilkan tahun dari `Commencement` apa adanya; begitu rumusnya
-   * terbaca, inilah satu tempat yang berubah.
+   * ⭐ PERTANYAAN TERBUKA RONDE SEBELUMNYA DITUTUP oleh gambar `01`: medan
+   * ini berbunyi `2025` — tahun polos. Dugaan `05/1` sebagai turunan SALAH;
+   * itu artefak form yang belum tersimpan, dan pemilik proses menyatakannya
+   * sendiri 5 Oktober 2026.
+   *
+   * ⛔ `selAngka` TIDAK dipanggil di sini, dan itu disengaja: pemisah ribuan
+   * atas sebuah tahun memberi `2.025`.
+   *
+   * RUMUSNYA juga terbaca, dan ia tetap tidak dihitung di sini.
+   *
+   * ⭐ `DataTransform/TreatyInSetTreatyYear.xml` (`pyRuleAvailable = Yes`,
+   * memo *"termination automatically add 1 year from start date"*):
+   *
+   *     TreatyIn.TreatyYear  := @substring(TreatyIn.Commencement,0,4)
+   *     TreatyIn.Termination := @addCalendar(TreatyIn.Commencement,"1",0,0,0,0,0,0)
+   *
+   * ⚠️ Dan itu rumus SAAT MASUK, bukan aturan yang terus berlaku. Diadu
+   * dengan POOLDATA, 5 Oktober 2026:
+   *
+   *     TREATYYEAR = SUBSTR(COMMENCEMENT,1,4)       1.849 dari 1.854
+   *     TERMINATION = COMMENCEMENT + 12 bulan           9 dari 1.854
+   *
+   * Baris kedua yang memutuskan: kalau `Termination` sungguh terikat pada
+   * `Commencement`, ia akan cocok pada ribuan baris, bukan sembilan. Jadi
+   * kedua langkah itu NILAI AWAL yang pemakai ubah sesudahnya — dan
+   * menghitung ulang `TreatyYear` di layar akan menimpa lima kontrak yang
+   * tahunnya sengaja berbeda dari tahun mulainya.
+   *
+   * ⛔ Karena itu yang ditampilkan tetap KOLOMNYA apa adanya.
+   *
    */
   // ⭐ `TREATYYEAR` adalah KOLOM di `TREATY_IN` — dibaca, bukan dihitung.
-  // Bentuk sebelumnya memotong empat aksara pertama `Commencement`, yang
-  // kini salah dua kali: tanggalnya sudah berbentuk `dd/mm/yy`, dan
-  // tahunnya memang tersimpan sendiri.
   const tahunTreaty = warisan?.tahunTreaty ?? ''
 
   return (
@@ -528,8 +341,18 @@ export default function FormKontrakTreatyIn({ idKontrak, onKembali }: FormKontra
       {galat !== null && <Gagal galat={galat} />}
       {memuat && <Memuat />}
 
+      {/* ⭐ MODE LIHAT: `<fieldset disabled>` mematikan SELURUH isian di
+          dalamnya — medan, dropdown, kotak centang, tombol pemilih. Strip
+          tab dan `Close` berdiri di luarnya, jadi tetap hidup. */}
+      <fieldset className="trin__mode" disabled={!bisaUbah}>
       <Panel judul={FORM_KONTRAK.judul}>
         <div className="trin__kepala">
+          {/* ⭐ ID dan Reinsurance Type BERTUMPUK di kiri atas, bukan sebaris.
+              Di gambar Pega keduanya blok padat di pojok, dan tabel
+              "Existing Policy" berdiri sendiri di kanan. Tanpa kolom ini
+              keduanya ikut ditengahkan terhadap tabel yang jauh lebih
+              tinggi, dan melayang di tengah layar. */}
+          <div className="trin__kepala-kiri">
           <span className="trin__id">
             {FORM_KONTRAK.id}: {idKontrak === '' ? <span className="trin__redup">—</span> : idKontrak}
           </span>
@@ -555,6 +378,11 @@ export default function FormKontrakTreatyIn({ idKontrak, onKembali }: FormKontra
               </label>
             ))}
           </fieldset>
+          </div>
+
+          {/* ⭐ Kanan atas, sejajar blok ID dan Reinsurance Type — persis
+              letaknya di gambar 01 dan 26. */}
+          <PanelPolisProduksi baris={warisan?.polisProduksi ?? []} />
         </div>
 
         {/* ⛔ DUA KOLOM YANG MENGALIR SENDIRI, bukan `.form-grid`.
@@ -585,12 +413,24 @@ export default function FormKontrakTreatyIn({ idKontrak, onKembali }: FormKontra
                 dan `nonreporting` (687), huruf kecil. Layar lama menulis
                 "Reporting"; pemetaan dari yang tersimpan ke yang tampil
                 TIDAK ada di ekspor mana pun, jadi ia tidak dikarang. */}
-            <Pilih
-              label={FORM_KONTRAK.bordereaux}
-              value={bordereaux}
-              onChange={setBordereaux}
-              opsi={FORM_KONTRAK.bordereauxNilai.map((v) => ({ value: v, label: v }))}
-            />
+            {/* ⛔ PROPORSIONAL SAJA — `pyCondition
+                `TreatyIn.ProportionType='Proportional'` @60649, sel yang
+                sama dengan `TreatyIn.Bordeaux` @56974 di
+                `Section/TreatyInNONProportional.xml`.
+
+                ⚠️ Dan itu aturan TAMPIL, bukan aturan data: kuncinya ADA di
+                772 dari 775 dokumen non-proporsional, bernilai `reporting`
+                (711) atau `nonreporting` (61). Layar lama tidak
+                memperlihatkannya; layar ini mengikuti layar lama, dan
+                nilainya tetap utuh di dokumen. */}
+            {jenis !== NON_PROPORSIONAL && (
+              <Pilih
+                label={FORM_KONTRAK.bordereaux}
+                value={bordereaux}
+                onChange={setBordereaux}
+                opsi={opsi?.bordereaux ?? []}
+              />
+            )}
             {/* `pyWidth=0` — idem. */}
             {adaKunci('BordereauxNote') ? (
               <Area
@@ -604,26 +444,47 @@ export default function FormKontrakTreatyIn({ idKontrak, onKembali }: FormKontra
           </div>
 
           <div className="trin__kolom">
-            <FieldTanggal label={FORM_KONTRAK.mulai} value={mulai} onChange={setMulai} />
-            <FieldTanggal label={FORM_KONTRAK.berakhir} value={berakhir} onChange={setBerakhir} />
+            <TanggalRedup label={FORM_KONTRAK.mulai} value={mulai} onChange={setMulai} />
+            <TanggalRedup label={FORM_KONTRAK.berakhir} value={berakhir} onChange={setBerakhir} />
             <Field
               label={FORM_KONTRAK.tahunTreaty}
               value={tahunTreaty}
               onChange={() => undefined}
               readOnly
             />
-            <Pilih
-              label={FORM_KONTRAK.caraPembukuan}
-              value={pembukuan}
-              onChange={setPembukuan}
-              opsi={FORM_KONTRAK.caraPembukuanNilai.map((v) => ({ value: v, label: v }))}
+            {/* ⭐ DUA PROPERTI, satu label. Cabangnya yang memilih, dan
+                pemilihannya DIBACA: `pyCondition
+                `TreatyIn.ProportionType='Proportional'` @111777 untuk
+                `AccountingMode` @108019, dan `…='NonProportional'` @118211
+                untuk `AccountingModeNonProp` @114500.
+
+                ⛔ Sampai 5 Oktober 2026 layar ini hanya punya yang pertama,
+                jadi kontrak non-proporsional memperlihatkan `accounting` /
+                `underwriting` — nilai cabang seberang — di tempat `loss` /
+                `risk` seharusnya berdiri. */}
+            {jenis === NON_PROPORSIONAL ? (
+              <Pilih
+                label={FORM_KONTRAK.caraPembukuan}
+                value={pembukuanNonProp}
+                onChange={setPembukuanNonProp}
+                opsi={opsi?.caraPembukuanNonProp ?? []}
+              />
+            ) : (
+              <Pilih
+                label={FORM_KONTRAK.caraPembukuan}
+                value={pembukuan}
+                onChange={setPembukuan}
+                opsi={opsi?.caraPembukuan ?? []}
+              />
+            )}
+            <DropdownWarisan
+              label={FORM_KONTRAK.cedant}
+              ambil={ambilDaftarCedant}
+              nilai={cedant}
+              onPilih={(b) => {
+                setCedant(b.nama)
+              }}
             />
-            <div className="trin__pilih-luar">
-              <Field label={FORM_KONTRAK.cedant} value={cedant} onChange={setCedant} />
-              <button type="button" className="btn btn--ghost btn--sm" disabled>
-                {FORM_KONTRAK.pilihCedant}
-              </button>
-            </div>
             {adaKunci('TreatyLeader') ? (
               <label className="trin__centang">
                 <input
@@ -638,31 +499,36 @@ export default function FormKontrakTreatyIn({ idKontrak, onKembali }: FormKontra
             ) : (
               <MedanTakAda label={FORM_KONTRAK.pemimpinTreaty} />
             )}
-            <div className="trin__pilih-luar">
-              <Field label={FORM_KONTRAK.asalBisnis} value={asalBisnis} onChange={setAsalBisnis} />
-              <button type="button" className="btn btn--ghost btn--sm" disabled>
-                {FORM_KONTRAK.pilihAsalBisnis}
-              </button>
-            </div>
+            <DropdownWarisan
+              label={FORM_KONTRAK.asalBisnis}
+              ambil={ambilDaftarAsalBisnis}
+              nilai={asalBisnis}
+              onPilih={(b) => {
+                setAsalBisnis(b.nama)
+              }}
+            />
           </div>
         </div>
       </Panel>
 
-      {/* ⚠️ Kedua tombol "Choose …" DIMATIKAN, bukan disembunyikan. Keduanya
-          membuka pemilih atas tabel yang `ERD.md` §2.8 tempatkan DI LUAR skema
-          ini (`CEDANT`, `ASAL_BISNIS`); tanpa modul pemiliknya tidak ada yang
-          dapat dipilih. Tombol yang hilang terbaca sebagai layar yang berbeda;
-          tombol yang mati terbaca sebagai kemampuan yang belum datang. */}
-      {/* ⛔ TOMBOL "Add" DI BARIS KEPALA, bukan di bawah kotak kosong.
+            {/* ⛔ TOMBOL "Add" DI BARIS KEPALA, bukan di bawah kotak kosong.
           Di ekspor ia duduk sebaris dengan kepala grid; menaruhnya di bawah
           area kosong membuat panel menjulur tinggi dan tombolnya terbaca
           sebagai milik keadaan kosong, bukan milik gridnya. */}
       <section className="panel">
         <div className="trin__panel-kepala">
           <h4 className="panel__title">{FORM_KONTRAK.kurs}</h4>
-          <button type="button" className="btn btn--ghost btn--sm" disabled>
-            {FORM_KONTRAK.tambah}
-          </button>
+          {bisaUbah && (
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              onClick={() => {
+                setKurs([...kurs, { mataUang: '', nilaiKeIDR: '', berlakuDari: '', berlakuSampai: '' }])
+              }}
+            >
+              {FORM_KONTRAK.tambah}
+            </button>
+          )}
         </div>
         <div className="table-wrap">
           {/* ⛔ Perbandingan lebar DARI ekspor, satu-satunya di layar ini yang
@@ -693,10 +559,62 @@ export default function FormKontrakTreatyIn({ idKontrak, onKembali }: FormKontra
                   </td>
                 </tr>
               )}
-              {kurs.map((b, i) => (
+              {bisaUbah &&
+                kurs.map((b, i) => (
+                  <tr key={i}>
+                    {(['mataUang', 'nilaiKeIDR', 'berlakuDari', 'berlakuSampai'] as const).map((kk) => (
+                      <td key={kk}>
+                        {/* ⛔ ISIAN PUN DIFORMAT — cacat nyata 6 Oktober 2026:
+                            mode Edit merender nilai MENTAH (`10584.39`)
+                            sementara mode View merender `10.584,39`. Satu
+                            layar, dua bentuk, dan yang menyuntingnya mengira
+                            angkanya memang berbeda.
+
+                            ⭐ Diformat HANYA saat sel itu tidak sedang
+                            diketik. Memformat di tiap ketukan membuat koma
+                            desimal mustahil diketik: `10,` berubah menjadi
+                            `10` sebelum angka berikutnya sempat masuk. */}
+                        <input
+                          className="field__input"
+                          type="text"
+                          value={
+                            selDiketik === `${String(i)}:${kk}` || kk !== 'nilaiKeIDR'
+                              ? b[kk]
+                              : selAngka(['uang', 2], b[kk])
+                          }
+                          aria-label={kk}
+                          onFocus={() => {
+                            setSelDiketik(`${String(i)}:${kk}`)
+                          }}
+                          onBlur={() => {
+                            setSelDiketik(null)
+                          }}
+                          onChange={(e) => {
+                            setKurs(kurs.map((x, j) => (j === i ? { ...x, [kk]: e.target.value } : x)))
+                          }}
+                        />
+                      </td>
+                    ))}
+                    <td>
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--sm"
+                        onClick={() => {
+                          setKurs(kurs.filter((_, j) => j !== i))
+                        }}
+                      >
+                        {GRID_TAMBAH.hapus}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              {!bisaUbah && kurs.map((b, i) => (
                 <tr key={i}>
                   <td>{b.mataUang}</td>
-                  <td>{b.nilaiKeIDR}</td>
+                  {/* ⭐ DUA desimal, nol di ekor DIPERTAHANKAN — gambar 01
+                      berbunyi `1,00` dan `16.000,00`, gambar 26 `15.500,00`.
+                      Aturan lama membuangnya dan memberi `1`. */}
+                  <td>{selAngka(['uang', 2], b.nilaiKeIDR)}</td>
                   <td>{b.berlakuDari}</td>
                   <td>{b.berlakuSampai}</td>
                 </tr>
@@ -707,10 +625,16 @@ export default function FormKontrakTreatyIn({ idKontrak, onKembali }: FormKontra
       </section>
 
       {/* Keterangan kaki, satu baris redup — bukan paragraf di tengah layar. */}
-      <p className="trin__kaki">{FORM_KONTRAK.catatanPilihLuar}</p>
+
+      </fieldset>
 
       {/* Strip tab — himpunannya berganti bersama radio di atas. */}
       <StripTab tab={tab} aktif={tabTampil} onPilih={setTabAktif} />
+
+      {/* Isi tab — mode lihat mematikannya seperti kepala. `key` melahirkan
+          ulang grid ketika data kontrak tiba, sebab grid menyalin barisnya
+          SEKALI. */}
+      <fieldset className="trin__mode" disabled={!bisaUbah} key={`${idKontrak}|${warisan === null ? '-' : 'isi'}|${mode}`}>
 
       {/* ⭐ DUA BELAS TAB KINI BERISI. Tujuh dari tabel pendaratan
           `M_TREATYIN_*`, empat dari `M_TREATY_IN2` (satu tabel warisan,
@@ -719,42 +643,63 @@ export default function FormKontrakTreatyIn({ idKontrak, onKembali }: FormKontra
           bedanya dijaga: tab berisi yang kosong memakai `Kosong` ("belum
           ada DATA"), tab tanpa kode memakai `.trin__belum`. */}
       {tabTampil === 'Reporting Period' ? (
-        <TabReportingPeriod baris={warisan?.periodePelaporan ?? []} />
+        <TabReportingPeriod baris={warisan?.periodePelaporan ?? []} opsiPeriode={opsi?.periodePelaporan ?? []} mode={mode} />
       ) : tabTampil === 'Portfolio' ? (
-        <TabGridWarisan
-          judul={tabTampil}
-          kolom={KOLOM_PORTOFOLIO}
-          baris={(warisan?.portofolio ?? []).map((b) => [b.jenis, b.jenisPortfolio, b.keterangan])}
+        // ⛔ BUKAN `TabGridWarisan` lagi, sejak 6 Oktober 2026. Ekspor
+        // memberi tab ini dua daftar pilihan dan satu area teks, dan grid
+        // umum hanya tahu kotak teks. Pemetaan kolomnya juga DIBETULKAN di
+        // langkah yang sama: kolom 1 `TypePortfolio`, kolom 2 `Type` —
+        // sebelumnya tertukar. Lihat `TabPortofolio.tsx`.
+        <TabPortofolio
+          baris={warisan?.portofolio ?? []}
           petunjukKosong={FORM_KONTRAK.petunjukPortofolio}
+          mode={mode}
         />
       ) : tabTampil === 'EGNPI' ? (
         <TabGridWarisan
           judul={tabTampil}
           kolom={KOLOM_EGNPI}
-          baris={(warisan?.egnpi ?? []).map((b) => [
-            b.jumlah, b.jumlahIDR, b.perTanggal, b.kelasBisnis,
-            b.mataUang, b.keterangan, b.proporsi, b.kelompokTreaty,
-          ])}
+          baris={barisAngka(
+            // ⛔ URUTANNYA mengikuti `KOLOM_EGNPI`, yang kini urut layar
+            // (gambar 29), bukan urut abjad kunci dokumen.
+            (warisan?.egnpi ?? []).map((b) => [
+              b.kelompokTreaty, b.perTanggal, b.proporsi, b.mataUang,
+              b.jumlah, b.jumlahIDR, b.kelasBisnis, b.keterangan,
+            ]),
+            JENIS_EGNPI,
+          )}
           petunjukKosong={FORM_KONTRAK.petunjukTabel}
         />
       ) : tabTampil === 'Maximum Retention' ? (
-        <TabGridWarisan
-          judul={tabTampil}
-          kolom={KOLOM_RETENSI}
-          baris={(warisan?.retensi ?? []).map((b) => [
-            b.jumlah, b.kelasBisnis, b.mataUang, b.keterangan, b.kelompokTreaty,
-          ])}
-          petunjukKosong={FORM_KONTRAK.petunjukTabel}
-        />
+        <>
+          <TabGridWarisan
+            judul={tabTampil}
+            kolom={KOLOM_RETENSI}
+            baris={barisAngka(
+              // ⛔ Urut layar (gambar 26), bukan abjad.
+              (warisan?.retensi ?? []).map((b) => [
+                b.kelompokTreaty, b.mataUang, b.jumlah, b.kelasBisnis, b.keterangan,
+              ]),
+              JENIS_RETENSI,
+            )}
+            petunjukKosong={FORM_KONTRAK.petunjukTabel}
+            mode={mode}
+          />
+          <PanelTotalRetensi baris={warisan?.totalRetensi ?? []} />
+        </>
       ) : tabTampil === 'Installment' ? (
         <TabGridWarisan
           judul={tabTampil}
           kolom={KOLOM_ANGSURAN}
-          baris={(warisan?.angsuran ?? []).map((b) => [
-            b.angsuran, b.mataUang, b.jumlah, b.persen,
-            b.jatuhTempo, b.tanggalBayar, b.wpc,
-          ])}
+          baris={barisAngka(
+            (warisan?.angsuran ?? []).map((b) => [
+              b.angsuran, b.mataUang, b.jumlah, b.persen,
+              b.jatuhTempo, b.tanggalBayar, b.wpc,
+            ]),
+            JENIS_ANGSURAN,
+          )}
           petunjukKosong={FORM_KONTRAK.petunjukTabel}
+          mode={mode}
         />
       ) : tabTampil === 'Information & Submit' ? (
         <TabGridWarisan
@@ -764,61 +709,48 @@ export default function FormKontrakTreatyIn({ idKontrak, onKembali }: FormKontra
             b.tanggal, b.operator, b.disetujui, b.catatan,
           ])}
           petunjukKosong={FORM_KONTRAK.petunjukTabel}
+          mode={mode}
+          bisaTambah={false}
         />
       ) : tabTampil === 'Limits' ? (
-        <TabGridWarisan
-          judul={tabTampil}
-          kolom={KOLOM_LIMITS}
-          baris={barisLayer(
-            warisan?.layer ?? [],
-            (b) => [
-              b.layer, b.jenisLayer, b.dasarCover, b.jenisTreaty, b.mataUang,
-              b.limit100, b.retensiCedant, b.mdp, b.rasioMDP, b.rol,
-              b.adjRate, b.premiEarned, b.relasiMataUang, b.mataUangLimit,
-            ],
-            JENIS_LIMITS,
-          )}
-          petunjukKosong={FORM_KONTRAK.petunjukLayer}
-        />
+        jenis === NON_PROPORSIONAL ? (
+          <PohonLimits layer={warisan?.layer ?? []} nonProp />
+        ) : (
+          /* ⭐ Cabang P: tiga tingkat dari ekspor — `labelsLimitsProp.ts`. */
+          <TabLimitsProp pohon={warisan?.limitsPohon ?? []} mode={mode} />
+        )
       ) : tabTampil === 'Share' ? (
-        <TabGridWarisan
-          judul={tabTampil}
-          kolom={KOLOM_SHARE}
-          baris={barisLayer(
-            warisan?.layer ?? [],
-            (b) => [
-              b.layer, b.persenCession, b.jenisPenyebaran, b.persenBrokerage,
-              b.cessionKeRI, b.qsor, b.qsri, b.liabilityQSOR, b.liabilityQSRI,
-              b.epi100, b.riogr,
-            ],
-            JENIS_SHARE,
-          )}
+        /* ⭐ `RNM Share` adalah SUB-TAB di dalam `Share`, bukan tab setara —
+           dan itu kini terbukti dari dokumen desain, bukan disimpulkan.
+
+           Gambar `16`/`17` (prop) dan `34` (non-prop) memperlihatkan tab
+           `Share` berisi panel atasnya, lalu satu strip sub-tab berjudul
+           `RNM Share` di bawahnya. Pengukuran ekspor ronde sebelumnya
+           mengatakan hal yang sama dari sisi lain: kesebelas wadah `TABBED`
+           di `Section/TreatyInTabsNonProportional.xml` tidak memuat
+           `RNM Share`, dan kedua judulnya (@2.093.710, @2.133.893) jatuh di
+           dalam wilayah tab `Share`.
+
+           ⛔ Ini BUKAN penghapusan tab — §6 melarangnya, dan nol tab
+           dihapus: `RNM Share` tetap dirender, dengan kolom dan data yang
+           sama, satu tingkat di dalam tempat ekspor dan gambar menaruhnya. */
+        <SubTabShare
+          layer={warisan?.layer ?? []}
           petunjukKosong={FORM_KONTRAK.petunjukLayer}
+          mode={mode}
         />
       ) : tabTampil === 'Event Limits' ? (
-        <TabGridWarisan
-          judul={tabTampil}
-          kolom={KOLOM_EVENT_LIMITS}
-          baris={barisLayer(
-            warisan?.layer ?? [],
-            (b) => [b.layer, b.mataUang, b.gempa],
-            JENIS_EVENT_LIMITS,
-          )}
-          petunjukKosong={FORM_KONTRAK.petunjukEventLimits}
-        />
+        /* ⭐ EMPAT BARIS BERLABEL, bukan grid sembilan kolom — gambar 28. */
+        <TabEventLimits layer={warisan?.layer ?? []} />
       ) : tabTampil === 'RNM Share' ? (
-        <TabGridWarisan
-          judul={tabTampil}
-          kolom={KOLOM_RNM_SHARE}
-          baris={barisLayer(
-            warisan?.layer ?? [],
-            (b) => [
-              b.layer, b.rnmShare, b.liabilityRNM, b.mdpRNM100,
-              b.epiRNMQS100, b.rnmRetainedPremi, b.rnmQSPremi,
-            ],
-            JENIS_RNM_SHARE,
-          )}
+        /* ⚠️ Cabang ini TETAP ADA walau `RNM Share` kini dirender sebagai
+           sub-tab `Share`. Sebabnya: daftar tab masih memuatnya — §6
+           melarang menghapus tab mana pun — jadi strip utama masih dapat
+           memilihnya, dan tab yang dapat dipilih harus merender sesuatu. */
+        <PanelRnmShare
+          layer={warisan?.layer ?? []}
           petunjukKosong={FORM_KONTRAK.petunjukLayer}
+          mode={mode}
         />
       ) : tabTampil === 'Co-Ins Scale' ? (
         <TabGridWarisan
@@ -830,6 +762,7 @@ export default function FormKontrakTreatyIn({ idKontrak, onKembali }: FormKontra
             ),
           )}
           petunjukKosong={FORM_KONTRAK.petunjukSkalaKoasuransi}
+          mode={mode}
         />
       ) : tabTampil === 'Exclusions' ? (
         <TabTeksPanjang
@@ -863,12 +796,59 @@ export default function FormKontrakTreatyIn({ idKontrak, onKembali }: FormKontra
            dibedakan (tepi putus-putus, nol ikon keranjang) supaya bedanya
            terlihat sebelum teksnya dibaca. */
         <Panel judul={tabTampil}>
+          {/* ⛔ KEADAAN KEEMPAT untuk Retro: JARANG, bukan "belum ada kode".
+              Keduanya memakai kotak bertepi putus-putus yang sama — yang
+              berbeda teksnya, sebab yang berbeda memang alasannya, bukan
+              bentuknya. `KEPUTUSAN §17`. */}
           <div className="trin__belum" role="note">
-            <span className="trin__belum-judul">{FORM_KONTRAK.belumDibangun}</span>
-            <span className="trin__belum-petunjuk">{FORM_KONTRAK.belumDibangunPetunjuk}</span>
+            <span className="trin__belum-judul">
+              {tabTampil === 'Retro' ? FORM_KONTRAK.jarangDipakai : FORM_KONTRAK.belumDibangun}
+            </span>
+            <span className="trin__belum-petunjuk">
+              {tabTampil === 'Retro'
+                ? FORM_KONTRAK.jarangDipakaiPetunjuk
+                : FORM_KONTRAK.belumDibangunPetunjuk}
+            </span>
           </div>
         </Panel>
       )}
+      </fieldset>
+      {/* ⭐ ATTACHMENT · tombol · HISTORY — di BAWAH strip tab, bukan di
+          dalamnya. Begitu layar lama menyusunnya: panel Attachment, deret
+          tombol Save/Close/Actions, lalu panel History. Ketiganya berlaku
+          untuk kontraknya, bukan untuk tab yang kebetulan terbuka. */}
+      <PanelLampiran
+        kategori={warisan?.kategoriLampiran ?? []}
+        berkas={warisan?.lampiran ?? []}
+      />
+
+      {/* ⭐ `Close` HIDUP — ia satu-satunya dari ketiganya yang tidak menuntut
+          jalur tulis: ia hanya menutup layar. `Save` dan `Actions` tetap mati,
+          dan sebabnya berbeda satu sama lain:
+
+            Save    — nol jalur tulis. Tombol simpan yang tidak menyimpan
+                      adalah cara tercepat kehilangan suntingan tanpa seorang
+                      pun tahu.
+            Actions — syarat perannya belum terbaca di ekspor. Menghidupkannya
+                      berarti menebak siapa yang boleh menekannya.
+
+          ⛔ Keduanya DIMATIKAN, bukan disembunyikan: tombol hilang terbaca
+          sebagai layar yang berbeda, tombol mati terbaca sebagai kemampuan
+          yang belum datang. */}
+      <div className="trin__aksi" role="group" aria-label={FORM_KONTRAK.judul}>
+        <button type="button" className="btn" disabled>
+          Save
+        </button>
+        <button type="button" className="btn" onClick={onKembali}>
+          Close
+        </button>
+        <button type="button" className="btn" disabled>
+          Actions
+        </button>
+      </div>
+
+      <PanelHistory baris={warisan?.catatan ?? []} />
+
     </div>
   )
 }

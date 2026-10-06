@@ -22,7 +22,32 @@ const RUTE = readFileSync(join(AKAR, 'rute.tsx'), 'utf8')
 const INTI = readFileSync(join(AKAR, '..', '..', '..', 'inti', 'frontend', 'styles.css'), 'utf8')
 
 /** Kelas khusus modul ini: wajib hidup di berkas modul, dan nol jejak di inti. */
-const KELAS_MODUL = ['tria__aturan', 'tria__redup'] as const
+const KELAS_MODUL = [
+  'tria__aturan',
+  'tria__redup',
+  'tria__tabel',
+  'tria__spanduk',
+  'tria__catatan',
+  'tria__aksi',
+  // Layar Adjustment — 5 Oktober 2026.
+  'tria__bandingan',
+  'tria__sisi',
+  'tria__dwikolom',
+  'tria__kolom',
+  'tria__kepala',
+  'tria__radio',
+  'tria__centang',
+  'tria__tak-ada',
+  'tria__belum',
+  'tria__teks',
+  'tria__grid',
+  'tria__subjudul',
+  'tria__angka',
+  'tria__nilai',
+  'tria__prorata',
+  'tria__blok',
+  'tria__teks-sel',
+] as const
 
 /** Setiap berkas di bawah folder frontend modul (rekursif). */
 function berkas(d = AKAR): string[] {

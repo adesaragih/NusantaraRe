@@ -13,6 +13,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/modul/treatyin/backend/models"
+	"nusantarare/modul/treatyin/backend/repository"
 	"nusantarare/modul/treatyin/backend/services"
 )
 
@@ -43,8 +44,23 @@ type gudangTiruan struct {
 	angsuran         []models.BarisAngsuranWarisan
 	catatan          []models.BarisCatatanWarisan
 	layer            []models.BarisLayerWarisan
+	limitsPohon      []map[string]any
+	revisi           repository.RevisiPendaratan
+	kurs             []models.BarisKursWarisan
 	skalaKoasuransi  []models.BarisSkalaKoasuransiWarisan
+	lampiran         []models.BarisLampiranWarisan
+	katalogKategori  map[string]string
 	galatTab         error
+
+	// Panel `Existing Policy for Master ID`, galatnya terpisah lagi: ia
+	// satu-satunya pembacaan yang menyentuh `TREATYINPRODUCTION`, dan
+	// kegagalannya tidak boleh terbaca sebagai kegagalan tab mana pun.
+	polisProduksi      []models.BarisPolisProduksi
+	galatPolisProduksi error
+	cedant             []models.PilihanWarisan
+	jenisTreaty        []models.PilihanWarisan
+	asalBisnis         []models.PilihanWarisan
+	galatPilihan       error
 
 	// Tiket 32 - apa yang SAMPAI ke gudang, supaya uji dapat membuktikan
 	// masukan yang ditolak tidak pernah diteruskan.
@@ -333,6 +349,13 @@ func (g *gudangTiruan) BacaAkumulasi(_ context.Context, _ string) ([]models.Bari
 func (g *gudangTiruan) BacaEgnpi(_ context.Context, _ string) ([]models.BarisEgnpiWarisan, error) {
 	return g.egnpi, g.galatTab
 }
+
+// ⭐ Panel `Existing Policy for Master ID`. Nol baris adalah keadaan yang
+// SAH — gambar 01 dokumen desain memperlihatkannya berbunyi "No items".
+func (g *gudangTiruan) BacaPolisProduksi(_ context.Context, _ string) ([]models.BarisPolisProduksi, error) {
+	return g.polisProduksi, g.galatPolisProduksi
+}
+
 func (g *gudangTiruan) BacaRetensi(_ context.Context, _ string) ([]models.BarisRetensiWarisan, error) {
 	return g.retensi, g.galatTab
 }
@@ -343,11 +366,52 @@ func (g *gudangTiruan) BacaCatatan(_ context.Context, _ string) ([]models.BarisC
 	return g.catatan, g.galatTab
 }
 
-// Empat tab dari `M_TREATY_IN2` - satu seam, dan galatnya ikut `galatTab`.
-func (g *gudangTiruan) BacaLayerWarisan(_ context.Context, _ string) ([]models.BarisLayerWarisan, error) {
-	return g.layer, g.galatTab
+// Isi kedua pemilih "Choose …". Galatnya BERBAGI `galatPilihan`, bukan
+// `galatTab`: keduanya katalog yang tidak bergantung kontrak, dan uji yang
+// mematikan satu tab tidak boleh ikut mematikan pemilihnya.
+func (g *gudangTiruan) BacaDaftarCedant(_ context.Context) ([]models.PilihanWarisan, error) {
+	return g.cedant, g.galatPilihan
+}
+func (g *gudangTiruan) BacaDaftarAsalBisnis(_ context.Context) ([]models.PilihanWarisan, error) {
+	return g.asalBisnis, g.galatPilihan
+}
+func (g *gudangTiruan) BacaDaftarJenisTreaty(_ context.Context) ([]models.PilihanWarisan, error) {
+	return g.jenisTreaty, g.galatPilihan
+}
+func (g *gudangTiruan) BacaDaftarKelompokTreaty(_ context.Context) ([]models.PilihanWarisan, error) {
+	return g.jenisTreaty, g.galatPilihan
+}
+func (g *gudangTiruan) BacaDaftarMataUangLimit(_ context.Context) ([]models.PilihanWarisan, error) {
+	return g.jenisTreaty, g.galatPilihan
 }
 
 func (g *gudangTiruan) BacaSkalaKoasuransi(_ context.Context, _ string) ([]models.BarisSkalaKoasuransiWarisan, error) {
 	return g.skalaKoasuransi, g.galatTab
+}
+
+// ⭐ Keempat tab dari TABEL PENDARATAN — keputusan 6 Oktober 2026.
+func (g *gudangTiruan) BacaLayerPendaratan(_ context.Context, _ string) ([]models.BarisLayerWarisan, error) {
+	return g.layer, g.galatTab
+}
+
+func (g *gudangTiruan) BacaPohonLimitsPendaratan(_ context.Context, _ string) ([]map[string]any, error) {
+	return g.limitsPohon, g.galatTab
+}
+
+// ⭐ Medan kepala dan grid Rate of Exchange — juga dari pendaratan.
+func (g *gudangTiruan) BacaRevisiPendaratan(_ context.Context, _ string) (repository.RevisiPendaratan, error) {
+	return g.revisi, g.galatTab
+}
+
+func (g *gudangTiruan) BacaKursTahunan(_ context.Context, _ string) ([]models.BarisKursWarisan, error) {
+	return g.kurs, g.galatTab
+}
+
+// Panel Attachment - `M_ATTACHMENTTREATY_2`, tabel warisan.
+func (g *gudangTiruan) BacaLampiranKontrak(_ context.Context, _ string) ([]models.BarisLampiranWarisan, error) {
+	return g.lampiran, g.galatTab
+}
+
+func (g *gudangTiruan) BacaKatalogKategoriLampiran(_ context.Context) (map[string]string, error) {
+	return g.katalogKategori, g.galatTab
 }

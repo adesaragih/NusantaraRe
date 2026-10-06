@@ -197,11 +197,11 @@ func kontrakTerpadat(t *testing.T, ctx context.Context, sifat string, n int) []s
 	defer func() { _ = sqlDB.Close() }()
 
 	q := `SELECT x.MASTERID FROM (
-	        SELECT MASTERID, COUNT(*) n FROM ` + cfg.OracleSchema + `.M_TREATYIN_REPORTINGPERIOD GROUP BY MASTERID
+	        SELECT MASTERID, COUNT(*) n FROM ` + cfg.OracleSchema + `.T_TREATY_REPORTING_PERIOD GROUP BY MASTERID
 	        UNION ALL
-	        SELECT MASTERID, COUNT(*) n FROM ` + cfg.OracleSchema + `.M_TREATYIN_PORTFOLIO GROUP BY MASTERID
+	        SELECT MASTERID, COUNT(*) n FROM ` + cfg.OracleSchema + `.T_TREATY_PORTFOLIO GROUP BY MASTERID
 	        UNION ALL
-	        SELECT MASTERID, COUNT(*) n FROM ` + cfg.OracleSchema + `.M_TREATYIN_ACCUMULATION GROUP BY MASTERID) x
+	        SELECT MASTERID, COUNT(*) n FROM ` + cfg.OracleSchema + `.T_TREATY_ACCUMULATION GROUP BY MASTERID) x
 	        JOIN ` + cfg.OracleSchema + `.TREATY_IN t ON t.ID = x.MASTERID
 	       WHERE t.PROPORTIONTYPE = :1
 	       GROUP BY x.MASTERID

@@ -34,7 +34,7 @@ import (
 // urutan apa pun, dan larik Pega BERURUT - `Q 1`, `Q 2`, `Q 3` yang
 // tertukar terbaca benar.
 func (g *Gudang) BacaPeriodePelaporan(ctx context.Context, masterID string) ([]models.BarisPeriodeWarisan, error) {
-	baris, err := g.bacaTab(ctx, "M_TREATYIN_REPORTINGPERIOD",
+	baris, err := g.bacaTab(ctx, "T_TREATY_REPORTING_PERIOD",
 		"PERIOD, AUTOCALCULATE, INITIALDATE, SUBMISSIONDUE, CONFIRMATIONDUE, SETTLEMENTDUE", masterID, 6)
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (g *Gudang) BacaPeriodePelaporan(ctx context.Context, masterID string) ([]m
 
 // BacaPortofolio membaca tab Portfolio.
 func (g *Gudang) BacaPortofolio(ctx context.Context, masterID string) ([]models.BarisPortofolioWarisan, error) {
-	baris, err := g.bacaTab(ctx, "M_TREATYIN_PORTFOLIO", "TYPE, TYPEPORTFOLIO, DESCRIPTION", masterID, 3)
+	baris, err := g.bacaTab(ctx, "T_TREATY_PORTFOLIO", "TYPE, TYPEPORTFOLIO, DESCRIPTION", masterID, 3)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (g *Gudang) BacaPortofolio(ctx context.Context, masterID string) ([]models.
 // ⚠️ Terisi pada 18 kontrak dari 1.854 - yang terjarang dari kedelapan.
 // Kosong di sini adalah keadaan yang WAJAR, bukan kegagalan pembacaan.
 func (g *Gudang) BacaAkumulasi(ctx context.Context, masterID string) ([]models.BarisAkumulasiWarisan, error) {
-	baris, err := g.bacaTab(ctx, "M_TREATYIN_ACCUMULATION", "PERIOD, REPORTDATE, SUBDAYS, SUBDUEDATE", masterID, 4)
+	baris, err := g.bacaTab(ctx, "T_TREATY_ACCUMULATION", "PERIOD, REPORTDATE, SUBDAYS, SUBDUEDATE", masterID, 4)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func (g *Gudang) bacaTab(ctx context.Context, tabel, kolom, masterID string, n i
 
 // BacaEgnpi membaca tab EGNPI. Larik terbesar kedua sesudah Comment.
 func (g *Gudang) BacaEgnpi(ctx context.Context, masterID string) ([]models.BarisEgnpiWarisan, error) {
-	baris, err := g.bacaTab(ctx, "M_TREATYIN_EGNPI",
+	baris, err := g.bacaTab(ctx, "T_TREATY_EGNPI",
 		"AMOUNT, AMOUNTIDR, ASDATE, CLASSOFBUSINESS, CURRENCY, NOTE, PROPORTION, TREATYGROUP", masterID, 8)
 	if err != nil {
 		return nil, err
@@ -153,7 +153,7 @@ func (g *Gudang) BacaEgnpi(ctx context.Context, masterID string) ([]models.Baris
 
 // BacaRetensi membaca tab Maximum Retention.
 func (g *Gudang) BacaRetensi(ctx context.Context, masterID string) ([]models.BarisRetensiWarisan, error) {
-	baris, err := g.bacaTab(ctx, "M_TREATYIN_RETENTION",
+	baris, err := g.bacaTab(ctx, "T_TREATY_RETENTION",
 		"AMOUNT, CLASSOFBUSINESS, CURRENCY, NOTE, TREATYGROUP", masterID, 5)
 	if err != nil {
 		return nil, err
@@ -169,10 +169,10 @@ func (g *Gudang) BacaRetensi(ctx context.Context, masterID string) ([]models.Bar
 
 // BacaAngsuran membaca JADWAL tab Installment - tabel anak, bukan induknya.
 //
-// ⛔ Induk (`M_TREATYIN_INSTALLMENT`) memuat total; yang dibaca orang di
+// ⛔ Induk (`T_TREATY_INSTALLMENT`) memuat total; yang dibaca orang di
 // layar adalah jadwalnya. Urut `URUTAN` menjaga angsuran ke-1 sebelum ke-2.
 func (g *Gudang) BacaAngsuran(ctx context.Context, masterID string) ([]models.BarisAngsuranWarisan, error) {
-	baris, err := g.bacaTab(ctx, "M_TREATYIN_INSTALLMENTITEM",
+	baris, err := g.bacaTab(ctx, "T_TREATY_INSTALLMENT_ITEM",
 		"INSTALLMENT, CURRENCY, AMOUNT, INSTALLMENTPCT, DUEDATE, PAYMENTDATE, WPC", masterID, 7)
 	if err != nil {
 		return nil, err
@@ -189,7 +189,7 @@ func (g *Gudang) BacaAngsuran(ctx context.Context, masterID string) ([]models.Ba
 
 // BacaCatatan membaca tab Information & Submit.
 func (g *Gudang) BacaCatatan(ctx context.Context, masterID string) ([]models.BarisCatatanWarisan, error) {
-	baris, err := g.bacaTab(ctx, "M_TREATYIN_COMMENT",
+	baris, err := g.bacaTab(ctx, "T_VIEW_COMMENT",
 		"TANGGAL, OPERATORNAME, ISAPPROVED, SUGGEST", masterID, 4)
 	if err != nil {
 		return nil, err

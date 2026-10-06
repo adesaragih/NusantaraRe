@@ -193,3 +193,34 @@ func TestRuteArsipMenolakTujuanAsing(t *testing.T) {
 		t.Errorf("penolakan tidak menyebut tujuan yang ditolak: %s", w.Body.String())
 	}
 }
+
+// ------------------------------------------------------------- opsi kepala
+
+func TestRuteOpsiKepala(t *testing.T) {
+	h := handlers.RouterDengan(services.LayananDengan(gudangTiruan{}), true, true)
+	if w := kirim(t, h, http.MethodGet, "/api/treaty-in/warisan/opsi-kepala", "", nil); w.Code != http.StatusUnauthorized {
+		t.Errorf("tanpa identitas: kode %d, mau 401", w.Code)
+	}
+	w := kirim(t, h, http.MethodGet, "/api/treaty-in/warisan/opsi-kepala", "AKUN-UJI", nil)
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"value":"underwriting","label":"Underwriting Year"`) {
+		t.Errorf("kode %d badan %s", w.Code, w.Body.String())
+	}
+}
+
+// ------------------------------------------------- Apply Reporting Period
+
+func TestRuteHitungPeriodePelaporan(t *testing.T) {
+	h := handlers.RouterDengan(services.LayananDengan(gudangTiruan{}), true, true)
+	jalur := "/api/treaty-in/hitung/periode-pelaporan"
+	isi := badan(`{"mulai":"06-10-2026","akhir":"06-10-2026","periode":"quarter","penyerahan":"12","konfirmasi":"12","pelunasan":"12"}`)
+	if w := kirim(t, h, http.MethodPost, jalur, "", isi); w.Code != http.StatusUnauthorized {
+		t.Errorf("tanpa identitas: %d, mau 401", w.Code)
+	}
+	if w := kirim(t, h, http.MethodPost, jalur, "AKUN-UJI", badan(`{`)); w.Code != http.StatusBadRequest {
+		t.Errorf("badan rusak: %d, mau 400", w.Code)
+	}
+	w := kirim(t, h, http.MethodPost, jalur, "AKUN-UJI", isi)
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"jatuhTempoKirimAsli":"20270117"`) {
+		t.Errorf("kode %d badan %s", w.Code, w.Body.String())
+	}
+}
