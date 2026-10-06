@@ -144,8 +144,11 @@ func TestSaringMenuUntukAkun(t *testing.T) {
 // Menu aplikasi BUKAN baris tabel menu: golongannya di luar CHECK GROUPMENU,
 // dan kodenya tidak bertabrakan dengan nama modul mana pun.
 func TestMenuAplikasi(t *testing.T) {
-	if len(MenuAplikasi) != 1 || MenuAplikasi[0].Kode != KodeKelolaUser || MenuAplikasi[0].Label != "Kelola User" ||
-		!MenuAplikasi[0].Dimigrasi || MenuAplikasi[0].Modul != KodeKelolaUser {
+	mau := []Modul{
+		{Kode: KodeKelolaUser, Label: "Kelola User", Modul: KodeKelolaUser, Urutan: 1, Dimigrasi: true},
+		{Kode: KodeTemplateManager, Label: "Template Manager", Modul: KodeTemplateManager, Urutan: 2, Dimigrasi: true},
+	}
+	if !reflect.DeepEqual(MenuAplikasi, mau) {
 		t.Errorf("MenuAplikasi = %+v", MenuAplikasi)
 	}
 	for _, g := range Golongan {
@@ -306,5 +309,20 @@ func TestRuteMenyaringMenurutSesi(t *testing.T) {
 	w, _ = mintaDengan(t, Rute(p, semuaAktif, false), tanpaSesi)
 	if w.Code != http.StatusUnauthorized {
 		t.Errorf("tanpa sesi dan tanpa stub: kode %d, mau 401", w.Code)
+	}
+}
+
+// Hak menu LIHAT (migrasi 914): hanya menu ber-hak LIHAT yang menolak tulis - juga bagi superadmin (05-10-2026, B).
+func TestBolehUbah(t *testing.T) {
+	ctx := inti.DenganMenuLihat(inti.DenganAksesMenu(context.Background(), []string{"accounts", "aggregate"}), []string{"accounts"})
+	if BolehUbah(ctx, "accounts") || !BolehUbah(ctx, "aggregate") {
+		t.Error("accounts View only, aggregate penuh")
+	}
+	super := inti.DenganMenuLihat(inti.DenganAksesMenu(context.Background(), []string{"accounts", KodeKelolaUser}), []string{"accounts"})
+	if BolehUbah(super, "accounts") {
+		t.Error("superadmin ber-hak View only tetap tidak boleh menulis")
+	}
+	if !BolehUbah(context.Background(), "accounts") {
+		t.Error("tanpa sesi (AUTH_STUB) = penuh; gerbang menu yang menjaga")
 	}
 }

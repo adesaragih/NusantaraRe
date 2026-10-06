@@ -1,0 +1,221 @@
+// Paritas tab Object FIRE (tiket 35) - section Pega `ObjectList` / `Property` / `ObjectDetails` + tangkapan layar
+// work owner 03-10-2026. Data uji sintetis.
+
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
+import { renderToStaticMarkup } from 'react-dom/server'
+import { describe, expect, it } from 'vitest'
+
+import { GRID_OBJEK, OBJECT_TYPE_LAINNYA, OPSI_FLOOR_TYPE, OPSI_ROOF_TYPE, OPSI_WALL_TYPE, SIMPAN_OBJEK, SUBTAB_OBJEK, TEKS_INWARD } from '../labels'
+import TabObject, { gantiObjectType, kosongkanRisk, lantaiMinus, objekBaru, rapikanObjek, saringDari, terapkanAlamatBaru, terapkanRisk } from './TabObject'
+
+const HTML = renderToStaticMarkup(<TabObject caseId="NB-1" />)
+const SUMBER = readFileSync(join(__dirname, 'TabObject.tsx'), 'utf8').replace(/\r\n/g, '\n')
+
+describe('TabObject - keadaan awal', () => {
+  it('kolom grid: (buka), Top Risk, No., Object Name, Location, lalu tombol Tambah', () => {
+    const kolom = [...HTML.matchAll(/<th[^>]*>([\s\S]*?)<\/th>|<th[^>]*\/>/g)].map((m) => (m[1] ?? '').replace(/<[^>]+>/g, ''))
+    expect(kolom).toEqual(['', ...GRID_OBJEK.kolom.map((k) => k.label), GRID_OBJEK.tambah])
+  })
+
+  it('belum ada objek = No items; tombol Save di kanan', () => {
+    expect(HTML).toContain(`<td colSpan="6">${TEKS_INWARD.kosong}</td>`)
+    expect(HTML).toContain(`<div class="nbf-objek__kaki"><button type="button" class="btn btn--primary">${SIMPAN_OBJEK.label}</button></div>`)
+  })
+})
+
+describe('TabObject - aturan', () => {
+  it('objek baru: Object No. diisi, Material Damage tercentang, Top Risk tidak, Building Construction = Lain-lain (14 / 9 / KELAS I)', () => {
+    const o = objekBaru('3')
+    expect(o.objectNo).toBe('3')
+    expect(o.isMaterialDamage).toBe(true)
+    expect(o.isTopRisk).toBe(false)
+    expect(o.objectType).toBe('')
+    expect([o.roofType, o.wallType, o.floorType]).toEqual(['14', '9', 'KELAS I'])
+    expect(OPSI_ROOF_TYPE.find((x) => x.value === o.roofType)?.label).toBe('Lain-lain')
+    expect(OPSI_WALL_TYPE.find((x) => x.value === o.wallType)?.label).toBe('Lain-lain')
+    expect(OPSI_FLOOR_TYPE.find((x) => x.value === o.floorType)?.label).toBe('Lain-lain')
+  })
+
+  it('daftar Roof 14 / Wall 9 / Floor 3 pilihan (tangkapan layar); nilai Roof/Wall = nomor urut (G-9)', () => {
+    expect(OPSI_ROOF_TYPE).toHaveLength(14)
+    expect(OPSI_WALL_TYPE).toHaveLength(9)
+    expect(OPSI_FLOOR_TYPE.map((x) => x.label)).toEqual(['Keramik', 'Kayu', 'Lain-lain'])
+    expect(OPSI_ROOF_TYPE[0]).toEqual({ value: '1', label: 'Dak Beton' })
+    expect(OPSI_WALL_TYPE[0]).toEqual({ value: '1', label: 'Batu bata' })
+  })
+
+  it('Object Type berubah: Object Name = Object Type; Others -> Object Name kosong (G-2)', () => {
+    expect(gantiObjectType(objekBaru('1'), 'Dwelling House').objectName).toBe('Dwelling House')
+    const lain = gantiObjectType({ ...objekBaru('1'), objectName: 'UJI' }, OBJECT_TYPE_LAINNYA)
+    expect(lain.objectType).toBe(OBJECT_TYPE_LAINNYA)
+    expect(lain.objectName).toBe('')
+  })
+
+  it('Number of Floor minus = galat; kosong / nol / positif sah', () => {
+    expect(lantaiMinus('-1')).toBe(true)
+    expect(lantaiMinus('0')).toBe(false)
+    expect(lantaiMinus('3')).toBe(false)
+    expect(lantaiMinus('')).toBe(false)
+  })
+
+  it('Tambah: baris di akhir dengan Object No. = urutan, langsung terbuka di Object Address', () => {
+    expect(SUMBER).toContain('setBaris((b) => [...b, { kunci, data: objekBaru(String(b.length + 1)) }])')
+    expect(SUMBER).toContain('setTerbuka((t) => ({ ...t, [kunci]: SUBTAB_OBJEK[0] }))')
+  })
+
+  it('Hapus membuang baris itu; baris terbuka menampilkan tujuh sub-tab, Object Address terisi, lainnya BelumTersedia', () => {
+    expect(SUMBER).toContain('setBaris((b) => b.filter((x) => x.kunci !== kunci))')
+    expect(SUMBER).toContain('<StripTab tab={SUBTAB_OBJEK}')
+    expect(SUMBER).toMatch(/sub === SUBTAB_OBJEK\[0\] \? \(\s*<ObjectAddress/)
+    expect(SUBTAB_OBJEK).toHaveLength(7)
+  })
+
+  it('Save: Object Type kosong atau lantai minus menahan simpan dan membuka baris salah; sah -> PUT seluruh daftar', () => {
+    expect(SUMBER).toMatch(/if \(typeKosong \|\| adaLantaiMinus\) \{[\s\S]*?return\s*\}/)
+    expect(SUMBER).toMatch(/simpanObjek\(\s*caseId,\s*baris\.map\(\(x\) => x\.data\),?\s*\)/)
+    expect(SUMBER).toContain("galatType={cobaSimpan && x.data.objectType === ''}")
+  })
+
+  it('Choose Risk Address membuka popup berisi saringan dari objek; Clear mengosongkan; nilai di luar daftar tetap tampil', () => {
+    expect(SUMBER).toMatch(/onClick=\{\(\) => setPilihRisk\(true\)\}>\s*\{A\.chooseRisk\.label\}/)
+    expect(SUMBER).toMatch(/onClick=\{\(\) => ubah\(kosongkanRisk\(o\)\)\}>\s*\{A\.clearRisk\.label\}/)
+    expect(SUMBER).toContain('awal={saringDari(o)}')
+    expect(SUMBER).toMatch(/onPilih=\{\(b\) => \{\s*ubah\(terapkanRisk\(o, b\)\)/)
+    expect(SUMBER).toContain('opsi={denganTersimpan(OPSI_ROOF_TYPE, o.roofType)} kosong={BANGUNAN_KOSONG}')
+  })
+})
+
+describe('TabObject - Risk Address (tiket 36)', () => {
+  const B = {
+    id: 'UJI-R1', title: 'JL.', address: 'UJI JALAN 1', nationName: 'UJI NEGARA', provinceName: 'UJI PROV',
+    cityName: 'UJI KOTA', districtName: 'UJI KEC', territoryName: 'UJI KEL', postalCode: '99999',
+  }
+
+  it('Pilih = SetRiskIdDT_FacIn: medan terisi, Risk Location dirangkai, Building No. dikosongkan', () => {
+    const o = terapkanRisk({ ...objekBaru('1'), buildingNo: '7', objectType: 'Shop' }, B)
+    expect(o.riskAddressId).toBe('UJI-R1')
+    expect([o.roadType, o.roadName, o.territory, o.district, o.city, o.province, o.country, o.zipCode]).toEqual([
+      'JL.', 'UJI JALAN 1', 'UJI KEL', 'UJI KEC', 'UJI KOTA', 'UJI PROV', 'UJI NEGARA', '99999',
+    ])
+    expect(o.riskLocation).toBe('JL. UJI JALAN 1,UJI KEL,UJI KEC,UJI KOTA,UJI PROV,UJI NEGARA')
+    expect(o.buildingNo).toBe('')
+    expect(o.objectType).toBe('Shop')
+  })
+
+  it('Clear = ClearRiskLocation_act: sepuluh medan kosong, Building No. dan medan lain tetap', () => {
+    const o = kosongkanRisk({ ...terapkanRisk(objekBaru('1'), B), buildingNo: '7' })
+    expect([o.roadType, o.roadName, o.zipCode, o.province, o.country, o.territory, o.city, o.district, o.riskLocation, o.riskAddressId]).toEqual(
+      Array(10).fill(''),
+    )
+    expect(o.buildingNo).toBe('7')
+    expect(o.roofType).toBe('14')
+  })
+
+  it('saringan awal popup = medan objek (Address = RoadName)', () => {
+    expect(saringDari(terapkanRisk(objekBaru('1'), B))).toEqual({
+      address: 'UJI JALAN 1', zipCode: '99999', country: 'UJI NEGARA', province: 'UJI PROV', city: 'UJI KOTA',
+      district: 'UJI KEC', territory: 'UJI KEL',
+    })
+  })
+})
+
+describe('TabObject - alamat baru dari Add (tiket 37)', () => {
+  it('SaveRiskAddress_Act langkah 9 + ID baru: medan terisi, Risk Location dirangkai, Building No. TETAP', () => {
+    const a = {
+      nationName: 'UJI NEGARA', provinceName: 'UJI PROV', districtName: 'UJI KEC', cityName: 'UJI KOTA',
+      territoryName: 'UJI KEL', title: 'GANG', address: 'UJI GANG 2', postalCode: '99999',
+    }
+    const o = terapkanAlamatBaru({ ...objekBaru('1'), buildingNo: '7' }, a, 'UJI-ID-BARU')
+    expect(o.riskAddressId).toBe('UJI-ID-BARU')
+    expect([o.roadType, o.roadName, o.zipCode, o.country, o.province, o.city, o.district, o.territory]).toEqual([
+      'GANG', 'UJI GANG 2', '99999', 'UJI NEGARA', 'UJI PROV', 'UJI KOTA', 'UJI KEC', 'UJI KEL',
+    ])
+    expect(o.riskLocation).toBe('GANG UJI GANG 2,UJI KEL,UJI KEC,UJI KOTA,UJI PROV,UJI NEGARA')
+    expect(o.buildingNo).toBe('7')
+  })
+})
+
+describe('TabObject - Surrounding Risk (tiket 38)', () => {
+  it('objek baru membawa Surrounding Risk kosong dan tiga centang mati', () => {
+    const o = objekBaru('1')
+    expect(o.surroundingRisk.front).toEqual({ occupation: '', construction: '', distance: '', note: '' })
+    expect([o.ownership, o.isProductionProcess, o.isHotWorkProcess, o.isFlammableItem]).toEqual(['2', false, false, false])
+    expect([o.surroundingRisk.housekeepingStatus, o.surroundingRisk.floodAreaStatus]).toEqual(['0', '2'])
+  })
+
+  it('data lama tanpa surroundingRisk dilengkapi; isian yang ada tidak tertimpa', () => {
+    const lama = { ...objekBaru('2'), objectType: 'Shop' } as Partial<ReturnType<typeof objekBaru>>
+    delete lama.surroundingRisk
+    const o = rapikanObjek(lama)
+    expect(o.objectType).toBe('Shop')
+    expect(o.surroundingRisk.right.note).toBe('')
+    const sebagian = rapikanObjek({ objectNo: '3', surroundingRisk: { front: { occupation: 'UJI', construction: '', distance: '5', note: 'N' } } as never })
+    expect(sebagian.surroundingRisk.front.occupation).toBe('UJI')
+    expect(sebagian.surroundingRisk.back.distance).toBe('')
+  })
+
+  it('sub-tab kedua = SubTabSekitar; Distance minus menahan Save dan membuka Surrounding Risk', () => {
+    expect(SUMBER).toMatch(/sub === SUBTAB_OBJEK\[1\] \? \(\s*<SubTabSekitar/)
+    expect(SUMBER).toContain('adaJarakMinus(x.data.surroundingRisk)')
+    expect(SUMBER).toMatch(
+      /\? SUBTAB_OBJEK\[0\]\s*: adaJarakMinus\(x\.data\.surroundingRisk\)\s*\? SUBTAB_OBJEK\[1\]\s*: adaGalatItem\(x\.data\.items\)\s*\? SUBTAB_OBJEK\[2\]\s*: adaGalatFEA\(x\.data\.fea\)\s*\? SUBTAB_OBJEK\[4\]\s*: SUBTAB_OBJEK\[5\]/,
+    )
+  })
+})
+
+describe('TabObject - Object Item (tiket 39)', () => {
+  it('objek baru tanpa item; data lama tanpa items dilengkapi []', () => {
+    expect(objekBaru('1').items).toEqual([])
+    const lama = { ...objekBaru('2') } as Partial<ReturnType<typeof objekBaru>>
+    delete lama.items
+    expect(rapikanObjek(lama).items).toEqual([])
+  })
+
+  it('sub-tab ketiga = SubTabItem; galat item menahan Save dan membuka Object Item', () => {
+    expect(SUMBER).toMatch(/sub === SUBTAB_OBJEK\[2\] \? \(\s*<SubTabItem items=\{x\.data\.items\}[\s\S]*?tandaiWajib=\{cobaSimpan\}/)
+    expect(SUMBER).toContain('adaGalatItem(x.data.items)')
+  })
+})
+
+describe('TabObject - Occupation (tiket 40)', () => {
+  it('objek baru tanpa occupation; data lama dilengkapi []; sub-tab keempat = SubTabOkupasi', () => {
+    expect(objekBaru('1').occupations).toEqual([])
+    const lama = { ...objekBaru('2') } as Partial<ReturnType<typeof objekBaru>>
+    delete lama.occupations
+    expect(rapikanObjek(lama).occupations).toEqual([])
+    expect(SUMBER).toMatch(/sub === SUBTAB_OBJEK\[3\] \? \(\s*<SubTabOkupasi\s*caseId=\{caseId\}/)
+  })
+})
+
+describe('TabObject - FEA (tiket 41)', () => {
+  it('objek baru tanpa FEA; data lama dilengkapi []; sub-tab kelima = SubTabFEA; galat FEA menahan Save', () => {
+    expect(objekBaru('1').fea).toEqual([])
+    const lama = { ...objekBaru('2') } as Partial<ReturnType<typeof objekBaru>>
+    delete lama.fea
+    expect(rapikanObjek(lama).fea).toEqual([])
+    expect(SUMBER).toMatch(/sub === SUBTAB_OBJEK\[4\] \? \(\s*<SubTabFEA fea=\{x\.data\.fea\}/)
+    expect(SUMBER).toContain('adaGalatFEA(x.data.fea)')
+  })
+})
+
+describe('TabObject - Loss Record (tiket 42)', () => {
+  it('objek baru: tanpa catatan, loss ratio kosong; data lama dilengkapi', () => {
+    const o = objekBaru('1')
+    expect([o.lossRecords, o.internalLossRecords]).toEqual([[], []])
+    expect(o.lossRatio).toEqual({ oneYearAmount: '', oneYearPercent: '', threeFiveYearAmount: '', threeFiveYearPercent: '' })
+    const lama = { ...objekBaru('2') } as Partial<ReturnType<typeof objekBaru>>
+    delete lama.lossRecords
+    delete lama.lossRatio
+    delete lama.internalLossRecords
+    const r = rapikanObjek(lama)
+    expect([r.lossRecords, r.internalLossRecords, r.lossRatio.oneYearAmount]).toEqual([[], [], ''])
+  })
+
+  it('sub-tab keenam = SubTabKerugian (nama tertanggung case), ketujuh = SubTabKlaimInternal', () => {
+    expect(SUMBER).toMatch(/sub === SUBTAB_OBJEK\[5\] \? \(\s*<SubTabKerugian[\s\S]*?insuredName=\{insuredName\}/)
+    expect(SUMBER).toMatch(/sub === SUBTAB_OBJEK\[6\] \? \(\s*<SubTabKlaimInternal rows=\{x\.data\.internalLossRecords\} \/>/)
+    expect(SUMBER).toContain('adaGalatKerugian(x.data.lossRecords)')
+  })
+})

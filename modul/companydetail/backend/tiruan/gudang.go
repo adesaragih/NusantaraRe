@@ -24,6 +24,8 @@ type Gudang struct {
 	// Pilihan - isi M_ENUMERASI; Negara - isi NATION.
 	Pilihan []models.Pilihan
 	Negara  []models.Negara
+	// Akun - akun login AKTIF M_LOGIN_GO (jawaban DaftarAkunAktif).
+	Akun []models.Akun
 	// SeqOrg - nilai SEQ_CLIENT_ORG.NEXTVAL berikutnya (migrasi 810 memulainya dari nomor ORG tertinggi + 1).
 	SeqOrg int64
 	// Disisip dan Diperbarui - jejak tulisan organisasi untuk asersi uji.
@@ -159,6 +161,11 @@ func (g *Gudang) DaftarPilihan(context.Context) ([]models.Pilihan, error) {
 	return append([]models.Pilihan{}, g.Pilihan...), nil
 }
 
+// DaftarAkunAktif - akun login aktif.
+func (g *Gudang) DaftarAkunAktif(context.Context) ([]models.Akun, error) {
+	return append([]models.Akun{}, g.Akun...), nil
+}
+
 // DaftarNegara - isi NATION.
 func (g *Gudang) DaftarNegara(context.Context) ([]models.Negara, error) {
 	return append([]models.Negara{}, g.Negara...), nil
@@ -196,7 +203,7 @@ func pil(jenis, kode, label string, aktif bool) models.Pilihan {
 }
 
 // Contoh - gudang berisi data uji: dua organisasi Pega lama (satu dengan PIC dan alamat ber-nomor), pilihan
-// M_ENUMERASI ringkas, dan dua negara.
+// M_ENUMERASI ringkas, dua negara, dan akun login aktif untuk PIC Name.
 func Contoh() *Gudang {
 	g := Baru()
 	// Seperti migrasi 810: nomor ORG tertinggi = 120 (dokumen M_CLIENT di atas CLIENT ORG-115) + 1.
@@ -219,6 +226,11 @@ func Contoh() *Gudang {
 		pil(models.JenisGender, "1", "Male", true),
 		pil(models.JenisGender, "2", "Female", true),
 	}
+	g.Akun = []models.Akun{{LoginID: "UJI-AKUN-1", Nama: "UJI Kontak A", Jabatan: "Direktur"},
+		{LoginID: "UJI-AKUN-2", Nama: "UJI Kontak B", Jabatan: "Staff"},
+		{LoginID: "UJI-AKUN-3", Nama: "UJI Kontak Baru", Jabatan: "Manager"},
+		{LoginID: "UJI-AKUN-4", Nama: "UJI PIC", Jabatan: "Staff"},
+		{LoginID: "UJI-AKUN-5", Nama: "UJI Tanpa Jabatan"}}
 	g.Negara = []models.Negara{
 		{ID: "100901", OldID: "001", Nama: "UJI NEGARA SATU", NationInitial: "UJS"},
 		{ID: "100902", OldID: "", Nama: "UJI NEGARA BARU", NationInitial: "UJB"},

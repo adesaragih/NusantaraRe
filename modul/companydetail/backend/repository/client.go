@@ -3,7 +3,7 @@
 // Tabel warisan `CLIENT`, `CLIENT_PICLIST`, dan `CLIENT_ADDRESS` ditulis langsung (kolom tambahannya dari migrasi
 // 805-807); `M_ENUMERASI` dan `NATION` (migrasi 800-804) dibaca saja. Nomor ORG organisasi baru dari sequence
 // `SEQ_CLIENT_ORG` (migrasi 810 memulainya sesudah nomor ORG tertinggi CLIENT dan M_CLIENT; perintah work owner
-// 04-10-2026: "buat seq aja, start-nya dari id max+1").
+// 04-10-2026: "buat seq aja, start-nya dari id max+1"). `M_LOGIN_GO` (milik inti) dibaca saja untuk pilihan PIC Name.
 //
 // ⛔ Prosedur `RDBINSERTCLIENT` TIDAK dipanggil. Setiap tabel lewat `Qualify` (ADR-U-0033), nilai lewat bind, nol
 // COMMIT di SQL (ADR-U-0029): transaksinya milik services.
@@ -27,6 +27,8 @@ const (
 	TabelAlamat = "CLIENT_ADDRESS"
 	TabelEnum   = "M_ENUMERASI"
 	TabelNegara = "NATION"
+	// TabelLogin - akun login milik inti; pilihan PIC Name (perintah work owner 05-10-2026).
+	TabelLogin = "M_LOGIN_GO"
 	// TabelDokumen - dokumen organisasi Pega (Copy Old dan alat pindah).
 	TabelDokumen = "M_CLIENT"
 	// SequenceOrg - nomor ORG organisasi baru (migrasi 810).
@@ -36,7 +38,7 @@ const (
 // DaftarTabelDitulis dan DaftarTabelDibacaSaja - penjaga modul.
 var (
 	DaftarTabelDitulis    = []string{TabelClient, TabelPIC, TabelAlamat}
-	DaftarTabelDibacaSaja = []string{TabelEnum, TabelNegara, TabelDokumen}
+	DaftarTabelDibacaSaja = []string{TabelEnum, TabelNegara, TabelDokumen, TabelLogin}
 )
 
 // BatasCariInduk - pilihan Parent organization paling banyak sekali cari.
@@ -173,6 +175,11 @@ func sqlDaftarNegara(t string) string {
 	return fmt.Sprintf(`SELECT ID, OLDID, NOTE, NATIONINITIAL FROM %s ORDER BY UPPER(NOTE), ID`, t)
 }
 
+// sqlDaftarAkunAktif - pilihan PIC Name: akun login aktif (`IS_ACTIVE` = '1', VARCHAR2(1) migrasi inti 902).
+func sqlDaftarAkunAktif(t string) string {
+	return fmt.Sprintf(`SELECT LOGIN_ID, NAME, JOB_POSITION FROM %s WHERE IS_ACTIVE = :1 ORDER BY UPPER(NAME), LOGIN_ID`, t)
+}
+
 // sqlNamaOrg - nama seluruh organisasi, untuk pemeriksaan nama sama/mirip sebelum Create (18 ribuan baris).
 func sqlNamaOrg(t string) string {
 	return fmt.Sprintf(`SELECT ID, IDVIEW, NAME, TITLE, COUNTRYNAME FROM %s WHERE FLAG = :1 AND NAME IS NOT NULL`, t)
@@ -256,6 +263,14 @@ func pindaiNegara(p pemindai) (models.Negara, error) {
 		return models.Negara{}, err
 	}
 	return models.Negara{ID: v[0], OldID: v[1], Nama: v[2], NationInitial: v[3]}, nil
+}
+
+func pindaiAkun(p pemindai) (models.Akun, error) {
+	v, err := pindaiTeks(p, 3)
+	if err != nil {
+		return models.Akun{}, err
+	}
+	return models.Akun{LoginID: v[0], Nama: v[1], Jabatan: v[2]}, nil
 }
 
 func pindaiInduk(p pemindai) (models.BarisDaftar, error) {
@@ -496,6 +511,15 @@ func (g *Gudang) DaftarNegara(ctx context.Context) ([]models.Negara, error) {
 		return nil, err
 	}
 	return daftar(ctx, g.db, sqlDaftarNegara(t), pindaiNegara)
+}
+
+// DaftarAkunAktif membaca akun login aktif M_LOGIN_GO (LOGIN_ID, NAME, dan JOB_POSITION saja).
+func (g *Gudang) DaftarAkunAktif(ctx context.Context) ([]models.Akun, error) {
+	t, err := g.nama(TabelLogin)
+	if err != nil {
+		return nil, err
+	}
+	return daftar(ctx, g.db, sqlDaftarAkunAktif(t), pindaiAkun, "1")
 }
 
 // DaftarNamaOrg membaca ID, ORG ID, nama, title, dan negara seluruh organisasi.

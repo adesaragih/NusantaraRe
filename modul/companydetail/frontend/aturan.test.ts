@@ -7,11 +7,16 @@ import {
   gantiDi,
   isianDari,
   isianKosong,
+  jabatanAkun,
   jumlahHalaman,
+  KODE_LAIN,
+  kodeAreaLain,
   kataNama,
   kodeNegara,
   labelKode,
+  opsiAkun,
   opsiDari,
+  opsiKodeArea,
   opsiNegara,
   opsiTitle,
   periksa,
@@ -70,6 +75,46 @@ describe('aturan Company Detail', () => {
     ])
     expect(labelKode(telfax, '5')).toBe('OFFICE PHONE')
     expect(labelKode(telfax, '9')).toBe('9')
+  })
+
+  it('PIC Name: akun login aktif, nama kembar sekali; nama PIC lama yang bukan akun tetap terbaca', () => {
+    const akun = [
+      { loginId: 'UJI-AKUN-1', nama: 'UJI Kontak A', jabatan: 'Direktur' },
+      { loginId: 'UJI-AKUN-2', nama: 'UJI Kontak B', jabatan: 'Staff' },
+      { loginId: 'UJI-AKUN-3', nama: 'UJI Kontak A', jabatan: 'Manager' },
+    ]
+    expect(opsiAkun(akun, '')).toEqual([
+      { value: 'UJI Kontak A', label: 'UJI Kontak A' },
+      { value: 'UJI Kontak B', label: 'UJI Kontak B' },
+    ])
+    expect(opsiAkun(akun, 'UJI Kontak B')).toHaveLength(2)
+    expect(opsiAkun(akun, 'UJI Kontak Lama')).toContainEqual({ value: 'UJI Kontak Lama', label: CD.nilaiLama('UJI Kontak Lama') })
+  })
+
+  it('PIC Position = JOB_POSITION akun yang dipilih; nama bukan akun = tidak diketahui', () => {
+    const akun = [
+      { loginId: 'UJI-AKUN-1', nama: 'UJI Kontak A', jabatan: 'Direktur' },
+      { loginId: 'UJI-AKUN-2', nama: 'UJI Kontak B', jabatan: '' },
+    ]
+    expect(jabatanAkun(akun, 'UJI Kontak A')).toBe('Direktur')
+    expect(jabatanAkun(akun, 'UJI Kontak B')).toBe('')
+    expect(jabatanAkun(akun, 'UJI Kontak Lama')).toBeUndefined()
+  })
+
+  it('kode area: daftar kodehp aktif + Others; kode di luar daftar = Others diisi sendiri', () => {
+    const kode: Pilihan[] = [
+      { kode: '021', label: 'UJI AREA', aktif: true },
+      { kode: '0542', label: '', aktif: false },
+    ]
+    expect(opsiKodeArea(kode, '')).toEqual([
+      { value: '021', label: '021 - UJI AREA' },
+      { value: KODE_LAIN, label: CD.lainnya },
+    ])
+    expect(opsiKodeArea(kode, '0542')).toContainEqual({ value: '0542', label: CD.nilaiLama('0542') })
+    expect(kodeAreaLain(kode, '')).toBe(false)
+    expect(kodeAreaLain(kode, '021')).toBe(false)
+    expect(kodeAreaLain(kode, '0542')).toBe(false)
+    expect(kodeAreaLain(kode, '0999')).toBe(true)
   })
 
   it('COUNTRY: kode = OLDID, atau ID NATION bila tanpa OLDID', () => {

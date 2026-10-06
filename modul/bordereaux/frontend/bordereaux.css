@@ -1,0 +1,1072 @@
+/* Gaya modul Bordereaux - SETIAP pemilih di bawah akar .bordereaux (gaya.test.ts).
+   Tema sama dengan modul Aggregate dan Company Detail: neumorfisme rapi di atas alas #eef1f6, aksen navy, tombol utama
+   merah bergradasi. Nilainya disalin ke token `--bd-*` milik modul ini - TIDAK menumpang ke kelas inti atau modul lain
+   (keputusan work owner: CSS per modul tidak menumpang di inti).
+   TANPA backdrop-filter, filter, atau transform: Modal tanpa portal akan terperangkap. */
+
+.bordereaux {
+  display: contents;
+}
+
+.bordereaux .bordereaux__akar {
+  --bd-latar: #eef1f6;
+  --bd-seri-0: #4f46e5;
+  --bd-seri-1: #0d9488;
+  --bd-seri-2: #f59e0b;
+  --bd-seri-3: #64748b;
+  --bd-lintasan: #e8ecf4;
+  --bd-latar-tepi: #cfd7e5;
+  --bd-latar-atas: #f9fafd;
+  --bd-latar-bawah: #e4e9f3;
+  --bd-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --bd-lembut: #e9edf3;
+  --bd-lembut-tepi: #dde3ec;
+  --bd-teks: #101828;
+  --bd-teks-redup: #4f586b;
+  --bd-aksen: var(--primary-tanda);
+  --bd-aksen-teks: #2339a3;
+  --bd-aksen-lembut: #e3e8f6;
+  --bd-aksen-garis: #b9c5ee;
+  --bd-kepala-tabel: #dde4f2;
+  --bd-kepala-teks: #22326b;
+  --bd-kepala-garis: #c3cde2;
+  --bd-isi: #ffffff;
+  --bd-baris-hover: #e6ecfa;
+  --bd-garis: #e1e6ef;
+  --bd-tepi: #c8d1e1;
+  --bd-tombol: #d63a42;
+  --bd-tombol-ujung: #bf2f37;
+  --bd-tombol-hover: #c2333b;
+  --bd-tombol-hover-ujung: #a9282f;
+  --bd-terang: rgba(255, 255, 255, 0.92);
+  --bd-gelap: rgba(163, 177, 198, 0.55);
+  --bd-kilau: rgba(255, 255, 255, 0.7);
+  --bd-timbul: 8px 8px 18px var(--bd-gelap), -8px -8px 18px var(--bd-terang);
+  --bd-timbul-kecil: 4px 4px 9px var(--bd-gelap), -4px -4px 9px var(--bd-terang);
+  --bd-cekung-kecil: inset 2px 2px 4px var(--bd-gelap), inset -2px -2px 4px var(--bd-terang);
+  --bd-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --bd-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--bd-terang);
+  --bd-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --bd-sukses-latar: #e6f7ee;
+  --bd-sukses-tepi: #b7e8cc;
+  --bd-sukses-teks: #067647;
+  --bd-netral-latar: #e9edf3;
+  --bd-netral-tepi: #d5dce7;
+  --bd-netral-teks: #475467;
+  --bd-waspada-latar: #fbf3df;
+  --bd-waspada-tepi: #f1d58a;
+  --bd-waspada-teks: #a3410a;
+  /* Kepala grid format Excel bordereaux 2025 - biru muda Excel dilembutkan (perintah work owner 05-10-2026: "jangan
+     terlalu kaku"). */
+  --bd-excel-kepala: #eaf2fc;
+  --bd-excel-grup: #dde9f9;
+  --bd-excel-kepala-teks: #1f2d4d;
+  --bd-excel-garis: rgba(31, 45, 77, 0.1);
+  --bd-excel-aksen: #6f97e8;
+  --text-3: var(--bd-teks-redup);
+  color: var(--bd-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--bd-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--bd-latar-atas) 0%, var(--bd-latar-bawah) 100%);
+  box-shadow: var(--bd-bayang-akar);
+}
+
+:root[data-theme="dark"] .bordereaux .bordereaux__akar {
+  --bd-latar: #1b2130;
+  --bd-seri-0: #818cf8;
+  --bd-seri-1: #2dd4bf;
+  --bd-seri-2: #fbbf24;
+  --bd-seri-3: #94a3b8;
+  --bd-lintasan: #252d40;
+  --bd-latar-tepi: #323b50;
+  --bd-latar-atas: #222a3b;
+  --bd-latar-bawah: #161b27;
+  --bd-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --bd-lembut: #181d2a;
+  --bd-lembut-tepi: #242b3a;
+  --bd-teks: #eef0f6;
+  --bd-teks-redup: #aab2c4;
+  --bd-aksen-teks: #aebcff;
+  --bd-aksen-lembut: #222b45;
+  --bd-aksen-garis: #3a4b8f;
+  --bd-kepala-tabel: #273152;
+  --bd-kepala-teks: #dbe2ff;
+  --bd-kepala-garis: #3a4670;
+  --bd-isi: #1f2638;
+  --bd-baris-hover: #2b3554;
+  --bd-garis: #2c3447;
+  --bd-tepi: #3a4459;
+  --bd-terang: rgba(255, 255, 255, 0.045);
+  --bd-gelap: rgba(0, 0, 0, 0.55);
+  --bd-kilau: rgba(255, 255, 255, 0.04);
+  --bd-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --bd-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--bd-terang);
+  --bd-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --bd-sukses-latar: #0d2a1f;
+  --bd-sukses-tepi: #1d5c40;
+  --bd-sukses-teks: #75e0a7;
+  --bd-netral-latar: #1f2533;
+  --bd-netral-tepi: #333c4f;
+  --bd-netral-teks: #c3cad8;
+  --bd-waspada-latar: #2b2112;
+  --bd-waspada-tepi: #6b4d17;
+  --bd-waspada-teks: #fec84b;
+  --bd-excel-kepala: #1c2b43;
+  --bd-excel-grup: #223554;
+  --bd-excel-kepala-teks: #dbe6f7;
+  --bd-excel-garis: rgba(255, 255, 255, 0.08);
+  --bd-excel-aksen: #7aa2ff;
+}
+
+/* Judul dan teks redup. */
+.bordereaux .inbox__judul,
+.bordereaux .modal__title {
+  color: var(--bd-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.bordereaux .muted {
+  color: var(--bd-teks-redup);
+}
+
+.bordereaux :focus-visible {
+  outline: 2px solid var(--bd-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.bordereaux .field__input {
+  background: var(--bd-isi);
+  border: 1px solid var(--bd-tepi);
+  border-radius: 12px;
+  box-shadow: var(--bd-cekung-kecil);
+  color: var(--bd-teks);
+}
+
+.bordereaux .field__input:hover:not(:disabled) {
+  border-color: var(--bd-aksen-garis);
+}
+
+.bordereaux .field__input:focus {
+  border-color: var(--bd-aksen);
+  box-shadow: var(--bd-cekung-kecil), var(--bd-cincin);
+  outline: none;
+}
+
+.bordereaux .field__input--readonly,
+.bordereaux .field__input--readonly:hover {
+  background: var(--bd-lembut);
+  border-color: var(--bd-lembut-tepi);
+  color: var(--bd-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.bordereaux .btn {
+  border-radius: 999px;
+}
+
+.bordereaux .btn--primary {
+  background: linear-gradient(180deg, var(--bd-tombol), var(--bd-tombol-ujung));
+  border-color: var(--bd-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--bd-bayang-tombol);
+}
+
+.bordereaux .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--bd-tombol-hover), var(--bd-tombol-hover-ujung));
+  border-color: var(--bd-tombol-hover-ujung);
+}
+
+.bordereaux .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.bordereaux .btn--ghost {
+  background: var(--bd-isi);
+  border: 1px solid var(--bd-tepi);
+  color: var(--bd-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--bd-timbul-kecil);
+}
+
+.bordereaux .btn--ghost:hover:not(:disabled) {
+  background: var(--bd-aksen-lembut);
+  border-color: var(--bd-aksen-garis);
+  color: var(--bd-aksen-teks);
+}
+
+.bordereaux .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--bd-cekung-kecil);
+}
+
+.bordereaux .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.bordereaux .modal {
+  background: var(--bd-latar);
+  border: 1px solid var(--bd-kilau);
+  border-radius: 22px;
+  box-shadow: var(--bd-bayang-popup);
+}
+
+.bordereaux .modal__head,
+.bordereaux .modal__actions {
+  border-color: var(--bd-garis);
+}
+
+.bordereaux .alert {
+  border-radius: 12px;
+}
+
+/* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
+.bordereaux .bordereaux__tabel {
+  background: var(--bd-isi);
+  border: 1px solid var(--bd-tepi);
+  border-radius: 18px;
+  box-shadow: var(--bd-timbul);
+}
+
+.bordereaux .bordereaux__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.bordereaux .bordereaux__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.bordereaux .bordereaux__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.bordereaux .bordereaux__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.bordereaux .bordereaux__tabel thead th {
+  background: var(--bd-kepala-tabel);
+  color: var(--bd-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--bd-kepala-garis);
+}
+
+.bordereaux .bordereaux__tabel td {
+  color: var(--bd-teks);
+  background: var(--bd-isi);
+  border-bottom-color: var(--bd-garis);
+}
+
+.bordereaux .bordereaux__tabel tbody tr:nth-child(even),
+.bordereaux .bordereaux__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.bordereaux .bordereaux__tabel tbody tr:nth-child(even) > td {
+  background: var(--bd-lembut);
+}
+
+.bordereaux .bordereaux__tabel tbody tr:hover > td {
+  background: var(--bd-baris-hover);
+}
+
+/* Tombol aksi SEBARIS ke samping (permintaan work owner 03-10-2026 "buat ke samping aja"): tidak turun ke bawah;
+   tabel yang lebih lebar dari layar menggulir di dalam akar. */
+.bordereaux .bordereaux__aksi {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.bordereaux .bordereaux__tabel td.table__actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.bordereaux .bordereaux__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bordereaux .bordereaux__hapus {
+  color: var(--bd-tombol);
+}
+
+.bordereaux .bordereaux__halaman {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  white-space: nowrap;
+}
+
+.bordereaux .bordereaux__badge {
+  margin-left: 10px;
+  background: var(--bd-aksen-lembut);
+  color: var(--bd-aksen-teks);
+}
+
+/* Kartu: form header, tab, riwayat. */
+.bordereaux .bordereaux__kartu {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--bd-isi);
+  border: 1px solid var(--bd-tepi);
+  border-radius: 18px;
+  box-shadow: var(--bd-timbul);
+}
+
+.bordereaux .bordereaux__judul-kartu {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--bd-teks);
+}
+
+/* Search / Filter (PortalBordereaux_Sec S15): kisi isian, tombol di kanan bawah. */
+.bordereaux .bordereaux__saring-centang {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.bordereaux .bordereaux__filter {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px 14px;
+}
+
+.bordereaux .bordereaux__filter-aksi {
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Kepala form (ditata ulang - work owner 04-10-2026 "RAPIHKAN"): bagian bertumpuk berjarak tetap, pilihan berupa chip
+   berkisi, Master Treaty satu panel, isian satu baris yang membungkus tanpa saling menimpa. */
+.bordereaux .bordereaux__id {
+  margin-left: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--bd-aksen-teks);
+}
+
+.bordereaux .bordereaux__kepala-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.bordereaux .bordereaux__bagian {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bordereaux .bordereaux__judul-bagian {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bd-teks-redup);
+}
+
+.bordereaux .bordereaux__chip-grup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bordereaux .bordereaux__chip-kisi {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 8px;
+}
+
+.bordereaux .bordereaux__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 14px;
+  border: 1px solid var(--bd-tepi);
+  border-radius: 999px;
+  background: var(--bd-isi);
+  color: var(--bd-teks);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.bordereaux .bordereaux__chip:hover {
+  border-color: var(--bd-aksen-garis);
+}
+
+.bordereaux .bordereaux__chip input {
+  margin: 0;
+  accent-color: var(--bd-aksen);
+}
+
+.bordereaux .bordereaux__chip--aktif {
+  background: var(--bd-aksen-lembut);
+  border-color: var(--bd-aksen-garis);
+  color: var(--bd-aksen-teks);
+}
+
+.bordereaux .bordereaux__treaty {
+  padding: 12px 16px;
+  border: 1px solid var(--bd-lembut-tepi);
+  border-radius: 14px;
+  background: var(--bd-lembut);
+}
+
+.bordereaux .bordereaux__treaty-kepala {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.bordereaux .bordereaux__wajib {
+  margin-left: 4px;
+  color: var(--bd-tombol);
+}
+
+.bordereaux .bordereaux__treaty-kosong {
+  margin: 0;
+}
+
+/* View: nilai saja, kisi label di atas nilai. */
+.bordereaux .bordereaux__ringkas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 24px;
+  margin: 0;
+}
+
+.bordereaux .bordereaux__ringkas dt,
+.bordereaux .bordereaux__treaty-isi dt {
+  font-size: 12px;
+  color: var(--bd-teks-redup);
+}
+
+.bordereaux .bordereaux__ringkas dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.bordereaux .bordereaux__nilai-chip {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: var(--bd-aksen-lembut);
+  color: var(--bd-aksen-teks);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.bordereaux .bordereaux__treaty-isi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px 20px;
+  margin: 0;
+}
+
+.bordereaux .bordereaux__treaty-isi dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.bordereaux .bordereaux__baris-isian {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+
+.bordereaux .bordereaux__isian-periode {
+  flex: 2 1 360px;
+  min-width: 0;
+}
+
+.bordereaux .bordereaux__isian-reff {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.bordereaux .bordereaux__baris-isian .field__input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bordereaux .bordereaux__periode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bordereaux .bordereaux__periode .field__input {
+  flex: 1 1 0;
+}
+
+/* Radio Approve / Reject di tab Submit. */
+.bordereaux .bordereaux__radio {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.bordereaux .bordereaux__radio legend {
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.bordereaux .bordereaux__radio label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* Tab Details / Summary / Submit. */
+.bordereaux .bordereaux__tab {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.bordereaux .bordereaux__tab-butir {
+  padding: 8px 16px;
+  border: 1px solid var(--bd-tepi);
+  border-radius: 999px;
+  background: var(--bd-isi);
+  color: var(--bd-teks-redup);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bordereaux .bordereaux__tab-butir--aktif {
+  background: var(--bd-aksen-lembut);
+  border-color: var(--bd-aksen-garis);
+  color: var(--bd-aksen-teks);
+}
+
+.bordereaux .bordereaux__aksi-unggah {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.bordereaux .bordereaux__unggah {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.bordereaux .bordereaux__unggah input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.bordereaux .bordereaux__submit {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 640px;
+}
+
+.bordereaux .bordereaux__kaki {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.bordereaux .bordereaux__tolak {
+  max-height: 260px;
+  margin: 0;
+  padding-left: 18px;
+  overflow: auto;
+}
+
+/* Grid lebar (sampai 64 kolom): menggulir di dalam kotaknya, kepala menempel di atas. */
+.bordereaux .bordereaux__gulir {
+  overflow: auto;
+  max-height: 65vh;
+}
+
+.bordereaux .bordereaux__grid {
+  width: max-content;
+  min-width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+
+.bordereaux .bordereaux__grid th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 6px 8px;
+  text-align: left;
+  white-space: nowrap;
+  background: var(--bd-kepala-tabel);
+  color: var(--bd-kepala-teks);
+  border-bottom: 1px solid var(--bd-kepala-garis);
+}
+
+.bordereaux .bordereaux__grid th.bordereaux__angka {
+  text-align: right;
+}
+
+.bordereaux .bordereaux__grid td {
+  padding: 4px 8px;
+  white-space: nowrap;
+  color: var(--bd-teks);
+  background: var(--bd-isi);
+  border-bottom: 1px solid var(--bd-garis);
+}
+
+.bordereaux .bordereaux__grid tbody tr:nth-child(even) > td {
+  background: var(--bd-lembut);
+}
+
+/* Kepala format Excel bordereaux 2025 (sheet per LOB, perintah work owner 05-10-2026): susunan dan judul persis sheet,
+   bentuknya dilembutkan ("jangan terlalu kaku"): bingkai membulat, garis tipis halus, sel lega, huruf setengah tebal,
+   garis aksen di bawah judul grup. Baris kepala kedua menempel tepat di bawah baris pertama (38px). */
+.bordereaux .bordereaux__gulir--grid {
+  border: 1px solid var(--bd-excel-garis);
+  border-radius: 12px;
+  background: var(--bd-isi);
+}
+
+.bordereaux .bordereaux__grid--excel {
+  margin-top: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.bordereaux .bordereaux__grid--excel th {
+  box-sizing: border-box;
+  padding: 8px 12px;
+  text-align: center;
+  vertical-align: middle;
+  white-space: pre-line;
+  min-width: 72px;
+  max-width: 200px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  color: var(--bd-excel-kepala-teks);
+  background: var(--bd-excel-kepala);
+  border: 0;
+  border-right: 1px solid var(--bd-excel-garis);
+  border-bottom: 1px solid var(--bd-excel-garis);
+}
+
+.bordereaux .bordereaux__grid--excel thead tr:first-child th {
+  height: 38px;
+}
+
+/* Judul grup: sedikit lebih pekat dengan garis aksen di bawahnya. */
+.bordereaux .bordereaux__grid--excel th.bordereaux__kepala-grup {
+  white-space: nowrap;
+  background: var(--bd-excel-grup);
+  box-shadow: inset 0 -2px 0 var(--bd-excel-aksen);
+}
+
+.bordereaux .bordereaux__grid--excel thead tr:nth-child(2) th {
+  top: 38px;
+  padding: 6px 12px;
+  font-weight: 600;
+}
+
+.bordereaux .bordereaux__grid--excel thead tr:first-child th:last-child,
+.bordereaux .bordereaux__grid--excel tbody td:last-child {
+  border-right: 0;
+}
+
+.bordereaux .bordereaux__grid--excel td {
+  padding: 7px 12px;
+  border: 0;
+  border-right: 1px solid var(--bd-excel-garis);
+  border-bottom: 1px solid var(--bd-excel-garis);
+  font-variant-numeric: tabular-nums;
+}
+
+.bordereaux .bordereaux__grid--excel tbody tr:last-child > td {
+  border-bottom: 0;
+}
+
+.bordereaux .bordereaux__grid--excel tbody tr:hover > td {
+  background: var(--bd-baris-hover);
+}
+
+/* Popup Choose Master Treaty. */
+.bordereaux .bordereaux__master {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bordereaux .bordereaux__cedant {
+  max-width: 420px;
+}
+
+.bordereaux .bordereaux__saran {
+  max-width: 420px;
+  max-height: 240px;
+  margin: 0;
+  padding: 4px;
+  overflow: auto;
+  list-style: none;
+  background: var(--bd-isi);
+  border: 1px solid var(--bd-tepi);
+  border-radius: 12px;
+}
+
+.bordereaux .bordereaux__saran-butir {
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--bd-teks);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bordereaux .bordereaux__saran-butir:hover {
+  background: var(--bd-baris-hover);
+}
+
+/* Kolom tombol baris MENEMPEL di kanan saat tabel digulir (pola Treaty Contract Out, permintaan work owner
+   04-10-2026 "tidak perlu scroll ke kanan buat aksesnya"). */
+.bordereaux .bordereaux__tabel th.table__actions,
+.bordereaux .bordereaux__tabel td.table__actions {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  box-shadow: -8px 0 10px -8px rgba(16, 24, 40, 0.25);
+}
+
+.bordereaux .bordereaux__tabel {
+  width: max-content;
+  min-width: 100%;
+}
+
+.bordereaux .bordereaux__tabel th.table__actions,
+.bordereaux .bordereaux__tabel td.table__actions {
+  padding-right: 16px;
+  padding-left: 14px;
+}
+
+.bordereaux .bordereaux__tabel td {
+  white-space: nowrap;
+}
+
+/* Chart: jumlah berkas per Business (ditumpuk per Type), dibuka per Ceding. */
+.bordereaux .bordereaux__chart-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+
+.bordereaux .bordereaux__chart-kepala .bordereaux__judul-kartu {
+  margin: 0;
+}
+
+.bordereaux .bordereaux__remah {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.bordereaux .bordereaux__remah-tombol {
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--bd-aksen-teks);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bordereaux .bordereaux__remah-tombol:hover:not(:disabled) {
+  background: var(--bd-aksen-lembut);
+}
+
+.bordereaux .bordereaux__remah-tombol:disabled {
+  color: var(--bd-teks);
+  cursor: default;
+}
+
+.bordereaux .bordereaux__remah-pisah {
+  color: var(--bd-teks-redup);
+}
+
+.bordereaux .bordereaux__kpi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.bordereaux .bordereaux__kpi-item {
+  display: flex;
+  flex: 1 1 180px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  background: var(--bd-lembut);
+  border: 1px solid var(--bd-lembut-tepi);
+  border-radius: 14px;
+}
+
+.bordereaux .bordereaux__kpi-label {
+  font-size: 12px;
+  color: var(--bd-teks-redup);
+}
+
+.bordereaux .bordereaux__kpi-nilai {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--bd-aksen-teks);
+}
+
+.bordereaux .bordereaux__chart-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.bordereaux .bordereaux__legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bordereaux .bordereaux__legenda li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bordereaux .bordereaux__tanda {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.bordereaux .bordereaux__batang-daftar {
+  max-height: 360px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.bordereaux .bordereaux__batang {
+  display: grid;
+  grid-template-columns: minmax(140px, 260px) minmax(120px, 1fr) minmax(110px, auto) 56px 14px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.bordereaux .bordereaux__batang--buka {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.bordereaux .bordereaux__batang--buka:hover {
+  background: var(--bd-baris-hover);
+}
+
+.bordereaux .bordereaux__batang-nama {
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bordereaux .bordereaux__lintasan {
+  display: flex;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bd-lintasan);
+}
+
+.bordereaux .bordereaux__ruas {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.bordereaux .bordereaux__ruas + .bordereaux__ruas {
+  border-left: 2px solid var(--bd-isi);
+}
+
+.bordereaux .bordereaux__ruas--0 {
+  background: var(--bd-seri-0);
+}
+
+.bordereaux .bordereaux__ruas--1 {
+  background: var(--bd-seri-1);
+}
+
+.bordereaux .bordereaux__ruas--2 {
+  background: var(--bd-seri-2);
+}
+
+.bordereaux .bordereaux__ruas--3 {
+  background: var(--bd-seri-3);
+}
+
+.bordereaux .bordereaux__batang-nilai {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bordereaux .bordereaux__batang-persen {
+  text-align: right;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--bd-teks-redup);
+}
+
+.bordereaux .bordereaux__chevron {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--bd-teks-redup);
+}
+
+/* Popup Copy Old Data (superadmin) - bentuk sama dengan Copy Old Company Detail. */
+.bordereaux .bordereaux__lama {
+  display: grid;
+  gap: 10px;
+}
+
+.bordereaux .bordereaux__lama-alat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bordereaux .bordereaux__lama-cari {
+  flex: 1 1 260px;
+  max-width: 360px;
+}
+
+.bordereaux .bordereaux__lama-tabel {
+  max-height: 55vh;
+}
+
+/* Tabel popup selebar popup (bukan max-content seperti grid daftar), supaya kolom terakhir tidak terpotong. */
+.bordereaux .bordereaux__lama-tabel .bordereaux__tabel {
+  width: 100%;
+}
+
+.bordereaux .bordereaux__lama-centang {
+  width: 36px;
+  text-align: center;
+}
+
+.bordereaux .bordereaux__lama-ringkas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bordereaux .bordereaux__lama-jumlah {
+  padding: 3px 12px;
+  border: 1px solid var(--bd-sukses-tepi);
+  border-radius: 999px;
+  background: var(--bd-sukses-latar);
+  color: var(--bd-sukses-teks);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.bordereaux .bordereaux__lama-jumlah--masalah {
+  border-color: var(--bd-waspada-tepi);
+  background: var(--bd-waspada-latar);
+  color: var(--bd-waspada-teks);
+}
+
+/* Kolom "Will copy" boleh turun baris supaya tidak terpotong di tepi popup. */
+.bordereaux .bordereaux__tabel .bordereaux__lama-catatan {
+  min-width: 170px;
+  white-space: normal;
+}
+
+.bordereaux .bordereaux__lama-masalah {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--bd-waspada-teks);
+}
+
+@media (max-width: 720px) {
+  .bordereaux .bordereaux__batang {
+    grid-template-columns: 1fr auto 56px;
+    gap: 6px 10px;
+  }
+
+  .bordereaux .bordereaux__lintasan {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .bordereaux .bordereaux__chevron {
+    display: none;
+  }
+}

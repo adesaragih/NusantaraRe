@@ -223,32 +223,20 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 	// Pemeriksaan per berkas tidak dapat salah potong: satu berkas
 	// dikecualikan dengan namanya, sisanya utuh.
 	const berkasOutbox = "015_t_log_service_rnm"
-	// ⭐ PENGECUALIAN KEDUA, 6 Oktober 2026 — dan ia menegakkan larangan
-	// ini, bukan melonggarkannya.
-	//
-	// Larangannya berbunyi *"atribut klaim harus menjadi KOLOM BERNAMA"*:
-	// yang dilarang menyembunyikan atribut berstruktur di dalam satu blob.
-	// Kelima `CLOB` di `439` justru KOLOM BERNAMA — satu per ejaan medan
-	// teks bebas tab `Exclusions` dan `Special Conditions`, yang terukur
-	// mencapai 23.453 aksara sementara `VARCHAR2` Oracle berhenti di 4.000.
-	//
-	// ⛔ Alternatifnya MEMOTONG teks tanpa bersuara, dan itu kehilangan
-	// data yang baru ketahuan bertahun kemudian.
-	//
-	// ⚠️ Cacahnya DIPATOK: tepat lima, tidak boleh bertambah diam-diam.
-	const berkasTeksPanjang = "439_akar_dan_nilai_sisa"
-	const clobTeksPanjang = 5
-	dokumenDiOutbox := 0
-	teksPanjang := 0
+	// Template Manager (keputusan work owner 04-10-2026): ISI adalah BERKAS templat utuh (CSV/XLSX yang diunduh
+	// pengguna), bukan atribut klaim dan bukan dokumen JSON. Pengecualiannya SATU kolom BLOB di SATU tabel, dan
+	// berkas itu tidak boleh memuat CLOB atau JSON.
+	const berkasTemplat = "912_m_template_file"
+	dokumenDiOutbox, blobTemplat := 0, 0
 	for nama, isi := range seluruhSQL(t, false) {
 		atas := strings.ToUpper(isi)
 		if strings.Contains(nama, berkasOutbox) {
 			dokumenDiOutbox += strings.Count(atas, "CLOB")
 			continue
 		}
-		if strings.Contains(nama, berkasTeksPanjang) {
-			teksPanjang += strings.Count(atas, "CLOB")
-			continue
+		if strings.Contains(nama, berkasTemplat) && !strings.Contains(nama, "_down") {
+			blobTemplat += len(regexp.MustCompile(`(?m)^\s*ISI\s+BLOB\s+NOT NULL,$`).FindAllString(atas, -1))
+			atas = regexp.MustCompile(`(?m)^\s*ISI\s+BLOB\s+NOT NULL,$`).ReplaceAllString(atas, "")
 		}
 		for _, tipe := range []string{" JSON", "CLOB", "BLOB", "JSON_KLAIM"} {
 			if strings.Contains(atas, tipe) {
@@ -257,10 +245,8 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 			}
 		}
 	}
-	// Dan kelima kolom teks panjang itu memang LIMA, tidak lebih.
-	if teksPanjang != clobTeksPanjang {
-		t.Errorf("%s memuat %d kolom CLOB, mau tepat %d (kelima ejaan medan teks panjang)",
-			berkasTeksPanjang, teksPanjang, clobTeksPanjang)
+	if blobTemplat != 1 {
+		t.Errorf("M_TEMPLATE_FILE memuat %d kolom ISI BLOB, mau tepat 1", blobTemplat)
 	}
 	// Dan outbox-nya memang hanya punya SATU kolom dokumen.
 	if dokumenDiOutbox != 1 {

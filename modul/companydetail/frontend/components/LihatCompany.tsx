@@ -26,7 +26,8 @@ export default function LihatCompany({
   id: string
   pilihan: PilihanForm
   onKembali: () => void
-  onUbah: (id: string) => void
+  /** Tidak ada = menu View only (M_LOGIN_GO_MENU.HAK, 04-10-2026): tanpa tombol Edit. */
+  onUbah?: (id: string) => void
 }) {
   const [detail, setDetail] = useState<Detail | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
@@ -54,7 +55,7 @@ export default function LihatCompany({
         </button>
         <h2 className="inbox__judul">{CD.judulLihat(detail?.idView ?? '')}</h2>
         <span className="toolbar__spacer" />
-        {detail !== null && (
+        {detail !== null && onUbah !== undefined && (
           <button
             type="button"
             className="btn btn--primary"

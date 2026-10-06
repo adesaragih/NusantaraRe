@@ -117,6 +117,7 @@ func (r *Rute) Middleware(next http.Handler) http.Handler {
 		if !p.WajibGantiSandi {
 			ctx = inti.DenganPelakuSesi(ctx, inti.Pelaku{AkunID: p.AkunID, Peran: p.Peran})
 			ctx = inti.DenganAksesMenu(ctx, p.Menu)
+			ctx = inti.DenganMenuLihat(ctx, p.MenuLihat)
 		}
 		next.ServeHTTP(w, req.WithContext(ctx))
 	})

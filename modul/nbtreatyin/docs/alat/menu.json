@@ -1,0 +1,265 @@
+{
+ "baris": 3748,
+ "kedalaman": 14,
+ "atas": [
+  {
+   "no": "1",
+   "jenis": "Harness",
+   "nama": "SFAPortalOpportunities",
+   "dari": "menu portal (entry point)"
+  },
+  {
+   "no": "1.1",
+   "jenis": "Flow",
+   "nama": "InputRealizationTreatyIn",
+   "dari": "createWork dari tombol Create di SFAPortalOpportunitiesHeader"
+  },
+  {
+   "no": "1.1.1",
+   "jenis": "Flow Action",
+   "nama": "InboxPolicyTreatyIn",
+   "dari": "Assignment2"
+  },
+  {
+   "no": "1.1.2",
+   "jenis": "Activity",
+   "nama": "SaveJsonPolisTreatyIn_Act",
+   "dari": "InputRealizationTreatyIn"
+  },
+  {
+   "no": "1.1.3",
+   "jenis": "Decision Table",
+   "nama": "isApproved",
+   "dari": "Decision3"
+  },
+  {
+   "no": "1.1.4",
+   "jenis": "Decision Table",
+   "nama": "isApproved",
+   "dari": "InputRealizationTreatyIn"
+  },
+  {
+   "no": "1.1.5",
+   "jenis": "When",
+   "nama": "IsSPVCreate",
+   "dari": "Decision6 (pxCreateOperator SPV?)"
+  },
+  {
+   "no": "1.1.6",
+   "jenis": "When",
+   "nama": "IsSPVCreate",
+   "dari": "InputRealizationTreatyIn"
+  },
+  {
+   "no": "1.1.7",
+   "jenis": "When",
+   "nama": "IsSPVTreaty1",
+   "dari": "Decision12 (IS SPV TREATY 1)"
+  },
+  {
+   "no": "1.1.8",
+   "jenis": "When",
+   "nama": "ToTREATYDEPTHEAD",
+   "dari": "InputRealizationTreatyIn"
+  },
+  {
+   "no": "1.1.9",
+   "jenis": "When",
+   "nama": "IsTreaty1",
+   "dari": "Decision10 (is Treaty 1)"
+  },
+  {
+   "no": "1.1.10",
+   "jenis": "When",
+   "nama": "IsSPVTreaty1",
+   "dari": "InputRealizationTreatyIn"
+  },
+  {
+   "no": "1.1.11",
+   "jenis": "Flow Action",
+   "nama": "DeptHeadTreatyIn_UW",
+   "dari": "Assignment6"
+  },
+  {
+   "no": "1.1.12",
+   "jenis": "When",
+   "nama": "IsTreaty1",
+   "dari": "InputRealizationTreatyIn"
+  },
+  {
+   "no": "1.1.13",
+   "jenis": "Flow Action",
+   "nama": "DeptHeadTreatyIn_UW",
+   "dari": "Assignment4"
+  },
+  {
+   "no": "1.1.14",
+   "jenis": "When",
+   "nama": "NopolisEmpty",
+   "dari": "InputRealizationTreatyIn"
+  },
+  {
+   "no": "1.1.15",
+   "jenis": "Decision Table",
+   "nama": "isApproved",
+   "dari": "Decision4"
+  },
+  {
+   "no": "1.1.16",
+   "jenis": "When",
+   "nama": "isClaimTreaty",
+   "dari": "InputRealizationTreatyIn"
+  },
+  {
+   "no": "1.1.17",
+   "jenis": "Decision Table",
+   "nama": "isApproved",
+   "dari": "Decision11"
+  },
+  {
+   "no": "1.1.18",
+   "jenis": "Activity",
+   "nama": "serviceInsertArasapas_act",
+   "dari": "InputRealizationTreatyIn"
+  },
+  {
+   "no": "1.1.19",
+   "jenis": "When",
+   "nama": "ToTREATYDEPTHEAD",
+   "dari": "Decision13 (TO TREATY DEPT HEAD?)"
+  },
+  {
+   "no": "1.1.20",
+   "jenis": "Flow Action",
+   "nama": "DeptHeadTreatyIn_UW",
+   "dari": "InputRealizationTreatyIn"
+  },
+  {
+   "no": "1.1.21",
+   "jenis": "When",
+   "nama": "NopolisEmpty",
+   "dari": "Decision8 ([Decision])"
+  },
+  {
+   "no": "1.1.22",
+   "jenis": "Flow Action",
+   "nama": "InboxPolicyTreatyIn",
+   "dari": "InputRealizationTreatyIn"
+  },
+  {
+   "no": "1.1.23",
+   "jenis": "Flow Action",
+   "nama": "DeptHeadTreatyIn_UW",
+   "dari": "Assignment3"
+  },
+  {
+   "no": "1.1.24",
+   "jenis": "Activity",
+   "nama": "SaveJsonPolisTreatyIn_Act",
+   "dari": "Utility1"
+  },
+  {
+   "no": "1.1.25",
+   "jenis": "Decision Table",
+   "nama": "isApproved",
+   "dari": "Decision2"
+  },
+  {
+   "no": "1.1.26",
+   "jenis": "Activity",
+   "nama": "serviceInsertArasapas_act",
+   "dari": "Utility2"
+  },
+  {
+   "no": "1.1.27",
+   "jenis": "Decision Table",
+   "nama": "isApproved",
+   "dari": "Decision7"
+  },
+  {
+   "no": "1.1.28",
+   "jenis": "When",
+   "nama": "isClaimTreaty",
+   "dari": "Decision5 (Claim)"
+  },
+  {
+   "no": "1.1.29",
+   "jenis": "Flow Action",
+   "nama": "DeptHeadTreatyIn_UW",
+   "dari": "Assignment5"
+  },
+  {
+   "no": "1.1.30",
+   "jenis": "Decision Table",
+   "nama": "isApproved",
+   "dari": "Decision1"
+  },
+  {
+   "no": "1.1.31",
+   "jenis": "Flow Action",
+   "nama": "DeptHeadTreatyIn_UW",
+   "dari": "Assignment1"
+  },
+  {
+   "no": "1.2",
+   "jenis": "Section",
+   "nama": "SFAPortal_Opportunities",
+   "dari": "SFAPortalOpportunities"
+  },
+  {
+   "no": "1.2.1",
+   "jenis": "Section",
+   "nama": "SFAPortal_OpportunitiesList",
+   "dari": "SFAPortal_Opportunities"
+  },
+  {
+   "no": "1.2.2",
+   "jenis": "Section",
+   "nama": "SFAPortal_OpportunitiesList_Header",
+   "dari": "SFAPortal_Opportunities"
+  },
+  {
+   "no": "1.3",
+   "jenis": "Section",
+   "nama": "SFAPortalOpportunitiesHeader",
+   "dari": "SFAPortalOpportunities"
+  },
+  {
+   "no": "1.3.1",
+   "jenis": "When",
+   "nama": "crmCreateOpportunity",
+   "dari": "SFAPortalOpportunitiesHeader"
+  },
+  {
+   "no": "1.3.2",
+   "jenis": "When",
+   "nama": "isSellingModeB2C",
+   "dari": "SFAPortalOpportunitiesHeader"
+  },
+  {
+   "no": "1.3.3",
+   "jenis": "When",
+   "nama": "isSellingModeB2BB2C",
+   "dari": "SFAPortalOpportunitiesHeader"
+  },
+  {
+   "no": "1.3.4",
+   "jenis": "When",
+   "nama": "IsNotAdmin",
+   "dari": "SFAPortalOpportunitiesHeader"
+  },
+  {
+   "no": "1.3.5",
+   "jenis": "When",
+   "nama": "isSellingModeB2B",
+   "dari": "SFAPortalOpportunitiesHeader"
+  },
+  {
+   "no": "1.3.6",
+   "jenis": "When",
+   "nama": "pyIsIpadOrDesktop",
+   "dari": "SFAPortalOpportunitiesHeader"
+  }
+ ],
+ "catatan": "Akar tunggal: Harness `SFAPortalOpportunities` (menu portal). Satu-satunya jalan ke alur realisasi adalah tombol *Create* portal (`createWork` → `Flow/InputRealizationTreatyIn`). Tidak ada butir menu lain di pohon ini — sistem baru tidak boleh menambah menu di luar itu."
+}

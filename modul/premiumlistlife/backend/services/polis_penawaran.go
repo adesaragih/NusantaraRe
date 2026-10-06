@@ -133,40 +133,51 @@ func (p *Penawaran) pagari(ctx context.Context, pelaku inti.Pelaku, polisID stri
 // `models.ErrBenderaTanpaKonektor`, sebelum satu tulisan pun.
 func (p *Penawaran) Putuskan(ctx context.Context, pelaku inti.Pelaku,
 	polisID, keputusan string, saat time.Time) (models.AkibatKeputusan, error) {
+	akibat, _, err := p.PutuskanDenganNomor(ctx, pelaku, polisID, keputusan, saat)
+	return akibat, err
+}
+
+// PutuskanDenganNomor sama dengan `Putuskan`, dan juga mengembalikan hasil
+// simpan (PL Number dan WPC) yang terbit bila jalurnya menyimpan polis (Confirm di Input Premium Detail);
+// kosong selain itu. Layar MENAMPILKAN nomornya sebelum kembali ke kotak
+// masuk (keputusan work owner 03-10-2026).
+func (p *Penawaran) PutuskanDenganNomor(ctx context.Context, pelaku inti.Pelaku,
+	polisID, keputusan string, saat time.Time) (models.AkibatKeputusan, HasilSubmitSummary, error) {
 
 	keadaan, err := p.pagari(ctx, pelaku, polisID)
 	if err != nil {
-		return models.AkibatKeputusan{}, err
+		return models.AkibatKeputusan{}, HasilSubmitSummary{}, err
 	}
 	akibat, err := models.TransisiPenawaran(keadaan.Status, keputusan)
 	if err != nil {
-		return models.AkibatKeputusan{}, err
+		return models.AkibatKeputusan{}, HasilSubmitSummary{}, err
 	}
 	// ⛔ Tiket 01 bagian 3: `Confirm` di tahap penawaran menuntut isian wajib
 	// layar Input Offer SUDAH tersimpan (services/polis_isianpenawaran.go).
 	// `Decline` tidak digerbangi: penawaran yang ditolak tidak perlu lengkap.
 	if keadaan.Status == models.TahapPolisPenawaran && keputusan == models.KeputusanConfirm {
 		if err := p.periksaPenawaranLengkap(ctx, keadaan.ID); err != nil {
-			return models.AkibatKeputusan{}, err
+			return models.AkibatKeputusan{}, HasilSubmitSummary{}, err
 		}
 	}
 	sebab := keputusan
 	if akibat.KeDecision3 {
 		flag, err := repository.NewWorkPolis(p.svc.DB()).Bendera(ctx, keadaan.ID)
 		if err != nil {
-			return models.AkibatKeputusan{}, err
+			return models.AkibatKeputusan{}, HasilSubmitSummary{}, err
 		}
 		lanjut, err := models.PenggolongOtomatis(flag)
 		if err != nil {
-			return models.AkibatKeputusan{}, fmt.Errorf("polis %q: %w", polisID, err)
+			return models.AkibatKeputusan{}, HasilSubmitSummary{}, fmt.Errorf("polis %q: %w", polisID, err)
 		}
 		akibat = lanjut
 		sebab = keputusan + " -> " + models.HasilIsFlagOnGoingPolicy(flag)
 	}
-	if _, err := p.terapkan(ctx, pelaku, keadaan, akibat, sebab, saat); err != nil {
-		return models.AkibatKeputusan{}, err
+	simpan, err := p.terapkan(ctx, pelaku, keadaan, akibat, sebab, saat)
+	if err != nil {
+		return models.AkibatKeputusan{}, HasilSubmitSummary{}, err
 	}
-	return akibat, nil
+	return akibat, simpan, nil
 }
 
 // terapkan menulis akibat sebuah keputusan, beserta jejaknya.

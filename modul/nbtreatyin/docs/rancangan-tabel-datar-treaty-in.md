@@ -282,6 +282,11 @@ sistem lama dipertahankan)* · `OVERIDDING_COMM_ONP` · `RESULT_OGP1` · `RESULT
 
 `DEDUCTION1` · `DEDUCTION2` · `TOTAL_SHARE_PERCENTAGE_PREMIUM` · `TOTAL_SHARE_PERCENTAGE_CLAIM`
 
+> ⛔ **RALAT** 2026-10-03 (K3, paket P2) — bunyi lama: *"**Persen** … `DEDUCTION1` · `DEDUCTION2` ·
+> `TOTAL_SHARE_PERCENTAGE_PREMIUM` · `TOTAL_SHARE_PERCENTAGE_CLAIM`"* → bunyi baru: `DEDUCTION1`
+> `DEDUCTION2` pindah ke golongan **Uang** (keputusan WO K3: ikuti pemakaian XML);
+> `TOTAL_SHARE_PERCENTAGE_*` tetap persen. Bukti: sel `.Deduction1` `.Deduction2` `pxCurrency` di `Section/DetailPolicyTreatyIn.xml` dan `Section/DetailDeptHeadTreatyIn_UW.xml`; `Activity/CountNetPremi_act` langkah 4 mengurangkan keduanya dari premi; `Activity/SetPPNPPH` langkah 4 membagi `.Deduction1` dengan 1,022.
+
 **Kode dan teks** `[dari DATA_JSON]`
 
 `POLICY_NO` · `NO_OFFER` · `BIZ_CODE` · `BIZ_NAME` · `OJK_BUSINESS_ID` · `ID_NEW_BISNIS` ·
@@ -374,6 +379,12 @@ tergolong, dan **wajib kosong sebelum rancangan dinyatakan selesai**.
 
 `POLIS_ID` · `JALUR` · `NILAI`
 
+> ⛔ **RALAT putaran 2 — 03-10-2026** `[keputusan work owner]` **K17**. Bunyi lama: *"`TREATY_IN_POLIS_NILAI_LAIN`
+> — penampung sementara … `POLIS_ID` · `JALUR` · `NILAI`"* (dibangun putaran 1 sebagai `T_POLIS_MEDAN_LAIN`,
+> migrasi 329). Bunyi baru: **bukan tabel** — tidak ada di diagram grilling; migrasi 329 dihapus.
+> Penampungnya **berkas laporan CSV** per jalankan pemuat dokumen lama (`POLIS_ID`, `JALUR`, `NILAI`) di
+> folder keluaran operator; tetap wajib nol sebelum selesai (spec-penyimpanan RALAT ID-27, AC 57/59).
+
 Kenapa perlu: sensus medan yang dipakai rancangan ini berasal dari **rujukan di dalam aturan**, dan
 aturan hanya menyentuh medan yang dihitung atau ditampilkan. **Medan yang hanya lewat — masuk
 dokumen lalu keluar tanpa disentuh — tidak terlihat oleh sapuan ini.** Tiga contoh nyata memberi
@@ -413,6 +424,30 @@ Pemetaan kolomnya *(lengkap, dari naskah SQL)*:
 
 ⚠️ `B2B` dan `PERCENT_RNM` datang dari halaman **`OfferFacIn`** — bukti aturan ini **dipakai bersama
 modul Fac In**, bukan milik Treaty In sendiri.
+
+> ⛔⛔ **RALAT 2026-10-03 (implementasi) atas §4bis.1.** Premis *"dua tabel usulan ternyata sudah ada"*
+> tidak berlaku untuk **kasus treaty**: `SaveViewSuggest` menulis `HISTORYAKSEPTASIPRODUCTION` hanya
+> bila `Quotation.BusinessFac == "F"` — termasuk kalang berketerangan "UNTUK TREATY" — sedangkan treaty
+> bernilai "T". SuggestList treaty selama ini hanya hidup di dokumen JSON. ⇒ Tabel baris dokumen
+> `T_POLIS_SUGGEST` (migrasi 328) dibuat supaya catatan pengguna tidak hilang (spec AC 71). Keputusan
+> agen — mohon konfirmasi work owner.
+
+> ⛔⛔ **RALAT atas RALAT — putaran 2, 03-10-2026.** Bunyi RALAT di atas, dikutip: *"⇒ Tabel baris dokumen
+> `T_POLIS_SUGGEST` (migrasi 328) dibuat supaya catatan pengguna tidak hilang (spec AC 71). Keputusan
+> agen — mohon konfirmasi work owner."*
+>
+> Bunyi baru: `[keputusan work owner]` **K4** (PROMPT-NB-TREATY-IN-PUTARAN-2 bab 2) — **tidak
+> disetujui**: tabel di luar diagram grilling (bab 0 butir 11). Migrasi 328 dihapus. **§4bis.1 asli
+> berlaku**: `SuggestList` ditulis ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION` (diagram Prop J74–J78,
+> NonProp J89–J93; 15 kolom `RDBList\InsertViewSuggest_SQL`) dan dibaca balik untuk layar —
+> `repository/usulan.go`, pemetaan `models/usulan.go` (`.Suggest → KETERANGAN` substr 3990,
+> `.IsApproved → APPROVAL` 1 = Accept / 0 = Reject per baris, `PIC` = nama tampilan P33, `AKSES_LOGIN` =
+> identitas login P4). Premis *"catatan treaty hilang"* tetap benar untuk **Pega** (`Activity\SaveViewSuggest`
+> langkah 2 bersyarat `pyWorkPage.Quotation.BusinessFac=="F"`), dan justru itulah `[penyimpangan sadar]`
+> yang diterima: syarat itu tidak ditiru, dan baris ditulis pada submit **setiap** jenjang yang
+> menambahkannya (XML: hanya `InputPolicyTreatyInPost_Act` langkah 4, pasca-submit admin), di transaksi
+> submit, `NOURUT` berikutnya per `IDPEGA` di bawah kunci kasus. `DIV` NULL — `OperatorID.pyOrgDivision`
+> tanpa sumber di inti (butir terbuka).
 
 ### 4bis.2 ⭐⭐ Tabel datar yang diminta **sudah ada**: `TREATYINPRODUCTION`
 
@@ -455,6 +490,21 @@ Pemetaan penuh ada di sheet **`Treaty In Prop`** dan **`Treaty In NonProp`** pad
 | `UPDATE` | `POOLDATA.JSON_POLIS_MONITORING` | EDM — ⭐ inilah langkah 16 yang menyetel `STS_KONVERSI`, sejalan **P51** dan **P52** |
 
 ⚠️ **Dua dari empat ditulis tanpa awalan skema** — menambah bukti pelanggaran ketetapan 6.
+
+> ⛔ **RALAT catatan diagram — putaran 3, 04-10-2026** `[keputusan work owner]` **F8**. Diagram grilling
+> (`Diagram-Skema-Tabel-NusantaraRe.xlsx`, sheet *NB Treaty In Prop* sel F103 dan *NB Treaty In NonProp* sel F118)
+> menulis, dikutip apa adanya: *"dibaca saja: TANGGAL_CLOSING · GENERATE_SEQUENCE_NUMBER · CURRENCY · BUSINESS ·
+> REINSURANCETYPE · TREATYGROUP · M_TREATY_IN_EDM · ⚠ DATAPEGA.PC_ASM_FW_GCNMFW_WORK = skema KEDUA"*. Bunyi baru untuk
+> `GENERATE_SEQUENCE_NUMBER`: **ditulis** — penerbitan nomor polis memajukan penghitung deret lewat penomor bersama
+> `inti/backend/penomor` (`UrutNomorBerikut`: `SELECT … FOR UPDATE`, lalu `INSERT`/`UPDATE` baris deret), padanan
+> `PROC_GENERATE_SEQUENCE_NUMBER` Pega yang juga menulis tabel itu; disetujui WO 04-10-2026. Bukti XML:
+> `Activity\GeneratePolicyNoTreaty_Act.xml` `pySteps(27)` (*"generate MM.YYYY DAN SEQUENCE"*, `RDB-List`
+> `RequestType = GetSequenceNumber_SQL`) → `RDBList\GetSequenceNumber_SQL.xml`
+> `POOLDATA.PROC_GENERATE_SEQUENCE_NUMBER({ParamSeq.CARI1},{ParamSeq.CARI2},TO_DATE({ParamSeq.CARI3},'DD/MM/YYYY'),
+> {ParamSeq.HASIL1 out},{ParamSeq.HASIL2 out})`. Procedure itu sendiri tidak dipanggil (spec-penyimpanan AC 48); rule
+> NB tidak menulis tabel itu dengan SQL langsung — karena itu ia tidak masuk tabel *sasaran tulis langsung* di atas.
+> ⛔ Berkas Excel diagram **tidak** disunting. Kode: `backend/repository/riwayat.go` `TerbitkanNomorPolis`; uji
+> `backend/repository/nomorpolis_db_test.go` (`-tags=db`, K11). Tabel lain di sel itu tetap dibaca saja.
 
 ---
 
@@ -635,6 +685,13 @@ satu jalur proporsional, satu jalur XOL:
 menyaring `PROPORTIONALTYPE` lebih dulu**, kalau tidak ia menjumlahkan persen dengan rupiah.
 Rancangan kita tidak menularkannya — `T_GENERAL_POLIS.DEDUCTION1` dan `T_POLIS_XOL.DEDUCTION`
 sudah dua kolom terpisah.
+
+> ⛔ **RALAT (P9, 04-10-2026)** `[keputusan work owner]` **K3** — bunyi tabel di atas, dikutip: *"| `DEDUCTION1` | `.Deduction1` *(persen)* | `.Deduction` *(uang)* |"*. Bunyi baru: `.Deduction1` jalur prop
+> dipakai XML sebagai **jumlah uang** (rumus XML apa adanya, K3): sel `pxCurrency` di
+> `Section\DetailPolicyTreatyIn.xml` / `Section\DetailDeptHeadTreatyIn_UW.xml`, `CountNetPremi_act`
+> langkah 4 mengurangkannya dari premi, `SetPPNPPH` langkah 4 membaginya 1,022 — maka
+> `T_GENERAL_POLIS.DEDUCTION1/2` bergolongan uang (`models/katalog.go` `kUang`, paket P2). Label "persen"
+> berasal dari WO P29; pertentangannya tetap tercatat di tiket 07. Kedua kolom tetap terpisah.
 
 ⭐ Dan `LAYER*` pada polis proporsional **bernilai `"0"`, bukan kosong**.
 
@@ -844,6 +901,9 @@ mengurangi terhadap **nol**, bukan terhadap angka yang bermakna.
 
 ### 4q5.5 `[keputusan work owner]` Presisi uang — **`NUMBER(20,8)`**
 
+> ⛔ **RALAT 04-10-2026** — digantikan **`NUMBER(38,10)`** (diagram sheet NB Treaty In Prop F20 *"skala MINIMAL 9
+> desimal"*, perintah WO 04-10-2026). Lihat §4sx.6.
+
 ⚠️ Ini **menyempurnakan P29**, dan sebagian membalikkannya. Bunyi lama dikutip:
 
 > ⛔ *"P29 — ikuti apa adanya, jangan bulatkan. Skala kolom uang minimal 9 desimal."*
@@ -891,6 +951,97 @@ yang pernah tersimpan. Nilai terbesar yang terlihat 9 digit; premi rupiah bisa l
 
 `Show` dan `ViewState` **tidak dimigrasi** — keadaan layar. `Remark` **dimigrasi**, dan ini medan
 baru yang belum pernah masuk rancangan.
+
+---
+
+## 4sexies · ⛔ RALAT putaran 2 — 03-10-2026 — kolom delapan tabel lawan diagram grilling
+
+`[keputusan work owner]` bab 0 butir 11–12 PROMPT-NB-TREATY-IN-PUTARAN-2: **tepat delapan tabel**
+(diagram), kolom mengikuti diagram dan rancangan ini; kolom di luar keduanya hanya bila XML membuktikan
+medannya **dibaca** rule NB terjangkau — dicatat di sini dengan buktinya. Tabel per kolom:
+`docs/PERBANDINGAN-KOLOM-DIAGRAM.md`. ⛔ Bunyi lama yang diubah dikutip.
+
+### 4sx.1 Kolom di luar rancangan yang **dipertahankan** (bukti XML)
+
+| Tabel · kolom | Medan | Bukti (rule terjangkau) |
+| --- | --- | --- |
+| `T_GENERAL_POLIS.POSITION_NOTE` | `pyWorkPage.PositionNote` | connector `Flow\InputRealizationTreatyIn`; `InboxPolicyTreatyIn_postDT` langkah 4; syarat sel `Section\ListSuggest` |
+| `T_GENERAL_POLIS.NB_STATUS` | `pyWorkPage.NBStatus` | tampil `Section\SFAPortal_OpportunitiesList` (`A.NBStatus`) |
+| `T_GENERAL_POLIS.TREATY_IN_ID` | `pyWorkPage.TreatyIn.ID` | `RDBList\BrowseTreatyIn` (`where ID={TreatyIn.ID}`); `Activity\CheckDuplicateOffer` |
+| `T_GENERAL_POLIS.SHARE_CURRENCY` | `.ShareCurrency` | tampil `DetailPolicyTreatyIn`, `DetailDeptHeadTreatyIn_UW` (*RNM Share*) |
+| `T_GENERAL_POLIS.GROSS_CLAIM` | `.GrossClaim` | tampil `DetailPolicyTreatyIn` (*Claim 100%*); rumus `CalculatePremi_Act` |
+| `T_GENERAL_POLIS.BROKERAGE_FEE_SEBENARNYA` | `.BrokerageFeeSebenarnya` | rumus `SetPPNPPH` langkah 3 (`.PPHValue`, `.PPNValue`) |
+| `T_POLIS_QUOTATION.BUSINESS_NAME` | `Quotation.BusinessName` | `InputPolicyTreatyInPre_Act` langkah 2 (syarat + `OldID.CARI2`); tampil `SFAPortal_OpportunitiesList` |
+| `T_POLIS_QUOTATION.BUSINESS_FAC` | `Quotation.BusinessFac` | `SaveViewSuggest` CARI7; RD `GetListOpportunity` filter E |
+| `T_POLIS_QUOTATION.INSURED_ID` | `Quotation.InsuredID` | `InputPolicyTreatyInDetail_preACT` langkah 3 (rumus), 14.3 (syarat) |
+| `T_POLIS_QUOTATION.INSURED_NAME` | `Quotation.InsuredName` | preACT langkah 3, 14.1; tampil `SFAPortal_OpportunitiesList` |
+| `T_POLIS_QUOTATION.NO_OFFER_SLIP` | `QuotationData.NoOfferSlip` | tampil `DetailPolicyTreatyIn` (diisi), `DetailDeptHeadTreatyIn_UW` |
+| `T_POLIS_QUOTATION.IS_SURVEY_REPORT` | `QuotationData.IsSurveyReport` | tampil + wajib `DetailPolicyTreatyIn`; syarat tombol *Survey Report* |
+| `T_POLIS_INSTALMENT.PPN` · `PPH` · `PAYMENT_TOTAL_AFTER_PPN` · `PAYMENT_TOTAL_AFTER_TAX` | `ListInstallment().*` | rumus preACT langkah 18.3.4.1 (`.PaymentTotalAfterPPN = .PaymentTotal+.PPN`; `Local.PPNins = .PPN`; …) |
+
+### 4sx.2 Kolom yang **berubah** terhadap rancangan atau putaran 1
+
+| Hal | Bunyi lama | Bunyi baru | Dasar |
+| --- | --- | --- | --- |
+| §4.1 *"Dari `QuotationData{}` … dilipat ke tabel inti, tidak perlu tabel sendiri"* | dilipat ke inti | tabel sendiri `T_POLIS_QUOTATION` | diagram J35 (sudah berlaku sejak §3; dicatat) |
+| `T_POLIS_CEDING` | kolom `CEDING_CO`, induk `POLIS_ID` | `CEDING_CO_ID`, induk `QUOTATION_ID → T_POLIS_QUOTATION` | diagram R43, O39 |
+| §4.3 satu tabel angsuran 11 kolom | `PAYMENT_DATE` di satu tabel | `PAYMENT_DATE` hanya di `T_POLIS_INSTALMENT_DETAIL` | diagram R61 |
+| generasi tertutup | putaran 1: kolom `TGL_TUTUP` | **tanpa kolom** — ada penerus yang `OLD_POLIS_ID`-nya menunjuk | §4ter.1 *"aturan di services"*, ID-10 |
+
+### 4sx.3 Kolom putaran 1 yang **dibuang** (di luar diagram dan rancangan, tanpa pembaca)
+
+`T_GENERAL_POLIS`: `IS_OJK_NOPOLIS` (hanya ditulis `GeneratePolicyNoTreaty_Act` langkah 23), `BROKERAGE_FEE`
+(hanya ditulis `SetPPNPPH` langkah 3), `TGL_TUTUP`. `T_POLIS_QUOTATION`: `BUSINESS_TYPE` (hanya ditulis DT
+`BusinessType_DeT`; turunan `GROUP_PANEL` + `BUSINESS_OLD_ID`), `SOB_NAME` `SOB_LEADER0` `SOB_LEADER1`
+(pembaca: `CheckDataMkt` langkah 7 berlabel `//`, jalur treaty keluar), `CEDING_CO` `CEDING_CO_NAME`
+(tingkat polis tetap di `T_GENERAL_POLIS`, R47), `MARKETING_CODE` (pembaca: `CheckDataMkt` langkah 6
+`//`), `TEAM_GROUP` `BRANCH_CODE` `BRANCH_NAME` (hanya ditulis `CheckDataMkt` langkah 4).
+`T_POLIS_INSTALMENT_DETAIL`: `PPN` `PPH` (hanya ditulis preACT 18.3.4.2.1).
+
+### 4sx.4 Kolom rancangan yang **ditambahkan**
+
+`T_GENERAL_POLIS.IS_EDM_INPUT_ON_NB` (§4.1; `InputPolicyTreatyInDetail_NonProp` langkah 10–11),
+`T_GENERAL_POLIS.ID_NEW_BISNIS` (§4.1; data guide `$.IDNewBisnis`, nol rule NB),
+`PREMIUM_AFTER_PPH` / `PREMIUM_AFTER_PPN` / `PREMIUM_AFTER_TAX` di `T_POLIS_INSTALMENT` dan
+`PREMIUM_AFTER_PPH` di `T_POLIS_INSTALMENT_DETAIL` (§4.3; data guide).
+
+### 4sx.5 ⛔ RALAT putaran 3 — 04-10-2026 — F3: medan dokumen lama tanpa kolom
+
+`[keputusan work owner]` **F3** (PROMPT-NB-TREATY-IN-PUTARAN-3.md bab 2): setiap medan dokumen lama yang tidak
+berkolom dibaca ulang di XML — **(a)** dibaca rule NB terjangkau → wajib berkolom di salah satu dari 8 tabel;
+**(b)** tidak dibaca → dibuang (alasan + bukti di `backend/models/medan_abaikan_lama.json` bagian `pola`).
+
+| Tabel · kolom | Medan | Bukti (rule terjangkau) |
+| --- | --- | --- |
+| `T_GENERAL_POLIS.EDM_TYPE` ⭐ **ditambahkan** | `PolicyTreatyIn.EDMType` (data guide `$.EDMType`) | prasyarat `Activity\InputPolicyTreatyInPre_Act.xml` langkah 10: `.PolicyTreatyIn.EDMType=="3"` → lewati `Call TreatyRealizationCheckXOLList` (`models.PerluCekDaftarXOL`). §4.1 *penentu bentuk* sudah memuat `EDM_TYPE`; putaran 2 memetakannya hanya ke `QuotationData.EdmType` (J37) — properti lain (Pega peka huruf) |
+
+Bunyi lama 4sx.1, dikutip: *"`T_GENERAL_POLIS.BROKERAGE_FEE_SEBENARNYA` | `.BrokerageFeeSebenarnya` | rumus
+`SetPPNPPH` langkah 3"*; dan 4sx.3: *"`IS_OJK_NOPOLIS` (hanya ditulis `GeneratePolicyNoTreaty_Act` langkah 23),
+`BROKERAGE_FEE` (hanya ditulis `SetPPNPPH` langkah 3)"*. Bunyi baru: rumus dan penulis `.BrokerageFee` di
+`SetPPNPPH` langkah **4** (langkah 3 = `pxRetrieveReportData`); langkah 23 `GeneratePolicyNoTreaty_Act` berlabel
+**`//`**. Kolom 4sx.3 tetap dibuang; medan dokumen lamanya (`IsOJKNopolis`, `BrokerageFee`, `QuotationData.`
+`BusinessType`/`SobName`/`SobLeader0`/`SobLeader1`/`CedingCo`/`CedingCoName`/`MarketingCode`/`TeamGroup`/
+`BranchCode`/`BranchName`, `InstallmentList().PPN/PPh`) kini **diputuskan dibuang** berbukti, tidak lagi masuk
+laporan CSV sebagai butir terbuka. Daftar lengkap 25 pola: tiket 22 bab *Putaran 3*. Tetap **tepat delapan**
+`CREATE TABLE` (`repository/kolom_test.go`).
+
+### 4sx.6 ⛔ RALAT putaran 3 — 04-10-2026 — presisi uang dan persen `NUMBER(38,10)` (diagram F20)
+
+`[perintah work owner]` 04-10-2026: *"Baca dan pelajari sheet NB Treaty In Prop … buat sesuai yang di sheet NB Treaty
+In Prop."* Sel **F20** sheet itu, dikutip apa adanya: *"uang · persen → angka presisi tetap, skala MINIMAL 9 desimal
+(P29: galat lama diikuti apa adanya, tidak dibulatkan)"*; sel **J69**: *"NB: 100 / jumlah baris presisi 10 · ditiru
+apa adanya"*.
+
+Bunyi lama §4q5.5 (dan KEPUTUSAN 23-09-2026 sore di spec-penyimpanan), dikutip: *"Yang berlaku sekarang:
+**`NUMBER(20,8)`**"* → *"`NUMBER(38,8)` … desimalnya tetap delapan"*; tabel §4q5.5: *"skala kolom uang | minimal **9** |
+**8**"*. Bunyi baru: **`NUMBER(38,10)`** untuk setiap kolom uang dan persen di **delapan** tabel — skala 10 (≥ 9 menurut
+F20, kembali ke §4q.1; 10 supaya `SharePercentage`/`ClaimPercentage` hasil bagi rata NB presisi 10 dan
+`@divide(…,100,10)` `CountSpreading_Act` langkah 3–4 tersimpan utuh, J69), 28 digit di depan koma (≥ 17 digit sentinel
+§KEPUTUSAN 23-09 sore). Galat lama `592.629.512,880000276` kini **utuh** (P29 harfiah); nilai berdesimal > 10 tetap
+dibulatkan Oracle di desimal kesebelas. Tipe tabel lain, kolom, dan cacah `CREATE TABLE` (**tepat delapan**) tidak
+berubah. Kode dan uji: `docs/alat/skema.py` `TIPE_DESIMAL`; `repository/kolom_test.go`
+`TestSkalaUangPersenMinimalSembilanDiSemuaTabel`; penjaga inti `TestNolNumberTanpaPresisi` (`presisiSah`,
+PERMINTAAN-TIM-INTI A5). Kepatuhan seluruh sheet: `docs/KEPATUHAN-SHEET-NB-TREATY-IN-PROP.md`.
 
 ---
 

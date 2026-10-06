@@ -51,13 +51,18 @@ func nomorBerkas(nama string) (int, bool) {
 	return n, true
 }
 
-// jatahModul - rentang migrasi dan slot menu setiap modul, dari MODUL.md.
+// jatahModul - rentang migrasi dan slot menu setiap modul, dari MODUL.md. `tanpaSlot` = `Slot menu` — (modul luar
+// korpus tanpa slot, keputusan work owner 04-10-2026): nol nomor slot, barisnya lahir DIMIGRASI '1' di langkah inti.
 type jatahModul struct {
 	migrasi, slot [2]int
+	tanpaSlot     bool
 }
 
 func (j jatahModul) diMigrasi(n int) bool { return n >= j.migrasi[0] && n <= j.migrasi[1] }
-func (j jatahModul) diSlot(n int) bool    { return n >= j.slot[0] && n <= j.slot[1] }
+func (j jatahModul) diSlot(n int) bool    { return !j.tanpaSlot && n >= j.slot[0] && n <= j.slot[1] }
+
+// tanpaMigrasi - modul `—` (tandaTanpaMigrasi): nol nomor; setiap berkas migrasinya ditolak R2.
+func (j jatahModul) tanpaMigrasi() bool { return j.migrasi == [2]int{} && j.slot == [2]int{} }
 
 // jatahSetiapModul membaca jatah setiap modul dan menolak bentuk yang salah.
 func jatahSetiapModul(t *testing.T) map[string]jatahModul {
@@ -67,8 +72,8 @@ func jatahSetiapModul(t *testing.T) map[string]jatahModul {
 		if nama := strings.Trim(m.kunci["Nama modul"], "`"); nama != m.folder {
 			t.Errorf("%s: `Nama modul` %q, mau nama foldernya %q", m.jalur, nama, m.folder)
 		}
-		mig, slot := rentangModul(t, m)
-		hasil[m.folder] = jatahModul{migrasi: mig, slot: slot}
+		mig, slot, tanpaSlot := rentangModul(t, m)
+		hasil[m.folder] = jatahModul{migrasi: mig, slot: slot, tanpaSlot: tanpaSlot}
 	}
 	return hasil
 }
@@ -83,15 +88,21 @@ func TestRentangMigrasiDanSlotMenuTidakBerbagiNomor(t *testing.T) {
 	}
 	semua := []rentang{{"inti (900-949)", awalInti, akhirInti}}
 	for m, j := range jatah {
+		if j.tanpaMigrasi() {
+			continue
+		}
 		if j.migrasi[0] < 1 || j.migrasi[1] >= awalInti {
 			t.Errorf("modul %s: rentang migrasi %03d-%03d di luar 001-899 (900-999 milik inti dan slot menu)",
 				m, j.migrasi[0], j.migrasi[1])
 		}
+		semua = append(semua, rentang{"modul " + m + " (rentang migrasi)", j.migrasi[0], j.migrasi[1]})
+		if j.tanpaSlot {
+			continue
+		}
 		if j.slot[0] < awalSlot || j.slot[1] > akhirSlot {
 			t.Errorf("modul %s: slot menu %03d-%03d di luar %d-%d", m, j.slot[0], j.slot[1], awalSlot, akhirSlot)
 		}
-		semua = append(semua, rentang{"modul " + m + " (rentang migrasi)", j.migrasi[0], j.migrasi[1]},
-			rentang{"modul " + m + " (slot menu)", j.slot[0], j.slot[1]})
+		semua = append(semua, rentang{"modul " + m + " (slot menu)", j.slot[0], j.slot[1]})
 	}
 	sort.Slice(semua, func(i, k int) bool { return semua[i].awal < semua[k].awal })
 	for i := 1; i < len(semua); i++ {
@@ -161,9 +172,11 @@ func TestMenuHanyaDi900DanSlotMenuModulnya(t *testing.T) {
 			// Plus langkah baris modul di luar korpus (`modulLuarKorpus`, PANDUAN-TIM-PER-MODUL bab 5) - juga
 			// diterapkan skema tiruan.
 			// Plus langkah golongan menu (`langkahGolonganMenu`, 909 MASTER TREATY) - juga diterapkan skema tiruan.
+			// Plus langkah pensiun baris modul luar korpus yang dihapus (`langkahPensiunMenu`, 920) - juga diterapkan.
 			_, golongan := langkahGolonganMenu[nama]
-			if !strings.HasPrefix(nama, "900_") && !strings.HasPrefix(nama, "901_") && !langkahMenuLuarKorpus(nama) && !golongan {
-				t.Errorf("%s (inti) menyentuh M_NAV_MENU - hanya 900 (isi awal), 901 (bentuk datar), modulLuarKorpus, dan langkahGolonganMenu; menu modul di slot menunya", nama)
+			_, pensiun := langkahPensiunMenu[nama]
+			if !strings.HasPrefix(nama, "900_") && !strings.HasPrefix(nama, "901_") && !langkahMenuLuarKorpus(nama) && !golongan && !pensiun {
+				t.Errorf("%s (inti) menyentuh M_NAV_MENU - hanya 900 (isi awal), 901 (bentuk datar), modulLuarKorpus, langkahGolonganMenu, dan langkahPensiunMenu; menu modul di slot menunya", nama)
 			}
 		case !jatah[pemilik].diSlot(n):
 			t.Errorf("%s (modul %s) menyentuh M_NAV_MENU di luar slot menunya %03d-%03d",
@@ -353,6 +366,24 @@ func TestAturanRentangMenggigit(t *testing.T) {
 	}
 }
 
+// Modul TANPA migrasi sendiri (keputusan work owner 05-10-2026, `treatyexchangeyearly`: seluruh nomor 001-899 dan
+// 950-999 sudah terbagi, dan modul lain tidak boleh disentuh) menulis `—` di kedua kunci; barisnya dibuat migrasi inti.
+// Setengah `—` ditolak, dan modul `—` yang ternyata punya berkas migrasi tertangkap R2.
+func TestModulTanpaMigrasi(t *testing.T) {
+	m := modulMD{folder: "tiruan", jalur: "modul/tiruan/MODUL.md", kunci: map[string]string{"Rentang migrasi": "—", "Slot menu": "`—`"}}
+	mig, slot, _ := rentangModul(t, m)
+	j := jatahModul{migrasi: mig, slot: slot}
+	if !j.tanpaMigrasi() || j.diMigrasi(1) || j.diSlot(950) {
+		t.Errorf("modul tanpa migrasi: %+v", j)
+	}
+	if (jatahModul{migrasi: [2]int{1, 29}, slot: [2]int{950, 951}}).tanpaMigrasi() {
+		t.Error("modul berjatah dianggap tanpa migrasi")
+	}
+	if _, err := jatahDari("—", "`950-951`"); err == nil {
+		t.Error("setengah `—` harus ditolak")
+	}
+}
+
 // ⛔ R3: di skema uji dari NOL, 900 (CREATE TABLE M_NAV_MENU + isi awal)
 // berjalan SEBELUM slot menu 95x mana pun - pelari mengurutkan nama berkas
 // sebagai teks, dan tiga digit menjamin urutan itu. Diperiksa lewat pelari
@@ -360,7 +391,7 @@ func TestAturanRentangMenggigit(t *testing.T) {
 // tiruan yang punya berkas slot menu, bukan dengan membandingkan teks sendiri.
 func TestSlotMenuBerjalanSesudah900(t *testing.T) {
 	for m, j := range jatahSetiapModul(t) {
-		if j.slot[0] <= 900 {
+		if !j.tanpaSlot && !j.tanpaMigrasi() && j.slot[0] <= 900 {
 			t.Errorf("modul %s: slot menu %03d tidak sesudah 900", m, j.slot[0])
 		}
 	}
@@ -384,8 +415,15 @@ func TestSlotMenuBerjalanSesudah900(t *testing.T) {
 	// 03-10-2026), 905 (CONTACT_ID, username dan email unik M_LOGIN_GO, 03-10-2026), dan 906 (baris menu modul luar korpus
 	// Marketing Officer, 03-10-2026), 907 (baris menu Company Detail, 04-10-2026), dan 908 (baris menu Accounts,
 	// 04-10-2026) juga milik inti dan juga sebelum slot. 910 (M_LOGIN_GO_CONTACT_SEQ mengikuti CON tertinggi,
-	// 04-10-2026) pun milik inti.
-	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql", "904_m_login_go_kontak.sql", "905_m_login_go_contact_id.sql", "906_m_nav_menu_marketingofficer.sql", "907_m_nav_menu_companydetail.sql", "908_m_nav_menu_accounts.sql", "909_m_nav_menu_master_treaty.sql", "910_m_login_go_contact_seq_max.sql", "911_m_nav_menu_aggregate.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
+	// 04-10-2026) pun milik inti. Sesudah 910 dua sisi merge 05-10-2026 sama-sama menambah langkah inti, dan nomornya
+	// bertumpuk - pelari mengurut NAMA berkas, dan nama itulah kunci T_MIGRASI, jadi tidak satu pun dinomori ulang:
+	// lokal 912-919 (baris menu delapan modul master, 04-10-2026; sesudah 909 supaya URUTAN-nya menyambung golongan
+	// MASTER yang sudah dirapatkan) dan 920 (menu Master Data pensiun: hak disalin ke 912-919, baris lamanya dibuang;
+	// 911 baris Master Data dibuang bersama modulnya); GitHub 911 / 913 / 915-921 (baris menu Aggregate, Bordereaux,
+	// Adjuster Consultant, Treaty Group OJK, Treaty Group, Business Group, Treaty Exchange Yearly, Treaty Description,
+	// Reinsurance Type, 05-10-2026), 912 (M_TEMPLATE_FILE, Template Manager 04-10-2026) dan 914 (hak menu). 922 merapatkan
+	// URUTAN golongan MASTER yang bertumpuk karena merge itu.
+	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql", "904_m_login_go_kontak.sql", "905_m_login_go_contact_id.sql", "906_m_nav_menu_marketingofficer.sql", "907_m_nav_menu_companydetail.sql", "908_m_nav_menu_accounts.sql", "909_m_nav_menu_master_treaty.sql", "910_m_login_go_contact_seq_max.sql", "911_m_nav_menu_aggregate.sql", "912_m_nav_menu_masternation.sql", "912_m_template_file.sql", "913_m_nav_menu_bordereaux.sql", "913_m_nav_menu_masterprovince.sql", "914_m_login_go_menu_hak.sql", "914_m_nav_menu_mastercity.sql", "915_m_nav_menu_adjusterconsultant.sql", "915_m_nav_menu_masterdistrict.sql", "916_m_nav_menu_masterczone.sql", "916_m_nav_menu_treatygroupojk.sql", "917_m_nav_menu_masteraccumulatedtype.sql", "917_m_nav_menu_treatygroup.sql", "918_m_nav_menu_businessgroup.sql", "918_m_nav_menu_masteraccumulation.sql", "919_m_nav_menu_masterobjectitemtype.sql", "919_m_nav_menu_treatyexchangeyearly.sql", "920_m_nav_menu_masterdata_pensiun.sql", "920_m_nav_menu_treatydescription.sql", "921_m_nav_menu_reinsurancetype.sql", "922_m_nav_menu_urutan_master.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
 		t.Errorf("urutan pelari %v, mau %v", urut, mau)
 	}
 }

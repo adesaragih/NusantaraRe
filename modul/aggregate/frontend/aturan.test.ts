@@ -10,7 +10,6 @@ import {
   formatBulat,
   formatPersen,
   jumlahHalaman,
-  KEPALA_TEMPLATE,
   KOLOM_GRID,
   kunciDari,
   tampilanRingkasan,
@@ -46,8 +45,9 @@ describe('aturan Aggregate', () => {
     expect(KOLOM_GRID).toEqual(dariGo)
   })
 
-  it('kepala template = 38 kolom CSV, pemisah titik koma', () => {
-    const kolom = KEPALA_TEMPLATE.split(';')
+  it('templat bawaan (Template Manager) = 38 kolom CSV, pemisah titik koma', () => {
+    const kepala = readFileSync(`${__dirname}/../backend/templat/aggregate.csv`, 'utf8').split('\r\n')[0] ?? ''
+    const kolom = kepala.split(';')
     expect(kolom).toHaveLength(38)
     expect([kolom[0], kolom[8], kolom[37]]).toEqual(['ASSESMENT ZONE', 'TO USD', 'REMARK'])
   })

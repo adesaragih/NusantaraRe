@@ -222,7 +222,9 @@ Bukan bagian migrasi ini: keputusan work owner. Bila diputuskan: salin `modul/_t
 `modul/<nama>/`, ajukan rentang migrasi dan slot menu dari cadangan (760–899, 990–999) lewat pull
 request tim inti, dan minta tim inti menambah kelompok `M_NAV_MENU`-nya (isi awal 900 hanya memuat dua
 puluh folder korpus; slot menu modul tidak boleh membuat kelompok) serta barisnya di
-`frontend/katalogKorpus.ts`.
+`frontend/katalogKorpus.ts`. Atau — keputusan work owner 04-10-2026 ("Modul luar korpus tanpa slot", delapan modul
+master) — TANPA slot: `Slot menu` — di `MODUL.md`, dan baris menunya lahir `DIMIGRASI '1'` di langkah inti
+(`modulLuarKorpus`, `inti/backend/penjaga/menu_test.go`).
 
 ## 6. Pernyataan untuk penjaga di `MODUL.md`
 

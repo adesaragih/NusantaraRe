@@ -245,7 +245,10 @@ func TestSetiapPemanggilBukaMemeriksaBolehDilewati(t *testing.T) {
 	// mengadu constraint migrasi 400-419 dengan Oracle - ia menyuruh Oracle
 	// MENOLAK lalu memeriksa nama constraint yang menolaknya, sesuatu yang
 	// tidak dapat dipinjam dari uji db modul lain.
-	const mau = 16
+	// TUJUH BELAS sejak NB Treaty In (03-10-2026):
+	// nbtreatyin/repository/polis_db_test.go - pulang-pergi halaman lewat
+	// katalog, generasi tertutup, dan nomor polis unik lawan Oracle.
+	const mau = 17
 	if diperiksa != mau {
 		t.Errorf("pemanggil skemauji.Buka() ditemukan %d, mau %d; "+
 			"bila memang bertambah, perbarui angkanya di sini", diperiksa, mau)

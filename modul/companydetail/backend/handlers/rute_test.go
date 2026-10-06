@@ -79,14 +79,16 @@ func TestRuteCreateUbahDanGalat(t *testing.T) {
 		{"POST", handlers.Prefix, `{"nama":"x","asing":1}`, 400, "not valid JSON"},
 		{"PUT", handlers.Prefix + "/UJI-TIDAK-ADA", `{"nama":"x","country":"001","businessField":"01"}`, 404, "Organization not found"},
 		{"GET", handlers.Prefix + "/UJI-TIDAK-ADA", "", 404, "Organization not found"},
+		{"PUT", handlers.Prefix + "/" + idAnak, `{"nama":"UJI Anak Usaha Baru","country":"001","businessField":"23"}`, 422,
+			"Organization Name cannot be changed"},
 	} {
 		if w := kirim(t, h, k.metode, k.jalur, k.badan); w.Code != k.kode || !strings.Contains(w.Body.String(), k.isi) {
 			t.Errorf("%s %s: %d %s, mau %d %q", k.metode, k.jalur, w.Code, w.Body.String(), k.kode, k.isi)
 		}
 	}
-	ubah := `{"nama":"UJI Anak Usaha Baru","title":"PT.","npwp":"","country":"001","businessField":"23",` +
+	ubah := `{"nama":"UJI Anak Usaha","title":"PT.","npwp":"","country":"001","businessField":"23",` +
 		`"parentId":"ASM-SFAGIS-WORK-ORG ORG-100","note":"","pic":[],"alamat":[]}`
-	if w := kirim(t, h, "PUT", handlers.Prefix+"/"+idAnak, ubah); w.Code != 200 || !strings.Contains(w.Body.String(), `"nama":"UJI ANAK USAHA BARU"`) {
+	if w := kirim(t, h, "PUT", handlers.Prefix+"/"+idAnak, ubah); w.Code != 200 || !strings.Contains(w.Body.String(), `"nama":"UJI Anak Usaha"`) {
 		t.Errorf("ubah %d %s", w.Code, w.Body.String())
 	}
 	if len(g.PIC["ASM-SFAGIS-WORK-ORG ORG-115"]) != 0 || len(g.Alamat["ASM-SFAGIS-WORK-ORG ORG-115"]) != 0 {

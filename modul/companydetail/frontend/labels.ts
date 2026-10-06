@@ -59,6 +59,8 @@ export const CD = {
   type: 'Type',
   phoneAndFax: 'Phone and Fax',
   kodeArea: 'Area code',
+  lainnya: 'Others',
+  isiKodeArea: 'Code',
   nomor: 'Number',
   tambahAlamat: 'Add address',
   tambahNomor: 'Add number',
@@ -108,7 +110,8 @@ export const CD = {
   galatCountry: 'COUNTRY is required',
   galatBusinessField: 'Business Field is required',
   galatPICNama: (ke: number) => `PIC row ${ke}: Name is required`,
-  galatPICPosisi: (ke: number) => `PIC row ${ke}: Position is required`,
+  galatPICPosisi: (ke: number) =>
+    `PIC row ${ke}: Position is empty - fill the Job Position of this user in Kelola User`,
   galatAlamatType: (ke: number) => `Address row ${ke}: Type is required`,
   galatAlamat: (ke: number) => `Address row ${ke}: Address is required`,
   galatAlamatGanda: (ke: number, sebelum: number) => `Address row ${ke} repeats the address of row ${sebelum}`,

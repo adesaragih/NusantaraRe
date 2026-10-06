@@ -168,14 +168,18 @@ var (
 		"PARENT_ID":                    "ID baris Baris.Induk",
 		"T_GENERAL_POLIS.OLD_POLIS_ID": "K-071 J-5: hanya RENEWAL; fase 1 NULL seluruhnya",
 		"T_GENERAL_POLIS.PROD_KE":      "POOLDATA.JSON_POLIS.PRODKE (VARCHAR2(5) -> NUMBER, K-071 J-3)",
-		"T_WORK_POLIS.POSISI":          "V-48: baris terakhir POOLDATA.HISTORYAKSEPTASIPRODUCTION",
 		"T_WORK_POLIS.NOURUT":          "V-48: baris terakhir POOLDATA.HISTORYAKSEPTASIPRODUCTION",
 		"T_WORK_POLIS.PUTARAN":         "V-48: baris terakhir POOLDATA.HISTORYAKSEPTASIPRODUCTION",
 		"T_WORK_POLIS.STS_KONVERSI":    "V-48: POOLDATA.JSON_POLIS",
 		"T_WORK_POLIS.TGL_KONVERSI":    "V-48: POOLDATA.JSON_POLIS",
-		"T_WORK_POLIS.TGL_INPUT":       "V-48: POOLDATA.JSON_POLIS",
-		"T_WORK_POLIS.USERNAME":        "V-48: POOLDATA.JSON_POLIS",
-		"T_WORK_POLIS.STATUS_PROSES":   "V-48a: tidak punya sumber di bahan mana pun - belum terverifikasi",
+		// Butir 76 (amandemen.go): T_WORK_POLIS = tabel yang ada (K-064).
+		"T_WORK_POLIS.ID":          "butir 76.1: = NO_WORK (pyID, mis. NB-184351) - pengenal work tabel yang ada, bukan sekuens",
+		"T_GENERAL_POLIS.ID":       "butir 76.1: berbagi PK = T_WORK_POLIS.ID (K-064 relasi 52)",
+		"T_WORK_POLIS.LINI":        "butir 76.2: 'FAC' (penanda lini K-064)",
+		"T_WORK_POLIS.POSITION":    "V-48: baris terakhir POOLDATA.HISTORYAKSEPTASIPRODUCTION (POSISI rancangan, digabung butir 76.4)",
+		"T_WORK_POLIS.STATUS_WORK": "V-48a: tidak punya sumber di bahan mana pun - belum terverifikasi (STATUS_PROSES rancangan, digabung butir 76.4)",
+		"T_WORK_POLIS.TGL_CREATE":  "V-48: POOLDATA.JSON_POLIS (TGL_INPUT rancangan, digabung butir 76.4)",
+		"T_WORK_POLIS.CREATE_OP":   "V-48: POOLDATA.JSON_POLIS (USERNAME rancangan, digabung butir 76.4)",
 	}
 	// kolomFKV47 - V-47 "IdxLocation jadi LOCATION_ID ke T_LOCATIONLIST, IndexProperty
 	// jadi PROPERTY_ID, IndexAneka jadi ANEKA_ID, dan seterusnya". ⛔ Belum diisi:
@@ -282,10 +286,11 @@ var kolomV30 = map[string]bool{"T_SCORING_FACTOR.FACTOR_GROUP": true, "T_SCORING
 // asalKolom - asal isi kolom k tabel t, dan alasannya bila tidak dari medan dokumen.
 func asalKolom(t string, k kolomSkema) (asal, alasan string) {
 	tk := t + "." + k.nama
-	if a, ada := kolomRepository[k.nama]; ada {
+	// Kunci tabel.kolom lebih dulu: T_WORK_POLIS.ID (butir 76.1) mengalahkan "ID" umum.
+	if a, ada := kolomRepository[tk]; ada {
 		return asalRepository, a
 	}
-	if a, ada := kolomRepository[tk]; ada {
+	if a, ada := kolomRepository[k.nama]; ada {
 		return asalRepository, a
 	}
 	switch {

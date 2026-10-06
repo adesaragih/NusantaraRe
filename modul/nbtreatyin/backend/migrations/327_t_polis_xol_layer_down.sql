@@ -1,0 +1,3 @@
+-- Jalur mundur 327.
+DROP TABLE {skema}.T_POLIS_XOL_LAYER CASCADE CONSTRAINTS
+/

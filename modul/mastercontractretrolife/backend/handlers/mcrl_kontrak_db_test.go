@@ -18,7 +18,7 @@ func TestDBKontrakUangIdentikSelisihDitulis(t *testing.T) {
 		VALUES ('1000001', '2026', DATE '2026-01-01', DATE '2026-12-31')`)
 	u.exec(t, `INSERT INTO `+s+`.REINSURANCETYPE (ID, NOTE, FLAG) VALUES ('10196', 'QS', '1')`)
 	kode, badan := u.kirim(t, "POST", "/api/master-contract-retro-life/tahun/1000001/kontrak",
-		`{"reinsTypeId":"10196","bIdr":"1000000000.25","idr":"1500000000.123456789","bUsd":"0.5","usd":""}`)
+		`{"reinsTypeId":"10196","bIdr":"1000000000.25","idr":"1500000000.123456789","bUsd":"0.5","usd":"2.5"}`)
 	if kode != http.StatusOK || !strings.Contains(badan, `"id":"1000044"`) {
 		t.Fatalf("POST kontrak: %d %s", kode, badan)
 	}

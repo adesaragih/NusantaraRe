@@ -28,6 +28,12 @@
   --ag-isi: #ffffff;
   --ag-baris-hover: #e6ecfa;
   --ag-garis: #e1e6ef;
+  /* Grid baris berkepala dua baris (05-10-2026, sama dengan grid Bordereaux). */
+  --ag-grid-kepala: #eaf2fc;
+  --ag-grid-grup: #dde9f9;
+  --ag-grid-kepala-teks: #1f2d4d;
+  --ag-grid-garis: rgba(31, 45, 77, 0.1);
+  --ag-grid-aksen: #6f97e8;
   --ag-tepi: #c8d1e1;
   --ag-tombol: #d63a42;
   --ag-tombol-ujung: #bf2f37;
@@ -90,6 +96,11 @@
   --ag-isi: #1f2638;
   --ag-baris-hover: #2b3554;
   --ag-garis: #2c3447;
+  --ag-grid-kepala: #1c2b43;
+  --ag-grid-grup: #223554;
+  --ag-grid-kepala-teks: #dbe6f7;
+  --ag-grid-garis: rgba(255, 255, 255, 0.08);
+  --ag-grid-aksen: #7aa2ff;
   --ag-tepi: #3a4459;
   --ag-terang: rgba(255, 255, 255, 0.045);
   --ag-gelap: rgba(0, 0, 0, 0.55);
@@ -561,39 +572,85 @@
   max-height: 60vh;
 }
 
+/* Grid baris (pratinjau unggah dan rincian): kepala dua baris dengan grup NoR/IA per kategori, Total, dan RNM -
+   bentuk sama dengan grid detail Bordereaux (perintah work owner 05-10-2026): bingkai membulat, garis tipis halus,
+   huruf setengah tebal, garis aksen di bawah judul grup. Baris kepala kedua menempel tepat di bawah yang pertama. */
+.aggregate .aggregate__gulir--grid {
+  border: 1px solid var(--ag-grid-garis);
+  border-radius: 12px;
+  background: var(--ag-isi);
+}
+
 .aggregate .aggregate__grid {
   width: max-content;
   min-width: 100%;
+  margin-top: 0;
   font-size: 12px;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .aggregate .aggregate__grid th {
   position: sticky;
   top: 0;
   z-index: 1;
-  padding: 6px 8px;
-  text-align: left;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  text-align: center;
+  vertical-align: middle;
   white-space: nowrap;
-  background: var(--ag-kepala-tabel);
-  color: var(--ag-kepala-teks);
-  border-bottom: 1px solid var(--ag-kepala-garis);
+  min-width: 64px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  color: var(--ag-grid-kepala-teks);
+  background: var(--ag-grid-kepala);
+  border: 0;
+  border-right: 1px solid var(--ag-grid-garis);
+  border-bottom: 1px solid var(--ag-grid-garis);
 }
 
-.aggregate .aggregate__grid th.aggregate__angka {
-  text-align: right;
+.aggregate .aggregate__grid thead tr:first-child th {
+  height: 38px;
+}
+
+.aggregate .aggregate__grid th.aggregate__kepala-grup {
+  background: var(--ag-grid-grup);
+  box-shadow: inset 0 -2px 0 var(--ag-grid-aksen);
+}
+
+.aggregate .aggregate__grid thead tr:nth-child(2) th {
+  top: 38px;
+  padding: 6px 12px;
+}
+
+.aggregate .aggregate__grid thead tr:first-child th:last-child,
+.aggregate .aggregate__grid tbody td:last-child {
+  border-right: 0;
 }
 
 .aggregate .aggregate__grid td {
-  padding: 4px 8px;
+  padding: 7px 12px;
   white-space: nowrap;
   color: var(--ag-teks);
   background: var(--ag-isi);
-  border-bottom: 1px solid var(--ag-garis);
+  border: 0;
+  border-right: 1px solid var(--ag-grid-garis);
+  border-bottom: 1px solid var(--ag-grid-garis);
+  font-variant-numeric: tabular-nums;
+}
+
+.aggregate .aggregate__grid tbody tr:last-child > td {
+  border-bottom: 0;
 }
 
 .aggregate .aggregate__grid tbody tr:nth-child(even) > td {
   background: var(--ag-lembut);
+}
+
+.aggregate .aggregate__grid tbody tr:hover > td {
+  background: var(--ag-baris-hover);
 }
 
 .aggregate .aggregate__grid tbody tr.aggregate__total > td {

@@ -2,6 +2,21 @@
 
 > ⛔ **`T_POLIS_BREAKDOWN_SPREAD` DIBATALKAN 23-09-2026.** `[keputusan work owner]` Tabel itu **tidak ada**. Keempat medannya turunan: dua dari master `POOLDATA.PROPORTIONALARRG`, dua dihitung dari `TotalPremium` dan `TotalClaim` yang sudah tersimpan. Rujukan di bawah dicoret, bunyinya tidak dihapus.
 
+> ⛔⛔ **RALAT 04-10-2026 — presisi uang dan persen `NUMBER(38,10)`** `[perintah work owner]` *"Baca dan pelajari
+> sheet NB Treaty In Prop … buat sesuai yang di sheet NB Treaty In Prop."* Diagram grilling
+> (`Diagram-Skema-Tabel-NusantaraRe.xlsx` sheet *NB Treaty In Prop*) sel **F20**, dikutip apa adanya: *"uang · persen →
+> angka presisi tetap, skala MINIMAL 9 desimal (P29: galat lama diikuti apa adanya, tidak dibulatkan)"*; sel **J69**:
+> *"NB: 100 / jumlah baris presisi 10 · ditiru apa adanya"*. Bunyi lama di berkas ini (ID-14, ID-15, AC 19, 20, 20b, 55,
+> bab *KEPUTUSAN 23-09-2026 sore — Presisi*), dikutip: *"`NUMBER(38,8)` … **desimalnya tetap delapan**"*. Bunyi baru:
+> **`NUMBER(38,10)`** di seluruh delapan tabel — skala **10** (≥ 9 menurut F20; 10 supaya hasil bagi rata spreading NB
+> presisi 10 tersimpan utuh, J69), **28 digit di depan koma** (≥ 17 digit sentinel `99999999999999999.99`).
+> Akibat: galat lama `592.629.512,880000276` (9 desimal) **tersimpan utuh** — AC 19 kembali ke bunyi aslinya; pembulatan
+> hanya pada desimal **kesebelas** ke atas (AC 20b, 55). Kode: `docs/alat/skema.py` `TIPE_DESIMAL`, migrasi 320,
+> 323–327; uji `repository/kolom_test.go` `TestKatalogSepakatDenganDDL`, `TestSkalaUangPersenMinimalSembilanDiSemuaTabel`;
+> uji db `TestUangPresisiPenuhTanpaPembulatanRepository`, `TestSpreadingBagiRataPresisiSepuluhUtuhDiKolom`,
+> `TestPemuatLamaMenulisLewatAntarmukaSama` (K11). Penjaga inti `TestNolNumberTanpaPresisi` menerima `NUMBER(38,10)`
+> (PERMINTAAN-TIM-INTI A5). Kepatuhan butir demi butir: `docs/KEPATUHAN-SHEET-NB-TREATY-IN-PROP.md`.
+
 ---
 
 
@@ -351,7 +366,7 @@ dokumen. Itulah kunci pasangan antar generasi.
 
 | Golongan | Tipe | Dasar |
 | --- | --- | --- |
-| uang · persen | ⭐ **`NUMBER(38,8)`** *(semula ~~`NUMBER(20,8)`~~ — dinaikkan 23-09-2026 sore; **desimalnya tetap delapan**, yang berubah hanya sisi kiri koma)* | P29 disempurnakan 23-09-2026 · ADR-0003 |
+| uang · persen | ⛔ **`NUMBER(38,10)`** *(RALAT 04-10-2026, diagram F20 "skala MINIMAL 9" + J69; semula ~~`NUMBER(38,8)`~~, sebelumnya ~~`NUMBER(20,8)`~~)* | P29 · diagram F20 · ADR-0003 |
 | tanggal | `DATE` | dua format masuk |
 | cacah | bilangan bulat | `NOURUT` `PRODKE` `INSTALLMENT_NO` |
 | ⭐ kode | **teks** | nol di depan wajib utuh |
@@ -367,6 +382,12 @@ lebih dari delapan **dibulatkan saat dimuat**; `ShareValue` yang bersimpan 24 de
 
 ⭐ Ekor galat `2,76 × 10⁻⁷` **tetap terlihat** — ia jatuh di desimal ketujuh. ⛔ `[terbuka]`
 Dua belas digit di depan koma **belum diuji** terhadap nilai terbesar yang pernah tersimpan.
+
+> ⛔ **RALAT 04-10-2026 (diagram F20)** — paragraf di atas, dikutip: *"`NUMBER(38,8)` … lebih dari delapan
+> **dibulatkan saat dimuat**"*. Bunyi baru: **`NUMBER(38,10)`**; ekor galat `2,76 × 10⁻⁷` dan seluruh
+> `592.629.512,880000276` **utuh** (P29 secara harfiah); yang berdesimal > 10 (`ShareValue` 24, `PremiumSpreaded` 20)
+> tetap dibulatkan di desimal kesebelas — tidak ada skala tetap yang memuat 24 desimal tanpa memotong sisi kiri di
+> bawah 17 digit sentinel.
 
 `[terverifikasi]` Galat yang dimaksud nyata di data produksi: premi angsuran
 `148.157.378,220000069` dikali empat menghasilkan `592.629.512,880000276`, sementara nilai
@@ -395,11 +416,51 @@ Pega bersufiks ` GMT`. Pengurai wajib menerima keduanya.
 **ID-20** ⛔ Uang tidak pernah `float` *(ADR-0003)*. Perbandingan nilai uang **tidak boleh
 sama-persis** — bertoleransi, atau dibandingkan dalam bentuk terbulatkan.
 
+> ⛔ **RALAT** 2026-10-04 (P11, tiket 18) — bunyi lama ID-20: *"Perbandingan nilai uang **tidak boleh
+> sama-persis** — bertoleransi, atau dibandingkan dalam bentuk terbulatkan."* → bunyi baru: **Pembandingan
+> DUA nilai uang satu sama lain tidak boleh sama-persis** — bertoleransi, atau dalam bentuk terbulatkan.
+> Pembandingan nilai uang **lawan tetapan nol** (tanda: `>= 0`, `< 0`, `!= 0`, `> 0`, kosong / `"0"`)
+> mengikuti XML **apa adanya, eksak** — toleransi di sana mengubah perilaku rule. Bukti (sisir 176 rule
+> terjangkau, tiket 18 bab P11): nol pembandingan dua nilai uang yang hidup; yang ada hanya uang lawan nol
+> (`Activity/SetDueTo_act.xml` langkah 1–2 `.BalanceDueTo>=0` / `<0`; `Activity/CountNetPremi_act.xml` langkah 6
+> `.Deduction1!="" || .Deduction1!=0`; `Activity/CountOGPONP_Act.xml` langkah 1–2 `.PremiOgp == "" ||.PremiOgp ==  "0"`
+> dan langkah 8 `.Claim!=0&&.Claim!=""`; `Activity/InputPolicyTreatyInDetail_preACT.xml` langkah 17 `@if(.Limit>0,"IDR","")`;
+> `Section/DetailPolicyTreatyIn.xml` `.Claim != '' && .Claim != 0`; `Section/DetailDeptHeadTreatyIn_UW.xml` `.BalanceDueTo < 0` /
+> `>= 0`). Satu-satunya pembandingan bertoleransi atas rasio dua nilai uang, `((.ResultOgp2/.PremiOgp)-.OveriddingCommOgp)<=0.01`
+> dan tiga saudaranya, ada di langkah berlabel `//` (dinonaktifkan): `CountOverridingCommOgp_Act` 1/2/4,
+> `CountOverridingCommOnp_Act` 1/2, `CountRiCommOgp_act` 4, `CountRiCommOnp_act` 1; `Local.NETPREMI>200000000.00` hanya di
+> `CekLimitTreatyAcc_Act` (tidak dibangun, K2). Uji: `backend/models/pembandingan_uang_test.go`
+> `TestPortTidakMembandingkanDuaNilaiUang` (penjaga AST: setiap `.Cmp` lawan tetapan rule, nol teks medan uang
+> dibandingkan persis dengan teks medan lain) dan `TestTandaUangLawanNolEksakSepertiXML`.
+
 ### Isi tabel
 
 **ID-21** `T_GENERAL_POLIS` memuat 79 medan skalar tingkat atas `PolicyTreatyIn` — ⭐ ditambah **`REMARK`** *(panjang 128)*, medan yang sensus korpus lewatkan dan baru terlihat dari data guide — ditambah tujuh
 kolom yang sudah datar di `POOLDATA.json_polis`: `IDPEGA` `NOPOLIS` `NOENDORS` `PRODKE` `TGL_INPUT`
 `TGL_PROD` `USERNAME`.
+
+> ⛔ **RALAT putaran 2 — 03-10-2026 (kolom ikut diagram, bab 0 butir 12)** atas ID-10, ID-21, ID-23,
+> ID-24. Rinciannya per kolom: `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`; ditagih
+> `TestTabelDanKolomMengikutiDiagramGrilling`.
+>
+> - **ID-21** bunyi lama: *"79 medan skalar tingkat atas `PolicyTreatyIn` — ditambah `REMARK` — ditambah
+>   tujuh kolom … `json_polis`"*. Bunyi baru: 79 = **69 kolom** katalog (termasuk `TGL_PROD` dan
+>   `REMARK`) + `NOPOLIS` + 9 tanpa kolom (`LAYER*` 4 dicoret diagram F26, `Total*` 4 turunan,
+>   `isApprovedtoDeptHead` P36). Ditambah tiga kolom halaman kerja `POSITION_NOTE` `NB_STATUS`
+>   `TREATY_IN_ID` (RALAT: dibaca connector Flow / tampil portal / dibaca `BrowseTreatyIn`).
+>   `IS_OJK_NOPOLIS` dan `BROKERAGE_FEE` **dibuang** (hanya ditulis).
+> - **ID-23** bunyi lama: *"`T_POLIS_QUOTATION` — 1:1, 10 medan"*. Bunyi baru: 10 medan diagram **+ 6
+>   RALAT** yang XML buktikan dibaca/tampil: `BusinessName` (`InputPolicyTreatyInPre_Act` langkah 2;
+>   portal), `BusinessFac` (`SaveViewSuggest` CARI7; `GetListOpportunity` filter E), `InsuredID` dan
+>   `InsuredName` (`InputPolicyTreatyInDetail_preACT` langkah 3, 14.1, 14.3; portal), `NoOfferSlip` dan
+>   `IsSurveyReport` (tampil di Section NB, AC 64). Sebelas kolom putaran 1 lainnya dibuang.
+> - **ID-24** bunyi lama: *"`.CedingCo` sebagai id"*. Bunyi baru: kolomnya `CEDING_CO_ID` (diagram R43) dan
+>   tabel menunjuk induknya lewat `QUOTATION_ID → T_POLIS_QUOTATION` (diagram O39), bukan `POLIS_ID`.
+> - **ID-10**: tanpa kolom penanda tutup. Putaran 1 menambah `TGL_TUTUP` (di luar diagram) — **dibuang**;
+>   generasi tertutup = ada baris penerus yang `OLD_POLIS_ID`-nya menunjuknya.
+> - Angsuran (ID-26): `T_POLIS_INSTALMENT` = rancangan §4.3 tanpa `PAYMENT_DATE` (diagram R61) + RALAT
+>   `PPN` `PPH` `PAYMENT_TOTAL_AFTER_PPN` `PAYMENT_TOTAL_AFTER_TAX` (dibaca rumus preACT 18.3.4.1);
+>   `T_POLIS_INSTALMENT_DETAIL` = rancangan §4.3 (11), tanpa `PPN`/`PPH` anak (hanya ditulis).
 
 **ID-22** `[terverifikasi]` ⛔ `LAYER` `LAYER_TYPE` `LAYER_PART` `LAYER_PART_TYPE` **tidak
 disimpan** di `T_GENERAL_POLIS`. Di sistem lama keempatnya **pantulan**, dibaca balik dari kolom
@@ -447,6 +508,27 @@ tanpa `JSON_DATAGUIDE`.
 ⇒ Pemuat menyimpan medan yang tidak dikenal alih-alih membuangnya, dan penampung itu **wajib kosong
 sebelum rancangan dinyatakan selesai**.
 
+> ⛔ **RALAT putaran 2 — 03-10-2026** `[keputusan work owner]` **K17** (PROMPT-NB-TREATY-IN-PUTARAN-2.md
+> bab 2). Bunyi lama: *"⭐ **Tabel penampung medan tak dikenal.**"* — dibangun putaran 1 sebagai
+> `T_POLIS_MEDAN_LAIN` (migrasi 329). Bunyi baru: tabel itu **tidak ada di diagram grilling** dan
+> dihapus. Penampungnya **berkas laporan CSV per jalankan pemuat** — `POLIS_ID`, `JALUR`, `NILAI` — di
+> folder keluaran yang ditentukan operator (`MODUL.md` *Pemuat dokumen lama*, tiket 22). Medan tetap
+> tersimpan beserta nilainya, jumlahnya dicetak, dan **wajib 0** sebelum pekerjaan dinyatakan selesai.
+
+> ⛔ **RALAT putaran 3 — 04-10-2026** `[keputusan work owner]` **F3** (PROMPT-NB-TREATY-IN-PUTARAN-3.md
+> bab 2). Bunyi lama (RALAT K17 di atas), dikutip: *"Penampungnya **berkas laporan CSV per jalankan
+> pemuat** — `POLIS_ID`, `JALUR`, `NILAI` — … Medan tetap tersimpan beserta nilainya, jumlahnya dicetak,
+> dan **wajib 0** sebelum pekerjaan dinyatakan selesai."* Bunyi baru: **tidak ada penampung.** Setiap
+> medan dokumen lama tanpa kolom **diputuskan per medan** dari XML: (a) dibaca rule NB terjangkau →
+> berkolom di salah satu dari 8 tabel (bab 0 butir 12; satu-satunya: `PolicyTreatyIn.EDMType` →
+> `T_GENERAL_POLIS.EDM_TYPE`, dibaca syarat `InputPolicyTreatyInPre_Act` langkah 10), atau (b) tidak
+> dibaca → **dibuang** dengan alasan + bukti tertulis (`backend/models/medan_abaikan_lama.json` bagian
+> `pola`). `SuggestList` dokumen lama **disalin** ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION` (ID-31) dengan
+> penjaga dobel menurut `IDPEGA`. Berkas CSV pemuat tetap ditulis sebagai **arsip audit pemuatan**
+> (`nbtreatyin-arsip-medan-<stempel>.csv`: `POLIS_ID`, `JALUR`, `NILAI`, `KEPUTUSAN`) untuk setiap medan
+> yang tidak masuk kolom — bukan penampung untuk dimigrasi kelak. Yang wajib **0** sebelum pekerjaan
+> dinyatakan selesai: medan **belum diputuskan** (`KEPUTUSAN` = `BELUM DIPUTUSKAN`).
+
 **ID-27b** ⛔ **DICABUT 23-09-2026.** `[keputusan work owner]` Tabel sebaran tambahan **tidak ada** — keempat medannya turunan. Bunyi lamanya dikutip di blok kepala berkas ini.
 
 ⚠️ Sensus korpus **melewatkannya** — tidak satu pun aturan merujuk anggotanya. Ini persis jebakan
@@ -485,6 +567,16 @@ Pemetaan yang mengikat: `.Suggest → KETERANGAN` dipotong `substr(…, 0, 3990)
 
 ⭐ `IsApproved` di sini **per baris usulan**, berbeda dari `IsApproved` tingkat polis.
 Menggabungkan keduanya adalah cacat.
+
+> ⭐ **Penerapan putaran 2 — 03-10-2026** `[keputusan work owner]` **K4**: ID-31 berlaku apa adanya.
+> `SuggestList` ditulis ke tabel lama ini (`repository/usulan.go`, pemetaan `models/usulan.go`) dan
+> dibaca balik untuk layar. `[penyimpangan sadar]` terhadap XML, dasar grilling ID-31/AC 39 dan K4:
+> (1) syarat `Quotation.BusinessFac == "F"` `SaveViewSuggest` langkah 2 tidak ditiru; (2) baris ditulis
+> pada submit yang menambahkannya di **ketiga** jenjang, transaksi yang sama — XML hanya memanggilnya dari
+> `InputPolicyTreatyInPost_Act` langkah 4 (pasca-submit admin); (3) `NOURUT` = berikutnya per `IDPEGA` di
+> bawah kunci kasus (XML: `.pxListSubscript`); (4) `TGL_INP` jam 24 (XML memformat `hh` lalu
+> `To_date(…,'HH24…')` — catatan sore tersimpan pagi); (5) `DIV` (`OperatorID.pyOrgDivision`) NULL — tanpa
+> sumber di `inti.Pelaku` (butir terbuka). Tabel dideklarasikan *Tabel warisan* di `MODUL.md`.
 
 ### Penulisan dan transaksi
 
@@ -549,6 +641,20 @@ dapat diuji dari luar.
     *(ID-16)*
 15. `[terverifikasi]` `IsApproved` bernilai `""` tersimpan sebagai `""`, bukan `NULL` dan bukan
     `"0"`. Test yang menemukan ketiganya menyatu **gagal**. *(ID-17)*
+    > ⛔ **RALAT** 2026-10-04 (P11, tiket 18) — bunyi lama dikutip: *"`IsApproved` bernilai `""` tersimpan sebagai
+    > `""`, bukan `NULL` dan bukan `"0"`. Test yang menemukan ketiganya menyatu **gagal**."* → bunyi baru:
+    > **`IsApproved` bernilai `""` tersimpan sebagai `NULL` dan terbaca kembali sebagai `""`; `"0"` tersimpan
+    > `'0'` dan terbaca kembali `"0"`. Test yang menemukan `""` tersimpan atau terbaca sebagai `"0"`, atau `"0"`
+    > tersimpan NULL / terbaca `""`, gagal.** Sebab: Oracle menyamakan teks kosong `''` dengan `NULL` pada `VARCHAR2`
+    > (*Oracle Database SQL Language Reference*, bab "Nulls": nilai karakter berpanjang nol diperlakukan sebagai null)
+    > — "tersimpan sebagai `""`, bukan `NULL`" mustahil secara fisik. Yang dijaga ID-17 tetap utuh: `""` dan `"0"`
+    > tidak pernah menyatu, di kolom (`NULL` lawan `'0'`) maupun di halaman (`""` lawan `"0"`), sebab XML
+    > membandingkannya sebagai teks: `DecisionTable/isApproved.xml` kolom `pyWorkPage.PolicyTreatyIn.IsApproved`
+    > bertipe `text`, satu baris `= 0` → `No`, selain itu bawaan (disetujui) — `""` disetujui, `"0"` ditolak (AC 16).
+    > Uji: `backend/repository/kolom_test.go` `TestNilaiTulisKosongJadiNULL` (penanda `""` → NULL),
+    > `TestNilaiBaca` (NULL → `""`); `backend/repository/penyimpanan_db_test.go` `TestIsApprovedKosongDanNolTetapBerbeda`
+    > (kolom dibaca langsung, bertag `db`, belum dijalankan — K11); `backend/models/tangga_test.go`
+    > `TestIsApprovedSelainNolDisetujuiTermasukKosong`.
 16. `[terverifikasi]` `IsApproved` bernilai `"0"` menghasilkan keputusan **ditolak**; nilai lain
     menghasilkan **disetujui**. Test yang menemukan sebaliknya **gagal**. *(ID-17)*
 17. `[terverifikasi]` Teks kosong `""` pada medan uang tersimpan sebagai `NULL`. Test yang menemukan
@@ -559,11 +665,20 @@ dapat diuji dari luar.
     `592629512.88000028` — dibulatkan pada desimal kedelapan, **bukan** dipotong ke
     `592629512.88`. Test yang menemukan `592629512.88` **gagal**. *(ID-15)*
     ⚠️ Bunyi lama dikutip: ~~*"tersimpan dan terbaca kembali tanpa kehilangan satu digit pun"*~~.
+    > ⛔ **RALAT 04-10-2026 (diagram F20, `NUMBER(38,10)`)** — bunyi lama: *"tersimpan sebagai `592629512.88000028`
+    > — dibulatkan pada desimal kedelapan"*. Bunyi baru: `592629512.880000276` tersimpan dan terbaca kembali
+    > **utuh** (9 desimal ≤ skala 10). Test yang menemukan `592629512.88000028` atau `592629512.88` **gagal**
+    > (`TestPemuatLamaMenulisLewatAntarmukaSama`, `TestUangPresisiPenuhTanpaPembulatanRepository`; K11).
 20. `[keputusan work owner]` Kolom uang bertipe `NUMBER(38,8)` *(semula ~~`NUMBER(20,8)`~~)* — delapan angka di belakang koma,
     dua belas di depan. Test yang menemukan skala lain **gagal**. *(ID-14)*
     ⚠️ Bunyi lama dikutip: ~~*"menerima sekurangnya sembilan angka di belakang koma"*~~.
+    > ⛔ **RALAT 04-10-2026 (diagram F20)** — bunyi lama: *"`NUMBER(38,8)` — delapan angka di belakang koma"*.
+    > Bunyi baru: **`NUMBER(38,10)`** — sepuluh di belakang koma, 28 di depan; sejalan bunyi aslinya *"menerima
+    > sekurangnya sembilan angka di belakang koma"*. Test yang menemukan skala < 9 atau tipe desimal yang tidak seragam
+    > di delapan tabel **gagal** (`TestSkalaUangPersenMinimalSembilanDiSemuaTabel`, `TestKatalogSepakatDenganDDL`).
 20b. `[terverifikasi]` Nilai berdesimal lebih dari delapan **dibulatkan, bukan ditolak**. Test yang
     menemukan kegagalan pemuatan pada `ShareValue` berdesimal 24 **gagal**. *(ID-15)*
+    > ⛔ **RALAT 04-10-2026 (diagram F20)** — *"lebih dari delapan"* → **lebih dari sepuluh** (`NUMBER(38,10)`).
 21. `[terverifikasi]` Tanggal berformat `YYYYMMDD` terurai benar. Test yang menemukan kegagalan urai
     **gagal**. *(ID-19)*
 22. `[terverifikasi]` Cap waktu Pega bersufiks ` GMT` terurai benar. Test yang menemukan kegagalan
@@ -574,6 +689,12 @@ dapat diuji dari luar.
     pun **gagal**. *(ID-20)*
 25. `[terverifikasi]` Pembandingan dua nilai uang memakai toleransi atau bentuk terbulatkan, bukan
     kesamaan persis. Test yang menemukan pembandingan persis **gagal**. *(ID-20)*
+    > ⛔ **RALAT** 2026-10-04 (P11, tiket 18) — bunyi lama dikutip: *"Pembandingan dua nilai uang memakai toleransi
+    > atau bentuk terbulatkan, bukan kesamaan persis. Test yang menemukan pembandingan persis **gagal**."* → bunyi
+    > baru: **Port rumus tidak membandingkan dua nilai uang satu sama lain — 176 rule terjangkau pun tidak; bila
+    > kelak ada, ia bertoleransi atau terbulatkan. Pembandingan uang lawan nol mengikuti XML eksak. Test yang
+    > menemukan pembandingan persis antara dua nilai uang di port, atau toleransi pada pembandingan lawan nol,
+    > gagal.** Bukti XML dan uji: RALAT ID-20 (bab 5) dan tiket 18 bab P11.
 
 ### Isi tabel
 
@@ -605,6 +726,12 @@ dapat diuji dari luar.
 38. `[terverifikasi]` `DEDUCTION1` `DEDUCTION2` `TOTAL_SHARE_PERCENTAGE_PREMIUM`
     `TOTAL_SHARE_PERCENTAGE_CLAIM` disimpan sebagai persen. Test yang memperlakukannya sebagai uang
     **gagal**. *(Bab 5, ketetapan lama P29)*
+    > ⛔ **RALAT** 2026-10-03 (K3, paket P2) — bunyi lama: *"`DEDUCTION1` `DEDUCTION2`
+    > `TOTAL_SHARE_PERCENTAGE_PREMIUM` `TOTAL_SHARE_PERCENTAGE_CLAIM` disimpan sebagai persen. Test
+    > yang memperlakukannya sebagai uang **gagal**"* → bunyi baru: **`DEDUCTION1` `DEDUCTION2`
+    > `T_GENERAL_POLIS` bergolongan uang** (`NUMBER(38,8)`, sama tipe fisiknya), mengikuti pemakaian
+    > XML (keputusan WO K3); `TOTAL_SHARE_PERCENTAGE_*` tetap persen. Test yang memperlakukan
+    > `DEDUCTION1/2` sebagai persen **gagal**. Bukti: sel `.Deduction1` `.Deduction2` `pxCurrency` di `Section/DetailPolicyTreatyIn.xml` dan `Section/DetailDeptHeadTreatyIn_UW.xml`; `Activity/CountNetPremi_act` langkah 4 mengurangkan keduanya dari premi; `Activity/SetPPNPPH` langkah 4 membagi `.Deduction1` dengan 1,022. Kode: `models/katalog.go` (`kUang`).
 39. `[terverifikasi]` `HISTORYAKSEPTASIPRODUCTION` tidak dibuat ulang; polis menulis ke tabel yang
     sudah ada. Test yang menemukan tabel riwayat baru **gagal**. *(ID-31)*
 40. `[terverifikasi]` `KETERANGAN` dipotong pada 3990 karakter. Test yang menemukan nilai lebih
@@ -651,6 +778,8 @@ dapat diuji dari luar.
     menemukan nilai dibulatkan ke dua desimal **gagal**. *(ID-15)*
     ⚠️ Bunyi lama dikutip: ~~*"dimuat tanpa mengubah satu pun nilai uang"*~~ — tidak lagi benar
     secara harfiah sejak presisi ditetapkan `NUMBER(38,8)` *(semula ~~`NUMBER(20,8)`~~)*.
+    > ⛔ **RALAT 04-10-2026 (diagram F20)** — *"pembulatan hanya terjadi pada desimal kesembilan ke atas,
+    > mengikuti `NUMBER(38,8)`"* → pembulatan hanya pada desimal **kesebelas** ke atas, mengikuti **`NUMBER(38,10)`**.
 56. `[terverifikasi]` Pemuat migrasi menulis lewat antarmuka `repository` yang sama dengan
     penyimpanan biasa. Test yang menemukan jalur tulis terpisah **gagal**. *(ID-3)*
 57. `[terverifikasi]` Medan dokumen yang tidak dikenal tersimpan di penampung, bukan dibuang. Test
@@ -659,6 +788,25 @@ dapat diuji dari luar.
     Test yang menemukan kegagalan senyap **gagal**. *(ID-3)*
 59. `[terbuka]` Penampung medan tak dikenal **wajib kosong** sebelum rancangan dinyatakan selesai.
     *(ID-27)*
+    ⛔ **RALAT AC 57 dan 59 — putaran 2, 03-10-2026** (K17). Bunyi lama AC 57: *"Medan dokumen yang tidak
+    dikenal tersimpan di penampung"*; AC 59: *"Penampung medan tak dikenal wajib kosong"*. Bunyi baru:
+    "penampung" = **berkas CSV** `POLIS_ID,JALUR,NILAI` per jalankan pemuat, bukan tabel. AC 57: test
+    yang menemukan medan tak dikenal tidak tertulis di berkas itu beserta nilainya **gagal**. AC 59:
+    berkas itu wajib **nol baris data** sebelum pekerjaan dinyatakan selesai; pemuat mencetak jumlahnya
+    dan keluar dengan kode bukan nol selama jumlahnya > 0.
+    ⛔ **RALAT AC 57 dan 59 — putaran 3, 04-10-2026** (`[keputusan work owner]` **F3**, RALAT ID-27). Bunyi
+    lama (RALAT K17 di atas), dikutip: *"AC 57: test yang menemukan medan tak dikenal tidak tertulis di
+    berkas itu beserta nilainya **gagal**. AC 59: berkas itu wajib **nol baris data** sebelum pekerjaan
+    dinyatakan selesai"*. Bunyi baru: berkas CSV = **arsip audit pemuatan** `POLIS_ID,JALUR,NILAI,KEPUTUSAN`,
+    bukan penampung. **AC 57**: test yang menemukan medan dokumen yang tidak masuk kolom tetapi tidak
+    tertulis di arsip beserta nilai dan keputusannya **gagal** (`TestLaporanArsipMedanTanpaKolomBerkasCSV`).
+    **AC 59**: **nol medan yang belum diputuskan** sebelum pekerjaan dinyatakan selesai — setiap medan
+    berkolom, disalin (`SuggestList` → `HISTORYAKSEPTASIPRODUCTION`), atau dibuang dengan alasan + bukti
+    XML (`backend/models/medan_abaikan_lama.json`); pemuat keluar dengan kode bukan nol hanya bila ada medan
+    `BELUM DIPUTUSKAN` atau dokumen gagal (`TestRingkasanSelesaiHanyaBilaNolGalatDanNolBelumDiputuskan`).
+    Seluruh jalur daun panduan bentuk dokumen (378 entri) sudah diputuskan (`TestPanduanBentukDokumenNolMedanBelumDiputuskan`);
+    panduan itu basi (diagram R45), jadi AC 59 atas data nyata baru dapat dipastikan pada uji-kering
+    pemuat (urutan F7 langkah 2, `MODUL.md` bab *Migrasi*) — tetap 🟡, penahannya kini F7/K11, bukan F3.
 
 ### Keamanan
 
@@ -689,6 +837,32 @@ dapat diuji dari luar.
     Test yang menemukan pemanggilan ke arah sebaliknya **gagal**. *(ID-1, CLAUDE.md §5)*
 
 ---
+
+
+### ⛔ RALAT dan pertentangan yang ditemukan saat implementasi — 2026-10-03
+
+| AC | Bunyi lama (dikutip) | Temuan | Yang dibangun |
+| ---: | --- | --- | --- |
+| 15 | *"`IsApproved` bernilai `""` tersimpan sebagai `""`, bukan `NULL`"* | Oracle menyimpan `''` sebagai NULL | dibaca kembali `""`; setara di halaman, tidak di SQL |
+| 15 ⛔ RALAT (P11, 04-10-2026) | baris di atas: *"dibaca kembali `""`; setara di halaman, tidak di SQL"* — temuan tanpa bunyi AC baru | Oracle `''` ≡ NULL | bunyi baru AC 15 ditulis di bab AC: `""` → NULL → `""`, `"0"` → `'0'` → `"0"`; keduanya tidak menyatu (`DecisionTable/isApproved.xml` kolom `text`); `repository/penyimpanan_db_test.go` `TestIsApprovedKosongDanNolTetapBerbeda` (K11) |
+| 25 ⛔ RALAT (P11, 04-10-2026) | *"Pembandingan dua nilai uang memakai toleransi atau bentuk terbulatkan, bukan kesamaan persis"* | 176 rule terjangkau: nol pembandingan dua nilai uang yang hidup (rasio bertoleransi `<=0.01` hanya di langkah `//`); uang lawan nol eksak | bunyi baru AC 25 + RALAT ID-20; `models/pembandingan_uang_test.go` |
+| 38 | *"`DEDUCTION1` `DEDUCTION2` `TOTAL_SHARE_PERCENTAGE_PREMIUM` `TOTAL_SHARE_PERCENTAGE_CLAIM` disimpan sebagai persen"* | `TOTAL_*` turunan baris spreading; penjaga repo melarang nama `TOTAL_` di migrasi | DEDUCTION1/2 persen; `TOTAL_*` dihitung saat dibaca (`HitungTotalSpreading`) |
+| 38 ⛔ RALAT (P9, 04-10-2026) | baris di atas: *"DEDUCTION1/2 persen"* | `[keputusan work owner]` **K3** (rumus XML apa adanya) — bertentangan dengan kode sejak paket P2 | `DEDUCTION1/2` **uang** (`models/katalog.go` `kUang`, `NUMBER(38,8)`; RALAT AC 38 di bab AC): sel `.Deduction1/2` `pxCurrency` (`Section\DetailPolicyTreatyIn.xml`, `Section\DetailDeptHeadTreatyIn_UW.xml`), `CountNetPremi_act` langkah 4, `SetPPNPPH` langkah 4; `TOTAL_*` tetap turunan |
+| 39 | *"`HISTORYAKSEPTASIPRODUCTION` tidak dibuat ulang"* | `SaveViewSuggest` hanya menulis bila `BusinessFac == "F"`; treaty "T" | ⚠️ `T_POLIS_SUGGEST` (baris dokumen SuggestList, bukan tabel riwayat) — keputusan agen, mohon konfirmasi WO |
+| 39 ⛔ RALAT atas RALAT (putaran 2, 03-10-2026) | baris di atas: *"⚠️ `T_POLIS_SUGGEST` (baris dokumen SuggestList, bukan tabel riwayat) — keputusan agen, mohon konfirmasi WO"* | `[keputusan work owner]` **K4**: konfirmasi **ditolak** — tabel di luar diagram grilling (bab 0 butir 11) | ✅ AC 39 apa adanya: migrasi 328 dihapus; `SuggestList` ditulis ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION` yang sudah ada (15 kolom `InsertViewSuggest_SQL`) dan dibaca balik; syarat `BusinessFac == "F"` = `[penyimpangan sadar]` (lihat ID-31) |
+| 21-22, 52-59 | format dan pemuat dokumen lama | pemuat (tiket 22) belum dibangun | `T_POLIS_MEDAN_LAIN` (329) sudah ada tanpa penulis |
+
+⛔ **RALAT putaran 2 — 03-10-2026 — baris *21-22, 52-59* di atas.** Bunyi lama: *"pemuat (tiket 22) belum
+dibangun"* / *"`T_POLIS_MEDAN_LAIN` (329) sudah ada tanpa penulis"*. Bunyi baru: pemuat dibangun
+(`backend/alat/pemuatlama`, `services/pemuat.go`, `models/dokumenlama.go`, `models/laporanlama.go`,
+`repository/lama.go`); penampung = berkas CSV (K17, RALAT ID-27 dan AC 57/59). AC 21, 22, 52, 53, 54, 56,
+57, 58 diuji; AC 55 dan 59 🟡 (uji kolom bertag `db` belum dijalankan; jumlah atas data nyata belum
+diketahui). `[penyimpangan sadar]` atas **ID-4**: pemecah dokumen lama tinggal di `models` sebagai fungsi
+murni (seam 3 `spec.md` §6.2) supaya uji-kering pemuat tidak menyentuh tabel baru; penulisannya tetap
+lewat antarmuka `repository` yang sama (ID-3). Cap waktu ` GMT` dibaca sebagai jam dinding
+Asia/Jakarta (rule `GeneratePolicyNoTreaty_Act` langkah 5.3 membaca hari dalam Asia/Jakarta); tanggal
+ambigu tidak ditebak (K15).
+
 
 ## 7 · Testing Decisions
 
@@ -781,6 +955,10 @@ ronde berikutnya.
 **Kolom `DEDUCTION1` menampung dua satuan.** Jalur proporsional mengisinya dari `.Deduction1` — sebuah
 **persen**. Jalur XOL mengisinya dari `.Deduction` — sebuah **nilai uang**. Tidak ada penanda yang
 membedakannya selain `PROPORTIONALTYPE` di baris yang sama.
+> ⛔ **RALAT** 2026-10-03 (K3, paket P2) — bunyi lama: *"Jalur proporsional mengisinya dari
+> `.Deduction1` — sebuah **persen**"* → bunyi baru: `.Deduction1` jalur proporsional adalah **jumlah
+> uang** (XML: `pxCurrency`, dikurangkan dari premi di `CountNetPremi_act` langkah 4) — kedua jalur
+> mengisi `DEDUCTION1` dengan uang (peringatan "persen dengan rupiah" di sini gugur untuk kolom ini).
 
 ⇒ Pembaca lewat SQL **wajib menyaring `PROPORTIONALTYPE` lebih dulu**, kalau tidak ia menjumlahkan
 persen dengan rupiah.
@@ -890,6 +1068,10 @@ Bunyi lama: ~~*"dipindahkan seluruhnya atau sebagian — belum diputuskan"*~~.
 ## ⭐ KEPUTUSAN 23-09-2026 sore — presisi uang dan daftar medan
 
 ### Presisi — **`NUMBER(38,8)`**
+
+> ⛔ **RALAT 04-10-2026** — skala delapan di bab ini digantikan **`NUMBER(38,10)`** (diagram sheet NB Treaty In Prop
+> F20 *"skala MINIMAL 9 desimal"* + J69; lihat blok RALAT di kepala berkas). Sisi kiri koma menjadi 28 digit — tetap di
+> atas 17 digit sentinel di tabel bukti di bawah.
 
 `[keputusan work owner]` *"Selesaikan, jangan jadi permasalahan."*
 

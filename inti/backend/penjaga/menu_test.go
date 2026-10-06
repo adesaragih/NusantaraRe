@@ -88,6 +88,11 @@ var (
 	// polaTambahCekGolongan - CHECK GROUPMENU dibuat ulang (langkahGolonganMenu): pernyataan biasa, bukan blok.
 	polaTambahCekGolongan = regexp.MustCompile(`^ALTER TABLE \{skema\}\.M_NAV_MENU ADD CONSTRAINT CK_M_NAV_MENU_GROUPMENU ` +
 		`CHECK \(GROUPMENU IN \(([^)]*)\)\)$`)
+	// polaHapusBaris - baris modul dibuang (langkahPensiunMenu), hanya KODE yang dipensiunkan.
+	polaHapusBaris = regexp.MustCompile(`^DELETE FROM \{skema\}\.M_NAV_MENU WHERE KODE = '([^']+)'$`)
+	// polaHakMenu - pernyataan hak menu (M_LOGIN_GO_MENU): dilewatkan skema tiruan HANYA di langkah pensiun
+	// (`pernyataanMenu`); di langkah menu lain ia "bentuk tidak dikenal" (temuan /code-review).
+	polaHakMenu = regexp.MustCompile(`(?s)^(?:INSERT INTO|DELETE FROM) \{skema\}\.M_LOGIN_GO_MENU[ (]`)
 	// polaUbahGolongan - baris modul pindah golongan (langkahGolonganMenu): GROUPMENU dan URUTAN sekaligus.
 	polaUbahGolongan = regexp.MustCompile(`(?s)^UPDATE \{skema\}\.M_NAV_MENU SET GROUPMENU = '([^']+)', URUTAN = (\d+), ` +
 		`TGL_UBAH = SYSDATE\s+WHERE KODE = '([^']+)'$`)
@@ -97,6 +102,9 @@ var (
 // diterapkan skema tiruan seperti 900/901. Keputusan work owner 04-10-2026: golongan MASTER TREATY.
 var langkahGolonganMenu = map[string]string{
 	"909_m_nav_menu_master_treaty.sql": "MASTER TREATY: Treaty In, Treaty In Adjustment, Treaty Contract Out",
+	// Merge origin/dev 05-10-2026: dua sisi menambah baris MASTER bersamaan (URUTAN 6-13 lokal, 6-9 GitHub) - 922
+	// merapatkannya menurut urutan berkas tanpa menyunting berkas pembuat barisnya.
+	"922_m_nav_menu_urutan_master.sql": "MASTER: URUTAN 6-17 dirapatkan sesudah merge",
 }
 
 // isiCekGolongan - nilai-nilai CHECK GROUPMENU berurutan.
@@ -124,11 +132,56 @@ type labelTampil struct{ folder, tampil string }
 // Keputusan work owner 03-10-2026: modul `marketingofficer`, label "Marketing Officer", kelompok MASTER (906).
 // Keputusan work owner 04-10-2026: modul `companydetail`, label "Company Detail", kelompok MASTER (907).
 // Keputusan work owner 04-10-2026: modul `accounts`, label "Accounts", kelompok MASTER (908).
+// Keputusan work owner 04-10-2026: Master Data dipecah menjadi delapan modul ("8 modul terpisah"), kelompok MASTER,
+// TANPA slot menu ("Modul luar korpus tanpa slot") - barisnya lahir DIMIGRASI '1' di 912-919. Modul `masterdata`
+// (dulu 911) dihapus; barisnya dibuang 920 (`langkahPensiunMenu`).
 var modulLuarKorpus = map[string]string{
-	"marketingofficer": "906_m_nav_menu_marketingofficer.sql",
-	"companydetail":    "907_m_nav_menu_companydetail.sql",
-	"accounts":         "908_m_nav_menu_accounts.sql",
-	"aggregate":        "911_m_nav_menu_aggregate.sql",
+	"marketingofficer":      "906_m_nav_menu_marketingofficer.sql",
+	"companydetail":         "907_m_nav_menu_companydetail.sql",
+	"accounts":              "908_m_nav_menu_accounts.sql",
+	"masternation":          "912_m_nav_menu_masternation.sql",
+	"masterprovince":        "913_m_nav_menu_masterprovince.sql",
+	"mastercity":            "914_m_nav_menu_mastercity.sql",
+	"masterdistrict":        "915_m_nav_menu_masterdistrict.sql",
+	"masterczone":           "916_m_nav_menu_masterczone.sql",
+	"masteraccumulatedtype": "917_m_nav_menu_masteraccumulatedtype.sql",
+	"masteraccumulation":    "918_m_nav_menu_masteraccumulation.sql",
+	"masterobjectitemtype":  "919_m_nav_menu_masterobjectitemtype.sql",
+	"aggregate":             "911_m_nav_menu_aggregate.sql",
+	"bordereaux":            "913_m_nav_menu_bordereaux.sql",
+	// Keputusan work owner 05-10-2026: modul `adjusterconsultant`, label "Adjuster Consultant", kelompok MASTER (915).
+	"adjusterconsultant": "915_m_nav_menu_adjusterconsultant.sql",
+	// Keputusan work owner 05-10-2026: tiga modul master tabel warisan, kelompok MASTER - `treatygroupojk` "Treaty Group
+	// OJK" (916), `treatygroup` "Treaty Group" (917), `businessgroup` "Business Group" (918).
+	"treatygroupojk": "916_m_nav_menu_treatygroupojk.sql",
+	"treatygroup":    "917_m_nav_menu_treatygroup.sql",
+	"businessgroup":  "918_m_nav_menu_businessgroup.sql",
+	// Keputusan work owner 05-10-2026: modul `treatyexchangeyearly`, label "Treaty Exchange Yearly", kelompok MASTER
+	// TREATY (919) - tanpa migrasi sendiri (`tandaTanpaMigrasi`), barisnya langsung menyala.
+	"treatyexchangeyearly": "919_m_nav_menu_treatyexchangeyearly.sql",
+	// Keputusan work owner 05-10-2026: modul `treatydescription` (TREATYDESC), label "Treaty Description", kelompok
+	// MASTER TREATY (920).
+	"treatydescription": "920_m_nav_menu_treatydescription.sql",
+	// Keputusan work owner 05-10-2026: modul `reinsurancetype` (REINSURANCETYPE, master jenis reasuransi), label
+	// "Reinsurance Type", kelompok MASTER TREATY (921) - tanpa migrasi sendiri, barisnya langsung menyala.
+	"reinsurancetype": "921_m_nav_menu_reinsurancetype.sql",
+}
+
+// langkahPensiunMenu - langkah inti yang MEMBUANG baris modul luar korpus yang dihapus (berkas -> KODE): salin hak
+// menunya (M_LOGIN_GO_MENU), buang haknya, buang barisnya. Diterapkan skema tiruan seperti 900/901. Keputusan work
+// owner 04-10-2026: modul `masterdata` dihapus (pecah delapan modul), hak "Ya, salin otomatis".
+var langkahPensiunMenu = map[string]string{
+	"920_m_nav_menu_masterdata_pensiun.sql": "masterdata",
+}
+
+// kodePensiun menjawab apakah `kode` baris modul yang dipensiunkan `langkahPensiunMenu`.
+func kodePensiun(kode string) bool {
+	for _, k := range langkahPensiunMenu {
+		if k == kode {
+			return true
+		}
+	}
+	return false
 }
 
 // langkahMenuLuarKorpus menjawab apakah berkas inti `nama` membuat baris modul luar korpus.
@@ -141,9 +194,19 @@ func langkahMenuLuarKorpus(nama string) bool {
 	return false
 }
 
+// Delapan modul master (04-10-2026): nama tampilan tanpa "Master" sejak lahir (912-919, keputusan work owner nama /
+// label "Nation" ... "Object Item Type"), folder = "Master <nama>" supaya KODE = MODUL = masternation, dst.
 var labelTampilDisetujui = map[string]labelTampil{
 	"masterproductnamelife":   {folder: "Master Product Name Life", tampil: "Product Name Life"},
 	"mastercontractretrolife": {folder: "Master Contract Retro Life", tampil: "Contract Retro Life"},
+	"masternation":            {folder: "Master Nation", tampil: "Nation"},
+	"masterprovince":          {folder: "Master Province", tampil: "Province"},
+	"mastercity":              {folder: "Master City", tampil: "City"},
+	"masterdistrict":          {folder: "Master District", tampil: "District"},
+	"masterczone":             {folder: "Master CZone", tampil: "CZone"},
+	"masteraccumulatedtype":   {folder: "Master Accumulated Type", tampil: "Accumulated Type"},
+	"masteraccumulation":      {folder: "Master Accumulation", tampil: "Accumulation"},
+	"masterobjectitemtype":    {folder: "Master Object Item Type", tampil: "Object Item Type"},
 }
 
 // barisMenu - satu baris M_NAV_MENU di skema tiruan. `induk` kosong = baris
@@ -251,6 +314,15 @@ func (s *skemaMenu) terapkan(p string) error {
 		}
 		u, _ := strconv.Atoi(m[2])
 		s.baris[i].golongan, s.baris[i].urutan = m[1], u
+		return nil
+	}
+	if m := polaHapusBaris.FindStringSubmatch(p); m != nil {
+		if !kodePensiun(m[1]) {
+			return fmt.Errorf("DELETE baris modul %s - hanya baris yang dipensiunkan langkahPensiunMenu", m[1])
+		}
+		if i := s.cari(m[1]); i >= 0 {
+			s.baris = append(s.baris[:i], s.baris[i+1:]...)
+		}
 		return nil
 	}
 	if m := polaIndeksMenu.FindStringSubmatch(p); m != nil {
@@ -458,7 +530,9 @@ func langkahMenu(t *testing.T, hanyaIsiAwal bool) []migrasi.Langkah {
 		n, _ := nomorBerkas(m.Nama)
 		isiAwal := pemilik == "inti" && strings.HasPrefix(m.Nama, "900_")
 		_, golongan := langkahGolonganMenu[m.Nama]
-		datar := !hanyaIsiAwal && pemilik == "inti" && (strings.HasPrefix(m.Nama, "901_") || langkahMenuLuarKorpus(m.Nama) || golongan)
+		_, pensiun := langkahPensiunMenu[m.Nama]
+		datar := !hanyaIsiAwal && pemilik == "inti" && (strings.HasPrefix(m.Nama, "901_") || langkahMenuLuarKorpus(m.Nama) ||
+			golongan || pensiun)
 		slotModul := !hanyaIsiAwal && pemilik != "inti" && jatah[pemilik].diSlot(n)
 		if isiAwal || datar || slotModul {
 			out = append(out, m)
@@ -475,7 +549,13 @@ func pernyataanMenu(t *testing.T, hanyaIsiAwal bool) []string {
 	t.Helper()
 	var out []string
 	for _, m := range langkahMenu(t, hanyaIsiAwal) {
-		out = append(out, m.Pernyataan...)
+		_, pensiun := langkahPensiunMenu[m.Nama]
+		for _, p := range m.Pernyataan {
+			if pensiun && polaHakMenu.MatchString(p) {
+				continue // hak menu, bukan M_NAV_MENU
+			}
+			out = append(out, p)
+		}
 	}
 	return out
 }
@@ -582,6 +662,9 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 	kode := map[string]bool{}
 	urutanTerakhir := map[string]int{}
 	var label []string
+	// Label modul luar korpus: foldernya - bila ada di korpus (Bordereaux ditambah work owner 04-10-2026 SESUDAH dua
+	// puluh folder awal) - tidak dihitung sebagai folder modul korpus.
+	labelLuar := map[string]bool{}
 	tampil := 0
 	for _, k := range kelompok {
 		if kode[k.kode] {
@@ -600,6 +683,8 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 		}
 		if !luar {
 			label = append(label, folder) // modul luar korpus tidak punya folder korpus
+		} else {
+			labelLuar[k.label] = true
 		}
 		if mau := strings.ToLower(strings.ReplaceAll(folder, " ", "")); k.kode != mau || k.modul != mau {
 			t.Errorf("baris %q: KODE %q, MODUL %q, mau keduanya %q (tabel nama modul)", folder, k.kode, k.modul, mau)
@@ -633,7 +718,7 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 		}
 		_, errA := os.Stat(filepath.Join(akarKorpus, e.Name(), "Activity"))
 		_, errS := os.Stat(filepath.Join(akarKorpus, e.Name(), "Section"))
-		if errA == nil && errS == nil {
+		if errA == nil && errS == nil && !labelLuar[e.Name()] {
 			folder = append(folder, e.Name())
 		}
 	}
@@ -862,6 +947,10 @@ func TestSkemaTiruanMenangkapLangkahTanpaPelindung(t *testing.T) {
 // 903 karena langkah inti selain 900/901 tidak boleh menyebut tabel menu
 // (`TestMenuHanyaDi900DanSlotMenuModulnya`); penjaga inilah yang menahannya
 // tetap sama.
+// menuAplikasiSesudah903 - menu aplikasi yang lahir SESUDAH isi awal 903: akun lama tidak otomatis memegangnya,
+// haknya diberikan lewat Kelola User (Template Manager, keputusan work owner 04-10-2026).
+var menuAplikasiSesudah903 = map[string]bool{menu.KodeTemplateManager: true}
+
 func TestIsiAwalMenuAkunMemuatSemuaMenu(t *testing.T) {
 	var isi string
 	for _, p := range langkahInti(t, "903_m_login_go_menu.sql") {
@@ -884,7 +973,9 @@ func TestIsiAwalMenuAkunMemuatSemuaMenu(t *testing.T) {
 		}
 	}
 	for _, a := range menu.MenuAplikasi {
-		mau = append(mau, a.Kode)
+		if !menuAplikasiSesudah903[a.Kode] { // lahir sesudah 903 - hak menu lewat Kelola User
+			mau = append(mau, a.Kode)
+		}
 	}
 	sort.Strings(dapat)
 	sort.Strings(mau)

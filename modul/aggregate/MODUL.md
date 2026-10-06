@@ -11,7 +11,8 @@ tim satu folder per modul, keputusan work owner 30-09-2026).
 `Folder korpus` di bawah = label menu `M_NAV_MENU.LABEL`.
 
 ⛔ **Tabel di bawah dibaca penjaga** (`inti/backend/penjaga`): rentang migrasi dan slot menu — diambil dari
-cadangan `760-899` dan `990-999`.
+cadangan `760-899` dan `990-999`. Dipersempit 04-10-2026 dari `880-899` ke `880-889` (modul ini memakai 880 saja) supaya
+Bordereaux mendapat `890-899` - keputusan work owner "aku ikuti rekomendasi kamu".
 
 | Kunci | Nilai |
 | --- | --- |
@@ -20,8 +21,8 @@ cadangan `760-899` dan `990-999`.
 | GROUPMENU | `MASTER TREATY` |
 | Pemilik | `@PEMILIK-AGGREGATE` |
 | Status | dimigrasi |
-| Rentang migrasi | `880-899` |
-| Slot menu | `996-997` |
+| Rentang migrasi | `880-889` |
+| Slot menu | `996-996` |
 | Prefix rute API | `/api/aggregate` |
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |
@@ -50,7 +51,7 @@ cadangan `760-899` dan `990-999`.
 
 ## Migrasi
 
-Rentang `880-899`:
+Rentang `880-889`:
 
 | Berkas | Isi |
 | --- | --- |

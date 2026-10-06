@@ -281,8 +281,9 @@ func (g *GudangOracle) UbahAkun(ctx context.Context, id string, a IsianAkun) err
 			return err
 		}
 		for _, m := range a.Menu {
-			if err := tulisTx(ctx, tx, sqlSisipMenu(t.menu), false, id, m); err != nil {
-				return err
+			q, args := sisipMenu(t.menu, id, m, a.MenuLihat)
+			if err := tulisTx(ctx, tx, q, false, args...); err != nil {
+				return galatHak(err)
 			}
 		}
 		return nil

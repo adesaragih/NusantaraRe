@@ -12,7 +12,9 @@ import (
 	"net/http"
 
 	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/templat"
 	"nusantarare/modul/aggregate/backend/handlers"
+	"nusantarare/modul/aggregate/backend/models"
 	"nusantarare/modul/aggregate/backend/services"
 )
 
@@ -20,6 +22,26 @@ import (
 //
 //go:embed migrations/*.sql
 var berkasMigrasi embed.FS
+
+// templatBawaan - berkas templat Upload CSV bawaan (header 38 kolom, pemisah `;`): dipakai selama Template Manager
+// belum punya versi aktif untuk slot `KodeTemplat` (keputusan work owner 04-10-2026).
+//
+//go:embed templat/aggregate.csv
+var templatBawaan []byte
+
+// KodeTemplat - kode slot templat Upload CSV modul ini di Template Manager. TETAP: tersimpan di M_TEMPLATE_FILE.KODE.
+const KodeTemplat = "aggregate.upload"
+
+// jumlahKolomCSV - kolom CSV yang dibaca Upload CSV (`models.KolomGrid` ber-CSV).
+func jumlahKolomCSV() int {
+	n := 0
+	for _, k := range models.KolomGrid {
+		if k.CSV > 0 {
+			n++
+		}
+	}
+	return n
+}
 
 // Nama pengenal modul ini - SAMA dengan nama foldernya.
 const Nama = "aggregate"
@@ -29,6 +51,14 @@ func Pendaftaran() inti.Pendaftaran {
 	return inti.Pendaftaran{
 		Nama:    Nama,
 		Migrasi: berkasMigrasi,
+		Templat: []templat.Slot{{
+			Kode: KodeTemplat, Menu: Nama, Grup: "Aggregate", Nama: "Upload CSV",
+			DipakaiDi: "Aggregate › Add Data › Template", Ekstensi: ".csv", Pemisah: ';', JumlahKolom: jumlahKolomCSV(),
+			NamaUnduhan: "aggregate.csv", Bawaan: templatBawaan,
+		}},
+		// Akses menu LIHAT (keputusan work owner 04-10-2026): modul selesai, ikut gerbang tulis `cmd/api`. Pratinjau hanya
+		// membaca CSV, jadi bebas.
+		HakLihat: &inti.HakLihat{Bebas: []string{"POST " + handlers.Prefix + "/pratinjau"}},
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
 			return Modul{svc: services.DariDasar(p.Dasar()), stubPelaku: p.Config().AuthStub}, nil
 		},

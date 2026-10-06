@@ -1,0 +1,25 @@
+{
+ "pxObjClass": "ASM-FW-GISFW-Data-PolicyTreatyIn",
+ "PolicyNo": "UJI-QR.T1.01.2018.00002",
+ "IsNewPolicyNonProp": "1",
+ "StartDate": "20180101",
+ "EndDate": "20181231",
+ "QuotationData": {"ProportionalType": "NonProportional"},
+ "OldData": {"pxObjClass": "UJI-kelas", "TreatyXOLList": []},
+ "TreatyDifference": {"NetPremium": "-1.5", "ListInstallment": []},
+ "ListInstallment": [
+  {"InstallmentNo": "1", "Premium": "3000.5", "pyExpanded": "true",
+   "InstallmentList": [
+    {"InstallmentNo": "1", "DueDate": "20180131", "Premium": "1500.25"},
+    {"InstallmentNo": "2", "DueDate": "20180228", "Premium": "1500.25"}
+   ]}
+ ],
+ "TreatyXOLList": [
+  {"GrossPremi": "3000.5", "NetPremi": "2800", "Deduction": "200.5",
+   "ValueList": [
+    {"Layer": "1", "LayerType": "UJI-LT", "LayerPart": "1", "LayerPartType": "UJI-LPT", "GrossPremi": "1000", "Deduction": "100.25"},
+    {"Layer": "2", "LayerType": "UJI-LT", "LayerPart": "1", "LayerPartType": "UJI-LPT", "GrossPremi": "2000.5", "Deduction": "100.25"}
+   ]},
+  {"GrossPremi": "10", "NetPremi": "9", "Deduction": "1", "ValueList": []}
+ ]
+}

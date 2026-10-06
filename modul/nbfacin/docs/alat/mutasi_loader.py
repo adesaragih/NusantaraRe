@@ -99,6 +99,13 @@ M = [
     ('butir 71 penunjuk dibuang diam-diam', F, '\t\tp.hasil.Diagnostik.PenunjukBelumDikonversi[kunci]++', '\t\tp.hasil.Diagnostik.Dibuang[kunci]++'),
     ('butir 72 kolom INDEX_CARGO dicabut', AM, '{tabel: "T_COVERAGELIST", nama: "INDEX_CARGO", medan: "IndexCargo"},', ''),
     ('butir 72 penunjuk diurai sebagai angka', AM, 'const tipePenunjuk = "VARCHAR2(50)"', 'const tipePenunjuk = "NUMBER"'),
+    # Butir 76 - T_WORK_POLIS selaras dengan tabel yang ada (K-064).
+    ('butir 76.1 tipe ID kasus salah', AM, 'const tipeIDKasus = "VARCHAR2(32)"', 'const tipeIDKasus = "VARCHAR2(31)"'),
+    ('butir 76.1 T_GENERAL_POLIS tidak ikut', AM, 'var tabelIDKasus = []string{"T_WORK_POLIS", "T_GENERAL_POLIS"}', 'var tabelIDKasus = []string{"T_WORK_POLIS"}'),
+    ('butir 76.2 LINI dicabut', AM, '\t"T_WORK_POLIS": {{nama: "LINI", tipe: "VARCHAR2(255)"}},\n', ''),
+    ('butir 76.4 POSISI tidak digabung', AM, '\t\t"POSISI":        {nama: "POSITION", tipe: "VARCHAR2(255)"},\n', ''),
+    ('butir 76.1 asal ID umum mengalahkan', A, '\tif a, ada := kolomRepository[tk]; ada {\n\t\treturn asalRepository, a\n\t}\n\tif a, ada := kolomRepository[k.nama]; ada {\n',
+     '\tif a, ada := kolomRepository[k.nama]; ada {\n\t\treturn asalRepository, a\n\t}\n\tif a, ada := kolomRepository[tk]; ada {\n'),
     ('pembaca xlsx menggeser sel kosong', B, '\t\t\ti := indeksKolom(c.R)\n', '\t\t\ti := len(row.C) - len(row.C) + func() int { n := 0; for _, x := range r { if x != "" { n++ } }; return n }()\n'),
 ]
 asli = {}

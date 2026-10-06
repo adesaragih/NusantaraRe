@@ -5,14 +5,18 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { Gagal, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
+import { useBolehUbah } from '../../../../inti/frontend/lib/hakMenu'
 import { ambilDaftar, hapus, type Halaman, type Kelompok, type Kunci } from '../api'
 import { formatBulat, jumlahHalaman, kunciDari, kunciTeks } from '../aturan'
 import DialogRincian from '../components/DialogRincian'
 import ChartAggregate from '../components/ChartAggregate'
 import UnggahAggregate from '../components/UnggahAggregate'
 import { AG } from '../labels'
+import { NAMA_AG } from '../menu'
 
 export default function Aggregate() {
+  // Menu View only (M_LOGIN_GO_MENU.HAK, 04-10-2026): tanpa Add Data dan Delete; chart, cari, dan rincian tetap.
+  const bolehUbah = useBolehUbah(NAMA_AG)
   const [unggah, setUnggah] = useState(false)
   const [ketik, setKetik] = useState('')
   const [kueri, setKueri] = useState('')
@@ -110,16 +114,18 @@ export default function Aggregate() {
           {AG.tombolCari}
         </button>
         <span className="toolbar__spacer" />
-        <button
-          type="button"
-          className="btn btn--primary"
-          onClick={() => {
-            setPesan(null)
-            setUnggah(true)
-          }}
-        >
-          {AG.addData}
-        </button>
+        {bolehUbah && (
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={() => {
+              setPesan(null)
+              setUnggah(true)
+            }}
+          >
+            {AG.addData}
+          </button>
+        )}
       </form>
 
       {pesan !== null && (
@@ -144,7 +150,7 @@ export default function Aggregate() {
                   <th>{AG.asAt}</th>
                   <th>{AG.uwYear}</th>
                   <th className="aggregate__angka">{AG.jumlahBaris}</th>
-                  <th className="table__actions">{AG.aksi}</th>
+                  {bolehUbah && <th className="table__actions">{AG.aksi}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -168,21 +174,23 @@ export default function Aggregate() {
                     <td>{k.asAt}</td>
                     <td>{k.uwYear}</td>
                     <td className="aggregate__angka">{formatBulat(k.jumlahBaris)}</td>
-                    <td className="table__actions">
-                      <span className="aggregate__aksi">
-                        <button
-                          type="button"
-                          className="btn btn--ghost"
-                          onClick={() => {
-                            setPesan(null)
-                            setGalatHapus(null)
-                            setAkanHapus(k)
-                          }}
-                        >
-                          {AG.hapus}
-                        </button>
-                      </span>
-                    </td>
+                    {bolehUbah && (
+                      <td className="table__actions">
+                        <span className="aggregate__aksi">
+                          <button
+                            type="button"
+                            className="btn btn--ghost"
+                            onClick={() => {
+                              setPesan(null)
+                              setGalatHapus(null)
+                              setAkanHapus(k)
+                            }}
+                          >
+                            {AG.hapus}
+                          </button>
+                        </span>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

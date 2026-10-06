@@ -114,6 +114,13 @@ export interface Negara {
   nationInitial: string
 }
 
+/** Akun login aktif `M_LOGIN_GO` - `models.Akun`; pilihan PIC Name, `jabatan` (JOB_POSITION) = PIC Position. */
+export interface Akun {
+  loginId: string
+  nama: string
+  jabatan: string
+}
+
 /** Pilihan form - `services.PilihanForm`. */
 export interface PilihanForm {
   title: Pilihan[]
@@ -124,6 +131,8 @@ export interface PilihanForm {
   kodeArea: Pilihan[]
   gender: Pilihan[]
   negara: Negara[]
+  /** Akun login aktif - pilihan PIC Name (perintah work owner 05-10-2026). */
+  akun: Akun[]
 }
 
 /** Satu organisasi bernama sama/mirip - `services.NamaSerupa`. */

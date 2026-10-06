@@ -110,6 +110,37 @@ func TestNamaObjekDibuatTerbaca(t *testing.T) {
 	}
 }
 
+// View yang diganti tabel bernama sama dikenali hanya bila DROP VIEW-nya
+// datang SEBELUM CREATE TABLE di langkah yang sama (masterprovince 880, dulu masterdata 760).
+func TestViewDibongkarDulu(t *testing.T) {
+	p := pecahPernyataan("CREATE TABLE {skema}.P_SALIN (\n  ID VARCHAR2(10)\n)\n/\n" +
+		"-- komentar\nDROP VIEW {skema}.Province\n/\nCREATE TABLE {skema}.PROVINCE (\n  ID VARCHAR2(10)\n)\n/\n" +
+		"DROP VIEW {skema}.CITY\n/\n")
+	if len(p) != 4 {
+		t.Fatalf("%d pernyataan: %q", len(p), p)
+	}
+	kasus := []struct {
+		i    int
+		nama string
+		mau  bool
+	}{
+		{2, "PROVINCE", true},  // DROP VIEW sebelumnya, huruf kecil tetap sama
+		{0, "P_SALIN", false},  // tidak ada yang dibongkar sebelumnya
+		{2, "P_SALIN", false},  // view lain
+		{1, "PROVINCE", false}, // DROP VIEW itu sendiri, bukan sebelumnya
+		{3, "CITY", false},     // DROP VIEW SESUDAH tidak dihitung
+		{4, "CITY", true},
+	}
+	for _, k := range kasus {
+		if got := ViewDibongkarDulu(p, k.i, k.nama); got != k.mau {
+			t.Errorf("ViewDibongkarDulu(%d, %s) = %v, mau %v", k.i, k.nama, got, k.mau)
+		}
+	}
+	if ViewDibongkarDulu([]string{"DROP VIEW {skema}.X CASCADE CONSTRAINTS"}, 1, "X") {
+		t.Error("DROP VIEW berekor tidak boleh dikenali")
+	}
+}
+
 // Pembanding bentuk tabel menyebut kedua arah selisihnya.
 //
 // Ini bagian MURNI dari pra-terbang butir x: ia tidak menyentuh Oracle sama

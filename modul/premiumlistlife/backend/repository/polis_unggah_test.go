@@ -37,7 +37,7 @@ func TestKolomSisipPesertaAdaDiMigrasi052(t *testing.T) {
 		periksa(c.Kolom)
 	}
 	// ⛔ Ketiga puluh dua kolom uang unggahan juga harus punya rumah.
-	for _, c := range models.KolomUangUnggah {
+	for _, c := range models.KolomUangTersimpan() {
 		periksa(c)
 	}
 }
@@ -164,5 +164,21 @@ func TestPengenalPesertaTetapDanSepanjangKolomnya(t *testing.T) {
 	// Heksa huruf besar, sejajar dengan IMAGEID.
 	if strings.ToUpper(a) != a {
 		t.Errorf("pengenal %q bukan huruf besar", a)
+	}
+}
+
+// TestPengenalPesertaBerurutBarisCSV - keputusan work owner 03-10-2026:
+// `ORDER BY ID` dalam satu polis = urutan baris berkas CSV.
+func TestPengenalPesertaBerurutBarisCSV(t *testing.T) {
+	var lalu string
+	for _, n := range []int{1, 2, 9, 10, 11, 99, 100, 1000, 20000} {
+		id := PengenalPesertaUnggah("NBLF-1", n)
+		if id <= lalu {
+			t.Errorf("baris %d berpengenal %q, tidak sesudah %q", n, id, lalu)
+		}
+		lalu = id
+	}
+	if PengenalPesertaUnggah("NBLF-1", 5)[:24] != PengenalPesertaUnggah("NBLF-1", 6)[:24] {
+		t.Error("awalan pengenal berbeda di dalam satu polis")
 	}
 }

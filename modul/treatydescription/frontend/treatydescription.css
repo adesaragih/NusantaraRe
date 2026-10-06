@@ -1,0 +1,603 @@
+/* Gaya modul Treaty Description - SETIAP pemilih di bawah akar .treatydescription (gaya.test.ts). Fondasi tema
+   (token terang/gelap, isian, tombol, tabel, kolom aksi menempel, tampilan View) disalin dari modul Bordereaux supaya
+   tampilannya seragam; nol pemilih global, nol properti yang memerangkap Modal. */
+
+.treatydescription {
+  display: contents;
+}
+
+.treatydescription .treatydescription__akar {
+  --td-latar: #eef1f6;
+  --td-seri-0: #4f46e5;
+  --td-seri-1: #0d9488;
+  --td-seri-2: #f59e0b;
+  --td-seri-3: #64748b;
+  --td-lintasan: #e8ecf4;
+  --td-latar-tepi: #cfd7e5;
+  --td-latar-atas: #f9fafd;
+  --td-latar-bawah: #e4e9f3;
+  --td-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --td-lembut: #e9edf3;
+  --td-lembut-tepi: #dde3ec;
+  --td-teks: #101828;
+  --td-teks-redup: #4f586b;
+  --td-aksen: var(--primary-tanda);
+  --td-aksen-teks: #2339a3;
+  --td-aksen-lembut: #e3e8f6;
+  --td-aksen-garis: #b9c5ee;
+  --td-kepala-tabel: #dde4f2;
+  --td-kepala-teks: #22326b;
+  --td-kepala-garis: #c3cde2;
+  --td-isi: #ffffff;
+  --td-baris-hover: #e6ecfa;
+  --td-garis: #e1e6ef;
+  --td-tepi: #c8d1e1;
+  --td-tombol: #d63a42;
+  --td-tombol-ujung: #bf2f37;
+  --td-tombol-hover: #c2333b;
+  --td-tombol-hover-ujung: #a9282f;
+  --td-terang: rgba(255, 255, 255, 0.92);
+  --td-gelap: rgba(163, 177, 198, 0.55);
+  --td-kilau: rgba(255, 255, 255, 0.7);
+  --td-timbul: 8px 8px 18px var(--td-gelap), -8px -8px 18px var(--td-terang);
+  --td-timbul-kecil: 4px 4px 9px var(--td-gelap), -4px -4px 9px var(--td-terang);
+  --td-cekung-kecil: inset 2px 2px 4px var(--td-gelap), inset -2px -2px 4px var(--td-terang);
+  --td-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --td-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--td-terang);
+  --td-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --td-sukses-latar: #e6f7ee;
+  --td-sukses-tepi: #b7e8cc;
+  --td-sukses-teks: #067647;
+  --td-netral-latar: #e9edf3;
+  --td-netral-tepi: #d5dce7;
+  --td-netral-teks: #475467;
+  --td-waspada-latar: #fbf3df;
+  --td-waspada-tepi: #f1d58a;
+  --td-waspada-teks: #a3410a;
+  --text-3: var(--td-teks-redup);
+  color: var(--td-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--td-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--td-latar-atas) 0%, var(--td-latar-bawah) 100%);
+  box-shadow: var(--td-bayang-akar);
+}
+
+:root[data-theme="dark"] .treatydescription .treatydescription__akar {
+  --td-latar: #1b2130;
+  --td-seri-0: #818cf8;
+  --td-seri-1: #2dd4bf;
+  --td-seri-2: #fbbf24;
+  --td-seri-3: #94a3b8;
+  --td-lintasan: #252d40;
+  --td-latar-tepi: #323b50;
+  --td-latar-atas: #222a3b;
+  --td-latar-bawah: #161b27;
+  --td-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --td-lembut: #181d2a;
+  --td-lembut-tepi: #242b3a;
+  --td-teks: #eef0f6;
+  --td-teks-redup: #aab2c4;
+  --td-aksen-teks: #aebcff;
+  --td-aksen-lembut: #222b45;
+  --td-aksen-garis: #3a4b8f;
+  --td-kepala-tabel: #273152;
+  --td-kepala-teks: #dbe2ff;
+  --td-kepala-garis: #3a4670;
+  --td-isi: #1f2638;
+  --td-baris-hover: #2b3554;
+  --td-garis: #2c3447;
+  --td-tepi: #3a4459;
+  --td-terang: rgba(255, 255, 255, 0.045);
+  --td-gelap: rgba(0, 0, 0, 0.55);
+  --td-kilau: rgba(255, 255, 255, 0.04);
+  --td-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --td-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--td-terang);
+  --td-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --td-sukses-latar: #0d2a1f;
+  --td-sukses-tepi: #1d5c40;
+  --td-sukses-teks: #75e0a7;
+  --td-netral-latar: #1f2533;
+  --td-netral-tepi: #333c4f;
+  --td-netral-teks: #c3cad8;
+  --td-waspada-latar: #2b2112;
+  --td-waspada-tepi: #6b4d17;
+  --td-waspada-teks: #fec84b;
+}
+
+/* Judul dan teks redup. */
+.treatydescription .inbox__judul,
+.treatydescription .modal__title {
+  color: var(--td-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.treatydescription .muted {
+  color: var(--td-teks-redup);
+}
+
+.treatydescription :focus-visible {
+  outline: 2px solid var(--td-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.treatydescription .field__input {
+  background: var(--td-isi);
+  border: 1px solid var(--td-tepi);
+  border-radius: 12px;
+  box-shadow: var(--td-cekung-kecil);
+  color: var(--td-teks);
+}
+
+.treatydescription .field__input:hover:not(:disabled) {
+  border-color: var(--td-aksen-garis);
+}
+
+.treatydescription .field__input:focus {
+  border-color: var(--td-aksen);
+  box-shadow: var(--td-cekung-kecil), var(--td-cincin);
+  outline: none;
+}
+
+.treatydescription .field__input--readonly,
+.treatydescription .field__input--readonly:hover {
+  background: var(--td-lembut);
+  border-color: var(--td-lembut-tepi);
+  color: var(--td-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.treatydescription .btn {
+  border-radius: 999px;
+}
+
+.treatydescription .btn--primary {
+  background: linear-gradient(180deg, var(--td-tombol), var(--td-tombol-ujung));
+  border-color: var(--td-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--td-bayang-tombol);
+}
+
+.treatydescription .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--td-tombol-hover), var(--td-tombol-hover-ujung));
+  border-color: var(--td-tombol-hover-ujung);
+}
+
+.treatydescription .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.treatydescription .btn--ghost {
+  background: var(--td-isi);
+  border: 1px solid var(--td-tepi);
+  color: var(--td-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--td-timbul-kecil);
+}
+
+.treatydescription .btn--ghost:hover:not(:disabled) {
+  background: var(--td-aksen-lembut);
+  border-color: var(--td-aksen-garis);
+  color: var(--td-aksen-teks);
+}
+
+.treatydescription .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--td-cekung-kecil);
+}
+
+.treatydescription .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.treatydescription .modal {
+  background: var(--td-latar);
+  border: 1px solid var(--td-kilau);
+  border-radius: 22px;
+  box-shadow: var(--td-bayang-popup);
+}
+
+.treatydescription .modal__head,
+.treatydescription .modal__actions {
+  border-color: var(--td-garis);
+}
+
+.treatydescription .alert {
+  border-radius: 12px;
+}
+
+/* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
+.treatydescription .treatydescription__tabel {
+  background: var(--td-isi);
+  border: 1px solid var(--td-tepi);
+  border-radius: 18px;
+  box-shadow: var(--td-timbul);
+}
+
+.treatydescription .treatydescription__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.treatydescription .treatydescription__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.treatydescription .treatydescription__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.treatydescription .treatydescription__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.treatydescription .treatydescription__tabel thead th {
+  background: var(--td-kepala-tabel);
+  color: var(--td-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--td-kepala-garis);
+}
+
+.treatydescription .treatydescription__tabel td {
+  color: var(--td-teks);
+  background: var(--td-isi);
+  border-bottom-color: var(--td-garis);
+}
+
+.treatydescription .treatydescription__tabel tbody tr:nth-child(even),
+.treatydescription .treatydescription__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.treatydescription .treatydescription__tabel tbody tr:nth-child(even) > td {
+  background: var(--td-lembut);
+}
+
+.treatydescription .treatydescription__tabel tbody tr:hover > td {
+  background: var(--td-baris-hover);
+}
+
+/* Tombol aksi SEBARIS ke samping (permintaan work owner 03-10-2026 "buat ke samping aja"): tidak turun ke bawah;
+   tabel yang lebih lebar dari layar menggulir di dalam akar. */
+.treatydescription .treatydescription__aksi {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.treatydescription .treatydescription__tabel td.table__actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.treatydescription .treatydescription__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.treatydescription .treatydescription__hapus {
+  color: var(--td-tombol);
+}
+
+.treatydescription .treatydescription__halaman {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  white-space: nowrap;
+}
+
+.treatydescription .treatydescription__badge {
+  margin-left: 10px;
+  background: var(--td-aksen-lembut);
+  color: var(--td-aksen-teks);
+}
+
+/* Kartu: form header, tab, riwayat. */
+.treatydescription .treatydescription__kartu {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--td-isi);
+  border: 1px solid var(--td-tepi);
+  border-radius: 18px;
+  box-shadow: var(--td-timbul);
+}
+
+.treatydescription .treatydescription__judul-kartu {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--td-teks);
+}
+
+/* View: nilai saja, kisi label di atas nilai. */
+.treatydescription .treatydescription__ringkas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 24px;
+  margin: 0;
+}
+
+.treatydescription .treatydescription__ringkas dt,
+.treatydescription .treatydescription__treaty-isi dt {
+  font-size: 12px;
+  color: var(--td-teks-redup);
+}
+
+.treatydescription .treatydescription__ringkas dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Kolom tombol baris MENEMPEL di kanan saat tabel digulir (pola Treaty Contract Out, permintaan work owner
+   04-10-2026 "tidak perlu scroll ke kanan buat aksesnya"). */
+.treatydescription .treatydescription__tabel th.table__actions,
+.treatydescription .treatydescription__tabel td.table__actions {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  box-shadow: -8px 0 10px -8px rgba(16, 24, 40, 0.25);
+}
+
+.treatydescription .treatydescription__tabel {
+  width: max-content;
+  min-width: 100%;
+}
+
+.treatydescription .treatydescription__tabel th.table__actions,
+.treatydescription .treatydescription__tabel td.table__actions {
+  padding-right: 16px;
+  padding-left: 14px;
+}
+
+.treatydescription .treatydescription__tabel td {
+  white-space: nowrap;
+}
+
+/* Daftar menggulir di dalam kotaknya; kolom Action menempel di kanan. */
+.treatydescription .treatydescription__gulir {
+  overflow: auto;
+  max-height: 68vh;
+}
+
+/* Toolbar daftar: cari, saringan status, tombol Add. */
+.treatydescription .treatydescription__alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 12px;
+}
+
+.treatydescription .treatydescription__cari {
+  width: min(340px, 100%);
+}
+
+/* Saringan status Active / Inactive / All: tombol segmen. */
+.treatydescription .treatydescription__segmen {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--td-tepi);
+  border-radius: 999px;
+  background: var(--td-lembut);
+}
+
+.treatydescription .treatydescription__segmen-butir {
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--td-teks-redup);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.treatydescription .treatydescription__segmen-butir--aktif {
+  background: var(--td-isi);
+  color: var(--td-teks);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.14);
+}
+
+/* Status baris. */
+.treatydescription .treatydescription__status {
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid var(--td-sukses-tepi);
+  border-radius: 999px;
+  background: var(--td-sukses-latar);
+  color: var(--td-sukses-teks);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.treatydescription .treatydescription__status--nonaktif {
+  border-color: var(--td-netral-tepi);
+  background: var(--td-netral-latar);
+  color: var(--td-netral-teks);
+}
+
+/* Kolom Status: ruang di kanan supaya badge tidak tertutup kolom Action yang menempel. */
+.treatydescription .treatydescription__tabel .treatydescription__kolom-status {
+  min-width: 96px;
+  padding-right: 22px;
+}
+
+.treatydescription .treatydescription__baris--nonaktif > td {
+  color: var(--td-teks-redup);
+}
+
+/* Teks panjang (alamat) boleh turun baris di tabel. */
+.treatydescription .treatydescription__alamat {
+  min-width: 220px;
+  max-width: 360px;
+  white-space: normal;
+}
+
+/* Form Add / Edit di popup. */
+.treatydescription .treatydescription__form {
+  display: grid;
+  gap: 14px;
+}
+
+.treatydescription .treatydescription__form textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.treatydescription .treatydescription__catatan {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Saringan OJK Business di toolbar daftar. */
+.treatydescription .treatydescription__saring {
+  width: min(280px, 100%);
+}
+
+/* View: daftar grup bisnis anak di bawah ringkasan. */
+.treatydescription .treatydescription__judul-anak {
+  margin-top: 20px;
+}
+
+.treatydescription .treatydescription__tabel-anak {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Lencana jenis klausul (Non XOL / XOL) dan pilihan bersegmen di dalam form. */
+.treatydescription .treatydescription__jenis {
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid var(--td-lembut-tepi);
+  border-radius: 999px;
+  background: var(--td-lembut);
+  color: var(--td-teks-redup);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.treatydescription .treatydescription__jenis--xol {
+  border-color: var(--td-aksen-garis);
+  background: var(--td-aksen-lembut);
+  color: var(--td-aksen-teks);
+}
+
+.treatydescription .treatydescription__pilihan {
+  display: grid;
+  gap: 6px;
+}
+
+.treatydescription .treatydescription__pilihan .treatydescription__segmen {
+  justify-self: start;
+}
+
+/* View (permintaan work owner 05-10-2026: "buat rapih, contoh treaty exchange yearly") - kepala beraksen dan lencana,
+   kartu berdampingan berisi pasangan label-nilai dua kolom, jejak ubah satu baris di kaki; blok ini diturunkan dari
+   treatyexchangeyearly.css. */
+.treatydescription .treatydescription__lihat {
+  display: grid;
+  gap: 16px;
+}
+
+.treatydescription .treatydescription__lihat-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 1px solid var(--td-aksen-garis);
+  border-radius: 16px;
+  background: var(--td-aksen-lembut);
+}
+
+.treatydescription .treatydescription__lihat-mata {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.treatydescription .treatydescription__lihat-kode {
+  margin: 0;
+  color: var(--td-aksen-teks);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.treatydescription .treatydescription__lihat-nama {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+}
+
+.treatydescription .treatydescription__lencana {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px solid var(--td-tepi);
+  border-radius: 999px;
+  background: var(--td-isi);
+  color: var(--td-teks);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.treatydescription .treatydescription__lihat-kartu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.treatydescription .treatydescription__lihat-kartu .treatydescription__kartu {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .treatydescription .treatydescription__lihat-kartu {
+    grid-template-columns: 1fr;
+  }
+}
+
+.treatydescription .treatydescription__pasangan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.treatydescription .treatydescription__pasangan dt {
+  color: var(--td-teks-redup);
+  font-size: 12px;
+}
+
+.treatydescription .treatydescription__pasangan dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.treatydescription .treatydescription__nilai-besar {
+  font-size: 19px;
+}
+
+.treatydescription .treatydescription__jejak {
+  margin: 0;
+  font-size: 12px;
+}
+
+.treatydescription .treatydescription__lihat-kartu .treatydescription__kartu--penuh {
+  grid-column: 1 / -1;
+}

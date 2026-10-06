@@ -1,0 +1,3 @@
+-- Jalur mundur 181 - SEQ_WORK_POLIS_NB.
+DROP SEQUENCE {skema}.SEQ_WORK_POLIS_NB
+/

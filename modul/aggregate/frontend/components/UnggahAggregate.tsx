@@ -8,19 +8,11 @@ import { useRef, useState } from 'react'
 import { Gagal, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { kodeStatusGalat, pesanGalat } from '../../../../inti/frontend/klien'
 import { pratinjau, simpan, type Baris, type MasterTreaty } from '../api'
-import { barisPesan, formatAngka, KEPALA_TEMPLATE, NAMA_TEMPLATE } from '../aturan'
+import { unduhTemplat } from '../../../../inti/frontend/templat/api'
+import { barisPesan, formatAngka, KODE_TEMPLAT, NAMA_TEMPLATE } from '../aturan'
 import { AG } from '../labels'
 import DialogMasterID from './DialogMasterID'
 import GridAggregate from './GridAggregate'
-
-function unduhTemplate() {
-  const url = URL.createObjectURL(new Blob([KEPALA_TEMPLATE + '\r\n'], { type: 'text/csv;charset=utf-8' }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = NAMA_TEMPLATE
-  a.click()
-  URL.revokeObjectURL(url)
-}
 
 export default function UnggahAggregate({ onTutup, onTersimpan }: { onTutup: () => void; onTersimpan: () => void }) {
   const [master, setMaster] = useState<MasterTreaty[]>([])
@@ -97,7 +89,15 @@ export default function UnggahAggregate({ onTutup, onTersimpan }: { onTutup: () 
           >
             {AG.masterId}
           </button>
-          <button type="button" className="btn btn--ghost" onClick={unduhTemplate}>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => {
+              unduhTemplat(KODE_TEMPLAT, NAMA_TEMPLATE).catch((g: unknown) => {
+                setGalat(g)
+              })
+            }}
+          >
             {AG.template}
           </button>
           <button

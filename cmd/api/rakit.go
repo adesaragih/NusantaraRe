@@ -19,9 +19,12 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/config"
+	"nusantarare/inti/backend/daftar"
 	"nusantarare/inti/backend/galat"
 	"nusantarare/inti/backend/login"
 	"nusantarare/inti/backend/menu"
+	"nusantarare/inti/backend/templat"
+	ruteTemplat "nusantarare/inti/backend/templat/rute"
 )
 
 // pilihModulAktif menyaring modul terdaftar menurut MODUL_AKTIF.
@@ -92,7 +95,15 @@ func pilihModulAktif(terdaftar []inti.Modul, namaLama map[string]string, diminta
 // (`ruteDipinjam`). Sesi tanpa menunya 403; tanpa sesi 401, kecuali
 // AUTH_STUB=true (pengembangan, tanpa login). Pemilik rute dikenali dari
 // mux terpisah per modul - nol modul diubah.
-func rakitMux(dasar *inti.Dasar, terdaftar, aktif []inti.Modul, stubPelaku bool, masuk *login.Rute) http.Handler {
+//
+// ⛔ GERBANG TULIS (hak menu LIHAT, keputusan work owner 04-10-2026): `lihat` = modul yang mendaftar akses LIHAT
+// (`daftar.HakLihat`) beserta pola rute yang dibebaskannya. Pemegang menu itu ber-hak LIHAT hanya dilayani GET/HEAD
+// dan pola bebas; tulis lain 403. Modul yang tidak mendaftar tidak tersentuh.
+//
+// `aplikasi` - pemasang rute milik APLIKASI (bukan modul), mis. Template Manager: rutenya tidak melewati gerbang
+// menu modul dan memeriksa aksesnya sendiri.
+func rakitMux(dasar *inti.Dasar, terdaftar, aktif []inti.Modul, stubPelaku bool, masuk *login.Rute,
+	lihat map[string][]string, aplikasi ...func(*http.ServeMux)) http.Handler {
 	bungkus := func(h http.Handler) http.Handler { return h }
 	mux := http.NewServeMux()
 	if masuk != nil {
@@ -102,6 +113,9 @@ func rakitMux(dasar *inti.Dasar, terdaftar, aktif []inti.Modul, stubPelaku bool,
 	mux.HandleFunc("GET /healthz", healthz(dasar))
 	mux.HandleFunc("GET /api/modul-aktif", modulAktif(aktif))
 	mux.HandleFunc("GET /api/menu", ruteMenu(dasar, aktif, stubPelaku))
+	for _, pasang := range aplikasi {
+		pasang(mux)
+	}
 	dipasang := map[string]bool{}
 	var milikAktif []ruteModul
 	for _, m := range aktif {
@@ -131,8 +145,10 @@ func rakitMux(dasar *inti.Dasar, terdaftar, aktif []inti.Modul, stubPelaku bool,
 				}
 			}
 		}
-		if pemilik := pemilikPola(milikAktif, r, pola); pemilik != "" && !izinMenu(w, r, stubPelaku, pemilik, ruteDipinjam[pola]) {
-			return
+		if pemilik := pemilikPola(milikAktif, r, pola); pemilik != "" {
+			if !izinMenu(w, r, stubPelaku, pemilik, ruteDipinjam[pola]) || !izinTulis(w, r, pemilik, pola, lihat) {
+				return
+			}
 		}
 		mux.ServeHTTP(w, r)
 	}))
@@ -197,6 +213,42 @@ func izinMenu(w http.ResponseWriter, r *http.Request, stubPelaku bool, pemilik s
 	return false
 }
 
+// izinTulis menjawab apakah permintaan TULIS ke rute milik `pemilik` boleh lewat bagi akun ber-hak menu LIHAT, atau
+// menulis penolakannya. GET/HEAD, modul yang tidak mendaftar (`lihat`), hak PENUH, dan pola yang dibebaskan modulnya
+// selalu lewat. Superadmin TIDAK dikecualikan (keputusan work owner 05-10-2026 "ikuti B": View only berlaku juga untuk superadmin).
+func izinTulis(w http.ResponseWriter, r *http.Request, pemilik, pola string, lihat map[string][]string) bool {
+	if r.Method == http.MethodGet || r.Method == http.MethodHead {
+		return true
+	}
+	bebas, daftar := lihat[pemilik]
+	if !daftar || menu.BolehUbah(r.Context(), pemilik) {
+		return true
+	}
+	for _, b := range bebas {
+		if b == pola {
+			return true
+		}
+	}
+	galat.Tulis(w, http.StatusForbidden, fmt.Sprintf("akun ini hanya dapat melihat menu %s (View only)", pemilik))
+	return false
+}
+
+// rakitTemplat menyusun Template Manager (keputusan work owner 04-10-2026) dari slot SEMUA modul terdaftar.
+// Slot cacat atau kode ganda MENOLAK menyala - kesalahan modul terlihat saat proses dinyalakan. Tanpa Oracle,
+// berkas bawaan tetap dapat diunduh; unggah menjawab 503.
+func rakitTemplat(dasar *inti.Dasar, slot []templat.Slot, stubPelaku bool) (func(*http.ServeMux), error) {
+	kat, err := templat.NewKatalog(slot)
+	if err != nil {
+		return nil, err
+	}
+	var g templat.Gudang
+	if dasar.PunyaDatabase() {
+		g = templat.NewGudangOracle(dasar.DB())
+	}
+	l := templat.NewLayanan(kat, g)
+	return func(mux *http.ServeMux) { ruteTemplat.Pasang(mux, l, stubPelaku) }, nil
+}
+
 // rakitLogin menyusun rute login dan Kelola User. Tanpa Oracle atau tanpa
 // SESI_RAHASIA keduanya tetap terpasang dan menjawab 503 yang menyebut sebabnya.
 func rakitLogin(dasar *inti.Dasar, cfg config.Config) *login.Rute {
@@ -205,7 +257,8 @@ func rakitLogin(dasar *inti.Dasar, cfg config.Config) *login.Rute {
 	}
 	gudang := login.NewGudangOracle(dasar.DB())
 	l := login.NewLayanan(gudang, []byte(cfg.SesiRahasia))
-	return login.NewRute(l, cfg.SesiCookieAman).DenganKelola(login.NewKelola(gudang, menu.NewPembaca(dasar.DB())))
+	return login.NewRute(l, cfg.SesiCookieAman).DenganKelola(login.NewKelola(gudang, menu.NewPembaca(dasar.DB())).
+		DenganHakLihat(kodeHakLihat(daftar.HakLihat())))
 }
 
 // jawabanModulAktif adalah badan GET /api/modul-aktif.
@@ -306,4 +359,14 @@ func tungguPekerja(tutup context.Context, semua []inti.Pekerja, catat func(strin
 			}
 		}
 	}
+}
+
+// kodeHakLihat - KODE menu modul yang mendaftar akses LIHAT, urut.
+func kodeHakLihat(lihat map[string][]string) []string {
+	kode := make([]string, 0, len(lihat))
+	for k := range lihat {
+		kode = append(kode, k)
+	}
+	sort.Strings(kode)
+	return kode
 }

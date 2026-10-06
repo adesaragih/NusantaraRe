@@ -54,6 +54,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -243,6 +244,10 @@ var KolomUangUnggah = []string{
 // `!@PropertyHasValue` disetel `0`. Kolom yang tidak ada di berkas pun kosong
 // menurut Pega. OQ-PL-12 (GILIRAN-17).
 //
+// ⛔ KECUALI kolom uang yang WAJIB (`kolomUangWajib`, keputusan work owner
+// 03-10-2026): sel kosongnya harus DITOLAK "HARUS ADA", dan mengisinya 0
+// lebih dahulu akan membuat penolakan itu tidak pernah berbunyi.
+//
 // ⚠️ Ini PENAFSIRAN MASUKAN (sel kosong berarti nol), bukan pengisian tabel:
 // ADR-U-0027 tetap berlaku untuk kolom yang memang tidak bernilai.
 func IsiNolUangKosong(baris []BarisUnggah) {
@@ -251,6 +256,9 @@ func IsiNolUangKosong(baris []BarisUnggah) {
 			baris[i].Nilai = map[string]string{}
 		}
 		for _, k := range KolomUangUnggah {
+			if kolomUangWajib[k] {
+				continue
+			}
 			if strings.TrimSpace(baris[i].Nilai[k]) == "" {
 				baris[i].Nilai[k] = "0"
 			}
@@ -258,46 +266,101 @@ func IsiNolUangKosong(baris []BarisUnggah) {
 	}
 }
 
-// kolomUangWajib adalah enam kolom uang yang HARUS ada isinya.
+// ——— Kolom wajib per Type ———
 //
-// `[terverifikasi]` langkah 9 mewajibkan keenamnya per baris, dan masing-
-// masing punya pesannya sendiri. Kolom uang lain divalidasi BENTUKNYA bila
-// terisi, tetapi tidak diwajibkan - persis korpus.
-var kolomUangWajib = map[string]string{
-	"SUM_INSURED":        PesanSumInsured,
-	"CEDING_RETENTION":   PesanCedingRetention,
-	"SUM_REASURED":       PesanSumReasured,
-	"SHARE_NUSANTARA_RE": PesanShareNusantaraRe,
-	"GROSS_PREMIUM":      PesanGrossPremium,
-	"NET_PREMIUM":        PesanNetPremium,
+// ⛔ [keputusan work owner 03-10-2026] Daftar di bawah MENGGANTI kolom wajib
+// `ValidasiUploadPL_act` langkah 9. Yang wajib kini bergantung pada `Type`
+// polis: QR/QP memakai Gross Valuation, TR/TP memakai Retrocession
+// Valuation. Kolom lain BOLEH kosong, tetapi bila terisi bentuknya tetap
+// diperiksa (tanggal dd/mm/yyyy, angka ber-titik, bilangan bulat).
+//
+// ⚠️ PLAN, WPC, CEDING_RETENTION, SUM_REASURED, SHARE_NUSANTARA_RE,
+// GROSS_PREMIUM, dan NET_PREMIUM - dulu wajib - TIDAK lagi wajib. Kolom uang
+// yang kosong tetap diisi 0 (`IsiNolUangKosong`).
+
+// jenisKolomUnggah menentukan pemeriksaan BENTUK satu kolom.
+type jenisKolomUnggah int
+
+const (
+	jenisTeks jenisKolomUnggah = iota
+	jenisTanggal
+	jenisBulat
+	jenisUang
+)
+
+// KolomWajibUnggahan adalah satu kolom wajib beserta pesan dan jenisnya.
+type KolomWajibUnggahan struct {
+	Kolom string
+	Pesan string
+	jenis jenisKolomUnggah
 }
 
-// kolomTanggalWajib adalah kolom tanggal yang harus ada dan berbentuk.
+// PesanEntryAge - karangan layar baru berpola `<KOLOM> HARUS ADA` milik
+// korpus; ENTRY_AGE tidak pernah diwajibkan `ValidasiUploadPL_act`.
+const PesanEntryAge = "ENTRY_AGE HARUS ADA"
+
+// ErrTipeUnggahTakDikenal - Type polis kosong atau di luar QR/QP/TP/TR, jadi
+// kolom wajibnya tidak dapat ditentukan (keputusan work owner 03-10-2026:
+// unggahan DITOLAK, bukan divalidasi dengan aturan tebakan).
+var ErrTipeUnggahTakDikenal = errors.New(
+	"choose the Type (QR, QP, TP or TR) and press Save Data before uploading the CSV")
+
+// kolomUangWajib - kolom uang yang wajib di SEMUA Type; dikecualikan dari
+// `IsiNolUangKosong`.
+var kolomUangWajib = map[string]bool{"SUM_INSURED": true}
+
+// KolomWajibPerTipe mengembalikan kolom wajib unggahan untuk satu Type, urut
+// seperti daftar work owner.
+func KolomWajibPerTipe(tipe string) ([]KolomWajibUnggahan, error) {
+	var valuasi []KolomWajibUnggahan
+	switch strings.TrimSpace(tipe) {
+	case "QR", "QP":
+		valuasi = []KolomWajibUnggahan{
+			{"GROSS_VALUATION_BEGIN_DATE", PesanGrossValMulai, jenisTanggal},
+			{"GROSS_VALUATION_EXPIRED_DATE", PesanGrossValSelesai, jenisTanggal},
+		}
+	case "TR", "TP":
+		valuasi = []KolomWajibUnggahan{
+			{"RETROCESSION_VALUATION_BEGIN_DATE", PesanRetroValMulai, jenisTanggal},
+			{"RETROCESSION_VALUATION_EXPIRED_DATE", PesanRetroValSelesai, jenisTanggal},
+		}
+	default:
+		if strings.TrimSpace(tipe) == "" {
+			return nil, ErrTipeUnggahTakDikenal
+		}
+		return nil, fmt.Errorf("%w (Type %q)", ErrTipeUnggahTakDikenal, tipe)
+	}
+	k := []KolomWajibUnggahan{
+		{"POLICY_NO", PesanPolicyNo, jenisTeks},
+		{"CERTIFICATE_NO", PesanCertificateNo, jenisTeks},
+		{"NAME_OF_INSURED", PesanNamaTertanggung, jenisTeks},
+		{"DOB", PesanDOB, jenisTanggal},
+		{"ENTRY_AGE", PesanEntryAge, jenisBulat},
+		{"BEGIN_DATE", PesanBeginDate, jenisTanggal},
+		{"EXPIRED_DATE", PesanExpiredDate, jenisTanggal},
+	}
+	k = append(k, valuasi...)
+	return append(k, []KolomWajibUnggahan{
+		{"CURRENCY", PesanCurrency, jenisTeks},
+		{"SUM_INSURED", PesanSumInsured, jenisUang},
+	}...), nil
+}
+
+// kolomTanggalUnggah - SELURUH kolom tanggal unggahan. Yang tidak wajib bagi
+// Type-nya tetap diperiksa BENTUKNYA bila terisi.
 //
 // `[terverifikasi]` langkah 9: tiap kolom punya sepasang precondition -
 // `@PropertyHasValue(.X)` lalu `@toDate(.X)!=0`.
-var kolomTanggalWajib = []struct{ Kolom, Pesan string }{
+var kolomTanggalUnggah = []struct{ Kolom, Pesan string }{
 	{"DOB", PesanDOB},
 	{"BEGIN_DATE", PesanBeginDate},
 	{"EXPIRED_DATE", PesanExpiredDate},
-	{"WPC", PesanWPC},
-	{"GROSS_VALUATION_BEGIN_DATE", PesanGrossValMulai},
-	{"GROSS_VALUATION_EXPIRED_DATE", PesanGrossValSelesai},
-}
-
-// kolomTanggalOpsional adalah kolom tanggal yang BOLEH tidak ada.
-//
-// ⛔ [keputusan work owner 02-10-2026] Format unggah ceding yang dipakai
-// sekarang tidak memuat empat di antaranya, dan STNC boleh kosong -
-// padahal `ValidasiUploadPL_act` langkah 9 mewajibkan kelimanya.
-// Kolom yang ADA tetap diperiksa bentuknya dan disimpan; kolom yang tidak
-// ada atau kosong disimpan NULL - TIDAK diisi dari kolom lain, karena tanggal
-// karangan lebih buruk daripada tanggal kosong.
-var kolomTanggalOpsional = []struct{ Kolom, Pesan string }{
-	// STNC tidak wajib sejak 02-10-2026 (keputusan work owner).
 	{"STNC", PesanSTNC},
+	{"WPC", PesanWPC},
 	{"START_DATE", PesanStartDate},
 	{"EFFECTIVE_DATE", PesanEffectiveDate},
+	{"GROSS_VALUATION_BEGIN_DATE", PesanGrossValMulai},
+	{"GROSS_VALUATION_EXPIRED_DATE", PesanGrossValSelesai},
 	{"RETROCESSION_VALUATION_BEGIN_DATE", PesanRetroValMulai},
 	{"RETROCESSION_VALUATION_EXPIRED_DATE", PesanRetroValSelesai},
 }
@@ -343,20 +406,11 @@ func DesimalKomaKeTitik(teks string) string {
 // NormalisasiDesimalKoma menerapkan `DesimalKomaKeTitik` pada setiap kolom
 // uang satu baris. Hanya untuk berkas berpemisah `;`.
 func NormalisasiDesimalKoma(nilai map[string]string) {
-	for _, k := range KolomUangUnggah {
+	for _, k := range KolomUangTersimpan() {
 		if v, ada := nilai[k]; ada {
 			nilai[k] = DesimalKomaKeTitik(v)
 		}
 	}
-}
-
-// kolomTeksWajib adalah kolom teks yang harus ada isinya.
-var kolomTeksWajib = []struct{ Kolom, Pesan string }{
-	{"CERTIFICATE_NO", PesanCertificateNo},
-	{"NAME_OF_INSURED", PesanNamaTertanggung},
-	{"PLAN", PesanPlan},
-	{"CURRENCY", PesanCurrency},
-	{"POLICY_NO", PesanPolicyNo},
 }
 
 // BarisUnggah adalah satu baris CSV, apa adanya.
@@ -415,97 +469,133 @@ func (h HasilUnggah) BarisDitolak() []int {
 	return keluar
 }
 
-// ValidasiUnggah memeriksa seluruh baris dan mengumpulkan setiap penolakan.
+// ValidasiUnggah memeriksa seluruh baris dan mengumpulkan setiap penolakan,
+// dengan kolom wajib milik `tipe` (`KolomWajibPerTipe`).
 //
 // ⛔ SELURUH BARIS DIPERIKSA, bahkan sesudah satu ditolak - lihat
 // `HasilUnggah.Ditolak`.
-func ValidasiUnggah(baris []BarisUnggah) HasilUnggah {
+func ValidasiUnggah(tipe string, baris []BarisUnggah) (HasilUnggah, error) {
+	wajib, err := KolomWajibPerTipe(tipe)
+	if err != nil {
+		return HasilUnggah{}, err
+	}
 	hasil := HasilUnggah{CacahBaris: len(baris), Ditolak: []Penolakan{}}
+	hitungQR := HitungPesertaPerTipe(tipe)
 	tolak := func(b int, kolom, pesan, sebab string) {
 		hasil.Ditolak = append(hasil.Ditolak, Penolakan{
 			Baris: b, Kolom: kolom, Pesan: pesan, Sebab: sebab})
 	}
-
-	for _, b := range baris {
-		ambil := func(k string) string { return strings.TrimSpace(b.Nilai[k]) }
-
-		for _, w := range kolomTeksWajib {
-			if ambil(w.Kolom) == "" {
-				tolak(b.Nomor, w.Kolom, w.Pesan, "kolom kosong")
-			}
-		}
-
-		for _, w := range kolomTanggalWajib {
-			v := ambil(w.Kolom)
-			if v == "" {
-				tolak(b.Nomor, w.Kolom, w.Pesan, "kolom kosong")
-				continue
-			}
+	// periksaBentuk menolak nilai TERISI yang bentuknya salah.
+	periksaBentuk := func(b int, kolom, pesan string, jenis jenisKolomUnggah, v string) {
+		switch jenis {
+		case jenisTanggal:
 			if _, err := TanggalCSV(v); err != nil {
-				tolak(b.Nomor, w.Kolom, w.Pesan,
-					fmt.Sprintf("%q bukan dd/mm/yyyy", v))
+				tolak(b, kolom, pesan, fmt.Sprintf("%q bukan dd/mm/yyyy", v))
 			}
-		}
-
-		// Tanggal opsional: kosong diterima, terisi tetap harus berbentuk.
-		for _, w := range kolomTanggalOpsional {
-			v := ambil(w.Kolom)
-			if v == "" {
-				continue
+		case jenisBulat:
+			if !polaBulat.MatchString(v) {
+				tolak(b, kolom, pesan, fmt.Sprintf("%q bukan bilangan bulat", v))
 			}
-			if _, err := TanggalCSV(v); err != nil {
-				tolak(b.Nomor, w.Kolom, w.Pesan,
-					fmt.Sprintf("%q bukan dd/mm/yyyy", v))
-			}
-		}
-
-		// ⛔ SETIAP kolom uang diperiksa BENTUKNYA bila terisi; keenam yang
-		// wajib juga diperiksa KEBERADAANNYA. Korpus menyatakan aturan titik
-		// enam kali dan menegakkannya sekali - lihat `ErrUangBerkoma`.
-		for _, k := range KolomUangUnggah {
-			v := ambil(k)
-			pesan, wajib := kolomUangWajib[k]
-			if v == "" {
-				if wajib {
-					tolak(b.Nomor, k, pesan, "kolom kosong")
-				}
-				continue
-			}
-			if !wajib {
-				pesan = k + " bukan angka yang sah"
-			}
+		case jenisUang:
 			if _, err := UangCSV(v); err != nil {
 				sebab := fmt.Sprintf("%q bukan desimal ber-pemisah titik", v)
 				if errors.Is(err, ErrUangBerkoma) {
 					sebab = fmt.Sprintf("%q memuat koma; pemisah desimal harus "+
 						"titik dan pemisah ribuan tidak diterima", v)
 				}
-				tolak(b.Nomor, k, pesan, sebab)
+				tolak(b, kolom, pesan, sebab)
 			}
 		}
 	}
-	return hasil
+
+	for _, b := range baris {
+		ambil := func(k string) string { return strings.TrimSpace(b.Nilai[k]) }
+		sudah := map[string]bool{}
+
+		// 1. Kolom WAJIB Type ini - kosong ditolak, terisi diperiksa bentuknya.
+		for _, w := range wajib {
+			sudah[w.Kolom] = true
+			v := ambil(w.Kolom)
+			if v == "" {
+				tolak(b.Nomor, w.Kolom, w.Pesan, "kolom kosong")
+				continue
+			}
+			periksaBentuk(b.Nomor, w.Kolom, w.Pesan, w.jenis, v)
+		}
+		// 2. Tanggal lain - hanya bentuknya, bila terisi.
+		for _, t := range kolomTanggalUnggah {
+			if v := ambil(t.Kolom); !sudah[t.Kolom] && v != "" {
+				periksaBentuk(b.Nomor, t.Kolom, t.Pesan, jenisTanggal, v)
+			}
+		}
+		// 3. Uang lain - hanya bentuknya, bila terisi. ⛔ Korpus menyatakan
+		// aturan titik enam kali dan menegakkannya sekali - lihat
+		// `ErrUangBerkoma`.
+		// Type QR: kolom yang DIHITUNG Calculate CSV tidak diperiksa - nilainya
+		// di CSV diabaikan dan ditimpa (keputusan work owner 05-10-2026).
+		for _, k := range KolomUangTersimpan() {
+			if hitungQR && kolomHasilQR[k] {
+				continue
+			}
+			if v := ambil(k); !sudah[k] && v != "" {
+				periksaBentuk(b.Nomor, k, k+" bukan angka yang sah", jenisUang, v)
+			}
+		}
+	}
+	return hasil, nil
 }
 
-// KolomWajibUnggah mengembalikan nama kolom yang HARUS ada di baris judul.
+// polaBulat - bilangan bulat tak bertanda (umur).
+var polaBulat = regexp.MustCompile(`^\d+$`)
+
+// KolomWajibUnggah mengembalikan nama kolom yang HARUS ada di baris judul
+// untuk satu Type.
 //
 // ⛔ Dipakai memeriksa JUDUL, bukan isi. Berkas yang kehilangan satu kolom
 // sama sekali akan menghasilkan satu penolakan "kolom kosong" untuk SETIAP
 // barisnya - seribu kalimat yang mengatakan satu hal. Memeriksanya sekali di
 // judul memberi orang satu kalimat yang benar: kolom ini tidak ada di
 // berkasmu.
-func KolomWajibUnggah() []string {
-	nama := make([]string, 0,
-		len(kolomTeksWajib)+len(kolomTanggalWajib)+len(kolomUangWajib))
-	for _, w := range kolomTeksWajib {
+func KolomWajibUnggah(tipe string) ([]string, error) {
+	wajib, err := KolomWajibPerTipe(tipe)
+	if err != nil {
+		return nil, err
+	}
+	nama := make([]string, 0, len(wajib)+1)
+	for _, w := range wajib {
 		nama = append(nama, w.Kolom)
 	}
-	for _, w := range kolomTanggalWajib {
-		nama = append(nama, w.Kolom)
-	}
-	for k := range kolomUangWajib {
-		nama = append(nama, k)
+	// Type QR: PERIOD_MM wajib ADA DI JUDUL (penentu CONTRACT rate/risk);
+	// isinya diperiksa di tahap hitung, bukan sebagai "HARUS ADA" (keputusan
+	// work owner 05-10-2026).
+	if HitungPesertaPerTipe(tipe) {
+		nama = append(nama, KolomPeriodeQR)
 	}
 	sort.Strings(nama)
-	return nama
+	return nama, nil
+}
+
+// KolomPeriodeQR - kolom judul tambahan yang wajib untuk Type QR.
+const KolomPeriodeQR = "PERIOD_MM"
+
+// KolomUangUnggahTambahan - kolom uang CSV yang IKUT DISIMPAN di luar ke-32
+// kolom `ValidasiUploadPL_act` (keputusan work owner 03-10-2026: summary
+// harus memuat RI Admin Fee dan Deduction dari berkas). Kolomnya sudah ada di
+// migrasi 052 - nol migrasi.
+//
+// ⚠️ TERPISAH dari `KolomUangUnggah`, dengan sengaja: daftar itu tiruan
+// langkah 2 Pega (diisi 0 bila kosong, dijaga uji paritas). Kolom di sini
+// TIDAK diisi 0 - kosong disimpan NULL, dan rekap membacanya sebagai nol.
+//
+// RATE ikut sejak 05-10-2026: Calculate CSV Type QR menghitungnya dan
+// `T_PREMIUM_LIST_DETAIL.RATE` (migrasi 052) harus benar-benar tertulis.
+var KolomUangUnggahTambahan = []string{"DEDUCTION", "RI_ADMIN_FEE", "SUM_AT_RISK_GROSS", "FACTOR", "RATE"}
+
+// KolomUangTersimpan - seluruh kolom uang unggahan yang divalidasi bentuknya,
+// dinormalkan desimal komanya, dan disimpan: `KolomUangUnggah` lalu
+// `KolomUangUnggahTambahan`.
+func KolomUangTersimpan() []string {
+	k := make([]string, 0, len(KolomUangUnggah)+len(KolomUangUnggahTambahan))
+	k = append(k, KolomUangUnggah...)
+	return append(k, KolomUangUnggahTambahan...)
 }

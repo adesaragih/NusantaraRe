@@ -1,0 +1,9 @@
+-- Jalur mundur 198 - spreading kasus FIRE: daftar spreading, kolom TSI / premi Nusantara Re, dan % Share RNM ikut hilang.
+DROP SEQUENCE {skema}.SEQ_T_SPREADINGLIST
+/
+DROP TABLE {skema}.T_SPREADINGLIST CASCADE CONSTRAINTS
+/
+ALTER TABLE {skema}.T_COVERAGELIST DROP (TSI_NUSANTARA_RE, PREMI_NUSANTARA_RE)
+/
+ALTER TABLE {skema}.T_GENERAL_POLIS DROP (PERCENT_SHARE)
+/

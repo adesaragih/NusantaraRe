@@ -1,6 +1,28 @@
 import { describe, expect, it } from 'vitest'
 
-import { badanPremiCargo } from './api'
+import {
+  ambilKasus,
+  ambilObjek,
+  badanPremiCargo,
+  buatOpportunity,
+  cariAccount,
+  cariCoverage,
+  cariOccupation,
+  coverageOtomatis,
+  hitungCoverage,
+  cariRiskAddress,
+  cariSOB,
+  cariTableOfLimit,
+  cariZipCode,
+  daftarCaseNB,
+  daftarClassOfBusiness,
+  daftarJenisItem,
+  daftarMataUang,
+  daftarMarketing,
+  simpanGeneral,
+  simpanAlamatBaru,
+  simpanObjek,
+} from './api'
 
 describe('badanPremiCargo', () => {
   it('angka tetap teks, lini MARINE CARGO, bukan master policy', () => {
@@ -14,5 +36,296 @@ describe('badanPremiCargo', () => {
     // 0.1 + 0.2 di float = 0.30000000000000004; teks harus utuh.
     expect(badanPremiCargo({ mataUang: 'IDR', rate: '0.30', tsi: '0000123' }).rate).toBe('0.30')
     expect(badanPremiCargo({ mataUang: 'IDR', rate: '1', tsi: '0000123' }).tsi).toBe('0000123')
+  })
+})
+
+describe('cariAccount (tiket 26 C-8 / tiket 27)', () => {
+  it('GET /api/nbfacin/account dengan cari (dipangkas) dan halaman', async () => {
+    const asli = globalThis.fetch
+    let url = ''
+    let metode = ''
+    globalThis.fetch = (async (u: RequestInfo | URL, init?: RequestInit) => {
+      url = String(u)
+      metode = init?.method ?? ''
+      return new Response(JSON.stringify({ baris: [], total: 0, halaman: 2, ukuran: 20 }), { status: 200 })
+    }) as typeof fetch
+    try {
+      const h = await cariAccount('  UJI a  ', 2)
+      expect(metode).toBe('GET')
+      expect(url).toMatch(/\/api\/nbfacin\/account\?/)
+      const q = new URL(url, 'http://x').searchParams
+      expect(q.get('cari')).toBe('UJI a')
+      expect(q.get('halaman')).toBe('2')
+      expect(h).toEqual({ baris: [], total: 0, halaman: 2, ukuran: 20 })
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('daftarClassOfBusiness (tiket 26 C-11 / tiket 28)', () => {
+  it('GET /api/nbfacin/class-of-business dengan groupBusinessId', async () => {
+    const asli = globalThis.fetch
+    let url = ''
+    globalThis.fetch = (async (u: RequestInfo | URL) => {
+      url = String(u)
+      return new Response(JSON.stringify({ baris: [{ id: 'UJI-1', note: 'UJI COB' }] }), { status: 200 })
+    }) as typeof fetch
+    try {
+      const h = await daftarClassOfBusiness('UJI-GRUP')
+      expect(url).toMatch(/\/api\/nbfacin\/class-of-business\?/)
+      expect(new URL(url, 'http://x').searchParams.get('groupBusinessId')).toBe('UJI-GRUP')
+      expect(h.baris).toEqual([{ id: 'UJI-1', note: 'UJI COB' }])
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('buatOpportunity (tiket 29)', () => {
+  it('POST /api/nbfacin/opportunity dengan isian apa adanya, jawaban caseId', async () => {
+    const asli = globalThis.fetch
+    let url = ''
+    let metode = ''
+    let badan = ''
+    globalThis.fetch = (async (u: RequestInfo | URL, init?: RequestInit) => {
+      url = String(u)
+      metode = init?.method ?? ''
+      badan = String(init?.body ?? '')
+      return new Response(JSON.stringify({ caseId: 'NB-1' }), { status: 201 })
+    }) as typeof fetch
+    const isian = {
+      estimatedClosingDate: '10-03-2026', businessProspectName: 'UJI', accountId: 'UJI-A', insuredId: 'UJI-I',
+      groupBusinessId: 'UJI-G', groupBusiness: 'UJI GRUP', classOfBusiness: 'UJI COB', typeOfInward: 'Facultative',
+      typeOfFacultative: 'Facultative In', phase: 'Proposal', stage: 'Opportunity', opportunitySource: '',
+      businessStatus: 'New Business', description: '',
+    }
+    try {
+      const h = await buatOpportunity(isian)
+      expect(metode).toBe('POST')
+      expect(url).toMatch(/\/api\/nbfacin\/opportunity$/)
+      expect(JSON.parse(badan)).toEqual(isian)
+      expect(h).toEqual({ caseId: 'NB-1' })
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('kasus NB - baca, simpan General, marketing officer (tiket 31)', () => {
+  it('rute dan metode sesuai kontrak; caseId di-encode', async () => {
+    const asli = globalThis.fetch
+    const panggil: { url: string; metode: string; badan: string }[] = []
+    globalThis.fetch = (async (u: RequestInfo | URL, init?: RequestInit) => {
+      panggil.push({ url: String(u), metode: init?.method ?? '', badan: String(init?.body ?? '') })
+      return new Response(JSON.stringify({ baris: [] }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await ambilKasus('NB-1')
+      await simpanGeneral('NB-1', {
+        reffNumber: 'UJI', qqName: '', beginDate: '01-10-2026', offeringDate: '03-10-2026', endDate: '',
+        policyType: '', marketingId: 'UJI-M', day: '', typeFacultative: 'Facultative In', sourceOfBusinessId: 'UJI-S', cedingIds: ['UJI-C1', 'UJI-C2'],
+      })
+      await daftarMarketing()
+      expect(panggil.map((p) => [p.metode, p.url.replace(/^.*(\/api\/)/, '$1')])).toEqual([
+        ['GET', '/api/nbfacin/kasus/NB-1'],
+        ['PUT', '/api/nbfacin/kasus/NB-1/general'],
+        ['GET', '/api/nbfacin/marketing-officer'],
+      ])
+      expect(JSON.parse(panggil[1]!.badan).marketingId).toBe('UJI-M')
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('daftarCaseNB (tiket 32)', () => {
+  it('GET /api/nbfacin/opportunity dengan cari (dipangkas) dan halaman', async () => {
+    const asli = globalThis.fetch
+    let url = ''
+    globalThis.fetch = (async (u: RequestInfo | URL) => {
+      url = String(u)
+      return new Response(JSON.stringify({ baris: [], total: 0, halaman: 1, ukuran: 15 }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await daftarCaseNB('  NB-1  ', 1)
+      expect(url).toMatch(/\/api\/nbfacin\/opportunity\?/)
+      const q = new URL(url, 'http://x').searchParams
+      expect(q.get('cari')).toBe('NB-1')
+      expect(q.get('halaman')).toBe('1')
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('cariSOB (tiket 33)', () => {
+  it('GET /api/nbfacin/sob dengan cari (dipangkas) dan halaman', async () => {
+    const asli = globalThis.fetch
+    let url = ''
+    globalThis.fetch = (async (u: RequestInfo | URL) => {
+      url = String(u)
+      return new Response(JSON.stringify({ baris: [], total: 0, halaman: 2, ukuran: 20 }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await cariSOB('  uji  ', 2)
+      expect(url).toMatch(/\/api\/nbfacin\/sob\?/)
+      const q = new URL(url, 'http://x').searchParams
+      expect(q.get('cari')).toBe('uji')
+      expect(q.get('halaman')).toBe('2')
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('tab Object (tiket 35)', () => {
+  it('GET dan PUT /api/nbfacin/kasus/{caseId}/objek; PUT membawa { baris }', async () => {
+    const asli = globalThis.fetch
+    const panggil: { url: string; metode: string; badan: string }[] = []
+    globalThis.fetch = (async (u: RequestInfo | URL, init?: RequestInit) => {
+      panggil.push({ url: String(u), metode: init?.method ?? '', badan: String(init?.body ?? '') })
+      return new Response(JSON.stringify({ baris: [] }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await ambilObjek('NB-1')
+      await simpanObjek('NB-1', [])
+      expect(panggil.map((p) => [p.metode, p.url.replace(/^.*(\/api\/)/, '$1')])).toEqual([
+        ['GET', '/api/nbfacin/kasus/NB-1/objek'],
+        ['PUT', '/api/nbfacin/kasus/NB-1/objek'],
+      ])
+      expect(JSON.parse(panggil[1]!.badan)).toEqual({ baris: [] })
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('cariRiskAddress (tiket 36)', () => {
+  it('GET /api/nbfacin/risk-address hanya membawa saringan terisi (dipangkas) + halaman', async () => {
+    const asli = globalThis.fetch
+    let url = ''
+    globalThis.fetch = (async (u: RequestInfo | URL) => {
+      url = String(u)
+      return new Response(JSON.stringify({ baris: [], total: 0, halaman: 1, ukuran: 10 }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await cariRiskAddress({ address: '', zipCode: ' 99999 ', country: '', province: '', city: 'uji', district: '', territory: '' }, 2)
+      expect(url).toMatch(/\/api\/nbfacin\/risk-address\?/)
+      const q = new URL(url, 'http://x').searchParams
+      expect([...q.keys()].sort()).toEqual(['city', 'halaman', 'zipCode'])
+      expect(q.get('zipCode')).toBe('99999')
+      expect(q.get('halaman')).toBe('2')
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('popup Add alamat risiko (tiket 37)', () => {
+  it('GET /api/nbfacin/rw?zipCode= dan POST /api/nbfacin/risk-address membawa isian utuh', async () => {
+    const asli = globalThis.fetch
+    const panggil: { url: string; metode: string; badan: string }[] = []
+    globalThis.fetch = (async (u: RequestInfo | URL, init?: RequestInit) => {
+      panggil.push({ url: String(u), metode: init?.method ?? '', badan: String(init?.body ?? '') })
+      return new Response(JSON.stringify({ baris: [], id: 'UJI-1' }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await cariZipCode(' 999 ')
+      const a = {
+        nationName: 'N', provinceName: 'P', districtName: 'D', cityName: 'C', territoryName: 'T', title: 'DESA',
+        address: 'A', postalCode: '99999',
+      }
+      await simpanAlamatBaru(a)
+      expect(panggil[0]!.metode).toBe('GET')
+      expect(new URL(panggil[0]!.url, 'http://x').pathname).toMatch(/\/api\/nbfacin\/rw$/)
+      expect(new URL(panggil[0]!.url, 'http://x').searchParams.get('zipCode')).toBe('999')
+      expect([panggil[1]!.metode, panggil[1]!.url.replace(/^.*(\/api\/)/, '$1')]).toEqual(['POST', '/api/nbfacin/risk-address'])
+      expect(JSON.parse(panggil[1]!.badan)).toEqual(a)
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('cariOccupation (tiket 38)', () => {
+  it('GET /api/nbfacin/occupation?cari= dipangkas', async () => {
+    const asli = globalThis.fetch
+    let url = ''
+    globalThis.fetch = (async (u: RequestInfo | URL) => {
+      url = String(u)
+      return new Response(JSON.stringify({ baris: [] }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await cariOccupation('  uji  ')
+      expect(new URL(url, 'http://x').pathname).toMatch(/\/api\/nbfacin\/occupation$/)
+      expect(new URL(url, 'http://x').searchParams.get('cari')).toBe('uji')
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('pilihan Object Item (tiket 39)', () => {
+  it('GET /api/nbfacin/jenis-item-objek dan /api/nbfacin/mata-uang', async () => {
+    const asli = globalThis.fetch
+    const url: string[] = []
+    globalThis.fetch = (async (u: RequestInfo | URL) => {
+      url.push(new URL(String(u), 'http://x').pathname)
+      return new Response(JSON.stringify({ baris: [] }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await daftarJenisItem()
+      await daftarMataUang()
+      expect(url).toEqual(['/api/nbfacin/jenis-item-objek', '/api/nbfacin/mata-uang'])
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('cariTableOfLimit (tiket 40)', () => {
+  it('GET /api/nbfacin/kasus/{caseId}/table-of-limit?category=', async () => {
+    const asli = globalThis.fetch
+    let url = ''
+    globalThis.fetch = (async (u: RequestInfo | URL) => {
+      url = String(u)
+      return new Response(JSON.stringify({ baris: [] }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await cariTableOfLimit('NB-1', 'III')
+      const u = new URL(url, 'http://x')
+      expect(u.pathname).toBe('/api/nbfacin/kasus/NB-1/table-of-limit')
+      expect(u.searchParams.get('category')).toBe('III')
+    } finally {
+      globalThis.fetch = asli
+    }
+  })
+})
+
+describe('tab Coverage (tiket 43)', () => {
+  it('GET coverage?cari=, GET coverage-otomatis, POST kasus/{id}/hitung-coverage', async () => {
+    const asli = globalThis.fetch
+    const panggil: { url: string; metode: string; badan: string }[] = []
+    globalThis.fetch = (async (u: RequestInfo | URL, init?: RequestInit) => {
+      panggil.push({ url: String(u), metode: init?.method ?? 'GET', badan: String(init?.body ?? '') })
+      return new Response(JSON.stringify({ baris: [] }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await cariCoverage(' api ')
+      await coverageOtomatis()
+      const c = { coverage: 'UJI', rate: '1.5' } as never
+      await hitungCoverage('NB-1', { coverage: c, tsi: '1000', mode: 'percent' })
+      const u = panggil.map((p) => [p.metode, new URL(p.url, 'http://x').pathname])
+      expect(u).toEqual([
+        ['GET', '/api/nbfacin/coverage'],
+        ['GET', '/api/nbfacin/coverage-otomatis'],
+        ['POST', '/api/nbfacin/kasus/NB-1/hitung-coverage'],
+      ])
+      expect(new URL(panggil[0]!.url, 'http://x').searchParams.get('cari')).toBe('api')
+      expect(JSON.parse(panggil[2]!.badan)).toEqual({ coverage: { coverage: 'UJI', rate: '1.5' }, tsi: '1000', mode: 'percent' })
+    } finally {
+      globalThis.fetch = asli
+    }
   })
 })

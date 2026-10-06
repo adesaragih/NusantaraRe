@@ -362,3 +362,136 @@ func (r *SummaryPolis) SumberWarisan(ctx context.Context, tx *db.Tx, polisID str
 	}
 	return keluar, nil
 }
+
+// ——— Rekap tersimpan: dihitung saat Save, dipakai saat Confirm ———
+//
+// ⛔ [keputusan work owner 03-10-2026] Rekap dihitung dan disimpan SEBELUM
+// Confirm - setiap Save Data dan setiap simpan peserta CSV - lalu Confirm
+// HANYA memakai yang tersimpan (penomoran, salinan warisan, penutupan kasus).
+
+// HapusRekap membuang rekap tersimpan satu polis - dipakai bila rekapnya
+// tidak lagi dapat dihitung (peserta habis, Type belum diisi), supaya rekap
+// lama yang sudah usang tidak tertinggal untuk dipakai Confirm.
+//
+// Mengembalikan cacah baris terhapus; NOL bukan galat.
+func (r *SummaryPolis) HapusRekap(ctx context.Context, tx *db.Tx, polisID string) (int, error) {
+	summary, err := r.db.Qualify("T_PREMIUM_LIST_SUMMARY")
+	if err != nil {
+		return 0, err
+	}
+	q := sqlHapusRekap(summary)
+	if err := db.PeriksaSQL(q); err != nil {
+		return 0, err
+	}
+	hasil, err := tx.ExecContext(ctx, q, polisID)
+	if err != nil {
+		return 0, fmt.Errorf("repository: menghapus rekap: %w", err)
+	}
+	n, err := hasil.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("repository: membaca cacah rekap terhapus: %w", err)
+	}
+	return int(n), nil
+}
+
+// sqlBacaRekap merakit pembacaan rekap tersimpan satu polis, urut mata uang.
+//
+// ⛔ Setiap kolom uang lewat `TM9` - teks desimal, nol float (ADR-U-0003).
+func sqlBacaRekap(summary string) string {
+	kolom := []string{"CURRENCY"}
+	for _, k := range append([]string{"BALANCE", "PREMIUM", "COMMISSION"}, models.KolomJumlahSummary...) {
+		kolom = append(kolom, fmt.Sprintf(db.FmtDesimal, k))
+	}
+	return fmt.Sprintf(`SELECT %s FROM %s WHERE PREMIUM_LIST_ID = :1 ORDER BY CURRENCY`,
+		strings.Join(kolom, ", "), summary)
+}
+
+// BacaRekap membaca rekap tersimpan satu polis. Kosong (nil) bila belum ada.
+//
+// ⚠️ `CacahBaris` tidak tersimpan di tabelnya, jadi bernilai nol di sini.
+func (r *SummaryPolis) BacaRekap(ctx context.Context, tx *db.Tx, polisID string) (
+	[]models.RekapMataUang, error) {
+
+	summary, err := r.db.Qualify("T_PREMIUM_LIST_SUMMARY")
+	if err != nil {
+		return nil, err
+	}
+	q := sqlBacaRekap(summary)
+	if err := db.PeriksaSQL(q); err != nil {
+		return nil, err
+	}
+	baris, err := tx.QueryContext(ctx, q, polisID)
+	if err != nil {
+		return nil, fmt.Errorf("repository: membaca rekap: %w", err)
+	}
+	defer baris.Close()
+
+	uang := append([]string{"BALANCE", "PREMIUM", "COMMISSION"}, models.KolomJumlahSummary...)
+	var keluar []models.RekapMataUang
+	for baris.Next() {
+		n := make([]sql.NullString, 1+len(uang))
+		tujuan := make([]any, len(n))
+		for i := range n {
+			tujuan[i] = &n[i]
+		}
+		if err := baris.Scan(tujuan...); err != nil {
+			return nil, fmt.Errorf("repository: memindai rekap: %w", err)
+		}
+		rk := models.RekapMataUang{Currency: n[0].String, Jumlah: map[string]*apd.Decimal{}}
+		for i, k := range uang {
+			v, err := desimalAtauNil(n[i+1], k)
+			if err != nil {
+				return nil, err
+			}
+			switch k {
+			case "BALANCE":
+				rk.Balance = v
+			case "PREMIUM":
+				rk.Premium = v
+			case "COMMISSION":
+				rk.Commission = v
+			default:
+				rk.Jumlah[k] = v
+			}
+		}
+		keluar = append(keluar, rk)
+	}
+	if err := baris.Err(); err != nil {
+		return nil, fmt.Errorf("repository: membaca rekap: %w", err)
+	}
+	return keluar, nil
+}
+
+// sqlTulisNomorRekap mengisi PL_NUMBER seluruh baris rekap satu polis.
+func sqlTulisNomorRekap(summary string) string {
+	return fmt.Sprintf(`UPDATE %s SET PL_NUMBER = :1 WHERE PREMIUM_LIST_ID = :2`, summary)
+}
+
+// TulisNomorRekap menulis nomor PL ke rekap tersimpan polis - saat Confirm,
+// sesudah nomornya terbit, di transaksi yang sama (keputusan work owner
+// 03-10-2026; kolomnya migrasi 064). Rekap dihitung saat Save, ketika nomor
+// belum ada - karena itu kolomnya diisi di sini, bukan di `GantiRekap`.
+//
+// Mengembalikan cacah baris rekap yang tersentuh.
+func (r *SummaryPolis) TulisNomorRekap(ctx context.Context, tx *db.Tx, polisID, nomor string) (int, error) {
+	if strings.TrimSpace(nomor) == "" {
+		return 0, errors.New("repository: menolak menulis PL_NUMBER rekap kosong")
+	}
+	summary, err := r.db.Qualify("T_PREMIUM_LIST_SUMMARY")
+	if err != nil {
+		return 0, err
+	}
+	q := sqlTulisNomorRekap(summary)
+	if err := db.PeriksaSQL(q); err != nil {
+		return 0, err
+	}
+	hasil, err := tx.ExecContext(ctx, q, nomor, polisID)
+	if err != nil {
+		return 0, fmt.Errorf("repository: menulis PL_NUMBER rekap: %w", err)
+	}
+	n, err := hasil.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("repository: membaca cacah rekap bernomor: %w", err)
+	}
+	return int(n), nil
+}

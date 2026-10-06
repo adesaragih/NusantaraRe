@@ -1,0 +1,3 @@
+-- Jalur mundur 195 - kolom Indemnity Unit dan akumulasi T_COVERAGELIST.
+ALTER TABLE {skema}.T_COVERAGELIST DROP (UNIT, ACCUMULATION_CODE, ACCUMULATION_DESCRIPTION)
+/

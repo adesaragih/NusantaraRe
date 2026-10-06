@@ -116,12 +116,26 @@ describe('badan permintaan', () => {
     expect(isianKosong().wajibGanti).toBe(true)
     expect(badanBaru(isi)).toEqual({
       akunId: 'UJI', nama: 'Uji', sandi: 'Sandi-Uji-01', wajibGanti: true, organisasi: '', divisi: '', unit: '', workbasket: [], menu: ['claimlife'],
+      menuLihat: [],
       // Kontak (Kelola User 03-10-2026): spasi tepi dibuang.
       email: 'uji@nusantara.example', telepon: '0812 3456 7890', nik: 'UJI-001', jabatan: 'Analyst',
     })
     expect(badanBaru({ ...isi, wajibGanti: false }).wajibGanti).toBe(false)
     const ubah = badanUbah(isi)
-    expect(Object.keys(ubah).sort()).toEqual(['divisi', 'email', 'jabatan', 'menu', 'nama', 'nik', 'organisasi', 'telepon', 'unit', 'workbasket'])
+    expect(Object.keys(ubah).sort()).toEqual(['divisi', 'email', 'jabatan', 'menu', 'menuLihat', 'nama', 'nik', 'organisasi', 'telepon', 'unit', 'workbasket'])
+  })
+
+  it('hak View only (migrasi 914): terbaca dari akun, dan menu yang dicabut tidak ikut terkirim', () => {
+    const r = {
+      akunId: 'UJI-K', nama: 'Uji', organisasi: '', divisi: '', unit: '', aktif: true, terkunci: false, wajibGantiSandi: false,
+      loginTerakhir: '', email: '', telepon: '', nik: '', jabatan: '', contactId: 'CON-1009',
+      workbasket: [], menu: ['accounts', 'aggregate'], menuLihat: ['accounts', 'aggregate'],
+    }
+    const isi = isianDari(r)
+    expect(isi.menuLihat).toEqual(['accounts', 'aggregate'])
+    expect(badanUbah({ ...isi, menu: ['aggregate'] }).menuLihat).toEqual(['aggregate'])
+    // Backend lama tanpa medan menuLihat = semua Full.
+    expect(isianDari({ ...r, menuLihat: undefined }).menuLihat).toEqual([])
   })
 
   it('Security saat ubah: dikirim hanya bila password diisi atau centangnya berubah', () => {
@@ -185,8 +199,8 @@ describe('klien /api/admin', () => {
     await ambilDaftarPengguna()
     await ambilPilihanPengguna()
     const kontak = { email: '', telepon: '', nik: '', jabatan: '' }
-    await buatPengguna({ akunId: 'U/1', nama: 'U', sandi: 'Sandi-Uji-01', wajibGanti: true, organisasi: '', divisi: '', unit: '', workbasket: [], menu: [], ...kontak })
-    await ubahPengguna('U/1', { nama: 'U', organisasi: '', divisi: '', unit: '', workbasket: [], menu: [], ...kontak })
+    await buatPengguna({ akunId: 'U/1', nama: 'U', sandi: 'Sandi-Uji-01', wajibGanti: true, organisasi: '', divisi: '', unit: '', workbasket: [], menu: [], menuLihat: [], ...kontak })
+    await ubahPengguna('U/1', { nama: 'U', organisasi: '', divisi: '', unit: '', workbasket: [], menu: [], menuLihat: [], ...kontak })
     await setelAktifPengguna('U/1', false)
     await bukaKunciPengguna('U/1')
     await aturSandiPengguna('U/1', { sandi: '', wajibGanti: true })

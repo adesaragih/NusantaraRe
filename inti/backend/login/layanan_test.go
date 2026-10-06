@@ -16,6 +16,8 @@ type gudangTiruan struct {
 	akun       map[string]*Akun
 	workbasket map[string][]string
 	menu       map[string][]string
+	// menuLihat - menu ber-hak LIHAT per akun (migrasi 914).
+	menuLihat map[string][]string
 	// master organisasi: unit -> divisi, divisi -> organisasi; aktif.
 	unit, divisi     map[string]string
 	organisasi       map[string]bool
@@ -79,6 +81,9 @@ func (g *gudangTiruan) WorkbasketSemua(_ context.Context, id string) ([]string, 
 func (g *gudangTiruan) Menu(_ context.Context, id string) ([]string, error) {
 	return g.menu[id], nil
 }
+func (g *gudangTiruan) MenuLihat(_ context.Context, id string) ([]string, error) {
+	return append([]string{}, g.menuLihat[id]...), nil
+}
 func (g *gudangTiruan) CatatGagal(_ context.Context, id string) error {
 	g.gagal = append(g.gagal, id)
 	return nil
@@ -130,6 +135,7 @@ func (g *gudangTiruan) WorkbasketAktif(_ context.Context, id string) (bool, erro
 func (g *gudangTiruan) BuatAkun(_ context.Context, a AkunBaru, hash string, wajibGanti bool) error {
 	g.dibuat = append(g.dibuat, a)
 	g.workbasket[a.ID], g.menu[a.ID] = a.Workbasket, a.Menu
+	g.aturMenuLihat(a.ID, a.MenuLihat)
 	g.akun[a.ID] = &Akun{ID: a.ID, Nama: a.Nama, HashSandi: hash, Aktif: true, WajibGantiSandi: wajibGanti, VersiSesi: 1}
 	g.tulisKontak(a.ID, a.Kontak)
 	if g.idKontak == nil {
@@ -380,4 +386,11 @@ func TestProfilMembawaMenu(t *testing.T) {
 	if err != nil || p.Menu == nil || len(p.Menu) != 0 {
 		t.Errorf("tanpa menu: %+v %v", p, err)
 	}
+}
+
+func (g *gudangTiruan) aturMenuLihat(id string, lihat []string) {
+	if g.menuLihat == nil {
+		g.menuLihat = map[string][]string{}
+	}
+	g.menuLihat[id] = lihat
 }

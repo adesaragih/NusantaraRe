@@ -31,7 +31,7 @@ func muxGerbang(t *testing.T, stub bool) http.Handler {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return rakitMux(inti.NewDasar(nil), terdaftar, aktif, stub, rakitLogin(inti.NewDasar(nil), config.Config{}))
+	return rakitMux(inti.NewDasar(nil), terdaftar, aktif, stub, rakitLogin(inti.NewDasar(nil), config.Config{}), daftar.HakLihat())
 }
 
 // kodeDengan - kode jawaban satu permintaan GET; `menu` nil = tanpa sesi.
@@ -84,6 +84,30 @@ func TestGerbangMenuModul(t *testing.T) {
 	}
 	if k := kodeDengan(muxGerbang(t, true), "/api/klaim-life", nil); k == http.StatusUnauthorized || k == http.StatusForbidden {
 		t.Errorf("tanpa sesi, stub: %d, mau dilayani", k)
+	}
+}
+
+// Delapan modul master (04-10-2026): satu mesin bersama `inti/backend/master`, tetapi gerbangnya PER MODUL - pemegang
+// menu City memakai rute City (termasuk saran rujukan Province miliknya sendiri), dan rute Province 403. Rute lama
+// `/api/masterdata` sudah tidak ada (404), bukan digerbang.
+func TestGerbangMenuMaster(t *testing.T) {
+	h := muxGerbang(t, false)
+	kota := []string{"mastercity"}
+	for _, j := range []string{"/api/master-city/meta", "/api/master-city/rujukan/provinceId"} {
+		if k := kodeDengan(h, j, kota); k == http.StatusUnauthorized || k == http.StatusForbidden || k == http.StatusNotFound {
+			t.Errorf("%s bagi pemegang City: %d", j, k)
+		}
+	}
+	for _, j := range []string{"/api/master-province", "/api/master-province/meta", "/api/master-nation/meta"} {
+		if k := kodeDengan(h, j, kota); k != http.StatusForbidden {
+			t.Errorf("%s bagi pemegang City: %d, mau 403", j, k)
+		}
+	}
+	if k := kodeDengan(h, "/api/master-province/meta", []string{"masterprovince"}); k != http.StatusOK {
+		t.Errorf("meta Province bagi pemegang Province: %d, mau 200", k)
+	}
+	if k := kodeDengan(h, "/api/masterdata", []string{"masterprovince"}); k != http.StatusNotFound {
+		t.Errorf("/api/masterdata: %d, mau 404", k)
 	}
 }
 

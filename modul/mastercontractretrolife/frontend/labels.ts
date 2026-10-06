@@ -48,6 +48,8 @@ export const TAHUN_MCRL = {
    * huruf kapital di awal kata seperti nama menu ("penulisannya udah jangan capital, ikuti Product Name Life").
    */
   judul: 'Contract Retro Life',
+  /** START DATE sesudah END DATE - BUKAN korpus; keputusan work owner 04-10-2026. Sama dengan server. */
+  tanggalMundur: 'START DATE cannot be later than END DATE.',
   /** `InputRetrocessionLife.xml` b8927 `<pyLabelFieldValue>` - label SEL tombol b8888 (`pyIncludeLabel` true). */
   labelSelAdd: 'End Period',
   /** `InputRetrocessionLife.xml` b9007 `<pyLabel>` - teks tombol b8888 (`NewInputTreatyYear_Life_Act`). */

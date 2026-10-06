@@ -59,5 +59,10 @@ TERTANGKAP P6 POLICY_TSI dicabut
 TERTANGKAP butir 71 penunjuk dibuang diam-diam
 TERTANGKAP butir 72 kolom INDEX_CARGO dicabut
 TERTANGKAP butir 72 penunjuk diurai sebagai angka
+TERTANGKAP butir 76.1 tipe ID kasus salah
+TERTANGKAP butir 76.1 T_GENERAL_POLIS tidak ikut
+TERTANGKAP butir 76.2 LINI dicabut
+TERTANGKAP butir 76.4 POSISI tidak digabung
+TERTANGKAP butir 76.1 asal ID umum mengalahkan
 TERTANGKAP pembaca xlsx menggeser sel kosong
-HASIL: 62/62 tertangkap; berkas asli pulih: ya
+HASIL: 67/67 tertangkap; berkas asli pulih: ya

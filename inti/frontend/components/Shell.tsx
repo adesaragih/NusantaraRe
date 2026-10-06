@@ -5,15 +5,21 @@
 //
 // ⛔ SEJAK 30-09-2026 MENU DARI TABEL `M_NAV_MENU` (brief menu, permintaan work
 // owner): sidebar dan palet dirakit dari `GET /api/menu` - golongan TREATY,
-// FACULTATIVE, KLAIM, MASTER sebagai kepala bagian, lalu SATU TOMBOL PER MODUL
+// FACULTATIVE, KLAIM, MASTER, ... sebagai kepala bagian, lalu SATU TOMBOL PER MODUL
 // - dipotong dengan modul yang terdaftar di `frontend/daftar.ts`
 // (`susunMenu`). Bila `GET /api/menu` gagal, sidebar menampilkan galatnya.
 //
 // ⛔ MENU DATAR — keputusan work owner 30-09-2026
 // (`PROMPT-MENU-DATAR-PER-GROUPMENU.md`): "menu jangan ada model seperti child
-// ... 1 modul 1 menu". Tidak ada kelompok yang dilipat, tidak ada anak, tidak
-// ada panah buka-tutup. Klik tombol modul membuka halaman awalnya
-// (`HALAMAN_AWAL_<X>`); halaman lain modul itu dibuka dari dalamnya.
+// ... 1 modul 1 menu". Tidak ada modul berlipat, tidak ada anak. Klik tombol
+// modul membuka halaman awalnya (`HALAMAN_AWAL_<X>`); halaman lain modul itu
+// dibuka dari dalamnya.
+//
+// ⛔ GOLONGAN DAPAT DIBUKA-TUTUP — permintaan work owner 05-10-2026 ("untuk
+// yang GROUP nya buat bisa buka tutup"): kepala golongan adalah tombol yang
+// menyembunyikan/menampilkan tombol modulnya. Pilihan diingat peramban
+// (`lib/golonganSidebar.ts`); bawaan semua terbuka. Golongan halaman yang
+// sedang tampil dibuka sendiri; panel terciut (ikon) tidak melipat apa pun.
 //
 // ⚠️ Modul yang belum dimigrasi tetap BERDIRI sebagai tombol NONAKTIF
 // (`aria-disabled`, "belum dimigrasi"), tidak disembunyikan. Aplikasi yang
@@ -47,6 +53,12 @@ import {
   type EntriMenu,
   type KeadaanMenuTabel,
 } from '../lib/daftarMenu'
+import {
+  alihkanGolongan,
+  bacaGolonganTertutup,
+  bukaGolongan,
+  simpanGolonganTertutup,
+} from '../lib/golonganSidebar'
 import { singkatanUnik } from '../lib/singkatan'
 import { PagarGalat } from '../PagarGalat'
 import { type Sesi } from '../store/sesi'
@@ -168,6 +180,17 @@ export function Shell<H extends string>({
       )
     }
   }, [tersusun])
+  // Golongan yang ditutup pemakai (05-10-2026) - diingat peramban.
+  const [tertutup, setTertutup] = useState(() => bacaGolonganTertutup())
+  useEffect(() => {
+    simpanGolonganTertutup(tertutup)
+  }, [tertutup])
+  // Halaman yang tampil (mis. dibuka dari palet Ctrl+K) tidak boleh tersembunyi
+  // di golongan tertutup: golongannya dibuka. Pemakai tetap dapat menutupnya lagi.
+  const golonganAktif = tersusun?.golongan.find((g) => g.modul.some((m) => m.halamanModul.includes(halaman as H)))?.kode
+  useEffect(() => {
+    if (golonganAktif !== undefined) setTertutup((t) => bukaGolongan(t, golonganAktif))
+  }, [golonganAktif])
   const lebar = useLayarLebar()
   const { tema, balik: balikTema } = useTema()
   // Tablet (768–1023px) mulai dengan panel terciut, seperti template:
@@ -352,62 +375,86 @@ export function Shell<H extends string>({
                 <p role="status">{KERANGKA.menuKosong}</p>
               </li>
             )}
-            {/* Kepala bagian = GROUPMENU (TREATY, FACULTATIVE, KLAIM, MASTER),
+            {/* Kepala bagian = GROUPMENU (TREATY, FACULTATIVE, KLAIM, MASTER, ...),
                 urutan dari backend; di bawahnya SATU tombol per modul. Modul
-                NONAKTIF (MODUL_AKTIF) tidak dikirim backend (`susunMenu`). */}
-            {tersusun?.golongan.map((g) => (
-              <li key={g.kode} className="shell__golongan">
-                <p className="shell__golongan-judul" aria-hidden="true">
-                  {g.kode}
-                </p>
-                <ul className="shell__daftar" aria-label={g.kode}>
-                  {g.modul.map((m) => {
-                    const aktif = m.halamanModul.includes(halaman as H)
-                    const tujuan = m.halaman
-                    return (
-                      <li key={m.kode}>
-                        {tujuan === null ? (
-                          /* `DIMIGRASI = '0'`: tombol NONAKTIF yang menyebut
-                             sebabnya - tidak disembunyikan, tidak dapat diklik. */
-                          <button
-                            type="button"
-                            className="shell__butir shell__butir--modul shell__butir--nonaktif"
-                            aria-disabled="true"
-                            disabled
-                            title={`${m.label} — ${KETERANGAN_BELUM_DIMIGRASI}`}
-                          >
-                            <span className="kelompok__lencana" aria-hidden="true">
-                              {lencana.get(m.label)}
-                            </span>
-                            <span className="kelompok__teks">
-                              {m.label}
-                              <span className="shell__belum">{KETERANGAN_BELUM_DIMIGRASI}</span>
-                            </span>
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className={`shell__butir shell__butir--modul${aktif ? ' shell__butir--aktif' : ''}`}
-                            aria-current={aktif ? 'page' : undefined}
-                            // Nama modul VERBATIM korpus bisa lebih panjang dari
-                            // panel dan terpotong elipsis — tooltip memuat utuhnya.
-                            title={m.label}
-                            onClick={() => {
-                              pilih(tujuan)
-                            }}
-                          >
-                            <span className="kelompok__lencana" aria-hidden="true">
-                              {lencana.get(m.label)}
-                            </span>
-                            <span className="shell__label">{m.label}</span>
-                          </button>
-                        )}
-                      </li>
-                    )
-                  })}
-                </ul>
-              </li>
-            ))}
+                NONAKTIF (MODUL_AKTIF) tidak dikirim backend (`susunMenu`).
+                Kepala golongan = tombol buka-tutup (05-10-2026). */}
+            {tersusun?.golongan.map((g) => {
+              // Panel terciut (ikon saja): kepala golongan hanya garis pemisah,
+              // tak ada yang dapat diklik - semua tombol modul tetap tampil.
+              const tutup = !terciut && tertutup.has(g.kode)
+              const idDaftar = `shell-golongan-${g.kode.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+              return (
+                <li key={g.kode} className={`shell__golongan${tutup ? ' shell__golongan--tutup' : ''}`}>
+                  {terciut ? (
+                    <p className="shell__golongan-judul" aria-hidden="true">
+                      {g.kode}
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      className="shell__golongan-judul"
+                      aria-expanded={!tutup}
+                      aria-controls={idDaftar}
+                      onClick={() => {
+                        setTertutup((t) => alihkanGolongan(t, g.kode))
+                      }}
+                    >
+                      <span className="shell__golongan-teks">{g.kode}</span>
+                      <span className="shell__golongan-panah" aria-hidden="true">
+                        <IkonChevron ukuran={14} />
+                      </span>
+                    </button>
+                  )}
+                  <ul id={idDaftar} className="shell__daftar" aria-label={g.kode} hidden={tutup}>
+                    {g.modul.map((m) => {
+                      const aktif = m.halamanModul.includes(halaman as H)
+                      const tujuan = m.halaman
+                      return (
+                        <li key={m.kode}>
+                          {tujuan === null ? (
+                            /* `DIMIGRASI = '0'`: tombol NONAKTIF yang menyebut
+                               sebabnya - tidak disembunyikan, tidak dapat diklik. */
+                            <button
+                              type="button"
+                              className="shell__butir shell__butir--modul shell__butir--nonaktif"
+                              aria-disabled="true"
+                              disabled
+                              title={`${m.label} — ${KETERANGAN_BELUM_DIMIGRASI}`}
+                            >
+                              <span className="kelompok__lencana" aria-hidden="true">
+                                {lencana.get(m.label)}
+                              </span>
+                              <span className="kelompok__teks">
+                                {m.label}
+                                <span className="shell__belum">{KETERANGAN_BELUM_DIMIGRASI}</span>
+                              </span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className={`shell__butir shell__butir--modul${aktif ? ' shell__butir--aktif' : ''}`}
+                              aria-current={aktif ? 'page' : undefined}
+                              // Nama modul VERBATIM korpus bisa lebih panjang dari
+                              // panel dan terpotong elipsis — tooltip memuat utuhnya.
+                              title={m.label}
+                              onClick={() => {
+                                pilih(tujuan)
+                              }}
+                            >
+                              <span className="kelompok__lencana" aria-hidden="true">
+                                {lencana.get(m.label)}
+                              </span>
+                              <span className="shell__label">{m.label}</span>
+                            </button>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </li>
+              )
+            })}
           </ul>
         </nav>
       </aside>
