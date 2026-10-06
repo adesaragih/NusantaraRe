@@ -650,29 +650,77 @@
   color: var(--rr-waspada-teks);
 }
 
-/* Form Rate Detail (section InboxRIRate "R/I RATE DETAIL"): judul kecil, radio GENDER sebaris, baris yang sedang
-   di-Edit ditandai. */
+/* Form Rate Detail (section InboxRIRate "R/I RATE DETAIL") - ringkas (permintaan work owner 06-10-2026 "rapikan
+   tampilan detail agar tidak terlalu besar"): satu baris medan rapat, input 32px, tombol kecil sebaris kanan; layar
+   sempit turun ke dua kolom. Baris grid yang sedang di-Edit ditandai. */
+.riratelife .riratelife__form--rapat {
+  gap: 8px;
+  padding: 12px 14px;
+}
+
 .riratelife .riratelife__subjudul {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
 }
 
+.riratelife .riratelife__rincian {
+  display: grid;
+  grid-template-columns: 110px minmax(150px, 1.6fr) auto 84px 84px minmax(110px, 1fr);
+  gap: 10px;
+  align-items: end;
+}
+
+@media (max-width: 860px) {
+  .riratelife .riratelife__rincian {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.riratelife .riratelife__form--rapat .field {
+  gap: 4px;
+  margin: 0;
+}
+
+.riratelife .riratelife__form--rapat .field__label {
+  font-size: 11px;
+}
+
+.riratelife .riratelife__form--rapat .field__input {
+  height: 32px;
+  padding: 0 8px;
+  font-size: 13px;
+}
+
+.riratelife .riratelife__form--rapat .btn {
+  padding: 5px 14px;
+  font-size: 13px;
+}
+
+.riratelife .riratelife__form--rapat .riratelife__aksi {
+  justify-content: flex-end;
+}
+
 .riratelife .riratelife__pilihan {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
   margin: 0;
   padding: 0;
   border: 0;
+  min-width: 0;
+}
+
+.riratelife .riratelife__radio-baris {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
 }
 
 .riratelife .riratelife__radio {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  font-size: 13px;
   cursor: pointer;
 }
 

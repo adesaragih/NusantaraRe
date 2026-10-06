@@ -91,7 +91,7 @@ export default function RateDetail({
     <Modal judul={`${RR.judulDetail} — ${ringkasan.id} ${ringkasan.usedby}`} onTutup={onTutup} labelBatal={RR.tutup} lebar>
       {bolehUbah && (
         <form
-          className="riratelife__kartu riratelife__form"
+          className="riratelife__kartu riratelife__form riratelife__form--rapat"
           onSubmit={(e) => {
             e.preventDefault()
             simpan()
@@ -109,7 +109,7 @@ export default function RateDetail({
               {pesan}
             </div>
           )}
-          <div className="riratelife__baris">
+          <div className="riratelife__rincian">
             <label className="field">
               <span className="field__label">{RR.id}</span>
               <input className="field__input field__input--readonly" value={ubahID} placeholder={RR.idRateOtomatis} readOnly disabled />
@@ -120,17 +120,17 @@ export default function RateDetail({
               </span>
               <input className="field__input field__input--readonly" value={ringkasan.usedby} readOnly disabled />
             </label>
-          </div>
-          <fieldset className="field riratelife__pilihan">
-            <legend className="field__label">{RR.gender}</legend>
-            {GENDER.map((g) => (
-              <label key={g} className="riratelife__radio">
-                <input type="radio" name="riratelife-gender" value={g} checked={isi.gender === g} onChange={isiMedan('gender')} />
-                {g}
-              </label>
-            ))}
-          </fieldset>
-          <div className="riratelife__baris">
+            <fieldset className="field riratelife__pilihan">
+              <legend className="field__label">{RR.gender}</legend>
+              <div className="riratelife__radio-baris">
+                {GENDER.map((g) => (
+                  <label key={g} className="riratelife__radio">
+                    <input type="radio" name="riratelife-gender" value={g} checked={isi.gender === g} onChange={isiMedan('gender')} />
+                    {g}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <label className="field">
               <span className="field__label">
                 {RR.contract} <span aria-hidden="true">*</span>
