@@ -1,7 +1,7 @@
 -- 926 - RATE_LIFE_SUMMARY: tabel FLAT ringkasan R/I Rate Life (modul `riratelife`), menggantikan VIEW warisan bernama
 -- sama. Perintah work owner 06-10-2026: "tabel M_RATE_LIFE_SUMMARY buat jadi flat menampilkan data detail yang ada pada
 -- tabel view RATE_LIFE_SUMMARY". K-F1: view diganti tabel flat bernama sama (pola 924 RICOMM_LIFE); M_RATE_LIFE_SUMMARY
--- (JSON, 339 baris DEV) TIDAK disentuh - cadangan dan sumber alat `modul/riratelife/backend/alat/pindahflat`. K-F2:
+-- (JSON, data DEV masih berubah) TIDAK disentuh - cadangan dan sumber alat `modul/riratelife/backend/alat/pindahflat`. K-F2:
 -- SEMUA enam kolom view ikut (`SELECT a.ID, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.MODIFIEDDATE,
 -- a.JSONDATA.OPERATORID, a.JSONDATA.FLAG FROM M_RATE_LIFE_SUMMARY a`, ALL_VIEWS dibaca WO 06-10-2026), semua teks, isi
 -- apa adanya. Pembaca lain (`mastercontractretrolife`, `masterproductnamelife`: `SELECT ID, USEDBY`) ikut membaca tabel.
