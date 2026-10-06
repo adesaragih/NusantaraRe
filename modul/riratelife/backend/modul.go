@@ -2,9 +2,9 @@
 //
 // Menu "R/I Rate Life" golongan MASTER TREATY (perintah work owner 05-10-2026: "Buat Menu baru Namanya R/I Rate Life
 // pada Master Treaty, menu ini bisa CRUD untuk simpan data ke tabel RATE_LIFE_SUMMARY, panduannya xml yang saya
-// berikan"). K1: tulis ke tabel fisik `M_RATE_LIFE_SUMMARY` (+ `M_RATE_LIFE` lewat Delete dan Upload), view
-// `RATE_LIFE_SUMMARY` / `RATE_LIFE` dibaca; nol DDL pada objek warisan. NOL MIGRASI SENDIRI - baris menunya migrasi
-// inti 922, sequence ID-nya migrasi inti 923 (K2).
+// berikan"). RALAT R4 (keputusan work owner 06-10-2026 K-F1/K-F2): ringkasan dibaca dan ditulis di TABEL FLAT
+// `RATE_LIFE_SUMMARY` (migrasi inti 926, pengganti view); `M_RATE_LIFE_SUMMARY` (JSON) dibaca saja; rincian `M_RATE_LIFE`
+// ditulis, view `RATE_LIFE` dibaca. NOL MIGRASI SENDIRI - menu = migrasi inti 922, sequence ID = 923, tabel flat = 926.
 package backend
 
 import (

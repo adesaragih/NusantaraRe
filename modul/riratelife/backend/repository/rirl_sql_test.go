@@ -40,14 +40,26 @@ func TestSqlDaftar(t *testing.T) {
 	}
 }
 
-// Tulis ke TABEL fisik: sisip JSON_OBJECT; ubah = baca JSONDATA FOR UPDATE lalu tulis utuh (RALAT R3).
+// RALAT R4: ringkasan ditulis ke TABEL FLAT RATE_LIFE_SUMMARY - kolom bernama, nol JSONDATA; TYPE/FLAG tidak ditulis.
+// ID terpakai diperiksa di tabel flat DAN JSON warisan M_RATE_LIFE_SUMMARY.
 func TestSqlTulisRingkasan(t *testing.T) {
-	memuat(t, "sisip", SqlSisipRingkasan("S.M_RATE_LIFE_SUMMARY"),
-		"INSERT INTO S.M_RATE_LIFE_SUMMARY (ID, JSONDATA) VALUES (:1, JSON_OBJECT('USEDBY' VALUE :2, 'OPERATORID' VALUE :3, 'MODIFIEDDATE' VALUE :4 ABSENT ON NULL))")
-	memuat(t, "baca json", SqlBacaJSON("S.M_RATE_LIFE_SUMMARY"), "SELECT JSONDATA FROM S.M_RATE_LIFE_SUMMARY WHERE ID = :1 FOR UPDATE")
+	memuat(t, "sisip", SqlSisipRingkasan("S.RATE_LIFE_SUMMARY"),
+		"INSERT INTO S.RATE_LIFE_SUMMARY (ID, USEDBY, OPERATORID, MODIFIEDDATE) VALUES (:1, :2, :3, :4)")
+	memuat(t, "ubah", SqlUbahRingkasan("S.RATE_LIFE_SUMMARY"),
+		"UPDATE S.RATE_LIFE_SUMMARY SET USEDBY = :1, OPERATORID = :2, MODIFIEDDATE = :3 WHERE ID = :4")
+	memuat(t, "hapus", SqlHapusRingkasan("S.RATE_LIFE_SUMMARY"), "DELETE FROM S.RATE_LIFE_SUMMARY WHERE ID = :1")
+	for _, q := range []string{SqlSisipRingkasan("T"), SqlUbahRingkasan("T"), SqlDaftar("T", "", false), SqlAmbil("T")} {
+		if strings.Contains(q, "JSON") || strings.Contains(q, "TYPE") || strings.Contains(q, "FLAG") {
+			t.Errorf("ringkasan flat memakai JSON/TYPE/FLAG: %s", q)
+		}
+	}
+	memuat(t, "maks ringkasan", SqlMaksIDRingkasan("S.RATE_LIFE_SUMMARY", "S.M_RATE_LIFE_SUMMARY"),
+		"NVL(MAX(TO_NUMBER(REGEXP_SUBSTR(ID, '^[0-9]+$'))), 0)) FROM (SELECT ID FROM S.RATE_LIFE_SUMMARY UNION ALL SELECT ID FROM S.M_RATE_LIFE_SUMMARY)")
+	memuat(t, "ada ringkasan", SqlAdaIDRingkasan("S.RATE_LIFE_SUMMARY", "S.M_RATE_LIFE_SUMMARY"),
+		"SELECT COUNT(*) FROM (SELECT ID FROM S.RATE_LIFE_SUMMARY WHERE ID = :1 UNION ALL SELECT ID FROM S.M_RATE_LIFE_SUMMARY WHERE ID = :2)")
+	memuat(t, "baca json rate", SqlBacaJSON("S.M_RATE_LIFE"), "SELECT JSONDATA FROM S.M_RATE_LIFE WHERE ID = :1 FOR UPDATE")
 	memuat(t, "tulis json", SqlTulisJSON("S.M_RATE_LIFE"), "UPDATE S.M_RATE_LIFE SET JSONDATA = :1 WHERE ID = :2")
 	memuat(t, "rate milik", SqlIDRateMilik("S.RATE_LIFE"), "SELECT ID FROM S.RATE_LIFE WHERE IDUSEDBY = :1")
-	memuat(t, "hapus", SqlHapusRingkasan("S.M_RATE_LIFE_SUMMARY"), "DELETE FROM S.M_RATE_LIFE_SUMMARY WHERE ID = :1")
 	memuat(t, "hapus rate", SqlHapusRate("S.M_RATE_LIFE", "S.RATE_LIFE"),
 		"DELETE FROM S.M_RATE_LIFE WHERE ID IN (SELECT ID FROM S.RATE_LIFE WHERE IDUSEDBY = :1)")
 	memuat(t, "id baru", SqlIDBaru("S.SEQ_M_RATE_LIFE_SUMMARY"), "SELECT TO_CHAR(S.SEQ_M_RATE_LIFE_SUMMARY.NEXTVAL) FROM DUAL")
@@ -66,10 +78,16 @@ func TestSqlRate(t *testing.T) {
 	memuat(t, "kunci", SqlRateDari("S.RATE_LIFE", 3), "WHERE IDUSEDBY IN (:1, :2, :3)")
 }
 
-// Lapis penjaga: view hanya SELECT; tulis hanya ke DaftarTabelDitulis.
+// Lapis penjaga: tulis hanya ke tabel flat RATE_LIFE_SUMMARY dan M_RATE_LIFE; JSON ringkasan warisan dan view rate
+// dibaca saja (K-F1).
 func TestPeriksaTulis(t *testing.T) {
-	if err := PeriksaTulis(ViewRingkasan, "DELETE FROM X.RATE_LIFE_SUMMARY"); !errors.Is(err, ErrBacaSaja) {
-		t.Errorf("view ditulis: %v", err)
+	for _, objek := range DaftarDibacaSaja {
+		if err := PeriksaTulis(objek, "DELETE FROM X"); !errors.Is(err, ErrBacaSaja) {
+			t.Errorf("%s ditulis: %v", objek, err)
+		}
+	}
+	if err := PeriksaTulis(TabelRingkasanJSON, SqlTulisJSON("X.M_RATE_LIFE_SUMMARY")); !errors.Is(err, ErrBacaSaja) {
+		t.Errorf("M_RATE_LIFE_SUMMARY ditulis: %v", err)
 	}
 	if err := PeriksaTulis(TabelRate, SqlTulisJSON("X.M_RATE_LIFE")); err != nil {
 		t.Errorf("ubah rate: %v", err)
@@ -82,7 +100,10 @@ func TestPeriksaTulis(t *testing.T) {
 			t.Errorf("%s: %v", objek, err)
 		}
 	}
-	if len(DaftarTabelDitulis) != 2 || DaftarTabelDitulis[0] != "M_RATE_LIFE_SUMMARY" || DaftarTabelDitulis[1] != "M_RATE_LIFE" {
+	if len(DaftarTabelDitulis) != 2 || DaftarTabelDitulis[0] != "RATE_LIFE_SUMMARY" || DaftarTabelDitulis[1] != "M_RATE_LIFE" {
 		t.Errorf("tabel ditulis %v", DaftarTabelDitulis)
+	}
+	if len(DaftarDibacaSaja) != 2 || DaftarDibacaSaja[0] != "RATE_LIFE" || DaftarDibacaSaja[1] != "M_RATE_LIFE_SUMMARY" {
+		t.Errorf("dibaca saja %v", DaftarDibacaSaja)
 	}
 }

@@ -14,13 +14,13 @@ func TestKolomViewRingkasanEnamKolom(t *testing.T) {
 	}
 }
 
-// Setiap kunci JSON yang ditulis dan setiap kolom yang dibaca ADA di definisi view - nol nama karangan.
+// Setiap kolom ringkasan yang ditulis / dibaca dan kunci JSON rate ADA di definisi view - nol nama karangan.
 // TYPE dan FLAG tidak dirujuk XML InboxSummaryRIRate: tidak ditulis, tidak dibaca.
 func TestKunciDanKolomCocokDenganView(t *testing.T) {
 	ring, rate := KolomViewRingkasan, KolomViewRate
-	for _, k := range []string{JSONUsedBy, JSONOperatorID, JSONModified} {
+	for _, k := range []string{KolomUsedBy, KolomOperatorID, KolomModified} {
 		if !slices.Contains(ring, k) {
-			t.Errorf("kunci ringkasan %s tidak ada di view", k)
+			t.Errorf("kolom tulis ringkasan %s tidak ada di view", k)
 		}
 	}
 	for _, k := range strings.Split(kolomRingkasan, ", ") {

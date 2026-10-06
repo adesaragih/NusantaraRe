@@ -3,43 +3,44 @@
 //
 // Untuk apa berkas ini: nama objek Oracle dan kunci JSON modul ini, ditulis SEKALI.
 //
-// K1 keputusan work owner 05-10-2026: CRUD menulis tabel fisik `M_RATE_LIFE_SUMMARY`; view `RATE_LIFE_SUMMARY` TIDAK
-// di-DROP dan dipakai membaca grid; nol DDL pada tabel/view warisan.
-//
-// RALAT R1 (06-10-2026, MODUL.md): asumsi A1 TERBUKTI - definisi view `RATE_LIFE_SUMMARY` dibaca WO dari ALL_VIEWS
-// (owner POOLDATA) 06-10-2026, lihat `KolomViewRingkasan`. Kunci `USEDBY`, `OPERATORID`, `MODIFIEDDATE` benar; `TYPE`
-// dan `FLAG` ada di view tetapi tidak dirujuk XML `InboxSummaryRIRate` - tidak dibaca dan tidak ditulis.
+// RALAT R4 (06-10-2026, MODUL.md) - menggantikan K1 05-10-2026 ("CRUD menulis M_RATE_LIFE_SUMMARY, view TIDAK
+// di-DROP"): keputusan work owner K-F1/K-F2 06-10-2026 - VIEW `RATE_LIFE_SUMMARY` diganti TABEL FLAT bernama sama
+// (migrasi inti 926, enam kolom view). Ringkasan kini dibaca DAN ditulis di tabel flat itu (kolom bernama);
+// `M_RATE_LIFE_SUMMARY` (JSON) tidak pernah ditulis lagi - cadangan, sumber alat pindahflat, dan pemeriksa ID terpakai.
+// Rincian rate (`M_RATE_LIFE` + view `RATE_LIFE`) TIDAK berubah.
 package repository
 
-// Tabel fisik yang DITULIS (JSON Pega; kunci lain milik Pega dipertahankan, rirl_json.go).
+// Tabel yang DITULIS.
 const (
-	// TabelRingkasan - kelas `ASM-FW-GISFW-Int-RATE_LIFE_SUMMARY` (339 baris DEV).
-	TabelRingkasan = "M_RATE_LIFE_SUMMARY"
+	// TabelRingkasan - TABEL FLAT `RATE_LIFE_SUMMARY` (migrasi inti 926, K-F1), kelas
+	// `ASM-FW-GISFW-Int-RATE_LIFE_SUMMARY`. Kolom = KolomViewRingkasan.
+	TabelRingkasan = "RATE_LIFE_SUMMARY"
 	// TabelRate - kelas `ASM-FW-GISFW-Int-M_RATE_LIFE` (`AddToListSummary_Act` b1833); `ID VARCHAR2(10)`,
 	// `JSONDATA CLOB` (katalog DEV).
 	TabelRate = "M_RATE_LIFE"
-	// KolomJSON - kolom CLOB berisi JSON di kedua tabel.
+	// KolomJSON - kolom CLOB berisi JSON di tabel warisan.
 	KolomJSON = "JSONDATA"
 )
 
-// KolomViewRingkasan - kolom view `RATE_LIFE_SUMMARY` menurut definisinya (ALL_VIEWS, owner POOLDATA, dibaca WO
+// TabelRingkasanJSON - `M_RATE_LIFE_SUMMARY` (JSON warisan, 339 baris DEV): DIBACA saja (K-F1) - sumber alat
+// pindahflat dan pemeriksa ID terpakai (MaksID/AdaID), supaya ID baru tidak bertabrakan dengan ringkasan Pega yang
+// belum / akan dipindah.
+const TabelRingkasanJSON = "M_RATE_LIFE_SUMMARY"
+
+// KolomViewRingkasan - kolom VIEW warisan `RATE_LIFE_SUMMARY` menurut definisinya (ALL_VIEWS, owner POOLDATA, dibaca WO
 // 06-10-2026): `SELECT a.ID, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.MODIFIEDDATE, a.JSONDATA.OPERATORID,
-// a.JSONDATA.FLAG FROM M_RATE_LIFE_SUMMARY a` - semua VARCHAR2; selain ID = kunci `M_RATE_LIFE_SUMMARY.JSONDATA`.
-// Dipakai uji untuk mengikat kunci JSON yang ditulis dan kolom yang dibaca ke definisi itu.
+// a.JSONDATA.FLAG FROM M_RATE_LIFE_SUMMARY a`. Tabel flat 926 memuat PERSIS kolom ini (K-F2); selain ID = kunci
+// `M_RATE_LIFE_SUMMARY.JSONDATA` yang dibaca alat pindah.
 var KolomViewRingkasan = []string{"ID", "USEDBY", "TYPE", "MODIFIEDDATE", "OPERATORID", "FLAG"}
 
 // KolomViewRate - kolom view `RATE_LIFE` (katalog DEV, `modul/claimlife/docs/KATALOG-TABEL-PESERTA-DAN-TREATY.md`);
 // selain ID = kunci `M_RATE_LIFE.JSONDATA`.
 var KolomViewRate = []string{"ID", "IDUSEDBY", "USEDBY", "TYPE", "GENDER", "CONTRACT", "AGE", "RATE"}
 
-// View warisan yang DIBACA (tidak pernah ditulis, tidak di-DROP).
-const (
-	// ViewRingkasan - `RATE_LIFE_SUMMARY` (6 kolom; dibaca juga `mastercontractretrolife`, `masterproductnamelife`).
-	ViewRingkasan = "RATE_LIFE_SUMMARY"
-	// ViewRate - `SELECT a.ID, a.JSONDATA.IDUSEDBY, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.GENDER,
-	// a.JSONDATA.CONTRACT, a.JSONDATA.AGE, a.JSONDATA.RATE FROM M_RATE_LIFE a` (katalog DEV).
-	ViewRate = "RATE_LIFE"
-)
+// ViewRate - view warisan yang DIBACA (tidak pernah ditulis, tidak di-DROP): `SELECT a.ID, a.JSONDATA.IDUSEDBY,
+// a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.GENDER, a.JSONDATA.CONTRACT, a.JSONDATA.AGE, a.JSONDATA.RATE FROM
+// M_RATE_LIFE a` (katalog DEV).
+const ViewRate = "RATE_LIFE"
 
 // Sequence ID baru (K2 keputusan work owner 05-10-2026: dari sequence Oracle) - dibuat migrasi inti 923.
 const (
@@ -47,17 +48,18 @@ const (
 	SeqRate      = "SEQ_M_RATE_LIFE"
 )
 
-// Kunci JSON `M_RATE_LIFE_SUMMARY.JSONDATA` (terbukti, `KolomViewRingkasan`) = kolom view yang dibaca grid XML.
-// `TYPE`, `FLAG` tidak ditulis: tidak ada di XML (RALAT R1).
+// Kolom tabel flat ringkasan yang ditulis modul (XML `InboxSummaryRIRate`). `TYPE` dan `FLAG` TIDAK ditulis (tidak ada
+// di XML, K-F2): baris baru NULL, baris pindahan apa adanya.
 const (
-	JSONUsedBy     = "USEDBY"
-	JSONOperatorID = "OPERATORID"
-	JSONModified   = "MODIFIEDDATE"
+	KolomUsedBy     = "USEDBY"
+	KolomOperatorID = "OPERATORID"
+	KolomModified   = "MODIFIEDDATE"
 )
 
 // Kunci JSON `M_RATE_LIFE.JSONDATA` (terbukti dari definisi view `RATE_LIFE`). `TYPE` tidak ditulis (NULL di
-// seluruh baris DEV).
+// seluruh baris DEV). `USEDBY` = kunci salinan nama.
 const (
+	JSONUsedBy   = "USEDBY"
 	JSONIDUsedBy = "IDUSEDBY"
 	JSONGender   = "GENDER"
 	JSONContract = "CONTRACT"
@@ -65,14 +67,14 @@ const (
 	JSONRate     = "RATE"
 )
 
-// Kolom view yang dibaca (nol `SELECT *`).
+// Kolom yang dibaca (nol `SELECT *`).
 const (
 	kolomRingkasan = `ID, USEDBY, OPERATORID, MODIFIEDDATE`
 	kolomRate      = `ID, IDUSEDBY, USEDBY, GENDER, CONTRACT, AGE, RATE`
 )
 
-// DaftarTabelDitulis - penjaga modul: hanya dua tabel fisik ini yang menerima INSERT/UPDATE/DELETE.
+// DaftarTabelDitulis - penjaga modul: hanya dua tabel ini yang menerima INSERT/UPDATE/DELETE/LOCK.
 var DaftarTabelDitulis = []string{TabelRingkasan, TabelRate}
 
-// DaftarViewDibacaSaja - hanya SELECT.
-var DaftarViewDibacaSaja = []string{ViewRingkasan, ViewRate}
+// DaftarDibacaSaja - hanya SELECT: view rincian dan JSON ringkasan warisan.
+var DaftarDibacaSaja = []string{ViewRate, TabelRingkasanJSON}

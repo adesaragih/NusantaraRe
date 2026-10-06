@@ -1,6 +1,6 @@
 // Package models memuat bentuk data modul R/I Rate Life (`riratelife`) - section Pega `InboxSummaryRIRate` (kelas
 // `ASM-FW-GISFW-Int-RATE_LIFE_SUMMARY`, judul "R/I RATE SUMMARY" b382): ringkasan rate reasuransi life
-// (`M_RATE_LIFE_SUMMARY`, dibaca lewat view `RATE_LIFE_SUMMARY`) dan rincian rate-nya (`M_RATE_LIFE`, view
+// (tabel flat `RATE_LIFE_SUMMARY`, migrasi inti 926 - RALAT R4) dan rincian rate-nya (`M_RATE_LIFE`, view
 // `RATE_LIFE`). Perintah work owner 05-10-2026: "Buat Menu baru Namanya R/I Rate Life pada Master Treaty, menu ini
 // bisa CRUD untuk simpan data ke tabel RATE_LIFE_SUMMARY, panduannya xml yang saya berikan".
 package models

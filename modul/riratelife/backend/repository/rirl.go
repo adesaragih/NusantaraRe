@@ -1,8 +1,9 @@
 package repository
 
-// SQL modul R/I Rate Life. Baca dari view (`RATE_LIFE_SUMMARY`, `RATE_LIFE`); tulis ke tabel fisik
-// (`M_RATE_LIFE_SUMMARY`, `M_RATE_LIFE`): sisip = `JSON_OBJECT`, ubah = baca-ubah-tulis JSONDATA di Go, rirl_json.go (kunci JSON lain milik Pega
-// tetap). Baris `M_RATE_LIFE` milik satu ringkasan dipilih lewat view (`ID IN (SELECT ID FROM RATE_LIFE WHERE
+// SQL modul R/I Rate Life. Ringkasan: TABEL FLAT `RATE_LIFE_SUMMARY` (migrasi inti 926, RALAT R4) - baca dan tulis kolom
+// bernama; `M_RATE_LIFE_SUMMARY` (JSON) hanya dibaca untuk ID terpakai dan alat pindah. Rincian: tulis tabel fisik
+// `M_RATE_LIFE` (sisip = `JSON_OBJECT`, ubah = baca-ubah-tulis JSONDATA di Go, rirl_json.go - kunci JSON lain milik Pega
+// tetap), baca view `RATE_LIFE`. Baris `M_RATE_LIFE` milik satu ringkasan dipilih lewat view (`ID IN (SELECT ID FROM RATE_LIFE WHERE
 // IDUSEDBY = :n)`) supaya maknanya SAMA dengan pembaca lain (`GetRateRetro`, `BrowseLifeRate_SQL`).
 //
 // ⚠️ `RATE_LIFE` view atas CLOB tanpa indeks: setiap kueri ber-IDUSEDBY mengurai seluruh JSON (puluhan detik di DEV
@@ -77,14 +78,14 @@ func PeriksaTulis(objek, q string) error {
 }
 
 // nama - nama berskema setiap objek.
-type nama struct{ tabelRingkasan, tabelRate, viewRingkasan, viewRate, seqRingkasan, seqRate string }
+type nama struct{ tabelRingkasan, tabelRate, ringkasanJSON, viewRate, seqRingkasan, seqRate string }
 
 func (g *Gudang) nama() (nama, error) {
 	var n nama
 	for _, p := range []struct {
 		ke    *string
 		objek string
-	}{{&n.tabelRingkasan, TabelRingkasan}, {&n.tabelRate, TabelRate}, {&n.viewRingkasan, ViewRingkasan},
+	}{{&n.tabelRingkasan, TabelRingkasan}, {&n.tabelRate, TabelRate}, {&n.ringkasanJSON, TabelRingkasanJSON},
 		{&n.viewRate, ViewRate}, {&n.seqRingkasan, SeqRingkasan}, {&n.seqRate, SeqRate}} {
 		q, err := g.db.Qualify(p.objek)
 		if err != nil {
@@ -161,13 +162,30 @@ func SqlMaksID(t string) string {
 	return fmt.Sprintf(`SELECT TO_CHAR(NVL(MAX(TO_NUMBER(REGEXP_SUBSTR(ID, '^[0-9]+$'))), 0)) FROM %s`, t)
 }
 
+// SqlMaksIDRingkasan - ID angka tertinggi di tabel flat DAN di JSON warisan `M_RATE_LIFE_SUMMARY`: ringkasan Pega yang
+// belum dipindah (atau ditulis Pega sesudah cutover) tetap dihitung, supaya ID baru tidak bertabrakan ketika alat
+// pindah dijalankan ulang.
+func SqlMaksIDRingkasan(flat, json string) string {
+	return fmt.Sprintf(`SELECT TO_CHAR(NVL(MAX(TO_NUMBER(REGEXP_SUBSTR(ID, '^[0-9]+$'))), 0)) FROM (SELECT ID FROM %s UNION ALL SELECT ID FROM %s)`,
+		flat, json)
+}
+
 // SqlAdaID - ID sudah terpakai di tabel fisik?
 func SqlAdaID(t string) string { return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE ID = :1`, t) }
 
-// SqlSisipRingkasan - ringkasan baru (`JSON_OBJECT`, kunci terbukti `KolomViewRingkasan`).
+// SqlAdaIDRingkasan - ID terpakai di tabel flat ATAU di JSON warisan (alasan: SqlMaksIDRingkasan).
+func SqlAdaIDRingkasan(flat, json string) string {
+	return fmt.Sprintf(`SELECT COUNT(*) FROM (SELECT ID FROM %s WHERE ID = :1 UNION ALL SELECT ID FROM %s WHERE ID = :2)`, flat, json)
+}
+
+// SqlSisipRingkasan - ringkasan baru di tabel flat; TYPE dan FLAG tidak ditulis (NULL, K-F2).
 func SqlSisipRingkasan(t string) string {
-	return fmt.Sprintf(`INSERT INTO %s (ID, %s) VALUES (:1, JSON_OBJECT('%s' VALUE :2, '%s' VALUE :3, '%s' VALUE :4 ABSENT ON NULL))`,
-		t, KolomJSON, JSONUsedBy, JSONOperatorID, JSONModified)
+	return fmt.Sprintf(`INSERT INTO %s (ID, %s, %s, %s) VALUES (:1, :2, :3, :4)`, t, KolomUsedBy, KolomOperatorID, KolomModified)
+}
+
+// SqlUbahRingkasan - Edit: USEDBY, OPERATORID, MODIFIEDDATE; TYPE dan FLAG baris pindahan tetap.
+func SqlUbahRingkasan(t string) string {
+	return fmt.Sprintf(`UPDATE %s SET %s = :1, %s = :2, %s = :3 WHERE ID = :4`, t, KolomUsedBy, KolomOperatorID, KolomModified)
 }
 
 // SqlHapusRingkasan - Delete ringkasan.
@@ -303,11 +321,11 @@ func (g *Gudang) Daftar(ctx context.Context, s models.Saringan) ([]models.Ringka
 		return nil, 0, err
 	}
 	id, nm := PolaCari(s.ID), PolaCari(s.UsedBy)
-	total, err := g.satuNilai(ctx, nil, ViewRingkasan, SqlJumlah(n.viewRingkasan), id, id, nm, nm)
+	total, err := g.satuNilai(ctx, nil, TabelRingkasan, SqlJumlah(n.tabelRingkasan), id, id, nm, nm)
 	if err != nil {
 		return nil, 0, err
 	}
-	b, err := g.bacaBaris(ctx, nil, ViewRingkasan, SqlDaftar(n.viewRingkasan, s.Urut, s.Turun), 4, id, id, nm, nm,
+	b, err := g.bacaBaris(ctx, nil, TabelRingkasan, SqlDaftar(n.tabelRingkasan, s.Urut, s.Turun), 4, id, id, nm, nm,
 		(s.Halaman-1)*models.UkuranHalaman, models.UkuranHalaman)
 	return keRingkasan(b), angka(total), err
 }
@@ -318,7 +336,7 @@ func (g *Gudang) Ambil(ctx context.Context, tx *db.Tx, id string) (models.Ringka
 	if err != nil {
 		return models.Ringkasan{}, err
 	}
-	b, err := g.bacaBaris(ctx, tx, ViewRingkasan, SqlAmbil(n.viewRingkasan), 4, id)
+	b, err := g.bacaBaris(ctx, tx, TabelRingkasan, SqlAmbil(n.tabelRingkasan), 4, id)
 	if err != nil {
 		return models.Ringkasan{}, err
 	}
@@ -334,7 +352,7 @@ func (g *Gudang) PemakaiNama(ctx context.Context, tx *db.Tx, nama, kecualiID str
 	if err != nil {
 		return nil, err
 	}
-	b, err := g.bacaBaris(ctx, tx, ViewRingkasan, SqlPemakaiNama(n.viewRingkasan), 4, nama, db.KosongJadiNil(kecualiID))
+	b, err := g.bacaBaris(ctx, tx, TabelRingkasan, SqlPemakaiNama(n.tabelRingkasan), 4, nama, db.KosongJadiNil(kecualiID))
 	return keRingkasan(b), err
 }
 
@@ -358,24 +376,32 @@ func (n nama) tabel(ringkasan bool) (string, string) {
 	return TabelRate, n.tabelRate
 }
 
-// MaksID - nomor ID angka tertinggi tabel fisik.
+// MaksID - nomor ID angka tertinggi (ringkasan: tabel flat dan JSON warisan).
 func (g *Gudang) MaksID(ctx context.Context, tx *db.Tx, ringkasan bool) (int, error) {
 	n, err := g.nama()
 	if err != nil {
 		return 0, err
 	}
-	objek, t := n.tabel(ringkasan)
+	if ringkasan {
+		s, err := g.satuNilai(ctx, tx, TabelRingkasan, SqlMaksIDRingkasan(n.tabelRingkasan, n.ringkasanJSON))
+		return angka(s), err
+	}
+	objek, t := n.tabel(false)
 	s, err := g.satuNilai(ctx, tx, objek, SqlMaksID(t))
 	return angka(s), err
 }
 
-// AdaID - ID sudah terpakai di tabel fisik?
+// AdaID - ID sudah terpakai? Ringkasan: tabel flat ATAU JSON warisan (SqlAdaIDRingkasan).
 func (g *Gudang) AdaID(ctx context.Context, tx *db.Tx, ringkasan bool, id string) (bool, error) {
 	n, err := g.nama()
 	if err != nil {
 		return false, err
 	}
-	objek, t := n.tabel(ringkasan)
+	if ringkasan {
+		s, err := g.satuNilai(ctx, tx, TabelRingkasan, SqlAdaIDRingkasan(n.tabelRingkasan, n.ringkasanJSON), id, id)
+		return angka(s) > 0, err
+	}
+	objek, t := n.tabel(false)
 	s, err := g.satuNilai(ctx, tx, objek, SqlAdaID(t), id)
 	return angka(s) > 0, err
 }
@@ -391,15 +417,20 @@ func (g *Gudang) SisipRingkasan(ctx context.Context, tx *db.Tx, r models.Ringkas
 	return err
 }
 
-// UbahRingkasan - Edit: hanya USEDBY, OPERATORID, MODIFIEDDATE yang diganti; kunci lain milik Pega tetap
-// (rirl_json.go). ErrTidakAda bila ID tidak ada.
+// UbahRingkasan - Edit: hanya USEDBY, OPERATORID, MODIFIEDDATE di tabel flat; TYPE dan FLAG tetap. ErrTidakAda bila
+// ID tidak ada.
 func (g *Gudang) UbahRingkasan(ctx context.Context, tx *db.Tx, r models.Ringkasan) error {
 	n, err := g.nama()
 	if err != nil {
 		return err
 	}
-	return g.ubahJSON(ctx, tx, TabelRingkasan, n.tabelRingkasan, r.ID, map[string]string{
-		JSONUsedBy: r.UsedBy, JSONOperatorID: r.OperatorID, JSONModified: r.ModifiedDate}, nil)
+	k := db.KosongJadiNil
+	j, err := g.tulis(ctx, tx, TabelRingkasan, SqlUbahRingkasan(n.tabelRingkasan), "mengubah ringkasan", k(r.UsedBy),
+		k(r.OperatorID), k(r.ModifiedDate), r.ID)
+	if err == nil && j == 0 {
+		return ErrTidakAda
+	}
+	return err
 }
 
 // UbahNamaRate - salinan nama (`USEDBY`) di setiap baris rate ringkasan idUsedBy.
