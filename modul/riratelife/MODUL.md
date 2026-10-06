@@ -66,7 +66,7 @@ RATE_LIFE_SUMMARY, panduannya xml yang saya berikan"*. Panduan: section Pega `In
 
 | # | Asumsi | Alasan / risiko |
 | --- | --- | --- |
-| A1 | `M_RATE_LIFE_SUMMARY (ID VARCHAR2(10), JSONDATA CLOB)`, kunci JSON `USEDBY`, `OPERATORID`, `MODIFIEDDATE`; view `RATE_LIFE_SUMMARY` = `a.JSONDATA.<kunci>` | pola `M_RATE_LIFE`/`RATE_LIFE` yang terbukti; definisi view ringkasan BELUM dibaca. ⛔ **WO/DBA wajib memeriksa `SELECT TEXT FROM ALL_VIEWS WHERE VIEW_NAME='RATE_LIFE_SUMMARY'` sebelum menyalakan menu**; bila beda, ubah hanya `backend/repository/rirl_tabel.go` |
+| ~~A1~~ | ~~kunci JSON `M_RATE_LIFE_SUMMARY` dianggap `USEDBY`, `OPERATORID`, `MODIFIEDDATE`~~ | ✅ **terbukti — RALAT R1** di bawah |
 | A2 | Update = `JSON_MERGEPATCH(... RETURNING CLOB)`, sisip = `JSON_OBJECT(... ABSENT ON NULL)` | butuh Oracle 18c+; kunci JSON lain milik Pega tetap |
 | A3 | MODIFIEDDATE ditulis format Pega `YYYYMMDDTHHMMSS.mmm GMT`; OPERATORID = akun login | seperti TGLUPDATE `reinsurancetype`; format data DEV belum dilihat |
 | A4 | Urutan bawaan grid: ID angka menurun | urutan RD Pega tidak ada di XML |
@@ -78,6 +78,12 @@ RATE_LIFE_SUMMARY, panduannya xml yang saya berikan"*. Panduan: section Pega `In
 | A10 | USEDBY dicocokkan ke ringkasan bernama sama (tanpa beda huruf) atau dibuat baru; ringkasan lama ikut diperbarui OPERATORID/MODIFIEDDATE; nama yang cocok ke >1 ringkasan warisan ditolak | rule `SubmitRIRate_Act` tidak tersedia |
 | A11 | Batas: 4 MB, 10.000 baris data, 100 nama berbeda per unggah; nama ≤ 200 byte | `RATE_LIFE` DEV 98.305 baris / 348 ringkasan |
 | A12 | View Upload pun tertutup bagi View only | brief: View only tanpa Upload |
+
+## RALAT
+
+| # | Bunyi lama | Bunyi baru | Bukti |
+| --- | --- | --- | --- |
+| R1 (06-10-2026) | A1: *"`M_RATE_LIFE_SUMMARY (ID VARCHAR2(10), JSONDATA CLOB)`, kunci JSON `USEDBY`, `OPERATORID`, `MODIFIEDDATE` … definisi view ringkasan BELUM dibaca"* | View `RATE_LIFE_SUMMARY` = `SELECT a.ID, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.MODIFIEDDATE, a.JSONDATA.OPERATORID, a.JSONDATA.FLAG FROM M_RATE_LIFE_SUMMARY a`; kolom `ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID, FLAG` (semua VARCHAR2). Ketiga kunci yang ditulis **sudah benar** — nol perubahan nama di kode. `TYPE` dan `FLAG` ada di view tetapi **tidak dirujuk** XML `InboxSummaryRIRate` (form `.ID`/`.USEDBY`, grid `.ID`/`.USEDBY`/`.OPERATORID`/`.MODIFIEDDATE`) → tidak dibaca, tidak ditulis, tidak dikarang; ringkasan baru tanpa kunci `TYPE`/`FLAG` (pembaca `mastercontractretrolife` dan `masterproductnamelife` hanya membaca `ID, USEDBY`, tanpa saringan `FLAG`). Isi `TYPE`/`FLAG` pada data lama belum dilihat — bila ternyata dipakai menyaring, perlu keputusan WO | `ALL_VIEWS`, owner POOLDATA, dibaca WO 06-10-2026; konstanta `DefinisiViewRingkasan` (`backend/repository/rirl_tabel.go`); uji `TestDefinisiViewRingkasanEnamKolom`, `TestKunciDanKolomCocokDenganView` |
 
 ## Migrasi
 

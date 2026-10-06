@@ -19,8 +19,9 @@ a.JSONDATA.CONTRACT, a.JSONDATA.AGE, a.JSONDATA.RATE FROM M_RATE_LIFE a` dan agr
 (`modul/masterproductnamelife/docs/STRUKTUR-TABEL-MASTER-PRODUCT-NAME-LIFE.md` b180); objek ada di DEV
 (`modul/masterproductnamelife/docs/OQ-MASTER-PRODUCT-NAME-LIFE.md` b51).
 
-⚠️ **ASUMSI A1** (MODUL.md): definisi view `RATE_LIFE_SUMMARY` dan kolom `M_RATE_LIFE_SUMMARY` BELUM terbukti.
-WO/DBA wajib memeriksa `SELECT TEXT FROM ALL_VIEWS WHERE VIEW_NAME='RATE_LIFE_SUMMARY'` sebelum menyalakan menu.
+✅ **RALAT R1** (MODUL.md, 06-10-2026): definisi view `RATE_LIFE_SUMMARY` dibaca WO dari `ALL_VIEWS` (owner POOLDATA):
+`SELECT a.ID, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.MODIFIEDDATE, a.JSONDATA.OPERATORID, a.JSONDATA.FLAG
+FROM M_RATE_LIFE_SUMMARY a`. Asumsi A1 terbukti.
 
 ⚠️ View atas CLOB tanpa indeks: setiap kueri `RATE_LIFE ... WHERE IDUSEDBY = :n` mengurai seluruh JSON. Modul ini
 membaca kunci kembar upload SEKALI per unggah (daftar IN), dan Delete/Edit memilih baris lewat view
@@ -33,10 +34,11 @@ Tabel warisan (dinyatakan di `MODUL.md`, bukan dibuat migrasi).
 | Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
 | --- | --- | --- | --- | --- | --- |
 | `ID` | VARCHAR2(10) | ? | | "ID" | `SEQ_M_RATE_LIFE_SUMMARY` (nomor terpakai dilewati) |
-| `JSONDATA` | CLOB | ? | | JSON | sisip `JSON_OBJECT`, ubah `JSON_MERGEPATCH` (ASUMSI A1-A2) |
+| `JSONDATA` | CLOB | ? | | JSON | sisip `JSON_OBJECT`, ubah `JSON_MERGEPATCH` (A2) |
 
-Kunci JSON yang ditulis (ASUMSI A1): `USEDBY` ("R/I RATE NAME", wajib, tidak kembar), `OPERATORID` (akun login),
-`MODIFIEDDATE` (format Pega `YYYYMMDDTHHMMSS.mmm GMT`). Kunci lain dibiarkan.
+Kunci JSON yang ditulis (terbukti, RALAT R1): `USEDBY` ("R/I RATE NAME", wajib, tidak kembar), `OPERATORID` (akun login),
+`MODIFIEDDATE` (format Pega `YYYYMMDDTHHMMSS.mmm GMT`). Kunci lain dibiarkan; `TYPE` dan `FLAG` tidak ditulis
+(tidak ada di XML).
 
 ## M_RATE_LIFE
 
@@ -58,9 +60,11 @@ View warisan (dinyatakan di `MODUL.md`), dibaca saja.
 | Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
 | --- | --- | --- | --- | --- | --- |
 | `ID` | VARCHAR2(10) | ? | | "ID" | `M_RATE_LIFE_SUMMARY.ID` |
-| `USEDBY` | VARCHAR2(4000) | ? | | "R/I RATE NAME" | `JSONDATA.USEDBY` (ASUMSI A1) |
-| `OPERATORID` | VARCHAR2(4000) | ? | | "MODIFY OPERATOR" | `JSONDATA.OPERATORID` (ASUMSI A1) |
-| `MODIFIEDDATE` | VARCHAR2(4000) | ? | | "MODIFY DATE" | `JSONDATA.MODIFIEDDATE` (ASUMSI A1) |
+| `USEDBY` | VARCHAR2(4000) | ? | | "R/I RATE NAME" | `JSONDATA.USEDBY` (terbukti, R1) |
+| `OPERATORID` | VARCHAR2(4000) | ? | | "MODIFY OPERATOR" | `JSONDATA.OPERATORID` (terbukti, R1) |
+| `MODIFIEDDATE` | VARCHAR2(4000) | ? | | "MODIFY DATE" | `JSONDATA.MODIFIEDDATE` (terbukti, R1) |
+| `TYPE` | VARCHAR2 | ? | | tidak dipakai | `JSONDATA.TYPE` — tidak dirujuk XML (R1) |
+| `FLAG` | VARCHAR2 | ? | | tidak dipakai | `JSONDATA.FLAG` — tidak dirujuk XML (R1) |
 
 ## RATE_LIFE
 

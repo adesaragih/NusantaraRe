@@ -162,7 +162,7 @@ func SqlMaksID(t string) string {
 // SqlAdaID - ID sudah terpakai di tabel fisik?
 func SqlAdaID(t string) string { return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE ID = :1`, t) }
 
-// SqlSisipRingkasan - ringkasan baru (`JSON_OBJECT`, kunci ASUMSI A1).
+// SqlSisipRingkasan - ringkasan baru (`JSON_OBJECT`, kunci terbukti `DefinisiViewRingkasan`).
 func SqlSisipRingkasan(t string) string {
 	return fmt.Sprintf(`INSERT INTO %s (ID, %s) VALUES (:1, JSON_OBJECT('%s' VALUE :2, '%s' VALUE :3, '%s' VALUE :4 ABSENT ON NULL))`,
 		t, KolomJSON, JSONUsedBy, JSONOperatorID, JSONModified)

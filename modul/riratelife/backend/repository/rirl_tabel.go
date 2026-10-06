@@ -6,11 +6,9 @@
 // K1 keputusan work owner 05-10-2026: CRUD menulis tabel fisik `M_RATE_LIFE_SUMMARY`; view `RATE_LIFE_SUMMARY` TIDAK
 // di-DROP dan dipakai membaca grid; nol DDL pada tabel/view warisan.
 //
-// ⚠️ ASUMSI (MODUL.md "Asumsi terbuka" A1): definisi view `RATE_LIFE_SUMMARY` dan kolom `M_RATE_LIFE_SUMMARY` BELUM
-// terbukti. Dianggap `M_RATE_LIFE_SUMMARY (ID VARCHAR2(10), JSONDATA CLOB)` dengan kunci JSON `USEDBY`, `OPERATORID`,
-// `MODIFIEDDATE` - pola yang terbukti untuk `M_RATE_LIFE` / `RATE_LIFE`. WO/DBA wajib memeriksa
-// `SELECT TEXT FROM ALL_VIEWS WHERE VIEW_NAME='RATE_LIFE_SUMMARY'` sebelum menyalakan menu; bila berbeda, ubah HANYA
-// konstanta di berkas ini.
+// RALAT R1 (06-10-2026, MODUL.md): asumsi A1 TERBUKTI - definisi view `RATE_LIFE_SUMMARY` dibaca WO dari ALL_VIEWS
+// (owner POOLDATA) 06-10-2026, lihat `DefinisiViewRingkasan`. Kunci `USEDBY`, `OPERATORID`, `MODIFIEDDATE` benar; `TYPE`
+// dan `FLAG` ada di view tetapi tidak dirujuk XML `InboxSummaryRIRate` - tidak dibaca dan tidak ditulis.
 package repository
 
 // Tabel fisik yang DITULIS (JSON Pega; kunci lain milik Pega dipertahankan `JSON_MERGEPATCH`).
@@ -23,6 +21,16 @@ const (
 	// KolomJSON - kolom CLOB berisi JSON di kedua tabel.
 	KolomJSON = "JSONDATA"
 )
+
+// DefinisiViewRingkasan - teks view `RATE_LIFE_SUMMARY` (ALL_VIEWS, owner POOLDATA, dibaca WO 06-10-2026). Kolom view:
+// ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID, FLAG (semua VARCHAR2). Dipakai uji untuk mengikat kunci JSON yang ditulis
+// dan kolom yang dibaca ke definisi ini.
+const DefinisiViewRingkasan = `SELECT a.ID, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.MODIFIEDDATE, a.JSONDATA.OPERATORID,
+       a.JSONDATA.FLAG FROM M_RATE_LIFE_SUMMARY a`
+
+// DefinisiViewRate - teks view `RATE_LIFE` (katalog DEV, `modul/claimlife/docs/KATALOG-TABEL-PESERTA-DAN-TREATY.md`).
+const DefinisiViewRate = `SELECT a.ID, a.JSONDATA.IDUSEDBY, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.GENDER,
+       a.JSONDATA.CONTRACT, a.JSONDATA.AGE, a.JSONDATA.RATE FROM M_RATE_LIFE a`
 
 // View warisan yang DIBACA (tidak pernah ditulis, tidak di-DROP).
 const (
@@ -39,7 +47,8 @@ const (
 	SeqRate      = "SEQ_M_RATE_LIFE"
 )
 
-// Kunci JSON `M_RATE_LIFE_SUMMARY.JSONDATA` (ASUMSI A1) = nama kolom view `RATE_LIFE_SUMMARY` yang dibaca grid XML.
+// Kunci JSON `M_RATE_LIFE_SUMMARY.JSONDATA` (terbukti, `DefinisiViewRingkasan`) = kolom view yang dibaca grid XML.
+// `TYPE`, `FLAG` tidak ditulis: tidak ada di XML (RALAT R1).
 const (
 	JSONUsedBy     = "USEDBY"
 	JSONOperatorID = "OPERATORID"
