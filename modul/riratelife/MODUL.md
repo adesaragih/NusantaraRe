@@ -47,6 +47,7 @@ RATE_LIFE_SUMMARY"*. Sesudah ditanya:
   masih berubah) TIDAK disentuh: cadangan + sumber alat pindah.
 - **K-F2:** SEMUA 6 kolom view ikut, isi apa adanya (`ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID, FLAG`, semua
   VARCHAR2). Modul tidak menulis `TYPE`/`FLAG` (tidak di XML): baris baru NULL, baris pindahan apa adanya.
+  ⚠️ **FLAG dikeluarkan RALAT R5** (keputusan work owner 06-10-2026: FLAG tidak digunakan) - tabel flat 5 kolom.
 
 Penerapan: `inti/backend/migrations/926_rate_life_summary_flat.sql` (+ `_down`), `docs/DBA-LEPAS-VIEW-RATE_LIFE_SUMMARY.sql`,
 `backend/alat/pindahflat` + `repository/pindah.go`, repository ringkasan membaca DAN menulis tabel flat (kolom bernama;
@@ -67,26 +68,17 @@ tetapi ringkasannya baru tampil sesudah dipindah.
 
 **Fakta DEV (dicek WO 06-10-2026, baca-saja):** `M_RATE_LIFE_SUMMARY` 347 baris dan MASIH BERUBAH (MODIFIEDDATE terbaru
 `20261006T040628.169 GMT`) - dokumen dan alat tidak menanam angka baris; panjang maksimum isi ID 7, USEDBY 99,
-MODIFIEDDATE 23, OPERATORID 17, FLAG 2, TYPE kosong di semua baris (lebar 926 cukup - **[terverifikasi data DEV
+MODIFIEDDATE 23, OPERATORID 17, TYPE kosong di semua baris (FLAG 2 - tidak dipakai, R5) (lebar 926 cukup - **[terverifikasi data DEV
 06-10-2026]**); `UPPER(TRIM(USEDBY))` kembar = 0; dependensi / sinonim / grant view = nol.
 
-### Keputusan FLAG (dan TYPE) — [penyimpangan sadar - menunggu WO]
+### FLAG tidak digunakan — RALAT R5
 
-Isi FLAG DEV: `AP` 230, `PM` 106, `PY` 1, kosong 10. Pengisinya **tidak ditemukan**. Dicari: `D:\NUSARE DEV\Menu RI
-Rate Life\RIRate.xml` dan `View Detail.xml` (satu-satunya `Flag` = `pyParameterSetFlag` b6 / b5, bukan properti),
-`D:\PEGA`, `D:\Leo\PEGA`, `D:\NUSARE DEV` (termasuk `Backup\`, tanpa `node_modules`) - nol berkas rule
-`BrowseRateLifeSummary` / `AddToListSummary_Act` / `SubmitRIRate_Act`; catatan inventaris RD `BrowseRateLifeSummary`
-(`D:\NUSARE DEV\Backup\jefri\OUTPUT FIX\03-celah\02-reportdefinition-nb.md` b246) hanya menyebut kolom `.ID, .USEDBY,
-.OPERATORID, .MODIFIEDDATE, .TYPE` - tanpa FLAG. Maka, tanpa mengarang:
-
-- ringkasan BARU: FLAG (dan TYPE) kosong / NULL;
-- Edit: hanya USEDBY, OPERATORID, MODIFIEDDATE yang ditulis - FLAG dan TYPE lama TIDAK ditimpa (`SqlUbahRingkasan`, uji
-  `TestSqlTulisRingkasan`, `-tags=db` `TestDBRumusIDDanPulangPergi`);
-- alat pindah menyalin FLAG dan TYPE APA ADANYA (uji `TestRencanaPindahPenuh` dengan AP/PM/PY, `-tags=db`).
-
-**Pertanyaan untuk WO:** (1) apa arti `AP`, `PM`, `PY` (dugaan, belum terbukti: jenis/status rate)? (2) siapa yang
-mengisinya (layar / proses Pega mana)? (3) haruskah ringkasan baru dari aplikasi diberi FLAG, dan nilainya apa? (4)
-apakah pembaca lain perlu menyaring FLAG (MPNL saat ini membaca `ID, USEDBY` tanpa saringan FLAG)?
+Keputusan work owner 06-10-2026: **kolom FLAG tidak digunakan di R/I Rate Life.** Fakta (dicek WO, baca-saja): FLAG
+diisi layar Pega saat Submit (nol trigger / prosedur); isi DEV `AP` 230, `PM` 106, `PY` 1, kosong 10; FLAG juga ada di
+tiap baris detail `M_RATE_LIFE` (putaran ini tidak diubah); nol kode repo membacanya. Maka tabel flat 926 TIDAK memuat
+FLAG, modul tidak membaca / menulisnya, dan alat pindah tidak menyalinnya. Nilai FLAG lama TIDAK hilang: tetap di
+`M_RATE_LIFE_SUMMARY.JSONDATA` (cadangan), dan jalur mundur 926 memulihkan view lengkap dengan FLAG. TYPE tetap:
+ringkasan baru NULL, Edit tidak menimpa, pindahan apa adanya.
 
 ### Cutover delta (alat pindah)
 
@@ -97,8 +89,8 @@ berikutnya `-sejak="<batas delta berikutnya>"` dari laporan putaran sebelumnya. 
 | --- | --- |
 | tidak ada di flat, MODIFIEDDATE sumber lebih baru dari `-sejak` (atau tanpa `-sejak`) | **baru** - disisip |
 | tidak ada di flat, MODIFIEDDATE sumber tidak lebih baru dari `-sejak` / kosong | **dilewati** - dianggap dihapus aplikasi, tidak dihidupkan lagi, dilaporkan |
-| keenam kolom sama | **sama** - dilewati |
-| beda, MODIFIEDDATE sumber lebih baru dari flat | **berubah** - flat diperbarui keenam kolom (Pega lebih baru), ID dilaporkan |
+| kelima kolom flat sama | **sama** - dilewati |
+| beda, MODIFIEDDATE sumber lebih baru dari flat | **berubah** - flat diperbarui kelima kolom (Pega lebih baru), ID dilaporkan |
 | beda, MODIFIEDDATE flat sama / lebih baru / salah satu kosong atau tidak terbaca | **konflik** - TIDAK ditimpa, ID dilaporkan untuk diperiksa WO |
 | hanya di flat | dibiarkan (ringkasan baru aplikasi) |
 
@@ -178,6 +170,7 @@ worktree sementara tidak memuat berkas `.env` (tidak masuk git) - bukan akibat m
 
 | # | Bunyi lama | Bunyi baru | Bukti |
 | --- | --- | --- | --- |
+| R5 (06-10-2026) | R4/K-F2: tabel flat memuat keenam kolom view termasuk `FLAG`; FLAG berstatus [penyimpangan sadar - menunggu WO] + pertanyaan arti `AP`/`PM`/`PY` | **FLAG tidak digunakan - keputusan WO 06-10-2026; nilai lama tetap di `M_RATE_LIFE_SUMMARY.JSONDATA`.** FLAG diisi layar Pega saat Submit (nol trigger/prosedur). Kolom FLAG dibuang dari CREATE TABLE 926 (belum dijalankan di DEV - berkas yang sama diubah, bukan migrasi baru); `_down` tetap memulihkan view asli lengkap. Modul dan alat pindah tidak membaca/menulis/menyalin FLAG; delta, COUNT, dan MINUS memakai 5 kolom. Pertanyaan FLAG untuk WO dicabut | keputusan WO 06-10-2026; `926_rate_life_summary_flat.sql`; uji `TestMigrasi926TeruraiDanBerpasangan` (nol FLAG di DDL), `TestSqlTulisRingkasan` (nol FLAG di SQL repository dan alat), `TestRencanaPindahPenuh` |
 | R4 (06-10-2026) | K1: *"CRUD menulis ke `M_RATE_LIFE_SUMMARY`, view TIDAK di-DROP, nol DDL pada tabel/view warisan"* | **Keputusan work owner 06-10-2026 K-F1/K-F2**: VIEW `RATE_LIFE_SUMMARY` diganti TABEL FLAT bernama sama (migrasi inti 926, keenam kolom view, isi apa adanya); ringkasan dibaca DAN ditulis di tabel flat (kolom bernama, `TYPE`/`FLAG` tidak ditulis); `M_RATE_LIFE_SUMMARY` dibaca saja (cadangan, sumber alat pindah, ID terpakai); DROP VIEW = berkas DBA terpisah sebelum `-migrate` | perintah WO *"tabel M_RATE_LIFE_SUMMARY buat jadi flat …"*; `926_rate_life_summary_flat.sql`; uji `TestMigrasi926TeruraiDanBerpasangan`, `TestSqlTulisRingkasan`, `TestRencanaPindah`, `TestNilaiJSON`, `-tags=db` `rirl_db_test.go` |
 | R3 (06-10-2026) | A2: *"Update = `JSON_MERGEPATCH(... RETURNING CLOB)` … butuh Oracle 18c+"* | Edit ringkasan, salinan nama rate, dan Edit / Save Rate Detail **tidak lagi memakai `JSON_MERGEPATCH`**: JSONDATA dibaca `SELECT … FOR UPDATE` di dalam transaksi, kunci yang berubah diganti di Go (`TerapkanKunci`: kunci Pega lain dan bentuk angka tetap, nilai kosong = kunci dibuang), lalu `UPDATE … SET JSONDATA = :1` - pola yang sudah berjalan di DEV (`masterproductnamelife`). Sisip tetap `JSON_OBJECT` (terbukti berjalan) | log server DEV 06-10-2026 10:55: `riratelife: menyimpan rate: repository: mengubah ringkasan: ORA-00907: missing right parenthesis` (Save Rate Detail; transaksi dibatalkan, nol baris setengah jadi); `backend/repository/rirl_json.go`; uji `TestTerapkanKunci`, `TestNolJSONMergepatchDiSQL` |
 | R2 (06-10-2026) | Rule XML → kode, Detail: *"popup rincian rate (USEDBY, CONTRACT, GENDER, AGE, RATE), baca saja, 50 per halaman"* | Rate Detail bisa **tambah dan ubah** baris (form `InboxRIRate`), grid 20 per halaman, urut ID menurun, kolom ID · R/I RATE NAME · GENDER · CONTRACT · AGE · RATE · Edit | View Detail.xml (section `InboxRIRate`, work owner 06-10-2026): b3196, b9853, b10206, b7668; uji `TestRuteRateDetail`, `TestPeriksaIsianRate` |

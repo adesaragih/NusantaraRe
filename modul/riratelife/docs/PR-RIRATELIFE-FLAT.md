@@ -9,7 +9,7 @@
 ```diff
  RATE_LIFE_SUMMARY            (POOLDATA)
 -  VIEW  SELECT a.ID, a.JSONDATA.USEDBY, … FROM M_RATE_LIFE_SUMMARY a
-+  TABLE ID VARCHAR2(10) PK, USEDBY, TYPE, MODIFIEDDATE, OPERATORID, FLAG   (migrasi inti 926)
++  TABLE ID VARCHAR2(10) PK, USEDBY, TYPE, MODIFIEDDATE, OPERATORID   (migrasi inti 926; FLAG tidak digunakan)
 +  INDEX IX_RATE_LIFE_SUMMARY_NAMA (UPPER(TRIM(USEDBY)))                     (pemeriksa nama + pengaman view)
  M_RATE_LIFE_SUMMARY          (JSON)   tidak disentuh: cadangan + sumber alat pindah + ID terpakai
 ```
@@ -17,7 +17,7 @@
 ```diff
  riratelife ringkasan
 -  baca  view RATE_LIFE_SUMMARY ; tulis M_RATE_LIFE_SUMMARY.JSONDATA (JSON_OBJECT / baca-ubah-tulis)
-+  baca + tulis tabel flat RATE_LIFE_SUMMARY (kolom bernama; TYPE/FLAG tidak ditulis, Edit tidak menimpa)
++  baca + tulis tabel flat RATE_LIFE_SUMMARY (kolom bernama; TYPE tidak ditulis, Edit tidak menimpa)
 +  ID baru: SEQ_M_RATE_LIFE_SUMMARY, lewati ID terpakai di flat ∪ M_RATE_LIFE_SUMMARY
  riratelife rincian (M_RATE_LIFE + view RATE_LIFE)   tidak berubah
  mastercontractretrolife, masterproductnamelife      tidak diubah - SELECT ID, USEDBY kini dari tabel
@@ -51,5 +51,5 @@ tabel flat (hilang bila view dipulihkan).
 **Blast Radius:** lintas-modul.
 
 R/I Rate Life, autocomplete `R/I RATE` (Contract Retro Life), `Choose R/I Rate` (Product Name Life). Ringkasan yang
-ditulis Pega sesudah pemindahan tidak tampil sampai delta dijalankan. Arti FLAG `AP`/`PM`/`PY` belum diketahui
-(pertanyaan WO, MODUL.md).
+ditulis Pega sesudah pemindahan tidak tampil sampai delta dijalankan. FLAG tidak digunakan (keputusan work owner
+06-10-2026, RALAT R5); nilai lamanya tetap di `M_RATE_LIFE_SUMMARY.JSONDATA`.
