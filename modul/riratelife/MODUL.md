@@ -1,0 +1,107 @@
+# Modul `riratelife` — R/I Rate Life
+
+Satu folder, satu modul, satu pemilik: kode backend, kode frontend, dan dokumen modul ini tinggal di sini (struktur
+tim satu folder per modul, keputusan work owner 30-09-2026).
+
+**Modul di luar dua puluh folder korpus** (`PANDUAN-TIM-PER-MODUL.md` bab 5) — perintah work owner 05-10-2026:
+*"Buat Menu baru Namanya R/I Rate Life pada Master Treaty, menu ini bisa CRUD untuk simpan data ke tabel
+RATE_LIFE_SUMMARY, panduannya xml yang saya berikan"*. Panduan: section Pega `InboxSummaryRIRate` (kelas
+`ASM-FW-GISFW-Int-RATE_LIFE_SUMMARY`, judul "R/I RATE SUMMARY" b382). Baris menunya dibuat migrasi inti `922`
+(golongan MASTER TREATY, URUTAN 9), sequence ID-nya migrasi inti `923`.
+
+⛔ **Tanpa migrasi sendiri** (`—` di bawah, `tandaTanpaMigrasi` di `inti/backend/penjaga`): seluruh nomor modul
+001-899 dan slot menu 950-999 sudah terbagi, dan modul lain tidak boleh disentuh.
+
+| Kunci | Nilai |
+| --- | --- |
+| Nama modul | `riratelife` |
+| Folder korpus | `R/I Rate Life` |
+| GROUPMENU | `MASTER TREATY` |
+| Pemilik | `@PEMILIK-RIRATELIFE` |
+| Status | dimigrasi |
+| Rentang migrasi | `—` |
+| Slot menu | `—` |
+| Prefix rute API | `/api/ri-rate-life` |
+| Kontrak disediakan | — |
+| Kontrak dipakai | — |
+
+## Keputusan work owner 05-10-2026 (sesudah ditanya)
+
+- **K1 tabel tujuan:** `RATE_LIFE_SUMMARY` di DEV adalah VIEW (6 kolom, dibaca `mastercontractretrolife` dan
+  `masterproductnamelife`) atas tabel fisik `M_RATE_LIFE_SUMMARY` (339 baris). *"CRUD menulis ke
+  `M_RATE_LIFE_SUMMARY`, view TIDAK di-DROP, nol DDL pada tabel/view warisan."* View `RATE_LIFE_SUMMARY` dipakai
+  membaca grid.
+- **K2 ID baru:** dari **sequence Oracle** (`SEQ_M_RATE_LIFE_SUMMARY`, `SEQ_M_RATE_LIFE`, migrasi inti 923).
+- **K3 lingkup:** termasuk **Detail** (rincian rate) dan **Upload CSV / View Upload / Simpan Upload**. XML rule-rule
+  itu tidak tersedia → dirancang dari petunjuk format di XML (`Format excel : USEDBY, CONTRACT, GENDER, AGE, RATE`
+  b5305); perilaku di luar itu = ASUMSI (tabel di bawah).
+
+## Isi folder
+
+| Folder | Isi |
+| --- | --- |
+| `docs/` | `STRUKTUR-TABEL-RIRATELIFE.md` — peta tabel/view warisan, kunci JSON, asumsi |
+| `backend/` | `models/` `repository/` `services/` `handlers/` `tiruan/` `modul.go` (tanpa `migrations/`) |
+| `frontend/` | `pages/` `components/` `labels.ts` `api.ts` `aturan.ts` `riratelife.css` `menu.ts` `rute.tsx` dan `*.test.ts` |
+
+## Rule XML → kode
+
+| XML | Perilaku | Kode |
+| --- | --- | --- |
+| `.ID` b1089, pxTextInput disabled selalu b1104-b1105 | ID tampil, tidak dapat diisi; baru = sequence | `FormRingkasan.tsx`, `services.pemberiID` |
+| `.USEDBY` b1273, label "R/I RATE NAME" b1242, wajib b1285 | wajib, dipangkas, **tidak kembar** tanpa beda huruf | `services.Simpan` |
+| `InputParam.ERRMSG` b896 | pesan galat di atas form | `Gagal` di `FormRingkasan.tsx` |
+| Save b1809 → `AddToListSummary_Act` b1833; Cancel b2109 (visible `DATASHOW='IsEdit'` b2275) → `NewDataSummary_DT` b2137 | container `1=2` b1529 disembunyikan Pega; **ditampilkan** (perintah CRUD). Cancel hanya saat Edit = kembali ke form Add | `POST` / `PUT /api/ri-rate-life` |
+| Grid `BrowseRateLifeSummary` b9568, param `id` / `idusedby` b9308-b9314, 50 baris b12645, read-only b12575 | filter ID / R/I RATE NAME, urut per kolom, paging 50 | `GET /api/ri-rate-life` |
+| Kolom ID · R/I RATE NAME b9588 · MODIFY OPERATOR b9748 (`.OPERATORID` b10709) · MODIFY DATE b9894 (`.MODIFIEDDATE` b10879, `Date-Short-Custom-YYYY` b10929) | tanggal tampil `DD-MM-YYYY` WIB | `TampilTanggal` |
+| Edit b11109 → `EditListSummary_DT` b11136 (ID, UsedBy) | isi form dari baris | `RIRateLife.tsx` |
+| Detail b11398 → `setIDUsedBy_Act` b11415 + harness `InboxRIRate` b11444, "Rate Detail" b11446 | popup rincian rate (USEDBY, CONTRACT, GENDER, AGE, RATE), baca saja, 50 per halaman | `GET /{id}/rate`, `RateDetail.tsx` |
+| Delete b12238 → `DeleteSummaryDetail` b12262, DeleteID=.ID b12279 | hapus ringkasan **beserta** rate ber-IDUSEDBY sama, satu transaksi, konfirmasi menyebut jumlah rate | `DELETE /{id}`, `services.Hapus` |
+| "Upload CSV" b2949 → local action `UploadCSV_RIRATE` b3019 | pilih berkas CSV (popup) | `UnggahCSV.tsx` |
+| "View Upload" b3467 → popup `ViewCSVResult_RIRate` b3486 | pratinjau hasil urai + galat per baris, tanpa menulis | `POST /unggah/pratinjau` |
+| "Simpan Upload" b4511 → `SubmitRIRate_Act` b4535 | urai ulang di server, tolak seluruhnya bila ada galat (422 per baris), satu transaksi | `POST /unggah`, `services.SimpanUnggah` |
+| Label `Format excel : USEDBY, CONTRACT, GENDER, AGE, RATE` b5305 | kepala CSV wajib lima kolom itu | `models.UraiCSV` |
+
+## Asumsi terbuka
+
+| # | Asumsi | Alasan / risiko |
+| --- | --- | --- |
+| A1 | `M_RATE_LIFE_SUMMARY (ID VARCHAR2(10), JSONDATA CLOB)`, kunci JSON `USEDBY`, `OPERATORID`, `MODIFIEDDATE`; view `RATE_LIFE_SUMMARY` = `a.JSONDATA.<kunci>` | pola `M_RATE_LIFE`/`RATE_LIFE` yang terbukti; definisi view ringkasan BELUM dibaca. ⛔ **WO/DBA wajib memeriksa `SELECT TEXT FROM ALL_VIEWS WHERE VIEW_NAME='RATE_LIFE_SUMMARY'` sebelum menyalakan menu**; bila beda, ubah hanya `backend/repository/rirl_tabel.go` |
+| A2 | Update = `JSON_MERGEPATCH(... RETURNING CLOB)`, sisip = `JSON_OBJECT(... ABSENT ON NULL)` | butuh Oracle 18c+; kunci JSON lain milik Pega tetap |
+| A3 | MODIFIEDDATE ditulis format Pega `YYYYMMDDTHHMMSS.mmm GMT`; OPERATORID = akun login | seperti TGLUPDATE `reinsurancetype`; format data DEV belum dilihat |
+| A4 | Urutan bawaan grid: ID angka menurun | urutan RD Pega tidak ada di XML |
+| A5 | Delete menghapus rate ber-IDUSEDBY sama tanpa memeriksa `RIRATEID` di Contract Retro Life (`TREATYBUSINESS_LIFE`) dan Product Name Life (`M_PRODUCTNAME_LIFE_PLAN`) | modul lain tidak disentuh; rujukan yang tertinggal menunjuk ringkasan yang sudah tidak ada |
+| A6 | Edit nama ikut mengganti salinan `USEDBY` di baris `M_RATE_LIFE` ringkasan itu | supaya Rate Detail konsisten; salinan nama `RIRATE` di MCRL/MPNL tidak diganti |
+| A7 | CSV: kepala wajib (urutan bebas, tanpa beda huruf); pemisah `;` bila kepala memuatnya, selain itu `,` — dengan `,` RATE berkoma desimal wajib dikutip (`"0,5"`), tanpa kutip baris ditolak (tidak ditebak) | label b5305 tidak menyebut pemisah |
+| A8 | GENDER U/M/F; AGE wajib, CONTRACT boleh kosong, keduanya bulat 0-120; RATE desimal tak bertanda, koma atau titik, disimpan berkoma desimal (`0.50` → `0,50`) | isi `RATE_LIFE` DEV (`claimlife/docs/KATALOG-TABEL-PESERTA-DAN-TREATY.md` b118-b140) |
+| A9 | Kombinasi (USEDBY, GENDER, AGE, CONTRACT) tidak kembar di berkas maupun terhadap baris yang sudah ada | DEV memuat 2.693 kembar warisan yang membuat `GetRateRetro` ambigu |
+| A10 | USEDBY dicocokkan ke ringkasan bernama sama (tanpa beda huruf) atau dibuat baru; ringkasan lama ikut diperbarui OPERATORID/MODIFIEDDATE; nama yang cocok ke >1 ringkasan warisan ditolak | rule `SubmitRIRate_Act` tidak tersedia |
+| A11 | Batas: 4 MB, 10.000 baris data, 100 nama berbeda per unggah; nama ≤ 200 byte | `RATE_LIFE` DEV 98.305 baris / 348 ringkasan |
+| A12 | View Upload pun tertutup bagi View only | brief: View only tanpa Upload |
+
+## Migrasi
+
+Nol migrasi modul. Migrasi inti `922_m_nav_menu_riratelife.sql` (baris menu, langsung menyala) dan
+`923_seq_rate_life.sql` (dua sequence, nilai awal = ID angka tertinggi + 1 dihitung di basis data tujuan).
+
+## Menjalankan uji modul ini saja
+
+Dari folder akar repo:
+
+```powershell
+go test ./modul/riratelife/...
+npx vitest run modul/riratelife
+```
+
+## Pernyataan untuk penjaga
+
+⛔ **Dibaca penjaga** `inti/backend/penjaga`.
+
+### Tabel warisan: dibaca, tidak dibuat
+
+| Tabel | Alasan |
+| --- | --- |
+| `M_RATE_LIFE_SUMMARY` | tabel fisik warisan Pega (ringkasan R/I rate life, JSON); modul ini menambah, mengubah, dan menghapus barisnya, tidak pernah membuat atau mengubah strukturnya (K1 keputusan work owner 05-10-2026: nol DDL) |
+| `M_RATE_LIFE` | tabel fisik warisan Pega (baris rate, JSON); disisipkan Simpan Upload dan dihapus Delete ringkasan; nol DDL |
+| `RATE_LIFE_SUMMARY` | view warisan atas `M_RATE_LIFE_SUMMARY`; dibaca grid; TIDAK di-DROP (K1) |
+| `RATE_LIFE` | view warisan atas `M_RATE_LIFE`; dibaca Rate Detail, Delete, dan pemeriksa kembar upload |
