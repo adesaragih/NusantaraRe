@@ -1,7 +1,7 @@
 package repository
 
 // SQL modul R/I Rate Life. Baca dari view (`RATE_LIFE_SUMMARY`, `RATE_LIFE`); tulis ke tabel fisik
-// (`M_RATE_LIFE_SUMMARY`, `M_RATE_LIFE`): sisip = `JSON_OBJECT`, ubah = `JSON_MERGEPATCH` (kunci JSON lain milik Pega
+// (`M_RATE_LIFE_SUMMARY`, `M_RATE_LIFE`): sisip = `JSON_OBJECT`, ubah = baca-ubah-tulis JSONDATA di Go, rirl_json.go (kunci JSON lain milik Pega
 // tetap). Baris `M_RATE_LIFE` milik satu ringkasan dipilih lewat view (`ID IN (SELECT ID FROM RATE_LIFE WHERE
 // IDUSEDBY = :n)`) supaya maknanya SAMA dengan pembaca lain (`GetRateRetro`, `BrowseLifeRate_SQL`).
 //
@@ -170,18 +170,6 @@ func SqlSisipRingkasan(t string) string {
 		t, KolomJSON, JSONUsedBy, JSONOperatorID, JSONModified)
 }
 
-// SqlUbahRingkasan - Edit: hanya tiga kunci yang diganti; kunci lain milik Pega tetap.
-func SqlUbahRingkasan(t string) string {
-	return fmt.Sprintf(`UPDATE %s SET %s = JSON_MERGEPATCH(%s, JSON_OBJECT('%s' VALUE :1, '%s' VALUE :2, '%s' VALUE :3) RETURNING CLOB)
-	  WHERE ID = :4`, t, KolomJSON, KolomJSON, JSONUsedBy, JSONOperatorID, JSONModified)
-}
-
-// SqlUbahNamaRate - salinan nama di baris rate ringkasan itu ikut diganti (kolom `USEDBY` view `RATE_LIFE`).
-func SqlUbahNamaRate(t, v string) string {
-	return fmt.Sprintf(`UPDATE %s SET %s = JSON_MERGEPATCH(%s, JSON_OBJECT('%s' VALUE :1) RETURNING CLOB)
-	  WHERE ID IN (SELECT ID FROM %s WHERE IDUSEDBY = :2)`, t, KolomJSON, KolomJSON, JSONUsedBy, v)
-}
-
 // SqlHapusRingkasan - Delete ringkasan.
 func SqlHapusRingkasan(t string) string { return fmt.Sprintf(`DELETE FROM %s WHERE ID = :1`, t) }
 
@@ -218,15 +206,6 @@ func SqlSisipRate(t string) string {
 	return fmt.Sprintf(`INSERT INTO %s (ID, %s) VALUES (:1, JSON_OBJECT('%s' VALUE :2, '%s' VALUE :3, '%s' VALUE :4,
 	  '%s' VALUE :5, '%s' VALUE :6, '%s' VALUE :7 ABSENT ON NULL))`,
 		t, KolomJSON, JSONIDUsedBy, JSONUsedBy, JSONGender, JSONContract, JSONAge, JSONRate)
-}
-
-// SqlUbahRate - Edit Rate Detail (`EditList_DT` b9853 -> Save `AddToList_Act` b3196): GENDER, CONTRACT, AGE, RATE
-// diganti lewat JSON_MERGEPATCH; nilai kosong = NULL = kunci dibuang (sama dengan sisip ABSENT ON NULL). Kunci lain
-// (IDUSEDBY, USEDBY, TYPE, milik Pega) tetap. Baris harus milik ringkasan :6 (dipilih lewat view, seperti hapus).
-func SqlUbahRate(t, v string) string {
-	return fmt.Sprintf(`UPDATE %s SET %s = JSON_MERGEPATCH(%s, JSON_OBJECT('%s' VALUE :1, '%s' VALUE :2, '%s' VALUE :3,
-	  '%s' VALUE :4 NULL ON NULL) RETURNING CLOB) WHERE ID = :5 AND ID IN (SELECT ID FROM %s WHERE IDUSEDBY = :6)`,
-		t, KolomJSON, KolomJSON, JSONGender, JSONContract, JSONAge, JSONRate, v)
 }
 
 type pemindai interface{ Scan(...any) error }
@@ -412,28 +391,33 @@ func (g *Gudang) SisipRingkasan(ctx context.Context, tx *db.Tx, r models.Ringkas
 	return err
 }
 
-// UbahRingkasan - Edit; ErrTidakAda bila ID tidak ada.
+// UbahRingkasan - Edit: hanya USEDBY, OPERATORID, MODIFIEDDATE yang diganti; kunci lain milik Pega tetap
+// (rirl_json.go). ErrTidakAda bila ID tidak ada.
 func (g *Gudang) UbahRingkasan(ctx context.Context, tx *db.Tx, r models.Ringkasan) error {
 	n, err := g.nama()
 	if err != nil {
 		return err
 	}
-	j, err := g.tulis(ctx, tx, TabelRingkasan, SqlUbahRingkasan(n.tabelRingkasan), "mengubah ringkasan",
-		db.KosongJadiNil(r.UsedBy), db.KosongJadiNil(r.OperatorID), db.KosongJadiNil(r.ModifiedDate), r.ID)
-	if err == nil && j == 0 {
-		return ErrTidakAda
-	}
-	return err
+	return g.ubahJSON(ctx, tx, TabelRingkasan, n.tabelRingkasan, r.ID, map[string]string{
+		JSONUsedBy: r.UsedBy, JSONOperatorID: r.OperatorID, JSONModified: r.ModifiedDate}, nil)
 }
 
-// UbahNamaRate - salinan nama di baris rate ringkasan idUsedBy.
+// UbahNamaRate - salinan nama (`USEDBY`) di setiap baris rate ringkasan idUsedBy.
 func (g *Gudang) UbahNamaRate(ctx context.Context, tx *db.Tx, idUsedBy, nama string) (int, error) {
 	n, err := g.nama()
 	if err != nil {
 		return 0, err
 	}
-	j, err := g.tulis(ctx, tx, TabelRate, SqlUbahNamaRate(n.tabelRate, n.viewRate), "mengubah nama rate", nama, idUsedBy)
-	return int(j), err
+	b, err := g.bacaBaris(ctx, tx, ViewRate, SqlIDRateMilik(n.viewRate), 1, idUsedBy)
+	if err != nil {
+		return 0, err
+	}
+	for _, s := range b {
+		if err := g.ubahJSON(ctx, tx, TabelRate, n.tabelRate, s[0], map[string]string{JSONUsedBy: nama}, nil); err != nil {
+			return 0, err
+		}
+	}
+	return len(b), nil
 }
 
 // HapusRingkasan - Delete ringkasan; ErrTidakAda bila ID tidak ada.
@@ -513,17 +497,14 @@ func (g *Gudang) SisipRate(ctx context.Context, tx *db.Tx, r models.Rate) error 
 	return err
 }
 
-// UbahRate - Edit satu baris rate milik ringkasan r.IDUsedBy; ErrTidakAda bila tidak ada baris yang berubah.
+// UbahRate - Edit satu baris rate: GENDER, CONTRACT, AGE, RATE (kosong = kunci dibuang); baris harus milik
+// ringkasan r.IDUsedBy (kunci IDUSEDBY JSON lama), selain itu ErrTidakAda.
 func (g *Gudang) UbahRate(ctx context.Context, tx *db.Tx, r models.Rate) error {
 	n, err := g.nama()
 	if err != nil {
 		return err
 	}
-	k := db.KosongJadiNil
-	m, err := g.tulis(ctx, tx, TabelRate, SqlUbahRate(n.tabelRate, n.viewRate), "mengubah rate", k(r.Gender), k(r.Contract),
-		k(r.Age), k(r.Rate), r.ID, r.IDUsedBy)
-	if err == nil && m == 0 {
-		return ErrTidakAda
-	}
-	return err
+	return g.ubahJSON(ctx, tx, TabelRate, n.tabelRate, r.ID, map[string]string{
+		JSONGender: r.Gender, JSONContract: r.Contract, JSONAge: r.Age, JSONRate: r.Rate},
+		func(lama string) bool { return TeksKunci(lama, JSONIDUsedBy) == strings.TrimSpace(r.IDUsedBy) })
 }

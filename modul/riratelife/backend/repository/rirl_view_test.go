@@ -38,7 +38,7 @@ func TestKunciDanKolomCocokDenganView(t *testing.T) {
 			t.Errorf("kolom rate %s tidak ada di view", k)
 		}
 	}
-	for _, q := range []string{SqlSisipRingkasan("T"), SqlUbahRingkasan("T"), SqlDaftar("V", "", false), kolomRingkasan} {
+	for _, q := range []string{SqlSisipRingkasan("T"), SqlTulisJSON("T"), SqlDaftar("V", "", false), kolomRingkasan} {
 		for _, k := range []string{"'TYPE'", "'FLAG'", "TYPE,", "FLAG"} {
 			if strings.Contains(q, k) {
 				t.Errorf("%q memuat %s:\n%s", k, k, q)

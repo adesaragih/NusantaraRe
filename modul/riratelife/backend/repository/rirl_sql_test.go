@@ -40,14 +40,13 @@ func TestSqlDaftar(t *testing.T) {
 	}
 }
 
-// Tulis ke TABEL fisik: sisip JSON_OBJECT, ubah JSON_MERGEPATCH (RETURNING CLOB) - kunci Pega lain tetap.
+// Tulis ke TABEL fisik: sisip JSON_OBJECT; ubah = baca JSONDATA FOR UPDATE lalu tulis utuh (RALAT R3).
 func TestSqlTulisRingkasan(t *testing.T) {
 	memuat(t, "sisip", SqlSisipRingkasan("S.M_RATE_LIFE_SUMMARY"),
 		"INSERT INTO S.M_RATE_LIFE_SUMMARY (ID, JSONDATA) VALUES (:1, JSON_OBJECT('USEDBY' VALUE :2, 'OPERATORID' VALUE :3, 'MODIFIEDDATE' VALUE :4 ABSENT ON NULL))")
-	memuat(t, "ubah", SqlUbahRingkasan("S.M_RATE_LIFE_SUMMARY"),
-		"UPDATE S.M_RATE_LIFE_SUMMARY SET JSONDATA = JSON_MERGEPATCH(JSONDATA, JSON_OBJECT('USEDBY' VALUE :1, 'OPERATORID' VALUE :2, 'MODIFIEDDATE' VALUE :3) RETURNING CLOB) WHERE ID = :4")
-	memuat(t, "nama rate", SqlUbahNamaRate("S.M_RATE_LIFE", "S.RATE_LIFE"),
-		"SET JSONDATA = JSON_MERGEPATCH(JSONDATA, JSON_OBJECT('USEDBY' VALUE :1) RETURNING CLOB) WHERE ID IN (SELECT ID FROM S.RATE_LIFE WHERE IDUSEDBY = :2)")
+	memuat(t, "baca json", SqlBacaJSON("S.M_RATE_LIFE_SUMMARY"), "SELECT JSONDATA FROM S.M_RATE_LIFE_SUMMARY WHERE ID = :1 FOR UPDATE")
+	memuat(t, "tulis json", SqlTulisJSON("S.M_RATE_LIFE"), "UPDATE S.M_RATE_LIFE SET JSONDATA = :1 WHERE ID = :2")
+	memuat(t, "rate milik", SqlIDRateMilik("S.RATE_LIFE"), "SELECT ID FROM S.RATE_LIFE WHERE IDUSEDBY = :1")
 	memuat(t, "hapus", SqlHapusRingkasan("S.M_RATE_LIFE_SUMMARY"), "DELETE FROM S.M_RATE_LIFE_SUMMARY WHERE ID = :1")
 	memuat(t, "hapus rate", SqlHapusRate("S.M_RATE_LIFE", "S.RATE_LIFE"),
 		"DELETE FROM S.M_RATE_LIFE WHERE ID IN (SELECT ID FROM S.RATE_LIFE WHERE IDUSEDBY = :1)")
@@ -64,14 +63,6 @@ func TestSqlRate(t *testing.T) {
 	}
 	memuat(t, "detail", SqlDaftarRate("S.RATE_LIFE"), "SELECT ID, IDUSEDBY, USEDBY, GENDER, CONTRACT, AGE, RATE FROM S.RATE_LIFE WHERE IDUSEDBY = :1",
 		"ORDER BY TO_NUMBER(REGEXP_SUBSTR(ID, '^[0-9]+$')) DESC NULLS LAST, ID DESC OFFSET :2 ROWS FETCH NEXT :3 ROWS ONLY")
-	u := satuBaris(SqlUbahRate("S.M_RATE_LIFE", "S.RATE_LIFE"))
-	memuat(t, "ubah rate", u, "UPDATE S.M_RATE_LIFE SET JSONDATA = JSON_MERGEPATCH(JSONDATA, JSON_OBJECT('GENDER' VALUE :1, 'CONTRACT' VALUE :2, 'AGE' VALUE :3, 'RATE' VALUE :4 NULL ON NULL) RETURNING CLOB)",
-		"WHERE ID = :5 AND ID IN (SELECT ID FROM S.RATE_LIFE WHERE IDUSEDBY = :6)")
-	for _, k := range []string{"'TYPE'", "'IDUSEDBY'", "'USEDBY'"} {
-		if strings.Contains(u, k) {
-			t.Errorf("ubah rate tidak boleh menulis %s", k)
-		}
-	}
 	memuat(t, "kunci", SqlRateDari("S.RATE_LIFE", 3), "WHERE IDUSEDBY IN (:1, :2, :3)")
 }
 
@@ -80,7 +71,7 @@ func TestPeriksaTulis(t *testing.T) {
 	if err := PeriksaTulis(ViewRingkasan, "DELETE FROM X.RATE_LIFE_SUMMARY"); !errors.Is(err, ErrBacaSaja) {
 		t.Errorf("view ditulis: %v", err)
 	}
-	if err := PeriksaTulis(TabelRate, SqlUbahRate("X.M_RATE_LIFE", "X.RATE_LIFE")); err != nil {
+	if err := PeriksaTulis(TabelRate, SqlTulisJSON("X.M_RATE_LIFE")); err != nil {
 		t.Errorf("ubah rate: %v", err)
 	}
 	if err := PeriksaTulis(ViewRate, SqlDaftarRate("V")); err != nil {

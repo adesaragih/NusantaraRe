@@ -34,7 +34,7 @@ Tabel warisan (dinyatakan di `MODUL.md`, bukan dibuat migrasi).
 | Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
 | --- | --- | --- | --- | --- | --- |
 | `ID` | VARCHAR2(10) | ? | | "ID" | `SEQ_M_RATE_LIFE_SUMMARY` (nomor terpakai dilewati) |
-| `JSONDATA` | CLOB | ? | | JSON | sisip `JSON_OBJECT`, ubah `JSON_MERGEPATCH` (A2) |
+| `JSONDATA` | CLOB | ? | | JSON | sisip `JSON_OBJECT`, ubah `JSON_MERGEPATCH` (ubah: baca-ubah-tulis, RALAT R3) |
 
 Kunci JSON yang ditulis (terbukti, RALAT R1): `USEDBY` ("R/I RATE NAME", wajib, tidak kembar), `OPERATORID` (akun login),
 `MODIFIEDDATE` (format Pega `YYYYMMDDTHHMMSS.mmm GMT`). Kunci lain dibiarkan; `TYPE` dan `FLAG` tidak ditulis
@@ -47,7 +47,7 @@ Tabel warisan (dinyatakan di `MODUL.md`, bukan dibuat migrasi).
 | Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
 | --- | --- | --- | --- | --- | --- |
 | `ID` | VARCHAR2(10) | tidak | unik (data) | rate ID | `SEQ_M_RATE_LIFE` (nomor terpakai dilewati) |
-| `JSONDATA` | CLOB | ? | | JSON | sisip `JSON_OBJECT(... ABSENT ON NULL)`; Edit nama `JSON_MERGEPATCH` kunci `USEDBY`; Rate Detail Edit `JSON_MERGEPATCH` kunci `GENDER`, `CONTRACT`, `AGE`, `RATE` (kosong = kunci dibuang) |
+| `JSONDATA` | CLOB | ? | | JSON | sisip `JSON_OBJECT(... ABSENT ON NULL)`; Edit nama kunci `USEDBY`; Rate Detail Edit kunci `GENDER`, `CONTRACT`, `AGE`, `RATE` (kosong = kunci dibuang) - baca `FOR UPDATE`, ganti di Go, tulis utuh (RALAT R3) |
 
 Kunci JSON yang ditulis (terbukti dari view): `IDUSEDBY` (ID ringkasan), `USEDBY`, `GENDER` (U/M/F), `CONTRACT`
 (0-120 atau tidak ditulis), `AGE` (0-120), `RATE` (teks berkoma desimal). `TYPE` tidak pernah ditulis (NULL di

@@ -11,7 +11,7 @@
 // dan `FLAG` ada di view tetapi tidak dirujuk XML `InboxSummaryRIRate` - tidak dibaca dan tidak ditulis.
 package repository
 
-// Tabel fisik yang DITULIS (JSON Pega; kunci lain milik Pega dipertahankan `JSON_MERGEPATCH`).
+// Tabel fisik yang DITULIS (JSON Pega; kunci lain milik Pega dipertahankan, rirl_json.go).
 const (
 	// TabelRingkasan - kelas `ASM-FW-GISFW-Int-RATE_LIFE_SUMMARY` (339 baris DEV).
 	TabelRingkasan = "M_RATE_LIFE_SUMMARY"
