@@ -130,6 +130,15 @@ func TestKasusKomiteMembacaPesertaDanNomorDiperiksa(t *testing.T) {
 	}
 }
 
+// TestKasusKomiteHanyaLiniLife - kasus komite lini lain (TKMT- Claim Prop) tidak terbaca lewat ID: membuka, memutuskan,
+// dan riwayat Komite Life semuanya lewat `Kasus` (keputusan work owner 07-10-2026).
+func TestKasusKomiteHanyaLiniLife(t *testing.T) {
+	q := sqlKasusKomite("G", "W", "L", "C", "A")
+	if !strings.Contains(q, "WHERE g.ID = :2\n\t   AND (w.LINI = :3 OR w.LINI IS NULL)") {
+		t.Errorf("kasus komite tanpa saringan LINI sesudah ID:\n%s", q)
+	}
+}
+
 // TestRekamAkhirSatuJalurDanDipagari - tiket 04b.
 func TestRekamAkhirSatuJalurDanDipagari(t *testing.T) {
 	q := sqlRekamAkhirWarisan("D")

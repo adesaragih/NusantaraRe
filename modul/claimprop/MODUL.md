@@ -85,7 +85,7 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   (satu-satunya suntingan di modul itu). Gerbang lampiran tetap menolak selama OQ-CP-12 terbuka.
 - **Kotak masuk Komite Claim Life disaring LINI** ("tambahkan!"): `komiteclaimlife/backend/repository/komite_inbox.go`
   `sqlSaringInboxKomite` + `(w.LINI = :lini OR w.LINI IS NULL)`, argumen `inti.LiniLife`. Kasus komite PROP tidak
-  muncul di inbox Komite Life.
+  muncul di inbox Komite Life. Pembaca satu kasus `sqlKasusKomite` disaring sama (membuka, memutuskan, riwayat).
 - **Tambah / hapus baris Spreading Claim nonaktif**, termasuk ikon grid bawaan (dicabut). Akibat yang diketahui:
   kasus BARU tidak dapat melahirkan baris spreading, sehingga Save to issue RNM ditolak `ProteksiData_act` langkah 5
   ("please Fill SpreadingList"); kasus hasil pemuat data lama membawa barisnya.

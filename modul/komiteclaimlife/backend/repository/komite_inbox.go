@@ -246,6 +246,9 @@ var ErrKasusKomiteTakDitemukan = errors.New("repository: kasus komite tidak dite
 
 // sqlKasusKomite membaca kepala satu kasus. Tingkat berjalannya dihitung
 // seperti inbox; kasus yang tidak lagi menunggu siapa pun memberi urut 0.
+//
+// ⛔ LINI seperti inbox (keputusan work owner 07-10-2026): kasus komite lini lain (TKMT- Claim Prop) dijawab
+// "tidak ditemukan" - membuka, memutuskan, dan riwayat Komite Life semuanya membaca lewat `Kasus`.
 func sqlKasusKomite(gen, work, list, klaim, adj string) string {
 	return fmt.Sprintf(`SELECT g.ID, w.COVER_KEY, c.CLAIM_NO,
 	       (SELECT MIN(l2.KOMITE_URUT) FROM %s l2
@@ -258,7 +261,8 @@ func sqlKasusKomite(gen, work, list, klaim, adj string) string {
 	  JOIN %s w ON w.ID = g.ID
 	  LEFT JOIN %s c ON c.ID = w.COVER_KEY
 	  LEFT JOIN %s a ON a.ID = g.ADJUSTMENT_ID
-	 WHERE g.ID = :2`, list, gen, work, klaim, adj)
+	 WHERE g.ID = :2
+	   AND (w.LINI = :3 OR w.LINI IS NULL)`, list, gen, work, klaim, adj)
 }
 
 // sqlTanggaKasus membaca tangga satu kasus, urut jenjang.
@@ -281,7 +285,7 @@ func (r *InboxKomite) Kasus(ctx context.Context, kasusID string) (KasusKomite, e
 	var k KasusKomite
 	var klaimID, nomor, nilai, mu, sts, status, adjID, accept, peserta, kpr sql.NullString
 	var urut, count, loop sql.NullInt64
-	err = r.db.QueryRowContext(ctx, q, ApprovalKomiteMenunggu, kasusID).Scan(
+	err = r.db.QueryRowContext(ctx, q, ApprovalKomiteMenunggu, kasusID, inti.LiniLife).Scan(
 		&k.Baris.KasusID, &klaimID, &nomor, &urut, &count, &loop, &nilai, &mu, &sts,
 		&status, &k.Baris.TglUpdate, &adjID, &accept, &peserta, &kpr)
 	if errors.Is(err, sql.ErrNoRows) {
