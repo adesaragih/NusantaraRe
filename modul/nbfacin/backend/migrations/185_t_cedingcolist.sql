@@ -1,0 +1,34 @@
+-- 185 - daftar Ceding Co (tiket 34): T_CEDINGCOLIST + SEQ_T_CEDINGCOLIST, dan kolom gabungan di T_QUOTATIONDATA.
+--
+-- T_CEDINGCOLIST = tabel RANCANGAN (`loader/skema_gen.go`, jalur `QuotationData/CedingCoList`, induk
+-- T_QUOTATIONDATA), dibuat UTUH - seluruh kolomnya non-uang. Nama/tipe = rancangan; ID dan PARENT_ID
+-- NUMBER(19) (identitas dari sequence, pola A92; PARENT_ID = T_QUOTATIONDATA.ID). Satu baris per ceding,
+-- urut SEQ_NO = urutan pilih (E-8).
+--
+-- T_QUOTATIONDATA.CEDING_CO (gabungan kode `;`, Pega `Quotation.CedingCo`) ditambah; CEDING_CO_NAME (183,
+-- 500) DILEBARKAN - keputusan work owner 03-10-2026 butir 80: gabungan kode VARCHAR2(1000) (DDL Pega
+-- FACINOFFER/FACINPRODUCTION `CEDINGCO`), gabungan nama VARCHAR2(4000). Loader ikut (amandemen butir 80).
+-- Nol COMMIT (ADR-U-0029).
+CREATE TABLE {skema}.T_CEDINGCOLIST (
+  ID             NUMBER(19) NOT NULL,
+  IDPEGA         VARCHAR2(50),
+  COB_GROUP      VARCHAR2(20),
+  PARENT_ID      NUMBER(19) NOT NULL,
+  SEQ_NO         NUMBER(5) NOT NULL,
+  ROW_UID        VARCHAR2(36) NOT NULL,
+  CEDING_CO      VARCHAR2(50),
+  CEDING_CO_NAME VARCHAR2(500),
+  CONSTRAINT PK_T_CEDINGCOLIST PRIMARY KEY (ID),
+  CONSTRAINT FK_CEDINGCOLIST_QUOTATION FOREIGN KEY (PARENT_ID) REFERENCES {skema}.T_QUOTATIONDATA (ID)
+)
+/
+CREATE INDEX {skema}.IX_CEDINGCOLIST_PARENT ON {skema}.T_CEDINGCOLIST (PARENT_ID, SEQ_NO)
+/
+CREATE SEQUENCE {skema}.SEQ_T_CEDINGCOLIST START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE
+/
+ALTER TABLE {skema}.T_QUOTATIONDATA ADD (
+  CEDING_CO VARCHAR2(1000)
+)
+/
+ALTER TABLE {skema}.T_QUOTATIONDATA MODIFY (CEDING_CO_NAME VARCHAR2(4000))
+/

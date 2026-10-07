@@ -9,8 +9,12 @@ import './masterproductnamelife.css'
 import type { HalamanMPNL } from './menu'
 import MasterProductNameLife from './pages/MasterProductNameLife'
 
-export function RuteMPNL({ halaman }: PropsRute<HalamanMPNL>) {
-  return <BahasaUI.Provider value="en">{halaman === 'mpnl-produk' && <MasterProductNameLife />}</BahasaUI.Provider>
+// Setiap pilihan menu (`ketukMenu` naik) memasang ULANG halaman lewat `key`: form, popup, dan halaman
+// tabel kembali ke daftar awal (permintaan work owner 04-10-2026, sama dengan Master Contract Retro Life).
+export function RuteMPNL({ halaman, ketukMenu }: PropsRute<HalamanMPNL>) {
+  return (
+    <BahasaUI.Provider value="en">{halaman === 'mpnl-produk' && <MasterProductNameLife key={ketukMenu ?? 0} />}</BahasaUI.Provider>
+  )
 }
 
 /** Rute modul ini untuk perakit `frontend/daftar.ts` - nama ekspor sama di setiap modul. */

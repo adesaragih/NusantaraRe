@@ -1,0 +1,274 @@
+package handlers
+
+import (
+	"context"
+	"encoding/json"
+	"strings"
+	"testing"
+
+	"nusantarare/inti/backend/utils"
+	"nusantarare/modul/nbfacin/backend/models"
+	"nusantarare/modul/nbfacin/backend/services"
+)
+
+type coverageTiruan struct{ kata *string }
+
+func (c coverageTiruan) CariCoverage(_ context.Context, k string) ([]models.BarisCoverage, error) {
+	*c.kata = k
+	return []models.BarisCoverage{{ID: "100815", OldID: "UJI-OLD", Nama: "UJI COVERAGE"}}, nil
+}
+
+func (coverageTiruan) CoverageOtomatis(context.Context) ([]models.BarisCoverage, error) {
+	return []models.BarisCoverage{{ID: "100815", OldID: "UJI-OLD", Nama: "UJI COVERAGE"}, {ID: "100828"}}, nil
+}
+
+// kasusPeriode - case UJI dengan periode polis setahun penuh (Prorate 100).
+func kasusPeriode() *models.Kasus {
+	return &models.Kasus{CaseID: "UJI-NB-1", InsuredName: "UJI",
+		General: models.General{StartDateTime: "20250101T050000.000 GMT", EndDateTime: "20260101T050000.000 GMT"}}
+}
+
+// kunciCoverage - 28 kunci kontrak CoverageObjek (frontend/api.ts; deductibles tiket 45; unit / akumulasi tiket 46).
+var kunciCoverage = []string{"coverage", "oldId", "coverageNote", "coverageBasis", "day", "tsi", "indemnity", "rate", "rateOjk",
+	"firstLoss", "discountPercentage", "tsiLiability", "netRate", "limitOfLiability", "pctLol", "proRatePercent",
+	"indemnityPercentage", "firstScale", "sublimit", "lostLimit", "emlPml", "discount", "premium", "conditions", "deductibles", "unit",
+	"accumulationCode", "accumulationDescription"}
+
+// TestCariCoverage - GET /api/nbfacin/coverage (tiket 43): bentuk persis BarisCoverage, kata di-trim, kosong = semua;
+// tanpa identitas; 400 / 503.
+func TestCariCoverage(t *testing.T) {
+	var kata string
+	svc := services.Baru(nil).DenganCoverage(coverageTiruan{&kata})
+	if kode, isi := minta(t, svc, "GET", "/api/nbfacin/coverage?cari=%20fire%20", "", ""); kode != 200 ||
+		isi != `{"baris":[{"id":"100815","oldId":"UJI-OLD","nama":"UJI COVERAGE"}]}` || kata != "fire" {
+		t.Errorf("%d %s kata %q", kode, isi, kata)
+	}
+	if kode, _ := minta(t, svc, "GET", "/api/nbfacin/coverage", "", ""); kode != 200 || kata != "" {
+		t.Errorf("kosong: %d kata %q", kode, kata)
+	}
+	if kode, _ := minta(t, svc, "GET", "/api/nbfacin/coverage?cari="+strings.Repeat("A", 256), "", ""); kode != 400 {
+		t.Errorf("400: %d", kode)
+	}
+	if kode, _ := minta(t, services.Baru(nil), "GET", "/api/nbfacin/coverage", "", ""); kode != 503 {
+		t.Errorf("503: %d", kode)
+	}
+}
+
+// TestCoverageOtomatis - GET /api/nbfacin/coverage-otomatis: urutan pembaca dipertahankan; 503.
+func TestCoverageOtomatis(t *testing.T) {
+	var kata string
+	if kode, isi := minta(t, services.Baru(nil).DenganCoverage(coverageTiruan{&kata}), "GET", "/api/nbfacin/coverage-otomatis", "", ""); kode != 200 ||
+		isi != `{"baris":[{"id":"100815","oldId":"UJI-OLD","nama":"UJI COVERAGE"},{"id":"100828","oldId":"","nama":""}]}` {
+		t.Errorf("%d %s", kode, isi)
+	}
+	if kode, _ := minta(t, services.Baru(nil), "GET", "/api/nbfacin/coverage-otomatis", "", ""); kode != 503 {
+		t.Errorf("503: %d", kode)
+	}
+}
+
+// TestHitungCoverageHandler - POST …/hitung-coverage: 24 kunci persis CoverageObjek; medan server (tsi, tsiLiability,
+// proRatePercent) dari badan diabaikan; 400 desimal ber-jalur / basis 5 / mode; 409 periode kosong; 503.
+func TestHitungCoverageHandler(t *testing.T) {
+	svc := services.Baru(nil).DenganKasus(kasusTiruan{k: kasusPeriode()})
+	jalur := "/api/nbfacin/kasus/UJI-NB-1/hitung-coverage"
+	cov := `{"coverage":"100815","coverageBasis":"1","rate":"1","indemnityPercentage":"100","tsi":"9","tsiLiability":"9","proRatePercent":"9"}`
+	kode, isi := minta(t, svc, "POST", jalur, `{"coverage":`+cov+`,"tsi":"1000000000","mode":"percent"}`, "")
+	var j map[string]any
+	if err := json.Unmarshal([]byte(isi), &j); err != nil || kode != 200 || len(j) != len(kunciCoverage) {
+		t.Fatalf("%d %s", kode, isi)
+	}
+	for _, k := range kunciCoverage {
+		if _, ada := j[k]; !ada {
+			t.Errorf("kunci %q tidak ada (kontrak CoverageObjek)", k)
+		}
+	}
+	if j["premium"] != "1000000" || j["tsi"] != "1000000000" || j["tsiLiability"] != "1000000000" || j["proRatePercent"] != "100" {
+		t.Errorf("hasil: %s", isi)
+	}
+	for _, u := range []struct {
+		nama, badan, pesan string
+		svc                *services.Service
+		kode               int
+	}{
+		{"JSON rusak", `{"coverage":`, "bukan JSON", svc, 400},
+		{"rate koma", `{"coverage":{"coverageBasis":"1","rate":"1,5"},"tsi":"1","mode":"percent"}`, "coverage.rate harus angka", svc, 400},
+		{"tsi minus", `{"coverage":{"coverageBasis":"1"},"tsi":"-1","mode":"percent"}`, "tsi harus angka", svc, 400},
+		{"pctAdjustOther", `{"coverage":{"coverageBasis":"1"},"tsi":"1","mode":"percent","pctAdjustOther":"x"}`, "pctAdjustOther harus angka", svc, 400},
+		{"basis 5", `{"coverage":{"coverageBasis":"5"},"tsi":"1","mode":"percent"}`, "Layering belum didukung", svc, 400},
+		{"mode", `{"coverage":{"coverageBasis":"1"},"tsi":"1","mode":"x"}`, "mode harus", svc, 400},
+		{"modeDiskon", `{"coverage":{"coverageBasis":"1"},"tsi":"1","mode":"percent","modeDiskon":"x"}`, "modeDiskon", svc, 400},
+		{"periode kosong", `{"coverage":{"coverageBasis":"1"},"tsi":"1","mode":"percent"}`, "Begin / End",
+			services.Baru(nil).DenganKasus(kasusTiruan{k: &models.Kasus{CaseID: "UJI-NB-1"}}), 409},
+		{"tanpa DB", `{"coverage":{"coverageBasis":"1"},"tsi":"1","mode":"percent"}`, "galat", services.Baru(nil), 503},
+	} {
+		if kode, isi := minta(t, u.svc, "POST", jalur, u.badan, ""); kode != u.kode || !strings.Contains(isi, u.pesan) {
+			t.Errorf("%s: %d %s, mau %d", u.nama, kode, isi, u.kode)
+		}
+	}
+}
+
+// TestObjekCoverage - PUT/GET objek dengan items[].coverages (tiket 43): premi dihitung ulang server, totalGrossPremi
+// BACA-SAJA, totalNetRate = 0 tanpa kelima coverage net rate (tiket 44, CekNetRate langkah 4), totalPerCurrency dihitung;
+// 400 ber-jalur coverages[k]; mata uang > 10 byte.
+func TestObjekCoverage(t *testing.T) {
+	var d []models.ObjekFire
+	svc := services.Baru(nil).DenganObjek(objekTiruan{&d}).DenganTransaksi(tanpaOracle).DenganPilihanItem(pilihanTiruan{}).
+		DenganKasus(kasusTiruan{k: kasusPeriode()})
+	jalur := "/api/nbfacin/kasus/UJI-NB-1/objek"
+	cov := `{"coverage":"100815","coverageBasis":"1","rate":"1","indemnityPercentage":"100","premium":"5"}`
+	badan := `{"baris":[{"objectType":"UJI","items":[{"currency":"IDR","tsi":"1000000000","totalGrossPremi":"7","totalNetRate":"1.25",` +
+		`"coverages":[` + cov + `]}],"totalPerCurrency":[{"currency":"X"}]}]}`
+	kode, isi := minta(t, svc, "PUT", jalur, badan, "UJI-USER")
+	var j struct {
+		Baris []struct {
+			Items []struct {
+				Coverages       []map[string]any `json:"coverages"`
+				TotalGrossPremi string           `json:"totalGrossPremi"`
+				TotalNetRate    string           `json:"totalNetRate"`
+			} `json:"items"`
+			TotalPerCurrency []map[string]any `json:"totalPerCurrency"`
+		} `json:"baris"`
+	}
+	if err := json.Unmarshal([]byte(isi), &j); err != nil || kode != 200 || len(j.Baris) != 1 || len(j.Baris[0].Items) != 1 ||
+		len(j.Baris[0].Items[0].Coverages) != 1 {
+		t.Fatalf("%d %s", kode, isi)
+	}
+	it := j.Baris[0].Items[0]
+	if len(it.Coverages[0]) != len(kunciCoverage) || it.Coverages[0]["premium"] != "1000000" || it.TotalGrossPremi != "1000000" ||
+		it.TotalNetRate != "0" {
+		t.Errorf("item: %s", isi)
+	}
+	tot := j.Baris[0].TotalPerCurrency
+	if len(tot) != 1 || tot[0]["currency"] != "IDR" || tot[0]["tsi"] != "1000000000" || tot[0]["premium"] != "1000000" || tot[0]["rate"] != "1" {
+		t.Errorf("totalPerCurrency: %s", isi)
+	}
+	for nama, u := range map[string]struct {
+		badan, pesan string
+	}{
+		"rate koma": {`{"baris":[{"objectType":"UJI","items":[{"currency":"IDR","coverages":[{"coverageBasis":"1"},{"coverageBasis":"1","rate":"1,5"}]}]}]}`,
+			"baris[0].items[0].coverages[1].rate harus angka"},
+		"basis 5":       {`{"baris":[{"objectType":"UJI","items":[{"currency":"IDR","coverages":[{"coverageBasis":"5"}]}]}]}`, "Layering belum didukung"},
+		"totalNetRate":  {`{"baris":[{"objectType":"UJI","items":[{"currency":"IDR","totalNetRate":"x"}]}]}`, "baris[0].items[0].totalNetRate"},
+		"mata uang 11B": {`{"baris":[{"objectType":"UJI","items":[{"currency":"IDRIDRIDRID","coverages":[{"coverageBasis":"1"}]}]}]}`, "currency paling banyak 10 byte"},
+	} {
+		if kode, isi := minta(t, svc, "PUT", jalur, u.badan, "UJI-USER"); kode != 400 || !strings.Contains(isi, u.pesan) {
+			t.Errorf("%s: %d %s", nama, kode, isi)
+		}
+	}
+}
+
+// TestHitungNetRateHandler - POST …/hitung-net-rate (tiket 44): bentuk {coverages, totalNetRate, flagNetRate}; flag
+// false -> "0" dan coverage apa adanya; flag true -> NetRate dibagi; 400 ber-jalur; 409 periode kosong.
+func TestHitungNetRateHandler(t *testing.T) {
+	svc := services.Baru(nil).DenganKasus(kasusTiruan{k: kasusPeriode()})
+	jalur := "/api/nbfacin/kasus/UJI-NB-1/hitung-net-rate"
+	cov := func(oldID, rate string) string {
+		return `{"coverage":"1","oldId":"` + oldID + `","coverageBasis":"1","rate":"` + rate + `","indemnityPercentage":"100"}`
+	}
+	lima := cov("FLEXAS", "1") + "," + cov("4.1A CC", "1") + "," + cov("4.3", "2") + "," + cov("4.2 PRGBI", "") + "," + cov("OTHERS", "")
+	tanpaRate := cov("FLEXAS", "") + "," + cov("4.1A CC", "0") + "," + cov("4.3", "") + "," + cov("4.2 PRGBI", "") + "," + cov("OTHERS", "")
+	kode, isi := minta(t, svc, "POST", jalur, `{"tsi":"1000000000","totalNetRate":"2","coverages":[`+lima+`]}`, "")
+	var j struct {
+		Coverages    []map[string]any `json:"coverages"`
+		TotalNetRate string           `json:"totalNetRate"`
+		FlagNetRate  bool             `json:"flagNetRate"`
+	}
+	var mentah map[string]any
+	if err := json.Unmarshal([]byte(isi), &j); err != nil || kode != 200 || json.Unmarshal([]byte(isi), &mentah) != nil || len(mentah) != 3 ||
+		len(j.Coverages) != 5 || len(j.Coverages[0]) != len(kunciCoverage) {
+		t.Fatalf("%d %s", kode, isi)
+	}
+	if !j.FlagNetRate || j.TotalNetRate != "2" || j.Coverages[2]["netRate"] != "1" || j.Coverages[2]["premium"] != "1000000" {
+		t.Errorf("flag true: %s", isi)
+	}
+	if kode, isi := minta(t, svc, "POST", jalur, `{"tsi":"1000000000","totalNetRate":"2","coverages":[`+cov("FLEXAS", "1")+`]}`, ""); kode != 200 ||
+		!strings.Contains(isi, `"totalNetRate":"0","flagNetRate":false`) || !strings.Contains(isi, `"netRate":""`) {
+		t.Errorf("flag false: %d %s", kode, isi)
+	}
+	for _, u := range []struct {
+		nama, badan, pesan string
+		svc                *services.Service
+		kode               int
+	}{
+		{"JSON rusak", `{"coverages":`, "bukan JSON", svc, 400},
+		{"rate koma", `{"tsi":"1","totalNetRate":"2","coverages":[` + cov("FLEXAS", "1,5") + `]}`, "coverages[0].rate harus angka", svc, 400},
+		{"total minus", `{"tsi":"1","totalNetRate":"-2","coverages":[]}`, "totalNetRate harus angka", svc, 400},
+		{"ΣRate 0", `{"tsi":"1","totalNetRate":"2","coverages":[` + tanpaRate + `]}`, "totalNetRate: Σ Rate coverage = 0", svc, 400},
+		{"periode kosong", `{"tsi":"1","totalNetRate":"2","coverages":[` + lima + `]}`, "Begin / End",
+			services.Baru(nil).DenganKasus(kasusTiruan{k: &models.Kasus{CaseID: "UJI-NB-1"}}), 409},
+	} {
+		kode, isi := minta(t, u.svc, "POST", jalur, u.badan, "")
+		if kode != u.kode || !strings.Contains(isi, u.pesan) {
+			t.Errorf("%s: %d %s, mau %d", u.nama, kode, isi, u.kode)
+		}
+	}
+}
+
+// TestObjekDeductible - tiket 45: coverages[k].deductibles pulang-pergi utuh lewat PUT objek (kunci persis kontrak
+// Deductible; coverage dihitung ulang tanpa kehilangan deductible); tanpa deductibles -> []; 400 ber-jalur
+// …coverages[k].deductibles[d].<medan>; mata uang boleh kosong walau amount diisi (A169), bila diisi harus ada di daftar.
+func TestObjekDeductible(t *testing.T) {
+	var d []models.ObjekFire
+	svc := services.Baru(nil).DenganObjek(objekTiruan{&d}).DenganTransaksi(tanpaOracle).DenganPilihanItem(pilihanTiruan{}).
+		DenganKasus(kasusTiruan{k: kasusPeriode()})
+	jalur := "/api/nbfacin/kasus/UJI-NB-1/objek"
+	ded1 := `{"typeDeductible":"3","pctDeductible":"10","minMax":"3","currency":"USD","typeDeductible2":"1","pctDeductible2":"2.5",` +
+		`"condition":"5","amount":"1000000.12345678","inputCondition":"UJI KONDISI","timeExcess":"14"}`
+	ded2 := `{"typeDeductible":"7","pctDeductible":"","minMax":"","currency":"","typeDeductible2":"","pctDeductible2":"",` +
+		`"condition":"","amount":"","inputCondition":"","timeExcess":""}`
+	badan := func(ded string) string {
+		return `{"baris":[{"objectType":"UJI","items":[{"currency":"IDR","tsi":"1000000000","coverages":[` +
+			`{"coverage":"1","coverageBasis":"1","rate":"1","indemnityPercentage":"100","deductibles":[` + ded + `]},` +
+			`{"coverage":"2","coverageBasis":"1"}]}]}]}`
+	}
+	kode, isi := minta(t, svc, "PUT", jalur, badan(ded1+","+ded2), "UJI-USER")
+	if kode != 200 || !strings.Contains(isi, `"deductibles":[`+ded1+","+ded2+`],"unit":""`) || !strings.Contains(isi, `"conditions":"","deductibles":[],"unit":""`) ||
+		!strings.Contains(isi, `"premium":"1000000"`) {
+		t.Fatalf("%d %s", kode, isi)
+	}
+	if got := d[0].Items[0].Coverages[0].Deductibles; len(got) != 2 || utils.FormatDecimal(got[0].Amount) != "1000000.12345678" || got[1].Currency != "" {
+		t.Errorf("model: %+v", got)
+	}
+	if kode, isi := minta(t, svc, "PUT", jalur, badan(`{"amount":"5"}`), "UJI-USER"); kode != 200 ||
+		!strings.Contains(isi, `"currency":"","typeDeductible2":"","pctDeductible2":"","condition":"","amount":"5"`) {
+		t.Errorf("amount tanpa mata uang: %d %s", kode, isi)
+	}
+	panjang := strings.Repeat("A", 501)
+	for nama, u := range map[string]struct{ ded, pesan string }{
+		"amount koma":      {`{"amount":"1,5","currency":"USD"}`, "baris[0].items[0].coverages[0].deductibles[0].amount harus angka"},
+		"kode bukan angka": {`{"typeDeductible":"x"}`, "deductibles[0].typeDeductible harus kode bilangan bulat"},
+		"mata uang asing":  {`{"currency":"ITL"}`, `deductibles[0].currency \"ITL\" tidak ada di daftar mata uang`},
+		"kondisi panjang":  {`{"inputCondition":"` + panjang + `"}`, "deductibles[0].inputCondition paling banyak 500 byte"},
+		"time excess":      {`{"timeExcess":"123456789012345678901234567890.12345678"}`, "deductibles[0].timeExcess paling banyak 30 karakter"},
+	} {
+		if kode, isi := minta(t, svc, "PUT", jalur, badan(u.ded), "UJI-USER"); kode != 400 || !strings.Contains(isi, u.pesan) {
+			t.Errorf("%s: %d %s", nama, kode, isi)
+		}
+	}
+}
+
+// TestCoverageUnitAkumulasi - tiket 46: unit / accumulationCode / accumulationDescription pulang-pergi lewat PUT objek dan
+// diteruskan apa adanya oleh hitung-coverage; lebar kolom migrasi 195 -> 400 ber-jalur.
+func TestCoverageUnitAkumulasi(t *testing.T) {
+	var d []models.ObjekFire
+	svc := services.Baru(nil).DenganObjek(objekTiruan{&d}).DenganTransaksi(tanpaOracle).DenganPilihanItem(pilihanTiruan{}).
+		DenganKasus(kasusTiruan{k: kasusPeriode()})
+	akum := `"unit":"1","accumulationCode":"UJI-61151-000001","accumulationDescription":"UJI ALAMAT AKUMULASI"`
+	badan := func(isi string) string {
+		return `{"baris":[{"objectType":"UJI","items":[{"currency":"IDR","tsi":"1000000000","coverages":[{"coverage":"1","coverageBasis":"1",` + isi + `}]}]}]}`
+	}
+	if kode, isi := minta(t, svc, "PUT", "/api/nbfacin/kasus/UJI-NB-1/objek", badan(akum), "UJI-USER"); kode != 200 || !strings.Contains(isi, `"deductibles":[],`+akum+`}`) {
+		t.Fatalf("%d %s", kode, isi)
+	}
+	if c := d[0].Items[0].Coverages[0]; c.Unit != "1" || c.AccumulationCode != "UJI-61151-000001" || c.AccumulationDescription != "UJI ALAMAT AKUMULASI" {
+		t.Errorf("model: %+v", c)
+	}
+	if kode, isi := minta(t, svc, "POST", "/api/nbfacin/kasus/UJI-NB-1/hitung-coverage", `{"coverage":{"coverageBasis":"1",`+akum+`},"tsi":"1","mode":"percent"}`, ""); kode != 200 ||
+		!strings.Contains(isi, akum) {
+		t.Errorf("hitung-coverage: %d %s", kode, isi)
+	}
+	if kode, isi := minta(t, svc, "PUT", "/api/nbfacin/kasus/UJI-NB-1/objek", badan(`"accumulationCode":"`+strings.Repeat("A", 51)+`"`), "UJI-USER"); kode != 400 ||
+		!strings.Contains(isi, "baris[0].items[0].coverages[0].accumulationCode paling banyak 50 byte") {
+		t.Errorf("lebar: %d %s", kode, isi)
+	}
+}

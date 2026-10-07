@@ -132,6 +132,19 @@ func (l *Layanan) SimpanReinsurer(ctx context.Context, p inti.Pelaku, kontrakID 
 		r.TreatyYearID, r.TreatyContractID = k.IDTreatyYear, k.ID
 		r.ReinsTypeID, r.ReinsTypeName = k.ReinsTypeID, k.ReinsTypeName
 		r.UserID = p.AkunID
+		// ⛔ Satu Reinsurer Name sekali per kontrak (keputusan work owner 04-10-2026).
+		saudara, err := l.gudang.DaftarReinsurer(ctx, tx, k.IDTreatyYear, k.ID)
+		if err != nil {
+			return err
+		}
+		if models.ReinsurerGanda(saudara, m.ID, r.ReinsurerID) {
+			return fmt.Errorf("%w: %s", ErrMasukanTidakSah, fmt.Sprintf(PesanReinsurerGanda, r.ReinsurerName))
+		}
+		// ⛔ Total share kontrak TIDAK BOLEH melebihi 100 (keputusan work owner
+		// 04-10-2026). Baris yang sedang diubah dihitung dengan nilai BARUNYA.
+		if err := periksaTotalShare(saudara, m.ID, r.PctShare); err != nil {
+			return err
+		}
 		if !ubah {
 			if r.ID, err = l.gudang.SisipReinsurer(ctx, tx, r); err != nil {
 				return err
@@ -208,4 +221,31 @@ func (l *Layanan) LaporanTotalShareBukan100(ctx context.Context, p inti.Pelaku, 
 			ReinsTypeName: t.ReinsTypeName, TotalShare: total.Text('f'), Selisih: sisa.Text('f')})
 	}
 	return hasil, nil
+}
+
+// periksaTotalShare menolak simpan yang membuat total share reinsurer satu
+// kontrak MELEBIHI 100 (keputusan work owner 04-10-2026). Di bawah 100 tetap
+// boleh - reinsurer dimasukkan satu per satu - dan tetap dilaporkan
+// `TotalBukan100` di daftar.
+func periksaTotalShare(saudara []models.Reinsurer, idSendiri string, baru *apd.Decimal) error {
+	share := []*apd.Decimal{baru}
+	for _, r := range saudara {
+		if r.ID != idSendiri {
+			share = append(share, r.PctShare)
+		}
+	}
+	return periksaShareMaks(share)
+}
+
+// periksaShareMaks menolak total share > 100 - dipakai Reinsurer List dan
+// Security Reinsurer (keputusan work owner 04-10-2026).
+func periksaShareMaks(share []*apd.Decimal) error {
+	total, err := jumlahShare(share)
+	if err != nil {
+		return err
+	}
+	if total.Cmp(apd.New(100, 0)) > 0 {
+		return fmt.Errorf("%w: %s", ErrMasukanTidakSah, fmt.Sprintf(PesanShareLebih100, utils.FormatDecimal(total)))
+	}
+	return nil
 }

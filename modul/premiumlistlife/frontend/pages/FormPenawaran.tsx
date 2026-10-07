@@ -30,6 +30,7 @@ import {
   type PilihanKode,
 } from '../api'
 import { KOLOM_RIWAYAT_PENAWARAN, LABEL_PENAWARAN, TEKS_PILIH } from '../labels'
+import AreaTeks from '../components/AreaTeks'
 import IsianTanggal from '../components/IsianTanggal'
 import { tanggalJamTampil } from '../tanggal'
 import '../premiumlistlife.css'
@@ -220,21 +221,13 @@ export default function FormPenawaran({ polisID }: { polisID: string }) {
             onChange={(v) => { ubah('sumInsured')(saringAngkaDesimal(v)) }}
             readOnly={kunci}
           />
-          {kunci ? (
-            <Field
-              label={LABEL_PENAWARAN.ketentuanUnderwriting}
-              value={isi.ketentuanUnderwriting}
-              onChange={() => {}}
-              readOnly
-            />
-          ) : (
-            <Area
-              label={LABEL_PENAWARAN.ketentuanUnderwriting}
-              value={isi.ketentuanUnderwriting}
-              onChange={ubah('ketentuanUnderwriting')}
-              baris={3}
-            />
-          )}
+          {/* Text area — terkunci pun tetap text area (03-10-2026). */}
+          <AreaTeks
+            label={LABEL_PENAWARAN.ketentuanUnderwriting}
+            value={isi.ketentuanUnderwriting}
+            onChange={ubah('ketentuanUnderwriting')}
+            readOnly={kunci}
+          />
         </div>
         <div>
           <h4 className="pl-offer__subjudul">Dates &amp; Status</h4>
@@ -301,21 +294,12 @@ export default function FormPenawaran({ polisID }: { polisID: string }) {
               readOnly={kunci}
             />
           </div>
-          {kunci ? (
-            <Field
-              label={LABEL_PENAWARAN.keteranganMarketing}
-              value={isi.keteranganMarketing}
-              onChange={() => {}}
-              readOnly
-            />
-          ) : (
-            <Area
-              label={LABEL_PENAWARAN.keteranganMarketing}
-              value={isi.keteranganMarketing}
-              onChange={ubah('keteranganMarketing')}
-              baris={3}
-            />
-          )}
+          <AreaTeks
+            label={LABEL_PENAWARAN.keteranganMarketing}
+            value={isi.keteranganMarketing}
+            onChange={ubah('keteranganMarketing')}
+            readOnly={kunci}
+          />
         </div>
       </div>
 

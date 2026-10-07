@@ -4,6 +4,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -84,25 +85,53 @@ func TestDataPolisMenolakPilihanAsing(t *testing.T) {
 	}
 }
 
-// SavePremiumList_Act 8.1/8.2 - pesan VERBATIM, nomor urut 1.., SI dilewati TP/TR RNML-FL.
+// SavePremiumList_Act 8.1/8.2 - penolakan Validate CSV (keputusan work owner
+// 05-10-2026): pesan VERBATIM, "at list" = nomor baris CSV, SI dilewati TP/TR RNML-FL.
 func TestPeriksaBatasProduk(t *testing.T) {
 	b := BatasProduk{MinAge: apd.New(18, 0), MaxAge: apd.New(65, 0),
 		MinSumInsured: apd.New(1000, 0), MaxSumInsured: apd.New(5000, 0)}
-	peserta := []PesertaBatas{
-		{NameOfInsured: "UJI-A", EntryAge: apd.New(30, 0), SumInsured: apd.New(2000, 0)},
-		{NameOfInsured: "UJI-B", EntryAge: apd.New(70, 0), SumInsured: apd.New(9000, 0)},
-		{NameOfInsured: "UJI-C", EntryAge: nil, SumInsured: nil},
+	baris := func(nomor int, nama, umur, si string) BarisUnggah {
+		return BarisUnggah{Nomor: nomor, Nilai: map[string]string{"NAME_OF_INSURED": nama, "ENTRY_AGE": umur, "SUM_INSURED": si}}
 	}
-	got := PeriksaBatasProduk("QR", "", b, peserta)
-	mau := []string{"UJI-B Age exceeds the limit, at list 2", "UJI-B Sum Insured exceeds the limit, at list 2"}
-	if strings.Join(got, "|") != strings.Join(mau, "|") {
-		t.Errorf("pesan = %q, mau %q", got, mau)
+	peserta := []BarisUnggah{
+		baris(3, "UJI-A", "30", "2000"),
+		baris(7, "UJI-B", "70", "9000"),
+		baris(9, "UJI-C", "", ""),
+		baris(11, "UJI-D", "10", "500"),
+		baris(12, "UJI-E", "x", "1,5"), // tidak terurai - urusan validasi bentuk
 	}
-	if got := PeriksaBatasProduk("TP", "UJI/RNML-FL/1", b, peserta); len(got) != 1 || !strings.Contains(got[0], "Age") {
-		t.Errorf("TP RNML-FL melewati Sum Insured saja: %q", got)
+	pesan := func(p []Penolakan) []string {
+		var s []string
+		for _, x := range p {
+			s = append(s, fmt.Sprintf("%d|%s|%s", x.Baris, x.Kolom, x.Pesan))
+		}
+		return s
 	}
-	if got := PeriksaBatasProduk("QR", "", BatasProduk{}, peserta); len(got) != 0 {
-		t.Errorf("batas kosong tetap menuduh: %q", got)
+	got := pesan(PeriksaBatasProduk("QR", "", b, peserta, nil))
+	mau := []string{
+		"7|ENTRY_AGE|UJI-B Age exceeds the limit, at list 7",
+		"7|SUM_INSURED|UJI-B Sum Insured exceeds the limit, at list 7",
+		"11|ENTRY_AGE|UJI-D Age exceeds the limit, at list 11",
+		"11|SUM_INSURED|UJI-D Sum Insured exceeds the limit, at list 11",
+	}
+	if strings.Join(got, "\n") != strings.Join(mau, "\n") {
+		t.Errorf("penolakan =\n%s\nmau\n%s", strings.Join(got, "\n"), strings.Join(mau, "\n"))
+	}
+	tp := PeriksaBatasProduk("TP", "UJI/RNML-FL/1", b, peserta, nil)
+	for _, p := range tp {
+		if p.Kolom != "ENTRY_AGE" {
+			t.Errorf("TP RNML-FL tetap memeriksa Sum Insured: %+v", p)
+		}
+	}
+	if len(tp) != 2 {
+		t.Errorf("TP RNML-FL: %+v", tp)
+	}
+	if got := PeriksaBatasProduk("QR", "", BatasProduk{}, peserta, nil); len(got) != 0 {
+		t.Errorf("batas kosong tetap menuduh: %+v", got)
+	}
+	// Baris yang sudah ditolak validasi tidak dicek lagi.
+	if got := PeriksaBatasProduk("QR", "", b, peserta, map[int]bool{7: true, 11: true}); len(got) != 0 {
+		t.Errorf("baris terlewati tetap dicek: %+v", got)
 	}
 }
 
@@ -130,5 +159,22 @@ func TestBillingRetroDikosongkanSelainTPTR(t *testing.T) {
 	}
 	if got.RetroID != "" || got.RetroName != "" || got.SecurityReinsurerID != "" || got.SecurityReinsurer != "" {
 		t.Errorf("QR menyimpan Billing/Retro tersembunyi: %+v", got)
+	}
+}
+
+// Sebab penolakan batas berpemisah ribuan (permintaan work owner 05-10-2026).
+func TestAngkaTampilSebabBatas(t *testing.T) {
+	for masuk, mau := range map[string]string{"-27300184": "-27.300.184", "1000000000": "1.000.000.000",
+		"0": "0", "70": "70", "1234.5": "1.234,5", "999": "999", "1000": "1.000"} {
+		d, _, _ := apd.NewFromString(masuk)
+		if got := AngkaTampil(d); got != mau {
+			t.Errorf("AngkaTampil(%s) = %q, mau %q", masuk, got, mau)
+		}
+	}
+	b := BatasProduk{MinSumInsured: apd.New(0, 0), MaxSumInsured: apd.New(1000000000, 0)}
+	p := PeriksaBatasProduk("QR", "", b, []BarisUnggah{{Nomor: 8, Nilai: map[string]string{
+		"NAME_OF_INSURED": "UJI-A", "ENTRY_AGE": "30", "SUM_INSURED": "-27300184"}}}, nil)
+	if len(p) != 1 || p[0].Sebab != "SUM_INSURED -27.300.184 outside product limit 0 - 1.000.000.000" {
+		t.Errorf("sebab = %+v", p)
 	}
 }

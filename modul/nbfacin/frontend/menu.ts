@@ -9,7 +9,7 @@ export const NAMA_NBFACIN = 'nbfacin'
 /** Nama modul - nama folder korpus VERBATIM (`NB FacIn`) = `M_NAV_MENU.LABEL` barisnya (900). */
 export const KELOMPOK_NBFACIN = 'NB FacIn'
 
-export const HALAMAN_NBFACIN = ['nbfacin-portal', 'nbfacin-opportunity', 'nbfacin-coverage-cargo'] as const
+export const HALAMAN_NBFACIN = ['nbfacin-portal', 'nbfacin-opportunity', 'nbfacin-inward', 'nbfacin-coverage-cargo'] as const
 export type HalamanNbFacIn = (typeof HALAMAN_NBFACIN)[number]
 
 /**

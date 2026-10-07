@@ -77,21 +77,29 @@ export const KETERANGAN_BELUM_DIMIGRASI = 'belum dimigrasi'
  * layar awal PremiumList. Claim Life **tidak punya** harness portal yang
  * terekspor — OQ ke pemilik ekspor tetap terbuka — jadi bentuk Beranda ini
  * keputusan kami, dan ditandai begitu.
+ *
+ * Berbahasa Inggris sejak 06-10-2026 (permintaan work owner "beranda diubah
+ * pake bahasa inggris"), termasuk `judul` - nama butir sidebar dan palet.
  */
 export const BERANDA = {
-  judul: 'Beranda',
-  salam: 'Selamat datang',
-  aktif: 'aktif',
-  antrean: 'antrean',
-  tanpaAntrean: 'belum ada kotak masuk',
-  ringkasan: 'Antrean Claim Life',
-  catatanTahap: 'Claim Life',
-  judulModul: 'Modul',
-  kolomModul: 'Modul',
-  kolomStatus: 'Status',
-  kolomAntrean: 'Antrean',
-  kolomAksi: 'Aksi',
-  judulPeran: 'Peran Anda',
+  judul: 'Home',
+  salam: 'Welcome',
+  antrean: 'in queue',
+  /** Kotak masuk akun per workbasket (06-10-2026). */
+  kotakMasuk: 'Your inbox',
+  menunggu: 'cases waiting for you',
+  perWorkbasket: 'By workbasket',
+  perJenis: 'By case type',
+  galatKotak: 'inbox failed to load.',
+  tutupDaftar: 'Close list',
+  memuatDaftar: 'Loading cases…',
+  daftarKosong: 'No cases waiting.',
+  galatDaftar: 'Case list failed to load.',
+  /** Filter daftar berkas (06-10-2026). */
+  saring: 'Filter cases',
+  saringPetunjuk: 'Search this list…',
+  bersihkanSaring: 'Clear filter',
+  tidakCocok: 'No cases match the filter.',
 } as const
 
 /**
@@ -344,13 +352,6 @@ export const PERAN = {
 } as const
 
 export type KodePeran = (typeof PERAN)[keyof typeof PERAN]
-
-/** Sebutan peran di layar — pendamping, bukan pengganti. */
-export const PERAN_ID: Record<KodePeran, string> = {
-  [PERAN.admin]: 'Admin Klaim Jiwa',
-  [PERAN.medis]: 'Penasihat Medis',
-  [PERAN.spv]: 'Supervisor Klaim',
-}
 
 /**
  * Nama produk di topbar dan judul dokumen.

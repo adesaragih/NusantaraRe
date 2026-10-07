@@ -24,7 +24,7 @@ kolom persis) dan `TestSQLTidakMenyebutKolomYangDibuang`. Tabel putaran 1 di lua
 
 | # | Tabel | Migrasi | Sheet / sel diagram | Bentuk |
 | ---: | --- | --- | --- | --- |
-| 1 | `T_GENERAL_POLIS` | 320 | Prop/NonProp F9–F33 | 1:1 shared PK `T_WORK_POLIS`, satu baris per generasi |
+| 1 | `T_GENERAL_POLIS_TREATY` | 320 | Prop/NonProp F9–F33 | 1:1 shared PK `T_WORK_POLIS`, satu baris per generasi |
 | 2 | `T_POLIS_QUOTATION` | 321 | J35–J38 | 1:1 `POLIS_ID` |
 | 3 | `T_POLIS_CEDING` | 322 | O39, R40–R50 | 1:N `QUOTATION_ID` |
 | 4 | `T_POLIS_INSTALMENT` | 323 | Prop J52–J56 · NonProp J52–J55 | 1:N `POLIS_ID` |
@@ -41,13 +41,13 @@ dibaca, tidak dibuat (MODUL.md *Tabel warisan*), lihat bab 9.
 > Diagram sheet *NB Treaty In Prop* sel **F20**: *"uang · persen → angka presisi tetap, skala MINIMAL 9 desimal (P29)"*.
 > Bunyi lama (migrasi 320, 323–327 dan dokumen ini): *"`NUMBER(38,8)`"*. Bunyi baru: **`NUMBER(38,10)`** di seluruh delapan
 > tabel (skala 10: bagi rata spreading NB presisi 10, J69). Nama kolom, cacah kolom, dan **tepat delapan** `CREATE TABLE`
-> tidak berubah; `T_GENERAL_POLIS` tetap tabel Treaty sendiri lewat `CREATE TABLE` di migrasi 320 (perintah WO
+> tidak berubah; `T_GENERAL_POLIS_TREATY` tetap tabel Treaty sendiri lewat `CREATE TABLE` di migrasi 320 (perintah WO
 > 04-10-2026, tabrakan nama dengan `nbfacin` 182: PERMINTAAN-TIM-INTI C10). Kepatuhan butir demi butir seluruh sheet
 > (B5–B122): `docs/KEPATUHAN-SHEET-NB-TREATY-IN-PROP.md`.
 
 ---
 
-## 1 · `T_GENERAL_POLIS` — 79 medan `PolicyTreatyIn` + 7 kolom `json_polis` (F10–F11)
+## 1 · `T_GENERAL_POLIS_TREATY` — 79 medan `PolicyTreatyIn` + 7 kolom `json_polis` (F10–F11)
 
 ### 1a · Kunci, generasi, `json_polis`
 
@@ -138,7 +138,7 @@ berkolom (4 `LAYER*`, 4 `Total*`, `isApprovedtoDeptHead`) = **79** — angka dia
 
 | Kolom | Medan | Diagram | Keputusan | Bukti |
 | --- | --- | --- | --- | --- |
-| `POLIS_ID` | kunci | G34 *1:1 POLIS_ID UNIK* | dipertahankan | PK + FK `T_GENERAL_POLIS` |
+| `POLIS_ID` | kunci | G34 *1:1 POLIS_ID UNIK* | dipertahankan | PK + FK `T_GENERAL_POLIS_TREATY` |
 | `PROPORTIONAL_TYPE` · `MO_ID` · `BUSINESS_CODE` · `BUSINESS_OLD_ID` · `GROUP_PANEL` · `SOURCE_OF_BUSINESS` · `TYPE` · `EDM_TYPE` · `OLD_POLICY_NO` · `MARKETING_NAME` | 10 medan | ✓ J37 | dipertahankan | `SOURCE_OF_BUSINESS` dibaca `SetPPNPPH` langkah 1–3 (status PKP agen) dan ditulis pemilih SOB (CATATAN §2c) |
 | `BUSINESS_NAME` | `Quotation.BusinessName` | ✗ | **dipertahankan — RALAT** | `InputPolicyTreatyInPre_Act` langkah 2 (syarat `@contains(…BusinessName,"MBU")` dst. + `OldID.CARI2`, berjalan setiap layar dibuka bila `BizCode` kosong); tampil `SFAPortal_OpportunitiesList` sel `A.Quotation.BusinessName` |
 | `BUSINESS_FAC` | `Quotation.BusinessFac` | ✗ | **dipertahankan — RALAT** | `SaveViewSuggest` langkah 2 `CARI7` (→ `HISTORYAKSEPTASIPRODUCTION.TYPE`); `GetListOpportunity` filter E `A.Quotation.BusinessFac = T`. Bernilai `T` sejak kasus lahir |
@@ -148,9 +148,9 @@ berkolom (4 `LAYER*`, 4 `Total*`, `isApprovedtoDeptHead`) = **79** — angka dia
 | `IS_SURVEY_REPORT` | `QuotationData.IsSurveyReport` | ✗ | **dipertahankan — RALAT** | tampil + **wajib** `DetailPolicyTreatyIn`; syarat nonaktif tombol *Survey Report* |
 | ~~`BUSINESS_TYPE`~~ | `Quotation.BusinessType` | ✗ | **dibuang** | hanya ditulis DT `BusinessType_DeT` (preACT 14.8); nol pembaca. Turunan masukan yang tersimpan (`GROUP_PANEL` + `BUSINESS_OLD_ID`, J38; `models.GolongkanJenisUsaha`) |
 | ~~`SOB_NAME`~~ · ~~`SOB_LEADER0`~~ · ~~`SOB_LEADER1`~~ | `Quotation.SobName/SobLeader0/1` | ✗ | **dibuang** | ditulis preACT langkah 3 dan `SearchHierarkiSourceBizAgent_PostDT` (pemilih SOB); pembacanya hanya `CheckDataMkt` langkah 7 (label `//`) dan `InputPolicyTreatyOutDetail_preACT` (treaty keluar, K8 butir 4). Dikonfirmasi paket pemilih SOB: nol pembaca |
-| ~~`CEDING_CO`~~ · ~~`CEDING_CO_NAME`~~ | `Quotation.CedingCo/CedingCoName` | ✗ (R47: di `T_GENERAL_POLIS`) | **dibuang** (tingkat polis tetap di `T_GENERAL_POLIS`) | ditulis preACT langkah 3; nol pembaca NB (`TreatyRealizationCheckDuplicate` membaca `PolicyTreatyIn.CedingCoName`) |
-| ~~`MARKETING_CODE`~~ | `Quotation.MarketingCode` | ✗ | **dibuang** | ditulis `CheckDataMkt` langkah 4; pembacanya hanya langkah 6 (label `//`) |
-| ~~`TEAM_GROUP`~~ · ~~`BRANCH_CODE`~~ · ~~`BRANCH_NAME`~~ | `Quotation.TeamGroup/BranchCode/BranchName` | ✗ | **dibuang** | hanya ditulis `CheckDataMkt` langkah 4 |
+| ~~`CEDING_CO`~~ · ~~`CEDING_CO_NAME`~~ | `Quotation.CedingCo/CedingCoName` | ✗ (R47: di `T_GENERAL_POLIS_TREATY`) | **dibuang** (tingkat polis tetap di `T_GENERAL_POLIS_TREATY`) | ditulis preACT langkah 3; nol pembaca NB (`TreatyRealizationCheckDuplicate` membaca `PolicyTreatyIn.CedingCoName`) |
+| `MARKETING_CODE` | `Quotation.MarketingCode` | ✗ | **RALAT 06-10-2026: disimpan** | ditulis `CheckDataMkt` langkah 4; pembacanya hanya langkah 6 (label `//`). Keputusan work owner 06-10-2026 "CheckDataMkt ikuti aja itu semua, tambah ke quotation nya" - VARCHAR2(100) = `MARKETINGOFFICER.CLIENTID` |
+| `TEAM_GROUP` · `BRANCH_CODE` · `BRANCH_NAME` | `Quotation.TeamGroup/BranchCode/BranchName` | ✗ | **RALAT 06-10-2026: disimpan** | ditulis `CheckDataMkt` langkah 4. Keputusan work owner yang sama; `TEAM_GROUP` dibaca aturan tim Sec Head. Skema lama: Excel sheet NB TREATY bagian D (ALTER + isi dari `MO_ID`) |
 
 ---
 
@@ -159,7 +159,7 @@ berkolom (4 `LAYER*`, 4 `Total*`, `isApprovedtoDeptHead`) = **79** — angka dia
 | Kolom | Diagram | Keputusan | Bukti |
 | --- | --- | --- | --- |
 | `ID` | — | dipertahankan | kunci baris |
-| `QUOTATION_ID` | O39 *1:N QUOTATION_ID* | **dipindah** dari `POLIS_ID → T_GENERAL_POLIS` ke `QUOTATION_ID → T_POLIS_QUOTATION (POLIS_ID)` | diagram; repository menghapus anak **sebelum** quotation ditulis ulang |
+| `QUOTATION_ID` | O39 *1:N QUOTATION_ID* | **dipindah** dari `POLIS_ID → T_GENERAL_POLIS_TREATY` ke `QUOTATION_ID → T_POLIS_QUOTATION (POLIS_ID)` | diagram; repository menghapus anak **sebelum** quotation ditulis ulang |
 | `NOURUT` | R42 | dipertahankan | `UNIQUE (QUOTATION_ID, NOURUT)` |
 | `CEDING_CO_ID` | R43 *CEDING_CO_ID ← .CedingCo* | **diganti nama** dari `CEDING_CO` | diagram |
 | `CEDING_CO_NAME` | R43 | dipertahankan | |
@@ -230,7 +230,7 @@ Sapuan sel `Section` terjangkau (korpus, `graf.Graf.terjangkau()`), dicocokkan k
 
 | Medan tampil | Section | Tempat simpan |
 | --- | --- | --- |
-| skalar `PolicyTreatyIn` layar admin/atasan (`BalanceBeforePPH` … `YearOfQuartal`) | `DetailPolicyTreatyIn`, `DetailDeptHeadTreatyIn_UW` | `T_GENERAL_POLIS` (bab 1b/1c) |
+| skalar `PolicyTreatyIn` layar admin/atasan (`BalanceBeforePPH` … `YearOfQuartal`) | `DetailPolicyTreatyIn`, `DetailDeptHeadTreatyIn_UW` | `T_GENERAL_POLIS_TREATY` (bab 1b/1c) |
 | `PolicyNo` · `ProductionDate` | `DetailDeptHeadTreatyIn_UW`, `ShowPolicyNoTreaty_SC`, `ListSuggest` | `NOPOLIS` · `TGL_PROD` |
 | `.QuotationData.IsSurveyReport` · `.NoOfferSlip` · `.MOID` · `.ProportionalType` | admin, atasan | `T_POLIS_QUOTATION` |
 | `A.Quotation.BusinessName` · `InsuredName` · `MarketingName` · `A.NBStatus` | `SFAPortal_OpportunitiesList` | `T_POLIS_QUOTATION` · `NB_STATUS` |
@@ -255,7 +255,7 @@ Sapuan sel `Section` terjangkau (korpus, `graf.Graf.terjangkau()`), dicocokkan k
    akan muncul di **laporan CSV** pemuat (K17) — wajib 0 sebelum selesai, jadi butuh keputusan work owner
    (tambah kolom lewat RALAT diagram, atau nyatakan dibuang).
    ✅ **Diputuskan 04-10-2026 (F3)** — butir ini selesai: (a) `PolicyTreatyIn.EDMType` dibaca rule NB terjangkau
-   → kolom `T_GENERAL_POLIS.EDM_TYPE` (bab 1c); (b) 25 pola lain dibuang dengan alasan + bukti XML per medan
+   → kolom `T_GENERAL_POLIS_TREATY.EDM_TYPE` (bab 1c); (b) 25 pola lain dibuang dengan alasan + bukti XML per medan
    (`backend/models/medan_abaikan_lama.json` bagian `pola`; daftar dan bukti: tiket 22 bab *Putaran 3*);
    `SuggestList` disalin ke `HISTORYAKSEPTASIPRODUCTION` (bab 9). CSV pemuat = arsip audit, bukan penampung;
    yang wajib 0: medan **belum diputuskan** (RALAT spec-penyimpanan AC 59, ID-27).

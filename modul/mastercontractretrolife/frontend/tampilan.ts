@@ -31,15 +31,15 @@ export function sel(v: string): string {
   return v.trim() === '' ? '—' : v
 }
 
-/** Sel tanggal `YYYY-MM-DD` → `DD-MM-YYYY`. */
+/** Sel tanggal `YYYY-MM-DD` → `DD/MM/YYYY` (semua tanggal dd/mm/yyyy - work owner 04-10-2026). */
 export function selTanggal(v: string): string {
-  return sel(formatDate(v))
+  return sel(formatDate(v).replace(/-/g, '/'))
 }
 
-/** Sel/medan waktu `YYYY-MM-DD HH:MM:SS` → `DD-MM-YYYY HH:MM:SS`; bentuk lain apa adanya. */
+/** Sel/medan waktu `YYYY-MM-DD HH:MM:SS` → `DD/MM/YYYY HH:MM:SS`; bentuk lain apa adanya. */
 export function selWaktu(v: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}:\d{2}:\d{2})/.exec(v.trim())
-  return m ? `${m[3]}-${m[2]}-${m[1]} ${m[4]}` : sel(v)
+  return m ? `${m[3]}/${m[2]}/${m[1]} ${m[4]}` : sel(v)
 }
 
 /** Sel angka (share, komisi, batas) - digit apa adanya, pemisah ribuan, nol ekor dipangkas. */
@@ -70,5 +70,16 @@ export function waktuKini(d: Date): string {
  * dari pelaku yang sama, bukan dari isian.
  */
 export function operatorKini(): string {
-  return pelakuStub()?.akunID ?? ''
+  // ⛔ Akun LOGIN lebih dahulu (dicatat `rute.tsx` dari sesi `masuk`); stub hanya
+  // cadangan mode tanpa login. Dulu hanya stub yang dibaca, sehingga dengan login
+  // sungguhan isian `Inputor` kosong (temuan work owner 04-10-2026).
+  return operatorAktif !== '' ? operatorAktif : (pelakuStub()?.akunID ?? '')
+}
+
+/** Akun yang sedang login - dicatat rute modul setiap render (`catatOperator`). */
+let operatorAktif = ''
+
+/** Mencatat akun login untuk `operatorKini` - dipanggil `rute.tsx` dari `masuk.akunID`. */
+export function catatOperator(akunID: string): void {
+  operatorAktif = akunID.trim()
 }

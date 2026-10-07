@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -224,10 +225,10 @@ func TestFlattenSetiapJalur(t *testing.T) {
 			}
 		}
 	}
-	// 148 + 1 amandemen (T_ADDITIONALSHIP) - 1 jalur akar - 2 ruas V-30 - 4 jalur tiga
+	// 148 + 2 amandemen (T_ADDITIONALSHIP; T_FEALIST tiket 41) - 1 jalur akar - 2 ruas V-30 - 4 jalur tiga
 	// tabel wadah (T_FR_POLICY dua jalur).
-	if diuji != 142 {
-		t.Errorf("%d jalur diuji, mau 142", diuji)
+	if diuji != 143 {
+		t.Errorf("%d jalur diuji, mau 143", diuji)
 	}
 	if len(wadah) != 3 {
 		t.Errorf("tabel wadah tercapai %v, mau T_FR_FACOFFERLIST, T_FR_OBJECT, T_FR_POLICY", wadah)
@@ -835,5 +836,37 @@ func TestFlattenDeterministik(t *testing.T) {
 	}
 	if teks(h1.Baris["T_PERSONLIST"][0], "ROW_UID") == teks(h3.Baris["T_PERSONLIST"][0], "ROW_UID") {
 		t.Error("ROW_UID tidak bergantung pada IDPEGA")
+	}
+}
+
+// TestFlattenFEA - tiket 41 (A142): LocationList/FEAList -> T_FEALIST (induk T_LOCATIONLIST, SEQ_NO urut), halaman
+// tertanam DataFEA DILIPAT ke baris FEA; jumlah unit teks apa adanya; nol medan ke penampung.
+func TestFlattenFEA(t *testing.T) {
+	fea := []any{dok{"APAR": "2", "Sprinkler": "0", "InfoFEA": "UJI INFO", "DataFEA": dok{"PrivateTruckBrigade": "1", "TeamSOPSafety": "UJI"}},
+		dok{"Hydrant": "3"}}
+	h := ratakan(t, dok{"QuotationData": dok{"BusinessType": "Life"}, "LocationList": []any{dok{"FEAList": fea, "Property": dok{"ObjectNo": "1"}}}})
+	baris := h.Baris["T_FEALIST"]
+	if len(baris) != 2 {
+		t.Fatalf("%d baris T_FEALIST, mau 2", len(baris))
+	}
+	lokasi := satu(t, h, "T_LOCATIONLIST")
+	for i, mau := range []map[string]string{
+		{"APAR": "2", "SPRINKLER": "0", "INFO_FEA": "UJI INFO", "PRIVATE_TRUCK_BRIGADE": "1", "TEAM_SOP_SAFETY": "UJI"},
+		{"HYDRANT": "3"},
+	} {
+		for k, v := range mau {
+			if got := teks(baris[i], k); got != v {
+				t.Errorf("FEA[%d].%s = %q, mau %q", i, k, got, v)
+			}
+		}
+		if baris[i].Induk != lokasi.Kunci {
+			t.Errorf("FEA[%d] induk %v, mau baris lokasi %v", i, baris[i].Induk, lokasi.Kunci)
+		}
+		if got := angka(baris[i], "SEQ_NO"); got != strconv.Itoa(i+1) {
+			t.Errorf("FEA[%d] SEQ_NO %s", i, got)
+		}
+	}
+	if n := len(h.Penampung); n != 0 {
+		t.Errorf("penampung %d: %+v", n, h.Penampung)
 	}
 }

@@ -111,7 +111,7 @@ Tujuh kolom lainnya — `IDPEGA` `TGL_INPUT` `NOPOLIS` `NOENDORS` `PRODKE` `TGL_
 
 ```
 T_WORK_POLIS                        akar, LINTAS-LINI          (nama ditetapkan work owner)
-  +- T_GENERAL_POLIS                inti, satu baris per generasi
+  +- T_GENERAL_POLIS_TREATY                inti, satu baris per generasi
        |- T_POLIS_QUOTATION         QuotationData              1:1
        |    +- T_POLIS_CEDING       QuotationData.CedingCoList 1:N
        |- T_POLIS_INSTALMENT        ListInstallment            1:N   induk
@@ -514,7 +514,7 @@ Empat keputusan work owner, diambil berurutan dalam satu sesi. **Mengikat.**
 
 ### 4ter.1 `OldData` → penunjuk, bukan tabel
 
-⭐ **`T_GENERAL_POLIS.OLD_POLIS_ID` → `T_WORK_POLIS.ID`** · nullable · kosong pada polis baru
+⭐ **`T_GENERAL_POLIS_TREATY.OLD_POLIS_ID` → `T_WORK_POLIS.ID`** · nullable · kosong pada polis baru
 *(PRODKE 0)*, terisi pada tiap endorsemen. `[keputusan work owner]`
 
 Sistem lama **tidak punya penunjuk ini** — ia mencari tiap kali:
@@ -592,7 +592,7 @@ pada hari Pega dimatikan.
 
 1. **Hanya ditulis Go**, di dalam transaksi yang sama dengan generasinya *(P2)*. Tidak pernah diisi
    manual, tidak pernah lewat procedure.
-2. **Boleh dihapus total dan dibangun ulang** kapan saja dari `T_GENERAL_POLIS`. Bila tidak bisa,
+2. **Boleh dihapus total dan dibangun ulang** kapan saja dari `T_GENERAL_POLIS_TREATY`. Bila tidak bisa,
    ada yang salah.
 3. **Bila isinya berbeda dari hasil hitung ulang, tabelnya yang salah** — bukan operannya. Sumber
    kebenaran tetap kedua baris generasi.
@@ -683,14 +683,14 @@ satu jalur proporsional, satu jalur XOL:
 
 ⛔ **Satu kolom `DEDUCTION1` menampung dua satuan.** Siapa pun yang membacanya lewat SQL **wajib
 menyaring `PROPORTIONALTYPE` lebih dulu**, kalau tidak ia menjumlahkan persen dengan rupiah.
-Rancangan kita tidak menularkannya — `T_GENERAL_POLIS.DEDUCTION1` dan `T_POLIS_XOL.DEDUCTION`
+Rancangan kita tidak menularkannya — `T_GENERAL_POLIS_TREATY.DEDUCTION1` dan `T_POLIS_XOL.DEDUCTION`
 sudah dua kolom terpisah.
 
 > ⛔ **RALAT (P9, 04-10-2026)** `[keputusan work owner]` **K3** — bunyi tabel di atas, dikutip: *"| `DEDUCTION1` | `.Deduction1` *(persen)* | `.Deduction` *(uang)* |"*. Bunyi baru: `.Deduction1` jalur prop
 > dipakai XML sebagai **jumlah uang** (rumus XML apa adanya, K3): sel `pxCurrency` di
 > `Section\DetailPolicyTreatyIn.xml` / `Section\DetailDeptHeadTreatyIn_UW.xml`, `CountNetPremi_act`
 > langkah 4 mengurangkannya dari premi, `SetPPNPPH` langkah 4 membaginya 1,022 — maka
-> `T_GENERAL_POLIS.DEDUCTION1/2` bergolongan uang (`models/katalog.go` `kUang`, paket P2). Label "persen"
+> `T_GENERAL_POLIS_TREATY.DEDUCTION1/2` bergolongan uang (`models/katalog.go` `kUang`, paket P2). Label "persen"
 > berasal dari WO P29; pertentangannya tetap tercatat di tiket 07. Kedua kolom tetap terpisah.
 
 ⭐ Dan `LAYER*` pada polis proporsional **bernilai `"0"`, bukan kosong**.
@@ -771,7 +771,7 @@ InputPolicyTreatyInDetail_preACT:
 
 Sumbernya **kolom tabel**, dibaca balik saat layar rincian dibuka.
 
-⇒ ⭐ `T_GENERAL_POLIS.LAYER` dkk. **dicoret** — turunan dari `T_POLIS_XOL_LAYER`.
+⇒ ⭐ `T_GENERAL_POLIS_TREATY.LAYER` dkk. **dicoret** — turunan dari `T_POLIS_XOL_LAYER`.
 
 ⚠️ `pxResults(1)` hanya mengambil **baris pertama**. Nilai di tingkat polis itu **layer pertama
 saja**, bukan ringkasan seluruh layer. Laporan yang memakainya sebagai "layer polis ini"
@@ -965,12 +965,12 @@ medannya **dibaca** rule NB terjangkau — dicatat di sini dengan buktinya. Tabe
 
 | Tabel · kolom | Medan | Bukti (rule terjangkau) |
 | --- | --- | --- |
-| `T_GENERAL_POLIS.POSITION_NOTE` | `pyWorkPage.PositionNote` | connector `Flow\InputRealizationTreatyIn`; `InboxPolicyTreatyIn_postDT` langkah 4; syarat sel `Section\ListSuggest` |
-| `T_GENERAL_POLIS.NB_STATUS` | `pyWorkPage.NBStatus` | tampil `Section\SFAPortal_OpportunitiesList` (`A.NBStatus`) |
-| `T_GENERAL_POLIS.TREATY_IN_ID` | `pyWorkPage.TreatyIn.ID` | `RDBList\BrowseTreatyIn` (`where ID={TreatyIn.ID}`); `Activity\CheckDuplicateOffer` |
-| `T_GENERAL_POLIS.SHARE_CURRENCY` | `.ShareCurrency` | tampil `DetailPolicyTreatyIn`, `DetailDeptHeadTreatyIn_UW` (*RNM Share*) |
-| `T_GENERAL_POLIS.GROSS_CLAIM` | `.GrossClaim` | tampil `DetailPolicyTreatyIn` (*Claim 100%*); rumus `CalculatePremi_Act` |
-| `T_GENERAL_POLIS.BROKERAGE_FEE_SEBENARNYA` | `.BrokerageFeeSebenarnya` | rumus `SetPPNPPH` langkah 3 (`.PPHValue`, `.PPNValue`) |
+| `T_GENERAL_POLIS_TREATY.POSITION_NOTE` | `pyWorkPage.PositionNote` | connector `Flow\InputRealizationTreatyIn`; `InboxPolicyTreatyIn_postDT` langkah 4; syarat sel `Section\ListSuggest` |
+| `T_GENERAL_POLIS_TREATY.NB_STATUS` | `pyWorkPage.NBStatus` | tampil `Section\SFAPortal_OpportunitiesList` (`A.NBStatus`) |
+| `T_GENERAL_POLIS_TREATY.TREATY_IN_ID` | `pyWorkPage.TreatyIn.ID` | `RDBList\BrowseTreatyIn` (`where ID={TreatyIn.ID}`); `Activity\CheckDuplicateOffer` |
+| `T_GENERAL_POLIS_TREATY.SHARE_CURRENCY` | `.ShareCurrency` | tampil `DetailPolicyTreatyIn`, `DetailDeptHeadTreatyIn_UW` (*RNM Share*) |
+| `T_GENERAL_POLIS_TREATY.GROSS_CLAIM` | `.GrossClaim` | tampil `DetailPolicyTreatyIn` (*Claim 100%*); rumus `CalculatePremi_Act` |
+| `T_GENERAL_POLIS_TREATY.BROKERAGE_FEE_SEBENARNYA` | `.BrokerageFeeSebenarnya` | rumus `SetPPNPPH` langkah 3 (`.PPHValue`, `.PPNValue`) |
 | `T_POLIS_QUOTATION.BUSINESS_NAME` | `Quotation.BusinessName` | `InputPolicyTreatyInPre_Act` langkah 2 (syarat + `OldID.CARI2`); tampil `SFAPortal_OpportunitiesList` |
 | `T_POLIS_QUOTATION.BUSINESS_FAC` | `Quotation.BusinessFac` | `SaveViewSuggest` CARI7; RD `GetListOpportunity` filter E |
 | `T_POLIS_QUOTATION.INSURED_ID` | `Quotation.InsuredID` | `InputPolicyTreatyInDetail_preACT` langkah 3 (rumus), 14.3 (syarat) |
@@ -990,18 +990,18 @@ medannya **dibaca** rule NB terjangkau — dicatat di sini dengan buktinya. Tabe
 
 ### 4sx.3 Kolom putaran 1 yang **dibuang** (di luar diagram dan rancangan, tanpa pembaca)
 
-`T_GENERAL_POLIS`: `IS_OJK_NOPOLIS` (hanya ditulis `GeneratePolicyNoTreaty_Act` langkah 23), `BROKERAGE_FEE`
+`T_GENERAL_POLIS_TREATY`: `IS_OJK_NOPOLIS` (hanya ditulis `GeneratePolicyNoTreaty_Act` langkah 23), `BROKERAGE_FEE`
 (hanya ditulis `SetPPNPPH` langkah 3), `TGL_TUTUP`. `T_POLIS_QUOTATION`: `BUSINESS_TYPE` (hanya ditulis DT
 `BusinessType_DeT`; turunan `GROUP_PANEL` + `BUSINESS_OLD_ID`), `SOB_NAME` `SOB_LEADER0` `SOB_LEADER1`
 (pembaca: `CheckDataMkt` langkah 7 berlabel `//`, jalur treaty keluar), `CEDING_CO` `CEDING_CO_NAME`
-(tingkat polis tetap di `T_GENERAL_POLIS`, R47), `MARKETING_CODE` (pembaca: `CheckDataMkt` langkah 6
+(tingkat polis tetap di `T_GENERAL_POLIS_TREATY`, R47), `MARKETING_CODE` (pembaca: `CheckDataMkt` langkah 6
 `//`), `TEAM_GROUP` `BRANCH_CODE` `BRANCH_NAME` (hanya ditulis `CheckDataMkt` langkah 4).
 `T_POLIS_INSTALMENT_DETAIL`: `PPN` `PPH` (hanya ditulis preACT 18.3.4.2.1).
 
 ### 4sx.4 Kolom rancangan yang **ditambahkan**
 
-`T_GENERAL_POLIS.IS_EDM_INPUT_ON_NB` (§4.1; `InputPolicyTreatyInDetail_NonProp` langkah 10–11),
-`T_GENERAL_POLIS.ID_NEW_BISNIS` (§4.1; data guide `$.IDNewBisnis`, nol rule NB),
+`T_GENERAL_POLIS_TREATY.IS_EDM_INPUT_ON_NB` (§4.1; `InputPolicyTreatyInDetail_NonProp` langkah 10–11),
+`T_GENERAL_POLIS_TREATY.ID_NEW_BISNIS` (§4.1; data guide `$.IDNewBisnis`, nol rule NB),
 `PREMIUM_AFTER_PPH` / `PREMIUM_AFTER_PPN` / `PREMIUM_AFTER_TAX` di `T_POLIS_INSTALMENT` dan
 `PREMIUM_AFTER_PPH` di `T_POLIS_INSTALMENT_DETAIL` (§4.3; data guide).
 
@@ -1013,9 +1013,9 @@ berkolom dibaca ulang di XML — **(a)** dibaca rule NB terjangkau → wajib ber
 
 | Tabel · kolom | Medan | Bukti (rule terjangkau) |
 | --- | --- | --- |
-| `T_GENERAL_POLIS.EDM_TYPE` ⭐ **ditambahkan** | `PolicyTreatyIn.EDMType` (data guide `$.EDMType`) | prasyarat `Activity\InputPolicyTreatyInPre_Act.xml` langkah 10: `.PolicyTreatyIn.EDMType=="3"` → lewati `Call TreatyRealizationCheckXOLList` (`models.PerluCekDaftarXOL`). §4.1 *penentu bentuk* sudah memuat `EDM_TYPE`; putaran 2 memetakannya hanya ke `QuotationData.EdmType` (J37) — properti lain (Pega peka huruf) |
+| `T_GENERAL_POLIS_TREATY.EDM_TYPE` ⭐ **ditambahkan** | `PolicyTreatyIn.EDMType` (data guide `$.EDMType`) | prasyarat `Activity\InputPolicyTreatyInPre_Act.xml` langkah 10: `.PolicyTreatyIn.EDMType=="3"` → lewati `Call TreatyRealizationCheckXOLList` (`models.PerluCekDaftarXOL`). §4.1 *penentu bentuk* sudah memuat `EDM_TYPE`; putaran 2 memetakannya hanya ke `QuotationData.EdmType` (J37) — properti lain (Pega peka huruf) |
 
-Bunyi lama 4sx.1, dikutip: *"`T_GENERAL_POLIS.BROKERAGE_FEE_SEBENARNYA` | `.BrokerageFeeSebenarnya` | rumus
+Bunyi lama 4sx.1, dikutip: *"`T_GENERAL_POLIS_TREATY.BROKERAGE_FEE_SEBENARNYA` | `.BrokerageFeeSebenarnya` | rumus
 `SetPPNPPH` langkah 3"*; dan 4sx.3: *"`IS_OJK_NOPOLIS` (hanya ditulis `GeneratePolicyNoTreaty_Act` langkah 23),
 `BROKERAGE_FEE` (hanya ditulis `SetPPNPPH` langkah 3)"*. Bunyi baru: rumus dan penulis `.BrokerageFee` di
 `SetPPNPPH` langkah **4** (langkah 3 = `pxRetrieveReportData`); langkah 23 `GeneratePolicyNoTreaty_Act` berlabel

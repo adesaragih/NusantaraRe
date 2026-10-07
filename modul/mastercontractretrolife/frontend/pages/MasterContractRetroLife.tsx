@@ -8,7 +8,7 @@
 // ber-`ALWAYS` → selalu tampil, RALAT R6): tombol b8888 (label sel `End Period` - TIDAK ditampilkan
 // sejak 02-10-2026, keputusan work owner; teks `Add`, tooltip
 // `Add New Data` → `NewInputTreatyYear_Life_Act`), `pyGridPaginator` b9192, grid b9375 RD
-// `BrowseTreatyYear_Life_RD` (urut `.ID ASC` - server; 10 baris/halaman) dengan tombol baris `Edit`
+// `BrowseTreatyYear_Life_RD` (urut `.ID ASC` - server; SEMUA baris, tanpa paginasi sejak 04-10-2026) dengan tombol baris `Edit`
 // b11645 (`SetTreatyYearLife_Act`) dan `ReinsType` b11988 (`showHarness` `InboxRetroLimitReinsurers`).
 //
 // ⛔ Identitas tidak pernah diketik: `ID` hanya dibaca (tampil bila tidak kosong, `NOTBLANK` b1798);
@@ -20,9 +20,8 @@ import { useCallback, useEffect, useState } from 'react'
 import '../mcrl.css'
 import { ambilTahun, simpanTahun, type TahunMasuk, type TahunTreaty } from '../api'
 import PanelKontrak from '../components/PanelKontrak'
-import { Penomoran } from '../components/Bingkai'
 import { TAHUN_MCRL, UMUM_MCRL } from '../labels'
-import { jepitHalaman, keTanggalKabel, operatorKini, potongHalaman, sel, selTanggal, selWaktu, waktuKini } from '../tampilan'
+import { keTanggalKabel, operatorKini, sel, selTanggal, selWaktu, waktuKini } from '../tampilan'
 import { Field, FieldTanggal, Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 
 /** Isian form - `InputTreatyYear.*`. */
@@ -58,6 +57,18 @@ export function formTahunDari(t: TahunTreaty, operator: string, kini: string): F
 }
 
 /** Badan simpan; tanggal diseragamkan ke `YYYY-MM-DD`, teks bukan tanggal dikirim apa adanya. */
+/**
+ * START DATE sesudah END DATE (tanggal mundur) - Save dikunci dan pesannya
+ * tampil di END DATE (keputusan work owner 04-10-2026). Sama hari diterima.
+ * Server menolak hal yang sama (`PesanTanggalMundur`).
+ */
+export function tanggalMundur(f: FormTahun): boolean {
+  const mulai = keTanggalKabel(f.startDate)
+  const akhir = keTanggalKabel(f.endDate)
+  const iso = /^\d{4}-\d{2}-\d{2}$/
+  return iso.test(mulai) && iso.test(akhir) && mulai > akhir
+}
+
 export function keTahunMasuk(f: FormTahun): TahunMasuk {
   return {
     id: f.id,
@@ -71,7 +82,6 @@ export function keTahunMasuk(f: FormTahun): TahunMasuk {
 export default function MasterContractRetroLife() {
   const [daftar, setDaftar] = useState<TahunTreaty[] | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
-  const [halaman, setHalaman] = useState(1)
   const [form, setForm] = useState<FormTahun | null>(null)
   const [galatSimpan, setGalatSimpan] = useState<unknown>(null)
   const [menyimpan, setMenyimpan] = useState(false)
@@ -83,7 +93,6 @@ export default function MasterContractRetroLife() {
       const d = await ambilTahun()
       setDaftar(d.daftar)
       setGalat(null)
-      setHalaman((h) => jepitHalaman(h, d.daftar.length))
     } catch (e) {
       // ⛔ Galat DINYATAKAN, bukan menjadi daftar kosong.
       setGalat(e)
@@ -153,12 +162,23 @@ export default function MasterContractRetroLife() {
             <Field label={TAHUN_MCRL.formUnderwritingYear} value={form.underwritingYear} onChange={ubah('underwritingYear')} required />
             <Field label={TAHUN_MCRL.formTransactionYear} value={form.treatyYear} onChange={ubah('treatyYear')} required />
             <FieldTanggal label={TAHUN_MCRL.formStartDate} value={form.startDate} onChange={ubah('startDate')} required />
-            <FieldTanggal label={TAHUN_MCRL.formEndDate} value={form.endDate} onChange={ubah('endDate')} required />
+            <FieldTanggal
+              label={TAHUN_MCRL.formEndDate}
+              value={form.endDate}
+              onChange={ubah('endDate')}
+              required
+              error={tanggalMundur(form) ? TAHUN_MCRL.tanggalMundur : undefined}
+            />
             <Field label={TAHUN_MCRL.formModifiedDate} value={selWaktu(form.tglUpdate)} onChange={() => undefined} readOnly />
             <Field label={TAHUN_MCRL.formInputor} value={form.userId} onChange={() => undefined} readOnly />
           </div>
           <div className="aksi-baris">
-            <button type="button" className="btn btn--primary" disabled={menyimpan} onClick={() => void simpan()}>
+            <button
+              type="button"
+              className="btn btn--primary"
+              disabled={menyimpan || tanggalMundur(form)}
+              onClick={() => void simpan()}
+            >
               {TAHUN_MCRL.save}
             </button>{' '}
             <button
@@ -186,7 +206,6 @@ export default function MasterContractRetroLife() {
         >
           {TAHUN_MCRL.add}
         </button>
-        <Penomoran halaman={halaman} total={semua.length} onPindah={setHalaman} />
       </div>
       {daftar === null && galat === null && <Memuat />}
       {galat !== null && <Gagal galat={galat} />}
@@ -205,7 +224,7 @@ export default function MasterContractRetroLife() {
               </tr>
             </thead>
             <tbody>
-              {potongHalaman(semua, halaman).map((t) => (
+              {semua.map((t) => (
                 <tr key={t.id} className="inbox__baris">
                   <td>{sel(t.id)}</td>
                   <td>{sel(t.underwritingYear)}</td>

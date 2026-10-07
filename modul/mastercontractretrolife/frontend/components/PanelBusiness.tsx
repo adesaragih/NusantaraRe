@@ -17,10 +17,10 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { ambilBusiness, simpanBusiness, type Business, type BusinessMasuk, type JawabanBusiness, type Kontrak } from '../api'
 import { BUSINESS_MCRL, UMUM_MCRL } from '../labels'
-import { jepitHalaman, operatorKini, potongHalaman, sel, selWaktu, waktuKini } from '../tampilan'
+import { operatorKini, sel, selWaktu, waktuKini } from '../tampilan'
 import { Field, Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
-import { PilihSaring } from '../../../../inti/frontend/components/ui/pilihSaring'
-import { KepalaPanel, Penomoran } from './Bingkai'
+import { PilihSaring, type OpsiSaring } from '../../../../inti/frontend/components/ui/pilihSaring'
+import { KepalaPanel } from './Bingkai'
 import { useCariBusiness, useCariRate } from './cariMaster'
 import KonfirmasiHapus from './KonfirmasiHapus'
 import ModalRate from './ModalRate'
@@ -60,6 +60,21 @@ export function keBusinessMasuk(f: FormBusiness): BusinessMasuk {
 }
 
 /** Tombol `View Rate` form b4732 tampil bila `InputBusinessLife.RIRATEID != ''`. */
+/**
+ * Pilihan Business Name yang BELUM dipakai business lain di kontrak ini - satu
+ * Business Name sekali per kontrak (keputusan work owner 04-10-2026). Milik
+ * business yang sedang diubah (`idSendiri`) tetap tersedia. Server menolak hal
+ * yang sama (`PesanBusinessGanda`).
+ */
+export function bisnisTersedia(
+  pilihan: readonly OpsiSaring[],
+  daftar: readonly Business[],
+  idSendiri: string,
+): OpsiSaring[] {
+  const terpakai = new Set(daftar.filter((b) => b.id !== idSendiri).map((b) => b.bizCode.trim()))
+  return pilihan.filter((o) => !terpakai.has(o.value.trim()))
+}
+
 export function viewRateTampil(f: FormBusiness): boolean {
   return f.riRateId.trim() !== ''
 }
@@ -67,7 +82,6 @@ export function viewRateTampil(f: FormBusiness): boolean {
 export default function PanelBusiness({ kontrak, onTutup }: { kontrak: Kontrak; onTutup: () => void }) {
   const [jawab, setJawab] = useState<JawabanBusiness | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
-  const [halaman, setHalaman] = useState(1)
   const [form, setForm] = useState<FormBusiness | null>(null)
   const [galatForm, setGalatForm] = useState<unknown>(null)
   const [menyimpan, setMenyimpan] = useState(false)
@@ -82,7 +96,6 @@ export default function PanelBusiness({ kontrak, onTutup }: { kontrak: Kontrak; 
       const j = await ambilBusiness(kontrak.id)
       setJawab(j)
       setGalat(null)
-      setHalaman((h) => jepitHalaman(h, j.daftar.length))
     } catch (e) {
       setGalat(e)
     }
@@ -131,7 +144,8 @@ export default function PanelBusiness({ kontrak, onTutup }: { kontrak: Kontrak; 
         judul={BUSINESS_MCRL.judul}
         medan={[
           [BUSINESS_MCRL.idTreatyYear, induk.idTreatyYear],
-          [BUSINESS_MCRL.idReinsType, induk.id],
+          // `ID Reins Type` (ID kontrak) SENGAJA tidak ditampilkan - keputusan
+          // work owner 04-10-2026.
           [BUSINESS_MCRL.reinsType, induk.reinsTypeName],
         ]}
         onTutup={onTutup}
@@ -141,14 +155,12 @@ export default function PanelBusiness({ kontrak, onTutup }: { kontrak: Kontrak; 
         <div className="panel">
           {galatForm !== null && <Gagal galat={galatForm} />}
           <div className="form-grid">
-            <Field label={BUSINESS_MCRL.formInputor} value={form.userId} onChange={() => undefined} readOnly />
-            <Field label={BUSINESS_MCRL.formModifiedDate} value={selWaktu(form.tglUpdate)} onChange={() => undefined} readOnly />
             <Field label={BUSINESS_MCRL.formBusinessCode} value={form.bizCode} onChange={() => undefined} readOnly />
             <PilihSaring
               label={BUSINESS_MCRL.formBusinessName}
               value={form.bizCode}
               teksTerpilih={form.bizName || form.bizCode}
-              opsi={masterBisnis.pilihan}
+              opsi={bisnisTersedia(masterBisnis.pilihan, daftar, form.id)}
               memuat={masterBisnis.memuat}
               onCari={masterBisnis.cari}
               onPilih={(o) => {
@@ -168,19 +180,11 @@ export default function PanelBusiness({ kontrak, onTutup }: { kontrak: Kontrak; 
               }}
               required
             />
+            {/* Modified Date dan Inputor di PALING AKHIR - seragam di semua form (04-10-2026). */}
+            <Field label={BUSINESS_MCRL.formModifiedDate} value={selWaktu(form.tglUpdate)} onChange={() => undefined} readOnly />
+            <Field label={BUSINESS_MCRL.formInputor} value={form.userId} onChange={() => undefined} readOnly />
           </div>
           <div className="aksi-baris">
-            {viewRateTampil(form) && (
-              <button
-                type="button"
-                className="btn btn--ghost"
-                onClick={() => {
-                  setRate(form.riRateId)
-                }}
-              >
-                {BUSINESS_MCRL.viewRateForm}
-              </button>
-            )}{' '}
             <button type="button" className="btn btn--primary" disabled={menyimpan} onClick={() => void simpan()}>
               {BUSINESS_MCRL.save}
             </button>{' '}
@@ -194,6 +198,18 @@ export default function PanelBusiness({ kontrak, onTutup }: { kontrak: Kontrak; 
             >
               {BUSINESS_MCRL.cancel}
             </button>
+            {/* `View Rate` di POJOK KANAN baris tombol form (keputusan work owner 04-10-2026). */}
+            {viewRateTampil(form) && (
+              <button
+                type="button"
+                className="btn btn--ghost mcrl-aksi-kanan"
+                onClick={() => {
+                  setRate(form.riRateId)
+                }}
+              >
+                {BUSINESS_MCRL.viewRateForm}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -204,7 +220,6 @@ export default function PanelBusiness({ kontrak, onTutup }: { kontrak: Kontrak; 
         <button type="button" className="btn btn--primary" onClick={() => buka(formBusinessBaru(operatorKini(), waktuKini(new Date())))}>
           {BUSINESS_MCRL.add}
         </button>
-        <Penomoran halaman={halaman} total={daftar.length} onPindah={setHalaman} />
       </div>
       {jawab === null && galat === null && <Memuat />}
       {galat !== null && <Gagal galat={galat} />}
@@ -222,7 +237,7 @@ export default function PanelBusiness({ kontrak, onTutup }: { kontrak: Kontrak; 
               </tr>
             </thead>
             <tbody>
-              {potongHalaman(daftar, halaman).map((b) => (
+              {daftar.map((b) => (
                 <tr key={b.id} className="inbox__baris">
                   <td>{sel(b.bizName)}</td>
                   <td>{sel(b.riRate)}</td>

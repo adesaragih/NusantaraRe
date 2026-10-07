@@ -120,3 +120,17 @@ func TestKetentuanUnderwritingTidakDikarang(t *testing.T) {
 			"beserta tiket 01")
 	}
 }
+
+// TestKotakMasukHanyaKasusLife - keputusan work owner 03-10-2026: hanya
+// kasus berlini LIFE (`T_WORK_POLIS.LINI`), di halaman DAN pencacahnya (keduanya harus sepakat, atau
+// penomoran halaman berbohong).
+func TestKotakMasukHanyaKasusLife(t *testing.T) {
+	for nama, q := range map[string]string{
+		"halaman": sqlInboxPolis(tabelUjiWorkPolisInbox, tabelUjiPolis, tabelUjiPolisDetail),
+		"cacah":   sqlCacahInboxPolis(tabelUjiWorkPolisInbox),
+	} {
+		if !strings.Contains(q, "w.LINI = 'LIFE'") || strings.Contains(q, "LIKE 'NBLF-") {
+			t.Errorf("%s tanpa saringan LINI = LIFE:\n%s", nama, q)
+		}
+	}
+}

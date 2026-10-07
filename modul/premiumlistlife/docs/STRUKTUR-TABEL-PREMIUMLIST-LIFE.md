@@ -356,6 +356,7 @@ Rekap uang polis **per mata uang**. Satu baris mewakili **satu mata uang pada sa
 | `ID` | teks | tidak | PK | NB + EDM | keputusan tiket 00 PremiumList |
 | `PREMIUM_LIST_ID` | teks | ya | FK | NB + EDM | keputusan `revisi-penyimpanan-premiumlist.md` §`T_PREMIUM_LIST_SUMMARY` — → `T_PREMIUM_LIST.ID` |
 | `CURRENCY` | teks | ya | | NB + EDM | keputusan `revisi-penyimpanan-premiumlist.md` §`T_PREMIUM_LIST_SUMMARY` |
+| `PL_NUMBER` | teks | ya | | NB | nomor PL rekap, diisi saat Confirm — keputusan work owner 03-10-2026, menggantikan "tanpa PL_NUMBER" tiket 05a; migrasi 064 |
 | `BALANCE` | angka desimal | ya | | NB + EDM | keputusan `revisi-penyimpanan-premiumlist.md` §`T_PREMIUM_LIST_SUMMARY` |
 | `PREMIUM` | angka desimal | ya | | NB + EDM | keputusan `revisi-penyimpanan-premiumlist.md` §`T_PREMIUM_LIST_SUMMARY` |
 | `COMMISSION` | angka desimal | ya | | NB + EDM | keputusan `revisi-penyimpanan-premiumlist.md` §`T_PREMIUM_LIST_SUMMARY` |

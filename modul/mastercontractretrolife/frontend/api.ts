@@ -143,6 +143,9 @@ export interface JawabanSecurity {
   induk: Reinsurer
   daftar: SecurityReinsurer[]
   eksposur: Record<string, string>
+  /** Total share security - seperti Reinsurer List (04-10-2026). Opsional: server lama tidak mengirimnya. */
+  totalShare?: string
+  totalBukan100?: boolean
 }
 
 /** `GET …/kontrak/{id}/business`. */

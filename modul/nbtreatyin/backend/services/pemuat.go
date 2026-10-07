@@ -13,7 +13,7 @@ package services
 // antarmuka penyimpanan yang SAMA dengan jalur biasa (ID-3, AC 56):
 //
 //	SisipKasus      T_WORK_POLIS + generasi PRODKE 0 (pembuat tidak dikarang: NULL)
-//	SimpanHalaman   T_GENERAL_POLIS + T_POLIS_QUOTATION/CEDING/INSTALMENT(_DETAIL)/
+//	SimpanHalaman   T_GENERAL_POLIS_TREATY + T_POLIS_QUOTATION/CEDING/INSTALMENT(_DETAIL)/
 //	                SPREADING/XOL/XOL_LAYER menurut katalog - penjaga yang sama
 //	                (PeriksaBentukSimpan AC 31/33, konversi kolom ID-14..18)
 //	SetelNomorPolis NOPOLIS = JSON_POLIS.NOPOLIS (indeks unik NOPOLIS, PRODKE)
@@ -147,14 +147,13 @@ func (p *Pemuat) Jalankan(ctx context.Context, tulis bool, lap *models.LaporanPe
 func (p *Pemuat) muat(ctx context.Context, b models.BarisJSONPolis, h models.HasilPecah) (models.NasibUsulan, error) {
 	var usulan models.NasibUsulan
 	err := p.g.Transaksi(ctx, func(tx *db.Tx) error {
-		ada, err := p.g.IDPegaKasus(ctx, tx, h.ID)
-		switch {
-		case err == nil && ada == b.IDPega:
-			return errSudahDimuat
-		case err == nil:
-			return fmt.Errorf("%w: %s ber-IDPEGA %q", models.ErrIDKasusDipakai, h.ID, ada)
-		case !errors.Is(err, repository.ErrKasusTidakAda):
+		// IDPEGA tidak lagi disimpan (06-10-2026): ID yang sudah ada = dokumen sudah dimuat - dilewati.
+		ada, err := p.g.AdaKasus(ctx, tx, h.ID)
+		if err != nil {
 			return err
+		}
+		if ada {
+			return errSudahDimuat
 		}
 		if err := p.g.SisipKasus(ctx, tx, h.ID, "", ""); err != nil {
 			return err

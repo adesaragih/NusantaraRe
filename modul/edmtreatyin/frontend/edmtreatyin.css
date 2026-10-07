@@ -1,0 +1,1263 @@
+/*
+ * Asal: salinan `modul/nbtreatyin/frontend/nbtreatyin.css` (06-10-2026) - gaya NB Treaty In yang disetujui
+ * work owner; akar `.nbtreatyin` -> `.edmtreatyin`, kelas `nbti__` -> `edmt__`, token `--nbti-*` -> `--edmt-*`.
+ */
+
+/*
+ * Gaya modul EDM Treaty In.
+ *
+ * ⛔ TERISOLASI: SETIAP pemilih diawali kelas akar `.edmtreatyin` (dipasang `rute.tsx` pada pembungkus seluruh
+ * halaman modul, `display: contents`). Kelas khusus modul berawalan `edmt__`. Dijaga `gaya.test.ts`.
+ * Warna: palet inti, ditambah token skin Kelola User `--edmt-*` (terang dan gelap) di bagian SKIN di bawah -
+ * perintah work owner 05-10-2026 menggantikan aturan lama "nol rona baru".
+ */
+
+.edmtreatyin {
+  display: contents;
+}
+
+/* Baris saringan portal dan popup pilih bisnis. */
+/* Popup pilih bisnis: judul kolom yang dapat diurut, dan saringan per kolom. */
+.edmtreatyin .edmt__urut {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.edmtreatyin .edmt__saring-kolom {
+  min-width: 6em;
+}
+
+/* Nomor kasus di daftar portal: tombol berupa tautan. */
+.edmtreatyin .edmt__tautan {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--text);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+/* Medan hanya-baca: label di atas, nilai di bawah. */
+.edmtreatyin .edmt__medan .edmt__nilai {
+  display: block;
+  min-height: 1.6em;
+  padding: 6px 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* Kode mata uang pasangan angka uang (AC 85). */
+.edmtreatyin .edmt__kode {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+.edmtreatyin .edmt__dengan-kode {
+  display: contents;
+}
+
+.edmtreatyin .edmt__centang {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.edmtreatyin .edmt__radio {
+  display: flex;
+  gap: 16px;
+  padding: 6px 0;
+}
+
+.edmtreatyin .edmt__aksi {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 12px;
+}
+
+.edmtreatyin .edmt__pendek {
+  max-width: 120px;
+}
+
+.edmtreatyin .edmt__catatan {
+  white-space: pre-wrap;
+}
+
+.edmtreatyin .edmt__kaki {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin: 16px 0;
+}
+
+/* Popup ShowPolicyNo: nomor berkas, keterangan, lalu nomor polis menonjol - bertumpuk di tengah (perintah work owner
+   06-10-2026 "RAPIHIN"; dulu kisi dua kolom yang memotong kalimatnya). */
+.edmtreatyin .edmt__nomor {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 8px 0 4px;
+  text-align: center;
+}
+
+.edmtreatyin .edmt__nomor p {
+  margin: 0;
+}
+
+.edmtreatyin .edmt__nomor-kasus {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--edmt-teks, var(--text));
+}
+
+.edmtreatyin .edmt__nomor-teks {
+  font-size: 13px;
+  color: var(--edmt-teks-redup, var(--text-3));
+}
+
+.edmtreatyin .edmt__nomor-polis {
+  margin-top: 8px;
+  padding: 10px 18px;
+  border: 1px solid var(--edmt-aksen-garis, var(--border));
+  border-radius: 10px;
+  background: var(--edmt-aksen-lembut, var(--primary-soft));
+  color: var(--edmt-aksen-teks, var(--primary-text));
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* Subsection DetailPoliciesNonProportional: grid total per mata uang berdampingan, rincian angsuran per mata uang. */
+.edmtreatyin .edmt__total-np {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.edmtreatyin .edmt__angsuran-np {
+  margin: 8px 0 16px;
+}
+
+/* LABEL "NON EDM" / "EDM" DetailPoliciesNonProportional (tempat berperan tiket 05). */
+.edmtreatyin .edmt__label-np {
+  margin: 8px 0;
+  font-weight: 600;
+}
+
+/* ======================================================================
+   SKIN KELOLA USER (perintah work owner 05-10-2026: "RAPIHKAN SEMUA TAMPILAN NB TREATY, IKUTI SKIN PADA
+   MENU KELOLA USER, BUAT DENGAN USER FRIENDLY DAN COMPATIBLE DENGAN DEVICE/HP").
+   Soft UI neumorfisme yang SAMA dengan `.kelola-user` (inti/frontend/styles.css): token `--ku-*`
+   disalin sebagai `--edmt-*` dan dibatasi kelas halaman `.edmt__akar` (portal dan layar kasus) - nol
+   pemilih di inti, nol perubahan di Kelola User. Alas abu kebiruan bergradasi; tabel dan kartu TIMBUL
+   KELUAR; isian TIMBUL KE DALAM; tombol kapsul; tombol utama merah bergradasi; aksen navy #2b44b0.
+   Popup dirender di dalam akar halaman, jadi ikut bergaya. TANPA backdrop-filter / filter / transform
+   (mengurung popup `position: fixed`; dijaga gaya.test.ts).
+   ====================================================================== */
+.edmtreatyin .edmt__akar {
+  --edmt-latar: #eef1f6;
+  --edmt-latar-tepi: #cfd7e5;
+  --edmt-latar-atas: #f9fafd;
+  --edmt-latar-bawah: #e4e9f3;
+  --edmt-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --edmt-lembut: #e9edf3;
+  --edmt-lembut-tepi: #dde3ec;
+  --edmt-teks: #101828;
+  --edmt-teks-redup: #4f586b;
+  --edmt-aksen: var(--primary-tanda);
+  --edmt-aksen-teks: #2339a3;
+  --edmt-aksen-lembut: #e3e8f6;
+  --edmt-aksen-garis: #b9c5ee;
+  --edmt-kepala-tabel: #dde4f2;
+  --edmt-kepala-teks: #22326b;
+  --edmt-kepala-garis: #c3cde2;
+  --edmt-isi: #ffffff;
+  --edmt-baris-hover: #e6ecfa;
+  --edmt-garis: #e1e6ef;
+  --edmt-tepi: #c8d1e1;
+  --edmt-tombol: #d63a42;
+  --edmt-tombol-ujung: #bf2f37;
+  --edmt-tombol-hover: #c2333b;
+  --edmt-tombol-hover-ujung: #a9282f;
+  --edmt-terang: rgba(255, 255, 255, 0.92);
+  --edmt-gelap: rgba(163, 177, 198, 0.55);
+  --edmt-kilau: rgba(255, 255, 255, 0.7);
+  --edmt-timbul: 8px 8px 18px var(--edmt-gelap), -8px -8px 18px var(--edmt-terang);
+  --edmt-timbul-kecil: 4px 4px 9px var(--edmt-gelap), -4px -4px 9px var(--edmt-terang);
+  --edmt-cekung-kecil: inset 2px 2px 4px var(--edmt-gelap), inset -2px -2px 4px var(--edmt-terang);
+  --edmt-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --edmt-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--edmt-terang);
+  --edmt-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --edmt-sukses-latar: #e6f7ee;
+  --edmt-sukses-tepi: #b7e8cc;
+  --edmt-sukses-teks: #067647;
+  --edmt-netral-latar: #e9edf3;
+  --edmt-netral-tepi: #d5dce7;
+  --edmt-netral-teks: #475467;
+  --edmt-bahaya-teks: #b42318;
+  --edmt-judul: #2339a3;
+  --text-3: var(--edmt-teks-redup);
+  color: var(--edmt-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--edmt-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--edmt-latar-atas) 0%, var(--edmt-latar-bawah) 100%);
+  box-shadow: var(--edmt-bayang-akar);
+}
+
+:root[data-theme="dark"] .edmtreatyin .edmt__akar {
+  --edmt-latar: #1b2130;
+  --edmt-latar-tepi: #323b50;
+  --edmt-latar-atas: #222a3b;
+  --edmt-latar-bawah: #161b27;
+  --edmt-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --edmt-lembut: #181d2a;
+  --edmt-lembut-tepi: #242b3a;
+  --edmt-teks: #eef0f6;
+  --edmt-teks-redup: #aab2c4;
+  --edmt-aksen-teks: #aebcff;
+  --edmt-aksen-lembut: #222b45;
+  --edmt-aksen-garis: #3a4b8f;
+  --edmt-kepala-tabel: #273152;
+  --edmt-kepala-teks: #dbe2ff;
+  --edmt-kepala-garis: #3a4670;
+  --edmt-isi: #1f2638;
+  --edmt-baris-hover: #2b3554;
+  --edmt-garis: #2c3447;
+  --edmt-tepi: #3a4459;
+  --edmt-terang: rgba(255, 255, 255, 0.045);
+  --edmt-gelap: rgba(0, 0, 0, 0.55);
+  --edmt-kilau: rgba(255, 255, 255, 0.04);
+  --edmt-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --edmt-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--edmt-terang);
+  --edmt-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --edmt-sukses-latar: #0d2a1f;
+  --edmt-sukses-tepi: #1d5c40;
+  --edmt-sukses-teks: #75e0a7;
+  --edmt-netral-latar: #1f2533;
+  --edmt-netral-tepi: #333c4f;
+  --edmt-netral-teks: #c3cad8;
+  --edmt-bahaya-teks: #fda29b;
+  --edmt-judul: #aebcff;
+}
+
+/* Kepala halaman: judul dan tombol; turun ke bawah bila tidak muat (HP). */
+.edmtreatyin .edmt__akar .inbox__kepala {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.edmtreatyin .edmt__akar .inbox__judul,
+.edmtreatyin .edmt__akar .modal__title {
+  color: var(--edmt-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.edmtreatyin .edmt__akar .muted {
+  color: var(--edmt-teks-redup);
+}
+
+.edmtreatyin .edmt__akar :focus-visible {
+  outline: 2px solid var(--edmt-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.edmtreatyin .edmt__akar .field__input {
+  background: var(--edmt-isi);
+  border: 1px solid var(--edmt-tepi);
+  border-radius: 12px;
+  box-shadow: var(--edmt-cekung-kecil);
+  color: var(--edmt-teks);
+}
+
+.edmtreatyin .edmt__akar .field__input:hover:not(:disabled) {
+  border-color: var(--edmt-aksen-garis);
+}
+
+.edmtreatyin .edmt__akar .field__input:focus {
+  border-color: var(--edmt-aksen);
+  box-shadow: var(--edmt-cekung-kecil), var(--edmt-cincin);
+  outline: none;
+}
+
+.edmtreatyin .edmt__akar .field__input:disabled,
+.edmtreatyin .edmt__akar .field__input--readonly {
+  background: var(--edmt-lembut);
+  border-color: var(--edmt-lembut-tepi);
+  color: var(--edmt-teks-redup);
+  box-shadow: none;
+}
+
+.edmtreatyin .edmt__akar .field__label {
+  color: var(--edmt-teks-redup);
+  font-weight: 600;
+}
+
+/* Medan hanya-baca: nilai di kotak lembut (rata dengan isian di sebelahnya), bukan teks melayang. */
+.edmtreatyin .edmt__akar .edmt__medan .edmt__nilai {
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid var(--edmt-lembut-tepi);
+  border-radius: 12px;
+  background: var(--edmt-lembut);
+  color: var(--edmt-teks);
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+/* Angka rata kanan, digit sama lebar - isian, nilai hanya-baca, dan sel tabel (perintah work owner 06-10-2026). */
+.edmtreatyin .edmt__akar .edmt__angka,
+.edmtreatyin .edmt__akar .edmt__medan .edmt__nilai--angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Nol di bagian uang: redup, sama dengan placeholder "0" isian angka. */
+.edmtreatyin .edmt__akar .edmt__medan .edmt__nilai--nol {
+  color: var(--edmt-teks-redup);
+  font-weight: 400;
+}
+
+.edmtreatyin .edmt__akar .field__input::placeholder {
+  color: var(--edmt-teks-redup);
+  opacity: 0.75;
+}
+
+/* Kotak centang dan radio: warna aksen; radio menjadi pilihan berbingkai yang mudah diketuk. */
+.edmtreatyin .edmt__akar input[type="checkbox"],
+.edmtreatyin .edmt__akar input[type="radio"] {
+  accent-color: var(--edmt-aksen);
+  width: 18px;
+  height: 18px;
+}
+
+.edmtreatyin .edmt__akar .edmt__radio {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.edmtreatyin .edmt__akar .edmt__radio label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 14px;
+  border: 1px solid var(--edmt-tepi);
+  border-radius: 999px;
+  background: var(--edmt-isi);
+  box-shadow: var(--edmt-timbul-kecil);
+  cursor: pointer;
+}
+
+.edmtreatyin .edmt__akar .edmt__radio label:has(input:checked) {
+  border-color: var(--edmt-aksen-garis);
+  background: var(--edmt-aksen-lembut);
+  color: var(--edmt-aksen-teks);
+  font-weight: 600;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama merah bergradasi; tombol polos = ghost. */
+.edmtreatyin .edmt__akar .btn {
+  border-radius: 999px;
+}
+
+.edmtreatyin .edmt__akar .btn--primary {
+  background: linear-gradient(180deg, var(--edmt-tombol), var(--edmt-tombol-ujung));
+  border-color: var(--edmt-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--edmt-bayang-tombol);
+}
+
+.edmtreatyin .edmt__akar .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--edmt-tombol-hover), var(--edmt-tombol-hover-ujung));
+  border-color: var(--edmt-tombol-hover-ujung);
+}
+
+.edmtreatyin .edmt__akar .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.edmtreatyin .edmt__akar .btn--ghost,
+.edmtreatyin .edmt__akar .btn:not(.btn--primary):not(.btn--danger) {
+  background: var(--edmt-isi);
+  border: 1px solid var(--edmt-tepi);
+  color: var(--edmt-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--edmt-timbul-kecil);
+}
+
+.edmtreatyin .edmt__akar .btn--ghost:hover:not(:disabled),
+.edmtreatyin .edmt__akar .btn:not(.btn--primary):not(.btn--danger):hover:not(:disabled) {
+  background: var(--edmt-aksen-lembut);
+  border-color: var(--edmt-aksen-garis);
+  color: var(--edmt-aksen-teks);
+}
+
+.edmtreatyin .edmt__akar .btn:not(.btn--primary):active:not(:disabled) {
+  box-shadow: var(--edmt-cekung-kecil);
+}
+
+.edmtreatyin .edmt__akar .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.edmtreatyin .edmt__akar .modal {
+  background: var(--edmt-latar);
+  border: 1px solid var(--edmt-kilau);
+  border-radius: 22px;
+  box-shadow: var(--edmt-bayang-popup);
+}
+
+.edmtreatyin .edmt__akar .modal__head,
+.edmtreatyin .edmt__akar .modal__actions {
+  border-color: var(--edmt-garis);
+}
+
+.edmtreatyin .edmt__akar .alert {
+  border-radius: 12px;
+}
+
+/* Wadah Section (panel): kartu putih TIMBUL KELUAR; judul navy. */
+.edmtreatyin .edmt__akar .panel {
+  margin-bottom: 18px;
+  padding: 20px;
+  border: 1px solid var(--edmt-tepi);
+  border-radius: 18px;
+  background: var(--edmt-isi);
+  box-shadow: var(--edmt-timbul-kecil);
+}
+
+.edmtreatyin .edmt__akar .panel__title,
+.edmtreatyin .edmt__akar .panel h4 {
+  margin: 0 0 12px;
+  color: var(--edmt-judul);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.edmtreatyin .edmt__akar .panel h4:not(:first-child) {
+  margin-top: 18px;
+}
+
+/* Tabel: kartu putih bertepi; kepala navy muda, belang lembut, sorot biru muda. Di dalam panel tanpa bayangan.
+   Tinggi mengikuti isi: `min-height: 160px` inti menyisakan ruang kosong di bawah daftar pendek (work owner
+   06-10-2026, "kenapa banyak space kosong"). */
+.edmtreatyin .edmt__akar .table-wrap {
+  min-height: 0;
+  border: 1px solid var(--edmt-tepi);
+  border-radius: 16px;
+  background: var(--edmt-isi);
+  box-shadow: var(--edmt-timbul);
+}
+
+.edmtreatyin .edmt__akar .panel .table-wrap,
+.edmtreatyin .edmt__akar .modal .table-wrap {
+  box-shadow: none;
+}
+
+.edmtreatyin .edmt__akar .table-wrap thead th {
+  background: var(--edmt-kepala-tabel);
+  color: var(--edmt-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--edmt-kepala-garis);
+}
+
+.edmtreatyin .edmt__akar .table-wrap td {
+  color: var(--edmt-teks);
+  background: var(--edmt-isi);
+  border-bottom-color: var(--edmt-garis);
+}
+
+.edmtreatyin .edmt__akar .table-wrap tbody tr:nth-child(even),
+.edmtreatyin .edmt__akar .table-wrap tbody tr:hover {
+  background: transparent;
+}
+
+.edmtreatyin .edmt__akar .table-wrap tbody tr:nth-child(even) > td {
+  background: var(--edmt-lembut);
+}
+
+.edmtreatyin .edmt__akar .table-wrap tbody tr:hover > td {
+  background: var(--edmt-baris-hover);
+}
+
+/* Tombol di dalam baris tabel (Choose, Delete): kapsul kecil, supaya baris tidak didominasi tombol besar. */
+.edmtreatyin .edmt__akar .table-wrap td .btn {
+  min-height: 32px;
+  padding: 4px 14px;
+  font-size: 13px;
+}
+
+.edmtreatyin .edmt__akar .table-wrap td .btn--primary {
+  box-shadow: 2px 2px 6px rgba(214, 58, 66, 0.3);
+}
+
+/* Nomor berkas di daftar portal: tautan aksen yang mudah diketuk. */
+.edmtreatyin .edmt__akar .edmt__tautan {
+  color: var(--edmt-aksen-teks);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Status berkas: chip bertitik seperti status Kelola User. */
+.edmtreatyin .edmt__akar .edmt__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 8px;
+  border: 1px solid var(--edmt-netral-tepi);
+  border-radius: 999px;
+  background: var(--edmt-netral-latar);
+  color: var(--edmt-netral-teks);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.edmtreatyin .edmt__akar .edmt__status::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Kode mata uang pasangan angka uang: chip aksen kecil. */
+/* Kode mata uang: teks biasa di depan angka ("IDR 163.125.000"), bukan chip - perintah work owner 05-10-2026. */
+.edmtreatyin .edmt__akar .edmt__kode {
+  margin-right: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/* Baris saringan portal: isian melebar, tombol di sampingnya. */
+/* Saringan portal: SATU kapsul - ikon cari, isian tanpa bingkai, pengosong (hanya bila ada teks), tombol Filter
+   menempel di kanan; cincin fokus pada kapsulnya (perintah work owner 06-10-2026: "rapihkan, keren, elegan"). */
+.edmtreatyin .edmt__akar .edmt__saring {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 560px;
+  margin: 0 0 14px;
+  padding: 4px 4px 4px 14px;
+  border: 1px solid var(--edmt-tepi);
+  border-radius: 999px;
+  background: var(--edmt-isi);
+  box-shadow: var(--edmt-cekung-kecil);
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.edmtreatyin .edmt__akar .edmt__saring:focus-within {
+  border-color: var(--edmt-aksen-garis);
+  box-shadow: var(--edmt-cekung-kecil), var(--edmt-cincin);
+}
+
+.edmtreatyin .edmt__akar .edmt__saring-ikon {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--edmt-teks-redup);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.edmtreatyin .edmt__akar .edmt__saring-isian {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 32px;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--edmt-teks);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.edmtreatyin .edmt__akar .edmt__saring-isian::placeholder {
+  color: var(--edmt-teks-redup);
+  opacity: 0.75;
+}
+
+.edmtreatyin .edmt__akar .edmt__saring-hapus {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--edmt-lembut);
+  color: var(--edmt-teks-redup);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.edmtreatyin .edmt__akar .edmt__saring-hapus:hover:not(:disabled) {
+  background: var(--edmt-aksen-lembut);
+  color: var(--edmt-aksen-teks);
+}
+
+/* kotak kosong: pengosong disembunyikan, tempatnya tetap (isian tidak melompat saat mengetik) */
+.edmtreatyin .edmt__akar .edmt__saring-hapus:disabled {
+  visibility: hidden;
+}
+
+.edmtreatyin .edmt__akar .edmt__saring-tombol {
+  flex: 0 0 auto;
+  height: 32px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--edmt-aksen-teks);
+  color: var(--edmt-isi);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.edmtreatyin .edmt__akar .edmt__saring-tombol:hover {
+  opacity: 0.88;
+}
+
+.edmtreatyin .edmt__akar .edmt__saring-hapus:focus-visible,
+.edmtreatyin .edmt__akar .edmt__saring-tombol:focus-visible {
+  outline: 2px solid var(--edmt-aksen-garis);
+  outline-offset: 2px;
+}
+
+.edmtreatyin .edmt__akar .edmt__aksi {
+  flex-wrap: wrap;
+}
+
+/* Kaki aksi kasus (Save / Submit / Approve): kartu di akhir halaman. Tidak `sticky`: yang menggulir adalah body,
+   sedangkan `main.shell__isi` (inti) ber-overflow, jadi `sticky` di dalam modul tidak pernah menempel. */
+.edmtreatyin .edmt__akar .edmt__kaki {
+  flex-wrap: wrap;
+  margin: 16px 0 0;
+  padding: 12px 16px;
+  border: 1px solid var(--edmt-tepi);
+  border-radius: 18px;
+  background: var(--edmt-isi);
+  box-shadow: var(--edmt-timbul-kecil);
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   TATA LETAK PEGA (perintah work owner 05-10-2026, screenshot layar Pega: "coba ikuti layoutnya begini, buat rapih
+   ya"): dua kolom berdiri sendiri, label di KIRI dan nilai di KANAN. Lebar label tetap, jadi kolom kiri, kolom
+   kanan, dan Remark yang melebar berbaris rapi. `tataletak.ts` membagi medannya; CSS ini hanya menata.
+   --------------------------------------------------------------------------------------------------------------- */
+.edmtreatyin .edmt__akar {
+  --edmt-lebar-label: 200px;
+  --edmt-label: min(var(--edmt-lebar-label), 40%);
+}
+
+.edmtreatyin .edmt__akar .edmt__dua-kolom {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 40px;
+  align-items: start;
+}
+
+.edmtreatyin .edmt__akar .edmt__dua-kolom + .edmt__dua-kolom {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--edmt-garis);
+}
+
+.edmtreatyin .edmt__akar .edmt__kolom,
+.edmtreatyin .edmt__akar .edmt__kolom-grup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.edmtreatyin .edmt__akar .edmt__kolom-grup > h4 {
+  margin: 0;
+}
+
+/* Wadah kedua dalam satu kolom (klaim/saldo di bawah OGP, potongan/pajak di bawah ONP): garis pemisah tipis. */
+.edmtreatyin .edmt__akar .edmt__kolom-grup > .edmt__kolom + .edmt__kolom {
+  padding-top: 10px;
+  border-top: 1px dashed var(--edmt-garis);
+}
+
+.edmtreatyin .edmt__akar .edmt__baris-penuh {
+  margin-top: 10px;
+}
+
+.edmtreatyin .edmt__akar .edmt__total {
+  margin-top: 14px;
+}
+
+.edmtreatyin .edmt__akar .edmt__usulan {
+  margin: 0 0 16px;
+}
+
+/* Satu baris: label | nilai. */
+.edmtreatyin .edmt__akar .edmt__kolom .field {
+  display: grid;
+  grid-template-columns: var(--edmt-label) minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: center;
+  margin: 0;
+}
+
+.edmtreatyin .edmt__akar .edmt__kolom .field__label {
+  margin: 0;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.edmtreatyin .edmt__akar .edmt__kolom .field__error {
+  grid-column: 2;
+}
+
+/* Isian bertingkat (textarea): label sejajar baris pertama. */
+.edmtreatyin .edmt__akar .edmt__kolom .field--lebar {
+  align-items: start;
+}
+
+.edmtreatyin .edmt__akar .edmt__kolom .field--lebar .field__label {
+  padding-top: 11px;
+}
+
+/* Angka uang tersunting: label | [kode] [isian]. Pembungkus `.field` dilebur supaya kode duduk di baris yang sama. */
+.edmtreatyin .edmt__akar .edmt__kolom > .edmt__dengan-kode {
+  display: grid;
+  grid-template-columns: var(--edmt-label) auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.edmtreatyin .edmt__akar .edmt__kolom > .edmt__dengan-kode > .field {
+  display: contents;
+}
+
+.edmtreatyin .edmt__akar .edmt__kolom > .edmt__dengan-kode .field__label {
+  grid-column: 1;
+  grid-row: 1;
+  padding-right: 12px;
+}
+
+.edmtreatyin .edmt__akar .edmt__kolom > .edmt__dengan-kode > .edmt__kode {
+  grid-column: 2;
+  grid-row: 1;
+  margin-right: 8px;
+}
+
+.edmtreatyin .edmt__akar .edmt__kolom > .edmt__dengan-kode .field__input {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.edmtreatyin .edmt__akar .edmt__kolom > .edmt__dengan-kode .field__error {
+  grid-column: 2 / -1;
+  grid-row: 2;
+}
+
+/* Tombol Survey Report di bawah radio Survey Report: sejajar kolom nilai. */
+.edmtreatyin .edmt__akar .edmt__kolom > .edmt__tombol-survei {
+  margin: -4px 0 0 calc(var(--edmt-label) + 12px);
+}
+
+.edmtreatyin .edmt__akar .edmt__survei-kepala {
+  margin: 0 0 12px;
+}
+
+/* Kotak centang: duduk di kolom nilai, sejajar isian di atas/bawahnya. */
+.edmtreatyin .edmt__akar .edmt__kolom .edmt__centang {
+  margin: 0 0 0 calc(var(--edmt-label) + 12px);
+}
+
+.edmtreatyin .edmt__akar .edmt__kolom .edmt__centang {
+  min-height: 32px;
+  font-weight: 600;
+}
+
+/* Deret "Q [..] / [..] U/Y [..]" satu baris; label Q tetap di kolom label. */
+.edmtreatyin .edmt__akar .edmt__deret {
+  display: grid;
+  grid-template-columns: var(--edmt-label) minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 4px;
+  align-items: center;
+}
+
+.edmtreatyin .edmt__akar .edmt__deret > *,
+.edmtreatyin .edmt__akar .edmt__deret .field,
+.edmtreatyin .edmt__akar .edmt__deret .edmt__dengan-kode {
+  display: contents;
+}
+
+.edmtreatyin .edmt__akar .edmt__deret .field__label {
+  padding: 0;
+}
+
+.edmtreatyin .edmt__akar .edmt__deret .field__error {
+  grid-column: 2 / -1;
+}
+
+/* Tablet dan layar sempit: kolom kanan turun ke bawah kolom kiri, label tetap di kiri. */
+@media (max-width: 860px) {
+  .edmtreatyin .edmt__akar .edmt__dua-kolom {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   PADAT (perintah work owner 06-10-2026: "tampilannya kecilin, terlalu besar"): huruf 13px, isian 32px, panel dan
+   sel tabel lebih rapat, tombol lebih ramping. Hanya halaman modul (`.edmt__akar`); inti tidak disentuh.
+   --------------------------------------------------------------------------------------------------------------- */
+.edmtreatyin .edmt__akar {
+  --edmt-lebar-label: 170px;
+  padding: 16px;
+  font-size: 13px;
+}
+
+.edmtreatyin .edmt__akar .inbox__judul {
+  font-size: 18px;
+}
+
+.edmtreatyin .edmt__akar .panel {
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.edmtreatyin .edmt__akar .panel h4 {
+  margin: 0 0 6px;
+  font-size: 12px;
+}
+
+.edmtreatyin .edmt__akar .field__label {
+  font-size: 12px;
+}
+
+.edmtreatyin .edmt__akar .field__input {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.edmtreatyin .edmt__akar textarea.field__input {
+  height: auto;
+  min-height: 56px;
+  padding: 6px 10px;
+}
+
+.edmtreatyin .edmt__akar .edmt__medan .edmt__nilai {
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.edmtreatyin .edmt__akar .edmt__dua-kolom {
+  gap: 6px 28px;
+}
+
+.edmtreatyin .edmt__akar .edmt__kolom,
+.edmtreatyin .edmt__akar .edmt__kolom-grup {
+  gap: 6px;
+}
+
+.edmtreatyin .edmt__akar .edmt__dua-kolom + .edmt__dua-kolom {
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.edmtreatyin .edmt__akar .edmt__radio label {
+  min-height: 30px;
+  padding: 3px 12px;
+}
+
+.edmtreatyin .edmt__akar input[type="checkbox"],
+.edmtreatyin .edmt__akar input[type="radio"] {
+  width: 16px;
+  height: 16px;
+}
+
+.edmtreatyin .edmt__akar .edmt__kolom .edmt__centang {
+  min-height: 26px;
+}
+
+.edmtreatyin .edmt__akar .btn {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.edmtreatyin .edmt__akar .btn--sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.edmtreatyin .edmt__akar th {
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.edmtreatyin .edmt__akar td {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.edmtreatyin .edmt__akar td .field__input {
+  height: 30px;
+}
+
+.edmtreatyin .edmt__akar .edmt__kaki {
+  padding: 8px 12px;
+}
+
+.edmtreatyin .edmt__akar .alert {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+/* HP dan layar sempit. */
+@media (max-width: 640px) {
+  .edmtreatyin .edmt__akar {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .edmtreatyin .edmt__akar .panel {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .edmtreatyin .edmt__akar .inbox__kepala > .btn {
+    width: 100%;
+  }
+
+  /* HP: kapsul selebar layar, tetap satu baris */
+  .edmtreatyin .edmt__akar .edmt__saring {
+    max-width: none;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__saring-tombol {
+    padding: 0 14px;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__kaki .btn {
+    flex: 1 1 140px;
+  }
+
+  /* Daftar portal menjadi kartu: satu berkas satu kartu, label kolom di kiri setiap baris. */
+  .edmtreatyin .edmt__akar .edmt__tabel-portal-wadah {
+    max-height: none;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__tabel-portal thead {
+    display: none;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__tabel-portal,
+  .edmtreatyin .edmt__akar .edmt__tabel-portal tbody,
+  .edmtreatyin .edmt__akar .edmt__tabel-portal tr,
+  .edmtreatyin .edmt__akar .edmt__tabel-portal td {
+    display: block;
+    width: 100%;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__tabel-portal tr {
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--edmt-tepi);
+    border-radius: 16px;
+    background: var(--edmt-isi);
+    box-shadow: var(--edmt-timbul-kecil);
+    box-sizing: border-box;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__tabel-portal tbody tr:nth-child(even) > td,
+  .edmtreatyin .edmt__akar .edmt__tabel-portal tbody tr:hover > td,
+  .edmtreatyin .edmt__akar .edmt__tabel-portal td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+    border: 0;
+    background: transparent;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__tabel-portal td::before {
+    content: attr(data-label);
+    flex: none;
+    color: var(--edmt-teks-redup);
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  /* Tata letak Pega di HP: label di ATAS nilai (lebar penuh untuk jari); deret Q / U/Y tetap satu baris. */
+  .edmtreatyin .edmt__akar .edmt__kolom .field {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 6px;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__kolom .field__error {
+    grid-column: 1;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__kolom .field--lebar .field__label {
+    padding-top: 0;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__kolom > .edmt__dengan-kode {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: 6px;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__kolom > .edmt__dengan-kode .field__label {
+    grid-column: 1 / -1;
+    padding-right: 0;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__kolom > .edmt__dengan-kode > .edmt__kode {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__kolom > .edmt__dengan-kode .field__input {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__kolom > .edmt__dengan-kode .field__error {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__kolom .edmt__centang {
+    margin-left: 0;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__kolom > .edmt__tombol-survei {
+    margin-left: 0;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__aksi .btn {
+    flex: 1 1 140px;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__deret {
+    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+    column-gap: 8px;
+  }
+
+  .edmtreatyin .edmt__akar .edmt__deret .field__error {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   NONPROP SEPERTI LAYAR PEGA (screenshot work owner 06-10-2026: "tampilan NB Treaty Non Prop belum sesuai"): grid
+   selebar isinya tanpa patah baris (Note "layer1 of layer1" satu baris, kolom lebar menggulir di dalam bingkainya),
+   grid total sebaris berdampingan, "% RNM Share" dan "Installment" ringkas, angsuran per mata uang dapat dilipat,
+   deret layer "layer 1 Of layer 1" di kolom kanan section General.
+   --------------------------------------------------------------------------------------------------------------- */
+.edmtreatyin .edmt__akar .edmt__grid-np {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.edmtreatyin .edmt__akar .edmt__grid-np table {
+  width: auto;
+}
+
+.edmtreatyin .edmt__akar .edmt__grid-np th,
+.edmtreatyin .edmt__akar .edmt__grid-np td {
+  white-space: nowrap;
+}
+
+/* spreading: selebar panel seperti Pega */
+.edmtreatyin .edmt__akar .edmt__grid-np:has(> table > tfoot) {
+  width: 100%;
+}
+
+.edmtreatyin .edmt__akar .edmt__grid-np:has(> table > tfoot) table {
+  width: 100%;
+}
+
+.edmtreatyin .edmt__akar .edmt__total-np {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 10px 0 4px;
+}
+
+.edmtreatyin .edmt__akar .edmt__total-np > .edmt__grid-np {
+  flex: 0 1 auto;
+}
+
+/* sel nilai total cukup lebar untuk ratusan miliar */
+.edmtreatyin .edmt__akar .edmt__total-np td.edmt__angka {
+  min-width: 140px;
+}
+
+.edmtreatyin .edmt__akar .edmt__medan-np {
+  max-width: 260px;
+}
+
+.edmtreatyin .edmt__akar .edmt__kolom-np {
+  max-width: 360px;
+  margin-bottom: 12px;
+}
+
+.edmtreatyin .edmt__akar .edmt__urut-np {
+  width: 1%;
+  color: var(--edmt-teks-redup);
+  font-weight: 700;
+  text-align: right;
+}
+
+/* grid "Currency": baris mata uang berlipat, rinciannya di dalam bingkai sendiri */
+.edmtreatyin .edmt__akar .edmt__angsuran-np > table > tbody > tr > td {
+  padding: 6px 10px 10px;
+  background: var(--edmt-isi);
+}
+
+.edmtreatyin .edmt__akar .edmt__rinci-np > summary {
+  width: fit-content;
+  padding: 4px 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.edmtreatyin .edmt__akar .edmt__rinci-np > .edmt__grid-np {
+  margin-top: 6px;
+  box-shadow: none;
+}
+
+/* "layer 1 Of layer 1": nilai pertama di bawah kolom label, sisanya sebaris; label kosong tidak memakan kolom */
+.edmtreatyin .edmt__akar .edmt__deret--layer {
+  grid-template-columns: var(--edmt-label) repeat(4, auto);
+  justify-content: start;
+}
+
+.edmtreatyin .edmt__akar .edmt__deret--layer .field__label:empty {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .edmtreatyin .edmt__akar .edmt__deret--layer {
+    grid-template-columns: repeat(5, auto);
+  }
+
+  .edmtreatyin .edmt__akar .edmt__total-np > .edmt__grid-np {
+    flex: 1 1 100%;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   KHAS EDM TREATY IN (bukan salinan NB): baris saring portal + tombol Refresh, tautan EDM Number nonaktif, popup
+   Create EDM, tab Old Data / New Data / Value Difference, grid ber-baris lipat (expand pane AddPremi / angsuran).
+   --------------------------------------------------------------------------------------------------------------- */
+.edmtreatyin .edmt__akar .edmt__saring-baris {
+  align-items: center;
+  margin: 0 0 14px;
+}
+
+.edmtreatyin .edmt__akar .edmt__saring-baris .edmt__saring {
+  flex: 1 1 320px;
+  margin: 0;
+}
+
+/* Tautan "EDM Number" kasus di luar posisi admin: pxLink nonaktif - teks biasa, tanpa garis bawah. */
+.edmtreatyin .edmt__akar .edmt__tautan:disabled {
+  color: var(--edmt-teks);
+  font-weight: 400;
+  text-decoration: none;
+  cursor: default;
+}
+
+/* Popup Create EDM: medan bertumpuk, label di kiri. */
+.edmtreatyin .edmt__akar .edmt__buat {
+  min-width: min(420px, 100%);
+}
+
+/* Tab layout group: strip tab inti di atas isi tab. */
+.edmtreatyin .edmt__akar .edmt__tab-data > .tabs {
+  margin: 0 0 12px;
+}
+
+/* Baris lipat: tombol teks sel pertama dengan penanda buka/tutup. */
+.edmtreatyin .edmt__akar .edmt__lipat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--edmt-aksen-teks);
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.edmtreatyin .edmt__akar .edmt__lipat-ikon {
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+}
+
+/* Rincian baris: grid anak menjorok, latar lembut. */
+.edmtreatyin .edmt__akar .table-wrap tbody tr.edmt__rinci-baris > td {
+  padding: 8px 10px 12px 28px;
+  background: var(--edmt-lembut);
+}
+
+.edmtreatyin .edmt__akar .edmt__rinci-baris .table-wrap {
+  box-shadow: none;
+}

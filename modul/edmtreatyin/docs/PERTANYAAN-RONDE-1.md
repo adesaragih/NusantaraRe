@@ -93,6 +93,13 @@ rujukan: `Activity\serviceInsertArasapas_act.xml` langkah 6 *(tanpa gerbang)* da
 > Penguat: di seluruh modul EDM Treaty In, `FacOut` hanya muncul di **dua berkas** — aktivitas yang
 > memuat langkahnya, dan rule pemeriksa di atas. Nol layar, nol tabel pemantauan, nol rule lain.
 >
+> ⛔ **KOREKSI 06-10-2026 (XML) — penguat ini tidak lengkap; keputusan WO di atas tidak diubah.** Gerbang
+> langkah 7 adalah `When/IsFacRetro` (`OfferFacIn.IsFacRetro = 1`), dan penanda itu **diset di jalur EDM**:
+> `Activity/InputPolicyTreatyEDMDetail_NP.xml` dan `…_NP_AdjPremi.xml` langkah 3 — `OfferFacIn.IsFacRetro = "1"`
+> bila `TreatyIn.FacultativeShare > 0` (dipanggil `SetValueEDM_Act` 9/10 ← `EDMChooseBusiness_Act` 1). Sapuan
+> kata *"FacOut"* melewatkannya. ⇒ *"tidak pernah berjalan"* tidak terbukti; **butir WO**: apakah P50 tetap
+> berlaku untuk master ber-`FacultativeShare > 0`. Log: `KOREKSI-DOKUMEN-2026-10-06.md`.
+>
 > ---
 >
 > ⛔ **RALAT atas laporan ronde 1.** `[penyimpangan sadar]`
@@ -188,8 +195,8 @@ rujukan: `Activity\serviceInsertArasapas_act.xml` langkah 12, `RDB-List`, catata
 >
 > ~~`[terbuka]`~~ ✅ **`PEGA_DELETE_ERROR_KONVERSI` — naskahnya DITERIMA 2026-09-22.** Semula
 > tercatat sebagai *"procedure KEEMPAT yang belum diminta"*; surat **P1** kini memuat keempatnya dan
-> **sudah terjawab**. Lihat `..
-b-treaty-in\PERTANYAAN-untuk-DBA.md` §P1 nomor 4.
+> **sudah terjawab**. Lihat `modul/nbtreatyin/docs/PERTANYAAN-untuk-DBA.md` §P1 nomor 4.
+> *(Koreksi 06-10: jalur semula `..\nb-treaty-in\…` terpotong menjadi dua baris karena `\n` terbaca sebagai baris baru.)*
 >
 > ~~`[terbuka]`~~ ✅ **Pertanyaan `COMMIT` terjawab: procedure ini meng-commit DI DALAM**, sesudah
 > seluruh penghapusan berhasil. Galat pada tabel mana pun menghasilkan `ROLLBACK` dan penghentian.
@@ -374,8 +381,8 @@ rujukan: `Section\DetailPolicyTreatyInAddendum` **34** properti lawan
 >                      + @If(PolicyTreatyIn.ProdKe < 10, "0" + ProdKe, ProdKe)
 > ```
 >
-> Contoh: polis `RNM-QR.T01.11.2019.01291` menghasilkan endorsemen
-> `RNM-QR.T01.11.2019.01291/E01`.
+> Contoh: polis `UJI-POL-0001` menghasilkan endorsemen
+> `UJI-POL-0001/E01`. *(contoh disamarkan 06-10-2026 — semula nomor polis berformat nyata; aturan prompt eksekusi: nol nomor polis di dokumen.)*
 >
 > Sumbernya **nomor polis induk** (`OldData.PolicyNo`), bukan deret tersendiri. Adendum dan premi
 > tambahan karena itu **berbagi satu nomor** — tidak ada penomoran terpisah untuk masing-masing.
@@ -734,6 +741,10 @@ irisan dengan `…PropOldData` **15** properti, hanya di yang ber-akhiran 2 **27
 > yang lebih rendah, itu validasi yang perlu dibangun; bila tidak ada, angka 99 tetap batas yang
 > perlu diketahui sebelum sistem baru memakainya. **Tidak menahan.**
 >
+> ⛔ **KOREKSI 06-10-2026.** (XML) Rumus itu hanya membubuhkan nol di bawah sepuluh; ≥ 100 menjadi tiga digit —
+> **tidak ada batas 99**. (Keputusan) ✅ ditutup `[keputusan work owner]` 23-09: **tanpa batas**
+> (`spec-penyimpanan-relasional.md` bab *KEPUTUSAN 23-09-2026* butir 1).
+>
 > ---
 >
 > ⭐⭐ **DIPERIKSA ULANG 2026-09-22 terhadap data produksi — jawaban ini TETAP BERDIRI.**
@@ -777,8 +788,8 @@ tidak terekspor *(sama seperti **P18**)* — ronde 1 §F.1
 > ⛔⛔ **RALAT atas baris `rujukan:` di atas.** `[penyimpangan sadar]` 2026-09-22
 > Anak kalimat ⛔ *"nilai `Property-Set` tidak terekspor (sama seperti **P18**)"* **salah**.
 > Nilainya **terekspor**, di tag `PropertiesName`/`PropertiesValue` — **tanpa awalan `py`**.
-> **P18 sendiri sudah ditarik.** Lihat `..
-b-treaty-in\VERIFIKASI-P18.md`.
+> **P18 sendiri sudah ditarik.** Lihat `modul/nbtreatyin/docs/VERIFIKASI-P18.md`.
+> *(Koreksi 06-10: jalur semula `..\nb-treaty-in\…` terpotong menjadi dua baris.)*
 
 **Jawaban:**
 

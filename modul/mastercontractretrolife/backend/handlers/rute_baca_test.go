@@ -140,10 +140,12 @@ func TestMasterTidakTerbaca503MenyebutObjek(t *testing.T) {
 	}
 }
 
-func TestJenisReasuransiUrutRD(t *testing.T) {
+// Urutan dropdown keputusan work owner 04-10-2026 (QS, 2ND QS, SURPLUS,
+// 2ND SURPLUS, OR) - menggantikan urutan ID DESC `BrowseRD`.
+func TestJenisReasuransiUrutWorkOwner(t *testing.T) {
 	kode, badan := server(t, true).minta(t, "GET", handlers.Prefix+"/jenis-reasuransi", true)
-	if kode != http.StatusOK || strings.Index(badan, "10200") > strings.Index(badan, "10196") {
-		t.Errorf("jenis (urut ID DESC dari gudang): %d %s", kode, badan)
+	if kode != http.StatusOK || strings.Index(badan, `"note":"QS"`) > strings.Index(badan, `"note":"OR"`) {
+		t.Errorf("jenis (QS sebelum OR): %d %s", kode, badan)
 	}
 }
 

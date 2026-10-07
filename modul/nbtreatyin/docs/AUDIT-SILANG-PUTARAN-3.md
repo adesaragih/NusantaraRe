@@ -357,7 +357,7 @@ Bagian berikut sama dengan XML:
 - Satu uji paket itu (`hitungNetPremi`) disesuaikan ke aksi sel admin `CountOGPONP` (7.4).
   Tidak ada selisih layar baru.
 
-**Kolom `T_GENERAL_POLIS.EDM_TYPE` (R1, F3).**
+**Kolom `T_GENERAL_POLIS_TREATY.EDM_TYPE` (R1, F3).**
 
 - Kolom ini dibaca syarat kedua `InputPolicyTreatyInPre_Act` langkah 10
   (`[.PolicyTreatyIn.EDMType=="3"] T->3`). Cocok dengan `PerluCekDaftarXOL`.
