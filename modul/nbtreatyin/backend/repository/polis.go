@@ -2,7 +2,7 @@ package repository
 
 // Untuk apa berkas ini: SIMPAN DAN MUAT HALAMAN KERJA - pengganti
 // `SaveJsonPolisTreatyIn_Act` (JSON_POLIS) dan `Obj-Save pyWorkPage`. Halaman
-// dipecah ke T_GENERAL_POLIS + tabel anak menurut KATALOG
+// dipecah ke T_GENERAL_POLIS_TREATY + tabel anak menurut KATALOG
 // (`models/katalog.go`), di dalam transaksi pemanggil (tiket 16-21; spec §5.7,
 // AC 16, 29, 38; spec-penyimpanan ID-11, ID-12, ID-23..ID-31).
 //
@@ -58,6 +58,7 @@ var (
 		{tabel: models.TabelAngsuran, kolomInduk: "POLIS_ID", cucu: cucuAngsuran},
 		{tabel: models.TabelSpreading, kolomInduk: "POLIS_ID"},
 		{tabel: models.TabelXOL, kolomInduk: "POLIS_ID", cucu: cucuLayer},
+		{tabel: models.TabelSurvei, kolomInduk: "POLIS_ID"},
 	}
 )
 
@@ -85,7 +86,7 @@ func (g *Gudang) SimpanHalaman(ctx context.Context, tx *db.Tx, id string, h *mod
 	return nil
 }
 
-// tulisInduk memperbarui T_GENERAL_POLIS - hanya bila generasinya terbuka.
+// tulisInduk memperbarui T_GENERAL_POLIS_TREATY - hanya bila generasinya terbuka.
 func (g *Gudang) tulisInduk(ctx context.Context, tx *db.Tx, id string, h *models.Halaman) error {
 	t, err := g.nama(models.TabelGeneralPolis.Nama)
 	if err != nil {
@@ -256,7 +257,7 @@ func (g *Gudang) SetelNomorPolis(ctx context.Context, tx *db.Tx, id, nopol strin
 
 // ------------------------------------------------------------------ muat
 
-// BacaHalaman memuat halaman kerja satu kasus dari T_GENERAL_POLIS dan
+// BacaHalaman memuat halaman kerja satu kasus dari T_GENERAL_POLIS_TREATY dan
 // anak-anaknya. Nilai halaman `TreatyIn` TIDAK dimuat di sini - dibaca ulang
 // dari view lewat TREATY_IN_ID (services).
 func (g *Gudang) BacaHalaman(ctx context.Context, tx *db.Tx, id string) (*models.Halaman, error) {

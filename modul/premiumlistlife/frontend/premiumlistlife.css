@@ -375,14 +375,42 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 8px 12px;
+}
+
+/* Panel ringkas (03-10-2026): judul sebaris dengan berkas dan tombol. */
+.pl-unggah__judul {
+  margin: 0;
+  white-space: nowrap;
 }
 
 .pl-unggah__berkas {
-  flex: 1 1 260px;
+  flex: 1 1 220px;
   min-width: 0;
   font-size: var(--fs-base);
+}
+
+/* Aturan format CSV dilipat: tertutup hanya tautan kecil; terbuka, turun ke
+   baris sendiri selebar panel (sesudah tombol). */
+.pl-unggah__aturan > summary {
+  color: var(--primary);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pl-unggah__aturan[open] {
+  order: 10;
+  flex-basis: 100%;
+}
+
+.pl-unggah__aturan[open] > .panel__note {
+  margin: 6px 0 0;
+}
+
+/* Hasil validasi / simpan di bawah baris ringkas. */
+.pl-unggah > :not(.pl-unggah__baris) {
+  margin-top: 10px;
 }
 
 .pl-detail__cacah {
@@ -422,4 +450,65 @@
 /* Tanpa tombol (layar hanya menampilkan): satu kolom. */
 .pl-offer__pilih-grup--baca {
   grid-template-columns: minmax(0, 1fr);
+}
+
+/* PL Number yang baru terbit di popup hasil Confirm (03-10-2026): besar dan
+   tebal, supaya terbaca sekilas dan mudah disalin. */
+.pl-hasil-nomor {
+  margin: 0 0 8px;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  user-select: all;
+}
+
+/* Popup hasil Confirm: PL Number dan WPC berpasangan label-nilai. */
+.pl-hasil {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 4px 16px;
+  margin: 0 0 8px;
+}
+
+.pl-hasil > dt {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.pl-hasil > dd {
+  margin: 0;
+}
+
+/* Tombol pilih + tombol View berdampingan di kanan kotak isian Product Name (05-10-2026). */
+.pl-dp-pilih--dua {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.pl-dp-pilih > .btn:not(:last-child) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* Popup isi Product Name (05-10-2026): bagian bertumpuk, tabel menggulir di dalam kotaknya. */
+.pl-rincian__bagian + .pl-rincian__bagian {
+  margin-top: 16px;
+}
+
+.pl-rincian__lebar {
+  grid-column: 1 / -1;
+}
+
+.pl-rincian__tabel {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Tabel rate di bawah PLAN LIST popup Product Name (05-10-2026). */
+.pl-rincian__rate {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }

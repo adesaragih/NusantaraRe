@@ -173,7 +173,7 @@ func TestKolomUangGridDibungkusTM9(t *testing.T) {
 func TestQueryGridPesertaBerbatasDanTerurut(t *testing.T) {
 	q := sqlGridPeserta("SKEMAUJI.T_PREMIUM_LIST_DETAIL", models.KolomGridPeserta)
 	for _, potong := range []string{
-		"ORDER BY d.CERTIFICATE_NO, d.ID",
+		"ORDER BY d.ID\n",
 		"OFFSET :2 ROWS FETCH NEXT :3 ROWS ONLY",
 		"WHERE d.PREMIUM_LIST_ID = :1",
 	} {

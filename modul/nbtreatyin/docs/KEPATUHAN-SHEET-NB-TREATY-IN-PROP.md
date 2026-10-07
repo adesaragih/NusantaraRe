@@ -13,8 +13,9 @@ Jalur relatif terhadap `modul/nbtreatyin/backend/` kecuali diawali `docs/` atau 
 dikompilasi (`go vet -tags db`), **belum dijalankan** (K11).
 
 ⛔ Keputusan WO terbaru yang dipegang dokumen ini: keputusan sementara *"`T_GENERAL_POLIS` tabel bersama FacIn — 320
-menjadi `ALTER`"* **dibatalkan** (commit `ea90fec6`..`b81e1ec1`). `T_GENERAL_POLIS` tetap tabel Treaty In sendiri lewat
-`CREATE TABLE` di migrasi 320 — tepat delapan `CREATE TABLE`. Tabrakan nama dengan migrasi `nbfacin` 182: PERMINTAAN C10.
+menjadi `ALTER`"* **dibatalkan** (commit `ea90fec6`..`b81e1ec1`). `T_GENERAL_POLIS_TREATY` tetap tabel Treaty In sendiri lewat
+`CREATE TABLE` di migrasi 320 — tepat delapan `CREATE TABLE`. Tabrakan nama dengan migrasi `nbfacin` 182 (PERMINTAAN C10)
+selesai 05-10-2026: tabel Treaty In bernama `T_GENERAL_POLIS_TREATY`.
 
 ## Ringkasan
 
@@ -39,11 +40,11 @@ menuntut skala *minimal* 9; skala tetap yang memuat 24 desimal menekan sisi kiri
 | B6 | diambil dari `pyWorkPage.pzInsKey` | `T_WORK_POLIS.ID` = pengenal kasus `NB-<n>` (`IDKasusBerikut`); padanan `pzInsKey` = `models.KunciInstans` (`models/kasus.go:108`) dipakai `IDPEGA` riwayat; kasus lama: `IDPEGA` = `pzInsKey` dokumen lama (`SetelKolomDatarLama`) | SESUAI |
 | B7 | tabel sama dengan akar sheet PremiumList; baris NB dan EDM sejajar, tidak saling menunjuk | nol kunci tamu NB↔EDM di `T_WORK_POLIS` (spec-penyimpanan AC 7) | SESUAI |
 
-## 2 · `T_GENERAL_POLIS` (F9–F33)
+## 2 · `T_GENERAL_POLIS_TREATY` (F9–F33)
 
 | Sel | Pernyataan sheet | Pemenuhan | Status |
 | --- | --- | --- | --- |
-| F9 | 1:1 · SHARED PK · satu baris per GENERASI | `migrations/320_t_general_polis.sql:106-107` PK `ID` + FK `ID` → `T_WORK_POLIS (ID)`; `CREATE TABLE` (bukan `ALTER`), `migrasi_test.go` `TestMigrasi320TanpaBlokPLSQL`, `repository/kolom_test.go:313` TestTabelDanKolomMengikutiDiagramGrilling | SESUAI |
+| F9 | 1:1 · SHARED PK · satu baris per GENERASI | `migrations/320_t_general_polis_treaty.sql:111-112` PK `ID` + FK `ID` → `T_WORK_POLIS (ID)`; `CREATE TABLE` (bukan `ALTER`), `migrasi_test.go` `TestMigrasi320TanpaBlokPLSQL`, `repository/kolom_test.go:313` TestTabelDanKolomMengikutiDiagramGrilling | SESUAI |
 | F10 | `PolicyTreatyIn` — 79 medan skalar tingkat atas | 70 kolom katalog medan `PolicyTreatyIn` + `NOPOLIS` + 9 medan tak berkolom berbukti (4 `LAYER*` F26, 4 `Total*` turunan, `isApprovedtoDeptHead` P36) ≥ 79 (batas bawah, B119) — `docs/PERBANDINGAN-KOLOM-DIAGRAM.md` bab 1e; kolom di luar 79 hanya dengan RALAT berbukti XML (bab 1c) | SESUAI |
 | F11 | `json_polis` — 7 kolom yang sudah datar | `NOPOLIS`, `PRODKE`, `NOENDORS`, `IDPEGA`, `TGL_INPUT`, `USERNAME`, `TGL_PROD` (320; PERBANDINGAN bab 1a) | SESUAI |
 | F12 | kunci alami `(NOPOLIS, PRODKE)` · NB = PRODKE 0 | indeks unik `320:112` (bentuk `CASE` supaya draf tanpa nomor tidak bentrok); `PRODKE NUMBER(10) DEFAULT 0 NOT NULL` (`320:27`); `repository/kasus.go:39` `sqlSisipGenerasi` menulis `PRODKE` 0; daftar portal `g.PRODKE = 0`; uji db `repository/polis_db_test.go:170` TestNomorPolisSekaliDanUnik (K11) | SESUAI |
@@ -70,13 +71,13 @@ menuntut skala *minimal* 9; skala tetap yang memuat 24 desimal menekan sisi kiri
 
 | Sel | Pernyataan sheet | Pemenuhan | Status |
 | --- | --- | --- | --- |
-| G34, J35 | 1:1 · `POLIS_ID` UNIK | `321_t_polis_quotation.sql` PK `POLIS_ID` + FK `T_GENERAL_POLIS (ID)` | SESUAI |
+| G34, J35 | 1:1 · `POLIS_ID` UNIK | `321_t_polis_quotation.sql` PK `POLIS_ID` + FK `T_GENERAL_POLIS_TREATY (ID)` | SESUAI |
 | J36–J37 | `QuotationData` — 10 medan skalar (`ProportionalType` … `MarketingName`) | sepuluh kolom ada (`models/katalog.go:222` `TabelQuotation`); enam kolom tambahan masing-masing RALAT berbukti rule NB terjangkau (PERBANDINGAN bab 2; bab 0 butir 12) | SESUAI |
 | J38 | `GroupPanel` + `BusinessOldId` masukan penggolong `BusinessType_DeT` — 36 baris, 128 kode, bawaan UNKNOWN | `models/penggolong.go` (`TabelPenggolong` 36 baris, `JenisUsahaTakDikenal = "UNKNOWN"`); `models/penggolong_test.go:145` TestKe128KodeSamaDenganSistemLama, `:193` TestPenggolongBawaanUnknown, `:185` TestPenggolongBerhentiDiBarisPertama | SESUAI |
 | O39, R40 | `T_POLIS_CEDING` 1:N `QUOTATION_ID` | `322_t_polis_ceding.sql` FK `QUOTATION_ID` → `T_POLIS_QUOTATION (POLIS_ID)`; ditagih `TestTabelDanKolomMengikutiDiagramGrilling` | SESUAI |
 | R41–R43 | `CedingCoList()` — 2 medan; `NOURUT`; `CEDING_CO_ID ← .CedingCo`, `CEDING_CO_NAME ← .CedingCoName` | `models/katalog.go:255` `TabelCeding`; `UQ_POLIS_CEDING_NOURUT` | SESUAI |
 | R44–R46 | `CedingCoList` ada di tingkat polis DAN di `OldData`; data guide basi; `CedingCoName` tingkat polis berakhiran `"; "` | pemuat membaca `PolicyTreatyIn.QuotationData.CedingCoList` dari dokumen (bukan data guide); `OldData` tidak dimigrasi; ekor `"; "` utuh — db `repository/lama_db_test.go:74` (`UJI-CEDING A; UJI-CEDING B; `, K11) | SESUAI |
-| R47 | `CEDING_CO_NAME` dan `CEDING_CO` di `T_GENERAL_POLIS` DISALIN APA ADANYA, tidak dirangkai ulang | kolom `VARCHAR2(4000)` di 320; nol kode perangkai dari `T_POLIS_CEDING` (PERBANDINGAN bab 1b); `models/dokumenlama_test.go:70` TestPecahDokumenProporsionalDatar | SESUAI |
+| R47 | `CEDING_CO_NAME` dan `CEDING_CO` di `T_GENERAL_POLIS_TREATY` DISALIN APA ADANYA, tidak dirangkai ulang | kolom `VARCHAR2(4000)` di 320; nol kode perangkai dari `T_POLIS_CEDING` (PERBANDINGAN bab 1b); `models/dokumenlama_test.go:70` TestPecahDokumenProporsionalDatar | SESUAI |
 | R48 | bentuk gabungan dan tabel bisa TIDAK SINKRON, tanpa penjaga | nol penjaga sinkron, sama dengan sistem lama | SESUAI |
 | R49 | `CEDING_CO` tingkat polis daftar yang digabung | `CEDING_CO` golongan kode `VARCHAR2(4000)`; `TREATYINPRODUCTION.CEDINGCOID` ditulis modul EDM (F87) | SESUAI |
 | R50 | penghapusan ceding `@replaceAll` teks gabungan TIDAK ditiru; cukup hapus barisnya | nol `@replaceAll` ceding; baris ceding dihapus lewat hapus-sisip `SimpanHalaman` | SESUAI |
@@ -85,7 +86,7 @@ menuntut skala *minimal* 9; skala tetap yang memuat 24 desimal menekan sisi kiri
 
 | Sel | Pernyataan sheet | Pemenuhan | Status |
 | --- | --- | --- | --- |
-| G51, J52 | `T_POLIS_INSTALMENT` 1:N `POLIS_ID` · SATU TINGKAT | `323_t_polis_instalment.sql` FK `POLIS_ID` → `T_GENERAL_POLIS` | SESUAI |
+| G51, J52 | `T_POLIS_INSTALMENT` 1:N `POLIS_ID` · SATU TINGKAT | `323_t_polis_instalment.sql` FK `POLIS_ID` → `T_GENERAL_POLIS_TREATY` | SESUAI |
 | J53–J54 | `ListInstallment()` — 10 medan; `NOURUT` | `models/katalog.go:263` `TabelAngsuran` (10 medan + 4 RALAT `PPN`/`PPh`/`PaymentTotalAfterPPN`/`Tax` dibaca preACT 18.3.4.1, PERBANDINGAN bab 4) | SESUAI |
 | J55 | memegang TOTAL — `PaymentTotal` | kolom `PAYMENT_TOTAL` | SESUAI |
 | J56 | proporsional BERHENTI di sini — tanpa sarang `InstallmentList` | `models.PeriksaBentukSimpan` (`models/katalog.go:443`) menolak rincian angsuran polis `Proportional` (dipanggil `SimpanHalaman`); `models/layar_test.go:12` TestBentukProporsionalMenolakXOLDanRincian | SESUAI |
@@ -126,7 +127,7 @@ menuntut skala *minimal* 9; skala tetap yang memuat 24 desimal menekan sisi kiri
 
 | Sel | Pernyataan sheet | Pemenuhan | Status |
 | --- | --- | --- | --- |
-| B105–B117 | 8 tabel hidup NB Prop: `T_WORK_POLIS`, `T_GENERAL_POLIS`, `T_POLIS_QUOTATION`, `T_POLIS_CEDING`, `T_POLIS_INSTALMENT`, (`T_POLIS_BREAKDOWN_SPREAD` dibatalkan), `T_POLIS_SPREADING`, `HISTORYAKSEPTASIPRODUCTION`; 3 proyeksi nol baris | lima tabel dibuat modul (320–323, 325) + akar milik premiumlistlife + tabel warisan ditulis; `T_POLIS_INSTALMENT_DETAIL`/`XOL`/`XOL_LAYER` (324, 326, 327) milik sheet NonProp, nol baris di Prop; proyeksi tidak dibuat. Jumlah `CREATE TABLE` modul tepat delapan (bab 0 butir 11) | SESUAI |
+| B105–B117 | 8 tabel hidup NB Prop: `T_WORK_POLIS`, `T_GENERAL_POLIS_TREATY`, `T_POLIS_QUOTATION`, `T_POLIS_CEDING`, `T_POLIS_INSTALMENT`, (`T_POLIS_BREAKDOWN_SPREAD` dibatalkan), `T_POLIS_SPREADING`, `HISTORYAKSEPTASIPRODUCTION`; 3 proyeksi nol baris | lima tabel dibuat modul (320–323, 325) + akar milik premiumlistlife + tabel warisan ditulis; `T_POLIS_INSTALMENT_DETAIL`/`XOL`/`XOL_LAYER` (324, 326, 327) milik sheet NonProp, nol baris di Prop; proyeksi tidak dibuat. Jumlah `CREATE TABLE` modul tepat delapan (bab 0 butir 11) | SESUAI |
 | B119–B120 | angka medan = BATAS BAWAH; `SuggestList`, `CedingCoList`, lima property EDM terlewat sapuan | `SuggestList` → `HISTORYAKSEPTASIPRODUCTION`, `CedingCoList` → `T_POLIS_CEDING`; kolom di atas batas bawah hanya lewat RALAT berbukti XML (PERBANDINGAN bab 1c, 2, 4) | SESUAI |
 | B122 | sumber sheet | rujukan, tanpa tuntutan | SESUAI |
 

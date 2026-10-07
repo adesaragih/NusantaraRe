@@ -31,8 +31,10 @@ package models
 // ⚠️ Sel lain di layar itu (Ceding, Policy Holder, tanggal-tanggal, dan
 // seterusnya) adalah data penawaran - DITAMPILKAN, tidak diisi di sini.
 //
-// ⛔ `Save Data` = `SavePremiumList_Act` saja (lihat PeriksaBatasProduk di bawah);
-// `Calculate1_Act` TIDAK dijalankan - keputusan work owner 01-10-2026.
+// ⛔ `Save Data` hanya menyimpan + memeriksa medan wajib (keputusan work owner
+// 05-10-2026); `Calculate1_Act` TIDAK dijalankan - keputusan work owner
+// 01-10-2026. Batas produk `SavePremiumList_Act` 6-8.2 kini penolakan Validate
+// CSV - lihat PeriksaBatasProduk di bawah.
 //
 // Dibaca sesudah: polis_isianpenawaran.go.
 
@@ -204,68 +206,4 @@ func SusunDataPolis(isi IsianDataPolis) (IsianDataPolis, error) {
 		return isi, fmt.Errorf("%w: %s", ErrDataPolisBelumLengkap, GabungPesanPenawaran(kurang))
 	}
 	return isi, nil
-}
-
-// ——— Save Data = SavePremiumList_Act (TANPA Calculate1_Act) ———
-//
-// `[keputusan work owner 01-10-2026]` tombol `Save Data` hanya menjalankan
-// `SavePremiumList_Act`; `Calculate1_Act` TIDAK dijalankan.
-//
-// `[terverifikasi]` langkah HIDUP SavePremiumList_Act dan padanannya:
-//
-//	6-7   ProductNameID -> GetRateProductLife: `SELECT * FROM PRODUCTINWARD_LIFE
-//	      WHERE ID = {ParamData.CARI1}`                -> BatasProduk
-//	8.1   Protect Age: `.ENTRY_AGE < MINAGE || .ENTRY_AGE > MAXAGE`
-//	      -> `<NAME_OF_INSURED> Age exceeds the limit, at list <idx>`
-//	8.2   Protect Sum Insured: `SUM_INSURED < MINSUMINSURED || > MAXSUMINSURED`,
-//	      DILEWATI bila `(Type TP || TR) && @contains(RISLIPRNM,"RNML-FL")`
-//	      -> `<NAME_OF_INSURED> Sum Insured exceeds the limit, at list <idx>`
-//	9     Page-Set-Messages bila ada galat
-//	15    Obj-Save (WithErrors=true) - data polis TETAP tersimpan walau ada galat
-//
-// Langkah 4-5 (ValidasiUploadPL_act) sudah berjalan saat unggah CSV (tiket 04);
-// 8.4/8.8 (salin baris CSV ke detail) dikerjakan "Simpan permanen" unggahan;
-// 10 dan 12 (COB ke summary, daftar mata uang) dihitung layar Summary (05a);
-// 8.3, 8.5-8.7, 8.9, 11, 13 ter-remark `//`.
-
-// BatasProduk - batas `PRODUCTINWARD_LIFE` satu produk; nil = tidak terisi.
-type BatasProduk struct {
-	MinAge, MaxAge               *apd.Decimal
-	MinSumInsured, MaxSumInsured *apd.Decimal
-}
-
-// PesertaBatas - satu baris peserta yang diperiksa langkah 8.
-type PesertaBatas struct {
-	NameOfInsured string
-	EntryAge      *apd.Decimal
-	SumInsured    *apd.Decimal
-}
-
-// PeriksaBatasProduk menjalankan langkah 8.1 dan 8.2 atas seluruh peserta.
-//
-// `idx` adalah nomor urut 1.. sesuai urutan `peserta` (padanan
-// `.pxListSubscript`; pemanggil memberi urutan grid peserta).
-//
-// ⚠️ Batas yang kosong, atau nilai peserta yang kosong, TIDAK diperiksa:
-// Pega membandingkan dengan properti kosong, dan hasil perbandingan itu tidak
-// terbaca dari korpus - lebih aman tidak menuduh daripada menuduh tanpa dasar.
-func PeriksaBatasProduk(typePolis, riSlip string, b BatasProduk, peserta []PesertaBatas) []string {
-	var pesan []string
-	luar := func(v, min, maks *apd.Decimal) bool {
-		if v == nil {
-			return false
-		}
-		return (min != nil && v.Cmp(min) < 0) || (maks != nil && v.Cmp(maks) > 0)
-	}
-	lewatiSI := TypeRetro(typePolis) && strings.Contains(riSlip, "RNML-FL")
-	for i, p := range peserta {
-		idx := fmt.Sprintf("%d", i+1)
-		if luar(p.EntryAge, b.MinAge, b.MaxAge) {
-			pesan = append(pesan, p.NameOfInsured+" Age exceeds the limit, at list "+idx)
-		}
-		if !lewatiSI && luar(p.SumInsured, b.MinSumInsured, b.MaxSumInsured) {
-			pesan = append(pesan, p.NameOfInsured+" Sum Insured exceeds the limit, at list "+idx)
-		}
-	}
-	return pesan
 }

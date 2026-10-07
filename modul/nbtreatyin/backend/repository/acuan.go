@@ -190,7 +190,15 @@ func (g *Gudang) KomisiKontrak(ctx context.Context, treatyID string) ([]models.B
 		return nil, err
 	}
 	nama, _ := g.nama(viewDetailGabung)
-	eks, ada, err := pilihKolom(viewDetailGabung, tipe, kolomKomisi)
+	// SPREADINGTYPEID / SPREADINGTYPE (view diubah 06-10-2026, Excel bagian C): dibaca hanya bila ada di view,
+	// supaya Choose tetap jalan di skema yang view-nya belum diubah.
+	kolom := append([]string{}, kolomKomisi...)
+	for _, k := range []string{models.KolomSpreadingTypeID, models.KolomSpreadingType} {
+		if _, adaDiView := tipe[k]; adaDiView {
+			kolom = append(kolom, k)
+		}
+	}
+	eks, ada, err := pilihKolom(viewDetailGabung, tipe, kolom)
 	if err != nil {
 		return nil, err
 	}
@@ -212,6 +220,41 @@ func (g *Gudang) KomisiKontrak(ctx context.Context, treatyID string) ([]models.B
 		out = append(out, b)
 	}
 	return out, rows.Err()
+}
+
+// sqlDaftarBisnis merakit query popup: filter H RD, ID (pemeriksaan Choose), lalu saringan kolom layar
+// (`UPPER(TO_CHAR(kolom)) LIKE` - teks "memuat", wildcard pengguna di-escape) - SEMUANYA sebelum batas 500.
+// Nama kolom hanya dari `models.KolomSaringBisnis` (`SaringanKolomSah`), nilai selalu parameter terikat.
+func sqlDaftarBisnis(eks []string, nama string, s models.SaringanBisnis) (string, []any) {
+	var syarat []string
+	var args []any
+	ikat := func(v any) string {
+		args = append(args, v)
+		return fmt.Sprintf(":%d", len(args))
+	}
+	if s.JenisProporsi != "" {
+		syarat = append(syarat, "PROPORTIONTYPE = "+ikat(s.JenisProporsi))
+	}
+	if s.ID != "" {
+		syarat = append(syarat, "ID = "+ikat(s.ID))
+	}
+	kolom := models.SaringanKolomSah(s.Kolom)
+	for _, k := range models.KolomSaringBisnis {
+		if v, ada := kolom[k]; ada {
+			syarat = append(syarat, fmt.Sprintf(`UPPER(TO_CHAR(%s)) LIKE %s ESCAPE '\'`, k, ikat("%"+escapeLike(strings.ToUpper(v))+"%")))
+		}
+	}
+	saring := ""
+	if len(syarat) > 0 {
+		saring = " WHERE " + strings.Join(syarat, " AND ")
+	}
+	return fmt.Sprintf(`SELECT %s FROM %s%s ORDER BY TREATYID, ID FETCH FIRST %d ROWS ONLY`,
+		strings.Join(eks, ", "), nama, saring, models.BatasDaftarBisnis), args
+}
+
+// escapeLike - `\`, `%` dan `_` ketikan pengguna dicari apa adanya (ESCAPE '\').
+func escapeLike(v string) string {
+	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(v)
 }
 
 // DaftarBisnis = RD `BrowseTreatyJoinEDM` (kelas
@@ -238,14 +281,7 @@ func (g *Gudang) DaftarBisnis(ctx context.Context, s models.SaringanBisnis) ([]m
 	if err != nil {
 		return nil, err
 	}
-	saring := ""
-	var args []any
-	if s.JenisProporsi != "" {
-		saring = " WHERE PROPORTIONTYPE = :1"
-		args = append(args, s.JenisProporsi)
-	}
-	q := fmt.Sprintf(`SELECT %s FROM %s%s ORDER BY TREATYID, ID FETCH FIRST %d ROWS ONLY`,
-		strings.Join(eks, ", "), nama, saring, models.BatasDaftarBisnis)
+	q, args := sqlDaftarBisnis(eks, nama, s)
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
@@ -312,6 +348,23 @@ func (g *Gudang) OJKGrupTreaty(ctx context.Context, grupID string) (string, erro
 	}
 	return g.satuTeks(ctx, "membaca OJK grup treaty",
 		fmt.Sprintf(`SELECT TO_CHAR(OJKBUSINESSID) FROM %s WHERE TO_CHAR(ID) = :1 FETCH FIRST 1 ROWS ONLY`, t), grupID)
+}
+
+// GrupBisnisDariGrupTreaty - [keputusan work owner 06-10-2026] nama grup bisnis kontrak tanpa Class of
+// Business: dari tabel BUSINESS lewat ID grup - TREATYGROUP.COAID = BUSINESS.BUSINESSGROUPID - lalu
+// BUSINESSGROUPNAME (satu nama per grup, dicek di DEV 06-10-2026). Nol baris = "".
+func (g *Gudang) GrupBisnisDariGrupTreaty(ctx context.Context, grupID string) (string, error) {
+	b, err := g.nama(tabelBisnis)
+	if err != nil {
+		return "", err
+	}
+	tg, err := g.nama(tabelGrupTreaty)
+	if err != nil {
+		return "", err
+	}
+	return g.satuTeks(ctx, "membaca grup bisnis", fmt.Sprintf(`SELECT b.BUSINESSGROUPNAME FROM %s b
+	  JOIN %s t ON b.BUSINESSGROUPID = TO_CHAR(t.COAID)
+	 WHERE TO_CHAR(t.ID) = :1 AND b.BUSINESSGROUPNAME IS NOT NULL ORDER BY b.ID FETCH FIRST 1 ROWS ONLY`, b, tg), grupID)
 }
 
 // OldIDGrupTreaty = RDB `FetchTreatyGroupOLDID` (`FetchTreatyGroupOldID`).

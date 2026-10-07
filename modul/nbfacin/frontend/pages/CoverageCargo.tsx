@@ -17,6 +17,7 @@ import { useRef, useState } from 'react'
 
 import { Field, Gagal, Panel } from '../../../../inti/frontend/components/ui/dasar'
 import { hitungPremiCargo, type HasilPremi } from '../api'
+import IsianUang from '../components/IsianUang'
 import { MEDAN_COVERAGE_CARGO as MEDAN, TEKS_COVERAGE_CARGO as TEKS, TOMBOL_COVERAGE_CARGO as TOMBOL } from '../labels'
 
 const tanpaUbah = () => {}
@@ -96,7 +97,7 @@ export default function CoverageCargo() {
         <Field label={MEDAN.diskonPersen.label} value="" onChange={tanpaUbah} readOnly />
       </div>
       <div className="form-grid">
-        <Field label={MEDAN.tsi.label} value={tsi} onChange={ubah(setTsi)} required />
+        <IsianUang label={MEDAN.tsi.label} value={tsi} onChange={ubah(setTsi)} required />
         <Field label={MEDAN.premi.label} value={hasil?.premi ?? ''} onChange={tanpaUbah} readOnly />
         <Field label={MEDAN.minPremi.label} value="" onChange={tanpaUbah} readOnly />
         <Field label={MEDAN.diskon.label} value="" onChange={tanpaUbah} readOnly />

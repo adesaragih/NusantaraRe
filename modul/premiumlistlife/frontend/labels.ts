@@ -75,6 +75,33 @@ export const KEPUTUSAN_POLIS = {
 } as const
 
 /**
+ * Popup konfirmasi tombol Decision — mencegah tombol tertekan tanpa sengaja
+ * (keputusan work owner 03-10-2026). Kalimatnya menyebut AKIBAT, bukan hanya
+ * "apakah Anda yakin", supaya orang tahu apa yang ia setujui.
+ */
+export const KONFIRMASI_KEPUTUSAN = {
+  judulConfirm: 'Confirm this case?',
+  judulDecline: 'Decline this case?',
+  /** Confirm di Life Business Offering. */
+  confirmPenawaran: 'This will confirm the offer and move the case to the next step.',
+  /** Confirm di Premium List Detail. */
+  confirmDetail: "This will create the PL Number and finish the case. You can't undo this.",
+  decline: "This will reject and close the case. You can't undo this.",
+  /** Confirm terkunci: form Premium List Detail belum disimpan (03-10-2026). */
+  belumTersimpan: 'You have unsaved changes. Press Save Data before Confirm.',
+  ya: 'Yes, continue',
+} as const
+
+/** Popup hasil Confirm yang menerbitkan PL Number (03-10-2026). */
+export const HASIL_NOMOR_PL = {
+  judul: 'PL Number created',
+  labelNomor: 'PL Number',
+  labelWpc: 'WPC',
+  kalimat: 'The case is finished (Resolved-Completed).',
+  ok: 'OK',
+} as const
+
+/**
  * Judul kolom grid Premium List Detail — `Section/PL_Detail_Sec.xml`.
  *
  * ⛔ NOL judul yang dikarang. Section itu tidak memuat satu pun `pyCaption`
@@ -94,6 +121,7 @@ export const JUDUL_KOLOM_PESERTA: Record<string, string> = {
   EXPIRED_DATE: 'Expired Date',
   CURRENT_AGE: 'Current Age',
   PERIOD_MM: 'Period MM',
+  POLICY_NO: 'Policy No',
   POLICY_HOLDER: 'Policy Holder',
   EFFECTIVE_DATE: 'Effective Date',
   WPC: 'WPC',
@@ -131,6 +159,7 @@ export const JUDUL_KOLOM_PESERTA: Record<string, string> = {
   DOB: 'DOB',
   GROSS_VALUATION_BEGIN_DATE: 'Gross Valuation Begin Date',
   GROSS_VALUATION_EXPIRED_DATE: 'Gross Valuation Expired Date',
+  RI_ADMIN_FEE: 'RI Admin Fee',
 }
 
 /**
@@ -143,9 +172,15 @@ export const URUTAN_KOLOM_PESERTA: readonly string[] = [
   'POLICY_NO', 'POLICY_HOLDER', 'CERTIFICATE_NO', 'NAME_OF_INSURED', 'SEX', 'DOB', 'ENTRY_AGE', 'CURRENT_AGE',
   'PLAN', 'BEGIN_DATE', 'EXPIRED_DATE', 'GROSS_VALUATION_BEGIN_DATE', 'GROSS_VALUATION_EXPIRED_DATE',
   'PERIOD_MM', 'UW_STATUS', 'EM_PERCENT', 'CURRENCY', 'SUM_INSURED', 'CEDING_RETENTION',
-  'SUM_REASURED', 'SHARE_NUSANTARA_RE_GROSS', 'SUM_AT_RISK_GROSS', 'GROSS_PREMIUM', 'DEDUCTION',
+  'SUM_REASURED', 'SHARE_NUSANTARA_RE_GROSS', 'SUM_AT_RISK_GROSS', 'RISK', 'GROSS_PREMIUM', 'DEDUCTION',
   'RI_ADMIN_FEE', 'BROKERAGE_FEE', 'NET_PREMIUM', 'FACTOR',
 ]
+
+/**
+ * Kolom grid peserta yang SELALU tampil walau seluruhnya kosong / nol
+ * (permintaan work owner 05-10-2026) - RISK kosong di tahun pertama Type QR.
+ */
+export const KOLOM_SELALU_TAMPIL: readonly string[] = ['SUM_AT_RISK_GROSS', 'RISK']
 
 /** Kolom grid peserta yang selalu PALING KANAN, urut seperti ini (02-10-2026). */
 export const KOLOM_PALING_KANAN = ['STNC', 'WPC'] as const
@@ -174,10 +209,14 @@ export const DETAIL_POLIS = {
  * satu kalimat, dan yang satu akan tertinggal.
  */
 export const UNGGAH_CSV = {
-  judul: 'Upload CSV Premium List Detail',
+  judul: 'Upload CSV',
+  // Tautan lipat aturan format CSV (03-10-2026).
+  formatCsv: 'CSV format',
   pilihBerkas: 'CSV file',
-  tinjau: 'Preview',
-  simpan: 'Save',
+  // Memeriksa CSV tanpa menyimpan (03-10-2026) — teks tombol keputusan work owner.
+  tinjau: 'Validate CSV',
+  // Simpan peserta + hitung summary (03-10-2026) — teks tombol keputusan work owner.
+  simpan: 'Calculate CSV',
   /**
    * ⛔ Aturan pemisah DINYATAKAN DI MUKA, bukan hanya saat menolak. Korpus
    * menyebutnya enam kali di nama langkahnya ("SEPARATOR MENGGUNAKAN TITIK")
@@ -190,7 +229,7 @@ export const UNGGAH_CSV = {
     '(1234567,89) in semicolon files. Not 1,234,567.89 or 1.234.567,89. ' +
     'Dates: dd/mm/yyyy.',
   perbaikiDulu:
-    'Fix the rejected rows first, then preview again. While any row is ' +
+    'Fix the rejected rows first, then validate again. While any row is ' +
     'rejected, no row is saved.',
   kolomBaris: 'Row',
   kolomKolom: 'Column',
@@ -201,6 +240,26 @@ export const UNGGAH_CSV = {
 /**
  * Label layar rekap — tiket 05a bagian 2, `Section/ShowLifePremiumSummary.xml`.
  */
+/**
+ * Panel Summary di Premium List Detail (keputusan work owner 03-10-2026):
+ * rekap yang dihitung saat Save Data / Save peserta CSV, dan yang dipakai
+ * Confirm.
+ */
+/** Dua tab panel Participants (03-10-2026): rincian peserta dan Summary. */
+export const TAB_PESERTA = ['rincian', 'summary'] as const
+export type TabPeserta = (typeof TAB_PESERTA)[number]
+export const LABEL_TAB_PESERTA: Record<TabPeserta, string> = {
+  rincian: 'Participant Details',
+  summary: 'Summary',
+}
+
+export const PANEL_SUMMARY = {
+  judul: 'Summary',
+  kosong:
+    'No summary yet. It is calculated when participants are saved or Save Data is ' +
+    'pressed, once Type is filled in.',
+} as const
+
 export const SUMMARY_POLIS = {
   judul: 'Summary Premium Life',
   submit: 'Submit',
@@ -404,6 +463,8 @@ export const LABEL_DATA_POLIS = {
   statusUpdate: 'Status Update',
   keteranganMarketing: 'Marketing Note',
   simpan: 'Save Data',
+  // Save Data mengganti Type / Product Name → rekap summary dihapus server (keputusan work owner 05-10-2026).
+  rekapDihapus: 'Type or Product Name changed - please run Calculate CSV again before Confirm.',
 } as const
 
 /** Kolom grid popup Choose Product Name — `Section/ChooseProdName.xml`. */
@@ -427,3 +488,30 @@ export const TEKS_PILIH = '-- choose --'
  * Nama lengkapnya (mis. "Choose Product Name") tetap di `aria-label` dan `title`.
  */
 export const TEKS_TOMBOL_PILIH = 'Choose'
+
+/**
+ * Tombol + popup isi Product Name (permintaan work owner 05-10-2026). Sumbernya
+ * tabel Master Product Name Life; judul dan label kolom datang dari server.
+ */
+export const RINCIAN_PRODUK = {
+  tombol: 'View',
+  namaTombol: 'View Product Name details',
+  judul: 'Product Name Details',
+  kosong: 'No items',
+  tutup: 'Close',
+  // View Rate baris PLAN LIST (05-10-2026) - kepala kolom = grid `ViewRate` Master Product Name Life.
+  viewRate: 'View Rate',
+  tutupRate: 'Hide Rate',
+  judulRate: 'R/I Rate',
+  rateTerpotong: 'Only the first 500 rows are shown.',
+  kolomRate: ['ID', 'USEDBY', 'GENDER', 'CONTRACT', 'AGE', 'RATE'],
+  // View R/I Risk (05-10-2026) - kepala kolom = kolom view RIRISK_LIFE.
+  viewRisk: 'View R/I Risk',
+  tutupRisk: 'Hide R/I Risk',
+  // Teks pendek tombol yang menempel di kotak R/I Risk Name; nama lengkap di aria-label.
+  tutupSingkat: 'Hide',
+  judulRisk: 'R/I Risk',
+  // Label medan R/I Risk Name yang dikirim server (repository BagianRincianProduk) - letak tombol View.
+  medanRisk: 'R/I Risk Name',
+  kolomRisk: ['ID', 'USEDBY', 'AGE', 'YEAR', 'MONTH', 'RISK', 'CONTRACT'],
+}

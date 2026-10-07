@@ -134,7 +134,7 @@
         "DataTransform/TreatyEnableDisableInput"
       ],
       "padanan": "pages/LayarKasus.tsx -> POST /kasus/{id}/hitung {aksi: TreatyEnableDisableInput} -> models.TreatyEnableDisableInput (tanpa simpan; hasil dipegang layar); Save/Submit: models.terimaEnableDisable menerima IsNewPolicyNonProp / QuotationData.ProportionalType hanya bila TreatyType XOL dan sama dengan hasil DT atas halaman server (bukan XOL diabaikan, lain 422)",
-      "status": "RALAT R6 audit silang P3 (04-10-2026): dibangun - W3 (pola F4)"
+      "status": "NONAKTIF 06-10-2026 (perintah work owner \"jangan di hide, tapi di disable aja; muncul untuk XOL, tapi di disable\"): tombol dirender bila TreatyType XOL dengan atribut disabled, tanpa aksi; aksi hitung TreatyEnableDisableInput dan terimaEnableDisable di server tetap. Bunyi lama: RALAT R6 audit silang P3 (04-10-2026): dibangun - W3 (pola F4)"
     },
     {
       "tombol": "Save (bagian uang) / Save (kaki layar)",

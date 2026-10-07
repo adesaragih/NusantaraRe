@@ -30,7 +30,7 @@ const DAFTAR = daftarPalet(PALET.entri)
 describe('sidebar ↔ palet, dua arah', () => {
   it('palet = Beranda + satu entri per tombol modul yang dapat dibuka, urutan sidebar', () => {
     const dariSidebar = PALET.golongan.flatMap((g) => g.modul.flatMap((t) => (t.halaman === null ? [] : [[t.halaman, t.label]])))
-    expect(PALET.entri.map((e) => [e.modul, e.label])).toEqual([['beranda', 'Beranda'], ...dariSidebar])
+    expect(PALET.entri.map((e) => [e.modul, e.label])).toEqual([['beranda', 'Home'], ...dariSidebar])
     expect(dariSidebar).toHaveLength(MODUL_FRONTEND.length)
     // Label entri palet = LABEL tabel = nama folder korpus.
     const sah = new Set<string>(Object.values(LABEL_MENU))
@@ -83,7 +83,7 @@ describe('saringPalet', () => {
   it('kueri kosong mengembalikan seluruhnya, urutan sidebar', () => {
     const hasil = saringPalet(DAFTAR, '   ')
     expect(hasil).toHaveLength(PALET.entri.length)
-    expect(hasil[0]?.label).toBe('Beranda')
+    expect(hasil[0]?.label).toBe('Home')
   })
 
   it('huruf besar-kecil diabaikan', () => {

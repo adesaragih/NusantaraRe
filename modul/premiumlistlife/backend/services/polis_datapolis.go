@@ -21,6 +21,7 @@ import (
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/penomor"
 	"nusantarare/modul/premiumlistlife/backend/models"
 	"nusantarare/modul/premiumlistlife/backend/repository"
 )
@@ -63,10 +64,11 @@ type JawabanDataPolis struct {
 	SecurityReinsurer   string     `json:"securityReinsurer"`
 	WPC                 *time.Time `json:"wpc"`
 	DateReceived        *time.Time `json:"dateReceived"`
-	// Peringatan - pesan langkah 9 SavePremiumList_Act sesudah Save Data; kosong
-	// saat membaca.
-	Peringatan []string `json:"peringatan"`
-	Pilihan    struct {
+	// RekapDihapus - Save Data mengganti Type atau Product Name sehingga rekap summary dihapus
+	// (keputusan work owner 05-10-2026); Calculate CSV wajib dijalankan ulang
+	// sebelum Confirm. Selalu false saat membaca.
+	RekapDihapus bool `json:"rekapDihapus"`
+	Pilihan      struct {
 		Type        []models.Pilihan `json:"type"`
 		ProRateType []models.Pilihan `json:"proRateType"`
 	} `json:"pilihan"`
@@ -125,53 +127,89 @@ func (f *FormDataPolis) Baca(ctx context.Context, pelaku inti.Pelaku, polisID st
 }
 
 // Simpan menulis data polis - hanya di tahap Input Premium Detail.
-// Simpan menjalankan `Save Data` = SavePremiumList_Act (tanpa Calculate1_Act,
-// keputusan work owner 01-10-2026): simpan data polis, lalu periksa umur dan
-// sum insured peserta terhadap batas produk (langkah 6-8).
 //
-// ⛔ Mengembalikan PERINGATAN, bukan galat: Pega menyimpan dengan
-// `Obj-Save WithErrors=true` (langkah 15) dan menampilkan pesannya lewat
-// `Page-Set-Messages` (langkah 9) - data polis tetap tersimpan.
+// Keputusan work owner 05-10-2026: `Save Data` hanya memeriksa medan wajib,
+// menghitung WPC, lalu menyimpan data polis + WPC dalam satu transaksi.
+// Rekap summary TIDAK dihitung di sini (itu tugas Calculate CSV); bila Type
+// atau Product Name berganti, rekap lama yang bergantung padanya DIHAPUS supaya Confirm tidak
+// memakai rekap basi - Confirm menolak polis tanpa rekap.
+//
+// Mengembalikan true bila rekap dihapus.
 func (f *FormDataPolis) Simpan(ctx context.Context, pelaku inti.Pelaku, polisID string,
-	isi models.IsianDataPolis) ([]string, error) {
+	isi models.IsianDataPolis) (bool, error) {
 
 	if err := f.pagari(pelaku, polisID); err != nil {
-		return nil, err
+		return false, err
 	}
 	keadaan, err := repository.NewWorkPolis(f.svc.DB()).Keadaan(ctx, polisID)
 	if errors.Is(err, repository.ErrWorkPolisTidakAda) {
-		return nil, fmt.Errorf("%w: %s", ErrPolisTakDitemukan, polisID)
+		return false, fmt.Errorf("%w: %s", ErrPolisTakDitemukan, polisID)
 	}
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 	if models.KasusPolisTertutup(keadaan.Status) {
-		return nil, fmt.Errorf("%w: polis %q berstatus %q", ErrKasusPolisTertutup, polisID, keadaan.Status)
+		return false, fmt.Errorf("%w: polis %q berstatus %q", ErrKasusPolisTertutup, polisID, keadaan.Status)
 	}
 	if keadaan.Status != models.TahapPolisDetail {
-		return nil, fmt.Errorf("%w: polis %q di tahap %q", ErrDataPolisBukanTahapnya, polisID, keadaan.Status)
+		return false, fmt.Errorf("%w: polis %q di tahap %q", ErrDataPolisBukanTahapnya, polisID, keadaan.Status)
 	}
 	siap, err := models.SusunDataPolis(isi)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", galat.ErrPermintaanTidakSah, err)
+		return false, fmt.Errorf("%w: %w", galat.ErrPermintaanTidakSah, err)
+	}
+	// ⛔ Save Data HANYA menyimpan dan memeriksa medan wajib (SusunDataPolis di
+	// atas) - keputusan work owner 05-10-2026. Hitung summary pindah ke
+	// Calculate CSV; pemeriksaan batas produk SavePremiumList_Act menjadi
+	// penolakan Validate CSV (UnggahPremiumList.periksaDanHitung).
+	// WPC dihitung dan ditulis saat Save Data (keputusan work owner 05-10-2026):
+	// Type yang baru disimpan + periode produksi `TANGGAL_CLOSING` saat ini -
+	// aturan periode yang SAMA dengan PL Number (`penomor.HitungPeriodeNomor`).
+	// Confirm tetap menulis ulang WPC dari periode nomor yang terbit.
+	hariClosing, err := repository.NewTutupBuku(f.svc.DB()).Tanggal(ctx)
+	if err != nil {
+		return false, err
+	}
+	periode, err := penomor.HitungPeriodeNomor(time.Now(), hariClosing)
+	if err != nil {
+		return false, err
+	}
+	wpc, err := models.WPCPolis(siap.Type, periode.MMYYYY)
+	if err != nil {
+		return false, fmt.Errorf("%w: %w", galat.ErrPermintaanTidakSah, err)
 	}
 	repo := repository.NewPenawaran(f.svc.DB())
-	if err := f.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
-		return repo.SimpanDataPolis(ctx, tx, polisID, siap)
-	}); err != nil {
-		return nil, err
+	// Type dan Product Name TERSIMPAN dibaca sebelum UPDATE: rekap
+	// T_PREMIUM_LIST_SUMMARY bergantung padanya (keputusan work owner 05-10-2026;
+	// Product Name ikut sejak permintaan work owner berikutnya di hari yang sama).
+	lama, err := repo.BacaDataPolis(ctx, polisID)
+	if errors.Is(err, repository.ErrHeaderPolisTidakAda) {
+		return false, fmt.Errorf("%w: %s", ErrPolisTakDitemukan, polisID)
 	}
-	// Langkah 6-7: batas produk. Produk tanpa baris PRODUCTINWARD_LIFE tidak
-	// diperiksa (lihat models.PeriksaBatasProduk).
-	batas, ada, err := repo.BatasProduk(ctx, siap.ProductNameID)
-	if err != nil || !ada {
-		return nil, err
-	}
-	peserta, err := repo.PesertaBatas(ctx, polisID)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
-	return models.PeriksaBatasProduk(siap.Type, siap.RISlipRNM, batas, peserta), nil
+	rekapBasi := strings.TrimSpace(lama.Type) != strings.TrimSpace(siap.Type) ||
+		strings.TrimSpace(lama.ProductNameID) != strings.TrimSpace(siap.ProductNameID)
+	if err := f.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
+		if err := repo.SimpanDataPolis(ctx, tx, polisID, siap); err != nil {
+			return err
+		}
+		if err := repo.TulisWPC(ctx, tx, polisID, wpc); err != nil {
+			return err
+		}
+		// Type / Product Name berganti: rekap lama basi - dihapus, BUKAN dihitung ulang
+		// (hitung ulang hanya di Calculate CSV). Keduanya sama: rekap tidak disentuh.
+		if rekapBasi {
+			if _, err := repository.NewSummaryPolis(f.svc.DB()).HapusRekap(ctx, tx, polisID); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		return false, err
+	}
+	return rekapBasi, nil
 }
 
 // CariProduk - popup Choose Product Name, disaring Ceding KASUS
@@ -190,6 +228,53 @@ func (f *FormDataPolis) CariProduk(ctx context.Context, pelaku inti.Pelaku, poli
 		return nil, err
 	}
 	return repository.NewRujukan(f.svc.DB()).CariProduk(ctx, d.CedingCo, teks)
+}
+
+// RincianProduk - isi satu Product Name untuk tombol "View" layar Input
+// Premium Detail, dari tabel flat Master Product Name Life (keputusan work
+// owner 05-10-2026). Baca-saja; ID diambil dari isian layar sehingga produk
+// yang baru dipilih (belum disimpan) pun dapat dilihat.
+func (f *FormDataPolis) RincianProduk(ctx context.Context, pelaku inti.Pelaku, produkID string) (
+	repository.RincianProduk, error) {
+
+	if err := f.svc.FormPenawaran().pagariRujukan(pelaku); err != nil {
+		return repository.RincianProduk{}, err
+	}
+	id := strings.TrimSpace(produkID)
+	if id == "" {
+		return repository.RincianProduk{}, fmt.Errorf("%w: ID produk kosong", galat.ErrPermintaanTidakSah)
+	}
+	return repository.NewRujukan(f.svc.DB()).RincianProduk(ctx, id)
+}
+
+// RateProduk - isi satu R/I Rate baris PLAN LIST di popup Product Name
+// (permintaan work owner 05-10-2026). Baca-saja.
+func (f *FormDataPolis) RateProduk(ctx context.Context, pelaku inti.Pelaku, riRateID string) (
+	repository.RateProduk, error) {
+
+	if err := f.svc.FormPenawaran().pagariRujukan(pelaku); err != nil {
+		return repository.RateProduk{}, err
+	}
+	id := strings.TrimSpace(riRateID)
+	if id == "" {
+		return repository.RateProduk{}, fmt.Errorf("%w: ID R/I Rate kosong", galat.ErrPermintaanTidakSah)
+	}
+	return repository.NewRujukan(f.svc.DB()).RateProduk(ctx, id)
+}
+
+// RiskProduk - isi R/I Risk Name produk di popup Product Name (permintaan
+// work owner 05-10-2026). Baca-saja.
+func (f *FormDataPolis) RiskProduk(ctx context.Context, pelaku inti.Pelaku, riRiskID string) (
+	repository.RiskProduk, error) {
+
+	if err := f.svc.FormPenawaran().pagariRujukan(pelaku); err != nil {
+		return repository.RiskProduk{}, err
+	}
+	id := strings.TrimSpace(riRiskID)
+	if id == "" {
+		return repository.RiskProduk{}, fmt.Errorf("%w: ID R/I Risk kosong", galat.ErrPermintaanTidakSah)
+	}
+	return repository.NewRujukan(f.svc.DB()).RiskProduk(ctx, id)
 }
 
 // CariMarketing - autocomplete Marketing Officer.

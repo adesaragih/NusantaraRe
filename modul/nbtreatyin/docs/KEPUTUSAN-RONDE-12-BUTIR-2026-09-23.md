@@ -274,7 +274,7 @@ membaca satu tempat saja.
    > `SUMBER='PEGA'` dan **beku**"*. Bunyi baru: penanda `SUMBER='PEGA'` **gugur** — tidak ada kolom
    > `SUMBER` di diagram grilling (`Diagram-Skema-Tabel-NusantaraRe.xlsx` sheet *NB Treaty In Prop* /
    > *NonProp*, F9–F33) dan tidak dibuat (bab 0 butir 11–12). Baris hasil pemuat dokumen lama (NB
-   > tiket 22) **dikenali dari `IDPEGA` dan status**: `T_GENERAL_POLIS.IDPEGA` berisi
+   > tiket 22) **dikenali dari `IDPEGA` dan status**: `T_GENERAL_POLIS_TREATY.IDPEGA` berisi
    > `JSON_POLIS.IDPEGA` apa adanya, berbentuk `<kelas> <pyID>` = `pyWorkPage.pzInsKey` kasus Pega
    > (`RDBList\SavePolisTreatyIn_SQL.xml`: `PEGA_JSON_POLIS_TREATYIN({pyWorkPage.pzInsKey}, …)`;
    > `repository.SetelKolomDatarLama`), sedangkan jalur biasa menulis ID kasus `NB-<n>`

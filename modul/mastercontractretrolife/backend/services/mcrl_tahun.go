@@ -57,6 +57,11 @@ func (m TahunMasuk) keModel() (models.TahunTreaty, error) {
 	if t.EndDate, err = tanggal("END DATE", akhir); err != nil {
 		return t, err
 	}
+	// ⛔ START DATE tidak boleh sesudah END DATE - tanggal mundur ditolak
+	// (keputusan work owner 04-10-2026). Sama hari diterima.
+	if t.StartDate.After(t.EndDate) {
+		return t, fmt.Errorf("%w: %s", ErrMasukanTidakSah, PesanTanggalMundur)
+	}
 	return t, nil
 }
 

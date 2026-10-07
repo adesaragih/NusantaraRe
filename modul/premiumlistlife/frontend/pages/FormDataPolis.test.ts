@@ -38,7 +38,7 @@ const contoh: DataPolis = {
   securityReinsurer: '',
   dateReceived: '2026-10-01T00:00:00Z',
   wpc: null,
-  peringatan: null,
+  rekapDihapus: false,
   pilihan: { type: [], proRateType: [] },
 }
 
@@ -77,7 +77,11 @@ describe('kolom wajib data polis', () => {
 describe('struktur layar', () => {
   it('Save Data terkunci selama ada yang kosong, dan dinyatakan tanpa perhitungan', () => {
     expect(BERKAS).toContain('disabled={sibuk || kurang.length > 0}')
-    expect(BERKAS).toContain('data.peringatan')
+    // Save Data tidak lagi membawa peringatan batas produk (kini penolakan Validate CSV);
+    // Type / Product Name berganti → pesan rekap dihapus (keputusan work owner 05-10-2026).
+    expect(BERKAS).not.toContain('data.peringatan')
+    expect(BERKAS).toContain('setRekapDihapus(hasil.rekapDihapus === true)')
+    expect(BERKAS).toContain('{LABEL_DATA_POLIS.rekapDihapus}')
   })
 
   it('Choose Product Name hanya sebelum bernomor', () => {
@@ -126,6 +130,24 @@ describe('Retrocessionaire wajib (TP/TR) dan lebar kolom seragam', () => {
   })
 })
 
+describe('tombol View isi Product Name (05-10-2026)', () => {
+  it('View tampil di samping Product Name, juga sesudah bernomor, dan membuka popup rincian', () => {
+    expect(BERKAS).toContain('{RINCIAN_PRODUK.tombol}')
+    expect(BERKAS).toContain("disabled={isi.productNameId.trim() === ''}")
+    expect(BERKAS).toContain('<ModalRincianProduk produkID={isi.productNameId}')
+    const modal = readFileSync(join(__dirname, '..', 'components', 'ModalRincianProduk.tsx'), 'utf8')
+    expect(modal).toContain('ambilRincianProduk(produkID)')
+    // View Rate baris PLAN LIST: kunci RIRATEID dari server, tabel rate di bawah grid (05-10-2026).
+    expect(modal).toContain('ambilRateProduk(riRateId)')
+    // View R/I Risk: kunci riRiskId dari server, view RIRISK_LIFE (05-10-2026).
+    expect(modal).toContain('ambilRiskProduk(riRiskId)')
+    // Tombol View menempel di kotak R/I Risk Name (05-10-2026).
+    expect(modal).toContain("m.label === RINCIAN_PRODUK.medanRisk && (isi.riRiskId ?? '') !== '' ? (")
+    expect(modal).toContain('{riskBuka ? RINCIAN_PRODUK.tutupSingkat : RINCIAN_PRODUK.tombol}')
+    expect(modal).toContain('{terbuka ? RINCIAN_PRODUK.tutupRate : RINCIAN_PRODUK.viewRate}')
+  })
+})
+
 describe('tata letak seragam Premium List Detail (02-10-2026)', () => {
   it('Status penawaran tidak ditampilkan (keputusan work owner 02-10-2026)', () => {
     expect(BERKAS).not.toContain('tampil(LABEL_DATA_POLIS.status,')
@@ -140,7 +162,9 @@ describe('tata letak seragam Premium List Detail (02-10-2026)', () => {
   })
 
   it('tombol pilih menempel di kotaknya dan tetap bernama lengkap untuk pembaca layar', () => {
-    expect(BERKAS.match(/className="pl-dp-pilih pl-dp-lebar"/g)?.length).toBe(5)
+    // Empat isian bertombol pilih + Product Name (Choose + View, kelas bersyarat - 05-10-2026).
+    expect(BERKAS.match(/className="pl-dp-pilih pl-dp-lebar"/g)?.length).toBe(4)
+    expect(BERKAS).toContain("'pl-dp-pilih pl-dp-pilih--dua pl-dp-lebar' : 'pl-dp-pilih pl-dp-lebar'")
     expect(BERKAS).toContain('aria-label={label}')
     expect(BERKAS).toContain('{TEKS_TOMBOL_PILIH}')
   })
@@ -158,5 +182,20 @@ describe('tata letak seragam Premium List Detail (02-10-2026)', () => {
     expect(css).toMatch(/\.pl-dp-grid \{[^}]*repeat\(2, minmax\(0, 1fr\)\)/)
     expect(css).toMatch(/\.pl-dp-lebar \{[^}]*grid-column: 1 \/ -1/)
     expect(BERKAS.match(/className="pl-dp-kolom-tiga"/g)?.length).toBe(1)
+  })
+})
+
+describe('Underwriting Policy dan Marketing Note sebagai text area (03-10-2026)', () => {
+  it('kedua layar memakai AreaTeks untuk keduanya, terkunci pun tetap text area', () => {
+    const penawaran = readFileSync(join(__dirname, 'FormPenawaran.tsx'), 'utf8')
+    for (const sumber of [BERKAS, penawaran]) {
+      expect(sumber).toMatch(/<AreaTeks[\s\S]{0,80}ketentuanUnderwriting/)
+      expect(sumber).toMatch(/<AreaTeks[\s\S]{0,80}keteranganMarketing/)
+    }
+    expect(BERKAS).not.toContain('tampil(LABEL_DATA_POLIS.ketentuanUnderwriting')
+    expect(BERKAS).not.toContain('tampil(LABEL_DATA_POLIS.keteranganMarketing')
+    const area = readFileSync(join(__dirname, '..', 'components', 'AreaTeks.tsx'), 'utf8')
+    expect(area).toContain('<textarea')
+    expect(area).toContain('readOnly={readOnly}')
   })
 })

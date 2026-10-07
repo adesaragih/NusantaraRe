@@ -184,10 +184,14 @@ func NamaKolomGridPeserta() []string {
 // work owner, tetapi aturan lainnya TETAP: tidak pernah masuk fixture,
 // tiket, atau log.
 var KolomGridTambahan = []KolomPeserta{
+	// POLICY_NO dari CSV, kolom paling depan grid (permintaan work owner 05-10-2026).
+	{"POLICY_NO", KolomPesertaTeks},
 	{"NAME_OF_INSURED", KolomPesertaTeks},
 	{"DOB", KolomPesertaTanggal},
 	{"GROSS_VALUATION_BEGIN_DATE", KolomPesertaTanggal},
 	{"GROSS_VALUATION_EXPIRED_DATE", KolomPesertaTanggal},
+	// RI Admin Fee - ikut disimpan unggahan sejak 03-10-2026 dan dipakai rekap.
+	{"RI_ADMIN_FEE", KolomPesertaAngka},
 }
 
 // KolomGridTampil mengembalikan kolom yang benar-benar dibaca dan dikirim ke
@@ -205,6 +209,18 @@ func NamaKolomGridTampil() []string {
 	nama := make([]string, 0, len(k))
 	for _, x := range k {
 		nama = append(nama, x.Nama)
+	}
+	return nama
+}
+
+// NamaKolomGridAngka - nama kolom `KolomGridTampil` yang ber-jenis ANGKA,
+// urut. Layar memberinya pemisah ribuan (03-10-2026).
+func NamaKolomGridAngka() []string {
+	var nama []string
+	for _, k := range KolomGridTampil() {
+		if k.Jenis == KolomPesertaAngka {
+			nama = append(nama, k.Nama)
+		}
 	}
 	return nama
 }

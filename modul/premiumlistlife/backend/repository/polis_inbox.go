@@ -42,6 +42,7 @@ import (
 	"strconv"
 	"time"
 
+	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
 )
 
@@ -109,8 +110,9 @@ func sqlInboxPolis(work, polis, detail string) string {
 	          WHERE d.PREMIUM_LIST_ID = p.ID) AS PL_NUMBER
 	   FROM %s w LEFT JOIN %s p ON p.ID_PEGA = w.ID AND p.ID = p.ID_PEGA
 	  WHERE (:1 IS NULL OR w.POSITION = :2)
+	    AND %s
 	  ORDER BY p.TGL_INPUT DESC, w.ID
-	  OFFSET :3 ROWS FETCH NEXT :4 ROWS ONLY`, detail, work, polis)
+	  OFFSET :3 ROWS FETCH NEXT :4 ROWS ONLY`, detail, work, polis, syaratKasusLife)
 }
 
 // sqlCacahInboxPolis merakit pencacahnya.
@@ -122,7 +124,7 @@ func sqlInboxPolis(work, polis, detail string) string {
 // antrean yang tidak kosong.
 func sqlCacahInboxPolis(work string) string {
 	return fmt.Sprintf(
-		`SELECT COUNT(*) FROM %s w WHERE (:1 IS NULL OR w.POSITION = :1)`, work)
+		`SELECT COUNT(*) FROM %s w WHERE (:1 IS NULL OR w.POSITION = :1) AND %s`, work, syaratKasusLife)
 }
 
 // Ambil membaca satu halaman kotak masuk.
@@ -240,3 +242,14 @@ func NomorHalamanPolis(diminta string) int {
 	}
 	return n
 }
+
+// syaratKasusLife membatasi kotak masuk PremiumList Life ke kasus berlini
+// LIFE (`T_WORK_POLIS.LINI`) - keputusan work owner 03-10-2026. Tabelnya
+// LINTAS-LINI (migrasi 050); lini lain tidak ditampilkan di sini. Nilainya
+// `inti.LiniLife`, yang sama dengan yang ditulis saat kasus lahir
+// (`models.KasusPolisBaru`).
+//
+// ⚠️ Harfiah di SQL, bukan penampung: nilainya konstanta kode, bukan masukan
+// pemakai, dan penampung baru akan menggeser nomor penampung halaman yang
+// dijaga `TestNolPenampungBerulangDiSQLBerpembatasBaris`.
+const syaratKasusLife = "w.LINI = '" + inti.LiniLife + "'"

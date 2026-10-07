@@ -45,14 +45,24 @@ func badanFungsi(t *testing.T, teks, kepala string) string {
 
 // TestSimpanDalamUrutanTerkunci - AC 24 spec.
 //
-// ⛔ Urutannya bagian dari kebenaran: nomor lebih dahulu (salinan warisan
-// berkunci `PL_NUMBER`), rekap sesudah nomor, warisan paling akhir.
+// ⛔ Urutannya bagian dari kebenaran: rekap TERSIMPAN dibaca lebih dahulu
+// (tanpa rekap, Confirm ditolak sebelum penghitung nomor dikunci), lalu
+// nomor (salinan warisan berkunci `PL_NUMBER`), warisan paling akhir.
+//
+// ⛔ [keputusan work owner 03-10-2026] Confirm TIDAK menghitung rekap: ia
+// dihitung saat Save Data / simpan peserta CSV (`perbaruiRekapDalam`).
 func TestSimpanDalamUrutanTerkunci(t *testing.T) {
 	badan := badanFungsi(t, sumberSummary(t), "func (s *SummaryPremiumList) simpanDalam(")
+	for _, larangan := range []string{"s.rekapDalam(", "ringkas.GantiRekap(", "perbaruiRekapDalam("} {
+		if strings.Contains(badan, larangan) {
+			t.Errorf("simpanDalam (Confirm) masih menghitung rekap lewat %s", larangan)
+		}
+	}
 	urut := []string{
+		"ringkas.BacaRekap(",
+		"ErrSummaryBelumAda",
 		"s.nomor.terbitkanDalam(",
-		"s.rekapDalam(",
-		"ringkas.GantiRekap(",
+		"ringkas.TulisNomorRekap(",
 		"ringkas.KepalaSummaryWarisan(",
 		"summaryWarisan.Ganti(",
 		"ringkas.SumberWarisan(",
@@ -165,5 +175,78 @@ func TestSummaryTanpaOracleDitolakTerang(t *testing.T) {
 	}
 	if _, err := s.Submit(context.Background(), inti.Pelaku{}, "P1", time.Now()); err == nil {
 		t.Error("Submit tanpa identitas diterima")
+	}
+}
+
+// TestRekapDihitungSaatSave - keputusan work owner 03-10-2026: rekap dihitung
+// dan disimpan di transaksi Save Data DAN simpan peserta CSV, dan rekap yang
+// tidak dapat dihitung DIHAPUS (bukan dibiarkan usang).
+// TestRekapDihitungSaatSave - keputusan work owner 05-10-2026: rekap summary
+// dihitung Calculate CSV saja, batas produk (SavePremiumList_Act 6-8.2) menjadi
+// penolakan periksaDanHitung (Validate CSV, jalan bersama Simpan); Save Data
+// hanya menyimpan, memeriksa medan wajib, dan menghapus rekap bila Type / Product Name berganti.
+func TestRekapDihitungSaatSave(t *testing.T) {
+	unggah, err := os.ReadFile("polis_unggah.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	badan := badanFungsi(t, string(unggah), "func (u *UnggahPremiumList) Simpan(")
+	iTx := strings.Index(badan, "DalamTransaksi(")
+	iRekap := strings.Index(badan, ".perbaruiRekapDalam(ctx, tx, polisID)")
+	if iTx < 0 || iRekap < iTx {
+		t.Error("Calculate CSV: rekap tidak diperbarui di dalam transaksi simpan")
+	}
+	// Cek batas berada di jalan bersama Validate/Calculate, bukan langkah
+	// terpisah sesudah simpan.
+	for _, dilarang := range []string{"periksaBatasPolis(", "PeriksaBatasProduk(", "Peringatan"} {
+		if strings.Contains(badan, dilarang) {
+			t.Errorf("Calculate CSV masih memeriksa batas sesudah simpan (%s)", dilarang)
+		}
+	}
+	jalan := badanFungsi(t, string(unggah), "func (u *UnggahPremiumList) periksaDanHitung(")
+	if !strings.Contains(jalan, "models.PeriksaBatasProduk(tipe, kepala.RISlipRNM, batas, baris, lewati)") {
+		t.Error("periksaDanHitung tidak memeriksa batas produk")
+	}
+	data, err := os.ReadFile("polis_datapolis.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	simpan := badanFungsi(t, string(data), "func (f *FormDataPolis) Simpan(")
+	for _, dilarang := range []string{"perbaruiRekapDalam(", "BatasProduk(", "PeriksaBatasProduk("} {
+		if strings.Contains(simpan, dilarang) {
+			t.Errorf("Save Data masih menjalankan %s", dilarang)
+		}
+	}
+	if !strings.Contains(simpan, "models.SusunDataPolis(isi)") {
+		t.Error("Save Data tidak lagi memeriksa medan wajib")
+	}
+	// Type / Product Name berganti → rekap basi DIHAPUS di transaksi simpan yang sama, tidak
+	// dihitung ulang (keputusan work owner 05-10-2026).
+	iTxSimpan := strings.Index(simpan, "DalamTransaksi(")
+	iHapus := strings.Index(simpan, "HapusRekap(")
+	if iTxSimpan < 0 || iHapus < iTxSimpan {
+		t.Error("Save Data: HapusRekap tidak berada di dalam transaksi simpan")
+	}
+	badan = badanFungsi(t, sumberSummary(t), "func (s *SummaryPremiumList) perbaruiRekapDalam(")
+	for _, jejak := range []string{"ringkas.HapusRekap(", "ringkas.GantiRekap(",
+		"repository.ErrPolisTanpaPeserta", "penomor.ErrTipePLTanpaCabang"} {
+		if !strings.Contains(badan, jejak) {
+			t.Errorf("perbaruiRekapDalam tanpa %s", jejak)
+		}
+	}
+}
+
+// TestWPCDitulisSaatConfirm - WPC dihitung di Go (tanpa POOLDATA.GETQUARTER)
+// dan ditulis SESUDAH nomor terbit, di transaksi Confirm (03-10-2026).
+func TestWPCDitulisSaatConfirm(t *testing.T) {
+	badan := badanFungsi(t, sumberSummary(t), "func (s *SummaryPremiumList) simpanDalam(")
+	iNomor := strings.Index(badan, "s.nomor.terbitkanDalam(")
+	iWPC := strings.Index(badan, "models.WPCPolis(identitas.Tipe, nomor.Periode)")
+	iTulis := strings.Index(badan, ".TulisWPC(ctx, tx, polisID, wpc)")
+	if iNomor < 0 || iWPC < iNomor || iTulis < iWPC {
+		t.Errorf("WPC tidak dihitung lalu ditulis sesudah nomor terbit (nomor=%d wpc=%d tulis=%d)", iNomor, iWPC, iTulis)
+	}
+	if strings.Contains(badan, "GETQUARTER") {
+		t.Error("simpanDalam masih memanggil POOLDATA.GETQUARTER")
 	}
 }

@@ -170,6 +170,7 @@ func barisSah(nomor int) BarisUnggah {
 		"PLAN":            "UJI-PLAN",
 		"CURRENCY":        "IDR",
 		"MEDICAL_STATUS":  "NM",
+		"ENTRY_AGE":       "30",
 	}
 	for _, k := range []string{
 		"DOB", "BEGIN_DATE", "EXPIRED_DATE", "START_DATE", "EFFECTIVE_DATE",
@@ -198,7 +199,7 @@ func itoa(n int) string {
 }
 
 func TestValidasiUnggahMelewatkanBerkasYangBenar(t *testing.T) {
-	h := ValidasiUnggah([]BarisUnggah{barisSah(1), barisSah(2)})
+	h := validasiQR([]BarisUnggah{barisSah(1), barisSah(2)})
 	if !h.Lolos() {
 		for _, p := range h.Ditolak {
 			t.Errorf("baris %d kolom %s: %s (%s)", p.Baris, p.Kolom, p.Pesan, p.Sebab)
@@ -212,10 +213,10 @@ func TestValidasiUnggahMelewatkanBerkasYangBenar(t *testing.T) {
 // TestSetiapPenolakanMenyebutKolomDanBaris - AC tiket 04.
 func TestSetiapPenolakanMenyebutKolomDanBaris(t *testing.T) {
 	b := barisSah(7)
-	b.Nilai["PLAN"] = ""
+	b.Nilai["ENTRY_AGE"] = ""
 	b.Nilai["SUM_INSURED"] = "1,000"
 	b.Nilai["DOB"] = "1970-01-02"
-	h := ValidasiUnggah([]BarisUnggah{b})
+	h := validasiQR([]BarisUnggah{b})
 	if h.Lolos() {
 		t.Fatal("berkas rusak diterima")
 	}
@@ -235,7 +236,7 @@ func TestSetiapPenolakanMenyebutKolomDanBaris(t *testing.T) {
 	for _, p := range h.Ditolak {
 		kena[p.Kolom] = p.Sebab
 	}
-	for _, k := range []string{"PLAN", "SUM_INSURED", "DOB"} {
+	for _, k := range []string{"ENTRY_AGE", "SUM_INSURED", "DOB"} {
 		if _, ada := kena[k]; !ada {
 			t.Errorf("kolom %q tidak dilaporkan", k)
 		}
@@ -257,7 +258,7 @@ func TestNetPremiumHanyaDiperiksaKeberadaannya(t *testing.T) {
 	b := barisSah(1)
 	b.Nilai["NET_PREMIUM"] = "1.00"
 	b.Nilai["GROSS_PREMIUM"] = "999999.00"
-	h := ValidasiUnggah([]BarisUnggah{b})
+	h := validasiQR([]BarisUnggah{b})
 	if !h.Lolos() {
 		for _, p := range h.Ditolak {
 			t.Errorf("net < gross ditolak di %s: %s (%s)", p.Kolom, p.Pesan, p.Sebab)
@@ -278,7 +279,7 @@ func TestNetPremiumHanyaDiperiksaKeberadaannya(t *testing.T) {
 func TestKolomUangTakWajibTetapDiperiksaBentuknya(t *testing.T) {
 	b := barisSah(1)
 	b.Nilai["TAX"] = "1,5"
-	h := ValidasiUnggah([]BarisUnggah{b})
+	h := validasiQR([]BarisUnggah{b})
 	found := false
 	for _, p := range h.Ditolak {
 		if p.Kolom == "TAX" {
@@ -294,7 +295,7 @@ func TestKolomUangTakWajibTetapDiperiksaBentuknya(t *testing.T) {
 	// Tetapi KOSONG pada kolom tak wajib bukan galat.
 	c := barisSah(2)
 	c.Nilai["TAX"] = ""
-	if h2 := ValidasiUnggah([]BarisUnggah{c}); !h2.Lolos() {
+	if h2 := validasiQR([]BarisUnggah{c}); !h2.Lolos() {
 		for _, p := range h2.Ditolak {
 			t.Errorf("kolom tak wajib kosong ditolak: %+v", p)
 		}
@@ -303,9 +304,9 @@ func TestKolomUangTakWajibTetapDiperiksaBentuknya(t *testing.T) {
 
 func TestSeluruhBarisDiperiksaBukanHanyaYangPertama(t *testing.T) {
 	a, b := barisSah(1), barisSah(2)
-	a.Nilai["PLAN"] = ""
+	a.Nilai["ENTRY_AGE"] = ""
 	b.Nilai["CURRENCY"] = ""
-	h := ValidasiUnggah([]BarisUnggah{a, b})
+	h := validasiQR([]BarisUnggah{a, b})
 	if n := len(h.BarisDitolak()); n != 2 {
 		t.Errorf("%d baris dilaporkan, mau 2 - berhenti di baris pertama "+
 			"memaksa orang mengunggah ulang sebanyak jumlah kesalahannya", n)
@@ -325,10 +326,10 @@ func TestPenolakanLangkahTerRemarkTidakDitegakkan(t *testing.T) {
 	b.Nilai["DOB"] = a.Nilai["DOB"]
 	a.Nilai["MEDICAL_STATUS"] = "X"
 	delete(b.Nilai, "MEDICAL_STATUS")
-	if h := ValidasiUnggah([]BarisUnggah{a, b}); !h.Lolos() {
+	if h := validasiQR([]BarisUnggah{a, b}); !h.Lolos() {
 		t.Errorf("penolakan langkah ter-remark muncul: %+v", h.Ditolak)
 	}
-	for _, k := range KolomWajibUnggah() {
+	for _, k := range kolomWajibQR() {
 		if k == "MEDICAL_STATUS" {
 			t.Error("MEDICAL_STATUS masih kolom judul wajib; pemeriksanya ter-remark")
 		}

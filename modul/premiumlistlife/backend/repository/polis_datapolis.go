@@ -30,8 +30,9 @@ import (
 // DataPolisTersimpan adalah isian data polis yang sudah ada di header.
 type DataPolisTersimpan struct {
 	models.IsianDataPolis
-	// WPC - DIBACA saja (dihitung `WPCLife_Act` / `POOLDATA.GETQUARTER`, belum
-	// dibawa).
+	// WPC - DIBACA saja di sini; ditulis saat Save Data dan Confirm (`TulisWPC`, rumus
+	// `models.WPCPolis` pengganti `WPCLife_Act` / `POOLDATA.GETQUARTER`,
+	// 03-10-2026). Kosong sampai Save Data pertama.
 	WPC *time.Time
 }
 
@@ -171,29 +172,6 @@ func (r *Penawaran) SimpanDataPolis(ctx context.Context, tx *db.Tx, id string, d
 	return db.PastikanSatuBaris(hasil, "data polis")
 }
 
-// ——— Save Data: bahan SavePremiumList_Act langkah 6-8 ———
-
-// MasterProdukInwardLife - `GetRateProductLife`: `SELECT * FROM
-// POOLDATA.PRODUCTINWARD_LIFE WHERE ID = {ParamData.CARI1}` (CARI1 =
-// ProductNameID). `[terverifikasi]` MINAGE/MAXAGE (GetProductDtlPL `b.MINAGE`,
-// `b.MAXAGE`). ⚠️ `[belum terverifikasi]` MINSUMINSURED/MAXSUMINSURED - nama
-// properti yang SavePremiumList_Act baca dari `ProductNameInward.pxResults(1)`.
-const MasterProdukInwardLife = "PRODUCTINWARD_LIFE"
-
-func sqlBatasProduk(tabel string) string {
-	return fmt.Sprintf(`SELECT %s, %s, %s, %s FROM %s WHERE ID = :1 FETCH FIRST 1 ROWS ONLY`,
-		fmt.Sprintf(db.FmtDesimal, "MINAGE"), fmt.Sprintf(db.FmtDesimal, "MAXAGE"),
-		fmt.Sprintf(db.FmtDesimal, "MINSUMINSURED"), fmt.Sprintf(db.FmtDesimal, "MAXSUMINSURED"), tabel)
-}
-
-// sqlPesertaBatas - urutan GRID peserta (`sqlGridPeserta`): nomor "at list"
-// pesan galat menunjuk baris yang pemakai lihat.
-func sqlPesertaBatas(detail string) string {
-	return fmt.Sprintf(`SELECT d.NAME_OF_INSURED, %s, %s FROM %s d
-	  WHERE d.PREMIUM_LIST_ID = :1 ORDER BY d.CERTIFICATE_NO, d.ID`,
-		fmt.Sprintf(db.FmtDesimal, "d.ENTRY_AGE"), fmt.Sprintf(db.FmtDesimal, "d.SUM_INSURED"), detail)
-}
-
 func desimalAtauNil(v sql.NullString, kolom string) (*apd.Decimal, error) {
 	if !v.Valid || strings.TrimSpace(v.String) == "" {
 		return nil, nil
@@ -205,71 +183,34 @@ func desimalAtauNil(v sql.NullString, kolom string) (*apd.Decimal, error) {
 	return d, nil
 }
 
-// BatasProduk membaca batas umur dan sum insured satu produk; ada=false bila
-// produknya tidak punya baris di PRODUCTINWARD_LIFE.
-func (r *Penawaran) BatasProduk(ctx context.Context, produkID string) (models.BatasProduk, bool, error) {
-	tabel, err := r.db.Qualify(MasterProdukInwardLife)
-	if err != nil {
-		return models.BatasProduk{}, false, err
-	}
-	q := sqlBatasProduk(tabel)
-	if err := db.PeriksaSQL(q); err != nil {
-		return models.BatasProduk{}, false, err
-	}
-	var n [4]sql.NullString
-	err = r.db.QueryRowContext(ctx, q, produkID).Scan(&n[0], &n[1], &n[2], &n[3])
-	if errors.Is(err, sql.ErrNoRows) {
-		return models.BatasProduk{}, false, nil
-	}
-	if err != nil {
-		return models.BatasProduk{}, false, fmt.Errorf("repository: membaca %s: %w", MasterProdukInwardLife, err)
-	}
-	var b models.BatasProduk
-	for i, t := range []**apd.Decimal{&b.MinAge, &b.MaxAge, &b.MinSumInsured, &b.MaxSumInsured} {
-		if *t, err = desimalAtauNil(n[i], MasterProdukInwardLife); err != nil {
-			return models.BatasProduk{}, false, err
-		}
-	}
-	return b, true, nil
-}
-
-// PesertaBatas membaca umur masuk dan sum insured seluruh peserta satu polis.
-func (r *Penawaran) PesertaBatas(ctx context.Context, polisID string) ([]models.PesertaBatas, error) {
-	detail, err := r.db.Qualify("T_PREMIUM_LIST_DETAIL")
-	if err != nil {
-		return nil, err
-	}
-	q := sqlPesertaBatas(detail)
-	if err := db.PeriksaSQL(q); err != nil {
-		return nil, err
-	}
-	rows, err := r.db.QueryContext(ctx, q, polisID)
-	if err != nil {
-		return nil, fmt.Errorf("repository: membaca peserta untuk batas produk: %w", err)
-	}
-	defer func() { _ = rows.Close() }()
-	var hasil []models.PesertaBatas
-	for rows.Next() {
-		var n [3]sql.NullString
-		if err := rows.Scan(&n[0], &n[1], &n[2]); err != nil {
-			return nil, err
-		}
-		p := models.PesertaBatas{NameOfInsured: n[0].String}
-		if p.EntryAge, err = desimalAtauNil(n[1], "ENTRY_AGE"); err != nil {
-			return nil, err
-		}
-		if p.SumInsured, err = desimalAtauNil(n[2], "SUM_INSURED"); err != nil {
-			return nil, err
-		}
-		hasil = append(hasil, p)
-	}
-	return hasil, rows.Err()
-}
-
 // tanggalAtauNil - tanggal kosong menjadi NULL.
 func tanggalAtauNil(t *time.Time) any {
 	if t == nil {
 		return nil
 	}
 	return *t
+}
+
+// sqlTulisWPC mengisi WPC baris utama header satu polis.
+func sqlTulisWPC(polis string) string {
+	return fmt.Sprintf(`UPDATE %s SET WPC = :1 WHERE ID = :2`, polis)
+}
+
+// TulisWPC menulis WPC polis (`models.WPCPolis`) - saat Save Data (05-10-2026) dan saat Confirm, sesudah PL
+// Number terbit, di transaksi pemanggil (keputusan work owner 03-10-2026,
+// pengganti `WPCLife_Act` / `POOLDATA.GETQUARTER`).
+func (r *Penawaran) TulisWPC(ctx context.Context, tx *db.Tx, id string, wpc time.Time) error {
+	polis, err := r.db.Qualify("T_PREMIUM_LIST")
+	if err != nil {
+		return err
+	}
+	q := sqlTulisWPC(polis)
+	if err := db.PeriksaSQL(q); err != nil {
+		return err
+	}
+	hasil, err := tx.ExecContext(ctx, q, wpc, id)
+	if err != nil {
+		return fmt.Errorf("repository: menulis WPC: %w", err)
+	}
+	return db.PastikanSatuBaris(hasil, "WPC polis")
 }

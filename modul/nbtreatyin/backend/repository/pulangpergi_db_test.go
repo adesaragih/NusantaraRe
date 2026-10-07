@@ -75,7 +75,7 @@ func barisUji(tb models.Tabel, n, geser int) []models.Baris {
 	return out
 }
 
-// halamanPenuh - halaman yang mengisi SETIAP kolom katalog T_GENERAL_POLIS dan
+// halamanPenuh - halaman yang mengisi SETIAP kolom katalog T_GENERAL_POLIS_TREATY dan
 // T_POLIS_QUOTATION, dua ceding, dua angsuran, dua spreading; non-proporsional
 // menambah dua rincian per angsuran dan dua XOL bertiga layer.
 func halamanPenuh(jenis string) *models.Halaman {
@@ -126,7 +126,7 @@ func periksaPulangPergi(t *testing.T, h, b *models.Halaman) {
 	t.Helper()
 	for _, k := range models.TabelGeneralPolis.Kolom {
 		if got, harap := b.Ambil(k.Properti), h.Ambil(k.Properti); got != harap {
-			t.Errorf("T_GENERAL_POLIS.%s (%s) = %q, harap %q", k.Kolom, k.Properti, got, harap)
+			t.Errorf("T_GENERAL_POLIS_TREATY.%s (%s) = %q, harap %q", k.Kolom, k.Properti, got, harap)
 		}
 	}
 	for _, k := range models.TabelQuotation.Kolom {
@@ -270,7 +270,7 @@ func TestUangPresisiPenuhTanpaPembulatanRepository(t *testing.T) {
 		t.Fatal(err)
 	}
 	for p, v := range harap {
-		got := kolomTeks(t, ctx, sqlDB, fmt.Sprintf(`SELECT %s FROM %s.T_GENERAL_POLIS WHERE ID = :1`,
+		got := kolomTeks(t, ctx, sqlDB, fmt.Sprintf(`SELECT %s FROM %s.T_GENERAL_POLIS_TREATY WHERE ID = :1`,
 			fmt.Sprintf(intidb.FmtDesimal, kolom[p]), skema), id)
 		if rapikan(got) != v[1] {
 			t.Errorf("kolom %s = %s, harap %s (masuk %s)", kolom[p], got, v[1], v[0])
@@ -315,13 +315,13 @@ func TestKegagalanDiTengahTidakMenyisakanBarisDiTabelManaPun(t *testing.T) {
 		t.Fatalf("harap galat suntikan, dapat %v", err)
 	}
 	for tabel, syarat := range map[string]string{
-		"T_WORK_POLIS":       "ID = :1",
-		"T_GENERAL_POLIS":    "ID = :1",
-		"T_POLIS_QUOTATION":  "POLIS_ID = :1",
-		"T_POLIS_CEDING":     "QUOTATION_ID = :1",
-		"T_POLIS_INSTALMENT": "POLIS_ID = :1",
-		"T_POLIS_SPREADING":  "POLIS_ID = :1",
-		"T_POLIS_XOL":        "POLIS_ID = :1",
+		"T_WORK_POLIS":           "ID = :1",
+		"T_GENERAL_POLIS_TREATY": "ID = :1",
+		"T_POLIS_QUOTATION":      "POLIS_ID = :1",
+		"T_POLIS_CEDING":         "QUOTATION_ID = :1",
+		"T_POLIS_INSTALMENT":     "POLIS_ID = :1",
+		"T_POLIS_SPREADING":      "POLIS_ID = :1",
+		"T_POLIS_XOL":            "POLIS_ID = :1",
 		// cucu berkunci induk acak: seluruh tabel dihitung (skema uji dipasang
 		// bersih per uji; uji ini satu-satunya penulisnya)
 		"T_POLIS_INSTALMENT_DETAIL": "",

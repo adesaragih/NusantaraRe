@@ -10,9 +10,10 @@
 // diisi di sini — ia milik layar Input Offer. Insured Name dan Occupation tetap
 // disembunyikan, sama seperti di layar Input Offer (keputusan work owner).
 //
-// ⛔ `Save Data` = `SavePremiumList_Act` SAJA: simpan, lalu periksa umur dan sum
-// insured peserta terhadap batas produk; pesannya tampil, data tetap tersimpan.
-// `Calculate1_Act` TIDAK dijalankan — keputusan work owner 01-10-2026.
+// ⛔ `Save Data` HANYA menyimpan dan memeriksa medan wajib (keputusan work owner
+// 05-10-2026). `Calculate1_Act` tidak dijalankan; hitung summary berjalan di
+// Calculate CSV, dan batas produk `SavePremiumList_Act` menjadi penolakan
+// Validate CSV.
 
 import { useCallback, useEffect, useState } from 'react'
 
@@ -31,8 +32,10 @@ import {
   type PenawaranPolis,
   type PilihanKode,
 } from '../api'
-import { KOLOM_PRODUK, LABEL_DATA_POLIS, TEKS_PILIH, TEKS_TOMBOL_PILIH } from '../labels'
+import { KOLOM_PRODUK, LABEL_DATA_POLIS, RINCIAN_PRODUK, TEKS_PILIH, TEKS_TOMBOL_PILIH } from '../labels'
+import AreaTeks from '../components/AreaTeks'
 import IsianTanggal from '../components/IsianTanggal'
+import ModalRincianProduk from '../components/ModalRincianProduk'
 import { tanggalTampil } from '../tanggal'
 import '../premiumlistlife.css'
 
@@ -84,12 +87,18 @@ export default function FormDataPolis({
   polisID,
   bernomor,
   onTersimpan,
+  onBelumTersimpan,
 }: {
   polisID: string
   /** PL_NUMBER sudah terbit — `Choose Product Name` tampil hanya bila belum. */
   bernomor: boolean
   /** Dipanggil sesudah tersimpan — kepala halaman (Type) ikut dimuat ulang. */
   onTersimpan: () => void
+  /**
+   * Dilapori `true` selama isian di layar BERBEDA dari yang terakhir tersimpan
+   * — Confirm dikunci selama itu (keputusan work owner 03-10-2026).
+   */
+  onBelumTersimpan?: (belum: boolean) => void
 }) {
   const [data, setData] = useState<DataPolis | null>(null)
   const [offer, setOffer] = useState<PenawaranPolis | null>(null)
@@ -98,11 +107,25 @@ export default function FormDataPolis({
   const [galatSimpan, setGalatSimpan] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(false)
   const [tersimpan, setTersimpan] = useState(false)
+  // Jawaban Save Data: Type / Product Name berganti → rekap summary dihapus (05-10-2026).
+  const [rekapDihapus, setRekapDihapus] = useState(false)
   const [popup, setPopup] = useState<Popup | null>(null)
+  // Popup isi Product Name - tombol View (05-10-2026).
+  const [lihatProduk, setLihatProduk] = useState(false)
+  // Isian terakhir yang TERSIMPAN (dimuat atau sesudah Save Data), sebagai teks -
+  // pembanding "ada perubahan yang belum disimpan".
+  const [dasar, setDasar] = useState('')
+  const belumTersimpan = isi !== null && dasar !== '' && JSON.stringify(isi) !== dasar
+  useEffect(() => {
+    onBelumTersimpan?.(belumTersimpan)
+  }, [belumTersimpan, onBelumTersimpan])
+  // Layar ditinggalkan: tidak ada lagi perubahan yang menahan Confirm.
+  useEffect(() => () => onBelumTersimpan?.(false), [onBelumTersimpan])
 
   const terima = useCallback((d: DataPolis) => {
     setData(d)
     setIsi(isiDariDataPolis(d))
+    setDasar(JSON.stringify(isiDariDataPolis(d)))
   }, [])
 
   useEffect(() => {
@@ -130,6 +153,7 @@ export default function FormDataPolis({
   const ubah = (medan: keyof IsiDataPolis) => (v: string) => {
     setIsi({ ...isi, [medan]: v })
     setTersimpan(false)
+    setRekapDihapus(false)
   }
   const tampil = (label: string, nilai: string) => (
     <Field key={label} label={label} value={nilai} onChange={() => {}} readOnly />
@@ -140,8 +164,11 @@ export default function FormDataPolis({
     setSibuk(true)
     setGalatSimpan(null)
     setTersimpan(false)
+    setRekapDihapus(false)
     try {
-      terima(await simpanDataPolis(polisID, isi))
+      const hasil = await simpanDataPolis(polisID, isi)
+      terima(hasil)
+      setRekapDihapus(hasil.rekapDihapus === true)
       setTersimpan(true)
       onTersimpan()
     } catch (e) {
@@ -183,10 +210,21 @@ export default function FormDataPolis({
         <div className="pl-dp-bagian">
           <h4 className="pl-offer__subjudul">Policy Data</h4>
           <div className="pl-dp-grid">
-            <div className="pl-dp-pilih pl-dp-lebar">
+            <div className={!bernomor && bisa ? 'pl-dp-pilih pl-dp-pilih--dua pl-dp-lebar' : 'pl-dp-pilih pl-dp-lebar'}>
               <Field label={LABEL_DATA_POLIS.productName} value={isi.productName} onChange={() => {}} readOnly required />
               {/* `Choose Product Name` tampil bila PL_NUMBER belum ada. */}
               {!bernomor && tombol(LABEL_DATA_POLIS.pilihProduk, 'produk')}
+              {/* View: isi Product Name terpilih, juga sesudah bernomor (05-10-2026). */}
+              <button
+                type="button"
+                className="btn btn--ghost"
+                aria-label={RINCIAN_PRODUK.namaTombol}
+                title={RINCIAN_PRODUK.namaTombol}
+                disabled={isi.productNameId.trim() === ''}
+                onClick={() => { setLihatProduk(true) }}
+              >
+                {RINCIAN_PRODUK.tombol}
+              </button>
             </div>
             {tampil(LABEL_DATA_POLIS.productNameId, isi.productNameId)}
             <Pilih
@@ -228,7 +266,7 @@ export default function FormDataPolis({
               required
             />
             <div className="pl-dp-lebar">
-              {tampil(LABEL_DATA_POLIS.ketentuanUnderwriting, offer.ketentuanUnderwriting)}
+              <AreaTeks label={LABEL_DATA_POLIS.ketentuanUnderwriting} value={offer.ketentuanUnderwriting} readOnly />
             </div>
           </div>
         </div>
@@ -304,21 +342,20 @@ export default function FormDataPolis({
               Life.
             */}
             <div className="pl-dp-lebar">{tampil(LABEL_DATA_POLIS.statusUpdate, offer.statusUpdate)}</div>
-            <div className="pl-dp-lebar">{tampil(LABEL_DATA_POLIS.keteranganMarketing, offer.keteranganMarketing)}</div>
+            <div className="pl-dp-lebar"><AreaTeks label={LABEL_DATA_POLIS.keteranganMarketing} value={offer.keteranganMarketing} readOnly /></div>
           </div>
         </div>
       </div>
 
       {galatSimpan !== null && <Gagal galat={galatSimpan} />}
       {/*
-        Pesan SavePremiumList_Act langkah 8.1/8.2 (umur / sum insured di luar
-        batas produk). Data TETAP tersimpan — `Obj-Save WithErrors=true`.
+        Type / Product Name berganti → rekap summary dihapus server; Confirm menolak polis tanpa
+        rekap sampai Calculate CSV dijalankan ulang (keputusan work owner 05-10-2026).
+        Panel Summary dimuat ulang lewat `onTersimpan` (versiSummary).
       */}
-      {(data.peringatan ?? []).length > 0 && (
+      {rekapDihapus && (
         <div className="alert alert--error" role="alert">
-          {(data.peringatan ?? []).map((p, i) => (
-            <div key={i}>{p}</div>
-          ))}
+          {LABEL_DATA_POLIS.rekapDihapus}
         </div>
       )}
       {bisa && (
@@ -344,6 +381,9 @@ export default function FormDataPolis({
         </div>
       )}
 
+      {lihatProduk && (
+        <ModalRincianProduk produkID={isi.productNameId} onTutup={() => { setLihatProduk(false) }} />
+      )}
       {popup !== null && (
         <PopupCari
           judul={judulPopup(popup)}

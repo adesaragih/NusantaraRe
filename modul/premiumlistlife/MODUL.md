@@ -35,7 +35,7 @@ dipensiunkan 1 Oktober 2026.
 ## Migrasi
 
 Rentang `050-099` *(ralat 30-09-2026: dulu tertulis `050–079` di panduan deploy)*, terpakai
-`050–063`. Slot menu `954-955` tidak terpakai: baris modul ini sudah
+`050–064`. Slot menu `954-955` tidak terpakai: baris modul ini sudah
 `DIMIGRASI = '1'` sejak 900, dan menu datar (30-09-2026) tidak punya butir — slot hanya menyalakan
 `DIMIGRASI` (`APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6). Nama berkas migrasi yang sudah ada tidak pernah diubah: `T_MIGRASI` mencatat nama.
 

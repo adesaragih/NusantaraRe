@@ -57,3 +57,27 @@ func Pesan(err error) string {
 	s = polaMarkup.ReplaceAllString(s, "")
 	return strings.TrimSpace(strings.NewReplacer("<", "", ">", "").Replace(s))
 }
+
+// PesanTanggalMundur - START DATE sesudah END DATE. BUKAN korpus: proteksi
+// keputusan work owner 04-10-2026 (Pega tidak memeriksanya).
+const PesanTanggalMundur = "START DATE cannot be later than END DATE."
+
+// PesanJenisGanda - REINS TYPE sudah dipakai kontrak lain di tahun treaty yang
+// sama. BUKAN korpus: keputusan work owner 04-10-2026.
+const PesanJenisGanda = "REINS TYPE %s is already used in this treaty year."
+
+// PesanBusinessGanda - Business Name sudah ada di kontrak yang sama. BUKAN
+// korpus: keputusan work owner 04-10-2026.
+const PesanBusinessGanda = "BUSINESS NAME %s is already in this business list."
+
+// PesanReinsurerGanda - Reinsurer Name sudah ada di kontrak yang sama. BUKAN
+// korpus: keputusan work owner 04-10-2026.
+const PesanReinsurerGanda = "REINSURER NAME %s is already in this reinsurer list."
+
+// PesanShareLebih100 - total share reinsurer satu kontrak melebihi 100. BUKAN
+// korpus: keputusan work owner 04-10-2026 (Pega hanya memperingatkan).
+const PesanShareLebih100 = "Total share cannot be more than 100%% (would be %s%%)."
+
+// PesanSecurityGanda - Security Reinsurer Name sudah ada di bawah reinsurer
+// yang sama. BUKAN korpus: keputusan work owner 04-10-2026.
+const PesanSecurityGanda = "SECURITY REINSURER NAME %s is already in this security list."

@@ -30,7 +30,8 @@ describe('CoverageCargo = blok pertama InputCoverageCargo_FacIn', () => {
   })
 
   it('hanya Name, Rate (%), TSI dapat diisi (butir 61); medan lain read-only', () => {
-    const dapatDiisi = [...JSX.matchAll(/<Field label=\{MEDAN\.(\w+)\.label\}[^/]*?onChange=\{ubah\(/g)].map((m) => m[1])
+    // TSI memakai IsianUang (berformat ribuan saat diketik, permintaan work owner 03-10-2026).
+    const dapatDiisi = [...JSX.matchAll(/<(?:Field|IsianUang) label=\{MEDAN\.(\w+)\.label\}[^/]*?onChange=\{ubah\(/g)].map((m) => m[1])
     expect(dapatDiisi).toEqual(['mataUang', 'rate', 'tsi'])
     const readOnly = [...JSX.matchAll(/<Field label=\{MEDAN\.(\w+)\.label\}[^/]*?readOnly/g)].map((m) => m[1])
     expect(readOnly).toEqual(['coverageInitial', 'limitOfLiability', 'currencyMaster', 'diskonPersen', 'premi', 'minPremi', 'diskon'])

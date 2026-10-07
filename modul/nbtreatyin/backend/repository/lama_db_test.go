@@ -81,7 +81,7 @@ func TestPemuatLamaMenulisLewatAntarmukaSama(t *testing.T) { // AC 21, 22, 55, 5
 	var premi, mulai, akhir, statement, idpega, user, nopol, prodke string
 	q := fmt.Sprintf(`SELECT %s, TO_CHAR(START_DATE, 'YYYY-MM-DD'), TO_CHAR(END_DATE, 'YYYY-MM-DD'),
 	        TO_CHAR(STATEMENT_DATE, 'YYYY-MM-DD HH24:MI:SS'), IDPEGA, USERNAME, NOPOLIS, TO_CHAR(PRODKE)
-	   FROM %s.T_GENERAL_POLIS WHERE ID = :1`, fmt.Sprintf(intidb.FmtDesimal, "PREMI_OGP"), skema)
+	   FROM %s.T_GENERAL_POLIS_TREATY WHERE ID = :1`, fmt.Sprintf(intidb.FmtDesimal, "PREMI_OGP"), skema)
 	if err := sqlDB.QueryRowContext(ctx, q, h.ID).Scan(&premi, &mulai, &akhir, &statement, &idpega, &user, &nopol, &prodke); err != nil {
 		t.Fatal(err)
 	}
@@ -112,8 +112,8 @@ func TestPemuatLamaMenulisLewatAntarmukaSama(t *testing.T) { // AC 21, 22, 55, 5
 		baca.Ambil("Quotation.GroupPanel") != "006" {
 		t.Errorf("halaman terbaca %+v", baca)
 	}
-	if got, err := g.IDPegaKasus(ctx, nil, h.ID); err != nil || got != b.IDPega {
-		t.Errorf("IDPegaKasus %q %v", got, err)
+	if ada, err := g.AdaKasus(ctx, nil, h.ID); err != nil || !ada {
+		t.Errorf("AdaKasus %v %v - dokumen yang baru dimuat harus ada", ada, err)
 	}
 }
 

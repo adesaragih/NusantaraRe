@@ -359,6 +359,7 @@ dropdown Type tidak ada di korpus.
 tidak dijalankan. Langkah hidup yang dibawa: 6–7 batas produk (`PRODUCTINWARD_LIFE WHERE ID =
 ProductNameID`), 8.1 Protect Age (`ENTRY_AGE` vs MINAGE/MAXAGE), 8.2 Protect Sum Insured (dilewati
 TP/TR ber-R/I SLIP `RNML-FL`), 9 pesan, 15 simpan (`WithErrors=true`: data tetap tersimpan, pesan
-tampil sebagai peringatan). Langkah 4–5 sudah di unggah CSV (tiket 04); 8.4/8.8 di "Simpan
+tampil sebagai peringatan). ⚠️ **Diganti 05-10-2026 (keputusan work owner):** 6–8.2 kini penolakan
+Validate CSV dengan batas dari `M_PRODUCTNAME_LIFE` — lihat PARITAS-LAYAR-DAN-AKSI.md. Langkah 4–5 sudah di unggah CSV (tiket 04); 8.4/8.8 di "Simpan
 permanen"; 10/12 di layar Summary; 8.3, 8.5–8.7, 8.9, 11, 13 ter-remark. ⚠️ `[belum terverifikasi]`
 kolom MINSUMINSURED/MAXSUMINSURED.

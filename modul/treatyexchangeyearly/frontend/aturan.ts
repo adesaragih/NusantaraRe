@@ -74,6 +74,18 @@ export function periksaIsian(i: Isian): string | null {
   return null
 }
 
+/**
+ * Kurs untuk dibaca, format Indonesia (perintah work owner 05-10-2026: "perbaiki tampilan uang", "format angkanya
+ * versi indo lah"): ribuan titik, desimal koma, minimal dua desimal, desimal tersimpan yang lebih panjang tidak dipotong (To USD sampai 7 desimal di DEV, mis. `0.0067809`).
+ * Teks yang bukan angka bertitik apa adanya; yang tersimpan tidak berubah.
+ */
+export function tampilKurs(s: string): string {
+  const m = /^([0-9]+)(?:\.([0-9]+))?$/.exec(s.trim())
+  if (m === null) return s
+  const bulat = m[1]!.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `${bulat},${(m[2] ?? '').padEnd(2, '0')}`
+}
+
 /** Kode dan nama: `USD - UNITED STATE DOLLAR`; nama kosong = kode saja. */
 export function kodeNama(kode: string, nama: string): string {
   if (kode === '') return ''

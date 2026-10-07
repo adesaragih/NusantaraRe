@@ -53,13 +53,14 @@ describe('menu hanya yang berbukti korpus', () => {
     // Dua puluh folder korpus + Marketing Officer (modul di luar korpus, migrasi inti 906).
     // + Company Detail (modul di luar korpus, migrasi inti 907).
     // + Accounts (modul di luar korpus, migrasi inti 908).
+    // + delapan modul master (migrasi inti 912-919; Master Data dipensiunkan 920).
     // + Aggregate (911), Bordereaux (913), Adjuster Consultant (915).
     // + Treaty Group OJK (916), Treaty Group (917), Business Group (918).
     // + Treaty Exchange Yearly (919).
     // + Treaty Description (920).
     // + Reinsurance Type (921).
     // + R/I Rate Life (922).
-    expect(KELOMPOK_SIDEBAR).toHaveLength(33)
+    expect(KELOMPOK_SIDEBAR).toHaveLength(41)
     // Dan seluruhnya disebut di Shell, supaya tidak ada kelompok yang
     // terdaftar di label tetapi tidak dirender.
     for (const nama of KELOMPOK_SIDEBAR) {

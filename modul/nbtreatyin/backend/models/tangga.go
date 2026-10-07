@@ -137,8 +137,10 @@ type Transisi struct {
 	// Simpan - berkas melewati Utility1 (simpan polis) dan Utility2 (layanan
 	// Arasapas) sebelum End3.
 	Simpan bool
-	// KosongkanNBStatus - connector menulis `NBStatus = ""` (penolakan atasan).
-	KosongkanNBStatus bool
+	// KembaliKePembuat - penolakan atasan: berkas kembali ke Admin. XML: connector menulis `NBStatus = ""`;
+	// `[keputusan work owner 06-10-2026]` NBStatus tidak pernah kosong ("petunjuk ke user NB-nya ada di siapa") -
+	// diisi nama pembuat berkas (`services.kirim`), sebab grid admin hanya menampilkan berkas buatan sendiri.
+	KembaliKePembuat bool
 	// NBStatusKePosisi - connector menulis "NB IS IN <...>'S INBOX" untuk posisi
 	// tujuan; nama di dalamnya diambil dari DATA (P40), lihat `TeksNBStatus*`.
 	NBStatusKePosisi bool
@@ -166,7 +168,7 @@ func Langkah(posisi, isApproved string, adaNomorPolis bool) (Transisi, error) {
 		// Assignment4|6 -> Decision11|4 isApproved
 		if !setuju {
 			// No -> Assignment2, NBStatus "" (AC 6)
-			return Transisi{PosisiBaru: PosisiAdmin, KosongkanNBStatus: true}, nil
+			return Transisi{PosisiBaru: PosisiAdmin, KembaliKePembuat: true}, nil
 		}
 		// YES -> Dept Head SELALU (AC 8, keputusan work owner; lihat kepala
 		// berkas - Decision13/Decision8 XML tidak dipakai di posisi ini).
@@ -175,7 +177,7 @@ func Langkah(posisi, isApproved string, adaNomorPolis bool) (Transisi, error) {
 		// Assignment3 -> Decision2 isApproved
 		if !setuju {
 			// No -> Assignment2, NBStatus "" (AC 6)
-			return Transisi{PosisiBaru: PosisiAdmin, KosongkanNBStatus: true}, nil
+			return Transisi{PosisiBaru: PosisiAdmin, KembaliKePembuat: true}, nil
 		}
 		// YES -> Decision8. ⛔ Tugas properti connector Decision2 YES
 		// (Position "6", PositionNote ReasTreatyInDirector) milik posisi yang
@@ -199,12 +201,38 @@ func sesudahDecision8(adaNomorPolis bool) Transisi {
 
 // ---------------------------------------------------------------- NBStatus
 
+// NBStatusBaru - NBStatus berkas yang baru dibuat (`[keputusan work owner 06-10-2026]` "begitu create buat aja
+// New"). XML: connector Start1 tidak menulis NBStatus, sehingga kolom Status portal kosong sampai Submit.
+const NBStatusBaru = "New"
+
 // TeksNBStatusDitolakOleh = `InboxPolicyTreatyIn_postDT` / `DeptHeadTreatyIn_UW_postDT`
 // langkah "PositionNote == ReasTreatyInAdmin && IsApproved == 0":
 // "NB WAS DECLINED BY  " + @toUpperCase(OperatorID.pyUserName) - DUA spasi
 // sesudah BY, verbatim.
 func TeksNBStatusDitolakOleh(namaTampilan string) string {
 	return "NB WAS DECLINED BY  " + hurufBesar(namaTampilan)
+}
+
+// PemegangKotakMasuk - pemegang AKTIF di luar divisi IT workbasket tujuan (`M_LOGIN_GO_WORKBASKET` x
+// `M_LOGIN_GO.IS_ACTIVE` / `DIVISION_CODE`):
+// jumlahnya, nama akun bila hanya satu, dan nama workbasket (`M_WORKBASKET.NAME`).
+type PemegangKotakMasuk struct {
+	Jumlah         int
+	NamaAkun       string
+	NamaWorkbasket string
+}
+
+// NamaKotakMasuk - nama di NBStatus "NB IS IN <nama>'S INBOX" (`[keputusan work owner 06-10-2026]`): tepat satu
+// pemegang aktif = nama akunnya; nol atau lebih dari satu = nama workbasket; nama kosong jatuh ke berikutnya,
+// terakhir ID workbasket. Pengganti nama orang yang tertanam di connector flow (P40), tanpa hardcode.
+func NamaKotakMasuk(workbasket string, p PemegangKotakMasuk) string {
+	if p.Jumlah == 1 && strings.TrimSpace(p.NamaAkun) != "" {
+		return p.NamaAkun
+	}
+	if strings.TrimSpace(p.NamaWorkbasket) != "" {
+		return p.NamaWorkbasket
+	}
+	return workbasket
 }
 
 // TeksNBStatusKotakMasuk = "NB IS IN " + <nama> + "'S INBOX".

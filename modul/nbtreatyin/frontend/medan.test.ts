@@ -14,6 +14,7 @@ import {
   MEDAN_ATASAN_UMUM,
   medanTampil,
   saldoNegatif,
+  teksPilihan,
   type Medan,
 } from './medan'
 
@@ -183,12 +184,16 @@ describe('medan layar NB Treaty In - penyajian (AC 85, K3, K14)', () => {
     expect(cari(MEDAN_ATASAN_UANG, 'Deduction2').mataUang).toBe(P + 'Currency')
   })
 
-  it('pyDecimalPlaces terbaca: pxNumber 2 desimal; pxCurrency tak terbaca (pola inti)', () => {
-    expect(cari(MEDAN_ADMIN_UANG, 'GrossPremium').sajian).toEqual({ desimal: 2, formatSaatSunting: true })
-    expect(cari(MEDAN_ADMIN_UANG, 'RiCommOgp').sajian).toEqual({ desimal: 2, formatSaatSunting: true })
-    expect(cari(MEDAN_ADMIN_UANG, 'PremiOgp').sajian).toEqual({ formatSaatSunting: true })
-    expect(cari(MEDAN_ADMIN_UANG, 'NetPremium').sajian).toEqual({})
-    expect(cari(MEDAN_ATASAN_UANG, 'GrossPremium').sajian).toEqual({ desimal: 2 })
+  // RALAT 06-10-2026 (perintah work owner): bagian uang seragam - nol tampil "0", terisi 4 desimal.
+  it('bagian uang: 4 desimal dan nol polos di admin maupun atasan; total spreading tetap', () => {
+    const S = { desimal: 4, nolPolos: true, formatSaatSunting: true }
+    for (const m of ['GrossPremium', 'RiCommOgp', 'PremiOgp', 'ResultOnp2', 'Claim', 'Deduction1']) {
+      expect(cari(MEDAN_ADMIN_UANG, m).sajian).toEqual(S)
+    }
+    expect(cari(MEDAN_ADMIN_UANG, 'NetPremium').sajian).toEqual({ desimal: 4, nolPolos: true })
+    expect(cari(MEDAN_ADMIN_UANG, 'PPNValue').sajian).toEqual({ desimal: 4, nolPolos: true })
+    expect(cari(MEDAN_ATASAN_UANG, 'GrossPremium').sajian).toEqual({ desimal: 4, nolPolos: true })
+    expect(cari(MEDAN_ATASAN_UANG, 'RiCommOnp').sajian).toEqual({ desimal: 4, nolPolos: true })
     expect(cari(MEDAN_ATASAN_TOTAL, 'TotalPremium').sajian).toEqual({ desimal: 2 })
   })
 
@@ -216,5 +221,115 @@ describe('bagian uang: kelompok wadah XML dan LABEL OGP / ONP', () => {
     expect(jalur((KELOMPOK_UANG_ATASAN[2]?.medan ?? []))[0]).toBe('PremiOnp')
     expect(jalur((KELOMPOK_UANG_ATASAN[2]?.medan ?? [])).slice(-2)).toEqual(['PPHValue', 'PPNValue'])
     expect(KELOMPOK_UANG_ATASAN.flatMap((k) => k.medan)).toEqual(MEDAN_ATASAN_UANG)
+  })
+})
+
+// Sel `.ClaimType` / `.ClaimPaymentType` DetailPolicyTreatyIn: pxDropdown, pyListSource `associated`,
+// pyHasNoSelection true; DetailDeptHeadTreatyIn_UW: dropdown Read-only. Isi daftar = prompt values property
+// (screenshot work owner 05-10-2026): nilai standar disimpan, teks prompt ditampilkan.
+describe('dropdown Claim Type dan Payment Type (prompt values property)', () => {
+  const nilaiOpsi = (m: Medan) => (m.opsi ?? []).map((o) => [o.value, o.label])
+  it('admin: dropdown dengan nilai standar dan teks prompt', () => {
+    const tipe = cari(MEDAN_ADMIN_UMUM, 'ClaimType')
+    expect(tipe.jenis).toBe('pilihan')
+    expect(nilaiOpsi(tipe)).toEqual([
+      ['SOA', 'SOA'],
+      ['CashLoss', 'Cash Loss'],
+      ['XOL', 'XOL'],
+      ['XOL Retro', 'XOL Retro'],
+    ])
+    const bayar = cari(MEDAN_ADMIN_UMUM, 'ClaimPaymentType')
+    expect(bayar.jenis).toBe('pilihan')
+    expect(nilaiOpsi(bayar)).toEqual([
+      ['Claim', 'Claim'],
+      ['AdjusterFee', 'Adjuster Fee'],
+      ['Salvage', 'Salvage'],
+      ['Adjustment', 'Adjustment'],
+      ['Retro', 'XOL Retro'],
+    ])
+  })
+
+  it('atasan: tetap hanya-baca, menampilkan teks prompt', () => {
+    for (const j of ['ClaimType', 'ClaimPaymentType']) {
+      const m = cari(MEDAN_ATASAN_UMUM, j)
+      expect(m.jenis).toBe('tampil')
+      expect(m.opsi).toBe(cari(MEDAN_ADMIN_UMUM, j).opsi)
+    }
+    const bayar = cari(MEDAN_ATASAN_UMUM, 'ClaimPaymentType').opsi ?? []
+    expect(teksPilihan(bayar, 'Retro')).toBe('XOL Retro')
+    expect(teksPilihan(bayar, 'AdjusterFee')).toBe('Adjuster Fee')
+    // nilai warisan di luar daftar tampil apa adanya, tidak dibuang
+    expect(teksPilihan(bayar, 'Lama')).toBe('Lama')
+    expect(teksPilihan(bayar, '')).toBe('')
+  })
+})
+
+// Sel `.QuotationData.IsSurveyReport` DetailPolicyTreatyIn: pxRadioButtons, wajib bila ProportionalType !=
+// NonProportional; DetailDeptHeadTreatyIn_UW: radio Read-only. Prompt values property (screenshot work owner
+// 06-10-2026): Yes / No.
+describe('radio Survey Report (prompt values property)', () => {
+  const pasangan = (m: Medan) => (m.opsi ?? []).map((o) => [o.value, o.label])
+  it('admin: radio Yes / No, tetap di wadah bukan NonProportional', () => {
+    const m = cari(MEDAN_ADMIN_UMUM, 'QuotationData.IsSurveyReport')
+    expect(m.jenis).toBe('radio')
+    expect(pasangan(m)).toEqual([
+      ['Yes', 'Yes'],
+      ['No', 'No'],
+    ])
+    expect(tampil(MEDAN_ADMIN_UMUM, { 'Quotation.ProportionalType': 'NonProportional' })).not.toContain('Survey Report')
+  })
+
+  it('atasan: hanya-baca dengan daftar yang sama', () => {
+    const m = cari(MEDAN_ATASAN_UMUM, 'QuotationData.IsSurveyReport')
+    expect(m.jenis).toBe('tampil')
+    expect(m.opsi).toBe(cari(MEDAN_ADMIN_UMUM, 'QuotationData.IsSurveyReport').opsi)
+  })
+})
+
+// Sel `.StatementType`: DetailPolicyTreatyIn pxDropdown pyListSource `associated` (Editable); DetailDeptHeadTreatyIn_UW
+// dropdown Read-only. Prompt values property (screenshot work owner 06-10-2026).
+describe('dropdown Statement Type (prompt values property)', () => {
+  it('admin: dropdown dengan nilai standar dan teks prompt', () => {
+    const m = cari(MEDAN_ADMIN_UMUM, 'StatementType')
+    expect(m.jenis).toBe('pilihan')
+    expect((m.opsi ?? []).map((o) => [o.value, o.label])).toEqual([
+      ['SOA', 'Statement of Account'],
+      ['LPC', 'Loss Participation Clause'],
+      ['PC', 'Profit Commission'],
+      ['SC', 'Sliding Scale'],
+    ])
+  })
+
+  it('atasan: hanya-baca, menampilkan teks prompt', () => {
+    const m = cari(MEDAN_ATASAN_UMUM, 'StatementType')
+    expect(m.jenis).toBe('tampil')
+    expect(m.opsi).toBe(cari(MEDAN_ADMIN_UMUM, 'StatementType').opsi)
+    expect(teksPilihan(m.opsi ?? [], 'LPC')).toBe('Loss Participation Clause')
+  })
+})
+
+// Sel `.TypeTax` DetailPolicyTreatyIn: pxRadioButtons pyListSource `associated`, wajib bila `.FlagPPH = true`;
+// DetailDeptHeadTreatyIn_UW: pxDisplayText (teks nilai apa adanya - tidak diubah). Prompt values property
+// (screenshot work owner 06-10-2026): Inclusive / Exclusive.
+describe('radio Type Tax (prompt values property)', () => {
+  it('admin: radio Inclusive / Exclusive, tampil hanya bila With Tax dicentang', () => {
+    const m = cari(MEDAN_ADMIN_UMUM, 'TypeTax')
+    expect(m.jenis).toBe('radio')
+    expect((m.opsi ?? []).map((o) => [o.value, o.label])).toEqual([
+      ['Inclusive', 'Inclusive'],
+      ['Exclusive', 'Exclusive'],
+    ])
+    expect(tampil(MEDAN_ADMIN_UMUM, { [P + 'FlagPPH']: 'false' })).not.toContain('Type Tax')
+    expect(tampil(MEDAN_ADMIN_UMUM, { [P + 'FlagPPH']: 'true' })).toContain('Type Tax')
+  })
+
+  it('admin: memilih Type Tax menghitung ulang pajak (keputusan work owner 06-10-2026; XML hanya postValue)', () => {
+    expect(cari(MEDAN_ADMIN_UMUM, 'TypeTax').aksi).toEqual([{ aksi: 'HitungPajak' }])
+  })
+
+  it('atasan: tetap teks tampil (pxDisplayText)', () => {
+    const m = cari(MEDAN_ATASAN_UMUM, 'TypeTax')
+    expect(m.jenis).toBe('tampil')
+    expect(m.opsi).toBeUndefined()
   })
 })

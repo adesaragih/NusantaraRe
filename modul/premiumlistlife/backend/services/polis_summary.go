@@ -55,6 +55,7 @@ import (
 	"nusantarare/inti/backend/galat"
 	"nusantarare/inti/backend/jejak"
 	"nusantarare/inti/backend/outbox"
+	"nusantarare/inti/backend/penomor"
 	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/premiumlistlife/backend/models"
 	"nusantarare/modul/premiumlistlife/backend/repository"
@@ -82,7 +83,11 @@ type HasilRekap struct {
 
 // HasilSubmitSummary adalah jawaban `Submit`.
 type HasilSubmitSummary struct {
-	Nomor HasilNomorPL  `json:"nomor"`
+	Nomor HasilNomorPL `json:"nomor"`
+	// WPC `YYYY-MM-DD` yang dihitung saat nomor terbit (`models.WPCPolis`); kosong
+	// bila nomornya sudah ada sebelumnya. Layar menampilkannya bersama PL
+	// Number (03-10-2026).
+	WPC   string        `json:"wpc"`
 	Rekap []RekapTampil `json:"rekap"`
 	// RekapDihapus adalah cacah baris rekap lama yang diganti.
 	RekapDihapus int `json:"rekapDihapus"`
@@ -224,9 +229,14 @@ func (s *SummaryPremiumList) rekapDalam(ctx context.Context, tx *db.Tx,
 	return identitas.Tipe, rekap, nil
 }
 
-// Lihat menghitung rekap untuk layar tanpa menyimpan apa pun.
+// Lihat membaca rekap TERSIMPAN untuk layar, tanpa menulis apa pun.
 //
-// ⚠️ Ia tetap memakai transaksi, supaya identitas polis dan baris pesertanya
+// ⛔ [keputusan work owner 03-10-2026] Yang ditampilkan adalah rekap yang
+// dihitung saat Save Data / simpan peserta CSV (`perbaruiRekapDalam`) -
+// PERSIS yang nanti disalin Confirm - bukan hitungan ulang yang bisa berbeda
+// darinya. Belum ada rekap → daftar kosong, bukan galat.
+//
+// ⚠️ Ia tetap memakai transaksi, supaya identitas polis dan rekapnya
 // terbaca dari SATU keadaan. Transaksinya tidak menulis apa-apa.
 //
 // ⚠️ TANPA gerbang kasus tertutup, dengan sengaja: ia membaca saja. Melarang
@@ -240,11 +250,15 @@ func (s *SummaryPremiumList) Lihat(ctx context.Context, pelaku inti.Pelaku, poli
 	}
 	var hasil HasilRekap
 	err := s.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
-		tipe, rekap, err := s.rekapDalam(ctx, tx, polisID)
+		identitas, err := repository.NewNomorPolis(s.svc.DB()).Identitas(ctx, tx, polisID)
 		if err != nil {
 			return err
 		}
-		hasil = HasilRekap{Tipe: tipe, Rekap: keTampil(rekap)}
+		rekap, err := repository.NewSummaryPolis(s.svc.DB()).BacaRekap(ctx, tx, polisID)
+		if err != nil {
+			return err
+		}
+		hasil = HasilRekap{Tipe: identitas.Tipe, Rekap: keTampil(rekap)}
 		return nil
 	})
 	if err != nil {
@@ -291,25 +305,51 @@ func (s *SummaryPremiumList) simpanDalam(ctx context.Context, tx *db.Tx,
 	summaryWarisan := repository.NewSummaryWarisan(s.svc.DB())
 	warisan := repository.NewPesertaWarisan(s.svc.DB())
 
+	// 0. Rekap TERSIMPAN - dihitung saat Save Data / simpan peserta CSV
+	//    (`perbaruiRekapDalam`), TIDAK dihitung di sini (keputusan work owner
+	//    03-10-2026). Diperiksa LEBIH DAHULU, sebelum penghitung nomor
+	//    dikunci: tanpa rekap, Confirm ditolak.
+	rekap, err := ringkas.BacaRekap(ctx, tx, polisID)
+	if err != nil {
+		return HasilSubmitSummary{}, err
+	}
+	if len(rekap) == 0 {
+		return HasilSubmitSummary{}, ErrSummaryBelumAda
+	}
 	// 1. Penomoran - langkah 10-14. Lahir sekali: simpan ulang memakai nomor
 	//    yang sama dan tidak menggerakkan penghitung.
 	nomor, err := s.nomor.terbitkanDalam(ctx, tx, polisID, saat)
 	if err != nil {
 		return HasilSubmitSummary{}, err
 	}
-	// 2. Rekap - rumus murni atas peserta yang baru saja dinomori.
-	_, rekap, err := s.rekapDalam(ctx, tx, polisID)
-	if err != nil {
+	// 2. Nomor ke rekap tersimpan - T_PREMIUM_LIST_SUMMARY.PL_NUMBER (064,
+	//    keputusan work owner 03-10-2026).
+	if _, err := ringkas.TulisNomorRekap(ctx, tx, polisID, nomor.Nomor); err != nil {
 		return HasilSubmitSummary{}, err
 	}
-	// 3. Hapus lalu sisip rekap.
-	dihapus, _, err := ringkas.GantiRekap(ctx, tx, polisID, rekap)
-	if err != nil {
-		return HasilSubmitSummary{}, err
+	var wpcTerbit string
+	// 2b. WPC polis - dari Type dan periode produksi nomor yang BARU terbit
+	//     (`models.WPCPolis`, pengganti WPCLife_Act; keputusan work owner
+	//     03-10-2026). Nomor yang sudah ada sebelumnya tidak membawa periode:
+	//     WPC-nya tidak ditimpa.
+	if nomor.Periode != "" {
+		identitas, err := repository.NewNomorPolis(s.svc.DB()).Identitas(ctx, tx, polisID)
+		if err != nil {
+			return HasilSubmitSummary{}, err
+		}
+		wpc, err := models.WPCPolis(identitas.Tipe, nomor.Periode)
+		if err != nil {
+			return HasilSubmitSummary{}, err
+		}
+		if err := repository.NewPenawaran(s.svc.DB()).TulisWPC(ctx, tx, polisID, wpc); err != nil {
+			return HasilSubmitSummary{}, err
+		}
+		wpcTerbit = wpc.Format("2006-01-02")
 	}
 	// 3b. PL-09 - rekap yang SAMA ke tabel warisan `M_LIFE_PREMIUM_SUMMARY`,
 	//     seperti `PEGA_M_LIFE_PREMIUM_SUMMARY` (langkah 8, b2228-b3252),
-	//     berkunci nomor + work. Prosedurnya tidak dipanggil (keputusan o).
+	//     berkunci nomor + work - karena itu tetap di sini, sesudah nomor.
+	//     Prosedurnya tidak dipanggil (keputusan o).
 	kepala, err := ringkas.KepalaSummaryWarisan(ctx, tx, polisID, nomor.Nomor)
 	if err != nil {
 		return HasilSubmitSummary{}, err
@@ -328,8 +368,36 @@ func (s *SummaryPremiumList) simpanDalam(ctx context.Context, tx *db.Tx,
 	}
 	return HasilSubmitSummary{
 		Nomor:          nomor,
+		WPC:            wpcTerbit,
 		Rekap:          keTampil(rekap),
-		RekapDihapus:   dihapus,
 		PesertaWarisan: disalin,
 	}, nil
+}
+
+// ErrSummaryBelumAda - Confirm tanpa rekap tersimpan (keputusan work owner
+// 03-10-2026: Confirm TIDAK menghitung rekap).
+var ErrSummaryBelumAda = errors.New(
+	"summary is missing: upload the participants and press Save Data first, then Confirm again")
+
+// perbaruiRekapDalam menghitung ulang rekap per mata uang dan MENYIMPANNYA ke
+// `T_PREMIUM_LIST_SUMMARY` - dipanggil setiap Save Data (Type dapat berubah)
+// dan setiap simpan peserta CSV, di transaksi yang sama (keputusan work owner
+// 03-10-2026).
+//
+// ⛔ Rekap yang TIDAK dapat dihitung - polis tanpa peserta, atau Type di luar
+// QR/QP/TP/TR (termasuk kosong) - membuat rekap lama DIHAPUS, bukan
+// dibiarkan: rekap usang yang tertinggal akan dipakai Confirm untuk peserta
+// yang sudah berubah. Save-nya sendiri tetap berhasil.
+func (s *SummaryPremiumList) perbaruiRekapDalam(ctx context.Context, tx *db.Tx, polisID string) error {
+	ringkas := repository.NewSummaryPolis(s.svc.DB())
+	_, rekap, err := s.rekapDalam(ctx, tx, polisID)
+	switch {
+	case errors.Is(err, repository.ErrPolisTanpaPeserta), errors.Is(err, penomor.ErrTipePLTanpaCabang):
+		_, err := ringkas.HapusRekap(ctx, tx, polisID)
+		return err
+	case err != nil:
+		return err
+	}
+	_, _, err = ringkas.GantiRekap(ctx, tx, polisID, rekap)
+	return err
 }

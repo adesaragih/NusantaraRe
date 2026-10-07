@@ -13,6 +13,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cockroachdb/apd/v3"
+
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/utils"
@@ -150,7 +152,9 @@ func (l *Layanan) DaftarKontrak(ctx context.Context, p inti.Pelaku, tahunID stri
 		return JawabanKontrak{}, err
 	}
 	d, err := l.gudang.DaftarKontrak(ctx, nil, t.ID)
-	return JawabanKontrak{Tahun: t, Daftar: kosongBukanNil(d)}, err
+	// Urut REINS TYPE (QS, 2ND QS, SURPLUS, 2ND SURPLUS, OR) - keputusan work
+	// owner 04-10-2026; sama dengan dropdown.
+	return JawabanKontrak{Tahun: t, Daftar: kosongBukanNil(models.UrutkanKontrakMenurutJenis(d))}, err
 }
 
 // DaftarBusiness - tombol `Business List` (`InputRetroLimitReinsurers.xml` b12999).
@@ -204,6 +208,9 @@ type JawabanSecurity struct {
 	Induk    models.Reinsurer           `json:"induk"`
 	Daftar   []models.SecurityReinsurer `json:"daftar"`
 	Eksposur map[string]string          `json:"eksposur"`
+	// TotalShare / TotalBukan100 - seperti Reinsurer List (04-10-2026).
+	TotalShare    string `json:"totalShare"`
+	TotalBukan100 bool   `json:"totalBukan100"`
 }
 
 // DaftarSecurity - tombol `Security Reinsurer` (`InputSecurityLifeReinsurers.xml` b12441).
@@ -227,7 +234,16 @@ func (l *Layanan) DaftarSecurity(ctx context.Context, p inti.Pelaku, reinsurerID
 		}
 		eks[s.ID] = utils.FormatDecimal(e)
 	}
-	return JawabanSecurity{Induk: r, Daftar: kosongBukanNil(d), Eksposur: eks}, nil
+	share := make([]*apd.Decimal, len(d))
+	for i, s := range d {
+		share[i] = s.PctShare
+	}
+	total, err := jumlahShare(share)
+	if err != nil {
+		return JawabanSecurity{}, err
+	}
+	return JawabanSecurity{Induk: r, Daftar: kosongBukanNil(d), Eksposur: eks,
+		TotalShare: total.Text('f'), TotalBukan100: total.Cmp(seratus) != 0}, nil
 }
 
 // JawabanBusiness - grid business satu kontrak, beserta kontraknya.
@@ -249,7 +265,8 @@ func (l *Layanan) JenisReasuransi(ctx context.Context, p inti.Pelaku) ([]models.
 		return nil, fmt.Errorf("%w: %s has no row with FLAG = 1 (life)", ErrMasterTidakTerbaca,
 			repository.MasterJenisReasuransi)
 	}
-	return d, nil
+	// Urutan dropdown keputusan work owner 04-10-2026.
+	return models.UrutkanJenisReasuransi(d), nil
 }
 
 // CariMasterReinsurer - autocomplete `REINSURER NAME`.

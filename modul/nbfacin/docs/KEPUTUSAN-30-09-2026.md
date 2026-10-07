@@ -1019,6 +1019,386 @@ baris, sama dengan posisi induk 1 dari 104.
 | ---: | --- | --- |
 | 67 | Penjaga claimlife `TestKolomTakDibawaHanyaAdaDiKatalog` (lingkup tertulis claimlife, pindaian seluruh `APP_RNM`) menuduh loader NB atas `STS_KONVERSI`/`TGL_KONVERSI` | **"FOKUS KE NB FACIN SAJA"** — claimlife tidak disunting; `go test ./...` aplikasi tetap merah di paket itu sampai pemiliknya memutuskan |
 
+## Keputusan work owner — 2 Oktober 2026, lookup akun tiket 27, diteruskan sesi `nusantarare-0f`
+
+Diteruskan sesi agent `nusantarare-0f` dengan kutipan jawaban work owner **"harus peka besar kecil dong, 15 baris per
+halaman"** atas keputusan agent A69–A73 (`issues/27-lookup-akun-choose-account.md`).
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 73.1 | A70 — peka huruf besar-kecil pencarian `GET /api/nbfacin/account` | **DIUBAH: PEKA huruf.** "Mengandung" tanpa `UPPER` di `INSUREDID`, `INSUREDNAME`, `GROUPBUSINESS` apa adanya; escape `\` `%` `_` tetap |
+| 73.2 | A71 — ukuran halaman | **DIUBAH: 15** (semula 20) |
+| 73.3 | A69 (tiga kolom dicari), A72 (urut `INSUREDID`, `ID`), A73 (`cari` > 255 → 400) | **Belum diputus** — tetap keputusan agent, menunggu konfirmasi |
+
+**Penerapan:** `repository/akun.go` (`PolaCari` tanpa `ToUpper`, `saringAkun` tanpa `UPPER`), `services/layanan.go`
+(`UkuranHalamanAkun = 15`); uji `TestSQLAkun` (menolak `UPPER`/`LOWER`), `TestPolaCari` (`uji` ≠ `UJI`), `TestCariAkun`
+services (halaman 3 → offset 30) dan handlers (`"ukuran":15`). `[dugaan]` peka-huruf `LIKE` bergantung `NLS_COMP` instance
+— `belum terverifikasi`.
+
+## Keputusan agent A74–A78 — tiket 28 Class Of Business, menunggu konfirmasi
+
+Atas brief sesi `nusantarare-0f` dan DDL `BUSINESS.txt` dari work owner (`issues/28-pilihan-class-of-business.md`).
+`GET /api/nbfacin/class-of-business?groupBusinessId=` → `{"baris":[{"id","note"}]}`, semua baris, tanpa paging.
+
+| # | Keputusan | Dasar |
+| --- | --- | --- |
+| A74 | Urut `NOTE`, **bukan** `.ID` DESC seperti RD `BrowseBusiness_RD` | brief sesi 0f; tangkapan layar Pega tampak alfabetis NOTE |
+| A75 | `ID` pemutus seri sesudah `NOTE` | urutan deterministik (pola A72) |
+| A76 | `groupBusinessId` kosong/spasi atau > 4000 byte → 400; nilai tidak dipangkas | brief (kosong); lebar `BUSINESSGROUPID` (pola A73) |
+| A77 | Hanya filter C RD (`.BusinessGroupID = Param.Group`) yang dibangun; filter A/B tidak | brief "semua baris"; di satu-satunya section pemakai di folder `NB FacIn` (`InputLossRecord_Sec`) parameter `ID`/`Note`/`Group` kosong (`RNW Fac In` punya salinan bernama sama, tidak dibandingkan) |
+| A78 | `NOTE IS NOT NULL` | brief sesi 0f; **tidak ada di RD** — selisih dengan Pega, dicatat |
+
+**Ralat atas brief** `[terverifikasi]` `BrowseBusiness_RD.xml`: filter B adalah `.Note Contains Param.Note` dengan
+`pyCaseInsensitive` true — bukan `=`. `[dugaan]` `groupBusinessId` = `T_M_ACCOUNT.GROUPBUSINESSID` akun terpilih — belum
+terverifikasi dari korpus (section form Opportunity pemakai RD tidak ada di folder `NB FacIn`).
+
+## Keputusan work owner — 3 Oktober 2026, Create opportunity (tiket 29), diteruskan sesi `nusantarare-0f`
+
+Diteruskan sesi agent `nusantarare-0f` (pilihan work owner lewat AskUserQuestion di sesi itu). Konteks: tombol
+`Create opportunity` di form Opportunity (tiket 29, frontend + tiket di-commit sesi 0f, `4064d0b`) memanggil kontrak
+`POST /api/nbfacin/opportunity` → 201 `{"caseId":"NB-…"}`; badan = `IsianOpportunity` (`frontend/api.ts`), tanggal bentuk
+kabel `DD-MM-YYYY`. ⛔ **Endpoint belum dibangun** — dicatat saja, atas permintaan sesi 0f ("jangan dibangun dulu").
+⛔ **74.1 DIRALAT butir 76** (3 Oktober 2026) — endpoint kini dibangun; lihat bab butir 76.
+
+| # | Butir | Pilihan work owner |
+| ---: | --- | --- |
+| 74.1 | Penyimpanan opportunity/case NB | **"Tunggu tabel flat (tiket 23)"** — **tidak ada** tabel sementara. `POST /api/nbfacin/opportunity` baru dibangun sesudah tabel flat tiket 23 ada; tiket 23 sendiri masih ⏸ ditahan (butir 66, presisi tim inti). → ⛔ **DIRALAT butir 76**: pilihan ini diambil atas premis keliru yang diteruskan sesi 0f (penyimpanan case dikira seluruhnya tertahan tiket 23), padahal `T_WORK_POLIS` sudah ada (premiumlistlife 050) |
+| 74.2 | Nomor case NB | **"Lanjut dari nomor terakhir Pega"** — penghitung mulai dari MAX nomor NB yang ada + 1; angka pastinya diisi saat migrasi dijalankan oleh work owner/DBA (⛔ agent tidak menjalankan `-migrate`, butir 65) |
+| 74.3 | Layar sesudah create ("lari ke flow nya") | Flow action `InwardFacultative` → section `InputInwardFacultative` — port berikutnya, **belum dimulai** |
+
+**Bukti yang dikutip sesi 0f:**
+- `[terverifikasi]` oleh agent ini: ADR-0043 (`docs/bersama/adr/0043-penomoran-di-aplikasi.md`) — penomoran di aplikasi,
+  `SELECT … FOR UPDATE`; tiket 29 dan commit `4064d0b` ada.
+- Nomor NB = satu deret global tanpa tahun, sampai `NB-184351` (nama berkas ekspor kasus di `D:\XML NURE\Groupbusiness\`)
+  — **klaim sesi 0f, tidak diverifikasi ulang agent ini** (folder ekspor kasus tidak dibuka).
+
+⚠️ **Terbuka, tidak ditafsirkan:** ADR-0043 mengunci penghitung atas `(CLASS, JENIS, TAHUN)` dengan aturan periode/tahun,
+sedangkan deret NB menurut klaim di atas **tanpa tahun**. Bagaimana nomor NB dipetakan ke kunci itu belum diputuskan —
+`belum terverifikasi`.
+
+## Keputusan work owner — 3 Oktober 2026, lookup akun kembali tidak peka huruf (tiket 27), diteruskan sesi `nusantarare-0f`
+
+Diteruskan sesi agent `nusantarare-0f` dengan kutipan work owner (disertai tangkapan layar kotak Search popup
+ChooseAccount): **"pada saat search Group Business, itukan ada isian untuk search, itu buatin tanpa liat huruf besar atau
+kecil"**.
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 75 | Peka huruf pencarian `GET /api/nbfacin/account` | **TIDAK peka huruf** — `UPPER(kolom) LIKE` pola huruf besar, `ESCAPE` tetap, parameter terikat, atas `INSUREDID`/`INSUREDNAME`/`GROUPBUSINESS`. **Membatalkan 73.1** — keputusan lama dikutip utuh: **"harus peka besar kecil dong, 15 baris per halaman"** (73.1 "DIUBAH: PEKA huruf"). Bagian "15 baris per halaman" (**73.2**) **tetap** |
+
+**Penerapan:** `repository/akun.go` (`PolaCari` kembali `strings.ToUpper`, `saringAkun` kembali `UPPER(kolom)`); uji
+`TestSQLAkun` (tepat tiga `UPPER(`), `TestPolaCari` (`uji`/`Uji`/`UJI` berpola sama). `[dugaan]` lama tetap: huruf besar
+dibuat `strings.ToUpper` Go sedangkan kolom `UPPER` Oracle — untuk huruf non-ASCII keduanya dapat berbeda.
+
+## Keputusan work owner — 3 Oktober 2026, case NB di `T_WORK_POLIS` yang ada (tiket 29 backend, tiket 23)
+
+Rencana sesi `nusantarare-0f` dijawab work owner **"setuju"** (diteruskan sesi 0f): case NB dibuat sekarang di
+`T_WORK_POLIS` yang ada, tiket 23 diselaraskan. Butir yang tidak boleh ditebak ditanyakan langsung ke work owner di sesi
+ini (AskUserQuestion, 3 Oktober 2026); pilihannya dikutip.
+
+| # | Butir | Pilihan work owner |
+| ---: | --- | --- |
+| 76.1 | `T_WORK_POLIS.ID`: tabel yang ada `VARCHAR2(32)` berisi pengenal work, rancangan `NUMBER` + `IDPEGA` | **"Follow existing table"** — ID = `NB-<n>` `VARCHAR2(32)`; `T_GENERAL_POLIS.ID` dan `PARENT_ID` 10 tabel anaknya ikut `VARCHAR2(32)`; `IDPEGA`/`JENIS_WORK`/`NO_WORK` tetap kolom tambahan; loader + uji disesuaikan |
+| 76.2 | Nilai `LINI` Fac In | **"FAC"** — preseden `T_WORK_CLAIM.LINI` (K-064) |
+| 76.3 | Penyimpanan isian opportunity | **"Own opportunity table"** — `T_NB_OPPORTUNITY` (migrasi 180), 1:1 dengan `T_WORK_POLIS.ID`. Dasar `[terverifikasi]`: opportunity di Pega kelas work tersendiri (`NB FacIn\ReportDefinition\GetListOpportunity.xml`: `ASM-FW-SFAGISFW-Work-Opportunity` INNER JOIN `ASM-FW-GISFW-Work-NB` pada `A.pzInsKey = .NBHandle`); rancangan flat tidak punya tabelnya |
+| 76.4 | Kolom rancangan yang bertumpuk dengan kolom yang ada | **"Merge into existing"** — `POSISI`→`POSITION`, `STATUS_PROSES`→`STATUS_WORK`, `TGL_INPUT`→`TGL_CREATE`, `USERNAME`→`CREATE_OP` |
+| 76.5 | Angka awal `SEQ_WORK_POLIS_NB` (tidak ada di repo) | **"Placeholder in migration"** — `181` memakai `START WITH {NB_MULAI}`; Oracle menolaknya sampai work owner/DBA menggantinya dengan (nomor NB Pega terakhir + 1); `-migrate` seluruh aplikasi berhenti di langkah itu sampai diisi — disengaja |
+
+**Penerapan:** `loader/amandemen.go` `selaraskanWorkPolis` + `aturan.go` (`TestAmandemenWorkPolis`; skema 79 tabel /
+**1.391** kolom; mutasi **67/67**); migrasi `180_t_nb_opportunity.sql`, `181_seq_work_polis_nb.sql` (+ `_down`) — **ditulis,
+tidak dijalankan**; `repository/casenb.go`, `services/opportunity.go`, `handlers` `POST /api/nbfacin/opportunity`
+→ 201 `{"caseId":"NB-<n>"}`. Pemetaan 18 kolom: tiket 23 bab *Penyelarasan*.
+
+**Keputusan agent — menunggu konfirmasi:**
+
+| # | Keputusan | Dasar |
+| --- | --- | --- |
+| A79 | `T_NB_OPPORTUNITY` berbagi PK dengan `T_WORK_POLIS` **tanpa** constraint FK | pola `T_PREMIUM_LIST` premiumlistlife 050/051; constraint lintas modul tidak diputuskan siapa pun |
+| ~~A80~~ | ~~Baris `T_WORK_POLIS` NB: `POSITION`, `STATUS_WORK`, `FLAG_ONGOING_POLICY`, `COVER_KEY` **kosong**~~ → **DIGANTI butir 77** (`COVER_KEY` tetap kosong) | nilai awal case NB di Pega `belum terverifikasi` |
+| A81 | Tipe `T_NB_OPPORTUNITY`: salinan `T_M_ACCOUNT` bertipe sumber (CHAR), `CLASS_OF_BUSINESS` 4000 BYTE (`BUSINESS.NOTE`), teks lain 255, `DESCRIPTION` 4000; isian melebihi lebar → 400 | pola A73/A76 |
+| A82 | Tanpa identitas → **401**; pembuat = pengenal akun di `CREATE_OP` **dan** `CREATE_OP_NAME`; sesi login didahulukan, stub `X-Pelaku` hanya bila `AUTH_STUB` | pola `KasusPolis.Buat` premiumlistlife, ADR-U-0030 |
+| A83 | Isian disimpan **apa adanya** (tidak dipangkas; medan opsional berisi spasi saja tersimpan spasi, bukan NULL); wajib-isi = bukan hanya spasi; Type Of Facultative wajib bila Type Of Inward **persis** `Facultative`; tanggal `DD-MM-YYYY` ketat (31-02 ditolak), disimpan `DATE` tanpa jam | tiket 29; nilai `Facultative` `[dugaan]` dari frontend |
+| A84 | Nomor dari **sequence** (`SEQ_WORK_POLIS_NB`, `NEXTVAL`), bukan tabel penghitung ADR-0043 `(CLASS, JENIS, TAHUN)` | brief sesi 0f; preseden `SEQ_WORK_POLIS` premiumlistlife; deret NB tanpa tahun |
+| A85 | Kelahiran case NB **tidak** direkam ke jejak | satu-satunya penyimpan jejak (`inti/backend/jejak`) menulis `T_CLAIMLF_JEJAK` milik claimlife |
+
+**Risiko yang ditemukan — menunggu work owner:**
+- **R1** `[terverifikasi]` kotak masuk PremiumList Life membaca **seluruh** `T_WORK_POLIS` tanpa saringan `LINI`
+  (`premiumlistlife/backend/repository/polis_inbox.go`: cacah `WHERE (:1 IS NULL OR w.POSITION = :1)`, daftar `LEFT JOIN`
+  `T_PREMIUM_LIST`). Case `NB-…` (POSITION kosong) akan **muncul di tab "semua" kotak masuk Life**. endorsementlife
+  (`481_seq_work_edm_life.sql`) sengaja tidak menulis `T_WORK_POLIS` karena alasan yang sama. Perbaikannya di modul
+  premiumlistlife (saringan `LINI`) — **di luar lingkup sesi ini, tidak disunting**.
+- **R2** nbfacin MENULIS `T_WORK_POLIS` milik premiumlistlife dengan SQL sendiri (`repository/casenb.go`, tanpa kontrak
+  lintas modul) dan kelak `ALTER` kolom Fac In atasnya (tiket 23): perubahan premiumlistlife atas tabel itu (mis. kolom
+  NOT NULL baru) dapat mematahkan NB tanpa peringatan — koordinasi pemilik / tim inti.
+
+## Keputusan work owner — 3 Oktober 2026, keadaan awal case NB (tiket 29), diteruskan sesi `nusantarare-0f`
+
+Diteruskan sesi `nusantarare-0f`; konteks: work owner sudah menjalankan migrasi 180/181 di DEV (181 diisi work owner:
+`START WITH 151028`, belum di-commit saat dicatat) dan case NB berhasil dibuat. Kutipan: **"saat berhasil create position =
+Offer, FLAG_ONGOING_POLICY=0, STATUS_WORK=Pending-Policy."**
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 77 | Keadaan awal baris `T_WORK_POLIS` case NB — **menggantikan A80** ("kosong") | `POSITION = 'Offer'`, `FLAG_ONGOING_POLICY = '0'`, `STATUS_WORK = 'Pending-Policy'` — teks verbatim, konstanta `PosisiAwalCaseNB` / `FlagAwalCaseNB` / `StatusAwalCaseNB` di `repository/casenb.go`; `COVER_KEY` tetap kosong |
+
+**R1 melebar** `[terverifikasi]`: `'Offer'` adalah nilai posisi Life yang sama (`premiumlistlife/backend/models/polis_penawaran.go`
+L112 `PosisiOffer`; kasus Life baru juga `Offer`, `models/polis_kasus.go` L84). Kotak masuk Life menyaring hanya
+`w.POSITION` (`repository/polis_inbox.go` L111/L125, kueri `?posisi=` dari `handlers/rute_premiumlist.go` L53), jadi case NB
+kini tampil di tab "semua" **dan** di saringan `posisi=Offer`, ber-status `Pending-Policy`. Layar Life hari ini hanya memanggil
+tanpa posisi (`frontend/pages/InboxPremiumList.tsx` L99). `Pending-Policy`: nol kemunculan di premiumlistlife — hanya tampil,
+bukan saringan. Tidak disunting (di luar lingkup).
+
+⚠️ **Dicatat, tidak ditafsirkan:** angka awal 151028 **lebih kecil** dari contoh `NB-184351` yang dikutip sesi 0f dari
+ekspor uji (butir 74, klaim sesi 0f, tidak diverifikasi agent ini). Bila nomor NB Pega yang ada memang mencapai 184351,
+nomor baru dapat bertabrakan dengan kasus lama — `belum terverifikasi`, menunggu work owner/DBA.
+
+## Keputusan work owner — 3 Oktober 2026, layar Inward Facultative tahap 2 (tiket 31)
+
+Tugas diteruskan sesi `nusantarare-0f` (work owner "commit dan lanjut"); butir yang perlu tafsiran ditanyakan langsung
+ke work owner di sesi ini (AskUserQuestion, 3 Oktober 2026). Bukti dan kontrak: `issues/31-baca-simpan-case-inward-general.md`.
+
+| # | Butir | Pilihan work owner |
+| ---: | --- | --- |
+| 78.1 | Bentuk simpan Begin/Offering/End date (rancangan: teks Pega VARCHAR2(30)) | **"Pega text, WIB"** — Offering `YYYYMMDD`; baca GMT → WIB → tanggal. Jam Begin/End: semula ~~00:00 WIB (`…T170000.000 GMT` hari sebelumnya)~~ → **diralat: "05:00 GMT / 12:00 WIB"** (pertanyaan diajukan ulang setelah agent meralat hitungannya: nilai terkini fixture Start 050000 ×4 / 170000 ×1, End ×3 / ×2 — angka awal menjumlahkan salinan `OldData`, jebakan sensus 5) |
+| 78.2 | Policy Type: data Pega berkode `0`/`1`/`2`, layar berlabel `Individual Policy`/`Master Policy`, pemetaan tidak ada di korpus | **"Label text for now"** — label disimpan apa adanya (penyimpangan); dikonversi ke kode bila pemetaan diketahui |
+| 78.3 | Type facultative: data `FacultativeIn`, layar `Facultative In` | **"As sent by the screen"** — tanpa konversi tebakan |
+| 78.4 | `T_GENERAL_POLIS` / `T_QUOTATIONDATA` tidak dapat dibuat utuh (presisi tim inti; panjang butir 68.1) | **"Create with needed columns"** — migrasi 182/183 kolom sistem + kolom layar; sisanya tiket 23 lewat `ALTER` |
+
+**Penerapan:** migrasi `182_t_general_polis.sql`, `183_t_quotationdata.sql` (+ `SEQ_T_QUOTATIONDATA`) — **ditulis, tidak
+dijalankan**; `GET /api/nbfacin/kasus/{caseId}`, `PUT /api/nbfacin/kasus/{caseId}/general`, `GET /api/nbfacin/marketing-officer`.
+Keputusan agent A86–A94 (menunggu konfirmasi): tiket 31 bab *Keputusan agent*.
+
+**Ralat atas brief** `[terverifikasi]` `Periode.xml`: Source of business = `.QuotationData.SobName`; Old Policy Number =
+`.Following` (akar, `T_GENERAL_POLIS.FOLLOWING`). `PEGA_MARKETINGOFFICER.txt` adalah prosedur, tabelnya `MARKETINGOFFICER`.
+
+## Tiket 32 — daftar case NB di portal Opportunity, diteruskan sesi `nusantarare-0f`
+
+Permintaan work owner (dikutip sesi 0f): **"nb yang sudah di create, muncul disini … harus ada case id nya, group business,
+insured name, status."** Dibangun `GET /api/nbfacin/opportunity` (`issues/32-daftar-case-nb-portal-opportunity.md`): hanya
+`LINI = 'FAC'`, status = `STATUS_WORK` (bukan `NBStatusNew` grid Pega — selisih dicatat), cari tidak peka huruf atas case id +
+Business Prospect Name. Keputusan agent A95–A98 menunggu konfirmasi; A97 mencatat lima selisih dengan
+`GetListOpportunityF` `[terverifikasi]` (saringan pembuat/team group/Resolved tidak diterapkan). ⚠️ Rute butuh migrasi 183.
+
+## Tiket 33 — popup Change SOB (backend), diteruskan sesi `nusantarare-0f`
+
+Perintah work owner (dikutip tiket 33): *"… diambil dari tabel agent, dimana yang ditarik dengan kondisi StatusActive=1,
+AgentType2 != "LIFE INSURANCE", ClientID is not null dan dapat di search tanpa memperhatikan huruf besar dan kecil"*.
+`[terverifikasi]` syarat itu = RD `BrowseAgentNonLife_RD` (A/B/C). Dibangun `GET /api/nbfacin/sob`, `sourceOfBusinessId` di
+GET/PUT case, migrasi 184 (`T_QUOTATIONDATA.SOURCE_OF_BUSINESS`, kolom rancangan). Keputusan agent A99–A104 (tiket 33). ~~⚠️ DDL
+`AGENT` belum ada — nama tabel/kolom `[dugaan]` (A102).~~ → DDL `AGENT.txt` ditambahkan work owner; kolom tipe-2 dieja `AGENTTPYE2`.
+
+| # | Butir | Keputusan work owner 3 Oktober 2026 |
+| ---: | --- | --- |
+| 79.1 | Baris AGENT ber-AgentType2 NULL | **DIIKUTKAN** — syarat `(AGENTTPYE2 IS NULL OR AGENTTPYE2 <> 'LIFE INSURANCE')`; berlaku juga popup Ceding Co (tiket 34). Riwayat: di sesi ini work owner semula menjawab "Exclude them"; sesi `nusantarare-0f` lalu meneruskan keputusan work owner "NULL tidak dibuang"; agent menanyakan ulang dan work owner memilih **"Include empty ones"** sebagai final. Membatalkan A101 |
+| 79.2 | Lebar kode SOB `T_QUOTATIONDATA.SOURCE_OF_BUSINESS` | **"Keep 50"** — mengikuti rancangan; kode > 50 bita ditolak 400 |
+
+## Tiket 34 — popup Change Ceding Co (backend), diteruskan sesi `nusantarare-0f`
+
+Dibangun `general.cedingList` (GET) + `cedingIds` (PUT) di atas tabel RANCANGAN `T_CEDINGCOLIST` (migrasi 185) — usulan
+`T_QUOTATION_CEDING` tidak dipakai karena rancangan sudah punya bentuknya (`issues/34-popup-change-ceding-co.md`).
+
+| # | Butir | Keputusan work owner 3 Oktober 2026 (AskUserQuestion di sesi ini) |
+| ---: | --- | --- |
+| 80 | Lebar kolom gabungan `;` daftar Ceding Co di `T_QUOTATIONDATA` (rancangan `CEDING_CO` VARCHAR2(50), `CEDING_CO_NAME` VARCHAR2(500) ≈ 5 ceding; fixture hanya 1 ceding) | **"Widen joined columns"** — `CEDING_CO` VARCHAR2(1000) (DDL Pega `CEDINGCO`), `CEDING_CO_NAME` VARCHAR2(4000); migrasi 185 + amandemen loader `amandemenLebar` |
+
+Keputusan agent A105–A108 menunggu konfirmasi (tiket 34).
+
+## Tiket 35 — tab Object FIRE tahap 1 (backend), diteruskan sesi `nusantarare-0f`
+
+Dibangun `GET`/`PUT /api/nbfacin/kasus/{caseId}/objek` di atas tabel rancangan `T_LOCATIONLIST` → `T_PROPERTY` →
+`T_RISKLOCATION` / `T_BUILDINGCONSTRUCTION` (migrasi 186; dua yang pertama sebagian, pola butir 78.4). Tiga kolom
+BuildingConstruction yang tidak ada di rancangan (`PARTITION_TYPE`, `SUPPORT_WALL_TYPE`, `OTHERS_TYPE`; `ObjectDetails` sel
+56–58) ditambahkan — migrasi + amandemen loader (skema 79 tabel / **1.394** kolom). Keputusan agent A109–A115 menunggu
+konfirmasi (`issues/35-tab-object-fire-tahap-1.md`). Tanpa keputusan work owner baru.
+G-9 (daftar Roof/Wall/Floor) `[terverifikasi]` lewat aturan properti Pega yang ditambahkan work owner
+(`DDL\RoofType.xml`, `WallType.xml`, `FloorType.xml`): Roof 1..14, Wall 1..9, Floor `KELAS III` = Keramik, `KELAS II` = Kayu,
+`KELAS I` = Lain-lain (dipasangkan per rowdata); tanpa `pyDefaultValue`.
+
+## Tiket 36 — popup Choose Risk Address (backend), diteruskan sesi `nusantarare-0f`
+
+Dibangun `GET /api/nbfacin/risk-address` menurut RD `BrowseRisksAddress_RD` `[terverifikasi]`: tujuh filter Contains (A
+`.Address` tidak peka huruf), logika AND, DISTINCT, tanpa urutan, `pyMaxRecords` 100, dan **INNER JOIN `RW`**
+(`.PostalCode = RW.ZipCode` — `RW.ZipCode` adalah syarat JOIN, bukan saringan). Tabel warisan `RISKADDRESS`, `RW` (baca saja,
+DDL terverifikasi). Keputusan agent A116–A122 **disetujui** 03-10-2026 (butir 91; `issues/36-choose-clear-risk-address.md`). Tanpa migrasi.
+
+## Keputusan work owner — 3 Oktober 2026, simpan alamat risiko baru (tiket 37)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 81 | W-1 (diteruskan sesi `nusantarare-0f`: Save memanggil prosedur `pooldata.InsertUpdateRISKADDRESS`) bertentangan dengan ADR-0043 (*"jangan ada lagi pemanggilan procedure, segala procedure hardcode dalam skrip"*). Ditanyakan langsung ke work owner di sesi ini (AskUserQuestion) | **"Port to Go, keep ADR-0043"** — W-1 diganti: INSERT dari Go di transaksi aplikasi; ID dengan ekspresi prosedur yang sama `GETCURRENTSITE \|\| LPAD(TO_CHAR(RISKADDRESS_SEQ.NEXTVAL),12,'0')` (fungsi hanya untuk awalan situs — isinya tidak ada di korpus); nol CALL prosedur, tanpa ROLLBACK tersembunyi |
+
+W-2 (akumulasi ditunda) dan W-3 (ID baru dikembalikan) tetap. Keputusan agent A123–A128 **disetujui** 03-10-2026 (butir 82)
+(`issues/37-add-alamat-risiko.md`). Tanpa migrasi.
+
+## Tiket 38 — sub-tab Surrounding Risk (backend), diteruskan sesi `nusantarare-0f`
+
+`GET`/`PUT /api/nbfacin/kasus/{caseId}/objek` membawa Ownership, tiga flag proses, dan Surrounding Risk; `GET
+/api/nbfacin/occupation` menurut RD `BrowseOccupationFacInFIRE_RD` `[terverifikasi]`. Migrasi **187**: empat kolom rancangan
+`T_PROPERTY` (ALTER ADD) + `T_SURROUNDINGRISK` utuh dengan 18 kolom baru (amandemen loader `amandemenSekitar`; skema 79 tabel
+/ **1.412** kolom). Ditulis, belum dijalankan — urutan DEV: 182 → 183 → 184 → 185 → 186 → **187**. Keputusan agent
+A129–A131 **disetujui** 03-10-2026 (butir 82; `issues/38-surrounding-risk.md`). Tanpa keputusan work owner baru; daftar dropdown
+(`DDL\FrontConstruction.xml`, `Ownership.xml`, `FloodAreaStatus.xml`, `HousekeepingStatus.xml`, `FloodArea.xml`,
+ditambahkan work owner) dipakai frontend saja — server tidak memvalidasi enumerasi.
+
+## Tiket 39 — sub-tab Object Item (backend), diteruskan sesi `nusantarare-0f`
+
+`GET`/`PUT …/objek` membawa `items` → `T_PROPERTYITEMLIST` (migrasi **188**, sebagian pola A109, enam kolom baru +
+amandemen loader `amandemenItem`; skema 79 tabel / **1.418** kolom). `TSI_OBJECT_ITEM` uang `NUMBER(38,8)` (ADR-0016),
+`PCT_ADJUST2`/`PCT_ADJUST_OTHER` persen `NUMBER(38,8)` — teks desimal di JSON, `apd` di Go, nol float. `GET
+/api/nbfacin/jenis-item-objek` (V_JN_OBJ_ITEM) dan `GET /api/nbfacin/mata-uang` (CURRENCY) menurut RD `[terverifikasi]`;
+DDL kedua objek warisan itu **tidak ada** — tipe kolomnya `belum terverifikasi` (diminta lewat sesi 0f). Ditulis, belum
+dijalankan — urutan DEV: … → 187 → **188**. Keputusan agent A132–A137 **disetujui** 03-10-2026 (butir 82; `issues/39-object-item.md`);
+A133 (mata uang wajib) bersandar pada K-069 + K-012 (ADR modul 0006 `Unknown` eksplisit, bukan `docs/bersama` ADR-0006).
+
+## Tiket 40 — sub-tab Occupation (backend, sebagian), diteruskan sesi `nusantarare-0f`
+
+`GET`/`PUT …/objek` membawa `occupations` → tabel rancangan `T_OCCUPATIONLIST` (sebagian, induk T_PROPERTY lewat
+`PARENT_TABLE`/`SRC_PATH`) + `T_TABLEOFLIMIT` (utuh), migrasi **189**; `PCT_LIMIT` teks apa adanya menurut butir 68.1.
+`GET /api/nbfacin/occupation` membawa `kdRiskExposure` dan menerima `cari` kosong. Endpoint table-of-limit **ditahan** atas
+perintah sesi 0f (*"lanjut tiket 40 tanpa endpoint table-of-limit dulu"*): DDL TABLEOFLIMIT belum ada, dan
+`QuotationData.BusinessCode` hanya tersalin dari halaman `Quotation` (`SetCedingCo_Act`) yang asal BusinessCode-nya belum
+ditemukan. Ditulis,
+belum dijalankan — urutan DEV: … → 188 → **189**. Keputusan agent A138–A141 **disetujui** 03-10-2026 (butir 82; `issues/40-occupation.md`).
+
+## Tiket 41 — sub-tab FEA (backend), diteruskan sesi `nusantarare-0f`
+
+`GET`/`PUT …/objek` membawa `fea` → tabel **baru** `T_FEALIST` (induk `T_LOCATIONLIST`), migrasi **190**; loader:
+`amandemenFEA` + jalur `LocationList/FEAList` + lipatan `.DataFEA` (skema 80 tabel / **1.433** kolom / 150 jalur).
+Ditulis, belum dijalankan — urutan DEV: … → 189 → **190**. Keputusan agent A142–A144 **disetujui** 03-10-2026 (butir 82)
+(`issues/41-fea.md`). Tanpa keputusan work owner baru.
+
+## Keputusan work owner — 3 Oktober 2026, tiket 36–42 (diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 82 | Keputusan agent sesi c3 A123–A144 dan sesi 0f tiket 36–42 (H-*, I-*, J-*, K-*, L-*, M-*, N-*) | **"setuju keputusan agent"** — semuanya DISETUJUI. A116–A122 (tiket 36) di luar rentang ini — disetujui kemudian (butir 91) |
+| 83 | Loss Record Internal (N-5) | **"biarkan saja kosong"** — grid baca-saja, GET selalu `[]`, tanpa tabel dan tanpa pengisian dari DATAKLAIM |
+| 84 | W-4 Loss Ratio | Dihitung server menurut `DDL\SetLossRatio_Act.xml` (kelas LocationReinsurance); ΣAmount = 0 → LR dan %LR tetap 0; Total of Loss tetap baca-saja |
+| 85 | Aturan properti baru (`DDL\`) | `Condition.xml`, `PctAdjust2.xml` ("100", K-7), `PrivateFireBrigade` / `TeamSOPSafety` / `TeamSOPRiskManagement.xml` (Have / Not Have / No Info) dipakai frontend; backend tetap tanpa validasi enumerasi. Susulan: `Remarks.xml` (CAUSEOFLOSS!REMARKS, PromptList: Settled / Ex Gratia Payment / Withdraw / Others / --) juga dipakai frontend saja |
+| 86 | W-5 BusinessCode table-of-limit (tiket 40) — ⚠️ **DIGANTI butir 89** | ~~**= kode Group Business**~~ (dipilih di Create opportunity); kolom yang cocok dengan `TABLEOFLIMIT.BIZCODE` dibuktikan dari data contoh saat endpoint dibangun. Tahun = tahun `T_GENERAL_POLIS.START_DATE_TIME`; Begin kosong → 409 |
+
+## Tiket 42 — sub-tab Loss Record (backend), diteruskan sesi `nusantarare-0f`
+
+`GET`/`PUT …/objek` membawa `lossRecords` → tabel rancangan `T_LISTCAUSEOFLOSS` (+ lima kolom baru, `DETAIL` 500) dan
+`T_COINSDATA`, migrasi **191**; loss ratio dihitung server saat PUT (butir 84) ke kolom rancangan `T_LOCATIONLIST.LOSS_RATIO*`
+(191 `ALTER ADD`); `internalLossRecords` selalu `[]` (butir 83). Skema loader 80 tabel / **1.438** kolom. Ditulis, belum
+dijalankan — urutan DEV: … → 190 → **191**. Keputusan agent A145–A152 **disetujui** 03-10-2026 (butir 90; `issues/42-loss-record.md`).
+
+## Keputusan work owner — 3 Oktober 2026, bug DEV lebar alamat risiko (diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 87 | Save tab Object gagal di DEV: *"baris[0].riskLocation paling banyak 50 byte"* - Risk Location = rangkaian Title + Address + Territory + District + City + Province + Nation (`SetRiskIdDT_FacIn`) | **"ini perbaiki dlu, kolomnya buatin bisa sampe 4000"** - migrasi BARU **192** (186 sudah dijalankan di DEV, tidak diubah): sepuluh kolom yang diisi dari RISKADDRESS (`T_RISKLOCATION` ASM_ADDRESS / ASM_CITY / ASM_DISTRICT / ASMRW / ASM_ZIP_CODE; `T_PROPERTY` ROAD_NAME / ROAD_TYPE / PROVINCE / COUNTRY / ALM_RISK_ID) `MODIFY` ke VARCHAR2(4000) = lebar sumber RISKADDRESS (pola butir 80); batas validasi backend ikut 4000; `BUILDING_NO` tetap 50 (bukan dari RISKADDRESS); amandemen loader `amandemenLebar`. ⚠️ `_down` gagal (ORA-01441) bila sudah ada nilai panjang. ⚠️ **Diralat butir 88** |
+| 88 | Ralat butir 87 (pesan langsung work owner di sesi 0f, sebelum 192 di-commit / dijalankan) | **"ASM_ADDRESS, ROAD_NAME saja dilebarin segitu, yg lainnya 100 saja"** - 192: `T_RISKLOCATION.ASM_ADDRESS` (Risk Location) dan `T_PROPERTY.ROAD_NAME` (Address) VARCHAR2(4000); ASM_CITY / ASM_DISTRICT / ASMRW / ASM_ZIP_CODE / ROAD_TYPE / PROVINCE / COUNTRY / ALM_RISK_ID VARCHAR2(100); batas validasi 4000 / 100; BUILDING_NO tetap 50 |
+
+## Keputusan work owner — 3 Oktober 2026, BIZCODE Table of Limit dan tiket 42 (diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 90 | Keputusan agent A145–A152 (tiket 42) | **"setuju sesuai rekomendasi agent A145–A152"** — DISETUJUI |
+| 91 | Keputusan agent A116–A122 (tiket 36) | **"setuju A116–A122"** — DISETUJUI. Seluruh keputusan agent A99–A152 kini disetujui |
+| 92 | ⛔ *dibatalkan butir 95* — A153 saringan tahun Table of Limit (tiket 40): popup tombol mengirim Tahun kosong, autocomplete mengirim CurrentYear (= tahun Begin date) — AskUserQuestion di sesi 0f | **SARING tahun Begin date** (= implementasi `4b149fe5`, tanpa perubahan kode). A154 disetujui kemudian (butir 93) |
+| 93 | A154 (tiket 40): Class of Business case dicocokkan persis ke `BUSINESS.NOTE` di group business case; 0 / > 1 baris → 409 | **"setuju A154"** — DISETUJUI. Seluruh keputusan agent A99–A154 kini disetujui |
+| 89 | Ralat W-5 (butir 86) sesudah melihat contoh `DDL\TABLEOFLIMIT.xml` (BIZCODE 10048, NOTE "EMPLOYERS LIABILITY"), AskUserQuestion di sesi 0f | **BIZCODE = `BUSINESS.ID` Class of Business** yang dipilih di form Opportunity — BUKAN Group Business. Form menyimpan NAMA (`T_NB_OPPORTUNITY.CLASS_OF_BUSINESS` = BUSINESS.NOTE), jadi ID diturunkan: `BUSINESS.ID WHERE NOTE = nama AND BUSINESSGROUPID = GROUP_BUSINESS_ID case`; 0 / > 1 baris → 409 |
+
+## Keputusan work owner — 3 Oktober 2026, uang di dalam aplikasi (ADR-0034, diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 94 | Temuan sesi c3: model tiket 39/42 menyimpan uang/persen sebagai TEKS di dalam aplikasi (menyimpang ADR-0034 aturan 1) | **"Perbaiki sebelum Coverage"** (AskUserQuestion di sesi 0f) — `ItemObjek.TSI/PctAdjust2/PctAdjustOther`, `CatatanKerugian.Amount/Claim/PreventionOfLoss`, `LossRatio` → `*apd.Decimal` (nil = kosong); SATU fungsi urai teks JSON → desimal (`services.UraiDesimalIsian`, dipakai handler; 400 ber-indeks, pesan sama); SATU pasangan ikat/baca + konversi TO_NUMBER/TO_CHAR ber-NLS di satu tempat (`repository/desimal.go`); kontrak JSON tetap teks |
+
+⚠️ Ditemukan saat sensus medan uang lain (dilaporkan, TIDAK diubah — di luar lingkup butir 94): `services/premium` `Input`
+(TSI, Rate, …) dan `total.go`, `services/pembayaran` `Coverage` (Premium, Discount, …) menerima angka sebagai teks dan
+mengurainya SEKALI di gerbang mesinnya (`utils.ParseDecimal`); `inti/backend/kontrak` `MasukanPremiFacIn` (kontrak lintas
+modul, milik inti) juga teks; `services/acceptance/tangga.go` dan `services/rules` membaca angka dari data case Pega
+sebagai teks lalu mengurainya; `repository/limit.go` (tiket 20) membaca kolom NUMBER bulat lewat `db.UraiDesimal` langsung,
+tanpa `angkaKeluar` (pra-butir 94). `T_TABLEOFLIMIT.PCT_LIMIT` / `TABLEOFLIMIT.PCTLIMIT` tetap teks apa adanya (butir 68.1).
+⚠️ **R-ADR34:** `T_LOCATIONLIST.LOSS_RATIO*_PERCENT` (VARCHAR2) kini diurai desimal saat dibaca - nilai lama yang bukan
+desimal polos (koma, "%", spasi) membuat baca objek case itu GAGAL (500), bukan diteruskan apa adanya seperti sebelumnya.
+Contoh data: semua "0"; loader menyimpan teks Pega apa adanya. `[pertanyaan terbuka]` bentuk nilai produksi.
+
+## Tiket 43 — tab Coverage FIRE tahap C1 (backend), diteruskan sesi `nusantarare-0f`
+
+`POST …/kasus/{caseId}/hitung-coverage` (port `CountPremi_ACT` basis 1–4), `GET /api/nbfacin/coverage` (COVERAGE_FACIN → tabel COVERAGE, butir 96),
+`GET /api/nbfacin/coverage-otomatis` (COVERAGE, lima kode `AddCoverageAutoFire`), dan `items[].coverages` /
+`totalGrossPremi` / `totalNetRate` / `totalPerCurrency` di `…/objek`. Migrasi **193** (`T_COVERAGELIST` sebagian + dua kolom
+total `T_PROPERTYITEMLIST`) ditulis, belum dijalankan — urutan DEV: … → 192 → **193**; ⛔ 193 WAJIB dijalankan sebelum backend baru (tanpa itu GET/PUT
+objek gagal ORA-00904). Diteruskan sesi 0f (bukan keputusan
+work owner): CURRENCY_CODE = mata uang item, kolom total lewat ALTER, total per objek, heuristik mode saat PUT. Keputusan
+agent A155–A160 dan A162–A164 ✅ **disetujui** butir 97 (A160 diganti butir 96) (`issues/43-coverage-fire-c1.md`) — ⚠️ A160 (lama): view `COVERAGE_FACIN` tanpa
+ACTIVESTATUS, saringan aktif RD tidak dapat dinyatakan (`[pertanyaan terbuka]` DBA).
+
+## Tiket 44 — tab Coverage FIRE tahap C2 Net Rate (backend), diteruskan sesi `nusantarare-0f`
+
+`POST …/kasus/{caseId}/hitung-net-rate` (port `CekNetRate_ACT` + `CalculateNetRate_ACT`) dan aturan net rate di `PUT
+…/objek`. Tanpa migrasi (memakai kolom 193). Keputusan agent A165–A168 ✅ **disetujui** butir 100 (`issues/44-net-rate-c2.md`);
+A166 menggantikan bagian TotalNetRate dari A159.
+
+## Keputusan work owner — 3 Oktober 2026, sumber Choose Coverage dan tahap C4 (diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 96 | Sumber popup Choose Coverage (A160: view `COVERAGE_FACIN` tanpa ACTIVESTATUS) | **"diambil dari tabel COVERAGE saja, karena yang di Pega juga begitu"** — RD versi work owner `DDL\BrowseCoverageFacIn_RD.xml` dibaca dari `POOLDATA.COVERAGE`: NamaCoverage = `NAME`, BizCode = `BUSINESSCODE` (param kosong → dibuang), Type = `TYPE` = 'FIRE', `ACTIVESTATUS = '1' OR IS NULL`, OLDID, ID; DISTINCT, ≤ 500, urut NAME lalu OLDID. `[terverifikasi]` hanya saringan C (NamaCoverage Contains) ber-`pyCaseInsensitive` true; A/B/D `=` peka huruf; saringan, urutan, kolom laporan versi DDL = salinan `NB FacIn\ReportDefinition`. View `COVERAGE_FACIN` tidak dipakai lagi. **A160 diganti** |
+| 97 | Keputusan agent A155–A164 (tiket 43) | **DISETUJUI** (A160 sekaligus diganti butir 96). A165–A168 (tiket 44) disetujui kemudian — butir 100 |
+| 98 | Tahap C4 rate standar (`SetRatePolis_ACT`) | **Ikut Pega DEV dulu — lookup rate standar TIDAK dibangun**; work owner berencana membuat tabel tarif sendiri. `[terverifikasi]` `SetRatePolis_ACT` langkah 1 bercabang `IsPEGAPROD`; langkah 11 (RatePolis tanpa hasil) mengisi rate 0, min 0, max 1000; tujuan lompatan DEV `[dugaan]` (kode lompatan tidak terbaca). Backend: `RateOJK` hanya diteruskan apa adanya (kosong / 0 tetap), **tanpa** pesan min/max 0–1000 karena pemeriksaan min/max (CountPremi langkah 53–54) tidak dibangun |
+| 99 | Info: `DDL\MinMax.xml` (DATA-DEDUCTIBLE!MINMAX 1 Min / 2 Max / 3 Or) dan `DDL\Condition.xml` (DATA-DEDUCTIBLE!CONDITION 1–5) | Dipakai tahap C3 Deductible. ⚠️ `Condition.xml` menimpa berkas lama PROPERTYITEM!CONDITION (butir 85); frontend menguji menurut `pxInsName`. Susulan 03-10-2026: Condition Object Item dikirim ulang sebagai `DDL\ConditionObjectItem.xml` (`[terverifikasi]` pxInsName `ASM-FW-GISFW-DATA-PROPERTYITEM!CONDITION`) — uji label Object Item tidak lagi dilewati |
+
+## Keputusan work owner — 3 Oktober 2026, Net Rate tiket 44 (diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 100 | Keputusan agent A165–A168 (tiket 44) | **"setuju keputusan Net Rate A165–A168"** — DISETUJUI |
+| 101 | NetRate basi: flag false hanya membuat TotalNetRate = 0, NET_RATE coverage tidak dikosongkan (pertanyaan terbuka review tiket 44) | **"pertahankan sesuai pega"** — perilaku `CekNetRate_ACT` langkah 4 dipertahankan; kode tidak diubah |
+
+## Tiket 45 — tab Coverage FIRE tahap C3 Deductible (backend), diteruskan sesi `nusantarare-0f`
+
+`coverages[k].deductibles` di `GET` / `PUT …/objek` → tabel rancangan `T_DEDUCTIBLELIST` (induk `T_COVERAGELIST` ber-FK),
+migrasi **194** — ditulis, belum dijalankan; urutan DEV: … → 193 → **194** (⛔ wajib sebelum backend baru: baca objek
+membaca `T_DEDUCTIBLELIST`). Skema loader tidak berubah (rancangan sudah punya tabel itu); uji migrasi sebagian 217 kolom.
+Keputusan agent A169–A171 **menunggu konfirmasi** (`issues/45-deductible-c3.md`). ⚠️ Koreksi atas kontrak: `PUT …/objek`
+TIDAK memakai `DisallowUnknownFields` (fungsi `urai` handlers.go:268 dipakai rute lain) — medan tak dikenal diabaikan.
+
+## Tiket 46 — Coverage Indemnity Unit + akumulasi (backend butir 1), diteruskan sesi `nusantarare-0f`
+
+`coverages[k].unit` / `accumulationCode` / `accumulationDescription` di `…/objek` → tiga kolom RANCANGAN `T_COVERAGELIST`,
+migrasi **195** (`ALTER ADD`) — ditulis, belum dijalankan; urutan DEV … → 194 → **195** (⛔ wajib sebelum backend baru).
+Tanpa keputusan agent baru. Endpoint `GET /api/nbfacin/akumulasi` menunggu DDL sumber `Int-ACCUMULATION`
+(`issues/46-coverage-tata-letak-akumulasi.md`).
+
+## Tiket 46 — popup Choose Accumulation Code (backend butir 2–3), diteruskan sesi `nusantarare-0f`
+
+`GET /api/nbfacin/akumulasi` (jalur RD / SQL `GetDataAccumulation_act`) dan `GET /api/nbfacin/akumulasi/saran/{jenis}`
+(city / district / area; nation / province / accumtype / czone → 501 menunggu DDL). Tanpa migrasi; baca view `ACCUMULATION`
+(DDL work owner 04-10-2026), `CITY`, `DISTRICT`, tabel `RW`, `JSON_POLIS`. Keputusan agent A172–A178 ✅ **disetujui butir 102** (A178 diganti butir 103) — sebelumnya **menunggu
+konfirmasi** (`issues/46-coverage-tata-letak-akumulasi.md`).
+
+## Keputusan work owner — 4 Oktober 2026, akumulasi dan view warisan → tabel flat (diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 102 | Keputusan agent A172–A178 (tiket 46) | **"setuju A172–A178"** — DISETUJUI. A178 (saran 501) kemudian diganti butir 103 |
+| 103 | DDL `NATION` (tabel), `PROVINCE` / `ACCUMULATEDTYPE` / `CZONE` (view atas JSON M_*) dikirim; view warisan lain | **"dll nya sudah ditambah, tapi itu msh bentuk view table, km bisa ga buatin jadi flat tabel, isi datanya di copy dari view table itu, jadi nnti di list in yang masih view tabel, trus dibuatin tabel nya masing2 dengan nama yang sama seperti view nya."** — dikerjakan sebagian: migrasi **196** (PROVINCE, ACCUMULATEDTYPE, CZONE, ACCUMULATION → tabel flat bernama sama, DROP VIEW; jalur mundur memulihkan view persis DDL) dan saran ketujuh jenis. Sisanya (CITY, DISTRICT, V_JN_OBJ_ITEM — tipe tabel dasar tanpa DDL; COVERAGE_FACIN, BRANDDETAIL, VJ_M_TYPE_PROPERTY_PLAN — tidak dibaca nbfacin) ditunda A179; tipe kolom A180 `[dugaan]` — keduanya menunggu konfirmasi (`issues/46`). ⚠️ Tabel flat = salinan saat migrasi; perubahan `M_*` tidak lagi terbawa. ⛔ 196 menghapus objek di skema sasaran — ditulis, work owner yang menjalankan |
+
+## Keputusan work owner — 4 Oktober 2026, modul Master Data (diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 104 | Menu master insert / update / aktif / nonaktif tabel flat | **Modul baru `masterdata`**, cakupan "Yang dipakai NB FacIn dulu" (AskUserQuestion di sesi 0f). Pengguna sesi c3 mengizinkan sesi ini menyentuh inti / frontend ("Semua, tandai untuk tim inti") |
+| 105 | CITY / DISTRICT | **"Flat-kan CITYINPUT & DISTRICTINPUT saja"** — CITY / DISTRICT tetap view gabungan; RWINPUT "tidak usah" |
+| 106 | Migrasi 196 | Work owner **menahan** 196 (belum dijalankan) → 196 **DIPINDAH** ke `masterdata` 760 (MD-1) dan dihapus dari nbfacin; tabel PROVINCE / ACCUMULATEDTYPE / CZONE / ACCUMULATION kini milik Master Data (peta kolom `modul/masterdata/docs/STRUKTUR-TABEL-MASTER-DATA.md`); NATION pindah ke bab "Tabel warisan" `modul/masterdata/MODUL.md` |
+
+Akibat di nbfacin (sesi c3): saran / popup akumulasi hanya baris AKTIF menu Master Data (MD-5) — province / accumtype /
+czone `STS_AKTIF`, city / district lewat `CITYINPUT` / `DISTRICTINPUT`, nation lewat `T_MASTER_STATUS`, pencarian
+akumulasi ketiga jalur. Keputusan agent MD-1 … MD-9 menunggu konfirmasi (`modul/masterdata/docs/issues/02-api-master-data.md`).
+A179 (ditunda) sebagian terjawab: CITYINPUT / DISTRICTINPUT diflat-kan, CITY / DISTRICT / V_JN_OBJ_ITEM tetap view;
+COVERAGE_FACIN / BRANDDETAIL / VJ_M_TYPE_PROPERTY_PLAN tahap berikut Master Data.
+
+## Bug DEV — 3 Oktober 2026, popup Choose Class of Construction kosong (diteruskan sesi `nusantarare-0f`)
+
+| # | Butir | Keputusan |
+| ---: | --- | --- |
+| 95 | Popup Choose Class of Construction KOSONG di DEV; di Pega untuk okupasi 2951 ada hasilnya. `[terverifikasi]` contoh `DDL\TABLEOFLIMIT.xml` ber-`TAHUN` 2017 (1 baris); popup tombol Pega (`Section\ChooseClassofContraction.xml`) mengirim Tahun kosong → filter dibuang; saringan tahun Begin date (2025/2026) membuang semua baris | **Ikuti popup Pega** (perintah sesi 0f): saringan TAHUN DIHAPUS dari `GET …/table-of-limit`; Begin date tidak lagi wajib (409 dihapus); BIZCODE (butir 89), CATEGORY, DISTINCT, urutan, ≤ 500 tetap. **A153 / butir 92 DIBATALKAN**, pengganti **A161** "popup tanpa saringan tahun, sama dengan Pega" — ✅ **DIKONFIRMASI work owner 03-10-2026** (diteruskan sesi 0f: *"Class of Construction sudah sesuai dan muncul di pop up-nya"*). Tanpa migrasi |
+
 ## Yang belum diputuskan
 
 

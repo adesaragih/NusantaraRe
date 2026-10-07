@@ -34,6 +34,10 @@ describe('dua langkah', () => {
     // mengabaikan galat.
     expect(SUMBER).toContain('tinjau.lolos && !sibuk')
     expect(SUMBER).toContain('disabled={!bolehSimpan}')
+    // Batas produk kini penolakan Validate CSV (05-10-2026): tidak ada lagi
+    // peringatan sesudah Calculate CSV; tombolnya mati bila tinjauan tidak lolos.
+    expect(SUMBER).toContain('const bolehSimpan = tinjau !== null && tinjau.lolos && !sibuk')
+    expect(SUMBER).not.toContain('peringatan')
   })
 
   it('sebab tombol simpan mati DIKATAKAN', () => {
@@ -118,5 +122,13 @@ describe('ringkasan tinjauan', () => {
     expect(s).toContain('2 rows rejected')
     expect(s).toContain('3 reasons')
     expect(s).toContain('Nothing was saved')
+  })
+})
+
+describe('panel unggah ringkas (03-10-2026)', () => {
+  it('satu baris; aturan format dilipat, bukan dibuang', () => {
+    expect(SUMBER).toContain('<details className="pl-unggah__aturan">')
+    expect(SUMBER).toMatch(/<details className="pl-unggah__aturan">[\s\S]{0,200}UNGGAH_CSV\.aturanPemisah/)
+    expect(SUMBER).toContain('className="panel__title pl-unggah__judul"')
   })
 })

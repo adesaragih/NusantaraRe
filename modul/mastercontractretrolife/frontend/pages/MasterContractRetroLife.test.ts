@@ -19,3 +19,14 @@ describe('halaman awal Master Contract Retro Life', () => {
     expect(KODE).toContain('title={TAHUN_MCRL.tooltipAdd}')
   })
 })
+
+describe('START DATE tidak boleh sesudah END DATE (04-10-2026)', () => {
+  it('tanggal mundur terdeteksi; sama hari dan isian kosong tidak', async () => {
+    const { formTahunBaru, tanggalMundur } = await import('./MasterContractRetroLife')
+    const f = formTahunBaru('UJI', '2026-10-04 10:00:00')
+    expect(tanggalMundur({ ...f, startDate: '31-12-2026', endDate: '01-01-2026' })).toBe(true)
+    expect(tanggalMundur({ ...f, startDate: '01-01-2026', endDate: '31-12-2026' })).toBe(false)
+    expect(tanggalMundur({ ...f, startDate: '01-01-2026', endDate: '01-01-2026' })).toBe(false)
+    expect(tanggalMundur({ ...f, startDate: '01-01-2026', endDate: '' })).toBe(false)
+  })
+})

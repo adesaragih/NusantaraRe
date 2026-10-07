@@ -1,0 +1,104 @@
+package repository
+
+// Uji teks SQL khas EDM (tanpa Oracle): saringan daftar EDM lawan NB, penampung urut = argumen, kunci generasi
+// endorsemen, dan kolom popup Retro tanpa OLDID. Bentuk yang sama dicoba baca-saja di DEV 06-10-2026
+// (`scratchpad/edmx/dev-sql-baca.txt`).
+
+import (
+	"regexp"
+	"strings"
+	"testing"
+
+	"nusantarare/modul/edmtreatyin/backend/models"
+)
+
+var rePenampung = regexp.MustCompile(`:(\d+)`)
+
+// penampungUrut - penampung `:n` muncul berurut 1..n dan jumlahnya = jumlah argumen.
+func penampungUrut(t *testing.T, q string, args []any) {
+	t.Helper()
+	terbesar := 0
+	for _, m := range rePenampung.FindAllStringSubmatch(q, -1) {
+		n := 0
+		for _, c := range m[1] {
+			n = n*10 + int(c-'0')
+		}
+		if n > terbesar+1 {
+			t.Fatalf("penampung :%d melompat (terbesar sebelumnya :%d)\n%s", n, terbesar, q)
+		}
+		if n > terbesar {
+			terbesar = n
+		}
+	}
+	if terbesar != len(args) {
+		t.Fatalf("penampung terbesar :%d, argumen %d\n%s", terbesar, len(args), q)
+	}
+}
+
+func TestDaftarEDMHanyaGenerasiEndorsemen(t *testing.T) {
+	q, args := sqlDaftarKasus("P.W", "P.G", "P.Q", models.SaringanKasus{Cari: "UJI-POL", Pembuat: "UJI-AKUN"})
+	for _, w := range []string{"g.PRODKE >= 1", "w.ID LIKE 'EDMT-%'", "q.OLD_POLICY_NO LIKE", "w.CREATE_OP = ", "ORDER BY w.TGL_UPDATE DESC", "FETCH FIRST 500 ROWS ONLY", "NVL(g.NOPOLIS, q.OLD_POLICY_NO)", "TO_CHAR(g.TGL_PROD"} {
+		if !strings.Contains(q, w) {
+			t.Errorf("daftar portal tanpa %q\n%s", w, q)
+		}
+	}
+	if strings.Contains(q, "PRODKE = 0") {
+		t.Fatal("daftar EDM tidak boleh menyaring PRODKE = 0 (milik NB)")
+	}
+	penampungUrut(t, q, args)
+	if args[len(args)-2] != "%UJI-POL%" || args[len(args)-1] != "UJI-AKUN" {
+		t.Fatalf("argumen cari / pembuat = %v", args)
+	}
+}
+
+func TestDaftarEDMKotakMasukDanSelesai(t *testing.T) {
+	q, args := sqlDaftarKasus("P.W", "P.G", "P.Q", models.SaringanKasus{Pembuat: "UJI", PembuatPosisi: models.PosisiAdmin,
+		Antrean: []string{models.PosisiSecHead}})
+	penampungUrut(t, q, args)
+	if !strings.Contains(q, "(w.CREATE_OP = :4 AND g.POSITION_NOTE = :5) OR g.POSITION_NOTE IN (:6)") {
+		t.Fatalf("kotak masuk: pembuat ATAU antrean\n%s", q)
+	}
+	q, args = sqlDaftarKasus("P.W", "P.G", "P.Q", models.SaringanKasus{Selesai: true})
+	penampungUrut(t, q, args)
+	if strings.Contains(q, "NOT IN") || !strings.Contains(q, "w.STATUS_WORK IN (:2, :3)") {
+		t.Fatalf("switch Resolved = HANYA berkas selesai\n%s", q)
+	}
+}
+
+func TestKotakMasukEDMSaringPRODKE(t *testing.T) {
+	q, args := sqlHitungKotakMasuk("P.W", "P.G", "UJI", true, []string{models.PosisiSecHead, models.PosisiDeptHead})
+	penampungUrut(t, q, args)
+	if !strings.Contains(q, "g.PRODKE >= 1") || !strings.Contains(q, "w.ID LIKE 'EDMT-%'") {
+		t.Fatalf("kotak masuk EDM tanpa saringan generasi endorsemen\n%s", q)
+	}
+}
+
+func TestSisipGenerasiMembawaKunciEndorsemen(t *testing.T) {
+	q := sqlSisipGenerasi("P.G")
+	for _, k := range []string{"PRODKE", "NOENDORS", "OLD_POLIS_ID", "EDM_TYPE", "POSITION_NOTE"} {
+		if !strings.Contains(q, k) {
+			t.Errorf("sisip generasi tanpa %s (AC 1, 2, 15)\n%s", k, q)
+		}
+	}
+	if strings.Contains(q, "NOPOLIS") {
+		t.Fatal("NOPOLIS generasi endorsemen KOSONG sampai selesai (SetelNomorPolisSelesai)")
+	}
+	penampungUrut(t, q, make([]any, 7))
+}
+
+func TestKeadaanHanyaGenerasiEndorsemen(t *testing.T) {
+	q := sqlKeadaan("P.W", "P.G")
+	if !strings.Contains(q, "g.PRODKE >= 1") || !strings.Contains(q, "g.OLD_POLIS_ID") {
+		t.Fatalf("keadaan EDM\n%s", q)
+	}
+}
+
+func TestPopupRetroTanpaKolomOldID(t *testing.T) {
+	p := pilihTanpaOldID("A")
+	if strings.Contains(p, "A.OLDID") || !strings.HasPrefix(p, "TO_CHAR(A.ID), NULL") {
+		t.Fatalf("RDB TreatyLoadMasterJoinEdmChooseBusinessRetro: OLDID = (select null from dual); TREATY_OUT2 tanpa OLDID\n%s", p)
+	}
+	if awalanKarakter("1234567890123", 7) != "1234567" || awalanKarakter("12", 7) != "12" {
+		t.Fatal("@substring(.., 0, n)")
+	}
+}

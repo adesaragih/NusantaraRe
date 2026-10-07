@@ -29,6 +29,9 @@ export function menuDipilihUlang(
 export function RutePremiumList({ halaman, ketukMenu }: PropsRute<HalamanPremiumList>) {
   // Polis yang sedang dibuka, beserta tahapnya - tiket 01 PremiumList.
   const [polis, setPolis] = useState({ id: '', tahap: '' })
+  // Form Premium List Detail punya perubahan yang belum disimpan (Save Data) -
+  // Confirm dikunci selama itu (keputusan work owner 03-10-2026).
+  const [dataBelumTersimpan, setDataBelumTersimpan] = useState(false)
 
   // Memilih menu PremiumList Life (lagi) membawa kembali ke kotak masuk -
   // permintaan work owner 01-10-2026. Rute ini TETAP terpasang (keadaan polis
@@ -62,7 +65,7 @@ export function RutePremiumList({ halaman, ketukMenu }: PropsRute<HalamanPremium
       {halaman === 'premiumlist' &&
         polis.id !== '' &&
         polis.tahap === TAHAP_POLIS.detail && (
-          <PremiumListDetail polisID={polis.id} />
+          <PremiumListDetail polisID={polis.id} onBelumTersimpan={setDataBelumTersimpan} />
         )}
       {/* Tiket 05a bagian 2 — `ShowLifePremiumSummary`, tahap Input Premium Summary. */}
       {halaman === 'premiumlist' &&
@@ -73,6 +76,7 @@ export function RutePremiumList({ halaman, ketukMenu }: PropsRute<HalamanPremium
         <InputOffer
           polisID={polis.id}
           tahap={polis.tahap}
+          confirmTerkunci={polis.tahap === TAHAP_POLIS.detail && dataBelumTersimpan}
           onSelesai={() => {
             setPolis({ id: '', tahap: '' })
           }}
