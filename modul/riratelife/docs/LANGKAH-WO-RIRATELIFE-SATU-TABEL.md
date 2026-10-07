@@ -37,7 +37,18 @@ SELECT (SELECT COUNT(*) FROM POOLDATA.RATE_LIFE_SUMMARY)   AS FLAT_SEBELUM,
        (SELECT COUNT(*) FROM POOLDATA.M_RATE_LIFE_SUMMARY) AS JSON_SEBELUM FROM DUAL;
 SELECT OBJECT_NAME, OBJECT_TYPE, STATUS FROM SYS.ALL_OBJECTS
  WHERE OWNER = 'POOLDATA' AND OBJECT_NAME IN ('PEGA_M_RATE_LIFE_SUMMARY', 'PEGA_M_PLAN_LIFE_SUMMARY');
+
+-- ID yang akan disentuh 928: hanya di JSON (langkah 2 DELETE) dan hanya di flat (langkah 4 INSERT)
+SELECT ID AS HANYA_JSON FROM POOLDATA.M_RATE_LIFE_SUMMARY MINUS SELECT ID FROM POOLDATA.RATE_LIFE_SUMMARY;
+SELECT ID AS HANYA_FLAT FROM POOLDATA.RATE_LIFE_SUMMARY MINUS SELECT ID FROM POOLDATA.M_RATE_LIFE_SUMMARY;
 ```
+
+**Angka pembanding (WO, POOLDATA baca-saja 07-10-2026) - PEMBANDING, BUKAN angka tetap** (data bisa bertambah lewat
+aplikasi sebelum (b)): `JSON_SEBELUM` 347, `FLAT_SEBELUM` 347, `HANYA_JSON` = {`1000469`} ("TEST RATE LIFE", sudah dihapus
+pengguna lewat aplikasi), `HANYA_FLAT` = {`1000471`} (baru dari aplikasi), isi beda pada ID yang sama 0, nol tulisan Pega
+sesudah cutover 09:09 (keputusan WO 07-10-2026: DELETE 928 langkah 2 disetujui - MODUL.md RALAT R6). Bila `HANYA_JSON`
+memuat ID LAIN yang tidak dihapus lewat aplikasi: BERHENTI sebelum (b) dan laporkan - 928 akan membuangnya (sumbernya
+tinggal cadangan CSV di atas).
 
 ## (b) Migrasi 927 + 928 dari cabang `modul/riratelife/implementasi` — PowerShell, folder akar repo
 
@@ -59,8 +70,10 @@ INSERT `NOT EXISTS`, CREATE INDEX, DROP TABLE flat terakhir).
 SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH, NULLABLE FROM SYS.ALL_TAB_COLUMNS
  WHERE OWNER = 'POOLDATA' AND TABLE_NAME = 'M_RATE_LIFE_SUMMARY' ORDER BY COLUMN_ID;
 
--- 2. COUNT = FLAT_SEBELUM dari (a)
+-- 2. COUNT = FLAT_SEBELUM dari (a) = jumlah tabel flat saat 928 berjalan (pembanding 07-10-2026: 347 bila tidak ada
+--    ringkasan baru/terhapus lewat aplikasi di antara (a) dan (b); 1000469 tidak ada lagi, 1000471 ada)
 SELECT COUNT(*) FROM POOLDATA.M_RATE_LIFE_SUMMARY;
+SELECT ID FROM POOLDATA.M_RATE_LIFE_SUMMARY WHERE ID IN ('1000469', '1000471');
 
 -- 3. RATE_LIFE_SUMMARY tidak ada lagi (nol baris); constraint IS JSON hilang (nol baris); indeks nama baru ada (satu baris)
 SELECT OBJECT_NAME, OBJECT_TYPE FROM SYS.ALL_OBJECTS WHERE OWNER = 'POOLDATA' AND OBJECT_NAME = 'RATE_LIFE_SUMMARY';
