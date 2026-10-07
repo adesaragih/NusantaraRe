@@ -1,0 +1,3 @@
+-- Jalur mundur 527.
+DROP TABLE {skema}.T_CLAIM_FAC_RETRO CASCADE CONSTRAINTS
+/

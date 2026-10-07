@@ -87,9 +87,17 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
   it('uji gigit: modul frontend tanpa baris, atau berbaris DIMIGRASI=0', () => {
     const tiruan = { nama: 'modultiruan', kelompok: 'Modul Tiruan', halaman: ['t'], halamanAwal: 't' }
     expect(selisihMenuModul(BERSIH.baris, [...MODUL_FRONTEND, tiruan])).toEqual(['modul frontend modultiruan tanpa baris M_NAV_MENU'])
-    // Contoh modul berbaris DIMIGRASI='0' - claimprop (edmtreatyin menyala 06-10-2026, slot 970).
-    const claimprop = { nama: 'claimprop', kelompok: 'Claim Prop', halaman: ['claimprop'], halamanAwal: 'claimprop' }
-    expect(selisihMenuModul(BERSIH.baris, [...MODUL_FRONTEND, claimprop])).toEqual(["modul frontend claimprop: barisnya DIMIGRASI='0'"])
+    // Contoh modul berbaris DIMIGRASI='0' - komiteclaimprop (edmtreatyin menyala 06-10-2026, slot 970; claimprop
+    // menyala 07-10-2026, slot 980).
+    const komiteclaimprop = {
+      nama: 'komiteclaimprop',
+      kelompok: 'Komite Claim Prop',
+      halaman: ['komiteclaimprop'],
+      halamanAwal: 'komiteclaimprop',
+    }
+    expect(selisihMenuModul(BERSIH.baris, [...MODUL_FRONTEND, komiteclaimprop])).toEqual([
+      "modul frontend komiteclaimprop: barisnya DIMIGRASI='0'",
+    ])
   })
 
   it('uji gigit: HALAMAN_AWAL di luar halaman modul, dan nama ≠ LABEL', () => {

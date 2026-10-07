@@ -1,0 +1,186 @@
+/* Gaya modul Claim Prop - satu berkas milik modul; setiap pemilih di bawah akar `.claimprop`, kelas modul berawalan
+   `claimprop__`, token warna `--cp-*` terang dan gelap. Nol properti yang memerangkap Modal tanpa portal. */
+
+.claimprop {
+  display: contents;
+}
+
+.claimprop .claimprop__akar {
+  --cp-latar: #f4f6fa;
+  --cp-garis: #d6dce6;
+  --cp-teks: #1f2733;
+  --cp-redup: #5d6878;
+  --cp-galat: #b42318;
+  --cp-bagian: #ffffff;
+  color: var(--cp-teks);
+}
+
+:root[data-theme="dark"] .claimprop .claimprop__akar {
+  --cp-latar: #1b2130;
+  --cp-garis: #354055;
+  --cp-teks: #e5e9f0;
+  --cp-redup: #9aa5b5;
+  --cp-galat: #f97066;
+  --cp-bagian: #222a3a;
+}
+
+.claimprop .claimprop__layar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.claimprop .claimprop__bagian {
+  border: 1px solid var(--cp-garis);
+  border-radius: 6px;
+  background: var(--cp-bagian);
+  padding: 8px 12px 12px;
+  margin: 6px 0;
+}
+
+.claimprop .claimprop__judul-bagian {
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+.claimprop .claimprop__isi-bagian {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 16px;
+}
+
+.claimprop .claimprop__isi-bagian > .claimprop__bagian,
+.claimprop .claimprop__isi-bagian > .claimprop__grid {
+  flex: 1 1 100%;
+}
+
+.claimprop .claimprop__medan {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 180px;
+  flex: 0 1 260px;
+}
+
+.claimprop .claimprop__nama-medan {
+  font-size: 12px;
+  color: var(--cp-redup);
+}
+
+.claimprop .claimprop__wajib {
+  color: var(--cp-galat);
+  margin-left: 2px;
+}
+
+.claimprop .claimprop__nilai {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.claimprop .claimprop__input,
+.claimprop .claimprop__area {
+  border: 1px solid var(--cp-garis);
+  border-radius: 4px;
+  padding: 4px 6px;
+  background: var(--cp-latar);
+  color: var(--cp-teks);
+  font: inherit;
+  min-width: 0;
+}
+
+.claimprop .claimprop__input--angka {
+  text-align: right;
+}
+
+.claimprop .claimprop__area {
+  min-height: 56px;
+  resize: vertical;
+}
+
+.claimprop .claimprop__cari {
+  margin: 8px 0;
+  width: 100%;
+  max-width: 480px;
+}
+
+.claimprop .claimprop__tampil {
+  min-height: 22px;
+  padding: 3px 0;
+  white-space: pre-wrap;
+}
+
+.claimprop .claimprop__angka {
+  display: block;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.claimprop .claimprop__label {
+  font-weight: 600;
+  padding: 4px 0;
+}
+
+.claimprop .claimprop__pesan-medan {
+  color: var(--cp-galat);
+  font-size: 12px;
+}
+
+.claimprop .claimprop__tombol {
+  white-space: nowrap;
+}
+
+.claimprop .claimprop__tombol--ikon {
+  min-width: 28px;
+}
+
+.claimprop .claimprop__grid {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.claimprop .claimprop__grid-alat,
+.claimprop .claimprop__grid-kaki {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.claimprop .claimprop__tabel {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.claimprop .claimprop__tabel th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--cp-garis);
+  background: var(--cp-latar);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.claimprop .claimprop__tabel td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--cp-garis);
+  vertical-align: top;
+}
+
+.claimprop .claimprop__baris-rinci {
+  cursor: pointer;
+}
+
+.claimprop .claimprop__rinci {
+  border-left: 3px solid var(--cp-garis);
+  padding: 6px 10px;
+}
+
+.claimprop .claimprop__form-katastrofe {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

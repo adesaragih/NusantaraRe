@@ -1,11 +1,8 @@
 # Modul `claimprop` — Claim Prop
 
-⚠️ **Kerangka — belum dimigrasi.** Folder ini dibuat struktur tim satu folder per modul (keputusan work
-owner 30-09-2026) supaya pemilik, rentang migrasi, dan slot menu modul ini TETAP sejak awal — satu
-modul, satu folder, satu pemilik. Belum ada kode: tanpa `backend/modul.go` modul ini tidak terdaftar
-(daftar Go bangkitan `inti/backend/daftar`, `import.meta.glob` frontend), dan kelompoknya di sidebar
-tetap "belum dimigrasi" (`M_NAV_MENU.DIMIGRASI = '0'`). Cara memulainya:
-`APP_RNM/PANDUAN-TIM-PER-MODUL.md` (akar repo) bab 4.
+Klaim treaty inward proporsional - kasus `ASM-FW-GCNMFW-Work-ClaimTreaty` (`Flow/Flow_TreatyIn.xml`: Outstanding
+Claim -> Input Acceptation -> Resolved-Completed). Dimigrasi 07-10-2026 (prompt
+`_brief/PROMPT-IMPLEMENTASI-MODUL-CLAIM-PROP.md`); paritas tombol XML di `docs/PARITAS.md`, OQ di `docs/OQ.md`.
 
 ⛔ **Tabel di bawah dibaca penjaga** (`inti/backend/penjaga`): rentang migrasi dan slot menu. Ubah
 nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak boleh berbagi nomor.
@@ -16,12 +13,12 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Folder korpus | `Claim Prop` |
 | GROUPMENU | `KLAIM` |
 | Pemilik | `@PEMILIK-CLAIMPROP` |
-| Status | belum dimigrasi |
+| Status | dimigrasi |
 | Rentang migrasi | `520-559` |
 | Slot menu | `980-981` |
-| Prefix rute API | — (ditetapkan spec modul ini) |
+| Prefix rute API | `/api/claim-prop` |
 | Kontrak disediakan | — |
-| Kontrak dipakai | — |
+| Kontrak dipakai | — (nol kontrak `inti/backend/kontrak`; pola modul lain disalin, tidak diimpor) |
 
 `Pemilik` adalah penanda pemegang modul. Wilayah berkas yang boleh disentuh cabang
 `module/<nama>` dijaga `.github/workflows/penjaga-wilayah-cabang.yml` - CODEOWNERS
@@ -32,8 +29,8 @@ dipensiunkan 1 Oktober 2026.
 | Folder | Isi |
 | --- | --- |
 | `docs/` | spec, tiket (`issues/`), grilling, catatan — dulu `.scratch/claim-prop/` (dipindah dengan `git mv`, isi byte-identik) |
-| `backend/` | belum ada — lahir bersama `backend/modul.go` (`Pendaftaran()`) saat modul dimulai |
-| `frontend/` | belum ada — lahir bersama `frontend/menu.ts` dan `rute.tsx` saat modul dimulai |
+| `backend/` | `modul.go` (`Pendaftaran()`), `models/` (port activity, katalog, tata layar), `repository/` (Oracle), `services/`, `handlers/`, `tiruan/` (uji), `alat/pemuatlama/` (pemuat data lama, uji-kering) |
+| `frontend/` | `menu.ts`, `rute.tsx`, renderer tata (`components/TataView.tsx`), halaman awal (`pages/ClaimProp.tsx`) |
 
 ## Migrasi
 
@@ -42,3 +39,64 @@ selalu berjalan sesudahnya). Slot menu `980-981` hanya menyalakan `DIMIGRASI` ba
 nol `INSERT` — menu datar 30-09-2026) saat modul mendapat layar pertamanya, di folder
 `backend/migrations/` modul ini sendiri — bentuk SQL-nya di `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`
 bab 6. Nomor selalu tiga digit.
+
+### Kaskade ON DELETE CASCADE
+
+Kaskade HANYA pada berkas migrasi modul ini yang berawalan di bawah; berkas lain modul ini tanpa
+`ON DELETE CASCADE` (`TestKaskadeHanyaPadaRelasiTerdaftar`).
+
+| Awalan berkas | Relasi |
+| --- | --- |
+| `521_` | T_CLAIM_ESTIMATION.CLAIM_ID -> T_GENERAL_CLAIM - `.ClaimData.EstimationList` hidup di halaman klaim |
+| `522_` | T_CLAIM_INTEREST.CLAIM_ID -> T_GENERAL_CLAIM - `.ClaimData.InterestList` |
+| `523_` | T_CLAIM_CLAIM_AMOUNT.CLAIM_ID -> T_GENERAL_CLAIM - `.ClaimData.ListClaimAmount` |
+| `524_` | T_CLAIM_LOSS_ALLOCATION.CLAIM_ID -> T_GENERAL_CLAIM - `.ClaimData.SpreadingRisk` |
+| `525_` | T_CLAIM_SPREADING.CLAIM_ID -> T_GENERAL_CLAIM - `.ClaimData.SpreadingClaim` |
+| `526_` | T_CLAIM_BREAK_QS.CLAIM_ID -> T_GENERAL_CLAIM - `.ClaimData.SpreadingBreakQS` |
+| `527_` | T_CLAIM_FAC_RETRO.CLAIM_ID -> T_GENERAL_CLAIM - `.ClaimData.FacRetroList` |
+| `528_` | T_CLAIM_ADJUSTMENT.CLAIM_ID -> T_GENERAL_CLAIM - `.ClaimData.AdjustmentList` (baris berkomite tidak pernah dihapus aplikasi) |
+| `529_` | T_CLAIM_ADJ_SPREADING.ADJUSTMENT_ID -> T_CLAIM_ADJUSTMENT - `.AdjustmentList(n).SpreadingAdjustment` |
+| `530_` | T_CLAIM_ADJ_QUOTA_SHARE.ADJUSTMENT_ID -> T_CLAIM_ADJUSTMENT - `.AdjustmentList(n).SpreadingQuotaShare` |
+| `531_` | T_CLAIM_ADJ_LOSS_ALLOCATION.ADJUSTMENT_ID -> T_CLAIM_ADJUSTMENT - `.AdjustmentList(n).LossAllocation` |
+
+### Nama terlarang
+
+`FLAG_ON_GOING_COMMITTEE` (`AddKomiteTreatyChild_ACT` langkah 3 `.FlagOnGoingCommitte`) DIBUANG (keputusan work owner
+19-09-2026) - tidak ada kolom, tidak ada properti tersimpan.
+
+## Pembatalan 07-10-2026 (uji modul pemilik wajib tetap hijau)
+
+- **Migrasi `532` (`T_VIEW_SUGGEST.CLAIM_ID`) dicabut** — baris kolomnya di STRUKTUR PremiumList Life memerahkan uji
+  modul itu (prompt §6 butir 2). Claim History tidak disimpan: `docs/OQ.md` OQ-CP-17. Nomor 532 dibiarkan kosong.
+- **Baris kolom 520 di STRUKTUR Claim Life** (`## T_GENERAL_CLAIM`, 94 baris, dokumen saja) = keputusan work owner
+  07-10-2026 "Tabel bersama": *"Hanya baris kolom yang ditambahkan di dokumen STRUKTUR Claim Life dan PremiumList Life;
+  kode kedua modul tidak disentuh."* Uji claimlife tetap seperti HEAD (salinan bersih 07-10-2026); yang dicabut hanya
+  532, karena uji PremiumList Life (kode) memerah.
+- **Penyerahan ke komite dicabut** (penulis dan pembaca tangga, kolom keputusan anggota) — penjaga batas Claim Life
+  `komite_statik_test.go` menolaknya (prompt §10: menyunting modul lain = OQ). Tombol tampil nonaktif: OQ-CP-16.
+
+## Pemuat data lama
+
+`backend/alat/pemuatlama` (prompt §6 butir 11; AC 9–12, 123, 132). Sumber baca-saja: `OS_AKSEPTASI_KLAIM`
+(CASEID `ASM-FW-GCNMFW-WORK CLMP-%`, baris berlaku per kasus menurut AC 123) dan `JSON_KLAIM` (halaman `.ClaimData`
+bila ada). Tujuan: `T_WORK_CLAIM` + `T_GENERAL_CLAIM` (SUMBER `PEGA`, ID = pyID Pega `CLMP-n`) dan tabel `T_CLAIM_*`
+lewat `SimpanHalaman` — jalur yang sama dengan aplikasi.
+
+```
+go run ./modul/claimprop/backend/alat/pemuatlama -keluaran <folder>             # uji-kering (bawaan, baca saja)
+go run ./modul/claimprop/backend/alat/pemuatlama -keluaran <folder> -jalankan   # tulis - HANYA work owner
+```
+
+- `-jalankan` ditolak bila `IS_PEGA_PROD=true`; satu transaksi per kasus; kasus yang ID-nya sudah ada dilewati.
+- Berkas keluaran: `claimprop-arsip-medan-*.csv` (medan yang tidak masuk kolom + sebab) dan `claimprop-galat-*.csv`.
+  Keduanya memuat data kasus — simpan di luar repositori.
+- Uji-kering DEV 07-10-2026: 2.451 kasus, 6.596 baris OS (4.145 riwayat), 6 kasus berhalaman JSON, **2.032 siap**,
+  **419 gagal** (seluruhnya baris berlaku `STS_REJECT = 1`, OQ-CP-18), nol galat format nilai.
+- Urutan resmi: work owner menjalankan `-migrate` (520–531, 533, 980) → uji-kering ulang → keputusan OQ-CP-18 →
+  `-jalankan` oleh work owner / DBA. Tidak pernah dijalankan agen.
+
+## Uji SQL di DEV (baca saja)
+
+`go test -tags ujidev -run TestSQLDiDEV -v ./modul/claimprop/backend/repository/` — setiap SELECT dijalankan lewat
+metode aslinya dengan masukan `UJI-*`, setiap INSERT / UPDATE / DELETE hanya diurai `DBMS_SQL.PARSE`. 07-10-2026:
+52 ok, 0 gagal, 33 "objek belum ada" (30 menunggu migrasi 520–533; 3 skema luar OQ-CP-11).

@@ -1,0 +1,3 @@
+-- Jalur mundur 526.
+DROP TABLE {skema}.T_CLAIM_BREAK_QS CASCADE CONSTRAINTS
+/
