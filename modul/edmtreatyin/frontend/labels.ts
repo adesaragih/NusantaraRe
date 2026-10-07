@@ -96,9 +96,11 @@ export const KOLOM_BERANDA = {
 } as const
 
 export const PORTAL = {
-  /** `.FilterTermForEndorsement` pyLabelFor (nama aksesibel) dan pyPlaceholder. */
+  /** `.FilterTermForEndorsement` pyLabelFor (nama aksesibel). */
   filter: 'Filter Term for Endorsement',
-  placeholder: 'Policy Number',
+  /** XML pyPlaceholder "Policy Number"; ⛔ perintah work owner 07-10-2026 (pencarian diperluas: nomor kasus / EDM No,
+   *  nomor polis, insured, SOB, ceding, marketing, treaty group, class of business - `repository.kolomCariPortal`). */
+  placeholder: 'Search EDM no, master ID, policy no, insured, business, ceding, marketing...',
   /** Nama aksesibel tombol pengosong kapsul saring (pola NB). */
   bersihkan: 'Clear field',
   kosong: 'Belum ada berkas endorsemen treaty yang terbuka.',
@@ -216,4 +218,36 @@ export const PILIHAN_TYPE_TAX: { value: string; label: string }[] = [
 export const PESAN = {
   tersimpan: 'Tersimpan.',
   terkirim: 'Berkas dikirim.',
+} as const
+
+/** `[tidak ada di korpus]` - tombol Copy Old di samping Create dan popupnya (perintah work owner 07-10-2026 "SAMA
+ *  SEPERTI MASTER PRODUCTNAME LIFE, KHUSUS BUAT SUPERUSER"); teks mengikuti Copy Old Product Name Life. */
+export const COPY_OLD = {
+  tombol: 'Copy Old',
+  keterangan:
+    'Old EDM Treaty In documents (JSON) that are not in the new tables yet. Tick the ones to copy, then press Process Copy. Generations are copied in order; generation 1 needs its NB policy in the new tables.',
+  prosesCopy: 'Process Copy',
+  tutup: 'Close',
+  cari: 'Search',
+  pilihSemua: 'Select all',
+  pilihBaris: 'Select',
+  dipilih: 'selected',
+  kosong: 'All old EDM Treaty In documents are already in the new tables.',
+  kolom: {
+    id: 'EDM Number',
+    noPolis: 'Policy Number',
+    edmNo: 'EDM No',
+    prodKe: 'Generation',
+    edmType: 'EDM Type',
+    sob: 'SOB',
+    ceding: 'Ceding',
+    tglProd: 'Production Date',
+    catatan: 'Notes',
+  },
+  status: {
+    disalin: 'Copied',
+    sudahAda: 'Already in the new tables',
+    ditolak: 'Cannot be copied',
+    gagal: 'Failed',
+  },
 } as const

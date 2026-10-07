@@ -39,6 +39,23 @@ func sqlPmKunciJSONPolisEDM(t string) string {
 	  ORDER BY NOPOLIS, ROWID`, t)
 }
 
+// tabelKerjaPega - tabel kerja Pega (kelas ASM-FW-GISFW-Work-*, skema DATAPEGA): PZINSKEY = JSON_POLIS.IDPEGA dokumen
+// Pega asli. Hanya DIBACA.
+const tabelKerjaPega = "DATAPEGA.PC_ASM_FW_GISFW_WORK"
+
+// sqlPmKunciJSONPolisEDMCopyOld - kunci popup Copy Old. ⛔ Perintah work owner 07-10-2026: data lama dipilih dengan
+// `SELECT * FROM DATAPEGA.PC_ASM_FW_GISFW_WORK a, json_polis b, treatyinproduction c WHERE a.pzinskey = b.idpega AND
+// b.idpega = c.idpega` - dokumen yang kasus Pega-nya ada DAN sudah berproduksi. Ditulis EXISTS: TREATYINPRODUCTION
+// berbaris banyak per IDPEGA. Sama dengan Copy Old NB (`modul/nbtreatyin` `sqlKunciJSONPolisCopyOld`); alat pemuat
+// massal tetap tanpa saringan (KEPUTUSAN 23-09-2026 butir 4).
+func sqlPmKunciJSONPolisEDMCopyOld(t, prod string) string {
+	return fmt.Sprintf(`SELECT ROWIDTOCHAR(b.ROWID), b.NOPOLIS, TRIM(TO_CHAR(b.PRODKE)) FROM %s b
+	  WHERE b.PRODKE IS NOT NULL AND TRIM(TO_CHAR(b.PRODKE)) <> '0'
+	    AND EXISTS (SELECT 1 FROM %s a WHERE a.PZINSKEY = b.IDPEGA)
+	    AND EXISTS (SELECT 1 FROM %s c WHERE c.IDPEGA = b.IDPEGA)
+	  ORDER BY b.NOPOLIS, b.ROWID`, t, tabelKerjaPega, prod)
+}
+
 func sqlPmBacaJSONPolis(t string) string {
 	return fmt.Sprintf(`SELECT IDPEGA, NOPOLIS, NOENDORS, TRIM(TO_CHAR(PRODKE)),
 	        TO_CHAR(TGL_INPUT, '%s'), TO_CHAR(TGL_PROD, '%s'), USERNAME, DATA_JSON
@@ -87,7 +104,24 @@ func (g *Gudang) KunciJSONPolisEDM(ctx context.Context) ([]models.KunciJSONPolis
 	if err != nil {
 		return nil, err
 	}
-	q := sqlPmKunciJSONPolisEDM(t)
+	return g.kunciJSONPolisEDM(ctx, sqlPmKunciJSONPolisEDM(t))
+}
+
+// KunciJSONPolisEDMCopyOld - kunci generasi endorsemen yang kasus Pega-nya ada dan sudah berproduksi
+// (`sqlPmKunciJSONPolisEDMCopyOld`, popup Copy Old).
+func (g *Gudang) KunciJSONPolisEDMCopyOld(ctx context.Context) ([]models.KunciJSONPolis, error) {
+	t, err := g.nama(tabelJSONPolis)
+	if err != nil {
+		return nil, err
+	}
+	prod, err := g.nama(tabelProduksi)
+	if err != nil {
+		return nil, err
+	}
+	return g.kunciJSONPolisEDM(ctx, sqlPmKunciJSONPolisEDMCopyOld(t, prod))
+}
+
+func (g *Gudang) kunciJSONPolisEDM(ctx context.Context, q string) ([]models.KunciJSONPolis, error) {
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}

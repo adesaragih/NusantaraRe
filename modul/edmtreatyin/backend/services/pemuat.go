@@ -4,8 +4,9 @@ package services
 // ID-37, AC 39-43); KEPUTUSAN 23-09-2026 butir 4: setiap polis, SETIAP generasi, tanpa penyaring. Asal: pola
 // `modul/nbtreatyin/backend/services/pemuat.go` (tiket NB 22; NB memuat PRODKE 0 dan hanya MENGHITUNG PRODKE > 0).
 //
-// Dijalankan MANUSIA lewat `backend/alat/pemuatlama`, tidak pernah saat aplikasi menyala - modul.go tidak
-// mendaftarkannya. Urutan: generasi NB lebih dulu oleh pemuat NB, lalu pemuat ini.
+// Dijalankan MANUSIA lewat `backend/alat/pemuatlama` (seluruh dokumen), atau per dokumen dari layar lewat tombol Copy
+// Old superadmin (`copyold.go`, perintah work owner 07-10-2026) - `muat` yang sama. Urutan: generasi NB lebih dulu
+// oleh pemuat NB, lalu pemuat ini.
 //
 // ⚠️ URUTAN PEMUATAN (tiket 10): dokumen dimuat menurut NOPOLIS lalu PRODKE BILANGAN naik
 // (`models.UrutKunciGenerasi`) - OLD_POLIS_ID menuntut generasi sebelumnya sudah ada. OLD_POLIS_ID = ID generasi
@@ -55,6 +56,8 @@ type GudangPemuat interface {
 
 	// baca saja (repository/lama_edm.go)
 	KunciJSONPolisEDM(ctx context.Context) ([]models.KunciJSONPolis, error)
+	// KunciJSONPolisEDMCopyOld - popup Copy Old: hanya dokumen yang kasus Pega-nya ada dan sudah berproduksi (WO 07-10-2026).
+	KunciJSONPolisEDMCopyOld(ctx context.Context) ([]models.KunciJSONPolis, error)
 	BacaJSONPolisEDM(ctx context.Context, kunci string) (models.BarisJSONPolis, error)
 	BacaJSONPolisNB(ctx context.Context, nopolis string) ([]models.BarisJSONPolis, error)
 	KunciGenerasiLama(ctx context.Context, tx *db.Tx, id string) (models.KunciGenerasi, bool, error)
@@ -126,7 +129,8 @@ func (pm *Pemuat) Jalankan(ctx context.Context, tulis bool, lap *models.LaporanP
 		}
 		h, err := models.PecahDokumenEDM(b)
 		switch {
-		case errors.Is(err, models.ErrBukanTreatyIn), errors.Is(err, models.ErrBukanGenerasiEndorsemen):
+		case errors.Is(err, models.ErrBukanTreatyIn), errors.Is(err, models.ErrBukanGenerasiEndorsemen),
+			errors.Is(err, models.ErrBarisAplikasiBaru):
 			lap.Lewat(err)
 			continue
 		case err != nil:

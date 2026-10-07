@@ -161,6 +161,10 @@ var (
 	ErrDokumenRusak = errors.New("models: DATA_JSON tidak dapat diurai sebagai objek JSON")
 	// ErrBukanTreatyIn - dokumen lini lain (dihitung saja).
 	ErrBukanTreatyIn = errors.New("models: dokumen bukan polis Treaty In")
+	// ErrBarisAplikasiBaru - baris json_polis yang ditulis Utility1 APLIKASI BARU (`repository/produksi.go`: IDPEGA =
+	// ID kasus polos `EDMT-<n>`, DATA_JSON tidak ditulis). Bukan dokumen Pega lama - generasinya sudah di tabel flat
+	// (dihitung saja; ditemukan popup Copy Old DEV 07-10-2026).
+	ErrBarisAplikasiBaru = errors.New("models: baris json_polis tulisan aplikasi baru (tanpa DATA_JSON), bukan dokumen Pega")
 	// ErrBukanGenerasiEndorsemen - PRODKE 0: generasi NB, milik pemuat NB tiket 22 (dihitung saja).
 	ErrBukanGenerasiEndorsemen = errors.New("models: generasi NB (PRODKE 0) - milik pemuat NB tiket 22")
 	// ErrProdKe - PRODKE kosong atau bukan bilangan.
@@ -413,6 +417,13 @@ var pmPolaPyIDEDM = regexp.MustCompile(`^` + regexp.QuoteMeta(AwalanKasus) + `\d
 
 // IDKasusDariIDPegaEDM mengambil pyID dari `pyWorkPage.pzInsKey` kasus endorsemen ("<kelas> <pyID>"). Kelas wajib
 // `KelasKerjaEDM` (tanpa beda huruf) dan pyID wajib `EDMT-<nomor>`; selain itu ErrIDPega - tidak ditebak.
+// BarisAplikasiBaru - baris json_polis tulisan Utility1 aplikasi baru: IDPEGA tanpa kelas Pega (tanpa spasi; Pega selalu
+// `<kelas> <pyID>`) DAN DATA_JSON kosong. Dokumen Pega ber-kelas tanpa JSON tetap galat (`ErrDokumenRusak`).
+func BarisAplikasiBaru(b BarisJSONPolis) bool {
+	id := strings.TrimSpace(b.IDPega)
+	return id != "" && !strings.Contains(id, " ") && len(bytes.TrimSpace(b.DataJSON)) == 0
+}
+
 func IDKasusDariIDPegaEDM(idpega string) (string, error) {
 	s := strings.TrimSpace(idpega)
 	i := strings.LastIndex(s, " ")
@@ -591,6 +602,9 @@ func pmBuangOldData(h *Halaman) {
 // lahir dari varian rumus berlapis Pega: teks desimal dibawa apa adanya (pembulatan hanya di Oracle pada desimal
 // kesebelas, NUMBER(38,10)). Tidak ada pengisian nilai: EndDate / ProductionDate kosong tetap kosong.
 func PecahDokumenEDM(b BarisJSONPolis) (HasilPecahEDM, error) {
+	if BarisAplikasiBaru(b) {
+		return HasilPecahEDM{}, ErrBarisAplikasiBaru
+	}
 	m, err := pmUrai(b.DataJSON)
 	if err != nil {
 		return HasilPecahEDM{}, err

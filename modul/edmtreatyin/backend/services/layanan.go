@@ -51,14 +51,21 @@ type Layanan struct {
 	// konversi dan produksi - efek keluar sesudah selesai (konversi.go).
 	konversi PengirimKonversi
 	produksi bool
+	// pemuat - Copy Old (copyold.go); nil bila gudang tidak membaca JSON_POLIS (tombol tidak tampil).
+	pemuat *Pemuat
 }
 
-// Baru menyusun layanan; `g` nil = tanpa Oracle (setiap tindakan 503).
+// Baru menyusun layanan; `g` nil = tanpa Oracle (setiap tindakan 503). Gudang yang juga `GudangPemuat` (Oracle)
+// menyalakan Copy Old.
 func Baru(g Gudang, jam func() time.Time) *Layanan {
 	if jam == nil {
 		jam = time.Now
 	}
-	return &Layanan{g: g, jam: jam}
+	l := &Layanan{g: g, jam: jam}
+	if gp, ok := g.(GudangPemuat); ok {
+		l.pemuat = PemuatBaru(gp)
+	}
+	return l
 }
 
 // AdaGudang - layanan tersambung ke penyimpanan.

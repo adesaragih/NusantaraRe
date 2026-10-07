@@ -215,12 +215,25 @@ func (g *Gudang) TutupKasus(ctx context.Context, tx *db.Tx, id, statusLama, stat
 	return nil
 }
 
+// kolomCariPortal - kolom kotak saring portal (perintah work owner 07-10-2026 "pencarian ... buat bisa mencari nomor
+// nb/edm, insured name dll"): nomor kasus EDMT-n, Offer No, nomor polis (generasi dan polis NB lama), EDM No, insured
+// (generasi dan quotation), group business, SOB, ceding, marketing, treaty group, class of business, nama pembuat -
+// seragam dengan portal NB (sesi NB TREATY 07-10-2026) ditambah dua kolom khas EDM (OLD_POLICY_NO, NOENDORS). XML
+// filter B hanya `q.OLD_POLICY_NO`.
+var kolomCariPortal = []string{"w.ID", "g.NO_OFFER", "g.NOPOLIS", "q.OLD_POLICY_NO", "g.NOENDORS", "g.INSURED_NAME",
+	"q.INSURED_NAME", "q.BUSINESS_NAME", "g.SOB_NAME", "g.CEDING_CO_NAME", "q.MARKETING_NAME", "g.TREATY_GROUP_NAME",
+	"g.BIZ_NAME", "w.CREATE_OP_NAME"}
+
+// polaLike - % _ dan garis miring terbalik kotak saring dicari harfiah (`ESCAPE` garis miring terbalik).
+var polaLike = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+
 // sqlDaftarKasus merakit daftar portal beserta argumen ikatnya - RD `InboxEDM_RD2` (kelas
 // ASM-FW-GISFW-Work-EndorsementTreaty, pyMaxRecords 500, urut `.pxUpdateDateTime DESC`, logika `B AND C AND A
 // AND D AND E`):
 //
 //	A  `.pxCreateOperator = Param.UserNameID`                                  -> s.Pembuat
-//	B  `.OfferFacIn.QuotationData.OldPolicyNo Contains Param.FilterTermForEndorsement` -> s.Cari
+//	B  `.OfferFacIn.QuotationData.OldPolicyNo Contains Param.FilterTermForEndorsement` -> s.Cari, DIPERLUAS
+//	   (WO 07-10-2026): setiap kata `kolomCariPortal`
 //	C  `.pyStatusWork != "Resolved-Completed"`                                  -> !s.Selesai (switch Resolved =
 //	   kebalikannya, aturan portal NB keputusan WO 07-10-2026)
 //	D  `.Quotation.TeamGroup = Param.TeamGroup` - Param dari `InputParam.CARI33`, pengisinya TIDAK ada di korpus
@@ -255,9 +268,15 @@ func sqlDaftarKasus(kerja, gen, quot string, s models.SaringanKasus) (string, []
 		b.WriteString(`
 	    AND w.STATUS_WORK IN (:2, :3)`)
 	}
-	if cari := strings.TrimSpace(s.Cari); cari != "" {
+	// kotak saring (perintah WO 07-10-2026): setiap kata cocok dengan salah satu kolom portal, tanpa beda huruf
+	for _, k := range models.KataCari(s.Cari) {
+		pola := "%" + polaLike.Replace(k) + "%"
+		atau := make([]string, len(kolomCariPortal))
+		for i, c := range kolomCariPortal {
+			atau[i] = "UPPER(" + c + ") LIKE " + pen(pola) + ` ESCAPE '\'`
+		}
 		fmt.Fprintf(&b, `
-	    AND q.OLD_POLICY_NO LIKE %s`, pen("%"+cari+"%"))
+	    AND (%s)`, strings.Join(atau, " OR "))
 	}
 	if s.Posisi != "" {
 		fmt.Fprintf(&b, `

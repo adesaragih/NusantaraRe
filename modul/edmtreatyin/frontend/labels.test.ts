@@ -36,7 +36,10 @@ describe('label layar = LABEL XML', () => {
       'Refresh',
       'Refresh EDM Grid',
     ])
-    expect([PORTAL.placeholder, PORTAL.filter]).toEqual(['Policy Number', 'Filter Term for Endorsement'])
+    expect([PORTAL.placeholder, PORTAL.filter]).toEqual([
+      'Search EDM no, master ID, policy no, insured, business, ceding, marketing...',
+      'Filter Term for Endorsement',
+    ])
     expect(KOLOM_PORTAL.map((k) => k.judul)).toEqual([
       'EDM Number',
       'Offer No',

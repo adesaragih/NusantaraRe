@@ -71,6 +71,7 @@ func polisNBUji() *models.Halaman {
 	p("StartDate", "2026-01-01")
 	p("EndDate", "2026-12-31")
 	p("MarketingOfficer", "UJI MO")
+	p("InsuredName", "UJI TERTANGGUNG SATU")
 	p("IsNewPolicyNonProp", "0")
 	p("Installment", "1")
 	p("PremiOgp", "1000")

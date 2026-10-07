@@ -73,6 +73,8 @@ Kode yang disalin dari `modul/nbtreatyin` (modul tidak saling mengimpor) membawa
     semua berkas selesai, dibuka hanya-baca).
     Tab Resolved menambah kolom **Production Date** DD-MM-YYYY (`T_GENERAL_POLIS_TREATY.TGL_PROD`) di ujung; Policy Number
     sudah kolom XML ke-3.
+    Kolom Status berkas selesai = `T_WORK_POLIS.STATUS_WORK` (`Resolved-Completed` / `Resolved-Rejected`), bukan NBStatus
+    terakhir (*"KALO DAH RESOLVE STATUS NYA PAKE STATUS RESOLVE"*, pola portal NB).
   - **Header terkunci bagi atasan**: With Tax, Type Tax, Overiding Commision, Marketing Officer hanya diterima dari layar
     Admin (`models.GabungMasukanLayar`, `services/aksiposisi.go`) - XML tidak menguncinya per posisi.
   - **Label EDMType** = DT `TreatyEDMListType` (screenshot Pega): 1 Internal · 2 External · 3 Adjustment Premium · 4 Cancel
@@ -93,6 +95,11 @@ Kode yang disalin dari `modul/nbtreatyin` (modul tidak saling mengimpor) membawa
     tampilan, nilai tersimpan tidak diubah.
   - **Baris spreading tambahan tanpa % Share** ditolak dengan pesan di baris itu (`PesanShareSpreadingKosong`), bukan
     dibagi `PolicyTreatyIn.RNMShare` (tak diisi rule mana pun).
+  - **Kotak saring portal diperluas** (*"pencarian ... buat bisa mencari nomor nb/edm, insured name dll"*): setiap kata
+    (paling banyak 5) wajib cocok dengan salah satu kolom - nomor kasus EDMT, Offer/Master ID, nomor polis (generasi dan
+    polis NB), EDM No, insured (generasi dan quotation), group business, SOB, ceding, marketing, treaty group, class of
+    business, nama pembuat; tanpa beda huruf, `%` `_` harfiah (`repository.kolomCariPortal`, `models.KataCari`). XML
+    hanya `OldPolicyNo`. Seragam dengan portal NB (sesi NB TREATY). Dicoba DEV 07-10-2026 (COUNT saja).
   - Bila konversi Arasapas kelak disambung: P50 `IsFacRetro` dan gerbang `IsPEGAPROD` / `IsTreatyIn` mengikuti XML.
 
 ## Migrasi
@@ -148,6 +155,8 @@ hanya dicatat (ORA-00955 ditelan, `inti/backend/migrasi`).
 | `POST /kasus/{id}/bisnis`, `POST /kasus/{id}/pilih-bisnis` | popup *Choose Business* EDM dan `EDMChooseBusiness_Act` |
 | `POST /kasus/{id}/kirim` | submit per posisi (Utility1 saat Dept Head setuju) |
 | `GET /acuan` | daftar pilihan (mata uang, MO, jenis EDM, ...) |
+| `GET /hak` | hak layar portal akun (`{"copyOld": bool}`) |
+| `GET /lama`, `POST /lama/salin` | popup **Copy Old** dan *Process Copy* `{"ids": [...]}` — superadmin saja |
 
 ## Pemuat dokumen lama (tiket 09-10)
 
@@ -174,6 +183,30 @@ go run ./modul/edmtreatyin/backend/alat/pemuatlama -keluaran <folder> -jalankan 
   nol dokumen gagal dan nol medan `BELUM DIPUTUSKAN`.
 - Status 06-10-2026: dibangun dan diuji di atas gudang tiruan (rantai tiga generasi, percabangan ditolak, nilai AC 39
   identik digit demi digit); **belum pernah dijalankan** di DEV.
+
+### Tombol Copy Old (perintah WO 07-10-2026)
+
+*"BUATKAN TOMBOL COPY OLD SAMA SEPERTI MASTER PRODUCTNAME LIFE, KHUSUS BUAT SUPERUSER"* — tombol **Copy Old** di samping
+*Create New Addendum Treaty* di portal (bukan layar Pega). Popup berisi dokumen endorsemen lama di `JSON_POLIS` yang
+belum ada di tabel flat (EDM Number, Policy Number, EDM No, Generation, EDM Type, SOB, Ceding, Production Date, Notes);
+yang dicentang disalin lewat **Process Copy** dengan `muat` pemuat di atas — satu transaksi per dokumen, urutan
+generasi (bukan urutan centang), dokumen yang gagal tidak membatalkan yang lain, hasil per dokumen (Copied / Already in
+the new tables / Cannot be copied / Failed). Baris yang tidak dapat disalin (generasi sebelumnya belum ada,
+percabangan, ID bentrok, galat dokumen) tampil dengan alasan dan tidak dapat dicentang; pesan tanpa nomor polis / nilai
+dokumen (`models.AlasanSalinLama`).
+
+- **Sumber data lama** (perintah WO 07-10-2026): `SELECT * FROM DATAPEGA.PC_ASM_FW_GISFW_WORK a, json_polis b,
+  treatyinproduction c WHERE a.pzinskey = b.idpega AND b.idpega = c.idpega` - ditulis EXISTS
+  (`repository.sqlPmKunciJSONPolisEDMCopyOld`), sama dengan Copy Old NB. Alat pemuat massal tetap tanpa saringan.
+- **Hanya superadmin** = pemegang menu Kelola User dengan menu EDM Treaty In ber-hak penuh (pola Copy Old Data
+  Bordereaux; View only berlaku juga bagi superadmin). Tombol tampil menurut `GET /hak`; rute `lama` menolak 403.
+- Generasi 1 butuh polis NB-nya sudah di tabel flat (pemuat NB). DEV 07-10-2026: nol dokumen endorsemen Treaty In lama
+  di `JSON_POLIS`, jadi popup kosong di DEV.
+- Baris `JSON_POLIS` tulisan Utility1 aplikasi baru (IDPEGA = ID kasus polos tanpa kelas Pega, `DATA_JSON` kosong) BUKAN
+  dokumen Pega: dilewati popup dan pemuat (`models.ErrBarisAplikasiBaru`, dihitung terpisah di ringkasan). Ditemukan
+  WO 07-10-2026: popup menampilkan baris EDMT-22449 sendiri sebagai "the old JSON cannot be read".
+- Kode: `backend/services/copyold.go`, `backend/models/copyold.go`, `frontend/components/DialogCopyOld.tsx`,
+  `frontend/lama.ts`; uji `backend/services/copyold_test.go` (daftar, urutan generasi, superadmin, HTTP, View only).
 
 ## Menjalankan uji modul ini saja
 

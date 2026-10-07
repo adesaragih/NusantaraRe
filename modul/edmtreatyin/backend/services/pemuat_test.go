@@ -31,6 +31,8 @@ type gudangUji struct {
 	nb      map[string][]models.BarisJSONPolis // NOPOLIS -> baris JSON_POLIS generasi NB
 	penanda map[string]models.PenandaMigrasi
 	datar   map[string]models.KolomDatarLama
+	// tanpaProduksi - ROWID yang IDPEGA-nya tidak ada di tabel kerja Pega / TREATYINPRODUCTION (Copy Old).
+	tanpaProduksi map[string]bool
 }
 
 func gudangBaru() *gudangUji {
@@ -68,6 +70,19 @@ func (g *gudangUji) KunciJSONPolisEDM(ctx context.Context) ([]models.KunciJSONPo
 		return out[i].Kunci < out[j].Kunci
 	})
 	return out, nil
+}
+
+// KunciJSONPolisEDMCopyOld - saringan WO 07-10-2026 (kasus Pega ada DAN sudah berproduksi): ROWID di `tanpaProduksi`
+// tidak lolos.
+func (g *gudangUji) KunciJSONPolisEDMCopyOld(ctx context.Context) ([]models.KunciJSONPolis, error) {
+	semua, err := g.KunciJSONPolisEDM(ctx)
+	var out []models.KunciJSONPolis
+	for _, k := range semua {
+		if !g.tanpaProduksi[k.Kunci] {
+			out = append(out, k)
+		}
+	}
+	return out, err
 }
 
 func (g *gudangUji) BacaJSONPolisEDM(ctx context.Context, kunci string) (models.BarisJSONPolis, error) {
@@ -294,7 +309,12 @@ func periksaGalatRantai(t *testing.T, r models.RingkasanPemuat) {
 // TestPemuatRantaiTigaGenerasi - tiket 10 uji utama + AC 39-44.
 func TestPemuatRantaiTigaGenerasi(t *testing.T) {
 	g := siapkan(t)
+	// baris json_polis Utility1 aplikasi baru (IDPEGA polos, tanpa DATA_JSON): dilewati, bukan dokumen gagal
+	g.dok["Z1"] = models.BarisJSONPolis{IDPega: "EDMT-990777", NoPolis: polisA, NoEndors: models.NomorEDM(polisA, 9), ProdKe: "9"}
 	r := jalankanPemuat(t, g, true)
+	if r.BarisAplikasiBaru != 1 {
+		t.Errorf("baris aplikasi baru dilewati %d, harap 1", r.BarisAplikasiBaru)
+	}
 	if r.Dimuat != 3 || r.SudahDimuat != 0 || r.MedanBelumDiputuskan != 0 {
 		t.Fatalf("ringkasan %+v", r)
 	}

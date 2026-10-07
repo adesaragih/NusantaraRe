@@ -90,6 +90,8 @@ type RingkasanPemuat struct {
 	BarisDibaca   int
 	BukanTreatyIn int
 	GenerasiNB    int
+	// BarisAplikasiBaru - baris json_polis tulisan Utility1 aplikasi baru (ErrBarisAplikasiBaru), dilewati.
+	BarisAplikasiBaru int
 	// Dimuat - ditulis (`-jalankan`) atau siap ditulis (uji-kering).
 	Dimuat       int
 	SudahDimuat  int
@@ -170,6 +172,9 @@ func (r RingkasanPemuat) Teks() string {
 	if r.GenerasiNB > 0 {
 		fmt.Fprintf(&b, "Generasi NB (PRODKE 0), dilewati - pemuat NB     : %d\n", r.GenerasiNB)
 	}
+	if r.BarisAplikasiBaru > 0 {
+		fmt.Fprintf(&b, "Baris json_polis aplikasi baru, dilewati         : %d\n", r.BarisAplikasiBaru)
+	}
 	fmt.Fprintf(&b, "%-49s: %d\n", dimuat, r.Dimuat)
 	fmt.Fprintf(&b, "Sudah dimuat sebelumnya, dilewati                : %d\n", r.SudahDimuat)
 	fmt.Fprintf(&b, "Dokumen gagal (berkas laporan galat)             : %d\n", r.DokumenGagal)
@@ -227,10 +232,14 @@ func LaporanPemuatBaru(arsip, galat io.Writer, tulis bool) (*LaporanPemuat, erro
 // Dibaca mencatat satu baris JSON_POLIS yang dibaca.
 func (l *LaporanPemuat) Dibaca() { l.r.BarisDibaca++ }
 
-// Lewat mencatat dokumen di luar lingkup (ErrBukanTreatyIn, ErrBukanGenerasiEndorsemen).
+// Lewat mencatat dokumen di luar lingkup (ErrBukanTreatyIn, ErrBukanGenerasiEndorsemen, ErrBarisAplikasiBaru).
 func (l *LaporanPemuat) Lewat(err error) {
 	if errors.Is(err, ErrBukanGenerasiEndorsemen) {
 		l.r.GenerasiNB++
+		return
+	}
+	if errors.Is(err, ErrBarisAplikasiBaru) {
+		l.r.BarisAplikasiBaru++
 		return
 	}
 	l.r.BukanTreatyIn++

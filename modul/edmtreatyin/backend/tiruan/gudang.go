@@ -12,7 +12,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strings"
 	"sync"
 
 	"nusantarare/inti/backend/db"
@@ -292,7 +291,11 @@ func (g *Gudang) DaftarKasus(ctx context.Context, s models.SaringanKasus) ([]mod
 		if selesai != s.Selesai {
 			continue
 		}
-		if s.Cari != "" && !strings.Contains(models.NilaiQuotation(h, "OldPolicyNo"), s.Cari) {
+		pt := func(m string) string { return h.Ambil(models.HalamanPolis + "." + m) }
+		if !models.CocokCari(s.Cari, id, pt("NoOffer"), g.Generasi[id].NoPolis, models.NilaiQuotation(h, "OldPolicyNo"),
+			g.Generasi[id].EDMNo, pt("InsuredName"), models.NilaiQuotation(h, "InsuredName"), models.NilaiQuotation(h, "BusinessName"),
+			pt("SOBName"), pt("CedingCoName"), models.NilaiQuotation(h, "MarketingName"), pt("TreatyGroupName"), pt("BizName"),
+			g.NamaPembuat[id]) {
 			continue
 		}
 		if s.Posisi != "" && k.PositionNote != s.Posisi {

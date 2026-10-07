@@ -156,6 +156,11 @@ func TestPecahDokumenEDMLewatDanGalat(t *testing.T) {
 		"IDPEGA kasus NB":        {func(b *BarisJSONPolis) { b.IDPega = "ASM-FW-GISFW-WORK-NB NB-77" }, ErrIDPega},
 		"IDPEGA kelas lain EDMT": {func(b *BarisJSONPolis) { b.IDPega = "ASM-FW-GISFW-WORK-LAIN EDMT-77" }, ErrIDPega},
 		"dokumen rusak":          {func(b *BarisJSONPolis) { b.DataJSON = []byte(`{`) }, ErrDokumenRusak},
+		// baris json_polis Utility1 aplikasi baru (IDPEGA = ID kasus polos, DATA_JSON tidak ditulis) - bukan dokumen
+		// Pega, generasinya sudah di tabel flat (WO 07-10-2026, popup Copy Old)
+		"tulisan aplikasi baru": {func(b *BarisJSONPolis) { b.IDPega, b.DataJSON = "EDMT-77", nil }, ErrBarisAplikasiBaru},
+		// dokumen Pega (IDPEGA ber-kelas) tanpa JSON tetap galat
+		"Pega tanpa JSON": {func(b *BarisJSONPolis) { b.DataJSON = []byte("  ") }, ErrDokumenRusak},
 	} {
 		b := barisUjiEDM(dokumenUjiEDMProp)
 		tt.ubah(&b)

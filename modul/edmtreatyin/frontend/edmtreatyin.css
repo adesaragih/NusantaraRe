@@ -263,6 +263,73 @@
   gap: 12px;
 }
 
+/* Tombol kepala portal: Copy Old (superadmin) di samping Create. */
+.edmtreatyin .edmt__akar .edmt__kepala-aksi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Popup Copy Old (WO 07-10-2026, pola Product Name Life): ringkasan hasil, saring, tabel bergulir. */
+.edmtreatyin .edmt__akar .edmt__lama-ringkas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.edmtreatyin .edmt__akar .edmt__lama-masalah {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  font-size: var(--fs-sm);
+}
+
+.edmtreatyin .edmt__akar .edmt__lama-alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-bottom: 10px;
+}
+
+.edmtreatyin .edmt__akar .edmt__lama-cari {
+  flex: 1 1 16rem;
+  max-width: 28rem;
+}
+
+.edmtreatyin .edmt__akar .edmt__lama-cacah {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.edmtreatyin .edmt__akar .edmt__lama-tabel {
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.edmtreatyin .edmt__akar .edmt__lama-centang {
+  width: 2.75rem;
+  text-align: center;
+}
+
+/* Alasan turun baris di dalam selnya - tabel tidak melebar keluar popup. */
+.edmtreatyin .edmt__akar .edmt__lama-catatan {
+  min-width: 12rem;
+  max-width: 20rem;
+  font-size: var(--fs-xs);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.edmtreatyin .edmt__akar .edmt__lama-ditolak > td {
+  color: var(--edmt-teks-redup, inherit);
+}
+
+.edmtreatyin .edmt__akar .edmt__lama-alasan {
+  color: var(--edmt-bahaya-teks, inherit);
+}
+
 .edmtreatyin .edmt__akar .inbox__judul,
 .edmtreatyin .edmt__akar .modal__title {
   color: var(--edmt-teks);
