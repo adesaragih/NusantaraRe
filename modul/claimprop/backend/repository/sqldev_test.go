@@ -115,6 +115,11 @@ func TestSQLDiDEV(t *testing.T) {
 	tulis["AdaJSONKlaim JSON_KLAIM (SELECT)"] = sqlAdaJSONKlaim(q("JSON_KLAIM"))
 	tulis["IDAdjustment (SELECT)"] = sqlIDAdjustment(q(models.TabelAdjustment.Nama))
 	tulis["NomorRiwayat T_VIEW_SUGGEST (SELECT)"] = sqlNomorRiwayat(q("T_VIEW_SUGGEST"))
+	tulis["SisipKasusKomite T_WORK_CLAIM"] = sqlSisipKasusKomite(q("T_WORK_CLAIM"))
+	tulis["SisipKepalaKomite T_GENERAL_KOMITE"] = sqlSisipKepalaKomite(q("T_GENERAL_KOMITE"))
+	tulis["SisipAnggotaKomite tangga"] = sqlSisipAnggotaKomite(q(tabelTanggaKomite))
+	tulis["SetelKomiteAdjustment"] = sqlSetelKomiteAdjustment(q(models.TabelAdjustment.Nama))
+	tulis["TanggaKomite (SELECT)"] = sqlTanggaKomite(q(tabelTanggaKomite))
 	tulis["SisipRiwayat T_VIEW_SUGGEST"] = sqlSisipRiwayat(q("T_VIEW_SUGGEST"))
 	tulis["BacaRiwayat T_VIEW_SUGGEST (SELECT)"] = sqlBacaRiwayat(q("T_VIEW_SUGGEST"))
 	for nama, s := range tulis {
@@ -174,6 +179,7 @@ func TestSQLDiDEV(t *testing.T) {
 		{"BarisKatastrofeID", func() error { _, _, err := a.BarisKatastrofeID(ctx, "UJI"); return err }},
 		{"BarisSebabID", func() error { _, _, err := a.BarisSebabID(ctx, "UJI"); return err }},
 		{"RingkasanOS", func() error { _, err := a.RingkasanOS(ctx, "UJI"); return err }},
+		{"TanggaKomite", func() error { _, err := a.TanggaKomite(ctx, "UJI"); return err }},
 		{"NamaPelaku", func() error { _, err := a.NamaPelaku(ctx, "UJI"); return err }},
 		{"Keadaan", func() error {
 			_, err := g.Keadaan(ctx, nil, "UJI-CLMP")

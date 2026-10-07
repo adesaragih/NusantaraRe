@@ -119,8 +119,9 @@ func LayarAdjustment(n int) []Unsur {
 			bagian("Spreading Out", Unsur{Jenis: JenisGrid, Jalur: j(AnakQuotaShare), Bernomor: true, Kolom: []Unsur{
 				kRO(kol("Currency", "Currency", KTeks)), kRO(kol("TreatyName", "Treaty Type", KTeks)),
 				kRO(kol("SharePercentage", "Share(%)", KAngka)), kRO(kol("ClaimSpreaded", "Claim Spreaded", KAngka))}}),
-			bagian("Committe Accept Status", catatan(Unsur{Jenis: JenisGrid, Jalur: j("ComiteeClaim"), Bernomor: true,
-				Kolom: []Unsur{kRO(kol("IDKomite", "Committee Name", KTampil))}}, OQBatasKomite)),
+			bagian("Committe Accept Status", Unsur{Jenis: JenisGrid, Jalur: j("ComiteeClaim"), Bernomor: true, Kolom: []Unsur{
+				kRO(kol("IDKomite", "Committee Name", KTampil)), kRO(kol(PropKeputusanAnggota, "Status", KTampil)),
+				kRO(kol(PropTanggalKeputusan, "Date Approve", KWaktu)), kRO(kol(PropCatatanKeputusan, "Comment", KTampil))}}),
 			tombolBaris,
 		),
 	}
@@ -182,7 +183,8 @@ func LayarKomite(n int, lolos bool) []Unsur {
 		),
 		bagian("",
 			tampil(bagian("",
-				tampil(tombolOQ("SendClaimToCommittee", "Send Claim to Committee", OQBatasKomite), kirimTampil),
+				tampil(naJika(tombol("SendClaimToCommittee", "Send Claim to Committee", "AddKomiteTreatyChild"),
+					sama(CD+"Payable", "")), kirimTampil),
 			), func(*Halaman) bool { return lolos }),
 			tombol("CancelKomite", "Cancel", "TutupModal"),
 		),

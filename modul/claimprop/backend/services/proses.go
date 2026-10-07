@@ -2,9 +2,9 @@ package services
 
 // Untuk apa berkas ini: PENANGAN AKSI YANG MENULIS LEBIH DARI HALAMAN - pilihan pop-up yang dibaca ulang di server,
 // Save to issue RNM (SaveOutstanding_Act), Save (SetOutstanding_Act), Send to Acceptation (CheckNopolicy_Act +
-// UpdateTableOS), Submit (finishAssignment OutstandingClaim + ProteksiData_act), gerbang Send to Committe
-// (AttachmentProtect_ACT + ProteksiInitialandDate_Act; penyerahan AddKomiteTreatyChild_ACT = OQ-CP-16), Acceptation
-// (HitServiceToKasir_Act), PLA (TryMakePLA_Act), DLA (PrintDLATreatyIn), Close Claim (CloseClaimProp).
+// UpdateTableOS), Submit (finishAssignment OutstandingClaim + ProteksiData_act), penyerahan komite
+// (AttachmentProtect_ACT + ProteksiInitialandDate_Act + AddKomiteTreatyChild_ACT), Acceptation (HitServiceToKasir_Act),
+// PLA (TryMakePLA_Act), DLA (PrintDLATreatyIn), Close Claim (CloseClaimProp).
 
 import (
 	"context"
@@ -349,6 +349,63 @@ func aksiBukaKomite(j *jalanAksi) error {
 	return models.ProteksiInitialandDate(j.k, j.h, j.r.Indeks)
 }
 
+// aksiKomite - tombol "Send Claim to Committee" (`AddKomiteTreatyChild_ACT`). Gerbang DITEGAKKAN di layanan (AC 57,
+// 58): Protect.CARI1/CARI2 dihitung ulang, tombol harus tampil dan aktif pada isian sesudah digabung (Payable,
+// Remarks, Circumstanses / Salvage / Adjuster Fee), baris belum diserahkan.
+func aksiKomite(j *jalanAksi) error {
+	h, n := j.h, j.r.Indeks
+	if h.Ambil("Protect.CARI1") != "1" || h.Ambil("Protect.CARI2") != "1" {
+		if err := validasi(h); err != nil {
+			return err
+		}
+		return fmt.Errorf("%w: penyerahan komite ditolak (lampiran / premi)", ErrAksiTertutup)
+	}
+	ts := models.Evaluasi(h, models.LayarKomite(n, true), false)
+	if !models.AksiTerbuka(ts, "AddKomiteTreatyChild", n) {
+		if err := wajibTerisi(j, ts); err != nil {
+			return err
+		}
+		return fmt.Errorf("%w: tombol Send Claim to Committee tidak tampil untuk isian ini", ErrAksiTertutup)
+	}
+	b, err := adjBaris(h, n)
+	if err != nil {
+		return err
+	}
+	if b["IsKomite"] == "1" || b[models.PropKomiteID] != "" {
+		return fmt.Errorf("%w: baris adjustment sudah diserahkan ke komite", ErrAksiTertutup)
+	}
+	if err := models.TandaiKirimKomite(j.k, h, n); err != nil { // 1-15, 31
+		return err
+	}
+	roster, err := j.l.a.RosterKomite(j.ctx, models.NilaiRosterKomite(b), models.STSKlaimProp) // 18-22
+	if err != nil {
+		return err
+	}
+	if len(roster) == 0 {
+		return &GalatValidasi{Pesan: []string{"Roster komite (EMAILKOMITE STS_KLAIM PROP) kosong untuk nilai adjustment ini"}}
+	}
+	if err := j.l.g.SimpanHalaman(j.ctx, j.tx, j.kasus.ID, h); err != nil { // ID baris adjustment stabil
+		return err
+	}
+	var anggota []repository.AnggotaTangga
+	for i, r := range roster {
+		anggota = append(anggota, repository.AnggotaTangga{Urut: i + 1, OperatorID: r.OperatorID, Jabatan: r.Jabatan, Email: r.Email})
+	}
+	nama, err := j.l.a.NamaPelaku(j.ctx, j.k.Pelaku)
+	if err != nil {
+		return err
+	}
+	komite, err := j.l.g.BuatKasusKomite(j.ctx, j.tx, j.kasus.ID, b[models.PropID], j.k.Pelaku, nama, anggota, j.k.Sekarang) // 25
+	if err != nil {
+		return err
+	}
+	if err := j.l.g.SetelKomiteAdjustment(j.ctx, j.tx, b[models.PropID], komite); err != nil {
+		return err
+	}
+	b[models.PropKomiteID] = komite
+	return j.antre(JenisEfekEmailKomite, komite, map[string]string{"klaim": j.kasus.ID, "komite": komite}) // 34 SendEmailKlaim
+}
+
 func adjBaris(h *models.Halaman, n int) (models.Baris, error) {
 	d := h.AmbilDaftar(models.DaftarAdjustment)
 	if n < 1 || n > len(d) {
@@ -465,8 +522,9 @@ func aksiTutupKlaim(j *jalanAksi) error {
 
 // Jenis efek outbox Claim Prop.
 const (
-	JenisEfekKonversi = "konversi-klaim" // KonversiKlaim_Act -> Connect-REST KonversiKlaimNonLife (Klaim / insertClaimAccept)
-	JenisEfekKasir    = "kasir"          // HitServiceToKasir_Act -> SendAcceptationToKasir (Kasir / insertAllPaymentKasir)
+	JenisEfekKonversi    = "konversi-klaim" // KonversiKlaim_Act -> Connect-REST KonversiKlaimNonLife (Klaim / insertClaimAccept)
+	JenisEfekKasir       = "kasir"          // HitServiceToKasir_Act -> SendAcceptationToKasir (Kasir / insertAllPaymentKasir)
+	JenisEfekEmailKomite = "email-komite"   // AddKomiteTreatyChild_ACT 34 -> SendEmailKlaim
 )
 
 // MuatanOutbox - isi baris T_LOG_SERVICE_RNM.MUATAN (teks JSON milik outbox inti, bukan data klaim).

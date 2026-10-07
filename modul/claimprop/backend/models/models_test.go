@@ -263,40 +263,6 @@ func cariTata(ts []models.Tata, kunci string) *models.Tata {
 	return nil
 }
 
-func TestPenyerahanKomiteNonaktifOQ16(t *testing.T) {
-	a := tiruan.AcuanBaru()
-	a.Roster = append(a.Roster, tiruan.AnggotaRoster{Batas: "0", Sts: models.STSKlaimProp,
-		AnggotaKomite: models.AnggotaKomite{OperatorID: "UJI-K1", Jabatan: "UJI-JABATAN"}})
-	h := models.HalamanBaru()
-	h.Setel(models.CD+"Payable", "2")
-	h.Setel(models.CD+"Occupation", "UJI-OKUPASI")
-	h.SetelDaftar(models.DaftarAdjustment, []models.Baris{{"Type": "1", "ProposeAdjustmentValue": "10",
-		"ValueAdjustment": "10", "DataCommitteeTreaty.CircumCauseOfLoss": "UJI", "DataCommitteeTreaty.Remarks": "UJI"}})
-	if err := models.SusunKomiteAdjustment(konteksUji(a), h, 1); err != nil {
-		t.Fatal(err)
-	}
-	ts := models.Evaluasi(h, models.LayarKomite(1, true), false)
-	tb := cariTata(ts, "SendClaimToCommittee")
-	if tb == nil || !tb.Nonaktif || !strings.HasPrefix(tb.Catatan, "OQ-CP-16") {
-		t.Fatalf("tombol Send Claim to Committee mau tampil nonaktif ber-OQ-CP-16: %+v", tb)
-	}
-	if models.AksiTerbuka(ts, "AddKomiteTreatyChild", 1) {
-		t.Fatalf("aksi penyerahan komite terbuka")
-	}
-	g := cariTata(models.Evaluasi(h, models.LayarAdjustment(1), false), models.JalurAdj(1, "ComiteeClaim"))
-	if g == nil || len(g.Kolom) != 1 || g.Kolom[0].Label != "Committee Name" || len(g.Baris) != 1 {
-		t.Fatalf("grid Committe Accept Status mau satu kolom nama dan satu baris roster: %+v", g)
-	}
-	// baris yang sudah menunjuk kasus komite: keputusan anggotanya tidak dibaca - grid kosong
-	h.AmbilDaftar(models.DaftarAdjustment)[0][models.PropKomiteID] = "UJI-KOMITE"
-	if err := models.SusunKomiteAdjustment(konteksUji(a), h, 1); err != nil {
-		t.Fatal(err)
-	}
-	if n := len(h.AmbilDaftar(models.JalurAdj(1, "ComiteeClaim"))); n != 0 {
-		t.Fatalf("grid komite baris berkomite %d baris, mau 0", n)
-	}
-}
-
 // Tambah / hapus baris Spreading Claim nonaktif (keputusan work owner 07-10-2026): grid tanpa ikon bawaan aktif; tombol
 // ber-activity (AddSpreading_Act / DeleteSpreading_Act tidak diekspor) tampil nonaktif.
 func TestSpreadingTanpaTambahHapusAktif(t *testing.T) {
@@ -310,5 +276,65 @@ func TestSpreadingTanpaTambahHapusAktif(t *testing.T) {
 	g := cariTata(ts, models.DaftarSpreading)
 	if g == nil || g.Tambah == nil || !g.Tambah.Nonaktif {
 		t.Fatalf("tombol Add spreading mau tampil nonaktif: %+v", g)
+	}
+}
+
+// rosterUji - satu anggota roster EMAILKOMITE lini PROP berbatas 0.
+func rosterUji() *tiruan.Acuan {
+	a := tiruan.AcuanBaru()
+	a.Roster = append(a.Roster, tiruan.AnggotaRoster{Batas: "0", Sts: models.STSKlaimProp,
+		AnggotaKomite: models.AnggotaKomite{OperatorID: "UJI-K1", Jabatan: "UJI-JABATAN"}})
+	return a
+}
+
+func halamanKomiteUji() *models.Halaman {
+	h := models.HalamanBaru()
+	h.Setel(models.CD+"Occupation", "UJI-OKUPASI")
+	h.SetelDaftar(models.DaftarAdjustment, []models.Baris{{"Type": "1", "ProposeAdjustmentValue": "10",
+		"ValueAdjustment": "10", "DataCommitteeTreaty.CircumCauseOfLoss": "UJI", "DataCommitteeTreaty.Remarks": "UJI"}})
+	return h
+}
+
+// Send Claim to Committee (keputusan work owner 07-10-2026, opsi B): tampil bila gerbang lampiran / premi lolos dan
+// isian lengkap, nonaktif selama Payable kosong (dis `pyWorkPage.ClaimData.Payable = ”`).
+func TestPenyerahanKomiteMengikutiIsian(t *testing.T) {
+	h := halamanKomiteUji()
+	ts := models.Evaluasi(h, models.LayarKomite(1, true), false)
+	if tb := cariTata(ts, "SendClaimToCommittee"); tb == nil || !tb.Nonaktif || models.AksiTerbuka(ts, "AddKomiteTreatyChild", 1) {
+		t.Fatalf("Payable kosong: tombol mau tampil nonaktif: %+v", tb)
+	}
+	h.Setel(models.CD+"Payable", "2")
+	if !models.AksiTerbuka(models.Evaluasi(h, models.LayarKomite(1, true), false), "AddKomiteTreatyChild", 1) {
+		t.Fatalf("isian lengkap: penyerahan komite mau terbuka")
+	}
+	if tb := cariTata(models.Evaluasi(h, models.LayarKomite(1, false), false), "SendClaimToCommittee"); tb != nil {
+		t.Fatalf("gerbang lampiran / premi gagal: tombol mau tidak tampil")
+	}
+}
+
+// Grid "Committe Accept Status": roster calon sebelum diserahkan, keputusan tangga sesudahnya.
+func TestGridKomiteRosterLaluTangga(t *testing.T) {
+	h := halamanKomiteUji()
+	k := konteksUji(rosterUji())
+	if err := models.SusunKomiteAdjustment(k, h, 1, nil); err != nil {
+		t.Fatal(err)
+	}
+	rows := h.AmbilDaftar(models.JalurAdj(1, "ComiteeClaim"))
+	if len(rows) != 1 || rows[0]["IDKomite"] != "UJI-JABATAN" || rows[0][models.PropKeputusanAnggota] != models.ApprovalKomiteMenunggu {
+		t.Fatalf("roster calon %+v", rows)
+	}
+	g := cariTata(models.Evaluasi(h, models.LayarAdjustment(1), false), models.JalurAdj(1, "ComiteeClaim"))
+	if g == nil || len(g.Kolom) != 4 || g.Kolom[1].Jalur != models.PropKeputusanAnggota || g.Kolom[3].Jalur != models.PropCatatanKeputusan {
+		t.Fatalf("grid komite mau empat kolom Committee Name / Status / Date Approve / Comment: %+v", g)
+	}
+	tangga := []models.AnggotaKomite{{OperatorID: "UJI-K1", Jabatan: "UJI-JABATAN", Approval: "1", Comment: "UJI-SETUJU",
+		TanggalSetuju: "2026-05-04 10:00:00"}}
+	if err := models.SusunKomiteAdjustment(k, h, 1, tangga); err != nil {
+		t.Fatal(err)
+	}
+	rows = h.AmbilDaftar(models.JalurAdj(1, "ComiteeClaim"))
+	if len(rows) != 1 || rows[0][models.PropKeputusanAnggota] != "1" || rows[0][models.PropCatatanKeputusan] != "UJI-SETUJU" ||
+		rows[0][models.PropTanggalKeputusan] != "2026-05-04 10:00:00" {
+		t.Fatalf("keputusan tangga %+v", rows)
 	}
 }

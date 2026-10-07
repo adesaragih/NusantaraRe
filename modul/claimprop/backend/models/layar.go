@@ -117,8 +117,6 @@ const (
 	OQMasterLain      = "OQ-CP-04: pemeliharaan master milik menu lain - Claim Prop hanya memakai pemilihnya"
 	OQDokumenPDF      = "OQ-CP-05: stream HTML dokumen tidak diekspor dan aplikasi belum punya mesin PDF"
 	OQTutupTanpaBayar = "OQ-CP-06: kasus komite tanpa baris adjustment tidak dapat ditulis (T_GENERAL_KOMITE.ADJUSTMENT_ID NOT NULL)"
-	OQBatasKomite     = "OQ-CP-16: penyerahan ke komite dan keputusan anggotanya milik konteks Komite; penjaga batas Claim Life " +
-		"menolak modul lain menulis atau membaca tangga komite - menunggu keputusan work owner"
 )
 
 // Kunci daftar pilihan (`services` mengisinya).

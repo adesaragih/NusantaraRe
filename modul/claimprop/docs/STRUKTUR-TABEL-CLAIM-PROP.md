@@ -176,10 +176,9 @@ langkah **8**).
 > 2. **Ketelitian**: *"20 digit seluruhnya, 8 di antaranya di belakang koma"* = **`NUMBER(38,10)`** (keputusan work
 >    owner 07-10-2026).
 > 3. **Kurs per baris**: tabel spreading tanpa kolom kurs memang benar menurut XML — lihat RALAT AC 25 di spec.
-> 4. `T_CLAIM_FAC_RETRO.TOTAL_ESTIMATION_REINS` dibuat seperti diagram, tetapi pada kasus baru **tetap kosong**: satu-
->    satunya penulis `ClaimData.FacRetroList.TotalEstimasiReas` adalah `AddKomiteTreatyChild_ACT` 8.1 (penyerahan komite =
->    OQ-CP-16); `PrintDLATreatyIn` 15.13 menulis salinan `AdjustmentList(n).FacRetroList`, bukan daftar ini. Kasus lama
->    dari `JSON_KLAIM` membawa nilainya lewat pemuat.
+> 4. `T_CLAIM_FAC_RETRO.TOTAL_ESTIMATION_REINS` dibuat seperti diagram: satu-satunya penulis
+>    `ClaimData.FacRetroList.TotalEstimasiReas` adalah `AddKomiteTreatyChild_ACT` 8.1 (terisi saat penyerahan ke komite);
+>    `PrintDLATreatyIn` 15.13 menulis salinan `AdjustmentList(n).FacRetroList`, bukan daftar ini.
 >
 > Bentuk yang berlaku = **Lampiran pengikat penjaga** di akhir berkas (dibandingkan penjaga dengan DDL).
 

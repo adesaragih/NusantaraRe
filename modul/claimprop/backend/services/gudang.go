@@ -31,6 +31,7 @@ type Gudang interface {
 	DaftarKasus(ctx context.Context, s repository.SaringanKasus) ([]repository.RingkasanKasus, error)
 
 	SimpanHalaman(ctx context.Context, tx *db.Tx, id string, h *models.Halaman) error
+	SetelKomiteAdjustment(ctx context.Context, tx *db.Tx, adjID, komiteID string) error
 	BacaHalaman(ctx context.Context, tx *db.Tx, id string) (*models.Halaman, error)
 
 	NomorSementara(ctx context.Context, tx *db.Tx, tahun string) (string, error)
@@ -41,6 +42,8 @@ type Gudang interface {
 	SalinJSONKlaim(ctx context.Context, tx *db.Tx, idPega, noKlaim, noPolis string, saat time.Time) error
 	CatatLogLayanan(ctx context.Context, tx *db.Tx, l repository.LogLayanan, saat time.Time) error
 	SisipKatastrofe(ctx context.Context, tx *db.Tx, k models.KatastrofeBaru, saat time.Time) error
+	BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID, pembuat, namaPembuat string,
+		anggota []repository.AnggotaTangga, saat time.Time) (string, error)
 	AntreEfek(ctx context.Context, tx *db.Tx, jenis, rujukan, muatan string, saat time.Time) (string, error)
 }
 
@@ -59,6 +62,7 @@ type Acuan interface {
 	DaftarKatastrofe(ctx context.Context, cari string) ([]repository.BarisKatastrofe, error)
 	BarisKatastrofeID(ctx context.Context, id string) (repository.BarisKatastrofe, bool, error)
 	RingkasanOS(ctx context.Context, noClaim string) ([]repository.BarisRingkasanOS, error)
+	TanggaKomite(ctx context.Context, komiteID string) ([]models.AnggotaKomite, error)
 	StatusKasir(ctx context.Context, noAksep string) (string, bool, error)
 	StatusKonversi(ctx context.Context, noAksep string) (string, error)
 	EmailCeding(ctx context.Context, ceding string) (string, error)

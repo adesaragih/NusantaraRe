@@ -97,13 +97,13 @@
 | View Komite No | `SetKomiteNo_Act` (vis `KomiteNo==''`, layout `IsKomite == 1`) | 11 | **dibangun** |
 | centang Direct To Kasir | postValue | 13 | **dibangun** |
 | grid Spreading In / Spreading Out / Loss Allocation | ikon grid standar | 06 | **dibangun** (hanya-baca seperti XML) |
-| grid "Committe Accept Status" (`.ComiteeClaim`) | — | 11 | **sebagian** — kolom *Committee Name* saja; Status / Date Approve / Comment = OQ-CP-16 |
+| grid "Committe Accept Status" (`.ComiteeClaim`) | — | 11 | **dibangun** — roster calon, lalu keputusan tangga (Committee Name / Status / Date Approve / Comment) |
 
 ## 5. Harness `CommitteeTreaty` (`ComiteeClaimTreaty`)
 
 | Label XML | Aksi XML | Tiket | Status |
 | --- | --- | --- | --- |
-| Send Claim to Committee | `AddKomiteTreatyChild_ACT` | 11 | **nonaktif-OQ** OQ-CP-16 (kode penyerahan dicabut 07-10-2026) |
+| Send Claim to Committee | `AddKomiteTreatyChild_ACT` (dis `Payable = ''`) | 11 | **dibangun** (opsi "b" 07-10-2026) — kasus TKMT- + tangga + email komite; terjangkau sesudah gerbang lampiran (OQ-CP-12) |
 | Cancel | tutup | 11 | **dibangun** |
 
 ## 6. Local action modal
@@ -128,7 +128,7 @@
 | REST `getPayAttachment` | View Payment Attachment (`GetPayAttachment_Act` → `GetPayAttachmentAdj_Act`) | 13 | **nonaktif-OQ** OQ-CP-03 |
 | REST `getPremiumPaidOnTreatyIn` | View Status Payment Premi | 02 | **nonaktif-OQ** OQ-CP-03 |
 | REST `ServiceGoogle` | `InsertGoogleStorage_Act` / `GetUrlGoogleStorage_Act` (berkas) | 11, 12 | **tidak dibangun** — OQ-CP-12 / OQ-CP-05 |
-| email `SendEmailKlaim` | `AddKomiteTreatyChild_ACT` 34 | 11, 13 | **tidak dibangun** — penyerahan komite OQ-CP-16 |
+| email `SendEmailKlaim` | `AddKomiteTreatyChild_ACT` 34 | 11, 13 | **dibangun** — efek outbox "email-komite" hanya bila `IS_PEGA_PROD`; CC/BCC OQ-CP-15 |
 | email `SendEmailKlaimRejectClose` | `SendCloseClaimToKomite` (tutup tanpa bayar) | 11 | **tidak dibangun** — OQ-CP-06 |
 
 ## 7. Pemeliharaan master (di luar lingkup, prompt §2)
@@ -152,8 +152,7 @@ Dihitung dari 73 baris tabel §1–§6a (baris berstatus campuran dihitung menur
 
 | Status | Cacah baris |
 | --- | --- |
-| dibangun | 42 |
-| sebagian (grid komite, OQ-CP-16) | 1 |
-| nonaktif-OQ | 14 |
-| tidak tampil di XML / bukan data / tidak dibangun (OQ atau keputusan) | 14 |
+| dibangun | 45 |
+| nonaktif-OQ | 13 |
+| tidak tampil di XML / bukan data / tidak dibangun (OQ atau keputusan) | 13 |
 | di luar lingkup | 2 baris + seluruh §7 |

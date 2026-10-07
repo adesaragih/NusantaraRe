@@ -59,7 +59,7 @@ type penanganAksi func(j *jalanAksi) error
 // aksiBarisAdj - aksi yang bekerja atas satu baris AdjustmentList (`Indeks`).
 var aksiBarisAdj = map[string]bool{"SetPayableTreaty": true, "SetNameCurrency": true, "SetDLACedingSOB": true,
 	"PilihAllocation": true, "CountGrossAdjTreaty": true, "PilihRekening": true, "SetKomiteNo": true, "BukaKomite": true,
-	"HitServiceToKasir": true, "PrintDLATreatyIn": true}
+	"AddKomiteTreatyChild": true, "HitServiceToKasir": true, "PrintDLATreatyIn": true}
 
 // aksiInduk - aksi pop-up (tombol Choose / Save di harness) yang terbuka bila aksi PEMBUKA pop-up-nya terbuka di tata.
 var aksiInduk = map[string]string{
@@ -72,6 +72,8 @@ var aksiInduk = map[string]string{
 	"TryMakePLA":         "BukaPLA",
 	"PrintDLATreatyIn":   "BukaDLA",
 	"CloseClaimProp":     "BukaTutupKlaim",
+	// tombol modal CommitteeTreaty tampil menurut isian modal - diperiksa ulang SESUDAH kiriman digabung (aksiKomite)
+	"AddKomiteTreatyChild": "BukaKomite",
 }
 
 // Aksi menjalankan satu aksi dan mengembalikan layar sesudahnya.
@@ -126,6 +128,11 @@ func (l *Layanan) Aksi(ctx context.Context, p inti.Pelaku, id string, r Perminta
 		}
 		// Pesan pra-proses tidak dibawa ke hasil aksi (pesan aksi yang tampil).
 		h.BersihkanPesan()
+		if nama == "AddKomiteTreatyChild" { // gerbang Protect dihitung ulang di server, bukan dari kiriman (AC 58)
+			if err := j0BukaKomite(l, ctx, kt, h, r.Indeks); err != nil {
+				return err
+			}
+		}
 		utama, adj, modal := tataKasus(kasus, h, false)
 		semua := semuaTata(utama, adj, modal)
 		if aksiBarisAdj[nama] { // aksi baris adjustment: hanya tata baris itu (dan modalnya)
@@ -310,18 +317,19 @@ func init() {
 		"SubmitOutstanding": aksiSubmit,
 		"Simpan":            halamanSaja(func(j *jalanAksi) {}),
 		// akseptasi (tiket 08, 10, 11, 12, 13)
-		"AddAdjustment":       halamanSaja(func(j *jalanAksi) { models.AddAdjustment(j.k, j.h) }),
-		"DeleteAjsutment":     func(j *jalanAksi) error { return models.DeleteAjsutment(j.h, j.r.Indeks) },
-		"SetPayableTreaty":    indeks(models.SetPayableTreaty),
-		"SetNameCurrency":     aksiMataUangAdjustment,
-		"SetDLACedingSOB":     func(j *jalanAksi) error { return models.SetDLACedingSOB(j.h, j.r.Indeks) },
-		"PilihAllocation":     func(j *jalanAksi) error { return models.PilihAllocation(j.h, j.r.Indeks, j.r.Param) },
-		"CountGrossAdjTreaty": indeks(models.CountGrossAdjTreaty),
-		"PilihRekening":       aksiPilihRekening,
-		"SetKomiteNo":         halamanSaja(func(j *jalanAksi) {}),
-		"BukaKomite":          aksiBukaKomite,
-		"HitServiceToKasir":   aksiKasir,
-		"PrintDLATreatyIn":    aksiDLA,
-		"CloseClaimProp":      aksiTutupKlaim,
+		"AddAdjustment":        halamanSaja(func(j *jalanAksi) { models.AddAdjustment(j.k, j.h) }),
+		"DeleteAjsutment":      func(j *jalanAksi) error { return models.DeleteAjsutment(j.h, j.r.Indeks) },
+		"SetPayableTreaty":     indeks(models.SetPayableTreaty),
+		"SetNameCurrency":      aksiMataUangAdjustment,
+		"SetDLACedingSOB":      func(j *jalanAksi) error { return models.SetDLACedingSOB(j.h, j.r.Indeks) },
+		"PilihAllocation":      func(j *jalanAksi) error { return models.PilihAllocation(j.h, j.r.Indeks, j.r.Param) },
+		"CountGrossAdjTreaty":  indeks(models.CountGrossAdjTreaty),
+		"PilihRekening":        aksiPilihRekening,
+		"SetKomiteNo":          halamanSaja(func(j *jalanAksi) {}),
+		"BukaKomite":           aksiBukaKomite,
+		"AddKomiteTreatyChild": aksiKomite,
+		"HitServiceToKasir":    aksiKasir,
+		"PrintDLATreatyIn":     aksiDLA,
+		"CloseClaimProp":       aksiTutupKlaim,
 	}
 }

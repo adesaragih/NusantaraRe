@@ -203,10 +203,18 @@ func (l *Layanan) turunkan(ctx context.Context, k *models.Konteks, h *models.Hal
 		return err
 	}
 	for i, b := range h.AmbilDaftar(models.DaftarAdjustment) {
+		var tangga []models.AnggotaKomite
 		if kid := b[models.PropKomiteID]; kid != "" {
+			var err error
+			if tangga, err = l.a.TanggaKomite(ctx, kid); err != nil {
+				return err
+			}
 			b["KomiteNo"] = kid // SetKomiteNo_Act: nomor kasus komite (pxCoveredInsKeys)
+			if tangga == nil {
+				tangga = []models.AnggotaKomite{}
+			}
 		}
-		if err := models.SusunKomiteAdjustment(k, h, i+1); err != nil {
+		if err := models.SusunKomiteAdjustment(k, h, i+1, tangga); err != nil {
 			return err
 		}
 		if b["AcceptedNo"] != "" { // GetStatusKasir_Act (defer load blok kasir)

@@ -54,6 +54,7 @@ type Acuan struct {
 	Sebab          []repository.BarisSebab
 	Katastrofe     []repository.BarisKatastrofe
 	OS             map[string][]repository.BarisRingkasanOS
+	Tangga         map[string][]models.AnggotaKomite
 	Kasir          map[string]string
 	Konversi       map[string]string
 	Tingkat        map[string]string
@@ -68,7 +69,7 @@ func AcuanBaru() *Acuan {
 		MO: map[string][6]string{}, Riwayat: map[string][]models.RiwayatKlaimPolis{}, OldID: map[string]string{},
 		Tahun: map[string]string{}, LimitPLAMap: map[string]string{}, Retro: map[string][]models.Retro{},
 		Saldo: map[string]string{}, Proteksi: map[string]bool{}, OS: map[string][]repository.BarisRingkasanOS{},
-		Kasir: map[string]string{}, Konversi: map[string]string{},
+		Tangga: map[string][]models.AnggotaKomite{}, Kasir: map[string]string{}, Konversi: map[string]string{},
 		Tingkat: map[string]string{}}
 }
 
@@ -270,6 +271,10 @@ func (a *Acuan) BarisKatastrofeID(_ context.Context, id string) (repository.Bari
 
 func (a *Acuan) RingkasanOS(_ context.Context, no string) ([]repository.BarisRingkasanOS, error) {
 	return a.OS[no], nil
+}
+
+func (a *Acuan) TanggaKomite(_ context.Context, id string) ([]models.AnggotaKomite, error) {
+	return a.Tangga[id], nil
 }
 
 func (a *Acuan) StatusKasir(_ context.Context, no string) (string, bool, error) {

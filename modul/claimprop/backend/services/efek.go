@@ -2,13 +2,13 @@ package services
 
 // Untuk apa berkas ini: PELAKSANA OUTBOX Claim Prop - menjalankan satu baris T_LOG_SERVICE_RNM `MODUL = claimprop`
 // (pola Komite Claim Life `PelaksanaKomite`, DISALIN bukan diimpor). Pekerja tahu cara memungut dan mencoba ulang;
-// berkas ini tahu arti "konversi-klaim" dan "kasir".
+// berkas ini tahu arti "konversi-klaim", "kasir", dan "email-komite".
 //
 // ⛔ Non-produksi: pengirim STUB - nol panggilan keluar, baris berhenti `gagal-permanen` dengan
 // `ErrPengirimStubNonProduksi`, tidak pernah `selesai`. Produksi: alamat M_LINK_SERVICE di-resolve sungguhan (kunci
 // Kategori_1/Kategori_2 VERBATIM dari activity) lalu berhenti terang (`…BelumDisetujui`) sampai manusia menyetujui
-// panggilan nyata (prompt §6 butir 6). Email komite (SendEmailKlaim, AddKomiteTreatyChild_ACT 34) tidak diantre:
-// penyerahan komite = OQ-CP-16; alamat CC/BCC-nya ke konfigurasi = OQ-CP-15.
+// panggilan nyata (prompt §6 butir 6). Email komite (SendEmailKlaim, AddKomiteTreatyChild_ACT 34) memakai SMTP, bukan
+// M_LINK_SERVICE; alamat CC/BCC yang di-hardcode XML ke konfigurasi = OQ-CP-15.
 
 import (
 	"context"
@@ -39,12 +39,15 @@ func (p PelaksanaClaimProp) Laksanakan(ctx context.Context, _ *db.Tx, b outbox.B
 		return fmt.Errorf("%w: muatan outbox Claim Prop tak terbaca: %v", galat.ErrPermintaanTidakSah, err)
 	}
 	switch b.Jenis {
-	case JenisEfekKonversi, JenisEfekKasir:
+	case JenisEfekKonversi, JenisEfekKasir, JenisEfekEmailKomite:
 	default:
 		return fmt.Errorf("%w: jenis efek Claim Prop %q", galat.ErrPermintaanTidakSah, b.Jenis)
 	}
 	if !p.Lingkungan.AdalahProduksi() {
 		return outbox.ErrPengirimStubNonProduksi
+	}
+	if b.Jenis == JenisEfekEmailKomite {
+		return outbox.EfekEmail{}.Jalankan(ctx, outbox.MuatanEfek{KlaimID: m.KlaimID})
 	}
 	if p.Resolver == nil {
 		return layanan.ErrResolverBelumDiputuskan

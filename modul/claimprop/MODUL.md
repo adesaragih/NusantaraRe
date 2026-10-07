@@ -80,8 +80,9 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   dengan riwayat penawaran PremiumList Life. Baris kolomnya di STRUKTUR PremiumList Life; uji modul itu
   (`strukturtipe_polis_test.go`) menghitung 244 kolom dan melewati kolom buatan modul lain (`kolomModulLain`).
 - **Baris kolom 520 di STRUKTUR Claim Life** (`## T_GENERAL_CLAIM`, dokumen saja) = keputusan "Tabel bersama".
-- **Penyerahan ke komite tetap dicabut** (penulis dan pembaca tangga, kolom keputusan anggota): penjaga batas Claim
-  Life `komite_statik_test.go` menolaknya. Tombol tampil nonaktif: OQ-CP-16, menunggu jawaban.
+- **Penyerahan ke komite aktif** (jawaban "b"): kode batas komite dikumpulkan di `backend/models/komite.go` dan
+  `backend/repository/komite.go`; keduanya masuk daftar pengecualian penjaga batas Claim Life `komite_statik_test.go`
+  (satu-satunya suntingan di modul itu). Gerbang lampiran tetap menolak selama OQ-CP-12 terbuka.
 - **Tambah / hapus baris Spreading Claim nonaktif**, termasuk ikon grid bawaan (dicabut). Akibat yang diketahui:
   kasus BARU tidak dapat melahirkan baris spreading, sehingga Save to issue RNM ditolak `ProteksiData_act` langkah 5
   ("please Fill SpreadingList"); kasus hasil pemuat data lama membawa barisnya.
@@ -112,4 +113,4 @@ go run ./modul/claimprop/backend/alat/pemuatlama -keluaran <folder> -jalankan   
 
 `go test -tags ujidev -run TestSQLDiDEV -v ./modul/claimprop/backend/repository/` — setiap SELECT dijalankan lewat
 metode aslinya dengan masukan `UJI-*`, setiap INSERT / UPDATE / DELETE hanya diurai `DBMS_SQL.PARSE`. 07-10-2026:
-53 ok, 0 gagal, 37 "objek belum ada" (34 menunggu migrasi 520–533; 3 skema luar OQ-CP-11).
+58 ok, 0 gagal, 38 "objek belum ada" (35 menunggu migrasi 520–533; 3 skema luar OQ-CP-11).

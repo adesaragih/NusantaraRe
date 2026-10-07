@@ -5,6 +5,7 @@ package tiruan
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -29,7 +30,10 @@ type Gudang struct {
 	JSONKlaim  map[string][2]string
 	Log        []repository.LogLayanan
 	Katastrofe []models.KatastrofeBaru
-	Efek       []string
+	// Komite - ID kasus komite -> tangga; KomiteAdj - ID kasus komite -> ID baris adjustment.
+	Komite    map[string][]repository.AnggotaTangga
+	KomiteAdj map[string]string
+	Efek      []string
 	// NomorTerbit - jenis -> urut terakhir (penghitung bersama).
 	NomorTerbit map[string]int
 	// OSLama / JSONLama - sumber pemuat data lama (OS_AKSEPTASI_KLAIM; JSON_KLAIM IDPEGA -> DATA_JSON).
@@ -40,7 +44,8 @@ type Gudang struct {
 // Baru membuat gudang kosong.
 func Baru() *Gudang {
 	return &Gudang{seq: map[string]int{}, Kasus: map[string]models.Kasus{}, halaman: map[string]*models.Halaman{},
-		JSONKlaim: map[string][2]string{}, NomorTerbit: map[string]int{}}
+		JSONKlaim: map[string][2]string{}, Komite: map[string][]repository.AnggotaTangga{}, KomiteAdj: map[string]string{},
+		NomorTerbit: map[string]int{}}
 }
 
 // Transaksi - tiruan: salinan keadaan dipulihkan bila fn gagal (rollback).
@@ -66,6 +71,8 @@ type cadangan struct {
 	json        map[string][2]string
 	log         []repository.LogLayanan
 	kat         []models.KatastrofeBaru
+	komite      map[string][]repository.AnggotaTangga
+	komiteAdj   map[string]string
 	efek        []string
 	nomorTerbit map[string]int
 }
@@ -73,7 +80,8 @@ type cadangan struct {
 func (g *Gudang) salin() cadangan {
 	c := cadangan{urut: g.urut, seq: map[string]int{}, kasus: map[string]models.Kasus{}, halaman: map[string]*models.Halaman{},
 		os: append([]models.BarisOS{}, g.OS...), json: map[string][2]string{}, log: append([]repository.LogLayanan{}, g.Log...),
-		kat: append([]models.KatastrofeBaru{}, g.Katastrofe...), efek: append([]string{}, g.Efek...),
+		kat: append([]models.KatastrofeBaru{}, g.Katastrofe...), komite: map[string][]repository.AnggotaTangga{},
+		komiteAdj: map[string]string{}, efek: append([]string{}, g.Efek...),
 		nomorTerbit: map[string]int{}}
 	for k, v := range g.seq {
 		c.seq[k] = v
@@ -87,6 +95,12 @@ func (g *Gudang) salin() cadangan {
 	for k, v := range g.JSONKlaim {
 		c.json[k] = v
 	}
+	for k, v := range g.Komite {
+		c.komite[k] = v
+	}
+	for k, v := range g.KomiteAdj {
+		c.komiteAdj[k] = v
+	}
 	for k, v := range g.NomorTerbit {
 		c.nomorTerbit[k] = v
 	}
@@ -95,7 +109,8 @@ func (g *Gudang) salin() cadangan {
 
 func (g *Gudang) pulihkan(c cadangan) {
 	g.urut, g.seq, g.Kasus, g.halaman, g.OS, g.JSONKlaim = c.urut, c.seq, c.kasus, c.halaman, c.os, c.json
-	g.Log, g.Katastrofe, g.Efek, g.NomorTerbit = c.log, c.kat, c.efek, c.nomorTerbit
+	g.Log, g.Katastrofe, g.Komite, g.KomiteAdj, g.Efek, g.NomorTerbit = c.log, c.kat, c.komite, c.komiteAdj, c.efek,
+		c.nomorTerbit
 }
 
 func (g *Gudang) nomor(seq string) int {
@@ -266,7 +281,7 @@ func (g *Gudang) SimpanHalaman(_ context.Context, _ *db.Tx, id string, h *models
 		}
 	}
 	s.SetelDaftar(models.DaftarRiwayat, riw)
-	// KOMITE_ID tidak pernah ditulis dari halaman (kolomnya milik penautan komite, OQ-CP-16).
+	// KOMITE_ID ditulis SetelKomiteAdjustment, bukan dari halaman.
 	komite := map[string]string{}
 	for _, b := range lama.AmbilDaftar(models.DaftarAdjustment) {
 		if b[models.PropKomiteID] != "" {
@@ -370,6 +385,40 @@ func (g *Gudang) SisipKatastrofe(_ context.Context, _ *db.Tx, k models.Katastrof
 	defer g.mu.Unlock()
 	g.Katastrofe = append(g.Katastrofe, k)
 	return nil
+}
+
+// SetelKomiteAdjustment menautkan baris adjustment ke komite.
+func (g *Gudang) SetelKomiteAdjustment(_ context.Context, _ *db.Tx, adjID, komiteID string) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	for _, h := range g.halaman {
+		for _, b := range h.AmbilDaftar(models.DaftarAdjustment) {
+			if b[models.PropID] == adjID {
+				if b[models.PropKomiteID] != "" {
+					return errors.New("tiruan: adjustment sudah berkomite")
+				}
+				b[models.PropKomiteID] = komiteID
+				return nil
+			}
+		}
+	}
+	return errors.New("tiruan: baris adjustment tidak ada")
+}
+
+// BuatKasusKomite melahirkan kasus komite TKMT-.
+func (g *Gudang) BuatKasusKomite(_ context.Context, _ *db.Tx, klaimID, adjID, pembuat, nama string,
+	anggota []repository.AnggotaTangga, saat time.Time) (string, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if len(anggota) == 0 {
+		return "", errors.New("tiruan: tangga komite kosong")
+	}
+	id := fmt.Sprintf("%s%06d", models.AwalanKomite, g.nomor("SEQ_WORK_CLAIM"))
+	g.Kasus[id] = models.Kasus{ID: id, Tahap: models.TahapKomiteTreaty, PembuatID: pembuat, PembuatNama: nama,
+		TglCreate: saat, Sumber: models.SumberGo}
+	g.Komite[id] = anggota
+	g.KomiteAdj[id] = adjID
+	return id, nil
 }
 
 // AntreEfek mencatat efek.

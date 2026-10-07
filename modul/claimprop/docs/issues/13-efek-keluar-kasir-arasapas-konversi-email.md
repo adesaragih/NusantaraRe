@@ -1,6 +1,6 @@
 # 13: Efek keluar — Kasir, Arasapas, konversi non-life, dan email komite
 
-**Status:** sebagian 07-10-2026 — efek keluar diantre di outbox hanya bila `IS_PEGA_PROD`; panggilan nyata berhenti `…BelumDisetujui` (OQ-CP-03); email komite ikut OQ-CP-16 — RALAT 07-10-2026 (semula `ready-for-agent`)
+**Status:** sebagian 07-10-2026 — efek keluar diantre di outbox hanya bila `IS_PEGA_PROD`; panggilan nyata berhenti `…BelumDisetujui` (OQ-CP-03); email komite diantre (hanya bila `IS_PEGA_PROD`) — RALAT 07-10-2026 (semula `ready-for-agent`)
 **Blocked by:** 00 (PREFACTOR) · 08 (baris adjustment)
 **Menutup:** AC 89 · 90 · 91 · 92 · 93 · 94 · 99 · 100 · 101 *(9 AC)* — US 50–54
 

@@ -264,9 +264,11 @@ func TestAlurPenuhSampaiResolved(t *testing.T) {
 	if n := len(u.g.Halaman(id).AmbilDaftar(models.DaftarAdjustment)); n != 1 {
 		t.Fatalf("baris adjustment %d, mau 1", n)
 	}
-	// penyerahan komite tidak dibangun (OQ-CP-16): dipanggil langsung pun ditolak, nol kasus TKMT- lahir
+	// penyerahan komite tanpa lampiran ditolak di layanan, walau dipanggil langsung (AC 58); nol kasus TKMT- lahir
 	kode, out = kerja("AddKomiteTreatyChild", 1, "", nil)
-	u.wajib(kode, http.StatusBadRequest, out, "penyerahan komite")
+	if kode == http.StatusOK {
+		t.Fatalf("penyerahan komite tanpa lampiran lolos: %v", out["galat"])
+	}
 	for kid := range u.g.Kasus {
 		if strings.HasPrefix(kid, "TKMT-") {
 			t.Fatalf("kasus komite %s lahir", kid)

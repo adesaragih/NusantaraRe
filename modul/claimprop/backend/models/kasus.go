@@ -25,11 +25,11 @@ const KelasKasus = "ASM-FW-GCNMFW-Work-ClaimTreaty"
 // KelasKasusKunci - awalan pzInsKey Pega kasus lama (`ASM-FW-GCNMFW-WORK CLMP-n`, katalog DEV OS_AKSEPTASI_KLAIM).
 const KelasKasusKunci = "ASM-FW-GCNMFW-WORK"
 
-// Awalan pengenal T_WORK_CLAIM lini PROP (STRUKTUR T3, keputusan work owner 18-09-2026). Awalan kasus komite TKMT-
-// tidak dipakai: penyerahan ke komite = OQ-CP-16.
+// Awalan pengenal T_WORK_CLAIM lini PROP (STRUKTUR T3, keputusan work owner 18-09-2026).
 const (
-	AwalanKlaim = "CLMP-"
-	// LiniProp - T_WORK_CLAIM.LINI baris klaim.
+	AwalanKlaim  = "CLMP-"
+	AwalanKomite = "TKMT-"
+	// LiniProp - T_WORK_CLAIM.LINI kedua baris (klaim dan komite).
 	LiniProp = "PROP"
 )
 
@@ -41,8 +41,9 @@ const (
 // saringan LINI. Nilai FlowAction ("OutstandingClaim") berasal dari XML yang sama dan tidak bertabrakan, sehingga baris
 // PROP tidak pernah muncul di kotak masuk Claim Life. Saringan LINI di modul itu = OQ work owner (tidak disunting).
 const (
-	TahapOutstanding = "OutstandingClaim"
-	TahapAcceptation = "InputAcceptation"
+	TahapOutstanding  = "OutstandingClaim"
+	TahapAcceptation  = "InputAcceptation"
+	TahapKomiteTreaty = "KomiteTreaty_Flow"
 )
 
 // Label assignment - pyMOName shape Flow_TreatyIn, tampil di daftar kerja.

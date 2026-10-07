@@ -113,6 +113,9 @@ type AnggotaKomite struct {
 	Email      string
 	Jabatan    string
 	Degree     string
+	// Approval, Comment, TanggalSetuju - keputusan anggota tangga kasus komite (dibaca untuk tampilan); kosong pada
+	// roster calon.
+	Approval, Comment, TanggalSetuju string
 }
 
 // RekeningBank - satu baris BANKACCOUNT.

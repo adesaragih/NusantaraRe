@@ -1,7 +1,7 @@
 -- 527 - T_CLAIM_FAC_RETRO <- pyWorkPage.ClaimData.FacRetroList (diisi dari TREATYREINSURER, SaveOutstanding_Act langkah 35).
 -- AdjustmentList(n).FacRetroList adalah salinan daftar ini - tidak disimpan (STRUKTUR J1 butir 5).
 -- TOTAL_ESTIMATION_REINS <- .TotalEstimasiReas: satu-satunya pengisi di ClaimData.FacRetroList adalah AddKomiteTreatyChild_ACT
--- 8.1 (penyerahan komite = OQ-CP-16) - kasus baru membiarkannya kosong; kasus lama dari JSON_KLAIM membawa nilainya.
+-- 8.1 (terisi saat penyerahan ke komite); PrintDLATreatyIn 15.13 menulis salinan AdjustmentList(n).FacRetroList.
 CREATE TABLE {skema}.T_CLAIM_FAC_RETRO (
   ID                      VARCHAR2(32) NOT NULL,
   CLAIM_ID                VARCHAR2(32) NOT NULL,

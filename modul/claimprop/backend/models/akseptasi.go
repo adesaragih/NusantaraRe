@@ -415,34 +415,7 @@ func SetKomiteTreaty(k *Konteks, h *Halaman, idx int) error {
 	if err := kal.Galat(); err != nil {
 		return err
 	}
-	return SusunKomiteAdjustment(k, h, idx)
-}
-
-// SusunKomiteAdjustment - grid "Committe Accept Status" baris adjustment `idx`: roster calon (SetKomiteTreaty_ACT 5.1:
-// `IDKomite = .JABATAN`). Kolom keputusan anggota (Status / Date Approve / Comment) dan tangga kasus komite yang
-// sudah diserahkan TIDAK dibaca: keduanya milik konteks Komite, dan penjaga batas Claim Life menolak modul lain
-// menyentuhnya (OQ-CP-16). Baris yang sudah menunjuk kasus komite menampilkan grid kosong.
-func SusunKomiteAdjustment(k *Konteks, h *Halaman, idx int) error {
-	b, err := adj(h, idx)
-	if err != nil {
-		return err
-	}
-	if b[PropKomiteID] != "" || b["ProposeAdjustmentValue"] == "" || b["ValueAdjustment"] == "" {
-		h.SetelDaftar(JalurAdj(idx, "ComiteeClaim"), nil)
-		b["TotalKomite"] = ""
-		return nil
-	}
-	anggota, err := k.Acuan.RosterKomite(k.Ctxt(), b["ValueAdjustment"], STSKlaimProp)
-	if err != nil {
-		return err
-	}
-	var rows []Baris
-	for _, a := range anggota {
-		rows = append(rows, Baris{"KomiteID": a.OperatorID, "IDKomite": a.Jabatan})
-	}
-	h.SetelDaftar(JalurAdj(idx, "ComiteeClaim"), rows)
-	b["TotalKomite"] = strconv.Itoa(len(rows))
-	return nil
+	return SusunKomiteAdjustment(k, h, idx, nil)
 }
 
 // ---------------------------------------------------------------- payable dan rekening

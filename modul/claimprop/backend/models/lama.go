@@ -90,7 +90,7 @@ type MedanDibuang struct {
 const (
 	SebabInternalPega = "dibuang: kunci px/py/pz (AC 10-11)"
 	SebabTidakDiimpor = "dibuang: tidak diimpor - InterestListDtl, SpreadingRisk, PaymentData (keputusan diagram)"
-	SebabKomite       = "dibuang: keputusan komite milik konteks Komite (OQ-CP-16)"
+	SebabKomite       = "dibuang: keputusan anggota komite kasus lama (tangga kasus komite Pega tidak dimuat)"
 	SebabLampiran     = "dibuang: lampiran (OQ-CP-12)"
 	SebabTanpaKolom   = "dibuang: tanpa kolom di katalog (turunan dihitung ulang, atau bukan data)"
 	SebabBarisOS      = "tetap di OS_AKSEPTASI_KLAIM: medan baris estimasi / adjustment, bukan header kasus"

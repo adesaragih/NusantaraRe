@@ -41,7 +41,7 @@ const lebarUrut = 6
 // IDKasusBerikut - ID kasus baru dari SEQ_WORK_CLAIM (urutan bersama Claim Life - ruang nomor tidak bertabrakan karena
 // awalannya berbeda).
 func (g *Gudang) IDKasusBerikut(ctx context.Context, tx *db.Tx, awalan string) (string, error) {
-	if awalan != models.AwalanKlaim {
+	if awalan != models.AwalanKlaim && awalan != models.AwalanKomite {
 		return "", fmt.Errorf("repository: awalan kasus %q tidak dikenal", awalan)
 	}
 	n, err := g.db.NomorBerikut(ctx, tx, "SEQ_WORK_CLAIM")
