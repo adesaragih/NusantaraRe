@@ -105,6 +105,37 @@ func (l *Layanan) pilihBisnisNonProp(ctx context.Context, h *models.Halaman) err
 	return rusak(models.PPNPPHLapisanXOL(h))
 }
 
+// pajakNonProp - `[keputusan work owner 06-10-2026]` With Tax / Type Tax berubah sesudah Choose Business:
+// pajak polis NonProp baru dihitung ulang dengan menjalankan lagi preACT 16 dan 18 (`pilihBisnisNonProp`),
+// satu-satunya tempat XML menghitungnya (sel `.TypeTax` hanya postValue, `.FlagPPH` hanya RemoveTypeTax_ACT).
+// Isian pengguna yang ikut ditulis ulang langkah 13 dan 23 - StartDate, EndDate, %Share spreading -
+// dikembalikan (`models.SimpanIsianNonProp`).
+func (l *Layanan) pajakNonProp(ctx context.Context, h *models.Halaman) error {
+	if !models.PolisNonPropBaru(h) || !nonPropDipilih(h) {
+		return nil
+	}
+	isian := models.SimpanIsianNonProp(h)
+	if err := l.pilihBisnisNonProp(ctx, h); err != nil {
+		return err
+	}
+	return isian.Kembalikan(h)
+}
+
+// tampilanNonProp - bagian NonProp buka berkas HANYA-LIHAT (`Layanan.tampilan`): master dibaca ulang untuk
+// subsection DetailPoliciesNonProportional saja (butir 1 `siapkanNonProp`). Butir 2 (pra-proses langkah 10,
+// TreatyRealizationCheckXOLList) tidak dijalankan - itu bagian pekerjaan pemegang berkas.
+func (l *Layanan) tampilanNonProp(ctx context.Context, h *models.Halaman) error {
+	if !nonPropDipilih(h) {
+		return nil
+	}
+	m, err := l.bacaMaster(ctx, h, false)
+	if err != nil {
+		return err
+	}
+	models.TerapkanMasterXOL(h, m)
+	return rusak(models.TampilanMasterNonProp(h))
+}
+
 // siapkanNonProp - bagian NonProp pra-proses (dipanggil `siapkan` sesudah
 // `muatMaster`):
 //

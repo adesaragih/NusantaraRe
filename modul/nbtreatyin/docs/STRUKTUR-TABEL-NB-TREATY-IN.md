@@ -10,7 +10,7 @@ Golongan (uang / persen / kode / penanda / tanggal) ada di kolom *Golongan*.
 
 Tabel yang **dibaca, tidak dibuat** modul ini dideklarasikan di `MODUL.md`.
 
-## T_GENERAL_POLIS
+## T_GENERAL_POLIS_TREATY
 
 Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7). Generasi tertutup = ada penerus yang `OLD_POLIS_ID`-nya menunjuk baris ini (ID-10).
 
@@ -21,7 +21,6 @@ Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7). Genera
 | `PRODKE` | bilangan bulat | tidak | UQ (NOPOLIS, PRODKE) | cacah | generasi; NB = 0 |
 | `NOENDORS` | teks | ya |  | kode | json_polis |
 | `OLD_POLIS_ID` | teks | ya | UQ, FK T_WORK_POLIS | kode | generasi sebelumnya |
-| `IDPEGA` | teks | ya |  | kode | json_polis |
 | `TGL_INPUT` | DATE | ya |  | tanggal-waktu | json_polis |
 | `USERNAME` | teks | ya |  | kode | identitas akses login (P4) |
 | `POSITION_NOTE` | teks | ya |  | teks | `PositionNote` |
@@ -104,7 +103,7 @@ Halaman `Quotation` / `PolicyTreatyIn.QuotationData`, 1:1 (ID-23).
 
 | Kolom | Tipe | Null | Kunci | Golongan | Properti Pega |
 | --- | --- | --- | --- | --- | --- |
-| `POLIS_ID` | teks | tidak | PK, FK T_GENERAL_POLIS | kode | induk |
+| `POLIS_ID` | teks | tidak | PK, FK T_GENERAL_POLIS_TREATY | kode | induk |
 | `PROPORTIONAL_TYPE` | teks | ya |  | kode | `ProportionalType` |
 | `MO_ID` | teks | ya |  | kode | `MOID` |
 | `BUSINESS_CODE` | teks | ya |  | kode | `BusinessCode` |
@@ -121,6 +120,10 @@ Halaman `Quotation` / `PolicyTreatyIn.QuotationData`, 1:1 (ID-23).
 | `INSURED_NAME` | teks | ya |  | teks | `InsuredName` |
 | `NO_OFFER_SLIP` | teks | ya |  | teks | `NoOfferSlip` |
 | `IS_SURVEY_REPORT` | teks | ya |  | penanda | `IsSurveyReport` |
+| `MARKETING_CODE` | teks | ya |  | kode | `MarketingCode` |
+| `TEAM_GROUP` | teks | ya |  | kode | `TeamGroup` |
+| `BRANCH_CODE` | teks | ya |  | kode | `BranchCode` |
+| `BRANCH_NAME` | teks | ya |  | teks | `BranchName` |
 
 ## T_POLIS_CEDING
 
@@ -141,7 +144,7 @@ Halaman `Quotation` / `PolicyTreatyIn.QuotationData`, 1:1 (ID-23).
 | Kolom | Tipe | Null | Kunci | Golongan | Properti Pega |
 | --- | --- | --- | --- | --- | --- |
 | `ID` | teks | tidak | PK | kode | baris |
-| `POLIS_ID` | teks | tidak | FK T_GENERAL_POLIS, UQ (POLIS_ID, NOURUT) | kode | induk |
+| `POLIS_ID` | teks | tidak | FK T_GENERAL_POLIS_TREATY, UQ (POLIS_ID, NOURUT) | kode | induk |
 | `NOURUT` | bilangan bulat | tidak | UQ (POLIS_ID, NOURUT) | cacah | urutan baris (ID-11) |
 | `INSTALLMENT_NO` | bilangan bulat | ya |  | cacah | `InstallmentNo` |
 | `DUE_DATE` | DATE | ya |  | tanggal | `DueDate` |
@@ -186,7 +189,7 @@ Halaman `Quotation` / `PolicyTreatyIn.QuotationData`, 1:1 (ID-23).
 | Kolom | Tipe | Null | Kunci | Golongan | Properti Pega |
 | --- | --- | --- | --- | --- | --- |
 | `ID` | teks | tidak | PK | kode | baris |
-| `POLIS_ID` | teks | tidak | FK T_GENERAL_POLIS, UQ (POLIS_ID, NOURUT) | kode | induk |
+| `POLIS_ID` | teks | tidak | FK T_GENERAL_POLIS_TREATY, UQ (POLIS_ID, NOURUT) | kode | induk |
 | `NOURUT` | bilangan bulat | tidak | UQ (POLIS_ID, NOURUT) | cacah | urutan baris (ID-11) |
 | `TREATY_TYPE` | teks | ya |  | kode | `TreatyType` |
 | `TREATY_NAME` | teks | ya |  | teks | `TreatyName` |
@@ -205,7 +208,7 @@ Halaman `Quotation` / `PolicyTreatyIn.QuotationData`, 1:1 (ID-23).
 | Kolom | Tipe | Null | Kunci | Golongan | Properti Pega |
 | --- | --- | --- | --- | --- | --- |
 | `ID` | teks | tidak | PK | kode | baris |
-| `POLIS_ID` | teks | tidak | FK T_GENERAL_POLIS, UQ (POLIS_ID, NOURUT) | kode | induk |
+| `POLIS_ID` | teks | tidak | FK T_GENERAL_POLIS_TREATY, UQ (POLIS_ID, NOURUT) | kode | induk |
 | `NOURUT` | bilangan bulat | tidak | UQ (POLIS_ID, NOURUT) | cacah | urutan baris (ID-11) |
 | `CURRENCY` | teks | ya |  | kode | `Currency` |
 | `ID_CURRENCY` | teks | ya |  | kode | `IDCurrency` |
@@ -247,6 +250,20 @@ Halaman `Quotation` / `PolicyTreatyIn.QuotationData`, 1:1 (ID-23).
 | `NET_PREMI_AFTER_PPH` | angka desimal | ya |  | uang | `NetPremiAfterPPH` |
 | `NET_PREMI_AFTER_PPN` | angka desimal | ya |  | uang | `NetPremiAfterPPN` |
 | `NET_PREMI_AFTER_TAX` | angka desimal | ya |  | uang | `NetPremiAfterTax` |
+
+## T_POLIS_SURVEY
+
+← `PolicyTreatyIn.QuotationData.SurveyReportList` (popup Historical Survey Report; keputusan work owner 06-10-2026).
+
+| Kolom | Tipe | Null | Kunci | Golongan | Properti Pega |
+| --- | --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | kode | baris |
+| `POLIS_ID` | teks | tidak | FK T_GENERAL_POLIS_TREATY, UQ (POLIS_ID, NOURUT) | kode | induk |
+| `NOURUT` | bilangan bulat | tidak | UQ (POLIS_ID, NOURUT) | cacah | urutan baris (ID-11) |
+| `DATE_OF_SURVEY` | DATE | ya |  | tanggal | `DateofSurvey` |
+| `SURVEYED_BY` | teks | ya |  | teks | `SurveyedBy` |
+| `LOSS_PREVENTION` | angka desimal | ya |  | persen | `LossPrevention` |
+| `REMARKS` | teks | ya |  | kode | `Remarks` |
 
 ## HISTORYAKSEPTASIPRODUCTION
 

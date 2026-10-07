@@ -1,0 +1,30 @@
+{
+ "pxObjClass": "ASM-FW-GISFW-Data-PolicyTreatyIn",
+ "PolicyNo": "UJI-QR.T1.01.2018.00002",
+ "EDMNo": "UJI-QR.T1.01.2018.00002/E01",
+ "ProdKe": "1",
+ "EDMType": "4",
+ "QuotationData": {
+  "ProportionalType": "Non Proportional"
+ },
+ "ListInstallment": [
+  {"InstallmentNo": "1", "Currency": "UJI-IDR", "IDCurrency": "UJI-1", "Premium": "10",
+   "InstallmentList": [{"InstallmentNo": "1", "DueDate": "20180201", "Premium": "10", "PPN": "0.22"}]}
+ ],
+ "TreatyXOLList": [
+  {"Currency": "UJI-IDR", "IDCurrency": "UJI-1", "pyExpanded": "true",
+   "ValueList": [
+    {"pxListSubscript": "1", "Layer": "1", "LayerPart": "A", "IDCurrency": "UJI-1", "GrossPremi": "7"},
+    {"Layer": "2", "LayerPart": "A", "IDCurrency": "UJI-1", "GrossPremi": "3"}
+   ]}
+ ],
+ "TreatyXOLDifferenceList": [
+  {"Currency": "UJI-IDR", "IDCurrency": "UJI-1", "DueTo": "DUE TO YOU", "NetPremi": "-9.99", "GrossPremi": "-9.99",
+   "ValueList": [
+    {"Layer": "1", "LayerPart": "A", "Currency": "UJI-IDR", "IDCurrency": "UJI-1", "DueTo": "DUE TO YOU", "GrossPremi": "-6.990000001", "DueToValue": "-6.990000001"},
+    {"Layer": "2", "LayerPart": "A", "Currency": "UJI-IDR", "IDCurrency": "UJI-1", "DueTo": "DUE TO YOU", "GrossPremi": "-3.000000002", "DueToValue": "-3.000000002"}
+   ]}
+ ],
+ "OldData": {"EDMNo": ""},
+ "TreatyDifference": {"DueTo": "UJI-TERISI"}
+}

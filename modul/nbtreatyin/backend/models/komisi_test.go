@@ -110,3 +110,55 @@ func TestLangkahKomisiHanyaBukanNonProporsional(t *testing.T) { // preACT langka
 		}
 	}
 }
+
+// Perintah work owner 06-10-2026: view TREATYINDETAILJOINEDM kini memuat SPREADINGTYPEID / SPREADINGTYPE, jadi
+// langkah 2.1.1.1 `SpreadingRiskList(1).TreatyType = .SpreadingTypeID` dan `.TreatyName = .SpreadingType`
+// DIBANGUN. `SharePercentage = .SpreadingTotalPct` tetap tidak (bukan kolom view). Kolom tidak ada di baris
+// (view belum diubah) = baris spreading tidak disentuh.
+func barisSpreading(id, jenis, grup, tipeID, tipe string) BarisKontrak {
+	b := barisKomisi(id, jenis, grup, "30", "40")
+	b[KolomSpreadingTypeID] = tipeID
+	b[KolomSpreadingType] = tipe
+	return b
+}
+
+func TestSpreadingBarisPertamaDariSpreadingTypeView(t *testing.T) {
+	h := halamanKomisi()
+	TreatyInputPctCommSpreading(h, []BarisKontrak{barisSpreading("UJI-D1", "UJI-QS", "UJI-GRUP-1", "UJI-ST1", "UJI Spreading Satu")})
+	d := h.AmbilDaftar(DaftarSpreading)
+	if len(d) != 1 || d[0]["TreatyType"] != "UJI-ST1" || d[0]["TreatyName"] != "UJI Spreading Satu" {
+		t.Fatalf("SpreadingRiskList(1) = %v, harap TreatyType UJI-ST1 / TreatyName dari SPREADINGTYPE", d)
+	}
+	if d[0]["SharePercentage"] != "100" {
+		t.Errorf("SharePercentage = %q, harap tetap 100 (SpreadingTotalPct bukan kolom view)", d[0]["SharePercentage"])
+	}
+}
+
+func TestSpreadingKosongDibuatBarisPertama(t *testing.T) {
+	h := halamanKomisi()
+	h.SetelDaftar(DaftarSpreading, nil)
+	TreatyInputPctCommSpreading(h, []BarisKontrak{barisSpreading("UJI-D1", "UJI-QS", "UJI-GRUP-1", "UJI-ST2", "UJI Dua")})
+	if d := h.AmbilDaftar(DaftarSpreading); len(d) != 1 || d[0]["TreatyType"] != "UJI-ST2" || d[0]["TreatyName"] != "UJI Dua" {
+		t.Fatalf("SpreadingRiskList = %v, harap satu baris baru", d)
+	}
+}
+
+func TestSpreadingTidakBerubahBilaBarisTakCocok(t *testing.T) {
+	h := halamanKomisi()
+	TreatyInputPctCommSpreading(h, []BarisKontrak{barisSpreading("UJI-D1", "UJI-XOL", "UJI-GRUP-1", "UJI-ST3", "UJI Tiga")})
+	if d := h.AmbilDaftar(DaftarSpreading); d[0]["TreatyType"] != "UJI-SPR" {
+		t.Fatalf("baris tak cocok tidak boleh mengubah spreading: %v", d)
+	}
+}
+
+// Kontrak tanpa data spreading (SPREADINGTYPEID / SPREADINGTYPE kosong) dan grid masih kosong: tidak dibuatkan
+// baris kosong (keputusan 06-10-2026, supaya grid tidak berisi baris hampa). Baris yang sudah ada tetap ditimpa
+// seperti Property-Set Pega.
+func TestSpreadingKosongTidakMembuatBarisHampa(t *testing.T) {
+	h := halamanKomisi()
+	h.SetelDaftar(DaftarSpreading, nil)
+	TreatyInputPctCommSpreading(h, []BarisKontrak{barisSpreading("UJI-D1", "UJI-QS", "UJI-GRUP-1", "", "")})
+	if d := h.AmbilDaftar(DaftarSpreading); len(d) != 0 {
+		t.Fatalf("baris hampa dibuat: %v", d)
+	}
+}

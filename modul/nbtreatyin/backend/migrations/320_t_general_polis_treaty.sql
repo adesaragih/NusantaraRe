@@ -1,4 +1,9 @@
--- 320 - T_GENERAL_POLIS: satu baris per GENERASI polis treaty inward (tiket 16).
+-- 320 - T_GENERAL_POLIS_TREATY: satu baris per GENERASI polis treaty inward (tiket 16).
+--
+-- Nama T_GENERAL_POLIS_TREATY (perintah work owner 05-10-2026, menutup PERMINTAAN C10 / K18):
+-- T_GENERAL_POLIS milik nbfacin (migrasi 182) dan tidak dipakai NB Treaty In. Nama constraint
+-- GP_TREATY supaya tidak bentrok dengan constraint tabel lama di skema yang sudah menjalankan 320
+-- lama; skema itu dipindah skrip transisi (SCRIPT-TABEL-KOLOM-BARU.xlsx sheet NB TREATY).
 --
 -- Kunci utama BERSAMA T_WORK_POLIS (tabel kasus lintas-lini milik premiumlistlife,
 -- migrasi 050/059): ID adalah ID baris T_WORK_POLIS, tanpa kolom kunci tamu
@@ -15,19 +20,19 @@
 -- ini; tidak boleh disunting (ID-10, AC 6) - tanpa kolom penanda (diagram).
 --
 -- Kolom lain DIBANGKITKAN dari backend/models/katalog.go (docs/alat/skema.py) -
--- 79 medan PolicyTreatyIn + 7 kolom json_polis menurut diagram dan rancangan;
+-- 79 medan PolicyTreatyIn + 6 kolom json_polis menurut diagram dan rancangan (IDPEGA DIBUANG,
+-- keputusan work owner 06-10-2026: kasus baru menyimpan IDPEGA = ID);
 -- LAYER* dicoret (diagram F26). Perbandingan: docs/PERBANDINGAN-KOLOM-DIAGRAM.md.
 -- Uang dan persen NUMBER(38,10) - diagram sheet NB Treaty In Prop F20 (skala
 -- MINIMAL 9 desimal, P29) dan J69 (NB bagi rata presisi 10); RALAT NUMBER(38,8)
 -- KEPUTUSAN 23-09-2026 sore (perintah WO 04-10-2026). Tanggal DATE (P32),
 -- kode dan penanda teks (ID-16, ID-17). Nol COMMIT.
-CREATE TABLE {skema}.T_GENERAL_POLIS (
+CREATE TABLE {skema}.T_GENERAL_POLIS_TREATY (
   ID                        VARCHAR2(32) NOT NULL,
   NOPOLIS                   VARCHAR2(64),
   PRODKE                    NUMBER(10) DEFAULT 0 NOT NULL,
   NOENDORS                  VARCHAR2(64),
   OLD_POLIS_ID              VARCHAR2(32),
-  IDPEGA                    VARCHAR2(128),
   TGL_INPUT                 DATE,
   USERNAME                  VARCHAR2(64),
   POSITION_NOTE             VARCHAR2(64),
@@ -103,11 +108,11 @@ CREATE TABLE {skema}.T_GENERAL_POLIS (
   OVERIDDING_COMM_OGP       NUMBER(38,10),
   RI_COMM_ONP               NUMBER(38,10),
   OVERIDDING_COMM_ONP       NUMBER(38,10),
-  CONSTRAINT PK_GENERAL_POLIS PRIMARY KEY (ID),
-  CONSTRAINT FK_GENERAL_POLIS_WORK FOREIGN KEY (ID) REFERENCES {skema}.T_WORK_POLIS (ID),
-  CONSTRAINT FK_GENERAL_POLIS_OLD FOREIGN KEY (OLD_POLIS_ID) REFERENCES {skema}.T_WORK_POLIS (ID),
-  CONSTRAINT UQ_GENERAL_POLIS_OLD UNIQUE (OLD_POLIS_ID)
+  CONSTRAINT PK_GP_TREATY PRIMARY KEY (ID),
+  CONSTRAINT FK_GP_TREATY_WORK FOREIGN KEY (ID) REFERENCES {skema}.T_WORK_POLIS (ID),
+  CONSTRAINT FK_GP_TREATY_OLD FOREIGN KEY (OLD_POLIS_ID) REFERENCES {skema}.T_WORK_POLIS (ID),
+  CONSTRAINT UQ_GP_TREATY_OLD UNIQUE (OLD_POLIS_ID)
 )
 /
-CREATE UNIQUE INDEX {skema}.UQ_GENERAL_POLIS_NOPOLIS ON {skema}.T_GENERAL_POLIS (CASE WHEN NOPOLIS IS NOT NULL THEN NOPOLIS END, CASE WHEN NOPOLIS IS NOT NULL THEN PRODKE END)
+CREATE UNIQUE INDEX {skema}.UQ_GP_TREATY_NOPOLIS ON {skema}.T_GENERAL_POLIS_TREATY (CASE WHEN NOPOLIS IS NOT NULL THEN NOPOLIS END, CASE WHEN NOPOLIS IS NOT NULL THEN PRODKE END)
 /

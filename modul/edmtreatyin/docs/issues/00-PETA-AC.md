@@ -1,5 +1,21 @@
 # 00 · PETA AC — penyimpanan relasional EDM Treaty In
 
+> ## ⛔ KOREKSI 06-10-2026 — rekonsiliasi dengan keadaan nyata (log: `../KOREKSI-DOKUMEN-2026-10-06.md`)
+>
+> | # | Bunyi lama (dikutip) | Bunyi baru | Bukti |
+> | ---: | --- | --- | --- |
+> | 1 | tiket 11 *"⛔ tetap blocked"*, tiket 12 *"⛔ blocked · tiket baru"*, *"⇒ 10 siap · 2 tertahan"* | ⭐ **11 dan 12 `ready-for-agent`** ⇒ **12 siap · 0 tertahan** | `11-…md` baris 3–14, `12-…md` baris 3–14 (penahan gugur 23-09 sore); `../spec-penyimpanan-relasional.md` bab *KEPUTUSAN 23-09-2026 sore* |
+> | 2 | `ID-27b` *"tidak tersentuh satu tiket pun"* · `ID-27c` *"tidak terbawa ke tiket mana pun"* | ⭐ keduanya **tiket 12** (bagian 1 = `ID-27b`, bagian 2 = `ID-27c`); **AC 57** (isi = `REMARK` 128, `ID-27b`) dipindah **11 → 12** | `12-…md` baris 18, 37–53; spec-penyimpanan AC 57 |
+> | 3 | tiket 08 *"AC 35–38 · AC 56 (5 AC)"* | **AC 35–38 (4 AC)** — AC 56 ditarik dari lingkup | spec-penyimpanan AC 56; `08-…md` baris 60 |
+> | 4 | *"Sisanya bergerbang NB 18 atau NB 19, yang keduanya menunggu DBA"* | gerbang NB **16 · 17 · 18 · 19 · 20 · 22 berstatus selesai** (sisa penahan pihak luar K11) | `modul/nbtreatyin/docs/issues/16…` baris 3, `17…` 3, `18…` 20, `19…` 14, `20…` 3, `22…` 14 |
+> | 5 | *"Sepuluh tabel dasar dibuat tiket NB"* | tabel dasar nyata: `T_WORK_POLIS` (premiumlistlife) + `T_GENERAL_POLIS_TREATY` + delapan anak `T_POLIS_*` migrasi NB **321–328** (`T_POLIS_SURVEY` 328 ikut) | `modul/nbtreatyin/backend/migrations/320…328` |
+> | 6 | peringatan *"tumpang tindih … wajib diputuskan"* | ✅ sudah diputuskan: NB 24–28 bertanda **DIGANTIKAN**. ⚠️ Kelimanya masih menunjuk jalur lama `.scratch\edm-treaty-in\issues\…` — **tidak disunting** (berkas NB); jalur kini `modul/edmtreatyin/docs/issues/` | `modul/nbtreatyin/docs/issues/24…28` baris 3–6, 32 |
+> | 7 | `KEPUTUSAN-RONDE-12-BUTIR-2026-09-23.md` (tanpa jalur) | `modul/nbtreatyin/docs/KEPUTUSAN-RONDE-12-BUTIR-2026-09-23.md` | berkas ada di folder itu |
+>
+> ⛔ Nol butir `[terbuka]` ditutup oleh koreksi ini.
+
+---
+
 > ## ⭐⭐ DIPERBARUI 23 September 2026 sore — tujuh butir tertahan ditutup
 >
 > Ronde keputusan dua belas butir menutup **seluruh** penahan `[work owner]`. Enam tiket di berkas
@@ -13,10 +29,10 @@
 > | **08** | ⛔ blocked | ⭐ `ready-for-agent` | ⚠️ **lingkup menyusut** — lihat di bawah |
 > | **09** | ⛔ blocked | ⭐ `ready-for-agent` | dokumen lama dipindah **seluruhnya** |
 > | **10** | ⛔ blocked | ⭐ `ready-for-agent` | idem |
-> | **11** | ⛔ blocked | ⛔ **tetap blocked** | `[data DBA]` presisi fisik kolom uang |
-> | **12** | — | ⛔ **blocked** · **tiket baru** | `[data DBA]` panduan bentuk dokumen basi |
+> | **11** | ⛔ blocked | ~~⛔ **tetap blocked**~~ ⭐ `ready-for-agent` *(koreksi 06-10)* | ~~`[data DBA]` presisi fisik kolom uang~~ gugur 23-09 sore — `[keputusan work owner]` *"Selesaikan, jangan jadi permasalahan."* |
+> | **12** | — | ~~⛔ **blocked** · **tiket baru**~~ ⭐ `ready-for-agent` · tiket baru *(koreksi 06-10)* | ~~`[data DBA]` panduan bentuk dokumen basi~~ gugur 23-09 sore — `[keputusan work owner]` *"Abaikan `JSON_DATAGUIDE`…"* |
 >
-> ⇒ **10 siap · 2 tertahan**, keduanya menunggu **DBA**, bukan work owner.
+> ⇒ ~~**10 siap · 2 tertahan**, keduanya menunggu **DBA**, bukan work owner.~~ ⭐ **12 siap · 0 tertahan** *(koreksi 06-10, butir 1)*.
 >
 > ### ⛔ Tabel sebaran tambahan DIBATALKAN
 >
@@ -34,9 +50,11 @@
 >
 > Label `ready-for-agent` **bukan** berarti dapat dimulai. Setiap tiket di sini tetap menunggu
 > gerbang NB-nya. Lima tiket punya gerbang yang sudah siap dikerjakan — **02 · 03 · 04 · 06 · 07**
-> *(gerbang NB 16, 17, 20)*. Sisanya bergerbang **NB 18** atau **NB 19**, yang keduanya menunggu DBA.
+> *(gerbang NB 16, 17, 20)*. ~~Sisanya bergerbang **NB 18** atau **NB 19**, yang keduanya menunggu DBA.~~
+> ⭐ *(koreksi 06-10, butir 4)* Gerbang NB 16–20 dan 22 kini **selesai**; sisa penahannya hanya K11
+> (skema uji Oracle) — `modul/nbtreatyin/docs/issues/16…22` baris *Status*.
 >
-> Rinciannya di `KEPUTUSAN-RONDE-12-BUTIR-2026-09-23.md`.
+> Rinciannya di `modul/nbtreatyin/docs/KEPUTUSAN-RONDE-12-BUTIR-2026-09-23.md`.
 
 ---
 
@@ -71,11 +89,12 @@
 > | ID | Isi | Keadaan |
 > | --- | --- | --- |
 > | `ID-6b` | tabel sebaran tambahan | ✅ tertutup **isi**nya oleh tiket **08**, label ID-nya saja yang tak dikutip |
-> | `ID-27b` | medan `REMARK` *(panjang 128)* ikut dimigrasi | ⛔ **tidak tersentuh satu tiket pun** |
-> | `ID-27c` | data guide berkedudukan pelengkap — satu dokumen memuat 95 jalur yang tak ada di dalamnya | ⛔ butir tertahan `[data DBA]` ini **tidak terbawa** ke tiket mana pun |
+> | `ID-27b` | medan `REMARK` *(panjang 128)* ikut dimigrasi | ~~⛔ **tidak tersentuh satu tiket pun**~~ ✅ **tiket 12 bagian 1** + **AC 57** *(koreksi 06-10)* |
+> | `ID-27c` | data guide berkedudukan pelengkap — satu dokumen memuat 95 jalur yang tak ada di dalamnya | ~~⛔ butir tertahan `[data DBA]` ini **tidak terbawa** ke tiket mana pun~~ ✅ **tiket 12 bagian 2** — tanpa nomor AC di spec; penahannya gugur 23-09 sore *(koreksi 06-10)* |
 >
 > ⭐ Akibat praktisnya: tiket yang menetapkan **daftar kolom** berjalan seolah data guide lengkap.
-> Ia tidak lengkap. Butir itu perlu ditambahkan sebagai `blocked` sebelum daftar kolom dikunci.
+> Ia tidak lengkap. ~~Butir itu perlu ditambahkan sebagai `blocked` sebelum daftar kolom dikunci.~~
+> ✅ Sudah ditambahkan sebagai **tiket 12**, lalu penahannya gugur 23-09 sore (`12-…md` baris 3–9).
 >
 > ⚠️ Catatan ini **tidak menyunting satu pun tiket**. Penutupannya keputusan work owner.
 
@@ -91,13 +110,16 @@
 | ⭐ tercakup tiket | ⭐ **57** |
 | ⛔ yatim | ✅ **0** |
 | ganda | ✅ **0** |
-| tiket | ~~**11** — **4** siap · **7** tertahan~~ ⭐ **12** — **10** siap · **2** tertahan |
+| tiket | ~~**11** — **4** siap · **7** tertahan~~ ~~**12** — **10** siap · **2** tertahan~~ ⭐ **12** — **12** siap · **0** tertahan *(koreksi 06-10, butir 1)* |
 
 ---
 
 ## ⚠️ EDM tidak membuat satu pun tabel dasar
 
-Sepuluh tabel dasar dibuat **tiket NB**. Setiap tiket di bawah menyebut tiket NB yang
+~~Sepuluh tabel dasar dibuat **tiket NB**.~~ ⭐ *(koreksi 06-10, butir 5)* Tabel dasar dibuat **migrasi NB**:
+`T_GENERAL_POLIS_TREATY` (320) + delapan anak `T_POLIS_*` (321–328, termasuk `T_POLIS_SURVEY`), di atas
+`T_WORK_POLIS` milik premiumlistlife. EDM hanya menambah empat tabel **proyeksi** (migrasi 360–363,
+`../STRUKTUR-TABEL-EDM-TREATY-IN.md`). Setiap tiket di bawah menyebut tiket NB yang
 menggatenya — dikerjakan **sesudahnya**, bukan bersamaan.
 
 | # | Tiket | Status | Blocked by | Gate NB | Menutup |
@@ -109,10 +131,11 @@ menggatenya — dikerjakan **sesudahnya**, bukan bersamaan.
 | **05** | Pembatalan sebagai generasi bernilai nol | ⭐ `ready-for-agent` | ~~`[work owner] sesudah dibatalkan, polis masih boleh di-endorse lagi atau tidak~~ ✅ **gugur 23-09 sore** | **19** *(pemecah dokumen — kolom jenis berkas)* | AC **14–15** *(2 AC)* |
 | **06** | Perhitungan selisih di lapisan layanan | ⭐ `ready-for-agent` | **02** · **03** | **16** *(kerangka penyimpanan)* | AC **16–22** *(7 AC)* |
 | **07** | Proyeksi selisih yang dapat dibaca langsung | ⭐ `ready-for-agent` | **06** · ~~`[work owner] anak proyeksi dibutuhkan pembaca SQL atau tidak~~ ✅ **gugur 23-09 sore** | **20** *(transaksi tunggal dan skema eksplisit)* | AC **23–31** *(9 AC)* |
-| **08** | Perbedaan perhitungan sebaran dan rincian angsuran | ⭐ `ready-for-agent` | ~~`[work owner] beda dagang tabel sebaran tambahan~~ ✅ **gugur 23-09 sore** dari sebaran risiko belum dijelaskan | **19** *(pemecah dokumen menjadi baris)* | AC **35–38** · AC **56** *(5 AC)* |
+| **08** | Perbedaan perhitungan sebaran dan rincian angsuran | ⭐ `ready-for-agent` | ~~`[work owner] beda dagang tabel sebaran tambahan~~ ✅ **gugur 23-09 sore** dari sebaran risiko belum dijelaskan | **19** *(pemecah dokumen menjadi baris)* | AC **35–38** ~~· AC **56** *(5 AC)*~~ *(4 AC — AC 56 ditarik; koreksi 06-10)* |
 | **09** | Dua penanda migrasi | ⭐ `ready-for-agent` | **04** · **07** · ~~`[work owner] lingkup pemindahan dokumen lama~~ ✅ **gugur 23-09 sore** | **22** *(pemuat dokumen lama)* | AC **39–43** *(5 AC)* |
 | **10** | Pemuat migrasi endorsemen | ⭐ `ready-for-agent` | **09** · ~~`[work owner] lingkup pemindahan dokumen lama~~ ✅ **gugur 23-09 sore** | **22** *(pemuat dokumen lama)* | AC **44** *(1 AC)* |
-| **11** | Kepatuhan lapisan dan tipe kolom | ⭐ `ready-for-agent` | ~~`[data DBA] presisi fisik kolom uang~~ ✅ **gugur 23-09 sore** — dua belas digit di depan koma belum diuji terhadap nilai terbesar | **18** *(tipe kolom dan presisi uang)* · **20** *(transaksi tunggal dan skema eksplisit)* | AC **45–53** · AC **57–58** *(11 AC)* |
+| **11** | Kepatuhan lapisan dan tipe kolom | ⭐ `ready-for-agent` | ~~`[data DBA] presisi fisik kolom uang~~ ✅ **gugur 23-09 sore** — dua belas digit di depan koma belum diuji terhadap nilai terbesar | **18** *(tipe kolom dan presisi uang)* · **20** *(transaksi tunggal dan skema eksplisit)* | AC **45–53** · AC ~~**57–58** *(11 AC)*~~ **58** *(10 AC — AC 57 ke tiket 12; koreksi 06-10)* |
+| **12** | Medan catatan dan penguncian daftar kolom | ⭐ `ready-for-agent` | ~~`[data DBA]` panduan bentuk dokumen basi~~ ✅ **gugur 23-09 sore** | **19** *(pemecah dokumen menjadi baris)* | AC **57** · `ID-27b` · `ID-27c` *(1 AC; baris ditambah koreksi 06-10)* |
 
 ---
 
@@ -127,14 +150,15 @@ menggatenya — dikerjakan **sesudahnya**, bukan bersamaan.
 | **05** | 14–15 |
 | **06** | 16–22 |
 | **07** | 23–31 |
-| **08** | 35–38 · 56 |
+| **08** | 35–38 · ~~56~~ *(ditarik)* |
 | **09** | 39–43 |
 | **10** | 44 |
-| **11** | 45–53 · 57–58 |
+| **11** | 45–53 · ~~57–58~~ 58 |
+| **12** | 57 *(+ `ID-27c`, tanpa AC)* — *baris ditambah koreksi 06-10* |
 
 ---
 
-## ⛔ Tujuh tiket `blocked`, dan butir yang menahannya
+## ⛔ ~~Tujuh tiket `blocked`~~, dan butir yang menahannya — ⭐ *(koreksi 06-10)* **nol tiket `blocked`**
 
 | Tiket | Tertahan | Pemilik |
 | ---: | --- | --- |
@@ -146,8 +170,8 @@ menggatenya — dikerjakan **sesudahnya**, bukan bersamaan.
 | ~~**10**~~ ✅ | ~~idem~~ **gugur 23-09 sore** | ~~`[work owner]`~~ |
 | ~~**11**~~ ✅ | ~~presisi fisik — dua belas digit di depan koma belum diuji~~ **gugur 23-09 sore** | ~~`[data DBA]`~~ |
 
-⭐ **Empat siap dikerjakan** — **01**, **03**, **04**, **06** — begitu tiket NB yang menggatenya
-selesai.
+~~⭐ **Empat siap dikerjakan** — **01**, **03**, **04**, **06** — begitu tiket NB yang menggatenya
+selesai.~~ ⭐ *(koreksi 06-10)* **Dua belas siap**; tiket NB penggatenya selesai (lihat blok KOREKSI butir 4).
 
 ⚠️ **Tiket `blocked` tetap ditulis lengkap.** ⛔ Jangan ditandai siap sebelum butirnya dijawab.
 
@@ -155,7 +179,10 @@ selesai.
 
 ## ⛔⛔ Peringatan: tiket ini TUMPANG TINDIH dengan tiket NB 24–28
 
-⚠️ **Wajib diputuskan sebelum pekerjaan dimulai.**
+> ✅ *(koreksi 06-10, butir 6)* **Sudah diputuskan** — NB 24–28 bertanda **DIGANTIKAN**
+> (`modul/nbtreatyin/docs/issues/24…28` baris 3–6, 32). Bunyi di bawah dipertahankan sebagai sejarah.
+
+~~⚠️ **Wajib diputuskan sebelum pekerjaan dimulai.**~~
 
 Ronde tiket sebelumnya menulis **tiket NB 24–28**, yang menutup **AC 1–58 spec yang sama ini**, ke
 dalam folder tiket NB. Ronde ini menulis **sebelas tiket** yang menutup AC yang sama, ke dalam
@@ -185,6 +212,8 @@ Brief menyarankan **sepuluh** potongan. Ditulis **sebelas**, dan sebabnya:
 
 1. ⭐ **Tiket 11 ditambahkan** — AC **45–53** *(kepatuhan lapisan)* dan **57–58** *(tipe kolom)*
    **tidak tercakup** pembagian brief. Tanpa tiket itu, **sebelas AC menjadi yatim**.
+   ⭐ *(koreksi 06-10, butir 2)* AC 57 berisi medan `REMARK` (`ID-27b`), bukan tipe kolom umum →
+   kini milik **tiket 12**; tiket 11 menutup **10 AC**.
 2. ⭐ **Tiga AC ditempatkan ulang** — AC **54–55** *(bentuk tabel tidak berubah)* masuk tiket **01**,
    sebab di sanalah penjaganya berada; ~~AC **56** *(tabel sebaran tambahan)* masuk tiket **08**~~ ⛔ **AC 56 ditarik dari lingkup 23-09 sore**,
    sebab ia soal sebaran, bukan soal bentuk.

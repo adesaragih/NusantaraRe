@@ -18,7 +18,7 @@
 // `modul/<nama>/backend/modul.go` - dijaga `rakitModulFrontend` di bawah dan
 // `daftar.modulAktif.test.ts`.
 
-import { KELOLA_USER, TEMPLATE_MANAGER } from '../inti/frontend/labels'
+import { BERANDA, KELOLA_USER, TEMPLATE_MANAGER } from '../inti/frontend/labels'
 import {
   HALAMAN_BERANDA,
   HALAMAN_KELOLA_USER,
@@ -85,7 +85,15 @@ export function rakitModulFrontend(menu: BerkasMenu, rute: BerkasRute): ModulFro
       if (!m.halaman.includes(m.halamanAwal)) {
         throw new Error(`daftar modul: modul/${folder}/frontend/menu.ts: halaman awal "${m.halamanAwal}" bukan halaman modul itu`)
       }
-      return { nama: m.nama, kelompok: m.kelompok, halaman: m.halaman, halamanAwal: m.halamanAwal, Rute: r }
+      return {
+        nama: m.nama,
+        kelompok: m.kelompok,
+        halaman: m.halaman,
+        halamanAwal: m.halamanAwal,
+        ...(m.antreanBeranda !== undefined ? { antreanBeranda: m.antreanBeranda } : {}),
+        ...(m.daftarBeranda !== undefined ? { daftarBeranda: m.daftarBeranda } : {}),
+        Rute: r,
+      }
     })
 }
 
@@ -109,7 +117,7 @@ export const MODUL_FRONTEND: readonly ModulFrontend<Halaman>[] = rakitModulFront
  * walau menunya tidak terlihat, cacat yang REFERENSI_UI bayar sekali.
  */
 export const ENTRI_MENU: readonly EntriMenu<Halaman>[] = [
-  { modul: HALAMAN_BERANDA, label: 'Beranda', kelompok: 'Beranda', pemilik: null },
+  { modul: HALAMAN_BERANDA, label: BERANDA.judul, kelompok: BERANDA.judul, pemilik: null },
   // Kelola User (01-10-2026): menu APLIKASI, bukan modul - `pemilik` adalah KODE
   // menunya, yang `GET /api/menu` kirim di golongan ADMIN hanya bagi pemegangnya.
   { modul: HALAMAN_KELOLA_USER, label: KELOLA_USER.judul, kelompok: KELOLA_USER.judul, pemilik: KODE_MENU_KELOLA_USER },

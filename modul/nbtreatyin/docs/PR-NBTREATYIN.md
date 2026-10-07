@@ -1,7 +1,8 @@
 # nbtreatyin: modul NB Treaty In (realisasi treaty masuk, Prop + NonProp)
 
 > Urutan merge: **(1)** PR inti `inti/nbtreatyin-uji-menu` (`PR-INTI-UJI-MENU.md`) → **(2)** PR ini. Migrasi
-> dijalankan work owner, bukan oleh merge — dan 320–327 baru sesudah C10 (tabrakan nama `T_GENERAL_POLIS`) beres.
+> dijalankan work owner, bukan oleh merge. C10 selesai 05-10-2026: tabel induk `T_GENERAL_POLIS_TREATY`; skema yang
+> sudah menjalankan 320 lama dipindah skrip transisi (Excel sheet NB TREATY).
 
 ## Summary
 
@@ -30,7 +31,7 @@ buka kasus → pra-proses (hari tutup buku dari TANGGAL_CLOSING)
   catatan usulan → POOLDATA.HISTORYAKSEPTASIPRODUCTION (K4)
 ```
 
-Tabel: **tepat 8 `CREATE TABLE`** menurut diagram grilling sheet *NB Treaty In Prop/NonProp* — `T_GENERAL_POLIS`
+Tabel: **tepat 8 `CREATE TABLE`** menurut diagram grilling sheet *NB Treaty In Prop/NonProp* — `T_GENERAL_POLIS_TREATY`
 (320, tabel Treaty In sendiri, shared PK `T_WORK_POLIS`), `T_POLIS_QUOTATION`, `_CEDING`, `_INSTALMENT`,
 `_INSTALMENT_DETAIL`, `_SPREADING`, `_XOL`, `_XOL_LAYER` (321–327). Nol tabel lain. Uang dan persen `NUMBER(38,10)`
 (diagram F20: skala minimal 9). Daftar kolom lawan diagram: `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`; kepatuhan sheet
@@ -59,7 +60,7 @@ TestPilihBisnisDiLuarDaftarPopupDitolak           → 422
 TestBentukProporsionalMenolakXOLDanRincian        → Prop tanpa XOL dan tanpa rincian angsuran (diagram J56, J71)
 TestTabelDanKolomMengikutiDiagramGrilling         → tepat 8 CREATE TABLE, kolom = diagram
 TestSkalaUangPersenMinimalSembilanDiSemuaTabel    → NUMBER(38,10) seragam (diagram F20)
-TestPraTerbangMenolakTGeneralPolisBentukFacIn     → -migrate berhenti sebelum apa pun bila T_GENERAL_POLIS FacIn ada
+TestMigrasiMemakaiTGeneralPolisTreatyBukanTabelFacIn → 320 membuat T_GENERAL_POLIS_TREATY; nol pernyataan menyebut T_GENERAL_POLIS FacIn
 ```
 
 ## Merge Danger
@@ -71,10 +72,8 @@ migrasi 320–327 bila dijalankan (delapan tabel baru; mundur = `DROP`).
 
 Penahan sebelum migrasi dijalankan WO:
 
-- **K18 / C10 — tabrakan nama:** `POOLDATA.T_GENERAL_POLIS` sudah ada, dibuat migrasi `nbfacin` `182_t_general_polis`
-  (7 kolom FacIn, di luar repo). Keputusan WO 04-10-2026: `T_GENERAL_POLIS` **tetap tabel Treaty In sendiri** (diagram
-  F9); **pemilik `nbfacin` perlu mengganti nama tabel FacIn**. Sampai itu, `-migrate` berhenti di pra-terbang inti
-  (`praTerbangBentuk`) sebelum satu pernyataan pun dikirim — langkah semua modul yang belum tercatat ikut tertahan.
+- **K18 / C10 — ✅ selesai 05-10-2026:** perintah work owner 05-10-2026: tabel induk NB Treaty In diganti nama `T_GENERAL_POLIS_TREATY` (migrasi `320_t_general_polis_treaty`); `T_GENERAL_POLIS` tetap milik `nbfacin` dan tidak dipakai modul ini. Skema yang sudah menjalankan 320 lama: skrip transisi
+  Excel sheet NB TREATY sesudah `-migrate`.
 - **A5:** satu entri `NUMBER(38,10)` di penjaga inti `presisiSah` (commit `inti:` tersendiri) — mohon ditinjau tim inti.
 - **K13:** `968_menu_nbtreatyin` sudah tercatat di `POOLDATA` oleh pihak lain.
 - **K11:** uji db belum pernah berjalan (A4 `Makefile test-db`, C9 skema uji).

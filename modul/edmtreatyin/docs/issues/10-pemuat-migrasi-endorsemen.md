@@ -6,7 +6,15 @@
 >
 > ⭐ **Status berubah `blocked` → `ready-for-agent`.** Dua baris di kepala tiket dicoret, bunyinya tidak dihapus.
 >
-> Rinciannya di `KEPUTUSAN-RONDE-12-BUTIR-2026-09-23.md`, butir 5.
+> Rinciannya di `modul/nbtreatyin/docs/KEPUTUSAN-RONDE-12-BUTIR-2026-09-23.md`, butir 5.
+
+> ⛔ **KOREKSI 06-10-2026** (log `../KOREKSI-DOKUMEN-2026-10-06.md`).
+> 1. Bab *Kenapa tiket ini `blocked`* di bawah dicoret — penahannya gugur 23-09.
+> 2. Keadaan NB nyata: pemuat dokumen lama NB menolak generasi `PRODKE > 0` dengan
+>    `ErrGenerasiEndorsemen` *"milik pemuat EDM tiket 10"* (`modul/nbtreatyin/backend/models/dokumenlama.go`
+>    baris 113–115) ⇒ seluruh generasi endorsemen lama memang menunggu tiket ini. Sumbernya dokumen lama
+>    `JSON_POLIS.DATA_JSON` berbaris `PRODKE ≥ 1`; sistem baru **tidak menulis** `DATA_JSON` (NB
+>    `models/produksi.go` baris 63) — hasil muatnya baris tabel, tanpa JSON.
 
 ---
 
@@ -49,10 +57,11 @@ bukan dilewati karena ini jalur migrasi.
 
 - [ ] **AC 44** — pemuat migrasi menulis lewat antarmuka penyimpanan yang **sama**
 
-## ⛔ Kenapa tiket ini `blocked`
+## ⛔ ~~Kenapa tiket ini `blocked`~~ — ✅ penahan gugur 23-09 *(dicoret koreksi 06-10)*
 
-`[work owner]` **Lingkup pemindahan belum diputuskan** — sama dengan penahan tiket **09**. Memuat
-seluruh riwayat dan memuat dua tahun terakhir adalah pekerjaan yang berbeda besarnya.
+~~`[work owner]` **Lingkup pemindahan belum diputuskan** — sama dengan penahan tiket **09**. Memuat
+seluruh riwayat dan memuat dua tahun terakhir adalah pekerjaan yang berbeda besarnya.~~
+⭐ `[keputusan work owner]` 23-09: **seluruh** polis, **setiap** generasi.
 
 ⚠️ **Tiket ini sengaja kecil** — satu AC — sebab isinya hampir seluruhnya dipakai bersama tiket NB
 **22**. Yang khas endorsemen hanya **urutan pemuatan generasi**.

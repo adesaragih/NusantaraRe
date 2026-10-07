@@ -28,11 +28,10 @@ package models
 // yang sama - hasil akhirnya RIONR (komisi ONR masuk ke medan OGP), dan
 // RiCommOnp tidak disentuh. Bukan diperbaiki.
 //
-// ⛔ TIDAK DIBANGUN, alasan (c) bab 4 prompt putaran 2: tiga baris
-// `SpreadingRiskList(1)` - `SpreadingTotalPct`, `SpreadingTypeID`,
-// `SpreadingType` bukan kolom view (39 kolom: 33 kolom RD + BROKERAGE,
-// COMMENCEMENT, TERMINATION, RIOGR, RIONR, RNM_SHARE); hanya ada di JSON master,
-// dan pengecualian baca-JSON K8 terbatas pada medan jalur NonProp/XOL.
+// ⭐ RALAT 06-10-2026 (perintah work owner): view kini memuat SPREADINGTYPEID dan SPREADINGTYPE (Excel sheet
+// NB TREATY bagian C), jadi `SpreadingRiskList(1).TreatyType = .SpreadingTypeID` dan `.TreatyName =
+// .SpreadingType` DIBANGUN. Kolom tidak ada di baris (view belum diubah) = baris spreading tidak disentuh.
+// ⛔ Tetap TIDAK: `SharePercentage = .SpreadingTotalPct` - bukan kolom view (alasan c bab 4 prompt putaran 2).
 //
 // ⚠️ Urutan baris: Pega menimpa di setiap baris yang syaratnya benar, menurut
 // urutan Limits/Detail di dokumen JSON. Urutan itu tidak ada di view; baris
@@ -47,6 +46,9 @@ const (
 	KolomGrupTreaty  = "TREATYGROUP"
 	KolomRIOGR       = "RIOGR"
 	KolomRIONR       = "RIONR"
+	// KolomSpreadingTypeID / KolomSpreadingType - kolom view tambahan 06-10-2026 (boleh tidak ada).
+	KolomSpreadingTypeID = "SPREADINGTYPEID"
+	KolomSpreadingType   = "SPREADINGTYPE"
 )
 
 // LangkahKomisiProporsional = syarat `InputPolicyTreatyInDetail_preACT`
@@ -68,5 +70,33 @@ func TreatyInputPctCommSpreading(h *Halaman, baris []BarisKontrak) {
 		}
 		h.Setel(HalamanPolis+".RiCommOgp", strings.ReplaceAll(b[KolomRIOGR], ",", "."))
 		h.Setel(HalamanPolis+".RiCommOgp", strings.ReplaceAll(b[KolomRIONR], ",", "."))
+		// SpreadingRiskList(1).TreatyType = .SpreadingTypeID; .TreatyName = .SpreadingType (kolom ada di view)
+		if v, ada := b[KolomSpreadingTypeID]; ada {
+			setelSpreadingPertama(h, "TreatyType", v)
+		}
+		if v, ada := b[KolomSpreadingType]; ada {
+			setelSpreadingPertama(h, "TreatyName", v)
+		}
 	}
+}
+
+// setelSpreadingPertama = Property-Set `SpreadingRiskList(1).<medan>`: baris pertama dibuat bila belum ada
+// (kecuali nilainya kosong - tanpa baris hampa), medan lain baris itu dibiarkan.
+func setelSpreadingPertama(h *Halaman, medan, v string) {
+	d := h.AmbilDaftar(DaftarSpreading)
+	baru := make([]Baris, len(d))
+	copy(baru, d)
+	if len(baru) == 0 {
+		if v == "" {
+			return // kontrak tanpa data spreading: tidak dibuatkan baris hampa
+		}
+		baru = []Baris{{}}
+	}
+	pertama := Baris{}
+	for k, x := range baru[0] {
+		pertama[k] = x
+	}
+	pertama[medan] = v
+	baru[0] = pertama
+	h.SetelDaftar(DaftarSpreading, baru)
 }

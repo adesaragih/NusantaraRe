@@ -6,7 +6,16 @@
 >
 > ⭐ **Status berubah `blocked` → `ready-for-agent`.** Dua baris di kepala tiket dicoret, bunyinya tidak dihapus.
 >
-> Rinciannya di `KEPUTUSAN-RONDE-12-BUTIR-2026-09-23.md`, butir 2.
+> Rinciannya di `modul/nbtreatyin/docs/KEPUTUSAN-RONDE-12-BUTIR-2026-09-23.md`, butir 2.
+
+> ⛔ **KOREKSI 06-10-2026** (log `../KOREKSI-DOKUMEN-2026-10-06.md`).
+> 1. Bab *Kenapa tiket ini `blocked`* di bawah dicoret — penahannya gugur 23-09 (blok di atas).
+> 2. Tabel proyeksi nyata = migrasi **360–363** (`../STRUKTUR-TABEL-EDM-TREATY-IN.md`), induknya berkunci tamu ke
+>    `T_GENERAL_POLIS_TREATY` (bukan `T_GENERAL_POLIS`). Kunci penyaring AC 28 di 360: `NOPOLIS · PRODKE · EDM_NO · IDPEGA`.
+>    ⚠️ Bunyi spec ID-27 *"Gaya penamaan mengikuti `TREATYINPRODUCTION`"* tidak tepat untuk `EDM_NO`: di
+>    `TREATYINPRODUCTION` dan tabel dasar nomor endorsemen bernama **`NOENDORS`**
+>    (`RDBList/InsertTreatyInProdEDMT_SQL.xml`; migrasi NB 320 baris 34). Kolom 360 **tidak diubah** — dicatat.
+> 3. AC 29 *(nol proyeksi induk lapisan)* tetap; alasannya diganti — lihat koreksi spec-penyimpanan ID-7.
 
 ---
 
@@ -71,11 +80,12 @@ Lewat seam `repository`. ⭐ **Uji yang paling penting:** bangun ulang proyeksi 
 - [ ] **AC 30** — **nol** proyeksi untuk rincian angsuran
 - [ ] **AC 31** — lapisan penyimpanan mengambil **dua baris**, bukan menjalankan agregasi
 
-## ⛔ Kenapa tiket ini `blocked`
+## ⛔ ~~Kenapa tiket ini `blocked`~~ — ✅ penahan gugur 23-09 *(dicoret koreksi 06-10)*
 
-`[work owner]` **Belum dijelaskan apakah anak tabel proyeksi — untuk penyebaran dan untuk angsuran —
+~~`[work owner]` **Belum dijelaskan apakah anak tabel proyeksi — untuk penyebaran dan untuk angsuran —
 memang dibutuhkan pembaca SQL, atau cukup induknya.** Membuat keduanya berarti memelihara tabel yang
-mungkin tidak pernah dibaca; tidak membuatnya berarti pembaca harus join balik.
+mungkin tidak pernah dibaca; tidak membuatnya berarti pembaca harus join balik.~~
 
-⭐ **Induknya dapat dikerjakan lebih dulu** — AC 23–28 dan 31 tidak bergantung pada keputusan itu,
-dan AC 29–30 justru menyatakan proyeksi mana yang **tidak** dibuat, yang sudah pasti.
+~~⭐ **Induknya dapat dikerjakan lebih dulu** — AC 23–28 dan 31 tidak bergantung pada keputusan itu,
+dan AC 29–30 justru menyatakan proyeksi mana yang **tidak** dibuat, yang sudah pasti.~~
+⭐ `[keputusan work owner]` 23-09: **kedua anak dibuat** (KEPUTUSAN-RONDE-12 butir 2) — kini migrasi 361 dan 362.

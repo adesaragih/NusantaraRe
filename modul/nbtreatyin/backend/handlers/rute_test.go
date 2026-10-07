@@ -118,8 +118,12 @@ func TestAlurHTTP(t *testing.T) {
 	if w := minta(t, s, "GET", "/api/nb-treaty-in/kasus", "UJI-A", "ReasTreatyInAdmin", nil); w.Code != http.StatusOK || !strings.Contains(w.Body.String(), k.ID) {
 		t.Fatalf("daftar: %d %s", w.Code, w.Body)
 	}
-	if w := minta(t, s, "GET", "/api/nb-treaty-in/kasus", "UJI-A", "", nil); w.Code != http.StatusForbidden {
+	// hanya filter pembuat (keputusan work owner 06-10-2026): tanpa peran pun pembuat melihat buatannya
+	if w := minta(t, s, "GET", "/api/nb-treaty-in/kasus", "UJI-A", "", nil); w.Code != http.StatusOK || !strings.Contains(w.Body.String(), k.ID) {
 		t.Fatalf("daftar tanpa antrean: %d %s", w.Code, w.Body)
+	}
+	if w := minta(t, s, "GET", "/api/nb-treaty-in/kasus?status=selesai", "UJI-A", "ReasTreatyInAdmin", nil); w.Code != http.StatusOK || strings.Contains(w.Body.String(), k.ID) {
+		t.Fatalf("Resolved tanpa berkas selesai: %d %s", w.Code, w.Body)
 	}
 	if w := minta(t, s, "GET", "/api/nb-treaty-in/acuan", "UJI-A", "", nil); w.Code != http.StatusOK {
 		t.Fatalf("acuan: %d %s", w.Code, w.Body)

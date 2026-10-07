@@ -23,7 +23,9 @@ import (
 const (
 	DaftarAngsuran  = HalamanPolis + ".ListInstallment"
 	DaftarSpreading = HalamanPolis + ".SpreadingRiskList"
-	DaftarUsulan    = HalamanPolis + ".SuggestList"
+	// DaftarSurvei - grid popup Historical Survey Report (`Section/HistoricalSurveyReportDtl`).
+	DaftarSurvei = HalamanPolis + ".QuotationData.SurveyReportList"
+	DaftarUsulan = HalamanPolis + ".SuggestList"
 )
 
 // presisiBagiRata - pembagian rata `100 / jumlah baris` spreading NB dibulatkan

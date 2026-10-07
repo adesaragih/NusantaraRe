@@ -145,10 +145,11 @@ export function kolomTotal(t: Total): Kolom[] {
   return [...(t.kosongAwal ? [k('', '')] : []), ...dasar, ...(t.tambahan ?? [])]
 }
 
-/** Section `InstallmentList` (flow action `InstallmentList`, hanya-baca) - rincian satu angsuran. */
+/** Section `InstallmentList` (flow action `InstallmentList`, hanya-baca) - rincian satu angsuran. Angka saldo dua
+ *  desimal dan Percentage apa adanya, seperti screenshot layar Pega (work owner 06-10-2026). */
 export const KOLOM_RINCI: Kolom[] = [
   k('DueDate', 'Payment Date'),
-  k('InstallmentPercentage', 'Percentage'),
+  k('InstallmentPercentage', 'Percentage', POLA_INTI),
   // LABEL judul kolom ke-3 Section InstallmentList kosong
   k('Currency', ''),
   k('Premium', 'Balance Before Tax'),
@@ -168,6 +169,19 @@ export const JUDUL_NONPROP = {
   fakultatifPersen: '% Share Facultative',
   currency: 'Currency',
   value: 'Value',
+} as const
+
+/** Kolom grid `SpreadingRiskList` NonProp menurut screenshot layar Pega (work owner 06-10-2026: "tampilan NB Treaty
+ *  Non Prop belum sesuai"): kolom `% RNM Share` (.SplitRNMSharePct, diisi InputPolicyTreatyInDetail_NonProp) di
+ *  depan, "% Share" menjadi "% Proportion Share". Section XML ekspor 2026-09-03 masih berlabel lama. */
+export const KOLOM_SPREADING_NP = {
+  treatyType: 'Type Treaty',
+  rnmShare: '% RNM Share',
+  share: '% Proportion Share',
+  premium: 'Premium',
+  claimPct: '% Proportion Share',
+  claim: 'Claim',
+  total: 'Total',
 } as const
 
 /** `% RNM Share`: RNMShare bila FacultativeShare = 0, RnmShareDeducted bila != 0. */

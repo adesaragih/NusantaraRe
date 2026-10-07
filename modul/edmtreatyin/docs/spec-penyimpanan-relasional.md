@@ -2,6 +2,25 @@
 
 > ⛔ **~~`T_POLIS_BREAKDOWN_SPREAD`~~ ⛔ DIBATALKAN 23-09-2026.** `[keputusan work owner]` Tabel itu **tidak ada**. Keempat medannya turunan: dua dari master `POOLDATA.PROPORTIONALARRG`, dua dihitung dari `TotalPremium` dan `TotalClaim` yang sudah tersimpan. Rujukan di bawah dicoret, bunyinya tidak dihapus.
 
+> ## ⛔⛔ KOREKSI 06-10-2026 — rekonsiliasi dengan tabel NB nyata dan XML
+>
+> Spec ini ditulis 23-09, **sebelum** NB Treaty In dibangun (03–06 Oktober). Butir di bawah dikoreksi
+> di tempatnya (bunyi lama dicoret, tidak dihapus); log lengkap `KOREKSI-DOKUMEN-2026-10-06.md`, peta per AC
+> `REKONSILIASI-AC.md`. ⛔ Nol butir `[terbuka]` milik WO/DBA ditutup tanpa keputusan tertulis.
+>
+> | Hal | Yang tertulis | Keadaan nyata | Bukti |
+> | --- | --- | --- | --- |
+> | tabel induk | `T_GENERAL_POLIS` | **`T_GENERAL_POLIS_TREATY`** | `modul/nbtreatyin/backend/migrations/320_t_general_polis_treaty.sql` baris 1–6 |
+> | tabel dasar | *"sembilan"* | `T_WORK_POLIS` + `T_GENERAL_POLIS_TREATY` + **delapan** anak 321–328 (**`T_POLIS_SURVEY`** ikut, di luar diagram) | migrasi NB 321–328; 328 baris 1–3 |
+> | nomor generasi / endorsemen | `PROD_KE` · `EDM_NO` | **`PRODKE NUMBER(10)`** (NB = 0, `NOT NULL`) · **`NOENDORS`** | 320 baris 33–34 |
+> | presisi uang/persen | `NUMBER(38,8)` | **`NUMBER(38,10)`** (RALAT 04-10-2026, perintah WO) | 320 baris 26–28; `modul/nbtreatyin/docs/spec-penyimpanan-relasional.md` baris 5–17 |
+> | `IS_APPROVEDTO_DEPT_HEAD` | kolom khas NB | **tidak ada** (P36) | `modul/nbtreatyin/docs/spec.md` AC 64 |
+> | penyimpanan | — | **tanpa JSON**: `JSON_POLIS` ditulis tanpa `DATA_JSON`; medan dokumen tanpa kolom diputuskan per medan (F3) | NB `backend/models/produksi.go` baris 63; NB tiket 19 baris 45–54 |
+> | proyeksi EDM | rancangan | dibuat: migrasi **360–363** | `STRUKTUR-TABEL-EDM-TREATY-IN.md` |
+> | XML | ID-7, ID-29, ID-30, ID-31, ID-32, ID-40, 10.2 | dikoreksi berbukti langkah — lihat di tempatnya | `KOREKSI-DOKUMEN-2026-10-06.md` jenis *XML* |
+>
+> ⚠️ Cacah Bab 1.2 adalah cacah atas bunyi 23-09; baris koreksi 06-10 **tidak** ikut dicacah ulang.
+
 ---
 
 
@@ -17,9 +36,9 @@
 >
 > | # | Yang tertulis di spec ini | Yang berlaku |
 > | ---: | --- | --- |
-> | 1 | skala kolom uang **minimal 9 desimal** | ⭐ **`NUMBER(38,8)`** *(semula ~~`NUMBER(20,8)`~~ — dinaikkan 23-09-2026 sore; **desimalnya tetap delapan**, yang berubah hanya sisi kiri koma)* |
-> | 2 | AC uang "tersimpan tanpa kehilangan satu digit pun" | utuh **sampai 8 desimal** |
-> | 3 | migrasi "tidak mengubah satu pun nilai uang" | **membulatkan** yang berdesimal > 8 |
+> | 1 | skala kolom uang **minimal 9 desimal** | *(bunyi 23-09 sore, kini tidak berlaku)* **`NUMBER(38,8)`** *(semula ~~`NUMBER(20,8)`~~ — dinaikkan 23-09-2026 sore; **desimalnya tetap delapan**, yang berubah hanya sisi kiri koma)* → ⭐ **`NUMBER(38,10)`** — desimal **sepuluh** *(RALAT 04-10-2026; koreksi 06-10)* |
+> | 2 | AC uang "tersimpan tanpa kehilangan satu digit pun" | utuh **sampai ~~8~~ 10 desimal** *(koreksi 06-10)* |
+> | 3 | migrasi "tidak mengubah satu pun nilai uang" | **membulatkan** yang berdesimal > ~~8~~ **10** *(koreksi 06-10)* |
 > | 4 | — | ⭐ **tabel baru ~~`T_POLIS_BREAKDOWN_SPREAD`~~ ⛔** ← `BreakDownSpreadList`, 4 medan, ada di tingkat polis dan `OldData` |
 > | 5 | rumus selisih `[dugaan]` | ⭐ **`[terverifikasi]` dari data produksi** — `baru − lama.nilai`, terbukti pada 6 medan |
 >
@@ -37,13 +56,15 @@
 
 ### 1.1 ⭐⭐ Aturan terpenting berkas ini
 
-**EDM tidak merancang ulang satu pun tabel.** Sembilan tabel dasar sudah ditetapkan
-`..\nb-treaty-in\spec-penyimpanan-relasional.md`, dan **bentuknya final**. Berkas ini hanya
+**EDM tidak merancang ulang satu pun tabel.** ~~Sembilan tabel dasar sudah ditetapkan
+`..\nb-treaty-in\spec-penyimpanan-relasional.md`~~ Tabel dasar sudah ditetapkan
+`modul/nbtreatyin/docs/spec-penyimpanan-relasional.md` dan dibangun migrasi NB **320–328**
+(`T_GENERAL_POLIS_TREATY` + delapan anak, termasuk `T_POLIS_SURVEY`) *(koreksi 06-10)*, dan **bentuknya final**. Berkas ini hanya
 menyatakan **apa yang berbeda**:
 
 | | Yang ditambahkan EDM |
 | --- | --- |
-| **kolom** | **21** kolom yang hanya terisi di EDM |
+| **kolom** | **21** kolom yang hanya terisi di EDM *(⛔ koreksi 06-10: NB nyata menulis sebagian besarnya — lihat KOREKSI bab 5.5)* |
 | **baris** | `PRODKE ≥ 1` · `OLD_POLIS_ID` **terisi** |
 | **tabel proyeksi** | `T_POLIS_DIFFERENCE` dan anaknya — ⭐ **nol baris di NB, hidup di EDM** |
 
@@ -96,7 +117,7 @@ rujukan di dalam aturan; medan yang ada di dokumen tetapi tidak pernah dirujuk s
 ⚠️ **Peringatan dari spec NB tetap berlaku dan tidak diulang penuh di sini** —
 `TREATYINPRODUCTION.DEDUCTION1` menampung **dua satuan**; `LAYER*` pada polis proporsional bernilai
 `"0"` bukan kosong; ada **empat titik sisip** dengan jalur XOL menyisip **per mata uang**.
-⇒ Rujuk `..\nb-treaty-in\spec-penyimpanan-relasional.md`.
+⇒ Rujuk ~~`..\nb-treaty-in\spec-penyimpanan-relasional.md`~~ `modul/nbtreatyin/docs/spec-penyimpanan-relasional.md` *(jalur — koreksi 06-10)*.
 
 ---
 
@@ -249,14 +270,20 @@ sama dengan spec NB, **tidak ditambah** untuk endorsemen.
 ### 5.2 Tabel
 
 **ID-5** ⭐ **Sembilan tabel dasar diwarisi tanpa perubahan bentuk** — `T_WORK_POLIS` ·
-`T_GENERAL_POLIS` · `T_POLIS_QUOTATION` · `T_POLIS_CEDING` · `T_POLIS_INSTALMENT` ·
+~~`T_GENERAL_POLIS`~~ **`T_GENERAL_POLIS_TREATY`** · `T_POLIS_QUOTATION` · `T_POLIS_CEDING` · `T_POLIS_INSTALMENT` ·
 `T_POLIS_INSTALMENT_DETAIL` · `T_POLIS_SPREADING` · `T_POLIS_XOL` · `T_POLIS_XOL_LAYER`, ditambah
 `POOLDATA.HISTORYAKSEPTASIPRODUCTION` yang **tidak dibuat ulang**.
+
+> ⛔ **KOREKSI 06-10-2026.** (1) Nama induk nyata **`T_GENERAL_POLIS_TREATY`** — `T_GENERAL_POLIS` milik
+> `nbfacin` (320 baris 3–6; `modul/nbtreatyin/MODUL.md` baris 75). (2) Tabel dasar kini **sepuluh**: ditambah
+> **`T_POLIS_SURVEY`** (328, keputusan WO 06-10-2026, di luar diagram). (3) ⚠️ `HISTORYAKSEPTASIPRODUCTION`:
+> korpus EDM **nol rujukan** (163 xml; juga nol `SaveViewSuggest`/`InsertViewSuggest`) — EDM Pega tidak
+> menulisnya; NB Go menulisnya (K4). Apakah EDM ikut — **butir WO** (tidak diputuskan di sini).
 
 **ID-6** Tabel **proyeksi** yang ditambahkan EDM:
 
 ```
-T_GENERAL_POLIS
+T_GENERAL_POLIS        ← koreksi 06-10: T_GENERAL_POLIS_TREATY (FK migrasi 360)
  └ T_POLIS_DIFFERENCE                  1:1  ← POLIS_ID, UNIK
     ├ T_POLIS_DIFFERENCE_SPREADING     1:N
     ├ T_POLIS_DIFFERENCE_INSTALMENT    1:N
@@ -274,6 +301,16 @@ yang sudah ada di anaknya; ⛔ **tidak membawa informasi baru.**
 ⚠️ **Ralat kecil atas brief ronde ini:** brief menyebut *"tujuh medan kunci"*. Terukur **delapan**,
 dan yang kedelapan — `NetPremi` — **bukan kunci melainkan uang**. ⭐ Kesimpulannya tidak berubah:
 nilainya tetap ada di `.ValueList`, sehingga induknya tetap tidak perlu tabel.
+
+> ⛔ **KOREKSI 06-10-2026 (XML).** Cacah *"delapan medan, masing-masing satu kali"* hanya cacah rujukan
+> **berindeks berjangkar** (terulang: 8 medan, 85 `.ValueList`). Ia **melewatkan rujukan relatif** di dalam
+> kalang induk (jebakan 10.5 butir 2): `Activity/CalculateDifferenceEDM_act.xml` langkah 2.1–2.3 menulis
+> **sepuluh total** induk (`.GrossPremi .Deduction .NetPremi .DueToValue .BrokerageFeeSebenarnya .PPHValue
+> .PPNValue .NetPremiAfterPPN/PPH/Tax` = jumlah lapisan); `FillPaymentInstallmentEDMT` langkah 2.1,
+> `FillSpreading` langkah 3, `SetEDMAchivementValue` (NonProp) dan grid `Section/DetailPolicyTreatyInAddPremi`
+> **membacanya**. ⭐ Kesimpulan tetap — induk = salinan kunci lapisan + **jumlah** lapisan, seluruhnya turunan
+> (dibangun ulang dari `T_POLIS_XOL_LAYER_DIFFERENCE`, migrasi 363) — tetapi alasannya bukan *"tidak
+> membawa informasi"*, melainkan *"informasinya turunan"*.
 
 **ID-8** ⛔ **`OldData` TIDAK menjadi tabel.** Ia baris yang ditunjuk `OLD_POLIS_ID`.
 `[terverifikasi]` Rujukan `OldData` **di dalam** `OldData` = **0**. Susunan bersarang itu dibuat
@@ -307,6 +344,11 @@ menaati ketetapan skema eksplisit *(P3)*. Ketetapannya **tetap berlaku untuk sis
 **ID-12** `[keputusan work owner]` `EDM_NO = NOPOLIS + "/E" + PRODKE dua digit` —
 `Activity\SetEDMTNoPolis` *(P55)*.
 
+> ⛔ **KOREKSI 06-10-2026.** Kolom nyata **`T_GENERAL_POLIS_TREATY.NOENDORS`** (320 baris 34; argumen ke-3
+> `PEGA_JSON_POLIS_TREATYIN` dan `TREATYINPRODUCTION.NOENDORS` juga bernama begitu), bukan `EDM_NO`. *"dua
+> digit"* → **sekurangnya dua digit**: `SetEDMTNoPolis` langkah 3 `@If(ProdKe<10,"0"+ProdKe, ProdKe)` hanya
+> membubuhkan nol di bawah sepuluh; ≥ 100 menjadi tiga digit — sejalan keputusan *tanpa batas* (bab KEPUTUSAN butir 1).
+
 **ID-13** `[keputusan work owner]` Baris generasi lampau **tidak boleh disunting** — itulah
 pembekuan `OldData` *(P58)*.
 
@@ -330,6 +372,13 @@ bukan derau yang wajar.
 **ID-19** `[terverifikasi]` Pembatalan *(P56, `Activity\SetEDMTCancel`)* **menolkan seluruh kolom
 uang** ⇒ generasi baru berisi nol, ⛔ **bukan penghapusan baris**.
 
+> ⛔ **KOREKSI 06-10-2026 (XML).** *"seluruh kolom uang"* tidak persis: langkah 1.1 menolkan **16** medan
+> (OGP/ONP, `Claim`, `OutstandingClaim`, `SalvageValue`, `ExcessLoss`, `Deduction1/2`), 1.3 angsuran
+> `Premium/PaymentTotal`, 1.4 spreading `PremiumSpreaded` **dan** `SharePercentage`; ⛔ **tidak** dinolkan:
+> `GrossPremium`, `NetPremium`, `BalanceDueTo`, `PPNValue`, `PPHValue`, `BalanceBeforeTax/PPH`, `ClaimSpreaded`,
+> `ClaimPercentage`. NonProp (langkah 2.x) menolkan seluruh uang lapisan. Panggilan efektif
+> `EDMChooseBusiness_Act` langkah 5. Tiru 16 medan atau nolkan seluruhnya — **butir WO**. *(Bukan penghapusan — tetap benar.)*
+
 ### 5.5 Dua puluh satu kolom yang hanya terisi di EDM
 
 `[terverifikasi]` Enam belas tidak pernah dirujuk NB; lima lagi dirujuk tetapi **tidak pernah
@@ -342,16 +391,32 @@ OVERIDDING_COMM_ONP · RESULT_OGP1 · RESULT_OGP2 · OVERIDDING_COMM_OGP
 OUTSTANDING_CLAIM · SALVAGE_VALUE · EXCESS_LOSS     ← NB merujuk, tak pernah menulis
 ```
 
+> ⛔ **KOREKSI 06-10-2026 (NB nyata).** (1) `EDM_NO` → **`NOENDORS`**, `PROD_KE` → **`PRODKE`** (320 baris
+> 33–34). (2) *"hanya terisi di EDM"* **bertentangan dengan NB yang dibangun**: `PRODKE` NB = 0 (`NOT NULL
+> DEFAULT 0`); NB menulis `GROSS_PREMIUM`/OGP/ONP (`models/hitung.go` baris 186–188, rantai `CountNetPremi`),
+> `QUARTAL` (`models/layar.go` baris 128), `STATEMENT_TYPE` (`layar.go` baris 334), `ID_NEW_BISNIS` (=
+> ID kasus, `models/produksi.go` baris 199). Yang terbukti **kosong** di NB: `NOENDORS` (`produksi.go` baris
+> 63) dan `OLD_POLIS_ID`. ⇒ daftar 21 **bukan** daftar kolom khas EDM; AC 32 perlu disusun ulang dari
+> katalog NB (`modul/nbtreatyin/backend/models/katalog.go`) — butir asisten utama.
+
 **ID-20** Di tabel anak: `T_POLIS_QUOTATION.OLD_POLICY_NO` dan
 `T_POLIS_SPREADING.SPLIT_RNM_SHARE_PCT` — keduanya **hanya EDM yang menulis**.
+
+> ⛔ **KOREKSI 06-10-2026.** `SPLIT_RNM_SHARE_PCT` **juga ditulis NB** — `TreatyNonPropSetSpreading` yang
+> mengisinya *"ada di NB dan TIDAK ADA di EDM"* (`KEADAAN-EDM-TREATY-IN.md` Bab 6.5; NB
+> `backend/models/nonprop.go`). Bunyi *"hanya EDM yang menulis"* bertentangan dengan ID-39 berkas ini sendiri.
 
 **ID-21** ⭐ Dan **empat kolom hanya dipakai NB** — `IS_EDM_INPUT_ON_NB` ·
 `IS_APPROVEDTO_DEPT_HEAD` · `HAS_FAC_OUT` · `SHARE_CURRENCY`. ⛔ **Bukan kolom mati**; ia kosong di
 EDM karena memang bukan urusannya.
 
+> ⛔ **KOREKSI 06-10-2026.** ~~empat~~ **tiga** — `IS_APPROVEDTO_DEPT_HEAD` **tidak ada** di
+> `T_GENERAL_POLIS_TREATY`: properti `isApprovedtoDeptHead` tidak dibangun (P36, `[keputusan work owner]`
+> 22-09; `modul/nbtreatyin/docs/spec.md` AC 64; `PERTANYAAN-untuk-Product-dan-Underwriting.md` baris 362).
+
 **ID-22** ⛔ `ViewState` ditulis EDM lewat `DataTransform` — **keadaan layar, TIDAK dimigrasi.**
 
-**ID-27b** ⭐ **`REMARK`** *(panjang 128)* — medan tingkat atas yang sensus korpus lewatkan dan baru terlihat dari data guide. Dimigrasi. `Show` dan `ViewState` tetap **tidak** dimigrasi.
+**ID-27b** ⭐ **`REMARK`** *(panjang 128)* — medan tingkat atas yang sensus korpus lewatkan dan baru terlihat dari data guide. Dimigrasi. `Show` dan `ViewState` tetap **tidak** dimigrasi. *(Koreksi 06-10: kolomnya sudah ada — `T_GENERAL_POLIS_TREATY.REMARK VARCHAR2(128)`, 320 baris 80; tiket 12.)*
 
 **ID-27c** ⚠️ **Data guide berkedudukan PELENGKAP, bukan sumber kebenaran.** `[terverifikasi]` Satu dokumen tunggal memuat **95 jalur** yang tidak ada di dalamnya — termasuk `QuotationData.CedingCoList`, seluruh `BreakDownSpreadList`, `Claim`, `ExcessLoss`, `ResultOgp1/2`, `SalvageValue`, `MasterID`. Indeksnya tampaknya basi; DBA diminta menyegarkannya.
 
@@ -375,6 +440,11 @@ angka selisih dibaca lewat layar aplikasi **dan** lewat SQL sendiri.
 **ID-27** Kunci penyaring disertakan supaya pembaca SQL tidak perlu join balik: `NOPOLIS` ·
 `PRODKE` · `EDM_NO` · `IDPEGA`. Gaya penamaan mengikuti `TREATYINPRODUCTION`.
 
+> ⚠️ **KOREKSI 06-10-2026 (catatan).** Kolom keempatnya ada di migrasi 360 apa adanya. Tetapi
+> *"gaya penamaan mengikuti `TREATYINPRODUCTION`"* tidak tepat untuk `EDM_NO`: di `TREATYINPRODUCTION`
+> (`RDBList/InsertTreatyInProdEDMT_SQL.xml`) dan di tabel dasar (320 baris 34) nomor endorsemen bernama
+> **`NOENDORS`**. Kolom 360 **tidak diubah** koreksi ini.
+
 ### 5.7 Rumus selisih
 
 **ID-28** ⭐⭐ `[keputusan work owner]` **SATU RUMUS UNTUK SEMUA:**
@@ -384,6 +454,9 @@ selisih.X = baris_ini.X − baris(OLD_POLIS_ID).X
 ```
 
 Tanpa memandang endorsemen pertama atau berlapis, proporsional atau non-proporsional.
+
+> ⚠️ *Koreksi 06-10:* untuk **non-proporsional** XML bukan pengurangan polos (batas bawah 0, prorata, pajak
+> ulang, mentah untuk jenis 4/2) — lihat ID-31 KOREKSI. Cakupan *"untuk semua"* atas NonProp — **butir WO**.
 
 ⭐⭐ **TERBUKTI DARI DATA PRODUKSI 23-09-2026** — naik dari `[dugaan]` ke `[terverifikasi]`. Satu dokumen EDM sungguhan memperlihatkan rumusnya pada **enam medan sekaligus**:
 
@@ -401,7 +474,14 @@ Idem `PremiOgp` −200.712.533,47 · `ResultOgp1` −70.249.386,71 · `Claim` �
 
 **ID-29** `[terverifikasi]` Empat aturan turunannya, dari `Activity\EDMTCalculateTreatyDifference`:
 **uang** dikurangi · **persen** **disalin, tidak dikurangi** · **kunci** disalin ·
-**`DUE_TO`** diturunkan dari **tanda** selisih.
+~~**`DUE_TO`** diturunkan dari **tanda** selisih~~.
+
+> ⛔ **KOREKSI 06-10-2026 (XML).** Aturan keempat **tidak ada** di `EDMTCalculateTreatyDifference`: langkah
+> 1–6 menulis 26 medan `TreatyDifference.*` tanpa `DueTo`, `Currency`, `CurrencyID`; nol aturan korpus
+> menulis `TreatyDifference.DueTo` (pembacanya `InsetTreatyInProdAddendum_Act` 9.4/9.5 ⇒ `DUE_TO` produksi
+> proporsional kosong `[dugaan]`). `DUE_TO` dari tanda selisih **hanya** pada lapisan XOL
+> (`CalculateDifferenceEDM_act` 1.2.1/1.2.3/1.2.5). Proporsional = **tiga** aturan; `T_POLIS_DIFFERENCE`
+> tanpa `DUE_TO` (360) sesuai.
 
 **ID-30** ⚠️ `[penyimpangan sadar]` **1 — varian rumus berlapis TIDAK ditiru.**
 `[keputusan work owner]` 23-09-2026.
@@ -420,18 +500,40 @@ Akibat aritmetiknya, dengan angka contoh: nilai baru **180**, nilai lama **150**
 
 ⛔ **Varian kedua tidak dibangun.** ⭐ ID-28 berlaku untuk seluruh generasi.
 
-⚠️ **Dan satu hal yang tidak dapat saya buktikan dari ekspor:** `[terbuka]` kedua blok itu
+~~⚠️ **Dan satu hal yang tidak dapat saya buktikan dari ekspor:** `[terbuka]` kedua blok itu
 **sama-sama bergerbang `pyStepsPreCondition = "true"`**, dengan parameter percabangan kosong.
 ⇒ **Pemilih antara keduanya hanya tertulis di keterangan langkah**, bukan di gerbang yang
-dijalankan. Mana yang benar-benar berjalan **tidak dapat dinyatakan dari korpus**. ⭐ Ini tidak
+dijalankan. Mana yang benar-benar berjalan **tidak dapat dinyatakan dari korpus**.~~ ⭐ Ini tidak
 menahan: varian kedua tidak ditiru apa pun jawabannya.
+
+> ⛔ **KOREKSI 06-10-2026 (XML) — varian kedua BERPEMILIH.** Parameter percabangan **tidak kosong**:
+> langkah 1 `pyStepsPreCondParamsWhen = .OldData.EDMNo==""`, `WhenFalse = 1` (lompat), `WhenFalsePrms =
+> HasEDMNo`; langkah 4 (label `HasEDMNo`) syarat sama, `WhenTrue = 6` (keluar activity). ⇒ generasi lama
+> **NB** (`EDMNo` kosong) memakai langkah 1–3 lalu keluar; generasi lama **EDM** melompat ke langkah 4–6.
+> Sejalan `spec.md` bab 5.3, `PERTANYAAN-RONDE-1.md` P57, diagram *EDM Treaty In Prop* J91. Bukti:
+> `Activity/EDMTCalculateTreatyDifference.xml` langkah 1 dan 4. ⭐ Penanda `RUMUS_BERLAPIS` (ID-36) kini
+> bersandar pada syarat yang **dijalankan**.
 
 **ID-31** ⭐ `[terverifikasi]` Sisi non-proporsional — `Activity\CalculateDifferenceEDM_act` —
 memang **sudah seragam**: pengurangannya selalu terhadap **nilai** generasi lampau.
 ⇒ ID-28 **menyamakan proporsional dengan non-proporsional**, bukan mengubah keduanya.
 
+> ⛔ **KOREKSI 06-10-2026 (XML).** Benar bahwa pembandingnya selalu **nilai** lampau
+> (`OldData.TreatyXOLList(c).ValueList(l)`), tetapi **bukan pengurangan polos**: 1.2.1 **batas bawah 0**
+> (`@if(baru<lama, 0, baru−lama)`), 1.2.3 **prorata** `×divide(ProRatePercent,100,8)` bila master `IsProRate`,
+> 1.2.4 pajak dihitung ulang dari `Deduction` selisih (`FlagPPH=="true"` ∧ `EDMType=="3"`), 1.2.5 selisih
+> **mentah** (boleh negatif) untuk `EDMType` 4 atau 2. ⇒ *"satu rumus untuk semua"* (ID-28) yang diterapkan ke
+> NonProp **mengubah** angka — bertentangan dengan AC 22. Migrasi 363 mengikuti XML. Cakupan ID-28 — **butir WO**.
+
 **ID-32** `[terverifikasi]` `DUE_TO` pada selisih XOL: `local.duetovalue` dijumlahkan sepanjang
 `ValueList`, lalu `@If(> 0, "DUE TO US", "DUE TO YOU")`.
+
+> ⛔ **KOREKSI 06-10-2026 (XML).** Urutannya terbalik dari bunyi di atas. `DueTo` **lapisan** (1.2.1/1.2.3/1.2.5)
+> = tanda selisih `DueToValue` **lapisan itu**. `DueTo` **induk** diset langkah **1.1** — **sebelum** kalang
+> lapisan — dari `local.duetovalue` sisa **iterasi sebelumnya** (mata uang pertama: belum terisi). Penjumlahan
+> `local.duetovalue` (2.2.1) hanya ditulis ke `.DueToValue` induk (2.3); `DueTo` induk **tidak** dihitung
+> ulang. **Nol pembaca** `DueTo` induk maupun lapisan (produksi NonProp `InsetTreatyInProdAddendum_Act` 10.1
+> `"DUE TO US"` tetap; grid `DetailPolicyTreatyInAddPremi`/`DetailPolicyAddPremiDetail` tanpa kolom `DueTo`).
 
 ### 5.8 Migrasi
 
@@ -463,8 +565,17 @@ tersendiri**.
 **ID-40** `T_POLIS_INSTALMENT_DETAIL` **hidup di EDM non-proporsional**. ⭐ Dan di EDM sarang itu
 juga datang dari **salinan master kontrak**:
 `EDMChooseBusiness_Act → FillMasterInstallment → SetInstallmentValue`, menyalin dari
-`pyWorkPage.TreatyIn.Installment(n).InstallmentList`.
+~~`pyWorkPage.TreatyIn.Installment(n).InstallmentList`~~.
 ⚠️ ⇒ ketergantungan pada dokumen kontrak **tetap ada**, walau dokumen itu di luar lingkup.
+
+> ⛔ **KOREKSI 06-10-2026 (XML).** (1) Sumber `SetInstallmentValue` = **`TreatyIn.ValueDifference.Installment(n)`**
+> lalu `.InstallmentList` (`.AmountTotal`, `.Amount`, `.InstallmentPct`) — **selisih** master EDM
+> (`DataTransform/SetInstallmentValue.xml`). (2) Pada kasus `EDMT-` hasil salinan itu **diganti** dalam activity
+> yang sama: `EDMChooseBusiness_Act` langkah 12 → `FillPaymentInstallmentEDMT` langkah 1 `Property-Remove
+> .ListInstallment`, lalu dibangun ulang per mata uang `TreatyXOLDifferenceList` (`Premium = PaymentTotal =
+> .NetPremi`), rincian N termin (N dari master, langkah 11), persen `divide(100,N,4)` + sisa di termin terakhir,
+> `DueDate = StatementDate`. ⇒ Sarang **tetap hidup** (ID-40 benar), tetapi sumber akhirnya **selisih XOL**,
+> bukan salinan master. AC 38 — **butir WO / asisten utama**.
 
 **ID-41** `T_POLIS_QUOTATION.EDM_TYPE` menentukan **jenis endorsemen**, termasuk pembatalan *(P56)*,
 dipilih di awal saat berkas dibuat.
@@ -480,7 +591,13 @@ sumber non-proporsional sarang itu ada. ⇒ ⛔ **Tidak ada `T_POLIS_DIFFERENCE_
 **ID-45** `OPERATORID` dari identitas akses login; `PIC` dari nama tampilan *(P4, P33)*.
 **ID-46** Uang **tidak pernah `float`** *(ADR-0003)*; ⭐ **`NUMBER(38,8)`** *(semula ~~`NUMBER(20,8)`~~ — dinaikkan 23-09-2026 sore; **desimalnya tetap delapan**, yang berubah hanya sisi kiri koma)*
 
-⚠️ Bunyi lama dikutip: ~~*"skala minimal sembilan desimal; galat lama diikuti apa adanya"*~~. Nilai berdesimal lebih dari delapan **dibulatkan saat dimuat** — `ShareValue` bersimpan 24 desimal, `PremiumSpreaded` 20 desimal. ⭐ Ekor galat `2,76 × 10⁻⁷` tetap terlihat; ia jatuh di desimal ketujuh. ⛔ `[terbuka]` Dua belas digit di depan koma belum diuji terhadap nilai terbesar yang pernah tersimpan.
+> ⛔ **KOREKSI 06-10-2026 (NB nyata).** Yang berlaku **`NUMBER(38,10)`** — RALAT 04-10-2026 atas perintah work
+> owner (diagram sheet *NB Treaty In Prop* F20 *"skala MINIMAL 9 desimal"*, J69 presisi 10): **28** digit di depan
+> koma (≥ 17 digit sentinel), **10** di belakang. Galat 9 desimal `592.629.512,880000276` **utuh**; yang > 10
+> desimal (`ShareValue` 24, `PremiumSpreaded` 20) dibulatkan di desimal kesebelas. Bukti: 320 baris 26–28;
+> `modul/nbtreatyin/docs/spec-penyimpanan-relasional.md` baris 5–17; EDM 360–363.
+
+⚠️ Bunyi lama dikutip: ~~*"skala minimal sembilan desimal; galat lama diikuti apa adanya"*~~. Nilai berdesimal lebih dari delapan **dibulatkan saat dimuat** — `ShareValue` bersimpan 24 desimal, `PremiumSpreaded` 20 desimal. ⭐ Ekor galat `2,76 × 10⁻⁷` tetap terlihat; ia jatuh di desimal ketujuh. ~~⛔ `[terbuka]` Dua belas digit di depan koma belum diuji terhadap nilai terbesar yang pernah tersimpan.~~ *(koreksi 06-10: ditutup keputusan WO 23-09 sore — bab KEPUTUSAN presisi; kini 28 digit, `NUMBER(38,10)`)*
 **ID-47** Kode dan penanda **tetap teks**; teks kosong `""` yang masuk kolom angka atau tanggal
 menjadi **`NULL`**, bukan `0`.
 
@@ -502,7 +619,8 @@ yang dapat diuji dari luar.
 4. `[terverifikasi]` Dua endorsemen serentak atas polis yang sama: yang kedua **ditolak**. Test yang
    menemukan keduanya tersimpan **gagal**. *(ID-11)*
 5. `[keputusan work owner]` Nomor endorsemen berbentuk `NOPOLIS + "/E" + dua digit`. Test yang
-   menghasilkan bentuk lain **gagal**. *(ID-12)*
+   menghasilkan bentuk lain **gagal**. *(ID-12)* — ⛔ *koreksi 06-10:* **sekurangnya** dua digit (nol di depan
+   bila < 10; ≥ 100 tiga digit, `SetEDMTNoPolis` langkah 3), tersimpan di `NOENDORS`.
 6. `[keputusan work owner]` Menyunting baris generasi yang sudah punya penerus **ditolak**. Test
    yang berhasil mengubahnya **gagal**. *(ID-13)*
 7. `[keputusan work owner]` Selisih dihitung terhadap generasi **tepat sebelumnya**. Test pada
@@ -526,7 +644,8 @@ yang dapat diuji dari luar.
 ### Pembatalan
 
 14. `[terverifikasi]` Pembatalan menghasilkan generasi baru dengan kolom uang **bernilai nol**. Test
-    yang menemukan penghapusan baris **gagal**. *(ID-19)*
+    yang menemukan penghapusan baris **gagal**. *(ID-19)* — ⚠️ *koreksi 06-10:* XML menolkan 16 medan +
+    angsuran + spreading, bukan seluruh kolom uang (ID-19 KOREKSI); cakupan — butir WO.
 15. `[keputusan work owner]` Jenis endorsemen — termasuk pembatalan — tersimpan di kolomnya sendiri
     dan dipilih di awal. Test yang menurunkannya dari nilai nol **gagal**. *(ID-41)*
 
@@ -542,11 +661,23 @@ yang dapat diuji dari luar.
     perubahan **gagal**. *(ID-29)*
 20. `[terverifikasi]` `DUE_TO` diturunkan dari **tanda** selisih, bukan disalin. Test yang menemukan
     salinan **gagal**. *(ID-29)*
+    > ⛔ **KOREKSI 06-10-2026 (XML).** Berlaku **hanya untuk lapisan XOL** (`T_POLIS_XOL_LAYER_DIFFERENCE.DUE_TO`,
+    > `CalculateDifferenceEDM_act` 1.2.1/1.2.3/1.2.5). Jalur proporsional tidak punya `DUE_TO` selisih
+    > (`EDMTCalculateTreatyDifference` tidak menulisnya; 360 tanpa kolom itu). Bunyi baru: *"`DUE_TO` lapisan XOL
+    > diturunkan dari tanda selisih `DueToValue` lapisan itu, bukan disalin."*
 21. `[terverifikasi]` `DUE_TO` pada selisih XOL diturunkan dari **jumlah** sepanjang daftar lapisan,
     bukan dari satu lapisan. Test yang menurunkannya dari lapisan pertama **gagal**. *(ID-32)*
+    > ⛔ **KOREKSI 06-10-2026 (XML).** ~~dari **jumlah** sepanjang daftar lapisan~~ — XML menurunkan `DueTo`
+    > **per lapisan** dari selisih lapisan itu; `DueTo` induk memakai `local.duetovalue` iterasi sebelumnya
+    > (langkah 1.1) dan **nol pembaca**; induk tidak bertabel (ID-7). Bunyi baru: *"`DUE_TO` setiap baris
+    > lapisan = tanda selisih `DUE_TO_VALUE` baris itu. Test yang menurunkannya dari jumlah atau dari lapisan
+    > lain **gagal**."*
 22. `[terverifikasi]` Sisi non-proporsional menghasilkan angka yang **sama** sebelum dan sesudah
     penyeragaman rumus. Test yang menemukan perubahan **gagal** — ID-28 tidak mengubah sisi ini.
     *(ID-31)*
+    > ⚠️ **KOREKSI 06-10-2026 (XML).** Premisnya (*"sudah seragam"*) keliru — NonProp memakai batas bawah 0,
+    > prorata, pajak ulang, dan selisih mentah untuk jenis 4/2 (ID-31 KOREKSI). AC ini hanya dapat dipenuhi bila
+    > rumus XML NonProp **dipertahankan** — yang berarti ID-28 tidak berlaku untuk NonProp. **Butir WO.**
 
 ### Tabel proyeksi
 
@@ -573,8 +704,12 @@ yang dapat diuji dari luar.
 
 32. `[terverifikasi]` Dua puluh satu kolom khas endorsemen **kosong** pada baris polis baru. Test
     yang menemukannya terisi **gagal**. *(ID-20)*
+    > ⛔ **KOREKSI 06-10-2026 (NB nyata).** Tidak dapat dipenuhi apa adanya: NB menulis sebagian besar dari
+    > 21 kolom itu dan `PRODKE` NB = 0 (lihat KOREKSI bab 5.5). Yang terbukti kosong di NB: `NOENDORS`,
+    > `OLD_POLIS_ID`. Daftar kolom khas **disusun ulang** dari katalog NB — butir asisten utama.
 33. `[terverifikasi]` Empat kolom khas polis baru **kosong** pada baris endorsemen, dan **tidak**
-    dihapus dari skema. Test yang menemukan kolomnya hilang **gagal**. *(ID-21)*
+    dihapus dari skema. Test yang menemukan kolomnya hilang **gagal**. *(ID-21)* — ⛔ *koreksi 06-10:*
+    **tiga** kolom (`IS_EDM_INPUT_ON_NB` · `HAS_FAC_OUT` · `SHARE_CURRENCY`); `IS_APPROVEDTO_DEPT_HEAD` tidak ada (P36).
 34. `[keputusan work owner]` Keadaan layar **tidak tersimpan** di tabel mana pun. Test yang
     menemukan kolomnya **gagal**. *(ID-22)*
 
@@ -588,6 +723,9 @@ yang dapat diuji dari luar.
     Test yang menemukannya hilang **gagal**. *(ID-40)*
 38. `[terverifikasi]` Rincian angsuran yang berasal dari salinan master kontrak tersimpan sama
     seperti yang diketik. Test yang membedakan keduanya **gagal**. *(ID-40)*
+    > ⚠️ **KOREKSI 06-10-2026 (XML).** Pada kasus `EDMT-` salinan master (`SetInstallmentValue`, sumber
+    > `TreatyIn.ValueDifference`) **dihapus dan dibangun ulang** oleh `FillPaymentInstallmentEDMT` dari selisih
+    > XOL (ID-40 KOREKSI). Sumber rincian yang disimpan — **butir WO / asisten utama**.
 
 ### Migrasi
 
@@ -599,6 +737,10 @@ yang dapat diuji dari luar.
     menemukan nilai berubah saat penandaan **gagal**. *(ID-35)*
 42. `[terverifikasi]` `RUMUS_BERLAPIS = 1` pada setiap baris selisih yang generasi sebelumnya punya
     nomor endorsemen terisi. Test yang menemukannya kosong **gagal**. *(ID-36)*
+    > ⭐ **KOREKSI 06-10-2026.** Syaratnya kini berbukti langkah yang dijalankan (ID-30 KOREKSI). ⚠️ Kolom
+    > `RUMUS_BERLAPIS` hanya di 361/362; induk 360 tidak punya, padahal varian kedua menulis medan induk juga
+    > (langkah 4) — cakupan *"setiap baris selisih"* perlu dinyatakan (asisten utama). Sisi XOL (363) memang
+    > tanpa varian kedua.
 43. `[keputusan work owner]` Kedua penanda migrasi **hanya** terisi pada baris `SUMBER = 'PEGA'`.
     Test yang menemukannya pada baris `'GO'` **gagal**. *(ID-37)*
 44. `[keputusan work owner]` Pemuat migrasi menulis lewat antarmuka `repository` yang sama. Test yang
@@ -615,6 +757,8 @@ yang dapat diuji dari luar.
 48. `[keputusan work owner]` Tidak ada kolom uang bertipe `float`. Test yang menemukan satu pun
     **gagal**. *(ID-46)*
 49. `[keputusan work owner]` ⭐ Kolom uang menerima **delapan** angka di belakang koma. Nilai berdesimal lebih dari delapan **dibulatkan saat dimuat, bukan ditolak**. Test yang menemukan penolakan pemuatan **gagal**. *(ID-46)*
+    > ⛔ **KOREKSI 06-10-2026 (NB nyata).** ~~delapan~~ → **sepuluh** (`NUMBER(38,10)`, RALAT 04-10-2026); yang
+    > dibulatkan hanya yang berdesimal **> 10**. Bunyi asli 22-09 *"sekurangnya sembilan"* kini **terpenuhi**.
 
 > ⛔ **DISELARASKAN 23-09-2026 sore.** Bunyi lama dikutip: ~~*"menerima sekurangnya **sembilan** angka di belakang koma; test yang menemukan pemotongan gagal"*~~.
 >
@@ -635,9 +779,14 @@ yang dapat diuji dari luar.
 ### Bentuk tabel
 
 54. `[terverifikasi]` Bentuk kesembilan tabel dasar **tidak berubah** oleh spec ini. Test yang
-    menemukan kolom dasar bertambah, hilang, atau berganti tipe **gagal**. *(ID-5)*
+    menemukan kolom dasar bertambah, hilang, atau berganti tipe **gagal**. *(ID-5)* — ⛔ *koreksi 06-10:*
+    ~~kesembilan~~ tabel dasar NB **320–328** (`T_GENERAL_POLIS_TREATY` + delapan anak, termasuk `T_POLIS_SURVEY`).
 55. `[terverifikasi]` ⭐ Endorsemen proporsional memakai **10** tabel; non-proporsional
     **14**. Test yang menemukan jumlah lain **gagal**. *(ID-5, ID-6)*
+    > ⚠️ **KOREKSI 06-10-2026.** Cacah 10/14 = daftar resmi diagram (*EDM Treaty In Prop* K146–K156, *NonProp*
+    > K171–K185): memuat `HISTORYAKSEPTASIPRODUCTION` (nol rujukan di korpus EDM) dan **tidak** memuat
+    > `T_POLIS_SURVEY` (328, di luar diagram). Apakah generasi EDM menulis keduanya belum diputuskan ⇒ cacah
+    > **belum pasti** — **butir WO**.
 
     > ⚠️ **Angka ini berubah dua kali dalam satu hari, lalu kembali ke semula.**
     > | Waktu | Prop | NonProp | Sebab |
@@ -656,11 +805,14 @@ yang dapat diuji dari luar.
 > ⚠️ Koreksi pertama itu **masih terlalu jauh**: ia mempertahankan perhitungannya di lapisan `services`. Work owner menyatakan perhitungannya pun tidak perlu dibawa.
 
 ⭐ **Cacah AC berlaku turun 58 → 57.** Nomor 56 tidak dipakai ulang, supaya rujukan lama tidak salah arah.
-57. `[terverifikasi]` `T_GENERAL_POLIS` menyimpan `REMARK` dengan panjang sekurangnya 128. Test
-    yang menemukan medan itu hilang saat pulang-pergi **gagal**. *(ID-27b)*
+57. `[terverifikasi]` ~~`T_GENERAL_POLIS`~~ **`T_GENERAL_POLIS_TREATY`** menyimpan `REMARK` dengan panjang sekurangnya 128. Test
+    yang menemukan medan itu hilang saat pulang-pergi **gagal**. *(ID-27b)* — *koreksi 06-10:* kolom ada
+    (`REMARK VARCHAR2(128)`, 320 baris 80); AC ini milik **tiket 12**.
 58. `[keputusan work owner]` Kolom uang bertipe `NUMBER(38,8)` *(semula ~~`NUMBER(20,8)`~~)*. Nilai berdesimal lebih dari delapan
     **dibulatkan, bukan ditolak**. Test yang menemukan kegagalan pemuatan pada `ShareValue`
     berdesimal 24 **gagal**. *(ID-46)*
+    > ⛔ **KOREKSI 06-10-2026 (NB nyata).** `NUMBER(38,8)` → **`NUMBER(38,10)`**; *"lebih dari delapan"* →
+    > **lebih dari sepuluh** (RALAT 04-10-2026; 320 baris 26–28). Uji `ShareValue` 24 desimal tetap berlaku.
 
 ## 7 · Testing Decisions
 
@@ -696,9 +848,13 @@ test memeriksa nilai kolom langsung**, bukan hanya hasil baca-ulang.
 ⛔ **Repo implementasi terlarang, dan kode Go belum ada.** ⇒ **Tidak ada prior art test yang dapat
 dirujuk.** ⚠️ Menyebut satu pun berarti mengarangnya.
 
-⭐ Yang boleh dirujuk hanya **preseden dokumen**: `..\nb-treaty-in\spec-penyimpanan-relasional.md`
-Bab 7, dan `..\claim-life\spec-penyimpanan-relasional.md` — keduanya memakai seam `repository` yang
+⭐ Yang boleh dirujuk hanya **preseden dokumen**: ~~`..\nb-treaty-in\spec-penyimpanan-relasional.md`~~
+`modul/nbtreatyin/docs/spec-penyimpanan-relasional.md` Bab 7, dan ~~`..\claim-life\spec-penyimpanan-relasional.md`~~
+`modul/claimlife/docs/spec-penyimpanan-relasional.md` *(jalur — koreksi 06-10)* — keduanya memakai seam `repository` yang
 sama.
+
+> ⚠️ *Koreksi 06-10 (keadaan nyata):* bunyi *"kode Go belum ada"* sudah tidak berlaku — NB Treaty In dibangun
+> 03–06 Oktober (`modul/nbtreatyin/backend`, bukti per AC di `modul/nbtreatyin/docs/HASIL-IMPLEMENTASI.md`).
 
 ---
 
@@ -706,7 +862,7 @@ sama.
 
 | # | Yang dikeluarkan | Sebab |
 | ---: | --- | --- |
-| 1 | **Sembilan tabel dasar** | ⭐ sudah dispec NB — dinyatakan ulang perbedaannya, ⛔ bukan dirancang ulang |
+| 1 | **Sembilan tabel dasar** *(koreksi 06-10: tabel dasar NB 320–328, termasuk `T_POLIS_SURVEY`)* | ⭐ sudah dispec NB — dinyatakan ulang perbedaannya, ⛔ bukan dirancang ulang |
 | 2 | `T_POLIS_XOL_DIFFERENCE` | induk hanya salinan penanda yang sudah ada di anaknya *(ID-7)* |
 | 3 | `V_POLIS_DIFFERENCE` | ⛔ **dibatalkan** — rumus di lapisan aplikasi, bukan di Oracle *(ID-23)* |
 | 4 | `T_POLIS_DIFFERENCE_INSTALMENT_DETAIL` | selisih angsuran hanya satu tingkat *(ID-42)* |
@@ -734,25 +890,28 @@ kosong; ada **empat titik sisip** dengan jalur XOL menyisip **per mata uang**.
 
 | # | Butir | Pemilik |
 | ---: | --- | --- |
-| 1 | ⭐ **Panduan bentuk dokumen dari DBA** — satu-satunya yang dapat menutup selisih **74 lawan 79** medan | `[data DBA]` |
-| 2 | **Presisi fisik kolom uang** — skala pasti | `[data DBA]` |
-| 3 | ⚠️ **Treaty Out masuk lingkup atau tidak** — folder EDM juga memuat `InsertToTreatyOutXOLList` dan `InsertToTreatyOutXOLListEDMOldData` | `[work owner]` |
-| 4 | **Migrasi dokumen lama** — dipindahkan, atau dibaca lewat jalur lama | `[work owner]` |
+| 1 | ⭐ **Panduan bentuk dokumen dari DBA** — satu-satunya yang dapat menutup selisih **74 lawan 79** medan | `[data DBA]` — ✅ *(koreksi 06-10)* ditutup keputusan WO tertulis: bab *KEPUTUSAN 23-09-2026 sore — Daftar medan* (*"Abaikan `JSON_DATAGUIDE`…"*) |
+| 2 | **Presisi fisik kolom uang** — skala pasti | `[data DBA]` — ✅ *(koreksi 06-10)* ditutup: bab *KEPUTUSAN 23-09-2026 sore — Presisi*, lalu RALAT `NUMBER(38,10)` 04-10-2026 |
+| 3 | ⚠️ **Treaty Out masuk lingkup atau tidak** — folder EDM juga memuat `InsertToTreatyOutXOLList` dan `InsertToTreatyOutXOLListEDMOldData` | `[work owner]` — ⛔ tetap terbuka untuk EDM *(NB memutuskan untuk NB saja: K8 butir 4 "treaty keluar tidak dibaca", `modul/nbtreatyin/MODUL.md` baris 42–44)* |
+| 4 | **Migrasi dokumen lama** — dipindahkan, atau dibaca lewat jalur lama | `[work owner]` — ✅ *(koreksi 06-10)* ditutup: bab *KEPUTUSAN 23-09-2026* butir 4 (seluruhnya, setiap generasi) |
 
 ### 9.2 Khas EDM
 
 | # | Butir | Pemilik |
 | ---: | --- | --- |
 | 5 | **Maksud dagang varian rumus berlapis** — kenapa sistem lama mengurangi terhadap **selisih**, bukan terhadap nilai | `[work owner]` |
-| 6 | **Anak `T_POLIS_DIFFERENCE` untuk pembaca SQL** — apakah `_SPREADING` dan `_INSTALMENT` memang dibutuhkan, atau cukup induknya | `[work owner]` |
-| 7 | Sesudah **pembatalan** *(P56)*, apakah polis masih boleh di-endorse lagi | `[work owner]` |
-| 8 | **Batas berapa kali** satu polis boleh di-endorse *(P57)* — batas teknis 99 | `[work owner]` |
+| 6 | **Anak `T_POLIS_DIFFERENCE` untuk pembaca SQL** — apakah `_SPREADING` dan `_INSTALMENT` memang dibutuhkan, atau cukup induknya | `[work owner]` — ✅ *(koreksi 06-10)* ditutup: bab *KEPUTUSAN 23-09-2026* butir 2 (keduanya dibuat; migrasi 361, 362) |
+| 7 | Sesudah **pembatalan** *(P56)*, apakah polis masih boleh di-endorse lagi | `[work owner]` — ✅ *(koreksi 06-10)* ditutup: bab *KEPUTUSAN 23-09-2026* butir 3 (boleh, dengan peringatan) |
+| 8 | **Batas berapa kali** satu polis boleh di-endorse *(P57)* — batas teknis 99 | `[work owner]` — ✅ *(koreksi 06-10)* ditutup: bab *KEPUTUSAN 23-09-2026* butir 1 (tanpa batas); XML pun tanpa batas 99 (`SetEDMTNoPolis` langkah 3) |
 
 ### 9.3 ⭐ Satu yang lahir dari ronde ini
 
 | # | Butir | Pemilik |
 | ---: | --- | --- |
-| 9 | ⚠️ **Pemilih antara dua rumus selisih tidak terbaca dari ekspor.** Kedua blok bergerbang `"true"` dengan parameter percabangan kosong; pemilihnya hanya tertulis di **keterangan langkah**. ⭐ **Tidak menahan** — varian kedua tidak ditiru apa pun jawabannya | `[pengembang Pega lama]` |
+| 9 | ⚠️ **Pemilih antara dua rumus selisih tidak terbaca dari ekspor.** Kedua blok bergerbang `"true"` dengan parameter percabangan kosong; pemilihnya hanya tertulis di **keterangan langkah**. ⭐ **Tidak menahan** — varian kedua tidak ditiru apa pun jawabannya | `[pengembang Pega lama]` — ✅ *(koreksi 06-10)* **gugur oleh bukti korpus**: pemilih `.OldData.EDMNo==""` dijalankan di prasyarat langkah 1 dan 4 (ID-30 KOREKSI) |
+
+> ⚠️ *Koreksi 06-10:* butir yang ditandai ✅ di atas ditutup oleh **keputusan WO yang sudah tertulis di berkas ini**
+> (bab KEPUTUSAN) — koreksi ini hanya menyelaraskan Bab 9 dengannya. Butir 3 dan 5 tetap terbuka.
 
 ---
 
@@ -777,6 +936,13 @@ pernah benar**. `[terverifikasi]` Terukur pada ronde `to-spec` EDM: ia bertipe *
 ⇒ ⛔ **Ia bukan aturan mati, melainkan jalur penomoran kedua yang hidup**, menghasilkan bentuk
 `RNM-E…` dengan lima digit. ⭐ **P55 tetap menang** — satu jalur, dan jalur kedua tidak dimigrasi.
 ⚠️ Pertentangannya tercatat di `spec.md` EDM Bab 10.1 sebagai butir `[terbuka]`.
+
+> ⛔ **KOREKSI 06-10-2026 (XML).** *"tidak ditemukan syarat penjaga apa pun"* keliru: di
+> `Activity/GeneratePolicyNoTreatyAddendum_Act.xml` langkah **10** (`RDB-List GenerateNoEDMTreaty`), **12**
+> (`EDMNo = InputData.CARI2`) dan **13** (pesan) berprasyarat **`pyWorkPage.PolicyTreatyIn.EDMNo==""`**.
+> `CreateEDMT` langkah 15 → `SetEDMTNoPolis` langkah 3 **selalu** mengisi `EDMNo` ⇒ penerbit `RNM-E…`
+> **praktis tidak pernah menerbitkan** `[dugaan: korpus tidak memuat aturan pengosong EDMNo]`. Jalurnya
+> terjangkau dari layar, efeknya tidak. Butir `[terbuka]` spec.md 9.2 #3 **tidak ditutup** (milik WO + P&U).
 
 ### 10.3 Penyimpangan sadar
 
@@ -806,6 +972,8 @@ untuk itu.
 4. ⛔ **`pyStepsPreCondParams` adalah percabangan lompat**, bukan gerbang hidup/mati.
    ⭐ Ronde ini menemukan akibatnya langsung: kedua blok rumus selisih bergerbang `"true"`, sehingga
    pemilihnya **tidak terbaca** — lihat butir `[terbuka]` **9**.
+   ⛔ *Koreksi 06-10:* justru percabangan lompat itulah **pemilihnya** — `WhenFalse=1`/`HasEDMNo` di langkah 1
+   dan `WhenTrue=6` di langkah 4 (ID-30 KOREKSI). Butir 9 gugur.
 
 ⚠️ Buang blok `pyExpressionGadget` lebih dulu. ⚠️ Jangan `html.unescape` sebelum mencocokkan pola
 struktur. ⚠️ Jalur korpus memuat spasi — pakai Python, bukan loop shell.
@@ -942,6 +1110,10 @@ butir 1.
 
 ### Presisi — **`NUMBER(38,8)`**
 
+> ⛔ **KOREKSI 06-10-2026.** Yang berlaku **`NUMBER(38,10)`** — 28 digit di depan koma, 10 di belakang
+> (RALAT 04-10-2026, `[perintah work owner]`; 320 baris 26–28; `modul/nbtreatyin/docs/spec-penyimpanan-relasional.md`
+> baris 5–17). Bunyi *"30 digit di depan koma, delapan di belakang"* di bawah adalah sejarah 23-09 sore.
+
 `[keputusan work owner]` *"Selesaikan, jangan jadi permasalahan."*
 
 Bunyi lama: ~~*`NUMBER(20,8)` — dua belas digit di depan koma*~~ ⛔ **tidak cukup.**
@@ -964,13 +1136,16 @@ Bunyi lama: ~~*`NUMBER(20,8)` — dua belas digit di depan koma*~~ ⛔ **tidak c
 
 `[keputusan work owner]` *"Abaikan `JSON_DATAGUIDE`, ikuti dari data yang digunakan di Activity dan Section."*
 
-⭐ Daftar medan disusun ulang dari **302 berkas aturan** — **394 medan unik**, **232** di antaranya tampil di layar. Hasilnya: **`DAFTAR-MEDAN-DARI-KORPUS-TREATY-IN.md`**.
+⭐ Daftar medan disusun ulang dari **302 berkas aturan** — **394 medan unik**, **232** di antaranya tampil di layar. Hasilnya: **`modul/nbtreatyin/docs/DAFTAR-MEDAN-DARI-KORPUS-TREATY-IN.md`** *(jalur — koreksi 06-10)*.
 
 Data guide turun derajat menjadi **penambal**. Ia sah hanya untuk **panjang maksimum per medan**, dan untuk 24 nama yang tidak tersapu aturan — `OldData` · `ProdKe` · `EDMNo` · `OldPolicyNo` · `BranchCode` dan lainnya, yang ditulis sistem, bukan diketik pengguna.
 
 ⛔ Butir `[data DBA]` panduan bentuk dokumen **ditutup**.
 
-⚠️ **Cacah 394 tetap batas bawah, bukan total.** Penampung medan tak dikenal tetap wajib, dan wajib **kosong** sebelum pekerjaan dinyatakan selesai.
+⚠️ **Cacah 394 tetap batas bawah, bukan total.** ~~Penampung medan tak dikenal tetap wajib, dan wajib **kosong** sebelum pekerjaan dinyatakan selesai.~~
+⛔ *Koreksi 06-10 (NB nyata, RALAT F3 04-10-2026 `[keputusan work owner]`):* **tanpa penampung** — setiap medan
+dokumen tanpa kolom diputuskan per medan (berkolom · disalin · dibuang berbukti); yang wajib **nol** = medan
+**belum diputuskan** (`modul/nbtreatyin/docs/issues/19-pemecah-dokumen-menjadi-baris.md` baris 45–54).
 
 ---
 

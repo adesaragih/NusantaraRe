@@ -46,7 +46,7 @@ const (
 	awalanDibuang = "dibuang: "
 )
 
-// ErrIDKasusDipakai - ID kasus (pyID) sudah dipakai baris T_GENERAL_POLIS
+// ErrIDKasusDipakai - ID kasus (pyID) sudah dipakai baris T_GENERAL_POLIS_TREATY
 // lain ber-IDPEGA berbeda; dokumen tidak dimuat, tidak menimpa.
 var ErrIDKasusDipakai = errors.New("models: ID kasus sudah dipakai kasus lain (IDPEGA berbeda)")
 

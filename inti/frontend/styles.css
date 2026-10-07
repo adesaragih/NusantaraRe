@@ -2913,6 +2913,11 @@ table {
 .modal__actions .btn--ghost {
   margin-right: auto;
 }
+/* Modal `tanpaTutup` (Modal di dasar.tsx): tanpa Batal, satu aksi di TENGAH (perintah work owner 06-10-2026,
+   popup nomor polis NB Treaty In "OK nya ditengah"). */
+.modal__actions--tengah {
+  justify-content: center;
+}
 
 /* Modal LEBAR — untuk isi yang berfield banyak dan memakai .form-grid.
    460px terlalu sempit untuk dua kolom: kotak isiannya menjadi lebih pendek
@@ -5192,6 +5197,326 @@ button.shell__golongan-judul:focus-visible {
   font-size: 13px;
   color: var(--text-3);
 }
+/* Panel kotak masuk Beranda (06-10-2026, keputusan work owner: dasbor per workbasket "yang lebih modern, ga harus
+   pie chart"; "kalo jumlahnya 0 ga usah muncul"). Angka total, batang proporsi bersegmen sebagai pengganti donut,
+   daftar peringkat per workbasket (titik warna, jumlah, porsi, batang), cacah per jenis. Palet = token tema yang
+   sudah ada (mode gelap ikut); nol warna baru. */
+.beranda__kotak {
+  display: grid;
+  gap: 16px;
+  padding: 20px 22px;
+}
+.beranda__kotak-judul {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.beranda__kotak-total {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 4px 0 0;
+  color: var(--text-3);
+  font-size: var(--fs-md);
+}
+.beranda__kotak-total strong {
+  color: var(--text);
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.beranda__warna--0 { --warna: var(--primary); }
+.beranda__warna--1 { --warna: var(--accent); }
+.beranda__warna--2 { --warna: var(--success-text); }
+.beranda__warna--3 { --warna: var(--danger); }
+.beranda__warna--4 { --warna: var(--warning-text); }
+.beranda__warna--5 { --warna: var(--text-2); }
+.beranda__proporsi {
+  display: flex;
+  gap: 3px;
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.beranda__proporsi-ruas {
+  flex-basis: 0;
+  min-width: 6px;
+  background: var(--warna);
+  transition: flex-grow var(--speed) ease;
+}
+.beranda__kotak-isi {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 28px;
+}
+.beranda__kotak-subjudul {
+  margin: 0 0 8px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.beranda__batang-daftar,
+.beranda__jenis {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.beranda__batang,
+.beranda__jenis-butir {
+  width: 100%;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-md);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--speed) ease;
+}
+/* Baris workbasket bertepi seperti butir per jenis - pintu klik ke per jenis (permintaan work owner 06-10-2026). */
+.beranda__batang {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.beranda__batang:hover,
+.beranda__jenis-butir:hover {
+  background: var(--hover-baris);
+}
+.beranda__batang:focus-visible,
+.beranda__jenis-butir:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+.beranda__batang-kepala {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.beranda__batang-titik {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--warna);
+}
+.beranda__batang-nama {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.beranda__batang-angka {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.beranda__batang-porsi {
+  min-width: 4ch;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.beranda__batang-jalur {
+  display: block;
+  height: 6px;
+  margin-left: 20px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.beranda__batang-isi {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--warna);
+  transition: width var(--speed) ease;
+}
+.beranda__jenis-butir {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.beranda__jenis-nama {
+  font-weight: 600;
+  color: var(--primary-text);
+}
+.beranda__jenis-angka {
+  min-width: 2.2em;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.beranda__batang--aktif,
+.beranda__jenis-butir--aktif {
+  background: var(--primary-soft);
+  box-shadow: inset 3px 0 0 var(--warna, var(--primary));
+}
+/* Kolom per jenis baru terbuka sesudah batang workbasket diklik (06-10-2026); warnanya ikut batang yang dibuka. */
+.beranda__jenis-kolom {
+  animation: beranda-jenis-buka var(--speed) ease;
+}
+@keyframes beranda-jenis-buka {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* Daftar berkas pilihan panel kotak masuk (06-10-2026): di Beranda, tanpa masuk menu modul. */
+.beranda__daftar {
+  display: grid;
+  gap: 12px;
+  padding: 18px 20px;
+}
+.beranda__daftar-kepala {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.beranda__daftar-kepala h3 {
+  margin: 0;
+}
+.beranda__daftar-modul {
+  color: var(--text-3);
+  font-weight: 500;
+}
+.beranda__daftar-tutup {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.beranda__daftar-tutup:hover {
+  background: var(--hover-baris);
+}
+.beranda__daftar-catatan {
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-md);
+}
+.beranda__daftar-tabel {
+  min-height: 0;
+}
+/* Kapsul filter daftar berkas (06-10-2026: "tambahkan filter disini"), sebaris dengan tombol tutup. */
+.beranda__daftar-alat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.beranda__saring {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 300px;
+  max-width: 100%;
+  margin: 0;
+  padding: 2px 3px 2px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-3);
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.beranda__saring:focus-within {
+  border-color: var(--primary);
+  box-shadow: var(--ring);
+}
+.beranda__saring svg {
+  flex: 0 0 auto;
+}
+.beranda__saring-isian {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 30px;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-md);
+  outline: none;
+}
+.beranda__saring-isian::placeholder {
+  color: var(--text-3);
+  opacity: 0.8;
+}
+.beranda__saring-isian:disabled {
+  cursor: not-allowed;
+}
+.beranda__saring-hapus {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+.beranda__saring-hapus:hover:not(:disabled) {
+  background: var(--hover-baris);
+}
+/* kosong: pengosong disembunyikan, tempatnya tetap (isian tidak melompat saat mengetik) */
+.beranda__saring-hapus:disabled {
+  visibility: hidden;
+}
+@media (max-width: 720px) {
+  .beranda__daftar-kepala {
+    flex-wrap: wrap;
+  }
+  .beranda__daftar-alat {
+    flex: 1 1 100%;
+  }
+  .beranda__saring {
+    flex: 1 1 auto;
+    width: auto;
+  }
+}
+@media (max-width: 720px) {
+  .beranda__kotak-isi {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .beranda__kisi {
   display: grid;
   gap: 20px;
