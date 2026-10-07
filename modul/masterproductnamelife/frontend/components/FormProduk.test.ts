@@ -235,8 +235,13 @@ describe('mode lihat: nol tambah/edit/delete - baru ada sesudah Edit (keputusan 
     expect(KODE).toMatch(/\{!lihat && \(\s*<td className="table__actions">[\s\S]*?\{hapus\(i\)\}\s*<\/td>\s*\)\}/)
   })
 
-  it('checkbox On Retention mati di mode lihat; tombol Copy hanya di mode sunting; Generate tetap', () => {
-    expect(KODE).toMatch(/checked=\{u\.isOrs\}\s*disabled=\{lihat\}/)
+  it('checkbox On Retention TIDAK dirender (05-10-2026); tombol Copy hanya di mode sunting; Generate tetap', () => {
+    // Checkbox tidak terpakai: tidak dirender, layar tidak pernah mengirim hitungOutward: true,
+    // dan isOrs tidak di-reset (tidak ada penulisan isOrs di layar).
+    expect(KODE).not.toContain('type="checkbox"')
+    expect(KODE).not.toContain('UMUM_MPNL.onRetention')
+    expect(KODE).not.toMatch(/hitungOutward:\s*true/)
+    expect(KODE).not.toMatch(/isOrs:/)
     expect(dijagaLihat(KODE, 'TOMBOL_MPNL.copy')).toBe(true)
     expect(dijagaLihat(KODE, 'TOMBOL_MPNL.generate')).toBe(false)
   })

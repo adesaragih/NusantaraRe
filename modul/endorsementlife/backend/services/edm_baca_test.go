@@ -25,7 +25,8 @@ func gudangBerkasus() *tiruan.Gudang {
 		ID: "EDMLF-1", OldPolicyNo: "UJI-PL-1", EdmType: "1", TglInput: "2026-10-01 09:00:00", Pembuat: "UJI-AKUN-1",
 		Kepala: map[string]string{"TYPE": "QR", "CEDING_CO_NAME": "UJI-CEDING"},
 	}
-	g.Polis["EDMLF-2"] = &tiruan.Polis{ID: "EDMLF-2", OldPolicyNo: "UJI-PL-2", EdmType: "3", TglInput: "2026-10-01 10:00:00"}
+	g.Polis["EDMLF-2"] = &tiruan.Polis{ID: "EDMLF-2", OldPolicyNo: "UJI-PL-2", EdmType: "3", TglInput: "2026-10-01 10:00:00",
+		NoEndors: "UJI-PL-2/02"}
 	g.Polis["EDMLF-3"] = &tiruan.Polis{ID: "EDMLF-3", OldPolicyNo: "UJI-PL-3", EdmType: "1", TglInput: "2026-10-01 11:00:00",
 		Status: models.StatusKasusDitolak}
 	for i, s := range []string{models.StatusOld, models.StatusOld, models.StatusNew} {
@@ -45,8 +46,12 @@ func TestInboxHanyaKasusTerbukaTerbaruDahulu(t *testing.T) {
 	if h.Total != 2 || len(h.Baris) != 2 || h.Baris[0].CaseID != "EDMLF-2" || h.Baris[1].CaseID != "EDMLF-1" {
 		t.Fatalf("kotak masuk = %+v", h)
 	}
-	if h.Baris[1].EndorsementNo != "UJI-PL-1" || h.Baris[1].Ceding != "UJI-CEDING" {
+	// Endorsement No = NO_ENDORS (07-10-2026): kosong bila belum terbit; Policy No = OLD_POLICY_NO.
+	if h.Baris[1].EndorsementNo != "" || h.Baris[1].PolicyNo != "UJI-PL-1" || h.Baris[1].Ceding != "UJI-CEDING" {
 		t.Errorf("baris kotak masuk = %+v", h.Baris[1])
+	}
+	if h.Baris[0].EndorsementNo != "UJI-PL-2/02" || h.Baris[0].PolicyNo != "UJI-PL-2" {
+		t.Errorf("Endorsement No bukan NO_ENDORS: %+v", h.Baris[0])
 	}
 	for _, b := range h.Baris {
 		if !models.KasusEDM(b.CaseID) {

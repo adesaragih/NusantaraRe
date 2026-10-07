@@ -160,6 +160,13 @@ func (p *Penawaran) PutuskanDenganNomor(ctx context.Context, pelaku inti.Pelaku,
 			return models.AkibatKeputusan{}, HasilSubmitSummary{}, err
 		}
 	}
+	// Kesiapan Confirm Premium List Detail (keputusan work owner 06-10-2026): selama
+	// masih ada yang kurang, nomor tidak terbit dan kasus tidak ditutup - nol tulisan.
+	if keputusan == models.KeputusanConfirm {
+		if err := p.periksaSiapConfirm(ctx, pelaku, keadaan); err != nil {
+			return models.AkibatKeputusan{}, HasilSubmitSummary{}, err
+		}
+	}
 	sebab := keputusan
 	if akibat.KeDecision3 {
 		flag, err := repository.NewWorkPolis(p.svc.DB()).Bendera(ctx, keadaan.ID)

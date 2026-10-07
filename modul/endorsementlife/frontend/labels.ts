@@ -13,6 +13,8 @@ export const MENU_EDM = {
 export const UMUM_EDM = {
   kosong: 'No data.',
   tutup: 'Close',
+  // Kolom nomor baris tabel peserta View Old Policy (07-10-2026) - tampilan saja, bukan kolom korpus.
+  nomor: 'No',
   kembali: 'Back',
   memuat: 'Loading…',
   memeriksa: 'Checking…',
@@ -43,15 +45,14 @@ export const INBOX_EDM = {
   kolomEndorsementNo: 'Endorsement No', // b8556
   kolomType: 'Type', // b8692
   kolomEdmType: 'EDM Type', // b8828
-  kolomPolicyNo: 'Policy No', // b8964
-  kolomSob: 'SOB', // b9100
+  // b8964 korpus "Policy No" → "PL_NUMBER" (istilah kotak masuk PremiumList Life) - keputusan work owner 07-10-2026;
+  // isi tetap OLD_POLICY_NO (PL Number polis yang di-endorse). Label "Policy No" layar lain tidak berubah.
+  kolomPolicyNo: 'PL_NUMBER',
   kolomCeding: 'Ceding', // b9236
-  kolomPolicyHolder: 'Policy Holder', // b9372
-  kolomMarketingName: 'Marketing Name', // b9508
   kolomCreateDate: 'Create Date', // b9644
   kolomCreateOperator: 'Create Operator', // b9780
-  kolomEdmTypeBatal: 'EDM Type Batal', // b9916
-  kolomStatus: 'Status', // b10052
+  // b10052 korpus "Status" → "Work Status" (istilah kotak masuk PremiumList Life) - keputusan work owner 07-10-2026.
+  kolomStatus: 'Work Status',
 } as const
 
 /** `Section/InputEDMLife.xml` - kepala kasus (seluruhnya baca-saja). */
@@ -69,7 +70,22 @@ export const KASUS_EDM = {
   marketingOfficer: 'Marketing Officer', // b6578
   edmType: 'EDM Type', // b6910
   description: 'Description', // b7697
+  // Judul bagian layar kasus dirapikan (keputusan work owner 07-10-2026; pola Premium List Detail) - bukan korpus.
+  bagianPolis: 'Policy Data',
+  bagianPihak: 'Parties',
+  bagianEndorsement: 'Endorsement',
+  peserta: 'Participants',
 } as const
+
+/**
+ * Nama `Premium Method` (`PRO_RATE_TYPE`) - 1 Single, 2 Annually, 3 Others; sama dengan opsi Premium Payment
+ * Method PremiumList Life (keputusan work owner 07-10-2026). Kode lain tampil apa adanya.
+ */
+export const OPSI_METODE_PREMI: Readonly<Record<string, string>> = {
+  '1': 'Single',
+  '2': 'Annually',
+  '3': 'Others',
+}
 
 /** `Section/EndorsmentLife_Section.xml` - label yang `InputEDMLife` ambil dari deskripsi properti. */
 export const BUAT_EDM = {
@@ -77,7 +93,24 @@ export const BUAT_EDM = {
   edmType: 'EDM Type', // b1347
   description: 'Description', // b2140
   edmDate: 'EDM Date', // b3160
+  // Sub-jenis EDM Type (OQ-EDM-005 ditutup, keputusan work owner 07-10-2026).
+  edmTypePerubahanData: 'EDM Type Perubahan Data', // b1645
+  edmTypeBatal: 'EDM Type Batal', // b1937
+  pilih: 'Choose',
   submit: 'Submit', // b4226
+  // Tampilan dirapikan (keputusan work owner 07-10-2026): footer Cancel + Submit, teks bantuan Submit nonaktif.
+  cancel: 'Cancel',
+  bantuan: {
+    policyNo: 'Fill in Policy No to continue.',
+    edmType: 'Choose an EDM Type (Perubahan Data or Batal) to continue.',
+    memeriksa: 'Checking the policy…',
+    menunggu: 'Waiting for the policy check.',
+    pesan: 'Resolve the messages above before submitting.',
+    penolakan: 'Change the input to submit again.',
+    perubahanData: 'Choose an EDM Type Perubahan Data to continue.',
+    batal: 'Choose an EDM Type Batal to continue.',
+    mengirim: 'Submitting…',
+  },
 } as const
 
 /** `Section/ShowLifePremiumSummary_EDM.xml` - tombol yang dipindah ke `InputEDMLife` (RALAT R02). */
@@ -147,6 +180,21 @@ export const OPSI_EDM_TYPE: Readonly<Record<string, string>> = {
   '1': 'Perubahan Data',
   '3': 'Batal',
 }
+
+/**
+ * Sub-jenis EDM Type (OQ-EDM-005, keputusan work owner 07-10-2026) - opsi dari layar Pega, DISIMPAN sebagai teks
+ * label persis (`models.OpsiEdmTypePerubahanData` / `OpsiEdmTypeBatal`, migrasi 483).
+ */
+export const OPSI_EDM_TYPE_PERUBAHAN_DATA: readonly string[] = [
+  'Perubahan data (No Polis)',
+  'Perubahan data (No Sertifikat)',
+  'Perubahan data (Nama Peserta)',
+  'Perubahan data (DOB)',
+  'Perubahan data (Begin & Expired Date)',
+  'Perubahan data (UP & Premi)',
+]
+/** Opsi `EDM Type Batal` - tanpa Choose; yang pertama bawaan terpilih. */
+export const OPSI_EDM_TYPE_BATAL: readonly string[] = ['Batal Internal', 'Batal Eksternal']
 
 /**
  * Domain `TYPE_CEDING` (`Reinsurance System`) - STRUKTUR PremiumList bab `T_PREMIUM_LIST`,

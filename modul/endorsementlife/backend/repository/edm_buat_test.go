@@ -28,10 +28,12 @@ func TestSQLKasusTerbukaDanSisipKasus(t *testing.T) {
 		t.Errorf("gerbang 3 bukan kasus EDM terbuka atas polis: %s", q)
 	}
 	s := sqlSisipKasus(uPolis)
-	if n := penampungUnik(t, "sqlSisipKasus", s); n != 8+len(models.KolomKepalaSalin) {
+	if n := penampungUnik(t, "sqlSisipKasus", s); n != 10+len(models.KolomKepalaSalin) {
 		t.Fatalf("%d penampung", n)
 	}
-	for _, wajib := range []string{"OLD_POLICY_NO", "EDM_TYPE", "TO_DATE(:6, 'YYYY-MM-DD')", "PROD_KE", "CREATE_OP_NAME", "SYSDATE"} {
+	for _, wajib := range []string{"OLD_POLICY_NO", "EDM_TYPE", "TO_DATE(:6, 'YYYY-MM-DD')", "PROD_KE", "CREATE_OP_NAME", "SYSDATE",
+		// Sub-jenis EDM Type (migrasi 483, 07-10-2026) - kolom bernama, penampung :9 / :10.
+		"PROD_KE, EDM_TYPE_PERUBAHAN_DATA, EDM_TYPE_BATAL,", ":8, :9, :10, :11"} {
 		if !strings.Contains(s, wajib) {
 			t.Errorf("sqlSisipKasus tanpa %q", wajib)
 		}

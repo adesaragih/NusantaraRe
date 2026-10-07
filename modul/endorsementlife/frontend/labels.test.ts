@@ -38,15 +38,9 @@ export const BUKTI: readonly Bukti[] = [
   ['INBOX_EDM.kolomEndorsementNo', INBOX, 8556, 'pyValue'],
   ['INBOX_EDM.kolomType', INBOX, 8692, 'pyValue'],
   ['INBOX_EDM.kolomEdmType', INBOX, 8828, 'pyValue'],
-  ['INBOX_EDM.kolomPolicyNo', INBOX, 8964, 'pyValue'],
-  ['INBOX_EDM.kolomSob', INBOX, 9100, 'pyValue'],
   ['INBOX_EDM.kolomCeding', INBOX, 9236, 'pyValue'],
-  ['INBOX_EDM.kolomPolicyHolder', INBOX, 9372, 'pyValue'],
-  ['INBOX_EDM.kolomMarketingName', INBOX, 9508, 'pyValue'],
   ['INBOX_EDM.kolomCreateDate', INBOX, 9644, 'pyValue'],
   ['INBOX_EDM.kolomCreateOperator', INBOX, 9780, 'pyValue'],
-  ['INBOX_EDM.kolomEdmTypeBatal', INBOX, 9916, 'pyValue'],
-  ['INBOX_EDM.kolomStatus', INBOX, 10052, 'pyValue'],
   ['KASUS_EDM.judul', INPUT, 817, 'pyValue'],
   ['KASUS_EDM.productName', INPUT, 3399, 'pyLabelFieldValue'],
   ['KASUS_EDM.productNameId', INPUT, 3589, 'pyLabelFieldValue'],
@@ -64,6 +58,8 @@ export const BUKTI: readonly Bukti[] = [
   ['BUAT_EDM.edmType', BUAT, 1347, 'pyLabelFieldValue'],
   ['BUAT_EDM.description', BUAT, 2140, 'pyLabelFieldValue'],
   ['BUAT_EDM.edmDate', BUAT, 3160, 'pyLabelFieldValue'],
+  ['BUAT_EDM.edmTypePerubahanData', BUAT, 1645, 'pyLabelFieldValue'],
+  ['BUAT_EDM.edmTypeBatal', BUAT, 1937, 'pyLabelFieldValue'],
   ['BUAT_EDM.submit', BUAT, 4226, 'pyLabel'],
   ['POLIS_LAMA_EDM.viewOldPolicy', RINGKAS, 64965, 'pyLabel'],
   ['GRID_EDM.policyNo', INPUT, 12035, 'pyValue'],
@@ -101,6 +97,16 @@ export const BUKAN_KORPUS: readonly string[] = [
   'MENU_EDM.kelompok', // nama FOLDER korpus, dibuktikan terpisah di bawah
   'UMUM_EDM.kosong', // teks bawaan grid kosong
   'UMUM_EDM.tutup', // ikon tutup harness `pxIconCancel` tanpa teks
+  'INBOX_EDM.kolomPolicyNo', // korpus b8964 "Policy No"; kini "PL_NUMBER" seperti kotak masuk PremiumList Life (keputusan work owner 07-10-2026) - isinya tetap OLD_POLICY_NO
+  'INBOX_EDM.kolomStatus', // korpus b10052 "Status"; kini "Work Status" seperti kotak masuk PremiumList Life (keputusan work owner 07-10-2026) - isinya tetap STATUSS
+  'KASUS_EDM.bagianPolis', // judul bagian layar kasus - tampilan (keputusan work owner 07-10-2026)
+  'KASUS_EDM.bagianPihak', // judul bagian layar kasus - tampilan (keputusan work owner 07-10-2026)
+  'KASUS_EDM.bagianEndorsement', // judul bagian layar kasus - tampilan (keputusan work owner 07-10-2026)
+  'KASUS_EDM.peserta', // judul bagian peserta layar kasus - tampilan (keputusan work owner 07-10-2026)
+  'UMUM_EDM.nomor', // kolom nomor baris popup View Old Policy - tampilan saja (keputusan work owner 07-10-2026)
+  'BUAT_EDM.pilih', // teks pilihan kosong dropdown sub-jenis (layar Pega, diberikan work owner 07-10-2026); opsi properti tidak diekspor
+  'BUAT_EDM.cancel', // footer Create Addendum - keputusan work owner 07-10-2026 (harness hanya ikon tutup)
+  'BUAT_EDM.bantuan', // teks bantuan Submit nonaktif - keputusan work owner 07-10-2026 (Pega menyembunyikan Submit)
   'UMUM_EDM.kembali', // kembali dari layar kasus ke kotak masuk (`finishAssignment`)
   'UMUM_EDM.memuat', // teks bawaan muat
   'UMUM_EDM.memeriksa', // gerbang sedang berjalan

@@ -14,7 +14,7 @@ adalah **ejaan korpus** — itu **bukti asal kolom**, bukan nama kolom.
 >
 > | Tabel | Saat | Kolom |
 > | --- | --- | --- |
-> | `T_PREMIUM_LIST` | buat kasus | `ID` `EDMLF-<n>`, `OLD_POLICY_NO`, `EDM_TYPE`, `EDM_NOTE`, `EDM_DATE`, `PROD_KE`, `CREATE_OP_NAME`, `TGL_INPUT` + 24 kolom kepala salinan (`models.KolomKepalaSalin`) |
+> | `T_PREMIUM_LIST` | buat kasus | `ID` `EDMLF-<n>`, `OLD_POLICY_NO`, `EDM_TYPE`, `EDM_NOTE`, `EDM_DATE`, `PROD_KE`, `CREATE_OP_NAME`, `TGL_INPUT`, `EDM_TYPE_PERUBAHAN_DATA` / `EDM_TYPE_BATAL` (483, 07-10-2026) + 24 kolom kepala salinan (`models.KolomKepalaSalin`) |
 > | `T_PREMIUM_LIST` | `Confirm` | `NO_POLIS`, `PROD_KE`, `NO_ENDORS` = `PL_NUMBER_EDM`, `STATUSS` `Resolved-Completed` (`Decline`: `STATUSS` `Resolved-Rejected` saja) |
 > | `T_PREMIUM_LIST_DETAIL` | buat kasus / CSV | salinan versi lama ber-`PARENT_ID` + `EDM_STATUS` `Old`; baris CSV `New` |
 > | `T_PREMIUM_LIST_DETAIL` | `Save` | `EDM_STATUS` `Delete`/`Batal` + 32 kolom uang dibalik tandanya |
@@ -88,6 +88,8 @@ irisan ber-`Dipakai = EDM saja` dari tabel `T_PREMIUM_LIST` di berkas PremiumLis
 | `PROD_KE` | bilangan bulat | ya | | **EDM saja** | keputusan tiket 00 Endorsement — versi berjalan = `PRODKE` terbesar |
 | `EDM_STATUS` | teks | ya | | **EDM saja** | keputusan tiket 00 Endorsement — `Old`/`New`/`Delete`/`Batal` |
 | `STATUS_OLD` | teks | ya | | **EDM saja** | keputusan tiket 00 Endorsement |
+| `EDM_TYPE_PERUBAHAN_DATA` | teks | ya | | **EDM saja** | keputusan work owner 07-10-2026 (OQ-EDM-005, migrasi 483) — sub-jenis EDM Type 1, teks label `EndorsmentLife_Section` b1645 |
+| `EDM_TYPE_BATAL` | teks | ya | | **EDM saja** | keputusan work owner 07-10-2026 (OQ-EDM-005, migrasi 483) — sub-jenis EDM Type 3, teks label b1937 |
 
 ⚠️ **`TYPE_CEDING` tidak ada di daftar ini** — ia **kolom bersama (NB + EDM)**, bersumber korpus.
 Tiket 00 Endorsement hanya menetapkan **domain nilainya**. Lihat

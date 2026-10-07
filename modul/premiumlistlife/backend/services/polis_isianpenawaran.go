@@ -9,8 +9,11 @@ package services
 //
 // ⛔ Tombol `Save Offer` Pega menjalankan `AddHistorySuggest` lalu
 // `InputOfferLife_ACT` (langkah 2-8 hidup) - SATU simpanan di sini: header
-// dan satu baris riwayat dalam SATU transaksi. Langkah 4-6
-// (`INSERTJSONOFFERLIFE`, `GetIdOffer_SQL` -> NoOffer) TIDAK ditiru (spec §12):
+// dan satu baris riwayat dalam SATU transaksi. Langkah 3-4 ("Pega to
+// json_offer_life", `SaveOfferJsonLife_SQL`) DITIRU sejak 06-10-2026 (keputusan
+// work owner) dengan SQL langsung ke `JSON_OFFER_LIFE` di transaksi yang sama -
+// repository/polis_jsonoffer.go; prosedur `INSERTJSONOFFERLIFE` tidak dipanggil,
+// JSONDATA/OLDID NULL. Langkah 5-6 (`GetIdOffer_SQL` -> NoOffer) TIDAK ditiru:
 // `NO_OFFER` tetap kosong untuk kasus baru, dan sel `Confirmation Number`
 // memang hanya tampil bila tidak kosong (`pyVisible NOTBLANK`).
 //
@@ -46,6 +49,9 @@ var (
 type FormPenawaran struct{ svc *Service }
 
 // FormPenawaran menyusun layanannya.
+// ErrPenawaranMelebihiKolom - isian tidak muat di kolom JSON_OFFER_LIFE (400, berpesan).
+var ErrPenawaranMelebihiKolom = errors.New("services: isian penawaran melebihi lebar kolom")
+
 func (s *Service) FormPenawaran() *FormPenawaran { return &FormPenawaran{svc: s} }
 
 // PilihanPenawaran - pilihan tertutup layar, dikirim BERSAMA isiannya supaya
@@ -220,6 +226,15 @@ func (f *FormPenawaran) Simpan(ctx context.Context, pelaku inti.Pelaku, polisID 
 			return err
 		}
 		if err := repo.Simpan(ctx, tx, polisID, siap); err != nil {
+			return err
+		}
+		// JSON_OFFER_LIFE dari isian yang BARU tersimpan (keputusan work owner
+		// 06-10-2026): ID lama dipertahankan; gagal = seluruh Save Offer batal.
+		if _, err := repository.NewJSONOfferLife(f.svc.DB()).Ganti(ctx, tx, polisID); err != nil {
+			if errors.Is(err, repository.ErrNilaiJSONOfferTerlaluPanjang) {
+				return fmt.Errorf("%w: %s", ErrPenawaranMelebihiKolom,
+					strings.TrimPrefix(err.Error(), repository.ErrNilaiJSONOfferTerlaluPanjang.Error()+": "))
+			}
 			return err
 		}
 		_, err = repo.SisipSuggest(ctx, tx, polisID,

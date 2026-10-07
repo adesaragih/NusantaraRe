@@ -75,8 +75,7 @@ export const UMUM_MPNL = {
   causeOfLoss: 'Cause Of Loss',
   /** `InboxProductName.xml` b11360 `<pyLabel>`. */
   chooseCause: 'Choose Cause of Loss',
-  /** `InboxProductName.xml` b47312 `<pyCheckboxCaption>`. */
-  onRetention: 'On Retention',
+  // `On Retention` b47312 dihapus - checkbox-nya tidak dirender (keputusan work owner 05-10-2026).
 } as const
 
 /** Form sisi inward - halaman `ProductNameInward` (PARITAS §3.2). */

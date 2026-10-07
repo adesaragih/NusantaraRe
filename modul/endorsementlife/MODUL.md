@@ -42,6 +42,7 @@ dipensiunkan 1 Oktober 2026.
 | `480` | tiket 00 (ralat E1): `T_PREMIUM_LIST.PROD_KE NUMBER(5) DEFAULT 1` + isi mundur, index `IDX_PL_NOPOLIS_PRODKE`, `IDX_PL_OLD_POLICY_NO`, `IDX_PLD_PL_NUMBER` — nol kolom baru |
 | `481` | sequence `SEQ_WORK_EDM_LIFE` — pengenal kasus `EDMLF-<n>` |
 | `482` | index unik berfungsi `UX_PL_EDM_TERBUKA` — satu kasus endorsement terbuka per polis (AC 3) |
+| `483` | `T_PREMIUM_LIST` + `EDM_TYPE_PERUBAHAN_DATA`, `EDM_TYPE_BATAL` `VARCHAR2(100)` nullable — sub-jenis EDM Type Create Addendum (OQ-EDM-005, keputusan work owner 07-10-2026); nol isi mundur |
 | `976` | slot menu: `UPDATE M_NAV_MENU SET DIMIGRASI = '1'` baris `endorsementlife`, nol `INSERT` |
 
 ⛔ **Nol tabel baru** (spec §16, AC 55): endorsement adalah versi baru di tabel PremiumList Life. Bentuk

@@ -31,7 +31,8 @@ func gudangNB() *tiruan.Gudang {
 }
 
 func TestRuteKelayakanDanBuatKasus(t *testing.T) {
-	h := routerBuat(gudangNB())
+	g := gudangNB()
+	h := routerBuat(g)
 	w := minta(t, h, "POST", handlers.Prefix+"/kelayakan", `{"policyNo":"","edmType":"1"}`, true)
 	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"pesan":["Invalid Policy No !","Policy no Not Found !"]`) ||
 		!strings.Contains(w.Body.String(), `"boleh":false`) {
@@ -41,12 +42,20 @@ func TestRuteKelayakanDanBuatKasus(t *testing.T) {
 	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"pesan":[],"boleh":true`) {
 		t.Fatalf("kelayakan sah %d %s", w.Code, w.Body)
 	}
-	w = minta(t, h, "POST", handlers.Prefix+"/kasus", `{"policyNo":"UJI-PL-1","edmType":"1","edmDate":"2026-10-01","description":"UJI"}`, true)
+	w = minta(t, h, "POST", handlers.Prefix+"/kasus", `{"policyNo":"UJI-PL-1","edmType":"1","edmDate":"2026-10-01","description":"UJI","edmTypePerubahanData":"Perubahan data (No Polis)"}`, true)
 	if w.Code != http.StatusCreated || w.Header().Get("Location") != handlers.Prefix+"/kasus/EDMLF-1" || !strings.Contains(w.Body.String(), `"peserta":1`) {
 		t.Fatalf("buat %d %s %v", w.Code, w.Body, w.Header())
 	}
+	if k := g.Polis["EDMLF-1"]; k.EdmTypePerubahanData != "Perubahan data (No Polis)" || k.EdmTypeBatal != "" {
+		t.Fatalf("sub-jenis EDM Type tidak tertulis: %+v", k)
+	}
+	// Sub-jenis EDM Type wajib (07-10-2026): 422 berpesan, sebelum gerbang.
+	w = minta(t, h, "POST", handlers.Prefix+"/kasus", `{"policyNo":"UJI-PL-1","edmType":"3"}`, true)
+	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), "EDM Type Batal is required") {
+		t.Fatalf("buat tanpa sub-jenis %d %s", w.Code, w.Body)
+	}
 	// Kasus kedua atas polis yang sama: 422 berpesan gerbang 3 VERBATIM.
-	w = minta(t, h, "POST", handlers.Prefix+"/kasus", `{"policyNo":"UJI-PL-1","edmType":"1"}`, true)
+	w = minta(t, h, "POST", handlers.Prefix+"/kasus", `{"policyNo":"UJI-PL-1","edmType":"1","edmTypePerubahanData":"Perubahan data (DOB)"}`, true)
 	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), "There's EDM with this policy no that haven't finish yet!") {
 		t.Fatalf("buat kedua %d %s", w.Code, w.Body)
 	}

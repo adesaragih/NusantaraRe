@@ -76,6 +76,16 @@ var medanTypeYangSah = map[string]string{
 	// modul (dulu repository/polis_ringkas.go).
 	"inti/backend/kontrak/polis.go": "PolisRingkas - Type POLIS dibaca dari T_PREMIUM_LIST untuk PolicyDataLife",
 	"services/polis_ringkas.go":     "bentuk layar PolicyDataLife, jalur baca",
+	// ⛔ PremiumList Life Save Data (keputusan work owner 07-10-2026): `isiDataPolis.Type` adalah
+	// badan JSON `PUT /api/polis-life/{id}/data-polis` - hidup sepanjang satu permintaan, lalu
+	// disimpan SEKALI ke `T_PREMIUM_LIST.TYPE` (`repository/polis_datapolis.go` `SET TYPE = :1`).
+	"handlers/rute_datapolis.go": "muatan permintaan Save Data PremiumList Life (Type polis QR/QP/TP/TR), bukan Type klaim; disimpan sekali di T_PREMIUM_LIST.TYPE",
+	// ⛔ PremiumList Life Save Data, dua lapis berikutnya (keputusan work owner 07-10-2026):
+	// `models.IsianDataPolis.Type` - isian hasil `keIsian` handler di atas, jalur TULIS ke
+	// `T_PREMIUM_LIST.TYPE`; `services.JawabanDataPolis.Type` - bentuk layar
+	// `GET /api/polis-life/{id}/data-polis`, jalur BACA dari `T_PREMIUM_LIST.TYPE`.
+	"models/polis_datapolis.go":   "IsianDataPolis.Type - isian Save Data PremiumList Life (Type polis QR/QP/TP/TR) hasil keIsian, jalur tulis ke T_PREMIUM_LIST.TYPE; bukan Type klaim",
+	"services/polis_datapolis.go": "JawabanDataPolis.Type - bentuk layar GET data-polis PremiumList Life, jalur baca dari T_PREMIUM_LIST.TYPE; bukan Type klaim",
 }
 
 func TestTypeKlaimHanyaSatuRumahTersimpan(t *testing.T) {

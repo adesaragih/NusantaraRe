@@ -467,6 +467,17 @@ func ambil[T any](m map[string]T, id string) (T, error) {
 	return v, nil
 }
 
+// KunciTahunTreaty - tiruan LOCK TABLE: dicatat di Kunci.
+func (g *Gudang) KunciTahunTreaty(context.Context, *db.Tx) error {
+	g.Kunci = append(g.Kunci, "tabel|"+repository.TabelTahun)
+	return nil
+}
+
+// DaftarTahunTx - sama dengan DaftarTahun.
+func (g *Gudang) DaftarTahunTx(ctx context.Context, _ *db.Tx) ([]models.TahunTreaty, error) {
+	return g.DaftarTahun(ctx)
+}
+
 // DaftarTahun - `ID ASC`.
 func (g *Gudang) DaftarTahun(context.Context) ([]models.TahunTreaty, error) {
 	return urutID(g.Tahun, func(models.TahunTreaty) bool { return true },
@@ -490,12 +501,12 @@ func (g *Gudang) AmbilKontrak(_ context.Context, _ *db.Tx, id string) (models.Ko
 	return ambil(g.Kontrak, id)
 }
 
-// DaftarReinsurer - dua kunci induk, `ID DESC`.
+// DaftarReinsurer - dua kunci induk, `ID ASC` (06-10-2026).
 func (g *Gudang) DaftarReinsurer(_ context.Context, _ *db.Tx, tahunID, kontrakID string) ([]models.Reinsurer, error) {
 	g.catat("reinsurer", tahunID, kontrakID)
 	return urutID(g.Reinsurer, func(r models.Reinsurer) bool {
 		return r.TreatyYearID == tahunID && r.TreatyContractID == kontrakID
-	}, func(r models.Reinsurer) string { return r.ID }, true), nil
+	}, func(r models.Reinsurer) string { return r.ID }, false), nil
 }
 
 // AmbilReinsurer - satu reinsurer.

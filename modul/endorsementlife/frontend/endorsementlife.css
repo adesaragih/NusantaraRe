@@ -18,6 +18,99 @@
   text-decoration: underline;
 }
 
+/* Layar kasus dirapikan (keputusan work owner 07-10-2026; pola Premium List Detail). */
+.edm-kasus__kepala {
+  align-items: center;
+}
+
+.edm-kasus__info {
+  margin: 0;
+}
+
+/* Judul bagian: kecil, huruf besar, bergaris bawah. */
+.edm-subjudul {
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-md, 0.875rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* Tiga bagian berdampingan, kolom sama lebar, garis pemisah. */
+.edm-kasus__tigabagian {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+
+.edm-kasus__tigabagian > .edm-kasus__bagian {
+  min-width: 0;
+  padding: 0 1.5rem;
+}
+
+.edm-kasus__tigabagian > .edm-kasus__bagian:first-child {
+  padding-left: 0;
+}
+
+.edm-kasus__tigabagian > .edm-kasus__bagian:last-child {
+  padding-right: 0;
+}
+
+.edm-kasus__tigabagian > .edm-kasus__bagian + .edm-kasus__bagian {
+  border-left: 1px solid var(--border);
+}
+
+/* Di dalam bagian: dua sel sama lebar; nilai panjang dibungkus, tidak mendorong kolom lain. */
+.edm-kasus__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+  margin: 0;
+}
+
+.edm-kasus__grid dd {
+  overflow-wrap: anywhere;
+}
+
+.edm-kasus__lebar {
+  grid-column: 1 / -1;
+}
+
+/* Judul Participants + toolbar CSV satu baris. */
+.edm-kasus__kepalapeserta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.edm-kasus__kepalapeserta .edm-subjudul {
+  margin: 0;
+  padding: 0;
+  border-bottom: 0;
+}
+
+@media (max-width: 1024px) {
+  .edm-kasus__tigabagian {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 1rem;
+  }
+
+  .edm-kasus__tigabagian > .edm-kasus__bagian {
+    padding: 0;
+  }
+
+  .edm-kasus__tigabagian > .edm-kasus__bagian + .edm-kasus__bagian {
+    border-left: 0;
+  }
+}
+
 .edm-kepala {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
@@ -39,16 +132,74 @@
   margin: 0;
 }
 
+/* Create Addendum - tampilan dirapikan (keputusan work owner 07-10-2026). */
 .edm-buat {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  box-sizing: border-box;
+  /* Selebar penuh area konten, seperti panel kotak masuk (keputusan work owner 07-10-2026). */
+  width: 100%;
+  min-width: 0;
 }
 
-.edm-buat__isian {
+/* Baris 1: Policy No | EDM Type | EDM Date - tiga kolom sama lebar, isian rata bawah. */
+.edm-buat__baris {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem 1.5rem;
+  align-items: end;
+}
+
+/* Sub-jenis EDM Type tepat di bawah EDM Type (kolom 2) - 07-10-2026. */
+.edm-buat__sub {
+  grid-column: 2;
+  min-width: 0;
+}
+
+/* Baris 2: Description selebar penuh. */
+.edm-buat__lebar {
+  min-width: 0;
+}
+
+.edm-buat__status,
+.edm-buat__pesan {
+  margin: 0;
+}
+
+.edm-buat__pesan {
+  padding-left: 2rem;
+}
+
+/* Footer rata kanan: teks bantuan, Cancel, Submit; melipat di layar sempit. */
+.edm-buat__kaki {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.edm-buat__bantuan {
+  flex: 1 1 16rem;
+  text-align: right;
+}
+
+@media (max-width: 720px) {
+  .edm-buat__baris {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .edm-buat__sub {
+    grid-column: auto;
+  }
+
+  .edm-buat__bantuan {
+    flex-basis: 100%;
+    text-align: left;
+  }
 }
 
 .edm-aksi {
@@ -67,6 +218,13 @@
   margin: 0;
   padding-left: 1.25rem;
   color: var(--bahaya, #b42318);
+}
+
+/* Kolom nomor baris (tabel peserta View Old Policy, 07-10-2026): sempit, rata kanan. */
+.edm-nomor {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
 }
 
 .edm-angka {

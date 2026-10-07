@@ -32,7 +32,7 @@ giliran ini; statusnya tetap seperti baris paritasnya (bila ada) — **belum** a
 | `SubmitPremiumList_Act` | 15 b3398 (geser `MM.YYYY.` bila di atas tanggal closing) | tidak — tetapi `models/polis_periode.go` mengutip b3491 | kutipan diralat; premis "dua versi hidup" → OQ-PL-13 |
 | `InsertJsonPolisLife_Act` | 16 b5294 `Commit` · 17 b5383 `Connect-REST InsertLifePremiumDetail` | tidak (Go memegang transaksi; salinan peserta lewat `repository/polis_warisan.go`, keputusan pl2) | nama layanan step 17 diralat di spec, 05b, 06 → OQ-PL-14 |
 | `SavePremiumList_Act` | 8.3 b1891 · 8.5 b3704 · 8.6 b3863 · 8.7 b4050 · 8.9 b5887 · 11 b6411 · 13 b6642 | tidak | tercatat tiket 03/05a. Langkah HIDUP 6–8.2 (batas umur / sum insured) kini **penolakan Validate CSV** — lihat bagian di bawah (keputusan work owner 05-10-2026) |
-| `UploadCSVLifePremium_Act` | 5 b889 · 6 b1042 · 7 b1188 (+7.2 b2517, 7.4 b2797) · 8 b2922 | tidak (tinjauan tidak menulis) | — |
+| `UploadCSVLifePremium_Act` | 5 b889 · 6 b1042 · 7 b1188 (+7.2 b2517, 7.4 b2797) · 8 b2922 | tidak (tinjauan tidak menulis) | — · ⚠️ beda dari Pega (05-10-2026): `POLICY_HOLDER`/`PLAN` peserta diisi dari polis (`POLICY_HOLDER_NAME`, `BUSINESS_NAME`), nilai CSV diabaikan — tiket 04 |
 | `InputOfferLife_ACT` | 1 b354 (`ASMForceCaseClose`) | tidak — Decline menutup lewat flow | tercatat tiket 01 |
 | `LoadAttachmentData` | 1 b276 · 2 b493 · 3 b661 · 4 b771 | tidak | — |
 | `serviceInsertArasapasLife_act` | 9 b1597 (`UpdateErrorNoteJsonPolis`) | tidak (efek stub) | — |
@@ -100,7 +100,9 @@ SUM_REASURED × RNM Share % · tahun pertama (`BEGIN_DATE` = `GROSS_VALUATION_BE
 `SUM_AT_RISK_GROSS` = share × risk master / 1000 · `GROSS_PREMIUM` = RATE/1000 × share × FACTOR
 (kosong/0 → 1) × (EM_PERCENT + 1) · `DEDUCTION` = gross × Deduction % · `BROKERAGE_FEE` = gross ×
 Brokerage % · `NET_PREMIUM` = gross − deduction − brokerage · `RI_ADMIN_FEE` dari CSV (kosong → 0, tidak
-mengurangi net). Kolom hasil yang terisi di CSV diabaikan dan ditimpa.
+mengurangi net) · langkah 10.3.3: `SUM_AT_RISK_RETRO` = `RETROCEDED_SHARE` = `SUM_AT_RISK_GROSS` (keputusan
+work owner 06-10-2026; **beda dari Pega**: Pega = SHARE × `local.Risk` dan hanya bila produk punya Outward List).
+Type lain: kedua kolom dari CSV apa adanya (kosong → NULL). Kolom hasil yang terisi di CSV diabaikan dan ditimpa.
 
 **Perbedaan dari XML (disengaja):**
 
@@ -132,3 +134,79 @@ peserta dibaca dari baris CSV (bukan tabel peserta tersimpan); melewati batas **
 Batas kosong dan nilai peserta yang kosong / sudah ditolak validasi bentuk tidak diperiksa; produk kosong
 atau tidak ada di `M_PRODUCTNAME_LIFE` tidak diperiksa (Type QR sudah ditolak syarat hitung). Langkah cek
 batas terpisah sesudah Calculate CSV dihapus.
+
+## `SetRateLIfePremium_Act` 10.8–10.12 — spreading retro Type QR (keputusan work owner 06-10-2026)
+
+Ditiru untuk **Type QR** di Calculate CSV (`periksaDanHitung` sesudah hitung premi → `models/polis_spreading.go`,
+bahan `repository/polis_spreading.go`), disimpan di transaksi yang sama dengan peserta ke
+`T_PREMIUM_LIST_SPREADING` (053, satu baris per lapisan berbagian > 0) dan `T_PREMIUM_LIST_SPREADING_RETRO` (054, satu
+baris per reinsurer). Rekap **Retro by Reinsurer** tetap di tab Summary.
+
+**Tampilan per peserta (keputusan work owner 07-10-2026):** tab **Spreading** (semua peserta, berhalaman) DIHAPUS beserta
+rutenya. Spreading dilihat dengan mengklik (atau Enter/Space) satu baris grid **Participant Details** → popup
+`Spreading - <Name Of Insured>` (`components/ModalSpreadingPeserta.tsx`): kepala Name Of Insured, Certificate No, Currency,
+Retroceded Share peserta, treaty year (label `TREATYYEAR` + periode `TREATYYEAR_LIFE`); isi lapisan → reinsurer. Sumber:
+`GET /api/polis-life/{id}/peserta/{detailId}/spreading` (baca-saja; peserta bukan milik polis → 404; tanpa spreading →
+lapisan kosong, pesan "No retro spreading for this participant."). Semua angka lewat satu formatter grid (`pemisahRibuan`,
+koma desimal untuk bentuk teks apa pun dari server).
+
+**Perbedaan dari Pega (disengaja):**
+
+- Treaty year dipilih dari **periode** `TREATYYEAR_LIFE` yang memuat `BEGIN_DATE` produk (`M_PRODUCTNAME_LIFE`), bukan
+  dari Outward List / ORS; Underwriting/Transaction Year tidak dipakai. Nol atau lebih dari satu → 409.
+- Lapisan = seluruh kontrak treaty year itu, **kaskade Maximum Limit** (IDR/USD sesuai mata uang peserta) menaik;
+  nilai yang di-spreading = `RETROCEDED_SHARE` presisi penuh.
+- **Penolakan**: melebihi Max lapisan terakhir, mata uang selain IDR/USD, rate retro tidak ada/ganda (baris); Business
+  tidak ada di Business List, total share ≠ 100%, Max Limit kosong, master rate tidak sah (409) — hanya untuk lapisan
+  yang terpakai.
+- Rate retro dicari dengan fungsi yang SAMA dengan rate premi (`MasterRate.Cari`); GROSS **tanpa FACTOR**.
+- Tahun pertama: Discount = GROSS × COMMISION%, Comm = (GROSS − Discount) × OVR_COMM%; bukan tahun pertama: Comm =
+  GROSS × OVR_COMM%. Nominal Discount/Comm tidak disimpan (tidak ada kolomnya).
+- Berhenti di tingkat reinsurer (`TREATYSECURITYREINSURER_LIFE` tidak dipakai).
+- Rekap retro per reinsurer per mata uang dari data — **tanpa** empat nama tetap Pega (NUSARE/HANNOVER/TOA/GIBRALTAR).
+- Validate CSV **tidak** menjalankan spreading (keputusan work owner 05-10-2026: Validate hanya bentuk + batas usia/SI).
+
+## `InsertJsonPolisLife_Act` langkah 9/11 — `LIFEINPRODUCTION` (keputusan work owner 06-10-2026)
+
+Ditiru dengan **SQL langsung** di transaksi Confirm (`SummaryPremiumList.simpanDalam` langkah 6, sesudah PL Number, WPC
+final, summary dan peserta warisan) — `repository/polis_produksi.go`. Tabel WARISAN POOLDATA, nol DDL, nol COMMIT.
+
+- Kolom = daftar INSERT `SaveLifeinProduction_SQL` (36) **tanpa** `LAYER_1..LAYER_4` (NULL — "tidak perlu digunakan
+  lagi"); nilai dari baris utama `T_PREMIUM_LIST` (`ID = ID_PEGA`). `IDPEGA` = pengenal kasus (pola tabel warisan lain di
+  modul ini), `NOPOLIS` = PL Number, `TYPECEDINGNAME` = QS/SURPLUS/QS + SURPLUS/XOL dari `TYPE_CEDING`,
+  `DATERECEIVED`/`WPC` tanpa jam, `TGL_INPUT` = `SYSDATE`.
+- Sekali per kasus: baris lama `IDPEGA` yang sama dihapus dulu — Confirm ulang tidak menggandakan.
+- `JSON_OFFER_LIFE` ditiru saat **Save Offer** dan `JSON_POLIS` saat Confirm — dua bagian di bawah.
+
+## `InputOfferLife_ACT` langkah 3-4 — `JSON_OFFER_LIFE` (keputusan work owner 06-10-2026)
+
+Ditiru dengan **SQL langsung** di transaksi **Save Offer** (`FormPenawaran.Simpan`, sesudah isian tersimpan ke baris utama
+`T_PREMIUM_LIST`, sebelum riwayat `T_VIEW_SUGGEST`) — `repository/polis_jsonoffer.go`. Prosedur
+`INSERTJSONOFFERLIFE` **tidak** dipanggil. Kolom = `ALL_TAB_COLUMNS` POOLDATA (06-10-2026).
+
+- Satu baris per kasus: baca ID lama → `DELETE WHERE IDPEGA` → `INSERT … SELECT` dari baris utama (isian TERAKHIR).
+  **ID lama dipertahankan**; kasus baru: `TO_CHAR(JSON_OFFER_SEQ.NEXTVAL)` — sequence warisan yang SUDAH ada (PK prosedur,
+  `[data DBA]` tiket 09), nol sequence baru.
+- `IDPEGA` = pengenal kasus (sama dengan `LIFEINPRODUCTION`/`JSON_POLIS`); `REINSURANCETYPE` ← `JENIS_ASURANSI`;
+  `TYPECEDING` = QS/SURPLUS/QS + SURPLUS/XOL (CARI8); `STATUS` ← `STATUS_PENAWARAN`; `MARKETING_NOTE` ←
+  `KETERANGAN_MARKETING`; `OPERATORNAME` ← `CREATE_OP_NAME`; `UW_NOTE` ← `KETENTUAN_UNDERWRITING`; delapan tanggal
+  **tanpa jam** (Pega mengirim `DD/MM/YYYY HH24:MI:SS`); `TGL_INPUT` = `SYSDATE`.
+- ⚠️ `JSONDATA` dan `OLDID` (`p_OFFERID`) **NULL**. `NO_OFFER` (`GetIdOffer_SQL` → `'OFR-'||ID`, langkah 5-6) tetap
+  **tidak** diisi.
+- Lebar kolom diperiksa di Go (`LENGTHB` baris utama) sebelum menulis: melebihi (mis. `STATUS`/`BUSINESSCODE`
+  VARCHAR2(10)) → **400** berpesan, bukan ORA-12899. Gagal tulis apa pun → seluruh Save Offer batal.
+
+## `InsertJsonPolisLife_Act` langkah 10 — `JSON_POLIS` (keputusan work owner 06-10-2026)
+
+Ditiru dengan **SQL langsung** di transaksi Confirm (`simpanDalam` langkah 7, sesudah PL Number dan `LIFEINPRODUCTION`)
+— `repository/polis_jsonpolis.go`. Prosedur `INSERTJSONPOLISLIFE` **tidak** dipanggil.
+
+- Diisi HANYA `IDPEGA` (= `LIFEINPRODUCTION`), `NOPOLIS` = PL Number, `TGL_PROD`, `USERNAME` ← `CREATE_OP_NAME`
+  (= `CREATEOPNAME`), `TGL_INPUT` = `SYSDATE`. ⚠️ **`DATA_JSON` NULL**; `NOENDORS`, `PRODKE`, `ERR_NOTE`,
+  `TGL_KONVERSI`, `STS_KONVERSI`, `TGL_KONVERSI_RETRO`, `STS_KONVERSI_RETRO`, `OLDNOPOLIS` NULL (layanan hilir).
+- `TGL_PROD` (`models.TanggalProduksi`) — aturan periode PL Number (`penomor.HitungPeriodeNomor`, TANGGAL_CLOSING), bukan
+  ambang 25 Pega: periode = bulan transaksi (Jakarta) → tanggal transaksi; periode bergeser → tanggal 1 bulan periode.
+  Nomor yang sudah terbit sebelumnya: TGL_PROD lama dipertahankan, bila tidak ada dihitung ulang pada saat Confirm.
+- `DELETE WHERE IDPEGA` lalu `INSERT` — Confirm ulang tidak menggandakan; gagal tulis → seluruh Confirm batal.
+- ⚠️ `convertJsonNusareToProduction` tetap **stub** (OQ-PL-11): `DATA_JSON` kosong harus dikonfirmasi ke pemilik
+  Arasapas sebelum stub dilepas.

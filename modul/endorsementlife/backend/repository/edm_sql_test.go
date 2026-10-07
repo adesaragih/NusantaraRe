@@ -50,6 +50,15 @@ func TestSQLInboxMenyaringKasusTerbukaTerbaruDahulu(t *testing.T) {
 			t.Errorf("sqlInbox tanpa %q", wajib)
 		}
 	}
+	// 07-10-2026: Endorsement No dari NO_ENDORS (Policy No tetap OLD_POLICY_NO); empat kolom dihapus.
+	if !strings.Contains(q, "SELECT p.ID, p.NO_ENDORS, p.OLD_POLICY_NO, p.TYPE, p.EDM_TYPE, p.CEDING_CO_NAME,") {
+		t.Errorf("sqlInbox bukan urutan kolom kotak masuk 07-10-2026: %s", q)
+	}
+	for _, buang := range []string{"SOB_NAME", "POLICY_HOLDER_NAME", "MARKETING_NAME", "EDM_TYPE_BATAL"} {
+		if strings.Contains(q, buang) {
+			t.Errorf("sqlInbox masih membaca %s", buang)
+		}
+	}
 	if !strings.Contains(sqlCacahInbox(uPolis), "p.ID LIKE :1 AND p.STATUSS IS NULL") {
 		t.Error("cacah kotak masuk tidak memakai saringan yang sama")
 	}
@@ -66,6 +75,25 @@ func TestSQLKasusMembacaKepalaSalinanDanMengunci(t *testing.T) {
 	}
 	if !strings.Contains(biasa, "WHERE p.ID = :1 AND p.ID LIKE :2") {
 		t.Error("sqlKasus tidak membatasi ke kasus EDM")
+	}
+	// Sub-jenis EDM Type (483) sebelum kolom kepala salinan; cacah kolom tetap sepakat dengan pemindai.
+	if !strings.Contains(biasa, "p.CREATE_OP_NAME, p.EDM_TYPE_PERUBAHAN_DATA, p.EDM_TYPE_BATAL, ") {
+		t.Error("sqlKasus tidak membaca sub-jenis EDM Type")
+	}
+	// Koma di dalam kurung (NVL, TO_CHAR) bukan pemisah kolom.
+	n, dalam := 1, 0
+	for _, c := range kolomKasus {
+		switch {
+		case c == '(':
+			dalam++
+		case c == ')':
+			dalam--
+		case c == ',' && dalam == 0:
+			n++
+		}
+	}
+	if n != jumlahKolomKasus {
+		t.Errorf("kolomKasus %d kolom, jumlahKolomKasus %d", n, jumlahKolomKasus)
 	}
 	for _, k := range models.KolomKepalaSalin {
 		if !strings.Contains(biasa, "p."+k.Kolom) {

@@ -21,7 +21,9 @@ package services
 //
 // ⛔ STUB (OQ-PL-11 `[terbuka - pemilik Arasapas]`): parameternya DIRAKIT dari
 // tabel, lalu berhenti terang - nol panggilan keluar. Layanan hilir tampaknya
-// membaca `JSON_POLIS` yang tidak lagi ditulis (pl1).
+// membaca `JSON_POLIS`; sejak 06-10-2026 (keputusan work owner) tabel itu DITULIS
+// lagi saat Confirm, TANPA `DATA_JSON` (repository/polis_jsonpolis.go). Stub ini
+// tetap: `DATA_JSON` kosong harus dikonfirmasi ke pemilik Arasapas sebelum stub dilepas.
 //
 // ⚠️ `tglInput`: `.pxCreateDateTime` (saat kasus lahir) tidak punya kolom -
 // `T_WORK_POLIS` tanpa waktu lahir. Yang dirakit waktu dari muatan outbox

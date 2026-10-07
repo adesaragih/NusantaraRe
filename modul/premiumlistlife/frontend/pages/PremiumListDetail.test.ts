@@ -4,7 +4,16 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { DETAIL_POLIS, JUDUL_KOLOM_PESERTA } from '../labels'
-import { judulKolom, kalimatNomor, kolomBerisi, selPeserta, susunKolom } from './PremiumListDetail'
+import {
+  JUDUL_NOMOR_BARIS,
+  judulKolom,
+  kalimatNomor,
+  kolomBerisi,
+  nomorBaris,
+  selPeserta,
+  susunKolom,
+  tombolBukaBaris,
+} from './PremiumListDetail'
 
 // Uji layar Premium List Detail — tiket 03.
 
@@ -88,7 +97,11 @@ describe('hanya kolom yang berisi (02-10-2026)', () => {
   it('kolom tampil bila SATU baris saja bukan nol; sel nolnya tetap ditulis 0', () => {
     expect(kolomBerisi(['CLAIM'], [...baris, { nilai: { CLAIM: '12.5' } }])).toEqual(['CLAIM'])
     // SUM_AT_RISK_GROSS dan RISK selalu tampil walau kosong / nol (05-10-2026).
-    expect(kolomBerisi(['CLAIM', 'SUM_AT_RISK_GROSS', 'RISK'], baris)).toEqual(['SUM_AT_RISK_GROSS', 'RISK'])
+    expect(kolomBerisi(['CLAIM', 'SHARE_NUSANTARA_RE_GROSS', 'SUM_AT_RISK_GROSS', 'RISK'], baris)).toEqual([
+      'SHARE_NUSANTARA_RE_GROSS',
+      'SUM_AT_RISK_GROSS',
+      'RISK',
+    ])
     expect(susunKolom(['RISK', 'GROSS_PREMIUM', 'SUM_AT_RISK_GROSS'])).toEqual(['SUM_AT_RISK_GROSS', 'RISK', 'GROSS_PREMIUM'])
     expect(selPeserta('0')).toBe('0')
   })
@@ -105,8 +118,9 @@ describe('STNC dan WPC paling kanan (02-10-2026)', () => {
       'POLICY_HOLDER',
       'PLAN',
       'BEGIN_DATE',
-      'GROSS_PREMIUM',
+      // RATE sesudah RISK, sebelum GROSS_PREMIUM (05-10-2026).
       'RATE',
+      'GROSS_PREMIUM',
       'STNC',
       'WPC',
     ])
@@ -196,5 +210,43 @@ describe('nomor PL', () => {
     // dengan server tepat saat bentuknya berubah.
     expect(SUMBER).not.toContain('QR/QP/TP/TR')
     expect(SUMBER).not.toMatch(/padStart\(\s*5/)
+  })
+})
+
+describe('nomor baris grid peserta (06-10-2026)', () => {
+  it('kolom No paling kiri, berlanjut antar halaman', () => {
+    expect(JUDUL_NOMOR_BARIS).toBe('No')
+    expect(nomorBaris(1, 50, 0)).toBe(1)
+    expect(nomorBaris(1, 50, 9)).toBe(10)
+    expect(nomorBaris(3, 50, 0)).toBe(101)
+    expect(SUMBER).toContain('<td className="pl-detail__no">{nomorBaris(hal.halaman, hal.ukuran, i)}</td>')
+  })
+})
+
+describe('popup spreading per peserta (07-10-2026)', () => {
+  it('tab Spreading tidak ada lagi; popup dari baris grid', () => {
+    expect(SUMBER).not.toContain('PanelSpreading')
+    expect(SUMBER).not.toContain("tab === 'spreading'")
+    expect(SUMBER).toContain("import ModalSpreadingPeserta from '../components/ModalSpreadingPeserta'")
+  })
+
+  it('baris dapat diklik dan dibuka dengan keyboard (Enter/Space)', () => {
+    for (const k of ['className="pl-detail__baris"', 'tabIndex={0}', 'aria-haspopup="dialog"', 'onClick={(e) => {',
+      'onKeyDown={(e) => {', 'if (!tombolBukaBaris(e.key)) return', 'e.preventDefault()',
+      "bukaSpreading(e.currentTarget, b.id, b.nilai[PANEL_SPREADING.kolomNama] ?? '')"]) {
+      expect(SUMBER).toContain(k)
+    }
+    expect(tombolBukaBaris('Enter')).toBe(true)
+    expect(tombolBukaBaris(' ')).toBe(true)
+    expect(tombolBukaBaris('a')).toBe(false)
+    expect(tombolBukaBaris('Escape')).toBe(false)
+  })
+
+  it('popup untuk peserta yang diklik; ditutup → fokus kembali ke barisnya', () => {
+    expect(SUMBER).toContain('detailID={spreading.id}')
+    expect(SUMBER).toContain('nama={spreading.nama}')
+    expect(SUMBER).toContain('onTutup={tutupSpreading}')
+    expect(SUMBER).toContain('barisPemicu.current = baris')
+    expect(SUMBER).toContain('barisPemicu.current?.focus()')
   })
 })

@@ -27,7 +27,10 @@ import {
   tampilAngka,
   tampilTanggal,
   tampilViewRate,
+  saringPlanBisnis,
+  urutKomentarTampil,
   waktuPega,
+  waktuPegaMs,
 } from './bentuk'
 import { LAIN_MPNL } from './labels'
 import type { ProdukLama } from './api'
@@ -260,5 +263,39 @@ describe('unggah banyak berkas (permintaan work owner 03-10-2026)', () => {
     expect(dikirim).toEqual(['UJI a.pdf', 'UJI b.pdf', 'UJI c.pdf'])
     expect(mulai).toEqual(['0:UJI a.pdf', '1:UJI b.pdf', '2:UJI c.pdf'])
     expect(gagal.map((g) => [g.berkas.name, (g.galat as Error).message])).toEqual([['UJI b.pdf', 'UJI ditolak']])
+  })
+})
+
+describe('riwayat komentar terbaru di atas (keputusan work owner 05-10-2026)', () => {
+  it('urutan tampil menurun menurut stempel; sama / kosong → indeks asli menurun; state tidak berubah', () => {
+    const daftar = [
+      { date: '20261001T080000.000 GMT', suggest: 'UJI-A' },
+      { date: '20261003T080000.000 GMT', suggest: 'UJI-B' },
+      { date: '20261002T080000.000 GMT', suggest: 'UJI-C' },
+      { date: '20261003T080000.000 GMT', suggest: 'UJI-D' }, // sama dengan B, tersimpan belakangan
+      { date: '', suggest: 'UJI-E' },
+      { date: 'bukan stempel', suggest: 'UJI-F' },
+    ]
+    const salinan = daftar.map((x) => ({ ...x }))
+    expect(urutKomentarTampil(daftar).map(({ k }) => k.suggest)).toEqual(['UJI-D', 'UJI-B', 'UJI-C', 'UJI-A', 'UJI-F', 'UJI-E'])
+    expect(urutKomentarTampil(daftar).map(({ i }) => i)).toEqual([3, 1, 2, 0, 5, 4])
+    expect(daftar).toEqual(salinan)
+  })
+  it('stempel dibandingkan sebagai waktu, termasuk milidetik', () => {
+    expect(waktuPegaMs('20261002T031500.500 GMT')! - waktuPegaMs('20261002T031500 GMT')!).toBe(500)
+    expect(waktuPegaMs('02-10-2026 10:15')).toBeNull()
+  })
+})
+
+describe('PLAN LIST: Bussines tidak boleh sama (keputusan work owner 05-10-2026)', () => {
+  it('pilihan Plan Name tanpa Bussines yang sudah dipakai baris lain; baris sendiri tetap boleh', () => {
+    const pilihan = [
+      { id: 'P1', business: 'UJI BIZ' },
+      { id: 'P2', business: 'uji biz ' },
+      { id: 'P3', business: 'UJI LAIN' },
+    ]
+    const planList = [{ name: 'UJI BIZ' }, { name: '' }]
+    expect(saringPlanBisnis(pilihan, planList, 1).map((t) => t.id)).toEqual(['P3'])
+    expect(saringPlanBisnis(pilihan, planList, 0).map((t) => t.id)).toEqual(['P1', 'P2', 'P3'])
   })
 })

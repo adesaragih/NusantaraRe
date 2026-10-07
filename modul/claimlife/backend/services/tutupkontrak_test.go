@@ -232,6 +232,13 @@ var rutePengubah = map[string]string{
 	// Tiket 05a bagian 2. Submit summary MENULIS - nomor, rekap, dan salinan
 	// peserta warisan dalam satu transaksi - jadi ia pengubah.
 	"POST /api/polis-life/{id}/summary": "polis_summary.go",
+	// PremiumList Life (keputusan work owner 07-10-2026). Save Offer dan Save Data MENULIS kepala
+	// polis; keduanya menolak kasus tertutup lewat T_WORK_POLIS (`ErrKasusPolisTertutup`, 409 di
+	// handlers/rute_premiumlist.go `jawabGalatPolis`):
+	//   penawaran  - services/polis_isianpenawaran.go:202 `FormPenawaran.Simpan`
+	//   data-polis - services/polis_datapolis.go:151 `FormDataPolis.Simpan`
+	"PUT /api/polis-life/{id}/penawaran":  "polis_isianpenawaran.go",
+	"PUT /api/polis-life/{id}/data-polis": "polis_datapolis.go",
 	// Komite Claim Life tiket 02 - keputusan satu tingkat MENULIS anak tangga
 	// dan kepala kasus.
 	"POST /api/komite/{id}/keputusan": "komite_keputusan.go",
@@ -286,6 +293,9 @@ var penjagaTutup = map[string]string{
 	"polis_nomor.go":     "models.KasusPolisTertutup(keadaanKerja.Status)",
 	"polis_unggah.go":    "models.KasusPolisTertutup(keadaanKerja.Status)",
 	"polis_summary.go":   "models.KasusPolisTertutup(keadaan.Status)",
+	// 07-10-2026 - Save Offer / Save Data PremiumList (lihat rutePengubah).
+	"polis_isianpenawaran.go": "models.KasusPolisTertutup(keadaan.Status)",
+	"polis_datapolis.go":      "models.KasusPolisTertutup(keadaan.Status)",
 }
 
 func TestSetiapRuteNonGETPunyaPenjagaKasusTertutup(t *testing.T) {

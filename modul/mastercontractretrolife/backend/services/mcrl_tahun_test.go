@@ -180,3 +180,91 @@ func TestTerjemahRelasiHanyaGalatRelasi(t *testing.T) {
 		t.Error("nil harus tetap nil")
 	}
 }
+
+// TRANSACTION YEAR dan UNDERWRITING YEAR tidak boleh sama dengan tahun treaty lain
+// (keputusan work owner 05-10-2026); Edit baris sendiri tetap boleh.
+func TestTahunTreatyTidakBolehGanda(t *testing.T) {
+	g := tiruan.Baru()
+	l := layananUji(g)
+	ada, err := l.SimpanTahun(context.Background(), pelaku, tahunLengkap(), true) // 2026 / 2026
+	if err != nil {
+		t.Fatal(err)
+	}
+	for nama, k := range map[string]struct{ ty, uy, pesan string }{
+		"transaksi": {"2026", "2027", "TRANSACTION YEAR 2026 is already used (ID " + ada.ID + ")."},
+		"uw":        {"2027", " 2026 ", "UNDERWRITING YEAR 2026 is already used (ID " + ada.ID + ")."},
+	} {
+		m := tahunLengkap()
+		m.TreatyYear, m.UnderwritingYear = k.ty, k.uy
+		_, err := l.SimpanTahun(context.Background(), pelaku, m, true)
+		if !errors.Is(err, services.ErrMasukanTidakSah) || !strings.Contains(services.Pesan(err), k.pesan) {
+			t.Errorf("%s: %v, mau %q", nama, err, k.pesan)
+		}
+	}
+	if len(g.Tahun) != 1 {
+		t.Errorf("%d baris tersimpan, mau 1", len(g.Tahun))
+	}
+	// Edit baris sendiri dengan tahun yang sama - boleh.
+	m := tahunLengkap()
+	m.ID = ada.ID
+	if _, err := l.SimpanTahun(context.Background(), pelaku, m, false); err != nil {
+		t.Errorf("edit baris sendiri ditolak: %v", err)
+	}
+	// Tahun lain - boleh.
+	m = tahunLengkap()
+	m.TreatyYear, m.UnderwritingYear = "2027", "2027"
+	// periode juga tidak boleh bertabrakan (06-10-2026)
+	m.StartDate, m.EndDate = "2027-01-01", "2027-12-31"
+	if _, err := l.SimpanTahun(context.Background(), pelaku, m, true); err != nil {
+		t.Errorf("tahun berbeda ditolak: %v", err)
+	}
+}
+
+// Periode treaty year tidak boleh bertabrakan (keputusan work owner 06-10-2026):
+// sebagian, di dalam, sama persis ditolak; bersambung dan edit diri sendiri boleh.
+func TestTahunTreatyPeriodeTidakBertabrakan(t *testing.T) {
+	g := tiruan.Baru()
+	l := layananUji(g)
+	m := services.TahunMasuk{TreatyYear: "2025", UnderwritingYear: "2025", StartDate: "2025-01-01", EndDate: "2036-12-31"}
+	ada, err := l.SimpanTahun(context.Background(), pelaku, m, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for nama, k := range map[string][2]string{
+		"sebagian":    {"2020-06-01", "2025-01-01"},
+		"di dalam":    {"2026-01-01", "2026-12-31"},
+		"sama persis": {"2025-01-01", "2036-12-31"},
+		"mencakup":    {"2024-01-01", "2040-12-31"},
+	} {
+		b := services.TahunMasuk{TreatyYear: "2099", UnderwritingYear: "2099", StartDate: k[0], EndDate: k[1]}
+		_, err := l.SimpanTahun(context.Background(), pelaku, b, true)
+		if !errors.Is(err, services.ErrMasukanTidakSah) || !strings.Contains(services.Pesan(err), "overlaps treaty year "+ada.ID+" (01/01/2025 - 31/12/2036)") {
+			t.Errorf("%s: %v", nama, err)
+		}
+	}
+	if got := services.Pesan(func() error {
+		_, err := l.SimpanTahun(context.Background(), pelaku, services.TahunMasuk{TreatyYear: "2098", UnderwritingYear: "2098",
+			StartDate: "2026-01-01", EndDate: "2026-12-31"}, true)
+		return err
+	}()); !strings.Contains(got, "Period 01/01/2026 - 31/12/2026 overlaps treaty year "+ada.ID+" (01/01/2025 - 31/12/2036)") {
+		t.Errorf("pesan = %q", got)
+	}
+	// Bersambung: berakhir 31/12/2024, mulai 01/01/2037 - boleh.
+	for _, b := range []services.TahunMasuk{
+		{TreatyYear: "2018", UnderwritingYear: "2018", StartDate: "2018-01-01", EndDate: "2024-12-31"},
+		{TreatyYear: "2037", UnderwritingYear: "2037", StartDate: "2037-01-01", EndDate: "2037-12-31"},
+	} {
+		if _, err := l.SimpanTahun(context.Background(), pelaku, b, true); err != nil {
+			t.Errorf("bersambung %s ditolak: %v", b.StartDate, err)
+		}
+	}
+	// Edit diri sendiri dengan periode yang sama - boleh.
+	m.ID = ada.ID
+	if _, err := l.SimpanTahun(context.Background(), pelaku, m, false); err != nil {
+		t.Errorf("edit diri sendiri ditolak: %v", err)
+	}
+	// Pemeriksaan di dalam tx sesudah kunci tabel.
+	if len(g.Kunci) == 0 || g.Kunci[0] != "tabel|TREATYYEAR_LIFE" {
+		t.Errorf("kunci = %v", g.Kunci)
+	}
+}

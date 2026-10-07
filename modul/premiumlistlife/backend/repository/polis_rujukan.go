@@ -179,8 +179,10 @@ func (r *Rujukan) cari(ctx context.Context, master string, rakit func(string) st
 //     produk. GetProductDtlPL hanya membuktikan ID, PRODUCTNAME, CEDING.
 //   - `MARKETINGOFFICER` - Claim Life PARITAS §5.2 `[data DBA - katalog DEV]`,
 //     `CLIENTNAME` terbukti. ⚠️ `[belum terverifikasi]` `CLIENTID`, `MOSTATUS`.
-//   - R/I SLIP dari `T_PREMIUM_LIST.NO_POLIS` baris utama: `JSON_POLIS` dibuang
-//     (spec §12). Polis warisan baru muncul setelah migrasi data (tiket 09).
+//   - R/I SLIP dari `T_PREMIUM_LIST.NO_POLIS` baris utama, BUKAN `JSON_POLIS`
+//     (spec §12; sejak 06-10-2026 `JSON_POLIS` ditulis lagi saat Confirm tanpa
+//     `DATA_JSON`, tetapi tetap tidak dibaca di sini). Polis warisan baru muncul
+//     setelah migrasi data (tiket 09).
 
 const (
 	// MasterProdukLife - master produk inward Life.

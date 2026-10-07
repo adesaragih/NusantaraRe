@@ -3,7 +3,7 @@
 //
 // ⛔ Uang dan angka TEKS sepanjang jalan - tidak pernah `Number` (ADR-0003). Kosong = `""`.
 
-import { kegagalanDari, minta, rakitURL } from '../../../inti/frontend/klien'
+import { kegagalanDari, kodeStatusGalat, minta, pesanGalat, rakitURL } from '../../../inti/frontend/klien'
 import { headerIdentitas } from '../../../inti/frontend/store/sesi'
 import type { PilihanHapusEDM } from './tampilan'
 
@@ -25,10 +25,7 @@ export interface BarisInbox {
   type: string
   edmType: string
   policyNo: string
-  sob: string
   ceding: string
-  policyHolder: string
-  marketingName: string
   createDate: string
   createOperator: string
   status: string
@@ -42,6 +39,9 @@ export interface KasusEDM {
   plNumberEdm: string
   prodKe: number
   edmType: string
+  /** Sub-jenis EDM Type (483) - kosong untuk kasus sebelum 483. */
+  edmTypePerubahanData: string
+  edmTypeBatal: string
   description: string
   edmDate: string
   status: string
@@ -103,6 +103,9 @@ export interface MasukanKasusEDM {
   edmType: string
   edmDate: string
   description: string
+  /** Sub-jenis EDM Type (07-10-2026, migrasi 483): terisi sesuai EDM Type, yang lain kosong. */
+  edmTypePerubahanData: string
+  edmTypeBatal: string
 }
 
 /** Kasus baru - `services.HasilBuat`. */
@@ -121,6 +124,21 @@ export function cekKelayakan(policyNo: string, edmType: string): Promise<Kelayak
 /** Buat kasus - `POST /kasus` (`Submit` b4226 → `MappingEDMLife`). */
 export function buatKasus(m: MasukanKasusEDM): Promise<HasilBuatEDM> {
   return minta<HasilBuatEDM>(`${PREFIX_EDM}/kasus`, { metode: 'POST', badan: m })
+}
+
+/**
+ * Penolakan berpesan `POST /kasus` → daftar pesan (keputusan work owner 07-10-2026). `BuatKasus` menjalankan
+ * ulang seluruh gerbang DENGAN EDM Type (termasuk "sudah dibayar + Batal") dan menolak dengan 422
+ * `{"galat": "<pesan>\n<pesan>"}` (`GalatKelayakan.PesanLayar`, satu pesan per baris; juga isian tidak sah).
+ * Selain 422 berpesan → null (ditampilkan sebagai galat umum).
+ */
+export function pesanPenolakanEDM(err: unknown): string[] | null {
+  if (kodeStatusGalat(err) !== 422) return null
+  const daftar = (pesanGalat(err) ?? '')
+    .split('\n')
+    .map((p) => p.trim())
+    .filter((p) => p !== '')
+  return daftar.length > 0 ? daftar : null
 }
 
 /** Satu baris spreading retro - `models.SpreadingRetro`. */

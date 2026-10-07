@@ -119,6 +119,16 @@ func jawabGalatUnggahPolis(w http.ResponseWriter, err error) bool {
 		// terpenuhi - pesannya menyebut apa yang perlu dibetulkan (05-10-2026).
 		galat.Tulis(w, http.StatusConflict, sesudahSebab(err, models.ErrSyaratHitungQR))
 		return true
+	case errors.Is(err, models.ErrSyaratSpreading):
+		// 409: data Contract Retro Life / produk belum memenuhi syarat spreading
+		// retro (keputusan work owner 06-10-2026).
+		galat.Tulis(w, http.StatusConflict, sesudahSebab(err, models.ErrSyaratSpreading))
+		return true
+	case errors.Is(err, models.ErrDataPolisPesertaKosong):
+		// 409: Policy Holder / Class of Business polis kosong - POLICY_HOLDER dan
+		// PLAN peserta diisi darinya (keputusan work owner 05-10-2026).
+		galat.Tulis(w, http.StatusConflict, sesudahSebab(err, models.ErrDataPolisPesertaKosong))
+		return true
 	case errors.Is(err, models.ErrTipeUnggahTakDikenal):
 		// 409: berkasnya mungkin benar - polisnya yang belum siap (Type
 		// menentukan kolom wajib; keputusan work owner 03-10-2026).

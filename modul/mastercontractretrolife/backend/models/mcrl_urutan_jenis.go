@@ -3,6 +3,7 @@ package models
 import (
 	"sort"
 	"strings"
+	"time"
 )
 
 // UrutanJenisReasuransi - urutan dropdown `REINS TYPE` menurut teks tampilnya
@@ -81,4 +82,44 @@ func ReinsurerGanda(daftar []Reinsurer, idSendiri, reinsurerID string) bool {
 		}
 	}
 	return false
+}
+
+// TahunTreatyGanda - tahun treaty LAIN (ID berbeda dari `idSendiri`) yang memakai
+// TRANSACTION YEAR (`TreatyYear`) atau UNDERWRITING YEAR yang sama - keputusan
+// work owner 05-10-2026: masing-masing tahun hanya boleh SATU baris. Kosong =
+// tidak ada; tahun dibandingkan tanpa spasi tepi.
+func TahunTreatyGanda(daftar []TahunTreaty, idSendiri, treatyYear, underwritingYear string) (transaksi, uw *TahunTreaty) {
+	ty, uy := strings.TrimSpace(treatyYear), strings.TrimSpace(underwritingYear)
+	for i := range daftar {
+		t := &daftar[i]
+		if t.ID == idSendiri {
+			continue
+		}
+		if transaksi == nil && ty != "" && strings.TrimSpace(t.TreatyYear) == ty {
+			transaksi = t
+		}
+		if uw == nil && uy != "" && strings.TrimSpace(t.UnderwritingYear) == uy {
+			uw = t
+		}
+	}
+	return transaksi, uw
+}
+
+// PeriodeTahunBertabrakan - tahun treaty LAIN (ID berbeda dari `idSendiri`) yang
+// periodenya bertabrakan dengan [mulai, akhir] - keputusan work owner 06-10-2026.
+// Bertabrakan ⇔ mulai ≤ akhir_lain DAN akhir ≥ mulai_lain (tanggal inklusif, hari
+// saja): bersambung (31/12/2024 lalu 01/01/2025) BOLEH. nil = tidak ada.
+func PeriodeTahunBertabrakan(daftar []TahunTreaty, idSendiri string, mulai, akhir time.Time) *TahunTreaty {
+	hari := func(t time.Time) time.Time { return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC) }
+	m, a := hari(mulai), hari(akhir)
+	for i := range daftar {
+		t := &daftar[i]
+		if t.ID == idSendiri || t.StartDate.IsZero() || t.EndDate.IsZero() {
+			continue
+		}
+		if !m.After(hari(t.EndDate)) && !a.Before(hari(t.StartDate)) {
+			return t
+		}
+	}
+	return nil
 }

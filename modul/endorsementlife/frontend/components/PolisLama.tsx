@@ -13,6 +13,11 @@ import { POLIS_LAMA_EDM, UMUM_EDM } from '../labels'
 import { UKURAN_HALAMAN_EDM } from '../tampilan'
 import { TabelKorpus } from './TabelKorpus'
 
+/** Nomor baris pertama tabel peserta halaman ini - berlanjut antar halaman (07-10-2026). */
+export function nomorAwalPeserta(halaman: number, ukuran: number = UKURAN_HALAMAN_EDM): number {
+  return (Math.max(halaman, 1) - 1) * ukuran + 1
+}
+
 /** Tipe yang dikenal popup; tipe lain jatuh ke varian induk `QR` (seperti tombol `.Type=='QR'`). */
 export function tipePopup(t: string): TipeEDM {
   return t === 'QP' || t === 'TP' || t === 'TR' ? t : 'QR'
@@ -45,7 +50,13 @@ export default function PolisLama({ kasusId, tipe, onTutup }: { kasusId: string;
       {isi !== null && isi.peserta.length === 0 && <Kosong pesan={UMUM_EDM.kosong} />}
       {isi !== null && isi.peserta.length > 0 && (
         <>
-          <TabelKorpus kolom={POLIS_LAMA_PESERTA[t]} baris={isi.peserta.map((p) => p.nilai)} kunci={(_, i) => isi.peserta[i]?.id ?? String(i)} />
+          {/* Kolom "No" paling kiri, berlanjut antar halaman (keputusan work owner 07-10-2026); rekap tanpa nomor. */}
+          <TabelKorpus
+            kolom={POLIS_LAMA_PESERTA[t]}
+            baris={isi.peserta.map((p) => p.nilai)}
+            kunci={(_, i) => isi.peserta[i]?.id ?? String(i)}
+            nomorAwal={nomorAwalPeserta(halaman)}
+          />
           <Halaman halaman={halaman} ukuran={UKURAN_HALAMAN_EDM} total={isi.total} onPindah={setHalaman} />
         </>
       )}

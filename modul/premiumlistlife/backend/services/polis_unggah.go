@@ -34,6 +34,7 @@ import (
 	"io"
 	"sort"
 	"strings"
+	"time"
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
@@ -292,7 +293,11 @@ func (u *UnggahPremiumList) Tinjau(ctx context.Context, pelaku inti.Pelaku,
 // memakai pengurai atau validator berbeda akan berselisih, dan selisihnya
 // berarti berkas yang lolos tinjauan lalu ditolak saat simpan - atau, jauh
 // lebih buruk, sebaliknya.
-func periksaBerkas(berkas io.Reader, tipe string) ([]models.BarisUnggah, models.HasilUnggah, error) {
+//
+// `siapkan` (opsional) dijalankan pada baris SEBELUM validasi per baris -
+// dipakai menimpa POLICY_HOLDER / PLAN dari data polis (keputusan work owner
+// 05-10-2026).
+func periksaBerkas(berkas io.Reader, tipe string, siapkan ...func([]models.BarisUnggah)) ([]models.BarisUnggah, models.HasilUnggah, error) {
 	if berkas == nil {
 		// ⛔ Galat permintaan, bukan penolakan korpus: "Please Upload CSV File
 		// into attachment" milik langkah 11/33 yang ter-remark (sensus
@@ -307,6 +312,9 @@ func periksaBerkas(berkas io.Reader, tipe string) ([]models.BarisUnggah, models.
 	// OQ-PL-12 (GILIRAN-17): langkah 2 - uang kosong = 0 SEBELUM validasi
 	// (kecuali kolom uang wajib - lihat `models.IsiNolUangKosong`).
 	models.IsiNolUangKosong(baris)
+	for _, f := range siapkan {
+		f(baris)
+	}
 	hasil, err := models.ValidasiUnggah(tipe, baris)
 	if err != nil {
 		return nil, models.HasilUnggah{}, err
@@ -331,17 +339,24 @@ func periksaBerkas(berkas io.Reader, tipe string) ([]models.BarisUnggah, models.
 func (u *UnggahPremiumList) periksaDanHitung(ctx context.Context, polisID string, berkas io.Reader,
 	tipe string, hitung bool) ([]models.BarisUnggah, models.HasilUnggah, error) {
 
-	baris, hasil, err := periksaBerkas(berkas, tipe)
-	if err != nil {
-		return nil, models.HasilUnggah{}, err
-	}
 	rujukan := repository.NewRujukan(u.svc.DB())
 	// Kepala polis dibaca SEKALI: Type, Product Name ID, Class of Business,
-	// Premium Payment Method, R/I SLIP RNM.
+	// Premium Payment Method, R/I SLIP RNM, nama Policy Holder.
 	kepala, err := rujukan.KepalaUnggah(ctx, polisID)
 	if errors.Is(err, repository.ErrHeaderPolisTidakAda) {
 		return nil, models.HasilUnggah{}, fmt.Errorf("%w: %s", ErrPolisTakDitemukan, polisID)
 	}
+	if err != nil {
+		return nil, models.HasilUnggah{}, err
+	}
+	// POLICY_HOLDER / PLAN peserta dari data polis, semua Type (keputusan work
+	// owner 05-10-2026): polis tanpa keduanya DITOLAK sebelum baris diproses;
+	// nilainya menimpa CSV sebelum validasi per baris.
+	dataPolis := models.DataPolisPeserta{PolicyHolder: kepala.PolicyHolderName, Plan: kepala.BusinessName}
+	if err := dataPolis.Periksa(); err != nil {
+		return nil, models.HasilUnggah{}, err
+	}
+	baris, hasil, err := periksaBerkas(berkas, tipe, dataPolis.Terapkan)
 	if err != nil {
 		return nil, models.HasilUnggah{}, err
 	}
@@ -375,6 +390,14 @@ func (u *UnggahPremiumList) periksaDanHitung(ctx context.Context, polisID string
 			return nil, models.HasilUnggah{}, err
 		}
 		hasil.Ditolak = append(hasil.Ditolak, models.HitungPesertaQR(m, baris, lewati)...)
+		// Spreading retro SESUDAH hitung premi (keputusan work owner 06-10-2026):
+		// baris yang ditolak tidak di-spreading.
+		tandai()
+		tolakSpreading, err := u.spreadingQR(ctx, rujukan, kepala, baris, lewati)
+		if err != nil {
+			return nil, models.HasilUnggah{}, err
+		}
+		hasil.Ditolak = append(hasil.Ditolak, tolakSpreading...)
 	}
 	// Urut nomor baris - penolakan satu peserta tampil berdekatan.
 	sort.SliceStable(hasil.Ditolak, func(i, j int) bool { return hasil.Ditolak[i].Baris < hasil.Ditolak[j].Baris })
@@ -391,7 +414,7 @@ func (u *UnggahPremiumList) masterQR(ctx context.Context, rujukan *repository.Ru
 			models.ErrSyaratHitungQR)
 	}
 	param, plan, err := rujukan.BahanHitungQR(ctx, kepala.ProductNameID)
-	if errors.Is(err, repository.ErrRincianProdukTidakAda) {
+	if errors.Is(err, ErrRincianProdukTidakAda) {
 		return models.MasterQR{}, fmt.Errorf("%w: product %s is not found in Master Product Name Life",
 			models.ErrSyaratHitungQR, kepala.ProductNameID)
 	}
@@ -480,13 +503,23 @@ func (u *UnggahPremiumList) Simpan(ctx context.Context, pelaku inti.Pelaku,
 
 	var keluar HasilSimpanUnggah
 	peserta := repository.NewPesertaUnggah(u.svc.DB())
+	spreading := repository.NewSpreading(u.svc.DB())
 	err = u.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
+		// Spreading lama dihapus EKSPLISIT lebih dulu (tidak bergantung kaskade FK).
+		if err := spreading.HapusSpreadingPolis(ctx, tx, polisID); err != nil {
+			return err
+		}
 		dihapus, err := peserta.HapusPesertaPolis(ctx, tx, polisID)
 		if err != nil {
 			return err
 		}
-		disimpan, err := peserta.SisipPeserta(ctx, tx, polisID, baris)
+		disimpan, idPeserta, err := peserta.SisipPeserta(ctx, tx, polisID, baris)
 		if err != nil {
+			return err
+		}
+		// Spreading retro Type QR - transaksi yang SAMA, sesudah peserta tersisip
+		// (keputusan work owner 06-10-2026).
+		if _, _, err := spreading.SisipSpreading(ctx, tx, polisID, pelaku.AkunID, idPeserta, baris); err != nil {
 			return err
 		}
 		// Rekap summary dihitung ulang dari peserta yang baru - bukan saat
@@ -546,4 +579,55 @@ func RingkasPenolakan(d []models.Penolakan) string {
 		fmt.Fprintf(&b, " Row %d %s: %s.", p.Baris, p.Kolom, strings.TrimSuffix(p.Pesan, "."))
 	}
 	return b.String()
+}
+
+// spreadingQR - S1-S8 spreading retro Type QR (models/polis_spreading.go): pilih
+// treaty year dari BEGIN_DATE produk, baca bahan Contract Retro Life SEKALI per
+// polis, lalu bagi setiap baris terhitung. Syarat data → models.ErrSyaratSpreading
+// (409); penolakan baris dikembalikan. MEMBACA saja.
+func (u *UnggahPremiumList) spreadingQR(ctx context.Context, rujukan *repository.Rujukan,
+	kepala repository.KepalaUnggah, baris []models.BarisUnggah, lewati map[int]bool) ([]models.Penolakan, error) {
+
+	begin, err := rujukan.BeginDateProduk(ctx, kepala.ProductNameID)
+	if err != nil {
+		return nil, err
+	}
+	tglBegin, errTgl := time.Parse("2006-01-02", begin)
+	if begin == "" || errTgl != nil {
+		return nil, fmt.Errorf("%w: Begin Date is not set on product %s (Master Product Name Life)",
+			models.ErrSyaratSpreading, kepala.ProductNameID)
+	}
+	semua, err := rujukan.DaftarTahunRetro(ctx)
+	if err != nil {
+		return nil, err
+	}
+	tahun, err := models.PilihTahunRetro(semua, tglBegin)
+	if err != nil {
+		return nil, err
+	}
+	kontrak, reins, biz, err := rujukan.BahanSpreadingTahun(ctx, tahun.ID)
+	if err != nil {
+		return nil, err
+	}
+	// Master rate hanya untuk business = Class of Business polis, sekali per R/I Rate.
+	rates := map[string][]models.BarisRateQR{}
+	for _, b := range biz {
+		id := strings.TrimSpace(b.RIRateID)
+		if id == "" || !strings.EqualFold(strings.TrimSpace(b.BizName), strings.TrimSpace(kepala.BusinessName)) {
+			continue
+		}
+		if _, sudah := rates[id]; sudah {
+			continue
+		}
+		r, err := rujukan.RateHitungQR(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		rates[id] = r
+	}
+	m, err := models.SiapkanSpreading(tahun, kontrak, reins, biz, rates, kepala.BusinessName, kepala.ProRateType)
+	if err != nil {
+		return nil, err
+	}
+	return models.SpreadingQR(m, baris, lewati)
 }

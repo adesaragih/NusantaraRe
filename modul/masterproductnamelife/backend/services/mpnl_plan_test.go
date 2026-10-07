@@ -156,3 +156,30 @@ func TestDaftarUrutDipertahankanDanKosongTetapKosong(t *testing.T) {
 		t.Errorf("urutan baris dipertahankan, daftar kosong = kosong: %+v %+v", p.PlanList, p.UnderwritingLimit)
 	}
 }
+
+// Bussines tidak boleh sama di PLAN LIST (keputusan work owner 05-10-2026): dua plan BERBEDA
+// berbisnis sama ditolak di kedua barisnya; plan yang sama hanya dilaporkan "Plan tidak boleh sama".
+func TestPlanBisnisTidakBolehSama(t *testing.T) {
+	l, g := layananMaster()
+	g.IsiJSON("100007", produkBerplan, "")
+	g.Plan = []models.JenisPlan{{ID: "P1", CoverName: "UJI COVER", Business: "UJI BIZ", Benefit: "UJI MANFAAT"},
+		{ID: "P3", CoverName: "UJI COVER TIGA", Business: " uji biz ", Benefit: "UJI MANFAAT"}}
+	g.Master[models.MasterRIRate] = []models.NilaiMaster{{ID: "R2", Nama: "UJI RATE DUA"}}
+	simpan := func(m models.Produk) error {
+		m.ID = "100007"
+		_, err := l.SimpanProduk(context.Background(), pelakuUji, m, false)
+		return err
+	}
+	m := produkMasuk()
+	m.PlanList = []models.BarisPlan{planTersimpan, {Plan: "UJI COVER TIGA", PlanID: "P3", RIRate: "UJI RATE DUA", RIRateID: "R2"}}
+	err := simpan(m)
+	for _, mau := range []string{"PLAN LIST row 1: " + services.PesanBisnisSama, "PLAN LIST row 2: " + services.PesanBisnisSama} {
+		if err == nil || !strings.Contains(err.Error(), mau) {
+			t.Errorf("bisnis ganda: %v, mau memuat %q", err, mau)
+		}
+	}
+	m.PlanList = []models.BarisPlan{planTersimpan, planTersimpan}
+	if err := simpan(m); err == nil || strings.Contains(err.Error(), services.PesanBisnisSama) {
+		t.Errorf("plan sama dilaporkan dua kali: %v", err)
+	}
+}

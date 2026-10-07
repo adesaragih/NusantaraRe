@@ -84,13 +84,16 @@ func pindaiNilai(kolom []models.KolomPeserta, mentah []sql.NullString) (map[stri
 // (b659) dan bukan `Resolved-Rejected` (b673) = `STATUSS` kosong; urut
 // `pxCreateDateTime` `DESC` (b1040) + pemutus seri `ID`.
 //
-// ⚠️ Kolom `Endorsement No` (`InboxEndorsementLife.xml` b8556) menampilkan
-// `A.PremiumListSummary.PL_NUMBER` (b10516) = nomor polis yang di-endorse
-// (`MappingEDMLife` 9 b2184) - RALAT R25.
+// ⚠️ Kolom `Endorsement No` (`InboxEndorsementLife.xml` b8556): di Pega `A.PremiumListSummary.PL_NUMBER`
+// (b10516) = nomor polis yang di-endorse (`MappingEDMLife` 9 b2184, RALAT R25). KINI `NO_ENDORS` - nomor
+// endorsement yang terbit saat kasus diresmikan (`sqlResmikanKepala`) - keputusan work owner 07-10-2026
+// (penyimpangan sadar). ⚠️ `NO_ENDORS` ditulis BERSAMA `STATUSS` (Confirm), sedangkan kotak masuk hanya
+// memuat kasus `STATUSS IS NULL`: sel ini kosong untuk setiap kasus terbuka. `Policy No` tetap `OLD_POLICY_NO`.
+// Kolom SOB, Policy Holder, Marketing Name, EDM Type Batal tidak lagi dibaca (dihapus dari kotak masuk,
+// 07-10-2026); `EDM_TYPE_BATAL` tetap tersimpan dan tampil di layar kasus.
 func sqlInbox(polis string) string {
-	return fmt.Sprintf(`SELECT p.ID, p.OLD_POLICY_NO, p.TYPE, p.EDM_TYPE, p.SOB_NAME, p.CEDING_CO_NAME,
-	        p.POLICY_HOLDER_NAME, p.MARKETING_NAME, TO_CHAR(p.TGL_INPUT, 'YYYY-MM-DD HH24:MI:SS'),
-	        p.CREATE_OP_NAME, p.STATUSS
+	return fmt.Sprintf(`SELECT p.ID, p.NO_ENDORS, p.OLD_POLICY_NO, p.TYPE, p.EDM_TYPE, p.CEDING_CO_NAME,
+	        TO_CHAR(p.TGL_INPUT, 'YYYY-MM-DD HH24:MI:SS'), p.CREATE_OP_NAME, p.STATUSS
 	   FROM %s p
 	  WHERE p.ID LIKE :1 AND p.STATUSS IS NULL
 	  ORDER BY p.TGL_INPUT DESC, p.ID
@@ -126,7 +129,7 @@ func (g *Gudang) Inbox(ctx context.Context, halaman, ukuran int) ([]models.Baris
 	defer func() { _ = rows.Close() }()
 	var hasil []models.BarisInbox
 	for rows.Next() {
-		var v [11]sql.NullString
+		var v [9]sql.NullString
 		ptr := make([]any, len(v))
 		for i := range v {
 			ptr[i] = &v[i]
@@ -135,10 +138,9 @@ func (g *Gudang) Inbox(ctx context.Context, halaman, ukuran int) ([]models.Baris
 			return nil, 0, fmt.Errorf("repository: memindai kotak masuk endorsement: %w", err)
 		}
 		hasil = append(hasil, models.BarisInbox{
-			CaseID: v[0].String, EndorsementNo: v[1].String, PolicyNo: v[1].String,
-			Tipe: v[2].String, EdmType: v[3].String, Sob: v[4].String, Ceding: v[5].String,
-			PolicyHolder: v[6].String, MarketingName: v[7].String, CreateDate: v[8].String,
-			CreateOperator: v[9].String, Status: v[10].String,
+			CaseID: v[0].String, EndorsementNo: v[1].String, PolicyNo: v[2].String,
+			Tipe: v[3].String, EdmType: v[4].String, Ceding: v[5].String, CreateDate: v[6].String,
+			CreateOperator: v[7].String, Status: v[8].String,
 		})
 	}
 	if err := rows.Err(); err != nil {
@@ -152,7 +154,10 @@ func (g *Gudang) Inbox(ctx context.Context, halaman, ukuran int) ([]models.Baris
 // kolomKasus - kolom tetap kepala kasus, sebelum `KolomKepalaSalin`.
 const kolomKasus = `p.ID, p.OLD_POLICY_NO, p.PL_NUMBER_EDM, NVL(p.PROD_KE, 1), p.EDM_TYPE, p.EDM_NOTE,
 	        TO_CHAR(p.EDM_DATE, 'YYYY-MM-DD'), p.STATUSS, TO_CHAR(p.TGL_INPUT, 'YYYY-MM-DD HH24:MI:SS'),
-	        p.CREATE_OP_NAME`
+	        p.CREATE_OP_NAME, p.EDM_TYPE_PERUBAHAN_DATA, p.EDM_TYPE_BATAL`
+
+// jumlahKolomKasus - cacah kolom `kolomKasus` (kolom kepala salinan mulai sesudahnya).
+const jumlahKolomKasus = 12
 
 // sqlKasus membaca kepala satu kasus; `kunci` menambah `FOR UPDATE` (kasus
 // dikunci selama transaksi yang mengubahnya - dua tab tidak dapat menyimpan
@@ -185,7 +190,7 @@ func (g *Gudang) AmbilKasus(ctx context.Context, tx *db.Tx, id string, kunci boo
 	if err := db.PeriksaSQL(q); err != nil {
 		return models.Kasus{}, err
 	}
-	v := make([]sql.NullString, 10+len(models.KolomKepalaSalin))
+	v := make([]sql.NullString, jumlahKolomKasus+len(models.KolomKepalaSalin))
 	var prodKe int
 	ptr := make([]any, len(v))
 	for i := range v {
@@ -203,10 +208,11 @@ func (g *Gudang) AmbilKasus(ctx context.Context, tx *db.Tx, id string, kunci boo
 		ID: v[0].String, NomorPolis: v[1].String, PLNumber: v[1].String, PLNumberEDM: v[2].String,
 		ProdKe: prodKe, EdmType: v[4].String, EdmNote: v[5].String, EdmDate: v[6].String,
 		Status: v[7].String, TglInput: v[8].String, Pembuat: v[9].String,
+		EdmTypePerubahanData: v[10].String, EdmTypeBatal: v[11].String,
 		Kepala: make(map[string]string, len(models.KolomKepalaSalin)),
 	}
 	for i, kol := range models.KolomKepalaSalin {
-		k.Kepala[kol.Kolom] = strings.TrimSpace(v[10+i].String)
+		k.Kepala[kol.Kolom] = strings.TrimSpace(v[jumlahKolomKasus+i].String)
 	}
 	return k, nil
 }

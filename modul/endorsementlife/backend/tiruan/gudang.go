@@ -30,12 +30,15 @@ type Polis struct {
 	EdmType     string
 	EdmNote     string
 	EdmDate     string
-	PLNumberEDM string
-	NoEndors    string
-	Status      string // `STATUSS`
-	TglInput    string
-	Pembuat     string
-	Kepala      map[string]string
+	// Sub-jenis EDM Type (migrasi 483).
+	EdmTypePerubahanData string
+	EdmTypeBatal         string
+	PLNumberEDM          string
+	NoEndors             string
+	Status               string // `STATUSS`
+	TglInput             string
+	Pembuat              string
+	Kepala               map[string]string
 }
 
 // Peserta adalah satu baris `T_PREMIUM_LIST_DETAIL` tiruan.
@@ -146,9 +149,8 @@ func (g *Gudang) Inbox(_ context.Context, halaman, ukuran int) ([]models.BarisIn
 	var hasil []models.BarisInbox
 	for _, p := range semua[awal:akhir] {
 		hasil = append(hasil, models.BarisInbox{
-			CaseID: p.ID, EndorsementNo: p.OldPolicyNo, PolicyNo: p.OldPolicyNo, Tipe: p.Kepala["TYPE"],
-			EdmType: p.EdmType, Sob: p.Kepala["SOB_NAME"], Ceding: p.Kepala["CEDING_CO_NAME"],
-			PolicyHolder: p.Kepala["POLICY_HOLDER_NAME"], MarketingName: p.Kepala["MARKETING_NAME"],
+			CaseID: p.ID, EndorsementNo: p.NoEndors, PolicyNo: p.OldPolicyNo, Tipe: p.Kepala["TYPE"],
+			EdmType: p.EdmType, Ceding: p.Kepala["CEDING_CO_NAME"],
 			CreateDate: p.TglInput, CreateOperator: p.Pembuat, Status: p.Status,
 		})
 	}
@@ -177,6 +179,7 @@ func (g *Gudang) AmbilKasus(_ context.Context, _ *db.Tx, id string, _ bool) (mod
 	return models.Kasus{
 		ID: p.ID, NomorPolis: p.OldPolicyNo, PLNumber: p.OldPolicyNo, PLNumberEDM: p.PLNumberEDM,
 		ProdKe: prod, EdmType: p.EdmType, EdmNote: p.EdmNote, EdmDate: p.EdmDate, Status: p.Status,
+		EdmTypePerubahanData: p.EdmTypePerubahanData, EdmTypeBatal: p.EdmTypeBatal,
 		TglInput: p.TglInput, Pembuat: p.Pembuat, Kepala: kepala,
 	}, nil
 }
@@ -452,6 +455,7 @@ func (g *Gudang) SisipKasus(_ context.Context, _ *db.Tx, k repository.KasusTulis
 	}
 	g.Polis[k.ID] = &Polis{
 		ID: k.ID, OldPolicyNo: k.NomorPolis, EdmType: k.EdmType, EdmDate: k.EdmDate, EdmNote: k.EdmNote,
+		EdmTypePerubahanData: k.EdmTypePerubahanData, EdmTypeBatal: k.EdmTypeBatal,
 		ProdKe: k.ProdKe, Pembuat: k.Pembuat, TglInput: "2026-10-01 12:00:00", Kepala: kepala,
 	}
 	return nil

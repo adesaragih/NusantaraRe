@@ -27,6 +27,7 @@ import { useEffect, useState } from 'react'
 import { HASIL_NOMOR_PL, KEPUTUSAN_POLIS, KONFIRMASI_KEPUTUSAN } from '../labels'
 import { Gagal, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import {
+  ambilKesiapanConfirm,
   ambilPeriodeProduksi,
   putuskanPenawaran,
   TAHAP_POLIS,
@@ -62,6 +63,7 @@ export default function InputOffer({
   polisID,
   tahap,
   confirmTerkunci = false,
+  versiKesiapan = 0,
   onSelesai,
 }: {
   polisID: string
@@ -73,6 +75,8 @@ export default function InputOffer({
    * TERSIMPAN, jadi perubahan di layar akan diabaikan diam-diam.
    */
   confirmTerkunci?: boolean
+  /** Naik setiap Save Data / Calculate CSV berhasil - kesiapan Confirm dibaca ulang (06-10-2026). */
+  versiKesiapan?: number
   onSelesai: () => void
 }) {
   const [akibat, setAkibat] = useState<AkibatKeputusanPolis | null>(null)
@@ -82,6 +86,30 @@ export default function InputOffer({
   // Decision TIDAK langsung menjalankan apa pun — mencegah tertekan tanpa sengaja.
   const [tanya, setTanya] = useState<typeof KEPUTUSAN_POLIS.confirm | typeof KEPUTUSAN_POLIS.decline | null>(null)
 
+  // Kesiapan Confirm di tahap Input Premium Detail (keputusan work owner 06-10-2026):
+  // Confirm terkunci selama server masih menyebut sesuatu yang kurang.
+  const [alasanBelumSiap, setAlasanBelumSiap] = useState<string[]>([])
+  useEffect(() => {
+    if (tahap !== TAHAP_POLIS.detail) {
+      setAlasanBelumSiap([])
+      return
+    }
+    let hidup = true
+    ambilKesiapanConfirm(polisID).then(
+      (k) => {
+        if (hidup) setAlasanBelumSiap(k.alasan ?? [])
+      },
+      () => {
+        // Gagal membaca kesiapan: Confirm tidak dikunci di layar - server tetap menolak bila belum siap.
+        if (hidup) setAlasanBelumSiap([])
+      },
+    )
+    return () => {
+      hidup = false
+    }
+  }, [polisID, tahap, versiKesiapan])
+  const belumSiap = alasanBelumSiap.length > 0
+
   // PL Number yang baru terbit — popup hasil sebelum kembali ke kotak masuk.
   const [nomorTerbit, setNomorTerbit] = useState<string | null>(null)
   const [wpcTerbit, setWpcTerbit] = useState('')
@@ -90,7 +118,7 @@ export default function InputOffer({
   function lanjutkan(): void {
     if (tanya === null) return
     // Perubahan belum disimpan muncul SESUDAH popup terbuka: Confirm tetap ditahan.
-    if (tanya === KEPUTUSAN_POLIS.confirm && confirmTerkunci) {
+    if (tanya === KEPUTUSAN_POLIS.confirm && (confirmTerkunci || belumSiap)) {
       setTanya(null)
       return
     }
@@ -194,7 +222,7 @@ export default function InputOffer({
           <button
             type="button"
             className="btn btn--primary"
-            disabled={sibuk || confirmTerkunci}
+            disabled={sibuk || confirmTerkunci || belumSiap}
             onClick={() => {
               setTanya(KEPUTUSAN_POLIS.confirm)
             }}
@@ -222,6 +250,17 @@ export default function InputOffer({
           <p className="pl-offer__kurang" role="status">
             {KONFIRMASI_KEPUTUSAN.belumTersimpan}
           </p>
+        )}
+        {/* Kesiapan Confirm: seluruh yang masih kurang disebut (06-10-2026). */}
+        {!confirmTerkunci && belumSiap && (
+          <div className="pl-offer__kurang" role="status">
+            <p>{KONFIRMASI_KEPUTUSAN.belumSiap}</p>
+            <ul>
+              {alasanBelumSiap.map((a) => (
+                <li key={a}>{a}</li>
+              ))}
+            </ul>
+          </div>
         )}
       </section>
 

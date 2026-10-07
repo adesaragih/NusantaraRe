@@ -80,6 +80,8 @@ export const KEPUTUSAN_POLIS = {
  * "apakah Anda yakin", supaya orang tahu apa yang ia setujui.
  */
 export const KONFIRMASI_KEPUTUSAN = {
+  // Kesiapan Confirm (keputusan work owner 06-10-2026) - judul daftar yang kurang.
+  belumSiap: 'Confirm is locked until these are fixed:',
   judulConfirm: 'Confirm this case?',
   judulDecline: 'Decline this case?',
   /** Confirm di Life Business Offering. */
@@ -172,7 +174,7 @@ export const URUTAN_KOLOM_PESERTA: readonly string[] = [
   'POLICY_NO', 'POLICY_HOLDER', 'CERTIFICATE_NO', 'NAME_OF_INSURED', 'SEX', 'DOB', 'ENTRY_AGE', 'CURRENT_AGE',
   'PLAN', 'BEGIN_DATE', 'EXPIRED_DATE', 'GROSS_VALUATION_BEGIN_DATE', 'GROSS_VALUATION_EXPIRED_DATE',
   'PERIOD_MM', 'UW_STATUS', 'EM_PERCENT', 'CURRENCY', 'SUM_INSURED', 'CEDING_RETENTION',
-  'SUM_REASURED', 'SHARE_NUSANTARA_RE_GROSS', 'SUM_AT_RISK_GROSS', 'RISK', 'GROSS_PREMIUM', 'DEDUCTION',
+  'SUM_REASURED', 'SHARE_NUSANTARA_RE_GROSS', 'SUM_AT_RISK_GROSS', 'RISK', 'RATE', 'GROSS_PREMIUM', 'DEDUCTION',
   'RI_ADMIN_FEE', 'BROKERAGE_FEE', 'NET_PREMIUM', 'FACTOR',
 ]
 
@@ -180,7 +182,7 @@ export const URUTAN_KOLOM_PESERTA: readonly string[] = [
  * Kolom grid peserta yang SELALU tampil walau seluruhnya kosong / nol
  * (permintaan work owner 05-10-2026) - RISK kosong di tahun pertama Type QR.
  */
-export const KOLOM_SELALU_TAMPIL: readonly string[] = ['SUM_AT_RISK_GROSS', 'RISK']
+export const KOLOM_SELALU_TAMPIL: readonly string[] = ['SHARE_NUSANTARA_RE_GROSS', 'SUM_AT_RISK_GROSS', 'RISK']
 
 /** Kolom grid peserta yang selalu PALING KANAN, urut seperti ini (02-10-2026). */
 export const KOLOM_PALING_KANAN = ['STNC', 'WPC'] as const
@@ -227,7 +229,10 @@ export const UNGGAH_CSV = {
     'Columns: separated by a comma (,) or semicolon (;). ' +
     'Numbers: no thousands separator; decimals use a DOT (1234567.89), or a comma ' +
     '(1234567,89) in semicolon files. Not 1,234,567.89 or 1.234.567,89. ' +
-    'Dates: dd/mm/yyyy.',
+    'Dates: dd/mm/yyyy. ' +
+    // POLICY_HOLDER / PLAN dari data polis (keputusan work owner 05-10-2026).
+    'POLICY_HOLDER and PLAN are filled automatically from the policy (Policy Holder, ' +
+    'Class of Business); values in the CSV are ignored.',
   perbaikiDulu:
     'Fix the rejected rows first, then validate again. While any row is ' +
     'rejected, no row is saved.',
@@ -235,6 +240,9 @@ export const UNGGAH_CSV = {
   kolomKolom: 'Column',
   kolomPesan: 'Message',
   kolomSebab: 'Reason',
+  // Validate lolos (keputusan work owner 05-10-2026).
+  lolosSemua: (n: number) =>
+    `${String(n)} rows read, all passed. Press Calculate CSV to calculate and save participants.`,
 } as const
 
 /**
@@ -246,6 +254,9 @@ export const UNGGAH_CSV = {
  * Confirm.
  */
 /** Dua tab panel Participants (03-10-2026): rincian peserta dan Summary. */
+// Spreading di tengah (keputusan work owner 06-10-2026).
+// Tab Spreading DIHAPUS (keputusan work owner 07-10-2026): spreading dilihat per peserta
+// lewat popup baris grid Participant Details (components/ModalSpreadingPeserta.tsx).
 export const TAB_PESERTA = ['rincian', 'summary'] as const
 export type TabPeserta = (typeof TAB_PESERTA)[number]
 export const LABEL_TAB_PESERTA: Record<TabPeserta, string> = {
@@ -515,3 +526,36 @@ export const RINCIAN_PRODUK = {
   medanRisk: 'R/I Risk Name',
   kolomRisk: ['ID', 'USEDBY', 'AGE', 'YEAR', 'MONTH', 'RISK', 'CONTRACT'],
 }
+
+/** Popup spreading satu peserta (07-10-2026) dan rekap retro di Summary (06-10-2026). */
+export const PANEL_SPREADING = {
+  // Popup spreading satu peserta (keputusan work owner 07-10-2026).
+  judul: 'Spreading',
+  kosong: 'No retro spreading for this participant.',
+  tutup: 'Close',
+  /** Kolom grid berisi Name Of Insured - judul popup sebelum datanya tiba. */
+  kolomNama: 'NAME_OF_INSURED',
+  /** Keterangan (title) baris grid peserta yang dapat diklik. */
+  bukaBaris: 'Click or press Enter to view retro spreading',
+  kepala: {
+    nama: 'Name Of Insured',
+    sertifikat: 'Certificate No',
+    currency: 'Currency',
+    retrocededShare: 'Retroceded Share',
+    treatyYear: 'Treaty Year',
+  },
+  kolom: {
+    reinsType: 'Reins Type',
+    bagian: 'Retroceded Share',
+    reinsurer: 'Reinsurer',
+    pctShare: '% Share',
+    amount: 'Amount',
+    rate: 'Rate',
+    komisi: 'Commision %',
+    ovrComm: 'Ovr Comm %',
+    gross: 'Gross',
+    net: 'Net',
+  },
+  judulRekap: 'Retro by Reinsurer',
+  kolomRekap: { reinsurer: 'Reinsurer', currency: 'Currency', gross: 'Premium Spreaded Gross', net: 'Premium Spreaded Net' },
+} as const

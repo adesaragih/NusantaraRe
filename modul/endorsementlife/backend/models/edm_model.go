@@ -42,6 +42,69 @@ func PeriksaEdmType(v string) error {
 	return nil
 }
 
+// Sub-jenis EDM Type (OQ-EDM-005 DITUTUP, keputusan work owner 07-10-2026) -
+// `EndorsmentLife_Section.xml` b1645 `EDM Type Perubahan Data` (EDM Type 1) dan
+// b1937 `EDM Type Batal` (EDM Type 3). Opsi properti tidak diekspor korpus; daftar
+// diberikan work owner dari layar Pega. Yang DISIMPAN teks label persis (kode Pega
+// tidak diketahui) ke `T_PREMIUM_LIST.EDM_TYPE_PERUBAHAN_DATA` / `EDM_TYPE_BATAL`
+// (migrasi 483). Hanya dicatat - tidak mengubah alur lain.
+var OpsiEdmTypePerubahanData = []string{
+	"Perubahan data (No Polis)",
+	"Perubahan data (No Sertifikat)",
+	"Perubahan data (Nama Peserta)",
+	"Perubahan data (DOB)",
+	"Perubahan data (Begin & Expired Date)",
+	"Perubahan data (UP & Premi)",
+}
+
+// OpsiEdmTypeBatal - opsi `EDM Type Batal`; yang pertama bawaan terpilih (tanpa Choose).
+var OpsiEdmTypeBatal = []string{EdmTypeBatalInternal, "Batal Eksternal"}
+
+// EdmTypeBatalInternal - bawaan dropdown `EDM Type Batal`.
+const EdmTypeBatalInternal = "Batal Internal"
+
+// ErrSubJenisEdmTidakSah - kombinasi EDM Type × sub-jenis ditolak.
+var ErrSubJenisEdmTidakSah = errors.New("models: invalid EDM Type detail")
+
+func adaDi(daftar []string, v string) bool {
+	for _, x := range daftar {
+		if x == v {
+			return true
+		}
+	}
+	return false
+}
+
+// PeriksaSubJenisEdm: EDM Type 1 → Perubahan Data wajib salah satu opsi, Batal
+// kosong; EDM Type 3 → Batal wajib salah satu opsi, Perubahan Data kosong. Nilai
+// dibandingkan persis (datang dari pilihan). EDM Type lain diserahkan ke
+// `PeriksaEdmType`.
+func PeriksaSubJenisEdm(edmType, perubahanData, batal string) error {
+	switch edmType {
+	case EdmTypePerubahanData:
+		if perubahanData == "" {
+			return fmt.Errorf("%w: EDM Type Perubahan Data is required", ErrSubJenisEdmTidakSah)
+		}
+		if !adaDi(OpsiEdmTypePerubahanData, perubahanData) {
+			return fmt.Errorf("%w: EDM Type Perubahan Data %q is not an option", ErrSubJenisEdmTidakSah, perubahanData)
+		}
+		if batal != "" {
+			return fmt.Errorf("%w: EDM Type Batal must be empty for Perubahan Data", ErrSubJenisEdmTidakSah)
+		}
+	case EdmTypeBatal:
+		if batal == "" {
+			return fmt.Errorf("%w: EDM Type Batal is required", ErrSubJenisEdmTidakSah)
+		}
+		if !adaDi(OpsiEdmTypeBatal, batal) {
+			return fmt.Errorf("%w: EDM Type Batal %q is not an option", ErrSubJenisEdmTidakSah, batal)
+		}
+		if perubahanData != "" {
+			return fmt.Errorf("%w: EDM Type Perubahan Data must be empty for Batal", ErrSubJenisEdmTidakSah)
+		}
+	}
+	return nil
+}
+
 // Status per peserta (properti `EDMStatus` → kolom `EDM_STATUS`, dan kolom status
 // EDM tabel warisan peserta) - spec §5.
 const (

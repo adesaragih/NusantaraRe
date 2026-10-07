@@ -135,7 +135,9 @@ func TestBacaKasusDanVersiTerhadapOracle(t *testing.T) {
 	)
 	g := repository.Baru(repo)
 	baris, total, err := g.Inbox(ctx, 1, 20)
-	if err != nil || total != 1 || len(baris) != 1 || baris[0].CaseID != "EDMLF-901" || baris[0].EndorsementNo != "UJI-PL-2" {
+	// Endorsement No = NO_ENDORS (07-10-2026) - kosong selama kasus terbuka; Policy No = OLD_POLICY_NO.
+	if err != nil || total != 1 || len(baris) != 1 || baris[0].CaseID != "EDMLF-901" || baris[0].EndorsementNo != "" ||
+		baris[0].PolicyNo != "UJI-PL-2" {
 		t.Fatalf("inbox = %+v, %d, %v", baris, total, err)
 	}
 	k, err := g.AmbilKasus(ctx, nil, "EDMLF-901", false)

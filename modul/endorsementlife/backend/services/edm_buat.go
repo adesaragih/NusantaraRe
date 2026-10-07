@@ -99,6 +99,9 @@ type MasukanKasus struct {
 	EdmType    string `json:"edmType"`
 	EdmDate    string `json:"edmDate"`
 	Deskripsi  string `json:"description"`
+	// Sub-jenis EDM Type (keputusan work owner 07-10-2026, migrasi 483).
+	EdmTypePerubahanData string `json:"edmTypePerubahanData"`
+	EdmTypeBatal         string `json:"edmTypeBatal"`
 }
 
 // HasilBuat - kasus baru dan cacah salinannya.
@@ -121,6 +124,9 @@ func (l *Layanan) BuatKasus(ctx context.Context, p inti.Pelaku, m MasukanKasus) 
 	}
 	np := strings.TrimSpace(m.NomorPolis)
 	if err := models.PeriksaEdmType(m.EdmType); err != nil {
+		return HasilBuat{}, fmt.Errorf("%w: %v", ErrMasukanTidakSah, err)
+	}
+	if err := models.PeriksaSubJenisEdm(m.EdmType, m.EdmTypePerubahanData, m.EdmTypeBatal); err != nil {
 		return HasilBuat{}, fmt.Errorf("%w: %v", ErrMasukanTidakSah, err)
 	}
 	tgl := strings.TrimSpace(m.EdmDate)
@@ -151,6 +157,7 @@ func (l *Layanan) BuatKasus(ctx context.Context, p inti.Pelaku, m MasukanKasus) 
 		}
 		if err := l.gudang.SisipKasus(ctx, tx, repository.KasusTulis{
 			ID: id, NomorPolis: np, EdmType: m.EdmType, EdmDate: tgl, EdmNote: strings.TrimSpace(m.Deskripsi),
+			EdmTypePerubahanData: m.EdmTypePerubahanData, EdmTypeBatal: m.EdmTypeBatal,
 			ProdKe: v.ProdKe + 1, Pembuat: p.AkunID, Kepala: kepala,
 		}); err != nil {
 			if errors.Is(err, repository.ErrKasusTerbukaGanda) {

@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { pemisahRibuan } from './angka'
+import { desimalBaku, pemisahRibuan } from './angka'
 import { selAngkaAtauTanggal } from './pages/PremiumListDetail'
 
 // Pemisah ribuan untuk nominal uang — keputusan work owner 03-10-2026.
@@ -47,5 +47,18 @@ describe('paling banyak 4 digit desimal (03-10-2026)', () => {
     expect(pemisahRibuan('1.99999')).toBe('1,9999')
     expect(pemisahRibuan('20.1234')).toBe('20,1234')
     expect(pemisahRibuan('20.5')).toBe('20,5')
+  })
+})
+
+describe('satu bentuk desimal untuk semua sumber (07-10-2026)', () => {
+  it('".72", "+0.72", "7.2E-01" tampil sama dengan "0.72"', () => {
+    for (const t of ['0.72', '.72', '+0.72', '7.2E-01', '72e-2', ' 0.72 ']) {
+      expect(pemisahRibuan(t)).toBe('0,72')
+    }
+    expect(pemisahRibuan('-.5')).toBe('-0,5')
+    expect(pemisahRibuan('1.5E+6')).toBe('1.500.000')
+    expect(desimalBaku('0012.50')).toBe('12.50')
+    expect(desimalBaku('e5')).toBeNull()
+    expect(desimalBaku('.')).toBeNull()
   })
 })

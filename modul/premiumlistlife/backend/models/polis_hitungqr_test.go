@@ -40,7 +40,7 @@ func barisQR(ubah map[string]string) []BarisUnggah {
 		"BEGIN_DATE": "01/01/2026", "GROSS_VALUATION_BEGIN_DATE": "01/01/2026",
 		"FACTOR": "", "EM_PERCENT": "0.5", "RI_ADMIN_FEE": "",
 		// Kolom hasil di CSV diabaikan dan ditimpa.
-		"GROSS_PREMIUM": "999", "RATE": "999",
+		"GROSS_PREMIUM": "999", "RATE": "999", "SUM_AT_RISK_RETRO": "999", "RETROCEDED_SHARE": "999",
 	}
 	for k, v := range ubah {
 		n[k] = v
@@ -83,6 +83,8 @@ func TestHitungQRVektorTahunPertama(t *testing.T) {
 		"CEDING_RETENTION": "100000000", "SUM_REASURED": "400000000", "SHARE_NUSANTARA_RE": "200000000",
 		"SUM_AT_RISK_GROSS": "200000000", "RATE": "3.2", "GROSS_PREMIUM": "960000", "DEDUCTION": "192000",
 		"BROKERAGE_FEE": "48000", "NET_PREMIUM": "720000", "RI_ADMIN_FEE": "0",
+		// Retro = sum at risk gross (keputusan work owner 06-10-2026).
+		"SUM_AT_RISK_RETRO": "200000000", "RETROCEDED_SHARE": "200000000",
 	} {
 		samaAngka(t, k, n[k], mau)
 	}
@@ -101,6 +103,8 @@ func TestHitungQRBukanTahunPertama(t *testing.T) {
 		t.Fatalf("ditolak: %+v", tolak)
 	}
 	samaAngka(t, "SUM_AT_RISK_GROSS", n["SUM_AT_RISK_GROSS"], "124000000")
+	samaAngka(t, "SUM_AT_RISK_RETRO", n["SUM_AT_RISK_RETRO"], "124000000")
+	samaAngka(t, "RETROCEDED_SHARE", n["RETROCEDED_SHARE"], "124000000")
 	if n["RISK"] != "0.6200000" {
 		t.Errorf("RISK = %q, mau 0.6200000 (7 desimal)", n["RISK"])
 	}
@@ -269,5 +273,25 @@ func TestValidasiQRAbaikanKolomHasil(t *testing.T) {
 	}
 	if h, _ := ValidasiUnggah("QP", []BarisUnggah{b}); h.Lolos() {
 		t.Error("QP tidak lagi memeriksa bentuk GROSS_PREMIUM")
+	}
+}
+
+// Kolom retro: QR dihitung (bentuk CSV tidak diperiksa), Type lain divalidasi bentuk
+// uang dan TIDAK diisi 0 bila kosong (keputusan work owner 06-10-2026).
+func TestKolomRetroPerTipe(t *testing.T) {
+	for _, k := range []string{"SUM_AT_RISK_RETRO", "RETROCEDED_SHARE"} {
+		b := barisSah(1)
+		b.Nilai[k] = "1,5"
+		if h, _ := ValidasiUnggah("QR", []BarisUnggah{b}); !h.Lolos() {
+			t.Errorf("QR memeriksa bentuk %s: %+v", k, h.Ditolak)
+		}
+		if h, _ := ValidasiUnggah("QP", []BarisUnggah{b}); h.Lolos() {
+			t.Errorf("QP tidak memeriksa bentuk %s", k)
+		}
+		kosong := []BarisUnggah{{Nomor: 1, Nilai: map[string]string{}}}
+		IsiNolUangKosong(kosong)
+		if v, ada := kosong[0].Nilai[k]; ada || v != "" {
+			t.Errorf("%s kosong diisi %q, mau tetap kosong (NULL)", k, v)
+		}
 	}
 }

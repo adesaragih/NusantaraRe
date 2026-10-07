@@ -118,11 +118,14 @@ type Kasus struct {
 	PLNumberEDM string `json:"plNumberEdm"`
 	ProdKe      int    `json:"prodKe"`
 	EdmType     string `json:"edmType"`
-	EdmNote     string `json:"description"`
-	EdmDate     string `json:"edmDate"`
-	Status      string `json:"status"`
-	TglInput    string `json:"createDate"`
-	Pembuat     string `json:"createOperator"`
+	// Sub-jenis EDM Type (migrasi 483, 07-10-2026) - kosong untuk kasus sebelum 483.
+	EdmTypePerubahanData string `json:"edmTypePerubahanData"`
+	EdmTypeBatal         string `json:"edmTypeBatal"`
+	EdmNote              string `json:"description"`
+	EdmDate              string `json:"edmDate"`
+	Status               string `json:"status"`
+	TglInput             string `json:"createDate"`
+	Pembuat              string `json:"createOperator"`
 	// Kepala - kolom `KolomKepalaSalin`, kunci nama kolom.
 	Kepala map[string]string `json:"kepala"`
 	// SudahSimpan - `IsJsonPolis` (`SetPremi_EDM` 8 b5600): rekap kasus ada.
@@ -147,15 +150,13 @@ func (k Kasus) Terbuka() bool { return k.Status == StatusKasusTerbuka }
 
 // BarisInbox adalah satu baris kotak masuk `InboxEndorsementLife` (grid b8284).
 type BarisInbox struct {
-	CaseID         string `json:"caseId"`
+	CaseID string `json:"caseId"`
+	// EndorsementNo - `NO_ENDORS` (07-10-2026; dulu `OLD_POLICY_NO` seperti Pega, R25).
 	EndorsementNo  string `json:"endorsementNo"`
 	Tipe           string `json:"type"`
 	EdmType        string `json:"edmType"`
 	PolicyNo       string `json:"policyNo"`
-	Sob            string `json:"sob"`
 	Ceding         string `json:"ceding"`
-	PolicyHolder   string `json:"policyHolder"`
-	MarketingName  string `json:"marketingName"`
 	CreateDate     string `json:"createDate"`
 	CreateOperator string `json:"createOperator"`
 	Status         string `json:"status"`

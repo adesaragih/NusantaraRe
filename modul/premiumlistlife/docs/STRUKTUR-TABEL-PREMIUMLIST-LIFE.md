@@ -128,6 +128,8 @@ versi hidup berdampingan; **versi berjalan adalah baris ber-`PROD_KE` terbesar**
 | `PROD_KE` | bilangan bulat | ya | | **EDM saja** | keputusan tiket 00 Endorsement — versi berjalan = `PRODKE` terbesar |
 | `EDM_STATUS` | teks | ya | | **EDM saja** | keputusan tiket 00 Endorsement — `Old`/`New`/`Delete`/`Batal` |
 | `STATUS_OLD` | teks | ya | | **EDM saja** | keputusan tiket 00 Endorsement |
+| `EDM_TYPE_PERUBAHAN_DATA` | teks | ya | | **EDM saja** | keputusan work owner 07-10-2026 (OQ-EDM-005, migrasi 483) — sub-jenis EDM Type 1, teks label `EndorsmentLife_Section` b1645 |
+| `EDM_TYPE_BATAL` | teks | ya | | **EDM saja** | keputusan work owner 07-10-2026 (OQ-EDM-005, migrasi 483) — sub-jenis EDM Type 3, teks label b1937 |
 | `BATAS_USIA_PESERTA` | bilangan bulat | ya | | **NB saja** | korpus `.BatasUsiaPeserta` "Age Limit" — `Section/InputOfferLife.xml`; migrasi 059 |
 | `PERIODE_PERTANGGUNGAN` | teks | ya | | **NB saja** | korpus `.PeriodePertanggungan` "Coverage Period" — InputOfferLife.xml; migrasi 059 |
 | `TANGGAL_PENAWARAN` | DATE | ya | | **NB saja** | korpus `.TanggalPenawaran` "Offering Date" — InputOfferLife.xml; migrasi 059 |

@@ -189,6 +189,9 @@ type KasusTulis struct {
 	EdmType    string
 	EdmDate    string
 	EdmNote    string
+	// Sub-jenis EDM Type (migrasi 483, keputusan work owner 07-10-2026).
+	EdmTypePerubahanData string
+	EdmTypeBatal         string
 	// ProdKe - versi yang AKAN dicapai kasus (versi berjalan + 1); ditetapkan
 	// ulang saat diresmikan.
 	ProdKe  int
@@ -200,11 +203,12 @@ type KasusTulis struct {
 // pembaca versi berjalan (Claim Life `polis_ringkas.go`, `sqlVersiEDM`)
 // mencari lewat kolom itu, dan kasus terbuka atau ditolak bukan versi polis.
 func sqlSisipKasus(polis string) string {
-	kolom := []string{"ID", "ID_PEGA", "TGL_INPUT", "CREATE_OP_NAME", "OLD_POLICY_NO", "EDM_TYPE", "EDM_DATE", "EDM_NOTE", "PROD_KE"}
-	nilai := []string{":1", ":2", "SYSDATE", ":3", ":4", ":5", "TO_DATE(:6, 'YYYY-MM-DD')", ":7", ":8"}
+	kolom := []string{"ID", "ID_PEGA", "TGL_INPUT", "CREATE_OP_NAME", "OLD_POLICY_NO", "EDM_TYPE", "EDM_DATE", "EDM_NOTE", "PROD_KE",
+		"EDM_TYPE_PERUBAHAN_DATA", "EDM_TYPE_BATAL"}
+	nilai := []string{":1", ":2", "SYSDATE", ":3", ":4", ":5", "TO_DATE(:6, 'YYYY-MM-DD')", ":7", ":8", ":9", ":10"}
 	for i, k := range models.KolomKepalaSalin {
 		kolom = append(kolom, k.Kolom)
-		p := fmt.Sprintf(":%d", 9+i)
+		p := fmt.Sprintf(":%d", 11+i)
 		if k.Tanggal {
 			p = "TO_DATE(" + p + ", 'YYYY-MM-DD')"
 		}
@@ -223,7 +227,8 @@ func (g *Gudang) SisipKasus(ctx context.Context, tx *db.Tx, k KasusTulis) error 
 	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	args := []any{k.ID, k.ID, k.Pembuat, k.NomorPolis, k.EdmType, db.KosongJadiNil(k.EdmDate), db.KosongJadiNil(k.EdmNote), k.ProdKe}
+	args := []any{k.ID, k.ID, k.Pembuat, k.NomorPolis, k.EdmType, db.KosongJadiNil(k.EdmDate), db.KosongJadiNil(k.EdmNote), k.ProdKe,
+		db.KosongJadiNil(k.EdmTypePerubahanData), db.KosongJadiNil(k.EdmTypeBatal)}
 	for _, kol := range models.KolomKepalaSalin {
 		args = append(args, db.KosongJadiNil(k.Kepala[kol.Kolom]))
 	}

@@ -1,20 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { OPSI_EDM_TYPE, OPSI_TYPE_CEDING } from './labels'
-import {
-  PILIHAN_KOSONG,
-  UKURAN_HALAMAN_EDM,
-  alihBaris,
-  alihSemua,
-  bolehCentang,
-  labelEdmType,
-  labelTypeCeding,
-  sel,
-  selAngka,
-  selTanggal,
-  selWaktu,
-  tercentang,
-} from './tampilan'
+import { PILIHAN_KOSONG, UKURAN_HALAMAN_EDM, alihBaris, alihSemua, bolehCentang, labelEdmType, labelTypeCeding, sel, selAngka, selTanggal, selWaktu, tercentang } from './tampilan'
 
 describe('pembantu tampilan Endorsement Life', () => {
   it('sel kosong ditandai, bukan dibiarkan kosong', () => {
@@ -24,10 +11,10 @@ describe('pembantu tampilan Endorsement Life', () => {
     expect(sel(' UJI-1 ')).toBe('UJI-1')
   })
 
-  it('tanggal dan waktu dibalik ke DD-MM-YYYY', () => {
-    expect(selTanggal('2026-10-01')).toBe('01-10-2026')
+  it('tanggal dan waktu dibalik ke DD/MM/YYYY (07-10-2026; dulu DD-MM-YYYY)', () => {
+    expect(selTanggal('2026-10-01')).toBe('01/10/2026')
     expect(selTanggal('')).toBe('—')
-    expect(selWaktu('2026-10-01 09:05:07')).toBe('01-10-2026 09:05:07')
+    expect(selWaktu('2026-10-01 09:05:07')).toBe('01/10/2026 09:05:07')
     expect(selWaktu('')).toBe('—')
   })
 
@@ -85,5 +72,26 @@ describe('kotak centang .EdmBatal dan DELETE ALL (SelectAllEdmLife_act)', () => 
     expect(bolehCentang({ edmStatus: 'Old' }, { ...kasus, sudahSimpan: true })).toBe(false)
     expect(bolehCentang({ edmStatus: 'Old' }, { ...kasus, edmType: '3' })).toBe(false)
     expect(bolehCentang({ edmStatus: 'Old' }, { ...kasus, status: 'Resolved-Completed' })).toBe(false)
+  })
+})
+
+describe('format tanggal dd/mm/yyyy (keputusan work owner 07-10-2026)', () => {
+  it('selTanggal: tanggal saja, jam dibuang', () => {
+    expect(selTanggal('2026-10-07')).toBe('07/10/2026')
+    expect(selTanggal('2026-10-07 14:49:22')).toBe('07/10/2026')
+    expect(selTanggal('2026-10-07T14:49:22Z')).toBe('07/10/2026')
+    expect(selTanggal('20261007T144922.000 GMT')).toBe('07/10/2026')
+    expect(selTanggal('07-10-2026')).toBe('07/10/2026')
+  })
+  it('selWaktu: stempel waktu riwayat dengan jam', () => {
+    expect(selWaktu('2026-10-07 14:49:22')).toBe('07/10/2026 14:49:22')
+    expect(selWaktu('20261007T144922.000 GMT')).toBe('07/10/2026 14:49:22')
+    expect(selWaktu('2026-10-07')).toBe('07/10/2026')
+  })
+  it('kosong / tak terurai / waktu nol → tanda kosong', () => {
+    for (const v of [undefined, '', '  ', 'bukan tanggal', '0001-01-01', '0001-01-01 00:00:00']) {
+      expect(selTanggal(v)).toBe('—')
+      expect(selWaktu(v)).toBe('—')
+    }
   })
 })

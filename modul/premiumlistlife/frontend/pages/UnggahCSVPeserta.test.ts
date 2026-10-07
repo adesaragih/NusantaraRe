@@ -61,6 +61,8 @@ describe('aturan pemisah dinyatakan di muka', () => {
     expect(UNGGAH_CSV.aturanPemisah).toContain('DOT')
     expect(UNGGAH_CSV.aturanPemisah).toContain('1,234,567.89')
     expect(UNGGAH_CSV.aturanPemisah).toContain('1.234.567,89')
+    // POLICY_HOLDER / PLAN diisi dari polis (05-10-2026).
+    expect(UNGGAH_CSV.aturanPemisah).toContain('POLICY_HOLDER and PLAN are filled automatically from the policy')
     expect(UNGGAH_CSV.aturanPemisah).toContain('dd/mm/yyyy')
     expect(SUMBER).toContain('UNGGAH_CSV.aturanPemisah')
   })
@@ -102,7 +104,7 @@ describe('ringkasan tinjauan', () => {
   it('berkas bersih dikatakan lolos', () => {
     expect(
       ringkasanTinjau({ cacahBaris: 5, cacahDitolak: 0, ditolak: [], lolos: true }),
-    ).toContain('all passed')
+    ).toBe('5 rows read, all passed. Press Calculate CSV to calculate and save participants.')
   })
 
   it('berkas rusak menyebut cacah BARIS dan cacah ALASAN, keduanya', () => {

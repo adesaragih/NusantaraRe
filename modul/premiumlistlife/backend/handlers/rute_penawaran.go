@@ -221,6 +221,8 @@ func jawabGalatPenawaran(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusConflict, sesudahSebab(err, services.ErrPenawaranBelumLengkap))
 	case errors.Is(err, services.ErrPenawaranBukanTahapnya):
 		galat.Tulis(w, http.StatusConflict, err.Error())
+	case errors.Is(err, services.ErrPenawaranMelebihiKolom):
+		galat.Tulis(w, http.StatusBadRequest, sesudahSebab(err, services.ErrPenawaranMelebihiKolom))
 	default:
 		return jawabGalatPolis(w, err)
 	}

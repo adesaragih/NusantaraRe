@@ -512,3 +512,51 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
 }
+
+/* Spreading retro: tabel popup spreading satu peserta (07-10-2026) dan rekap retro di Summary. */
+.premiumlistlife .pl-spreading {
+  max-width: 100%;
+  margin-top: 8px;
+  overflow-x: auto;
+}
+
+.premiumlistlife .pl-spreading th,
+.premiumlistlife .pl-spreading td {
+  white-space: nowrap;
+}
+
+.premiumlistlife .pl-spreading__angka {
+  text-align: right;
+}
+
+.premiumlistlife .pl-spreading__awal > td {
+  border-top: 2px solid var(--border);
+}
+
+/* Baris peserta dapat diklik / Enter → popup spreading (07-10-2026). */
+.premiumlistlife .pl-detail__baris {
+  cursor: pointer;
+}
+
+.premiumlistlife .pl-detail__baris:hover > td {
+  background: var(--hover-baris);
+}
+
+.premiumlistlife .pl-detail__baris:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+/* Isi popup spreading: kepala lalu tabel yang digulir horizontal (.pl-spreading). */
+.premiumlistlife .pl-spreading-modal {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Nomor baris grid peserta (06-10-2026). */
+.premiumlistlife .pl-detail__no {
+  width: 1%;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--text-3);
+}

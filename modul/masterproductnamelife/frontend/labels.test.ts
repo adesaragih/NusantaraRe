@@ -68,7 +68,6 @@ const BUKTI: readonly Bukti[] = [
   ['UMUM_MPNL.treatyNumber', S_INBOXPRODUCTNAME, 8900, 'pyLabelFieldValue'],
   ['UMUM_MPNL.causeOfLoss', S_INBOXPRODUCTNAME, 10661, 'pyLabelFieldValue'],
   ['UMUM_MPNL.chooseCause', S_INBOXPRODUCTNAME, 11360, 'pyLabel'],
-  ['UMUM_MPNL.onRetention', S_INBOXPRODUCTNAME, 47312, 'pyCheckboxCaption'],
   ['INWARD_MPNL.judul', S_INBOXPRODUCTNAME, 16621, 'pyTitle'],
   ['INWARD_MPNL.policyHolder', S_INBOXPRODUCTNAME, 17097, 'pyLabelFieldValue'],
   ['INWARD_MPNL.choosePolicyHolder', S_INBOXPRODUCTNAME, 17827, 'pyLabel'],

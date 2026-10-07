@@ -60,8 +60,8 @@ func TestDBGridDibacaDenganSaringanDanUrutRD(t *testing.T) {
 	if strings.Contains(badan, "1000010") {
 		t.Errorf("baris bersalinan tahun lain ikut tampil: %s", badan)
 	}
-	if strings.Index(badan, `"id":"1000009"`) > strings.Index(badan, `"id":"1000001"`) {
-		t.Errorf("reinsurer tidak urut ID DESC: %s", badan)
+	if strings.Index(badan, `"id":"1000001"`) > strings.Index(badan, `"id":"1000009"`) {
+		t.Errorf("reinsurer tidak urut ID ASC (06-10-2026): %s", badan)
 	}
 	if !strings.Contains(badan, `"pctShare":"10.5"`) {
 		t.Errorf("share tidak teks persis: %s", badan)

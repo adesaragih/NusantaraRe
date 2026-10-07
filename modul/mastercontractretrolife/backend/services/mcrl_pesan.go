@@ -62,6 +62,18 @@ func Pesan(err error) string {
 // keputusan work owner 04-10-2026 (Pega tidak memeriksanya).
 const PesanTanggalMundur = "START DATE cannot be later than END DATE."
 
+// PesanTahunTransaksiGanda / PesanTahunUWGanda - TRANSACTION YEAR / UNDERWRITING
+// YEAR sudah dipakai tahun treaty lain. BUKAN korpus: keputusan work owner
+// 05-10-2026 (satu tahun hanya satu baris).
+const (
+	PesanTahunTransaksiGanda = "TRANSACTION YEAR %s is already used (ID %s)."
+	PesanTahunUWGanda        = "UNDERWRITING YEAR %s is already used (ID %s)."
+)
+
+// PesanPeriodeBertabrakan - periode START/END DATE bertabrakan dengan tahun treaty
+// lain. BUKAN korpus: keputusan work owner 06-10-2026. Tanggal dd/mm/yyyy.
+const PesanPeriodeBertabrakan = "Period %s - %s overlaps treaty year %s (%s - %s)"
+
 // PesanJenisGanda - REINS TYPE sudah dipakai kontrak lain di tahun treaty yang
 // sama. BUKAN korpus: keputusan work owner 04-10-2026.
 const PesanJenisGanda = "REINS TYPE %s is already used in this treaty year."

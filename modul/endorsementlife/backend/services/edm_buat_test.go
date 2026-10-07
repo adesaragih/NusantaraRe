@@ -32,6 +32,9 @@ func (j *jejakTiruan) Rekam(_ context.Context, _ *db.Tx, c jejak.CatatanJejak) e
 
 var jamUji = time.Date(2026, 10, 1, 10, 0, 0, 0, time.UTC)
 
+// subUji - sub-jenis Perubahan Data yang sah (BuatKasus menuntutnya sejak 07-10-2026).
+var subUji = models.OpsiEdmTypePerubahanData[0]
+
 func layananJejak(g *tiruan.Gudang) (*services.Layanan, *jejakTiruan) {
 	j := &jejakTiruan{}
 	return services.BaruLayanan(g, tiruan.Transaksi, nil).DenganJejak(j).DenganJam(func() time.Time { return jamUji }), j
@@ -104,7 +107,7 @@ func TestBuatKasusMenyalinVersiNBBesertaSpreading(t *testing.T) {
 	g.Peserta[2].EdmStatus = models.StatusDelete // baris Delete versi lama: tidak tersalin (R10)
 	l, j := layananJejak(g)
 	h, err := l.BuatKasus(context.Background(), pelakuUji, services.MasukanKasus{
-		NomorPolis: "UJI-PL-NB", EdmType: "1", EdmDate: "2026-10-01", Deskripsi: "UJI-CATATAN"})
+		NomorPolis: "UJI-PL-NB", EdmType: "1", EdmDate: "2026-10-01", Deskripsi: "UJI-CATATAN", EdmTypePerubahanData: subUji})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,6 +115,9 @@ func TestBuatKasusMenyalinVersiNBBesertaSpreading(t *testing.T) {
 		t.Fatalf("hasil = %+v", h)
 	}
 	k := g.Polis["EDMLF-1"]
+	if k.EdmTypePerubahanData != subUji || k.EdmTypeBatal != "" {
+		t.Errorf("sub-jenis EDM Type tidak tertulis: %q / %q", k.EdmTypePerubahanData, k.EdmTypeBatal)
+	}
 	if k.OldPolicyNo != "UJI-PL-NB" || k.ProdKe != 2 || k.EdmNote != "UJI-CATATAN" || k.Pembuat != pelakuUji.AkunID ||
 		k.Kepala["PRODUCT_NAME"] != "UJI-PRODUK" || k.Kepala["TYPE"] != "QR" || k.NoPolis != "" || k.Status != "" {
 		t.Errorf("kepala kasus = %+v", k)
@@ -129,7 +135,7 @@ func TestBuatKasusMenyalinVersiNBBesertaSpreading(t *testing.T) {
 		t.Errorf("jejak = %+v", j.catatan)
 	}
 	// Gerbang 3 kini menolak kasus kedua atas polis yang sama.
-	_, err = l.BuatKasus(context.Background(), pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-NB", EdmType: "1"})
+	_, err = l.BuatKasus(context.Background(), pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-NB", EdmType: "1", EdmTypePerubahanData: subUji})
 	var gk services.GalatKelayakan
 	if !errors.As(err, &gk) || !reflect.DeepEqual(gk.Pesan, []string{models.PesanEDMBelumSelesai}) {
 		t.Errorf("kasus kedua: %v", err)
@@ -139,7 +145,7 @@ func TestBuatKasusMenyalinVersiNBBesertaSpreading(t *testing.T) {
 func TestBuatKasusDariVersiNBWarisan(t *testing.T) {
 	g := gudangPolisNB()
 	l, _ := layananJejak(g)
-	h, err := l.BuatKasus(context.Background(), pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-W", EdmType: "3"})
+	h, err := l.BuatKasus(context.Background(), pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-W", EdmType: "3", EdmTypeBatal: models.EdmTypeBatalInternal})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,19 +169,25 @@ func TestBuatKasusDitolak(t *testing.T) {
 	l, j := layananJejak(g)
 	for _, m := range []services.MasukanKasus{
 		{NomorPolis: "UJI-PL-NB", EdmType: "2"},
-		{NomorPolis: "UJI-PL-NB", EdmType: "1", EdmDate: "01/10/2026"},
+		{NomorPolis: "UJI-PL-NB", EdmType: "1", EdmDate: "01/10/2026", EdmTypePerubahanData: subUji},
+		// Sub-jenis EDM Type (07-10-2026): wajib, salah satu opsi, pasangan yang benar.
+		{NomorPolis: "UJI-PL-NB", EdmType: "1"},
+		{NomorPolis: "UJI-PL-NB", EdmType: "1", EdmTypePerubahanData: "UJI-BUKAN-OPSI"},
+		{NomorPolis: "UJI-PL-NB", EdmType: "1", EdmTypePerubahanData: subUji, EdmTypeBatal: models.EdmTypeBatalInternal},
+		{NomorPolis: "UJI-PL-NB", EdmType: "3"},
+		{NomorPolis: "UJI-PL-NB", EdmType: "3", EdmTypeBatal: subUji},
 	} {
 		if _, err := l.BuatKasus(ctx, pelakuUji, m); !errors.Is(err, services.ErrMasukanTidakSah) {
 			t.Errorf("%+v: %v", m, err)
 		}
 	}
 	var gk services.GalatKelayakan
-	if _, err := l.BuatKasus(ctx, pelakuUji, services.MasukanKasus{NomorPolis: "UJI-TIDAK-ADA", EdmType: "1"}); !errors.As(err, &gk) {
+	if _, err := l.BuatKasus(ctx, pelakuUji, services.MasukanKasus{NomorPolis: "UJI-TIDAK-ADA", EdmType: "1", EdmTypePerubahanData: subUji}); !errors.As(err, &gk) {
 		t.Errorf("polis tak dikenal: %v", err)
 	}
 	// Polis yang versi terakhirnya Batal ditolak gerbang 4.
 	g.PolisWarisan = append(g.PolisWarisan, &tiruan.PolisWarisan{IDPega: "UJI-IDPEGA-BTL", NoPolis: "UJI-PL-B", ProdKe: 3, EdmType: "3"})
-	if _, err := l.BuatKasus(ctx, pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-B", EdmType: "1"}); !errors.As(err, &gk) ||
+	if _, err := l.BuatKasus(ctx, pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-B", EdmType: "1", EdmTypePerubahanData: subUji}); !errors.As(err, &gk) ||
 		!reflect.DeepEqual(gk.Pesan, []string{models.PesanSudahBatal}) {
 		t.Errorf("polis sudah Batal: %v", err)
 	}
@@ -184,12 +196,12 @@ func TestBuatKasusDitolak(t *testing.T) {
 	}
 	// Jejak gagal = pembuatan gagal (ADR-U-0007: transisi tanpa jejak tidak boleh lolos).
 	l2 := services.BaruLayanan(gudangPolisNB(), tiruan.Transaksi, nil).DenganJejak(&jejakTiruan{galat: errors.New("UJI-jejak")})
-	if _, err := l2.BuatKasus(ctx, pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-NB", EdmType: "1"}); err == nil {
+	if _, err := l2.BuatKasus(ctx, pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-NB", EdmType: "1", EdmTypePerubahanData: subUji}); err == nil {
 		t.Error("galat jejak ditelan")
 	}
 	// Jejak bawaan gagal terang.
 	l3 := services.BaruLayanan(gudangPolisNB(), tiruan.Transaksi, nil)
-	if _, err := l3.BuatKasus(ctx, pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-NB", EdmType: "1"}); !errors.Is(err, jejak.ErrJejakBelumDiputuskan) {
+	if _, err := l3.BuatKasus(ctx, pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-NB", EdmType: "1", EdmTypePerubahanData: subUji}); !errors.Is(err, jejak.ErrJejakBelumDiputuskan) {
 		t.Errorf("jejak bawaan: %v", err)
 	}
 }
@@ -199,7 +211,7 @@ func TestPolisLamaDanRincianPeserta(t *testing.T) {
 	g := gudangPolisNB()
 	g.RekapWarisan = []map[string]string{{"PL_NUMBER": "UJI-PL-NB", "CURRENCY": "IDR", "PREMIUM": "10"}, {"PL_NUMBER": "UJI-LAIN"}}
 	l, _ := layananJejak(g)
-	h, err := l.BuatKasus(ctx, pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-NB", EdmType: "1"})
+	h, err := l.BuatKasus(ctx, pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-NB", EdmType: "1", EdmTypePerubahanData: subUji})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -239,7 +251,7 @@ func TestBuatKasusDariVersiEndorsementWarisan(t *testing.T) {
 		&tiruan.PesertaWarisan{ID: "UJI-E2", PLNumber: "UJI-PL-W", IDPega: "UJI-IDPEGA-EDM", EdmStatus: models.StatusNew, Nilai: map[string]string{"CERTIFICATE_NO": "UJI-EC2"}},
 		&tiruan.PesertaWarisan{ID: "UJI-E3", PLNumber: "UJI-PL-W", IDPega: "UJI-IDPEGA-EDM", EdmStatus: models.StatusDelete, Nilai: map[string]string{"CERTIFICATE_NO": "UJI-EC3"}})
 	lw, _ := layananJejak(g2)
-	h, err := lw.BuatKasus(ctx, pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-W", EdmType: "1"})
+	h, err := lw.BuatKasus(ctx, pelakuUji, services.MasukanKasus{NomorPolis: "UJI-PL-W", EdmType: "1", EdmTypePerubahanData: subUji})
 	if err != nil || h.Peserta != 2 {
 		t.Fatalf("sumber warisan EDM: %+v %v", h, err)
 	}

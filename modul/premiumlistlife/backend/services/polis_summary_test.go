@@ -67,6 +67,10 @@ func TestSimpanDalamUrutanTerkunci(t *testing.T) {
 		"summaryWarisan.Ganti(",
 		"ringkas.SumberWarisan(",
 		"warisan.Ganti(",
+		// 06-10-2026: LIFEINPRODUCTION sesudah PL Number + WPC, di transaksi yang sama.
+		"NewProduksiLife(s.svc.DB()).Ganti(ctx, tx, polisID, nomor.Nomor)",
+		// 06-10-2026: JSON_POLIS sesudah LIFEINPRODUCTION, di transaksi yang sama.
+		"repository.NewJSONPolis(s.svc.DB()).Ganti(ctx, tx, polisID, nomor.Nomor, tglProd)",
 	}
 	lalu := -1
 	for _, jejak := range urut {

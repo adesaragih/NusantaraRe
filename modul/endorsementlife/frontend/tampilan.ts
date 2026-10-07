@@ -2,8 +2,9 @@
 //
 // ⛔ Angka tidak pernah menjadi `Number`: sel angka lewat `formatNumber` (digit, bukan float).
 
-import { DESIMAL_TAK_DIBATASI, formatDate, formatNumber } from '../../../inti/frontend/lib/format'
-import { OPSI_EDM_TYPE, OPSI_TYPE_CEDING } from './labels'
+import { DESIMAL_TAK_DIBATASI, formatNumber } from '../../../inti/frontend/lib/format'
+import type { KasusEDM } from './api'
+import { BUAT_EDM, KASUS_EDM, OPSI_EDM_TYPE, OPSI_METODE_PREMI, OPSI_TYPE_CEDING } from './labels'
 
 /** Baris per halaman grid - SAMA dengan `services.UkuranHalaman` (`pyGridPaginator`). */
 export const UKURAN_HALAMAN_EDM = 20
@@ -14,15 +15,50 @@ export function sel(v: string | undefined): string {
   return t === '' ? '—' : t
 }
 
-/** Sel tanggal `YYYY-MM-DD` → `DD-MM-YYYY`. */
-export function selTanggal(v: string | undefined): string {
-  return sel(formatDate(v ?? ''))
+/** Tanggal (dan jam bila ada) terurai dari teks server - olah teks, tanpa `Date` (nol geser zona waktu). */
+interface TanggalTerurai {
+  yyyy: string
+  mm: string
+  dd: string
+  jam: string
 }
 
-/** Sel waktu `YYYY-MM-DD HH:MM:SS` → `DD-MM-YYYY HH:MM:SS`; bentuk lain apa adanya. */
+/**
+ * Bentuk yang dikenal: ISO `YYYY-MM-DD` (+ `[ T]HH:MM:SS`), stempel Pega `YYYYMMDD[THHMMSS]`, dan
+ * `DD-MM-YYYY` / `DD/MM/YYYY`. Tahun < 1900 (waktu nol Go `0001-01-01`) = tidak ada nilai.
+ */
+function uraiTanggal(v: string | undefined): TanggalTerurai | null {
+  const t = (v ?? '').trim()
+  let m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}:\d{2}:\d{2}))?/.exec(t)
+  let hasil: TanggalTerurai | null = null
+  if (m) {
+    hasil = { yyyy: m[1] ?? '', mm: m[2] ?? '', dd: m[3] ?? '', jam: m[4] ?? '' }
+  } else if ((m = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2}))?/.exec(t))) {
+    hasil = { yyyy: m[1] ?? '', mm: m[2] ?? '', dd: m[3] ?? '', jam: m[4] ? `${m[4]}:${m[5] ?? ''}:${m[6] ?? ''}` : '' }
+  } else if ((m = /^(\d{2})[-/](\d{2})[-/](\d{4})$/.exec(t))) {
+    hasil = { yyyy: m[3] ?? '', mm: m[2] ?? '', dd: m[1] ?? '', jam: '' }
+  }
+  if (hasil === null || hasil.yyyy < '1900') return null
+  return hasil
+}
+
+/**
+ * Sel tanggal → `dd/mm/yyyy` TANPA jam (keputusan work owner 07-10-2026; sama dengan kotak masuk PremiumList
+ * Life). Kosong / tak terurai → tanda kosong.
+ */
+export function selTanggal(v: string | undefined): string {
+  const t = uraiTanggal(v)
+  return t === null ? sel('') : `${t.dd}/${t.mm}/${t.yyyy}`
+}
+
+/**
+ * Sel STEMPEL WAKTU (riwayat keputusan) → `dd/mm/yyyy HH:MM:SS`; tanpa jam → `dd/mm/yyyy`.
+ * Kosong / tak terurai → tanda kosong.
+ */
 export function selWaktu(v: string | undefined): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}:\d{2}:\d{2})/.exec((v ?? '').trim())
-  return m ? `${m[3]}-${m[2]}-${m[1]} ${m[4]}` : sel(v)
+  const t = uraiTanggal(v)
+  if (t === null) return sel('')
+  return t.jam === '' ? `${t.dd}/${t.mm}/${t.yyyy}` : `${t.dd}/${t.mm}/${t.yyyy} ${t.jam}`
 }
 
 /** Sel angka - digit apa adanya, pemisah ribuan, nol ekor dipangkas; negatif tetap bertanda. */
@@ -34,6 +70,70 @@ export function selAngka(v: string | undefined): string {
 /** Label `EDM Type` (`1` Perubahan Data, `3` Batal); nilai lain apa adanya. */
 export function labelEdmType(v: string): string {
   return OPSI_EDM_TYPE[v] ?? sel(v)
+}
+
+/**
+ * Sub-jenis EDM Type baca-saja di kepala kasus (07-10-2026, migrasi 483): hanya yang sesuai EDM Type kasus.
+ * Kasus sebelum 483 (kolom kosong) tampil bertanda kosong, bukan disembunyikan.
+ */
+export function subJenisKasus(k: {
+  edmType: string
+  edmTypePerubahanData?: string
+  edmTypeBatal?: string
+}): ReadonlyArray<readonly [string, string]> {
+  if (k.edmType === '1') return [[BUAT_EDM.edmTypePerubahanData, sel(k.edmTypePerubahanData)]]
+  if (k.edmType === '3') return [[BUAT_EDM.edmTypeBatal, sel(k.edmTypeBatal)]]
+  return []
+}
+
+/** Nama `Premium Method` dari kode `PRO_RATE_TYPE` (1 Single, 2 Annually, 3 Others); lain apa adanya. */
+export function labelMetodePremi(v: string): string {
+  return OPSI_METODE_PREMI[v.trim()] ?? sel(v)
+}
+
+/** Satu medan kepala kasus: label, nilai tampil, dan apakah selebar bagiannya. */
+export type MedanKepala = readonly [label: string, nilai: string, lebar: boolean]
+
+/**
+ * Kepala layar kasus dikelompokkan (keputusan work owner 07-10-2026, pola Premium List Detail): Policy Data,
+ * Parties, Endorsement. Sub-jenis hanya yang sesuai EDM Type (`subJenisKasus`); Description selebar bagian.
+ */
+export function bagianKepalaKasus(
+  kasus: Pick<KasusEDM, 'policyNo' | 'edmType' | 'edmTypePerubahanData' | 'edmTypeBatal' | 'description' | 'edmDate' | 'kepala'>,
+): ReadonlyArray<{ judul: string; medan: readonly MedanKepala[] }> {
+  const k = kasus.kepala
+  return [
+    {
+      judul: KASUS_EDM.bagianPolis,
+      medan: [
+        [BUAT_EDM.policyNo, sel(kasus.policyNo), false],
+        [KASUS_EDM.productName, sel(k.PRODUCT_NAME), true],
+        [KASUS_EDM.productNameId, sel(k.PRODUCT_NAME_ID), false],
+        [KASUS_EDM.type, sel(k.TYPE), false],
+        [KASUS_EDM.reinsuranceSystem, sel(labelTypeCeding(k.TYPE_CEDING ?? '')), false],
+        [KASUS_EDM.classOfBusiness, sel(k.BUSINESS_NAME), false],
+        [KASUS_EDM.premiumMethod, labelMetodePremi(k.PRO_RATE_TYPE ?? ''), false],
+      ],
+    },
+    {
+      judul: KASUS_EDM.bagianPihak,
+      medan: [
+        [KASUS_EDM.ceding, sel(k.CEDING_CO_NAME), true],
+        [KASUS_EDM.sob, sel(k.SOB_NAME), false],
+        [KASUS_EDM.policyHolder, sel(k.POLICY_HOLDER_NAME), true],
+        [KASUS_EDM.marketingOfficer, sel(k.MARKETING_NAME), true],
+      ],
+    },
+    {
+      judul: KASUS_EDM.bagianEndorsement,
+      medan: [
+        [KASUS_EDM.edmType, sel(labelEdmType(kasus.edmType)), false],
+        ...subJenisKasus(kasus).map(([l, n]): MedanKepala => [l, n, false]),
+        [BUAT_EDM.edmDate, selTanggal(kasus.edmDate), false],
+        [KASUS_EDM.description, sel(kasus.description), true],
+      ],
+    },
+  ]
 }
 
 /** Label `Reinsurance System` dari kode `TYPE_CEDING`; kode tak dikenal apa adanya. */

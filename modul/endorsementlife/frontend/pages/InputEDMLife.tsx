@@ -31,20 +31,19 @@ import TerimaKasih from '../components/TerimaKasih'
 import UnggahCSV, { TabelPesanCSV } from '../components/UnggahCSV'
 import { barisUnggahan } from '../csv'
 import { MATA_UANG } from '../kolomKorpus'
-import { BUAT_EDM, GRID_EDM, KASUS_EDM, POLIS_LAMA_EDM, SIMPAN_EDM, UMUM_EDM, UNGGAH_EDM } from '../labels'
+import { GRID_EDM, KASUS_EDM, POLIS_LAMA_EDM, SIMPAN_EDM, UMUM_EDM, UNGGAH_EDM } from '../labels'
 import {
-  PILIHAN_KOSONG,
-  UKURAN_HALAMAN_EDM,
   alihBaris,
   alihSemua,
+  bagianKepalaKasus,
   bolehCentang,
-  labelEdmType,
-  labelTypeCeding,
+  PILIHAN_KOSONG,
   sel,
   selAngka,
   selTanggal,
   tercentang,
   type PilihanHapusEDM,
+  UKURAN_HALAMAN_EDM,
 } from '../tampilan'
 import '../endorsementlife.css'
 
@@ -233,22 +232,8 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
   if (kasus === null) return <Memuat pesan={UMUM_EDM.memuat} />
 
   const k = kasus.kepala
-  const medan: ReadonlyArray<readonly [string, string]> = [
-    [BUAT_EDM.policyNo, kasus.policyNo],
-    [KASUS_EDM.productName, k.PRODUCT_NAME ?? ''],
-    [KASUS_EDM.productNameId, k.PRODUCT_NAME_ID ?? ''],
-    [KASUS_EDM.type, k.TYPE ?? ''],
-    [KASUS_EDM.reinsuranceSystem, labelTypeCeding(k.TYPE_CEDING ?? '')],
-    [KASUS_EDM.classOfBusiness, k.BUSINESS_NAME ?? ''],
-    [KASUS_EDM.sob, k.SOB_NAME ?? ''],
-    [KASUS_EDM.policyHolder, k.POLICY_HOLDER_NAME ?? ''],
-    [KASUS_EDM.premiumMethod, k.PRO_RATE_TYPE ?? ''],
-    [KASUS_EDM.ceding, k.CEDING_CO_NAME ?? ''],
-    [KASUS_EDM.marketingOfficer, k.MARKETING_NAME ?? ''],
-    [KASUS_EDM.edmType, labelEdmType(kasus.edmType)],
-    [KASUS_EDM.description, kasus.description],
-    [BUAT_EDM.edmDate, selTanggal(kasus.edmDate)],
-  ]
+  // Kepala dikelompokkan tiga bagian berjudul (keputusan work owner 07-10-2026) - `bagianKepalaKasus`.
+  const bagian = bagianKepalaKasus(kasus)
   const kolom = kolomGrid(kasus.edmType !== '3')
   const denganCentang = kasus.edmType === '1'
   const terbukaKasus = kasus.status === ''
@@ -258,7 +243,7 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
 
   return (
     <section className="panel edm-kasus">
-      <header className="inbox__kepala">
+      <header className="inbox__kepala edm-kasus__kepala">
         <h2 className="inbox__judul">{KASUS_EDM.judul}</h2>
         <div className="edm-aksi">
           {/* `View Old Policy` - dipindah dari `ShowLifePremiumSummary_EDM` (R02); popup sesuai `.Type`. */}
@@ -267,7 +252,7 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
           </button>
           {/* `Save` b37202: `VIS .EditInput=1` (kasus terbuka), mati bila `.IsJsonPolis=1` b37200. */}
           {terbukaKasus && (
-            <button type="button" className="btn btn--sm" disabled={kasus.sudahSimpan || menyimpan} onClick={() => void simpan()}>
+            <button type="button" className="btn btn--primary btn--sm" disabled={kasus.sudahSimpan || menyimpan} onClick={() => void simpan()}>
               {menyimpan ? UMUM_EDM.menyimpan : SIMPAN_EDM.save}
             </button>
           )}
@@ -276,17 +261,30 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
           </button>
         </div>
       </header>
+      {/* Kotak info tepat di bawah judul (07-10-2026). */}
+      <p className="alert alert--info edm-kasus__info" role="note">
+        {UMUM_EDM.terkunci}
+      </p>
       {galatSimpan !== null && <Gagal galat={galatSimpan} />}
-      <p className="edm-catatan">{UMUM_EDM.terkunci}</p>
-      <dl className="edm-kepala">
-        {medan.map(([label, nilai]) => (
-          <div key={label} className="edm-kepala__medan">
-            <dt>{label}</dt>
-            <dd>{sel(nilai)}</dd>
-          </div>
+      <div className="edm-kasus__tigabagian">
+        {bagian.map((b) => (
+          <section key={b.judul} className="edm-kasus__bagian">
+            <h3 className="edm-subjudul">{b.judul}</h3>
+            <dl className="edm-kasus__grid">
+              {b.medan.map(([label, nilai, lebar]) => (
+                <div key={label} className={lebar ? 'edm-kepala__medan edm-kasus__lebar' : 'edm-kepala__medan'}>
+                  <dt>{label}</dt>
+                  <dd>{nilai}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
         ))}
-      </dl>
-      {denganCentang && terbukaKasus && (
+      </div>
+      {/* Bagian peserta berjudul; tombol CSV menjadi toolbar di baris judul (kondisi aktif tidak berubah). */}
+      <div className="edm-kasus__kepalapeserta">
+        <h3 className="edm-subjudul">{KASUS_EDM.peserta}</h3>
+        {denganCentang && terbukaKasus && (
         <div className="edm-aksi">
           <button type="button" className="btn btn--ghost btn--sm" disabled={kasus.csvTerkunci} onClick={() => setJendelaCSV('unggah')}>
             {UNGGAH_EDM.uploadCsv}
@@ -308,7 +306,8 @@ export default function InputEDMLife({ kasusId, onTutup }: { kasusId: string; on
             </span>
           )}
         </div>
-      )}
+        )}
+      </div>
       {periksa !== null && jendelaCSV === null && <TabelPesanCSV hasil={periksa} />}
       {peserta !== null && peserta.baris.length === 0 && <Kosong pesan={UMUM_EDM.kosong} />}
       {peserta !== null && peserta.baris.length > 0 && (

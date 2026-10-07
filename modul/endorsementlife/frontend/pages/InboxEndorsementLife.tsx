@@ -8,23 +8,26 @@ import { useCallback, useEffect, useState } from 'react'
 import { Gagal, Halaman, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { ambilInbox, type BarisInbox, type HalamanEDM } from '../api'
 import { INBOX_EDM, UMUM_EDM } from '../labels'
-import { UKURAN_HALAMAN_EDM, labelEdmType, sel, selWaktu } from '../tampilan'
+import { UKURAN_HALAMAN_EDM, labelEdmType, sel, selTanggal } from '../tampilan'
 import '../endorsementlife.css'
 
-/** Kepala grid VERBATIM, urut korpus (b8418 … b10052). */
-const KOLOM: readonly string[] = [
+/**
+ * Kepala grid VERBATIM. ⚠️ Urutan TAMPILAN menyimpang dari korpus (b8418 … b10052, `Create Date` b9644 di
+ * antara `Marketing Name` dan `Create Operator`): `Create Date` dipindah tepat sesudah `Case ID` -
+ * keputusan work owner 07-10-2026. Juga 07-10-2026: kolom SOB, Policy Holder, Marketing Name, EDM Type Batal
+ * DIHAPUS, `Endorsement No` diisi `NO_ENDORS` (kosong selama kasus terbuka), bukan nomor polis (R25), dan
+ * kepala `Status` bernama `Work Status` (isi tetap `STATUSS`).
+ * Sel `<td>` mengikuti urutan ini.
+ */
+export const KOLOM_INBOX: readonly string[] = [
   INBOX_EDM.kolomCaseId,
+  INBOX_EDM.kolomCreateDate,
   INBOX_EDM.kolomEndorsementNo,
   INBOX_EDM.kolomType,
   INBOX_EDM.kolomEdmType,
   INBOX_EDM.kolomPolicyNo,
-  INBOX_EDM.kolomSob,
   INBOX_EDM.kolomCeding,
-  INBOX_EDM.kolomPolicyHolder,
-  INBOX_EDM.kolomMarketingName,
-  INBOX_EDM.kolomCreateDate,
   INBOX_EDM.kolomCreateOperator,
-  INBOX_EDM.kolomEdmTypeBatal,
   INBOX_EDM.kolomStatus,
 ]
 
@@ -63,7 +66,7 @@ export default function InboxEndorsementLife({ onBuka, onBuat }: { onBuka: (id: 
           <table className="inbox__tabel">
             <thead>
               <tr>
-                {KOLOM.map((k) => (
+                {KOLOM_INBOX.map((k) => (
                   <th key={k}>{k}</th>
                 ))}
               </tr>
@@ -76,18 +79,14 @@ export default function InboxEndorsementLife({ onBuka, onBuat }: { onBuka: (id: 
                       {b.caseId}
                     </button>
                   </td>
+                  {/* dd/mm/yyyy tanpa jam (07-10-2026); urutan data tetap TGL_INPUT DESC. */}
+                  <td>{selTanggal(b.createDate)}</td>
                   <td>{sel(b.endorsementNo)}</td>
                   <td>{sel(b.type)}</td>
                   <td>{labelEdmType(b.edmType)}</td>
                   <td>{sel(b.policyNo)}</td>
-                  <td>{sel(b.sob)}</td>
                   <td>{sel(b.ceding)}</td>
-                  <td>{sel(b.policyHolder)}</td>
-                  <td>{sel(b.marketingName)}</td>
-                  <td>{selWaktu(b.createDate)}</td>
                   <td>{sel(b.createOperator)}</td>
-                  {/* `A.EdmTypeBatal` b12243 `VIS A.EdmType==3` - opsinya belum ditetapkan (OQ-EDM-005). */}
-                  <td>{b.edmType === '3' ? sel('') : ''}</td>
                   <td>{sel(b.status)}</td>
                 </tr>
               ))}
