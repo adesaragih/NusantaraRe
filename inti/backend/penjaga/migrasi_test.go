@@ -212,6 +212,11 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 	// pengguna), bukan atribut klaim dan bukan dokumen JSON. Pengecualiannya SATU kolom BLOB di SATU tabel, dan
 	// berkas itu tidak boleh memuat CLOB atau JSON.
 	const berkasTemplat = "912_m_template_file"
+	// Ringkasan R/I Rate Life satu tabel (keputusan work owner 07-10-2026): 928 MEMBUANG kolom JSON warisan
+	// M_RATE_LIFE_SUMMARY.JSONDATA - searah dengan penjaga ini. Pengecualiannya SATU perintah di SATU berkas, persis.
+	const berkasBuangJSON, perintahBuangJSON = "928_m_rate_life_summary_satu_tabel",
+		"DROP COLUMN JSONDATA CASCADE CONSTRAINTS"
+	buangJSON := 0
 	dokumenDiOutbox, blobTemplat := 0, 0
 	for nama, isi := range seluruhSQL(t, false) {
 		atas := strings.ToUpper(isi)
@@ -223,12 +228,19 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 			blobTemplat += len(regexp.MustCompile(`(?m)^\s*ISI\s+BLOB\s+NOT NULL,$`).FindAllString(atas, -1))
 			atas = regexp.MustCompile(`(?m)^\s*ISI\s+BLOB\s+NOT NULL,$`).ReplaceAllString(atas, "")
 		}
+		if strings.Contains(nama, berkasBuangJSON) && !strings.Contains(nama, "_down") {
+			buangJSON += strings.Count(atas, perintahBuangJSON)
+			atas = strings.ReplaceAll(atas, perintahBuangJSON, "")
+		}
 		for _, tipe := range []string{" JSON", "CLOB", "BLOB", "JSON_KLAIM"} {
 			if strings.Contains(atas, tipe) {
 				t.Errorf("%s memuat %q - atribut klaim harus menjadi kolom bernama",
 					nama, tipe)
 			}
 		}
+	}
+	if buangJSON != 1 {
+		t.Errorf("928 memuat %d perintah %q, mau tepat 1", buangJSON, perintahBuangJSON)
 	}
 	if blobTemplat != 1 {
 		t.Errorf("M_TEMPLATE_FILE memuat %d kolom ISI BLOB, mau tepat 1", blobTemplat)
