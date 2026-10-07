@@ -261,7 +261,7 @@ export const BUSINESS_MCRL = {
   formBusinessCode: 'BUSINESS CODE',
   /** b3898 `<pyLabelFieldValue>` - autocomplete `BrowseBusinessLife_RD`. */
   formBusinessName: 'BUSINESS NAME',
-  /** b4351 `<pyLabelFieldValue>` - autocomplete `BrowseRateLifeSummary` (view `RATE_LIFE_SUMMARY`, K1). */
+  /** b4351 `<pyLabelFieldValue>` - autocomplete `BrowseRateLifeSummary` (tabel `M_RATE_LIFE_SUMMARY`, K1). */
   formRiRate: 'R/I RATE',
   /** b4849 `<pyLabel>` - tombol b4732, tampil bila `RIRATEID != ''` (`localAction ViewRate`). */
   viewRateForm: 'View Rate',

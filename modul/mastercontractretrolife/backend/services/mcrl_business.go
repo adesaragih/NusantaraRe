@@ -7,7 +7,7 @@ package services
 //	langkah 3 b589   wajib BIZCODE, BIZNAME, RIRATEID, RIRATE -> "All value cannot be empty." (b293)
 //	BUSINESS NAME    autocomplete `BrowseBusinessLife_RD` mengisi BIZCODE; nama = master NOTE
 //	R/I RATE         `RIRATE` = nama tabel rate, TEKS apa adanya (R7); autocomplete `BrowseRateLifeSummary`
-//	                 (view `RATE_LIFE_SUMMARY`, K1 01-10-2026) mengisi RIRATEID; pilihan BARU wajib ada di view itu
+//	                 (tabel `M_RATE_LIFE_SUMMARY`, K1 01-10-2026) mengisi RIRATEID; pilihan BARU wajib ada di view itu
 //	salin-semua 1    CARI1 <- TREATYYEARID (tahun kontrak asal)
 //	salin-semua 2    `GetTreatyContract_life`: kontrak `idtreatyyear =` tahun itu
 //	salin-semua 3.1  `.REINSTYPEID == Param.REINSTYPEID` WhenTrue 3 = LEWATI -> sasaran = jenis BERBEDA (R2)
@@ -82,7 +82,7 @@ func (l *Layanan) namaBusiness(ctx context.Context, kode string, pilihanBaru boo
 }
 
 // periksaRate - RIRATEID pilihan BARU (business baru, atau RIRATEID yang diganti) wajib ada di
-// `RATE_LIFE_SUMMARY`. ⚠️ Penyimpangan sadar: Pega tidak memeriksa - di layarnya satu-satunya pengisi
+// `M_RATE_LIFE_SUMMARY`. ⚠️ Penyimpangan sadar: Pega tidak memeriksa - di layarnya satu-satunya pengisi
 // RIRATEID adalah autocomplete (`InputBusinessLifeReinsurers.xml` b4527 `pyPropertyTarget`
 // `InputBusinessLife.RIRATEID`), jadi ID di luar view hanya mungkin dari klien lain. Nilai yang sudah
 // tersimpan tidak diperiksa ulang.
