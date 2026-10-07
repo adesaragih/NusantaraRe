@@ -254,8 +254,18 @@ func (g *Gudang) SimpanHalaman(_ context.Context, _ *db.Tx, id string, h *models
 	}
 	s := models.ProyeksiKatalog(h)
 	Normalkan(s)
-	// SuggestList tidak disimpan (OQ-CP-17), sama dengan repository.
-	s.SetelDaftar(models.DaftarRiwayat, nil)
+	// SuggestList hanya bertambah (T_VIEW_SUGGEST): baris ber-penanda Baru diberi NO berikutnya.
+	riw := models.SalinDaftar(lama.AmbilDaftar(models.DaftarRiwayat))
+	for _, b := range h.AmbilDaftar(models.DaftarRiwayat) {
+		if b[models.PropRiwayatBaru] == "1" {
+			nb := b.Salin()
+			delete(nb, models.PropRiwayatBaru)
+			nb["No"] = fmt.Sprintf("%d", len(riw)+1)
+			riw = append(riw, nb)
+			delete(b, models.PropRiwayatBaru)
+		}
+	}
+	s.SetelDaftar(models.DaftarRiwayat, riw)
 	// KOMITE_ID tidak pernah ditulis dari halaman (kolomnya milik penautan komite, OQ-CP-16).
 	komite := map[string]string{}
 	for _, b := range lama.AmbilDaftar(models.DaftarAdjustment) {

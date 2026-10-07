@@ -296,3 +296,19 @@ func TestPenyerahanKomiteNonaktifOQ16(t *testing.T) {
 		t.Fatalf("grid komite baris berkomite %d baris, mau 0", n)
 	}
 }
+
+// Tambah / hapus baris Spreading Claim nonaktif (keputusan work owner 07-10-2026): grid tanpa ikon bawaan aktif; tombol
+// ber-activity (AddSpreading_Act / DeleteSpreading_Act tidak diekspor) tampil nonaktif.
+func TestSpreadingTanpaTambahHapusAktif(t *testing.T) {
+	h := models.HalamanBaru()
+	h.SetelDaftar(models.DaftarSpreading, []models.Baris{{"TreatyName": "UJI-QS"}})
+	ts := models.Evaluasi(h, models.LayarOutstanding(), false)
+	if models.AksiTerbuka(ts, models.DaftarSpreading+"#tambah", 0) || models.AksiTerbuka(ts, "AddSpreading", 0) ||
+		models.AksiTerbuka(ts, "DeleteSpreading", 1) {
+		t.Fatalf("tambah / hapus spreading terbuka")
+	}
+	g := cariTata(ts, models.DaftarSpreading)
+	if g == nil || g.Tambah == nil || !g.Tambah.Nonaktif {
+		t.Fatalf("tombol Add spreading mau tampil nonaktif: %+v", g)
+	}
+}

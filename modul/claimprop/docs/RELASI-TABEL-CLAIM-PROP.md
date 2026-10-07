@@ -191,9 +191,9 @@ dengan `CLAIM_ID`.
 
 #### Relasi 9 — `T_VIEW_SUGGEST` ⭐ terbukti lewat `SuggestList`
 
-> ⚠️ **RALAT 07-10-2026** — relasi 9 **tidak dibuat**: migrasi `532` (`T_VIEW_SUGGEST.CLAIM_ID` + CHECK satu induk)
-> dicabut karena baris kolomnya di STRUKTUR PremiumList Life memerahkan uji modul itu (prompt §6 butir 2). Claim History
-> tidak disimpan sampai work owner memutuskan tempatnya — OQ-CP-17 (`docs/OQ.md`). Butir P 8 di bawah ikut OQ itu.
+> ⚠️ **RALAT 07-10-2026** — relasi 9 **dibuat** (migrasi `532`, keputusan work owner "1 tabel aja gabung life dan non life"), dengan
+> ON DELETE **CASCADE** seperti diagram sheet Claim Prop F38-F40 — bukan "JANGAN cascade" di tabel atas: riwayat
+> hidup bersama klaimnya. CHECK `CK_VS_SATU_INDUK`: tepat satu dari `PREMIUM_LIST_ID` / `CLAIM_ID` terisi.
 
 | | |
 | --- | --- |

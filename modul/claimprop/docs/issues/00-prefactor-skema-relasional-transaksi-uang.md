@@ -1,7 +1,7 @@
 # 00: PREFACTOR — skema relasional, batas transaksi penomoran, dan satu jalur uang
 
-**Status:** dibangun 07-10-2026 — migrasi 520–531 dan 533 (532 dicabut, OQ-CP-17); procedure `PEGA_JSON_*` tidak dipanggil (RALAT di bawah); pemuat data lama `backend/alat/pemuatlama` diuji-kering di DEV — RALAT 07-10-2026 (semula `ready-for-agent`)
-**AC yang dipegang (RALAT 07-10-2026, prompt §7 butir 4):** AC 132 (ADR-0009, migrasi penuh tanpa koeksistensi) — dipegang pemuat data lama `backend/alat/pemuatlama` (uji-kering DEV 07-10-2026: 2.451 kasus, 2.032 siap, 419 menunggu OQ-CP-18).
+**Status:** dibangun 07-10-2026 — migrasi 520–533; procedure `PEGA_JSON_*` tidak dipanggil (RALAT di bawah); pemuat data lama `backend/alat/pemuatlama` diuji-kering di DEV — RALAT 07-10-2026 (semula `ready-for-agent`)
+**AC yang dipegang (RALAT 07-10-2026, prompt §7 butir 4):** AC 132 (ADR-0009, migrasi penuh tanpa koeksistensi) — dipegang pemuat data lama `backend/alat/pemuatlama` (uji-kering DEV 07-10-2026: 2.451 kasus, 2.032 siap, 419 ditunda ke modul Komite Claim Prop).
 **Blocked by:** None (can start immediately)
 **Menutup:** AC 1–28 · AC 105 · AC 106 · AC 107 · AC 123 · AC 124 · **AC 128** · **AC 129** *(35 AC)*
 

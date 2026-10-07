@@ -53,7 +53,7 @@ func jalankanPemuat(t *testing.T, g *tiruan.Gudang, tulis bool) (services.Ringka
 func TestPemuatUjiKeringTidakMenulis(t *testing.T) {
 	g := gudangLama()
 	r, arsip, galat := jalankanPemuat(t, g, false)
-	if r.Kasus != 3 || r.Baris != 4 || r.Riwayat != 1 || r.DariJSON != 1 || r.Siap != 2 || r.Gagal != 1 || r.Dimuat != 0 {
+	if r.Kasus != 3 || r.Baris != 4 || r.Riwayat != 1 || r.DariJSON != 1 || r.Siap != 2 || r.Gagal != 0 || r.Ditunda != 1 || r.Dimuat != 0 {
 		t.Fatalf("ringkasan uji-kering %+v", r)
 	}
 	if r.PerTahap[models.StatusSelesai] != 1 || r.PerTahap[models.TahapAcceptation] != 1 {
@@ -66,7 +66,7 @@ func TestPemuatUjiKeringTidakMenulis(t *testing.T) {
 		!adaBaris(t, arsip, "UJI-CLMP-9", "ClaimData.DaftarObjek", "UJI-OBJEK", models.SebabTanpaKolom) {
 		t.Fatalf("arsip medan:\n%s", arsip)
 	}
-	if !adaBaris(t, galat, "UJI-CLMP-8", "STS_REJECT", "1", models.SebabStsTakDikenal) || r.Selesai() {
+	if !adaBaris(t, galat, "UJI-CLMP-8", "STS_REJECT", "1", models.SebabStsDitunda) || !r.Selesai() {
 		t.Fatalf("galat:\n%s (selesai %v)", galat, r.Selesai())
 	}
 	if !strings.Contains(r.Teks(), "uji-kering") {
@@ -77,7 +77,7 @@ func TestPemuatUjiKeringTidakMenulis(t *testing.T) {
 func TestPemuatJalankanMenulisLaluMelewatiUlang(t *testing.T) {
 	g := gudangLama()
 	r, _, _ := jalankanPemuat(t, g, true)
-	if r.Dimuat != 2 || r.Gagal != 1 || r.Dilewati != 0 {
+	if r.Dimuat != 2 || r.Gagal != 0 || r.Ditunda != 1 || r.Dilewati != 0 {
 		t.Fatalf("ringkasan jalankan %+v", r)
 	}
 	k7 := g.Kasus["UJI-CLMP-7"]

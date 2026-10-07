@@ -125,7 +125,6 @@ func TestUraiKlaimLama(t *testing.T) {
 		cd + "SpreadingRisk(1).TreatyName":                     models.SebabTidakDiimpor,
 		cd + "InterestListDtl(1).ObjectName":                   models.SebabTidakDiimpor,
 		cd + "PaymentData.Nilai":                               models.SebabTidakDiimpor,
-		cd + "SuggestList(1).CommentSuggest":                   models.SebabRiwayat,
 		cd + "Attachment(1).IMAGEID":                           models.SebabLampiran,
 		cd + "ClaimComitee(1).KomiteID":                        models.SebabKomite,
 		models.JalurAdj(1, "ComiteeClaim(1).IDKomite"):         models.SebabKomite,
@@ -140,6 +139,13 @@ func TestUraiKlaimLama(t *testing.T) {
 		if m.Jalur == cd+"NoClaim" || m.Jalur == cd+"EstimationList(1).GrossEstimationPct" {
 			t.Errorf("medan berkolom dilaporkan dibuang: %+v", m)
 		}
+	}
+	if r := h.AmbilDaftar(models.DaftarRiwayat); len(r) != 1 || r[0]["CommentSuggest"] != "UJI-RIWAYAT" ||
+		r[0][models.PropRiwayatBaru] != "1" {
+		t.Fatalf("SuggestList lama mau dibawa sebagai riwayat baru: %+v", r)
+	}
+	if s := sebabUntuk(dibuang, cd+"SuggestList(1).CommentSuggest"); s != "" {
+		t.Errorf("riwayat dilaporkan dibuang: %q", s)
 	}
 	if g := models.GalatNilaiKatalog(h); len(g) != 0 {
 		t.Fatalf("dua format tanggal Pega dan angka teks mau sah (AC 12): %+v", g)

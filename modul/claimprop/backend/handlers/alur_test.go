@@ -187,9 +187,24 @@ func TestAlurPenuhSampaiResolved(t *testing.T) {
 	langkah("CountPersen", 1, "", map[string]string{models.JalurAnak(models.DaftarLossAlloc, 1, "SharePercentage"): "100"})
 	langkah("AddEstimation", 0, "", nil)
 	langkah("CountEstimation", 1, "", map[string]string{models.JalurAnak(models.DaftarEstimasi, 1, "Type"): "1"})
-	langkah(models.DaftarSpreading+"#tambah", 0, "", nil)
+	// tambah / hapus baris Spreading Claim nonaktif (keputusan work owner 07-10-2026): dipanggil langsung pun ditolak
+	kode, out := u.aksi(id, admin, "", models.DaftarSpreading+"#tambah", 0, "", nil)
+	u.wajib(kode, http.StatusBadRequest, out, "tambah baris spreading")
+	// tanpa baris spreading, Save to issue RNM ditolak ProteksiData_act langkah 5 - dan layar tidak dapat
+	// melahirkannya. Kasus hasil pemuat data lama membawa barisnya: fixture setara.
+	kode, out = u.aksi(id, admin, "", "SaveOutstanding", 0, "", nil)
+	u.wajib(kode, http.StatusUnprocessableEntity, out, "Save to issue RNM tanpa baris spreading")
+	if !strings.Contains(strings.Join(teks(out["pesan"]), ";"), models.PesanIsiSpreading) {
+		t.Fatalf("pesan tanpa spreading: %v", out["pesan"])
+	}
+	h0 := u.g.Halaman(id)
+	h0.SetelDaftar(models.DaftarSpreading, []models.Baris{{"CurrencyID": matauang, "Currency": "UJA"}})
+	u.g.SetelHalaman(id, h0)
 	langkah("CountSpreading", 1, "", map[string]string{models.JalurAnak(models.DaftarSpreading, 1, "TreatyName"): "UJI-QS",
 		models.JalurAnak(models.DaftarSpreading, 1, "SharePercentage"): "100"})
+	if s := u.g.Halaman(id).AmbilDaftar(models.DaftarSpreading); len(s) != 1 || s[0]["SharePercentage"] != "100" {
+		t.Fatalf("baris Spreading Claim tersimpan %+v, mau satu baris share 100", s)
+	}
 
 	h := u.g.Halaman(id)
 	if v := h.AmbilDaftar(models.DaftarLossAlloc)[0]["TreatyType"]; v != jenisQSUji {
@@ -202,8 +217,11 @@ func TestAlurPenuhSampaiResolved(t *testing.T) {
 		t.Fatalf("CountEstimation: IsCFS %q, mau 1", h.Ambil("IsCFS"))
 	}
 
-	out := langkah("SaveOutstanding", 0, "", nil)
+	out = langkah("SaveOutstanding", 0, "", nil)
 	h = u.g.Halaman(id)
+	if !riwayatMemuat(h, models.TeksSaveOutstanding) {
+		t.Fatalf("Claim History tidak menyimpan %q: %+v", models.TeksSaveOutstanding, h.AmbilDaftar(models.DaftarRiwayat))
+	}
 	if no := h.Ambil(models.CD + "NoClaim"); no != "UJI-K12.05.2026.T00001" {
 		t.Fatalf("nomor klaim %q", no)
 	}
@@ -223,7 +241,7 @@ func TestAlurPenuhSampaiResolved(t *testing.T) {
 		t.Errorf("non-produksi tetap mengantre efek keluar: %v", u.g.Efek)
 	}
 	// sekali lagi tanpa estimasi baru: tombol nonaktif (IsCFS kosong)
-	kode, out := u.aksi(id, admin, "", "SaveOutstanding", 0, "", nil)
+	kode, out = u.aksi(id, admin, "", "SaveOutstanding", 0, "", nil)
 	u.wajib(kode, http.StatusConflict, out, "Save to issue RNM tanpa estimasi baru")
 
 	langkah("CheckNopolicy", 0, "", nil)
@@ -272,6 +290,16 @@ func TestAlurPenuhSampaiResolved(t *testing.T) {
 	}
 	kode, out = kerja("Simpan", 0, "", nil)
 	u.wajib(kode, http.StatusConflict, out, "tulis ke kasus tertutup")
+}
+
+// riwayatMemuat - baris SuggestList tersimpan berkomentar `isi` (tanpa penanda baris baru).
+func riwayatMemuat(h *models.Halaman, isi string) bool {
+	for _, b := range h.AmbilDaftar(models.DaftarRiwayat) {
+		if b["CommentSuggest"] == isi && b[models.PropRiwayatBaru] == "" && b["No"] != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func teks(v any) []string {

@@ -58,9 +58,9 @@
 | tambah / hapus baris Estimation | `AddEstimation_Act` / `DeleteEstimation_Act` (dis `PrintFaceClaim==1`) | 07 | **dibangun** |
 | tambah baris Spreading Claim | `AddSpreading_Act` (**tidak diekspor**) | 06 | **nonaktif-OQ** OQ-CP-01 |
 | hapus baris Spreading Claim (ikon baris) | `DeleteSpreading_Act` (**tidak diekspor**, dis `IsOldData='Yes'`) | 06 | **nonaktif-OQ** OQ-CP-01 |
-| ikon grid standar Spreading List (tambah / hapus bawaan) | `pzPegaDefaultGridIcons` ("always"), tanpa activity | 06 | **dibangun** — keputusan menunggu work owner (OQ.md, baris ikon grid standar) |
+| ikon grid standar Spreading List (tambah / hapus bawaan) | `pzPegaDefaultGridIcons` ("always"), tanpa activity | 06 | **tidak dibangun** — tambah / hapus spreading dinonaktifkan (keputusan work owner 07-10-2026) |
 | tombol tanpa label di samping RNMShareP | vis NEVER | — | tidak tampil di XML |
-| grid "Claim History" (SuggestList) | — | 14 | **dibangun, kosong** — OQ-CP-17 |
+| grid "Claim History" (SuggestList) | — | 14 | **dibangun** — `T_VIEW_SUGGEST` (keputusan work owner 07-10-2026) |
 
 ## 3. Section `InputAcceptation` (Assignment1) dan sub-section-nya
 
@@ -152,8 +152,8 @@ Dihitung dari 73 baris tabel §1–§6a (baris berstatus campuran dihitung menur
 
 | Status | Cacah baris |
 | --- | --- |
-| dibangun | 43 |
+| dibangun | 42 |
 | sebagian (grid komite, OQ-CP-16) | 1 |
 | nonaktif-OQ | 14 |
-| tidak tampil di XML / bukan data / tidak dibangun (OQ) | 13 |
+| tidak tampil di XML / bukan data / tidak dibangun (OQ atau keputusan) | 14 |
 | di luar lingkup | 2 baris + seluruh §7 |

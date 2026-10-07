@@ -45,6 +45,4 @@ export const CP = {
   save: 'Save',
   cancel: 'Cancel',
   totalOutstanding: 'Total Outstanding',
-  tambahBaris: '+',
-  hapusBaris: '−',
 } as const

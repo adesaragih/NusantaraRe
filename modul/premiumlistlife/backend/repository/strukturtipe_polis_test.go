@@ -154,6 +154,12 @@ func bacaDDLPolis(t *testing.T) (map[string]map[string]kolomDDL, map[string]map[
 	return kolom, fk, idx
 }
 
+// kolomModulLain - kolom tabel PremiumList Life yang DIBUAT migrasi modul lain (di luar `berkasMigrasi` modul ini):
+// barisnya tetap dihitung, tetapi tipe / null / FK-nya dijaga modul pembuatnya.
+var kolomModulLain = map[string]string{
+	"T_VIEW_SUGGEST.CLAIM_ID": "Claim Prop migrasi 532 - keputusan work owner 07-10-2026 \"1 tabel aja gabung life dan non life\"",
+}
+
 // tipeCocok menjawab apakah kosakata STRUKTUR sepadan dengan tipe DDL.
 func tipeCocok(struktur, ddl string) bool {
 	switch struktur {
@@ -183,12 +189,13 @@ func TestMigrasi050Sampai056TipeNullFKIndexSesuaiStruktur(t *testing.T) {
 	// ⛔ 242 sejak 059-062 isian penawaran (01-10-2026): +17 kolom T_PREMIUM_LIST
 	// (8 di 059 isian, 7 di 060, JENIS_ASURANSI 061, STATUS_PENAWARAN 062).
 	// ⛔ 243 sejak 064 (03-10-2026): T_PREMIUM_LIST_SUMMARY.PL_NUMBER.
+	// ⛔ 244 sejak claimprop 532 (07-10-2026): T_VIEW_SUGGEST.CLAIM_ID (kolomModulLain).
 	total := 0
 	for _, k := range struktur {
 		total += len(k)
 	}
-	if len(struktur) != 7 || total != 243 {
-		t.Fatalf("STRUKTUR terbaca %d tabel / %d kolom, mau 7 / 243; pengurainya rusak, "+
+	if len(struktur) != 7 || total != 244 {
+		t.Fatalf("STRUKTUR terbaca %d tabel / %d kolom, mau 7 / 244; pengurainya rusak, "+
 			"atau STRUKTUR berubah - perbarui angka ini dengan sadar", len(struktur), total)
 	}
 	for tab, kol := range struktur {
@@ -203,6 +210,9 @@ func TestMigrasi050Sampai056TipeNullFKIndexSesuaiStruktur(t *testing.T) {
 			}
 		}
 		for c, s := range kol {
+			if _, lain := kolomModulLain[tab+"."+c]; lain {
+				continue
+			}
 			k, ada := d[c]
 			if !ada {
 				t.Errorf("%s.%s ada di STRUKTUR, tidak di DDL", tab, c)

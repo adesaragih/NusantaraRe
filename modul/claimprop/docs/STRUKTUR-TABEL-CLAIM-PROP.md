@@ -130,7 +130,7 @@ lintas-lini, bukan definisi ulang tabelnya. ⚠️ **Sepuluh di antaranya dibawa
 | `T_KOMITE_KOMITELIST` | ⛔ **sudah terkunci**. **Nol** hubungan langsung ke tabel Claim Prop — ia anak `T_GENERAL_KOMITE` |
 
 > ⚠️ **RALAT 07-10-2026** — kalimat lama: *"`T_VIEW_SUGGEST` — tidak ketemu di korpus `Claim Prop` maupun `Komite Claim Prop` … `[terbuka]` apa perannya bagi lini PROP"* `T_VIEW_SUGGEST` **ketemu** sebagai halaman `SuggestList` (78 kemunculan di 4 berkas; RELASI §B6).
-> Kolom `CLAIM_ID`-nya (keputusan "Tabel bersama") **dibatalkan** 07-10-2026 — OQ-CP-17.
+> Kolom `CLAIM_ID`-nya dipasang (migrasi `532`, keputusan work owner 07-10-2026 "1 tabel aja gabung life dan non life").
 
 ### T5 · ⚠️ Tabel kesebelas: jejak audit — **BELUM PUNYA NAMA**
 
@@ -711,10 +711,9 @@ bab di bawah inilah yang berlaku. Kolom Claim Prop di tabel bersama `T_GENERAL_C
 dicatat di dokumen pemiliknya, bukan di sini, supaya satu tabel digambarkan satu dokumen: bab
 `## T_GENERAL_CLAIM` di `modul/claimlife/docs/STRUKTUR-TABEL-CLAIM-LIFE.md`.
 
-⛔ **`T_VIEW_SUGGEST.CLAIM_ID` dibatalkan 07-10-2026 (OQ-CP-17).** Baris kolomnya di STRUKTUR PremiumList Life
-memerahkan uji modul itu (`TestMigrasi050Sampai056TipeNullFKIndexSesuaiStruktur` mengunci 243 kolom), dan
-aturan prompt §6.2 mewajibkan uji pemilik tabel bersama tetap hijau. Migrasi `532` dicabut; riwayat
-`.ClaimData.SuggestList` ("Claim History") tidak disimpan sampai work owner memutuskan tempatnya.
+`T_VIEW_SUGGEST.CLAIM_ID` (migrasi `532`) dicatat di bab `## T_VIEW_SUGGEST`
+`modul/premiumlistlife/docs/STRUKTUR-TABEL-PREMIUMLIST-LIFE.md` — keputusan work owner 07-10-2026 "1 tabel aja gabung life dan non life".
+(Sempat dicabut pada hari yang sama karena uji PremiumList Life mengunci 243 kolom; uji itu kini menghitung 244.)
 
 Uang, persen, share, dan kurs `NUMBER(38,10)` (keputusan work owner 07-10-2026).
 

@@ -1,7 +1,8 @@
 package repository
 
 // Untuk apa berkas ini: HALAMAN <-> TABEL. Satu halaman kerja klaim disimpan ke T_GENERAL_CLAIM (kolom katalog), tujuh
-// tabel anak T_CLAIM_*, dan T_CLAIM_ADJUSTMENT beserta tiga tabel cucunya - SEMUA di dalam transaksi pemanggil, digerakkan `models.TabelHeaderKlaim` / `TabelAnakKlaim` / `TabelAdjustment` /
+// tabel anak T_CLAIM_*, T_CLAIM_ADJUSTMENT beserta tiga tabel cucunya, dan riwayat T_VIEW_SUGGEST - SEMUA di dalam
+// transaksi pemanggil, digerakkan `models.TabelHeaderKlaim` / `TabelAnakKlaim` / `TabelAdjustment` /
 // `TabelCucuAdjustment`.
 //
 //   - Tabel anak (tanpa rujukan dari luar): hapus lalu tulis ulang, NOURUT = urutan baris (1..n).
@@ -9,11 +10,15 @@ package repository
 //     disisipkan, baris yang hilang dihapus (tabel cucu ikut ON DELETE CASCADE). Baris yang sudah punya KOMITE_ID tidak
 //     pernah dihapus (T_GENERAL_KOMITE.ADJUSTMENT_ID menunjuknya). NOURUT ditulis dua fase (negatif dulu) supaya
 //     UNIQUE (CLAIM_ID, NOURUT) tidak bertabrakan saat urutan bergeser.
-//   - SuggestList ("Claim History") TIDAK disimpan: CLAIM_ID di T_VIEW_SUGGEST dibatalkan 07-10-2026 (OQ-CP-17).
+//   - T_VIEW_SUGGEST (tabel bersama PremiumList Life, keputusan work owner 07-10-2026 "1 tabel aja"): HANYA
+//     BERTAMBAH - baris SuggestList ber-penanda `Baru` disisipkan dengan NO berikutnya per klaim; baris lama tidak
+//     disentuh.
 
 import (
 	"context"
+	"crypto/md5"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
@@ -46,8 +51,107 @@ func (g *Gudang) SimpanHalaman(ctx context.Context, tx *db.Tx, id string, h *mod
 	if err := g.simpanAdjustment(ctx, tx, id, h); err != nil {
 		return err
 	}
-	// SuggestList ("Claim History") tidak disimpan: CLAIM_ID di T_VIEW_SUGGEST dibatalkan 07-10-2026 (OQ-CP-17).
+	return g.sisipRiwayat(ctx, tx, id, h)
+}
+
+// sqlNomorRiwayat / sqlSisipRiwayat / sqlBacaRiwayat - riwayat klaim di T_VIEW_SUGGEST (pola PremiumList Life
+// `sqlNomorSuggestBerikut` / `sqlSisipSuggest`, DISALIN bukan diimpor).
+func sqlNomorRiwayat(tabel string) string {
+	return fmt.Sprintf(`SELECT NVL(MAX(NO), 0) + 1 FROM %s WHERE CLAIM_ID = :1`, tabel)
+}
+
+func sqlSisipRiwayat(tabel string) string {
+	return fmt.Sprintf(`INSERT INTO %s (ID, CLAIM_ID, NO, DATE_SUGGEST, PIC_SUGGEST, IS_CEDING_CONFIRM, COMMENT_SUGGEST)
+		VALUES (:1, :2, :3, TO_DATE(:4, '%s'), :5, :6, :7)`, tabel, fmtTanggal)
+}
+
+func sqlBacaRiwayat(tabel string) string {
+	return fmt.Sprintf(`SELECT TO_CHAR(NO), %s, PIC_SUGGEST, IS_CEDING_CONFIRM, COMMENT_SUGGEST
+		  FROM %s WHERE CLAIM_ID = :1 ORDER BY NO`, fmt.Sprintf(db.FmtTanggalOracle, "DATE_SUGGEST"), tabel)
+}
+
+// PengenalRiwayat - `T_VIEW_SUGGEST.ID` riwayat klaim: 32 heksa deterministik dari (klaim, NO), pola
+// `PengenalSuggest` PremiumList Life (disalin). Masukannya berawalan ID klaim, maka tidak pernah sama dengan pengenal
+// riwayat penawaran.
+func PengenalRiwayat(klaimID string, no int) string {
+	sum := md5.Sum([]byte(klaimID + "\x00suggest\x00" + strconv.Itoa(no)))
+	return strings.ToUpper(hex.EncodeToString(sum[:]))
+}
+
+// sisipRiwayat - baris SuggestList ber-penanda `Baru` disisipkan (NO berikutnya per klaim), penandanya dibuang.
+func (g *Gudang) sisipRiwayat(ctx context.Context, tx *db.Tx, id string, h *models.Halaman) error {
+	var baru []models.Baris
+	for _, b := range h.AmbilDaftar(models.DaftarRiwayat) {
+		if b[models.PropRiwayatBaru] == "1" {
+			baru = append(baru, b)
+		}
+	}
+	if len(baru) == 0 {
+		return nil
+	}
+	tabel, err := g.db.Qualify("T_VIEW_SUGGEST")
+	if err != nil {
+		return err
+	}
+	qNo, q := sqlNomorRiwayat(tabel), sqlSisipRiwayat(tabel)
+	for _, x := range []string{qNo, q} {
+		if err := db.PeriksaSQL(x); err != nil {
+			return err
+		}
+	}
+	var noTeks sql.NullString
+	if err := tx.QueryRowContext(ctx, qNo, id).Scan(&noTeks); err != nil {
+		return fmt.Errorf("repository: membaca nomor riwayat klaim: %w", err)
+	}
+	no, err := strconv.Atoi(strings.TrimSpace(noTeks.String))
+	if err != nil {
+		return fmt.Errorf("repository: nomor riwayat klaim %q: %w", noTeks.String, err)
+	}
+	for _, b := range baru {
+		var tgl any
+		if t, ok := models.UraiTanggal(b["DateSuggest"]); ok {
+			tgl = t.Format(utils.TanggalWaktu)
+		}
+		hasil, err := tx.ExecContext(ctx, q, PengenalRiwayat(id, no), id, no, tgl, teksAtauNil(potong(b["PICSuggest"], 255)),
+			teksAtauNil(potong(b["IsCedingConfirm"], 255)), teksAtauNil(potong(b["CommentSuggest"], 255)))
+		if err != nil {
+			return fmt.Errorf("repository: menyisipkan riwayat klaim: %w", err)
+		}
+		if err := db.PastikanSatuBaris(hasil, "riwayat klaim"); err != nil {
+			return err
+		}
+		b["No"] = strconv.Itoa(no)
+		delete(b, models.PropRiwayatBaru)
+		no++
+	}
 	return nil
+}
+
+// bacaRiwayat - riwayat klaim urut NO.
+func (g *Gudang) bacaRiwayat(qn func(string, ...any) (*sql.Rows, error), id string) ([]models.Baris, error) {
+	tabel, err := g.db.Qualify("T_VIEW_SUGGEST")
+	if err != nil {
+		return nil, err
+	}
+	q := sqlBacaRiwayat(tabel)
+	if err := db.PeriksaSQL(q); err != nil {
+		return nil, err
+	}
+	rows, err := qn(q, id)
+	if err != nil {
+		return nil, fmt.Errorf("repository: membaca riwayat klaim: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	var out []models.Baris
+	for rows.Next() {
+		var n [5]sql.NullString
+		if err := rows.Scan(&n[0], &n[1], &n[2], &n[3], &n[4]); err != nil {
+			return nil, fmt.Errorf("repository: memindai riwayat klaim: %w", err)
+		}
+		out = append(out, models.Baris{"No": n[0].String, "DateSuggest": n[1].String, "PICSuggest": n[2].String,
+			"IsCedingConfirm": n[3].String, "CommentSuggest": n[4].String})
+	}
+	return out, rows.Err()
 }
 
 func (g *Gudang) simpanHeader(ctx context.Context, tx *db.Tx, id string, h *models.Halaman) error {
@@ -367,6 +471,11 @@ func (g *Gudang) BacaHalaman(ctx context.Context, tx *db.Tx, id string) (*models
 			h.SetelDaftar(models.JalurAdj(i+1, c.Daftar), rows)
 		}
 	}
+	riw, err := g.bacaRiwayat(qn, id)
+	if err != nil {
+		return nil, err
+	}
+	h.SetelDaftar(models.DaftarRiwayat, riw)
 	return h, nil
 }
 

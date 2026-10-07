@@ -40,6 +40,12 @@ nol `INSERT` — menu datar 30-09-2026) saat modul mendapat layar pertamanya, di
 `backend/migrations/` modul ini sendiri — bentuk SQL-nya di `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`
 bab 6. Nomor selalu tiga digit.
 
+## Pernyataan untuk penjaga
+
+⛔ **Dibaca penjaga** `inti/backend/penjaga` — satu jenis pernyataan per judul `###`, satu baris per butir (pola
+MODUL.md Claim Life). Sebelum 07-10-2026 kedua judul di bawah berada di bab Migrasi sehingga TIDAK terbaca penjaga
+(mutasi 532 tanpa CASCADE tetap hijau); dipindah ke bab ini.
+
 ### Kaskade ON DELETE CASCADE
 
 Kaskade HANYA pada berkas migrasi modul ini yang berawalan di bawah; berkas lain modul ini tanpa
@@ -58,22 +64,29 @@ Kaskade HANYA pada berkas migrasi modul ini yang berawalan di bawah; berkas lain
 | `529_` | T_CLAIM_ADJ_SPREADING.ADJUSTMENT_ID -> T_CLAIM_ADJUSTMENT - `.AdjustmentList(n).SpreadingAdjustment` |
 | `530_` | T_CLAIM_ADJ_QUOTA_SHARE.ADJUSTMENT_ID -> T_CLAIM_ADJUSTMENT - `.AdjustmentList(n).SpreadingQuotaShare` |
 | `531_` | T_CLAIM_ADJ_LOSS_ALLOCATION.ADJUSTMENT_ID -> T_CLAIM_ADJUSTMENT - `.AdjustmentList(n).LossAllocation` |
+| `532_` | T_VIEW_SUGGEST.CLAIM_ID -> T_GENERAL_CLAIM - riwayat `.ClaimData.SuggestList` (induk kedua, CHECK tepat satu) |
 
-### Nama terlarang
+### Nama terlarang di migrasi
 
-`FLAG_ON_GOING_COMMITTEE` (`AddKomiteTreatyChild_ACT` langkah 3 `.FlagOnGoingCommitte`) DIBUANG (keputusan work owner
-19-09-2026) - tidak ada kolom, tidak ada properti tersimpan.
+Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTidakAda`).
 
-## Pembatalan 07-10-2026 (uji modul pemilik wajib tetap hijau)
+| Nama | Sebab |
+| --- | --- |
+| `FLAG_ON_GOING_COMMITTEE` | `AddKomiteTreatyChild_ACT` langkah 3 `.FlagOnGoingCommitte` dibuang (keputusan work owner 19-09-2026) - tidak ada kolom, tidak ada properti tersimpan |
 
-- **Migrasi `532` (`T_VIEW_SUGGEST.CLAIM_ID`) dicabut** — baris kolomnya di STRUKTUR PremiumList Life memerahkan uji
-  modul itu (prompt §6 butir 2). Claim History tidak disimpan: `docs/OQ.md` OQ-CP-17. Nomor 532 dibiarkan kosong.
-- **Baris kolom 520 di STRUKTUR Claim Life** (`## T_GENERAL_CLAIM`, 94 baris, dokumen saja) = keputusan work owner
-  07-10-2026 "Tabel bersama": *"Hanya baris kolom yang ditambahkan di dokumen STRUKTUR Claim Life dan PremiumList Life;
-  kode kedua modul tidak disentuh."* Uji claimlife tetap seperti HEAD (salinan bersih 07-10-2026); yang dicabut hanya
-  532, karena uji PremiumList Life (kode) memerah.
-- **Penyerahan ke komite dicabut** (penulis dan pembaca tangga, kolom keputusan anggota) — penjaga batas Claim Life
-  `komite_statik_test.go` menolaknya (prompt §10: menyunting modul lain = OQ). Tombol tampil nonaktif: OQ-CP-16.
+## Keputusan work owner 07-10-2026 sesudah laporan pertama
+
+- **Migrasi `532` (`T_VIEW_SUGGEST.CLAIM_ID` + CHECK satu induk) dipasang** — "1 tabel aja gabung life dan non life": Claim History satu tabel
+  dengan riwayat penawaran PremiumList Life. Baris kolomnya di STRUKTUR PremiumList Life; uji modul itu
+  (`strukturtipe_polis_test.go`) menghitung 244 kolom dan melewati kolom buatan modul lain (`kolomModulLain`).
+- **Baris kolom 520 di STRUKTUR Claim Life** (`## T_GENERAL_CLAIM`, dokumen saja) = keputusan "Tabel bersama".
+- **Penyerahan ke komite tetap dicabut** (penulis dan pembaca tangga, kolom keputusan anggota): penjaga batas Claim
+  Life `komite_statik_test.go` menolaknya. Tombol tampil nonaktif: OQ-CP-16, menunggu jawaban.
+- **Tambah / hapus baris Spreading Claim nonaktif**, termasuk ikon grid bawaan (dicabut). Akibat yang diketahui:
+  kasus BARU tidak dapat melahirkan baris spreading, sehingga Save to issue RNM ditolak `ProteksiData_act` langkah 5
+  ("please Fill SpreadingList"); kasus hasil pemuat data lama membawa barisnya.
+- **`STS_REJECT = 1` ditunda** sampai modul Komite Claim Prop ("itu nanti kan dari komite") — pemuat mencatatnya
+  "ditunda", bukan gagal.
 
 ## Pemuat data lama
 
@@ -91,12 +104,12 @@ go run ./modul/claimprop/backend/alat/pemuatlama -keluaran <folder> -jalankan   
 - Berkas keluaran: `claimprop-arsip-medan-*.csv` (medan yang tidak masuk kolom + sebab) dan `claimprop-galat-*.csv`.
   Keduanya memuat data kasus — simpan di luar repositori.
 - Uji-kering DEV 07-10-2026: 2.451 kasus, 6.596 baris OS (4.145 riwayat), 6 kasus berhalaman JSON, **2.032 siap**,
-  **419 gagal** (seluruhnya baris berlaku `STS_REJECT = 1`, OQ-CP-18), nol galat format nilai.
-- Urutan resmi: work owner menjalankan `-migrate` (520–531, 533, 980) → uji-kering ulang → keputusan OQ-CP-18 →
+  **419 ditunda** (baris berlaku `STS_REJECT = 1`, menunggu modul Komite Claim Prop), **0 gagal**; keluar 0.
+- Urutan resmi: work owner menjalankan `-migrate` (520–533, 980) → uji-kering ulang → keputusan OQ-CP-18 →
   `-jalankan` oleh work owner / DBA. Tidak pernah dijalankan agen.
 
 ## Uji SQL di DEV (baca saja)
 
 `go test -tags ujidev -run TestSQLDiDEV -v ./modul/claimprop/backend/repository/` — setiap SELECT dijalankan lewat
 metode aslinya dengan masukan `UJI-*`, setiap INSERT / UPDATE / DELETE hanya diurai `DBMS_SQL.PARSE`. 07-10-2026:
-52 ok, 0 gagal, 33 "objek belum ada" (30 menunggu migrasi 520–533; 3 skema luar OQ-CP-11).
+53 ok, 0 gagal, 37 "objek belum ada" (34 menunggu migrasi 520–533; 3 skema luar OQ-CP-11).

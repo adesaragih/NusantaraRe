@@ -72,13 +72,8 @@ type Unsur struct {
 	Kolom  []Unsur // grid: templat sel baris
 	Kaki   []Unsur // grid: area kaki (total)
 	Tambah *Unsur  // grid: tombol "Add" di header
-	// IkonStandar - `pzPegaDefaultGridIcons`: tambah / hapus baris bawaan Pega (hanya grid yang menyatakannya DAN
-	// punya aksi bawaan di sini).
-	IkonStandar bool
 	// Bernomor - grid bernomor baris.
 	Bernomor bool
-	// HapusIkon - ID aksi hapus baris bawaan (IkonStandar).
-	HapusIkon string
 }
 
 // Tata - unsur sesudah dievaluasi, dikirim ke layar.
@@ -99,8 +94,6 @@ type Tata struct {
 	Baris     [][]SelTata `json:"baris,omitempty"`
 	Kaki      []Tata      `json:"kaki,omitempty"`
 	Tambah    *Tata       `json:"tambah,omitempty"`
-	Ikon      bool        `json:"ikon,omitempty"`
-	HapusIkon string      `json:"hapusIkon,omitempty"`
 	Bernomor  bool        `json:"bernomor,omitempty"`
 }
 
@@ -163,8 +156,6 @@ func Evaluasi(h *Halaman, defs []Unsur, kunci bool) []Tata {
 					t.Tambah = &tt[0]
 				}
 			}
-			t.Ikon = u.IkonStandar && !kunci && !t.Nonaktif
-			t.HapusIkon = u.HapusIkon
 		}
 		out = append(out, t)
 	}
@@ -233,9 +224,6 @@ func AksiTerbuka(ts []Tata, aksi string, indeks int) bool {
 				}
 			case JenisGrid:
 				if t.Tambah != nil && (t.Tambah.ID == aksi || t.Tambah.Aksi == aksi) && !t.Tambah.Nonaktif {
-					return true
-				}
-				if t.Ikon && (aksi == t.Jalur+"#tambah" || (aksi == t.HapusIkon && indeks >= 1 && indeks <= len(t.Baris))) {
 					return true
 				}
 				if indeks >= 1 && indeks <= len(t.Baris) {

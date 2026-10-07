@@ -119,8 +119,6 @@ const (
 	OQTutupTanpaBayar = "OQ-CP-06: kasus komite tanpa baris adjustment tidak dapat ditulis (T_GENERAL_KOMITE.ADJUSTMENT_ID NOT NULL)"
 	OQBatasKomite     = "OQ-CP-16: penyerahan ke komite dan keputusan anggotanya milik konteks Komite; penjaga batas Claim Life " +
 		"menolak modul lain menulis atau membaca tangga komite - menunggu keputusan work owner"
-	OQRiwayatKlaim = "OQ-CP-17: Claim History belum punya tempat simpan - CLAIM_ID di T_VIEW_SUGGEST dibatalkan (uji " +
-		"PremiumList Life mengunci jumlah kolom STRUKTUR-nya) - menunggu keputusan work owner"
 )
 
 // Kunci daftar pilihan (`services` mengisinya).
@@ -243,11 +241,11 @@ func blokLokasi() []Unsur {
 	}
 }
 
-// gridRiwayat - Layout "Claim History" (grid SuggestList, paging 5; urutan `TampilRiwayat`). Barisnya tidak disimpan
-// (OQ-CP-17): grid tampil sesuai section, isinya kosong sesudah dimuat ulang.
+// gridRiwayat - Layout "Claim History" (grid SuggestList, paging 5; urutan `TampilRiwayat`), tersimpan di
+// T_VIEW_SUGGEST.
 func gridRiwayat() Unsur {
 	return Unsur{Jenis: JenisBagian, Label: "Claim History", Anak: []Unsur{{
-		Jenis: JenisGrid, Jalur: DaftarRiwayatTampil, Bernomor: true, Catatan: OQRiwayatKlaim,
+		Jenis: JenisGrid, Jalur: DaftarRiwayatTampil, Bernomor: true,
 		Kolom: []Unsur{kRO(kol("IsCedingConfirm", "Name", KTampil)), kRO(kol("DateSuggest", "Date", KWaktu)),
 			kRO(kol("CommentSuggest", "Noted", KTampil))},
 	}}}
@@ -380,8 +378,10 @@ func gridSpreading(acc bool) Unsur {
 	if acc {
 		tt = kAksi(kSumber(kROJ(kol("TreatyType", "Treaty Type", KPilih), bOldData), SumberSpreading), "SetTreatyNameSpreading")
 	}
+	// Tambah / hapus baris nonaktif (keputusan work owner 07-10-2026, prompt §6 butir 9): Add = AddSpreading_Act dan
+	// Delete = DeleteSpreading_Act tidak diekspor; ikon grid bawaan Pega tidak dibangun. Baris lahir dari activity
+	// estimasi / spreading yang berbukti.
 	return bagian("Spreading List", Unsur{Jenis: JenisGrid, Jalur: DaftarSpreading, Bernomor: true,
-		IkonStandar: true, HapusIkon: "HapusBarisSpreading",
 		Tambah: ptr(tombolOQ("AddSpreading", "Add", OQTidakDiekspor)),
 		Kolom: []Unsur{
 			tt,

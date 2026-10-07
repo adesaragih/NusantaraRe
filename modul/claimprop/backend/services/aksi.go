@@ -301,9 +301,7 @@ func init() {
 			}
 			return models.SetTreatyNameSpreading(j.k, j.h, j.r.Indeks, m)
 		},
-		"CountSpreading":                   dariModel(models.CountSpreading),
-		models.DaftarSpreading + "#tambah": halamanSaja(func(j *jalanAksi) { models.TambahBarisSpreading(j.h) }),
-		"HapusBarisSpreading":              func(j *jalanAksi) error { return models.HapusBarisSpreading(j.h, j.r.Indeks) },
+		"CountSpreading": dariModel(models.CountSpreading),
 		// tombol Outstanding Claim (tiket 01, 07, 12)
 		"SetOutstanding":    aksiSetOutstanding,
 		"SaveOutstanding":   aksiSaveOutstanding,

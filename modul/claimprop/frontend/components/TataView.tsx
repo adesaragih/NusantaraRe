@@ -6,7 +6,6 @@
 import { Fragment, useState, type ReactNode } from 'react'
 
 import type { Halaman, Pilihan, Tata } from '../api'
-import { CP } from '../labels'
 import { ambil, dariInputWaktu, jalurBaris, keInputWaktu, tampilAngka } from '../nilai'
 
 export interface KonteksTata {
@@ -185,22 +184,11 @@ function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
   const [buka, setBuka] = useState<number | null>(null)
   const kolom = t.kolom ?? []
   const baris = t.baris ?? []
-  const data = k.h.daftar[t.jalur ?? ''] ?? []
   return (
     <div className="claimprop__grid" title={t.catatan}>
-      {(t.tambah || t.ikon) && (
+      {t.tambah && (
         <div className="claimprop__grid-alat">
-          {t.tambah && <Tombol t={t.tambah} k={k} />}
-          {t.ikon && (
-            <button
-              type="button"
-              className="btn btn--sm claimprop__tombol"
-              disabled={k.sibuk}
-              onClick={() => k.aksi(`${t.jalur ?? ''}#tambah`)}
-            >
-              {CP.tambahBaris}
-            </button>
-          )}
+          <Tombol t={t.tambah} k={k} />
         </div>
       )}
       <table className="claimprop__tabel">
@@ -210,7 +198,6 @@ function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
             {kolom.map((c, i) => (
               <th key={i}>{c.jenis === 'tombol' ? '' : c.label}</th>
             ))}
-            {t.ikon && <th />}
           </tr>
         </thead>
         <tbody>
@@ -240,27 +227,10 @@ function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
                     </td>
                   )
                 })}
-                {t.ikon && (
-                  <td>
-                    <button
-                      type="button"
-                      className="btn btn--sm claimprop__tombol"
-                      disabled={k.sibuk || data[i]?.IsOldData === 'Yes'}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        k.aksi(t.hapusIkon ?? '', i + 1)
-                      }}
-                    >
-                      {CP.hapusBaris}
-                    </button>
-                  </td>
-                )}
               </tr>
               {k.rincian && buka === i + 1 && (
                 <tr>
-                  <td colSpan={kolom.length + (t.bernomor ? 1 : 0) + (t.ikon ? 1 : 0)}>
-                    {k.rincian(t.jalur ?? '', i + 1)}
-                  </td>
+                  <td colSpan={kolom.length + (t.bernomor ? 1 : 0)}>{k.rincian(t.jalur ?? '', i + 1)}</td>
                 </tr>
               )}
             </Fragment>

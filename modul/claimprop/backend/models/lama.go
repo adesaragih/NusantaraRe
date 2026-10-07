@@ -91,13 +91,18 @@ const (
 	SebabInternalPega = "dibuang: kunci px/py/pz (AC 10-11)"
 	SebabTidakDiimpor = "dibuang: tidak diimpor - InterestListDtl, SpreadingRisk, PaymentData (keputusan diagram)"
 	SebabKomite       = "dibuang: keputusan komite milik konteks Komite (OQ-CP-16)"
-	SebabRiwayat      = "dibuang: Claim History tanpa tempat simpan (OQ-CP-17)"
 	SebabLampiran     = "dibuang: lampiran (OQ-CP-12)"
 	SebabTanpaKolom   = "dibuang: tanpa kolom di katalog (turunan dihitung ulang, atau bukan data)"
 	SebabBarisOS      = "tetap di OS_AKSEPTASI_KLAIM: medan baris estimasi / adjustment, bukan header kasus"
 	// SebabStsTakDikenal - galat: baris berlaku ber-STS_REJECT tanpa penulis di ekspor, tahapnya tidak dapat diturunkan.
-	SebabStsTakDikenal = "galat: STS_REJECT di luar 0 / 2 / 4 tanpa penulis di ekspor - tahap tidak diturunkan (OQ-CP-18)"
+	SebabStsTakDikenal = "galat: STS_REJECT di luar 0 / 1 / 2 / 4 - tahap tidak diturunkan (OQ-CP-18)"
+	// SebabStsDitunda - baris berlaku ber-STS_REJECT 1: dibahas bersama modul Komite Claim Prop (keputusan work owner
+	// 07-10-2026 "itu nanti kan dari komite, lewatkan dulu claim prop"). Tidak dimuat, tidak dihitung gagal.
+	SebabStsDitunda = "ditunda: STS_REJECT = 1 dibahas bersama modul Komite Claim Prop (keputusan work owner 07-10-2026)"
 )
+
+// StsOSDitunda - STS_REJECT baris OS yang pemuatannya ditunda sampai modul Komite Claim Prop.
+const StsOSDitunda = "1"
 
 // tidakDiimpor - nama halaman yang tidak diimpor dari JSON lama (prompt implementasi §3, baris "diagram").
 var tidakDiimpor = map[string]bool{"InterestListDtl": true, "SpreadingRisk": true, "PaymentData": true}
@@ -120,7 +125,27 @@ func UraiKlaimLama(teks string) (*Halaman, []MedanDibuang, error) {
 	var dibuang []MedanDibuang
 	u := urai{h: h, dibuang: &dibuang}
 	u.objek(strings.TrimSuffix(CD, "."), akar)
+	// SuggestList ("Claim History") disimpan lewat T_VIEW_SUGGEST, bukan katalog: barisnya ditandai baru supaya
+	// repository menyisipkannya; medan selain empat kolom riwayat dilaporkan dibuang.
+	var riw []Baris
+	for i, b := range h.AmbilDaftar(DaftarRiwayat) {
+		nb := Baris{PropRiwayatBaru: "1"}
+		for _, k := range kunciUrut(b) {
+			switch k {
+			case "CommentSuggest", "PICSuggest", "DateSuggest", "IsCedingConfirm":
+				nb[k] = b[k]
+			default:
+				if b[k] != "" {
+					dibuang = append(dibuang, MedanDibuang{Jalur: fmt.Sprintf("%s(%d).%s", DaftarRiwayat, i+1, k), Nilai: b[k],
+						Sebab: SebabTanpaKolom})
+				}
+			}
+		}
+		riw = append(riw, nb)
+	}
+	h.SetelDaftar(DaftarRiwayat, nil)
 	dibuang = append(dibuang, tanpaKolom(h, ProyeksiKatalog(h))...)
+	h.SetelDaftar(DaftarRiwayat, riw)
 	return h, dibuang, nil
 }
 
@@ -233,8 +258,6 @@ func sebabTanpaKolom(jalur string) string {
 	switch {
 	case strings.Contains(jalur, "ComiteeClaim") || strings.HasPrefix(jalur, CD+"ClaimComitee"):
 		return SebabKomite
-	case strings.HasPrefix(jalur, DaftarRiwayat):
-		return SebabRiwayat
 	case strings.HasPrefix(jalur, CD+"Attachment"):
 		return SebabLampiran
 	}

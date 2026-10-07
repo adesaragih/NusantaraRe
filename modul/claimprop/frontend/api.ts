@@ -41,8 +41,6 @@ export interface Tata {
   baris?: SelTata[][]
   kaki?: Tata[]
   tambah?: Tata
-  ikon?: boolean
-  hapusIkon?: string
   bernomor?: boolean
 }
 

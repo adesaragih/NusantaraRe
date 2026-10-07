@@ -677,28 +677,3 @@ func SetTreatyNameSpreading(k *Konteks, h *Halaman, idx int, m MasterTreaty) err
 	h.SetelDaftar(DaftarBreakQS, qs) // 15
 	return HitungTurunan(h)
 }
-
-// TambahBarisSpreading - ikon grid standar Pega (`pzPegaDefaultGridIcons`) grid "Spreading List" pertama: baris kosong
-// baru, mata uang mengikuti estimasi baris 1. Tombol Add kustom grid ini memanggil `AddSpreading_Act` yang TIDAK ada di
-// ekspor (nonaktif, OQ); satu-satunya jalan baris spreading lahir adalah penambah baris bawaan grid.
-func TambahBarisSpreading(h *Halaman) {
-	b := Baris{"TreatyType": "", "SharePercentage": ""}
-	if est := h.AmbilDaftar(DaftarEstimasi); len(est) > 0 {
-		b["CurrencyID"], b["Currency"] = est[0]["CurrencyID"], est[0]["Currency"]
-	}
-	h.TambahBaris(DaftarSpreading, b)
-}
-
-// HapusBarisSpreading - ikon hapus baris bawaan grid; baris IsOldData "Yes" ditolak (tombol Delete disabled jika
-// `.IsOldData='Yes'`).
-func HapusBarisSpreading(h *Halaman, idx int) error {
-	b, err := baris(h, DaftarSpreading, idx)
-	if err != nil {
-		return err
-	}
-	if b["IsOldData"] == "Yes" {
-		return ErrBarisBeku
-	}
-	h.HapusBaris(DaftarSpreading, idx)
-	return HitungTurunan(h)
-}

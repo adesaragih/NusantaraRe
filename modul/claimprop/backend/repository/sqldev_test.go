@@ -114,6 +114,9 @@ func TestSQLDiDEV(t *testing.T) {
 	}
 	tulis["AdaJSONKlaim JSON_KLAIM (SELECT)"] = sqlAdaJSONKlaim(q("JSON_KLAIM"))
 	tulis["IDAdjustment (SELECT)"] = sqlIDAdjustment(q(models.TabelAdjustment.Nama))
+	tulis["NomorRiwayat T_VIEW_SUGGEST (SELECT)"] = sqlNomorRiwayat(q("T_VIEW_SUGGEST"))
+	tulis["SisipRiwayat T_VIEW_SUGGEST"] = sqlSisipRiwayat(q("T_VIEW_SUGGEST"))
+	tulis["BacaRiwayat T_VIEW_SUGGEST (SELECT)"] = sqlBacaRiwayat(q("T_VIEW_SUGGEST"))
 	for nama, s := range tulis {
 		if !polaDML.MatchString(s) {
 			t.Fatalf("%s bukan DML - DBMS_SQL.PARSE mengeksekusi DDL, ditolak", nama)
