@@ -34,7 +34,7 @@ func TestSQLMasterMengikutiRD(t *testing.T) {
 		// BrowseCauseofLossLife_RD: CauseofLoss Contains b502; urut ID ASC b598.
 		{models.MasterPenyebab, []string{"FROM S.CAUSEOFLOSS_LIFE", "UPPER(CAUSEOFLOSS) LIKE :1", "ORDER BY ID ASC"}, 1},
 		// BrowseRateLifeSummary (K1 01-10-2026): USEDBY Contains CARI1 b807; urut ID ASC b694; maks 500 b674.
-		{models.MasterRIRate, []string{"SELECT ID, USEDBY FROM S.RATE_LIFE_SUMMARY", "UPPER(USEDBY) LIKE :1",
+		{models.MasterRIRate, []string{"SELECT ID, USEDBY FROM S.M_RATE_LIFE_SUMMARY", "UPPER(USEDBY) LIKE :1",
 			"ORDER BY ID ASC", "FETCH FIRST 500 ROWS ONLY"}, 1},
 	}
 	for _, k := range kasus {
