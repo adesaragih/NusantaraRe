@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { useBolehUbah } from '../../../../inti/frontend/lib/hakMenu'
 import { ambilDaftar, ambilPilihan, type Kurs, type MataUang } from '../api'
+import { tampilKurs } from '../aturan'
 import FormKurs, { type ModeForm } from '../components/FormKurs'
 import { TEY } from '../labels'
 import { NAMA_TEY } from '../menu'
@@ -138,8 +139,8 @@ export default function TreatyExchangeYearly() {
                   <td>{k.quarter}</td>
                   <td>{k.mulai}</td>
                   <td>{k.akhir}</td>
-                  <td className="treatyexchangeyearly__angka">{k.toIdr}</td>
-                  <td className="treatyexchangeyearly__angka">{k.toUsd}</td>
+                  <td className="treatyexchangeyearly__angka">{tampilKurs(k.toIdr)}</td>
+                  <td className="treatyexchangeyearly__angka">{tampilKurs(k.toUsd)}</td>
                   <td>{k.userId}</td>
                   <td>{k.diubah}</td>
                   {bolehUbah && (

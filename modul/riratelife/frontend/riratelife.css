@@ -1,0 +1,729 @@
+/* Gaya modul R/I Rate Life - SETIAP pemilih di bawah akar .riratelife (gaya.test.ts). Fondasi tema
+   (token terang/gelap, isian, tombol, tabel, kolom aksi menempel, tampilan View) disalin dari modul Bordereaux supaya
+   tampilannya seragam; nol pemilih global, nol properti yang memerangkap Modal. */
+
+.riratelife {
+  display: contents;
+}
+
+.riratelife .riratelife__akar {
+  --rr-latar: #eef1f6;
+  --rr-seri-0: #4f46e5;
+  --rr-seri-1: #0d9488;
+  --rr-seri-2: #f59e0b;
+  --rr-seri-3: #64748b;
+  --rr-lintasan: #e8ecf4;
+  --rr-latar-tepi: #cfd7e5;
+  --rr-latar-atas: #f9fafd;
+  --rr-latar-bawah: #e4e9f3;
+  --rr-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --rr-lembut: #e9edf3;
+  --rr-lembut-tepi: #dde3ec;
+  --rr-teks: #101828;
+  --rr-teks-redup: #4f586b;
+  --rr-aksen: var(--primary-tanda);
+  --rr-aksen-teks: #2339a3;
+  --rr-aksen-lembut: #e3e8f6;
+  --rr-aksen-garis: #b9c5ee;
+  --rr-kepala-tabel: #dde4f2;
+  --rr-kepala-teks: #22326b;
+  --rr-kepala-garis: #c3cde2;
+  --rr-isi: #ffffff;
+  --rr-baris-hover: #e6ecfa;
+  --rr-garis: #e1e6ef;
+  --rr-tepi: #c8d1e1;
+  --rr-tombol: #d63a42;
+  --rr-tombol-ujung: #bf2f37;
+  --rr-tombol-hover: #c2333b;
+  --rr-tombol-hover-ujung: #a9282f;
+  --rr-terang: rgba(255, 255, 255, 0.92);
+  --rr-gelap: rgba(163, 177, 198, 0.55);
+  --rr-kilau: rgba(255, 255, 255, 0.7);
+  --rr-timbul: 8px 8px 18px var(--rr-gelap), -8px -8px 18px var(--rr-terang);
+  --rr-timbul-kecil: 4px 4px 9px var(--rr-gelap), -4px -4px 9px var(--rr-terang);
+  --rr-cekung-kecil: inset 2px 2px 4px var(--rr-gelap), inset -2px -2px 4px var(--rr-terang);
+  --rr-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --rr-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--rr-terang);
+  --rr-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --rr-sukses-latar: #e6f7ee;
+  --rr-sukses-tepi: #b7e8cc;
+  --rr-sukses-teks: #067647;
+  --rr-netral-latar: #e9edf3;
+  --rr-netral-tepi: #d5dce7;
+  --rr-netral-teks: #475467;
+  --rr-waspada-latar: #fbf3df;
+  --rr-waspada-tepi: #f1d58a;
+  --rr-waspada-teks: #a3410a;
+  --text-3: var(--rr-teks-redup);
+  color: var(--rr-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--rr-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--rr-latar-atas) 0%, var(--rr-latar-bawah) 100%);
+  box-shadow: var(--rr-bayang-akar);
+}
+
+:root[data-theme="dark"] .riratelife .riratelife__akar {
+  --rr-latar: #1b2130;
+  --rr-seri-0: #818cf8;
+  --rr-seri-1: #2dd4bf;
+  --rr-seri-2: #fbbf24;
+  --rr-seri-3: #94a3b8;
+  --rr-lintasan: #252d40;
+  --rr-latar-tepi: #323b50;
+  --rr-latar-atas: #222a3b;
+  --rr-latar-bawah: #161b27;
+  --rr-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --rr-lembut: #181d2a;
+  --rr-lembut-tepi: #242b3a;
+  --rr-teks: #eef0f6;
+  --rr-teks-redup: #aab2c4;
+  --rr-aksen-teks: #aebcff;
+  --rr-aksen-lembut: #222b45;
+  --rr-aksen-garis: #3a4b8f;
+  --rr-kepala-tabel: #273152;
+  --rr-kepala-teks: #dbe2ff;
+  --rr-kepala-garis: #3a4670;
+  --rr-isi: #1f2638;
+  --rr-baris-hover: #2b3554;
+  --rr-garis: #2c3447;
+  --rr-tepi: #3a4459;
+  --rr-terang: rgba(255, 255, 255, 0.045);
+  --rr-gelap: rgba(0, 0, 0, 0.55);
+  --rr-kilau: rgba(255, 255, 255, 0.04);
+  --rr-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --rr-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--rr-terang);
+  --rr-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --rr-sukses-latar: #0d2a1f;
+  --rr-sukses-tepi: #1d5c40;
+  --rr-sukses-teks: #75e0a7;
+  --rr-netral-latar: #1f2533;
+  --rr-netral-tepi: #333c4f;
+  --rr-netral-teks: #c3cad8;
+  --rr-waspada-latar: #2b2112;
+  --rr-waspada-tepi: #6b4d17;
+  --rr-waspada-teks: #fec84b;
+}
+
+/* Judul dan teks redup. */
+.riratelife .inbox__judul,
+.riratelife .modal__title {
+  color: var(--rr-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.riratelife .muted {
+  color: var(--rr-teks-redup);
+}
+
+.riratelife :focus-visible {
+  outline: 2px solid var(--rr-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.riratelife .field__input {
+  background: var(--rr-isi);
+  border: 1px solid var(--rr-tepi);
+  border-radius: 12px;
+  box-shadow: var(--rr-cekung-kecil);
+  color: var(--rr-teks);
+}
+
+.riratelife .field__input:hover:not(:disabled) {
+  border-color: var(--rr-aksen-garis);
+}
+
+.riratelife .field__input:focus {
+  border-color: var(--rr-aksen);
+  box-shadow: var(--rr-cekung-kecil), var(--rr-cincin);
+  outline: none;
+}
+
+.riratelife .field__input--readonly,
+.riratelife .field__input--readonly:hover {
+  background: var(--rr-lembut);
+  border-color: var(--rr-lembut-tepi);
+  color: var(--rr-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.riratelife .btn {
+  border-radius: 999px;
+}
+
+.riratelife .btn--primary {
+  background: linear-gradient(180deg, var(--rr-tombol), var(--rr-tombol-ujung));
+  border-color: var(--rr-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--rr-bayang-tombol);
+}
+
+.riratelife .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--rr-tombol-hover), var(--rr-tombol-hover-ujung));
+  border-color: var(--rr-tombol-hover-ujung);
+}
+
+.riratelife .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.riratelife .btn--ghost {
+  background: var(--rr-isi);
+  border: 1px solid var(--rr-tepi);
+  color: var(--rr-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--rr-timbul-kecil);
+}
+
+.riratelife .btn--ghost:hover:not(:disabled) {
+  background: var(--rr-aksen-lembut);
+  border-color: var(--rr-aksen-garis);
+  color: var(--rr-aksen-teks);
+}
+
+.riratelife .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--rr-cekung-kecil);
+}
+
+.riratelife .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.riratelife .modal {
+  background: var(--rr-latar);
+  border: 1px solid var(--rr-kilau);
+  border-radius: 22px;
+  box-shadow: var(--rr-bayang-popup);
+}
+
+.riratelife .modal__head,
+.riratelife .modal__actions {
+  border-color: var(--rr-garis);
+}
+
+.riratelife .alert {
+  border-radius: 12px;
+}
+
+/* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
+.riratelife .riratelife__tabel {
+  background: var(--rr-isi);
+  border: 1px solid var(--rr-tepi);
+  border-radius: 18px;
+  box-shadow: var(--rr-timbul);
+}
+
+.riratelife .riratelife__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.riratelife .riratelife__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.riratelife .riratelife__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.riratelife .riratelife__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.riratelife .riratelife__tabel thead th {
+  background: var(--rr-kepala-tabel);
+  color: var(--rr-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--rr-kepala-garis);
+}
+
+.riratelife .riratelife__tabel td {
+  color: var(--rr-teks);
+  background: var(--rr-isi);
+  border-bottom-color: var(--rr-garis);
+}
+
+.riratelife .riratelife__tabel tbody tr:nth-child(even),
+.riratelife .riratelife__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.riratelife .riratelife__tabel tbody tr:nth-child(even) > td {
+  background: var(--rr-lembut);
+}
+
+.riratelife .riratelife__tabel tbody tr:hover > td {
+  background: var(--rr-baris-hover);
+}
+
+/* Tombol aksi SEBARIS ke samping (permintaan work owner 03-10-2026 "buat ke samping aja"): tidak turun ke bawah;
+   tabel yang lebih lebar dari layar menggulir di dalam akar. */
+.riratelife .riratelife__aksi {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.riratelife .riratelife__tabel td.table__actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.riratelife .riratelife__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.riratelife .riratelife__hapus {
+  color: var(--rr-tombol);
+}
+
+.riratelife .riratelife__halaman {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  white-space: nowrap;
+}
+
+.riratelife .riratelife__badge {
+  margin-left: 10px;
+  background: var(--rr-aksen-lembut);
+  color: var(--rr-aksen-teks);
+}
+
+/* Kartu: form header, tab, riwayat. */
+.riratelife .riratelife__kartu {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--rr-isi);
+  border: 1px solid var(--rr-tepi);
+  border-radius: 18px;
+  box-shadow: var(--rr-timbul);
+}
+
+.riratelife .riratelife__judul-kartu {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--rr-teks);
+}
+
+/* View: nilai saja, kisi label di atas nilai. */
+.riratelife .riratelife__ringkas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 24px;
+  margin: 0;
+}
+
+.riratelife .riratelife__ringkas dt,
+.riratelife .riratelife__treaty-isi dt {
+  font-size: 12px;
+  color: var(--rr-teks-redup);
+}
+
+.riratelife .riratelife__ringkas dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Kolom tombol baris MENEMPEL di kanan saat tabel digulir (pola Treaty Contract Out, permintaan work owner
+   04-10-2026 "tidak perlu scroll ke kanan buat aksesnya"). */
+.riratelife .riratelife__tabel th.table__actions,
+.riratelife .riratelife__tabel td.table__actions {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  box-shadow: -8px 0 10px -8px rgba(16, 24, 40, 0.25);
+}
+
+.riratelife .riratelife__tabel {
+  width: max-content;
+  min-width: 100%;
+}
+
+.riratelife .riratelife__tabel th.table__actions,
+.riratelife .riratelife__tabel td.table__actions {
+  padding-right: 16px;
+  padding-left: 14px;
+}
+
+.riratelife .riratelife__tabel td {
+  white-space: nowrap;
+}
+
+/* Daftar menggulir di dalam kotaknya; kolom Action menempel di kanan. */
+.riratelife .riratelife__gulir {
+  overflow: auto;
+  max-height: 68vh;
+}
+
+/* Toolbar daftar: cari, saringan status, tombol Add. */
+.riratelife .riratelife__alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 12px;
+}
+
+.riratelife .riratelife__cari {
+  width: min(340px, 100%);
+}
+
+/* Saringan status Active / Inactive / All: tombol segmen. */
+.riratelife .riratelife__segmen {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--rr-tepi);
+  border-radius: 999px;
+  background: var(--rr-lembut);
+}
+
+.riratelife .riratelife__segmen-butir {
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--rr-teks-redup);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.riratelife .riratelife__segmen-butir--aktif {
+  background: var(--rr-isi);
+  color: var(--rr-teks);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.14);
+}
+
+/* Status baris. */
+.riratelife .riratelife__status {
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid var(--rr-sukses-tepi);
+  border-radius: 999px;
+  background: var(--rr-sukses-latar);
+  color: var(--rr-sukses-teks);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.riratelife .riratelife__status--nonaktif {
+  border-color: var(--rr-netral-tepi);
+  background: var(--rr-netral-latar);
+  color: var(--rr-netral-teks);
+}
+
+/* Kolom Status: ruang di kanan supaya badge tidak tertutup kolom Action yang menempel. */
+.riratelife .riratelife__tabel .riratelife__kolom-status {
+  min-width: 96px;
+  padding-right: 22px;
+}
+
+.riratelife .riratelife__baris--nonaktif > td {
+  color: var(--rr-teks-redup);
+}
+
+/* Teks panjang (alamat) boleh turun baris di tabel. */
+.riratelife .riratelife__alamat {
+  min-width: 220px;
+  max-width: 360px;
+  white-space: normal;
+}
+
+/* Form Add / Edit di popup. */
+.riratelife .riratelife__form {
+  display: grid;
+  gap: 14px;
+}
+
+.riratelife .riratelife__form textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.riratelife .riratelife__catatan {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Saringan Type dan Flag di toolbar daftar. */
+.riratelife .riratelife__saring {
+  width: min(200px, 100%);
+}
+
+/* Form: dua kolom (Type / Flag, Code / No Urut) yang turun satu kolom di layar sempit. */
+.riratelife .riratelife__baris {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .riratelife .riratelife__baris {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* View (permintaan work owner 05-10-2026 "rapihin"): kepala nama + lencana, kartu rincian, jejak di kaki. */
+.riratelife .riratelife__lihat {
+  display: grid;
+  gap: 16px;
+}
+
+.riratelife .riratelife__lihat-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 1px solid var(--rr-aksen-garis);
+  border-radius: 16px;
+  background: var(--rr-aksen-lembut);
+}
+
+.riratelife .riratelife__lihat-mata {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.riratelife .riratelife__lihat-kode {
+  margin: 0;
+  color: var(--rr-aksen-teks);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.riratelife .riratelife__lihat-nama {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+}
+
+.riratelife .riratelife__lencana {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px solid var(--rr-tepi);
+  border-radius: 999px;
+  background: var(--rr-isi);
+  color: var(--rr-teks);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.riratelife .riratelife__lihat-kartu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.riratelife .riratelife__lihat-kartu .riratelife__kartu {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .riratelife .riratelife__lihat-kartu {
+    grid-template-columns: 1fr;
+  }
+}
+
+.riratelife .riratelife__pasangan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.riratelife .riratelife__pasangan dt {
+  color: var(--rr-teks-redup);
+  font-size: 12px;
+}
+
+.riratelife .riratelife__pasangan dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.riratelife .riratelife__nilai-besar {
+  font-size: 19px;
+}
+
+.riratelife .riratelife__jejak {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Lencana Flag: active hijau, inactive abu, nilai warisan lain netral. */
+.riratelife .riratelife__lencana--aktif {
+  border-color: var(--rr-sukses-tepi);
+  background: var(--rr-sukses-latar);
+  color: var(--rr-sukses-teks);
+}
+
+.riratelife .riratelife__lencana--nonaktif {
+  border-color: var(--rr-netral-tepi);
+  background: var(--rr-netral-latar);
+  color: var(--rr-netral-teks);
+}
+
+.riratelife .riratelife__baris--nonaktif > td {
+  color: var(--rr-teks-redup);
+}
+
+/* View: label kecil SOA Name di kepala, ubin Code / No Urut / Group Type (hanya yang terisi). */
+.riratelife .riratelife__label-kecil {
+  margin-right: 8px;
+  color: var(--rr-teks-redup);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.riratelife .riratelife__lihat-nama {
+  color: var(--rr-teks);
+  font-weight: 600;
+}
+
+.riratelife .riratelife__ubin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.riratelife .riratelife__ubin > div {
+  padding: 12px 16px;
+  border: 1px solid var(--rr-tepi);
+  border-radius: 14px;
+  background: var(--rr-isi);
+  box-shadow: var(--rr-timbul-kecil);
+}
+
+.riratelife .riratelife__ubin dt {
+  color: var(--rr-teks-redup);
+  font-size: 12px;
+}
+
+.riratelife .riratelife__ubin dd {
+  margin: 4px 0 0;
+  color: var(--rr-teks);
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Kepala kolom grid yang dapat diurutkan (filter + sort `BrowseRateLifeSummary`). */
+.riratelife .riratelife__urut {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Pesan galat per baris View Upload: boleh turun baris. */
+.riratelife .riratelife__tabel td.riratelife__galat {
+  min-width: 260px;
+  white-space: normal;
+  color: var(--rr-waspada-teks);
+}
+
+/* Form Rate Detail (section InboxRIRate "R/I RATE DETAIL") - ringkas (permintaan work owner 06-10-2026 "rapikan
+   tampilan detail agar tidak terlalu besar"): satu baris medan rapat, input 32px, tombol kecil sebaris kanan; layar
+   sempit turun ke dua kolom. Baris grid yang sedang di-Edit ditandai. */
+.riratelife .riratelife__form--rapat {
+  gap: 8px;
+  padding: 12px 14px;
+}
+
+.riratelife .riratelife__subjudul {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.riratelife .riratelife__rincian {
+  display: grid;
+  grid-template-columns: 110px minmax(150px, 1.6fr) auto 84px 84px minmax(110px, 1fr);
+  gap: 10px;
+  align-items: end;
+}
+
+@media (max-width: 860px) {
+  .riratelife .riratelife__rincian {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.riratelife .riratelife__form--rapat .field {
+  gap: 4px;
+  margin: 0;
+}
+
+.riratelife .riratelife__form--rapat .field__label {
+  font-size: 11px;
+}
+
+.riratelife .riratelife__form--rapat .field__input {
+  height: 32px;
+  padding: 0 8px;
+  font-size: 13px;
+}
+
+.riratelife .riratelife__form--rapat .btn {
+  padding: 5px 14px;
+  font-size: 13px;
+}
+
+.riratelife .riratelife__form--rapat .riratelife__aksi {
+  justify-content: flex-end;
+}
+
+.riratelife .riratelife__pilihan {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.riratelife .riratelife__radio-baris {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+}
+
+.riratelife .riratelife__radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.riratelife .riratelife__baris--pilih td {
+  background: var(--rr-aksen-lembut);
+}

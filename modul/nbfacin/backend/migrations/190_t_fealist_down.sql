@@ -1,0 +1,5 @@
+-- Jalur mundur 190 - sub-tab FEA.
+DROP SEQUENCE {skema}.SEQ_T_FEALIST
+/
+DROP TABLE {skema}.T_FEALIST CASCADE CONSTRAINTS
+/

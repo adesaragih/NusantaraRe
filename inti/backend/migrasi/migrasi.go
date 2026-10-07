@@ -365,7 +365,7 @@ func praTerbangBentuk(ctx context.Context, d *db.DB, langkah []Langkah,
 		if selesai[KunciLangkah(m.Nama)] {
 			continue
 		}
-		for _, p := range m.Pernyataan {
+		for i, p := range m.Pernyataan {
 			nama, kolomDDL := KolomCreateTable(p)
 			if nama == "" {
 				// ⛔ Pernyataan yang TAMPAK CREATE TABLE tetapi tidak terurai
@@ -386,6 +386,22 @@ func praTerbangBentuk(ctx context.Context, d *db.DB, langkah []Langkah,
 			}
 			if !ada {
 				continue // akan dibuat; tidak ada bentuk untuk dibandingkan
+			}
+			// VIEW yang DIGANTI tabel bernama sama di langkah ini (DROP VIEW
+			// sebelum CREATE TABLE - masterprovince 880, dulu masterdata 760): kolom view bukan bentuk
+			// tabel yang hendak dibuat, dan tabelnya baru lahir sesudah view
+			// dibongkar. ALL_OBJECTS dan ALL_TAB_COLUMNS memuat view juga, jadi
+			// tanpa ini kolom view dibandingkan dengan CREATE TABLE dan seluruh
+			// migrasi berhenti (kolom tambahan tabel - STS_AKTIF - "tidak ada").
+			// Tabel yang SUDAH berdiri dengan nama itu tetap dibandingkan.
+			if ViewDibongkarDulu(m.Pernyataan, i, nama) {
+				view, err := adalahView(ctx, d, nama)
+				if err != nil {
+					return nil, fmt.Errorf("repository: migrasi %s: %w", m.Nama, err)
+				}
+				if view {
+					continue
+				}
 			}
 			kolomKat, err := kolomKatalog(ctx, d, nama)
 			if err != nil {
@@ -486,6 +502,37 @@ func objekAda(ctx context.Context, d *db.DB, nama string) (bool, error) {
 	var n int
 	if err := d.QueryRowContext(ctx, q, d.Skema(), nama).Scan(&n); err != nil {
 		return false, fmt.Errorf("repository: memeriksa keberadaan %s: %w", nama, err)
+	}
+	return n > 0, nil
+}
+
+// polaBongkarView mengenali `DROP VIEW {skema}.X` - satu pernyataan utuh.
+var polaBongkarView = regexp.MustCompile(`(?is)^DROP\s+VIEW\s+\{skema\}\.(\w+)$`)
+
+// ViewDibongkarDulu menjawab apakah salah satu pernyataan SEBELUM ke-i di
+// langkah yang sama membongkar view bernama `nama` - tanda langkah itu
+// mengganti view dengan tabel bernama sama. Murni, tanpa Oracle; penjaga
+// memakainya atas berkas migrasi sungguhan.
+func ViewDibongkarDulu(pernyataan []string, i int, nama string) bool {
+	for _, p := range pernyataan[:i] {
+		if m := polaBongkarView.FindStringSubmatch(strings.TrimSpace(p)); m != nil && strings.EqualFold(m[1], nama) {
+			return true
+		}
+	}
+	return false
+}
+
+// adalahView bertanya ke katalog apakah objek bernama itu sebuah VIEW. Bentuk
+// dan alasan SYS.ALL_OBJECTS sama dengan objekAda.
+func adalahView(ctx context.Context, d *db.DB, nama string) (bool, error) {
+	q := `SELECT COUNT(*) FROM SYS.ALL_OBJECTS
+	        WHERE UPPER(OWNER) = UPPER(:1) AND UPPER(OBJECT_NAME) = UPPER(:2) AND OBJECT_TYPE = 'VIEW'`
+	if err := db.PeriksaSQL(q); err != nil {
+		return false, err
+	}
+	var n int
+	if err := d.QueryRowContext(ctx, q, d.Skema(), nama).Scan(&n); err != nil {
+		return false, fmt.Errorf("repository: memeriksa jenis %s: %w", nama, err)
 	}
 	return n > 0, nil
 }

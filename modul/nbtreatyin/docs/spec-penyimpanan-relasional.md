@@ -307,7 +307,7 @@ lama tunduk pada penjaga yang sama dengan data baru, dan tidak ada seam kedua ya
 
 ```
 T_WORK_POLIS                            akar · LINTAS-LINI
- └ T_GENERAL_POLIS                      1:1 SHARED PK · satu baris per GENERASI
+ └ T_GENERAL_POLIS_TREATY                      1:1 SHARED PK · satu baris per GENERASI
     ├ T_POLIS_QUOTATION                 1:1
     │   └ T_POLIS_CEDING                1:N
     ├ T_POLIS_INSTALMENT                1:N
@@ -322,7 +322,7 @@ T_WORK_POLIS                            akar · LINTAS-LINI
 PremiumList. Baris NB dan baris EDM duduk **sejajar** di dalamnya dan **tidak saling menunjuk**;
 kaitannya lewat `(NOPOLIS, PRODKE)` dan `OLD_POLIS_ID`, bukan lewat hubungan induk-anak.
 
-**ID-7** `T_GENERAL_POLIS` berbagi kunci utama dengan `T_WORK_POLIS` — **tidak ada kolom kunci tamu
+**ID-7** `T_GENERAL_POLIS_TREATY` berbagi kunci utama dengan `T_WORK_POLIS` — **tidak ada kolom kunci tamu
 tersendiri**, sejalan pola `T_GENERAL_CLAIM` dan `T_PREMIUM_LIST` yang sudah ada.
 
 ### Kunci dan generasi
@@ -335,7 +335,7 @@ generasi berikutnya dengan `order by prodke desc` lalu menambah satu, tanpa peng
 endorsemen serentak membaca angka yang sama. Di sistem baru yang kedua **gagal**, bukan bentrok
 diam-diam.
 
-**ID-9** `[keputusan work owner]` `T_GENERAL_POLIS.OLD_POLIS_ID → T_WORK_POLIS.ID`, nullable,
+**ID-9** `[keputusan work owner]` `T_GENERAL_POLIS_TREATY.OLD_POLIS_ID → T_WORK_POLIS.ID`, nullable,
 **di NB selalu kosong**. Keunikannya ditegakkan: satu generasi hanya boleh punya **satu** penerus,
 sehingga rantai endorsemen tidak dapat bercabang.
 
@@ -435,7 +435,7 @@ sama-persis** — bertoleransi, atau dibandingkan dalam bentuk terbulatkan.
 
 ### Isi tabel
 
-**ID-21** `T_GENERAL_POLIS` memuat 79 medan skalar tingkat atas `PolicyTreatyIn` — ⭐ ditambah **`REMARK`** *(panjang 128)*, medan yang sensus korpus lewatkan dan baru terlihat dari data guide — ditambah tujuh
+**ID-21** `T_GENERAL_POLIS_TREATY` memuat 79 medan skalar tingkat atas `PolicyTreatyIn` — ⭐ ditambah **`REMARK`** *(panjang 128)*, medan yang sensus korpus lewatkan dan baru terlihat dari data guide — ditambah tujuh
 kolom yang sudah datar di `POOLDATA.json_polis`: `IDPEGA` `NOPOLIS` `NOENDORS` `PRODKE` `TGL_INPUT`
 `TGL_PROD` `USERNAME`.
 
@@ -463,7 +463,7 @@ kolom yang sudah datar di `POOLDATA.json_polis`: `IDPEGA` `NOPOLIS` `NOENDORS` `
 >   `T_POLIS_INSTALMENT_DETAIL` = rancangan §4.3 (11), tanpa `PPN`/`PPH` anak (hanya ditulis).
 
 **ID-22** `[terverifikasi]` ⛔ `LAYER` `LAYER_TYPE` `LAYER_PART` `LAYER_PART_TYPE` **tidak
-disimpan** di `T_GENERAL_POLIS`. Di sistem lama keempatnya **pantulan**, dibaca balik dari kolom
+disimpan** di `T_GENERAL_POLIS_TREATY`. Di sistem lama keempatnya **pantulan**, dibaca balik dari kolom
 tabel: `InputPolicyTreatyInDetail_preACT` menetapkan
 `POLIS.LayerType = pyReportContentPage.pxResults(1).LAYERTYPE`.
 
@@ -477,7 +477,7 @@ layer kedua dan seterusnya.
 **ID-24** `T_POLIS_CEDING` ← `QuotationData.CedingCoList()`, dua medan: `.CedingCo` sebagai id dan
 `.CedingCoName` sebagai nama.
 
-**ID-25** `[keputusan work owner]` `CEDING_CO_NAME` dan `CEDING_CO` di `T_GENERAL_POLIS`
+**ID-25** `[keputusan work owner]` `CEDING_CO_NAME` dan `CEDING_CO` di `T_GENERAL_POLIS_TREATY`
 **disalin apa adanya** dari dokumen, **tidak pernah dirangkai ulang** dari `T_POLIS_CEDING`.
 
 `[terverifikasi]` Keduanya daftar yang digabung, berakhiran `"; "`. Perangkaiannya terjadi di
@@ -521,7 +521,7 @@ sebelum rancangan dinyatakan selesai**.
 > dan **wajib 0** sebelum pekerjaan dinyatakan selesai."* Bunyi baru: **tidak ada penampung.** Setiap
 > medan dokumen lama tanpa kolom **diputuskan per medan** dari XML: (a) dibaca rule NB terjangkau →
 > berkolom di salah satu dari 8 tabel (bab 0 butir 12; satu-satunya: `PolicyTreatyIn.EDMType` →
-> `T_GENERAL_POLIS.EDM_TYPE`, dibaca syarat `InputPolicyTreatyInPre_Act` langkah 10), atau (b) tidak
+> `T_GENERAL_POLIS_TREATY.EDM_TYPE`, dibaca syarat `InputPolicyTreatyInPre_Act` langkah 10), atau (b) tidak
 > dibaca → **dibuang** dengan alasan + bukti tertulis (`backend/models/medan_abaikan_lama.json` bagian
 > `pola`). `SuggestList` dokumen lama **disalin** ke `POOLDATA.HISTORYAKSEPTASIPRODUCTION` (ID-31) dengan
 > penjaga dobel menurut `IDPEGA`. Berkas CSV pemuat tetap ditulis sebagai **arsip audit pemuatan**
@@ -612,7 +612,7 @@ dapat diuji dari luar.
    **gagal**. *(ID-9)*
 4. `[terverifikasi]` Dua baris berbeda tidak boleh memiliki `OLD_POLIS_ID` yang sama. Test yang
    menemukan dua penerus untuk satu generasi **gagal**. *(ID-9)*
-5. `[terverifikasi]` `T_GENERAL_POLIS` dan `T_WORK_POLIS` berbagi kunci utama; tidak ada kolom kunci
+5. `[terverifikasi]` `T_GENERAL_POLIS_TREATY` dan `T_WORK_POLIS` berbagi kunci utama; tidak ada kolom kunci
    tamu tersendiri. Test yang menemukan kolom penyambung terpisah **gagal**. *(ID-7)*
 6. `[terverifikasi]` Menyunting baris generasi yang sudah ditutup **ditolak**. Test yang menemukan
    perubahan tersimpan **gagal**. *(ID-10)*
@@ -698,13 +698,13 @@ dapat diuji dari luar.
 
 ### Isi tabel
 
-26. `[terverifikasi]` `T_GENERAL_POLIS` tidak memiliki kolom `LAYER` `LAYER_TYPE` `LAYER_PART`
+26. `[terverifikasi]` `T_GENERAL_POLIS_TREATY` tidak memiliki kolom `LAYER` `LAYER_TYPE` `LAYER_PART`
     `LAYER_PART_TYPE`. Test yang menemukan satu pun **gagal**. *(ID-22)*
 27. `[terverifikasi]` `T_POLIS_QUOTATION` menyimpan sepuluh medan `QuotationData`, termasuk
     `OldPolicyNo` dan `GroupPanel`. Test yang menemukan kurang **gagal**. *(ID-23)*
 28. `[terverifikasi]` `T_POLIS_CEDING` menyimpan satu baris per ceding, dengan id dan nama terpisah.
     Test yang menemukan keduanya dalam satu kolom **gagal**. *(ID-24)*
-29. `[keputusan work owner]` `CEDING_CO_NAME` pada `T_GENERAL_POLIS` tersimpan persis seperti di
+29. `[keputusan work owner]` `CEDING_CO_NAME` pada `T_GENERAL_POLIS_TREATY` tersimpan persis seperti di
     dokumen, termasuk ekor `"; "`. Test yang menemukan hasil rangkaian ulang **gagal**. *(ID-25)*
 30. `[keputusan work owner]` Menghapus satu ceding menghapus **barisnya**, bukan mengganti teks
     gabungan. Test yang menemukan `@replaceAll` atau padanannya **gagal**. *(ID-25)*
@@ -729,7 +729,7 @@ dapat diuji dari luar.
     > ⛔ **RALAT** 2026-10-03 (K3, paket P2) — bunyi lama: *"`DEDUCTION1` `DEDUCTION2`
     > `TOTAL_SHARE_PERCENTAGE_PREMIUM` `TOTAL_SHARE_PERCENTAGE_CLAIM` disimpan sebagai persen. Test
     > yang memperlakukannya sebagai uang **gagal**"* → bunyi baru: **`DEDUCTION1` `DEDUCTION2`
-    > `T_GENERAL_POLIS` bergolongan uang** (`NUMBER(38,8)`, sama tipe fisiknya), mengikuti pemakaian
+    > `T_GENERAL_POLIS_TREATY` bergolongan uang** (`NUMBER(38,8)`, sama tipe fisiknya), mengikuti pemakaian
     > XML (keputusan WO K3); `TOTAL_SHARE_PERCENTAGE_*` tetap persen. Test yang memperlakukan
     > `DEDUCTION1/2` sebagai persen **gagal**. Bukti: sel `.Deduction1` `.Deduction2` `pxCurrency` di `Section/DetailPolicyTreatyIn.xml` dan `Section/DetailDeptHeadTreatyIn_UW.xml`; `Activity/CountNetPremi_act` langkah 4 mengurangkan keduanya dari premi; `Activity/SetPPNPPH` langkah 4 membagi `.Deduction1` dengan 1,022. Kode: `models/katalog.go` (`kUang`).
 39. `[terverifikasi]` `HISTORYAKSEPTASIPRODUCTION` tidak dibuat ulang; polis menulis ke tabel yang
@@ -823,12 +823,12 @@ dapat diuji dari luar.
 > AC**: ketetapan **16** *(ID-21)*, **21** *(ID-25)*, dan **31** *(ID-1)*. ⛔ **Tidak ada keputusan
 > baru di sini** — ketiganya dinyatakan ulang dalam bentuk yang dapat diuji.
 
-64. `[terverifikasi]` `T_GENERAL_POLIS` menampung **79 medan skalar tingkat atas** `PolicyTreatyIn`
+64. `[terverifikasi]` `T_GENERAL_POLIS_TREATY` menampung **79 medan skalar tingkat atas** `PolicyTreatyIn`
     ditambah **tujuh kolom datar** dari `POOLDATA.json_polis`. Test yang menemukan salah satu medan
     itu tidak punya kolom, atau menemukan kolom kedelapan dari `json_polis`, **gagal**.
     ⚠️ Angka 79 adalah **batas bawah** — lihat Bab 1 peringatan dan butir `[terbuka]` 1.
     *(ID-21)*
-65. `[keputusan work owner]` Bentuk gabungan `CEDING_CO_NAME` / `CEDING_CO` di `T_GENERAL_POLIS`
+65. `[keputusan work owner]` Bentuk gabungan `CEDING_CO_NAME` / `CEDING_CO` di `T_GENERAL_POLIS_TREATY`
     **boleh tidak sinkron** dengan baris `T_POLIS_CEDING`, dan **tidak ada penjaga** yang
     memaksanya sinkron. Test yang **menolak** penyimpanan karena keduanya berbeda **gagal** —
     ketidaksinkronan itu konsekuensi yang diterima, bukan cacat. *(ID-25)*

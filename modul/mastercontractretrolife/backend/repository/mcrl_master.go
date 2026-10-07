@@ -8,7 +8,7 @@ package repository
 //	                urut `.ClientName ASC` b745; isi `REINSURERID ← .ID`
 //	BUSINESS NAME   `BrowseBusinessLife_RD` b651 `.OLDID StartsWith "L"`, urut `.ID ASC` b1057; tampil `.Note`,
 //	                isi `BIZCODE ← .ID`, kolom tampil `.OLDID`
-//	R/I RATE        `BrowseRateLifeSummary` (view `RATE_LIFE_SUMMARY`) `A AND B`: `.ID = param.id` b794,
+//	R/I RATE        `BrowseRateLifeSummary` (tabel `M_RATE_LIFE_SUMMARY`) `A AND B`: `.ID = param.id` b794,
 //	                `.USEDBY Contains param.idusedby` b809 - autocomplete b4534/b4542 mengirim keduanya
 //	                KOSONG, jadi kedua saringan gugur; kata yang diketik dicari di `.USEDBY` (medan cari
 //	                b4494, pola autocomplete modul ini); urut `.ID ASC` b692; isi `RIRATEID ← .ID` b4527

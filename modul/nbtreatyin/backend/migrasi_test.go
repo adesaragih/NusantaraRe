@@ -2,31 +2,26 @@ package backend
 
 // K18 (PROMPT putaran 3 bab 2; koreksi WO 04-10-2026) - TANPA Oracle.
 //
-// `POOLDATA.T_GENERAL_POLIS` sudah ada, dibuat migrasi `182_t_general_polis`
-// milik `nbfacin` (di luar repo ini) dengan TUJUH kolom: ID, IDPEGA, COB_GROUP,
-// START_DATE_TIME, OFFERING_DATE, END_DATE_TIME, FOLLOWING. Diagram grilling
-// memberi nama itu ke Treaty In (PERMINTAAN-TIM-INTI C10).
+// `POOLDATA.T_GENERAL_POLIS` MILIK `nbfacin` (migrasi `182_t_general_polis`, TUJUH kolom: ID, IDPEGA,
+// COB_GROUP, START_DATE_TIME, OFFERING_DATE, END_DATE_TIME, FOLLOWING). Perintah work owner 05-10-2026:
+// NB Treaty In TIDAK memakai T_GENERAL_POLIS - tabel induknya `T_GENERAL_POLIS_TREATY` (migrasi
+// `320_t_general_polis_treaty`). DEV yang sudah menjalankan 320 lama dipindah lewat skrip transisi
+// (SCRIPT-TABEL-KOLOM-BARU.xlsx sheet NB TREATY, dijalankan manusia).
 //
-// ⛔ Koreksi WO: migrasi 320 TIDAK diberi blok PL/SQL penjaga. Penjaganya sudah
-// ada di inti: `praTerbangBentuk` (`inti/backend/migrasi/migrasi.go`) memeriksa
-// SELURUH langkah yang belum tercatat SEBELUM satu pernyataan pun dikirim -
-// setiap CREATE TABLE diurai `KolomCreateTable`, dan bila tabelnya sudah ada,
-// kolom DDL dibandingkan kolom katalog Oracle lewat `SelisihKolom`; selisih
-// apa pun menghentikan migrasi dengan galat:
+// ⛔ Koreksi WO: migrasi 320 TIDAK diberi blok PL/SQL penjaga. Penjaga bentuk ada di inti:
+// `praTerbangBentuk` (`inti/backend/migrasi/migrasi.go`) memeriksa SELURUH langkah yang belum tercatat
+// SEBELUM satu pernyataan pun dikirim - setiap CREATE TABLE diurai `KolomCreateTable`, dan bila tabelnya
+// sudah ada, kolom DDL dibandingkan kolom katalog Oracle lewat `SelisihKolom`.
 //
-//	repository: migrasi <langkah>: tabel <T> sudah ada di skema <S> tetapi
-//	BENTUKNYA BERBEDA - kolom yang diminta migrasi tetapi tidak ada: [...];
-//	kolom yang ada tetapi tidak diminta: [...]. Migrasi dihentikan sebelum
-//	satu pernyataan pun dikirim; tidak ada yang diubah
-//
-// `praTerbangBentuk` sendiri butuh Oracle (katalog); uji di sini membuktikan
-// dua bagian murninya atas migrasi 320 yang sebenarnya (berkas tertanam yang
-// sama dengan `-migrate`): (1) CREATE TABLE 320 terurai PERSIS menjadi kolom
-// T_GENERAL_POLIS modul ini, dan (2) bentuk tujuh kolom FacIn menghasilkan
-// selisih tidak kosong di kedua arah - isi pesan galat di atas.
+// Uji di sini membuktikan, atas berkas migrasi tertanam yang sama dengan `-migrate`: (1) CREATE TABLE 320
+// terurai PERSIS menjadi kolom T_GENERAL_POLIS_TREATY modul ini, dan (2) tidak satu pun pernyataan migrasi
+// modul ini menyebut T_GENERAL_POLIS milik nbfacin; setiap FK induk anak menunjuk T_GENERAL_POLIS_TREATY.
 
 import (
+	"io/fs"
+	"path"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -34,17 +29,14 @@ import (
 	"nusantarare/modul/nbtreatyin/backend/models"
 )
 
-const langkah320 = "320_t_general_polis.sql"
+const langkah320 = "320_t_general_polis_treaty.sql"
 
-// kolomFacIn182 - bentuk `POOLDATA.T_GENERAL_POLIS` yang dibuat migrasi 182
-// `nbfacin` (PROMPT putaran 3 bab 2 K18, katalog dicek 04-10-2026).
-var kolomFacIn182 = []string{"ID", "IDPEGA", "COB_GROUP", "START_DATE_TIME", "OFFERING_DATE", "END_DATE_TIME", "FOLLOWING"}
-
-// kolomKunciGeneralPolis - kolom T_GENERAL_POLIS di luar katalog medan
+// kolomKunciGeneralPolis - kolom T_GENERAL_POLIS_TREATY di luar katalog medan
 // (`models.TabelGeneralPolis`): kunci bersama T_WORK_POLIS (ID, ID-7), kunci
 // generasi (NOPOLIS, PRODKE, NOENDORS, OLD_POLIS_ID; ID-8, ID-9), dan kolom
 // json_polis (IDPEGA, TGL_INPUT, USERNAME; ID-21) - urutan DDL 320.
-var kolomKunciGeneralPolis = []string{"ID", "NOPOLIS", "PRODKE", "NOENDORS", "OLD_POLIS_ID", "IDPEGA", "TGL_INPUT", "USERNAME"}
+// IDPEGA DIBUANG (keputusan work owner 06-10-2026: kasus baru menyimpan IDPEGA = ID).
+var kolomKunciGeneralPolis = []string{"ID", "NOPOLIS", "PRODKE", "NOENDORS", "OLD_POLIS_ID", "TGL_INPUT", "USERNAME"}
 
 // kolomDDL320 menguraikan CREATE TABLE langkah 320 dengan pengurai
 // pra-terbang inti; gagal bila jumlahnya bukan tepat satu.
@@ -117,7 +109,7 @@ func kolomDeklarasi320(t *testing.T) []string {
 	return kolom
 }
 
-// (1) Pengurai pra-terbang membaca 320 persis: nama T_GENERAL_POLIS, kolom =
+// (1) Pengurai pra-terbang membaca 320 persis: nama T_GENERAL_POLIS_TREATY, kolom =
 // kunci + katalog medan, dan = setiap deklarasi kolom di badan DDL (nol kolom
 // tersembunyi dari pra-terbang; baris CONSTRAINT bukan kolom). Sesudah 320
 // berjalan, katalog Oracle = kolom DDL ini, sehingga menjalankan ulang tidak
@@ -143,37 +135,50 @@ func TestMigrasi320TeruraiPraTerbangPersisKolomGeneralPolis(t *testing.T) {
 	}
 }
 
-// (2) Bentuk FacIn tujuh kolom diberikan ke pembanding inti `SelisihKolom`
-// (yang dipanggil `praTerbangBentuk`): kedua daftar dalam pesan galat terisi -
-// pra-terbang menghentikan migrasi 320 sebelum apa pun berubah. Nilai harapan
-// ditulis tangan dari tujuh kolom K18, bukan dihitung ulang.
-func TestPraTerbangMenolakTGeneralPolisBentukFacIn(t *testing.T) {
-	_, kolom := kolomDDL320(t)
-	kurang, lebih := migrasi.SelisihKolom(kolom, kolomFacIn182)
+// (2) Perintah WO 05-10-2026: tabel induk NB Treaty In = T_GENERAL_POLIS_TREATY. T_GENERAL_POLIS milik
+// nbfacin (182) tidak disebut satu pernyataan pun migrasi modul ini (komentar `--` tidak dihitung), dan FK
+// induk setiap anak langsung (321, 323, 325, 326) menunjuk T_GENERAL_POLIS_TREATY. Nama harapan ditulis
+// tangan, bukan dibaca dari katalog.
+func TestMigrasiMemakaiTGeneralPolisTreatyBukanTabelFacIn(t *testing.T) {
+	if nama, _ := kolomDDL320(t); nama != "T_GENERAL_POLIS_TREATY" {
+		t.Fatalf("320 membuat %q, harap T_GENERAL_POLIS_TREATY", nama)
+	}
+	milikFacIn := regexp.MustCompile(`(?i)\bT_GENERAL_POLIS\b`)
+	berkas, err := fs.Glob(berkasMigrasi, "migrations/*.sql")
+	if err != nil || len(berkas) == 0 {
+		t.Fatalf("berkas migrasi tidak terbaca: %v", err)
+	}
+	for _, b := range berkas {
+		p, err := migrasi.PernyataanLangkah(berkasMigrasi, path.Base(b))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, s := range p {
+			if milikFacIn.MatchString(tanpaKomentar(s)) {
+				t.Errorf("%s menyebut T_GENERAL_POLIS milik nbfacin:\n%s", path.Base(b), s)
+			}
+		}
+	}
+	for _, l := range []string{"321_t_polis_quotation.sql", "323_t_polis_instalment.sql", "325_t_polis_spreading.sql", "326_t_polis_xol.sql"} {
+		p, err := migrasi.PernyataanLangkah(berkasMigrasi, l)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(strings.Join(p, "\n"), "FOREIGN KEY (POLIS_ID) REFERENCES {skema}.T_GENERAL_POLIS_TREATY (ID)") {
+			t.Errorf("%s: FK POLIS_ID tidak menunjuk T_GENERAL_POLIS_TREATY", l)
+		}
+	}
+}
 
-	// "kolom yang ada tetapi tidak diminta" - lima kolom FacIn, terurut.
-	if harap := []string{"COB_GROUP", "END_DATE_TIME", "FOLLOWING", "OFFERING_DATE", "START_DATE_TIME"}; !reflect.DeepEqual(lebih, harap) {
-		t.Errorf("kolom yang ada tetapi tidak diminta = %v, harap %v", lebih, harap)
-	}
-	// "kolom yang diminta migrasi tetapi tidak ada" - seluruh kolom 320 kecuali
-	// dua yang kebetulan bernama sama (ID, IDPEGA).
-	if len(kurang) != len(kolom)-2 {
-		t.Errorf("kolom yang diminta tetapi tidak ada: %d, harap %d (320 tanpa ID, IDPEGA)", len(kurang), len(kolom)-2)
-	}
-	for _, k := range []string{"NOPOLIS", "PRODKE", "OLD_POLIS_ID", "POSITION_NOTE", "PREMI_OGP", "OVERIDDING_COMM_ONP"} {
-		if !mengandung(kurang, k) {
-			t.Errorf("%s tidak disebut sebagai kolom yang diminta tetapi tidak ada: %v", k, kurang)
+// tanpaKomentar membuang komentar baris `--` dari satu pernyataan.
+func tanpaKomentar(s string) string {
+	baris := strings.Split(s, "\n")
+	for i, x := range baris {
+		if j := strings.Index(x, "--"); j >= 0 {
+			baris[i] = x[:j]
 		}
 	}
-	for _, k := range []string{"ID", "IDPEGA"} {
-		if mengandung(kurang, k) {
-			t.Errorf("%s ada di kedua bentuk, tidak boleh disebut kurang", k)
-		}
-	}
-	// Syarat penolakan `praTerbangBentuk`: len(kurang) > 0 || len(lebih) > 0.
-	if len(kurang) == 0 && len(lebih) == 0 {
-		t.Fatal("bentuk FacIn lolos pra-terbang - migrasi 320 akan melewati tabel milik nbfacin")
-	}
+	return strings.Join(baris, "\n")
 }
 
 // Koreksi WO 04-10-2026: 320 tetap DDL biasa - nol blok PL/SQL (penjaga ada

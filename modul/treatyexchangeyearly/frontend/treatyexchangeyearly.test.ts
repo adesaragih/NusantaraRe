@@ -13,6 +13,7 @@ import {
   periodeBawaan,
   QUARTER,
   rapikanIsian,
+  tampilKurs,
 } from './aturan'
 import { MENU_TEY, TEY } from './labels'
 
@@ -108,6 +109,27 @@ describe('aturan Treaty Exchange Yearly', () => {
     expect(opsiMataUang(m, '10001')).toEqual([{ value: '10001', label: 'USD - UJI DOLLAR' }])
     expect(opsiMataUang(m, '10099', 'XYZ')).toContainEqual({ value: '10099', label: TEY.nilaiLama('XYZ') })
     expect(TEY.labelQuarter('0')).toBe('0 - Yearly')
+  })
+})
+
+describe('tampilan uang Treaty Exchange Yearly (perintah work owner 05-10-2026: "perbaiki tampilan uang")', () => {
+  it('format Indonesia: ribuan titik, desimal koma, minimal 2 desimal, desimal panjang tidak dipotong', () => {
+    expect(tampilKurs('17000.00')).toBe('17.000,00')
+    expect(tampilKurs('16304.68')).toBe('16.304,68')
+    expect(tampilKurs('14500')).toBe('14.500,00')
+    expect(tampilKurs('134.5')).toBe('134,50')
+    expect(tampilKurs('111.8849')).toBe('111,8849')
+    expect(tampilKurs('0.0067809')).toBe('0,0067809')
+    expect(tampilKurs('1234567.5')).toBe('1.234.567,50')
+    expect(tampilKurs('0')).toBe('0,00')
+  })
+
+  it('kosong tetap kosong; bentuk lain apa adanya; daftar memakai tampilKurs untuk To IDR dan To USD', () => {
+    expect(tampilKurs('')).toBe('')
+    expect(tampilKurs('16.500,00')).toBe('16.500,00')
+    const halaman = readFileSync(`${__dirname}/pages/TreatyExchangeYearly.tsx`, 'utf8')
+    expect(halaman).toContain('{tampilKurs(k.toIdr)}')
+    expect(halaman).toContain('{tampilKurs(k.toUsd)}')
   })
 })
 

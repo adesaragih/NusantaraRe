@@ -4,7 +4,7 @@
   "Mengapa berkas data, bukan literal kode: penjaga lintas modul claimlife TestNolPenyimpanKeputusanKomiteDiKonteksIni (polaIndeksPosisi) memindai setiap berkas .go repo secara leksikal dan melarang nama properti nomor baris Pega di luar komentar. Pemuat ini TIDAK memakai nomor baris sebagai kunci: properti itu hanya dikenali supaya DIBUANG, karena urutan baris diwakili NOURUT (spec-penyimpanan ID-11). Cakupan penjaga diajukan ke tim claimlife/inti di docs/PERMINTAAN-TIM-INTI.md bagian A.",
   "simpul: nama properti tingkat polis yang SELURUH isinya diabaikan (diperiksa lebih dulu, termasuk pxObjClass di dalamnya). ruas: nama properti daun di mana pun; hanya_di_baris_daftar = hanya bila medan berada di baris PageList (pola memuat '()'). skalar_polis: nama properti skalar tingkat polis saja (tidak berlaku di dalam simpul atau baris).",
   "Kasus uji perilakunya: testdata/penggolong_kasus.json (TestPenggolongMedanDiabaikan).",
-  "pola (F3, keputusan work owner 04-10-2026, PROMPT-NB-TREATY-IN-PUTARAN-3.md bab 2): pola jalur PERSIS relatif PolicyTreatyIn ('()' = baris PageList) -> alasan + bukti XML. Setiap medan dokumen lama tanpa kolom diputuskan satu per satu: (a) dibaca rule NB terjangkau -> wajib berkolom (EDMType -> T_GENERAL_POLIS.EDM_TYPE, katalog.go); (b) tidak dibaca -> dibuang di sini. Nilai medan yang dibuang tetap tertulis di arsip CSV pemuat (arsip audit, bukan penampung). Diperiksa sesudah simpul, sebelum ruas dan skalar_polis. Bukti dibaca ulang dari korpus NB Treaty In (Done) lewat docs/alat/pemakai.py dan graf.py (terjangkau dari titik masuk nyata).",
+  "pola (F3, keputusan work owner 04-10-2026, PROMPT-NB-TREATY-IN-PUTARAN-3.md bab 2): pola jalur PERSIS relatif PolicyTreatyIn ('()' = baris PageList) -> alasan + bukti XML. Setiap medan dokumen lama tanpa kolom diputuskan satu per satu: (a) dibaca rule NB terjangkau -> wajib berkolom (EDMType -> T_GENERAL_POLIS_TREATY.EDM_TYPE, katalog.go); (b) tidak dibaca -> dibuang di sini. Nilai medan yang dibuang tetap tertulis di arsip CSV pemuat (arsip audit, bukan penampung). Diperiksa sesudah simpul, sebelum ruas dan skalar_polis. Bukti dibaca ulang dari korpus NB Treaty In (Done) lewat docs/alat/pemakai.py dan graf.py (terjangkau dari titik masuk nyata).",
   "SuggestList() TIDAK di sini: barisnya disalin ke POOLDATA.HISTORYAKSEPTASIPRODUCTION (F3; SaveViewSuggest langkah 2, models/usulanlama.go), bukan dibuang."
  ],
  "alasan": {
@@ -67,14 +67,6 @@
    "alasan": "f3_tanpa_pembaca",
    "bukti": "ditulis Activity/ProtectDate langkah 1 (.pyMessageLabel = \"\"; dipanggil Section/DetailPolicyTreatyIn pada halaman PolicyTreatyIn); nol pembaca - langkah 2 hanya memakai nama kategori pesan pyMessageLabel"
   },
-  "QuotationData.BranchCode": {
-   "alasan": "f3_tanpa_pembaca",
-   "bukti": "ditulis Activity/CheckDataMkt langkah 4 (pyWorkPage.Quotation.BranchCode = DataMarketing.pxResults(1).BranchDetailID), masuk dokumen lewat GeneratePolicyNoTreaty_Act langkah 10 (Page-Copy pyWorkPage.Quotation -> pyWorkPage.PolicyTreatyIn.QuotationData); nol pembaca di korpus NB"
-  },
-  "QuotationData.BranchName": {
-   "alasan": "f3_tanpa_pembaca",
-   "bukti": "ditulis Activity/CheckDataMkt langkah 4 (pyWorkPage.Quotation.BranchName = DataMarketing.pxResults(1).BranchDetailName), masuk dokumen lewat GeneratePolicyNoTreaty_Act langkah 10 (Page-Copy pyWorkPage.Quotation -> pyWorkPage.PolicyTreatyIn.QuotationData); nol pembaca di korpus NB"
-  },
   "QuotationData.BusinessType": {
    "alasan": "f3_tanpa_pembaca",
    "bukti": "ditulis Activity/InputPolicyTreatyInDetail_preACT langkah 14.8 (Property-Map-DecisionTable BusinessType_DeT -> pyWorkPage.Quotation.BusinessType), masuk dokumen lewat GeneratePolicyNoTreaty_Act langkah 10 (Page-Copy pyWorkPage.Quotation -> pyWorkPage.PolicyTreatyIn.QuotationData); pembacanya hanya rule TAK terjangkau (When Is*, ProtectCoverage_Act, ProtectFIREMBUPA_Act - halaman OfferFacIn); masukan penggolongnya tersimpan (GROUP_PANEL, BUSINESS_OLD_ID)"
@@ -85,15 +77,11 @@
   },
   "QuotationData.CedingCo": {
    "alasan": "f3_tanpa_pembaca",
-   "bukti": "ditulis Activity/InputPolicyTreatyInDetail_preACT langkah 3 dan DataTransform/SearchHierarkiSourceBizAgent_PostDT 2.1 (pyWorkPage.Quotation.CedingCo), masuk dokumen lewat GeneratePolicyNoTreaty_Act langkah 10 (Page-Copy pyWorkPage.Quotation -> pyWorkPage.PolicyTreatyIn.QuotationData); nol pembaca terjangkau (InputPolicyTreatyOutDetail_preACT langkah 4 = treaty keluar, K8 butir 4); tingkat polis disimpan di T_GENERAL_POLIS.CEDING_CO (diagram R47)"
+   "bukti": "ditulis Activity/InputPolicyTreatyInDetail_preACT langkah 3 dan DataTransform/SearchHierarkiSourceBizAgent_PostDT 2.1 (pyWorkPage.Quotation.CedingCo), masuk dokumen lewat GeneratePolicyNoTreaty_Act langkah 10 (Page-Copy pyWorkPage.Quotation -> pyWorkPage.PolicyTreatyIn.QuotationData); nol pembaca terjangkau (InputPolicyTreatyOutDetail_preACT langkah 4 = treaty keluar, K8 butir 4); tingkat polis disimpan di T_GENERAL_POLIS_TREATY.CEDING_CO (diagram R47)"
   },
   "QuotationData.CedingCoName": {
    "alasan": "f3_tanpa_pembaca",
-   "bukti": "ditulis Activity/InputPolicyTreatyInDetail_preACT langkah 3 dan DataTransform/SearchHierarkiSourceBizAgent_PostDT 2.2 (pyWorkPage.Quotation.CedingCoName), masuk dokumen lewat GeneratePolicyNoTreaty_Act langkah 10 (Page-Copy pyWorkPage.Quotation -> pyWorkPage.PolicyTreatyIn.QuotationData); pembaca QuotationData.CedingCoName hanya halaman OfferFacIn di rule TAK terjangkau (Protection_Act, ProtectCedingCo); tingkat polis disimpan di T_GENERAL_POLIS.CEDING_CO_NAME (diagram R47)"
-  },
-  "QuotationData.MarketingCode": {
-   "alasan": "f3_tanpa_pembaca",
-   "bukti": "ditulis Activity/CheckDataMkt langkah 4 (pyWorkPage.Quotation.MarketingCode, .QuotationData.MarketingCode); satu-satunya pembaca .MarketingCode - langkah 6 - berlabel //"
+   "bukti": "ditulis Activity/InputPolicyTreatyInDetail_preACT langkah 3 dan DataTransform/SearchHierarkiSourceBizAgent_PostDT 2.2 (pyWorkPage.Quotation.CedingCoName), masuk dokumen lewat GeneratePolicyNoTreaty_Act langkah 10 (Page-Copy pyWorkPage.Quotation -> pyWorkPage.PolicyTreatyIn.QuotationData); pembaca QuotationData.CedingCoName hanya halaman OfferFacIn di rule TAK terjangkau (Protection_Act, ProtectCedingCo); tingkat polis disimpan di T_GENERAL_POLIS_TREATY.CEDING_CO_NAME (diagram R47)"
   },
   "QuotationData.OperatorID": {
    "alasan": "f3_tanpa_pembaca",
@@ -113,7 +101,7 @@
   },
   "QuotationData.SobName": {
    "alasan": "f3_tanpa_pembaca",
-   "bukti": "ditulis Activity/InputPolicyTreatyInDetail_preACT langkah 3 dan DataTransform/SearchHierarkiSourceBizAgent_PostDT 1.2 (pyWorkPage.Quotation.SobName), masuk dokumen lewat GeneratePolicyNoTreaty_Act langkah 10 (Page-Copy pyWorkPage.Quotation -> pyWorkPage.PolicyTreatyIn.QuotationData); pembacanya hanya CheckDataMkt langkah 7 (berlabel //) dan InputPolicyTreatyOutDetail_preACT langkah 4 (treaty keluar, K8 butir 4); nama SOB tingkat polis di T_GENERAL_POLIS.SOB_NAME"
+   "bukti": "ditulis Activity/InputPolicyTreatyInDetail_preACT langkah 3 dan DataTransform/SearchHierarkiSourceBizAgent_PostDT 1.2 (pyWorkPage.Quotation.SobName), masuk dokumen lewat GeneratePolicyNoTreaty_Act langkah 10 (Page-Copy pyWorkPage.Quotation -> pyWorkPage.PolicyTreatyIn.QuotationData); pembacanya hanya CheckDataMkt langkah 7 (berlabel //) dan InputPolicyTreatyOutDetail_preACT langkah 4 (treaty keluar, K8 butir 4); nama SOB tingkat polis di T_GENERAL_POLIS_TREATY.SOB_NAME"
   },
   "QuotationData.StatusBusiness": {
    "alasan": "f3_tanpa_pembaca",
@@ -122,10 +110,6 @@
   "QuotationData.StatusSyariah": {
    "alasan": "f3_tanpa_pembaca",
    "bukti": "nol rujukan StatusSyariah di korpus NB (pemakai.py: 0 rule) - diisi di luar modul NB, nol pembaca"
-  },
-  "QuotationData.TeamGroup": {
-   "alasan": "f3_tanpa_pembaca",
-   "bukti": "ditulis Activity/CheckDataMkt langkah 4 (pyWorkPage.Quotation.TeamGroup, .QuotationData.TeamGroup); nol pembaca terjangkau (When IsTBonding tak terjangkau; ReportDefinition BrowseMarketingOfficer_RD memilih kolom master MO, bukan halaman ini)"
   },
   "QuotationData.TypeFacultative": {
    "alasan": "f3_tanpa_pembaca",

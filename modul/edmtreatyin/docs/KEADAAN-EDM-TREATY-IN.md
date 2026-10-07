@@ -22,7 +22,7 @@ Bila dua sumber berselisih, yang di atas menang.
 | **1** | `[keputusan work owner]` | keputusan yang sudah diambil — **tidak boleh diubah berkas ini** |
 | **2** | `[data DBA]` | naskah stored procedure, view, dan contoh `DATA_JSON` sungguhan |
 | **3** | `[terverifikasi]` dari korpus | terbaca dari berkas ekspor, dengan perintah ujinya |
-| **4** | `KEADAAN-NB-TREATY-IN.md` | ketetapan modul saudara — **berlaku di sini kecuali terbukti sebaliknya** |
+| **4** | `modul/nbtreatyin/docs/KEADAAN-NB-TREATY-IN.md` *(jalur — koreksi 06-10)* | ketetapan modul saudara — **berlaku di sini kecuali terbukti sebaliknya** |
 | **5** | `grilling-ronde-1.md` EDM | ⚠️ **empat pernyataannya sudah terbukti keliru** — lihat Bab 6 |
 | ⛔ | `[dugaan]` | ⛔ **tidak dipakai sebagai dasar keputusan mana pun** |
 
@@ -40,6 +40,10 @@ Bila dua sumber berselisih, yang di atas menang.
 
 ⚠️ **Berkas ke-164 bukan XML:** `Struktur_InputAddendumTreatyIn.xlsx` *(118.333 B)* — lembar kerja,
 bukan aturan Pega. **Tidak masuk hitungan aturan mana pun.** `[terverifikasi]`
+
+> ⛔ **KOREKSI 06-10-2026 — korpus berubah.** Byte kini **17.640.859** (+1.600); md5 gabungan lama tidak
+> tereproduksi. Dua berkas berubah sesudah 22-09: `Activity/CountSpreading_Act.xml` (22-09 17:50) dan
+> `Activity/InsetTreatyInProdAddendum_Act.xml` (23-09). Cacah 163 / 12 tipe / 380 / 1.309 **tetap** — Bab 11.
 
 | Tipe rule | Jumlah | | Tipe rule | Jumlah |
 | --- | ---: | --- | --- | ---: |
@@ -138,10 +142,13 @@ Setiap aturan EDM terjangkau dari titik masuk nyata. ⇒ **Lingkup EDM adalah li
 
 ⭐ **Endorsemen adalah jenis kasus tersendiri**, bukan tahap di dalam kasus polis baru.
 `[terverifikasi]` Alurnya *(202.269 B)* memuat **8 kotak keputusan**, **4 penugasan**,
-**2 utilitas**, **22 sambungan**, dan menyebut **tiga antrean**:
+**2 utilitas**, ~~**22 sambungan**~~ **24 baris sambungan** *(koreksi 06-10: 23 `TransitionN` + 1 sisa penyuntingan)*, dan menyebut **tiga antrean**:
 `ReasTreatyInAdmin` · `ReasTreatyInSecHead` · `ReasTreatyInDeptHead`.
 
-⇒ ⭐ **Sejalan dengan keputusan tangga tiga jenjang pada P13** — tidak ada penyimpangan.
+⇒ ⭐ **Sejalan dengan keputusan tangga tiga jenjang pada P13** — ~~tidak ada penyimpangan~~.
+⛔ *Koreksi 06-10 (XML):* **ada** — `Decision9` mengirim berkas langsung ke `Utility1` bila `LetterNo` ≠
+`"TREATYINDEPTHEAD"` (≤ 200 juta, `CekLimitTreatyAcc_Act` langkah 2.4), sehingga Sec Head dapat menyelesaikan
+sendiri. Tiga jenjang tetap = **keputusan** (penyimpangan sadar) — Bab 11.
 
 ---
 
@@ -209,7 +216,7 @@ lama. ⚠️ Yang perlu diketahui: **`DATAPEGA` adalah skema kedua** yang disent
 
 | Butir | Ketetapan |
 | --- | --- |
-| **P50** | EDM tidak punya FacOut; pengiriman kedua **tidak pernah berjalan** |
+| **P50** | EDM tidak punya FacOut; pengiriman kedua **tidak pernah berjalan** *(⚠️ koreksi 06-10: premis tidak terbukti — `IsFacRetro` diset di jalur EDM; Bab 11)* |
 | **P51** | data produksi **dihapus** bila konversi gagal — ⭐ **bersyarat**: hanya bila `STS_KONVERSI` belum `1` |
 | **P52** | langkah 10 dihidupkan, langkah 18 tetap mati |
 | **P53** | pengiriman ke produksi tanpa autentikasi — **benar**, jalur internal |
@@ -244,7 +251,7 @@ di dalam `pyParamArray` milik tiap langkah. `[terverifikasi]`
 | `pyPropertiesName` / `pyPropertiesValue` terisi | ⛔ **0 / 0** |
 
 ⛔ **Sebabnya dua huruf `py`.** Ronde 1 memeriksa varian **dengan** awalan, menemukan nol, dan
-mempercayainya. Rinciannya di `..\nb-treaty-in\VERIFIKASI-P18.md`.
+mempercayainya. Rinciannya di ~~`..\nb-treaty-in\VERIFIKASI-P18.md`~~ `modul/nbtreatyin/docs/VERIFIKASI-P18.md` *(jalur — koreksi 06-10)*.
 
 ### 6.2 ⛔ *"Pemeriksaan keberhasilan hanya memeriksa FacIn"* — **KELIRU**
 
@@ -461,6 +468,8 @@ print(n)                 # harus 1309
 | md5 gabungan | `24afd5726e083c9df6a692da94728139` |
 | md5 folder `Activity` *(66 berkas)* | `22cf762f4ea4c513ef0e109dfedf94fb` |
 
+> ⛔ *Koreksi 06-10:* invarian di atas berlaku **22-09**; md5 berubah — diukur ulang di **Bab 11**.
+
 ⚠️ **Bila md5 berubah, seluruh angka berkas ini wajib diukur ulang.** Korpus proyek ini **pernah
 berubah di tengah jalan** — berkas `Protection_Act` pernah tertukar versi.
 
@@ -575,3 +584,107 @@ terlihat dari dalam sesi.
 
 *Disusun 22 September 2026. Ronde berikutnya: `to-spec` EDM Treaty In, yang membaca berkas ini
 sebagai sumber keadaan terukur.*
+
+---
+
+## 11 · Koreksi 06-10-2026
+
+⛔ `grilling-ronde-1.md` **tetap tersegel**; koreksinya ditulis di sini (11.3). Log seluruh koreksi dokumen:
+`KOREKSI-DOKUMEN-2026-10-06.md`; peta per AC: `REKONSILIASI-AC.md`. ⛔ Nol butir `[terbuka]` milik WO/DBA ditutup.
+
+### 11.1 Ukur ulang korpus — md5 **berubah**, sensus **tetap**
+
+| Ukuran | 22-09 (Bab 2, 8) | **06-10** | Cara |
+| --- | ---: | ---: | --- |
+| berkas `.xml` | 163 | **163** | `glob **/*.xml` = `os.walk` (164 berkas, 1 `.xlsx`) |
+| tipe rule | 12 | **12** | nama folder induk |
+| byte `.xml` | 17.639.259 | ⛔ **17.640.859** (+1.600) | jumlah `getsize` |
+| md5 gabungan | `24afd572…94728139` | ⛔ **tidak tereproduksi** | lihat di bawah |
+| byte `Activity` (66) | — | 7.383.092 | jumlah `getsize` |
+| langkah bermetode | 618 | **618** | ElementTree, `pySteps` puncak + rekursi |
+| langkah `Property-Set` | 380 | **380 · 380** | **A** ElementTree (resep Bab 8) · **B** pola teks `<pyStepsActivityName>Property-Set</…>` |
+| pasangan nama=nilai | 1.309 | **1.309 · 1.309** | **A** satu `rowdata` · **B** pola teks bersebelahan (resep Bab 8) |
+| `Property-Set` berisi / kosong | 379 / 1 | **379 / 1** (`FillPaymentInstallment` 4.3.2) | A |
+| `PropertiesName` / `PropertiesValue` terisi | 1.310 / 1.311 | **1.310 / 1.311** | pola teks |
+| kedalaman 1…6 | 165·83·65·29·20·18 | **165·83·65·29·20·18** | A |
+| metode teratas | Bab 2.2 | **sama** (`PROPERTY-SET` 380 · `RDB-LIST` 60 · `PAGE-NEW` 21 …) | A |
+
+**Sebab md5 berubah** — dua berkas bercap waktu sesudah ukuran 22-09 (161 berkas lain 08-09-2026):
+`Activity/CountSpreading_Act.xml` (22-09-2026 17:50, 91.357 B) dan `Activity/InsetTreatyInProdAddendum_Act.xml`
+(23-09-2026 14:31, 309.257 B; `pxUpdateDateTime` ekspor 23-09). Perintah: `find "EDM Treaty In" -type f -newermt 2026-09-21`.
+
+⚠️ **Resep md5 22-09 tidak tertulis** di Bab 8. Lima varian diukur 06-10 — tidak satu pun mungkin cocok karena
+isi berubah: concat byte urut jalur penuh `57926cc1b3f4524cb0cf73e1995ca211` · urut relpath huruf kecil
+`f76847aeb328e328b5e0b5231dab7bcf` · urut nama berkas `5cd063b3286beb23864f078794f0ff0c` · md5-dari-md5
+`f57c2a3284437023325abbd07b45a9b6` · relpath+byte `1375a54a19f111a8cc37524b5c5179c1`; folder `Activity` concat
+`2d2f35d333c326505de75e8603717436`. ⭐ **Invarian baru yang diusulkan** (resep tertulis): md5 concat byte seluruh
+`.xml` urut jalur penuh = **`57926cc1b3f4524cb0cf73e1995ca211`**, 163 berkas, 17.640.859 B.
+
+```python
+import os, glob, hashlib
+EDM = r"D:\XML\RNM_BRD\EDM Treaty In"
+h = hashlib.md5()
+for p in sorted(glob.glob(os.path.join(EDM, "**", "*.xml"), recursive=True)):
+    h.update(open(p, "rb").read())
+print(h.hexdigest())          # 06-10-2026: 57926cc1b3f4524cb0cf73e1995ca211
+```
+
+⭐ Karena 380 / 1.309 sepakat dua cara sesudah perubahan, **angka Bab 2.2 tetap berlaku**. Angka Bab 2.4
+(penjangkauan) dan 6.3 (73 senama) **tidak diukur ulang** ronde ini.
+
+### 11.2 Koreksi atas berkas ini
+
+| Bab | Bunyi lama (dikutip) | Bunyi baru | Bukti |
+| --- | --- | --- | --- |
+| 3 | *"22 sambungan"* | **24** baris `pyConnectors` (23 `TransitionN` + 1 sisa penyuntingan) | `Flow/InputAddendumTreatyIn.xml`; sejalan `grilling-ronde-1.md` baris 334 (24) |
+| 3 | *"Sejalan dengan keputusan tangga tiga jenjang pada P13 — tidak ada penyimpangan"* | XML punya cabang **Sec Head menyelesaikan sendiri**: `Decision9` → `Utility1` (`Transition24`) bila `LetterNo` ≠ `"TREATYINDEPTHEAD"`; `LetterNo` diisi hanya bila \|`TotalPremium`\| × kurs > 200.000.000. Tiga jenjang = **keputusan** (brief F0-F1 06-10, prompt WO; NB K2) ⇒ **penyimpangan sadar** | `When/ToTREATYDEPTHEAD.xml`; `Activity/CekLimitTreatyAcc_Act.xml` langkah 2.4 (2.2 ber-`//`); NB `docs/INVENTARIS-XML.md` baris 70 |
+| 5.3 | P50 *"pengiriman kedua tidak pernah berjalan"* | premis tidak terbukti: `IsFacRetro` diset `InputPolicyTreatyEDMDetail_NP`/`_AdjPremi` langkah 3 bila master `FacultativeShare > 0` ⇒ `serviceInsertArasapas_act` langkah 7 dapat jalan. Keputusan P50 tidak diubah — **butir WO** | berkas-berkas itu; `When/IsFacRetro.xml` |
+| 1, 6.1 | `KEADAAN-NB-TREATY-IN.md`, `..\nb-treaty-in\VERIFIKASI-P18.md` | `modul/nbtreatyin/docs/…` | folder NB |
+| 2.1, 8 | byte 17.639.259, md5 `24afd572…` | 11.1 di atas | 11.1 |
+
+### 11.3 Koreksi atas `grilling-ronde-1.md` (tersegel — dikutip, tidak disunting)
+
+| Baris | Bunyi ronde 1 (dikutip) | Yang benar | Bukti |
+| ---: | --- | --- | --- |
+| 342 | *"Keputusan work owner untuk NB (tangga tiga jenjang) sudah menjadi kenyataan di EDM."* | ⛔ **Tidak di XML**: Sec Head dapat menyelesaikan sendiri bila premi ≤ 200 juta (11.2). Tiga jenjang menjadi kenyataan **di sistem baru** sebagai keputusan, bukan sebagai paritas | 11.2 baris kedua |
+| 312 | *"Nol rule yang menguji status FACOUT terbaca."* | sudah dikoreksi Bab 6.2 (`IsSuccessHitService` menguji keduanya); **tambahan 06-10**: gerbang pengiriman FACOUT (`IsFacRetro`) **diset** di jalur EDM | 11.2 baris ketiga |
+| 334 | *"Sambungan … 24"* | ✅ **benar** — justru Bab 3 berkas ini (22) yang keliru | `Flow/InputAddendumTreatyIn.xml` |
+
+### 11.4 Butir yang lahir dari koreksi ini — dicatat, **tidak ditutup**
+
+| # | Butir | Pemilik |
+| ---: | --- | --- |
+| 1 | Cakupan *"satu rumus untuk semua"* (ID-28) atas NonProp — XML memakai batas bawah 0, prorata, pajak ulang, mentah untuk jenis 4/2; AC 22 menuntut angka NonProp tak berubah | `[work owner]` |
+| 2 | P50 dengan `IsFacRetro` = 1 (master `FacultativeShare > 0`) | `[work owner]` |
+| 3 | Pembatalan: tiru 16 medan `SetEDMTCancel` atau nolkan seluruh uang (AC 14) | `[work owner]` |
+| 4 | Sumber rincian angsuran NonProp: salinan master (`SetInstallmentValue`) atau bangun ulang dari selisih XOL (`FillPaymentInstallmentEDMT`) — AC 38 | `[work owner]` · asisten utama |
+| 5 | Daftar kolom khas EDM (AC 32) disusun ulang dari katalog NB | asisten utama |
+| 6 | `T_POLIS_SURVEY` dan `HISTORYAKSEPTASIPRODUCTION` pada generasi EDM — cacah AC 55 | `[work owner]` |
+| 7 | Penghapusan produksi bersyarat `IsPEGAPROD`; langkah 10 berprasyarat `IsTreatyIn` (AC 38, AC 42) | `[work owner]` |
+| 8 | P29 (a) untuk EDM — penunjuk ke NB ID-15 / F20 (spec.md 8.2) | `[work owner]` · `[Finance]` |
+
+### 11.6 Jawaban work owner 07-10-2026 atas butir 11.4
+
+Work owner 07-10-2026 (kedua): *"ikuti rekomendasi semua"* - butir 2, 4, 7, 8 ditutup seperti tabel di bawah. Bila
+konversi Arasapas kelak disambung, butir 2 (P50 `IsFacRetro`: kirim FacOut bila master `FacultativeShare > 0`) dan 7
+(`IsPEGAPROD` / `IsTreatyIn`) dibangun **mengikuti XML**.
+
+| # 11.4 | Keadaan sesudah 07-10-2026 | Dasar |
+| ---: | --- | --- |
+| 1 | **ditutup** - Prop satu rumus, NonProp `CalculateDifferenceEDM_act` apa adanya (migrasi 363 mengikuti XML) | keputusan WO ID-28/30 06-10-2026 |
+| 2 | **gugur** - konversi Arasapas tetap tidak disambung, langkah 7 FacOut tidak pernah jalan | WO 07-10-2026 butir 4 |
+| 3 | **ditutup** - tiru 16 medan `SetEDMTCancel` | WO 07-10-2026 butir 6 *"ikuti XML dulu"* |
+| 4 | **ditutup** - mengikuti XML (`FillPaymentInstallmentEDMT` membangun ulang) | XML; dijelaskan ke WO 07-10-2026 butir 13 |
+| 5 | **terbuka** - daftar kolom khas AC 32 belum disusun ulang | asisten utama |
+| 6 | **ditutup** - generasi EDM menulis `T_POLIS_SURVEY` dan `HISTORYAKSEPTASIPRODUCTION` (pola NB); cacah AC 55 = 🟡 | WO 07-10-2026 butir 9 *"YA"* |
+| 7 | **gugur** - penghapusan produksi dan pesan gagal konversi tidak dibangun (konversi tidak disambung) | WO 07-10-2026 butir 4 |
+| 8 | **ditutup** - nilai lama disalin apa adanya (pemuat SUMBER 'PEGA', AC 39), sama dengan NB ID-15 | NB ID-15; dijelaskan ke WO 07-10-2026 butir 13 |
+
+### 11.5 TELEMETRI EKSEKUSI ronde koreksi
+
+| Ukuran | Keadaan |
+| --- | --- |
+| berkas korpus dibaca | 163 `.xml` (sensus) + 17 activity / 1 flow / 1 When / 1 DT dibaca rinci per langkah |
+| berkas korpus disunting | **0** |
+| `grilling-ronde-1.md` disunting | **0** |
+| token · durasi · biaya | ⛔ **tidak diukur** — angka token sejati tidak terlihat dari dalam sesi; tidak ditaksir |

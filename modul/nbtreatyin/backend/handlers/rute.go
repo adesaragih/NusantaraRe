@@ -5,6 +5,8 @@
 // Rute - prefix `/api/nb-treaty-in` (MODUL.md):
 //
 //	GET  /api/nb-treaty-in/kasus                      daftar portal (SFAPortal_OpportunitiesList; gerbang antrean, 403)
+//	GET  /api/nb-treaty-in/kotak-masuk                cacah berkas yang menunggu akun per workbasket (Beranda)
+//	GET  /api/nb-treaty-in/kotak-masuk/kasus          daftar berkas yang menunggu akun (?workbasket=; Beranda)
 //	POST /api/nb-treaty-in/kasus                      Create (createWork)
 //	GET  /api/nb-treaty-in/kasus/{id}                 buka assignment (pra-proses)
 //	PUT  /api/nb-treaty-in/kasus/{id}                 Save layar admin
@@ -43,6 +45,8 @@ const batasBadan = 4 << 20
 func DaftarkanRute(mux *http.ServeMux, l *services.Layanan, stubPelaku bool) {
 	h := &rute{l: l, stub: stubPelaku}
 	mux.HandleFunc("GET "+Prefix+"/kasus", h.daftar)
+	mux.HandleFunc("GET "+Prefix+"/kotak-masuk", h.kotakMasuk)
+	mux.HandleFunc("GET "+Prefix+"/kotak-masuk/kasus", h.daftarMenunggu)
 	mux.HandleFunc("POST "+Prefix+"/kasus", h.buat)
 	mux.HandleFunc("GET "+Prefix+"/kasus/{id}", h.buka)
 	mux.HandleFunc("PUT "+Prefix+"/kasus/{id}", h.simpan)
@@ -146,13 +150,39 @@ type badanHalaman struct {
 	Halaman *models.Halaman `json:"halaman"`
 	// IDDetail - ID baris view kontrak (pilih bisnis).
 	IDDetail string `json:"idDetail"`
+	// Saringan - saringan kolom popup Choose Business (nama kolom view -> teks).
+	Saringan map[string]string `json:"saringan"`
 }
 
 func (h *rute) daftar(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	out, err := h.l.DaftarKasus(r.Context(), h.pelaku(r), models.SaringanKasus{
 		Cari: strings.TrimSpace(q.Get("cari")), Posisi: strings.TrimSpace(q.Get("posisi")),
+		Selesai: q.Get("status") == "selesai", // switch Proses / Resolved; bawaan Proses
 	})
+	if err != nil {
+		tulisGalat(w, err)
+		return
+	}
+	if out == nil {
+		out = []models.RingkasanKasus{}
+	}
+	galat.TulisJSON(w, out)
+}
+
+// kotakMasuk - kotak masuk Beranda (keputusan work owner 06-10-2026).
+func (h *rute) kotakMasuk(w http.ResponseWriter, r *http.Request) {
+	out, err := h.l.KotakMasuk(r.Context(), h.pelaku(r))
+	if err != nil {
+		tulisGalat(w, err)
+		return
+	}
+	galat.TulisJSON(w, out)
+}
+
+// daftarMenunggu - daftar berkas kotak masuk Beranda (keputusan work owner 06-10-2026).
+func (h *rute) daftarMenunggu(w http.ResponseWriter, r *http.Request) {
+	out, err := h.l.DaftarMenunggu(r.Context(), h.pelaku(r), strings.TrimSpace(r.URL.Query().Get("workbasket")))
 	if err != nil {
 		tulisGalat(w, err)
 		return
@@ -266,7 +296,7 @@ func (h *rute) bisnis(w http.ResponseWriter, r *http.Request) {
 	if !bacaJSON(w, r, &b) {
 		return
 	}
-	out, err := h.l.DaftarBisnis(r.Context(), h.pelaku(r), r.PathValue("id"), b.Halaman)
+	out, err := h.l.DaftarBisnis(r.Context(), h.pelaku(r), r.PathValue("id"), b.Halaman, b.Saringan)
 	if err != nil {
 		tulisGalat(w, err)
 		return

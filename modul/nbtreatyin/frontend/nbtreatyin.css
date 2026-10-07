@@ -2,8 +2,9 @@
  * Gaya modul NB Treaty In.
  *
  * ⛔ TERISOLASI: SETIAP pemilih diawali kelas akar `.nbtreatyin` (dipasang `rute.tsx` pada pembungkus seluruh
- * halaman modul, `display: contents`). Kelas khusus modul berawalan `nbti__`. Nol rona baru: seluruh warna
- * `var(--…)` dari palet inti, sehingga kedua tema ikut sendiri. Dijaga `gaya.test.ts`.
+ * halaman modul, `display: contents`). Kelas khusus modul berawalan `nbti__`. Dijaga `gaya.test.ts`.
+ * Warna: palet inti, ditambah token skin Kelola User `--nbti-*` (terang dan gelap) di bagian SKIN di bawah -
+ * perintah work owner 05-10-2026 menggantikan aturan lama "nol rona baru".
  */
 
 .nbtreatyin {
@@ -11,13 +12,6 @@
 }
 
 /* Baris saringan portal dan popup pilih bisnis. */
-.nbtreatyin .nbti__saring {
-  display: flex;
-  gap: 8px;
-  margin: 0 0 12px;
-  max-width: 520px;
-}
-
 /* Popup pilih bisnis: judul kolom yang dapat diurut, dan saringan per kolom. */
 .nbtreatyin .nbti__urut {
   background: none;
@@ -102,10 +96,43 @@
   margin: 16px 0;
 }
 
+/* Popup ShowPolicyNo: nomor berkas, keterangan, lalu nomor polis menonjol - bertumpuk di tengah (perintah work owner
+   06-10-2026 "RAPIHIN"; dulu kisi dua kolom yang memotong kalimatnya). */
 .nbtreatyin .nbti__nomor {
   display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 6px 16px;
+  justify-items: center;
+  gap: 4px;
+  padding: 8px 0 4px;
+  text-align: center;
+}
+
+.nbtreatyin .nbti__nomor p {
+  margin: 0;
+}
+
+.nbtreatyin .nbti__nomor-kasus {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--nbti-teks, var(--text));
+}
+
+.nbtreatyin .nbti__nomor-teks {
+  font-size: 13px;
+  color: var(--nbti-teks-redup, var(--text-3));
+}
+
+.nbtreatyin .nbti__nomor-polis {
+  margin-top: 8px;
+  padding: 10px 18px;
+  border: 1px solid var(--nbti-aksen-garis, var(--border));
+  border-radius: 10px;
+  background: var(--nbti-aksen-lembut, var(--primary-soft));
+  color: var(--nbti-aksen-teks, var(--primary-text));
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
 }
 
 /* Subsection DetailPoliciesNonProportional: grid total per mata uang berdampingan, rincian angsuran per mata uang. */
@@ -124,4 +151,1045 @@
 .nbtreatyin .nbti__label-np {
   margin: 8px 0;
   font-weight: 600;
+}
+
+/* ======================================================================
+   SKIN KELOLA USER (perintah work owner 05-10-2026: "RAPIHKAN SEMUA TAMPILAN NB TREATY, IKUTI SKIN PADA
+   MENU KELOLA USER, BUAT DENGAN USER FRIENDLY DAN COMPATIBLE DENGAN DEVICE/HP").
+   Soft UI neumorfisme yang SAMA dengan `.kelola-user` (inti/frontend/styles.css): token `--ku-*`
+   disalin sebagai `--nbti-*` dan dibatasi kelas halaman `.nbti__akar` (portal dan layar kasus) - nol
+   pemilih di inti, nol perubahan di Kelola User. Alas abu kebiruan bergradasi; tabel dan kartu TIMBUL
+   KELUAR; isian TIMBUL KE DALAM; tombol kapsul; tombol utama merah bergradasi; aksen navy #2b44b0.
+   Popup dirender di dalam akar halaman, jadi ikut bergaya. TANPA backdrop-filter / filter / transform
+   (mengurung popup `position: fixed`; dijaga gaya.test.ts).
+   ====================================================================== */
+.nbtreatyin .nbti__akar {
+  --nbti-latar: #eef1f6;
+  --nbti-latar-tepi: #cfd7e5;
+  --nbti-latar-atas: #f9fafd;
+  --nbti-latar-bawah: #e4e9f3;
+  --nbti-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --nbti-lembut: #e9edf3;
+  --nbti-lembut-tepi: #dde3ec;
+  --nbti-teks: #101828;
+  --nbti-teks-redup: #4f586b;
+  --nbti-aksen: var(--primary-tanda);
+  --nbti-aksen-teks: #2339a3;
+  --nbti-aksen-lembut: #e3e8f6;
+  --nbti-aksen-garis: #b9c5ee;
+  --nbti-kepala-tabel: #dde4f2;
+  --nbti-kepala-teks: #22326b;
+  --nbti-kepala-garis: #c3cde2;
+  --nbti-isi: #ffffff;
+  --nbti-baris-hover: #e6ecfa;
+  --nbti-garis: #e1e6ef;
+  --nbti-tepi: #c8d1e1;
+  --nbti-tombol: #d63a42;
+  --nbti-tombol-ujung: #bf2f37;
+  --nbti-tombol-hover: #c2333b;
+  --nbti-tombol-hover-ujung: #a9282f;
+  --nbti-terang: rgba(255, 255, 255, 0.92);
+  --nbti-gelap: rgba(163, 177, 198, 0.55);
+  --nbti-kilau: rgba(255, 255, 255, 0.7);
+  --nbti-timbul: 8px 8px 18px var(--nbti-gelap), -8px -8px 18px var(--nbti-terang);
+  --nbti-timbul-kecil: 4px 4px 9px var(--nbti-gelap), -4px -4px 9px var(--nbti-terang);
+  --nbti-cekung-kecil: inset 2px 2px 4px var(--nbti-gelap), inset -2px -2px 4px var(--nbti-terang);
+  --nbti-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --nbti-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--nbti-terang);
+  --nbti-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --nbti-sukses-latar: #e6f7ee;
+  --nbti-sukses-tepi: #b7e8cc;
+  --nbti-sukses-teks: #067647;
+  --nbti-netral-latar: #e9edf3;
+  --nbti-netral-tepi: #d5dce7;
+  --nbti-netral-teks: #475467;
+  --nbti-bahaya-teks: #b42318;
+  --nbti-judul: #2339a3;
+  --text-3: var(--nbti-teks-redup);
+  color: var(--nbti-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--nbti-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--nbti-latar-atas) 0%, var(--nbti-latar-bawah) 100%);
+  box-shadow: var(--nbti-bayang-akar);
+}
+
+:root[data-theme="dark"] .nbtreatyin .nbti__akar {
+  --nbti-latar: #1b2130;
+  --nbti-latar-tepi: #323b50;
+  --nbti-latar-atas: #222a3b;
+  --nbti-latar-bawah: #161b27;
+  --nbti-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --nbti-lembut: #181d2a;
+  --nbti-lembut-tepi: #242b3a;
+  --nbti-teks: #eef0f6;
+  --nbti-teks-redup: #aab2c4;
+  --nbti-aksen-teks: #aebcff;
+  --nbti-aksen-lembut: #222b45;
+  --nbti-aksen-garis: #3a4b8f;
+  --nbti-kepala-tabel: #273152;
+  --nbti-kepala-teks: #dbe2ff;
+  --nbti-kepala-garis: #3a4670;
+  --nbti-isi: #1f2638;
+  --nbti-baris-hover: #2b3554;
+  --nbti-garis: #2c3447;
+  --nbti-tepi: #3a4459;
+  --nbti-terang: rgba(255, 255, 255, 0.045);
+  --nbti-gelap: rgba(0, 0, 0, 0.55);
+  --nbti-kilau: rgba(255, 255, 255, 0.04);
+  --nbti-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --nbti-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--nbti-terang);
+  --nbti-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --nbti-sukses-latar: #0d2a1f;
+  --nbti-sukses-tepi: #1d5c40;
+  --nbti-sukses-teks: #75e0a7;
+  --nbti-netral-latar: #1f2533;
+  --nbti-netral-tepi: #333c4f;
+  --nbti-netral-teks: #c3cad8;
+  --nbti-bahaya-teks: #fda29b;
+  --nbti-judul: #aebcff;
+}
+
+/* Kepala halaman: judul dan tombol; turun ke bawah bila tidak muat (HP). */
+.nbtreatyin .nbti__akar .inbox__kepala {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.nbtreatyin .nbti__akar .inbox__judul,
+.nbtreatyin .nbti__akar .modal__title {
+  color: var(--nbti-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.nbtreatyin .nbti__akar .muted {
+  color: var(--nbti-teks-redup);
+}
+
+.nbtreatyin .nbti__akar :focus-visible {
+  outline: 2px solid var(--nbti-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.nbtreatyin .nbti__akar .field__input {
+  background: var(--nbti-isi);
+  border: 1px solid var(--nbti-tepi);
+  border-radius: 12px;
+  box-shadow: var(--nbti-cekung-kecil);
+  color: var(--nbti-teks);
+}
+
+.nbtreatyin .nbti__akar .field__input:hover:not(:disabled) {
+  border-color: var(--nbti-aksen-garis);
+}
+
+.nbtreatyin .nbti__akar .field__input:focus {
+  border-color: var(--nbti-aksen);
+  box-shadow: var(--nbti-cekung-kecil), var(--nbti-cincin);
+  outline: none;
+}
+
+.nbtreatyin .nbti__akar .field__input:disabled,
+.nbtreatyin .nbti__akar .field__input--readonly {
+  background: var(--nbti-lembut);
+  border-color: var(--nbti-lembut-tepi);
+  color: var(--nbti-teks-redup);
+  box-shadow: none;
+}
+
+.nbtreatyin .nbti__akar .field__label {
+  color: var(--nbti-teks-redup);
+  font-weight: 600;
+}
+
+/* Medan hanya-baca: nilai di kotak lembut (rata dengan isian di sebelahnya), bukan teks melayang. */
+.nbtreatyin .nbti__akar .nbti__medan .nbti__nilai {
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid var(--nbti-lembut-tepi);
+  border-radius: 12px;
+  background: var(--nbti-lembut);
+  color: var(--nbti-teks);
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+/* Angka rata kanan, digit sama lebar - isian, nilai hanya-baca, dan sel tabel (perintah work owner 06-10-2026). */
+.nbtreatyin .nbti__akar .nbti__angka,
+.nbtreatyin .nbti__akar .nbti__medan .nbti__nilai--angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Nol di bagian uang: redup, sama dengan placeholder "0" isian angka. */
+.nbtreatyin .nbti__akar .nbti__medan .nbti__nilai--nol {
+  color: var(--nbti-teks-redup);
+  font-weight: 400;
+}
+
+.nbtreatyin .nbti__akar .field__input::placeholder {
+  color: var(--nbti-teks-redup);
+  opacity: 0.75;
+}
+
+/* Kotak centang dan radio: warna aksen; radio menjadi pilihan berbingkai yang mudah diketuk. */
+.nbtreatyin .nbti__akar input[type="checkbox"],
+.nbtreatyin .nbti__akar input[type="radio"] {
+  accent-color: var(--nbti-aksen);
+  width: 18px;
+  height: 18px;
+}
+
+.nbtreatyin .nbti__akar .nbti__radio {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.nbtreatyin .nbti__akar .nbti__radio label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 14px;
+  border: 1px solid var(--nbti-tepi);
+  border-radius: 999px;
+  background: var(--nbti-isi);
+  box-shadow: var(--nbti-timbul-kecil);
+  cursor: pointer;
+}
+
+.nbtreatyin .nbti__akar .nbti__radio label:has(input:checked) {
+  border-color: var(--nbti-aksen-garis);
+  background: var(--nbti-aksen-lembut);
+  color: var(--nbti-aksen-teks);
+  font-weight: 600;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama merah bergradasi; tombol polos = ghost. */
+.nbtreatyin .nbti__akar .btn {
+  border-radius: 999px;
+}
+
+.nbtreatyin .nbti__akar .btn--primary {
+  background: linear-gradient(180deg, var(--nbti-tombol), var(--nbti-tombol-ujung));
+  border-color: var(--nbti-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--nbti-bayang-tombol);
+}
+
+.nbtreatyin .nbti__akar .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--nbti-tombol-hover), var(--nbti-tombol-hover-ujung));
+  border-color: var(--nbti-tombol-hover-ujung);
+}
+
+.nbtreatyin .nbti__akar .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.nbtreatyin .nbti__akar .btn--ghost,
+.nbtreatyin .nbti__akar .btn:not(.btn--primary):not(.btn--danger) {
+  background: var(--nbti-isi);
+  border: 1px solid var(--nbti-tepi);
+  color: var(--nbti-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--nbti-timbul-kecil);
+}
+
+.nbtreatyin .nbti__akar .btn--ghost:hover:not(:disabled),
+.nbtreatyin .nbti__akar .btn:not(.btn--primary):not(.btn--danger):hover:not(:disabled) {
+  background: var(--nbti-aksen-lembut);
+  border-color: var(--nbti-aksen-garis);
+  color: var(--nbti-aksen-teks);
+}
+
+.nbtreatyin .nbti__akar .btn:not(.btn--primary):active:not(:disabled) {
+  box-shadow: var(--nbti-cekung-kecil);
+}
+
+.nbtreatyin .nbti__akar .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.nbtreatyin .nbti__akar .modal {
+  background: var(--nbti-latar);
+  border: 1px solid var(--nbti-kilau);
+  border-radius: 22px;
+  box-shadow: var(--nbti-bayang-popup);
+}
+
+.nbtreatyin .nbti__akar .modal__head,
+.nbtreatyin .nbti__akar .modal__actions {
+  border-color: var(--nbti-garis);
+}
+
+.nbtreatyin .nbti__akar .alert {
+  border-radius: 12px;
+}
+
+/* Wadah Section (panel): kartu putih TIMBUL KELUAR; judul navy. */
+.nbtreatyin .nbti__akar .panel {
+  margin-bottom: 18px;
+  padding: 20px;
+  border: 1px solid var(--nbti-tepi);
+  border-radius: 18px;
+  background: var(--nbti-isi);
+  box-shadow: var(--nbti-timbul-kecil);
+}
+
+.nbtreatyin .nbti__akar .panel__title,
+.nbtreatyin .nbti__akar .panel h4 {
+  margin: 0 0 12px;
+  color: var(--nbti-judul);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.nbtreatyin .nbti__akar .panel h4:not(:first-child) {
+  margin-top: 18px;
+}
+
+/* Tabel: kartu putih bertepi; kepala navy muda, belang lembut, sorot biru muda. Di dalam panel tanpa bayangan.
+   Tinggi mengikuti isi: `min-height: 160px` inti menyisakan ruang kosong di bawah daftar pendek (work owner
+   06-10-2026, "kenapa banyak space kosong"). */
+.nbtreatyin .nbti__akar .table-wrap {
+  min-height: 0;
+  border: 1px solid var(--nbti-tepi);
+  border-radius: 16px;
+  background: var(--nbti-isi);
+  box-shadow: var(--nbti-timbul);
+}
+
+.nbtreatyin .nbti__akar .panel .table-wrap,
+.nbtreatyin .nbti__akar .modal .table-wrap {
+  box-shadow: none;
+}
+
+.nbtreatyin .nbti__akar .table-wrap thead th {
+  background: var(--nbti-kepala-tabel);
+  color: var(--nbti-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--nbti-kepala-garis);
+}
+
+.nbtreatyin .nbti__akar .table-wrap td {
+  color: var(--nbti-teks);
+  background: var(--nbti-isi);
+  border-bottom-color: var(--nbti-garis);
+}
+
+.nbtreatyin .nbti__akar .table-wrap tbody tr:nth-child(even),
+.nbtreatyin .nbti__akar .table-wrap tbody tr:hover {
+  background: transparent;
+}
+
+.nbtreatyin .nbti__akar .table-wrap tbody tr:nth-child(even) > td {
+  background: var(--nbti-lembut);
+}
+
+.nbtreatyin .nbti__akar .table-wrap tbody tr:hover > td {
+  background: var(--nbti-baris-hover);
+}
+
+/* Tombol di dalam baris tabel (Choose, Delete): kapsul kecil, supaya baris tidak didominasi tombol besar. */
+.nbtreatyin .nbti__akar .table-wrap td .btn {
+  min-height: 32px;
+  padding: 4px 14px;
+  font-size: 13px;
+}
+
+.nbtreatyin .nbti__akar .table-wrap td .btn--primary {
+  box-shadow: 2px 2px 6px rgba(214, 58, 66, 0.3);
+}
+
+/* Nomor berkas di daftar portal: tautan aksen yang mudah diketuk. */
+.nbtreatyin .nbti__akar .nbti__tautan {
+  color: var(--nbti-aksen-teks);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Status berkas: chip bertitik seperti status Kelola User. */
+.nbtreatyin .nbti__akar .nbti__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 8px;
+  border: 1px solid var(--nbti-netral-tepi);
+  border-radius: 999px;
+  background: var(--nbti-netral-latar);
+  color: var(--nbti-netral-teks);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.nbtreatyin .nbti__akar .nbti__status::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Kode mata uang pasangan angka uang: chip aksen kecil. */
+/* Kode mata uang: teks biasa di depan angka ("IDR 163.125.000"), bukan chip - perintah work owner 05-10-2026. */
+.nbtreatyin .nbti__akar .nbti__kode {
+  margin-right: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/* Baris saringan portal: isian melebar, tombol di sampingnya. */
+/* Saringan portal: SATU kapsul - ikon cari, isian tanpa bingkai, pengosong (hanya bila ada teks), tombol Filter
+   menempel di kanan; cincin fokus pada kapsulnya (perintah work owner 06-10-2026: "rapihkan, keren, elegan"). */
+.nbtreatyin .nbti__akar .nbti__saring {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 560px;
+  margin: 0 0 14px;
+  padding: 4px 4px 4px 14px;
+  border: 1px solid var(--nbti-tepi);
+  border-radius: 999px;
+  background: var(--nbti-isi);
+  box-shadow: var(--nbti-cekung-kecil);
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nbtreatyin .nbti__akar .nbti__saring:focus-within {
+  border-color: var(--nbti-aksen-garis);
+  box-shadow: var(--nbti-cekung-kecil), var(--nbti-cincin);
+}
+
+.nbtreatyin .nbti__akar .nbti__saring-ikon {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--nbti-teks-redup);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.nbtreatyin .nbti__akar .nbti__saring-isian {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 32px;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--nbti-teks);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.nbtreatyin .nbti__akar .nbti__saring-isian::placeholder {
+  color: var(--nbti-teks-redup);
+  opacity: 0.75;
+}
+
+.nbtreatyin .nbti__akar .nbti__saring-hapus {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--nbti-lembut);
+  color: var(--nbti-teks-redup);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.nbtreatyin .nbti__akar .nbti__saring-hapus:hover:not(:disabled) {
+  background: var(--nbti-aksen-lembut);
+  color: var(--nbti-aksen-teks);
+}
+
+/* kotak kosong: pengosong disembunyikan, tempatnya tetap (isian tidak melompat saat mengetik) */
+.nbtreatyin .nbti__akar .nbti__saring-hapus:disabled {
+  visibility: hidden;
+}
+
+.nbtreatyin .nbti__akar .nbti__saring-tombol {
+  flex: 0 0 auto;
+  height: 32px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--nbti-aksen-teks);
+  color: var(--nbti-isi);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.nbtreatyin .nbti__akar .nbti__saring-tombol:hover {
+  opacity: 0.88;
+}
+
+.nbtreatyin .nbti__akar .nbti__saring-hapus:focus-visible,
+.nbtreatyin .nbti__akar .nbti__saring-tombol:focus-visible {
+  outline: 2px solid var(--nbti-aksen-garis);
+  outline-offset: 2px;
+}
+
+.nbtreatyin .nbti__akar .nbti__aksi {
+  flex-wrap: wrap;
+}
+
+/* Kaki aksi kasus (Save / Submit / Approve): kartu di akhir halaman. Tidak `sticky`: yang menggulir adalah body,
+   sedangkan `main.shell__isi` (inti) ber-overflow, jadi `sticky` di dalam modul tidak pernah menempel. */
+.nbtreatyin .nbti__akar .nbti__kaki {
+  flex-wrap: wrap;
+  margin: 16px 0 0;
+  padding: 12px 16px;
+  border: 1px solid var(--nbti-tepi);
+  border-radius: 18px;
+  background: var(--nbti-isi);
+  box-shadow: var(--nbti-timbul-kecil);
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   TATA LETAK PEGA (perintah work owner 05-10-2026, screenshot layar Pega: "coba ikuti layoutnya begini, buat rapih
+   ya"): dua kolom berdiri sendiri, label di KIRI dan nilai di KANAN. Lebar label tetap, jadi kolom kiri, kolom
+   kanan, dan Remark yang melebar berbaris rapi. `tataletak.ts` membagi medannya; CSS ini hanya menata.
+   --------------------------------------------------------------------------------------------------------------- */
+.nbtreatyin .nbti__akar {
+  --nbti-lebar-label: 200px;
+  --nbti-label: min(var(--nbti-lebar-label), 40%);
+}
+
+.nbtreatyin .nbti__akar .nbti__dua-kolom {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 40px;
+  align-items: start;
+}
+
+.nbtreatyin .nbti__akar .nbti__dua-kolom + .nbti__dua-kolom {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--nbti-garis);
+}
+
+.nbtreatyin .nbti__akar .nbti__kolom,
+.nbtreatyin .nbti__akar .nbti__kolom-grup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.nbtreatyin .nbti__akar .nbti__kolom-grup > h4 {
+  margin: 0;
+}
+
+/* Wadah kedua dalam satu kolom (klaim/saldo di bawah OGP, potongan/pajak di bawah ONP): garis pemisah tipis. */
+.nbtreatyin .nbti__akar .nbti__kolom-grup > .nbti__kolom + .nbti__kolom {
+  padding-top: 10px;
+  border-top: 1px dashed var(--nbti-garis);
+}
+
+.nbtreatyin .nbti__akar .nbti__baris-penuh {
+  margin-top: 10px;
+}
+
+.nbtreatyin .nbti__akar .nbti__total {
+  margin-top: 14px;
+}
+
+.nbtreatyin .nbti__akar .nbti__usulan {
+  margin: 0 0 16px;
+}
+
+/* Satu baris: label | nilai. */
+.nbtreatyin .nbti__akar .nbti__kolom .field {
+  display: grid;
+  grid-template-columns: var(--nbti-label) minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: center;
+  margin: 0;
+}
+
+.nbtreatyin .nbti__akar .nbti__kolom .field__label {
+  margin: 0;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.nbtreatyin .nbti__akar .nbti__kolom .field__error {
+  grid-column: 2;
+}
+
+/* Isian bertingkat (textarea): label sejajar baris pertama. */
+.nbtreatyin .nbti__akar .nbti__kolom .field--lebar {
+  align-items: start;
+}
+
+.nbtreatyin .nbti__akar .nbti__kolom .field--lebar .field__label {
+  padding-top: 11px;
+}
+
+/* Angka uang tersunting: label | [kode] [isian]. Pembungkus `.field` dilebur supaya kode duduk di baris yang sama. */
+.nbtreatyin .nbti__akar .nbti__kolom > .nbti__dengan-kode {
+  display: grid;
+  grid-template-columns: var(--nbti-label) auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.nbtreatyin .nbti__akar .nbti__kolom > .nbti__dengan-kode > .field {
+  display: contents;
+}
+
+.nbtreatyin .nbti__akar .nbti__kolom > .nbti__dengan-kode .field__label {
+  grid-column: 1;
+  grid-row: 1;
+  padding-right: 12px;
+}
+
+.nbtreatyin .nbti__akar .nbti__kolom > .nbti__dengan-kode > .nbti__kode {
+  grid-column: 2;
+  grid-row: 1;
+  margin-right: 8px;
+}
+
+.nbtreatyin .nbti__akar .nbti__kolom > .nbti__dengan-kode .field__input {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.nbtreatyin .nbti__akar .nbti__kolom > .nbti__dengan-kode .field__error {
+  grid-column: 2 / -1;
+  grid-row: 2;
+}
+
+/* Tombol Survey Report di bawah radio Survey Report: sejajar kolom nilai. */
+.nbtreatyin .nbti__akar .nbti__kolom > .nbti__tombol-survei {
+  margin: -4px 0 0 calc(var(--nbti-label) + 12px);
+}
+
+.nbtreatyin .nbti__akar .nbti__survei-kepala {
+  margin: 0 0 12px;
+}
+
+/* Kotak centang: duduk di kolom nilai, sejajar isian di atas/bawahnya. */
+.nbtreatyin .nbti__akar .nbti__kolom .nbti__centang {
+  margin: 0 0 0 calc(var(--nbti-label) + 12px);
+}
+
+.nbtreatyin .nbti__akar .nbti__kolom .nbti__centang {
+  min-height: 32px;
+  font-weight: 600;
+}
+
+/* Deret "Q [..] / [..] U/Y [..]" satu baris; label Q tetap di kolom label. */
+.nbtreatyin .nbti__akar .nbti__deret {
+  display: grid;
+  grid-template-columns: var(--nbti-label) minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 4px;
+  align-items: center;
+}
+
+.nbtreatyin .nbti__akar .nbti__deret > *,
+.nbtreatyin .nbti__akar .nbti__deret .field,
+.nbtreatyin .nbti__akar .nbti__deret .nbti__dengan-kode {
+  display: contents;
+}
+
+.nbtreatyin .nbti__akar .nbti__deret .field__label {
+  padding: 0;
+}
+
+.nbtreatyin .nbti__akar .nbti__deret .field__error {
+  grid-column: 2 / -1;
+}
+
+/* Tablet dan layar sempit: kolom kanan turun ke bawah kolom kiri, label tetap di kiri. */
+@media (max-width: 860px) {
+  .nbtreatyin .nbti__akar .nbti__dua-kolom {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   PADAT (perintah work owner 06-10-2026: "tampilannya kecilin, terlalu besar"): huruf 13px, isian 32px, panel dan
+   sel tabel lebih rapat, tombol lebih ramping. Hanya halaman NB Treaty In (`.nbti__akar`); inti tidak disentuh.
+   --------------------------------------------------------------------------------------------------------------- */
+.nbtreatyin .nbti__akar {
+  --nbti-lebar-label: 170px;
+  padding: 16px;
+  font-size: 13px;
+}
+
+.nbtreatyin .nbti__akar .inbox__judul {
+  font-size: 18px;
+}
+
+.nbtreatyin .nbti__akar .panel {
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.nbtreatyin .nbti__akar .panel h4 {
+  margin: 0 0 6px;
+  font-size: 12px;
+}
+
+.nbtreatyin .nbti__akar .field__label {
+  font-size: 12px;
+}
+
+.nbtreatyin .nbti__akar .field__input {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.nbtreatyin .nbti__akar textarea.field__input {
+  height: auto;
+  min-height: 56px;
+  padding: 6px 10px;
+}
+
+.nbtreatyin .nbti__akar .nbti__medan .nbti__nilai {
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.nbtreatyin .nbti__akar .nbti__dua-kolom {
+  gap: 6px 28px;
+}
+
+.nbtreatyin .nbti__akar .nbti__kolom,
+.nbtreatyin .nbti__akar .nbti__kolom-grup {
+  gap: 6px;
+}
+
+.nbtreatyin .nbti__akar .nbti__dua-kolom + .nbti__dua-kolom {
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.nbtreatyin .nbti__akar .nbti__radio label {
+  min-height: 30px;
+  padding: 3px 12px;
+}
+
+.nbtreatyin .nbti__akar input[type="checkbox"],
+.nbtreatyin .nbti__akar input[type="radio"] {
+  width: 16px;
+  height: 16px;
+}
+
+.nbtreatyin .nbti__akar .nbti__kolom .nbti__centang {
+  min-height: 26px;
+}
+
+.nbtreatyin .nbti__akar .btn {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.nbtreatyin .nbti__akar .btn--sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.nbtreatyin .nbti__akar th {
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.nbtreatyin .nbti__akar td {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.nbtreatyin .nbti__akar td .field__input {
+  height: 30px;
+}
+
+.nbtreatyin .nbti__akar .nbti__kaki {
+  padding: 8px 12px;
+}
+
+.nbtreatyin .nbti__akar .alert {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+/* HP dan layar sempit. */
+@media (max-width: 640px) {
+  .nbtreatyin .nbti__akar {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .nbtreatyin .nbti__akar .panel {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .nbtreatyin .nbti__akar .inbox__kepala > .btn {
+    width: 100%;
+  }
+
+  /* HP: kapsul selebar layar, tetap satu baris */
+  .nbtreatyin .nbti__akar .nbti__saring {
+    max-width: none;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__saring-tombol {
+    padding: 0 14px;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__kaki .btn {
+    flex: 1 1 140px;
+  }
+
+  /* Daftar portal menjadi kartu: satu berkas satu kartu, label kolom di kiri setiap baris. */
+  .nbtreatyin .nbti__akar .nbti__tabel-portal-wadah {
+    max-height: none;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__tabel-portal thead {
+    display: none;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__tabel-portal,
+  .nbtreatyin .nbti__akar .nbti__tabel-portal tbody,
+  .nbtreatyin .nbti__akar .nbti__tabel-portal tr,
+  .nbtreatyin .nbti__akar .nbti__tabel-portal td {
+    display: block;
+    width: 100%;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__tabel-portal tr {
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--nbti-tepi);
+    border-radius: 16px;
+    background: var(--nbti-isi);
+    box-shadow: var(--nbti-timbul-kecil);
+    box-sizing: border-box;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__tabel-portal tbody tr:nth-child(even) > td,
+  .nbtreatyin .nbti__akar .nbti__tabel-portal tbody tr:hover > td,
+  .nbtreatyin .nbti__akar .nbti__tabel-portal td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+    border: 0;
+    background: transparent;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__tabel-portal td::before {
+    content: attr(data-label);
+    flex: none;
+    color: var(--nbti-teks-redup);
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  /* Tata letak Pega di HP: label di ATAS nilai (lebar penuh untuk jari); deret Q / U/Y tetap satu baris. */
+  .nbtreatyin .nbti__akar .nbti__kolom .field {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 6px;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__kolom .field__error {
+    grid-column: 1;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__kolom .field--lebar .field__label {
+    padding-top: 0;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__kolom > .nbti__dengan-kode {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: 6px;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__kolom > .nbti__dengan-kode .field__label {
+    grid-column: 1 / -1;
+    padding-right: 0;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__kolom > .nbti__dengan-kode > .nbti__kode {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__kolom > .nbti__dengan-kode .field__input {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__kolom > .nbti__dengan-kode .field__error {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__kolom .nbti__centang {
+    margin-left: 0;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__kolom > .nbti__tombol-survei {
+    margin-left: 0;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__aksi .btn {
+    flex: 1 1 140px;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__deret {
+    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+    column-gap: 8px;
+  }
+
+  .nbtreatyin .nbti__akar .nbti__deret .field__error {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   NONPROP SEPERTI LAYAR PEGA (screenshot work owner 06-10-2026: "tampilan NB Treaty Non Prop belum sesuai"): grid
+   selebar isinya tanpa patah baris (Note "layer1 of layer1" satu baris, kolom lebar menggulir di dalam bingkainya),
+   grid total sebaris berdampingan, "% RNM Share" dan "Installment" ringkas, angsuran per mata uang dapat dilipat,
+   deret layer "layer 1 Of layer 1" di kolom kanan section General.
+   --------------------------------------------------------------------------------------------------------------- */
+.nbtreatyin .nbti__akar .nbti__grid-np {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.nbtreatyin .nbti__akar .nbti__grid-np table {
+  width: auto;
+}
+
+.nbtreatyin .nbti__akar .nbti__grid-np th,
+.nbtreatyin .nbti__akar .nbti__grid-np td {
+  white-space: nowrap;
+}
+
+/* spreading: selebar panel seperti Pega */
+.nbtreatyin .nbti__akar .nbti__grid-np:has(> table > tfoot) {
+  width: 100%;
+}
+
+.nbtreatyin .nbti__akar .nbti__grid-np:has(> table > tfoot) table {
+  width: 100%;
+}
+
+.nbtreatyin .nbti__akar .nbti__total-np {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 10px 0 4px;
+}
+
+.nbtreatyin .nbti__akar .nbti__total-np > .nbti__grid-np {
+  flex: 0 1 auto;
+}
+
+/* sel nilai total cukup lebar untuk ratusan miliar */
+.nbtreatyin .nbti__akar .nbti__total-np td.nbti__angka {
+  min-width: 140px;
+}
+
+.nbtreatyin .nbti__akar .nbti__medan-np {
+  max-width: 260px;
+}
+
+.nbtreatyin .nbti__akar .nbti__kolom-np {
+  max-width: 360px;
+  margin-bottom: 12px;
+}
+
+.nbtreatyin .nbti__akar .nbti__urut-np {
+  width: 1%;
+  color: var(--nbti-teks-redup);
+  font-weight: 700;
+  text-align: right;
+}
+
+/* grid "Currency": baris mata uang berlipat, rinciannya di dalam bingkai sendiri */
+.nbtreatyin .nbti__akar .nbti__angsuran-np > table > tbody > tr > td {
+  padding: 6px 10px 10px;
+  background: var(--nbti-isi);
+}
+
+.nbtreatyin .nbti__akar .nbti__rinci-np > summary {
+  width: fit-content;
+  padding: 4px 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nbtreatyin .nbti__akar .nbti__rinci-np > .nbti__grid-np {
+  margin-top: 6px;
+  box-shadow: none;
+}
+
+/* "layer 1 Of layer 1": nilai pertama di bawah kolom label, sisanya sebaris; label kosong tidak memakan kolom */
+.nbtreatyin .nbti__akar .nbti__deret--layer {
+  grid-template-columns: var(--nbti-label) repeat(4, auto);
+  justify-content: start;
+}
+
+.nbtreatyin .nbti__akar .nbti__deret--layer .field__label:empty {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .nbtreatyin .nbti__akar .nbti__deret--layer {
+    grid-template-columns: repeat(5, auto);
+  }
+
+  .nbtreatyin .nbti__akar .nbti__total-np > .nbti__grid-np {
+    flex: 1 1 100%;
+  }
 }

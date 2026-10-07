@@ -6,7 +6,17 @@
 >
 > ⭐ **Status berubah `blocked` → `ready-for-agent`.** Dua baris di kepala tiket dicoret, bunyinya tidak dihapus.
 >
-> Rinciannya di `KEPUTUSAN-RONDE-12-BUTIR-2026-09-23.md`, butir 5.
+> Rinciannya di `modul/nbtreatyin/docs/KEPUTUSAN-RONDE-12-BUTIR-2026-09-23.md`, butir 5.
+
+> ⛔ **KOREKSI 06-10-2026** (log `../KOREKSI-DOKUMEN-2026-10-06.md`).
+> 1. Bab *Kenapa tiket ini `blocked`* di bawah dicoret — penahannya gugur 23-09.
+> 2. ⭐ Syarat **rumus berlapis** (AC 42) kini berbukti syarat yang **dijalankan**, bukan keterangan:
+>    `Activity/EDMTCalculateTreatyDifference.xml` langkah 1 / 4 memilih varian lewat `.OldData.EDMNo==""`
+>    (salah ⇒ lompat `HasEDMNo`; benar ⇒ keluar). Baris Pega yang generasi sebelumnya ber-`EDMNo` terisi
+>    memang lahir dari varian kedua.
+> 3. ⚠️ Catatan untuk asisten utama: kolom `RUMUS_BERLAPIS` hanya ada di **361** dan **362**; induk
+>    `T_POLIS_DIFFERENCE` (360) tidak memilikinya, padahal varian kedua juga menulis medan induk (langkah 4).
+>    AC 42 berbunyi *"setiap baris selisih"* — cakupannya perlu dinyatakan. Tidak diputuskan di sini.
 
 ---
 
@@ -58,7 +68,8 @@ gagal.
 - [ ] **AC 42** — penanda rumus berlapis terisi pada setiap baris yang memenuhi syaratnya
 - [ ] **AC 43** — kedua penanda **hanya** terisi pada baris hasil migrasi
 
-## ⛔ Kenapa tiket ini `blocked`
+## ⛔ ~~Kenapa tiket ini `blocked`~~ — ✅ penahan gugur 23-09 *(dicoret koreksi 06-10)*
 
-`[work owner]` **Lingkup pemindahan dokumen lama belum diputuskan** — seluruhnya, sebagian, atau
-tetap dibaca lewat jalur lama. Penandaan hanya berarti atas baris yang benar-benar dipindahkan.
+~~`[work owner]` **Lingkup pemindahan dokumen lama belum diputuskan** — seluruhnya, sebagian, atau
+tetap dibaca lewat jalur lama. Penandaan hanya berarti atas baris yang benar-benar dipindahkan.~~
+⭐ `[keputusan work owner]` 23-09: **seluruh** polis, **setiap** generasi (spec-penyimpanan bab *KEPUTUSAN 23-09-2026* butir 4).

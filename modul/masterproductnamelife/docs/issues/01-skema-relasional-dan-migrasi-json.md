@@ -327,7 +327,7 @@ Kalimat work owner dikutip: *"HANYA MODUL PRODUCTNAME LIFE!! UBAH SEMUA JANGAN A
 Penjaga `TestMPNLAplikasiHanyaTabelFlat`: kode produksi modul tidak menyebut kedua tabel JSON (kecuali definisi nama,
 alat pindah, dan kodek JSON-nya) dan tidak menyebut ketiga view produk. Akibatnya alat pindah wajib dijalankan sebelum
 aplikasi dipakai: ID produk lama baru terlihat oleh penerbitan ID setelah berada di induk flat. View master milik master
-lain (`CURRENCY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE`, `RIRISK_LIFE_SUMMARY`, `RATE_LIFE_SUMMARY`, `RATE_LIFE`) tetap
+lain (`CURRENCY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE`, `RIRISK_LIFE_SUMMARY`, `RATE_LIFE_SUMMARY`, `RATE_LIFE`) tetap *(RALAT 07-10-2026: ringkasan rate kini tabel `M_RATE_LIFE_SUMMARY` berkolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID - keputusan work owner 07-10-2026, `modul/riratelife/MODUL.md` RALAT R6; modul ini membacanya `SELECT ID, USEDBY`, tetap baca-saja)*
 dibaca untuk pilihan dropdown — bukan view produk modul ini.
 
 ### Permintaan work owner 03-10-2026 — tombol Copy Old

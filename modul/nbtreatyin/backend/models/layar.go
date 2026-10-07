@@ -25,6 +25,12 @@ type MedanWajib struct {
 	Label string
 	// Syarat - `pyRequired` bersyarat; nil = selalu wajib.
 	Syarat func(h *Halaman) bool
+	// NolOtomatis - medan UANG wajib: kosong diisi "0" saat Save / Submit, bukan ditolak (permintaan work
+	// owner 06-10-2026). Medan wajib lain tetap ditolak bila kosong.
+	NolOtomatis bool
+	// HanyaSubmit - wajib hanya saat Submit, bukan halangan Save (permintaan work owner 06-10-2026: Approval,
+	// Suggest).
+	HanyaSubmit bool
 }
 
 // bukanNonProp = `pyWorkPage.Quotation.ProportionalType != 'NonProportional'`.
@@ -88,12 +94,25 @@ func wajib(m, label string, syarat func(*Halaman) bool) MedanWajib {
 // wajibUangAdmin - medan wajib bagian uang layar admin: `pyRequired`
 // `bukanNonProp` DAN wadahnya tampil.
 func wajibUangAdmin(m, label string) MedanWajib {
-	return wajib(m, label, dan(bukanNonProp, wadahUangAdmin))
+	w := wajib(m, label, dan(bukanNonProp, wadahUangAdmin))
+	w.NolOtomatis = true
+	return w
 }
 
 // wajibUangAtasan - medan wajib bagian uang layar atasan: `pyRequired` tanpa
 // syarat, wadahnya `.IsNewPolicyNonProp != 1`.
-func wajibUangAtasan(m, label string) MedanWajib { return wajib(m, label, bukanNonPropBaru) }
+func wajibUangAtasan(m, label string) MedanWajib {
+	w := wajib(m, label, bukanNonPropBaru)
+	w.NolOtomatis = true
+	return w
+}
+
+// wajibSubmit - medan `Section/ListSuggest` yang wajib saat Submit saja (Approval, Suggest).
+func wajibSubmit(m, label string) MedanWajib {
+	w := wajib(m, label, nil)
+	w.HanyaSubmit = true
+	return w
+}
 
 // medanWajibAdmin - `Section/DetailPolicyTreatyIn` + `Section/ListSuggest`.
 //
@@ -123,8 +142,8 @@ var medanWajibAdmin = []MedanWajib{
 	wajibUangAdmin("ExcessLoss", "Excess Loss"),
 	wajibUangAdmin("Deduction1", "Deduction1"),
 	wajibUangAdmin("Deduction2", "Deduction2"),
-	wajib("IsApproved", "Approval", nil),
-	wajib("Suggest", "Suggest", nil),
+	wajibSubmit("IsApproved", "Approval"),
+	wajibSubmit("Suggest", "Suggest"),
 }
 
 // medanWajibAtasan - `Section/DetailDeptHeadTreatyIn_UW` + `Section/ListSuggest`.
@@ -149,8 +168,8 @@ var medanWajibAtasan = []MedanWajib{
 	wajibUangAtasan("OveriddingCommOnp", "Deduction In B (ONP)"),
 	wajibUangAtasan("Deduction1", "Deduction1"),
 	wajibUangAtasan("Deduction2", "Deduction2"),
-	wajib("IsApproved", "Approval", nil),
-	wajib("Suggest", "Suggest", nil),
+	wajibSubmit("IsApproved", "Approval"),
+	wajibSubmit("Suggest", "Suggest"),
 }
 
 // DaftarMedanWajib - medan wajib layar posisi itu.
@@ -188,6 +207,32 @@ func MedanWajibBerlaku(h *Halaman, posisi string, tempat map[string]bool) []Meda
 		out = append(out, medanTanggalProduksi)
 	}
 	return out
+}
+
+// IsiNolWajibUang - medan UANG wajib yang berlaku dan kosong diisi "0" (permintaan work owner 06-10-2026:
+// "yang wajib diisi tapi memang tidak diisi, set otomatis 0"). Dipanggil Save / Submit tepat sebelum
+// `MedanWajibKosong`; nilai 0 ikut tersimpan. Jawab jalur yang diisi.
+func IsiNolWajibUang(h *Halaman, posisi string, tempat map[string]bool) []string {
+	var diisi []string
+	for _, m := range MedanWajibBerlaku(h, posisi, tempat) {
+		if m.NolOtomatis && strings.TrimSpace(h.Ambil(m.Jalur)) == "" {
+			h.Setel(m.Jalur, "0")
+			diisi = append(diisi, m.Jalur)
+		}
+	}
+	return diisi
+}
+
+// MedanWajibKosongSimpan - `MedanWajibKosong` untuk tombol Save (AC 48): medan `HanyaSubmit` (Approval, Suggest)
+// tidak menghalangi Save (permintaan work owner 06-10-2026).
+func MedanWajibKosongSimpan(h *Halaman, posisi string, tempat map[string]bool) []string {
+	var kosong []string
+	for _, m := range MedanWajibBerlaku(h, posisi, tempat) {
+		if !m.HanyaSubmit && strings.TrimSpace(h.Ambil(m.Jalur)) == "" {
+			kosong = append(kosong, m.Label)
+		}
+	}
+	return kosong
 }
 
 // MedanWajibKosong - label medan wajib berlaku yang kosong (AC 45, 48).
@@ -240,8 +285,12 @@ const (
 	// pemicuAngsuran - change -> refresh `FillPaymentInstallment(Installment=.Installment)`.
 	pemicuAngsuran
 	// pemicuHapusTypeTax - sel `.FlagPPH`: change -> runActivity `RemoveTypeTax_ACT`
-	// (menulis medan halaman, bukan daftar - dijalankan saat digabung).
+	// (menulis medan halaman, bukan daftar - dijalankan saat digabung), lalu pajak
+	// dihitung ulang seperti `pemicuPajak`.
 	pemicuHapusTypeTax
+	// pemicuPajak - sel `.TypeTax`. `[keputusan work owner 06-10-2026]` pajak dihitung
+	// ulang saat itu juga; XML sel ini hanya postValue.
+	pemicuPajak
 )
 
 // medanIsianAdmin - satu sel isian TERBUKA layar admin: jalur relatif
@@ -290,7 +339,7 @@ var medanAdmin = func() []medanIsianAdmin {
 		medanIsianAdmin{medan: "QuotationData.IsSurveyReport", tampil: bukanNonProp},
 		medanIsianAdmin{medan: "FlagRetroTreaty", tampil: bukanXOLRetro},
 		medanIsianAdmin{medan: "FlagPPH", tampil: bukanXOLRetro, pemicu: pemicuHapusTypeTax},
-		medanIsianAdmin{medan: "TypeTax", tampil: dan(bukanXOLRetro, flagPPH)},
+		medanIsianAdmin{medan: "TypeTax", tampil: dan(bukanXOLRetro, flagPPH), pemicu: pemicuPajak},
 		medanIsianAdmin{medan: "Quartal", tampil: proporsionalQD},
 		medanIsianAdmin{medan: "YearOfQuartal", tampil: proporsionalQD},
 		medanIsianAdmin{medan: "IDCurrency", tampil: bukanNonPropBaru},
@@ -438,9 +487,21 @@ func GabungMasukanLayar(h, masuk *Halaman, posisi string, tempat map[string]bool
 				p.Angsuran = true
 			case pemicuHapusTypeTax:
 				RemoveTypeTax(h) // change -> runActivity RemoveTypeTax_ACT
+				p.Pajak = true
+			case pemicuPajak:
+				p.Pajak = true
 			}
 		}
+		// pajak proporsional: CountNetPremi_act sudah dijalankan `services.turunkan`; daftar yang memakai
+		// BalanceDueTo diputar ulang seperti sel uang berubah. NonProp baru: `services.pajakNonProp`.
+		if p.Pajak && !PolisNonPropBaru(h) {
+			p.Uang = true
+		}
 		TerapkanNilaiBawaanSel(h)
+		// popup Survey Report (survei.go): hanya layar admin, hanya bila tombolnya tampil dan aktif
+		if b, ada := masuk.Daftar[DaftarSurvei]; ada && SurveiDapatDisunting(h) {
+			h.SetelDaftar(DaftarSurvei, barisSurvei(b))
+		}
 	}
 	if SpreadingDariLayar(h, posisi) { // nonprop_layar.go
 		if b, ada := masuk.Daftar[DaftarSpreading]; ada {
@@ -466,6 +527,9 @@ type PemicuLayar struct {
 	Uang bool
 	// Angsuran - sel `.Installment` berubah: refresh `FillPaymentInstallment`.
 	Angsuran bool
+	// Pajak - sel `.FlagPPH` / `.TypeTax` berubah (admin): pajak dihitung ulang
+	// (`[keputusan work owner 06-10-2026]`, XML hanya postValue).
+	Pajak bool
 }
 
 // kolomHitungSpreading - kolom `Read-only` grid spreading yang hanya ditulis
@@ -473,110 +537,43 @@ type PemicuLayar struct {
 // `SpreadingRiskList`, `DetailDeptHeadTreatyIn_UW` S96).
 var kolomHitungSpreading = []string{"PremiumSpreaded", "ClaimSpreaded"}
 
-// selSpreading - satu-satunya anggota baris spreading yang berupa SEL terbuka
-// grid (`DetailPolicyTreatyIn` S30, `SpreadingRiskList`): `.TreatyType`
-// (dropdown, `pyValue .TreatyType`; `.TreatyName` hanya `pyPrompt` daftar
-// pilihan - tidak ditulis sel), `.SharePercentage`, `.ClaimPercentage`.
-var selSpreading = []string{"TreatyType", "SharePercentage", "ClaimPercentage"}
+// selSpreading - sel grid spreading yang diterima dari layar. Perintah work owner 06-10-2026: Add / Delete
+// DIBUANG dan `.TreatyType` hanya-baca ("ga boleh di ubah lagi") - yang tersisa hanya `.SharePercentage` dan
+// `.ClaimPercentage` (di XML `DetailPolicyTreatyIn` S30 juga `.TreatyType` dropdown + tombol Add/Delete).
+var selSpreading = []string{"SharePercentage", "ClaimPercentage"}
 
-// anggotaServerSpreading - anggota baris spreading yang BUKAN sel grid dan
-// tidak ditulis action set sel mana pun (`CountSpreading_Act` hanya menulis
-// SharePercentage/ClaimPercentage/PremiumSpreaded/ClaimSpreaded). Penulisnya
-// hanya aktivitas server saat pilih bisnis:
-//
-//	TreatyName        `TreatyInputPctCommSpreading` (baris 1 = `.SpreadingType` master)
-//	Currency, CurrencyID, SplitRNMSharePct
-//	                  `TreatyNonPropSetSpreading` langkah 3, 4.1, 6
-//	                  (`InputPolicyTreatyInDetail_NonProp` 23)
-//
-// Pengerasan tercatat (PERMINTAAN H2): nilainya TIDAK diterima dari layar.
-// Baris kiriman membawa nilai baris server apa adanya (layar menyalin baris
-// utuh); nilai itu dipakai hanya bila SAMA dengan baris server yang belum
-// terpakai, berurutan (`pasangAnggotaServer`) - sehingga Delete tetap membawa
-// nilai barisnya sendiri. Baris baru (Add membuat baris kosong) atau nilai
-// yang tidak ada di server: kosong.
-var anggotaServerSpreading = []string{"TreatyName", "Currency", "CurrencyID", "SplitRNMSharePct"}
-
-// gabungSpreading menerima baris grid spreading kiriman layar `kiriman`
-// (Add/Delete, sel `selSpreading`) TANPA kolom hanya-baca dan tanpa
-// `anggotaServerSpreading`, dan menjawab apakah `CountSpreading_Act` terpicu.
-//
-//   - terpicu (sel %Share / %Share Claim berubah dibanding baris server di
-//     urutan yang sama, baris baru membawa %Share, atau baris dihapus - urutan
-//     bergeser): kolom hanya-baca dikosongkan, `TerapkanPemicu` menghitungnya
-//     (langkah 4.1 seluruh baris);
-//   - tidak terpicu (hanya `.TreatyType` berubah, atau baris baru tanpa
-//     %Share): kolom hanya-baca = nilai server di urutan yang sama; baris baru
-//     kosong - di Pega pun baris itu kosong sampai refresh berikutnya.
-//
-// ⚠️ `[penyesuaian sadar]` Baris yang dihapus TANPA perubahan %Share dihitung
-// ulang: baris tak berkunci, nilai server tidak dapat dipasangkan lagi
-// menurut urutan. Hasilnya sama dengan nilai server selama NetPremium / klaim
-// belum berubah sejak refresh terakhir.
+// gabungSpreading menerima kiriman grid spreading layar: jumlah baris dan setiap anggota selain `selSpreading`
+// tetap milik SERVER (baris kiriman ke-i = baris server ke-i; baris tambahan kiriman diabaikan, baris yang
+// hilang dari kiriman tetap ada). Jawab apakah `CountSpreading_Act` terpicu (%Share / %Share Claim berubah):
+// terpicu = kolom hitung dikosongkan, `TerapkanPemicu` menghitungnya ulang; tidak = nilai server apa adanya.
 func gabungSpreading(h *Halaman, kiriman []Baris) bool {
 	lama := h.AmbilDaftar(DaftarSpreading)
-	baru := make([]Baris, len(kiriman))
-	for i, k := range kiriman {
-		baru[i] = Baris{}
-		for _, m := range selSpreading {
-			if v, ada := k[m]; ada {
-				baru[i][m] = v
+	baru := make([]Baris, len(lama))
+	terpicu := false
+	for i, l := range lama {
+		r := Baris{}
+		for k, v := range l {
+			r[k] = v
+		}
+		if i < len(kiriman) {
+			for _, m := range selSpreading {
+				if v, ada := kiriman[i][m]; ada {
+					terpicu = terpicu || nilaiBerubah(l[m], v)
+					r[m] = v
+				}
 			}
 		}
+		baru[i] = r
 	}
-	pasangAnggotaServer(lama, kiriman, baru)
-	terpicu := len(baru) < len(lama)
-	for i, b := range baru {
-		if i < len(lama) {
-			terpicu = terpicu || nilaiBerubah(lama[i]["SharePercentage"], b["SharePercentage"]) ||
-				nilaiBerubah(lama[i]["ClaimPercentage"], b["ClaimPercentage"])
-		} else {
-			terpicu = terpicu || b["SharePercentage"] != "" || b["ClaimPercentage"] != ""
-		}
-	}
-	if !terpicu {
-		for i := 0; i < len(baru) && i < len(lama); i++ {
+	if terpicu {
+		for _, r := range baru {
 			for _, k := range kolomHitungSpreading {
-				if v, ada := lama[i][k]; ada {
-					baru[i][k] = v
-				}
+				delete(r, k)
 			}
 		}
 	}
 	h.SetelDaftar(DaftarSpreading, baru)
 	return terpicu
-}
-
-// pasangAnggotaServer mengisi `anggotaServerSpreading` baris `baru` dari baris
-// server `lama`: baris kiriman ke-i dipasangkan dengan baris server berikutnya
-// (belum terpakai, berurutan) yang keempat anggotanya SAMA dengan yang dibawa
-// kiriman; kiriman tanpa nilai keempatnya, atau tanpa pasangan = kosong.
-func pasangAnggotaServer(lama, kiriman, baru []Baris) {
-	sama := func(a, b Baris) bool {
-		for _, m := range anggotaServerSpreading {
-			if a[m] != b[m] {
-				return false
-			}
-		}
-		return true
-	}
-	j := 0
-	for i, k := range kiriman {
-		if sama(k, Baris{}) {
-			continue // baris baru / tanpa nilai server: tidak memakai pasangan
-		}
-		for c := j; c < len(lama); c++ {
-			if sama(lama[c], k) {
-				for _, m := range anggotaServerSpreading {
-					if v, ada := lama[c][m]; ada {
-						baru[i][m] = v
-					}
-				}
-				j = c + 1
-				break
-			}
-		}
-	}
 }
 
 // nilaiBerubah - isian sel berubah = event `change` sel Pega: teks yang

@@ -2,6 +2,28 @@
 
 ## Migrasi Treaty Inward — Endorsemen · modul *EDM Treaty In*
 
+> ## ⛔⛔ KOREKSI 06-10-2026 — rekonsiliasi dengan keadaan nyata dan XML
+>
+> Spec ini ditulis 22-09, **sebelum** NB Treaty In dibangun (03–06 Oktober). Koreksi ditulis di tempatnya
+> (bunyi lama dikutip/dicoret); log `KOREKSI-DOKUMEN-2026-10-06.md`, peta per AC `REKONSILIASI-AC.md`.
+> ⛔ Nol butir `[terbuka]` milik WO/DBA ditutup tanpa keputusan tertulis.
+>
+> | Bab / AC | Inti koreksi | Jenis |
+> | --- | --- | --- |
+> | 1.1, 6.3 | jalur `..\nb-treaty-in\…` → `modul/nbtreatyin/docs/…` | konsistensi |
+> | 1.4, 3, 9.2 #4 | tabel penyimpanan **sudah ada**: NB 320–328 (`T_GENERAL_POLIS_TREATY` + 8 anak), EDM 360–363; sensus properti dikerjakan | NB nyata |
+> | 5.1, AC 2 | tangga XML punya **cabang Sec Head menyelesaikan sendiri** (`LetterNo` kosong, ≤ 200 juta); tiga jenjang = keputusan, bukan `[terverifikasi]`; 22 → **24** baris sambungan | XML |
+> | 5.2 | `CreateEDMT` **21** langkah (bukan 20); sumber data lama Pega = `JSON_POLIS.DATA_JSON` — sistem baru tanpa JSON, data lama = baris yang ditunjuk `OLD_POLIS_ID` | XML · NB nyata |
+> | 5.4, AC 13, AC 15 | *"dua digit, batas 99"* → **sekurangnya** dua digit, tanpa batas | XML |
+> | 5.5 | panggilan `SetEDMTCancel` yang efektif = `EDMChooseBusiness_Act` langkah 5 | XML |
+> | 5.7, AC 36–38, AC 42 | `IsFacRetro` **dapat** menyalakan pengiriman kedua; penghapusan juga bersyarat `IsPEGAPROD`; langkah 10 berprasyarat `IsTreatyIn` | XML |
+> | 5.8, AC 49 | `GETTanggalClosing_SQL` tanpa `ROWNUM` — baris pertama diambil `pxResults(1)` | XML |
+> | AC 27 | `DEDUCTION1/2` **uang** (K3 03-10-2026), bukan persentase | NB nyata |
+> | AC 28 | pembulatan di pemuatan untuk desimal > 10 (`NUMBER(38,10)`) — selaras spec-penyimpanan AC 58 | konsistensi · NB nyata |
+> | AC 7, AC 9 | didamaikan dengan spec-penyimpanan ID-8/ID-13 | konsistensi |
+> | 9.2 #6 | batas endorsemen ditutup keputusan WO tertulis (spec-penyimpanan bab KEPUTUSAN butir 1) | konsistensi |
+> | 10.1 | jalur kedua **berpenjaga** `EDMNo==""` | XML |
+
 ---
 
 ## 1 · Cara membaca berkas ini
@@ -14,9 +36,9 @@ didiamkan** — lihat Bab 10.1.
 | # | Sumber | Sifat |
 | ---: | --- | --- |
 | 1 | `PERTANYAAN-RONDE-1.md` — **P50–P60**, terjawab 11/11 | `[keputusan work owner]`, mengikat |
-| 2 | `..\nb-treaty-in\PERTANYAAN-untuk-*.md` — **P1–P49** | `[keputusan work owner]`, berlaku lintas modul |
+| 2 | ~~`..\nb-treaty-in\PERTANYAAN-untuk-*.md`~~ `modul/nbtreatyin/docs/PERTANYAAN-untuk-*.md` — **P1–P49** | `[keputusan work owner]`, berlaku lintas modul |
 | 3 | `KEADAAN-EDM-TREATY-IN.md` | keadaan terukur, diuji dua cara |
-| 4 | `..\nb-treaty-in\KEADAAN-NB-TREATY-IN.md` Bab 4 | dua belas ketetapan; berlaku **kecuali terbukti sebaliknya** |
+| 4 | ~~`..\nb-treaty-in\KEADAAN-NB-TREATY-IN.md`~~ `modul/nbtreatyin/docs/KEADAAN-NB-TREATY-IN.md` Bab 4 | dua belas ketetapan; berlaku **kecuali terbukti sebaliknya** |
 | 5 | `grilling-ronde-1.md` | ⛔ latar saja — **empat pernyataannya terbukti keliru** |
 | 6 | korpus XML | selalu boleh dipakai membuktikan ulang |
 
@@ -62,6 +84,7 @@ didiamkan** — lihat Bab 10.1.
   Product & Underwriting, Finance, atau IAM.
 - ⛔ **Tidak membuat ADR baru.** Lima belas ADR yang ada tetap berlaku.
 - ⛔ **Tidak merancang tabel penyimpanan.** Itu menunggu sensus properti — tiket `00` NB.
+  *(Koreksi 06-10: sudah ada — `spec-penyimpanan-relasional.md` EDM; tabel NB 320–328 dan proyeksi EDM 360–363.)*
 - ⛔ **Tidak memilih** di antara tiga pilihan galat uang *(Bab 8.9)*.
 
 ---
@@ -114,7 +137,7 @@ sejajar dengan polis baru, bukan sebagai tahap di dalamnya.
 | **Penomoran** | `NoPolis + "/E" + ProdKe` dua digit |
 | **Pembatalan** | **jenis endorsemen**, dipilih di awal — bukan alur terpisah |
 | **Konversi ke produksi** | satu panggilan keluar, dengan penanganan gagal yang menghapus bersyarat |
-| **Penyimpanan** | tabel relasional; ⛔ bentuk tabelnya menunggu sensus properti |
+| **Penyimpanan** | tabel relasional; ~~⛔ bentuk tabelnya menunggu sensus properti~~ *(koreksi 06-10)* `T_WORK_POLIS` + `T_GENERAL_POLIS_TREATY` + `T_POLIS_*` (NB 320–328) + proyeksi selisih (EDM 360–363); **tanpa JSON** |
 
 ⭐ **Yang membuat ini mungkin sekarang, dan tidak mungkin dua minggu lalu:** isi 380 langkah
 penetapan nilai **terbaca penuh** dari ekspor — **1.309 pasangan nama=nilai**, **379 dari 380**
@@ -244,6 +267,16 @@ langkah membawa isinya. Rumusnya tidak perlu ditebak. `[terverifikasi]`
 ⭐ **Tiga antrean, sejalan P13:** `ReasTreatyInAdmin` · `ReasTreatyInSecHead` ·
 `ReasTreatyInDeptHead`. ⛔ Tidak ada jenjang keempat; tidak ada penyimpangan dari tangga NB.
 
+> ⛔ **KOREKSI 06-10-2026 (XML).** (1) Sambungan: **24** baris `pyConnectors` (23 `TransitionN` + 1 sisa
+> penyuntingan), bukan 22 — `Flow/InputAddendumTreatyIn.xml`; `grilling-ronde-1.md` baris 334 sudah menulis 24.
+> (2) Tangga XML **tidak selalu tiga jenjang**: `Decision9` (`When/ToTREATYDEPTHEAD`, `LetterNo ==
+> "TREATYINDEPTHEAD"`) → `Assignment1` (Dept Head) **atau** `Transition24` → `Utility1` (simpan produksi).
+> `LetterNo` = `"TREATYINDEPTHEAD"` hanya bila |`TotalPremium`| × kurs **> 200.000.000**
+> (`Activity/CekLimitTreatyAcc_Act.xml` langkah 2.4; langkah 2.2 varian `EDMT-` ber-`//`) ⇒ **Sec Head dapat
+> menyelesaikan sendiri**. Tiga jenjang tetap berlaku sebagai **keputusan** (brief F0-F1 06-10-2026, prompt work
+> owner; sejalan NB K2 — `modul/nbtreatyin/docs/INVENTARIS-XML.md` baris 70, `HASIL-IMPLEMENTASI.md` baris 74) ⇒
+> **penyimpangan sadar** terhadap XML, bukan paritas.
+
 **Modul yang dibangun:** layanan kasus endorsemen · layanan perhitungan selisih · layanan
 penyebaran risiko · layanan penomoran · penghubung konversi produksi · repository penyimpanan.
 Arah ketergantungan tetap `handlers → services → repository` *(CLAUDE.md §5)*.
@@ -262,6 +295,13 @@ menyalin **seluruh halaman** ke dalam `OldData`; langkah 11 menyalin data kuotas
 ⚠️ **Konsekuensi yang dibawa ke sistem baru:** penyalinan dilakukan **satu kali, di titik
 pembuatan**, dan snapshot itu bagian dari berkas endorsemen — bukan rujukan yang dibaca saat
 ditampilkan.
+
+> ⛔ **KOREKSI 06-10-2026.** (1) `CreateEDMT` berisi **21** langkah (18 aktif, 3 ber-`//`: 4, 5, 6), bukan 20 —
+> `Activity/CreateEDMT.xml`. (2) Sumber data lama di Pega = **`JSON_POLIS.DATA_JSON`** generasi `PRODKE`
+> tertinggi (`RDBList/FetchPolisJsonPolis`, langkah 7–8). Sistem baru **tidak menulis `DATA_JSON`**
+> (`modul/nbtreatyin/backend/models/produksi.go` baris 63) ⇒ "snapshot" = **baris generasi sebelumnya**
+> yang ditunjuk `OLD_POLIS_ID` dan dibekukan begitu punya penerus (spec-penyimpanan ID-8, ID-13; migrasi
+> NB 320 baris 18–20). Tidak ada tabel salinan (spec-penyimpanan AC 9).
 
 ### 5.3 Perhitungan selisih — `[keputusan work owner]` P57
 
@@ -291,6 +331,13 @@ ProdKe = @toInt(<nomor urut terakhir dari basis data>) + 1
 Ditetapkan `Activity\SetEDMTNoPolis` langkah 3, dipanggil `Activity\CreateEDMT`. `[terverifikasi]`
 Bentuknya: nomor polis induk, `/E`, lalu **dua digit**. Batas teknis `ProdKe` **99**.
 
+> ⛔ **KOREKSI 06-10-2026 (XML).** ~~dua digit … batas teknis 99~~ — rumus di atas hanya membubuhkan nol
+> **di bawah sepuluh**; `ProdKe` ≥ 100 menghasilkan tiga digit, **tanpa batas** (`SetEDMTNoPolis` langkah 3).
+> Sejalan `[keputusan work owner]` 23-09 *tanpa batas* (spec-penyimpanan bab KEPUTUSAN butir 1). Kolom nyata
+> `NOENDORS`, `PRODKE NUMBER(10)` (migrasi NB 320 baris 33–34). Catatan XML lain: `PRODKE` yang disimpan ke
+> `JSON_POLIS` dihitung **berbeda** — `COUNT(*) … WHERE Nopolis = PolicyNo` (`RDBList/TreatyInSearchProdKe`,
+> `SaveJsonPolisTreatyInEDM_Act` langkah 11–12) lawan maks+1 berpotongan `substr(nopolis,1,24)` di sini.
+
 ⛔⛔ **Pertentangan yang ditemukan — lihat Bab 10.1.** Korpus memuat **jalur penomoran kedua** yang
 menghasilkan bentuk berbeda. **P55 menang** sebagai keputusan; jalur kedua **tidak dimigrasi** dan
 masuk Out of Scope, ⛔ **dengan catatan bahwa pertentangannya belum dijelaskan work owner**.
@@ -300,6 +347,11 @@ masuk Out of Scope, ⛔ **dengan catatan bahwa pertentangannya belum dijelaskan 
 Pembatalan adalah **jenis endorsemen**, dipilih di awal saat berkas dibuat. `[terverifikasi]`
 `Activity\CreateEDMT` langkah 16 memanggil `SetEDMTCancel` dengan catatan *"when Param.edmtype = 4,
 run this activity"*. ⛔ **Bukan alur terpisah**, bukan tombol tersendiri.
+
+> ⚠️ **KOREKSI 06-10-2026 (XML).** Langkah 16 berjalan atas halaman portal **sebelum** kasus dibuat
+> (langkah 18 `CreateWorkPage`) — `[dugaan]` tanpa efek pada kasus. Panggilan yang **efektif**:
+> `Activity/EDMChooseBusiness_Act.xml` langkah **5** (`EDMType=='4'`), sesudah `CopyGeneralDataEDM_act` (4) dan
+> sebelum `CalculateDifferenceEDM_act` (6). Yang dinolkan: lihat koreksi spec-penyimpanan ID-19.
 
 ### 5.6 Penyebaran risiko — `[keputusan work owner]` P60
 
@@ -329,6 +381,19 @@ polis yang diendorse dan medannya dapat tiba kosong — sementara rumus EDM **me
 
 **Satu panggilan keluar.** `[terverifikasi]` EDM **tidak punya FacOut**; cabang pengiriman kedua
 **tidak pernah berjalan** dan **tidak dibangun**.
+
+> ⛔ **KOREKSI 06-10-2026 (XML) — keputusan P50 tidak diubah, premisnya dikoreksi.** *"tidak pernah
+> berjalan"* tidak terbukti: `serviceInsertArasapas_act` langkah 7 (`Connect-REST` *"Arasapas 2 - FACOUT"*)
+> bergerbang `When/IsFacRetro` (`OfferFacIn.IsFacRetro = 1`), dan penanda itu **diset di jalur EDM** —
+> `InputPolicyTreatyEDMDetail_NP` dan `…_NP_AdjPremi` langkah 3: `OfferFacIn.IsFacRetro = "1"` bila
+> `TreatyIn.FacultativeShare > 0` (dipanggil `SetValueEDM_Act` langkah 9/10 ← `EDMChooseBusiness_Act` langkah 1,
+> untuk setiap jenis endorsemen). Sapuan P50 mencari kata *"FacOut"* dan melewatkan `IsFacRetro`.
+> ⇒ **butir WO**: P50 tetap berlaku (FacOut tidak dibangun) untuk master ber-`FacultativeShare > 0`?
+>
+> Dua syarat XML lain di jalur ini: penghapusan data produksi (langkah 12) juga bersyarat **`IsPEGAPROD`**
+> (`pxProcess.pzProductionLevel = "5"`); dan langkah 10 (pesan galat, P52 *dihidupkan*) berprasyarat
+> **`IsTreatyIn` → lewati** (`Quotation.BusinessFac = "T"`) — menghidupkannya apa adanya tetap tidak tampil untuk
+> treaty `[dugaan: "T" = treaty]`. Niat P52/AC 42 (*pesan sampai ke pengguna*) yang dipegang.
 
 **Pemeriksaan keberhasilan** memeriksa **kedua** penanda, dalam tiga cabang:
 `FacIn = 1` **dan** *(`FacOut = ""` **atau** `FacOut = 1`)*. `[terverifikasi]`
@@ -360,7 +425,7 @@ pernah melihat pesan galat konversi. **Langkah 18** `Call ASMForceCaseClose` **t
 | pembacaan kontrak | **view relasional** yang sudah ada — 39 kolom, kecukupan sudah diuji *(P29)* |
 | `RDBList` | **36 dari 36** membawa naskah SQL — nol yang harus ditebak `[terverifikasi]` |
 | skema | ⭐ setiap query menulis skema **eksplisit** *(ketetapan NB 6)* |
-| tanggal tutup buku | dibaca `WHERE ROWNUM = 1` — ⭐ **satu baris berlaku global** `[data DBA]` P54 |
+| tanggal tutup buku | dibaca `WHERE ROWNUM = 1` — ⭐ **satu baris berlaku global** `[data DBA]` P54 *(koreksi 06-10, XML: naskahnya `SELECT * FROM POOLDATA.TANGGAL_CLOSING` tanpa `ROWNUM`; baris pertama diambil `TglProd.pxResults(1).TANGGAL`, kosong → 25 — `SaveJsonPolisTreatyInEDM_Act` langkah 2–3. Keputusan P54 tidak berubah)* |
 | lingkungan | uji dan produksi memakai **basis data berbeda** `[keputusan work owner]` P59 |
 
 ⚠️ **Sistem lama tidak menaati ketetapan 6.** `[terverifikasi]` Dari 31 pernyataan `FROM`, hanya
@@ -468,7 +533,7 @@ sebelumnya benar-benar terbukti — bukan hanya lapis pertama yang kebetulan sam
 
 ### 6.3 Prior art
 
-Bentuk test mengikuti `..\nb-treaty-in\spec.md` Bab 6 — seam handler untuk alur, seam perhitungan
+Bentuk test mengikuti ~~`..\nb-treaty-in\spec.md`~~ `modul/nbtreatyin/docs/spec.md` Bab 6 — seam handler untuk alur, seam perhitungan
 untuk uang, dan uji paritas terhadap data lama. ⚠️ **Ambang paritas uang belum dapat ditetapkan** —
 lihat Bab 8.9.
 
@@ -486,6 +551,9 @@ bentuk yang dapat diuji dari luar. Bila sebuah butir terasa seperti keputusan ba
    **gagal**. *(Bab 5.1)*
 2. `[terverifikasi]` Tangga persetujuan punya **tiga jenjang** — Admin, Sec Head, Dept Head. Test
    yang menemukan jenjang keempat **gagal**. *(Bab 5.1)*
+   > ⛔ **KOREKSI 06-10-2026.** Penanda ~~`[terverifikasi]`~~ → `[keputusan work owner]` + `[penyimpangan sadar]`:
+   > XML membolehkan Sec Head menyelesaikan sendiri bila `LetterNo` kosong (≤ 200 juta) — koreksi Bab 5.1.
+   > Bunyi AC tetap; ditambah: Sec Head menyetujui ⇒ **selalu** naik ke Dept Head (sejalan NB AC 8 / K2).
 3. `[keputusan work owner]` Penolakan oleh **atasan** mengembalikan berkas ke admin. Test yang
    menemukan berkas tertutup **gagal**. *(Bab 5.1)*
 4. `[keputusan work owner]` Penolakan oleh **admin** menutup berkas sebagai ditolak. Test yang
@@ -503,6 +571,10 @@ bentuk yang dapat diuji dari luar. Bila sebuah butir terasa seperti keputusan ba
    nilai lama di berkas itu. Test yang menemukan nilainya ikut berubah **gagal**. *(Bab 5.2)*
 9. `[terverifikasi]` Snapshot data lama adalah **bagian dari berkas endorsemen**, bukan rujukan yang
    dibaca saat ditampilkan. Test yang menemukan pembacaan tertunda **gagal**. *(Bab 5.2)*
+   > ⚠️ **KOREKSI 06-10-2026 (konsistensi).** AC 7–9 tampak bertentangan dengan spec-penyimpanan ID-8 / AC 9
+   > (*"nilai lama dibaca lewat `OLD_POLIS_ID`; tabel salinan gagal"*). Didamaikan: snapshot = **baris generasi
+   > sebelumnya** yang dibekukan (ID-13; generasi tertutup = punya penerus, migrasi NB 320 baris 18–20) — dibaca
+   > lewat `OLD_POLIS_ID`, tidak disalin ke tabel kedua, dan tidak dapat berubah sesudah berkas dibuat.
 
 ### Selisih dan endorsemen berlapis — P57
 
@@ -518,11 +590,11 @@ bentuk yang dapat diuji dari luar. Bila sebuah butir terasa seperti keputusan ba
 ### Penomoran — P55
 
 13. `[keputusan work owner]` Nomor endorsemen berbentuk **nomor polis induk + `/E` + dua digit**.
-    Test yang menghasilkan bentuk lain **gagal**. *(Bab 5.4)*
+    Test yang menghasilkan bentuk lain **gagal**. *(Bab 5.4)* — ⛔ *koreksi 06-10:* **sekurangnya** dua digit (≥ 100 tiga digit; tanpa batas).
 14. `[terverifikasi]` Nomor urut endorsemen **bertambah satu** dari nomor urut terakhir polis yang
     sama. Test yang menemukan nomor terulang atau melompat **gagal**. *(Bab 5.4)*
 15. `[terverifikasi]` Nomor urut di bawah sepuluh **dibubuhi nol di depan**. Test yang menghasilkan
-    satu digit **gagal**. *(Bab 5.4)*
+    satu digit **gagal**. *(Bab 5.4)* — *koreksi 06-10:* dan ≥ 100 **tidak dipotong** (tiga digit).
 16. `[keputusan work owner]` Adendum dan premi tambahan memakai **jalur penomoran yang sama**. Test
     yang menemukan format nomor kedua **gagal**. *(Bab 5.4, Bab 8.3)*
 17. `[terverifikasi]` Nomor urut dihasilkan **di dalam transaksi yang sama** dengan penyimpanannya.
@@ -558,8 +630,15 @@ bentuk yang dapat diuji dari luar. Bila sebuah butir terasa seperti keputusan ba
     Test yang menghitungnya dari potongan mentah **gagal**. *(Bab 5.6)*
 27. `[keputusan work owner]` Empat medan potongan dan bagian adalah **persentase**, bukan uang;
     `12.5` berarti 12,5 persen. Test yang memperlakukannya sebagai nilai uang **gagal**. *(Bab 5.8)*
+    > ⛔ **KOREKSI 06-10-2026 (NB nyata).** Untuk **`DEDUCTION1` `DEDUCTION2`** berlaku RALAT NB K3
+    > (`[keputusan work owner]` 03-10-2026): **jumlah uang**, seperti pemakaian XML (`pxCurrency`;
+    > `CountNetPremi_act` langkah 4; `SetPPNPPH` langkah 4) — `modul/nbtreatyin/docs/spec.md` AC 26 blok RALAT;
+    > `backend/models/katalog.go` (`kUang` Deduction1/2). `BROKERAGE` dan `RNM_SHARE` tidak disentuh RALAT itu.
 28. `[terverifikasi]` Nilai dibaca dan disimpan dengan **presisi penuh**; pembulatan hanya di titik
     penyajian. Test yang menemukan pembulatan di lapisan repository **gagal**. *(Bab 5.8)*
+    > ⛔ **KOREKSI 06-10-2026 (konsistensi · NB nyata).** Bertentangan dengan spec-penyimpanan AC 58
+    > (`[keputusan work owner]`: kelebihan skala **dibulatkan saat dimuat**). Kolom nyata `NUMBER(38,10)`: presisi
+    > penuh **sampai 10 desimal** (galat 9 desimal utuh); yang > 10 desimal dibulatkan di pemuatan, bukan ditolak.
 29. `[data DBA]` Uang yang melintas ke pencatatan pencapaian diseberangkan sebagai **desimal
     berpresisi tetap**. Test yang menemukan penyeberangan sebagai mengambang **gagal**. *(Bab 5.9)*
 
@@ -581,12 +660,15 @@ bentuk yang dapat diuji dari luar. Bila sebuah butir terasa seperti keputusan ba
 ### Konversi ke produksi — P50 sampai P53
 
 36. `[keputusan work owner]` Jalur konversi **FacOut tidak dibangun**. Test yang menemukan kode
-    pengiriman kedua **gagal**. *(Bab 5.7, Bab 8.1)*
+    pengiriman kedua **gagal**. *(Bab 5.7, Bab 8.1)* — ⚠️ *koreksi 06-10:* XML **dapat** mengirim kedua kali bila
+    `IsFacRetro` (master `FacultativeShare > 0`); keputusan tetap, premis dikoreksi — **butir WO** (Bab 5.7).
 37. `[terverifikasi]` Pemeriksaan keberhasilan menguji **kedua** penanda, dengan cabang yang
     memperlakukan penanda kedua **kosong** sebagai sah. Test yang hanya menguji penanda pertama
     **gagal**. *(Bab 5.7)*
 38. `[keputusan work owner]` Kegagalan konversi **menghapus** data produksi yang sudah tersisip.
-    Test yang menemukan data tertinggal **gagal**. *(Bab 5.7)*
+    Test yang menemukan data tertinggal **gagal**. *(Bab 5.7)* — ⚠️ *koreksi 06-10:* di XML penghapusan juga
+    bersyarat `IsPEGAPROD` (tingkat produksi 5, `serviceInsertArasapas_act` langkah 12); padanannya di sistem baru
+    (P59, penanda lingkungan tidak masuk lapisan penyimpanan — penyimpangan sadar 3) — **butir WO**.
 39. `[data DBA]` Penghapusan itu **tidak berjalan** bila kasusnya sudah bertanda konversi berhasil.
     Test yang menemukan data sah terhapus **gagal**. *(Bab 5.7)*
 40. `[keputusan work owner]` Penghapusan hanya lewat **satu fungsi repository**. Test yang menemukan
@@ -594,7 +676,8 @@ bentuk yang dapat diuji dari luar. Bila sebuah butir terasa seperti keputusan ba
 41. `[keputusan work owner]` Pengguna **diberi tahu lebih dulu** bahwa kegagalan akan menghapus.
     Test yang menemukan penghapusan berjalan tanpa pemberitahuan **gagal**. *(Bab 5.7)*
 42. `[keputusan work owner]` Pesan galat konversi **sampai ke pengguna**. Test yang menemukan
-    kegagalan berlalu diam-diam **gagal**. *(Bab 5.7)*
+    kegagalan berlalu diam-diam **gagal**. *(Bab 5.7)* — *koreksi 06-10:* langkah 8 dan 10 XML dilewati untuk
+    `IsTreatyIn`; AC ini memegang niat P52, bukan prasyarat XML itu.
 43. `[keputusan work owner]` Penutupan paksa berkas **tidak dibangun**. Test yang menemukannya
     **gagal**. *(Bab 5.7, Bab 8.1)*
 44. `[keputusan work owner]` Sistem baru **tidak menambahkan autentikasi** pada jalur ke produksi.
@@ -611,7 +694,8 @@ bentuk yang dapat diuji dari luar. Bila sebuah butir terasa seperti keputusan ba
 48. `[keputusan work owner]` Setiap query menulis **skema basis data eksplisit**. Test yang
     menemukan rujukan tabel tanpa skema **gagal**. *(Bab 5.8)*
 49. `[data DBA]` Tanggal tutup buku dibaca sebagai **satu baris yang berlaku global**. Test yang
-    menemukan pembacaan per periode atau per lini bisnis **gagal**. *(Bab 5.8)*
+    menemukan pembacaan per periode atau per lini bisnis **gagal**. *(Bab 5.8)* — *koreksi 06-10:* baris pertama
+    `pxResults(1)`, bawaan 25 bila kosong (naskah SQL tanpa `ROWNUM`).
 50. `[keputusan work owner]` Kolom pelaku pada riwayat akseptasi diisi dari **identitas akses
     login**. Test yang menemukannya kosong **gagal**. *(Bab 5.11)*
 51. `[keputusan work owner]` Pencarian berdasarkan **nomor urut antrean** tidak dibangun; diganti
@@ -651,9 +735,9 @@ pernah berjalan**, atau **sengaja tidak ditiru** — ⛔ **bukan** aturan yang t
 
 | # | Yang dikeluarkan | Sebab | Asal |
 | ---: | --- | --- | --- |
-| 1 | jalur konversi **FacOut** | EDM tidak punya FacOut; ⛔ **tidak pernah berjalan** | **P50** |
+| 1 | jalur konversi **FacOut** | EDM tidak punya FacOut; ⛔ **tidak pernah berjalan** *(⚠️ koreksi 06-10: dapat berjalan bila `IsFacRetro` — Bab 5.7)* | **P50** |
 | 2 | langkah 18 `Call ASMForceCaseClose` | ⛔ tetap mati, keputusan work owner | **P52** |
-| 3 | jalur penomoran kedua *(`RNM-E…`)* | ⛔ **satu jalur penomoran**, bukan dua — ⚠️ **lihat pertentangan Bab 10.1** | **P55** |
+| 3 | jalur penomoran kedua *(`RNM-E…`)* | ⛔ **satu jalur penomoran**, bukan dua — ⚠️ **lihat pertentangan Bab 10.1** *(koreksi 06-10: penerbitnya berpenjaga `EDMNo==""`)* | **P55** |
 | 4 | `OldData` **di dalam** `OldData` | dibuat penyalinan seluruh halaman; ⛔ **nol rujukan** di korpus | keadaan Bab 9 |
 | 5 | pencarian berdasarkan **nomor urut antrean** | diganti pemeriksaan keanggotaan | **P25** |
 | 6 | pemeriksaan duplikat berbasis **nilai uang** | ⛔ dipatahkan galat presisi yang terbukti ada | Bab 5.9 |
@@ -701,6 +785,13 @@ dari satu kasus, dan tidak dikarang di sini.**
 
 ⛔ **Tiga pilihan pada P29 — spec ini tidak memilih.**
 
+> ⚠️ **KOREKSI 06-10-2026 (penunjuk, bukan penutupan).** Sesudah spec ini ditulis, dua sumber tertulis
+> menyentuh P29 untuk **data lama**: `modul/nbtreatyin/docs/spec-penyimpanan-relasional.md` ID-15
+> (`[keputusan work owner]` *"galat presisi pada data lama diikuti apa adanya, tidak dibulatkan"*; diagram sheet
+> *NB Treaty In Prop* F20) dan spec-penyimpanan EDM ID-33 / AC 39 (*nilai lama tidak dihitung ulang*). Dengan
+> `NUMBER(38,10)` galat 9 desimal tersimpan utuh. Apakah itu menutup pilihan **(a)** untuk EDM, dan ambang uji
+> paritas hitungan baru, **belum dinyatakan** — **butir WO** (tidak ditutup di sini).
+
 | | Pilihan | Akibat | Ambang uji paritas |
 | --- | --- | --- | --- |
 | **a** | ikuti apa adanya | paritas sempurna; ⛔ cacatnya **diwariskan** dan tiap penjumlahan menambahnya | paritas **persis** |
@@ -737,9 +828,9 @@ sehingga **tidak menambah galat baru**. ⛔ **Tidak ada ADR baru yang diperlukan
 | 1 | ⛔⛔ **Galat angka uang tersimpan** — tiga pilihan pada P29 | `[work owner]` · `[Finance]` | ambang uji paritas · migrasi data lama |
 | 2 | ⛔ **Kunci anti-duplikat pencapaian** — medan pengenal mana yang dipakai | `[work owner]` | AC 54 |
 | 3 | ⛔⛔ **Dua jalur penomoran di sistem lama** — mana yang benar untuk adendum | `[work owner]` · `[Product+Underwriting]` | AC 16 · Bab 8.1 butir 3 |
-| 4 | ⚠️ **Sensus properti `PolicyTreatyIn`** belum dikerjakan — 94 nama unik dan 9 simpul bersarang baru **batas bawah** | tim migrasi | bentuk tabel penyimpanan |
+| 4 | ⚠️ **Sensus properti `PolicyTreatyIn`** belum dikerjakan — 94 nama unik dan 9 simpul bersarang baru **batas bawah** | tim migrasi — ✅ *(koreksi 06-10)* **gugur oleh bukti**: `modul/nbtreatyin/docs/SENSUS-PROPERTI-POLICYTREATYIN.md` dan `DAFTAR-MEDAN-DARI-KORPUS-TREATY-IN.md` (394 medan); tabel NB 320–328 | bentuk tabel penyimpanan |
 | 5 | ⚠️ **Selisih mana yang dipakai laporan** — yang terakhir, atau jumlah seluruhnya | `[Finance]` | pengakuan premi |
-| 6 | ⚠️ **Batas berapa kali satu polis boleh diendorse** — batas teknis 99 | `[Product+Underwriting]` | validasi |
+| 6 | ⚠️ **Batas berapa kali satu polis boleh diendorse** — batas teknis 99 | `[Product+Underwriting]` — ✅ *(koreksi 06-10)* ditutup keputusan WO tertulis: **tanpa batas** (spec-penyimpanan bab *KEPUTUSAN 23-09-2026* butir 1); XML pun tanpa batas 99 | validasi |
 | 7 | ⚠️ **Tiga pemeriksaan pencegah yang dimatikan** di pembuatan berkas | `[work owner]` | endorsemen serentak |
 | 8 | ⚠️ **`OldData` di dalam `OldData`** — dibuat, tidak pernah dibaca | `[work owner]` | Bab 8.1 butir 4 |
 | 9 | ⚠️ **Skema tidak konsisten di SQL lama** — `JSON_POLIS` dua ejaan, `DATAPEGA` skema kedua | `[data DBA]` | AC 48 |
@@ -776,6 +867,14 @@ dapat ditarik kembali sesudah terbit**. Tercatat sebagai butir `[terbuka]` **3**
 *"aturan mati yang dijaga syarat `EDMNo` kosong"*. `[terverifikasi]` Terukur: ia bertipe
 **`RDBList`**, bukan `Activity`; ⛔ **tidak ditemukan syarat penjaga apa pun**; dan pemanggilnya
 dirujuk dari sebuah layar. ⇒ ⛔ **Ia bukan aturan mati — ia jalur kedua yang hidup.**
+
+> ⛔ **KOREKSI 06-10-2026 (XML) — brief itu sebagian benar.** Penjaganya ada di **pemanggil**:
+> `Activity/GeneratePolicyNoTreatyAddendum_Act.xml` langkah 10 (`RDB-List GenerateNoEDMTreaty`), 12, 13
+> berprasyarat `pyWorkPage.PolicyTreatyIn.EDMNo==""`; `CreateEDMT` 15 → `SetEDMTNoPolis` 3 selalu mengisi
+> `EDMNo` ⇒ penerbit `RNM-E…` **praktis tidak pernah menerbitkan** `[dugaan: korpus tidak memuat aturan pengosong
+> EDMNo]`. Tombol pemanggilnya pun hanya tampil bagi identitas operator ber-hardcode
+> (`Section/DetailPolicyTreatyInAddendum.xml`, tombol Submit atasan; identitasnya tidak disalin). Pertentangan dengan P55 **mengecil**,
+> tetapi butir `[terbuka]` 3 Bab 9.2 tetap milik WO + P&U — **tidak ditutup**.
 
 #### Pertentangan 2 — **ketetapan skema eksplisit lawan perilaku sistem lama**
 
@@ -830,6 +929,11 @@ nasabah.** ⭐ Alamat dan hos internal adalah **variabel lingkungan**, tidak per
 | langkah membawa isinya | **379** *(99,7 %)* | — | — |
 | pasangan nama=nilai terisi | **1.309** | pasangan dalam satu `rowdata` | pola teks bersebelahan |
 | `RDBList` punya SQL | **36 / 36** | — | — |
+
+> ⚠️ **KOREKSI 06-10-2026.** Korpus **berubah** sesudah 22-09: byte kini **17.640.859** (+1.600) — dua berkas
+> berubah (`Activity/CountSpreading_Act.xml` 22-09 17:50, `Activity/InsetTreatyInProdAddendum_Act.xml` 23-09);
+> md5 gabungan lama tidak lagi tereproduksi. Diukur ulang dua cara: **380** `Property-Set` / **1.309** pasangan
+> **tetap** — rincian `KEADAAN-EDM-TREATY-IN.md` Bab 11.
 
 ### 11.2 Kedalaman sarang langkah
 

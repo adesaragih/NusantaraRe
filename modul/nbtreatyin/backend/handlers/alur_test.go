@@ -169,7 +169,7 @@ func TestAdminMenolakDiselesaikanDitolak(t *testing.T) { // AC 1, 5, 39-41, 43, 
 	if r.Status != "REJECT" || r.OperatorID != "UJI-ADMIN" || r.Username != "Uji Admin" || r.Workbasket != models.PosisiAdmin {
 		t.Fatalf("riwayat %+v", r)
 	}
-	if r.IDPega != "ASM-FW-GISFW-WORK-NB "+id {
+	if r.IDPega != id {
 		t.Fatalf("ID_PEGA %q", r.IDPega)
 	}
 	// Catatan usulan -> POOLDATA.HISTORYAKSEPTASIPRODUCTION (K4; SaveViewSuggest
@@ -178,7 +178,7 @@ func TestAdminMenolakDiselesaikanDitolak(t *testing.T) { // AC 1, 5, 39-41, 43, 
 		t.Fatalf("satu baris riwayat produksi per catatan, dapat %d", len(u.g.Usulan))
 	}
 	c := u.g.Usulan[0]
-	if c.IDPega != "ASM-FW-GISFW-WORK-NB "+id || c.NoUrut != 1 || c.TypePolis != "NB" || c.Posisi != "Policy" ||
+	if c.IDPega != id || c.NoUrut != 1 || c.TypePolis != "NB" || c.Posisi != "Policy" ||
 		c.PIC != "Uji Admin" || c.AksesLogin != "UJI-ADMIN" || c.Approval != "Reject" || c.Keterangan != "UJI-catatan" ||
 		c.Type != "T" || c.Putaran != "2" || c.TglInp != "2026-10-03 09:00:00" || c.Div != "" {
 		t.Fatalf("baris riwayat produksi %+v", c)
@@ -211,11 +211,11 @@ func TestTanggaPenuhDanNomorPolisSekali(t *testing.T) { // AC 6-9, 31, 73, 74
 	if got := u.g.Halaman[id].Ambil("NBStatus"); got != "NB IS IN REASTREATYINSECHEAD'S INBOX" {
 		t.Fatalf("NBStatus dari data posisi, dapat %q", got)
 	}
-	// Sec Head menolak -> kembali ke admin, NBStatus kosong
+	// Sec Head menolak -> kembali ke admin; NBStatus tidak pernah kosong (keputusan WO 06-10-2026): nama pembuat
 	if kode, isi := u.kirim(id, secHead, putusan("0")); kode != http.StatusOK {
 		t.Fatalf("Sec Head menolak: %d %s", kode, isi)
 	}
-	if u.g.Kasus[id].PositionNote != models.PosisiAdmin || u.g.Halaman[id].Ambil("NBStatus") != "" {
+	if u.g.Kasus[id].PositionNote != models.PosisiAdmin || u.g.Halaman[id].Ambil("NBStatus") != "NB IS IN UJI ADMIN'S INBOX" {
 		t.Fatalf("Sec Head menolak: %+v / %q", u.g.Kasus[id], u.g.Halaman[id].Ambil("NBStatus"))
 	}
 	// naik lagi; Sec Head menyetujui -> Dept Head SELALU (AC 8, WO)
@@ -254,7 +254,7 @@ func TestTanggaPenuhDanNomorPolisSekali(t *testing.T) { // AC 6-9, 31, 73, 74
 	// NOURUT berurutan per kasus (XML: hanya pasca-submit admin).
 	var akses []string
 	for i, c := range u.g.Usulan {
-		if c.NoUrut != i+1 || c.IDPega != "ASM-FW-GISFW-WORK-NB "+id {
+		if c.NoUrut != i+1 || c.IDPega != id {
 			t.Fatalf("NOURUT %d: %+v", i+1, c)
 		}
 		akses = append(akses, c.AksesLogin+":"+c.Approval)
@@ -475,7 +475,7 @@ func TestPilihBisnis(t *testing.T) { // tiket 01; AC 36-38
 		"Quotation.BusinessType":       "",
 		"TreatyIn.ID":                  "UJI-D1",
 		"PolicyTreatyIn.OJKBusinessID": "UJI-OJK",
-		"PolicyTreatyIn.LayerType":     "", // diagram F26: dicoret dari T_GENERAL_POLIS
+		"PolicyTreatyIn.LayerType":     "", // diagram F26: dicoret dari T_GENERAL_POLIS_TREATY
 	} {
 		if got := h.Ambil(j); got != harap {
 			t.Errorf("tersimpan %s = %q, harap %q", j, got, harap)
@@ -681,7 +681,7 @@ func TestKonversiSesudahSelesai(t *testing.T) {
 			t.Fatalf("satu konversi per penyelesaian, dapat %d", len(p.muatan))
 		}
 		m := p.muatan[0]
-		if m.CARI1 != "ASM-FW-GISFW-WORK-NB "+id || m.CARI2 != n.PolicyNo || m.CARI3 != n.PolicyNo || m.CARI21 != "03/10/2026 09:00:00" {
+		if m.CARI1 != id || m.CARI2 != n.PolicyNo || m.CARI3 != n.PolicyNo || m.CARI21 != "03/10/2026 09:00:00" {
 			t.Fatalf("muatan %+v", m)
 		}
 		if gagal != strings.Contains(isi, models.PesanGagalKonversi) {

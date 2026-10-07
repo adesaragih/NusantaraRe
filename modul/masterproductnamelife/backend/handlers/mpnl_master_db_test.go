@@ -62,15 +62,15 @@ func TestDBMasterPlanCariCoverNameAtauBusiness(t *testing.T) {
 	}
 }
 
-// K1 keputusan work owner 01-10-2026 (OQ-MPNL-03): `Choose R/I Rate` membaca view `RATE_LIFE_SUMMARY`
+// K1 keputusan work owner 01-10-2026 (OQ-MPNL-03): `Choose R/I Rate` membaca tabel `M_RATE_LIFE_SUMMARY`
 // (`Contains` USEDBY, urut `ID ASC`), `View Rate` membaca view `RATE_LIFE` satu RIRATEID (urut `ID DESC,
 // RATE ASC`, RATE teks apa adanya); nol tulisan.
 func TestDBRIRateDanViewRateDibacaSaja(t *testing.T) {
 	u := pasangDB(t)
 	for _, q := range []string{
-		`INSERT INTO {s}.RATE_LIFE_SUMMARY (ID, USEDBY) VALUES ('UJI-2', 'UJI RATE DUA')`,
-		`INSERT INTO {s}.RATE_LIFE_SUMMARY (ID, USEDBY) VALUES ('UJI-1', 'uji rate satu')`,
-		`INSERT INTO {s}.RATE_LIFE_SUMMARY (ID, USEDBY) VALUES ('UJI-3', 'LAIN')`,
+		`INSERT INTO {s}.M_RATE_LIFE_SUMMARY (ID, USEDBY) VALUES ('UJI-2', 'UJI RATE DUA')`,
+		`INSERT INTO {s}.M_RATE_LIFE_SUMMARY (ID, USEDBY) VALUES ('UJI-1', 'uji rate satu')`,
+		`INSERT INTO {s}.M_RATE_LIFE_SUMMARY (ID, USEDBY) VALUES ('UJI-3', 'LAIN')`,
 		`INSERT INTO {s}.RATE_LIFE (ID, IDUSEDBY, USEDBY, GENDER, CONTRACT, AGE, RATE) VALUES ('UJI-A', 'UJI-1', 'UJI', 'U', '10', '30', '0,5')`,
 		`INSERT INTO {s}.RATE_LIFE (ID, IDUSEDBY, USEDBY, GENDER, CONTRACT, AGE, RATE) VALUES ('UJI-B', 'UJI-1', 'UJI', 'U', '10', '31', '1.25')`,
 		`INSERT INTO {s}.RATE_LIFE (ID, IDUSEDBY, USEDBY, GENDER, CONTRACT, AGE, RATE) VALUES ('UJI-C', 'UJI-2', 'UJI', 'U', '10', '30', '9')`,
@@ -80,7 +80,7 @@ func TestDBRIRateDanViewRateDibacaSaja(t *testing.T) {
 	// Sidik isi kedua view sebelum dan sesudah (code review #10: cacah saja tidak melihat UPDATE).
 	sidik := func() string {
 		return u.teks(t, `SELECT (SELECT COUNT(*) || '/' || SUM(LENGTH(ID || IDUSEDBY || USEDBY || GENDER || CONTRACT || AGE || RATE))
-		    FROM {s}.RATE_LIFE) || '|' || (SELECT COUNT(*) || '/' || SUM(LENGTH(ID || USEDBY)) FROM {s}.RATE_LIFE_SUMMARY) FROM DUAL`)
+		    FROM {s}.RATE_LIFE) || '|' || (SELECT COUNT(*) || '/' || SUM(LENGTH(ID || USEDBY)) FROM {s}.M_RATE_LIFE_SUMMARY) FROM DUAL`)
 	}
 	awal := sidik()
 	kode, badan := u.kirim(t, "GET", pre+"/master/ri-rate?cari=rate", "")

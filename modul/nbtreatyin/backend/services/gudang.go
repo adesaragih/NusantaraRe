@@ -46,6 +46,7 @@ type Gudang interface {
 	IDMataUangDariNama(ctx context.Context, nama string) (string, error)
 	NamaMataUang(ctx context.Context, id string) (string, error)
 	OJKGrupTreaty(ctx context.Context, grupID string) (string, error)
+	GrupBisnisDariGrupTreaty(ctx context.Context, grupID string) (string, error)
 	OldIDGrupTreaty(ctx context.Context, grupID string) (string, error)
 	KlienDariNama(ctx context.Context, nama string) (string, error)
 	StsPKPAgen(ctx context.Context, sobID string) (string, error)
@@ -62,12 +63,19 @@ type Gudang interface {
 	// PembacaMasterTreaty - master kontrak jalur XOL (K8).
 	PembacaMasterTreaty
 
+	// SimpanPolisProduksi - Utility1 `SaveJsonPolisTreatyIn_Act` sesudah realisasi selesai: json_polis (tanpa
+	// DATA_JSON), ACHIEVEMENT, TREATYINPRODUCTION (`[keputusan work owner 06-10-2026]`, models/produksi.go).
+	SimpanPolisProduksi(ctx context.Context, tx *db.Tx, s models.SimpananPolis) error
 	CatatRiwayat(ctx context.Context, tx *db.Tx, r models.Riwayat) error
 	// CatatUsulan menulis catatan SuggestList ke POOLDATA.HISTORYAKSEPTASIPRODUCTION
 	// (SaveViewSuggest -> InsertViewSuggest_SQL), NOURUT berikutnya per IDPEGA.
 	CatatUsulan(ctx context.Context, tx *db.Tx, idPega string, baris []models.UsulanProduksi) error
 	DaftarRiwayat(ctx context.Context, idPega string) ([]models.Riwayat, error)
 	NamaTampilan(ctx context.Context, loginID string) (string, error)
+	// PemegangKotakMasuk - pemegang aktif workbasket tujuan Submit, untuk nama di NBStatus.
+	PemegangKotakMasuk(ctx context.Context, workbasket string) (models.PemegangKotakMasuk, error)
+	// HitungKotakMasuk - cacah berkas yang menunggu akun per posisi (kotak masuk Beranda).
+	HitungKotakMasuk(ctx context.Context, akun string, admin bool, atasan []string) (map[string]int, error)
 }
 
 // PembacaMasterTreaty adalah sumber master kontrak treaty untuk jalur NB

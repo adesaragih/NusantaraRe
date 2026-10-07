@@ -56,6 +56,28 @@ section mana pun yang terkait portal. Tombol `Create opportunity` membuat kasus 
   `Choose` per baris, paging angka + `Next`. Rule `ChooseAccount` tidak ada di korpus. Sumber data menurut work
   owner: **`T_M_ACCOUNT`** — DDL-nya belum ada di `D:\migrasi\RNM\DDL\`, jadi grid tampil `BelumTersedia` dan
   Search nonaktif sampai DDL + endpoint ada (backend nbfacin, sesi c3).
+- **C-8 diperbarui 02-10-2026 (jawaban work owner):** sumber `POOLDATA.T_M_ACCOUNT` (DDL
+  `D:\migrasi\RNM\DDL\T_M_ACCOUNT.txt`: ID, GROUPBUSINESSID, GROUPBUSINESS, INSUREDID, INSUREDNAME); Insured ID =
+  `INSUREDID`, Insured Name = `INSUREDNAME`, Group Business = `GROUPBUSINESS`; pencarian "mengandung". Frontend
+  memanggil `GET /api/nbfacin/account?cari=&halaman=` (kontrak di `api.ts`); endpoint dibangun sesi c3 (tiket 27).
+  Sampai endpoint ada, popup menampilkan galat backend apa adanya.
+- **C-9 — keputusan agent:** daftar dimuat saat popup dibuka dengan kotak kosong (= semua baris); Search memuat ulang
+  dari halaman 1; paging memakai kata cari yang terakhir dikirim. Kolom yang dicari (tiga kolom tampil), ukuran halaman
+  (20), dan urutan — keputusan agent di tiket 27, menunggu konfirmasi.
+- **C-10 — sesudah Choose** (tangkapan layar work owner 02-10-2026): ketiga tombol Group Business diganti teks
+  `GROUPBUSINESS` terpilih + ikon roda gigi; `[dugaan]` roda gigi membuka popup lagi untuk mengganti pilihan.
+  ⛔ **Class Of Business belum diisi:** menurut work owner ia "ditarik dari tabel business, berdasarkan treaty group
+  yang dipilih" — tabel dan DDL-nya belum ada di `D:\migrasi\RNM\DDL\`, dan tidak ditemukan di korpus (yang ada
+  hanya `m_businessfield`, RDB `ConvertBusinessField`, untuk BusinessFieldNote). Menunggu work owner.
+- **C-11 — Class Of Business** (jawaban work owner 02-10-2026: "ditarik dari tabel business, berdasarkan treaty group
+  yang dipilih"; DDL `D:\migrasi\RNM\DDL\BUSINESS.txt`; tangkapan layar daftar terbuka
+  `docs/02-layar/tangkapan/class-of-business-pega-02-10-2026.png`): kotak isian dengan daftar saran. `[terverifikasi]`
+  korpus `NB FacIn\Section\InputLossRecord_Sec.xml` (~L2669) memberi `.ClassOfBusiness` pyUIElement `autocomplete` dari
+  `BrowseBusiness_RD` (pyValue `.Note`; filter `(ID = Param.ID OR Note = Param.Note) AND BusinessGroupID = Param.Group`).
+  `[dugaan]` form Opportunity memakai RD yang sama dan Param.Group = `GROUPBUSINESSID` akun terpilih. Frontend memanggil
+  `GET /api/nbfacin/class-of-business?groupBusinessId=` (tiket 28, sesi c3); saran dimuat ulang tiap group berganti dan
+  isian lama dikosongkan. Gambar memperlihatkan urutan abjad, sedangkan RD sort ID DESC — urutan dari backend.
+- **Work owner 02-10-2026 atas tiket 27:** pencarian akun PEKA huruf besar-kecil, 15 baris per halaman.
 - **C-2 — dua tombol Group Business lain nonaktif (`New Company Detail`, `New Group Business`)** (aksinya tidak diketahui).
 - **C-3 — `Stage` ditampilkan read-only berisi `Opportunity`** `[dugaan]`: di gambar ia kotak berisi
   tanpa panah dropdown.

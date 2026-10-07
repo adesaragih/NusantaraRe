@@ -45,11 +45,11 @@ func fakultatifNolAtauKosong(h *Halaman) bool {
 // (`GabungMasukanLayar`) dan refresh `CountSpreading_Act` sel %Share dapat
 // terpicu (`services.aksiTerbuka`).
 //
-//	subsection NonProp (KEDUA layar, W2 audit silang P3)  `tampilSubsectionNonProp`
-//	                   DAN `fakultatifNolAtauKosong` - `DetailDeptHeadTreatyIn_UW`
-//	                   S88 menyertakan `DetailPoliciesNonProportional` ->
-//	                   `DetailPolicyTreatyInNonProportional` S73 -> `SpreadingRiskList`
-//	                   dengan syarat yang SAMA dengan layar admin
+//	subsection NonProp  layar ADMIN saja: `tampilSubsectionNonProp` DAN
+//	                   `fakultatifNolAtauKosong`. `[keputusan work owner 07-10-2026]`
+//	                   "HANYA ADMIN YANG BISA EDIT" - menyimpang sadar dari XML/W2:
+//	                   `DetailDeptHeadTreatyIn_UW` S88 menyertakan subsection yang sama
+//	                   ber-`pyEditOptions=Auto`, tetapi Sec Head / Dept Head hanya-baca
 //	admin Proporsional `DetailPolicyTreatyIn` S30 (wadah S19 `wadahUangAdmin`):
 //	                   sel terbuka, Add/Delete
 //	atasan Proporsional `DetailDeptHeadTreatyIn_UW` S96: sel `pyReadOnly=true`
@@ -60,7 +60,38 @@ func fakultatifNolAtauKosong(h *Halaman) bool {
 // `openWorkByHandle` / flow action), jadi selalu benar.
 func SpreadingDariLayar(h *Halaman, posisi string) bool {
 	if tampilSubsectionNonProp(h) {
-		return fakultatifNolAtauKosong(h)
+		return posisi == PosisiAdmin && fakultatifNolAtauKosong(h)
 	}
 	return posisi == PosisiAdmin && wadahUangAdmin(h)
+}
+
+// IsianNonProp - isian layar yang ikut ditulis ulang preACT 16 saat pajak NonProp dihitung ulang
+// (`services.pajakNonProp`, `[keputusan work owner 06-10-2026]`): langkah 13 StartDate/EndDate dan
+// langkah 23 %Share / %Share Claim spreading.
+type IsianNonProp struct {
+	mulai, akhir string
+	spreading    []Baris
+}
+
+// SimpanIsianNonProp mencatat isian layar sebelum preACT 16 dijalankan ulang.
+func SimpanIsianNonProp(h *Halaman) IsianNonProp {
+	return IsianNonProp{h.Ambil(pt + "StartDate"), h.Ambil(pt + "EndDate"), salinBaris(h.AmbilDaftar(DaftarSpreading))}
+}
+
+// Kembalikan memasang lagi isian yang dicatat. %Share kembali ke baris ber-Treaty Type sama di urutan
+// yang sama (baris spreading milik server); spreading lalu dihitung ulang (`CountSpreading_Act`).
+func (s IsianNonProp) Kembalikan(h *Halaman) error {
+	h.Setel(pt+"StartDate", s.mulai)
+	h.Setel(pt+"EndDate", s.akhir)
+	baru := h.AmbilDaftar(DaftarSpreading)
+	for i, r := range baru {
+		if i >= len(s.spreading) || s.spreading[i]["TreatyType"] != r["TreatyType"] {
+			continue
+		}
+		for _, m := range selSpreading {
+			r[m] = s.spreading[i][m]
+		}
+	}
+	h.SetelDaftar(DaftarSpreading, baru)
+	return CountSpreading(h, 0)
 }

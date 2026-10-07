@@ -74,7 +74,7 @@ func TestDBRateDibacaSaja(t *testing.T) {
 	u := pasangDB(t)
 	s := u.skema
 	for _, r := range [][2]string{{"UJI-2", "UJI RATE DUA"}, {"UJI-1", "uji rate satu"}, {"UJI-3", "LAIN"}} {
-		u.exec(t, `INSERT INTO `+s+`.RATE_LIFE_SUMMARY (ID, USEDBY) VALUES (:1, :2)`, r[0], r[1])
+		u.exec(t, `INSERT INTO `+s+`.M_RATE_LIFE_SUMMARY (ID, USEDBY) VALUES (:1, :2)`, r[0], r[1])
 	}
 	for _, r := range [][3]string{{"UJI-A", "UJI-1", "0,5"}, {"UJI-B", "UJI-1", "1.25"}, {"UJI-C", "UJI-2", "9"}} {
 		u.exec(t, `INSERT INTO `+s+`.RATE_LIFE (ID, IDUSEDBY, USEDBY, GENDER, CONTRACT, AGE, RATE)
@@ -83,7 +83,7 @@ func TestDBRateDibacaSaja(t *testing.T) {
 	// Sidik isi kedua view sebelum dan sesudah (code review #10: cacah saja tidak melihat UPDATE).
 	sidik := func() string {
 		return u.teks(t, `SELECT (SELECT COUNT(*) || '/' || SUM(LENGTH(ID || IDUSEDBY || USEDBY || GENDER || CONTRACT || AGE || RATE))
-		    FROM {s}.RATE_LIFE) || '|' || (SELECT COUNT(*) || '/' || SUM(LENGTH(ID || USEDBY)) FROM {s}.RATE_LIFE_SUMMARY) FROM DUAL`)
+		    FROM {s}.RATE_LIFE) || '|' || (SELECT COUNT(*) || '/' || SUM(LENGTH(ID || USEDBY)) FROM {s}.M_RATE_LIFE_SUMMARY) FROM DUAL`)
 	}
 	awal := sidik()
 	kode, badan := u.get(t, "/api/master-contract-retro-life/ringkasan-rate?cari=RATE")

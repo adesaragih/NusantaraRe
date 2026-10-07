@@ -193,7 +193,7 @@ func TestRateTakTerbacaMenyebutView(t *testing.T) {
 		t.Errorf("DaftarRate: %v", err)
 	}
 	if _, err := l.CariRingkasanRate(context.Background(), pelaku, ""); !errors.Is(err, services.ErrMasterTidakTerbaca) ||
-		!strings.Contains(services.Pesan(err), "RATE_LIFE_SUMMARY") {
+		!strings.Contains(services.Pesan(err), "M_RATE_LIFE_SUMMARY") {
 		t.Errorf("CariRingkasanRate: %v", err)
 	}
 }

@@ -145,7 +145,7 @@ func TestIsApprovedKosongDanNolTetapBerbeda(t *testing.T) {
 	h.Setel("PositionNote", models.PosisiAdmin)
 	h.Setel("PolicyTreatyIn.IsApproved", "")
 	simpanKasusBaru(t, ctx, d, g, id, h)
-	q := fmt.Sprintf(`SELECT IS_APPROVED FROM %s.T_GENERAL_POLIS WHERE ID = :1`, skema)
+	q := fmt.Sprintf(`SELECT IS_APPROVED FROM %s.T_GENERAL_POLIS_TREATY WHERE ID = :1`, skema)
 	for _, c := range []struct{ masuk, kolom string }{{"", "<NULL>"}, {"0", "0"}, {"", "<NULL>"}} {
 		h.Setel("PolicyTreatyIn.IsApproved", c.masuk)
 		if err := dalamTx(t, ctx, d, func(tx *intidb.Tx) error { return g.SimpanHalaman(ctx, tx, id, h) }); err != nil {
@@ -170,7 +170,7 @@ func TestIsApprovedKosongDanNolTetapBerbeda(t *testing.T) {
 // Kegagalan lahir di ORACLE pada baris anak kedua: `InstallmentNo`
 // 12345678901 lolos pemeriksaan Go (bilangan bulat) tetapi melampaui
 // `T_POLIS_INSTALMENT.INSTALLMENT_NO NUMBER(10)` (ORA-01438) - SESUDAH induk
-// T_GENERAL_POLIS diperbarui, anak lama dihapus, T_POLIS_QUOTATION ditulis
+// T_GENERAL_POLIS_TREATY diperbarui, anak lama dihapus, T_POLIS_QUOTATION ditulis
 // ulang, dan baris anak pertama disisipkan, di transaksi yang sama.
 func TestGagalTulisTabelAnakMembatalkanInduk(t *testing.T) {
 	sqlDB, skema, ctx, d := pasang(t)
@@ -195,10 +195,10 @@ func TestGagalTulisTabelAnakMembatalkanInduk(t *testing.T) {
 	if errors.Is(err, galat.ErrPermintaanTidakSah) {
 		t.Fatalf("galat lahir di Go, bukan di tabel anak: %v", err)
 	}
-	premi := kolomTeks(t, ctx, sqlDB, fmt.Sprintf(`SELECT %s FROM %s.T_GENERAL_POLIS WHERE ID = :1`,
+	premi := kolomTeks(t, ctx, sqlDB, fmt.Sprintf(`SELECT %s FROM %s.T_GENERAL_POLIS_TREATY WHERE ID = :1`,
 		fmt.Sprintf(intidb.FmtDesimal, "PREMI_OGP"), skema), id)
 	if premi != "100" {
-		t.Errorf("induk T_GENERAL_POLIS.PREMI_OGP = %s sesudah gagal, harap 100", premi)
+		t.Errorf("induk T_GENERAL_POLIS_TREATY.PREMI_OGP = %s sesudah gagal, harap 100", premi)
 	}
 	if gp := kolomTeks(t, ctx, sqlDB, fmt.Sprintf(`SELECT GROUP_PANEL FROM %s.T_POLIS_QUOTATION WHERE POLIS_ID = :1`, skema), id); gp != "006" {
 		t.Errorf("T_POLIS_QUOTATION.GROUP_PANEL = %s sesudah gagal, harap 006", gp)

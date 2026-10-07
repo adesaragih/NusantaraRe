@@ -22,7 +22,7 @@ package models
 // `TreatyXOLList().ValueList` -> T_POLIS_XOL_LAYER, `ListInstallment` ->
 // T_POLIS_INSTALMENT, `ListInstallment().InstallmentList` ->
 // T_POLIS_INSTALMENT_DETAIL, `SpreadingRiskList` -> T_POLIS_SPREADING, dan medan
-// polis -> T_GENERAL_POLIS. Nol tabel baru (bab 0 butir 11).
+// polis -> T_GENERAL_POLIS_TREATY. Nol tabel baru (bab 0 butir 11).
 //
 // Semantik Pega yang ditiru:
 //   - variabel lokal ber-tipe Decimal (pyLocalParameters) bernilai awal 0;

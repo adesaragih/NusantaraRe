@@ -94,6 +94,10 @@ const POLA_UBAH_GOLONGAN =
 // CHECK GROUPMENU dibuat ulang (909) - tidak mengubah baris.
 const TAMBAH_CEK_GOLONGAN = 'ALTER TABLE {skema}.M_NAV_MENU ADD CONSTRAINT CK_M_NAV_MENU_GROUPMENU CHECK'
 const POLA_UBAH_LABEL = /^UPDATE \{skema\}\.M_NAV_MENU SET LABEL = '([^']+)', TGL_UBAH = SYSDATE\s+WHERE KODE = '([^']+)'$/
+// Baris modul dipensiunkan (920 - Master Data dipecah delapan modul): DELETE berjangkar satu KODE.
+const POLA_HAPUS_BARIS = /^DELETE FROM \{skema\}\.M_NAV_MENU WHERE KODE = '([^']+)'$/
+// Hak akun atas menu (`M_LOGIN_GO_MENU`, 920 menyalin hak lalu membuangnya) - bukan baris menu, tidak mengubah hasil.
+const HAK_MENU = /^(INSERT INTO|DELETE FROM) \{skema\}\.M_LOGIN_GO_MENU\b/
 
 /** Hasil bersih: baris modul, butir yang tersisa, dan cacah INSERT yang terbaca. */
 export interface MenuBersih {
@@ -111,6 +115,7 @@ export function menuBersih(berkas: readonly BerkasMigrasiMenu[] = berkasMenu()):
   const hasil: MenuBersih = { baris: [], butir: [], insert: 0, insertTerbaca: 0, takDikenal: [] }
   for (const b of berkas) {
     for (const p of pernyataan(b.isi)) {
+      if (HAK_MENU.test(p)) continue
       if (p.startsWith('INSERT')) hasil.insert++
       const k = POLA_KELOMPOK.exec(p) ?? POLA_KELOMPOK_DATAR.exec(p)
       if (k !== null) {
@@ -151,6 +156,11 @@ export function menuBersih(berkas: readonly BerkasMigrasiMenu[] = berkasMenu()):
       const l = POLA_UBAH_LABEL.exec(p)
       if (l !== null) {
         for (const x of hasil.baris) if (x.kode === l[2]) x.label = l[1]!
+        continue
+      }
+      const h = POLA_HAPUS_BARIS.exec(p)
+      if (h !== null) {
+        hasil.baris = hasil.baris.filter((x) => x.kode !== h[1])
         continue
       }
       hasil.takDikenal.push(`${b.nama}: ${p.slice(0, 80)}`)

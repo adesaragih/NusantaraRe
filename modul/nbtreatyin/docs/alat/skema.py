@@ -5,7 +5,7 @@ Sumber tunggal: backend/models/katalog.go (Kolom properti -> kolom -> golongan).
 TestTabelDanKolomMengikutiDiagramGrilling) menagih bahwa DDL, katalog, dan diagram
 grilling tetap sepakat.
 
-⛔ TEPAT DELAPAN TABEL (bab 0 butir 11 PROMPT putaran 2): T_GENERAL_POLIS,
+⛔ TEPAT DELAPAN TABEL (bab 0 butir 11 PROMPT putaran 2): T_GENERAL_POLIS_TREATY,
 T_POLIS_QUOTATION, T_POLIS_CEDING, T_POLIS_INSTALMENT, T_POLIS_INSTALMENT_DETAIL,
 T_POLIS_SPREADING, T_POLIS_XOL, T_POLIS_XOL_LAYER. Tabel lain tidak dibangkitkan.
 
@@ -96,14 +96,19 @@ def tulis(nama_berkas, kepala, pernyataan, turun):
 
 def main():
     t = baca_katalog()
-    g = t["T_GENERAL_POLIS"]
+    g = t["T_GENERAL_POLIS_TREATY"]
 
     # ------------------------------------------------------------ 320
     kunci = [("ID", "VARCHAR2(32) NOT NULL"), ("NOPOLIS", "VARCHAR2(64)"), ("PRODKE", "NUMBER(10) DEFAULT 0 NOT NULL"),
-             ("NOENDORS", "VARCHAR2(64)"), ("OLD_POLIS_ID", "VARCHAR2(32)"), ("IDPEGA", "VARCHAR2(128)"),
+             ("NOENDORS", "VARCHAR2(64)"), ("OLD_POLIS_ID", "VARCHAR2(32)"),
              ("TGL_INPUT", "DATE"), ("USERNAME", "VARCHAR2(64)")]
-    tulis("320_t_general_polis", [
-        "320 - T_GENERAL_POLIS: satu baris per GENERASI polis treaty inward (tiket 16).",
+    tulis("320_t_general_polis_treaty", [
+        "320 - T_GENERAL_POLIS_TREATY: satu baris per GENERASI polis treaty inward (tiket 16).",
+        "",
+        "Nama T_GENERAL_POLIS_TREATY (perintah work owner 05-10-2026, menutup PERMINTAAN C10 / K18):",
+        "T_GENERAL_POLIS milik nbfacin (migrasi 182) dan tidak dipakai NB Treaty In. Nama constraint",
+        "GP_TREATY supaya tidak bentrok dengan constraint tabel lama di skema yang sudah menjalankan 320",
+        "lama; skema itu dipindah skrip transisi (SCRIPT-TABEL-KOLOM-BARU.xlsx sheet NB TREATY).",
         "",
         "Kunci utama BERSAMA T_WORK_POLIS (tabel kasus lintas-lini milik premiumlistlife,",
         "migrasi 050/059): ID adalah ID baris T_WORK_POLIS, tanpa kolom kunci tamu",
@@ -120,31 +125,32 @@ def main():
         "ini; tidak boleh disunting (ID-10, AC 6) - tanpa kolom penanda (diagram).",
         "",
         "Kolom lain DIBANGKITKAN dari backend/models/katalog.go (docs/alat/skema.py) -",
-        "79 medan PolicyTreatyIn + 7 kolom json_polis menurut diagram dan rancangan;",
+        "79 medan PolicyTreatyIn + 6 kolom json_polis menurut diagram dan rancangan (IDPEGA DIBUANG,",
+        "keputusan work owner 06-10-2026: kasus baru menyimpan IDPEGA = ID);",
         "LAYER* dicoret (diagram F26). Perbandingan: docs/PERBANDINGAN-KOLOM-DIAGRAM.md.",
         "Uang dan persen NUMBER(38,10) - diagram sheet NB Treaty In Prop F20 (skala",
         "MINIMAL 9 desimal, P29) dan J69 (NB bagi rata presisi 10); RALAT NUMBER(38,8)",
         "KEPUTUSAN 23-09-2026 sore (perintah WO 04-10-2026). Tanggal DATE (P32),",
         "kode dan penanda teks (ID-16, ID-17). Nol COMMIT.",
     ], [
-        blok("T_GENERAL_POLIS", kunci, g["kolom"], [
-            "CONSTRAINT PK_GENERAL_POLIS PRIMARY KEY (ID)",
-            "CONSTRAINT FK_GENERAL_POLIS_WORK FOREIGN KEY (ID) REFERENCES {skema}.T_WORK_POLIS (ID)",
-            "CONSTRAINT FK_GENERAL_POLIS_OLD FOREIGN KEY (OLD_POLIS_ID) REFERENCES {skema}.T_WORK_POLIS (ID)",
-            "CONSTRAINT UQ_GENERAL_POLIS_OLD UNIQUE (OLD_POLIS_ID)",
+        blok("T_GENERAL_POLIS_TREATY", kunci, g["kolom"], [
+            "CONSTRAINT PK_GP_TREATY PRIMARY KEY (ID)",
+            "CONSTRAINT FK_GP_TREATY_WORK FOREIGN KEY (ID) REFERENCES {skema}.T_WORK_POLIS (ID)",
+            "CONSTRAINT FK_GP_TREATY_OLD FOREIGN KEY (OLD_POLIS_ID) REFERENCES {skema}.T_WORK_POLIS (ID)",
+            "CONSTRAINT UQ_GP_TREATY_OLD UNIQUE (OLD_POLIS_ID)",
         ]),
-        "CREATE UNIQUE INDEX {skema}.UQ_GENERAL_POLIS_NOPOLIS ON {skema}.T_GENERAL_POLIS "
+        "CREATE UNIQUE INDEX {skema}.UQ_GP_TREATY_NOPOLIS ON {skema}.T_GENERAL_POLIS_TREATY "
         "(CASE WHEN NOPOLIS IS NOT NULL THEN NOPOLIS END, CASE WHEN NOPOLIS IS NOT NULL THEN PRODKE END)",
-    ], ["DROP TABLE {skema}.T_GENERAL_POLIS CASCADE CONSTRAINTS"])
+    ], ["DROP TABLE {skema}.T_GENERAL_POLIS_TREATY CASCADE CONSTRAINTS"])
 
     # ------------------------------------------------------------ 321 quotation (1:1)
     q = t["T_POLIS_QUOTATION"]
     tulis("321_t_polis_quotation", [
-        "321 - T_POLIS_QUOTATION: halaman Quotation polis, 1:1 dengan T_GENERAL_POLIS",
+        "321 - T_POLIS_QUOTATION: halaman Quotation polis, 1:1 dengan T_GENERAL_POLIS_TREATY",
         "(spec-penyimpanan ID-23; tiket 19 AC 27). Kunci utama = POLIS_ID.",
     ], [blok("T_POLIS_QUOTATION", [("POLIS_ID", "VARCHAR2(32) NOT NULL")], q["kolom"], [
         "CONSTRAINT PK_POLIS_QUOTATION PRIMARY KEY (POLIS_ID)",
-        "CONSTRAINT FK_POLIS_QUOTATION_POLIS FOREIGN KEY (POLIS_ID) REFERENCES {skema}.T_GENERAL_POLIS (ID)",
+        "CONSTRAINT FK_POLIS_QUOTATION_POLIS FOREIGN KEY (POLIS_ID) REFERENCES {skema}.T_GENERAL_POLIS_TREATY (ID)",
     ])], ["DROP TABLE {skema}.T_POLIS_QUOTATION CASCADE CONSTRAINTS"])
 
     # ------------------------------------------------------------ anak 1:N
@@ -165,21 +171,25 @@ def main():
                                        "Anak T_POLIS_QUOTATION lewat QUOTATION_ID = POLIS_ID quotation (diagram O39);",
                                        "CEDING_CO_ID <- .CedingCo, CEDING_CO_NAME <- .CedingCoName (diagram R43)."] + nourut,
          induk_pk="POLIS_ID")
-    anak("323", "T_POLIS_INSTALMENT", "POLIS_ID", "T_GENERAL_POLIS", "PK_POLIS_INSTALMENT", "UQ_POLIS_INSTALMENT_NOURUT",
+    anak("323", "T_POLIS_INSTALMENT", "POLIS_ID", "T_GENERAL_POLIS_TREATY", "PK_POLIS_INSTALMENT", "UQ_POLIS_INSTALMENT_NOURUT",
          "FK_POLIS_INSTALMENT_POLIS", ["323 - T_POLIS_INSTALMENT <- PolicyTreatyIn.ListInstallment (ID-26)."] + nourut)
     anak("324", "T_POLIS_INSTALMENT_DETAIL", "INSTALMENT_ID", "T_POLIS_INSTALMENT", "PK_POLIS_INSTALMENT_DETAIL",
          "UQ_POLIS_INST_DETAIL_NOURUT", "FK_POLIS_INST_DETAIL_INST",
          ["324 - T_POLIS_INSTALMENT_DETAIL <- ListInstallment().InstallmentList - hanya",
           "non-proporsional (rancangan-tabel-datar §3.2; tiket 19 AC 31)."] + nourut)
-    anak("325", "T_POLIS_SPREADING", "POLIS_ID", "T_GENERAL_POLIS", "PK_POLIS_SPREADING", "UQ_POLIS_SPREADING_NOURUT",
+    anak("325", "T_POLIS_SPREADING", "POLIS_ID", "T_GENERAL_POLIS_TREATY", "PK_POLIS_SPREADING", "UQ_POLIS_SPREADING_NOURUT",
          "FK_POLIS_SPREADING_POLIS", ["325 - T_POLIS_SPREADING <- PolicyTreatyIn.SpreadingRiskList (ID-28).",
                                       "Total share dan nilai TIDAK disimpan - turunan baris ini."] + nourut)
-    anak("326", "T_POLIS_XOL", "POLIS_ID", "T_GENERAL_POLIS", "PK_POLIS_XOL", "UQ_POLIS_XOL_NOURUT",
+    anak("326", "T_POLIS_XOL", "POLIS_ID", "T_GENERAL_POLIS_TREATY", "PK_POLIS_XOL", "UQ_POLIS_XOL_NOURUT",
          "FK_POLIS_XOL_POLIS", ["326 - T_POLIS_XOL <- PolicyTreatyIn.TreatyXOLList - induk XOL tanpa penanda",
                                 "layer (ID-29); DEDUCTION di sini UANG (ID-30)."] + nourut)
     anak("327", "T_POLIS_XOL_LAYER", "XOL_ID", "T_POLIS_XOL", "PK_POLIS_XOL_LAYER", "UQ_POLIS_XOL_LAYER_NOURUT",
          "FK_POLIS_XOL_LAYER_XOL", ["327 - T_POLIS_XOL_LAYER <- TreatyXOLList().ValueList - pemegang penanda",
                                     "layer (ID-29; tiket 19 AC 32-35)."] + nourut)
+    anak("328", "T_POLIS_SURVEY", "POLIS_ID", "T_GENERAL_POLIS_TREATY", "PK_POLIS_SURVEY", "UQ_POLIS_SURVEY_NOURUT",
+         "FK_POLIS_SURVEY_POLIS", ["328 - T_POLIS_SURVEY <- PolicyTreatyIn.QuotationData.SurveyReportList: popup Historical",
+                                "Survey Report (Section/HistoricalSurveyReportDtl). Keputusan work owner 06-10-2026,",
+                                "membatalkan K7 - tabel kesembilan, di luar diagram grilling."] + nourut)
     # ------------------------------------------------------------ STRUKTUR
     w = ["# Struktur Tabel — NB Treaty In", "",
          "Acuan bentuk tabel modul `nbtreatyin`. **Dibangkitkan** `docs/alat/skema.py` dari",
@@ -199,26 +209,27 @@ def main():
             w.append(f"| `{k['kolom']}` | {tipe_struktur(k)} | ya |  | {k['gol']} | `{k.get('properti', '')}` |")
         w.append("")
 
-    sect("T_GENERAL_POLIS", [
+    sect("T_GENERAL_POLIS_TREATY", [
         ("ID", "teks", "tidak", "PK, FK T_WORK_POLIS", "kode", "kasus"),
         ("NOPOLIS", "teks", "ya", "UQ (NOPOLIS, PRODKE)", "kode", "`PolicyTreatyIn.PolicyNo`"),
         ("PRODKE", "bilangan bulat", "tidak", "UQ (NOPOLIS, PRODKE)", "cacah", "generasi; NB = 0"),
         ("NOENDORS", "teks", "ya", "", "kode", "json_polis"),
         ("OLD_POLIS_ID", "teks", "ya", "UQ, FK T_WORK_POLIS", "kode", "generasi sebelumnya"),
-        ("IDPEGA", "teks", "ya", "", "kode", "json_polis"),
         ("TGL_INPUT", "DATE", "ya", "", "tanggal-waktu", "json_polis"),
         ("USERNAME", "teks", "ya", "", "kode", "identitas akses login (P4)"),
     ], g["kolom"], "Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7). "
                    "Generasi tertutup = ada penerus yang `OLD_POLIS_ID`-nya menunjuk baris ini (ID-10).")
-    sect("T_POLIS_QUOTATION", [("POLIS_ID", "teks", "tidak", "PK, FK T_GENERAL_POLIS", "kode", "induk")],
+    sect("T_POLIS_QUOTATION", [("POLIS_ID", "teks", "tidak", "PK, FK T_GENERAL_POLIS_TREATY", "kode", "induk")],
          q["kolom"], "Halaman `Quotation` / `PolicyTreatyIn.QuotationData`, 1:1 (ID-23).")
     for nama, induk, cat in [
             ("T_POLIS_CEDING", ("QUOTATION_ID", "T_POLIS_QUOTATION"), "← `QuotationData.CedingCoList` (ID-24), di bawah `T_POLIS_QUOTATION` (diagram O39)."),
-            ("T_POLIS_INSTALMENT", ("POLIS_ID", "T_GENERAL_POLIS"), "← `PolicyTreatyIn.ListInstallment` (ID-26)."),
+            ("T_POLIS_INSTALMENT", ("POLIS_ID", "T_GENERAL_POLIS_TREATY"), "← `PolicyTreatyIn.ListInstallment` (ID-26)."),
             ("T_POLIS_INSTALMENT_DETAIL", ("INSTALMENT_ID", "T_POLIS_INSTALMENT"), "← `ListInstallment().InstallmentList`, non-proporsional."),
-            ("T_POLIS_SPREADING", ("POLIS_ID", "T_GENERAL_POLIS"), "← `PolicyTreatyIn.SpreadingRiskList` (ID-28)."),
-            ("T_POLIS_XOL", ("POLIS_ID", "T_GENERAL_POLIS"), "← `PolicyTreatyIn.TreatyXOLList` (ID-29)."),
-            ("T_POLIS_XOL_LAYER", ("XOL_ID", "T_POLIS_XOL"), "← `TreatyXOLList().ValueList` (ID-29).")]:
+            ("T_POLIS_SPREADING", ("POLIS_ID", "T_GENERAL_POLIS_TREATY"), "← `PolicyTreatyIn.SpreadingRiskList` (ID-28)."),
+            ("T_POLIS_XOL", ("POLIS_ID", "T_GENERAL_POLIS_TREATY"), "← `PolicyTreatyIn.TreatyXOLList` (ID-29)."),
+            ("T_POLIS_XOL_LAYER", ("XOL_ID", "T_POLIS_XOL"), "← `TreatyXOLList().ValueList` (ID-29)."),
+            ("T_POLIS_SURVEY", ("POLIS_ID", "T_GENERAL_POLIS_TREATY"), "← `PolicyTreatyIn.QuotationData.SurveyReportList` "
+             "(popup Historical Survey Report; keputusan work owner 06-10-2026).")]:
         sect(nama, [("ID", "teks", "tidak", "PK", "kode", "baris"),
                     (induk[0], "teks", "tidak", f"FK {induk[1]}, UQ ({induk[0]}, NOURUT)", "kode", "induk"),
                     ("NOURUT", "bilangan bulat", "tidak", f"UQ ({induk[0]}, NOURUT)", "cacah", "urutan baris (ID-11)")],

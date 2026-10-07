@@ -48,7 +48,8 @@ var ddlTiruan = map[string]string{
 	repository.MasterJenisReasuransi: `ID VARCHAR2(100), NOTE VARCHAR2(1000), FLAG VARCHAR2(100)`,
 	repository.MasterReinsurer:       `ID VARCHAR2(100), CLIENTNAME VARCHAR2(1000), STATUSACTIVE VARCHAR2(10)`,
 	repository.MasterBusiness:        `ID VARCHAR2(100), NOTE VARCHAR2(1000), OLDID VARCHAR2(100)`,
-	// Dua view rate (K1 01-10-2026) ditiru sebagai TABEL berkolom RD; `RATE_LIFE` bertipe katalog Claim
+	// Ringkasan rate (tabel `M_RATE_LIFE_SUMMARY`, keputusan work owner 07-10-2026) dan view `RATE_LIFE` (K1 01-10-2026)
+	// ditiru sebagai TABEL berkolom RD; `RATE_LIFE` bertipe katalog Claim
 	// Life (`ID VARCHAR2(10)`, sisanya VARCHAR2(4000)). Tidak ditulis modul - hanya fixture uji.
 	repository.MasterRingkasanRate: `ID VARCHAR2(10), USEDBY VARCHAR2(4000), OPERATORID VARCHAR2(4000),
 		MODIFIEDDATE VARCHAR2(4000), TYPE VARCHAR2(4000)`,

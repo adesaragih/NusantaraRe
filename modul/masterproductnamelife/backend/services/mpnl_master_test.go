@@ -18,7 +18,7 @@ func TestCariMasterHurufBesarDanRIRateDibaca(t *testing.T) {
 	if err != nil || len(d) != 1 || g.CariTerakhir != "RISK" {
 		t.Errorf("SearchPolicyHolder_act b236 huruf besar: %v %v %q", d, err, g.CariTerakhir)
 	}
-	// K1 01-10-2026 (OQ-MPNL-03): pemilih R/I Rate membaca view `RATE_LIFE_SUMMARY`, kata cari dihurufbesarkan.
+	// K1 01-10-2026 (OQ-MPNL-03): pemilih R/I Rate membaca tabel `M_RATE_LIFE_SUMMARY`, kata cari dihurufbesarkan.
 	g.Master[models.MasterRIRate] = []models.NilaiMaster{{ID: "R1", Nama: "UJI RATE"}}
 	if d, err := l.CariMaster(context.Background(), pelakuUji, models.MasterRIRate, " rate", 0); err != nil || len(d) != 1 ||
 		g.CariTerakhir != "RATE" {

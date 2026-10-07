@@ -44,6 +44,16 @@ export interface RingkasanKasus {
   positionNote: string
   noPolis: string
   tglCreate: string
+  /** T_WORK_POLIS.CREATE_OP_NAME - kolom "User Create" portal. */
+  createOpName: string
+  /** T_POLIS_QUOTATION.PROPORTIONAL_TYPE - kolom "Type" portal. */
+  proportionalType: string
+  /** Kolom daftar kotak masuk Beranda: T_GENERAL_POLIS_TREATY.CEDING_CO_NAME / START_DATE, T_WORK_POLIS.TGL_UPDATE. */
+  cedingCoName: string
+  startDate: string
+  tglUpdate: string
+  /** T_GENERAL_POLIS_TREATY.TGL_PROD - kolom "Production Date" tab Resolved portal (keputusan work owner 07-10-2026). */
+  productionDate: string
 }
 
 /** Tombol submit yang tampil - `models.TombolKirim`. */
@@ -90,15 +100,6 @@ export interface NomorPolis {
   policyNo: string
 }
 
-export interface Riwayat {
-  idPega: string
-  status: string
-  username: string
-  workbasket: string
-  operatorId: string
-  tglTransfer: string
-}
-
 /** Action set satu sel - `services.PermintaanHitung`, SATU bentuk: `urutan`
  *  berisi satu refresh atau lebih, dijalankan berurutan atas halaman yang sama. */
 export interface PermintaanHitung {
@@ -109,9 +110,27 @@ export interface PermintaanHitung {
 
 const kasus = (id: string) => `${PREFIX_NBTREATYIN}/kasus/${encodeURIComponent(id)}`
 
-export function daftarKasus(cari: string, posisi = ''): Promise<RingkasanKasus[]> {
+/** Satu baris kotak masuk Beranda - `models.AntreanKotakMasuk`. */
+export interface AntreanKotakMasuk {
+  workbasket: string
+  nama: string
+  jumlah: number
+}
+
+/** Kotak masuk Beranda: berkas yang menunggu akun per workbasket yang ia pegang (keputusan work owner 06-10-2026). */
+export function kotakMasuk(): Promise<AntreanKotakMasuk[]> {
+  return minta<AntreanKotakMasuk[]>(`${PREFIX_NBTREATYIN}/kotak-masuk`)
+}
+
+/** Daftar berkas yang menunggu akun di `workbasket` (null = semua yang ia pegang) - kotak masuk Beranda. */
+export function daftarMenunggu(workbasket: string | null): Promise<RingkasanKasus[]> {
+  return minta<RingkasanKasus[]>(`${PREFIX_NBTREATYIN}/kotak-masuk/kasus`, { kueri: { workbasket: workbasket ?? undefined } })
+}
+
+/** Daftar portal: hanya berkas buatan akun ini (keputusan work owner 06-10-2026); `selesai` = switch Resolved. */
+export function daftarKasus(cari: string, posisi = '', selesai = false): Promise<RingkasanKasus[]> {
   return minta<RingkasanKasus[]>(`${PREFIX_NBTREATYIN}/kasus`, {
-    kueri: { cari: cari || undefined, posisi: posisi || undefined },
+    kueri: { cari: cari || undefined, posisi: posisi || undefined, status: selesai ? 'selesai' : undefined },
   })
 }
 
@@ -167,14 +186,12 @@ export function kirimKasus(id: string, halaman: Halaman): Promise<HasilKirim> {
   return minta<HasilKirim>(`${kasus(id)}/kirim`, { metode: 'POST', badan: { halaman } })
 }
 
-export function riwayatKasus(id: string): Promise<Riwayat[]> {
-  return minta<Riwayat[]>(`${kasus(id)}/riwayat`)
-}
-
 /** Isi grid popup `BusinessAndSOBList` (RD `BrowseTreatyJoinEDM`): showHarness `pySubmitData=Yes`
- *  mengirim isian layar - server menyaring dengan `QuotationData.ProportionalType`-nya, tanpa simpan. */
-export function daftarBisnis(id: string, halaman: Halaman): Promise<BarisKontrak[]> {
-  return minta<BarisKontrak[]>(`${kasus(id)}/bisnis`, { metode: 'POST', badan: { halaman } })
+ *  mengirim isian layar - server menyaring dengan `QuotationData.ProportionalType`-nya, tanpa simpan.
+ *  `saringan` (nama kolom view -> teks) dicari di SERVER sebelum batas 500 baris (keputusan work owner
+ *  06-10-2026), supaya kontrak di luar 500 baris pertama dapat ditemukan. */
+export function daftarBisnis(id: string, halaman: Halaman, saringan: Record<string, string> = {}): Promise<BarisKontrak[]> {
+  return minta<BarisKontrak[]>(`${kasus(id)}/bisnis`, { metode: 'POST', badan: { halaman, saringan } })
 }
 
 /** Isi TreeGrid popup `SOB` (`Section/SourceHierarki`). */

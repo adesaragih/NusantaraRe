@@ -1,0 +1,58 @@
+-- 191 - sub-tab Loss Record (tiket 42): T_LOCATIONLIST + empat kolom loss ratio, T_LISTCAUSEOFLOSS utuh + lima kolom
+-- baru, T_COINSDATA utuh.
+--
+-- T_LOCATIONLIST (186 sebagian, A109): LOSS_RATIO1_YEAR_AMOUNT / _PERCENT, LOSS_RATIO35_YEAR_AMOUNT / _PERCENT = kolom
+-- RANCANGAN (`loader/skema_gen.go`); amount = uang NUMBER(38,8) (ADR-0016; rancangan NUMBER polos), percent = rancangan
+-- VARCHAR2(50). BACA-SAJA di layar; DIHITUNG server saat simpan (keputusan work owner W-4, butir 84:
+-- `DDL\SetLossRatio_Act.xml` kelas LocationReinsurance; N-1 digantikan).
+-- T_LISTCAUSEOFLOSS = tabel RANCANGAN (jalur `LocationList/Property/ListCauseOfLoss`, induk T_PROPERTY), dibuat utuh +
+-- lima kolom BARU (bukan di rancangan; A145, amandemen loader `amandemenKerugian`) dari
+-- `Section\InputCauseOfLoss_FacIn.xml` (AMOUNT: grid `Section\CauseOfLoss_FacIn.xml`): DATE_OF_LOSS (.DateOfLoss, pxDateTime -
+-- teks Pega VARCHAR2(30) pola
+-- START_DATE_TIME), LOSS_OBJECT / CAUSE_OF_LOSS (pxTextInput, VARCHAR2(500)), AMOUNT / PREVENTION_OF_LOSS (uang
+-- NUMBER(38,8)). CLAIM uang NUMBER(38,8). DETAIL dilebarkan 50 -> 500 (pxTextArea "Loss Detail"; A146, `amandemenLebar`).
+-- CURRENCY = rancangan `DEFAULT 'UNKNOWN' NOT NULL` (K-069); aplikasi tidak menulis 'UNKNOWN' (K-012) - wajib diisi.
+-- T_COINSDATA = tabel RANCANGAN (`.../ListCauseOfLoss/CoinsData`, satu halaman per catatan: UNIQUE PARENT_ID, pola A113).
+-- ID/PARENT_ID NUMBER(19) (A92). Nol COMMIT (ADR-U-0029).
+ALTER TABLE {skema}.T_LOCATIONLIST ADD (
+  LOSS_RATIO1_YEAR_AMOUNT   NUMBER(38,8),
+  LOSS_RATIO1_YEAR_PERCENT  VARCHAR2(50),
+  LOSS_RATIO35_YEAR_AMOUNT  NUMBER(38,8),
+  LOSS_RATIO35_YEAR_PERCENT VARCHAR2(50)
+)
+/
+CREATE TABLE {skema}.T_LISTCAUSEOFLOSS (
+  ID                 NUMBER(19) NOT NULL,
+  IDPEGA             VARCHAR2(50),
+  COB_GROUP          VARCHAR2(20),
+  PARENT_ID          NUMBER(19) NOT NULL,
+  SEQ_NO             NUMBER(5) NOT NULL,
+  ROW_UID            VARCHAR2(36) NOT NULL,
+  CLAIM              NUMBER(38,8),
+  CURRENCY           VARCHAR2(50) DEFAULT 'UNKNOWN' NOT NULL,
+  DETAIL             VARCHAR2(500),
+  REMARKS            VARCHAR2(500),
+  DATE_OF_LOSS       VARCHAR2(30),
+  LOSS_OBJECT        VARCHAR2(500),
+  AMOUNT             NUMBER(38,8),
+  PREVENTION_OF_LOSS NUMBER(38,8),
+  CAUSE_OF_LOSS      VARCHAR2(500),
+  CONSTRAINT PK_T_LISTCAUSEOFLOSS PRIMARY KEY (ID),
+  CONSTRAINT FK_LISTCAUSEOFLOSS_PROPERTY FOREIGN KEY (PARENT_ID) REFERENCES {skema}.T_PROPERTY (ID)
+)
+/
+CREATE SEQUENCE {skema}.SEQ_T_LISTCAUSEOFLOSS START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE
+/
+CREATE TABLE {skema}.T_COINSDATA (
+  ID         NUMBER(19) NOT NULL,
+  IDPEGA     VARCHAR2(50),
+  COB_GROUP  VARCHAR2(20),
+  PARENT_ID  NUMBER(19) NOT NULL,
+  COINS_NAME VARCHAR2(500),
+  CONSTRAINT PK_T_COINSDATA PRIMARY KEY (ID),
+  CONSTRAINT UQ_T_COINSDATA_PARENT UNIQUE (PARENT_ID),
+  CONSTRAINT FK_COINSDATA_CAUSEOFLOSS FOREIGN KEY (PARENT_ID) REFERENCES {skema}.T_LISTCAUSEOFLOSS (ID)
+)
+/
+CREATE SEQUENCE {skema}.SEQ_T_COINSDATA START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE
+/

@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/cockroachdb/apd/v3"
@@ -139,5 +140,105 @@ func TestTabelRepositoryDikenalTangga(t *testing.T) {
 	}
 	if len(tabelDikenal) != len(repository.TabelBentukA) {
 		t.Errorf("tangga mengenal %d tabel, repository membaca %d", len(tabelDikenal), len(repository.TabelBentukA))
+	}
+}
+
+// akunTiruan - PembacaAkun tiruan: mencatat argumen, mengembalikan baris sintetis UJI-.
+type akunTiruan struct {
+	baris          []models.Akun
+	total          int
+	err            error
+	cari           *string
+	offset, ukuran *int
+}
+
+func (a akunTiruan) CariAkun(_ context.Context, cari string, offset, ukuran int) ([]models.Akun, int, error) {
+	if a.cari != nil {
+		*a.cari, *a.offset, *a.ukuran = cari, offset, ukuran
+	}
+	return a.baris, a.total, a.err
+}
+
+// TestCariAkun - tiket 27: offset dari halaman (ukuran 15, keputusan work owner), teks cari diteruskan
+// apa adanya (pola LIKE dibentuk repository - TestPolaCari), total dari repository
+// (bukan panjang halaman), 400 untuk halaman/cari tak sah, 503 tanpa basis data.
+func TestCariAkun(t *testing.T) {
+	var cari string
+	var offset, ukuran int
+	svc := Baru(nil).DenganAkun(akunTiruan{baris: []models.Akun{{ID: "UJI-1", InsuredID: "UJI-INS"}}, total: 41,
+		cari: &cari, offset: &offset, ukuran: &ukuran})
+	h, err := svc.CariAkun(context.Background(), "uji_50%", 3)
+	if err != nil || h.Total != 41 || h.Halaman != 3 || h.Ukuran != 15 || len(h.Baris) != 1 {
+		t.Fatalf("hasil %+v (%v)", h, err)
+	}
+	if cari != "uji_50%" || offset != 30 || ukuran != 15 {
+		t.Errorf("ke repository: cari %q offset %d ukuran %d", cari, offset, ukuran)
+	}
+	if _, err := svc.CariAkun(context.Background(), "", 1); err != nil || cari != "" || offset != 0 {
+		t.Errorf("cari kosong: cari %q offset %d (%v)", cari, offset, err)
+	}
+	panjang := make([]rune, 256)
+	for i := range panjang {
+		panjang[i] = 'é'
+	}
+	for _, u := range []struct {
+		cari    string
+		halaman int
+	}{{"", 0}, {"", -1}, {string(panjang), 1}, {"", halamanMaks + 1}} {
+		if _, err := svc.CariAkun(context.Background(), u.cari, u.halaman); !errors.Is(err, ErrMasukanAkun) {
+			t.Errorf("halaman %d, cari %d karakter: %v", u.halaman, len([]rune(u.cari)), err)
+		}
+	}
+	if _, err := svc.CariAkun(context.Background(), string(panjang[:255]), 1); err != nil {
+		t.Errorf("255 karakter (multibita) ditolak: %v", err)
+	}
+	if _, err := Baru(nil).CariAkun(context.Background(), "", 1); !errors.Is(err, ErrAkunTanpaDatabase) {
+		t.Errorf("tanpa DB: %v", err)
+	}
+	var _ repository.PembacaAkun = akunTiruan{}
+}
+
+// kelasBisnisTiruan - PembacaKelasBisnis tiruan: mencatat argumen, baris sintetis UJI-.
+type kelasBisnisTiruan struct {
+	baris []models.KelasBisnis
+	err   error
+	group *string
+}
+
+func (k kelasBisnisTiruan) KelasBisnis(_ context.Context, groupBusinessID string) ([]models.KelasBisnis, error) {
+	if k.group != nil {
+		*k.group = groupBusinessID
+	}
+	return k.baris, k.err
+}
+
+// TestKelasBisnis - tiket 28: groupBusinessId diteruskan APA ADANYA (tanpa pangkas),
+// baris dan galat repository diteruskan, 400 untuk kosong/spasi/terlalu panjang (diperiksa
+// SEBELUM basis data), 503 tanpa basis data.
+func TestKelasBisnis(t *testing.T) {
+	var group string
+	baris := []models.KelasBisnis{{ID: "UJI-B1", Note: "UJI NOTE A"}}
+	svc := Baru(nil).DenganKelasBisnis(kelasBisnisTiruan{baris: baris, group: &group})
+	h, err := svc.KelasBisnis(context.Background(), " UJI-GB ")
+	if err != nil || len(h) != 1 || h[0] != baris[0] || group != " UJI-GB " {
+		t.Fatalf("hasil %+v (%v), ke repository %q", h, err, group)
+	}
+	galatUji := errors.New("UJI galat repository")
+	if _, err := Baru(nil).DenganKelasBisnis(kelasBisnisTiruan{err: galatUji}).KelasBisnis(context.Background(), "UJI-GB"); !errors.Is(err, galatUji) {
+		t.Errorf("galat repository tidak diteruskan: %v", err)
+	}
+	for _, g := range []string{"", "   ", strings.Repeat("U", 4001)} {
+		if _, err := svc.KelasBisnis(context.Background(), g); !errors.Is(err, ErrMasukanKelasBisnis) {
+			t.Errorf("groupBusinessId panjang %d: %v, mau ErrMasukanKelasBisnis", len(g), err)
+		}
+		if _, err := Baru(nil).KelasBisnis(context.Background(), g); !errors.Is(err, ErrMasukanKelasBisnis) {
+			t.Errorf("tanpa DB, groupBusinessId panjang %d: %v, mau 400 dulu", len(g), err)
+		}
+	}
+	if _, err := svc.KelasBisnis(context.Background(), strings.Repeat("U", 4000)); err != nil {
+		t.Errorf("tepat 4000 byte: %v", err)
+	}
+	if _, err := Baru(nil).KelasBisnis(context.Background(), "UJI-GB"); !errors.Is(err, ErrKelasBisnisTanpaDatabase) {
+		t.Errorf("tanpa DB: %v", err)
 	}
 }

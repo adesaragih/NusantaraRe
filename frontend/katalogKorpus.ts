@@ -85,7 +85,11 @@ export const LABEL_TAMPIL: Readonly<Partial<Record<keyof typeof FOLDER_KORPUS, s
  * Officer", kelompok MASTER, baris menu migrasi inti 906. Keputusan work owner 04-10-2026: modul `companydetail`
  * (layar Pega SFAGIS Company Detail, tabel datar CLIENT), label "Company Detail", kelompok MASTER, migrasi inti 907.
  * Keputusan work owner 04-10-2026: modul `accounts` (layar Pega SFAGIS Account, tabel T_M_ACCOUNT), label "Accounts",
- * kelompok MASTER, migrasi inti 908. Keputusan work owner 05-10-2026: modul `adjusterconsultant` (layar master Pega
+ * kelompok MASTER, migrasi inti 908. Keputusan work owner 04-10-2026: "Modul baru 'masterdata'" (menu master insert /
+ * update / aktif / nonaktif), label "Master Data", migrasi inti 911 - lalu DIPECAH (keputusan work owner 04-10-2026:
+ * "bukan di satuin begini, di pisah per sub modul", "8 modul terpisah"): delapan modul `master<nama>` satu menu per
+ * master di kelompok MASTER, baris menu migrasi inti 912-919; baris 'masterdata' dihapus 920.
+ * Keputusan work owner 05-10-2026: modul `adjusterconsultant` (layar master Pega
  * MstAdjusterConsultant, tabel ADJUSTERCONSULTANT), label "Adjuster Consultant", kelompok MASTER, migrasi inti 915.
  * Keputusan work owner 05-10-2026: tiga modul master tabel warisan, kelompok MASTER - `treatygroupojk` (TREATYGROUPOJK)
  * "Treaty Group OJK" migrasi inti 916, `treatygroup` (TREATYGROUP) "Treaty Group" 917, `businessgroup` (BUSINESSGROUP)
@@ -94,11 +98,23 @@ export const LABEL_TAMPIL: Readonly<Partial<Record<keyof typeof FOLDER_KORPUS, s
  * Keputusan work owner 05-10-2026: modul `treatydescription` (TREATYDESC, master jenis klausul treaty), label "Treaty
  * Description", kelompok MASTER TREATY, migrasi inti 920. Keputusan work owner 05-10-2026: modul `reinsurancetype`
  * (REINSURANCETYPE, master jenis reasuransi), label "Reinsurance Type", kelompok MASTER TREATY, migrasi inti 921.
+ * Perintah work owner 05-10-2026: modul `riratelife` (M_RATE_LIFE_SUMMARY, ringkasan rate reasuransi life), label
+ * "R/I Rate Life", kelompok MASTER TREATY, migrasi inti 922. Perintah work owner 06-10-2026: modul `ricommlife`
+ * (M_RICOMM_LIFE_SUMMARY + tabel flat RICOMM_LIFE, migrasi inti 924), label "R/I Comm Life", kelompok MASTER TREATY,
+ * migrasi inti 925.
  */
 export const MODUL_LUAR_KORPUS = {
   marketingOfficer: 'Marketing Officer',
   companyDetail: 'Company Detail',
   accounts: 'Accounts',
+  masterNation: 'Nation',
+  masterProvince: 'Province',
+  masterCity: 'City',
+  masterDistrict: 'District',
+  masterCzone: 'CZone',
+  masterAccumulatedType: 'Accumulated Type',
+  masterAccumulation: 'Accumulation',
+  masterObjectItemType: 'Object Item Type',
   aggregate: 'Aggregate',
   bordereaux: 'Bordereaux',
   adjusterConsultant: 'Adjuster Consultant',
@@ -108,6 +124,8 @@ export const MODUL_LUAR_KORPUS = {
   treatyExchangeYearly: 'Treaty Exchange Yearly',
   treatyDescription: 'Treaty Description',
   reinsuranceType: 'Reinsurance Type',
+  riRateLife: 'R/I Rate Life',
+  riCommLife: 'R/I Comm Life',
 } as const
 
 /**

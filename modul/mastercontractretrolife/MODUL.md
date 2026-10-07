@@ -52,7 +52,7 @@ Nol kontrak lintas modul: master rujukan dibaca langsung dari tabelnya.
 | `GET /jenis-reasuransi` | dropdown `REINS TYPE` (master `REINSURANCETYPE` `.Flag = 1`) |
 | `GET /master-reinsurer?cari=` | autocomplete `REINSURER NAME` / `SECURITY REINSURER NAME` |
 | `GET /master-business?cari=` | autocomplete `BUSINESS NAME` |
-| `GET /ringkasan-rate?cari=` · `GET /rate?idusedby=` | autocomplete `R/I RATE` (view `RATE_LIFE_SUMMARY`) · `View Rate` (`Rate List`, view `RATE_LIFE`) — baca saja sejak K1 keputusan work owner 01-10-2026 (OQ-MCRL-13) |
+| `GET /ringkasan-rate?cari=` · `GET /rate?idusedby=` | autocomplete `R/I RATE` (view `RATE_LIFE_SUMMARY`) · `View Rate` (`Rate List`, view `RATE_LIFE`) — baca saja sejak K1 keputusan work owner 01-10-2026 (OQ-MCRL-13) *(RALAT 07-10-2026: ringkasan rate kini tabel `M_RATE_LIFE_SUMMARY` berkolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID - keputusan work owner 07-10-2026, `modul/riratelife/MODUL.md` RALAT R6; modul ini membacanya `SELECT ID, USEDBY`, tetap baca-saja)* |
 | `GET /laporan/total-share-bukan-100?tahun=` | tanpa layar (tiket 11, OQ-MCRL-07) |
 
 ## Migrasi
@@ -112,6 +112,6 @@ Sebelum pull request, jalankan gerbang lengkap (`APP_RNM/PANDUAN-TIM-PER-MODUL.m
 
 | Butir | Keadaan | Bukti |
 | --- | --- | --- |
-| K1 OQ-MCRL-13 + OQ-MCRL-05 rate | view `RATE_LIFE_SUMMARY` (autocomplete `R/I RATE`) dan `RATE_LIFE` (`Rate List`) dibaca **saja**, kolom RD saja; business baru dapat disimpan (RIRATEID pilihan baru wajib ada di view ringkasan). DEV baca-saja: `GET /ringkasan-rate` 200 (100 saran), `GET /rate` 200 (1 dan 59 baris, ±0,35 detik), nol tulisan | `repository/mcrl_master.go`, uji `TestRateDibacaKolomRDSaja`, `TestPeriksaBacaSajaMenolakTulisanKeView`, `TestMCRLMasterHanyaDibacaSelect` |
+| K1 OQ-MCRL-13 + OQ-MCRL-05 rate | view `RATE_LIFE_SUMMARY` (autocomplete `R/I RATE`) dan `RATE_LIFE` (`Rate List`) dibaca **saja**, kolom RD saja; business baru dapat disimpan (RIRATEID pilihan baru wajib ada di view ringkasan). DEV baca-saja: `GET /ringkasan-rate` 200 (100 saran), `GET /rate` 200 (1 dan 59 baris, ±0,35 detik), nol tulisan | `repository/mcrl_master.go`, uji `TestRateDibacaKolomRDSaja`, `TestPeriksaBacaSajaMenolakTulisanKeView`, `TestMCRLMasterHanyaDibacaSelect` *(RALAT 07-10-2026: ringkasan rate kini tabel `M_RATE_LIFE_SUMMARY` berkolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID - keputusan work owner 07-10-2026, `modul/riratelife/MODUL.md` RALAT R6; modul ini membacanya `SELECT ID, USEDBY`, tetap baca-saja)* |
 | §2 dua belas OQ | OQ-MCRL-01 (gerbang tahun ikut Pega), 02, 03 (0–100 ditegakkan), 04, 06, 07 (laporan hanya API), 08–12, 14 **ditutup** dengan bawaan yang dibangun; konfirmasi menyusul OQ-MCRL-02 (DBA), OQ-MCRL-04 (pemilik ekspor Pega). OQ terbuka: nol | `docs/OQ-MASTER-CONTRACT-RETRO-LIFE.md` bab keputusan 01-10-2026; tiket 03, 07, 11 |
 

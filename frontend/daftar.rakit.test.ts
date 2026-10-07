@@ -30,6 +30,30 @@ describe('rakitModulFrontend', () => {
     expect(hasil[0]?.Rute).toBe(ruteKosong)
   })
 
+  it('penghitung kotak masuk Beranda (antreanBeranda) opsional diteruskan apa adanya (06-10-2026)', () => {
+    const hitung = async () => [{ workbasket: 'UJI-WB', nama: 'UJI WB', jumlah: 2 }]
+    const berantrean = menu('alfa')
+    berantrean.PENDAFTARAN_MENU = { ...berantrean.PENDAFTARAN_MENU, antreanBeranda: hitung }
+    const hasil = rakitModulFrontend(
+      { '../modul/alfa/frontend/menu.ts': berantrean, '../modul/beta/frontend/menu.ts': menu('beta') },
+      { '../modul/alfa/frontend/rute.tsx': { RUTE_MODUL: ruteKosong }, '../modul/beta/frontend/rute.tsx': { RUTE_MODUL: ruteKosong } },
+    )
+    expect(hasil[0]?.antreanBeranda).toBe(hitung)
+    expect(hasil[1]).not.toHaveProperty('antreanBeranda')
+  })
+
+  it('penyedia daftar kotak masuk Beranda (daftarBeranda) opsional diteruskan apa adanya (06-10-2026)', () => {
+    const daftar = async () => ({ kolom: [], baris: [] })
+    const berdaftar = menu('alfa')
+    berdaftar.PENDAFTARAN_MENU = { ...berdaftar.PENDAFTARAN_MENU, daftarBeranda: daftar }
+    const hasil = rakitModulFrontend(
+      { '../modul/alfa/frontend/menu.ts': berdaftar, '../modul/beta/frontend/menu.ts': menu('beta') },
+      { '../modul/alfa/frontend/rute.tsx': { RUTE_MODUL: ruteKosong }, '../modul/beta/frontend/rute.tsx': { RUTE_MODUL: ruteKosong } },
+    )
+    expect(hasil[0]?.daftarBeranda).toBe(daftar)
+    expect(hasil[1]).not.toHaveProperty('daftarBeranda')
+  })
+
   it('HALAMAN_AWAL yang bukan halaman modul itu DITOLAK (menu datar 30-09-2026)', () => {
     expect(() =>
       rakitModulFrontend(

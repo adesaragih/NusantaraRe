@@ -16,11 +16,11 @@ import (
 func TestSQLPemuatLamaBerskemaTanpaCommit(t *testing.T) {
 	const tabel = "UJI_SKEMA.JSON_POLIS"
 	for nama, q := range map[string]string{
-		"kunci":  sqlKunciJSONPolis(tabel),
-		"lain":   sqlHitungJSONPolisLain(tabel),
-		"baca":   sqlBacaJSONPolis(tabel),
-		"idpega": sqlIDPegaKasus("UJI_SKEMA.T_GENERAL_POLIS"),
-		"datar":  sqlSetelKolomDatarLama("UJI_SKEMA.T_GENERAL_POLIS"),
+		"kunci": sqlKunciJSONPolis(tabel),
+		"lain":  sqlHitungJSONPolisLain(tabel),
+		"baca":  sqlBacaJSONPolis(tabel),
+		"ada":   sqlAdaKasus("UJI_SKEMA.T_GENERAL_POLIS_TREATY"),
+		"datar": sqlSetelKolomDatarLama("UJI_SKEMA.T_GENERAL_POLIS_TREATY"),
 		// F3: penjaga dobel salinan SuggestList menurut IDPEGA.
 		"usulan": sqlAdaUsulanIDPega("UJI_SKEMA.HISTORYAKSEPTASIPRODUCTION"),
 	} {
@@ -75,19 +75,19 @@ func TestPemuatTanpaJalurTulisTerpisah(t *testing.T) {
 
 // Diagram sheet NB Treaty In Prop F17: "baris generasi lampau TIDAK BOLEH
 // disunting - itulah pembekuan OldData (P58)". SETIAP UPDATE atas
-// T_GENERAL_POLIS yang SQL-nya dirakit fungsi tersendiri hanya menyentuh
+// T_GENERAL_POLIS_TREATY yang SQL-nya dirakit fungsi tersendiri hanya menyentuh
 // generasi terbuka (tanpa penerus yang OLD_POLIS_ID-nya menunjuknya);
 // `tulisInduk` dan `SetelNomorPolis` merakitnya di badan fungsi dengan
 // `syaratTerbuka` yang sama.
 func TestUbahGeneralPolisHanyaGenerasiTerbuka(t *testing.T) {
-	const tabel = "UJI_SKEMA.T_GENERAL_POLIS"
-	penjaga := "NOT EXISTS (SELECT 1 FROM UJI_SKEMA.T_GENERAL_POLIS s WHERE s.OLD_POLIS_ID = g.ID)"
+	const tabel = "UJI_SKEMA.T_GENERAL_POLIS_TREATY"
+	penjaga := "NOT EXISTS (SELECT 1 FROM UJI_SKEMA.T_GENERAL_POLIS_TREATY s WHERE s.OLD_POLIS_ID = g.ID)"
 	for nama, q := range map[string]string{
 		"pindah posisi":          sqlPindahGenerasi(tabel),
 		"kolom datar json_polis": sqlSetelKolomDatarLama(tabel),
 	} {
 		if !strings.Contains(q, tabel+" g ") || !strings.Contains(q, penjaga) {
-			t.Errorf("%s: UPDATE T_GENERAL_POLIS tanpa penjaga generasi terbuka (F17):\n%s", nama, q)
+			t.Errorf("%s: UPDATE T_GENERAL_POLIS_TREATY tanpa penjaga generasi terbuka (F17):\n%s", nama, q)
 		}
 	}
 }

@@ -8,9 +8,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+	"unicode/utf8"
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/kontrak"
+	masterservices "nusantarare/inti/backend/master/services"
 	"nusantarare/inti/backend/uang"
 	"nusantarare/modul/nbfacin/backend/models"
 	"nusantarare/modul/nbfacin/backend/repository"
@@ -40,7 +44,25 @@ func DariDasar(d *inti.Dasar) *Service {
 	if !d.PunyaDatabase() {
 		return Baru(nil)
 	}
-	return Baru(repository.NewLimitOracle(d.DB()))
+	return Baru(repository.NewLimitOracle(d.DB())).DenganAkun(repository.NewAkunOracle(d.DB())).
+		DenganKelasBisnis(repository.NewKelasBisnisOracle(d.DB())).
+		DenganTransaksi(d.DalamTransaksi).DenganCaseNB(repository.NewCaseNBOracle(d.DB())).
+		DenganKasus(repository.NewKasusOracle(d.DB())).
+		DenganMarketingOfficer(repository.NewMarketingOfficerOracle(d.DB())).
+		DenganPortal(repository.NewPortalOracle(d.DB())).
+		DenganSOB(repository.NewSOBOracle(d.DB())).
+		DenganObjek(repository.NewObjekOracle(d.DB())).
+		DenganRisk(repository.NewRiskOracle(d.DB())).
+		DenganRW(repository.NewRWOracle(d.DB())).
+		DenganOccupation(repository.NewOccupationOracle(d.DB())).
+		DenganPilihanItem(repository.NewPilihanItemOracle(d.DB())).
+		DenganTableOfLimit(repository.NewTableOfLimitOracle(d.DB())).
+		DenganCoverage(repository.NewCoverageOracle(d.DB())).
+		DenganAkumulasi(repository.NewAkumulasiOracle(d.DB())).
+		DenganAddAkumulasi(repository.NewAddAkumulasiOracle(d.DB()), masterservices.DariDasar(d)).
+		DenganKlausa(repository.NewKlausaOracle(d.DB())).
+		DenganSpreading(repository.NewSpreadingOracle(d.DB())).
+		DenganCedant(repository.NewCedantOracle(d.DB()))
 }
 
 // Service - layanan NB Fac In.
@@ -49,6 +71,59 @@ type Service struct {
 	// tangga - tangga yang dirakit pemanggil (BaruDenganTangga); nil = disusun dari
 	// tabel limit repository setiap permintaan.
 	tangga kontrak.TanggaAkseptasiFacIn
+	// akun - pembaca POOLDATA.T_M_ACCOUNT (tiket 27); nil = tanpa basis data (503).
+	akun repository.PembacaAkun
+	// kelasBisnis - pembaca POOLDATA.BUSINESS (tiket 28); nil = tanpa basis data (503).
+	kelasBisnis repository.PembacaKelasBisnis
+	// caseNB, transaksi - pembuat case NB (tiket 29) dan pembuka transaksinya
+	// (inti.Dasar.DalamTransaksi); nil = tanpa basis data (503).
+	caseNB    repository.PenulisCaseNB
+	transaksi Transaksi
+	// kasus, marketing, jam - layar Inward Facultative (tiket 31); nil = tanpa basis
+	// data (503); jam nil = time.Now.
+	kasus     repository.PenyimpanKasus
+	marketing repository.PembacaMarketingOfficer
+	// portal - daftar case NB portal Opportunity (tiket 32); nil = tanpa basis data (503).
+	portal repository.PembacaPortal
+	// sob - pilihan SOB popup Change SOB (tiket 33); nil = tanpa basis data (503).
+	sob repository.PembacaSOB
+	// objek - tab Object FIRE (tiket 35); nil = tanpa basis data (503).
+	objek repository.PenyimpanObjek
+	// risk - pencarian alamat risiko (tiket 36); nil = tanpa basis data (503).
+	risk repository.PembacaRisk
+	// rw - saran Zip Code dan simpan alamat baru (tiket 37); nil = tanpa basis data (503).
+	rw repository.PenyimpanRW
+	// occupation - saran Occupation Surrounding Risk (tiket 38); nil = tanpa basis data (503).
+	occupation repository.PembacaOccupation
+	// jenisItem, mataUang - pilihan Object Item Type / Currency (tiket 39); nil = tanpa basis data (503).
+	jenisItem repository.PembacaJenisItem
+	mataUang  repository.PembacaMataUang
+	// tableOfLimit - pilihan Class of Construction (tiket 40); nil = tanpa basis data (503).
+	tableOfLimit repository.PembacaTableOfLimit
+	// coverage - pilihan coverage tab Coverage (tiket 43); nil = tanpa basis data (503).
+	coverage repository.PembacaCoverage
+	// akumulasi - popup Choose Accumulation Code (tiket 46); nil = tanpa basis data (503).
+	akumulasi repository.PembacaAkumulasi
+	// addAkumulasi, penambahMaster - form Add New akumulasi (tiket 46): pembaca CZone / Zip Code dan penambah master
+	// ACCUMULATION (mesin inti); nil = tanpa basis data (503).
+	addAkumulasi   repository.PembacaAddAkumulasi
+	penambahMaster PenambahMaster
+	// klausa - ClauseList kasus dan argumen klausa (tiket 47); nil = tanpa basis data (503).
+	klausa repository.PenyimpanKlausa
+	// spreading - tab Spreading (tiket 48); nil = tanpa basis data (503), dan Save Object tidak mempertahankan spreading.
+	spreading repository.PenyimpanSpreading
+	// cedant - tab Inw Fac Cedant Panels (tiket 49); nil = tanpa basis data (503).
+	cedant repository.PenyimpanCedant
+	jam    func() time.Time
+}
+
+// DenganAkun memasang pembaca tabel akun (tiket 27).
+func (s *Service) DenganAkun(a repository.PembacaAkun) *Service { s.akun = a; return s }
+
+// DenganKelasBisnis memasang pembaca tabel bisnis (tiket 28).
+func (s *Service) DenganKelasBisnis(k repository.PembacaKelasBisnis) *Service {
+	s.kelasBisnis = k
+	return s
 }
 
 // BaruDenganTangga merakit layanan atas tangga yang sudah dirakit (uji HTTP, atau
@@ -162,4 +237,72 @@ func susunTangga(a []models.BarisLimitA, b []models.BarisLimitB) (kontrakfacin.T
 		t.BentukA = nil
 	}
 	return t, nil
+}
+
+// --- Lookup akun ChooseAccount (tiket 27) ---
+
+// UkuranHalamanAkun - keputusan work owner 02-10-2026 "15 baris per halaman" (A71 diubah;
+// semula 20 = UKURAN_HALAMAN inti frontend).
+const UkuranHalamanAkun = 15
+
+// batasCari - A73: kolom terpanjang T_M_ACCOUNT 255 karakter.
+const batasCari = 255
+
+// halamanMaks - offset (halaman-1)*ukuran tetap dalam int32 (bind Oracle), tidak meluap.
+const halamanMaks = (1<<31-1)/UkuranHalamanAkun + 1
+
+// ErrMasukanAkun - halaman bukan bilangan bulat >= 1 atau cari terlalu panjang. 400.
+var ErrMasukanAkun = fmt.Errorf("services: halaman harus bilangan bulat >= 1 dan cari paling banyak %d karakter", batasCari)
+
+// ErrAkunTanpaDatabase - layanan dirakit tanpa basis data: tabel akun tidak terbaca. 503.
+var ErrAkunTanpaDatabase = errors.New("services: basis data tidak dikonfigurasi, tabel akun T_M_ACCOUNT tidak terbaca")
+
+// HasilCariAkun - satu halaman lookup akun.
+type HasilCariAkun struct {
+	Baris          []models.Akun
+	Total, Halaman int
+	Ukuran         int
+}
+
+// CariAkun - halaman ke-`halaman` (mulai 1) baris T_M_ACCOUNT yang "mengandung" `cari`
+// (TIDAK peka huruf besar-kecil, butir 75) di INSUREDID, INSUREDNAME, atau
+// GROUPBUSINESS (A69); `cari` kosong = semua baris. Urutan INSUREDID, ID (A72).
+func (s *Service) CariAkun(ctx context.Context, cari string, halaman int) (HasilCariAkun, error) {
+	if halaman < 1 || halaman > halamanMaks || utf8.RuneCountInString(cari) > batasCari {
+		return HasilCariAkun{}, ErrMasukanAkun
+	}
+	if s.akun == nil {
+		return HasilCariAkun{}, ErrAkunTanpaDatabase
+	}
+	baris, total, err := s.akun.CariAkun(ctx, cari, (halaman-1)*UkuranHalamanAkun, UkuranHalamanAkun)
+	if err != nil {
+		return HasilCariAkun{}, err
+	}
+	return HasilCariAkun{Baris: baris, Total: total, Halaman: halaman, Ukuran: UkuranHalamanAkun}, nil
+}
+
+// --- Class Of Business (tiket 28) ---
+
+// batasGroupBusiness - A76: BUSINESSGROUPID VARCHAR2(4000 BYTE); masukan lebih panjang
+// tidak mungkin cocok.
+const batasGroupBusiness = 4000
+
+// ErrMasukanKelasBisnis - groupBusinessId kosong atau terlalu panjang. 400.
+var ErrMasukanKelasBisnis = fmt.Errorf("services: groupBusinessId wajib diisi, paling banyak %d byte", batasGroupBusiness)
+
+// ErrKelasBisnisTanpaDatabase - layanan dirakit tanpa basis data: tabel bisnis tidak
+// terbaca. 503.
+var ErrKelasBisnisTanpaDatabase = errors.New("services: basis data tidak dikonfigurasi, tabel bisnis BUSINESS tidak terbaca")
+
+// KelasBisnis - semua pilihan Class Of Business milik group business `groupBusinessID`
+// (diteruskan apa adanya, tidak dipangkas); kosong/spasi saja = 400. Urutan dari
+// repository (A74, A75).
+func (s *Service) KelasBisnis(ctx context.Context, groupBusinessID string) ([]models.KelasBisnis, error) {
+	if strings.TrimSpace(groupBusinessID) == "" || len(groupBusinessID) > batasGroupBusiness {
+		return nil, ErrMasukanKelasBisnis
+	}
+	if s.kelasBisnis == nil {
+		return nil, ErrKelasBisnisTanpaDatabase
+	}
+	return s.kelasBisnis.KelasBisnis(ctx, groupBusinessID)
 }

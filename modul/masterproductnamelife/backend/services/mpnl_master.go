@@ -5,7 +5,7 @@ package services
 //	medan `Search` (`SearchPolicyHolder.CARI1`) → Enter → `SearchPolicyHolder_act` 1 b236 `·`
 //	`CARI1 = @toUpperCase(CARI1)` → grid RD berparam CARI1 → `Choose` → `set*_DT`
 //
-// R/I Rate (`Choose R/I Rate`) dan `View Rate` membaca view `RATE_LIFE_SUMMARY` / `RATE_LIFE` baca saja
+// R/I Rate (`Choose R/I Rate`) dan `View Rate` membaca tabel `M_RATE_LIFE_SUMMARY` / `RATE_LIFE` baca saja
 // sejak K1 keputusan work owner 01-10-2026 (OQ-MPNL-03). View tak terbaca = 503 yang menyebut objeknya.
 
 import (
