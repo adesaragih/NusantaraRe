@@ -38,7 +38,7 @@ inti 917.
 
 ## Tabel
 
-Menulis `ACCUMULATEDTYPE` (dibuat `masterprovince` 880).
+Menulis `ACCUMULATEDTYPE` (dibuat `masterprovince` 215).
 
 ## Rute
 

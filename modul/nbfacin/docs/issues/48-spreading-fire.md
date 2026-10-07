@@ -174,3 +174,9 @@ Backend (sesi c3, 05-10-2026) — `services/spreading.go` `proteksiTemplate`, di
 
 - [x] Layar sesuai gambar Pega: % Share RNM, Copy Spreading, lokasi → item → coverage → spreading, total, ringkasan.
 - [x] Backend: hitung share + spreading otomatis, Copy To All, simpan (sesi c3, 05-10-2026; migrasi 198 ditulis, belum dijalankan).
+
+## Keputusan work owner 05-10-2026 — proteksi treaty per bisnis dilewati
+
+"jenis treaty ini tidak terdapat untuk bisnis ini " (`CalcultePersentageSpeading_Act` langkah "set error", butuh
+`M_TREATYBUSINESS` berkolom JSON yang keberadaannya di DEV belum terverifikasi): work owner "proteksi itu dilewatin saja
+dulu". Tetap sisa, tidak di-port.

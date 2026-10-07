@@ -53,3 +53,49 @@ Pencarian "mengandung", **tidak peka huruf** (`UPPER(kolom) LIKE` pola huruf bes
 ## Comments
 
 *Tanpa nama orang, tanpa data pelanggan — uji memakai data sintetis berawalan `UJI-`.*
+
+## Keputusan work owner 07-10-2026 - daftar hanya case buatan sendiri
+
+"di menu nb facin, list yang muncul hanya list yg dia buat sndri" - `GET /api/nbfacin/opportunity` disaring
+`T_WORK_POLIS.CREATE_OP` = akun login (diminta ke c3; frontend tidak berubah).
+
+### Backend (sesi c3, 07-10-2026)
+
+- `repository/portal.go`: saringan `w.LINI = :1 AND w.CREATE_OP = :2` (bind, tanpa literal) di kueri halaman DAN kueri cacah
+  - total / jumlah halaman dihitung sesudah saringan. Cari `:3/:4`, OFFSET / FETCH bergeser `:3/:4` atau `:5/:6`.
+  `services/portal.go` meneruskan `pelaku.AkunID` (`inti.PelakuDari`); tanpa identitas tetap 401 (sudah ada sebelumnya).
+- Uji: teks SQL kedua kueri (repository), akun A tidak melihat case akun B dan total = milik sendiri (services, pengganti
+  repository yang meniru saringan), 401 tanpa sesi (handler, sudah ada). Mutasi: saringan dibuang dari SQL / AkunID tidak
+  diteruskan - keduanya menggagalkan uji.
+- ⚠️ **Case lama / hasil muat data** `[terverifikasi]` pada kode loader: `T_WORK_POLIS.CREATE_OP` diisi dari
+  `POOLDATA.JSON_POLIS.USERNAME` (aturan V-48, `services/loader/aturan.go`) - pengenal OPERATOR Pega, bukan LOGIN_ID akun
+  sistem baru. Bentuknya di sampel `DDL\CONTOH` (`pxCreateOperator`, 114 berkas): huruf besar tanpa spasi / '@', 6-16
+  karakter (3 berkas huruf campuran). Case seperti itu hanya tampil bila LOGIN_ID akun baru SAMA PERSIS dengan pengenal
+  operator Pega (peka huruf) - kesamaan itu `belum terverifikasi`; bila tidak sama, case tersebut tidak terlihat oleh siapa
+  pun di portal ini. Apakah baris FAC hasil muat sudah ada di DEV juga belum terverifikasi (agent tidak membaca DEV). Baris
+  T_WORK_POLIS milik premiumlistlife sebelum 059 ber-CREATE_OP kosong, tetapi ber-LINI bukan FAC (tidak tampil di portal ini
+  sejak awal). Case yang dibuat aplikasi baru (tiket 29) selalu ber-CREATE_OP = LOGIN_ID pembuat.
+  `[pertanyaan terbuka]` work owner / tim login: pemetaan operator Pega -> LOGIN_ID untuk case lama.
+
+### Terjawab 07-10-2026 - case lama tidak masuk portal ini
+
+Work owner: "case lama yang sudah masuk ke json_polis tidak akan masuk ke menu nb facin ini, menu ini hanya untuk yg lgi proses
+input." Pertanyaan terbuka c3 (case hasil muat ber-CREATE_OP operator Pega tak terlihat siapa pun) DITUTUP: portal NB FacIn hanya
+untuk case yang sedang diinput di aplikasi baru (CREATE_OP = LOGIN_ID sejak tiket 29); tidak perlu pemetaan operator Pega →
+LOGIN_ID untuk portal ini.
+
+## Kolom NB Status (work owner 07-10-2026: "disini ditambahin NB status dong, biar tau nb nya lgi dimana")
+
+`[terverifikasi]` Grid `GetListOpportunityF` sel 95 = `A.NBStatus` dengan judul KOSONG. Kini (sesi 0f) berjudul "NB Status"
+(permintaan work owner) dan berisi `BarisCaseNB.nbStatus` = `T_GENERAL_POLIS.NB_STATUS` (tiket 57); belum pernah di-Submit =
+"NEW NB" (`Flow\InputInwardFacultativeOffer.xml` awal flow). Backend diminta ke c3; GET portal kini butuh migrasi 208.
+
+### NB Status di daftar (permintaan work owner 07-10-2026 "disini ditambahin NB status dong, biar tau nb nya lgi dimana")
+
+Backend (sesi c3): tiap baris `nbStatus` = `T_GENERAL_POLIS.NB_STATUS` (migrasi 208, ditulis Submit tiket 57) lewat
+`LEFT JOIN … g ON g.ID = w.ID` (PK = ID kasus, satu baris per kasus - cacah tidak terpengaruh, kueri cacah tidak berubah);
+kosong / NULL → "NEW NB" `[terverifikasi]` (`Flow\InputInwardFacultativeOffer.xml`: awal flow men-set `.NBStatus = "NEW NB"`
+dan `.NBStatusNew = "NEW NB"`). Kolom `status` (STATUS_WORK) tetap. ⚠️ Migrasi 208 kini **WAJIB sebelum biner** - tanpa
+kolom NB_STATUS kueri portal ORA-00904 (pembacaan tidak dibuat tahan: pembacaan bersyarat katalog menambah kueri per
+permintaan; urutan deploy cukup). Uji: SQL (kolom + JOIN), NB_STATUS apa adanya / kosong → "NEW NB" (services), kunci JSON
+`nbStatus` (handler); mutasi bawaan "NEW NB" → tertangkap.

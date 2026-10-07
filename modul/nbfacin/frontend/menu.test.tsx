@@ -34,19 +34,19 @@ describe('halaman depan NB FacIn', () => {
 
   it('Create opportunity memindah ke form Opportunity', () => {
     const rute = readFileSync(join(__dirname, 'rute.tsx'), 'utf8')
-    expect(rute).toContain("onBuat={() => onPindah('nbfacin-opportunity')}")
+    expect(rute).toMatch(/onBuat=\{\(\) => \{\s*setPesanPortal\(''\)\s*onPindah\('nbfacin-opportunity'\)/)
   })
 
   it('sesudah Create berhasil: case disimpan di rute lalu pindah ke Inward Facultative (tiket 30)', () => {
     const rute = readFileSync(join(__dirname, 'rute.tsx'), 'utf8')
     expect(rute).toMatch(/onDibuat=\{\(k\) => \{\s*setKasus\(k\)\s*onPindah\('nbfacin-inward'\)/)
     // Tanpa case (mis. dibuka langsung), halaman Inward tidak dirender.
-    expect(rute).toContain("{halaman === 'nbfacin-inward' && kasus && <InwardFacultative")
+    expect(rute).toMatch(/\{halaman === 'nbfacin-inward' && kasus && \(\s*<InwardFacultative/)
     expect(render('nbfacin-inward')).toBe('')
   })
 
   it('klik Name di portal membuka case tersebut di layar Inward Facultative (tiket 32)', () => {
     const rute = readFileSync(join(__dirname, 'rute.tsx'), 'utf8')
-    expect(rute).toMatch(/onBuka=\{\(caseId\) => \{\s*setKasus\(\{ caseId \}\)\s*onPindah\('nbfacin-inward'\)/)
+    expect(rute).toMatch(/onBuka=\{\(caseId\) => \{\s*setPesanPortal\(''\)\s*setKasus\(\{ caseId \}\)\s*onPindah\('nbfacin-inward'\)/)
   })
 })

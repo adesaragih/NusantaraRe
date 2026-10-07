@@ -82,6 +82,13 @@ describe('Inward Facultative tahap 1 = tangkapan layar kasus FIRE + XML Periode'
     expect(HTML).not.toContain('role="tablist"')
   })
 
+  it('Risk Scoring = skor tersimpan + kelas berwarna seperti tab Scoring; Save Scoring memperbarui General (tiket 54)', () => {
+    const SUMBER = readFileSync(join(__dirname, 'InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
+    expect(SUMBER).toContain('setSkorRisiko(k.riskScoring)')
+    expect(SUMBER).not.toContain('<span className="nbf-score__skor" data-nada={nadaKelas(skorRisiko.noteFinalScore)}>')
+    expect(SUMBER).toContain('<span className="nbf-score__pil nbf-score__pil--umum" data-nada={nadaKelas(skorRisiko.noteFinalScore)}>')
+    expect(SUMBER).toContain('<TabScoring caseId={kasus.caseId} saatTersimpan={setSkorRisiko} />')
+  })
   it('hariIniKabel = DD-MM-YYYY', () => {
     expect(hariIniKabel(new Date(2026, 9, 3))).toBe('03-10-2026')
   })
@@ -147,7 +154,7 @@ describe('Inward Facultative tahap 1 = tangkapan layar kasus FIRE + XML Periode'
     const SUMBER = readFileSync(join(__dirname, 'InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
     expect(SUMBER).toContain('error={tanggalSalah ? TEKS_INWARD.endSebelumBegin : undefined}')
     expect(SUMBER).toMatch(/async function simpan\(\) \{[\s\S]{0,120}if \(tanggalSalah\) return/)
-    expect(SUMBER).toContain('disabled={menyimpan || tanggalSalah}')
+    expect(SUMBER).toContain('disabled={menyimpan || tanggalSalah || bacaSaja}')
   })
 
   it('tab Object kasus FIRE = TabObject; selain FIRE tetap BelumTersedia (G-5)', () => {

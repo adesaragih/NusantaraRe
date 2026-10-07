@@ -79,7 +79,9 @@ export const KOLOM_PORTAL = [
   { sel: '92', label: 'Group Business', properti: 'A.Quotation.BusinessName' },
   { sel: '93', label: 'Insured Name', properti: 'A.Quotation.InsuredName' },
   { sel: '94', label: 'Marketing', properti: 'A.Quotation.MarketingName' },
-  { sel: '95', label: '', properti: 'A.NBStatus' },
+  // Sel 95 berjudul kosong di Pega; diberi judul "NB Status" atas permintaan work owner 07-10-2026 ("disini ditambahin NB
+  // status dong, biar tau nb nya lgi dimana"). Isi = `.NBStatus` (T_GENERAL_POLIS.NB_STATUS; kosong = "NEW NB", awal flow).
+  { sel: '95', label: 'NB Status', properti: 'A.NBStatus' },
   { sel: '96', label: 'Status', properti: 'A.NBStatusNew' },
 ] as const
 
@@ -296,6 +298,8 @@ export const TEKS_INWARD = {
   isiTab: 'Isi tab',
   /** Sesudah Save for later berhasil. */
   tersimpan: 'Tersimpan.',
+  /** Case baca-saja: sudah keluar dari tahap marketing (work owner 07-10-2026). */
+  bacaSaja: 'Case ini baca-saja: sudah tidak berada di tahap marketing, jadi isinya tidak dapat diubah.',
   /** Popup Change SOB: pencarian berhasil tetapi kosong. */
   tanpaSob: 'Tidak ada SOB yang cocok.',
 } as const
@@ -899,7 +903,10 @@ export const GRID_COV_ITEM = [
   { sel: '21', label: '‰ Total Net Rate' },
 ] as const
 
-/** Grid total per mata uang (`.Property.TotalTSIPremiGrossList`). "Total Gross Rate" = permil (Pega salah memberi akhiran %). */
+/**
+ * Grid total per mata uang (`.Property.TotalTSIPremiGrossList`). "Total Gross Rate" = Premium / TSI seperti layar Pega DEV
+ * (work owner 05-10-2026; korpus menulis x 1000 - beda versi server).
+ */
 export const GRID_COV_TOTAL = [
   { sel: '51', label: 'Currency' },
   { sel: '52', label: 'Total TSI' },
@@ -1312,7 +1319,7 @@ export const TEKS_SPREADING = {
 /**
  * Tab Inw Fac Cedant Panels FIRE (tiket 49) - `NB FacIn\Section\InputInwardFacultativeDtl.xml` baris 60510-67588
  * (pyLabelFieldValue Source of Business / Share Cedant Type / % Share RNM / Total TSI RNM / Total Premi RNM; kepala grid
- * "Ceding" / "% Share"; tombol "Add" / "Delete"); "Choose Ceding" = pyLabel + pyWindowName `Section\CedingCedant.xml`.
+ * "Ceding" / "% Share"; tombol "Add" / "Delete").
  * Diuji `TabCedant.test.tsx`.
  */
 export const CEDANT = {
@@ -1325,8 +1332,10 @@ export const CEDANT = {
   kolomShare: '% Share',
   tambah: 'Add',
   hapus: 'Delete',
-  pilihCeding: 'Choose Ceding',
-  judulPilih: 'Choose Ceding',
+  /** Detail baris = `Section\CedingCedant.xml` (gambar layar work owner 05-10-2026). XML "OF", layar Pega "of". */
+  dari: 'of',
+  kolomMataUang: ['Currency', 'TSI Cedant', 'Premium Cedant'],
+  bukaBaris: 'Buka / tutup detail cedant',
 } as const
 
 /** `DDL\ShareCedantType.xml` (aturan properti `ASM-FW-GISFW-DATA-OFFERFACIN!SHARECEDANTTYPE`, pyPromptTableList). */
@@ -1347,4 +1356,552 @@ export const TEKS_CEDANT = {
   listKosong: "List Inward facultative cedant can't be null!",
   /** Pesan Pega verbatim - `Activity\SetTSIPremiCedant_Act.xml` (`.ShareCeding>100`); berlaku TANPA gerbang. */
   nilaiLebih: "Value can't be more than 100 or less than 0!",
+  sudahSemua: 'Semua Ceding Co tab General sudah ada di daftar.',
+  /** Total RNM dalam IDR (C-8). */
+  mataUangTotal: 'IDR',
+  kursTidakAda: 'Kurs ke IDR belum ada untuk mata uang: ',
+  /** Pesan agent (C-7) - bukan teks Pega. */
+  totalLebih: 'Total % Share cedant tidak boleh lebih dari 100.',
+  generalKosong: 'Ceding Co di tab General belum diisi.',
+} as const
+
+/**
+ * Tab Premium Deduction / Brokerage Fee FIRE (tiket 50) - `NB FacIn\Section\InputInwardFacultativeDtl.xml` baris
+ * 74726-90306 (pyLabelFieldValue / pyValue; "Exclude PPN ?" = pyCheckboxCaption); daftar komisi =
+ * `CoverageCommisionList` / `PropertyItemListCoverageCommision` / `InputCoverageCommisionFire` / `CommisionItem`.
+ * Kepala PPh / PPN = `SetTAXNote` ("PPH " + tarif + " %"). Diuji `TabDeduction.test.tsx`.
+ */
+export const DEDUCTION = {
+  pctPremiumDeduction: '% Premium Deduction',
+  pctBrokerageFee: '% Brokerage Fee',
+  excludePpn: 'Exclude PPN ?',
+  kolomMataUang: 'Currency',
+  totalPremiumDeduction: 'Total Premium Deduction',
+  totalPremiumDeduction2: 'Total Premium Deduction 2',
+  totalBrokerageFee: 'Total Brokerage Fee',
+  pph: 'PPH',
+  ppn: 'PPN',
+  kolomLokasi: ['No.', 'Object Name', 'Location'],
+  kolomItem: ['Object Item Type', 'Currency', 'TSI Object Item', 'Total Gross Premium', 'Total Premium RNM'],
+  kolomCoverage: ['Coverage', '‰ Standard Rate', 'Gross Premium', 'Premium RNM'],
+  detailCoverage: {
+    tsiLiability: 'Gross TSI Liability',
+    premium: 'Gross Premium',
+    tsiNusantaraRe: 'TSI Nusantara Re',
+    premiNusantaraRe: 'Premium Nusantara Re',
+  },
+  /** Grid spreading di detail coverage = `InputDtlSpreadingCommisionCoverage_FacIn` (.TreatyType, .SharePercentage,
+   *  .TSISpreaded, .ClaimEstimation, .PremiumSpreaded) - gambar layar Pega work owner 06-10-2026. */
+  kolomSpreading: ['Type Treaty', '% Share', 'TSI Spreaded', 'Limit Of Liability', 'Premium Spreaded'],
+} as const
+
+export const TEKS_DEDUCTION = {
+  kosong: 'No items',
+  simpan: 'Save',
+  menyimpan: 'Menyimpan…',
+  menghitung: 'Menghitung…',
+  tersimpan: 'Premium deduction tersimpan.',
+  bukaBaris: 'Buka / tutup detail',
+  /** Pesan Pega verbatim - `Activity\ProtekDeduction2_Act.xml` langkah 2. */
+  deduction2Lebih: 'Deduction 2 cannot be greater than the Premium',
+} as const
+
+/**
+ * Tab Payment FIRE (tiket 51) - `NB FacIn\Section\InputInwardFacultativeDtl.xml` (label "Payment Information"),
+ * `PaymentCurrencyList` (Installment; Currency / Premium RNM / Total Payment) dan `InputDtlPayment_FacIn` (grid
+ * "Installment Data Information"). Kepala PPH / PPN = `PPH_Note` / `PPN_Note`. Diuji `TabPayment.test.tsx`.
+ */
+export const PAYMENT = {
+  judul: 'Payment Information',
+  installment: 'Installment',
+  kolomMataUang: ['Currency', 'Premium RNM', 'Total Payment'],
+  judulCicilan: 'Installment Data Information',
+  no: 'No',
+  dueDate: 'Due Date',
+  persen: '% Installment',
+  premium: 'Premium RNM',
+  deduction: 'Deduction',
+  deduction2: 'Deduction 2',
+  brokerage: 'Total Brokerage Fee',
+  pph: 'PPH',
+  ppn: 'PPN',
+  discount: 'Discount',
+  totalPayment: 'Total Payment',
+} as const
+
+export const TEKS_PAYMENT = {
+  kosong: 'No items',
+  simpan: 'Save',
+  menyimpan: 'Menyimpan…',
+  menghitung: 'Menghitung…',
+  tersimpan: 'Payment tersimpan.',
+  bukaBaris: 'Buka / tutup cicilan',
+  installmentTidakSah: 'Installment diisi bilangan bulat 1–99.',
+  /** Pesan Pega verbatim - `Endorsment Fac In\Activity\SetValidateInstallment_Act.xml` (versi kelas Currency). */
+  persenLebih: "Total % Installment Can't Be More Than 100%",
+  persenKurang: 'Total % Installment Must Be 100%',
+} as const
+
+/**
+ * Zone / 4.2 Construction di form coverage (tiket 52) - `NB FacIn\Section\CoverageItem.xml` sel 6/11 ("Zone"), 12 (ikon,
+ * pyTooltip "Switch to edit mode"), 13 ("4.2 Construction"). Kode coverage = syarat tampil sel (L4252, L6983).
+ */
+export const ZONA_COVERAGE = {
+  zone: 'Zone',
+  konstruksi: '4.2 Construction',
+  ubahZona: 'Switch to edit mode',
+} as const
+
+/** Coverage yang menampilkan Zone: `.Coverage` 100835 / 100821 / 100829 / 100816 / 100817 / 100828 (sel 6). */
+export const COVERAGE_ZONA: readonly string[] = ['100835', '100821', '100829', '100816', '100817', '100828']
+
+/** Coverage yang menampilkan 4.2 Construction: `.Coverage` 100821 / 100829 (sel 13). */
+export const COVERAGE_KONSTRUKSI: readonly string[] = ['100821', '100829']
+
+/**
+ * Tombol salin di bawah grid coverage item (tiket 53) - pyLabel `NB FacIn\Section\InputCoverageFire.xml`; popup =
+ * `Section\CopyCoverageFrom.xml` (pyLabelFieldValue "Location Address" / "Object Item Name", tombol "Copy to Another
+ * Object Item"). Diuji `salinCoverage.test.ts`.
+ */
+export const SALIN_COVERAGE = {
+  coverage: 'Copy Coverage',
+  semua: 'Copy Coverage To All',
+  dari: 'Copy Coverage From',
+  deductibleSemua: 'Copy Deductible To All',
+  deductibleBI: 'Copy Deductible For BI',
+  keItemLain: 'Copy to Another Object Item',
+  lokasi: 'Location Address',
+  item: 'Object Item Name',
+  objek: 'Objek',
+  menyalin: 'Menyalin dan menghitung ulang premi…',
+} as const
+
+/**
+ * Tab Scoring Risk FIRE (tiket 54) - teks verbatim `NB FacIn\Section\ScoringRisk.xml` (kepala, hasil, persetujuan) dan
+ * `ScoringRiskForm1` / `4` / `2` / `3` (faktor, bobot, sub-faktor, pilihan ChechBox1..n berurutan; spasi ganda Pega
+ * dipertahankan). Kunci sub-faktor = kontrak `…/scoring`. Diuji `TabScoring.test.tsx`.
+ */
+export const SCORING = {
+  judul: 'Risk Scoring - Property',
+  insured: 'The Insured',
+  topRisk: 'Top Risk',
+  dominantRisk: 'Dominant Risk',
+  periode: 'Period',
+  lokasi1: 'Risk Location 1 (Top Risk)',
+  lokasi2: 'Risk Location 2 (Dominant Risk)',
+  status: 'Status',
+  skor: 'Score',
+  kolom: ['No', 'Scoring Factor', 'Percentage', 'Risk Detail', 'Top Risk', 'Dominant Risk'],
+  total: 'Total',
+  hasil: 'Scoring Result',
+  klasifikasi: 'Risk Classifications',
+  kelas: [
+    { rentang: '86 - 100', nama: 'Good' },
+    { rentang: '76 - 85', nama: 'Above Average' },
+    { rentang: '60 - 75', nama: 'Average' },
+    { rentang: '30 - 59', nama: 'Below Average' },
+    { rentang: '0 - 29', nama: 'Poor' },
+  ],
+  rekomendasi: 'Recomendation',
+  persetujuan: 'Required approval :',
+  dari: 'From :',
+  karena: 'Due to :',
+  lossRatioInput: 'Loss Ratio 1 up to 5 Years',
+} as const
+
+/** Satu sub-faktor: kunci kontrak, label Risk Detail, bobot, pilihan ChechBox1..n; `terkunci` = nomor pilihan isian sistem. */
+export interface SubFaktorScoring {
+  kunci: string
+  label: string
+  bobot: string
+  opsi: readonly string[]
+  terkunci?: readonly number[]
+}
+
+export interface FaktorScoring {
+  no: string
+  faktor: string
+  bobot: string
+  sub: readonly SubFaktorScoring[]
+}
+
+export const FAKTOR_SCORING: readonly FaktorScoring[] = [
+  {
+    no: '1', faktor: 'Occupation', bobot: '15,00',
+    sub: [{ kunci: 'occupation', label: '', bobot: '', opsi: ['Low Risks', 'Medium Risks', 'High Risks', 'Non-Preferred Risk', 'Treaty Exclusion'], terkunci: [1, 2, 3, 4, 5] }],
+  },
+  {
+    no: '2', faktor: 'Risk Location', bobot: '10,00',
+    sub: [
+      { kunci: 'riot', label: 'Riot', bobot: '1', opsi: ['Cover exclude Riot', 'Non - Riot prone area', 'Riot prone area', 'No Information'] },
+      { kunci: 'flood', label: 'Flood', bobot: '5', opsi: ['Cover exclude Flood', 'Non - Flood prone area', 'Flood prone area', 'No Information'] },
+      {
+        kunci: 'earthquake', label: 'Earthquake', bobot: '2,5',
+        opsi: ['Cover exclude Earthquake', 'Zone 1', 'Zone 2', 'Zone 3', 'Zone 4', 'Zone 5', 'Other than zona 1 up to zona 5'],
+      },
+      { kunci: 'tsunami', label: 'Tsunami', bobot: '1,5', opsi: ['Cover exclude Tsunami', 'Non - Tsunami prone area', 'Tsunami prone area', 'No Information'] },
+    ],
+  },
+  {
+    no: '3', faktor: 'Object Conditions', bobot: '12,50',
+    sub: [
+      { kunci: 'classConstruction', label: 'Class Construction', bobot: '2,5', opsi: ['I', 'II', 'III', 'Growing Trees', 'Open storage', 'No Information'] },
+      {
+        kunci: 'building', label: 'Building', bobot: '2,5',
+        opsi: ['Good condition / housekeeping', 'Growing Trees / Open storage', 'Bad Condition /  housekeeping', 'Silent Risk', 'No Information'],
+      },
+      {
+        kunci: 'machinery', label: 'Machinery', bobot: '2,5',
+        opsi: ['Good condition / maintenance', 'Growing Trees / Open storage', 'Bad condition / maintenance', 'Silent Risk', 'No Information'],
+      },
+      {
+        kunci: 'stock', label: 'Stock in the policy cover', bobot: '2,5',
+        opsi: ['Policy does not cover stock', 'Sum Insured < 60%', 'Sum Insured Stock >= 60%', 'No Information'],
+      },
+      {
+        kunci: 'typeOfStock', label: 'Type of Stock', bobot: '2,5',
+        opsi: ['No Stock in the premises', 'Non Combustible or Non Perishable Goods', 'Combustible or Perishable Goods or obsolete', 'No Information'],
+      },
+    ],
+  },
+  {
+    no: '4', faktor: 'FEA (Fire Extinguishing Appliance)', bobot: '10,00',
+    sub: [
+      {
+        kunci: 'portableFireExtinguisher', label: 'Portable Fire Extinguisher', bobot: '3',
+        opsi: ['Available', 'Available and  adequate', 'Not Available (Growing Trees)', 'Not available or No Information'],
+      },
+      { kunci: 'hydrant', label: 'Hydrant System', bobot: '1,5', opsi: ['Available', 'Not Available (Growing Trees)', 'Not available or No Information'] },
+      {
+        kunci: 'sprinkler', label: 'Sprinkler System', bobot: '1',
+        opsi: ['Available', 'Not Available (Growing Trees, Open Storage)', 'Not available or No Information'],
+      },
+      { kunci: 'fireAlarm', label: 'Fire Alarm System', bobot: '1,5', opsi: ['Available', 'Not available or No Information'] },
+      {
+        kunci: 'securityGuard', label: 'Security Guard', bobot: '1,5',
+        opsi: ['Available in the premises', 'Available on outside premises', 'Not available or No Information'],
+      },
+      {
+        kunci: 'fireBrigade', label: 'Fire brigade', bobot: '1,5',
+        opsi: [
+          'Available in the premises',
+          'Available on outside within < 30 minutes',
+          'Available on outsidewithin 30-60 minutes',
+          'Available on outsidewithin  > 60 minutes',
+          'Not available or No Information',
+        ],
+      },
+    ],
+  },
+  {
+    no: '5', faktor: 'Net Loss Ratio', bobot: '22,50',
+    sub: [
+      {
+        kunci: 'lossRatio', label: 'Loss Ratio (Claim/net premium)', bobot: '',
+        opsi: [
+          'Nil 5 years and more',
+          'Nil 3 years',
+          'Nil 1 years',
+          '-- Loss Ratio > 0 up to 10%',
+          '-- Loss Ratio > 10 up to 25%',
+          '-- Loss Ratio > 25 up to 50%',
+          '-- Loss Ratio > 50 up to 75%',
+          '-- Loss Ratio> 75 up to 100%',
+          '-- Loss Ratio > 100%',
+          'No Information',
+        ],
+        terkunci: [4, 5, 6, 7, 8, 9],
+      },
+    ],
+  },
+  {
+    no: '6', faktor: 'Risk Improvement', bobot: '10,00',
+    sub: [
+      {
+        kunci: 'riskImprovement', label: '', bobot: '',
+        opsi: [
+          'Risk Improvement has been done or on progress',
+          'Risk Improvement is not required due to nil loss record',
+          'No risk improvement for incurred loss or No Information',
+        ],
+      },
+    ],
+  },
+  {
+    no: '7', faktor: 'Survey Report', bobot: '10,00',
+    sub: [
+      {
+        kunci: 'surveyReport', label: '', bobot: '',
+        opsi: [
+          'Available - within 1 year',
+          'Available - 2 years ago',
+          'Available - 3 years ago',
+          'Available - more than 3 years ago',
+          'No Survey Report, but provided photographs or summary of the insured activities',
+          'Not Available or No Information',
+        ],
+      },
+    ],
+  },
+  {
+    no: '8', faktor: 'Others', bobot: '10,00',
+    sub: [
+      { kunci: 'rate', label: 'Rate', bobot: '2', opsi: ['On Gross Rate (OGR)  standard', 'Market Rate', 'No Information'] },
+      { kunci: 'deductible', label: 'Deductible', bobot: '2,5', opsi: ['Standard or higher than standard', 'Non Standard', 'No Information'] },
+      {
+        kunci: 'totalSumInsured', label: 'Total Sum Insured', bobot: '1',
+        opsi: ['Less than IDR 30,000,000,000', 'IDR 30,000,000,000 or more'],
+        terkunci: [1, 2],
+      },
+      {
+        kunci: 'otherInformation', label: 'Other Information', bobot: '2,5',
+        opsi: [
+          'Available and not potentially to increase risk exposure',
+          'Available and  potentially to increase risk exposure',
+          'Not Available or No Information',
+        ],
+      },
+      {
+        kunci: 'clauses', label: 'Clauses', bobot: '2',
+        opsi: ['Non Standard (un usual) Clauses', 'Standard (usual) Clauses', 'Not Available or No Information'],
+      },
+    ],
+  },
+]
+
+/** Rekomendasi dan persetujuan (`ScoringRisk.xml`, `.ScoringRisk.ScoringResult.*`). */
+export const HASIL_SCORING = {
+  rekomendasi: [
+    { kunci: 'acceptableNotApproval', label: 'Acceptable, not required approval' },
+    { kunci: 'acceptableWithApproval', label: 'Acceptable, required approval' },
+    { kunci: 'notAcceptable', label: 'Not Acceptable' },
+  ],
+  dari: [
+    { kunci: 'opDivHead', label: 'Operational Div. Head' },
+    { kunci: 'opDirector', label: 'Operational Director' },
+    { kunci: 'techDirector', label: 'Technical Director' },
+    { kunci: 'presDirector', label: 'President Director' },
+  ],
+  karena: [
+    { kunci: 'dueOccupation', label: 'Occupation' },
+    { kunci: 'dueObjectConditions', label: 'Object Conditions' },
+    { kunci: 'dueLossRatio', label: 'Loss Ratio' },
+    { kunci: 'dueOthers', label: 'Others' },
+  ],
+} as const
+
+export const TEKS_SCORING = {
+  bacaSaja: 'Scoring Risk hanya dapat diisi pada tahap marketing (case belum diajukan).',
+  menghitung: 'Menghitung…',
+  simpan: 'Save',
+  menyimpan: 'Menyimpan…',
+  tersimpan: 'Scoring Risk tersimpan.',
+  kosong: '—',
+  diisiSistem: 'Diisi sistem',
+  terkunciGrowingTrees: 'Terkunci: Class Construction = Growing Trees',
+  tanpaDominan: 'Pilih lokasi Dominant Risk di atas untuk mengisi kolom Dominant Risk.',
+  belumDipilih: 'Belum dipilih',
+} as const
+
+/**
+ * Tab utama Loss Record FIRE (tiket 55) - teks verbatim `NB FacIn\Section\ObjectList_LossRecord.xml` (bar unggah, premi,
+ * grid), `SummaryLossRecord_Section.xml` (total, loss ratio) dan `InputLossRecord_Sec.xml` (ubah baris). Diuji
+ * `TabLossRecord.test.tsx`.
+ */
+export const LOSS_RECORD = {
+  judulUnggah: 'Please upload file with .csv format',
+  unduhTemplate: 'Download Template CSV',
+  unggah: 'Upload CSV',
+  simpan: 'Save Data',
+  /** Tombol Save tab (`InputInwardFacultativeDtl.xml` kontainer Loss Record, layout S89 sel 525). */
+  simpanTab: 'Save',
+  premiPar: 'Premi PAR',
+  premiMb: 'Premi MB',
+  premiPl: 'Premi PL',
+  premiOther: 'Premi Other COB',
+  uwYear: 'Uw Year',
+  classOfBusiness: 'Class Of Business',
+  dateOfLoss: 'Date of Loss',
+  causeOfLoss: 'Cause Of Loss',
+  causeOfLossUbah: 'Cause of Loss',
+  currency: 'Currency',
+  lossAmount: 'Loss Amount',
+  lossAmountIdr: 'Loss Amount ( IDR )',
+  insuredName: 'Insured Name',
+  totalLoss: 'Total Loss Amount',
+  totalLossIdr: 'Total Loss Amount ( IDR )',
+  rasio: ['Loss Ratio 1 Year', 'Loss Ratio 3 Year', 'Loss Ratio 5 Year'],
+  gross: 'Gross',
+  net: 'Net',
+} as const
+
+/** Teks layar sistem baru (bukan Pega) tab Loss Record. */
+export const TEKS_LOSS_RECORD = {
+  tambah: 'Tambah',
+  hapus: 'Hapus',
+  bukaBaris: 'Ubah baris',
+  kosong: 'No items',
+  menghitung: 'Menghitung…',
+  menyimpan: 'Menyimpan…',
+  tersimpan: 'Loss Record tersimpan.',
+  membaca: 'Membaca berkas CSV…',
+  csvKosong: 'Berkas CSV tidak berisi baris kerugian.',
+  csvKolom: 'Kolom CSV tidak lengkap - wajib ada: ',
+  csvBaris: 'Baris CSV ',
+  csvTanggal: ': Date of Loss bukan tanggal DD/MM/YYYY.',
+  csvJumlah: ': Loss Amount bukan angka.',
+  csvKelasKosong: ': Class Of Business kosong.',
+  csvKelasTidakAda: ': Class Of Business tidak ada di daftar - ',
+  memeriksaKelas: 'Memeriksa Class Of Business…',
+  csvTerbaca: ' baris dibaca dari CSV - periksa lalu klik Save Data.',
+  namaBerkas: 'templatecsvlossrecord.csv',
+} as const
+
+/**
+ * Isi template CSV Loss Record - persis berkas `D:\migrasi\RNM\DDL\templatecsvlossrecord.csv` dari work owner 06-10-2026
+ * (padanan Rule-File-Binary `TemplateCSVLossRecord` Pega, `Activity\DownloadMasterLossRecord.xml`; isinya tidak ada di
+ * korpus). CRLF, pemisah `;`. Diuji sama dengan berkas itu.
+ */
+export const TEMPLATE_CSV_LOSS_RECORD =
+  [
+    'CLASS_OF_BUSINESS;DATE_OF_LOSS;CAUSE_OF_LOSS;CURRENCY;LOSS_AMOUNT;;;;;',
+    'PROPERTY ALL RISK;;Windstorm;IDR;100.000.000;;;;;',
+    'PROPERTY ALL RISK;01/05/2024;Fire;USD;10.000;;;;;',
+    'PROPERTY ALL RISK;04/06/2025;Accident;IDR;100.000.000;;;;;',
+    'MACHINERY BREAK DOWN;03/01/2025;Windstorm;IDR;100.000.000;;;;;Note:',
+    'MACHINERY BREAK DOWN;01/05/2024;Fire;USD;1.000;;;;;- Date of loss diisi dengan tanggal bulan tahun (DD/MM/YYYY)',
+    'MACHINERY BREAK DOWN;04/06/2025;Accident;IDR;100.000.000;;;;;- Cause of Loss diisi dengan xxxxx',
+    'PUBLIC LIABILITY;03/01/2025;Windstorm;IDR;100.000.000;;;;;',
+    'PUBLIC LIABILITY;01/05/2024;Fire;IDR;100.000.000;;;;;',
+    'PUBLIC LIABILITY;04/06/2025;Accident;IDR;100.000.000;;;;;',
+  ].join('\r\n') + '\r\n'
+
+/**
+ * Tab Correspondence (tiket 56) - teks verbatim `NB FacIn\Section\Correspondence.xml` (grid) dan
+ * `CorrespondenceContent.xml` (editor). Status: "Not Sent" dari gambar layar Pega work owner 06-10-2026 (`.IsEditable`
+ * = 1; daftar nilai properti tidak ada di korpus); "Sent" `[dugaan]` padanan `.IsEditable` = 0. Diuji
+ * `TabCorrespondence.test.tsx`.
+ */
+export const KORESPONDENSI = {
+  kolom: ['Date', 'Sender', 'Subject', 'Recipient', 'Status'],
+  tambah: 'Add',
+  hapus: 'Remove',
+  sender: 'Sender',
+  senderMail: 'Sender Mail Address',
+  penerima: 'Recipients:',
+  subject: 'Subject',
+  message: 'Message',
+  simpan: 'Save',
+  kirim: 'Send Email',
+  belumTerkirim: 'Not Sent',
+  terkirim: 'Sent',
+} as const
+
+/** Teks layar sistem baru (bukan Pega) tab Correspondence. */
+export const TEKS_KORESPONDENSI = {
+  kosong: 'No items',
+  bukaBaris: 'Buka email',
+  namaPenerima: 'Recipient',
+  emailPenerima: 'Email',
+  menyimpan: 'Menyimpan…',
+  mengirim: 'Mengirim…',
+  tersimpan: 'Email tersimpan.',
+  terkirimInfo: 'Email terkirim.',
+  terkunci: 'Email sudah terkirim - tidak dapat diubah.',
+  penerimaKosong: 'Tambahkan minimal satu penerima dengan alamat email.',
+  emailSalah: 'Alamat email penerima tidak sah: ',
+  /** Penghitung ukuran Message (backend: MESSAGE VARCHAR2(4000), HTML bersih dalam bita UTF-8). */
+  ukuran: ' / 4000 bita',
+  terlaluPanjang: 'Message terlalu panjang - kurangi isi atau format sampai paling banyak 4000 bita.',
+  editor: {
+    tebal: 'Bold',
+    miring: 'Italic',
+    garisBawah: 'Underline',
+    daftarTitik: 'Bulleted list',
+    daftarNomor: 'Numbered list',
+    hapusFormat: 'Remove format',
+    urung: 'Undo',
+    ulang: 'Redo',
+  },
+} as const
+
+/**
+ * Blok Email Type tahap marketing (tiket 57) - teks verbatim `NB FacIn\Section\EmailSection.xml` (label, grid riwayat) dan
+ * `RejectNotificationSection.xml` (konfirmasi). Opsi = kode `.EmailType` (`Activity\SaveViewSuggest.xml`: 1 Accept, 2 Reject,
+ * 4 Banding, 7 Decline); empat opsi sesuai gambar layar work owner 06-10-2026 (Ask 3 / Revise 9 tidak ditampilkan). Diuji
+ * `BlokEmailType.test.tsx`.
+ */
+export const EMAIL_TYPE = {
+  label: 'Email Type',
+  opsi: [
+    { kode: '1', label: 'Accept' },
+    { kode: '2', label: 'Reject' },
+    { kode: '4', label: 'Banding' },
+    { kode: '7', label: 'Decline' },
+  ],
+  comment: 'Comment',
+  bandingTo: 'Banding to',
+  bandingKosong: 'Choose',
+  pilihSebab: 'Choose Cause of decline',
+  kolomRiwayat: ['Date', 'PIC', 'Approval', 'Status', 'Comment'],
+  yakinReject: 'Are you sure want to reject?',
+  yakinDecline: 'Are you sure want to decline?',
+} as const
+
+/** Teks layar sistem baru (bukan Pega) blok Email Type / Submit. */
+export const TEKS_EMAIL_TYPE = {
+  memeriksa: 'Memeriksa kelengkapan data…',
+  mengajukan: 'Mengajukan…',
+  ya: 'Ya',
+  batal: 'Batal',
+  wajibType: 'Pilih Email Type.',
+  wajibComment: 'Comment wajib diisi.',
+  wajibBanding: 'Pilih Banding to.',
+  wajibSebab: 'Pilih Cause of decline lebih dulu.',
+  bandingTanpaOpsi: 'Case ini belum pernah diproses approver di luar marketing - Banding belum dapat dipilih.',
+  tidakBoleh: 'Submit tidak tersedia: ',
+  /** Case sudah tidak di tahap marketing (mis. sudah di-submit ke Team Leader): form disembunyikan, riwayat tetap. */
+  sudahDiproses: 'Case ini sudah tidak berada di tahap marketing (sudah di-submit / diproses), jadi Email Type dan Submit tidak tersedia. Riwayat akseptasi ada di bawah.',
+  terkirim: 'Case berhasil di-submit.',
+  riwayatKosong: 'No items',
+} as const
+
+/**
+ * Popup "Choose Cause of decline" (tiket 57) - teks verbatim `NB FacIn\Section\InputCauseOfDecline.xml` (judul, kolom,
+ * tombol) dan pesan `Activity\CekCauseOfDecline_ACT.xml` (APA ADANYA, termasuk spasi depan dan salah ketik "Remaks").
+ * Nama T/C = nilai `POOLDATA.CAUSEOFDECLINE.TERMCONDITION` yang disebut syarat aktif / wajib di section dan activity itu.
+ */
+export const SEBAB_DECLINE = {
+  judul: 'Cause of Decline',
+  kolom: ['Term and Conditions (T/C)', 'Option', 'Remarks', '% RNM', '% SOB'],
+  nonTc: 'Non - T/C',
+  prioritas: ['I', 'II'],
+  cek: 'Check',
+  submit: 'Submit',
+  pesan: {
+    pctRnmSob: " PctRNM or PctSOB Can't be NULL",
+    pctRnm: " PctRNM Can't be NULL",
+    remaks: " Remaks Can't be NULL",
+    option: "Option Can't be NULL",
+    remarks: "Remarks Can't be NULL",
+  },
+  /** Syarat kolom (`InputCauseOfDecline` pyDisabledWhen / `CekCauseOfDecline_ACT`). */
+  term: {
+    option: ['Period Of Insurance (POI)', 'Extension of coverage', 'Risk Exposure'],
+    remarks: ['Occupancy', 'TSI (in IDR)', 'Clauses', 'Lack of data for acceptance', 'Others T/C'],
+    remarksWajib: ['Occupancy', 'TSI (in IDR)', 'Lack of data for acceptance', 'Others T/C'],
+    pctRnm: ['Rate', 'R/I Comm, Deduction', 'OJK Discount', 'Loss Ratio (net)'],
+    pctSob: ['Rate', 'R/I Comm, Deduction', 'OJK Discount'],
+    rate: 'Rate',
+    riComm: 'R/I Comm, Deduction',
+    lossRatio: 'Loss Ratio (net)',
+    lainnya: 'Others',
+  },
+} as const
+
+export const TEKS_SEBAB_DECLINE = {
+  memuat: 'Memuat daftar Cause of Decline…',
+  pilihPrioritas: 'Prioritas',
+  lolos: 'Cause of Decline lengkap - klik Submit.',
+  kosong: 'Pilih minimal satu Cause of Decline.',
 } as const

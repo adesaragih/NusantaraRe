@@ -87,8 +87,8 @@ kini membaca / menulis `T_PROPERTYITEMLIST.TOTAL_GROSS_PREMI` / `TOTAL_NET_RATE`
 **Rumus** (`services/coverage.go`) — port `Activity\CountPremi_ACT.xml` (57 langkah dibaca utuh lewat pengurai langkah):
 Prorate langkah 3–8; PctAdjustment 11–15; LossLimit / SubLimit kosong → 100 (17–18); rumus per basis × mode 19–50 dijalankan
 BERURUTAN, yang kemudian menimpa (PctAdjustment ≠ 0 → pembagi ×100; NetRate terisi → menggantikan Rate); diskon 51–52;
-TotalGrossPremi 55–56. Total per mata uang = `Activity\SumTotalTSIPremiGross_Act.xml` cabang FIRE (Rate = Premium / TSI
-× 1000; TSI 0 → 0). **Tidak diport:** langkah 9 (jalur EDM), 53–54 (min / max rate `SetRatePolis`, tahap C4), basis 5.
+TotalGrossPremi 55–56. Total per mata uang = `Activity\SumTotalTSIPremiGross_Act.xml` cabang FIRE (korpus: Rate = Premium /
+TSI × 1000; **diubah 05-10-2026 menjadi Premium / TSI tanpa × 1000**, lihat "Keputusan work owner 05-10-2026"; TSI 0 → 0). **Tidak diport:** langkah 9 (jalur EDM), 53–54 (min / max rate `SetRatePolis`, tahap C4), basis 5.
 `[dugaan]` DiffYear = tahun penuh Start → End (DateTimeDifference "Y" dibulatkan ke bawah); arti kode aksi syarat langkah
 Pega (2 lanjut / 3 lewati / 5 jalankan) diturunkan dari konsistensi logika langkah 3, 8, 9, 14 — tidak tertulis di korpus.
 
@@ -111,3 +111,15 @@ Pega (2 lanjut / 3 lewati / 5 jalankan) diturunkan dari konsistensi logika langk
 | A159 | `TotalGrossPremi` dihitung ulang saat PUT (Σ Premium, item tanpa coverage → kosong); ⚠️ bagian TotalNetRate diganti tiket 44 (A166) — `TotalNetRate` disimpan apa adanya dari PUT; `PCT_ADJUSTMENT` disimpan tetapi tidak dikirim JSON | rumus TotalNetRate tahap C2; kontrak frontend tanpa pctAdjustment |
 | ~~A160~~ | ~~Popup Choose Coverage **tanpa** saringan ACTIVESTATUS (`.ACTIVESTATUS = 1 OR IS NULL`, syarat D/E RD)~~ | `[terverifikasi]` RD `ReportDefinition\BrowseCoverageFacIn_RD.xml` `pyFilterLogic` "A AND B AND C AND (D OR E)" dengan D/E atas ACTIVESTATUS; DDL `DDL\COVERAGE_FACIN.txt` = VIEW lima kolom (ID, BIZCODE, NAMACOVERAGE, TYPE, OLDID) — 0 kemunculan ACTIVESTATUS (dihitung dua cara: daftar kolom view dan `grep -c`). Kunci JSON `M_COVERAGE` untuk status aktif tidak ditebak; DDL `M_COVERAGE` tidak ada. `[pertanyaan terbuka]` DBA: tambah ACTIVESTATUS ke view, atau semua baris M_COVERAGE memang aktif? | ⛔ **DIGANTI butir 96**: popup dibaca dari tabel `COVERAGE` yang PUNYA `ACTIVESTATUS` — saringan D/E kini dipasang.
 | — | Coverage otomatis dibaca dari tabel `COVERAGE` (bukan `COVERAGE_FACIN`), urutan korpus 100815, 100828, 100829, 100825, 100840; baris pertama per ID | `[terverifikasi]` `Activity\AddCoverageAutoFire.xml` langkah 3 + Obj-Browse kelas `ASM-FW-GISFW-Int-COVERAGE` (`RDBList\SearchCoverageIDSQL.xml` "FROM COVERAGE"); disetujui sesi 0f ("ikuti korpus") |
+
+## Keputusan work owner 05-10-2026 — Rate total per mata uang mengikuti layar Pega DEV
+
+Gambar layar Pega DEV (TSI 50.000.000.000, premi 9.391.000.000) menampilkan "Total Gross Rate" dan "Rate" ringkasan
+**0,1878** (= Premium / TSI), sedangkan korpus (`SumTotalTSIPremiGross_Act`, `SumTSIPremiSpreadedRNM_FIRE_Act`) menulis
+`@divide(Premium, TSI, 20) * 1000` (= 187,82). Work owner: "ikutin sesuai pega saja" → **tanpa × 1000** di grid total per
+lokasi (backend `TotalPerMataUang`, sesi c3) dan ringkasan seluruh coverage (frontend `rateRingkasan`). Beda versi
+server — sejenis OQ-011.
+Backend (sesi c3, 05-10-2026): `services/coverage.go` `TotalPerMataUang` Rate = `bagi(Premium, TSI, 20)` lalu simpan8, TSI
+0 → 0, konstanta `seribu` dihapus; uji `TestTotalPerMataUang` (termasuk angka layar DEV → 0.18782), `TestGantiObjekCoverage`,
+handler `TestObjekCoverage`. Pemakai lain Rate ini: tidak ada (hanya `totalPerCurrency` tab Object; ringkasan Spreading
+`TotalSpreadAll` tidak memuat rate).

@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 
 import { FORM_COV as F, LABEL_COVERAGE_BASIS, TEKS_COVERAGE } from '../labels'
 import FormCoverage, { adaGalatCoverage, angkaSah, coverageBaru } from './FormCoverage'
-import { bolehNetRate, ratePerMil, ringkasanCoverage, totalPremiItem } from './TabCoverage'
+import { bolehNetRate, rateRingkasan, ringkasanCoverage, totalPremiItem } from './TabCoverage'
 import { RINGKASAN_COV_ITEM, RINGKASAN_COV_MATA_UANG } from '../labels'
 import type { ObjekFire } from '../api'
 
@@ -59,7 +59,7 @@ describe('FormCoverage', () => {
 
   it('% Indemnity dan TSI baca-saja (teks rata kanan); Copy Accumulation hanya coverage pertama', () => {
     const html = form()
-    expect(html).toContain('<div class="nbf-inward__teks nbf-angka">100</div>')
+    expect(html).toContain('<div class="nbf-inward__teks nbf-angka">100,0000</div>')
     expect(html).toContain(F.pilihAkumulasi.label)
     expect(html).not.toContain(F.salinAkumulasi.label)
     const pertama = renderToStaticMarkup(
@@ -78,7 +78,7 @@ describe('FormCoverage', () => {
 
   it('TSI tampil = TSI item (format Indonesia); Gross Rate bertanda wajib', () => {
     const html = form()
-    expect(html).toContain('nbf-angka">1.000.000</div>')
+    expect(html).toContain('nbf-angka">1.000.000,0000</div>')
     expect(html).toMatch(new RegExp(`${F.rate.label.replace('‰', '‰')}<span class="field__req">\\*</span>`))
   })
 
@@ -155,13 +155,13 @@ describe('Ringkasan seluruh coverage (SummaryCoverage_Section + SumTSIPremiSprea
     for (const t of [...RINGKASAN_COV_ITEM, ...RINGKASAN_COV_MATA_UANG]) expect(xml).toContain(`<pyValue>${t}</pyValue>`)
   })
 
-  it('Rate = Premium / TSI (20 desimal) x 1000, TSI 0 -> 0, eksak', () => {
+  it('Rate = Premium / TSI (20 desimal, layar Pega DEV - bukan x 1000 korpus), TSI 0 -> 0, eksak', () => {
     // Angka gambar layar Pega 05-10-2026 (TSI 50.000.000.000, premi 9.391.000.000).
-    expect(ratePerMil('9391000000', '50000000000')).toBe('187.82000000')
-    expect(ratePerMil('1', '3')).toBe('333.33333333')
-    expect(ratePerMil('2', '3')).toBe('666.66666667')
-    expect(ratePerMil('5', '0')).toBe('0')
-    expect(ratePerMil('', '10')).toBe('')
+    expect(rateRingkasan('9391000000', '50000000000')).toBe('0.18782000')
+    expect(rateRingkasan('1', '3')).toBe('0.33333333')
+    expect(rateRingkasan('2', '3')).toBe('0.66666667')
+    expect(rateRingkasan('5', '0')).toBe('0')
+    expect(rateRingkasan('', '10')).toBe('')
   })
 
   it('dikelompokkan per (Object Item Type, Currency) dan per Currency, urut kemunculan, lintas lokasi', () => {
@@ -178,8 +178,8 @@ describe('Ringkasan seluruh coverage (SummaryCoverage_Section + SumTSIPremiSprea
       { itemType: 'UJI A', currency: 'USD', tsi: '10', premium: '1' },
     ])
     expect(r.mataUang.map((m) => [m.currency, m.tsi, m.premium, m.rate])).toEqual([
-      ['IDR', '175.5', '7.5', '42.73504274'],
-      ['USD', '10', '1', '100.00000000'],
+      ['IDR', '175.5', '7.5', '0.04273504'],
+      ['USD', '10', '1', '0.10000000'],
     ])
   })
 })

@@ -5,10 +5,13 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"nusantarare/inti/backend/migrasi"
 )
 
-// tipeAkhirMigrasi - tipe kolom tabel flat sesudah migrasi nbfacin 182..195 dijalankan
-// BERURUTAN: CREATE TABLE, lalu ALTER ... ADD (...) dan ALTER ... MODIFY (KOLOM TIPE).
+// tipeAkhirMigrasi - tipe kolom tabel flat sesudah migrasi nbfacin 182..205 dan 208 dijalankan BERURUTAN, pernyataan demi
+// pernyataan: CREATE TABLE, ALTER ... ADD (...), ALTER ... MODIFY (KOLOM TIPE), dan ALTER ... DROP COLUMN (juga di dalam blok
+// berpelindung katalog, `migrasi.KolomAlterBuang`) - 202 membuang lalu menambah ulang PPN_CHECK.
 func tipeAkhirMigrasi(t *testing.T) map[string]map[string]string {
 	t.Helper()
 	polaCreate := regexp.MustCompile(`(?s)CREATE TABLE \{skema\}\.(\w+) \((.*?)\n\)`)
@@ -30,23 +33,33 @@ func tipeAkhirMigrasi(t *testing.T) map[string]map[string]string {
 		"186_t_objek_fire.sql", "187_t_surroundingrisk.sql", "188_t_propertyitemlist.sql", "189_t_occupationlist.sql",
 		"191_t_listcauseofloss.sql", "192_lebar_alamat_risiko.sql",
 		"193_t_coveragelist.sql", "194_t_deductiblelist.sql", "195_t_coveragelist_unit_akumulasi.sql",
-		"198_spreading.sql", "199_cedant.sql"} {
+		"198_spreading.sql", "199_cedant.sql", "200_premium_deduction.sql", "201_payment.sql", "202_ppn_check_teks.sql",
+		"203_coverage_zona.sql", "204_coverage_zona_4000.sql", "205_scoring_risk.sql", "208_nb_status.sql"} {
 		b, err := os.ReadFile("../../migrations/" + berkas)
 		if err != nil {
 			t.Fatal(err)
 		}
-		isi := strings.ReplaceAll(string(b), "\r", "")
-		for _, m := range polaCreate.FindAllStringSubmatch(isi, -1) {
-			kolom(m[1], m[2])
-		}
-		for _, m := range polaAdd.FindAllStringSubmatch(isi, -1) {
-			kolom(m[1], m[2])
-		}
-		for _, m := range polaModify.FindAllStringSubmatch(isi, -1) {
-			if akhir[m[1]][m[2]] == "" {
-				t.Fatalf("%s: MODIFY %s.%s sebelum kolomnya ada", berkas, m[1], m[2])
+		for _, p := range strings.Split(strings.ReplaceAll(string(b), "\r", ""), "\n/\n") {
+			for _, m := range polaCreate.FindAllStringSubmatch(p, -1) {
+				kolom(m[1], m[2])
 			}
-			akhir[m[1]][m[2]] = m[3]
+			for _, m := range polaAdd.FindAllStringSubmatch(p, -1) {
+				kolom(m[1], m[2])
+			}
+			for _, m := range polaModify.FindAllStringSubmatch(p, -1) {
+				if akhir[m[1]][m[2]] == "" {
+					t.Fatalf("%s: MODIFY %s.%s sebelum kolomnya ada", berkas, m[1], m[2])
+				}
+				akhir[m[1]][m[2]] = m[3]
+			}
+			if tabel, buang := migrasi.KolomAlterBuang(p); tabel != "" {
+				for _, k := range buang {
+					if akhir[tabel][k] == "" {
+						t.Fatalf("%s: DROP COLUMN %s.%s yang tidak ada", berkas, tabel, k)
+					}
+					delete(akhir[tabel], k)
+				}
+			}
 		}
 	}
 	return akhir
@@ -106,12 +119,37 @@ func TestMigrasiFlatSebagianCocokRancangan(t *testing.T) {
 		"T_GENERAL_POLIS.SHARE_CEDANT_TYPE": "NUMBER(5)", "T_QUOTATIONDATA.SHARE_OF_CEDING": "VARCHAR2(50)",
 		"T_CEDINGCEDANTLIST.ID": "NUMBER(19)", "T_CEDINGCEDANTLIST.PARENT_ID": "VARCHAR2(32)",
 		"T_CEDINGCEDANTLIST.SHARE_CEDING": "NUMBER(38,8)",
+		// tiket 50 (200): PPN_CHECK teks apa adanya (butir 68.1, kolomTeksMenyimpang); persen / uang NUMBER(38,8) (ADR-0016) -
+		// rancangan NUMBER polos.
+		"T_GENERAL_POLIS.PPN_CHECK": "VARCHAR2(10)", "T_GENERAL_POLIS.PAY_RI_COMMISION": "NUMBER(38,8)",
+		"T_GENERAL_POLIS.PAY_PCT_BROKERAGE_FEE": "NUMBER(38,8)", "T_CURRENCYLIST.ID": "NUMBER(19)",
+		"T_CURRENCYLIST.PAY_PREMIUM": "NUMBER(38,8)", "T_CURRENCYLIST.PAY_COMMISION": "NUMBER(38,8)",
+		"T_CURRENCYLIST.PAY_DEDUCTION2": "NUMBER(38,8)", "T_CURRENCYLIST.PAY_BROKERAGE_FEE": "NUMBER(38,8)",
+		"T_CURRENCYLIST.PAY_PPH": "NUMBER(38,8)", "T_CURRENCYLIST.PAY_PPN": "NUMBER(38,8)",
+		// tiket 51 (201): jumlah cicilan NUMBER(5); uang NUMBER(38,8) (ADR-0016; DEDUCTION2 rancangan VARCHAR2(50));
+		// persen cicilan teks desimal apa adanya (K51-3, pola PCT_LIMIT); ID / PARENT_ID NUMBER(19) (A92).
+		"T_GENERAL_POLIS.PAY_INSTALLMENT": "NUMBER(5)", "T_CURRENCYLIST.SUM_TOTAL_PAYMENT": "NUMBER(38,8)",
+		"T_CURRENCYLIST.PAY_NET_PREMIUM": "NUMBER(38,8)", "T_LISTINSTALLMENT.ID": "NUMBER(19)",
+		"T_LISTINSTALLMENT.PARENT_ID": "NUMBER(19)", "T_LISTINSTALLMENT.INSTALLMENT_NO": "NUMBER(5)",
+		"T_LISTINSTALLMENT.INSTALLMENT_PERCENTAGE": "VARCHAR2(50)", "T_LISTINSTALLMENT.PREMIUM": "NUMBER(38,8)",
+		"T_LISTINSTALLMENT.RI_COMMISION": "NUMBER(38,8)", "T_LISTINSTALLMENT.DEDUCTION2": "NUMBER(38,8)",
+		"T_LISTINSTALLMENT.BROKERAGE_FEE": "NUMBER(38,8)", "T_LISTINSTALLMENT.PPH": "NUMBER(38,8)",
+		"T_LISTINSTALLMENT.PPN": "NUMBER(38,8)", "T_LISTINSTALLMENT.DISCOUNT": "NUMBER(38,8)",
+		"T_LISTINSTALLMENT.PAYMENT_TOTAL": "NUMBER(38,8)",
+		// tiket 54 (205): ID / PARENT_ID NUMBER(19) (A92); skor / persen NUMBER(38,8) - rancangan NUMBER polos.
+		"T_SCORINGRISK.ID": "NUMBER(19)", "T_SCORINGRISK.FINAL_SCORE": "NUMBER(38,8)",
+		"T_SCORINGRESULT.ID": "NUMBER(19)", "T_SCORINGRESULT.PARENT_ID": "NUMBER(19)",
+		"T_DATASCORINGRISKLIST.ID": "NUMBER(19)", "T_DATASCORINGRISKLIST.PARENT_ID": "NUMBER(19)",
+		"T_DATASCORINGRISKLIST.SCORE": "NUMBER(38,8)", "T_SCORING_FACTOR.ID": "NUMBER(19)", "T_SCORING_FACTOR.PARENT_ID": "NUMBER(19)",
+		"T_SCORING_FACTOR.SCORE_PER_FACTOR": "NUMBER(38,8)", "T_SCORING_FACTOR.PERCENT_LOSS_RATIO": "NUMBER(38,8)",
+		"T_SCORING_OPTION.ID": "NUMBER(19)", "T_SCORING_OPTION.PARENT_ID": "NUMBER(19)", "T_SCORING_OPTION.SCORE": "NUMBER(38,8)",
 	}
 	akhir := tipeAkhirMigrasi(t)
 	diperiksa := 0
 	for _, tabel := range []string{"T_GENERAL_POLIS", "T_QUOTATIONDATA", "T_CEDINGCOLIST", "T_LOCATIONLIST",
 		"T_PROPERTY", "T_RISKLOCATION", "T_BUILDINGCONSTRUCTION", "T_SURROUNDINGRISK", "T_PROPERTYITEMLIST", "T_OCCUPATIONLIST", "T_TABLEOFLIMIT",
-		"T_LISTCAUSEOFLOSS", "T_COINSDATA", "T_COVERAGELIST", "T_DEDUCTIBLELIST", "T_CEDINGCEDANTLIST"} {
+		"T_LISTCAUSEOFLOSS", "T_COINSDATA", "T_COVERAGELIST", "T_DEDUCTIBLELIST", "T_CEDINGCEDANTLIST", "T_CURRENCYLIST", "T_LISTINSTALLMENT",
+		"T_SCORINGRISK", "T_SCORINGRESULT", "T_DATASCORINGRISKLIST", "T_SCORING_FACTOR", "T_SCORING_OPTION"} {
 		for k, tipe := range akhir[tabel] {
 			// "VARCHAR2(10)" dari "VARCHAR2(10) DEFAULT 'UNKNOWN' NOT NULL" - tipe saja yang dibandingkan.
 			if i := indeksKolom(tabel, k); i >= 0 && strings.HasPrefix(skemaTabel[tabel][i].tipe, tipe+" ") {
@@ -135,7 +173,8 @@ func TestMigrasiFlatSebagianCocokRancangan(t *testing.T) {
 	}
 	// Dibuat UTUH: setiap kolom rancangan (sesudah amandemen) ada di migrasi.
 	for _, tabel := range []string{"T_CEDINGCOLIST", "T_RISKLOCATION", "T_BUILDINGCONSTRUCTION", "T_SURROUNDINGRISK", "T_TABLEOFLIMIT", "T_LISTCAUSEOFLOSS",
-		"T_COINSDATA", "T_CEDINGCEDANTLIST"} {
+		"T_COINSDATA", "T_CEDINGCEDANTLIST",
+		"T_SCORINGRISK", "T_SCORINGRESULT", "T_DATASCORINGRISKLIST", "T_SCORING_FACTOR", "T_SCORING_OPTION"} {
 		for _, k := range skemaTabel[tabel] {
 			if akhir[tabel][k.nama] == "" {
 				t.Errorf("%s.%s rancangan tidak dibuat migrasi", tabel, k.nama)
@@ -148,9 +187,12 @@ func TestMigrasiFlatSebagianCocokRancangan(t *testing.T) {
 	// + 4 T_LOCATIONLIST (191) + 15 T_LISTCAUSEOFLOSS + 5 T_COINSDATA (191) + 2 T_PROPERTYITEMLIST + 34 T_COVERAGELIST
 	// (193) = 199. + 18 T_DEDUCTIBLELIST (194) = 217. + 3 T_COVERAGELIST (195) = 220.
 	// + 1 T_GENERAL_POLIS + 2 T_COVERAGELIST (198) = 223. + 1 T_GENERAL_POLIS + 1 T_QUOTATIONDATA + 9 T_CEDINGCEDANTLIST
-	// (199) = 234.
-	if diperiksa != 234 {
-		t.Errorf("%d kolom diperiksa, mau 234", diperiksa)
+	// (199) = 234. + 3 T_GENERAL_POLIS + 14 T_CURRENCYLIST (200) = 251. + 1 T_GENERAL_POLIS + 2 T_CURRENCYLIST +
+	// 18 T_LISTINSTALLMENT (201) = 272. + 2 T_COVERAGELIST (203) = 274. 204 melebarkan ZONE (tanpa kolom baru) = 274.
+	// + 7 T_SCORINGRISK + 20 T_SCORINGRESULT + 11 T_DATASCORINGRISKLIST + 12 T_SCORING_FACTOR + 9 T_SCORING_OPTION (205) = 333.
+	// 206 / 207 tabel baru di luar rancangan (tidak diputar). + 1 T_GENERAL_POLIS NB_STATUS (208) = 334.
+	if diperiksa != 334 {
+		t.Errorf("%d kolom diperiksa, mau 334", diperiksa)
 	}
 	// Butir 87/88: Risk Location / Address VARCHAR2(4000), delapan kolom alamat lain VARCHAR2(100) sesudah 192.
 	for tk, mau := range map[string]string{"T_RISKLOCATION.ASM_ADDRESS": "VARCHAR2(4000)", "T_PROPERTY.ROAD_NAME": "VARCHAR2(4000)",

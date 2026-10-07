@@ -21,7 +21,7 @@ inti 913.
 | GROUPMENU | `MASTER` |
 | Pemilik | `@PEMILIK-MASTERPROVINCE` |
 | Status | dimigrasi |
-| Rentang migrasi | `880-883` |
+| Rentang migrasi | `215-219` |
 | Slot menu | — |
 | Prefix rute API | `/api/master-province` |
 | Kontrak disediakan | — |
@@ -31,35 +31,36 @@ inti 913.
 
 | Folder | Isi |
 | --- | --- |
-| `backend/` | `modul.go` — `master.Pendaftaran(Nama, "/api/master-province", "province", …)`; definisi master `province` di `inti/backend/master/models/daftar.go`; `migrations/` 880 / 881 / 882, 883 (CITYINPUT.PROVINCENAME + kota baru dari RW, `docs/issues/04`) (+ `_down`) |
+| `backend/` | `modul.go` — `master.Pendaftaran(Nama, "/api/master-province", "province", …)`; definisi master `province` di `inti/backend/master/models/daftar.go`; `migrations/` 215 / 216 / 217, 218 (CITYINPUT.PROVINCENAME + kota baru dari RW, `docs/issues/04`) (+ `_down`) — dulu 880–883 |
 | `frontend/` | `menu.ts`, `rute.tsx`, `labels.ts` — layar `inti/frontend/master` (sesi 9d) |
 | `docs/` | `STRUKTUR-TABEL-MASTER-DATA.md`, `issues/01-rencana-master-data.md`, `02-api-master-data.md`, `03-pemecahan-delapan-modul.md` (warisan modul masterdata), `04-city-provincename.md` |
 
 ## Tabel
 
-Menulis `PROVINCE`. **Pemilik migrasi 880-882** (keputusan work owner 04-10-2026 "Dihapus, tabel pindah ke Province"): keenam tabel flat `PROVINCE`, `CITYINPUT`, `DISTRICTINPUT`, `ACCUMULATEDTYPE`, `CZONE`, `ACCUMULATION` (880, view warisan -> tabel bernama sama + `STS_AKTIF`), `T_MASTER_STATUS` (881) dan kolom jejak ubah (882) - dibaca / ditulis juga oleh tujuh modul master lain dan dibaca saran akumulasi `nbfacin`. Struktur: `docs/STRUKTUR-TABEL-MASTER-DATA.md`.
+Menulis `PROVINCE`. **Pemilik migrasi 215-217** (dulu 880-882) (keputusan work owner 04-10-2026 "Dihapus, tabel pindah ke Province"): keenam tabel flat `PROVINCE`, `CITYINPUT`, `DISTRICTINPUT`, `ACCUMULATEDTYPE`, `CZONE`, `ACCUMULATION` (215, view warisan -> tabel bernama sama + `STS_AKTIF`), `T_MASTER_STATUS` (216) dan kolom jejak ubah (217) - dibaca / ditulis juga oleh tujuh modul master lain dan dibaca saran akumulasi `nbfacin`. Struktur: `docs/STRUKTUR-TABEL-MASTER-DATA.md`.
 
 ## Urutan deploy
 
 ⛔ **Urutan deploy** (04-10-2026, diteruskan sesi nusantarare-0f; diperbarui untuk delapan modul master): kedelapan
 modul master (mesin `inti/backend/master`) dan saran akumulasi nbfacin (MD-5: `STS_AKTIF`, `CITYINPUT`, `DISTRICTINPUT`,
-`T_MASTER_STATUS`) membaca tabel 880 / 881 / 882 dan gagal (ORA-00904 / ORA-00942) atas skema yang belum dimigrasi.
+`T_MASTER_STATUS`) membaca tabel 215 / 216 / 217 dan gagal (ORA-00904 / ORA-00942) atas skema yang belum dimigrasi.
 Backend dan frontend delapan modul dideploy BERSAMA (`/api/masterdata` dibuang). Urutannya:
 
 1. Pasang biner yang memuat commit `072370f0` (pelari: pra-terbang melewati VIEW yang diganti tabel bernama sama).
-   Biner lebih lama BERHENTI di pra-terbang 880 selama keenam objek masih VIEW — dan menahan seluruh migrasi
+   Biner lebih lama BERHENTI di pra-terbang 215 selama keenam objek masih VIEW — dan menahan seluruh migrasi
    tertunda modul lain.
-2. `-migrate` (work owner): 880 → 881 → 882 → 912-919 (baris menu delapan modul, DIMIGRASI '1') → 920 (hak menu
-   Master Data disalin ke delapan menu, lalu baris 'masterdata' dibuang). Urut nama, ikut berjalan bersama migrasi
-   tertunda lain. Di DEV yang sudah menjalankan 880-882 / 911 / 996: hanya 912-920 yang baru.
+2. `-migrate` (work owner): 215 → 216 → 217 → 218 → 912-919 (baris menu delapan modul, DIMIGRASI '1') → 920 (hak
+   menu Master Data disalin ke delapan menu, lalu baris 'masterdata' dibuang). Urut nama, ikut berjalan bersama migrasi
+   tertunda lain. ⛔ Di DEV yang sudah menjalankan nama lama (760-762 / 880-883): ganti namanya di `T_MIGRASI` LEBIH
+   DULU (bab "Penomoran ulang (05-10-2026)"), baru `-migrate`.
 3. Baru sesudahnya buka layar delapan master dan saran akumulasi nbfacin (Choose Accumulation, tiket 46). Bila
    `MODUL_AKTIF` di env menyebut nama modul satu per satu, tambahkan kedelapan nama dan buang `masterdata`.
 
 **Bila `-migrate` gagal.** Pesan yang memuat `BENTUKNYA BERBEDA ... Migrasi dihentikan sebelum satu pernyataan
 pun dikirim` = gagal di **pra-terbang**: tidak ada yang berubah, perbaiki sebabnya lalu ulangi. Galat lain atas
-`880_view_ke_tabel_flat` = gagal **sesudah** pra-terbang: DDL Oracle tanpa transaksi, jadi pernyataan sebelum yang gagal
-SUDAH jadi dan `T_MIGRASI` belum mencatat 880. ⛔ **Jangan langsung mengulang `-migrate`** — periksa dulu sisa
-`*_SALIN`. 880 mengubah keenam view berurutan (PROVINCE, CITYINPUT, DISTRICTINPUT, ACCUMULATEDTYPE, CZONE,
+`215_view_ke_tabel_flat` = gagal **sesudah** pra-terbang: DDL Oracle tanpa transaksi, jadi pernyataan sebelum yang gagal
+SUDAH jadi dan `T_MIGRASI` belum mencatat 215. ⛔ **Jangan langsung mengulang `-migrate`** — periksa dulu sisa
+`*_SALIN`. 215 mengubah keenam view berurutan (PROVINCE, CITYINPUT, DISTRICTINPUT, ACCUMULATEDTYPE, CZONE,
 ACCUMULATION), masing-masing: `CREATE TABLE X_SALIN` → salin isi view → `DROP VIEW X` → `CREATE TABLE X` → salin
 balik → `DROP TABLE X_SALIN`. Untuk tiap X, baca
 `SELECT OBJECT_NAME, OBJECT_TYPE FROM USER_OBJECTS WHERE OBJECT_NAME IN ('X', 'X_SALIN')`:
@@ -68,17 +69,72 @@ balik → `DROP TABLE X_SALIN`. Untuk tiap X, baca
 | --- | --- | --- | --- |
 | VIEW | tidak ada | belum disentuh | — |
 | VIEW | ada | berhenti sebelum `DROP VIEW`; isi masih di view | buang `X_SALIN` — tanpa itu pengulangan menyalin isi DUA KALI (pelari melewati `CREATE` yang sudah ada, `INSERT`-nya tetap jalan) |
-| tidak ada | ada | ⛔ satu-satunya salinan isi ada di `X_SALIN` | JANGAN dibuang: jalankan manual `CREATE TABLE X` + salin balik persis teks 880, cocokkan `COUNT(*)`, baru `DROP TABLE X_SALIN` |
+| tidak ada | ada | ⛔ satu-satunya salinan isi ada di `X_SALIN` | JANGAN dibuang: jalankan manual `CREATE TABLE X` + salin balik persis teks 215, cocokkan `COUNT(*)`, baru `DROP TABLE X_SALIN` |
 | TABLE | ada | berhenti di salin balik atau sesudahnya | cocokkan `COUNT(*)` X dengan `X_SALIN`; bila X kosong jalankan salin balik; lalu `DROP TABLE X_SALIN` |
 | TABLE | tidak ada | view itu selesai | — |
 
-Begitu satu view saja sudah menjadi TABLE, 880 **tidak dapat diulang pelari**: `DROP VIEW` atas objek yang kini
-tabel gagal `[dugaan: ORA-00942]`. Jalan keluarnya: DBA menuntaskan view yang tersisa manual dari teks 880,
+Begitu satu view saja sudah menjadi TABLE, 215 **tidak dapat diulang pelari**: `DROP VIEW` atas objek yang kini
+tabel gagal `[dugaan: ORA-00942]`. Jalan keluarnya: DBA menuntaskan view yang tersisa manual dari teks 215,
 memastikan keenam tabel ber-`STS_AKTIF`, mencatat `INSERT INTO <skema>.T_MIGRASI (NAMA, DIJALANKAN_PADA) VALUES
-('880_view_ke_tabel_flat', SYSDATE)` (`NAMA` = nama berkas tanpa `.sql`, `migrasi.KunciLangkah`), lalu `-migrate`
-lagi untuk 881 dan seterusnya. 882 yang gagal di tengah berhenti di ORA-01430 saat diulang (kolom sudah ada) — pola
+('215_view_ke_tabel_flat', SYSDATE)` (`NAMA` = nama berkas tanpa `.sql`, `migrasi.KunciLangkah`), lalu `-migrate`
+lagi untuk 216 dan seterusnya. 217 yang gagal di tengah berhenti di ORA-01430 saat diulang (kolom sudah ada) — pola
 059: periksa kolom yang sudah ada, bukan ulang buta. ⛔ Seluruh langkah di atas perubahan basis data: work owner /
 DBA, dengan persetujuan — bukan agent.
+
+## Penomoran ulang (05-10-2026) — 880-883 → 215-218
+
+Penjaga `TestRentangMigrasiDanSlotMenuTidakBerbagiNomor` merah sesudah merge `origin/dev` 05-10-2026: modul `aggregate`
+(milik tim lain, GitHub) memegang `880-889` sejak 04-10-2026, modul ini memakai `880-883`. Keputusan work owner
+05-10-2026 ("ikutin rekomendasi terbaik km aja. biar tidak terganggu kerjaan yang sudah ada milik orang lain"): modul
+LOKAL yang pindah. Rentang 001-899 penuh; `215-219` diambil dari ujung rentang `nbfacin` (`180-219` → `180-214`, modul
+milik work owner yang sama; nbfacin memakai sampai 199). Isi SQL tidak berubah — hanya nama berkas dan komentar; penanda
+data `CREATE_OP = 'MIGRASI-883'` TETAP (baris yang sudah dibuat membawanya, jalur mundur 218 mencarinya).
+
+| Dulu (04-10-2026) | Lebih dulu (masterdata) | Sekarang |
+| --- | --- | --- |
+| `880_view_ke_tabel_flat` | `760_view_ke_tabel_flat` | `215_view_ke_tabel_flat` |
+| `881_t_master_status` | `761_t_master_status` | `216_t_master_status` |
+| `882_jejak_ubah_master` | `762_jejak_ubah_master` | `217_jejak_ubah_master` |
+| `883_cityinput_provincename` | — | `218_cityinput_provincename` |
+
+Urutan jalan ikut berubah (pelari mengurut NAMA berkas lintas modul): kini sesudah nbfacin 199 dan sebelum rnwfacin 220,
+bukan sesudah 879. `[terverifikasi]` tidak ada migrasi modul lain di 220-879 yang memakai PROVINCE / CITYINPUT /
+DISTRICTINPUT / ACCUMULATEDTYPE / CZONE / ACCUMULATION / T_MASTER_STATUS (cari `*.sql` 05-10-2026; nbfacin 186 / 192
+hanya bernama kolom `PROVINCE`); menu inti 912-920 tetap sesudahnya.
+
+⛔ **Pelari mencatat langkah menurut NAMA berkas** (`T_MIGRASI.NAMA`, `migrasi.KunciLangkah`) — nama baru = langkah baru.
+Work owner tidak ingat apakah nama lama sudah dijalankan di DEV, jadi SEBELUM `-migrate` berikutnya work owner / DBA
+memeriksa:
+
+```sql
+SELECT NAMA FROM <skema>.T_MIGRASI
+ WHERE NAMA IN ('760_view_ke_tabel_flat', '761_t_master_status', '762_jejak_ubah_master',
+                '880_view_ke_tabel_flat', '881_t_master_status', '882_jejak_ubah_master', '883_cityinput_provincename');
+```
+
+Untuk setiap nama lama yang ADA, ganti namanya ke nama sekarang — JANGAN dijalankan ulang:
+
+```sql
+UPDATE <skema>.T_MIGRASI SET NAMA = '215_view_ke_tabel_flat' WHERE NAMA IN ('760_view_ke_tabel_flat', '880_view_ke_tabel_flat');
+UPDATE <skema>.T_MIGRASI SET NAMA = '216_t_master_status' WHERE NAMA IN ('761_t_master_status', '881_t_master_status');
+UPDATE <skema>.T_MIGRASI SET NAMA = '217_jejak_ubah_master' WHERE NAMA IN ('762_jejak_ubah_master', '882_jejak_ubah_master');
+UPDATE <skema>.T_MIGRASI SET NAMA = '218_cityinput_provincename' WHERE NAMA = '883_cityinput_provincename';
+COMMIT;
+```
+
+(⚠️ `880_seq_aggregate` milik modul `aggregate` — JANGAN ikut diubah; pencarian di atas memakai nama lengkap.) Bila
+tidak ada satu pun nama lama, tidak perlu apa-apa: 215-218 jalan sebagai langkah baru.
+
+**Bila pemeriksaan terlewat.** Pengulangan nama baru atas skema yang sudah dimigrasi berhenti AMAN di **pra-terbang**
+selama 217 (jejak ubah) sudah jalan: PROVINCE dkk. dan T_MASTER_STATUS sudah ber-kolom jejak, bentuknya berbeda dari
+CREATE TABLE 215 / 216 → "BENTUKNYA BERBEDA ... Migrasi dihentikan sebelum satu pernyataan pun dikirim" — jalankan
+UPDATE di atas lalu ulangi. Hanya bila DEV menjalankan 880 / 881 TANPA 882, pra-terbang lolos dan 215 berhenti di
+`DROP VIEW` sesudah membuat `PROVINCE_SALIN` — buang `PROVINCE_SALIN` (salinan ganda; PROVINCE tidak tersentuh), jalankan
+UPDATE di atas, ulangi. 218 sendiri aman diulang di bagian isinya (UPDATE ber-`PROVINCENAME IS NULL`, INSERT ber-`NOT
+EXISTS`), tetapi `ALTER ... ADD (PROVINCENAME)` berhenti di ORA-01430 bila kolomnya sudah ada — kolom baru TIDAK boleh
+dibungkus blok berpelindung katalog (penjaga `pelanggaranBlokPLSQL`: kolom lewat blok tidak terlihat pembanding
+STRUKTUR), jadi jalan keluarnya tetap UPDATE `T_MIGRASI` di atas. ⛔ Seluruh langkah di atas perubahan basis data: work
+owner / DBA, dengan persetujuan — bukan agent.
 
 ## Penomoran ulang (04-10-2026)
 
@@ -151,4 +207,4 @@ saya disesuaikan"): `BRANCH` - kini dinyatakan `marketingofficer` (satu tabel wa
 modul); modul `mastercity` hanya MEMBACA `ID`-nya untuk rujukan City. `NATION` - bukan lagi tabel warisan: sejak
 `companydetail` 802 / 803 ia tabel datar yang DIBUAT migrasi (strukturnya digambarkan
 `modul/companydetail/docs/STRUKTUR-TABEL-COMPANYDETAIL.md`); modul `masternation` menulis isinya tanpa mengubah
-strukturnya - status dan jejak ubahnya di T_MASTER_STATUS (881 / 882).
+strukturnya - status dan jejak ubahnya di T_MASTER_STATUS (216 / 217, dulu 881 / 882).

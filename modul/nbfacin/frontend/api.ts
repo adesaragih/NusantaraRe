@@ -153,6 +153,33 @@ export interface KasusNB {
   opportunity: IsianOpportunity
   insuredName: string
   general: GeneralInward
+  /**
+   * Risk Scoring di General (`Section\Periode.xml`: `.ScoringRisk.FinalScore` + `.ScoringRisk.NoteFinalScore`, baca-saja)
+   * = nilai TERSIMPAN `T_SCORINGRISK` (FINAL_SCORE, NOTE_FINAL_SCORE), kosong bila Scoring Risk belum pernah di-Save
+   * (tiket 54, backend sesi c3).
+   */
+  riskScoring: { finalScore: string; noteFinalScore: string }
+  /**
+   * Tab Loss Record boleh dibuka (tiket 55): akun login ber-`JOB_POSITION` = "IT" (keputusan work owner 06-10-2026
+   * "untuk sementara untuk POSITION=IT saja"; Pega `When\IsIT.xml`). Backend sesi c3: dibaca lunak - galat baca /
+   * tanpa sesi = false, GET kasus tidak pernah gagal karenanya.
+   */
+  aksesLossRecord: boolean
+  /**
+   * Tab Correspondence boleh dibuka (tiket 56): aturan SAMA dengan `aksesLossRecord` - akun login ber-`JOB_POSITION` = "IT"
+   * (keputusan work owner 06-10-2026 "ini visibility menu nya juga cuma it ya"; Pega S95 selalu tampil). Backend sesi c3:
+   * satu pembacaan lunak bersama `aksesLossRecord`; endpoint korespondensi menolak 401 / 403.
+   */
+  aksesKorespondensi: boolean
+  /**
+   * Case boleh diubah (work owner 07-10-2026: case yang sudah keluar dari tahap marketing baca-saja untuk marketing):
+   * aturan sama dengan `TampilanSubmit.bolehSubmit` (posisi tahap marketing Offer + akun memegang workbasket marketing).
+   * false = layar baca-saja (`BacaSajaKasus`) dan backend menolak tulisan (409 tahap / 403 tanpa workbasket marketing;
+   * backend sesi c3 `services/bacasaja.go`, satu sumber dengan Submit dan Scoring).
+   */
+  bolehUbah: boolean
+  /** Sebab baca-saja (teks singkat); '' bila boleh ubah. */
+  alasanBacaSaja: string
 }
 
 export function ambilKasus(caseId: string): Promise<KasusNB> {
@@ -176,6 +203,11 @@ export interface BarisCaseNB {
   insuredName: string
   marketing: string
   status: string
+  /**
+   * `.NBStatus` (sel 95 grid `GetListOpportunityF`) = `T_GENERAL_POLIS.NB_STATUS` (tiket 57); belum pernah di-Submit =
+   * "NEW NB" (`Flow\InputInwardFacultativeOffer.xml` awal flow).
+   */
+  nbStatus: string
 }
 
 /** Jawaban `GET /api/nbfacin/opportunity` - daftar case NB Fac In, terbaru dulu. */
@@ -476,6 +508,10 @@ export interface CoverageObjek {
   accumulationCode?: string
   /** `.AccumulationDescription` = Accumulation Address (tiket 46). Boleh absen. */
   accumulationDescription?: string
+  /** `.Zone` = ZONES.DESCRIPTION terpilih (tiket 52; hanya coverage `COVERAGE_ZONA`). Boleh absen di data lama. */
+  zone?: string
+  /** `.ConstructionEarthquake` = CONSTRUCTION.CONSTRUCTION (tiket 52; hanya `COVERAGE_KONSTRUKSI`). Boleh absen. */
+  constructionEarthquake?: string
 }
 
 /** Satu deductible - `ASM-FW-GISFW-Data-Deductible`. Persen / uang = teks desimal. */
@@ -711,6 +747,16 @@ export function hitungCoverage(
     /** Item pemilik coverage (`CountPremi_ACT` langkah 11-16, PctAdjustment). */
     isAdjustable?: boolean
     pctAdjustOther?: string
+    /**
+     * `Param.CallAct="rate"` (tiket 52): Coverage / Zone diubah -> `CountPremiRate_ACT`; coverage ber-OLDID "4.2 PRGBI"
+     * (dicocokkan harfiah seperti Pega `.OLDID`) mengambil ‰ Gross Rate dari `POOLDATA.ZONEOJK` menurut Zone. Absen = hitung
+     * biasa.
+     */
+    callAct?: 'rate'
+    /** Hanya bersama `callAct`: `.Property.Province` objek (4.3 = 0.5 untuk DKI JAKARTA / BANTEN / JAWA BARAT, selain itu 0.45). */
+    province?: string
+    /** Hanya bersama `callAct`: OccupationId okupasi objek (FLEXAS = max OCCUPATION.RATELOWER). */
+    occupationIds?: string[]
   },
 ): Promise<CoverageObjek> {
   return minta<CoverageObjek>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/hitung-coverage`, { metode: 'POST', badan })
@@ -1040,15 +1086,40 @@ export interface TampilanCedant {
   shareCedantType: string
   /** `.OfferFacIn.PercentShare` (baca-saja di tab ini). */
   percentShare: string
-  /** `.OfferFacIn.TotalTSINusaReSpreading`. */
+  /**
+   * `.OfferFacIn.TotalTSINusaReSpreading` dalam IDR: tiap mata uang dikali kurs TOIDR (`TREATYEXCHANGEYEARLY`) lalu
+   * dijumlah (work owner 05-10-2026, C-8 - Pega menjumlah angka tanpa kurs). "" bila ada mata uang tanpa kurs.
+   */
   totalTsiRnm: string
-  /** `.OfferFacIn.TotalPremiNusaRe`. */
+  /** `.OfferFacIn.TotalPremiNusaRe` dalam IDR (aturan sama dengan `totalTsiRnm`). */
   totalPremiRnm: string
+  /**
+   * Mata uang yang kursnya ke IDR tidak ditemukan (KursPada Begin date, sama dengan Spreading; item tanpa mata uang =
+   * "(kosong)") - bila berisi, kedua total "". Selalu larik (C-8, K49-11).
+   */
+  kursTidakAda: string[]
   /** Proteksi `ProtectShareCedant_Act` berlaku (IsGroup == "Group" atau FlagOnGoingPolicy == 2). */
   wajib: boolean
   cedant: BarisCedant[]
   /** Ceding Co tab General (`QuotationData.CedingCoList`, atau CedingCo tunggal) - sumber Add pertama. */
   cedingUmum: BarisCedant[]
+  /** `.OfferFacIn.QuotationData.ShareOfCeding` tersimpan ("100%" / "N%"), "" bila kosong; teks "OF" di detail baris. */
+  shareOfCeding: string
+  /**
+   * Dasar CurrencyList per mata uang pada % Share cedant 100 (`SetTSIPremiCedant_Act` langkah 4 atas
+   * `OfferFacIn.CurrencyList`; langkah 5 `TotalSpreadAll` ber-label `//` = mati). tsiRnm = Σ TSI objek x PS / 100,
+   * premiumRnm = Σ premi NR, tsiGross = Σ TSI objek, premiumGross = Σ premi NR x 100 / PS. [] bila % Share RNM kosong.
+   */
+  dasarMataUang: DasarCedant[]
+}
+
+/** Satu baris dasar CurrencyList cedant (teks desimal). */
+export interface DasarCedant {
+  currency: string
+  tsiRnm: string
+  premiumRnm: string
+  tsiGross: string
+  premiumGross: string
 }
 
 const jalurCedant = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/cedant`
@@ -1060,4 +1131,468 @@ export function ambilCedant(caseId: string): Promise<TampilanCedant> {
 /** Save tab Cedant: simpan Share Cedant Type + grid; backend menjalankan SetShareOfCeding dan proteksi. */
 export function simpanCedant(caseId: string, isi: { shareCedantType: string; cedant: BarisCedant[] }): Promise<TampilanCedant> {
   return minta<TampilanCedant>(jalurCedant(caseId), { metode: 'PUT', badan: isi })
+}
+
+/** Satu mata uang tab Premium Deduction / Brokerage Fee (`.OfferFacIn.CurrencyList`, tiket 50). Angka = teks desimal. */
+export interface BarisDeduction {
+  /** `.Name`. */
+  currency: string
+  /** `.Policy.Payment.Premium` = Σ PremiNusantaraRe mata uang itu (baca-saja; dasar semua hitungan). */
+  premium: string
+  /** `.Policy.Payment.Commision` - Total Premium Deduction. */
+  commision: string
+  /** `.Policy.Payment.Deduction2` - Total Premium Deduction 2. */
+  deduction2: string
+  /** `.Policy.Payment.BrokerageFee`. */
+  brokerageFee: string
+  /** `.Policy.Payment.PPh` / `.PPN` (baca-saja). */
+  pph: string
+  ppn: string
+}
+
+/** `GET /api/nbfacin/kasus/{caseId}/deduction` (tiket 50, kontrak usulan sesi 0f). */
+export interface TampilanDeduction {
+  /** `.Policy.Payment.RICommision` - % Premium Deduction. */
+  pctPremiumDeduction: string
+  /** `.Policy.Payment.PctBrokerageFee`. */
+  pctBrokerageFee: string
+  /** `.OfferFacIn.PPnCheck` - "Exclude PPN ?" (Pega selalu menyetelnya true saat menghitung). */
+  ppnCheck: boolean
+  /** Tarif `POOLDATA.TAX` baris TANGGAL terbaru (PPH / PPN, persen); "" bila tabel kosong. */
+  tarifPph: string
+  tarifPpn: string
+  mataUang: BarisDeduction[]
+  pesan: string[]
+}
+
+/** Pemicu hitung: isian persen atas (`SetRIComm_Act`), atau sel grid baris `idx`. */
+export type AksiDeduction = 'persen' | 'commision' | 'deduction2' | 'brokerage'
+
+const jalurDeduction = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/deduction`
+
+const badanDeduction = (isi: TampilanDeduction) => ({
+  pctPremiumDeduction: isi.pctPremiumDeduction,
+  pctBrokerageFee: isi.pctBrokerageFee,
+  ppnCheck: isi.ppnCheck,
+  mataUang: isi.mataUang.map((b) => ({ currency: b.currency, commision: b.commision, deduction2: b.deduction2, brokerageFee: b.brokerageFee })),
+})
+
+export function ambilDeduction(caseId: string): Promise<TampilanDeduction> {
+  return minta<TampilanDeduction>(jalurDeduction(caseId))
+}
+
+/** Hitung ulang (tanpa simpan): `SetRIComm_Act` / `SetTotalPremium_Act` / `ProtekDeduction2_Act` / `TotalBrokerageFee_Act`. */
+export function hitungDeduction(caseId: string, aksi: AksiDeduction, idx: number, isi: TampilanDeduction): Promise<TampilanDeduction> {
+  return minta<TampilanDeduction>(`${jalurDeduction(caseId)}/hitung`, { metode: 'POST', badan: { aksi, idx, ...badanDeduction(isi) } })
+}
+
+/** Save tab (`SaveFacIn_Act`): hitung ulang lalu simpan. */
+export function simpanDeduction(caseId: string, isi: TampilanDeduction): Promise<TampilanDeduction> {
+  return minta<TampilanDeduction>(jalurDeduction(caseId), { metode: 'PUT', badan: badanDeduction(isi) })
+}
+
+/** Satu cicilan `.Policy.Payment.ListInstallment` (tiket 51). Angka = teks desimal; Due Date kabel `DD-MM-YYYY`. */
+export interface CicilanPayment {
+  installmentNo: string
+  dueDate: string
+  installmentPercentage: string
+  premium: string
+  /** `.RICommision` - kolom "Deduction". */
+  riCommision: string
+  deduction2: string
+  brokerageFee: string
+  pph: string
+  ppn: string
+  discount: string
+  paymentTotal: string
+}
+
+/** Satu mata uang `.OfferFacIn.CurrencyList` di tab Payment. */
+export interface MataUangPayment {
+  currency: string
+  /** `.Policy.Payment.Premium` - Premium RNM. */
+  premium: string
+  /** `.SumTotalPayment` - Total Payment. */
+  sumTotalPayment: string
+  cicilan: CicilanPayment[]
+}
+
+/** `GET /api/nbfacin/kasus/{caseId}/payment` (tiket 51, kontrak usulan sesi 0f). */
+export interface TampilanPayment {
+  /** `.Policy.Payment.Installment` (teks; "" bila belum diisi). */
+  installment: string
+  /** Tarif `POOLDATA.TAX` terbaru untuk kepala kolom PPH / PPN; "" bila kosong. */
+  tarifPph: string
+  tarifPpn: string
+  mataUang: MataUangPayment[]
+  /** Pesan proteksi (`ProtectPremiPolicy_Act`) / peringatan dari backend. */
+  pesan: string[]
+}
+
+/** Pemicu hitung: jumlah cicilan (`FillPaymentInstallment`) atau % cicilan baris `idx` mata uang `currency`. */
+export type AksiPayment = 'installment' | 'persen'
+
+const jalurPayment = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/payment`
+
+const badanPayment = (isi: TampilanPayment) => ({
+  installment: isi.installment,
+  mataUang: isi.mataUang.map((m) => ({
+    currency: m.currency,
+    cicilan: m.cicilan.map((c) => ({ installmentNo: c.installmentNo, dueDate: c.dueDate, installmentPercentage: c.installmentPercentage })),
+  })),
+})
+
+export function ambilPayment(caseId: string): Promise<TampilanPayment> {
+  return minta<TampilanPayment>(jalurPayment(caseId))
+}
+
+/** Hitung ulang tanpa simpan: `FillPaymentInstallment` (installment) / `SetValidateInstallment_Act` (persen). */
+export function hitungPayment(caseId: string, aksi: AksiPayment, currency: string, idx: number, isi: TampilanPayment): Promise<TampilanPayment> {
+  return minta<TampilanPayment>(`${jalurPayment(caseId)}/hitung`, { metode: 'POST', badan: { aksi, currency, idx, ...badanPayment(isi) } })
+}
+
+/** Save tab Payment: hitung ulang (`SaveFillPaymentInstallment` + `CountPaymentInstallment_Act`), proteksi, simpan. */
+export function simpanPayment(caseId: string, isi: TampilanPayment): Promise<TampilanPayment> {
+  return minta<TampilanPayment>(jalurPayment(caseId), { metode: 'PUT', badan: badanPayment(isi) })
+}
+
+/**
+ * `GET /api/nbfacin/zona?coverage=&oldId=&q=` (tiket 52, kontrak usulan) - RD `BrowseZones_RD` atas view `POOLDATA.ZONES`:
+ * `OLDID` = OLDID coverage, zona X/Y/Z (RSMD) atau 1-6 (gempa) menurut kode coverage (`SetPropertyCoverageDT_FacIn` langkah
+ * 10-11). Saran: id = ZONES.ID, label = ZONES.DESCRIPTION.
+ */
+export function saranZona(coverage: string, oldId: string, q: string): Promise<{ baris: SaranAkumulasi[] }> {
+  const p = new URLSearchParams({ coverage, oldId, q })
+  return minta<{ baris: SaranAkumulasi[] }>(`/api/nbfacin/zona?${p.toString()}`)
+}
+
+/**
+ * `GET /api/nbfacin/konstruksi-gempa?q=` (tiket 52, kontrak usulan) - `SearchClassConstructionReas_SQL`
+ * (`select distinct construction from construction order by CONSTRUCTION`). Saran: id = label = CONSTRUCTION.
+ */
+export function saranKonstruksiGempa(q: string): Promise<{ baris: SaranAkumulasi[] }> {
+  return minta<{ baris: SaranAkumulasi[] }>(`/api/nbfacin/konstruksi-gempa?${new URLSearchParams({ q }).toString()}`)
+}
+
+/** Satu kolom Scoring Risk (Top Risk / Dominant Risk) - `.ScoringRisk.DataScoringRiskList(n)` (tiket 54). */
+export interface KolomScoring {
+  occupationNote: string
+  topRiskLocation: string
+  /** `.IndexLocation` = ObjectNo lokasi (Dominant Risk); "" untuk kolom Top Risk / tanpa Dominant Risk. */
+  indexLocation: string
+  /** Kunci sub-faktor -> nomor ChechBox terpilih (1..n), 0 = tidak dicentang. */
+  pilihan: Record<string, number>
+  /** `.LossRatio.LossRatio.PercentLossRatio` (teks desimal). */
+  persenLossRatio: string
+  /** Kunci sub-faktor -> ScorePerFactor (teks desimal). */
+  skor: Record<string, string>
+  /** `.Score` kolom. */
+  total: string
+}
+
+/** `.ScoringRisk.ScoringResult.*` - rekomendasi dan persetujuan. */
+export interface HasilScoring {
+  acceptableNotApproval: boolean
+  acceptableWithApproval: boolean
+  notAcceptable: boolean
+  opDivHead: boolean
+  opDirector: boolean
+  techDirector: boolean
+  presDirector: boolean
+  dueOccupation: boolean
+  dueObjectConditions: boolean
+  dueLossRatio: boolean
+  dueOthers: boolean
+}
+
+/** `GET /api/nbfacin/kasus/{caseId}/scoring` (tiket 54, kontrak usulan sesi 0f). */
+export interface TampilanScoring {
+  /** Tahap marketing & bukan on-going (Pega "Write"); false = baca-saja ("Read"). */
+  bolehUbah: boolean
+  insuredName: string
+  /** "New Business" / "Renewal". */
+  status: string
+  /** Period (kabel DD-MM-YYYY). */
+  mulai: string
+  selesai: string
+  /** [Top Risk, Dominant Risk]. */
+  kolom: KolomScoring[]
+  finalScore: string
+  /** "Good" / "Above Average" / "Average" / "Below Average" / "Poor" / "". */
+  noteFinalScore: string
+  hasil: HasilScoring
+  /** Pilihan Dominant Risk: lokasi (ObjectNo) + okupasi pertamanya. */
+  lokasiDominan: { indexLocation: string; label: string }[]
+  pesan: string[]
+}
+
+const jalurScoring = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/scoring`
+
+const badanScoring = (isi: TampilanScoring) => ({
+  kolom: isi.kolom.map((k) => ({ indexLocation: k.indexLocation, pilihan: k.pilihan, persenLossRatio: k.persenLossRatio })),
+})
+
+export function ambilScoring(caseId: string): Promise<TampilanScoring> {
+  return minta<TampilanScoring>(jalurScoring(caseId))
+}
+
+/** Hitung ulang tanpa simpan (`SetScore_Act` / `SetLossRatio_Act` / `ScoringResult`, isi otomatis kolom). */
+export function hitungScoring(caseId: string, isi: TampilanScoring): Promise<TampilanScoring> {
+  return minta<TampilanScoring>(`${jalurScoring(caseId)}/hitung`, { metode: 'POST', badan: badanScoring(isi) })
+}
+
+/** Save tab Scoring Risk. */
+export function simpanScoring(caseId: string, isi: TampilanScoring): Promise<TampilanScoring> {
+  return minta<TampilanScoring>(jalurScoring(caseId), { metode: 'PUT', badan: badanScoring(isi) })
+}
+
+/** Satu baris grid Loss Record tingkat case - `.OfferFacIn.ListCauseOfLoss(n)` (kelas Data-CauseOfLoss, tiket 55). */
+export interface BarisLossRecord {
+  /** `.UWYEAR` - DIHITUNG backend dari Date of Loss (`Get5YearAgo`): tahun awal jendela ke-1..5 sebelum periode polis. */
+  uwYear: string
+  classOfBusiness: string
+  /** `.DOL` - kabel `DD-MM-YYYY`; kosong -> backend mengisi Begin date - 1 tahun (`SaveLossRecord` 7.6). */
+  dateOfLoss: string
+  /** `.CauseOfLoss` - backend menyimpan huruf besar (`@toUpperCase`). */
+  causeOfLoss: string
+  currency: string
+  /** `.LOSS_AMOUNT` - teks desimal. */
+  lossAmount: string
+  /** `.LOSS_AMOUNT_IDR` - DIHITUNG backend: IDR = Loss Amount; lain = × kurs TREATYEXCHANGEYEARLY per Begin date. */
+  lossAmountIdr: string
+}
+
+/** Satu baris "Total Loss" per Class Of Business + Currency (`TotalLossCOB`, `SaveLossRecord` langkah 8). */
+export interface TotalLossRecord {
+  classOfBusiness: string
+  currency: string
+  lossAmount: string
+  lossAmountIdr: string
+}
+
+/** Loss ratio (persen, teks desimal) - `.OfferFacIn.LossRatio{1,3,5}YearPercent` / `.NetLossRatio{1,3,5}Year`. */
+export interface RasioLossRecord {
+  gross1: string
+  gross3: string
+  gross5: string
+  net1: string
+  net3: string
+  net5: string
+}
+
+/** `GET /api/nbfacin/kasus/{caseId}/loss-record` (tiket 55, kontrak usulan sesi 0f). */
+export interface TampilanLossRecord {
+  /** `.OfferFacIn.PremiPAR` - bawaan backend bila belum diisi (keputusan 2: Σ premi × kurs Begin date). */
+  premiPar: string
+  premiMb: string
+  premiPl: string
+  premiOther: string
+  /** Urut Date of Loss terbaru dulu (`SaveLossRecord` langkah 9). */
+  baris: BarisLossRecord[]
+  totalCob: TotalLossRecord[]
+  rasio: RasioLossRecord
+  pesan: string[]
+}
+
+const jalurLossRecord = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/loss-record`
+
+const badanLossRecord = (isi: TampilanLossRecord) => ({
+  premiPar: isi.premiPar,
+  premiMb: isi.premiMb,
+  premiPl: isi.premiPl,
+  premiOther: isi.premiOther,
+  baris: isi.baris.map((b) => ({
+    classOfBusiness: b.classOfBusiness,
+    dateOfLoss: b.dateOfLoss,
+    causeOfLoss: b.causeOfLoss,
+    currency: b.currency,
+    lossAmount: b.lossAmount,
+  })),
+})
+
+export function ambilLossRecord(caseId: string): Promise<TampilanLossRecord> {
+  return minta<TampilanLossRecord>(jalurLossRecord(caseId))
+}
+
+/** Hitung ulang tanpa simpan (Uw Year, Loss Amount IDR, total, loss ratio). */
+export function hitungLossRecord(caseId: string, isi: TampilanLossRecord): Promise<TampilanLossRecord> {
+  return minta<TampilanLossRecord>(`${jalurLossRecord(caseId)}/hitung`, { metode: 'POST', badan: badanLossRecord(isi) })
+}
+
+/** Save Data tab Loss Record - daftar diganti utuh, dihitung ulang (keputusan 2). */
+export function simpanLossRecord(caseId: string, isi: TampilanLossRecord): Promise<TampilanLossRecord> {
+  return minta<TampilanLossRecord>(jalurLossRecord(caseId), { metode: 'PUT', badan: badanLossRecord(isi) })
+}
+
+/** `GET /api/nbfacin/class-of-business/saran?q=` - `BUSINESS.NOTE` semua grup (`BrowseBusiness_RD`, nilai `.Note`). */
+export function saranClassOfBusiness(q: string): Promise<{ baris: SaranAkumulasi[] }> {
+  return minta<{ baris: SaranAkumulasi[] }>('/api/nbfacin/class-of-business/saran', { kueri: { q } })
+}
+
+/** Satu penerima email korespondensi - `.RecipientList(n)` (tiket 56). */
+export interface PenerimaKorespondensi {
+  /** `.Recipient` - nama akun terpilih, atau teks bebas. */
+  recipient: string
+  /** `.RecipientMail` - diisi dari akun terpilih (`M_LOGIN_GO.EMAIL`) atau diketik. */
+  recipientMail: string
+}
+
+/** Satu email korespondensi - `.OfferFacIn.CorrespondenceList(n)` (tiket 56, kontrak usulan sesi 0f). */
+export interface Korespondensi {
+  /** Kunci stabil dari server. */
+  no: string
+  /** `.Date` - waktu Add, WIB, kabel `DD-MM-YYYY HH:MM`. */
+  tanggal: string
+  /** `.Sender` / `.SenderMail` - akun login saat Add (`M_LOGIN_GO.NAME` / `EMAIL`); baca-saja. */
+  sender: string
+  senderMail: string
+  subject: string
+  /** `.Message` - HTML yang SUDAH dibersihkan server (daftar tag `TAG_HTML_KORESPONDENSI`, tanpa atribut). */
+  message: string
+  penerima: PenerimaKorespondensi[]
+  /** Status: false = "Not Sent" (`.IsEditable` 1, dapat diubah), true = "Sent" (terkunci). */
+  terkirim: boolean
+}
+
+/** `GET /api/nbfacin/kasus/{caseId}/korespondensi`. */
+export interface TampilanKorespondensi {
+  daftar: Korespondensi[]
+  pesan: string[]
+}
+
+/** Isi yang dikirim Save / Send Email. */
+export interface IsiKorespondensi {
+  subject: string
+  message: string
+  penerima: PenerimaKorespondensi[]
+}
+
+const jalurKorespondensi = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/korespondensi`
+
+export function ambilKorespondensi(caseId: string): Promise<TampilanKorespondensi> {
+  return minta<TampilanKorespondensi>(jalurKorespondensi(caseId))
+}
+
+/** Add (`CorrespondenceAdd`): draf baru - tanggal dan pengirim diisi server dari akun login. */
+export function tambahKorespondensi(caseId: string): Promise<Korespondensi> {
+  return minta<Korespondensi>(jalurKorespondensi(caseId), { metode: 'POST' })
+}
+
+/** Save editor (`SaveFacIn_Act`) - 409 bila sudah terkirim. */
+export function simpanKorespondensi(caseId: string, no: string, isi: IsiKorespondensi): Promise<Korespondensi> {
+  return minta<Korespondensi>(`${jalurKorespondensi(caseId)}/${encodeURIComponent(no)}`, { metode: 'PUT', badan: isi })
+}
+
+/** Remove - hanya draf (409 bila sudah terkirim). */
+export function hapusKorespondensi(caseId: string, no: string): Promise<void> {
+  return minta<void>(`${jalurKorespondensi(caseId)}/${encodeURIComponent(no)}`, { metode: 'DELETE' })
+}
+
+/**
+ * Send Email (`SendCorrespondence`, dibetulkan): isi disimpan dulu, lalu dikirim lewat SMTP konfigurasi - To = penerima,
+ * CC + Reply-To = pengirim. Berhasil -> terkirim (terkunci). SMTP belum dikonfigurasi (503) / gagal (502) -> isi tetap
+ * tersimpan, status tetap "Not Sent".
+ */
+export function kirimKorespondensi(caseId: string, no: string, isi: IsiKorespondensi): Promise<Korespondensi> {
+  return minta<Korespondensi>(`${jalurKorespondensi(caseId)}/${encodeURIComponent(no)}/kirim`, { metode: 'POST', badan: isi })
+}
+
+/** `GET /api/nbfacin/korespondensi/penerima/saran?q=` - akun aktif ber-EMAIL: id = LOGIN_ID, label = NAME, ekstra = EMAIL. */
+export function saranPenerimaKorespondensi(q: string): Promise<{ baris: SaranAkumulasi[] }> {
+  return minta<{ baris: SaranAkumulasi[] }>('/api/nbfacin/korespondensi/penerima/saran', { kueri: { q } })
+}
+
+/** Kode Email Type tahap marketing (`.EmailType`, `SaveViewSuggest`): 1 Accept, 2 Reject, 4 Banding, 7 Decline (tiket 57). */
+export type KodeEmailType = '1' | '2' | '4' | '7'
+
+/** Satu baris grid riwayat akseptasi (`TempViewSuggest`: Date · PIC · Approval · Status · Comment), terbaru dulu. */
+export interface RiwayatAkseptasi {
+  /** Kabel `DD-MM-YYYY HH:MM` WIB. */
+  tanggal: string
+  pic: string
+  /** Label Approval (Accept / Reject / Ask / Banding / Decline / Revise / …), sudah dipetakan server. */
+  approval: string
+  /** `.IsCedingConfirm` apa adanya (Offer / Binding / Accepted / Policy). */
+  status: string
+  comment: string
+}
+
+/** Satu baris T/C popup Cause of Decline (`POOLDATA.CAUSEOFDECLINE` `DESCRIPTION IS NULL`) + pilihan Option-nya. */
+export interface BarisSebabTc {
+  termCondition: string
+  /** Pilihan kolom Option (`.Description1`) untuk T/C ini; kosong = tidak ada daftar. */
+  opsi: string[]
+}
+
+/** Pilihan pengguna atas satu baris T/C. */
+export interface PilihanSebabTc {
+  termCondition: string
+  /** Kolom centang: 'I' (`.CheckBox1`), 'II' (`.CheckBox2`), '' = tidak dicentang. */
+  prioritas: '' | 'I' | 'II'
+  description1: string
+  description2: string
+  /** Teks desimal persen (5 desimal di Pega); '' = kosong. */
+  pctRnm: string
+  pctSob: string
+}
+
+/** `GET /api/nbfacin/kasus/{caseId}/submit` (tiket 57, kontrak usulan sesi 0f). */
+export interface TampilanSubmit {
+  /**
+   * Submit boleh: posisi case tahap marketing Offer DAN akun login memegang workbasket posisi itu (Pega: tombol aktif bila
+   * `TempEmail.CARI28 == .PositionNote`, CARI28 = workbasket operator yang sama dengan PositionNote).
+   */
+  bolehSubmit: boolean
+  /** Sebab tidak boleh (tampil di layar); '' bila boleh. */
+  alasan: string
+  riwayat: RiwayatAkseptasi[]
+  /** Pilihan "Banding to" (`GetAksepBanding_SQL`); kosong bila case belum pernah ke approver non-marketing. */
+  opsiBanding: string[]
+  sebabTc: BarisSebabTc[]
+  /** Daftar Non - T/C (`TERMCONDITION2 IS NOT NULL`). */
+  sebabNonTc: string[]
+  /**
+   * % RNM otomatis saat T/C "Rate" / "R/I Comm, Deduction" dicentang prioritas I (`SetCODRate`): rate =
+   * (Total Net Rate / 10) × (100 − RI Commission) / 100 dibulatkan 4 desimal; riComm = RI Commission. '' = tidak tersedia.
+   */
+  pctRnmOtomatis: { rate: string; riComm: string }
+}
+
+/** Isi Submit / periksa. */
+export interface IsiSubmit {
+  emailType: KodeEmailType
+  comment: string
+  bandingTo: string
+  /** Decline: pilihan T/C (hanya baris yang dicentang) dan Non - T/C terpilih ('' = tidak ada). */
+  sebabTc: PilihanSebabTc[]
+  sebabNonTc: string
+}
+
+/** Jawaban Submit / periksa. */
+export interface HasilSubmit {
+  /** Pesan proteksi (`Protection_Act` dkk., verbatim). Kosong = lolos / berhasil. */
+  pesan: string[]
+  /** Sesudah Submit berhasil: posisi baru case dan status teksnya (`NBStatus`). */
+  position: string
+  nbStatus: string
+}
+
+const jalurSubmit = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/submit`
+
+export function ambilSubmit(caseId: string): Promise<TampilanSubmit> {
+  return minta<TampilanSubmit>(jalurSubmit(caseId))
+}
+
+/** Proteksi Accept tanpa submit (Pega `Protection_Act` saat radio dipilih); Reject / Banding / Decline -> pesan kosong. */
+export function periksaSubmit(caseId: string, emailType: KodeEmailType): Promise<HasilSubmit> {
+  return minta<HasilSubmit>(`${jalurSubmit(caseId)}/periksa`, { metode: 'POST', badan: { emailType } })
+}
+
+/**
+ * Submit tahap marketing (flow action `InwardFacultative` + `SetValidateDate_PostAct` + `Decision3`): Accept -> Team Leader;
+ * Reject -> tetap di marketing; Banding -> jabatan Banding to; Decline -> selesai. Proteksi gagal: 200 + `pesan` (diminta ke c3)
+ * atau 422 `{"galat": pesan digabung "; "}` - keduanya ditangani `BlokEmailType` (`pesanProteksiDari`).
+ */
+export function ajukanSubmit(caseId: string, isi: IsiSubmit): Promise<HasilSubmit> {
+  return minta<HasilSubmit>(jalurSubmit(caseId), { metode: 'POST', badan: isi })
 }

@@ -1,4 +1,4 @@
--- 883 - CITYINPUT.PROVINCENAME, isi awal dari RW, dan kota RW yang belum ada di CITYINPUT.
+-- 218 (dulu 883) - CITYINPUT.PROVINCENAME, isi awal dari RW, dan kota RW yang belum ada di CITYINPUT.
 --
 -- Keputusan work owner 04-10-2026 (diteruskan sesi nusantarare-9d): "di cityinput tambahin PROVINCENAME, data nya diambil
 -- dari tabel rw . rw.CITYNAME=cityinput.note baru di isi cityinput .PROVINCENAME". Lebar = RW.PROVINCENAME VARCHAR2(4000)
@@ -25,11 +25,12 @@
 --   - ID = "+1 dari id terakhir": MAX ID CITYINPUT yang SELURUHNYA digit (`REGEXP_LIKE '^[0-9]+$'`; ID lain tidak ikut
 --     dihitung) + ROW_NUMBER() urut CITYNAME, disimpan teks tanpa nol di depan (TO_CHAR angka). Tanpa ID digit: mulai 1.
 --     Satu pernyataan: nomornya berurutan, tanpa tabrakan dengan sesama baris baru.
---   - Penanda CREATE_OP = 'MIGRASI-883', TGL_CREATE = SYSDATE (kolom jejak 882): jalur mundur membuang TEPAT baris ini.
+--   - Penanda CREATE_OP = 'MIGRASI-883', TGL_CREATE = SYSDATE (kolom jejak 217): jalur mundur membuang TEPAT baris ini.
+--     Penanda TETAP 'MIGRASI-883' sesudah berkas dipindah ke 218 - baris yang sudah dibuat di DEV membawanya.
 -- Pernyataan ini SESUDAH UPDATE: baris baru sudah membawa PROVINCENAME-nya sendiri.
 --
--- Bila 883 gagal SESUDAH ALTER, pengulangan berhenti di ORA-01430 (kolom sudah ada) dan T_MIGRASI belum mencatat 883 -
--- pola 059: DBA menjalankan UPDATE di bawah manual, lalu mencatat `883_cityinput_provincename` di T_MIGRASI.
+-- Bila 218 gagal SESUDAH ALTER, pengulangan berhenti di ORA-01430 (kolom sudah ada) dan T_MIGRASI belum mencatat 218 -
+-- pola 059: DBA menjalankan UPDATE di bawah manual, lalu mencatat `218_cityinput_provincename` di T_MIGRASI.
 -- Ditulis, TIDAK dijalankan agent. Nol COMMIT (ADR-U-0029).
 ALTER TABLE {skema}.CITYINPUT ADD (
   PROVINCENAME VARCHAR2(4000)

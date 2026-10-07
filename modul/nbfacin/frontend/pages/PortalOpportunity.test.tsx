@@ -36,7 +36,8 @@ describe('PortalOpportunity = unsur yang TAMPIL di Pega', () => {
 
   it('judul kolom = grid GetListOpportunityF, berurutan, kolom 3 dan 7 kosong', () => {
     expect(judulKolom).toEqual(KOLOM_PORTAL.map((k) => k.label))
-    expect(judulKolom).toEqual(['Offer No', 'Name', '', 'Group Business', 'Insured Name', 'Marketing', '', 'Status'])
+    // Sel 95 berjudul kosong di Pega; "NB Status" = permintaan work owner 07-10-2026.
+    expect(judulKolom).toEqual(['Offer No', 'Name', '', 'Group Business', 'Insured Name', 'Marketing', 'NB Status', 'Status'])
   })
 
   it('unsur tersembunyi permanen di Pega TIDAK dirender', () => {
@@ -73,7 +74,7 @@ describe('PortalOpportunity = unsur yang TAMPIL di Pega', () => {
     expect(SUMBER).toContain('<tr key={b.caseId} className="inbox__baris" onClick={() => onBuka(b.caseId)}>')
     expect(sel[2]).toBe('')
     expect(sel.slice(3, 6)).toEqual(['{b.groupBusiness}', '{b.insuredName}', '{b.marketing}'])
-    expect(sel[6]).toBe('')
+    expect(sel[6]).toBe('{b.nbStatus}')
     expect(sel[7]).toBe('{b.status}')
   })
 

@@ -29,3 +29,12 @@ func TestSQLOccupation(t *testing.T) {
 		t.Errorf("pola %q", got)
 	}
 }
+
+// TestSQLRateLowerOkupasi - RateFlexas_Sql untuk banyak kode: OCCUPATIONCODE IN (bind berurutan), RATELOWER lewat
+// angkaKeluar, urut kode lalu ID (baris pertama per kode), tanpa saringan lain.
+func TestSQLRateLowerOkupasi(t *testing.T) {
+	if q := sqlRateLowerOkupasi("UJI.OCCUPATION", 3); q != "SELECT OCCUPATIONCODE, "+angkaKeluar("RATELOWER")+
+		" FROM UJI.OCCUPATION WHERE OCCUPATIONCODE IN (:1, :2, :3) ORDER BY OCCUPATIONCODE, ID" {
+		t.Errorf("%s", q)
+	}
+}

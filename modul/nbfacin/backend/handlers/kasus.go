@@ -40,6 +40,30 @@ type kasusKabel struct {
 	Opportunity isianOpportunity `json:"opportunity"`
 	InsuredName string           `json:"insuredName"`
 	General     generalKabel     `json:"general"`
+	// RiskScoring - tiket 54: `{finalScore, noteFinalScore}` tersimpan; "" bila belum ada.
+	RiskScoring riskScoringKabel `json:"riskScoring"`
+	// AksesLossRecord - tiket 55: akun login ber-JOB_POSITION "IT" (lunak: galat baca = false).
+	AksesLossRecord bool `json:"aksesLossRecord"`
+	// AksesKorespondensi - tiket 56: aturan sama dengan AksesLossRecord (satu pembacaan JOB_POSITION).
+	AksesKorespondensi bool `json:"aksesKorespondensi"`
+	// BolehUbah / AlasanBacaSaja - case baca-saja sesudah keluar dari tahap marketing (aturan bersama Submit, bacasaja.go).
+	BolehUbah      bool   `json:"bolehUbah"`
+	AlasanBacaSaja string `json:"alasanBacaSaja"`
+}
+
+// denganAksesTab - aksesLossRecord / aksesKorespondensi dari satu pembacaan lunak JOB_POSITION; bolehUbah / alasanBacaSaja
+// dari tahap kasus (lunak).
+func denganAksesTab(out kasusKabel, svc *services.Service, r *http.Request, stubPelaku bool) kasusKabel {
+	pelaku := inti.PelakuDari(r, stubPelaku)
+	akses := svc.AksesTabIT(r.Context(), pelaku)
+	out.AksesLossRecord, out.AksesKorespondensi = akses, akses
+	out.BolehUbah, out.AlasanBacaSaja = svc.AksesUbahKasus(r.Context(), pelaku, r.PathValue("caseId"))
+	return out
+}
+
+type riskScoringKabel struct {
+	FinalScore     string `json:"finalScore"`
+	NoteFinalScore string `json:"noteFinalScore"`
 }
 
 // isianGeneral - badan PUT .../general (sepuluh medan; tanpa medan tampil-saja).
@@ -71,6 +95,7 @@ const batasBadanGeneral = 16 << 10
 func keKasusKabel(k services.KasusKabel) kasusKabel {
 	o, g := k.Opportunity, k.General
 	return kasusKabel{CaseID: k.CaseID, Position: k.Position, StatusWork: k.StatusWork, InsuredName: k.InsuredName,
+		RiskScoring: riskScoringKabel{teks(k.RiskScoring.FinalScore), k.RiskScoring.NoteFinalScore},
 		Opportunity: isianOpportunity{EstimatedClosingDate: o.EstimatedClosingDate, BusinessProspectName: o.BusinessProspectName,
 			AccountID: o.AccountID, InsuredID: o.InsuredID, GroupBusinessID: o.GroupBusinessID, GroupBusiness: o.GroupBusiness,
 			ClassOfBusiness: o.ClassOfBusiness, TypeOfInward: o.TypeOfInward, TypeOfFacultative: o.TypeOfFacultative,
@@ -84,14 +109,14 @@ func keKasusKabel(k services.KasusKabel) kasusKabel {
 }
 
 // bacaKasus - GET /api/nbfacin/kasus/{caseId}.
-func bacaKasus(svc *services.Service) http.HandlerFunc {
+func bacaKasus(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		k, err := svc.BacaKasus(r.Context(), r.PathValue("caseId"))
 		if err != nil {
 			tulisGalat(w, err)
 			return
 		}
-		galat.TulisJSON(w, keKasusKabel(k))
+		galat.TulisJSON(w, denganAksesTab(keKasusKabel(k), svc, r, stubPelaku))
 	}
 }
 
@@ -112,7 +137,7 @@ func simpanGeneral(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			tulisGalat(w, err)
 			return
 		}
-		galat.TulisJSON(w, keKasusKabel(k))
+		galat.TulisJSON(w, denganAksesTab(keKasusKabel(k), svc, r, stubPelaku))
 	}
 }
 

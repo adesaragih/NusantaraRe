@@ -61,7 +61,6 @@ var konteksCoverage = func() *apd.Context {
 var (
 	seratus    = apd.New(100, 0)
 	enamPuluh  = apd.New(60, 0)
-	seribu     = apd.New(1000, 0)
 	errBagiNol = errors.New("pembagi nol")
 	pangkat    = func(n int32) *apd.Decimal { return apd.New(1, n) }
 )
@@ -379,7 +378,7 @@ func periksaCoverage(awalItem string, cov []models.CoverageObjek) []string {
 // lebarMataUangCoverage - T_COVERAGELIST.CURRENCY_CODE VARCHAR2(10) (migrasi 193).
 const lebarMataUangCoverage = 10
 
-// lebarCoverage - lebar kolom (BYTE) migrasi 193 / 195 medan teks coverage.
+// lebarCoverage - lebar kolom (BYTE) migrasi 193 / 195 / 203 / 204 medan teks coverage.
 var lebarCoverage = []struct {
 	nama  string
 	nilai func(models.CoverageObjek) string
@@ -396,6 +395,9 @@ var lebarCoverage = []struct {
 	{"unit", func(c models.CoverageObjek) string { return c.Unit }, 50},
 	{"accumulationCode", func(c models.CoverageObjek) string { return c.AccumulationCode }, 50},
 	{"accumulationDescription", func(c models.CoverageObjek) string { return c.AccumulationDescription }, 500},
+	// tiket 52 (migrasi 203)
+	{"zone", func(c models.CoverageObjek) string { return c.Zone }, 4000}, // 204 (203: 1000)
+	{"constructionEarthquake", func(c models.CoverageObjek) string { return c.ConstructionEarthquake }, 500},
 }
 
 // desimalCoverage - medan desimal masukan coverage (medan server tsi / tsiLiability / proRatePercent diabaikan).
@@ -435,11 +437,15 @@ func (s *Service) periodeKasus(ctx context.Context, id string) (Periode, error) 
 }
 
 // HitungCoverageKasus - POST hitung-coverage: Prorate dari periode case, tanpa menyimpan. Tanpa identitas tidak perlu
-// (tidak menulis) - tetap ikut kebijakan rute (pola lookup).
+// (tidak menulis) - tetap ikut kebijakan rute (pola lookup). rate.CallAct CallActRate (tiket 52) = CountPremiRate_ACT
+// lebih dulu (terapkanRate), kosong = hitung biasa.
 func (s *Service) HitungCoverageKasus(ctx context.Context, id string, c models.CoverageObjek, tsi *apd.Decimal, mode,
-	modeDiskon string, it PenyesuaianItem) (models.CoverageObjek, error) {
+	modeDiskon string, rate PermintaanRate, it PenyesuaianItem) (models.CoverageObjek, error) {
 	if modeDiskon != "" && modeDiskon != ModePercent && modeDiskon != ModeAmount {
 		return c, fmt.Errorf("%w: modeDiskon harus percent atau amount", ErrMasukanCoverage)
+	}
+	if err := rate.periksa(); err != nil {
+		return c, err
 	}
 	if !idKasusSah(id) {
 		return c, ErrKasusTidakAda
@@ -451,6 +457,11 @@ func (s *Service) HitungCoverageKasus(ctx context.Context, id string, c models.C
 	prorate, err := Prorate(periode)
 	if err != nil {
 		return c, err
+	}
+	if rate.CallAct == CallActRate {
+		if c, err = s.terapkanRate(ctx, c, rate); err != nil {
+			return c, err
+		}
 	}
 	return HitungCoverage(c, tsi, prorate, mode, modeDiskon, it)
 }
@@ -521,7 +532,10 @@ func (s *Service) siapkanCoverage(ctx context.Context, id string, baris []models
 }
 
 // TotalPerMataUang - SumTotalTSIPremiGross_Act cabang FIRE atas satu objek: per mata uang item (urut kemunculan),
-// TSI = Σ TSIObjectItem, Premium = Σ TotalGrossPremi, Rate = Premium / TSI (20 desimal) x 1000, TSI 0 -> 0; disimpan8.
+// TSI = Σ TSIObjectItem, Premium = Σ TotalGrossPremi, Rate = Premium / TSI (20 desimal), TSI 0 -> 0; disimpan8.
+// MENYIMPANG dari korpus (activity menulis `@divide(Premium, TSI, 20) * 1000`): work owner 05-10-2026 "ikutin sesuai pega
+// saja" - layar Pega DEV menampilkan Total Gross Rate 0,1878 untuk premi 9.391.000.000 / TSI 50.000.000.000, jadi TANPA
+// ×1000 (tiket 43, bagian "Keputusan work owner 05-10-2026").
 func TotalPerMataUang(item []models.ItemObjek) []models.TotalCoverage {
 	hasil := []models.TotalCoverage{}
 	posisi := map[string]int{}
@@ -540,7 +554,7 @@ func TotalPerMataUang(item []models.ItemObjek) []models.TotalCoverage {
 		if t.TSI.IsZero() {
 			t.Rate = apd.New(0, 0)
 		} else if r, err := bagi(t.Premium, t.TSI, skalaBagi); err == nil {
-			t.Rate = simpan8(kali(r, seribu))
+			t.Rate = simpan8(r)
 		} // bagi hanya gagal bila hasil melampaui presisi 120 digit - Rate dibiarkan kosong (baca-saja, tidak disimpan)
 		t.TSI, t.Premium = simpan8(t.TSI), simpan8(t.Premium)
 	}

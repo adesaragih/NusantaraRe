@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/apd/v3"
+
 	"nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/nbfacin/backend/models"
@@ -102,6 +104,30 @@ type occupationTiruan struct{}
 
 func (occupationTiruan) CariOccupation(_ context.Context, k string) ([]models.BarisOccupation, error) {
 	return []models.BarisOccupation{{OldID: "UJI01", Name: "UJI " + k, KdRiskExposure: "03"}}, nil
+}
+
+// RateLowerOkupasi - tiket 52 FLEXAS: UJI-OKP-1 0.3, UJI-OKP-2 0.75, UJI-OKP-NULL RATELOWER NULL; kode lain tanpa baris.
+func (occupationTiruan) RateLowerOkupasi(_ context.Context, kode []string) (map[string]*apd.Decimal, error) {
+	tabel := map[string]*apd.Decimal{"UJI-OKP-1": apd.New(3, -1), "UJI-OKP-2": apd.New(75, -2), "UJI-OKP-NULL": nil}
+	hasil := map[string]*apd.Decimal{}
+	for _, k := range kode {
+		if r, ada := tabel[k]; ada {
+			hasil[k] = r
+		}
+	}
+	return hasil, nil
+}
+
+// RisikoOkupasiFire - tiket 54: UJI-OKP-1 "01", UJI-OKP-4 "04", UJI-OKP-9 "09" (di luar 01-05); kode lain tanpa baris.
+func (occupationTiruan) RisikoOkupasiFire(_ context.Context, kode []string) (map[string]string, error) {
+	tabel := map[string]string{"UJI-OKP-1": "01", "UJI-OKP-4": "04", "UJI-OKP-9": "09"}
+	hasil := map[string]string{}
+	for _, k := range kode {
+		if r, ada := tabel[k]; ada {
+			hasil[k] = r
+		}
+	}
+	return hasil, nil
 }
 
 // TestOccupation - GET /api/nbfacin/occupation?cari= (tiket 38): bentuk persis kontrak

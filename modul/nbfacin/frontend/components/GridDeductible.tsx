@@ -18,7 +18,7 @@
 import { useState } from 'react'
 
 import { Field, Pilih, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
-import { formatNumber } from '../../../../inti/frontend/lib/format'
+import { angka4 } from '../angka4'
 import type { Deductible } from '../api'
 import {
   DEDUCTIBLE_KOSONG,
@@ -165,7 +165,7 @@ export default function GridDeductible({
                 <td>{teks(OPSI_TYPE_DEDUCTIBLE, d.typeDeductible)}</td>
                 <td>{teks(OPSI_MINMAX, d.minMax)}</td>
                 <td>{d.currency}</td>
-                <td className="nbf-angka">{formatNumber(d.amount, 2)}</td>
+                <td className="nbf-angka">{angka4(d.amount)}</td>
                 <td>{d.condition === '5' ? d.inputCondition : teks(OPSI_KONDISI_DEDUCTIBLE, d.condition)}</td>
                 <td className="nbf-angka">{d.timeExcess}</td>
                 <td className="table__actions">

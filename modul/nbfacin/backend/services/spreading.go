@@ -963,6 +963,9 @@ func (s *Service) SimpanSpreading(ctx context.Context, pelaku inti.Pelaku, id st
 	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return TampilanSpreading{}, err
 	}
+	if err := s.wajibBolehUbah(ctx, pelaku, id); err != nil {
+		return TampilanSpreading{}, err
+	}
 	if err := periksaShareKasus(ps); err != nil {
 		return TampilanSpreading{}, err
 	}

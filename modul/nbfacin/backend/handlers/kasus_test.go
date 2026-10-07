@@ -74,7 +74,7 @@ func minta(t *testing.T, svc *services.Service, metode, jalur, badan, pelaku str
 }
 
 // TestBacaKasus - GET /api/nbfacin/kasus/{caseId} (tiket 31): bentuk jawaban persis
-// (kunci tingkat atas, 14 kunci opportunity, 13 kunci general), 404, 503.
+// (kunci tingkat atas termasuk riskScoring tiket 54, aksesLossRecord tiket 55, aksesKorespondensi tiket 56, bolehUbah / alasanBacaSaja (tanpa pembaca tahap = boleh), 14 kunci opportunity, 13 kunci general), 404, 503.
 func TestBacaKasus(t *testing.T) {
 	kode, isi := minta(t, layananKasus(), "GET", "/api/nbfacin/kasus/UJI-NB-1", "", "")
 	var j map[string]json.RawMessage
@@ -91,11 +91,11 @@ func TestBacaKasus(t *testing.T) {
 		return k
 	}
 	all, _ := json.Marshal(j)
-	if n := len(kunci(all)); n != 6 || len(kunci(j["opportunity"])) != 14 || len(kunci(j["general"])) != 15 {
+	if n := len(kunci(all)); n != 11 || len(kunci(j["opportunity"])) != 14 || len(kunci(j["general"])) != 15 {
 		t.Errorf("kunci %v / opportunity %v / general %v", kunci(all), kunci(j["opportunity"]), kunci(j["general"]))
 	}
 	for _, harus := range []string{`"caseId":"UJI-NB-1"`, `"position":"Offer"`, `"statusWork":"Pending-Policy"`,
-		`"insuredName":"UJI TERTANGGUNG"`, `"offeringDate":"01-10-2026"`, `"businessProspectName":"UJI Prospek"`, `"beginDate":""`} {
+		`"insuredName":"UJI TERTANGGUNG"`, `"riskScoring":{"finalScore":"","noteFinalScore":""}`, `"aksesLossRecord":false`, `"aksesKorespondensi":false`, `"bolehUbah":true,"alasanBacaSaja":""`, `"offeringDate":"01-10-2026"`, `"businessProspectName":"UJI Prospek"`, `"beginDate":""`} {
 		if !strings.Contains(isi, harus) {
 			t.Errorf("jawaban tanpa %s: %s", harus, isi)
 		}

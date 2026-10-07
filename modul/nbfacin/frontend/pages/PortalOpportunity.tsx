@@ -26,7 +26,21 @@ import { Gagal, Halaman, Kosong, Memuat } from '../../../../inti/frontend/compon
 import { daftarCaseNB, type HalamanCaseNB } from '../api'
 import { KEPALA_PORTAL, KOLOM_PORTAL, SARING_PORTAL, TEKS_PORTAL } from '../labels'
 
-export default function PortalOpportunity({ onBuat, onBuka }: { onBuat: () => void; onBuka: (caseId: string) => void }) {
+/**
+ * `pesan` - konfirmasi sesudah Submit case berhasil (tiket 57: case ditutup dan pengguna kembali ke portal, seperti
+ * `finishAssignment` Pega); `onTutupPesan` menghapusnya.
+ */
+export default function PortalOpportunity({
+  onBuat,
+  onBuka,
+  pesan = '',
+  onTutupPesan,
+}: {
+  onBuat: () => void
+  onBuka: (caseId: string) => void
+  pesan?: string
+  onTutupPesan?: () => void
+}) {
   const [kotak, setKotak] = useState('')
   const [hasil, setHasil] = useState<HalamanCaseNB | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
@@ -59,6 +73,16 @@ export default function PortalOpportunity({ onBuat, onBuka }: { onBuat: () => vo
 
   return (
     <div className="nbfacin">
+      {pesan !== '' && (
+        <div className="alert alert--ok nbf-portal__pesan">
+          <span>{pesan}</span>
+          {onTutupPesan && (
+            <button type="button" className="btn btn--ghost btn--sm" aria-label="Tutup" onClick={onTutupPesan}>
+              ✕
+            </button>
+          )}
+        </div>
+      )}
       <section className="inbox">
         <header className="inbox__kepala">
           <h2 className="inbox__judul">{KEPALA_PORTAL.judul.label}</h2>
@@ -132,7 +156,7 @@ export default function PortalOpportunity({ onBuat, onBuka }: { onBuat: () => vo
                     <td>{b.groupBusiness}</td>
                     <td>{b.insuredName}</td>
                     <td>{b.marketing}</td>
-                    <td />
+                    <td>{b.nbStatus}</td>
                     <td>{b.status}</td>
                   </tr>
                 ))}

@@ -16,14 +16,15 @@
 // baca-saja dari server (dikonfirmasi work owner 03-10-2026: "biarkan saja kosong"); di Pega pengisinya
 // (`MappingKlaimToLossRecord_Act`) tidak pernah terpanggil (tombol tersembunyi, pemanggil dikomentari) dan memakai
 // NOPOLIS ter-hardcode - pengisian otomatis menunggu keputusan work owner. N-6 Total Claim awal "0" (nilai awal sel 7).
-// N-9 Currency wajib per catatan (pola A133: kolom rancangan T_LISTCAUSEOFLOSS.CURRENCY NOT NULL DEFAULT 'UNKNOWN') -
-// bertanda wajib, menahan Save, pesan tampil sesudah Save dicoba.
+// N-9 DIRALAT 07-10-2026 (work owner: "Currency ini tidak wajib di isi, ganti"): Currency TIDAK wajib - sesuai Pega
+// (`NB FacIn\Section\InputCauseOfLoss_FacIn.xml` `.Currency` pyRequired=false). Kosong disimpan NULL (bukan 'UNKNOWN',
+// K-012); kolom T_LISTCAUSEOFLOSS.CURRENCY dibuat boleh kosong lewat migrasi baru (tiket 42).
 
 import { useEffect, useState } from 'react'
 
 import { Area, Field, Pilih, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
 import { desimalSah } from '../../../../inti/frontend/lib/desimal'
-import { formatNumber } from '../../../../inti/frontend/lib/format'
+import { angka4 } from '../angka4'
 import { daftarMataUang, type CatatanKerugian, type KlaimInternal, type LossRatio } from '../api'
 import IsianUang from './IsianUang'
 import TanggalDMY from './TanggalDMY'
@@ -38,12 +39,9 @@ import {
   OPSI_REMARKS,
   TEKS_FORM_OPPORTUNITY,
   TEKS_INWARD,
-  TEKS_ITEM,
   TEKS_KERUGIAN,
   TEKS_OBJEK,
 } from '../labels'
-
-const DESIMAL_UANG = 4
 
 /** Catatan kerugian baru (Add): Insured Name = tertanggung case (N-3), Total Claim "0" (N-6). */
 export function kerugianBaru(insuredName: string): CatatanKerugian {
@@ -59,9 +57,9 @@ export const lossRatioKosong = (): LossRatio => ({ oneYearAmount: '', oneYearPer
 /** Uang sah: kosong atau desimal bertitik. */
 export const uangSah = (v: string) => v.trim() === '' || desimalSah(v.trim())
 
-/** Ada catatan bergalat: Currency kosong (N-9) atau uang tidak sah. */
+/** Ada catatan bergalat: uang tidak sah (Currency tidak wajib - N-9 diralat 07-10-2026). */
 export function adaGalatKerugian(r: CatatanKerugian[]): boolean {
-  return r.some((x) => x.currency.trim() === '' || !uangSah(x.claim) || !uangSah(x.preventionOfLoss))
+  return r.some((x) => !uangSah(x.claim) || !uangSah(x.preventionOfLoss))
 }
 
 function Tampil({ label, nilai }: { label: string; nilai: string }) {
@@ -78,13 +76,11 @@ function FormKerugian({
   ubah,
   insuredName,
   mataUang,
-  tandaiWajib,
 }: {
   r: CatatanKerugian
   ubah: (r: CatatanKerugian) => void
   insuredName: string
   mataUang: string[]
-  tandaiWajib: boolean
 }) {
   const set = (k: keyof CatatanKerugian) => (v: string) => ubah({ ...r, [k]: v })
   const opsiUang: Opsi[] = mataUang.map((m) => ({ value: m, label: m }))
@@ -108,8 +104,6 @@ function FormKerugian({
           onChange={set('currency')}
           opsi={opsiUang}
           kosong={ITEM_KOSONG}
-          required
-          error={tandaiWajib && r.currency.trim() === '' ? TEKS_ITEM.currencyWajib : undefined}
         />
         <IsianUang label={F.claim.label} value={r.claim} onChange={set('claim')} error={uangSah(r.claim) ? undefined : TEKS_KERUGIAN.uang} />
         <IsianUang
@@ -133,7 +127,6 @@ export function SubTabKerugian({
   lossRatio,
   insuredName,
   ubah,
-  tandaiWajib = false,
 }: {
   rows: CatatanKerugian[]
   lossRatio: LossRatio
@@ -207,8 +200,8 @@ export function SubTabKerugian({
                 <td>{r.coinsName}</td>
                 <td>{r.lossObject}</td>
                 <td>{r.currency}</td>
-                <td className="nbf-angka">{formatNumber(r.amount, DESIMAL_UANG)}</td>
-                <td className="nbf-angka">{formatNumber(r.claim, DESIMAL_UANG)}</td>
+                <td className="nbf-angka">{angka4(r.amount)}</td>
+                <td className="nbf-angka">{angka4(r.claim)}</td>
                 <td className="table__actions">
                   <button
                     type="button"
@@ -230,7 +223,6 @@ export function SubTabKerugian({
                       ubah={(baru) => ubah(rows.map((x, k) => (k === n ? baru : x)))}
                       insuredName={insuredName}
                       mataUang={mataUang}
-                      tandaiWajib={tandaiWajib}
                     />
                   </td>
                 </tr>
@@ -241,7 +233,7 @@ export function SubTabKerugian({
       </div>
       <div className="nbf-ringkas nbf-ringkas__grid nbf-ringkas__grid--empat">
         {LOSS_RATIO.map((l) => (
-          <Tampil key={l.sel} label={l.label} nilai={formatNumber(lossRatio[l.kunci], l.desimal)} />
+          <Tampil key={l.sel} label={l.label} nilai={angka4(lossRatio[l.kunci])} />
         ))}
       </div>
     </div>
@@ -275,11 +267,11 @@ export function SubTabKlaimInternal({ rows }: { rows: KlaimInternal[] }) {
                 <td>{r.locationNo}</td>
                 <td>{r.location}</td>
                 <td>{r.currency}</td>
-                <td className="nbf-angka">{formatNumber(r.premium, DESIMAL_UANG)}</td>
-                <td className="nbf-angka">{formatNumber(r.osClaim, DESIMAL_UANG)}</td>
-                <td className="nbf-angka">{formatNumber(r.acceptedClaim, DESIMAL_UANG)}</td>
-                <td className="nbf-angka">{formatNumber(r.incurredClaim, DESIMAL_UANG)}</td>
-                <td className="nbf-angka">{formatNumber(r.lossRatio, DESIMAL_UANG)}</td>
+                <td className="nbf-angka">{angka4(r.premium)}</td>
+                <td className="nbf-angka">{angka4(r.osClaim)}</td>
+                <td className="nbf-angka">{angka4(r.acceptedClaim)}</td>
+                <td className="nbf-angka">{angka4(r.incurredClaim)}</td>
+                <td className="nbf-angka">{angka4(r.lossRatio)}</td>
                 <td>{r.remark}</td>
               </tr>
             ))}

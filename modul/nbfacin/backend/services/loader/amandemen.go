@@ -85,6 +85,17 @@ var amandemenLebar = map[string]string{
 	"T_PROPERTY.PROVINCE":         "VARCHAR2(100)",
 	"T_PROPERTY.COUNTRY":          "VARCHAR2(100)",
 	"T_PROPERTY.ALM_RISK_ID":      "VARCHAR2(100)",
+	// Tiket 52 (pola butir 80): Zone = ZONES.DESCRIPTION / ZONEOJK.DESCRIPTION VARCHAR2(1000) (DDL ZONEOJK.txt; RD
+	// BrowseZones_RD menulis .Description ke .Zone); rancangan 50, sampel `DDL\CONTOH` sampai 111 byte. Migrasi 203.
+	// Dilebarkan VARCHAR2(4000) - bug DEV 06-10-2026 (Zone > 1000 byte; ZONES.DESCRIPTION view atas JSON), perintah work
+	// owner "buat 4000". Migrasi 204.
+	"T_COVERAGELIST.ZONE": "VARCHAR2(4000)",
+	// Tiket 54 (pola butir 80): kolom Scoring Risk = lebar sumbernya - TopRiskLocation = .Property.RiskLocation.ASMAddress
+	// (T_RISKLOCATION.ASM_ADDRESS 4000, 192), OccupationCode / OccupationNote = OccupationList(1).OccupationId / Name
+	// (T_OCCUPATIONLIST 1000, 189). Migrasi 205.
+	"T_DATASCORINGRISKLIST.TOP_RISK_LOCATION": "VARCHAR2(4000)",
+	"T_DATASCORINGRISKLIST.OCCUPATION_CODE":   "VARCHAR2(1000)",
+	"T_DATASCORINGRISKLIST.OCCUPATION_NOTE":   "VARCHAR2(1000)",
 }
 
 // T_ADDITIONALSHIP - kolom sistem sepola tabel berulang berjalur tunggal di DDL draf
@@ -185,6 +196,35 @@ var amandemenPenunjuk = []kolomPenunjuk{
 }
 
 const tipePenunjuk = "VARCHAR2(50)"
+
+// amandemenDeduction2 - tiket 50 (K50-2, keputusan agent menunggu konfirmasi): `.CurrencyList(n).Policy.Payment.Deduction2`
+// (Total Premium Deduction 2, grid tab Premium Deduction, `ProtekDeduction2_Act`) dilipat ke PAY_ seperti saudaranya
+// (PAY_COMMISION / PAY_BROKERAGE_FEE, lipatan V-22b) tetapi tidak ada di rancangan: `[terverifikasi]` 0 dari 115 contoh
+// `DDL\CONTOH` memuatnya di tingkat CurrencyList.Policy.Payment - seluruh 123 tag Deduction2 ada di ListInstallment
+// (101 CurrencyList, 21 OldData, 1 FacRetroList; dihitung dua cara 05-10-2026: pengurai XML = grep tag). Tipe NUMBER =
+// saudaranya.
+// Migrasi 200.
+var amandemenDeduction2 = kolomSkema{nama: "PAY_DEDUCTION2", tipe: "NUMBER", medan: "PayDeduction2", turunan: true}
+
+// amandemenKonstruksiGempa - tiket 52: `.ConstructionEarthquake` (4.2 Construction, `Section\CoverageItem.xml`; isian
+// `SearchClassConstructionReas_SQL` = CONSTRUCTION.CONSTRUCTION) ADA di layar tetapi tidak di rancangan T_COVERAGELIST
+// (sampel `DDL\CONTOH` tidak memuatnya). Lebar VARCHAR2(500) = kolom konstruksi saudaranya (T_SURROUNDINGRISK
+// *_CONSTRUCTION); lebar sumber belum terverifikasi (view CONSTRUCTION atas JSON, kolom tanpa tipe tertulis). Migrasi 203.
+var amandemenKonstruksiGempa = kolomSkema{nama: "CONSTRUCTION_EARTHQUAKE", tipe: "VARCHAR2(500)", medan: "ConstructionEarthquake"}
+
+// amandemenScoring - tiket 54: dua medan Scoring Risk yang tidak di rancangan. `.DataScoringRiskList(2).IndexLocation`
+// (Dominant Risk, autocomplete `Section\ScoringRisk.xml` -> ObjectNo; 0 sampel `DDL\CONTOH`) VARCHAR2(50) = OBJECT_NO;
+// `.LossRatio.LossRatio.PercentLossRatio` (halaman faktor, aturan V-30 -> baris T_SCORING_FACTOR; 2 sampel, sebelumnya
+// penampung) NUMBER seperti skor saudaranya. Migrasi 205.
+var amandemenScoring = map[string]kolomSkema{
+	"T_DATASCORINGRISKLIST": {nama: "INDEX_LOCATION", tipe: "VARCHAR2(50)", medan: "IndexLocation"},
+	"T_SCORING_FACTOR":      {nama: "PERCENT_LOSS_RATIO", tipe: "NUMBER", medan: "PercentLossRatio"},
+}
+
+// amandemenNBStatus - tiket 57: `pyWorkPage.NBStatus` (teks status kasus yang ditulis Submit tahap marketing) milik halaman
+// KERJA, tidak di rancangan; ditaruh di T_GENERAL_POLIS karena T_WORK_POLIS milik premiumlistlife. Medan NBStatus tidak ada
+// di halaman OfferFacIn, jadi loader data lama mengisinya kosong. VARCHAR2(1000) - lebar sumber tidak tertulis. Migrasi 208.
+var amandemenNBStatus = kolomSkema{nama: "NB_STATUS", tipe: "VARCHAR2(1000)", medan: "NBStatus"}
 
 // amandemenBangunan - tiket 35 (A110): tiga medan BuildingConstruction yang ADA di layar
 // (`Section\ObjectDetails.xml` sel 56-58) tetapi tidak di rancangan; tipe = kolom
@@ -287,6 +327,12 @@ func init() {
 	amandemenKolom["T_SURROUNDINGRISK"] = append(amandemenKolom["T_SURROUNDINGRISK"], amandemenSekitar...)
 	amandemenKolom["T_PROPERTYITEMLIST"] = append(amandemenKolom["T_PROPERTYITEMLIST"], amandemenItem...)
 	amandemenKolom["T_LISTCAUSEOFLOSS"] = append(amandemenKolom["T_LISTCAUSEOFLOSS"], amandemenKerugian...)
+	amandemenKolom["T_CURRENCYLIST"] = append(amandemenKolom["T_CURRENCYLIST"], amandemenDeduction2)
+	amandemenKolom["T_COVERAGELIST"] = append(amandemenKolom["T_COVERAGELIST"], amandemenKonstruksiGempa)
+	amandemenKolom["T_GENERAL_POLIS"] = append(amandemenKolom["T_GENERAL_POLIS"], amandemenNBStatus)
+	for t, k := range amandemenScoring {
+		amandemenKolom[t] = append(amandemenKolom[t], k)
+	}
 	for _, k := range amandemenPenunjuk {
 		amandemenKolom[k.tabel] = append(amandemenKolom[k.tabel], kolomSkema{nama: k.nama, tipe: tipePenunjuk, medan: k.medan})
 	}

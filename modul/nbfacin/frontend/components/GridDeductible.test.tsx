@@ -19,7 +19,7 @@ describe('GridDeductible', () => {
     const html = grid([
       { ...deductibleBaru('USD'), typeDeductible: '1', pctDeductible: '10', minMax: '1', amount: '2500000', condition: '5', inputCondition: 'UJI KONDISI', timeExcess: '7' },
     ])
-    expect(html).toContain('<td>% Of Claim</td><td>Min</td><td>USD</td><td class="nbf-angka">2.500.000</td><td>UJI KONDISI</td>')
+    expect(html).toContain('<td>% Of Claim</td><td>Min</td><td>USD</td><td class="nbf-angka">2.500.000,0000</td><td>UJI KONDISI</td>')
   })
 
   it('angka tak sah ditolak; kosong / desimal sah', () => {

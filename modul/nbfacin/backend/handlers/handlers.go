@@ -25,7 +25,7 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc("GET /api/nbfacin/account", cariAkun(svc))
 	mux.HandleFunc("GET /api/nbfacin/class-of-business", kelasBisnis(svc))
 	mux.HandleFunc("POST /api/nbfacin/opportunity", buatOpportunity(svc, stubPelaku))
-	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}", bacaKasus(svc))
+	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}", bacaKasus(svc, stubPelaku))
 	mux.HandleFunc("PUT /api/nbfacin/kasus/{caseId}/general", simpanGeneral(svc, stubPelaku))
 	mux.HandleFunc("GET /api/nbfacin/marketing-officer", daftarMarketing(svc))
 	mux.HandleFunc("GET /api/nbfacin/opportunity", cariPortal(svc, stubPelaku))
@@ -48,6 +48,8 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc("POST /api/nbfacin/akumulasi", tambahAkumulasi(svc, stubPelaku))
 	mux.HandleFunc("GET /api/nbfacin/akumulasi/czone", czoneZip(svc))
 	mux.HandleFunc("GET /api/nbfacin/akumulasi/zipcode", cariZipAkumulasi(svc))
+	mux.HandleFunc("GET /api/nbfacin/zona", saranZona(svc))
+	mux.HandleFunc("GET /api/nbfacin/konstruksi-gempa", saranKonstruksiGempa(svc))
 	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}/klausa", bacaKlausa(svc))
 	mux.HandleFunc("PUT /api/nbfacin/kasus/{caseId}/klausa", simpanKlausa(svc, stubPelaku))
 	mux.HandleFunc("GET /api/nbfacin/klausa", cariKlausa(svc))
@@ -58,6 +60,28 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/spreading/salin", salinSpreading(svc))
 	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}/cedant", bacaCedant(svc))
 	mux.HandleFunc("PUT /api/nbfacin/kasus/{caseId}/cedant", simpanCedant(svc, stubPelaku))
+	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}/deduction", bacaDeduction(svc))
+	mux.HandleFunc("PUT /api/nbfacin/kasus/{caseId}/deduction", simpanDeduction(svc, stubPelaku))
+	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/deduction/hitung", hitungDeduction(svc))
+	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}/scoring", bacaScoring(svc))
+	mux.HandleFunc("PUT /api/nbfacin/kasus/{caseId}/scoring", simpanScoring(svc, stubPelaku))
+	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/scoring/hitung", hitungScoring(svc))
+	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}/loss-record", bacaLossRecord(svc, stubPelaku))
+	mux.HandleFunc("PUT /api/nbfacin/kasus/{caseId}/loss-record", simpanLossRecord(svc, stubPelaku))
+	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/loss-record/hitung", hitungLossRecord(svc, stubPelaku))
+	mux.HandleFunc("GET /api/nbfacin/class-of-business/saran", saranKelasBisnis(svc))
+	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}/korespondensi", daftarKorespondensi(svc, stubPelaku))
+	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/korespondensi", tambahKorespondensi(svc, stubPelaku))
+	mux.HandleFunc("PUT /api/nbfacin/kasus/{caseId}/korespondensi/{no}", ubahKorespondensi(svc, stubPelaku, false))
+	mux.HandleFunc("DELETE /api/nbfacin/kasus/{caseId}/korespondensi/{no}", hapusKorespondensi(svc, stubPelaku))
+	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/korespondensi/{no}/kirim", ubahKorespondensi(svc, stubPelaku, true))
+	mux.HandleFunc("GET /api/nbfacin/korespondensi/penerima/saran", saranPenerimaKorespondensi(svc, stubPelaku))
+	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}/submit", tampilanSubmit(svc, stubPelaku))
+	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/submit/periksa", periksaSubmit(svc, stubPelaku))
+	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/submit", ajukanSubmit(svc, stubPelaku))
+	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}/payment", bacaPayment(svc))
+	mux.HandleFunc("PUT /api/nbfacin/kasus/{caseId}/payment", simpanPayment(svc, stubPelaku))
+	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/payment/hitung", hitungPayment(svc))
 }
 
 // isianOpportunity - badan POST /api/nbfacin/opportunity, kontrak frontend
@@ -298,14 +322,22 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		errors.Is(err, services.ErrMasukanOccupation), errors.Is(err, services.ErrMasukanTableOfLimit),
 		errors.Is(err, services.ErrMasukanCoverage), errors.Is(err, services.ErrMasukanAkumulasi),
 		errors.Is(err, services.ErrWajibAkumulasi), errors.Is(err, services.ErrMasukanKlausa),
-		errors.Is(err, services.ErrMasukanSpreading), errors.Is(err, services.ErrMasukanCedant):
+		errors.Is(err, services.ErrMasukanSpreading), errors.Is(err, services.ErrMasukanCedant),
+		errors.Is(err, services.ErrMasukanDeduction), errors.Is(err, services.ErrMasukanPayment),
+		errors.Is(err, services.ErrMasukanScoring), errors.Is(err, services.ErrMasukanLossRecord),
+		errors.Is(err, services.ErrMasukanKorespondensi), errors.Is(err, services.ErrMasukanSubmit):
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, inti.ErrTanpaIdentitas):
 		galat.Tulis(w, http.StatusUnauthorized, err.Error())
-	case errors.Is(err, services.ErrKasusTidakAda):
+	case errors.Is(err, inti.ErrTanpaWewenang):
+		galat.Tulis(w, http.StatusForbidden, err.Error())
+	case errors.Is(err, services.ErrKasusTidakAda), errors.Is(err, services.ErrKorespondensiTidakAda):
 		galat.Tulis(w, http.StatusNotFound, err.Error())
 	case errors.Is(err, services.ErrTableOfLimitTidakSiap), errors.Is(err, services.ErrPeriodeKasus),
-		errors.Is(err, services.ErrAkumulasiSudahAda), errors.Is(err, services.ErrSpreadingBerubah):
+		errors.Is(err, services.ErrAkumulasiSudahAda), errors.Is(err, services.ErrSpreadingBerubah),
+		errors.Is(err, services.ErrDeductionBerubah), errors.Is(err, services.ErrPaymentBerubah),
+		errors.Is(err, services.ErrScoringBacaSaja), errors.Is(err, services.ErrKorespondensiTerkirim),
+		errors.Is(err, services.ErrKasusBacaSaja): // = ErrSubmitBukanTahapMarketing
 		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrTidakDapatDiproses):
 		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
@@ -318,8 +350,21 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		errors.Is(err, services.ErrOccupationTanpaDatabase), errors.Is(err, services.ErrPilihanItemTanpaDatabase),
 		errors.Is(err, services.ErrTableOfLimitTanpaDatabase), errors.Is(err, services.ErrCoverageTanpaDatabase),
 		errors.Is(err, services.ErrAkumulasiTanpaDatabase), errors.Is(err, services.ErrKlausaTanpaDatabase),
-		errors.Is(err, services.ErrSpreadingTanpaDatabase), errors.Is(err, services.ErrCedantTanpaDatabase):
+		errors.Is(err, services.ErrSpreadingTanpaDatabase), errors.Is(err, services.ErrCedantTanpaDatabase),
+		errors.Is(err, services.ErrDeductionTanpaDatabase), errors.Is(err, services.ErrPaymentTanpaDatabase),
+		errors.Is(err, services.ErrZonaTanpaDatabase), errors.Is(err, services.ErrScoringTanpaDatabase),
+		errors.Is(err, services.ErrLossRecordTanpaDatabase), errors.Is(err, services.ErrKorespondensiTanpaDatabase),
+		errors.Is(err, services.ErrSMTPBelumDikonfigurasi), errors.Is(err, services.ErrSubmitTanpaDatabase):
 		galat.Tulis(w, http.StatusServiceUnavailable, err.Error())
+	case errors.Is(err, services.ErrSMTPTanpaTLS):
+		// TLS wajib (keputusan work owner 06-10-2026, tiket 56): tidak ada yang dikirim.
+		galat.Tulis(w, http.StatusBadGateway, "server SMTP tidak mendukung TLS - email tidak dikirim; isi tersimpan, status tetap Not Sent; hubungi admin")
+	case errors.Is(err, services.ErrKirimSurelGagal):
+		// Isi tetap tersimpan, status tetap draf (tiket 56); rincian server SMTP sudah dicatat layanan, tidak dikirim ke layar.
+		galat.Tulis(w, http.StatusBadGateway, "email gagal dikirim - isi tersimpan, status tetap Not Sent; coba lagi atau hubungi admin")
+	case errors.Is(err, services.ErrKorespondensiStatusGagal):
+		// Email SUDAH keluar (tiket 56); rincian sudah dicatat layanan.
+		galat.Tulis(w, http.StatusInternalServerError, "email terkirim tetapi status gagal disimpan - jangan kirim ulang; hubungi admin")
 	default:
 		log.Printf("nbfacin: galat server: %v", err)
 		galat.Tulis(w, http.StatusInternalServerError, "galat server")

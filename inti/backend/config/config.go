@@ -9,6 +9,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/mail"
 	"os"
 	"strconv"
 	"strings"
@@ -100,6 +101,10 @@ type Config struct {
 	// IntervalPekerjaLampiranTCO - jeda pekerja latar antrean lampiran
 	// Treaty Contract Out (OQ-TCO-09). Nol = pekerja MATI (bawaan).
 	IntervalPekerjaLampiranTCO time.Duration
+
+	// SMTPNBFacIn - kotak surat keluar korespondensi NB Fac In (tiket 56; persetujuan work owner 06-10-2026 "iya kirim
+	// email sungguhan"). Host atau alamat pengirim (Dari) kosong = SMTP belum dikonfigurasi: modul tidak mengirim (503).
+	SMTPNBFacIn SMTP
 
 	// ModulAktif - modul yang dipasang proses ini (refactor bentuk B), dari
 	// MODUL_AKTIF: nama dipisah koma, huruf kecil, tanpa ganda. KOSONG
@@ -259,6 +264,10 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 
+	if c.SMTPNBFacIn, err = bacaSMTP("NBFACIN_SMTP"); err != nil {
+		return Config{}, err
+	}
+
 	raw := strings.TrimSpace(os.Getenv("IS_PEGA_PROD"))
 	if raw != "" {
 		b, err := strconv.ParseBool(raw)
@@ -315,4 +324,52 @@ func ambil(nama, bawaan string) string {
 		return v
 	}
 	return bawaan
+}
+
+// SMTP - satu kotak surat keluar. ⛔ Nilainya hanya dari env (ADR-0004); Password tidak pernah dicetak (String).
+type SMTP struct {
+	Host     string
+	Port     int // 0 = bawaan pemakai (587); 465 = TLS implisit
+	User     string
+	Password string
+	// Dari - alamat kotak surat sistem pengirim (header From), dari <awalan>_FROM.
+	Dari string
+	// TanpaTLS - <awalan>_TANPA_TLS=true: boleh mengirim TANPA enkripsi bila server tidak menawarkan STARTTLS (tanpa akun
+	// saja). Bawaan false = TLS WAJIB (keputusan work owner 06-10-2026, tiket 56).
+	TanpaTLS bool
+}
+
+// Dikonfigurasi - Host dan Dari terisi.
+func (s SMTP) Dikonfigurasi() bool { return s.Host != "" && s.Dari != "" }
+
+// String - tanpa User / Password (aman dicetak di log).
+func (s SMTP) String() string {
+	return fmt.Sprintf("SMTP{host:%t port:%d dari:%t auth:%t tanpaTLS:%t}", s.Host != "", s.Port, s.Dari != "", s.User != "", s.TanpaTLS)
+}
+
+// bacaSMTP - <awalan>_HOST / _PORT / _USER / _PASSWORD / _FROM / _TANPA_TLS. Port bukan bilangan 1..65535, FROM bukan
+// alamat email polos (tanpa nama tampilan, tanpa CR / LF), atau TANPA_TLS bukan boolean -> ErrKonfigurasi.
+func bacaSMTP(awalan string) (SMTP, error) {
+	s := SMTP{Host: strings.TrimSpace(os.Getenv(awalan + "_HOST")), User: strings.TrimSpace(os.Getenv(awalan + "_USER")),
+		Password: os.Getenv(awalan + "_PASSWORD"), Dari: strings.TrimSpace(os.Getenv(awalan + "_FROM"))}
+	if raw := strings.TrimSpace(os.Getenv(awalan + "_PORT")); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n < 1 || n > 65535 {
+			return SMTP{}, fmt.Errorf("%w: %s_PORT harus bilangan 1..65535: %q", ErrKonfigurasi, awalan, raw)
+		}
+		s.Port = n
+	}
+	if raw := strings.TrimSpace(os.Getenv(awalan + "_TANPA_TLS")); raw != "" {
+		b, err := strconv.ParseBool(raw)
+		if err != nil {
+			return SMTP{}, fmt.Errorf("%w: %s_TANPA_TLS harus true / false: %q", ErrKonfigurasi, awalan, raw)
+		}
+		s.TanpaTLS = b
+	}
+	if s.Dari != "" {
+		if a, err := mail.ParseAddress(s.Dari); err != nil || a.Name != "" || a.Address != s.Dari {
+			return SMTP{}, fmt.Errorf("%w: %s_FROM harus satu alamat email polos", ErrKonfigurasi, awalan)
+		}
+	}
+	return s, nil
 }

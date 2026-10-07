@@ -8,12 +8,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"unicode/utf8"
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/modul/nbfacin/backend/models"
 	"nusantarare/modul/nbfacin/backend/repository"
 )
+
+// nbStatusBaru - NB status case yang belum pernah di-Submit: `Flow\InputInwardFacultativeOffer.xml` awal flow men-set
+// `.NBStatus = "NEW NB"` (bersama IsCedingConfirm "Offer" dan FlagOnGoingPolicy "0"); NB_STATUS kosong dibaca sebagai itu.
+const nbStatusBaru = "NEW NB"
 
 // UkuranHalamanPortal - A95: 15 baris, pola keputusan work owner tiket 27 (butir 73.2).
 const UkuranHalamanPortal = 15
@@ -43,9 +48,9 @@ func (s *Service) DenganPortal(p repository.PembacaPortal) *Service {
 	return s
 }
 
-// CariPortal - halaman ke-`halaman` (mulai 1) case NB yang ID atau Business Prospect
-// Name-nya "mengandung" `cari` (tidak peka huruf); cari kosong = semua. Urutan
-// pemeriksaan: identitas (401) -> masukan (400) -> basis data (503).
+// CariPortal - halaman ke-`halaman` (mulai 1) case NB BUATAN PELAKU (CREATE_OP = AkunID; keputusan work owner 07-10-2026)
+// yang ID atau Business Prospect Name-nya "mengandung" `cari` (tidak peka huruf); cari kosong = semua miliknya; total =
+// sesudah saringan. Urutan pemeriksaan: identitas (401) -> masukan (400) -> basis data (503).
 func (s *Service) CariPortal(ctx context.Context, pelaku inti.Pelaku, cari string, halaman int) (HasilPortal, error) {
 	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HasilPortal{}, err
@@ -56,9 +61,14 @@ func (s *Service) CariPortal(ctx context.Context, pelaku inti.Pelaku, cari strin
 	if s.portal == nil {
 		return HasilPortal{}, ErrPortalTanpaDatabase
 	}
-	baris, total, err := s.portal.CariPortal(ctx, cari, (halaman-1)*UkuranHalamanPortal, UkuranHalamanPortal)
+	baris, total, err := s.portal.CariPortal(ctx, pelaku.AkunID, cari, (halaman-1)*UkuranHalamanPortal, UkuranHalamanPortal)
 	if err != nil {
 		return HasilPortal{}, err
+	}
+	for i := range baris {
+		if strings.TrimSpace(baris[i].NBStatus) == "" {
+			baris[i].NBStatus = nbStatusBaru
+		}
 	}
 	return HasilPortal{Baris: baris, Total: total, Halaman: halaman, Ukuran: UkuranHalamanPortal}, nil
 }

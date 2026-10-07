@@ -75,6 +75,9 @@ type CoverageObjek struct {
 	// Unit (.Unit Indemnity Unit, kode), AccumulationCode, AccumulationDescription (Accumulation Address) - tiket 46,
 	// teks apa adanya (migrasi 195).
 	Unit, AccumulationCode, AccumulationDescription string
+	// Zone (.Zone, ZONES.DESCRIPTION) dan ConstructionEarthquake (.ConstructionEarthquake 4.2 Construction,
+	// CONSTRUCTION.CONSTRUCTION) - tiket 52, teks apa adanya (migrasi 203).
+	Zone, ConstructionEarthquake string
 }
 
 // Deductible - satu .CoverageList(k).DeductibleList(d) (kelas Data-Deductible, tiket 45). Kode pilihan = teks

@@ -41,7 +41,7 @@ func kolomMigrasi(t *testing.T, berkas, tabel string) map[string]bool {
 func TestSQLKasusMemakaiKolomMigrasi(t *testing.T) {
 	gen := kolomMigrasi(t, "182_t_general_polis.sql", "T_GENERAL_POLIS")
 	quo := kolomMigrasi(t, "183_t_quotationdata.sql", "T_QUOTATIONDATA")
-	baca := sqlBacaKasus("W", "O", "A", "G", "Q")
+	baca := sqlBacaKasus("W", "O", "A", "G", "Q", "S")
 	tulisG := sqlUbahGeneral("G") + " " + sqlSisipGeneral("G")
 	tulisQ := sqlUbahQuotation("Q") + " " + sqlSisipQuotation("Q")
 	pakai := map[string]map[string]bool{"G": {}, "Q": {}}
@@ -81,17 +81,19 @@ func TestSQLKasusMemakaiKolomMigrasi(t *testing.T) {
 // TestSQLKasus - teks SQL tiket 31: case dibatasi LINI (bind :2), nama tertanggung lewat
 // subkueri MAX (T_M_ACCOUNT tanpa PK), sentuh case = kunci baris + 404, bind bernomor.
 func TestSQLKasus(t *testing.T) {
-	baca := sqlBacaKasus("UJI.W", "UJI.O", "UJI.A", "UJI.G", "UJI.Q")
+	baca := sqlBacaKasus("UJI.W", "UJI.O", "UJI.A", "UJI.G", "UJI.Q", "UJI.S")
 	for _, harus := range []string{"FROM UJI.W w", "LEFT JOIN UJI.O o ON o.ID = w.ID", "LEFT JOIN UJI.G g ON g.ID = w.ID",
 		"LEFT JOIN UJI.Q q ON q.PARENT_ID = w.ID", "(SELECT MAX(a.INSUREDNAME) FROM UJI.A a WHERE a.ID = o.ACCOUNT_ID)",
-		"WHERE w.ID = :1 AND w.LINI = :2"} {
+		"WHERE w.ID = :1 AND w.LINI = :2", "(SELECT MAX(s.NOTE_FINAL_SCORE) FROM UJI.S s WHERE s.PARENT_ID = w.ID)",
+		"(SELECT " + angkaKeluar("MAX(s.FINAL_SCORE)") + " FROM UJI.S s WHERE s.PARENT_ID = w.ID)"} {
 		if !strings.Contains(baca, harus) {
 			t.Errorf("baca tanpa %q", harus)
 		}
 	}
 	pilih := baca[len("SELECT "):strings.Index(baca, "\nFROM")]
-	if n := len(strings.Split(pilih, ",")); n != len(kolomBacaKasus) || n != 33 {
-		t.Errorf("SELECT %d kolom, daftar %d, mau 33 (3 case + 14 opportunity + nama + 5 general + 10 quotation)", n, len(kolomBacaKasus))
+	// angkaKeluar memuat tiga koma (TO_CHAR(x, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''')) - dikurangkan.
+	if n := len(strings.Split(pilih, ",")) - strings.Count(angkaKeluar("x"), ","); n != len(kolomBacaKasus) || n != 35 {
+		t.Errorf("SELECT %d kolom, daftar %d, mau 35 (3 case + 14 opportunity + nama + 5 general + 10 quotation + 2 Risk Scoring)", n, len(kolomBacaKasus))
 	}
 	for got, mau := range map[string]string{
 		sqlSentuhCase("UJI.W"):   "UPDATE UJI.W SET TGL_UPDATE = SYSDATE WHERE ID = :1 AND LINI = :2",
@@ -133,5 +135,12 @@ func TestBacaKasusMemakaiKolomBernama(t *testing.T) {
 		if k != kolomTanggalKasus && !dibaca[k] {
 			t.Errorf("kolom %s dipilih tetapi tidak dibaca", k)
 		}
+	}
+}
+
+// TestSQLTahapKasus - penentu baca-saja: POSITION / FLAG_ONGOING_POLICY satu case FAC (bind ID, LINI).
+func TestSQLTahapKasus(t *testing.T) {
+	if q := sqlTahapKasus("UJI.W"); q != "SELECT POSITION, FLAG_ONGOING_POLICY FROM UJI.W WHERE ID = :1 AND LINI = :2" {
+		t.Errorf("%q", q)
 	}
 }

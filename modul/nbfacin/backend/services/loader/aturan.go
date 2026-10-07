@@ -201,7 +201,7 @@ var (
 )
 
 // kolomTeksMenyimpang - ⛔ PENYIMPANGAN SADAR dari DDL draf (keputusan work owner
-// 02-10-2026, butir 68.1): delapan kolom yang DDL beri NUMBER tetapi isinya teks
+// 02-10-2026, butir 68.1; + tiket 51 K51-3): sembilan kolom yang DDL beri NUMBER tetapi isinya teks
 // disimpan sebagai TEKS APA ADANYA - "9%" tidak ditafsirkan, koma desimal tidak
 // dinormalkan, spasi di ujung PctLimit tidak dipangkas. Nilai peta = baris DDL draf
 // (`08-flat\DDL-tabel-flat-draf.sql`) yang disimpangi. Panjang VARCHAR2-nya
@@ -215,6 +215,9 @@ var kolomTeksMenyimpang = map[string]string{
 	"T_TABLEOFLIMIT.PCT_LIMIT":          "L914: PCT_LIMIT NUMBER",
 	"T_FR_PRINTRISLIP.WARR_PAYMENT":     "L1151: WARR_PAYMENT NUMBER",
 	"T_FR_TABLEOFLIMIT.PCT_LIMIT":       "L1519: PCT_LIMIT NUMBER",
+	// Tiket 51 (K51-3, keputusan agent menunggu konfirmasi): persen cicilan berskala 20 ("33.33333333333333333333"),
+	// NUMBER(38,8) membuat jumlahnya bukan 100 - migrasi 201 VARCHAR2(50).
+	"T_LISTINSTALLMENT.INSTALLMENT_PERCENTAGE": "L299: INSTALLMENT_PERCENTAGE NUMBER",
 }
 
 // kodeDariCurrency - keputusan work owner 02-10-2026: CURRENCY_CODE tabel (kunci)

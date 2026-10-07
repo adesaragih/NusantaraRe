@@ -56,17 +56,7 @@ func cariAkumulasi(svc *services.Service) http.HandlerFunc {
 func saranAkumulasi(svc *services.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		d, err := svc.SaranAkumulasi(r.Context(), r.PathValue("jenis"), r.URL.Query().Get("q"), r.URL.Query().Get("induk"))
-		if err != nil {
-			tulisGalat(w, err)
-			return
-		}
-		baris := make([]saranAkumulasiKabel, 0, len(d))
-		for _, b := range d {
-			baris = append(baris, saranAkumulasiKabel(b))
-		}
-		galat.TulisJSON(w, struct {
-			Baris []saranAkumulasiKabel `json:"baris"`
-		}{baris})
+		tulisSaran(w, d, err)
 	}
 }
 

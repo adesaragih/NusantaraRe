@@ -38,7 +38,7 @@ inti 915.
 
 ## Tabel
 
-Menulis `DISTRICTINPUT` (dibuat `masterprovince` 880). Rujukan City dari `CITYINPUT`.
+Menulis `DISTRICTINPUT` (dibuat `masterprovince` 215). Rujukan City dari `CITYINPUT`.
 
 ## Rute
 

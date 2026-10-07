@@ -21,8 +21,8 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Gagal, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { desimalSah, jumlahDesimal } from '../../../../inti/frontend/lib/desimal'
-import { formatNumber } from '../../../../inti/frontend/lib/format'
-import { ambilObjek, coverageOtomatis, hitungNetRate, simpanObjek, type CoverageObjek, type ObjekFire } from '../api'
+import { angka4 } from '../angka4'
+import { ambilObjek, coverageOtomatis, hitungCoverage, hitungNetRate, simpanObjek, type CoverageObjek, type ObjekFire } from '../api'
 import {
   GRID_COV_ITEM,
   GRID_COV_OBJEK,
@@ -36,12 +36,21 @@ import {
   TEKS_FORM_OPPORTUNITY,
   TEKS_INWARD,
   TEKS_OBJEK,
+  SALIN_COVERAGE,
 } from '../labels'
 import FormCoverage, { adaGalatCoverage, angkaSah, coverageBaru } from './FormCoverage'
 import { adaGalatDeductible } from './GridDeductible'
+import { dariKetikan } from './IsianAngka4'
+import PopupSalinCoverage from './PopupSalinCoverage'
+import {
+  JENIS_ITEM_BI,
+  salinCoverageDari,
+  salinCoverageLokasi,
+  salinCoverageSemua,
+  salinDeductible,
+  type PosisiItem,
+} from './salinCoverage'
 import { rapikanObjek } from './TabObject'
-
-const DESIMAL = 4
 
 /** Total Gross Premium item = Σ Premium coverage (eksak); tanpa coverage -> nilai server. */
 export function totalPremiItem(coverages: CoverageObjek[] | undefined, dariServer: string | undefined): string {
@@ -83,17 +92,18 @@ function bagiBulat(a: bigint, b: bigint): bigint {
 }
 
 /**
- * Rate ringkasan per Currency = `@if(TSI = 0, 0, @divide(Premium, TSI, 20) * 1000)` (SumTSIPremiSpreadedRNM_FIRE_Act),
- * eksak tanpa float: bagi 20 desimal setengah-ke-atas, x 1000, simpan 8 desimal - sama dengan `TotalPerMataUang`
- * backend untuk grid total per lokasi.
+ * Rate ringkasan per Currency = Premium / TSI, TSI 0 -> 0 - mengikuti layar Pega DEV (work owner 05-10-2026 "ikutin
+ * sesuai pega saja": TSI 50.000.000.000, premi 9.391.000.000 -> 0,1878). Korpus `SumTSIPremiSpreadedRNM_FIRE_Act`
+ * menulis `@divide(Premium, TSI, 20) * 1000` (= 187,82) - beda versi server, sejenis OQ-011; yang dipakai layar DEV.
+ * Eksak tanpa float: bagi 20 desimal setengah-ke-atas, simpan 8 desimal - sama dengan `TotalPerMataUang` backend.
  */
-export function ratePerMil(premium: string, tsi: string): string {
+export function rateRingkasan(premium: string, tsi: string): string {
   if (!desimalSah(premium.trim()) || !desimalSah(tsi.trim())) return ''
   const [p, sp] = keBulat(premium.trim())
   const [t, st] = keBulat(tsi.trim())
   if (t === 0n) return '0'
   const q20 = bagiBulat(p * 10n ** BigInt(st + 20), t * 10n ** BigInt(sp))
-  const r8 = bagiBulat(q20 * 1000n, 10n ** 12n)
+  const r8 = bagiBulat(q20, 10n ** 12n)
   const negatif = r8 < 0n
   const digit = (negatif ? -r8 : r8).toString().padStart(9, '0')
   return (negatif ? '-' : '') + digit.slice(0, -8) + '.' + digit.slice(-8)
@@ -124,7 +134,7 @@ export function ringkasanCoverage(objek: ObjekFire[]): { item: RingkasanItemCove
     mataUang: uang.map((r) => {
       const tsi = jumlahDesimal(r.tsi).total
       const premium = jumlahDesimal(r.premium).total
-      return { currency: r.currency, tsi, premium, rate: ratePerMil(premium, tsi) }
+      return { currency: r.currency, tsi, premium, rate: rateRingkasan(premium, tsi) }
     }),
   }
 }
@@ -161,7 +171,7 @@ function IsianNetRate({ nilai, onUbah }: { nilai: string; onUbah: (v: string) =>
       inputMode="decimal"
       aria-label={GRID_COV_ITEM[4].label}
       value={nilai}
-      onChange={(e) => onUbah(e.target.value)}
+      onChange={(e) => onUbah(dariKetikan(e.target.value))}
     />
   )
 }
@@ -172,6 +182,9 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
   const [galat, setGalat] = useState<unknown>(null)
   const [menyimpan, setMenyimpan] = useState(false)
   const [tersimpan, setTersimpan] = useState(false)
+  // Tiket 53: salin coverage sedang menghitung ulang premi; item tujuan popup Copy Coverage From.
+  const [menyalin, setMenyalin] = useState(false)
+  const [salinKe, setSalinKe] = useState<PosisiItem | null>(null)
   const aktif = useRef(true)
   const jadwalNet = useRef<number | undefined>(undefined)
   const nomorNet = useRef(0)
@@ -250,6 +263,53 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
         },
       )
     }, 500)
+  }
+
+  /**
+   * Tiket 53: pasang hasil salin, lalu hitung ulang premi setiap coverage item tujuan (CountPremi_ACT percent / percent,
+   * TSI item tujuan - K53-1). Gagal satu -> galat tampil, data salinan tetap di layar (belum disimpan).
+   */
+  async function pasangSalinan(data: ObjekFire[], tujuan: PosisiItem[]) {
+    setObjek(data)
+    setTersimpan(false)
+    if (tujuan.length === 0) return
+    setMenyalin(true)
+    setGalat(null)
+    try {
+      const hasil = await Promise.all(
+        tujuan.map(async ({ o, i }) => {
+          const it = data[o]!.items[i]!
+          const coverages = await Promise.all(
+            (it.coverages ?? []).map((c) =>
+              hitungCoverage(caseId, {
+                coverage: c,
+                tsi: it.tsi,
+                mode: 'percent',
+                modeDiskon: 'percent',
+                isAdjustable: it.isAdjustable,
+                pctAdjustOther: it.pctAdjustOther,
+              }),
+            ),
+          )
+          return { o, i, coverages }
+        }),
+      )
+      setObjek((d) =>
+        d === null
+          ? d
+          : d.map((x, a) => ({
+              ...x,
+              items: x.items.map((y, b) => {
+                const h = hasil.find((z) => z.o === a && z.i === b)
+                return h ? { ...y, coverages: h.coverages } : y
+              }),
+            })),
+      )
+    } catch (err) {
+      setGalat(err)
+    } finally {
+      setMenyalin(false)
+    }
   }
 
   async function tambah(o: number, i: number, ada: CoverageObjek[]) {
@@ -351,13 +411,13 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                                   </td>
                                   <td>{it.itemType}</td>
                                   <td>{it.currency}</td>
-                                  <td className="nbf-angka">{formatNumber(it.tsi, DESIMAL)}</td>
-                                  <td className="nbf-angka">{formatNumber(totalPremiItem(covs, it.totalGrossPremi), DESIMAL)}</td>
+                                  <td className="nbf-angka">{angka4(it.tsi)}</td>
+                                  <td className="nbf-angka">{angka4(totalPremiItem(covs, it.totalGrossPremi))}</td>
                                   <td className="nbf-angka">
                                     {bolehNetRate(covs) ? (
                                       <IsianNetRate nilai={it.totalNetRate ?? ''} onUbah={(v) => ubahNetRate(o, i, v)} />
                                     ) : (
-                                      formatNumber(it.totalNetRate ?? '', DESIMAL)
+                                      angka4(it.totalNetRate ?? '')
                                     )}
                                   </td>
                                 </tr>,
@@ -398,8 +458,8 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                                                 <td>
                                                   <span className="nbf-cov-kode">{c.oldId}</span>
                                                 </td>
-                                                <td className="nbf-angka">{formatNumber(c.rateOjk, DESIMAL)}</td>
-                                                <td className="nbf-angka">{formatNumber(c.premium, DESIMAL)}</td>
+                                                <td className="nbf-angka">{angka4(c.rateOjk)}</td>
+                                                <td className="nbf-angka">{angka4(c.premium)}</td>
                                                 <td className="table__actions">
                                                   <button
                                                     type="button"
@@ -420,6 +480,7 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                                                       item={{ isAdjustable: it.isAdjustable, pctAdjustOther: it.pctAdjustOther, currency: it.currency }}
                                                       pertama={n === 0}
                                                       zipRisiko={x.zipCode}
+                                                      lokasi={{ province: x.province, occupationIds: x.occupations.map((k) => k.occupationId) }}
                                                       onSalinAkumulasi={() => salinAkumulasi(o, c)}
                                                       ubah={(baru) => ubahCoverage(o, i, covs.map((y, k) => (k === n ? baru : y)))}
                                                     />
@@ -429,6 +490,59 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                                             ])}
                                           </tbody>
                                         </table>
+                                      </div>
+                                      {/* Tiket 53: tombol salin (InputCoverageFire); visibilitas = pyCondition Pega. */}
+                                      <div className="nbf-cov-salin">
+                                        {i === 0 && (
+                                          <button
+                                            type="button"
+                                            className="btn btn--sm"
+                                            disabled={menyalin}
+                                            onClick={() => {
+                                              const h = salinCoverageLokasi(objek, o)
+                                              void pasangSalinan(h.objek, h.tujuan)
+                                            }}
+                                          >
+                                            {SALIN_COVERAGE.coverage}
+                                          </button>
+                                        )}
+                                        {o === 0 && i === 0 && (
+                                          <button
+                                            type="button"
+                                            className="btn btn--sm"
+                                            disabled={menyalin}
+                                            onClick={() => {
+                                              const h = salinCoverageSemua(objek)
+                                              void pasangSalinan(h.objek, h.tujuan)
+                                            }}
+                                          >
+                                            {SALIN_COVERAGE.semua}
+                                          </button>
+                                        )}
+                                        <button type="button" className="btn btn--sm" disabled={menyalin} onClick={() => setSalinKe({ o, i })}>
+                                          {SALIN_COVERAGE.dari}
+                                        </button>
+                                        {o === 0 && i === 0 && (
+                                          <button
+                                            type="button"
+                                            className="btn btn--sm"
+                                            disabled={menyalin}
+                                            onClick={() => void pasangSalinan(salinDeductible(objek, { o, i }, 'ALL'), [])}
+                                          >
+                                            {SALIN_COVERAGE.deductibleSemua}
+                                          </button>
+                                        )}
+                                        {o === 0 && it.itemTypeId === JENIS_ITEM_BI && (
+                                          <button
+                                            type="button"
+                                            className="btn btn--sm"
+                                            disabled={menyalin}
+                                            onClick={() => void pasangSalinan(salinDeductible(objek, { o, i }, 'BI'), [])}
+                                          >
+                                            {SALIN_COVERAGE.deductibleBI}
+                                          </button>
+                                        )}
+                                        {menyalin && <span className="muted">{SALIN_COVERAGE.menyalin}</span>}
                                       </div>
                                     </td>
                                   </tr>
@@ -458,9 +572,9 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                             {(x.totalPerCurrency ?? []).map((t) => (
                               <tr key={t.currency}>
                                 <td>{t.currency}</td>
-                                <td className="nbf-angka">{formatNumber(t.tsi, DESIMAL)}</td>
-                                <td className="nbf-angka">{formatNumber(t.premium, DESIMAL)}</td>
-                                <td className="nbf-angka">{formatNumber(t.rate, DESIMAL)}</td>
+                                <td className="nbf-angka">{angka4(t.tsi)}</td>
+                                <td className="nbf-angka">{angka4(t.premium)}</td>
+                                <td className="nbf-angka">{angka4(t.rate)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -497,8 +611,8 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                 <tr key={`${r.itemType}|${r.currency}`}>
                   <td>{r.itemType}</td>
                   <td>{r.currency}</td>
-                  <td className="nbf-angka">{formatNumber(r.tsi, DESIMAL)}</td>
-                  <td className="nbf-angka">{formatNumber(r.premium, DESIMAL)}</td>
+                  <td className="nbf-angka">{angka4(r.tsi)}</td>
+                  <td className="nbf-angka">{angka4(r.premium)}</td>
                 </tr>
               ))}
             </tbody>
@@ -524,15 +638,26 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
               {ringkasan.mataUang.map((r) => (
                 <tr key={r.currency}>
                   <td>{r.currency}</td>
-                  <td className="nbf-angka">{formatNumber(r.tsi, DESIMAL)}</td>
-                  <td className="nbf-angka">{formatNumber(r.premium, DESIMAL)}</td>
-                  <td className="nbf-angka">{formatNumber(r.rate, DESIMAL)}</td>
+                  <td className="nbf-angka">{angka4(r.tsi)}</td>
+                  <td className="nbf-angka">{angka4(r.premium)}</td>
+                  <td className="nbf-angka">{angka4(r.rate)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </section>
+      {salinKe !== null && (
+        <PopupSalinCoverage
+          objek={objek}
+          onTutup={() => setSalinKe(null)}
+          onSalin={(dari) => {
+            const h = salinCoverageDari(objek, dari, salinKe)
+            setSalinKe(null)
+            void pasangSalinan(h.objek, h.tujuan)
+          }}
+        />
+      )}
       <div className="nbf-objek__kaki">
         <button type="button" className="btn btn--primary" onClick={() => void simpan()} disabled={menyimpan}>
           {menyimpan ? TEKS_FORM_OPPORTUNITY.menyimpan : SIMPAN_COVERAGE}

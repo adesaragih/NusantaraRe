@@ -141,13 +141,18 @@ func TestHitungCoverage(t *testing.T) {
 	}
 }
 
-// TestTotalPerMataUang - SumTotalTSIPremiGross_Act cabang FIRE: per mata uang urut kemunculan; TSI 0 -> rate 0.
+// TestTotalPerMataUang - SumTotalTSIPremiGross_Act cabang FIRE: per mata uang urut kemunculan; rate = premi / TSI TANPA
+// ×1000 (keputusan work owner 05-10-2026, layar Pega DEV 9.391.000.000 / 50.000.000.000 = 0,18782); TSI 0 -> rate 0.
 func TestTotalPerMataUang(t *testing.T) {
 	got := TotalPerMataUang([]models.ItemObjek{{Currency: "IDR", TSI: ds("1000"), TotalGrossPremi: ds("3")},
 		{Currency: "USD", TotalGrossPremi: ds("5")}, {Currency: "IDR", TSI: ds("2000"), TotalGrossPremi: ds("6")}})
-	if len(got) != 2 || got[0].Currency != "IDR" || teksD(got[0].TSI) != "3000" || teksD(got[0].Premium) != "9" || teksD(got[0].Rate) != "3" ||
+	if len(got) != 2 || got[0].Currency != "IDR" || teksD(got[0].TSI) != "3000" || teksD(got[0].Premium) != "9" || teksD(got[0].Rate) != "0.003" ||
 		got[1].Currency != "USD" || teksD(got[1].Rate) != "0" || teksD(got[1].Premium) != "5" {
 		t.Errorf("%+v", got)
+	}
+	layarDEV := TotalPerMataUang([]models.ItemObjek{{Currency: "IDR", TSI: ds("50000000000"), TotalGrossPremi: ds("9391000000")}})
+	if teksD(layarDEV[0].Rate) != "0.18782" {
+		t.Errorf("rate layar DEV = %s, mau 0.18782", teksD(layarDEV[0].Rate))
 	}
 }
 
@@ -178,7 +183,7 @@ func TestGantiObjekCoverage(t *testing.T) {
 		cov.Coverages[2].Premium != nil || teksD(cov.Coverages[2].TSILiability) != "1000000000" || teksD(cov.TotalGrossPremi) != "3000000" {
 		t.Errorf("tersimpan: %+v", cov)
 	}
-	if len(d) != 1 || len(d[0].TotalPerCurrency) != 1 || teksD(d[0].TotalPerCurrency[0].Premium) != "3000000" || teksD(d[0].TotalPerCurrency[0].Rate) != "3" {
+	if len(d) != 1 || len(d[0].TotalPerCurrency) != 1 || teksD(d[0].TotalPerCurrency[0].Premium) != "3000000" || teksD(d[0].TotalPerCurrency[0].Rate) != "0.003" {
 		t.Errorf("total per mata uang: %+v", d)
 	}
 	tersimpan.ada["UJI-NB-2"] = nil

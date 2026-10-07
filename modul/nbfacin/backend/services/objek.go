@@ -193,6 +193,9 @@ func (s *Service) GantiObjek(ctx context.Context, pelaku inti.Pelaku, id string,
 	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return nil, err
 	}
+	if err := s.wajibBolehUbah(ctx, pelaku, id); err != nil {
+		return nil, err
+	}
 	if err := periksaObjek(baris); err != nil {
 		return nil, err
 	}

@@ -12,6 +12,7 @@ import (
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/nbfacin/backend/handlers"
+	"nusantarare/modul/nbfacin/backend/repository"
 	"nusantarare/modul/nbfacin/backend/services"
 	"nusantarare/modul/nbfacin/backend/services/kontrakfacin"
 )
@@ -46,7 +47,14 @@ func Pendaftaran() inti.Pendaftaran {
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
 			inti.Sediakan[kontrak.PenilaiPredikatFacIn](p, kontrakfacin.Predikat{})
 			inti.Sediakan[kontrak.MesinPremiFacIn](p, kontrakfacin.Premi{})
-			return Modul{svc: services.DariDasar(p.Dasar()), stubPelaku: p.Config().AuthStub}, nil
+			cfg := p.Config()
+			// Tiket 56: SMTP korespondensi dari NBFACIN_SMTP_* (persetujuan work owner 06-10-2026); kosong = Send 503.
+			// ⛔ Sandi tidak pernah dicetak (config.SMTP.String menyembunyikannya).
+			m := cfg.SMTPNBFacIn
+			svc := services.DariDasar(p.Dasar()).DenganSMTP(repository.KonfigSMTP{Host: m.Host, Port: m.Port, User: m.User,
+				Sandi: m.Password, Dari: m.Dari, TanpaTLS: m.TanpaTLS})
+			p.Catat("nbfacin: korespondensi " + m.String())
+			return Modul{svc: svc, stubPelaku: cfg.AuthStub}, nil
 		},
 	}
 }

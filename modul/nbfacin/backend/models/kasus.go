@@ -10,6 +10,14 @@ type Kasus struct {
 	Opportunity Opportunity
 	InsuredName string
 	General     General
+	// RiskScoring - Scoring Risk TERSIMPAN (T_SCORINGRISK, tiket 54) untuk kolom "Risk Scoring" General; kosong bila belum
+	// pernah disimpan.
+	RiskScoring RingkasanScoring
+}
+
+// TahapKasus - T_WORK_POLIS.POSITION / FLAG_ONGOING_POLICY (penentu baca-saja, services/bacasaja.go).
+type TahapKasus struct {
+	Position, FlagOnGoingPolicy string
 }
 
 // General - isian blok General (section Periode) sebagaimana TERSIMPAN. Tanggal = teks
@@ -52,6 +60,7 @@ type BarisPortal struct {
 	InsuredName   string // T_M_ACCOUNT.INSUREDNAME lewat ACCOUNT_ID
 	Marketing     string // MARKETINGOFFICER.CLIENTNAME lewat T_QUOTATIONDATA.MOID; kosong bila belum ada
 	Status        string // T_WORK_POLIS.STATUS_WORK
+	NBStatus      string // T_GENERAL_POLIS.NB_STATUS (migrasi 208, tiket 57); kosong = belum pernah Submit
 }
 
 // SOB - satu pilihan popup Change SOB (tiket 33): baris tabel AGENT.

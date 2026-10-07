@@ -23,7 +23,7 @@ import { useEffect, useState } from 'react'
 
 import { Area, Field, Pilih, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
 import { desimalSah, jumlahDesimal } from '../../../../inti/frontend/lib/desimal'
-import { formatNumber } from '../../../../inti/frontend/lib/format'
+import { angka4 } from '../angka4'
 import { daftarJenisItem, daftarMataUang, type ItemObjek, type JenisItem } from '../api'
 import IsianUang from './IsianUang'
 import {
@@ -39,9 +39,6 @@ import {
   TEKS_ITEM,
   TEKS_OBJEK,
 } from '../labels'
-
-/** Desimal tampilan grid (pxNumber 4 dp). */
-const DESIMAL_GRID = 4
 
 /** Item kosong (Add). `PctAdjustOther` awal 0 (nilai awal sel 36); `PctAdjust2` awal "100" (K-7). */
 export function itemBaru(): ItemObjek {
@@ -264,7 +261,7 @@ export default function SubTabItem({
                 <td>{i.propertyYear}</td>
                 <td>{i.unit}</td>
                 <td>{i.currency}</td>
-                <td className="nbf-angka">{formatNumber(i.tsi, DESIMAL_GRID)}</td>
+                <td className="nbf-angka">{angka4(i.tsi)}</td>
                 <td className="table__actions">
                   <button
                     type="button"
@@ -316,7 +313,7 @@ export default function SubTabItem({
             {total.map((t) => (
               <tr key={t.currency}>
                 <td>{t.currency}</td>
-                <td className="nbf-angka">{formatNumber(t.total, DESIMAL_GRID)}</td>
+                <td className="nbf-angka">{angka4(t.total)}</td>
               </tr>
             ))}
           </tbody>

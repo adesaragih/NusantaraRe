@@ -84,6 +84,8 @@ type KasusKabel struct {
 	Opportunity                  IsianOpportunity
 	InsuredName                  string
 	General                      GeneralKabel
+	// RiskScoring - Scoring Risk tersimpan (tiket 54); FinalScore nil / NoteFinalScore "" = belum disimpan.
+	RiskScoring models.RingkasanScoring
 }
 
 // IsianGeneral - badan PUT .../general: medan yang dapat diubah (tanpa medan tampil-saja).
@@ -214,7 +216,7 @@ func (s *Service) keKabel(k models.Kasus) KasusKabel {
 	if g.OfferingDate == "" {
 		tawar = s.sekarang().In(WIB).Format(BentukTanggalKabel)
 	}
-	return KasusKabel{CaseID: k.CaseID, Position: k.Position, StatusWork: k.StatusWork, InsuredName: k.InsuredName,
+	return KasusKabel{CaseID: k.CaseID, Position: k.Position, StatusWork: k.StatusWork, InsuredName: k.InsuredName, RiskScoring: k.RiskScoring,
 		Opportunity: IsianOpportunity{EstimatedClosingDate: tutup, BusinessProspectName: o.BusinessProspectName,
 			AccountID: o.AccountID, InsuredID: o.InsuredID, GroupBusinessID: o.GroupBusinessID,
 			GroupBusiness: o.GroupBusiness, ClassOfBusiness: o.ClassOfBusiness, TypeOfInward: o.TypeOfInward,
@@ -249,6 +251,9 @@ func (s *Service) BacaKasus(ctx context.Context, id string) (KasusKabel, error) 
 // Urutan: identitas (401) -> isian (400) -> basis data (503) -> case (404).
 func (s *Service) SimpanGeneral(ctx context.Context, pelaku inti.Pelaku, id string, isian IsianGeneral) (KasusKabel, error) {
 	if err := inti.WajibIdentitas(pelaku); err != nil {
+		return KasusKabel{}, err
+	}
+	if err := s.wajibBolehUbah(ctx, pelaku, id); err != nil {
 		return KasusKabel{}, err
 	}
 	g, err := periksaGeneral(isian)

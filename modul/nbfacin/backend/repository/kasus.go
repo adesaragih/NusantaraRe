@@ -43,6 +43,11 @@ type PenyimpanKasus interface {
 	PenulisGeneral
 }
 
+// PembacaTahapKasus - POSITION / FLAG_ONGOING_POLICY satu case FAC; ErrKasusTidakAda bila tidak ada.
+type PembacaTahapKasus interface {
+	TahapKasus(ctx context.Context, id string) (models.TahapKasus, error)
+}
+
 // KasusOracle - PenyimpanKasus atas Oracle.
 type KasusOracle struct{ db *db.DB }
 
@@ -57,18 +62,24 @@ var kolomBacaKasus = []string{"w.ID", "w.POSITION", "w.STATUS_WORK",
 	"o.OPPORTUNITY_SOURCE", "o.BUSINESS_STATUS", "o.DESCRIPTION", "INSUREDNAME",
 	"g.ID", "g.START_DATE_TIME", "g.OFFERING_DATE", "g.END_DATE_TIME", "g.FOLLOWING",
 	"q.NO_OFFER_SLIP", "q.QQ_NAME", "q.POLICY_TYPE", "q.MOID", "q.EDM_DAY", "q.TYPE_FACULTATIVE", "q.SOURCE_OF_BUSINESS", "q.SOB_NAME",
-	"q.CEDING_CO_NAME", "q.GROUP_NAME"}
+	"q.CEDING_CO_NAME", "q.GROUP_NAME", "RISK_FINAL_SCORE", "RISK_NOTE_FINAL_SCORE"}
 
 // kolomTanggalKasus - satu-satunya kolom DATE di kolomBacaKasus.
 const kolomTanggalKasus = "o.ESTIMATED_CLOSING_DATE"
 
-// sqlBacaKasus - satu baris: case + opportunity + nama tertanggung + General, dibatasi LINI.
-func sqlBacaKasus(work, opp, akun, general, quo string) string {
+// sqlBacaKasus - satu baris: case + opportunity + nama tertanggung + General + Risk Scoring tersimpan (tiket 54: subkueri
+// T_SCORINGRISK ber-PARENT_ID = ID kasus, UNIQUE; tanpa baris -> NULL), dibatasi LINI.
+func sqlBacaKasus(work, opp, akun, general, quo, skor string) string {
 	pilih := make([]string, len(kolomBacaKasus))
 	for i, k := range kolomBacaKasus {
 		pilih[i] = k
-		if k == "INSUREDNAME" {
+		switch k {
+		case "INSUREDNAME":
 			pilih[i] = "(SELECT MAX(a.INSUREDNAME) FROM " + akun + " a WHERE a.ID = o.ACCOUNT_ID)"
+		case "RISK_FINAL_SCORE":
+			pilih[i] = "(SELECT " + angkaKeluar("MAX(s.FINAL_SCORE)") + " FROM " + skor + " s WHERE s.PARENT_ID = w.ID)"
+		case "RISK_NOTE_FINAL_SCORE":
+			pilih[i] = "(SELECT MAX(s.NOTE_FINAL_SCORE) FROM " + skor + " s WHERE s.PARENT_ID = w.ID)"
 		}
 	}
 	return fmt.Sprintf(`SELECT %s
@@ -79,10 +90,31 @@ LEFT JOIN %s q ON q.PARENT_ID = w.ID
 WHERE w.ID = :1 AND w.LINI = :2`, strings.Join(pilih, ", "), work, opp, general, quo)
 }
 
+func sqlTahapKasus(work string) string {
+	return "SELECT POSITION, FLAG_ONGOING_POLICY FROM " + work + " WHERE ID = :1 AND LINI = :2"
+}
+
+// TahapKasus - lihat PembacaTahapKasus.
+func (r *KasusOracle) TahapKasus(ctx context.Context, id string) (models.TahapKasus, error) {
+	work, err := r.db.Qualify(TabelWorkPolis)
+	if err != nil {
+		return models.TahapKasus{}, err
+	}
+	var pos, flag sql.NullString
+	err = r.db.QueryRowContext(ctx, sqlTahapKasus(work), id, LiniFacIn).Scan(&pos, &flag)
+	if errors.Is(err, sql.ErrNoRows) {
+		return models.TahapKasus{}, ErrKasusTidakAda
+	}
+	if err != nil {
+		return models.TahapKasus{}, fmt.Errorf("repository: baca tahap case NB: %w", err)
+	}
+	return models.TahapKasus{Position: pos.String, FlagOnGoingPolicy: flag.String}, nil
+}
+
 // BacaKasus - lihat PembacaKasus. ErrKasusTidakAda bila tidak ada.
 func (r *KasusOracle) BacaKasus(ctx context.Context, id string) (models.Kasus, error) {
-	var t [5]string
-	for i, n := range []string{TabelWorkPolis, TabelOpportunity, TabelAkun, TabelGeneralPolis, TabelQuotationData} {
+	var t [6]string
+	for i, n := range []string{TabelWorkPolis, TabelOpportunity, TabelAkun, TabelGeneralPolis, TabelQuotationData, TabelScoringRisk} {
 		q, err := r.db.Qualify(n)
 		if err != nil {
 			return models.Kasus{}, err
@@ -100,7 +132,7 @@ func (r *KasusOracle) BacaKasus(ctx context.Context, id string) (models.Kasus, e
 		teks[k] = &sql.NullString{}
 		tujuan[i] = teks[k]
 	}
-	err := r.db.QueryRowContext(ctx, sqlBacaKasus(t[0], t[1], t[2], t[3], t[4]), id, LiniFacIn).Scan(tujuan...)
+	err := r.db.QueryRowContext(ctx, sqlBacaKasus(t[0], t[1], t[2], t[3], t[4], t[5]), id, LiniFacIn).Scan(tujuan...)
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.Kasus{}, ErrKasusTidakAda
 	}
@@ -124,6 +156,10 @@ func (r *KasusOracle) BacaKasus(ctx context.Context, id string) (models.Kasus, e
 	if tutup.Valid {
 		k.Opportunity.EstimatedClosingDate = tutup.Time
 	}
+	if k.RiskScoring.FinalScore, err = bacaDesimal(id, "T_SCORINGRISK.FINAL_SCORE", teks["RISK_FINAL_SCORE"]); err != nil {
+		return models.Kasus{}, err
+	}
+	k.RiskScoring.NoteFinalScore = v("RISK_NOTE_FINAL_SCORE")
 	ceding, err := r.db.Qualify(TabelCedingCoList)
 	if err != nil {
 		return models.Kasus{}, err

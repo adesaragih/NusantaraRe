@@ -43,11 +43,11 @@ func sqlSisipKoas(koas string) string {
 	return "INSERT INTO " + koas + " (ID, PARENT_ID, COINS_NAME) VALUES (:1, :2, :3)"
 }
 
-// argKerugian - bind :5..:13 sqlSisipKerugian, urutan sama dengan daftar kolomnya. Kosong -> NULL kecuali CURRENCY
-// (wajib, diperiksa services). DateOfLoss di sini sudah teks Pega (services).
+// argKerugian - bind :5..:13 sqlSisipKerugian, urutan sama dengan daftar kolomnya. Kosong -> NULL, termasuk CURRENCY
+// (tidak wajib sejak migrasi 209; aplikasi tidak menulis 'UNKNOWN', K-012). DateOfLoss di sini sudah teks Pega (services).
 func argKerugian(c models.CatatanKerugian) []any {
 	k := db.KosongJadiNil
-	return []any{k(c.DateOfLoss), k(c.LossObject), c.Currency, ikatDesimal(c.Amount), ikatDesimal(c.Claim),
+	return []any{k(c.DateOfLoss), k(c.LossObject), k(c.Currency), ikatDesimal(c.Amount), ikatDesimal(c.Claim),
 		ikatDesimal(c.PreventionOfLoss), k(c.CauseOfLoss), k(c.Remarks), k(c.Detail)}
 }
 

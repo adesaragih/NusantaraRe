@@ -1228,13 +1228,76 @@
 /* ---- Tab Inw Fac Cedant Panels (tiket 49): blok atas berlabel kiri, grid cedant sempit. */
 .nbfacin .nbf-cedant__atas {
   display: grid;
-  gap: 10px;
-  max-width: 640px;
+  gap: 16px;
 }
-.nbfacin .nbf-cedant__atas .nbf-inward__teks {
-  min-height: 30px;
-  padding: 5px 8px;
+.nbfacin .nbf-cedant__info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 32px;
+  align-items: start;
+}
+.nbfacin .nbf-cedant__medan {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+.nbfacin .nbf-cedant__label {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.nbfacin .nbf-cedant__nilai {
+  font-weight: 600;
+}
+/* Share Cedant Type: dua pilihan berbentuk tombol segmen. */
+.nbfacin .nbf-cedant__tipe {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.nbfacin .nbf-cedant__opsi {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
   font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.nbfacin .nbf-cedant__opsi--aktif {
+  border-color: var(--primary, currentColor);
+  background: var(--surface-2);
+  font-weight: 600;
+}
+/* Tiga angka RNM = kartu kecil, angka rata kanan tabular. */
+.nbfacin .nbf-cedant__angka {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+.nbfacin .nbf-cedant__angka > div {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.nbfacin .nbf-cedant__angka dt {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.nbfacin .nbf-cedant__angka dd {
+  margin: 4px 0 0;
+  font-size: var(--fs-md, 1rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 720px) {
+  .nbfacin .nbf-cedant__info,
+  .nbfacin .nbf-cedant__angka {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .nbfacin .nbf-cedant__grid {
   display: grid;
@@ -1244,8 +1307,8 @@
 .nbfacin .nbf-cedant__grid .nbf-cov-wrap {
   max-width: 760px;
 }
-.nbfacin .nbf-cedant__grid td input {
-  width: 120px;
+.nbfacin .nbf-cedant__rinci input {
+  width: 140px;
   height: 30px;
   padding: 3px 8px;
   font-size: var(--fs-sm);
@@ -1256,4 +1319,989 @@
   align-items: center;
   justify-content: space-between;
   gap: 6px 12px;
+}
+
+/* Detail baris cedant = Section CedingCedant (gambar layar Pega): Ceding + Choose Ceding, % Share "of", grid mata uang. */
+.nbfacin .nbf-cedant__rinci {
+  display: grid;
+  gap: 10px;
+  padding: 10px 4px;
+}
+.nbfacin .nbf-cedant__baris {
+  display: grid;
+  grid-template-columns: 90px auto auto;
+  justify-content: start;
+  align-items: center;
+  gap: 8px 14px;
+}
+.nbfacin .nbf-cedant__dari {
+  font-size: var(--fs-sm);
+}
+@media (max-width: 560px) {
+  .nbfacin .nbf-cedant__baris {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Penanda mata uang total RNM (C-8). */
+.nbfacin .nbf-cedant__uang {
+  margin-left: 4px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* ---- Tab Premium Deduction / Brokerage Fee (tiket 50) = gambar layar Pega: dua isian persen berlabel kiri, drill-down
+   komisi, ringkasan Spreading hijau, dua kotak grid per mata uang berlatar kuning lembut. */
+.nbfacin .nbf-deduct__atas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 48px;
+  align-items: start;
+}
+.nbfacin .nbf-deduct__kanan {
+  display: grid;
+  gap: 8px;
+}
+.nbfacin .nbf-deduct__medan {
+  display: grid;
+  grid-template-columns: 130px 180px;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-deduct input {
+  height: 30px;
+  padding: 3px 8px;
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-deduct__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.nbfacin .nbf-deduct__kotak {
+  padding: 10px 12px;
+  border: 1px solid var(--warning-border);
+  border-radius: var(--r-md);
+  background: var(--warning-bg);
+  overflow-x: auto;
+}
+.nbfacin .nbf-deduct__kotak td input {
+  width: 100%;
+  min-width: 120px;
+}
+.nbfacin .nbf-deduct__rinci {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px 14px;
+  margin: 0 0 8px;
+}
+.nbfacin .nbf-deduct__rinci dt {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.nbfacin .nbf-deduct__rinci dd {
+  margin: 2px 0 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+@media (max-width: 900px) {
+  .nbfacin .nbf-deduct__atas,
+  .nbfacin .nbf-deduct__grid,
+  .nbfacin .nbf-deduct__rinci {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Judul kolom tepat di atas nilainya (work owner 06-10-2026: "judul kolom dan nilainya bisa ga tidak terlalu jauh gitu,
+   kalau bisa atas bwh aja", berlaku semua tab): kolom yang selnya angka (`nbf-angka`, rata kanan) ikut merata-kanankan
+   judulnya. `>` menjaga tabel bersarang tidak saling memengaruhi; kolom ke-1..12. */
+.nbfacin .nbf-tabel:has(> tbody > tr > td.nbf-angka:nth-child(1)) > thead > tr > th:nth-child(1),
+.nbfacin .nbf-tabel:has(> tbody > tr > td.nbf-angka:nth-child(2)) > thead > tr > th:nth-child(2),
+.nbfacin .nbf-tabel:has(> tbody > tr > td.nbf-angka:nth-child(3)) > thead > tr > th:nth-child(3),
+.nbfacin .nbf-tabel:has(> tbody > tr > td.nbf-angka:nth-child(4)) > thead > tr > th:nth-child(4),
+.nbfacin .nbf-tabel:has(> tbody > tr > td.nbf-angka:nth-child(5)) > thead > tr > th:nth-child(5),
+.nbfacin .nbf-tabel:has(> tbody > tr > td.nbf-angka:nth-child(6)) > thead > tr > th:nth-child(6),
+.nbfacin .nbf-tabel:has(> tbody > tr > td.nbf-angka:nth-child(7)) > thead > tr > th:nth-child(7),
+.nbfacin .nbf-tabel:has(> tbody > tr > td.nbf-angka:nth-child(8)) > thead > tr > th:nth-child(8),
+.nbfacin .nbf-tabel:has(> tbody > tr > td.nbf-angka:nth-child(9)) > thead > tr > th:nth-child(9),
+.nbfacin .nbf-tabel:has(> tbody > tr > td.nbf-angka:nth-child(10)) > thead > tr > th:nth-child(10),
+.nbfacin .nbf-tabel:has(> tbody > tr > td.nbf-angka:nth-child(11)) > thead > tr > th:nth-child(11),
+.nbfacin .nbf-tabel:has(> tbody > tr > td.nbf-angka:nth-child(12)) > thead > tr > th:nth-child(12) {
+  text-align: right;
+}
+
+/* ---- Tab Payment (tiket 51) = gambar layar Pega: Installment berlabel kiri, grid mata uang berbingkai hijau, cicilan
+   berlatar kuning lembut. */
+.nbfacin .nbf-pay__judul {
+  margin: 0 0 10px;
+}
+.nbfacin .nbf-pay__installment {
+  display: grid;
+  grid-template-columns: 90px 80px auto;
+  align-items: center;
+  gap: 6px 12px;
+  margin-bottom: 14px;
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-pay__installment > div {
+  grid-column: 2 / -1;
+}
+.nbfacin .nbf-pay input {
+  height: 30px;
+  padding: 3px 8px;
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-pay__luar {
+  padding: 10px 12px;
+  border: 1px solid var(--success-border);
+  border-radius: var(--r-md);
+  background: var(--success-bg);
+}
+.nbfacin .nbf-pay__cicilan {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--warning-border);
+  border-radius: var(--r-md);
+  background: var(--warning-bg);
+}
+.nbfacin .nbf-pay__cicilan h5 {
+  margin: 0;
+}
+.nbfacin .nbf-pay__cicilan td input {
+  width: 110px;
+}
+/* Label Due Date di sel grid cukup untuk pembaca layar (judul kolom sudah tampil). */
+.nbfacin .nbf-pay__cicilan td > div > label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+/* Zone terisi (tiket 52): teks + ikon "Switch to edit mode". */
+.nbfacin .nbf-cov__zona {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nbfacin .nbf-cov__zona > div {
+  flex: 1 1 auto;
+}
+
+/* ---- Tombol salin di bawah grid coverage item (tiket 53). */
+.nbfacin .nbf-cov-salin {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.nbfacin .nbf-salin-cov {
+  display: grid;
+  gap: 10px;
+  min-width: min(100%, 420px);
+}
+
+/* ---- Tab Scoring Risk (tiket 54) - dirapikan ulang 06-10-2026 (work owner: atas & tengah "makin kurang user
+   friendly", bawah sudah sesuai): kepala satu blok dua kolom berlabel kiri (seperti Pega); faktor dalam SATU tabel menerus
+   - baris pita faktor dengan subtotal lurus di bawah kolom Top / Dominant, judul sub-faktor, pilihan menjorok, centang
+   dan skor di slot tetap; bawah (ringkasan total + kartu hasil) tetap. Isi dan urutan tetap Pega. */
+.nbfacin .nbf-score__judul {
+  margin: 0 0 10px;
+}
+.nbfacin [data-nada='baik'] {
+  --nbf-nada: var(--success-text);
+}
+.nbfacin [data-nada='sedang'] {
+  --nbf-nada: var(--warning-text);
+}
+.nbfacin [data-nada='buruk'] {
+  --nbf-nada: var(--danger-text);
+}
+.nbfacin .nbf-score__pil {
+  padding: 1px 10px;
+  border: 1px solid currentColor;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+/* General: angka tetap hitam biasa, hanya lencana kelas yang berwarna (work owner 06-10-2026). */
+.nbfacin .nbf-score__pil--umum {
+  display: inline-block;
+  margin-left: 4px;
+  color: var(--nbf-nada, inherit);
+}
+
+/* Kepala */
+.nbfacin .nbf-score__kepala {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 32px;
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-score__kepala dl {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 8px 12px;
+  align-items: center;
+  margin: 0;
+}
+.nbfacin .nbf-score__kepala dt {
+  color: var(--text-3);
+}
+.nbfacin .nbf-score__kepala dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.nbfacin .nbf-score__skor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-md, 1rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--nbf-nada, inherit);
+}
+.nbfacin .nbf-score__dominan {
+  display: grid;
+  gap: 4px;
+}
+.nbfacin .nbf-score__dominan > div {
+  margin: 0;
+}
+.nbfacin .nbf-score__dominan select {
+  height: 32px;
+  padding: 2px 8px;
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-score__dominan > div > label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.nbfacin .nbf-score__catatan {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+
+/* Tabel faktor */
+.nbfacin .nbf-score__bungkus {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+.nbfacin .nbf-score__tabel {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-score__tabel thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.nbfacin .nbf-score__tabel thead th:nth-child(n + 2),
+.nbfacin .nbf-score__tabel td:nth-child(n + 2) {
+  width: 140px;
+}
+.nbfacin .nbf-score__tabel thead th:nth-child(n + 2) {
+  text-align: center;
+}
+.nbfacin .nbf-score__tabel tbody td,
+.nbfacin .nbf-score__tabel tbody th {
+  padding: 4px 12px;
+  border: 0;
+  box-shadow: none;
+  line-height: 1.35;
+  vertical-align: middle;
+}
+.nbfacin .nbf-score__sel input {
+  margin: 0;
+}
+.nbfacin .nbf-score__tabel tbody tr:nth-child(even) {
+  background: transparent;
+}
+.nbfacin .nbf-score__tabel thead th {
+  padding: 8px 12px;
+}
+.nbfacin .nbf-score__tabel tbody .nbf-score__baris-faktor > th,
+.nbfacin .nbf-score__tabel tbody .nbf-score__baris-faktor > td {
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-top: 2px solid var(--border);
+  font-weight: 700;
+}
+.nbfacin .nbf-score__baris-faktor > th {
+  text-align: left;
+}
+.nbfacin .nbf-score__no {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  font-size: var(--fs-xs);
+}
+.nbfacin .nbf-score__bobot {
+  margin-left: 8px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+}
+.nbfacin .nbf-score__tabel tbody .nbf-score__judul-sub > td {
+  padding: 8px 12px 2px 42px;
+  font-weight: 600;
+}
+.nbfacin .nbf-score__tabel tbody td.nbf-score__opsi {
+  padding-left: 42px;
+}
+.nbfacin .nbf-score__tabel tbody .nbf-score__judul-sub ~ tr > td.nbf-score__opsi {
+  padding-left: 62px;
+}
+.nbfacin .nbf-score__tabel tbody tr:not(.nbf-score__baris-faktor):not(.nbf-score__judul-sub):hover > td {
+  background: var(--hover-baris, var(--surface-2));
+}
+.nbfacin .nbf-score__baris--pilih > td {
+  background: var(--primary-soft);
+}
+.nbfacin .nbf-score__baris--pilih > .nbf-score__opsi {
+  font-weight: 600;
+}
+.nbfacin .nbf-score__sel label,
+.nbfacin .nbf-score__baris-faktor > .nbf-score__sel {
+  display: grid;
+  grid-template-columns: 20px 64px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+.nbfacin .nbf-score__sel label {
+  margin: 0;
+  vertical-align: middle;
+  cursor: pointer;
+}
+.nbfacin .nbf-score__baris-faktor > .nbf-score__sel {
+  display: table-cell;
+  text-align: center;
+  white-space: nowrap;
+}
+.nbfacin .nbf-score__slot {
+  display: inline-block;
+  width: 20px;
+}
+.nbfacin .nbf-score__poin {
+  display: inline-block;
+  min-width: 64px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-weight: 700;
+}
+.nbfacin .nbf-score__poin--sub {
+  margin-left: 10px;
+}
+.nbfacin .nbf-score__sistem {
+  margin-left: 8px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-style: italic;
+}
+.nbfacin .nbf-score__persen td {
+  padding-top: 4px;
+  padding-bottom: 6px;
+}
+.nbfacin .nbf-score__persen input {
+  width: 100px;
+  height: 28px;
+  padding: 2px 6px;
+}
+
+/* Bawah: ringkasan total + kartu hasil (tetap) */
+.nbfacin .nbf-score__ringkas {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.nbfacin .nbf-score__ringkas > div {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  min-width: 0;
+}
+.nbfacin .nbf-score__ringkas dt {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.nbfacin .nbf-score__ringkas dd {
+  margin: 4px 0 0;
+  font-size: var(--fs-lg, 1.25rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.nbfacin .nbf-score__ringkas > div[data-nada='baik'],
+.nbfacin .nbf-score__ringkas > div[data-nada='sedang'],
+.nbfacin .nbf-score__ringkas > div[data-nada='buruk'] {
+  border-left: 4px solid var(--nbf-nada);
+}
+.nbfacin .nbf-score__ringkas > div[data-nada] dd {
+  color: var(--nbf-nada, inherit);
+}
+.nbfacin .nbf-score__hasil {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 12px;
+  margin-top: 14px;
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-score__kartu {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+.nbfacin .nbf-score__kartu h5 {
+  margin: 0 0 8px;
+}
+.nbfacin .nbf-score__kartu h6 {
+  margin: 0 0 4px;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.nbfacin .nbf-score__kartu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.nbfacin .nbf-score__kartu li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px;
+  border-radius: var(--r-md);
+  color: var(--text-3);
+}
+.nbfacin .nbf-score__kartu li.nbf-score__aktif {
+  background: var(--primary-soft);
+  color: var(--nbf-nada, var(--primary-text));
+  font-weight: 700;
+}
+.nbfacin .nbf-score__rentang {
+  min-width: 64px;
+  font-variant-numeric: tabular-nums;
+}
+.nbfacin .nbf-score__tanda {
+  width: 14px;
+}
+.nbfacin .nbf-score__setuju {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1100px) {
+  .nbfacin .nbf-score__kepala {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+@media (max-width: 900px) {
+  .nbfacin .nbf-score__ringkas,
+  .nbfacin .nbf-score__hasil {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .nbfacin .nbf-score__bungkus {
+    overflow-x: auto;
+  }
+}
+@media (max-width: 560px) {
+  .nbfacin .nbf-score__kepala dl,
+  .nbfacin .nbf-score__ringkas,
+  .nbfacin .nbf-score__hasil,
+  .nbfacin .nbf-score__setuju {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Tab Loss Record (tiket 55) = gambar layar Pega: bar unggah CSV, premi berlabel kiri, grid kerugian dengan ubah baris,
+   kotak hijau Total Loss, kotak biru Loss Ratio 1 / 3 / 5 Year (Gross / Net). */
+.nbfacin .nbf-lr {
+  display: grid;
+  gap: 14px;
+}
+.nbfacin .nbf-lr__unggah {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.nbfacin .nbf-lr__unggah h5 {
+  margin: 0 0 8px;
+}
+.nbfacin .nbf-lr__tombol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.nbfacin .nbf-lr__info {
+  margin: 8px 0 0;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-lr__galat {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--danger-text);
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-lr__premi {
+  display: grid;
+  gap: 8px;
+  max-width: 560px;
+}
+.nbfacin .nbf-lr__premi-baris {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-lr__premi-baris label {
+  margin: 0;
+  color: var(--text-3);
+}
+.nbfacin .nbf-lr input.nbf-angka {
+  width: 100%;
+  height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: inherit;
+  font-size: var(--fs-sm);
+}
+/* Kolom tombol (Tambah / Hapus) - hanya baris data, bukan panel ubah baris (sel colSpan juga :last-child). */
+.nbfacin .nbf-lr__grid > thead > tr > th:last-child,
+.nbfacin .nbf-lr__grid > tbody > tr:not(.nbf-objek__detail) > td:last-child {
+  width: 110px;
+  text-align: right;
+}
+/* Panel ubah baris: info baca-saja di atas, isian 3 kolom berlabel atas, rata kiri, tinggi seragam. */
+.nbfacin .nbf-lr__grid > tbody > tr.nbf-objek__detail > td {
+  padding: 0 0 0 46px;
+  text-align: left;
+}
+.nbfacin .nbf-lr__ubah {
+  display: grid;
+  gap: 12px;
+  margin: 4px 12px 12px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+.nbfacin .nbf-lr__ubah-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-lr__ubah-info dt {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.nbfacin .nbf-lr__ubah-info dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+  text-align: left;
+}
+.nbfacin .nbf-lr__ubah-isian {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 18px;
+  align-items: start;
+}
+.nbfacin .nbf-lr__ubah-lebar {
+  grid-column: span 2;
+}
+.nbfacin .nbf-lr__ubah-isian > div,
+.nbfacin .nbf-lr__ubah-lebar > div {
+  margin: 0;
+  text-align: left;
+}
+.nbfacin .nbf-lr__ubah-isian label {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  text-align: left;
+}
+.nbfacin .nbf-lr__ubah-isian input,
+.nbfacin .nbf-lr__ubah-isian select {
+  height: 34px;
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-lr__ubah-isian input.nbf-angka {
+  text-align: right;
+}
+.nbfacin .nbf-lr__total {
+  padding: 10px;
+  border: 1px solid var(--success-border);
+  border-radius: var(--r-md);
+  background: var(--success-bg);
+}
+.nbfacin .nbf-lr__rasio {
+  padding: 4px 12px;
+  border: 1px solid var(--info-border, var(--border));
+  border-radius: var(--r-md);
+  background: var(--primary-soft);
+}
+.nbfacin .nbf-lr__rasio-baris {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-lr__rasio-baris + .nbf-lr__rasio-baris {
+  border-top: 1px solid var(--border);
+}
+.nbfacin .nbf-lr__rasio-baris dl {
+  margin: 0;
+}
+.nbfacin .nbf-lr__rasio-baris dt {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.nbfacin .nbf-lr__rasio-baris dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 900px) {
+  .nbfacin .nbf-lr__ubah-isian {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .nbfacin .nbf-lr__ubah-isian,
+  .nbfacin .nbf-lr__rasio-baris {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nbfacin .nbf-lr__ubah-lebar {
+    grid-column: auto;
+  }
+}
+
+/* ---- Tab Correspondence (tiket 56) = gambar layar Pega: grid email, editor terbuka di bawah baris (pengirim, Recipients,
+   Subject, Message berformat, Save / Send Email kanan bawah). */
+.nbfacin .nbf-kor__grid > thead > tr > th:last-child,
+.nbfacin .nbf-kor__grid > tbody > tr:not(.nbf-objek__detail) > td:last-child {
+  width: 110px;
+  text-align: right;
+}
+.nbfacin .nbf-kor__grid > tbody > tr.nbf-objek__detail > td {
+  padding: 0 0 0 46px;
+  text-align: left;
+}
+.nbfacin .nbf-kor__status {
+  display: inline-block;
+  padding: 1px 10px;
+  border: 1px solid var(--warning-border);
+  border-radius: var(--r-pill);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.nbfacin .nbf-kor__status--terkirim {
+  border-color: var(--success-border);
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+.nbfacin .nbf-kor__editor {
+  display: grid;
+  gap: 14px;
+  margin: 4px 12px 12px 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-kor__pengirim {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 24px;
+  margin: 0;
+  max-width: 900px;
+}
+.nbfacin .nbf-kor__pengirim dt,
+.nbfacin .nbf-kor__subjek label,
+.nbfacin .nbf-kor__penerima-baris label,
+.nbfacin .nbf-teks-kaya__label {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.nbfacin .nbf-kor__pengirim dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+}
+.nbfacin .nbf-kor__penerima {
+  display: grid;
+  gap: 6px;
+  max-width: 900px;
+}
+.nbfacin .nbf-kor__penerima-kepala {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nbfacin .nbf-kor__penerima-kepala h6 {
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-kor__kosong {
+  margin: 0;
+  color: var(--text-3);
+}
+.nbfacin .nbf-kor__penerima-baris {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 10px 14px;
+  align-items: end;
+}
+.nbfacin .nbf-kor__penerima-baris > div {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+.nbfacin .nbf-kor__penerima-baris > div > label {
+  margin: 0;
+  line-height: 1.4;
+}
+.nbfacin .nbf-kor__penerima-baris--baca {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+.nbfacin .nbf-kor__subjek {
+  display: grid;
+  gap: 4px;
+}
+.nbfacin .nbf-kor__editor input {
+  height: 34px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: inherit;
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-kor__ukuran {
+  margin: -8px 0 0;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  text-align: right;
+}
+.nbfacin .nbf-kor__ukuran--lebih {
+  color: var(--danger-text);
+  font-weight: 600;
+}
+.nbfacin .nbf-kor__tombol {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.nbfacin .nbf-teks-kaya {
+  display: grid;
+  gap: 4px;
+}
+.nbfacin .nbf-teks-kaya__alat {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: var(--r-md) var(--r-md) 0 0;
+  background: var(--surface-2);
+}
+.nbfacin .nbf-teks-kaya__alat button {
+  min-width: 32px;
+  font-weight: 700;
+}
+.nbfacin .nbf-teks-kaya__isi {
+  min-height: 220px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+.nbfacin .nbf-teks-kaya__isi[contenteditable='false'] {
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+@media (max-width: 720px) {
+  .nbfacin .nbf-kor__pengirim,
+  .nbfacin .nbf-kor__penerima-baris {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Blok Email Type tahap marketing (tiket 57) = gambar layar Pega: Email type* (radio bersusun) berlabel kiri,
+   Comment* lebar penuh, grid riwayat; popup Cause of Decline (grid T/C + Non - T/C). */
+.nbfacin .nbf-et {
+  display: grid;
+  gap: 12px;
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-et__baris {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 8px 16px;
+  align-items: start;
+}
+.nbfacin .nbf-et__label {
+  color: var(--text-3);
+  padding-top: 2px;
+}
+.nbfacin .nbf-et__opsi {
+  display: grid;
+  gap: 4px;
+}
+.nbfacin .nbf-et__opsi label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-weight: 400;
+  color: inherit;
+}
+.nbfacin .nbf-et__baris select {
+  max-width: 360px;
+  height: 32px;
+}
+.nbfacin .nbf-et__catatan {
+  color: var(--warning-text);
+}
+.nbfacin .nbf-et__komentar {
+  display: grid;
+  gap: 4px;
+}
+.nbfacin .nbf-et__komentar label {
+  margin: 0;
+  color: var(--text-3);
+}
+.nbfacin .nbf-et__komentar textarea {
+  width: 100%;
+  min-height: 110px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+}
+.nbfacin .nbf-et__info {
+  display: grid;
+  gap: 4px;
+}
+.nbfacin .nbf-et__info small {
+  color: var(--text-3);
+}
+.nbfacin .nbf-et__proteksi {
+  margin: 0;
+  padding: 8px 12px 8px 28px;
+  border: 1px solid var(--danger-border);
+  border-radius: var(--r-md);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+.nbfacin .nbf-et__teks {
+  white-space: pre-wrap;
+}
+.nbfacin .nbf-sebab {
+  display: grid;
+  gap: 12px;
+  font-size: var(--fs-sm);
+}
+.nbfacin .nbf-sebab__galat {
+  margin: 0;
+  padding: 8px 12px 8px 28px;
+  border: 1px solid var(--danger-border);
+  border-radius: var(--r-md);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+.nbfacin .nbf-sebab__centang {
+  width: 36px;
+  text-align: center;
+}
+.nbfacin .nbf-sebab__pilih > td {
+  background: var(--primary-soft);
+}
+.nbfacin .nbf-sebab__tc input,
+.nbfacin .nbf-sebab__tc select {
+  width: 100%;
+  min-width: 90px;
+  height: 30px;
+  padding: 2px 6px;
+}
+.nbfacin .nbf-sebab__tc input[type='checkbox'],
+.nbfacin .nbf-sebab__nontc input[type='checkbox'] {
+  width: auto;
+  min-width: 0;
+  height: auto;
+}
+@media (max-width: 720px) {
+  .nbfacin .nbf-et__baris {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Konfirmasi Submit di portal (tiket 57). */
+.nbfacin .nbf-portal__pesan {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
 }

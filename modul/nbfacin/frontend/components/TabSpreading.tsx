@@ -25,7 +25,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Field, Gagal, Kosong, Memuat, Pilih } from '../../../../inti/frontend/components/ui/dasar'
 import { desimalSah, jumlahDesimal } from '../../../../inti/frontend/lib/desimal'
-import { formatNumber } from '../../../../inti/frontend/lib/format'
+import { angka4 } from '../angka4'
 import {
   ambilSpreading,
   hitungShareSpreading,
@@ -37,7 +37,6 @@ import {
 } from '../api'
 import { SPREADING as S, TEKS_OBJEK, TEKS_SPREADING as T } from '../labels'
 
-const DESIMAL = 4
 const JEDA_MS = 500
 
 /** Angka sah: kosong atau desimal bertitik. */
@@ -60,7 +59,7 @@ export function treatyKembar(t: TemplateSpreading[]): boolean {
   return new Set(dipilih).size !== dipilih.length
 }
 
-const angka = (v: string | undefined) => formatNumber(v ?? '', DESIMAL)
+const angka = (v: string | undefined) => angka4(v ?? '')
 
 function Buka({ buka, onKlik }: { buka: boolean; onKlik: () => void }) {
   return (
@@ -111,6 +110,53 @@ function TabelTotal({ kolom, baris, firstLoss }: { kolom: readonly string[]; bar
         </tbody>
       </table>
     </div>
+  )
+}
+
+/**
+ * Ringkasan Spreading (`SummarySpreading_Section`) - dipakai juga tab Premium Deduction / Brokerage Fee (tiket 50).
+ * `hanyaMataUang` = grid `TotalSpreadAll.pxResults` saja: tab Inw Fac Cedant Panels FIRE (Dtl layout S62 `IsFire`, tiket 49).
+ */
+export function RingkasanSpreading({
+  v,
+  hanyaMataUang = false,
+}: {
+  v: Pick<TampilanSpreading, 'ringkasanTreaty' | 'ringkasanMataUang'>
+  hanyaMataUang?: boolean
+}) {
+  return (
+    <section className="nbf-spread__ringkasan">
+      {!hanyaMataUang && <TabelTotal kolom={S.kolomRingkasanTreaty} baris={v.ringkasanTreaty} firstLoss />}
+      <div className="nbf-cov-wrap">
+        <table className="nbf-tabel">
+          <thead>
+            <tr>
+              {S.kolomRingkasanMataUang.map((k) => (
+                <th key={k} scope="col">
+                  {k}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {v.ringkasanMataUang.length === 0 && (
+              <tr>
+                <td colSpan={5}>{T.kosong}</td>
+              </tr>
+            )}
+            {v.ringkasanMataUang.map((r) => (
+              <tr key={r.currency}>
+                <td>{r.currency}</td>
+                <td className="nbf-angka">{angka(r.tsiTopRisk)}</td>
+                <td className="nbf-angka">{angka(r.tsi)}</td>
+                <td className="nbf-angka">{angka(r.lol)}</td>
+                <td className="nbf-angka">{angka(r.premium)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   )
 }
 
@@ -473,38 +519,7 @@ export default function TabSpreading({ caseId }: { caseId: string }) {
       </div>
 
       {/* Ringkasan (SummarySpreading_Section) */}
-      <section className="nbf-spread__ringkasan">
-        <TabelTotal kolom={S.kolomRingkasanTreaty} baris={v.ringkasanTreaty} firstLoss />
-        <div className="nbf-cov-wrap">
-          <table className="nbf-tabel">
-            <thead>
-              <tr>
-                {S.kolomRingkasanMataUang.map((k) => (
-                  <th key={k} scope="col">
-                    {k}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {v.ringkasanMataUang.length === 0 && (
-                <tr>
-                  <td colSpan={5}>{T.kosong}</td>
-                </tr>
-              )}
-              {v.ringkasanMataUang.map((r) => (
-                <tr key={r.currency}>
-                  <td>{r.currency}</td>
-                  <td className="nbf-angka">{angka(r.tsiTopRisk)}</td>
-                  <td className="nbf-angka">{angka(r.tsi)}</td>
-                  <td className="nbf-angka">{angka(r.lol)}</td>
-                  <td className="nbf-angka">{angka(r.premium)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <RingkasanSpreading v={v} />
 
       <div className="nbf-objek__kaki">
         <button type="button" className="btn btn--primary" onClick={() => void simpan()} disabled={menyimpan || !angkaSah(share) || lebihDari100(share)}>

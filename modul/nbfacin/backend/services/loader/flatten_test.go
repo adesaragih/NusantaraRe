@@ -495,8 +495,8 @@ func TestFlattenTeksMenyimpang(t *testing.T) {
 	if len(h.Diagnostik.KomaDesimal) != 0 {
 		t.Errorf("koma desimal ditafsirkan di kolom teks: %v", h.Diagnostik.KomaDesimal)
 	}
-	if len(kolomTeksMenyimpang) != 8 {
-		t.Errorf("%d kolom menyimpang, mau 8", len(kolomTeksMenyimpang))
+	if len(kolomTeksMenyimpang) != 9 { // 8 butir 68.1 + T_LISTINSTALLMENT.INSTALLMENT_PERCENTAGE (tiket 51 K51-3)
+		t.Errorf("%d kolom menyimpang, mau 9", len(kolomTeksMenyimpang))
 	}
 	for tk := range kolomTeksMenyimpang {
 		tb, kol, _ := strings.Cut(tk, ".")

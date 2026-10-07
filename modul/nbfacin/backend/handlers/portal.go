@@ -19,6 +19,7 @@ type barisPortal struct {
 	InsuredName   string `json:"insuredName"`
 	Marketing     string `json:"marketing"`
 	Status        string `json:"status"`
+	NBStatus      string `json:"nbStatus"`
 }
 
 func cariPortal(svc *services.Service, stubPelaku bool) http.HandlerFunc {
@@ -41,7 +42,7 @@ func cariPortal(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		baris := make([]barisPortal, 0, len(hasil.Baris))
 		for _, b := range hasil.Baris {
 			baris = append(baris, barisPortal{CaseID: b.CaseID, Name: b.Name, GroupBusiness: b.GroupBusiness,
-				InsuredName: b.InsuredName, Marketing: b.Marketing, Status: b.Status})
+				InsuredName: b.InsuredName, Marketing: b.Marketing, Status: b.Status, NBStatus: b.NBStatus})
 		}
 		galat.TulisJSON(w, struct {
 			Baris   []barisPortal `json:"baris"`
