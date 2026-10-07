@@ -35,6 +35,7 @@ import (
 	"fmt"
 	"strings"
 
+	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/komiteclaimlife/backend/models"
@@ -96,6 +97,10 @@ func sqlDariKomite(gen, work, list, klaim, adj string) string {
 // tengah meninggalkan anggota berikutnya ber-approval menunggu; tanpa syarat
 // `IsKomiteLoop` (`models.KasusDiTangga`) kasus itu jatuh ke inbox mereka.
 // `End1` tidak punya `pyWorkStatus`, jadi syaratnya dibaca dari kepala kasus.
+//
+// ⛔ LINI (keputusan work owner 07-10-2026): tabel komite dipakai bersama Claim Prop, yang melahirkan kasus komite
+// `TKMT-` ber-`LINI = 'PROP'` di tabel yang sama. Tanpa saringan ini anggota roster Life yang juga anggota roster
+// PROP melihat kasus PROP di inbox Komite Life. `LINI` kosong tetap terbaca sebagai Life - baris lama.
 const sqlSaringInboxKomite = `
 	 WHERE l.KOMITE_OPERATORID = :akun
 	   AND l.KOMITE_APPROVAL = :menunggu
@@ -104,7 +109,8 @@ const sqlSaringInboxKomite = `
 	                           AND l2.KOMITE_APPROVAL = :menunggu)
 	   AND (w.STATUS_WORK IS NULL OR w.STATUS_WORK <> :tutup)
 	   AND (g.ACCEPT_STATUS IS NULL
-	        OR (g.ACCEPT_STATUS = :setuju AND g.KOMITE_COUNT <= g.KOMITE_LOOP))`
+	        OR (g.ACCEPT_STATUS = :setuju AND g.KOMITE_COUNT <= g.KOMITE_LOOP))
+	   AND (w.LINI = :lini OR w.LINI IS NULL)`
 
 // InboxKomite membaca kasus komite.
 type InboxKomite struct{ db *db.DB }
@@ -178,7 +184,7 @@ func (r *InboxKomite) Ambil(ctx context.Context, akunID, statusTutup string,
 	// jalur ini mengikat penanda bernama secara berurutan (pola `AmbilInbox`
 	// Claim Life). `:menunggu` muncul DUA kali, jadi ia dikirim dua kali.
 	saring := []any{akunID, ApprovalKomiteMenunggu, ApprovalKomiteMenunggu, statusTutup,
-		models.KeputusanKomiteSetuju}
+		models.KeputusanKomiteSetuju, inti.LiniLife}
 	rows, err := r.db.QueryContext(ctx, q, append(saring, offset, ukuran)...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("repository: membaca inbox komite: %w", err)

@@ -83,6 +83,9 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
 - **Penyerahan ke komite aktif** (jawaban "b"): kode batas komite dikumpulkan di `backend/models/komite.go` dan
   `backend/repository/komite.go`; keduanya masuk daftar pengecualian penjaga batas Claim Life `komite_statik_test.go`
   (satu-satunya suntingan di modul itu). Gerbang lampiran tetap menolak selama OQ-CP-12 terbuka.
+- **Kotak masuk Komite Claim Life disaring LINI** ("tambahkan!"): `komiteclaimlife/backend/repository/komite_inbox.go`
+  `sqlSaringInboxKomite` + `(w.LINI = :lini OR w.LINI IS NULL)`, argumen `inti.LiniLife`. Kasus komite PROP tidak
+  muncul di inbox Komite Life.
 - **Tambah / hapus baris Spreading Claim nonaktif**, termasuk ikon grid bawaan (dicabut). Akibat yang diketahui:
   kasus BARU tidak dapat melahirkan baris spreading, sehingga Save to issue RNM ditolak `ProteksiData_act` langkah 5
   ("please Fill SpreadingList"); kasus hasil pemuat data lama membawa barisnya.
