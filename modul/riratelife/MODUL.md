@@ -36,89 +36,57 @@ RATE_LIFE_SUMMARY, panduannya xml yang saya berikan"*. Panduan: section Pega `In
   itu tidak tersedia → dirancang dari petunjuk format di XML (`Format excel : USEDBY, CONTRACT, GENDER, AGE, RATE`
   b5305); perilaku di luar itu = ASUMSI (tabel di bawah).
 
-## Keputusan work owner 06-10-2026 — ringkasan menjadi tabel flat (RALAT R4)
+## Keputusan work owner 07-10-2026 — ringkasan SATU tabel `M_RATE_LIFE_SUMMARY` (RALAT R6, menggantikan R4)
 
-Perintah: *"tabel M_RATE_LIFE_SUMMARY buat jadi flat menampilkan data detail yang ada pada tabel view
-RATE_LIFE_SUMMARY"*. Sesudah ditanya:
+*"Ringkasan R/I Rate Life cukup SATU tabel - M_RATE_LIFE_SUMMARY."* Sasaran akhir POOLDATA: `M_RATE_LIFE_SUMMARY`
+berkolom persis seperti tabel flat `RATE_LIFE_SUMMARY` (926): `ID VARCHAR2(10)` PK, `USEDBY VARCHAR2(500)`,
+`TYPE VARCHAR2(100)`, `MODIFIEDDATE VARCHAR2(50)`, `OPERATORID VARCHAR2(200)`; kolom `JSONDATA` dan constraint
+`ENSURE_M_RATE_LIFE_SUMMARY_JSON` dibuang; tabel flat `RATE_LIFE_SUMMARY` (926) DIHAPUS; nol tabel baru.
 
-- **K-F1:** VIEW `RATE_LIFE_SUMMARY` **DIGANTI TABEL FLAT bernama sama** `RATE_LIFE_SUMMARY` (migrasi inti `926`, pola
-  `RICOMM_LIFE`): berkas DBA pelepas view terpisah SEBELUM `-migrate`; `_down` = DROP TABLE lalu CREATE VIEW definisi
-  asli; alat pindah uji-kering bawaan, `-jalankan` ditolak bila `IS_PEGA_PROD=true`. `M_RATE_LIFE_SUMMARY` (JSON, cacah
-  masih berubah) TIDAK disentuh: cadangan + sumber alat pindah.
-- **K-F2:** SEMUA 6 kolom view ikut, isi apa adanya (`ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID, FLAG`, semua
-  VARCHAR2). Modul tidak menulis `TYPE`/`FLAG` (tidak di XML): baris baru NULL, baris pindahan apa adanya.
-  ⚠️ **FLAG dikeluarkan RALAT R5** (keputusan work owner 06-10-2026: FLAG tidak digunakan) - tabel flat 5 kolom.
+Keadaan DEV (WO 07-10-2026, baca-saja): 926 sudah jalan - `RATE_LIFE_SUMMARY` = TABLE, SUMBER KEBENARAN (aplikasi
+menulis ke sana sejak 09:09), identik dengan JSON `M_RATE_LIFE_SUMMARY` (MINUS dua arah = 0); `M_RATE_LIFE_SUMMARY` = ID
+PK + JSONDATA CLOB (IS JSON). Dependensi DB `M_RATE_LIFE_SUMMARY`: prosedur `PEGA_M_RATE_LIFE_SUMMARY` dan
+`PEGA_M_PLAN_LIFE_SUMMARY` - akan INVALID. ⚠️ **Pemutusan Pega:** WO menerima R/I Rate TIDAK lagi disimpan lewat Pega;
+satu-satunya penulis ringkasan = modul ini.
 
-Penerapan: `inti/backend/migrations/926_rate_life_summary_flat.sql` (+ `_down`), `docs/DBA-LEPAS-VIEW-RATE_LIFE_SUMMARY.sql`,
-`backend/alat/pindahflat` + `repository/pindah.go`, repository ringkasan membaca DAN menulis tabel flat (kolom bernama;
-jalur JSON ringkasan dibuang - `rirl_json.go` tetap untuk `M_RATE_LIFE`). Bukti lebar per kolom + **[penyimpangan
-sadar]**: `docs/STRUKTUR-TABEL-RIRATELIFE.md`. **Urutan WO siap-tempel: [`docs/LANGKAH-WO-RIRATELIFE-FLAT.md`](docs/LANGKAH-WO-RIRATELIFE-FLAT.md).**
+Penerapan:
 
-**Pembaca lain ikut membaca tabel flat:** `mastercontractretrolife` (autocomplete `R/I RATE`) dan
-`masterproductnamelife` (`Choose R/I Rate`) menjalankan `SELECT ID, USEDBY FROM RATE_LIFE_SUMMARY` - kodenya TIDAK
-diubah dan tetap berjalan atas tabel (nama dan kolom sama).
+- Migrasi inti `927_m_rate_life_summary_kolom.sql` (ALTER … ADD keempat kolom, berdiri sendiri - ADD tidak aman
+  diulang) dan `928_m_rate_life_summary_satu_tabel.sql` (isi dari flat, buang baris yang sudah dihapus aplikasi, buang
+  JSONDATA + constraint IS JSON lewat blok berpelindung katalog, sisip baris flat-saja, indeks
+  `IX_M_RATE_LIFE_SUMMARY_NAMA`, DROP TABLE flat TERAKHIR - setiap pernyataan aman diulang). Jalur mundur keduanya
+  mengembalikan keadaan sesudah 926 (FLAG lama hanya dari cadangan CSV).
+- Repository: ringkasan dibaca DAN ditulis di kolom `M_RATE_LIFE_SUMMARY` (satu tabel; ID terpakai diperiksa di sini
+  saja). Alat `pindahflat` dan berkas `DBA-LEPAS-VIEW-RATE_LIFE_SUMMARY.sql` DIHAPUS (tidak diperlukan lagi; riwayatnya
+  di git). `db.Koneksi` (inti) tetap - dipakai ricommlife.
+- Pembaca lain: `masterproductnamelife` (`Choose R/I Rate`) dan `mastercontractretrolife` (autocomplete `R/I RATE`)
+  kini membaca `SELECT ID, USEDBY FROM M_RATE_LIFE_SUMMARY` (diizinkan WO), tetap baca-saja.
+- **Urutan WO siap-tempel + pemulihan + jalur mundur: [`docs/LANGKAH-WO-RIRATELIFE-SATU-TABEL.md`](docs/LANGKAH-WO-RIRATELIFE-SATU-TABEL.md).**
 
-⚠️ **Risiko cutover:** ringkasan baru yang ditulis Pega (`PEGA_M_RATE_LIFE_SUMMARY` → `M_RATE_LIFE_SUMMARY`) SESUDAH
-pemindahan tidak masuk tabel flat, sehingga tidak tampil di layar ini, di MCRL, maupun MPNL. Saran: bekukan penulisan
-Pega ke R/I Rate (layar Pega `InboxSummaryRIRate` / upload Pega) sejak langkah DBA; bila belum dapat dibekukan,
-jalankan alat pindah ULANG berkala (aman diulang: baris sama dilewati; ID sama berisi beda menghentikan putaran untuk
-diperiksa). ID baru aplikasi tidak bertabrakan dengan ID Pega yang belum dipindah: `MaksID`/`AdaID` ringkasan memeriksa
-tabel flat DAN `M_RATE_LIFE_SUMMARY`. Rincian rate yang ditulis Pega tetap terlihat (view `RATE_LIFE` tidak berubah),
-tetapi ringkasannya baru tampil sesudah dipindah.
-
-**Fakta DEV (dicek WO 06-10-2026, baca-saja):** `M_RATE_LIFE_SUMMARY` 347 baris dan MASIH BERUBAH (MODIFIEDDATE terbaru
-`20261006T040628.169 GMT`) - dokumen dan alat tidak menanam angka baris; panjang maksimum isi ID 7, USEDBY 99,
-MODIFIEDDATE 23, OPERATORID 17, TYPE kosong di semua baris (FLAG 2 - tidak dipakai, R5) (lebar 926 cukup - **[terverifikasi data DEV
-06-10-2026]**); `UPPER(TRIM(USEDBY))` kembar = 0; dependensi / sinonim / grant view = nol.
-
-### FLAG tidak digunakan — RALAT R5
-
-Keputusan work owner 06-10-2026: **kolom FLAG tidak digunakan di R/I Rate Life.** Fakta (dicek WO, baca-saja): FLAG
-diisi layar Pega saat Submit (nol trigger / prosedur); isi DEV `AP` 230, `PM` 106, `PY` 1, kosong 10; FLAG juga ada di
-tiap baris detail `M_RATE_LIFE` (putaran ini tidak diubah); nol kode repo membacanya. Maka tabel flat 926 TIDAK memuat
-FLAG, modul tidak membaca / menulisnya, dan alat pindah tidak menyalinnya. Nilai FLAG lama TIDAK hilang: tetap di
-`M_RATE_LIFE_SUMMARY.JSONDATA` (cadangan), dan jalur mundur 926 memulihkan view lengkap dengan FLAG. TYPE tetap:
-ringkasan baru NULL, Edit tidak menimpa, pindahan apa adanya.
-
-### Cutover delta (alat pindah)
-
-Cacah dibaca SAAT berjalan (sumber dan flat), tidak ada angka tetap. Putaran pertama tanpa `-sejak` (penuh); putaran
-berikutnya `-sejak="<batas delta berikutnya>"` dari laporan putaran sebelumnya. Per ID:
-
-| Keadaan | Tindakan |
-| --- | --- |
-| tidak ada di flat, MODIFIEDDATE sumber lebih baru dari `-sejak` (atau tanpa `-sejak`) | **baru** - disisip |
-| tidak ada di flat, MODIFIEDDATE sumber tidak lebih baru dari `-sejak` / kosong | **dilewati** - dianggap dihapus aplikasi, tidak dihidupkan lagi, dilaporkan |
-| kelima kolom flat sama | **sama** - dilewati |
-| beda, MODIFIEDDATE sumber lebih baru dari flat | **berubah** - flat diperbarui kelima kolom (Pega lebih baru), ID dilaporkan |
-| beda, MODIFIEDDATE flat sama / lebih baru / salah satu kosong atau tidak terbaca | **konflik** - TIDAK ditimpa, ID dilaporkan untuk diperiksa WO |
-| hanya di flat | dibiarkan (ringkasan baru aplikasi) |
-
-Aplikasi tetap hanya menulis tabel flat (MODIFIEDDATE = waktu simpan), sehingga tulisan aplikasi sesudah pemindahan
-selalu lebih baru dari salinan Pega yang lama → konflik, bukan ditimpa. ⚠️ Batas aturan: bila Pega DAN aplikasi
-sama-sama mengubah ringkasan yang sama, versi yang MODIFIEDDATE-nya lebih baru menang dan ID-nya tercantum di laporan
-(`berubah` atau `konflik`). Alasan utama tetap: bekukan Pega.
+Riwayat: RALAT R4 (06-10-2026, view → tabel flat `RATE_LIFE_SUMMARY`, migrasi 926, alat pindah delta) dan RALAT R5
+(FLAG tidak digunakan) - tabel RALAT di bawah. FLAG tetap tidak digunakan; nilai FLAG lama hanya ada di cadangan CSV
+`ID + JSONDATA` yang dibuat sebelum 928 (LANGKAH-WO (a)).
 
 ### Urutan merge
 
 **`modul/riratelife/implementasi` di-merge LEBIH DULU, lalu `modul/ricommlife/implementasi`.** Kedua cabang membawa
-`inti/backend/db/koneksi.go` identik (commit `91221b2f` di sini = `349be34d` di ricommlife), migrasi inti 926 di sini
-dan 924/925 di ricommlife. PR: `docs/PR-RIRATELIFE-FLAT.md`.
+`inti/backend/db/koneksi.go` identik (commit `91221b2f` di sini = `349be34d` di ricommlife); migrasi inti 926-928 di
+sini dan 924/925 di ricommlife. PR: `docs/PR-RIRATELIFE-FLAT.md`.
 
-**Uji coba merge (06-10-2026)** - worktree sementara dari ujung riratelife, `git merge --no-commit
+**Uji coba merge (07-10-2026)** - worktree sementara dari ujung riratelife, `git merge --no-commit
 modul/ricommlife/implementasi`: `inti/backend/db/koneksi.go` bersih (identik). SATU konflik, di
-`inti/backend/penjaga/rentang_test.go` (`TestSlotMenuBerjalanSesudah900`, daftar urutan pelari - kedua cabang menambah
-berkasnya sendiri). Penyelesaian: satu daftar berurutan `… "923_seq_rate_life.sql", "924_ricomm_life.sql",
-"925_m_nav_menu_ricommlife.sql", "926_rate_life_summary_flat.sql", "952_menu_tiruan.sql"`. Sesudahnya `go vet ./...`
-bersih dan `go test ./...` = baseline (3 paket claimlife), ditambah `TestNolAlamatLayananDiKode` yang gagal HANYA karena
-worktree sementara tidak memuat berkas `.env` (tidak masuk git) - bukan akibat merge.
+`inti/backend/penjaga/rentang_test.go` (`TestSlotMenuBerjalanSesudah900`, daftar urutan pelari). Penyelesaian: satu
+daftar berurutan `… "923_seq_rate_life.sql", "924_ricomm_life.sql", "925_m_nav_menu_ricommlife.sql",
+"926_rate_life_summary_flat.sql", "927_m_rate_life_summary_kolom.sql", "928_m_rate_life_summary_satu_tabel.sql",
+"952_menu_tiruan.sql"`. Sesudahnya `go vet ./...` bersih dan `go test ./...` = baseline (3 paket claimlife), ditambah
+`TestNolAlamatLayananDiKode` yang gagal HANYA karena worktree sementara tidak memuat berkas `.env` (tidak masuk git).
 
 ## Isi folder
 
 | Folder | Isi |
 | --- | --- |
-| `docs/` | `STRUKTUR-TABEL-RIRATELIFE.md` — tabel flat (bukti lebar), tabel/view warisan, kunci JSON; `DBA-LEPAS-VIEW-RATE_LIFE_SUMMARY.sql`; `LANGKAH-WO-RIRATELIFE-FLAT.md` |
-| `backend/` | `models/` `repository/` `services/` `handlers/` `tiruan/` `alat/pindahflat/` `modul.go` (tanpa `migrations/`) |
+| `docs/` | `STRUKTUR-TABEL-RIRATELIFE.md` — kolom ringkasan, tabel/view warisan, kunci JSON; `LANGKAH-WO-RIRATELIFE-SATU-TABEL.md`; `PR-RIRATELIFE-FLAT.md` |
+| `backend/` | `models/` `repository/` `services/` `handlers/` `tiruan/` `modul.go` (tanpa `migrations/`) |
 | `frontend/` | `pages/` `components/` `labels.ts` `api.ts` `aturan.ts` `riratelife.css` `menu.ts` `rute.tsx` dan `*.test.ts` |
 
 ## Rule XML → kode
@@ -170,6 +138,7 @@ worktree sementara tidak memuat berkas `.env` (tidak masuk git) - bukan akibat m
 
 | # | Bunyi lama | Bunyi baru | Bukti |
 | --- | --- | --- | --- |
+| R6 (07-10-2026) | R4: *"VIEW `RATE_LIFE_SUMMARY` diganti TABEL FLAT bernama sama … `M_RATE_LIFE_SUMMARY` (JSON) TIDAK disentuh: cadangan + sumber alat pindah"* | **Keputusan work owner 07-10-2026: ringkasan cukup SATU tabel `M_RATE_LIFE_SUMMARY`** berkolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID (lebar = 926); JSONDATA + constraint IS JSON dibuang; tabel flat 926 dihapus (928); Pega tidak lagi menyimpan R/I Rate (prosedur `PEGA_M_RATE_LIFE_SUMMARY`, `PEGA_M_PLAN_LIFE_SUMMARY` INVALID - diterima WO); alat pindahflat dan berkas DBA lepas view dihapus; MPNL dan MCRL membaca kolom `M_RATE_LIFE_SUMMARY` | migrasi inti `927_m_rate_life_summary_kolom.sql`, `928_m_rate_life_summary_satu_tabel.sql`; uji `TestMigrasi927KolomRingkasan`, `TestMigrasi928SatuTabel`, `TestSqlTulisRingkasan`, `-tags=db` `TestDBMigrasiSatuTabelDanMundur` |
 | R5 (06-10-2026) | R4/K-F2: tabel flat memuat keenam kolom view termasuk `FLAG`; FLAG berstatus [penyimpangan sadar - menunggu WO] + pertanyaan arti `AP`/`PM`/`PY` | **FLAG tidak digunakan - keputusan WO 06-10-2026; nilai lama tetap di `M_RATE_LIFE_SUMMARY.JSONDATA`.** FLAG diisi layar Pega saat Submit (nol trigger/prosedur). Kolom FLAG dibuang dari CREATE TABLE 926 (belum dijalankan di DEV - berkas yang sama diubah, bukan migrasi baru); `_down` tetap memulihkan view asli lengkap. Modul dan alat pindah tidak membaca/menulis/menyalin FLAG; delta, COUNT, dan MINUS memakai 5 kolom. Pertanyaan FLAG untuk WO dicabut | keputusan WO 06-10-2026; `926_rate_life_summary_flat.sql`; uji `TestMigrasi926TeruraiDanBerpasangan` (nol FLAG di DDL), `TestSqlTulisRingkasan` (nol FLAG di SQL repository dan alat), `TestRencanaPindahPenuh` |
 | R4 (06-10-2026) | K1: *"CRUD menulis ke `M_RATE_LIFE_SUMMARY`, view TIDAK di-DROP, nol DDL pada tabel/view warisan"* | **Keputusan work owner 06-10-2026 K-F1/K-F2**: VIEW `RATE_LIFE_SUMMARY` diganti TABEL FLAT bernama sama (migrasi inti 926, keenam kolom view, isi apa adanya); ringkasan dibaca DAN ditulis di tabel flat (kolom bernama, `TYPE`/`FLAG` tidak ditulis); `M_RATE_LIFE_SUMMARY` dibaca saja (cadangan, sumber alat pindah, ID terpakai); DROP VIEW = berkas DBA terpisah sebelum `-migrate` | perintah WO *"tabel M_RATE_LIFE_SUMMARY buat jadi flat …"*; `926_rate_life_summary_flat.sql`; uji `TestMigrasi926TeruraiDanBerpasangan`, `TestSqlTulisRingkasan`, `TestRencanaPindah`, `TestNilaiJSON`, `-tags=db` `rirl_db_test.go` |
 | R3 (06-10-2026) | A2: *"Update = `JSON_MERGEPATCH(... RETURNING CLOB)` … butuh Oracle 18c+"* | Edit ringkasan, salinan nama rate, dan Edit / Save Rate Detail **tidak lagi memakai `JSON_MERGEPATCH`**: JSONDATA dibaca `SELECT … FOR UPDATE` di dalam transaksi, kunci yang berubah diganti di Go (`TerapkanKunci`: kunci Pega lain dan bentuk angka tetap, nilai kosong = kunci dibuang), lalu `UPDATE … SET JSONDATA = :1` - pola yang sudah berjalan di DEV (`masterproductnamelife`). Sisip tetap `JSON_OBJECT` (terbukti berjalan) | log server DEV 06-10-2026 10:55: `riratelife: menyimpan rate: repository: mengubah ringkasan: ORA-00907: missing right parenthesis` (Save Rate Detail; transaksi dibatalkan, nol baris setengah jadi); `backend/repository/rirl_json.go`; uji `TestTerapkanKunci`, `TestNolJSONMergepatchDiSQL` |
@@ -179,9 +148,11 @@ worktree sementara tidak memuat berkas `.env` (tidak masuk git) - bukan akibat m
 ## Migrasi
 
 Nol migrasi modul. Migrasi inti `922_m_nav_menu_riratelife.sql` (baris menu, langsung menyala),
-`923_seq_rate_life.sql` (dua sequence, nilai awal = ID angka tertinggi + 1 dihitung di basis data tujuan), dan
-`926_rate_life_summary_flat.sql` (tabel flat ringkasan, RALAT R4 - prasyarat: view dibuang DBA; 924/925 dipakai
-`ricommlife` di cabangnya).
+`923_seq_rate_life.sql` (dua sequence, nilai awal = ID angka tertinggi + 1 dihitung di basis data tujuan),
+`926_rate_life_summary_flat.sql` (tabel flat ringkasan, RALAT R4 - sudah jalan di DEV), `927_m_rate_life_summary_kolom.sql`
+dan `928_m_rate_life_summary_satu_tabel.sql` (satu tabel, RALAT R6). 924/925 dipakai `ricommlife` di cabangnya.
+⚠️ Karena 927/928 mengubah bentuk `M_RATE_LIFE_SUMMARY`, tabel itu TIDAK lagi dinyatakan "Tabel warisan" di bawah
+(preseden `adjusterconsultant` 870); kolom yang dibuat migrasi tercatat di `docs/STRUKTUR-TABEL-RIRATELIFE.md`.
 
 ## Menjalankan uji modul ini saja
 
@@ -200,6 +171,5 @@ npx vitest run modul/riratelife
 
 | Tabel | Alasan |
 | --- | --- |
-| `M_RATE_LIFE_SUMMARY` | tabel fisik warisan Pega (ringkasan R/I rate life, JSON, cacah masih berubah); sejak RALAT R4 (K-F1 06-10-2026) DIBACA saja - cadangan, sumber alat pindahflat, dan pemeriksa ID terpakai; nol DDL, nol tulis |
 | `M_RATE_LIFE` | tabel fisik warisan Pega (baris rate, JSON); disisipkan Simpan Upload dan Rate Detail Save, diubah Rate Detail Edit, dihapus Delete ringkasan; nol DDL |
 | `RATE_LIFE` | view warisan atas `M_RATE_LIFE`; dibaca Rate Detail, Delete, dan pemeriksa kembar upload |

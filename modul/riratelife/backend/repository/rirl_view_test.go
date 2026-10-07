@@ -7,14 +7,14 @@ import (
 )
 
 // RALAT R1: definisi view RATE_LIFE_SUMMARY (ALL_VIEWS, dibaca WO 06-10-2026) = enam kolom ini (sejarah; dipulihkan
-// jalur mundur 926). Tabel flat = kolom ini TANPA FLAG (RALAT R5).
+// jalur mundur 926). Kolom ringkasan M_RATE_LIFE_SUMMARY = kolom ini TANPA FLAG (RALAT R5, R6).
 func TestKolomViewRingkasanEnamKolom(t *testing.T) {
 	mau := []string{"ID", "USEDBY", "TYPE", "MODIFIEDDATE", "OPERATORID", "FLAG"}
 	if !slices.Equal(KolomViewRingkasan, mau) {
 		t.Fatalf("kolom view %v, mau %v", KolomViewRingkasan, mau)
 	}
-	if !slices.Equal(KolomRingkasanFlat, mau[:5]) {
-		t.Errorf("kolom flat %v, mau %v", KolomRingkasanFlat, mau[:5])
+	if !slices.Equal(KolomRingkasan, mau[:5]) {
+		t.Errorf("kolom ringkasan %v, mau %v", KolomRingkasan, mau[:5])
 	}
 }
 

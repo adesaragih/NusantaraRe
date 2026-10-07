@@ -1,11 +1,11 @@
 // Package models memuat bentuk data modul R/I Rate Life (`riratelife`) - section Pega `InboxSummaryRIRate` (kelas
 // `ASM-FW-GISFW-Int-RATE_LIFE_SUMMARY`, judul "R/I RATE SUMMARY" b382): ringkasan rate reasuransi life
-// (tabel flat `RATE_LIFE_SUMMARY`, migrasi inti 926 - RALAT R4) dan rincian rate-nya (`M_RATE_LIFE`, view
+// (kolom `M_RATE_LIFE_SUMMARY`, migrasi inti 927/928 - RALAT R6) dan rincian rate-nya (`M_RATE_LIFE`, view
 // `RATE_LIFE`). Perintah work owner 05-10-2026: "Buat Menu baru Namanya R/I Rate Life pada Master Treaty, menu ini
 // bisa CRUD untuk simpan data ke tabel RATE_LIFE_SUMMARY, panduannya xml yang saya berikan".
 package models
 
-// Ringkasan - satu baris view `RATE_LIFE_SUMMARY` (grid `BrowseRateLifeSummary` b9568).
+// Ringkasan - satu baris `M_RATE_LIFE_SUMMARY` (grid `BrowseRateLifeSummary` b9568).
 type Ringkasan struct {
 	// ID - `.ID` b1089 (pxTextInput, disabled selalu b1104-b1105); VARCHAR2(10).
 	ID string `json:"id"`
@@ -84,5 +84,5 @@ type HasilHapus struct {
 // BatasNama - panjang R/I RATE NAME (byte). ASUMSI: kolom JSON tanpa batas; 200 cukup untuk nama DEV.
 const BatasNama = 200
 
-// BatasID - `RATE_LIFE_SUMMARY.ID` dan `M_RATE_LIFE.ID` VARCHAR2(10).
+// BatasID - `M_RATE_LIFE_SUMMARY.ID` dan `M_RATE_LIFE.ID` VARCHAR2(10).
 const BatasID = 10

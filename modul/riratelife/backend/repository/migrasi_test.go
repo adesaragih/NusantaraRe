@@ -1,7 +1,9 @@
 package repository
 
-// Migrasi inti 926 (tabel flat RATE_LIFE_SUMMARY, K-F1/K-F2) dibaca pengurai PRODUKSI pelari (`migrasi.KolomCreateTable`)
-// dan berpasangan dengan jalur mundurnya; lebar kolom yang dipakai alat pindah = DDL.
+// Migrasi inti ringkasan R/I Rate Life dibaca pengurai PRODUKSI pelari (`migrasi.KolomCreateTable`,
+// `KolomAlterTambah`, `KolomAlterBuang`, `BacaPerintahKatalog`) - pengurai yang sama dengan pra-terbang `-migrate`:
+// 926 (tabel flat, sudah jalan di DEV - riwayat), 927 (kolom M_RATE_LIFE_SUMMARY), 928 (satu tabel, RALAT R6), dan
+// pasangan `_down` masing-masing.
 
 import (
 	"fmt"
@@ -16,97 +18,121 @@ import (
 	"nusantarare/inti/backend/migrasi"
 )
 
-const (
-	berkas926     = "926_rate_life_summary_flat.sql"
-	berkas926Down = "926_rate_life_summary_flat_down.sql"
-)
-
-func langkah926(t *testing.T, mundur bool) []string {
+func langkahInti(t *testing.T, kunci string, mundur bool) []string {
 	t.Helper()
 	sumber := fstest.MapFS{}
-	for _, n := range []string{berkas926, berkas926Down} {
+	for _, n := range []string{kunci + ".sql", kunci + "_down.sql"} {
 		isi, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "inti", "backend", "migrations", n))
 		if err != nil {
 			t.Fatal(err)
 		}
+		if strings.Contains(string(isi), "\r") {
+			t.Errorf("%s memuat CR", n)
+		}
 		sumber["migrations/"+n] = &fstest.MapFile{Data: isi}
 	}
 	l, err := migrasi.Daftar(mundur, sumber)
-	if err != nil || len(l) != 1 || migrasi.KunciLangkah(l[0].Nama) != "926_rate_life_summary_flat" {
-		t.Fatalf("membaca 926 (mundur=%v): %v %v", mundur, l, err)
+	if err != nil || len(l) != 1 || migrasi.KunciLangkah(l[0].Nama) != kunci {
+		t.Fatalf("membaca %s (mundur=%v): %v %v", kunci, mundur, l, err)
 	}
 	return l[0].Pernyataan
 }
 
-func TestMigrasi926TeruraiDanBerpasangan(t *testing.T) {
-	maju := langkah926(t, false)
-	if len(maju) != 2 {
-		t.Fatalf("926 maju %d pernyataan, mau 2 (CREATE TABLE + indeks pengaman)", len(maju))
-	}
-	nama, kolom := migrasi.KolomCreateTable(maju[0])
-	if nama != TabelRingkasan || !slices.Equal(kolom, KolomRingkasanFlat) {
-		t.Fatalf("KolomCreateTable = %s %v, mau %s %v", nama, kolom, TabelRingkasan, KolomRingkasanFlat)
-	}
-	// RALAT R5: FLAG tidak digunakan - tidak ada di DDL tabel flat (jalur mundur tetap memulihkan view lengkap).
-	if slices.Contains(kolom, "FLAG") || strings.Contains(maju[0], "FLAG") {
-		t.Errorf("DDL 926 memuat FLAG:\n%s", maju[0])
-	}
-	if len(LebarKolomFlat) != len(KolomRingkasanFlat) {
-		t.Errorf("LebarKolomFlat %v, kolom flat %v", LebarKolomFlat, KolomRingkasanFlat)
-	}
-	ddl := satuBaris(maju[0])
-	if strings.Count(ddl, "NOT NULL") != 1 || !strings.Contains(ddl, "CONSTRAINT PK_RATE_LIFE_SUMMARY PRIMARY KEY (ID)") {
-		t.Errorf("PK / NULLABLE:\n%s", ddl)
-	}
-	// Lebar alat pindah = lebar DDL, dan semua kolom teks (view: semua VARCHAR2).
-	for _, k := range KolomRingkasanFlat {
-		m := regexp.MustCompile(k + ` VARCHAR2\((\d+)\)`).FindStringSubmatch(ddl)
-		if m == nil || m[1] != fmt.Sprint(LebarKolomFlat[k]) {
-			t.Errorf("%s: DDL %v, LebarKolomFlat %d", k, m, LebarKolomFlat[k])
+// lebarDDL - lebar VARCHAR2 setiap kolom ringkasan di teks DDL.
+func periksaLebar(t *testing.T, nama, ddl string, kolom []string) {
+	t.Helper()
+	for _, k := range kolom {
+		m := regexp.MustCompile(`\b` + k + ` VARCHAR2\((\d+)\)`).FindStringSubmatch(ddl)
+		if m == nil || m[1] != fmt.Sprint(LebarKolomRingkasan[k]) {
+			t.Errorf("%s %s: DDL %v, LebarKolomRingkasan %d", nama, k, m, LebarKolomRingkasan[k])
 		}
-	}
-	// Pengaman view: pernyataan kedua = indeks fungsi atas nama (dipakai SqlPemakaiNama) - gagal ORA-01702 atas view.
-	if satuBaris(maju[1]) != "CREATE INDEX {skema}.IX_RATE_LIFE_SUMMARY_NAMA ON {skema}.RATE_LIFE_SUMMARY (UPPER(TRIM(USEDBY)))" {
-		t.Errorf("indeks pengaman %q", maju[1])
-	}
-	if !strings.Contains(SqlPemakaiNama("V"), "UPPER(TRIM(USEDBY))") {
-		t.Error("indeks nama tidak lagi dipakai SqlPemakaiNama")
-	}
-	for _, p := range maju {
-		if strings.Contains(strings.ToUpper(p), "VIEW") || strings.Contains(p, "M_RATE_LIFE_SUMMARY") {
-			t.Errorf("jalur maju menyentuh view atau M_RATE_LIFE_SUMMARY (DROP VIEW = berkas DBA): %s", p)
-		}
-	}
-
-	mundur := langkah926(t, true)
-	if len(mundur) != 2 || satuBaris(mundur[0]) != "DROP TABLE {skema}.RATE_LIFE_SUMMARY CASCADE CONSTRAINTS" {
-		t.Fatalf("mundur %q", mundur)
-	}
-	mauView := "CREATE VIEW {skema}.RATE_LIFE_SUMMARY AS SELECT a.ID, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, " +
-		"a.JSONDATA.MODIFIEDDATE, a.JSONDATA.OPERATORID, a.JSONDATA.FLAG FROM {skema}.M_RATE_LIFE_SUMMARY a"
-	if satuBaris(mundur[1]) != mauView {
-		t.Errorf("view dipulihkan\n%s\nmau\n%s", satuBaris(mundur[1]), mauView)
 	}
 }
 
-// Berkas DBA (bukan migrasi): ALL_DEPENDENCIES mendahului DROP VIEW, dan hanya view RATE_LIFE_SUMMARY yang di-DROP.
-func TestBerkasDBALepasView(t *testing.T) {
-	isi, err := os.ReadFile(filepath.Join("..", "..", "docs", "DBA-LEPAS-VIEW-RATE_LIFE_SUMMARY.sql"))
-	if err != nil {
-		t.Fatal(err)
+// 926 (riwayat, sudah jalan di DEV): tabel flat lima kolom, jalur mundur memulihkan view lengkap.
+func TestMigrasi926Riwayat(t *testing.T) {
+	maju := langkahInti(t, "926_rate_life_summary_flat", false)
+	nama, kolom := migrasi.KolomCreateTable(maju[0])
+	if nama != "RATE_LIFE_SUMMARY" || !slices.Equal(kolom, KolomRingkasan) {
+		t.Fatalf("926 = %s %v", nama, kolom)
 	}
-	s := string(isi)
-	if strings.Contains(s, "\r") {
-		t.Error("berkas DBA memuat CR")
+	periksaLebar(t, "926", satuBaris(maju[0]), KolomRingkasan)
+	mundur := langkahInti(t, "926_rate_life_summary_flat", true)
+	mauView := "CREATE VIEW {skema}.RATE_LIFE_SUMMARY AS SELECT a.ID, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, " +
+		"a.JSONDATA.MODIFIEDDATE, a.JSONDATA.OPERATORID, a.JSONDATA.FLAG FROM {skema}.M_RATE_LIFE_SUMMARY a"
+	if len(mundur) != 2 || satuBaris(mundur[1]) != mauView {
+		t.Errorf("926 mundur %q", mundur)
 	}
-	i, j := strings.Index(s, "ALL_DEPENDENCIES"), strings.Index(s, "DROP VIEW POOLDATA.RATE_LIFE_SUMMARY;")
-	if i < 0 || j < 0 || i > j {
-		t.Errorf("ALL_DEPENDENCIES (%d) harus mendahului DROP VIEW (%d)", i, j)
+}
+
+// 927: SATU pernyataan ALTER … ADD ( biasa (terbaca KolomAlterTambah), keempat kolom ringkasan selebar 926; mundurnya
+// membuang keempatnya.
+func TestMigrasi927KolomRingkasan(t *testing.T) {
+	maju := langkahInti(t, "927_m_rate_life_summary_kolom", false)
+	if len(maju) != 1 {
+		t.Fatalf("927 %d pernyataan, mau 1 (berdiri sendiri - ADD tidak aman diulang)", len(maju))
 	}
-	for _, b := range strings.Split(s, "\n") {
-		u := strings.ToUpper(strings.TrimSpace(b))
-		if !strings.HasPrefix(u, "--") && strings.HasPrefix(u, "DROP ") && u != "DROP VIEW POOLDATA.RATE_LIFE_SUMMARY;" {
-			t.Errorf("DROP lain: %s", b)
+	nama, kolom := migrasi.KolomAlterTambah(maju[0])
+	if nama != TabelRingkasan || !slices.Equal(kolom, KolomRingkasan[1:]) {
+		t.Fatalf("KolomAlterTambah = %s %v", nama, kolom)
+	}
+	periksaLebar(t, "927", satuBaris(maju[0]), KolomRingkasan[1:])
+	mundur := langkahInti(t, "927_m_rate_life_summary_kolom", true)
+	if len(mundur) != 1 || satuBaris(mundur[0]) != "ALTER TABLE {skema}.M_RATE_LIFE_SUMMARY DROP (USEDBY, TYPE, MODIFIEDDATE, OPERATORID)" {
+		t.Errorf("927 mundur %q", mundur)
+	}
+}
+
+// 928: urutan isi -> buang JSONDATA (blok berpelindung katalog, terbaca KolomAlterBuang) -> sisip baris flat-saja ->
+// indeks -> DROP TABLE flat TERAKHIR; setiap pernyataan aman diulang. Mundurnya membangun ulang tabel flat dan JSONDATA.
+func TestMigrasi928SatuTabel(t *testing.T) {
+	maju := langkahInti(t, "928_m_rate_life_summary_satu_tabel", false)
+	if len(maju) != 6 {
+		t.Fatalf("928 %d pernyataan, mau 6", len(maju))
+	}
+	awal := []string{"UPDATE {skema}.M_RATE_LIFE_SUMMARY m SET (USEDBY, TYPE, MODIFIEDDATE, OPERATORID) =",
+		"DELETE FROM {skema}.M_RATE_LIFE_SUMMARY m WHERE NOT EXISTS (SELECT 1 FROM {skema}.RATE_LIFE_SUMMARY f",
+		"DECLARE", "INSERT INTO {skema}.M_RATE_LIFE_SUMMARY (ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID)",
+		"CREATE INDEX {skema}.IX_M_RATE_LIFE_SUMMARY_NAMA ON {skema}.M_RATE_LIFE_SUMMARY (UPPER(TRIM(USEDBY)))",
+		"DROP TABLE {skema}.RATE_LIFE_SUMMARY CASCADE CONSTRAINTS"}
+	for i, a := range awal {
+		if !strings.HasPrefix(satuBaris(maju[i]), a) {
+			t.Errorf("928 pernyataan %d:\n%s\nmau berawal\n%s", i, satuBaris(maju[i]), a)
 		}
+	}
+	pk, ok := migrasi.BacaPerintahKatalog(maju[2])
+	if !ok || pk.Katalog != "ALL_TAB_COLUMNS" || pk.Tabel != TabelRingkasan || pk.Objek != "JSONDATA" || !pk.BilaAda {
+		t.Errorf("blok buang JSONDATA %+v %v", pk, ok)
+	}
+	if nama, kolom := migrasi.KolomAlterBuang(pk.Perintah); nama != TabelRingkasan || !slices.Equal(kolom, []string{"JSONDATA"}) {
+		t.Errorf("KolomAlterBuang = %s %v", nama, kolom)
+	}
+	if !strings.Contains(maju[3], "WHERE NOT EXISTS (SELECT 1 FROM {skema}.M_RATE_LIFE_SUMMARY m WHERE m.ID = f.ID)") {
+		t.Error("sisipan baris flat-saja harus NOT EXISTS (aman diulang)")
+	}
+	for _, p := range maju {
+		if strings.Contains(p, "JSON_OBJECT") || strings.Contains(p, "FLAG") {
+			t.Errorf("jalur maju membangun JSON / menyebut FLAG: %s", p)
+		}
+	}
+
+	mundur := langkahInti(t, "928_m_rate_life_summary_satu_tabel", true)
+	nama, kolom := migrasi.KolomCreateTable(mundur[0])
+	if nama != "RATE_LIFE_SUMMARY" || !slices.Equal(kolom, KolomRingkasan) {
+		t.Fatalf("928 mundur CREATE = %s %v", nama, kolom)
+	}
+	periksaLebar(t, "928_down", satuBaris(mundur[0]), KolomRingkasan)
+	semua := satuBaris(strings.Join(mundur, "\n"))
+	for _, mau := range []string{"CREATE INDEX {skema}.IX_RATE_LIFE_SUMMARY_NAMA ON {skema}.RATE_LIFE_SUMMARY",
+		"INSERT INTO {skema}.RATE_LIFE_SUMMARY (ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID)",
+		"DROP INDEX {skema}.IX_M_RATE_LIFE_SUMMARY_NAMA",
+		"JSON_OBJECT('USEDBY' VALUE m.USEDBY, 'TYPE' VALUE m.TYPE, 'MODIFIEDDATE' VALUE m.MODIFIEDDATE, 'OPERATORID' VALUE m.OPERATORID ABSENT ON NULL RETURNING CLOB)",
+		"ADD CONSTRAINT ENSURE_M_RATE_LIFE_SUMMARY_JSON CHECK (JSONDATA IS JSON)"} {
+		if !strings.Contains(semua, mau) {
+			t.Errorf("928 mundur tanpa %q", mau)
+		}
+	}
+	if nama, kolom := migrasi.KolomAlterTambah(mundur[4]); nama != TabelRingkasan || !slices.Equal(kolom, []string{"JSONDATA"}) {
+		t.Errorf("928 mundur ADD JSONDATA = %s %v", nama, kolom)
 	}
 }

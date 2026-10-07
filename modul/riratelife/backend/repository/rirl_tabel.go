@@ -3,39 +3,35 @@
 //
 // Untuk apa berkas ini: nama objek Oracle dan kunci JSON modul ini, ditulis SEKALI.
 //
-// RALAT R4 (06-10-2026, MODUL.md) - menggantikan K1 05-10-2026 ("CRUD menulis M_RATE_LIFE_SUMMARY, view TIDAK
-// di-DROP"): keputusan work owner K-F1/K-F2 06-10-2026 - VIEW `RATE_LIFE_SUMMARY` diganti TABEL FLAT bernama sama
-// (migrasi inti 926, enam kolom view). Ringkasan kini dibaca DAN ditulis di tabel flat itu (kolom bernama);
-// `M_RATE_LIFE_SUMMARY` (JSON) tidak pernah ditulis lagi - cadangan, sumber alat pindahflat, dan pemeriksa ID terpakai.
-// Rincian rate (`M_RATE_LIFE` + view `RATE_LIFE`) TIDAK berubah.
+// RALAT R6 (07-10-2026, MODUL.md) - menggantikan RALAT R4: keputusan work owner 07-10-2026 "ringkasan R/I Rate Life
+// cukup SATU tabel - M_RATE_LIFE_SUMMARY". Ringkasan dibaca DAN ditulis di kolom `M_RATE_LIFE_SUMMARY` (ID, USEDBY,
+// TYPE, MODIFIEDDATE, OPERATORID - migrasi inti 927/928); JSONDATA ringkasan dan tabel flat `RATE_LIFE_SUMMARY` (926)
+// dibuang 928. Rincian rate (`M_RATE_LIFE` + view `RATE_LIFE`) TIDAK berubah.
 package repository
 
 // Tabel yang DITULIS.
 const (
-	// TabelRingkasan - TABEL FLAT `RATE_LIFE_SUMMARY` (migrasi inti 926, K-F1), kelas
-	// `ASM-FW-GISFW-Int-RATE_LIFE_SUMMARY`. Kolom = KolomRingkasanFlat.
-	TabelRingkasan = "RATE_LIFE_SUMMARY"
+	// TabelRingkasan - `M_RATE_LIFE_SUMMARY`, kelas `ASM-FW-GISFW-Int-RATE_LIFE_SUMMARY`; kolom = KolomRingkasan
+	// (RALAT R6). Satu-satunya tabel ringkasan: ID terpakai pun diperiksa di sini saja.
+	TabelRingkasan = "M_RATE_LIFE_SUMMARY"
 	// TabelRate - kelas `ASM-FW-GISFW-Int-M_RATE_LIFE` (`AddToListSummary_Act` b1833); `ID VARCHAR2(10)`,
 	// `JSONDATA CLOB` (katalog DEV).
 	TabelRate = "M_RATE_LIFE"
-	// KolomJSON - kolom CLOB berisi JSON di tabel warisan.
+	// KolomJSON - kolom CLOB berisi JSON di `M_RATE_LIFE` (rincian).
 	KolomJSON = "JSONDATA"
 )
 
-// TabelRingkasanJSON - `M_RATE_LIFE_SUMMARY` (JSON warisan; data DEV masih berubah): DIBACA saja (K-F1) - sumber alat
-// pindahflat dan pemeriksa ID terpakai (MaksID/AdaID), supaya ID baru tidak bertabrakan dengan ringkasan Pega yang
-// belum / akan dipindah.
-const TabelRingkasanJSON = "M_RATE_LIFE_SUMMARY"
-
-// KolomViewRingkasan - kolom VIEW warisan `RATE_LIFE_SUMMARY` menurut definisinya (ALL_VIEWS, owner POOLDATA, dibaca WO
+// KolomViewRingkasan - SEJARAH: kolom VIEW warisan `RATE_LIFE_SUMMARY` (ALL_VIEWS, owner POOLDATA, dibaca WO
 // 06-10-2026): `SELECT a.ID, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.MODIFIEDDATE, a.JSONDATA.OPERATORID,
-// a.JSONDATA.FLAG FROM M_RATE_LIFE_SUMMARY a`. SEJARAH: dipakai jalur mundur 926 (view dipulihkan persis).
+// a.JSONDATA.FLAG FROM M_RATE_LIFE_SUMMARY a`. Dipulihkan jalur mundur 926.
 var KolomViewRingkasan = []string{"ID", "USEDBY", "TYPE", "MODIFIEDDATE", "OPERATORID", "FLAG"}
 
-// KolomRingkasanFlat - kolom tabel flat 926 = kolom view TANPA FLAG (RALAT R5: keputusan work owner 06-10-2026 "kolom
-// FLAG tidak digunakan"; nilai lama tetap di `M_RATE_LIFE_SUMMARY.JSONDATA`). Selain ID = kunci JSON yang dibaca alat
-// pindah.
-var KolomRingkasanFlat = []string{"ID", "USEDBY", "TYPE", "MODIFIEDDATE", "OPERATORID"}
+// KolomRingkasan - kolom `M_RATE_LIFE_SUMMARY` sesudah 927/928 = kolom view TANPA FLAG (RALAT R5: FLAG tidak digunakan;
+// nilai lamanya hanya di cadangan CSV LANGKAH-WO (a)). Lebar = 926.
+var KolomRingkasan = []string{"ID", "USEDBY", "TYPE", "MODIFIEDDATE", "OPERATORID"}
+
+// LebarKolomRingkasan - lebar (byte) kolom ringkasan; diikat uji ke DDL 926, 927, dan 928_down.
+var LebarKolomRingkasan = map[string]int{"ID": 10, "USEDBY": 500, "TYPE": 100, "MODIFIEDDATE": 50, "OPERATORID": 200}
 
 // KolomViewRate - kolom view `RATE_LIFE` (katalog DEV, `modul/claimlife/docs/KATALOG-TABEL-PESERTA-DAN-TREATY.md`);
 // selain ID = kunci `M_RATE_LIFE.JSONDATA`.
@@ -52,8 +48,8 @@ const (
 	SeqRate      = "SEQ_M_RATE_LIFE"
 )
 
-// Kolom tabel flat ringkasan yang ditulis modul (XML `InboxSummaryRIRate`). `TYPE` TIDAK ditulis (tidak ada di XML,
-// K-F2): baris baru NULL, Edit tidak menimpa, baris pindahan apa adanya. FLAG tidak ada di tabel flat (RALAT R5).
+// Kolom ringkasan yang ditulis modul (XML `InboxSummaryRIRate`). `TYPE` TIDAK ditulis (tidak ada di XML): baris baru
+// NULL, Edit tidak menimpa.
 const (
 	KolomUsedBy     = "USEDBY"
 	KolomOperatorID = "OPERATORID"
@@ -77,8 +73,8 @@ const (
 	kolomRate      = `ID, IDUSEDBY, USEDBY, GENDER, CONTRACT, AGE, RATE`
 )
 
-// DaftarTabelDitulis - penjaga modul: hanya dua tabel ini yang menerima INSERT/UPDATE/DELETE/LOCK.
+// DaftarTabelDitulis - penjaga modul: hanya dua tabel ini yang menerima INSERT/UPDATE/DELETE.
 var DaftarTabelDitulis = []string{TabelRingkasan, TabelRate}
 
-// DaftarDibacaSaja - hanya SELECT: view rincian dan JSON ringkasan warisan.
-var DaftarDibacaSaja = []string{ViewRate, TabelRingkasanJSON}
+// DaftarDibacaSaja - hanya SELECT: view rincian.
+var DaftarDibacaSaja = []string{ViewRate}
