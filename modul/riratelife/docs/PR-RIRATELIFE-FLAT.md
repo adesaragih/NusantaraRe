@@ -44,8 +44,31 @@ COUNT = flat sebelum, prosedur PEGA_* INVALID → restart; pemulihan per titik g
 - **Before:** ringkasan di dua tempat (JSON Pega + tabel flat 926).
   **After:** `TestMigrasi927KolomRingkasan`, `TestMigrasi928SatuTabel` (pengurai produksi pelari: `KolomAlterTambah`,
   `BacaPerintahKatalog`, `KolomAlterBuang`, `KolomCreateTable` jalur mundur; lebar = 926), `TestSqlTulisRingkasan`,
-  uji MPNL/MCRL hijau; `go vet -tags=db ./...` bersih (uji Oracle `rirl_db_test.go` termasuk 928 diulang sebagian dan
-  jalur mundur - belum dijalankan); `go test ./...` dan `npm test` = baseline.
+  uji MPNL/MCRL hijau; `go vet -tags=db` bersih untuk semua paket yang disentuh cabang ini (uji Oracle `rirl_db_test.go` termasuk 928
+  diulang sebagian dan jalur mundur - belum dijalankan); `go test ./...` dan `npm test` = baseline.
+
+- **Baseline `go vet -tags=db ./...` (bukan dari cabang ini, jangan diperbaiki di sini - milik premiumlistlife):**
+  `modul/premiumlistlife/backend/repository/polis_kasus_db_test.go:53:86: not enough arguments in call to
+  kerja.SisipKasusBaru` - galat yang sama ada di `origin/dev` @ `2d9e0692` (diperiksa 07-10-2026 di worktree sementara;
+  berkas terakhir diubah `8f0ea22a`, yang ada di `origin/dev`).
+
+## Perlu tinjauan tim inti
+
+Keputusan WO 07-10-2026: pengecualian penjaga `TestKolomUangDesimalDanNolJSON`
+(`inti/backend/penjaga/migrasi_test.go`) untuk tepat satu `DROP COLUMN JSONDATA` di
+`928_m_rate_life_summary_satu_tabel.sql` - **DISETUJUI WO, tetap ditinjau tim inti** (pernyataan itu membuang JSON, bukan
+menambahnya). Berkas lain di luar folder modul:
+
+- Migrasi inti: `922_m_nav_menu_riratelife`, `923_seq_rate_life`, `926_rate_life_summary_flat`,
+  `927_m_rate_life_summary_kolom`, `928_m_rate_life_summary_satu_tabel` (masing-masing + `_down`) di
+  `inti/backend/migrations/`.
+- Penjaga inti: `inti/backend/penjaga/menu_test.go` (`modulLuarKorpus`; aturan nama modul membuang `/`),
+  `rentang_test.go` (urutan pelari), `migrasi_test.go` (pengecualian di atas).
+- `inti/backend/db/koneksi.go` (`db.Koneksi`, identik dengan cabang ricommlife), `inti/backend/daftar/modul_riratelife_gen.go`.
+- `cmd/api/gerbang_tulis_test.go`; frontend akar `katalogKorpus.ts`, `Beranda.test.ts`, `Shell.test.ts`,
+  `daftar.menuTabel.test.ts`.
+- Modul lain (izin WO 07-10-2026): `modul/masterproductnamelife/**` dan `modul/mastercontractretrolife/**` - pembaca
+  ringkasan kini `SELECT ID, USEDBY FROM M_RATE_LIFE_SUMMARY` (baca-saja), uji, tiruan, katalog testdata, dokumen RALAT.
 
 ## Merge Danger
 
