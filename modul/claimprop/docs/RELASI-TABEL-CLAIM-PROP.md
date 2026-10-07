@@ -6,6 +6,9 @@
 >
 > ⚠️ Akibatnya **dua berkas lini Life masih menyebut nama tabel penyesuaian yang lama**. ⭐ Itu **dicatat sebagai `[terbuka]`**, ⛔ **bukan diperbaiki**.
 
+> ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Tujuh tabel dipakai bersama; lima di antaranya berkunci asing GANDA."* Tabel bersama berjumlah **lima** (`T_WORK_CLAIM`, `T_GENERAL_CLAIM`, `T_GENERAL_KOMITE`,
+> `T_KOMITE_KOMITELIST`, `T_VIEW_SUGGEST`); "tujuh" basi.
+
 
 **Tanggal:** 2026-09-19 · **Modul:** `Claim Prop` · Ujung komite dilacak di `Komite Claim Prop`
 **Acuan nama kolom:** `STRUKTUR-TABEL-CLAIM-PROP.md` — berkas itu **tidak disunting** di sini.
@@ -28,6 +31,10 @@
 | **A3** | Lima tabel lintas-lini **tidak didefinisikan ulang**; sisi komite **sudah terkunci** dan punya berkas relasinya sendiri | §B relasi 14–17 |
 | **A4** | Lini PROP: baris klaim **`CLMP-`** · baris komite **`TKMT-`** | §B relasi 1 · 2 |
 | **A5** | Uang/persen/kurs: **angka desimal, 20 digit, 8 di belakang koma**, dihitung penuh tanpa pembulatan di tengah, tampil 4 desimal; **pencacah bilangan bulat biasa** | seluruh tabel bermuatan uang |
+
+> ⚠️ **RALAT 07-10-2026** — kalimat lama: *"angka desimal, 20 digit, 8 di belakang koma"* Kolom uang, persen, share, dan kurs = **`NUMBER(38,10)`** (keputusan work owner 07-10-2026).
+> Hitungan di Go penuh (`apd.Decimal`, nol float); di batas simpan Oracle membulatkan ke 10 angka di belakang
+> koma. Bunyi "disimpan penuh tanpa pembulatan" berlaku untuk hitungan, bukan untuk kolom.
 
 ✅ **`STRUKTUR-TABEL-CLAIM-PROP.md` ADA** (662 baris) — dikonfirmasi di LANGKAH 0. Nol nama kolom
 dikarang.
@@ -183,6 +190,10 @@ dengan `CLAIM_ID`.
 *(halaman tertanam)*, jadi tidak punya arti tanpa induknya. **Index: biasa** pada `CLAIM_ID`.
 
 #### Relasi 9 — `T_VIEW_SUGGEST` ⭐ terbukti lewat `SuggestList`
+
+> ⚠️ **RALAT 07-10-2026** — relasi 9 **tidak dibuat**: migrasi `532` (`T_VIEW_SUGGEST.CLAIM_ID` + CHECK satu induk)
+> dicabut karena baris kolomnya di STRUKTUR PremiumList Life memerahkan uji modul itu (prompt §6 butir 2). Claim History
+> tidak disimpan sampai work owner memutuskan tempatnya — OQ-CP-17 (`docs/OQ.md`). Butir P 8 di bawah ikut OQ itu.
 
 | | |
 | --- | --- |

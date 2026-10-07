@@ -1,6 +1,7 @@
 # 00: PREFACTOR — skema relasional, batas transaksi penomoran, dan satu jalur uang
 
-**Status:** ready-for-agent
+**Status:** dibangun 07-10-2026 — migrasi 520–531 dan 533 (532 dicabut, OQ-CP-17); procedure `PEGA_JSON_*` tidak dipanggil (RALAT di bawah); pemuat data lama `backend/alat/pemuatlama` diuji-kering di DEV — RALAT 07-10-2026 (semula `ready-for-agent`)
+**AC yang dipegang (RALAT 07-10-2026, prompt §7 butir 4):** AC 132 (ADR-0009, migrasi penuh tanpa koeksistensi) — dipegang pemuat data lama `backend/alat/pemuatlama` (uji-kering DEV 07-10-2026: 2.451 kasus, 2.032 siap, 419 menunggu OQ-CP-18).
 **Blocked by:** None (can start immediately)
 **Menutup:** AC 1–28 · AC 105 · AC 106 · AC 107 · AC 123 · AC 124 · **AC 128** · **AC 129** *(35 AC)*
 
@@ -94,6 +95,11 @@ model penanda kesalahan · konvensi penamaan kolom.
 ⛔ **Bab ini memuat FAKTA, bukan rancangan.** Nama tabel baru, pembagian tabel, dan kolomnya
 **belum diputuskan work owner**. Tiket ini tetap berbunyi *rancang skema baru*; yang ditulis di bawah
 hanyalah keadaan yang selama ini tidak tertulis, supaya perancangnya tahu apa yang sedang ia ganti.
+
+> ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Nama tabel baru, pembagian tabel, dan kolomnya belum diputuskan work owner."*
+> Sudah diputuskan: diagram sheet Claim Prop (18 dan 20-09-2026: sepuluh tabel `T_CLAIM_*` + lima tabel bersama,
+> `T_WORK_CLAIM.LINI = 'PROP'`, ID `CLMP-`) dan keputusan 07-10-2026 (kolom PROP di `T_GENERAL_CLAIM`,
+> `NUMBER(38,10)`). Bentuk mengikat = migrasi 520–531, 533 dan lampiran pengikat STRUKTUR.
 
 ### Kolom nyata kedua tabel klaim
 
@@ -190,6 +196,12 @@ ini. Rinciannya di spec **§1a** dan **§1b**.
 `POOLDATA.PEGA_JSON_OS_AKSEP_KLAIM` · `POOLDATA.PEGA_JSON_KLAIM_PNC` ·
 `POOLDATA.PEGA_JSON_OS_AKSEP_KLAIMTNP` — dan menjalankan `COMMIT` **sendiri sesudah panggilan itu**.
 **Logika penulisan tidak direplikasi di aplikasi.**
+
+> ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Go memanggil stored procedure yang sama … dan menjalankan COMMIT sendiri sesudah
+> panggilan itu."* Diganti keputusan 07-10-2026 (prompt implementasi §3): procedure `PEGA_JSON_*` **tidak**
+> dipanggil; isinya, dibaca dari `ALL_SOURCE` DEV, ditulis ulang sebagai SQL langsung di transaksi aplikasi
+> (`repository.SisipOS`, `repository.SalinJSONKlaim`), hanya kolom selain `DATA_JSON` — `DATA_JSON` tidak
+> diisi. `COMMIT` oleh aplikasi; nol `COMMIT` di teks SQL.
 
 `[terverifikasi]` **Sejalan dengan AC 7, bukan melawannya.** AC 7 menuntut **nol `COMMIT` di dalam
 teks SQL aplikasi**. Di Pega `COMMIT` tertanam di blok anonim rule — `BEGIN … ; COMMIT; END;` pada
@@ -303,6 +315,9 @@ besar-kecil**. Yang peka akan melaporkan lima tabel berbeda padahal hanya dua ob
 
 ⚠️ **Yang berakibat hanya DUA objek di atas.** `[terverifikasi]` Pemeriksaan ulang `sensus.py --tabel`
 atas teks SQL di **58 dari 58** berkas `RDBList/` memisahkan dua hal yang sempat tercampur:
+
+> ⚠️ **RALAT 07-10-2026** — alat `sensus.py` sudah tidak ada dan kewajibannya dicabut (spec, bagian awal). Angka di bab ini fakta
+> historis sapuan, bukan langkah kerja.
 
 | | Objek | Akibat |
 | --- | --- | --- |
@@ -434,6 +449,10 @@ namanya yang menyesatkan. **Dicatat supaya pembaca berikutnya tidak melaporkanny
 - [ ] ⚠️ Angka yang **sudah terbit** — nomor akseptasi terbit, DLA dicetak, data terkirim ke Kasir — dibekukan dan tidak ikut dihitung ulang *(AC 23 spec)*
 - [ ] Nilai spreading diperlakukan sebagai turunan, boleh dihitung ulang dari sumber *(AC 24 spec)*
 - [ ] ⚠️ Nilai uang tidak pernah disimpan sebagai teks; **nol tambalan pemisah desimal** di jalur baca mana pun. **Alasan menyimpang:** dua jalur Pega menambal koma-ke-titik — `RDBList/CariHistoryClaim_SQL.xml` dan `Activity/CekPremiLunas_Act.xml` step 5 *(AC 107 spec)*
+
+> ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Share ceding dikalikan TEPAT SEKALI … perubahan sadar KETIGA"*. **Dibatalkan**:
+> spec §4 (19-09-2026) memutuskan *"BUKAN perubahan sadar"* — perkalian ganda share ceding tidak pernah
+> berjalan, jadi tidak ada yang diperbaiki. Implementasi meniru rantai yang berjalan (`models.HitungTurunan`).
 
 ### Mata uang
 

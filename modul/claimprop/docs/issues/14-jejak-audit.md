@@ -1,6 +1,7 @@
 # 14: Jejak audit klaim — empat cacat yang diperbaiki
 
-**Status:** ready-for-agent
+**Status:** sebagian 07-10-2026 — log layanan `MONITORING_KLAIM_LOG` dibangun; jejak Claim History tidak disimpan (OQ-CP-17) — RALAT 07-10-2026 (semula `ready-for-agent`)
+**AC yang dipegang (RALAT 07-10-2026, prompt §7 butir 4):** AC 133 (wewenang hapus kronologi lewat peran) — layar Claim Prop tidak punya aksi hapus kronologi yang berbukti; berlaku bila Claim History disimpan (OQ-CP-17).
 **Blocked by:** 00 (PREFACTOR) · 10 (wewenang)
 **Menutup:** AC 77 · 78 · 79 · 80 · 81 · 82 · 83 *(7 AC)* — US 59–62
 

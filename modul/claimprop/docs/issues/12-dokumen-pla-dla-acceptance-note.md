@@ -1,6 +1,7 @@
 # 12: Dokumen — PLA, DLA, dan Acceptance Note
 
-**Status:** ready-for-agent
+**Status:** sebagian 07-10-2026 — nomor PLA / DLA dibangun; berkas PDF (OQ-CP-05); unggahan berkas (OQ-CP-12) — RALAT 07-10-2026 (semula `ready-for-agent`)
+**AC yang dipegang (RALAT 07-10-2026, prompt §7 butir 4):** AC 134 (pengenal berkas bernanodetik + nilai unik) dan AC 135 (jenis berkas yang diterima apa adanya) — unggahan berkas belum dibangun (OQ-CP-12).
 **Blocked by:** 00 (PREFACTOR) · 08 (baris adjustment)
 **Menutup:** AC 84 · 85 · 86 · 87 · 88 *(5 AC)* — US 45–49
 

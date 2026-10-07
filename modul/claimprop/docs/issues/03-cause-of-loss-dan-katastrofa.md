@@ -1,6 +1,6 @@
 # 03: Cause of Loss dua tingkat dan penandaan katastrofa
 
-**Status:** ready-for-agent
+**Status:** dibangun 07-10-2026 — pemeliharaan master Cause of Loss di luar lingkup (OQ-CP-04) — RALAT 07-10-2026 (semula `ready-for-agent`)
 **Blocked by:** 00 (PREFACTOR) · 01 (registrasi klaim dan nomor polis)
 **Menutup:** AC 96 · 97 · 98 · 118 · 119 · 120 · 121 · 122 *(8 AC)* — US 7–9
 

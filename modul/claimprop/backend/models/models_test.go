@@ -1,0 +1,298 @@
+package models_test
+
+// Uji seam 1 (aturan murni): angka harapan dihitung tangan dari rumus Pega yang dikutip di komentar port, bukan dari
+// kode yang diuji.
+
+import (
+	"context"
+	"strings"
+	"testing"
+	"time"
+
+	"nusantarare/modul/claimprop/backend/models"
+	"nusantarare/modul/claimprop/backend/tiruan"
+)
+
+func halamanUji() *models.Halaman {
+	h := models.HalamanBaru()
+	h.Setel(models.CD+"ShareCeding", "50")
+	h.Setel(models.CD+"NetDeductibleValue", "100")
+	h.Setel(models.TM+"RNMShareP", "10")
+	h.SetelDaftar(models.DaftarInterest, []models.Baris{{"ObjectName": "UJI-OBJ", "CurrencyID": "UJI-A",
+		"Currency": "UJA", "KursObjectItem": "2", "TSIPerObject": "1000"}})
+	h.SetelDaftar(models.DaftarClaimAmount, []models.Baris{{"CurrencyID": "UJI-A", "Currency": "UJA", "IDR": "2",
+		"ClaimAmount": "1000"}})
+	h.SetelDaftar(models.DaftarLossAlloc, []models.Baris{{"CurrencyID": "UJI-A", "SharePercentage": "25",
+		"PremiumSpreaded": "2", "TreatyType": "UJI-QS"}})
+	h.SetelDaftar(models.DaftarEstimasi, []models.Baris{{"CurrencyID": "UJI-A", "Currency": "UJA", "KursValue": "2",
+		"GrossEstimationPct": "1000", "Type": "1", "TypeLossID": "UJI-QS"}})
+	h.SetelDaftar(models.DaftarSpreading, []models.Baris{{"CurrencyID": "UJI-A", "SharePercentage": "60"},
+		{"CurrencyID": "UJI-A", "SharePercentage": "40"}})
+	h.SetelDaftar(models.DaftarBreakQS, []models.Baris{{"CurrencyID": "UJI-A", "SharePercentage": "50"}})
+	return h
+}
+
+func sama(t *testing.T, nama, dapat, mau string) {
+	t.Helper()
+	if dapat != mau {
+		t.Errorf("%s = %q, mau %q", nama, dapat, mau)
+	}
+}
+
+func TestHitungTurunanRantaiKlaim(t *testing.T) {
+	h := halamanUji()
+	if err := models.HitungTurunan(h); err != nil {
+		t.Fatal(err)
+	}
+	in := h.AmbilDaftar(models.DaftarInterest)[0]
+	sama(t, "TSIPerObjectIDR", in["TSIPerObjectIDR"], "2000") // 2 x 1000
+	sama(t, "TotalSumInsuredIDR", h.Ambil(models.CD+"TotalSumInsuredIDR"), "2000")
+	sama(t, "TotalInterestInsured", h.AmbilDaftar(models.DaftarTotalTSI)[0]["Value"], "1000")
+	ca := h.AmbilDaftar(models.DaftarClaimAmount)[0]
+	sama(t, "ClaimAmount.Value", ca["Value"], "400") // 50% x 1000 - 100 (rumus 2024)
+	sama(t, "ClaimAmount.USD", ca["USD"], "800")
+	sama(t, "TotalListClaimAmountIDR", h.Ambil(models.CD+"TotalListClaimAmountIDR"), "800")
+	la := h.AmbilDaftar(models.DaftarLossAlloc)[0]
+	sama(t, "LossAlloc.ClaimSpreaded", la["ClaimSpreaded"], "100") // 25% x 400
+	sama(t, "LossAlloc.ClaimEstimation", la["ClaimEstimation"], "200")
+	es := h.AmbilDaftar(models.DaftarEstimasi)[0]
+	sama(t, "EstimationValue", es["EstimationValue"], "100") // 10% x 1000
+	sama(t, "ConvertValue", es["ConvertValue"], "200")
+	sama(t, "ConvertGrossEstimasi", es["ConvertGrossEstimasi"], "2000")
+	sama(t, "TotalEstimasiIDR", h.Ambil(models.CD+"TotalEstimasiIDR"), "200")
+	sama(t, "TotalGrossEstimateTreaty", h.Ambil(models.CD+"TotalGrossEstimateTreaty"), "1000")
+	sp := h.AmbilDaftar(models.DaftarSpreading)
+	sama(t, "Spreading1", sp[0]["ClaimSpreaded"], "60") // 60% x 100
+	sama(t, "Spreading2", sp[1]["ClaimSpreaded"], "40")
+	sama(t, "BreakQS", h.AmbilDaftar(models.DaftarBreakQS)[0]["ClaimSpreaded"], "20") // 50% x spread TERAKHIR (40)
+}
+
+func TestBarisBekuTidakDihitungUlang(t *testing.T) {
+	h := halamanUji()
+	h.AmbilDaftar(models.DaftarClaimAmount)[0]["Note"] = "Yes"
+	h.AmbilDaftar(models.DaftarClaimAmount)[0]["Value"] = "123"
+	h.AmbilDaftar(models.DaftarEstimasi)[0]["PrintFaceClaim"] = "1"
+	h.AmbilDaftar(models.DaftarEstimasi)[0]["EstimationValue"] = "7"
+	if err := models.HitungTurunan(h); err != nil {
+		t.Fatal(err)
+	}
+	sama(t, "ClaimAmount beku", h.AmbilDaftar(models.DaftarClaimAmount)[0]["Value"], "123")
+	sama(t, "Estimasi terkirim", h.AmbilDaftar(models.DaftarEstimasi)[0]["EstimationValue"], "7")
+	sama(t, "LossAlloc dari nilai beku", h.AmbilDaftar(models.DaftarLossAlloc)[0]["ClaimSpreaded"], "30.75") // 25% x 123
+}
+
+func TestPresisiPenuhKaliDuluBagiTerakhir(t *testing.T) {
+	h := models.HalamanBaru()
+	h.Setel(models.TM+"RNMShareP", "33.3333333333")
+	h.SetelDaftar(models.DaftarEstimasi, []models.Baris{{"CurrencyID": "UJI-A", "KursValue": "1", "GrossEstimationPct": "3"}})
+	if err := models.HitungTurunan(h); err != nil {
+		t.Fatal(err)
+	}
+	sama(t, "EstimationValue", h.AmbilDaftar(models.DaftarEstimasi)[0]["EstimationValue"], "0.999999999999")
+}
+
+func TestFormatNomor(t *testing.T) {
+	sama(t, "klaim", models.RakitNomorKlaim("UJI-K", "12", "05.2026", 7), "UJI-K12.05.2026.T00007")
+	sama(t, "sementara", models.RakitNomorSementara("2026", 12), "KT.2026-00012")
+	sama(t, "CFS", models.RakitNomorCFS("", "05", "2026", 1168), "RNM-K.05.2026.T01168")
+	sama(t, "PLA", models.RakitNomorPLA("UJI-H", "12", "05.2026", 3), "UJI-H12.05.2026.00003")
+}
+
+func TestRencanaNomor(t *testing.T) {
+	h := models.HalamanBaru()
+	if r := models.RencanakanNomor(h); !r.Sementara || r.Klaim {
+		t.Errorf("tanpa polis: %+v, mau nomor sementara saja", r)
+	}
+	h.Setel(models.CD+"PolicyData.PolicyNo", "UJI-RNM-Q1")
+	if r := models.RencanakanNomor(h); r.Sementara || !r.Klaim {
+		t.Errorf("berpolis: %+v, mau nomor klaim saja", r)
+	}
+	h.Setel(models.CD+"NoClaim", "UJI-K1")
+	if r := models.RencanakanNomor(h); r.Sementara || r.Klaim {
+		t.Errorf("bernomor: %+v, mau tanpa nomor baru", r)
+	}
+}
+
+func TestTglBolehBayar(t *testing.T) {
+	sama(t, "hari <= 25", models.TglBolehBayar("20260520", 5), "20-06-2026")
+	sama(t, "hari > 25 Desember", models.TglBolehBayar("20261228", 12), "01-01-2027")
+	sama(t, "November", models.TglBolehBayar("20261120", 11), "20-12-2026")
+}
+
+func konteksUji(a *tiruan.Acuan) *models.Konteks {
+	return &models.Konteks{Ctx: context.Background(), Acuan: a, Pelaku: "UJI-ADMIN",
+		Sekarang: time.Date(2026, 5, 20, 10, 0, 0, 0, models.Jakarta)}
+}
+
+func TestKirimEstimasiMenandaiDanMelahirkanBarisOS(t *testing.T) {
+	h := halamanUji()
+	h.Setel(models.CD+"NoClaim", "UJI-K1")
+	h.AmbilDaftar(models.DaftarEstimasi)[0]["EstimationValue"] = "100"
+	h.TambahBaris(models.DaftarEstimasi, models.Baris{"CurrencyID": "UJI-A", "PrintFaceClaim": "1"})
+	rows := models.KirimEstimasi(konteksUji(tiruan.AcuanBaru()), h, "CLMP-000001")
+	if len(rows) != 1 {
+		t.Fatalf("baris OS = %d, mau 1 (estimasi terkirim dilewati)", len(rows))
+	}
+	sama(t, "STS_REJECT", rows[0].StsReject, models.StsOSEstimasi)
+	sama(t, "NOCLAIM", rows[0].NoClaim, "UJI-K1")
+	sama(t, "VALUE", rows[0].Value, "100")
+	sama(t, "PrintFaceClaim", h.AmbilDaftar(models.DaftarEstimasi)[0]["PrintFaceClaim"], "1")
+	models.BekukanDataLama(h)
+	sama(t, "Note", h.AmbilDaftar(models.DaftarClaimAmount)[0]["Note"], "Yes")
+	sama(t, "IsOldData", h.AmbilDaftar(models.DaftarSpreading)[1]["IsOldData"], "Yes")
+	sama(t, "IsAdjVal", h.AmbilDaftar(models.DaftarInterest)[0]["IsAdjVal"], "Yes")
+}
+
+func TestDuplikatDOLMemblokirKecualiKlaimDitolak(t *testing.T) {
+	a := tiruan.AcuanBaru()
+	a.Riwayat["UJI-RNM-Q1"] = []models.RiwayatKlaimPolis{{IDKasus: "UJI-CLMP-9", DateOfLoss: "2026-05-01 08:00:00"}}
+	h := models.HalamanBaru()
+	h.Setel("pyID", "CLMP-000001")
+	h.Setel(models.CD+"PolicyData.PolicyNo", "UJI-RNM-Q1")
+	h.Setel(models.CD+"DateOfLoss", "2026-05-01 15:00:00")
+	if err := models.PeriksaDOLSerupa(konteksUji(a), h); err != nil {
+		t.Fatal(err)
+	}
+	if h.Ambil(models.PropBlokirDOL) != "1" || !strings.Contains(strings.Join(h.SemuaPesan(), ";"), models.PesanDOLSerupa) {
+		t.Fatalf("duplikat DOL tidak memblokir: %v", h.SemuaPesan())
+	}
+	a.Riwayat["UJI-RNM-Q1"][0].Ditolak = true
+	h.BersihkanPesan()
+	if err := models.PeriksaDOLSerupa(konteksUji(a), h); err != nil {
+		t.Fatal(err)
+	}
+	if h.Ambil(models.PropBlokirDOL) != "" || h.AdaPesan() {
+		t.Fatalf("klaim lama yang ditolak tetap memblokir: %v", h.SemuaPesan())
+	}
+}
+
+func TestShareSpreadingTepatSeratus(t *testing.T) {
+	h := models.HalamanBaru()
+	h.SetelDaftar(models.DaftarSpreading, []models.Baris{{"CurrencyID": "UJI-A", "Currency": "UJA", "SharePercentage": "60"},
+		{"CurrencyID": "UJI-A", "Currency": "UJA", "SharePercentage": "30"}})
+	p, err := models.PeriksaShareTepat100(h)
+	if err != nil || len(p) != 1 || !strings.Contains(p[0], models.PesanShareKurang100) {
+		t.Fatalf("90 %%: %v %v, mau pesan kurang dari 100", p, err)
+	}
+	h.AmbilDaftar(models.DaftarSpreading)[1]["SharePercentage"] = "40"
+	if p, _ := models.PeriksaShareTepat100(h); len(p) != 0 {
+		t.Fatalf("100 %%: %v, mau lolos", p)
+	}
+	h.AmbilDaftar(models.DaftarSpreading)[1]["SharePercentage"] = "41"
+	if p, _ := models.PeriksaShareTepat100(h); len(p) != 1 || !strings.Contains(p[0], models.PesanShareLebih100) {
+		t.Fatalf("101 %%: %v, mau pesan lebih dari 100", p)
+	}
+}
+
+func TestTataMedanTerkunciTidakTerbuka(t *testing.T) {
+	h := models.HalamanBaru()
+	h.Setel("IsOutstanding", "1")
+	ts := models.Evaluasi(h, models.LayarOutstanding(), false)
+	terbuka := models.MedanTerbuka(ts)
+	if terbuka[models.CD+"NoClaim"] || terbuka[models.CD+"PolicyData.PolicyNo"] {
+		t.Errorf("medan read-only selalu terbuka: %v", terbuka)
+	}
+	if terbuka[models.CD+"ReporterName"] {
+		t.Errorf("Reporter Name read-only jika IsOutstanding==1, tetapi terbuka")
+	}
+	if !terbuka[models.CD+"PostalCode"] {
+		t.Errorf("Zip Code (tanpa kondisi read-only) harus terbuka")
+	}
+	if models.AksiTerbuka(ts, "PilihMaster", 0) {
+		t.Errorf("Choose Master disabled jika IsOutstanding==1, tetapi terbuka")
+	}
+	if models.AksiTerbuka(ts, "SaveOutstanding", 0) {
+		t.Errorf("Save to issue RNM disabled jika IsCFS = '', tetapi terbuka")
+	}
+	if !models.AksiTerbuka(models.Evaluasi(h, models.LayarOutstanding(), false), "CheckNopolicy", 0) {
+		t.Errorf("Send to Acceptation tampil jika IsOutstanding = 1 dan aktif selama IsAcceptation != 1")
+	}
+	if models.AksiTerbuka(models.Evaluasi(h, models.LayarOutstanding(), true), "CheckNopolicy", 0) {
+		t.Errorf("layar terkunci tetap membuka aksi")
+	}
+}
+
+func TestTataBarisGridMengikutiBarisnya(t *testing.T) {
+	h := models.HalamanBaru()
+	h.SetelDaftar(models.DaftarInterest, []models.Baris{{"ObjectName": "UJI-1"}, {"ObjectName": "UJI-2", "IsAdjVal": "Yes"}})
+	ts := models.Evaluasi(h, models.LayarOutstanding(), false)
+	terbuka := models.MedanTerbuka(ts)
+	if !terbuka[models.JalurAnak(models.DaftarInterest, 1, "TSIPerObject")] {
+		t.Errorf("TSI baris 1 harus terbuka")
+	}
+	if terbuka[models.JalurAnak(models.DaftarInterest, 2, "TSIPerObject")] {
+		t.Errorf("TSI baris 2 (IsAdjVal Yes) harus terkunci")
+	}
+	if models.AksiTerbuka(ts, "DeleteInterest", 2) || !models.AksiTerbuka(ts, "DeleteInterest", 1) {
+		t.Errorf("Delete baris interest mengikuti IsAdjVal")
+	}
+}
+
+func TestCountValueAdjustment(t *testing.T) {
+	a := tiruan.AcuanBaru()
+	h := models.HalamanBaru()
+	h.Setel(models.CD+"ShareCeding", "50")
+	h.SetelDaftar(models.DaftarAdjustment, []models.Baris{{"Type": "1", "CurrencyID": "UJI-A", "KursIDR": "2",
+		"PersenRNM": "10", "GrossAdjustment": "1000", "IndividualRiskType": "1", "IndividualRiskPercentage": "10",
+		"TotalEstimasiValue": "1000"}})
+	h.SetelDaftar(models.JalurAdj(1, models.AnakLossAllocation), []models.Baris{{"CurrencyID": "UJI-A", "SharePercentage": "40"}})
+	if err := models.CountGrossAdjTreaty(konteksUji(a), h, 1); err != nil {
+		t.Fatal(err)
+	}
+	b := h.AmbilDaftar(models.DaftarAdjustment)[0]
+	sama(t, "GrossValue", b["GrossValue"], "20")                    // 1000 x 10% x 40% x 50%
+	sama(t, "IndividualRiskValue", b["IndividualRiskValue"], "100") // 1000 x 10%
+	sama(t, "ProposeAdjustmentValue", b["ProposeAdjustmentValue"], "900")
+	sama(t, "AdjustmentValue", b["AdjustmentValue"], "18") // 900 x 10% x 40% x 50%
+	sama(t, "ValueAdjustment", b["ValueAdjustment"], "36") // kurs 2
+	// CountGrossAdjTreaty_Act 5.2 berjalan SEBELUM CountValueADJTreaty_Act menghitung individual risk: TreatyGross = 1000
+	// - IndividualRiskValue lama (kosong) -> 1000 x 50% x 40%.
+	sama(t, "LossAlloc.ClaimSpreaded", h.AmbilDaftar(models.JalurAdj(1, models.AnakLossAllocation))[0]["ClaimSpreaded"], "200")
+}
+
+// cariTata - simpul pertama ber-ID / berjalur `kunci` di pohon tata.
+func cariTata(ts []models.Tata, kunci string) *models.Tata {
+	for i := range ts {
+		if ts[i].ID == kunci || (ts[i].Jenis == models.JenisGrid && ts[i].Jalur == kunci) {
+			return &ts[i]
+		}
+		if t := cariTata(ts[i].Anak, kunci); t != nil {
+			return t
+		}
+	}
+	return nil
+}
+
+func TestPenyerahanKomiteNonaktifOQ16(t *testing.T) {
+	a := tiruan.AcuanBaru()
+	a.Roster = append(a.Roster, tiruan.AnggotaRoster{Batas: "0", Sts: models.STSKlaimProp,
+		AnggotaKomite: models.AnggotaKomite{OperatorID: "UJI-K1", Jabatan: "UJI-JABATAN"}})
+	h := models.HalamanBaru()
+	h.Setel(models.CD+"Payable", "2")
+	h.Setel(models.CD+"Occupation", "UJI-OKUPASI")
+	h.SetelDaftar(models.DaftarAdjustment, []models.Baris{{"Type": "1", "ProposeAdjustmentValue": "10",
+		"ValueAdjustment": "10", "DataCommitteeTreaty.CircumCauseOfLoss": "UJI", "DataCommitteeTreaty.Remarks": "UJI"}})
+	if err := models.SusunKomiteAdjustment(konteksUji(a), h, 1); err != nil {
+		t.Fatal(err)
+	}
+	ts := models.Evaluasi(h, models.LayarKomite(1, true), false)
+	tb := cariTata(ts, "SendClaimToCommittee")
+	if tb == nil || !tb.Nonaktif || !strings.HasPrefix(tb.Catatan, "OQ-CP-16") {
+		t.Fatalf("tombol Send Claim to Committee mau tampil nonaktif ber-OQ-CP-16: %+v", tb)
+	}
+	if models.AksiTerbuka(ts, "AddKomiteTreatyChild", 1) {
+		t.Fatalf("aksi penyerahan komite terbuka")
+	}
+	g := cariTata(models.Evaluasi(h, models.LayarAdjustment(1), false), models.JalurAdj(1, "ComiteeClaim"))
+	if g == nil || len(g.Kolom) != 1 || g.Kolom[0].Label != "Committee Name" || len(g.Baris) != 1 {
+		t.Fatalf("grid Committe Accept Status mau satu kolom nama dan satu baris roster: %+v", g)
+	}
+	// baris yang sudah menunjuk kasus komite: keputusan anggotanya tidak dibaca - grid kosong
+	h.AmbilDaftar(models.DaftarAdjustment)[0][models.PropKomiteID] = "UJI-KOMITE"
+	if err := models.SusunKomiteAdjustment(konteksUji(a), h, 1); err != nil {
+		t.Fatal(err)
+	}
+	if n := len(h.AmbilDaftar(models.JalurAdj(1, "ComiteeClaim"))); n != 0 {
+		t.Fatalf("grid komite baris berkomite %d baris, mau 0", n)
+	}
+}

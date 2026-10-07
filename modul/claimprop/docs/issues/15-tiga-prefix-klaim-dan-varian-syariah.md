@@ -1,6 +1,6 @@
 # 15: Tiga prefix klaim dan varian Syariah
 
-**Status:** ready-for-agent
+**Status:** dibangun 07-10-2026 — `CLMP-` saja (RALAT prefix di bawah); varian Syariah OQ-CP-14 — RALAT 07-10-2026 (semula `ready-for-agent`)
 **Blocked by:** 00 (PREFACTOR) · 13 (efek keluar)
 **Menutup:** AC 75 · 76 *(2 AC)* — US 66
 
@@ -36,6 +36,18 @@ Penentuan prefix klaim · tiga jalur simpan proyeksi OS akseptasi · penomoran p
 
 - [ ] `[terverifikasi]` Modul melayani **tiga prefix klaim**, dan varian Syariah diperlakukan **identik** dengan induknya *(AC 75 spec)*
 - [ ] `[terverifikasi]` **Tiga jalur simpan proyeksi OS akseptasi terpisah** dipertahankan sesuai jenis *(AC 76 spec)*
+
+> ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Modul melayani tiga prefix klaim, dan varian Syariah diperlakukan identik dengan induknya"* Diputuskan dari XML: `When/IsCLMP` menguji `pyWorkIDPrefix = "CLMP-"` dengan properti kelas
+> `ASM-FW-GCNMFW-Work-ClaimTreaty` (kelas Claim Prop); `IsCLM` = kelas PNC (Fac), `IsCLMNP` = kelas ClaimTreatyNonProp.
+> Ketiganya hanya dipakai activity BERSAMA kelas Data-Adjustment (`HitServiceToKasir_Act`, `SendEmailKlaim`) yang
+> bercabang untuk tiga lini. Modul ini melayani **`CLMP-` saja** (STRUKTUR T3); cabang `CLM-` / `CLMNP-` tidak
+> dimigrasikan (Out of Scope "Claim Non Prop dan Claim Fac In"). Varian ber-`S` (`CLMPS-`) hanya muncul di
+> `SendEmailKlaimRejectClose` (kelas `ASM-FW-GCNMFW-Work`) — OQ-CP-14.
+
+> ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Tiga jalur simpan proyeksi OS akseptasi terpisah dipertahankan sesuai jenis"* Jalur `KLAIMTRT` **tidak ada**: procedure `PEGA_JSON_OS_AKSEP_KLAIMTRT` tidak ada di DEV dan
+> jalurnya dibuang tiket 00 (keputusan work owner 18-09-2026); `..._KLAIMTNP` milik Claim Non Prop. Claim Prop
+> punya **satu** jalur simpan OS: baris `OS_AKSEPTASI_KLAIM` (isi `PEGA_JSON_OS_AKSEP_KLAIM` ditulis ulang sebagai
+> SQL langsung, `repository.SisipOS`).
 
 ## Perintah verifikasi
 

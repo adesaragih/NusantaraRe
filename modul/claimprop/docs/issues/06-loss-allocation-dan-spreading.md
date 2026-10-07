@@ -1,6 +1,6 @@
 # 06: Loss allocation dan spreading — share wajib tepat 100 %
 
-**Status:** ready-for-agent
+**Status:** sebagian 07-10-2026 — loss allocation dan spreading dibangun; tambah / hapus baris Spreading Claim lewat activity nonaktif (`AddSpreading_Act`, `DeleteSpreading_Act` tidak diekspor, OQ-CP-01) — RALAT 07-10-2026 (semula `ready-for-agent`)
 **Blocked by:** 00 (PREFACTOR) · 01 (registrasi klaim dan nomor polis) · 05 (Insured Interest / TSI)
 **Menutup:** AC 29 · 30 · 31 · 32 · 33 *(5 AC)* — US 20–23, 30–32
 
