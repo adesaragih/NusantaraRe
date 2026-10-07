@@ -3,7 +3,8 @@
 > ⚠️ **Urutan merge: `modul/riratelife/implementasi` LEBIH DULU (`modul/riratelife/docs/PR-RIRATELIFE-FLAT.md`), lalu
 > PR ini.** `inti/backend/db/koneksi.go` identik di kedua cabang. Uji coba merge di atas ujung riratelife: SATU konflik di
 > `inti/backend/penjaga/rentang_test.go` (daftar urutan pelari) - selesaikan menjadi `… 923, 924_ricomm_life,
-> 925_m_nav_menu_ricommlife, 926_rate_life_summary_flat, 952_menu_tiruan` (MODUL.md bab "Urutan merge").
+> 925_m_nav_menu_ricommlife, 926_rate_life_summary_flat, 927_m_rate_life_summary_kolom,
+> 928_m_rate_life_summary_satu_tabel, 952_menu_tiruan` (MODUL.md bab "Urutan merge").
 
 ## Summary
 
