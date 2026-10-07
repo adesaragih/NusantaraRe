@@ -71,6 +71,19 @@ export function sajikanAngka(nilai: string | null | undefined, f: FormatAngka): 
 }
 
 /** Teks tampilan satu nilai menurut sajian selnya (tanpa sajian = apa adanya). */
+/**
+ * Tanggal + jam kolom Date grid SuggestList (perintah work owner 06-10-2026: "HARUSNYA PAKE YG ATAS AJA, TAPI
+ * TAMBAHIN JAM NYA" - panel History dibuang). Tanggal tetap format seluruh sistem (`formatDate` inti), jam 24 apa
+ * adanya dari cap waktu `YYYY-MM-DD HH:MI[:SS]`; nilai tanpa jam = tanggal saja.
+ */
+export function sajikanTanggalJam(nilai: string | null | undefined): string {
+  const t = (nilai ?? '').trim()
+  const tgl = formatDate(t)
+  const jam = /^\d{4}-\d{2}-\d{2}[ T](\d{2}):(\d{2})(?::(\d{2}))?/.exec(t)
+  if (tgl === '' || jam === null) return tgl
+  return `${tgl} ${jam[1]}:${jam[2]}:${jam[3] ?? '00'}`
+}
+
 export function sajikan(nilai: string | null | undefined, s: Sajian | undefined): string {
   if (s === undefined) return nilai ?? ''
   if (s === 'tanggal') return formatDate(nilai ?? '')

@@ -24,7 +24,6 @@ import {
   nilai,
   pilihBisnis,
   pilihSumberBisnis,
-  riwayatKasus,
   setel,
   setelDaftar,
   simpanKasus,
@@ -34,7 +33,6 @@ import {
   type Halaman,
   type Layar,
   type NomorPolis,
-  type Riwayat,
 } from '../api'
 import DetailNonProp from '../components/DetailNonProp'
 import InputAngka from '../components/InputAngka'
@@ -73,8 +71,8 @@ import {
 } from '../medan'
 import { tampilNonProp } from '../nonprop'
 import { BARIS_PER_HALAMAN_USULAN, irisan } from '../paginasi'
-import { sajikan, type Sajian } from '../sajian'
-import { TATA_UANG_ADMIN, TATA_UANG_ATASAN, TOTAL_ATASAN, deretQ, tataUmum } from '../tataletak'
+import { sajikan, sajikanTanggalJam, type Sajian } from '../sajian'
+import { TATA_UANG_ADMIN, TATA_UANG_ATASAN, TOTAL_ATASAN, deretLayer, deretQ, tataUmum } from '../tataletak'
 import { aktifTombolSurvei, DAFTAR_SURVEI, tampilTombolSurvei } from '../survei'
 import { tampilTanggalProduksi } from '../tempat'
 
@@ -90,7 +88,6 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
   const [layar, setLayar] = useState<Layar | null>(null)
   const [h, setH] = useState<Halaman | null>(null)
   const [acuan, setAcuan] = useState<Acuan | null>(null)
-  const [riwayat, setRiwayat] = useState<Riwayat[]>([])
   const [galat, setGalat] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(false)
   const [info, setInfo] = useState('')
@@ -107,11 +104,10 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
   }, [])
 
   useAmbilBatal(
-    () => Promise.all([bukaKasus(id), ambilAcuan(), riwayatKasus(id)]),
-    ([ly, a, r]) => {
+    () => Promise.all([bukaKasus(id), ambilAcuan()]),
+    ([ly, a]) => {
       terima(ly)
       setAcuan(a)
-      setRiwayat(r ?? [])
     },
     setGalat,
     [id, terima],
@@ -180,7 +176,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
     <div className="nbti__kolom">
       {deretQ(ms).map((x, i) =>
         Array.isArray(x) ? (
-          <div key={`deret-${i}`} className="nbti__deret">
+          <div key={`deret-${i}`} className={deretLayer(x) ? 'nbti__deret nbti__deret--layer' : 'nbti__deret'}>
             {x.map(kotak)}
           </div>
         ) : (
@@ -278,9 +274,10 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
           {TOMBOL.selectSOB}
         </button>
       )}
-      {/* `.TreatyType='XOL'`; click -> refresh (pra-DT TreatyEnableDisableInput) */}
+      {/* `.TreatyType='XOL'`: tombol TAMPIL tetapi NONAKTIF - klik tidak menjalankan pra-DT TreatyEnableDisableInput
+          (perintah work owner 06-10-2026: "jangan di hide, tapi di disable aja; muncul untuk XOL, tapi di disable") */}
       {nilai(h, POLIS + 'TreatyType') === 'XOL' && (
-        <button type="button" className="btn" onClick={() => refresh([{ aksi: 'TreatyEnableDisableInput' }])}>
+        <button type="button" className="btn" disabled>
           {TOMBOL.enableDisable}
         </button>
       )}
@@ -330,8 +327,9 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
       {tampilNonProp(h) && (
         <DetailNonProp
           halaman={h}
-          // W2: subsection NonProp ber-`pyEditOptions=Auto` di KEDUA layar (admin S17, atasan S88)
-          sunting={boleh}
+          // %Share spreading hanya tersunting di layar ADMIN (keputusan work owner 07-10-2026: "HANYA ADMIN YANG
+          // BISA EDIT"); XML S88 atasan ber-`pyEditOptions=Auto`, disimpangkan sadar
+          sunting={ubahAdmin}
           tempat={layar.tempat}
           // `SpreadingRiskList` .TreatyType: pyListSource reportdefinition BrowseReinsuranceType_RD (.ID / .Note)
           opsiSpreading={acuan?.jenisReas ?? []}
@@ -534,7 +532,8 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
             <tbody>
               {irisan(usulan, halUsulan, BARIS_PER_HALAMAN_USULAN).map((b, i) => (
                 <tr key={i}>
-                  <td>{sajikan(b.Date ?? '', 'tanggal')}</td>
+                  {/* tanggal + jam: panel History dibuang (perintah work owner 06-10-2026 "PAKE YG ATAS AJA, TAPI TAMBAHIN JAM NYA") */}
+                  <td>{sajikanTanggalJam(b.Date)}</td>
                   <td>{b.OperatorName ?? ''}</td>
                   <td>{PILIHAN_APPROVAL.find((o) => o.value === b.IsApproved)?.label ?? b.IsApproved ?? ''}</td>
                   <td className="nbti__catatan">{b.Suggest ?? ''}</td>
@@ -546,27 +545,6 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
         {/* pyGridPaginator - pyPageMode Numeric, pyPageSizeOther 5 */}
         <Paginasi jumlahBaris={usulan.length} ukuran={BARIS_PER_HALAMAN_USULAN} hal={halUsulan} onHal={setHalUsulan} />
       </Wadah>
-
-      {/* Panel History: bukan Section XML - dasar spec AC 72 ("Riwayat dapat dibaca berurutan
-          waktu"; GET /kasus/{id}/riwayat), dicatat di tiket 11 (W6 audit silang P3). */}
-      {riwayat.length > 0 && (
-        <Panel judul={JUDUL.riwayat}>
-          <div className="table-wrap">
-            <table>
-              <tbody>
-                {riwayat.map((r, i) => (
-                  <tr key={i}>
-                    <td>{r.tglTransfer}</td>
-                    <td>{r.workbasket}</td>
-                    <td>{r.status}</td>
-                    <td>{r.username}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Panel>
-      )}
 
       {boleh && (
         <div className="nbti__kaki">
@@ -650,9 +628,12 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
         </Modal>
       )}
       {nomor && (
+        // Tanpa Cancel / X / Escape / klik luar: nomor polis sudah terbit, jadi hanya OK = kirim (perintah work owner
+        // 06-10-2026: "tidak mau ada cancel, tidak ada close ... selalu maju kalo udah klik aksep").
         <Modal
           judul={JUDUL.nomorPolis}
           onTutup={() => setNomor(null)}
+          tanpaTutup
           aksi={
             <button
               type="button"
@@ -666,10 +647,13 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
             </button>
           }
         >
-          {/* Section ShowPolicyNoTreaty_SC: pyWorkPage.pyID, LABEL "telah diaksep menjadi", PolicyNo */}
-          <p className="nbti__nomor">
-            <strong>{nomor.id}</strong> {NOMOR_DIAKSEP} <strong>{nomor.policyNo}</strong>
-          </p>
+          {/* Section ShowPolicyNoTreaty_SC: pyWorkPage.pyID, LABEL "telah diaksep menjadi", PolicyNo - bertumpuk di
+              tengah, nomor polis menonjol (perintah work owner 06-10-2026 "RAPIHIN") */}
+          <div className="nbti__nomor">
+            <p className="nbti__nomor-kasus">{nomor.id}</p>
+            <p className="nbti__nomor-teks">{NOMOR_DIAKSEP}</p>
+            <p className="nbti__nomor-polis">{nomor.policyNo}</p>
+          </div>
         </Modal>
       )}
     </div>

@@ -117,6 +117,8 @@ func TestSQLDaftarKasusPenampungSamaDenganArgumen(t *testing.T) {
 		{Posisi: models.PosisiSecHead},
 		{Antrean: []string{models.PosisiSecHead, models.PosisiDeptHead}},
 		{Cari: "uji-1", Posisi: models.PosisiDeptHead, Antrean: []string{models.PosisiSecHead, models.PosisiDeptHead}},
+		{Pembuat: "UJI-A"},
+		{Cari: "uji-1", Pembuat: "UJI-A", Antrean: []string{models.PosisiSecHead}},
 	} {
 		q, args := sqlDaftarKasus("S.W", "S.G", "S.Q", s)
 		pen := regexp.MustCompile(`:(\d+)`).FindAllStringSubmatch(q, -1)

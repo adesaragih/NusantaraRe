@@ -22,7 +22,6 @@ export const JUDUL = {
   tolak: 'Confirm Decline NB',
   /** FlowAction `ShowPolicyNoTreaty` pyLabel. */
   nomorPolis: 'Show PolicyNo',
-  riwayat: 'History',
   catatan: 'Suggest',
 } as const
 
@@ -61,10 +60,36 @@ export const TOMBOL = {
  *  (`.TextNoQuotation` = pengenal kasus yang sama; RALAT tiket 11). */
 export const KOLOM_PORTAL = {
   id: 'Offer No',
+  // keputusan work owner 06-10-2026 - bukan kolom GetListOpportunity
+  jenis: 'Type',
   bisnis: 'Group Business',
   tertanggung: 'Insured Name',
   marketing: 'Marketing',
   status: 'Status',
+  // keputusan work owner 06-10-2026 - bukan kolom GetListOpportunity
+  pembuat: 'User Create',
+  tanggal: 'Tanggal Create',
+} as const
+
+/** Kolom tambahan tab Resolved portal (perintah work owner 07-10-2026: "KALO DAH RESOLVE TAMBAHIN KOLOM NOPOLISNYA" dan "SEKALIAN KELUARIN TANGGAL PRODUKSINYA AJA DD-MM-YYYY"); label sama dengan portal EDM Treaty In. */
+export const KOLOM_PORTAL_SELESAI = {
+  noPolis: 'Policy Number',
+  tglProduksi: 'Production Date',
+} as const
+
+/** Kolom daftar kotak masuk Beranda (keputusan work owner 06-10-2026: portal + kolom yang ada datanya). */
+export const KOLOM_BERANDA = {
+  id: 'Offer No',
+  jenis: 'Type',
+  tertanggung: 'Insured Name',
+  bisnis: 'Group Business',
+  ceding: 'Ceding Company',
+  mulai: 'Inception Date',
+  marketing: 'Marketing',
+  status: 'Status Inbox',
+  pembuat: 'User Create',
+  tanggal: 'Tanggal Create',
+  sejak: 'Time Since Last Update',
 } as const
 
 export const PORTAL = {
@@ -79,8 +104,15 @@ export const PORTAL = {
   /** Teks daftar kosong - komponen `Kosong` inti (tiket 11: dasar unsur bawaan inti). */
   kosong: 'Belum ada berkas realisasi treaty yang terbuka.',
   kosongPetunjuk: 'Tombol Create membuat berkas baru di antrean admin.',
+  /** Daftar kosong di posisi switch Resolved. */
+  kosongSelesai: 'Belum ada berkas yang selesai.',
   hanyaBaca: 'Berkas ini menunggu di antrean lain atau sudah selesai - hanya-baca.',
 } as const
+
+/** Switch portal di atas daftar (keputusan work owner 06-10-2026: "switch untuk lihat yang lagi proses atau resolve,
+ *  default ke proses"). Resolved = Resolved-Completed / Resolved-Rejected. */
+export const STATUS_PORTAL = ['In Progress', 'Resolved'] as const
+export type StatusPortal = (typeof STATUS_PORTAL)[number]
 
 /** Judul kolom TreeGrid `Section/SourceHierarki` (pyCaption, `.ClientName`). */
 export const KOLOM_SOB = 'Source of Business Name'

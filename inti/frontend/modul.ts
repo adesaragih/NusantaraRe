@@ -39,6 +39,35 @@ export interface HalamanModul {}
 /** Setiap halaman modul terdaftar, sebagai UNION - bukan `string`. */
 export type HalamanTerdaftar = HalamanModul[keyof HalamanModul]
 
+/**
+ * Satu kotak masuk akun di Beranda: satu workbasket yang DIPEGANG akun dan jumlah berkas yang menunggu dia di sana
+ * (keputusan work owner 06-10-2026: "beranda menunjukkan berapa banyak case yang masuk di akun dia, mengikuti
+ * workbasket"). Modulnya sendiri yang memutuskan arti "menunggu".
+ */
+export interface AntreanBeranda {
+  /** Kode workbasket - kunci kartu. */
+  workbasket: string
+  /** Nama tampil workbasket. */
+  nama: string
+  jumlah: number
+}
+
+/** Satu kolom daftar kotak masuk Beranda. */
+export interface KolomBeranda {
+  kunci: string
+  label: string
+}
+
+/**
+ * Daftar berkas kotak masuk Beranda (keputusan work owner 06-10-2026: klik workbasket / jenis di Beranda menampilkan
+ * berkasnya tanpa masuk menu modul): kolom + baris; sel SUDAH diformat modulnya. Kolom pertama = pengenal berkas
+ * (`baris.id`), dibuka lewat `PropsRute.bukaKasus`.
+ */
+export interface DaftarBeranda {
+  kolom: KolomBeranda[]
+  baris: { id: string; sel: Record<string, string> }[]
+}
+
 /** Bentuk ekspor `PENDAFTARAN_MENU` di `modul/<nama>/frontend/menu.ts`. */
 export interface MenuModul<H extends string = HalamanTerdaftar> {
   /** Nama modul backend - SAMA dengan nama folder dan `const Nama` Go. */
@@ -57,6 +86,16 @@ export interface MenuModul<H extends string = HalamanTerdaftar> {
    * dari dalam halaman ini.
    */
   halamanAwal: H
+  /**
+   * Opsional dan aditif (06-10-2026): penghitung kotak masuk akun untuk Beranda - satu baris per workbasket yang
+   * dipegang akun. Modul tanpa penghitung tidak tampil di kotak masuk Beranda.
+   */
+  antreanBeranda?: () => Promise<AntreanBeranda[]>
+  /**
+   * Opsional dan aditif (06-10-2026): daftar berkas yang menunggu akun di `workbasket` (null = semua workbasket
+   * yang ia pegang), ditampilkan di Beranda. Tanpa penyedia ini klik di Beranda membuka halaman awal modul.
+   */
+  daftarBeranda?: (workbasket: string | null) => Promise<DaftarBeranda>
 }
 
 /** Bentuk ekspor `RUTE_MODUL` di `modul/<nama>/frontend/rute.tsx`. */
@@ -83,6 +122,17 @@ export interface PropsRute<H extends string> {
    * tidak membacanya tetap seperti sebelumnya.
    */
   ketukMenu?: number
+  /**
+   * Opsional dan aditif (06-10-2026): permintaan membuka SATU berkas langsung - dari daftar kotak masuk Beranda.
+   * `ketuk` bertambah setiap permintaan (berkas yang sama boleh diminta lagi). Rute yang tidak membacanya tetap
+   * seperti sebelumnya.
+   */
+  bukaKasus?: { id: string; ketuk: number }
+  /**
+   * Opsional dan aditif (06-10-2026): pindah ke Beranda - tombol Back berkas yang dibuka lewat `bukaKasus` kembali ke
+   * sana, bukan ke layar awal modul (permintaan work owner "tombol back nya bisa ngetrack darimana bukanya").
+   */
+  onBeranda?: () => void
 }
 
 /** Satu modul frontend terdaftar. */
@@ -95,6 +145,10 @@ export interface ModulFrontend<H extends string> {
   halaman: readonly H[]
   /** Halaman yang dibuka tombol modul (lihat `MenuModul.halamanAwal`). */
   halamanAwal: H
+  /** Penghitung kotak masuk Beranda (lihat `MenuModul.antreanBeranda`). */
+  antreanBeranda?: () => Promise<AntreanBeranda[]>
+  /** Penyedia daftar kotak masuk Beranda (lihat `MenuModul.daftarBeranda`). */
+  daftarBeranda?: (workbasket: string | null) => Promise<DaftarBeranda>
   /**
    * Komponen rute. ⛔ Ia TETAP terpasang selama modulnya aktif, supaya
    * keadaannya (kasus yang sedang dibuka) bertahan saat pemakai pindah

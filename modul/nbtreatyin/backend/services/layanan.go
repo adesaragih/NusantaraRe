@@ -88,7 +88,8 @@ func tempatPelaku(p inti.Pelaku) map[string]bool {
 
 // ------------------------------------------------------------------ daftar dan buat
 
-// DaftarKasus - daftar portal (`Section/SFAPortal_OpportunitiesList`).
+// DaftarKasus - daftar portal (`Section/SFAPortal_OpportunitiesList`). ⛔ Bab GERBANG di bawah DIGANTI RALAT
+// 06-10-2026 di badan fungsi (hanya filter pembuat) - dibiarkan sebagai catatan bunyi lama.
 //
 // GERBANG (putaran 2, P8). Grid satu-satunya di section itu (badan REPEATING,
 // `pyGridProps/pyRDName = GetListOpportunity`) bersarang di wadah
@@ -120,16 +121,77 @@ func (l *Layanan) DaftarKasus(ctx context.Context, p inti.Pelaku, s models.Sarin
 	if s.Posisi != "" && !models.AdalahPosisiTangga(s.Posisi) {
 		return nil, fmt.Errorf("%w: posisi %q", ErrPermintaanTidakSah, s.Posisi)
 	}
-	s.Antrean = nil
-	if !anggota(p, models.PosisiAdmin) {
-		for _, pos := range models.PosisiTangga {
-			if anggota(p, pos) && (s.Posisi == "" || s.Posisi == pos) {
-				s.Antrean = append(s.Antrean, pos)
-			}
+	// RALAT 06-10-2026 (keputusan work owner "menu nb treaty in buat hanya filter berdasarkan create operator aja";
+	// sebelumnya "isi inbox ini muncul hanya untuk akun dia saja"): HANYA filter A RD `GetListOpportunity`
+	// (`A.pxCreateOperator = Param.UserIdentifier`) - berkas BUATAN akun ini di posisi mana pun, untuk siapa pun.
+	// Antrean atasan tidak lagi tampil di portal (berkas yang menunggu atasan dibuka dari kotak masuk Beranda);
+	// berkas tanpa CREATE_OP tidak cocok dengan akun mana pun. Saringan LINI non-life tetap (WO: "filter nonlife-nya
+	// tetap"). `s.Selesai` = switch Proses / Resolved: Resolved menampilkan SEMUA berkas selesai, siapa pun
+	// pembuatnya (WO 06-10-2026: "yang resolve nampilin semua yang resolve"); berkas selesai hanya-baca.
+	s.Antrean, s.PembuatPosisi, s.Pembuat = nil, "", p.AkunID
+	if s.Selesai {
+		s.Pembuat = ""
+	}
+	return l.g.DaftarKasus(ctx, s)
+}
+
+// KotakMasuk - kotak masuk Beranda (keputusan work owner 06-10-2026): satu baris per workbasket tangga yang dipegang
+// pelaku, urut tangga, dengan jumlah berkas yang MENUNGGU dia - Admin: buatannya yang masih di Admin; Sec Head /
+// Dept Head: antrean workbasket itu. Bukan pemegang = daftar kosong (Beranda tidak gagal karenanya).
+func (l *Layanan) KotakMasuk(ctx context.Context, p inti.Pelaku) ([]models.AntreanKotakMasuk, error) {
+	if err := l.periksaPelaku(p); err != nil {
+		return nil, err
+	}
+	admin := anggota(p, models.PosisiAdmin)
+	var atasan []string
+	for _, pos := range models.PosisiTangga {
+		if pos != models.PosisiAdmin && anggota(p, pos) {
+			atasan = append(atasan, pos)
 		}
-		if len(s.Antrean) == 0 {
-			return nil, fmt.Errorf("%w (daftar portal)", ErrBukanAnggotaAntrean)
+	}
+	cacah, err := l.g.HitungKotakMasuk(ctx, p.AkunID, admin, atasan)
+	if err != nil {
+		return nil, err
+	}
+	out := []models.AntreanKotakMasuk{}
+	for _, pos := range models.PosisiTangga {
+		if !anggota(p, pos) {
+			continue
 		}
+		pk, err := l.g.PemegangKotakMasuk(ctx, pos)
+		if err != nil {
+			return nil, err
+		}
+		nama := pk.NamaWorkbasket
+		if strings.TrimSpace(nama) == "" {
+			nama = pos
+		}
+		out = append(out, models.AntreanKotakMasuk{Workbasket: pos, Nama: nama, Jumlah: cacah[pos]})
+	}
+	return out, nil
+}
+
+// DaftarMenunggu - daftar berkas kotak masuk Beranda (keputusan work owner 06-10-2026): berkas yang MENUNGGU pelaku
+// di `workbasket` (kosong = semua workbasket tangga yang ia pegang) - Admin: buatannya yang masih di Admin;
+// Sec Head / Dept Head: antrean itu. Workbasket di luar tangga atau tidak dipegang = ErrBukanAnggotaAntrean.
+func (l *Layanan) DaftarMenunggu(ctx context.Context, p inti.Pelaku, workbasket string) ([]models.RingkasanKasus, error) {
+	if err := l.periksaPelaku(p); err != nil {
+		return nil, err
+	}
+	if workbasket != "" && (!models.AdalahPosisiTangga(workbasket) || !anggota(p, workbasket)) {
+		return nil, fmt.Errorf("%w (kotak masuk %q)", ErrBukanAnggotaAntrean, workbasket)
+	}
+	s := models.SaringanKasus{Posisi: workbasket}
+	if anggota(p, models.PosisiAdmin) && (workbasket == "" || workbasket == models.PosisiAdmin) {
+		s.Pembuat, s.PembuatPosisi = p.AkunID, models.PosisiAdmin
+	}
+	for _, pos := range models.PosisiTangga {
+		if pos != models.PosisiAdmin && anggota(p, pos) && (workbasket == "" || workbasket == pos) {
+			s.Antrean = append(s.Antrean, pos)
+		}
+	}
+	if s.Pembuat == "" && len(s.Antrean) == 0 {
+		return []models.RingkasanKasus{}, nil
 	}
 	return l.g.DaftarKasus(ctx, s)
 }
@@ -160,6 +222,7 @@ func (l *Layanan) BuatKasus(ctx context.Context, p inti.Pelaku) (models.Kasus, e
 		}
 		h := models.HalamanBaru()
 		h.Setel("PositionNote", models.PosisiAdmin)
+		h.Setel("NBStatus", models.NBStatusBaru)
 		h.Setel(models.HalamanQuotation+".BusinessFac", models.BisnisTreaty)
 		return l.g.SimpanHalaman(ctx, tx, id, h)
 	})
@@ -207,6 +270,8 @@ func (l *Layanan) BukaKasus(ctx context.Context, p inti.Pelaku, id string) (Laya
 			// W5: `pyDefaultValue` sel terbuka layar admin saat dirender.
 			models.TerapkanNilaiBawaanSel(h)
 		}
+	} else if err := l.tampilan(ctx, h); err != nil {
+		return Layar{}, err
 	}
 	return l.layar(ctx, p, k, h, boleh)
 }
@@ -291,6 +356,17 @@ func (l *Layanan) siapkan(ctx context.Context, p inti.Pelaku, k models.Kasus, h 
 	}
 	// langkah 10 dan master XOL (K8) - nonprop.go
 	return l.siapkanNonProp(ctx, h)
+}
+
+// tampilan - buka berkas HANYA-LIHAT (bukan pemegang posisinya, atau berkas tertutup): pra-proses tidak
+// dijalankan karena tidak ada pekerjaan, tetapi halaman master `TreatyIn` yang TIDAK disimpan tetap dibaca
+// ulang - Commencement, Termination, deret layer, dan subsection NonProp. Di Pega halaman itu ikut tersimpan
+// di clipboard berkas, sehingga tampil juga saat berkas hanya dilihat. Nol tulisan.
+func (l *Layanan) tampilan(ctx context.Context, h *models.Halaman) error {
+	if err := l.muatMaster(ctx, h); err != nil {
+		return err
+	}
+	return l.tampilanNonProp(ctx, h)
 }
 
 // muatMaster mengisi halaman TreatyIn dari baris view kontrak terpilih.

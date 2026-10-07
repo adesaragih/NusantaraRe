@@ -14,7 +14,15 @@ import {
   MEDAN_ATASAN_UMUM,
   type Medan,
 } from './medan'
-import { deretQ, TATA_UANG_ADMIN, TATA_UANG_ATASAN, tataUmum, TOTAL_ATASAN, type TataUang } from './tataletak'
+import {
+  deretLayer,
+  deretQ,
+  TATA_UANG_ADMIN,
+  TATA_UANG_ATASAN,
+  tataUmum,
+  TOTAL_ATASAN,
+  type TataUang,
+} from './tataletak'
 
 const label = (ms: Medan[]) => ms.map((m) => m.label)
 const jalur = (ms: Medan[]) => ms.map((m) => m.jalur)
@@ -64,8 +72,21 @@ describe('tata letak section General', () => {
     const d = deretQ(kanan)
     const deret = d.find((x) => Array.isArray(x)) as Medan[]
     expect(label(deret)).toEqual(['Q', '/', 'U/Y'])
-    expect(d.flat()).toEqual(kanan)
-    expect(deretQ(kanan.filter((m) => m.label !== '/')).some((x) => Array.isArray(x))).toBe(false)
+    expect(jalur(d.flat())).toEqual(jalur(kanan))
+    const tanpaGaris = deretQ(kanan.filter((m) => m.label !== '/'))
+    expect(tanpaGaris.some((x) => Array.isArray(x) && x.some((m) => m.label === 'Q'))).toBe(false)
+  })
+
+  // Screenshot layar Pega NonProp (work owner 06-10-2026): "layer 1 Of layer 1" satu baris, hanya LABEL "Of" yang
+  // tampil - label nama properti (LayerType, Layer, LayerPart) bukan teks layar.
+  it('deret layer NonProp: empat medan satu baris, hanya label "Of"', () => {
+    for (const ms of [MEDAN_ADMIN_UMUM, MEDAN_ATASAN_UMUM]) {
+      const d = deretQ(tataUmum(ms).kanan)
+      const layer = d.find((x) => Array.isArray(x) && deretLayer(x)) as Medan[]
+      expect(jalur(layer)).toEqual(['LayerType', 'Layer', 'LayerPartType', 'LayerPart'].map((m) => POLIS + m))
+      expect(label(layer)).toEqual(['', '', 'Of', ''])
+      expect(deretLayer(d.find((x) => Array.isArray(x) && !deretLayer(x)) as Medan[])).toBe(false)
+    }
   })
 })
 

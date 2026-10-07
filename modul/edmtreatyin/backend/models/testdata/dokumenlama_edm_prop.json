@@ -1,0 +1,66 @@
+{
+ "pxObjClass": "ASM-FW-GISFW-Data-PolicyTreatyIn",
+ "PolicyNo": "UJI-QP.T1.10.2017.00001",
+ "EDMNo": "UJI-QP.T1.10.2017.00001/E02",
+ "ProdKe": "2",
+ "EDMType": "3",
+ "NoOffer": "UJI-OFR-1",
+ "NetPremium": "0.00",
+ "PremiOgp": "180.000000276",
+ "StartDate": "20171001",
+ "StatementDate": "20170930T170000.000 GMT",
+ "Show": "true",
+ "TotalPremium": "180.000000276",
+ "UJIMedanFiktif": "UJI-nilai-lewat",
+ "QuotationData": {
+  "pxObjClass": "UJI-kelas-quotation",
+  "ProportionalType": "Proportional",
+  "OldPolicyNo": "UJI-QP.T1.10.2017.00001",
+  "BusinessFac": "T",
+  "SobLsg": "UJI-sob"
+ },
+ "SpreadingRiskList": [
+  {"pxObjClass": "UJI-kelas", "pxListSubscript": "1", "TreatyType": "UJI-QS", "TreatyName": "UJI QS", "SharePercentage": "60", "PremiumSpreaded": "108.000000166"},
+  {"TreatyType": "UJI-SP", "TreatyName": "UJI SP", "SharePercentage": "40", "PremiumSpreaded": "72.00000011"}
+ ],
+ "ListInstallment": [
+  {"InstallmentNo": "1", "DueDate": "20171101", "Premium": "180.000000276", "PaymentTotal": "180.000000276", "pyExpanded": "true",
+   "InstallmentList": [{"InstallmentNo": "1", "Premium": "1"}]}
+ ],
+ "TreatyXOLList": [
+  {"Currency": "UJI-IDR", "IDCurrency": "UJI-1", "GrossPremi": "5", "ValueList": [{"Layer": "1", "GrossPremi": "5"}]}
+ ],
+ "TreatyXOLDifferenceList": [
+  {"Currency": "UJI-IDR", "IDCurrency": "UJI-1", "NetPremi": "5", "ValueList": [{"Layer": "1", "NetPremi": "5"}]}
+ ],
+ "OldData": {
+  "pxObjClass": "ASM-FW-GISFW-Data-PolicyTreatyIn",
+  "EDMNo": "UJI-QP.T1.10.2017.00001/E01",
+  "PolicyNo": "UJI-QP.T1.10.2017.00001",
+  "PremiOgp": "150",
+  "SpreadingRiskList": [{"TreatyType": "UJI-QS", "PremiumSpreaded": "90"}],
+  "TreatyDifference": {"pxObjClass": "UJI-kelas-selisih", "ListInstallment": [], "SpreadingRiskList": []}
+ },
+ "TreatyDifference": {
+  "pxObjClass": "UJI-kelas-selisih",
+  "Installment": "1",
+  "NetPremium": "-130463146.760000276",
+  "PremiOgp": "130.000000276",
+  "RiCommOgp": "25",
+  "TotalPremium": "130.000000276",
+  "TotalSharePercentagePremium": "100",
+  "DueTo": "",
+  "SpreadingRiskList": [
+   {"pxObjClass": "UJI-kelas-selisih", "TreatyType": "UJI-QS", "TreatyName": "UJI QS", "SharePercentage": "60", "PremiumSpreaded": "78.000000166", "ClaimSpreaded": "0"},
+   {"TreatyType": "UJI-SP", "TreatyName": "UJI SP", "SharePercentage": "40", "PremiumSpreaded": "52.00000011", "ClaimSpreaded": "-0.000000001"}
+  ],
+  "ListInstallment": [
+   {"pxObjClass": "UJI-kelas-selisih", "InstallmentNo": "1", "DueDate": "20171101", "InstallmentPercentage": "100", "Premium": "-119961119.76", "PaymentTotal": "-119961119.76"}
+  ]
+ },
+ "SuggestList": [
+  {"pxObjClass": "UJI-kelas-catatan", "Date": "20171002T010000.000 GMT", "Suggest": "UJI catatan pertama", "IsApproved": "1", "OperatorName": "UJI-OPERATOR"},
+  {"Date": "20171002T020000.000 GMT", "Suggest": "UJI catatan kedua", "IsApproved": "0", "OperatorName": ""},
+  {"Date": "20171002T030000.000 GMT", "Suggest": "UJI sudah tersimpan", "IsSave": "Yes", "OperatorName": "UJI-OPERATOR"}
+ ]
+}

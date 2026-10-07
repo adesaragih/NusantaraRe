@@ -7,9 +7,12 @@
 //     -> tak terbaca: pola `inti/frontend/lib/format.ts` (titik ribuan, koma desimal,
 //        tanpa batas desimal, nol ekor dibuang)
 
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
-import { nilaiNol, sajikan, sajikanAngka } from './sajian'
+import { nilaiNol, sajikan, sajikanAngka, sajikanTanggalJam } from './sajian'
 
 describe('sajikanAngka - pyDecimalPlaces terbaca: tepat N desimal', () => {
   it('2 desimal: dipadankan dan dibulatkan setengah ke atas, titik ribuan koma desimal', () => {
@@ -84,5 +87,27 @@ describe('nilaiNol - placeholder "0"', () => {
   it('kosong dan nol', () => {
     for (const v of ['', ' ', '0', '-0', '0.0000', '.0', undefined]) expect(nilaiNol(v)).toBe(true)
     for (const v of ['0.0001', '5', 'UJI']) expect(nilaiNol(v)).toBe(false)
+  })
+})
+
+// Kolom Date grid SuggestList (perintah work owner 06-10-2026: "HARUSNYA PAKE YG ATAS AJA, TAPI TAMBAHIN JAM NYA" -
+// panel History dibuang, jamnya pindah ke grid ini).
+describe('sajikanTanggalJam', () => {
+  it('cap waktu TGL_INP / SuggestDate: tanggal format sistem + jam 24', () => {
+    expect(sajikanTanggalJam('2026-10-06 17:52:59')).toBe('06-10-2026 17:52:59')
+    expect(sajikanTanggalJam('2026-10-06 09:05:00')).toBe('06-10-2026 09:05:00')
+    expect(sajikanTanggalJam('2026-10-06T16:32')).toBe('06-10-2026 16:32:00')
+  })
+
+  it('tanpa jam = tanggal saja; kosong = kosong', () => {
+    expect(sajikanTanggalJam('2026-10-06')).toBe('06-10-2026')
+    expect(sajikanTanggalJam('')).toBe('')
+    expect(sajikanTanggalJam(undefined)).toBe('')
+  })
+
+  it('grid SuggestList layar kasus memakai tanggal + jam; panel History tidak dirender lagi', () => {
+    const layar = readFileSync(join(__dirname, 'pages', 'LayarKasus.tsx'), 'utf8')
+    expect(layar).toContain('<td>{sajikanTanggalJam(b.Date)}</td>')
+    expect(layar).not.toContain('riwayat')
   })
 })

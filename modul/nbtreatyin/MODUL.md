@@ -120,9 +120,27 @@ Tidak dibuat dan tidak diubah strukturnya oleh modul ini; ditulis hanya bila dia
 | `HISTORYAKSEPTASIPEGA` | tulis + baca | riwayat akseptasi (`InsertHistoryAkseptasiPega_Sql`, diagram Prop F98–F99) |
 | `HISTORYAKSEPTASIPRODUCTION` | tulis + baca | catatan usulan (`SaveViewSuggest -> InsertViewSuggest_SQL`, diagram Prop J74–J76; K4) |
 | `GENERATE_SEQUENCE_NUMBER` | tulis lewat `inti/backend/penomor` | deret nomor polis (padanan `PROC_GENERATE_SEQUENCE_NUMBER`); diagram F103/F118 menyebutnya "dibaca saja" — penulisan lewat penomor bersama disetujui WO 04-10-2026 (`docs/PERMINTAAN-TIM-INTI.md` F8; RALAT catatan di `docs/rancangan-tabel-datar-treaty-in.md` §4bis.4) |
-| `TANGGAL_CLOSING`, `KODE_PRODUKSI`, `CURRENCY`, `BUSINESS`, `REINSURANCETYPE`, `TREATYGROUP`, `MARKETINGOFFICER`, `CLIENT`, `AGENT`, `M_LOGIN_GO`, view `TREATYINDETAILJOINEDM`, `TREATYINPRODUCTION` | baca | RD/RDB terjangkau; `TREATYINPRODUCTION` ditulis modul EDM |
+| `TANGGAL_CLOSING`, `KODE_PRODUKSI`, `CURRENCY`, `BUSINESS`, `REINSURANCETYPE`, `TREATYGROUP`, `MARKETINGOFFICER`, `CLIENT`, `AGENT`, `M_LOGIN_GO`, view `TREATYINDETAILJOINEDM` | baca | RD/RDB terjangkau |
 | `M_TREATY_IN`, `M_TREATY_IN_EDM` | baca (JSON, satu fungsi `repository.MasterXOLDariJSON`) | K8 |
-| `JSON_POLIS` | baca (pemuat dokumen lama saja) | tiket 22 |
+| `M_LOGIN_GO_WORKBASKET`, `M_WORKBASKET` (+ `M_LOGIN_GO.IS_ACTIVE` / `DIVISION_CODE`) | baca | nama di NBStatus dari pemegang aktif workbasket tujuan, divisi IT tidak dihitung; nama kartu kotak masuk Beranda (`GET /api/nb-treaty-in/kotak-masuk`) - keputusan work owner 06-10-2026 |
+| `JSON_POLIS` | tulis + baca | tulis: Utility1 `SaveJsonPolisTreatyIn_Act` saat realisasi selesai, **tanpa `DATA_JSON`** (`[keputusan work owner 06-10-2026]` "JSON-nya tidak disimpan, tapi tetap insert kolom lainnya" - RALAT sebagian AC 16; `repository/produksi.go`, pemetaan `models/produksi.go`); baca: pemuat dokumen lama (tiket 22) |
+| `TREATYINPRODUCTION` | tulis + baca | tulis: `InsetTreatyInProd_Act` + `InsertTreatyInProd_SQL` (58 kolom) saat realisasi selesai, dilewati bila IDPEGA sudah punya baris; trigger `TRG_TREATYINPRODUCTION_INSERT` menyalin ke `_BACKUP`; baca: cek duplikat `TreatyRealizationCheckDuplicate` |
+| `ACHIEVEMENT` | tulis | `SetAchivementValue` + `SaveAchievementSQL` saat realisasi selesai; prosedur `InsertUpdateAchievment` ditulis ulang sebagai satu INSERT (nol prosedur, AC 48), `TGL_PROD` = SYSDATE |
+
+## Alat simpanproduksi (06-10-2026)
+
+Menulis baris Utility1 `SaveJsonPolisTreatyIn_Act` (json_polis tanpa `DATA_JSON`, `ACHIEVEMENT`,
+`TREATYINPRODUCTION`) untuk SATU kasus yang sudah Resolved-Completed sebelum penulisan produksi ada (permintaan
+work owner). Dijalankan **manusia** dari akar repo sesudah `. .\muat-env.ps1`:
+
+```powershell
+go run ./modul/nbtreatyin/backend/alat/simpanproduksi -kasus NB-22445             # uji-kering: cetak baris, nol tulis
+go run ./modul/nbtreatyin/backend/alat/simpanproduksi -kasus NB-22445 -jalankan   # tulis, satu transaksi
+```
+
+Pemetaan sama dengan submit (`models.SusunSimpananPolis`); ProductionDate tersimpan dipakai apa adanya; halaman
+kasus tidak diubah. Aman diulang: tabel yang sudah punya baris untuk IDPEGA itu dilewati (ACHIEVEMENT juga).
+`-pengguna` mengganti USERNAME (bawaan: OPERATORID riwayat terakhir). `-jalankan` ditolak bila `IS_PEGA_PROD=true`.
 
 ## Pemuat dokumen lama (tiket 22)
 

@@ -420,13 +420,13 @@ func (l *Layanan) PilihBisnis(ctx context.Context, p inti.Pelaku, id, idDetail s
 // repository (`[penyimpangan sadar — disetujui WO 04-10-2026]`); rinciannya di
 // models/usulan.go.
 //
-// lalu connector flow (`models.Langkah`). Semuanya SATU transaksi (AC 29, 83).
-// Sesudah transaksi, bila realisasi selesai: Utility2 `serviceInsertArasapas_act`
+// lalu connector flow (`models.Langkah`). Bila realisasi selesai (Decision8 Else),
+// Utility1 `SaveJsonPolisTreatyIn_Act` ditulis di transaksi yang sama: medan
+// halaman (`models.PrasimpanPolis`), lalu json_polis TANPA DATA_JSON, ACHIEVEMENT,
+// TREATYINPRODUCTION (`[keputusan work owner 06-10-2026]` "JSON-nya tidak
+// disimpan, tapi tetap insert kolom lainnya"; models/produksi.go). Semuanya SATU
+// transaksi (AC 29, 83). Sesudah transaksi: Utility2 `serviceInsertArasapas_act`
 // (`konversikan`, KEPUTUSAN-RONDE-12 butir 7) - gagalnya tidak membatalkan apa pun.
-//
-// ⛔ Tidak dibangun, dan sebabnya:
-//   - Utility1 `SaveJsonPolisTreatyIn_Act` - diganti penyimpanan relasional
-//     (AC 16); halaman sudah tersimpan di transaksi yang sama.
 func (l *Layanan) Kirim(ctx context.Context, p inti.Pelaku, id string, masuk *models.Halaman) (HasilKirim, error) {
 	k, err := l.kirim(ctx, p, id, masuk)
 	if err != nil {
@@ -489,6 +489,21 @@ func (l *Layanan) kirim(ctx context.Context, p inti.Pelaku, id string, masuk *mo
 	if err != nil {
 		return models.Kasus{}, err
 	}
+	// NBStatus "NB IS IN <nama>'S INBOX": nama dari pemegang aktif workbasket tujuan (keputusan WO 06-10-2026)
+	// - penolakan atasan: nama pembuat berkas; berkas lama tanpa pembuat -> pemegang workbasket Admin
+	namaKotak := ""
+	if tr.KembaliKePembuat {
+		if namaKotak, err = l.g.NamaTampilan(ctx, k.CreateOp); err != nil {
+			return models.Kasus{}, err
+		}
+	}
+	if tr.NBStatusKePosisi || (tr.KembaliKePembuat && strings.TrimSpace(namaKotak) == "") {
+		pk, err := l.g.PemegangKotakMasuk(ctx, tr.PosisiBaru)
+		if err != nil {
+			return models.Kasus{}, err
+		}
+		namaKotak = models.NamaKotakMasuk(tr.PosisiBaru, pk)
+	}
 	err = l.tulis(ctx, k, func(tx *db.Tx) error {
 		// InsertHistoryAkseptasiPega - sebelum connector: WORKBASKET = posisi
 		// tempat putusan diambil.
@@ -508,16 +523,31 @@ func (l *Layanan) kirim(ctx context.Context, p inti.Pelaku, id string, masuk *mo
 			}
 		}
 		if tr.Ditutup() {
+			// Utility1 SaveJsonPolisTreatyIn_Act - hanya jalur selesai (Decision8 Else), bukan penolakan admin
+			var simpanan models.SimpananPolis
+			if tr.Simpan {
+				hari, err := l.g.HariClosing(ctx, tx)
+				if err != nil {
+					return err
+				}
+				models.PrasimpanPolis(h, id, l.jam(), hari)
+				if simpanan, err = models.SusunSimpananPolis(h, id, p.AkunID); err != nil {
+					return err
+				}
+			}
 			if err := l.g.SimpanHalaman(ctx, tx, id, h); err != nil {
 				return err
 			}
+			if tr.Simpan {
+				if err := l.g.SimpanPolisProduksi(ctx, tx, simpanan); err != nil {
+					return err
+				}
+			}
 			return l.g.TutupKasus(ctx, tx, id, k.StatusWork, tr.StatusTutup)
 		}
-		if tr.KosongkanNBStatus {
-			h.Setel("NBStatus", "")
-		}
-		if tr.NBStatusKePosisi {
-			h.Setel("NBStatus", models.TeksNBStatusKotakMasuk(tr.PosisiBaru))
+		// NBStatus tidak pernah kosong selama berkas berjalan (keputusan WO 06-10-2026)
+		if tr.NBStatusKePosisi || tr.KembaliKePembuat {
+			h.Setel("NBStatus", models.TeksNBStatusKotakMasuk(namaKotak))
 		}
 		h.Setel("PositionNote", tr.PosisiBaru)
 		if err := l.g.SimpanHalaman(ctx, tx, id, h); err != nil {

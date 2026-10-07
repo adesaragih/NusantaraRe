@@ -181,7 +181,8 @@ export const MEDAN_ADMIN_UMUM: Medan[] = [
   { jalur: 'TreatyIn.Termination', label: 'Termination', jenis: 'tampil', sajian: TGL },
   { jalur: POLIS + 'EndDate', label: 'To', jenis: 'tanggal', aksi: [{ aksi: 'ProtectDate' }] },
   { jalur: POLIS + 'CedingCoName', label: 'Ceding Company', jenis: 'tampil' },
-  { jalur: POLIS + 'InsuredName', label: 'InsuredName', jenis: 'tampil' },
+  // sel tanpa label: teks yang TAMPIL di layar Pega (screenshot work owner 06-10-2026)
+  { jalur: POLIS + 'InsuredName', label: 'Insured Name', jenis: 'tampil' },
   { jalur: POLIS + 'TreatyType', label: 'Treaty Type', jenis: 'tampil' },
   { jalur: POLIS + 'TreatyYear', label: 'UW Year', jenis: 'tampil', tampil: bukanNonPropBaru },
   // pyFormatType number tanpa desimal (mode baca); pyShowReadonlyFormatting false
@@ -315,7 +316,7 @@ export const MEDAN_ATASAN_UMUM: Medan[] = [
   { jalur: 'TreatyIn.Termination', label: 'Termination', jenis: 'tampil', sajian: TGL },
   { jalur: POLIS + 'EndDate', label: 'To', jenis: 'tampil', sajian: TGL },
   { jalur: POLIS + 'CedingCoName', label: 'Ceding Company', jenis: 'tampil', tampil: tidakKosong(POLIS + 'CedingCoName') },
-  { jalur: POLIS + 'InsuredName', label: 'InsuredName', jenis: 'tampil' },
+  { jalur: POLIS + 'InsuredName', label: 'Insured Name', jenis: 'tampil' },
   { jalur: POLIS + 'TreatyType', label: 'Treaty Type', jenis: 'tampil' },
   { jalur: POLIS + 'TreatyYear', label: 'UW Year', jenis: 'tampil', tampil: bukanNonPropBaru },
   { jalur: POLIS + 'Quartal', label: 'Q', jenis: 'tampil', tampil: proporsionalQD, sajian: BULAT_POLOS },

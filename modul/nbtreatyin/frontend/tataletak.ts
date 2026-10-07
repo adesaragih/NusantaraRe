@@ -2,7 +2,8 @@
 //
 //   General : tombol Choose Business / Select SOB / Enable-Disable paling atas; kolom kiri Master ID .. RNM Share,
 //             kolom kanan Statement Date .. Payment Type/Layer, Remark melebar di bawah; "RNM Share IDR 163.125.000"
-//             satu baris; "Q [..] / [..] U/Y [..]" satu baris.
+//             satu baris; "Q [..] / [..] U/Y [..]" satu baris; NonProp "layer 1 Of layer 1" satu baris
+//             (screenshot work owner 06-10-2026).
 //   Uang    : baris Gross di atas (Gross Premium 100% | Claim 100%), kolom kiri OGP lalu klaim/saldo,
 //             kolom kanan ONP lalu potongan/pajak. Kode mata uang polis TIDAK diulang di setiap medan (sudah
 //             tampil di medan Currency) - "banyak sekali tulisan IDR".
@@ -51,17 +52,29 @@ export function tataUmum(semua: Medan[]): TataUmum {
   return { kiri: ms.slice(0, k), kanan: ms.slice(k, b), bawah: ms.slice(b) }
 }
 
-const DERET = [POLIS + 'Quartal', POLIS + 'YearOfQuartal', POLIS + 'TreatyYear'] as const
+const DERET_Q = [POLIS + 'Quartal', POLIS + 'YearOfQuartal', POLIS + 'TreatyYear']
+/** Medan layer NonProp: sel tanpa label, kecuali LABEL "Of" di depan LayerPartType. */
+const DERET_LAYER = [POLIS + 'LayerType', POLIS + 'Layer', POLIS + 'LayerPartType', POLIS + 'LayerPart']
+const TANPA_LABEL = new Set([POLIS + 'LayerType', POLIS + 'Layer', POLIS + 'LayerPart'])
 
-/** Satukan "Q / U/Y" (tiga medan berurutan) menjadi satu deret; medan lain tetap sendiri. */
+/** Deret layer NonProp ("layer 1 Of layer 1"). */
+export const deretLayer = (d: Medan[]) => d[0]?.jalur === DERET_LAYER[0]
+
+/** Satukan "Q / U/Y" (tiga medan berurutan) dan layer NonProp (empat medan berurutan, label nama properti dibuang)
+ *  menjadi satu deret; medan lain tetap sendiri. */
 export function deretQ(ms: Medan[]): (Medan | Medan[])[] {
   const hasil: (Medan | Medan[])[] = []
   for (let i = 0; i < ms.length; i++) {
-    const tiga = ms.slice(i, i + DERET.length)
-    if (tiga.length === DERET.length && tiga.every((m, n) => m.jalur === DERET[n])) {
-      hasil.push(tiga)
-      i += DERET.length - 1
-    } else hasil.push(ms[i]!)
+    const pola = [DERET_Q, DERET_LAYER].find((p) => {
+      const potong = ms.slice(i, i + p.length)
+      return potong.length === p.length && potong.every((m, n) => m.jalur === p[n])
+    })
+    if (pola === undefined) {
+      hasil.push(ms[i]!)
+      continue
+    }
+    hasil.push(ms.slice(i, i + pola.length).map((m) => (TANPA_LABEL.has(m.jalur) ? { ...m, label: '' } : m)))
+    i += pola.length - 1
   }
   return hasil
 }

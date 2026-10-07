@@ -227,12 +227,21 @@ func sqlDaftarKasus(kerja, gen, quot string, s models.SaringanKasus) (string, []
 		return fmt.Sprintf(":%d", len(args))
 	}
 	fmt.Fprintf(&b, `SELECT w.ID, q.BUSINESS_NAME, q.INSURED_NAME, q.MARKETING_NAME, g.NB_STATUS,
-	        w.STATUS_WORK, g.POSITION_NOTE, g.NOPOLIS, TO_CHAR(w.TGL_CREATE, '%s')
+	        w.STATUS_WORK, g.POSITION_NOTE, g.NOPOLIS, TO_CHAR(w.TGL_CREATE, '%s'), w.CREATE_OP_NAME,
+	        q.PROPORTIONAL_TYPE, g.CEDING_CO_NAME, TO_CHAR(g.START_DATE, '%s'), TO_CHAR(w.TGL_UPDATE, '%s'),
+	        TO_CHAR(g.TGL_PROD, '%s')
 	   FROM %s w
 	   JOIN %s g ON g.ID = w.ID
 	   LEFT JOIN %s q ON q.POLIS_ID = g.ID
-	  WHERE g.PRODKE = 0 AND w.LINI = :1
-	    AND (w.STATUS_WORK IS NULL OR w.STATUS_WORK NOT IN (:2, :3))`, fmtTanggal, kerja, gen, quot)
+	  WHERE g.PRODKE = 0 AND w.LINI = :1`, fmtTanggal, fmtTanggal, fmtTanggal, fmtTanggal, kerja, gen, quot)
+	// switch portal Proses / Resolved (keputusan work owner 06-10-2026); filter D, F GetListOpportunity = Proses
+	if s.Selesai {
+		b.WriteString(`
+	    AND w.STATUS_WORK IN (:2, :3)`)
+	} else {
+		b.WriteString(`
+	    AND (w.STATUS_WORK IS NULL OR w.STATUS_WORK NOT IN (:2, :3))`)
+	}
 	if cari := strings.TrimSpace(s.Cari); cari != "" {
 		fmt.Fprintf(&b, `
 	    AND UPPER(w.ID) LIKE %s`, pen("%"+strings.ToUpper(cari)+"%"))
@@ -241,18 +250,102 @@ func sqlDaftarKasus(kerja, gen, quot string, s models.SaringanKasus) (string, []
 		fmt.Fprintf(&b, `
 	    AND g.POSITION_NOTE = %s`, pen(s.Posisi))
 	}
+	// filter A GetListOpportunity (pembuat) ATAU antrean atasan yang dipegang (services.DaftarKasus)
+	pembuat := ""
+	if s.Pembuat != "" {
+		pembuat = "w.CREATE_OP = " + pen(s.Pembuat)
+		if s.PembuatPosisi != "" {
+			pembuat = "(" + pembuat + " AND g.POSITION_NOTE = " + pen(s.PembuatPosisi) + ")"
+		}
+	}
+	antrean := ""
 	if len(s.Antrean) > 0 {
 		var ps []string
 		for _, a := range s.Antrean {
 			ps = append(ps, pen(a))
 		}
+		antrean = "g.POSITION_NOTE IN (" + strings.Join(ps, ", ") + ")"
+	}
+	switch {
+	case pembuat != "" && antrean != "":
 		fmt.Fprintf(&b, `
-	    AND g.POSITION_NOTE IN (%s)`, strings.Join(ps, ", "))
+	    AND (%s OR %s)`, pembuat, antrean)
+	case pembuat != "":
+		fmt.Fprintf(&b, `
+	    AND %s`, pembuat)
+	case antrean != "":
+		fmt.Fprintf(&b, `
+	    AND %s`, antrean)
 	}
 	fmt.Fprintf(&b, `
 	  ORDER BY w.TGL_CREATE DESC
 	  FETCH FIRST %d ROWS ONLY`, models.BatasDaftarPortal)
 	return b.String(), args
+}
+
+// sqlHitungKotakMasuk - cacah berkas terbuka per posisi yang MENUNGGU akun (kotak masuk Beranda): Admin = buatan
+// akun yang masih di Admin (bila ia memegang Admin), atasan = seluruh antrean workbasket yang ia pegang. Penampung
+// urut kemunculan = urut argumen.
+func sqlHitungKotakMasuk(kerja, gen, akun string, admin bool, atasan []string) (string, []any) {
+	args := []any{models.LiniKasus, models.StatusDitolak, models.StatusSelesai}
+	pen := func(v any) string {
+		args = append(args, v)
+		return fmt.Sprintf(":%d", len(args))
+	}
+	var syarat []string
+	if admin {
+		syarat = append(syarat, fmt.Sprintf("(g.POSITION_NOTE = %s AND w.CREATE_OP = %s)", pen(models.PosisiAdmin), pen(akun)))
+	}
+	if len(atasan) > 0 {
+		var ps []string
+		for _, a := range atasan {
+			ps = append(ps, pen(a))
+		}
+		syarat = append(syarat, "g.POSITION_NOTE IN ("+strings.Join(ps, ", ")+")")
+	}
+	q := fmt.Sprintf(`SELECT g.POSITION_NOTE, COUNT(*)
+	   FROM %s w
+	   JOIN %s g ON g.ID = w.ID
+	  WHERE g.PRODKE = 0 AND w.LINI = :1
+	    AND (w.STATUS_WORK IS NULL OR w.STATUS_WORK NOT IN (:2, :3))
+	    AND (%s)
+	  GROUP BY g.POSITION_NOTE`, kerja, gen, strings.Join(syarat, " OR "))
+	return q, args
+}
+
+// HitungKotakMasuk - cacah kotak masuk Beranda per posisi (`sqlHitungKotakMasuk`); posisi tanpa berkas tidak ada di
+// peta. Tanpa syarat (bukan pemegang workbasket tangga) = peta kosong tanpa query.
+func (g *Gudang) HitungKotakMasuk(ctx context.Context, akun string, admin bool, atasan []string) (map[string]int, error) {
+	out := map[string]int{}
+	if !admin && len(atasan) == 0 {
+		return out, nil
+	}
+	kerja, err := g.nama(tabelKerja)
+	if err != nil {
+		return nil, err
+	}
+	gen, err := g.nama(models.TabelGeneralPolis.Nama)
+	if err != nil {
+		return nil, err
+	}
+	q, args := sqlHitungKotakMasuk(kerja, gen, akun, admin, atasan)
+	if err := db.PeriksaSQL(q); err != nil {
+		return nil, err
+	}
+	rows, err := g.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("repository: menghitung kotak masuk: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var pos sql.NullString
+		var n int
+		if err := rows.Scan(&pos, &n); err != nil {
+			return nil, fmt.Errorf("repository: membaca cacah kotak masuk: %w", err)
+		}
+		out[pos.String] = n
+	}
+	return out, rows.Err()
 }
 
 // DaftarKasus membaca kasus terbuka untuk portal.
@@ -287,12 +380,15 @@ func (g *Gudang) DaftarKasus(ctx context.Context, s models.SaringanKasus) ([]mod
 	var out []models.RingkasanKasus
 	for rows.Next() {
 		var r models.RingkasanKasus
-		var bis, ins, mkt, nb, st, pn, np, tg sql.NullString
-		if err := rows.Scan(&r.ID, &bis, &ins, &mkt, &nb, &st, &pn, &np, &tg); err != nil {
+		var bis, ins, mkt, nb, st, pn, np, tg, pembuat, jenis, ceding, mulai, ubah, prod sql.NullString
+		if err := rows.Scan(&r.ID, &bis, &ins, &mkt, &nb, &st, &pn, &np, &tg, &pembuat, &jenis, &ceding, &mulai, &ubah, &prod); err != nil {
 			return nil, fmt.Errorf("repository: membaca baris daftar kasus: %w", err)
 		}
 		r.BusinessName, r.InsuredName, r.MarketingName = teks(bis), teks(ins), teks(mkt)
 		r.NBStatus, r.StatusWork, r.PositionNote, r.NoPolis, r.TglCreate = teks(nb), teks(st), teks(pn), teks(np), teks(tg)
+		r.NamaPembuat, r.JenisProporsi = teks(pembuat), teks(jenis)
+		r.CedingCoName, r.StartDate, r.TglUpdate = teks(ceding), teks(mulai), teks(ubah)
+		r.TglProduksi = teks(prod)
 		out = append(out, r)
 	}
 	return out, rows.Err()

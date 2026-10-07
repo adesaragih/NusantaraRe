@@ -21,12 +21,12 @@ package services
 //	       CountOverridingCommOgp_Act, CountOverridingCommOnp_Act, ...) - tidak
 //	       pernah terpicu. Yang terbuka: radio `ListSuggest .IsApproved`
 //	       (runActivity SetDueTo_act; CekLimitTreatyAcc_Act K2; Protection_Act
-//	       tidak ada di korpus), dan - W2 audit silang P3 - sel %Share
-//	       `Section/SpreadingRiskList` subsection NonProp (wadah S88, refresh
-//	       CountSpreading_Act) bila `TreatyIn.FacultativeShare` 0 / ''.
+//	       tidak ada di korpus). Sel %Share subsection NonProp (wadah S88) TIDAK
+//	       terbuka bagi atasan - `[keputusan work owner 07-10-2026]` "HANYA ADMIN
+//	       YANG BISA EDIT".
 //
-// `CountSpreading` di KEDUA layar hanya bila grid spreadingnya terbuka
-// (`models.SpreadingDariLayar`, syarat yang sama dengan penerimaan daftarnya).
+// `CountSpreading` hanya bila grid spreadingnya terbuka (`models.SpreadingDariLayar`,
+// syarat yang sama dengan penerimaan daftarnya) - kini hanya layar admin.
 //
 // ⛔ Aksi di luar layar posisi berkas ditolak `ErrTindakanTakAdaDiPosisi`:
 // `CheckDataMkt` menyimpan halaman (Obj-Save langkah 5) dan tidak boleh

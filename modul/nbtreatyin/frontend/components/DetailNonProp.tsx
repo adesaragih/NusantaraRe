@@ -15,10 +15,14 @@
 // Judul wadah hanya yang ber-`pyIncludeHeader=true` (S1 Limits, S19 Share, S41 Total
 // Spreaded, S51 Share Facultative); S73 (SpreadingRiskList) dan S74 (angsuran) NOHEADER -
 // `Wadah` tanpa judul (W6 audit silang P3).
+//
+// Tata letak mengikuti screenshot layar Pega (work owner 06-10-2026: "tampilan NB Treaty Non Prop belum sesuai"):
+// grid selebar isinya tanpa patah baris, grid total sebaris berdampingan, spreading berkolom `% RNM Share`,
+// "Installment" sebaris dengan nilainya, angsuran per mata uang dapat dilipat dengan rincian bernomor.
 
 import { Panel } from '../../../../inti/frontend/components/ui/dasar'
 import { MASTER, POLIS, daftar, nilai, type Baris, type Halaman, type Pilihan } from '../api'
-import { KOLOM_ANGSURAN, KOLOM_SPREADING } from '../labels'
+import { KOLOM_ANGSURAN } from '../labels'
 import { labelTreatyType } from '../medan'
 import {
   JUDUL_NONPROP,
@@ -26,6 +30,7 @@ import {
   KOLOM_LIMIT,
   KOLOM_RINCI,
   KOLOM_SHARE,
+  KOLOM_SPREADING_NP,
   TOTAL_FAKULTATIF,
   TOTAL_LIMIT,
   TOTAL_SHARE,
@@ -38,7 +43,7 @@ import {
   type Kolom,
   type Total,
 } from '../nonprop'
-import { kelasAngka, POLA_INTI, sajikan, type Sajian } from '../sajian'
+import { kelasAngka, sajikan, type Sajian } from '../sajian'
 import { TEMPAT_LABEL_NON_EDM, tempatTerbuka, type Tempat } from '../tempat'
 import InputAngka from './InputAngka'
 import Wadah from './Wadah'
@@ -60,12 +65,21 @@ function teksSel(b: Baris, c: Kolom, sajian: Sajian): string {
   return sajikan(v, c.m === 'DueDate' ? 'tanggal' : (c.format ?? sajian))
 }
 
-function Grid({ baris, kolom, sajian = DUA }: { baris: Baris[]; kolom: Kolom[]; sajian?: Sajian }) {
+interface PropsGrid {
+  baris: Baris[]
+  kolom: Kolom[]
+  sajian?: Sajian
+  /** kolom nomor baris di depan (grid rincian angsuran Pega) */
+  nomor?: boolean
+}
+
+function Grid({ baris, kolom, sajian = DUA, nomor = false }: PropsGrid) {
   return (
-    <div className="table-wrap">
+    <div className="table-wrap nbti__grid-np">
       <table>
         <thead>
           <tr>
+            {nomor && <th scope="col" aria-label="No" />}
             {kolom.map((c, j) => (
               <th
                 key={`${c.m}-${j}`}
@@ -81,6 +95,7 @@ function Grid({ baris, kolom, sajian = DUA }: { baris: Baris[]; kolom: Kolom[]; 
         <tbody>
           {baris.map((b, i) => (
             <tr key={i}>
+              {nomor && <td className="nbti__urut-np">{i + 1}</td>}
               {kolom.map((c, j) => (
                 <td key={`${c.m}-${j}`} className={kelasAngka(b[c.m])}>
                   {teksSel(b, c, sajian)}
@@ -110,9 +125,9 @@ function Totals({ h, daftarTotal }: { h: Halaman; daftarTotal: Total[] }) {
 
 export interface PropsDetailNonProp {
   halaman: Halaman
-  /** Pelaku boleh bekerja di layar ini - admin MAUPUN atasan (W2 audit silang P3:
-   *  `DetailDeptHeadTreatyIn_UW` S88 menyertakan subsection ini ber-`pyEditOptions=Auto`);
-   *  grid spreading lalu terbuka menurut `spreadingTerbuka` (FacultativeShare 0/''). */
+  /** Admin pemegang berkas - HANYA admin (keputusan work owner 07-10-2026: "HANYA ADMIN YANG BISA EDIT";
+   *  `DetailDeptHeadTreatyIn_UW` S88 ber-`pyEditOptions=Auto` disimpangkan sadar); grid spreading lalu
+   *  terbuka menurut `spreadingTerbuka` (FacultativeShare 0/''). */
   sunting: boolean
   /** Tempat berperan pelaku (`Layar.tempat`, tiket 05). */
   tempat: Tempat
@@ -140,7 +155,7 @@ export default function DetailNonProp({
       </Panel>
 
       <Panel judul={JUDUL_NONPROP.share}>
-        <div className="field nbti__medan">
+        <div className="field nbti__medan nbti__medan-np">
           <span className="field__label">{JUDUL_NONPROP.rnmShare}</span>
           <span className="nbti__nilai">{nilai(h, jalurRnmShare(h))}</span>
         </div>
@@ -152,7 +167,7 @@ export default function DetailNonProp({
 
       {tampilFakultatif(h) && (
         <Panel judul={JUDUL_NONPROP.fakultatif}>
-          <div className="field nbti__medan">
+          <div className="field nbti__medan nbti__medan-np">
             <span className="field__label">{JUDUL_NONPROP.fakultatifPersen}</span>
             <span className="nbti__nilai">{nilai(h, MASTER + 'FacultativeShare')}</span>
           </div>
@@ -164,15 +179,16 @@ export default function DetailNonProp({
       {/* S73 NOHEADER: SUB_SECTION `SpreadingRiskList` tanpa judul wadah */}
       <Wadah>
         {/* perintah work owner 06-10-2026: Add / Delete dibuang, Treaty Type hanya-baca ("ga boleh di ubah lagi") */}
-        <div className="table-wrap">
+        <div className="table-wrap nbti__grid-np">
           <table>
             <thead>
               <tr>
-                <th scope="col">{KOLOM_SPREADING.treatyType}</th>
-                <th scope="col" className="nbti__angka">{KOLOM_SPREADING.share}</th>
-                <th scope="col" className="nbti__angka">{KOLOM_SPREADING.premium}</th>
-                <th scope="col" className="nbti__angka">{KOLOM_SPREADING.claimPct}</th>
-                <th scope="col" className="nbti__angka">{KOLOM_SPREADING.claim}</th>
+                <th scope="col">{KOLOM_SPREADING_NP.treatyType}</th>
+                <th scope="col" className="nbti__angka">{KOLOM_SPREADING_NP.rnmShare}</th>
+                <th scope="col" className="nbti__angka">{KOLOM_SPREADING_NP.share}</th>
+                <th scope="col" className="nbti__angka">{KOLOM_SPREADING_NP.premium}</th>
+                <th scope="col" className="nbti__angka">{KOLOM_SPREADING_NP.claimPct}</th>
+                <th scope="col" className="nbti__angka">{KOLOM_SPREADING_NP.claim}</th>
               </tr>
             </thead>
             <tbody>
@@ -182,11 +198,13 @@ export default function DetailNonProp({
                     {/* hanya-baca: dropdown ro ber-RD BrowseReinsuranceType_RD - tampil .Note dari .ID */}
                     {labelTreatyType(b, opsiSpreading)}
                   </td>
+                  {/* porsi RNM per treaty (.Pct master), hanya-baca */}
+                  <td className="nbti__angka">{angka2(b.SplitRNMSharePct)}</td>
                   {(['SharePercentage', 'PremiumSpreaded', 'ClaimPercentage', 'ClaimSpreaded'] as const).map((k) => (
                     <td key={k} className="nbti__angka">
                       {terbuka && (k === 'SharePercentage' || k === 'ClaimPercentage') ? (
                         <InputAngka
-                          label={k === 'SharePercentage' ? KOLOM_SPREADING.share : KOLOM_SPREADING.claimPct}
+                          label={k === 'SharePercentage' ? KOLOM_SPREADING_NP.share : KOLOM_SPREADING_NP.claimPct}
                           value={b[k] ?? ''}
                           sajian={DUA}
                           onChange={(v) => onUbahBaris(SPREADING, i, k, v)}
@@ -202,7 +220,8 @@ export default function DetailNonProp({
             </tbody>
             <tfoot>
               <tr>
-                <td>{KOLOM_SPREADING.totalShare}</td>
+                <td>{KOLOM_SPREADING_NP.total}</td>
+                <td />
                 <td className="nbti__angka">{angka2(nilai(h, POLIS + 'TotalSharePercentagePremium'))}</td>
                 <td className="nbti__angka">{angka2(nilai(h, POLIS + 'TotalPremium'))}</td>
                 <td className="nbti__angka">{angka2(nilai(h, POLIS + 'TotalSharePercentageClaim'))}</td>
@@ -213,22 +232,36 @@ export default function DetailNonProp({
         </div>
       </Wadah>
 
-      {/* S74 NOHEADER (pyIncludeHeader=false): tanpa judul wadah; "Installment" = label sel */}
+      {/* S74 NOHEADER (pyIncludeHeader=false): tanpa judul wadah; "Installment" = label sel, sebaris dengan nilainya */}
       <Wadah>
-        <div className="field nbti__medan">
-          <span className="field__label">{KOLOM_ANGSURAN.installment}</span>
-          <span className="nbti__nilai">{nilai(h, POLIS + 'Installment')}</span>
-        </div>
-        {daftar(h, ANGSURAN).map((a, i) => (
-          <div key={i} className="nbti__angsuran-np">
-            <div className="field nbti__medan">
-              <span className="field__label">{JUDUL_NONPROP.currency}</span>
-              <span className="nbti__nilai">{a.Currency ?? ''}</span>
-            </div>
-            {/* masterDetail -> flow action `InstallmentList` (Section ber-pyReadOnly; angka tanpa pyDecimalPlaces) */}
-            <Grid baris={daftar(h, `${ANGSURAN}(${i + 1}).InstallmentList`)} kolom={KOLOM_RINCI} sajian={POLA_INTI} />
+        <div className="nbti__kolom nbti__kolom-np">
+          <div className="field nbti__medan">
+            <span className="field__label">{KOLOM_ANGSURAN.installment}</span>
+            <span className="nbti__nilai">{nilai(h, POLIS + 'Installment')}</span>
           </div>
-        ))}
+        </div>
+        {/* grid "Currency" masterDetail: tiap mata uang dapat dilipat, rinciannya flow action `InstallmentList` */}
+        <div className="table-wrap nbti__grid-np nbti__angsuran-np">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">{JUDUL_NONPROP.currency}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {daftar(h, ANGSURAN).map((a, i) => (
+                <tr key={i}>
+                  <td>
+                    <details className="nbti__rinci-np" open>
+                      <summary>{a.Currency ?? ''}</summary>
+                      <Grid baris={daftar(h, `${ANGSURAN}(${i + 1}).InstallmentList`)} kolom={KOLOM_RINCI} nomor />
+                    </details>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Wadah>
       {/* LABEL "EDM": wadah S2 `TreatyMasterInEDM && IsEDMInputOnNB != true` - mustahil sesudah
           InputPolicyTreatyInDetail_NonProp langkah 10 (audit silang P3), tidak dirender. */}

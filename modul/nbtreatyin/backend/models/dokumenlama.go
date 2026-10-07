@@ -372,7 +372,7 @@ func alasanDiabaikan(pola string) string {
 var polaPyID = regexp.MustCompile(`^[A-Z][A-Z0-9]*-\d+$`)
 
 // IDKasusDariIDPega mengambil pyID dari `pyWorkPage.pzInsKey`
-// (`<kelas> <pyID>`, `KunciInstans`). pyID menjadi ID T_WORK_POLIS - diagram
+// (`<kelas> <pyID>`, kunci dokumen Pega lama). pyID menjadi ID T_WORK_POLIS - diagram
 // grilling: T_WORK_POLIS "diambil dari pyWorkPage.pzInsKey".
 func IDKasusDariIDPega(idpega string) (string, error) {
 	s := strings.TrimSpace(idpega)

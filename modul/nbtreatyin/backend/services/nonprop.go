@@ -121,6 +121,21 @@ func (l *Layanan) pajakNonProp(ctx context.Context, h *models.Halaman) error {
 	return isian.Kembalikan(h)
 }
 
+// tampilanNonProp - bagian NonProp buka berkas HANYA-LIHAT (`Layanan.tampilan`): master dibaca ulang untuk
+// subsection DetailPoliciesNonProportional saja (butir 1 `siapkanNonProp`). Butir 2 (pra-proses langkah 10,
+// TreatyRealizationCheckXOLList) tidak dijalankan - itu bagian pekerjaan pemegang berkas.
+func (l *Layanan) tampilanNonProp(ctx context.Context, h *models.Halaman) error {
+	if !nonPropDipilih(h) {
+		return nil
+	}
+	m, err := l.bacaMaster(ctx, h, false)
+	if err != nil {
+		return err
+	}
+	models.TerapkanMasterXOL(h, m)
+	return rusak(models.TampilanMasterNonProp(h))
+}
+
 // siapkanNonProp - bagian NonProp pra-proses (dipanggil `siapkan` sesudah
 // `muatMaster`):
 //

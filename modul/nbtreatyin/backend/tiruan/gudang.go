@@ -33,7 +33,13 @@ type Gudang struct {
 	Halaman map[string]*models.Halaman
 	Riwayat []models.Riwayat
 	// Usulan - baris POOLDATA.HISTORYAKSEPTASIPRODUCTION (catatan SuggestList).
-	Usulan  []BarisRiwayatProduksi
+	Usulan []BarisRiwayatProduksi
+	// JSONPolis, Capaian, Produksi - baris json_polis / ACHIEVEMENT / TREATYINPRODUCTION (Utility1
+	// `SaveJsonPolisTreatyIn_Act`, `SimpanPolisProduksi`), urutan tulis.
+	JSONPolis []models.Baris
+	Capaian   []models.Baris
+	Produksi  []models.Baris
+
 	Nama    map[string]string // login -> nama tampilan
 	Kontrak map[string]models.BarisKontrak
 	Bisnis  map[string]models.BarisBisnis
@@ -55,6 +61,10 @@ type Gudang struct {
 	GagalDi     string // nama operasi yang dipaksa gagal (uji pembatalan transaksi)
 	dalamTx     bool
 	Panggil     []string
+	// KotakMasuk - pemegang aktif per workbasket (`PemegangKotakMasuk`); tak terdaftar = nol pemegang tanpa nama.
+	KotakMasuk map[string]models.PemegangKotakMasuk
+	// NamaPembuat - T_WORK_POLIS.CREATE_OP_NAME per kasus (diisi SisipKasus).
+	NamaPembuat map[string]string
 }
 
 // Baru menyusun gudang kosong.
@@ -96,6 +106,9 @@ type potret struct {
 	halaman       map[string]*models.Halaman
 	riwayat       []models.Riwayat
 	usulan        []BarisRiwayatProduksi
+	jsonPolis     []models.Baris
+	capaian       []models.Baris
+	produksi      []models.Baris
 }
 
 func (g *Gudang) potret() potret {
@@ -108,6 +121,9 @@ func (g *Gudang) potret() potret {
 	}
 	p.riwayat = append(p.riwayat, g.Riwayat...)
 	p.usulan = append(p.usulan, g.Usulan...)
+	p.jsonPolis = append(p.jsonPolis, g.JSONPolis...)
+	p.capaian = append(p.capaian, g.Capaian...)
+	p.produksi = append(p.produksi, g.Produksi...)
 	return p
 }
 
@@ -124,6 +140,7 @@ func (g *Gudang) Transaksi(ctx context.Context, fn func(tx *db.Tx) error) error 
 	if err != nil {
 		g.urut, g.urutPol = sebelum.urut, sebelum.urutPol
 		g.Kasus, g.Halaman, g.Riwayat, g.Usulan = sebelum.kasus, sebelum.halaman, sebelum.riwayat, sebelum.usulan
+		g.JSONPolis, g.Capaian, g.Produksi = sebelum.jsonPolis, sebelum.capaian, sebelum.produksi
 	}
 	return err
 }
@@ -133,12 +150,16 @@ func (g *Gudang) IDKasusBerikut(context.Context, *db.Tx) (string, error) {
 	return models.RakitIDKasus(fmt.Sprint(g.urut)), g.gagal("IDKasusBerikut")
 }
 
-func (g *Gudang) SisipKasus(_ context.Context, _ *db.Tx, id, pembuat, _ string) error {
+func (g *Gudang) SisipKasus(_ context.Context, _ *db.Tx, id, pembuat, namaPembuat string) error {
 	if err := g.gagal("SisipKasus"); err != nil {
 		return err
 	}
 	g.Kasus[id] = models.Kasus{ID: id, Position: models.PositionAdmin, StatusWork: models.AssignmentAdmin,
 		PositionNote: models.PosisiAdmin, CreateOp: pembuat, TglCreate: "2026-10-03 09:00:00"}
+	if g.NamaPembuat == nil {
+		g.NamaPembuat = map[string]string{}
+	}
+	g.NamaPembuat[id] = namaPembuat // T_WORK_POLIS.CREATE_OP_NAME
 	g.Halaman[id] = models.HalamanBaru()
 	return nil
 }
@@ -192,19 +213,32 @@ func (g *Gudang) TutupKasus(_ context.Context, _ *db.Tx, id, statusLama, statusA
 func (g *Gudang) DaftarKasus(_ context.Context, s models.SaringanKasus) ([]models.RingkasanKasus, error) {
 	var out []models.RingkasanKasus
 	for id, k := range g.Kasus {
-		if k.Tertutup() || (s.Posisi != "" && k.PositionNote != s.Posisi) {
+		if k.Tertutup() != s.Selesai || (s.Posisi != "" && k.PositionNote != s.Posisi) { // switch Proses / Resolved
 			continue
 		}
-		if s.Antrean != nil && !slices.Contains(s.Antrean, k.PositionNote) {
+		// pembuat (bila diminta: hanya di PembuatPosisi) ATAU antrean, sama dengan repository
+		diAntrean := slices.Contains(s.Antrean, k.PositionNote)
+		milik := k.CreateOp == s.Pembuat && (s.PembuatPosisi == "" || k.PositionNote == s.PembuatPosisi)
+		if s.Pembuat != "" && !milik && !diAntrean {
+			continue
+		}
+		if s.Pembuat == "" && s.Antrean != nil && !diAntrean {
 			continue
 		}
 		if !models.CocokCariPortal(id, s.Cari) { // filter G, sama dengan repository
 			continue
 		}
-		r := models.RingkasanKasus{ID: id, StatusWork: k.StatusWork, PositionNote: k.PositionNote, NoPolis: k.NoPolis}
+		r := models.RingkasanKasus{ID: id, StatusWork: k.StatusWork, PositionNote: k.PositionNote, NoPolis: k.NoPolis,
+			TglCreate: k.TglCreate, NamaPembuat: g.NamaPembuat[id]}
 		if h := g.Halaman[id]; h != nil {
 			r.BusinessName = h.Ambil(models.HalamanQuotation + ".BusinessName")
 			r.InsuredName = h.Ambil(models.HalamanQuotation + ".InsuredName")
+			r.MarketingName = h.Ambil(models.HalamanQuotation + ".MarketingName")    // q.MARKETING_NAME, sama dengan repository
+			r.NBStatus = h.Ambil("NBStatus")                                         // g.NB_STATUS
+			r.JenisProporsi = h.Ambil(models.HalamanQuotation + ".ProportionalType") // q.PROPORTIONAL_TYPE
+			r.CedingCoName = h.Ambil(models.HalamanPolis + ".CedingCoName")
+			r.StartDate = h.Ambil(models.HalamanPolis + ".StartDate")
+			r.TglProduksi = h.Ambil(models.HalamanPolis + ".ProductionDate") // g.TGL_PROD
 		}
 		out = append(out, r)
 	}
@@ -426,6 +460,38 @@ func (g *Gudang) CatatRiwayat(_ context.Context, _ *db.Tx, r models.Riwayat) err
 }
 
 // CatatUsulan - NOURUT berikutnya per IDPEGA, persis repository.
+// SimpanPolisProduksi - sama dengan repository: json_polis dilewati bila IDPEGA sudah ada, NOPOLIS ACHIEVEMENT
+// dari json_polis, TREATYINPRODUCTION dilewati bila IDPEGA sudah punya baris.
+func (g *Gudang) SimpanPolisProduksi(_ context.Context, _ *db.Tx, s models.SimpananPolis) error {
+	if err := g.gagal("SimpanPolisProduksi"); err != nil {
+		return err
+	}
+	cari := func(bs []models.Baris) (models.Baris, bool) {
+		for _, b := range bs {
+			if b["IDPEGA"] == s.IDPega {
+				return b, true
+			}
+		}
+		return nil, false
+	}
+	if _, ada := cari(g.JSONPolis); !ada {
+		g.JSONPolis = append(g.JSONPolis, s.JSONPolis)
+	}
+	jp, _ := cari(g.JSONPolis)
+	for _, b := range s.Capaian {
+		salin := models.Baris{}
+		for k, v := range b {
+			salin[k] = v
+		}
+		salin["NOPOLIS"] = jp["NOPOLIS"]
+		g.Capaian = append(g.Capaian, salin)
+	}
+	if _, ada := cari(g.Produksi); !ada {
+		g.Produksi = append(g.Produksi, s.Produksi...)
+	}
+	return nil
+}
+
 func (g *Gudang) CatatUsulan(_ context.Context, _ *db.Tx, idPega string, baris []models.UsulanProduksi) error {
 	if err := g.gagal("CatatUsulan"); err != nil {
 		return err
@@ -451,6 +517,23 @@ func (g *Gudang) DaftarRiwayat(_ context.Context, idPega string) ([]models.Riway
 		}
 	}
 	return out, nil
+}
+
+func (g *Gudang) HitungKotakMasuk(_ context.Context, akun string, admin bool, atasan []string) (map[string]int, error) {
+	out := map[string]int{}
+	for _, k := range g.Kasus { // sama dengan repository: berkas terbuka generasi aktif
+		if k.Tertutup() {
+			continue
+		}
+		if (admin && k.PositionNote == models.PosisiAdmin && k.CreateOp == akun) || slices.Contains(atasan, k.PositionNote) {
+			out[k.PositionNote]++
+		}
+	}
+	return out, nil
+}
+
+func (g *Gudang) PemegangKotakMasuk(_ context.Context, workbasket string) (models.PemegangKotakMasuk, error) {
+	return g.KotakMasuk[workbasket], nil
 }
 
 func (g *Gudang) NamaTampilan(_ context.Context, login string) (string, error) {

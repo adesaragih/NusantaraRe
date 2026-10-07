@@ -45,11 +45,11 @@ func fakultatifNolAtauKosong(h *Halaman) bool {
 // (`GabungMasukanLayar`) dan refresh `CountSpreading_Act` sel %Share dapat
 // terpicu (`services.aksiTerbuka`).
 //
-//	subsection NonProp (KEDUA layar, W2 audit silang P3)  `tampilSubsectionNonProp`
-//	                   DAN `fakultatifNolAtauKosong` - `DetailDeptHeadTreatyIn_UW`
-//	                   S88 menyertakan `DetailPoliciesNonProportional` ->
-//	                   `DetailPolicyTreatyInNonProportional` S73 -> `SpreadingRiskList`
-//	                   dengan syarat yang SAMA dengan layar admin
+//	subsection NonProp  layar ADMIN saja: `tampilSubsectionNonProp` DAN
+//	                   `fakultatifNolAtauKosong`. `[keputusan work owner 07-10-2026]`
+//	                   "HANYA ADMIN YANG BISA EDIT" - menyimpang sadar dari XML/W2:
+//	                   `DetailDeptHeadTreatyIn_UW` S88 menyertakan subsection yang sama
+//	                   ber-`pyEditOptions=Auto`, tetapi Sec Head / Dept Head hanya-baca
 //	admin Proporsional `DetailPolicyTreatyIn` S30 (wadah S19 `wadahUangAdmin`):
 //	                   sel terbuka, Add/Delete
 //	atasan Proporsional `DetailDeptHeadTreatyIn_UW` S96: sel `pyReadOnly=true`
@@ -60,7 +60,7 @@ func fakultatifNolAtauKosong(h *Halaman) bool {
 // `openWorkByHandle` / flow action), jadi selalu benar.
 func SpreadingDariLayar(h *Halaman, posisi string) bool {
 	if tampilSubsectionNonProp(h) {
-		return fakultatifNolAtauKosong(h)
+		return posisi == PosisiAdmin && fakultatifNolAtauKosong(h)
 	}
 	return posisi == PosisiAdmin && wadahUangAdmin(h)
 }

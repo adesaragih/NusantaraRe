@@ -66,6 +66,28 @@ type RingkasanKasus struct {
 	PositionNote  string `json:"positionNote"`
 	NoPolis       string `json:"noPolis"`
 	TglCreate     string `json:"tglCreate"`
+	// NamaPembuat - T_WORK_POLIS.CREATE_OP_NAME, kolom "User Create" portal (keputusan work owner 06-10-2026).
+	NamaPembuat string `json:"createOpName"`
+	// JenisProporsi - T_POLIS_QUOTATION.PROPORTIONAL_TYPE, kolom "Type" portal (keputusan work owner 06-10-2026).
+	JenisProporsi string `json:"proportionalType"`
+	// Kolom daftar kotak masuk Beranda (keputusan work owner 06-10-2026): Ceding Company, Inception Date
+	// (T_GENERAL_POLIS_TREATY.CEDING_CO_NAME / START_DATE), Time Since Last Update (T_WORK_POLIS.TGL_UPDATE).
+	CedingCoName string `json:"cedingCoName"`
+	StartDate    string `json:"startDate"`
+	TglUpdate    string `json:"tglUpdate"`
+	// TglProduksi - T_GENERAL_POLIS_TREATY.TGL_PROD, kolom "Production Date" tab Resolved portal (perintah work owner 07-10-2026: "KALO DAH RESOLVE TAMBAHIN KOLOM NOPOLISNYA" dan "SEKALIAN KELUARIN TANGGAL PRODUKSINYA AJA DD-MM-YYYY").
+	// Nomor polisnya = NoPolis (g.NOPOLIS); keduanya terisi saat realisasi selesai, kosong untuk berkas ditolak.
+	TglProduksi string `json:"productionDate"`
+}
+
+// AntreanKotakMasuk - satu baris kotak masuk Beranda (keputusan work owner 06-10-2026: "beranda menunjukkan berapa
+// banyak case yang masuk di akun dia, mengikuti workbasket"): satu workbasket tangga yang DIPEGANG akun dan jumlah
+// berkas yang MENUNGGU dia di sana.
+type AntreanKotakMasuk struct {
+	Workbasket string `json:"workbasket"`
+	// Nama - M_WORKBASKET.NAME; tanpa master = ID workbasket.
+	Nama   string `json:"nama"`
+	Jumlah int    `json:"jumlah"`
 }
 
 // BatasDaftarPortal - baris terbanyak daftar portal = `pyMaxRecords` RD
@@ -86,6 +108,16 @@ type SaringanKasus struct {
 	// workbasket ini. Diisi gerbang portal `services.DaftarKasus` bagi pelaku
 	// di luar wadah grid `ReasTreatyInAdmin` (P8); nil = tanpa batas antrean.
 	Antrean []string
+	// Pembuat - filter A RD `GetListOpportunity` (`A.pxCreateOperator = Param.UserIdentifier`; RALAT keputusan
+	// work owner 06-10-2026): hanya berkas buatan akun ini (CREATE_OP), ATAU berkas di `Antrean` bila diisi.
+	// Kosong = tanpa saringan pembuat.
+	Pembuat string
+	// PembuatPosisi - bila diisi, saringan pembuat hanya berlaku bagi berkas di posisi ini (kotak masuk Beranda:
+	// buatan akun yang MASIH di Admin = menunggu dia).
+	PembuatPosisi string
+	// Selesai - switch portal (keputusan work owner 06-10-2026: "switch untuk lihat yang lagi proses atau
+	// resolve, default ke proses"): true = berkas Resolved (Completed / Rejected), false = yang masih proses.
+	Selesai bool
 }
 
 // CocokCariPortal = filter G RD `GetListOpportunity`: `.TextNoQuotation
@@ -102,10 +134,12 @@ func JalurAnak(induk string, n int, anak string) string {
 	return fmt.Sprintf("%s(%d).%s", induk, n, anak)
 }
 
-// KunciInstans = `pyWorkPage.pzInsKey`: kelas work huruf besar + spasi + pyID
-// (bentuk kunci instans Pega). Dipakai `HISTORYAKSEPTASIPEGA.ID_PEGA`
-// (`InsertHistory.CARI1 = pyWorkPage.pzInsKey`).
-func KunciInstans(id string) string { return strings.ToUpper(KelasDeret) + " " + id }
+// KunciInstans - IDPEGA berkas sistem baru (padanan `pyWorkPage.pzInsKey`) di HISTORYAKSEPTASIPEGA.ID_PEGA,
+// HISTORYAKSEPTASIPRODUCTION, json_polis, ACHIEVEMENT, TREATYINPRODUCTION dan muatan konversi: ID T_WORK_POLIS APA
+// ADANYA (`NB-22445`). `[keputusan work owner 06-10-2026]` "INTINYA KEY DARI T_WORK_POLIS JANGAN DI UBAH" - RALAT
+// bentuk lama `ASM-FW-GISFW-WORK-NB NB-x` (kelas + spasi + pyID); baris DEV berawalan itu diubah ke ID polos.
+// Dokumen Pega lama tetap berkunci pzInsKey Pega (`ASM-FW-GISFW-WORK NB-x`, `IDKasusDariIDPega`).
+func KunciInstans(id string) string { return id }
 
 // Pilihan adalah satu opsi daftar pilihan layar (RD mata uang, MO, jenis
 // reasuransi).

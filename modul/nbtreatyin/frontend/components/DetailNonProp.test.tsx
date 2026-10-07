@@ -11,6 +11,9 @@
 //                LimitFacShareSummaryList seluruh sel tanpa Format (apa adanya);
 //                TotalLimitIOONP / TotalFacShareRnmNP kolom pertama FIELD kosong
 
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
@@ -67,6 +70,13 @@ describe('DetailNonProp = DetailPolicyTreatyInNonProportional', () => {
     expect(render(fak, true)).not.toMatch(/<input[^>]*nbti__angka/)
   })
 
+  it('layar memberi sunting HANYA bila admin pemegang berkas (keputusan work owner 07-10-2026)', () => {
+    const sumber = readFileSync(join(__dirname, '../pages/LayarKasus.tsx'), 'utf8')
+    const blok = sumber.slice(sumber.indexOf('<DetailNonProp'), sumber.indexOf('/>', sumber.indexOf('<DetailNonProp')))
+    expect(blok).toContain('sunting={ubahAdmin}')
+    expect(blok).not.toContain('sunting={boleh}')
+  })
+
   it('format sel grid master: Share .Limit tanpa desimal tetap, Share Facultative apa adanya', () => {
     const h = hal(
       { 'TreatyIn.FacultativeShare': '5' },
@@ -93,5 +103,61 @@ describe('DetailNonProp = DetailPolicyTreatyInNonProportional', () => {
     expect(html).toContain('<th scope="col"></th><th scope="col"></th><th scope="col" class="nbti__angka">Total Limit</th>')
     expect(html).toContain('<td></td><td>IDR</td><td class="nbti__angka">5.000,00</td>')
     expect(html).toContain('<td></td><td>USD</td><td class="nbti__angka">7,00</td>')
+  })
+})
+
+// Screenshot layar Pega NonProp (work owner 06-10-2026: "tampilan NB Treaty Non Prop belum sesuai").
+describe('DetailNonProp mengikuti screenshot layar Pega', () => {
+  it('spreading: kolom % RNM Share (.SplitRNMSharePct) di depan, "% Share" menjadi "% Proportion Share"', () => {
+    const h = hal(
+      { 'TreatyIn.FacultativeShare': '0' },
+      {
+        'PolicyTreatyIn.SpreadingRiskList': [
+          { TreatyName: 'UJI-QS', SplitRNMSharePct: '14', SharePercentage: '73.68', PremiumSpreaded: '100', ClaimPercentage: '73.68', ClaimSpreaded: '0' },
+        ],
+      },
+    )
+    const html = render(h, false)
+    const kepala = [...html.matchAll(/<th scope="col"[^>]*>([^<]*)<\/th>/g)].map((m) => m[1])
+    expect(kepala).toEqual(
+      expect.arrayContaining(['Type Treaty', '% RNM Share', '% Proportion Share', 'Premium', 'Claim']),
+    )
+    expect(kepala.filter((x) => x === '% Proportion Share')).toHaveLength(2)
+    expect(html).not.toContain('>% Share<')
+    expect(html).toContain('<td>UJI-QS</td><td class="nbti__angka">14,00</td><td class="nbti__angka">73,68</td>')
+    // baris Total: sel % RNM Share kosong, total lain di bawah kolomnya
+    expect(html).toContain('<td>Total</td><td></td>')
+  })
+
+  it('grid total sebaris dalam satu wadah; grid tanpa patah baris', () => {
+    const h = hal(
+      { 'TreatyIn.FacultativeShare': '0' },
+      {
+        'TreatyIn.TotalLimitIOONP': [{ Currency: 'IDR', Value: '1' }],
+        'TreatyIn.TotalLimitDeductblNP': [{ Currency: 'IDR', Value: '2' }],
+        'TreatyIn.TotalLimitMDPNP': [{ Currency: 'IDR', Value: '3' }],
+      },
+    )
+    const html = render(h, false)
+    const wadah = html.split('<div class="nbti__total-np">')[1]!.split('</table></div></div>')[0]!
+    expect((wadah.match(/<div class="table-wrap nbti__grid-np">/g) ?? []).length).toBe(3)
+    expect(html).toContain('Total Deductible')
+  })
+
+  it('Installment sebaris; angsuran per mata uang dapat dilipat, rincian bernomor, saldo dua desimal', () => {
+    const h = hal(
+      { 'TreatyIn.FacultativeShare': '0', 'PolicyTreatyIn.Installment': '1' },
+      {
+        'PolicyTreatyIn.ListInstallment': [{ Currency: 'UJI' }],
+        'PolicyTreatyIn.ListInstallment(1).InstallmentList': [
+          { DueDate: '2026-07-01', InstallmentPercentage: '25', Currency: 'UJI', Premium: '10.5', PremiumAfterPPN: '7', PremiumAfterTax: '8' },
+        ],
+      },
+    )
+    const html = render(h, false)
+    expect(html).toContain('<div class="nbti__kolom nbti__kolom-np">')
+    expect(html).toContain('<details class="nbti__rinci-np" open=""><summary>UJI</summary>')
+    expect(html).toContain('<td class="nbti__urut-np">1</td><td>01-07-2026</td><td class="nbti__angka">25</td>')
+    expect(html).toContain('<td class="nbti__angka">10,50</td><td class="nbti__angka">7,00</td><td class="nbti__angka">8,00</td>')
   })
 })

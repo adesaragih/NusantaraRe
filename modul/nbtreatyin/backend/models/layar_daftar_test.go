@@ -46,8 +46,9 @@ func TestGabungMasukanDaftarMenurutGridXML(t *testing.T) {
 		{"admin NonProp XOL Retro (wadah S17 tersembunyi)", PosisiAdmin, "1", "0", KlaimXOLRetro, false},
 		{"Sec Head Proporsional (S96 pyReadOnly)", PosisiSecHead, "", "", "", false},
 		{"Dept Head Proporsional (S96 pyReadOnly)", PosisiDeptHead, "", "", "", false},
-		{"Sec Head NonProp FacultativeShare 0 (S88)", PosisiSecHead, "1", "0", "", true},
-		{"Dept Head NonProp FacultativeShare kosong (S88)", PosisiDeptHead, "1", "", "", true},
+		// [keputusan work owner 07-10-2026] "HANYA ADMIN YANG BISA EDIT": S88 atasan hanya-baca
+		{"Sec Head NonProp FacultativeShare 0 (S88, hanya admin)", PosisiSecHead, "1", "0", "", false},
+		{"Dept Head NonProp FacultativeShare kosong (S88, hanya admin)", PosisiDeptHead, "1", "", "", false},
 		{"Dept Head NonProp FacultativeShare 5", PosisiDeptHead, "1", "5", "", false},
 		{"Sec Head NonProp XOL Retro (wadah S88 tersembunyi)", PosisiSecHead, "1", "0", KlaimXOLRetro, false},
 	} {

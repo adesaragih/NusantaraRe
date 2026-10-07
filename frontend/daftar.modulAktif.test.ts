@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AKAR_APLIKASI, folderKorpusBelumDimigrasi } from '../inti/frontend/uji/sumber'
 import { menuTabelDariMigrasi } from '../inti/frontend/uji/menuBersih'
 import { FOLDER_KORPUS } from './katalogKorpus'
-import { kartuModul } from './Beranda'
+import { modulBerkotakMasuk } from './Beranda'
 import { ambilModulAktif } from '../inti/frontend/klien'
 import { daftarPalet, KODE_MENU_KELOLA_USER, KODE_MENU_TEMPLATE_MANAGER, susunMenu } from '../inti/frontend/lib/daftarMenu'
 import { ENTRI_MENU, halamanAktif, MODUL_BACKEND, MODUL_FRONTEND } from './daftar'
@@ -49,19 +49,15 @@ describe('menu modul nonaktif hilang', () => {
     expect(dariSidebar).toEqual(['premiumlist', 'tco-tahun'])
   })
 
-  it('Beranda: kartu modul nonaktif hilang, yang belum dimigrasi tetap', () => {
-    // Tombol kartu Beranda MEMBUKA modul - ia menu juga.
-    const kartu = kartuModul(['komiteclaimlife'])
-    expect(kartu.filter((k) => k.tujuan !== null).map((k) => k.nama)).toEqual([FOLDER_KORPUS.komiteClaimLife])
-    expect(kartu.filter((k) => k.tujuan === null).map((k) => k.nama).sort()).toEqual(folderKorpusBelumDimigrasi())
-    expect(kartuModul(null)).toEqual(kartuModul())
-    // Cacah antrean Claim Life tidak diminta bila modul itu nonaktif.
-    const beranda = readFileSync(join(SRC, 'Beranda.tsx'), 'utf8')
-    expect(beranda).toContain('const claimLifeAktif = modulDipasang(NAMA_CLAIMLIFE, modulAktif)')
-    expect(beranda).toContain('if (!claimLifeAktif) {')
+  it('Beranda: kotak masuk hanya dari modul aktif', () => {
+    // Panel kotak masuk MEMBUKA modul dan berkasnya - ia menu juga. (Tabel modul dan kartu tahap Claim Life
+    // dibuang 06-10-2026, perintah work owner "buang aja, ga perlu".)
+    expect(modulBerkotakMasuk(MODUL_FRONTEND, ['komiteclaimlife'])).toEqual([])
+    expect(modulBerkotakMasuk(MODUL_FRONTEND, null)).toEqual(modulBerkotakMasuk(MODUL_FRONTEND))
     // Sejak Kelola User (01-10-2026) Beranda menerima modul aktif yang menunya
     // DIPEGANG akun (`modulBoleh` = `modulUntukAkun(modulAktif, ...)`).
-    expect(readFileSync(join(SRC, 'App.tsx'), 'utf8')).toContain('<Beranda masuk={masuk} onBuka={setHalaman} modulAktif={modulBoleh} />')
+    // (06-10-2026: elemen <Beranda> kini berbaris banyak - prop onBukaKasus kotak masuk; yang dijaga tetap modulBoleh)
+    expect(readFileSync(join(SRC, 'App.tsx'), 'utf8')).toMatch(/<Beranda\s[\s\S]*?modulAktif=\{modulBoleh\}\s*\/>/)
   })
 
   it('null = semua rute terpasang, persis seperti sebelum MODUL_AKTIF', () => {

@@ -49,33 +49,31 @@ func npSampaiSecHead(u *uji, fakultatif string) string {
 // @divide(.SharePercentage,100,10)`; NetPremium polis XOL = 2700
 // (InputPolicyTreatyInDetail_NonProp, hitung tangan `TestNonPropPilihBisnis...`):
 // 2700 x 60% = 1620, 2700 x 40% = 1080.
-func TestAtasanMenyuntingSpreadingNonProp(t *testing.T) {
+// [keputusan work owner 07-10-2026] "HANYA ADMIN YANG BISA EDIT": walau FacultativeShare 0, Sec Head tidak dapat
+// menyunting %Share spreading NonProp - CountSpreading ditolak (409) dan kiriman %Share diabaikan saat submit.
+func TestAtasanTidakMenyuntingSpreadingNonProp(t *testing.T) {
 	u := baru(t)
 	id := npSampaiSecHead(u, "0")
+	lama := u.g.Halaman[id].AmbilDaftar(models.DaftarSpreading)
+	if len(lama) != 1 {
+		t.Fatalf("SpreadingRiskList awal %d baris, harap 1", len(lama))
+	}
 	_, isi := u.panggil("GET", "/kasus/"+id, secHead, nil)
 	h := u.layar(isi).Halaman
-	h.SetelDaftar(models.DaftarSpreading, []models.Baris{
-		{"TreatyType": "UJI-SPR-ID", "SharePercentage": "60"},
-		{"TreatyType": "UJI-SPR-2", "SharePercentage": "40"},
-	})
+	h.SetelDaftar(models.DaftarSpreading, []models.Baris{{"TreatyType": "UJI-SPR-ID", "SharePercentage": "60"}})
 	h.Setel("PolicyTreatyIn.IsApproved", "1")
 	h.Setel("PolicyTreatyIn.Suggest", "UJI-sec")
-	kode, isi := u.panggil("POST", "/kasus/"+id+"/hitung", secHead,
-		map[string]any{"urutan": []map[string]string{{"aksi": "CountSpreading"}}, "indeks": 2, "halaman": h})
-	if kode != http.StatusOK {
-		t.Fatalf("Sec Head CountSpreading (sel %%Share terbuka, FacultativeShare 0): %d %s", kode, isi)
+	if kode, _ := u.panggil("POST", "/kasus/"+id+"/hitung", secHead,
+		map[string]any{"urutan": []map[string]string{{"aksi": "CountSpreading"}}, "indeks": 1, "halaman": h}); kode != http.StatusConflict {
+		t.Fatalf("Sec Head CountSpreading NonProp: %d, harap 409 (hanya admin)", kode)
 	}
-	hasil := u.layar(isi).Halaman
-	if kode, isi := u.kirim(id, secHead, hasil); kode != http.StatusOK {
+	if kode, isi := u.kirim(id, secHead, h); kode != http.StatusOK {
 		t.Fatalf("Sec Head submit: %d %s", kode, isi)
 	}
-	// 06-10-2026 (perintah work owner): tanpa Add/Delete - baris kedua kiriman diabaikan; %Share baris server diterima.
 	sp := u.g.Halaman[id].AmbilDaftar(models.DaftarSpreading)
-	if len(sp) != 1 || sp[0]["TreatyType"] != "UJI-SPR-ID" {
-		t.Fatalf("SpreadingRiskList suntingan Sec Head tersimpan: %v", sp)
+	if len(sp) != 1 || sp[0]["SharePercentage"] != lama[0]["SharePercentage"] {
+		t.Fatalf("%%Share suntingan Sec Head tersimpan: %v, harap tetap %q", sp, lama[0]["SharePercentage"])
 	}
-	angkaSamaTeks(t, "Spreading(1).SharePercentage", sp[0]["SharePercentage"], "60")
-	angkaSamaTeks(t, "Spreading(1).PremiumSpreaded", sp[0]["PremiumSpreaded"], "1620")
 }
 
 // W2 - FacultativeShare > 0: Add/Delete tersembunyi, sel terkunci - kiriman

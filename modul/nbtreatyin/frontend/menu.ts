@@ -6,6 +6,8 @@
 // tidak boleh menambah menu di luar itu").
 
 import type { MenuModul } from '../../../inti/frontend/modul'
+import { kotakMasuk } from './api'
+import { daftarBeranda } from './beranda'
 
 /** Nama modul - SAMA dengan `const Nama` di `modul/nbtreatyin/backend/modul.go`. */
 export const NAMA_NBTREATYIN = 'nbtreatyin'
@@ -25,6 +27,10 @@ export const PENDAFTARAN_MENU: MenuModul<HalamanNBTreatyIn> = {
   kelompok: KELOMPOK_NBTREATYIN,
   halaman: HALAMAN_NBTREATYIN,
   halamanAwal: HALAMAN_AWAL_NBTREATYIN,
+  // kotak masuk Beranda per workbasket yang dipegang akun (keputusan work owner 06-10-2026)
+  antreanBeranda: kotakMasuk,
+  // daftar berkas kotak masuk di Beranda, tanpa masuk menu ini (keputusan work owner 06-10-2026)
+  daftarBeranda,
 }
 
 declare module '../../../inti/frontend/modul' {
