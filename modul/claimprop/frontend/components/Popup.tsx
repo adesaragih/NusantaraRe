@@ -108,7 +108,7 @@ export default function Popup({
   else if (data === null) isi = <Memuat pesan={CP.memuat} />
   else if (jenis === 'master') {
     isi = (
-      <table className="claimprop__tabel">
+      <table>
         <thead>
           <tr>
             {[
@@ -155,7 +155,7 @@ export default function Popup({
     )
   } else if (jenis === 'polis') {
     isi = (
-      <table className="claimprop__tabel">
+      <table>
         <thead>
           <tr>
             <th>No Polis</th>
@@ -166,11 +166,7 @@ export default function Popup({
         </thead>
         <tbody>
           {(data as BarisPolis[]).map((b) => (
-            <tr
-              key={b.policyNo}
-              className="claimprop__baris-rinci"
-              onDoubleClick={() => onPilih('CheckNoPolicy', b.policyNo)}
-            >
+            <tr key={b.policyNo} className="inbox__baris" onDoubleClick={() => onPilih('CheckNoPolicy', b.policyNo)}>
               <td>{b.policyNo}</td>
               <td>{b.quarter}</td>
               <td>{b.sourceOfBusinessName}</td>
@@ -182,7 +178,7 @@ export default function Popup({
     )
   } else if (jenis === 'sebab') {
     isi = (
-      <table className="claimprop__tabel">
+      <table>
         <thead>
           <tr>
             <th>Cause of Loss</th>
@@ -210,22 +206,26 @@ export default function Popup({
   } else if (jenis === 'katastrofe') {
     isi = formBaru ? (
       <div className="claimprop__form-katastrofe">
-        <label className="claimprop__medan">
-          <span className="claimprop__nama-medan">Catastrophe</span>
+        <label className="field claimprop__medan">
+          <span className="field__label">Catastrophe</span>
           <span className="claimprop__tampil">{sts.sts}</span>
         </label>
         {sts.sts === 'Non-Catastrophe' && (
-          <label className="claimprop__medan">
-            <span className="claimprop__nama-medan" />
+          <label className="field claimprop__medan">
+            <span className="field__label" />
             <span className="claimprop__tampil">{sts.non}</span>
           </label>
         )}
-        <label className="claimprop__medan">
-          <span className="claimprop__nama-medan">{CP.note}</span>
-          <textarea className="claimprop__area" value={catatan} onChange={(e) => setCatatan(e.target.value)} />
+        <label className="field claimprop__medan">
+          <span className="field__label">{CP.note}</span>
+          <textarea
+            className="field__input claimprop__area"
+            value={catatan}
+            onChange={(e) => setCatatan(e.target.value)}
+          />
         </label>
-        <label className="claimprop__medan">
-          <span className="claimprop__nama-medan">{CP.userInput}</span>
+        <label className="field claimprop__medan">
+          <span className="field__label">{CP.userInput}</span>
           <span className="claimprop__tampil">{pelaku}</span>
         </label>
         <div className="claimprop__grid-alat">
@@ -244,7 +244,7 @@ export default function Popup({
             {CP.addNew}
           </button>
         </div>
-        <table className="claimprop__tabel">
+        <table>
           <thead>
             <tr>
               <th />
@@ -279,7 +279,7 @@ export default function Popup({
     isi = (
       <>
         <div className="claimprop__label">Summary Outstanding Claim</div>
-        <table className="claimprop__tabel">
+        <table>
           <thead>
             <tr>
               {[
@@ -329,7 +329,7 @@ export default function Popup({
     >
       {pakaiCari && !formBaru && (
         <input
-          className="claimprop__input claimprop__cari"
+          className="field__input claimprop__cari"
           placeholder={CP.cariPopup}
           value={cari}
           onChange={(e) => setCari(e.target.value)}

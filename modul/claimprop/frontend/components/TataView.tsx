@@ -37,6 +37,8 @@ function Medan({ t, k, indeks = 0, jalur }: { t: Tata; k: KonteksTata; indeks?: 
     else k.ubah(jalur, baru)
   }
   const pesan = k.pesanMedan[jalur]
+  // sel grid memakai isian ringkas; medan bagian memakai isian penuh Kelola User
+  const kelasIsian = indeks > 0 ? 'field__input claimprop__input--sel' : 'field__input'
   let isi: ReactNode
   switch (t.kendali) {
     case 'tampil':
@@ -47,7 +49,7 @@ function Medan({ t, k, indeks = 0, jalur }: { t: Tata; k: KonteksTata; indeks?: 
         <span className="claimprop__angka">{tampilAngka(v)}</span>
       ) : (
         <input
-          className="claimprop__input claimprop__input--angka"
+          className={'field__input claimprop__input--angka' + (indeks > 0 ? ' claimprop__input--sel' : '')}
           inputMode="decimal"
           value={v}
           onChange={(e) => k.ubah(jalur, e.target.value.replace(/,/g, ''))}
@@ -59,7 +61,7 @@ function Medan({ t, k, indeks = 0, jalur }: { t: Tata; k: KonteksTata; indeks?: 
       isi = (
         <input
           type="date"
-          className="claimprop__input"
+          className={kelasIsian}
           value={v.slice(0, 10)}
           disabled={kunci}
           onChange={(e) => ganti(e.target.value, true)}
@@ -70,7 +72,7 @@ function Medan({ t, k, indeks = 0, jalur }: { t: Tata; k: KonteksTata; indeks?: 
       isi = (
         <input
           type="datetime-local"
-          className="claimprop__input"
+          className={kelasIsian}
           value={keInputWaktu(v)}
           disabled={kunci}
           onChange={(e) => ganti(dariInputWaktu(e.target.value), true)}
@@ -80,7 +82,7 @@ function Medan({ t, k, indeks = 0, jalur }: { t: Tata; k: KonteksTata; indeks?: 
     case 'area':
       isi = (
         <textarea
-          className="claimprop__area"
+          className="field__input claimprop__area"
           value={v}
           readOnly={kunci}
           onChange={(e) => k.ubah(jalur, e.target.value)}
@@ -105,7 +107,7 @@ function Medan({ t, k, indeks = 0, jalur }: { t: Tata; k: KonteksTata; indeks?: 
       isi = kunci ? (
         <span className="claimprop__tampil">{label}</span>
       ) : (
-        <select className="claimprop__input" value={v} onChange={(e) => ganti(e.target.value, true)}>
+        <select className={kelasIsian} value={v} onChange={(e) => ganti(e.target.value, true)}>
           <option value="">Choose</option>
           {opsi.map((o) => (
             <option key={o.nilai} value={o.nilai}>
@@ -125,7 +127,7 @@ function Medan({ t, k, indeks = 0, jalur }: { t: Tata; k: KonteksTata; indeks?: 
       ) : (
         <>
           <input
-            className="claimprop__input"
+            className={kelasIsian}
             list={idDaftar}
             value={v}
             onFocus={() => k.saran?.(t.sumber ?? '', indeks || indeksDari(jalur), '')}
@@ -151,7 +153,7 @@ function Medan({ t, k, indeks = 0, jalur }: { t: Tata; k: KonteksTata; indeks?: 
         <span className="claimprop__tampil">{v}</span>
       ) : (
         <input
-          className="claimprop__input"
+          className={kelasIsian}
           value={v}
           onChange={(e) => k.ubah(jalur, e.target.value)}
           onBlur={(e) => t.aksi && ganti(e.target.value, true)}
@@ -170,12 +172,12 @@ function Tombol({ t, k, indeks = 0 }: { t: Tata; k: KonteksTata; indeks?: number
   return (
     <button
       type="button"
-      className={'btn btn--sm claimprop__tombol' + (t.label === '' || !t.label ? ' claimprop__tombol--ikon' : '')}
+      className={indeks > 0 || !t.label ? 'btn btn--ghost btn--sm' : 'btn btn--sm'}
       disabled={t.nonaktif || k.sibuk}
       title={t.catatan ?? t.id}
       onClick={() => k.aksi(t.aksi ?? t.id ?? '', indeks)}
     >
-      {t.label && t.label !== '' ? t.label : '⚙'}
+      {t.label ? t.label : '⚙'}
     </button>
   )
 }
@@ -191,7 +193,7 @@ function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
           <Tombol t={t.tambah} k={k} />
         </div>
       )}
-      <table className="claimprop__tabel">
+      <table>
         <thead>
           <tr>
             {t.bernomor && <th>#</th>}
@@ -204,7 +206,7 @@ function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
           {baris.map((sel, i) => (
             <Fragment key={i}>
               <tr
-                className={k.rincian ? 'claimprop__baris-rinci' : undefined}
+                className={k.rincian ? 'inbox__baris' : undefined}
                 onClick={k.rincian ? () => setBuka(buka === i + 1 ? null : i + 1) : undefined}
               >
                 {t.bernomor && <td>{i + 1}</td>}
@@ -283,10 +285,10 @@ export default function TataView({ tata, k }: { tata: readonly Tata[]; k: Kontek
             )
           default:
             return (
-              <label key={i} className="claimprop__medan">
-                <span className="claimprop__nama-medan">
+              <label key={i} className="field claimprop__medan">
+                <span className="field__label">
                   {t.label}
-                  {t.wajib && <span className="claimprop__wajib">*</span>}
+                  {t.wajib && <span className="field__req">*</span>}
                 </span>
                 <Medan t={t} k={k} jalur={t.jalur ?? ''} />
               </label>

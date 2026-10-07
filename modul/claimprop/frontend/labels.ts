@@ -6,12 +6,15 @@ export const MENU_CP = { kelompok: 'Claim Prop' } as const
 
 export const CP = {
   judul: 'Claim Prop',
-  /** `[tidak ada di korpus]` tab halaman awal - Assignment2 ke worklist operator, Assignment1 ke workbasket. */
-  tabSaya: 'Outstanding Claim',
-  tabWorkbasket: 'Input Acceptation',
-  tabSelesai: 'Resolved-Completed',
-  /** `pyStartingHarness=New` (Flow_TreatyIn) - harness New tidak diekspor (OQ-CP-13). */
-  baru: 'New',
+  /** Tab dan workbasket halaman awal - keputusan work owner 07-10-2026 (`[tidak ada di korpus]`). */
+  tabProses: 'Process',
+  tabResolve: 'Resolve',
+  workbasket: 'Workbasket',
+  /** Admin = Assignment2 "Outstanding Claim"; Teknik = Assignment1 "Input Acceptation" (ReasKlaimTeknik). */
+  wbAdmin: 'Admin',
+  wbTeknik: 'Teknik',
+  /** Start1 -> Assignment2 (`Flow_TreatyIn`); harness New tidak diekspor (OQ-CP-13). */
+  tambahKlaim: 'Add Claim',
   cari: 'Search case ID, claim no, policy no, insured name',
   memuat: 'Loading…',
   kosong: 'No case.',

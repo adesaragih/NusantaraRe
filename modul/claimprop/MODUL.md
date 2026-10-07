@@ -91,6 +91,11 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   ("please Fill SpreadingList"); kasus hasil pemuat data lama membawa barisnya.
 - **`STS_REJECT = 1` ditunda** sampai modul Komite Claim Prop ("itu nanti kan dari komite") — pemuat mencatatnya
   "ditunda", bukan gagal.
+- **Halaman awal dua tab, rupa Kelola User** ("cuman ada 2 tab process dan resolve"): tab Process memilih
+  workbasket Admin (Assignment2 Outstanding Claim, daftar `saya`) atau Teknik (Assignment1 Input Acceptation,
+  daftar `workbasket`); tab Resolve = daftar `selesai`. Add Claim hanya di Process + Admin (`pages/inbox.ts`).
+  Medan, tombol, tabel, toolbar memakai kelas inti (`field__input`, `btn`, `inbox__tabel`, `toolbar`);
+  `claimprop.css` hanya menata letak pohon tata, warna lewat token inti.
 
 ## Pemuat data lama
 

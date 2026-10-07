@@ -46,9 +46,22 @@ describe('gaya modul Claim Prop', () => {
     for (const k of dipakai) expect(didefinisikan, k).toContain(k)
   })
 
-  it('tema terang dan gelap lewat token --cp-*', () => {
-    expect(CSS).toMatch(/^\.claimprop \.claimprop__akar \{[^}]*--cp-latar: #f4f6fa;/m)
-    expect(CSS).toMatch(/^:root\[data-theme="dark"\] \.claimprop \.claimprop__akar \{[^}]*--cp-latar: #1b2130;/m)
+  it('rupa mengikuti inti (Kelola User): nol warna baru, warna lewat token inti', () => {
+    expect(ATURAN).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/)
+    expect(ATURAN).toMatch(/var\(--border\)/)
+  })
+
+  it('halaman awal memakai kelas inti Kelola User: toolbar, field__input, inbox__tabel, btn--primary', () => {
+    const awal = readFileSync(join(AKAR, 'pages', 'ClaimProp.tsx'), 'utf8')
+    for (const k of ['className="toolbar"', 'field__input', 'className="inbox__tabel"', 'btn btn--primary']) {
+      expect(awal, k).toContain(k)
+    }
+  })
+
+  it('akar layar kasus membungkus baris, bukan kolom: basis flex medan = lebar, bukan tinggi', () => {
+    const layar = ATURAN.match(/\.claimprop \.claimprop__layar \{([^}]*)\}/)?.[1] ?? ''
+    expect(layar).toMatch(/flex-wrap:\s*wrap/)
+    expect(layar).not.toMatch(/flex-direction:\s*column/)
   })
 
   it('nol properti yang memerangkap Modal tanpa portal', () => {

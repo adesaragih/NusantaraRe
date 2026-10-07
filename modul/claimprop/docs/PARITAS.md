@@ -11,7 +11,8 @@
 > - **tidak tampil di XML** — kondisi tampilnya statis `NEVER` / `1=2` / `never`, atau tanpa aksi: tidak dibangun.
 > - **di luar lingkup** — pemeliharaan master milik menu lain (prompt §2).
 >
-> Cek layar 07-10-2026 (server tiruan `UJI-`, vite port 5177, Chrome tanpa kepala): halaman awal (New + tiga tab),
+> Cek layar 07-10-2026 (server tiruan `UJI-`, vite port 5177, Chrome tanpa kepala): halaman awal (tab Process /
+> Resolve, workbasket Admin / Teknik, Add Claim hanya di Admin; rupa kelas inti seperti Kelola User),
 > layar Outstanding Claim kasus baru (54 medan, nol galat konsol), popup "Data Master TreatyIn" — tombol tampak
 > cocok dengan baris berstatus di bawah untuk keadaan kasus baru. Tahap Input Acceptation sampai Resolved-Completed
 > dijaga uji HTTP `TestAlurPenuhSampaiResolved`.
@@ -20,9 +21,9 @@
 
 | XML | Aksi XML | Tiket | Status |
 | --- | --- | --- | --- |
-| `Flow_TreatyIn` Start1 → Assignment2 "Outstanding Claim" (worklist pembuat) | pembuatan kasus | 01 | **dibangun** — tombol **New** + tab *Outstanding Claim* (OQ-CP-13: harness `New` tidak diekspor) |
-| Assignment1 "Input Acceptation" (workbasket) | FlowAction `InputAcceptation` | 10 | **dibangun** — tab *Input Acceptation*, workbasket `ReasKlaimTeknik` (keputusan 07-10-2026) |
-| Decision3 `IsBackStage` → Assignment2 / End1 Resolved-Completed | — | 11 | **dibangun** — tab *Resolved-Completed*; jalur kembali lewat "Back" yang di XML `NEVER` → tidak dibangun |
+| `Flow_TreatyIn` Start1 → Assignment2 "Outstanding Claim" (worklist pembuat) | pembuatan kasus | 01 | **dibangun** — tab *Process*, workbasket *Admin*; tombol **Add Claim** hanya di workbasket Admin (keputusan 07-10-2026; OQ-CP-13: harness `New` tidak diekspor) |
+| Assignment1 "Input Acceptation" (workbasket) | FlowAction `InputAcceptation` | 10 | **dibangun** — tab *Process*, workbasket *Teknik* = `ReasKlaimTeknik` (keputusan 07-10-2026) |
+| Decision3 `IsBackStage` → Assignment2 / End1 Resolved-Completed | — | 11 | **dibangun** — tab *Resolve*; jalur kembali lewat "Back" yang di XML `NEVER` → tidak dibangun |
 | FlowAction `OutstandingClaim` pre-act `CheeckNoRNM_Act`, pre-DT `SetDateOutstanding`, post-act `ProteksiData_act` | — | 01, 02 | **dibangun** (`siapkan`; tanggal hanya diisi bila kosong — penyimpangan, OQ.md) |
 | FlowAction `InputAcceptation` pre-act `GetPICAdjutment_Act`, pre-DT `SetDateAcceptation` | — | 08 | **dibangun** |
 
