@@ -4,8 +4,9 @@ package services
 // ID-3, AC 55-59; KEPUTUSAN-RONDE-12 butir 5; K15, K17).
 //
 // Dijalankan MANUSIA lewat perintah `backend/alat/pemuatlama` (MODUL.md
-// "Pemuat dokumen lama"), tidak pernah saat aplikasi menyala - modul.go tidak
-// mendaftarkannya. Seluruh dokumen generasi NB di `POOLDATA.JSON_POLIS`
+// "Pemuat dokumen lama") untuk seluruh dokumen, atau per dokumen dari layar
+// lewat tombol Copy Old superadmin (`copyold.go`, perintah work owner
+// 07-10-2026) - `muat` yang sama. Seluruh dokumen generasi NB di `POOLDATA.JSON_POLIS`
 // (PRODKE 0) - setiap polis, tanpa penyaring status/tahun/lini usaha (butir 5).
 // Generasi endorsemen (PRODKE > 0) milik pemuat EDM (edmtreatyin tiket 10).
 //
@@ -47,18 +48,40 @@ import (
 	"nusantarare/modul/nbtreatyin/backend/repository"
 )
 
-// Pemuat - pemuat dokumen lama. Penyimpanannya langsung `repository.Gudang`
-// + transaksi `inti.Dasar` (`penyimpanOracle`): satu implementasi, tanpa
-// tiruan - seam services tidak diuji (spec.md §6.2), jadi tidak perlu
-// antarmuka tersendiri.
-type Pemuat struct{ g penyimpanOracle }
+// GudangPemuat - kebutuhan penyimpanan pemuat: pembaca JSON_POLIS + antarmuka
+// tulis jalur biasa + dua penulis tambahan (`repository/lama.go`). Implementasi
+// Oracle: `penyimpanOracle`. Antarmuka ini ada sejak Copy Old (07-10-2026):
+// seam HTTP-nya diuji di atas gudang tiruan (`handlers/copyold_test.go`).
+type GudangPemuat interface {
+	Transaksi(ctx context.Context, fn func(tx *db.Tx) error) error
+	HitungJSONPolisLain(ctx context.Context) (int, error)
+	KunciJSONPolis(ctx context.Context) ([]string, error)
+	// KunciJSONPolisCopyOld - popup Copy Old: hanya dokumen yang kasus Pega-nya ada dan sudah berproduksi (WO 07-10-2026).
+	KunciJSONPolisCopyOld(ctx context.Context) ([]string, error)
+	BacaJSONPolis(ctx context.Context, kunci string) (models.BarisJSONPolis, error)
+	AdaKasus(ctx context.Context, tx *db.Tx, id string) (bool, error)
+	SisipKasus(ctx context.Context, tx *db.Tx, id, pembuat, namaPembuat string) error
+	SimpanHalaman(ctx context.Context, tx *db.Tx, id string, h *models.Halaman) error
+	SetelNomorPolis(ctx context.Context, tx *db.Tx, id, nopol string) error
+	SetelKolomDatarLama(ctx context.Context, tx *db.Tx, id string, k models.KolomDatarLama) error
+	TutupKasus(ctx context.Context, tx *db.Tx, id, statusLama, statusAkhir string) error
+	SalinUsulanLama(ctx context.Context, tx *db.Tx, idPega string, baris []models.UsulanProduksi) (models.NasibUsulan, error)
+}
+
+var _ GudangPemuat = penyimpanOracle{}
+
+// Pemuat - pemuat dokumen lama di atas `GudangPemuat`.
+type Pemuat struct{ g GudangPemuat }
+
+// PemuatBaru menyusun pemuat di atas gudang `g`.
+func PemuatBaru(g GudangPemuat) *Pemuat { return &Pemuat{g: g} }
 
 // PemuatDariDasar menyusun pemuat di atas basis data bersama.
 func PemuatDariDasar(d *inti.Dasar) (*Pemuat, error) {
 	if d == nil || !d.PunyaDatabase() {
 		return nil, ErrTanpaOracle
 	}
-	return &Pemuat{g: penyimpanOracle{Gudang: repository.Baru(d.DB()), dasar: d}}, nil
+	return PemuatBaru(penyimpanOracle{Gudang: repository.Baru(d.DB()), dasar: d}), nil
 }
 
 // errSudahDimuat - baris kasus sudah ada dengan IDPEGA yang sama (jalankan ulang).
@@ -97,7 +120,8 @@ func (p *Pemuat) Jalankan(ctx context.Context, tulis bool, lap *models.LaporanPe
 		}
 		h, err := models.PecahDokumenLama(b)
 		switch {
-		case errors.Is(err, models.ErrBukanTreatyIn), errors.Is(err, models.ErrGenerasiEndorsemen):
+		case errors.Is(err, models.ErrBukanTreatyIn), errors.Is(err, models.ErrGenerasiEndorsemen),
+			errors.Is(err, models.ErrBarisAplikasiBaru):
 			lap.Lewat(err)
 			continue
 		case err != nil:

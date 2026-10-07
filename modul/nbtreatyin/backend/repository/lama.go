@@ -41,6 +41,23 @@ func sqlKunciJSONPolis(t string) string {
 	  ORDER BY IDPEGA, ROWID`, t)
 }
 
+// tabelKerjaPega - tabel kerja Pega (kelas ASM-FW-GISFW-Work-*, skema DATAPEGA): PZINSKEY = JSON_POLIS.IDPEGA dokumen
+// Pega asli. Hanya DIBACA.
+const tabelKerjaPega = "DATAPEGA.PC_ASM_FW_GISFW_WORK"
+
+// sqlKunciJSONPolisCopyOld - kunci popup Copy Old. ⛔ Perintah work owner 07-10-2026: data lama dipilih dengan
+// `SELECT * FROM DATAPEGA.PC_ASM_FW_GISFW_WORK a, json_polis b, treatyinproduction c WHERE a.pzinskey = b.idpega AND
+// b.idpega = c.idpega` - dokumen yang kasus Pega-nya ada DAN sudah berproduksi. Ditulis EXISTS: TREATYINPRODUCTION
+// berbaris banyak per IDPEGA (DEV 07-10-2026: gabungan 41 baris untuk 27 IDPEGA). Alat pemuat massal tetap tanpa
+// saringan (KEPUTUSAN-RONDE-12 butir 5).
+func sqlKunciJSONPolisCopyOld(t, prod string) string {
+	return fmt.Sprintf(`SELECT ROWIDTOCHAR(b.ROWID) FROM %s b
+	  WHERE (b.PRODKE IS NULL OR TRIM(b.PRODKE) = '0')
+	    AND EXISTS (SELECT 1 FROM %s a WHERE a.PZINSKEY = b.IDPEGA)
+	    AND EXISTS (SELECT 1 FROM %s c WHERE c.IDPEGA = b.IDPEGA)
+	  ORDER BY b.IDPEGA, b.ROWID`, t, tabelKerjaPega, prod)
+}
+
 // sqlHitungJSONPolisLain - baris generasi endorsemen (seluruh lini), hanya dihitung.
 func sqlHitungJSONPolisLain(t string) string {
 	return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE PRODKE IS NOT NULL AND TRIM(PRODKE) <> '0'`, t)
@@ -106,7 +123,24 @@ func (g *Gudang) KunciJSONPolis(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	q := sqlKunciJSONPolis(t)
+	return g.kunciJSONPolis(ctx, sqlKunciJSONPolis(t))
+}
+
+// KunciJSONPolisCopyOld - kunci baca baris generasi NB yang kasus Pega-nya ada dan sudah berproduksi
+// (`sqlKunciJSONPolisCopyOld`, popup Copy Old).
+func (g *Gudang) KunciJSONPolisCopyOld(ctx context.Context) ([]string, error) {
+	t, err := g.nama(tabelPolisJSON)
+	if err != nil {
+		return nil, err
+	}
+	prod, err := g.nama(tabelProduksi)
+	if err != nil {
+		return nil, err
+	}
+	return g.kunciJSONPolis(ctx, sqlKunciJSONPolisCopyOld(t, prod))
+}
+
+func (g *Gudang) kunciJSONPolis(ctx context.Context, q string) ([]string, error) {
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}

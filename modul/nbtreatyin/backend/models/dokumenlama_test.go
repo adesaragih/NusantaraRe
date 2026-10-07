@@ -330,6 +330,11 @@ func TestDokumenDiLuarLingkupAtauRusak(t *testing.T) {
 		{"generasi endorsemen", dokumenUjiProp, "", "1", ErrGenerasiEndorsemen},
 		{"PRODKE kosong", dokumenUjiProp, "", "", ErrProdKe},
 		{"IDPEGA tanpa kelas", dokumenUjiProp, "UJI-77", "0", ErrIDPega},
+		// baris Utility1 aplikasi baru: IDPEGA polos + DATA_JSON kosong - dilewati, bukan galat (temuan 07-10-2026)
+		{"baris aplikasi baru", "", "UJI-77", "0", ErrBarisAplikasiBaru},
+		{"baris aplikasi baru, JSON spasi", "  ", "UJI-77", "0", ErrBarisAplikasiBaru},
+		// dokumen Pega ber-kelas tetapi JSON kosong TETAP galat
+		{"dokumen Pega JSON kosong", "", "", "0", ErrDokumenRusak},
 	} {
 		b := barisUji(tt.dokumen)
 		b.ProdKe = tt.prod

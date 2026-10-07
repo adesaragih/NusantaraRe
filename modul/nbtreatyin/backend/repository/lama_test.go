@@ -17,6 +17,7 @@ func TestSQLPemuatLamaBerskemaTanpaCommit(t *testing.T) {
 	const tabel = "UJI_SKEMA.JSON_POLIS"
 	for nama, q := range map[string]string{
 		"kunci": sqlKunciJSONPolis(tabel),
+		"copy":  sqlKunciJSONPolisCopyOld(tabel, "UJI_SKEMA.TREATYINPRODUCTION"),
 		"lain":  sqlHitungJSONPolisLain(tabel),
 		"baca":  sqlBacaJSONPolis(tabel),
 		"ada":   sqlAdaKasus("UJI_SKEMA.T_GENERAL_POLIS_TREATY"),
@@ -39,6 +40,21 @@ func TestSQLPemuatLamaBerskemaTanpaCommit(t *testing.T) {
 	q := strings.ToUpper(sqlAdaUsulanIDPega("UJI_SKEMA.HISTORYAKSEPTASIPRODUCTION"))
 	if !strings.Contains(q, "WHERE IDPEGA = :1") || strings.Contains(q, ":2") || !strings.HasPrefix(strings.TrimSpace(q), "SELECT") {
 		t.Errorf("penjaga dobel salinan usulan: %s", q)
+	}
+}
+
+// Copy Old (perintah work owner 07-10-2026): data lama = JSON_POLIS x tabel kerja Pega (PZINSKEY = IDPEGA) x
+// TREATYINPRODUCTION (IDPEGA), lewat EXISTS supaya satu dokumen satu baris; generasi NB saja; baca saja.
+func TestKunciCopyOldGabungKerjaPegaDanProduksi(t *testing.T) {
+	q := sqlKunciJSONPolisCopyOld("UJI_SKEMA.JSON_POLIS", "UJI_SKEMA.TREATYINPRODUCTION")
+	for _, w := range []string{"FROM UJI_SKEMA.JSON_POLIS b", "EXISTS (SELECT 1 FROM DATAPEGA.PC_ASM_FW_GISFW_WORK a WHERE a.PZINSKEY = b.IDPEGA)",
+		"EXISTS (SELECT 1 FROM UJI_SKEMA.TREATYINPRODUCTION c WHERE c.IDPEGA = b.IDPEGA)", "TRIM(b.PRODKE) = '0'"} {
+		if !strings.Contains(q, w) {
+			t.Errorf("tanpa %q\n%s", w, q)
+		}
+	}
+	if !strings.HasPrefix(strings.TrimSpace(q), "SELECT") || strings.Contains(q, ":1") {
+		t.Errorf("kunci Copy Old: %s", q)
 	}
 }
 

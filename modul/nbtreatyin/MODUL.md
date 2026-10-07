@@ -178,6 +178,26 @@ sudah punya baris di sana (penjaga dobel `repository.SalinUsulanLama`). Baris ha
 `IDPEGA` (`<kelas> <pyID>`) dan status `Resolved-Completed` - tanpa kolom penanda (F6). Generasi endorsemen
 (`PRODKE > 0`) milik pemuat EDM (`modul/edmtreatyin`, tiket 10) dan hanya dihitung.
 
+### Tombol Copy Old (perintah WO 07-10-2026)
+
+*"nb ttreatyin tobol copy untuk data lama mana?"* -> *"langsung anda kerjakan!"* (dikerjakan sesi EDM TREATY IN dengan
+izin WO) - tombol **Copy Old** di samping *Create* di portal (bukan layar Pega), pola sama dengan Copy Old EDM Treaty In
+dan Product Name Life. Popup berisi dokumen polis NB lama yang belum ada di tabel flat (NB Number, Master ID, Policy
+Number, Insured Name, Group Business, SOB, Ceding, Production Date, Notes); yang dicentang disalin lewat **Process
+Copy** dengan `muat` pemuat di atas - satu transaksi per dokumen, hasil per dokumen (Copied / Already in the new tables /
+Cannot be copied / Failed). Baris yang tidak dapat disalin tampil dengan alasan (tanpa nilai dokumen) dan tidak dapat
+dicentang.
+
+- **Sumber data lama** (perintah WO 07-10-2026): `SELECT * FROM DATAPEGA.PC_ASM_FW_GISFW_WORK a, json_polis b,
+  treatyinproduction c WHERE a.pzinskey = b.idpega AND b.idpega = c.idpega` - ditulis EXISTS
+  (`repository.sqlKunciJSONPolisCopyOld`) karena TREATYINPRODUCTION berbaris banyak per IDPEGA. DEV 07-10-2026: 27
+  dokumen NB (dari 29; 2 belum ada di TREATYINPRODUCTION). Alat pemuat massal di atas tetap TANPA saringan.
+- **Hanya superadmin** = pemegang menu Kelola User dengan menu NB Treaty In ber-hak penuh (pola Bordereaux; View only
+  berlaku juga). Tombol menurut `GET /hak`; `GET /lama`, `POST /lama/salin` menolak 403.
+- Kode: `backend/services/copyold.go` (`GudangPemuat` di `pemuat.go`), `backend/models/copyold.go`,
+  `frontend/components/DialogCopyOld.tsx`, `frontend/lama.ts`; uji `backend/handlers/copyold_test.go`,
+  `backend/repository/lama_test.go`, `frontend/components/DialogCopyOld.test.tsx`, `frontend/lama.test.ts`.
+
 ## Menjalankan uji modul ini saja
 
 Dari akar repo:

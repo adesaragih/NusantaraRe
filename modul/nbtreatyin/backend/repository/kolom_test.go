@@ -109,7 +109,8 @@ func TestNilaiBaca(t *testing.T) {
 // Perilaku pengikatan, bukan teks SQL (temuan tinjauan P9 A5): setiap
 // penampung muncul SEKALI (klausa pembatas baris memecah penampung berulang)
 // dan penampung = argumen ikat, :1..:n berurutan, untuk setiap kombinasi
-// saringan portal. Pencarian (filter G GetListOpportunity) mengikat SATU nilai.
+// saringan portal. Pencarian mengikat satu nilai per kolom `kolomCariPortal` per kata (perintah work owner
+// 07-10-2026, pencarian portal diperluas).
 func TestSQLDaftarKasusPenampungSamaDenganArgumen(t *testing.T) {
 	for _, s := range []models.SaringanKasus{
 		{},
@@ -119,6 +120,7 @@ func TestSQLDaftarKasusPenampungSamaDenganArgumen(t *testing.T) {
 		{Cari: "uji-1", Posisi: models.PosisiDeptHead, Antrean: []string{models.PosisiSecHead, models.PosisiDeptHead}},
 		{Pembuat: "UJI-A"},
 		{Cari: "uji-1", Pembuat: "UJI-A", Antrean: []string{models.PosisiSecHead}},
+		{Cari: "uji-1 uji-1", Selesai: true},
 	} {
 		q, args := sqlDaftarKasus("S.W", "S.G", "S.Q", s)
 		pen := regexp.MustCompile(`:(\d+)`).FindAllStringSubmatch(q, -1)
@@ -146,8 +148,8 @@ func TestSQLDaftarKasusPenampungSamaDenganArgumen(t *testing.T) {
 				}
 			}
 		}
-		if (s.Cari != "") != (cari == 1) || cari > 1 {
-			t.Fatalf("%+v: pencarian mengikat %d nilai, harap 1 (hanya pengenal kasus)", s, cari)
+		if harap := len(models.KataCariPortal(s.Cari)) * len(kolomCariPortal); cari != harap {
+			t.Fatalf("%+v: pencarian mengikat %d nilai, harap %d (kata x kolom)", s, cari, harap)
 		}
 	}
 }

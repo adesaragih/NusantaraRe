@@ -115,6 +115,10 @@ func TestLaporanGalatBerkasCSVDanTanggalAmbiguDihitung(t *testing.T) { // AC 58,
 		t.Fatal(err)
 	}
 	l.Lewat(ErrBukanTreatyIn)
+	l.Lewat(ErrBarisAplikasiBaru)
+	if r := l.Ringkasan(); r.BarisAplikasiBaru != 1 || r.BukanTreatyIn != 1 || r.DokumenGagal != 2 {
+		t.Fatalf("baris aplikasi baru dihitung terpisah, bukan galat: %+v", r)
+	}
 	if err := l.Tutup(); err != nil {
 		t.Fatal(err)
 	}

@@ -258,6 +258,73 @@
   gap: 12px;
 }
 
+/* Tombol kepala portal: Copy Old (superadmin, WO 07-10-2026) di samping Create. */
+.nbtreatyin .nbti__akar .nbti__kepala-aksi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Popup Copy Old (pola Copy Old EDM Treaty In / Product Name Life): ringkasan hasil, saring, tabel bergulir. */
+.nbtreatyin .nbti__akar .nbti__lama-ringkas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.nbtreatyin .nbti__akar .nbti__lama-masalah {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  font-size: var(--fs-sm);
+}
+
+.nbtreatyin .nbti__akar .nbti__lama-alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-bottom: 10px;
+}
+
+.nbtreatyin .nbti__akar .nbti__lama-cari {
+  flex: 1 1 16rem;
+  max-width: 28rem;
+}
+
+.nbtreatyin .nbti__akar .nbti__lama-cacah {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.nbtreatyin .nbti__akar .nbti__lama-tabel {
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.nbtreatyin .nbti__akar .nbti__lama-centang {
+  width: 2.75rem;
+  text-align: center;
+}
+
+/* Alasan turun baris di dalam selnya - tabel tidak melebar keluar popup. */
+.nbtreatyin .nbti__akar .nbti__lama-catatan {
+  min-width: 12rem;
+  max-width: 20rem;
+  font-size: var(--fs-xs);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.nbtreatyin .nbti__akar .nbti__lama-ditolak > td {
+  color: var(--nbti-teks-redup, inherit);
+}
+
+.nbtreatyin .nbti__akar .nbti__lama-alasan {
+  color: var(--nbti-bahaya-teks, inherit);
+}
+
 .nbtreatyin .nbti__akar .inbox__judul,
 .nbtreatyin .nbti__akar .modal__title {
   color: var(--nbti-teks);
@@ -963,7 +1030,9 @@
     border-radius: 16px;
   }
 
-  .nbtreatyin .nbti__akar .inbox__kepala > .btn {
+  .nbtreatyin .nbti__akar .inbox__kepala > .btn,
+  .nbtreatyin .nbti__akar .nbti__kepala-aksi,
+  .nbtreatyin .nbti__akar .nbti__kepala-aksi > .btn {
     width: 100%;
   }
 

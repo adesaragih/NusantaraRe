@@ -97,6 +97,8 @@ type RingkasanPemuat struct {
 	BarisProdKeLain    int
 	BukanTreatyIn      int
 	GenerasiEndorsemen int
+	// BarisAplikasiBaru - baris JSON_POLIS tulisan aplikasi baru (`ErrBarisAplikasiBaru`), dilewati.
+	BarisAplikasiBaru int
 	// Dimuat - ditulis (`-jalankan`) atau siap ditulis (uji-kering).
 	Dimuat       int
 	SudahDimuat  int
@@ -183,6 +185,7 @@ func (r RingkasanPemuat) Teks() string {
 	if r.GenerasiEndorsemen > 0 {
 		fmt.Fprintf(&b, "Generasi endorsemen, dilewati                    : %d\n", r.GenerasiEndorsemen)
 	}
+	fmt.Fprintf(&b, "Baris tulisan aplikasi baru (tanpa JSON), dilewati: %d\n", r.BarisAplikasiBaru)
 	fmt.Fprintf(&b, "%-49s: %d\n", dimuat, r.Dimuat)
 	fmt.Fprintf(&b, "Sudah dimuat sebelumnya, dilewati                : %d\n", r.SudahDimuat)
 	fmt.Fprintf(&b, "Dokumen gagal (berkas laporan galat)             : %d\n", r.DokumenGagal)
@@ -235,10 +238,14 @@ func (l *LaporanPemuat) Dibaca() { l.r.BarisDibaca++ }
 // ProdKeLain mencatat cacah baris JSON_POLIS yang tidak dibaca.
 func (l *LaporanPemuat) ProdKeLain(n int) { l.r.BarisProdKeLain = n }
 
-// Lewat mencatat dokumen di luar lingkup (ErrBukanTreatyIn, ErrGenerasiEndorsemen).
+// Lewat mencatat dokumen di luar lingkup (ErrBukanTreatyIn, ErrGenerasiEndorsemen, ErrBarisAplikasiBaru).
 func (l *LaporanPemuat) Lewat(err error) {
 	if errors.Is(err, ErrGenerasiEndorsemen) {
 		l.r.GenerasiEndorsemen++
+		return
+	}
+	if errors.Is(err, ErrBarisAplikasiBaru) {
+		l.r.BarisAplikasiBaru++
 		return
 	}
 	l.r.BukanTreatyIn++

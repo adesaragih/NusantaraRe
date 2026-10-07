@@ -210,6 +210,23 @@ func (g *Gudang) TutupKasus(_ context.Context, _ *db.Tx, id, statusLama, statusA
 	return nil
 }
 
+// medanCariTiruan - medan pencarian portal satu berkas, urutan `repository.kolomCariPortal`.
+func medanCariTiruan(id string, k models.Kasus, h *models.Halaman, pembuat string) []string {
+	m := []string{id, "", k.NoPolis, "", "", "", "", "", "", "", "", pembuat}
+	if h != nil {
+		for i, j := range map[int]string{
+			1: models.HalamanPolis + ".NoOffer", 3: models.HalamanQuotation + ".InsuredName",
+			4: models.HalamanPolis + ".InsuredName", 5: models.HalamanQuotation + ".BusinessName",
+			6: models.HalamanQuotation + ".MarketingName", 7: models.HalamanPolis + ".SOBName",
+			8: models.HalamanPolis + ".CedingCoName", 9: models.HalamanPolis + ".TreatyGroupName",
+			10: models.HalamanPolis + ".BizName",
+		} {
+			m[i] = h.Ambil(j)
+		}
+	}
+	return m
+}
+
 func (g *Gudang) DaftarKasus(_ context.Context, s models.SaringanKasus) ([]models.RingkasanKasus, error) {
 	var out []models.RingkasanKasus
 	for id, k := range g.Kasus {
@@ -225,7 +242,7 @@ func (g *Gudang) DaftarKasus(_ context.Context, s models.SaringanKasus) ([]model
 		if s.Pembuat == "" && s.Antrean != nil && !diAntrean {
 			continue
 		}
-		if !models.CocokCariPortal(id, s.Cari) { // filter G, sama dengan repository
+		if !models.CocokCariPortal(medanCariTiruan(id, k, g.Halaman[id], g.NamaPembuat[id]), s.Cari) { // sama dengan repository
 			continue
 		}
 		r := models.RingkasanKasus{ID: id, StatusWork: k.StatusWork, PositionNote: k.PositionNote, NoPolis: k.NoPolis,

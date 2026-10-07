@@ -110,6 +110,10 @@ var (
 	ErrDokumenRusak = errors.New("models: DATA_JSON tidak dapat diurai sebagai objek JSON")
 	// ErrBukanTreatyIn - dokumen lini lain (bukan galat; dihitung saja).
 	ErrBukanTreatyIn = errors.New("models: dokumen bukan polis Treaty In")
+	// ErrBarisAplikasiBaru - baris JSON_POLIS tulisan Utility1 APLIKASI BARU (keputusan work owner 06-10-2026: tanpa
+	// DATA_JSON, IDPEGA = ID T_WORK_POLIS polos): bukan dokumen Pega - berkasnya sudah di tabel baru. Dilewati dan
+	// dihitung, bukan galat (temuan sesi EDM 07-10-2026; 4 baris di DEV).
+	ErrBarisAplikasiBaru = errors.New("models: baris JSON_POLIS tulisan aplikasi baru (tanpa DATA_JSON) - bukan dokumen Pega")
 	// ErrGenerasiEndorsemen - PRODKE > 0: generasi endorsemen, milik pemuat
 	// EDM (edmtreatyin tiket 10), bukan galat.
 	ErrGenerasiEndorsemen = errors.New("models: generasi endorsemen (PRODKE > 0) - milik pemuat EDM tiket 10")
@@ -519,7 +523,16 @@ func periksaProdKe(prodke string) error {
 // desimal KESEBELAS (NUMBER(38,10) - diagram NB Treaty In Prop F20 "skala
 // MINIMAL 9"; AC 19, 20b). Satu-satunya pengisian:
 // EndDate kosong = StartDate (`[keputusan work owner]` spec AC 69, §5.8).
+// BarisAplikasiBaru - baris JSON_POLIS tulisan aplikasi baru: IDPEGA tanpa spasi (bukan `<kelas> <pyID>` Pega) DAN
+// DATA_JSON kosong. Dokumen Pega ber-kelas yang JSON-nya kosong TETAP galat (`ErrDokumenRusak`).
+func BarisAplikasiBaru(b BarisJSONPolis) bool {
+	return !strings.Contains(strings.TrimSpace(b.IDPega), " ") && len(bytes.TrimSpace(b.DataJSON)) == 0
+}
+
 func PecahDokumenLama(b BarisJSONPolis) (HasilPecah, error) {
+	if BarisAplikasiBaru(b) {
+		return HasilPecah{}, ErrBarisAplikasiBaru
+	}
 	dek := json.NewDecoder(bytes.NewReader(b.DataJSON))
 	dek.UseNumber()
 	var akar any
