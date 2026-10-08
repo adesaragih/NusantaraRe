@@ -810,8 +810,59 @@
 }
 
 .claimprop .claimprop__rinci {
-  border-left: 3px solid var(--cp-aksen-garis);
-  padding: 8px 12px;
+  border-left: 3px solid var(--cp-aksen);
+  border-radius: 0 12px 12px 0;
+  padding: 10px 16px 14px;
+  background: var(--cp-isi);
+}
+
+/* Panel baris (Acceptation List, work owner 08-10-2026 "pewarnaan ... kurang enak diliat"): baris panel bukan baris
+   zebra / sorot - latar tetap tenang; baris yang terbuka disorot aksen supaya tersambung dengan panelnya. */
+.claimprop .claimprop__tabel tbody tr.claimprop__baris-rinci > td,
+.claimprop .claimprop__tabel tbody tr.claimprop__baris-rinci:hover > td {
+  padding: 0 0 10px;
+  background: var(--cp-latar-atas);
+}
+
+.claimprop .claimprop__tabel tbody tr[aria-expanded="true"] > td,
+.claimprop .claimprop__tabel tbody tr[aria-expanded="true"]:hover > td {
+  background: var(--cp-aksen-lembut);
+  color: var(--cp-aksen-teks);
+  font-weight: 600;
+}
+
+/* Di dalam panel: tabel tanpa bayangan timbul, tab bergaris bawah selebar teks (seperti Pega) - kapsul 110 px tab
+   utama mematahkan "Adjusment List Detail" menjadi dua baris. */
+.claimprop .claimprop__rinci .claimprop__tabel {
+  box-shadow: none;
+}
+
+.claimprop .claimprop__rinci .tabs {
+  width: 100%;
+  padding: 0;
+  gap: 0;
+  border-bottom: 1px solid var(--cp-garis);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.claimprop .claimprop__rinci .tabs::before {
+  display: none;
+}
+
+.claimprop .claimprop__rinci .tabs__item {
+  width: auto;
+  padding: 0 14px;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+}
+
+.claimprop .claimprop__rinci .tabs__item--aktif,
+.claimprop .claimprop__rinci .tabs__item--aktif:hover {
+  border-bottom-color: var(--cp-aksen);
+  color: var(--cp-aksen-teks);
+  font-weight: 700;
 }
 
 /* Penanda baris ber-panel (Acceptation List): seluruh baris dapat diklik, panah menunjukkan terbuka / tertutup. */

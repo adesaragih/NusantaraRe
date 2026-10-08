@@ -248,6 +248,12 @@ var LabelKode = map[string]map[string]string{
 	"ReporterStatus": {"1": "Ceding Co Name", "2": "SOB Name", "3": "Others"},
 	// ASM-FW-GCNMFW-Data-Estimasi.Type - kolom Type grid Estimation List (screenshot work owner 08-10-2026)
 	"EstimationType": {"1": "Claim", "2": "Adjuster Fee", "3": "Salvage", "4": "Consultant Fee"},
+	// ASM-FW-GCNMFW-Data-Adjustment.Type / .IndividualRiskType, ASM-FW-GCNMFW-Data-ClaimData.Payable (screenshot work owner
+	// 08-10-2026). IndividualRiskType "0" = "Select.." hanya label tampilan (KodePilihan tidak menawarkannya - setara
+	// placeholder Choose).
+	"AdjustmentType":     {"1": "Claim", "2": "Adjuster Fee", "3": "Salvage", "4": "Consultant Fee"},
+	"IndividualRiskType": {"0": "Select..", "1": "% From claims", "2": "% FromTSI", "3": "Other"},
+	"Payable":            {"1": "Ceding Co Name", "2": "Broker Name", "3": "Others"},
 }
 
 func kode(p string) string { return AwalanKode + p }

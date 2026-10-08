@@ -103,3 +103,38 @@ func TestLayarAdjustmentIkutLayoutXML(t *testing.T) {
 		t.Errorf("Spreading Out hilang")
 	}
 }
+
+// Prompt values dari screenshot work owner 08-10-2026: ASM-FW-GCNMFW-Data-Adjustment.Type / .IndividualRiskType dan
+// ASM-FW-GCNMFW-Data-ClaimData.Payable. Sumber medan panel harus menunjuk label itu (nilai tersimpan tetap kode).
+func TestLabelKodeAdjustmentDariScreenshot(t *testing.T) {
+	h := models.HalamanBaru()
+	h.SetelDaftar(models.DaftarAdjustment, []models.Baris{{"Type": "1"}})
+	ts := models.Evaluasi(h, models.LayarAdjustment(1), false)
+	sumber := map[string]string{}
+	var jalan func(xs []models.Tata)
+	jalan = func(xs []models.Tata) {
+		for _, x := range xs {
+			if x.Jenis == models.JenisMedan && x.Sumber != "" {
+				sumber[x.Jalur] = x.Sumber
+			}
+			jalan(x.Anak)
+		}
+	}
+	jalan(ts)
+	mau := map[string]map[string]string{
+		models.JalurAdj(1, "Type"):               {"1": "Claim", "2": "Adjuster Fee", "3": "Salvage", "4": "Consultant Fee"},
+		models.JalurAdj(1, "IndividualRiskType"): {"0": "Select..", "1": "% From claims", "2": "% FromTSI", "3": "Other"},
+		models.CD + "Payable":                    {"1": "Ceding Co Name", "2": "Broker Name", "3": "Others"},
+	}
+	for jalur, label := range mau {
+		kunci, ok := models.AdaKode(sumber[jalur])
+		if !ok {
+			t.Fatalf("%s bukan medan kode: sumber %q", jalur, sumber[jalur])
+		}
+		for kode, l := range label {
+			if got := models.LabelKode[kunci][kode]; got != l {
+				t.Errorf("%s kode %s: label %q, mau %q", jalur, kode, got, l)
+			}
+		}
+	}
+}

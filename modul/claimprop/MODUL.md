@@ -147,8 +147,10 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   `AdjustmentDetail` - Inline grid double bersarang, checkbox "Transfer Direct to Kasir", tabel bebas 6 x 4
   (`LetakTabel`, komponen `TabelTetap`), Payable | bank berdampingan, Spreading In (NEVER) tidak dibangun; judul mentah
   "AdjustmentDetail" dibuang. Baris terbaru terbuka tanpa klik dan seluruh baris dapat diklik (`rincian.ts`
-  bukaAwal / barisTerbuka). Label kode Type (AdjustmentType) dan Deductible Type (IndividualRiskType) belum ada di
-  korpus - tampil kode sampai work owner memberi prompt values.
+  bukaAwal / barisTerbuka). Label kode dari screenshot prompt values work owner: Type (AdjustmentType) 1 Claim /
+  2 Adjuster Fee / 3 Salvage / 4 Consultant Fee, Deductible Type (IndividualRiskType) 0 Select.. (label saja) / 1 %
+  From claims / 2 % FromTSI / 3 Other, Payable To 1 Ceding Co Name / 2 Broker Name / 3 Others. Warna panel ("kurang
+  enak diliat"): panel putih bergaris aksen, baris terbuka disorot, tab panel bergaris bawah, tabel tanpa bayangan.
 - **Tab Acceptation tanpa data estimasi** (08-10-2026, "semua data estimasi yang muncul di tab akseptasi di hapus"):
   blok "Claim Estimation" `InputAcceptation_Adjs` (salinan hanya-baca tab Estimation) tidak ditampilkan; data tidak
   dihapus dan tetap di tab Estimation. Acceptance Information, Acceptation List, Spreading Adjustment Total tetap.

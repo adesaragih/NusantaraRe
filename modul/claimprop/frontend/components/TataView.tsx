@@ -608,7 +608,7 @@ function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
                   {selKepalaTambah && <td />}
                 </tr>
                 {rinci && buka === n && (
-                  <tr>
+                  <tr className="claimprop__baris-rinci">
                     <td colSpan={lebar}>{rinci.isi(n)}</td>
                   </tr>
                 )}
