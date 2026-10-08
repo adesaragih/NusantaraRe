@@ -23,13 +23,15 @@ package services
 // identik di kedua korpus) — `models.LangkahBerikut`, keputusan pemilik
 // proses tentang jalur naik dan `PositionUsername` ikut berlaku.
 //
+// ⭐ Halaman `ActualValue` (8 Oktober 2026, keputusan pemakai) mendarat di
+// MASTERID `ID + AkhiranSisiAktual` — termasuk salinan `TreatyIn` →
+// `ActualValue` `SaveTreatyIn_EDM_Act` [2]–[4] untuk EDM 1/2 (`halamanAktual`).
+//
 // ⚠️ Yang SENGAJA tidak dibangun:
-//   - salinan `TreatyIn` → `ActualValue` di `SaveTreatyIn_EDM_Act` [2]–[4]
-//     (EDM 1/2): salinan halaman yang sama, tanpa tabelnya sendiri.
 //   - `SaveTreatyInDetailEdm_Act` saat Resolve Complete — pemilik proses:
 //     data ditarik dari tabel tiap tab, status dari kepalanya.
-//   - `TreatyRevisionCopyAttachment` (draf): mengunggah ulang berkas ke
-//     Google Storage lewat langkah Java.
+//   - (8 Oktober 2026: `TreatyRevisionCopyAttachment` KINI dibangun —
+//     `salin_lampiran_penyesuaian.go`, dikaitkan sesudah tulisan draf.)
 //   - grid Rate of Exchange: prosedur EDM tidak menulis
 //     `TREATYEXCHANGEYEARLY`; yang dikirim layar DILAPORKAN tak tersimpan.
 
@@ -98,7 +100,9 @@ func (l *Layanan) SimpanPenyesuaian(ctx context.Context, p inti.Pelaku, m Masuka
 	// kosong/Admin) PositionUsername = operator.
 	doc["Position"] = models.PosisiAdmin
 	doc["PositionUsername"] = p.AkunID
-	return l.tulisPenyesuaian(ctx, m, doc, lama)
+	h, err := l.tulisPenyesuaian(ctx, m, doc, lama)
+	// TreatyInEDMSetValue [8] — draf saja, sesudah kepala tersimpan.
+	return l.salinLampiranDraf(ctx, p, m, doc, h, err)
 }
 
 // KirimPenyesuaian - Submit atau Actions layar Adjustment.
@@ -153,7 +157,9 @@ func (l *Layanan) KirimPenyesuaian(ctx context.Context, p inti.Pelaku, m Masukan
 			}
 		}
 	}
-	return l.tulisPenyesuaian(ctx, m.MasukanPenyesuaian, doc, lama)
+	h, err := l.tulisPenyesuaian(ctx, m.MasukanPenyesuaian, doc, lama)
+	// TreatyInEDMSetValue [8] — draf saja, sesudah kepala tersimpan.
+	return l.salinLampiranDraf(ctx, p, m.MasukanPenyesuaian, doc, h, err)
 }
 
 // HapusPenyesuaian - Decline offer layar Adjustment: baris EDM dihapus
@@ -342,15 +348,46 @@ func (l *Layanan) tulisPenyesuaian(ctx context.Context, m MasukanPenyesuaian, do
 		takTersimpan = append(takTersimpan, larikKurs)
 	}
 	delete(lama, larikKurs)
+	// ⭐ Halaman `ActualValue` — MASTERID sendiri (`AkhiranSisiAktual`,
+	// keputusan pemakai 8 Oktober 2026), bukan bagian dokumen sisi New.
+	aktual, adaAktual := halamanAktual(doc)
+	delete(doc, kunciAktual)
+	// ⭐ Halaman `ValueBeforeProrate` — MASTERID sendiri, pola yang SAMA.
+	//
+	// ⛔ Sampai 8 Oktober 2026 ia tertinggal di dokumen sisi New, nol punya
+	// kolom, dan karena itu dilaporkan "TIDAK tersimpan" pada setiap Save
+	// penyesuaian ber-pro-rate — lalu hilang. Tab
+	// `TreatyInTabsNPValueDifference_NoProRate` yang membacanya kosong
+	// sesudah kontrak dimuat ulang.
+	sebelumProrata, adaSebelumProrata := doc[kunciSebelumProrata].(map[string]any)
+	delete(doc, kunciSebelumProrata)
 	asing, err := l.kunciTakTersimpan(ctx, doc, repository.KolomKepalaPenyesuaian)
 	if err != nil {
 		return HasilSimpan{}, err
 	}
 	takTersimpan = append(takTersimpan, asing...)
+	// Yang TIDAK tersimpan dari halaman Actual dilaporkan HANYA bila isinya
+	// isian pemakai (EDMState 3). Salinan [2]–[4] identik dengan sisi New,
+	// jadi kuncinya sudah dilaporkan sekali di atas.
+	if adaAktual && teksDok(doc, "EDMState") == "3" {
+		asingAktual, err := l.kunciTakTersimpan(ctx, aktual, nil)
+		if err != nil {
+			return HasilSimpan{}, err
+		}
+		for _, k := range asingAktual {
+			takTersimpan = append(takTersimpan, kunciAktual+"."+k)
+		}
+	}
 	sort.Strings(takTersimpan)
 	r := models.RencanaPenyesuaian{ID: id, Draf: m.Draf, Baru: doc}
 	if m.Draf {
 		r.Lama = lama
+	}
+	if adaAktual {
+		r.Aktual = aktual
+	}
+	if adaSebelumProrata {
+		r.SebelumProrata = sebelumProrata
 	}
 	if err := l.gudang.SimpanPenyesuaian(ctx, r); err != nil {
 		if errors.Is(err, repository.ErrPenyesuaianSudahAda) {
@@ -390,4 +427,41 @@ func (l *Layanan) kunciTakTersimpan(ctx context.Context, doc map[string]any, kep
 		return nil, err
 	}
 	return unik(append(out, belum...)), nil
+}
+
+// kunciAktual - halaman `TreatyIn.ActualValue`.
+const kunciAktual = "ActualValue"
+
+// kunciSebelumProrata - halaman `TreatyIn.ValueBeforeProrate`, salinan
+// `ValueDifference` SEBELUM pro-rate (`TreatyEDMProRateCalculation`).
+const kunciSebelumProrata = "ValueBeforeProrate"
+
+// halamanAktual - `SaveTreatyIn_EDM_Act` [2]–[4] lalu halaman Actual yang
+// didaratkan.
+//
+//	[2]  EDMState == "3" → lompat ke `jmp`: `ActualValue` apa adanya
+//	     (isian cabang Adjust Premium)
+//	[2]–[4] selainnya: Page-Copy TreatyIn → TreatyInTemp, buang `.OLDDATA`
+//	     dan `.ValueDifference`, Page-Copy TreatyInTemp → `ActualValue`
+//
+// ⚠️ `ActualValue` di DALAM salinan (halaman Actual lama yang ikut tersalin
+// Page-Copy) dibuang: tingkat kedua tidak mendarat — aturan yang sama dengan
+// `OLDDATA` di dalam `OLDDATA`.
+//
+// `ada` palsu = tidak ada halaman Actual sama sekali (EDMState 3 tanpa
+// isian) — sisi `#AKTUAL` tidak disentuh.
+func halamanAktual(doc map[string]any) (map[string]any, bool) {
+	if teksDok(doc, "EDMState") == "3" {
+		a, ok := doc[kunciAktual].(map[string]any)
+		return a, ok
+	}
+	salin := make(map[string]any, len(doc))
+	for k, v := range doc {
+		switch k {
+		case "OLDDATA", "ValueDifference", kunciAktual:
+			continue
+		}
+		salin[k] = v
+	}
+	return salin, true
 }

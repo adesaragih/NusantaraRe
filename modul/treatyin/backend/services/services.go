@@ -137,6 +137,9 @@ type Gudang interface {
 	// `repository.LarikTotalPenampung`) — supaya isian yang di-Save tampil
 	// kembali tanpa Refresh.
 	BacaTotalPenampung(ctx context.Context, masterID string) (map[string][]map[string]any, error)
+	// Tombol `Submit` sub-tab Achievement — `InsertToLogAchievement` ke
+	// `LOG_ACHIEVEMENT`, satu transaksi (keputusan pemakai 8 Oktober 2026).
+	CatatLogAchievement(ctx context.Context, masterID, operator string, baris []repository.BarisLogSiap) error
 	BacaKursTahunan(ctx context.Context, tahunTreaty string) ([]models.BarisKursWarisan, error)
 
 	// Tab Co-Ins Scale - tabel pendaratan kesembilan, migrasi 432.
@@ -162,6 +165,9 @@ type Gudang interface {
 	// dibuka.
 	BacaDaftarCedant(ctx context.Context) ([]models.PilihanWarisan, error)
 	BacaDaftarAsalBisnis(ctx context.Context) ([]models.PilihanWarisan, error)
+	// `TreatyInCheckCedingBlacklist` — `AGENT.STATUSACTIVE` per pengenal agen
+	// (`agen_daftar_negatif.go`). Baca saja.
+	BacaStatusAktifAgen(ctx context.Context, ids []string) (map[string]string, error)
 	// Isi dropdown `Treaty Type` tab Limits — `BrowseReinsuranceType_RD`.
 	BacaDaftarJenisTreaty(ctx context.Context) ([]models.PilihanWarisan, error)
 	// `Treaty Group` dan mata uang tab Limits — `BrowseTreatyGroup_RD`,

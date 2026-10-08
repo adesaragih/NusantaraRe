@@ -9,11 +9,13 @@
 // ⛔ Pola tata letaknya DITIRU dari `modul/treatyin/frontend/pages/
 // FormKontrakTreatyIn.tsx`; nol impor dari modul itu.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Area, Field, Panel, Pilih, StripTab } from '../../../../inti/frontend/components/ui/dasar'
 import {
   ambilAgenTreatyIn,
+  ambilIndukSpreadingTreatyIn,
+  ambilKelasBisnisTreatyIn,
   ambilOpsiKepalaTreatyIn,
   ambilOpsiLimitsTreatyIn,
   type BarisBersarang,
@@ -27,7 +29,7 @@ import type { JenisTulis } from './aksiTombol'
 import { gabungPohon, gabungTigaArah } from './baris'
 import { ikutBerubah } from './rumusKepala'
 import { FieldTanggalKetik } from './TanggalKetik'
-import { opsiUntuk, type DataOpsi } from './pilihan'
+import { opsiUntuk, type DataOpsi, type Opsi, type PemuatOpsi } from './pilihan'
 import PilihAgen from './PilihAgen'
 import { AreaBacaSaja, BelumDibangun, Centang, MedanTakAda, TanggalBacaSaja, selNilai } from './medan'
 
@@ -46,6 +48,26 @@ export type ModeLayar = '0' | '1'
 
 const tanpaAksi = () => undefined
 
+/** Rute daftar BERPARAMETER — rute Treaty In yang SAMA dengan layar Treaty In. */
+const PEMUAT_OPSI: PemuatOpsi = {
+  kelasBisnis: ambilKelasBisnisTreatyIn,
+  indukSpreading: ambilIndukSpreadingTreatyIn,
+}
+
+/**
+ * Pilihan dropdown kepala — rute `opsi-kepala` Treaty In (nilai tersimpan
+ * berlabel tampil, urutan yang SAMA dengan form Treaty In), atau daftar
+ * cadangan `PILIHAN_MEDAN` selama rute itu belum menjawab.
+ */
+export function opsiKepala(kunci: string, kepala: DataOpsi['kepala']): Opsi[] {
+  const dariRute: Readonly<Record<string, readonly Opsi[] | undefined>> = {
+    Bordeaux: kepala?.bordereaux,
+    AccountingMode: kepala?.caraPembukuan,
+    AccountingModeNonProp: kepala?.caraPembukuanNonProp,
+  }
+  return [...(dariRute[kunci] ?? (PILIHAN_MEDAN[kunci] ?? []).map((v) => ({ value: v, label: v })))]
+}
+
 /** Satu medan kepala form menurut spesifikasinya. */
 function Medan({
   spek,
@@ -53,12 +75,15 @@ function Medan({
   ada,
   bacaSaja,
   onUbah,
+  opsi,
 }: {
   spek: MedanForm
   nilai: string
   ada: boolean
   bacaSaja: boolean
   onUbah: (v: string) => void
+  /** Pilihan medan `pilih` — `opsiKepala`. */
+  opsi?: Opsi[]
 }) {
   if (!ada) return <MedanTakAda label={spek.label} />
   if (bacaSaja) {
@@ -88,7 +113,7 @@ function Medan({
           label={spek.label}
           value={nilai}
           onChange={onUbah}
-          opsi={(PILIHAN_MEDAN[spek.kunci] ?? []).map((v) => ({ value: v, label: v }))}
+          opsi={opsi ?? opsiKepala(spek.kunci, undefined)}
         />
       )
     case 'centang':
@@ -193,8 +218,34 @@ export default function SisiForm({
       return { ...x, medan: { ...medanBaru, ...ikutBerubah(kunci, medanBaru) } }
     })
   }
+  const ubahMedanBanyak = (pasangan: Readonly<Record<string, string>>) => {
+    setKini((x) => {
+      let medanBaru = { ...x.medan }
+      for (const [kunci, v] of Object.entries(pasangan)) {
+        medanBaru = { ...medanBaru, [kunci]: v }
+        medanBaru = { ...medanBaru, ...ikutBerubah(kunci, medanBaru) }
+      }
+      return { ...x, medan: medanBaru }
+    })
+  }
   const ubahLarik = (larik: string, baris: BarisBersarang[]) => {
     setKini((x) => ({ ...x, larik: { ...x.larik, [larik]: baris } }))
+  }
+  // ⭐ Daftar BERPARAMETER (Class of Business, Spreading Type) — dimuat per
+  // parameter saat sel/medannya pertama dirender, sekali per kunci.
+  const [muatan, setMuatan] = useState<Record<string, readonly Opsi[]>>({})
+  const sedangDimuat = useRef(new Set<string>())
+  const muat = (kunci: string, ambil: () => Promise<Opsi[]>) => {
+    if (sedangDimuat.current.has(kunci)) return
+    sedangDimuat.current.add(kunci)
+    ambil()
+      .then((xs) => {
+        setMuatan((m) => ({ ...m, [kunci]: xs }))
+      })
+      .catch(() => {
+        // Rute gagal — daftar kosong, bukan galat layar (pola daftar lain).
+        setMuatan((m) => ({ ...m, [kunci]: [] }))
+      })
   }
   // ⭐ Daftar dropdown/autocomplete dimuat SEKALI, hanya bila panel ini
   // dapat disunting. Rute yang gagal meninggalkan medannya kotak teks —
@@ -219,7 +270,8 @@ export default function SisiForm({
   }, [dapatSunting])
   const k: KonteksKerangka = {
     // ⭐ Larik akar ikut — daftar `pageList` halaman SESI (Achievement).
-    opsi: (sp, kunci) => opsiUntuk(sp, kunci, { ...dataOpsi, halaman: tampilSisi.larik }),
+    opsi: (sp, kunci, tempat) =>
+      opsiUntuk(sp, kunci, { ...dataOpsi, halaman: tampilSisi.larik, muatan, muat }, tempat, PEMUAT_OPSI),
     sisi: tampilSisi,
     akar,
     lama: lama === undefined ? undefined : gabungPohon(lama),
@@ -227,6 +279,7 @@ export default function SisiForm({
     // ⭐ Mode Edit panel New — `ViewState 0`. Panel Old tidak pernah.
     ubah: dapatSunting,
     ubahMedan,
+    ubahMedanBanyak,
     ubahMedanAkar: ubahMedan,
     ubahLarik,
     // ⭐ Akar panel — Section rincian memperpanjang jalur ini (`konteksBaris`).
@@ -285,6 +338,7 @@ export default function SisiForm({
         nilai={sumber[m.kunci] ?? ''}
         ada={ada}
         bacaSaja={kunciBaca}
+        opsi={m.bentuk === 'pilih' ? opsiKepala(m.kunci, dataOpsi.kepala) : undefined}
         onUbah={(v) => {
           ubahMedan(m.kunci, v)
         }}

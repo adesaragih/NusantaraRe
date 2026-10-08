@@ -55,6 +55,7 @@ import {
   tabUntuk,
   tataLetakKolom,
 } from './pages/FormKontrakTreatyIn'
+import { PROPERTI_TAB_PROP } from './halaman'
 
 const AKAR = __dirname
 
@@ -146,19 +147,20 @@ describe('layar daftar kontrak', () => {
 
 describe('strip tab - DUA himpunan, dan keduanya tidak sama', () => {
   it('proporsional sebelas tab, non-proporsional dua belas', () => {
-    expect(TAB_PROPORSIONAL).toHaveLength(11)
-    expect(TAB_NON_PROPORSIONAL).toHaveLength(12)
+    expect(TAB_PROPORSIONAL).toHaveLength(10)
+    expect(TAB_NON_PROPORSIONAL).toHaveLength(11)
   })
 
   // ⛔ Uji yang paling berguna di berkas ini. Perkiraan ronde ini: "keduanya
   // memuat kesepuluh namanya". Ekspor menyatakan sebaliknya, dan uji ini
   // membekukan temuan itu supaya tidak diratakan diam-diam nanti.
-  it('hanya enam nama yang dimiliki KEDUA cabang', () => {
+  // ⛔ LIMA sejak 8 Oktober 2026 — satu nama bersama DIKELUARKAN dari
+  // proyek atas keputusan pemilik proses.
+  it('hanya lima nama yang dimiliki KEDUA cabang', () => {
     const sama = TAB_PROPORSIONAL.filter((t) => (TAB_NON_PROPORSIONAL as readonly string[]).includes(t))
     expect(sama).toEqual([
       'Limits',
       'Share',
-      'Retro',
       'Exclusions',
       'Special Conditions',
       'Information & Submit',
@@ -1156,10 +1158,10 @@ describe('pemilih "Choose …" adalah DROPDOWN sejak 5 Oktober 2026', () => {
 })
 
 describe('Retro — keadaan KEEMPAT: jarang, bukan belum-ada-kode', () => {
-  it('tab Retro memakai teks JARANG, bukan belumDibangun', () => {
-    expect(FORM).toContain("tabTampil === 'Retro' ? FORM_KONTRAK.jarangDipakai")
-    expect(FORM_KONTRAK.jarangDipakai).toContain('JARANG')
-    expect(FORM_KONTRAK.jarangDipakai).not.toContain('belum dibangun.')
+  // ⛔ DIBALIK 8 Oktober 2026 — tab itu dikeluarkan dari proyek, jadi nol
+  // cabang render boleh menyebutnya lagi.
+  it('⛔ nol cabang render menyebutnya', () => {
+    expect(FORM).not.toContain("tabTampil === 'Retro'")
   })
 
   // ⛔ DIBALIK 8 Oktober 2026 — petunjuknya DICABUT dari layar.
@@ -1347,5 +1349,36 @@ describe('kepala kolom tidak ikut tenggelam', () => {
     for (const f of ['components/TabAngsuran.tsx', 'components/TabShareProp.tsx']) {
       expect(readFileSync(join(__dirname, f), 'utf8')).toContain('trin__rincian')
     }
+  })
+})
+
+// ⭐ DT `TreatyInSetPeriod` — DIBANGUN 8 Oktober 2026.
+//
+// Permintaan pemilik proses: *"utamakan rumus agar berjalan semua seperti di
+// pega … agar semua 100%"*.
+//
+// Isi DT-nya SATU langkah: `TreatyIn.ReportingPeriod := "quarter"`, dan ia
+// terpasang pada peristiwa `change` radio Reinsurance Type di
+// `Section/InputTreatyInOffer.xml` (aksi `refresh` ber-pra-DT) — BUKAN di
+// tab Reporting Period, tempat orang pertama kali akan mencarinya.
+describe('DT TreatyInSetPeriod — radio jenis menyetel Reporting Period', () => {
+  const HAL = normalkanBaris(readFileSync(join(AKAR, 'pages', 'FormKontrakTreatyIn.tsx'), 'utf8'))
+  const i = HAL.indexOf("name=\"jenis-reasuransi\"")
+
+  it('⛔ perubahan radio menyetel ReportingPeriod = quarter', () => {
+    expect(i).toBeGreaterThan(0)
+    const blok = HAL.slice(i, i + 1600)
+    expect(blok).toContain('setJenis(o.nilai)')
+    expect(blok).toContain("penampung.ubah('ReportingPeriod', () => 'quarter')")
+  })
+
+  it('⚠️ TANPA syarat — ekspor nol memeriksa nilai lamanya', () => {
+    const blok = HAL.slice(i, i + 1600)
+    // Bentuk yang dilarang: hanya menyetel bila jenisnya BERUBAH.
+    expect(blok).not.toMatch(/if \(o\.nilai !== jenis\)/)
+  })
+
+  it('⭐ `ReportingPeriod` memang properti penampung halaman, bukan keadaan tab', () => {
+    expect(PROPERTI_TAB_PROP['Reporting Period']).toContain('ReportingPeriod')
   })
 })

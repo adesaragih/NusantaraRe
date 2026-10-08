@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"net/url"
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
@@ -24,6 +26,8 @@ import (
 //
 // Modal `View File` (`ShowAttachmentTreaty`):
 //
+//	GET  …/lampiran/{lid}/isi                tautan nama berkas: isi berkas
+//	                                         dialirkan (DownloadAttachmentTreaty)
 //	GET  …/lampiran/{lid}/tautan[?office=1]  DownloadAttachmentTreaty → {"url"}
 //	POST …/lampiran/{lid}/hapus              Delete_act
 //	POST …/lampiran/kategori                 ChangeDokument_Act("Save"):
@@ -62,6 +66,24 @@ func daftarkanLampiran(pasang func(string, rute)) {
 		}
 		hasil, err := l.UnggahLampiran(r.Context(), p, m)
 		tulis(w, hasil, err)
+	})
+	// Tautan nama berkas — isi berkas DIALIRKAN (layar memakai fetch
+	// beridentitas, bukan membuka URL; `unduhdokumen.test.ts`).
+	pasang("GET "+dasar+"/{lid}/isi", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		b, err := l.IsiLampiran(r.Context(), p, r.PathValue("id"), r.PathValue("lid"))
+		if jawabGalat(w, err) {
+			return
+		}
+		defer func() { _ = b.Isi.Close() }()
+		w.Header().Set("Content-Type", b.Mime)
+		w.Header().Set("Content-Disposition", "attachment; filename*=UTF-8''"+url.PathEscape(b.Nama))
+		w.WriteHeader(http.StatusOK)
+		if _, err := io.Copy(w, b.Isi); err != nil {
+			// Isi putus di tengah: sambungan diputus — peramban melihat
+			// unduhan gagal, bukan berkas terpotong berstatus 200.
+			log.Printf("treaty in: attachment %s download was interrupted", r.PathValue("lid"))
+			panic(http.ErrAbortHandler)
+		}
 	})
 	pasang("GET "+dasar+"/{lid}/tautan", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		u, err := l.TautanLampiran(r.Context(), p, r.PathValue("id"), r.PathValue("lid"), r.URL.Query().Get("office") == "1")

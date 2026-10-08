@@ -61,6 +61,14 @@ export const PENYESUAIAN = {
    * di layar, simpanannya menunggu tombol Save.
    */
   drafBelumTersimpan: 'Draf — belum tersimpan. Penyesuaian ini baru ada di layar; ia masuk basis data lewat tombol Save.',
+  /**
+   * ⭐ Audit 8 Oktober 2026 — isi tab penyesuaian ini TIDAK ada di tabel
+   * pendaratan (`Penyesuaian.terdarat = false`). Di Pega penyesuaian selalu
+   * membawa salinan dokumen utuh; di sini grid kosongnya akan dapat ditambah
+   * lalu disimpan sebagai data separuh — maka panel New dikunci.
+   */
+  belumTerdarat:
+    'Isi kontrak ini (Limits, Share, Portfolio, dst.) belum tersedia di aplikasi, jadi tab-tabnya kosong. Penyesuaian hanya dapat dilihat sampai kontrak induknya disimpan lewat menu Treaty In.',
 
   ubah: 'Edit', // pyLabel @782051
   lihat: 'View', // pyLabel @798870
@@ -81,6 +89,7 @@ export const PENYESUAIAN = {
    * — keputusan pemilik proses 7 Oktober 2026: tetap mati sampai tabel log
    * diputuskan bersama jalur Save. Angka Achievement sendiri tersimpan lewat Save.
    */
+  /** ⛔ USANG sejak 8 Oktober 2026 — Submit Achievement HIDUP (`LOG_ACHIEVEMENT`). */
   achievementMenunggu:
     'Submit Achievement menulis log tersendiri; tabelnya menunggu keputusan bersama jalur Save. Angka Achievement tersimpan lewat Save.',
   /** `GenerateCSVTreaty` — nama berkas dari ekspor (`FSFileName`). */
@@ -403,4 +412,14 @@ export const CARI_MASTER = {
   reset: 'Reset',
   hasil: (n: number, total: number) => `${n} dari ${total} baris`,
   tanpaHasil: 'Tidak ada baris yang cocok dengan pencarian.',
+}
+
+/**
+ * Submit Achievement (`InsertToLogAchievement`) — Pega tidak menampilkan
+ * pesan apa pun sesudahnya; kalimat ini TAMBAHAN supaya penekanan yang
+ * berhasil terlihat (8 Oktober 2026).
+ */
+export const LOG_ACHIEVEMENT = {
+  tercatat: (n: number, lewat: number) =>
+    `${n} baris Achievement tercatat${lewat > 0 ? `, ${lewat} baris tanpa Quarter dilewati` : ''}.`,
 }

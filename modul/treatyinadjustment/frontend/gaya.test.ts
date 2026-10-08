@@ -124,5 +124,49 @@ describe('gaya modul Treaty In Adjustment', () => {
   it('tanpa properti yang mengurung popup position: fixed', () => {
     const tanpaKomentar = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
     expect([...tanpaKomentar.matchAll(PENAMPUNG_FIXED)].map((m) => m[1])).toEqual([])
+    // `container-type` juga mengurung popup fixed (layout containment).
+    expect(tanpaKomentar).not.toMatch(/container(-type)?\s*:/)
+  })
+})
+
+// ⭐ 8 Oktober 2026 — "perbaiki design nya seperti [Pega] … kalau zoom in
+// zoom out … jadi bagus".
+describe('bentuk Pega + responsif saat zoom', () => {
+  const tanpaKomentar = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
+
+  it('Old ‖ New bertumpuk menurut lebar wadahnya, bukan lebar layar', () => {
+    expect(tanpaKomentar).toMatch(
+      /\.treatyinadjustment \.tria__bandingan \{[^}]*grid-template-columns: repeat\(auto-fit, minmax\(min\(100%, 520px\), 1fr\)\);/,
+    )
+    expect(tanpaKomentar).toMatch(
+      /\.treatyinadjustment \.tria__dwikolom \{[^}]*grid-template-columns: repeat\(auto-fit, minmax\(min\(100%, 340px\), 1fr\)\);/,
+    )
+    expect(tanpaKomentar).not.toMatch(/@media \(max-width: 1100px\)/)
+  })
+
+  it('strip tab SATU baris, digulir mendatar', () => {
+    expect(tanpaKomentar).toMatch(/\.treatyinadjustment \.tabs \{\s*flex-wrap: nowrap;\s*overflow-x: auto;/)
+    expect(tanpaKomentar).toMatch(/\.treatyinadjustment \.tabs__item \{\s*flex: 0 0 auto;/)
+  })
+
+  it('label di KIRI kotak kepala (132px), hanya dari 900px ke atas', () => {
+    const i = tanpaKomentar.indexOf('@media (min-width: 900px)')
+    expect(i).toBeGreaterThan(0)
+    const blok = tanpaKomentar.slice(i, i + 700)
+    expect(blok).toContain('grid-template-columns: 132px minmax(0, 1fr);')
+    expect(blok).toMatch(/\.tria__kolom \.field > :not\(\.field__label\) \{\s*grid-column: 2;/)
+  })
+
+  it('kerapatan sama dengan Treaty In: kotak 34px, label 13px', () => {
+    expect(tanpaKomentar).toMatch(/\.treatyinadjustment \.field__input \{\s*height: 34px;\s*font-size: 14px;/)
+    expect(tanpaKomentar).toMatch(/\.treatyinadjustment \.field__label \{\s*font-size: 13px;/)
+  })
+
+  it('kotak di sel grid tidak terpotong; tabel ber-rincian (fixed) tetap boleh menyusut', () => {
+    expect(tanpaKomentar).toMatch(/\.treatyinadjustment \.tria__tabel td \.field__input \{\s*min-width: 96px;/)
+    expect(tanpaKomentar).toMatch(/\.treatyinadjustment \.tria__tabel td \.tria__tgl \{\s*min-width: 150px;/)
+    expect(tanpaKomentar).toMatch(
+      /\.treatyinadjustment \.tria__tabel:has\(> tbody > \.tria__rincian\) td \.field__input,\s*\.treatyinadjustment \.tria__tabel:has\(> tbody > \.tria__rincian\) td \.tria__tgl \{\s*min-width: 0;/,
+    )
   })
 })

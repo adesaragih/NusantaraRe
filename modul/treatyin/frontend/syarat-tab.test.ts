@@ -22,7 +22,7 @@ import {
   TOTAL_RETENSI,
 } from './labels'
 import { totalTerkunci } from './labelsRetensi'
-import { NON_PROPORSIONAL, PROPORSIONAL, TAB_DISEMBUNYIKAN, tabUntuk } from './pages/FormKontrakTreatyIn'
+import { NON_PROPORSIONAL, PROPORSIONAL, tabUntuk } from './pages/FormKontrakTreatyIn'
 
 const AKAR = join(__dirname)
 // ⭐ Layar ini DIPECAH 5 Oktober 2026: halaman + `components/`. `FORM`
@@ -55,17 +55,14 @@ describe('§0 syarat tampil tab', () => {
     expect(tabUntuk(NON_PROPORSIONAL)).toEqual(TAB_NON_PROPORSIONAL)
   })
 
-  it('Retro HILANG dari cabang prop saat IsMultipleRetro bukan "true"', () => {
-    // Keadaan 1.531 kontrak "false" + 318 tanpa kunci.
-    expect(tabUntuk(PROPORSIONAL, KOSONG)).not.toContain('Retro')
-    expect(tabUntuk(PROPORSIONAL, { ...KOSONG, retroBerganda: 'false' })).not.toContain('Retro')
-  })
-
-  it('Retro MUNCUL pada kelima kontrak yang IsMultipleRetro-nya "true"', () => {
-    const tab = tabUntuk(PROPORSIONAL, { ...KOSONG, retroBerganda: 'true' })
-    expect(tab).toContain('Retro')
-    // ⭐ Dan HANYA Retro yang berubah — sisanya utuh.
-    expect(tab).toEqual(TAB_PROPORSIONAL)
+  // ⛔ DIBALIK 8 Oktober 2026 — tab itu DIKELUARKAN dari proyek atas
+  // keputusan pemilik proses. Kedua uji lama menjaga kapan ia tampil; yang
+  // ini menjaga bahwa ia TIDAK PERNAH tampil, pada nilai apa pun.
+  it('⛔ tab itu nol di kedua cabang, pada keadaan dokumen apa pun', () => {
+    for (const k of [KOSONG, { ...KOSONG, retroBerganda: 'false' }, { ...KOSONG, retroBerganda: 'true' }]) {
+      expect(tabUntuk(PROPORSIONAL, k)).not.toContain('Retro')
+      expect(tabUntuk(NON_PROPORSIONAL, k)).not.toContain('Retro')
+    }
   })
 
   it('Value Difference HILANG dari cabang non-prop pada SELURUH 1.854 kontrak', () => {
@@ -96,32 +93,30 @@ describe('§0 syarat tampil tab', () => {
 
   it('tab bersyarat HILANG dari daftar, bukan dirender kosong', () => {
     // ⛔ Pembedanya: panjang daftarnya BERUBAH. Tab yang dirender kosong
-    // tetap sebelas butir; tab yang tidak dirender menjadi sepuluh.
-    expect(tabUntuk(PROPORSIONAL, KOSONG)).toHaveLength(TAB_PROPORSIONAL.length - 1)
+    // tetap seluruh butirnya; tab yang tidak dirender berkurang satu.
+    //
+    // ⚠️ Sejak 8 Oktober 2026 hanya cabang NON-PROPORSIONAL yang masih
+    // punya tab bersyarat (`Value Difference`). Cabang proporsional nol —
+    // satu-satunya syaratnya dikeluarkan dari proyek, jadi daftarnya utuh.
+    expect(tabUntuk(PROPORSIONAL, KOSONG)).toHaveLength(TAB_PROPORSIONAL.length)
     expect(tabUntuk(NON_PROPORSIONAL, KOSONG)).toHaveLength(TAB_NON_PROPORSIONAL.length - 1)
   })
 
-  it('Retro TETAP ADA di cabang non-prop — syaratnya milik cabang prop saja', () => {
-    // ⛔ Jebakan yang sungguh terjadi saat ronde ini ditulis: peta syarat
-    // berkunci NAMA TAB saja menyembunyikan `Retro` non-proporsional pada
-    // 770 dari 775 kontrak. Ekspor non-prop (TABBED @3291822) NOL syarat.
-    expect(tabUntuk(NON_PROPORSIONAL, KOSONG)).toContain('Retro')
-    expect(Object.keys(SYARAT_TAB_NON_PROPORSIONAL)).not.toContain('Retro')
-  })
-
   it('NOL tab dihapus dari kedua daftar — §0 melarangnya', () => {
-    expect(TAB_PROPORSIONAL).toHaveLength(11)
+    expect(TAB_PROPORSIONAL).toHaveLength(10)
     // ⚠️ DUA BELAS, dan butir ke-12 (RNM Share) adalah pertanyaan terbuka —
     // lihat komentarnya di `labels.ts`. Ia TIDAK dihapus.
-    expect(TAB_NON_PROPORSIONAL).toHaveLength(12)
+    expect(TAB_NON_PROPORSIONAL).toHaveLength(11)
     expect(TAB_NON_PROPORSIONAL).toContain('RNM Share')
     expect(LABELS).toContain('PERTANYAAN TERBUKA, bukan tab menurut ekspor')
   })
 
-  it('hanya DUA tab yang bersyarat, dan keduanya disebut sumbernya', () => {
-    expect(Object.keys(SYARAT_TAB_PROPORSIONAL)).toEqual(['Retro'])
+  it('SATU tab bersyarat tersisa, dan sumbernya disebut', () => {
+    // ⛔ Peta cabang proporsional kini KOSONG: satu-satunya entrinya sudah
+    // dikeluarkan dari proyek. Bentuknya tetap ada sebab `tabUntuk`
+    // menerima peta untuk kedua cabang.
+    expect(Object.keys(SYARAT_TAB_PROPORSIONAL)).toEqual([])
     expect(Object.keys(SYARAT_TAB_NON_PROPORSIONAL)).toEqual(['Value Difference'])
-    expect(LABELS).toContain('TreatyIn.IsMultipleRetro')
     expect(LABELS).toContain('TreatyIn.EDMState != 3 && TreatyIn.EDMMaterialType == 1')
   })
 })
@@ -227,11 +222,21 @@ describe('§5 Update Total dan Total Retention Amount', () => {
   })
 })
 
-describe('⛔ Retro DISEMBUNYIKAN dari strip — keputusan pemilik proses 7 Oktober 2026', () => {
-  it('syaratnya tetap dinilai `tabUntuk`; strip membuangnya lewat TAB_DISEMBUNYIKAN', () => {
-    expect(TAB_DISEMBUNYIKAN.has('Retro')).toBe(true)
-    expect(readFileSync(join(__dirname, 'pages/FormKontrakTreatyIn.tsx'), 'utf8')).toContain(
-      'tabUntuk(jenis, syaratTab).filter((t) => !TAB_DISEMBUNYIKAN.has(t))',
-    )
+// ⛔ NOL JEJAK DI STRIP TAB — keputusan pemilik proses 8 Oktober 2026.
+//
+// ⚠️ Mekanisme `TAB_DISEMBUNYIKAN` ikut DICABUT, bukan sekadar dikosongkan:
+// saringan yang nol menyaring apa pun adalah undangan bagi ronde berikutnya
+// untuk memasukkan sesuatu ke dalamnya diam-diam.
+describe('⛔ tab yang dikeluarkan nol jejak di strip', () => {
+  it('daftar tab dan peta syaratnya bersih', () => {
+    expect([...TAB_PROPORSIONAL, ...TAB_NON_PROPORSIONAL]).not.toContain('Retro')
+    expect(Object.keys(SYARAT_TAB_PROPORSIONAL)).not.toContain('Retro')
+    expect(Object.keys(SYARAT_TAB_NON_PROPORSIONAL)).not.toContain('Retro')
+  })
+
+  it('nol saringan tab tersisa di halaman', () => {
+    const form = readFileSync(join(__dirname, 'pages/FormKontrakTreatyIn.tsx'), 'utf8')
+    expect(form).not.toContain('TAB_DISEMBUNYIKAN')
+    expect(form).toContain('const tab = tabUntuk(jenis, syaratTab)')
   })
 })

@@ -352,3 +352,142 @@ menang bila ada.
 ⚠️ Hanya sisi **New**. Sisi Old (`OLDDATA`) adalah salinan saat penyesuaian dibuat; kepala master hari
 ini bukan salinan itu, jadi panel Old tetap kosong sampai pendaratannya terisi. Isi tab (Limits, Share,
 dst.) juga kosong sampai pendaratannya terisi — kolom `TREATY_IN_EDM` hanya kepala.
+
+## 13 · 8 Oktober 2026 — halaman `ActualValue` tersimpan ber-MASTERID sendiri
+
+Keputusan pemakai: *"masukkan seperti yang ada di modul treaty in asal ada master id nya pasti
+dapat"*. `ActualValue` berbentuk dokumen `TreatyIn`, jadi ia mendarat di tabel `T_TREATY_*` yang SAMA
+lewat peta yang sama — nol tabel baru.
+
+| Sisi | MASTERID |
+|---|---|
+| New (akar) | `1000080/R01` |
+| Old (`OLDDATA`) | `1000080/R01#LAMA` |
+| Actual (`ActualValue`) | `1000080/R01#AKTUAL` |
+
+- **Tulis** (`treatyin/services/simpan_penyesuaian.go` `halamanAktual`): `SaveTreatyIn_EDM_Act` [2] —
+  EDMState `3` memakai `ActualValue` isian layar apa adanya; selainnya [2]–[4] menyalin `TreatyIn` tanpa
+  `OLDDATA`, `ValueDifference`, dan `ActualValue` lamanya. Decline offer ikut mengosongkan `#AKTUAL`.
+- **Baca** (`repository/pendaratan_aktual.go`): `#AKTUAL` kembali ke sisi New sebagai kunci bertitik
+  (`ActualValue.EGNPI`, `ActualValue.TotalEgnpiAmount`, pohon `ActualValue.Share` …).
+- Akhiran dijaga sama di kedua modul oleh `uji/lintasmodul` (`TestAkhiranSisiAktualSama`).
+- Kunci Actual yang tidak punya kolom dilaporkan `ActualValue.<kunci>` — hanya untuk EDMState 3 (salinan
+  EDM 1/2 identik dengan sisi New, kuncinya sudah dilaporkan sekali).
+
+## 14 · 8 Oktober 2026 — Submit Achievement dan Show Facultative Share HIDUP
+
+**Submit Achievement** (`InsertToLogAchievement`, sub-tab Achievement `DetailLimits`; Treaty In dan
+Adjustment). Keputusan pemakai: sasarannya `POOLDATA.LOG_ACHIEVEMENT` apa adanya (tabel sudah ada,
+17 kolom sama dengan `InsertToLogAchievement_SQL`); setiap klik menyisipkan (Pega tanpa pencegah
+duplikat), KECUALI baris ber-Quarter kosong — di Pega baris itu tersisip dengan nilai baris
+sebelumnya; di sini dilewati dan cacahnya dilaporkan.
+- Rute `POST /api/treaty-in/achievement/log` (`treatyin/services/log_achievement.go`), satu transaksi;
+  angka `TO_NUMBER(koef)/POWER(10,skala)`; angka tak terbaca DITOLAK, bukan dicatat 0.
+- Operator: akun yang menekan (Pega: `OperatorID.pxUpdateOperator`).
+- Pega tidak menampilkan pesan; layar menambah "n baris Achievement tercatat".
+
+**Show Facultative Share** (`showHarness` → `TreatyInFacultativeShareCalculation`, panel New;
+`…OldData`, panel Old; tampil bila `FacultativeShare > 0`). Pembangkit kini mencatat `harness` dan
+`jendela` aksi, membangkitkan Section isi harness (`TreatyInActualFacultativeShareCalculation`,
+`TreatyInFacultativeShareCalculationOldData`) dan peta `KERANGKA_HARNESS`. Tombol membuka jendela
+"Facultative Calculation" berisi Section itu atas halaman yang SAMA (`pySubmitData = Yes`); nol Activity
+saat dibuka/ditutup. Penyertaan inline Section itu di tab Retro TETAP tersembunyi (keputusan Retro).
+
+## 15 · Ralat 8 Oktober 2026 — mode baris grid (`pyRowEditing`) kini dibaca
+
+Laporan pemakai: sel `Kind of Treaty` tab **Achievement In IDR** panel New tampil sebagai dropdown,
+padahal di Pega tidak dapat disunting. Sebabnya: pembangkit hanya membaca kunci PER SEL
+(`pyEditOptions`, `pyReadOnlyCondition`, `pyDisabledWhen`), dan sel itu `Auto` — padahal Pega
+menentukan juga dari MODE BARIS GRID di `pyGridProps/pyRowEditing`. Terukur di korpus
+`Treaty In Adjustment/Section`:
+
+| `pyRowEditing` | grid | Arti di Pega | Di sini |
+|---|---|---|---|
+| `row` | 87 | sel disunting di tempat | kunci per sel berlaku seperti semula |
+| `readOnly` | 183 | grid seluruhnya baca-saja | setiap kolom data `baca = "selalu"` |
+| `masterDetail` (`expandPane`) | 45 | baris TAMPIL saja; disunting di panel rincian | setiap kolom data `baca = "selalu"`; rincian tetap mengikuti kuncinya sendiri |
+
+153 grid di kerangka berubah (kebanyakan grid total/ringkasan `readOnly`). Kolom TOMBOL baris
+(Delete) tidak tersentuh. Setiap grid `masterDetail` di panel New punya rincian berisi medan
+yang dapat disunting (mis. `MaxRetention`: TreatyGroup · Currency · Amount · Note; `LimitProportional`:
+`TreatyTypeID` — Kind of Treaty baris baru dipilih di sana). `pyRODetails = true`
+(`LimitFacRetro_Sec` `.FacultativeLimits`) dibawa sebagai `rincianBaca`: rinciannya ikut baca-saja.
+Dijaga `frontend/mode-baris-grid.test.tsx`.
+
+## 16 · 8 Oktober 2026 — lampiran master ikut ke penyesuaian baru (`TreatyRevisionCopyAttachment` KINI hidup)
+
+Di Pega, `Choose` picker menjalankan `TreatyInEDMSetValue`: [3] `OLDID = ID` (master yang dipilih),
+[6] `TreatyInRevisi_post` (pengenal revisi baru), **[8] `TreatyRevisionCopyAttachment`** tanpa prasyarat,
+[9] `SaveTreatyIn_EDM_Act`. Rantai salinannya (diverifikasi dari XML korpus `Treaty In Adjustment`):
+
+| Langkah | Isi |
+|---|---|
+| [1] `CopyAllAttachment2_Sql` | `select ID, filename, CATEGORY, FILEMIMETYPE, T_STORAGE_ID, CATEGORY_ID from M_ATTACHMENTTREATY_2 where treatyid = {TreatyIn.OLDID}` |
+| [2.3] `GetUrlGoogleStorage_Act` | URL bertanda tangan objek SUMBER (`ImageID = .type`, Durasi 1800; URL baru bila EXPDATE lewat) |
+| [2.5] Java | unduh isi dari URL → Base64; galat ditelan (base64 kosong) |
+| [2.7] `InsertGoogleStorage_Act` | dilewati bila base64 kosong; Ext = `.pyFileMimeType`, Folder `Contract`, Namafile = nama asli → objek BARU + `Insert_T_Storage_SQL` |
+| [2.8] `InsertAttachment2_Sql` | dilewati bila ImageID kosong; TREATYID = pengenal BARU, CATEGORY/CATEGORY_ID/FILENAME/FILEMIMETYPE dari baris sumber apa adanya, USERNAME operator, T_STORAGE_ID = objek BARU, DATA_JSON tidak diisi |
+
+Pega tidak punya pagar duplikat — setiap `Choose` menyalin lagi.
+
+**Di aplikasi ini** (`modul/treatyin/backend/services/salin_lampiran_penyesuaian.go`):
+
+- `Choose` hanya menyusun draf (keputusan pemilik proses), jadi salinan dibuat pada **tulisan pertama draf**
+  (Save, Submit, atau Actions dengan `draf = true`), **sesudah** kepala `TREATY_IN_EDM` + pendaratan mengikat.
+  Karena `SimpanPenyesuaian` menolak draf yang pengenalnya sudah ada, salinan berjalan **tepat sekali** per pengenal.
+- Objek **diunggah ulang** seperti Pega, bukan baris yang menunjuk objek yang sama: tombol Delete menghapus objek
+  Google Storage + baris `T_STORAGE_IMAGE` ber-IMAGEID itu, jadi berbagi objek akan merusak lampiran master.
+- Tabel yang ditulis SAMA dengan tombol Upload file (`CatatLampiran`: `T_STORAGE_IMAGE` + `M_ATTACHMENTTREATY_2`,
+  satu transaksi per berkas). Nol tabel/kolom baru.
+- Penyimpanan tidak transaksional: gagalnya salinan **tidak** menggagalkan Save. Nasib tiap berkas dilaporkan di
+  `salinanLampiran` hasil Save dan ditulis layar di bawah pesan prosedur (`komponen/salinanLampiran.ts`). INSERT yang gagal
+  sesudah unggah berhasil meninggalkan objek yatim — sama dengan Upload file.
+- Penyimpangan yang dinyatakan: berkas gagal dilaporkan (Pega menelannya); pagar `OLDID` (harus asal pengenal revisi
+  menurut `IDRevisiBaru`, sebab draf datang dari layar); batas 25 MB seperti Upload file; konteks permintaan dilepas
+  dari pembatalan supaya salinan tidak terpotong.
+- Panel Attachment draf menampilkan lampiran master (`p.idAsal`); sesudah tersimpan layar dibuka ulang sebagai
+  penyesuaian tersimpan dan panel membaca `p.id` — salinannya langsung tampil.
+- ⚠️ Terbuka: panel Attachment modul ini baca-saja — berkas yang gagal disalin belum dapat diulang dari layar.
+
+Dijaga `services/salin_lampiran_penyesuaian_test.go` dan `frontend/salinan-lampiran.test.ts`.
+
+## 17 · Audit 8 Oktober 2026 — tombol, dropdown, grid panel New
+
+Permintaan pemakai: *"pastikan tiap dropdown, table hingga button berfungsi semua dan kondisinya
+diperhatikan … jangan semisal isi data table kosong tp bisa ditambah … samakan dengan yang ada di
+pega … isi dari dropdown … sama seperti yang ada di treaty in"*. Inventaris dibuat dengan fungsi
+layar itu sendiri atas setiap tab, include, rincian, dan harness panel New, dalam lima keadaan
+(Revisi Material 1/2, EDMState 2, Adjust Premium, View).
+
+**Tombol.** Setiap tombol yang TAMPIL berfungsi (tambah baris, `addRow`/`deleteRow`, atau rantai
+rumus). Empat yang belum punya rumus (`Hide Facultative Share`, Submit/Decline non-EDM, Add Retro
+Prop) tidak pernah tampil di Adjustment — syarat Pega-nya menyembunyikannya (`!TreatyMasterInEDM`,
+`facsharedisp`, tab Retro disembunyikan keputusan pemilik proses). Material Type 2 mematikan
+Add/Delete/Update persis `pyDisabledWhen` ekspor; tidak ada include yang dikunci di tingkat atas
+(`pyEditOptions = Auto`).
+
+**Dropdown — isinya kini sama dengan Treaty In:**
+
+| Medan | Sumber | Sebelumnya |
+|---|---|---|
+| Layer · Part Of · Cover · Currency Relation · Note Reinstatement (rincian Layers) | `opsi-limits` Treaty In (`jenisLayer`, `cover`, `relasiMataUang`, `catatanReinstatement`) | kotak teks |
+| Class of Business (CoBList, DetailLimits) | `kelas-bisnis?treatyGroupId=` — parameter `pTreatyGroupId` | kotak teks |
+| Spreading Type (DetailShare) · Spreading Type XOL (Share) | `spreading-induk` — `TreatyGroupID` (`.TreatyGroupID` / `.TreatyGroupList(1).TreatyGroupID`) + `StartDate` | kotak teks |
+| Bordereaux · Accounting Mode (kepala) | `opsi-kepala` Treaty In (label tampil, urutan Treaty In) | nilai mentah |
+
+Pembangkit kini membawa parameter RD (`param`) dan medan ikut-isi (`setel`,
+`pyAdditionalFields`/`pySetValueOnSelect`): memilih Currency mengisi `CurrencyID`, Treaty Group
+`TreatyGroupID`, Treaty Type `TreatyTypeID`, Reinsurer `ReinsID`, Class of Business
+`ClassOfBusinessID` — 76 sel/medan. Rincian menulis keduanya SEKALIGUS (`ubahMedanBanyak`).
+
+**Grid kosong karena datanya tidak ada.** Penyesuaian (atau draf dari master) yang baris akarnya
+tidak ada di `T_TREATY_REVISION` dibawa sebagai `terdarat = false`; panel New dan deret tombolnya
+dibuka dalam mode LIHAT dengan keterangan — grid kosong tidak dapat ditambah lalu disimpan sebagai
+data separuh. Di Pega keadaan ini tidak mungkin: penyesuaian selalu membawa salinan dokumen utuh.
+Terukur: `1002305` terdarat, `1001540/R01` tidak.
+
+**Masih terbuka (tab Retro disembunyikan):** perilaku `change` `CountRetroShare_Act`,
+`Del/GetSpreadingRetro`, dan Add `AddFacRetroProp`.
+
+Dijaga `frontend/pilihan-berparameter.test.ts`, `frontend/terkunci-pendaratan.test.ts`,
+`backend/services/terdarat_test.go`, `backend/repository/terdarat_db_test.go`.

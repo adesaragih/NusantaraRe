@@ -37,41 +37,6 @@ type HasilMuat struct {
 // Cocok menjawab apakah kontrak ini boleh diikat.
 func (h HasilMuat) Cocok() bool { return len(h.Selisih) == 0 }
 
-// MuatSatuKontrak mendaratkan satu kontrak di dalam transaksi yang diberikan,
-// lalu MENCOCOKKAN hasilnya tanpa keluar dari transaksi itu.
-//
-// ⛔ Tidak mengikat dan tidak membatalkan. Keputusan itu milik pemanggil,
-// yang membacanya dari `HasilMuat.Cocok()`.
-func MuatSatuKontrak(ctx context.Context, g *repository.Gudang, tx *db.Tx, masterID string) (HasilMuat, error) {
-	h := HasilMuat{MasterID: masterID}
-
-	teks, err := g.BacaDokumenMentah(ctx, masterID)
-	if err != nil {
-		return h, err
-	}
-	doc, err := repository.UraiDokumen(teks)
-	if err != nil {
-		return h, fmt.Errorf("services: kontrak %s: %w", masterID, err)
-	}
-
-	h.DiDokumen = repository.CacahLarik(doc)
-	h.TakTerpetakan = repository.KunciTakTerpetakan(doc)
-
-	if _, err := g.MuatKontrak(ctx, tx, masterID, doc); err != nil {
-		return h, err
-	}
-
-	// ⛔ Dibaca DI DALAM transaksi: yang hendak dibuktikan adalah apa yang
-	// baru saja ditulis, dan dari luar transaksi itu belum ada.
-	h.DiTabel, err = g.CacahBarisKontrak(ctx, tx, masterID)
-	if err != nil {
-		return h, err
-	}
-
-	h.Selisih = selisihCacah(h.DiDokumen, h.DiTabel)
-	return h, nil
-}
-
 // selisihCacah mengadu dua peta cacah dan menamai setiap ketidakcocokan.
 //
 // ⚠️ Menyebut TABEL, dokumen, dan tabel sekaligus. Pesan "tidak cocok" tanpa

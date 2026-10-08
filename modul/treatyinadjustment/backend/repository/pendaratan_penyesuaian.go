@@ -59,6 +59,21 @@ func (g *Gudang) BacaPenyesuaianPendaratan(ctx context.Context, id string) (mode
 	if err != nil {
 		return models.Penyesuaian{}, err
 	}
+	// ⭐ Halaman `ActualValue` (MASTERID `id + AkhiranSisiAktual`) kembali ke
+	// sisi New sebagai kunci BERTITIK — bentuk yang kerangka dan rumus layar
+	// ikat (`ActualValue.EGNPI`, `ActualValue.TotalEgnpiAmount`, …).
+	aktual, err := g.bacaSisi(ctx, id+AkhiranSisiAktual)
+	if err != nil {
+		return models.Penyesuaian{}, err
+	}
+	gabungAktual(baru, aktual)
+	// ⭐ Halaman `ValueBeforeProrate` (MASTERID `id +
+	// AkhiranSisiSebelumProrata`) — pola yang sama, kunci bertitik.
+	prorata, err := g.bacaSisi(ctx, id+AkhiranSisiSebelumProrata)
+	if err != nil {
+		return models.Penyesuaian{}, err
+	}
+	gabungSebelumProrata(baru, prorata)
 	// ⭐ Kunci kepala yang TIDAK ada di pendaratan dilengkapi dari kolom
 	// `TREATY_IN_EDM` — cara yang sama dengan `BacaDokumenMaster` (picker
 	// Add). Tanpa itu penyesuaian yang belum (atau tidak lagi) mendarat tidak
@@ -84,6 +99,7 @@ func (g *Gudang) BacaPenyesuaianPendaratan(ctx context.Context, id string) (mode
 		}
 	}
 	p.Baru, p.Lama = baru, lama
+	p.Terdarat = baru.Terdarat
 	// `OLDID` dibaca dari sisi yang punya — sisi `New` lebih dahulu.
 	if v, ada := baru.Medan["OLDID"]; ada && v != "" {
 		p.IDAsal = v
@@ -116,6 +132,8 @@ func (g *Gudang) bacaSisi(ctx context.Context, masterID string) (models.SisiPeny
 			if err != nil {
 				return sisi, err
 			}
+			// Baris akar ber-MASTERID ini ada → sisi ini TERDARAT.
+			sisi.Terdarat = sisi.Terdarat || len(medan) > 0
 			for k, v := range medan {
 				sisi.Medan[k] = v
 			}
@@ -260,3 +278,19 @@ func (g *Gudang) bacaBarisPendaratan(ctx context.Context, pd larikPendaratan,
 // menulis akhiran berbeda terbaca sebagai "sisi Old kosong", bukan sebagai
 // galat.
 const AkhiranSisiLama = "#LAMA"
+
+// AkhiranSisiAktual - akhiran `MASTERID` halaman `ActualValue` (cabang
+// Adjust Premium). Keputusan pemakai 8 Oktober 2026: `ActualValue` mendarat
+// di tabel `T_TREATY_*` yang sama, ber-MASTERID sendiri.
+//
+// ⛔ NILAINYA WAJIB SAMA dengan `treatyin/repository.AkhiranSisiAktual`
+// (penulisnya) — `uji/lintasmodul/peta_pendaratan_test.go` mengadunya.
+const AkhiranSisiAktual = "#AKTUAL"
+
+// AkhiranSisiSebelumProrata - akhiran `MASTERID` halaman `ValueBeforeProrate`
+// (salinan `ValueDifference` sebelum pro-rate, `TreatyEDMProRateCalculation`).
+//
+// ⛔ NILAINYA WAJIB SAMA dengan `treatyin/repository.
+// AkhiranSisiSebelumProrata` (penulisnya) —
+// `uji/lintasmodul/peta_pendaratan_test.go` mengadunya.
+const AkhiranSisiSebelumProrata = "#PRORATA"

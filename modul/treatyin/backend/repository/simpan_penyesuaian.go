@@ -41,6 +41,42 @@ import (
 // TabelKepalaPenyesuaian - kepala penyesuaian warisan.
 const TabelKepalaPenyesuaian = "TREATY_IN_EDM"
 
+// AkhiranSisiAktual - akhiran `MASTERID` halaman `ActualValue` satu
+// penyesuaian (cabang Adjust Premium, dan salinan `SaveTreatyIn_EDM_Act`
+// [2]–[4] untuk EDMState 1/2). Pola yang sama dengan `AkhiranSisiLama`.
+//
+// ⭐ Keputusan pemakai 8 Oktober 2026: "masukkan seperti yang ada di modul
+// treaty in asal ada master id nya" — `ActualValue` berbentuk dokumen
+// `TreatyIn`, jadi ia mendarat di tabel `T_TREATY_*` yang SAMA lewat peta
+// yang sama, ber-MASTERID sendiri; nol tabel baru.
+//
+// ⛔ NILAINYA WAJIB SAMA dengan `treatyinadjustment/repository.
+// AkhiranSisiAktual` (pembacanya) — `uji/lintasmodul` mengadunya.
+const AkhiranSisiAktual = "#AKTUAL"
+
+// AkhiranSisiSebelumProrata - akhiran `MASTERID` halaman `ValueBeforeProrate`.
+//
+// ---------------------------------------------------------------------
+// ⛔ CELAH YANG DITUTUP 8 Oktober 2026
+// ---------------------------------------------------------------------
+// `TreatyEDMProRateCalculation` langkah "Copy value from ValueDifference to
+// ValueBeforeProrate" menyetel `TreatyIn.ValueBeforeProrate :=
+// TreatyIn.ValueDifference` — salinan selisih SEBELUM pro-rate dikenakan —
+// dan `services.terapkanSelisih` menyalinnya ke dokumen.
+//
+// Sampai hari ini NOL tabel menampungnya: setiap Save penyesuaian ber-pro-rate
+// melaporkannya tidak tersimpan, dan tab
+// `TreatyInTabsNPValueDifference_NoProRate` yang MEMBACANYA kosong sesudah
+// kontrak dimuat ulang.
+//
+// ⭐ Pola yang sama dengan `AkhiranSisiAktual`, dan itu disengaja: isinya
+// berbentuk dokumen `TreatyIn`, jadi ia mendarat di tabel `T_TREATY_*` yang
+// SAMA lewat peta yang sama, ber-MASTERID sendiri — NOL DDL, nol tabel baru.
+//
+// ⛔ NILAINYA WAJIB SAMA dengan `treatyinadjustment/repository.
+// AkhiranSisiSebelumProrata` (pembacanya) — `uji/lintasmodul` mengadunya.
+const AkhiranSisiSebelumProrata = "#PRORATA"
+
 // ErrPenyesuaianSudahAda - draf berpengenal yang SUDAH tersimpan. Prosedur
 // Pega menimpanya (`STSINPUT` ≠ 0 → UPDATE); di sini ditolak, sebab
 // menimpa penyesuaian lain tanpa suara adalah kehilangan data.
@@ -180,6 +216,13 @@ func (g *Gudang) simpanPenyesuaianDalam(ctx context.Context, tx *db.Tx, r models
 	// sendiri, peta yang SAMA (lihat `AkhiranSisiAktual`).
 	if r.Aktual != nil {
 		if _, err := g.MuatKontrakSebagian(ctx, tx, id+AkhiranSisiAktual, r.Aktual); err != nil {
+			return err
+		}
+	}
+	// ⭐ Halaman `ValueBeforeProrate` — MASTERID sendiri, peta yang SAMA
+	// (lihat `AkhiranSisiSebelumProrata`).
+	if r.SebelumProrata != nil {
+		if _, err := g.MuatKontrakSebagian(ctx, tx, id+AkhiranSisiSebelumProrata, r.SebelumProrata); err != nil {
 			return err
 		}
 	}
@@ -328,7 +371,7 @@ func (g *Gudang) hapusPenyesuaianDalam(ctx context.Context, tx *db.Tx, id string
 	if _, err := tx.ExecContext(ctx, q, id); err != nil {
 		return fmt.Errorf("repository: menghapus %s %s: %w", TabelKepalaPenyesuaian, id, err)
 	}
-	for _, m := range []string{id, id + AkhiranSisiLama, id + AkhiranSisiAktual} {
+	for _, m := range []string{id, id + AkhiranSisiLama, id + AkhiranSisiAktual, id + AkhiranSisiSebelumProrata} {
 		if _, err := g.KosongkanKontrak(ctx, tx, m); err != nil {
 			return err
 		}

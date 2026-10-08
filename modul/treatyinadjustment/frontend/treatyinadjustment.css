@@ -111,17 +111,22 @@
 
 /* Old Data ‖ New Data BERDAMPINGAN (@181268) — lama di kiri, baru di kanan.
    Pada layar sempit keduanya bertumpuk, LAMA tetap di atas: urutan baca
-   yang sama dengan kiri-ke-kanan. */
+   yang sama dengan kiri-ke-kanan.
+
+   ⭐ RESPONSIF SAAT ZOOM (permintaan pemakai 8 Oktober 2026: "biar bagus
+   kalau zoom in zoom out"): bertumpuk BUKAN menurut lebar LAYAR (dulu
+   `max-width: 1100px`), melainkan menurut lebar WADAHNYA sendiri — tiap
+   sisi minimal 520px, cukup untuk dua kolom kepala berlabel kiri. Zoom in
+   sampai sisi lebih sempit dari itu → Old di atas New, masing-masing
+   selebar halaman; zoom out → berdampingan lagi.
+   ⛔ Bukan container query: `container-type` mengurung popup
+   `position: fixed` (Choose Ceding, picker Add) — yang `gaya.test.ts`
+   larang. `auto-fit` + `minmax` responsif tanpa itu. */
 .treatyinadjustment .tria__bandingan {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr));
   gap: 0 16px;
   align-items: start;
-}
-@media (max-width: 1100px) {
-  .treatyinadjustment .tria__bandingan {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 .treatyinadjustment .tria__sisi {
   min-width: 0;
@@ -133,17 +138,14 @@
   border-left-color: var(--text-3);
 }
 
-/* Dua kolom yang mengalir sendiri — kolom kanan New LEBIH PANJANG. */
+/* Dua kolom yang mengalir sendiri — kolom kanan New LEBIH PANJANG.
+   ⭐ Satu ↔ dua kolom menurut lebar SISINYA (bukan layar): tiap kolom
+   minimal 340px — label kiri 132px + kotak isian yang masih terbaca. */
 .treatyinadjustment .tria__dwikolom {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 20px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 0 28px;
   align-items: start;
-}
-@media (max-width: 720px) {
-  .treatyinadjustment .tria__dwikolom {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 .treatyinadjustment .tria__kolom {
   display: flex;
@@ -463,4 +465,125 @@
 }
 .treatyinadjustment .tria__grup-tab > .tria__blok {
   padding-top: 10px;
+}
+
+/* =========================================================================
+   BENTUK PEGA + RESPONSIF SAAT ZOOM — permintaan pemakai 8 Oktober 2026
+   =========================================================================
+   *"perbaiki design nya seperti ini [layar Pega] … kalau zoom in zoom out
+   … intinya jadi bagus"*.
+
+   Yang membuat layar ini terlihat berantakan dibanding Pega, terukur dari
+   tangkapan layarnya:
+     a. strip tab PECAH DUA BARIS (`Special Conditions`, `Information &
+        Submit`, `Achievement In IDR` jatuh ke baris kedua);
+     b. tanggal di grid Rate of Exchange TERPOTONG (`08/10/202…`) — kotak
+        menyusut mengikuti kolom persen tanpa batas bawah;
+     c. label DI ATAS kotak dan kotak setinggi 42px — dua kali tinggi baris
+        Pega, sehingga kepala Old/New jauh lebih panjang dari layar lama.
+
+   ⛔ Bentuknya DISALIN dari `modul/treatyin/frontend/treatyin.css` (blok
+   "BENTUK PEGA: LABEL DI KIRI" dan "KERAPATAN 7 Oktober 2026") — bentuk
+   yang pemilik proses sudah setujui untuk form yang sama. Ditiru, bukan
+   diimpor: gaya tiap modul berakar di kelasnya sendiri.
+
+   ⛔ `inti/frontend/styles.css` TIDAK disentuh: batas lebar area kerja
+   1600px (`.shell__isi`) adalah keputusan work owner untuk SEMUA modul.
+   ========================================================================= */
+
+/* a · STRIP TAB SATU BARIS, digulir mendatar — seperti ekspor (tombol
+   panah `‹ ›` Pega). `.tabs` inti memakai `flex-wrap: wrap`. */
+.treatyinadjustment .tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.treatyinadjustment .tabs__item {
+  flex: 0 0 auto;
+}
+
+/* c · KERAPATAN — kotak 42 → 34px, label 13px, panel dan sel dirapatkan.
+   Angka yang sama dengan Treaty In, supaya kedua layar form yang sama
+   terlihat sama. */
+.treatyinadjustment .field__input {
+  height: 34px;
+  font-size: 14px;
+  padding: 0 10px;
+}
+.treatyinadjustment textarea.field__input {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+}
+.treatyinadjustment .field__label {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.treatyinadjustment .panel {
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.treatyinadjustment .tria__tabel th,
+.treatyinadjustment .tria__tabel td {
+  padding: 5px 8px;
+}
+/* ⚠️ Sel rincian baris TIDAK ikut dirapatkan — ia wadah blok, bukan sel
+   data (aturan rincian 8 Oktober 2026 di atas). */
+.treatyinadjustment .tria__tabel .tria__rincian > td {
+  padding: 10px 12px;
+}
+.treatyinadjustment .btn--sm {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+/* Jarak antar medan kepala: satu pemilik, dirapatkan. */
+.treatyinadjustment .tria__kolom .field {
+  margin-bottom: 10px;
+}
+
+/* c · LABEL DI KIRI KOTAK — bentuk kepala Old/New di Pega. Kolom label
+   132px (sama dengan Treaty In); SETIAP anak selain label duduk di kolom
+   kedua — kotak, catatan `tria__tak-ada`/`tria__redup`, nilai pilihan,
+   dan tombol `Choose …` bertumpuk rapi di bawah kotaknya.
+   ⚠️ Hanya dari 900px ke atas: di bawahnya label kembali ke atas kotak —
+   kolom label 132px pada lebar telepon menyisakan kotak terlalu ramping. */
+@media (min-width: 900px) {
+  .treatyinadjustment .tria__kolom .field {
+    display: grid;
+    grid-template-columns: 132px minmax(0, 1fr);
+    align-items: start;
+    column-gap: 12px;
+  }
+  .treatyinadjustment .tria__kolom .field > .field__label {
+    margin: 0;
+    padding-top: 8px;
+    line-height: 1.3;
+  }
+  .treatyinadjustment .tria__kolom .field > :not(.field__label) {
+    grid-column: 2;
+  }
+  .treatyinadjustment .tria__kolom .field > .btn {
+    justify-self: start;
+    margin-top: 4px;
+  }
+}
+
+/* b · SEL GRID YANG DAPAT DISUNTING TIDAK TERPOTONG. Kotak di sel diberi
+   lebar minimum; bila seluruh kolom tidak muat, TABELNYA yang digulir
+   mendatar di dalam `.table-wrap` — bukan isinya yang terpotong.
+   ⛔ Rincian baris (`.tria__rincian`) TETAP dikunci selebar wadah (aturan
+   8 Oktober 2026 di atas, kekhususannya lebih tinggi) — luberan ke kanan
+   panel New adalah laporan pemakai yang sudah ditutup. */
+.treatyinadjustment .tria__tabel td .field__input {
+  min-width: 96px;
+}
+.treatyinadjustment .tria__tabel td .tria__tgl {
+  min-width: 150px;
+}
+/* Tabel ber-rincian ber-`table-layout: fixed`: sel TIDAK melebar mengikuti
+   isi, jadi lebar minimum di sana membuat kotak menimpa sel sebelah. Di
+   tabel itu (dan rincian di dalamnya) kotak tetap boleh menyusut. */
+.treatyinadjustment .tria__tabel:has(> tbody > .tria__rincian) td .field__input,
+.treatyinadjustment .tria__tabel:has(> tbody > .tria__rincian) td .tria__tgl {
+  min-width: 0;
 }

@@ -153,7 +153,9 @@ func SusunDraf(dok models.SisiPenyesuaian, m models.MasukanDraf, adaRevisi bool,
 	s.Medan["ID"] = IDRevisiBaru(m.ID, adaRevisi)
 	s.Medan["OLDID"] = m.ID
 
-	return models.Penyesuaian{ID: s.Medan["ID"], IDAsal: m.ID, Baru: s, Lama: lama}
+	// ⭐ Draf dari master yang isinya TIDAK ada di pendaratan — layar
+	// menguncinya (`Penyesuaian.Terdarat`).
+	return models.Penyesuaian{ID: s.Medan["ID"], IDAsal: m.ID, Baru: s, Lama: lama, Terdarat: dok.Terdarat}
 }
 
 // IDRevisiBaru - `TreatyInRevisi_post` [4]/[5].

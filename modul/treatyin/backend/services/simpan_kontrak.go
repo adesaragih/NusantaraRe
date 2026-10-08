@@ -103,6 +103,10 @@ type HasilSimpan struct {
 	// KunciTakTersimpan - properti yang layar kirim tetapi BELUM punya kolom
 	// di tabel pendaratan. ⛔ Dilaporkan, tidak ditelan.
 	KunciTakTersimpan []string `json:"kunciTakTersimpan"`
+	// SalinanLampiran - draf penyesuaian yang PERTAMA kali tersimpan:
+	// nasib salinan lampiran master (`TreatyRevisionCopyAttachment`,
+	// `salin_lampiran_penyesuaian.go`). nil = tidak ada yang disalin.
+	SalinanLampiran *HasilSalinLampiran `json:"salinanLampiran,omitempty"`
 }
 
 // kunciMilikServer - properti yang HANYA tombol yang mengubah; nilai kiriman

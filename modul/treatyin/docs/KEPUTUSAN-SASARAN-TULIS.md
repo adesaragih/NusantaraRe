@@ -261,9 +261,14 @@ disalin — `.env` diisi nilai ACAK 64 heksa (tidak pernah dicetak); tokennya te
 
 | Tombol | Rantai ekspor | Rute |
 |---|---|---|
-| nama berkas · View Office Online (xls/xlsx/doc/docx/ppt/pptx) | `DownloadAttachmentTreaty` → `GetUrlGoogleStorage_Act` (URL tersimpan selama EXPDATE berlaku; selain itu Google/geturl + `Update_T_Storage_SQL`) | `GET …/lampiran/{lid}/tautan[?office=1]` |
+| nama berkas | `DownloadAttachmentTreaty` → `GetUrlGoogleStorage_Act` (URL tersimpan selama EXPDATE berlaku; selain itu Google/geturl + `Update_T_Storage_SQL`); isi berkas DIALIRKAN backend (https saja, tanpa pengalihan) dan diunduh lewat `fetch` beridentitas | `GET …/lampiran/{lid}/isi` |
+| View Office Online (xls/xlsx/doc/docx/ppt/pptx) | idem, URL penampil kantor dimuat di bingkai POPUP (pola Master Product Name Life) | `GET …/lampiran/{lid}/tautan?office=1` |
 | Delete (`ViewState !='1' \|\| RevisionState='1'`) | `Delete_act`: `DeleteGoogleStorage_Act` (Google/delete, `DeleteStorage_SQL`) → `DeleteAttachment2_Sql` | `POST …/lampiran/{lid}/hapus` |
 | Change Category → Save (status bukan Resolve Complete/Decline) | `ChangeDokument_Act` → `ChangeKateAttachment2_Sql` per baris | `POST …/lampiran/kategori` |
+
+⛔ Ralat 8 Oktober 2026: bentuk pertama membuka URL bertanda tangan di tab baru (`window.open`) —
+dilanggar penjaga lintas modul `modul/claimlife/frontend/unduhdokumen.test.ts` (nol navigasi lewat
+skrip). Kini unduhan lewat rute `/isi` dan penampil kantor di bingkai popup.
 
 Penyimpangan yang dinyatakan: hapus di storage gagal → baris TETAP; jawaban geturl tanpa
 `appfolder` tidak mengosongkan APPFOLDER; `CATEGORY` dari katalog yang dirapikan (nama Non-Prop
@@ -282,3 +287,38 @@ dilarang `lapisan.guard.test.ts`. Rute dan backend tidak berubah.
 - `SaveTreatyInDetail_Act` / `SaveTreatyInDetailEdm_Act` (`M_TREATY_IN_DETAIL`,
   `TREATYINDETAILEDM` saat Resolve Complete) — pemilik proses 7 Oktober 2026: *"biarkan data nya
   ditarik dari table nya masing masing saja … untuk melihat status nya bisa dari treaty_in"*.
+
+### 5.5 Tombol `Copy` daftar kontrak (8 Oktober 2026)
+
+`Section/InputTreatyInOffer.xml` cell 993 (label `Copy`, event `click`): `refresh thisSection` +
+`SetTreatyIn_Act(ID=.ID)` (tanpa `viewstate`/`revisionstate` — langkah simpan [10–11] tidak jalan),
+lalu `refresh thisSection` + `TreatyInCopy`. Syarat tampilnya IDENTIK dengan `Revision` (cell 994):
+WB `ReasTreatyInAdmin` && `Position = ''` && `StatusAkseptasi = 'Resolve Complete'`.
+
+`Activity/TreatyInCopy.xml` — empat langkah, **nol `SaveTreatyIn`**:
+
+| Langkah | Isi |
+|---|---|
+| [1] | `CommentList = ""`, `RevisionState = ""` |
+| [2] | `RDB-List GetCurrentDate` → halaman `time` |
+| [3] | `CommentList(<APPEND>)`: `Date`, `OperatorName = OperatorID.pxInsName`, `Suggest = "Copied from ID " + TreatyIn.ID` (tanpa `IsApproved`); `OLDID = TreatyIn.ID` |
+| [4] | `ID = "UnknownId"`, `Position = "ReasTreatyInAdmin"`, `StatusAkseptasi = ""`, `ViewState = 0`, `IsEditData = 0` |
+
+Jadi Copy **membuka draf**, tidak menyimpan; `UnknownId` adalah penanda kontrak baru yang sama
+dengan `Add` (`TreatyInInputVis` Add=1), dan pengenal baru lahir ketika draf di-Save.
+
+| Tombol | Rute | Tulisan |
+|---|---|---|
+| Copy (daftar) | `GET /api/treaty-in/kontrak-warisan/{id}/salin` | NOL — draf tampil (status/posisi/riwayat sudah `TreatyInCopy`) |
+| Save draf | `POST /api/treaty-in/kontrak/salin` | clipboard SUMBER (kepala + `T_TREATY_*`) → `TreatyInCopy` → isian layar → `tulis` dengan ID kosong (`idKontrakBaru`) |
+| Submit / Decline draf | `POST /api/treaty-in/kontrak/salin` + `aksi` | salinan disimpan lalu `KirimKontrak` atas ID barunya; `TreatyInCheckError` diperiksa SEBELUM menulis |
+
+Mengapa bukan `/kontrak/simpan` biasa: kontrak baru di sana hanya memegang kiriman layar (tab yang
+pernah dibuka), dan `CommentList` milik server. Sasaran tulisnya tetap yang sama dengan Save.
+
+Penyimpangan/yang tidak disalin (dinyatakan): lampiran (`M_ATTACHMENTTREATY_2` berkunci
+`TreatyIn.ID` — `UnknownId` memberi nol), log achievement, polis produksi (panel dikosongkan bila
+`EDMState` kosong, persis `FetchTreatyExistingProduction`); kurs `TREATYEXCHANGEYEARLY` berkunci
+tahun. Submit/Decline draf = DUA transaksi (Pega: satu `SaveTreatyIn`) — bila langkah kedua gagal,
+salinan tetap tersimpan sebagai draf Admin dan pesannya menyebut ID-nya. Kode:
+`backend/services/salin_kontrak.go`, `backend/handlers/rute_salin_kontrak.go`.

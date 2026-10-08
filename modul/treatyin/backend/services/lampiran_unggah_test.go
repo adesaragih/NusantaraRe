@@ -6,6 +6,7 @@ package services_test
 import (
 	"context"
 	"errors"
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -27,6 +28,16 @@ type simpananTiruan struct {
 	// geturl dan delete.
 	urlBaru []services.PermintaanSimpanan
 	dihapus []services.PermintaanSimpanan
+	// URL bertanda tangan yang isinya diambil.
+	diambil []string
+}
+
+func (s *simpananTiruan) Ambil(_ context.Context, bertanda string) (io.ReadCloser, error) {
+	s.diambil = append(s.diambil, bertanda)
+	if s.galat != nil {
+		return nil, s.galat
+	}
+	return io.NopCloser(strings.NewReader("isi-berkas")), nil
 }
 
 func (s *simpananTiruan) URLBaru(_ context.Context, p services.PermintaanSimpanan) (services.JawabanSimpanan, error) {

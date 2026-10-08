@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { BarisBersarang, SisiPenyesuaian } from './api'
 import type { AksiTombol, ButirKerangka, TombolKerangka } from './ekspor/jenis'
 import { KERANGKA_INCLUDE, KERANGKA_RINCIAN, KERANGKA_TAB } from './ekspor/kerangka.gen'
+import { isiHarness } from './komponen/KerangkaTab'
 import { hapusBarisGrid, labelTombol, rantaiSesudahHapus, tambahBarisGrid, tambahDari, terkunci, tulisanDari, unduhanDari } from './komponen/aksiTombol'
 import { gabungPohon, nilaiJalur } from './komponen/baris'
 import { tambah } from './komponen/desimal'
@@ -38,9 +39,13 @@ const golongan = (t: TombolKerangka) =>
       ? 'unduh'
       : tulisanDari(t) !== undefined
         ? 'tulis'
-        : rantaiRumus(t) !== undefined
-          ? 'rumus'
-          : 'mati'
+        : t.aksi.some((a) => a.aktivitas === 'InsertToLogAchievement')
+          ? 'log'
+          : isiHarness(t) !== undefined
+            ? 'harness'
+            : rantaiRumus(t) !== undefined
+            ? 'rumus'
+            : 'mati'
 
 const sisi = (medan: Record<string, string>, larik: Record<string, BarisBersarang[]> = {}): SisiPenyesuaian => ({ medan, larik })
 
@@ -90,14 +95,12 @@ describe('klasifikasi tombol panel New', () => {
       // ⭐ 7 Oktober 2026 — Add*/Remove rincian Limits Prop, Delete Treaty
       // Group Layers, Remove deduksi Share, Achievement Refresh/Excel, Value
       // Difference, dan cabang Adjust Premium KINI hidup. Yang tersisa:
-      // Submit Achievement (`InsertToLogAchievement` menulis log — jalur tulis),
-      'DetailLimits · Submit',
+      // (Submit Achievement HIDUP sejak 8 Oktober 2026 — golongan `log`.)
       // Retro Share Prop (`AddFacRetroProp`, keputusan §17),
       'Share · Add',
       // halaman sesi `facsharedisp`,
       'Share · Hide Facultative Share (unused)', // pyLabel apa adanya
-      // harness Facultative Share Actual (`showHarness` tanpa Activity),
-      'TreatyInActualShare · Show Facultative Share',
+      // (Show Facultative Share HIDUP sejak 8 Oktober 2026 — golongan `harness`.)
       // dan varian NON-EDM tombol tulis (`TreatyInSubmit`,
       // `TreatyInDeclineConfirmation`, blok `!TreatyMasterInEDM`) — milik
       // layar Treaty In; 280 dari 280 penyesuaian ber-EDMState.
@@ -385,5 +388,30 @@ describe('rumus Installment — rute /hitung/angsuran Treaty In', () => {
     expect(rantaiSesudahHapus(hapus([{ aksi: 'deleteRow' }]))).toBeNull()
     expect(rantaiSesudahHapus(hapus([{ aksi: 'deleteRow' }, { aksi: 'refresh', aktivitas: 'InsertToLogAchievement' }]))).toBeUndefined()
     expect(rantaiSesudahHapus(hapus([{ aksi: 'deleteRow' }, { aksi: 'refresh', aktivitas: 'TreatyInNPSetTotal', param: { type: 'installment' } }]))).toBeTypeOf('function')
+  })
+})
+
+describe('Submit Achievement — InsertToLogAchievement (8 Oktober 2026)', () => {
+  it('⭐ satu-satunya tombol golongan log: DetailLimits · Submit, bersyarat FlagExcel.CARI1', () => {
+    const log = tombolBaru().filter((x) => golongan(x.t) === 'log')
+    expect([...new Set(log.map((x) => `${x.tab.split('#')[1] ?? x.tab} · ${labelTombol(x.t)}`))]).toEqual(['DetailLimits · Submit'])
+    expect(log[0]?.t.syarat.join(' ')).toContain('FlagExcel.CARI1')
+  })
+})
+
+describe('Show Facultative Share — showHarness (8 Oktober 2026)', () => {
+  it('⭐ tombol golongan harness: Show Facultative Share, bersyarat FacultativeShare > 0', () => {
+    const h = tombolBaru().filter((x) => golongan(x.t) === 'harness')
+    expect([...new Set(h.map((x) => labelTombol(x.t)))]).toEqual(['Show Facultative Share'])
+    for (const x of h) expect(x.t.syarat.join(' ')).toContain('FacultativeShare>0')
+  })
+
+  it('isi jendela = Section harness (KERANGKA_HARNESS), judul pyWindowName', () => {
+    const h = tombolBaru().find((x) => golongan(x.t) === 'harness')
+    const isi = h === undefined ? undefined : isiHarness(h.t)
+    expect(isi?.judul).toBe('Facultative Calculation')
+    const grid = JSON.stringify(isi?.isi ?? [])
+    expect(grid).toContain('FacultativeShareList')
+    expect(grid).toContain('LimitFacShareSummaryList')
   })
 })

@@ -25,14 +25,14 @@
 
 import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 
-import { Area, Field, FieldAngka, Kosong, StripTab } from '../../../../inti/frontend/components/ui/dasar'
+import { Area, Field, FieldAngka, Kosong, Modal, StripTab } from '../../../../inti/frontend/components/ui/dasar'
 import { keInputTanggal } from '../../../../inti/frontend/lib/tanggalInput'
-import type { BarisBersarang, OpsiLimitsTreatyIn, SisiPenyesuaian } from '../api'
+import { catatLogAchievement, type BarisBersarang, type BarisLogAchievement, type OpsiLimitsTreatyIn, type SisiPenyesuaian } from '../api'
 import { golongan } from '../ekspor/golongan'
 import type { AksiTombol, BlokKerangka, ButirKerangka, GridKerangka, MedanKerangka, SumberPilihan, TombolKerangka } from '../ekspor/jenis'
-import { KERANGKA_INCLUDE, KERANGKA_RINCIAN } from '../ekspor/kerangka.gen'
+import { KERANGKA_HARNESS, KERANGKA_INCLUDE, KERANGKA_RINCIAN } from '../ekspor/kerangka.gen'
 import { syaratTerpenuhi } from '../ekspor/syarat'
-import { PENYESUAIAN } from '../labelsPenyesuaian'
+import { LOG_ACHIEVEMENT, PENYESUAIAN } from '../labelsPenyesuaian'
 import {
   hapusBarisGrid,
   labelTombol,
@@ -50,7 +50,7 @@ import {
 import { unduhAchievement } from './unduhAchievement'
 import { AreaBacaSaja, BelumDibangun, Centang, MedanTakAda, TanggalBacaSaja, angkaMurni, selNilai } from './medan'
 import { rantaiRumus, type HasilTerapan, type LingkupRumus, type SelRumus } from './rumus'
-import { denganNilaiKini, type Opsi } from './pilihan'
+import { denganNilaiKini, ikutTerpilih, type Opsi, type TempatOpsi } from './pilihan'
 import { kunciBerjalur, nilaiJalur, type LangkahJalur } from './baris'
 import { FieldTanggalKetik, KotakTanggalKetik } from './TanggalKetik'
 
@@ -77,14 +77,23 @@ export interface KonteksKerangka {
   /** Panel New di mode Edit. Tanpa ini semua butir baca-saja. */
   ubah?: boolean
   ubahMedan?: (kunci: string, nilai: string) => void
+  /**
+   * Tulis BEBERAPA medan halaman ini SEKALIGUS — medan berdaftar beserta
+   * pasangan kodenya (`pySetValueOnSelect`). ⛔ Dua `ubahMedan` berurutan di
+   * rincian menimpa baris dari salinan yang sama: yang pertama hilang.
+   */
+  ubahMedanBanyak?: (pasangan: Readonly<Record<string, string>>) => void
   ubahLarik?: (larik: string, baris: Baris[]) => void
   /**
    * Timpakan hasil satu rumus ke keadaan panel New. Hasil RANTAI membawa
    * akar sebelum/sesudah (`awal`/`akhir`) — diterapkan di akar.
    */
   terapkan?: (h: HasilTerapan) => void
-  /** Daftar dropdown/autocomplete untuk satu sumber — `undefined` = belum ada. */
-  opsi?: (sp: SumberPilihan, kunci: string) => Opsi[] | undefined
+  /**
+   * Daftar dropdown/autocomplete untuk satu sumber — `undefined` = belum ada.
+   * `tempat` = halaman sel/medan itu (parameter RD berparameter).
+   */
+  opsi?: (sp: SumberPilihan, kunci: string, tempat?: TempatOpsi) => Opsi[] | undefined
   /** `TreatyIn.OLDDATA` — sisi Old; dibaca rumus (Installment langkah 10). */
   lama?: SisiPenyesuaian
   /** Akar panel — di Section rincian `sisi` adalah BARIS, akarnya di sini. */
@@ -141,6 +150,15 @@ const bertitik = (b: Baris): Record<string, string> => {
  * baris induk (rincian di dalam rincian) tidak terbawa. Suntingan dan hasil
  * rumus MENGGANTIKAN baris itu di larik induknya lewat `ganti`.
  */
+/**
+ * `pyRODetails = true` (ekspor: grid `masterDetail` ber-rincian baca-saja,
+ * mis. `LimitFacRetro_Sec` `.FacultativeLimits`) — panel rinciannya tampil
+ * saja, sama dengan barisnya.
+ */
+export function bacaRincian(k: KonteksKerangka, baca: boolean): KonteksKerangka {
+  return baca ? { ...k, ubah: false } : k
+}
+
 export function konteksBaris(k: KonteksKerangka, b: Baris, ganti: (nb: Baris) => void, langkah?: LangkahJalur): KonteksKerangka {
   const medan: Record<string, string> = {}
   const larik: Record<string, Baris[]> = {}
@@ -160,6 +178,9 @@ export function konteksBaris(k: KonteksKerangka, b: Baris, ganti: (nb: Baris) =>
     jalur,
     ubahMedan: (kunci, v) => {
       ganti({ ...b, [kunci]: v })
+    },
+    ubahMedanBanyak: (pasangan) => {
+      ganti({ ...b, ...pasangan })
     },
     ubahLarik: (l, baris) => {
       ganti({ ...b, [l]: baris })
@@ -577,14 +598,18 @@ export function GridEkspor({ g, k }: { g: GridKerangka; k: KonteksKerangka }) {
                   // ⛔ Jalur berindeks (`RnmLimitListDisplay(1).Value`) hasil
                   // rumus — tidak disunting langsung.
                   if (sunting && !terkunci(g.baca[i], k.halaman) && !kunciBerjalur(kunci)) {
+                    const sp = g.pilihan[i] ?? null
+                    const opsi = pilihanSel(sp, kunci, k, b)
                     const sel = (
                       <SelSunting
                         format={fmt}
                         nilai={v}
                         label={g.kolom[i] ?? kunci}
-                        opsi={pilihanSel(g.pilihan[i] ?? null, kunci, k)}
+                        opsi={opsi}
                         onUbah={(nv) => {
-                          ganti(baris.map((x, y) => (y === r ? { ...x, [kunci]: nv } : x)))
+                          // ⭐ `pySetValueOnSelect` — pasangan kode ikut diisi
+                          // (`CurrencyID`, `TreatyGroupID`, `ClassOfBusinessID`).
+                          ganti(baris.map((x, y) => (y === r ? { ...x, [kunci]: nv, ...ikutTerpilih(sp, opsi, nv) } : x)))
                         }}
                       />
                     )
@@ -636,13 +661,16 @@ export function GridEkspor({ g, k }: { g: GridKerangka; k: KonteksKerangka }) {
                     <div className="tria__blok">
                     <RenderKerangka
                       isi={rincian}
-                      k={konteksBaris(
-                        k,
-                        b,
-                        (nb) => {
-                          ganti(baris.map((x, y) => (y === r ? nb : x)))
-                        },
-                        { larik: g.larik, indeks: r },
+                      k={bacaRincian(
+                        konteksBaris(
+                          k,
+                          b,
+                          (nb) => {
+                            ganti(baris.map((x, y) => (y === r ? nb : x)))
+                          },
+                          { larik: g.larik, indeks: r },
+                        ),
+                        g.rincianBaca === true,
                       )}
                     />
                     </div>
@@ -667,10 +695,14 @@ export function GridEkspor({ g, k }: { g: GridKerangka; k: KonteksKerangka }) {
   )
 }
 
-/** Daftar satu sel/medan berdaftar, atau `undefined` (kotak teks). */
-function pilihanSel(sp: SumberPilihan | null | undefined, kunci: string, k: KonteksKerangka): Opsi[] | undefined {
+/**
+ * Daftar satu sel/medan berdaftar, atau `undefined` (kotak teks).
+ * `baris` = baris grid sel itu: skalarnya ikut halaman parameter (`.X`).
+ */
+function pilihanSel(sp: SumberPilihan | null | undefined, kunci: string, k: KonteksKerangka, baris?: Baris): Opsi[] | undefined {
   if (sp === null || sp === undefined) return undefined
-  return k.opsi?.(sp, kunci)
+  const halaman = baris === undefined ? k.halaman : { ...k.halaman, ...bertitik(baris) }
+  return k.opsi?.(sp, kunci, { halaman, sisi: k.sisi })
 }
 
 /** Medan bangkitan — kontrolnya menurut `pyFormat`; dapat disunting di mode Edit panel New. */
@@ -682,8 +714,18 @@ export function MedanEkspor({ m, k }: { m: MedanKerangka; k: KonteksKerangka }) 
   if (!Object.prototype.hasOwnProperty.call(hal.medan, m.kunci) && !sunting) return <MedanTakAda label={label} />
   const v = hal.medan[m.kunci] ?? ''
   if (sunting) {
-    const ubah = (nv: string) => (m.dari === 'sesi' ? k.ubahMedanAkar : k.ubahMedan)?.(m.kunci, nv)
     const opsi = pilihanSel(m.pilihan, m.kunci, k)
+    const ubah = (nv: string) => {
+      // ⭐ `pySetValueOnSelect` — pasangan kode medan ini ikut diisi, SEKALIGUS.
+      const ikut = ikutTerpilih(m.pilihan, opsi, nv)
+      if (m.dari !== 'sesi' && Object.keys(ikut).length > 0 && k.ubahMedanBanyak !== undefined) {
+        k.ubahMedanBanyak({ [m.kunci]: nv, ...ikut })
+        return
+      }
+      const tulis = m.dari === 'sesi' ? k.ubahMedanAkar : k.ubahMedan
+      tulis?.(m.kunci, nv)
+      for (const [target, nilai] of Object.entries(ikut)) tulis?.(target, nilai)
+    }
     const kontrol = (() => {
       if (opsi !== undefined && (m.format === 'pxDropdown' || m.format === 'pxAutoComplete')) {
         return (
@@ -761,6 +803,19 @@ function TombolEkspor({ t, k }: { t: TombolKerangka; k: KonteksKerangka }) {
       </button>
     )
   }
+  // ⭐ Submit Achievement — `InsertToLogAchievement` → `LOG_ACHIEVEMENT`
+  // (keputusan pemakai 8 Oktober 2026). Tampil bila `FlagExcel.CARI1=='1'`
+  // (syarat sel ekspor); berlaku di panel mana pun (`pyApplicability =
+  // READONLY` — Pega menjalankannya juga di mode baca).
+  if (t.aksi.some((a) => a.aktivitas === 'InsertToLogAchievement')) {
+    return <TombolLogAchievement t={t} k={k} />
+  }
+  // ⭐ `showHarness` berisi Section — `Show Facultative Share` (8 Oktober
+  // 2026, permintaan pemakai). Jendela tanpa Activity pembuka.
+  const harness = isiHarness(t)
+  if (harness !== undefined) {
+    return <TombolHarness t={t} k={k} isi={harness.isi} judul={harness.judul} />
+  }
   // ⭐ Submit / Decline offer EDM — form yang menulis (`k.tulis`).
   const tulisan = tulisanDari(t)
   if (tulisan !== undefined && k.tulis !== undefined) {
@@ -786,13 +841,7 @@ function TombolEkspor({ t, k }: { t: TombolKerangka; k: KonteksKerangka }) {
         type="button"
         className="btn btn--ghost btn--sm"
         disabled
-        title={
-          t.aksi.some((a) => a.aktivitas === 'InsertToLogAchievement')
-            ? PENYESUAIAN.achievementMenunggu
-            : k.ubah === true
-              ? PENYESUAIAN.rumusBelum
-              : PENYESUAIAN.tombolTulisMati
-        }
+        title={k.ubah === true ? PENYESUAIAN.rumusBelum : PENYESUAIAN.tombolTulisMati}
       >
         {labelTombol(t)}
       </button>
@@ -830,6 +879,120 @@ function TombolEkspor({ t, k }: { t: TombolKerangka; k: KonteksKerangka }) {
       {pesan.length > 0 && (
         <span className="tria__galat" role="alert">
           {pesan.join(' · ')}
+        </span>
+      )}
+    </>
+  )
+}
+
+/**
+ * Isi harness tombol `showHarness`: Section yang harness muat
+ * (`KERANGKA_HARNESS`) dan judul jendelanya. `undefined` = bukan tombol harness
+ * berisi (mis. `Generate Excel`, yang ditangani jalur unduh).
+ */
+export function isiHarness(t: TombolKerangka): { isi: readonly ButirKerangka[]; judul: string } | undefined {
+  for (const a of t.aksi) {
+    if (a.aksi !== 'showHarness' || a.harness === undefined) continue
+    const section = KERANGKA_HARNESS[a.harness]
+    const isi = section === undefined ? undefined : KERANGKA_INCLUDE[section]
+    if (isi !== undefined) return { isi, judul: a.jendela ?? labelTombol(t) }
+  }
+  return undefined
+}
+
+/**
+ * Tombol `showHarness` — jendela berisi Section harness, atas halaman YANG SAMA
+ * (`pySubmitData = Yes`): suntingan di dalamnya adalah suntingan panel ini.
+ * Nol Activity saat dibuka maupun ditutup (`pyPreProcRun* = false`).
+ */
+function TombolHarness({ t, k, isi, judul }: { t: TombolKerangka; k: KonteksKerangka; isi: readonly ButirKerangka[]; judul: string }) {
+  const [buka, setBuka] = useState(false)
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn--ghost btn--sm"
+        disabled={tombolMati(t, k.halaman)}
+        onClick={() => {
+          setBuka(true)
+        }}
+      >
+        {labelTombol(t)}
+      </button>
+      {buka && (
+        <Modal
+          judul={judul}
+          penuh
+          onTutup={() => {
+            setBuka(false)
+          }}
+        >
+          <div className="tria__blok">
+            <RenderKerangka isi={isi} k={k} />
+          </div>
+        </Modal>
+      )}
+    </>
+  )
+}
+
+/** Kolom log `InsertToLogAchievement` [2.1] — ejaan properti `AchievementLists`. */
+const KUNCI_LOG_ACHIEVEMENT = [
+  'Quarter', 'QUARTERYEAR', 'CurrencyID', 'Currency', 'PREMIUM', 'RICOMM', 'BROKERAGE', 'NETPREMIUM',
+  'PaidClaim', 'CASHCALL', 'OutstandingClaim', 'IncuredClaim', 'Total', 'LossRatio',
+] as const
+
+/** Baris `AchievementLists` rincian ini → baris log (nilai teks apa adanya). */
+export function barisLogAchievement(sisi: SisiPenyesuaian): BarisLogAchievement[] {
+  return (sisi.larik.AchievementLists ?? []).map((b) => {
+    const out = {} as BarisLogAchievement
+    for (const kunci of KUNCI_LOG_ACHIEVEMENT) {
+      const v = (b as Record<string, unknown>)[kunci]
+      out[kunci] = typeof v === 'string' || typeof v === 'number' ? String(v) : ''
+    }
+    return out
+  })
+}
+
+/** Tombol `Submit` sub-tab Achievement — `InsertToLogAchievement`. */
+function TombolLogAchievement({ t, k }: { t: TombolKerangka; k: KonteksKerangka }) {
+  const [sibuk, setSibuk] = useState(false)
+  const [pesan, setPesan] = useState('')
+  const [galat, setGalat] = useState('')
+  // [1] `InputParam.CARI1 = TreatyIn.ID` — pengenal halaman AKAR panel.
+  const id = (k.panel ?? k.akar).medan.ID ?? ''
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn--ghost btn--sm"
+        disabled={sibuk || tombolMati(t, k.halaman)}
+        onClick={() => {
+          setSibuk(true)
+          setPesan('')
+          setGalat('')
+          catatLogAchievement({ idKontrak: id, baris: barisLogAchievement(k.sisi) })
+            .then((h) => {
+              setPesan(LOG_ACHIEVEMENT.tercatat(h.disisipkan, h.dilewati))
+            })
+            .catch((e: unknown) => {
+              setGalat(e instanceof Error ? e.message : String(e))
+            })
+            .finally(() => {
+              setSibuk(false)
+            })
+        }}
+      >
+        {labelTombol(t)}
+      </button>
+      {pesan !== '' && (
+        <span className="tria__redup" role="status">
+          {pesan}
+        </span>
+      )}
+      {galat !== '' && (
+        <span className="tria__galat" role="alert">
+          {galat}
         </span>
       )}
     </>

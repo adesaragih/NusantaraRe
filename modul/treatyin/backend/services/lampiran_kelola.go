@@ -31,11 +31,13 @@ package services
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/url"
 	"strings"
 	"time"
 
 	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/unggah"
 	"nusantarare/modul/treatyin/backend/models"
 )
 
@@ -100,43 +102,9 @@ func (l *Layanan) TautanLampiran(ctx context.Context, p inti.Pelaku, idKontrak, 
 	if err := inti.WajibIdentitas(p); err != nil {
 		return "", err
 	}
-	b, ada, err := l.lampiranKontrak(ctx, strings.TrimSpace(idKontrak), strings.TrimSpace(idLampiran))
+	b, tautan, err := l.tautanBertanda(ctx, idKontrak, idLampiran)
 	if err != nil {
 		return "", err
-	}
-	if !ada {
-		return "", fmt.Errorf("%w: lampiran %s", ErrKontrakTidakAda, idLampiran)
-	}
-	o, ada, err := l.gudang.BacaObjekSimpanan(ctx, b.IDSimpanan)
-	if err != nil {
-		return "", err
-	}
-	if !ada || strings.TrimSpace(o.URLPublik) == "" {
-		return "", ditolak(fmt.Sprintf("Berkas %s tidak punya objek di penyimpanan (T_STORAGE_IMAGE).", b.NamaBerkas))
-	}
-	tautan := o.URLPublik
-	// [6] JIKA EXPDATE SUDAH EXPIRED — URL tersimpan dipakai selama berlaku.
-	if exp, err := time.ParseInLocation("02/01/2006 15:04:05", strings.TrimSpace(o.Exp), zonaLampiran); err != nil || !exp.After(time.Now()) {
-		if l.simpanan == nil {
-			return "", fmt.Errorf("%w: the storage sender is not wired", ErrSimpananBelumSiap)
-		}
-		// [6.2] Folder = APPFOLDER tanpa Namafile, tanpa `gs://<App>/`.
-		folder := strings.ReplaceAll(strings.ReplaceAll(o.AppFolder, o.NamaObjek, ""), "gs://"+o.App+"/", "")
-		j, err := l.simpanan.URLBaru(ctx, PermintaanSimpanan{App: o.App, Durasi: durasiLampiran, Folder: folder, Namafile: o.NamaObjek})
-		if err != nil {
-			return "", err
-		}
-		// [6.6] dilewati bila URLImage kosong → URL tersimpan.
-		if strings.TrimSpace(j.URLImage) != "" {
-			o.URLPublik, o.Exp = j.URLImage, expSimpanan(j.Exp)
-			if strings.TrimSpace(j.AppFolder) != "" {
-				o.AppFolder = j.AppFolder
-			}
-			if err := l.gudang.PerbaruiObjekSimpanan(ctx, o, j.DateTime); err != nil {
-				return "", err
-			}
-			tautan = j.URLImage
-		}
 	}
 	if office {
 		if !JenisOffice(b.JenisMime) {
@@ -145,6 +113,79 @@ func (l *Layanan) TautanLampiran(ctx context.Context, p inti.Pelaku, idKontrak, 
 		return penampilOffice + url.QueryEscape(tautan), nil
 	}
 	return tautan, nil
+}
+
+// BerkasUnduhan - isi satu lampiran untuk dialirkan ke layar.
+type BerkasUnduhan struct {
+	Nama string
+	Mime string
+	Isi  io.ReadCloser
+}
+
+// IsiLampiran - tautan nama berkas (`DownloadAttachmentTreaty`): isi berkas
+// dari URL bertanda tangan, DIALIRKAN backend. Layar mengunduhnya lewat
+// `fetch` beridentitas (`unduhBerkasBeridentitas`), bukan membuka URL —
+// penjaga lintas modul `unduhdokumen.test.ts`.
+func (l *Layanan) IsiLampiran(ctx context.Context, p inti.Pelaku, idKontrak, idLampiran string) (BerkasUnduhan, error) {
+	if err := inti.WajibIdentitas(p); err != nil {
+		return BerkasUnduhan{}, err
+	}
+	b, tautan, err := l.tautanBertanda(ctx, idKontrak, idLampiran)
+	if err != nil {
+		return BerkasUnduhan{}, err
+	}
+	if l.simpanan == nil {
+		return BerkasUnduhan{}, fmt.Errorf("%w: the storage sender is not wired", ErrSimpananBelumSiap)
+	}
+	isi, err := l.simpanan.Ambil(ctx, tautan)
+	if err != nil {
+		return BerkasUnduhan{}, err
+	}
+	return BerkasUnduhan{Nama: b.NamaBerkas, Mime: unggah.MimeDariNamaFile(b.NamaBerkas), Isi: isi}, nil
+}
+
+// tautanBertanda - `GetUrlGoogleStorage_Act`: URL tersimpan selama EXPDATE
+// berlaku; selain itu Google/geturl lalu `Update_T_Storage_SQL`.
+func (l *Layanan) tautanBertanda(ctx context.Context, idKontrak, idLampiran string) (models.BarisLampiranWarisan, string, error) {
+	b, ada, err := l.lampiranKontrak(ctx, strings.TrimSpace(idKontrak), strings.TrimSpace(idLampiran))
+	if err != nil {
+		return b, "", err
+	}
+	if !ada {
+		return b, "", fmt.Errorf("%w: lampiran %s", ErrKontrakTidakAda, idLampiran)
+	}
+	o, ada, err := l.gudang.BacaObjekSimpanan(ctx, b.IDSimpanan)
+	if err != nil {
+		return b, "", err
+	}
+	if !ada || strings.TrimSpace(o.URLPublik) == "" {
+		return b, "", ditolak(fmt.Sprintf("Berkas %s tidak punya objek di penyimpanan (T_STORAGE_IMAGE).", b.NamaBerkas))
+	}
+	tautan := o.URLPublik
+	// [6] JIKA EXPDATE SUDAH EXPIRED — URL tersimpan dipakai selama berlaku.
+	if exp, err := time.ParseInLocation("02/01/2006 15:04:05", strings.TrimSpace(o.Exp), zonaLampiran); err != nil || !exp.After(time.Now()) {
+		if l.simpanan == nil {
+			return b, "", fmt.Errorf("%w: the storage sender is not wired", ErrSimpananBelumSiap)
+		}
+		// [6.2] Folder = APPFOLDER tanpa Namafile, tanpa `gs://<App>/`.
+		folder := strings.ReplaceAll(strings.ReplaceAll(o.AppFolder, o.NamaObjek, ""), "gs://"+o.App+"/", "")
+		j, err := l.simpanan.URLBaru(ctx, PermintaanSimpanan{App: o.App, Durasi: durasiLampiran, Folder: folder, Namafile: o.NamaObjek})
+		if err != nil {
+			return b, "", err
+		}
+		// [6.6] dilewati bila URLImage kosong → URL tersimpan.
+		if strings.TrimSpace(j.URLImage) != "" {
+			o.URLPublik, o.Exp = j.URLImage, expSimpanan(j.Exp)
+			if strings.TrimSpace(j.AppFolder) != "" {
+				o.AppFolder = j.AppFolder
+			}
+			if err := l.gudang.PerbaruiObjekSimpanan(ctx, o, j.DateTime); err != nil {
+				return b, "", err
+			}
+			tautan = j.URLImage
+		}
+	}
+	return b, tautan, nil
 }
 
 // HapusLampiran - `Delete_act`: objek di penyimpanan lebih dulu, lalu baris.

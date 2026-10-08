@@ -168,6 +168,25 @@ func TestRuteUnggahLampiranMultipart(t *testing.T) {
 	}
 }
 
+// Rute isi lampiran (tautan nama berkas) terpasang, bergerbang identitas,
+// dan lampiran yang tidak ada dijawab berpesan — bukan 405/500.
+func TestRuteIsiLampiran(t *testing.T) {
+	h := handlers.RouterDengan(services.LayananDengan(gudangTiruan{}), true, true)
+	r := httptest.NewRequest(http.MethodGet, "/api/treaty-in/kontrak/1001001/lampiran/L9/isi", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("tanpa identitas: kode %d", w.Code)
+	}
+	r2 := httptest.NewRequest(http.MethodGet, "/api/treaty-in/kontrak/1001001/lampiran/L9/isi", nil)
+	r2.Header.Set("X-Pelaku", "ADESAMUEL")
+	w2 := httptest.NewRecorder()
+	h.ServeHTTP(w2, r2)
+	if w2.Code != http.StatusNotFound {
+		t.Errorf("lampiran tak ada: kode %d %s", w2.Code, w2.Body.String())
+	}
+}
+
 func (_ gudangTiruan) BacaObjekSimpanan(context.Context, string) (models.ObjekSimpanan, bool, error) {
 	return models.ObjekSimpanan{}, false, nil
 }

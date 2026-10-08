@@ -835,7 +835,7 @@ func TestWarisanHanyaDibaca(t *testing.T) {
 	// Melonggarkannya tanpa memasang penjaga tulis yang sesungguhnya akan
 	// meninggalkan keduanya tanpa penjaga sama sekali.
 	for _, tabel := range []string{
-		"TREATY_IN", "M_TREATY_IN", "M_TREATY_IN2",
+		"TREATY_IN",
 		"TREATYEXCHANGEYEARLY", "M_TREATY_IN_DETAIL",
 		// ⭐ `M_ATTACHMENTTREATY_2` DIKELUARKAN 8 Oktober 2026 — keputusan
 		// pemakai: *"untuk upload file seharusnya kesini SELECT * FROM

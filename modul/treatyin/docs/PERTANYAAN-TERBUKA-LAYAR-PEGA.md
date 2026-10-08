@@ -843,3 +843,69 @@ jadi):**
   `pesanBaris` (indeks baris); layar menampilkannya di panel baris itu dan memberi penanda `!` pada
   baris grid. Aksi satu baris hanya mengganti pesan baris itu.
 - Rute `POST /hitung/share-np` diuji lewat handler dengan alur dari nol (`handlers/rute_share_test.go`).
+
+## 22 · Cek penawaran ganda dan "Agent Negative List" — dilacak ke ekspor (8 Oktober 2026)
+
+### 22.1 `CheckDuplicateOffer` — TIDAK dibangun; di Pega tidak pernah menyala
+
+Korpus Treaty In dan Adjustment memuat aturan yang SAMA (`GISFW 01-01-56`, beda urutan tag saja).
+
+| Langkah | Isi | Keadaan |
+|---|---|---|
+| 1–4 | RD `BrowseTREATY_IN`, kalang `.ID != TreatyIn.ID && .ProportionType == TreatyIn.ProportionType`, `TreatyWarning.CARI1 += "Have similarities in SoB, Ceding, and Period, please check for duplicates"` | **`//` — mati** |
+| 5 | `TreatyWarning.CAIREINSFACIN = Param.ID` | jalan |
+| 6 | RDB `GetCountClaim`: `select count(1) as "CARI1" from DATAPEGA.PC_ASM_FW_GCNMFW_WORK where masterid={TreatyWarning.CAIREINSFACIN}` | jalan |
+| 7–8 | bila `CARI1 > 0`: `Page-Set-Messages` pada halaman `TreatyIn`: "Sudah Ada Claim Untuk IDMASTER ini , Tidak bisa Revisi" | syaratnya tak pernah benar |
+
+- Pemanggil HANYA dua: `SetTreatyIn_Act` [14] (buka kontrak) dan `SaveTreatyIn_Act` [2] (Save) — keduanya
+  `Call` TANPA parameter dan `pyPassCurrentParameterPage=false`, parameter `ID` tanpa nilai bawaan.
+  Jadi `Param.ID` kosong → `masterid = NULL` → hitungan 0 → pesan tidak pernah tampil, Save tidak
+  pernah tertahan. Nol pemanggil `TreatyInCheckDuplicate` / `TreatyInAddNew` di korpus.
+- Area peringatan `TreatyWarning.CARI1` (`Section/InputTreatyInOffer.xml`, `TreatyInAction.xml`, tampil
+  bila `TreatyWarning.CARI1 != '' && OutputParam.DATASHOW=1`) hanya diisi langkah 3.1/4 yang mati, dan
+  dikosongkan `SetTreatyIn_Act` [3].
+- Putusan sama dengan `nbtreatyin` (`docs/INVENTARIS-XML.md` §6) dan `edmtreatyin`. `CariKontrakSerupa`
+  (`repository/identitas.go`, tiket 16, tabel model baru `KONTRAK`) BUKAN padanan aturan ini — ia lahir
+  dari ADR-0040, dan tidak disambungkan ke layar.
+- ❓ **Keputusan pemilik proses:** bila cek penawaran ganda (Ceding + SoB + periode) tetap diinginkan,
+  itu fitur BARU — bunyi pesannya ada di langkah 4 yang mati, tetapi kapan dan menghalangi atau tidak,
+  ekspor tidak menjawab. Cek klaim membaca tabel kerja Pega `DATAPEGA.PC_ASM_FW_GCNMFW_WORK` (skema lain).
+
+### 22.2 `TreatyInCheckCedingBlacklist` — dibangun apa adanya
+
+`Activity/TreatyInCheckCedingBlacklist.xml` (identik di kedua korpus):
+[1] `Param.ErrMsg = "This name is on Agent Negative List"`; [2] bila `TreatyIn.CedingStatusActive=="inactive"`
+→ `Property-Set-Messages` medan `TreatyIn.Ceding`; [3] idem `SourceStatusActive` → `TreatyIn.LeadingReinsSource`;
+[4] `TreatyIn.pyErrMsg = "error"` (nol aturan membacanya → **tidak menghalangi**).
+
+- **Kapan:** tombol `Edit` layar daftar (SetValue → `SetTreatyIn_Act` → **activity ini** →
+  `GetMasterTreatyCategory_Act`); `View`/`Copy`/`Revision` tidak. Juga `change` autocomplete Ceding /
+  Business Source `Section/TreatyInNONProportional.xml` sel 16/17. Tombol `Choose` jendela
+  `TreatyInSearchReinsured`/`TreatyInSearchSoB` TIDAK (hanya DataTransform `TreatyInSetReinsured`).
+- **Sumber status:** autocomplete menyalin `.StatusActive` RD `BrowseAgentNusaRe_RD` (tabel `AGENT`) ke
+  `CedingStatusActive`/`SourceStatusActive`; nol aturan lain menulisnya.
+- ⛔ **Temuan: di Pega tidak pernah menyala.** RD yang sama menyaring `.StatusActive = "1"` (saringan A,
+  literal), dan `AGENT.STATUSACTIVE` terukur 8 Oktober 2026 hanya `'1'` (378) / `'0'` (51) — nol `'inactive'`.
+- **Dibangun:** `GET /api/treaty-in/agen/daftar-negatif?cedant=&asalBisnis=` (baca saja `AGENT`;
+  `repository/agen_daftar_negatif.go`, `services/agen_daftar_negatif.go`, `handlers/rute_daftar_negatif.go`);
+  layar: `components/PesanDaftarNegatif.tsx` — sekali sesudah kontrak lama dimuat di mode ubah (= tombol
+  Edit), pesan di bawah medan Ceding / Source of Business, lepas begitu agennya diganti.
+- ⚠️ Penyimpangan sumber: Pega membaca status dari dokumen `JSONDATA` (salinan saat dipilih) — dilarang
+  di sini; dibaca dari `AGENT.STATUSACTIVE` untuk pengenal di `TREATY_IN`.
+- **Adjustment:** layar Adjustment memilih agen lewat jendela `Choose` (`PilihAgen.tsx`) yang di Pega
+  tidak menjalankan activity ini, dan daftar Adjustment (`InputTreatyInAdjustment`) tidak merujuknya →
+  nol perubahan di Adjustment.
+- ❓ **Keputusan pemilik proses:** apakah `STATUSACTIVE = '0'` dianggap "Agent Negative List"? Bila ya,
+  ganti satu konstanta `services.StatusAgenDaftarNegatif` (`"inactive"` → `"0"`); hari ini pesan
+  dibandingkan persis seperti ekspor sehingga tidak pernah tampil.
+
+### 22.3 Jalur tulis — Save, Submit, Copy, Revision, Decline: SENGAJA tanpa kait
+
+- `CheckDuplicateOffer` memang dipanggil di jalur tulis (`SaveTreatyIn_Act` [2]) dan saat buka
+  (`SetTreatyIn_Act` [14], termasuk sumber `Copy` sebelum `TreatyInCopy`), tetapi tanpa parameter
+  sehingga tidak pernah menghasilkan apa pun (22.1). Mengaitkannya ke `SimpanKontrak`, `SimpanSalinan`,
+  `MulaiRevisi`, atau `tulis` berarti MENGARANG penghalang yang tidak ada di Pega → nol kait.
+- `TreatyInCheckCedingBlacklist` TIDAK ada di jalur tulis mana pun di ekspor (hanya `Edit` dan
+  `change` autocomplete), dan pesannya tidak menghalangi. `Copy` (`SetTreatyIn_Act` → `TreatyInCopy`),
+  `View`, `Revision` tidak menjalankannya; draf salinan (`idKontrak` kosong) dan mode lihat karena itu
+  dikecualikan layar.

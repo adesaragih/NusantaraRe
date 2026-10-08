@@ -115,6 +115,10 @@ type PengirimSimpanan interface {
 	URLBaru(ctx context.Context, p PermintaanSimpanan) (JawabanSimpanan, error)
 	// Hapus - Google/delete (`DeleteGoogleStorage_Act`).
 	Hapus(ctx context.Context, p PermintaanSimpanan) error
+	// Ambil - isi berkas dari URL bertanda tangan (`DownloadAttachmentTreaty`):
+	// dialirkan backend supaya unduhan layar lewat `fetch` beridentitas —
+	// penjaga lintas modul `unduhdokumen.test.ts` melarang navigasi skrip.
+	Ambil(ctx context.Context, bertanda string) (io.ReadCloser, error)
 }
 
 type pengirimGoogle struct {
@@ -160,6 +164,36 @@ func (p pengirimGoogle) URLBaru(ctx context.Context, badan PermintaanSimpanan) (
 func (p pengirimGoogle) Hapus(ctx context.Context, badan PermintaanSimpanan) error {
 	_, err := p.panggil(ctx, layanan.KunciHapusBerkas, badan)
 	return err
+}
+
+// Ambil - membuka URL bertanda tangan (pola `masterproductnamelife`
+// `penyimpananGoogle.unduh`). ⛔ Hanya https — isi lampiran tidak melintas
+// tanpa sandi, dan URL dari basis data tidak dapat menyuruh backend membuka
+// alamat polos — dan pengalihan TIDAK diikuti.
+func (p pengirimGoogle) Ambil(ctx context.Context, bertanda string) (io.ReadCloser, error) {
+	u, err := url.Parse(strings.TrimSpace(bertanda))
+	if err != nil || u.Scheme != "https" || u.Host == "" {
+		return nil, fmt.Errorf("%w: the signed URL is not an https address", ErrSimpananGagal)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("%w: the signed URL is malformed", ErrSimpananGagal)
+	}
+	klien := *p.klien
+	klien.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	jwb, err := klien.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("%w: the signed URL is unreachable", ErrSimpananGagal)
+	}
+	if jwb.StatusCode >= 200 && jwb.StatusCode <= 299 {
+		return jwb.Body, nil
+	}
+	_, _ = io.Copy(io.Discard, io.LimitReader(jwb.Body, batasJawabanSimpanan))
+	_ = jwb.Body.Close()
+	if jwb.StatusCode == http.StatusNotFound {
+		return nil, ditolak("Berkas tidak ditemukan di penyimpanan (Google Storage).")
+	}
+	return nil, fmt.Errorf("%w: the signed URL answered status %d", ErrSimpananGagal, jwb.StatusCode)
 }
 
 // panggil - token, alamat, POST JSON, jawaban — satu Connect-REST.

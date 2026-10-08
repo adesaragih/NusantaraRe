@@ -209,6 +209,12 @@ export const ACHIEVEMENT = {
   kirim: 'Submit', // @2997863 — `InsertToLogAchievement`, bila FlagExcel = 1
   berkasExcel: 'CSVAchievementTreatyIn.xlsx', // `FSFileName`
   kirimMenunggu: '',
+  /**
+   * Sesudah Submit — Pega tidak menampilkan pesan; kalimat ini TAMBAHAN
+   * supaya penekanan yang berhasil terlihat (8 Oktober 2026).
+   */
+  tercatat: (n: number, lewat: number) =>
+    `${n} baris Achievement tercatat${lewat > 0 ? `, ${lewat} baris tanpa Quarter dilewati` : ''}.`,
   parameter: 'Parameter',
   gross: 'Based on Gross',
   nett: 'Based on Nett',

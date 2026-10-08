@@ -174,12 +174,27 @@ def sumber_pilihan(c):
     if c.v("pyFormat") not in ("pxDropdown", "pxAutoComplete"):
         return None
     sumber, rd, nilai, tampil, halaman = "", "", "", "", ""
+    # ⭐ 8 Oktober 2026 — parameter RD (`pyReportDefParams`: `pTreatyGroupId
+    # = .TreatyGroupID`, `StartDate = TreatyIn.Commencement`) dan medan yang
+    # IKUT diisi saat dipilih (`pyAdditionalFields`, `pySetValueOnSelect`:
+    # `.ClassOfBusinessID` ← `.BizCode`). Tanpa keduanya daftar bergantung-
+    # baris tidak dapat dimuat, dan pasangan kode↔nama tertinggal basi.
+    param, setel = {}, []
     for m in c.iter("pyListDataSource"):
         sumber = sumber or m.v("pyListSource")
         for r in m.k("pyReportDefinitionPage"):
             rd = rd or r.v("pySourceName")
             nilai = nilai or r.v("pyValue")
             tampil = tampil or r.v("pyPrompt")
+            for ps in r.k("pyReportDefParams"):
+                for row in ps.k("rowdata"):
+                    if row.v("pyName"):
+                        param[row.v("pyName")] = row.v("pyValue")
+            for af in r.k("pyAdditionalFields"):
+                for row in af.k("rowdata"):
+                    tgt, src = row.v("pyPropertyTarget"), row.v("pyDisplayProperty")
+                    if row.v("pySetValueOnSelect") == "true" and tgt.startswith(".") and src:
+                        setel.append({"target": tgt.lstrip("."), "dari": src.lstrip(".")})
         for r in m.k("pyCBPage"):
             halaman = halaman or r.v("pySourceName")
     if not sumber:
@@ -191,6 +206,10 @@ def sumber_pilihan(c):
             out["nilai"] = nilai.lstrip(".")
         if tampil:
             out["tampil"] = tampil.lstrip(".")
+        if param:
+            out["param"] = param
+        if setel:
+            out["setel"] = setel
     if sumber == "pageList" and halaman:
         out["halaman"] = halaman
     return out
@@ -261,6 +280,14 @@ def aksi_tombol(c, peristiwa=None):
                         for tag in ("pyActivity", "pyLocalAction", "pyFlowAction", "pyDataTransform"):
                             if api.v(tag) and "aktivitas" not in a:
                                 a["aktivitas"] = api.v(tag)
+                        # ⭐ 8 Oktober 2026 — `showHarness`: harness yang dibuka
+                        # (mis. `Show Facultative Share` →
+                        # `TreatyInFacultativeShareCalculation`). Isinya dipetakan
+                        # `KERANGKA_HARNESS`.
+                        if api.v("pyHarnessName"):
+                            a["harness"] = api.v("pyHarnessName")
+                            if api.v("pyWindowName"):
+                                a["jendela"] = api.v("pyWindowName")
                         # DataTransform PRA-refresh (`pyPreDataTransform/pyName`) —
                         # Add Accumulation memakai `TreatyInAddAccumulation` begini.
                         for pdt in api.k("pyPreDataTransform"):
@@ -445,12 +472,32 @@ class Pembangkit:
             kol["format"].append(fmt)
             kol["syaratSel"].append(sy[0] if sy else None)
             kol["atSel"].append(c.off)
+        # Mode sunting dan flow action-nya ada di `pyGridProps` grid ini.
+        gp = (n.k("pyGridProps") or [None])[0]
+        # ⭐ MODE BARIS GRID (`pyRowEditing`) — 8 Oktober 2026, laporan
+        # pemakai: sel `Kind of Treaty` tab Achievement In IDR tampil sebagai
+        # dropdown, padahal di Pega tidak dapat disunting. Terukur di korpus
+        # `Treaty In Adjustment/Section`:
+        #   `row`           87 grid — sel baris DISUNTING di tempat (kunci per
+        #                   sel tetap berlaku, `kunci_baca`);
+        #   `readOnly`     183 grid — grid seluruhnya baca-saja;
+        #   `masterDetail`  45 grid — baris TAMPIL saja; penyuntingannya di
+        #                   panel rincian (`pyEditingMode = expandPane`).
+        # Sebelumnya hanya kunci PER SEL yang dibaca, sehingga sel ber-
+        # `pyEditOptions = Auto` di grid readOnly/masterDetail terbaca
+        # "dapat disunting". Kolom TOMBOL baris (Delete) tidak tersentuh.
+        mode = gp.v("pyRowEditing") if gp is not None else ""
+        if mode in ("readOnly", "masterDetail"):
+            kol["baca"] = ["selalu" for _ in kol["baca"]]
         g = {"t": "grid", "at": n.off, "prop": prop, "dari": dari, "larik": larik, "syarat": syarat, **kol}
+        if mode:
+            g["modeBaris"] = mode
         tmpl = n.v("pyGridTemplateName")
         if tmpl:
             g["templatBaris"] = tmpl
-        # Mode sunting dan flow action-nya ada di `pyGridProps` grid ini.
-        gp = (n.k("pyGridProps") or [None])[0]
+        # `pyRODetails = true` — panel rincian pun baca-saja.
+        if gp is not None and gp.v("pyRODetails") == "true":
+            g["rincianBaca"] = True
         aksi = gp.v("pyEditAction") if gp is not None else ""
         if gp is not None and gp.v("pyEditingMode") == "expandPane" and aksi:
             sek = seksi_flowaction(self.korpus, aksi)
@@ -594,6 +641,12 @@ def bangkit(korpus):
         ("TreatyInTabsNPValueDifferenceProRate", False), ("TreatyInTabsNPValueDifference_NoProRate", False),
         # Isi tab cabang Adjust Premium (Actual Retro TIDAK — §17).
         ("TreatyInActualLimits", False), ("TreatyInActualShare", False), ("TreatyInActualSumary", False),
+        # ⭐ 8 Oktober 2026 — isi popup `Show Facultative Share` (permintaan
+        # pemakai): Section yang harness `TreatyInFacultativeShareCalculation`
+        # (panel New, halaman `ActualValue`) dan `…OldData` (panel Old) muat.
+        # Penyertaan inline-nya di tab Retro TETAP tersembunyi (§17).
+        ("TreatyInActualFacultativeShareCalculation", False),
+        ("TreatyInFacultativeShareCalculationOldData", True),
     ]:
         r = muat(sec(nama))
         p = Pembangkit(nama, lama, korpus)
@@ -626,9 +679,38 @@ def bangkit(korpus):
     return kerangka, include, kurs, dict(sorted(rincian.items())), dibuang
 
 
+def peta_harness(korpus, *kumpulan):
+    """Harness yang tombol `showHarness` buka → Section yang ia muat
+    (`pyInclude` PERTAMA di berkas `Harness/<nama>.xml`)."""
+    nama = set()
+
+    def jalan(o):
+        if isinstance(o, dict):
+            if o.get("aksi") == "showHarness" and o.get("harness"):
+                nama.add(o["harness"])
+            for v in o.values():
+                jalan(v)
+        elif isinstance(o, list):
+            for v in o:
+                jalan(v)
+
+    for k in kumpulan:
+        jalan(k)
+    out = {}
+    for h in sorted(nama):
+        jalur = os.path.join(korpus, "Harness", h + ".xml")
+        if not os.path.exists(jalur):
+            continue
+        m = re.search(r"<pyInclude>([^<]+)</pyInclude>", open(jalur, encoding="utf-8", errors="replace").read())
+        if m:
+            out[h] = m.group(1).strip()
+    return out
+
+
 def main():
     korpus = sys.argv[1]
     kerangka, include, kurs, rincian, dibuang = bangkit(korpus)
+    harness = peta_harness(korpus, kerangka, include, rincian)
     sini = os.path.dirname(os.path.abspath(__file__))
     tujuan = os.path.join(sini, "..", "frontend", "ekspor", "kerangka.gen.ts")
     j = lambda o: json.dumps(o, ensure_ascii=False, indent=1)
@@ -643,6 +725,8 @@ def main():
         f.write(f"export const GRID_KURS: Readonly<Record<'lama' | 'baru', GridKerangka>> = {j(kurs)}\n\n")
         f.write("// Section rincian baris (`expandPane`) — ikatan RELATIF atas halaman baris.\n")
         f.write(f"export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>> = {j(rincian)}\n\n")
+        f.write("// Harness `showHarness` → Section isinya (`pyInclude` berkas Harness).\n")
+        f.write(f"export const KERANGKA_HARNESS: Readonly<Record<string, string>> = {j(harness)}\n\n")
         f.write(f"export const DIBUANG: readonly Terbuang[] = {j(dibuang)}\n")
     medan, larik = kunci_terbaca(kerangka, include, kurs)
     go = os.path.join(sini, "..", "backend", "repository", "kunci_kerangka_gen.go")

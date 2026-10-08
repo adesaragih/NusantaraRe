@@ -161,13 +161,17 @@ describe('tab Limits Prop — sesuai Activity', () => {
     expect(bebas).toContain('<option value="10007" selected="">PROPERTY</option>')
   })
 
-  it('⭐ Achievement: Refresh/Quarter Year → GetAchievement di services; Generate Excel .xlsx; Submit menunggu jalur tulis', () => {
+  it('⭐ Achievement: Refresh/Quarter Year → GetAchievement di services; Generate Excel .xlsx; Submit → LOG_ACHIEVEMENT', () => {
     expect(LP).toContain('hitungAchievement({')
     expect(LP).toContain('jalankanAchievement(true, v)')
     expect(LP).toContain('jalankanAchievement(false, tahun)')
     expect(LP).toContain("setTahun('') // DT `Reset_DT`")
     expect(LP).toContain('unduhXlsx(')
-    expect(LP).toMatch(/disabled title=\{ACHIEVEMENT\.kirimMenunggu\}/)
+    // Submit HIDUP sejak 8 Oktober 2026 (keputusan pemakai): satu baris log
+    // per baris AchievementLists, pengenal `TreatyIn.ID`.
+    expect(LP).not.toMatch(/disabled title=\{ACHIEVEMENT\.kirimMenunggu\}/)
+    expect(LP).toContain('catatLogAchievement({')
+    expect(LP).toContain('onClick={kirim}')
     expect(LP).toContain('KOLOM_ACH_PARAMETER')
   })
 

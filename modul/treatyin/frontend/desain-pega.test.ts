@@ -140,8 +140,8 @@ describe('§6 RNM Share adalah SUB-TAB, dan nol tab dihapus', () => {
 
   it('⛔ RNM Share TETAP di daftar tab — §6 melarang menghapusnya', () => {
     expect(TAB_NON_PROPORSIONAL).toContain('RNM Share')
-    expect(TAB_NON_PROPORSIONAL).toHaveLength(12)
-    expect(TAB_PROPORSIONAL).toHaveLength(11)
+    expect(TAB_NON_PROPORSIONAL).toHaveLength(11)
+    expect(TAB_PROPORSIONAL).toHaveLength(10)
   })
 
   it('cabang tab RNM Share masih merender sesuatu', () => {

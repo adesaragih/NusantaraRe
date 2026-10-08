@@ -92,3 +92,40 @@ func TestSalinanPetaAdjustmentSungguhDibandingkan(t *testing.T) {
 			len(salinan), kolom)
 	}
 }
+
+// ⭐ 8 Oktober 2026 — halaman `ActualValue` (cabang Adjust Premium) mendarat di
+// `ID + AkhiranSisiAktual`; penulis (Treaty In) dan pembaca (Adjustment)
+// wajib sepakat, atau sisi Actual terbaca kosong tanpa galat.
+func TestAkhiranSisiAktualSama(t *testing.T) {
+	if ti.AkhiranSisiAktual != adj.AkhiranSisiAktual {
+		t.Fatalf("akhiran sisi Actual berbeda: treatyin %q, treatyinadjustment %q",
+			ti.AkhiranSisiAktual, adj.AkhiranSisiAktual)
+	}
+	if ti.AkhiranSisiAktual == "" || ti.AkhiranSisiAktual == ti.AkhiranSisiLama {
+		t.Fatalf("akhiran sisi Actual %q wajib terisi dan berbeda dari sisi Old %q", ti.AkhiranSisiAktual, ti.AkhiranSisiLama)
+	}
+}
+
+// ⭐ 8 Oktober 2026 — halaman `ValueBeforeProrate` mendarat di
+// `ID + AkhiranSisiSebelumProrata`, pola yang sama dengan sisi Actual.
+//
+// ⛔ Ketiga akhiran wajib BERBEDA satu sama lain: dua sisi berakhiran sama
+// akan saling menimpa di tabel yang sama, dan yang hilang tidak akan
+// bergalat — ia hanya terbaca kosong.
+func TestAkhiranSisiSebelumProrataSama(t *testing.T) {
+	if ti.AkhiranSisiSebelumProrata != adj.AkhiranSisiSebelumProrata {
+		t.Fatalf("akhiran sisi ValueBeforeProrate berbeda: treatyin %q, treatyinadjustment %q",
+			ti.AkhiranSisiSebelumProrata, adj.AkhiranSisiSebelumProrata)
+	}
+	akhiran := []string{ti.AkhiranSisiLama, ti.AkhiranSisiAktual, ti.AkhiranSisiSebelumProrata}
+	for i, a := range akhiran {
+		if a == "" {
+			t.Fatalf("akhiran ke-%d kosong", i)
+		}
+		for j, b := range akhiran {
+			if i != j && a == b {
+				t.Fatalf("akhiran ke-%d dan ke-%d sama (%q) — kedua sisi akan saling menimpa", i, j, a)
+			}
+		}
+	}
+}

@@ -350,7 +350,6 @@ export const TAB_PROPORSIONAL = [
   'Portfolio', // @417075
   'Limits', // @526981
   'Share', // @651816 — panel dalamnya "Total Share" @662148
-  'Retro', // @1031030 — ⭐ BERSYARAT, lihat SYARAT_TAB
   'Co-Ins Scale', // @1077949
   'Accumulation', // @1230754 — panel dalamnya "Accumulation Control" @1250071
   'Exclusions', // @1455282
@@ -388,7 +387,6 @@ export const TAB_NON_PROPORSIONAL = [
   // terpenuhi) = 10, persis yang tangkapan layar perlihatkan. Dengan
   // `RNM Share` ikut, daftar ini 12 — satu lebih banyak daripada ekspor.
   'RNM Share', // @2093710 — ⛔ lihat di atas
-  'Retro', // @3291797
   'Installment', // @3465901
   'Value Difference', // @3848946 — ⭐ BERSYARAT, lihat SYARAT_TAB
   'Exclusions', // @3907436
@@ -511,16 +509,11 @@ export type UjiSyaratTab = (k: SyaratTabKontrak) => boolean
  * 770 dari 775 kontrak yang berhak melihatnya — dan ekspornya tidak pernah
  * memintanya.
  */
-export const SYARAT_TAB_PROPORSIONAL: Readonly<Record<string, UjiSyaratTab>> = {
-  // `TreatyIn.IsMultipleRetro` — satu properti telanjang sebagai syarat
-  // berarti "benar". Nilainya TEKS di dokumen: `"true"` pada 5 dari 1.854
-  // kontrak, `"false"` pada 1.531, dan kuncinya tidak ada pada 318.
-  //
-  // ⛔ Kunci yang TIDAK ADA diperlakukan tidak-terpenuhi, dan itu bukan
-  // sama dengan `false` — ia hanya kebetulan berakhir di tab yang sama.
-  // Perbedaannya tercatat; yang dicatat dapat dibalik, yang dilebur tidak.
-  Retro: (k) => k.retroBerganda === 'true',
-}
+// ⛔ KOSONG, dan itu keadaan yang sah: satu-satunya tab proporsional
+// bersyarat sudah dikeluarkan dari proyek (keputusan pemilik proses
+// 8 Oktober 2026). Bentuknya dipertahankan sebab `tabUntuk` menerima peta
+// syarat untuk KEDUA cabang, dan cabang non-proporsional masih memakainya.
+export const SYARAT_TAB_PROPORSIONAL: Readonly<Record<string, UjiSyaratTab>> = {}
 
 export const SYARAT_TAB_NON_PROPORSIONAL: Readonly<Record<string, UjiSyaratTab>> = {
   // `TreatyIn.EDMState != 3 && TreatyIn.EDMMaterialType == 1`.
@@ -1416,6 +1409,8 @@ export const LAMPIRAN = {
   simpanDulu: 'Simpan kontrak lebih dulu untuk mengunggah lampiran.',
   /** `ShowAttachmentTreaty` — `pyLabel` apa adanya. */
   viewOffice: 'View Office Online',
+  /** Popup penampil kantor sebelum URL-nya datang. */
+  memuatPenampil: 'Loading…',
   hapus: 'Delete',
   gantiKategori: 'Change Category',
   simpanKategori: 'Save',

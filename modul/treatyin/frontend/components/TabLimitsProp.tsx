@@ -20,6 +20,7 @@ import { Field, FieldAngka, Kosong, Panel, Pilih, StripTab } from '../../../../i
 import { formatNumber } from '../../../../inti/frontend/lib/format'
 import {
   ambilKelasBisnis,
+  catatLogAchievement,
   ambilOpsiLimits,
   hitungCadangan,
   hitungDeduksi,
@@ -112,6 +113,8 @@ interface KeadaanAchievement {
   pilihTahun: (v: string) => void
   /** Refresh → `GetAchievement`. */
   segarkan: () => void
+  /** `TreatyIn.ID` — `InsertToLogAchievement` [1] `InputParam.CARI1`. */
+  idKontrak: string
 }
 const AchievementCtx = createContext<KeadaanAchievement | null>(null)
 
@@ -119,6 +122,24 @@ const AchievementCtx = createContext<KeadaanAchievement | null>(null)
 function PanelAchievement({ d, grid }: { d: SimpulLimit; grid: (larik: string) => ReactNode }) {
   const a = useContext(AchievementCtx)
   const daftar = larikDari(d, 'AchievementLists')
+  // `InsertToLogAchievement` → `LOG_ACHIEVEMENT` (keputusan pemakai
+  // 8 Oktober 2026): satu baris log per baris AchievementLists.
+  const [log, setLog] = useState<{ sibuk: boolean; pesan: string; galat: boolean }>({ sibuk: false, pesan: '', galat: false })
+  const kirim = () => {
+    const kolom = ['Quarter', 'QUARTERYEAR', 'CurrencyID', 'Currency', 'PREMIUM', 'RICOMM', 'BROKERAGE', 'NETPREMIUM',
+      'PaidClaim', 'CASHCALL', 'OutstandingClaim', 'IncuredClaim', 'Total', 'LossRatio']
+    setLog({ sibuk: true, pesan: '', galat: false })
+    catatLogAchievement({
+      idKontrak: a?.idKontrak ?? '',
+      baris: daftar.map((b) => Object.fromEntries(kolom.map((k) => [k, teksDari(b, k)]))),
+    })
+      .then((h) => {
+        setLog({ sibuk: false, pesan: ACHIEVEMENT.tercatat(h.disisipkan, h.dilewati), galat: false })
+      })
+      .catch((e: unknown) => {
+        setLog({ sibuk: false, pesan: e instanceof Error ? e.message : String(e), galat: true })
+      })
+  }
   const unduh = () => {
     // `GenerateCSVTreaty`: 13 kolom AchievementLists, baris tanpa Quarter
     // (baris total) dilewati.
@@ -160,9 +181,9 @@ function PanelAchievement({ d, grid }: { d: SimpulLimit; grid: (larik: string) =
             <button type="button" className="btn" onClick={unduh}>
               {ACHIEVEMENT.excel}
             </button>
-            {/* `InsertToLogAchievement` MENULIS log — jalur tulis menunggu
-                keputusan pemilik proses, seperti Save. */}
-            <button type="button" className="btn" disabled title={ACHIEVEMENT.kirimMenunggu}>
+            {/* `InsertToLogAchievement` → `LOG_ACHIEVEMENT` — HIDUP sejak
+                8 Oktober 2026 (keputusan pemakai). */}
+            <button type="button" className="btn" disabled={log.sibuk} onClick={kirim}>
               {ACHIEVEMENT.kirim}
             </button>
           </>
@@ -171,6 +192,11 @@ function PanelAchievement({ d, grid }: { d: SimpulLimit; grid: (larik: string) =
       {a !== null && a.pesan !== '' && (
         <p className="trin__galat" role="alert">
           {a.pesan}
+        </p>
+      )}
+      {log.pesan !== '' && (
+        <p className={log.galat ? 'trin__galat' : 'trin__redup'} role={log.galat ? 'alert' : 'status'}>
+          {log.pesan}
         </p>
       )}
     </>
@@ -1224,6 +1250,7 @@ export default function TabLimitsProp({
       })
   }
   const keadaanAch: KeadaanAchievement = {
+    idKontrak,
     asAt,
     tahun,
     kuartal,

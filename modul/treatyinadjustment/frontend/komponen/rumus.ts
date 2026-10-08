@@ -498,6 +498,43 @@ const pasangMataUang: Rumus = (s, _a, l) => {
 }
 
 /**
+ * `SetCurrNameMasterTreaty_Act` — perilaku `change` sel `.CurrencyID` grid
+ * Rate of Exchange panel New (`GRID_KURS.baru`: postValue → runActivity →
+ * refresh). *(8 Okt, E)*
+ *
+ * Korpus `Treaty In Adjustment/Activity/SetCurrNameMasterTreaty_Act.xml`
+ * (langkahnya identik dengan korpus Treaty In), kelas
+ * `ASM-FW-GISFW-Data-TreatyInCurrencyList` — halaman pemicu = BARIS kurs:
+ *
+ *   [1] Page-Remove `CURRENCY`
+ *   [2] Obj-Browse `CURRENCY` kelas `ASM-FW-GISFW-Int-CURRENCY`,
+ *       `.ID = .CurrencyID` (@4723/@4763), pilih `.Currency` (@9916),
+ *       MaxRecords 1 (@11461)
+ *   [3] Property-Set `.Currency = CURRENCY.pxResults(1).Currency` (@18421/@18463)
+ *
+ * Hanya `.Currency` baris itu yang ditulis; pengenal yang tidak ditemukan
+ * memberi `pxResults(1)` kosong → `.Currency` kosong. Berbeda dari
+ * `SetCurrName_Act` (pasangan dua arah) — Activity ini SATU arah, ID → nama.
+ *
+ * ⚠️ Daftar master = rute Treaty In (`BrowseCurrency_RD`, tanpa `ITL`),
+ * sedang Obj-Browse tidak menyaring `ITL`. Dropdown sel ini memakai daftar
+ * yang sama, jadi pengenal `ITL` tidak dapat DIPILIH; bedanya hanya muncul
+ * pada nilai tersimpan yang tidak pernah diubah — dan itu tidak memicu
+ * `change`.
+ */
+const namaMataUangMaster: Rumus = (s, _a, l) => {
+  const sel = l.sel
+  if (sel === undefined) return Promise.resolve(kosong())
+  const daftar = l.master?.mataUang
+  if (daftar === undefined) return Promise.resolve(masterBelum())
+  const baris = s.larik[sel.larik] ?? []
+  const b = baris[sel.indeks]
+  if (b === undefined) return Promise.resolve(kosong())
+  const baru: Baris = { ...b, Currency: daftar.find((x) => x.id === teks(b.CurrencyID))?.nama ?? '' }
+  return Promise.resolve({ larik: { [sel.larik]: baris.map((y, i) => (i === sel.indeks ? baru : y)) }, medan: {}, pesan: [] })
+}
+
+/**
  * `SetTreatyGroupName_Act` — `.TreatyGroup = TREATYGROUP(.TreatyGroupID).TreatyGroupName`.
  * Langkah 2 (pencarian) dilewati bila pengenalnya kosong, tetapi langkah 3
  * tetap menulis — hasil kosong.
@@ -1161,6 +1198,7 @@ const RUMUS: Readonly<Record<string, Rumus>> = {
   'LimitCalculation|': limitCalculation,
   'PremiumReserveCalculate|': cadanganPremi,
   'SetCurrName_Act|': pasangMataUang,
+  'SetCurrNameMasterTreaty_Act|': namaMataUangMaster,
   'SetTreatyGroupName_Act|': namaKelompokTreaty,
   'SetTreatyTypeName_Act|': namaJenisTreaty,
 }

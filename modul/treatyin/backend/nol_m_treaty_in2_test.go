@@ -43,12 +43,11 @@ var diizinkan = map[string]string{
 
 	// Komentar yang menyatakan tabel ini TIDAK disentuh. Briefing pencabutan
 	// menyatakan komentar itu tetap benar dan boleh tinggal.
-	filepath.Join("modul", "treatyin", "backend", "repository", "pendaratan_muat.go"):               "komentar: yang TIDAK dimuat",
-	filepath.Join("modul", "treatyin", "backend", "repository", "warisan_layer_dokumen.go"):         "komentar: riwayat pencabutan",
-	filepath.Join("modul", "treatyin", "backend", "models", "warisan_layer.go"):                     "komentar: riwayat pencabutan",
-	filepath.Join("modul", "treatyin", "backend", "models", "warisan_kontrak.go"):                   "komentar: riwayat pencabutan",
-	filepath.Join("modul", "treatyin", "backend", "repository", "warisan_layer_dokumen_test.go"):    "komentar: uji lama yang dicabut, beserta sebabnya",
-	filepath.Join("modul", "treatyin", "backend", "repository", "warisan_layer_dokumen_db_test.go"): "uji yang MEMBUKTIKAN pencabutannya — kueri di uji, bukan di jalur baca",
+	filepath.Join("modul", "treatyin", "backend", "repository", "pendaratan_muat.go"):            "komentar: yang TIDAK dimuat",
+	filepath.Join("modul", "treatyin", "backend", "repository", "warisan_layer_dokumen.go"):      "komentar: riwayat pencabutan",
+	filepath.Join("modul", "treatyin", "backend", "models", "warisan_layer.go"):                  "komentar: riwayat pencabutan",
+	filepath.Join("modul", "treatyin", "backend", "models", "warisan_kontrak.go"):                "komentar: riwayat pencabutan",
+	filepath.Join("modul", "treatyin", "backend", "repository", "warisan_layer_dokumen_test.go"): "komentar: uji lama yang dicabut, beserta sebabnya",
 }
 
 // ⭐ NOL berkas Go menyebut `M_TREATY_IN2` di luar daftar-izin.

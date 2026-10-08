@@ -63,8 +63,8 @@ export function bolehRevisi(b: Pick<BarisDaftarWarisan, 'statusAkseptasi' | 'pos
  * Mode form yang dibuka sebuah tombol aksi baris.
  *
  * ⭐ `Edit` → `ubah` (seluruh fungsi form hidup), `View` → `lihat`.
- * `Copy` membuat kontrak BARU dari yang ada — alur itu belum dibangun, jadi
- * ia membuka kontrak sumbernya dalam mode `lihat`. `Revision` menyimpan
+ * `Copy` TIDAK lewat fungsi ini sejak 8 Oktober 2026 — ia membuka DRAF
+ * kontrak baru lewat `onSalin` (`TreatyInCopy`). `Revision` menyimpan
  * keadaan revisi lebih dulu (`mulaiRevisi`), lalu membuka kontraknya dalam
  * mode `lihat` — form terkunci (`ViewState=1`, `IsEditData=1`), hanya
  * Comment dan Submit revisi yang hidup.
@@ -129,9 +129,15 @@ export interface DaftarKontrakProps {
   onBuka: (id: string, mode: ModeForm) => void
   /** Membuka form kosong — tombol `Add`. */
   onTambah: () => void
+  /**
+   * ⭐ Tombol `Copy` — membuka DRAF kontrak baru berisi salinan kontrak ini
+   * (`SetTreatyIn_Act(ID=.ID)` lalu `Activity/TreatyInCopy.xml`). NOL
+   * tulisan: draf masuk tabel hanya lewat Save/Submit di form.
+   */
+  onSalin?: (id: string) => void
 }
 
-export default function DaftarKontrakTreatyIn({ onBuka, onTambah }: DaftarKontrakProps) {
+export default function DaftarKontrakTreatyIn({ onBuka, onTambah, onSalin }: DaftarKontrakProps) {
   const [baris, setBaris] = useState<BarisDaftarWarisan[] | null>(null)
   const [total, setTotal] = useState(0)
   const [galat, setGalat] = useState<unknown>(null)
@@ -326,7 +332,9 @@ export default function DaftarKontrakTreatyIn({ onBuka, onTambah }: DaftarKontra
                   ))}
                   <td className="trin__aksi">
                     {aksiUntuk(b.statusAkseptasi)
-                      .filter((a) => a !== DAFTAR_KONTRAK.revisi || bolehRevisi(b, workbasket))
+                      /* ⭐ `Copy` (cell 993) dan `Revision` (cell 994) ber-`pyCondition`
+                         IDENTIK — `bolehRevisi` berlaku untuk keduanya. */
+                      .filter((a) => (a !== DAFTAR_KONTRAK.revisi && a !== DAFTAR_KONTRAK.salin) || bolehRevisi(b, workbasket))
                       .map((a) =>
                         a === DAFTAR_KONTRAK.revisi ? (
                           /* ⚠️ Event `doubleclick`, bukan `click` — persis
@@ -350,7 +358,8 @@ export default function DaftarKontrakTreatyIn({ onBuka, onTambah }: DaftarKontra
                             type="button"
                             className="btn btn--ghost btn--sm"
                             onClick={() => {
-                              onBuka(b.id, modeUntuk(a))
+                              if (a === DAFTAR_KONTRAK.salin && onSalin !== undefined) onSalin(b.id)
+                              else onBuka(b.id, modeUntuk(a))
                             }}
                           >
                             {a}

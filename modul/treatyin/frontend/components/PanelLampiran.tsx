@@ -1,7 +1,7 @@
 // ⛔ DIPINDAHKAN dari `pages/FormKontrakTreatyIn.tsx` 5 Oktober 2026 —
 // pemindahan MURNI, nol perubahan perilaku.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Gagal, Kosong, Modal, Panel } from '../../../../inti/frontend/components/ui/dasar'
 import { pesanGalat } from '../../../../inti/frontend/klien'
@@ -10,6 +10,7 @@ import {
   ambilTautanLampiran,
   hapusLampiran,
   ubahKategoriLampiran,
+  unduhLampiran,
   unggahLampiran,
   type BarisKategoriLampiran,
   type BarisLampiranWarisan,
@@ -107,23 +108,45 @@ export default function PanelLampiran({
   const [kategoriBaru, setKategoriBaru] = useState<Record<string, string>>({})
   const bolehGantiKategori = statusAkseptasi !== 'Resolve Complete' && statusAkseptasi !== 'Decline'
   /**
-   * `DownloadAttachmentTreaty` — URL bertanda tangan dibuka di tab baru.
-   * ⚠️ Jendelanya dibuka SEBELUM menunggu jawaban: peramban memblokir
-   * `window.open` yang terjadi sesudah `await`.
+   * Tautan nama berkas (`DownloadAttachmentTreaty`) — isi berkas dialirkan
+   * backend dan diunduh lewat `fetch` beridentitas.
+   * ⛔ BUKAN membuka URL di tab baru: penjaga lintas modul
+   * `claimlife/frontend/unduhdokumen.test.ts` melarang `window.open` dan
+   * navigasi lewat skrip (ralat 8 Oktober 2026).
    */
-  const buka = (idLampiran: string, office: boolean) => {
-    const jendela = window.open('', '_blank')
-    ambilTautanLampiran(idKontrak, idLampiran, office)
+  const unduh = (b: BarisLampiranWarisan) => {
+    setSibuk(true)
+    setGalatPanel('')
+    unduhLampiran(idKontrak, b.id, b.namaBerkas)
+      .catch(galat)
+      .finally(() => {
+        setSibuk(false)
+      })
+  }
+  /**
+   * `View Office Online` — penampil kantor di POPUP berbingkai, pola Master
+   * Product Name Life: popup dibuka lebih dulu (tanpa jendela baru, jadi
+   * tidak diblokir peramban), lalu bingkainya diisi URL penampil dari
+   * backend. Jawaban untuk popup yang sudah ditutup dibuang (`giliran`).
+   */
+  const [penampil, setPenampil] = useState<{ nama: string; siap: boolean } | null>(null)
+  const bingkai = useRef<HTMLIFrameElement>(null)
+  const giliran = useRef(0)
+  const tutupPenampil = () => {
+    giliran.current++
+    setPenampil(null)
+  }
+  const bukaOffice = (b: BarisLampiranWarisan) => {
+    const ke = ++giliran.current
+    setPenampil({ nama: b.namaBerkas, siap: false })
+    ambilTautanLampiran(idKontrak, b.id, true)
       .then((j) => {
-        if (jendela === null) {
-          window.location.assign(j.url)
-          return
-        }
-        jendela.opener = null
-        jendela.location.href = j.url
+        if (ke !== giliran.current) return
+        if (bingkai.current !== null) bingkai.current.src = j.url
+        setPenampil((p) => (p === null ? p : { ...p, siap: true }))
       })
       .catch((e: unknown) => {
-        jendela?.close()
+        if (ke === giliran.current) tutupPenampil()
         galat(e)
       })
   }
@@ -438,7 +461,13 @@ export default function PanelLampiran({
             </div>
           )}
           <div className="table-wrap">
-            <table className="trin__tabel">
+            <table className="trin__tabel trin__lihat-berkas">
+              {/* ⭐ Dirapikan 8 Oktober 2026 (permintaan pemakai): nama
+                  berkas lebar, sel Type memuat jenis + tombolnya sebaris. */}
+              <colgroup>
+                <col className="trin__lihat-nama" />
+                <col className="trin__lihat-tipe" />
+              </colgroup>
               <thead>
                 <tr>
                   {/* ⛔ DUA kolom, persis gambar 25 — `File Name` dan
@@ -463,16 +492,18 @@ export default function PanelLampiran({
                       <button
                         type="button"
                         className="trin__tautan"
-                        disabled={idKontrak === ''}
+                        disabled={idKontrak === '' || sibuk}
                         onClick={() => {
-                          buka(b.id, false)
+                          unduh(b)
                         }}
                       >
                         {b.namaBerkas}
                       </button>
                     </td>
                     <td>
-                      {b.jenisMime}
+                      <div className="trin__lihat-jenis">
+                      <span>{b.jenisMime}</span>
+                      <div className="trin__lihat-aksi">
                       {/* `View Office Online` — xls/xlsx/doc/docx/ppt/pptx. */}
                       {JENIS_OFFICE.includes(b.jenisMime.toLowerCase()) && (
                         <button
@@ -480,7 +511,7 @@ export default function PanelLampiran({
                           className="btn btn--ghost btn--sm"
                           disabled={idKontrak === ''}
                           onClick={() => {
-                            buka(b.id, true)
+                            bukaOffice(b)
                           }}
                         >
                           {LAMPIRAN.viewOffice}
@@ -518,12 +549,22 @@ export default function PanelLampiran({
                           {LAMPIRAN.hapus}
                         </button>
                       )}
+                      </div>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        </Modal>
+      )}
+
+      {/* `View Office Online` — penampil kantor di bingkai popup. */}
+      {penampil !== null && (
+        <Modal judul={penampil.nama} onTutup={tutupPenampil} labelBatal={LAMPIRAN.tutup} penuh>
+          {!penampil.siap && <p className="trin__redup">{LAMPIRAN.memuatPenampil}</p>}
+          <iframe ref={bingkai} title={penampil.nama} className="trin__penampil" />
         </Modal>
       )}
     </Panel>

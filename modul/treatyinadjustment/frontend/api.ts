@@ -181,6 +181,12 @@ export interface Penyesuaian {
   idAsal: string
   baru: SisiPenyesuaian
   lama: SisiPenyesuaian
+  /**
+   * Isi sisi New ada di tabel pendaratan. `false` = kepalanya dilengkapi dari
+   * `TREATY_IN_EDM`/master tetapi isi tabnya tidak ada — layar mengunci panel
+   * New (mode lihat). Tidak ada = dianggap terdarat (bentuk lama).
+   */
+  terdarat?: boolean
 }
 
 /** `GET /api/treaty-in-adjustment/penyesuaian-warisan` — grid daftar. */
@@ -268,9 +274,42 @@ export interface OpsiLimitsTreatyIn {
   jenisTreaty: PilihanTreatyIn[]
   kelompokTreaty: PilihanTreatyIn[]
   mataUang: PilihanTreatyIn[]
+  /**
+   * ⭐ Dropdown `associated` rincian Layers Non-Prop — daftar yang SAMA
+   * dengan tab Limits Non-Prop Treaty In (`Layer`/`Part Of` · `Cover` ·
+   * `Currency Relation` · `Note` Reinstatement).
+   */
+  jenisLayer?: OpsiTreatyIn[]
+  cover?: OpsiTreatyIn[]
+  relasiMataUang?: OpsiTreatyIn[]
+  catatanReinstatement?: OpsiTreatyIn[]
 }
 export async function ambilOpsiLimitsTreatyIn(): Promise<OpsiLimitsTreatyIn> {
   return minta<OpsiLimitsTreatyIn>(`${PREFIX_TREATYIN}/warisan/opsi-limits`)
+}
+
+/**
+ * `GET /api/treaty-in/warisan/kelas-bisnis` — autocomplete `Class of
+ * Business` (`BrowseTreatyBusinessWOType_RD`, parameter `pTreatyGroupId`):
+ * `id` = `.BizCode`, `nama` = `.BIZNAME`. Sama dengan Treaty In.
+ */
+export async function ambilKelasBisnisTreatyIn(treatyGroupId: string): Promise<PilihanTreatyIn[]> {
+  return minta<PilihanTreatyIn[]>(`${PREFIX_TREATYIN}/warisan/kelas-bisnis`, { kueri: { treatyGroupId } })
+}
+
+/** Satu susunan induk spreading — `SusunanSpreading` modul Treaty In. */
+export interface SusunanSpreadingTreatyIn {
+  reinsTypeId: string
+  reinsTypeName: string
+}
+
+/**
+ * `GET /api/treaty-in/warisan/spreading-induk` — dropdown `Spreading Type`
+ * (`BrowseTreatyArrangement_ParentReinsMasterTrt`, parameter `TreatyGroupID`
+ * dan `StartDate = TreatyIn.Commencement`). Sama dengan Treaty In.
+ */
+export async function ambilIndukSpreadingTreatyIn(treatyGroupId: string, mulai: string): Promise<SusunanSpreadingTreatyIn[]> {
+  return minta<SusunanSpreadingTreatyIn[]>(`${PREFIX_TREATYIN}/warisan/spreading-induk`, { kueri: { treatyGroupId, mulai } })
 }
 
 /** `GET /api/treaty-in/warisan/opsi-kepala` — Bordereaux, Accounting Mode, Reporting Period. */
@@ -323,6 +362,24 @@ export interface MasukanKirimPenyesuaian extends MasukanSimpanPenyesuaian {
 }
 
 /** Jawaban tombol tulis — `services.HasilSimpan` modul Treaty In. */
+/** Nasib satu berkas salinan lampiran master. */
+export interface BerkasSalinanLampiran {
+  nama: string
+  berhasil: boolean
+  pesan: string
+}
+
+/**
+ * Salinan lampiran master (`TreatyRevisionCopyAttachment`) — hanya pada
+ * tulisan PERTAMA draf penyesuaian.
+ */
+export interface SalinanLampiran {
+  sumber: string
+  tersalin: number
+  berkas: BerkasSalinanLampiran[]
+  pesan?: string
+}
+
 export interface HasilSimpanPenyesuaian {
   id: string
   pesan: string
@@ -331,6 +388,8 @@ export interface HasilSimpanPenyesuaian {
   pemegangPosisi: string
   /** Properti terkirim yang TIDAK tersimpan — dilaporkan, tidak ditelan. */
   kunciTakTersimpan: string[]
+  /** Draf yang PERTAMA kali tersimpan: salinan lampiran master. */
+  salinanLampiran?: SalinanLampiran
 }
 
 /** `POST /api/treaty-in/penyesuaian/simpan` — tombol Save. */
@@ -349,4 +408,20 @@ export async function kirimPenyesuaian(m: MasukanKirimPenyesuaian): Promise<Hasi
  */
 export async function hapusPenyesuaian(id: string): Promise<HasilSimpanPenyesuaian> {
   return minta<HasilSimpanPenyesuaian>(`${PREFIX_TREATYIN}/penyesuaian/hapus`, { metode: 'POST', badan: { id } })
+}
+
+/** Satu baris `AchievementLists` untuk log — ejaan properti Pega. */
+export type BarisLogAchievement = Record<
+  'Quarter' | 'QUARTERYEAR' | 'CurrencyID' | 'Currency' | 'PREMIUM' | 'RICOMM' | 'BROKERAGE' | 'NETPREMIUM' |
+    'PaidClaim' | 'CASHCALL' | 'OutstandingClaim' | 'IncuredClaim' | 'Total' | 'LossRatio',
+  string
+>
+
+/**
+ * `POST /api/treaty-in/achievement/log` — tombol `Submit` sub-tab Achievement
+ * (`InsertToLogAchievement` → `LOG_ACHIEVEMENT`, keputusan pemakai 8 Oktober
+ * 2026). Baris ber-Quarter kosong dilewati server.
+ */
+export async function catatLogAchievement(m: { idKontrak: string; baris: BarisLogAchievement[] }): Promise<{ disisipkan: number; dilewati: number }> {
+  return minta<{ disisipkan: number; dilewati: number }>(`${PREFIX_TREATYIN}/achievement/log`, { metode: 'POST', badan: m })
 }

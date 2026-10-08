@@ -6,6 +6,7 @@ package services_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"nusantarare/modul/treatyin/backend/models"
@@ -165,5 +166,72 @@ func TestDeclineOfferPenyesuaianMenghapus(t *testing.T) {
 	g.kepalaEDM["1001001/R01"]["StatusAkseptasi"] = models.StatusTuntas
 	if _, err := l.HapusPenyesuaian(context.Background(), admin, services.MasukanHapusPenyesuaian{ID: "1001001/R01"}); !errors.Is(err, services.ErrTombolDitolak) {
 		t.Errorf("tuntas: %v", err)
+	}
+}
+
+// ⛔ `ValueBeforeProrate` PUNYA RUMAH — celah yang ditutup 8 Oktober 2026.
+//
+// ---------------------------------------------------------------------
+// Apa yang dulu hilang
+// ---------------------------------------------------------------------
+// `TreatyEDMProRateCalculation` langkah "Copy value from ValueDifference to
+// ValueBeforeProrate" menyetel `TreatyIn.ValueBeforeProrate :=
+// TreatyIn.ValueDifference`, dan `terapkanSelisih` menyalinnya ke dokumen.
+// NOL tabel menampungnya: setiap Save penyesuaian ber-pro-rate melaporkannya
+// "TIDAK tersimpan", dan tab `TreatyInTabsNPValueDifference_NoProRate` yang
+// MEMBACANYA kosong sesudah kontrak dimuat ulang.
+//
+// ⭐ Sekarang ia mendarat di MASTERID sendiri (`#PRORATA`), pola yang SAMA
+// dengan `ActualValue` — nol DDL, tabel yang sama, peta yang sama.
+func TestSebelumProrataMendaratDiSisinyaSendiri(t *testing.T) {
+	g := gudangEDM()
+	h, err := services.LayananDengan(g).SimpanPenyesuaian(context.Background(), admin, services.MasukanPenyesuaian{
+		ID: "1001001/R02", Draf: true,
+		Baru: services.SisiKiriman{
+			Medan: map[string]any{
+				"OLDID": "1001001/R01", "EDMState": "2",
+				"ValueBeforeProrate.RNMShare":         "7",
+				"ValueBeforeProrate.BrokeragePercent": "3",
+			},
+		},
+		Lama: &services.SisiKiriman{Medan: map[string]any{"RNMShare": "4"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := g.disimpanEDM[0]
+
+	// ⛔ Ia TIDAK tertinggal di dokumen sisi New — di sana ia nol punya kolom.
+	if _, masih := r.Baru["ValueBeforeProrate"]; masih {
+		t.Error("ValueBeforeProrate masih di sisi New — ia akan dilaporkan hilang lagi")
+	}
+	// ⭐ Dan ia ADA di sisinya sendiri.
+	if r.SebelumProrata == nil {
+		t.Fatal("SebelumProrata nil — halaman itu tidak didaratkan")
+	}
+	if r.SebelumProrata["RNMShare"] != "7" || r.SebelumProrata["BrokeragePercent"] != "3" {
+		t.Errorf("isi sisi SebelumProrata %v", r.SebelumProrata)
+	}
+	// ⛔ Dan ia TIDAK lagi dilaporkan tidak tersimpan.
+	for _, k := range h.KunciTakTersimpan {
+		if strings.HasPrefix(k, "ValueBeforeProrate") {
+			t.Errorf("masih dilaporkan hilang: %q", k)
+		}
+	}
+}
+
+// ⭐ Tanpa pro-rate, sisinya TIDAK dibuat — `nil` berarti tidak disentuh,
+// dan membuat sisi kosong akan menghapus yang tersimpan sebelumnya.
+func TestTanpaProRataSisinyaTidakDisentuh(t *testing.T) {
+	g := gudangEDM()
+	if _, err := services.LayananDengan(g).SimpanPenyesuaian(context.Background(), admin, services.MasukanPenyesuaian{
+		ID: "1001001/R02", Draf: true,
+		Baru: services.SisiKiriman{Medan: map[string]any{"OLDID": "1001001/R01", "EDMState": "2"}},
+		Lama: &services.SisiKiriman{Medan: map[string]any{"RNMShare": "4"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if g.disimpanEDM[0].SebelumProrata != nil {
+		t.Error("sisi SebelumProrata dibuat padahal dokumen tidak membawanya")
 	}
 }

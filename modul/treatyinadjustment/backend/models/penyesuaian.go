@@ -58,6 +58,10 @@ type SisiPenyesuaian struct {
 	// FacultativeShareList, Installment) sebagai simpul BERSARANG: nilai teks
 	// atau larik simpul. Dibaca rumus tombol; grid membaca `Larik`.
 	Pohon map[string][]map[string]any `json:"pohon"`
+	// Terdarat - baris AKAR sisi ini ada di tabel pendaratan (`T_TREATY_IN`
+	// ber-MASTERID ini). Diisi pembaca pendaratan; tidak ikut JSON — layar
+	// membacanya dari `Penyesuaian.Terdarat`.
+	Terdarat bool `json:"-"`
 }
 
 // Penyesuaian - satu penyesuaian utuh: pengenalnya, sisi New, dan sisi Old.
@@ -72,4 +76,11 @@ type Penyesuaian struct {
 	IDAsal string          `json:"idAsal"`
 	Baru   SisiPenyesuaian `json:"baru"`
 	Lama   SisiPenyesuaian `json:"lama"`
+	// Terdarat - isi sisi New (tab Limits, Share, …) ADA di tabel
+	// pendaratan. ⛔ `false` = kepalanya dilengkapi dari `TREATY_IN_EDM` /
+	// master, tetapi isi tabnya TIDAK ada: layar menguncinya dari suntingan,
+	// sebab grid kosong yang dapat ditambah lalu disimpan menimpa kontrak
+	// dengan data separuh (audit 8 Oktober 2026). Di Pega keadaan ini tidak
+	// mungkin — penyesuaian selalu membawa salinan dokumen utuh.
+	Terdarat bool `json:"terdarat"`
 }

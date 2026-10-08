@@ -99,6 +99,14 @@ describe('⭐ modal Attach — bentuk Master Product Name Life', () => {
     expect(PANEL).toContain('if (gagal.length === 0) setUnggahKe(null)')
   })
 
+  // ⛔ Ralat 8 Oktober 2026: unduh lewat fetch beridentitas, View Office
+  // Online di bingkai popup — nol `window.open` (`unduhdokumen.test.ts`).
+  it('View File: unduh lewat fetch beridentitas, Office di bingkai popup', () => {
+    expect(PANEL).toContain('unduhLampiran(idKontrak, b.id, b.namaBerkas)')
+    expect(PANEL).toContain('bingkai.current.src = j.url')
+    expect(PANEL).not.toMatch(/window\.open\(|location\.(href|assign|replace)\b/)
+  })
+
   it('Attach tidak dimatikan saat pilihan kosong — kalimat penolakan datang dari backend', () => {
     expect(PANEL).toContain('disabled={sibuk} onClick={lampirkan}')
     expect(PANEL).toContain('await unggahLampiran(idKontrak, kode, [])')

@@ -35,11 +35,13 @@ import { ambilSesiSaya } from '../../../../inti/frontend/klien'
 import {
   ambilDaftarAsalBisnis,
   ambilDaftarCedant,
+  ambilDraftSalinan,
   ambilKontrakWarisan,
   ambilOpsiKepala,
   ambilOpsiLimits,
   kirimKontrak,
   simpanKontrak,
+  simpanSalinan,
   type HasilSimpan,
   type MasukanKirim,
   type BarisEgnpi,
@@ -52,6 +54,7 @@ import {
   type SimpulLimit,
 } from '../api'
 import type { ModeForm } from '../mode'
+import { PesanMedanAgen, useDaftarNegatifAgen } from '../components/PesanDaftarNegatif'
 import {
   FORM_KONTRAK,
   SYARAT_TAB_NON_PROPORSIONAL,
@@ -136,14 +139,6 @@ export const PROPORSIONAL = 'Proportional'
 export const NON_PROPORSIONAL = 'Non Proportional'
 
 /**
- * Tab yang DISEMBUNYIKAN dari strip — keputusan pemilik proses 7 Oktober
- * 2026: *"untuk sementara retro di hide dari tab sampai ada perintah dari
- * developer"*. Tab-nya tetap di daftar ekspor (`TAB_*`) beserta syaratnya;
- * ia hanya tidak ditawarkan. Membukanya kembali = menghapus entrinya.
- */
-export const TAB_DISEMBUNYIKAN: ReadonlySet<string> = new Set(['Retro'])
-
-/**
  * Himpunan tab yang berlaku bagi sebuah cabang.
  *
  * ⛔ Dipisahkan sebagai fungsi supaya ia dapat diuji tanpa merender apa pun —
@@ -205,9 +200,18 @@ export interface FormKontrakProps {
    * ulang form dengan pengenal itu.
    */
   onTersimpan?: (id: string) => void
+  /**
+   * ⭐ Tombol `Copy` daftar — pengenal kontrak SUMBER. Bersama `idKontrak`
+   * kosong ia berarti DRAF salinan (`Activity/TreatyInCopy.xml`: `ID =
+   * "UnknownId"`, `OLDID` = sumber): isinya dimuat dari sumbernya, dan
+   * Save/Submit/Decline melahirkan kontrak BARU lewat `simpanSalinan`.
+   */
+  salinDari?: string
 }
 
-export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKembali, onTersimpan }: FormKontrakProps) {
+export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKembali, onTersimpan, salinDari }: FormKontrakProps) {
+  // Draf `Copy` yang BELUM disimpan — sesudah Save, rute membuka pengenal barunya.
+  const sumberSalin = idKontrak === '' ? (salinDari ?? '') : ''
   const bisaUbah = mode === 'ubah'
   // Pilihan dropdown kepala — nilai TERSIMPAN ↔ label, disusun services.
   // Kontrak yang dibuka membawanya; kontrak BARU memintanya sendiri.
@@ -263,6 +267,9 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
   // menolak kontrak yang pengenalnya kosong.
   const [idCedant, setIdCedant] = useState('')
   const [idAsalBisnis, setIdAsalBisnis] = useState('')
+  // `TreatyInCheckCedingBlacklist` — tombol `Edit` menjalankannya sesudah
+  // `SetTreatyIn_Act`: sekali, saat kontrak lama selesai dimuat di mode ubah.
+  const pesanAgen = useDaftarNegatifAgen(bisaUbah && idKontrak !== '' && !memuat, idKontrak, idCedant, idAsalBisnis)
   const [pemimpin, setPemimpin] = useState(false)
   // ⭐ Grid Rate of Exchange dibaca dari dokumen warisan kontrak ini, bukan
   // dari keadaan kosong. `CurrencyList` berisi di 297 dari 300 dokumen yang
@@ -379,11 +386,20 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
         setSibukTulis(false)
       })
   }
+  /** Draf `Copy`: isi layar + sumbernya — server menyusun clipboard salinan. */
+  const isiSalinan = (aksi: '' | 'submit' | 'decline', tambahan: Record<string, unknown> = {}) => {
+    const { dokumen, kurs: k } = isiTombol(tambahan)
+    return { idSumber: sumberSalin, dokumen, kurs: k, aksi }
+  }
   const tekanSave = () => {
-    tekanTulis(() => simpanKontrak(isiTombol()))
+    tekanTulis(() => (sumberSalin !== '' ? simpanSalinan(isiSalinan('')) : simpanKontrak(isiTombol())))
   }
   const tekanKirim = (aksi: MasukanKirim['aksi'], pilihan = '', tambahan: Record<string, unknown> = {}) => {
-    tekanTulis(() => kirimKontrak({ ...isiTombol(tambahan), aksi, pilihan }))
+    tekanTulis(() =>
+      sumberSalin !== '' && aksi !== 'akseptasi'
+        ? simpanSalinan(isiSalinan(aksi, tambahan))
+        : kirimKontrak({ ...isiTombol(tambahan), aksi, pilihan }),
+    )
   }
   const statusKini = warisan?.statusAkseptasi ?? ''
   // `TreatyIn.RevisionState` TERSIMPAN (migrasi 448) — tombol Revision daftar.
@@ -401,7 +417,7 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
   // ubah sendiri — kontrak non-proporsional yang membuka strip proporsional
   // memperlihatkan sebelas tab yang tidak satu pun miliknya.
   useEffect(() => {
-    if (idKontrak === '') {
+    if (idKontrak === '' && sumberSalin === '') {
       setMemuat(false)
       return
     }
@@ -411,7 +427,10 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
     setLimitsNP(null)
     setShareNP(null)
     penampung.kosongkan()
-    ambilKontrakWarisan(idKontrak)
+    // ⭐ Draf `Copy` dimuat dari SUMBERNYA, sudah melewati `TreatyInCopy`
+    // di server (status/posisi/riwayat). NOL tulisan.
+    const muat = sumberSalin !== '' ? ambilDraftSalinan(sumberSalin) : ambilKontrakWarisan(idKontrak)
+    muat
       .then((k) => {
         if (dibuang) return
         setWarisan(k)
@@ -485,7 +504,7 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
     }
     // ⭐ `muatUlang` — sesudah tombol tulis berhasil, kontrak dibaca ULANG dari
     // tabel: layar memperlihatkan yang TERSIMPAN, bukan yang diketik.
-  }, [idKontrak, muatUlang])
+  }, [idKontrak, sumberSalin, muatUlang])
 
   // ⭐ `TreatyIn.EDMMaterialType = 1` — mengunci `Contract Ref No`
   // (`pyDisabledWhen`) dan `Bordereaux Note` (`pyReadOnlyCondition`).
@@ -503,7 +522,7 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
         }
   // ⭐ Syarat tab dinilai `tabUntuk`; yang DISEMBUNYIKAN pemilik proses
   // (Retro) dibuang di sini, di strip — syaratnya tetap teruji.
-  const tab = tabUntuk(jenis, syaratTab).filter((t) => !TAB_DISEMBUNYIKAN.has(t))
+  const tab = tabUntuk(jenis, syaratTab)
   const [tabAktif, setTabAktif] = useState<string>(tab[0] ?? '')
   const tabTampil = tab.includes(tabAktif) ? tabAktif : (tab[0] ?? '')
 
@@ -639,6 +658,21 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
                   checked={jenis === o.nilai}
                   onChange={() => {
                     setJenis(o.nilai)
+                    // ⭐ DT `TreatyInSetPeriod` — satu langkah, dan itu
+                    // seluruh isinya:
+                    //
+                    //   TreatyIn.ReportingPeriod := "quarter"
+                    //
+                    // Ia terpasang pada peristiwa `change` radio inilah
+                    // (`Section/InputTreatyInOffer.xml`, aksi `refresh`
+                    // ber-pra-DT), bukan pada tab Reporting Period.
+                    //
+                    // ⚠️ TANPA SYARAT, termasuk ketika pemakai memilih
+                    // kembali jenis yang sama: ekspor nol memeriksa nilai
+                    // lama, dan menambah pemeriksaan itu akan membuat
+                    // perilaku kita berbeda pada satu-satunya kasus yang
+                    // membedakannya.
+                    penampung.ubah('ReportingPeriod', () => 'quarter')
                   }}
                 />
                 {o.label}
@@ -776,6 +810,8 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
                 memperlihatkan pengenal adalah DAFTAR pencariannya — di sini
                 `nama — id` untuk nama kembar. */}
             <input type="hidden" name="cedingId" value={idCedant} />
+            {/* `TreatyInCheckCedingBlacklist` [2]: pesan pada `TreatyIn.Ceding`. */}
+            <PesanMedanAgen pesan={pesanAgen.cedant} />
             {/* `pxCheckbox` · `pyCheckboxCaption` "RNM as Treaty Leader" ·
                 `pyIncludeLabel=false` — keterangan di SAMPING kotak, tanpa
                 label medan. `pyDisabledWhen TreatyIn.ViewState = 1` = mode
@@ -802,6 +838,8 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
             {/* Sel 28 `TreatyIn.LeadingReinsSource` baca-saja; pengenalnya
                 tidak tampil di Pega. */}
             <input type="hidden" name="leadingReinsSourceId" value={idAsalBisnis} />
+            {/* `TreatyInCheckCedingBlacklist` [3]: pesan pada `TreatyIn.LeadingReinsSource`. */}
+            <PesanMedanAgen pesan={pesanAgen.asalBisnis} />
           </div>
         </div>
       </Panel>
@@ -1239,12 +1277,10 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
               bentuknya. `KEPUTUSAN §17`. */}
           <div className="trin__belum" role="note">
             <span className="trin__belum-judul">
-              {tabTampil === 'Retro' ? FORM_KONTRAK.jarangDipakai : FORM_KONTRAK.belumDibangun}
+              {FORM_KONTRAK.belumDibangun}
             </span>
             <span className="trin__belum-petunjuk">
-              {tabTampil === 'Retro'
-                ? FORM_KONTRAK.jarangDipakaiPetunjuk
-                : FORM_KONTRAK.belumDibangunPetunjuk}
+              {FORM_KONTRAK.belumDibangunPetunjuk}
             </span>
           </div>
         </Panel>

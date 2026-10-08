@@ -42,6 +42,7 @@ import {
 import type { JenisTulis } from '../komponen/aksiTombol'
 import { gabungPohon, samaNilai, teks } from '../komponen/baris'
 import { persenLebar } from '../komponen/lebar'
+import { gabungPesanSalinan } from '../komponen/salinanLampiran'
 import PilihMaster from '../komponen/PilihMaster'
 import SisiForm, { selNilai, type ModeLayar } from '../komponen/SisiPenyesuaian'
 import {
@@ -63,6 +64,7 @@ import {
   TOMBOL,
 } from '../labelsPenyesuaian'
 import { PanelLampiranKontrak, PanelRiwayat } from './LampiranKontrak'
+import { teksPromptEDM } from '../labelsPromptEDM'
 import PanelPolisMaster, { idMasterPolis } from '../komponen/PanelPolisMaster'
 
 /** Baris per halaman grid daftar — `pyGridPaginator` @651683, ukuran bawaan Pega 10. */
@@ -110,7 +112,10 @@ function Kepala({ p }: { p: Penyesuaian }) {
     Object.prototype.hasOwnProperty.call(m, kunci) ? (
       <div className="field">
         <label className="field__label">{label}</label>
-        <input className="field__input field__input--readonly" type="text" value={m[kunci] ?? ''} readOnly />
+        {/* *(8 Okt, E)* Dropdown `associated` Pega menampilkan PROMPT VALUE
+            rule Property-nya (`ekspor-tambahan/EDMState.xml`,
+            `EDMMaterialType.xml`) — lihat `labelsPromptEDM.ts`. */}
+        <input className="field__input field__input--readonly" type="text" value={teksPromptEDM(kunci, m[kunci] ?? '')} readOnly />
         <span className="tria__redup">{PENYESUAIAN.kodeBelumBerteks}</span>
       </div>
     ) : (
@@ -324,7 +329,7 @@ function Detail({
     setHasil(null)
     jalan()
       .then((h) => {
-        setHasil({ galat: false, pesan: h.pesan, takTersimpan: h.kunciTakTersimpan })
+        setHasil({ galat: false, pesan: gabungPesanSalinan(h.pesan, h.salinanLampiran), takTersimpan: h.kunciTakTersimpan })
         kini.current = null
         setMuatUlang((n) => n + 1)
         if (adalahDraf) onTersimpan(h.id)
@@ -372,6 +377,11 @@ function Detail({
   // ⭐ Cabang ADJUST PREMIUM panel New — `EDMState=3` (@566980): Actual GNPI,
   // Actual Limits, Actual Share, Premium Adjustment (halaman `ActualValue`).
   const adjustPremi = np && (p.baru.medan.EDMState ?? '') === '3'
+  // ⭐ Isi tab TIDAK ada di pendaratan → panel New dan deret tombolnya dalam
+  // mode LIHAT: grid kosong tidak dapat ditambah lalu disimpan sebagai data
+  // separuh (audit 8 Oktober 2026). Panel Old tetap menurut `mode`.
+  const terkunciPendaratan = p.terdarat === false
+  const modeBaru: ModeLayar = terkunciPendaratan ? '1' : mode
 
   return (
     <>
@@ -380,6 +390,11 @@ function Detail({
         <p className="tria__redup" role="note">
           {PENYESUAIAN.drafBelumTersimpan}
         </p>
+      )}
+      {terkunciPendaratan && mode === '0' && (
+        <div className="alert alert--warn" role="note">
+          {PENYESUAIAN.belumTerdarat}
+        </div>
       )}
       {/* ⭐ `Existing Policy for Master ID` (@111283) — di antara kepala dan
           panel Old/New, seperti urutan Section-nya. */}
@@ -403,13 +418,13 @@ function Detail({
             tab={np ? TAB_LAMA_NP : TAB_LAMA_P}
           />
           <SisiForm
-            key={`baru-${p.id}-${mode}-${String(muatUlang)}`}
+            key={`baru-${p.id}-${modeBaru}-${String(muatUlang)}`}
             judul={PENYESUAIAN.panelBaru}
             sisi={p.baru}
             akar={p.baru}
             lama={p.lama}
             bacaSaja={false}
-            mode={mode}
+            mode={modeBaru}
             cabang={cabang}
             medanKiri={MEDAN_KIRI_BARU}
             medanKanan={MEDAN_KANAN_BARU}
@@ -427,7 +442,7 @@ function Detail({
           baru, dan salinannya menunggu Save. */}
       <PanelLampiranKontrak masterID={draf !== undefined ? p.idAsal : p.id} jenis={cabang} />
       <DeretTombol
-        mode={mode}
+        mode={modeBaru}
         medan={p.baru.medan}
         onTutup={onTutup}
         onSimpan={() => {

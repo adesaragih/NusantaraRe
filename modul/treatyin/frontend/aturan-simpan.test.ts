@@ -65,9 +65,18 @@ function berkasLayar(): { nama: string; isi: string }[] {
 // (`Delete_act`, `ChangeDokument_Act("Save")`) — dan `ambilTautanLampiran`:
 // GET, tetapi MENULIS `T_STORAGE_IMAGE` saat URL kedaluwarsa
 // (`GetUrlGoogleStorage_Act` [6.6] `Update_T_Storage_SQL`).
+// ⭐ DELAPAN: `catatLogAchievement` — tombol Submit sub-tab Achievement
+// (`InsertToLogAchievement` → `LOG_ACHIEVEMENT`), yang di Pega pun menulis
+// seketika (keputusan pemakai 8 Oktober 2026).
 const FUNGSI_TULIS: readonly string[] = [
   'simpanKontrak', 'kirimKontrak', 'mulaiRevisi', 'unggahLampiran', 'hapusLampiran', 'ubahKategoriLampiran',
-  'ambilTautanLampiran',
+  'ambilTautanLampiran', 'catatLogAchievement',
+  // `unduhLampiran` — URL kedaluwarsa diperbarui (`Update_T_Storage_SQL`).
+  'unduhLampiran',
+  // `simpanSalinan` — Save/Submit/Decline draf tombol `Copy` (8 Oktober
+  // 2026). Copy SENDIRI nol tulis (`TreatyInCopy` hanya `Property-Set`);
+  // draf baru masuk tabel lewat tombol Save, persis kontrak `UnknownId`.
+  'simpanSalinan',
 ]
 
 describe('Aturan B — isian tidak masuk DB sampai Save atau Submit', () => {
@@ -99,7 +108,10 @@ describe('Aturan B — isian tidak masuk DB sampai Save atau Submit', () => {
     const api = readFileSync(join(AKAR, 'api.ts'), 'utf8')
     const menulis: string[] = []
     for (const m of api.matchAll(
-      /export async function (\w+)([\s\S]{0,700}?)metode:\s*'(POST|PUT|PATCH|DELETE)'/g,
+      // ⛔ Badan TIDAK boleh menyeberang ke `export async function`
+      // berikutnya — dulu fungsi GET meminjam `metode: 'POST'` tetangganya
+      // dan tetangga itu luput diperiksa (8 Oktober 2026).
+      /export async function (\w+)((?:(?!export async function)[\s\S]){0,700}?)metode:\s*'(POST|PUT|PATCH|DELETE)'/g,
     )) {
       const nama = m[1]
       const badan = m[2] ?? ''

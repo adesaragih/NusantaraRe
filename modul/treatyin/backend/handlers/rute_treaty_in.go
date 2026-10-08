@@ -56,6 +56,9 @@ func daftarkan(mux *http.ServeMux, layanan func() *services.Layanan, adaDB func(
 	daftarkanIdentitas(pasang)
 	daftarkanWarisan(pasang)
 	daftarkanSimpan(pasang)
+	daftarkanSalin(pasang)
+	daftarkanLogAchievement(pasang)
+	daftarkanDaftarNegatifAgen(pasang)
 	daftarkanLampiran(pasang)
 }
 

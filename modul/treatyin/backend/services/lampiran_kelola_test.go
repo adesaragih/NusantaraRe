@@ -5,9 +5,11 @@ package services_test
 import (
 	"context"
 	"errors"
+	"io"
 	"strings"
 	"testing"
 
+	inti "nusantarare/inti/backend"
 	"nusantarare/modul/treatyin/backend/models"
 	"nusantarare/modul/treatyin/backend/services"
 )
@@ -78,6 +80,34 @@ func TestTautanLampiranViewOfficeOnline(t *testing.T) {
 	}
 	if !strings.HasPrefix(u, "https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fstorage.googleapis.com") {
 		t.Errorf("office %q", u)
+	}
+}
+
+// Tautan nama berkas: isi DIALIRKAN backend dari URL bertanda tangan yang
+// berlaku — layar mengunduhnya lewat fetch beridentitas.
+func TestIsiLampiranMengalirkanDariURLBertanda(t *testing.T) {
+	g, s := gudangViewFile("01/01/2099 00:00:00"), &simpananTiruan{}
+	b, err := services.LayananDenganSimpanan(g, s).IsiLampiran(context.Background(), admin, "1001001", "L1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = b.Isi.Close() }()
+	isi, _ := io.ReadAll(b.Isi)
+	if string(isi) != "isi-berkas" || b.Nama != "Bordero.xlsx" || !strings.Contains(b.Mime, "spreadsheet") {
+		t.Errorf("berkas %q %q %q", b.Nama, b.Mime, isi)
+	}
+	if len(s.diambil) != 1 || s.diambil[0] != "https://storage.googleapis.com/rnmtest/lama?sig=1" {
+		t.Errorf("diambil %v", s.diambil)
+	}
+}
+
+func TestIsiLampiranTanpaIdentitasDitolak(t *testing.T) {
+	g, s := gudangViewFile("01/01/2099 00:00:00"), &simpananTiruan{}
+	if _, err := services.LayananDenganSimpanan(g, s).IsiLampiran(context.Background(), inti.Pelaku{}, "1001001", "L1"); err == nil {
+		t.Fatal("tanpa identitas diterima")
+	}
+	if len(s.diambil) != 0 {
+		t.Errorf("penyimpanan disentuh: %v", s.diambil)
 	}
 }
 

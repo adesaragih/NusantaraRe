@@ -6,7 +6,7 @@
 // "tidak ada spesifikasi layar di mana pun". Rute kontrak, versi, dan
 // persetujuan lahir bersama spesifikasinya.
 
-import { minta, mintaFormulir } from '../../../inti/frontend/klien'
+import { minta, mintaFormulir, unduhBerkasBeridentitas } from '../../../inti/frontend/klien'
 
 /** Prefix rute API modul ini - SAMA dengan `handlers.Prefix`. */
 export const PREFIX_TREATYIN = '/api/treaty-in'
@@ -321,6 +321,19 @@ export async function ambilPanelLampiran(idKontrak: string): Promise<PanelLampir
  * berkas dikirim ke Google Storage (`InsertGoogleStorage_Act`) lalu dicatat
  * di `T_STORAGE_IMAGE` + `M_ATTACHMENTTREATY_2`.
  */
+/**
+ * Tautan nama berkas (`DownloadAttachmentTreaty`) — isi berkas DIALIRKAN
+ * backend dan diunduh lewat `fetch` beridentitas. ⛔ Bukan membuka URL
+ * bertanda tangan: penjaga lintas modul `unduhdokumen.test.ts` melarang
+ * navigasi lewat skrip.
+ */
+export async function unduhLampiran(idKontrak: string, idLampiran: string, namaBerkas: string): Promise<void> {
+  return unduhBerkasBeridentitas(
+    `${PREFIX_TREATYIN}/kontrak/${encodeURIComponent(idKontrak)}/lampiran/${encodeURIComponent(idLampiran)}/isi`,
+    namaBerkas,
+  )
+}
+
 /** `DownloadAttachmentTreaty` — URL bertanda tangan (`office` = View Office Online). */
 export async function ambilTautanLampiran(idKontrak: string, idLampiran: string, office: boolean): Promise<{ url: string }> {
   return minta<{ url: string }>(
@@ -1320,4 +1333,77 @@ export async function ambilIndukSpreading(treatyGroupId: string, mulai: string):
 /** `GET /api/treaty-in/warisan/reasuradur-share` — autocomplete `Reinsurer Name`. */
 export async function ambilReasuradurShare(): Promise<PilihanWarisan[]> {
   return minta<PilihanWarisan[]>(`${PREFIX_TREATYIN}/warisan/reasuradur-share`)
+}
+
+/**
+ * `POST /api/treaty-in/achievement/log` — tombol `Submit` sub-tab Achievement
+ * (`InsertToLogAchievement` → `LOG_ACHIEVEMENT`, keputusan pemakai 8 Oktober
+ * 2026). Baris ber-Quarter kosong dilewati server.
+ */
+export async function catatLogAchievement(m: {
+  idKontrak: string
+  baris: Record<string, string>[]
+}): Promise<{ disisipkan: number; dilewati: number }> {
+  return minta<{ disisipkan: number; dilewati: number }>(`${PREFIX_TREATYIN}/achievement/log`, { metode: 'POST', badan: m })
+}
+
+// ---------------------------------------------------------------------------
+// Tombol `Copy` daftar kontrak — `Section/InputTreatyInOffer.xml` cell 993 →
+// `SetTreatyIn_Act(ID=.ID)` → `Activity/TreatyInCopy.xml`.
+//
+// ⭐ Copy SENDIRI tidak menulis: `TreatyInCopy` hanya `Property-Set` (ID =
+// "UnknownId", OLDID = ID lama, Position = ReasTreatyInAdmin, status/riwayat
+// dikosongkan, komentar "Copied from ID …"). Basis data baru disentuh oleh
+// Save/Submit/Decline draf itu — dan ID-nya lahir baru, persis `Add`.
+// ---------------------------------------------------------------------------
+
+/** Save (`aksi` kosong), Submit, atau Decline offer draf Copy. */
+export interface MasukanSalin {
+  /** Kontrak yang disalin — menjadi `OLDID` salinan. */
+  idSumber: string
+  dokumen: Record<string, unknown>
+  kurs?: KursSimpan | null
+  aksi?: '' | 'submit' | 'decline'
+}
+
+/** `GET /api/treaty-in/kontrak-warisan/{id}/salin` — draf Copy, NOL tulisan. */
+export async function ambilDraftSalinan(idSumber: string): Promise<KontrakWarisan> {
+  return minta<KontrakWarisan>(`${PREFIX_TREATYIN}/kontrak-warisan/${encodeURIComponent(idSumber)}/salin`)
+}
+
+/** `POST /api/treaty-in/kontrak/salin` — Save/Submit/Decline draf Copy; ID baru lahir. */
+export async function simpanSalinan(m: MasukanSalin): Promise<HasilSimpan> {
+  return minta<HasilSimpan>(`${PREFIX_TREATYIN}/kontrak/salin`, { metode: 'POST', badan: m })
+}
+
+// ===========================================================================
+// "This name is on Agent Negative List" — `TreatyInCheckCedingBlacklist`
+// ===========================================================================
+
+/** Hasil periksa satu medan — SAMA dengan `services.StatusAgenNegatif`. */
+export interface StatusAgenNegatif {
+  id: string
+  /** Pengenalnya ada di `AGENT`. */
+  ditemukan: boolean
+  /** `AGENT.STATUSACTIVE` apa adanya. */
+  statusAktif: string
+  daftarNegatif: boolean
+  /** Terisi hanya bila `daftarNegatif` — teks Activity apa adanya. */
+  pesan?: string
+}
+
+/** SAMA dengan `services.HasilDaftarNegatifAgen`. */
+export interface HasilDaftarNegatifAgen {
+  cedant: StatusAgenNegatif
+  asalBisnis: StatusAgenNegatif
+}
+
+/**
+ * `GET /api/treaty-in/agen/daftar-negatif` — `TreatyInCheckCedingBlacklist`
+ * atas `CedingID` dan `LeadingReinsSourceID`. BACA SAJA (`AGENT`).
+ */
+export async function periksaDaftarNegatifAgen(idCedant: string, idAsalBisnis: string): Promise<HasilDaftarNegatifAgen> {
+  return minta<HasilDaftarNegatifAgen>(
+    `${PREFIX_TREATYIN}/agen/daftar-negatif?cedant=${encodeURIComponent(idCedant)}&asalBisnis=${encodeURIComponent(idAsalBisnis)}`,
+  )
 }

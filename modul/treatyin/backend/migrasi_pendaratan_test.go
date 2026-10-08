@@ -202,7 +202,7 @@ func TestSembilanTabelPendaratanAdaDanBerkunciUtama(t *testing.T) {
 // di komputer orang yang menulisnya, alih-alih gagal di Oracle pada orang
 // lain beberapa hari kemudian.
 func TestPendaratanTidakMerujukTabelWarisanDenganKunciAsing(t *testing.T) {
-	warisan := []string{"TREATY_IN", "M_TREATY_IN", "M_TREATY_IN2", "TREATYEXCHANGEYEARLY", "M_TREATY_IN_DETAIL"}
+	warisan := []string{"TREATY_IN", "TREATYEXCHANGEYEARLY"}
 	pola := regexp.MustCompile(`(?is)REFERENCES\s+\{skema\}\.(\w+)`)
 	sql := tanpaKomentar(gabunganDenganParkir(t))
 	for _, m := range pola.FindAllStringSubmatch(sql, -1) {

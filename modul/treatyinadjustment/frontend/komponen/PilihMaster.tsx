@@ -29,6 +29,7 @@ import {
   OPSI_MATERIAL,
   PENYESUAIAN,
 } from '../labelsPenyesuaian'
+import { teksPromptEDM } from '../labelsPromptEDM'
 import { persenLebar } from './lebar'
 import { selNilai } from './medan'
 
@@ -162,7 +163,9 @@ export default function PilihMaster({
                     setMaterial(v)
                   }}
                 />
-                {v}
+                {/* *(8 Okt, E)* `TreatyIn.EDMMaterialType` @110848 — prompt value
+                    `ekspor-tambahan/EDMMaterialType.xml` (1 Material, 2 Non Material). */}
+                {teksPromptEDM('EDMMaterialType', v)}
               </label>
             ))}
             <span className="tria__redup">{PENYESUAIAN.kodeBelumBerteks}</span>

@@ -46,25 +46,26 @@ function semuaSumber(): { kunci: string; sp: SumberPilihan }[] {
 
 describe('opsiUntuk — satu entri per sumber ekspor', () => {
   it('BrowseCurrency_RD bernilai `.ID` (grid kurs New): nilai pengenal, tampil kode', () => {
+    // `id` ikut — pasangan kode yang `pySetValueOnSelect` isi.
     expect(opsiUntuk({ sumber: 'reportdefinition', rd: 'BrowseCurrency_RD', nilai: 'ID', tampil: 'Currency' }, 'CurrencyID', DATA)).toEqual([
-      { value: '10026', label: 'IDR' },
-      { value: '10001', label: 'USD' },
+      { value: '10026', label: 'IDR', id: '10026' },
+      { value: '10001', label: 'USD', id: '10001' },
     ])
   })
 
   it('RD bernilai nama: Treaty Group, Currency Event Limits, Treaty Type (`.Note`), agen', () => {
-    expect(opsiUntuk({ sumber: 'reportdefinition', rd: 'BrowseTreatyGroup_RD', nilai: 'TreatyGroupName' }, 'TreatyGroup', DATA)).toEqual([{ value: 'PROPERTY', label: 'PROPERTY' }])
+    expect(opsiUntuk({ sumber: 'reportdefinition', rd: 'BrowseTreatyGroup_RD', nilai: 'TreatyGroupName' }, 'TreatyGroup', DATA)).toMatchObject([{ value: 'PROPERTY', label: 'PROPERTY' }])
     expect(opsiUntuk({ sumber: 'reportdefinition', rd: 'BrowseCurrencyTreatyIn_RD', nilai: 'Currency' }, 'CurrencyRSMD', DATA)?.map((o) => o.value)).toEqual(['IDR', 'USD'])
-    expect(opsiUntuk({ sumber: 'reportdefinition', rd: 'BrowseReinsuranceType_RD', nilai: 'Note' }, 'TreatyType', DATA)).toEqual([{ value: 'QUOTA SHARE', label: 'QUOTA SHARE' }])
-    expect(opsiUntuk({ sumber: 'reportdefinition', rd: 'BrowseAgentNusaRe_RD', nilai: 'ClientName' }, 'ReinsName', DATA)).toEqual([{ value: 'PT ASURANSI A', label: 'PT ASURANSI A' }])
+    expect(opsiUntuk({ sumber: 'reportdefinition', rd: 'BrowseReinsuranceType_RD', nilai: 'Note' }, 'TreatyType', DATA)).toMatchObject([{ value: 'QUOTA SHARE', label: 'QUOTA SHARE' }])
+    expect(opsiUntuk({ sumber: 'reportdefinition', rd: 'BrowseAgentNusaRe_RD', nilai: 'ClientName' }, 'ReinsName', DATA)).toMatchObject([{ value: 'PT ASURANSI A', label: 'PT ASURANSI A' }])
   })
 
   it('⛔ RD bernilai `.ID` (Treaty Group / Treaty Type rincian Limits Prop): nilai PENGENAL, tampil nama', () => {
     expect(opsiUntuk({ sumber: 'reportdefinition', rd: 'BrowseTreatyGroup_RD', nilai: 'ID', tampil: 'TreatyGroupName' }, 'TreatyGroupID', DATA)).toEqual(
-      DATA.limits?.kelompokTreaty.map((x) => ({ value: x.id, label: x.nama })),
+      DATA.limits?.kelompokTreaty.map((x) => ({ value: x.id, label: x.nama, id: x.id })),
     )
     expect(opsiUntuk({ sumber: 'reportdefinition', rd: 'BrowseReinsuranceType_RD', nilai: 'ID', tampil: 'Note' }, 'TreatyTypeID', DATA)).toEqual(
-      DATA.limits?.jenisTreaty.map((x) => ({ value: x.id, label: x.nama })),
+      DATA.limits?.jenisTreaty.map((x) => ({ value: x.id, label: x.nama, id: x.id })),
     )
   })
 
@@ -73,7 +74,8 @@ describe('opsiUntuk — satu entri per sumber ekspor', () => {
     expect(opsiUntuk({ sumber: 'associated' }, 'AccumulationPeriod', DATA)?.map((o) => o.value)).toEqual(['quarter', 'half', 'month', 'none'])
     expect(opsiUntuk({ sumber: 'associated' }, 'OptionLimit', DATA)).toEqual([
       { value: '1', label: 'Of Cession to R/I' },
-      { value: '2', label: '2' },
+      // *(8 Okt, E)* rule `OptionLimit` (prompt list) — sama dengan Treaty In.
+      { value: '2', label: 'Of 100% Limit' },
     ])
     expect(opsiUntuk({ sumber: 'reportdefinition', rd: 'BrowseTreatyGroup_RD' }, 'TreatyGroup', {})).toBeUndefined()
   })

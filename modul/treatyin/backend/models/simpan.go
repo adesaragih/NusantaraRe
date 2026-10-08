@@ -33,4 +33,12 @@ type RencanaPenyesuaian struct {
 	// pemakai 8 Oktober 2026: "masukkan seperti yang ada di modul treaty in
 	// asal ada master id nya"). `nil` = tidak disentuh.
 	Aktual map[string]any
+	// SebelumProrata - halaman `ValueBeforeProrate`, mendarat di
+	// `ID + #PRORATA`. `nil` = tidak disentuh.
+	//
+	// ⭐ Isinya salinan `ValueDifference` SEBELUM pro-rate dikenakan
+	// (`TreatyEDMProRateCalculation`), dan tab
+	// `TreatyInTabsNPValueDifference_NoProRate` membacanya. Sampai
+	// 8 Oktober 2026 ia nol punya tempat simpan dan hilang setiap Save.
+	SebelumProrata map[string]any
 }

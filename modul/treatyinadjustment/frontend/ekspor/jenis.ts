@@ -33,6 +33,17 @@ export interface SumberPilihan {
   nilai?: string
   tampil?: string
   halaman?: string
+  /**
+   * Parameter RD (`pyReportDefParams`) — nama → ungkapan Pega apa adanya:
+   * `.TreatyGroupID`, `.TreatyGroupList(1).TreatyGroupID`,
+   * `TreatyIn.Commencement`, `"10001"`.
+   */
+  param?: Readonly<Record<string, string>>
+  /**
+   * Medan yang IKUT diisi saat satu pilihan dipilih (`pyAdditionalFields`,
+   * `pySetValueOnSelect`): `CurrencyID` ← `.ID`, `ClassOfBusinessID` ← `.BizCode`.
+   */
+  setel?: readonly { target: string; dari: string }[]
 }
 
 /** Satu aksi klik tombol, berurutan seperti di `pyBehaviors` ekspor. */
@@ -53,6 +64,10 @@ export interface AksiTombol {
    * pemicu (akar + skalar bertitik baris sel pemicu).
    */
   syarat?: string
+  /** `showHarness` — harness yang dibuka (`pyHarnessName`); isinya `KERANGKA_HARNESS`. */
+  harness?: string
+  /** Judul jendela harness (`pyWindowName`), mis. `Facultative Calculation`. */
+  jendela?: string
 }
 
 /** Tombol ekspor — juga tombol ikon tanpa `pyLabel`. */
@@ -96,6 +111,15 @@ export interface GridKerangka {
   pilihan: readonly (SumberPilihan | null)[]
   /** Aksi `change` sel per kolom (Activity sesudah isian berubah); `null` = tidak ada. */
   aksiUbah: readonly (readonly AksiTombol[] | null)[]
+  /**
+   * Mode baris grid (`pyGridProps/pyRowEditing`): `row` = sel disunting di
+   * tempat; `readOnly` = grid baca-saja; `masterDetail` = baris TAMPIL saja,
+   * penyuntingannya di panel rincian. Untuk dua yang terakhir pembangkit
+   * sudah mengisi `baca` setiap kolom data dengan `selalu`.
+   */
+  modeBaris?: string
+  /** `pyRODetails = true` — panel rincian pun baca-saja. */
+  rincianBaca?: boolean
   /** Templat bingkai baris (`pyGridTemplateName`) — bingkai saja, bukan isinya. */
   templatBaris?: string
   /**

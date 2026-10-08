@@ -66,9 +66,9 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        84489
       ],
       "baca": [
-       null,
-       null,
-       null,
+       "selalu",
+       "selalu",
+       "selalu",
        "selalu"
       ],
       "tombol": [
@@ -122,7 +122,16 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        {
         "sumber": "reportdefinition",
         "rd": "BrowseTreatyGroup_RD",
-        "nilai": "TreatyGroupName"
+        "nilai": "TreatyGroupName",
+        "param": {
+         "ID": ""
+        },
+        "setel": [
+         {
+          "target": "TreatyGroupID",
+          "dari": "ID"
+         }
+        ]
        },
        null,
        null,
@@ -134,6 +143,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "masterDetail",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInRetention!pyGridRowDetails",
       "rincian": "MaxRetention"
      }
@@ -175,8 +185,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      164168
     ],
     "baca": [
-     null,
-     null
+     "selalu",
+     "selalu"
     ],
     "tombol": [
      null,
@@ -194,6 +204,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      null,
      null
     ],
+    "modeBaris": "readOnly",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
    },
    {
@@ -244,7 +255,16 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
       "pilihan": {
        "sumber": "reportdefinition",
        "rd": "BrowseCurrencyTreatyIn_RD",
-       "nilai": "Currency"
+       "nilai": "Currency",
+       "param": {
+        "Currency": ""
+       },
+       "setel": [
+        {
+         "target": "CurrencyID",
+         "dari": "ID"
+        }
+       ]
       },
       "aksiUbah": [
        {
@@ -281,7 +301,16 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
       "pilihan": {
        "sumber": "reportdefinition",
        "rd": "BrowseCurrencyTreatyIn_RD",
-       "nilai": "Currency"
+       "nilai": "Currency",
+       "param": {
+        "Currency": ""
+       },
+       "setel": [
+        {
+         "target": "CurrencyID",
+         "dari": "ID"
+        }
+       ]
       },
       "aksiUbah": [
        {
@@ -317,7 +346,16 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
       "pilihan": {
        "sumber": "reportdefinition",
        "rd": "BrowseCurrencyTreatyIn_RD",
-       "nilai": "Currency"
+       "nilai": "Currency",
+       "param": {
+        "Currency": ""
+       },
+       "setel": [
+        {
+         "target": "CurrencyID",
+         "dari": "ID"
+        }
+       ]
       },
       "aksiUbah": [
        {
@@ -353,7 +391,16 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
       "pilihan": {
        "sumber": "reportdefinition",
        "rd": "BrowseCurrencyTreatyIn_RD",
-       "nilai": "Currency"
+       "nilai": "Currency",
+       "param": {
+        "Currency": ""
+       },
+       "setel": [
+        {
+         "target": "CurrencyID",
+         "dari": "ID"
+        }
+       ]
       },
       "aksiUbah": [
        {
@@ -459,14 +506,12 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        591940
       ],
       "baca": [
-       [
-        "1=1"
-       ],
-       null,
-       null,
-       null,
-       null,
-       null,
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
        "selalu"
       ],
       "tombol": [
@@ -542,6 +587,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "masterDetail",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInEGNPI!pyGridRowDetails",
       "rincian": "DetailEGNPI"
      }
@@ -583,8 +629,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      671998
     ],
     "baca": [
-     null,
-     null
+     "selalu",
+     "selalu"
     ],
     "tombol": [
      null,
@@ -602,6 +648,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      null,
      null
     ],
+    "modeBaris": "readOnly",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
    },
    {
@@ -779,15 +826,15 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      1019496
     ],
     "baca": [
-     null,
-     null,
      "selalu",
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
+     "selalu",
+     "selalu",
+     "selalu",
+     "selalu",
+     "selalu",
+     "selalu",
+     "selalu",
+     "selalu",
      "selalu"
     ],
     "tombol": [
@@ -872,6 +919,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      null,
      null
     ],
+    "modeBaris": "masterDetail",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridRowDetails",
     "rincian": "Layers"
    },
@@ -966,15 +1014,15 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        1160935
       ],
       "baca": [
-       null,
-       null,
-       null,
-       null,
-       null,
-       null,
-       null,
-       null,
-       null
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -1020,6 +1068,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-LimitSummaryList!pyGridModalTemplate"
      }
     ]
@@ -1066,8 +1115,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        1332880
       ],
       "baca": [
-       null,
-       null
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -1085,6 +1134,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
@@ -1123,8 +1173,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        1397536
       ],
       "baca": [
-       null,
-       null
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -1142,6 +1192,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
@@ -1180,8 +1231,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        1462197
       ],
       "baca": [
-       null,
-       null
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -1199,6 +1250,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
@@ -1237,8 +1289,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        1526841
       ],
       "baca": [
-       null,
-       null
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -1256,6 +1308,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
@@ -1596,7 +1649,18 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        {
         "sumber": "reportdefinition",
         "rd": "BrowseAgentNusaRe_RD",
-        "nilai": "ClientName"
+        "nilai": "ClientName",
+        "param": {
+         "StatusActive": "",
+         "ChildCount": "",
+         "Name": ""
+        },
+        "setel": [
+         {
+          "target": "ReinsID",
+          "dari": "ID"
+         }
+        ]
        },
        null,
        null,
@@ -1608,6 +1672,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "row",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInShareReins!pyGridModalTemplate"
      },
      {
@@ -1724,7 +1789,18 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
          {
           "sumber": "reportdefinition",
           "rd": "BrowseAgentNusaRe_RD",
-          "nilai": "ClientName"
+          "nilai": "ClientName",
+          "param": {
+           "StatusActive": "",
+           "ChildCount": "",
+           "Name": ""
+          },
+          "setel": [
+           {
+            "target": "ReinsID",
+            "dari": "ID"
+           }
+          ]
          },
          null,
          null,
@@ -1736,6 +1812,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
          null,
          null
         ],
+        "modeBaris": "row",
         "templatBaris": "ASM-FW-GISFW-Data-TreatyInShareReins!pyGridModalTemplate"
        }
       ]
@@ -1899,19 +1976,19 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
            2274405
           ],
           "baca": [
-           null,
-           null,
-           null,
-           null,
-           null,
-           null,
-           null,
-           null,
-           null,
-           null,
-           null,
-           null,
-           null,
+           "selalu",
+           "selalu",
+           "selalu",
+           "selalu",
+           "selalu",
+           "selalu",
+           "selalu",
+           "selalu",
+           "selalu",
+           "selalu",
+           "selalu",
+           "selalu",
+           "selalu",
            "selalu"
           ],
           "tombol": [
@@ -1978,6 +2055,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
            null,
            null
           ],
+          "modeBaris": "masterDetail",
           "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridRowDetails",
           "rincian": "Share"
          }
@@ -2074,15 +2152,15 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
            2420122
           ],
           "baca": [
-           null,
-           null,
-           null,
-           null,
-           null,
-           null,
-           null,
-           null,
-           null
+           "selalu",
+           "selalu",
+           "selalu",
+           "selalu",
+           "selalu",
+           "selalu",
+           "selalu",
+           "selalu",
+           "selalu"
           ],
           "tombol": [
            null,
@@ -2128,6 +2206,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
            null,
            null
           ],
+          "modeBaris": "readOnly",
           "templatBaris": "ASM-FW-GISFW-Data-LimitSummaryList!pyGridModalTemplate"
          }
         ]
@@ -2178,8 +2257,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        2536109
       ],
       "baca": [
-       null,
-       null
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -2197,6 +2276,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
@@ -2235,8 +2315,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        2601126
       ],
       "baca": [
-       null,
-       null
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -2254,6 +2334,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
@@ -2292,8 +2373,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        2666167
       ],
       "baca": [
-       null,
-       null
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -2311,6 +2392,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
@@ -2349,8 +2431,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        2746532
       ],
       "baca": [
-       null,
-       null
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -2368,6 +2450,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
@@ -2406,8 +2489,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        2826896
       ],
       "baca": [
-       null,
-       null
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -2425,6 +2508,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
@@ -2469,8 +2553,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
          2907256
         ],
         "baca": [
-         null,
-         null
+         "selalu",
+         "selalu"
         ],
         "tombol": [
          null,
@@ -2488,6 +2572,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
          null,
          null
         ],
+        "modeBaris": "readOnly",
         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
        }
       ]
@@ -2528,8 +2613,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        2987650
       ],
       "baca": [
-       null,
-       null
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -2547,6 +2632,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
@@ -2585,8 +2671,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        3052674
       ],
       "baca": [
-       null,
-       null
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -2604,6 +2690,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
@@ -2642,8 +2729,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        3116567
       ],
       "baca": [
-       null,
-       null
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -2661,6 +2748,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
@@ -2850,7 +2938,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      3575411
     ],
     "baca": [
-     null
+     "selalu"
     ],
     "tombol": [
      null
@@ -2864,6 +2952,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
     "aksiUbah": [
      null
     ],
+    "modeBaris": "masterDetail",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInInstallment!pyGridRowDetails",
     "rincian": "Installments"
    },
@@ -2903,8 +2992,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      3790088
     ],
     "baca": [
-     null,
-     null
+     "selalu",
+     "selalu"
     ],
     "tombol": [
      null,
@@ -2922,6 +3011,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      null,
      null
     ],
+    "modeBaris": "readOnly",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
    },
    {
@@ -3079,9 +3169,9 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        77261
       ],
       "baca": [
-       null,
-       null,
-       null
+       "selalu",
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -3097,7 +3187,16 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        {
         "sumber": "reportdefinition",
         "rd": "BrowseTreatyGroup_RD",
-        "nilai": "TreatyGroupName"
+        "nilai": "TreatyGroupName",
+        "param": {
+         "ID": ""
+        },
+        "setel": [
+         {
+          "target": "TreatyGroupID",
+          "dari": "ID"
+         }
+        ]
        },
        null,
        null
@@ -3107,6 +3206,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "masterDetail",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInRetention!pyGridRowDetails",
       "rincian": "MaxRetentionOldData"
      }
@@ -3148,8 +3248,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      153248
     ],
     "baca": [
-     null,
-     null
+     "selalu",
+     "selalu"
     ],
     "tombol": [
      null,
@@ -3167,6 +3267,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      null,
      null
     ],
+    "modeBaris": "readOnly",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
    }
   ]
@@ -3245,14 +3346,12 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        293685
       ],
       "baca": [
-       [
-        "1=1"
-       ],
-       null,
-       null,
-       null,
-       null,
-       null
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -3288,6 +3387,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "masterDetail",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInEGNPI!pyGridRowDetails",
       "rincian": "DetailEGNPIOldData"
      }
@@ -3329,8 +3429,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      370939
     ],
     "baca": [
-     null,
-     null
+     "selalu",
+     "selalu"
     ],
     "tombol": [
      null,
@@ -3348,6 +3448,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      null,
      null
     ],
+    "modeBaris": "readOnly",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
    },
    {
@@ -3474,14 +3575,14 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      663080
     ],
     "baca": [
-     null,
-     null,
      "selalu",
-     null,
-     null,
-     null,
-     null,
-     null
+     "selalu",
+     "selalu",
+     "selalu",
+     "selalu",
+     "selalu",
+     "selalu",
+     "selalu"
     ],
     "tombol": [
      null,
@@ -3523,6 +3624,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      null,
      null
     ],
+    "modeBaris": "masterDetail",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridRowDetails",
     "rincian": "LayersOldData"
    },
@@ -3617,15 +3719,15 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        800986
       ],
       "baca": [
-       null,
-       null,
-       null,
-       null,
-       null,
-       null,
-       null,
-       null,
-       null
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -3671,6 +3773,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-LimitSummaryList!pyGridModalTemplate"
      }
     ]
@@ -3717,8 +3820,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        973940
       ],
       "baca": [
-       null,
-       null
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -3736,6 +3839,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
@@ -3774,8 +3878,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        1038967
       ],
       "baca": [
-       null,
-       null
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -3793,6 +3897,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
@@ -3831,8 +3936,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        1103999
       ],
       "baca": [
-       null,
-       null
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -3850,6 +3955,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
@@ -3888,8 +3994,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        1169014
       ],
       "baca": [
-       null,
-       null
+       "selalu",
+       "selalu"
       ],
       "tombol": [
        null,
@@ -3907,6 +4013,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
@@ -4020,7 +4127,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      1492345
     ],
     "baca": [
-     null
+     "selalu"
     ],
     "tombol": [
      null
@@ -4034,6 +4141,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
     "aksiUbah": [
      null
     ],
+    "modeBaris": "masterDetail",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInInstallment!pyGridRowDetails",
     "rincian": "Installments_ReadOnly"
    },
@@ -4073,8 +4181,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      1707701
     ],
     "baca": [
-     null,
-     null
+     "selalu",
+     "selalu"
     ],
     "tombol": [
      null,
@@ -4092,6 +4200,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      null,
      null
     ],
+    "modeBaris": "readOnly",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
    }
   ]
@@ -4428,6 +4537,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      null,
      null
     ],
+    "modeBaris": "row",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInAccountReport!pyGridRowDetails"
    }
   ]
@@ -4565,6 +4675,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "row",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInPortfolio!pyGridModalTemplate"
      }
     ]
@@ -4617,7 +4728,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        592801
       ],
       "baca": [
-       null,
+       "selalu",
        "selalu"
       ],
       "tombol": [
@@ -4667,7 +4778,17 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        {
         "sumber": "reportdefinition",
         "rd": "BrowseReinsuranceType_RD",
-        "nilai": "Note"
+        "nilai": "Note",
+        "param": {
+         "ID": "",
+         "Note": ""
+        },
+        "setel": [
+         {
+          "target": "TreatyTypeID",
+          "dari": "ID"
+         }
+        ]
        },
        null
       ],
@@ -4675,6 +4796,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "masterDetail",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridRowDetails",
       "rincian": "LimitProportional"
      }
@@ -4954,6 +5076,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
          ],
          null
         ],
+        "modeBaris": "row",
         "templatBaris": "ASM-FW-GISFW-Data-TreatyInShareReins!pyGridModalTemplate"
        }
       ]
@@ -5094,6 +5217,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      ],
      null
     ],
+    "modeBaris": "row",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInCoInScaleDetails!pyGridModalTemplate"
    },
    {
@@ -5318,6 +5442,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      null,
      null
     ],
+    "modeBaris": "row",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInAccumulation!pyGridRowDetails"
    }
   ]
@@ -5439,7 +5564,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      1647348
     ],
     "baca": [
-     null
+     "selalu"
     ],
     "tombol": [
      null
@@ -5451,12 +5576,25 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      {
       "sumber": "reportdefinition",
       "rd": "BrowseReinsuranceType_RD",
-      "nilai": "Note"
+      "nilai": "Note",
+      "param": {
+       "ID": "",
+       "Note": "",
+       "Flag": "",
+       "Type": ""
+      },
+      "setel": [
+       {
+        "target": "TreatyTypeID",
+        "dari": "ID"
+       }
+      ]
      }
     ],
     "aksiUbah": [
      null
     ],
+    "modeBaris": "masterDetail",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridRowDetails",
     "rincian": "AchievementCombine"
    }
@@ -5667,6 +5805,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      null,
      null
     ],
+    "modeBaris": "readOnly",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInAccountReport!pyGridRowDetails"
    }
   ]
@@ -5748,6 +5887,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "readOnly",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInPortfolio!pyGridModalTemplate"
      }
     ]
@@ -5793,7 +5933,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        507483
       ],
       "baca": [
-       null
+       "selalu"
       ],
       "tombol": [
        null
@@ -5805,12 +5945,23 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        {
         "sumber": "reportdefinition",
         "rd": "BrowseReinsuranceType_RD",
-        "nilai": "Note"
+        "nilai": "Note",
+        "param": {
+         "ID": "",
+         "Note": ""
+        },
+        "setel": [
+         {
+          "target": "TreatyTypeID",
+          "dari": "ID"
+         }
+        ]
        }
       ],
       "aksiUbah": [
        null
       ],
+      "modeBaris": "masterDetail",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridRowDetails",
       "rincian": "LimitProportionalOldData"
      }
@@ -5895,7 +6046,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      653422
     ],
     "baca": [
-     null
+     "selalu"
     ],
     "tombol": [
      null
@@ -5907,12 +6058,23 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      {
       "sumber": "reportdefinition",
       "rd": "BrowseReinsuranceType_RD",
-      "nilai": "Note"
+      "nilai": "Note",
+      "param": {
+       "ID": "",
+       "Note": ""
+      },
+      "setel": [
+       {
+        "target": "TreatyTypeID",
+        "dari": "ID"
+       }
+      ]
      }
     ],
     "aksiUbah": [
      null
     ],
+    "modeBaris": "masterDetail",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridRowDetails",
     "rincian": "TotalLimitsOldData"
    },
@@ -5952,8 +6114,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      730706
     ],
     "baca": [
-     null,
-     null
+     "selalu",
+     "selalu"
     ],
     "tombol": [
      null,
@@ -5971,6 +6133,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      null,
      null
     ],
+    "modeBaris": "readOnly",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
    },
    {
@@ -6009,8 +6172,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      801504
     ],
     "baca": [
-     null,
-     null
+     "selalu",
+     "selalu"
     ],
     "tombol": [
      null,
@@ -6028,6 +6191,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      null,
      null
     ],
+    "modeBaris": "readOnly",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
    },
    {
@@ -6066,8 +6230,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      872305
     ],
     "baca": [
-     null,
-     null
+     "selalu",
+     "selalu"
     ],
     "tombol": [
      null,
@@ -6085,6 +6249,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      null,
      null
     ],
+    "modeBaris": "readOnly",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
    }
   ]
@@ -6218,6 +6383,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      ],
      null
     ],
+    "modeBaris": "readOnly",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInAccumulation!pyGridRowDetails"
    }
   ]
@@ -6365,14 +6531,12 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        124484
       ],
       "baca": [
-       [
-        "1=1"
-       ],
-       null,
-       null,
-       null,
-       null,
-       null,
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
+       "selalu",
        "selalu"
       ],
       "tombol": [
@@ -6442,6 +6606,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        null,
        null
       ],
+      "modeBaris": "masterDetail",
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInEGNPI!pyGridRowDetails",
       "rincian": "DetailEGNPI"
      }
@@ -6483,8 +6648,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      204889
     ],
     "baca": [
-     null,
-     null
+     "selalu",
+     "selalu"
     ],
     "tombol": [
      null,
@@ -6502,6 +6667,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
      null,
      null
     ],
+    "modeBaris": "readOnly",
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
    },
    {
@@ -6776,7 +6942,18 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       {
        "sumber": "reportdefinition",
        "rd": "BrowseAgentNusaRe_RD",
-       "nilai": "ClientName"
+       "nilai": "ClientName",
+       "param": {
+        "StatusActive": "",
+        "ChildCount": "",
+        "Name": ""
+       },
+       "setel": [
+        {
+         "target": "ReinsID",
+         "dari": "ID"
+        }
+       ]
       },
       null,
       null
@@ -6786,6 +6963,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "row",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInShareReins!pyGridModalTemplate"
     },
     {
@@ -6940,19 +7118,19 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           368582
          ],
          "baca": [
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -7014,6 +7192,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "masterDetail",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridRowDetails",
          "rincian": "ShareOldData"
         }
@@ -7110,15 +7289,15 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           499491
          ],
          "baca": [
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -7164,6 +7343,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-LimitSummaryList!pyGridModalTemplate"
         }
        ]
@@ -7214,8 +7394,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       602488
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -7233,6 +7413,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -7271,8 +7452,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       666050
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -7290,6 +7471,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -7328,8 +7510,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       729616
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -7347,6 +7529,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -7385,8 +7568,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       808508
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -7404,6 +7587,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -7448,8 +7632,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         887369
        ],
        "baca": [
-        null,
-        null
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -7467,6 +7651,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
      ]
@@ -7507,8 +7692,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       966242
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -7526,6 +7711,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -7564,8 +7750,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       1029811
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -7583,6 +7769,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -7621,8 +7808,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       1092229
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -7640,6 +7827,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -7668,7 +7856,9 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
      ],
      "aksi": [
       {
-       "aksi": "showHarness"
+       "aksi": "showHarness",
+       "harness": "TreatyInFacultativeShareCalculationOldData",
+       "jendela": "Facultative Calculation"
       }
      ]
     }
@@ -7813,19 +8003,19 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             1368749
            ],
            "baca": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu"
            ],
            "tombol": [
             null,
@@ -7887,6 +8077,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             null,
             null
            ],
+           "modeBaris": "masterDetail",
            "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridRowDetails",
            "rincian": "Share"
           }
@@ -7983,15 +8174,15 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             1503290
            ],
            "baca": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu"
            ],
            "tombol": [
             null,
@@ -8037,6 +8228,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             null,
             null
            ],
+           "modeBaris": "readOnly",
            "templatBaris": "ASM-FW-GISFW-Data-LimitSummaryList!pyGridModalTemplate"
           }
          ]
@@ -8085,8 +8277,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           1594294
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -8104,6 +8296,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         },
         {
@@ -8142,8 +8335,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           1672813
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -8161,6 +8354,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         },
         {
@@ -8205,8 +8399,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             1751308
            ],
            "baca": [
-            null,
-            null
+            "selalu",
+            "selalu"
            ],
            "tombol": [
             null,
@@ -8224,6 +8418,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             null,
             null
            ],
+           "modeBaris": "readOnly",
            "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
           }
          ]
@@ -8264,8 +8459,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           1829837
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -8283,6 +8478,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         }
        ]
@@ -8355,7 +8551,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       86754
      ],
      "baca": [
-      null
+      "selalu"
      ],
      "tombol": [
       null
@@ -8367,12 +8563,23 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       {
        "sumber": "reportdefinition",
        "rd": "BrowseReinsuranceType_RD",
-       "nilai": "Note"
+       "nilai": "Note",
+       "param": {
+        "ID": "",
+        "Note": ""
+       },
+       "setel": [
+        {
+         "target": "TreatyTypeID",
+         "dari": "ID"
+        }
+       ]
       }
      ],
      "aksiUbah": [
       null
      ],
+     "modeBaris": "masterDetail",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridRowDetails",
      "rincian": "TotalLimits"
     },
@@ -8412,8 +8619,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       163993
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -8431,6 +8638,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -8469,8 +8677,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       234755
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -8488,6 +8696,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -8526,8 +8735,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       305525
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -8545,6 +8754,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     }
    ]
@@ -9070,19 +9280,19 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             618959
            ],
            "baca": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu"
            ],
            "tombol": [
             null,
@@ -9144,6 +9354,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             null,
             null
            ],
+           "modeBaris": "masterDetail",
            "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridRowDetails",
            "rincian": "ShareOldData"
           }
@@ -9240,15 +9451,15 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             753583
            ],
            "baca": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu"
            ],
            "tombol": [
             null,
@@ -9294,6 +9505,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             null,
             null
            ],
+           "modeBaris": "readOnly",
            "templatBaris": "ASM-FW-GISFW-Data-LimitSummaryList!pyGridModalTemplate"
           }
          ]
@@ -9342,8 +9554,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           850950
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -9361,6 +9573,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         },
         {
@@ -9399,8 +9612,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           914502
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -9418,6 +9631,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         },
         {
@@ -9456,8 +9670,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           978058
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -9475,6 +9689,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         },
         {
@@ -9513,8 +9728,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           1056599
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -9532,6 +9747,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         },
         {
@@ -9576,8 +9792,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             1135156
            ],
            "baca": [
-            null,
-            null
+            "selalu",
+            "selalu"
            ],
            "tombol": [
             null,
@@ -9595,6 +9811,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             null,
             null
            ],
+           "modeBaris": "readOnly",
            "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
           }
          ]
@@ -9635,8 +9852,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           1213727
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -9654,6 +9871,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         },
         {
@@ -9692,8 +9910,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           1277306
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -9711,6 +9929,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         },
         {
@@ -9749,8 +9968,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           1339714
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -9768,6 +9987,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         }
        ]
@@ -9832,7 +10052,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         1499991
        ],
        "baca": [
-        null
+        "selalu"
        ],
        "tombol": [
         null
@@ -9846,6 +10066,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
        "aksiUbah": [
         null
        ],
+       "modeBaris": "masterDetail",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInInstallment!pyGridRowDetails",
        "rincian": "Installments"
       },
@@ -9885,8 +10106,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         1583951
        ],
        "baca": [
-        null,
-        null
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -9904,6 +10125,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
      ]
@@ -10135,19 +10357,19 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             527648
            ],
            "baca": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu"
            ],
            "tombol": [
             null,
@@ -10209,6 +10431,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             null,
             null
            ],
+           "modeBaris": "masterDetail",
            "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridRowDetails",
            "rincian": "ShareOldData"
           }
@@ -10305,15 +10528,15 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             666451
            ],
            "baca": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu"
            ],
            "tombol": [
             null,
@@ -10359,6 +10582,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             null,
             null
            ],
+           "modeBaris": "readOnly",
            "templatBaris": "ASM-FW-GISFW-Data-LimitSummaryList!pyGridModalTemplate"
           }
          ]
@@ -10407,8 +10631,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           764390
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -10426,6 +10650,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         },
         {
@@ -10464,8 +10689,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           827918
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -10483,6 +10708,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         },
         {
@@ -10521,8 +10747,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           891450
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -10540,6 +10766,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         },
         {
@@ -10578,8 +10805,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           969965
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -10597,6 +10824,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         },
         {
@@ -10641,8 +10869,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             1048496
            ],
            "baca": [
-            null,
-            null
+            "selalu",
+            "selalu"
            ],
            "tombol": [
             null,
@@ -10660,6 +10888,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             null,
             null
            ],
+           "modeBaris": "readOnly",
            "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
           }
          ]
@@ -10700,8 +10929,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           1127021
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -10719,6 +10948,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         },
         {
@@ -10757,8 +10987,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           1190556
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -10776,6 +11006,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         },
         {
@@ -10814,8 +11045,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           1252940
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -10833,6 +11064,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         }
        ]
@@ -10897,7 +11129,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         1413178
        ],
        "baca": [
-        null
+        "selalu"
        ],
        "tombol": [
         null
@@ -10911,6 +11143,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
        "aksiUbah": [
         null
        ],
+       "modeBaris": "masterDetail",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInInstallment!pyGridRowDetails",
        "rincian": "Installments"
       },
@@ -10950,8 +11183,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         1497086
        ],
        "baca": [
-        null,
-        null
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -10969,6 +11202,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
      ]
@@ -11046,11 +11280,11 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         85381
        ],
        "baca": [
-        null,
-        null,
         "selalu",
-        null,
-        null
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -11080,6 +11314,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "masterDetail",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridRowDetails",
        "rincian": "LayersEDM"
       }
@@ -11134,9 +11369,9 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         167607
        ],
        "baca": [
-        null,
-        null,
-        null
+        "selalu",
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -11158,6 +11393,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-LimitSummaryList!pyGridModalTemplate"
       }
      ]
@@ -11204,8 +11440,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         246594
        ],
        "baca": [
-        null,
-        null
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -11223,6 +11459,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -11261,8 +11498,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         310125
        ],
        "baca": [
-        null,
-        null
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -11280,6 +11517,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -11505,7 +11743,18 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         {
          "sumber": "reportdefinition",
          "rd": "BrowseAgentNusaRe_RD",
-         "nilai": "ClientName"
+         "nilai": "ClientName",
+         "param": {
+          "StatusActive": "",
+          "ChildCount": "",
+          "Name": ""
+         },
+         "setel": [
+          {
+           "target": "ReinsID",
+           "dari": "ID"
+          }
+         ]
         },
         null,
         null
@@ -11515,6 +11764,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInShareReins!pyGridModalTemplate"
       },
       {
@@ -11614,15 +11864,15 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             347167
            ],
            "baca": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu"
            ],
            "tombol": [
             null,
@@ -11668,6 +11918,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             null,
             null
            ],
+           "modeBaris": "masterDetail",
            "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridRowDetails",
            "rincian": "Share"
           }
@@ -11750,13 +12001,13 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             455175
            ],
            "baca": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu"
            ],
            "tombol": [
             null,
@@ -11794,6 +12045,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             null,
             null
            ],
+           "modeBaris": "readOnly",
            "templatBaris": "ASM-FW-GISFW-Data-LimitSummaryList!pyGridModalTemplate"
           }
          ]
@@ -11844,8 +12096,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         557859
        ],
        "baca": [
-        null,
-        null
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -11863,6 +12115,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -11907,8 +12160,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           636383
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -11926,6 +12179,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         }
        ]
@@ -11966,8 +12220,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         714901
        ],
        "baca": [
-        null,
-        null
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -11985,6 +12239,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -12023,8 +12278,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         778449
        ],
        "baca": [
-        null,
-        null
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -12042,6 +12297,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -12080,8 +12336,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         840846
        ],
        "baca": [
-        null,
-        null
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -12099,6 +12355,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -12110,7 +12367,9 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
        ],
        "aksi": [
         {
-         "aksi": "showHarness"
+         "aksi": "showHarness",
+         "harness": "TreatyInFacultativeShareCalculation",
+         "jendela": "Facultative Calculation"
         }
        ]
       }
@@ -12190,14 +12449,12 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       89776
      ],
      "baca": [
-      [
-       "1=1"
-      ],
-      null,
-      null,
-      null,
-      null,
-      null
+      "selalu",
+      "selalu",
+      "selalu",
+      "selalu",
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -12233,6 +12490,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "masterDetail",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInEGNPI!pyGridRowDetails",
      "rincian": "DetailEGNPI"
     }
@@ -12274,8 +12532,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
     167330
    ],
    "baca": [
-    null,
-    null
+    "selalu",
+    "selalu"
    ],
    "tombol": [
     null,
@@ -12293,6 +12551,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "readOnly",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
   },
   {
@@ -12358,11 +12617,11 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       282323
      ],
      "baca": [
-      null,
-      null,
       "selalu",
-      null,
-      null
+      "selalu",
+      "selalu",
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -12392,6 +12651,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "masterDetail",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridRowDetails",
      "rincian": "Layers"
     }
@@ -12474,13 +12734,13 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       400993
      ],
      "baca": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
+      "selalu",
+      "selalu",
+      "selalu",
+      "selalu",
+      "selalu",
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -12518,6 +12778,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-LimitSummaryList!pyGridModalTemplate"
     }
    ]
@@ -12564,8 +12825,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       484443
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -12583,6 +12844,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -12621,8 +12883,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       549486
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -12640,6 +12902,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -12758,15 +13021,15 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         772493
        ],
        "baca": [
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -12812,6 +13075,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "masterDetail",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridRowDetails",
        "rincian": "Share"
       }
@@ -12894,13 +13158,13 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         884354
        ],
        "baca": [
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -12938,6 +13202,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-LimitSummaryList!pyGridModalTemplate"
       }
      ]
@@ -12986,8 +13251,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       982777
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -13005,6 +13270,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -13049,8 +13315,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         1063152
        ],
        "baca": [
-        null,
-        null
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -13068,6 +13334,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
      ]
@@ -13108,8 +13375,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       1143562
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -13127,6 +13394,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -13165,8 +13433,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       1208602
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -13184,6 +13452,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -13222,8 +13491,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       1272491
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -13241,6 +13510,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -13387,17 +13657,17 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           1500673
          ],
          "baca": [
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -13451,6 +13721,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "masterDetail",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridRowDetails",
          "rincian": "ShareRetro"
         }
@@ -13533,13 +13804,13 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           1613772
          ],
          "baca": [
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -13577,6 +13848,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-LimitSummaryList!pyGridModalTemplate"
         }
        ]
@@ -13625,8 +13897,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         1705885
        ],
        "baca": [
-        null,
-        null
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -13644,6 +13916,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -13688,8 +13961,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           1786264
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -13707,6 +13980,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         }
        ]
@@ -13747,8 +14021,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         1866657
        ],
        "baca": [
-        null,
-        null
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -13766,6 +14040,1237 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "TreatyInActualFacultativeShareCalculation": [
+  {
+   "t": "blok",
+   "at": 18559,
+   "judul": "",
+   "syarat": [],
+   "anak": [
+    {
+     "t": "blok",
+     "at": 27364,
+     "judul": "Other Treaty Retro",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 36037,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "grid",
+         "at": 52809,
+         "prop": "TreatyIn.ActualValue.FacultativeShareList",
+         "dari": "sisi",
+         "larik": "ActualValue.FacultativeShareList",
+         "syarat": [],
+         "kolom": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "100% Limit",
+          "",
+          "100% Limit",
+          "",
+          "MDP",
+          "",
+          "MDP"
+         ],
+         "kunci": [
+          "LayerType",
+          "Layer",
+          "pyTemplateInputBox",
+          "LayerPartType",
+          "LayerPart",
+          "RnmLimitListDisplay(1).Currency",
+          "RnmLimitListDisplay(1).Value",
+          "RnmLimitListDisplay(2).Currency",
+          "RnmLimitListDisplay(2).Value",
+          "RnmGrossPremiDisplay(1).Currency",
+          "RnmGrossPremiDisplay(1).Value",
+          "RnmGrossPremiDisplay(2).Currency",
+          "RnmGrossPremiDisplay(2).Value"
+         ],
+         "lebar": [
+          138,
+          60,
+          92,
+          138,
+          103,
+          75,
+          163,
+          75,
+          163,
+          80,
+          120,
+          80,
+          120
+         ],
+         "desimal": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "format": [
+          "pxTextInput",
+          "",
+          "",
+          "pxTextInput",
+          "",
+          "pxTextInput",
+          "",
+          "pxTextInput",
+          "",
+          "pxTextInput",
+          "",
+          "pxTextInput",
+          ""
+         ],
+         "syaratSel": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "atSel": [
+          97174,
+          102864,
+          107063,
+          111219,
+          116814,
+          121019,
+          126663,
+          130978,
+          136622,
+          140937,
+          146583,
+          150900,
+          156546
+         ],
+         "baca": [
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "modeBaris": "masterDetail",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridRowDetails",
+         "rincian": "ShareRetro"
+        }
+       ]
+      },
+      {
+       "t": "blok",
+       "at": 194161,
+       "judul": "Summarry of Other Treaty Retro",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "grid",
+         "at": 210876,
+         "prop": "TreatyIn.ActualValue.LimitFacShareSummaryList",
+         "dari": "sisi",
+         "larik": "ActualValue.LimitFacShareSummaryList",
+         "syarat": [],
+         "kolom": [
+          "Note",
+          "100% Limit (IDR)",
+          "100% Limit (USD)",
+          "MDP (IDR)",
+          "MDP (USD)",
+          "Deduction (IDR)",
+          "Deduction (USD)",
+          "Net Premi (IDR)",
+          "Net Premi (USD)"
+         ],
+         "kunci": [
+          "Note",
+          "Limit",
+          "Limit2",
+          "MDP",
+          "MDP2",
+          "Deductible",
+          "Deductible2",
+          "NetPremi",
+          "NetPremi2"
+         ],
+         "lebar": [
+          293,
+          199,
+          204,
+          123,
+          119,
+          205,
+          210,
+          150,
+          144
+         ],
+         "desimal": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "format": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+         ],
+         "syaratSel": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "atSel": [
+          249486,
+          253685,
+          257893,
+          262102,
+          266307,
+          270513,
+          274726,
+          278940,
+          283150
+         ],
+         "baca": [
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-LimitSummaryList!pyGridModalTemplate"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "blok",
+     "at": 323817,
+     "judul": "Total All Layers Other Treaty Retro",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "grid",
+       "at": 357885,
+       "prop": "TreatyIn.ActualValue.TotalFacShareRnmNP",
+       "dari": "sisi",
+       "larik": "ActualValue.TotalFacShareRnmNP",
+       "syarat": [],
+       "kolom": [
+        "Total RNM Limit (RNM Share)",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        194,
+        352
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        369465,
+        374179
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 436416,
+       "prop": "TreatyIn.ActualValue.TotalFacShareGrossNP",
+       "dari": "sisi",
+       "larik": "ActualValue.TotalFacShareGrossNP",
+       "syarat": [],
+       "kolom": [
+        "Total Gross Premium (MDP)",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        194,
+        350
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        447996,
+        452710
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "blok",
+       "at": 498240,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "grid",
+         "at": 514949,
+         "prop": "TreatyIn.ActualValue.TotalFacShareDeductionNP",
+         "dari": "sisi",
+         "larik": "ActualValue.TotalFacShareDeductionNP",
+         "syarat": [],
+         "kolom": [
+          "Total Deduction",
+          "Value"
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          194,
+          352
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          526523,
+          531237
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
+       ]
+      },
+      {
+       "t": "grid",
+       "at": 593494,
+       "prop": "TreatyIn.ActualValue.TotalFacShareNetNP",
+       "dari": "sisi",
+       "larik": "ActualValue.TotalFacShareNetNP",
+       "syarat": [],
+       "kolom": [
+        "Total Net Premium",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        193,
+        349
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        605064,
+        609778
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "TreatyInFacultativeShareCalculationOldData": [
+  {
+   "t": "blok",
+   "at": 18874,
+   "judul": "",
+   "syarat": [],
+   "anak": [
+    {
+     "t": "blok",
+     "at": 27679,
+     "judul": "Other Treaty Retro",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 36352,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "grid",
+         "at": 53124,
+         "prop": "TreatyIn.OLDDATA.FacultativeShareList",
+         "dari": "sisi",
+         "larik": "FacultativeShareList",
+         "syarat": [],
+         "kolom": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "100% Limit",
+          "",
+          "100% Limit",
+          "",
+          "MDP",
+          "",
+          "MDP"
+         ],
+         "kunci": [
+          "LayerType",
+          "Layer",
+          "pyTemplateInputBox",
+          "LayerPartType",
+          "LayerPart",
+          "RnmLimitListDisplay(1).Currency",
+          "RnmLimitListDisplay(1).Value",
+          "RnmLimitListDisplay(2).Currency",
+          "RnmLimitListDisplay(2).Value",
+          "RnmGrossPremiDisplay(1).Currency",
+          "RnmGrossPremiDisplay(1).Value",
+          "RnmGrossPremiDisplay(2).Currency",
+          "RnmGrossPremiDisplay(2).Value"
+         ],
+         "lebar": [
+          138,
+          60,
+          92,
+          138,
+          103,
+          75,
+          163,
+          75,
+          163,
+          80,
+          120,
+          80,
+          120
+         ],
+         "desimal": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "format": [
+          "pxTextInput",
+          "",
+          "",
+          "pxTextInput",
+          "",
+          "pxTextInput",
+          "",
+          "pxTextInput",
+          "",
+          "pxTextInput",
+          "",
+          "pxTextInput",
+          ""
+         ],
+         "syaratSel": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "atSel": [
+          97485,
+          103175,
+          107374,
+          111530,
+          117125,
+          121330,
+          126974,
+          131289,
+          136933,
+          141248,
+          146894,
+          151211,
+          156857
+         ],
+         "baca": [
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "modeBaris": "masterDetail",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridRowDetails",
+         "rincian": "ShareRetro"
+        }
+       ]
+      },
+      {
+       "t": "blok",
+       "at": 194472,
+       "judul": "Summarry of Other Treaty Retro",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "grid",
+         "at": 211187,
+         "prop": "TreatyIn.OLDDATA.LimitFacShareSummaryList",
+         "dari": "sisi",
+         "larik": "LimitFacShareSummaryList",
+         "syarat": [],
+         "kolom": [
+          "Note",
+          "100% Limit (IDR)",
+          "100% Limit (USD)",
+          "MDP (IDR)",
+          "MDP (USD)",
+          "Deduction (IDR)",
+          "Deduction (USD)",
+          "Net Premi (IDR)",
+          "Net Premi (USD)"
+         ],
+         "kunci": [
+          "Note",
+          "Limit",
+          "Limit2",
+          "MDP",
+          "MDP2",
+          "Deductible",
+          "Deductible2",
+          "NetPremi",
+          "NetPremi2"
+         ],
+         "lebar": [
+          293,
+          199,
+          204,
+          123,
+          119,
+          205,
+          210,
+          150,
+          144
+         ],
+         "desimal": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "format": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+         ],
+         "syaratSel": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "atSel": [
+          249793,
+          253992,
+          258200,
+          262409,
+          266614,
+          270820,
+          275033,
+          279247,
+          283457
+         ],
+         "baca": [
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-LimitSummaryList!pyGridModalTemplate"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "blok",
+     "at": 324124,
+     "judul": "Total All Layers Other Treaty Retro",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "grid",
+       "at": 358192,
+       "prop": "TreatyIn.OLDDATA.TotalFacShareRnmNP",
+       "dari": "sisi",
+       "larik": "TotalFacShareRnmNP",
+       "syarat": [],
+       "kolom": [
+        "Total RNM Limit (RNM Share)",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        194,
+        352
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        369768,
+        374482
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 436719,
+       "prop": "TreatyIn.OLDDATA.TotalFacShareGrossNP",
+       "dari": "sisi",
+       "larik": "TotalFacShareGrossNP",
+       "syarat": [],
+       "kolom": [
+        "Total Gross Premium (MDP)",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        194,
+        350
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        448295,
+        453009
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "blok",
+       "at": 498539,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "grid",
+         "at": 515248,
+         "prop": "TreatyIn.OLDDATA.TotalFacShareDeductionNP",
+         "dari": "sisi",
+         "larik": "TotalFacShareDeductionNP",
+         "syarat": [],
+         "kolom": [
+          "Total Deduction",
+          "Value"
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          194,
+          352
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          526818,
+          531532
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
+       ]
+      },
+      {
+       "t": "grid",
+       "at": 593789,
+       "prop": "TreatyIn.OLDDATA.TotalFacShareNetNP",
+       "dari": "sisi",
+       "larik": "TotalFacShareNetNP",
+       "syarat": [],
+       "kolom": [
+        "Total Net Premium",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        193,
+        349
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        605355,
+        610069
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
      ]
@@ -13847,7 +15352,16 @@ export const GRID_KURS: Readonly<Record<'lama' | 'baru', GridKerangka>> = {
    {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrency_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    null,
    null,
@@ -13863,6 +15377,7 @@ export const GRID_KURS: Readonly<Record<'lama' | 'baru', GridKerangka>> = {
    null,
    null
   ],
+  "modeBaris": "readOnly",
   "templatBaris": "ASM-FW-GISFW-Data-TreatyInCurrencyList!pyGridModalTemplate"
  },
  "baru": {
@@ -13990,7 +15505,11 @@ export const GRID_KURS: Readonly<Record<'lama' | 'baru', GridKerangka>> = {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrency_RD",
     "nilai": "ID",
-    "tampil": "Currency"
+    "tampil": "Currency",
+    "param": {
+     "Currency": "",
+     "ID": ""
+    }
    },
    null,
    null,
@@ -14015,6 +15534,7 @@ export const GRID_KURS: Readonly<Record<'lama' | 'baru', GridKerangka>> = {
    null,
    null
   ],
+  "modeBaris": "row",
   "templatBaris": "ASM-FW-GISFW-Data-TreatyInCurrencyList!pyGridModalTemplate"
  }
 }
@@ -14125,6 +15645,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "readOnly",
    "templatBaris": "Data-!pyGridModalTemplate"
   }
  ],
@@ -14145,7 +15666,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseTreatyGroup_RD",
-    "nilai": "TreatyGroupName"
+    "nilai": "TreatyGroupName",
+    "param": {
+     "ID": ""
+    },
+    "setel": [
+     {
+      "target": "TreatyGroupID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -14208,7 +15738,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     {
      "sumber": "reportdefinition",
      "rd": "BrowseTreatyBusinessWOType_RD",
-     "nilai": "BIZNAME"
+     "nilai": "BIZNAME",
+     "param": {
+      "pTreatyGroupId": ".TreatyGroupID"
+     },
+     "setel": [
+      {
+       "target": "ClassOfBusinessID",
+       "dari": "BizCode"
+      }
+     ]
     }
    ],
    "aksiUbah": [
@@ -14226,6 +15765,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      }
     ]
    ],
+   "modeBaris": "row",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitLayer!pyGridRowDetails"
   }
  ],
@@ -14245,7 +15785,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseTreatyGroup_RD",
-    "nilai": "TreatyGroupName"
+    "nilai": "TreatyGroupName",
+    "param": {
+     "ID": ""
+    },
+    "setel": [
+     {
+      "target": "TreatyGroupID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -14305,7 +15854,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     {
      "sumber": "reportdefinition",
      "rd": "BrowseTreatyBusinessWOType_RD",
-     "nilai": "BIZNAME"
+     "nilai": "BIZNAME",
+     "param": {
+      "pTreatyGroupId": ".TreatyGroupID"
+     },
+     "setel": [
+      {
+       "target": "ClassOfBusinessID",
+       "dari": "BizCode"
+      }
+     ]
     }
    ],
    "aksiUbah": [
@@ -14323,6 +15881,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      }
     ]
    ],
+   "modeBaris": "readOnly",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitLayer!pyGridRowDetails"
   }
  ],
@@ -14340,7 +15899,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseTreatyGroup_RD",
-    "nilai": "TreatyGroupName"
+    "nilai": "TreatyGroupName",
+    "param": {
+     "ID": ""
+    },
+    "setel": [
+     {
+      "target": "TreatyGroupID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -14389,12 +15957,22 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     {
      "sumber": "reportdefinition",
      "rd": "BrowseTreatyBusinessWOType_RD",
-     "nilai": "BIZNAME"
+     "nilai": "BIZNAME",
+     "param": {
+      "pTreatyGroupId": ".TreatyGroupID"
+     },
+     "setel": [
+      {
+       "target": "ClassOfBusinessID",
+       "dari": "BizCode"
+      }
+     ]
     }
    ],
    "aksiUbah": [
     null
    ],
+   "modeBaris": "readOnly",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitLayer!pyGridRowDetails"
   }
  ],
@@ -14415,7 +15993,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseTreatyGroup_RD",
-    "nilai": "TreatyGroupName"
+    "nilai": "TreatyGroupName",
+    "param": {
+     "ID": ""
+    },
+    "setel": [
+     {
+      "target": "TreatyGroupID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -14457,7 +16044,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -14556,7 +16152,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseTreatyGroup_RD",
-    "nilai": "TreatyGroupName"
+    "nilai": "TreatyGroupName",
+    "param": {
+     "ID": ""
+    },
+    "setel": [
+     {
+      "target": "TreatyGroupID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -14593,7 +16198,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -14692,7 +16306,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     "sumber": "reportdefinition",
     "rd": "BrowseTreatyGroup_RD",
     "nilai": "ID",
-    "tampil": "TreatyGroupName"
+    "tampil": "TreatyGroupName",
+    "param": {
+     "ID": ""
+    }
    },
    "aksiUbah": [
     {
@@ -14767,7 +16384,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     {
      "sumber": "reportdefinition",
      "rd": "BrowseTreatyBusinessWOType_RD",
-     "nilai": "BIZNAME"
+     "nilai": "BIZNAME",
+     "param": {
+      "pTreatyGroupId": ".TreatyGroupID"
+     },
+     "setel": [
+      {
+       "target": "ClassOfBusinessID",
+       "dari": "BizCode"
+      }
+     ]
     }
    ],
    "aksiUbah": [
@@ -14784,6 +16410,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      }
     ]
    ],
+   "modeBaris": "row",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridRowDetails"
   },
   {
@@ -15008,7 +16635,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "sumber": "reportdefinition",
      "rd": "BrowseCurrencyTreatyIn_RD",
      "nilai": "Currency",
-     "tampil": "Currency"
+     "tampil": "Currency",
+     "param": {
+      "Currency": ""
+     }
     },
     null,
     null,
@@ -15049,6 +16679,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "row",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
   },
   {
@@ -15214,7 +16845,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "sumber": "reportdefinition",
      "rd": "BrowseCurrencyTreatyIn_RD",
      "nilai": "Currency",
-     "tampil": "Currency"
+     "tampil": "Currency",
+     "param": {
+      "Currency": ""
+     }
     },
     null,
     null,
@@ -15255,6 +16889,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "row",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
   },
   {
@@ -15399,7 +17034,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "sumber": "reportdefinition",
      "rd": "BrowseCurrencyTreatyIn_RD",
      "nilai": "Currency",
-     "tampil": "Currency"
+     "tampil": "Currency",
+     "param": {
+      "Currency": ""
+     }
     },
     null,
     null
@@ -15420,6 +17058,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "row",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
   },
   {
@@ -15451,7 +17090,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         "sumber": "reportdefinition",
         "rd": "BrowseCurrencyTreatyIn_RD",
         "nilai": "Currency",
-        "tampil": "Currency"
+        "tampil": "Currency",
+        "param": {
+         "Currency": ""
+        }
        },
        "aksiUbah": [
         {
@@ -15490,7 +17132,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         "sumber": "reportdefinition",
         "rd": "BrowseCurrencyTreatyIn_RD",
         "nilai": "Currency",
-        "tampil": "Currency"
+        "tampil": "Currency",
+        "param": {
+         "Currency": ""
+        }
        },
        "aksiUbah": [
         {
@@ -15528,7 +17173,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         "sumber": "reportdefinition",
         "rd": "BrowseCurrencyTreatyIn_RD",
         "nilai": "Currency",
-        "tampil": "Currency"
+        "tampil": "Currency",
+        "param": {
+         "Currency": ""
+        }
        },
        "aksiUbah": [
         {
@@ -15566,7 +17214,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         "sumber": "reportdefinition",
         "rd": "BrowseCurrencyTreatyIn_RD",
         "nilai": "Currency",
-        "tampil": "Currency"
+        "tampil": "Currency",
+        "param": {
+         "Currency": ""
+        }
        },
        "aksiUbah": [
         {
@@ -15791,7 +17442,11 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
          "sumber": "reportdefinition",
          "rd": "BrowseCurrency_RD",
          "nilai": "ID",
-         "tampil": "Currency"
+         "tampil": "Currency",
+         "param": {
+          "Currency": "",
+          "ID": ""
+         }
         },
         null,
         null,
@@ -15840,6 +17495,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         ],
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInDeduction!pyGridModalTemplate"
       }
      ]
@@ -15899,6 +17555,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "row",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     }
    ],
@@ -16043,7 +17700,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
          "sumber": "reportdefinition",
          "rd": "BrowseCurrencyTreatyIn_RD",
          "nilai": "Currency",
-         "tampil": "Currency"
+         "tampil": "Currency",
+         "param": {
+          "Currency": ""
+         }
         },
         null,
         null
@@ -16061,6 +17721,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
      ]
@@ -16263,7 +17924,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
          "sumber": "reportdefinition",
          "rd": "BrowseCurrencyTreatyIn_RD",
          "nilai": "Currency",
-         "tampil": "Currency"
+         "tampil": "Currency",
+         "param": {
+          "Currency": ""
+         }
         },
         null,
         null
@@ -16281,6 +17945,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
      ]
@@ -16408,7 +18073,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
          "sumber": "reportdefinition",
          "rd": "BrowseCurrencyTreatyIn_RD",
          "nilai": "Currency",
-         "tampil": "Currency"
+         "tampil": "Currency",
+         "param": {
+          "Currency": ""
+         }
         },
         null,
         null
@@ -16426,6 +18094,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
      ]
@@ -16553,7 +18222,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
          "sumber": "reportdefinition",
          "rd": "BrowseCurrencyTreatyIn_RD",
          "nilai": "Currency",
-         "tampil": "Currency"
+         "tampil": "Currency",
+         "param": {
+          "Currency": ""
+         }
         },
         null,
         null
@@ -16571,6 +18243,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
      ]
@@ -16785,7 +18458,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
          "sumber": "reportdefinition",
          "rd": "BrowseCurrencyTreatyIn_RD",
          "nilai": "Currency",
-         "tampil": "Currency"
+         "tampil": "Currency",
+         "param": {
+          "Currency": ""
+         }
         },
         null,
         null
@@ -16803,6 +18479,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
      ]
@@ -17009,6 +18686,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInAchievement!pyGridModalTemplate"
       },
       {
@@ -17078,6 +18756,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "Data-!pyGridModalTemplate"
       },
       {
@@ -17151,7 +18830,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
        "aksi": [
         {
          "aksi": "showHarness",
-         "aktivitas": "GenerateCSVTreaty"
+         "aktivitas": "GenerateCSVTreaty",
+         "harness": "ActivityStatusSuccess"
         }
        ]
       },
@@ -17189,7 +18869,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseTreatyGroup_RD",
-    "nilai": "TreatyGroupName"
+    "nilai": "TreatyGroupName",
+    "param": {
+     "ID": ""
+    },
+    "setel": [
+     {
+      "target": "TreatyGroupID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -17262,7 +18951,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     {
      "sumber": "reportdefinition",
      "rd": "BrowseTreatyBusinessWOType_RD",
-     "nilai": "BIZNAME"
+     "nilai": "BIZNAME",
+     "param": {
+      "pTreatyGroupId": ".TreatyGroupID"
+     },
+     "setel": [
+      {
+       "target": "ClassOfBusinessID",
+       "dari": "BizCode"
+      }
+     ]
     }
    ],
    "aksiUbah": [
@@ -17279,6 +18977,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      }
     ]
    ],
+   "modeBaris": "readOnly",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridRowDetails"
   },
   {
@@ -17424,7 +19123,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     {
      "sumber": "reportdefinition",
      "rd": "BrowseCurrencyTreatyIn_RD",
-     "nilai": "Currency"
+     "nilai": "Currency",
+     "param": {
+      "Currency": ""
+     },
+     "setel": [
+      {
+       "target": "CurrencyID",
+       "dari": "ID"
+      }
+     ]
     },
     null
    ],
@@ -17465,6 +19173,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      }
     ]
    ],
+   "modeBaris": "readOnly",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
   },
   {
@@ -17558,7 +19267,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     {
      "sumber": "reportdefinition",
      "rd": "BrowseCurrencyTreatyIn_RD",
-     "nilai": "Currency"
+     "nilai": "Currency",
+     "param": {
+      "Currency": ""
+     },
+     "setel": [
+      {
+       "target": "CurrencyID",
+       "dari": "ID"
+      }
+     ]
     },
     null
    ],
@@ -17599,6 +19317,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      }
     ]
    ],
+   "modeBaris": "readOnly",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
   },
   {
@@ -17692,7 +19411,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     {
      "sumber": "reportdefinition",
      "rd": "BrowseCurrencyTreatyIn_RD",
-     "nilai": "Currency"
+     "nilai": "Currency",
+     "param": {
+      "Currency": ""
+     },
+     "setel": [
+      {
+       "target": "CurrencyID",
+       "dari": "ID"
+      }
+     ]
     },
     null
    ],
@@ -17715,6 +19443,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     ],
     null
    ],
+   "modeBaris": "readOnly",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
   },
   {
@@ -17742,7 +19471,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
        "pilihan": {
         "sumber": "reportdefinition",
         "rd": "BrowseCurrencyTreatyIn_RD",
-        "nilai": "Currency"
+        "nilai": "Currency",
+        "param": {
+         "Currency": ""
+        },
+        "setel": [
+         {
+          "target": "CurrencyID",
+          "dari": "ID"
+         }
+        ]
        },
        "aksiUbah": [
         {
@@ -17774,7 +19512,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
        "pilihan": {
         "sumber": "reportdefinition",
         "rd": "BrowseCurrencyTreatyIn_RD",
-        "nilai": "Currency"
+        "nilai": "Currency",
+        "param": {
+         "Currency": ""
+        },
+        "setel": [
+         {
+          "target": "CurrencyID",
+          "dari": "ID"
+         }
+        ]
        },
        "aksiUbah": [
         {
@@ -17806,7 +19553,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
        "pilihan": {
         "sumber": "reportdefinition",
         "rd": "BrowseCurrencyTreatyIn_RD",
-        "nilai": "Currency"
+        "nilai": "Currency",
+        "param": {
+         "Currency": ""
+        },
+        "setel": [
+         {
+          "target": "CurrencyID",
+          "dari": "ID"
+         }
+        ]
        },
        "aksiUbah": [
         {
@@ -17838,7 +19594,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
        "pilihan": {
         "sumber": "reportdefinition",
         "rd": "BrowseCurrencyTreatyIn_RD",
-        "nilai": "Currency"
+        "nilai": "Currency",
+        "param": {
+         "Currency": ""
+        },
+        "setel": [
+         {
+          "target": "CurrencyID",
+          "dari": "ID"
+         }
+        ]
        },
        "aksiUbah": [
         {
@@ -17971,7 +19736,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         "selalu",
         "selalu",
         "selalu",
-        null,
+        "selalu",
         "selalu"
        ],
        "tombol": [
@@ -17993,7 +19758,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         {
          "sumber": "reportdefinition",
          "rd": "BrowseCurrency_RD",
-         "nilai": "Currency"
+         "nilai": "Currency",
+         "param": {
+          "Currency": ""
+         },
+         "setel": [
+          {
+           "target": "CurrencyID",
+           "dari": "ID"
+          }
+         ]
         },
         null,
         null,
@@ -18033,6 +19807,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
          }
         ]
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInDeduction!pyGridModalTemplate"
       }
      ]
@@ -18092,6 +19867,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "row",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     }
    ]
@@ -18182,7 +19958,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         {
          "sumber": "reportdefinition",
          "rd": "BrowseCurrencyTreatyIn_RD",
-         "nilai": "Currency"
+         "nilai": "Currency",
+         "param": {
+          "Currency": ""
+         }
         },
         null
        ],
@@ -18190,6 +19969,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
      ]
@@ -18332,7 +20112,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         {
          "sumber": "reportdefinition",
          "rd": "BrowseCurrencyTreatyIn_RD",
-         "nilai": "Currency"
+         "nilai": "Currency",
+         "param": {
+          "Currency": ""
+         }
         },
         null
        ],
@@ -18340,6 +20123,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
      ]
@@ -18415,7 +20199,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         {
          "sumber": "reportdefinition",
          "rd": "BrowseCurrencyTreatyIn_RD",
-         "nilai": "Currency"
+         "nilai": "Currency",
+         "param": {
+          "Currency": ""
+         }
         },
         null
        ],
@@ -18423,6 +20210,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
      ]
@@ -18498,7 +20286,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         {
          "sumber": "reportdefinition",
          "rd": "BrowseCurrencyTreatyIn_RD",
-         "nilai": "Currency"
+         "nilai": "Currency",
+         "param": {
+          "Currency": ""
+         }
         },
         null
        ],
@@ -18506,6 +20297,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
      ]
@@ -18581,7 +20373,10 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         {
          "sumber": "reportdefinition",
          "rd": "BrowseCurrencyTreatyIn_RD",
-         "nilai": "Currency"
+         "nilai": "Currency",
+         "param": {
+          "Currency": ""
+         }
         },
         null
        ],
@@ -18589,6 +20384,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
      ]
@@ -18692,15 +20488,15 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         2232612
        ],
        "baca": [
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -18746,6 +20542,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInAchievement!pyGridModalTemplate"
       },
       {
@@ -18941,8 +20738,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     99913
    ],
    "baca": [
-    null,
-    null
+    "selalu",
+    "selalu"
    ],
    "tombol": [
     null,
@@ -18960,6 +20757,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "readOnly",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
   },
   {
@@ -18992,7 +20790,14 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         "sumber": "reportdefinition",
         "rd": "BrowseTreatyArrangement_ParentReinsMasterTrt",
         "nilai": "ReinsTypeID",
-        "tampil": "ReinsTypeName"
+        "tampil": "ReinsTypeName",
+        "param": {
+         "TreatyYear": "TreatyIn.TreatyYear",
+         "TreatyGroupID": ".TreatyGroupID",
+         "TreatyDescID": "\"10001\"",
+         "StartDate": "TreatyIn.Commencement",
+         "ReinsTypeID": "\"10246\""
+        }
        },
        "aksiUbah": [
         {
@@ -19069,6 +20874,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsSpreading!pyGridModalTemplate"
       },
       {
@@ -19130,13 +20936,9 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         335540
        ],
        "baca": [
-        [
-         "TreatyIn.ViewState = '1'"
-        ],
-        [
-         "TreatyIn.ViewState = '1'"
-        ],
-        null
+        "selalu",
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -19153,7 +20955,14 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
          "sumber": "reportdefinition",
          "rd": "BrowseTreatyArrangement_ParentReinsMasterTrt",
          "nilai": "ReinsTypeID",
-         "tampil": "ReinsTypeName"
+         "tampil": "ReinsTypeName",
+         "param": {
+          "TreatyYear": "TreatyIn.TreatyYear",
+          "TreatyGroupID": "TempSprd.TreatyGroupID",
+          "TreatyDescID": "\"10001\"",
+          "StartDate": "TreatyIn.Commencement",
+          "ReinsTypeID": "\"10246\""
+         }
         },
         null,
         null
@@ -19179,6 +20988,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         ],
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsSpreading!pyGridRowDetails"
       },
       {
@@ -19251,8 +21061,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       459001
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -19270,6 +21080,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -19308,8 +21119,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       524963
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -19327,6 +21138,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     }
    ]
@@ -19389,8 +21201,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     98138
    ],
    "baca": [
-    null,
-    null
+    "selalu",
+    "selalu"
    ],
    "tombol": [
     null,
@@ -19408,6 +21220,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "readOnly",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
   },
   {
@@ -19440,7 +21253,14 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         "sumber": "reportdefinition",
         "rd": "BrowseTreatyArrangement_ParentReinsMasterTrt",
         "nilai": "ReinsTypeID",
-        "tampil": "ReinsTypeName"
+        "tampil": "ReinsTypeName",
+        "param": {
+         "TreatyYear": "TreatyIn.TreatyYear",
+         "TreatyGroupID": ".TreatyGroupID",
+         "TreatyDescID": "\"10001\"",
+         "StartDate": "TreatyIn.Commencement",
+         "ReinsTypeID": "\"10246\""
+        }
        },
        "aksiUbah": [
         {
@@ -19517,6 +21337,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsSpreading!pyGridModalTemplate"
       },
       {
@@ -19587,7 +21408,14 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
          "sumber": "reportdefinition",
          "rd": "BrowseTreatyArrangement_ParentReinsMasterTrt",
          "nilai": "ReinsTypeID",
-         "tampil": "ReinsTypeName"
+         "tampil": "ReinsTypeName",
+         "param": {
+          "TreatyYear": "TreatyIn.TreatyYear",
+          "TreatyGroupID": "TempSprd.TreatyGroupID",
+          "TreatyDescID": "\"10001\"",
+          "StartDate": "TreatyIn.Commencement",
+          "ReinsTypeID": "\"10246\""
+         }
         },
         null
        ],
@@ -19611,6 +21439,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
          }
         ]
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsSpreading!pyGridRowDetails"
       },
       {
@@ -19683,8 +21512,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       457137
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -19702,6 +21531,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -19740,8 +21570,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       523099
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -19759,6 +21589,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     }
    ]
@@ -19903,6 +21734,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      }
     ]
    ],
+   "modeBaris": "row",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInInstallment!pyGridModalTemplate"
   },
   {
@@ -20032,6 +21864,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "readOnly",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInInstallment!pyGridModalTemplate"
   },
   {
@@ -20191,13 +22024,9 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       127532
      ],
      "baca": [
-      [
-       "TreatyIn.EDMMaterialType = 2"
-      ],
       "selalu",
-      [
-       "TreatyIn.ViewState = '1' || TreatyIn.EDMMaterialType = 2"
-      ]
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -20254,7 +22083,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       {
        "sumber": "reportdefinition",
        "rd": "BrowseTreatyGroup_RD",
-       "nilai": "TreatyGroupName"
+       "nilai": "TreatyGroupName",
+       "param": {
+        "ID": ""
+       },
+       "setel": [
+        {
+         "target": "TreatyGroupID",
+         "dari": "ID"
+        }
+       ]
       },
       null,
       null
@@ -20279,6 +22117,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "masterDetail",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitLayer!pyGridRowDetails",
      "rincian": "CoBList"
     }
@@ -20339,6 +22178,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "readOnly",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridRowDetails"
   },
   {
@@ -20400,7 +22240,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -20441,7 +22290,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -20482,7 +22340,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -20523,7 +22390,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -20564,7 +22440,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -20605,7 +22490,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -20853,6 +22747,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     ],
     null
    ],
+   "modeBaris": "row",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridModalTemplate"
   },
   {
@@ -20938,6 +22833,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      }
     ]
    ],
+   "modeBaris": "row",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
   },
   {
@@ -21059,7 +22955,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     {
      "sumber": "reportdefinition",
      "rd": "BrowseCurrency_RD",
-     "nilai": "Currency"
+     "nilai": "Currency",
+     "param": {
+      "Currency": ""
+     },
+     "setel": [
+      {
+       "target": "CurrencyID",
+       "dari": "ID"
+      }
+     ]
     },
     null,
     null
@@ -21077,6 +22982,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     ],
     null
    ],
+   "modeBaris": "row",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
   },
   {
@@ -21198,7 +23104,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     {
      "sumber": "reportdefinition",
      "rd": "BrowseCurrency_RD",
-     "nilai": "Currency"
+     "nilai": "Currency",
+     "param": {
+      "Currency": ""
+     },
+     "setel": [
+      {
+       "target": "CurrencyID",
+       "dari": "ID"
+      }
+     ]
     },
     null,
     null
@@ -21216,6 +23131,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     ],
     null
    ],
+   "modeBaris": "row",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
   },
   {
@@ -21399,7 +23315,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       {
        "sumber": "reportdefinition",
        "rd": "BrowseTreatyGroup_RD",
-       "nilai": "TreatyGroupName"
+       "nilai": "TreatyGroupName",
+       "param": {
+        "ID": ""
+       },
+       "setel": [
+        {
+         "target": "TreatyGroupID",
+         "dari": "ID"
+        }
+       ]
       },
       null
      ],
@@ -21422,6 +23347,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       ],
       null
      ],
+     "modeBaris": "masterDetail",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitLayer!pyGridRowDetails",
      "rincian": "CoBList"
     }
@@ -21482,6 +23408,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "readOnly",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridRowDetails"
   },
   {
@@ -21535,7 +23462,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -21572,7 +23508,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -21609,7 +23554,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -21646,7 +23600,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -21683,7 +23646,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -21720,7 +23692,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -21840,6 +23821,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      }
     ]
    ],
+   "modeBaris": "row",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridModalTemplate"
   },
   {
@@ -21918,6 +23900,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "row",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
   },
   {
@@ -21995,7 +23978,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     {
      "sumber": "reportdefinition",
      "rd": "BrowseCurrency_RD",
-     "nilai": "Currency"
+     "nilai": "Currency",
+     "param": {
+      "Currency": ""
+     },
+     "setel": [
+      {
+       "target": "CurrencyID",
+       "dari": "ID"
+      }
+     ]
     },
     null
    ],
@@ -22017,6 +24009,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      }
     ]
    ],
+   "modeBaris": "row",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
   },
   {
@@ -22192,7 +24185,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       {
        "sumber": "reportdefinition",
        "rd": "BrowseTreatyGroup_RD",
-       "nilai": "TreatyGroupName"
+       "nilai": "TreatyGroupName",
+       "param": {
+        "ID": ""
+       },
+       "setel": [
+        {
+         "target": "TreatyGroupID",
+         "dari": "ID"
+        }
+       ]
       },
       null
      ],
@@ -22215,6 +24217,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       ],
       null
      ],
+     "modeBaris": "masterDetail",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitLayer!pyGridRowDetails",
      "rincian": "CoBListOldData"
     }
@@ -22275,6 +24278,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "readOnly",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridRowDetails"
   },
   {
@@ -22328,7 +24332,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -22365,7 +24378,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -22402,7 +24424,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -22439,7 +24470,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -22476,7 +24516,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -22513,7 +24562,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -22633,6 +24691,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      }
     ]
    ],
+   "modeBaris": "readOnly",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridModalTemplate"
   },
   {
@@ -22710,6 +24769,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "row",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
   },
   {
@@ -22783,7 +24843,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     {
      "sumber": "reportdefinition",
      "rd": "BrowseCurrency_RD",
-     "nilai": "Currency"
+     "nilai": "Currency",
+     "param": {
+      "Currency": ""
+     },
+     "setel": [
+      {
+       "target": "CurrencyID",
+       "dari": "ID"
+      }
+     ]
     },
     null
    ],
@@ -22791,6 +24860,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "readOnly",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
   },
   {
@@ -22849,7 +24919,13 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     "sumber": "reportdefinition",
     "rd": "BrowseReinsuranceType_RD",
     "nilai": "ID",
-    "tampil": "Note"
+    "tampil": "Note",
+    "param": {
+     "ID": "",
+     "Note": "",
+     "Flag": "\"active\"",
+     "Type": ""
+    }
    },
    "aksiUbah": [
     {
@@ -22938,7 +25014,18 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     {
      "sumber": "reportdefinition",
      "rd": "BrowseBusiness_RD",
-     "nilai": "Note"
+     "nilai": "Note",
+     "param": {
+      "ID": "",
+      "Note": "",
+      "Group": ""
+     },
+     "setel": [
+      {
+       "target": "ClassOfBusinessID",
+       "dari": "ID"
+      }
+     ]
     },
     null
    ],
@@ -22946,6 +25033,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "masterDetail",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsDetail!pyGridRowDetails",
    "rincian": "DetailLimits"
   }
@@ -22964,7 +25052,19 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseReinsuranceType_RD",
-    "nilai": "Note"
+    "nilai": "Note",
+    "param": {
+     "ID": "",
+     "Note": "",
+     "Flag": "\"active\"",
+     "Type": ""
+    },
+    "setel": [
+     {
+      "target": "TreatyTypeID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -23005,7 +25105,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     59573
    ],
    "baca": [
-    null
+    "selalu"
    ],
    "tombol": [
     null
@@ -23017,12 +25117,24 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     {
      "sumber": "reportdefinition",
      "rd": "BrowseBusiness_RD",
-     "nilai": "Note"
+     "nilai": "Note",
+     "param": {
+      "ID": "",
+      "Note": "",
+      "Group": ""
+     },
+     "setel": [
+      {
+       "target": "ClassOfBusinessID",
+       "dari": "ID"
+      }
+     ]
     }
    ],
    "aksiUbah": [
     null
    ],
+   "modeBaris": "masterDetail",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsDetail!pyGridRowDetails",
    "rincian": "DetailLimitsOldData"
   }
@@ -23044,7 +25156,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseTreatyGroup_RD",
-    "nilai": "TreatyGroupName"
+    "nilai": "TreatyGroupName",
+    "param": {
+     "ID": ""
+    },
+    "setel": [
+     {
+      "target": "TreatyGroupID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -23068,7 +25189,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -23131,7 +25261,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseTreatyGroup_RD",
-    "nilai": "TreatyGroupName"
+    "nilai": "TreatyGroupName",
+    "param": {
+     "ID": ""
+    },
+    "setel": [
+     {
+      "target": "TreatyGroupID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -23152,7 +25291,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "pilihan": {
     "sumber": "reportdefinition",
     "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency"
+    "nilai": "Currency",
+    "param": {
+     "Currency": ""
+    },
+    "setel": [
+     {
+      "target": "CurrencyID",
+      "dari": "ID"
+     }
+    ]
    },
    "aksiUbah": [
     {
@@ -23321,7 +25469,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       125547
      ],
      "baca": [
-      null
+      "selalu"
      ],
      "tombol": [
       null
@@ -23333,7 +25481,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       {
        "sumber": "reportdefinition",
        "rd": "BrowseTreatyGroup_RD",
-       "nilai": "TreatyGroupName"
+       "nilai": "TreatyGroupName",
+       "param": {
+        "ID": ""
+       },
+       "setel": [
+        {
+         "target": "TreatyGroupID",
+         "dari": "ID"
+        }
+       ]
       }
      ],
      "aksiUbah": [
@@ -23354,6 +25511,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
        }
       ]
      ],
+     "modeBaris": "masterDetail",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitLayer!pyGridRowDetails",
      "rincian": "CoBListReadOnly"
     }
@@ -23536,7 +25694,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       {
        "sumber": "reportdefinition",
        "rd": "BrowseCurrency_RD",
-       "nilai": "Currency"
+       "nilai": "Currency",
+       "param": {
+        "Currency": ""
+       },
+       "setel": [
+        {
+         "target": "CurrencyID",
+         "dari": "ID"
+        }
+       ]
       },
       null,
       null,
@@ -23580,6 +25747,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "row",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInDeduction!pyGridModalTemplate"
     }
    ]
@@ -23608,7 +25776,14 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       "sumber": "reportdefinition",
       "rd": "BrowseTreatyArrangement_ParentReinsMasterTrt",
       "nilai": "ReinsTypeName",
-      "tampil": "ReinsTypeName"
+      "tampil": "ReinsTypeName",
+      "param": {
+       "TreatyYear": "TreatyIn.TreatyYear",
+       "TreatyGroupID": ".TreatyGroupList(1).TreatyGroupID",
+       "TreatyDescID": "\"10001\"",
+       "StartDate": "TreatyIn.Commencement",
+       "ReinsTypeID": "\"10246\""
+      }
      },
      "aksiUbah": [
       {
@@ -23699,8 +25874,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
             425284
            ],
            "baca": [
-            null,
-            null
+            "selalu",
+            "selalu"
            ],
            "tombol": [
             null,
@@ -23718,6 +25893,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
             null,
             null
            ],
+           "modeBaris": "readOnly",
            "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsSpreading!pyGridModalTemplate"
           },
           {
@@ -23810,6 +25986,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -23848,8 +26025,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         634427
        ],
        "baca": [
-        null,
-        null
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -23867,6 +26044,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -23905,8 +26083,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         700357
        ],
        "baca": [
-        null,
-        null
+        "selalu",
+        "selalu"
        ],
        "tombol": [
         null,
@@ -23924,6 +26102,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridModalTemplate"
       },
       {
@@ -23981,6 +26160,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -24038,6 +26218,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -24095,6 +26276,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -24152,6 +26334,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -24209,6 +26392,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -24266,6 +26450,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -24323,6 +26508,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "@baseclass!pyGridModalTemplate"
       },
       {
@@ -24380,6 +26566,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -24437,6 +26624,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -24494,6 +26682,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -24551,6 +26740,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
@@ -24608,6 +26798,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null,
         null
        ],
+       "modeBaris": "row",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
      ]
@@ -24687,13 +26878,9 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
             1707977
            ],
            "baca": [
-            [
-             "TreatyIn.ViewState = '1'"
-            ],
-            [
-             "TreatyIn.ViewState = '1'"
-            ],
-            null
+            "selalu",
+            "selalu",
+            "selalu"
            ],
            "tombol": [
             null,
@@ -24710,7 +26897,14 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
              "sumber": "reportdefinition",
              "rd": "BrowseTreatyArrangement_ParentReinsMasterTrt",
              "nilai": "ReinsTypeID",
-             "tampil": "ReinsTypeName"
+             "tampil": "ReinsTypeName",
+             "param": {
+              "TreatyYear": "TreatyIn.TreatyYear",
+              "TreatyGroupID": "TempSprd.TreatyGroupID",
+              "TreatyDescID": "\"10001\"",
+              "StartDate": "TreatyIn.Commencement",
+              "ReinsTypeID": "\"10246\""
+             }
             },
             null,
             null
@@ -24735,6 +26929,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
             ],
             null
            ],
+           "modeBaris": "readOnly",
            "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsSpreading!pyGridModalTemplate"
           },
           {
@@ -24870,7 +27065,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       84542
      ],
      "baca": [
-      null
+      "selalu"
      ],
      "tombol": [
       null
@@ -24882,7 +27077,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       {
        "sumber": "reportdefinition",
        "rd": "BrowseTreatyGroup_RD",
-       "nilai": "TreatyGroupName"
+       "nilai": "TreatyGroupName",
+       "param": {
+        "ID": ""
+       },
+       "setel": [
+        {
+         "target": "TreatyGroupID",
+         "dari": "ID"
+        }
+       ]
       }
      ],
      "aksiUbah": [
@@ -24903,6 +27107,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
        }
       ]
      ],
+     "modeBaris": "masterDetail",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitLayer!pyGridRowDetails",
      "rincian": "CoBListReadOnly"
     }
@@ -24997,7 +27202,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       "selalu",
       "selalu",
       "selalu",
-      null,
+      "selalu",
       "selalu",
       "selalu"
      ],
@@ -25022,7 +27227,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       {
        "sumber": "reportdefinition",
        "rd": "BrowseCurrency_RD",
-       "nilai": "Currency"
+       "nilai": "Currency",
+       "param": {
+        "Currency": ""
+       },
+       "setel": [
+        {
+         "target": "CurrencyID",
+         "dari": "ID"
+        }
+       ]
       },
       null,
       null,
@@ -25064,6 +27278,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       ],
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInDeduction!pyGridModalTemplate"
     }
    ]
@@ -25088,7 +27303,12 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       "sumber": "reportdefinition",
       "rd": "BrowseTreatyArrangement_ParentReinsMasterTrt",
       "nilai": "ReinsTypeID",
-      "tampil": "ReinsTypeName"
+      "tampil": "ReinsTypeName",
+      "param": {
+       "TreatyYear": "TreatyIn.TreatyYear",
+       "TreatyGroupID": ".TreatyGroupID",
+       "TreatyDescID": ""
+      }
      }
     },
     {
@@ -25141,8 +27361,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
           331153
          ],
          "baca": [
-          null,
-          null
+          "selalu",
+          "selalu"
          ],
          "tombol": [
           null,
@@ -25160,6 +27380,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsSpreading!pyGridModalTemplate"
         },
         {
@@ -25252,6 +27473,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "row",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -25290,8 +27512,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       535045
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -25309,6 +27531,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -25347,8 +27570,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       599471
      ],
      "baca": [
-      null,
-      null
+      "selalu",
+      "selalu"
      ],
      "tombol": [
       null,
@@ -25366,6 +27589,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "readOnly",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridModalTemplate"
     },
     {
@@ -25423,6 +27647,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "row",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -25480,6 +27705,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "row",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -25537,6 +27763,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "row",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -25594,6 +27821,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "row",
      "templatBaris": "@baseclass!pyGridModalTemplate"
     },
     {
@@ -25651,6 +27879,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "row",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -25708,6 +27937,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "row",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -25765,6 +27995,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "row",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -25822,6 +28053,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "row",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
@@ -25879,6 +28111,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "row",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     }
    ]
@@ -25976,7 +28209,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       87484
      ],
      "baca": [
-      null
+      "selalu"
      ],
      "tombol": [
       null
@@ -25988,7 +28221,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       {
        "sumber": "reportdefinition",
        "rd": "BrowseTreatyGroup_RD",
-       "nilai": "TreatyGroupName"
+       "nilai": "TreatyGroupName",
+       "param": {
+        "ID": ""
+       },
+       "setel": [
+        {
+         "target": "TreatyGroupID",
+         "dari": "ID"
+        }
+       ]
       }
      ],
      "aksiUbah": [
@@ -26009,6 +28251,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
        }
       ]
      ],
+     "modeBaris": "masterDetail",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitLayer!pyGridRowDetails",
      "rincian": "CoBListReadOnly"
     }
@@ -26177,7 +28420,16 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       {
        "sumber": "reportdefinition",
        "rd": "BrowseCurrency_RD",
-       "nilai": "Currency"
+       "nilai": "Currency",
+       "param": {
+        "Currency": ""
+       },
+       "setel": [
+        {
+         "target": "CurrencyID",
+         "dari": "ID"
+        }
+       ]
       },
       null,
       null,
@@ -26221,6 +28473,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       null,
       null
      ],
+     "modeBaris": "row",
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInDeduction!pyGridModalTemplate"
     }
    ]
@@ -26246,7 +28499,19 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "pilihan": {
       "sumber": "reportdefinition",
       "rd": "BrowseReinsuranceType_RD",
-      "nilai": "Note"
+      "nilai": "Note",
+      "param": {
+       "ID": "",
+       "Note": "",
+       "Flag": "",
+       "Type": ""
+      },
+      "setel": [
+       {
+        "target": "SpreadingTypeXOLRetroID",
+        "dari": "ID"
+       }
+      ]
      },
      "aksiUbah": [
       {
@@ -26357,6 +28622,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
           null,
           null
          ],
+         "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInShareReins!pyGridModalTemplate"
         }
        ]
@@ -26410,7 +28676,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     61354
    ],
    "baca": [
-    null,
+    "selalu",
     "selalu",
     "selalu"
    ],
@@ -26428,7 +28694,11 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     {
      "sumber": "reportdefinition",
      "rd": "BrowseBusinessGroup_RD",
-     "nilai": "Note"
+     "nilai": "Note",
+     "param": {
+      "ID": "",
+      "Note": ""
+     }
     },
     null,
     null
@@ -26438,6 +28708,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "masterDetail",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsDetail!pyGridRowDetails",
    "rincian": "DetailShare"
   }
@@ -26486,7 +28757,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     63061
    ],
    "baca": [
-    null,
+    "selalu",
     "selalu",
     "selalu"
    ],
@@ -26504,7 +28775,11 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     {
      "sumber": "reportdefinition",
      "rd": "BrowseBusinessGroup_RD",
-     "nilai": "Note"
+     "nilai": "Note",
+     "param": {
+      "ID": "",
+      "Note": ""
+     }
     },
     null,
     null
@@ -26514,10 +28789,18 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
     null,
     null
    ],
+   "modeBaris": "masterDetail",
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsDetail!pyGridRowDetails",
    "rincian": "DetailShareOldData"
   }
  ]
+}
+
+// Harness `showHarness` → Section isinya (`pyInclude` berkas Harness).
+export const KERANGKA_HARNESS: Readonly<Record<string, string>> = {
+ "ActivityStatusSuccess": "ActivityStatusSuccess",
+ "TreatyInFacultativeShareCalculation": "TreatyInActualFacultativeShareCalculation",
+ "TreatyInFacultativeShareCalculationOldData": "TreatyInFacultativeShareCalculationOldData"
 }
 
 export const DIBUANG: readonly Terbuang[] = [
@@ -27214,6 +29497,18 @@ export const DIBUANG: readonly Terbuang[] = [
  {
   "berkas": "TreatyInActualSumary",
   "at": 1901477,
+  "jenis": "sel",
+  "alasan": "penjaga mati: 1=2"
+ },
+ {
+  "berkas": "TreatyInActualFacultativeShareCalculation",
+  "at": 644346,
+  "jenis": "sel",
+  "alasan": "penjaga mati: 1=2"
+ },
+ {
+  "berkas": "TreatyInFacultativeShareCalculationOldData",
+  "at": 644637,
   "jenis": "sel",
   "alasan": "penjaga mati: 1=2"
  },
