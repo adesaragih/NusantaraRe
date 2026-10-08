@@ -488,7 +488,12 @@ function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
             {kolom.map((c, i) => (
               <th key={i} className={c.jenis === 'tombol' ? 'claimprop__th-aksi' : undefined}>
                 {c.jenis !== 'tombol' ? (
-                  c.label
+                  // kolom angka: judul rata kanan seperti nilainya (work owner 08-10-2026 "ga sejajar header sama nilai")
+                  c.kendali === 'angka' ? (
+                    <span className="claimprop__angka">{c.label}</span>
+                  ) : (
+                    c.label
+                  )
                 ) : i === kolom.length - 1 && t.tambah ? (
                   <Tombol t={t.tambah} k={k} />
                 ) : null}
