@@ -2,7 +2,7 @@
 // pohon tata server; aksi dikirim bersama nilai semua medan terbuka. Local action / harness (PrintFile, GeneratePLA,
 // GenerateDLATreaty, PreventRejectClaimProp, CommitteeTreaty) dibuka sebagai Modal; pop-up pemilih sebagai `Popup`.
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Gagal, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import { ApiFailure } from '../../../../inti/frontend/klien'
@@ -257,6 +257,14 @@ export default function LayarKasus({
     }
   }, [layar, h, aksi, opsi, saran, sibuk])
 
+  // Pesan halaman tampil di atas layar; aksi dari bagian bawah (Add Spreading List yang ditolak "spreading sama")
+  // menggulir ke kotak pesan supaya penolakannya terlihat.
+  const kotakPesan = useRef<HTMLDivElement>(null)
+  const pesanLayar = layar?.pesan
+  useEffect(() => {
+    if ((pesanLayar ?? []).length > 0) kotakPesan.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [pesanLayar])
+
   if (!layar || !h || !k) {
     return (
       <section className="inbox claimprop__akar">
@@ -280,7 +288,7 @@ export default function LayarKasus({
       {galat !== null &&
         (pesanGalat ? <div className="alert alert--error">{pesanGalat}</div> : <Gagal galat={galat} />)}
       {(layar.pesan ?? []).length > 0 && (
-        <div className="alert alert--error">
+        <div ref={kotakPesan} className="alert alert--error">
           <ul>
             {(layar.pesan ?? []).map((p, i) => (
               <li key={i}>{p}</li>

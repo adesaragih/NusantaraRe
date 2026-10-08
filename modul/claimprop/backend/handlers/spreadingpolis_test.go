@@ -91,16 +91,27 @@ func TestSpreadingDariPolisTambahHapusLolosSaveToIssueRNM(t *testing.T) {
 		t.Fatalf("tanpa spreading mau ditolak ProteksiData 5: HTTP %d %v", kode, out["pesan"])
 	}
 
-	// Add: baris kosong, pilih Treaty Type dari dropdown, isi Share
+	// Add: Treaty Type LANGSUNG terisi treaty polis dan terkunci (work owner 08-10-2026), tabel bawah tersusun; isi Share
 	langkah("AddSpreading", 0, "", nil)
-	langkah("SetTreatyNameSpreading", 1, "", map[string]string{models.JalurAnak(models.DaftarSpreading, 1, "TreatyType"): "UJI-INDUK"})
-	langkah("CountSpreading", 1, "", map[string]string{models.JalurAnak(models.DaftarSpreading, 1, "SharePercentage"): "100"})
 	h = u.g.Halaman(id)
-	if a := h.AmbilDaftar(models.DaftarSpreading); len(a) != 1 || a[0]["TreatyName"] != "UJI QS INDUK TRT" || a[0]["SharePercentage"] != "100" {
-		t.Fatalf("Add + pilih Treaty Type: %v", a)
+	if a := h.AmbilDaftar(models.DaftarSpreading); len(a) != 1 || a[0]["TreatyType"] != "UJI-INDUK" || a[0]["TreatyName"] != "UJI QS INDUK TRT" {
+		t.Fatalf("Add: %v", a)
 	}
 	if len(h.AmbilDaftar(models.DaftarBreakQS)) != 2 {
 		t.Fatalf("tabel bawah sesudah Add: %v", h.AmbilDaftar(models.DaftarBreakQS))
+	}
+	kode, out = u.aksi(id, admin, "", "SetTreatyNameSpreading", 1, "",
+		map[string]string{models.JalurAnak(models.DaftarSpreading, 1, "TreatyType"): "UJI-LAIN"})
+	u.wajib(kode, http.StatusConflict, out, "ganti Treaty Type baris dari Add") // terkunci
+	// Add lagi: treaty + mata uang yang sama sudah ada -> gagal, baris tidak bertambah
+	out = langkah("AddSpreading", 0, "", nil)
+	if n := len(u.g.Halaman(id).AmbilDaftar(models.DaftarSpreading)); n != 1 ||
+		!strings.Contains(strings.Join(teks(out["pesan"]), ";"), models.PesanSpreadingSama) {
+		t.Fatalf("Add spreading sama mau gagal: %d baris, pesan %v", n, out["pesan"])
+	}
+	langkah("CountSpreading", 1, "", map[string]string{models.JalurAnak(models.DaftarSpreading, 1, "SharePercentage"): "100"})
+	if a := u.g.Halaman(id).AmbilDaftar(models.DaftarSpreading); a[0]["SharePercentage"] != "100" {
+		t.Fatalf("isi Share: %v", a)
 	}
 
 	// Save to issue RNM lolos

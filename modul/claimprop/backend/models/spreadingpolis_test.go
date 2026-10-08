@@ -75,18 +75,77 @@ func TestTabelBawahPerMataUangEstimasi(t *testing.T) {
 	}
 }
 
-// Add: baris kosong bermata uang estimasi pertama; pilih Treaty Type (SetTreatyNameSpreading) mengisi nama dan
-// menyusun ulang tabel bawah. Delete: baris hilang; tanpa baris atas, tabel bawah kosong.
-func TestTambahPilihHapusSpreading(t *testing.T) {
-	k := konteksUji(acuanSpreading())
+// Add (work owner 08-10-2026 "begitu add langsung set spreading type nya dan readonly"): Treaty Type baris baru langsung
+// diisi treaty spreading polis yang BELUM ada di daftar (semua sudah ada: treaty polis pertama; tanpa spreading polis:
+// kosong), mata uang estimasi pertama, tabel bawah + turunan disusun. Delete: baris hilang; tanpa baris atas, tabel
+// bawah kosong.
+func TestTambahHapusSpreading(t *testing.T) {
+	a := acuanSpreading()
+	a.JenisReas["UJI-INDUK2"] = "UJI QS INDUK DUA TRT"
+	a.SpreadingPolisMap["UJI-POLIS-1"] = append(a.SpreadingPolisMap["UJI-POLIS-1"],
+		models.SpreadingPolis{TreatyType: "UJI-INDUK2", SharePercentage: "50", CurrencyID: "UJI-ID-IDR", Currency: "IDR"})
+	k := konteksUji(a)
 	h := models.HalamanBaru()
+	h.Setel(models.CD+"PolicyData.PolicyNo", "UJI-POLIS-1")
 	h.SetelDaftar(models.DaftarEstimasi, []models.Baris{{"CurrencyID": "UJI-ID-IDR", "Currency": "IDR"}})
+	h.SetelDaftar(models.DaftarSpreading, []models.Baris{{"TreatyType": "UJI-INDUK", "CurrencyID": "UJI-ID-IDR", "Currency": "IDR"}})
+
+	// 1. treaty polis berikutnya yang belum ada
 	if err := models.AddSpreading(k, h, masterSpreading()); err != nil {
 		t.Fatal(err)
 	}
 	atas := h.AmbilDaftar(models.DaftarSpreading)
-	if len(atas) != 1 || atas[0]["TreatyType"] != "" || atas[0]["CurrencyID"] != "UJI-ID-IDR" || atas[0]["Currency"] != "IDR" {
-		t.Fatalf("Add: %v", atas)
+	if len(atas) != 2 || atas[1]["TreatyType"] != "UJI-INDUK2" || atas[1]["TreatyName"] != "UJI QS INDUK DUA TRT" ||
+		atas[1]["SharePercentage"] != "" || atas[1]["CurrencyID"] != "UJI-ID-IDR" || atas[1]["Currency"] != "IDR" {
+		t.Fatalf("Add treaty berikutnya: %v", atas)
+	}
+	if len(h.AmbilDaftar(models.DaftarBreakQS)) != 2 {
+		t.Fatalf("tabel bawah langsung tersusun sesudah Add: %v", h.AmbilDaftar(models.DaftarBreakQS))
+	}
+
+	// 2. semua treaty polis sudah ada di mata uang ini: Add GAGAL (work owner 08-10-2026 "tidak ada spreading sama, jika
+	// sama, gagal add spreadinglist, kecuali currency beda") - baris tidak bertambah, pesan tampil
+	if err := models.AddSpreading(k, h, masterSpreading()); err != nil {
+		t.Fatal(err)
+	}
+	if atas = h.AmbilDaftar(models.DaftarSpreading); len(atas) != 2 || !adaPesan(h, models.PesanSpreadingSama) {
+		t.Fatalf("Add spreading sama mau gagal: %v pesan %v", atas, h.Pesan)
+	}
+	h.BersihkanPesan()
+
+	// 3. mata uang lain di estimasi: treaty yang sama boleh, mata uang berbeda
+	h.SetelDaftar(models.DaftarEstimasi, []models.Baris{
+		{"CurrencyID": "UJI-ID-IDR", "Currency": "IDR"}, {"CurrencyID": "UJI-ID-USD", "Currency": "USD"},
+	})
+	if err := models.AddSpreading(k, h, masterSpreading()); err != nil {
+		t.Fatal(err)
+	}
+	if atas = h.AmbilDaftar(models.DaftarSpreading); len(atas) != 3 || atas[2]["TreatyType"] != "UJI-INDUK" ||
+		atas[2]["CurrencyID"] != "UJI-ID-USD" || adaPesan(h, models.PesanSpreadingSama) {
+		t.Fatalf("Add mata uang lain: %v", atas)
+	}
+
+	// Delete sampai habis: tabel bawah ikut kosong; baris tak ada = galat
+	for range 3 {
+		if err := models.DeleteSpreading(k, h, 1, masterSpreading()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if n, m := len(h.AmbilDaftar(models.DaftarSpreading)), len(h.AmbilDaftar(models.DaftarBreakQS)); n != 0 || m != 0 {
+		t.Fatalf("Delete semua: atas %d bawah %d, mau 0 0", n, m)
+	}
+	if err := models.DeleteSpreading(k, h, 1, masterSpreading()); err == nil {
+		t.Fatal("Delete baris yang tidak ada mau galat")
+	}
+
+	// 4. tanpa spreading polis: baris kosong, Treaty Type tetap dapat dipilih
+	h.Setel(models.CD+"PolicyData.PolicyNo", "UJI-POLIS-TANPA-PRODUKSI")
+	h.SetelDaftar(models.DaftarEstimasi, []models.Baris{{"CurrencyID": "UJI-ID-IDR", "Currency": "IDR"}})
+	if err := models.AddSpreading(k, h, masterSpreading()); err != nil {
+		t.Fatal(err)
+	}
+	if atas = h.AmbilDaftar(models.DaftarSpreading); len(atas) != 1 || atas[0]["TreatyType"] != "" {
+		t.Fatalf("Add tanpa spreading polis: %v", atas)
 	}
 	atas[0]["TreatyType"] = "UJI-INDUK"
 	if err := models.SetTreatyNameSpreading(k, h, 1, masterSpreading()); err != nil {
@@ -94,15 +153,6 @@ func TestTambahPilihHapusSpreading(t *testing.T) {
 	}
 	if h.AmbilDaftar(models.DaftarSpreading)[0]["TreatyName"] != "UJI QS INDUK TRT" || len(h.AmbilDaftar(models.DaftarBreakQS)) != 2 {
 		t.Fatalf("pilih Treaty Type: atas %v bawah %v", h.AmbilDaftar(models.DaftarSpreading), h.AmbilDaftar(models.DaftarBreakQS))
-	}
-	if err := models.DeleteSpreading(k, h, 1, masterSpreading()); err != nil {
-		t.Fatal(err)
-	}
-	if n, m := len(h.AmbilDaftar(models.DaftarSpreading)), len(h.AmbilDaftar(models.DaftarBreakQS)); n != 0 || m != 0 {
-		t.Fatalf("Delete baris terakhir: atas %d bawah %d, mau 0 0", n, m)
-	}
-	if err := models.DeleteSpreading(k, h, 1, masterSpreading()); err == nil {
-		t.Fatal("Delete baris yang tidak ada mau galat")
 	}
 }
 
@@ -141,4 +191,21 @@ func adaPesan(h *models.Halaman, pesan string) bool {
 		}
 	}
 	return false
+}
+
+// Memilih Treaty Type yang sudah ada di mata uang yang sama pada baris kosong ditolak: Treaty Type dikosongkan lagi,
+// pesan tampil.
+func TestPilihTreatyTypeSamaDitolak(t *testing.T) {
+	k := konteksUji(acuanSpreading())
+	h := models.HalamanBaru()
+	h.SetelDaftar(models.DaftarSpreading, []models.Baris{
+		{"TreatyType": "UJI-INDUK", "CurrencyID": "UJI-ID-IDR", "Currency": "IDR"},
+		{"TreatyType": "UJI-INDUK", "CurrencyID": "UJI-ID-IDR", "Currency": "IDR"},
+	})
+	if err := models.SetTreatyNameSpreading(k, h, 2, masterSpreading()); err != nil {
+		t.Fatal(err)
+	}
+	if b := h.AmbilDaftar(models.DaftarSpreading)[1]; b["TreatyType"] != "" || !adaPesan(h, models.PesanSpreadingSama) {
+		t.Fatalf("pilih treaty sama mau ditolak: %v pesan %v", b, h.Pesan)
+	}
 }

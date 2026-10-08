@@ -93,8 +93,11 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   (SetTreatyNameSpreading_Act langkah 11-15, XML); percobaan PROPORTIONALARRG (24a6e315) dibatalkan sesudah uji data
   DEV - master cocok dengan seluruh SpreadingBreakQS klaim CLMP lama, PROPORTIONALARRG tidak. Add / Delete AKTIF
   (membatalkan "non aktifkan" 07-10-2026; AddSpreading_Act / DeleteSpreading_Act tidak diekspor, perilaku ditetapkan
-  work owner): Add menambah baris kosong, Treaty Type dipilih dari dropdown lalu terkunci, Share diisi manual; Delete
-  nonaktif bila `IsOldData='Yes'` (XML); tabel bawah dan turunan disusun ulang sesudah setiap perubahan. Dropdown
+  work owner): Add LANGSUNG mengisi Treaty Type dengan pasangan treaty spreading polis x mata uang yang belum ada
+  (hanya-baca karena terisi; "begitu add langsung set spreading type nya dan readonly"), Share diisi manual; spreading
+  sama (Treaty Type + Currency) ditolak dengan pesan, juga saat memilih di baris kosong ("tidak ada spreading sama ...
+  kecuali currency beda"); tanpa spreading polis baris kosong dan Treaty Type dipilih; layar menggulir ke kotak pesan.
+  Delete nonaktif bila `IsOldData='Yes'` (XML); tabel bawah dan turunan disusun ulang sesudah setiap perubahan. Dropdown
   Treaty Type (kedua layar) = spreading polis + treaty baris yang sudah ada: koreksi atas `[dugaan]` SpreadingList
   master yang dibantah data DEV (TreatyType klaim lama = induk, SpreadingList = anak).
 - **`STS_REJECT = 1` ditunda** sampai modul Komite Claim Prop ("itu nanti kan dari komite") — pemuat mencatatnya

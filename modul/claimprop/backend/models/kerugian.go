@@ -630,6 +630,15 @@ func SetTreatyNameSpreading(k *Konteks, h *Halaman, idx int, m MasterTreaty) err
 	if err != nil {
 		return err
 	}
+	if b["TreatyType"] != "" { // spreading sama (TreatyType + mata uang) ditolak - keputusan work owner 08-10-2026
+		for i, x := range h.AmbilDaftar(DaftarSpreading) {
+			if i != idx-1 && kunciSpreading(x) == kunciSpreading(b) {
+				b["TreatyType"], b["TreatyName"] = "", ""
+				h.TambahPesan(JalurAnak(DaftarSpreading, idx, "TreatyType"), PesanSpreadingSama)
+				break
+			}
+		}
+	}
 	if b["TreatyType"] != "" {
 		nama, err := k.Acuan.NamaJenisReasuransi(k.Ctxt(), b["TreatyType"])
 		if err != nil {
@@ -655,7 +664,13 @@ func IsiSpreadingPolis(k *Konteks, h *Halaman, nopolis string, m MasterTreaty) e
 		return err
 	}
 	var atas []Baris
+	sudah := map[string]bool{}
 	for _, s := range sp {
+		kunci := s.TreatyType + "#" + s.CurrencyID
+		if sudah[kunci] {
+			continue // tidak ada spreading sama (work owner 08-10-2026)
+		}
+		sudah[kunci] = true
 		nama, err := k.Acuan.NamaJenisReasuransi(k.Ctxt(), s.TreatyType)
 		if err != nil {
 			return err
@@ -668,19 +683,64 @@ func IsiSpreadingPolis(k *Konteks, h *Halaman, nopolis string, m MasterTreaty) e
 	return HitungTurunan(h)
 }
 
+// PesanSpreadingSama - Add / pilih Treaty Type ditolak: treaty dan mata uang yang sama sudah ada di Spreading List
+// (work owner 08-10-2026 "tidak ada spreading sama, jika sama, gagal add spreadinglist, kecuali currency beda").
+const PesanSpreadingSama = "Spreading with the same Treaty Type and Currency already exists"
+
+// kunciSpreading - satu baris spreading unik per TreatyType + CurrencyID.
+func kunciSpreading(b Baris) string { return b["TreatyType"] + "#" + b["CurrencyID"] }
+
 // AddSpreading - tombol Add Spreading List (`AddSpreading_Act`, TIDAK diekspor; diaktifkan keputusan work owner
-// 08-10-2026): satu baris kosong; Treaty Type dipilih dari dropdown spreading polis (aksi SetTreatyNameSpreading),
-// Share (%) diisi layar. Mata uang baris = mata uang estimasi pertama, tanpa estimasi = mata uang baris spreading
-// pertama (SpreadingClaim per mata uang, CountSpreading_Act langkah 6). `[penyimpangan sadar]` isi activity aslinya
-// tidak terbaca.
+// 08-10-2026). Work owner 08-10-2026 "begitu add langsung set spreading type nya dan readonly" dan "tidak ada spreading
+// sama, jika sama, gagal add spreadinglist, kecuali currency beda": baris baru LANGSUNG berisi pasangan treaty spreading
+// polis x mata uang pertama yang belum ada di daftar (mata uang estimasi; tanpa estimasi = mata uang baris spreading),
+// nama dari REINSURANCETYPE - Treaty Type terkunci karena terisi. Semua pasangan sudah ada = Add GAGAL (pesan
+// PesanSpreadingSama, baris tidak bertambah). Tanpa spreading polis baris kosong dan Treaty Type dipilih dari dropdown.
+// Share (%) diisi layar. Tabel bawah + turunan disusun seperti SetTreatyNameSpreading. `[penyimpangan sadar]` isi
+// activity aslinya tidak terbaca.
 func AddSpreading(k *Konteks, h *Halaman, m MasterTreaty) error {
+	sp, err := k.Acuan.SpreadingPolis(k.Ctxt(), h.Ambil(CD+"PolicyData.PolicyNo"))
+	if err != nil {
+		return err
+	}
+	atas := h.AmbilDaftar(DaftarSpreading)
 	mu := urutanMataUang(h.AmbilDaftar(DaftarEstimasi))
 	if len(mu) == 0 {
-		mu = urutanMataUang(h.AmbilDaftar(DaftarSpreading))
+		mu = urutanMataUang(atas)
 	}
-	b := Baris{"TreatyType": "", "TreatyName": "", "SharePercentage": ""}
-	if len(mu) > 0 {
-		b["CurrencyID"], b["Currency"] = mu[0]["CurrencyID"], mu[0]["Currency"]
+	if len(mu) == 0 {
+		mu = []Baris{{"CurrencyID": "", "Currency": ""}}
+	}
+	b := Baris{"TreatyType": "", "TreatyName": "", "SharePercentage": "",
+		"CurrencyID": mu[0]["CurrencyID"], "Currency": mu[0]["Currency"]}
+	if len(sp) > 0 {
+		ada := map[string]bool{}
+		for _, x := range atas {
+			ada[kunciSpreading(x)] = true
+		}
+		ketemu := false
+		for _, u := range mu {
+			for _, s := range sp {
+				c := Baris{"TreatyType": s.TreatyType, "CurrencyID": u["CurrencyID"]}
+				if !ada[kunciSpreading(c)] {
+					b["TreatyType"], b["CurrencyID"], b["Currency"] = s.TreatyType, u["CurrencyID"], u["Currency"]
+					ketemu = true
+					break
+				}
+			}
+			if ketemu {
+				break
+			}
+		}
+		if !ketemu {
+			h.TambahPesan("", PesanSpreadingSama)
+			return nil
+		}
+		nama, err := k.Acuan.NamaJenisReasuransi(k.Ctxt(), b["TreatyType"])
+		if err != nil {
+			return err
+		}
+		b["TreatyName"] = nama
 	}
 	h.TambahBaris(DaftarSpreading, b)
 	susunBreakQS(h, m)
