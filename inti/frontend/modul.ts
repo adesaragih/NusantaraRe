@@ -133,6 +133,12 @@ export interface PropsRute<H extends string> {
    * sana, bukan ke layar awal modul (permintaan work owner "tombol back nya bisa ngetrack darimana bukanya").
    */
   onBeranda?: () => void
+  /**
+   * Opsional dan aditif (08-10-2026): buka SATU berkas modul lain di jendela di atas layar ini - tanpa menu, tanpa tab
+   * baru, layar pemanggil tetap (tombol View polis Claim Prop -> berkas NB / EDM Treaty In, perintah work owner "biarkan
+   * di layar utama"). `false` = modul itu tidak dipasang bagi akun ini (menunya tidak dipegang).
+   */
+  onLihatBerkas?: (modul: string, id: string) => boolean
 }
 
 /** Satu modul frontend terdaftar. */

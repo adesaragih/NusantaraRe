@@ -15,7 +15,14 @@ import { bolehTambahKlaim, jenisDaftar, switchTeknikAktif, TAB_INBOX, type TabIn
 const LABEL_TAB: Record<TabInbox, string> = { proses: CP.tabProses, selesai: CP.tabResolve }
 const JEDA_CARI_MS = 300
 
-export default function ClaimProp({ pelaku }: { pelaku: string }) {
+export default function ClaimProp({
+  pelaku,
+  onLihatBerkas,
+}: {
+  pelaku: string
+  /** `PropsRute.onLihatBerkas` - tombol View polis. */
+  onLihatBerkas?: (modul: string, id: string) => boolean
+}) {
   const [tab, setTab] = useState<TabInbox>('proses')
   const [teknik, setTeknik] = useState(false)
   const [hak, setHak] = useState<HakPelaku | null>(null)
@@ -70,6 +77,7 @@ export default function ClaimProp({ pelaku }: { pelaku: string }) {
       <LayarKasus
         id={buka}
         pelaku={pelaku}
+        onLihatBerkas={onLihatBerkas}
         onKembali={() => {
           setBuka(null)
           setSegar((s) => s + 1)

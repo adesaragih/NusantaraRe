@@ -2,11 +2,10 @@
 // pohon tata server; aksi dikirim bersama nilai semua medan terbuka. Local action / harness (PrintFile, GeneratePLA,
 // GenerateDLATreaty, PreventRejectClaimProp, CommitteeTreaty) dibuka sebagai Modal; pop-up pemilih sebagai `Popup`.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { Gagal, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import { ApiFailure } from '../../../../inti/frontend/klien'
-import { PARAM_KASUS, PARAM_MODUL } from '../../../../inti/frontend/lib/tautanKasus'
 import {
   aksiKasus,
   ambilAcuan,
@@ -14,7 +13,6 @@ import {
   bukaKasus,
   pilihanKasus,
   type AcuanStatis,
-  type BerkasPolis,
   type Halaman,
   type Layar,
   type Pilihan,
@@ -55,7 +53,18 @@ interface RekeningBank {
   AccountNo: string
 }
 
-export default function LayarKasus({ id, pelaku, onKembali }: { id: string; pelaku: string; onKembali: () => void }) {
+export default function LayarKasus({
+  id,
+  pelaku,
+  onKembali,
+  onLihatBerkas,
+}: {
+  id: string
+  pelaku: string
+  onKembali: () => void
+  /** `PropsRute.onLihatBerkas` - tombol View polis. */
+  onLihatBerkas?: (modul: string, id: string) => boolean
+}) {
   const [layar, setLayar] = useState<Layar | null>(null)
   const [h, setH] = useState<Halaman | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
@@ -129,38 +138,23 @@ export default function LayarKasus({ id, pelaku, onKembali }: { id: string; pela
     [id, layar, h, terima],
   )
 
-  // Tombol View polis (keputusan work owner 08-10-2026): berkas NB / EDM Treaty In dibuka di tab baru. Berkasnya dicari
-  // di latar begitu Policy No terisi, supaya klik View langsung mengirim form GET bertarget `_blank` (pop-up sesudah
-  // await diblokir peramban; window.open dan href dinamis dilarang penjaga navigasi).
+  // Tombol View polis (perintah work owner 08-10-2026 "jangan tab baru ... biarkan di layar utama", "hanya tampilan
+  // polisnya aja"): berkas NB / EDM Treaty In polis ini dicari (`GET /berkas-polis`) lalu tampil di jendela di atas
+  // layar ini lewat `PropsRute.onLihatBerkas` - tanpa menu, tanpa tab baru. Tanpa berkas / modul tidak dipasang = pesan.
   const noPolis = h ? ambil(h, 'ClaimData.PolicyData.PolicyNo') : ''
-  const [berkas, setBerkas] = useState<BerkasPolis | 'tidak-ada' | null>(null)
   const [pesanView, setPesanView] = useState<string | null>(null)
-  const formView = useRef<HTMLFormElement>(null)
-  useEffect(() => {
-    setBerkas(null)
+  const lihatPolis = useCallback(() => {
     if (noPolis === '') return
-    let aktif = true
     berkasPolis(noPolis).then(
       (b) => {
-        if (aktif) setBerkas(b)
+        if (onLihatBerkas?.(b.modul, b.kasus) !== true) setPesanView(CP.berkasTakTerpasang)
       },
-      () => {
-        if (aktif) setBerkas('tidak-ada')
+      (g: unknown) => {
+        if (g instanceof ApiFailure && g.status === 404) setPesanView(CP.polisTanpaBerkas)
+        else setGalat(g)
       },
     )
-    return () => {
-      aktif = false
-    }
-  }, [noPolis])
-  const lihatPolis = useCallback(() => {
-    setPesanView(null)
-    if (berkas === null) return
-    if (berkas === 'tidak-ada') {
-      setPesanView(CP.polisTanpaBerkas)
-      return
-    }
-    formView.current?.submit()
-  }, [berkas])
+  }, [noPolis, onLihatBerkas])
 
   const aksi = useCallback(
     (nama: string, indeks = 0, ubahan: Record<string, string> = {}) => {
@@ -287,15 +281,9 @@ export default function LayarKasus({ id, pelaku, onKembali }: { id: string; pela
         </div>
       )}
       {pesanView && (
-        <div className="alert alert--error" role="alert">
-          {pesanView}
-        </div>
-      )}
-      {berkas !== null && berkas !== 'tidak-ada' && (
-        <form ref={formView} method="get" action={window.location.pathname} target="_blank" hidden>
-          <input type="hidden" name={PARAM_MODUL} value={berkas.modul} />
-          <input type="hidden" name={PARAM_KASUS} value={berkas.kasus} />
-        </form>
+        <Modal judul={CP.view} onTutup={() => setPesanView(null)} labelBatal={CP.tutup}>
+          <p role="alert">{pesanView}</p>
+        </Modal>
       )}
       <LayarTata tata={layar.tata} k={k} />
       {modal && (

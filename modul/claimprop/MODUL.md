@@ -109,14 +109,17 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   filter per kolom digabung AND di server (`repository.sqlDaftarMaster`), urut Treaty Year lalu Treaty ID menurun,
   batas 500 (`models.BatasMaster`), 50 per halaman di layar. Sebab lama: 20 baris pertama urut TREATYID = satu
   treaty (rata-rata 39 baris per treaty di view CLAIM_MASTER_TREATY). DEV: 0,37 s tanpa filter, 0,05 s berfilter.
-- **Tombol View polis** (08-10-2026, "buat view untuk polis itu sesuai dengan modul pada nb/edm treaty" -> pilihan
-  "Tab baru"): harness DetailPolisRealization tidak diekspor, tetapi `GetDetailPolis_act` mengurai dokumen polis ke
-  kelas berkas polis Treaty In. View membuka berkas NB / EDM Treaty In di tab baru: `GET /api/claim-prop/berkas-polis`
-  (T_GENERAL_POLIS_TREATY.NOPOLIS + T_WORK_POLIS, PRODKE terbesar; 0 = nbtreatyin, >= 1 = edmtreatyin), lalu form GET
-  tersembunyi `target=_blank` ke `?modul=&kasus=` (inti `lib/tautanKasus.ts`; window.open dilarang penjaga navigasi).
-  `frontend/App.tsx` membaca tautan itu dan membuka berkas lewat jalur kotak masuk Beranda; modul tanpa menu = pesan.
-  Modul NB / EDM tidak diubah. DEV: hanya berkas aplikasi baru / Copy Old punya berkas (15 dari 41.945 baris
-  TREATYINPRODUCTION) - polis Pega lama lain menampilkan pesan.
+- **Tombol View polis** (08-10-2026, "buat view untuk polis itu sesuai dengan modul pada nb/edm treaty"; diralat
+  hari yang sama: "jangan tab baru", "biarkan di layar utama", "hanya tampilan polisnya aja, ga usah sampe menu
+  menunya ikut kebuka"): harness DetailPolisRealization tidak diekspor, tetapi `GetDetailPolis_act` mengurai dokumen
+  polis ke kelas berkas polis Treaty In. View mencari berkasnya - `GET /api/claim-prop/berkas-polis`
+  (T_GENERAL_POLIS_TREATY.NOPOLIS + T_WORK_POLIS, PRODKE terbesar; 0 = nbtreatyin, >= 1 = edmtreatyin) - lalu
+  `PropsRute.onLihatBerkas` (inti `modul.ts`): `frontend/App.tsx` memasang rute modul NB / EDM sekali lagi di modal
+  selebar layar (`Modal penuh`) di atas layar Claim Prop, berkas dibuka lewat jalur kotak masuk Beranda (`bukaKasus`);
+  tanpa sidebar / topbar, tanpa tab baru, layar klaim tetap. Back berkas atau X menutupnya. Tab baru dibatalkan: di
+  server dev vite tab baru memuat ulang seluruh aplikasi (22-30 detik layar putih), dan peramban tidak mengizinkan
+  halaman membuka tab di latar. Tanpa berkas (404) / modul tidak dipasang bagi akun = pesan dalam modal. Modul NB /
+  EDM tidak diubah. DEV: hanya berkas aplikasi baru / Copy Old punya berkas (15 dari 41.945 baris TREATYINPRODUCTION).
 - **Perbaikan Claim Information** (08-10-2026, daftar work owner): Date of Loss / Received Date tanggal saja
   (KTanggal, katalog kTgl); Reporter Phone Number kendali `telepon` (hanya angka, nol di depan tetap, kolom teks);
   label kode `models.LabelKode` - Report Type 1 Direct / 2 Via Email / 3 Via Fax / 4 via Postal Mail/Courier / 5 Via
