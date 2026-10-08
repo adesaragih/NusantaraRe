@@ -125,6 +125,11 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   (PilihSaring inti, saringan server). Catastrophe dan Edit RNM Share diperbaiki: penanda mode `EditCatastrope` /
   `IsEditRNMShare` tidak punya kolom sehingga hilang saat halaman dibaca ulang (aksi 409) - kini `Layar.mode` dikirim
   server dan dikembalikan layar di setiap aksi (`models.ModeLayar`, daftar putih nilai true/false).
+- **Tombol "+" Consultant / Adjuster** (08-10-2026, pilihan "Popup di Claim Prop"): popup `TambahAdjuster`
+  (label section MstAdjusterConsultant) menyimpan master lewat API modul Adjuster Consultant - rute pinjaman
+  `"POST /api/adjuster-consultant": {"claimprop"}` di `cmd/api/rakit.go` (dijaga `TestPanggilanLintasModulTerdaftar`).
+  Modul itu membuat ID dan menolak nama kembar (422, pesannya tampil). Sesudah tersimpan layar menjalankan
+  SetConsultant / SetAdjsuter dengan ID baru. Tombol nonaktif selama ID hanya-baca (IsOutstanding = 1).
 - **Layar kasus berkulit Kelola User** (08-10-2026, "SAMAIN DENGAN MENU KELOLA USER SKIN NYA"): setiap bagian
   berlabel = kartu `panel` + `panel__title`, isi `form-grid`, medan berlabel di atas kotak `field__input`, hanya-baca
   tetap berkotak (`field__input--readonly`). Pengelompokan di `frontend/components/susun.ts` (diuji): label

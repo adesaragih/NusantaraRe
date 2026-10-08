@@ -144,6 +144,14 @@ func AmbilMode(h *Halaman) map[string]string {
 	return out
 }
 
+// Tombol "+" Consultant / Adjuster (Pega: harness MstAdjusterConsultant, tambah master): layar membuka popup tambah
+// lalu menyimpan lewat rute pinjaman modul Adjuster Consultant (`POST /api/adjuster-consultant`, keputusan work owner
+// 08-10-2026) dan mengisi ID baru ke medannya. Tidak ada aksi server Claim Prop; nonaktif selama ID hanya-baca.
+const (
+	AksiTambahKonsultan = "TambahKonsultan"
+	AksiTambahAdjuster  = "TambahAdjuster"
+)
+
 // AksiLihatPolis - tombol View (harness DetailPolisRealization tidak diekspor): layar membuka berkas polis NB / EDM
 // Treaty In di tab baru lewat `GET /berkas-polis` (keputusan work owner 08-10-2026); tidak ada aksi server.
 const AksiLihatPolis = "LihatPolis"
@@ -297,13 +305,13 @@ func blokAdjuster(namaTampil Kondisi, namaAdjTampil Kondisi) []Unsur {
 		bagian("",
 			aksi(sumber(tampil(wajibU(roJika(medan(CD+"ConsultantID", "Consultant ID", KOtomatis), isOutstanding)), bukanAcc),
 				SumberAdjuster), "SetConsultant"),
-			ikon(tampil(tombolOQ("AdjusterConsultantBaru1", "", OQMasterLain), bukanAcc), IkonTambah),
+			ikon(tampil(naJika(tombol("AdjusterConsultantBaru1", "Add", AksiTambahKonsultan), isOutstanding), bukanAcc), IkonTambah),
 			tampil(ro(medan(CD+"ConsultantName", "Consultant Name", KTeks)), namaTampil),
 		),
 		bagian("",
 			aksi(sumber(tampil(wajibU(roJika(medan(CD+"AppointedADJID", "Adjuster / Professional ID", KOtomatis),
 				isOutstanding)), bukanAcc), SumberAdjuster), "SetAdjsuter"),
-			ikon(tampil(tombolOQ("AdjusterConsultantBaru2", "", OQMasterLain), bukanAcc), IkonTambah),
+			ikon(tampil(naJika(tombol("AdjusterConsultantBaru2", "Add", AksiTambahAdjuster), isOutstanding), bukanAcc), IkonTambah),
 			tampil(ro(medan(CD+"AppointedADJ", "Adjuster / Professional Name", KTeks)), namaAdjTampil),
 		),
 	)}

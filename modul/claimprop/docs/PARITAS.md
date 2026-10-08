@@ -43,7 +43,7 @@
 | View (polis) | harness `DetailPolisRealization` (tidak diekspor); pre-act `GetDetailPolis_act` mengurai dokumen polis ke kelas `ASM-FW-GISFW-Work` | 01 | **dibangun lain** — membuka berkas NB / EDM Treaty In (PRODKE terbesar, `GET /berkas-polis`) di tab baru; polis Pega lama tanpa berkas = pesan (keputusan work owner 08-10-2026) |
 | View Status Payment Premi | harness `ListPaymentPremi_Harness`, pre-act `GetDtlPaymentPremi_act` | 02 | **nonaktif-OQ** OQ-CP-03 |
 | Choose Cause of Loss | harness `CauseofLoss_Harness` (dis `IsAnyAcceptation =1`) | 03 | **dibangun** |
-| ikon tambah Consultant / Appointed Adjuster | harness `MstAdjusterConsultant` | 08 | **di luar lingkup** — nonaktif OQ-CP-04 |
+| ikon tambah Consultant / Appointed Adjuster | harness `MstAdjusterConsultant` | 08 | **dibangun** — popup tambah (Name, Telp No, Address; label XML) disimpan lewat rute pinjaman modul Adjuster Consultant `POST /api/adjuster-consultant`, ID baru diisi ke medannya; nonaktif selama ID hanya-baca (keputusan work owner 08-10-2026) |
 | ikon edit RNM Share % | `GetRNMShareTreaty` (vis `EstimationList(1).PrintFaceClaim = ''`) | 06 | **dibangun** |
 | ikon "Standard Icon" RNM Share % | tanpa aksi, vis never | — | tidak tampil di XML |
 | Save | `SetOutstanding_Act` lalu save (vis `IsAcceptation!=1`) | 07 | **dibangun** |
@@ -79,7 +79,7 @@
 | Choose Policy No | vis NEVER | — | tidak tampil di XML |
 | View (polis) | harness `DetailPolisRealization` (tidak diekspor); pre-act `GetDetailPolis_act` mengurai dokumen polis ke kelas `ASM-FW-GISFW-Work` | 01 | **dibangun lain** — membuka berkas NB / EDM Treaty In (PRODKE terbesar, `GET /berkas-polis`) di tab baru; polis Pega lama tanpa berkas = pesan (keputusan work owner 08-10-2026) |
 | Choose Cause of Loss | harness `CauseofLoss_Harness` | 03 | **dibangun** |
-| ikon tambah Consultant / Appointed Adjuster | harness `MstAdjusterConsultant` | 08 | **di luar lingkup** — nonaktif OQ-CP-04 |
+| ikon tambah Consultant / Appointed Adjuster | harness `MstAdjusterConsultant` | 08 | **dibangun** — popup tambah (Name, Telp No, Address; label XML) disimpan lewat rute pinjaman modul Adjuster Consultant `POST /api/adjuster-consultant`, ID baru diisi ke medannya; nonaktif selama ID hanya-baca (keputusan work owner 08-10-2026) |
 | Save (di bawah Est) / Save (di bawah Adjs) | save | 07, 08 | **dibangun** |
 | Back | `BackToRegister_act` (tidak diekspor) — layout NEVER | — | tidak tampil di XML — prompt §6 butir 9 menyebutnya, tetapi "tampil sesuai section" = tidak tampil; activity-nya tetap OQ-CP-01 |
 | Update Estimation / Save (`InputAcceptation_Adjs`) | `UpdateEstimasi_Act` (tidak diekspor) — layout NEVER | — | tidak tampil di XML — idem; OQ-CP-01 |

@@ -438,3 +438,23 @@ func TestClaimInformationPerbaikanWO(t *testing.T) {
 		t.Fatalf("ReporterStatus: %s", got)
 	}
 }
+
+// Tombol "+" Consultant / Adjuster (MstAdjusterConsultant; work owner 08-10-2026): aksi layar tambah master, nonaktif
+// selama ID hanya-baca (IsOutstanding = 1).
+func TestTombolTambahAdjuster(t *testing.T) {
+	for _, outstanding := range []string{"", "1"} {
+		h := models.HalamanBaru()
+		h.Setel("IsOutstanding", outstanding)
+		ts := models.Evaluasi(h, models.LayarOutstanding(), false)
+		for id, aksi := range map[string]string{"AdjusterConsultantBaru1": models.AksiTambahKonsultan,
+			"AdjusterConsultantBaru2": models.AksiTambahAdjuster} {
+			b := cariTata(ts, id)
+			if b == nil || b.Aksi != aksi || b.Ikon != models.IkonTambah {
+				t.Fatalf("%s: %+v", id, b)
+			}
+			if b.Nonaktif != (outstanding == "1") {
+				t.Fatalf("%s IsOutstanding=%q: nonaktif=%v", id, outstanding, b.Nonaktif)
+			}
+		}
+	}
+}

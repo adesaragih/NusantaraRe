@@ -164,6 +164,20 @@ export function berkasPolis(nopolis: string): Promise<BerkasPolis> {
   return minta(`${PREFIX_CP}/berkas-polis`, { kueri: { nopolis } })
 }
 
+/**
+ * Tombol "+" Consultant / Adjuster (Pega MstAdjusterConsultant, keputusan work owner 08-10-2026): master baru disimpan
+ * lewat API modul Adjuster Consultant - rute pinjaman `POST /api/adjuster-consultant` (`cmd/api/rakit.go`). ID dibuat
+ * modul itu; namanya tidak boleh kembar (422).
+ */
+export interface AdjusterBaru {
+  id: string
+  name: string
+}
+
+export function tambahAdjuster(isi: { name: string; address: string; telpNo: string }): Promise<AdjusterBaru> {
+  return minta('/api/adjuster-consultant', { metode: 'POST', badan: { id: '', ...isi } })
+}
+
 /** Hak halaman awal: switch Teknik aktif hanya bagi anggota workbasket ReasKlaimTeknik. */
 export interface HakPelaku {
   workbasketTeknik: boolean

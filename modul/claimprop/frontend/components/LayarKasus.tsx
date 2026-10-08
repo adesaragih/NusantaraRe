@@ -22,6 +22,7 @@ import {
 import { CP } from '../labels'
 import { ambil, masukan, semuaTata, setel } from '../nilai'
 import Popup, { type JenisPopup } from './Popup'
+import TambahAdjuster from './TambahAdjuster'
 import TataView, { LayarTata, type KonteksTata } from './TataView'
 
 /** Aksi yang hanya membuka pop-up harness. */
@@ -62,6 +63,8 @@ export default function LayarKasus({ id, pelaku, onKembali }: { id: string; pela
   const [info, setInfo] = useState<string | null>(null)
   const [modal, setModal] = useState<string | null>(null)
   const [popup, setPopup] = useState<JenisPopup | null>(null)
+  // Tombol "+" Consultant / Adjuster: medan dan aksi yang diisi ID master baru.
+  const [tambahAdj, setTambahAdj] = useState<{ jalur: string; aksi: string } | null>(null)
   const [acuan, setAcuan] = useState<AcuanStatis | null>(null)
   const [opsiKasus, setOpsiKasus] = useState<Record<string, Pilihan[]>>({})
   const [saranPeta, setSaranPeta] = useState<Record<string, Pilihan[]>>({})
@@ -170,6 +173,8 @@ export default function LayarKasus({ id, pelaku, onKembali }: { id: string; pela
       if (nama === 'BukaDLA') return setModal(`dla:${indeks}`)
       if (nama === 'TutupModal') return setModal(null)
       if (nama === 'LihatPolis') return lihatPolis()
+      if (nama === 'TambahKonsultan') return setTambahAdj({ jalur: 'ClaimData.ConsultantID', aksi: 'SetConsultant' })
+      if (nama === 'TambahAdjuster') return setTambahAdj({ jalur: 'ClaimData.AppointedADJID', aksi: 'SetAdjsuter' })
       kirim(nama, indeks, ubahan)
     },
     [kirim, lihatPolis],
@@ -297,6 +302,16 @@ export default function LayarKasus({ id, pelaku, onKembali }: { id: string; pela
         <Modal judul={JUDUL_MODAL(modal)} onTutup={() => setModal(null)} lebar>
           <TataView tata={layar.modal?.[modal] ?? []} k={{ ...k, rincian: undefined }} />
         </Modal>
+      )}
+      {tambahAdj && (
+        <TambahAdjuster
+          onTersimpan={(idBaru) => {
+            const t = tambahAdj
+            setTambahAdj(null)
+            kirim(t.aksi, 0, { [t.jalur]: idBaru })
+          }}
+          onTutup={() => setTambahAdj(null)}
+        />
       )}
       {popup && (
         <Popup
