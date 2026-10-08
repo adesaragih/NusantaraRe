@@ -101,6 +101,11 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   tetap berkotak (`field__input--readonly`). Pengelompokan di `frontend/components/susun.ts` (diuji): label
   pendamping `Q` / `/` / `U/Y` menjadi label medannya, `%` menjadi satuan, tombol sesudah medan menempel di kanan
   kotaknya, tombol akhir = baris aksi kanan (Save / Submit = `btn--primary`). Isi tata server tidak berubah.
+- **Kulit Kelola User dari inbox sampai isi kasus** (08-10-2026, "SEMUA DONG DARI LUAR SAMPE DALAM"): nilai tema
+  `.kelola-user` inti disalin ke token `--cp-*` di akar `.claimprop__akar` (terang + gelap), pola Marketing Officer -
+  tidak menumpang ke kelas inti. Akar dipasang di halaman awal dan layar kasus (popup / Modal ikut karena tanpa
+  portal); semua tabel `claimprop__tabel` (kartu timbul berkepala navy), tab berjalur cekung, tombol kapsul, tombol
+  utama merah bergradasi, isian cekung, kartu bagian timbul. Warna hanya di blok token (dijaga gaya.test.ts).
 - **Pesan pra-proses tidak tampil saat kasus dibuat / dibuka** (08-10-2026, "BARU BUAT UDAH ADA WARNING
   ERROR"): `BukaKasus` membersihkan pesan `CheeckNoRNM_Act` (termasuk ProteksiData langkah 12) sesudah pra-proses;
   bendera Protect / IsError tetap dihitung. Pesan ProteksiData tampil pada Save to issue RNM / Submit.

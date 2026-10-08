@@ -46,14 +46,29 @@ describe('gaya modul Claim Prop', () => {
     for (const k of dipakai) expect(didefinisikan, k).toContain(k)
   })
 
-  it('rupa mengikuti inti (Kelola User): nol warna baru, warna lewat token inti', () => {
-    expect(ATURAN).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/)
-    expect(ATURAN).toMatch(/var\(--border\)/)
+  it('kulit Kelola User: akar .claimprop__akar bertoken --cp-* terang dan gelap; warna hanya di blok token', () => {
+    expect(CSS).toMatch(/^\.claimprop \.claimprop__akar \{[^}]*--cp-latar: #eef1f6;/m)
+    expect(CSS).toMatch(/^:root\[data-theme="dark"\] \.claimprop \.claimprop__akar \{[^}]*--cp-latar: #1b2130;/m)
+    const tanpaToken = ATURAN.replace(/(^|\n)[^{}\n]*\.claimprop__akar \{[^}]*\}/g, '')
+    expect(tanpaToken).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/)
+    for (const [berkas, kelas] of [
+      [['pages', 'ClaimProp.tsx'], 'className="inbox claimprop__akar"'],
+      [['components', 'LayarKasus.tsx'], 'className="inbox claimprop__akar"'],
+      [['components', 'TataView.tsx'], 'className="claimprop__tabel"'],
+      [['components', 'Popup.tsx'], 'className="claimprop__tabel"'],
+    ] as const) {
+      expect(readFileSync(join(AKAR, ...berkas), 'utf8'), kelas).toContain(kelas)
+    }
   })
 
   it('halaman awal memakai kelas inti Kelola User: toolbar, field__input, inbox__tabel, btn--primary', () => {
     const awal = readFileSync(join(AKAR, 'pages', 'ClaimProp.tsx'), 'utf8')
-    for (const k of ['className="toolbar"', 'field__input', 'className="inbox__tabel"', 'btn btn--primary']) {
+    for (const k of [
+      'className="toolbar"',
+      'field__input',
+      'className="inbox__tabel claimprop__tabel"',
+      'btn btn--primary',
+    ]) {
       expect(awal, k).toContain(k)
     }
   })

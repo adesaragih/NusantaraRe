@@ -108,7 +108,7 @@ export default function Popup({
   else if (data === null) isi = <Memuat pesan={CP.memuat} />
   else if (jenis === 'master') {
     isi = (
-      <table>
+      <table className="claimprop__tabel">
         <thead>
           <tr>
             {[
@@ -155,7 +155,7 @@ export default function Popup({
     )
   } else if (jenis === 'polis') {
     isi = (
-      <table>
+      <table className="claimprop__tabel">
         <thead>
           <tr>
             <th>No Polis</th>
@@ -178,7 +178,7 @@ export default function Popup({
     )
   } else if (jenis === 'sebab') {
     isi = (
-      <table>
+      <table className="claimprop__tabel">
         <thead>
           <tr>
             <th>Cause of Loss</th>
@@ -244,7 +244,7 @@ export default function Popup({
             {CP.addNew}
           </button>
         </div>
-        <table>
+        <table className="claimprop__tabel">
           <thead>
             <tr>
               <th />
@@ -279,7 +279,7 @@ export default function Popup({
     isi = (
       <>
         <div className="claimprop__label">Summary Outstanding Claim</div>
-        <table>
+        <table className="claimprop__tabel">
           <thead>
             <tr>
               {[

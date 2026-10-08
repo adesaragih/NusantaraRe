@@ -63,7 +63,7 @@ export default function ClaimProp({ pelaku }: { pelaku: string }) {
   }
 
   return (
-    <section className="inbox">
+    <section className="inbox claimprop__akar">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{CP.judul}</h2>
       </header>
@@ -102,7 +102,7 @@ export default function ClaimProp({ pelaku }: { pelaku: string }) {
       {daftar === null && galat === null && <Memuat pesan={CP.memuat} />}
       {daftar !== null && daftar.length === 0 && <Kosong pesan={CP.kosong} />}
       {daftar !== null && daftar.length > 0 && (
-        <table className="inbox__tabel">
+        <table className="inbox__tabel claimprop__tabel">
           <thead>
             <tr>
               <th>{CP.kolomID}</th>

@@ -260,7 +260,7 @@ function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
           <Tombol t={t.tambah} k={k} />
         </div>
       )}
-      <table>
+      <table className="claimprop__tabel">
         <thead>
           <tr>
             {t.bernomor && <th>#</th>}

@@ -199,12 +199,16 @@ export default function LayarKasus({ id, pelaku, onKembali }: { id: string; pela
   }, [layar, h, aksi, opsi, saran, sibuk])
 
   if (!layar || !h || !k) {
-    return <section className="inbox">{galat ? <Gagal galat={galat} /> : <Memuat pesan={CP.memuat} />}</section>
+    return (
+      <section className="inbox claimprop__akar">
+        {galat ? <Gagal galat={galat} /> : <Memuat pesan={CP.memuat} />}
+      </section>
+    )
   }
 
   const pesanGalat = galat instanceof ApiFailure ? galat.detail.message : null
   return (
-    <section className="inbox">
+    <section className="inbox claimprop__akar">
       <header className="inbox__kepala">
         <button type="button" className="btn btn--ghost btn--sm" onClick={onKembali}>
           {CP.kembali}

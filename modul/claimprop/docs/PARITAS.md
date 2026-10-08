@@ -14,7 +14,8 @@
 > Cek layar 07-10-2026 (server tiruan `UJI-`, vite port 5177, Chrome tanpa kepala): halaman awal (tab Process /
 > Resolve, workbasket Admin / Teknik, Add Claim hanya di Admin; rupa kelas inti seperti Kelola User),
 > layar kasus 08-10-2026 berkulit Kelola User (kartu `panel`, `form-grid`, kotak hanya-baca; tema terang dan
-> gelap; kasus baru tanpa daftar pesan galat),
+> gelap; kasus baru tanpa daftar pesan galat; kulit neumorfik `.kelola-user` disalin ke token `--cp-*` untuk inbox,
+> layar kasus, dan popup),
 > layar Outstanding Claim kasus baru (54 medan, nol galat konsol), popup "Data Master TreatyIn" — tombol tampak
 > cocok dengan baris berstatus di bawah untuk keadaan kasus baru. Tahap Input Acceptation sampai Resolved-Completed
 > dijaga uji HTTP `TestAlurPenuhSampaiResolved`.
