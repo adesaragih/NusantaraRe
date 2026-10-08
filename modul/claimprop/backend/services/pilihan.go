@@ -7,6 +7,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/cockroachdb/apd/v3"
 
@@ -40,6 +41,25 @@ type Ringkasan struct {
 	Baris      []BarisRingkasan `json:"baris"`
 	TotalLabel string           `json:"totalLabel"`
 	TotalNilai string           `json:"totalNilai"`
+}
+
+// BerkasPolis - tombol View: berkas NB / EDM Treaty In terbaru untuk nomor polis (layar membukanya di tab baru).
+func (l *Layanan) BerkasPolis(ctx context.Context, p inti.Pelaku, nopolis string) (models.BerkasPolis, error) {
+	if err := l.periksaPelaku(p); err != nil {
+		return models.BerkasPolis{}, err
+	}
+	nopolis = strings.TrimSpace(nopolis)
+	if nopolis == "" {
+		return models.BerkasPolis{}, fmt.Errorf("%w: nomor polis kosong", ErrPermintaanTidakSah)
+	}
+	b, ada, err := l.a.BerkasPolis(ctx, nopolis)
+	if err != nil {
+		return models.BerkasPolis{}, err
+	}
+	if !ada {
+		return models.BerkasPolis{}, fmt.Errorf("%w: polis belum punya berkas NB / EDM Treaty In", ErrKasusTidakAda)
+	}
+	return b, nil
 }
 
 // Pilihan membaca satu daftar pilihan kasus.

@@ -51,6 +51,7 @@ type Gudang interface {
 type Acuan interface {
 	models.Acuan
 	DaftarMaster(ctx context.Context, s models.SaringanMaster) ([]models.BarisMaster, error)
+	BerkasPolis(ctx context.Context, nopolis string) (models.BerkasPolis, bool, error)
 	BarisMasterDari(ctx context.Context, treatyID, grupID, cobID string) (models.BarisMaster, bool, error)
 	DaftarPolis(ctx context.Context, noOffer, grup string) ([]models.BarisPolis, error)
 	DaftarAdjuster(ctx context.Context, cari string) ([]models.Pilihan, error)

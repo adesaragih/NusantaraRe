@@ -12,6 +12,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"nusantarare/inti/backend/db"
@@ -308,6 +309,36 @@ func (a *Acuan) AdaPolisRealisasi(ctx context.Context, nopolis string) (bool, er
 	}
 	_, ada, err := a.satu(ctx, fmt.Sprintf(`SELECT NOPOLIS FROM %s WHERE NOPOLIS = :1 FETCH FIRST 1 ROWS ONLY`, t), nopolis)
 	return ada, err
+}
+
+// sqlBerkasPolis - berkas NB / EDM Treaty In terbaru untuk satu nomor polis: generasi PRODKE terbesar yang ada di
+// T_WORK_POLIS (polis Pega lama yang belum disalin lewat Copy Old tidak punya berkas).
+func sqlBerkasPolis(gen, kerja string) string {
+	return fmt.Sprintf(`SELECT g.ID, g.PRODKE FROM %s g JOIN %s w ON w.ID = g.ID
+		WHERE g.NOPOLIS = :1
+		ORDER BY g.PRODKE DESC
+		FETCH FIRST 1 ROWS ONLY`, gen, kerja)
+}
+
+// BerkasPolis = tombol View: modul dan ID berkas polis.
+func (a *Acuan) BerkasPolis(ctx context.Context, nopolis string) (models.BerkasPolis, bool, error) {
+	gen, err := a.q("T_GENERAL_POLIS_TREATY")
+	if err != nil {
+		return models.BerkasPolis{}, false, err
+	}
+	kerja, err := a.q("T_WORK_POLIS")
+	if err != nil {
+		return models.BerkasPolis{}, false, err
+	}
+	rows, err := a.banyak(ctx, sqlBerkasPolis(gen, kerja), 2, nopolis)
+	if err != nil || len(rows) == 0 {
+		return models.BerkasPolis{}, false, err
+	}
+	prodke, err := strconv.Atoi(strings.TrimSpace(rows[0][1]))
+	if err != nil {
+		return models.BerkasPolis{}, false, fmt.Errorf("repository: PRODKE berkas polis %q: %w", rows[0][0], err)
+	}
+	return models.BerkasPolis{Modul: models.ModulBerkasPolis(prodke), Kasus: rows[0][0]}, true, nil
 }
 
 // DaftarPolis = grid "Data Polis" (RDB SetPolicyTreatyProp: `NOOFFER = MasterID.CARI1 AND TREATYGROUP =

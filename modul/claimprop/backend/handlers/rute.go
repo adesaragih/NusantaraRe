@@ -42,6 +42,7 @@ func DaftarkanRute(mux *http.ServeMux, l *services.Layanan, stubPelaku bool) {
 	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/pilihan/{jenis}", h.pilihan)
 	mux.HandleFunc("GET "+Prefix+"/acuan", h.acuan)
 	mux.HandleFunc("GET "+Prefix+"/hak", h.hak)
+	mux.HandleFunc("GET "+Prefix+"/berkas-polis", h.berkasPolis)
 }
 
 // Router menyusun mux tersendiri - untuk uji.
@@ -96,6 +97,16 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		log.Printf("claimprop: %v", err)
 		galat.Tulis(w, http.StatusInternalServerError, "gagal memproses permintaan Claim Prop")
 	}
+}
+
+// berkasPolis - tombol View: modul dan ID berkas NB / EDM Treaty In untuk nomor polis.
+func (h *rute) berkasPolis(w http.ResponseWriter, r *http.Request) {
+	out, err := h.l.BerkasPolis(r.Context(), h.pelaku(r), r.URL.Query().Get("nopolis"))
+	if err != nil {
+		tulisGalat(w, err)
+		return
+	}
+	tulisJSON(w, http.StatusOK, out)
 }
 
 // hak - switch Teknik halaman awal: aktif hanya bagi anggota ReasKlaimTeknik.

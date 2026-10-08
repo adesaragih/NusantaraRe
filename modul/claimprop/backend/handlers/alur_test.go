@@ -397,3 +397,25 @@ func TestPopupMasterProporsionalDanFilterKolom(t *testing.T) {
 		t.Fatalf("filter digabung AND: %s", got)
 	}
 }
+
+// Tombol View: nomor polis -> berkas NB / EDM Treaty In (dibuka di tab baru oleh layar); polis tanpa berkas = 404,
+// nomor kosong = 400.
+func TestBerkasPolisUntukView(t *testing.T) {
+	u := baruUji(t)
+	u.a.Berkas[polisUji] = models.BerkasPolis{Modul: models.ModulEDMTreatyIn, Kasus: "UJI-EDMT-1"}
+	minta := func(kueri string) (int, map[string]any) {
+		t.Helper()
+		return u.minta(http.MethodGet, handlers.Prefix+"/berkas-polis"+kueri, admin, "", nil)
+	}
+	kode, out := minta("?nopolis=" + polisUji)
+	u.wajib(kode, http.StatusOK, out, "berkas polis")
+	if out["modul"] != models.ModulEDMTreatyIn || out["kasus"] != "UJI-EDMT-1" {
+		t.Fatalf("berkas polis: %v", out)
+	}
+	if kode, _ = minta("?nopolis=UJI-TIDAK-ADA"); kode != http.StatusNotFound {
+		t.Fatalf("polis tanpa berkas: HTTP %d, mau 404", kode)
+	}
+	if kode, _ = minta(""); kode != http.StatusBadRequest {
+		t.Fatalf("nomor kosong: HTTP %d, mau 400", kode)
+	}
+}

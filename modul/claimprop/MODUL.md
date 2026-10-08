@@ -109,6 +109,14 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   filter per kolom digabung AND di server (`repository.sqlDaftarMaster`), urut Treaty Year lalu Treaty ID menurun,
   batas 500 (`models.BatasMaster`), 50 per halaman di layar. Sebab lama: 20 baris pertama urut TREATYID = satu
   treaty (rata-rata 39 baris per treaty di view CLAIM_MASTER_TREATY). DEV: 0,37 s tanpa filter, 0,05 s berfilter.
+- **Tombol View polis** (08-10-2026, "buat view untuk polis itu sesuai dengan modul pada nb/edm treaty" -> pilihan
+  "Tab baru"): harness DetailPolisRealization tidak diekspor, tetapi `GetDetailPolis_act` mengurai dokumen polis ke
+  kelas berkas polis Treaty In. View membuka berkas NB / EDM Treaty In di tab baru: `GET /api/claim-prop/berkas-polis`
+  (T_GENERAL_POLIS_TREATY.NOPOLIS + T_WORK_POLIS, PRODKE terbesar; 0 = nbtreatyin, >= 1 = edmtreatyin), lalu form GET
+  tersembunyi `target=_blank` ke `?modul=&kasus=` (inti `lib/tautanKasus.ts`; window.open dilarang penjaga navigasi).
+  `frontend/App.tsx` membaca tautan itu dan membuka berkas lewat jalur kotak masuk Beranda; modul tanpa menu = pesan.
+  Modul NB / EDM tidak diubah. DEV: hanya berkas aplikasi baru / Copy Old punya berkas (15 dari 41.945 baris
+  TREATYINPRODUCTION) - polis Pega lama lain menampilkan pesan.
 - **Layar kasus berkulit Kelola User** (08-10-2026, "SAMAIN DENGAN MENU KELOLA USER SKIN NYA"): setiap bagian
   berlabel = kartu `panel` + `panel__title`, isi `form-grid`, medan berlabel di atas kotak `field__input`, hanya-baca
   tetap berkotak (`field__input--readonly`). Pengelompokan di `frontend/components/susun.ts` (diuji): label

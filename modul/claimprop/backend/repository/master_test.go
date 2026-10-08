@@ -50,3 +50,19 @@ func TestSqlDaftarMasterFilterPerKolom(t *testing.T) {
 		t.Fatalf("argumen %v", args)
 	}
 }
+
+// Tombol View (keputusan work owner 08-10-2026): berkas NB / EDM Treaty In terbaru untuk satu nomor polis - generasi
+// PRODKE terbesar yang benar-benar ada di T_WORK_POLIS.
+func TestSqlBerkasPolis(t *testing.T) {
+	q := sqlBerkasPolis("S.T_GENERAL_POLIS_TREATY", "S.T_WORK_POLIS")
+	for _, w := range []string{
+		"SELECT g.ID, g.PRODKE FROM S.T_GENERAL_POLIS_TREATY g JOIN S.T_WORK_POLIS w ON w.ID = g.ID",
+		"WHERE g.NOPOLIS = :1",
+		"ORDER BY g.PRODKE DESC",
+		"FETCH FIRST 1 ROWS ONLY",
+	} {
+		if !strings.Contains(q, w) {
+			t.Fatalf("SQL tanpa %q:\n%s", w, q)
+		}
+	}
+}

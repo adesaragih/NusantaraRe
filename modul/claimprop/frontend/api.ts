@@ -148,6 +148,16 @@ export function ambilAcuan(): Promise<AcuanStatis> {
   return minta(`${PREFIX_CP}/acuan`)
 }
 
+/** Tombol View: berkas NB / EDM Treaty In untuk nomor polis (dibuka di tab baru). 404 = polis belum punya berkas. */
+export interface BerkasPolis {
+  modul: string
+  kasus: string
+}
+
+export function berkasPolis(nopolis: string): Promise<BerkasPolis> {
+  return minta(`${PREFIX_CP}/berkas-polis`, { kueri: { nopolis } })
+}
+
 /** Hak halaman awal: switch Teknik aktif hanya bagi anggota workbasket ReasKlaimTeknik. */
 export interface HakPelaku {
   workbasketTeknik: boolean

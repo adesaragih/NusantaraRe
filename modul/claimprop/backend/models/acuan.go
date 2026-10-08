@@ -92,6 +92,28 @@ type SaringanMaster struct {
 	TreatyYear      string
 }
 
+// BerkasPolis - berkas NB / EDM Treaty In yang memuat satu nomor polis RNM. Tombol View (Pega: GetDetailPolis_act
+// mengurai dokumen polis ke halaman kelas ASM-FW-GISFW-Work = berkas polis Treaty In; harness DetailPolisRealization
+// tidak diekspor) membuka layar modul NB / EDM Treaty In di tab baru (keputusan work owner 08-10-2026).
+type BerkasPolis struct {
+	Modul string `json:"modul"`
+	Kasus string `json:"kasus"`
+}
+
+// Nama modul frontend tujuan tombol View (`menu.ts` modul NB / EDM Treaty In).
+const (
+	ModulNBTreatyIn  = "nbtreatyin"
+	ModulEDMTreatyIn = "edmtreatyin"
+)
+
+// ModulBerkasPolis - T_GENERAL_POLIS_TREATY.PRODKE 0 = NB Treaty In, >= 1 = generasi endorsemen EDM Treaty In.
+func ModulBerkasPolis(prodke int) string {
+	if prodke >= 1 {
+		return ModulEDMTreatyIn
+	}
+	return ModulNBTreatyIn
+}
+
 // BarisPolis - satu baris grid popup "Data Polis" (RDB `SetPolicyTreatyProp` atas TREATYINPRODUCTION).
 // ⚠️ Alias berbohong `TREATYGROUP AS "BusinessName"` diluruskan (AC 110): medannya bernama TreatyGroup.
 type BarisPolis struct {

@@ -40,7 +40,7 @@
 | Summary Outstanding Claim | harness `SummaryOutSClaim`, pre-act `GetDataOustanding` (vis `IsOutstanding = 1`) | 07 | **dibangun** |
 | teks `.Message` (klik) | harness `InputTreatyInOffer` (tidak diekspor) | 01 | **nonaktif-OQ** OQ-CP-02 — tampil hanya-baca |
 | Choose Policy No | harness `ListPolicyNoTreaty_Harness`, pre-act `SetMasterID` | 01 | **dibangun** (pilih = klik ganda baris → `CheckNoPolicy`, seperti XML) |
-| View (polis) | harness `DetailPolisRealization` (tidak diekspor) | 01 | **nonaktif-OQ** OQ-CP-02 |
+| View (polis) | harness `DetailPolisRealization` (tidak diekspor); pre-act `GetDetailPolis_act` mengurai dokumen polis ke kelas `ASM-FW-GISFW-Work` | 01 | **dibangun lain** — membuka berkas NB / EDM Treaty In (PRODKE terbesar, `GET /berkas-polis`) di tab baru; polis Pega lama tanpa berkas = pesan (keputusan work owner 08-10-2026) |
 | View Status Payment Premi | harness `ListPaymentPremi_Harness`, pre-act `GetDtlPaymentPremi_act` | 02 | **nonaktif-OQ** OQ-CP-03 |
 | Choose Cause of Loss | harness `CauseofLoss_Harness` (dis `IsAnyAcceptation =1`) | 03 | **dibangun** |
 | ikon tambah Consultant / Appointed Adjuster | harness `MstAdjusterConsultant` | 08 | **di luar lingkup** — nonaktif OQ-CP-04 |
@@ -77,7 +77,7 @@
 | View Status Payment Premi (#2, #3) | harness `ListPaymentPremi_Harness` | 02 | **nonaktif-OQ** OQ-CP-03 |
 | Close Claim | LA `PreventRejectClaimProp` | 11 | **dibangun** |
 | Choose Policy No | vis NEVER | — | tidak tampil di XML |
-| View (polis) | harness `DetailPolisRealization` (tidak diekspor) | 01 | **nonaktif-OQ** OQ-CP-02 |
+| View (polis) | harness `DetailPolisRealization` (tidak diekspor); pre-act `GetDetailPolis_act` mengurai dokumen polis ke kelas `ASM-FW-GISFW-Work` | 01 | **dibangun lain** — membuka berkas NB / EDM Treaty In (PRODKE terbesar, `GET /berkas-polis`) di tab baru; polis Pega lama tanpa berkas = pesan (keputusan work owner 08-10-2026) |
 | Choose Cause of Loss | harness `CauseofLoss_Harness` | 03 | **dibangun** |
 | ikon tambah Consultant / Appointed Adjuster | harness `MstAdjusterConsultant` | 08 | **di luar lingkup** — nonaktif OQ-CP-04 |
 | Save (di bawah Est) / Save (di bawah Adjs) | save | 07, 08 | **dibangun** |

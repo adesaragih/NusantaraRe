@@ -19,6 +19,7 @@ import {
 } from '../inti/frontend/lib/daftarMenu'
 import { bolehMasukStub, PERISTIWA_SESI_BERAKHIR, pelakuStub, sesiDariProfil, type Sesi } from '../inti/frontend/store/sesi'
 import { HAK_PENUH, KonteksHakMenu, type HakMenu } from '../inti/frontend/lib/hakMenu'
+import { bacaTautanKasus, PESAN_TAUTAN_TANPA_MODUL } from '../inti/frontend/lib/tautanKasus'
 import { ENTRI_MENU, halamanAktif, MODUL_FRONTEND, type Halaman } from './daftar'
 
 // App = identitas + Shell.
@@ -164,6 +165,23 @@ export default function App() {
   // itu dilepas, jadi halamannya kembali ke Beranda alih-alih layar kosong
   // (temuan /code-review). Tanpa MODUL_AKTIF tidak pernah terjadi. Sama bila
   // menu akunnya dicabut, dan bila Kelola User tidak (lagi) dipegang.
+  // Tautan berkas dari tab lain (tombol View polis Claim Prop -> berkas NB / EDM Treaty In, keputusan work owner
+  // 08-10-2026): dibaca SEKALI, dipakai sesudah identitas dan daftar modul aktif diketahui, lalu dihapus dari alamat
+  // supaya muat ulang tidak membukanya lagi. Berkas dibuka lewat jalur kotak masuk Beranda (`PropsRute.bukaKasus`).
+  const [tautan, setTautan] = useState(() => bacaTautanKasus(window.location.search))
+  const [pesanTautan, setPesanTautan] = useState<string | null>(null)
+  useEffect(() => {
+    if (tautan === null || akunMasuk === '' || modulAktif === null) return
+    const m = MODUL_FRONTEND.find((x) => x.nama === tautan.modul)
+    if (m !== undefined && modulDipasang(m.nama, modulBoleh)) {
+      setBukaKasus((lama) => ({ modul: m.nama, id: tautan.id, ketuk: (lama?.ketuk ?? 0) + 1 }))
+      setHalaman(m.halamanAwal)
+    } else {
+      setPesanTautan(PESAN_TAUTAN_TANPA_MODUL)
+    }
+    window.history.replaceState(null, '', window.location.pathname)
+    setTautan(null)
+  }, [tautan, akunMasuk, modulAktif, modulBoleh])
   useEffect(() => {
     if (!halamanAktif(halaman, modulBoleh) || (halaman === HALAMAN_KELOLA_USER && !bolehKelola)) {
       setHalaman('beranda')
@@ -256,6 +274,11 @@ export default function App() {
             }
       }
     >
+      {pesanTautan !== null && (
+        <div className="alert alert--error" role="alert">
+          {pesanTautan}
+        </div>
+      )}
       {halaman === 'beranda' && (
         <Beranda
           masuk={masuk}

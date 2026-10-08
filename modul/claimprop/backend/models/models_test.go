@@ -386,3 +386,12 @@ func TestLetakOutstandingIkutXML(t *testing.T) {
 		t.Fatalf("ikon EditRNMShare: %+v", b)
 	}
 }
+
+// Generasi polis: PRODKE 0 = NB Treaty In, PRODKE >= 1 = generasi endorsemen EDM Treaty In (T_GENERAL_POLIS_TREATY).
+func TestModulBerkasPolis(t *testing.T) {
+	for prodke, mau := range map[int]string{0: models.ModulNBTreatyIn, 1: models.ModulEDMTreatyIn, 3: models.ModulEDMTreatyIn} {
+		if got := models.ModulBerkasPolis(prodke); got != mau {
+			t.Fatalf("PRODKE %d: %s, mau %s", prodke, got, mau)
+		}
+	}
+}

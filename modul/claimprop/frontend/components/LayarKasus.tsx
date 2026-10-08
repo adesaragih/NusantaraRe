@@ -2,16 +2,19 @@
 // pohon tata server; aksi dikirim bersama nilai semua medan terbuka. Local action / harness (PrintFile, GeneratePLA,
 // GenerateDLATreaty, PreventRejectClaimProp, CommitteeTreaty) dibuka sebagai Modal; pop-up pemilih sebagai `Popup`.
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Gagal, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import { ApiFailure } from '../../../../inti/frontend/klien'
+import { PARAM_KASUS, PARAM_MODUL } from '../../../../inti/frontend/lib/tautanKasus'
 import {
   aksiKasus,
   ambilAcuan,
+  berkasPolis,
   bukaKasus,
   pilihanKasus,
   type AcuanStatis,
+  type BerkasPolis,
   type Halaman,
   type Layar,
   type Pilihan,
@@ -116,6 +119,39 @@ export default function LayarKasus({ id, pelaku, onKembali }: { id: string; pela
     [id, layar, h, terima],
   )
 
+  // Tombol View polis (keputusan work owner 08-10-2026): berkas NB / EDM Treaty In dibuka di tab baru. Berkasnya dicari
+  // di latar begitu Policy No terisi, supaya klik View langsung mengirim form GET bertarget `_blank` (pop-up sesudah
+  // await diblokir peramban; window.open dan href dinamis dilarang penjaga navigasi).
+  const noPolis = h ? ambil(h, 'ClaimData.PolicyData.PolicyNo') : ''
+  const [berkas, setBerkas] = useState<BerkasPolis | 'tidak-ada' | null>(null)
+  const [pesanView, setPesanView] = useState<string | null>(null)
+  const formView = useRef<HTMLFormElement>(null)
+  useEffect(() => {
+    setBerkas(null)
+    if (noPolis === '') return
+    let aktif = true
+    berkasPolis(noPolis).then(
+      (b) => {
+        if (aktif) setBerkas(b)
+      },
+      () => {
+        if (aktif) setBerkas('tidak-ada')
+      },
+    )
+    return () => {
+      aktif = false
+    }
+  }, [noPolis])
+  const lihatPolis = useCallback(() => {
+    setPesanView(null)
+    if (berkas === null) return
+    if (berkas === 'tidak-ada') {
+      setPesanView(CP.polisTanpaBerkas)
+      return
+    }
+    formView.current?.submit()
+  }, [berkas])
+
   const aksi = useCallback(
     (nama: string, indeks = 0, ubahan: Record<string, string> = {}) => {
       if (POPUP[nama]) {
@@ -126,9 +162,10 @@ export default function LayarKasus({ id, pelaku, onKembali }: { id: string; pela
       if (nama === 'BukaTutupKlaim') return setModal('tutupKlaim')
       if (nama === 'BukaDLA') return setModal(`dla:${indeks}`)
       if (nama === 'TutupModal') return setModal(null)
+      if (nama === 'LihatPolis') return lihatPolis()
       kirim(nama, indeks, ubahan)
     },
-    [kirim],
+    [kirim, lihatPolis],
   )
 
   const saran = useCallback(
@@ -233,6 +270,17 @@ export default function LayarKasus({ id, pelaku, onKembali }: { id: string; pela
         <div className="alert alert--ok" role="status">
           {info}
         </div>
+      )}
+      {pesanView && (
+        <div className="alert alert--error" role="alert">
+          {pesanView}
+        </div>
+      )}
+      {berkas !== null && berkas !== 'tidak-ada' && (
+        <form ref={formView} method="get" action={window.location.pathname} target="_blank" hidden>
+          <input type="hidden" name={PARAM_MODUL} value={berkas.modul} />
+          <input type="hidden" name={PARAM_KASUS} value={berkas.kasus} />
+        </form>
       )}
       <LayarTata tata={layar.tata} k={k} />
       {modal && (

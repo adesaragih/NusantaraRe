@@ -33,6 +33,8 @@ export const CP = {
   cariPopup: 'Search',
   /** Popup master: filter per kolom, 50 baris per halaman, batas 500 (keputusan work owner 08-10-2026). */
   saring: 'Filter',
+  /** Tombol View polis (08-10-2026): polis Pega lama yang belum disalin lewat Copy Old tidak punya berkas. */
+  polisTanpaBerkas: 'This policy has no NB / EDM Treaty In file yet (old Pega policy not copied).',
   menampilkan: 'Showing',
   dari: 'of',
   batasMaster: 'First 500 rows - narrow the filter',

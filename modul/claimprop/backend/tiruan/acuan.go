@@ -41,6 +41,7 @@ type Acuan struct {
 	WilayahPos     map[string][]models.BarisWilayah
 	Alamat         map[string][4]string
 	Adjuster       map[string]string
+	Berkas         map[string]models.BerkasPolis // nopolis -> berkas NB / EDM Treaty In
 	MO             map[string][6]string
 	Riwayat        map[string][]models.RiwayatKlaimPolis
 	OldID          map[string]string
@@ -67,7 +68,8 @@ func AcuanBaru() *Acuan {
 		TipeReas: map[string]string{}, Master: map[string]models.MasterTreaty{}, PolisRealisasi: map[string]bool{},
 		PolisMaster: map[string]bool{}, TreatyGroup: map[string]string{}, YearQuartal: map[string]string{},
 		WilayahPos: map[string][]models.BarisWilayah{}, Alamat: map[string][4]string{}, Adjuster: map[string]string{},
-		MO: map[string][6]string{}, Riwayat: map[string][]models.RiwayatKlaimPolis{}, OldID: map[string]string{},
+		Berkas: map[string]models.BerkasPolis{},
+		MO:     map[string][6]string{}, Riwayat: map[string][]models.RiwayatKlaimPolis{}, OldID: map[string]string{},
 		Tahun: map[string]string{}, LimitPLAMap: map[string]string{}, Retro: map[string][]models.Retro{},
 		Saldo: map[string]string{}, Proteksi: map[string]bool{}, OS: map[string][]repository.BarisRingkasanOS{},
 		Tangga: map[string][]models.AnggotaKomite{}, Kasir: map[string]string{}, Konversi: map[string]string{},
@@ -208,6 +210,11 @@ func (a *Acuan) DaftarMaster(_ context.Context, s models.SaringanMaster) ([]mode
 		out = out[:models.BatasMaster]
 	}
 	return out, nil
+}
+
+func (a *Acuan) BerkasPolis(_ context.Context, nopolis string) (models.BerkasPolis, bool, error) {
+	b, ada := a.Berkas[nopolis]
+	return b, ada, nil
 }
 
 func (a *Acuan) BarisMasterDari(_ context.Context, id, grup, cob string) (models.BarisMaster, bool, error) {

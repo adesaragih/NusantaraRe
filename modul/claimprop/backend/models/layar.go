@@ -117,6 +117,10 @@ func dua(sel ...Unsur) Unsur { return letak(LetakDua, sel...) }
 
 func ikon(u Unsur, i string) Unsur { u.Ikon = i; return u }
 
+// AksiLihatPolis - tombol View (harness DetailPolisRealization tidak diekspor): layar membuka berkas polis NB / EDM
+// Treaty In di tab baru lewat `GET /berkas-polis` (keputusan work owner 08-10-2026); tidak ada aksi server.
+const AksiLihatPolis = "LihatPolis"
+
 func tombol(id, lbl, aksiNama string) Unsur {
 	return Unsur{Jenis: JenisTombol, ID: id, Label: lbl, Aksi: aksiNama}
 }
@@ -458,7 +462,7 @@ func LayarOutstanding() []Unsur {
 		tampil(bagian("Information", catatan(ro(medan("Message", "", KTeks)), OQHarnessHilang)), terisi("Message")),
 		sebaris("",
 			tampil(naJika(tombol("ChoosePolicy", "Choose Policy No", "PilihPolis"), isOutstanding), beda("IsOutstanding", "1")),
-			tampil(tombolOQ("ViewPolicy", "View", OQHarnessHilang), terisi(CD+"PolicyData.PolicyNo")),
+			tampil(tombol("ViewPolicy", "View", AksiLihatPolis), terisi(CD+"PolicyData.PolicyNo")),
 			tampil(tombolOQ("PaymentPremi", "View Status Payment Premi", OQLayananLuar), terisi(CD+"PolicyData.PolicyNo")),
 		),
 		ro(medan(CD+"PolicyData.PolicyNo", "Policy No", KTeks)),
@@ -546,7 +550,7 @@ func sectionEstimasiOutstanding() Unsur {
 func LayarAkseptasi() []Unsur {
 	kiri := bagian("",
 		sebaris("",
-			tampil(tombolOQ("ViewPolicy", "View", OQHarnessHilang), terisi(CD+"PolicyData.PolicyNo")),
+			tampil(tombol("ViewPolicy", "View", AksiLihatPolis), terisi(CD+"PolicyData.PolicyNo")),
 			tampil(tombolOQ("PaymentPremi", "View Status Payment Premi", OQLayananLuar), terisi(CD+"PolicyData.PolicyNo")),
 		),
 		ro(medan(CD+"PolicyData.PolicyNo", "Policy No", KTeks)),
