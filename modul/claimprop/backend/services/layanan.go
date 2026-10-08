@@ -261,8 +261,9 @@ func (l *Layanan) siapkan(k *models.Konteks, kasus models.Kasus, h *models.Halam
 
 // ---------------------------------------------------------------- buka, daftar, buat
 
-// BukaKasus membuka satu kasus. Pemegang assignment: pra-proses dijalankan (pesannya tampil, tidak disimpan); selainnya
-// hanya-baca.
+// BukaKasus membuka satu kasus. Pemegang assignment: pra-proses dijalankan (tidak disimpan); selainnya hanya-baca.
+// ⚠️ Pesan pra-proses (CheeckNoRNM_Act, termasuk ProteksiData langkah 12) TIDAK tampil saat kasus dibuat / dibuka -
+// keputusan work owner 08-10-2026; pesan tampil sesudah aksi pengguna (bendera Protect / IsError tetap dihitung).
 func (l *Layanan) BukaKasus(ctx context.Context, p inti.Pelaku, id string) (*Layar, error) {
 	if err := l.periksaPelaku(p); err != nil {
 		return nil, err
@@ -280,6 +281,7 @@ func (l *Layanan) BukaKasus(ctx context.Context, p inti.Pelaku, id string) (*Lay
 		if err := l.siapkan(kt, k, h); err != nil {
 			return nil, err
 		}
+		h.BersihkanPesan()
 	}
 	if err := l.turunkan(ctx, kt, h); err != nil {
 		return nil, err

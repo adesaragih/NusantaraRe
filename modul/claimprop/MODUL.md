@@ -96,6 +96,14 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   daftar `workbasket`); tab Resolve = daftar `selesai`. Add Claim hanya di Process + Admin (`pages/inbox.ts`).
   Medan, tombol, tabel, toolbar memakai kelas inti (`field__input`, `btn`, `inbox__tabel`, `toolbar`);
   `claimprop.css` hanya menata letak pohon tata, warna lewat token inti.
+- **Layar kasus berkulit Kelola User** (08-10-2026, "SAMAIN DENGAN MENU KELOLA USER SKIN NYA"): setiap bagian
+  berlabel = kartu `panel` + `panel__title`, isi `form-grid`, medan berlabel di atas kotak `field__input`, hanya-baca
+  tetap berkotak (`field__input--readonly`). Pengelompokan di `frontend/components/susun.ts` (diuji): label
+  pendamping `Q` / `/` / `U/Y` menjadi label medannya, `%` menjadi satuan, tombol sesudah medan menempel di kanan
+  kotaknya, tombol akhir = baris aksi kanan (Save / Submit = `btn--primary`). Isi tata server tidak berubah.
+- **Pesan pra-proses tidak tampil saat kasus dibuat / dibuka** (08-10-2026, "BARU BUAT UDAH ADA WARNING
+  ERROR"): `BukaKasus` membersihkan pesan `CheeckNoRNM_Act` (termasuk ProteksiData langkah 12) sesudah pra-proses;
+  bendera Protect / IsError tetap dihitung. Pesan ProteksiData tampil pada Save to issue RNM / Submit.
 
 ## Pemuat data lama
 

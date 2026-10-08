@@ -58,10 +58,19 @@ describe('gaya modul Claim Prop', () => {
     }
   })
 
-  it('akar layar kasus membungkus baris, bukan kolom: basis flex medan = lebar, bukan tinggi', () => {
-    const layar = ATURAN.match(/\.claimprop \.claimprop__layar \{([^}]*)\}/)?.[1] ?? ''
-    expect(layar).toMatch(/flex-wrap:\s*wrap/)
-    expect(layar).not.toMatch(/flex-direction:\s*column/)
+  it('layar kasus memakai kelas inti Kelola User: panel, panel__title, form-grid, field__input--readonly', () => {
+    const tata = readFileSync(join(AKAR, 'components', 'TataView.tsx'), 'utf8')
+    for (const k of [
+      'className="panel"',
+      'panel__title',
+      'className="form-grid"',
+      'field__input--readonly',
+      'field__error',
+    ]) {
+      expect(tata, k).toContain(k)
+    }
+    // tata letak medan milik form-grid inti, bukan flex kolom modul (basis flex menjadi tinggi - 12.204px, 07-10-2026)
+    expect(ATURAN).not.toMatch(/flex-direction:\s*column/)
   })
 
   it('nol properti yang memerangkap Modal tanpa portal', () => {

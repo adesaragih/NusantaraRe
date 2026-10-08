@@ -19,7 +19,7 @@ import {
 import { CP } from '../labels'
 import { ambil, masukan, semuaTata, setel } from '../nilai'
 import Popup, { type JenisPopup } from './Popup'
-import TataView, { type KonteksTata } from './TataView'
+import TataView, { LayarTata, type KonteksTata } from './TataView'
 
 /** Aksi yang hanya membuka pop-up harness. */
 const POPUP: Record<string, JenisPopup> = {
@@ -230,9 +230,7 @@ export default function LayarKasus({ id, pelaku, onKembali }: { id: string; pela
           {info}
         </div>
       )}
-      <div className="claimprop__layar">
-        <TataView tata={layar.tata} k={k} />
-      </div>
+      <LayarTata tata={layar.tata} k={k} />
       {modal && (
         <Modal judul={JUDUL_MODAL(modal)} onTutup={() => setModal(null)} lebar>
           <TataView tata={layar.modal?.[modal] ?? []} k={{ ...k, rincian: undefined }} />

@@ -1,11 +1,14 @@
 /* Gaya modul Claim Prop - satu berkas milik modul; setiap pemilih di bawah akar `.claimprop`, kelas modul berawalan
-   `claimprop__`. Rupa dasar (medan, toolbar, tabel, tombol, tab) memakai kelas inti seperti Kelola User (keputusan work
-   owner 07-10-2026); berkas ini hanya menata letak pohon tata section Pega. Warna = token inti, nol warna baru, tema
-   terang dan gelap ikut inti. Nol properti yang memerangkap Modal tanpa portal. */
+   `claimprop__`. Rupa = Kelola User (keputusan work owner 07-10 dan 08-10-2026): kartu `panel` + `panel__title`, isi
+   `form-grid`, medan `field` / `field__input` (hanya-baca `field__input--readonly`), tombol `btn`, tabel dasar inti.
+   Berkas ini hanya menambah tata letak yang tidak ada di inti: kotak isian bertombol, sub-bagian, baris aksi, grid.
+   Warna = token inti, nol warna baru, tema terang dan gelap ikut inti. Nol properti yang memerangkap Modal. */
 
 .claimprop {
   display: contents;
 }
+
+/* --------------------------------------------------------------- halaman awal */
 
 .claimprop .claimprop__workbasket {
   display: flex;
@@ -26,63 +29,111 @@
   flex: 0 1 420px;
 }
 
-/* Akar layar kasus membungkus seperti isi bagian: medan dan tombol tingkat atas (Claim Information, tombol aksi)
-   berjajar; bagian dan grid selebar penuh. Kolom flex di sini membuat basis medan menjadi tinggi (280px per medan). */
-.claimprop .claimprop__layar {
+/* --------------------------------------------------------------- layar kasus */
+
+/* Kotak isian + satuan + tombol yang menempel di kanannya (Choose Cause of Loss, ikon pengaturan). */
+.claimprop .claimprop__baris-isian {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 16px 20px;
+  align-items: center;
+  gap: 8px;
 }
 
-.claimprop .claimprop__layar > .claimprop__bagian,
-.claimprop .claimprop__layar > .claimprop__isi-bagian,
-.claimprop .claimprop__layar > .claimprop__grid {
-  flex: 1 1 100%;
-}
-
-.claimprop .claimprop__bagian {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  padding: 12px 16px 16px;
-  margin: 0;
+.claimprop .claimprop__baris-isian > .field__input {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
-.claimprop .claimprop__judul-bagian {
-  font-size: 14px;
+.claimprop .claimprop__satuan {
   font-weight: 600;
   color: var(--text-2);
-  padding: 0 6px;
 }
 
-.claimprop .claimprop__isi-bagian {
+.claimprop .claimprop__centang {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 14px 20px;
-}
-
-.claimprop .claimprop__isi-bagian > .claimprop__bagian,
-.claimprop .claimprop__isi-bagian > .claimprop__grid {
-  flex: 1 1 100%;
-}
-
-.claimprop .claimprop__medan {
-  margin-bottom: 0;
-  min-width: 200px;
-  flex: 0 1 280px;
-}
-
-.claimprop .claimprop__nilai {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  height: 42px;
 }
 
 .claimprop .claimprop__input--angka {
   text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.claimprop .claimprop__area {
+  min-height: 84px;
+}
+
+/* Sub-bagian bertitel di dalam kartu (Spreading Claim, Loss Allocation, ...): garis atas, bukan kartu kedua. */
+.claimprop .claimprop__sub {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.claimprop .claimprop__subjudul {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Baris tombol di dalam kartu: di awal = alat (kiri), di akhir = aksi (kanan, seperti modal Kelola User). */
+.claimprop .claimprop__tombol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.claimprop .claimprop__tombol--akhir {
+  justify-content: flex-end;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+/* Baris aksi tingkat layar (Save, Save to issue RNM, PRINT PLA, Submit). */
+.claimprop .claimprop__aksi {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+/* --------------------------------------------------------------- grid */
+
+.claimprop .claimprop__grid {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.claimprop .claimprop__grid table {
+  width: 100%;
+}
+
+.claimprop .claimprop__grid td {
+  vertical-align: middle;
+}
+
+.claimprop .claimprop__grid-alat,
+.claimprop .claimprop__grid-kaki {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.claimprop .claimprop__grid-kaki {
+  justify-content: flex-end;
+}
+
+.claimprop .claimprop__kaki-nilai {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.claimprop .claimprop__kaki-nilai .field__label {
+  margin: 0;
 }
 
 .claimprop .claimprop__input--sel {
@@ -91,53 +142,10 @@
   min-width: 120px;
 }
 
-.claimprop .claimprop__area {
-  height: auto;
-  min-height: 72px;
-  padding: 8px 12px;
-  resize: vertical;
-}
-
-.claimprop .claimprop__tampil {
-  min-height: 24px;
-  padding: 4px 0;
-  white-space: pre-wrap;
-  color: var(--text);
-}
-
 .claimprop .claimprop__angka {
   display: block;
   text-align: right;
   font-variant-numeric: tabular-nums;
-}
-
-.claimprop .claimprop__label {
-  font-weight: 600;
-  color: var(--text-2);
-  padding: 4px 0;
-}
-
-.claimprop .claimprop__pesan-medan {
-  color: var(--danger);
-  font-size: 12px;
-}
-
-.claimprop .claimprop__grid {
-  width: 100%;
-  overflow-x: auto;
-}
-
-.claimprop .claimprop__grid-alat,
-.claimprop .claimprop__grid-kaki {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-}
-
-.claimprop .claimprop__grid td {
-  vertical-align: top;
 }
 
 .claimprop .claimprop__rinci {
@@ -145,8 +153,15 @@
   padding: 8px 12px;
 }
 
-.claimprop .claimprop__form-katastrofe {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+/* --------------------------------------------------------------- pop-up */
+
+.claimprop .claimprop__label {
+  font-weight: 600;
+  color: var(--text-2);
+  padding: 4px 0;
+}
+
+.claimprop .claimprop__tampil {
+  white-space: pre-wrap;
+  color: var(--text);
 }

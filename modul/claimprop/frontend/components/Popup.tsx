@@ -205,18 +205,18 @@ export default function Popup({
     )
   } else if (jenis === 'katastrofe') {
     isi = formBaru ? (
-      <div className="claimprop__form-katastrofe">
-        <label className="field claimprop__medan">
+      <div className="form-grid">
+        <label className="field">
           <span className="field__label">Catastrophe</span>
-          <span className="claimprop__tampil">{sts.sts}</span>
+          <input className="field__input field__input--readonly" readOnly tabIndex={-1} value={sts.sts} />
         </label>
         {sts.sts === 'Non-Catastrophe' && (
-          <label className="field claimprop__medan">
-            <span className="field__label" />
-            <span className="claimprop__tampil">{sts.non}</span>
+          <label className="field">
+            <span className="field__label">&nbsp;</span>
+            <input className="field__input field__input--readonly" readOnly tabIndex={-1} value={sts.non} />
           </label>
         )}
-        <label className="field claimprop__medan">
+        <label className="field field--lebar">
           <span className="field__label">{CP.note}</span>
           <textarea
             className="field__input claimprop__area"
@@ -224,12 +224,12 @@ export default function Popup({
             onChange={(e) => setCatatan(e.target.value)}
           />
         </label>
-        <label className="field claimprop__medan">
+        <label className="field">
           <span className="field__label">{CP.userInput}</span>
-          <span className="claimprop__tampil">{pelaku}</span>
+          <input className="field__input field__input--readonly" readOnly tabIndex={-1} value={pelaku} />
         </label>
-        <div className="claimprop__grid-alat">
-          <button type="button" className="btn btn--sm" onClick={() => setFormBaru(false)}>
+        <div className="field--lebar claimprop__tombol claimprop__tombol--akhir">
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => setFormBaru(false)}>
             {CP.cancel}
           </button>
           <button type="button" className="btn btn--sm btn--primary" onClick={() => onPilih('SaveCatasrtope', catatan)}>

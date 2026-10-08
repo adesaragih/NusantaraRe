@@ -136,6 +136,30 @@ func TestBuatKasusMasukWorklistPembuat(t *testing.T) {
 	}
 }
 
+// Keputusan work owner 08-10-2026 ("BARU BUAT UDAH ADA WARNING ERROR"): pesan pra-proses CheeckNoRNM_Act (termasuk
+// ProteksiData langkah 12) tidak tampil saat kasus dibuat / dibuka; pesan tampil sesudah aksi pengguna.
+func TestKasusBaruTanpaPesanSebelumAksi(t *testing.T) {
+	u := baruUji(t)
+	kode, out := u.minta(http.MethodPost, handlers.Prefix+"/kasus", admin, "", nil)
+	u.wajib(kode, http.StatusCreated, out, "buat kasus")
+	if out["pesan"] != nil || out["pesanMedan"] != nil {
+		t.Fatalf("kasus baru membawa pesan: %v / %v", out["pesan"], out["pesanMedan"])
+	}
+	id := out["kasus"].(map[string]any)["id"].(string)
+	kode, out = u.minta(http.MethodGet, handlers.Prefix+"/kasus/"+id, admin, "", nil)
+	u.wajib(kode, http.StatusOK, out, "buka oleh pemegang")
+	if out["pesan"] != nil || out["pesanMedan"] != nil {
+		t.Fatalf("membuka kasus membawa pesan: %v / %v", out["pesan"], out["pesanMedan"])
+	}
+	// Save biasa (SetOutstanding) tidak menjalankan ProteksiData: hasil aksinya pun tanpa daftar pesan pra-proses.
+	// Pesan ProteksiData tampil pada Save to issue RNM / Submit (TestAlurPenuhSampaiResolved).
+	kode, out = u.aksi(id, admin, "", "SetOutstanding", 0, "", nil)
+	u.wajib(kode, http.StatusOK, out, "Save kasus baru")
+	if out["pesan"] != nil || out["pesanMedan"] != nil {
+		t.Fatalf("Save kasus baru membawa pesan: %v / %v", out["pesan"], out["pesanMedan"])
+	}
+}
+
 func TestBukanPemegangDitolakDiLayanan(t *testing.T) {
 	u := baruUji(t)
 	id := u.buat()
