@@ -380,9 +380,8 @@ func TestEfekKeluarDiProduksi(t *testing.T) {
 		t.Fatal(err)
 	}
 	if dk.NamaBerkas != "Persetujuan Klaim   AcceptNo "+h.AcceptedNo+".pdf" || dk.Kategori != "AcceptanceNote" ||
-		dk.Folder != "Claim" || !strings.Contains(dk.HTML, "Create by : UJI Penyetuju Satu") ||
-		!strings.Contains(dk.HTML, "Jakarta, 08 October 2026") || !strings.Contains(dk.HTML, h.AcceptedNo) {
-		t.Fatalf("dokumen akseptasi: %+v", dk)
+		dk.Folder != "Claim" || dk.MIME != "pdf" || !bytes.HasPrefix(dk.Isi, []byte("%PDF-")) {
+		t.Fatalf("dokumen akseptasi: %s %s %s %s %d", dk.NamaBerkas, dk.Kategori, dk.Folder, dk.MIME, len(dk.Isi))
 	}
 	// Pelaksana produksi: isi dirakit, lalu panggilan nyata ditahan sampai disetujui manusia.
 	pl := services.PelaksanaKomiteClaimProp{Lingkungan: inti.Produksi, Penyusun: u.l}

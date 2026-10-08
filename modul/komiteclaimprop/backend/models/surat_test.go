@@ -1,6 +1,9 @@
 package models_test
 
 import (
+	"bytes"
+	"compress/zlib"
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -101,22 +104,59 @@ func TestFileAcceptanceNote(t *testing.T) {
 		d.PeriodeAwal != "01/01/2026" || d.InterestInsured != "UJI GEDUNG" || d.TSI[1].Nilai != "2.500,5" {
 		t.Fatalf("data dokumen: %+v", d)
 	}
-	h, err := models.RenderAcceptanceNote(d)
+	b, err := models.PDFAcceptanceNote(d, saat)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, s := range []string{"ACCEPTED CLAIM INSURANCE", "Accepted No :  \tUJIA12.10.2026.TP00001", "UJI COB",
-		"UJI/CLM/001 / CLMP-UJI001", "UJI GEDUNG&nbsp;IDR&nbsp;1.000.000.000", "IDR&nbsp;1.000.000,25",
-		"BreakDown Spreading (QS)", "<td>UJI RETRO QS</td>", "<td> 60,5</td>", "Jakarta, 08 October 2026",
-		"Create by : UJI Penyetuju Akhir", "UJI &lt;Tertanggung&gt;"} {
+	h := teksPDF(t, b)
+	if !bytes.HasPrefix(b, []byte("%PDF-")) {
+		t.Fatal("bukan PDF")
+	}
+	// fpdf menulis teks sebagai "(...) Tj"; kurung di dalam teks di-escape.
+	for _, s := range []string{"(PT. REASURANSI NUSANTARA MAKMUR)", "(ACCEPTED CLAIM INSURANCE)",
+		"(Accepted No :  UJIA12.10.2026.TP00001)", "(Line of Business)", "(UJI COB)", "(UJI/CLM/001 / CLMP-UJI001)",
+		"(UJI GEDUNG IDR 1.000.000.000)", "(UJI MESIN USD 2.500,5)", "(01/01/2026- 31/12/2026)", "(IDR 1.000.000,25)",
+		"(Location of Loss)", "(Name of Bank : UJI BANK)", "(Account No : UJI-REK)", "(PIC Name)", "(UJI Admin)",
+		`(BreakDown Spreading \(QS\))`, `(Share \(%\))`, "(UJI RETRO QS)", "(60,5)", "(605.000,25)",
+		"(Jakarta, 08 October 2026)", "(PT. Reasuransi Nusantara Makmur)", "(Create by : UJI Penyetuju Akhir)",
+		"(UJI <Tertanggung>)", "(Page 1 of 2 pages)", "(Page 2 of 2 pages)"} {
 		if !strings.Contains(h, s) {
-			t.Errorf("dokumen tanpa %q", s)
+			t.Errorf("PDF tanpa %q", s)
 		}
 	}
-	if strings.Contains(h, "Swift Code") {
-		t.Fatal("Swift Code hanya bila terisi")
+	if strings.Contains(h, "Swift Code") || strings.Count(h, "(UJI KEBAKARAN)") != 2 {
+		t.Fatal("Swift Code hanya bila terisi; Location of Loss = CauseOfLoss (S8)")
+	}
+	ulang, _ := models.PDFAcceptanceNote(d, saat)
+	if !bytes.Equal(b, ulang) {
+		t.Fatal("PDF tidak deterministik")
 	}
 	if n := models.NamaBerkasAkseptasi("UJI-NO"); n != "Persetujuan Klaim   AcceptNo UJI-NO.pdf" {
 		t.Fatalf("S9 PDFName: %q", n)
+	}
+}
+
+// awalStream - penanda awal isi stream PDF yang ditulis fpdf.
+const awalStream = "stream\n"
+
+// teksPDF - isi semua stream FlateDecode PDF (konten halaman) sebagai teks.
+func teksPDF(t *testing.T, b []byte) string {
+	t.Helper()
+	var out strings.Builder
+	for {
+		i := bytes.Index(b, []byte(awalStream))
+		if i < 0 {
+			return out.String()
+		}
+		b = b[i+len(awalStream):]
+		j := bytes.Index(b, []byte("endstream"))
+		if j < 0 {
+			t.Fatal("stream tanpa endstream")
+		}
+		if r, err := zlib.NewReader(bytes.NewReader(b[:j])); err == nil {
+			isi, _ := io.ReadAll(r)
+			out.Write(isi)
+		}
+		b = b[j+len("endstream"):]
 	}
 }

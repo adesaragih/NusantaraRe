@@ -22,10 +22,15 @@ const (
 	IsiSaat     = "saat"     // PrintFileAcceptance_TKMT S4 `NameInput.CARI24` (RFC 3339)
 )
 
-// DokumenAkseptasi - berkas PrintFileAcceptance_TKMT S9-S13 sebelum HTMLToPDF / InsertDocument_Act.
+// DokumenAkseptasi - berkas PrintFileAcceptance_TKMT S9-S11 yang S13 `InsertDocument_Act` simpan (KATEGORI_1,
+// NAMAFILE, MIME "pdf", isi; Folder "Claim" InsertDocument_Act S4).
 type DokumenAkseptasi struct {
-	NamaBerkas, Kategori, Folder, HTML string
+	NamaBerkas, Kategori, Folder, MIME string
+	Isi                                []byte
 }
+
+// MIMEDokumenAkseptasi - S13 `MIME="pdf"`.
+const MIMEDokumenAkseptasi = "pdf"
 
 // SusunEmailKomite = SendEmailKlaim_KMT S1-S18 untuk satu baris efek email-komite.
 func (l *Layanan) SusunEmailKomite(ctx context.Context, komiteID string, isi map[string]string) (models.SurelKomite,
@@ -80,7 +85,7 @@ func (l *Layanan) SusunEmailKomite(ctx context.Context, komiteID string, isi map
 		Subjek: models.SubjekEmail(jenis, kl, d.KomiteNo), HTML: h}, nil
 }
 
-// SusunDokumenAkseptasi = PrintFileAcceptance_TKMT S5-S10 untuk satu baris efek dokumen-akseptasi.
+// SusunDokumenAkseptasi = PrintFileAcceptance_TKMT S5-S11 (PDF) untuk satu baris efek dokumen-akseptasi.
 func (l *Layanan) SusunDokumenAkseptasi(ctx context.Context, komiteID string, isi map[string]string) (DokumenAkseptasi,
 	error) {
 	_, kl, err := l.muat(ctx, nil, komiteID, false)
@@ -100,10 +105,11 @@ func (l *Layanan) SusunDokumenAkseptasi(ctx context.Context, komiteID string, is
 	if err != nil {
 		return DokumenAkseptasi{}, err
 	}
-	h, err := models.RenderAcceptanceNote(d)
+	isiPDF, err := models.PDFAcceptanceNote(d, saat)
 	if err != nil {
 		return DokumenAkseptasi{}, err
 	}
 	return DokumenAkseptasi{NamaBerkas: models.NamaBerkasAkseptasi(adj["AcceptedNo"]),
-		Kategori: models.KategoriDokumenAkseptasi, Folder: models.FolderDokumenKlaim, HTML: h}, nil
+		Kategori: models.KategoriDokumenAkseptasi, Folder: models.FolderDokumenKlaim, MIME: MIMEDokumenAkseptasi,
+		Isi: isiPDF}, nil
 }

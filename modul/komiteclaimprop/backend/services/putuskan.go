@@ -38,10 +38,6 @@ type HasilKeputusan struct {
 	AcceptedNo  string `json:"acceptedNo,omitempty"`
 }
 
-// OQDokumenPDF - `PrintFileAcceptance_TKMT` S9-S13: stream `FILEAcceptanceNote` tidak diekspor; berkas PDF tidak
-// dikarang (prompt §6 butir 10). Penanda `IsPrintAccept` tetap ditulis.
-const OQDokumenPDF = "Dokumen Acceptance Note (PDF) menunggu stream FILEAcceptanceNote dari ekspor Pega (OQ)"
-
 // Putuskan menjalankan satu Submit `kep` oleh `p` atas kasus komite `id`.
 func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, kep models.Keputusan) (HasilKeputusan, error) {
 	if err := l.siap(p); err != nil {
@@ -128,8 +124,8 @@ func (j *jalan) laksanakan(r *models.Rencana) error {
 		if err := j.retro(r, adj); err != nil {
 			return err
 		}
-		// S8 PrintFileAcceptance_TKMT: dokumen ACCEPTED CLAIM INSURANCE (FILEAcceptanceNote -> HTMLToPDF ->
-		// InsertDocument_Act) dirakit saat efek dikirim (`SusunDokumenAkseptasi`).
+		// S8 PrintFileAcceptance_TKMT: PDF ACCEPTED CLAIM INSURANCE (FILEAcceptanceNote -> HTMLToPDF) dirakit saat
+		// efek dikirim (`SusunDokumenAkseptasi`); InsertDocument_Act = pelaksana.
 		if err := j.antre(JenisEfekDokumen, k.ID, map[string]string{IsiPelaku: j.akun,
 			IsiSaat: j.saat.Format(time.RFC3339)}); err != nil {
 			return err
@@ -205,7 +201,7 @@ func (j *jalan) retro(r *models.Rencana, adj map[string]string) error {
 		// yang menampilkannya sendiri dari IsFacRetro di local action PrintFileDLA) - tidak dikembalikan ke penyetuju.
 		r.Klaim.Adjustment["IsFacRetro"] = "1"
 	}
-	r.Klaim.Adjustment["IsPrintAccept"] = "1" // S8 (PrintFileAcceptance_TKMT S4) + S9; berkas PDF = OQDokumenPDF
+	r.Klaim.Adjustment["IsPrintAccept"] = "1" // S8 (PrintFileAcceptance_TKMT S4) + S9; PDF = efek dokumen-akseptasi
 	return nil
 }
 

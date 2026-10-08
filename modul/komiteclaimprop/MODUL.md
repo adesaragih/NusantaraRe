@@ -31,7 +31,7 @@ dipensiunkan 1 Oktober 2026.
 | Folder | Isi |
 | --- | --- |
 | `docs/` | spec, tiket (`issues/`), grilling (tersegel), STRUKTUR / RELASI, `PARITAS.md` (setiap isian / tombol / langkah `KomitePost*` ↔ tiket ↔ status) |
-| `backend/` | `modul.go` (`Pendaftaran`), `models/` (murni; `templat/` = stream HTML `EmailKlaim_HTML_KMT` / `FILEAcceptanceNote` VERBATIM), `repository/` (SQL), `services/` (aturan + satu transaksi Submit + perakit isi efek + pelaksana outbox), `handlers/`, `tiruan/` (uji, kontrak palsu Claim Prop), `konfigurasi/kasir.json` / `email.json`, `migrations/` |
+| `backend/` | `modul.go` (`Pendaftaran`), `models/` (murni; `templat/` = stream HTML `EmailKlaim_HTML_KMT` VERBATIM; `pdf_akseptasi.go` = PDF `FILEAcceptanceNote`), `repository/` (SQL), `services/` (aturan + satu transaksi Submit + perakit isi efek + pelaksana outbox), `handlers/`, `tiruan/` (uji, kontrak palsu Claim Prop), `konfigurasi/kasir.json` / `email.json`, `migrations/` |
 | `frontend/` | `menu.ts`, `rute.tsx`, daftar kerja penyetuju, layar `ShowTransfer` |
 
 ## Rute
@@ -66,7 +66,7 @@ alamat tujuan memuat "syariah") dan CC kotak surat klaim S4 (hanya IsPEGAPROD). 
 | `konversi-klaim` | `KonversiKlaim_Act` (S29) | CASEID, NOPOLIS, STS_REJECT | `ErrArasapasBelumDisetujui` |
 | `kasir` | `HitServiceToKasirKMT_Act` (S34) | muatan `SendAcceptationToKasir` | `ErrKasirBelumDisetujui` |
 | `email-komite` | `SendEmailKlaim_KMT` (S35) | jenis, ID akun penerima, ID baris tangga | rakit isi (`SusunEmailKomite`) → `ErrEmailBelumDisetujui` |
-| `dokumen-akseptasi` | `PrintFileAcceptance_TKMT` (S21 → S8) | ID akun penyetuju, saat cetak | rakit markup (`SusunDokumenAkseptasi`) → `ErrPenyimpananBelumDisetujui` (PDF = OQ-KCP-07) |
+| `dokumen-akseptasi` | `PrintFileAcceptance_TKMT` (S21 → S8) | ID akun penyetuju, saat cetak | rakit PDF (`SusunDokumenAkseptasi`, `github.com/go-pdf/fpdf`) → `ErrPenyimpananBelumDisetujui` (unggah + `DOCUMENT_CLAIM` belum disambung) |
 
 MUATAN email / dokumen hanya pengenal (claimlife/015: tanpa nama / alamat); isi dirakit saat dikirim.
 

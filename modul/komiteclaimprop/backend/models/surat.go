@@ -4,9 +4,9 @@ package models
 // `Komite Claim Prop`:
 //
 //	EmailKlaim_HTML_KMT  SendEmailKlaim_KMT S5-S16 (Temp.CARI*, InputData.pxResults) -> badan email `Param.Message`
-//	FILEAcceptanceNote   PrintFileAcceptance_TKMT S5-S10 (halaman TempAcceptedNo) -> markup yang S11 ubah jadi PDF
+//	FILEAcceptanceNote   PrintFileAcceptance_TKMT S5-S10 (halaman TempAcceptedNo) -> PDF S11 (`pdf_akseptasi.go`)
 //
-// Markup VERBATIM di `templat/`; nilai dirakit di sini (murni). Kedua isi DIRAKIT SAAT EFEK DIKIRIM dari pengenal di
+// Markup email VERBATIM di `templat/`; nilai kedua isi dirakit di sini (murni). Kedua isi DIRAKIT SAAT EFEK DIKIRIM dari pengenal di
 // MUATAN outbox (layanan `SusunEmailKomite` / `SusunDokumenAkseptasi`): MUATAN T_LOG_SERVICE_RNM hanya memuat pengenal
 // dan angka, tanpa nama atau alamat (claimlife/015).
 //
@@ -30,10 +30,7 @@ import (
 //go:embed templat/*.html
 var berkasTemplat embed.FS
 
-var (
-	templatEmail   = template.Must(template.ParseFS(berkasTemplat, "templat/email_klaim_kmt.html"))
-	templatDokumen = template.Must(template.ParseFS(berkasTemplat, "templat/file_acceptance_note.html"))
-)
+var templatEmail = template.Must(template.ParseFS(berkasTemplat, "templat/email_klaim_kmt.html"))
 
 // AngkaPega = `DecimalFormat("#,###.####")` locale id_ID (kedua stream): ribuan ".", desimal ",", paling banyak empat
 // angka desimal dibulatkan HALF_EVEN (bawaan DecimalFormat), tanpa nol ekor. Pola tanpa digit '0': bagian bulat nol
@@ -312,13 +309,4 @@ func SusunAcceptanceNote(kl kontrak.KlaimTreaty, adj map[string]string, saat tim
 		}
 	}
 	return d, nil
-}
-
-// RenderAcceptanceNote - S10 Property-Set-HTML `FILEAcceptanceNote` (markup sebelum S11 HTMLToPDF).
-func RenderAcceptanceNote(d DataAcceptanceNote) (string, error) {
-	var b bytes.Buffer
-	if err := templatDokumen.Execute(&b, d); err != nil {
-		return "", fmt.Errorf("models: FILEAcceptanceNote: %w", err)
-	}
-	return b.String(), nil
 }

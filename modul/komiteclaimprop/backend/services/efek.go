@@ -64,7 +64,7 @@ func (p PelaksanaKomiteClaimProp) Laksanakan(ctx context.Context, _ *db.Tx, b ou
 		}
 		isi := isiTeks(m.Isi)
 		if b.Jenis == JenisEfekDokumen {
-			// HTMLToPDF (mesin PDF Pega) + InsertDocument_Act (Google Storage, DOCUMENT_CLAIM) menunggu persetujuan.
+			// PDF dirakit (HTMLToPDF); InsertDocument_Act (Google Storage, DOCUMENT_CLAIM) menunggu persetujuan.
 			if _, err := p.Penyusun.SusunDokumenAkseptasi(ctx, m.KomiteID, isi); err != nil {
 				return err
 			}
