@@ -289,6 +289,20 @@ func (l *Layanan) BukaKasus(ctx context.Context, p inti.Pelaku, id string) (*Lay
 	return l.layar(k, h, boleh), nil
 }
 
+// HakPelaku - hak halaman awal: switch Teknik aktif hanya bagi anggota workbasket Assignment1 (keputusan work owner
+// 08-10-2026). Bawaan = worklist pembuat Assignment2 tanpa cek workbasket (`ToCurrentOperator`, XML apa adanya).
+type HakPelaku struct {
+	WorkbasketTeknik bool `json:"workbasketTeknik"`
+}
+
+// Hak membaca hak halaman awal pelaku (tanpa basis data: workbasket dari sesi).
+func (l *Layanan) Hak(p inti.Pelaku) (HakPelaku, error) {
+	if err := inti.WajibIdentitas(p); err != nil {
+		return HakPelaku{}, err
+	}
+	return HakPelaku{WorkbasketTeknik: p.PunyaPeran(models.WorkbasketAcceptation)}, nil
+}
+
 // JenisDaftar - tab halaman awal.
 const (
 	DaftarSaya       = "saya"       // Assignment2 Outstanding Claim - worklist pembuat (ToCurrentOperator)

@@ -6,13 +6,12 @@ export const MENU_CP = { kelompok: 'Claim Prop' } as const
 
 export const CP = {
   judul: 'Claim Prop',
-  /** Tab dan workbasket halaman awal - keputusan work owner 07-10-2026 (`[tidak ada di korpus]`). */
+  /** Tab dan switch halaman awal - keputusan work owner 07-10 dan 08-10-2026 (`[tidak ada di korpus]`). */
   tabProses: 'Process',
   tabResolve: 'Resolve',
-  workbasket: 'Workbasket',
-  /** Admin = Assignment2 "Outstanding Claim"; Teknik = Assignment1 "Input Acceptation" (ReasKlaimTeknik). */
-  wbAdmin: 'Admin',
+  /** Switch Teknik = Assignment1 "Input Acceptation" (workbasket ReasKlaimTeknik); mati = worklist sendiri. */
   wbTeknik: 'Teknik',
+  teknikTanpaHak: 'Requires workbasket ReasKlaimTeknik',
   /** Start1 -> Assignment2 (`Flow_TreatyIn`); harness New tidak diekspor (OQ-CP-13). */
   tambahKlaim: 'Add Claim',
   cari: 'Search case ID, claim no, policy no, insured name',

@@ -1,30 +1,32 @@
-// Aturan halaman awal Claim Prop (keputusan work owner 07-10-2026): dua tab Process / Resolve; tab Process memilih
-// workbasket Admin (Outstanding Claim) atau Teknik (Input Acceptation); Add Claim hanya di workbasket Admin.
+// Aturan halaman awal Claim Prop (keputusan work owner 08-10-2026): dua tab Process / Resolve; tab Process bawaan =
+// worklist pembuat tanpa cek workbasket (XML `ToCurrentOperator`); switch Teknik (Input Acceptation) hanya aktif bagi
+// anggota ReasKlaimTeknik; Add Claim hanya saat switch Teknik mati.
 
 import { describe, expect, it } from 'vitest'
 
-import { bolehTambahKlaim, jenisDaftar, TAB_INBOX, WORKBASKET } from './inbox'
+import { bolehTambahKlaim, jenisDaftar, switchTeknikAktif, TAB_INBOX } from './inbox'
 
 describe('halaman awal Claim Prop', () => {
   it('dua tab saja, berurut Process lalu Resolve', () => {
     expect(TAB_INBOX).toEqual(['proses', 'selesai'])
   })
 
-  it('workbasket Admin lalu Teknik', () => {
-    expect(WORKBASKET).toEqual(['admin', 'teknik'])
+  it('switch Teknik mati = worklist sendiri; nyala = workbasket Teknik; Resolve = selesai', () => {
+    expect(jenisDaftar('proses', false)).toBe('saya')
+    expect(jenisDaftar('proses', true)).toBe('workbasket')
+    expect(jenisDaftar('selesai', false)).toBe('selesai')
+    expect(jenisDaftar('selesai', true)).toBe('selesai')
   })
 
-  it('tab dan workbasket menentukan daftar yang diminta ke server', () => {
-    expect(jenisDaftar('proses', 'admin')).toBe('saya')
-    expect(jenisDaftar('proses', 'teknik')).toBe('workbasket')
-    expect(jenisDaftar('selesai', 'admin')).toBe('selesai')
-    expect(jenisDaftar('selesai', 'teknik')).toBe('selesai')
+  it('switch Teknik hanya dapat dinyalakan anggota ReasKlaimTeknik', () => {
+    expect(switchTeknikAktif({ workbasketTeknik: true })).toBe(true)
+    expect(switchTeknikAktif({ workbasketTeknik: false })).toBe(false)
+    expect(switchTeknikAktif(null)).toBe(false)
   })
 
-  it('Add Claim hanya di tab Process, workbasket Admin', () => {
-    expect(bolehTambahKlaim('proses', 'admin')).toBe(true)
-    expect(bolehTambahKlaim('proses', 'teknik')).toBe(false)
-    expect(bolehTambahKlaim('selesai', 'admin')).toBe(false)
-    expect(bolehTambahKlaim('selesai', 'teknik')).toBe(false)
+  it('Add Claim hanya di tab Process saat switch Teknik mati', () => {
+    expect(bolehTambahKlaim('proses', false)).toBe(true)
+    expect(bolehTambahKlaim('proses', true)).toBe(false)
+    expect(bolehTambahKlaim('selesai', false)).toBe(false)
   })
 })

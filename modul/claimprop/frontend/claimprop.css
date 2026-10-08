@@ -310,19 +310,56 @@
 
 /* --------------------------------------------------------------- halaman awal */
 
-.claimprop .claimprop__workbasket {
-  display: flex;
+/* Switch Teknik (Input Acceptation, workbasket ReasKlaimTeknik): jalur TIMBUL KE DALAM, kenop TIMBUL KELUAR;
+   nyala = jalur aksen. Nonaktif bagi akun tanpa workbasket itu. */
+.claimprop .claimprop__saklar-bungkus {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
-.claimprop .claimprop__workbasket .field__label {
-  margin: 0;
+.claimprop .claimprop__saklar {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--cp-tepi);
+  border-radius: 999px;
+  background: var(--cp-jalur-tab);
+  box-shadow: var(--cp-cekung-kecil);
+  cursor: pointer;
 }
 
-.claimprop .claimprop__workbasket .field__input {
-  width: auto;
-  min-width: 140px;
+.claimprop .claimprop__saklar--nyala {
+  background: var(--cp-aksen);
+  border-color: var(--cp-aksen);
+}
+
+.claimprop .claimprop__saklar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.claimprop .claimprop__saklar-kenop {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--cp-isi);
+  box-shadow: var(--cp-timbul-kecil);
+}
+
+.claimprop .claimprop__saklar--nyala .claimprop__saklar-kenop {
+  left: 20px;
+}
+
+.claimprop .claimprop__saklar-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cp-teks-redup);
 }
 
 .claimprop .claimprop__cari {

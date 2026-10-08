@@ -1,22 +1,26 @@
-// Aturan halaman awal Claim Prop (keputusan work owner 07-10-2026): dua tab, Process dan Resolve. Tab Process memilih
-// workbasket: Admin = Assignment2 "Outstanding Claim" (worklist pembuat, `Flow_TreatyIn`), Teknik = Assignment1 "Input
-// Acceptation" (workbasket `ReasKlaimTeknik`). Pembuatan klaim (Start1 -> Assignment2) hanya dari workbasket Admin.
+// Aturan halaman awal Claim Prop (keputusan work owner 07-10 dan 08-10-2026): dua tab, Process dan Resolve. Tab Process
+// bawaan = worklist pembuat (Assignment2 "Outstanding Claim", `Flow_TreatyIn` `ToCurrentOperator` - tanpa cek workbasket,
+// XML apa adanya). Switch Teknik menampilkan Assignment1 "Input Acceptation" (workbasket `ReasKlaimTeknik`) dan hanya
+// dapat dinyalakan anggota workbasket itu. Pembuatan klaim (Start1 -> Assignment2) hanya saat switch Teknik mati.
 
-import type { JenisDaftar } from '../api'
+import type { HakPelaku, JenisDaftar } from '../api'
 
 export type TabInbox = 'proses' | 'selesai'
-export type Workbasket = 'admin' | 'teknik'
 
 export const TAB_INBOX: readonly TabInbox[] = ['proses', 'selesai']
-export const WORKBASKET: readonly Workbasket[] = ['admin', 'teknik']
 
-/** Daftar yang diminta ke server untuk tab dan workbasket terpilih. */
-export function jenisDaftar(tab: TabInbox, wb: Workbasket): JenisDaftar {
+/** Daftar yang diminta ke server untuk tab dan posisi switch Teknik. */
+export function jenisDaftar(tab: TabInbox, teknik: boolean): JenisDaftar {
   if (tab === 'selesai') return 'selesai'
-  return wb === 'admin' ? 'saya' : 'workbasket'
+  return teknik ? 'workbasket' : 'saya'
 }
 
-/** Tombol Add Claim tampil hanya di tab Process, workbasket Admin. */
-export function bolehTambahKlaim(tab: TabInbox, wb: Workbasket): boolean {
-  return tab === 'proses' && wb === 'admin'
+/** Switch Teknik dapat dinyalakan hanya bila akun memegang workbasket ReasKlaimTeknik. */
+export function switchTeknikAktif(hak: HakPelaku | null): boolean {
+  return hak?.workbasketTeknik === true
+}
+
+/** Tombol Add Claim tampil hanya di tab Process saat switch Teknik mati. */
+export function bolehTambahKlaim(tab: TabInbox, teknik: boolean): boolean {
+  return tab === 'proses' && !teknik
 }

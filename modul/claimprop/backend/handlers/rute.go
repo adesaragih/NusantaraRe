@@ -40,6 +40,7 @@ func DaftarkanRute(mux *http.ServeMux, l *services.Layanan, stubPelaku bool) {
 	mux.HandleFunc("POST "+Prefix+"/kasus/{id}/aksi", h.aksi)
 	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/pilihan/{jenis}", h.pilihan)
 	mux.HandleFunc("GET "+Prefix+"/acuan", h.acuan)
+	mux.HandleFunc("GET "+Prefix+"/hak", h.hak)
 }
 
 // Router menyusun mux tersendiri - untuk uji.
@@ -94,6 +95,16 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		log.Printf("claimprop: %v", err)
 		galat.Tulis(w, http.StatusInternalServerError, "gagal memproses permintaan Claim Prop")
 	}
+}
+
+// hak - switch Teknik halaman awal: aktif hanya bagi anggota ReasKlaimTeknik.
+func (h *rute) hak(w http.ResponseWriter, r *http.Request) {
+	out, err := h.l.Hak(h.pelaku(r))
+	if err != nil {
+		tulisGalat(w, err)
+		return
+	}
+	tulisJSON(w, http.StatusOK, out)
 }
 
 func (h *rute) daftar(w http.ResponseWriter, r *http.Request) {

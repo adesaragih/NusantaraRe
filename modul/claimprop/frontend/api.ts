@@ -137,3 +137,12 @@ export function pilihanKasus<T>(id: string, jenis: string, indeks = 0, cari = ''
 export function ambilAcuan(): Promise<AcuanStatis> {
   return minta(`${PREFIX_CP}/acuan`)
 }
+
+/** Hak halaman awal: switch Teknik aktif hanya bagi anggota workbasket ReasKlaimTeknik. */
+export interface HakPelaku {
+  workbasketTeknik: boolean
+}
+
+export function ambilHak(): Promise<HakPelaku> {
+  return minta(`${PREFIX_CP}/hak`)
+}

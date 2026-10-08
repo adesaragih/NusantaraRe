@@ -337,3 +337,23 @@ func teks(v any) []string {
 	}
 	return out
 }
+
+// Switch Teknik halaman awal (keputusan work owner 08-10-2026): bawaan = worklist pembuat tanpa cek workbasket (XML
+// `ToCurrentOperator`); switch Teknik hanya aktif bila akun memegang workbasket ReasKlaimTeknik.
+func TestHakWorkbasketTeknik(t *testing.T) {
+	u := baruUji(t)
+	kode, out := u.minta(http.MethodGet, handlers.Prefix+"/hak", teknik, models.WorkbasketAcceptation, nil)
+	u.wajib(kode, http.StatusOK, out, "hak anggota Teknik")
+	if out["workbasketTeknik"] != true {
+		t.Fatalf("anggota ReasKlaimTeknik: %v", out)
+	}
+	kode, out = u.minta(http.MethodGet, handlers.Prefix+"/hak", admin, "", nil)
+	u.wajib(kode, http.StatusOK, out, "hak tanpa workbasket")
+	if out["workbasketTeknik"] != false {
+		t.Fatalf("tanpa ReasKlaimTeknik: %v", out)
+	}
+	kode, _ = u.minta(http.MethodGet, handlers.Prefix+"/hak", "", "", nil)
+	if kode != http.StatusUnauthorized {
+		t.Fatalf("tanpa identitas: HTTP %d, mau 401", kode)
+	}
+}
