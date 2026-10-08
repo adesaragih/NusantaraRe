@@ -65,7 +65,22 @@ func TestSetiapPernyataanSahDanBerskema(t *testing.T) {
 				if strings.TrimSpace(p) == "" {
 					t.Errorf("%s pernyataan %d kosong", m.Nama, i)
 				}
-				if !strings.Contains(p, "{skema}") {
+				// ⛔ SATU pengecualian, dan Oracle yang memaksakannya:
+				// `RENAME lama TO baru` TIDAK MENERIMA awalan skema. Menulis
+				// `RENAME {skema}.A TO B` memberi ORA-01765 ("specified owner
+				// does not match that of the table"), jadi pernyataan yang
+				// mematuhi ADR-U-0033 di sini adalah pernyataan yang tidak
+				// dapat dijalankan.
+				//
+				// ⚠️ Pengecualiannya SESEMPIT bentuknya: hanya pernyataan yang
+				// DIMULAI `RENAME `. `ALTER TABLE {skema}.X RENAME TO Y` —
+				// bentuk untuk tabel dan index — tetap wajib berskema, dan
+				// memang sudah.
+				berskema := strings.Contains(p, "{skema}")
+				if !berskema && strings.HasPrefix(strings.ToUpper(strings.TrimSpace(p)), "RENAME ") {
+					berskema = true
+				}
+				if !berskema {
 					t.Errorf("%s pernyataan %d tidak menyebut skema (ADR-U-0033): %.60s",
 						m.Nama, i, p)
 				}
@@ -212,16 +227,41 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 	// pengguna), bukan atribut klaim dan bukan dokumen JSON. Pengecualiannya SATU kolom BLOB di SATU tabel, dan
 	// berkas itu tidak boleh memuat CLOB atau JSON.
 	const berkasTemplat = "912_m_template_file"
-	dokumenDiOutbox, blobTemplat := 0, 0
+	// Ringkasan R/I Rate Life satu tabel (keputusan work owner 07-10-2026): 928 MEMBUANG kolom JSON warisan
+	// M_RATE_LIFE_SUMMARY.JSONDATA - searah dengan penjaga ini. Pengecualiannya SATU perintah di SATU berkas, persis.
+	const berkasBuangJSON, perintahBuangJSON = "928_m_rate_life_summary_satu_tabel",
+		"DROP COLUMN JSONDATA CASCADE CONSTRAINTS"
+	buangJSON := 0
+	// Treaty In (keputusan pemilik proses 06-10-2026): kelima `CLOB` di `439`
+	// adalah KOLOM BERNAMA — satu per ejaan medan teks bebas tab `Exclusions`
+	// dan `Special Conditions`, terukur mencapai 23.453 aksara sementara
+	// `VARCHAR2` Oracle berhenti di 4.000.
+	//
+	// ⛔ Larangan ini berbunyi "atribut klaim harus menjadi KOLOM BERNAMA";
+	// kelimanya justru kolom bernama. Alternatifnya MEMOTONG teks tanpa
+	// bersuara — kehilangan yang baru ketahuan bertahun kemudian.
+	//
+	// ⚠️ Cacahnya DIPATOK lima, dan berkas itu tidak boleh memuat BLOB.
+	const berkasTeksPanjang = "439_akar_dan_nilai_sisa"
+	const clobTeksPanjang = 5
+	dokumenDiOutbox, blobTemplat, teksPanjang := 0, 0, 0
 	for nama, isi := range seluruhSQL(t, false) {
 		atas := strings.ToUpper(isi)
 		if strings.Contains(nama, berkasOutbox) {
 			dokumenDiOutbox += strings.Count(atas, "CLOB")
 			continue
 		}
+		if strings.Contains(nama, berkasTeksPanjang) && !strings.Contains(nama, "_down") {
+			teksPanjang += strings.Count(atas, "CLOB")
+			atas = strings.ReplaceAll(atas, "CLOB", "")
+		}
 		if strings.Contains(nama, berkasTemplat) && !strings.Contains(nama, "_down") {
 			blobTemplat += len(regexp.MustCompile(`(?m)^\s*ISI\s+BLOB\s+NOT NULL,$`).FindAllString(atas, -1))
 			atas = regexp.MustCompile(`(?m)^\s*ISI\s+BLOB\s+NOT NULL,$`).ReplaceAllString(atas, "")
+		}
+		if strings.Contains(nama, berkasBuangJSON) && !strings.Contains(nama, "_down") {
+			buangJSON += strings.Count(atas, perintahBuangJSON)
+			atas = strings.ReplaceAll(atas, perintahBuangJSON, "")
 		}
 		for _, tipe := range []string{" JSON", "CLOB", "BLOB", "JSON_KLAIM"} {
 			if strings.Contains(atas, tipe) {
@@ -229,6 +269,13 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 					nama, tipe)
 			}
 		}
+	}
+	if buangJSON != 1 {
+		t.Errorf("928 memuat %d perintah %q, mau tepat 1", buangJSON, perintahBuangJSON)
+	}
+	if teksPanjang != clobTeksPanjang {
+		t.Errorf("%s memuat %d kolom CLOB, mau tepat %d (kelima ejaan medan teks panjang)",
+			berkasTeksPanjang, teksPanjang, clobTeksPanjang)
 	}
 	if blobTemplat != 1 {
 		t.Errorf("M_TEMPLATE_FILE memuat %d kolom ISI BLOB, mau tepat 1", blobTemplat)
@@ -315,7 +362,12 @@ func TestPernyataanMulaiDenganPerintah(t *testing.T) {
 					kata = strings.ToUpper(strings.Fields(perintah)[0])
 				}
 				switch kata {
-				case "CREATE", "ALTER", "DROP", "INSERT", "UPDATE", "DELETE", "SELECT":
+				// ⭐ `RENAME` ditambahkan 06-10-2026. Ia perintah DDL Oracle
+				// sepenuhnya, dan satu-satunya cara menamai ulang SEQUENCE:
+				// Oracle tidak punya `ALTER SEQUENCE … RENAME TO`. Daftar ini
+				// sekadar belum pernah bertemu dengannya sampai migrasi
+				// `436_nama_tabel_tab.sql`.
+				case "CREATE", "ALTER", "DROP", "INSERT", "UPDATE", "DELETE", "SELECT", "RENAME":
 				default:
 					t.Errorf("%s pernyataan %d mulai dengan %q, bukan perintah SQL",
 						m.Nama, i, kata)

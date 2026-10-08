@@ -114,9 +114,9 @@ make check
 **Status:** ✅ **selesai** — kalimat lama *"autocomplete `R/I RATE` dan `Rate List` dibangun tetapi datanya **menunggu OQ-MCRL-13**
 (503 berkalimat) — business BARU belum dapat disimpan (`RIRATEID` wajib)"* tidak berlaku lagi.
 
-- `R/I RATE` membaca view `RATE_LIFE_SUMMARY` (`BrowseRateLifeSummary`: `ID`, `USEDBY`, urut `ID ASC`); `Rate List` membaca
+- `R/I RATE` membaca view `RATE_LIFE_SUMMARY` (`BrowseRateLifeSummary`: `ID`, `USEDBY`, urut `ID ASC`); `Rate List` membaca *(RALAT 07-10-2026: ringkasan rate kini tabel `M_RATE_LIFE_SUMMARY` berkolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID - keputusan work owner 07-10-2026, `modul/riratelife/MODUL.md` RALAT R6; modul ini membacanya `SELECT ID, USEDBY`, tetap baca-saja)*
   view `RATE_LIFE` (`BrowseRateLife_RD`: enam kolom grid, `IDUSEDBY = :1`, urut `ID DESC, RATE ASC`, 500 baris + `terpotong`).
-- Business **baru** dapat disimpan; RIRATEID pilihan baru wajib ada di `RATE_LIFE_SUMMARY` (penyimpangan sadar — Pega tidak
+- Business **baru** dapat disimpan; RIRATEID pilihan baru wajib ada di `RATE_LIFE_SUMMARY` (penyimpangan sadar — Pega tidak *(RALAT 07-10-2026: ringkasan rate kini tabel `M_RATE_LIFE_SUMMARY` berkolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID - keputusan work owner 07-10-2026, `modul/riratelife/MODUL.md` RALAT R6; modul ini membacanya `SELECT ID, USEDBY`, tetap baca-saja)*
   memeriksa); `RIRATE` tetap teks apa adanya (AC 26).
 - AC 27 *"popup murni baca"* kini dijaga dua lapis: `periksaBacaSaja` (runtime) dan `TestMCRLMasterHanyaDibacaSelect` (statik).
 - DEV baca-saja 01-10-2026: `GET /ringkasan-rate` 200 (100 saran), `GET /rate` 200 (1 dan 59 baris), nol tulisan.

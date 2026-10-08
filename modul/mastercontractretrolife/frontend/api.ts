@@ -305,7 +305,7 @@ export async function cariMasterBusiness(cari: string): Promise<Daftar<MasterBus
 }
 
 /**
- * Autocomplete `R/I RATE` - view `RATE_LIFE_SUMMARY`, baca saja (K1 keputusan work owner 01-10-2026,
+ * Autocomplete `R/I RATE` - tabel `M_RATE_LIFE_SUMMARY`, baca saja (K1 keputusan work owner 01-10-2026,
  * OQ-MCRL-13). View tak terbaca = 503 berkalimat yang menyebut view-nya; pesannya tampil apa adanya.
  */
 export async function cariRingkasanRate(cari: string): Promise<Daftar<{ id: string; usedBy: string }>> {

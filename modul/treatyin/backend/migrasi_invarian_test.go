@@ -12,6 +12,8 @@ package backend
 
 import (
 	"io/fs"
+	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -194,6 +196,9 @@ func TestNolCheckDaftarNilai(t *testing.T) {
 	sah := map[string]string{
 		"CK_POTONGAN_INDUK": "KTV-B - induk polimorfik, tepat satu dari ID_BAGIAN dan " +
 			"ID_DETAIL_PROPORSIONAL terisi; menyatakan BENTUK baris, bukan daftar nilai",
+		"CK_PENYEBARAN_INDUK": "ERD.md §2.5 - induk polimorfik yang SAMA bentuknya dengan " +
+			"CK_POTONGAN_INDUK: tepat satu dari ID_BAGIAN dan ID_DETAIL_PROPORSIONAL terisi. " +
+			"Menyatakan BENTUK baris, bukan daftar nilai, jadi ADR-0038 tidak kena",
 	}
 	bernama := regexp.MustCompile(`(?is)CONSTRAINT\s+(\w+)\s+CHECK\s*\(`)
 	semua := regexp.MustCompile(`(?is)CHECK\s*\(`)
@@ -239,7 +244,13 @@ func TestPerilakuHapusSesuaiERD(t *testing.T) {
 		"FK_VERSI_KONTRAK_1":      tolak,
 		"FK_KONTRAK_DISALIN_DARI": "ON DELETE SET NULL",
 		// §2.3 anak langsung versi — sepuluh ikut hapus, dua tolak
-		"FK_MATA_UANG_KONTRAK_1": "ON DELETE CASCADE",
+		//
+		// ⛔ `FK_MATA_UANG_KONTRAK_1` DICABUT 4 Oktober 2026 bersama tabelnya
+		// (migrasi 434). Entri yang tertinggal di sini akan LULUS tanpa
+		// berarti apa-apa: uji ini mencocokkan teks `CREATE` di migrasi 401
+		// dan 403, dan `DROP` di 434 tidak terlihat olehnya. Penjaga yang
+		// menagih kunci asing yang tidak ada adalah penjaga yang berhenti
+		// menggigit tanpa menjadi merah.
 		"FK_RETENSI_CEDANT_1":    "ON DELETE CASCADE",
 		"FK_EGNPI_1":             "ON DELETE CASCADE",
 		"FK_PORTOFOLIO_1":        "ON DELETE CASCADE",
@@ -257,6 +268,76 @@ func TestPerilakuHapusSesuaiERD(t *testing.T) {
 		// §2.5 potongan — dua pelekatan, keduanya ikut hapus
 		"FK_POTONGAN_1": "ON DELETE CASCADE",
 		"FK_POTONGAN_2": "ON DELETE CASCADE",
+		// ----------------------------------------------------------------
+		// Entitas rekonsiliasi ERD, 2 Oktober 2026 — migrasi 422–425.
+		//
+		// ⛔ Keenam relasi di bawah TIDAK ada di `ERD.md` §2: ia lahir sesudah
+		// §2 ditulis, sama seperti delapan relasi §2.3c. Perilakunya TIDAK
+		// dikarang — ia diambil dari DUA sumber yang sepakat:
+		//
+		//   - `ERD-TREATY-IN-DAN-EDM.html` (ACUAN struktur sejak keputusan
+		//     pemilik proses 2 Okt 2026) baris relasi 4, 9, 10, 27, 39;
+		//   - aturan yang kelompoknya sendiri sudah nyatakan di `ERD.md`:
+		//     §2.5 anak cabang ikut hapus, §2.7 rujukan acuan tolak,
+		//     §2.3 anak langsung baris versi ikut hapus.
+		//
+		// ⚠️ Kolom `ON DELETE` di ERD HTML menyatakan dirinya "USULAN
+		// rancangan ... bukan perilaku sistem lama", jadi ia tidak dipakai
+		// sendirian. Di keenam baris ini kedua sumber sepakat.
+		"FK_KELAS_BISNIS_LAYER_1":    "ON DELETE CASCADE", // ERD baris 4 · ERD.md §2.5
+		"FK_KELAS_BISNIS_LAYER_2":    tolak,               // rujukan acuan · ERD.md §2.7
+		"FK_KELOMPOK_LAYER_1":        "ON DELETE CASCADE", // ERD baris 9 · ERD.md §2.5
+		"FK_KELOMPOK_LAYER_2":        tolak,               // rujukan acuan · ERD.md §2.7
+		"FK_KELAS_BISNIS_KELOMPOK_1": "ON DELETE CASCADE", // ERD baris 10
+		"FK_KELAS_BISNIS_KELOMPOK_2": tolak,               // rujukan acuan · ERD.md §2.7
+		"FK_RINCIAN_ANGSURAN_1":      "ON DELETE CASCADE", // ERD baris 27 · ERD.md §2.3
+		// §2.9 — MENGIKAT, dan satu-satunya tempat ERD.md dan ERD HTML
+		// BERSELISIH. §2.9 menulis `KONTRAK 1--o< PENCAPAIAN [hapus: tolak]`;
+		// ERD HTML baris 6 menulis induk `LIMIT_DETAIL` + CASCADE dengan bukti
+		// yang ia sendiri tandai DAUN-RELATIF (lemah). Sebabnya di kepala
+		// migrasi 423.
+		"FK_PENCAPAIAN_1": tolak,
+		// ERD baris 39 menulis ON DELETE-nya "di Go" — ia TIDAK meresepkan
+		// aturan tingkat basis data. Di sini diwujudkan `tolak`: arsip yang
+		// lenyap bersama kontraknya berhenti menjadi arsip. Sebabnya di kepala
+		// migrasi 425.
+		"FK_ARSIP_MUATAN_KELUAR_1": tolak,
+		// ⛔ `FK_NILAI_SELISIH_1` dan `FK_NILAI_SEBELUM_PRO_RATE_1` PINDAH
+		// ke `modul/treatyinadjustment` 4 Oktober 2026 bersama tabelnya —
+		// KEPUTUSAN §19, migrasi 435 mencabut dan 442 membangun ulang.
+		//
+		// Barisnya IKUT PINDAH, tidak digandakan: dua tempat yang
+		// menyatakan perilaku hapus yang sama akan berselisih, dan yang
+		// salah satunya basi tidak akan berbunyi. Keduanya kini ada di
+		// `modul/treatyinadjustment/backend/migrasi_invarian_test.go`.
+		//
+		// ⚠️ Yang TIDAK ikut pindah: alasan rancangannya. Kepala migrasi
+		// `426` tetap di modul ini — kardinalitas 1:N, penghalang
+		// `BESARAN_DAPAT_DISESUAIKAN`, dan INV-58 — dan `442` menunjuk
+		// balik ke sana alih-alih menyalinnya.
+		// §2.3 — MENGIKAT, dan ia SATU-SATUNYA anak VERSI_KONTRAK di §2.3
+		// yang `tolak`; sepuluh lainnya `ikut hapus`. Sebabnya dikutip utuh
+		// di kepala migrasi 427: "jejak yang dapat dihapus bersama bendanya
+		// bukan jejak."
+		"FK_CATATAN_PERSETUJUAN_1": tolak,
+		// Perkakas pemindahan — migrasi 428. TIDAK ada di `ERD.md` §2 sebab
+		// ia potret sistem LAMA dan ketiganya perkakas sistem BARU.
+		//
+		// ⚠️ ERD HTML baris 38 menulis ON DELETE-nya "di Go" — ia tidak
+		// meresepkan aturan tingkat basis data. Dipilih `tolak`, dengan
+		// alasan yang sudah dipakai migrasi 425: catatan forensik yang
+		// lenyap bersama induknya berhenti menjadi catatan forensik.
+		// Ini MENGOREKSI tiket 73, yang menyebut "ikut hapus".
+		"FK_MIGRASI_NILAI_DITOLAK_1": tolak,
+		// §2.5 cabang penyebaran — migrasi 429. Empat `ikut hapus` dan dua
+		// `tolak`, seluruhnya dikutip: §2.5 untuk rantai induknya, §2.7
+		// untuk rujukan tabel acuan.
+		"FK_PENYEBARAN_1":         "ON DELETE CASCADE", // BAGIAN, §2.5
+		"FK_PENYEBARAN_2":         "ON DELETE CASCADE", // DETAIL_PROPORSIONAL, §2.5
+		"FK_PENYEBARAN_3":         tolak,               // JENIS_REASURANSI, §2.7
+		"FK_RINCIAN_PENYEBARAN_1": "ON DELETE CASCADE", // PENYEBARAN, §2.5
+		"FK_RINCIAN_PENYEBARAN_2": tolak,               // JENIS_REASURANSI, §2.7
+		"FK_NILAI_PENYEBARAN_1":   "ON DELETE CASCADE", // RINCIAN_PENYEBARAN, §2.5
 		// §2.3b dan §2.3c — tabel anak paket uang, seluruhnya ikut hapus
 		"FK_PEMULIHAN_LIMIT_1":       "ON DELETE CASCADE",
 		"FK_NILAI_MDP_1":             "ON DELETE CASCADE",
@@ -265,16 +346,77 @@ func TestPerilakuHapusSesuaiERD(t *testing.T) {
 		"FK_NILAI_PREMI_BRUTO_MIN_1": "ON DELETE CASCADE",
 		"FK_NILAI_CADANGAN_PREMI_1":  "ON DELETE CASCADE",
 		// §2.7 tabel acuan — seluruhnya tolak
-		"FK_MATA_UANG_KONTRAK_2":     tolak,
-		"FK_RETENSI_CEDANT_2":        tolak,
-		"FK_EGNPI_2":                 tolak,
-		"FK_EGNPI_3":                 tolak,
-		"FK_BATAS_PER_BAHAYA_2":      tolak,
-		"FK_DETAIL_PROPORSIONAL_2":   tolak,
-		"FK_POTONGAN_3":              tolak,
-		"FK_VERSI_KONTRAK_MATA_UANG": tolak,
+		//
+		// ⛔ `FK_MATA_UANG_KONTRAK_2` dan `FK_VERSI_KONTRAK_MATA_UANG`
+		// DICABUT 4 Oktober 2026 bersama `MATA_UANG` dan
+		// `MATA_UANG_KONTRAK` (migrasi 434) — kurs dan daftar mata uang kini
+		// dibaca dari `TREATYEXCHANGEYEARLY`. Lihat sebabnya di kepala
+		// migrasi itu, termasuk kewajiban tiket 57 yang ikut terbuka.
+		"FK_RETENSI_CEDANT_2":      tolak,
+		"FK_EGNPI_2":               tolak,
+		"FK_EGNPI_3":               tolak,
+		"FK_BATAS_PER_BAHAYA_2":    tolak,
+		"FK_DETAIL_PROPORSIONAL_2": tolak,
+		"FK_POTONGAN_3":            tolak,
 		// Tidak ada di ERD §2 — diputuskan di migrasi 400, ditagih ke pemilik ERD.
 		"FK_JENIS_REASURANSI_INDUK": tolak,
+		// ----------------------------------------------------------------
+		// Tabel PENDARATAN tab Treaty In — migrasi 430, 3 Oktober 2026.
+		//
+		// ⛔ SATU-SATUNYA kunci asing di kedelapan tabel itu, dan ia tidak
+		// punya baris ERD. Kedelapannya mendaratkan larik di dalam
+		// `M_TREATY_IN.JSONDATA`; ERD menggambar entitas sistem lama, bukan
+		// tabel pendaratan, jadi mengutip baris ERD untuknya akan mengarang
+		// sumber. Yang mengikat bentuk datanya: `InstallmentList` bersarang
+		// DI DALAM elemen `Installment` — diukur pada ke-1.854 dokumen, 796
+		// elemen induk dan 3.033 butir anak — dan butir angsuran tanpa
+		// terminnya tidak berarti apa pun. Migrasi `424_` memodelkan dua
+		// tingkat yang sama persis dengan alasan yang sama.
+		//
+		// ⚠️ Yang TIDAK ada di sini jauh lebih banyak: delapan `MASTERID`
+		// yang rancangannya sebut sebagai kunci asing ke `TREATY_IN.ID`.
+		// Kedelapannya TIDAK dibuat, sebab `POOLDATA.TREATY_IN` tidak punya
+		// kunci utama maupun UNIQUE pada `ID` (ia bahkan NULLABLE), dan
+		// Oracle menolak merujuk kolom semacam itu dengan ORA-02270.
+		// `MODUL.md` bab kaskade dan `KEPUTUSAN-PENYELARASAN-REPO.md` §12.
+		// ⚠ Nama DDL-nya, bukan nama hari ini: migrasi 436 menggantinya
+		// menjadi `FK_TT_INSTALLMENT_ITEM_1`, dan penjaga ini membaca DDL.
+		"FK_MTI_INSTALLMENTITEM_1": "ON DELETE CASCADE",
+
+		// ⭐ DELAPAN kunci asing migrasi 437 — pohon anak `TREATY_IN` menurut
+		// `Diagram-Skema-Tabel-TreatyIn-dan-EDM-v2.xlsx`, keputusan pemilik
+		// proses 6 Oktober 2026 ("puncaknya tetap TREATY_IN, anak-anaknya
+		// mengikuti xlsx"). Tiap satu menyebut sel asalnya.
+		//
+		// ⛔ Tautan ke AKAR tidak ada di sini, dan itu disengaja: xlsx menulis
+		// `FK TREATY_IN_ID -> TREATY_IN.ID` pada tiap anak tingkat pertama,
+		// tetapi `TREATY_IN` nol kunci utama dan nol kunci unik — `ORA-02270`.
+		// Anak tingkat pertama karena itu menaut dengan `MASTERID` teks.
+		// Kedelapan di bawah seluruhnya antar tabel MILIK modul ini, jadi
+		// keduanya dapat dipasang sungguhan.
+		"FK_TT_LIMIT_DETAIL":    "ON DELETE CASCADE", // K23  -> T_TREATY_LIMITS
+		"FK_TT_LIMIT_GROUP":     "ON DELETE CASCADE", // K40  -> T_TREATY_LIMITS
+		"FK_TT_LIMIT_COB":       "ON DELETE CASCADE", // O27  -> T_TREATY_LIMIT_DETAIL
+		"FK_TT_LIMIT_ACHIEVE":   "ON DELETE CASCADE", // O35  -> T_TREATY_LIMIT_DETAIL
+		"FK_TT_LIMIT_GRP_COB":   "ON DELETE CASCADE", // O44  -> T_TREATY_LIMIT_GROUP
+		"FK_TT_SHARE_SPREADING": "ON DELETE CASCADE", // K54  -> T_TREATY_SHARE
+		"FK_TT_SHARE_DEDUCTION": "ON DELETE CASCADE", // K67  -> T_TREATY_SHARE
+		"FK_TT_FAC_SHARE_DED":   "ON DELETE CASCADE", // K80  -> T_TREATY_FAC_SHARE
+
+		// ⭐ Migrasi `438` — tiga tabel NILAI, dan ketiganya menaut tabel
+		// MILIK modul ini, jadi kunci asingnya nyata seperti kedelapan di
+		// atas. Dibangun sesudah cacah elemennya diukur atas SELURUH 1.855
+		// dokumen: 11.475 · 6.097 · 24.
+		"FK_TT_LIMIT_AMOUNT":     "ON DELETE CASCADE", // -> T_TREATY_LIMIT_DETAIL
+		"FK_TT_SHARE_AMOUNT":     "ON DELETE CASCADE", // -> T_TREATY_SHARE
+		"FK_TT_FAC_SHARE_AMOUNT": "ON DELETE CASCADE", // -> T_TREATY_FAC_SHARE
+
+		// ⭐ Migrasi 439 — satu-satunya kunci asing barunya. `MDPList`,
+		// `PremiumEarnedList`, dan `EgnpiTotalList` hidup di dalam elemen
+		// `Limits[]`, jadi induknya `T_TREATY_LIMITS`, bukan `_DETAIL`.
+		// Alasan kaskadenya sama dengan ketiga di atas: besaran sebuah layer
+		// tanpa layernya tidak berarti apa pun.
+		"FK_TT_LIMIT_MEASURE": "ON DELETE CASCADE", // -> T_TREATY_LIMITS
 	}
 
 	sql := gabungan(t)
@@ -293,6 +435,26 @@ func TestPerilakuHapusSesuaiERD(t *testing.T) {
 		}
 		akhir[nama] = strings.ToUpper(strings.TrimSpace(m[2]))
 	}
+	// ⛔ YANG DICABUT TIDAK DINILAI. Migrasi 434 membuang `MATA_UANG` dan
+	// `MATA_UANG_KONTRAK` beserta `FK_VERSI_KONTRAK_MATA_UANG`; teks
+	// `CREATE`-nya tetap ada di migrasi 401 dan 403, sebab migrasi tidak
+	// pernah disunting mundur. Tanpa langkah ini uji menagih kunci asing
+	// yang tidak akan ada di basis data mana pun - dan sebelum 4 Oktober
+	// 2026 ia LULUS menagihnya, yaitu berhenti menggigit tanpa menjadi
+	// merah.
+	for nama := range akhir {
+		if dicabut(tanpaKomentar(sql), nama) {
+			delete(akhir, nama)
+		}
+	}
+	hidup := urut[:0:0]
+	for _, nama := range urut {
+		if _, ada := akhir[nama]; ada {
+			hidup = append(hidup, nama)
+		}
+	}
+	urut = hidup
+
 	lihat := map[string]bool{}
 	for _, nama := range urut {
 		harap, dikenal := mau[nama]
@@ -313,17 +475,40 @@ func TestPerilakuHapusSesuaiERD(t *testing.T) {
 	}
 }
 
-// Dua puluh satu relasi IKUT HAPUS, dan cacahnya dijaga.
+// Dua puluh lima relasi IKUT HAPUS, dan cacahnya dijaga.
 //
 // ERD.md §2 menyatakan 28 relasi `ikut hapus`; tujuh di antaranya menyentuh
 // tabel yang modul ini BELUM buat (PENYEBARAN, RINCIAN_PENYEBARAN,
 // NILAI_PENYEBARAN, NILAI_SELISIH, PERISTIWA_KONTRAK, RETRO_KELUAR, dan
 // PENYEBARAN cabang kedua). Angka di bawah naik bersama tabelnya.
+//
+// 3 Oktober 2026: 27 -> 31. Cabang penyebaran masuk bersama migrasi 429 —
+// empat relasi §2.5 — sehingga yang "tabelnya belum dibuat" turun dari lima
+// menjadi satu (`RETRO_KELUAR`, gelombang 2). Sebelumnya 21 -> 27:
+// `NILAI_SELISIH` (§2.6) dan `NILAI_SEBELUM_PRO_RATE` bersama migrasi 426,
+// dan empat lagi bersama migrasi 422 dan 424,
+// dan keempatnya BUKAN dari §2 melainkan dari `ERD-TREATY-IN-DAN-EDM.html`
+// baris 4, 9, 10, 27 — lihat tabel di `TestPerilakuHapusSesuaiERD`. Penyebut
+// 28 TIDAK ikut naik: ia cacah §2, dan §2 belum memuat keempatnya.
+//
+// 3 Oktober 2026, kedua kalinya: 31 -> 32. Yang ke-32 `FK_MTI_INSTALLMENTITEM_1`
+// dari migrasi 430, dan ia tidak bersumber dari ERD sama sekali — tabel
+// PENDARATAN tidak digambar di sana. Penyebut 28 tetap, dan pembilang
+// "bukan dari §2" naik dari 4 menjadi 5.
 func TestCacahKaskadeSesuaiTabelYangAda(t *testing.T) {
+	// 6 Oktober 2026, ketiga kalinya: 40 -> 43. Ketiga yang baru dari migrasi
+	// `438` (`LIMIT_AMOUNT`, `SHARE_AMOUNT`, `FAC_SHARE_AMOUNT`), dan seperti
+	// `437` ia tidak bersumber dari ERD — tabel PENDARATAN tidak digambar di
+	// sana. Penyebut 28 tetap; "bukan dari §2" naik dari 13 menjadi 16.
+	//
+	// 6 Oktober 2026, keempat kalinya: 43 -> 44. Yang ke-44
+	// `FK_TT_LIMIT_MEASURE` dari migrasi `439`, sebab yang sama persis.
+	// "bukan dari §2" naik dari 16 menjadi 17.
 	n := strings.Count(strings.ToUpper(tanpaKomentar(gabungan(t))), "ON DELETE CASCADE")
-	if n != 21 {
-		t.Errorf("ON DELETE CASCADE ditemukan %d, mau 21 (ERD.md §2: 28 relasi ikut hapus, "+
-			"7 di antaranya tabelnya belum dibuat)", n)
+	if n != 44 {
+		t.Errorf("ON DELETE CASCADE ditemukan %d, mau 44 (ERD.md §2: 28 relasi ikut hapus, "+
+			"1 di antaranya tabelnya belum dibuat; ditambah 4 dari ERD HTML baris 4, 9, 10, 27, "+
+			"ditambah 1 tabel pendaratan migrasi 430 yang tidak ada di ERD mana pun)", n)
 	}
 }
 
@@ -476,3 +661,328 @@ func TestNamaObjekDiBawahTigaPuluhBita(t *testing.T) {
 //
 // Yang DI SINI adalah yang khusus modul ini: invarian bernomor dan pernyataan
 // keputusan yang penjaga umum tidak dapat mengetahuinya.
+
+// INV-61 - arsip muatan keluar TIDAK punya jalur baca, dan angkanya dicetak.
+//
+// Tiket 42 menuntut ujinya berbentuk SAPUAN: "sapu seluruh basis kode untuk
+// kueri yang menyentuh isi arsip; hasilnya HARUS nol, dan angkanya dicetak."
+// Angka yang dicetak itulah yang membuat uji ini berguna setahun lagi: nol
+// yang tidak terlihat tidak dapat dibedakan dari sapuan yang rusak.
+//
+// ⛔ Yang dilarang membaca KOLOM MUATAN, bukan menyentuh tabelnya. Menghitung
+// berapa arsip yang ada tidak membuat arsip menjadi sumber kedua; membaca
+// isinya membuatnya begitu (ADR-0034).
+//
+// ⚠️ Komentar DIBUANG lebih dulu, dan berkas ini sendiri dikecualikan. Dua
+// sebab, keduanya ditemukan saat uji ini pertama dijalankan: berkas migrasi
+// dan berkas repository MENJELASKAN keputusannya dengan menyebut kata
+// `MUATAN` dan `SELECT` di dalam prosa, dan uji ini sendiri harus menyebut
+// keduanya untuk dapat melarangnya. Sapuan yang memindai teks mentah
+// menemukan kata-katanya sendiri - pelajaran yang sama yang sudah membuat
+// `tanpaKomentar` lahir di berkas ini.
+func TestArsipTidakPunyaJalurBaca(t *testing.T) {
+	var pembaca []string
+	disapu := 0
+	err := filepath.Walk(".", func(jalur string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() || !strings.HasSuffix(jalur, ".go") {
+			return nil
+		}
+		// Berkas penjaganya sendiri - lihat alasan di kepala fungsi.
+		if filepath.Base(jalur) == "migrasi_invarian_test.go" {
+			return nil
+		}
+		isi, errBaca := os.ReadFile(jalur)
+		if errBaca != nil {
+			return errBaca
+		}
+		disapu++
+		// ⚠️ DIPERTAJAM 3 Oktober 2026. Bentuk sebelumnya memotong 600 aksara
+		// sesudah tiap `SELECT` dan mencari `MUATAN` di dalamnya. Jendela itu
+		// MENYEBERANG ke literal berikutnya: `bukti_db_test.go` punya
+		// `SELECT COUNT(*) FROM MIGRASI_KORELASI` yang 600 aksara sesudahnya
+		// memuat konstanta `insPendaratan` ber-kolom `MUATAN` — dan penjaga
+		// berbunyi untuk berkas yang nol membaca arsip.
+		//
+		// Yang diperiksa sekarang LITERAL TEKS Go satu per satu: sebuah
+		// pernyataan SQL hidup di dalam SATU literal, jadi `SELECT` dan
+		// `MUATAN` yang berada di literal BERBEDA memang bukan satu kueri.
+		// Lebih tajam, bukan lebih longgar: kueri yang sungguh memilih
+		// `MUATAN` tetap tertangkap, di literal mana pun ia ditulis.
+		for _, lit := range literalTeksGo(tanpaKomentarGo(string(isi))) {
+			u := strings.ToUpper(lit)
+			if strings.Contains(u, "SELECT") && strings.Contains(u, "MUATAN") {
+				pembaca = append(pembaca, jalur)
+				break
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if disapu == 0 {
+		t.Fatal("nol berkas Go tersapu; pembacanya yang rusak, bukan kodenya")
+	}
+	t.Logf("INV-61: %d berkas Go disapu, %d memuat SELECT atas kolom MUATAN", disapu, len(pembaca))
+	if len(pembaca) != 0 {
+		t.Errorf("ADR-0034 dan INV-61: arsip TIDAK punya jalur baca, tetapi %d berkas "+
+			"memuat SELECT atas kolom MUATAN: %v. Menambahkannya membalikkan ADR-0034 "+
+			"tanpa membukanya", len(pembaca), pembaca)
+	}
+}
+
+// literalTeksGo mengembalikan isi tiap literal teks Go - backtick maupun
+// tanda kutip ganda.
+//
+// Sengaja sederhana dan sengaja MELEBIH: ia tidak mengurai escape, jadi
+// sebuah literal dapat terbaca lebih panjang daripada yang sebenarnya.
+// Melebih di sini aman - ia membuat penjaga menangkap LEBIH banyak, bukan
+// lebih sedikit.
+func literalTeksGo(src string) []string {
+	var keluar []string
+	for i := 0; i < len(src); i++ {
+		switch src[i] {
+		case '`':
+			if j := strings.IndexByte(src[i+1:], '`'); j >= 0 {
+				keluar = append(keluar, src[i+1:i+1+j])
+				i += j + 1
+			}
+		case '"':
+			j := i + 1
+			for j < len(src) && src[j] != '"' && src[j] != '\n' {
+				if src[j] == '\\' {
+					j++
+				}
+				j++
+			}
+			if j < len(src) && src[j] == '"' {
+				keluar = append(keluar, src[i+1:j])
+			}
+			i = j
+		}
+	}
+	return keluar
+}
+
+// tanpaKomentarGo membuang komentar `//` dan `/* */` dari sumber Go.
+//
+// Ia sengaja sederhana: tanda `//` di dalam literal teks (mis. sebuah URL)
+// akan ikut terpotong. Itu diterima di sini sebab modul ini nol URL di dalam
+// literal, dan sapuan yang terlalu rajin membuang BUKTI - bukan menambahkannya.
+func tanpaKomentarGo(src string) string {
+	var b strings.Builder
+	for len(src) > 0 {
+		i := strings.Index(src, "//")
+		j := strings.Index(src, "/*")
+		switch {
+		case i < 0 && j < 0:
+			b.WriteString(src)
+			return b.String()
+		case j < 0 || (i >= 0 && i < j):
+			b.WriteString(src[:i])
+			k := strings.IndexByte(src[i:], '\n')
+			if k < 0 {
+				return b.String()
+			}
+			src = src[i+k:]
+		default:
+			b.WriteString(src[:j])
+			k := strings.Index(src[j:], "*/")
+			if k < 0 {
+				return b.String()
+			}
+			src = src[j+k+2:]
+		}
+	}
+	return b.String()
+}
+
+// ⛔ `TREATY_IN` adalah tabel WARISAN, dan modul ini BUKAN pemiliknya.
+//
+// Ia memuat 1.854 baris produksi-bayangan. Layar daftar membacanya
+// (keputusan pemilik proses 3 Oktober 2026), dan membaca itu seluruh izinnya.
+//
+// Dua hal dijaga di sini, dan keduanya pernah menjadi cara modul merusak
+// tabel yang bukan miliknya:
+//
+//  1. NOL `INSERT`/`UPDATE`/`DELETE`/`MERGE` terhadapnya di berkas Go mana
+//     pun milik modul ini;
+//  2. NOL penyebutan di migrasi mana pun — menuliskannya di migrasi berarti
+//     mengklaim kepemilikan, dan `migrate` berikutnya akan mencoba
+//     membuatnya di atas tabel yang sudah berisi.
+func TestWarisanHanyaDibaca(t *testing.T) {
+	// ⚠️ DIPERLUAS 3 Oktober 2026 ke `M_TREATY_IN` — pasangan `TREATY_IN`
+	// yang memegang dokumen aslinya, 1.854 baris `CLOB`. Form kontrak
+	// membacanya, dan membaca itu seluruh izinnya.
+	// ⚠️ DIPERLUAS lagi 3 Oktober 2026 ke tiga tabel warisan yang ronde tab
+	// mulai dibaca: `M_TREATY_IN2` (7.281 baris, empat tab),
+	// `TREATYEXCHANGEYEARLY` (140), dan `M_TREATY_IN_DETAIL` (27.617).
+	// Ketiganya DIBACA, dan membaca itu seluruh izinnya.
+	//
+	// ⛔ `M_TREATY_IN2` TIDAK tertangkap oleh pola `M_TREATY_IN`: `` sesudah
+	// `IN` tidak cocok di depan angka `2`. Itu sebabnya ia disebut sendiri,
+	// bukan diandaikan ikut terjaga.
+	// ⭐ DIPERLUAS 6 Oktober 2026 ke dua tabel warisan yang sudah dibaca modul
+	// ini tetapi belum dijaga di sini: `M_ATTACHMENTTREATY_2` (panel
+	// Attachment) dan `TREATYINPRODUCTION` (panel Existing Policy).
+	//
+	// ⚠️ Sebabnya ditemukan saat menyapu gerbang berangka PERSIS: keduanya
+	// dijaga HANYA oleh cacah barisnya di uji `db`, dan cacah itu kini
+	// dilonggarkan menjadi LANTAI sebab Pega sendiri menambah barisnya.
+	// Melonggarkannya tanpa memasang penjaga tulis yang sesungguhnya akan
+	// meninggalkan keduanya tanpa penjaga sama sekali.
+	for _, tabel := range []string{
+		"TREATY_IN",
+		"TREATYEXCHANGEYEARLY", "M_TREATY_IN_DETAIL",
+		// ⭐ `M_ATTACHMENTTREATY_2` DIKELUARKAN 8 Oktober 2026 — keputusan
+		// pemakai: *"untuk upload file seharusnya kesini SELECT * FROM
+		// M_ATTACHMENTTREATY_2"*. Tombol `Upload file` menulisnya
+		// (`repository/lampiran_tulis.go`, `InsertAttachment2_Sql`).
+		"TREATYINPRODUCTION",
+		// ⭐ 6 Oktober 2026 — isi dropdown `Treaty Type` tab Limits.
+		"REINSURANCETYPE", "TREATYGROUP", "CURRENCY", "TREATYBUSINESS", "ACHIEVEMENT",
+		// ⭐ 7 Oktober 2026 — tab Share Non-Prop: susunan treaty master
+		// (dropdown Spreading Type dan anaknya) dan autocomplete Reinsurer.
+		"PROPORTIONALARRG", "TREATYYEAR", "AGENT",
+		// ⭐ 7 Oktober 2026 — cadangan skalar akar Share (`SaveTreatyInDetail_Act`).
+		"TREATYINDETAIL",
+	} {
+		t.Run(tabel, func(t *testing.T) { warisanHanyaDibaca(t, tabel) })
+	}
+}
+
+// namaKolomJuga - tabel warisan yang namanya juga dipakai sebagai kolom.
+var namaKolomJuga = map[string]bool{"TREATYGROUP": true, "CURRENCY": true, "TREATYYEAR": true}
+
+func warisanHanyaDibaca(t *testing.T, tabel string) {
+	t.Helper()
+	// ⚠️ Kata yang dicari harus berdiri sebagai KATA. `VERSI_KONTRAK` dan
+	// `TREATY_IN_ID` memuat potongan yang sama, dan sapuan yang menangkapnya
+	// akan merah selamanya tanpa satu pun pelanggaran.
+	pola := regexp.MustCompile(`(?i)\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|MERGE\s+INTO)\s+[^\s;]*\b` + tabel + `\b`)
+
+	disapu := 0
+	var pelanggar []string
+	err := filepath.Walk(".", func(jalur string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() || !strings.HasSuffix(jalur, ".go") {
+			return nil
+		}
+		if filepath.Base(jalur) == "migrasi_invarian_test.go" {
+			return nil // berkas penjaganya sendiri; ia menyebut kata-katanya
+		}
+		isi, errBaca := os.ReadFile(jalur)
+		if errBaca != nil {
+			return errBaca
+		}
+		disapu++
+		for _, lit := range literalTeksGo(tanpaKomentarGo(string(isi))) {
+			if pola.MatchString(lit) {
+				pelanggar = append(pelanggar, jalur)
+				break
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if disapu == 0 {
+		t.Fatal("nol berkas Go tersapu; pembacanya yang rusak")
+	}
+	t.Logf("%s: %d berkas Go disapu, %d menulis ke tabel warisan", tabel, disapu, len(pelanggar))
+	if len(pelanggar) != 0 {
+		t.Errorf("%s adalah tabel WARISAN dan modul ini bukan pemiliknya; "+
+			"%d berkas menulis ke sana: %v", tabel, len(pelanggar), pelanggar)
+	}
+
+	// ⚠️ Aturannya MENGGIGIT, dan itu diperiksa di sini — sapuan yang tidak
+	// pernah menemukan apa pun tidak dapat dibedakan dari sapuan yang rusak.
+	for _, jahat := range []string{
+		"INSERT INTO POOLDATA." + tabel + " (ID) VALUES ('x')",
+		"delete from {skema}." + tabel + " where ID = 1",
+		"MERGE INTO " + tabel + " t USING dual ON (1=1)",
+	} {
+		if !pola.MatchString(jahat) {
+			t.Errorf("pola tidak menangkap penulisan yang nyata: %q", jahat)
+		}
+	}
+	// Dan ia tidak menangkap yang SAH: pembacaan, dan tabel bernama mirip.
+	for _, sah := range []string{
+		"SELECT ID FROM POOLDATA." + tabel + " ORDER BY ID",
+		"INSERT INTO {skema}.VERSI_KONTRAK (ID_VERSI_KONTRAK) VALUES (1)",
+		"INSERT INTO {skema}.MIGRASI_KORELASI (ID_MIGRASI_KORELASI) VALUES (1)",
+	} {
+		if pola.MatchString(sah) {
+			t.Errorf("pola menangkap pernyataan yang SAH: %q", sah)
+		}
+	}
+
+	// Dan ia tidak boleh disebut di migrasi mana pun.
+	//
+	// ⚠️ `TREATYGROUP` dan `CURRENCY` juga NAMA KOLOM sah di migrasi modul
+	// ini; untuk keduanya yang dicari hanya penyebutan sebagai TABEL.
+	sebut := regexp.MustCompile(`\b` + tabel + `\b`)
+	if namaKolomJuga[tabel] {
+		sebut = regexp.MustCompile(`(?i)\b(TABLE|REFERENCES|INTO|UPDATE|FROM|JOIN)\s+[^\s;(]*\b` + tabel + `\b`)
+	}
+	for nama, isi := range seluruhMigrasi(t) {
+		if sebut.MatchString(tanpaKomentar(isi)) {
+			t.Errorf("%s menyebut %s; tabel warisan TIDAK dimiliki modul ini, dan "+
+				"menuliskannya di migrasi berarti `migrate` berikutnya mencoba membuatnya", nama, tabel)
+		}
+	}
+}
+
+// dicabut menjawab apakah sebuah kunci asing dibuang migrasi berikutnya —
+// langsung lewat `DROP CONSTRAINT`, atau ikut terbawa `DROP TABLE` atas
+// tabel yang memuatnya.
+//
+// ⛔ YANG TERAKHIR MENANG, dan itu bukan hiasan: migrasi 420 MEMBONGKAR
+// lalu MEMASANG ULANG dua puluh satu kunci asing. Membaca "ada DROP" saja
+// membuang kedua puluh satunya — FK_EGNPI_1, FK_DOKUMEN_KONTRAK_1, dan
+// seterusnya — padahal ketiganya hidup. Yang menentukan POSISI: bila DROP
+// terakhir berada SESUDAH definisi terakhir, barulah ia tercabut.
+//
+// ⛔ SENGAJA TANPA REGEXP. Versi pertama memakai pola ber-backslash dan
+// gagal diam-diam: satu aksara kendali ikut tersalin ke dalam literalnya,
+// polanya tidak pernah cocok, dan uji tetap hijau sambil menilai kunci
+// asing yang sudah tidak ada.
+func dicabut(sql, fk string) bool {
+	atas := strings.ToUpper(sql)
+	F := strings.ToUpper(fk)
+	buat := strings.LastIndex(atas, "CONSTRAINT "+F+" FOREIGN KEY")
+	if buat < 0 {
+		return false
+	}
+	if buang := strings.LastIndex(atas, "DROP CONSTRAINT "+F); buang > buat {
+		return true
+	}
+	// Tabel pemiliknya: CREATE/ALTER TABLE terakhir sebelum definisi itu.
+	awal := atas[:buat]
+	potong := strings.LastIndex(awal, "CREATE TABLE {SKEMA}.")
+	if j := strings.LastIndex(awal, "ALTER TABLE {SKEMA}."); j > potong {
+		potong = j
+	}
+	if potong < 0 {
+		return false
+	}
+	sisa := awal[potong+strings.Index(awal[potong:], "{SKEMA}.")+len("{SKEMA}."):]
+	n := 0
+	for n < len(sisa) && (sisa[n] == '_' || (sisa[n] >= 'A' && sisa[n] <= 'Z') || (sisa[n] >= '0' && sisa[n] <= '9')) {
+		n++
+	}
+	tabel := sisa[:n]
+	if tabel == "" {
+		return false
+	}
+	// Tabelnya dibuang SESUDAH dibuat — bukan sekadar pernah disebut DROP.
+	buatTbl := strings.LastIndex(atas, "CREATE TABLE {SKEMA}."+tabel)
+	buangTbl := strings.LastIndex(atas, "DROP TABLE {SKEMA}."+tabel)
+	return buangTbl > buatTbl
+}

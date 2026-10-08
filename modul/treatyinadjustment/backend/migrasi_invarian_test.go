@@ -4,6 +4,7 @@ package backend
 
 import (
 	"io/fs"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -58,11 +59,87 @@ func majuSaja(t *testing.T) map[string]string {
 // ⛔ Modul ini TIDAK membuat satu tabel pun, dan itu keputusan - bukan keadaan
 // sementara. Model datanya satu dengan Treaty In; yang dipisahkan 25-09-2026
 // hanya papan tiketnya. Tabel baru di sini berarti model datanya bercabang.
+// tabelMilikModulIni adalah SATU-SATUNYA tabel yang modul ini boleh buat.
+//
+// ⛔ Daftar-IZIN, bukan pencabutan. Penjaga di bawah lahir menyatakan
+// *"modul ini hanya mengubah tabel milik `treatyin`"*, dan ia MENOLAK
+// migrasi `442` ketika pemindahan pertama kali dicoba - riwayat penolakan
+// itu tercatat di kepala `treatyin/.../426_nilai_selisih.sql`.
+//
+// Keputusan pemilik proses 4 Oktober 2026
+// (`modul/treatyin/docs/KEPUTUSAN-PENYELARASAN-REPO.md` §19) menggantikan
+// aturan itu UNTUK DUA TABEL INI SAJA: tiket 76 dan 77 ada di papan modul
+// ini, dan sejak ronde itu tabelnya ada di sini juga.
+//
+// ⛔ Yang TIDAK berubah: tabel ketiga tetap ditolak. Melonggarkan penjaga
+// menjadi "modul ini boleh membuat tabel" akan membuang pagar yang masih
+// diperlukan - model datanya memang sebagian besar masih satu dengan
+// `treatyin`, dan percabangan diam-diam adalah persis yang dicegah.
+//
+// ⚠️ DITAGIH ke pemilik spec: `treaty-in/SPEC-MODEL-DATA.md` masih
+// menyatakan model datanya SATU, dan pesan penjaga lama mengutipnya.
+// Pernyataan itu kini tidak lagi benar seluruhnya.
+var tabelMilikModulIni = map[string]bool{
+	"NILAI_SELISIH":          true,
+	"NILAI_SEBELUM_PRO_RATE": true,
+}
+
+// tabelTreatyInDiparkir — tabel MILIK modul `treatyin` yang `CREATE`-nya
+// terpaksa tinggal di folder ini, alasannya sama dengan `444`/`445`: rentang
+// `treatyin` (`400-439`) penuh, dan nomor berikutnya jatuh di rentang modul
+// ini. Ia BUKAN tabel modul ini — `tabelMilikModulIni` tidak berubah — dan
+// ia harus tercantum di peta pendaratan `treatyin` (diperiksa di bawah dari
+// teks berkasnya, bukan impor).
+//
+// ⛔ Kategori ini SEMPIT dengan sengaja: satu nama, satu alasan. Tabel
+// berikutnya yang hendak diparkir ditambahkan dengan alasannya sendiri.
+var tabelTreatyInDiparkir = map[string]string{
+	"T_TREATY_HAZARD_LIMIT": "446 — diagram v2 `TreatyIn [BATAS_BAHAYA]`; permintaan pemakai 7 Oktober 2026",
+	"T_TREATY_SHARE_SUMMARY": "448 — LimitShareSummaryList/LimitFacShareSummaryList tab Share Non-Prop " +
+		"tanpa tempat simpan (laporan `kunciTakTersimpan` Save); pemakai 7 Oktober 2026: \"ini dibuatkan saja\"",
+	"T_TREATY_LIMIT_SPREADING": "449 — Detail.SpreadingList tab Share Prop tanpa tempat simpan (laporan Save " +
+		"kontrak 1002305); pemakai 8 Oktober 2026: \"berikan apa yang anda butuhkan\"",
+	"T_TREATY_LIMIT_DEDUCTION": "450 — Detail.DeductionList tab Limits Prop: grid yang dapat diisi, tanpa tempat " +
+		"simpan (laporan Save kontrak 1002305, 8 Oktober 2026)",
+	"T_TREATY_LIMIT_ACH_PARAM": "450 — Detail.CurrencyList (Parameter Achievement) tanpa tempat simpan " +
+		"(laporan Save kontrak 1002305, 8 Oktober 2026)",
+	"T_TREATY_LIMIT_REINSTATEMENT": "450 — Limits.Reinstatement_List Non-Prop tanpa tempat simpan " +
+		"(laporan Save kontrak 1002305, 8 Oktober 2026)",
+	"T_TREATY_SHARE_GROUP": "453 — Share.TreatyGroupList Non-Prop tanpa tempat simpan (laporan Save kontrak " +
+		"1001855); pemakai 8 Oktober 2026: \"dan ini juga\"",
+	"T_TREATY_SHARE_XOL_AMOUNT": "453 — Share.RNMSpreadedList*XOL (10 larik) tanpa tempat simpan; `JENIS` 40 " +
+		"sebab namanya tak muat di T_TREATY_SHARE_AMOUNT (laporan Save kontrak 1001855, 8 Oktober 2026)",
+	"T_TREATY_FAC_SHARE_GROUP": "453 — FacultativeShareList.TreatyGroupList, pasangan T_TREATY_SHARE_GROUP " +
+		"(laporan Save kontrak 1001855, 8 Oktober 2026)",
+}
+
 func TestNolTabelBaru(t *testing.T) {
+	pola := regexp.MustCompile(`(?i)CREATE\s+TABLE\s+\{skema\}\.(\w+)`)
+	dibuat := map[string]string{}
+	petaTreatyIn, _ := os.ReadFile("../../treatyin/backend/repository/pendaratan_peta.go")
 	for nama, isi := range majuSaja(t) {
-		if strings.Contains(strings.ToUpper(tanpaKomentar(isi)), "CREATE TABLE") {
-			t.Errorf("%s membuat tabel; modul ini hanya mengubah tabel milik `treatyin` "+
-				"(model data SATU, `treaty-in/SPEC-MODEL-DATA.md`)", nama)
+		for _, m := range pola.FindAllStringSubmatch(tanpaKomentar(isi), -1) {
+			tabel := strings.ToUpper(m[1])
+			if _, parkir := tabelTreatyInDiparkir[tabel]; parkir {
+				if !strings.Contains(string(petaTreatyIn), `Tabel: "`+tabel+`"`) {
+					t.Errorf("%s memarkir %s, tetapi tabel itu tidak ada di peta pendaratan treatyin", nama, tabel)
+				}
+				continue
+			}
+			if !tabelMilikModulIni[tabel] {
+				t.Errorf("%s membuat tabel %s; modul ini hanya mengubah tabel milik "+
+					"`treatyin`, kecuali dua yang KEPUTUSAN §19 pindahkan ke sini", nama, tabel)
+				continue
+			}
+			dibuat[tabel] = nama
+		}
+	}
+	// ⛔ Dan keduanya BENAR-BENAR dibuat di sini. Daftar-izin yang isinya
+	// tidak pernah dipakai adalah izin yang diam-diam menjadi lubang.
+	for tabel := range tabelMilikModulIni {
+		if dibuat[tabel] == "" {
+			t.Errorf("tabel %s diizinkan untuk modul ini tetapi nol migrasi membuatnya; "+
+				"bila ia kembali ke `treatyin`, cabut izinnya di sini", tabel)
 		}
 	}
 }
@@ -145,25 +222,67 @@ func gabungan(t *testing.T) string {
 // kehilangan artinya." TOLAK diwujudkan dengan tidak menulis klausa ON DELETE.
 func TestPerilakuHapusSesuaiERD(t *testing.T) {
 	pola := regexp.MustCompile(`(?is)CONSTRAINT\s+(FK_\w+)\s+FOREIGN KEY\s*\([^)]*\)\s*REFERENCES\s+\{skema\}\.\w+\s*\([^)]*\)([^,\n]*)`)
-	cocok := pola.FindAllStringSubmatch(tanpaKomentar(gabungan(t)), -1)
-	if len(cocok) != 1 {
-		t.Fatalf("mau tepat 1 kunci asing di modul ini, dapat %d", len(cocok))
+	// "" berarti TOLAK: diwujudkan dengan TIDAK menulis klausa ON DELETE.
+	const tolak = ""
+	mau := map[string]string{
+		// §2.2 — "menghapus versi dasar akan membuat seluruh baris selisih
+		// kehilangan artinya."
+		"FK_VERSI_KONTRAK_DASAR": tolak,
+		// ----------------------------------------------------------------
+		// PINDAH dari modul `treatyin` 4 Oktober 2026 bersama tabelnya —
+		// KEPUTUSAN §19. Barisnya IKUT PINDAH, tidak digandakan: dua tempat
+		// yang menyatakan perilaku hapus yang sama akan berselisih, dan
+		// yang salah satunya basi tidak akan berbunyi.
+		//
+		// Keduanya dari `ERD.md` §2.6 dan ERD HTML baris 36/37, dan
+		// keduanya sepakat `ikut hapus`.
+		"FK_NILAI_SELISIH_1":          "ON DELETE CASCADE",
+		"FK_NILAI_SEBELUM_PRO_RATE_1": "ON DELETE CASCADE",
 	}
-	nama, ekor := cocok[0][1], strings.ToUpper(strings.TrimSpace(cocok[0][2]))
-	if nama != "FK_VERSI_KONTRAK_DASAR" {
-		t.Errorf("kunci asing tak terduga: %s", nama)
+
+	lihat := map[string]bool{}
+	for _, m := range pola.FindAllStringSubmatch(tanpaKomentar(gabungan(t)), -1) {
+		nama, ekor := m[1], strings.ToUpper(strings.TrimSpace(m[2]))
+		harap, dikenal := mau[nama]
+		if !dikenal {
+			t.Errorf("kunci asing %s tidak ada di tabel ERD uji ini; tiap kunci asing "+
+				"BARU wajib menyebut keputusan ERD.md §2-nya", nama)
+			continue
+		}
+		lihat[nama] = true
+		if ekor != strings.ToUpper(harap) {
+			t.Errorf("%s: perilaku hapus %q, ERD.md menuntut %q", nama, ekor, harap)
+		}
 	}
-	if ekor != "" {
-		t.Errorf("%s berperilaku %q; ERD.md §2.2 menuntut TOLAK, yaitu tanpa klausa ON DELETE", nama, ekor)
+	for nama := range mau {
+		if !lihat[nama] {
+			t.Errorf("kunci asing %s didaftar uji ini tetapi tidak ada di DDL", nama)
+		}
 	}
 }
 
-// Nol kaskade, dan `MODUL.md` menyatakannya dengan tabel kosong — sehingga
-// `TestKaskadeHanyaPadaRelasiTerdaftar` menolak yang pertama menambahkannya.
-func TestNolKaskadeDiModulIni(t *testing.T) {
+// Kaskade HANYA pada berkas yang `MODUL.md` daftarkan.
+//
+// ⚠️ RALAT 4 Oktober 2026. Uji ini pernah bernama `TestNolKaskadeDiModulIni`
+// dan menuntut NOL `ON DELETE` di seluruh modul — benar selama modul ini
+// tidak punya tabel sendiri. Sejak KEPUTUSAN §19 memindahkan `NILAI_SELISIH`
+// dan `NILAI_SEBELUM_PRO_RATE` ke sini, keduanya membawa kaskadenya dari
+// `ERD.md` §2.6. Nama lamanya ditulis di sini supaya pencarian atasnya tetap
+// sampai ke tempat ini.
+//
+// ⛔ Yang TIDAK berubah: kaskade tetap menuntut IZIN. Berkas di luar daftar
+// tetap ditolak, dan daftarnya hidup di `MODUL.md` — satu tempat, dibaca
+// juga oleh penjaga inti `TestKaskadeHanyaPadaRelasiTerdaftar`.
+func TestKaskadeHanyaPadaBerkasTerdaftar(t *testing.T) {
+	berkaskade := map[string]bool{"442_nilai_selisih.sql": true}
 	for nama, isi := range majuSaja(t) {
-		if strings.Contains(strings.ToUpper(tanpaKomentar(isi)), "ON DELETE") {
-			t.Errorf("%s memuat ON DELETE; modul ini menyatakan NOL kaskade di MODUL.md", nama)
+		ada := strings.Contains(strings.ToUpper(tanpaKomentar(isi)), "ON DELETE")
+		if ada && !berkaskade[nama] {
+			t.Errorf("%s memuat ON DELETE tanpa izin; daftarnya di MODUL.md bab kaskade", nama)
+		}
+		if !ada && berkaskade[nama] {
+			t.Errorf("%s didaftar berkaskade tetapi nol ON DELETE; daftar yang tidak "+
+				"menggigit adalah daftar yang diam-diam kosong", nama)
 		}
 	}
 }

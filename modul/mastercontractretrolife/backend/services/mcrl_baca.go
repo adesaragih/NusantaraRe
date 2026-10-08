@@ -287,7 +287,7 @@ func (l *Layanan) CariMasterBusiness(ctx context.Context, p inti.Pelaku, kata st
 	return kosongBukanNil(d), err
 }
 
-// CariRingkasanRate - autocomplete `R/I RATE` (`BrowseRateLifeSummary`, view `RATE_LIFE_SUMMARY`).
+// CariRingkasanRate - autocomplete `R/I RATE` (`BrowseRateLifeSummary`, tabel `M_RATE_LIFE_SUMMARY`).
 //
 // K1 keputusan work owner 01-10-2026 (OQ-MCRL-13): dibaca saja. View tak terbaca = 503 yang menyebut
 // objeknya (ErrMasterTidakTerbaca), bukan daftar kosong.

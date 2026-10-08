@@ -185,7 +185,7 @@ func TestLebarKolomDatarSamaDenganKatalogDEV(t *testing.T) {
 
 // L3 (OQ-MPNL-04 ditutup data DEV): setiap pemilih membaca objek bernama PERSIS objek yang ada di DEV -
 // tabel `AGENT`, `CLIENT`; view `CURRENCY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE`, `RIRISK_LIFE_SUMMARY`,
-// dan sejak K1 01-10-2026 (OQ-MPNL-03) view `RATE_LIFE_SUMMARY` (`Choose R/I Rate`) dan `RATE_LIFE` (`View Rate`).
+// dan sejak K1 01-10-2026 (OQ-MPNL-03) tabel `M_RATE_LIFE_SUMMARY` (`Choose R/I Rate`) dan `RATE_LIFE` (`View Rate`).
 // Yang dibuktikan: NAMA objek; kolom yang dibaca belum ada di katalog yang diberikan.
 func TestObjekMasterAdaDiKatalogDEV(t *testing.T) {
 	obj := katalogDEV(t).ObjekMaster

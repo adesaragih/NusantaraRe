@@ -67,14 +67,14 @@ func TestBusinessRIRateTeksApaAdanyaDanSalinanInduk(t *testing.T) {
 	}
 }
 
-// K1 (01-10-2026): RIRATEID pilihan BARU wajib ada di `RATE_LIFE_SUMMARY`; nilai lama yang tidak
+// K1 (01-10-2026): RIRATEID pilihan BARU wajib ada di `M_RATE_LIFE_SUMMARY`; nilai lama yang tidak
 // diganti tidak diperiksa ulang; RIRATE tetap teks ketikan (R7), tidak diganti USEDBY view.
 func TestBusinessRateBaruWajibAdaDiRingkasan(t *testing.T) {
 	g := gudangBusiness()
 	m := businessLengkap()
 	m.RIRateID = "UJI-RATE-TAK-ADA"
 	_, err := layananUji(g).SimpanBusiness(context.Background(), pelaku, "UJI-K1", m)
-	if !errors.Is(err, services.ErrMasukanTidakSah) || !strings.Contains(services.Pesan(err), "RATE_LIFE_SUMMARY") ||
+	if !errors.Is(err, services.ErrMasukanTidakSah) || !strings.Contains(services.Pesan(err), "M_RATE_LIFE_SUMMARY") ||
 		len(g.Business) != 0 || g.Komit != 0 {
 		t.Errorf("rate di luar view: %v (%d baris, komit %d)", err, len(g.Business), g.Komit)
 	}

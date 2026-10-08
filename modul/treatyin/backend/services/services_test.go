@@ -13,6 +13,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/modul/treatyin/backend/models"
+	"nusantarare/modul/treatyin/backend/repository"
 	"nusantarare/modul/treatyin/backend/services"
 )
 
@@ -34,12 +35,67 @@ type gudangTiruan struct {
 	adaQS       bool
 	dicatat     []string
 
+	// Tab pendaratan migrasi 430, dan galatnya yang TERPISAH dari `galat`.
+	periodePelaporan []models.BarisPeriodeWarisan
+	portofolio       []models.BarisPortofolioWarisan
+	akumulasi        []models.BarisAkumulasiWarisan
+	egnpi            []models.BarisEgnpiWarisan
+	retensi          []models.BarisRetensiWarisan
+	angsuran         []models.BarisAngsuranWarisan
+	catatan          []models.BarisCatatanWarisan
+	layer            []models.BarisLayerWarisan
+	limitsPohon      []map[string]any
+	revisi           repository.RevisiPendaratan
+	kurs             []models.BarisKursWarisan
+	skalaKoasuransi  []models.BarisSkalaKoasuransiWarisan
+	lampiran         []models.BarisLampiranWarisan
+	katalogKategori  map[string]string
+	galatTab         error
+
+	// Panel `Existing Policy for Master ID`, galatnya terpisah lagi: ia
+	// satu-satunya pembacaan yang menyentuh `TREATYINPRODUCTION`, dan
+	// kegagalannya tidak boleh terbaca sebagai kegagalan tab mana pun.
+	polisProduksi      []models.BarisPolisProduksi
+	galatPolisProduksi error
+	cedant             []models.PilihanWarisan
+	jenisTreaty        []models.PilihanWarisan
+	asalBisnis         []models.PilihanWarisan
+	galatPilihan       error
+
 	// Tiket 32 - apa yang SAMPAI ke gudang, supaya uji dapat membuktikan
 	// masukan yang ditolak tidak pernah diteruskan.
 	pemulihan    [][]models.PemulihanLimit
 	layerDicatat []int64
 	// Tiket 40 - nil berarti versinya yang pertama.
 	versiDasar *models.VersiKontrak
+	// Tiket 42.
+	arsip []models.ArsipMuatanKeluar
+	bukti models.BuktiArsip
+	// Layar daftar kontrak.
+	daftar []models.BarisDaftarKontrak
+	// Layar daftar WARISAN (`TREATY_IN`).
+	barisWarisan   []models.BarisDaftarWarisan
+	cacahWarisan   int
+	kontrakWarisan models.KontrakWarisan
+
+	// Tombol tulis Save/Submit/Actions/Decline offer.
+	kepalaTreatyIn   map[string]map[string]any
+	dokumenTersimpan map[string]map[string]any
+	disimpan         []models.RencanaSimpan
+	pemegangPosisi   map[string][]string
+	// Properti yang kolomnya dianggap BELUM terpasang (migrasi menunggu).
+	belumTerpasang []string
+	// Layar Adjustment — kepala `TREATY_IN_EDM`, rencana tersimpan, penghapusan.
+	kepalaEDM   map[string]map[string]any
+	disimpanEDM []models.RencanaPenyesuaian
+	dihapusEDM  []string
+	// Panel Attachment — baris yang `CatatLampiran` terima.
+	lampiranBaru []models.LampiranBaru
+	// Modal View File — objek storage, perubahan kategori, penghapusan.
+	objekSimpanan   map[string]models.ObjekSimpanan
+	objekDiperbarui []models.ObjekSimpanan
+	kategoriDiubah  []models.PerubahanKategori
+	lampiranDihapus []string
 }
 
 // Tiket 32.
@@ -47,6 +103,21 @@ func (g *gudangTiruan) CatatPemulihanLimit(_ context.Context, idLayer int64, bar
 	g.layerDicatat = append(g.layerDicatat, idLayer)
 	g.pemulihan = append(g.pemulihan, baris)
 	return g.galat
+}
+
+// Tiket 42.
+func (g *gudangTiruan) SimpanArsipMuatanKeluar(_ context.Context, a models.ArsipMuatanKeluar) error {
+	g.arsip = append(g.arsip, a)
+	return g.galat
+}
+
+// Tiket 42 — nilai baliknya TIDAK punya ruas muatan, dan itu seluruh maksudnya.
+func (g *gudangTiruan) BuktiArsipKontrak(_ context.Context, id int64) (models.BuktiArsip, error) {
+	g.dibaca = append(g.dibaca, id)
+	if g.galat != nil {
+		return models.BuktiArsip{}, g.galat
+	}
+	return g.bukti, nil
 }
 
 // Tiket 40.
@@ -91,7 +162,7 @@ func TestDaftarAcuanMenolakPermintaanTanpaIdentitas(t *testing.T) {
 	g := &gudangTiruan{}
 	l := services.LayananDengan(g)
 
-	_, err := l.DaftarAcuan(context.Background(), inti.Pelaku{}, models.HimpunanMataUang)
+	_, err := l.DaftarAcuan(context.Background(), inti.Pelaku{}, models.HimpunanJenisPotongan)
 
 	if !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Fatalf("mau ErrTanpaIdentitas, dapat %v", err)
@@ -122,9 +193,9 @@ func TestDaftarAcuanMenolakHimpunanDiLuarEnam(t *testing.T) {
 
 // Uji POSITIF - dan ia yang menangkap penyaring yang terlalu ketat. Penyaring
 // yang menolak salah satu dari enam lulus setiap uji negatif di atas.
-func TestKeenamHimpunanDiterima(t *testing.T) {
+func TestKelimaHimpunanDiterima(t *testing.T) {
 	enam := []models.Himpunan{
-		models.HimpunanMataUang, models.HimpunanJenisPotongan, models.HimpunanKelasBisnis,
+		models.HimpunanJenisPotongan, models.HimpunanJenisPotongan, models.HimpunanKelasBisnis,
 		models.HimpunanKelompokTreaty, models.HimpunanBahaya, models.HimpunanJenisReasuransi,
 	}
 	g := &gudangTiruan{isi: map[models.Himpunan][]models.Acuan{}}
@@ -148,7 +219,7 @@ func TestKeenamHimpunanDiterima(t *testing.T) {
 	}
 }
 
-// Daftar kosong adalah JAWABAN, bukan galat: keenam tabel berdiri kosong
+// Daftar kosong adalah JAWABAN, bukan galat: kelima tabel berdiri kosong
 // sampai tiket 44 memindahkan isinya dari sistem lama.
 func TestTabelAcuanKosongBukanGalat(t *testing.T) {
 	l := services.LayananDengan(&gudangTiruan{isi: map[models.Himpunan][]models.Acuan{}})
@@ -167,7 +238,7 @@ func TestGalatGudangDiteruskan(t *testing.T) {
 	bocor := errors.New("oracle mati")
 	l := services.LayananDengan(&gudangTiruan{galat: bocor})
 
-	_, err := l.DaftarAcuan(context.Background(), pelakuAda, models.HimpunanMataUang)
+	_, err := l.DaftarAcuan(context.Background(), pelakuAda, models.HimpunanJenisPotongan)
 
 	if !errors.Is(err, bocor) {
 		t.Fatalf("galat gudang tidak diteruskan; dapat %v", err)
@@ -179,7 +250,7 @@ func TestBersusunHanyaJenisReasuransi(t *testing.T) {
 		t.Error("JENIS_REASURANSI bersusun (§10.6) tetapi Bersusun() false")
 	}
 	for _, h := range []models.Himpunan{
-		models.HimpunanMataUang, models.HimpunanJenisPotongan, models.HimpunanKelasBisnis,
+		models.HimpunanJenisPotongan, models.HimpunanJenisPotongan, models.HimpunanKelasBisnis,
 		models.HimpunanKelompokTreaty, models.HimpunanBahaya,
 	} {
 		if h.Bersusun() {
@@ -231,4 +302,181 @@ func (g *gudangTiruan) CatatKetentuanProporsional(_ context.Context, _, _, _ int
 	}
 	g.dicatat = append(g.dicatat, jenis)
 	return nil
+}
+
+// Layar daftar kontrak — ronde layar 1.
+func (g *gudangTiruan) DaftarKontrak(context.Context) ([]models.BarisDaftarKontrak, error) {
+	if g.galat != nil {
+		return nil, g.galat
+	}
+	return g.daftar, nil
+}
+
+// Layar daftar WARISAN — jalur baca `TREATY_IN`.
+func (g *gudangTiruan) CacahKontrakWarisan(context.Context) (int, error) {
+	if g.galat != nil {
+		return 0, g.galat
+	}
+	return g.cacahWarisan, nil
+}
+
+func (g *gudangTiruan) DaftarKontrakWarisan(_ context.Context, offset, batas int) ([]models.BarisDaftarWarisan, error) {
+	if g.galat != nil {
+		return nil, g.galat
+	}
+	// Memotong seperti basis data memotong, supaya uji penomoran halaman
+	// menguji penomorannya - bukan tiruan yang selalu mengembalikan semua.
+	if offset >= len(g.barisWarisan) {
+		return []models.BarisDaftarWarisan{}, nil
+	}
+	akhir := offset + batas
+	if akhir > len(g.barisWarisan) {
+		akhir = len(g.barisWarisan)
+	}
+	return append([]models.BarisDaftarWarisan{}, g.barisWarisan[offset:akhir]...), nil
+}
+
+// Satu kontrak WARISAN.
+func (g *gudangTiruan) BacaKontrakWarisan(_ context.Context, id string) (models.KontrakWarisan, error) {
+	if g.galat != nil {
+		return models.KontrakWarisan{}, g.galat
+	}
+	return g.kontrakWarisan, nil
+}
+
+// Tab yang PINDAH ke tabel pendaratan migrasi 430 — tiruannya mengembalikan
+// apa yang ditaruh di medan di bawah, dan `galatTab` membuat ketiganya
+// gagal tanpa membuat `BacaKontrakWarisan` ikut gagal.
+//
+// ⛔ Galatnya TERPISAH dari `galat`, dan itu pokoknya: kontrak yang
+// dokumennya hilang tetap harus membuka tabnya, dan tab yang tabelnya
+// gagal dibaca tidak boleh terbaca sebagai "kontraknya tidak ada".
+func (g *gudangTiruan) BacaPeriodePelaporan(_ context.Context, _ string) ([]models.BarisPeriodeWarisan, error) {
+	return g.periodePelaporan, g.galatTab
+}
+
+func (g *gudangTiruan) BacaPortofolio(_ context.Context, _ string) ([]models.BarisPortofolioWarisan, error) {
+	return g.portofolio, g.galatTab
+}
+
+func (g *gudangTiruan) BacaAkumulasi(_ context.Context, _ string) ([]models.BarisAkumulasiWarisan, error) {
+	return g.akumulasi, g.galatTab
+}
+
+// Empat tab pendaratan berikutnya. `galatTab` dipakai ulang supaya uji
+// "satu tab gagal, seluruh pembacaan gagal" berlaku untuk kedelapan.
+func (g *gudangTiruan) BacaEgnpi(_ context.Context, _ string) ([]models.BarisEgnpiWarisan, error) {
+	return g.egnpi, g.galatTab
+}
+
+// ⭐ Panel `Existing Policy for Master ID`. Nol baris adalah keadaan yang
+// SAH — gambar 01 dokumen desain memperlihatkannya berbunyi "No items".
+func (g *gudangTiruan) BacaPolisProduksi(_ context.Context, _ string) ([]models.BarisPolisProduksi, error) {
+	return g.polisProduksi, g.galatPolisProduksi
+}
+
+func (g *gudangTiruan) BacaRetensi(_ context.Context, _ string) ([]models.BarisRetensiWarisan, error) {
+	return g.retensi, g.galatTab
+}
+func (g *gudangTiruan) BacaAngsuran(_ context.Context, _ string) ([]models.BarisAngsuranWarisan, error) {
+	return g.angsuran, g.galatTab
+}
+func (g *gudangTiruan) BacaCatatan(_ context.Context, _ string) ([]models.BarisCatatanWarisan, error) {
+	return g.catatan, g.galatTab
+}
+
+// Isi kedua pemilih "Choose …". Galatnya BERBAGI `galatPilihan`, bukan
+// `galatTab`: keduanya katalog yang tidak bergantung kontrak, dan uji yang
+// mematikan satu tab tidak boleh ikut mematikan pemilihnya.
+func (g *gudangTiruan) BacaDaftarCedant(_ context.Context) ([]models.PilihanWarisan, error) {
+	return g.cedant, g.galatPilihan
+}
+func (g *gudangTiruan) BacaDaftarAsalBisnis(_ context.Context) ([]models.PilihanWarisan, error) {
+	return g.asalBisnis, g.galatPilihan
+}
+func (g *gudangTiruan) BacaDaftarJenisTreaty(_ context.Context) ([]models.PilihanWarisan, error) {
+	return g.jenisTreaty, g.galatPilihan
+}
+func (g *gudangTiruan) BacaDaftarKelompokTreaty(_ context.Context) ([]models.PilihanWarisan, error) {
+	return g.jenisTreaty, g.galatPilihan
+}
+func (g *gudangTiruan) BacaDaftarMataUangLimit(_ context.Context) ([]models.PilihanWarisan, error) {
+	return g.jenisTreaty, g.galatPilihan
+}
+func (g *gudangTiruan) BacaDaftarKelasBisnisTreaty(_ context.Context, _ string) ([]models.PilihanWarisan, error) {
+	return g.jenisTreaty, g.galatPilihan
+}
+
+func (_ *gudangTiruan) BacaSharePendaratan(_ context.Context, _ string) (models.SharePendaratan, error) {
+	return models.SharePendaratan{}, nil
+}
+
+func (_ *gudangTiruan) BacaIndukSpreading(_ context.Context, _, _, _ string) ([]models.SusunanSpreading, error) {
+	return []models.SusunanSpreading{}, nil
+}
+
+func (_ *gudangTiruan) BacaAnakSpreading(_ context.Context, _, _ string) ([]models.SusunanSpreading, error) {
+	return []models.SusunanSpreading{}, nil
+}
+
+func (_ *gudangTiruan) BacaAnakSpreadingProp(_ context.Context, _, _, _, _, _ string) ([]models.SusunanSpreading, error) {
+	return []models.SusunanSpreading{}, nil
+}
+
+func (_ *gudangTiruan) BacaDaftarReasuradurShare(_ context.Context) ([]models.PilihanWarisan, error) {
+	return []models.PilihanWarisan{}, nil
+}
+
+func (_ *gudangTiruan) BacaShareAkarRevisi(_ context.Context, _ string) (map[string]string, error) {
+	return map[string]string{}, nil
+}
+
+func (_ *gudangTiruan) BacaShareDetailWarisan(_ context.Context, _ string) (models.ShareDetailWarisan, error) {
+	return models.ShareDetailWarisan{}, nil
+}
+
+func (g *gudangTiruan) BacaSkalaKoasuransi(_ context.Context, _ string) ([]models.BarisSkalaKoasuransiWarisan, error) {
+	return g.skalaKoasuransi, g.galatTab
+}
+
+// ⭐ Keempat tab dari TABEL PENDARATAN — keputusan 6 Oktober 2026.
+func (g *gudangTiruan) BacaLayerPendaratan(_ context.Context, _ string) ([]models.BarisLayerWarisan, error) {
+	return g.layer, g.galatTab
+}
+
+func (g *gudangTiruan) BacaAchievement(_ context.Context, _ string) ([]models.BarisAchievement, error) {
+	return []models.BarisAchievement{}, nil
+}
+func (g *gudangTiruan) BacaKursKeIDR(_ context.Context, _ []string) (map[string]string, error) {
+	return map[string]string{}, nil
+}
+
+func (g *gudangTiruan) BacaLimitsAkarPendaratan(_ context.Context, _ string) (models.LimitsAkar, error) {
+	return models.LimitsAkar{}, nil
+}
+
+func (g *gudangTiruan) BacaTotalPenampung(_ context.Context, _ string) (map[string][]map[string]any, error) {
+	return map[string][]map[string]any{}, nil
+}
+
+func (g *gudangTiruan) BacaPohonLimitsPendaratan(_ context.Context, _ string) ([]map[string]any, error) {
+	return g.limitsPohon, g.galatTab
+}
+
+// ⭐ Medan kepala dan grid Rate of Exchange — juga dari pendaratan.
+func (g *gudangTiruan) BacaRevisiPendaratan(_ context.Context, _ string) (repository.RevisiPendaratan, error) {
+	return g.revisi, g.galatTab
+}
+
+func (g *gudangTiruan) BacaKursTahunan(_ context.Context, _ string) ([]models.BarisKursWarisan, error) {
+	return g.kurs, g.galatTab
+}
+
+// Panel Attachment - `M_ATTACHMENTTREATY_2`, tabel warisan.
+func (g *gudangTiruan) BacaLampiranKontrak(_ context.Context, _ string) ([]models.BarisLampiranWarisan, error) {
+	return g.lampiran, g.galatTab
+}
+
+func (g *gudangTiruan) BacaKatalogKategoriLampiran(_ context.Context) (map[string]string, error) {
+	return g.katalogKategori, g.galatTab
 }

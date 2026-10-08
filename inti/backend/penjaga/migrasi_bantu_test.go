@@ -210,3 +210,80 @@ func cacahBarisMentah(t *testing.T, pola *regexp.Regexp) int {
 	}
 	return n
 }
+
+// ===========================================================================
+// Nama tabel yang DIBUAT atau DIGANTI-NAMAI oleh migrasi Treaty In
+// ===========================================================================
+//
+// ⛔ Lahir dari tabrakan dua keputusan, 6 Oktober 2026 — dan keduanya sah:
+//
+//	tco4, 29-09-2026   Treaty Contract Out tidak boleh punya tabel baru.
+//	                   Penjaganya mengenali "tabel baru" dari NAMANYA:
+//	                   `T_` + `TREATY…`/`MTREATY…`/`PROPORTIONAL…`.
+//
+//	Treaty In, 05-10   Pemilik proses menetapkan nama tabel Treaty In
+//	                   mengikuti `Diagram-Skema-Tabel-TreatyIn-dan-EDM-v2
+//	                   .xlsx`. Migrasi 436 menamai ulang delapan tabel
+//	                   menjadi `T_TREATY_*`; 437 membuat tiga belas lagi.
+//
+// Sesudah 436, nama `T_TREATY_*` TIDAK LAGI menandakan Treaty Contract Out —
+// dan penjaga yang menuduh tabel Treaty In sebagai pelanggaran tco4 menuduh
+// hal yang benar sebagai hal yang salah. Berkas `lintasaplikasi_test.go`
+// sendiri menuliskan akibatnya: penjaga semacam itu DILONGGARKAN orang,
+// bukan dipatuhi.
+//
+// ⭐ Jadi ia DIPERSEMPIT, bukan dilonggarkan: tco4 tetap menolak setiap tabel
+// baru di mana pun, KECUALI nama yang sungguh dibuat migrasi Treaty In. Yang
+// memutuskan bukan letak berkasnya saja, melainkan daftar ini — supaya kode
+// Treaty In yang menyebut tabel Treaty Contract Out tetap tertangkap.
+func namaTabelTreatyIn(t *testing.T) map[string]bool {
+	t.Helper()
+	polaBuat := regexp.MustCompile(`(?i)CREATE\s+(?:TABLE|SEQUENCE|INDEX)\s+\{skema\}\.(\w+)`)
+	// `ALTER TABLE … RENAME TO X` dan `RENAME A TO X` (sequence; Oracle tidak
+	// punya `ALTER SEQUENCE … RENAME TO`).
+	polaNamai := regexp.MustCompile(`(?i)RENAME\s+(?:\w+\s+)?TO\s+(\w+)`)
+	out := map[string]bool{}
+	// ⭐ 7 Oktober 2026 — tabel Treaty In yang DIPARKIR. Rentang migrasi
+	// `treatyin` (400-439) penuh, sehingga `446` (`T_TREATY_HAZARD_LIMIT`,
+	// diagram v2 `TreatyIn [BATAS_BAHAYA]`) lahir di folder
+	// `treatyinadjustment`, seperti `444`/`445` yang menambah kolom. Nama dari
+	// folder itu diakui HANYA bila tercantum di peta pendaratan Treaty In —
+	// dibaca sebagai TEKS berkas, bukan impor — sehingga tabel Treaty
+	// Contract Out yang dibuat dari folder mana pun tetap tertangkap.
+	petaTreatyIn, _ := os.ReadFile(filepath.FromSlash(akarAplikasi + "/modul/treatyin/backend/repository/pendaratan_peta.go"))
+	for nama, teks := range seluruhSQL(t, false) {
+		parkir := berkasMigrasi.modul(nama) == "treatyinadjustment"
+		if berkasMigrasi.modul(nama) != "treatyin" && !parkir {
+			continue
+		}
+		for _, m := range polaBuat.FindAllStringSubmatch(teks, -1) {
+			n := strings.ToUpper(m[1])
+			if parkir && !strings.Contains(string(petaTreatyIn), `"`+n+`"`) {
+				continue
+			}
+			out[n] = true
+		}
+		for _, m := range polaNamai.FindAllStringSubmatch(teks, -1) {
+			out[strings.ToUpper(m[1])] = true
+		}
+	}
+	if len(out) == 0 {
+		t.Fatal("nol nama tabel Treaty In terbaca; pembacanya yang rusak")
+	}
+	return out
+}
+
+// milikTreatyIn menjawab apakah `nama` adalah nama tabel Treaty In - persis,
+// atau sebuah AWALAN dari salah satunya.
+func milikTreatyIn(daftar map[string]bool, nama string) bool {
+	n := strings.ToUpper(nama)
+	if daftar[n] {
+		return true
+	}
+	for ada := range daftar {
+		if strings.HasPrefix(ada, n) {
+			return true
+		}
+	}
+	return false
+}

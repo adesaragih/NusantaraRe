@@ -8,9 +8,13 @@ package models
 // dan membiarkannya terbuka berarti nama tabel datang dari luar.
 type Himpunan string
 
-// Keenam himpunan acuan - `KAMUS-KOLOM.md` §10.22, tiket 15.
+// LIMA himpunan acuan - `KAMUS-KOLOM.md` §10.22, tiket 15.
+//
+// ⛔ `mata-uang` DICABUT 4 Oktober 2026 (migrasi 434). Daftar mata uang dan
+// kursnya dibaca dari `TREATYEXCHANGEYEARLY`, tabel warisan yang sudah hidup -
+// keputusan pemilik proses. Tabel acuan `MATA_UANG` yang pernah berdiri di
+// sini nol baris sepanjang hidupnya.
 const (
-	HimpunanMataUang        Himpunan = "mata-uang"
 	HimpunanJenisPotongan   Himpunan = "jenis-potongan"
 	HimpunanKelasBisnis     Himpunan = "kelas-bisnis"
 	HimpunanKelompokTreaty  Himpunan = "kelompok-treaty"
@@ -21,7 +25,7 @@ const (
 // Acuan adalah satu baris tabel acuan: kode, nama, dan penanda aktifnya.
 //
 // IDInduk hanya terisi pada `JENIS_REASURANSI`, yang bersusun (§10.6). Pada
-// kelima himpunan lain ia SELALU kosong - dan kosong di sana berarti "tabel ini
+// keempat himpunan lain ia SELALU kosong - dan kosong di sana berarti "tabel ini
 // memang tidak bersusun", bukan "induknya belum diisi".
 type Acuan struct {
 	ID      int64  `json:"id"`
