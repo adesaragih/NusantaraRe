@@ -93,7 +93,12 @@ function pemilihCSS(css: string): string[] {
 }
 
 function terisolasi(p: string): boolean {
-  return p === '.treatyin' || p.startsWith('.treatyin ') || p.startsWith(':where(.treatyin ')
+  // ⭐ 8 Oktober 2026 — tema Treaty Exchange Yearly: varian GELAP ditulis
+  // `:root[data-theme="dark"] .treatyin …`, pengecualian SEMPIT yang sama
+  // dengan penjaga `treatyexchangeyearly/frontend/gaya.test.ts`. Ia tetap
+  // berakar `.treatyin`: hanya atribut tema `:root` yang mendahuluinya.
+  const p2 = p.startsWith(':root[data-theme="dark"] ') ? p.slice(':root[data-theme="dark"] '.length) : p
+  return p2 === '.treatyin' || p2.startsWith('.treatyin ') || p2.startsWith(':where(.treatyin ')
 }
 
 /** Kelas dari `daftar` yang masih disebut pemilih di `css`. */
@@ -121,6 +126,9 @@ describe('gaya modul Treaty In', () => {
   it('aturan isolasi menggigit', () => {
     const contoh = pemilihCSS('table { x: 1 } .treatyin .a, .b { y: 2 } .treatyin :is(.c, .d):disabled { z: 3 } @media (max-width: 1px) { .e { w: 4 } }')
     expect(contoh.filter((p) => !terisolasi(p))).toEqual(['table', '.b', '.e'])
+    // Tema gelap berakar modul diterima; tema gelap GLOBAL tetap ditolak.
+    const gelap = pemilihCSS(':root[data-theme="dark"] .treatyin > .inbox { a: 1 } :root[data-theme="dark"] .x { b: 2 }')
+    expect(gelap.filter((p) => !terisolasi(p))).toEqual([':root[data-theme="dark"] .x'])
   })
 
   it('kelas khusus modul ini tidak menumpang di inti/frontend/styles.css', () => {
@@ -255,5 +263,38 @@ describe('kerapatan badan layar Treaty In', () => {
   it('`.trin__aksi` tidak disentuh — jarak kaki lewat pengubah `--kaki`', () => {
     expect(CSS).toMatch(/\.treatyin \.trin__aksi \{\s*display: flex;\s*flex-wrap: wrap;\s*gap: 8px;\s*margin-top: 12px;\s*\}/)
     expect(CSS).toMatch(/\.treatyin \.trin__aksi--kaki \{\s*margin-bottom: 18px;\s*\}/)
+  })
+})
+
+// ⭐ 8 Oktober 2026 — "ubah tema … menjadi seperti tema Treaty Exchange Yearly".
+describe('tema Treaty Exchange Yearly', () => {
+  const css = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
+  const akar = css.slice(css.indexOf('.treatyin > .inbox {'))
+
+  it('token terang di AKAR MODUL (juga layar tanpa `.inbox`), kartu akar halaman: `--trin-*` bernilai `--tey-*`, gradasi lembut, sudut 26px', () => {
+    expect(css).toMatch(/^\.treatyin \{[^}]*--trin-latar: #eef1f6;/m)
+    expect(akar.slice(0, 3000)).toContain('border-radius: 26px;')
+    expect(akar.slice(0, 3000)).toContain('background: linear-gradient(180deg, var(--trin-latar-atas) 0%, var(--trin-latar-bawah) 100%);')
+  })
+
+  it('varian gelap ditulis berakar modul', () => {
+    expect(css).toMatch(/^:root\[data-theme="dark"\] \.treatyin \{[^}]*--trin-isi: #1f2638;/m)
+  })
+
+  it('tombol kapsul: utama merah bergradasi, kartu panel putih timbul, isian cekung', () => {
+    expect(css).toMatch(/\.treatyin \.btn \{\s*border-radius: 999px;/)
+    expect(css).toMatch(/\.treatyin \.btn--primary,\s*\.treatyin \.tl-tambah \{\s*background: linear-gradient\(180deg, var\(--trin-tombol\), var\(--trin-tombol-ujung\)\);/)
+    expect(css).toMatch(/\.treatyin \.panel \{\s*background: var\(--trin-isi\);[^}]*border-radius: 18px;[^}]*box-shadow: var\(--trin-timbul\);/)
+    expect(css).toMatch(/\.treatyin \.field__input \{[^}]*box-shadow: var\(--trin-cekung-kecil\);/)
+  })
+
+  it('strip tab = kontrol segmen kapsul; kepala tabel navy muda dan TIDAK tembus pandang', () => {
+    expect(css).toMatch(/\.treatyin \.tabs__item--aktif,\s*\.treatyin \.tabs__item--aktif:hover \{\s*background: var\(--trin-isi\);/)
+    expect(css).toMatch(/\.treatyin \.table-wrap \.trin__tabel thead th \{\s*background: var\(--trin-kepala-tabel\);/)
+  })
+
+  it('lapisan tema TIDAK menimpa ukuran kontrol — kerapatan tetap milik bloknya', () => {
+    const tema = css.slice(css.indexOf('.treatyin > .inbox {'))
+    expect(tema).not.toMatch(/\.(btn|field__input)[^{]*\{[^}]*height:/)
   })
 })

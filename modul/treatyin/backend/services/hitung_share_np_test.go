@@ -45,65 +45,54 @@ func cari(daftar []models.NilaiMataUang, cur string) string {
 //
 // [26] itu buktinya: `praAktif=false` saja tidak mematikan apa pun.
 // `pyStepsBlockName == "//"` yang mematikan.
-func TestNPSetTotalShareHanyaTingkatSpreading(t *testing.T) {
+//
+// ⛔ RALAT 8 Oktober 2026: tangkapan layar Pega kontrak 1001855 menunjukkan
+// total = larik SETIAP baris Share, baris bernama ikut. Uji di bawah
+// memakai angka tangkapan itu.
+func TestNPSetTotalShareSamaDenganPega1001855(t *testing.T) {
 	s := shareKosong()
-	s.Share = []models.BarisShareNP{{
-		GrossPremiumList:    []models.NilaiMataUang{nilai("IDR", "100")},
-		GrossPremiumMinList: []models.NilaiMataUang{nilai("IDR", "7")},
-		NetPremiumList:      []models.NilaiMataUang{nilai("IDR", "80")},
-		DeductionTotalList:  []models.NilaiMataUang{nilai("IDR", "20")},
-		RnmLimitList:        []models.NilaiMataUang{nilai("IDR", "1000")},
-		SpreadingListXOL: []models.BarisSpreadingNP{{
-			GrossPremiumList:   []models.NilaiMataUang{nilai("IDR", "5")},
-			NetPremiumList:     []models.NilaiMataUang{nilai("IDR", "4")},
-			DeductionTotalList: []models.NilaiMataUang{nilai("IDR", "1")},
-			RnmLimitList:       []models.NilaiMataUang{nilai("IDR", "50")},
-		}},
-	}}
-	services.NPSetTotalShare(&s)
-
-	// ⛔ HANYA tingkat spreading. Larik baris Share sendiri TIDAK ikut.
-	for _, u := range []struct{ kunci, mau string }{
-		{"TotalShareGrossNP", "5"},
-		{"TotalShareNetNP", "4"},
-		{"TotalShareDeductionNP", "1"},
-		{"TotalShareRnmNP", "50"},
-	} {
-		if got := cari(s.Total[u.kunci], "IDR"); got != u.mau {
-			t.Fatalf("%s = %q, mau %q (hanya [24])", u.kunci, got, u.mau)
+	baris := func(limit, gross string) models.BarisShareNP {
+		return models.BarisShareNP{
+			SpreadingTypeXOL:    "2022 QS 145M TRT",
+			RnmLimitList:        []models.NilaiMataUang{nilai("IDR", limit)},
+			GrossPremiumList:    []models.NilaiMataUang{nilai("IDR", gross)},
+			GrossPremiumMinList: []models.NilaiMataUang{nilai("IDR", "7")},
+			DeductionTotalList:  []models.NilaiMataUang{nilai("IDR", "0")},
+			NetPremiumList:      []models.NilaiMataUang{nilai("IDR", gross)},
+			SpreadingListXOL: []models.BarisSpreadingNP{{
+				GrossPremiumList: []models.NilaiMataUang{nilai("IDR", "5")},
+			}},
 		}
 	}
-	// ⛔ `Total Gross Min Premium` SELALU kosong — satu-satunya langkah
-	// yang mengisinya ([23]) dikomentari. Ini bukan cacat port.
-	if len(s.Total["TotalShareGrossMinNP"]) != 0 {
-		t.Fatalf("TotalShareGrossMinNP = %+v, mau kosong", s.Total["TotalShareGrossMinNP"])
+	s.Share = []models.BarisShareNP{
+		baris("4000000000", "517646250"),
+		baris("6250000000", "380036250"),
+		baris("25000000000", "373353750"),
 	}
-}
-
-// ⭐ Baris ber-Spreading Type nol menyumbang apa pun — [24] menyaringnya
-// dan [23] tidak berjalan.
-func TestBarisBerSpreadingTypeNolMenyumbang(t *testing.T) {
-	s := shareKosong()
-	s.Share = []models.BarisShareNP{{
-		SpreadingTypeXOL: "QS",
-		GrossPremiumList: []models.NilaiMataUang{nilai("IDR", "100")},
-		SpreadingListXOL: []models.BarisSpreadingNP{{
-			GrossPremiumList: []models.NilaiMataUang{nilai("IDR", "5")},
-		}},
-	}}
 	services.NPSetTotalShare(&s)
-	if len(s.Total["TotalShareGrossNP"]) != 0 {
-		t.Fatalf("TotalShareGrossNP = %+v, mau kosong", s.Total["TotalShareGrossNP"])
+	for _, u := range []struct{ kunci, mau string }{
+		{"TotalShareRnmNP", "35250000000"},
+		{"TotalShareGrossNP", "1271036250"},
+		{"TotalShareDeductionNP", "0"},
+		{"TotalShareNetNP", "1271036250"},
+	} {
+		if got := cari(s.Total[u.kunci], "IDR"); got != u.mau {
+			t.Errorf("%s = %q, mau %q (tangkapan Pega)", u.kunci, got, u.mau)
+		}
+	}
+	// ⛔ `Total Gross Min Premium` TETAP kosong — "No items" di tangkapan yang sama.
+	if len(s.Total["TotalShareGrossMinNP"]) != 0 {
+		t.Errorf("TotalShareGrossMinNP = %+v, mau kosong", s.Total["TotalShareGrossMinNP"])
 	}
 }
 
-// ⭐ Mata uang KOSONG tidak pernah masuk — `.Currency != ""` di kedua blok.
+// ⭐ Mata uang KOSONG tidak pernah masuk — `.Currency != ""`.
 // Beda dengan cabang EGNPI dan retensi, yang menerimanya.
 func TestMataUangKosongTidakMasukTotalShare(t *testing.T) {
 	s := shareKosong()
-	s.Share = []models.BarisShareNP{{SpreadingListXOL: []models.BarisSpreadingNP{{
+	s.Share = []models.BarisShareNP{{
 		GrossPremiumList: []models.NilaiMataUang{nilai("", "99"), nilai("IDR", "1")},
-	}}}}
+	}}
 	services.NPSetTotalShare(&s)
 	if len(s.Total["TotalShareGrossNP"]) != 1 {
 		t.Fatalf("baris total = %+v, mau hanya IDR", s.Total["TotalShareGrossNP"])
@@ -113,9 +102,9 @@ func TestMataUangKosongTidakMasukTotalShare(t *testing.T) {
 func TestNPSetTotalShareMengosongkanLebihDulu(t *testing.T) {
 	s := shareKosong()
 	s.Total["TotalShareGrossNP"] = []models.NilaiMataUang{nilai("IDR", "999")}
-	s.Share = []models.BarisShareNP{{SpreadingListXOL: []models.BarisSpreadingNP{{
+	s.Share = []models.BarisShareNP{{
 		GrossPremiumList: []models.NilaiMataUang{nilai("IDR", "1")},
-	}}}}
+	}}
 	services.NPSetTotalShare(&s)
 	if got := cari(s.Total["TotalShareGrossNP"], "IDR"); got != "1" {
 		t.Fatalf("nilai lama tidak dibuang: %q", got)
@@ -265,10 +254,11 @@ func TestAksiTotalMengisiRingkasanDanTotal(t *testing.T) {
 			Total: map[string][]models.NilaiMataUang{},
 			Share: []models.BarisShareNP{func() models.BarisShareNP {
 				b := barisRingkas("1", []models.NilaiMataUang{nilai("IDR", "10")}, nil, nil, nil)
-				// ⛔ Gross di tingkat SPREADING — larik baris Share sendiri
-				// nol masuk total, sebab [23] dikomentari.
+				// ⛔ RALAT 8 Oktober 2026: larik baris Share SENDIRI yang
+				// dijumlah (tangkapan Pega 1001855), bukan tingkat spreading.
+				b.GrossPremiumList = []models.NilaiMataUang{nilai("IDR", "4")}
 				b.SpreadingListXOL = []models.BarisSpreadingNP{{
-					GrossPremiumList: []models.NilaiMataUang{nilai("IDR", "4")},
+					GrossPremiumList: []models.NilaiMataUang{nilai("IDR", "999")},
 				}}
 				return b
 			}()},

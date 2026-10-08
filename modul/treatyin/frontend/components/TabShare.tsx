@@ -35,7 +35,6 @@
 
 import { useState } from 'react'
 
-import { StripTab } from '../../../../inti/frontend/components/ui/dasar'
 import type { BarisLayerWarisan } from '../api'
 import {
   JENIS_RNM_SHARE,
@@ -46,6 +45,7 @@ import {
 } from '../labels'
 import type { ModeForm } from '../mode'
 import { barisLayer } from './angka'
+import { StripTabNavigasi } from './navigasi'
 import TabGridWarisan from './TabGridWarisan'
 
 export function PanelRnmShare({
@@ -117,7 +117,7 @@ export default function SubTabShare({
         // Proyeksi per layer larik yang sama — sel 382/398 `1=2`.
         bisaTambah={false}
       />
-      <StripTab tab={daftar} aktif={tampil} onPilih={setSub} />
+      <StripTabNavigasi tab={daftar} aktif={tampil} onPilih={setSub} />
       {tampil === 'RNM Share' && (
         <PanelRnmShare layer={layer} petunjukKosong={petunjukKosong} mode={mode} />
       )}

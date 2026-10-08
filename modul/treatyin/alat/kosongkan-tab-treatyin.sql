@@ -92,6 +92,13 @@ DELETE FROM {skema}.T_TREATY_LIMIT_COB
 /
 
 -- [19..15] anak Share dan Limits
+-- ⭐ 453 (8 Oktober 2026) — tiga anak Share / Facultative Share.
+DELETE FROM {skema}.T_TREATY_FAC_SHARE_GROUP
+/
+DELETE FROM {skema}.T_TREATY_SHARE_XOL_AMOUNT
+/
+DELETE FROM {skema}.T_TREATY_SHARE_GROUP
+/
 DELETE FROM {skema}.T_TREATY_FAC_SHARE_DEDUCTION
 /
 DELETE FROM {skema}.T_TREATY_SHARE_DEDUCTION

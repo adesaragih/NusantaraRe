@@ -19,6 +19,8 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
+import { PemicuUbah, usePemicuUbah } from './pemicuUbah'
+
 import { Field, FieldAngka, Kosong, Panel, Pilih } from '../../../../inti/frontend/components/ui/dasar'
 import {
   ambilKelasBisnis,
@@ -62,9 +64,12 @@ export const DITULIS_LIMIT_NP: Readonly<Record<AksiLimitNP, readonly string[]>> 
   'reinst-persen': ['Reinstatement_List'],
   'reinst-tambahan': ['Reinstatement_List'],
   adj: ['PremiumEarnedList', 'ROLPct'],
-  mdp: ['MDPList', 'MDPMinList', 'ROLPct'],
+  // ⭐ `Reinstatement_List` — sesudah MDP berubah, Reinstatement Premium
+  // Amount disegarkan dengan rumus `ReCalculateReinstatement` yang SAMA
+  // (keputusan pemakai 8 Oktober 2026; `segarkanReinstatement`).
+  mdp: ['MDPList', 'MDPMinList', 'ROLPct', 'Reinstatement_List'],
   total: [],
-  'nilai-list': ['EgnpiTotalList', 'PremiumEarnedList', 'MDPList', 'MDPMinList', 'ROLPct'],
+  'nilai-list': ['EgnpiTotalList', 'PremiumEarnedList', 'MDPList', 'MDPMinList', 'ROLPct', 'Reinstatement_List'],
 }
 
 /** Aksi yang menulis SEMUA layer; selainnya hanya layer `indeks`. */
@@ -109,8 +114,16 @@ function MedanNP({
   onUbah: (v: string) => void
   onLepas?: () => void
 }) {
+  // ⭐ Peristiwa `change` Pega — Activity berjalan HANYA bila nilainya
+  // BERUBAH sejak medan dimasuki (8 Oktober 2026). Sebelumnya setiap
+  // meninggalkan medan menjalankannya: melewati `Reinstatement` saja
+  // membangun ulang grid Reinstatement dan menghapus persen yang sudah
+  // disunting; melewati `Adjustment Rate`/`MDP %` menimpa Premium Earned/MDP
+  // yang diketik tangan.
+  // Peristiwa `change` Pega — `pemicuUbah.tsx`.
+  const pemicu = usePemicuUbah(nilai, bisaUbah ? onLepas : undefined)
   return (
-    <div className="trin__limit-medan" onBlur={bisaUbah ? onLepas : undefined}>
+    <div className="trin__limit-medan" onFocus={pemicu.masuk} onBlur={pemicu.keluar}>
       {/* ⭐ PEMISAH RIBUAN SAAT MENGETIK — permintaan pemilik proses
           7 Oktober 2026. `FieldAngka` menerima dan mengembalikan bentuk
           KABEL (titik desimal), jadi nol pemanggil berubah selain nama
@@ -606,17 +619,25 @@ export function RincianLayer({
                     }
                     return (
                       <td key={k.kunci} className="trin__angka">
-                        <input
-                          className="field__input"
-                          value={v}
-                          aria-label={k.label}
-                          onChange={(e) => {
-                            ubahSel(e.target.value)
-                          }}
-                          onBlur={() => {
+                        {/* ⭐ `change` Pega: DT baris berjalan HANYA bila sel ini
+                            berubah sejak dimasuki — sel yang hanya dilewati
+                            tidak menimpa nilai baris yang sudah disunting. */}
+                        <PemicuUbah
+                          nilai={v}
+                          aktif={aksi !== undefined}
+                          aksi={() => {
                             if (aksi !== undefined) hitung(aksi, r)
                           }}
-                        />
+                        >
+                          <input
+                            className="field__input"
+                            value={v}
+                            aria-label={k.label}
+                            onChange={(e) => {
+                              ubahSel(e.target.value)
+                            }}
+                          />
+                        </PemicuUbah>
                       </td>
                     )
                   })}
@@ -701,7 +722,13 @@ export function RincianLayer({
         </div>
         <div className="form-grid">
           <Centang label={LIMITS_NP.combineMDP} nilai={teksDari(l, 'IsCombineMDP')} bisaUbah={bisaUbah} onUbah={set('IsCombineMDP')} />
-          <MedanNP label={LIMITS_NP.rol} nilai={teksDari(l, 'ROLPct')} desimal={null} bisaUbah={modeUbah} onUbah={set('ROLPct')} />
+          {/* ⛔ ROL % TIDAK PERNAH diketik — Section `Layers` / `LayersEDM`
+              `.ROLPct`: `pyDisabled=true`, `pyDisabledNew=always`. Nilainya
+              hanya dari `DetailCalculationROL` (Adjustment Rate / MDP %).
+              Dulu medan ini terbuka di mode Edit; "1,659" yang diketik
+              berkoma terbaca NOL oleh services, dan `Total ROL` jadi 0,00
+              (laporan pemakai 8 Oktober 2026). */}
+          <MedanNP label={LIMITS_NP.rol} nilai={teksDari(l, 'ROLPct')} desimal={null} bisaUbah={false} onUbah={set('ROLPct')} />
         </div>
       </Bagian>
     </div>

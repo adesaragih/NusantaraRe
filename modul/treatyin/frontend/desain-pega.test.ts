@@ -135,7 +135,9 @@ describe('§6 RNM Share adalah SUB-TAB, dan nol tab dihapus', () => {
   it('strip sub-tab ada di dalam tab Share — gambar 16/17/34', () => {
     expect([...SUB_TAB_SHARE]).toEqual(['RNM Share'])
     expect(FORM).toContain('function SubTabShare(')
-    expect(FORM).toContain('<StripTab tab={daftar} aktif={tampil} onPilih={setSub} />')
+    // ⭐ 8 Oktober 2026 — strip NAVIGASI (bukan `<button>`): sub-tab tetap dapat
+    // dipindah di mode lihat (`fieldset disabled`). Lihat `navigasi.tsx`.
+    expect(FORM).toContain('<StripTabNavigasi tab={daftar} aktif={tampil} onPilih={setSub} />')
   })
 
   it('⛔ RNM Share TETAP di daftar tab — §6 melarang menghapusnya', () => {
@@ -737,8 +739,11 @@ describe('§29 LimitCalculation tab Limits Prop — dari Activity, diukur ulang'
   it('⛔ dipicu saat LEPAS FOKUS, bukan di tiap ketukan', () => {
     // Pega: peristiwa `change`. Tiap ketukan akan membagi limit dengan `4`
     // sebelum `40` selesai diketik.
+    // ⭐ 8 Oktober 2026 — `PemicuUbah`: lepas fokus DAN nilainya berubah
+    // (`components/pemicuUbah.tsx`), persis peristiwa `change` Pega.
     const i = LP.indexOf("hitung('qs')")
-    expect(LP.slice(Math.max(0, i - 120), i)).toContain('onBlur')
+    expect(LP.slice(Math.max(0, i - 160), i)).toContain('<PemicuUbah')
+    expect(LP.slice(Math.max(0, i - 160), i)).toContain("nilai={teksDari(d, 'QSPct')}")
   })
 
   it('⛔ hanya medan yang Activity TULIS yang digabung kembali', () => {

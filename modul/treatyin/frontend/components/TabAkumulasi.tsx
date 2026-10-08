@@ -25,6 +25,8 @@
 
 import { useState } from 'react'
 
+import { PemicuUbah } from './pemicuUbah'
+
 import { Panel, Pilih } from '../../../../inti/frontend/components/ui/dasar'
 import { hitungAkumulasi, type BarisAkumulasi, type BarisAkumulasiWarisan } from '../api'
 import { useProperti } from '../halaman'
@@ -156,20 +158,24 @@ export default function TabAkumulasi({
                   {terkunci ? (
                     b.SubDays
                   ) : (
-                    <input
-                      className="field__input"
-                      type="text"
-                      inputMode="numeric"
-                      aria-label={KOLOM_AKUMULASI[2]}
-                      value={b.SubDays}
-                      onChange={(e) => {
-                        ubahSel(i, 'SubDays', e.target.value)
-                      }}
-                      // `change` Pega = isian ditinggalkan.
-                      onBlur={() => {
+                    // `change` Pega — isian ditinggalkan DAN nilainya berubah.
+                    <PemicuUbah
+                      nilai={b.SubDays}
+                      aksi={() => {
                         jalankan('jatuh-tempo', isi, periode)
                       }}
-                    />
+                    >
+                      <input
+                        className="field__input"
+                        type="text"
+                        inputMode="numeric"
+                        aria-label={KOLOM_AKUMULASI[2]}
+                        value={b.SubDays}
+                        onChange={(e) => {
+                          ubahSel(i, 'SubDays', e.target.value)
+                        }}
+                      />
+                    </PemicuUbah>
                   )}
                 </td>
                 <td>{tanggalTampil(b.SubDueDate)}</td>

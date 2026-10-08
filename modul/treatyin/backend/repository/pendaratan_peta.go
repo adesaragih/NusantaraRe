@@ -273,20 +273,52 @@ var PetaPendaratan = []Pendaratan{
 		CacahTerukur: 11475,
 	},
 	{
-		Induk:       "T_TREATY_SHARE",
-		LarikGabung: []string{"GrossPremiumList", "NetPremiumList"},
-		Tabel:       "T_TREATY_SHARE_AMOUNT", Seq: "SEQ_TT_SHARE_AMOUNT",
+		Induk: "T_TREATY_SHARE",
+		LarikGabung: []string{"GrossPremiumList", "NetPremiumList",
+			// ⭐ 453 (8 Oktober 2026) — TANPA DDL, nama ≤ `JENIS` 20.
+			"RnmLimitList", "GrossPremiumMinList", "DeductionTotalList"},
+		Tabel: "T_TREATY_SHARE_AMOUNT", Seq: "SEQ_TT_SHARE_AMOUNT",
 		Kunci:        []string{"Currency", "Value"},
 		Kolom:        []string{"CURRENCY", "VALUE"},
 		CacahTerukur: 6097,
 	},
 	{
-		Induk:       "T_TREATY_FAC_SHARE",
-		LarikGabung: []string{"GrossPremiumList", "NetPremiumList"},
-		Tabel:       "T_TREATY_FAC_SHARE_AMOUNT", Seq: "SEQ_TT_FAC_SHARE_AMOUNT",
+		Induk: "T_TREATY_FAC_SHARE",
+		LarikGabung: []string{"GrossPremiumList", "NetPremiumList",
+			// ⭐ 453 — idem.
+			"RnmLimitList", "GrossPremiumMinList", "DeductionTotalList"},
+		Tabel: "T_TREATY_FAC_SHARE_AMOUNT", Seq: "SEQ_TT_FAC_SHARE_AMOUNT",
 		Kunci:        []string{"Currency", "Value"},
 		Kolom:        []string{"CURRENCY", "VALUE"},
 		CacahTerukur: 24,
+	},
+	{
+		// ⭐ 453 (8 Oktober 2026) — Treaty Group baris Share Non-Prop
+		// (`TreatyInNonAddItem` menyalinnya dari layer).
+		Induk: "T_TREATY_SHARE", KunciAnak: "TreatyGroupList",
+		Tabel: "T_TREATY_SHARE_GROUP", Seq: "SEQ_TT_SHARE_GROUP",
+		Kunci: []string{"TreatyGroup", "TreatyGroupID"},
+		Kolom: []string{"TREATYGROUP", "TREATYGROUPID"},
+	},
+	{
+		// ⭐ 453 — bagian OR / R/I tiap baris Share. `JENIS` 40: nama
+		// terpanjang 28 aksara, tak muat di `T_TREATY_SHARE_AMOUNT`.
+		Induk: "T_TREATY_SHARE",
+		LarikGabung: []string{"RNMSpreadedListXOL", "RNMSpreadedListRIXOL",
+			"RNMSpreadedListGrossXOL", "RNMSpreadedListGrossRIXOL",
+			"RNMSpreadedListGrossMinXOL", "RNMSpreadedListGrossRIMinXOL",
+			"RNMSpreadedListDeductXOL", "RNMSpreadedListDeductRIXOL",
+			"RNMSpreadedListNetXOL", "RNMSpreadedListNetRIXOL"},
+		Tabel: "T_TREATY_SHARE_XOL_AMOUNT", Seq: "SEQ_TT_SHARE_XOL_AMOUNT",
+		Kunci: []string{"Currency", "Value"},
+		Kolom: []string{"CURRENCY", "VALUE"},
+	},
+	{
+		// ⭐ 453 — Treaty Group baris Facultative Share.
+		Induk: "T_TREATY_FAC_SHARE", KunciAnak: "TreatyGroupList",
+		Tabel: "T_TREATY_FAC_SHARE_GROUP", Seq: "SEQ_TT_FAC_SHARE_GROUP",
+		Kunci: []string{"TreatyGroup", "TreatyGroupID"},
+		Kolom: []string{"TREATYGROUP", "TREATYGROUPID"},
 	},
 	// =====================================================================
 	// MIGRASI 439 — skalar akar, kurs, besaran layer, ringkasan, dan total

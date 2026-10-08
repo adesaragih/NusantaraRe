@@ -177,3 +177,16 @@ describe('tab EGNPI — bentuk dari ekspor', () => {
     expect(html).toContain(EGNPI.petunjukKosong)
   })
 })
+
+// ⭐ Laporan pemakai 8 Oktober 2026: "set idr atau yg lain tidak bisa malah
+// hilang". Konversi yang dipicu pemilihan mata uang berjalan atas baris LAMA
+// (keadaan belum dirender) lalu jawabannya menimpa pilihan itu. Kini baris
+// BARU dikirim bersama pemicunya.
+describe('pilih mata uang Amount — konversi atas baris yang sudah memuat pilihannya', () => {
+  it('onPilih membentuk baris baru dan menyerahkannya ke konversi', () => {
+    expect(SRC).toContain('const baru = { ...b, Currency: o.nama, CurrencyID: o.id }')
+    expect(SRC).toContain('onKonversi(baru)')
+    expect(SRC).toContain("jalankan('konversi', i, baru === undefined ? rows : rows.map((x, j) => (j === i ? baru : x)))")
+    expect(SRC).not.toMatch(/onUbah\(\{ \.\.\.b, Currency: o\.nama, CurrencyID: o\.id \}\)\s*onKonversi\(\)/)
+  })
+})

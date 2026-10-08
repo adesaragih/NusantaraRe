@@ -220,6 +220,9 @@ func HitungLimitNP(m MasukanLimitNP) HasilLimitNP {
 	case AksiNPAdj, AksiNPMDP:
 		if ada {
 			h.Pesan = append(h.Pesan, DetailCalculation(&h.Layers[m.Indeks], m.Aksi, m.Kurs)...)
+			if m.Aksi == AksiNPMDP {
+				segarkanReinstatement(&h.Layers[m.Indeks])
+			}
 		}
 	case AksiNPTotal:
 		h.Total, h.TotalLimitsROL = NPSetTotalLimits(h.Layers)
@@ -232,6 +235,7 @@ func HitungLimitNP(m MasukanLimitNP) HasilLimitNP {
 		for i := range h.Layers {
 			h.Pesan = append(h.Pesan, DetailCalculation(&h.Layers[i], AksiNPAdj, m.Kurs)...)
 			h.Pesan = append(h.Pesan, DetailCalculation(&h.Layers[i], AksiNPMDP, m.Kurs)...)
+			segarkanReinstatement(&h.Layers[i])
 		}
 		h.Total, h.TotalLimitsROL = NPSetTotalLimits(h.Layers)
 		h.LimitSummaryList = SummaryLimit(h.Layers)
@@ -328,6 +332,24 @@ func jikaMataUang(n NilaiMataUang, cur string) string {
 		return n.Value
 	}
 	return "0"
+}
+
+// segarkanReinstatement — ⭐ SIMPANGAN WAKTU, BUKAN RUMUS (keputusan pemakai
+// 8 Oktober 2026: *"lakukan saja rekomendasi terbaik asal rumusnya jangan
+// berbeda"*). Sesudah MDP satu layer dihitung ulang (`DetailCalculation(mdp)`,
+// juga di `TreatyInLimitsListValue`), DT `ReCalculateReinstatement` dijalankan
+// untuk SETIAP baris Reinstatement — rumus yang SAMA persis
+// (`hitungBarisReinstatement`). Di Pega DT itu hanya berjalan saat
+// `% Additional Premium` berubah, sehingga grid yang dibangun SEBELUM MDP ada
+// tetap kosong (laporan pemakai, tangkapan tab Limits Non-Prop).
+// MDP kosong = tidak ada yang disegarkan (`SetReinstatementPct` 3.2/3.3).
+func segarkanReinstatement(l *LayerNP) {
+	if len(l.MDPList) == 0 {
+		return
+	}
+	for i := range l.ReinstatementList {
+		hitungBarisReinstatement(l, i, AksiNPReinstTambahan)
+	}
 }
 
 // hitungBarisReinstatement — ketiga DT grid Reinstatement.

@@ -40,6 +40,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
+import { PemicuUbah } from './pemicuUbah'
+
 import { Field, FieldAngka, Kosong, Panel } from '../../../../inti/frontend/components/ui/dasar'
 import {
   ambilOpsiLimits,
@@ -130,7 +132,13 @@ function RincianBaris({
   ambilMataUang: () => Promise<PilihanWarisan[]>
   ambilKelompokTreaty: () => Promise<PilihanWarisan[]>
   onUbah: (baru: BarisEgnpi) => void
-  onKonversi: () => void
+  /**
+   * `SetAmountConversion`. `baru` = baris yang BARU diubah di event yang sama
+   * — ⛔ tanpanya konversi berjalan atas baris LAMA (keadaan belum dirender)
+   * dan jawabannya menimpa mata uang yang baru dipilih (laporan pemakai
+   * 8 Oktober 2026: "set idr atau yg lain tidak bisa malah hilang").
+   */
+  onKonversi: (baru?: BarisEgnpi) => void
 }) {
   return (
     <Bagian judul={EGNPI.panel}>
@@ -175,20 +183,20 @@ function RincianBaris({
             ⚠️ Ekspor memicunya pada SETIAP perubahan; di sini pemicunya
             kehilangan fokus — satu panggilan jaringan per huruf yang diketik
             bukan kesetiaan, melainkan layar yang tersendat. */}
-        <div
-          className="trin__egnpi-pasangan"
-          onBlur={() => {
-            if (bisaUbah) onKonversi()
-          }}
-        >
+        {/* ⭐ `change` Pega: konversi berjalan hanya bila Amount BERUBAH
+            (mata uang memicunya sendiri saat dipilih, `onPilih`). */}
+        <PemicuUbah className="trin__egnpi-pasangan" nilai={b.Amount} aktif={bisaUbah} aksi={onKonversi}>
           {bisaUbah ? (
             <DropdownWarisan
               label={EGNPI.jumlah}
               ambil={ambilMataUang}
               nilai={b.Currency}
               onPilih={(o) => {
-                onUbah({ ...b, Currency: o.nama, CurrencyID: o.id })
-                onKonversi()
+                // Mata uang dipilih → konversi SEGERA (Pega: `change` dropdown),
+                // atas baris yang SUDAH memuat pilihannya.
+                const baru = { ...b, Currency: o.nama, CurrencyID: o.id }
+                onUbah(baru)
+                onKonversi(baru)
               }}
             />
           ) : (
@@ -203,7 +211,7 @@ function RincianBaris({
               onUbah({ ...b, Amount: v })
             }}
           />
-        </div>
+        </PemicuUbah>
 
         {/* Baris `Amount in IDR` — mata uangnya TETAP `IDR`.
             ⭐ Di ekspor sel kiri `.pyTemplateRichTextEditor`: pemegang tempat
@@ -386,8 +394,8 @@ export default function TabEgnpi({
                   onUbah={(baru) => {
                     setRows(rows.map((x, j) => (j === i ? baru : x)))
                   }}
-                  onKonversi={() => {
-                    jalankan('konversi', i)
+                  onKonversi={(baru) => {
+                    jalankan('konversi', i, baru === undefined ? rows : rows.map((x, j) => (j === i ? baru : x)))
                   }}
                 />
               </KartuLipat>

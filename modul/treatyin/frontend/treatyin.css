@@ -2091,3 +2091,327 @@
   min-width: 0;
   max-width: 180px;
 }
+
+/* =========================================================================
+   TEMA TREATY EXCHANGE YEARLY — permintaan pemakai 8 Oktober 2026
+   =========================================================================
+   *"ubah tema dari treaty in dan treaty in adjustment menjadi seperti tema
+   Treaty Exchange Yearly"*.
+
+   ⭐ Bahasa rupanya DISALIN dari `modul/treatyexchangeyearly/frontend/
+   treatyexchangeyearly.css` (token `--tey-*` → `--trin-*`, nilai sama persis):
+   kartu akar bergradasi lembut, kartu putih TIMBUL, isian CEKUNG bercincin
+   fokus navy, tombol KAPSUL (utama merah bergradasi), tabel berkepala navy
+   muda + zebra + sorot biru muda, popup bersudut 22px, varian gelap.
+   Disalin, bukan diimpor: gaya tiap modul berakar di kelasnya sendiri.
+
+   ⛔ LAPISAN, bukan bongkar: aturan tata letak, kerapatan (kotak 34px,
+   label kiri 132px), kepala tabel menempel, dan responsif di atas TIDAK
+   diubah — lapisan ini hanya rupa (warna, sudut, bayangan, huruf judul),
+   ditulis PALING AKHIR supaya menang atas aturan berkekhususan sama.
+
+   ⛔ Nol properti yang mengurung popup `position: fixed` (transform,
+   filter, contain …): Modal inti dirender DI DALAM halaman.
+
+   Akar halaman = `.inbox` yang LANGSUNG di bawah akar modul — setiap layar
+   modul ini berakar di sana; tanpa menyunting satu layar pun.
+   ========================================================================= */
+
+/* 1 · Token terang — di AKAR MODUL: `display: contents` menghapus kotaknya,
+   bukan pewarisannya, jadi setiap layar modul (juga yang tidak berakar
+   `.inbox`) dan popupnya memakai token yang sama. */
+.treatyin {
+  --trin-latar: #eef1f6;
+  --trin-latar-tepi: #cfd7e5;
+  --trin-latar-atas: #f9fafd;
+  --trin-latar-bawah: #e4e9f3;
+  --trin-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --trin-lembut: #e9edf3;
+  --trin-lembut-tepi: #dde3ec;
+  --trin-teks: #101828;
+  --trin-teks-redup: #4f586b;
+  --trin-aksen: var(--primary-tanda);
+  --trin-aksen-teks: #2339a3;
+  --trin-aksen-lembut: #e3e8f6;
+  --trin-aksen-garis: #b9c5ee;
+  --trin-kepala-tabel: #dde4f2;
+  --trin-kepala-teks: #22326b;
+  --trin-kepala-garis: #c3cde2;
+  --trin-isi: #ffffff;
+  --trin-baris-hover: #e6ecfa;
+  --trin-garis: #e1e6ef;
+  --trin-tepi: #c8d1e1;
+  --trin-tombol: #d63a42;
+  --trin-tombol-ujung: #bf2f37;
+  --trin-tombol-hover: #c2333b;
+  --trin-tombol-hover-ujung: #a9282f;
+  --trin-terang: rgba(255, 255, 255, 0.92);
+  --trin-gelap: rgba(163, 177, 198, 0.55);
+  --trin-kilau: rgba(255, 255, 255, 0.7);
+  --trin-timbul: 8px 8px 18px var(--trin-gelap), -8px -8px 18px var(--trin-terang);
+  --trin-timbul-kecil: 4px 4px 9px var(--trin-gelap), -4px -4px 9px var(--trin-terang);
+  --trin-cekung-kecil: inset 2px 2px 4px var(--trin-gelap), inset -2px -2px 4px var(--trin-terang);
+  --trin-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --trin-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--trin-terang);
+  --trin-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --trin-sukses-latar: #e6f7ee;
+  --trin-sukses-tepi: #b7e8cc;
+  --trin-sukses-teks: #067647;
+  --trin-netral-latar: #e9edf3;
+  --trin-netral-tepi: #d5dce7;
+  --trin-netral-teks: #475467;
+  --text-3: var(--trin-teks-redup);
+}
+
+/* Kartu akar halaman — `.inbox` langsung di bawah akar modul. */
+.treatyin > .inbox {
+  color: var(--trin-teks);
+  padding: 24px;
+  border: 1px solid var(--trin-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--trin-latar-atas) 0%, var(--trin-latar-bawah) 100%);
+  box-shadow: var(--trin-bayang-akar);
+}
+
+/* Tema gelap — nilai `--tey-*` gelap apa adanya. */
+:root[data-theme="dark"] .treatyin {
+  --trin-latar: #1b2130;
+  --trin-latar-tepi: #323b50;
+  --trin-latar-atas: #222a3b;
+  --trin-latar-bawah: #161b27;
+  --trin-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --trin-lembut: #181d2a;
+  --trin-lembut-tepi: #242b3a;
+  --trin-teks: #eef0f6;
+  --trin-teks-redup: #aab2c4;
+  --trin-aksen-teks: #aebcff;
+  --trin-aksen-lembut: #222b45;
+  --trin-aksen-garis: #3a4b8f;
+  --trin-kepala-tabel: #273152;
+  --trin-kepala-teks: #dbe2ff;
+  --trin-kepala-garis: #3a4670;
+  --trin-isi: #1f2638;
+  --trin-baris-hover: #2b3554;
+  --trin-garis: #2c3447;
+  --trin-tepi: #3a4459;
+  --trin-terang: rgba(255, 255, 255, 0.045);
+  --trin-gelap: rgba(0, 0, 0, 0.55);
+  --trin-kilau: rgba(255, 255, 255, 0.04);
+  --trin-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --trin-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--trin-terang);
+  --trin-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --trin-sukses-latar: #0d2a1f;
+  --trin-sukses-tepi: #1d5c40;
+  --trin-sukses-teks: #75e0a7;
+  --trin-netral-latar: #1f2533;
+  --trin-netral-tepi: #333c4f;
+  --trin-netral-teks: #c3cad8;
+}
+
+/* Layar sempit (zoom besar): bantalan kartu akar dirapatkan. */
+@media (max-width: 640px) {
+  .treatyin > .inbox {
+    padding: 14px;
+    border-radius: 18px;
+  }
+}
+
+/* 2 · Judul — Poppins, seperti judul Treaty Exchange Yearly. Garis emas di
+   kiri judul panel DIGANTI rupa judul kartu `__judul-kartu`. */
+.treatyin .inbox__judul,
+.treatyin .modal__title,
+.treatyin .panel__title {
+  color: var(--trin-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.treatyin .panel__title {
+  padding-left: 0;
+  border-left: 0;
+  font-size: 16px;
+}
+.treatyin .muted {
+  color: var(--trin-teks-redup);
+}
+.treatyin :focus-visible {
+  outline: 2px solid var(--trin-aksen);
+  outline-offset: 2px;
+}
+
+/* 3 · Kartu — panel putih TIMBUL bersudut 18px. */
+.treatyin .panel {
+  background: var(--trin-isi);
+  border: 1px solid var(--trin-tepi);
+  border-radius: 18px;
+  box-shadow: var(--trin-timbul);
+}
+
+/* 4 · Isian — CEKUNG, putih bertepi jelas; fokus navy bercincin lembut. */
+.treatyin .field__input {
+  background: var(--trin-isi);
+  border: 1px solid var(--trin-tepi);
+  border-radius: 12px;
+  box-shadow: var(--trin-cekung-kecil);
+  color: var(--trin-teks);
+}
+.treatyin .field__input:hover:not(:disabled) {
+  border-color: var(--trin-aksen-garis);
+}
+.treatyin .field__input:focus {
+  border-color: var(--trin-aksen);
+  box-shadow: var(--trin-cekung-kecil), var(--trin-cincin);
+  outline: none;
+}
+.treatyin .field__input--readonly,
+.treatyin .field__input--readonly:hover,
+.treatyin .field__input:disabled {
+  background: var(--trin-lembut);
+  border-color: var(--trin-lembut-tepi);
+  color: var(--trin-teks-redup);
+  box-shadow: none;
+}
+
+/* 5 · Tombol KAPSUL — utama merah bergradasi TIMBUL, lainnya putih TIMBUL
+   bertulisan navy; ditekan CEKUNG. */
+.treatyin .btn {
+  border-radius: 999px;
+}
+.treatyin .btn--primary,
+.treatyin .tl-tambah {
+  background: linear-gradient(180deg, var(--trin-tombol), var(--trin-tombol-ujung));
+  border-color: var(--trin-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--trin-bayang-tombol);
+}
+.treatyin .btn--primary:hover:not(:disabled),
+.treatyin .tl-tambah:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--trin-tombol-hover), var(--trin-tombol-hover-ujung));
+  border-color: var(--trin-tombol-hover-ujung);
+}
+.treatyin .btn--primary:active:not(:disabled),
+.treatyin .tl-tambah:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+.treatyin .btn:not(.btn--primary):not(.btn--danger):not(.tl-tambah):not(.tl-hapus) {
+  background: var(--trin-isi);
+  border: 1px solid var(--trin-tepi);
+  color: var(--trin-aksen-teks);
+  box-shadow: var(--trin-timbul-kecil);
+}
+.treatyin .btn:not(.btn--primary):not(.btn--danger):not(.tl-tambah):not(.tl-hapus):hover:not(:disabled) {
+  background: var(--trin-aksen-lembut);
+  border-color: var(--trin-aksen-garis);
+}
+.treatyin .btn:not(.btn--primary):not(.btn--danger):not(.tl-tambah):not(.tl-hapus):active:not(:disabled) {
+  box-shadow: var(--trin-cekung-kecil);
+}
+.treatyin .btn--danger,
+.treatyin .tl-hapus {
+  background: var(--trin-isi);
+  box-shadow: var(--trin-timbul-kecil);
+}
+.treatyin .btn:disabled {
+  box-shadow: none;
+}
+
+/* 6 · Strip tab — kontrol SEGMEN kapsul (saringan Active/Inactive Treaty
+   Exchange Yearly): rel lembut, tab aktif kapsul putih. Tetap satu baris
+   dan digulir mendatar (aturan strip di atas). */
+.treatyin .tabs {
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--trin-tepi);
+  border-radius: 999px;
+  background: var(--trin-lembut);
+}
+.treatyin .tabs__item {
+  height: 36px;
+  margin-bottom: 0;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--trin-teks-redup);
+  font-size: 14px;
+  font-weight: 600;
+}
+.treatyin .tabs__item:hover {
+  color: var(--trin-teks);
+  background: var(--trin-aksen-lembut);
+}
+.treatyin .tabs__item--aktif,
+.treatyin .tabs__item--aktif:hover {
+  background: var(--trin-isi);
+  color: var(--trin-aksen-teks);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.14);
+}
+
+/* 7 · Tabel — kotak gulirnya kartu putih bersudut; kepala navy muda
+   (tetap TIDAK tembus pandang: kepala menempel), zebra, sorot biru muda.
+   ⛔ Baris RINCIAN (panel di bawah baris) dikecualikan dari zebra/sorot —
+   ia wadah blok, bukan baris data. */
+.treatyin .table-wrap {
+  background: var(--trin-isi);
+  border: 1px solid var(--trin-tepi);
+  border-radius: 14px;
+}
+.treatyin .trin__tabel thead th,
+.treatyin .table-wrap .trin__tabel thead th {
+  background: var(--trin-kepala-tabel);
+  color: var(--trin-kepala-teks);
+  font-weight: 700;
+  box-shadow: inset 0 -1px 0 var(--trin-kepala-garis);
+}
+.treatyin .trin__tabel td {
+  color: var(--trin-teks);
+  border-bottom-color: var(--trin-garis);
+}
+.treatyin .trin__tabel > tbody > tr:not(.trin__rincian):nth-child(even) > td {
+  background: var(--trin-lembut);
+}
+.treatyin .trin__tabel > tbody > tr:not(.trin__rincian):hover > td {
+  background: var(--trin-baris-hover);
+}
+
+/* Sel SEJAJAR TENGAH — grid yang dapat disunting memuat kotak 34px di
+   samping sel teks; tanpa ini teksnya menggantung di atas (tangkapan
+   pratinjau 8 Oktober 2026). Baris rincian tetap rata atas: ia wadah blok. */
+.treatyin .trin__tabel > thead > tr > th,
+.treatyin .trin__tabel > tbody > tr:not(.trin__rincian) > td {
+  vertical-align: middle;
+}
+
+/* 8 · Popup, peringatan, spanduk. */
+.treatyin .modal {
+  background: var(--trin-latar);
+  border: 1px solid var(--trin-kilau);
+  border-radius: 22px;
+  box-shadow: var(--trin-bayang-popup);
+}
+.treatyin .modal__head,
+.treatyin .modal__actions {
+  border-color: var(--trin-garis);
+}
+.treatyin .alert {
+  border-radius: 12px;
+}
+.treatyin .trin__spanduk {
+  border: 1px solid var(--trin-aksen-garis);
+  border-radius: 12px;
+  background: var(--trin-aksen-lembut);
+  color: var(--trin-aksen-teks);
+}
+
+/* 9 · Lencana Aktif — rupa status Treaty Exchange Yearly. */
+.treatyin .trin__lencana {
+  border-color: var(--trin-netral-tepi);
+  background: var(--trin-netral-latar);
+  color: var(--trin-netral-teks);
+  font-weight: 600;
+}
+.treatyin .trin__lencana--aktif {
+  border-color: var(--trin-sukses-tepi);
+  background: var(--trin-sukses-latar);
+  color: var(--trin-sukses-teks);
+}

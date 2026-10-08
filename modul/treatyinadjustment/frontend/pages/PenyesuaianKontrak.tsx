@@ -611,7 +611,13 @@ function Daftar({ onBuka, onDraf }: { onBuka: (id: string, mode: ModeLayar) => v
       {baris !== null && (
         <>
           <div className="table-wrap">
-            <table className="tria__tabel">
+            {/* ⛔ `--daftar`: grid INI punya dua belas kolom data, dan
+                lebarnya persen — tanpa lebar minimum, persen itu menyusut
+                mengikuti layar sampai "SAHABAT INSURANCE" terpecah menjadi
+                `SAHAB AT INSUR ANCE`. Lebar minimumnya BUKAN karangan:
+                jumlah lebar piksel kedua belas kolom di ekspor, ditambah
+                kedua kolom tombol. */}
+            <table className="tria__tabel tria__tabel--daftar">
               <colgroup>
                 {lebar.map((_, i) => (
                   <col key={i} style={{ width: persenLebar(lebar, i) }} />
@@ -639,7 +645,14 @@ function Daftar({ onBuka, onDraf }: { onBuka: (id: string, mode: ModeLayar) => v
                 {tampil.map((b) => (
                   <tr key={b.id}>
                     {selDaftar(b).map((v, i) => (
-                      <td key={i}>{v}</td>
+                      // ⛔ Tanggal diberi kelasnya di SEL, bukan di `<col>`:
+                      // `white-space` tidak berlaku pada `<col>` — elemen itu
+                      // hanya menghormati `width`, `background`, `border`, dan
+                      // `visibility`. Aturan yang ditaruh di sana diam-diam
+                      // tidak berlaku, dan `08-10-2026` tetap pecah dua baris.
+                      <td key={i} className={JENIS_DAFTAR[i] === 'tanggal' ? 'tria__sel-tanggal' : undefined}>
+                        {v}
+                      </td>
                     ))}
                     {/* `Edit` @782051 dan `View` @798870 sama-sama MEMBUKA —
                         bedanya `ViewState` 0 lawan 1. Membuka bukan menulis;

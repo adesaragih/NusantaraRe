@@ -10,6 +10,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { KOLOM_BERKAS_LAMPIRAN, KOLOM_HISTORY, KOLOM_LAMPIRAN, LAMPIRAN } from './labels'
+import { LEBAR_DAFTAR, LEBAR_TOMBOL_BARIS } from './labelsPenyesuaian'
 import { HALAMAN_TREATYINADJUSTMENT } from './menu'
 
 const AKAR = __dirname
@@ -156,5 +157,49 @@ describe('kepala kolom tidak ikut tenggelam', () => {
     // dan `border-bottom` pada mode itu milik kisi tabel — ia tergulir pergi.
     expect(aturan).toMatch(/box-shadow: inset 0 -1px 0 var\(--border\)/)
     expect(CSS).toMatch(/\.tria__tabel \{[^}]*border-collapse: collapse/)
+  })
+})
+
+// ⛔ GRID DAFTAR TIDAK BOLEH MEMEPET — keluhan pemakai 8 Oktober 2026:
+// *"perbaiki design tablenya biar gak mepet"*.
+//
+// Yang terlihat di layar: `SAHABAT INSURANCE` terpecah menjadi
+// `SAHAB AT INSUR ANCE`, dan `08-10-2026` pecah dua baris.
+//
+// ⚠️ Sebabnya BUKAN padding, melainkan LEBAR: kolomnya berukuran persen dan
+// persen menyusut mengikuti layar tanpa batas bawah.
+describe('grid daftar penyesuaian — lebar dan pemenggalan', () => {
+  const CSS2 = readFileSync(join(AKAR, 'treatyinadjustment.css'), 'utf8')
+  const HAL = readFileSync(join(AKAR, 'pages', 'PenyesuaianKontrak.tsx'), 'utf8')
+
+  it('⛔ sel tabel memutus di SELA KATA, bukan di tengahnya', () => {
+    // ⚠️ `anywhere` TIDAK dilarang menyeluruh: panel teks panjang
+    // (`tria__teks`) memang membutuhkannya untuk kalimat tanpa spasi.
+    // Yang dijaga hanya aturan SEL TABEL.
+    const i = CSS2.indexOf('.treatyinadjustment .tria__tabel th,')
+    expect(i).toBeGreaterThan(0)
+    const aturan = CSS2.slice(i, CSS2.indexOf('}', i))
+    expect(aturan).toContain('overflow-wrap: break-word')
+    expect(aturan).not.toContain('overflow-wrap: anywhere')
+  })
+
+  it('⭐ lebar minimumnya = jumlah lebar kolom di ekspor, bukan angka karangan', () => {
+    // 136+134+93+93+141+106+137+135+160+149+83+72 = 1.439, + 2 x 56 = 1.551.
+    const jumlah = LEBAR_DAFTAR.reduce((a, b) => a + b, 0) + 2 * LEBAR_TOMBOL_BARIS
+    expect(jumlah).toBe(1551)
+    const i = CSS2.indexOf('.treatyinadjustment .tria__tabel--daftar {')
+    expect(i).toBeGreaterThan(0)
+    expect(CSS2.slice(i, CSS2.indexOf('}', i))).toContain(`min-width: ${jumlah}px`)
+    expect(HAL).toContain('tria__tabel tria__tabel--daftar')
+  })
+
+  it('⛔ nowrap tanggal ada di SEL, bukan di `<col>` — `<col>` mengabaikannya', () => {
+    const j = CSS2.indexOf('.treatyinadjustment .tria__sel-tanggal {')
+    expect(j).toBeGreaterThan(0)
+    expect(CSS2.slice(j, CSS2.indexOf('}', j))).toContain('white-space: nowrap')
+    expect(CSS2).not.toContain('.tria__kol-tanggal')
+    expect(HAL).toContain("JENIS_DAFTAR[i] === 'tanggal' ? 'tria__sel-tanggal' : undefined")
+    // Dan `<col>` hanya membawa lebarnya.
+    expect(HAL).toContain('<col key={i} style={{ width: persenLebar(lebar, i) }} />')
   })
 })

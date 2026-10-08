@@ -93,6 +93,27 @@ func TestNonAddItemShareSatuBarisPerLayer(t *testing.T) {
 	}
 }
 
+// ⛔ Kontrak 1001855 (8 Oktober 2026): Limit tersimpan "16.000.000.000,00"
+// dan % RNM Share diketik berkoma. Dulu keduanya terbaca nol — Update
+// Summary berhenti di "Value Cannot Be Empty" atau membangun 100% Limit 0.
+func TestUpdateSummaryAngkaKetikanIndonesia(t *testing.T) {
+	l := layerShare()[:1]
+	l[0].Limit = "16.000.000.000,00"
+	s := shareAwal("12,5")
+	pesan := services.NonAddItemShare(&s, l)
+	if len(pesan) != 0 || len(s.Share) != 1 {
+		t.Fatalf("pesan %v, baris %d", pesan, len(s.Share))
+	}
+	if v := nilaiDi(t, s.Share[0].RnmLimitList, "IDR"); v != "2000000000" {
+		t.Errorf("100%% Limit RNM %q, mau 16 M × 12,5%% = 2 M", v)
+	}
+	// % RNM Share kosong — Pega [8]: pesan dan NOL baris.
+	k := shareAwal("")
+	if pesan := services.NonAddItemShare(&k, l); len(pesan) != 1 || pesan[0] != services.PesanShareNilaiKosong || len(k.Share) != 0 {
+		t.Errorf("RNM kosong: pesan %v baris %d", pesan, len(k.Share))
+	}
+}
+
 func TestUpdateSummarySpreadingBernamaDanBrokerage(t *testing.T) {
 	s := shareAwal("40")
 	// S1: Spreading Type baris lama dibawa ke baris baru berindeks sama.
@@ -151,13 +172,17 @@ func TestSpreadingManualLaluUpdateTotal(t *testing.T) {
 	}
 	h3 := services.HitungShareNP(services.MasukanShareNP{Aksi: services.AksiShareTotal, Share: h2.Share}, sumberQS)
 	tot := h3.Share.Total
-	// Gross baris 2 = 30 jt × 0,4 = 12 jt, dibagi 25/40 + 15/40 → 12 jt.
-	// Baris 1 (bernama) TIDAK dijumlah — hanya blok [24].
-	if nilaiDi(t, tot["TotalShareGrossNP"], "IDR") != "12000000" {
+	// ⛔ RALAT 8 Oktober 2026 (tangkapan Pega 1001855): SETIAP baris
+	// dijumlah, yang bernama ikut. Gross = 50 jt × 0,4 + 30 jt × 0,4 = 32 jt;
+	// 100% Limit RNM = 1 M × 0,4 + 2 M × 0,4 = 1,2 M.
+	if nilaiDi(t, tot["TotalShareGrossNP"], "IDR") != "32000000" {
 		t.Errorf("Total Gross %+v", tot["TotalShareGrossNP"])
 	}
-	if len(tot["TotalShareRnmNP"]) != 0 || len(tot["TotalShareGrossMinNP"]) != 0 {
-		t.Errorf("RNM %+v, Gross Min %+v", tot["TotalShareRnmNP"], tot["TotalShareGrossMinNP"])
+	if nilaiDi(t, tot["TotalShareRnmNP"], "IDR") != "1200000000" {
+		t.Errorf("Total RNM %+v", tot["TotalShareRnmNP"])
+	}
+	if len(tot["TotalShareGrossMinNP"]) != 0 {
+		t.Errorf("Gross Min %+v", tot["TotalShareGrossMinNP"])
 	}
 	if len(h3.Share.LimitShareSummaryList) != 2 || h3.Share.LimitShareSummaryList[0].Note != "Layer1 of Layer1" {
 		t.Errorf("summary %+v", h3.Share.LimitShareSummaryList)

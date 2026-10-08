@@ -36,7 +36,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
-import { Field, Kosong, Panel, Pilih, StripTab } from '../../../../inti/frontend/components/ui/dasar'
+import { Field, Kosong, Panel, Pilih } from '../../../../inti/frontend/components/ui/dasar'
 import {
   ambilIndukSpreading,
   ambilOpsiLimits,
@@ -70,6 +70,8 @@ import {
 } from '../labelsShareNP'
 import type { ModeForm } from '../mode'
 import IsianAuto from './IsianAuto'
+import { StripTabNavigasi, TombolNavigasi } from './navigasi'
+import { PemicuUbah, usePemicuUbah } from './pemicuUbah'
 import { Bagian, IkonChevronKanan, KepalaBagian, TombolHapus, TombolTambah } from './limitsUI'
 import { formatLimit } from './TabLimitsProp'
 
@@ -125,8 +127,10 @@ function Medan({
   onUbah: (v: string) => void
   onLepas?: () => void
 }) {
+  // Peristiwa `change` Pega — hanya bila nilainya berubah (`pemicuUbah.tsx`).
+  const pemicu = usePemicuUbah(nilai, bisaUbah ? onLepas : undefined)
   return (
-    <div className="trin__limit-medan" onBlur={bisaUbah ? onLepas : undefined}>
+    <div className="trin__limit-medan" onFocus={pemicu.masuk} onBlur={pemicu.keluar}>
       <Field label={label} value={nilai} readOnly={!bisaUbah} placeholder={bisaUbah ? placeholder : undefined} onChange={onUbah} />
     </div>
   )
@@ -478,7 +482,12 @@ export function RincianShare({
                         tanpa parameter, jadi filter `Currency`/`ID` dilewati:
                         isinya = daftar mata uang tab Limits (`!= ITL`).
                         `change` → `CalculateDeduction(index)`. */}
-                    <div className="trin__limit-medan" onBlur={bisaUbah ? () => hitung('deduksi', { baris: i, sts: '' }) : undefined}>
+                    <PemicuUbah
+                      className="trin__limit-medan"
+                      nilai={d.Currency}
+                      aktif={bisaUbah}
+                      aksi={() => hitung('deduksi', { baris: i, sts: '' })}
+                    >
                       <IsianAuto
                         label=""
                         nilai={d.Currency}
@@ -486,7 +495,7 @@ export function RincianShare({
                         bisaUbah={bisaUbah}
                         onPilih={(nama, id) => ubahDeduksi(i, { ...d, Currency: nama, CurrencyID: id })}
                       />
-                    </div>
+                    </PemicuUbah>
                   </td>
                   <td>
                     <Medan
@@ -949,7 +958,7 @@ export default function TabShareNonProp({
           </p>
         )}
 
-        <StripTab tab={SUB_TAB_SHARE} aktif={SUB_TAB_SHARE[0]} onPilih={setSub} />
+        <StripTabNavigasi tab={SUB_TAB_SHARE} aktif={SUB_TAB_SHARE[0]} onPilih={setSub} />
 
         {sub === SUB_TAB_SHARE[0] && (
           <>
@@ -998,15 +1007,17 @@ export default function TabShareNonProp({
                       return [
                         <tr key={`b${i}`} className={terbuka ? 'tl-share-baris--buka' : undefined}>
                           <td>
-                            <button
-                              type="button"
+                            {/* Navigasi, bukan `<button>` — tetap hidup di mode lihat. */}
+                            <TombolNavigasi
                               className="btn btn--ghost btn--sm tl-share-buka"
-                              aria-expanded={terbuka}
-                              aria-label={`${SHARE_NP.bukaRincian} ${judulBarisShare(b)}`}
-                              onClick={() => setBuka(terbuka ? null : i)}
+                              terbuka={terbuka}
+                              label={`${SHARE_NP.bukaRincian} ${judulBarisShare(b)}`}
+                              onKlik={() => {
+                                setBuka(terbuka ? null : i)
+                              }}
                             >
                               <IkonChevronKanan />
-                            </button>
+                            </TombolNavigasi>
                             {(pesanBaris[i]?.length ?? 0) > 0 && (
                               <span className="tl-share-tanda" role="img" aria-label={SHARE_NP.adaPesan} title={pesanBaris[i]?.join(' · ')}>
                                 !

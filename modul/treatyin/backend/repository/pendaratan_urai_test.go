@@ -188,9 +188,9 @@ func TestPetaPendaratanSejajarDanUnik(t *testing.T) {
 		}
 	}
 	// 22 + 3 (migrasi 438) + 4 (migrasi 439) + 1 (migrasi 446) + 1 (migrasi 448)
-	// + 1 (migrasi 449) + 3 (migrasi 450) = 35.
-	if len(repository.PetaPendaratan) != 35 {
-		t.Errorf("%d tabel pendaratan, mau 35", len(repository.PetaPendaratan))
+	// + 1 (migrasi 449) + 3 (migrasi 450) + 3 (migrasi 453) = 38.
+	if len(repository.PetaPendaratan) != 38 {
+		t.Errorf("%d tabel pendaratan, mau 38", len(repository.PetaPendaratan))
 	}
 }
 
@@ -361,6 +361,41 @@ func TestKunciAnakBukanKunciAsing(t *testing.T) {
 	for tabel, k := range asing {
 		t.Errorf("%s: %v dilaporkan asing, padahal dokumen uji HANYA memuat "+
 			"kunci anak dan larik tingkat pertama", tabel, k)
+	}
+}
+
+// ⛔ Laporan Save kontrak 1001855 (8 Oktober 2026): keempat belas larik
+// baris Share ini dulu "TIDAK tersimpan". Sejak 453 semuanya punya tempat.
+func TestLarikBarisShareNonPropPunyaTempat(t *testing.T) {
+	larik := []string{"DeductionTotalList", "GrossPremiumMinList", "RNMSpreadedListDeductRIXOL",
+		"RNMSpreadedListDeductXOL", "RNMSpreadedListGrossMinXOL", "RNMSpreadedListGrossRIMinXOL",
+		"RNMSpreadedListGrossRIXOL", "RNMSpreadedListGrossXOL", "RNMSpreadedListNetRIXOL",
+		"RNMSpreadedListNetXOL", "RNMSpreadedListRIXOL", "RNMSpreadedListXOL", "RnmLimitList"}
+	baris := map[string]any{"Layer": "1",
+		"TreatyGroupList": []any{map[string]any{"TreatyGroup": "PROPERTY", "TreatyGroupID": "10002"}}}
+	for _, n := range larik {
+		baris[n] = []any{map[string]any{"Currency": "IDR", "Value": "1"}}
+	}
+	// Facultative Share: `RNMSpreadedList*XOL` tidak pernah diisi rumus
+	// (larik kosong tidak dilaporkan) — hanya tiga larik nilai dan grupnya.
+	fac := map[string]any{"Layer": "1", "TreatyGroupList": baris["TreatyGroupList"]}
+	for _, n := range []string{"RnmLimitList", "GrossPremiumMinList", "DeductionTotalList"} {
+		fac[n] = baris[n]
+	}
+	doc := map[string]any{"Share": []any{baris}, "FacultativeShareList": []any{fac}}
+	for tabel, k := range repository.KunciTakTerpetakan(doc) {
+		t.Errorf("%s: %v masih TIDAK tersimpan", tabel, k)
+	}
+	// Nama terpanjang yang mendarat di `JENIS` 20 harus muat.
+	for _, p := range repository.PetaPendaratan {
+		if p.Tabel != "T_TREATY_SHARE_AMOUNT" && p.Tabel != "T_TREATY_FAC_SHARE_AMOUNT" {
+			continue
+		}
+		for _, n := range p.LarikGabung {
+			if len(n) > 20 {
+				t.Errorf("%s: JENIS %q %d aksara, kolomnya VARCHAR2(20 CHAR)", p.Tabel, n, len(n))
+			}
+		}
 	}
 }
 

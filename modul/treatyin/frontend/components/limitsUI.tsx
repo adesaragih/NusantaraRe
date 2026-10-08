@@ -19,6 +19,7 @@
 import { useId, useState, type ReactNode } from 'react'
 
 import { IkonChevron } from '../../../../inti/frontend/components/ui/dasar'
+import { TombolNavigasi } from './navigasi'
 
 /** Sifat bersama ikon garis 24×24 — sama dengan `dasar.tsx`. */
 const sifat = (ukuran: number) => ({
@@ -144,12 +145,13 @@ export function KartuLipat({
   return (
     <section className={'tl-kartu' + (buka ? ' tl-kartu--buka' : '')}>
       <div className="tl-kartu__kepala">
-        <button
-          type="button"
+        {/* ⭐ Kontrol NAVIGASI, bukan `<button>` — tetap dapat dibuka di mode
+            lihat (`fieldset disabled`). Lihat `navigasi.tsx`. */}
+        <TombolNavigasi
           className="tl-kartu__lipat"
-          aria-expanded={buka}
-          aria-controls={idIsi}
-          onClick={() => {
+          terbuka={buka}
+          kendali={idIsi}
+          onKlik={() => {
             setBuka(!buka)
           }}
         >
@@ -157,7 +159,7 @@ export function KartuLipat({
           {nomor !== undefined && <span className="tl-nomor">{nomor}</span>}
           <span className={'tl-kartu__judul' + (judul === '' ? ' tl-kartu__judul--kosong' : '')}>{judul === '' ? judulKosong : judul}</span>
           <span className="tl-kartu__petunjuk">{labelDetail}</span>
-        </button>
+        </TombolNavigasi>
         {meta !== undefined && <div className="tl-kartu__meta">{meta}</div>}
         {aksi !== undefined && <div className="tl-kartu__aksi">{aksi}</div>}
       </div>

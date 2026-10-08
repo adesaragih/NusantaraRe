@@ -226,6 +226,12 @@ var konteksLimit = func() *apd.Context {
 
 // angka membaca teks desimal Pega. Kosong atau tak terbaca = 0 — Pega
 // memperlakukan properti kosong sebagai nol di dalam aritmetika.
+//
+// ⭐ Bentuk ketikan Indonesia ikut terbaca (8 Oktober 2026). Kontrak
+// 1001855 tersimpan dengan `Limit` "16.000.000.000,00", `AdjRate` "4,183",
+// dan `ROLPct` "14,379" — diketik di medan teks biasa. Dulu ketiganya
+// terbaca NOL tanpa suara: `Total ROL` tetap 0 sesudah Update Total, dan
+// `DetailCalculationROL` berhenti di "limit kosong".
 func angka(s string) *apd.Decimal {
 	s = strings.TrimSpace(s)
 	if s == "" {
@@ -233,9 +239,28 @@ func angka(s string) *apd.Decimal {
 	}
 	d, _, err := apd.NewFromString(s)
 	if err != nil {
-		return apd.New(0, 0)
+		d, _, err = apd.NewFromString(kabelDariKetikan(s))
+		if err != nil {
+			return apd.New(0, 0)
+		}
 	}
 	return d
+}
+
+// kabelDariKetikan mengubah ketikan Indonesia ke bentuk kabel:
+// "16.000.000.000,00" → "16000000000.00", "14,379" → "14.379",
+// "16.000.000" → "16000000".
+//
+// ⛔ HANYA dipanggil sesudah bentuk kabel GAGAL dibaca. Nilai kabel
+// ("1.659") tidak pernah ditafsir ulang sebagai ribuan.
+func kabelDariKetikan(s string) string {
+	if strings.Contains(s, ",") {
+		return strings.ReplaceAll(strings.ReplaceAll(s, ".", ""), ",", ".")
+	}
+	if strings.Count(s, ".") > 1 {
+		return strings.ReplaceAll(s, ".", "")
+	}
+	return s
 }
 
 func kali(a, b *apd.Decimal) *apd.Decimal {

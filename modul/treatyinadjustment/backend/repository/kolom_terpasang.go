@@ -44,10 +44,10 @@ func (g *Gudang) kolomTerpasang(ctx context.Context, tabel string) (map[string]b
 	if i := strings.IndexByte(nama, '.'); i > 0 {
 		pemilik, nTabel = strings.ToUpper(nama[:i]), strings.ToUpper(nama[i+1:])
 	}
-	q := "SELECT COLUMN_NAME FROM USER_TAB_COLUMNS WHERE TABLE_NAME = :1"
+	q := "SELECT COLUMN_NAME FROM SYS.USER_TAB_COLUMNS WHERE TABLE_NAME = :1"
 	args := []any{nTabel}
 	if pemilik != "" {
-		q = "SELECT COLUMN_NAME FROM ALL_TAB_COLUMNS WHERE OWNER = :1 AND TABLE_NAME = :2"
+		q = "SELECT COLUMN_NAME FROM SYS.ALL_TAB_COLUMNS WHERE OWNER = :1 AND TABLE_NAME = :2"
 		args = []any{pemilik, nTabel}
 	}
 	if err := db.PeriksaSQL(q); err != nil {

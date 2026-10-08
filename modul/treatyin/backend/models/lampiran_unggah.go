@@ -25,7 +25,7 @@ type LampiranBaru struct {
 type ObjekSimpanan struct {
 	ImageID   string
 	URLPublik string // URLPUBLIC — URL bertanda tangan
-	AppFolder string // APPFOLDER — `gs://<App>/<Folder><Namafile>`
+	AppFolder string // APPFOLDER — jalur objek PENUH berawalan skema gs + App, lalu Folder + Namafile
 	Exp       string // EXPDATE — `DD/MM/YYYY HH24:MI:SS`
 	App       string // APPNAME
 	NamaObjek string // FILENAME

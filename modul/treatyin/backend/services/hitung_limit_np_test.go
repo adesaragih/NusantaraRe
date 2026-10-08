@@ -14,6 +14,10 @@ func nmu(cur, v string) services.NilaiMataUang {
 
 // ⭐ `TotalEgnpi`: EGNPI dicocokkan lewat Treaty Group LAYER, dijumlah per
 // mata uang, urut kemunculan; grup lain tidak ikut.
+//
+// ⛔ BUKAN total seluruh EGNPI. Ditanyakan 8 Oktober 2026 (layer PROPERTY
+// tampil 29 M, bukan total 55 M): pemilik proses memilih ikut Pega — untuk
+// 55 M, tambahkan Treaty Group lain ke layer itu.
 func TestTotalEgnpiPerGrupDanMataUang(t *testing.T) {
 	layers := []services.LayerNP{{TreatyGroupList: []services.GrupLayerNP{{TreatyGroup: "FIRE"}, {TreatyGroup: "MARINE"}}}}
 	egnpi := []services.EgnpiNP{
@@ -115,6 +119,33 @@ func TestMDPPersenKurangDariSatuMemberiPesan(t *testing.T) {
 	}
 	if h.Layers[0].MDPList[0].Value != "0.5" {
 		t.Errorf("MDP tetap dihitung: %v", h.Layers[0].MDPList)
+	}
+}
+
+// ⛔ Kontrak 1001855 (8 Oktober 2026): angka tersimpan berbentuk ketikan
+// Indonesia. Dulu terbaca NOL — Total ROL tetap 0 sesudah Update Total, dan
+// ROL % berhenti di "limit kosong".
+func TestAngkaKetikanIndonesiaTerbaca(t *testing.T) {
+	layers := []services.LayerNP{{ROLPct: "14,379"}, {ROLPct: "6,756"}, {ROLPct: "1,659"}}
+	h := services.HitungLimitNP(services.MasukanLimitNP{Aksi: services.AksiNPTotal, Layers: layers})
+	if h.TotalLimitsROL != "22.794" {
+		t.Errorf("Total ROL %q, mau 14,379 + 6,756 + 1,659 = 22.794", h.TotalLimitsROL)
+	}
+	kurs := []services.KursNP{}
+	l := services.LayerNP{Limit: "16.000.000.000,00", Limit2: "0", CurrencyRelation: "OR", AdjRate: "4,183",
+		EgnpiTotalList: []services.NilaiMataUang{nmu("IDR", "55000000000")}}
+	h = services.HitungLimitNP(services.MasukanLimitNP{Aksi: services.AksiNPAdj, Layers: []services.LayerNP{l}, Kurs: kurs})
+	// PE = 55 M × 4,183% ; ROL = 2.300.650.000 / 16 M → 0,14379063 × 100
+	if pe := h.Layers[0].PremiumEarnedList; len(pe) != 1 || pe[0] != nmu("IDR", "2300650000") {
+		t.Errorf("PE %v", pe)
+	}
+	if h.Layers[0].ROLPct != "14.379063" || len(h.Pesan) != 0 {
+		t.Errorf("ROL %q pesan %v", h.Layers[0].ROLPct, h.Pesan)
+	}
+	// Bentuk kabel TIDAK ditafsir ulang: "1.659" tetap 1,659, bukan 1.659.
+	k := services.HitungLimitNP(services.MasukanLimitNP{Aksi: services.AksiNPTotal, Layers: []services.LayerNP{{ROLPct: "1.659"}}})
+	if k.TotalLimitsROL != "1.659" {
+		t.Errorf("kabel ditafsir ulang: %q", k.TotalLimitsROL)
 	}
 }
 

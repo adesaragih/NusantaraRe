@@ -105,6 +105,12 @@ var tabelTreatyInDiparkir = map[string]string{
 		"(laporan Save kontrak 1002305, 8 Oktober 2026)",
 	"T_TREATY_LIMIT_REINSTATEMENT": "450 — Limits.Reinstatement_List Non-Prop tanpa tempat simpan " +
 		"(laporan Save kontrak 1002305, 8 Oktober 2026)",
+	"T_TREATY_SHARE_GROUP": "453 — Share.TreatyGroupList Non-Prop tanpa tempat simpan (laporan Save kontrak " +
+		"1001855); pemakai 8 Oktober 2026: \"dan ini juga\"",
+	"T_TREATY_SHARE_XOL_AMOUNT": "453 — Share.RNMSpreadedList*XOL (10 larik) tanpa tempat simpan; `JENIS` 40 " +
+		"sebab namanya tak muat di T_TREATY_SHARE_AMOUNT (laporan Save kontrak 1001855, 8 Oktober 2026)",
+	"T_TREATY_FAC_SHARE_GROUP": "453 — FacultativeShareList.TreatyGroupList, pasangan T_TREATY_SHARE_GROUP " +
+		"(laporan Save kontrak 1001855, 8 Oktober 2026)",
 }
 
 func TestNolTabelBaru(t *testing.T) {

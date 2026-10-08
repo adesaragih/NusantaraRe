@@ -38,6 +38,8 @@ import { useProperti } from '../halaman'
 import { ANGSURAN, KOLOM_RINCIAN_ANGSURAN } from '../labelsAngsuran'
 import type { ModeForm } from '../mode'
 import { selAngka } from './angka'
+import { TombolNavigasi } from './navigasi'
+import { PemicuUbah, usePemicuUbah } from './pemicuUbah'
 import { KotakTanggalKetik } from './TanggalKetik'
 import { keSimpan, tanggalTampil } from './tanggalIso'
 
@@ -158,6 +160,11 @@ export default function TabAngsuran({
       )
     })
   }
+  // `Installment` — peristiwa `change` Pega: hanya bila jumlahnya BERUBAH
+  // (Enter tetap memicu langsung). `pemicuUbah.tsx`.
+  const pemicuNo = usePemicuUbah(no, terkunci ? undefined : () => {
+    if (no !== '') nilai('', no)
+  })
   const ubahBaris = (i: number, j: number, ubahan: Partial<Angsuran['InstallmentList'][number]>): Angsuran => {
     const a = angsuran[i] ?? { Currency: '', AmountTotal: '', PctTotal: '', InstallmentList: [] }
     const baru = { ...a, InstallmentList: a.InstallmentList.map((r, y) => (y === j ? { ...r, ...ubahan } : r)) }
@@ -183,9 +190,8 @@ export default function TabAngsuran({
               setNo(e.target.value)
             }}
             // `change` (+ Enter) → `TreatyInSetValueInstallment` TANPA status.
-            onBlur={(e) => {
-              if (!terkunci && e.target.value !== '') nilai('', e.target.value)
-            }}
+            onFocus={pemicuNo.masuk}
+            onBlur={pemicuNo.keluar}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !terkunci) nilai('', e.currentTarget.value)
             }}
@@ -223,12 +229,12 @@ export default function TabAngsuran({
               <Fragment key={i}>
                 <tr>
                   <td className="trin__buka-sel">
-                    <button
-                      type="button"
+                    {/* Navigasi, bukan `<button>` — tetap hidup di mode lihat. */}
+                    <TombolNavigasi
                       className="trin__buka"
-                      aria-expanded={buka.has(i)}
-                      aria-label={`${ANGSURAN.rincian} ${String(i + 1)}`}
-                      onClick={() => {
+                      terbuka={buka.has(i)}
+                      label={`${ANGSURAN.rincian} ${String(i + 1)}`}
+                      onKlik={() => {
                         setBuka((x) => {
                           const y = new Set(x)
                           if (y.has(i)) y.delete(i)
@@ -238,7 +244,7 @@ export default function TabAngsuran({
                       }}
                     >
                       {buka.has(i) ? '▾' : '▸'}
-                    </button>
+                    </TombolNavigasi>
                   </td>
                   <td>{a.Currency}</td>
                 </tr>
@@ -282,20 +288,24 @@ export default function TabAngsuran({
                                 {terkunci ? (
                                   r.WPC
                                 ) : (
-                                  <input
-                                    className="field__input"
-                                    type="text"
-                                    inputMode="numeric"
-                                    aria-label={KOLOM_RINCIAN_ANGSURAN[2]}
-                                    value={r.WPC}
-                                    onChange={(e) => {
-                                      ubahBaris(i, j, { WPC: e.target.value })
+                                  // `change` → TreatyInUpdatePaymentDate_Act (semua halaman) — hanya bila berubah.
+                                  <PemicuUbah
+                                    nilai={r.WPC}
+                                    aksi={() => {
+                                      tanggalBayar(true, i, ubahBaris(i, j, { WPC: r.WPC }))
                                     }}
-                                    // `change` → TreatyInUpdatePaymentDate_Act (semua halaman).
-                                    onBlur={(e) => {
-                                      tanggalBayar(true, i, ubahBaris(i, j, { WPC: e.target.value }))
-                                    }}
-                                  />
+                                  >
+                                    <input
+                                      className="field__input"
+                                      type="text"
+                                      inputMode="numeric"
+                                      aria-label={KOLOM_RINCIAN_ANGSURAN[2]}
+                                      value={r.WPC}
+                                      onChange={(e) => {
+                                        ubahBaris(i, j, { WPC: e.target.value })
+                                      }}
+                                    />
+                                  </PemicuUbah>
                                 )}
                               </td>
                               <td>{tanggalTampil(r.PaymentDate)}</td>
@@ -303,40 +313,48 @@ export default function TabAngsuran({
                                 {terkunci ? (
                                   selAngka(['persenShare', 2], r.InstallmentPct)
                                 ) : (
-                                  <input
-                                    className="field__input"
-                                    type="text"
-                                    inputMode="decimal"
-                                    aria-label={KOLOM_RINCIAN_ANGSURAN[4]}
-                                    value={r.InstallmentPct}
-                                    onChange={(e) => {
-                                      ubahBaris(i, j, { InstallmentPct: e.target.value })
+                                  // `change` → SetTotalInstallment(status=editpercentage) — hanya bila berubah.
+                                  <PemicuUbah
+                                    nilai={r.InstallmentPct}
+                                    aksi={() => {
+                                      totalHalaman(i, 'editpercentage', ubahBaris(i, j, { InstallmentPct: r.InstallmentPct }))
                                     }}
-                                    // `change` → SetTotalInstallment(status=editpercentage).
-                                    onBlur={(e) => {
-                                      totalHalaman(i, 'editpercentage', ubahBaris(i, j, { InstallmentPct: e.target.value }))
-                                    }}
-                                  />
+                                  >
+                                    <input
+                                      className="field__input"
+                                      type="text"
+                                      inputMode="decimal"
+                                      aria-label={KOLOM_RINCIAN_ANGSURAN[4]}
+                                      value={r.InstallmentPct}
+                                      onChange={(e) => {
+                                        ubahBaris(i, j, { InstallmentPct: e.target.value })
+                                      }}
+                                    />
+                                  </PemicuUbah>
                                 )}
                               </td>
                               <td className="trin__angka">
                                 {terkunci ? (
                                   uang(r.Amount)
                                 ) : (
-                                  <input
-                                    className="field__input"
-                                    type="text"
-                                    inputMode="decimal"
-                                    aria-label={KOLOM_RINCIAN_ANGSURAN[5]}
-                                    value={r.Amount}
-                                    onChange={(e) => {
-                                      ubahBaris(i, j, { Amount: e.target.value })
+                                  // `change` → SetTotalInstallment (tanpa parameter): hanya total — hanya bila berubah.
+                                  <PemicuUbah
+                                    nilai={r.Amount}
+                                    aksi={() => {
+                                      totalHalaman(i, '', ubahBaris(i, j, { Amount: r.Amount }))
                                     }}
-                                    // `change` → SetTotalInstallment (tanpa parameter): hanya total.
-                                    onBlur={(e) => {
-                                      totalHalaman(i, '', ubahBaris(i, j, { Amount: e.target.value }))
-                                    }}
-                                  />
+                                  >
+                                    <input
+                                      className="field__input"
+                                      type="text"
+                                      inputMode="decimal"
+                                      aria-label={KOLOM_RINCIAN_ANGSURAN[5]}
+                                      value={r.Amount}
+                                      onChange={(e) => {
+                                        ubahBaris(i, j, { Amount: e.target.value })
+                                      }}
+                                    />
+                                  </PemicuUbah>
                                 )}
                               </td>
                             </tr>

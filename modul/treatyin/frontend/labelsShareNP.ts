@@ -28,7 +28,8 @@ export const SHARE_NP = {
   perbaruiTotal: 'Update Total', // @3188300
   perbaruiNilai: 'Update Value in Share', // @3202223 — `TreatyMasterInEDM`
   tanpaBaris: 'No items',
-  petunjukKosong: 'Rows are built by Update Summary — one per layer in Limits.',
+  // `TreatyInNonAddItem` [8]: % RNM Share kosong/0 → "Value Cannot Be Empty", nol baris.
+  petunjukKosong: 'Fill % RNM Share, then click Update Summary — one row per layer in Limits.',
   bukaRincian: 'Detail',
   // Panel rincian (`Share.xml`)
   kelasBisnis: 'Class of Business',

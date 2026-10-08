@@ -6,10 +6,15 @@ package repository
 //	Share (T_TREATY_SHARE)
 //	├ SpreadingListXOL (T_TREATY_SHARE_SPREADING)
 //	├ DeductionList (T_TREATY_SHARE_DEDUCTION)
-//	└ GrossPremiumList · NetPremiumList (T_TREATY_SHARE_AMOUNT, JENIS)
+//	├ TreatyGroupList (T_TREATY_SHARE_GROUP, 453)
+//	├ GrossPremiumList · NetPremiumList · RnmLimitList · GrossPremiumMinList ·
+//	│ DeductionTotalList (T_TREATY_SHARE_AMOUNT, JENIS)
+//	└ RNMSpreadedList*XOL (T_TREATY_SHARE_XOL_AMOUNT, JENIS, 453)
 //	FacultativeShareList (T_TREATY_FAC_SHARE)
 //	├ DeductionList (T_TREATY_FAC_SHARE_DEDUCTION)
-//	└ GrossPremiumList · NetPremiumList (T_TREATY_FAC_SHARE_AMOUNT, JENIS)
+//	├ TreatyGroupList (T_TREATY_FAC_SHARE_GROUP, 453)
+//	└ GrossPremiumList · NetPremiumList · RnmLimitList · GrossPremiumMinList ·
+//	  DeductionTotalList (T_TREATY_FAC_SHARE_AMOUNT, JENIS)
 //	ShareReins (T_TREATY_RETRO_SHARE)
 //	ShareFacultativeReinsurers (T_TREATY_FAC_REINSURER)
 //
@@ -29,7 +34,8 @@ import (
 // tabelPohonShare — urutan baca.
 var tabelPohonShare = []string{
 	"T_TREATY_SHARE", "T_TREATY_SHARE_SPREADING", "T_TREATY_SHARE_DEDUCTION", "T_TREATY_SHARE_AMOUNT",
-	"T_TREATY_FAC_SHARE", "T_TREATY_FAC_SHARE_DEDUCTION", "T_TREATY_FAC_SHARE_AMOUNT",
+	"T_TREATY_SHARE_GROUP", "T_TREATY_SHARE_XOL_AMOUNT",
+	"T_TREATY_FAC_SHARE", "T_TREATY_FAC_SHARE_DEDUCTION", "T_TREATY_FAC_SHARE_AMOUNT", "T_TREATY_FAC_SHARE_GROUP",
 	"T_TREATY_RETRO_SHARE", "T_TREATY_FAC_REINSURER",
 }
 
@@ -50,8 +56,10 @@ func (g *Gudang) BacaSharePendaratan(ctx context.Context, masterID string) (mode
 // berbaris hadir sebagai larik KOSONG — layar membaca `.length`.
 func RangkaiShare(baris map[string][]barisPendaratan) models.SharePendaratan {
 	sp := models.SharePendaratan{
-		Share:                      rangkaiBarisShare(baris, "T_TREATY_SHARE", "T_TREATY_SHARE_SPREADING", "T_TREATY_SHARE_DEDUCTION", "T_TREATY_SHARE_AMOUNT"),
-		FacultativeShareList:       rangkaiBarisShare(baris, "T_TREATY_FAC_SHARE", "", "T_TREATY_FAC_SHARE_DEDUCTION", "T_TREATY_FAC_SHARE_AMOUNT"),
+		Share: rangkaiBarisShare(baris, tabelBarisShare{induk: "T_TREATY_SHARE", sebar: "T_TREATY_SHARE_SPREADING",
+			deduksi: "T_TREATY_SHARE_DEDUCTION", nilai: "T_TREATY_SHARE_AMOUNT", grup: "T_TREATY_SHARE_GROUP", xol: "T_TREATY_SHARE_XOL_AMOUNT"}),
+		FacultativeShareList: rangkaiBarisShare(baris, tabelBarisShare{induk: "T_TREATY_FAC_SHARE",
+			deduksi: "T_TREATY_FAC_SHARE_DEDUCTION", nilai: "T_TREATY_FAC_SHARE_AMOUNT", grup: "T_TREATY_FAC_SHARE_GROUP"}),
 		ShareReins:                 rangkaiDatar(baris, "T_TREATY_RETRO_SHARE"),
 		ShareFacultativeReinsurers: rangkaiDatar(baris, "T_TREATY_FAC_REINSURER"),
 	}
@@ -69,24 +77,38 @@ func rangkaiDatar(baris map[string][]barisPendaratan, tabel string) []map[string
 	return out
 }
 
-func rangkaiBarisShare(baris map[string][]barisPendaratan, induk, tabelSebar, tabelDeduksi, tabelNilai string) []map[string]any {
-	p, _ := entriPeta(induk)
-	var sebar anakTabel
-	if tabelSebar != "" {
-		sebar = kelompokkan(tabelSebar, baris[tabelSebar])
+// tabelBarisShare - tabel induk dan anak satu jenis baris Share. `sebar`
+// dan `xol` kosong untuk Facultative Share (tabelnya tidak ada).
+type tabelBarisShare struct {
+	induk, sebar, deduksi, nilai, grup, xol string
+}
+
+func rangkaiBarisShare(baris map[string][]barisPendaratan, t tabelBarisShare) []map[string]any {
+	p, _ := entriPeta(t.induk)
+	var sebar, xol anakTabel
+	if t.sebar != "" {
+		sebar = kelompokkan(t.sebar, baris[t.sebar])
 	}
-	deduksi := kelompokkan(tabelDeduksi, baris[tabelDeduksi])
-	nilai := kelompokkan(tabelNilai, baris[tabelNilai])
+	if t.xol != "" {
+		xol = kelompokkan(t.xol, baris[t.xol])
+	}
+	deduksi := kelompokkan(t.deduksi, baris[t.deduksi])
+	nilai := kelompokkan(t.nilai, baris[t.nilai])
+	grup := kelompokkan(t.grup, baris[t.grup])
 	out := []map[string]any{}
-	for _, b := range baris[induk] {
+	for _, b := range baris[t.induk] {
 		s := simpulPeta(b, p)
-		if tabelSebar != "" {
+		if t.sebar != "" {
 			s["SpreadingListXOL"] = isiAtauKosong(sebar.biasa[b.ID])
 		} else {
 			s["SpreadingListXOL"] = []map[string]any{}
 		}
 		s["DeductionList"] = isiAtauKosong(deduksi.biasa[b.ID])
+		s["TreatyGroupList"] = isiAtauKosong(grup.biasa[b.ID])
 		pasangLarikGabung(s, nilai, b.ID)
+		if t.xol != "" {
+			pasangLarikGabung(s, xol, b.ID)
+		}
 		out = append(out, s)
 	}
 	return out

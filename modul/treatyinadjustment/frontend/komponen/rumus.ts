@@ -650,7 +650,10 @@ const DITULIS_LIMIT_NP: Readonly<Record<AksiLayerNP, readonly string[]>> = {
   'reinst-persen': ['Reinstatement_List'],
   'reinst-tambahan': ['Reinstatement_List'],
   adj: ['PremiumEarnedList', 'ROLPct'],
-  mdp: ['MDPList', 'MDPMinList', 'ROLPct'],
+  // ⭐ 8 Oktober 2026 — sama dengan Treaty In: sesudah MDP berubah, rute
+  // `limit-np` menyegarkan Reinstatement Premium Amount dengan rumus
+  // `ReCalculateReinstatement` yang SAMA (`segarkanReinstatement`).
+  mdp: ['MDPList', 'MDPMinList', 'ROLPct', 'Reinstatement_List'],
 }
 
 /**

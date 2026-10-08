@@ -16,7 +16,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
-import { Field, FieldAngka, Kosong, Panel, Pilih, StripTab } from '../../../../inti/frontend/components/ui/dasar'
+import { Field, FieldAngka, Kosong, Panel, Pilih } from '../../../../inti/frontend/components/ui/dasar'
 import { formatNumber } from '../../../../inti/frontend/lib/format'
 import {
   ambilKelasBisnis,
@@ -52,6 +52,8 @@ import type { ModeForm } from '../mode'
 import { DropdownDaftar } from './IsianAuto'
 import { Bagian, Chip, KartuLipat, KepalaBagian, TombolHapus, TombolTambah } from './limitsUI'
 import { selAngka } from './angka'
+import { StripTabNavigasi } from './navigasi'
+import { PemicuUbah } from './pemicuUbah'
 
 /** Teks satu medan simpul — larik dan kunci yang tidak ada → kosong. */
 export function teksDari(s: SimpulLimit, kunci: string): string {
@@ -622,8 +624,9 @@ export function GridLimit({
                            presisinya tidak dinyatakan ekspor, dan memaksa
                            dua desimal membuat nomor urut tampil `1,00`.
                            Pelajaran dari kartu Layers tab Limits Non-Prop. */
-                        <div
-                          onBlur={() => {
+                        <PemicuUbah
+                          nilai={v}
+                          aksi={() => {
                             lapor({ jenis: 'nilai', baris: [...baris], r, lama: b, kunci: k.kunci })
                           }}
                         >
@@ -636,21 +639,25 @@ export function GridLimit({
                               ubahSel({ ...b, [k.kunci]: x })
                             }}
                           />
-                        </div>
+                        </PemicuUbah>
                       ) : sunting ? (
-                        <input
-                          className="field__input"
-                          type="text"
-                          value={v}
-                          aria-label={k.label || k.kunci}
-                          onChange={(e) => {
-                            ubahSel({ ...b, [k.kunci]: e.target.value })
-                          }}
-                          onBlur={() => {
-                            // Peristiwa `change` Pega — sekali sesudah nilai selesai diketik.
+                        // Peristiwa `change` Pega — sekali, dan hanya bila nilainya berubah.
+                        <PemicuUbah
+                          nilai={v}
+                          aksi={() => {
                             lapor({ jenis: 'nilai', baris: [...baris], r, lama: b, kunci: k.kunci })
                           }}
-                        />
+                        >
+                          <input
+                            className="field__input"
+                            type="text"
+                            value={v}
+                            aria-label={k.label || k.kunci}
+                            onChange={(e) => {
+                              ubahSel({ ...b, [k.kunci]: e.target.value })
+                            }}
+                          />
+                        </PemicuUbah>
                       ) : (
                         formatLimit(k.golongan, k.desimal, v)
                       )}
@@ -948,8 +955,9 @@ function DetailLimits({
         <Bagian judul={LIMITS_PROP.bagianKetentuan}>
           {qs && (
             // Sel 37 `.QSPct` — `LimitCalculation(qs, '', true)` pada `change`.
-            <div
-              onBlur={() => {
+            <PemicuUbah
+              nilai={teksDari(d, 'QSPct')}
+              aksi={() => {
                 hitung('qs')
               }}
             >
@@ -959,12 +967,13 @@ function DetailLimits({
                 golongan: 'persen',
                 desimal: 2,
               })}
-            </div>
+            </PemicuUbah>
           )}
           {syaratSurplus(jenis) && (
             // Sel 42 `.Surplus` — `LimitCalculation(surplus, '', true)` pada `change`.
-            <div
-              onBlur={() => {
+            <PemicuUbah
+              nilai={teksDari(d, 'Surplus')}
+              aksi={() => {
                 hitung('surplus')
               }}
             >
@@ -974,7 +983,7 @@ function DetailLimits({
                 golongan: 'uang',
                 desimal: 2,
               })}
-            </div>
+            </PemicuUbah>
           )}
         </Bagian>
       )}
@@ -1005,14 +1014,14 @@ function DetailLimits({
         </div>
       </Bagian>
 
-      <StripTab tab={TAB_DETAIL_LIMIT.map((t) => t.judul)} aktif={aktif?.judul ?? ''} onPilih={setTab} />
+      <StripTabNavigasi tab={TAB_DETAIL_LIMIT.map((t) => t.judul)} aktif={aktif?.judul ?? ''} onPilih={setTab} />
       <Panel judul={aktif?.judul ?? ''}>
         {(aktif?.isi ?? []).map((b, i) =>
           b.t === 'medan' ? (
             b.m.kunci === 'PremiumReservePct' ? (
-              <div key={b.m.kunci} onBlur={hitungCadanganPremi}>
+              <PemicuUbah key={b.m.kunci} nilai={teksDari(d, 'PremiumReservePct')} aksi={hitungCadanganPremi}>
                 {medan(b.m, bisaUbahM)}
-              </div>
+              </PemicuUbah>
             ) : (
               medan(b.m, tabTerkunci ? bisaUbahM : bisaUbah)
             )

@@ -53,7 +53,7 @@
 
 import { Fragment, useEffect, useState } from 'react'
 
-import { FieldAngka, Kosong, Panel, Pilih, StripTab } from '../../../../inti/frontend/components/ui/dasar'
+import { FieldAngka, Kosong, Panel, Pilih } from '../../../../inti/frontend/components/ui/dasar'
 import { ambilIndukSpreading, hitungShareProp, type MasukanShareProp, type NilaiTotalProp, type SimpulLimit, type SusunanSpreading } from '../api'
 import { useProperti } from '../halaman'
 import {
@@ -65,6 +65,8 @@ import {
 import { DETAIL_SHARE, KOLOM_TOTAL_LIMITS } from '../labelsShareProp'
 import type { ModeForm } from '../mode'
 import { selAngka } from './angka'
+import { StripTabNavigasi, TombolNavigasi } from './navigasi'
+import { PemicuUbah } from './pemicuUbah'
 import { teksDari } from './TabLimitsProp'
 
 /**
@@ -152,9 +154,10 @@ function GridTotal({
 /** Tombol ▸/▾ rincian baris (`expandPane`), tertutup semula seperti Pega. */
 function TombolRincian({ buka, label, onKlik }: { buka: boolean; label: string; onKlik: () => void }) {
   return (
-    <button type="button" className="trin__buka" aria-expanded={buka} aria-label={label} onClick={onKlik}>
+    // Navigasi, bukan `<button>` — tetap hidup di mode lihat (`navigasi.tsx`).
+    <TombolNavigasi className="trin__buka" terbuka={buka} label={label} onKlik={onKlik}>
       {buka ? '▾' : '▸'}
-    </button>
+    </TombolNavigasi>
   )
 }
 
@@ -200,9 +203,11 @@ function RincianDetailShare({
   return (
     <div className="trin__share-rincian">
       {/* `.RNMShare` — change → `TreatyInPropshareDetail` (saat ditinggalkan). */}
-      <div
-        onBlur={() => {
-          if (!terkunci) onRumus('detail', d)
+      <PemicuUbah
+        nilai={teksDari(d, 'RNMShare')}
+        aktif={!terkunci}
+        aksi={() => {
+          onRumus('detail', d)
         }}
       >
         <FieldAngka
@@ -214,7 +219,7 @@ function RincianDetailShare({
             onUbah({ ...d, RNMShare: v })
           }}
         />
-      </div>
+      </PemicuUbah>
       <GridTotal judul={DETAIL_SHARE.rnmShare} baris={larik(d, 'RNMShareList')} judulNilai="" />
 
       <h5 className="trin__subjudul">{DETAIL_SHARE.spreading}</h5>
@@ -370,13 +375,15 @@ export default function TabShareProp({
               `TreatyInTabsProportional`. Nilai tampil `1,28` (bukan `1,28%`);
               `%` hanya placeholder saat kosong, persis layar Pega.
               `% RNM Share` change → `TreatyInPropshare` (saat ditinggalkan). */}
-          <div
-            onBlur={() => {
-              if (!terkunci) jalankan('share')
+          <PemicuUbah
+            nilai={rnmShare}
+            aktif={!terkunci}
+            aksi={() => {
+              jalankan('share')
             }}
           >
             <FieldAngka label={TOTAL_SHARE.persenRnmShare} value={rnmShare} desimal={2} placeholder="%" readOnly={terkunci} onChange={setRnmShare} />
-          </div>
+          </PemicuUbah>
           <FieldAngka label={TOTAL_SHARE.persenBrokerage} value={brokerage} desimal={2} placeholder="%" readOnly={terkunci} onChange={setBrokerage} />
           <Pilih
             label={TOTAL_SHARE.opsi}
@@ -396,7 +403,7 @@ export default function TabShareProp({
         )}
       </Panel>
 
-      <StripTab tab={daftar} aktif={tampil} onPilih={setSub} />
+      <StripTabNavigasi tab={daftar} aktif={tampil} onPilih={setSub} />
 
       {tampil === 'RNM Share' && (
         <Panel judul={SUB_TAB_SHARE[0]}>

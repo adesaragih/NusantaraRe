@@ -81,7 +81,11 @@ function pemilihCSS(css: string): string[] {
 }
 
 function terisolasi(p: string): boolean {
-  return p === '.treatyinadjustment' || p.startsWith('.treatyinadjustment ') || p.startsWith(':where(.treatyinadjustment ')
+  // ⭐ 8 Oktober 2026 — tema Treaty Exchange Yearly: varian GELAP ditulis
+  // `:root[data-theme="dark"] .treatyinadjustment …`, pengecualian SEMPIT yang
+  // sama dengan penjaga `treatyexchangeyearly/frontend/gaya.test.ts`.
+  const p2 = p.startsWith(':root[data-theme="dark"] ') ? p.slice(':root[data-theme="dark"] '.length) : p
+  return p2 === '.treatyinadjustment' || p2.startsWith('.treatyinadjustment ') || p2.startsWith(':where(.treatyinadjustment ')
 }
 
 /** Kelas dari `daftar` yang masih disebut pemilih di `css`. */
@@ -109,6 +113,9 @@ describe('gaya modul Treaty In Adjustment', () => {
   it('aturan isolasi menggigit', () => {
     const contoh = pemilihCSS('table { x: 1 } .treatyinadjustment .a, .b { y: 2 } .treatyinadjustment :is(.c, .d):disabled { z: 3 } @media (max-width: 1px) { .e { w: 4 } }')
     expect(contoh.filter((p) => !terisolasi(p))).toEqual(['table', '.b', '.e'])
+    // Tema gelap berakar modul diterima; tema gelap GLOBAL tetap ditolak.
+    const gelap = pemilihCSS(':root[data-theme="dark"] .treatyinadjustment > .inbox { a: 1 } :root[data-theme="dark"] .x { b: 2 }')
+    expect(gelap.filter((p) => !terisolasi(p))).toEqual([':root[data-theme="dark"] .x'])
   })
 
   it('kelas khusus modul ini tidak menumpang di inti/frontend/styles.css', () => {
@@ -168,5 +175,38 @@ describe('bentuk Pega + responsif saat zoom', () => {
     expect(tanpaKomentar).toMatch(
       /\.treatyinadjustment \.tria__tabel:has\(> tbody > \.tria__rincian\) td \.field__input,\s*\.treatyinadjustment \.tria__tabel:has\(> tbody > \.tria__rincian\) td \.tria__tgl \{\s*min-width: 0;/,
     )
+  })
+})
+
+// ⭐ 8 Oktober 2026 — "ubah tema … menjadi seperti tema Treaty Exchange Yearly".
+describe('tema Treaty Exchange Yearly', () => {
+  const css = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
+  const akar = css.slice(css.indexOf('.treatyinadjustment > .inbox {'))
+
+  it('token terang di AKAR MODUL (juga layar tanpa `.inbox`), kartu akar halaman: `--tria-*` bernilai `--tey-*`, gradasi lembut, sudut 26px', () => {
+    expect(css).toMatch(/^\.treatyinadjustment \{[^}]*--tria-latar: #eef1f6;/m)
+    expect(akar.slice(0, 3000)).toContain('border-radius: 26px;')
+    expect(akar.slice(0, 3000)).toContain('background: linear-gradient(180deg, var(--tria-latar-atas) 0%, var(--tria-latar-bawah) 100%);')
+  })
+
+  it('varian gelap ditulis berakar modul', () => {
+    expect(css).toMatch(/^:root\[data-theme="dark"\] \.treatyinadjustment \{[^}]*--tria-isi: #1f2638;/m)
+  })
+
+  it('tombol kapsul: utama merah bergradasi, kartu panel putih timbul, isian cekung', () => {
+    expect(css).toMatch(/\.treatyinadjustment \.btn \{\s*border-radius: 999px;/)
+    expect(css).toMatch(/\.treatyinadjustment \.btn--primary,\s*\.treatyinadjustment \.tl-tambah \{\s*background: linear-gradient\(180deg, var\(--tria-tombol\), var\(--tria-tombol-ujung\)\);/)
+    expect(css).toMatch(/\.treatyinadjustment \.panel \{\s*background: var\(--tria-isi\);[^}]*border-radius: 18px;[^}]*box-shadow: var\(--tria-timbul\);/)
+    expect(css).toMatch(/\.treatyinadjustment \.field__input \{[^}]*box-shadow: var\(--tria-cekung-kecil\);/)
+  })
+
+  it('strip tab = kontrol segmen kapsul; kepala tabel navy muda dan TIDAK tembus pandang', () => {
+    expect(css).toMatch(/\.treatyinadjustment \.tabs__item--aktif,\s*\.treatyinadjustment \.tabs__item--aktif:hover \{\s*background: var\(--tria-isi\);/)
+    expect(css).toMatch(/\.treatyinadjustment \.table-wrap \.tria__tabel thead th \{\s*background: var\(--tria-kepala-tabel\);/)
+  })
+
+  it('lapisan tema TIDAK menimpa ukuran kontrol — kerapatan tetap milik bloknya', () => {
+    const tema = css.slice(css.indexOf('.treatyinadjustment > .inbox {'))
+    expect(tema).not.toMatch(/\.(btn|field__input)[^{]*\{[^}]*height:/)
   })
 })

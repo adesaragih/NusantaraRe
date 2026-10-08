@@ -248,15 +248,31 @@ describe('tab Limits Non-Prop — grid layer → Layers → Summary → Total', 
 
   it('⛔ hanya medan yang Activity TULIS yang digabung; rumus di services', () => {
     expect(DITULIS_LIMIT_NP.adj).toEqual(['PremiumEarnedList', 'ROLPct'])
-    expect(DITULIS_LIMIT_NP.mdp).toEqual(['MDPList', 'MDPMinList', 'ROLPct'])
+    // ⭐ 8 Oktober 2026 — `Reinstatement_List` ikut: sesudah MDP berubah,
+    // Reinstatement Premium Amount disegarkan dengan rumus yang SAMA
+    // (`segarkanReinstatement`, keputusan pemakai).
+    expect(DITULIS_LIMIT_NP.mdp).toEqual(['MDPList', 'MDPMinList', 'ROLPct', 'Reinstatement_List'])
     expect(DITULIS_LIMIT_NP.egnpi).toEqual(['EgnpiTotalList'])
     expect(NP).toContain('hitungLimitNP({ aksi, layers: dasar, egnpi, kurs, indeks, baris })')
     expect(NP).not.toMatch(/\* Number\(|parseFloat\(/)
   })
 
-  it('⭐ kunci materialitas: No RIP dan ROL % tetap ikut mode saja', () => {
+  it('⭐ kunci materialitas: No RIP tetap ikut mode saja', () => {
     expect(NP).toContain("bisaUbah={modeUbah} onUbah={set('NoRIPCalculation')}")
-    expect(NP).toContain("bisaUbah={modeUbah} onUbah={set('ROLPct')}")
+  })
+
+  // ⛔ 8 Oktober 2026: `.ROLPct` di Section `Layers`/`LayersEDM` ber-
+  // `pyDisabledNew=always` — dulu terbuka di mode Edit, "1,659" berkoma
+  // terbaca nol dan `Total ROL` jadi 0,00.
+  it('⛔ ROL % selalu read-only — hanya rumus DetailCalculationROL yang mengisinya', () => {
+    expect(NP).toContain("bisaUbah={false} onUbah={set('ROLPct')}")
+    expect(NP).not.toContain("bisaUbah={modeUbah} onUbah={set('ROLPct')}")
+    const html = renderToStaticMarkup(
+      <RincianLayer l={LAYER} opsi={OPSI} bisaUbah modeUbah onUbah={() => undefined} hitung={() => undefined} onGantiGrup={() => undefined} />,
+    )
+    const sel = /<label class="field__label">ROL %<\/label><input([^>]*)>/.exec(html)
+    expect(sel).not.toBeNull()
+    expect(sel?.[1]).toMatch(/readonly/i)
   })
 })
 
@@ -386,7 +402,8 @@ describe('⭐ sel angka grid memakai FieldAngka', () => {
     const i = LP.indexOf('desimal={k.desimal}')
     expect(i).toBeGreaterThan(-1)
     const sebelum = LP.slice(Math.max(0, i - 700), i)
-    expect(sebelum).toContain('onBlur={() => {')
+    // ⭐ 8 Oktober 2026 — `PemicuUbah` (lepas fokus DAN berubah), bukan `onBlur` mentah.
+    expect(sebelum).toContain('<PemicuUbah')
     expect(sebelum).toContain('lapor({ jenis:')
   })
 

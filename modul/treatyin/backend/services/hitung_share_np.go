@@ -50,10 +50,9 @@ package services
 //     Share tanpa membuang yang lama; di sini disusun ulang (S3).
 //
 // ⚠️ Yang DITIRU APA ADANYA walau janggal, sebab ia rumus Pega:
-//   - `TreatyInNPSetTotal(share)` hanya menjumlah baris ber-Spreading Type
-//     KOSONG, dari larik baris SPREADING-nya. Baris bernama tidak ikut, dan
-//     `TotalShareRnmNP` / `TotalShareGrossMinNP` tidak pernah terisi —
-//     persis tangkapan layar Pega pemakai ("No items" di keduanya);
+//   - `TreatyInNPSetTotal(share)`: `TotalShareGrossMinNP` tidak pernah
+//     terisi. (⛔ RALAT 8 Oktober 2026: totalnya menjumlah larik SETIAP
+//     baris Share — tangkapan Pega kontrak 1001855; lihat `NPSetTotalShare`.)
 //   - `% RNM Share` satu baris (panel) memanggil `FetchQSfromMasterXOL`
 //     TANPA induk — Spreading Type baris itu terhapus dan bagian OR-nya 0;
 //   - `TreatyInSetBrokerage` memakai `QS (OR)` saja untuk Net OR (ORS tidak),
@@ -701,9 +700,28 @@ func totalSebaranOR(s *models.ShareNP, net bool) {
 
 // --- TreatyInNPSetTotal(share) ------------------------------------------------
 
-// NPSetTotalShare — `TreatyInNPSetTotal` langkah 22–24: hanya baris
-// ber-Spreading Type KOSONG, dari larik tingkat SPREADING-nya. Mata uang
-// kosong tidak ditambahkan.
+// NPSetTotalShare — `TreatyInNPSetTotal(share)`: jumlah per mata uang dari
+// larik SETIAP baris Share. Mata uang kosong tidak ditambahkan.
+//
+// ---------------------------------------------------------------------
+// ⛔ RALAT 8 Oktober 2026 — HASIL PEGA MENGALAHKAN BACAAN TEKS EKSPOR
+// ---------------------------------------------------------------------
+// Bacaan lama: hanya [24], hanya baris ber-Spreading Type KOSONG, dari
+// larik tingkat SPREADING. Untuk kontrak 1001855 (tiga baris ber-Spreading
+// Type, sebaran QS 40/60) itu membuat Total RNM Limit, Gross, Deduction,
+// dan Net "No items". Tangkapan layar Pega pemakai untuk kontrak yang SAMA:
+//
+//	Total RNM Limit   35.250.000.000 = 4 M + 6,25 M + 25 M  (RnmLimitList)
+//	Total Gross (MDP)  1.271.036.250 = Σ GrossPremiumList ketiga baris
+//	Total Deduction                0 · Total Net 1.271.036.250
+//	Total Gross Min Premium   No items
+//
+// — jumlah larik baris Share SENDIRI, semua baris. Itu juga bentuk
+// kembarannya yang sudah diport, `TreatyInNPSetTotalActualShare`
+// (`hitung_aktual.go` `totalShareAktual`).
+//
+// ⚠️ Yang TETAP: Total Gross Min Premium kosong (tangkapan yang sama), dan
+// `FacultativeShareList` tidak ikut.
 //
 // ---------------------------------------------------------------------
 // ⛔ LANGKAH [23] ADA DI EKSPOR DAN TIDAK DIBANGUN — IA DIKOMENTARI
@@ -733,15 +751,10 @@ func NPSetTotalShare(s *models.ShareNP) {
 		s.Total[n] = []models.NilaiMataUang{}
 	}
 	for _, b := range s.Share {
-		if b.SpreadingTypeXOL != "" {
-			continue
-		}
-		for _, sp := range b.SpreadingListXOL {
-			s.Total["TotalShareGrossNP"] = jumlahkanBerMataUang(s.Total["TotalShareGrossNP"], sp.GrossPremiumList)
-			s.Total["TotalShareNetNP"] = jumlahkanBerMataUang(s.Total["TotalShareNetNP"], sp.NetPremiumList)
-			s.Total["TotalShareDeductionNP"] = jumlahkanBerMataUang(s.Total["TotalShareDeductionNP"], sp.DeductionTotalList)
-			s.Total["TotalShareRnmNP"] = jumlahkanBerMataUang(s.Total["TotalShareRnmNP"], sp.RnmLimitList)
-		}
+		s.Total["TotalShareGrossNP"] = jumlahkanBerMataUang(s.Total["TotalShareGrossNP"], b.GrossPremiumList)
+		s.Total["TotalShareNetNP"] = jumlahkanBerMataUang(s.Total["TotalShareNetNP"], b.NetPremiumList)
+		s.Total["TotalShareDeductionNP"] = jumlahkanBerMataUang(s.Total["TotalShareDeductionNP"], b.DeductionTotalList)
+		s.Total["TotalShareRnmNP"] = jumlahkanBerMataUang(s.Total["TotalShareRnmNP"], b.RnmLimitList)
 	}
 }
 
