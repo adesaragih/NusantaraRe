@@ -55,3 +55,23 @@ describe('Copy Old NB', () => {
     expect(html).toContain('<td>02-10-2017</td>')
   })
 })
+
+// WO 07-10-2026 "TAMPILAN NYA HANYA NB-XXX AJA, BERLAKU NB DAN EDM TREATY": ID kasus salinan Copy Old = IDPEGA Pega
+// utuh (`<kelas> <pyID>`); layar hanya menampilkan pyID, kunci buka / kirim tetap ID utuh.
+describe('Copy Old - nomor dokumen Pega', () => {
+  it('kolom nomor dan label centang tampil pyID; centang tetap berkunci ID utuh', () => {
+    const id = 'ASM-FW-GISFW-WORK UJI-NB-9'
+    const html = renderToStaticMarkup(
+      <TabelLama
+        tampil={[dok(id, true)]}
+        terpilih={new Set([id])}
+        proses={false}
+        onCentang={kosong}
+        onCentangSemua={kosong}
+      />,
+    )
+    expect(html).toContain('<td>UJI-NB-9</td>')
+    expect(html).toContain('aria-label="Select UJI-NB-9" checked=""')
+    expect(html).not.toContain('ASM-FW-GISFW-WORK')
+  })
+})

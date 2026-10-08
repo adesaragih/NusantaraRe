@@ -38,7 +38,7 @@ import {
   type StatusPortal,
 } from '../labels'
 import { tampilCopyOld } from '../lama'
-import { sajikan } from '../sajian'
+import { idTampil, sajikan } from '../sajian'
 import { BARIS_PER_HALAMAN_GRID, irisan } from '../paginasi'
 
 /** Tautan sel 1: In Progress aktif hanya bagi kasus di posisi admin (pxLink `pyDisabled` bila PositionNote != ADM);
@@ -87,7 +87,7 @@ export function TabelPortal({
                         disabled={!tautanAktif(b, selesai)}
                         onClick={() => onBuka(b.id)}
                       >
-                        {b.id}
+                        {idTampil(b.id)}
                       </button>
                     ) : k.kunci === 'nbStatus' ? (
                       // pxDisplayText pyVisible NOTBLANK. WO 07-10-2026 "KALO DAH RESOLVE STATUS NYA PAKE STATUS

@@ -336,7 +336,9 @@ func TestTabelDanKolomMengikutiDiagramGrilling(t *testing.T) {
 				"POSITION_NOTE NB_STATUS TREATY_IN_ID SHARE_CURRENCY GROSS_CLAIM BROKERAGE_FEE_SEBENARNYA " +
 				// RALAT F3 (04-10-2026) - medan dokumen lama dibaca syarat
 				// InputPolicyTreatyInPre_Act langkah 10 (rancangan §4.1 EDM_TYPE)
-				"EDM_TYPE"),
+				"EDM_TYPE " +
+				// RALAT 08-10-2026 (keputusan work owner, cek Copy Old): "IsSOAUpload ITU PERLU"
+				"IS_SOA_UPLOAD"),
 		"T_POLIS_QUOTATION": daftar("POLIS_ID PROPORTIONAL_TYPE MO_ID BUSINESS_CODE BUSINESS_OLD_ID GROUP_PANEL " +
 			"SOURCE_OF_BUSINESS TYPE EDM_TYPE OLD_POLICY_NO MARKETING_NAME " +
 			// RALAT - dibaca rule terjangkau / tampil di Section NB

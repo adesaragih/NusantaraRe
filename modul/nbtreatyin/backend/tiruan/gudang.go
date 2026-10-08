@@ -337,6 +337,12 @@ func (g *Gudang) SetelNomorPolis(_ context.Context, _ *db.Tx, id, nopol string) 
 	if k.NoPolis != "" {
 		return repository.ErrNomorPolisSudahAda
 	}
+	// indeks unik UQ_GP_TREATY_NOPOLIS (tiruan NB hanya memegang generasi 0)
+	for lain, x := range g.Kasus {
+		if lain != id && x.NoPolis == nopol {
+			return repository.ErrNomorPolisDipakai
+		}
+	}
 	k.NoPolis = nopol
 	g.Kasus[id] = k
 	return nil
@@ -362,6 +368,20 @@ func (g *Gudang) DetailKontrak(_ context.Context, id string) (models.BarisKontra
 		return nil, repository.ErrDataKontrakTidakAda
 	}
 	return b, nil
+}
+
+// DetailKontrakTreaty - baris `Kontrak` ber-TREATYID itu dengan ID terkecil (ORDER BY ID, sama dengan repository).
+func (g *Gudang) DetailKontrakTreaty(_ context.Context, treatyID string) (models.BarisKontrak, error) {
+	var pilih models.BarisKontrak
+	for _, b := range g.Kontrak {
+		if treatyID != "" && b["TREATYID"] == treatyID && (pilih == nil || b["ID"] < pilih["ID"]) {
+			pilih = b
+		}
+	}
+	if pilih == nil {
+		return nil, repository.ErrDataKontrakTidakAda
+	}
+	return pilih, nil
 }
 
 // KomisiKontrak - baris `Kontrak` ber-TREATYID itu, berurut ID (sama dengan
@@ -524,6 +544,22 @@ func (g *Gudang) CatatUsulan(_ context.Context, _ *db.Tx, idPega string, baris [
 		g.Usulan = append(g.Usulan, BarisRiwayatProduksi{IDPega: idPega, UsulanProduksi: u})
 	}
 	return nil
+}
+
+// AdaRiwayatIDPega = repository.AdaRiwayatIDPega: IDPEGA sudah punya baris SuggestList (Usulan) atau History
+// (Riwayat).
+func (g *Gudang) AdaRiwayatIDPega(_ context.Context, _ *db.Tx, idPega string) (bool, error) {
+	for _, u := range g.Usulan {
+		if u.IDPega == idPega {
+			return true, nil
+		}
+	}
+	for _, r := range g.Riwayat {
+		if r.IDPega == idPega {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (g *Gudang) DaftarRiwayat(_ context.Context, idPega string) ([]models.Riwayat, error) {

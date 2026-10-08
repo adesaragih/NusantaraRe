@@ -741,6 +741,24 @@ func (g *Gudang) CatatUsulan(ctx context.Context, tx *db.Tx, idPega string, bari
 	return nil
 }
 
+// AdaRiwayatIDPega = repository.AdaRiwayatIDPega: IDPEGA sudah punya baris SuggestList (Usulan) atau History
+// (Riwayat).
+func (g *Gudang) AdaRiwayatIDPega(_ context.Context, _ *db.Tx, idPega string) (bool, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	for _, u := range g.Usulan {
+		if u.IDPega == idPega {
+			return true, nil
+		}
+	}
+	for _, r := range g.Riwayat {
+		if r.IDPega == idPega {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (g *Gudang) NamaTampilan(ctx context.Context, loginID string) (string, error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()

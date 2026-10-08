@@ -153,3 +153,15 @@ describe('layar Create TreatyCreateEdm', () => {
     expect(tampilTombolBuat('', 'UJI-POLIS', '')).toBe(false)
   })
 })
+
+// WO 07-10-2026 "TAMPILAN NYA HANYA NB-XXX AJA, BERLAKU NB DAN EDM TREATY": ID kasus salinan Copy Old = IDPEGA Pega
+// utuh (`<kelas> <pyID>`); layar hanya menampilkan pyID, kunci buka / kirim tetap ID utuh.
+describe('portal EDM Treaty In - berkas salinan Copy Old', () => {
+  it('EDM Number tampil pyID saja', () => {
+    const html = renderToStaticMarkup(
+      <TabelPortal baris={[{ ...baris, id: 'ASM-FW-GISFW-WORK UJI-EDMT-9' }]} onBuka={() => {}} selesai />,
+    )
+    expect(html).toContain('>UJI-EDMT-9</button>')
+    expect(html).not.toContain('ASM-FW-GISFW-WORK')
+  })
+})

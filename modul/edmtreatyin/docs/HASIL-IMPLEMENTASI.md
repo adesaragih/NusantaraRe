@@ -217,7 +217,7 @@ Keputusan work owner 07-10-2026 (jawaban 13 pertanyaan laporan 06-10):
 | # | Jawaban | Penerapan |
 | ---: | --- | --- |
 | 1 | Kotak masuk Beranda untuk EDM: **YA** | `frontend/menu.ts` `antreanBeranda` + `daftarBeranda`; `frontend/Beranda.test.ts` bersama (satu baris); cek Chrome 07-10 jalur Sec Head |
-| 2 | Aturan portal NB berlaku: **YA** | switch In Progress / Resolved (`?status=selesai`, `SaringanKasus.Selesai`); In Progress = buatan akun, Resolved = semua berkas selesai hanya-baca: `backend/handlers/alur_test.go` TestPortalInProgressDanResolved |
+| 2 | Aturan portal NB berlaku: **YA** | switch In Progress / Resolved (`?status=selesai`, `SaringanKasus.Selesai`); In Progress = buatan akun, Resolved = semua berkas selesai hanya-baca (RALAT WO 07-10-2026: Resolved pun hanya buatan akun): `backend/handlers/alur_test.go` TestPortalInProgressDanResolved |
 | 3 | Label EDMType: screenshot DT `TreatyEDMListType` | 1 Internal · 2 External · 3 Adjustment Premium · 4 Cancel Input — `models.LabelJenisEDM`, `frontend/labels.ts` `LABEL_JENIS_EDM` (dijaga sama: `frontend/labels.test.ts`); TestAcuanJenisEDMBerlabel |
 | 4 | Konversi Arasapas tetap tidak disambung: **YA** | AC konversi ⛔ sadar |
 | 5 | RNMShare: *"bukannya strukturnya sama dengan NB?"* → *"ikuti rekomendasi"* (b) | baris spreading ber-%Share kosong (baris tambahan) = pesan *"Spreading row n: % Share is required"*, bukan pembagian `PolicyTreatyIn.RNMShare` (tak diisi rule mana pun); Submit Admin tertahan lewat `CountOGPONP` langkah 9: `backend/handlers/alur_test.go` TestSubmitDitolakBarisSpreadingTambahanTanpaShare, `backend/models/angsuran_edm_test.go` TestCountSpreadingEDMShareKosongDitolakDenganPesan |

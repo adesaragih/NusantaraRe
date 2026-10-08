@@ -80,3 +80,13 @@ describe('daftar kotak masuk Beranda NB Treaty In', () => {
     expect(typeof PENDAFTARAN_MENU.daftarBeranda).toBe('function')
   })
 })
+
+// WO 07-10-2026 "TAMPILAN NYA HANYA NB-XXX AJA, BERLAKU NB DAN EDM TREATY": ID kasus salinan Copy Old = IDPEGA Pega
+// utuh (`<kelas> <pyID>`); layar hanya menampilkan pyID, kunci buka / kirim tetap ID utuh.
+describe('Beranda - berkas salinan Copy Old', () => {
+  it('sel nomor tampil pyID; kunci baris (pembuka berkas) tetap ID utuh', () => {
+    const d = keDaftarBeranda([{ ...baris, id: 'ASM-FW-GISFW-WORK UJI-NB-9' }], new Date(2026, 9, 6, 8, 0, 0))
+    expect(d.baris[0]?.id).toBe('ASM-FW-GISFW-WORK UJI-NB-9')
+    expect(d.baris[0]?.sel.id).toBe('UJI-NB-9')
+  })
+})

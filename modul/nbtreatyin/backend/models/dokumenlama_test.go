@@ -75,8 +75,9 @@ func TestPecahDokumenProporsionalDatar(t *testing.T) { // AC 52, 55, 29, 69; ID-
 	if len(h.Galat) > 0 {
 		t.Fatalf("galat tak terduga: %+v", h.Galat)
 	}
-	if h.ID != "UJI-77" {
-		t.Errorf("ID kasus %q, harap UJI-77 (pyID dari IDPEGA)", h.ID)
+	// ID kasus = IDPEGA Pega UTUH (WO 07-10-2026 "IDPEGA BAWAAN PEGA JANGAN DI POTONG")
+	if h.ID != "ASM-FW-GISFW-WORK-NB UJI-77" || PyIDKasus(h.ID) != "UJI-77" {
+		t.Errorf("ID kasus %q, harap IDPEGA utuh", h.ID)
 	}
 	for jalur, harap := range map[string]string{
 		"PolicyTreatyIn.PremiOgp":                       "592629512.880000276",          // AC 55: tidak dibulatkan ke presisi mata uang

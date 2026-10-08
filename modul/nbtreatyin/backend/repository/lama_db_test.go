@@ -145,17 +145,22 @@ func TestPemuatLamaMenyalinSuggestListSekaliMenurutIDPega(t *testing.T) {
 		_, _ = sqlDB.ExecContext(ctx, fmt.Sprintf(`DELETE FROM %s.HISTORYAKSEPTASIPRODUCTION WHERE IDPEGA = :1`, skema), b.IDPega)
 	})
 	h := muatLama(t, ctx, d, g, b)
-	for i, harapDisalin := range []models.NasibUsulan{models.UsulanDisalin, models.UsulanDilewati} {
-		var disalin models.NasibUsulan
+	// langkah services `salinUsulanLama`: salinan kedua melihat baris pertama (proteksi dobel WO 07-10-2026)
+	for i, harapAda := range []bool{false, true} {
 		if err := dalamTx(t, ctx, d, func(tx *intidb.Tx) error {
-			var err error
-			disalin, err = g.SalinUsulanLama(ctx, tx, b.IDPega, h.Usulan)
-			return err
+			ada, err := g.AdaRiwayatIDPega(ctx, tx, b.IDPega)
+			if err != nil {
+				return err
+			}
+			if ada != harapAda {
+				t.Errorf("salinan ke-%d: ada %v, harap %v (proteksi dobel IDPEGA)", i+1, ada, harapAda)
+			}
+			if ada {
+				return nil
+			}
+			return g.CatatUsulan(ctx, tx, b.IDPega, h.Usulan)
 		}); err != nil {
 			t.Fatal(err)
-		}
-		if disalin != harapDisalin {
-			t.Errorf("salinan ke-%d: disalin %v, harap %v (penjaga dobel IDPEGA)", i+1, disalin, harapDisalin)
 		}
 	}
 	rows, err := sqlDB.QueryContext(ctx, fmt.Sprintf(`SELECT TO_CHAR(NOURUT), TYPE_POLIS, POSISI, PIC,

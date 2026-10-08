@@ -95,6 +95,22 @@ func TestDaftarEDMKotakMasukDanSelesai(t *testing.T) {
 	}
 }
 
+// Salinan dokumen Pega berkunci IDPEGA UTUH (WO 07-10-2026 "IDPEGA BAWAAN PEGA JANGAN DI POTONG"): daftar portal, kotak
+// masuk, dan cek EDM terbuka mengenali `EDMT-<n>` dan `<kelas> EDMT-<n>`.
+func TestIDKasusEDMMencakupPzInsKeyUtuh(t *testing.T) {
+	harap := "(w.ID LIKE 'EDMT-%' OR w.ID LIKE '% EDMT-%')"
+	if sqlIDKasusEDM("w.ID") != harap {
+		t.Fatalf("syarat ID kasus %q", sqlIDKasusEDM("w.ID"))
+	}
+	q, _ := sqlDaftarKasus("P.W", "P.G", "P.Q", models.SaringanKasus{})
+	k, _ := sqlHitungKotakMasuk("P.W", "P.G", "UJI", true, nil)
+	for _, x := range []string{q, k} {
+		if !strings.Contains(x, harap) {
+			t.Errorf("tanpa syarat ID kasus utuh\n%s", x)
+		}
+	}
+}
+
 func TestKotakMasukEDMSaringPRODKE(t *testing.T) {
 	q, args := sqlHitungKotakMasuk("P.W", "P.G", "UJI", true, []string{models.PosisiSecHead, models.PosisiDeptHead})
 	penampungUrut(t, q, args)
@@ -144,4 +160,13 @@ func TestKunciCopyOldGabungKerjaPegaDanProduksi(t *testing.T) {
 		}
 	}
 	penampungUrut(t, q, nil)
+}
+
+// WO 07-10-2026 "PXCREATEOPERATOR,PXCREATEOPNAME": pembuat berkas salinan dibaca dari tabel kerja Pega menurut
+// pzInsKey = IDPEGA; baca saja, satu penampung.
+func TestPembuatPegaDariTabelKerjaPega(t *testing.T) {
+	q := sqlPmPembuatPega()
+	if q != `SELECT PXCREATEOPERATOR, PXCREATEOPNAME FROM DATAPEGA.PC_ASM_FW_GISFW_WORK WHERE PZINSKEY = :1` {
+		t.Fatalf("pembuat Pega: %s", q)
+	}
 }

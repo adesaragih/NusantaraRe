@@ -50,6 +50,9 @@ dipensiunkan 1 Oktober 2026.
   antrean (`inti.Pelaku.Peran`). Sec Head menyetujui → selalu Dept Head (AC 8, keputusan work owner —
   bertentangan dengan `CekLimitTreatyAcc_Act`, dicatat). Dept Head menerbitkan nomor polis
   (`inti/backend/penomor`, `KODE_PRODUKSI` NONLIFE).
+- **Portal** = berkas buatan akun ini (`w.CREATE_OP`) + LINI non-life, switch *In Progress* / *Resolved*
+  (`?status=selesai`). RALAT WO 07-10-2026 *"TAMBAHKAN KAN UNTUK PEMBUAT. MENU ITU HANYA UNTUK SI PEMBUAT, NB DAN EDM
+  TREATY"*: Resolved pun hanya buatan akun ini (dulu 06-10-2026 semua berkas selesai).
 - **Riwayat** `HISTORYAKSEPTASIPEGA` di transaksi submit; `OPERATORID` = identitas login, `USERNAME`
   = nama tampilan (`M_LOGIN_GO.NAME`).
 - **Catatan usulan** (`PolicyTreatyIn.SuggestList`) = tabel lama `POOLDATA.HISTORYAKSEPTASIPRODUCTION`
@@ -194,6 +197,47 @@ dicentang.
   dokumen NB (dari 29; 2 belum ada di TREATYINPRODUCTION). Alat pemuat massal di atas tetap TANPA saringan.
 - **Hanya superadmin** = pemegang menu Kelola User dengan menu NB Treaty In ber-hak penuh (pola Bordereaux; View only
   berlaku juga). Tombol menurut `GET /hak`; `GET /lama`, `POST /lama/salin` menolak 403.
+- **ID kasus salinan = IDPEGA Pega UTUH** (perintah WO 07-10-2026 *"IDPEGA BAWAAN PEGA JANGAN DI POTONG, BERLAKU UNTUK
+  SEMUA NB TREATY DAN EDM TREATY"*): `ASM-FW-GISFW-WORK NB-<n>`, bukan `NB-<n>` (`models.IDKasusDariIDPega`; kolom ID
+  32 karakter, pzInsKey terpanjang DEV 27). Riwayat SuggestList / HISTORYAKSEPTASIPEGA berkas Pega berkunci pzInsKey yang
+  sama, jadi tampil lewat `KunciInstans(ID)`. Berlaku juga untuk alat pemuat CLI.
+  - **Layar menampilkan pyID saja** (perintah WO 07-10-2026 *"TAMPILAN NYA HANYA NB-XXX AJA, BERLAKU NB DAN EDM
+    TREATY"*): `sajian.idTampil` (= `models.PyIDKasus`) di Offer No portal, Beranda, judul + popup nomor layar kasus,
+    popup Copy Old. Kunci buka / kirim / centang tetap ID utuh; saringan portal tetap cocok (LIKE `%NB-<n>%`).
+  - Perbaikan data DEV 07-10-2026 (perintah WO *"ID NYA KEPOTONG! CEK SEMUA TABLE YANG PAKE ID ITU! PERBAIKI !"*):
+    satu-satunya salinan lama ber-ID `NB-<n>` diganti ke IDPEGA utuh di T_WORK_POLIS, T_GENERAL_POLIS_TREATY,
+    T_POLIS_QUOTATION, T_POLIS_CEDING (QUOTATION_ID), T_POLIS_INSTALMENT, T_POLIS_SPREADING - satu transaksi (FK
+    tidak deferrable: sisip induk baru dengan NOPOLIS NULL, pindahkan anak, hapus induk lama, pasang NOPOLIS),
+    didahului mode cek ber-ROLLBACK. Pindai semua kolom teks tabel T_* sesudahnya: ID terpotong tinggal di
+    `ID_NEW_BISNIS` - itu nilai asli dokumen Pega (`IDNewBisnis = pyWorkPage.pyID`), tidak diubah.
+- **Cek sumber Copy Old** (WO 08-10-2026 *"CEK APAKAH COPY OLDNYA SUDAH BENERA MENGCOPY SUMBER DATANYA?"*; alat
+  baca-saja di atas `PecahDokumenLama` + `BacaHalaman`): DEV 29 dokumen NB Treaty, semua Proportional; NB NonProp
+  dan EDM Treaty 0 dokumen. Berkas tersalin cocok dengan sumbernya untuk setiap medan berkolom (spreading
+  dibulatkan 8 desimal: DEV `T_POLIS_SPREADING/INSTALMENT(_DETAIL)/XOL(_LAYER)` masih NUMBER(38,8), migrasi
+  NUMBER(38,10)). Medan tanpa kolom yang BELUM DIPUTUSKAN diputuskan WO 08-10-2026: `IsSOAUpload` ("IsSOAUpload
+  ITU PERLU") jadi kolom T_GENERAL_POLIS_TREATY `IS_SOA_UPLOAD` (320 + `SCRIPT-TABEL-KOLOM-BARU.xlsx` NB TREATY
+  bagian E untuk skema lama); `GuaranteeFund` dibuang ("GUARANTEE_FUND NUMBER(38,10), buang!", alasan
+  `keputusan_wo` - walau dibaca InsetTreatyInProd_Act); sisanya dibuang dengan bukti korpus di
+  `medan_abaikan_lama.json` (`f3_tanpa_pembaca`).
+- **Pembuat berkas salinan** (WO 07-10-2026 *"PXCREATEOPERATOR,PXCREATEOPNAME"*): CREATE_OP / CREATE_OP_NAME =
+  pembuat kasus Pega (`DATAPEGA.PC_ASM_FW_GISFW_WORK` menurut PZINSKEY = IDPEGA, `repository.PembuatPega`); tanpa
+  baris Pega = NULL (tidak dikarang). Berkas tampil di portal akun yang LOGIN_ID-nya = PXCREATEOPERATOR (DEV: 23 dari
+  27 dokumen NB kandidat punya akun). Dua berkas NB yang tersalin sebelum aturan ini diisi dari DATAPEGA di DEV
+  07-10-2026 (izin WO; UPDATE 2 baris T_WORK_POLIS, mode cek ROLLBACK lebih dulu).
+- **Proteksi dobel riwayat** (perintah WO 07-10-2026 *"TAMBAKAN PROTEKSI UNTUK 2 TABLE INI
+  historyakseptasiproduction,historyakseptasiPEGA - SAAT COPY, JIKA UDAH ADA PADA 2 TABLE ITU JANGAN DI COPY, SUPAYA
+  TIDAK DOUBLE"*): SuggestList dokumen lama ditulis ke HISTORYAKSEPTASIPRODUCTION HANYA bila IDPEGA-nya belum punya
+  baris di HISTORYAKSEPTASIPRODUCTION maupun HISTORYAKSEPTASIPEGA (`services.salinUsulanLama` +
+  `repository.AdaRiwayatIDPega`; uji seam `TestCopyOldNBTanpaDobelRiwayat`). HISTORYAKSEPTASIPEGA tidak pernah ditulis Copy Old
+  / alat pemuat - riwayat Pega berkunci pzInsKey yang sama, dibaca lewat `KunciInstans`. DEV 07-10-2026: dari 27
+  dokumen NB kandidat, 2 sudah punya SuggestList dan 1 hanya punya History (SuggestList-nya tidak disalin). Baris
+  kembar yang sudah ada di kedua tabel berasal dari data Pega lama, bukan dari Copy Old.
+- **Nomor polis dipegang berkas NB lain** (indeks unik `UQ_GP_TREATY_NOPOLIS`): `SetelNomorPolis` menjawab
+  `ErrNomorPolisDipakai`, Process Copy menolak dokumen itu dengan *"this policy number is already used by another NB
+  case in the new tables"* (dulu tampil "database error").
+- **Commencement / Termination berkas salinan**: TREATY_IN_ID kosong (DATA_JSON hanya PolicyTreatyIn), master dibaca lewat
+  `NoOffer` = TREATYID view, baris pertama (`DetailKontrakTreaty`, `muatMaster`). Kontrak yang tidak ada di view = tanpa
+  tanggal, berkas tetap terbuka.
 - Kode: `backend/services/copyold.go` (`GudangPemuat` di `pemuat.go`), `backend/models/copyold.go`,
   `frontend/components/DialogCopyOld.tsx`, `frontend/lama.ts`; uji `backend/handlers/copyold_test.go`,
   `backend/repository/lama_test.go`, `frontend/components/DialogCopyOld.test.tsx`, `frontend/lama.test.ts`.

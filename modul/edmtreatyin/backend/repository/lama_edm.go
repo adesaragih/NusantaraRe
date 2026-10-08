@@ -23,6 +23,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"nusantarare/inti/backend/db"
 	"nusantarare/modul/edmtreatyin/backend/models"
@@ -42,6 +43,31 @@ func sqlPmKunciJSONPolisEDM(t string) string {
 // tabelKerjaPega - tabel kerja Pega (kelas ASM-FW-GISFW-Work-*, skema DATAPEGA): PZINSKEY = JSON_POLIS.IDPEGA dokumen
 // Pega asli. Hanya DIBACA.
 const tabelKerjaPega = "DATAPEGA.PC_ASM_FW_GISFW_WORK"
+
+// sqlPmPembuatPega - pembuat kasus Pega dokumen lama (WO 07-10-2026 "PXCREATEOPERATOR,PXCREATEOPNAME"): satu baris
+// tabel kerja Pega menurut pzInsKey = IDPEGA. Baca saja.
+func sqlPmPembuatPega() string {
+	return fmt.Sprintf(`SELECT PXCREATEOPERATOR, PXCREATEOPNAME FROM %s WHERE PZINSKEY = :1`, tabelKerjaPega)
+}
+
+// PembuatPega - PXCREATEOPERATOR / PXCREATEOPNAME kasus Pega ber-pzInsKey `idPega` untuk CREATE_OP / CREATE_OP_NAME
+// berkas salinan. Tanpa baris Pega (alat pemuat CLI tidak menyaring tabel kerja Pega) = kosong: pembuat tidak
+// dikarang, ditulis NULL.
+func (g *Gudang) PembuatPega(ctx context.Context, tx *db.Tx, idPega string) (string, string, error) {
+	q := sqlPmPembuatPega()
+	if err := db.PeriksaSQL(q); err != nil {
+		return "", "", err
+	}
+	var op, nama sql.NullString
+	err := g.pembaca(tx).QueryRowContext(ctx, q, idPega).Scan(&op, &nama)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", "", nil
+	}
+	if err != nil {
+		return "", "", fmt.Errorf("repository: membaca pembuat kasus Pega: %w", err)
+	}
+	return strings.TrimSpace(op.String), strings.TrimSpace(nama.String), nil
+}
 
 // sqlPmKunciJSONPolisEDMCopyOld - kunci popup Copy Old. ⛔ Perintah work owner 07-10-2026: data lama dipilih dengan
 // `SELECT * FROM DATAPEGA.PC_ASM_FW_GISFW_WORK a, json_polis b, treatyinproduction c WHERE a.pzinskey = b.idpega AND
@@ -93,9 +119,15 @@ func sqlPmSetelPenanda(anak, induk string, berlapis bool) string {
 		anak, set, n, induk, n+1, n+2)
 }
 
-// sqlPmAdaUsulanIDPega - penjaga dobel salinan SuggestList lama: cacah baris riwayat produksi ber-IDPEGA itu.
-func sqlPmAdaUsulanIDPega(t string) string {
-	return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE IDPEGA = :1`, t)
+// sqlPmAdaRiwayatIDPega - proteksi dobel salinan SuggestList lama (F3; perintah WO 07-10-2026 "TAMBAKAN PROTEKSI UNTUK 2 TABLE INI historyakseptasiproduction,historyakseptasiPEGA -
+// SAAT COPY, JIKA UDAH ADA PADA 2 TABLE ITU JANGAN DI COPY, SUPAYA TIDAK DOUBLE"):
+// cacah sumber riwayat IDPEGA itu - HISTORYAKSEPTASIPRODUCTION (SuggestList) dan HISTORYAKSEPTASIPEGA (History),
+// paling banyak satu baris per tabel. > 0 = sudah ada, jangan disalin.
+func sqlPmAdaRiwayatIDPega(produksi, pega string) string {
+	return fmt.Sprintf(`SELECT COUNT(*) FROM (
+	         SELECT 1 FROM %s WHERE IDPEGA = :1 AND ROWNUM = 1
+	         UNION ALL
+	         SELECT 1 FROM %s WHERE ID_PEGA = :2 AND ROWNUM = 1)`, produksi, pega)
 }
 
 // KunciJSONPolisEDM - kunci setiap baris generasi endorsemen di JSON_POLIS (belum berurut generasi).
@@ -278,27 +310,25 @@ func (g *Gudang) SetelPenandaMigrasi(ctx context.Context, tx *db.Tx, polisID str
 	return nil
 }
 
-// SalinUsulanLamaEDM menyalin baris SuggestList dokumen lama ke POOLDATA.HISTORYAKSEPTASIPRODUCTION lewat penulis
-// yang SAMA dengan jalur biasa (`CatatUsulan`), di transaksi pemuatan dokumen itu. Penjaga dobel menurut IDPEGA:
-// IDPEGA yang sudah punya baris riwayat produksi tidak ditulis lagi (`UsulanDilewati`).
-func (g *Gudang) SalinUsulanLamaEDM(ctx context.Context, tx *db.Tx, idPega string, baris []models.UsulanProduksi) (models.NasibUsulan, error) {
-	if len(baris) == 0 {
-		return models.UsulanTanpaBaris, nil
-	}
-	t, err := g.nama(tabelRiwayatProduksi)
+// AdaRiwayatIDPega - IDPEGA itu sudah punya baris di POOLDATA.HISTORYAKSEPTASIPRODUCTION ATAU
+// POOLDATA.HISTORYAKSEPTASIPEGA: proteksi dobel salinan SuggestList dokumen lama (services `salinUsulanLama`).
+// Baca saja, di transaksi pemuatan dokumen itu.
+func (g *Gudang) AdaRiwayatIDPega(ctx context.Context, tx *db.Tx, idPega string) (bool, error) {
+	produksi, err := g.nama(tabelRiwayatProduksi)
 	if err != nil {
-		return models.UsulanTanpaBaris, err
+		return false, err
 	}
-	q := sqlPmAdaUsulanIDPega(t)
+	pega, err := g.nama(tabelRiwayatPega)
+	if err != nil {
+		return false, err
+	}
+	q := sqlPmAdaRiwayatIDPega(produksi, pega)
 	if err := db.PeriksaSQL(q); err != nil {
-		return models.UsulanTanpaBaris, err
+		return false, err
 	}
 	var n int
-	if err := g.pembaca(tx).QueryRowContext(ctx, q, idPega).Scan(&n); err != nil {
-		return models.UsulanTanpaBaris, fmt.Errorf("repository: memeriksa riwayat produksi IDPEGA: %w", err)
+	if err := g.pembaca(tx).QueryRowContext(ctx, q, idPega, idPega).Scan(&n); err != nil {
+		return false, fmt.Errorf("repository: memeriksa riwayat IDPEGA: %w", err)
 	}
-	if n > 0 {
-		return models.UsulanDilewati, nil
-	}
-	return models.UsulanDisalin, g.CatatUsulan(ctx, tx, idPega, baris)
+	return n > 0, nil
 }

@@ -12,7 +12,7 @@ import { Gagal, Kosong, Memuat, Modal } from '../../../../inti/frontend/componen
 import { ambilDokumenLama, salinDokumenLama, type DokumenLama, type HasilSalinLama, type StatusSalinLama } from '../api'
 import { COPY_OLD, labelJenisEDM } from '../labels'
 import { idBolehDisalin, ringkasSalin, saringLama } from '../lama'
-import { sajikan } from '../sajian'
+import { idTampil, sajikan } from '../sajian'
 
 const URUT_STATUS: StatusSalinLama[] = ['disalin', 'sudahAda', 'ditolak', 'gagal']
 
@@ -66,13 +66,13 @@ export function TabelLama({
               <td className="edmt__lama-centang">
                 <input
                   type="checkbox"
-                  aria-label={`${COPY_OLD.pilihBaris} ${d.id}`}
+                  aria-label={`${COPY_OLD.pilihBaris} ${idTampil(d.id)}`}
                   checked={terpilih.has(d.id)}
                   disabled={!d.bolehDisalin || proses}
                   onChange={(e) => onCentang(d.id, e.target.checked)}
                 />
               </td>
-              <td>{d.id}</td>
+              <td>{idTampil(d.id)}</td>
               <td>{d.noPolis}</td>
               <td>{d.edmNo}</td>
               <td className="edmt__angka">{d.prodKe}</td>
@@ -195,7 +195,7 @@ export default function DialogCopyOld({ onTutup }: { onTutup: (adaYangDisalin: b
           <ul className="edmt__lama-masalah">
             {bukanDisalin.map((h) => (
               <li key={h.id}>
-                <strong>{h.id}</strong> {COPY_OLD.status[h.status]}
+                <strong>{idTampil(h.id)}</strong> {COPY_OLD.status[h.status]}
                 {h.pesan.length > 0 && ` - ${h.pesan.join('; ')}`}
               </li>
             ))}

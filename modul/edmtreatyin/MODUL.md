@@ -70,7 +70,8 @@ Kode yang disalin dari `modul/nbtreatyin` (modul tidak saling mengimpor) membawa
   - **Kotak masuk Beranda**: EDM ikut (`frontend/menu.ts` `antreanBeranda` + `daftarBeranda`) - Sec Head / Dept Head
     membuka berkas dari Beranda.
   - **Portal = aturan portal NB**: switch *In Progress* (buatan akun, masih proses) / *Resolved* (`?status=selesai`,
-    semua berkas selesai, dibuka hanya-baca).
+    berkas selesai BUATAN akun ini, dibuka hanya-baca - RALAT WO 07-10-2026 *"TAMBAHKAN KAN UNTUK PEMBUAT. MENU ITU
+    HANYA UNTUK SI PEMBUAT, NB DAN EDM TREATY"*; dulu semua berkas selesai).
     Tab Resolved menambah kolom **Production Date** DD-MM-YYYY (`T_GENERAL_POLIS_TREATY.TGL_PROD`) di ujung; Policy Number
     sudah kolom XML ke-3.
     Kolom Status berkas selesai = `T_WORK_POLIS.STATUS_WORK` (`Resolved-Completed` / `Resolved-Rejected`), bukan NBStatus
@@ -198,6 +199,34 @@ dokumen (`models.AlasanSalinLama`).
 - **Sumber data lama** (perintah WO 07-10-2026): `SELECT * FROM DATAPEGA.PC_ASM_FW_GISFW_WORK a, json_polis b,
   treatyinproduction c WHERE a.pzinskey = b.idpega AND b.idpega = c.idpega` - ditulis EXISTS
   (`repository.sqlPmKunciJSONPolisEDMCopyOld`), sama dengan Copy Old NB. Alat pemuat massal tetap tanpa saringan.
+- **ID kasus salinan = IDPEGA Pega UTUH** (perintah WO 07-10-2026 *"IDPEGA BAWAAN PEGA JANGAN DI POTONG"*):
+  `ASM-FW-GISFW-WORK EDMT-<n>`. RALAT: pzInsKey Pega memakai kelas GRUP `ASM-FW-GISFW-WORK` (DEV: 4 kasus EDMT, 264 NB),
+  bukan `KelasKerjaEDM` - dulu setiap dokumen EDM asli akan ditolak `ErrIDPega`. Daftar portal / kotak masuk / cek EDM
+  terbuka mengenali kedua bentuk ID (`repository.sqlIDKasusEDM`). Berlaku juga untuk alat pemuat CLI.
+  - **Layar menampilkan pyID saja** (perintah WO 07-10-2026 *"TAMPILAN NYA HANYA NB-XXX AJA, BERLAKU NB DAN EDM
+    TREATY"*): `sajian.idTampil` (= `models.PyIDKasus`) di EDM Number portal, Beranda, judul + popup nomor layar kasus,
+    popup Copy Old. Kunci buka / kirim / centang tetap ID utuh; saringan portal tetap cocok (LIKE `%EDMT-<n>%`).
+- **Cek sumber Copy Old** (WO 08-10-2026 *"CEK APAKAH COPY OLDNYA SUDAH BENERA MENGCOPY SUMBER DATANYA?"*; alat
+  baca-saja di atas `PecahDokumenLama` + `BacaHalaman`): DEV 29 dokumen NB Treaty, semua Proportional; NB NonProp
+  dan EDM Treaty 0 dokumen. Berkas tersalin cocok dengan sumbernya untuk setiap medan berkolom (spreading
+  dibulatkan 8 desimal: DEV `T_POLIS_SPREADING/INSTALMENT(_DETAIL)/XOL(_LAYER)` masih NUMBER(38,8), migrasi
+  NUMBER(38,10)). Medan tanpa kolom yang BELUM DIPUTUSKAN diputuskan WO 08-10-2026: `IsSOAUpload` ("IsSOAUpload
+  ITU PERLU") jadi kolom T_GENERAL_POLIS_TREATY `IS_SOA_UPLOAD` (320 + `SCRIPT-TABEL-KOLOM-BARU.xlsx` NB TREATY
+  bagian E untuk skema lama); `GuaranteeFund` dibuang ("GUARANTEE_FUND NUMBER(38,10), buang!", alasan
+  `keputusan_wo`; produksi EDM membaca TreatyDifference.GuaranteeFund); sisanya dibuang dengan bukti korpus di
+  `medan_abaikan_lama.json` (`f3_tanpa_pembaca`). EDM: `IS_SOA_UPLOAD` ikut katalog EDM (tabel
+  NB yang sama); `RNMShare` TETAP belum diputuskan di EDM - dibaca `CountSpreading_Act` korpus EDM.
+- **Pembuat berkas salinan** (WO 07-10-2026 *"PXCREATEOPERATOR,PXCREATEOPNAME"*): CREATE_OP / CREATE_OP_NAME =
+  pembuat kasus Pega (`DATAPEGA.PC_ASM_FW_GISFW_WORK` menurut PZINSKEY = IDPEGA, `repository.PembuatPega`); tanpa
+  baris Pega = NULL (tidak dikarang). Berkas tampil di portal akun yang LOGIN_ID-nya = PXCREATEOPERATOR.
+- **Proteksi dobel riwayat** (perintah WO 07-10-2026 *"TAMBAKAN PROTEKSI UNTUK 2 TABLE INI
+  historyakseptasiproduction,historyakseptasiPEGA - SAAT COPY, JIKA UDAH ADA PADA 2 TABLE ITU JANGAN DI COPY, SUPAYA
+  TIDAK DOUBLE"*): SuggestList dokumen lama ditulis ke HISTORYAKSEPTASIPRODUCTION HANYA bila IDPEGA-nya belum punya
+  baris di HISTORYAKSEPTASIPRODUCTION maupun HISTORYAKSEPTASIPEGA (`services.salinUsulanLama` +
+  `repository.AdaRiwayatIDPega`; uji seam `TestCopyOldTanpaDobelRiwayat`). HISTORYAKSEPTASIPEGA tidak pernah ditulis Copy Old
+  / alat pemuat - riwayat Pega berkunci pzInsKey yang sama, dibaca lewat `KunciInstans`. DEV 07-10-2026: dari 27
+  dokumen NB kandidat, 2 sudah punya SuggestList dan 1 hanya punya History (SuggestList-nya tidak disalin). Baris
+  kembar yang sudah ada di kedua tabel berasal dari data Pega lama, bukan dari Copy Old.
 - **Hanya superadmin** = pemegang menu Kelola User dengan menu EDM Treaty In ber-hak penuh (pola Copy Old Data
   Bordereaux; View only berlaku juga bagi superadmin). Tombol tampil menurut `GET /hak`; rute `lama` menolak 403.
 - Generasi 1 butuh polis NB-nya sudah di tabel flat (pemuat NB). DEV 07-10-2026: nol dokumen endorsemen Treaty In lama

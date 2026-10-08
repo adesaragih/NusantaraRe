@@ -96,6 +96,7 @@ Satu baris per generasi polis; kunci utama bersama `T_WORK_POLIS` (ID-7). Genera
 | `OVERIDDING_COMM_OGP` | angka desimal | ya |  | persen | `OveriddingCommOgp` |
 | `RI_COMM_ONP` | angka desimal | ya |  | persen | `RiCommOnp` |
 | `OVERIDDING_COMM_ONP` | angka desimal | ya |  | persen | `OveriddingCommOnp` |
+| `IS_SOA_UPLOAD` | teks | ya |  | kode | `IsSOAUpload` |
 
 ## T_POLIS_QUOTATION
 

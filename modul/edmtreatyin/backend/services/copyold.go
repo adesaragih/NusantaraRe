@@ -111,7 +111,7 @@ func (pm *Pemuat) siapkanLama(ctx context.Context) ([]models.DokumenLama, map[st
 		}
 		d := models.DokumenLama{NoPolis: strings.TrimSpace(b.NoPolis), EDMNo: strings.TrimSpace(b.NoEndors), TglProd: b.TglProd,
 			Alasan: []string{}}
-		d.ID, _ = models.IDKasusDariIDPegaEDM(b.IDPega)
+		d.ID = strings.TrimSpace(b.IDPega) // IDPEGA utuh (WO 07-10-2026)
 		d.ProdKe, _ = strconv.Atoi(strings.TrimSpace(b.ProdKe))
 		if err != nil {
 			out = append(out, tolakLama(d, err))

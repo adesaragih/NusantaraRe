@@ -123,6 +123,7 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		errors.Is(err, services.ErrTahapBerubah),
 		errors.Is(err, services.ErrGenerasiTertutup),
 		errors.Is(err, services.ErrNomorPolisSudahAda),
+		errors.Is(err, services.ErrNomorPolisDipakai),
 		errors.Is(err, services.ErrTindakanTakAdaDiPosisi):
 		galat.Tulis(w, http.StatusConflict, err.Error())
 	default:

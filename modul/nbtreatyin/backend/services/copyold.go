@@ -105,7 +105,7 @@ func (pm *Pemuat) siapkanLama(ctx context.Context) ([]models.DokumenLama, map[st
 			continue
 		}
 		d := models.DokumenLama{NoPolis: strings.TrimSpace(b.NoPolis), TglProd: b.TglProd, Alasan: []string{}}
-		d.ID, _ = models.IDKasusDariIDPega(b.IDPega)
+		d.ID = strings.TrimSpace(b.IDPega) // IDPEGA utuh (WO 07-10-2026)
 		if err != nil {
 			d.Alasan = append(d.Alasan, teksAlasan(err))
 			out = append(out, d)
@@ -197,7 +197,7 @@ func (pm *Pemuat) salinLama(ctx context.Context, ids []string) (models.JawabanSa
 			j.Disalin++
 		case errors.Is(err, errSudahDimuat):
 			h.Status, h.Pesan = models.SalinSudahAda, []string{"already in the new tables"}
-		case errors.Is(err, ErrNomorPolisSudahAda):
+		case errors.Is(err, ErrNomorPolisDipakai), errors.Is(err, ErrNomorPolisSudahAda):
 			h.Status, h.Pesan = models.SalinDitolak, []string{"this policy number is already used by another NB case in the new tables"}
 		default:
 			log.Printf("nbtreatyin: Copy Old %s gagal: %v", d.ID, err)

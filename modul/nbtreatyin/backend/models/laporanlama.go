@@ -143,7 +143,8 @@ const (
 	UsulanTanpaBaris NasibUsulan = iota
 	// UsulanDisalin - baris ditulis (atau, uji-kering, siap ditulis).
 	UsulanDisalin
-	// UsulanDilewati - penjaga dobel: IDPEGA sudah punya baris riwayat produksi.
+	// UsulanDilewati - proteksi dobel (WO 07-10-2026): IDPEGA sudah punya baris di HISTORYAKSEPTASIPRODUCTION atau
+	// HISTORYAKSEPTASIPEGA - tidak ditulis lagi.
 	UsulanDilewati
 )
 
@@ -194,7 +195,7 @@ func (r RingkasanPemuat) Teks() string {
 	fmt.Fprintf(&b, "Catatan SuggestList %-29s: %d baris -> POOLDATA.HISTORYAKSEPTASIPRODUCTION (F3)\n", disalin, r.Usulan.Disalin)
 	b.WriteString("    AKSES_LOGIN selalu NULL (anggota sumbernya tidak ada di dokumen lama)\n")
 	fmt.Fprintf(&b, "    PIC kosong (baris dokumen tanpa OperatorName, ditulis NULL)      : %d\n", r.Usulan.TanpaPIC)
-	fmt.Fprintf(&b, "    dokumen dilewati - IDPEGA sudah punya baris riwayat produksi    : %d\n", r.Usulan.DokumenSudahAda)
+	fmt.Fprintf(&b, "    dokumen dilewati - IDPEGA sudah ada di riwayat produksi / Pega  : %d\n", r.Usulan.DokumenSudahAda)
 	fmt.Fprintf(&b, "Medan dibuang menurut keputusan tertulis (arsip CSV, KEPUTUSAN dibuang):\n")
 	tulisPeta(&b, r.DiabaikanPerAlasan)
 	fmt.Fprintf(&b, "Medan BELUM DIPUTUSKAN (arsip CSV, KEPUTUSAN %s): %d  - WAJIB 0 sebelum pekerjaan dinyatakan selesai (AC 59, F3)\n",
@@ -298,8 +299,9 @@ func (l *LaporanPemuat) Berhasil(h HasilPecah, usulan NasibUsulan) error {
 	case UsulanDilewati:
 		l.r.Usulan.DokumenSudahAda++
 	}
-	if strings.HasPrefix(h.ID, AwalanKasus) {
-		if n, err := strconv.ParseInt(strings.TrimPrefix(h.ID, AwalanKasus), 10, 64); err == nil && n > l.r.AngkaKasusTerbesar {
+	// ID salinan = pzInsKey utuh (WO 07-10-2026): nomor dari pyID-nya
+	if py := PyIDKasus(h.ID); strings.HasPrefix(py, AwalanKasus) {
+		if n, err := strconv.ParseInt(strings.TrimPrefix(py, AwalanKasus), 10, 64); err == nil && n > l.r.AngkaKasusTerbesar {
 			l.r.AngkaKasusTerbesar = n
 		}
 	}

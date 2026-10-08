@@ -25,6 +25,7 @@ var (
 	ErrTahapBerubah        = repository.ErrTahapBerubah
 	ErrGenerasiTertutup    = repository.ErrGenerasiTertutup
 	ErrNomorPolisSudahAda  = repository.ErrNomorPolisSudahAda
+	ErrNomorPolisDipakai   = repository.ErrNomorPolisDipakai
 	ErrDataKontrakTidakAda = repository.ErrDataKontrakTidakAda
 	ErrTipeNomorKosong     = repository.ErrTipeNomorKosong
 	ErrOJKKosong           = repository.ErrOJKKosong
@@ -133,12 +134,10 @@ func (l *Layanan) DaftarKasus(ctx context.Context, p inti.Pelaku, s models.Sarin
 	// (`A.pxCreateOperator = Param.UserIdentifier`) - berkas BUATAN akun ini di posisi mana pun, untuk siapa pun.
 	// Antrean atasan tidak lagi tampil di portal (berkas yang menunggu atasan dibuka dari kotak masuk Beranda);
 	// berkas tanpa CREATE_OP tidak cocok dengan akun mana pun. Saringan LINI non-life tetap (WO: "filter nonlife-nya
-	// tetap"). `s.Selesai` = switch Proses / Resolved: Resolved menampilkan SEMUA berkas selesai, siapa pun
-	// pembuatnya (WO 06-10-2026: "yang resolve nampilin semua yang resolve"); berkas selesai hanya-baca.
+	// tetap"). `s.Selesai` = switch Proses / Resolved; berkas selesai hanya-baca. RALAT 07-10-2026 (WO "TAMBAHKAN KAN
+	// UNTUK PEMBUAT. MENU ITU HANYA UNTUK SI PEMBUAT, NB DAN EDM TREATY"; dulu 06-10-2026 "yang resolve nampilin semua
+	// yang resolve"): Resolved pun HANYA berkas buatan akun ini.
 	s.Antrean, s.PembuatPosisi, s.Pembuat = nil, "", p.AkunID
-	if s.Selesai {
-		s.Pembuat = ""
-	}
 	return l.g.DaftarKasus(ctx, s)
 }
 
@@ -377,9 +376,26 @@ func (l *Layanan) tampilan(ctx context.Context, h *models.Halaman) error {
 }
 
 // muatMaster mengisi halaman TreatyIn dari baris view kontrak terpilih.
+//
+// Berkas salinan dokumen Pega lama (Copy Old / pemuat): DATA_JSON hanya halaman PolicyTreatyIn sehingga `TreatyIn.ID`
+// (TREATY_IN_ID) kosong - master dibaca lewat `PolicyTreatyIn.NoOffer` = TREATYID view, baris pertama (laporan work
+// owner 07-10-2026 "Commencement,Termination tdak muncul"). Kontrak lama yang tidak ada di view = tanpa master, berkas
+// tetap terbuka (nol tulisan).
 func (l *Layanan) muatMaster(ctx context.Context, h *models.Halaman) error {
 	id := h.Ambil(models.HalamanMaster + ".ID")
 	if id == "" {
+		noOffer := h.Ambil(models.HalamanPolis + ".NoOffer")
+		if noOffer == "" {
+			return nil
+		}
+		b, err := l.g.DetailKontrakTreaty(ctx, noOffer)
+		if errors.Is(err, repository.ErrDataKontrakTidakAda) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		models.TerapkanMasterKontrak(h, b)
 		return nil
 	}
 	b, err := l.g.DetailKontrak(ctx, id)

@@ -20,7 +20,7 @@ var dokumenUjiEDMNonProp string
 
 func barisUjiEDM(dokumen string) BarisJSONPolis {
 	return BarisJSONPolis{
-		IDPega: "ASM-FW-GISFW-WORK-ENDORSEMENTTREATY EDMT-990002", NoPolis: "UJI-QP.T1.10.2017.00001",
+		IDPega: "ASM-FW-GISFW-WORK EDMT-990002", NoPolis: "UJI-QP.T1.10.2017.00001",
 		NoEndors: "UJI-QP.T1.10.2017.00001/E02", ProdKe: "2",
 		TglInput: "2017-10-02 08:00:00", Username: "UJI-AKUN", DataJSON: []byte(dokumen),
 	}
@@ -34,7 +34,8 @@ func TestPecahDokumenEDMProporsional(t *testing.T) { // AC 39 (ID-33), ID-8, AC 
 	if len(h.Galat) > 0 {
 		t.Fatalf("galat tak terduga: %+v", h.Galat)
 	}
-	if h.ID != "EDMT-990002" || h.ProdKe != 2 || h.EDMNo != "UJI-QP.T1.10.2017.00001/E02" || h.EDMType != "3" ||
+	// ID kasus = IDPEGA Pega UTUH (WO 07-10-2026 "IDPEGA BAWAAN PEGA JANGAN DI POTONG")
+	if h.ID != "ASM-FW-GISFW-WORK EDMT-990002" || h.ProdKe != 2 || h.EDMNo != "UJI-QP.T1.10.2017.00001/E02" || h.EDMType != "3" ||
 		h.NoPolis != "UJI-QP.T1.10.2017.00001" || h.OldDataEDMNo != "UJI-QP.T1.10.2017.00001/E01" {
 		t.Errorf("kunci generasi %+v", h)
 	}
@@ -108,7 +109,7 @@ func TestPecahDokumenEDMProporsional(t *testing.T) { // AC 39 (ID-33), ID-8, AC 
 
 func TestPecahDokumenEDMNonProporsional(t *testing.T) { // ID-7, AC 29; ID-33
 	b := barisUjiEDM(dokumenUjiEDMNonProp)
-	b.IDPega, b.NoPolis, b.NoEndors, b.ProdKe = "asm-fw-gisfw-work-endorsementtreaty EDMT-990011", "UJI-QR.T1.01.2018.00002", "", "1"
+	b.IDPega, b.NoPolis, b.NoEndors, b.ProdKe = "asm-fw-gisfw-work EDMT-990011", "UJI-QR.T1.01.2018.00002", "", "1"
 	h, err := PecahDokumenEDM(b)
 	if err != nil || len(h.Galat) > 0 {
 		t.Fatalf("%v %+v", err, h.Galat)
@@ -203,14 +204,23 @@ func TestPecahDokumenEDMLewatDanGalat(t *testing.T) {
 	}
 }
 
+// pzInsKey kasus Pega = kelas GRUP + pyID (DEV 07-10-2026); ID kasus = IDPEGA UTUH (WO 07-10-2026), panjang <= 32.
 func TestIDKasusDariIDPegaEDM(t *testing.T) {
-	for _, s := range []string{"ASM-FW-GISFW-WORK-ENDORSEMENTTREATY EDMT-1", "ASM-FW-GISFW-Work-EndorsementTreaty EDMT-990045"} {
-		if _, err := IDKasusDariIDPegaEDM(s); err != nil {
-			t.Errorf("%q: %v", s, err)
+	for _, s := range []string{"ASM-FW-GISFW-WORK EDMT-1", "  asm-fw-gisfw-work EDMT-990045 "} {
+		id, err := IDKasusDariIDPegaEDM(s)
+		if err != nil || id != strings.TrimSpace(s) {
+			t.Errorf("%q: %q %v", s, id, err)
+		}
+		if PyIDKasus(id) != strings.Fields(s)[1] {
+			t.Errorf("pyID %q", PyIDKasus(id))
 		}
 	}
-	for _, s := range []string{"", "EDMT-1", "ASM-FW-GISFW-WORK-ENDORSEMENTTREATY NB-1", "ASM-FW-GISFW-WORK-ENDORSEMENTTREATY EDMT-",
-		"ASM-FW-GISFW-WORK-ENDORSEMENTTREATY EDMT-1A", "ASM-FW-GISFW-WORK-NB EDMT-1"} {
+	if PyIDKasus("EDMT-7") != "EDMT-7" {
+		t.Error("ID aplikasi baru = pyID")
+	}
+	for _, s := range []string{"", "EDMT-1", "ASM-FW-GISFW-WORK NB-1", "ASM-FW-GISFW-WORK EDMT-",
+		"ASM-FW-GISFW-WORK EDMT-1A", "ASM-FW-GISFW-WORK-NB EDMT-1", "ASM-FW-GISFW-Work-EndorsementTreaty EDMT-990045",
+		"ASM-FW-GISFW-WORK EDMT-123456789012345"} {
 		if _, err := IDKasusDariIDPegaEDM(s); !errors.Is(err, ErrIDPega) {
 			t.Errorf("%q: harap ErrIDPega, dapat %v", s, err)
 		}

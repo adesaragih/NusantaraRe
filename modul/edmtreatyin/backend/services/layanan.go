@@ -93,12 +93,10 @@ func (l *Layanan) DaftarKasus(ctx context.Context, p inti.Pelaku, cari string, s
 		return nil, err
 	}
 	// Aturan portal NB Treaty In berlaku untuk EDM (keputusan work owner 07-10-2026 "YA"; NB 06-10-2026): In
-	// Progress = berkas BUATAN akun ini (filter A) yang masih proses; Resolved = SEMUA berkas selesai, siapa pun
-	// pembuatnya ("yang resolve nampilin semua yang resolve"); berkas selesai hanya-baca (`Layar.BolehKerja`).
+	// Progress = berkas BUATAN akun ini (filter A) yang masih proses; Resolved = berkas selesai BUATAN akun ini (RALAT
+	// 07-10-2026 "TAMBAHKAN KAN UNTUK PEMBUAT. MENU ITU HANYA UNTUK SI PEMBUAT, NB DAN EDM TREATY"; dulu semua berkas
+	// selesai); berkas selesai hanya-baca (`Layar.BolehKerja`).
 	s := models.SaringanKasus{Cari: cari, Pembuat: p.AkunID, Selesai: selesai}
-	if selesai {
-		s.Pembuat = ""
-	}
 	return l.g.DaftarKasus(ctx, s)
 }
 

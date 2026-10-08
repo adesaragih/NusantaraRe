@@ -504,7 +504,8 @@ func TestAdminMenolakMembuangSelisih(t *testing.T) {
 }
 
 // Keputusan work owner 07-10-2026 (aturan portal NB berlaku untuk EDM): In Progress = buatan akun ini yang masih
-// proses; Resolved (`?status=selesai`) = SEMUA berkas selesai siapa pun pembuatnya; berkas selesai hanya-baca.
+// proses; Resolved (`?status=selesai`) = berkas selesai BUATAN akun ini (RALAT 07-10-2026 "TAMBAHKAN KAN UNTUK
+// PEMBUAT. MENU ITU HANYA UNTUK SI PEMBUAT, NB DAN EDM TREATY"; dulu semua berkas selesai); berkas selesai hanya-baca.
 func TestPortalInProgressDanResolved(t *testing.T) {
 	u := baru(t)
 	k := u.buat("1")
@@ -523,8 +524,11 @@ func TestPortalInProgressDanResolved(t *testing.T) {
 	if d := daftar(admin, ""); len(d) != 0 {
 		t.Fatalf("In Progress memuat berkas selesai: %+v", d)
 	}
-	if d := daftar(adminLain, "?status=selesai"); len(d) != 1 || d[0].ID != k.ID {
-		t.Fatalf("Resolved harus memuat berkas selesai buatan akun lain: %+v", d)
+	if d := daftar(adminLain, "?status=selesai"); len(d) != 0 {
+		t.Fatalf("Resolved memuat berkas selesai buatan akun lain: %+v", d)
+	}
+	if d := daftar(admin, "?status=selesai"); len(d) != 1 || d[0].ID != k.ID {
+		t.Fatalf("Resolved harus memuat berkas selesai buatan akun ini: %+v", d)
 	} else if d[0].NoPolis != nopolUji || d[0].EDMNo != nopolUji+"/E01" || d[0].TglProd == "" {
 		// WO 07-10-2026 "kalo dah resolve tambahin kolom nopolisnya": kolom XML "Policy Number" = NOPOLIS generasi selesai
 		t.Fatalf("Resolved: Policy Number %q / EDM Number %q / Production Date %q", d[0].NoPolis, d[0].EDMNo, d[0].TglProd)

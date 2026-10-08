@@ -13,7 +13,9 @@ package services
 // Per dokumen: pecah (models, murni) -> SATU transaksi -> tulis lewat
 // antarmuka penyimpanan yang SAMA dengan jalur biasa (ID-3, AC 56):
 //
-//	SisipKasus      T_WORK_POLIS + generasi PRODKE 0 (pembuat tidak dikarang: NULL)
+//	SisipKasus      T_WORK_POLIS + generasi PRODKE 0; pembuat = PXCREATEOPERATOR /
+//	                PXCREATEOPNAME kasus Pega (`PembuatPega`, WO 07-10-2026),
+//	                tanpa baris Pega = NULL (tidak dikarang)
 //	SimpanHalaman   T_GENERAL_POLIS_TREATY + T_POLIS_QUOTATION/CEDING/INSTALMENT(_DETAIL)/
 //	                SPREADING/XOL/XOL_LAYER menurut katalog - penjaga yang sama
 //	                (PeriksaBentukSimpan AC 31/33, konversi kolom ID-14..18)
@@ -22,10 +24,11 @@ package services
 //	TutupKasus      Resolved-Completed: dokumen JSON_POLIS hanya lahir di jalur
 //	                Decision8 "Nopolis not empty" -> Utility1 -> Utility2 -> End3
 //	                (Flow InputRealizationTreatyIn) - kasusnya sudah selesai.
-//	SalinUsulanLama SuggestList dokumen -> POOLDATA.HISTORYAKSEPTASIPRODUCTION
+//	CatatUsulan     SuggestList dokumen -> POOLDATA.HISTORYAKSEPTASIPRODUCTION
 //	                lewat `CatatUsulan` jalur biasa (F3, WO 04-10-2026), dengan
-//	                penjaga dobel menurut IDPEGA (IDPEGA = JSON_POLIS.IDPEGA =
-//	                pzInsKey kasus lama, sama dengan `InsertViewSuggest_SQL`).
+//	                proteksi dobel `salinUsulanLama` (WO 07-10-2026): IDPEGA yang
+//	                sudah ada di HISTORYAKSEPTASIPRODUCTION / HISTORYAKSEPTASIPEGA
+//	                tidak ditulis lagi. HISTORYAKSEPTASIPEGA tidak pernah ditulis.
 //
 // Baris hasil pemuat dikenali dari IDPEGA (`<kelas> <pyID>`, jalur biasa
 // menulis ID kasus) dan status Resolved-Completed - tanpa kolom penanda
@@ -60,12 +63,16 @@ type GudangPemuat interface {
 	KunciJSONPolisCopyOld(ctx context.Context) ([]string, error)
 	BacaJSONPolis(ctx context.Context, kunci string) (models.BarisJSONPolis, error)
 	AdaKasus(ctx context.Context, tx *db.Tx, id string) (bool, error)
+	// PembuatPega - PXCREATEOPERATOR / PXCREATEOPNAME DATAPEGA.PC_ASM_FW_GISFW_WORK menurut pzInsKey (WO 07-10-2026).
+	PembuatPega(ctx context.Context, tx *db.Tx, idPega string) (operator, nama string, err error)
 	SisipKasus(ctx context.Context, tx *db.Tx, id, pembuat, namaPembuat string) error
 	SimpanHalaman(ctx context.Context, tx *db.Tx, id string, h *models.Halaman) error
 	SetelNomorPolis(ctx context.Context, tx *db.Tx, id, nopol string) error
 	SetelKolomDatarLama(ctx context.Context, tx *db.Tx, id string, k models.KolomDatarLama) error
 	TutupKasus(ctx context.Context, tx *db.Tx, id, statusLama, statusAkhir string) error
-	SalinUsulanLama(ctx context.Context, tx *db.Tx, idPega string, baris []models.UsulanProduksi) (models.NasibUsulan, error)
+	// AdaRiwayatIDPega - IDPEGA sudah punya baris HISTORYAKSEPTASIPRODUCTION / HISTORYAKSEPTASIPEGA (proteksi dobel).
+	AdaRiwayatIDPega(ctx context.Context, tx *db.Tx, idPega string) (bool, error)
+	CatatUsulan(ctx context.Context, tx *db.Tx, idPega string, baris []models.UsulanProduksi) error
 }
 
 var _ GudangPemuat = penyimpanOracle{}
@@ -179,7 +186,12 @@ func (p *Pemuat) muat(ctx context.Context, b models.BarisJSONPolis, h models.Has
 		if ada {
 			return errSudahDimuat
 		}
-		if err := p.g.SisipKasus(ctx, tx, h.ID, "", ""); err != nil {
+		// pembuat = pembuat kasus Pega (WO 07-10-2026 "PXCREATEOPERATOR,PXCREATEOPNAME"); tanpa baris Pega = NULL
+		op, nama, err := p.g.PembuatPega(ctx, tx, b.IDPega)
+		if err != nil {
+			return err
+		}
+		if err := p.g.SisipKasus(ctx, tx, h.ID, op, nama); err != nil {
 			return err
 		}
 		if err := p.g.SimpanHalaman(ctx, tx, h.ID, h.Halaman); err != nil {
@@ -194,8 +206,28 @@ func (p *Pemuat) muat(ctx context.Context, b models.BarisJSONPolis, h models.Has
 		if err := p.g.TutupKasus(ctx, tx, h.ID, models.AssignmentAdmin, models.StatusSelesai); err != nil {
 			return err
 		}
-		usulan, err = p.g.SalinUsulanLama(ctx, tx, b.IDPega, h.Usulan)
+		usulan, err = salinUsulanLama(ctx, p.g, tx, b.IDPega, h.Usulan)
 		return err
 	})
 	return usulan, err
+}
+
+// salinUsulanLama - SuggestList dokumen lama -> POOLDATA.HISTORYAKSEPTASIPRODUCTION lewat `CatatUsulan` jalur biasa
+// (F3). PROTEKSI DOBEL (perintah WO 07-10-2026 "TAMBAKAN PROTEKSI UNTUK 2 TABLE INI historyakseptasiproduction,historyakseptasiPEGA -
+// SAAT COPY, JIKA UDAH ADA PADA 2 TABLE ITU JANGAN DI COPY, SUPAYA TIDAK DOUBLE"):
+// IDPEGA yang sudah punya baris di HISTORYAKSEPTASIPRODUCTION atau HISTORYAKSEPTASIPEGA (baris Pega sendiri atau
+// salinan sebelumnya) tidak ditulis lagi (`UsulanDilewati`). HISTORYAKSEPTASIPEGA tidak pernah ditulis pemuat:
+// riwayat Pega berkunci pzInsKey yang sama dan dibaca lewat `KunciInstans`.
+func salinUsulanLama(ctx context.Context, g GudangPemuat, tx *db.Tx, idPega string, baris []models.UsulanProduksi) (models.NasibUsulan, error) {
+	if len(baris) == 0 {
+		return models.UsulanTanpaBaris, nil
+	}
+	ada, err := g.AdaRiwayatIDPega(ctx, tx, idPega)
+	if err != nil {
+		return models.UsulanTanpaBaris, err
+	}
+	if ada {
+		return models.UsulanDilewati, nil
+	}
+	return models.UsulanDisalin, g.CatatUsulan(ctx, tx, idPega, baris)
 }

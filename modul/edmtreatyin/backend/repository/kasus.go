@@ -215,6 +215,12 @@ func (g *Gudang) TutupKasus(ctx context.Context, tx *db.Tx, id, statusLama, stat
 	return nil
 }
 
+// sqlIDKasusEDM - syarat "kasus endorsemen" atas kolom ID kasus: pyID aplikasi baru `EDMT-<n>` ATAU pzInsKey Pega utuh
+// `<kelas> EDMT-<n>` (salinan dokumen lama - IDPEGA tidak dipotong, perintah work owner 07-10-2026).
+func sqlIDKasusEDM(kolom string) string {
+	return fmt.Sprintf("(%[1]s LIKE '%[2]s%%' OR %[1]s LIKE '%% %[2]s%%')", kolom, models.AwalanKasus)
+}
+
 // kolomCariPortal - kolom kotak saring portal (perintah work owner 07-10-2026 "pencarian ... buat bisa mencari nomor
 // nb/edm, insured name dll"): nomor kasus EDMT-n, Offer No, nomor polis (generasi dan polis NB lama), EDM No, insured
 // (generasi dan quotation), group business, SOB, ceding, marketing, treaty group, class of business, nama pembuat -
@@ -257,7 +263,7 @@ func sqlDaftarKasus(kerja, gen, quot string, s models.SaringanKasus) (string, []
 	   JOIN %s g ON g.ID = w.ID
 	   LEFT JOIN %s q ON q.POLIS_ID = g.ID
 	  WHERE g.PRODKE >= 1 AND w.LINI = :1
-	    AND w.ID LIKE '%s%%'`, fmtTanggal, fmtTanggal, fmtTanggal, fmtTanggal, kerja, gen, quot, models.AwalanKasus)
+	    AND %s`, fmtTanggal, fmtTanggal, fmtTanggal, fmtTanggal, kerja, gen, quot, sqlIDKasusEDM("w.ID"))
 	if !s.Selesai {
 		// filter C RD InboxEDM_RD2 (`!= "Resolved-Completed"`). ⚠️ End3 Pega menutup kasus tanpa status tertulis;
 		// sistem baru menutup dengan dua status (ketetapan NB P24) - keduanya "sudah selesai" bagi filter C.
@@ -375,10 +381,10 @@ func sqlHitungKotakMasuk(kerja, gen, akun string, admin bool, atasan []string) (
 	q := fmt.Sprintf(`SELECT g.POSITION_NOTE, COUNT(*)
 	   FROM %s w
 	   JOIN %s g ON g.ID = w.ID
-	  WHERE g.PRODKE >= 1 AND w.LINI = :1 AND w.ID LIKE '%s%%'
+	  WHERE g.PRODKE >= 1 AND w.LINI = :1 AND %s
 	    AND (w.STATUS_WORK IS NULL OR w.STATUS_WORK NOT IN (:2, :3))
 	    AND (%s)
-	  GROUP BY g.POSITION_NOTE`, kerja, gen, models.AwalanKasus, strings.Join(syarat, " OR "))
+	  GROUP BY g.POSITION_NOTE`, kerja, gen, sqlIDKasusEDM("w.ID"), strings.Join(syarat, " OR "))
 	return q, args
 }
 

@@ -37,7 +37,7 @@ import {
   type StatusPortal,
 } from '../labels'
 import { tampilCopyOld } from '../lama'
-import { sajikan } from '../sajian'
+import { idTampil, sajikan } from '../sajian'
 
 /** Grid `GetListOpportunity` - kolom VERBATIM `SFAPortal_OpportunitiesList` C[1.x]/C[2.x]; tab Resolved (`selesai`)
  *  menambah Policy Number sesudah Offer No dan Production Date di akhir (keputusan work owner 07-10-2026). */
@@ -77,7 +77,7 @@ export function TabelPortal({
                 <td data-label={KOLOM_PORTAL.id}>
                   {/* `.TextNoQuotation`; tautan openWorkByHandle (dari sel `.Name`, RALAT tiket 11) */}
                   <button type="button" className="nbti__tautan" onClick={() => onBuka(b.id)}>
-                    {b.id}
+                    {idTampil(b.id)}
                   </button>
                 </td>
                 {selesai && <td data-label={KOLOM_PORTAL_SELESAI.noPolis}>{b.noPolis}</td>}

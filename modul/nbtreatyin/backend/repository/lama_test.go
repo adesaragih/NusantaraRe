@@ -22,8 +22,8 @@ func TestSQLPemuatLamaBerskemaTanpaCommit(t *testing.T) {
 		"baca":  sqlBacaJSONPolis(tabel),
 		"ada":   sqlAdaKasus("UJI_SKEMA.T_GENERAL_POLIS_TREATY"),
 		"datar": sqlSetelKolomDatarLama("UJI_SKEMA.T_GENERAL_POLIS_TREATY"),
-		// F3: penjaga dobel salinan SuggestList menurut IDPEGA.
-		"usulan": sqlAdaUsulanIDPega("UJI_SKEMA.HISTORYAKSEPTASIPRODUCTION"),
+		// F3 + WO 07-10-2026: proteksi dobel salinan SuggestList menurut IDPEGA di dua tabel riwayat.
+		"riwayat": sqlAdaRiwayatIDPega("UJI_SKEMA.HISTORYAKSEPTASIPRODUCTION", "UJI_SKEMA.HISTORYAKSEPTASIPEGA"),
 	} {
 		if err := db.PeriksaSQL(q); err != nil {
 			t.Errorf("%s: %v", nama, err)
@@ -36,10 +36,12 @@ func TestSQLPemuatLamaBerskemaTanpaCommit(t *testing.T) {
 	if !strings.Contains(sqlKunciJSONPolis(tabel), "'0'") {
 		t.Error("kunci JSON_POLIS harus menyaring PRODKE 0")
 	}
-	// Penjaga dobel F3: dicari per IDPEGA (satu penampung), baca saja.
-	q := strings.ToUpper(sqlAdaUsulanIDPega("UJI_SKEMA.HISTORYAKSEPTASIPRODUCTION"))
-	if !strings.Contains(q, "WHERE IDPEGA = :1") || strings.Contains(q, ":2") || !strings.HasPrefix(strings.TrimSpace(q), "SELECT") {
-		t.Errorf("penjaga dobel salinan usulan: %s", q)
+	// Proteksi dobel (WO 07-10-2026): IDPEGA dicari di HISTORYAKSEPTASIPRODUCTION DAN HISTORYAKSEPTASIPEGA, baca saja.
+	q := strings.ToUpper(sqlAdaRiwayatIDPega("UJI_SKEMA.HISTORYAKSEPTASIPRODUCTION", "UJI_SKEMA.HISTORYAKSEPTASIPEGA"))
+	if !strings.Contains(q, "FROM UJI_SKEMA.HISTORYAKSEPTASIPRODUCTION WHERE IDPEGA = :1") ||
+		!strings.Contains(q, "FROM UJI_SKEMA.HISTORYAKSEPTASIPEGA WHERE ID_PEGA = :2") || strings.Contains(q, ":3") ||
+		!strings.HasPrefix(strings.TrimSpace(q), "SELECT") {
+		t.Errorf("proteksi dobel salinan usulan: %s", q)
 	}
 }
 
@@ -105,5 +107,14 @@ func TestUbahGeneralPolisHanyaGenerasiTerbuka(t *testing.T) {
 		if !strings.Contains(q, tabel+" g ") || !strings.Contains(q, penjaga) {
 			t.Errorf("%s: UPDATE T_GENERAL_POLIS_TREATY tanpa penjaga generasi terbuka (F17):\n%s", nama, q)
 		}
+	}
+}
+
+// WO 07-10-2026 "PXCREATEOPERATOR,PXCREATEOPNAME": pembuat berkas salinan dibaca dari tabel kerja Pega menurut
+// pzInsKey = IDPEGA; baca saja, satu penampung.
+func TestPembuatPegaDariTabelKerjaPega(t *testing.T) {
+	q := sqlPembuatPega()
+	if q != `SELECT PXCREATEOPERATOR, PXCREATEOPNAME FROM DATAPEGA.PC_ASM_FW_GISFW_WORK WHERE PZINSKEY = :1` {
+		t.Fatalf("pembuat Pega: %s", q)
 	}
 }

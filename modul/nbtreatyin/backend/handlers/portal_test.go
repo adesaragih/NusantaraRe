@@ -95,10 +95,11 @@ func TestGerbangDaftarPortal(t *testing.T) { // AC 11, 14, 92 - wadah grid SFAPo
 		{"tanpa peran", pelakuUji{"UJI-KOSONG", ""}, "", http.StatusOK, []string{}},
 		// switch Proses / Resolved (keputusan work owner 06-10-2026, bawaan Proses): yang ditolak hanya di Resolved
 		{"admin: Resolved", admin, "?status=selesai", http.StatusOK, urut(ditolak)},
-		// Resolved = SEMUA berkas selesai, siapa pun pembuatnya (WO 06-10-2026)
-		{"Sec Head: Resolved semua", secHead, "?status=selesai", http.StatusOK, urut(ditolak)},
-		{"admin lain: Resolved semua", pelakuUji{"UJI-ADMIN2", models.PosisiAdmin}, "?status=selesai", http.StatusOK, urut(ditolak)},
-		{"tanpa peran: Resolved semua", pelakuUji{"UJI-KOSONG", ""}, "?status=selesai", http.StatusOK, urut(ditolak)},
+		// RALAT 07-10-2026 (WO "TAMBAHKAN KAN UNTUK PEMBUAT. MENU ITU HANYA UNTUK SI PEMBUAT, NB DAN EDM TREATY"; dulu
+		// 06-10-2026 "yang resolve nampilin semua yang resolve"): Resolved pun HANYA berkas buatan akun ini
+		{"Sec Head: Resolved bukan buatannya", secHead, "?status=selesai", http.StatusOK, []string{}},
+		{"admin lain: Resolved bukan buatannya", pelakuUji{"UJI-ADMIN2", models.PosisiAdmin}, "?status=selesai", http.StatusOK, []string{}},
+		{"tanpa peran: Resolved bukan buatannya", pelakuUji{"UJI-KOSONG", ""}, "?status=selesai", http.StatusOK, []string{}},
 		{"admin: Resolved disaring posisi", admin, "?status=selesai&posisi=" + models.PosisiSecHead, http.StatusOK, []string{}},
 		{"admin: status tak dikenal = Proses", admin, "?status=UJI", http.StatusOK, semua},
 	} {
