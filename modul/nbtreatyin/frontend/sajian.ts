@@ -29,6 +29,8 @@ export interface FormatAngka {
   ribuan?: boolean
   /** `pyShowReadonlyFormatting` mode sunting. */
   formatSaatSunting?: boolean
+  /** Nilai nol atau kosong tampil "0" (perintah work owner 06-10-2026, bagian uang OGP / ONP). */
+  nolPolos?: boolean
 }
 
 /** Sajian satu sel: angka berformat, atau tanggal. */
@@ -38,10 +40,24 @@ export type Sajian = FormatAngka | 'tanggal'
 export const POLA_INTI: Sajian = {}
 
 const ANGKA = /^[+-]?(\d+\.?\d*|\.\d+)$/
+/** Angka bernilai nol (`0`, `-0`, `0.000`, `.0`). */
+const NOL = /^[+-]?(0+\.?0*|\.0+)$/
+
+/** Kelas sel tabel untuk nilai angka mentah: rata kanan, digit sama lebar (perintah work owner 06-10-2026). */
+export function kelasAngka(v: string | null | undefined): string | undefined {
+  return ANGKA.test((v ?? '').trim()) ? 'nbti__angka' : undefined
+}
+
+/** Kosong atau bernilai nol - isian angka menampilkannya sebagai placeholder "0" (perintah work owner 06-10-2026). */
+export function nilaiNol(v: string | null | undefined): boolean {
+  const t = (v ?? '').trim()
+  return t === '' || NOL.test(t)
+}
 
 /** Teks tampilan sebuah angka menurut format selnya. Teks bukan angka apa adanya. */
 export function sajikanAngka(nilai: string | null | undefined, f: FormatAngka): string {
   const t = (nilai ?? '').trim()
+  if (f.nolPolos && (t === '' || NOL.test(t))) return '0'
   if (t === '' || !ANGKA.test(t)) return t
   let s = formatNumber(t, f.desimal ?? DESIMAL_TAK_DIBATASI)
   if (f.ribuan === false) s = s.replace(/\./g, '')
@@ -55,6 +71,19 @@ export function sajikanAngka(nilai: string | null | undefined, f: FormatAngka): 
 }
 
 /** Teks tampilan satu nilai menurut sajian selnya (tanpa sajian = apa adanya). */
+/**
+ * Tanggal + jam kolom Date grid SuggestList (perintah work owner 06-10-2026: "HARUSNYA PAKE YG ATAS AJA, TAPI
+ * TAMBAHIN JAM NYA" - panel History dibuang). Tanggal tetap format seluruh sistem (`formatDate` inti), jam 24 apa
+ * adanya dari cap waktu `YYYY-MM-DD HH:MI[:SS]`; nilai tanpa jam = tanggal saja.
+ */
+export function sajikanTanggalJam(nilai: string | null | undefined): string {
+  const t = (nilai ?? '').trim()
+  const tgl = formatDate(t)
+  const jam = /^\d{4}-\d{2}-\d{2}[ T](\d{2}):(\d{2})(?::(\d{2}))?/.exec(t)
+  if (tgl === '' || jam === null) return tgl
+  return `${tgl} ${jam[1]}:${jam[2]}:${jam[3] ?? '00'}`
+}
+
 export function sajikan(nilai: string | null | undefined, s: Sajian | undefined): string {
   if (s === undefined) return nilai ?? ''
   if (s === 'tanggal') return formatDate(nilai ?? '')

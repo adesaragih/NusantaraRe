@@ -38,7 +38,7 @@ func TestHTTPPemilihMasterMencariHurufBesar(t *testing.T) {
 	}
 }
 
-// K1 01-10-2026 (OQ-MPNL-03): pemilih R/I Rate yang dulu 503 kini 200 berisi view `RATE_LIFE_SUMMARY`.
+// K1 01-10-2026 (OQ-MPNL-03): pemilih R/I Rate yang dulu 503 kini 200 berisi tabel `M_RATE_LIFE_SUMMARY`.
 func TestHTTPRIRateDariViewRingkasan(t *testing.T) {
 	u := server(t, true)
 	u.g.Master[models.MasterRIRate] = []models.NilaiMaster{{ID: "R1", Nama: "UJI RATE"}}

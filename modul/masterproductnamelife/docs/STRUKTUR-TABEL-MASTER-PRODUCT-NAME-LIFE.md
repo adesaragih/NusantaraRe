@@ -177,7 +177,7 @@ Anak (migrasi 143) — `PlanList[*]` - grid b31557 (`OUTWARDRATEID` 0 terisi - t
 | `PLAN` | teks | VARCHAR2(200) | `Plan` - `Plan Name` b31845 |
 | `NAME` | teks | VARCHAR2(200) | `Name` - `Bussines` b31994 |
 | `BENEFIT` | teks | VARCHAR2(500) | `Benefit` - `Benefit` b32143 |
-| `RIRATEID` | teks | VARCHAR2(10) | `RIRATEID` - `SetRIRate` 1 b249 (`RATE_LIFE_SUMMARY.ID` VARCHAR2(10)) |
+| `RIRATEID` | teks | VARCHAR2(10) | `RIRATEID` - `SetRIRate` 1 b249 (`RATE_LIFE_SUMMARY.ID` VARCHAR2(10)) *(RALAT 07-10-2026: ringkasan rate kini tabel `M_RATE_LIFE_SUMMARY` berkolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID - keputusan work owner 07-10-2026, `modul/riratelife/MODUL.md` RALAT R6; modul ini membacanya `SELECT ID, USEDBY`, tetap baca-saja)* |
 | `RIRATE` | teks | VARCHAR2(500) | `RIRATE` - `R/I Rate` b32296 |
 
 ## M_PRODUCTNAME_LIFE_FINUW

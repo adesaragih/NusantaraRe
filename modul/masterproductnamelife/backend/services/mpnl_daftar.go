@@ -150,7 +150,7 @@ func periksaUWLimit(pk *periksa, daftar []models.BarisUWLimit) {
 // periksaPilihanPlan - tiket 06: R/I Rate baris plan dari master R/I Rate (bukan
 // R/I Risk); plan dari master `PRODUCT_TYPE_LIFE`. Pasangan yang sudah tersimpan
 // diterima apa adanya. R/I Rate BARU (K1 keputusan work owner 01-10-2026, OQ-MPNL-03) wajib ada di view
-// `RATE_LIFE_SUMMARY`; namanya = `.USEDBY` master, seperti `SetRIRate` b249 (`.RIRATE ← usedby`).
+// `M_RATE_LIFE_SUMMARY`; namanya = `.USEDBY` master, seperti `SetRIRate` b249 (`.RIRATE ← usedby`).
 func (l *Layanan) periksaPilihanPlan(ctx context.Context, pk *periksa, daftar []models.BarisPlan, lama []models.BarisPlan) error {
 	rateLama, planLama := map[[2]string]bool{}, map[[2]string]bool{}
 	// Satu pembacaan view per RIRATEID per simpan (code review #15) - baris plan sering ber-R/I Rate sama.

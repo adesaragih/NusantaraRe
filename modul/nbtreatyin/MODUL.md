@@ -43,7 +43,7 @@ dipensiunkan 1 Oktober 2026.
   `M_TREATY_IN` / `M_TREATY_IN_EDM` di satu fungsi `repository.MasterXOLDariJSON`
   (`services.PembacaMasterTreaty`, kelak kontrak modul `treatyin`); treaty keluar tidak dibaca.
 - **Penyimpanan** = `T_WORK_POLIS` (tabel kasus lintas-lini, migrasi premiumlistlife 050/057/059 —
-  modul ini MEMBUTUHKAN premiumlistlife aktif lebih dulu) + `T_GENERAL_POLIS` dan anak `T_POLIS_*`
+  modul ini MEMBUTUHKAN premiumlistlife aktif lebih dulu) + `T_GENERAL_POLIS_TREATY` dan anak `T_POLIS_*`
   (migrasi 320-327, tepat delapan tabel diagram grilling) menurut katalog `backend/models/katalog.go`;
   satu transaksi per tindakan.
 - **Tangga** tiga posisi; berkas menunggu POSISI (workbasket), keanggotaan diperiksa menurut nama
@@ -72,17 +72,15 @@ peran-tempat konstanta kode, medan dokumen lama tanpa kolom diputuskan per medan
 berkas CSV pemuat.
 Perbandingan kolom lawan diagram: `docs/PERBANDINGAN-KOLOM-DIAGRAM.md`. Slot menu `968`: satu `UPDATE DIMIGRASI` baris modul ini, nol `INSERT`.
 
-⛔ **Penahan migrasi — tulis di deskripsi PR (K18, `docs/PERMINTAAN-TIM-INTI.md` C10).** `POOLDATA.T_GENERAL_POLIS`
-sudah ada: tabel FacIn 7 kolom dari migrasi `182_t_general_polis` (`nbfacin`, di luar repo ini); diagram grilling
-memberi nama itu ke Treaty In. Sampai WO dan pemilik `nbfacin` memutuskan C10, `-migrate` dengan modul ini aktif
-**berhenti di pra-terbang inti** (`praTerbangBentuk`) sebelum satu pernyataan pun dikirim — seluruh langkah yang
-belum tercatat, semua modul, ikut tertahan — dengan galat *"tabel T_GENERAL_POLIS sudah ada … tetapi BENTUKNYA
-BERBEDA"*; tidak ada yang berubah. Migrasi 320 sengaja tanpa blok PL/SQL (koreksi WO 04-10-2026); bentuk yang
-dibandingkan pra-terbang dikunci `backend/migrasi_test.go`.
+✅ **K18 / C10 selesai** — perintah work owner 05-10-2026: tabel induk NB Treaty In diganti nama `T_GENERAL_POLIS_TREATY` (migrasi `320_t_general_polis_treaty`); `T_GENERAL_POLIS` tetap milik `nbfacin` dan tidak dipakai modul ini. Nama constraint `GP_TREATY` (≤ 30 byte) supaya tidak bentrok dengan
+constraint tabel lama di skema yang sudah menjalankan 320 lama. Skema seperti itu (DEV) dipindah **skrip transisi**
+di `SCRIPT-TABEL-KOLOM-BARU.xlsx` sheet NB TREATY (salin baris NB Treaty In, pindah FK anak, hapus baris lama);
+kolom treaty yang terlanjur menempel di `T_GENERAL_POLIS` dibiarkan (keputusan WO 05-10-2026). Bentuk 320 dan
+larangan menyebut `T_GENERAL_POLIS` dikunci `backend/migrasi_test.go`.
 
 | Migrasi | Tabel yang dibuat | Sheet diagram |
 | --- | --- | --- |
-| 320 | `T_GENERAL_POLIS` | Prop + NonProp F9–F33 |
+| 320 | `T_GENERAL_POLIS_TREATY` | Prop + NonProp F9–F33 |
 | 321 | `T_POLIS_QUOTATION` | Prop + NonProp J35–J38 |
 | 322 | `T_POLIS_CEDING` | Prop + NonProp R40–R50 |
 | 323 | `T_POLIS_INSTALMENT` | Prop J52–J56 · NonProp J52–J55 |
@@ -90,16 +88,18 @@ dibandingkan pra-terbang dikunci `backend/migrasi_test.go`.
 | 325 | `T_POLIS_SPREADING` | Prop J66–J69 · NonProp J71–J74 |
 | 326 | `T_POLIS_XOL` | NonProp J76–J80 (NonProp saja) |
 | 327 | `T_POLIS_XOL_LAYER` | NonProp R82–R87 (NonProp saja) |
+| 328 | `T_POLIS_SURVEY` | — di luar diagram: survei historis, Prop saja (keputusan WO 06-10-2026, membatalkan K7) |
 
-`T_GENERAL_POLIS.EDM_TYPE` (`PolicyTreatyIn.EDMType`) ditambahkan putaran 3 (F3, RALAT rancangan §4sexies):
+`T_GENERAL_POLIS_TREATY.EDM_TYPE` (`PolicyTreatyIn.EDMType`) ditambahkan putaran 3 (F3, RALAT rancangan §4sexies):
 medan dokumen lama yang dibaca syarat `InputPolicyTreatyInPre_Act` langkah 10.
 
 ### Urutan resmi migrasi dan pemuatan dokumen lama (F7, keputusan work owner 04-10-2026)
 
 Agen **tidak** menjalankan migrasi maupun pemuatan apa pun. Urutannya:
 
-1. **Migrasi 320–327 oleh work owner** (`-migrate`; menolak `IS_PEGA_PROD=true`, ADR-U-0005). Sebelumnya
-   selesaikan tabrakan nama `T_GENERAL_POLIS` (`PERMINTAAN-TIM-INTI.md` C10 / K18).
+1. **Migrasi 320–327 oleh work owner** (`-migrate`; menolak `IS_PEGA_PROD=true`, ADR-U-0005). Skema yang
+   sudah menjalankan 320 lama (`T_GENERAL_POLIS`): sesudah `-migrate`, jalankan skrip transisi sheet NB TREATY
+   `SCRIPT-TABEL-KOLOM-BARU.xlsx`, lalu mulai ulang backend.
 2. **Uji-kering pemuat di skema uji** (K11) — tanpa `-jalankan`; hanya `JSON_POLIS` yang dibaca, arsip medan
    dan laporan galat ditulis (bab *Pemuat dokumen lama*).
 3. **F3 tuntas**: arsip uji-kering nol baris `KEPUTUSAN = BELUM DIPUTUSKAN` dan nol dokumen gagal (kode
@@ -120,9 +120,27 @@ Tidak dibuat dan tidak diubah strukturnya oleh modul ini; ditulis hanya bila dia
 | `HISTORYAKSEPTASIPEGA` | tulis + baca | riwayat akseptasi (`InsertHistoryAkseptasiPega_Sql`, diagram Prop F98–F99) |
 | `HISTORYAKSEPTASIPRODUCTION` | tulis + baca | catatan usulan (`SaveViewSuggest -> InsertViewSuggest_SQL`, diagram Prop J74–J76; K4) |
 | `GENERATE_SEQUENCE_NUMBER` | tulis lewat `inti/backend/penomor` | deret nomor polis (padanan `PROC_GENERATE_SEQUENCE_NUMBER`); diagram F103/F118 menyebutnya "dibaca saja" — penulisan lewat penomor bersama disetujui WO 04-10-2026 (`docs/PERMINTAAN-TIM-INTI.md` F8; RALAT catatan di `docs/rancangan-tabel-datar-treaty-in.md` §4bis.4) |
-| `TANGGAL_CLOSING`, `KODE_PRODUKSI`, `CURRENCY`, `BUSINESS`, `REINSURANCETYPE`, `TREATYGROUP`, `MARKETINGOFFICER`, `CLIENT`, `AGENT`, `M_LOGIN_GO`, view `TREATYINDETAILJOINEDM`, `TREATYINPRODUCTION` | baca | RD/RDB terjangkau; `TREATYINPRODUCTION` ditulis modul EDM |
+| `TANGGAL_CLOSING`, `KODE_PRODUKSI`, `CURRENCY`, `BUSINESS`, `REINSURANCETYPE`, `TREATYGROUP`, `MARKETINGOFFICER`, `CLIENT`, `AGENT`, `M_LOGIN_GO`, view `TREATYINDETAILJOINEDM` | baca | RD/RDB terjangkau |
 | `M_TREATY_IN`, `M_TREATY_IN_EDM` | baca (JSON, satu fungsi `repository.MasterXOLDariJSON`) | K8 |
-| `JSON_POLIS` | baca (pemuat dokumen lama saja) | tiket 22 |
+| `M_LOGIN_GO_WORKBASKET`, `M_WORKBASKET` (+ `M_LOGIN_GO.IS_ACTIVE` / `DIVISION_CODE`) | baca | nama di NBStatus dari pemegang aktif workbasket tujuan, divisi IT tidak dihitung; nama kartu kotak masuk Beranda (`GET /api/nb-treaty-in/kotak-masuk`) - keputusan work owner 06-10-2026 |
+| `JSON_POLIS` | tulis + baca | tulis: Utility1 `SaveJsonPolisTreatyIn_Act` saat realisasi selesai, **tanpa `DATA_JSON`** (`[keputusan work owner 06-10-2026]` "JSON-nya tidak disimpan, tapi tetap insert kolom lainnya" - RALAT sebagian AC 16; `repository/produksi.go`, pemetaan `models/produksi.go`); baca: pemuat dokumen lama (tiket 22) |
+| `TREATYINPRODUCTION` | tulis + baca | tulis: `InsetTreatyInProd_Act` + `InsertTreatyInProd_SQL` (58 kolom) saat realisasi selesai, dilewati bila IDPEGA sudah punya baris; trigger `TRG_TREATYINPRODUCTION_INSERT` menyalin ke `_BACKUP`; baca: cek duplikat `TreatyRealizationCheckDuplicate` |
+| `ACHIEVEMENT` | tulis | `SetAchivementValue` + `SaveAchievementSQL` saat realisasi selesai; prosedur `InsertUpdateAchievment` ditulis ulang sebagai satu INSERT (nol prosedur, AC 48), `TGL_PROD` = SYSDATE |
+
+## Alat simpanproduksi (06-10-2026)
+
+Menulis baris Utility1 `SaveJsonPolisTreatyIn_Act` (json_polis tanpa `DATA_JSON`, `ACHIEVEMENT`,
+`TREATYINPRODUCTION`) untuk SATU kasus yang sudah Resolved-Completed sebelum penulisan produksi ada (permintaan
+work owner). Dijalankan **manusia** dari akar repo sesudah `. .\muat-env.ps1`:
+
+```powershell
+go run ./modul/nbtreatyin/backend/alat/simpanproduksi -kasus NB-22445             # uji-kering: cetak baris, nol tulis
+go run ./modul/nbtreatyin/backend/alat/simpanproduksi -kasus NB-22445 -jalankan   # tulis, satu transaksi
+```
+
+Pemetaan sama dengan submit (`models.SusunSimpananPolis`); ProductionDate tersimpan dipakai apa adanya; halaman
+kasus tidak diubah. Aman diulang: tabel yang sudah punya baris untuk IDPEGA itu dilewati (ACHIEVEMENT juga).
+`-pengguna` mengganti USERNAME (bawaan: OPERATORID riwayat terakhir). `-jalankan` ditolak bila `IS_PEGA_PROD=true`.
 
 ## Pemuat dokumen lama (tiket 22)
 

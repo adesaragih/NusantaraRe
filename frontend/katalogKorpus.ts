@@ -98,6 +98,10 @@ export const LABEL_TAMPIL: Readonly<Partial<Record<keyof typeof FOLDER_KORPUS, s
  * Keputusan work owner 05-10-2026: modul `treatydescription` (TREATYDESC, master jenis klausul treaty), label "Treaty
  * Description", kelompok MASTER TREATY, migrasi inti 920. Keputusan work owner 05-10-2026: modul `reinsurancetype`
  * (REINSURANCETYPE, master jenis reasuransi), label "Reinsurance Type", kelompok MASTER TREATY, migrasi inti 921.
+ * Perintah work owner 05-10-2026: modul `riratelife` (M_RATE_LIFE_SUMMARY, ringkasan rate reasuransi life), label
+ * "R/I Rate Life", kelompok MASTER TREATY, migrasi inti 922. Perintah work owner 06-10-2026: modul `ricommlife`
+ * (M_RICOMM_LIFE_SUMMARY + tabel flat RICOMM_LIFE, migrasi inti 924), label "R/I Comm Life", kelompok MASTER TREATY,
+ * migrasi inti 925.
  */
 export const MODUL_LUAR_KORPUS = {
   marketingOfficer: 'Marketing Officer',
@@ -120,6 +124,8 @@ export const MODUL_LUAR_KORPUS = {
   treatyExchangeYearly: 'Treaty Exchange Yearly',
   treatyDescription: 'Treaty Description',
   reinsuranceType: 'Reinsurance Type',
+  riRateLife: 'R/I Rate Life',
+  riCommLife: 'R/I Comm Life',
 } as const
 
 /**

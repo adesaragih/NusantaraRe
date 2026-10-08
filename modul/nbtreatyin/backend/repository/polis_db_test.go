@@ -188,12 +188,12 @@ func TestNomorPolisSekaliDanUnik(t *testing.T) { // spec AC 31, 74; spec-penyimp
 	}
 	// Spec-penyimpanan AC 1: "Test yang menemukan keduanya tersimpan gagal" -
 	// kolom dibaca LANGSUNG: berkas kedua tetap tanpa nomor.
-	q := fmt.Sprintf(`SELECT NOPOLIS FROM %s.T_GENERAL_POLIS WHERE ID = :1`, skema)
+	q := fmt.Sprintf(`SELECT NOPOLIS FROM %s.T_GENERAL_POLIS_TREATY WHERE ID = :1`, skema)
 	if got := kolomTeks(t, ctx, sqlDB, q, "UJI-NB-NO-2"); got != "<NULL>" {
 		t.Fatalf("berkas kedua tersimpan bernomor %s padahal ditolak", got)
 	}
 	// Kuncinya PASANGAN (NOPOLIS, PRODKE): nomor sama pada PRODKE lain diterima.
-	if _, err := sqlDB.ExecContext(ctx, fmt.Sprintf(`UPDATE %s.T_GENERAL_POLIS SET PRODKE = 1 WHERE ID = 'UJI-NB-NO-2'`, skema)); err != nil {
+	if _, err := sqlDB.ExecContext(ctx, fmt.Sprintf(`UPDATE %s.T_GENERAL_POLIS_TREATY SET PRODKE = 1 WHERE ID = 'UJI-NB-NO-2'`, skema)); err != nil {
 		t.Fatal(err)
 	}
 	if err := dalamTx(t, ctx, d, func(tx *intidb.Tx) error { return g.SetelNomorPolis(ctx, tx, "UJI-NB-NO-2", "UJI-QR.T1.10.2026.00001") }); err != nil {
@@ -235,7 +235,7 @@ func TestGenerasiTertutupDitolakDanPembatalanUtuh(t *testing.T) { // ID-10, spec
 	if err := dalamTx(t, ctx, d, func(tx *intidb.Tx) error { return g.SisipKasus(ctx, tx, "UJI-NB-PENERUS", "UJI-AKUN", "UJI") }); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := sqlDB.ExecContext(ctx, fmt.Sprintf(`UPDATE %s.T_GENERAL_POLIS SET OLD_POLIS_ID = :1, PRODKE = 1 WHERE ID = 'UJI-NB-PENERUS'`, skema), id); err != nil {
+	if _, err := sqlDB.ExecContext(ctx, fmt.Sprintf(`UPDATE %s.T_GENERAL_POLIS_TREATY SET OLD_POLIS_ID = :1, PRODKE = 1 WHERE ID = 'UJI-NB-PENERUS'`, skema), id); err != nil {
 		t.Fatal(err)
 	}
 	if k, err := g.Keadaan(ctx, nil, id); err != nil || !k.GenerasiTertutup {
@@ -251,7 +251,7 @@ func TestGenerasiTertutupDitolakDanPembatalanUtuh(t *testing.T) { // ID-10, spec
 	}
 	// Spec-penyimpanan AC 6: "Test yang menemukan perubahan tersimpan gagal" -
 	// induk dan anak dibaca LANGSUNG dari kolom.
-	if p := kolomTeks(t, ctx, sqlDB, fmt.Sprintf(`SELECT %s FROM %s.T_GENERAL_POLIS WHERE ID = :1`,
+	if p := kolomTeks(t, ctx, sqlDB, fmt.Sprintf(`SELECT %s FROM %s.T_GENERAL_POLIS_TREATY WHERE ID = :1`,
 		fmt.Sprintf(intidb.FmtDesimal, "PREMI_OGP"), skema), id); p != "100" {
 		t.Errorf("PREMI_OGP generasi tertutup = %s, harap 100", p)
 	}

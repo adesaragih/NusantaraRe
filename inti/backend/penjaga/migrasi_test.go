@@ -227,19 +227,12 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 	// pengguna), bukan atribut klaim dan bukan dokumen JSON. Pengecualiannya SATU kolom BLOB di SATU tabel, dan
 	// berkas itu tidak boleh memuat CLOB atau JSON.
 	const berkasTemplat = "912_m_template_file"
-	// Treaty In (keputusan pemilik proses 06-10-2026): kelima `CLOB` di `439`
-	// adalah KOLOM BERNAMA — satu per ejaan medan teks bebas tab `Exclusions`
-	// dan `Special Conditions`, terukur mencapai 23.453 aksara sementara
-	// `VARCHAR2` Oracle berhenti di 4.000.
-	//
-	// ⛔ Larangan ini berbunyi "atribut klaim harus menjadi KOLOM BERNAMA";
-	// kelimanya justru kolom bernama. Alternatifnya MEMOTONG teks tanpa
-	// bersuara — kehilangan yang baru ketahuan bertahun kemudian.
-	//
-	// ⚠️ Cacahnya DIPATOK lima, dan berkas itu tidak boleh memuat BLOB.
-	const berkasTeksPanjang = "439_akar_dan_nilai_sisa"
-	const clobTeksPanjang = 5
-	dokumenDiOutbox, blobTemplat, teksPanjang := 0, 0, 0
+	// Ringkasan R/I Rate Life satu tabel (keputusan work owner 07-10-2026): 928 MEMBUANG kolom JSON warisan
+	// M_RATE_LIFE_SUMMARY.JSONDATA - searah dengan penjaga ini. Pengecualiannya SATU perintah di SATU berkas, persis.
+	const berkasBuangJSON, perintahBuangJSON = "928_m_rate_life_summary_satu_tabel",
+		"DROP COLUMN JSONDATA CASCADE CONSTRAINTS"
+	buangJSON := 0
+	dokumenDiOutbox, blobTemplat := 0, 0
 	for nama, isi := range seluruhSQL(t, false) {
 		atas := strings.ToUpper(isi)
 		if strings.Contains(nama, berkasOutbox) {
@@ -254,6 +247,10 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 			blobTemplat += len(regexp.MustCompile(`(?m)^\s*ISI\s+BLOB\s+NOT NULL,$`).FindAllString(atas, -1))
 			atas = regexp.MustCompile(`(?m)^\s*ISI\s+BLOB\s+NOT NULL,$`).ReplaceAllString(atas, "")
 		}
+		if strings.Contains(nama, berkasBuangJSON) && !strings.Contains(nama, "_down") {
+			buangJSON += strings.Count(atas, perintahBuangJSON)
+			atas = strings.ReplaceAll(atas, perintahBuangJSON, "")
+		}
 		for _, tipe := range []string{" JSON", "CLOB", "BLOB", "JSON_KLAIM"} {
 			if strings.Contains(atas, tipe) {
 				t.Errorf("%s memuat %q - atribut klaim harus menjadi kolom bernama",
@@ -261,9 +258,8 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 			}
 		}
 	}
-	if teksPanjang != clobTeksPanjang {
-		t.Errorf("%s memuat %d kolom CLOB, mau tepat %d (kelima ejaan medan teks panjang)",
-			berkasTeksPanjang, teksPanjang, clobTeksPanjang)
+	if buangJSON != 1 {
+		t.Errorf("928 memuat %d perintah %q, mau tepat 1", buangJSON, perintahBuangJSON)
 	}
 	if blobTemplat != 1 {
 		t.Errorf("M_TEMPLATE_FILE memuat %d kolom ISI BLOB, mau tepat 1", blobTemplat)

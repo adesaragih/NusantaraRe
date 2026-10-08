@@ -54,8 +54,8 @@ func TestTanggaAtasanMenolakKembaliKeAdmin(t *testing.T) { // AC 6
 		if err != nil {
 			t.Fatal(err)
 		}
-		if tr.PosisiBaru != PosisiAdmin || tr.Ditutup() || !tr.KosongkanNBStatus {
-			t.Errorf("%s menolak: %+v, harap kembali ke admin dan NBStatus kosong", pos, tr)
+		if tr.PosisiBaru != PosisiAdmin || tr.Ditutup() || !tr.KembaliKePembuat {
+			t.Errorf("%s menolak: %+v, harap kembali ke admin, NBStatus menunjuk pembuat", pos, tr)
 		}
 	}
 }

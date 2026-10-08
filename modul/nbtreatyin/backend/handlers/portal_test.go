@@ -80,18 +80,27 @@ func TestGerbangDaftarPortal(t *testing.T) { // AC 11, 14, 92 - wadah grid SFAPo
 		// wadah luar: ReasTreatyInAdmin di urutan KEDUA daftar workbasket
 		{"admin di urutan 2 melihat grid GetListOpportunity", admin, "", http.StatusOK, semua},
 		// AC 14: menurut NAMA - urutan pertama pun anggota
-		{"admin di urutan 1", pelakuUji{"UJI-ADMIN2", models.PosisiAdmin}, "", http.StatusOK, semua},
+		// RALAT 06-10-2026 (filter A GetListOpportunity, keputusan work owner): admin hanya melihat buatannya
+		{"admin di urutan 1 tanpa berkas buatannya", pelakuUji{"UJI-ADMIN2", models.PosisiAdmin}, "", http.StatusOK, []string{}},
 		{"admin menyaring satu posisi", admin, "?posisi=" + models.PosisiSecHead, http.StatusOK, urut(diSec)},
-		// di luar wadah: antrean workbasket posisi yang dipegang (Flow ToWorkBasket)
-		{"Sec Head hanya antreannya", secHead, "", http.StatusOK, urut(diSec)},
-		{"Dept Head hanya antreannya", deptHead, "", http.StatusOK, urut(diDept)},
-		{"Sec Head + Dept Head", pelakuUji{"UJI-SHDH", models.PosisiDeptHead + "," + models.PosisiSecHead}, "", http.StatusOK, urut(diSec, diDept)},
+		// RALAT 06-10-2026 (keputusan work owner "hanya filter berdasarkan create operator aja"): antrean atasan
+		// TIDAK lagi tampil di portal - setiap akun hanya melihat buatannya (berkas atasan dibuka dari Beranda)
+		{"Sec Head tanpa berkas buatannya", secHead, "", http.StatusOK, []string{}},
+		{"Dept Head tanpa berkas buatannya", deptHead, "", http.StatusOK, []string{}},
+		{"Sec Head + Dept Head", pelakuUji{"UJI-SHDH", models.PosisiDeptHead + "," + models.PosisiSecHead}, "", http.StatusOK, []string{}},
 		{"Sec Head mencari kasus admin", secHead, "?cari=" + diAdmin, http.StatusOK, []string{}},
-		{"Sec Head meminta posisi admin", secHead, "?posisi=" + models.PosisiAdmin, http.StatusForbidden, nil},
-		{"bukan anggota antrean tangga", orang, "", http.StatusForbidden, nil},
-		// AC 10: posisi buangan tidak memberi akses
-		{"GroupLeader (posisi buangan)", pelakuUji{"UJI-GL", "ReasTreatyInGroupLeader"}, "", http.StatusForbidden, nil},
-		{"tanpa peran", pelakuUji{"UJI-KOSONG", ""}, "", http.StatusForbidden, nil},
+		{"Sec Head meminta posisi admin", secHead, "?posisi=" + models.PosisiAdmin, http.StatusOK, []string{}},
+		{"bukan anggota antrean tangga", orang, "", http.StatusOK, []string{}},
+		{"GroupLeader (posisi buangan)", pelakuUji{"UJI-GL", "ReasTreatyInGroupLeader"}, "", http.StatusOK, []string{}},
+		{"tanpa peran", pelakuUji{"UJI-KOSONG", ""}, "", http.StatusOK, []string{}},
+		// switch Proses / Resolved (keputusan work owner 06-10-2026, bawaan Proses): yang ditolak hanya di Resolved
+		{"admin: Resolved", admin, "?status=selesai", http.StatusOK, urut(ditolak)},
+		// Resolved = SEMUA berkas selesai, siapa pun pembuatnya (WO 06-10-2026)
+		{"Sec Head: Resolved semua", secHead, "?status=selesai", http.StatusOK, urut(ditolak)},
+		{"admin lain: Resolved semua", pelakuUji{"UJI-ADMIN2", models.PosisiAdmin}, "?status=selesai", http.StatusOK, urut(ditolak)},
+		{"tanpa peran: Resolved semua", pelakuUji{"UJI-KOSONG", ""}, "?status=selesai", http.StatusOK, urut(ditolak)},
+		{"admin: Resolved disaring posisi", admin, "?status=selesai&posisi=" + models.PosisiSecHead, http.StatusOK, []string{}},
+		{"admin: status tak dikenal = Proses", admin, "?status=UJI", http.StatusOK, semua},
 	} {
 		kode, id, isi := u.daftar(c.p, c.kueri)
 		if kode != c.kode {

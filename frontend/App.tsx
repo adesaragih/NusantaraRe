@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import Beranda from './Beranda'
+import Beranda, { type IngatanBeranda } from './Beranda'
 import GantiSandi from '../inti/frontend/components/GantiSandi'
 import Login, { KerangkaMasuk, pesanGagalLogin } from '../inti/frontend/components/Login'
 import { Shell } from '../inti/frontend/components/Shell'
@@ -64,6 +64,19 @@ export default function App() {
   // SEDANG tampil tidak mengubah `halaman`, jadi rute modul tidak akan tahu
   // menunya diklik ulang tanpa sinyal kedua ini.
   const [ketukMenu, setKetukMenu] = useState(0)
+  // Permintaan membuka satu berkas dari daftar kotak masuk Beranda - `PropsRute.bukaKasus` (06-10-2026).
+  const [bukaKasus, setBukaKasus] = useState<{ modul: string; id: string; ketuk: number } | null>(null)
+  // Pilihan panel kotak masuk Beranda (workbasket, jenis, filter). Beranda dibongkar selama layar kasus tampil, jadi
+  // disimpan di sini supaya Back mengembalikannya (perintah work owner 06-10-2026: "saat di back, ini jangan ilang").
+  // Milik SATU akun: akun lain yang masuk mulai dari panel tertutup.
+  const [ingatanBeranda, setIngatanBeranda] = useState<{ akun: string; isi: IngatanBeranda } | null>(null)
+  const akunMasuk = masuk?.akunID ?? ''
+  const ingatBeranda = useCallback(
+    (isi: IngatanBeranda) => {
+      setIngatanBeranda({ akun: akunMasuk, isi })
+    },
+    [akunMasuk],
+  )
   const pilihDariMenu = useCallback((h: Halaman) => {
     setHalaman(h)
     setKetukMenu((k) => k + 1)
@@ -243,7 +256,19 @@ export default function App() {
             }
       }
     >
-      {halaman === 'beranda' && <Beranda masuk={masuk} onBuka={setHalaman} modulAktif={modulBoleh} />}
+      {halaman === 'beranda' && (
+        <Beranda
+          masuk={masuk}
+          onBuka={setHalaman}
+          onBukaKasus={(m, id) => {
+            setBukaKasus((lama) => ({ modul: m.nama, id, ketuk: (lama?.ketuk ?? 0) + 1 }))
+            setHalaman(m.halamanAwal)
+          }}
+          ingatan={ingatanBeranda?.akun === masuk.akunID ? ingatanBeranda.isi : undefined}
+          onIngat={ingatBeranda}
+          modulAktif={modulBoleh}
+        />
+      )}
       {halaman === HALAMAN_KELOLA_USER && bolehKelola && <KelolaUser akunSaya={masuk.akunID} onDiriBerubah={segarkanDiri} />}
       {halaman === HALAMAN_TEMPLATE_MANAGER && bolehTemplat && <TemplateManager />}
       {/*
@@ -255,7 +280,17 @@ export default function App() {
       */}
       <KonteksHakMenu.Provider value={hakMenu}>
         {MODUL_FRONTEND.filter((m) => modulDipasang(m.nama, modulBoleh)).map((m) => (
-          <m.Rute key={m.nama} halaman={halaman} masuk={masuk} onPindah={setHalaman} ketukMenu={ketukMenu} />
+          <m.Rute
+            key={m.nama}
+            halaman={halaman}
+            masuk={masuk}
+            onPindah={setHalaman}
+            ketukMenu={ketukMenu}
+            bukaKasus={bukaKasus?.modul === m.nama ? { id: bukaKasus.id, ketuk: bukaKasus.ketuk } : undefined}
+            onBeranda={() => {
+              setHalaman('beranda')
+            }}
+          />
         ))}
       </KonteksHakMenu.Provider>
     </Shell>

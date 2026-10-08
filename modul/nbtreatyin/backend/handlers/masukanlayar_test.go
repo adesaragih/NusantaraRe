@@ -49,32 +49,31 @@ func npSampaiSecHead(u *uji, fakultatif string) string {
 // @divide(.SharePercentage,100,10)`; NetPremium polis XOL = 2700
 // (InputPolicyTreatyInDetail_NonProp, hitung tangan `TestNonPropPilihBisnis...`):
 // 2700 x 60% = 1620, 2700 x 40% = 1080.
-func TestAtasanMenyuntingSpreadingNonProp(t *testing.T) {
+// [keputusan work owner 07-10-2026] "HANYA ADMIN YANG BISA EDIT": walau FacultativeShare 0, Sec Head tidak dapat
+// menyunting %Share spreading NonProp - CountSpreading ditolak (409) dan kiriman %Share diabaikan saat submit.
+func TestAtasanTidakMenyuntingSpreadingNonProp(t *testing.T) {
 	u := baru(t)
 	id := npSampaiSecHead(u, "0")
+	lama := u.g.Halaman[id].AmbilDaftar(models.DaftarSpreading)
+	if len(lama) != 1 {
+		t.Fatalf("SpreadingRiskList awal %d baris, harap 1", len(lama))
+	}
 	_, isi := u.panggil("GET", "/kasus/"+id, secHead, nil)
 	h := u.layar(isi).Halaman
-	h.SetelDaftar(models.DaftarSpreading, []models.Baris{
-		{"TreatyType": "UJI-SPR-ID", "SharePercentage": "60"},
-		{"TreatyType": "UJI-SPR-2", "SharePercentage": "40"},
-	})
+	h.SetelDaftar(models.DaftarSpreading, []models.Baris{{"TreatyType": "UJI-SPR-ID", "SharePercentage": "60"}})
 	h.Setel("PolicyTreatyIn.IsApproved", "1")
 	h.Setel("PolicyTreatyIn.Suggest", "UJI-sec")
-	kode, isi := u.panggil("POST", "/kasus/"+id+"/hitung", secHead,
-		map[string]any{"urutan": []map[string]string{{"aksi": "CountSpreading"}}, "indeks": 2, "halaman": h})
-	if kode != http.StatusOK {
-		t.Fatalf("Sec Head CountSpreading (sel %%Share terbuka, FacultativeShare 0): %d %s", kode, isi)
+	if kode, _ := u.panggil("POST", "/kasus/"+id+"/hitung", secHead,
+		map[string]any{"urutan": []map[string]string{{"aksi": "CountSpreading"}}, "indeks": 1, "halaman": h}); kode != http.StatusConflict {
+		t.Fatalf("Sec Head CountSpreading NonProp: %d, harap 409 (hanya admin)", kode)
 	}
-	hasil := u.layar(isi).Halaman
-	if kode, isi := u.kirim(id, secHead, hasil); kode != http.StatusOK {
+	if kode, isi := u.kirim(id, secHead, h); kode != http.StatusOK {
 		t.Fatalf("Sec Head submit: %d %s", kode, isi)
 	}
 	sp := u.g.Halaman[id].AmbilDaftar(models.DaftarSpreading)
-	if len(sp) != 2 || sp[1]["TreatyType"] != "UJI-SPR-2" {
-		t.Fatalf("SpreadingRiskList suntingan Sec Head tersimpan: %v", sp)
+	if len(sp) != 1 || sp[0]["SharePercentage"] != lama[0]["SharePercentage"] {
+		t.Fatalf("%%Share suntingan Sec Head tersimpan: %v, harap tetap %q", sp, lama[0]["SharePercentage"])
 	}
-	angkaSamaTeks(t, "Spreading(1).PremiumSpreaded", sp[0]["PremiumSpreaded"], "1620")
-	angkaSamaTeks(t, "Spreading(2).PremiumSpreaded", sp[1]["PremiumSpreaded"], "1080")
 }
 
 // W2 - FacultativeShare > 0: Add/Delete tersembunyi, sel terkunci - kiriman
@@ -132,6 +131,8 @@ func (u *uji) simpanOK(id string, h *models.Halaman) {
 func TestKolomHanyaBacaSpreadingTidakDariLayar(t *testing.T) {
 	u := baru(t)
 	id := u.buat()
+	// baris spreading lahir di server (Choose Business); layar tidak dapat menambah baris (06-10-2026)
+	u.g.Halaman[id].SetelDaftar(models.DaftarSpreading, []models.Baris{{"TreatyType": "UJI-A"}})
 	h := halamanLengkap("1")
 	h.SetelDaftar(models.DaftarSpreading, []models.Baris{
 		{"TreatyType": "UJI-A", "SharePercentage": "60", "ClaimPercentage": "60", "PremiumSpreaded": "999999", "ClaimSpreaded": "999999"},
@@ -161,6 +162,8 @@ func spreadingDasar(t *testing.T) (*uji, string, *models.Halaman) {
 	t.Helper()
 	u := baru(t)
 	id := u.buat()
+	// baris spreading lahir di server (Choose Business); layar hanya mengisi %Share (06-10-2026)
+	u.g.Halaman[id].SetelDaftar(models.DaftarSpreading, []models.Baris{{"TreatyType": "UJI-A"}, {"TreatyType": "UJI-B"}})
 	h := halamanLengkap("1")
 	h.SetelDaftar(models.DaftarSpreading, []models.Baris{
 		{"TreatyType": "UJI-A", "SharePercentage": "60", "ClaimPercentage": "60"},
@@ -217,31 +220,34 @@ func TestSpreadingDipicuSelPersen(t *testing.T) {
 		})
 		cekSpreading(t, u, id, u.simpanSpreading(id, h), []string{"600", "500"}, "110", "1100")
 	})
-	t.Run("Add tanpa Share: tidak terpicu, baris baru kosong", func(t *testing.T) {
-		u, id, h := spreadingDasar(t)
-		h.SetelDaftar(models.DaftarSpreading, []models.Baris{
-			{"TreatyType": "UJI-A", "SharePercentage": "60", "ClaimPercentage": "60"},
-			{"TreatyType": "UJI-B", "SharePercentage": "40", "ClaimPercentage": "40"},
-			{"TreatyType": "UJI-C", "PremiumSpreaded": "999"},
-		})
-		cekSpreading(t, u, id, u.simpanSpreading(id, h), []string{"600", "400", ""}, "100", "1000")
-	})
-	t.Run("Add dengan Share 10: 4.1 mengisi Share Claim, 100", func(t *testing.T) {
+	// Perintah work owner 06-10-2026: Add / Delete dibuang dan Treaty Type hanya-baca - kiriman yang menambah,
+	// menghapus, atau mengganti Treaty Type diabaikan; jumlah baris dan Treaty Type milik server.
+	t.Run("baris tambahan dari layar diabaikan", func(t *testing.T) {
 		u, id, h := spreadingDasar(t)
 		h.SetelDaftar(models.DaftarSpreading, []models.Baris{
 			{"TreatyType": "UJI-A", "SharePercentage": "60", "ClaimPercentage": "60"},
 			{"TreatyType": "UJI-B", "SharePercentage": "40", "ClaimPercentage": "40"},
 			{"TreatyType": "UJI-C", "SharePercentage": "10"},
 		})
-		cekSpreading(t, u, id, u.simpanSpreading(id, h), []string{"600", "400", "100"}, "110", "1100")
-		angkaSamaTeks(t, "ClaimPercentage baris 3", u.g.Halaman[id].AmbilDaftar(models.DaftarSpreading)[2]["ClaimPercentage"], "10")
+		cekSpreading(t, u, id, u.simpanSpreading(id, h), []string{"600", "400"}, "100", "1000")
 	})
-	t.Run("Delete A: B bergeser ke baris 1, 400", func(t *testing.T) {
+	t.Run("baris yang hilang dari kiriman tetap ada", func(t *testing.T) {
 		u, id, h := spreadingDasar(t)
 		h.SetelDaftar(models.DaftarSpreading, []models.Baris{
-			{"TreatyType": "UJI-B", "SharePercentage": "40", "ClaimPercentage": "40", "PremiumSpreaded": "999"},
+			{"TreatyType": "UJI-A", "SharePercentage": "60", "ClaimPercentage": "60"},
 		})
-		cekSpreading(t, u, id, u.simpanSpreading(id, h), []string{"400"}, "40", "400")
+		cekSpreading(t, u, id, u.simpanSpreading(id, h), []string{"600", "400"}, "100", "1000")
+	})
+	t.Run("Treaty Type dari layar diabaikan", func(t *testing.T) {
+		u, id, h := spreadingDasar(t)
+		h.SetelDaftar(models.DaftarSpreading, []models.Baris{
+			{"TreatyType": "UJI-GANTI", "SharePercentage": "60", "ClaimPercentage": "60"},
+			{"TreatyType": "UJI-B", "SharePercentage": "40", "ClaimPercentage": "40"},
+		})
+		u.simpanOK(id, h)
+		if got := u.g.Halaman[id].AmbilDaftar(models.DaftarSpreading)[0]["TreatyType"]; got != "UJI-A" {
+			t.Errorf("Treaty Type baris 1 = %q, harap tetap UJI-A", got)
+		}
 	})
 }
 
@@ -256,7 +262,6 @@ func TestAnggotaBarisSpreadingDariServer(t *testing.T) {
 	anggota := []string{"TreatyName", "Currency", "CurrencyID", "SplitRNMSharePct"}
 	a := map[string]string{"TreatyName": "UJI NAMA A", "Currency": "IDR", "CurrencyID": "UJI-ID-IDR", "SplitRNMSharePct": "30"}
 	bb := map[string]string{"TreatyName": "UJI NAMA B", "Currency": "USD", "CurrencyID": "UJI-ID-USD", "SplitRNMSharePct": "20"}
-	kosong := map[string]string{}
 	// isiServer - nilai yang ditulis aktivitas pilih bisnis ke baris tersimpan.
 	isiServer := func(u *uji, id string) {
 		b := u.g.Halaman[id].AmbilDaftar(models.DaftarSpreading)
@@ -302,7 +307,7 @@ func TestAnggotaBarisSpreadingDariServer(t *testing.T) {
 		u.simpanOK(id, h)
 		cek(t, u, id, []map[string]string{a, bb})
 	})
-	t.Run("nilai karangan dan Add tiruan baris A: kosong", func(t *testing.T) {
+	t.Run("nilai karangan dan baris tambahan: nilai server bertahan, baris tambahan diabaikan", func(t *testing.T) {
 		u, id, h := spreadingDasar(t)
 		isiServer(u, id)
 		rows := salinLayar(u, id)
@@ -314,14 +319,14 @@ func TestAnggotaBarisSpreadingDariServer(t *testing.T) {
 		}
 		h.SetelDaftar(models.DaftarSpreading, append(rows, tiruA))
 		u.simpanOK(id, h)
-		cek(t, u, id, []map[string]string{a, kosong, kosong})
+		cek(t, u, id, []map[string]string{a, bb})
 	})
-	t.Run("Delete A: baris B membawa anggotanya sendiri", func(t *testing.T) {
+	t.Run("kiriman tanpa baris A: kedua baris dan anggotanya bertahan", func(t *testing.T) {
 		u, id, h := spreadingDasar(t)
 		isiServer(u, id)
 		h.SetelDaftar(models.DaftarSpreading, salinLayar(u, id)[1:])
 		u.simpanOK(id, h)
-		cek(t, u, id, []map[string]string{bb})
+		cek(t, u, id, []map[string]string{a, bb})
 	})
 	t.Run("anggota di luar sel dan server tidak diterima", func(t *testing.T) {
 		u, id, h := spreadingDasar(t)
@@ -416,6 +421,8 @@ func TestEnableDisableHanyaDariTombolXOL(t *testing.T) {
 func TestAngsuranDariActionSetServer(t *testing.T) {
 	u := baru(t)
 	id := u.buat()
+	// baris spreading lahir di server (Choose Business); layar tidak dapat menambah baris (06-10-2026)
+	u.g.Halaman[id].SetelDaftar(models.DaftarSpreading, []models.Baris{{"TreatyType": "UJI-A"}})
 	h := halamanLengkap("1")
 	h.Setel("PolicyTreatyIn.Installment", "2")
 	h.SetelDaftar(models.DaftarAngsuran, []models.Baris{{"InstallmentNo": "1", "InstallmentPercentage": "100", "Premium": "1", "PaymentTotal": "1", "DueDate": "2000-01-01"}})

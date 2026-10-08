@@ -10,7 +10,7 @@ package repository
 // `RIRISK_LIFE_SUMMARY` (uji `TestObjekMasterAdaDiKatalogDEV`). Objek yang tidak
 // terbaca di skema yang dikonfigurasi dijawab 503 yang MENYEBUT objeknya.
 //
-// ⛔ R/I Rate (`BrowseRateLifeSummary`, kelas `RATE_LIFE_SUMMARY`) dan `View Rate`
+// ⛔ R/I Rate (`BrowseRateLifeSummary`, kelas `M_RATE_LIFE_SUMMARY`) dan `View Rate`
 // (`BrowseRateLife_RD`, kelas `M_RATE_LIFE` = view `RATE_LIFE`): K1 keputusan work owner 01-10-2026
 // (OQ-MPNL-03) - kedua view rate dibaca SAJA, kolom RD saja, nol `SELECT *`, nol
 // `JSONDATA`, nol tulisan (`periksaBacaSaja`).
@@ -35,7 +35,7 @@ const (
 	MasterRIRisk    = "RIRISK_LIFE_SUMMARY" // BrowseRIRiskSummary
 	MasterCause     = "CAUSEOFLOSS_LIFE"    // BrowseCauseofLossLife_RD
 	MasterJenisPlan = "PRODUCT_TYPE_LIFE"   // BrowseProductTypeLife_RD (paket 6)
-	MasterRIRate    = "RATE_LIFE_SUMMARY"   // BrowseRateLifeSummary b40 (pemilih `Choose R/I Rate`)
+	MasterRIRate    = "M_RATE_LIFE_SUMMARY" // BrowseRateLifeSummary b40 (pemilih `Choose R/I Rate`)
 	// MasterRate - view `RATE_LIFE` atas `M_RATE_LIFE.JSONDATA` (dialog `View Rate`, `BrowseRateLife_RD`
 	// b39); nama fisik kelasnya: `NB FacIn/RDBList/BrowseLifeRate_SQL.xml` b85 `… FROM RATE_LIFE …`.
 	MasterRate = "RATE_LIFE"

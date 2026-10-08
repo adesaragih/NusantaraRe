@@ -545,6 +545,11 @@ export function BelumTersedia({ apa }: { apa: string }) {
  * atas. Modal yang hanya dapat ditutup dengan tetikus menghambat pemakai yang
  * bekerja dari papan tuts, dan pada layar pengisian data itu justru pemakai
  * yang paling sering membuka modal.
+ *
+ * SATU-SATUNYA kekecualian: `tanpaTutup` - popup yang hanya boleh dilanjutkan
+ * lewat `aksi`, tanpa keempat jalan keluar itu (perintah work owner
+ * 06-10-2026, popup nomor polis NB Treaty In: "tidak mau ada cancel, tidak
+ * ada close ... selalu maju").
  */
 export function Modal({
   judul,
@@ -554,9 +559,11 @@ export function Modal({
   labelBatal = "Cancel",
   lebar,
   penuh,
+  tanpaTutup = false,
   children,
 }: {
   judul: string;
+  /** Tidak pernah dipanggil bila `tanpaTutup`. */
   onTutup: () => void;
   /**
    * Bila diisi, isi modal dirender sebagai `<form>` sehingga Enter di kotak
@@ -588,6 +595,11 @@ export function Modal({
    * permintaannya memang "LAYAR PENUH SPLIT JADI 2".
    */
   penuh?: boolean;
+  /**
+   * Tanpa tombol X, tanpa tombol Batal; Escape dan klik backdrop tidak
+   * menutup. Pemakai hanya dapat maju lewat `aksi` - WAJIB diisi.
+   */
+  tanpaTutup?: boolean;
   children: ReactNode;
 }) {
   const idJudul = useId();
@@ -626,11 +638,11 @@ export function Modal({
   // elemen akan melewatkan tekanan tombol yang tidak mengenai elemen itu.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") mulaiTutup();
+      if (e.key === "Escape" && !tanpaTutup) mulaiTutup();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [mulaiTutup]);
+  }, [mulaiTutup, tanpaTutup]);
 
   const isi = (
     <>
@@ -640,23 +652,27 @@ export function Modal({
         </h3>
         {/* Tombol tutup. `type="button"` WAJIB: di dalam <form> tombol tanpa
             type adalah tombol kirim, sehingga X justru akan menyimpan. */}
-        <button
-          type="button"
-          className="modal__close"
-          aria-label={teksModal.tutup}
-          title={teksModal.tutupEsc}
-          onClick={mulaiTutup}
-        >
-          <IkonTutup />
-        </button>
+        {!tanpaTutup && (
+          <button
+            type="button"
+            className="modal__close"
+            aria-label={teksModal.tutup}
+            title={teksModal.tutupEsc}
+            onClick={mulaiTutup}
+          >
+            <IkonTutup />
+          </button>
+        )}
       </div>
 
       <div className="modal__body">{children}</div>
 
-      <div className="modal__actions">
-        <button type="button" className="btn btn--ghost" onClick={mulaiTutup}>
-          {labelBatal}
-        </button>
+      <div className={"modal__actions" + (tanpaTutup ? " modal__actions--tengah" : "")}>
+        {!tanpaTutup && (
+          <button type="button" className="btn btn--ghost" onClick={mulaiTutup}>
+            {labelBatal}
+          </button>
+        )}
         {aksi}
       </div>
     </>
@@ -673,7 +689,7 @@ export function Modal({
       }
       role="presentation"
       onClick={(e) => {
-        if (e.target === e.currentTarget) mulaiTutup();
+        if (!tanpaTutup && e.target === e.currentTarget) mulaiTutup();
       }}
     >
       {anak}

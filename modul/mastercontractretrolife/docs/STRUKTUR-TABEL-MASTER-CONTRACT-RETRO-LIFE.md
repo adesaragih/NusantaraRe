@@ -112,7 +112,7 @@ penghapus `DeleteRowBusinessList`. Satu-satunya tabel ber-PK di DDL DBA (`TREATY
 | `USERID` | VARCHAR2(100) | akun pelaku |
 | `TGLUPDATE` | DATE | `SYSDATE` |
 | `TREATYCONTRACTID` | VARCHAR2(100) | → `TREATYCONTRACT_LIFE.ID` (tanpa FK) |
-| `RIRATEID` | VARCHAR2(100) | ID ringkasan tabel rate — autocomplete `R/I RATE`, view `RATE_LIFE_SUMMARY.ID` (K1 keputusan work owner 01-10-2026) |
+| `RIRATEID` | VARCHAR2(100) | ID ringkasan tabel rate — autocomplete `R/I RATE`, view `RATE_LIFE_SUMMARY.ID` (K1 keputusan work owner 01-10-2026) *(RALAT 07-10-2026: ringkasan rate kini tabel `M_RATE_LIFE_SUMMARY` berkolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID - keputusan work owner 07-10-2026, `modul/riratelife/MODUL.md` RALAT R6; modul ini membacanya `SELECT ID, USEDBY`, tetap baca-saja)* |
 | `RIRATE` | VARCHAR2(1000) | **nama tabel rate** (teks, Pertanyaan A terjawab — RALAT R7) |
 
 ## Master yang dibaca saja
@@ -123,6 +123,6 @@ Tidak ditulis modul ini (`repository.DaftarMasterDibacaSaja`, `TestMCRLMasterDib
 sampai work owner menyetujui sumbernya (OQ-MCRL-13) — rutenya menjawab 503 berkalimat.
 
 > **Ralat 01-10-2026 (K1 keputusan work owner 01-10-2026, OQ-MCRL-13 + OQ-MCRL-05):** kalimat di atas tidak berlaku lagi. Kedua view rate
-> dibaca **saja** dan masuk `DaftarMasterDibacaSaja`: `RATE_LIFE_SUMMARY` (`ID`, `USEDBY`) untuk autocomplete `R/I RATE`,
+> dibaca **saja** dan masuk `DaftarMasterDibacaSaja`: `RATE_LIFE_SUMMARY` (`ID`, `USEDBY`) untuk autocomplete `R/I RATE`, *(RALAT 07-10-2026: ringkasan rate kini tabel `M_RATE_LIFE_SUMMARY` berkolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID - keputusan work owner 07-10-2026, `modul/riratelife/MODUL.md` RALAT R6; modul ini membacanya `SELECT ID, USEDBY`, tetap baca-saja)*
 > `RATE_LIFE` (`ID`, `USEDBY`, `GENDER`, `CONTRACT`, `AGE`, `RATE`, berkunci `IDUSEDBY`) untuk `Rate List`. Penjaga
 > `periksaBacaSaja` menolak SQL selain SELECT ke objek mana pun di daftar itu sebelum sampai ke Oracle.

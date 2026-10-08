@@ -15,12 +15,13 @@ export const JUDUL = {
   deptHead: 'Acceptance by Dept. Head',
   /** showHarness tombol `Choose Business` (`DetailPolicyTreatyIn`) `pyWindowName` - judul jendela popup. */
   pilihBisnis: 'Business And SOB List',
+  /** showHarness tombol `Survey Report` `pyWindowName`. */
+  surveiHistoris: 'Historical Survey Report',
   sumberBisnis: 'Source Of Business',
   /** FlowAction `PolicyTreatyInDeclineConfirm` pyLabel. */
   tolak: 'Confirm Decline NB',
   /** FlowAction `ShowPolicyNoTreaty` pyLabel. */
   nomorPolis: 'Show PolicyNo',
-  riwayat: 'History',
   catatan: 'Suggest',
 } as const
 
@@ -45,6 +46,8 @@ export const TOMBOL = {
   add: 'Add',
   delete: 'Delete',
   enableDisable: 'Enable / Disable Input Type',
+  /** Tombol sel 22 `Section/DetailPolicyTreatyIn` (LABEL). */
+  surveyReport: 'Survey Report',
   kembali: 'Kembali',
   /** pyNoSelectionText dropdown `.TreatyType` grid spreading. */
   pilihKosong: 'Choose',
@@ -57,10 +60,36 @@ export const TOMBOL = {
  *  (`.TextNoQuotation` = pengenal kasus yang sama; RALAT tiket 11). */
 export const KOLOM_PORTAL = {
   id: 'Offer No',
+  // keputusan work owner 06-10-2026 - bukan kolom GetListOpportunity
+  jenis: 'Type',
   bisnis: 'Group Business',
   tertanggung: 'Insured Name',
   marketing: 'Marketing',
   status: 'Status',
+  // keputusan work owner 06-10-2026 - bukan kolom GetListOpportunity
+  pembuat: 'User Create',
+  tanggal: 'Tanggal Create',
+} as const
+
+/** Kolom tambahan tab Resolved portal (perintah work owner 07-10-2026: "KALO DAH RESOLVE TAMBAHIN KOLOM NOPOLISNYA" dan "SEKALIAN KELUARIN TANGGAL PRODUKSINYA AJA DD-MM-YYYY"); label sama dengan portal EDM Treaty In. */
+export const KOLOM_PORTAL_SELESAI = {
+  noPolis: 'Policy Number',
+  tglProduksi: 'Production Date',
+} as const
+
+/** Kolom daftar kotak masuk Beranda (keputusan work owner 06-10-2026: portal + kolom yang ada datanya). */
+export const KOLOM_BERANDA = {
+  id: 'Offer No',
+  jenis: 'Type',
+  tertanggung: 'Insured Name',
+  bisnis: 'Group Business',
+  ceding: 'Ceding Company',
+  mulai: 'Inception Date',
+  marketing: 'Marketing',
+  status: 'Status Inbox',
+  pembuat: 'User Create',
+  tanggal: 'Tanggal Create',
+  sejak: 'Time Since Last Update',
 } as const
 
 export const PORTAL = {
@@ -75,8 +104,15 @@ export const PORTAL = {
   /** Teks daftar kosong - komponen `Kosong` inti (tiket 11: dasar unsur bawaan inti). */
   kosong: 'Belum ada berkas realisasi treaty yang terbuka.',
   kosongPetunjuk: 'Tombol Create membuat berkas baru di antrean admin.',
+  /** Daftar kosong di posisi switch Resolved. */
+  kosongSelesai: 'Belum ada berkas yang selesai.',
   hanyaBaca: 'Berkas ini menunggu di antrean lain atau sudah selesai - hanya-baca.',
 } as const
+
+/** Switch portal di atas daftar (keputusan work owner 06-10-2026: "switch untuk lihat yang lagi proses atau resolve,
+ *  default ke proses"). Resolved = Resolved-Completed / Resolved-Rejected. */
+export const STATUS_PORTAL = ['In Progress', 'Resolved'] as const
+export type StatusPortal = (typeof STATUS_PORTAL)[number]
 
 /** Judul kolom TreeGrid `Section/SourceHierarki` (pyCaption, `.ClientName`). */
 export const KOLOM_SOB = 'Source of Business Name'
@@ -173,9 +209,64 @@ export const PILIHAN_APPROVAL = [
   { value: '0', label: 'Reject' },
 ] as const
 
+/** Prompt values property `.ClaimType` (pxDropdown pyListSource `associated`; screenshot work owner 05-10-2026):
+ *  nilai standar disimpan, teks prompt ditampilkan. */
+export const PILIHAN_CLAIM_TYPE: { value: string; label: string }[] = [
+  { value: 'SOA', label: 'SOA' },
+  { value: 'CashLoss', label: 'Cash Loss' },
+  { value: 'XOL', label: 'XOL' },
+  { value: 'XOL Retro', label: 'XOL Retro' },
+]
+
+/** Prompt values property `.StatementType` (pxDropdown pyListSource `associated`; screenshot work owner 06-10-2026). */
+export const PILIHAN_STATEMENT_TYPE: { value: string; label: string }[] = [
+  { value: 'SOA', label: 'Statement of Account' },
+  { value: 'LPC', label: 'Loss Participation Clause' },
+  { value: 'PC', label: 'Profit Commission' },
+  { value: 'SC', label: 'Sliding Scale' },
+]
+
+/** Prompt values property `.TypeTax` (pxRadioButtons pyListSource `associated`; screenshot work owner 06-10-2026). */
+export const PILIHAN_TYPE_TAX: { value: string; label: string }[] = [
+  { value: 'Inclusive', label: 'Inclusive' },
+  { value: 'Exclusive', label: 'Exclusive' },
+]
+
+/** Prompt values property `.QuotationData.IsSurveyReport` (pxRadioButtons; screenshot work owner 06-10-2026). */
+export const PILIHAN_SURVEY_REPORT: { value: string; label: string }[] = [
+  { value: 'Yes', label: 'Yes' },
+  { value: 'No', label: 'No' },
+]
+
+/** Prompt values property `.ClaimPaymentType` (sumber sama dengan `PILIHAN_CLAIM_TYPE`). */
+export const PILIHAN_CLAIM_PAYMENT_TYPE: { value: string; label: string }[] = [
+  { value: 'Claim', label: 'Claim' },
+  { value: 'AdjusterFee', label: 'Adjuster Fee' },
+  { value: 'Salvage', label: 'Salvage' },
+  { value: 'Adjustment', label: 'Adjustment' },
+  { value: 'Retro', label: 'XOL Retro' },
+]
+
+/** Judul grid `Section/HistoricalSurveyReportDtl` (LABEL baris 1) dan medan Insured Name di atasnya. */
+export const KOLOM_SURVEI = {
+  tertanggung: 'Insured Name',
+  tanggal: 'Date of Survey',
+  oleh: 'Surveyed by (Ceding Company)',
+  lossPrevention: 'Loss Prevention',
+  remarks: 'Remarks',
+} as const
+
+/** Prompt values property `.Remarks` (pxDropdown pyListSource `associated`; screenshot work owner 06-10-2026). */
+export const PILIHAN_REMARKS_SURVEI: { value: string; label: string }[] = [
+  { value: '1', label: 'Satisfied' },
+  { value: '0', label: 'Unsatisfied' },
+]
+
 export const PESAN = {
   tersimpan: 'Tersimpan.',
   terkirim: 'Berkas dikirim.',
+  /** `.DateofSurvey` wajib (`Section/InputHistoricalSurveyReportDtl`). */
+  surveiTanpaTanggal: 'Date of Survey wajib diisi pada baris',
   opsiTerbuka:
     'Pilihan medan ini didefinisikan di rule Property yang tidak ada di korpus; nilai diketik apa adanya.',
 } as const

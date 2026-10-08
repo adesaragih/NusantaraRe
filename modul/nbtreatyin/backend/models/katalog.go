@@ -98,12 +98,12 @@ func kTglWaktu(p, k string) Kolom    { return Kolom{p, k, GolTanggalWaktu, 0} }
 
 const pt = HalamanPolis + "."
 
-// TabelGeneralPolis - T_GENERAL_POLIS: satu baris per GENERASI polis, kunci
+// TabelGeneralPolis - T_GENERAL_POLIS_TREATY: satu baris per GENERASI polis, kunci
 // utama bersama T_WORK_POLIS (ID-7). Kolom kunci dan generasi ditulis
 // repository di luar katalog (ID, NOPOLIS, PRODKE, NOENDORS, OLD_POLIS_ID,
-// IDPEGA, TGL_INPUT, USERNAME). Generasi TERTUTUP = ada baris penerus yang
+// TGL_INPUT, USERNAME; IDPEGA dibuang 06-10-2026 - sama dengan ID). Generasi TERTUTUP = ada baris penerus yang
 // OLD_POLIS_ID-nya menunjuk generasi ini (ID-10) - tanpa kolom penanda.
-var TabelGeneralPolis = Tabel{Nama: "T_GENERAL_POLIS", Kolom: []Kolom{
+var TabelGeneralPolis = Tabel{Nama: "T_GENERAL_POLIS_TREATY", Kolom: []Kolom{
 	// RALAT - halaman kerja, bukan PolicyTreatyIn; T_WORK_POLIS (milik
 	// premiumlistlife) tidak punya kolomnya. PositionNote dibaca connector Flow
 	// dan syarat Section; NBStatus tampil di SFAPortal_OpportunitiesList;
@@ -216,9 +216,13 @@ var TabelGeneralPolis = Tabel{Nama: "T_GENERAL_POLIS", Kolom: []Kolom{
 // ⛔ Dibuang (di luar diagram, nol pembaca NB terjangkau): BusinessType (hanya
 // ditulis DT BusinessType_DeT 14.8; turunan GroupPanel + BusinessOldId),
 // SobName/SobLeader0/SobLeader1 (pembacanya CheckDataMkt langkah 7 `//` dan
-// jalur treaty keluar), CedingCo/CedingCoName (tingkat polis di T_GENERAL_POLIS,
-// R47), MarketingCode (pembacanya CheckDataMkt langkah 6 `//`), TeamGroup,
-// BranchCode, BranchName (hanya ditulis CheckDataMkt langkah 4).
+// jalur treaty keluar), CedingCo/CedingCoName (tingkat polis di T_GENERAL_POLIS_TREATY,
+// R47).
+//
+// RALAT 06-10-2026 (keputusan work owner, "CheckDataMkt ikuti aja itu semua"): SEMUA
+// medan yang ditulis CheckDataMkt langkah 4 disimpan - MarketingCode, TeamGroup,
+// BranchCode, BranchName (sebelumnya dibuang, nol pembaca). TeamGroup dibaca aturan
+// tim Sec Head. Panjang kolom = kolom sumber MARKETINGOFFICER (VARCHAR2 100).
 var TabelQuotation = Tabel{Nama: "T_POLIS_QUOTATION", Kolom: []Kolom{
 	// diagram - 10 medan
 	kKode("ProportionalType", "PROPORTIONAL_TYPE", 32),
@@ -247,6 +251,11 @@ var TabelQuotation = Tabel{Nama: "T_POLIS_QUOTATION", Kolom: []Kolom{
 	kTeks("InsuredName", "INSURED_NAME", 255),
 	kTeks("NoOfferSlip", "NO_OFFER_SLIP", 4000),
 	kPenanda("IsSurveyReport", "IS_SURVEY_REPORT"),
+	// RALAT 06-10-2026 - CheckDataMkt langkah 4 (ClientID, TeamGroup, BranchDetailID, BranchDetailName)
+	kKode("MarketingCode", "MARKETING_CODE", 100),
+	kKode("TeamGroup", "TEAM_GROUP", 100),
+	kKode("BranchCode", "BRANCH_CODE", 100),
+	kTeks("BranchName", "BRANCH_NAME", 255),
 }}
 
 // TabelCeding - T_POLIS_CEDING ← QuotationData.CedingCoList (ID-24), anak
@@ -350,10 +359,22 @@ var TabelLayerXOL = Tabel{Nama: "T_POLIS_XOL_LAYER", Daftar: "ValueList", Kolom:
 	kUang("NetPremiAfterTax", "NET_PREMI_AFTER_TAX"),
 }}
 
+// TabelSurvei - T_POLIS_SURVEY ← PolicyTreatyIn.QuotationData.SurveyReportList: popup Historical Survey
+// Report (`Harness/HistoricalSurveyReport` ← tombol Survey Report). Keputusan work owner 06-10-2026,
+// membatalkan K7 (03-10-2026): tabel kesembilan, di luar diagram grilling. Kolom = sel grid
+// `Section/HistoricalSurveyReportDtl`: DateofSurvey pxDateTime, SurveyedBy teks, LossPrevention pxNumber
+// 4 desimal, Remarks pxDropdown (nilai standar).
+var TabelSurvei = Tabel{Nama: "T_POLIS_SURVEY", Daftar: DaftarSurvei, Kolom: []Kolom{
+	kTgl("DateofSurvey", "DATE_OF_SURVEY"),
+	kTeks("SurveyedBy", "SURVEYED_BY", 255),
+	kPersen("LossPrevention", "LOSS_PREVENTION"),
+	kKode("Remarks", "REMARKS", 64),
+}}
+
 // SemuaTabel - urutan tulis (induk lebih dulu).
 var SemuaTabel = []Tabel{
 	TabelGeneralPolis, TabelQuotation, TabelCeding, TabelAngsuran, TabelAngsuranRinci,
-	TabelSpreading, TabelXOL, TabelLayerXOL,
+	TabelSpreading, TabelXOL, TabelLayerXOL, TabelSurvei,
 }
 
 // NilaiQuotation - nilai satu medan T_POLIS_QUOTATION: QuotationData bila
@@ -376,6 +397,7 @@ var keturunanKatalog = []struct {
 	{TabelAngsuran, &TabelAngsuranRinci},
 	{TabelSpreading, nil},
 	{TabelXOL, &TabelLayerXOL},
+	{TabelSurvei, nil},
 }
 
 // ProyeksiKatalog - halaman sebagaimana ia KELUAR dari penyimpanan: hanya
