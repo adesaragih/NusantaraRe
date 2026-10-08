@@ -93,13 +93,22 @@ export default function LayarKasus({
   const idMaster = h?.nilai['ClaimData.IDMaster'] ?? ''
   useEffect(() => {
     if (idMaster === '') return
-    for (const s of ['limits', 'spreading', 'shareRNM']) {
+    for (const s of ['limits', 'shareRNM']) {
       pilihanKasus<Pilihan[]>(id, s).then(
         (d) => setOpsiKasus((o) => ({ ...o, [s]: d ?? [] })),
         () => undefined,
       )
     }
   }, [id, idMaster])
+  // Treaty Type spreading = spreading polis klaim (koreksi 08-10-2026), jadi dibaca ulang saat polis berganti.
+  const polisKasus = h?.nilai['ClaimData.PolicyData.PolicyNo'] ?? ''
+  useEffect(() => {
+    if (polisKasus === '') return
+    pilihanKasus<Pilihan[]>(id, 'spreading').then(
+      (d) => setOpsiKasus((o) => ({ ...o, spreading: d ?? [] })),
+      () => undefined,
+    )
+  }, [id, polisKasus])
 
   const kirim = useCallback(
     (aksi: string, indeks = 0, ubahan: Record<string, string> = {}, param = '') => {

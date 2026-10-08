@@ -200,7 +200,7 @@ const (
 	SumberLimits     = "limits"      // pageList TreatyInMaster.Limits (.TreatyType)
 	SumberJenisReas  = "jenisReas"   // BrowseReinsuranceType_RD
 	SumberJenisReas4 = "jenisReas4"  // BrowseReinsuranceType_RD Type = 4
-	SumberSpreading  = "spreading"   // pageList Spreading.pxResults (InputAcceptation_Est)
+	SumberSpreading  = "spreading"   // pageList Spreading.pxResults (InputAcceptation_Est) = spreading polis klaim
 	SumberAdjuster   = "adjuster"    // BrowseAdjusterConsultant
 	SumberProvinsi   = "provinsi"    // BrowseProvince_RD Nation INDONESIA
 	SumberShareRNM   = "shareRNM"    // pageList TreatyShare.pxResults (GetRNMShareTreaty)

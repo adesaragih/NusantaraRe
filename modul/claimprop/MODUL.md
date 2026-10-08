@@ -86,9 +86,18 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
 - **Kotak masuk Komite Claim Life disaring LINI** ("tambahkan!"): `komiteclaimlife/backend/repository/komite_inbox.go`
   `sqlSaringInboxKomite` + `(w.LINI = :lini OR w.LINI IS NULL)`, argumen `inti.LiniLife`. Kasus komite PROP tidak
   muncul di inbox Komite Life. Pembaca satu kasus `sqlKasusKomite` disaring sama (membuka, memutuskan, riwayat).
-- **Tambah / hapus baris Spreading Claim nonaktif**, termasuk ikon grid bawaan (dicabut). Akibat yang diketahui:
-  kasus BARU tidak dapat melahirkan baris spreading, sehingga Save to issue RNM ditolak `ProteksiData_act` langkah 5
-  ("please Fill SpreadingList"); kasus hasil pemuat data lama membawa barisnya.
+- **Tambah / hapus baris Spreading Claim nonaktif**, termasuk ikon grid bawaan (dicabut). Akibat lamanya (kasus BARU
+  tanpa baris spreading ditolak `ProteksiData_act` langkah 5, "please Fill SpreadingList") ditutup keputusan berikut.
+- **Spreading klaim terisi dari polis** (08-10-2026, "Add pada spreading kok ga bisa?" -> pilihan work owner;
+  dikerjakan sesi ASIS CLAIM PROP, ditinjau dan di-commit sesi CLAIM PROP): `AddSpreading_Act` / `DeleteSpreading_Act`
+  tidak diekspor, jadi SpreadingClaim terisi otomatis saat Policy No dipilih (`models.IsiSpreadingPolis` sesudah
+  CheckNoPolicy) dari TREATYINPRODUCTION polis (JN_REAS, PCT_SHARE_PREMI, CURR_ID -> CURRENCY.ID); SpreadingBreakQS =
+  anak PROPORTIONALARRG (PARENTREINSTYPEID = TreatyType atas, treaty group klaim, tahun arrangement terbaru <= tahun
+  treaty klaim - aturan tahun dari data DEV) menggantikan `TreatyInMaster.Limits(1).Detail(1).SpreadingList`.
+  Dropdown Treaty Type spreading = spreading polis klaim: KOREKSI atas `[dugaan]` SpreadingList master yang dibantah
+  data DEV (TreatyType klaim lama = induk, SpreadingList = anak). SpreadingList master dibuang (kode mati). DEV: 4 dari
+  6 klaim CLMP lama cocok persis atas + bawah; 2 polis 2019 menyimpan anak langsung di produksi (bawah kosong) -
+  kelompok 60 dari 1.020 polis.
 - **`STS_REJECT = 1` ditunda** sampai modul Komite Claim Prop ("itu nanti kan dari komite") — pemuat mencatatnya
   "ditunda", bukan gagal.
 - **Halaman awal dua tab, rupa Kelola User** ("cuman ada 2 tab process dan resolve"): tab Process bawaan = worklist

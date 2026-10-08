@@ -304,12 +304,9 @@ func init() {
 			}
 			return models.DeleteEstimation(j.k, j.h, j.r.Indeks, m)
 		},
+		// tabel bawah dari PROPORTIONALARRG, bukan master (keputusan work owner 08-10-2026)
 		"SetTreatyNameSpreading": func(j *jalanAksi) error {
-			m, err := master(j)
-			if err != nil {
-				return err
-			}
-			return models.SetTreatyNameSpreading(j.k, j.h, j.r.Indeks, m)
+			return models.SetTreatyNameSpreading(j.k, j.h, j.r.Indeks)
 		},
 		"CountSpreading": dariModel(models.CountSpreading),
 		// tombol Outstanding Claim (tiket 01, 07, 12)

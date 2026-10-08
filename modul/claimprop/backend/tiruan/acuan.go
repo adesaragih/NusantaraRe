@@ -60,6 +60,9 @@ type Acuan struct {
 	Kasir          map[string]string
 	Konversi       map[string]string
 	Tingkat        map[string]string
+
+	SpreadingPolisMap map[string][]models.SpreadingPolis // nopolis
+	AnakSpreadingMap  map[string][]models.AnakSpreading  // induk|tahun|grup
 }
 
 // AcuanBaru membuat acuan tiruan kosong.
@@ -73,7 +76,27 @@ func AcuanBaru() *Acuan {
 		Tahun: map[string]string{}, LimitPLAMap: map[string]string{}, Retro: map[string][]models.Retro{},
 		Saldo: map[string]string{}, Proteksi: map[string]bool{}, OS: map[string][]repository.BarisRingkasanOS{},
 		Tangga: map[string][]models.AnggotaKomite{}, Kasir: map[string]string{}, Konversi: map[string]string{},
-		Tingkat: map[string]string{}}
+		Tingkat: map[string]string{}, SpreadingPolisMap: map[string][]models.SpreadingPolis{},
+		AnakSpreadingMap: map[string][]models.AnakSpreading{}}
+}
+
+func (a *Acuan) SpreadingPolis(_ context.Context, nopolis string) ([]models.SpreadingPolis, error) {
+	return a.SpreadingPolisMap[nopolis], nil
+}
+
+// AnakSpreading - sama dengan repository: tahun arrangement terbaru yang <= `tahun` untuk induk + grup.
+func (a *Acuan) AnakSpreading(_ context.Context, induk, tahun, grup string) ([]models.AnakSpreading, error) {
+	terbaik := ""
+	for kunci := range a.AnakSpreadingMap {
+		p := strings.Split(kunci, "|")
+		if len(p) == 3 && p[0] == induk && p[2] == grup && p[1] <= tahun && p[1] > terbaik {
+			terbaik = p[1]
+		}
+	}
+	if terbaik == "" {
+		return nil, nil
+	}
+	return a.AnakSpreadingMap[induk+"|"+terbaik+"|"+grup], nil
 }
 
 func (a *Acuan) KursStandar(_ context.Context, c string) (string, error)  { return a.Kurs[c], nil }

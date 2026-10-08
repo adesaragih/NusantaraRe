@@ -109,7 +109,33 @@ func (l *Layanan) Pilihan(ctx context.Context, p inti.Pelaku, id, jenis string, 
 			out = append(out, models.Pilihan{Nilai: b["CurrencyID"], Label: b["Currency"]})
 		}
 		return out, nil
-	case models.SumberShareRNM, models.SumberLimits, models.SumberSpreading:
+	case models.SumberSpreading:
+		// Spreading.pxResults (penulisnya tidak diekspor). KOREKSI 08-10-2026 atas `[dugaan]` SpreadingList master:
+		// `[data DEV]` TreatyType SpreadingClaim klaim CLMP lama = INDUK (spreading polis), sedangkan SpreadingList
+		// master = anaknya (isi SpreadingBreakQS). Opsi = spreading polis klaim (keputusan work owner 08-10-2026:
+		// spreading diambil dari polis), berlabel nama treaty REINSURANCETYPE.
+		sp, err := l.a.SpreadingPolis(ctx, h.Ambil(models.CD+"PolicyData.PolicyNo"))
+		if err != nil {
+			return nil, err
+		}
+		out := []models.Pilihan{}
+		sudah := map[string]bool{}
+		for _, s := range sp {
+			if sudah[s.TreatyType] {
+				continue
+			}
+			sudah[s.TreatyType] = true
+			nama, err := l.a.NamaJenisReasuransi(ctx, s.TreatyType)
+			if err != nil {
+				return nil, err
+			}
+			if nama == "" {
+				nama = s.TreatyType
+			}
+			out = append(out, models.Pilihan{Nilai: s.TreatyType, Label: nama})
+		}
+		return out, nil
+	case models.SumberShareRNM, models.SumberLimits:
 		m, _, err := l.a.MasterTreaty(ctx, h.Ambil(models.CD+"IDMaster"))
 		if err != nil {
 			return nil, err
@@ -120,15 +146,9 @@ func (l *Layanan) Pilihan(ctx context.Context, p inti.Pelaku, id, jenis string, 
 			for _, s := range models.PilihanShareRNM(models.HalamanBaru(), m) {
 				out = append(out, models.Pilihan{Nilai: s, Label: s})
 			}
-		case models.SumberLimits:
+		default: // SumberLimits
 			for _, li := range m.Limits {
 				out = append(out, models.Pilihan{Nilai: li.TreatyType, Label: li.TreatyType})
-			}
-		default: // Spreading.pxResults - `[dugaan]` SpreadingList master (penulis Spreading.pxResults tidak diekspor)
-			if len(m.Limits) > 0 && len(m.Limits[0].Detail) > 0 {
-				for _, s := range m.Limits[0].Detail[0].SpreadingList {
-					out = append(out, models.Pilihan{Nilai: s.ReinsTypeID, Label: s.ReinsTypeName})
-				}
 			}
 		}
 		return out, nil

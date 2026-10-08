@@ -40,8 +40,7 @@ func acuanUji() *tiruan.Acuan {
 		Ceding: "UJI-CEDING", CedingID: "UJI-CED", LeadingReinsSource: "UJI-SOB", LeadingReinsSourceID: "UJI-SOBID",
 		Commencement: "2026-01-01", Termination: "2026-12-31", TreatyYear: "2026", RNMShareP: "10",
 		StatusAkseptasi: "Resolve Complete", Limits: []models.LimitMaster{{TreatyType: "QUOTA SHARE",
-			Detail: []models.DetailLimit{{TreatyGroupID: "UJI-TG", RNMShare: "10",
-				SpreadingList: []models.SpreadingMaster{{ReinsTypeID: "UJI-R1", ReinsTypeName: "UJI-QS", Pct: "100"}}}}}}}
+			Detail: []models.DetailLimit{{TreatyGroupID: "UJI-TG", RNMShare: "10"}}}}}
 	a.BarisMaster = []models.BarisMaster{{TreatyID: masterUji, ClassOfBusiness: "UJI-COBNAMA", ClassOfBusinessID: "UJI-COB",
 		TreatyContractName: "UJI-KONTRAK", ProportionType: "Proportional", TreatyGroup: "UJI-GRUP", TreatyGroupID: "UJI-TG",
 		TreatyYear: "2026"}}
