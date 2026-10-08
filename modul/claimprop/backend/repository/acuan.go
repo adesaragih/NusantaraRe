@@ -445,15 +445,16 @@ func (a *Acuan) NamaAdjuster(ctx context.Context, id string) (string, error) {
 	return v, err
 }
 
-// DaftarAdjuster = autocomplete Consultant / Adjuster (RD BrowseAdjusterConsultant, kolom ID*, NAME; 500).
+// DaftarAdjuster = autocomplete Consultant / Adjuster (RD BrowseAdjusterConsultant, kolom ID*, NAME; 500). Saringan dan
+// urutan menurut NAME saja (work owner 08-10-2026: "yang dropdown hanya dari namanya aja"); ID tetap nilai pilihan.
 func (a *Acuan) DaftarAdjuster(ctx context.Context, cari string) ([]models.Pilihan, error) {
 	t, err := a.q("ADJUSTERCONSULTANT")
 	if err != nil {
 		return nil, err
 	}
 	pola := "%" + strings.ToUpper(strings.TrimSpace(cari)) + "%"
-	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT ID, NAME FROM %s WHERE UPPER(ID) LIKE :1 OR UPPER(NAME) LIKE :2
-		ORDER BY ID FETCH FIRST 500 ROWS ONLY`, t), 2, pola, pola)
+	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT ID, NAME FROM %s WHERE UPPER(NAME) LIKE :1
+		ORDER BY NAME, ID FETCH FIRST 500 ROWS ONLY`, t), 2, pola)
 	return pilihan(rows, err)
 }
 

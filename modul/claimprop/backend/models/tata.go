@@ -56,8 +56,11 @@ type Unsur struct {
 	Jalur   string // medan: jalur halaman (atau nama properti anggota untuk kolom grid); grid: jalur daftar
 	Kendali string
 	Sumber  string // kunci daftar pilihan
-	Aksi    string // aksi saat ubah / klik ("" = postValue saja)
-	Catatan string // OQ / alasan nonaktif
+	// Tampilan - jalur teks yang DITAMPILKAN untuk medan ber-sumber; nilai medan (Jalur) tetap yang disimpan. Consultant /
+	// Adjuster: pilih dan tampil nama, simpan ID (work owner 08-10-2026).
+	Tampilan string
+	Aksi     string // aksi saat ubah / klik ("" = postValue saja)
+	Catatan  string // OQ / alasan nonaktif
 
 	Tampil    Kondisi
 	HanyaBaca Kondisi
@@ -91,6 +94,7 @@ type Tata struct {
 	Jalur     string      `json:"jalur,omitempty"`
 	Kendali   string      `json:"kendali,omitempty"`
 	Sumber    string      `json:"sumber,omitempty"`
+	Tampilan  string      `json:"tampilan,omitempty"`
 	Aksi      string      `json:"aksi,omitempty"`
 	Catatan   string      `json:"catatan,omitempty"`
 	HanyaBaca bool        `json:"hanyaBaca,omitempty"`
@@ -138,7 +142,8 @@ func Evaluasi(h *Halaman, defs []Unsur, kunci bool) []Tata {
 			continue
 		}
 		t := Tata{Jenis: u.Jenis, ID: u.ID, Label: u.Label, Jalur: u.Jalur, Kendali: u.Kendali, Sumber: u.Sumber,
-			Aksi: u.Aksi, Catatan: u.Catatan, Bernomor: u.Bernomor, Letak: u.Letak, Ikon: u.Ikon, PerHalaman: u.PerHalaman}
+			Tampilan: u.Tampilan, Aksi: u.Aksi, Catatan: u.Catatan, Bernomor: u.Bernomor, Letak: u.Letak, Ikon: u.Ikon,
+			PerHalaman: u.PerHalaman}
 		t.HanyaBaca = kunci || ya(u.HanyaBaca, h, false)
 		t.Nonaktif = kunci || ya(u.Nonaktif, h, false)
 		t.Wajib = ya(u.Wajib, h, false)

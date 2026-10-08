@@ -3,6 +3,7 @@
 // Jalur medan: `ClaimData.X` (halaman), `daftar(n).prop` (sel baris, n berbasis 1). Layar mengirim nilai SEMUA jalur
 // terbuka bersama setiap aksi; server menggabungkan hanya yang terbuka menurut tata miliknya sendiri.
 
+import { formatNumber } from '../../../inti/frontend/lib/format'
 import type { Baris, Halaman, Tata } from './api'
 
 /** Pecah `daftar(n).prop` (indeks terakhir); null bila bukan jalur baris. */
@@ -101,11 +102,13 @@ export function hanyaAngka(v: string): string {
   return v.replace(/\D/g, '')
 }
 
-/** Tampilan angka: ribuan bertitik koma (en-US), presisi apa adanya (teks, tidak lewat float). */
+/** Desimal tampilan angka (work owner 08-10-2026: "separator indonesia, 4 angka belakang koma"). */
+export const DESIMAL_TAMPIL = 4
+
+/**
+ * Tampilan angka: titik ribuan, koma desimal, paling banyak 4 desimal (dibulatkan setengah ke atas pada digit, bukan
+ * float), nol ekor dibuang - inti `formatNumber`. Bukan angka = apa adanya. Nilai tersimpan tidak disentuh.
+ */
 export function tampilAngka(v: string): string {
-  if (!/^-?\d+(\.\d+)?$/.test(v)) return v
-  const [bulat = '', pecah] = v.split('.')
-  const tanda = bulat.startsWith('-') ? '-' : ''
-  const b = (tanda ? bulat.slice(1) : bulat).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-  return tanda + b + (pecah !== undefined ? `.${pecah}` : '')
+  return formatNumber(v, DESIMAL_TAMPIL)
 }

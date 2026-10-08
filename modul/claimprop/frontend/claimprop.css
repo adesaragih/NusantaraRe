@@ -557,6 +557,12 @@
   overflow-wrap: anywhere;
 }
 
+/* Di sel tabel `anywhere` membuat lebar minimum kolom = satu huruf: tabel sempit memeras kolom tampil (Type Loss)
+   menjadi satu huruf per baris. `break-word` hanya memotong kata yang melebihi lebar kolom. */
+.claimprop .claimprop__tabel .claimprop__nilai {
+  overflow-wrap: break-word;
+}
+
 /* Inline grid double: dua kolom; sel ketiga turun ke baris berikutnya. */
 .claimprop .claimprop__dua {
   display: grid;
@@ -597,6 +603,31 @@
 .claimprop .claimprop__saring {
   flex: 1 1 200px;
   min-width: 0;
+}
+
+.claimprop .claimprop__tanggal {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+/* Isian tanggal (InputTanggal): di baris medan kotak boleh menyempit; sel grid memakai lebar minimum kelasnya. */
+.claimprop .claimprop__tanggal > .field__input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.claimprop .claimprop__tanggal > .claimprop__input--sel {
+  min-width: 110px;
+}
+
+/* Pemilih bawaan tersembunyi (sr-only, absolut) berjangkar di tombol kalender. */
+.claimprop .claimprop__tanggal-kalender {
+  position: relative;
+  display: inline-flex;
+  flex: none;
 }
 
 .claimprop .claimprop__saring .pilih-saring {

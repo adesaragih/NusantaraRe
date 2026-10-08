@@ -68,6 +68,16 @@
 | tombol tanpa label di samping RNMShareP | vis NEVER | — | tidak tampil di XML |
 | grid "Claim History" (SuggestList) | — | 14 | **dibangun** — `T_VIEW_SUGGEST` (keputusan work owner 07-10-2026) |
 
+## 2a. Tampilan medan (keputusan work owner 08-10-2026, berlaku juga di section 3)
+
+| Medan | XML | Status |
+| --- | --- | --- |
+| Consultant ID / Adjuster / Professional ID | Section OutstandingClaim / InputAcceptation: medan ID + baris nama hanya-baca | **dibangun lain** — dropdown memilih dan menampilkan NAMA (label "Consultant Name" / "Adjuster / Professional Name", saringan NAME saja); ID tetap disimpan (CONSULTANT_ID / ADJUSTER_ID); baris nama hanya-baca XML hanya tampil saat `IsAnyAcceptation = 1` |
+| ikon Add di samping Consultant / Adjuster | `pyWorkActionsAddWork.png` | **dibangun** — selalu menempel ke medannya, juga saat baris nama tersembunyi |
+| isian angka (kendali angka, medan dan sel grid) | Currency / Decimal | **dibangun lain** — hanya angka, separator Indonesia (titik ribuan, koma desimal), paling banyak 4 desimal saat mengetik dan saat tampil; nilai tersimpan tetap mentah |
+| isian tanggal / tanggal-waktu | DateTime (pemilih bawaan) | **dibangun lain** — diketik `dd-mm-yyyy` (+ `hh:mm`), pemisah otomatis, tanggal tidak sah ditandai merah, tombol kalender; aksi server (CheckDateDOL dll.) hanya saat isian lengkap dan sah atau dikosongkan |
+| Type (grid Estimation List, `ASM-FW-GCNMFW-Data-Estimasi.Type`) | prompt values tidak ada di korpus | **dibangun** — dari screenshot work owner: 1 Claim, 2 Adjuster Fee, 3 Salvage, 4 Consultant Fee; nilai tersimpan kode |
+
 ## 3. Section `InputAcceptation` (Assignment1) dan sub-section-nya
 
 | Label XML | Aksi XML | Tiket | Status |
@@ -88,7 +98,7 @@
 | tambah baris Adjustment | `AddAdjustment_Act` (vis `AktifButton = '0' \|\| ''`) | 08 | **dibangun** |
 | hapus baris Adjustment | `DeleteAjsutment_Act` (dis `IsKomite=1 \|\| IsSubjectivity`) | 08 | **dibangun** (+ tolak baris ber-`KOMITE_ID`) |
 | Save to issue RNM / PRINT PLA (`InputAcceptation_Est`) | sama dengan Outstanding (dis `ReCFS != 1` / `IsPLA!=1`) | 07, 12 | **dibangun** |
-| klik baris Adjustment | expand pane `AdjustmentDetail` | 08 | **dibangun** (panel rinci baris) |
+| klik baris Adjustment | expand pane `AdjustmentDetail` | 08 | **dibangun** (panel rinci baris; HANYA grid Adjustment - grid lain tidak punya expand pane, laporan work owner 08-10-2026) |
 | klik baris Total Claim Amount | expand pane `ViewDetailInterest` (`InterestListDtl` — tidak diimpor, J1) | 05 | tidak dibangun: halaman kerja bukan data (STRUKTUR J1) |
 
 ## 4. Section `AdjustmentDetail` (panel rinci baris adjustment)

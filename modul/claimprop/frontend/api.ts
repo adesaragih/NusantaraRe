@@ -31,6 +31,8 @@ export interface Tata {
   jalur?: string
   kendali?: string
   sumber?: string
+  /** Jalur teks yang ditampilkan medan ber-sumber; nilai `jalur` tetap yang disimpan (Consultant / Adjuster: nama). */
+  tampilan?: string
   aksi?: string
   catatan?: string
   hanyaBaca?: boolean

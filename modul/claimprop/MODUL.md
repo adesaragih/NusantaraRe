@@ -120,6 +120,16 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   server dev vite tab baru memuat ulang seluruh aplikasi (22-30 detik layar putih), dan peramban tidak mengizinkan
   halaman membuka tab di latar. Tanpa berkas (404) / modul tidak dipasang bagi akun = pesan dalam modal. Modul NB /
   EDM tidak diubah. DEV: hanya berkas aplikasi baru / Copy Old punya berkas (15 dari 41.945 baris TREATYINPRODUCTION).
+- **Panel AdjustmentDetail hanya di grid Adjustment** (08-10-2026, "kenapa ada itu?" - screenshot grid Insured
+  Interests / Total in Original Currency): panel rinci baris dulu menempel di semua grid, jadi klik baris mana pun
+  membuka "AdjustmentDetail" kosong. Kini hanya grid `ClaimData.AdjustmentList` (expand pane XML) yang barisnya dapat
+  dibuka (`frontend/components/rincian.ts`, diuji).
+- **Tampilan medan** (08-10-2026, perintah work owner; dikerjakan sesi ASIS CLAIM PROP, ditinjau dan di-commit sesi
+  CLAIM PROP): Consultant / Adjuster dropdown memilih dan menampilkan nama (`Tata.Tampilan`, saringan NAME saja), ID
+  tetap disimpan; isian angka hanya angka dengan separator Indonesia, paling banyak 4 desimal (`ketikAngka.ts`,
+  `InputAngka.tsx`, `nilai.tampilAngka`); isian tanggal diketik `dd-mm-yyyy` (+ `hh:mm`) dengan tombol kalender, aksi
+  server hanya saat lengkap dan sah (`ketikTanggal.ts`, `InputTanggal.tsx`); label Type Estimation List dari
+  screenshot (`LabelKode["EstimationType"]`); nilai tampil di sel tabel tidak lagi terpecah satu huruf per baris.
 - **Perbaikan Claim Information** (08-10-2026, daftar work owner): Date of Loss / Received Date tanggal saja
   (KTanggal, katalog kTgl); Reporter Phone Number kendali `telepon` (hanya angka, nol di depan tetap, kolom teks);
   label kode `models.LabelKode` - Report Type 1 Direct / 2 Via Email / 3 Via Fax / 4 via Postal Mail/Courier / 5 Via

@@ -83,6 +83,10 @@ func sumber(u Unsur, s string) Unsur  { u.Sumber = s; return u }
 func tampilIsi(u Unsur) Unsur         { u.Tampil = terisi(u.Jalur); return u }
 func label(t string) Unsur            { return Unsur{Jenis: JenisLabel, Label: t} }
 func catatan(u Unsur, c string) Unsur { u.Catatan = c; return u }
+
+// tampilan - jalur teks yang ditampilkan medan ber-sumber (nilai Jalur tetap yang disimpan).
+func tampilan(u Unsur, j string) Unsur { u.Tampilan = j; return u }
+
 func bagian(judul string, anak ...Unsur) Unsur {
 	return Unsur{Jenis: JenisBagian, Label: judul, Anak: anak}
 }
@@ -227,6 +231,8 @@ var KodePilihan = map[string][]string{
 var LabelKode = map[string]map[string]string{
 	"ReportType":     {"1": "Direct", "2": "Via Email", "3": "Via Fax", "4": "via Postal Mail/Courier", "5": "Via Telephone"},
 	"ReporterStatus": {"1": "Ceding Co Name", "2": "SOB Name", "3": "Others"},
+	// ASM-FW-GCNMFW-Data-Estimasi.Type - kolom Type grid Estimation List (screenshot work owner 08-10-2026)
+	"EstimationType": {"1": "Claim", "2": "Adjuster Fee", "3": "Salvage", "4": "Consultant Fee"},
 }
 
 func kode(p string) string { return AwalanKode + p }
@@ -299,20 +305,26 @@ func blokPelapor(relasiStatus string) []Unsur {
 
 // blokAdjuster - Consultant | Adjuster (Section OutstandingClaim / InputAcceptation): Inline grid double, ikon
 // `pyWorkActionsAddWork.png` di samping ID.
+//
+// [keputusan work owner 08-10-2026] "yang dropdown hanya dari namanya aja; untuk ID dihapus dari tampilan, tapi tetap
+// simpan ID": medan ID (yang disimpan, aksi SetConsultant / SetAdjsuter tetap) berlabel nama dan menampilkan jalur
+// nama; baris nama hanya-baca XML hanya muncul saat dropdown tersembunyi (IsAnyAcceptation = 1), supaya nama tidak
+// tampil dua kali. Label XML "Consultant ID" / "Adjuster / Professional ID" tidak dipakai.
 func blokAdjuster(namaTampil Kondisi, namaAdjTampil Kondisi) []Unsur {
 	bukanAcc := beda("IsAnyAcceptation", "1")
+	sudahAcc := sama("IsAnyAcceptation", "1")
 	return []Unsur{dua(
 		bagian("",
-			aksi(sumber(tampil(wajibU(roJika(medan(CD+"ConsultantID", "Consultant ID", KOtomatis), isOutstanding)), bukanAcc),
-				SumberAdjuster), "SetConsultant"),
+			tampilan(aksi(sumber(tampil(wajibU(roJika(medan(CD+"ConsultantID", "Consultant Name", KOtomatis), isOutstanding)),
+				bukanAcc), SumberAdjuster), "SetConsultant"), CD+"ConsultantName"),
 			ikon(tampil(naJika(tombol("AdjusterConsultantBaru1", "Add", AksiTambahKonsultan), isOutstanding), bukanAcc), IkonTambah),
-			tampil(ro(medan(CD+"ConsultantName", "Consultant Name", KTeks)), namaTampil),
+			tampil(ro(medan(CD+"ConsultantName", "Consultant Name", KTeks)), dan(namaTampil, sudahAcc)),
 		),
 		bagian("",
-			aksi(sumber(tampil(wajibU(roJika(medan(CD+"AppointedADJID", "Adjuster / Professional ID", KOtomatis),
-				isOutstanding)), bukanAcc), SumberAdjuster), "SetAdjsuter"),
+			tampilan(aksi(sumber(tampil(wajibU(roJika(medan(CD+"AppointedADJID", "Adjuster / Professional Name", KOtomatis),
+				isOutstanding)), bukanAcc), SumberAdjuster), "SetAdjsuter"), CD+"AppointedADJ"),
 			ikon(tampil(naJika(tombol("AdjusterConsultantBaru2", "Add", AksiTambahAdjuster), isOutstanding), bukanAcc), IkonTambah),
-			tampil(ro(medan(CD+"AppointedADJ", "Adjuster / Professional Name", KTeks)), namaAdjTampil),
+			tampil(ro(medan(CD+"AppointedADJ", "Adjuster / Professional Name", KTeks)), dan(namaAdjTampil, sudahAcc)),
 		),
 	)}
 }

@@ -9,12 +9,17 @@
 // tombol ikon dari XML (pi-plus / pi-trash / pi-pencil / pi-check), grid ber-paging (pyGridPaginator). Pengelompokan di
 // `susun.ts`.
 
-import { Fragment, useState, type ReactNode } from 'react'
+import { Fragment, useState } from 'react'
 
 import { PilihSaring } from '../../../../inti/frontend/components/ui/pilihSaring'
 import type { Halaman, Pilihan, Tata } from '../api'
-import { ambil, dariInputWaktu, hanyaAngka, jalurBaris, keInputWaktu, tampilAngka } from '../nilai'
+import { tampilTanggal } from '../ketikTanggal'
+import { ambil, hanyaAngka, jalurBaris, tampilAngka } from '../nilai'
+import InputAngka from './InputAngka'
+import InputTanggal from './InputTanggal'
+import { rincianUntuk, type RincianGrid } from './rincian'
 import { jumlahHalaman, potongHalaman, ratakan, susunIsi, susunLayar, type Butir } from './susun'
+import { butirSaring, teksTerpilih } from './tampilanNama'
 
 export interface KonteksTata {
   h: Halaman
@@ -27,8 +32,8 @@ export interface KonteksTata {
   saran?: (sumber: string, indeks: number, cari: string) => void
   pesanMedan: Record<string, string[]>
   sibuk: boolean
-  /** Panel rinci baris grid (expand pane AdjustmentDetail). */
-  rincian?: (jalurDaftar: string, n: number) => ReactNode
+  /** Panel rinci baris grid (expand pane AdjustmentDetail) - hanya untuk grid `rincian.daftar`. */
+  rincian?: RincianGrid
 }
 
 /** Indeks baris (1..n) dari jalur `daftar(n).prop`; 0 bila jalur halaman. */
@@ -45,9 +50,8 @@ function teksTampil(t: Tata, v: string, opsi: () => Pilihan[]): string {
     case 'angka':
       return tampilAngka(v)
     case 'tanggal':
-      return v.slice(0, 10)
     case 'tanggal-waktu':
-      return keInputWaktu(v).replace('T', ' ')
+      return tampilTanggal(v, t.kendali)
     case 'pilih':
     case 'radio':
       return opsi().find((o) => o.nilai === v)?.label ?? v
@@ -116,7 +120,7 @@ function Medan({
     )
   }
   if (kunci) {
-    const teks = teksTampil(t, v, opsi)
+    const teks = t.tampilan ? teksTerpilih(t, v, (j) => ambil(k.h, j), opsi()) : teksTampil(t, v, opsi)
     return (
       <span id={id} className={angka ? 'claimprop__nilai claimprop__angka' : 'claimprop__nilai'}>
         {teks}
@@ -143,15 +147,15 @@ function Medan({
   }
   switch (t.kendali) {
     case 'angka':
+      // hanya angka, separator Indonesia, maks 4 desimal (work owner 08-10-2026); nilai halaman tetap mentah
       return (
-        <input
+        <InputAngka
           id={id}
           className={kelas}
-          inputMode="decimal"
           value={v}
           disabled={k.sibuk}
-          onChange={(e) => k.ubah(jalur, e.target.value.replace(/,/g, ''))}
-          onBlur={(e) => t.aksi && ganti(e.target.value.replace(/,/g, ''), true)}
+          onChange={(mentah) => k.ubah(jalur, mentah)}
+          onBlur={() => t.aksi && ganti(v, true)}
         />
       )
     case 'telepon':
@@ -168,25 +172,17 @@ function Medan({
         />
       )
     case 'tanggal':
-      return (
-        <input
-          id={id}
-          type="date"
-          className={kelas}
-          value={v.slice(0, 10)}
-          disabled={k.sibuk}
-          onChange={(e) => ganti(e.target.value, true)}
-        />
-      )
     case 'tanggal-waktu':
+      // diketik dd-mm-yyyy (+ hh:mm), pemisah otomatis, tombol kalender (work owner 08-10-2026); aksi server hanya saat
+      // isian lengkap dan sah atau dikosongkan
       return (
-        <input
+        <InputTanggal
           id={id}
-          type="datetime-local"
           className={kelas}
-          value={keInputWaktu(v)}
+          jenis={t.kendali}
+          value={v}
           disabled={k.sibuk}
-          onChange={(e) => ganti(dariInputWaktu(e.target.value), true)}
+          onChange={(nilai, final) => (final ? ganti(nilai, true) : k.ubah(jalur, nilai))}
         />
       )
     case 'area':
@@ -218,18 +214,15 @@ function Medan({
     case 'otomatis': {
       // Dropdown yang dapat dicari (keputusan work owner 08-10-2026: Consultant ID / Adjuster ID "model dropdown yang
       // bisa di search"): PilihSaring inti, saringan ke server lewat `saran`; nilai berubah hanya saat butir dipilih.
+      // Medan ber-`tampilan` (Consultant / Adjuster) memilih dan menampilkan nama saja, nilai tetap ID (tampilanNama.ts).
       if (!sel) {
         return (
           <span className="claimprop__saring">
             <PilihSaring
               label=""
               value={v}
-              teksTerpilih={v}
-              opsi={opsi().map((o) => ({
-                value: o.nilai,
-                label: o.nilai,
-                keterangan: o.label !== o.nilai ? o.label : undefined,
-              }))}
+              teksTerpilih={teksTerpilih(t, v, (j) => ambil(k.h, j), opsi())}
+              opsi={butirSaring(t, opsi())}
               onCari={(kata) => k.saran?.(t.sumber ?? '', n, kata)}
               onPilih={(o) => ganti(o.value, true)}
             />
@@ -450,6 +443,7 @@ function Kepala({ t, k }: { t: Tata; k: KonteksTata }) {
 function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
   const [buka, setBuka] = useState<number | null>(null)
   const [hal, setHal] = useState(1)
+  const rinci = rincianUntuk(k.rincian, t.jalur)
   const kolom = t.kolom ?? []
   const semua = t.baris ?? []
   const nHal = jumlahHalaman(semua.length, t.perHalaman)
@@ -520,8 +514,8 @@ function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
             return (
               <Fragment key={n}>
                 <tr
-                  className={k.rincian ? 'inbox__baris' : undefined}
-                  onClick={k.rincian ? () => setBuka(buka === n ? null : n) : undefined}
+                  className={rinci ? 'inbox__baris' : undefined}
+                  onClick={rinci ? () => setBuka(buka === n ? null : n) : undefined}
                 >
                   {t.bernomor && <td>{n}</td>}
                   {kolom.map((c, j) => {
@@ -546,9 +540,9 @@ function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
                   })}
                   {selKepalaTambah && <td />}
                 </tr>
-                {k.rincian && buka === n && (
+                {rinci && buka === n && (
                   <tr>
-                    <td colSpan={lebar}>{k.rincian(t.jalur ?? '', n)}</td>
+                    <td colSpan={lebar}>{rinci.isi(n)}</td>
                   </tr>
                 )}
               </Fragment>

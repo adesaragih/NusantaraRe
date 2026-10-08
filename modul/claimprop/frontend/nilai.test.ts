@@ -58,9 +58,14 @@ describe('nilai layar Claim Prop', () => {
     expect(dariInputWaktu('2026-05-01T08:30')).toBe('2026-05-01 08:30:00')
   })
 
-  it('angka ditampilkan berpemisah ribuan tanpa membulatkan', () => {
-    expect(tampilAngka('1234567.0123456789')).toBe('1,234,567.0123456789')
-    expect(tampilAngka('-1000')).toBe('-1,000')
+  // work owner 08-10-2026: "separator indonesia", "4 angka belakang koma"
+  it('angka bergaya Indonesia: titik ribuan, koma desimal, maks 4 desimal, nol ekor dibuang', () => {
+    expect(tampilAngka('1234567.0123456789')).toBe('1.234.567,0123')
+    expect(tampilAngka('1234567.01235')).toBe('1.234.567,0124')
+    expect(tampilAngka('2484250.000000')).toBe('2.484.250')
+    expect(tampilAngka('0.5')).toBe('0,5')
+    expect(tampilAngka('-1000')).toBe('-1.000')
+    expect(tampilAngka('')).toBe('')
     expect(tampilAngka('abc')).toBe('abc')
   })
 })

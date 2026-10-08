@@ -20,6 +20,7 @@ import {
 import { CP } from '../labels'
 import { ambil, masukan, semuaTata, setel } from '../nilai'
 import Popup, { type JenisPopup } from './Popup'
+import { DAFTAR_RINCI } from './rincian'
 import TambahAdjuster from './TambahAdjuster'
 import TataView, { LayarTata, type KonteksTata } from './TataView'
 
@@ -235,12 +236,15 @@ export default function LayarKasus({
     }
     return {
       ...dasar,
-      rincian: (_j: string, n: number) => (
-        <div className="claimprop__rinci">
-          <div className="claimprop__label">{CP.popAdjustment}</div>
-          <TataView tata={layar.adjustment?.[String(n)] ?? []} k={dasar} />
-        </div>
-      ),
+      rincian: {
+        daftar: DAFTAR_RINCI,
+        isi: (n: number) => (
+          <div className="claimprop__rinci">
+            <div className="claimprop__label">{CP.popAdjustment}</div>
+            <TataView tata={layar.adjustment?.[String(n)] ?? []} k={dasar} />
+          </div>
+        ),
+      },
     }
   }, [layar, h, aksi, opsi, saran, sibuk])
 
