@@ -61,7 +61,14 @@ function berkasLayar(): { nama: string; isi: string }[] {
 // kontrak, yang di Pega pun menyimpan SEKETIKA (`SetTreatyIn_Act` [10–11]).
 // ⭐ EMPAT sejak 8 Oktober 2026: `unggahLampiran` — tombol Attach panel
 // Attachment (`TreatySaveAttachment`), yang di Pega pun menyimpan seketika.
-const FUNGSI_TULIS: readonly string[] = ['simpanKontrak', 'kirimKontrak', 'mulaiRevisi', 'unggahLampiran']
+// ⭐ TUJUH: `hapusLampiran` dan `ubahKategoriLampiran` — modal View File
+// (`Delete_act`, `ChangeDokument_Act("Save")`) — dan `ambilTautanLampiran`:
+// GET, tetapi MENULIS `T_STORAGE_IMAGE` saat URL kedaluwarsa
+// (`GetUrlGoogleStorage_Act` [6.6] `Update_T_Storage_SQL`).
+const FUNGSI_TULIS: readonly string[] = [
+  'simpanKontrak', 'kirimKontrak', 'mulaiRevisi', 'unggahLampiran', 'hapusLampiran', 'ubahKategoriLampiran',
+  'ambilTautanLampiran',
+]
 
 describe('Aturan B — isian tidak masuk DB sampai Save atau Submit', () => {
   it('⛔ nol fungsi tulis dipanggil dari `onChange`', () => {

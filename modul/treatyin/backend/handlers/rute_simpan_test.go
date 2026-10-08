@@ -167,3 +167,17 @@ func TestRuteUnggahLampiranMultipart(t *testing.T) {
 		t.Errorf("bukan multipart: kode %d", w2.Code)
 	}
 }
+
+func (_ gudangTiruan) BacaObjekSimpanan(context.Context, string) (models.ObjekSimpanan, bool, error) {
+	return models.ObjekSimpanan{}, false, nil
+}
+
+func (_ gudangTiruan) PerbaruiObjekSimpanan(context.Context, models.ObjekSimpanan, string) error {
+	return nil
+}
+
+func (_ gudangTiruan) HapusLampiran(context.Context, string, string, string) error { return nil }
+
+func (_ gudangTiruan) UbahKategoriLampiran(context.Context, string, []models.PerubahanKategori) error {
+	return nil
+}

@@ -20,3 +20,21 @@ type LampiranBaru struct {
 	NamaObjek string // FILENAME — `UploadDoc.Namafile` yang dikirim
 	App       string // APPNAME — `T_FOLDER_IMAGE.APPNAME`
 }
+
+// ObjekSimpanan - satu baris `T_STORAGE_IMAGE` (`GetLinkStorage_SQL`).
+type ObjekSimpanan struct {
+	ImageID   string
+	URLPublik string // URLPUBLIC — URL bertanda tangan
+	AppFolder string // APPFOLDER — `gs://<App>/<Folder><Namafile>`
+	Exp       string // EXPDATE — `DD/MM/YYYY HH24:MI:SS`
+	App       string // APPNAME
+	NamaObjek string // FILENAME
+}
+
+// PerubahanKategori - satu baris yang `Change Category` → `Save` tulis
+// (`ChangeKateAttachment2_Sql`).
+type PerubahanKategori struct {
+	IDLampiran   string
+	KodeKategori string
+	NamaKategori string
+}

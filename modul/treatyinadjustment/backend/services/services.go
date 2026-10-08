@@ -120,7 +120,10 @@ func Pesan(err error) string {
 // ⛔ Pengenalnya TEKS. `M_ATTACHMENTTREATY_2.TREATYID` adalah `VARCHAR2(100)`
 // - berbeda dari `idKontrak` model baru yang `int64`. Mengubahnya menjadi
 // angka di sini akan menolak pengenal warisan yang sah.
-func (l *Layanan) LampiranKontrakWarisan(ctx context.Context, p inti.Pelaku, masterID string) (LampiranKontrak, error) {
+//
+// `jenis` = `TreatyIn.ProportionType` layar: `NonProportional` memakai nama
+// Non-Prop untuk kode `00007` (`GetMasterTreatyCategory_Act` [2.2]).
+func (l *Layanan) LampiranKontrakWarisan(ctx context.Context, p inti.Pelaku, masterID, jenis string) (LampiranKontrak, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
 		return LampiranKontrak{}, err
 	}
@@ -140,7 +143,7 @@ func (l *Layanan) LampiranKontrakWarisan(ctx context.Context, p inti.Pelaku, mas
 		return LampiranKontrak{}, err
 	}
 	return LampiranKontrak{
-		Kategori: SusunKategoriLampiran(katalog, berkas),
+		Kategori: SusunKategoriLampiran(katalog, berkas, SifatProporsional(jenis)),
 		Berkas:   berkas,
 	}, nil
 }

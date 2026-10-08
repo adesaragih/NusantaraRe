@@ -34,6 +34,12 @@ var KunciPenampungRevisi = []string{
 	// sudah ada di `T_TREATY_REVISION` dan Save menulisnya, tetapi tab
 	// menyemai kosong saat kontrak dibuka.
 	"TotalEgnpiAmount", "TotalEgnpiProportion",
+	// ⭐ 8 Oktober 2026 — ketujuh medan kepala tab Reporting Period
+	// (`TabReportingPeriod` memegangnya di penampung dan menyemai kosong).
+	// Kolomnya ada sejak migrasi `444` dan Save menulisnya; tanpa disemai,
+	// Save berikutnya menimpanya kosong (laporan pemakai).
+	"ReportingStart", "ReportingEnd", "ReportingPeriod", "ReportingInterval",
+	"ReportingSubmission", "ReportingConfirmation", "ReportingSettlement",
 }
 
 // BacaKontrakWarisan membaca satu kontrak warisan, siap tampil.

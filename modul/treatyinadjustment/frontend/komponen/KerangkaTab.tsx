@@ -25,11 +25,11 @@
 
 import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 
-import { Area, Field, FieldAngka, Kosong } from '../../../../inti/frontend/components/ui/dasar'
+import { Area, Field, FieldAngka, Kosong, StripTab } from '../../../../inti/frontend/components/ui/dasar'
 import { keInputTanggal } from '../../../../inti/frontend/lib/tanggalInput'
 import type { BarisBersarang, OpsiLimitsTreatyIn, SisiPenyesuaian } from '../api'
 import { golongan } from '../ekspor/golongan'
-import type { AksiTombol, ButirKerangka, GridKerangka, MedanKerangka, SumberPilihan, TombolKerangka } from '../ekspor/jenis'
+import type { AksiTombol, BlokKerangka, ButirKerangka, GridKerangka, MedanKerangka, SumberPilihan, TombolKerangka } from '../ekspor/jenis'
 import { KERANGKA_INCLUDE, KERANGKA_RINCIAN } from '../ekspor/kerangka.gen'
 import { syaratTerpenuhi } from '../ekspor/syarat'
 import { PENYESUAIAN } from '../labelsPenyesuaian'
@@ -48,7 +48,7 @@ import {
   type JenisTulis,
 } from './aksiTombol'
 import { unduhAchievement } from './unduhAchievement'
-import { AreaBacaSaja, BelumDibangun, Centang, MedanTakAda, TanggalBacaSaja, selNilai } from './medan'
+import { AreaBacaSaja, BelumDibangun, Centang, MedanTakAda, TanggalBacaSaja, angkaMurni, selNilai } from './medan'
 import { rantaiRumus, type HasilTerapan, type LingkupRumus, type SelRumus } from './rumus'
 import { denganNilaiKini, type Opsi } from './pilihan'
 import { kunciBerjalur, nilaiJalur, type LangkahJalur } from './baris'
@@ -383,7 +383,11 @@ function SelSunting({
   // `FieldAngka` (inti) memformat BAGIAN BULAT saja dan membiarkan ekor
   // desimal apa adanya selama kotaknya dipegang. `inti/frontend/lib/
   // angkaKetik.test.ts` memaku keempat keadaan tengah-pengetikan itu.
-  if (format === 'pxNumber') {
+  // ⛔ Kontrol Number berisi TEKS (mis. sel `.Currency` grid `Total Share
+  // RNM Limit` — Pega memang memasang Number di sana) tampil apa adanya,
+  // bukan `IDR,00` dari padanan desimal `FieldAngka` (laporan pemakai
+  // 8 Oktober 2026). Kosong tetap kotak angka.
+  if (format === 'pxNumber' && (nilai.trim() === '' || angkaMurni(nilai))) {
     return (
       <FieldAngka
         label={label}
@@ -625,6 +629,11 @@ export function GridEkspor({ g, k }: { g: GridKerangka; k: KonteksKerangka }) {
               {rincian !== undefined && terbuka.has(r) && (
                 <tr className="tria__rincian">
                   <td colSpan={lebarKolom}>
+                    {/* ⭐ Dibungkus blok MENGALIR (8 Oktober 2026): tanpa itu
+                        label ekspor `100% Limit` · `100` · `%` menempel
+                        ("100% Limit100%") dan grid tidak mengambil baris
+                        penuh. */}
+                    <div className="tria__blok">
                     <RenderKerangka
                       isi={rincian}
                       k={konteksBaris(
@@ -636,6 +645,7 @@ export function GridEkspor({ g, k }: { g: GridKerangka; k: KonteksKerangka }) {
                         { larik: g.larik, indeks: r },
                       )}
                     />
+                    </div>
                   </td>
                 </tr>
               )}
@@ -827,10 +837,56 @@ function TombolEkspor({ t, k }: { t: TombolKerangka; k: KonteksKerangka }) {
 }
 
 /** Satu daftar butir kerangka. */
+/**
+ * Strip tab satu layout group `pyHeaderType = TABBED` — blok bertanda `tab`
+ * yang BERURUTAN di ekspor (mis. sebelas tab `DetailLimits`: Event Limits,
+ * Deduction In A, … Achievement). Tab yang syaratnya gagal tidak tampil.
+ */
+function GrupTab({ blok, k }: { blok: readonly BlokKerangka[]; k: KonteksKerangka }) {
+  const tampil = blok.filter((b) => syaratTerpenuhi(b.syarat, k.halaman))
+  const [aktif, setAktif] = useState<number>(tampil[0]?.at ?? 0)
+  const pilih = tampil.find((b) => b.at === aktif) ?? tampil[0]
+  if (pilih === undefined) return null
+  return (
+    <div className="tria__grup-tab">
+      <StripTab
+        tab={tampil.map((b) => b.judul)}
+        aktif={pilih.judul}
+        onPilih={(j) => {
+          const x = tampil.find((b) => b.judul === j)
+          if (x !== undefined) setAktif(x.at)
+        }}
+      />
+      <div className="tria__blok">
+        <RenderKerangka isi={pilih.anak} k={k} />
+      </div>
+    </div>
+  )
+}
+
+/** Butir kerangka, dengan blok `tab` yang berurutan dihimpun menjadi satu grup. */
+type Ruas = { t: 'butir'; b: ButirKerangka } | { t: 'grup'; blok: BlokKerangka[] }
+
+function himpunTab(isi: readonly ButirKerangka[]): Ruas[] {
+  const out: Ruas[] = []
+  for (const b of isi) {
+    const akhir = out[out.length - 1]
+    if (b.t === 'blok' && b.tab === true) {
+      if (akhir?.t === 'grup') akhir.blok.push(b)
+      else out.push({ t: 'grup', blok: [b] })
+      continue
+    }
+    out.push({ t: 'butir', b })
+  }
+  return out
+}
+
 export function RenderKerangka({ isi, k }: { isi: readonly ButirKerangka[]; k: KonteksKerangka }) {
   return (
     <>
-      {isi.map((b) => {
+      {himpunTab(isi).map((ruas) => {
+        if (ruas.t === 'grup') return <GrupTab key={`tab-${ruas.blok[0]?.at ?? 0}`} blok={ruas.blok} k={k} />
+        const b = ruas.b
         if (!syaratTerpenuhi(b.syarat, k.halaman)) return null
         switch (b.t) {
           case 'blok':

@@ -7,6 +7,7 @@ package repository_test
 // ⛔ Kolom JSON tabel lampiran tidak dibaca dan tidak ditulis.
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -73,5 +74,32 @@ func TestCatatLampiranSahDiOracleLaluDibatalkan(t *testing.T) {
 		if b.ID == id {
 			t.Errorf("lampiran uji tertinggal: %v", b)
 		}
+	}
+}
+
+// GetLinkStorage_SQL atas objek nyata (lampiran kontrak 1001513, 12 Agustus 2025).
+func TestBacaObjekSimpananNyata(t *testing.T) {
+	g, ctx := gudangBaca(t)
+	o, ada, err := g.BacaObjekSimpanan(ctx, "3E626C5BA54EE379A2A562260EC01CC7")
+	if err != nil || !ada {
+		t.Fatalf("ada %v err %v", ada, err)
+	}
+	if o.App != "rnmtest" || !strings.HasPrefix(o.AppFolder, "gs://rnmtest/Contract/Doc/") || o.NamaObjek == "" || len(o.Exp) != 19 {
+		t.Errorf("objek %+v", o)
+	}
+}
+
+// Delete_act: DeleteStorage_SQL + DeleteAttachment2_Sql — DIBATALKAN.
+func TestHapusLampiranSahDiOracleLaluDibatalkan(t *testing.T) {
+	g, ctx := gudangBaca(t)
+	nObjek, nLampiran, err := g.HapusLampiranLaluBatalkanUntukUji(ctx, "1001513", "20250812172620369", "3E626C5BA54EE379A2A562260EC01CC7")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if nObjek != 1 || nLampiran != 1 {
+		t.Errorf("terhapus objek %d lampiran %d", nObjek, nLampiran)
+	}
+	if _, ada, _ := g.BacaObjekSimpanan(ctx, "3E626C5BA54EE379A2A562260EC01CC7"); !ada {
+		t.Error("objek hilang sesudah rollback")
 	}
 }

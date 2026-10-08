@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -20,6 +21,13 @@ import (
 //	                             (`TreatySaveAttachment`): multipart, medan
 //	                             `kategori` (CATEGORY_ID) dan `berkas` (satu atau
 //	                             lebih)
+//
+// Modal `View File` (`ShowAttachmentTreaty`):
+//
+//	GET  …/lampiran/{lid}/tautan[?office=1]  DownloadAttachmentTreaty → {"url"}
+//	POST …/lampiran/{lid}/hapus              Delete_act
+//	POST …/lampiran/kategori                 ChangeDokument_Act("Save"):
+//	                                         {"perubahan":[{"id","kategori"}]}
 func daftarkanLampiran(pasang func(string, rute)) {
 	dasar := Prefix + "/kontrak/{id}/lampiran"
 	pasang("GET "+dasar, func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
@@ -54,5 +62,24 @@ func daftarkanLampiran(pasang func(string, rute)) {
 		}
 		hasil, err := l.UnggahLampiran(r.Context(), p, m)
 		tulis(w, hasil, err)
+	})
+	pasang("GET "+dasar+"/{lid}/tautan", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		u, err := l.TautanLampiran(r.Context(), p, r.PathValue("id"), r.PathValue("lid"), r.URL.Query().Get("office") == "1")
+		tulis(w, map[string]string{"url": u}, err)
+	})
+	pasang("POST "+dasar+"/{lid}/hapus", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		panel, err := l.HapusLampiran(r.Context(), p, r.PathValue("id"), r.PathValue("lid"))
+		tulis(w, panel, err)
+	})
+	pasang("POST "+dasar+"/kategori", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		var m struct {
+			Perubahan []services.MasukanUbahKategori `json:"perubahan"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
+			galat.Tulis(w, http.StatusBadRequest, "request body must be valid JSON")
+			return
+		}
+		panel, err := l.UbahKategoriLampiran(r.Context(), p, r.PathValue("id"), m.Perubahan)
+		tulis(w, panel, err)
 	})
 }

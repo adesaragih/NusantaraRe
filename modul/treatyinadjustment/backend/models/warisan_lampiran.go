@@ -29,27 +29,11 @@ type BarisKategoriLampiran struct {
 	Kode  string `json:"kode"`
 	Nama  string `json:"nama"`
 	Cacah int    `json:"cacah"`
-	// ⛔ Dipastikan menyatakan apakah pasangan KODE↔NAMA ini terbukti.
-	// Tujuh terbaca dari data itu sendiri; empat (`00003` `00004` `00008`
-	// `00009`) nol baris dan namanya nihil di korpus kedua modul.
+	// Dipastikan - kode ini bernama di katalog (`M_KATEGORIMASTERTREATY`,
+	// lalu data lampiran). Sejak 8 Oktober 2026 kesebelas kode bernama;
+	// `false` hanya untuk kode di data yang tidak ada di katalog mana pun.
 	Dipastikan bool `json:"dipastikan"`
 }
-
-// NamaKategoriBelumDipastikan - empat nama yang layar lama tampilkan
-// tetapi kodenya TIDAK diketahui.
-//
-// ⛔ URUTAN DI SINI BUKAN PASANGAN. Keempatnya menurut abjad supaya tidak
-// ada yang membacanya sebagai urutan kode.
-var NamaKategoriBelumDipastikan = []string{
-	"Binding, signed share Email",
-	"Claim Data",
-	"Info Pack",
-	"Letter of Acknowledgment / LOA",
-}
-
-// KodeKategoriBelumDipastikan - empat kode yang namanya tidak diketahui.
-// Sejajar dengan daftar di atas HANYA pada cacahnya, BUKAN pada urutannya.
-var KodeKategoriBelumDipastikan = []string{"00003", "00004", "00008", "00009"}
 
 // BarisRiwayatWarisan - satu baris panel History.
 //

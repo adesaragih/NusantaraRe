@@ -83,15 +83,19 @@ var zonaLampiran = time.FixedZone("WIB", 7*3600)
 
 // PermintaanSimpanan - halaman `UploadDoc` sebagai JSON (nama medan VERBATIM;
 // `Durasi` angka — `@replaceAll` langkah [9] membuang kutipnya).
+//
+// ⚠️ `omitempty` pada medan yang tidak semua efek kirim: hapus
+// (`DeleteGoogleStorage_Act` [6]) hanya App/Kodestring/Namafile, geturl
+// (`GetUrlGoogleStorage_Act` [6.2]) tanpa Image.
 type PermintaanSimpanan struct {
 	App        string `json:"App"`
 	Kodestring string `json:"Kodestring"`
-	Durasi     int    `json:"Durasi"`
-	Folder     string `json:"Folder"`
+	Durasi     int    `json:"Durasi,omitempty"`
+	Folder     string `json:"Folder,omitempty"`
 	Namafile   string `json:"Namafile"`
-	Image      string `json:"Image"`
-	Ext        string `json:"ext"`
-	MimeType   string `json:"MimeType"`
+	Image      string `json:"Image,omitempty"`
+	Ext        string `json:"ext,omitempty"`
+	MimeType   string `json:"MimeType,omitempty"`
 }
 
 // JawabanSimpanan - `UploadDoc.Response`.
@@ -99,16 +103,22 @@ type JawabanSimpanan struct {
 	URLImage  string `json:"URLImage"`
 	Exp       string `json:"exp"`
 	AppFolder string `json:"appfolder"`
+	DateTime  string `json:"DateTime"`
 }
 
-// PengirimSimpanan - satu Connect-REST `ServiceGoogle` (upload). `Kodestring`
-// (token) diisi pengirimnya sendiri.
+// PengirimSimpanan - Connect-REST `ServiceGoogle`, satu metode per kunci
+// `M_LINK_SERVICE`. `Kodestring` (token) diisi pengirimnya sendiri.
 type PengirimSimpanan interface {
+	// Unggah - Google/upload (`InsertGoogleStorage_Act`).
 	Unggah(ctx context.Context, p PermintaanSimpanan) (JawabanSimpanan, error)
+	// URLBaru - Google/geturl (`GetUrlGoogleStorage_Act` [6]).
+	URLBaru(ctx context.Context, p PermintaanSimpanan) (JawabanSimpanan, error)
+	// Hapus - Google/delete (`DeleteGoogleStorage_Act`).
+	Hapus(ctx context.Context, p PermintaanSimpanan) error
 }
 
 type pengirimGoogle struct {
-	alamat func(ctx context.Context) (string, error)
+	alamat func(ctx context.Context, kunci layanan.KunciLayanan) (string, error)
 	token  func(ctx context.Context, app string) (string, error)
 	klien  *http.Client
 }
@@ -117,11 +127,11 @@ type pengirimGoogle struct {
 // dan token `GCP_IMAGE` dibaca saat jalan.
 func (s *Service) pengirimSimpanan() PengirimSimpanan {
 	return pengirimGoogle{
-		alamat: func(ctx context.Context) (string, error) {
+		alamat: func(ctx context.Context, kunci layanan.KunciLayanan) (string, error) {
 			if !s.PunyaDatabase() {
 				return "", db.ErrTanpaOracle
 			}
-			return layanan.AlamatLayanan(ctx, layanan.ResolverLinkServiceOracle(s), layanan.KunciUnggahBerkas)
+			return layanan.AlamatLayanan(ctx, layanan.ResolverLinkServiceOracle(s), kunci)
 		},
 		token: func(ctx context.Context, app string) (string, error) {
 			if !s.PunyaDatabase() {
@@ -140,13 +150,28 @@ func (s *Service) pengirimSimpanan() PengirimSimpanan {
 }
 
 func (p pengirimGoogle) Unggah(ctx context.Context, badan PermintaanSimpanan) (JawabanSimpanan, error) {
+	return p.panggil(ctx, layanan.KunciUnggahBerkas, badan)
+}
+
+func (p pengirimGoogle) URLBaru(ctx context.Context, badan PermintaanSimpanan) (JawabanSimpanan, error) {
+	return p.panggil(ctx, layanan.KunciURLBerkas, badan)
+}
+
+func (p pengirimGoogle) Hapus(ctx context.Context, badan PermintaanSimpanan) error {
+	_, err := p.panggil(ctx, layanan.KunciHapusBerkas, badan)
+	return err
+}
+
+// panggil - token, alamat, POST JSON, jawaban — satu Connect-REST.
+func (p pengirimGoogle) panggil(ctx context.Context, kunci layanan.KunciLayanan, badan PermintaanSimpanan) (JawabanSimpanan, error) {
 	tok, err := p.token(ctx, badan.App)
 	if err != nil {
 		return JawabanSimpanan{}, fmt.Errorf("%w: the storage token is not available (%v)", ErrSimpananBelumSiap, sebabBernama(err))
 	}
-	alamat, err := p.alamat(ctx)
+	alamat, err := p.alamat(ctx, kunci)
 	if err != nil {
-		return JawabanSimpanan{}, fmt.Errorf("%w: the M_LINK_SERVICE address (Google, upload) is not available (%v)", ErrSimpananBelumSiap, sebabBernama(err))
+		return JawabanSimpanan{}, fmt.Errorf("%w: the M_LINK_SERVICE address (%s, %s) is not available (%v)",
+			ErrSimpananBelumSiap, kunci.Kategori1, kunci.Kategori2, sebabBernama(err))
 	}
 	badan.Kodestring = tok
 	isi, err := json.Marshal(badan)
@@ -166,18 +191,18 @@ func (p pengirimGoogle) Unggah(ctx context.Context, badan PermintaanSimpanan) (J
 	if err != nil {
 		var ue *url.Error
 		if errors.As(err, &ue) && ue.Timeout() {
-			return JawabanSimpanan{}, fmt.Errorf("%w: upload timed out", ErrSimpananGagal)
+			return JawabanSimpanan{}, fmt.Errorf("%w: %s timed out", ErrSimpananGagal, kunci.Kategori2)
 		}
-		return JawabanSimpanan{}, fmt.Errorf("%w: upload is unreachable", ErrSimpananGagal)
+		return JawabanSimpanan{}, fmt.Errorf("%w: %s is unreachable", ErrSimpananGagal, kunci.Kategori2)
 	}
 	defer func() { _ = jwb.Body.Close() }()
 	if jwb.StatusCode < 200 || jwb.StatusCode > 299 {
 		_, _ = io.Copy(io.Discard, io.LimitReader(jwb.Body, batasJawabanSimpanan))
-		return JawabanSimpanan{}, fmt.Errorf("%w: upload answered status %d", ErrSimpananGagal, jwb.StatusCode)
+		return JawabanSimpanan{}, fmt.Errorf("%w: %s answered status %d", ErrSimpananGagal, kunci.Kategori2, jwb.StatusCode)
 	}
 	var j JawabanSimpanan
 	if err := json.NewDecoder(io.LimitReader(jwb.Body, batasJawabanSimpanan)).Decode(&j); err != nil && !errors.Is(err, io.EOF) {
-		return JawabanSimpanan{}, fmt.Errorf("%w: the upload answer is not JSON", ErrSimpananGagal)
+		return JawabanSimpanan{}, fmt.Errorf("%w: the %s answer is not JSON", ErrSimpananGagal, kunci.Kategori2)
 	}
 	return j, nil
 }
@@ -329,13 +354,7 @@ func (l *Layanan) UnggahLampiran(ctx context.Context, p inti.Pelaku, m MasukanUn
 		return HasilUnggahLampiran{}, ditolak(fmt.Sprintf("Kategori %q tidak ada di M_KATEGORIMASTERTREATY.", kode))
 	}
 	// [1.1] `.pyCategory = StatusDoc.CARI41` — nama yang panel TAMPILKAN.
-	if !proporsional {
-		for nonProp, prop := range namaKategoriSetara {
-			if namaKategori == prop {
-				namaKategori = nonProp
-			}
-		}
-	}
+	namaKategori = namaKategoriTampil(namaKategori, proporsional)
 	if len(m.Berkas) == 0 {
 		return HasilUnggahLampiran{}, ditolak("Tidak ada berkas yang dipilih.")
 	}

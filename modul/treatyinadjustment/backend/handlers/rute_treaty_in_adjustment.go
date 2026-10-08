@@ -78,7 +78,7 @@ func daftarkanBaca(pasang func(string, rute)) {
 	// atas. `M_ATTACHMENTTREATY_2.TREATYID` adalah `VARCHAR2(100)` milik
 	// sistem lama; menuntutnya berupa angka akan menolak pengenal yang sah.
 	pasang("GET "+Prefix+"/kontrak-warisan/{id}/lampiran", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
-		lam, err := l.LampiranKontrakWarisan(r.Context(), p, r.PathValue("id"))
+		lam, err := l.LampiranKontrakWarisan(r.Context(), p, r.PathValue("id"), r.URL.Query().Get("jenis"))
 		tulis(w, lam, err)
 	})
 	// ⛔ Seam TERPISAH dari lampiran: keduanya dibaca dari tabel berbeda,

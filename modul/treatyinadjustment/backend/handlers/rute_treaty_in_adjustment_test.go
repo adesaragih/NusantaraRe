@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"nusantarare/modul/treatyinadjustment/backend/handlers"
@@ -170,10 +171,13 @@ func (g gudangTiruan) BacaKatalogKategoriLampiran(_ context.Context) (map[string
 
 func routerLampiran() http.Handler {
 	return handlers.RouterDengan(services.LayananDengan(gudangTiruan{
+		// Kesebelas pasangan `M_KATEGORIMASTERTREATY` (8 Oktober 2026).
 		katalogKategori: map[string]string{
 			"00000": "Others", "00001": "Analysed Email", "00002": "Approval Email",
-			"00005": "Summary Treaty Leader", "00006": "Assessment Inward Treaty Form",
-			"00007": "Pega Proportional Calculation", "00010": "Offer Email",
+			"00003": "Binding, signed share Email", "00004": "Info Pack",
+			"00005": "Summary Treaty Leader", "00006": "Assessment Inward Treaty Form / Format Analisa Treaty",
+			"00007": "Pega Proportional Calculation /Perhitungan Pega Proportional",
+			"00008": "Letter of Acknowledgment / LOA", "00009": "Claim Data", "00010": "Offer Email",
 		},
 		lampiran: []models.BarisLampiranWarisan{
 			{ID: "1", KodeKategori: "00001", NamaBerkas: "a.pdf", JenisMime: "application/pdf"},
@@ -201,24 +205,31 @@ func TestLampiranMenjawab200DenganKategoriLengkap(t *testing.T) {
 		t.Fatalf("badan bukan JSON yang diharapkan: %v - %s", err, w.Body.String())
 	}
 	if len(isi.Kategori) != 11 {
-		t.Errorf("%d kategori, mau 11 (7 terbukti + 4 belum dipastikan)", len(isi.Kategori))
+		t.Errorf("%d kategori, mau 11", len(isi.Kategori))
 	}
 	if len(isi.Berkas) != 1 {
 		t.Errorf("%d berkas, mau 1", len(isi.Berkas))
 	}
-	// ⛔ Keempat kode tanpa nama sampai ke layar TANPA nama tebakan.
-	belum := 0
+	// ⭐ Kesebelasnya BERNAMA, urut nama seperti Pega (`order by note`).
+	if k := isi.Kategori[0]; k.Nama != "Analysed Email" || k.Cacah != 1 {
+		t.Errorf("baris pertama %+v, mau Analysed Email (1)", k)
+	}
 	for _, k := range isi.Kategori {
-		if k.Dipastikan {
-			continue
-		}
-		belum++
-		if k.Nama != "" {
-			t.Errorf("kode %s sampai ke layar bernama %q; pasangannya belum diketahui", k.Kode, k.Nama)
+		if !k.Dipastikan || k.Nama == "" {
+			t.Errorf("kode %s sampai ke layar tanpa nama", k.Kode)
 		}
 	}
-	if belum != 4 {
-		t.Errorf("%d kategori belum dipastikan sampai ke layar, mau 4", belum)
+}
+
+// `?jenis=NonProportional` — kode 00007 bernama Non-Prop
+// (`GetMasterTreatyCategory_Act` [2.2]).
+func TestLampiranNonPropMemakaiNamaNonProp(t *testing.T) {
+	w := minta(t, routerLampiran(), "/api/treaty-in-adjustment/kontrak-warisan/1001851/lampiran?jenis=NonProportional", "UJI")
+	if w.Code != http.StatusOK {
+		t.Fatalf("kode %d (badan %s)", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "Pega Non Proportional Calculation /Perhitungan Pega Non Proportional") {
+		t.Errorf("nama Non-Prop tidak sampai: %s", w.Body.String())
 	}
 }
 

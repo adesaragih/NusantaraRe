@@ -2,16 +2,15 @@ package services
 
 // Panel Attachment modul Adjustment — menyusun baris Category + Count.
 //
-// ⛔ ATURANNYA SAMA PERSIS dengan modul Treaty In, dan kesamaan itu
-// DINYATAKAN alih-alih dibagi lewat impor: `TestModulTidakMengimporModulLain`
-// menolak impor silang, dan alasannya berdiri sendiri — dua modul yang
-// berbagi kode services berbagi juga jadwal rilisnya.
+// ⛔ ATURANNYA SAMA dengan modul Treaty In, dan kesamaan itu DINYATAKAN
+// alih-alih dibagi lewat impor: `TestModulTidakMengimporModulLain` menolak
+// impor silang, dan alasannya berdiri sendiri — dua modul yang berbagi kode
+// services berbagi juga jadwal rilisnya.
 //
-// ⚠️ Yang TIDAK boleh menyimpang: perlakuan terhadap empat kode tanpa nama.
-// Modul ini menampilkan `00003` `00004` `00008` `00009` dengan kodenya,
-// tanpa nama, bertanda belum dipastikan — sama persis seperti Treaty In.
-// Menebak pasangannya di SALAH SATU modul saja sudah cukup untuk menaruh
-// berkas di kategori yang salah.
+// ⭐ 8 Oktober 2026 — penamaan kategori diperbaiki (permintaan pemakai,
+// tangkapan layar Pega): kesebelas NAMA dari `M_KATEGORIMASTERTREATY`,
+// urut abjad nama seperti `GetMasterTreatyCategory_SQL` (`order by note`).
+// Empat kode yang dulu tampil "belum dipastikan" kini bernama dari katalog.
 
 import (
 	"sort"
@@ -20,52 +19,74 @@ import (
 	"nusantarare/modul/treatyinadjustment/backend/models"
 )
 
-// SusunKategoriLampiran menggabungkan katalog yang TERBACA dengan empat
-// kode yang namanya belum dipastikan.
+// namaKategoriSetara - nama Prop → nama Non-Prop untuk kode yang sama
+// (`GetMasterTreatyCategory_Act` [2.2], `TreatyIn.ProportionType ==
+// "NonProportional"`).
+var namaKategoriSetara = map[string]string{
+	"Pega Proportional Calculation /Perhitungan Pega Proportional": "Pega Non Proportional Calculation /Perhitungan Pega Non Proportional",
+}
+
+// SusunKategoriLampiran menyusun panel dari katalog dan lampiran kontrak.
 //
-// ⛔ Keempat kode tanpa nama TIDAK dipasangkan dengan keempat nama tanpa
-// kode. Keduanya sama-sama empat, berurutan, dan menggoda — dan
-// memasangkannya menurut abjad adalah tebakan yang akan terlihat benar
-// sampai seseorang mengunduh berkas dari kategori yang salah bertahun
-// kemudian. Disapu 4 Oktober 2026: keempat kode dan keempat namanya NIHIL
-// di korpus kedua modul.
-func SusunKategoriLampiran(katalog map[string]string, lampiran []models.BarisLampiranWarisan) []models.BarisKategoriLampiran {
+//   - urut NAMA katalog (`order by note`); nama Non-Prop untuk kontrak
+//     NonProportional menggantikan namanya di tempat yang sama;
+//   - dicacah menurut KODE, atau menurut NAMA bila baris lama tidak
+//     berkode;
+//   - ⛔ kode yang ADA DI DATA tetapi tidak di katalog tetap TAMPIL —
+//     menyembunyikannya membuat berkasnya tidak terjangkau. Tanpa nama, ia
+//     tampil dengan kodenya dan `Dipastikan=false`.
+func SusunKategoriLampiran(katalog map[string]string, lampiran []models.BarisLampiranWarisan, proporsional bool) []models.BarisKategoriLampiran {
+	kodeDariNama := map[string]string{}
+	for kode, nama := range katalog {
+		if nama != "" {
+			kodeDariNama[nama] = kode
+		}
+	}
 	cacah := map[string]int{}
 	for _, l := range lampiran {
-		cacah[l.KodeKategori]++
+		kode := strings.TrimSpace(l.KodeKategori)
+		if kode == "" {
+			kode = kodeDariNama[strings.TrimSpace(l.NamaKategori)]
+		}
+		cacah[kode]++
 	}
 
-	baris := map[string]models.BarisKategoriLampiran{}
+	out := make([]models.BarisKategoriLampiran, 0, len(katalog)+len(cacah))
 	for kode, nama := range katalog {
-		baris[kode] = models.BarisKategoriLampiran{
-			Kode: kode, Nama: nama, Cacah: cacah[kode], Dipastikan: true,
+		out = append(out, models.BarisKategoriLampiran{
+			Kode: kode, Nama: nama, Cacah: cacah[kode], Dipastikan: nama != "",
+		})
+	}
+	for kode, n := range cacah {
+		if _, ada := katalog[kode]; !ada && kode != "" {
+			out = append(out, models.BarisKategoriLampiran{Kode: kode, Cacah: n})
 		}
 	}
-	// ⛔ Keempat kode tanpa nama tetap TAMPIL. Menyembunyikannya membuat
-	// kategori yang ada di sistem lama lenyap dari layar tanpa suara, dan
-	// berkas yang tersimpan di sana menjadi tidak terjangkau.
-	for _, kode := range models.KodeKategoriBelumDipastikan {
-		if _, sudah := baris[kode]; sudah {
-			continue
+	// Bernama lebih dulu, urut nama; yang tanpa nama di ujung, urut kode.
+	sort.Slice(out, func(i, j int) bool {
+		a, b := out[i], out[j]
+		if (a.Nama == "") != (b.Nama == "") {
+			return a.Nama != ""
 		}
-		baris[kode] = models.BarisKategoriLampiran{
-			Kode: kode, Cacah: cacah[kode], Dipastikan: false,
+		if a.Nama != b.Nama {
+			return a.Nama < b.Nama
+		}
+		return a.Kode < b.Kode
+	})
+	if !proporsional {
+		for i := range out {
+			if np, ada := namaKategoriSetara[out[i].Nama]; ada {
+				out[i].Nama = np
+			}
 		}
 	}
-	for kode := range cacah {
-		if _, sudah := baris[kode]; !sudah {
-			baris[kode] = models.BarisKategoriLampiran{Kode: kode, Cacah: cacah[kode], Dipastikan: false}
-		}
-	}
-
-	out := make([]models.BarisKategoriLampiran, 0, len(baris))
-	for _, b := range baris {
-		out = append(out, b)
-	}
-	// Urut KODE, bukan nama: kode itulah yang tetap, dan empat di antaranya
-	// belum punya nama untuk diurutkan.
-	sort.Slice(out, func(i, j int) bool { return out[i].Kode < out[j].Kode })
 	return out
+}
+
+// SifatProporsional - `TreatyIn.ProportionType`; selain `NonProportional`
+// (termasuk kosong) memakai nama katalog apa adanya.
+func SifatProporsional(jenis string) bool {
+	return strings.TrimSpace(jenis) != "NonProportional"
 }
 
 // NamaBerkasAman memeriksa aturan spanduk biru layar lama:

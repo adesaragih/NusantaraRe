@@ -15589,7 +15589,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       }
      ]
     }
-   ]
+   ],
+   "tab": true
   },
   {
    "t": "blok",
@@ -15631,7 +15632,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       }
      ]
     }
-   ]
+   ],
+   "tab": true
   },
   {
    "t": "blok",
@@ -15899,7 +15901,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      ],
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     }
-   ]
+   ],
+   "tab": true
   },
   {
    "t": "blok",
@@ -16062,7 +16065,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       }
      ]
     }
-   ]
+   ],
+   "tab": true
   },
   {
    "t": "blok",
@@ -16136,7 +16140,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       }
      ]
     }
-   ]
+   ],
+   "tab": true
   },
   {
    "t": "blok",
@@ -16280,7 +16285,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       }
      ]
     }
-   ]
+   ],
+   "tab": true
   },
   {
    "t": "blok",
@@ -16424,7 +16430,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       }
      ]
     }
-   ]
+   ],
+   "tab": true
   },
   {
    "t": "blok",
@@ -16568,7 +16575,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       }
      ]
     }
-   ]
+   ],
+   "tab": true
   },
   {
    "t": "blok",
@@ -16654,7 +16662,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       }
      ]
     }
-   ]
+   ],
+   "tab": true
   },
   {
    "t": "blok",
@@ -16798,7 +16807,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       }
      ]
     }
-   ]
+   ],
+   "tab": true
   },
   {
    "t": "blok",
@@ -17161,7 +17171,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       }
      ]
     }
-   ]
+   ],
+   "tab": true
   }
  ],
  "DetailLimitsOldData": [

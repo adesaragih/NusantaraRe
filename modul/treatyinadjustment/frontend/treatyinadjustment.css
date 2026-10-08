@@ -429,3 +429,38 @@
   background: var(--bg);
   box-shadow: inset 0 -1px 0 var(--border);
 }
+
+/* =========================================================================
+   RINCIAN BARIS DI DALAM SEL TABEL — tab Limits Adjustment (8 Oktober 2026)
+   =========================================================================
+   Laporan pemakai: rincian `DetailLimits` meluber ke kanan panel New
+   (gulir mendatar, kolom terpotong). Sebabnya tabel bersarang ber-`auto`
+   melebar mengikuti isinya. Tabel YANG MEMUAT rincian, dan tabel DI DALAM
+   rincian, dikunci selebar wadahnya; kotak isian di sel boleh menyusut. */
+.treatyinadjustment .tria__tabel:has(> tbody > .tria__rincian),
+.treatyinadjustment .tria__rincian .tria__tabel {
+  table-layout: fixed;
+  width: 100%;
+}
+.treatyinadjustment .tria__rincian > td {
+  padding: 10px 12px;
+}
+.treatyinadjustment .tria__rincian .tria__tabel td .field__input,
+.treatyinadjustment .tria__rincian .tria__tabel td select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.treatyinadjustment .tria__rincian .tria__blok > .field {
+  min-width: 120px;
+}
+
+/* Strip tab satu layout group `TABBED` — satu baris penuh di blok. */
+.treatyinadjustment .tria__grup-tab {
+  flex-basis: 100%;
+  min-width: 0;
+  margin-top: 8px;
+}
+.treatyinadjustment .tria__grup-tab > .tria__blok {
+  padding-top: 10px;
+}

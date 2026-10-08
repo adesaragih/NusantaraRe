@@ -10,7 +10,8 @@ package services
 //   - Isian TIDAK masuk basis data sebelum tombol ditekan.
 //   - Save ≠ Submit: Save hanya menyimpan; Submit menjalankan tangga
 //     ReasTreatyInAdmin > SecHead > DeptHead > Director.
-//   - `PositionUsername` jalur naik = pemegang workbasket posisi berikutnya
+//   - `PositionUsername` jalur naik = SATU pemegang workbasket posisi
+//     berikutnya (yang pertama secara urut) — tampilan saja, akses dari peran
 //     di Kelola User.
 //
 // ---------------------------------------------------------------------
@@ -277,9 +278,32 @@ func TerapkanLangkah(doc map[string]any, l models.Langkah, pilihan string, pemeg
 			doc["PositionUsername"] = teksDok(komentar[len(komentar)-1], "OperatorName")
 		}
 	default:
+		// ⛔ SATU NAMA, bukan daftar — permintaan pemilik proses 8 Oktober
+		// 2026: *"dibuat salah satu nya di tampilan tp bisa diakses semua
+		// yg dapat Workbasket itu"*.
+		//
+		// Sebelumnya seluruh pemegang digabung `", "`, dan kolom
+		// `Position To` berbunyi `Dastin, JEFRIHARI, SUPERADMIN` — tiga
+		// akun yang sama memegang KEEMPAT anak tangga, sehingga daftarnya
+		// sama di rung mana pun dan nol memberi tahu apa pun.
+		//
+		// ⭐ AKSES NOL BERUBAH, dan itu bagian kedua permintaannya. Kolom ini
+		// MURNI TAMPILAN: pagar akseptasi `punyaPeran(p, posisi)` membaca
+		// PERAN pelaku, dan tombol `Actions` di layar membaca daftar peran
+		// (`bolehActions`). Nol jalur yang membandingkan nama pemakai dengan
+		// `PositionUsername` — `TestSemuaPemegangTetapBolehBertindak`
+		// memakukannya.
+		//
+		// ⚠️ Yang dipilih yang PERTAMA SECARA URUT, bukan yang pertama dari
+		// basis data: urutan baris SQL tanpa `ORDER BY` tidak dijamin, dan
+		// nama yang berganti-ganti antar penyimpanan akan terbaca sebagai
+		// berkas yang berpindah tangan.
 		urut := append([]string{}, pemegang...)
 		sort.Strings(urut)
-		doc["PositionUsername"] = strings.Join(urut, ", ")
+		doc["PositionUsername"] = ""
+		if len(urut) > 0 {
+			doc["PositionUsername"] = urut[0]
+		}
 		if l.Posisi == models.PosisiKosong {
 			doc["PositionUsername"] = ""
 		}

@@ -321,6 +321,33 @@ export async function ambilPanelLampiran(idKontrak: string): Promise<PanelLampir
  * berkas dikirim ke Google Storage (`InsertGoogleStorage_Act`) lalu dicatat
  * di `T_STORAGE_IMAGE` + `M_ATTACHMENTTREATY_2`.
  */
+/** `DownloadAttachmentTreaty` — URL bertanda tangan (`office` = View Office Online). */
+export async function ambilTautanLampiran(idKontrak: string, idLampiran: string, office: boolean): Promise<{ url: string }> {
+  return minta<{ url: string }>(
+    `${PREFIX_TREATYIN}/kontrak/${encodeURIComponent(idKontrak)}/lampiran/${encodeURIComponent(idLampiran)}/tautan`,
+    { kueri: office ? { office: '1' } : undefined },
+  )
+}
+
+/** `Delete_act` — objek di Google Storage, lalu baris `M_ATTACHMENTTREATY_2`. */
+export async function hapusLampiran(idKontrak: string, idLampiran: string): Promise<PanelLampiranAPI> {
+  return minta<PanelLampiranAPI>(
+    `${PREFIX_TREATYIN}/kontrak/${encodeURIComponent(idKontrak)}/lampiran/${encodeURIComponent(idLampiran)}/hapus`,
+    { metode: 'POST', badan: {} },
+  )
+}
+
+/** `ChangeDokument_Act("Save")` — `ChangeKateAttachment2_Sql` per baris. */
+export async function ubahKategoriLampiran(
+  idKontrak: string,
+  perubahan: readonly { id: string; kategori: string }[],
+): Promise<PanelLampiranAPI> {
+  return minta<PanelLampiranAPI>(`${PREFIX_TREATYIN}/kontrak/${encodeURIComponent(idKontrak)}/lampiran/kategori`, {
+    metode: 'POST',
+    badan: { perubahan },
+  })
+}
+
 export async function unggahLampiran(idKontrak: string, kodeKategori: string, berkas: readonly File[]): Promise<HasilUnggahLampiran> {
   const isi = new FormData()
   isi.append('kategori', kodeKategori)

@@ -252,7 +252,30 @@ RevisionState='1'`) → `SetkategoriDoc` → modal **ASM Attach Content** (`Trea
 Rute: `GET`/`POST /api/treaty-in/kontrak/{id}/lampiran` (multipart `kategori` + `berkas`).
 Kedua INSERT satu transaksi; berkas berjenis tak dikenal (`GetMimeType`) dilaporkan, berkas lain
 tetap diunggah. `M_ATTACHMENTTREATY_2` dikeluarkan dari daftar baca-saja `TestWarisanHanyaDibaca`.
-⚠️ Token baru menuntut `STORAGE_TOKEN_SALT` di `.env` (sama dengan modul masterproductnamelife).
+⚠️ Token baru menuntut `STORAGE_TOKEN_SALT` di `.env`. ⭐ 8 Oktober 2026 (izin pemakai): procedure
+`GET_TOKEN_STORAGE` ternyata TIDAK memakai garam (`MD5('ASMAPP' || waktu)`), jadi tidak ada yang
+disalin — `.env` diisi nilai ACAK 64 heksa (tidak pernah dicetak); tokennya tetap disimpan di
+`GCP_IMAGE` seperti buatan procedure.
+
+**Modal View File** (`ShowAttachmentTreaty`, 8 Oktober 2026):
+
+| Tombol | Rantai ekspor | Rute |
+|---|---|---|
+| nama berkas · View Office Online (xls/xlsx/doc/docx/ppt/pptx) | `DownloadAttachmentTreaty` → `GetUrlGoogleStorage_Act` (URL tersimpan selama EXPDATE berlaku; selain itu Google/geturl + `Update_T_Storage_SQL`) | `GET …/lampiran/{lid}/tautan[?office=1]` |
+| Delete (`ViewState !='1' \|\| RevisionState='1'`) | `Delete_act`: `DeleteGoogleStorage_Act` (Google/delete, `DeleteStorage_SQL`) → `DeleteAttachment2_Sql` | `POST …/lampiran/{lid}/hapus` |
+| Change Category → Save (status bukan Resolve Complete/Decline) | `ChangeDokument_Act` → `ChangeKateAttachment2_Sql` per baris | `POST …/lampiran/kategori` |
+
+Penyimpangan yang dinyatakan: hapus di storage gagal → baris TETAP; jawaban geturl tanpa
+`appfolder` tidak mengosongkan APPFOLDER; `CATEGORY` dari katalog yang dirapikan (nama Non-Prop
+untuk `00007`).
+
+**Bentuk modal Attach = Master Product Name Life** (pemakai, 8 Oktober 2026: *"contoh yang ada di
+menu product name life itu aja ditiru samakan yah krn tim saya menggunakan hal tersebut"*): kotak
+seret-lepas, pilihan digabung (nama kembar dilewati), **Remove** per berkas, unggah SATU berkas per
+permintaan secara berurutan dengan progres `Uploading 2/5 nama`, berkas gagal (termasuk yang ditolak
+`GetMimeType`) tinggal di pilihan beserta alasannya, modal tertutup bila semua berhasil. Helper
+`gabungBerkas` / `unggahBerurutan` DISALIN ke `frontend/unggahBerkas.ts` — impor lintas modul
+dilarang `lapisan.guard.test.ts`. Rute dan backend tidak berubah.
 
 ### 5.4 Yang sengaja TIDAK dibangun
 

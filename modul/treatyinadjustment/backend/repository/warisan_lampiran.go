@@ -7,6 +7,9 @@ package repository
 //
 // ⛔ NOL TABEL BARU dan nol migrasi di modul ini untuk lampiran.
 //
+// ⭐ 8 Oktober 2026: nama kategori dari `POOLDATA.M_KATEGORIMASTERTREATY`
+// (katalog RD Pega) — juga BACA SAJA.
+//
 // =====================================================================
 // KENAPA KODENYA ADA DUA KALI, DI DUA MODUL
 // =====================================================================
@@ -31,6 +34,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"nusantarare/inti/backend/db"
 	"nusantarare/modul/treatyinadjustment/backend/models"
@@ -38,6 +42,11 @@ import (
 
 // TabelWarisanLampiran - tabel lampiran sistem lama.
 const TabelWarisanLampiran = "M_ATTACHMENTTREATY_2"
+
+// TabelKategoriLampiran - katalog kategori yang RD Pega baca
+// (`GetMasterTreatyCategory_SQL`: `SELECT id, note FROM
+// POOLDATA.M_KATEGORIMASTERTREATY order by note`). BACA SAJA.
+const TabelKategoriLampiran = "M_KATEGORIMASTERTREATY"
 
 // BacaLampiranKontrak membaca seluruh lampiran satu kontrak.
 //
@@ -86,13 +95,68 @@ func (g *Gudang) BacaLampiranKontrak(ctx context.Context, masterID string) ([]mo
 	return out, nil
 }
 
-// BacaKatalogKategoriLampiran membaca pasangan kode↔nama DARI DATA.
+// BacaKatalogKategoriLampiran membaca pasangan kode↔nama.
 //
-// ⛔ Dibaca, tidak dihafal. `M_ATTACHMENTTREATY_2` menyimpan `CATEGORY_ID`
-// dan `CATEGORY` berdampingan, jadi ketujuh pasangan yang terpakai adalah
-// fakta yang diambil - bukan daftar di dalam kode yang akan membeku pada
-// hari seseorang mengganti sebuah nama di sistem lama.
+// ⭐ 8 Oktober 2026 — sumber UTAMANYA katalog yang RD Pega baca:
+// `M_KATEGORIMASTERTREATY` (`GetMasterTreatyCategory_SQL`), sama dengan
+// modul Treaty In. Kesebelas pasangannya ada di sana, termasuk keempat kode
+// yang dulu "tanpa nama" (`00003` Binding, signed share Email · `00004` Info
+// Pack · `00008` LOA · `00009` Claim Data) —
+// `treatyin/docs/PERTANYAAN-TERBUKA-KODE-KATEGORI-LAMPIRAN.md` TERJAWAB.
+// Pasangan dari DATA lampiran melengkapi kode yang tidak ada di katalog.
 func (g *Gudang) BacaKatalogKategoriLampiran(ctx context.Context) (map[string]string, error) {
+	out, err := g.BacaKategoriMaster(ctx)
+	if err != nil {
+		return nil, err
+	}
+	data, err := g.bacaKatalogDariData(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for kode, nama := range data {
+		if _, ada := out[kode]; !ada {
+			out[kode] = nama
+		}
+	}
+	return out, nil
+}
+
+// BacaKategoriMaster - kesebelas kategori `M_KATEGORIMASTERTREATY`, kode → nama.
+func (g *Gudang) BacaKategoriMaster(ctx context.Context) (map[string]string, error) {
+	nama, err := g.db.Qualify(TabelKategoriLampiran)
+	if err != nil {
+		return nil, err
+	}
+	q := fmt.Sprintf("SELECT ID, NOTE FROM %s ORDER BY NOTE", nama)
+	if err := db.PeriksaSQL(q); err != nil {
+		return nil, err
+	}
+	rows, err := g.db.QueryContext(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("repository: membaca %s: %w", TabelKategoriLampiran, err)
+	}
+	defer func() { _ = rows.Close() }()
+	out := map[string]string{}
+	for rows.Next() {
+		var kode, nk sql.NullString
+		if err := rows.Scan(&kode, &nk); err != nil {
+			return nil, fmt.Errorf("repository: membaca %s: %w", TabelKategoriLampiran, err)
+		}
+		// ⚠️ `TrimSpace`: NOTE `00004` tersimpan dengan ekor CR LF (terukur
+		// 8 Oktober 2026) — ekor baris baru bukan bagian namanya.
+		if k := strings.TrimSpace(kode.String); k != "" {
+			out[k] = strings.TrimSpace(nk.String)
+		}
+	}
+	return out, rows.Err()
+}
+
+// bacaKatalogDariData - pasangan `CATEGORY_ID`/`CATEGORY` yang terpakai di
+// `M_ATTACHMENTTREATY_2`.
+//
+// ⛔ Dibaca, tidak dihafal: tabel menyimpan `CATEGORY_ID` dan `CATEGORY`
+// berdampingan, jadi pasangan yang terpakai adalah fakta yang diambil.
+func (g *Gudang) bacaKatalogDariData(ctx context.Context) (map[string]string, error) {
 	nama, err := g.db.Qualify(TabelWarisanLampiran)
 	if err != nil {
 		return nil, err

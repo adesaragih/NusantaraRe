@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"nusantarare/modul/treatyin/backend/repository"
 	"nusantarare/modul/treatyin/backend/services"
 )
 
@@ -51,5 +52,27 @@ func TestGalatBacaTotalDiteruskan(t *testing.T) {
 	g := gudangTotal{gudangTiruan: &gudangTiruan{kontrakWarisan: kontrakWarisanUji()}, galat: rusak}
 	if _, err := services.LayananDengan(g).BacaKontrakWarisan(context.Background(), pelakuAda, "1000797"); !errors.Is(err, rusak) {
 		t.Fatalf("galat = %v, ingin %v", err, rusak)
+	}
+}
+
+// ⭐ Laporan pemakai 8 Oktober 2026: medan kepala tab Reporting Period
+// kosong sesudah Save. Ketujuhnya TERSIMPAN di `T_TREATY_REVISION` (migrasi
+// `444`) dan wajib ikut `Penampung`, supaya tab menyemainya — tanpa itu Save
+// berikutnya menimpanya kosong.
+func TestKepalaReportingPeriodIkutPenampung(t *testing.T) {
+	medan := map[string]string{
+		"ReportingStart": "20250901", "ReportingEnd": "20260831", "ReportingPeriod": "Quarterly",
+		"ReportingInterval": "", "ReportingSubmission": "120", "ReportingConfirmation": "15",
+		"ReportingSettlement": "15",
+	}
+	g := &gudangTiruan{kontrakWarisan: kontrakWarisanUji(), revisi: repository.RevisiPendaratan{Medan: medan, Ada: true}}
+	k, err := services.LayananDengan(g).BacaKontrakWarisan(context.Background(), pelakuAda, "1000797")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for kunci, ingin := range medan {
+		if got, ada := k.Penampung[kunci]; !ada || got != ingin {
+			t.Errorf("Penampung[%s] = %q (ada %v), ingin %q", kunci, got, ada, ingin)
+		}
 	}
 }

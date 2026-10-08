@@ -1189,6 +1189,68 @@
   text-align: center;
 }
 
+/* Nama berkas modal View File — tautan `DownloadAttachmentTreaty`
+   (`.pyFileName` ber-`pxLink` di `ShowAttachmentTreaty`). */
+.treatyin .trin__tautan {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary-text);
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.treatyin .trin__tautan:disabled {
+  color: inherit;
+  text-decoration: none;
+  cursor: default;
+}
+
+/* Kotak unggah modal `ASM Attach Content` — bentuk DISALIN dari
+   `.mpnl .mpnl-unggah*` (Master Product Name Life), permintaan pemakai
+   8 Oktober 2026. Warnanya dipetakan ke palet inti: nol rona baru. */
+.treatyin .trin__unggah {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 1rem;
+  border: 2px dashed var(--border);
+  border-radius: 0.5rem;
+  color: var(--text-2);
+  text-align: center;
+  cursor: pointer;
+}
+
+.treatyin .trin__unggah--seret {
+  border-color: var(--primary);
+  color: var(--primary-text);
+}
+
+.treatyin .trin__unggah-daftar,
+.treatyin .trin__unggah-gagal {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.treatyin .trin__unggah-daftar li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+
+.treatyin .trin__unggah-gagal li {
+  padding: 0.25rem 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
 /* Kotak centang berketerangan di sampingnya — `pyCheckboxCaption`
    (`.Layer` grid 100% Limit/Retention: "Auto calculate"). */
 .treatyin .trin__cek {

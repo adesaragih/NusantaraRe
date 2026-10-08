@@ -65,9 +65,9 @@ export interface BarisLampiranWarisan {
 /**
  * Satu baris panel Attachment: Category + Count.
  *
- * ⛔ `dipastikan` menyatakan apakah pasangan kode↔nama ini TERBUKTI. Empat
- * kode (`00003` `00004` `00008` `00009`) punya nol baris dan namanya nihil
- * di korpus kedua modul; layar menandainya alih-alih menebak.
+ * ⭐ 8 Oktober 2026: `nama` dari `M_KATEGORIMASTERTREATY` (katalog RD Pega)
+ * — kesebelas kode bernama, urut nama. `dipastikan` false hanya untuk kode
+ * di data yang tidak ada di katalog; layar menampilkan kodenya.
  */
 export interface BarisKategoriLampiran {
   kode: string
@@ -86,10 +86,14 @@ export interface LampiranKontrak {
  *
  * ⛔ Pengenalnya TEKS — `M_ATTACHMENTTREATY_2.TREATYID` adalah
  * `VARCHAR2(100)` milik sistem lama, bukan `idKontrak` model baru.
+ *
+ * `jenis` = `TreatyIn.ProportionType`: `NonProportional` menamai kode
+ * `00007` dengan nama Non-Prop (`GetMasterTreatyCategory_Act` [2.2]).
  */
-export async function ambilLampiran(masterID: string): Promise<LampiranKontrak> {
+export async function ambilLampiran(masterID: string, jenis = ''): Promise<LampiranKontrak> {
   return minta<LampiranKontrak>(
     `${PREFIX_TREATYINADJUSTMENT}/kontrak-warisan/${encodeURIComponent(masterID)}/lampiran`,
+    { kueri: { jenis: jenis !== '' ? jenis : undefined } },
   )
 }
 

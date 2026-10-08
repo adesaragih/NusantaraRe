@@ -35,6 +35,11 @@ export interface LampiranKontrakProps {
    * menolak pengenal warisan yang sah.
    */
   masterID: string
+  /**
+   * `TreatyIn.ProportionType` — `NonProportional` menamai kode `00007`
+   * dengan nama Non-Prop (`GetMasterTreatyCategory_Act` [2.2]).
+   */
+  jenis?: string
 }
 
 /**
@@ -44,8 +49,13 @@ export interface LampiranKontrakProps {
  * tombol DI ANTARA Attachment dan History (`InputTreatyInAdjustment.xml`
  * @276129 → @336222 → @380295), dan History-nya bersumber lain
  * (`TreatyIn.CommentList`). Pembacaan lampirannya tidak berubah.
+ *
+ * ⭐ 8 Oktober 2026 — penamaan kategori diperbaiki (tangkapan layar Pega):
+ * kesebelas NAMA dari `M_KATEGORIMASTERTREATY`, urut nama. Spanduk "empat
+ * nama belum dipastikan" dan baris `00003 nama kategori belum dipastikan`
+ * dibuang — pertanyaannya terjawab katalog itu.
  */
-export function PanelLampiranKontrak({ masterID }: LampiranKontrakProps) {
+export function PanelLampiranKontrak({ masterID, jenis = '' }: LampiranKontrakProps) {
   const [isi, setIsi] = useState<IsiLampiran | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [memuat, setMemuat] = useState(masterID !== '')
@@ -61,7 +71,7 @@ export function PanelLampiranKontrak({ masterID }: LampiranKontrakProps) {
     let dibuang = false
     setMemuat(true)
     setGalat(null)
-    ambilLampiran(masterID)
+    ambilLampiran(masterID, jenis)
       .then((l) => {
         if (!dibuang) setIsi(l)
       })
@@ -74,11 +84,10 @@ export function PanelLampiranKontrak({ masterID }: LampiranKontrakProps) {
     return () => {
       dibuang = true
     }
-  }, [masterID, muatUlang])
+  }, [masterID, jenis, muatUlang])
 
   const kategori = isi?.kategori ?? []
   const berkas = isi?.berkas ?? []
-  const adaBelumPasti = kategori.some((k) => !k.dipastikan)
 
   return (
     <>
@@ -92,12 +101,6 @@ export function PanelLampiranKontrak({ masterID }: LampiranKontrakProps) {
         <span className="tria__spanduk" role="note">
           {LAMPIRAN.spanduk}
         </span>
-
-        {adaBelumPasti && (
-          <span className="tria__catatan" role="note">
-            {LAMPIRAN.namaBelumBerumah}
-          </span>
-        )}
 
         <div className="table-wrap">
           <table className="tria__tabel">
@@ -120,15 +123,9 @@ export function PanelLampiranKontrak({ masterID }: LampiranKontrakProps) {
               )}
               {kategori.map((k) => (
                 <tr key={k.kode}>
-                  <td>
-                    {k.dipastikan ? (
-                      k.nama
-                    ) : (
-                      <>
-                        {k.kode} <span className="tria__redup">{LAMPIRAN.kategoriBelumPasti}</span>
-                      </>
-                    )}
-                  </td>
+                  {/* NAMA katalog; kode hanya untuk kode di data yang
+                      tidak ada di katalog mana pun. */}
+                  <td>{k.nama !== '' ? k.nama : k.kode}</td>
                   {/* ⛔ Cacah TIDAK diformat — ia butir, bukan uang. */}
                   <td>{String(k.cacah)}</td>
                   <td />

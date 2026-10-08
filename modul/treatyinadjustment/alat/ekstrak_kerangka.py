@@ -533,7 +533,13 @@ class Pembangkit:
                 # gambar Pega 34 dan 39 — keduanya `pyIncludeHeader = true`.
                 tampil = judul if (judul not in PENANDA and kepala in ("BAR", "TABBED")
                                    and c.v("pyIncludeHeader") != "false") else ""
-                out.append({"t": "blok", "at": c.off, "judul": tampil, "syarat": s, "anak": anak})
+                blok = {"t": "blok", "at": c.off, "judul": tampil, "syarat": s, "anak": anak}
+                # ⭐ 8 Oktober 2026 — layout group `pyHeaderType = TABBED`:
+                # blok-blok seperti ini yang BERURUTAN adalah satu strip tab
+                # (mis. sebelas tab `DetailLimits`: Event Limits … Achievement).
+                if kepala == "TABBED":
+                    blok["tab"] = True
+                out.append(blok)
                 continue
             out += self.jalan(c)
         return out

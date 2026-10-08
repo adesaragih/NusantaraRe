@@ -312,6 +312,17 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
   // `TREATY_IN`, kurs `TREATYEXCHANGEYEARLY`).
   // ---------------------------------------------------------------------
   const [muatUlang, setMuatUlang] = useState(0)
+  // ⭐ GENERASI DATA — naik SETIAP kali kontrak yang dimuat diterapkan
+  // (termasuk muat ulang sesudah Save), dan ikut `key` fieldset tab.
+  //
+  // ⛔ Laporan pemakai 8 Oktober 2026: Currency 100% Limit yang SUDAH
+  // tersimpan (`T_TREATY_LIMIT_AMOUNT.CURRENCY = IDR`) tampil "Choose" lagi
+  // sesudah Save. Sebabnya: `useProperti` membekukan nilai awal tab
+  // (`useState(awal)`) saat tab PERTAMA dirender. Muat ulang mengosongkan
+  // penampung, tetapi `key` lama (`id|isi|mode`) tidak berubah — tab tidak
+  // dilahirkan ulang dan menyemai ulang data SEBELUM Save. Save berikutnya
+  // lalu menulis data basi itu kembali.
+  const [generasi, setGenerasi] = useState(0)
   const [sibukTulis, setSibukTulis] = useState(false)
   const [hasilTulis, setHasilTulis] = useState<{ galat: boolean; pesan: string; takTersimpan: string[] } | null>(null)
   // Workbasket pemakai — `OperatorID.pyWorkBasketList`; syarat tampil Actions.
@@ -421,6 +432,8 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
         for (const [kunci, v] of Object.entries(k.penampungLarik ?? {})) {
           penampung.ubah(kunci, () => v)
         }
+        // Tab dilahirkan ulang atas data INI — lihat `generasi`.
+        setGenerasi((n) => n + 1)
         setOpsi(k.opsiKepala)
         // ⛔ `?? []` BUKAN hiasan, dan bukan pula ketidakpercayaan pada
         // backend. Ia lapis kedua dari galat yang menghentikan halaman
@@ -979,7 +992,7 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
       <fieldset
         className="trin__mode"
         disabled={!bisaUbah && !(revisi && tabTampil === TAB_REVISI)}
-        key={`${idKontrak}|${warisan === null ? '-' : 'isi'}|${mode}`}
+        key={`${idKontrak}|${warisan === null ? '-' : 'isi'}|${mode}|${generasi}`}
       >
 
       {/* ⭐ DUA BELAS TAB KINI BERISI. Tujuh dari tabel pendaratan
@@ -1247,6 +1260,7 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
         berkas={warisan?.lampiran ?? []}
         idKontrak={idKontrak}
         bisaUnggah={bisaUbah || revisi}
+        statusAkseptasi={statusKini}
       />
 
       {/* ⭐ HIDUP sejak 7 Oktober 2026 — keputusan pemilik proses: Save/Submit

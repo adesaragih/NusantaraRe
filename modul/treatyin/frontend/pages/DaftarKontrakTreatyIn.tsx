@@ -337,6 +337,7 @@ export default function DaftarKontrakTreatyIn({ onBuka, onTambah }: DaftarKontra
                             type="button"
                             className="btn btn--ghost btn--sm"
                             disabled={sibukRevisi}
+                            title={DAFTAR_KONTRAK.petunjukRevisi}
                             onDoubleClick={() => {
                               tekanRevisi(b.id)
                             }}

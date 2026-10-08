@@ -211,6 +211,11 @@ type Gudang interface {
 	// dan baris `M_ATTACHMENTTREATY_2`, satu transaksi.
 	NamaAplikasiSimpanan(ctx context.Context) (string, error)
 	CatatLampiran(ctx context.Context, l models.LampiranBaru) (string, error)
+	// Modal View File — unduh, hapus, ganti kategori.
+	BacaObjekSimpanan(ctx context.Context, imageID string) (models.ObjekSimpanan, bool, error)
+	PerbaruiObjekSimpanan(ctx context.Context, o models.ObjekSimpanan, tanggal string) error
+	HapusLampiran(ctx context.Context, idKontrak, idLampiran, imageID string) error
+	UbahKategoriLampiran(ctx context.Context, idKontrak string, ubah []models.PerubahanKategori) error
 }
 
 // Layanan memegang aturan modul ini di atas satu Gudang.

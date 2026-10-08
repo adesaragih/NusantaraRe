@@ -118,7 +118,7 @@ func TestSubmitPenyesuaianNaikTanpaValidasiDanMenghitungSelisih(t *testing.T) {
 		t.Fatal(err)
 	}
 	d := g.disimpanEDM[0].Baru
-	if d["Position"] != models.PosisiSecHead || d["StatusAkseptasi"] != "Accept" || d["PositionUsername"] != "SEC1, SEC2" {
+	if d["Position"] != models.PosisiSecHead || d["StatusAkseptasi"] != "Accept" || d["PositionUsername"] != "SEC1" {
 		t.Errorf("langkah %v %v %v", d["Position"], d["StatusAkseptasi"], d["PositionUsername"])
 	}
 	// [7] EDMState 1: ValueDifference = New − Old (10 − 4).

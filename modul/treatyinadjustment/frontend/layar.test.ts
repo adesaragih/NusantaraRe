@@ -44,14 +44,23 @@ describe('panel Attachment — jalan menuju ke sana ADA', () => {
     expect(CSS).toMatch(/\.tria__spanduk \{/)
   })
 
-  it('⛔ kategori belum dipastikan menampilkan KODE, bukan nama tebakan', () => {
-    expect(LAYAR).toContain('k.dipastikan')
-    expect(LAYAR).toContain('kategoriBelumPasti')
+  // ⭐ RALAT 8 Oktober 2026 — penamaan kategori diperbaiki (tangkapan layar
+  // Pega): nama dari `M_KATEGORIMASTERTREATY`, disusun backend. Layar TIDAK
+  // menghafal nama apa pun dan tidak lagi menandai "belum dipastikan".
+  it('⭐ kategori tampil dengan NAMA dari backend; kode hanya bila tanpa nama', () => {
+    expect(LAYAR).toContain("<td>{k.nama !== '' ? k.nama : k.kode}</td>")
+    expect(LAYAR).not.toContain('kategoriBelumPasti')
+    expect(LAYAR).not.toContain('namaBelumBerumah')
+    expect(Object.keys(LAMPIRAN)).not.toContain('namaBelumBerumah')
     for (const n of ['Binding, signed share Email', 'Claim Data', 'Info Pack']) {
       expect(LAYAR).not.toContain(`>${n}<`)
     }
-    expect(LAMPIRAN.namaBelumBerumah).toContain('Letter of Acknowledgment / LOA')
-    expect(LAMPIRAN.namaBelumBerumah).toContain('PERTANYAAN-TERBUKA-KODE-KATEGORI-LAMPIRAN.md')
+  })
+
+  it('⭐ jenis kontrak diteruskan — nama Non-Prop untuk kode 00007', () => {
+    expect(LAYAR).toContain('ambilLampiran(masterID, jenis)')
+    const ADJ = readFileSync(join(AKAR, 'pages', 'PenyesuaianKontrak.tsx'), 'utf8')
+    expect(ADJ).toContain('jenis={cabang}')
   })
 
   it('⛔ Count TIDAK diformat — ia cacah butir, bukan uang', () => {

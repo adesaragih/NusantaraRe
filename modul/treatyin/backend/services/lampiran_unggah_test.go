@@ -24,6 +24,23 @@ func (g *gudangTiruan) CatatLampiran(_ context.Context, l models.LampiranBaru) (
 type simpananTiruan struct {
 	diminta []services.PermintaanSimpanan
 	galat   error
+	// geturl dan delete.
+	urlBaru []services.PermintaanSimpanan
+	dihapus []services.PermintaanSimpanan
+}
+
+func (s *simpananTiruan) URLBaru(_ context.Context, p services.PermintaanSimpanan) (services.JawabanSimpanan, error) {
+	s.urlBaru = append(s.urlBaru, p)
+	if s.galat != nil {
+		return services.JawabanSimpanan{}, s.galat
+	}
+	return services.JawabanSimpanan{URLImage: "https://storage.googleapis.com/rnmtest/baru", Exp: "2030-01-01T00:00:00Z",
+		AppFolder: "gs://rnmtest/" + p.Folder + p.Namafile, DateTime: "01/01/2030 00:00:00"}, nil
+}
+
+func (s *simpananTiruan) Hapus(_ context.Context, p services.PermintaanSimpanan) error {
+	s.dihapus = append(s.dihapus, p)
+	return s.galat
 }
 
 func (s *simpananTiruan) Unggah(_ context.Context, p services.PermintaanSimpanan) (services.JawabanSimpanan, error) {

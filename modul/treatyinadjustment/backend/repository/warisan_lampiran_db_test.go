@@ -10,6 +10,30 @@ import (
 	"testing"
 )
 
+// ⭐ 8 Oktober 2026 — penamaan kategori: kesebelas pasangan dari katalog RD
+// Pega `M_KATEGORIMASTERTREATY`, termasuk keempat kode yang dulu tanpa nama.
+// BACA SAJA terhadap `M_KATEGORIMASTERTREATY` dan `M_ATTACHMENTTREATY_2`.
+func TestKatalogKategoriAdjustmentDariMaster(t *testing.T) {
+	g, ctx := bacaSaja(t)
+	k, err := g.BacaKatalogKategoriLampiran(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mau := map[string]string{
+		"00003": "Binding, signed share Email", "00004": "Info Pack",
+		"00008": "Letter of Acknowledgment / LOA", "00009": "Claim Data",
+		"00007": "Pega Proportional Calculation /Perhitungan Pega Proportional",
+	}
+	for kode, nama := range mau {
+		if k[kode] != nama {
+			t.Errorf("%s = %q, mau %q", kode, k[kode], nama)
+		}
+	}
+	if len(k) < 11 {
+		t.Errorf("katalog %d pasangan, mau >= 11: %v", len(k), k)
+	}
+}
+
 // ⭐ Ke-43 baris UTUH sesudah modul ini membacanya.
 func TestLampiranWarisanTidakBerubah(t *testing.T) {
 	_, ctx := bacaSaja(t)

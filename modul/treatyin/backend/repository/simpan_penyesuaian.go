@@ -176,6 +176,13 @@ func (g *Gudang) simpanPenyesuaianDalam(ctx context.Context, tx *db.Tx, r models
 			return err
 		}
 	}
+	// ⭐ Halaman `ActualValue` — dokumen berbentuk `TreatyIn` di MASTERID
+	// sendiri, peta yang SAMA (lihat `AkhiranSisiAktual`).
+	if r.Aktual != nil {
+		if _, err := g.MuatKontrakSebagian(ctx, tx, id+AkhiranSisiAktual, r.Aktual); err != nil {
+			return err
+		}
+	}
 	return g.tulisKepalaPenyesuaian(ctx, tx, id, doc, !ada)
 }
 
@@ -321,7 +328,7 @@ func (g *Gudang) hapusPenyesuaianDalam(ctx context.Context, tx *db.Tx, id string
 	if _, err := tx.ExecContext(ctx, q, id); err != nil {
 		return fmt.Errorf("repository: menghapus %s %s: %w", TabelKepalaPenyesuaian, id, err)
 	}
-	for _, m := range []string{id, id + AkhiranSisiLama} {
+	for _, m := range []string{id, id + AkhiranSisiLama, id + AkhiranSisiAktual} {
 		if _, err := g.KosongkanKontrak(ctx, tx, m); err != nil {
 			return err
 		}

@@ -51,14 +51,6 @@ export const LAMPIRAN = {
   petunjukLampiran: '',
   petunjukHistory:
     'Riwayat persetujuan kontrak ini. Kosong berarti belum ada catatan.',
-  /**
-   * ⛔ Penanda kategori yang pasangan kode↔namanya BELUM dipastikan —
-   * diperlakukan SAMA PERSIS seperti di modul Treaty In. Menebak di salah
-   * satu modul saja sudah cukup untuk menaruh berkas di kategori yang salah.
-   */
-  kategoriBelumPasti: 'nama kategori belum dipastikan',
-  namaBelumBerumah:
-    'Empat nama kategori ada di layar lama tetapi kodenya belum dipastikan, jadi keempatnya belum ditampilkan sebagai nama: Binding, signed share Email · Claim Data · Info Pack · Letter of Acknowledgment / LOA. Lihat treatyin/docs/PERTANYAAN-TERBUKA-KODE-KATEGORI-LAMPIRAN.md.',
   /** Pengenal kontrak warisan yang panelnya tampilkan — sementara, lihat layar. */
   labelPengenal: 'Pengenal kontrak',
 } as const

@@ -173,8 +173,10 @@ func TestSubmitAdminNaikKeSecHead(t *testing.T) {
 	if d["Position"] != models.PosisiSecHead || d["StatusAkseptasi"] != "Accept" || d["ChooseStatusAkseptasi"] != "Accept" {
 		t.Errorf("langkah %v %v %v", d["Position"], d["StatusAkseptasi"], d["ChooseStatusAkseptasi"])
 	}
-	// Kelola User: pemegang workbasket posisi berikutnya, urut.
-	if d["PositionUsername"] != "SEC1, SEC2" || h.PemegangPosisi != "SEC1, SEC2" {
+	// ⛔ SATU nama, yang PERTAMA SECARA URUT — permintaan pemilik proses
+	// 8 Oktober 2026. Gudang tiruan mengembalikan `{"SEC2", "SEC1"}` dengan
+	// sengaja: urutan basis data BUKAN urutan hasilnya.
+	if d["PositionUsername"] != "SEC1" || h.PemegangPosisi != "SEC1" {
 		t.Errorf("PositionUsername %v", d["PositionUsername"])
 	}
 	// AddCommentList_Act — riwayat membaca status BARU.
@@ -376,5 +378,55 @@ func TestSaveTetapMenyetelAdminDiPangkalTangga(t *testing.T) {
 		if got := g.disimpan[0].Dokumen["Position"]; got != models.PosisiAdmin {
 			t.Errorf("posisi awal %q → %v, mau Admin", awal, got)
 		}
+	}
+}
+
+// ⛔ SATU NAMA DI LAYAR, AKSES TETAP MILIK SEMUA PEMEGANG WORKBASKET.
+//
+// Permintaan pemilik proses 8 Oktober 2026: *"dibuat salah satu nya di
+// tampilan tp bisa diakses semua yg dapat Workbasket itu"*.
+//
+// ⚠️ Kedua kalimat itu DUA tuntutan, dan yang kedua yang mudah terlanggar
+// diam-diam: begitu `PositionUsername` menyusut jadi satu nama, siapa pun
+// yang kelak menulis pagar akses tergoda membandingkan nama pemakai dengan
+// kolom itu. Uji ini membuat godaan itu merah.
+func TestSemuaPemegangTetapBolehBertindak(t *testing.T) {
+	g := gudangSimpan()
+	g.pemegangPosisi[models.PosisiSecHead] = []string{"SEC2", "SEC1"}
+	g.pemegangPosisi[models.PosisiDeptHead] = []string{"DEPT1"}
+	l := services.LayananDengan(g)
+	ctx := context.Background()
+
+	if _, err := l.KirimKontrak(ctx, admin, services.MasukanKirim{
+		MasukanSimpan: services.MasukanSimpan{IDKontrak: "1001001"}, Aksi: services.AksiSubmit,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	d := g.disimpan[0].Dokumen
+	if d["PositionUsername"] != "SEC1" {
+		t.Fatalf("PositionUsername %v, mau SEC1", d["PositionUsername"])
+	}
+	g.dokumenTersimpan["1001001"] = d
+
+	// ⭐ SEC2 TIDAK disebut di `PositionUsername`, tetapi ia memegang
+	// workbasket yang sama — dan ia HARUS tetap dapat menerima.
+	sec2 := inti.Pelaku{AkunID: "SEC2", Peran: []string{models.PosisiSecHead}}
+	if _, err := l.KirimKontrak(ctx, sec2, services.MasukanKirim{
+		MasukanSimpan: services.MasukanSimpan{IDKontrak: "1001001"},
+		Aksi:          services.AksiAkseptasi, Pilihan: models.PilihAccept,
+	}); err != nil {
+		t.Fatalf("pemegang yang tidak disebut ditolak: %v", err)
+	}
+	if got := g.disimpan[1].Dokumen["Position"]; got != models.PosisiDeptHead {
+		t.Errorf("posisi %v, mau DeptHead", got)
+	}
+
+	// ⛔ Dan yang BUKAN pemegang tetap ditolak — pagarnya tidak ikut longgar.
+	asing := inti.Pelaku{AkunID: "SEC1", Peran: []string{models.PosisiAdmin}}
+	if _, err := l.KirimKontrak(ctx, asing, services.MasukanKirim{
+		MasukanSimpan: services.MasukanSimpan{IDKontrak: "1001001"},
+		Aksi:          services.AksiAkseptasi, Pilihan: models.PilihAccept,
+	}); !errors.Is(err, services.ErrBukanPemegangPosisi) {
+		t.Errorf("bukan pemegang tidak ditolak: %v", err)
 	}
 }

@@ -91,6 +91,11 @@ type gudangTiruan struct {
 	dihapusEDM  []string
 	// Panel Attachment — baris yang `CatatLampiran` terima.
 	lampiranBaru []models.LampiranBaru
+	// Modal View File — objek storage, perubahan kategori, penghapusan.
+	objekSimpanan   map[string]models.ObjekSimpanan
+	objekDiperbarui []models.ObjekSimpanan
+	kategoriDiubah  []models.PerubahanKategori
+	lampiranDihapus []string
 }
 
 // Tiket 32.

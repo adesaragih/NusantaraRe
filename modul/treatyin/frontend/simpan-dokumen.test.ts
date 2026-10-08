@@ -1,5 +1,8 @@
 // Penyusun isi tombol tulis — Save/Submit/Actions/Decline offer.
 
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
 import type { BarisKursWarisan, LimitsAkar, ShareNP } from './api'
@@ -128,5 +131,30 @@ describe('bolehActions — syarat tampil tombol Actions', () => {
   it('Admin memakai Submit, bukan Actions; tuntas = tidak tampil', () => {
     expect(bolehActions('ReasTreatyInAdmin', ['ReasTreatyInAdmin'], '')).toBe(false)
     expect(bolehActions('ReasTreatyInSecHead', ['ReasTreatyInSecHead'], 'Resolve Complete')).toBe(false)
+  })
+})
+
+// ⛔ TOMBOL `Actions` NOL MEMBACA `Position To`.
+//
+// Permintaan pemilik proses 8 Oktober 2026: satu nama di tampilan, tetapi
+// *"bisa diakses semua yg dapat Workbasket itu"*. Sejak `PositionUsername`
+// menyusut jadi SATU nama, membandingkannya dengan pemakai yang sedang masuk
+// akan mengunci layar bagi pemegang workbasket yang namanya tidak terpilih.
+//
+// ⚠️ Pasangannya di backend: `TestSemuaPemegangTetapBolehBertindak`.
+describe('Actions dinilai dari PERAN, bukan dari nama Position To', () => {
+  it('⛔ dua pemegang workbasket yang sama sama-sama boleh, nama siapa pun yang tampil', () => {
+    for (const akun of ['SEC1', 'SEC2', 'SIAPA SAJA']) {
+      // `akun` sengaja TIDAK ikut dinilai — itulah intinya.
+      expect(akun.length).toBeGreaterThan(0)
+      expect(bolehActions('ReasTreatyInSecHead', ['ReasTreatyInSecHead'], 'Accept')).toBe(true)
+    }
+  })
+
+  it('⛔ sumbernya tidak menyebut `pemegangPosisi` sama sekali', () => {
+    const src = readFileSync(join(__dirname, 'simpanDokumen.ts'), 'utf8')
+    const i = src.indexOf('export function bolehActions')
+    expect(i).toBeGreaterThan(0)
+    expect(src.slice(i, i + 400)).not.toMatch(/pemegangPosisi|PositionUsername/)
   })
 })

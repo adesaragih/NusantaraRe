@@ -57,6 +57,24 @@ import {
 } from './pages/FormKontrakTreatyIn'
 
 const AKAR = __dirname
+
+/**
+ * ⛔ Akhir baris DISERAGAMKAN sebelum dicocokkan.
+ *
+ * Penjaga di berkas ini mencari penambat yang MENYEBERANGI baris
+ * (`'{bisaUbah &&\n                kurs.map'`). Pada 8 Oktober 2026
+ * `FormKontrakTreatyIn.tsx` berpindah dari LF ke CRLF tanpa satu pun
+ * perubahan pada isinya — penambatnya nol ketemu, `slice` memberi teks
+ * KOSONG, dan dua uji grid Rate of Exchange merah seolah dropdown dan kotak
+ * tanggalnya dicabut. Markupnya utuh.
+ *
+ * ⚠️ Penjaga yang membaca TEKS SUMBER tidak boleh bergantung pada akhir
+ * baris: yang dijaga bentuk kodenya, bukan cara penyunting menyimpannya.
+ */
+function normalkanBaris(s: string): string {
+  return s.replace(/\r\n/g, '\n')
+}
+
 const LABELS = readFileSync(join(AKAR, 'labels.ts'), 'utf8')
 const MENU = readFileSync(join(AKAR, 'menu.ts'), 'utf8')
 // ⭐ Layar ini DIPECAH 5 Oktober 2026: halaman + `components/`. `FORM`
@@ -1215,7 +1233,8 @@ describe('larik dari API tidak boleh menghentikan halaman', () => {
 // `Section/TreatyInNONProportional.xml` (@439485–@466983). Dahulu keempatnya
 // kotak teks bebas di mode Edit.
 describe('grid Rate of Exchange — kontrol sel sesuai ekspor', () => {
-  const HAL = readFileSync(join(__dirname, 'pages', 'FormKontrakTreatyIn.tsx'), 'utf8')
+  // ⛔ Akhir baris diseragamkan — lihat `normalkanBaris` di puncak berkas.
+  const HAL = normalkanBaris(readFileSync(join(__dirname, 'pages', 'FormKontrakTreatyIn.tsx'), 'utf8'))
   const i = HAL.indexOf('{bisaUbah &&\n                kurs.map')
   const blokUbah = HAL.slice(i, HAL.indexOf('{!bisaUbah && kurs.map', i))
 

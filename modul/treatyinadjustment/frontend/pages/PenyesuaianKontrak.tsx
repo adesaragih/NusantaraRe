@@ -425,7 +425,7 @@ function Detail({
       {/* Draf: lampiran ASALNYA — `TreatyInEDMSetValue` [8]
           `TreatyRevisionCopyAttachment` menyalin lampiran itu ke pengenal
           baru, dan salinannya menunggu Save. */}
-      <PanelLampiranKontrak masterID={draf !== undefined ? p.idAsal : p.id} />
+      <PanelLampiranKontrak masterID={draf !== undefined ? p.idAsal : p.id} jenis={cabang} />
       <DeretTombol
         mode={mode}
         medan={p.baru.medan}

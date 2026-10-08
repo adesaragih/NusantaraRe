@@ -29,4 +29,8 @@ type RencanaPenyesuaian struct {
 	// Lama - halaman `OLDDATA` (sisi Old), mendarat di `ID + #LAMA`.
 	// `nil` = tidak disentuh (penyesuaian tersimpan: sisi Old baca saja).
 	Lama map[string]any
+	// Aktual - halaman `ActualValue`, mendarat di `ID + #AKTUAL` (keputusan
+	// pemakai 8 Oktober 2026: "masukkan seperti yang ada di modul treaty in
+	// asal ada master id nya"). `nil` = tidak disentuh.
+	Aktual map[string]any
 }

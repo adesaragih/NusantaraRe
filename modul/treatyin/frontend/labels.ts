@@ -80,6 +80,13 @@ export const DAFTAR_KONTRAK = {
   salin: 'Copy', // @7283254
   revisi: 'Revision', // @7247465
   /**
+   * Petunjuk arahkan-kursor tombol Revision. Event-nya `doubleclick` di
+   * ekspor (`pyActionSets` cell 994; Copy/Edit/View `click`) dan ia langsung
+   * MENYIMPAN — laporan pemakai 8 Oktober 2026: satu klik dikira tombolnya
+   * tidak berjalan. Event tetap seperti ekspor; petunjuk ini tambahan.
+   */
+  petunjukRevisi: 'Klik dua kali untuk membuat revisi',
+  /**
    * Keadaan yang membedakan susunan tombolnya.
    *
    * ⛔ Baris berstatus ini mendapat `View`+`Copy`+`Revision`; baris lain
@@ -1397,10 +1404,21 @@ export const LAMPIRAN = {
   batal: 'Cancel',
   /** `pyAttachmentScreen` — pemilih berkas. */
   pilihBerkas: 'Select file(s)',
-  mengunggah: 'Mengunggah…',
-  terunggah: 'Terunggah',
+  /**
+   * Kotak unggah — teks DISALIN dari Master Product Name Life (`LAIN_MPNL`),
+   * permintaan pemakai 8 Oktober 2026: bentuk unggah disamakan.
+   */
+  seretBerkas: 'Drag and drop files here, or click to choose files',
+  mengunggah: 'Uploading',
+  buangPilihan: 'Remove',
+  gagal: 'Failed',
   /** Kontrak baru belum ber-ID — lampiran menempel pada `TREATYID`. */
   simpanDulu: 'Simpan kontrak lebih dulu untuk mengunggah lampiran.',
+  /** `ShowAttachmentTreaty` — `pyLabel` apa adanya. */
+  viewOffice: 'View Office Online',
+  hapus: 'Delete',
+  gantiKategori: 'Change Category',
+  simpanKategori: 'Save',
   /**
    * ⛔ KEDUA kolom modal `View File` — gambar `25` memperlihatkan tepat dua.
    *

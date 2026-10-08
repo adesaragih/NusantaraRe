@@ -389,3 +389,18 @@ export const PILIHAN_AKSEPTASI = ['Accept', 'Reject', 'Decline'] as const
 
 /** Kolom History mode detail — `TreatyIn.CommentList` @407001, sel @428448…@446102. */
 export const KUNCI_HISTORY = ['Date', 'OperatorName', 'IsApproved', 'Suggest'] as const
+
+/**
+ * Pencarian picker `Add Revision` / `Add Adjustment Premium` — fitur BARU
+ * atas permintaan pemakai 8 Oktober 2026. Picker Pega sendiri tanpa kotak
+ * isian; kolom yang dapat dicari = parameter Report Definition daftarnya
+ * (`SearchFilter.CARI2` ID, `CARI10` Contract Name, `CARI3` Reinsurance
+ * Type, `CARI4` Source of Business, `CARI5` Ceding, `CARI6` Commencement,
+ * `CARI7` Termination) — tepat ketujuh kolom grid.
+ */
+export const CARI_MASTER = {
+  petunjuk: 'Cari…',
+  reset: 'Reset',
+  hasil: (n: number, total: number) => `${n} dari ${total} baris`,
+  tanpaHasil: 'Tidak ada baris yang cocok dengan pencarian.',
+}

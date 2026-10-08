@@ -131,6 +131,11 @@ export interface BlokKerangka {
   judul: string
   syarat: readonly string[]
   anak: readonly ButirKerangka[]
+  /**
+   * Layout group `pyHeaderType = TABBED` — blok bertanda ini yang BERURUTAN
+   * digambar sebagai SATU strip tab (`KerangkaTab.tsx`, `GrupTab`).
+   */
+  tab?: true
 }
 
 export type ButirKerangka =
