@@ -6,10 +6,12 @@ import './komiteclaimprop.css'
 import type { HalamanKCP } from './menu'
 import DaftarKerja from './pages/DaftarKerja'
 
-export function RuteKCP({ halaman }: PropsRute<HalamanKCP>) {
+export function RuteKCP({ halaman, onLihatBerkas }: PropsRute<HalamanKCP>) {
   return (
     <BahasaUI.Provider value="en">
-      <div className="komiteclaimprop">{halaman === 'komiteclaimprop-daftar' && <DaftarKerja />}</div>
+      <div className="komiteclaimprop">
+        {halaman === 'komiteclaimprop-daftar' && <DaftarKerja onLihatBerkas={onLihatBerkas} />}
+      </div>
     </BahasaUI.Provider>
   )
 }

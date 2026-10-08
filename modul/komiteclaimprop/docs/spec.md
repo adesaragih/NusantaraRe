@@ -38,6 +38,12 @@
     `T_GENERAL_KOMITE` (migrasi 682); OQ-KCP-06 "a" — baris subjectivity dapat diserahkan ulang ke komite (Claim Prop +
     komite, S7); OQ-KCP-02 "b" — **AC 83** (*"Seluruh data kasus komite dipindahkan"*) DIRALAT: kasus komite lama tidak
     dimigrasi, klaimnya dimuat Claim Prop; OQ-KCP-03 "ikuti" — bacaan lintas skema bergerbang IsPEGAPROD.
+11. **Ekspor tambahan work owner 08-10-2026 (OQ-KCP-04):** prompt values `AcceptStatus` / `AcceptanceStatus` /
+    `KomiteAproval` / `Payable` / `SubjectivityNote` → label layar dan dropdown "Subjectivity Note"; harness
+    `ViewClaimFormKomite` → "View more details" aktif (berkas Claim Prop hanya-baca); stream `EmailKlaim_HTML_KMT` dan
+    `FILEAcceptanceNote` → isi email dan markup dokumen akseptasi dirakit saat efek dikirim (MUATAN outbox hanya
+    pengenal). Harness `Confirm` = bawaan platform Pega, tidak dibutuhkan. OQ-KCP-05 diabaikan work owner. Konversi
+    PDF (`HTMLToPDF`) = OQ-KCP-07.
 
 ## Cara membaca berkas ini
 

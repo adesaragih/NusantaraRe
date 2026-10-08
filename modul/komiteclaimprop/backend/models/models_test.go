@@ -83,6 +83,11 @@ func TestPeriksaIsianShowTransfer(t *testing.T) {
 		SubjectivityNote: "1"}); len(p) != 0 {
 		t.Fatalf("tangga satu tingkat: %v", p)
 	}
+	// dropdown SubjectivityNote.xml: hanya kode 1..7
+	if p := models.PeriksaIsian(k, models.Keputusan{AcceptStatus: "1", Comment: "UJI", IsSubjectivity: true,
+		SubjectivityNote: "UJI bebas"}); len(p) != 1 || p[0] != "Subjectivity Note: Value is not in the list" {
+		t.Fatalf("Subjectivity Note di luar daftar pilihan: %v", p)
+	}
 	if p := models.PeriksaIsian(kasusUji(1), models.Keputusan{AcceptStatus: "1", Comment: "UJI", IsSubjectivity: true,
 		SubjectivityNote: "1"}); len(p) != 0 {
 		t.Fatalf("tangga dua tingkat menerima subjectivity (migrasi 682): %v", p)
@@ -351,5 +356,20 @@ func TestMuatanKasirDanEmail(t *testing.T) {
 	}
 	if !models.AdaSpreadingAdjustment(kl) {
 		t.Fatal("S1 SendEmailKlaim_KMT: spreading adjustment ada")
+	}
+}
+
+// Prompt values AcceptanceStatus.xml / SubjectivityNote.xml (diekspor work owner 08-10-2026).
+func TestLabelPromptValues(t *testing.T) {
+	for kode, mau := range map[string]string{"0": "Transfer to committee", "1": "Approve", "2": "Reject", "": "", "9": "9"} {
+		if l := models.LabelStatusBaris(kode); l != mau {
+			t.Errorf("AcceptanceStatus %q: %q, mau %q", kode, l, mau)
+		}
+	}
+	if !models.SubjectivityNoteSah("7") || models.SubjectivityNoteSah("8") || models.SubjectivityNoteSah("") {
+		t.Fatal("SubjectivityNote hanya 1..7")
+	}
+	if l := models.LabelSubjectivityNoteKode("6"); l != "Reinstatement Evidence" {
+		t.Fatalf("label SubjectivityNote 6: %q", l)
 	}
 }

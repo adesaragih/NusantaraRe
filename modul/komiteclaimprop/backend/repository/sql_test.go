@@ -34,6 +34,7 @@ func semuaSQL(t *testing.T) map[string]string {
 		"sisipJSON":     sqlSisipJSONKlaim("S.JSON_KLAIM"),
 		"log":           sqlLogLayanan("S.MONITORING_KLAIM_LOG"),
 		"riwayat":       sqlRiwayatAkseptasi("S.HISTORYAKSEPTASIPEGA"),
+		"emailPelaku":   sqlEmailPelaku("S.M_LOGIN_GO"),
 	}
 }
 

@@ -15,7 +15,12 @@ function sel(v: string) {
   return v.trim() === '' ? <span className="muted">—</span> : v
 }
 
-export default function DaftarKerja() {
+export default function DaftarKerja({
+  onLihatBerkas,
+}: {
+  /** `PropsRute.onLihatBerkas` - tombol View more details. */
+  onLihatBerkas?: (modul: string, id: string) => boolean
+}) {
   const [daftar, setDaftar] = useState<BarisKerja[] | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [buka, setBuka] = useState<string | null>(null)
@@ -44,6 +49,7 @@ export default function DaftarKerja() {
     return (
       <KasusKomite
         id={buka}
+        onLihatBerkas={onLihatBerkas}
         onKembali={() => {
           setBuka(null)
           setSegar((s) => s + 1)

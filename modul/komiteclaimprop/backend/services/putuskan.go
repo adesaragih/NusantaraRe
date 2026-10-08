@@ -128,6 +128,12 @@ func (j *jalan) laksanakan(r *models.Rencana) error {
 		if err := j.retro(r, adj); err != nil {
 			return err
 		}
+		// S8 PrintFileAcceptance_TKMT: dokumen ACCEPTED CLAIM INSURANCE (FILEAcceptanceNote -> HTMLToPDF ->
+		// InsertDocument_Act) dirakit saat efek dikirim (`SusunDokumenAkseptasi`).
+		if err := j.antre(JenisEfekDokumen, k.ID, map[string]string{IsiPelaku: j.akun,
+			IsiSaat: j.saat.Format(time.RFC3339)}); err != nil {
+			return err
+		}
 	}
 	if r.Kasir { // S34 HitServiceToKasirKMT_Act
 		if err := j.kasirEfek(r, adj, noAksep); err != nil {
@@ -247,32 +253,39 @@ func (j *jalan) kasirEfek(r *models.Rencana, adj map[string]string, noAksep stri
 	return j.antre(JenisEfekKasir, noAksep, map[string]any{"TAllPaymentData": []models.MuatanKasir{m}})
 }
 
-// email = SendEmailKlaim_KMT (S35 bergerbang IsPEGAPROD; S1 tanpa SpreadingAdjustment -> keluar). Isi HTML
-// (`EmailKlaim_HTML_KMT`) tidak diekspor = OQ; penerima dan subjek dibangun. CC/BCC pribadi XML tidak disalin.
+// email = SendEmailKlaim_KMT (S35 bergerbang IsPEGAPROD; S1 tanpa SpreadingAdjustment -> keluar). MUATAN hanya
+// pengenal: badan `EmailKlaim_HTML_KMT`, subjek, alamat, akun, dan CC dirakit saat dikirim (`SusunEmailKomite`).
+// BCC pribadi XML (S3) tidak disalin.
 func (j *jalan) email(r *models.Rencana) error {
 	if !j.l.produksi || r.Email == "" || !models.AdaSpreadingAdjustment(j.kl) {
 		return nil
 	}
-	// S13-S15: pembuat kasus - `pyEmailAddress` operatornya di-resolve pelaksana saat kirim (Obj-Browse
-	// Data-Admin-Operator-ID).
-	penerima, email := j.k.PembuatID, ""
-	if r.Email == models.EmailPenyetujuBerikut { // S12: ComiteeClaim(KomiteCount + 1).KomiteEmail
+	penerima := j.k.PembuatID                    // S13-S15: pembuat kasus
+	if r.Email == models.EmailPenyetujuBerikut { // S12: ComiteeClaim(KomiteCount + 1)
 		penerima = ""
 		for _, a := range j.k.Tangga {
 			if a.Urut == j.k.Count+1 {
-				penerima, email = a.OperatorID, a.Email
+				penerima = a.OperatorID
 			}
 		}
 	}
-	return j.antre(JenisEfekEmailKomite, j.k.ID, map[string]string{"jenis": r.Email, "penerima": penerima,
-		"emailPenerima": email, "subjek": models.SubjekEmail(r.Email, j.kl, models.NoKomite(j.kl, j.k.ID))})
+	anggota := ""
+	for _, u := range r.Tangga { // S6 / S7: baris yang diputuskan (S26.1 menolak sisa tanpa komentar)
+		if u.IsiKomentar {
+			anggota = u.ID
+			break
+		}
+	}
+	return j.antre(JenisEfekEmailKomite, j.k.ID, map[string]string{IsiJenis: r.Email, IsiPenerima: penerima,
+		IsiAnggota: anggota})
 }
 
 // Jenis efek outbox Komite Claim Prop.
 const (
-	JenisEfekKonversi    = "konversi-klaim" // KonversiKlaim_Act -> KonversiKlaimNonLife (Klaim / insertClaimAccept)
-	JenisEfekKasir       = "kasir"          // HitServiceToKasirKMT_Act -> SendAcceptationToKasir (Kasir / insertAllPaymentKasir)
-	JenisEfekEmailKomite = "email-komite"   // SendEmailKlaim_KMT -> SendEmailWithAttachments
+	JenisEfekKonversi    = "konversi-klaim"    // KonversiKlaim_Act -> KonversiKlaimNonLife (Klaim / insertClaimAccept)
+	JenisEfekKasir       = "kasir"             // HitServiceToKasirKMT_Act -> SendAcceptationToKasir (Kasir / insertAllPaymentKasir)
+	JenisEfekEmailKomite = "email-komite"      // SendEmailKlaim_KMT -> SendEmailWithAttachments
+	JenisEfekDokumen     = "dokumen-akseptasi" // PrintFileAcceptance_TKMT -> HTMLToPDF -> InsertDocument_Act
 )
 
 // MuatanOutbox - isi baris T_LOG_SERVICE_RNM.MUATAN.

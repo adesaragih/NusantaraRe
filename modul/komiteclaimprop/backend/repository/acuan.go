@@ -8,6 +8,7 @@ package repository
 //	Obj-Browse BANKACCOUNT  IDOFBANK                                                           HitServiceToKasirKMT_Act S12
 //	GetEmailCeding_SQL      GL.F_GET_EMAIL (HANYA saat muatan Kasir disusun di produksi)       HitServiceToKasirKMT_Act S14.1.2
 //	OperatorID.pyUserName   M_LOGIN_GO.NAME                                                    S32 InsertHistory.CARI4
+//	pyEmailAddress          M_LOGIN_GO.EMAIL (inti 904)                                        SendEmailKlaim_KMT S13-S15
 //
 //	getStatusKonversi_SQL   REINSURANCE.TRLOSS_DETAIL_T (HANYA produksi, gerbang IsPEGAPROD)  HitServiceToKasirKMT_Act S3
 //
@@ -151,6 +152,21 @@ func (a *Acuan) EmailCeding(ctx context.Context, ceding string) (string, error) 
 	}
 	v, _, err := a.satu(ctx, `SELECT GL.F_GET_EMAIL(:1) FROM DUAL`, ceding)
 	return v, err
+}
+
+// EmailPelaku - `Data-Admin-Operator-ID.pyEmailAddress` (SendEmailKlaim_KMT S13 Obj-Browse) = M_LOGIN_GO.EMAIL;
+// akun tanpa email = kosong.
+func (a *Acuan) EmailPelaku(ctx context.Context, akun string) (string, error) {
+	t, err := a.q("M_LOGIN_GO")
+	if err != nil {
+		return "", err
+	}
+	v, _, err := a.satu(ctx, sqlEmailPelaku(t), akun)
+	return v, err
+}
+
+func sqlEmailPelaku(t string) string {
+	return fmt.Sprintf(`SELECT EMAIL FROM %s WHERE LOGIN_ID = :1`, t)
 }
 
 // NamaPelaku - `OperatorID.pyUserName` (M_LOGIN_GO.NAME); akun tanpa nama = ID akun.

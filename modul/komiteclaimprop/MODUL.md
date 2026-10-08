@@ -31,7 +31,7 @@ dipensiunkan 1 Oktober 2026.
 | Folder | Isi |
 | --- | --- |
 | `docs/` | spec, tiket (`issues/`), grilling (tersegel), STRUKTUR / RELASI, `PARITAS.md` (setiap isian / tombol / langkah `KomitePost*` ↔ tiket ↔ status) |
-| `backend/` | `modul.go` (`Pendaftaran`), `models/` (murni), `repository/` (SQL), `services/` (aturan + satu transaksi Submit + pelaksana outbox), `handlers/`, `tiruan/` (uji, kontrak palsu Claim Prop), `konfigurasi/kasir.json`, `migrations/` |
+| `backend/` | `modul.go` (`Pendaftaran`), `models/` (murni; `templat/` = stream HTML `EmailKlaim_HTML_KMT` / `FILEAcceptanceNote` VERBATIM), `repository/` (SQL), `services/` (aturan + satu transaksi Submit + perakit isi efek + pelaksana outbox), `handlers/`, `tiruan/` (uji, kontrak palsu Claim Prop), `konfigurasi/kasir.json` / `email.json`, `migrations/` |
 | `frontend/` | `menu.ts`, `rute.tsx`, daftar kerja penyetuju, layar `ShowTransfer` |
 
 ## Rute
@@ -53,8 +53,22 @@ dipensiunkan 1 Oktober 2026.
 
 `backend/konfigurasi/kasir.json` — kode tetap muatan `SendAcceptationToKasir` (`HitServiceToKasirKMT_Act` S14.1.3:
 CompanyName / LjtdId / LdcId; S14.1.4 IsPEGASyariah LdcId). `[penyimpangan sadar]` CLAUDE.md §10: konfigurasi, bukan
-literal kode; env tidak dipakai (env hanya dibaca `inti/backend/config`, ADR-U-0013). Alamat CC/BCC pribadi yang
-di-hardcode XML (`SendEmailKlaim_KMT` S3-S4) **tidak disalin**.
+literal kode; env tidak dipakai (env hanya dibaca `inti/backend/config`, ADR-U-0013).
+
+`backend/konfigurasi/email.json` — akun notifikasi `SendEmailKlaim_KMT` S17 (`NUSARE`) / S18 (`NUSARESYARIAH`, bila
+alamat tujuan memuat "syariah") dan CC kotak surat klaim S4 (hanya IsPEGAPROD). BCC pribadi yang di-hardcode XML (S3)
+**tidak disalin**.
+
+## Efek keluar (outbox, hanya produksi)
+
+| Jenis | Asal | MUATAN | Pelaksana |
+| --- | --- | --- | --- |
+| `konversi-klaim` | `KonversiKlaim_Act` (S29) | CASEID, NOPOLIS, STS_REJECT | `ErrArasapasBelumDisetujui` |
+| `kasir` | `HitServiceToKasirKMT_Act` (S34) | muatan `SendAcceptationToKasir` | `ErrKasirBelumDisetujui` |
+| `email-komite` | `SendEmailKlaim_KMT` (S35) | jenis, ID akun penerima, ID baris tangga | rakit isi (`SusunEmailKomite`) → `ErrEmailBelumDisetujui` |
+| `dokumen-akseptasi` | `PrintFileAcceptance_TKMT` (S21 → S8) | ID akun penyetuju, saat cetak | rakit markup (`SusunDokumenAkseptasi`) → `ErrPenyimpananBelumDisetujui` (PDF = OQ-KCP-07) |
+
+MUATAN email / dokumen hanya pengenal (claimlife/015: tanpa nama / alamat); isi dirakit saat dikirim.
 
 ## Migrasi
 

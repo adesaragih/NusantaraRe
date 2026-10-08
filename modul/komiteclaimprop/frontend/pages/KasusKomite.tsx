@@ -101,12 +101,22 @@ function BagianView({ b }: { b: Bagian }) {
   )
 }
 
-export default function KasusKomite({ id, onKembali }: { id: string; onKembali: (pesan?: string[]) => void }) {
+export default function KasusKomite({
+  id,
+  onKembali,
+  onLihatBerkas,
+}: {
+  id: string
+  onKembali: (pesan?: string[]) => void
+  /** `PropsRute.onLihatBerkas` - tombol View more details. */
+  onLihatBerkas?: (modul: string, id: string) => boolean
+}) {
   const [layar, setLayar] = useState<Layar | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [isi, setIsi] = useState<Keputusan | null>(null)
   const [salah, setSalah] = useState<Partial<Record<keyof Keputusan, string>>>({})
   const [sibuk, setSibuk] = useState(false)
+  const [pesanLihat, setPesanLihat] = useState<string | null>(null)
 
   useEffect(() => {
     let aktif = true
@@ -175,10 +185,24 @@ export default function KasusKomite({ id, onKembali }: { id: string; onKembali: 
           {layar.tombol
             .filter((t) => t.aksi === 'lihat')
             .map((t) => (
-              <button key={t.aksi} type="button" className="btn btn--ghost btn--sm" disabled title={t.alasan}>
+              // View more details = harness ViewClaimFormKomite atas klaim induk: berkas Claim Prop dibuka hanya-baca di
+              // jendela di atas layar ini (`PropsRute.onLihatBerkas`). Modul tidak dipasang = pesan.
+              <button
+                key={t.aksi}
+                type="button"
+                className="btn btn--ghost btn--sm"
+                disabled={!t.aktif}
+                title={t.alasan}
+                onClick={() => {
+                  setPesanLihat(
+                    onLihatBerkas?.('claimprop', layar.kasus.klaimId) === true ? null : KCP.berkasTakTerpasang,
+                  )
+                }}
+              >
                 {t.label}
               </button>
             ))}
+          {pesanLihat && <div className="alert alert--info">{pesanLihat}</div>}
         </div>
       </div>
       {lain.map((b) => (
@@ -223,12 +247,19 @@ export default function KasusKomite({ id, onKembali }: { id: string; onKembali: 
             <span className="komiteclaimprop__label">
               {isian.label.subjectivityNote} <span className="field__req">*</span>
             </span>
-            <input
+            <select
               className="field__input"
               value={isi.subjectivityNote}
               disabled={kunci || !terbuka}
               onChange={(e) => ubah('subjectivityNote', e.target.value)}
-            />
+            >
+              <option value="">{KCP.pilih}</option>
+              {isian.pilihanSubjectivityNote.map((p) => (
+                <option key={p.nilai} value={p.nilai}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
             {salah.subjectivityNote && <span className="field__error">{salah.subjectivityNote}</span>}
           </label>
         )}

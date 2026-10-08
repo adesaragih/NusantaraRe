@@ -27,4 +27,6 @@ export const KCP = {
   memproses: 'Submitting…',
   /** `.AcceptStatus` `pyNoSelectionText` (ShowTransfer). */
   pilih: 'Choose',
+  /** `[tidak ada di korpus]` - View more details: menu Claim Prop tidak dipegang akun ini (teks sama dengan Claim Prop). */
+  berkasTakTerpasang: 'This file cannot be opened here: the menu of its module is not assigned to your account.',
 } as const

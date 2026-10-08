@@ -54,6 +54,7 @@ type Layanan struct {
 	jam      func() time.Time
 	produksi bool
 	kasir    models.KonfigurasiKasir
+	surel    models.KonfigurasiEmail
 }
 
 // Baru menyusun layanan; `g` nil = tanpa Oracle (setiap aksi 503).
@@ -62,6 +63,13 @@ func Baru(g Gudang, a Acuan, k kontrak.KlaimTreatyKomite, jam func() time.Time, 
 		jam = time.Now
 	}
 	return &Layanan{g: g, a: a, klaim: k, jam: jam, produksi: produksi}
+}
+
+// DenganEmail menyetel akun notifikasi dan CC email komite (konfigurasi berdokumen, MODUL.md).
+func (l *Layanan) DenganEmail(c models.KonfigurasiEmail) *Layanan {
+	salin := *l
+	salin.surel = c
+	return &salin
 }
 
 // DenganKasir menyetel kode tetap muatan Kasir (konfigurasi berdokumen, MODUL.md).
@@ -100,7 +108,11 @@ func (l *Layanan) DaftarKerja(ctx context.Context, p inti.Pelaku) ([]models.Bari
 	if err := l.siap(p); err != nil {
 		return nil, err
 	}
-	return l.g.DaftarKerja(ctx, p.AkunID)
+	d, err := l.g.DaftarKerja(ctx, p.AkunID)
+	for i := range d {
+		d[i].StatusBaris = models.LabelStatusBaris(d[i].StatusBaris)
+	}
+	return d, err
 }
 
 // muat - kasus + tangga + klaim induk (tx nil = layar).

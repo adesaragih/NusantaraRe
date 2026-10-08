@@ -24,6 +24,10 @@ import (
 // PesanKosong - pesan wajib isi (Property-Set-Messages bawaan Pega; teks sama dengan Claim Prop).
 const PesanKosong = "Value cannot be blank"
 
+// PesanDiLuarPilihan - kode di luar daftar pilihan dropdown (pertahanan server; layar hanya menawarkan daftar pilihan).
+// Teks validasi tabel bawaan Pega tidak ada di ekspor - bukan VERBATIM.
+const PesanDiLuarPilihan = "Value is not in the list"
+
 // Label isian `ShowTransfer` (VERBATIM).
 const (
 	LabelAcceptStatus     = "Are you sure to accept this document?"
@@ -43,7 +47,8 @@ type Keputusan struct {
 	// IsSubjectivity - `.IsSubjectivity` "Subjectivity ?": tampil bila AcceptStatus = 1 (TT 2), nonaktif bila
 	// `.KomiteCount != '1'`.
 	IsSubjectivity bool `json:"isSubjectivity"`
-	// SubjectivityNote - `.SubjectivityNote`: tampil + wajib bila Subjectivity, nonaktif bila KomiteCount != '1'.
+	// SubjectivityNote - `.SubjectivityNote` (dropdown kode 1..7, SubjectivityNote.xml): tampil + wajib bila Subjectivity,
+	// nonaktif bila KomiteCount != '1'.
 	SubjectivityNote string `json:"subjectivityNote"`
 	// UsulTutup / UsulCadang - `.Adjustment.IsProposeClose` / `.IsPropReserved` (TT 2), nonaktif bila
 	// KomiteCount != '1'.
@@ -67,6 +72,8 @@ func PeriksaIsian(k Kasus, kep Keputusan) []string {
 	if IsianTerbuka(k) && kep.AcceptStatus == KeputusanSetuju && kep.IsSubjectivity {
 		if strings.TrimSpace(kep.SubjectivityNote) == "" {
 			p = append(p, LabelSubjectivityNote+": "+PesanKosong)
+		} else if !SubjectivityNoteSah(kep.SubjectivityNote) { // dropdown SubjectivityNote.xml
+			p = append(p, LabelSubjectivityNote+": "+PesanDiLuarPilihan)
 		}
 	}
 	return p

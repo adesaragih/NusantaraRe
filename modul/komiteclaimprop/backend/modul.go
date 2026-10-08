@@ -37,6 +37,25 @@ const Nama = "komiteclaimprop"
 //go:embed konfigurasi/kasir.json
 var berkasKasir []byte
 
+// berkasEmail - akun notifikasi dan CC email komite (`SendEmailKlaim_KMT` S4, S17-S18): konfigurasi berdokumen
+// (`konfigurasi/email.json`, MODUL.md). BCC pribadi S3 tidak disalin.
+//
+//go:embed konfigurasi/email.json
+var berkasEmail []byte
+
+// KonfigurasiEmail membaca akun notifikasi dan CC email komite.
+func KonfigurasiEmail() (models.KonfigurasiEmail, error) {
+	var c struct {
+		Akun        string `json:"akun"`
+		AkunSyariah string `json:"akunSyariah"`
+		CC          string `json:"cc"`
+	}
+	if err := json.Unmarshal(berkasEmail, &c); err != nil {
+		return models.KonfigurasiEmail{}, fmt.Errorf("komiteclaimprop: konfigurasi/email.json: %w", err)
+	}
+	return models.KonfigurasiEmail{Akun: c.Akun, AkunSyariah: c.AkunSyariah, CC: c.CC}, nil
+}
+
 // KonfigurasiKasir membaca kode tetap muatan Kasir.
 func KonfigurasiKasir() (models.KonfigurasiKasir, error) {
 	var c struct {
@@ -64,7 +83,12 @@ func Pendaftaran() inti.Pendaftaran {
 			if err != nil {
 				return nil, err
 			}
-			svc := services.DariDasar(p.Dasar(), inti.Ambil[kontrak.KlaimTreatyKomite](p)).DenganKasir(kasir)
+			surel, err := KonfigurasiEmail()
+			if err != nil {
+				return nil, err
+			}
+			svc := services.DariDasar(p.Dasar(), inti.Ambil[kontrak.KlaimTreatyKomite](p)).DenganKasir(kasir).
+				DenganEmail(surel)
 			return Baru(svc, p.Config().AuthStub), nil
 		},
 	}

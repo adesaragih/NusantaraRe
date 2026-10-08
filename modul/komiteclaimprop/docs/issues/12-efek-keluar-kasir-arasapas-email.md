@@ -5,6 +5,7 @@
 > **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
 >
 > - Konversi Arasapas (S29), Kasir (S34), dan email (S35) diantre `inti/backend/outbox` hanya di produksi (`IsPEGAPROD`); pelaksana `PelaksanaKomiteClaimProp` me-resolve M_LINK_SERVICE lalu berhenti `…BelumDisetujui` sampai panggilan nyata disetujui. Pemeriksaan S3 `getStatusKonversi_Act` dipindah ke pelaksana (konversi kini asinkron). `DIRECTTOKASIR_LOG` / StatusKasir = hasil pelaksana (OQ-CP-03).
+> - RALAT kedua 08-10-2026 (stream `EmailKlaim_HTML_KMT` diekspor work owner): MUATAN email hanya pengenal (jenis, ID akun penerima, ID baris tangga - claimlife/015 melarang nama / alamat); badan HTML VERBATIM, subjek, alamat (S12 `KOMITE_EMAIL`, S13-S15 `M_LOGIN_GO.EMAIL`), akun NUSARE / NUSARESYARIAH, dan CC dirakit saat dikirim (`SusunEmailKomite`); pengiriman SMTP berhenti `ErrEmailBelumDisetujui`.
 
 
 **Blocked by:** **08 (nomor akseptasi)** · **10 (efek keluar ke basis data)**

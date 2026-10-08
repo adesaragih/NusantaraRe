@@ -39,7 +39,7 @@ Pra-proses `SetKomiteList_Act` (TT 2): total per mata uang tanpa baris `Acceptan
 | Location of Loss | — | dibangun |
 | "Policy No" ber-nilai `.Adjustment.Type` (`pyVisible ALWAYS`) | dropdown → label `SetDataAcceptationTreaty_Act` S4-S7 | dibangun (VERBATIM, walau labelnya ganjil) |
 | Catastrophe · `.NonKatastrofeType` (bila Non-Catastrophe) · Catastrophe Note (bila Catastrophe / Big Claim) | `pyCondition` | dibangun |
-| Tombol "View more details" | `showHarness` `ViewClaimFormKomite` | **nonaktif-OQ** — harness tidak diekspor |
+| Tombol "View more details" | `showHarness` `ViewClaimFormKomite` (diekspor 08-10-2026: tab Registration / Estimation / "Adjustment & Acceptation" / "Policy Detail & Claims History" atas `pyWorkCover`; section-nya tidak diekspor) | dibangun — berkas Claim Prop klaim induk dibuka hanya-baca di jendela di atas layar komite (`PropsRute.onLihatBerkas`); menu Claim Prop tidak dipegang akun → pesan |
 | PIC Name · Date | `pyWorkPage.pxCreateOpName` / `pxCreateDateTime` (kasus komite) | dibangun |
 | `.NoClaim` / `.CLMNO` | NOTBLANK | dibangun |
 | PLA / DLA Number · Date of Loss · Report Date · Received Date · Reporter Name · Reporter Phone Number · Reporter Status · Specify... · Reporter Address · Report Description | — | dibangun |
@@ -47,17 +47,17 @@ Pra-proses `SetKomiteList_Act` (TT 2): total per mata uang tanpa baris `Acceptan
 | Grid "Insured Interests 100 %" · "Count Claim Amount" · "Loss Allocation" · "Estimation List" | `ClaimData.*` | dibangun |
 | "Total Original Currency Estimation" (grid) | TT 2 | dibangun — kolom Currency di XML dapat disunting tetapi tidak pernah disimpan → hanya-baca |
 | "Total Estimation In IDR": Total Gross Estimate(100%) in IDR · Total Estimation in IDR | 2 sel lain `pyVisible` NEVER | dibangun |
-| "History Adjustment" | `TempClaimData.AdjustmentList` | dibangun — Payment Type / Komite No dapat disunting di XML, tidak disimpan → hanya-baca; Payment Type tampil kode (sumber `BrowseReinsuranceType_RD` .Note = OQ) |
+| "History Adjustment" | `TempClaimData.AdjustmentList` | dibangun — Payment Type / Komite No dapat disunting di XML, tidak disimpan → hanya-baca; Payment Type tampil kode (sumber `BrowseReinsuranceType_RD` .Note = OQ); Status label `AcceptanceStatus.xml` (0 Transfer to committee / 1 Approve / 2 Reject), juga kolom Status daftar kerja |
 | "Total Adjustment" | `TempTotalAdj.pxResults` | dibangun |
 | Grid "Spreading Claim" | `ContainerVisibleWhen 1=2` | mati |
 | Blok deductible ("Dedutible Type", 6 × 4) | `.Adjustment.*` | dibangun |
 | "Spreading In" · "Spreading Out" | `.Komite.SpreadingAdjustment` / `SpreadingQuotaShare` = baris adjustment | dibangun — Share / Claim Spreaded Spreading Out dapat disunting di XML, tidak disimpan → hanya-baca |
-| Payable To · Specify · Name of Bank · Swift Code (bila terisi) · Branch of Bank · Account No | `.Adjustment.*` | dibangun (Payable tampil kode) |
+| Payable To · Specify · Name of Bank · Swift Code (bila terisi) · Branch of Bank · Account No | `.Adjustment.*` | dibangun (Payable label `Payable.xml`: Ceding Co Name / Broker Name / Others) |
 | Circumstances · Occupation · Salvage · Adjuster / Consultant Fee (NOTBLANK) · Remarks | `.Komite.*` ← `DataCommitteeTreaty` baris adjustment + `ClaimData.Occupation` | dibangun |
-| Grid "Committe Accept Status" (Committe Name, Status, Date Approve, Comment) | tangga | dibangun (Status tampil kode) |
-| "Are you sure to accept this document?" `.AcceptStatus` | wajib; `pyNoSelectionText` "Choose"; pilihan `associated` → "Approve" / "Reject" (`SetDataAcceptationTreaty_Act` S2-S3) | dibangun |
+| Grid "Committe Accept Status" (Committe Name, Status, Date Approve, Comment) | tangga | dibangun (Status label `KomiteAproval.xml`: Waiting / Approved / Reject) |
+| "Are you sure to accept this document?" `.AcceptStatus` | wajib; `pyNoSelectionText` "Choose"; pilihan `AcceptStatus.xml` 1 "Approve" / 2 "Reject" | dibangun |
 | "Subjectivity ?" `.IsSubjectivity` | tampil `.AcceptStatus = 1 && TT 2`; nonaktif `.KomiteCount!='1'` | dibangun — isian tingkat 1 disimpan di header (`KOMITE_SUBJECTIVITY` / `_NOTE`, migrasi 682; OQ-KCP-01 dijawab "a" 08-10-2026) dan dipakai tingkat akhir |
-| "Subjectivity Note" | tampil + wajib `.IsSubjectivity = true`; nonaktif `KomiteCount!='1'` | dibangun sebagai isian teks — di XML `pxDropdown` (`pyListSource associated`): pilihannya tidak diekspor (OQ-KCP-04), tidak dikarang |
+| "Subjectivity Note" | tampil + wajib `.IsSubjectivity = true`; nonaktif `KomiteCount!='1'` | dibangun — dropdown `SubjectivityNote.xml` (1 Treaty Leader Approval … 7 Others), kode disimpan; server menolak kode di luar daftar (teks pesan bukan VERBATIM: validasi tabel bawaan Pega tidak diekspor) |
 | "Propose To Close Case" · "Propose To Reserved" | tampil TT 2; nonaktif `KomiteCount!='1'` | dibangun |
 | "Note" `.Comment` | wajib | dibangun |
 | Tombol "Cancel" | `cancel` | dibangun (kembali ke daftar kerja) |
@@ -106,7 +106,7 @@ Pra-proses `SetKomiteList_Act` (TT 2): total per mata uang tanpa baris `Acceptan
 | S30-S31 | log "AKSEPTASI" | `MONITORING_KLAIM_LOG`: NO_AKSEPTASI = `OutputData.START_DATE` (nomor S16.8); status / respons REST kosong (panggilan kini asinkron) | 10 | dibangun |
 | S32-S33 | `InsertHistoryAkseptasiPega_Sql` | `HISTORYAKSEPTASIPEGA` (ACCEPT / REJECT, KLAIM, ID_KOMITE; OPERATORID NULL seperti Pega) | 10 | dibangun |
 | S34 | `HitServiceToKasirKMT_Act` | §4 | 12 | dibangun sebagian |
-| S35 | `SendEmailKlaim_KMT` (IsPEGAPROD) | outbox `email-komite`: subjek, penerima S12 `ComiteeClaim(KomiteCount+1).KomiteEmail` (`KOMITE_EMAIL`), S13-S15 operator pembuat (email `pyEmailAddress` di-resolve pelaksana) | 12 | dibangun — isi HTML `EmailKlaim_HTML_KMT` = OQ; CC/BCC pribadi tidak disalin |
+| S35 | `SendEmailKlaim_KMT` (IsPEGAPROD) | outbox `email-komite`; MUATAN hanya pengenal (jenis, ID akun penerima, ID baris tangga yang diputuskan - claimlife/015 melarang nama / alamat). Isi dirakit saat dikirim (`services.SusunEmailKomite`) | 12 | dibangun — badan `EmailKlaim_HTML_KMT` VERBATIM (`models/templat`), subjek, penerima S12 `KOMITE_EMAIL` / S13-S15 `M_LOGIN_GO.EMAIL`, akun NUSARE / NUSARESYARIAH (S17-S18), CC S4 (`konfigurasi/email.json`); BCC pribadi S3 tidak disalin; kirim SMTP berhenti `ErrEmailBelumDisetujui` |
 | S36-S37 | Obj-Save + `UpdateWorkObject` | `TulisBalikKlaimTreaty` (kontrak) | 04 | dibangun |
 | S38 | Page-Remove | — | — | tidak perlu |
 | S39 | `ASMForceCaseClose` | — | — | mati (`//`) |
@@ -125,7 +125,9 @@ urutan efek keluar sengaja diubah (keputusan 14, 20).
 | `SaveAcceptation_Act` | S1 TempOSAkseptasi (18 kunci + pxObjClass), S3 parameter, S4 DATA_JSON, S5 `SaveOSClaim_SQL`, S6 IsOutstanding / IsCFS | `models.SusunOSAkseptasi`, `repository.SisipOS` | dibangun — DATA_JSON diisi (keputusan work owner 08-10-2026 sore); kolom datar = kunci bernama sama; `CARI16/17/20` NULL |
 | `SaveAcceptation_Act` S2 | Type 4 "final" | — | mati (`//`) |
 | `SaveAcceptationTreaty_TKMT` | S1-S9 | `services.jalan.retro` + `models.SusunRetro` | dibangun (S4: putaran TERAKHIR `SpreadingAdjustment` yang tersisa di LimitDla / ListInsurerDla) |
-| `PrintFileAcceptance_TKMT` | S1-S4 IsPrintAccept, BusinessOldId; S9+ PDF | penanda ditulis | PDF **nonaktif-OQ** (stream `FILEAcceptanceNote`, `pyPDFSettings` tidak diekspor) |
+| `PrintFileAcceptance_TKMT` | S1-S4 IsPrintAccept, BusinessOldId | penanda ditulis | dibangun |
+| `PrintFileAcceptance_TKMT` | S5-S10 halaman `TempAcceptedNo` + stream `FILEAcceptanceNote` (diekspor 08-10-2026); S9 nama berkas "Persetujuan Klaim   AcceptNo <no>.pdf", kategori AcceptanceNote | outbox `dokumen-akseptasi` (MUATAN: ID akun penyetuju + saat cetak); `services.SusunDokumenAkseptasi` + `models.SusunAcceptanceNote` | dibangun — markup VERBATIM; S8 Location ditimpa CauseOfLoss (XML apa adanya); tanggal `format="date"` = dd/MM/yyyy `[penyimpangan sadar]` |
+| `PrintFileAcceptance_TKMT` | S11 `HTMLToPDF`, S12 Base64, S13 `InsertDocument_Act` (Google Storage folder Claim + `DOCUMENT_CLAIM`) | pelaksana outbox | **OQ-KCP-07** — mesin PDF Pega tidak punya padanan (go.mod tanpa pustaka PDF); pelaksana berhenti `ErrPenyimpananBelumDisetujui` |
 | `InsertJsonClaimTreaty_act` | S1-S4 | `SalinJSONKlaim` | dibangun (`GetBase64Attachment` S1 tidak dipakai: DATA_JSON kosong) |
 | `KonversiKlaim_Act` | S1-S3 | outbox | dibangun |
 | `InsertLogServiceClaim` | S1-S2 | `CatatLogLayanan` | dibangun |
@@ -135,7 +137,7 @@ urutan efek keluar sengaja diubah (keputusan 14, 20).
 | `HitServiceToKasirKMT_Act` | S14.4-S14.6 REST, StatusKasir, `DIRECTTOKASIR_LOG` | pelaksana outbox | OQ-CP-03 (berhenti `ErrKasirBelumDisetujui`) |
 | `HitServiceToKasirKMT_Act` | S9-S11, S14.2 (CLMNP / CLM) | — | di luar lingkup (lini lain) |
 | `HitServiceToKasirKMT_Act` S1 | salvage | — | mati (`//`) |
-| `SendEmailKlaim_KMT` | S1 tanpa SpreadingAdjustment keluar; S5 tanggal ("Febuari", "July" VERBATIM); S12 / S14 / S15 subjek + penerima | `models.SubjekEmail`, `services.jalan.email` | dibangun (isi HTML OQ) |
+| `SendEmailKlaim_KMT` | S1 tanpa SpreadingAdjustment keluar; S5 tanggal ("Febuari", "July" VERBATIM); S9-S15 Temp.CARI*; S11 baris spreading (`@divide(SharePercentage,1,0)`, ClaimSpreaded `#,###.####` id_ID); S10 total (= `CountSpreadingADJ_Act` S6.3 / S10, Claim Prop tidak menyimpannya); S16 stream; S17-S18 akun | `models.SusunDataEmail` / `RenderEmailKomite`, `services.SusunEmailKomite` | dibangun — Ceding / SOB dibaca dari `TreatyInMaster` (S7 `ClaimData.QuotationData.CedingCoName` / `SobName` diisi dari master yang sama dan tidak disimpan) |
 | `getStatusKonversi_Act` | IsPEGAPROD → REINSURANCE.TRLOSS_DETAIL_T | `repository.Acuan.StatusKonversi` di S3 Submit | dibangun — hanya IsPEGAPROD, DEV tidak dijalankan (keputusan work owner 08-10-2026); hak baca diminta DBA. Konversi S29 asinkron: di produksi status bisa belum "1" saat Submit → Kasir lewat tombol "Acceptation" Claim Prop |
 | `GetEmailCeding_SQL` | `gl.f_get_email` | `repository.Acuan.EmailCeding` | dibangun — DEV ORA-00904 (OQ DBA) |
 | `CountEstimation_Act`, `CountSpreading_act`, `CurencyEstimation_Act`, `SetCurencyList_act`, `AddEstimation_Act`, … (berkelas Work-ClaimTreaty) | sel hanya-baca ShowTransfer | — | di luar lingkup (spec Out of Scope 2) |
@@ -155,7 +157,8 @@ jejak komite. Alat pemuat komite dibuang; AC 83 diralat.
 | ~~OQ-KCP-01~~ | DIJAWAB 08-10-2026 "a": migrasi 682 menyimpan isian Subjectivity tingkat 1 | — |
 | ~~OQ-KCP-02~~ | DIJAWAB 08-10-2026 "b": kasus komite lama tidak dimigrasi; klaim dimuat Claim Prop | — |
 | OQ-KCP-03 | Hak baca `REINSURANCE.TRLOSS_DETAIL_T` dan eksekusi `GL.F_GET_EMAIL` untuk akun aplikasi produksi (work owner 08-10-2026: "ikuti"; bacaan bergerbang IsPEGAPROD, DEV tidak dijalankan) | DBA |
-| OQ-KCP-04 | Ekspor: harness `ViewClaimFormKomite`, stream `FILEAcceptanceNote` / `EmailKlaim_HTML_KMT`, deskripsi properti `StartDateTime` / `EndDateTime` / `NoClaim` / `CLMNO` / `NonKatastrofeType`, prompt values `AcceptStatus` / `KomiteAproval` / `AcceptanceStatus` / `Payable` / `SubjectivityNote`, harness `Confirm` (layar sesudah Submit - kini kembali ke daftar kerja tanpa teks karangan), padanan `OperatorID.pyPosition` | pemilik ekspor Pega |
-| OQ-KCP-05 | 166 baris OS status 1 di DEV berbentuk lain (DeductibleValue / IDMasterTreaty / PolicyNo / pzInsKey, tanpa KomiteNo) — penulisnya tidak ada di ekspor (SaveAcceptationTreaty_Act langkah 14 ter-remark) | pemilik ekspor Pega |
+| OQ-KCP-04 | Ekspor yang masih kurang: deskripsi properti `StartDateTime` / `EndDateTime` / `NoClaim` / `CLMNO` / `NonKatastrofeType`, padanan `OperatorID.pyPosition`. Diterima 08-10-2026: harness `ViewClaimFormKomite`, stream `FILEAcceptanceNote` / `EmailKlaim_HTML_KMT`, prompt values `AcceptStatus` / `KomiteAproval` / `AcceptanceStatus` / `Payable` / `SubjectivityNote`. Harness `Confirm` DITUTUP: harness bawaan platform Pega (bukan aturan aplikasi, maka tidak ada di ekspor) - layar sesudah Submit kembali ke daftar kerja | pemilik ekspor Pega |
+| ~~OQ-KCP-05~~ | DIABAIKAN work owner 08-10-2026: 166 baris OS status 1 DEV berbentuk lain | — |
+| OQ-KCP-07 | PDF dokumen akseptasi: `HTMLToPDF` memakai mesin PDF platform Pega. Padanannya butuh pustaka Go baru (go.mod) atau layanan konversi; markup sudah dirakit, unggah lewat `inti/backend/penyimpanan` + `DOCUMENT_CLAIM` menunggu keputusan | work owner |
 | ~~OQ-KCP-06~~ | DIJAWAB 08-10-2026 "a": penyerahan ulang subjectivity dibangun di Claim Prop dan komite | — |
 | OQ-CP-06 | Jalur Close tanpa pembayaran (TT 4) | work owner (ditunda 08-10-2026) |

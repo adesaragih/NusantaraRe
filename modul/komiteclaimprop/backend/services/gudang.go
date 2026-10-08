@@ -48,6 +48,7 @@ type Acuan interface {
 	StatusKonversi(ctx context.Context, noAksep string) (string, error)
 	EmailCeding(ctx context.Context, ceding string) (string, error)
 	NamaPelaku(ctx context.Context, akun string) (string, error)
+	EmailPelaku(ctx context.Context, akun string) (string, error)
 }
 
 // penyimpanOracle - `repository.Gudang` + transaksi `inti.Dasar`.

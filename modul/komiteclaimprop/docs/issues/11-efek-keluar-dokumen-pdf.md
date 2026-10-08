@@ -1,10 +1,10 @@
 # 11: Efek keluar — dokumen PDF akseptasi
 
-**Status:** dibangun SEBAGIAN — berkas PDF = OQ *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+**Status:** dibangun SEBAGIAN — markup dokumen dibangun, konversi PDF + unggah = OQ-KCP-07 *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
 
 > **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
 >
-> - `IsPrintAccept := 1` ditulis; berkas PDF tidak dikarang: stream `FILEAcceptanceNote` tidak diekspor (OQ, sama dengan Claim Prop). AC 85-86 (pengenal berkas nanodetik + UUID, jenis berkas diterima) ditempel di sini, menunggu unggahan PDF.
+> - `IsPrintAccept := 1` ditulis; ~~berkas PDF tidak dikarang: stream `FILEAcceptanceNote` tidak diekspor (OQ, sama dengan Claim Prop).~~ RALAT kedua 08-10-2026 (stream diekspor work owner): efek outbox `dokumen-akseptasi` diantre di S21 (hanya produksi); markup "ACCEPTED CLAIM INSURANCE" dirakit VERBATIM saat efek dikirim (`SusunDokumenAkseptasi`), nama berkas "Persetujuan Klaim   AcceptNo <no>.pdf", kategori AcceptanceNote, folder Claim. `HTMLToPDF` (mesin PDF platform Pega) tanpa padanan di go.mod → pelaksana berhenti `ErrPenyimpananBelumDisetujui` (OQ-KCP-07). AC 85-86 (pengenal berkas nanodetik + UUID, jenis berkas diterima) ditempel di sini, menunggu unggahan PDF.
 
 
 **Blocked by:** **08 (nomor akseptasi)**

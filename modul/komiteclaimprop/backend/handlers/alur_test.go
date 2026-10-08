@@ -6,13 +6,17 @@ package handlers_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/outbox"
 	"nusantarare/modul/komiteclaimprop/backend/handlers"
 	"nusantarare/modul/komiteclaimprop/backend/models"
 	"nusantarare/modul/komiteclaimprop/backend/services"
@@ -23,6 +27,7 @@ type uji struct {
 	t   *testing.T
 	g   *tiruan.Gudang
 	a   *tiruan.Acuan
+	l   *services.Layanan
 	srv http.Handler
 }
 
@@ -31,8 +36,9 @@ func siap(t *testing.T, n int, produksi bool) *uji {
 	g, a := tiruan.Baru(), tiruan.AcuanBaru()
 	tiruan.SiapkanUji(g, a, tiruan.KomiteUji, tiruan.AdjUji, n)
 	l := services.Baru(g, a, g.Klaim, func() time.Time { return tiruan.SaatUji }, produksi).
-		DenganKasir(models.KonfigurasiKasir{CompanyName: "UJI-CO", LjtdID: "UJI-LJTD", LdcID: "UJI-LDC"})
-	return &uji{t: t, g: g, a: a, srv: handlers.Router(l, true)}
+		DenganKasir(models.KonfigurasiKasir{CompanyName: "UJI-CO", LjtdID: "UJI-LJTD", LdcID: "UJI-LDC"}).
+		DenganEmail(models.KonfigurasiEmail{Akun: "UJI-AKUN", AkunSyariah: "UJI-SYARIAH", CC: "uji.cc@contoh.invalid"})
+	return &uji{t: t, g: g, a: a, l: l, srv: handlers.Router(l, true)}
 }
 
 func (u *uji) minta(metode, jalur, pelaku string, badan any) *httptest.ResponseRecorder {
@@ -162,11 +168,11 @@ func TestSetujuLaluSetujuNomorTerbit(t *testing.T) {
 // dan dipakai tingkat akhir - tanpa nomor, tanpa OS, IsKomite 0. Tangga satu dan dua tingkat.
 func TestSubjectivityTingkatSatu(t *testing.T) {
 	u := siap(t, 2, false)
-	kep := models.Keputusan{AcceptStatus: "1", Comment: "UJI", IsSubjectivity: true, SubjectivityNote: "UJI syarat"}
+	kep := models.Keputusan{AcceptStatus: "1", Comment: "UJI", IsSubjectivity: true, SubjectivityNote: "3"}
 	if h := u.putus(tiruan.PenyetujuUji(1), kep, http.StatusOK); h.Selesai {
 		t.Fatalf("tingkat 1 dari 2: %+v", h)
 	}
-	if k := u.g.Kasus[tiruan.KomiteUji]; k.Subjectivity != "1" || k.SubjectivityNote != "UJI syarat" {
+	if k := u.g.Kasus[tiruan.KomiteUji]; k.Subjectivity != "1" || k.SubjectivityNote != "3" {
 		t.Fatalf("isian tingkat 1 tersimpan di header: %+v", k)
 	}
 	// tingkat 2: isian Subjectivity nonaktif (yang dikirim diabaikan), yang tersimpan dipakai.
@@ -174,7 +180,7 @@ func TestSubjectivityTingkatSatu(t *testing.T) {
 		h.AcceptedNo != "" {
 		t.Fatalf("tingkat akhir subjectivity: %+v", h)
 	}
-	if b := u.adj(); b["IsSubjectivity"] != "true" || b["SubjectivityNote"] != "UJI syarat" || b["IsKomite"] != "0" {
+	if b := u.adj(); b["IsSubjectivity"] != "true" || b["SubjectivityNote"] != "3" || b["IsKomite"] != "0" {
 		t.Fatalf("adjustment subjectivity tangga dua tingkat: %+v", b)
 	}
 	if len(u.g.OS) != 0 {
@@ -186,7 +192,7 @@ func TestSubjectivityTingkatSatu(t *testing.T) {
 		t.Fatalf("subjectivity: %+v", h)
 	}
 	b := u.adj()
-	if b["IsSubjectivity"] != "true" || b["SubjectivityNote"] != "UJI syarat" || b["IsKomite"] != "0" ||
+	if b["IsSubjectivity"] != "true" || b["SubjectivityNote"] != "3" || b["IsKomite"] != "0" ||
 		b["AcceptedNo"] != "" {
 		t.Fatalf("adjustment subjectivity: %+v", b)
 	}
@@ -285,14 +291,20 @@ func TestValidasiDanBukaKasus(t *testing.T) {
 		!strings.Contains(w.Body.String(), `"Total in IDR"`) || !strings.Contains(w.Body.String(), `"Dedutible Type"`) {
 		t.Fatal("layar memuat grid tangga, total per mata uang, dan blok deductible (VERBATIM)")
 	}
+	// prompt values (diekspor 08-10-2026): KomiteAproval, AcceptanceStatus, SubjectivityNote
+	if !strings.Contains(w.Body.String(), `"keputusan":"Waiting"`) ||
+		!strings.Contains(w.Body.String(), `"AcceptanceStatus":"Approve"`) ||
+		!strings.Contains(w.Body.String(), `{"nilai":"1","label":"Treaty Leader Approval"}`) {
+		t.Fatalf("label prompt values: %s", w.Body.String())
+	}
 	w = u.minta("GET", "/kasus/"+tiruan.KomiteUji, tiruan.PenyetujuUji(2), nil)
 	_ = json.Unmarshal(w.Body.Bytes(), &ly)
 	for _, tb := range ly.Tombol {
 		if tb.Label == "Submit" && tb.Aktif {
 			t.Fatal("Submit nonaktif bagi bukan pemegang")
 		}
-		if tb.Label == "View more details" && tb.Aktif {
-			t.Fatal("View more details nonaktif (harness tidak diekspor)")
+		if tb.Label == "View more details" && !tb.Aktif {
+			t.Fatal("View more details aktif juga bagi bukan pemegang (hanya-baca, ViewClaimFormKomite)")
 		}
 	}
 }
@@ -323,6 +335,65 @@ func TestEfekKeluarDiProduksi(t *testing.T) {
 	if u.adj()["IDOfBank"] != "UJI-BANK-1" || len(h.AcceptedNo) != 23 {
 		t.Fatalf("IDOfBank S12-S13: %+v", u.adj())
 	}
+	if !jenis[services.JenisEfekDokumen] {
+		t.Fatalf("S21 -> PrintFileAcceptance_TKMT: dokumen akseptasi diantre: %v", u.g.Efek)
+	}
+	// MUATAN hanya pengenal (claimlife/015): tanpa alamat email, subjek, maupun nama.
+	muatan := map[string]services.MuatanOutbox{}
+	for _, e := range u.g.Efek {
+		p := strings.SplitN(e, ":", 3)
+		if p[0] == services.JenisEfekEmailKomite || p[0] == services.JenisEfekDokumen {
+			if strings.Contains(p[2], "@") || strings.Contains(p[2], "UJI Penyetuju") || strings.Contains(p[2], "subjek") {
+				t.Fatalf("MUATAN %s memuat alamat / nama: %s", p[0], p[2])
+			}
+			var m services.MuatanOutbox
+			if err := json.Unmarshal([]byte(p[2]), &m); err != nil {
+				t.Fatal(err)
+			}
+			muatan[p[0]] = m
+		}
+	}
+	isi := func(j string) map[string]string {
+		out := map[string]string{}
+		for k, v := range muatan[j].Isi.(map[string]any) {
+			out[k], _ = v.(string)
+		}
+		return out
+	}
+	ctx := context.Background()
+	u.a.Nama[tiruan.PembuatUji] = "UJI Pembuat"
+	u.a.Surel[tiruan.PembuatUji] = "uji.pembuat.syariah@contoh.invalid"
+	sr, err := u.l.SusunEmailKomite(ctx, tiruan.KomiteUji, isi(services.JenisEfekEmailKomite))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// S13-S14 pembuat; S18 akun syariah; S4 CC; S16 badan EmailKlaim_HTML_KMT
+	if sr.Kepada != "uji.pembuat.syariah@contoh.invalid" || sr.Akun != "UJI-SYARIAH" || sr.CC != "uji.cc@contoh.invalid" ||
+		!strings.HasPrefix(sr.Subjek, "(Approval) Pengajuan Akseptasi : ") ||
+		!strings.Contains(sr.HTML, "Dear <strong>UJI Pembuat</strong>") ||
+		!strings.Contains(sr.HTML, "Accepted No: <span style=\"font-weight: normal;\">"+h.AcceptedNo) ||
+		!strings.Contains(sr.HTML, "<strong>UJI Penyetuju Satu</strong>") || !strings.Contains(sr.HTML, "Status: <span") {
+		t.Fatalf("email komite: %+v", sr)
+	}
+	dk, err := u.l.SusunDokumenAkseptasi(ctx, tiruan.KomiteUji, isi(services.JenisEfekDokumen))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dk.NamaBerkas != "Persetujuan Klaim   AcceptNo "+h.AcceptedNo+".pdf" || dk.Kategori != "AcceptanceNote" ||
+		dk.Folder != "Claim" || !strings.Contains(dk.HTML, "Create by : UJI Penyetuju Satu") ||
+		!strings.Contains(dk.HTML, "Jakarta, 08 October 2026") || !strings.Contains(dk.HTML, h.AcceptedNo) {
+		t.Fatalf("dokumen akseptasi: %+v", dk)
+	}
+	// Pelaksana produksi: isi dirakit, lalu panggilan nyata ditahan sampai disetujui manusia.
+	pl := services.PelaksanaKomiteClaimProp{Lingkungan: inti.Produksi, Penyusun: u.l}
+	for j, mau := range map[string]error{services.JenisEfekEmailKomite: outbox.ErrEmailBelumDisetujui,
+		services.JenisEfekDokumen: outbox.ErrPenyimpananBelumDisetujui} {
+		b, _ := json.Marshal(muatan[j])
+		err := pl.Laksanakan(ctx, nil, outbox.BarisEfekKeluar{Modul: "komiteclaimprop", Jenis: j, Muatan: string(b)})
+		if !errors.Is(err, mau) {
+			t.Fatalf("pelaksana %s: %v", j, err)
+		}
+	}
 }
 
 // OQ-KCP-06 "a": penyerahan ulang baris subjectivity - putaran kedua disetujui tanpa syarat menerbitkan nomor; `.Comment`
@@ -330,7 +401,7 @@ func TestEfekKeluarDiProduksi(t *testing.T) {
 func TestKirimUlangSubjectivity(t *testing.T) {
 	u := siap(t, 1, false)
 	u.putus(tiruan.PenyetujuUji(1), models.Keputusan{AcceptStatus: "1", Comment: "UJI putaran 1", IsSubjectivity: true,
-		SubjectivityNote: "UJI syarat"}, http.StatusOK)
+		SubjectivityNote: "3"}, http.StatusOK)
 	if b := u.adj(); b["IsSubjectivity"] != "true" || b["IsKomite"] != "0" || b["AcceptedNo"] != "" {
 		t.Fatalf("putaran 1 subjectivity: %+v", b)
 	}

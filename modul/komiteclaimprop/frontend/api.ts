@@ -62,6 +62,8 @@ export interface IsianLayar {
   /** `pyDisabledWhen .KomiteCount!='1'` salah. */
   terbuka: boolean
   pilihanTerima: Pilihan[]
+  /** Dropdown "Subjectivity Note" (SubjectivityNote.xml). */
+  pilihanSubjectivityNote: Pilihan[]
   label: Record<keyof Keputusan, string>
 }
 

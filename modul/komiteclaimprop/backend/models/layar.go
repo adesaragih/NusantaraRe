@@ -79,9 +79,11 @@ type Tombol struct {
 type IsianLayar struct {
 	Nilai Keputusan `json:"nilai"`
 	// Terbuka - `pyDisabledWhen .KomiteCount!='1'` salah: Subjectivity, catatannya, dan dua Propose aktif.
-	Terbuka       bool              `json:"terbuka"`
-	PilihanTerima []Pilihan         `json:"pilihanTerima"`
-	Label         map[string]string `json:"label"`
+	Terbuka       bool      `json:"terbuka"`
+	PilihanTerima []Pilihan `json:"pilihanTerima"`
+	// PilihanSubjectivityNote - dropdown "Subjectivity Note" (SubjectivityNote.xml).
+	PilihanSubjectivityNote []Pilihan         `json:"pilihanSubjectivityNote"`
+	Label                   map[string]string `json:"label"`
 }
 
 // Layar - satu kasus komite siap ditampilkan.
@@ -110,9 +112,10 @@ const (
 // `SetDataAcceptationTreaty_Act` S2-S3 (`ParamDataTreaty.CARI7`): 1 "Approve", 2 "Reject".
 var LabelTerima = []Pilihan{{Nilai: KeputusanSetuju, Label: "Approve"}, {Nilai: KeputusanTolak, Label: "Reject"}}
 
-// AlasanLihatNonaktif - "View more details" membuka harness `ViewClaimFormKomite` yang tidak diekspor (prompt §6
-// butir 11).
-const AlasanLihatNonaktif = "Harness ViewClaimFormKomite tidak ada di ekspor Pega (OQ)"
+// "View more details" = harness `ViewClaimFormKomite` (ASM-FW-GCNMFW-Work-Komite, diekspor 08-10-2026): tab Registration /
+// Estimation / Adjustment & Acceptation atas `pyWorkCover` (klaim induk). Section-nya (ViewInputRegisterDetail,
+// HistoryInputEstimasiDetail, HistoryShowObjectAdj) tidak diekspor; padanannya berkas Claim Prop klaim induk, dibuka
+// hanya-baca di jendela di atas layar komite (`PropsRute.onLihatBerkas`).
 
 // AlasanSudahBernomor - tombol Submit `pyDisabledWhen pyWorkPage.Adjustment.AcceptedNo != ”`.
 const AlasanSudahBernomor = "Adjustment ini sudah memiliki Accepted No"
@@ -280,7 +283,8 @@ func SusunLayar(k Kasus, kl kontrak.KlaimTreaty, total []TotalMataUang, akun str
 			{Judul: "Spreading Out", Kolom: kolomSpreading(), Baris: p.daftar(jalurAdj(kl.Adjustment, "SpreadingQuotaShare"))},
 		}},
 	)
-	bayar := []Medan{p.a("Payable To", "Payable", JenisTeks), p.a("Specify", "PayableTo", JenisTeks)}
+	bayar := []Medan{{Label: "Payable To", Nilai: labelKode(LabelPayable, p.adj["Payable"]), Jenis: JenisTeks},
+		p.a("Specify", "PayableTo", JenisTeks)}
 	bank := []Medan{p.a("Name of Bank", "NameOfBank", JenisTeks)}
 	bank = tampilBila(bank, p.adj["SwiftCode"] != "", p.a("Swift Code", "SwiftCode", JenisTeks))
 	bank = append(bank, p.a("Branch of Bank", "BranchOfBank", JenisTeks), p.a("Account No", "NoAccount", JenisTeks))
@@ -306,6 +310,7 @@ func SusunLayar(k Kasus, kl kontrak.KlaimTreaty, total []TotalMataUang, akun str
 	)
 
 	ly.Isian = IsianLayar{Nilai: nilaiAwal(k), Terbuka: IsianTerbuka(k), PilihanTerima: LabelTerima,
+		PilihanSubjectivityNote: PilihanSubjectivityNote,
 		Label: map[string]string{"acceptStatus": LabelAcceptStatus, "isSubjectivity": LabelSubjectivity,
 			"subjectivityNote": LabelSubjectivityNote, "usulTutup": LabelProposeClose, "usulCadang": LabelProposeReserved,
 			"comment": LabelNote}}
@@ -316,7 +321,7 @@ func SusunLayar(k Kasus, kl kontrak.KlaimTreaty, total []TotalMataUang, akun str
 		kirim.Alasan = AlasanSudahBernomor
 	}
 	ly.Tombol = []Tombol{
-		{Label: TombolLihat, Aksi: "lihat", Aktif: false, Alasan: AlasanLihatNonaktif},
+		{Label: TombolLihat, Aksi: "lihat", Aktif: true},
 		{Label: TombolBatal, Aksi: "batal", Aktif: true},
 		kirim,
 	}
@@ -349,6 +354,7 @@ func riwayatAdjustment(rows []map[string]string) []map[string]string {
 		if strings.TrimSpace(b["KomiteNo"]) == "" {
 			b["KomiteNo"] = b["KomiteID"]
 		}
+		b["AcceptanceStatus"] = LabelStatusBaris(b["AcceptanceStatus"]) // AcceptanceStatus.xml
 	}
 	return rows
 }
@@ -365,7 +371,8 @@ func barisTotal(t []TotalMataUang) []map[string]string {
 func barisTangga(t []Anggota) []map[string]string {
 	out := make([]map[string]string, 0, len(t))
 	for _, a := range t {
-		out = append(out, map[string]string{"jabatan": a.Jabatan, "keputusan": a.Keputusan, "tanggal": a.Tanggal,
+		out = append(out, map[string]string{"jabatan": a.Jabatan, "keputusan": labelKode(LabelKeputusanAnggota, a.Keputusan),
+			"tanggal":  a.Tanggal,
 			"komentar": a.Komentar})
 	}
 	return out

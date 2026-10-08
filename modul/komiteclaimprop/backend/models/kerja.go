@@ -23,7 +23,7 @@ type BarisKerja struct {
 	// Nilai / MataUang - "Adjustment RNM" baris adjustment yang diputus (uang TEKS, nol float).
 	Nilai    string `json:"nilai"`
 	MataUang string `json:"mataUang"`
-	// StatusBaris - `.AcceptanceStatus` baris adjustment (kode apa adanya).
+	// StatusBaris - `.AcceptanceStatus` baris adjustment; layanan memasang labelnya (`LabelStatusBaris`).
 	StatusBaris string    `json:"statusBaris"`
 	StatusWork  string    `json:"statusWork"`
 	TglUpdate   time.Time `json:"tglUpdate"`

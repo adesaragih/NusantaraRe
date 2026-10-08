@@ -306,12 +306,15 @@ type Acuan struct {
 	// Konversi - nomor akseptasi tanpa titik -> status konversi; Email - ceding -> email.
 	Konversi map[string]string
 	Email    map[string]string
+	// Surel - akun -> M_LOGIN_GO.EMAIL.
+	Surel map[string]string
 }
 
 // AcuanBaru membuat acuan kosong.
 func AcuanBaru() *Acuan {
 	return &Acuan{Tahun: map[string]string{}, Batas: map[string]string{}, Retro: map[string][]models.BarisRetro{},
-		Bank: map[string]string{}, Nama: map[string]string{}, Konversi: map[string]string{}, Email: map[string]string{}}
+		Bank: map[string]string{}, Nama: map[string]string{}, Konversi: map[string]string{}, Email: map[string]string{},
+		Surel: map[string]string{}}
 }
 
 // TahunTreaty - lihat `repository.Acuan.TahunTreaty`.
@@ -342,6 +345,11 @@ func (a *Acuan) StatusKonversi(_ context.Context, noAksep string) (string, error
 // EmailCeding - lihat `repository.Acuan.EmailCeding`.
 func (a *Acuan) EmailCeding(_ context.Context, ceding string) (string, error) {
 	return a.Email[ceding], nil
+}
+
+// EmailPelaku - lihat `repository.Acuan.EmailPelaku`.
+func (a *Acuan) EmailPelaku(_ context.Context, akun string) (string, error) {
+	return a.Surel[akun], nil
 }
 
 // NamaPelaku - lihat `repository.Acuan.NamaPelaku`.
