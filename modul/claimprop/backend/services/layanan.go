@@ -117,6 +117,8 @@ type Layar struct {
 	PesanMedan map[string][]string `json:"pesanMedan,omitempty"`
 	// Info - pemberitahuan local action sesudah aksi (PrintFile "Please Print Pla" / PrintFileDLA).
 	Info string `json:"info,omitempty"`
+	// Mode - penanda mode layar (models.ModeLayar); layar mengembalikannya di setiap aksi.
+	Mode map[string]string `json:"mode,omitempty"`
 }
 
 // tataKasus mengevaluasi seluruh section yang terbuka bagi kasus ini.
@@ -158,7 +160,7 @@ func semuaTata(utama []models.Tata, adj map[int][]models.Tata, modal map[string]
 func (l *Layanan) layar(k models.Kasus, h *models.Halaman, boleh bool) *Layar {
 	utama, adj, modal := tataKasus(k, h, !boleh)
 	ly := &Layar{Kasus: k, Label: models.LabelTahap[k.Tahap], Halaman: h, BolehKerja: boleh, Tata: utama,
-		Adjustment: adj, Modal: modal, Pesan: h.SemuaPesan(), PesanMedan: h.Pesan}
+		Adjustment: adj, Modal: modal, Pesan: h.SemuaPesan(), PesanMedan: h.Pesan, Mode: models.AmbilMode(h)}
 	return ly
 }
 
@@ -365,6 +367,8 @@ type AcuanStatis struct {
 	JenisReas  []models.Pilihan    `json:"jenisReas"`
 	JenisReas4 []models.Pilihan    `json:"jenisReas4"`
 	Kode       map[string][]string `json:"kode"`
+	// LabelKode - label tampilan kode (models.LabelKode); kode tanpa label tampil apa adanya.
+	LabelKode map[string]map[string]string `json:"labelKode"`
 }
 
 // Acuan membaca daftar pilihan bersama.
@@ -384,5 +388,6 @@ func (l *Layanan) Acuan(ctx context.Context, p inti.Pelaku) (AcuanStatis, error)
 		return out, err
 	}
 	out.Kode = models.KodePilihan
+	out.LabelKode = models.LabelKode
 	return out, nil
 }

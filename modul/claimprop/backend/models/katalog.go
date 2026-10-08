@@ -122,9 +122,9 @@ var TabelHeaderKlaim = Tabel{Nama: "T_GENERAL_CLAIM", Kolom: []Kolom{
 	kTeks(CD+"PlaNoSOB", "PLA_NO_SOB", 255),
 	kPenanda(CD+"PeriodPolicyTBA", "PERIOD_POLICY_TBA"),
 	// registrasi (Section OutstandingClaim / InputAcceptation)
-	kTglWaktu(CD+"DateOfLoss", "DATE_OF_LOSS"),
+	kTgl(CD+"DateOfLoss", "DATE_OF_LOSS"),
 	kTgl(CD+"ReportDate", "REPORT_DATE"),
-	kTglWaktu(CD+"DateReceived", "DATE_RECEIVED"),
+	kTgl(CD+"DateReceived", "DATE_RECEIVED"),
 	kTeks(CD+"ReporterName", "REPORTER_NAME", 255),
 	kTeks(CD+"ReporterTelp", "REPORTER_PHONE", 64),
 	kKode(CD+"ReportType", "REPORT_TYPE", 16),

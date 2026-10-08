@@ -395,3 +395,46 @@ func TestModulBerkasPolis(t *testing.T) {
 		}
 	}
 }
+
+// Perbaikan Claim Information (work owner 08-10-2026): Date of Loss / Received Date tanggal saja, nomor telepon hanya
+// angka, Report Type 1-5 dan Reporter Status 1-3 berlabel, "Policy Period TBA ?".
+func TestClaimInformationPerbaikanWO(t *testing.T) {
+	ts := models.Evaluasi(models.HalamanBaru(), models.LayarOutstanding(), false)
+	var cari func(ts []models.Tata, jalur string) *models.Tata
+	cari = func(ts []models.Tata, jalur string) *models.Tata {
+		for i := range ts {
+			if ts[i].Jenis == models.JenisMedan && ts[i].Jalur == jalur {
+				return &ts[i]
+			}
+			if x := cari(ts[i].Anak, jalur); x != nil {
+				return x
+			}
+		}
+		return nil
+	}
+	for jalur, mau := range map[string]string{
+		models.CD + "DateOfLoss":   models.KTanggal,
+		models.CD + "DateReceived": models.KTanggal,
+		models.CD + "ReporterTelp": models.KTelepon,
+	} {
+		if m := cari(ts, jalur); m == nil || m.Kendali != mau {
+			t.Fatalf("%s: kendali %+v, mau %s", jalur, m, mau)
+		}
+	}
+	if m := cari(ts, models.CD+"PeriodPolicyTBA"); m == nil || m.Label != "Policy Period TBA ?" {
+		t.Fatalf("label PeriodPolicyTBA: %+v", m)
+	}
+	label := func(p string) []string {
+		var out []string
+		for _, k := range models.KodePilihan[p] {
+			out = append(out, k+" "+models.LabelKode[p][k])
+		}
+		return out
+	}
+	if got := strings.Join(label("ReportType"), "|"); got != "1 Direct|2 Via Email|3 Via Fax|4 via Postal Mail/Courier|5 Via Telephone" {
+		t.Fatalf("ReportType: %s", got)
+	}
+	if got := strings.Join(label("ReporterStatus"), "|"); got != "1 Ceding Co Name|2 SOB Name|3 Others" {
+		t.Fatalf("ReporterStatus: %s", got)
+	}
+}

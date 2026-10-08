@@ -117,6 +117,14 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   `frontend/App.tsx` membaca tautan itu dan membuka berkas lewat jalur kotak masuk Beranda; modul tanpa menu = pesan.
   Modul NB / EDM tidak diubah. DEV: hanya berkas aplikasi baru / Copy Old punya berkas (15 dari 41.945 baris
   TREATYINPRODUCTION) - polis Pega lama lain menampilkan pesan.
+- **Perbaikan Claim Information** (08-10-2026, daftar work owner): Date of Loss / Received Date tanggal saja
+  (KTanggal, katalog kTgl); Reporter Phone Number kendali `telepon` (hanya angka, nol di depan tetap, kolom teks);
+  label kode `models.LabelKode` - Report Type 1 Direct / 2 Via Email / 3 Via Fax / 4 via Postal Mail/Courier / 5 Via
+  Telephone, Reporter Status 1 Ceding Co Name / 2 SOB Name / 3 Others (nilai tersimpan tetap kode);
+  PeriodPolicyTBA berlabel "Policy Period TBA ?"; Consultant / Adjuster / Province = dropdown yang dapat dicari
+  (PilihSaring inti, saringan server). Catastrophe dan Edit RNM Share diperbaiki: penanda mode `EditCatastrope` /
+  `IsEditRNMShare` tidak punya kolom sehingga hilang saat halaman dibaca ulang (aksi 409) - kini `Layar.mode` dikirim
+  server dan dikembalikan layar di setiap aksi (`models.ModeLayar`, daftar putih nilai true/false).
 - **Layar kasus berkulit Kelola User** (08-10-2026, "SAMAIN DENGAN MENU KELOLA USER SKIN NYA"): setiap bagian
   berlabel = kartu `panel` + `panel__title`, isi `form-grid`, medan berlabel di atas kotak `field__input`, hanya-baca
   tetap berkotak (`field__input--readonly`). Pengelompokan di `frontend/components/susun.ts` (diuji): label

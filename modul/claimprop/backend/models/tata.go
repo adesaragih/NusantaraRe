@@ -38,6 +38,7 @@ const (
 	KRadio    = "radio"         // pxRadioButtons
 	KTampil   = "tampil"        // pxDisplayText / kontrol bawaan hanya-baca
 	KOtomatis = "otomatis"      // pxAutoComplete
+	KTelepon  = "telepon"       // nomor telepon: hanya angka, tanpa pemisah ribuan (keputusan work owner 08-10-2026)
 )
 
 // Kondisi atas halaman; nil = selalu benar (tampil) atau selalu salah (hanya-baca / nonaktif / wajib) menurut

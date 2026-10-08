@@ -593,6 +593,20 @@
   color: var(--cp-teks-redup);
 }
 
+/* Dropdown yang dapat dicari (PilihSaring inti) di kolom nilai: label sudah di kiri baris, kotak mengisi lebar. */
+.claimprop .claimprop__saring {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.claimprop .claimprop__saring .pilih-saring {
+  margin: 0;
+}
+
+.claimprop .claimprop__saring .pilih-saring > .field__label {
+  display: none;
+}
+
 .claimprop .claimprop__satuan {
   font-weight: 600;
   color: var(--cp-teks-redup);

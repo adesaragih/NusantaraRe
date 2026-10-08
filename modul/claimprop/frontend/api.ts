@@ -72,6 +72,8 @@ export interface Layar {
   pesan?: string[]
   pesanMedan?: Record<string, string[]>
   info?: string
+  /** Penanda mode layar (Edit Catastrophe, Edit RNM Share) - tanpa kolom di tabel; dikembalikan di setiap aksi. */
+  mode?: Record<string, string>
 }
 
 /** Satu baris daftar kerja - `repository.RingkasanKasus`. */
@@ -100,6 +102,8 @@ export interface AcuanStatis {
   jenisReas: Pilihan[]
   jenisReas4: Pilihan[]
   kode: Record<string, string[]>
+  /** Label tampilan kode (Report Type, Reporter Status - dari work owner 08-10-2026); kode tanpa label tampil apa adanya. */
+  labelKode?: Record<string, Record<string, string>>
 }
 
 export interface PermintaanAksi {
@@ -108,6 +112,8 @@ export interface PermintaanAksi {
   param?: string
   tahap?: string
   masukan?: Record<string, string>
+  /** Penanda mode layar terakhir (`Layar.mode`) - dikembalikan di setiap aksi. */
+  mode?: Record<string, string>
 }
 
 export type JenisDaftar = 'saya' | 'workbasket' | 'selesai'

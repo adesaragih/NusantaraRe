@@ -98,7 +98,14 @@ export default function LayarKasus({ id, pelaku, onKembali }: { id: string; pela
       const semua = semuaTata(layar.tata, [layar.adjustment ?? {}, layar.modal ?? {}])
       setSibuk(true)
       setInfo(null)
-      aksiKasus(id, { aksi, indeks, param: prm, tahap: layar.kasus.tahap, masukan: masukan(h2, semua) }).then(
+      aksiKasus(id, {
+        aksi,
+        indeks,
+        param: prm,
+        tahap: layar.kasus.tahap,
+        masukan: masukan(h2, semua),
+        mode: layar.mode,
+      }).then(
         (l) => {
           terima(l)
           setSibuk(false)
@@ -194,7 +201,10 @@ export default function LayarKasus({ id, pelaku, onKembali }: { id: string; pela
       if (sumber === 'mataUang') return acuan?.mataUang ?? []
       if (sumber === 'jenisReas') return acuan?.jenisReas ?? []
       if (sumber === 'jenisReas4') return acuan?.jenisReas4 ?? []
-      if (sumber.startsWith('kode:')) return (acuan?.kode[sumber.slice(5)] ?? []).map((k) => ({ nilai: k, label: k }))
+      if (sumber.startsWith('kode:')) {
+        const p = sumber.slice(5)
+        return (acuan?.kode[p] ?? []).map((k) => ({ nilai: k, label: acuan?.labelKode?.[p]?.[k] ?? k }))
+      }
       if (sumber === 'mataUangAdj') {
         return (h.daftar[`ClaimData.AdjustmentList(${indeks}).CurencyAdjustment`] ?? []).map((b) => ({
           nilai: b.CurrencyID ?? '',

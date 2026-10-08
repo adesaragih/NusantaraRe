@@ -117,6 +117,33 @@ func dua(sel ...Unsur) Unsur { return letak(LetakDua, sel...) }
 
 func ikon(u Unsur, i string) Unsur { u.Ikon = i; return u }
 
+// ModeLayar - penanda MODE layar Pega yang hidup di halaman kerja tetapi tidak punya kolom di tabel datar: ikon Edit /
+// Save Catastrophe (`EditCatastrope`, Catastrope_Sec) dan ikon Edit RNM Share (`IsEditRNMShare`). Server mengirimnya
+// di `Layar.Mode`, layar mengembalikannya di setiap aksi, server memasangnya SEBELUM tata (medan / aksi terbuka)
+// dihitung. Aman: penanda hanya membuka mode edit yang memang dapat dinyalakan pemegang lewat tombolnya (temuan work
+// owner 08-10-2026 "Catastrophe tidak berfungsi" - penanda hilang saat halaman dibaca ulang).
+var ModeLayar = []string{CD + "EditCatastrope", "IsEditRNMShare"}
+
+// PasangMode memasang penanda mode kiriman layar; hanya kunci ModeLayar dan nilai "true" / "false".
+func PasangMode(h *Halaman, mode map[string]string) {
+	for _, k := range ModeLayar {
+		if v, ada := mode[k]; ada && (v == "true" || v == "false") {
+			h.Setel(k, v)
+		}
+	}
+}
+
+// AmbilMode - penanda mode halaman untuk `Layar.Mode`.
+func AmbilMode(h *Halaman) map[string]string {
+	out := map[string]string{}
+	for _, k := range ModeLayar {
+		if v := h.Ambil(k); v != "" {
+			out[k] = v
+		}
+	}
+	return out
+}
+
 // AksiLihatPolis - tombol View (harness DetailPolisRealization tidak diekspor): layar membuka berkas polis NB / EDM
 // Treaty In di tab baru lewat `GET /berkas-polis` (keputusan work owner 08-10-2026); tidak ada aksi server.
 const AksiLihatPolis = "LihatPolis"
@@ -174,7 +201,7 @@ const (
 // KodePilihan - kode yang teramati di data DEV untuk properti bersumber `associated` (prompt values tidak ada di
 // korpus, OQ-CP-07). Ditampilkan apa adanya (keputusan work owner "jangan di singkat ikuti apa yang di DB").
 var KodePilihan = map[string][]string{
-	"ReportType":         {"1", "2"},
+	"ReportType":         {"1", "2", "3", "4", "5"},
 	"ReporterStatus":     {"1", "2", "3"},
 	"FormType":           {"1", "2"},
 	"TypeDeductible":     {"1", "2"},
@@ -185,6 +212,13 @@ var KodePilihan = map[string][]string{
 	"AdjustmentType":     {"1", "2", "3", "4"},
 	"IndividualRiskType": {"1", "2", "3"},
 	"AcceptanceStatus":   {"1", "2"},
+}
+
+// LabelKode - label tampilan kode `associated` yang diberikan work owner (prompt values tidak ada di korpus; 08-10-2026).
+// Nilai tersimpan tetap kodenya.
+var LabelKode = map[string]map[string]string{
+	"ReportType":     {"1": "Direct", "2": "Via Email", "3": "Via Fax", "4": "via Postal Mail/Courier", "5": "Via Telephone"},
+	"ReporterStatus": {"1": "Ceding Co Name", "2": "SOB Name", "3": "Others"},
 }
 
 func kode(p string) string { return AwalanKode + p }
@@ -239,12 +273,12 @@ func blokKatastrofe() Unsur {
 func blokPelapor(relasiStatus string) []Unsur {
 	bukanTiga := beda(relasiStatus, "3")
 	return []Unsur{
-		aksi(wajibU(roJika(medan(CD+"DateOfLoss", "Date of Loss", KWaktu), isAnyAccept)), "CheckDateDOL"),
+		aksi(wajibU(roJika(medan(CD+"DateOfLoss", "Date of Loss", KTanggal), isAnyAccept)), "CheckDateDOL"),
 		aksi(wajibU(roJika(medan(CD+"ReportDate", "Report Date", KTanggal), isAnyAccept)), "CheckReportDate"),
-		aksi(wajibJ(roJika(medan(CD+"DateReceived", "Received Date", KWaktu), isAnyAccept), pyNoteKosong),
+		aksi(wajibJ(roJika(medan(CD+"DateReceived", "Received Date", KTanggal), isAnyAccept), pyNoteKosong),
 			"CheckDateReceived"),
 		wajibJ(roJika(medan(CD+"ReporterName", "Reporter Name", KTeks), isOutstanding), pyNoteKosong),
-		wajibU(roJika(medan(CD+"ReporterTelp", "Reporter Phone Number", KAngka), isOutstanding)),
+		wajibU(roJika(medan(CD+"ReporterTelp", "Reporter Phone Number", KTelepon), isOutstanding)),
 		sumber(roJika(medan(CD+"ReportType", "Report Type", KPilih), isOutstanding), kode("ReportType")),
 		aksi(sumber(naJika(roJika(medan(CD+"ReporterStatus", "Reporter Status", KPilih), isEstimation), isOutstanding),
 			kode("ReporterStatus")), "GetReportStatus"),
@@ -473,7 +507,7 @@ func LayarOutstanding() []Unsur {
 		roJika(medan(CD+"InsuredName", "Insured Name", KTeks), isAnyAccept),
 		roJika(medan(CD+"PlaNoCeding", "Pla No  Ceding", KTeks), isOutstanding),
 		roJika(medan(CD+"PlaNoSOB", "Pla No SOB", KTeks), isOutstanding),
-		naJika(medan(CD+"PeriodPolicyTBA", "Checkbox", KCentang), isAnyAccept),
+		naJika(medan(CD+"PeriodPolicyTBA", "Policy Period TBA ?", KCentang), isAnyAccept),
 		aksi(wajibU(roJika(medan(CD+"PolicyData.StartDateTime", "Policy Start Ceding", KTanggal), isAnyAccept)), "SetEndDate"),
 		aksi(wajibU(roJika(medan(CD+"PolicyData.EndDateTime", "Policy End Ceding", KTanggal), isAnyAccept)), "CheckPeriodPolicy"),
 	)
@@ -558,7 +592,7 @@ func LayarAkseptasi() []Unsur {
 		roJika(medan(CD+"InsuredName", "Insured Name", KTeks), isAnyAccept),
 		roJika(medan(CD+"PlaNoCeding", "Pla No Ceding", KTeks), isAnyAccept),
 		roJika(medan(CD+"PlaNoSOB", "Pla No SOB", KTeks), isAnyAccept),
-		naJika(medan(CD+"PeriodPolicyTBA", "Checkbox", KCentang), isAnyAccept),
+		naJika(medan(CD+"PeriodPolicyTBA", "Policy Period TBA ?", KCentang), isAnyAccept),
 		aksi(roJika(medan(CD+"PolicyData.StartDateTime", "Policy Start", KTanggal), isAnyAccept), "SetEndDate"),
 		aksi(roJika(medan(CD+"PolicyData.EndDateTime", "Policy End", KTanggal), isAnyAccept), "CheckPeriodPolicy"),
 		dua(

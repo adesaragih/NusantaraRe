@@ -96,6 +96,11 @@ export function dariInputWaktu(v: string): string {
   return s.length === 16 ? `${s}:00` : s
 }
 
+/** Nomor telepon: hanya angka (keputusan work owner 08-10-2026); nol di depan dipertahankan. */
+export function hanyaAngka(v: string): string {
+  return v.replace(/\D/g, '')
+}
+
 /** Tampilan angka: ribuan bertitik koma (en-US), presisi apa adanya (teks, tidak lewat float). */
 export function tampilAngka(v: string): string {
   if (!/^-?\d+(\.\d+)?$/.test(v)) return v

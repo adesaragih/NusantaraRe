@@ -35,6 +35,8 @@ type PermintaanAksi struct {
 	Tahap string `json:"tahap"`
 	// Masukan - nilai medan terbuka layar (jalur -> teks).
 	Masukan map[string]string `json:"masukan"`
+	// Mode - penanda mode layar terakhir (`Layar.Mode`, models.ModeLayar) yang dikembalikan layar.
+	Mode map[string]string `json:"mode,omitempty"`
 }
 
 // jalanAksi - konteks satu aksi untuk penanganannya.
@@ -116,6 +118,7 @@ func (l *Layanan) Aksi(ctx context.Context, p inti.Pelaku, id string, r Perminta
 			return err
 		}
 		h.Setel("pyID", kasus.ID)
+		models.PasangMode(h, r.Mode)
 		kt, err := l.konteks(ctx, p, l.jam())
 		if err != nil {
 			return err
@@ -182,7 +185,7 @@ func (l *Layanan) Aksi(ctx context.Context, p inti.Pelaku, id string, r Perminta
 			return err
 		}
 		h2.Pesan = pesan
-		for _, x := range []string{"Protect.CARI1", "Protect.CARI2", "ParamInput.CARI1", "IsError"} {
+		for _, x := range append([]string{"Protect.CARI1", "Protect.CARI2", "ParamInput.CARI1", "IsError"}, models.ModeLayar...) {
 			if v := h.Ambil(x); v != "" {
 				h2.Setel(x, v)
 			}

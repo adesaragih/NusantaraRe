@@ -11,8 +11,9 @@
 
 import { Fragment, useState, type ReactNode } from 'react'
 
+import { PilihSaring } from '../../../../inti/frontend/components/ui/pilihSaring'
 import type { Halaman, Pilihan, Tata } from '../api'
-import { ambil, dariInputWaktu, jalurBaris, keInputWaktu, tampilAngka } from '../nilai'
+import { ambil, dariInputWaktu, hanyaAngka, jalurBaris, keInputWaktu, tampilAngka } from '../nilai'
 import { jumlahHalaman, potongHalaman, ratakan, susunIsi, susunLayar, type Butir } from './susun'
 
 export interface KonteksTata {
@@ -153,6 +154,19 @@ function Medan({
           onBlur={(e) => t.aksi && ganti(e.target.value.replace(/,/g, ''), true)}
         />
       )
+    case 'telepon':
+      return (
+        <input
+          id={id}
+          type="tel"
+          inputMode="numeric"
+          className={kelas}
+          value={v}
+          disabled={k.sibuk}
+          onChange={(e) => k.ubah(jalur, hanyaAngka(e.target.value))}
+          onBlur={(e) => t.aksi && ganti(hanyaAngka(e.target.value), true)}
+        />
+      )
     case 'tanggal':
       return (
         <input
@@ -202,6 +216,26 @@ function Medan({
       )
     }
     case 'otomatis': {
+      // Dropdown yang dapat dicari (keputusan work owner 08-10-2026: Consultant ID / Adjuster ID "model dropdown yang
+      // bisa di search"): PilihSaring inti, saringan ke server lewat `saran`; nilai berubah hanya saat butir dipilih.
+      if (!sel) {
+        return (
+          <span className="claimprop__saring">
+            <PilihSaring
+              label=""
+              value={v}
+              teksTerpilih={v}
+              opsi={opsi().map((o) => ({
+                value: o.nilai,
+                label: o.nilai,
+                keterangan: o.label !== o.nilai ? o.label : undefined,
+              }))}
+              onCari={(kata) => k.saran?.(t.sumber ?? '', n, kata)}
+              onPilih={(o) => ganti(o.value, true)}
+            />
+          </span>
+        )
+      }
       const idDaftar = `${idMedan(jalur)}-saran`
       return (
         <>

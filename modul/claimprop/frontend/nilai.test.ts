@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Halaman, Tata } from './api'
-import { ambil, dariInputWaktu, jalurTerbuka, keInputWaktu, masukan, pecahJalur, setel, tampilAngka } from './nilai'
+import {
+  ambil,
+  dariInputWaktu,
+  hanyaAngka,
+  jalurTerbuka,
+  keInputWaktu,
+  masukan,
+  pecahJalur,
+  setel,
+  tampilAngka,
+} from './nilai'
 
 const h: Halaman = {
   nilai: { 'ClaimData.ReporterName': 'UJI-PELAPOR', 'ClaimData.NoClaim': 'UJI-K1' },
@@ -52,5 +62,13 @@ describe('nilai layar Claim Prop', () => {
     expect(tampilAngka('1234567.0123456789')).toBe('1,234,567.0123456789')
     expect(tampilAngka('-1000')).toBe('-1,000')
     expect(tampilAngka('abc')).toBe('abc')
+  })
+})
+
+describe('nomor telepon (work owner 08-10-2026: tidak boleh diisi huruf)', () => {
+  it('hanya angka yang tersisa; nol di depan dipertahankan', () => {
+    expect(hanyaAngka('021-5797 81ab00')).toBe('021579781' + '00')
+    expect(hanyaAngka('abc')).toBe('')
+    expect(hanyaAngka('0812')).toBe('0812')
   })
 })

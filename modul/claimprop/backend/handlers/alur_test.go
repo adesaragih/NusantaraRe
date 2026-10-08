@@ -419,3 +419,37 @@ func TestBerkasPolisUntukView(t *testing.T) {
 		t.Fatalf("nomor kosong: HTTP %d, mau 400", kode)
 	}
 }
+
+// Catastrophe (Catastrope_Sec): ikon Edit membuka radio, pilihan menjalankan SetDefNonCatastrope, ikon Save menutup.
+// EditCatastrope = penanda MODE layar (tanpa kolom di tabel datar): server mengirimnya di `mode`, layar
+// mengembalikannya di setiap aksi (temuan work owner 08-10-2026 "Catastrophe tidak berfungsi").
+func TestKatastrofeEditPilihSimpan(t *testing.T) {
+	u := baruUji(t)
+	id := u.buat()
+	var mode map[string]string
+	langkah := func(aksi string, masukan map[string]string) map[string]any {
+		t.Helper()
+		kode, out := u.minta(http.MethodPost, handlers.Prefix+"/kasus/"+id+"/aksi", admin, "",
+			services.PermintaanAksi{Aksi: aksi, Masukan: masukan, Mode: mode})
+		u.wajib(kode, http.StatusOK, out, aksi)
+		mode = map[string]string{}
+		if m, ok := out["mode"].(map[string]any); ok {
+			for k, v := range m {
+				mode[k] = v.(string)
+			}
+		}
+		return out["halaman"].(map[string]any)["nilai"].(map[string]any)
+	}
+	h := langkah("SetEditCatastrope:Edit", nil)
+	if h[models.CD+"EditCatastrope"] != "true" || mode[models.CD+"EditCatastrope"] != "true" {
+		t.Fatalf("sesudah Edit: nilai=%v mode=%v", h[models.CD+"EditCatastrope"], mode)
+	}
+	h = langkah("SetDefNonCatastrope", map[string]string{models.CD + "StsKatastrofe": "Non-Catastrophe"})
+	if h[models.CD+"StsKatastrofe"] != "Non-Catastrophe" || h[models.CD+"NonKatastrofeType"] != models.NilaiNonKatastrofeKlaim {
+		t.Fatalf("sesudah pilih: Sts=%v Non=%v", h[models.CD+"StsKatastrofe"], h[models.CD+"NonKatastrofeType"])
+	}
+	h = langkah("SetEditCatastrope:Save", nil)
+	if h[models.CD+"EditCatastrope"] == "true" || h[models.CD+"StsKatastrofe"] != "Non-Catastrophe" {
+		t.Fatalf("sesudah Save: Edit=%v Sts=%v", h[models.CD+"EditCatastrope"], h[models.CD+"StsKatastrofe"])
+	}
+}
