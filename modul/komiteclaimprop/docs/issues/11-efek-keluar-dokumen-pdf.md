@@ -1,6 +1,11 @@
 # 11: Efek keluar — dokumen PDF akseptasi
 
-**Status:** ready-for-agent
+**Status:** dibangun SEBAGIAN — berkas PDF = OQ *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+
+> **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
+>
+> - `IsPrintAccept := 1` ditulis; berkas PDF tidak dikarang: stream `FILEAcceptanceNote` tidak diekspor (OQ, sama dengan Claim Prop). AC 85-86 (pengenal berkas nanodetik + UUID, jenis berkas diterima) ditempel di sini, menunggu unggahan PDF.
+
 
 **Blocked by:** **08 (nomor akseptasi)**
 

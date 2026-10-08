@@ -1,0 +1,312 @@
+package handlers_test
+
+// Uji seam HTTP Komite Claim Prop (handlers -> services -> tiruan + kontrak palsu Claim Prop). Lima skenario wajib
+// prompt §9: setuju -> setuju (nomor terbit), subjectivity di tingkat 1, tolak di tingkat 1, penyetuju bukan pemilik
+// ditolak, kasus tertutup -> 409.
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"nusantarare/modul/komiteclaimprop/backend/handlers"
+	"nusantarare/modul/komiteclaimprop/backend/models"
+	"nusantarare/modul/komiteclaimprop/backend/services"
+	"nusantarare/modul/komiteclaimprop/backend/tiruan"
+)
+
+type uji struct {
+	t   *testing.T
+	g   *tiruan.Gudang
+	a   *tiruan.Acuan
+	srv http.Handler
+}
+
+func siap(t *testing.T, n int, produksi bool) *uji {
+	t.Helper()
+	g, a := tiruan.Baru(), tiruan.AcuanBaru()
+	tiruan.SiapkanUji(g, a, tiruan.KomiteUji, tiruan.AdjUji, n)
+	l := services.Baru(g, a, g.Klaim, func() time.Time { return tiruan.SaatUji }, produksi).
+		DenganKasir(models.KonfigurasiKasir{CompanyName: "UJI-CO", LjtdID: "UJI-LJTD", LdcID: "UJI-LDC"})
+	return &uji{t: t, g: g, a: a, srv: handlers.Router(l, true)}
+}
+
+func (u *uji) minta(metode, jalur, pelaku string, badan any) *httptest.ResponseRecorder {
+	u.t.Helper()
+	var b []byte
+	if badan != nil {
+		b, _ = json.Marshal(badan)
+	}
+	r := httptest.NewRequest(metode, handlers.Prefix+jalur, bytes.NewReader(b))
+	r.Header.Set("X-Pelaku", pelaku)
+	w := httptest.NewRecorder()
+	u.srv.ServeHTTP(w, r)
+	return w
+}
+
+func (u *uji) putus(pelaku string, kep models.Keputusan, mau int) services.HasilKeputusan {
+	u.t.Helper()
+	w := u.minta("POST", "/kasus/"+tiruan.KomiteUji+"/putuskan", pelaku, kep)
+	if w.Code != mau {
+		u.t.Fatalf("putuskan %s: %d (mau %d) %s", pelaku, w.Code, mau, w.Body.String())
+	}
+	var h services.HasilKeputusan
+	_ = json.Unmarshal(w.Body.Bytes(), &h)
+	return h
+}
+
+func (u *uji) adj() map[string]string {
+	for _, b := range u.g.Klaim.Daftar(tiruan.KlaimUji, "ClaimData.AdjustmentList") {
+		if b["ID"] == tiruan.AdjUji {
+			return b
+		}
+	}
+	u.t.Fatal("baris adjustment uji hilang")
+	return nil
+}
+
+func (u *uji) daftarKerja(pelaku string) []models.BarisKerja {
+	u.t.Helper()
+	w := u.minta("GET", "/kasus", pelaku, nil)
+	if w.Code != http.StatusOK {
+		u.t.Fatalf("daftar kerja %s: %d %s", pelaku, w.Code, w.Body.String())
+	}
+	var out []models.BarisKerja
+	if err := json.Unmarshal(w.Body.Bytes(), &out); err != nil {
+		u.t.Fatal(err)
+	}
+	return out
+}
+
+func setuju(komentar string) models.Keputusan {
+	return models.Keputusan{AcceptStatus: models.KeputusanSetuju, Comment: komentar}
+}
+
+// Skenario 1 - setuju -> setuju: tingkat akhir menerbitkan nomor akseptasi sekali, menulis klaim induk lewat kontrak,
+// OS / JSON / log / riwayat, lalu kasus selesai.
+func TestSetujuLaluSetujuNomorTerbit(t *testing.T) {
+	u := siap(t, 2, false)
+	if d := u.daftarKerja(tiruan.PenyetujuUji(1)); len(d) != 1 || d[0].KasusID != tiruan.KomiteUji || d[0].Tingkat != 1 {
+		t.Fatalf("daftar kerja UJI-K1: %+v", d)
+	}
+	if d := u.daftarKerja(tiruan.PenyetujuUji(2)); len(d) != 0 {
+		t.Fatalf("tingkat 2 belum boleh melihat kasus: %+v", d)
+	}
+	h := u.putus(tiruan.PenyetujuUji(1), setuju("UJI setuju satu"), http.StatusOK)
+	if h.Selesai || h.KomiteCount != 2 || h.AcceptedNo != "" {
+		t.Fatalf("tingkat 1: %+v", h)
+	}
+	if d := u.daftarKerja(tiruan.PenyetujuUji(2)); len(d) != 1 || d[0].Tingkat != 2 {
+		t.Fatalf("giliran pindah ke UJI-K2: %+v", d)
+	}
+	if len(u.g.OS) != 0 || u.adj()["AcceptedNo"] != "" {
+		t.Fatal("bukan tingkat akhir: nol OS, nol nomor")
+	}
+	h = u.putus(tiruan.PenyetujuUji(2), setuju("UJI setuju dua"), http.StatusOK)
+	if !h.Selesai || h.KomiteCount != 3 {
+		t.Fatalf("tingkat akhir: %+v", h)
+	}
+	if h.AcceptedNo != "UJIA12.10.2026.TP00001" {
+		t.Fatalf("nomor akseptasi %q", h.AcceptedNo)
+	}
+	b := u.adj()
+	if b["AcceptedNo"] != h.AcceptedNo || b["AcceptanceStatus"] != "1" || b["IsApproved"] != "1" ||
+		b["Notes"] != "UJI setuju dua" || b["IsPrintAccept"] != "1" || b["IsFacRetro"] != "1" {
+		t.Fatalf("adjustment induk: %+v", b)
+	}
+	n := u.g.Klaim.Nilai(tiruan.KlaimUji)
+	if n["IsAnyAcceptation"] != "1" || n["AktifButton"] != "0" || n["IsOutstanding"] != "1" ||
+		n["ClaimData.IsCloseFile"] != "false" {
+		t.Fatalf("header induk: %+v", n)
+	}
+	if len(u.g.OS) != 1 || u.g.OS[0].AcceptedNo != h.AcceptedNo || u.g.OS[0].StsReject != "1" ||
+		u.g.OS[0].CaseID != tiruan.KlaimUji {
+		t.Fatalf("OS_AKSEPTASI_KLAIM: %+v", u.g.OS)
+	}
+	if dj := u.g.OS[0].DataJSON; !json.Valid([]byte(dj)) || !strings.Contains(dj, `"KomiteNo":"TKMT-UJI001"`) ||
+		!strings.Contains(dj, `"AcceptedNo":"`+h.AcceptedNo+`"`) {
+		t.Fatalf("DATA_JSON OS (halaman TempOSAkseptasi): %q", dj)
+	}
+	if _, ada := u.g.JSONKlaim[tiruan.KlaimUji]; !ada || len(u.g.Log) != 1 || u.g.Log[0].JenisService != "AKSEPTASI" ||
+		u.g.Log[0].NoAkseptasi != h.AcceptedNo { // S30 Param.NoAkseptasi = OutputData.START_DATE (S16.8)
+		t.Fatalf("JSON_KLAIM / log: %+v %+v", u.g.JSONKlaim, u.g.Log)
+	}
+	if len(u.g.Riwayat) != 2 || u.g.Riwayat[0].Status != "ACCEPT" || u.g.Riwayat[0].Username != "UJI Penyetuju Satu" ||
+		u.g.Riwayat[1].IDKomite != tiruan.KomiteUji {
+		t.Fatalf("HISTORYAKSEPTASIPEGA: %+v", u.g.Riwayat)
+	}
+	riw := u.g.Klaim.Daftar(tiruan.KlaimUji, "ClaimData.SuggestList")
+	if len(riw) != 2 || riw[1]["CommentSuggest"] != "Accepted by UJI-JABATAN-2" {
+		t.Fatalf("riwayat klaim: %+v", riw)
+	}
+	if retro := u.g.Klaim.Daftar(tiruan.KlaimUji, "ClaimData.FacRetroList"); len(retro) != 1 ||
+		retro[0]["ReinsurerID"] != "UJI-R1" {
+		t.Fatalf("FacRetroList: %+v", retro)
+	}
+	if k := u.g.Kasus[tiruan.KomiteUji]; k.StatusWork != models.StatusSelesai || k.AcceptStatus != "1" {
+		t.Fatalf("kasus komite: %+v", k)
+	}
+	if len(u.g.Efek) != 0 {
+		t.Fatalf("di luar produksi nol efek keluar: %v", u.g.Efek)
+	}
+	if d := u.daftarKerja(tiruan.PenyetujuUji(2)); len(d) != 0 {
+		t.Fatalf("kasus selesai keluar dari daftar kerja: %+v", d)
+	}
+}
+
+// Skenario 2 - subjectivity di tingkat 1: tangga satu tingkat menyetujui bersyarat (tanpa nomor, tanpa OS, IsKomite
+// 0); tangga dua tingkat ditolak validasi selama OQ-KCP-01 terbuka.
+func TestSubjectivityTingkatSatu(t *testing.T) {
+	u := siap(t, 2, false)
+	kep := models.Keputusan{AcceptStatus: "1", Comment: "UJI", IsSubjectivity: true, SubjectivityNote: "UJI syarat"}
+	w := u.minta("POST", "/kasus/"+tiruan.KomiteUji+"/putuskan", tiruan.PenyetujuUji(1), kep)
+	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), "OQ-KCP-01") {
+		t.Fatalf("subjectivity bertingkat: %d %s", w.Code, w.Body.String())
+	}
+	u = siap(t, 1, false)
+	h := u.putus(tiruan.PenyetujuUji(1), kep, http.StatusOK)
+	if !h.Selesai || h.AcceptedNo != "" {
+		t.Fatalf("subjectivity: %+v", h)
+	}
+	b := u.adj()
+	if b["IsSubjectivity"] != "true" || b["SubjectivityNote"] != "UJI syarat" || b["IsKomite"] != "0" ||
+		b["AcceptedNo"] != "" {
+		t.Fatalf("adjustment subjectivity: %+v", b)
+	}
+	if len(u.g.OS) != 0 || u.g.Klaim.Nilai(tiruan.KlaimUji)["ClaimData.IsSubjectivity"] != "true" {
+		t.Fatal("subjectivity: nol OS, header IsSubjectivity true")
+	}
+	kep.SubjectivityNote = ""
+	u = siap(t, 1, false)
+	if w := u.minta("POST", "/kasus/"+tiruan.KomiteUji+"/putuskan", tiruan.PenyetujuUji(1), kep); w.Code !=
+		http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), "Subjectivity Note") {
+		t.Fatalf("catatan subjectivity wajib: %d %s", w.Code, w.Body.String())
+	}
+}
+
+// Skenario 3 - tolak di tingkat 1: tangga berhenti, sisa penyetuju ditolak otomatis, adjustment ditolak.
+func TestTolakTingkatSatu(t *testing.T) {
+	u := siap(t, 2, false)
+	h := u.putus(tiruan.PenyetujuUji(1), models.Keputusan{AcceptStatus: "2", Comment: "UJI tolak",
+		UsulTutup: true}, http.StatusOK)
+	if !h.Selesai || h.AcceptedNo != "" || h.KomiteCount != 3 {
+		t.Fatalf("tolak: %+v", h)
+	}
+	t2 := u.g.Tangga[tiruan.KomiteUji]
+	if t2[0].Keputusan != "2" || t2[0].Komentar != "UJI tolak" || t2[1].Keputusan != "2" || t2[1].Komentar != "" ||
+		t2[1].Tanggal == "" {
+		t.Fatalf("tangga sesudah tolak: %+v", t2)
+	}
+	b := u.adj()
+	if b["AcceptanceStatus"] != "2" || b["Notes"] != "UJI tolak" || b["AcceptedNo"] != "" {
+		t.Fatalf("adjustment ditolak: %+v", b)
+	}
+	n := u.g.Klaim.Nilai(tiruan.KlaimUji)
+	if n["AktifButton"] != "0" || n["ClaimData.IsCloseFile"] != "true" || n["IsAnyAcceptation"] == "1" {
+		t.Fatalf("header ditolak: %+v", n)
+	}
+	if len(u.g.Riwayat) != 1 || u.g.Riwayat[0].Status != "REJECT" || len(u.g.OS) != 0 {
+		t.Fatalf("riwayat tolak: %+v OS %d", u.g.Riwayat, len(u.g.OS))
+	}
+	if k := u.g.Kasus[tiruan.KomiteUji]; k.UsulTutup != "1" || k.StatusWork != models.StatusSelesai {
+		t.Fatalf("kepala kasus: %+v", k)
+	}
+}
+
+// Skenario 4 - penyetuju bukan pemilik tingkat berjalan ditolak (403) tanpa satu tulisan pun.
+func TestBukanPemilikDitolak(t *testing.T) {
+	u := siap(t, 2, false)
+	u.putus(tiruan.PenyetujuUji(2), setuju("UJI"), http.StatusForbidden)
+	u.putus("UJI-LAIN", setuju("UJI"), http.StatusForbidden)
+	if k := u.g.Kasus[tiruan.KomiteUji]; k.Count != 1 || u.g.Tangga[tiruan.KomiteUji][0].Keputusan != "0" ||
+		len(u.g.Riwayat) != 0 {
+		t.Fatalf("nol tulisan: %+v", k)
+	}
+	if w := u.minta("POST", "/kasus/"+tiruan.KomiteUji+"/putuskan", "", setuju("UJI")); w.Code != http.StatusUnauthorized {
+		t.Fatalf("tanpa identitas: %d", w.Code)
+	}
+}
+
+// Skenario 5 - kasus tertutup -> 409 (juga bila klaim induknya yang tertutup).
+func TestKasusTertutup409(t *testing.T) {
+	u := siap(t, 1, false)
+	u.putus(tiruan.PenyetujuUji(1), setuju("UJI"), http.StatusOK)
+	u.putus(tiruan.PenyetujuUji(1), setuju("UJI"), http.StatusConflict)
+	u = siap(t, 2, false)
+	u.g.Klaim.Tutup(tiruan.KlaimUji)
+	u.putus(tiruan.PenyetujuUji(1), setuju("UJI"), http.StatusConflict)
+	if u.g.Tangga[tiruan.KomiteUji][0].Keputusan != "0" {
+		t.Fatal("transaksi batal utuh")
+	}
+}
+
+func TestValidasiDanBukaKasus(t *testing.T) {
+	u := siap(t, 2, false)
+	if w := u.minta("POST", "/kasus/"+tiruan.KomiteUji+"/putuskan", tiruan.PenyetujuUji(1),
+		models.Keputusan{AcceptStatus: "1"}); w.Code != http.StatusUnprocessableEntity ||
+		!strings.Contains(w.Body.String(), "Note: Value cannot be blank") {
+		t.Fatalf("Note wajib: %d %s", w.Code, w.Body.String())
+	}
+	if w := u.minta("GET", "/kasus/TKMT-TIDAKADA", tiruan.PenyetujuUji(1), nil); w.Code != http.StatusNotFound {
+		t.Fatalf("kasus tak dikenal: %d", w.Code)
+	}
+	if w := u.minta("GET", "/kasus/CLMP-UJI001", tiruan.PenyetujuUji(1), nil); w.Code != http.StatusNotFound {
+		t.Fatalf("bukan TKMT-: %d", w.Code)
+	}
+	w := u.minta("GET", "/kasus/"+tiruan.KomiteUji, tiruan.PenyetujuUji(1), nil)
+	if w.Code != http.StatusOK {
+		t.Fatalf("buka kasus: %d %s", w.Code, w.Body.String())
+	}
+	var ly models.Layar
+	if err := json.Unmarshal(w.Body.Bytes(), &ly); err != nil {
+		t.Fatal(err)
+	}
+	if !ly.BolehKerja || ly.Judul[0] != "CLAIM COMMITTEE -" || ly.Judul[1] != "ADJUSTMENT" || !ly.Isian.Terbuka {
+		t.Fatalf("layar: %+v", ly)
+	}
+	if !strings.Contains(w.Body.String(), `"Committe Accept Status"`) ||
+		!strings.Contains(w.Body.String(), `"Total in IDR"`) || !strings.Contains(w.Body.String(), `"Dedutible Type"`) {
+		t.Fatal("layar memuat grid tangga, total per mata uang, dan blok deductible (VERBATIM)")
+	}
+	w = u.minta("GET", "/kasus/"+tiruan.KomiteUji, tiruan.PenyetujuUji(2), nil)
+	_ = json.Unmarshal(w.Body.Bytes(), &ly)
+	for _, tb := range ly.Tombol {
+		if tb.Label == "Submit" && tb.Aktif {
+			t.Fatal("Submit nonaktif bagi bukan pemegang")
+		}
+		if tb.Label == "View more details" && tb.Aktif {
+			t.Fatal("View more details nonaktif (harness tidak diekspor)")
+		}
+	}
+}
+
+// Produksi: konversi, Kasir (DirectToKasir), dan email diantre di transaksi yang sama.
+func TestEfekKeluarDiProduksi(t *testing.T) {
+	u := siap(t, 1, true)
+	nilai := u.g.Klaim.Nilai(tiruan.KlaimUji)
+	daftar := map[string][]map[string]string{}
+	for _, j := range []string{"ClaimData.AdjustmentList", "ClaimData.AdjustmentList(2).SpreadingAdjustment"} {
+		daftar[j] = u.g.Klaim.Daftar(tiruan.KlaimUji, j)
+	}
+	daftar["ClaimData.AdjustmentList"][1]["DirectToKasir"] = "true"
+	daftar["ClaimData.AdjustmentList"][1]["NameOfBank"] = "UJI BANK"
+	u.g.Klaim.Setel(tiruan.KlaimUji, nilai, daftar)
+	u.a.Bank["UJI BANK||"] = "UJI-BANK-1"
+	u.a.Email["UJI-CED"] = "uji@contoh.invalid"
+	u.g.KodeProduksi = "UJIX" // S14.1: @length(AcceptedNo) 23 / 24
+	h := u.putus(tiruan.PenyetujuUji(1), setuju("UJI"), http.StatusOK)
+	jenis := map[string]bool{}
+	for _, e := range u.g.Efek {
+		jenis[strings.SplitN(e, ":", 2)[0]] = true
+	}
+	if !jenis[services.JenisEfekKonversi] || !jenis[services.JenisEfekKasir] || !jenis[services.JenisEfekEmailKomite] {
+		t.Fatalf("efek produksi: %v", u.g.Efek)
+	}
+	if u.adj()["IDOfBank"] != "UJI-BANK-1" || len(h.AcceptedNo) != 23 {
+		t.Fatalf("IDOfBank S12-S13: %+v", u.adj())
+	}
+}

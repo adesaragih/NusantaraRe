@@ -1,6 +1,11 @@
 # 13: Migrasi data lama
 
-**Status:** ready-for-agent
+**Status:** alat sensus uji-kering dibangun; `-jalankan` ditolak (OQ tangga lama) *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+
+> **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
+>
+> - Sensus DEV 08-10-2026: 2.451 kasus CLMP lama, 419 ditunda pemuat Claim Prop (baris berlaku STS_REJECT 1): 2 punya work object KomiteTreaty ber-BLOB di DATAPEGA, 316 hanya riwayat akseptasi (tanpa tingkat / jabatan / operator), 101 tanpa jejak komite. Tangga tidak dikarang; AC 83 (seluruh data dipindahkan) ditempel di sini dan menunggu sumber tangga (OQ pemilik ekspor Pega).
+
 
 **Blocked by:** **00 (skema — PREFACTOR)**
 

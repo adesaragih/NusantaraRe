@@ -868,15 +868,19 @@ yang §1 sebut sebagai sumbernya. Tiket 00 Komite kelak **memverifikasi**, bukan
 
 ⛔ **`ADJUSTMENT_ID` TANPA `REFERENCES`** — tabel ini **lintas-lini**, jadi satu kolom punya **dua**
 tabel tujuan menurut `T_WORK_CLAIM.LINI`. Oracle hanya dapat menunjuk satu; keutuhannya **dijaga
-kode Go**. `NOT NULL` dan ber-index **UNIK**: satu baris adjustment = tepat satu kasus komite.
+kode Go**. `NOT NULL` dan ber-index **biasa** (`IX_GENERAL_KOMITE_ADJ`, migrasi `komiteclaimprop/681`): satu baris adjustment = tepat satu kasus komite dijaga `KOMITE_ID` UNIK di tabel adjustment masing-masing lini.
+
+> **RALAT 08-10-2026** (izin work owner 08-10-2026, Komite Claim Prop). Kalimat lama: *"`NOT NULL` dan ber-index **UNIK**: satu baris adjustment = tepat satu kasus komite."* — ID adjustment Prop (`SEQ_T_CLAIM`) dan Life (`SEQ_CLAIMLF_ADJ`) sama-sama angka polos, sehingga indeks unik lintas lini suatu saat menolak penyerahan sah (ORA-00001); diganti indeks biasa. Dua kolom usul `KOMITE_USUL_TUTUP` / `KOMITE_USUL_CADANG` ditambahkan migrasi `komiteclaimprop/680` (`CHAR(1) DEFAULT '0' NOT NULL`, CHECK `'0'`/`'1'`); kasus Life tidak menulisnya (bawaan `'0'`).
 
 | Kolom | Tipe | Boleh kosong | Kunci | Catatan |
 | --- | --- | --- | --- | --- |
 | `ID` | teks | tidak | PK, FK | → `T_WORK_CLAIM.ID` *(shared PK)*, awalan `KMTLF-` |
-| `ADJUSTMENT_ID` | teks | tidak | index unik | LIFE → `T_CLAIMLF_ADJUSTMENT.ID`; **tanpa** `REFERENCES` |
+| `ADJUSTMENT_ID` | teks | tidak | index biasa | LIFE → `T_CLAIMLF_ADJUSTMENT.ID`; **tanpa** `REFERENCES` (RALAT 08-10-2026: dulu index unik) |
 | `KOMITE_LOOP` | angka bulat | ya | | tinggi tangga — `KomitePostAdjustment` 1322 |
 | `KOMITE_COUNT` | angka bulat | ya | | tingkat sekarang — 1398, 6172, 9028 |
 | `ACCEPT_STATUS` | teks | ya | | `"1"` aksep / `"2"` tolak — gerbang 5695, 8119, 8648, 8887 |
+| `KOMITE_USUL_TUTUP` | teks | tidak | | usul tutup klaim, `'1'`/`'0'` bawaan `'0'` — migrasi `komiteclaimprop/680` (RALAT 08-10-2026) |
+| `KOMITE_USUL_CADANG` | teks | tidak | | usul cadangkan klaim, `'1'`/`'0'` bawaan `'0'` — migrasi `komiteclaimprop/680` (RALAT 08-10-2026) |
 
 ---
 

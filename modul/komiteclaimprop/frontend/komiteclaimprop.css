@@ -1,0 +1,282 @@
+/* Gaya modul Komite Claim Prop - satu berkas milik modul; setiap pemilih di bawah akar `.komiteclaimprop`, kelas modul
+   berawalan `komiteclaimprop__`. Kulit SAMA dengan Claim Prop (kulit Kelola User: alas #eef1f6, isian timbul ke
+   dalam, tombol kapsul, tabel sebagai kartu timbul berkepala navy) - nilainya DISALIN ke token `--kcp-*` milik modul
+   ini, tidak menumpang ke kelas modul lain. Warna hanya di blok token akar. TANPA backdrop-filter, filter, atau
+   transform. */
+
+.komiteclaimprop {
+  display: contents;
+}
+
+/* --------------------------------------------------------------- kulit */
+
+.komiteclaimprop .komiteclaimprop__akar {
+  --kcp-latar-tepi: #cfd7e5;
+  --kcp-latar-atas: #f9fafd;
+  --kcp-latar-bawah: #e4e9f3;
+  --kcp-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --kcp-lembut: #e9edf3;
+  --kcp-lembut-tepi: #dde3ec;
+  --kcp-teks: #101828;
+  --kcp-teks-redup: #4f586b;
+  --kcp-aksen: var(--primary-tanda);
+  --kcp-aksen-teks: #2339a3;
+  --kcp-aksen-lembut: #e3e8f6;
+  --kcp-aksen-garis: #b9c5ee;
+  --kcp-kepala-tabel: #dde4f2;
+  --kcp-kepala-teks: #22326b;
+  --kcp-kepala-garis: #c3cde2;
+  --kcp-isi: #ffffff;
+  --kcp-baris-hover: #e6ecfa;
+  --kcp-garis: #e1e6ef;
+  --kcp-tepi: #c8d1e1;
+  --kcp-tombol: #d63a42;
+  --kcp-tombol-ujung: #bf2f37;
+  --kcp-tombol-hover: #c2333b;
+  --kcp-tombol-hover-ujung: #a9282f;
+  --kcp-terang: rgba(255, 255, 255, 0.92);
+  --kcp-gelap: rgba(163, 177, 198, 0.55);
+  --kcp-timbul: 8px 8px 18px var(--kcp-gelap), -8px -8px 18px var(--kcp-terang);
+  --kcp-timbul-kecil: 4px 4px 9px var(--kcp-gelap), -4px -4px 9px var(--kcp-terang);
+  --kcp-cekung-kecil: inset 2px 2px 4px var(--kcp-gelap), inset -2px -2px 4px var(--kcp-terang);
+  --kcp-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --kcp-tekan: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+  --kcp-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--kcp-terang);
+  --text-3: var(--kcp-teks-redup);
+  color: var(--kcp-teks);
+  padding: 24px;
+  overflow-x: auto;
+  border: 1px solid var(--kcp-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--kcp-latar-atas) 0%, var(--kcp-latar-bawah) 100%);
+  box-shadow: var(--kcp-bayang-akar);
+}
+
+:root[data-theme="dark"] .komiteclaimprop .komiteclaimprop__akar {
+  --kcp-latar-tepi: #323b50;
+  --kcp-latar-atas: #222a3b;
+  --kcp-latar-bawah: #161b27;
+  --kcp-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --kcp-lembut: #181d2a;
+  --kcp-lembut-tepi: #242b3a;
+  --kcp-teks: #eef0f6;
+  --kcp-teks-redup: #aab2c4;
+  --kcp-aksen-teks: #aebcff;
+  --kcp-aksen-lembut: #222b45;
+  --kcp-aksen-garis: #3a4b8f;
+  --kcp-kepala-tabel: #273152;
+  --kcp-kepala-teks: #dbe2ff;
+  --kcp-kepala-garis: #3a4670;
+  --kcp-isi: #1f2638;
+  --kcp-baris-hover: #2b3554;
+  --kcp-garis: #2c3447;
+  --kcp-tepi: #3a4459;
+  --kcp-terang: rgba(255, 255, 255, 0.045);
+  --kcp-gelap: rgba(0, 0, 0, 0.55);
+  --kcp-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --kcp-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--kcp-terang);
+}
+
+.komiteclaimprop .inbox__judul,
+.komiteclaimprop .panel__title {
+  color: var(--kcp-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.komiteclaimprop .muted {
+  color: var(--kcp-teks-redup);
+}
+
+.komiteclaimprop :focus-visible {
+  outline: 2px solid var(--kcp-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian. */
+.komiteclaimprop .field__input {
+  background: var(--kcp-isi);
+  border: 1px solid var(--kcp-tepi);
+  border-radius: 12px;
+  box-shadow: var(--kcp-cekung-kecil);
+  color: var(--kcp-teks);
+}
+
+.komiteclaimprop .field__input:focus {
+  border-color: var(--kcp-aksen);
+  box-shadow: var(--kcp-cekung-kecil), var(--kcp-cincin);
+  outline: none;
+}
+
+.komiteclaimprop .field__input--readonly {
+  background: var(--kcp-lembut);
+  border-color: var(--kcp-lembut-tepi);
+  color: var(--kcp-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul. */
+.komiteclaimprop .btn {
+  border-radius: 999px;
+}
+
+.komiteclaimprop .btn--primary {
+  background: linear-gradient(180deg, var(--kcp-tombol), var(--kcp-tombol-ujung));
+  border-color: var(--kcp-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--kcp-bayang-tombol);
+}
+
+.komiteclaimprop .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--kcp-tombol-hover), var(--kcp-tombol-hover-ujung));
+}
+
+.komiteclaimprop .btn--primary:active:not(:disabled) {
+  box-shadow: var(--kcp-tekan);
+}
+
+.komiteclaimprop .btn--ghost {
+  background: var(--kcp-isi);
+  border: 1px solid var(--kcp-tepi);
+  color: var(--kcp-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--kcp-timbul-kecil);
+}
+
+.komiteclaimprop .btn:disabled {
+  box-shadow: none;
+}
+
+.komiteclaimprop .alert {
+  border-radius: 12px;
+}
+
+/* Kartu bagian layar kasus. */
+.komiteclaimprop .komiteclaimprop__akar .panel {
+  margin-top: 16px;
+  padding: 16px 20px;
+  background: var(--kcp-isi);
+  border: 1px solid var(--kcp-tepi);
+  border-radius: 18px;
+  box-shadow: var(--kcp-timbul);
+}
+
+/* Tabel: kartu berkepala navy muda, zebra, sorot biru muda. */
+.komiteclaimprop .komiteclaimprop__tabel {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--kcp-isi);
+  border: 1px solid var(--kcp-tepi);
+  border-radius: 14px;
+}
+
+.komiteclaimprop .komiteclaimprop__tabel th {
+  padding: 6px 10px;
+  background: var(--kcp-kepala-tabel);
+  color: var(--kcp-kepala-teks);
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 1px solid var(--kcp-kepala-garis);
+}
+
+.komiteclaimprop .komiteclaimprop__tabel td {
+  padding: 6px 10px;
+  color: var(--kcp-teks);
+  border-bottom: 1px solid var(--kcp-garis);
+}
+
+.komiteclaimprop .komiteclaimprop__tabel tbody tr:nth-child(even) > td {
+  background: var(--kcp-lembut);
+}
+
+.komiteclaimprop .komiteclaimprop__tabel tbody tr:hover > td {
+  background: var(--kcp-baris-hover);
+}
+
+.komiteclaimprop .komiteclaimprop__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Judul "CLAIM COMMITTEE - ADJUSTMENT". */
+.komiteclaimprop .komiteclaimprop__judul {
+  display: flex;
+  gap: 8px;
+}
+
+/* Panel "Claim Treaty": dua kolom (Inline grid double), turun satu kolom di layar sempit. */
+.komiteclaimprop .komiteclaimprop__dua {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.komiteclaimprop .komiteclaimprop__medan {
+  display: grid;
+  gap: 8px;
+}
+
+.komiteclaimprop .komiteclaimprop__baris-medan {
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) 1fr;
+  align-items: start;
+  gap: 4px 12px;
+}
+
+.komiteclaimprop .komiteclaimprop__label {
+  padding-top: 6px;
+  color: var(--kcp-teks-redup);
+  font-weight: 600;
+}
+
+.komiteclaimprop .komiteclaimprop__nilai {
+  min-height: 32px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.komiteclaimprop .komiteclaimprop__panjang {
+  min-height: 56px;
+}
+
+.komiteclaimprop .komiteclaimprop__bagian {
+  display: grid;
+  gap: 12px;
+}
+
+.komiteclaimprop .komiteclaimprop__grid {
+  display: grid;
+  gap: 6px;
+}
+
+.komiteclaimprop .komiteclaimprop__subjudul {
+  margin: 0;
+  color: var(--kcp-kepala-teks);
+  font-weight: 600;
+}
+
+/* Isian keputusan. */
+.komiteclaimprop .komiteclaimprop__isian {
+  display: grid;
+  gap: 12px;
+}
+
+.komiteclaimprop .komiteclaimprop__centang {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.komiteclaimprop .komiteclaimprop__area {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.komiteclaimprop .komiteclaimprop__aksi {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}

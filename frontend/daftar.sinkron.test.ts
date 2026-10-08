@@ -78,7 +78,12 @@ describe('saringPalet', () => {
     // `KLAIM` bukan kata di label modulnya; ia golongannya.
     const hasil = saringPalet(DAFTAR, 'klaim')
     expect(hasil.map((h) => h.label).sort()).toEqual(
-      [FOLDER_KORPUS.claimLife, FOLDER_KORPUS.claimProp, FOLDER_KORPUS.komiteClaimLife].sort(),
+      [
+        FOLDER_KORPUS.claimLife,
+        FOLDER_KORPUS.claimProp,
+        FOLDER_KORPUS.komiteClaimLife,
+        FOLDER_KORPUS.komiteClaimProp,
+      ].sort(),
     )
   })
 

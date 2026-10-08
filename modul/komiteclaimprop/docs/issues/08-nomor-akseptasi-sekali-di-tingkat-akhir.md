@@ -1,6 +1,11 @@
 # 08: Nomor akseptasi — terbit sekali, di tingkat akhir
 
-**Status:** ready-for-agent
+**Status:** dibangun *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+
+> **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
+>
+> - Rujukan ke `GenerateNoAcceptTreaty` / `GENERATE_NOACCEPTTREATYIN` — hanya di S16.1-S16.4 yang **ter-remark**; yang hidup S16.5-S16.9 (`GetKodeProdNonLife_SQL` + `GetSequenceNumber_SQL`) lewat `inti/backend/penomor`. Tanggal NULL procedure = waktu Jakarta + hari tutup buku (sama dengan nomor PLA / DLA Claim Prop).
+
 
 **Blocked by:** **06 (tangga maju atau selesai)**
 

@@ -1,6 +1,13 @@
 # 03: Layar komite — 93 kolom, tiga wajah menurut jalur
 
-**Status:** ready-for-agent
+**Status:** dibangun — wajah TT 2 saja *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+
+> **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
+>
+> - *Tiga wajah* — TT 2 (ADJUSTMENT) dibangun; TT 3 (REJECT) tanpa penulis di Claim Prop (dilaporkan, tak terjangkau); TT 4 (CLOSE) ditunda **OQ-CP-06** (keputusan work owner 08-10-2026).
+> - Tombol "View more details" tampil **nonaktif** (harness `ViewClaimFormKomite` tidak diekspor). Butir terbuka 9 (pintu masuk `ViewDetailInterest`) tetap.
+> - AC 84 (wewenang hapus kronologi) ditempel di sini: aksi itu tidak ada di Section `ShowTransfer` wajah TT 2 — nol tombol dibangun.
+
 
 **Blocked by:** **01 (kasus komite lahir)**
 

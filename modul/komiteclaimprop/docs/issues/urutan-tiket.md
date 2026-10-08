@@ -28,6 +28,13 @@ Sumber: `spec.md` dan `STRUKTUR-TABEL-KOMITE-CLAIM-PROP.md`.
 
 ---
 
+> **RALAT 08-10-2026** (prompt §7 butir 1, 3, 4). Kalimat lama baris 00 *"tiga tabel + dua kolom usul"* — ketiga
+> tabel sudah ada; tiket 00 = ADD dua kolom usul + ganti indeks. Kalimat lama baris 01 *"kasus komite lahir"* /
+> *"kontrak muatan Claim Prop"* — kasus dilahirkan Claim Prop (opsi B 07-10-2026); batas modul = kontrak baru
+> `kontrak.KlaimTreatyKomite` (keputusan work owner 08-10-2026). Kalimat lama bab Pengujian *"seam memakai ulang milik
+> Claim Prop, tidak menambah seam baru"* — seam uji tetap milik Claim Prop; kontrak adalah batas modul, bukan seam
+> uji. Status nyata setiap tiket ada di kepala berkas tiketnya dan di `docs/PARITAS.md`.
+
 ## Urutan pengerjaan
 
 ```
