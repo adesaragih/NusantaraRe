@@ -18,10 +18,16 @@ const JEDA_CARI_MS = 300
 export default function ClaimProp({
   pelaku,
   onLihatBerkas,
+  bukaKasus,
+  onBeranda,
 }: {
   pelaku: string
   /** `PropsRute.onLihatBerkas` - tombol View polis. */
   onLihatBerkas?: (modul: string, id: string) => boolean
+  /** `PropsRute.bukaKasus` - satu berkas dibuka langsung (View more details Komite Claim Prop, 08-10-2026). */
+  bukaKasus?: { id: string; ketuk: number }
+  /** `PropsRute.onBeranda` - Back berkas yang dibuka lewat `bukaKasus` kembali ke pemanggil. */
+  onBeranda?: () => void
 }) {
   const [tab, setTab] = useState<TabInbox>('proses')
   const [teknik, setTeknik] = useState(false)
@@ -32,6 +38,17 @@ export default function ClaimProp({
   const [galat, setGalat] = useState<unknown>(null)
   const [buka, setBuka] = useState<string | null>(null)
   const [segar, setSegar] = useState(0)
+  // Berkas dibuka lewat `bukaKasus`: Back kembali ke pemanggil (`onBeranda`), bukan ke daftar.
+  const [dariLuar, setDariLuar] = useState(false)
+
+  const ketukBuka = bukaKasus?.ketuk
+  const idBuka = bukaKasus?.id
+  useEffect(() => {
+    if (ketukBuka !== undefined && idBuka !== undefined) {
+      setBuka(idBuka)
+      setDariLuar(true)
+    }
+  }, [ketukBuka, idBuka])
 
   useEffect(() => {
     const t = setTimeout(() => setCari(kata), JEDA_CARI_MS)
@@ -81,6 +98,10 @@ export default function ClaimProp({
         onKembali={() => {
           setBuka(null)
           setSegar((s) => s + 1)
+          if (dariLuar) {
+            setDariLuar(false)
+            onBeranda?.()
+          }
         }}
       />
     )
