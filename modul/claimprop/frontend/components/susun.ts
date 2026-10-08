@@ -4,8 +4,8 @@
 //     berletak (`dua`, `sebaris`, `tab`, `judul` - format layout di XML) dipertahankan;
 //   - label tepat sebelum medan tanpa label menjadi label medan itu (`Q`, `/`, `U/Y`, `IDR`);
 //   - label satuan ("%") tepat sesudah medan menjadi satuan medan itu;
-//   - tombol sesudah medan menempel di kanan nilainya (Choose Cause of Loss, ikon), kecuali tombol berlabel di akhir
-//     isi - itu baris aksi;
+//   - tombol sesudah medan menempel di kanan nilainya (Choose Cause of Loss, ikon), kecuali tombol berlabel TANPA ikon
+//     di akhir isi - itu baris aksi;
 //   - tingkat layar: `judul` = kepala tengah, label judul membuka kartu, bagian berlabel menjadi kartu sendiri (bagian
 //     kecil tanpa grid di tengah kartu yang terbuka tetap di kartu itu), grup `tab` = kartu sendiri dan membawa baris
 //     `sebaris` tepat di atasnya (RNM Share), tombol tanpa kartu = baris aksi.
@@ -71,7 +71,8 @@ export function susunIsi(tata: readonly Tata[]): Unsur[] {
         return
       case 'tombol': {
         const sisaTombol = b.slice(i).every((x) => x.jenis === 'tombol')
-        if (akhir?.jenis === 'medan' && (!t.label || !sisaTombol)) akhir.tombol.push(t)
+        // tombol ikon (Add di samping Consultant ID / Adjuster ID) selalu menempel walau berlabel dan di akhir isi
+        if (akhir?.jenis === 'medan' && (!t.label || t.ikon || !sisaTombol)) akhir.tombol.push(t)
         else if (akhir?.jenis === 'tombol') akhir.tombol.push(t)
         else out.push({ jenis: 'tombol', tombol: [t], akhir: false })
         return

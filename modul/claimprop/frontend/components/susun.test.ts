@@ -42,6 +42,17 @@ describe('susunIsi - isi satu kartu', () => {
     expect(u[1]).toMatchObject({ jenis: 'medan', tombol: [{ id: 'Ikon' }] })
   })
 
+  // work owner 08-10-2026 ("masa add nya begitu"): ikon Add berlabel di samping Consultant ID / Adjuster ID jatuh ke
+  // baris sendiri saat Consultant Name / Adjuster Name tersembunyi - ikon tetap menempel walau berlabel dan di akhir.
+  it('tombol ikon berlabel di akhir isi tetap menempel ke medan sebelumnya', () => {
+    const u = susunIsi([
+      medan('ConsultantID', 'Consultant ID'),
+      { ...tombol('AdjusterConsultantBaru1', 'Add'), ikon: 'tambah' },
+    ])
+    expect(u).toHaveLength(1)
+    expect(u[0]).toMatchObject({ jenis: 'medan', tombol: [{ id: 'AdjusterConsultantBaru1' }] })
+  })
+
   it('tombol di awal = baris alat; tombol berlabel di akhir = baris aksi, tidak menempel', () => {
     const u = susunIsi([tombol('ChooseMaster'), medan('IDMaster', 'Treaty ID'), tombol('Save'), tombol('PrintPLA')])
     expect(u.map((x) => x.jenis)).toEqual(['tombol', 'medan', 'tombol'])
