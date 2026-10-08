@@ -13,6 +13,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -173,4 +174,35 @@ func (g *Gudang) DaftarKerja(ctx context.Context, akun string) ([]models.BarisKe
 			StatusWork: n[7].String, TglUpdate: waktuDB(n[8].String)})
 	}
 	return out, rows.Err()
+}
+
+// sqlKomentarAwal - `AddKomiteTreatyChild_ACT` S16 (kirim ulang subjectivity): `ComiteeClaim(1).KomiteComment` =
+// komentar anggota PERTAMA kasus komite TERDAHULU baris adjustment yang sama (klaim yang sama, LINI PROP).
+func sqlKomentarAwal(gen, work, list string) string {
+	return fmt.Sprintf(`SELECT l.KOMITE_COMMENT FROM %s g
+		  JOIN %s w ON w.ID = g.ID
+		  JOIN %s l ON l.DATA_KOMITE_ID = g.ID
+		 WHERE g.ADJUSTMENT_ID = :1 AND w.COVER_KEY = :2 AND w.LINI = :3 AND g.ID <> :4
+		 ORDER BY w.TGL_CREATE, g.ID, l.KOMITE_URUT, l.ID FETCH FIRST 1 ROWS ONLY`, gen, work, list)
+}
+
+// KomentarAwal membaca komentar awal kasus komite kirim ulang `id` (kosong bila tidak ada putaran terdahulu).
+func (g *Gudang) KomentarAwal(ctx context.Context, klaimID, adjID, id string) (string, error) {
+	gen, work, list, _, _, err := g.tabelKerja()
+	if err != nil {
+		return "", err
+	}
+	q := sqlKomentarAwal(gen, work, list)
+	if err := db.PeriksaSQL(q); err != nil {
+		return "", err
+	}
+	var v sql.NullString
+	err = g.db.QueryRowContext(ctx, q, adjID, klaimID, models.LiniProp, id).Scan(&v)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("repository: membaca komentar awal komite: %w", err)
+	}
+	return v.String, nil
 }

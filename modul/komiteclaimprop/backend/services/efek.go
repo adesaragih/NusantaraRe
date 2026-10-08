@@ -5,9 +5,8 @@ package services
 //
 // ⛔ Non-produksi: baris berhenti `gagal-permanen` dengan `ErrPengirimStubNonProduksi` (nol panggilan keluar).
 // Produksi: alamat M_LINK_SERVICE di-resolve sungguhan (kunci VERBATIM dari activity) lalu berhenti terang
-// (`…BelumDisetujui`) sampai manusia menyetujui panggilan nyata. Efek Kasir membawa `periksaKonversi`: pemeriksaan S3
-// `getStatusKonversi_Act` (REINSURANCE.TRLOSS_DETAIL_T, hanya produksi) dijalankan pelaksana sebelum memanggil Kasir,
-// sebab konversi S29 kini asinkron. Email (`SendEmailWithAttachments`) memakai SMTP, bukan M_LINK_SERVICE.
+// (`…BelumDisetujui`) sampai manusia menyetujui panggilan nyata. Email
+// (`SendEmailWithAttachments`) memakai SMTP, bukan M_LINK_SERVICE.
 
 import (
 	"context"

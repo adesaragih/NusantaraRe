@@ -881,6 +881,8 @@ kode Go**. `NOT NULL` dan ber-index **biasa** (`IX_GENERAL_KOMITE_ADJ`, migrasi 
 | `ACCEPT_STATUS` | teks | ya | | `"1"` aksep / `"2"` tolak — gerbang 5695, 8119, 8648, 8887 |
 | `KOMITE_USUL_TUTUP` | teks | tidak | | usul tutup klaim, `'1'`/`'0'` bawaan `'0'` — migrasi `komiteclaimprop/680` (RALAT 08-10-2026) |
 | `KOMITE_USUL_CADANG` | teks | tidak | | usul cadangkan klaim, `'1'`/`'0'` bawaan `'0'` — migrasi `komiteclaimprop/680` (RALAT 08-10-2026) |
+| `KOMITE_SUBJECTIVITY` | teks | tidak | | isian Subjectivity tingkat 1 Komite Claim Prop, `'1'`/`'0'` bawaan `'0'` — migrasi `komiteclaimprop/682` (RALAT 08-10-2026); kasus Life tidak menulisnya |
+| `KOMITE_SUBJECTIVITY_NOTE` | teks | ya | | catatan Subjectivity tingkat 1 Komite Claim Prop — migrasi `komiteclaimprop/682` (RALAT 08-10-2026) |
 
 ---
 

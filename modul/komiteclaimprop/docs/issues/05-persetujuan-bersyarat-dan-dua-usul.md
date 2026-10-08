@@ -1,6 +1,6 @@
 # 05: Persetujuan bersyarat dan dua penanda usul
 
-**Status:** dibangun SEBAGIAN — subjectivity bertingkat tertahan OQ-KCP-01 *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+**Status:** dibangun *(RALAT 08-10-2026; status lama: `ready-for-agent`, lalu "dibangun SEBAGIAN — OQ-KCP-01"; work owner menjawab "a": migrasi 682 menyimpan isian Subjectivity tingkat 1 antar tingkat. Penyerahan ulang baris subjectivity (OQ-KCP-06 "a") juga dibangun)*
 
 > **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
 >

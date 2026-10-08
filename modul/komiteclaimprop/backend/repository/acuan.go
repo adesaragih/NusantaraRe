@@ -9,9 +9,10 @@ package repository
 //	GetEmailCeding_SQL      GL.F_GET_EMAIL (HANYA saat muatan Kasir disusun di produksi)       HitServiceToKasirKMT_Act S14.1.2
 //	OperatorID.pyUserName   M_LOGIN_GO.NAME                                                    S32 InsertHistory.CARI4
 //
-// ⚠️ `GL.F_GET_EMAIL` tanpa hak di akun DEV (ORA-00904, 08-10-2026) - hanya dibaca di produksi; hak DBA = OQ.
-// `getStatusKonversi_SQL` (REINSURANCE.TRLOSS_DETAIL_T, ORA-00942 di DEV) tidak dibaca di sini: pemeriksaan S3 milik
-// pelaksana efek Kasir (konversi S29 kini asinkron) - OQ-CP-03.
+//	getStatusKonversi_SQL   REINSURANCE.TRLOSS_DETAIL_T (HANYA produksi, gerbang IsPEGAPROD)  HitServiceToKasirKMT_Act S3
+//
+// ⚠️ Dua bacaan lintas skema tanpa hak di akun DEV (TRLOSS_DETAIL_T ORA-00942, F_GET_EMAIL ORA-00904) - keduanya hanya
+// berjalan di produksi (keputusan work owner 08-10-2026); hak DBA diminta.
 
 import (
 	"context"
@@ -124,6 +125,23 @@ func (a *Acuan) IDBankRekening(ctx context.Context, bank, cabang, akun string) (
 	v, _, err := a.satu(ctx, fmt.Sprintf(`SELECT IDOFBANK FROM %s WHERE NAMEOFBANK = :1 AND BRANCHOFBANK = :2
 		AND ACCOUNTNO = :3 FETCH FIRST 1 ROWS ONLY`, t), bank, cabang, akun)
 	return v, err
+}
+
+// StatusKonversi = getStatusKonversi_Act (HitServiceToKasirKMT_Act S3): S3 RDB `getStatusKonversi_SQL`
+// (REINSURANCE.TRLOSS_DETAIL_T) HANYA bila IsPEGAPROD dan nomor tidak kosong - di DEV tidak dijalankan (keputusan work
+// owner 08-10-2026 "tambahkan when ispegaprod untuk dev jangan jalankan"); S4 `> 0` -> "1".
+func (a *Acuan) StatusKonversi(ctx context.Context, noAksep string) (string, error) {
+	if !a.Produksi || noAksep == "" {
+		return "", nil
+	}
+	v, _, err := a.satu(ctx, `SELECT TO_CHAR(COUNT(1)) FROM REINSURANCE.TRLOSS_DETAIL_T WHERE NO_AKSEP = :1`, noAksep)
+	if err != nil {
+		return "", err
+	}
+	if v != "" && v != "0" {
+		return "1", nil
+	}
+	return v, nil
 }
 
 // EmailCeding = GetEmailCeding_SQL (`gl.f_get_email(:ceding) FROM DUAL`) - hanya di produksi.

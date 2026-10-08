@@ -166,7 +166,7 @@ func (j *jalan) laksanakan(r *models.Rencana) error {
 	if err := j.email(r); err != nil { // S35
 		return err
 	}
-	if err := j.l.g.SimpanKepala(ctx, tx, k.ID, k.Count, r.Count, r.AcceptStatus, r.UsulTutup, r.UsulCadang); err != nil {
+	if err := j.l.g.SimpanKepala(ctx, tx, k.ID, k.Count, r.Kepala()); err != nil {
 		return err
 	}
 	return j.l.g.TutupKasus(ctx, tx, k.ID, r.Selesai, j.saat) // Decision KomiteLoop
@@ -204,14 +204,19 @@ func (j *jalan) retro(r *models.Rencana, adj map[string]string) error {
 }
 
 // kasirEfek = HitServiceToKasirKMT_Act jalur CLMP. S2: DirectToKasir dicentang dan StatusKasir kosong. S3
-// (`getStatusKonversi_Act`) hanya membaca di produksi - di luar produksi aktivitas keluar tanpa efek, persis XML. Di
-// produksi konversi S29 kini efek outbox (asinkron), jadi pemeriksaan S3 dipindah ke pelaksana efek Kasir (PARITAS);
-// yang dijalankan di sini: S12-S13 IDOfBank, S14.1 panjang AcceptedNo, S14.1.2 email ceding, muatan S14.1.3-S14.3.
+// `getStatusKonversi_Act`: hanya dibaca di produksi (IsPEGAPROD); di luar produksi aktivitas keluar tanpa efek, persis
+// XML. S12-S13 IDOfBank, S14.1 panjang AcceptedNo, S14.1.2 email ceding, muatan S14.1.3-S14.3; REST S14.4 = outbox.
+// ⚠️ Konversi S29 kini efek outbox (asinkron): di produksi status konversi saat Submit bisa belum "1" sehingga Kasir
+// tidak diantre - sama dengan Claim Prop, tombol "Acceptation" (`HitServiceToKasir_Act`) mengirimnya kemudian.
 func (j *jalan) kasirEfek(r *models.Rencana, adj map[string]string, noAksep string) error {
 	if !(adj["DirectToKasir"] == "true" && adj["StatusKasir"] == "") { // S2
 		return nil
 	}
-	if !j.l.produksi { // S3: status konversi kosong -> keluar
+	sts, err := j.l.a.StatusKonversi(j.ctx, strings.ReplaceAll(noAksep, ".", "")) // S3 (hanya IsPEGAPROD)
+	if err != nil {
+		return err
+	}
+	if sts != "1" { // S3 transisi `.StatusKonversi=="1"`, selainnya keluar
 		return nil
 	}
 	b := make(map[string]string, len(adj))
@@ -239,8 +244,7 @@ func (j *jalan) kasirEfek(r *models.Rencana, adj map[string]string, noAksep stri
 		return err
 	}
 	m := models.SusunMuatanKasir(j.kl, b, email, false, j.l.kasir, j.akun, j.saat) // IsPEGASyariah = OQ
-	return j.antre(JenisEfekKasir, noAksep, map[string]any{"periksaKonversi": strings.ReplaceAll(noAksep, ".", ""),
-		"TAllPaymentData": []models.MuatanKasir{m}})
+	return j.antre(JenisEfekKasir, noAksep, map[string]any{"TAllPaymentData": []models.MuatanKasir{m}})
 }
 
 // email = SendEmailKlaim_KMT (S35 bergerbang IsPEGAPROD; S1 tanpa SpreadingAdjustment -> keluar). Isi HTML

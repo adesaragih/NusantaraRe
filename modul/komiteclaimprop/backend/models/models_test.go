@@ -83,10 +83,9 @@ func TestPeriksaIsianShowTransfer(t *testing.T) {
 		SubjectivityNote: "1"}); len(p) != 0 {
 		t.Fatalf("tangga satu tingkat: %v", p)
 	}
-	p = models.PeriksaIsian(kasusUji(1), models.Keputusan{AcceptStatus: "1", Comment: "UJI", IsSubjectivity: true,
-		SubjectivityNote: "1"})
-	if len(p) != 1 || p[0] != models.PesanSubjectivityBertingkat {
-		t.Fatalf("OQ-KCP-01 tangga dua tingkat: %v", p)
+	if p := models.PeriksaIsian(kasusUji(1), models.Keputusan{AcceptStatus: "1", Comment: "UJI", IsSubjectivity: true,
+		SubjectivityNote: "1"}); len(p) != 0 {
+		t.Fatalf("tangga dua tingkat menerima subjectivity (migrasi 682): %v", p)
 	}
 	// tingkat 2: isian tingkat 1 nonaktif - diabaikan, tidak memicu pesan
 	if p := models.PeriksaIsian(kasusUji(2, "1"), models.Keputusan{AcceptStatus: "1", Comment: "UJI",
@@ -193,6 +192,39 @@ func TestRencanaSubjectivityTingkatSatu(t *testing.T) {
 	}
 	if _, ada := r.Klaim.Header["IsOutstanding"]; ada {
 		t.Fatal("SaveAcceptation_Act dilewati: IsOutstanding tidak disentuh")
+	}
+}
+
+// OQ-KCP-01 "a": isian tingkat 1 tersimpan di header, dibaca tingkat akhir (S16 / S17 / S21 / S23 / S24 / S34).
+func TestRencanaSubjectivityTanggaDuaTingkat(t *testing.T) {
+	r1 := models.Rencanakan(kasusUji(1), klaimUji(""), models.Keputusan{AcceptStatus: "1", Comment: "UJI",
+		IsSubjectivity: true, SubjectivityNote: "UJI-NOTE"}, "UJI-K1", saatUji)
+	if r1.SubjectivitySimpan != "1" || r1.SubjectivityNoteSimpan != "UJI-NOTE" || r1.TingkatAkhirSetuju {
+		t.Fatalf("tingkat 1 menyimpan isian: %+v", r1)
+	}
+	k := kasusUji(2, "1")
+	k.Subjectivity, k.SubjectivityNote = "1", "UJI-NOTE"
+	// tingkat 2: isian Subjectivity nonaktif - nilai yang dikirim diabaikan, yang tersimpan dipakai.
+	r2 := models.Rencanakan(k, klaimUji(""), models.Keputusan{AcceptStatus: "1", Comment: "UJI-2"}, "UJI-K2", saatUji)
+	if !r2.Subjectivity || r2.TerbitkanNomor || r2.SimpanAkseptasi || r2.Kasir || r2.SubjectivitySimpan != "1" {
+		t.Fatalf("tingkat akhir memakai subjectivity tersimpan: %+v", r2)
+	}
+	if a := r2.Klaim.Adjustment; a["IsKomite"] != "0" || a["SubjectivityNote"] != "UJI-NOTE" {
+		t.Fatalf("S23 / S24 dari isian tersimpan: %+v", a)
+	}
+}
+
+// OQ-KCP-06 "a": kirim ulang baris subjectivity - S6 dilewati, S7 menulis ComiteeClaim(<LAST>).
+func TestRencanaKirimUlangSubjectivityS7(t *testing.T) {
+	k := kasusUji(1)
+	kl := klaimUji("")
+	kl.Daftar["ClaimData.AdjustmentList"][0]["IsSubjectivity"] = "true"
+	r := models.Rencanakan(k, kl, models.Keputusan{AcceptStatus: "1", Comment: "UJI"}, "UJI-K1", saatUji)
+	if len(r.Tangga) != 1 || r.Tangga[0].ID != "L2" {
+		t.Fatalf("S7 menulis baris terakhir tangga: %+v", r.Tangga)
+	}
+	if r.Klaim.Riwayat[0].Teks != "Accepted by UJI-JABATAN-1" {
+		t.Fatalf("S8 tetap KomiteList(KomiteCount).IDKomite: %+v", r.Klaim.Riwayat)
 	}
 }
 

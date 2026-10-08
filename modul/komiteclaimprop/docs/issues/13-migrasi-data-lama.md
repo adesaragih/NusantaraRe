@@ -1,6 +1,6 @@
 # 13: Migrasi data lama
 
-**Status:** alat sensus uji-kering dibangun; `-jalankan` ditolak (OQ tangga lama) *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+**Status:** TIDAK DIBANGUN — keputusan work owner 08-10-2026 (OQ-KCP-02 "b"): kasus komite lama tidak dimigrasi, klaimnya dimuat pemuat Claim Prop (STS_REJECT 1 → Input Acceptation) *(RALAT 08-10-2026; status lama: `ready-for-agent`, lalu "alat sensus uji-kering"; alat itu dibuang)*
 
 > **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
 >

@@ -324,16 +324,15 @@ func SusunLayar(k Kasus, kl kontrak.KlaimTreaty, total []TotalMataUang, akun str
 }
 
 // nilaiAwal - isian yang tersimpan di `pyWorkPage` dari tingkat sebelumnya (Pega tidak mengosongkannya antar tingkat):
-// `.AcceptStatus` = keputusan terakhir, `.Comment` = komentar tingkat sebelumnya (`AddKomiteTreatyChild_ACT` 115:
-// tingkat 1 dari `ComiteeClaim(1).KomiteComment`), dua Propose = penanda usul tersimpan.
+// `.AcceptStatus` = keputusan terakhir, `.Comment` = komentar tingkat sebelumnya (tingkat 1: `AddKomiteTreatyChild_ACT`
+// S16, hanya kirim ulang subjectivity), Subjectivity / catatannya / dua Propose = nilai tersimpan di header.
 func nilaiAwal(k Kasus) Keputusan {
-	n := Keputusan{AcceptStatus: k.AcceptStatus, UsulTutup: k.UsulTutup == UsulYa, UsulCadang: k.UsulCadang == UsulYa}
-	if i := k.barisBerjalan(); i >= 0 {
-		if i > 0 {
-			n.Comment = k.Tangga[i-1].Komentar
-		} else {
-			n.Comment = k.Tangga[0].Komentar
-		}
+	n := Keputusan{AcceptStatus: k.AcceptStatus, UsulTutup: k.UsulTutup == UsulYa, UsulCadang: k.UsulCadang == UsulYa,
+		IsSubjectivity: k.Subjectivity == UsulYa, SubjectivityNote: k.SubjectivityNote}
+	if i := k.barisBerjalan(); i > 0 {
+		n.Comment = k.Tangga[i-1].Komentar
+	} else if i == 0 {
+		n.Comment = k.KomentarAwal // S16 kirim ulang subjectivity; selainnya kosong
 	}
 	return n
 }

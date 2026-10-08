@@ -49,14 +49,21 @@ const (
 
 // Kasus - satu kasus komite beserta tangganya.
 type Kasus struct {
-	ID           string    `json:"id"`
-	KlaimID      string    `json:"klaimId"`
-	AdjustmentID string    `json:"adjustmentId"`
-	Loop         int       `json:"komiteLoop"`
-	Count        int       `json:"komiteCount"`
-	AcceptStatus string    `json:"acceptStatus"`
-	UsulTutup    string    `json:"usulTutup"`
-	UsulCadang   string    `json:"usulCadang"`
+	ID           string `json:"id"`
+	KlaimID      string `json:"klaimId"`
+	AdjustmentID string `json:"adjustmentId"`
+	Loop         int    `json:"komiteLoop"`
+	Count        int    `json:"komiteCount"`
+	AcceptStatus string `json:"acceptStatus"`
+	UsulTutup    string `json:"usulTutup"`
+	UsulCadang   string `json:"usulCadang"`
+	// Subjectivity / SubjectivityNote - isian tingkat 1 yang disimpan antar tingkat (`KOMITE_SUBJECTIVITY` '1'/'0',
+	// `KOMITE_SUBJECTIVITY_NOTE`; migrasi 682, keputusan work owner 08-10-2026 OQ-KCP-01 "a").
+	Subjectivity     string `json:"subjectivity"`
+	SubjectivityNote string `json:"subjectivityNote"`
+	// KomentarAwal - `AddKomiteTreatyChild_ACT` S16 (kirim ulang subjectivity): `.Comment` awal =
+	// `ComiteeClaim(1).KomiteComment`, komentar anggota pertama putaran komite pertama baris adjustment yang sama.
+	KomentarAwal string    `json:"-"`
 	Tahap        string    `json:"tahap"`
 	StatusWork   string    `json:"statusWork"`
 	PembuatID    string    `json:"pembuatId"`
@@ -64,6 +71,12 @@ type Kasus struct {
 	TglCreate    time.Time `json:"tglCreate"`
 	TglUpdate    time.Time `json:"tglUpdate"`
 	Tangga       []Anggota `json:"tangga"`
+}
+
+// Kepala - tulisan kepala kasus komite sesudah satu Submit (S25 / S40, isian tingkat 1).
+type Kepala struct {
+	Count                                                               int
+	AcceptStatus, UsulTutup, UsulCadang, Subjectivity, SubjectivityNote string
 }
 
 // Tertutup - kasus sudah Resolved-Completed.

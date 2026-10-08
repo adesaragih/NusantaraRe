@@ -31,7 +31,7 @@ dipensiunkan 1 Oktober 2026.
 | Folder | Isi |
 | --- | --- |
 | `docs/` | spec, tiket (`issues/`), grilling (tersegel), STRUKTUR / RELASI, `PARITAS.md` (setiap isian / tombol / langkah `KomitePost*` ↔ tiket ↔ status) |
-| `backend/` | `modul.go` (`Pendaftaran`), `models/` (murni), `repository/` (SQL), `services/` (aturan + satu transaksi Submit + pelaksana outbox), `handlers/`, `tiruan/` (uji, kontrak palsu Claim Prop), `alat/pemuatlama/` (data lama, uji-kering), `konfigurasi/kasir.json`, `migrations/` |
+| `backend/` | `modul.go` (`Pendaftaran`), `models/` (murni), `repository/` (SQL), `services/` (aturan + satu transaksi Submit + pelaksana outbox), `handlers/`, `tiruan/` (uji, kontrak palsu Claim Prop), `konfigurasi/kasir.json`, `migrations/` |
 | `frontend/` | `menu.ts`, `rute.tsx`, daftar kerja penyetuju, layar `ShowTransfer` |
 
 ## Rute
@@ -64,4 +64,10 @@ Rentang `680-719`. `-migrate` dijalankan **work owner**.
 | --- | --- |
 | 680 | `T_GENERAL_KOMITE` ADD `KOMITE_USUL_TUTUP` / `KOMITE_USUL_CADANG` `CHAR(1) DEFAULT '0' NOT NULL` + CHECK `'0'`/`'1'` |
 | 681 | `UX_GENERAL_KOMITE_ADJ` (unik, `claimlife/013`) → `IX_GENERAL_KOMITE_ADJ` biasa (keputusan work owner 08-10-2026) |
+| 682 | `T_GENERAL_KOMITE` ADD `KOMITE_SUBJECTIVITY` `CHAR(1) DEFAULT '0' NOT NULL` + CHECK, `KOMITE_SUBJECTIVITY_NOTE` `VARCHAR2(1000)` — isian Subjectivity tingkat 1 antar tingkat (keputusan work owner 08-10-2026, OQ-KCP-01 "a") |
 | 986 | slot menu: `UPDATE M_NAV_MENU SET DIMIGRASI = '1' WHERE KODE = 'komiteclaimprop'` |
+
+## Data lama
+
+Kasus komite warisan Pega **tidak dimigrasi** (keputusan work owner 08-10-2026, OQ-KCP-02 "b"); klaimnya dimuat pemuat
+Claim Prop (baris berlaku `STS_REJECT = 1` → Input Acceptation). Nol alat pemuat di modul ini.

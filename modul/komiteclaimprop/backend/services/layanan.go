@@ -137,6 +137,11 @@ func (l *Layanan) BukaKasus(ctx context.Context, p inti.Pelaku, id string) (mode
 	if err != nil {
 		return models.Layar{}, err
 	}
+	if k.Count == 1 && models.AdjustmentKlaim(kl)["IsSubjectivity"] == "true" { // S16 kirim ulang subjectivity
+		if k.KomentarAwal, err = l.g.KomentarAwal(ctx, k.KlaimID, k.AdjustmentID, k.ID); err != nil {
+			return models.Layar{}, err
+		}
+	}
 	total, err := models.TotalPenyesuaian(kl.Daftar[models.DaftarAdjustment])
 	if err != nil {
 		return models.Layar{}, err

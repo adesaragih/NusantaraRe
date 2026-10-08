@@ -64,7 +64,7 @@ func TestSQLKomiteMenyaringLiniPropKetat(t *testing.T) {
 		t.Error("daftar kerja: baris tangga PERTAMA yang menunggu (KomiteRouter S6.1)")
 	}
 	if !strings.Contains(s["tulisAnggota"], "KOMITE_APPROVAL = :6") || !strings.Contains(s["simpanKepala"],
-		"KOMITE_COUNT = :6") {
+		"KOMITE_COUNT = :8") {
 		t.Error("tulisan keputusan bersyarat keadaan yang dibaca (dua klik tidak sama-sama menang)")
 	}
 	if !strings.Contains(s["kepalaKunci"], "FOR UPDATE") {

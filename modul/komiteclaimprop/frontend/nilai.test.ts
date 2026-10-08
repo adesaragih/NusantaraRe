@@ -1,15 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Keputusan } from './api'
-import {
-  isianKirim,
-  periksa,
-  PESAN_KOSONG,
-  PESAN_SUBJECTIVITY_BERTINGKAT,
-  tampil,
-  tampilCatatanSubjectivity,
-  tampilSubjectivity,
-} from './nilai'
+import { isianKirim, periksa, PESAN_KOSONG, tampil, tampilCatatanSubjectivity, tampilSubjectivity } from './nilai'
 
 const kosong: Keputusan = {
   acceptStatus: '',
@@ -45,13 +37,11 @@ describe('isian ShowTransfer', () => {
     expect(tampilCatatanSubjectivity({ ...kosong, acceptStatus: '2', isSubjectivity: true })).toBe(false)
   })
   it('wajib isi: AcceptStatus, Note, dan Subjectivity Note bila dicentang di tingkat 1', () => {
-    expect(periksa(kosong, true, 1)).toEqual({ acceptStatus: PESAN_KOSONG, comment: PESAN_KOSONG })
+    expect(periksa(kosong, true)).toEqual({ acceptStatus: PESAN_KOSONG, comment: PESAN_KOSONG })
     const subj = { ...kosong, acceptStatus: '1', comment: 'UJI', isSubjectivity: true }
-    expect(periksa(subj, true, 1)).toEqual({ subjectivityNote: PESAN_KOSONG })
-    expect(periksa(subj, false, 2)).toEqual({})
-    expect(periksa({ ...subj, subjectivityNote: 'UJI' }, true, 2)).toEqual({
-      isSubjectivity: PESAN_SUBJECTIVITY_BERTINGKAT,
-    })
+    expect(periksa(subj, true)).toEqual({ subjectivityNote: PESAN_KOSONG })
+    expect(periksa(subj, false)).toEqual({})
+    expect(periksa({ ...subj, subjectivityNote: 'UJI' }, true)).toEqual({})
   })
   it('isian bertingkat-1 tidak terkirim di tingkat lain atau saat tersembunyi', () => {
     const k = {

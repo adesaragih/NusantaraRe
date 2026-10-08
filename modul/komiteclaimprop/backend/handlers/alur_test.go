@@ -158,14 +158,27 @@ func TestSetujuLaluSetujuNomorTerbit(t *testing.T) {
 	}
 }
 
-// Skenario 2 - subjectivity di tingkat 1: tangga satu tingkat menyetujui bersyarat (tanpa nomor, tanpa OS, IsKomite
-// 0); tangga dua tingkat ditolak validasi selama OQ-KCP-01 terbuka.
+// Skenario 2 - subjectivity di tingkat 1 (OQ-KCP-01 "a", migrasi 682): isian tingkat 1 disimpan di header kasus komite
+// dan dipakai tingkat akhir - tanpa nomor, tanpa OS, IsKomite 0. Tangga satu dan dua tingkat.
 func TestSubjectivityTingkatSatu(t *testing.T) {
 	u := siap(t, 2, false)
 	kep := models.Keputusan{AcceptStatus: "1", Comment: "UJI", IsSubjectivity: true, SubjectivityNote: "UJI syarat"}
-	w := u.minta("POST", "/kasus/"+tiruan.KomiteUji+"/putuskan", tiruan.PenyetujuUji(1), kep)
-	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), "OQ-KCP-01") {
-		t.Fatalf("subjectivity bertingkat: %d %s", w.Code, w.Body.String())
+	if h := u.putus(tiruan.PenyetujuUji(1), kep, http.StatusOK); h.Selesai {
+		t.Fatalf("tingkat 1 dari 2: %+v", h)
+	}
+	if k := u.g.Kasus[tiruan.KomiteUji]; k.Subjectivity != "1" || k.SubjectivityNote != "UJI syarat" {
+		t.Fatalf("isian tingkat 1 tersimpan di header: %+v", k)
+	}
+	// tingkat 2: isian Subjectivity nonaktif (yang dikirim diabaikan), yang tersimpan dipakai.
+	if h := u.putus(tiruan.PenyetujuUji(2), models.Keputusan{AcceptStatus: "1", Comment: "UJI 2"}, http.StatusOK); !h.Selesai ||
+		h.AcceptedNo != "" {
+		t.Fatalf("tingkat akhir subjectivity: %+v", h)
+	}
+	if b := u.adj(); b["IsSubjectivity"] != "true" || b["SubjectivityNote"] != "UJI syarat" || b["IsKomite"] != "0" {
+		t.Fatalf("adjustment subjectivity tangga dua tingkat: %+v", b)
+	}
+	if len(u.g.OS) != 0 {
+		t.Fatal("subjectivity: nol OS")
 	}
 	u = siap(t, 1, false)
 	h := u.putus(tiruan.PenyetujuUji(1), kep, http.StatusOK)
@@ -297,7 +310,8 @@ func TestEfekKeluarDiProduksi(t *testing.T) {
 	u.g.Klaim.Setel(tiruan.KlaimUji, nilai, daftar)
 	u.a.Bank["UJI BANK||"] = "UJI-BANK-1"
 	u.a.Email["UJI-CED"] = "uji@contoh.invalid"
-	u.g.KodeProduksi = "UJIX" // S14.1: @length(AcceptedNo) 23 / 24
+	u.g.KodeProduksi = "UJIX"                  // S14.1: @length(AcceptedNo) 23 / 24
+	u.a.Konversi["UJIXA12102026TP00001"] = "1" // S3 getStatusKonversi_Act (IsPEGAPROD): sudah dikonversi
 	h := u.putus(tiruan.PenyetujuUji(1), setuju("UJI"), http.StatusOK)
 	jenis := map[string]bool{}
 	for _, e := range u.g.Efek {
@@ -308,5 +322,37 @@ func TestEfekKeluarDiProduksi(t *testing.T) {
 	}
 	if u.adj()["IDOfBank"] != "UJI-BANK-1" || len(h.AcceptedNo) != 23 {
 		t.Fatalf("IDOfBank S12-S13: %+v", u.adj())
+	}
+}
+
+// OQ-KCP-06 "a": penyerahan ulang baris subjectivity - putaran kedua disetujui tanpa syarat menerbitkan nomor; `.Comment`
+// awal = komentar anggota pertama putaran pertama (AddKomiteTreatyChild_ACT S16); keputusan di baris terakhir (S7).
+func TestKirimUlangSubjectivity(t *testing.T) {
+	u := siap(t, 1, false)
+	u.putus(tiruan.PenyetujuUji(1), models.Keputusan{AcceptStatus: "1", Comment: "UJI putaran 1", IsSubjectivity: true,
+		SubjectivityNote: "UJI syarat"}, http.StatusOK)
+	if b := u.adj(); b["IsSubjectivity"] != "true" || b["IsKomite"] != "0" || b["AcceptedNo"] != "" {
+		t.Fatalf("putaran 1 subjectivity: %+v", b)
+	}
+	// Claim Prop menyerahkan ulang (kasus baru, KOMITE_ID ditimpa) ke jenjang terbawah.
+	u.g.Lahirkan("TKMT-UJI002", tiruan.KlaimUji, tiruan.AdjUji, tiruan.PembuatUji, "UJI Admin",
+		[]models.Anggota{{OperatorID: tiruan.PenyetujuUji(1), Jabatan: "UJI-JABATAN-1"}}, tiruan.SaatUji.Add(time.Hour))
+	w := u.minta("GET", "/kasus/TKMT-UJI002", tiruan.PenyetujuUji(1), nil)
+	var ly models.Layar
+	if err := json.Unmarshal(w.Body.Bytes(), &ly); err != nil || ly.Isian.Nilai.Comment != "UJI putaran 1" {
+		t.Fatalf("S16 komentar awal putaran kedua: %q (%d)", ly.Isian.Nilai.Comment, w.Code)
+	}
+	r := u.minta("POST", "/kasus/TKMT-UJI002/putuskan", tiruan.PenyetujuUji(1),
+		models.Keputusan{AcceptStatus: "1", Comment: "UJI putaran 2"})
+	var h services.HasilKeputusan
+	_ = json.Unmarshal(r.Body.Bytes(), &h)
+	if r.Code != http.StatusOK || !h.Selesai || h.AcceptedNo == "" {
+		t.Fatalf("putaran 2 tanpa syarat menerbitkan nomor: %d %s", r.Code, r.Body.String())
+	}
+	if b := u.adj(); b["IsSubjectivity"] != "false" || b["AcceptedNo"] != h.AcceptedNo || b["AcceptanceStatus"] != "1" {
+		t.Fatalf("adjustment sesudah putaran 2: %+v", b)
+	}
+	if tg := u.g.Tangga["TKMT-UJI002"]; tg[len(tg)-1].Keputusan != "1" || tg[len(tg)-1].Komentar != "UJI putaran 2" {
+		t.Fatalf("S7 baris terakhir: %+v", tg)
 	}
 }

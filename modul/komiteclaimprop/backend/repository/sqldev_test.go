@@ -155,6 +155,11 @@ func TestSQLKomiteDiDEV(t *testing.T) {
 		{"DaftarRetro", func() error { _, err := a.DaftarRetro(ctx, "2026", "UJI", "UJI"); return err }},
 		{"IDBankRekening", func() error { _, err := a.IDBankRekening(ctx, "UJI", "UJI", "UJI"); return err }},
 		{"NamaPelaku", func() error { _, err := a.NamaPelaku(ctx, "UJI"); return err }},
+		{"KomentarAwal", func() error { _, err := g.KomentarAwal(ctx, "CLMP-UJI", "UJI", "TKMT-UJI"); return err }},
+		{"StatusKonversi (produksi; DEV tanpa hak = BELUM)", func() error {
+			_, err := AcuanDari(g, true).StatusKonversi(ctx, "UJI")
+			return err
+		}},
 	}
 	for _, b := range baca {
 		h.catat(t, "baca "+b.nama, b.f())

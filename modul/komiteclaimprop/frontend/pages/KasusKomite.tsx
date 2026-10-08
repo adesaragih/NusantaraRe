@@ -137,7 +137,7 @@ export default function KasusKomite({ id, onKembali }: { id: string; onKembali: 
   const kunci = !layar.bolehKerja || sibuk
 
   const kirim = () => {
-    const p = periksa(isi, isian.terbuka, layar.kasus.komiteLoop)
+    const p = periksa(isi, isian.terbuka)
     setSalah(p)
     if (Object.keys(p).length > 0) return
     setSibuk(true)
@@ -230,7 +230,6 @@ export default function KasusKomite({ id, onKembali }: { id: string; onKembali: 
               onChange={(e) => ubah('subjectivityNote', e.target.value)}
             />
             {salah.subjectivityNote && <span className="field__error">{salah.subjectivityNote}</span>}
-            {salah.isSubjectivity && <span className="field__error">{salah.isSubjectivity}</span>}
           </label>
         )}
         <label className="komiteclaimprop__centang">

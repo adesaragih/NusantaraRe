@@ -1,0 +1,7 @@
+-- Mundur 682 - isian Subjectivity tingkat 1 dibuang beserta isinya; untuk skema uji.
+--
+-- NOL COMMIT (ADR-U-0029).
+ALTER TABLE {skema}.T_GENERAL_KOMITE DROP CONSTRAINT CK_GENERAL_KOMITE_SUBJ
+/
+ALTER TABLE {skema}.T_GENERAL_KOMITE DROP (KOMITE_SUBJECTIVITY, KOMITE_SUBJECTIVITY_NOTE)
+/

@@ -165,17 +165,35 @@ func (g *Gudang) TulisAnggota(_ context.Context, _ *db.Tx, id string, u models.U
 }
 
 // SimpanKepala - lihat `repository.Gudang.SimpanKepala`.
-func (g *Gudang) SimpanKepala(_ context.Context, _ *db.Tx, id string, countLama, countBaru int, accept, usulTutup,
-	usulCadang string) error {
+func (g *Gudang) SimpanKepala(_ context.Context, _ *db.Tx, id string, countLama int, kp models.Kepala) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	k, ada := g.Kasus[id]
 	if !ada || k.Count != countLama {
 		return fmt.Errorf("%w: kepala kasus %s", repository.ErrKeputusanBersamaan, id)
 	}
-	k.Count, k.AcceptStatus, k.UsulTutup, k.UsulCadang = countBaru, accept, usulTutup, usulCadang
+	k.Count, k.AcceptStatus, k.UsulTutup, k.UsulCadang = kp.Count, kp.AcceptStatus, kp.UsulTutup, kp.UsulCadang
+	k.Subjectivity, k.SubjectivityNote = kp.Subjectivity, kp.SubjectivityNote
 	g.Kasus[id] = k
 	return nil
+}
+
+// KomentarAwal - lihat `repository.Gudang.KomentarAwal`: komentar anggota pertama kasus komite lain (paling awal)
+// untuk klaim dan adjustment yang sama.
+func (g *Gudang) KomentarAwal(_ context.Context, klaimID, adjID, id string) (string, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	var calon []models.Kasus
+	for kid, k := range g.Kasus {
+		if kid != id && k.KlaimID == klaimID && k.AdjustmentID == adjID {
+			calon = append(calon, k)
+		}
+	}
+	sort.Slice(calon, func(i, j int) bool { return calon[i].TglCreate.Before(calon[j].TglCreate) })
+	if len(calon) == 0 || len(g.Tangga[calon[0].ID]) == 0 {
+		return "", nil
+	}
+	return g.Tangga[calon[0].ID][0].Komentar, nil
 }
 
 // TutupKasus - lihat `repository.Gudang.TutupKasus`.
@@ -285,14 +303,15 @@ type Acuan struct {
 	Retro map[string][]models.BarisRetro
 	Bank  map[string]string
 	Nama  map[string]string
-	// Email - ceding -> email.
-	Email map[string]string
+	// Konversi - nomor akseptasi tanpa titik -> status konversi; Email - ceding -> email.
+	Konversi map[string]string
+	Email    map[string]string
 }
 
 // AcuanBaru membuat acuan kosong.
 func AcuanBaru() *Acuan {
 	return &Acuan{Tahun: map[string]string{}, Batas: map[string]string{}, Retro: map[string][]models.BarisRetro{},
-		Bank: map[string]string{}, Nama: map[string]string{}, Email: map[string]string{}}
+		Bank: map[string]string{}, Nama: map[string]string{}, Konversi: map[string]string{}, Email: map[string]string{}}
 }
 
 // TahunTreaty - lihat `repository.Acuan.TahunTreaty`.
@@ -313,6 +332,11 @@ func (a *Acuan) DaftarRetro(_ context.Context, tahun, grup, reins string) ([]mod
 // IDBankRekening - lihat `repository.Acuan.IDBankRekening`.
 func (a *Acuan) IDBankRekening(_ context.Context, bank, cabang, akun string) (string, error) {
 	return a.Bank[bank+"|"+cabang+"|"+akun], nil
+}
+
+// StatusKonversi - lihat `repository.Acuan.StatusKonversi` (tiruan: peta Konversi).
+func (a *Acuan) StatusKonversi(_ context.Context, noAksep string) (string, error) {
+	return a.Konversi[noAksep], nil
 }
 
 // EmailCeding - lihat `repository.Acuan.EmailCeding`.

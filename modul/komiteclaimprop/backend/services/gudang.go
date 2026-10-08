@@ -27,8 +27,8 @@ type Gudang interface {
 	BacaTangga(ctx context.Context, tx *db.Tx, id string) ([]models.Anggota, error)
 	DaftarKerja(ctx context.Context, akun string) ([]models.BarisKerja, error)
 	TulisAnggota(ctx context.Context, tx *db.Tx, id string, u models.UbahAnggota) error
-	SimpanKepala(ctx context.Context, tx *db.Tx, id string, countLama, countBaru int, accept, usulTutup,
-		usulCadang string) error
+	SimpanKepala(ctx context.Context, tx *db.Tx, id string, countLama int, kp models.Kepala) error
+	KomentarAwal(ctx context.Context, klaimID, adjID, id string) (string, error)
 	TutupKasus(ctx context.Context, tx *db.Tx, id string, selesai bool, saat time.Time) error
 
 	UrutNomorAkseptasi(ctx context.Context, tx *db.Tx, saat time.Time) (models.BahanNomor, error)
@@ -45,6 +45,7 @@ type Acuan interface {
 	LimitPLA(ctx context.Context, tahun, grup, reins string) (string, error)
 	DaftarRetro(ctx context.Context, tahun, grup, reins string) ([]models.BarisRetro, error)
 	IDBankRekening(ctx context.Context, bank, cabang, akun string) (string, error)
+	StatusKonversi(ctx context.Context, noAksep string) (string, error)
 	EmailCeding(ctx context.Context, ceding string) (string, error)
 	NamaPelaku(ctx context.Context, akun string) (string, error)
 }

@@ -56,7 +56,7 @@ Pra-proses `SetKomiteList_Act` (TT 2): total per mata uang tanpa baris `Acceptan
 | Circumstances · Occupation · Salvage · Adjuster / Consultant Fee (NOTBLANK) · Remarks | `.Komite.*` ← `DataCommitteeTreaty` baris adjustment + `ClaimData.Occupation` | dibangun |
 | Grid "Committe Accept Status" (Committe Name, Status, Date Approve, Comment) | tangga | dibangun (Status tampil kode) |
 | "Are you sure to accept this document?" `.AcceptStatus` | wajib; `pyNoSelectionText` "Choose"; pilihan `associated` → "Approve" / "Reject" (`SetDataAcceptationTreaty_Act` S2-S3) | dibangun |
-| "Subjectivity ?" `.IsSubjectivity` | tampil `.AcceptStatus = 1 && TT 2`; nonaktif `.KomiteCount!='1'` | dibangun — tangga >1 tingkat ditolak validasi (**OQ-KCP-01**) |
+| "Subjectivity ?" `.IsSubjectivity` | tampil `.AcceptStatus = 1 && TT 2`; nonaktif `.KomiteCount!='1'` | dibangun — isian tingkat 1 disimpan di header (`KOMITE_SUBJECTIVITY` / `_NOTE`, migrasi 682; OQ-KCP-01 dijawab "a" 08-10-2026) dan dipakai tingkat akhir |
 | "Subjectivity Note" | tampil + wajib `.IsSubjectivity = true`; nonaktif `KomiteCount!='1'` | dibangun sebagai isian teks — di XML `pxDropdown` (`pyListSource associated`): pilihannya tidak diekspor (OQ-KCP-04), tidak dikarang |
 | "Propose To Close Case" · "Propose To Reserved" | tampil TT 2; nonaktif `KomiteCount!='1'` | dibangun |
 | "Note" `.Comment` | wajib | dibangun |
@@ -82,7 +82,7 @@ Pra-proses `SetKomiteList_Act` (TT 2): total per mata uang tanpa baris `Acceptan
 | S4 | Obj-Open-By-Handle klaim induk, Lock | `KunciKlaimTreaty` (kontrak) + `FOR UPDATE` kepala komite | 04 | dibangun |
 | S5 | variabel lokal | — | — | tidak perlu |
 | S6 | `ComiteeClaim(count)` induk + `KomiteList(count)` komite | SATU baris `T_KOMITE_KOMITELIST` (`tangga.go` `TulisAnggota`) | 04 | dibangun |
-| S6 / S7 | S6 dilewati dan S7 menulis `ComiteeClaim(<LAST>)` bila adjustment induk SUDAH subjectivity | `Rencanakan` selalu S6 | 04 · 05 | tak terjangkau di sistem baru, **OQ-KCP-06** lintas modul: Pega mengirim ulang adjustment subjectivity ke komite (`AddKomiteTreatyChild_ACT` S16/S17/S19/S31, roster jenjang terbawah), tetapi Claim Prop menautkan `KOMITE_ID` sekali (`AND KOMITE_ID IS NULL`, UNIQUE) dan menolak penyerahan ulang - jalur S7 baru dibangun bila penyerahan ulang diputuskan |
+| S6 / S7 | S6 dilewati dan S7 menulis `ComiteeClaim(<LAST>)` bila adjustment induk SUDAH subjectivity | `Rencanakan` selalu S6 | 04 · 05 | dibangun (OQ-KCP-06 dijawab "a" 08-10-2026): Claim Prop menyerahkan ulang baris subjectivity (`BolehSerahKomite`, `KOMITE_ID` ditimpa dari kasus lama ke kasus baru; grid ComiteeClaim memuat semua putaran - S17 tidak menghapus saat subjectivity); komite menulis baris TERAKHIR tangga (S7) dan `.Comment` awal = komentar anggota pertama putaran pertama (AddKomiteTreatyChild_ACT S16) |
 | S8-S10 | `InsertChronology_DT` "Accepted by" / "Rejected by" + jabatan | kontrak `Riwayat` → `T_VIEW_SUGGEST` | 04 | dibangun — nama yang di-hardcode dibuang (keputusan 17-09); gerbang baris 1 `OperatorID.pyPosition != "IT Developer"` TIDAK dibangun: posisi operator Pega tidak punya padanan di akun sistem baru (sama dengan Claim Prop) — penyimpangan sadar, OQ-KCP-04 |
 | S11 | IsCloseFile / IsReservedClaim ← dua usul | kontrak header | 05 | dibangun |
 | S12 | tolak → EXT (S25) | `models.Rencanakan` | 07 | dibangun |
@@ -129,34 +129,33 @@ urutan efek keluar sengaja diubah (keputusan 14, 20).
 | `InsertJsonClaimTreaty_act` | S1-S4 | `SalinJSONKlaim` | dibangun (`GetBase64Attachment` S1 tidak dipakai: DATA_JSON kosong) |
 | `KonversiKlaim_Act` | S1-S3 | outbox | dibangun |
 | `InsertLogServiceClaim` | S1-S2 | `CatatLogLayanan` | dibangun |
-| `HitServiceToKasirKMT_Act` | S2 gerbang DirectToKasir & StatusKasir kosong; S3 `getStatusKonversi_Act` | S2 dibangun; S3 dipindah ke pelaksana efek Kasir (konversi asinkron) — penyimpangan sadar | dibangun sebagian |
+| `HitServiceToKasirKMT_Act` | S2 gerbang DirectToKasir & StatusKasir kosong; S3 `getStatusKonversi_Act` | S2 + S3 (hanya IsPEGAPROD) | dibangun |
 | `HitServiceToKasirKMT_Act` | S12-S13 IDOfBank (BANKACCOUNT) | kontrak adjustment | dibangun (hanya produksi: di luar produksi S3 keluar) |
 | `HitServiceToKasirKMT_Act` | S14.1 jalur CLMP: panjang AcceptedNo 23/24, email ceding, muatan | `models.SusunMuatanKasir`, kode tetap `konfigurasi/kasir.json` | dibangun; IsPEGASyariah = OQ (false) |
 | `HitServiceToKasirKMT_Act` | S14.4-S14.6 REST, StatusKasir, `DIRECTTOKASIR_LOG` | pelaksana outbox | OQ-CP-03 (berhenti `ErrKasirBelumDisetujui`) |
 | `HitServiceToKasirKMT_Act` | S9-S11, S14.2 (CLMNP / CLM) | — | di luar lingkup (lini lain) |
 | `HitServiceToKasirKMT_Act` S1 | salvage | — | mati (`//`) |
 | `SendEmailKlaim_KMT` | S1 tanpa SpreadingAdjustment keluar; S5 tanggal ("Febuari", "July" VERBATIM); S12 / S14 / S15 subjek + penerima | `models.SubjekEmail`, `services.jalan.email` | dibangun (isi HTML OQ) |
-| `getStatusKonversi_Act` | IsPEGAPROD → REINSURANCE.TRLOSS_DETAIL_T | — (milik pelaksana efek Kasir; konversi S29 asinkron) | nonaktif-OQ — OQ-CP-03 + hak baca DEV ORA-00942 (OQ DBA); di luar produksi aktivitas keluar tanpa efek, persis XML |
+| `getStatusKonversi_Act` | IsPEGAPROD → REINSURANCE.TRLOSS_DETAIL_T | `repository.Acuan.StatusKonversi` di S3 Submit | dibangun — hanya IsPEGAPROD, DEV tidak dijalankan (keputusan work owner 08-10-2026); hak baca diminta DBA. Konversi S29 asinkron: di produksi status bisa belum "1" saat Submit → Kasir lewat tombol "Acceptation" Claim Prop |
 | `GetEmailCeding_SQL` | `gl.f_get_email` | `repository.Acuan.EmailCeding` | dibangun — DEV ORA-00904 (OQ DBA) |
 | `CountEstimation_Act`, `CountSpreading_act`, `CurencyEstimation_Act`, `SetCurencyList_act`, `AddEstimation_Act`, … (berkelas Work-ClaimTreaty) | sel hanya-baca ShowTransfer | — | di luar lingkup (spec Out of Scope 2) |
 | `SaveRejectTreatyIn_Act_KMT`, `KomitePost_Close`, `KomitePost_Reject` | TT 3 / TT 4 | — | di luar lingkup |
 
 ## 5. Data lama (tiket 13)
 
-`alat/pemuatlama` uji-kering, DEV 08-10-2026: 2.451 kasus CLMP lama; **419** ditunda pemuat Claim Prop (baris berlaku
-STS_REJECT 1) — **2** punya work object KomiteTreaty ber-BLOB (`DATAPEGA.PC_ASM_FW_GCNMFW_WORK`, `KomiteList` utuh,
-terbaca pengurai analisis PR7d), **316** hanya `HISTORYAKSEPTASIPEGA` (tanpa tingkat / jabatan / ID operator),
-**101** tanpa jejak komite. Dimuat: 0. `-jalankan` ditolak sampai sumber tangga diputuskan (jangan mengarang tangga);
-usul lama benar / salah / kosong → `'1'` / `'0'` / `'0'` (`models.UsulLama`).
+Kasus komite warisan **tidak dimigrasi** (keputusan work owner 08-10-2026, OQ-KCP-02 "b"): klaimnya dimuat pemuat Claim
+Prop - baris berlaku `STS_REJECT = 1` kini → Input Acceptation (uji-kering DEV 08-10-2026: 2.451 kasus siap, 0 gagal,
+0 ditunda). Sensus sebelumnya: 419 klaim ber-STS 1 = 2 ber-BLOB KomiteTreaty, 316 hanya riwayat akseptasi, 101 tanpa
+jejak komite. Alat pemuat komite dibuang; AC 83 diralat.
 
 ## 6. Butir terbuka modul ini
 
 | Kode | Butir | Pemilik |
 | --- | --- | --- |
-| OQ-KCP-01 | Subjectivity di tangga >1 tingkat: isian tingkat 1 dibaca di tingkat akhir, header komite tanpa kolomnya | work owner |
-| OQ-KCP-02 | Sumber tangga data lama (BLOB DATAPEGA hanya 10 work object di DEV; pengurai PR7d di aplikasi?) | pemilik ekspor Pega / work owner |
-| OQ-KCP-03 | Hak baca `REINSURANCE.TRLOSS_DETAIL_T` dan `GL.F_GET_EMAIL` untuk akun aplikasi | DBA |
+| ~~OQ-KCP-01~~ | DIJAWAB 08-10-2026 "a": migrasi 682 menyimpan isian Subjectivity tingkat 1 | — |
+| ~~OQ-KCP-02~~ | DIJAWAB 08-10-2026 "b": kasus komite lama tidak dimigrasi; klaim dimuat Claim Prop | — |
+| OQ-KCP-03 | Hak baca `REINSURANCE.TRLOSS_DETAIL_T` dan eksekusi `GL.F_GET_EMAIL` untuk akun aplikasi produksi (work owner 08-10-2026: "ikuti"; bacaan bergerbang IsPEGAPROD, DEV tidak dijalankan) | DBA |
 | OQ-KCP-04 | Ekspor: harness `ViewClaimFormKomite`, stream `FILEAcceptanceNote` / `EmailKlaim_HTML_KMT`, deskripsi properti `StartDateTime` / `EndDateTime` / `NoClaim` / `CLMNO` / `NonKatastrofeType`, prompt values `AcceptStatus` / `KomiteAproval` / `AcceptanceStatus` / `Payable` / `SubjectivityNote`, harness `Confirm` (layar sesudah Submit - kini kembali ke daftar kerja tanpa teks karangan), padanan `OperatorID.pyPosition` | pemilik ekspor Pega |
 | OQ-KCP-05 | 166 baris OS status 1 di DEV berbentuk lain (DeductibleValue / IDMasterTreaty / PolicyNo / pzInsKey, tanpa KomiteNo) — penulisnya tidak ada di ekspor (SaveAcceptationTreaty_Act langkah 14 ter-remark) | pemilik ekspor Pega |
-| OQ-KCP-06 | Penyerahan ulang adjustment subjectivity ke komite (Pega `AddKomiteTreatyChild_ACT` S16-S19/S31 + `KomitePostAdjustment` S7) - Claim Prop menautkan `KOMITE_ID` sekali | work owner (lintas modul Claim Prop) |
+| ~~OQ-KCP-06~~ | DIJAWAB 08-10-2026 "a": penyerahan ulang subjectivity dibangun di Claim Prop dan komite | — |
 | OQ-CP-06 | Jalur Close tanpa pembayaran (TT 4) | work owner (ditunda 08-10-2026) |

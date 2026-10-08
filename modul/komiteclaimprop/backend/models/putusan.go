@@ -34,12 +34,6 @@ const (
 	LabelNote             = "Note"
 )
 
-// PesanSubjectivityBertingkat - OQ-KCP-01: isian Subjectivity tingkat 1 dibaca lagi di tingkat akhir (S16, S17, S21,
-// S23, S24, S34), tetapi header kasus komite tidak punya kolom untuk menyimpannya antar tingkat. Selama butir itu
-// terbuka, persetujuan bersyarat hanya diterima bila tingkat 1 sekaligus tingkat akhir.
-const PesanSubjectivityBertingkat = "Subjectivity ? : persetujuan bersyarat pada tangga lebih dari satu tingkat " +
-	"menunggu keputusan penyimpanan (OQ-KCP-01)"
-
 // Keputusan - isian layar `ShowTransfer` satu Submit.
 type Keputusan struct {
 	// AcceptStatus - `.AcceptStatus` (wajib; 1 Approve, 2 Reject - SetDataAcceptationTreaty_Act S2-S3).
@@ -61,7 +55,7 @@ type Keputusan struct {
 // (`pyDisabledWhen .KomiteCount!='1'`).
 func IsianTerbuka(k Kasus) bool { return k.Count == 1 }
 
-// PeriksaIsian = validasi klien Section ShowTransfer (pyRequired / pyRequiredWhen) + OQ-KCP-01.
+// PeriksaIsian = validasi klien Section ShowTransfer (pyRequired / pyRequiredWhen).
 func PeriksaIsian(k Kasus, kep Keputusan) []string {
 	var p []string
 	if kep.AcceptStatus != KeputusanSetuju && kep.AcceptStatus != KeputusanTolak {
@@ -73,9 +67,6 @@ func PeriksaIsian(k Kasus, kep Keputusan) []string {
 	if IsianTerbuka(k) && kep.AcceptStatus == KeputusanSetuju && kep.IsSubjectivity {
 		if strings.TrimSpace(kep.SubjectivityNote) == "" {
 			p = append(p, LabelSubjectivityNote+": "+PesanKosong)
-		}
-		if k.Loop > 1 {
-			p = append(p, PesanSubjectivityBertingkat)
 		}
 	}
 	return p
@@ -116,6 +107,9 @@ type Rencana struct {
 	AcceptStatus string
 	UsulTutup    string
 	UsulCadang   string
+	// SubjectivitySimpan / SubjectivityNoteSimpan - isian Subjectivity tingkat 1 di header kasus komite (migrasi 682).
+	SubjectivitySimpan     string
+	SubjectivityNoteSimpan string
 	// Selesai - Decision `KomiteLoop` (When IsKomiteLoop salah) -> Resolved-Completed.
 	Selesai bool
 	// Klaim - tulisan balik ke kasus klaim induk (lewat kontrak).
@@ -151,9 +145,9 @@ func Rencanakan(k Kasus, kl kontrak.KlaimTreaty, kep Keputusan, akun string, saa
 	if r.UsulCadang == "" {
 		r.UsulCadang = UsulTidak
 	}
-	// Isian tingkat 1 (Subjectivity, catatannya, dua Propose) - ditulis layar langsung ke pyWorkPage, nonaktif di
-	// tingkat lain: tingkat lain memakai nilai yang tersimpan.
-	subj := false
+	// Isian tingkat 1 (Subjectivity, catatannya, dua Propose) - ditulis layar langsung ke pyWorkPage (halaman kerja yang
+	// bertahan antar tingkat), nonaktif di tingkat lain: tingkat lain memakai nilai yang tersimpan di header.
+	subj, note := k.Subjectivity == UsulYa, k.SubjectivityNote
 	if IsianTerbuka(k) {
 		r.UsulTutup, r.UsulCadang = UsulTidak, UsulTidak
 		if kep.UsulTutup {
@@ -162,17 +156,33 @@ func Rencanakan(k Kasus, kl kontrak.KlaimTreaty, kep Keputusan, akun string, saa
 		if kep.UsulCadang {
 			r.UsulCadang = UsulYa
 		}
-		subj = kep.AcceptStatus == KeputusanSetuju && kep.IsSubjectivity
+		subj, note = kep.AcceptStatus == KeputusanSetuju && kep.IsSubjectivity, ""
+		if subj {
+			note = kep.SubjectivityNote
+		}
+	}
+	r.SubjectivitySimpan, r.SubjectivityNoteSimpan = UsulTidak, note
+	if subj {
+		r.SubjectivitySimpan = UsulYa
 	}
 	r.Subjectivity = subj
 	setuju := kep.AcceptStatus == KeputusanSetuju
 	tolak := kep.AcceptStatus == KeputusanTolak
+	adjKlaim := AdjustmentKlaim(kl)
 	berjalan := k.barisBerjalan()
+	sasaran := berjalan
+	if adjKlaim["IsSubjectivity"] == "true" && len(k.Tangga) > 0 {
+		// Kirim ulang baris subjectivity (keputusan work owner 08-10-2026, OQ-KCP-06 "a"): S6 dilewati, S7 menulis
+		// `ComiteeClaim(<LAST>)` - anggota yang ditambahkan putaran ini, baris TERAKHIR tangga kasus komite ini.
+		sasaran = len(k.Tangga) - 1
+	}
 	jabatan := ""
 	if berjalan >= 0 {
-		jabatan = k.Tangga[berjalan].Jabatan
-		// S6: KomiteList(KomiteCount) / ComiteeClaim(KomiteCount) <- AcceptStatus, Comment, @CurrentDateTime().
-		r.Tangga = append(r.Tangga, UbahAnggota{ID: k.Tangga[berjalan].ID, Keputusan: kep.AcceptStatus,
+		jabatan = k.Tangga[berjalan].Jabatan // S8-S9: KomiteList(KomiteCount).IDKomite
+	}
+	if sasaran >= 0 {
+		// S6 / S7: keputusan, komentar, @CurrentDateTime() - KomiteList dan ComiteeClaim satu baris di sistem baru.
+		r.Tangga = append(r.Tangga, UbahAnggota{ID: k.Tangga[sasaran].ID, Keputusan: kep.AcceptStatus,
 			Komentar: kep.Comment, IsiKomentar: true, Tanggal: saat})
 	}
 	// S8-S10: InsertChronology_DT ("Accepted by " / "Rejected by " + KomiteList(KomiteCount).IDKomite).
@@ -189,7 +199,6 @@ func Rencanakan(k Kasus, kl kontrak.KlaimTreaty, kep Keputusan, akun string, saa
 	// S11 (tanpa gerbang): IsCloseFile / IsReservedClaim <- Adjustment.IsProposeClose / IsPropReserved.
 	r.Klaim.Header["ClaimData.IsCloseFile"] = boolPega(r.UsulTutup == UsulYa)
 	r.Klaim.Header["ClaimData.IsReservedClaim"] = boolPega(r.UsulCadang == UsulYa)
-	adjKlaim := AdjustmentKlaim(kl)
 	count := k.Count
 	if setuju { // S12: tolak -> lompat ke EXT (S25)
 		akhir := count == k.Loop // S13 Local.TotalKomite := KomiteLoop
@@ -216,9 +225,8 @@ func Rencanakan(k Kasus, kl kontrak.KlaimTreaty, kep Keputusan, akun string, saa
 			}
 			// S24: penanda dan catatan subjectivity ke adjustment dan header induk.
 			r.Klaim.Adjustment["IsSubjectivity"] = boolPega(subj)
-			note := ""
-			if subj {
-				note = kep.SubjectivityNote
+			if !subj {
+				note = ""
 			}
 			r.Klaim.Adjustment["SubjectivityNote"] = note
 			r.Klaim.Header["ClaimData.IsSubjectivity"] = boolPega(subj)
@@ -234,7 +242,7 @@ func Rencanakan(k Kasus, kl kontrak.KlaimTreaty, kep Keputusan, akun string, saa
 		r.Klaim.Header["AktifButton"] = "0"
 		// S26 / S26.1: setiap baris tangga yang masih menunggu ditolak otomatis (+ tanggal); komentar tidak disentuh.
 		for i, a := range k.Tangga {
-			if i == berjalan || a.Keputusan != KeputusanMenunggu {
+			if i == sasaran || a.Keputusan != KeputusanMenunggu {
 				continue
 			}
 			r.Tangga = append(r.Tangga, UbahAnggota{ID: a.ID, Keputusan: KeputusanTolak, Tanggal: saat})
@@ -265,6 +273,12 @@ func Rencanakan(k Kasus, kl kontrak.KlaimTreaty, kep Keputusan, akun string, saa
 		r.Klaim.Adjustment = nil
 	}
 	return r
+}
+
+// Kepala - tulisan kepala kasus komite rencana ini.
+func (r Rencana) Kepala() Kepala {
+	return Kepala{Count: r.Count, AcceptStatus: r.AcceptStatus, UsulTutup: r.UsulTutup, UsulCadang: r.UsulCadang,
+		Subjectivity: r.SubjectivitySimpan, SubjectivityNote: r.SubjectivityNoteSimpan}
 }
 
 // AdjustmentDiterima - S16.9: AcceptedNo, AcceptanceStatus := 1, AcceptedDate := now.

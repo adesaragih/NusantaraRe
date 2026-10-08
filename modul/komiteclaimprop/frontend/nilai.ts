@@ -33,10 +33,6 @@ export function tampil(v: string, jenis: JenisNilai | ''): string {
 /** Kode `.AcceptStatus` (`SetDataAcceptationTreaty_Act` S2-S3: 1 Approve, 2 Reject). */
 export const KEPUTUSAN = { setuju: '1', tolak: '2' } as const
 
-/** OQ-KCP-01 - sama dengan `models.PesanSubjectivityBertingkat` di server. */
-export const PESAN_SUBJECTIVITY_BERTINGKAT =
-  'Subjectivity ? : persetujuan bersyarat pada tangga lebih dari satu tingkat menunggu keputusan penyimpanan (OQ-KCP-01)'
-
 /** Isian Subjectivity tampil (`pyVisible` `.AcceptStatus = 1 && .TransferType = 2`; layar ini hanya TT 2). */
 export function tampilSubjectivity(k: Keputusan): boolean {
   return k.acceptStatus === KEPUTUSAN.setuju
@@ -54,12 +50,11 @@ export const PESAN_KOSONG = 'Value cannot be blank'
  * Validasi klien (pyRequired / pyRequiredWhen) - sama dengan `models.PeriksaIsian` di server; server tetap menegakkan.
  * Kunci = medan isian.
  */
-export function periksa(k: Keputusan, terbuka: boolean, loop: number): Partial<Record<keyof Keputusan, string>> {
+export function periksa(k: Keputusan, terbuka: boolean): Partial<Record<keyof Keputusan, string>> {
   const out: Partial<Record<keyof Keputusan, string>> = {}
   if (k.acceptStatus !== KEPUTUSAN.setuju && k.acceptStatus !== KEPUTUSAN.tolak) out.acceptStatus = PESAN_KOSONG
   if (k.comment.trim() === '') out.comment = PESAN_KOSONG
   if (terbuka && tampilCatatanSubjectivity(k) && k.subjectivityNote.trim() === '') out.subjectivityNote = PESAN_KOSONG
-  if (terbuka && tampilCatatanSubjectivity(k) && loop > 1) out.isSubjectivity = PESAN_SUBJECTIVITY_BERTINGKAT
   return out
 }
 

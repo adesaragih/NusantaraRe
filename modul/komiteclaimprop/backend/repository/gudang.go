@@ -49,7 +49,7 @@ func (g *Gudang) barisAtau(ctx context.Context, tx *db.Tx, q string, args ...any
 // transaksi: dua Submit serentak diserialkan di sini).
 func sqlKepalaKasus(gen, work string, kunci bool) string {
 	q := fmt.Sprintf(`SELECT g.ID, w.COVER_KEY, g.ADJUSTMENT_ID, g.KOMITE_LOOP, g.KOMITE_COUNT, g.ACCEPT_STATUS,
-		       g.KOMITE_USUL_TUTUP, g.KOMITE_USUL_CADANG, w.TAHAP, w.STATUS_WORK, w.CREATE_OP, w.CREATE_OP_NAME,
+		       g.KOMITE_USUL_TUTUP, g.KOMITE_USUL_CADANG, g.KOMITE_SUBJECTIVITY, g.KOMITE_SUBJECTIVITY_NOTE, w.TAHAP, w.STATUS_WORK, w.CREATE_OP, w.CREATE_OP_NAME,
 		       %s, %s
 		  FROM %s g JOIN %s w ON w.ID = g.ID
 		 WHERE g.ID = :1 AND w.LINI = :2 AND w.ID LIKE :3`, fmt.Sprintf(db.FmtTanggalOracle, "w.TGL_CREATE"),
@@ -89,10 +89,10 @@ func (g *Gudang) BacaKasus(ctx context.Context, tx *db.Tx, id string, kunci bool
 	if err := db.PeriksaSQL(q); err != nil {
 		return models.Kasus{}, err
 	}
-	var n [14]sql.NullString
+	var n [16]sql.NullString
 	var loop, count sql.NullInt64
 	err = g.barisAtau(ctx, tx, q, id, models.LiniProp, awalanLike()).Scan(&n[0], &n[1], &n[2], &loop, &count, &n[5],
-		&n[6], &n[7], &n[8], &n[9], &n[10], &n[11], &n[12], &n[13])
+		&n[6], &n[7], &n[14], &n[15], &n[8], &n[9], &n[10], &n[11], &n[12], &n[13])
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.Kasus{}, fmt.Errorf("%w: %q", ErrKasusTidakAda, id)
 	}
@@ -101,21 +101,25 @@ func (g *Gudang) BacaKasus(ctx context.Context, tx *db.Tx, id string, kunci bool
 	}
 	return models.Kasus{ID: n[0].String, KlaimID: n[1].String, AdjustmentID: n[2].String, Loop: int(loop.Int64),
 		Count: int(count.Int64), AcceptStatus: strings.TrimSpace(n[5].String), UsulTutup: strings.TrimSpace(n[6].String),
-		UsulCadang: strings.TrimSpace(n[7].String), Tahap: n[8].String, StatusWork: n[9].String, PembuatID: n[10].String,
+		UsulCadang: strings.TrimSpace(n[7].String), Subjectivity: strings.TrimSpace(n[14].String),
+		SubjectivityNote: n[15].String, Tahap: n[8].String, StatusWork: n[9].String, PembuatID: n[10].String,
 		PembuatNama: n[11].String, TglCreate: waktuDB(n[12].String), TglUpdate: waktuDB(n[13].String)}, nil
 }
 
 // sqlSimpanKepala - KomitePostAdjustment S25 (`KomiteCount := KomiteLoop` saat tolak) + S40 (`KomiteCount + 1`),
-// `.AcceptStatus` (bahan `IsKomiteLoop`), dan dua penanda usul (isian tingkat 1). Bersyarat `KOMITE_COUNT` lama.
+// `.AcceptStatus` (bahan `IsKomiteLoop`), dua penanda usul dan isian Subjectivity (isian tingkat 1, migrasi 680 / 682).
+// Bersyarat `KOMITE_COUNT` lama.
 func sqlSimpanKepala(gen string) string {
 	return fmt.Sprintf(`UPDATE %s SET KOMITE_COUNT = :1, ACCEPT_STATUS = :2, KOMITE_USUL_TUTUP = :3,
-		       KOMITE_USUL_CADANG = :4
-		 WHERE ID = :5 AND KOMITE_COUNT = :6`, gen)
+		       KOMITE_USUL_CADANG = :4, KOMITE_SUBJECTIVITY = :5, KOMITE_SUBJECTIVITY_NOTE = :6
+		 WHERE ID = :7 AND KOMITE_COUNT = :8`, gen)
 }
 
 // SimpanKepala menulis kepala kasus sesudah satu Submit.
-func (g *Gudang) SimpanKepala(ctx context.Context, tx *db.Tx, id string, countLama, countBaru int, accept, usulTutup,
-	usulCadang string) error {
+func (g *Gudang) SimpanKepala(ctx context.Context, tx *db.Tx, id string, countLama int, kp models.Kepala) error {
+	if err := wajibTx(tx); err != nil {
+		return err
+	}
 	gen, err := g.db.Qualify("T_GENERAL_KOMITE")
 	if err != nil {
 		return err
@@ -124,7 +128,12 @@ func (g *Gudang) SimpanKepala(ctx context.Context, tx *db.Tx, id string, countLa
 	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	h, err := tx.ExecContext(ctx, q, countBaru, db.KosongJadiNil(accept), usulTutup, usulCadang, id, countLama)
+	subj := kp.Subjectivity
+	if subj == "" {
+		subj = models.UsulTidak
+	}
+	h, err := tx.ExecContext(ctx, q, kp.Count, db.KosongJadiNil(kp.AcceptStatus), kp.UsulTutup, kp.UsulCadang, subj,
+		db.KosongJadiNil(kp.SubjectivityNote), id, countLama)
 	if err != nil {
 		return fmt.Errorf("repository: menyimpan kepala kasus komite: %w", err)
 	}

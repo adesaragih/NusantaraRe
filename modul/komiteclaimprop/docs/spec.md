@@ -34,6 +34,10 @@
 8. **Indeks `ADJUSTMENT_ID`** — *"index UNIK"* → indeks biasa (migrasi 681, keputusan work owner 08-10-2026);
    keunikan dijaga `KOMITE_ID UNIQUE` di kedua tabel adjustment.
 9. **AC 81-86** ditempel ke tiket: 81-82 → 04; 83 → 13; 84 → 03 (aksi tak ada di wajah TT 2); 85-86 → 11.
+10. **Jawaban work owner 08-10-2026 (laporan implementasi):** OQ-KCP-01 "a" — isian Subjectivity tingkat 1 disimpan di
+    `T_GENERAL_KOMITE` (migrasi 682); OQ-KCP-06 "a" — baris subjectivity dapat diserahkan ulang ke komite (Claim Prop +
+    komite, S7); OQ-KCP-02 "b" — **AC 83** (*"Seluruh data kasus komite dipindahkan"*) DIRALAT: kasus komite lama tidak
+    dimigrasi, klaimnya dimuat Claim Prop; OQ-KCP-03 "ikuti" — bacaan lintas skema bergerbang IsPEGAPROD.
 
 ## Cara membaca berkas ini
 
