@@ -40,7 +40,8 @@ func acuanUji() *tiruan.Acuan {
 		Ceding: "UJI-CEDING", CedingID: "UJI-CED", LeadingReinsSource: "UJI-SOB", LeadingReinsSourceID: "UJI-SOBID",
 		Commencement: "2026-01-01", Termination: "2026-12-31", TreatyYear: "2026", RNMShareP: "10",
 		StatusAkseptasi: "Resolve Complete", Limits: []models.LimitMaster{{TreatyType: "QUOTA SHARE",
-			Detail: []models.DetailLimit{{TreatyGroupID: "UJI-TG", RNMShare: "10"}}}}}
+			Detail: []models.DetailLimit{{TreatyGroupID: "UJI-TG", RNMShare: "10",
+				SpreadingList: []models.SpreadingMaster{{ReinsTypeID: "UJI-R1", ReinsTypeName: "UJI-QS", Pct: "100"}}}}}}}
 	a.BarisMaster = []models.BarisMaster{{TreatyID: masterUji, ClassOfBusiness: "UJI-COBNAMA", ClassOfBusinessID: "UJI-COB",
 		TreatyContractName: "UJI-KONTRAK", ProportionType: "Proportional", TreatyGroup: "UJI-GRUP", TreatyGroupID: "UJI-TG",
 		TreatyYear: "2026"}}
@@ -210,11 +211,12 @@ func TestAlurPenuhSampaiResolved(t *testing.T) {
 	langkah("CountPersen", 1, "", map[string]string{models.JalurAnak(models.DaftarLossAlloc, 1, "SharePercentage"): "100"})
 	langkah("AddEstimation", 0, "", nil)
 	langkah("CountEstimation", 1, "", map[string]string{models.JalurAnak(models.DaftarEstimasi, 1, "Type"): "1"})
-	// tambah / hapus baris Spreading Claim nonaktif (keputusan work owner 07-10-2026): dipanggil langsung pun ditolak
+	// ikon grid bawaan Spreading Claim tidak dibangun (Add = aksi AddSpreading, keputusan work owner 08-10-2026):
+	// dipanggil langsung pun ditolak
 	kode, out := u.aksi(id, admin, "", models.DaftarSpreading+"#tambah", 0, "", nil)
 	u.wajib(kode, http.StatusBadRequest, out, "tambah baris spreading")
-	// tanpa baris spreading, Save to issue RNM ditolak ProteksiData_act langkah 5 - dan layar tidak dapat
-	// melahirkannya. Kasus hasil pemuat data lama membawa barisnya: fixture setara.
+	// polis uji tanpa produksi: spreading tidak terisi dari polis, Save to issue RNM ditolak ProteksiData_act
+	// langkah 5. Baris spreading lalu dipasang langsung (setara pemuat data lama); Add diuji spreadingpolis_test.go.
 	kode, out = u.aksi(id, admin, "", "SaveOutstanding", 0, "", nil)
 	u.wajib(kode, http.StatusUnprocessableEntity, out, "Save to issue RNM tanpa baris spreading")
 	if !strings.Contains(strings.Join(teks(out["pesan"]), ";"), models.PesanIsiSpreading) {

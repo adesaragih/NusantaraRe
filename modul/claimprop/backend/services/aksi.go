@@ -304,9 +304,28 @@ func init() {
 			}
 			return models.DeleteEstimation(j.k, j.h, j.r.Indeks, m)
 		},
-		// tabel bawah dari PROPORTIONALARRG, bukan master (keputusan work owner 08-10-2026)
+		// tabel bawah = SpreadingList master (SetTreatyNameSpreading_Act langkah 11); Add / Delete aktif (keputusan work
+		// owner 08-10-2026; AddSpreading_Act / DeleteSpreading_Act tidak diekspor)
 		"SetTreatyNameSpreading": func(j *jalanAksi) error {
-			return models.SetTreatyNameSpreading(j.k, j.h, j.r.Indeks)
+			m, err := master(j)
+			if err != nil {
+				return err
+			}
+			return models.SetTreatyNameSpreading(j.k, j.h, j.r.Indeks, m)
+		},
+		"AddSpreading": func(j *jalanAksi) error {
+			m, err := master(j)
+			if err != nil {
+				return err
+			}
+			return models.AddSpreading(j.k, j.h, m)
+		},
+		"DeleteSpreading": func(j *jalanAksi) error {
+			m, err := master(j)
+			if err != nil {
+				return err
+			}
+			return models.DeleteSpreading(j.k, j.h, j.r.Indeks, m)
 		},
 		"CountSpreading": dariModel(models.CountSpreading),
 		// tombol Outstanding Claim (tiket 01, 07, 12)

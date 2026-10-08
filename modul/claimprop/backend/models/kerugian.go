@@ -625,7 +625,7 @@ func PeriksaShareTepat100(h *Halaman) ([]string, error) {
 // nama treaty baris `idx` dari REINSURANCETYPE, lalu SpreadingBreakQS DIBANGUN ULANG (`susunBreakQS`).
 // Langkah 16-17 (FacRetroList dari TREATYREINSURER) memakai FindData.CARI3/CARI6 dari DataF.CARI11/CARI13 yang TIDAK
 // disetel activity ini - bacaan dengan tahun dan treaty group kosong tidak pernah menemukan baris; tidak ditulis.
-func SetTreatyNameSpreading(k *Konteks, h *Halaman, idx int) error {
+func SetTreatyNameSpreading(k *Konteks, h *Halaman, idx int, m MasterTreaty) error {
 	b, err := baris(h, DaftarSpreading, idx)
 	if err != nil {
 		return err
@@ -639,20 +639,17 @@ func SetTreatyNameSpreading(k *Konteks, h *Halaman, idx int) error {
 			b["TreatyName"] = nama
 		}
 	}
-	if err := susunBreakQS(k, h); err != nil {
-		return err
-	}
+	susunBreakQS(h, m)
 	return HitungTurunan(h)
 }
 
 // IsiSpreadingPolis - SpreadingClaim terisi dari spreading polis saat polis dipilih, lalu SpreadingBreakQS disusun.
 //
-// [keputusan work owner 08-10-2026] "kamu bisa ambil spreading dari polisnya? untuk table bawahnya itu child dari
-// spreading atas, bisa di select dari PROPORTIONALARRG?" - dipilih: terisi otomatis saat polis dipilih. Di Pega baris
-// spreading lahir dari tombol Add (`AddSpreading_Act`, TIDAK diekspor); Add/Delete manual tetap nonaktif. Sumber:
-// TREATYINPRODUCTION polis itu (JN_REAS, PCT_SHARE_PREMI, CURR_ID - nilai DB apa adanya), nama treaty dari
-// REINSURANCETYPE seperti langkah 6 SetTreatyNameSpreading_Act. Spreading lama diganti, tidak ditumpuk.
-func IsiSpreadingPolis(k *Konteks, h *Halaman, nopolis string) error {
+// [keputusan work owner 08-10-2026] "kamu bisa ambil spreading dari polisnya?" - dipilih: terisi otomatis saat polis
+// dipilih. Di Pega baris spreading lahir dari tombol Add (`AddSpreading_Act`, TIDAK diekspor). Sumber: TREATYINPRODUCTION
+// polis itu (JN_REAS, PCT_SHARE_PREMI, CURR_ID - nilai DB apa adanya), nama treaty dari REINSURANCETYPE seperti
+// langkah 6 SetTreatyNameSpreading_Act. Spreading lama diganti, tidak ditumpuk.
+func IsiSpreadingPolis(k *Konteks, h *Halaman, nopolis string, m MasterTreaty) error {
 	sp, err := k.Acuan.SpreadingPolis(k.Ctxt(), nopolis)
 	if err != nil {
 		return err
@@ -667,52 +664,79 @@ func IsiSpreadingPolis(k *Konteks, h *Halaman, nopolis string) error {
 			"SharePercentage": teksPersen(s.SharePercentage), "CurrencyID": s.CurrencyID, "Currency": s.Currency})
 	}
 	h.SetelDaftar(DaftarSpreading, atas)
-	if err := susunBreakQS(k, h); err != nil {
-		return err
-	}
+	susunBreakQS(h, m)
 	return HitungTurunan(h)
 }
 
-// susunBreakQS - SpreadingBreakQS = anak PROPORTIONALARRG setiap TreatyType SpreadingClaim (tahun + treaty group klaim),
-// untuk setiap mata uang estimasi (SetTreatyNameSpreading_Act langkah 12-13; tanpa estimasi: mata uang baris
-// spreading), unik TreatyType#CurrencyID (langkah 14).
+// AddSpreading - tombol Add Spreading List (`AddSpreading_Act`, TIDAK diekspor; diaktifkan keputusan work owner
+// 08-10-2026): satu baris kosong; Treaty Type dipilih dari dropdown spreading polis (aksi SetTreatyNameSpreading),
+// Share (%) diisi layar. Mata uang baris = mata uang estimasi pertama, tanpa estimasi = mata uang baris spreading
+// pertama (SpreadingClaim per mata uang, CountSpreading_Act langkah 6). `[penyimpangan sadar]` isi activity aslinya
+// tidak terbaca.
+func AddSpreading(k *Konteks, h *Halaman, m MasterTreaty) error {
+	mu := urutanMataUang(h.AmbilDaftar(DaftarEstimasi))
+	if len(mu) == 0 {
+		mu = urutanMataUang(h.AmbilDaftar(DaftarSpreading))
+	}
+	b := Baris{"TreatyType": "", "TreatyName": "", "SharePercentage": ""}
+	if len(mu) > 0 {
+		b["CurrencyID"], b["Currency"] = mu[0]["CurrencyID"], mu[0]["Currency"]
+	}
+	h.TambahBaris(DaftarSpreading, b)
+	susunBreakQS(h, m)
+	return HitungTurunan(h)
+}
+
+// DeleteSpreading - tombol Delete Spreading List (`DeleteSpreading_Act`, TIDAK diekspor; diaktifkan keputusan work
+// owner 08-10-2026; nonaktif bila `.IsOldData='Yes'` - pyDisabledWhen XML): baris dihapus, SpreadingBreakQS dan
+// turunan disusun ulang.
+func DeleteSpreading(k *Konteks, h *Halaman, idx int, m MasterTreaty) error {
+	b, err := baris(h, DaftarSpreading, idx)
+	if err != nil {
+		return err
+	}
+	if b["IsOldData"] == "Yes" {
+		return ErrBarisBeku
+	}
+	h.HapusBaris(DaftarSpreading, idx)
+	susunBreakQS(h, m)
+	return HitungTurunan(h)
+}
+
+// susunBreakQS - SetTreatyNameSpreading_Act langkah 11-15: SpreadingBreakQS = `TreatyInMaster.Limits(1).Detail(1)
+// .SpreadingList` untuk setiap mata uang estimasi (12: satu mata uang; 13: lebih), unik TreatyType#CurrencyID (14).
 //
-// [keputusan work owner 08-10-2026] menggantikan `TreatyInMaster.Limits(1).Detail(1).SpreadingList` (langkah 11):
-// tabel bawah = anak dari spreading atas di PROPORTIONALARRG. `[data DEV 08-10-2026]` 958 dari 1.020 polis klaim
-// CLMP: spreading polis = induk yang anaknya di PROPORTIONALARRG sama dengan SpreadingBreakQS klaim lama.
-func susunBreakQS(k *Konteks, h *Halaman) error {
+// [keputusan work owner 08-10-2026] sumber master DIPERTAHANKAN (PROPORTIONALARRG dibatalkan sesudah uji data DEV:
+// master cocok dengan seluruh SpreadingBreakQS klaim CLMP lama). Tambahan sejak spreading terisi dari polis: tanpa
+// estimasi dipakai mata uang baris spreading; tanpa baris spreading, tabel bawah kosong.
+func susunBreakQS(h *Halaman, m MasterTreaty) {
 	atas := h.AmbilDaftar(DaftarSpreading)
+	if len(atas) == 0 {
+		h.SetelDaftar(DaftarBreakQS, nil)
+		return
+	}
 	mu := urutanMataUang(h.AmbilDaftar(DaftarEstimasi))
 	if len(mu) == 0 {
 		mu = urutanMataUang(atas)
 	}
-	tahun, grup := h.Ambil(CD+"TreatyYear"), h.Ambil(CD+"TreatyGroupID")
-	var anak []AnakSpreading
-	for _, b := range atas {
-		if b["TreatyType"] == "" {
-			continue
-		}
-		a, err := k.Acuan.AnakSpreading(k.Ctxt(), b["TreatyType"], tahun, grup)
-		if err != nil {
-			return err
-		}
-		anak = append(anak, a...)
+	var daftar []SpreadingMaster
+	if len(m.Limits) > 0 && len(m.Limits[0].Detail) > 0 {
+		daftar = m.Limits[0].Detail[0].SpreadingList
 	}
 	var qs []Baris
 	sudah := map[string]bool{}
 	for _, u := range mu {
-		for _, a := range anak {
-			kunci := a.ReinsTypeID + "#" + u["CurrencyID"]
+		for _, s := range daftar {
+			kunci := s.ReinsTypeID + "#" + u["CurrencyID"]
 			if sudah[kunci] {
 				continue // langkah 14 Java: unik TreatyType#CurrencyID
 			}
 			sudah[kunci] = true
-			qs = append(qs, Baris{"TreatyType": a.ReinsTypeID, "TreatyName": a.ReinsTypeName,
-				"SharePercentage": teksPersen(a.Pct), "CurrencyID": u["CurrencyID"], "Currency": u["Currency"]})
+			qs = append(qs, Baris{"TreatyType": s.ReinsTypeID, "TreatyName": s.ReinsTypeName,
+				"SharePercentage": teksPersen(s.Pct), "CurrencyID": u["CurrencyID"], "Currency": u["Currency"]})
 		}
 	}
 	h.SetelDaftar(DaftarBreakQS, qs) // 15
-	return nil
 }
 
 // teksPersen - persen DB dirapikan ("40.00" -> "40"); bukan angka = apa adanya.

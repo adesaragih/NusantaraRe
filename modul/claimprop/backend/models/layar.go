@@ -56,6 +56,21 @@ var (
 
 func bSama(p, v string) KondisiBaris { return func(_ *Halaman, b Baris) bool { return b[p] == v } }
 
+// bTerisi - medan baris terisi.
+func bTerisi(p string) KondisiBaris { return func(_ *Halaman, b Baris) bool { return b[p] != "" } }
+
+// bAtau - salah satu kondisi baris benar.
+func bAtau(ks ...KondisiBaris) KondisiBaris {
+	return func(h *Halaman, b Baris) bool {
+		for _, k := range ks {
+			if k(h, b) {
+				return true
+			}
+		}
+		return false
+	}
+}
+
 var (
 	bIsAdjVal   = bSama("IsAdjVal", "Yes")
 	bNote       = bSama("Note", "Yes")
@@ -470,24 +485,25 @@ func blokTotalEstimasi() []Unsur {
 	}
 }
 
-// gridSpreading - "Spreading List" pertama (SpreadingClaim). `acc` = InputAcceptation_Est (kolom Treaty Type dropdown
-// sumber Spreading.pxResults).
-func gridSpreading(acc bool) Unsur {
-	tt := kAksi(kROJ(kol("TreatyName", "Treaty Type", KTeks), bOldData), "SetTreatyNameSpreading")
-	if acc {
-		tt = kAksi(kSumber(kROJ(kol("TreatyType", "Treaty Type", KPilih), bOldData), SumberSpreading), "SetTreatyNameSpreading")
-	}
-	// Tambah / hapus baris nonaktif (keputusan work owner 07-10-2026, prompt §6 butir 9): Add = AddSpreading_Act dan
-	// Delete = DeleteSpreading_Act tidak diekspor; ikon grid bawaan Pega tidak dibangun. Baris lahir dari activity
-	// estimasi / spreading yang berbukti.
+// gridSpreading - "Spreading List" pertama (SpreadingClaim), Section OutstandingClaim_Sprd / InputAcceptation_Est.
+//
+// [keputusan work owner 08-10-2026] Add / Delete AKTIF (membatalkan "non aktifkan" 07-10-2026); AddSpreading_Act /
+// DeleteSpreading_Act tidak diekspor - perilakunya `AddSpreading` / `DeleteSpreading`. Add tanpa syarat, Delete
+// nonaktif bila `.IsOldData='Yes'` (pyDisabledWhen XML). Ikon grid bawaan Pega tidak dibangun. Kolom Treaty Type di
+// KEDUA layar = dropdown TreatyType bersumber spreading polis (XML Outstanding: pxTextInput .TreatyName - diubah karena
+// baris dari Add harus memilih treaty), TERKUNCI bila baris sudah ber-TreatyType (dari polis, atau sudah dipilih
+// sesudah Add) atau data lama (work owner "ini disable aja").
+func gridSpreading() Unsur {
+	tt := kAksi(kSumber(kROJ(kol("TreatyType", "Treaty Type", KPilih), bAtau(bOldData, bTerisi("TreatyType"))),
+		SumberSpreading), "SetTreatyNameSpreading")
 	return bagian("Spreading List", Unsur{Jenis: JenisGrid, Jalur: DaftarSpreading, Bernomor: true,
-		Tambah: ptr(tombolOQ("AddSpreading", "Add", OQTidakDiekspor)),
+		Tambah: ptr(tombol("AddSpreading", "Add", "AddSpreading")),
 		Kolom: []Unsur{
 			tt,
 			kAksi(kROJ(kol("SharePercentage", "Share(%)", KAngka), bOldData), "CountSpreading"),
 			kRO(kol("Currency", "Currency", KTampil)),
 			kAksi(kROJ(kol("ClaimSpreaded", "Claim Spreaded", KAngka), bOldData), "CountSpreading"),
-			catatanK(kTombol("DeleteSpreading", "Delete", "", bSelalu), OQTidakDiekspor),
+			kTombol("DeleteSpreading", "Delete", "DeleteSpreading", bOldData),
 		},
 		Kaki: []Unsur{ro(medan(CD+"TotalEstimasi", "", KAngka))}})
 }
@@ -566,7 +582,7 @@ func LayarOutstanding() []Unsur {
 		letak(LetakTab,
 			bagian("Interest", sectionInterest()),
 			bagian("Estimation", sectionEstimasiOutstanding()),
-			bagian("Spreading", bagian("Spreading Claim", gridSpreading(false), gridBreakQS(false))),
+			bagian("Spreading", bagian("Spreading Claim", gridSpreading(), gridBreakQS(false))),
 		),
 		tampil(tombol("Save", "Save", "SetOutstanding"), beda("IsAcceptation", "1")),
 		naJika(tombol("SaveToIssueRNM", "Save to issue RNM", "SaveOutstanding"), sama("IsCFS", "")),
@@ -663,7 +679,7 @@ func sectionEstimasiAkseptasi() Unsur {
 	}
 	anak = append(anak, blokTotalEstimasi()...)
 	anak = append(anak,
-		bagian("Spreading Claim", gridSpreading(true), gridBreakQS(true)),
+		bagian("Spreading Claim", gridSpreading(), gridBreakQS(true)),
 		naJika(tombol("SaveToIssueRNM", "Save to issue RNM", "SaveOutstanding"), beda("ReCFS", "1")),
 		naJika(tombol("PrintPLA", "PRINT PLA", "BukaPLA"), beda(CD+"IsPLA", "1")),
 	)

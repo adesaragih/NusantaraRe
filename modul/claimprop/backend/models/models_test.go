@@ -263,19 +263,32 @@ func cariTata(ts []models.Tata, kunci string) *models.Tata {
 	return nil
 }
 
-// Tambah / hapus baris Spreading Claim nonaktif (keputusan work owner 07-10-2026): grid tanpa ikon bawaan aktif; tombol
-// ber-activity (AddSpreading_Act / DeleteSpreading_Act tidak diekspor) tampil nonaktif.
-func TestSpreadingTanpaTambahHapusAktif(t *testing.T) {
-	h := models.HalamanBaru()
-	h.SetelDaftar(models.DaftarSpreading, []models.Baris{{"TreatyName": "UJI-QS"}})
-	ts := models.Evaluasi(h, models.LayarOutstanding(), false)
-	if models.AksiTerbuka(ts, models.DaftarSpreading+"#tambah", 0) || models.AksiTerbuka(ts, "AddSpreading", 0) ||
-		models.AksiTerbuka(ts, "DeleteSpreading", 1) {
-		t.Fatalf("tambah / hapus spreading terbuka")
-	}
-	g := cariTata(ts, models.DaftarSpreading)
-	if g == nil || g.Tambah == nil || !g.Tambah.Nonaktif {
-		t.Fatalf("tombol Add spreading mau tampil nonaktif: %+v", g)
+// Add / Delete Spreading Claim AKTIF (keputusan work owner 08-10-2026, membatalkan 07-10-2026 "non aktifkan"): Add
+// selalu aktif, Delete nonaktif bila `.IsOldData='Yes'` (pyDisabledWhen XML). Ikon grid bawaan tetap tidak dibangun.
+// Treaty Type = dropdown spreading polis, terkunci bila baris sudah ber-TreatyType (dari polis, atau sudah dipilih
+// sesudah Add) atau data lama (work owner 08-10-2026 "ini disable aja").
+func TestSpreadingTambahHapusDanTreatyTypeTerkunci(t *testing.T) {
+	for _, layar := range []func() []models.Unsur{models.LayarOutstanding, models.LayarAkseptasi} {
+		h := models.HalamanBaru()
+		h.SetelDaftar(models.DaftarSpreading, []models.Baris{
+			{"TreatyType": "UJI-INDUK"}, {"TreatyType": ""}, {"TreatyType": "UJI-LAMA", "IsOldData": "Yes"},
+		})
+		ts := models.Evaluasi(h, layar(), false)
+		if !models.AksiTerbuka(ts, "AddSpreading", 0) {
+			t.Fatal("Add spreading mau aktif")
+		}
+		if models.AksiTerbuka(ts, models.DaftarSpreading+"#tambah", 0) {
+			t.Fatal("ikon grid bawaan tidak dibangun")
+		}
+		if !models.AksiTerbuka(ts, "DeleteSpreading", 1) || !models.AksiTerbuka(ts, "DeleteSpreading", 2) ||
+			models.AksiTerbuka(ts, "DeleteSpreading", 3) {
+			t.Fatal("Delete mau aktif kecuali IsOldData Yes")
+		}
+		// SetTreatyNameSpreading = aksi kolom Treaty Type: hanya baris yang Treaty Type-nya masih kosong
+		if models.AksiTerbuka(ts, "SetTreatyNameSpreading", 1) || !models.AksiTerbuka(ts, "SetTreatyNameSpreading", 2) ||
+			models.AksiTerbuka(ts, "SetTreatyNameSpreading", 3) {
+			t.Fatal("Treaty Type mau terkunci bila sudah terisi atau data lama")
+		}
 	}
 }
 

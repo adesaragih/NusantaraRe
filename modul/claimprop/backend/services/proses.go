@@ -67,8 +67,12 @@ func aksiPilihPolis(j *jalanAksi) error {
 			if err := models.CheckNoPolicy(j.k, j.h, r.PolicyNo, r.Quarter, r.TreatyYear, r.Prodke); err != nil {
 				return err
 			}
-			// spreading atas + bawah terisi dari polis (keputusan work owner 08-10-2026)
-			return models.IsiSpreadingPolis(j.k, j.h, r.PolicyNo)
+			// spreading atas dari polis, bawah dari SpreadingList master (keputusan work owner 08-10-2026)
+			m, err := master(j)
+			if err != nil {
+				return err
+			}
+			return models.IsiSpreadingPolis(j.k, j.h, r.PolicyNo, m)
 		}
 	}
 	return fmt.Errorf("%w: polis %q bukan polis master ini", ErrPermintaanTidakSah, j.r.Param)

@@ -189,6 +189,19 @@ func (a *Acuan) bacaMaster(ctx context.Context, objek, id string) (models.Master
 			d.CashLossList = append(d.CashLossList, models.CashLoss{Currency: c[2], Value: c[3]})
 		}
 	}
+	spr, err := a.banyak(ctx, fmt.Sprintf(`SELECT jt.li, jt.di, jt.ri, jt.rn, jt.pc FROM %s m,
+		JSON_TABLE(m.JSONDATA, '$.Limits[*]' COLUMNS (li FOR ORDINALITY, NESTED PATH '$.Detail[*]' COLUMNS
+		  (di FOR ORDINALITY, NESTED PATH '$.SpreadingList[*]' COLUMNS (ri VARCHAR2(100) PATH '$.ReinsTypeID',
+		  rn VARCHAR2(400) PATH '$.ReinsTypeName', pc VARCHAR2(100) PATH '$.Pct')))) jt
+		 WHERE m.ID = :1 AND (jt.ri IS NOT NULL OR jt.rn IS NOT NULL) ORDER BY jt.li, jt.di`, t), 5, id)
+	if err != nil {
+		return models.MasterTreaty{}, false, err
+	}
+	for _, s := range spr {
+		if d := detail(&m, idx, s[0], s[1]); d != nil {
+			d.SpreadingList = append(d.SpreadingList, models.SpreadingMaster{ReinsTypeID: s[2], ReinsTypeName: s[3], Pct: s[4]})
+		}
+	}
 	return m, true, nil
 }
 
@@ -564,34 +577,6 @@ func (a *Acuan) SpreadingPolis(ctx context.Context, nopolis string) ([]models.Sp
 	for _, r := range rows {
 		out = append(out, models.SpreadingPolis{TreatyType: r[0], SharePercentage: rapikanDesimal(r[1]),
 			CurrencyID: r[2], Currency: r[3]})
-	}
-	return out, nil
-}
-
-// AnakSpreading - anak PROPORTIONALARRG (PARENTREINSTYPEID) dalam treaty group klaim, pada tahun arrangement
-// TERBARU yang <= tahun treaty klaim (keputusan work owner 08-10-2026 "select dari PROPORTIONALARRG"; aturan tahun
-// `[data DEV 08-10-2026]`: TREATYYEAR arrangement = tahun kontrak treaty, bukan tahun polis - klaim 2025 / 2020 / 2018
-// memakai arrangement 2024 / 2019 / 2017 dan hasilnya sama dengan SpreadingBreakQS klaim lama). Satu baris per
-// REINSTYPEID: TGLUPDATE terbaru (9 dari 896 kelompok punya PCT berbeda untuk anak yang sama). Urut SPREADINGORDER lalu
-// REINSTYPEID.
-func (a *Acuan) AnakSpreading(ctx context.Context, induk, tahun, grup string) ([]models.AnakSpreading, error) {
-	t, err := a.q("PROPORTIONALARRG")
-	if err != nil {
-		return nil, err
-	}
-	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT REINSTYPEID, REINSTYPENAME, PCT FROM (
-		SELECT REINSTYPEID, REINSTYPENAME, PCT, SPREADINGORDER,
-			ROW_NUMBER() OVER (PARTITION BY REINSTYPEID ORDER BY TGLUPDATE DESC NULLS LAST, ID DESC) URUT
-		FROM %s WHERE PARENTREINSTYPEID = :1 AND TREATYGROUPID = :2
-		  AND TREATYYEAR = (SELECT MAX(TREATYYEAR) FROM %s WHERE PARENTREINSTYPEID = :3 AND TREATYGROUPID = :4
-		    AND TREATYYEAR <= :5))
-		WHERE URUT = 1 ORDER BY SPREADINGORDER NULLS LAST, REINSTYPEID`, t, t), 3, induk, grup, induk, grup, tahun)
-	if err != nil {
-		return nil, err
-	}
-	out := []models.AnakSpreading{}
-	for _, r := range rows {
-		out = append(out, models.AnakSpreading{ReinsTypeID: r[0], ReinsTypeName: r[1], Pct: r[2]})
 	}
 	return out, nil
 }

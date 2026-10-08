@@ -160,7 +160,6 @@ func TestSQLDiDEV(t *testing.T) {
 		{"LimitPLA", func() error { _, _, err := a.LimitPLA(ctx, "2026", "UJI", "UJI"); return err }},
 		{"DaftarRetro", func() error { _, err := a.DaftarRetro(ctx, "UJI", "2026", "UJI"); return err }},
 		{"SpreadingPolis", func() error { _, err := a.SpreadingPolis(ctx, "UJI"); return err }},
-		{"AnakSpreading", func() error { _, err := a.AnakSpreading(ctx, "UJI", "2024", "UJI"); return err }},
 		{"RosterKomite", func() error { _, err := a.RosterKomite(ctx, "0", "UJI"); return err }},
 		{"TingkatPelaku", func() error { _, err := a.TingkatPelaku(ctx, "UJI"); return err }},
 		{"LimitDirekturUtama", func() error { _, _, err := a.LimitDirekturUtama(ctx); return err }},

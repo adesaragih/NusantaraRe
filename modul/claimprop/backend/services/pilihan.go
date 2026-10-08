@@ -134,6 +134,19 @@ func (l *Layanan) Pilihan(ctx context.Context, p inti.Pelaku, id, jenis string, 
 			}
 			out = append(out, models.Pilihan{Nilai: s.TreatyType, Label: nama})
 		}
+		// + treaty baris yang sudah ada di luar spreading polis (data lama), label TreatyName baris apa adanya; label
+		// dari polis tidak ditimpa
+		for _, b := range h.AmbilDaftar(models.DaftarSpreading) {
+			if b["TreatyType"] == "" || sudah[b["TreatyType"]] {
+				continue
+			}
+			sudah[b["TreatyType"]] = true
+			label := b["TreatyName"]
+			if label == "" {
+				label = b["TreatyType"]
+			}
+			out = append(out, models.Pilihan{Nilai: b["TreatyType"], Label: label})
+		}
 		return out, nil
 	case models.SumberShareRNM, models.SumberLimits:
 		m, _, err := l.a.MasterTreaty(ctx, h.Ambil(models.CD+"IDMaster"))

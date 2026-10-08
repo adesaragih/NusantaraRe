@@ -40,12 +40,21 @@ type DetailLimit struct {
 	TreatyGroupID string
 	RNMShare      string
 	CashLossList  []CashLoss
+	SpreadingList []SpreadingMaster
 }
 
 // CashLoss - `Detail(m).CashLossList(k)`: plafon cash call (DeleteEstimation_Act langkah 6-7).
 type CashLoss struct {
 	Currency string
 	Value    string
+}
+
+// SpreadingMaster - `Limits(1).Detail(1).SpreadingList(k)`: anak spreading (SetTreatyNameSpreading_Act langkah 11 ->
+// SpreadingBreakQS).
+type SpreadingMaster struct {
+	ReinsTypeID   string
+	ReinsTypeName string
+	Pct           string
 }
 
 // BarisMaster - satu baris grid popup "Data Master TreatyIn" (RD `BrowseCLAIM_MASTER_TREATY`, view CLAIM_MASTER_TREATY).
@@ -169,19 +178,12 @@ type SpreadingPolis struct {
 	TreatyType, SharePercentage, CurrencyID, Currency string
 }
 
-// AnakSpreading - satu baris PROPORTIONALARRG anak sebuah jenis reasuransi (REINSTYPEID, REINSTYPENAME, PCT).
-type AnakSpreading struct {
-	ReinsTypeID, ReinsTypeName, Pct string
-}
-
 // Acuan - seluruh bacaan basis data port activity Claim Prop.
 type Acuan interface {
 	// SpreadingPolis - spreading polis (TREATYINPRODUCTION per NOPOLIS, unik, urut JN_REAS): pengisi SpreadingClaim
-	// saat polis dipilih (keputusan work owner 08-10-2026; AddSpreading_Act tidak diekspor).
+	// saat polis dipilih dan sumber dropdown Treaty Type (keputusan work owner 08-10-2026; AddSpreading_Act tidak
+	// diekspor).
 	SpreadingPolis(ctx context.Context, nopolis string) ([]SpreadingPolis, error)
-	// AnakSpreading - anak PROPORTIONALARRG sebuah jenis reasuransi (PARENTREINSTYPEID) pada tahun dan treaty group
-	// klaim, satu baris per REINSTYPEID (TGLUPDATE terbaru): pengisi SpreadingBreakQS (keputusan work owner 08-10-2026).
-	AnakSpreading(ctx context.Context, induk, tahun, grup string) ([]AnakSpreading, error)
 	// KursStandar = `POOLDATA.GETCURRENCYSTANDARD(CurrID, SYSDATE)` (RDB CurrencyStandard).
 	KursStandar(ctx context.Context, currencyID string) (string, error)
 	// NamaMataUang = RD BrowseCurrency_RD `.Currency` where `.ID = CurrID`.

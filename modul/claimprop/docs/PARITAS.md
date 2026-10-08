@@ -62,11 +62,11 @@
 | tambah / hapus baris Total Claim Amount | `AddListClaimAmount` / `DeleteListClaim_Act` (dis `Note=='Yes'`) | 09 | **dibangun** |
 | tambah / hapus baris Loss Allocation | `AddLossAllocation_act` / `RemoveLossAlloction_act` (dis `IsOldData=='Yes'`) | 06 | **dibangun** |
 | tambah / hapus baris Estimation | `AddEstimation_Act` / `DeleteEstimation_Act` (dis `PrintFaceClaim==1`) | 07 | **dibangun** |
-| tambah baris Spreading Claim | `AddSpreading_Act` (**tidak diekspor**) | 06 | **nonaktif-OQ** OQ-CP-01 — baris diisi dari polis saat CheckNoPolicy (TREATYINPRODUCTION JN_REAS / PCT_SHARE_PREMI / CURR_ID), tombol tetap nonaktif (keputusan work owner 08-10-2026) |
-| hapus baris Spreading Claim (ikon baris) | `DeleteSpreading_Act` (**tidak diekspor**, dis `IsOldData='Yes'`) | 06 | **nonaktif-OQ** OQ-CP-01 |
+| tambah baris Spreading Claim | `AddSpreading_Act` (**tidak diekspor**) | 06 | **dibangun lain** — baris terisi dari polis saat CheckNoPolicy (TREATYINPRODUCTION JN_REAS / PCT_SHARE_PREMI / CURR_ID); Add aktif = baris kosong, Treaty Type dipilih lalu terkunci (keputusan work owner 08-10-2026) |
+| hapus baris Spreading Claim (ikon baris) | `DeleteSpreading_Act` (**tidak diekspor**, dis `IsOldData='Yes'`) | 06 | **dibangun lain** — baris dihapus, nonaktif bila `IsOldData='Yes'` (XML); tabel bawah disusun ulang (keputusan work owner 08-10-2026) |
 | ikon grid standar Spreading List (tambah / hapus bawaan) | `pzPegaDefaultGridIcons` ("always"), tanpa activity | 06 | **tidak dibangun** — tambah / hapus spreading dinonaktifkan (keputusan work owner 07-10-2026) |
-| SpreadingBreakQS (`SetTreatyNameSpreading_Act` langkah 11) | `TreatyInMaster.Limits(1).Detail(1).SpreadingList` | 06 | **dibangun lain** — anak PROPORTIONALARRG (PARENTREINSTYPEID = TreatyType atas, treaty group klaim, tahun arrangement terbaru <= tahun treaty) (keputusan work owner 08-10-2026); DEV: 4/6 klaim lama cocok persis, 2 polis menyimpan anak di produksi |
-| dropdown Treaty Type spreading | `Spreading.pxResults` (penulis tidak diekspor) | 06 | **dibangun lain** — spreading polis klaim; koreksi `[dugaan]` master SpreadingList berdasar data DEV (induk vs anak) |
+| SpreadingBreakQS (`SetTreatyNameSpreading_Act` langkah 11) | `TreatyInMaster.Limits(1).Detail(1).SpreadingList` | 06 | **dibangun** — tetap master (XML); PROPORTIONALARRG dibatalkan sesudah uji data DEV (keputusan work owner 08-10-2026) |
+| dropdown Treaty Type spreading | `Spreading.pxResults` (penulis tidak diekspor); XML Outstanding: pxTextInput `.TreatyName` | 06 | **dibangun lain** — dropdown TreatyType di kedua layar = spreading polis + treaty baris yang sudah ada, terkunci bila terisi atau data lama; koreksi `[dugaan]` master SpreadingList berdasar data DEV (induk vs anak) (keputusan work owner 08-10-2026) |
 | tombol tanpa label di samping RNMShareP | vis NEVER | — | tidak tampil di XML |
 | grid "Claim History" (SuggestList) | — | 14 | **dibangun** — `T_VIEW_SUGGEST` (keputusan work owner 07-10-2026) |
 
