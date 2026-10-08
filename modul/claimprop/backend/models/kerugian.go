@@ -691,13 +691,17 @@ const PesanSpreadingSama = "Spreading with the same Treaty Type and Currency alr
 func kunciSpreading(b Baris) string { return b["TreatyType"] + "#" + b["CurrencyID"] }
 
 // AddSpreading - tombol Add Spreading List (`AddSpreading_Act`, TIDAK diekspor; diaktifkan keputusan work owner
-// 08-10-2026). Work owner 08-10-2026 "begitu add langsung set spreading type nya dan readonly" dan "tidak ada spreading
-// sama, jika sama, gagal add spreadinglist, kecuali currency beda": baris baru LANGSUNG berisi pasangan treaty spreading
-// polis x mata uang pertama yang belum ada di daftar (mata uang estimasi; tanpa estimasi = mata uang baris spreading),
-// nama dari REINSURANCETYPE - Treaty Type terkunci karena terisi. Semua pasangan sudah ada = Add GAGAL (pesan
-// PesanSpreadingSama, baris tidak bertambah). Tanpa spreading polis baris kosong dan Treaty Type dipilih dari dropdown.
-// Share (%) diisi layar. Tabel bawah + turunan disusun seperti SetTreatyNameSpreading. `[penyimpangan sadar]` isi
-// activity aslinya tidak terbaca.
+// 08-10-2026). Work owner 08-10-2026:
+//   - "begitu add langsung set spreading type nya dan readonly" - Treaty Type baris baru langsung terisi treaty spreading
+//     polis (nama dari REINSURANCETYPE) dan terkunci karena terisi;
+//   - "tidak ada spreading sama, jika sama, gagal add spreadinglist, kecuali currency beda" - TreatyType + CurrencyID unik;
+//   - "jika add langsung kedetek 2 currency, langsung add 2 mengikuti currency" - satu klik = SATU baris per mata uang
+//     yang belum ada untuk treaty polis pertama yang masih kurang, urut mata uang (estimasi; tanpa estimasi = baris
+//     spreading).
+//
+// Semua pasangan sudah ada = Add GAGAL (pesan PesanSpreadingSama, baris tidak bertambah). Tanpa spreading polis: satu
+// baris kosong per mata uang, Treaty Type dipilih dari dropdown. Share (%) diisi layar. Tabel bawah + turunan disusun
+// sekali sesudah semua baris ditambah. `[penyimpangan sadar]` isi activity aslinya tidak terbaca.
 func AddSpreading(k *Konteks, h *Halaman, m MasterTreaty) error {
 	sp, err := k.Acuan.SpreadingPolis(k.Ctxt(), h.Ambil(CD+"PolicyData.PolicyNo"))
 	if err != nil {
@@ -711,38 +715,47 @@ func AddSpreading(k *Konteks, h *Halaman, m MasterTreaty) error {
 	if len(mu) == 0 {
 		mu = []Baris{{"CurrencyID": "", "Currency": ""}}
 	}
-	b := Baris{"TreatyType": "", "TreatyName": "", "SharePercentage": "",
-		"CurrencyID": mu[0]["CurrencyID"], "Currency": mu[0]["Currency"]}
-	if len(sp) > 0 {
+	baru := func(u Baris, tt, nama string) Baris {
+		return Baris{"TreatyType": tt, "TreatyName": nama, "SharePercentage": "", "CurrencyID": u["CurrencyID"],
+			"Currency": u["Currency"]}
+	}
+	var tambah []Baris
+	if len(sp) == 0 {
+		for _, u := range mu {
+			tambah = append(tambah, baru(u, "", ""))
+		}
+	} else {
 		ada := map[string]bool{}
 		for _, x := range atas {
 			ada[kunciSpreading(x)] = true
 		}
-		ketemu := false
-		for _, u := range mu {
-			for _, s := range sp {
-				c := Baris{"TreatyType": s.TreatyType, "CurrencyID": u["CurrencyID"]}
-				if !ada[kunciSpreading(c)] {
-					b["TreatyType"], b["CurrencyID"], b["Currency"] = s.TreatyType, u["CurrencyID"], u["Currency"]
-					ketemu = true
-					break
+		for _, s := range sp {
+			var kurang []Baris
+			for _, u := range mu {
+				if !ada[kunciSpreading(Baris{"TreatyType": s.TreatyType, "CurrencyID": u["CurrencyID"]})] {
+					kurang = append(kurang, u)
 				}
 			}
-			if ketemu {
-				break
+			if len(kurang) == 0 {
+				continue
 			}
+			nama, err := k.Acuan.NamaJenisReasuransi(k.Ctxt(), s.TreatyType)
+			if err != nil {
+				return err
+			}
+			for _, u := range kurang {
+				tambah = append(tambah, baru(u, s.TreatyType, nama))
+			}
+			break
 		}
-		if !ketemu {
+		if len(tambah) == 0 {
 			h.TambahPesan("", PesanSpreadingSama)
 			return nil
 		}
-		nama, err := k.Acuan.NamaJenisReasuransi(k.Ctxt(), b["TreatyType"])
-		if err != nil {
-			return err
-		}
-		b["TreatyName"] = nama
 	}
-	h.TambahBaris(DaftarSpreading, b)
+	for _, b := range tambah {
+		h.TambahBaris(DaftarSpreading, b)
+	}
 	susunBreakQS(h, m)
 	return HitungTurunan(h)
 }

@@ -209,3 +209,58 @@ func TestPilihTreatyTypeSamaDitolak(t *testing.T) {
 		t.Fatalf("pilih treaty sama mau ditolak: %v pesan %v", b, h.Pesan)
 	}
 }
+
+// Add sekali klik = satu baris per mata uang yang belum ada untuk treaty polis pertama yang masih kurang (work owner
+// 08-10-2026 "jika add langsung kedetek 2 currency, langsung add 2 mengikuti currency"); urutan ikut mata uang estimasi.
+func TestTambahSpreadingSatuBarisPerMataUang(t *testing.T) {
+	estimasi := []models.Baris{{"CurrencyID": "UJI-ID-IDR", "Currency": "IDR"}, {"CurrencyID": "UJI-ID-USD", "Currency": "USD"}}
+	k := konteksUji(acuanSpreading())
+	h := models.HalamanBaru()
+	h.Setel(models.CD+"PolicyData.PolicyNo", "UJI-POLIS-1")
+	h.SetelDaftar(models.DaftarEstimasi, estimasi)
+
+	// 2 mata uang, belum ada baris: 2 baris sekali klik
+	if err := models.AddSpreading(k, h, masterSpreading()); err != nil {
+		t.Fatal(err)
+	}
+	atas := h.AmbilDaftar(models.DaftarSpreading)
+	if len(atas) != 2 || atas[0]["TreatyType"] != "UJI-INDUK" || atas[0]["CurrencyID"] != "UJI-ID-IDR" ||
+		atas[1]["TreatyType"] != "UJI-INDUK" || atas[1]["CurrencyID"] != "UJI-ID-USD" || atas[1]["TreatyName"] != "UJI QS INDUK TRT" {
+		t.Fatalf("Add 2 mata uang: %v", atas)
+	}
+	if len(h.AmbilDaftar(models.DaftarBreakQS)) != 4 {
+		t.Fatalf("tabel bawah 2 anak x 2 mata uang: %v", h.AmbilDaftar(models.DaftarBreakQS))
+	}
+
+	// semua sudah ada: gagal + pesan
+	if err := models.AddSpreading(k, h, masterSpreading()); err != nil {
+		t.Fatal(err)
+	}
+	if len(h.AmbilDaftar(models.DaftarSpreading)) != 2 || !adaPesan(h, models.PesanSpreadingSama) {
+		t.Fatalf("Add semua sudah ada mau gagal: %v", h.AmbilDaftar(models.DaftarSpreading))
+	}
+
+	// 1 dari 2 sudah ada: hanya 1 baris
+	h = models.HalamanBaru()
+	h.Setel(models.CD+"PolicyData.PolicyNo", "UJI-POLIS-1")
+	h.SetelDaftar(models.DaftarEstimasi, estimasi)
+	h.SetelDaftar(models.DaftarSpreading, []models.Baris{{"TreatyType": "UJI-INDUK", "CurrencyID": "UJI-ID-IDR", "Currency": "IDR"}})
+	if err := models.AddSpreading(k, h, masterSpreading()); err != nil {
+		t.Fatal(err)
+	}
+	if atas = h.AmbilDaftar(models.DaftarSpreading); len(atas) != 2 || atas[1]["CurrencyID"] != "UJI-ID-USD" {
+		t.Fatalf("Add 1 dari 2 sudah ada: %v", atas)
+	}
+
+	// tanpa spreading polis: satu baris kosong per mata uang
+	h = models.HalamanBaru()
+	h.Setel(models.CD+"PolicyData.PolicyNo", "UJI-POLIS-TANPA-PRODUKSI")
+	h.SetelDaftar(models.DaftarEstimasi, estimasi)
+	if err := models.AddSpreading(k, h, masterSpreading()); err != nil {
+		t.Fatal(err)
+	}
+	if atas = h.AmbilDaftar(models.DaftarSpreading); len(atas) != 2 || atas[0]["TreatyType"] != "" || atas[1]["TreatyType"] != "" ||
+		atas[0]["CurrencyID"] != "UJI-ID-IDR" || atas[1]["CurrencyID"] != "UJI-ID-USD" {
+		t.Fatalf("Add tanpa spreading polis: %v", atas)
+	}
+}
