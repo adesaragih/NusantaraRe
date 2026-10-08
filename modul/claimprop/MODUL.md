@@ -142,6 +142,9 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   `InputAngka.tsx`, `nilai.tampilAngka`); isian tanggal diketik `dd-mm-yyyy` (+ `hh:mm`) dengan tombol kalender, aksi
   server hanya saat lengkap dan sah (`ketikTanggal.ts`, `InputTanggal.tsx`); label Type Estimation List dari
   screenshot (`LabelKode["EstimationType"]`); nilai tampil di sel tabel tidak lagi terpecah satu huruf per baris.
+- **Tab Acceptation tanpa data estimasi** (08-10-2026, "semua data estimasi yang muncul di tab akseptasi di hapus"):
+  blok "Claim Estimation" `InputAcceptation_Adjs` (salinan hanya-baca tab Estimation) tidak ditampilkan; data tidak
+  dihapus dan tetap di tab Estimation. Acceptance Information, Acceptation List, Spreading Adjustment Total tetap.
 - **Send to Acceptation langsung ke Teknik** (08-10-2026, "send to acceptation nya langsung kirim ke teknik, ga usah
   klik submit lagi"): aksi `CheckNopolicy` menjalankan CheckNopolicy_Act lalu Submit (validasi wajib, ProteksiData,
   pindah ke Input Acceptation / `ReasKlaimTeknik`) dalam satu transaksi - gagal validasi membatalkan seluruhnya.

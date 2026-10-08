@@ -95,6 +95,7 @@
 | ikon tambah Consultant / Appointed Adjuster | harness `MstAdjusterConsultant` | 08 | **dibangun** — popup tambah (Name, Telp No, Address; label XML) disimpan lewat rute pinjaman modul Adjuster Consultant `POST /api/adjuster-consultant`, ID baru diisi ke medannya; nonaktif selama ID hanya-baca (keputusan work owner 08-10-2026) |
 | Save (di bawah Est) / Save (di bawah Adjs) | save | 07, 08 | **dibangun** |
 | Back | `BackToRegister_act` (tidak diekspor) — layout NEVER | — | tidak tampil di XML — prompt §6 butir 9 menyebutnya, tetapi "tampil sesuai section" = tidak tampil; activity-nya tetap OQ-CP-01 |
+| blok "Claim Estimation" tab Acceptation (`InputAcceptation_Adjs`: Count Claim Amount, Loss Allocation, Estimation List, total estimasi, Spreading Claim - hanya-baca) | tampilan saja | — | **tidak dibangun** — dibuang dari tab Acceptation (perintah work owner 08-10-2026 "semua data estimasi yang muncul di tab akseptasi di hapus"); data tetap di tab Estimation. Acceptation List dan Spreading Adjustment Total tetap |
 | Update Estimation / Save (`InputAcceptation_Adjs`) | `UpdateEstimasi_Act` (tidak diekspor) — layout NEVER | — | tidak tampil di XML — idem; OQ-CP-01 |
 | View Status Payment Claim | harness `ListPaymentClaim_Harness` | 13 | **nonaktif-OQ** OQ-CP-03 |
 | View Payment Attachment | harness `ViewAttachment` | 13 | **nonaktif-OQ** OQ-CP-03 |

@@ -72,13 +72,12 @@ func bAtau(ks ...KondisiBaris) KondisiBaris {
 }
 
 var (
-	bIsAdjVal   = bSama("IsAdjVal", "Yes")
-	bNote       = bSama("Note", "Yes")
-	bOldData    = bSama("IsOldData", "Yes")
-	bPrintFace  = bSama("PrintFaceClaim", "1")
-	bSelalu     = func(*Halaman, Baris) bool { return true }
-	hSelalu     = func(*Halaman, Baris) bool { return true }
-	bOutstandng = func(h *Halaman, _ Baris) bool { return h.Ambil("IsOutstanding") == "1" }
+	bIsAdjVal  = bSama("IsAdjVal", "Yes")
+	bNote      = bSama("Note", "Yes")
+	bOldData   = bSama("IsOldData", "Yes")
+	bPrintFace = bSama("PrintFaceClaim", "1")
+	bSelalu    = func(*Halaman, Baris) bool { return true }
+	hSelalu    = func(*Halaman, Baris) bool { return true }
 )
 
 // ---------------------------------------------------------------- pembentuk
@@ -686,47 +685,12 @@ func sectionEstimasiAkseptasi() Unsur {
 	return bagian("", anak...)
 }
 
-// sectionAdjs - Section `InputAcceptation_Adjs`. Grid ClaimAmount / Loss Allocation / Estimation / Spreading di sini
-// hanya-baca selalu (read-only selalu di XML); `IsEditEstimation` visible NEVER; tombol "Update Estimation" dan "Save"
-// di Layout S33 visible NEVER - tidak dibangun.
+// sectionAdjs - Section `InputAcceptation_Adjs`. [keputusan work owner 08-10-2026] "semua data estimasi yang muncul di
+// tab akseptasi di hapus": blok "Claim Estimation" XML (Count Claim Amount, Loss Allocation, Estimation List, total
+// estimasi, Spreading Claim - semuanya hanya-baca, salinan tab Estimation) TIDAK ditampilkan; datanya tetap di tab
+// Estimation. Tombol "Update Estimation" dan "Save" di Layout S33 visible NEVER - tidak dibangun.
 func sectionAdjs() Unsur {
-	semuaRO := func(us ...Unsur) []Unsur {
-		for i := range us {
-			if us[i].Jenis == JenisMedan {
-				us[i].HanyaBacaB = hSelalu
-			}
-		}
-		return us
-	}
 	return bagian("",
-		label("Claim Estimation"),
-		bagian("Count Claim Amount", Unsur{Jenis: JenisGrid, Jalur: DaftarClaimAmount, Bernomor: true,
-			Kolom: semuaRO(kSumber(kol("CurrencyID", "Currency", KPilih), SumberMataUang), kol("Value", "Claim Amount", KAngka),
-				kol("USD", "Claim Amount in IDR", KAngka))}),
-		bagian("Loss Allocation", Unsur{Jenis: JenisGrid, Jalur: DaftarLossAlloc, Bernomor: true,
-			Kolom: semuaRO(kSumber(kol("CurrencyID", "Curr", KPilih), SumberMataUang),
-				kSumber(kol("TreatyType", "Treaty Type", KPilih), SumberJenisReas4), kol("SharePercentage", "Share(%)", KAngka),
-				kol("ClaimSpreaded", "Result Claim", KAngka), kol("ClaimEstimation", "Result Claim In IDR", KAngka))}),
-		bagian("Estimation List", Unsur{Jenis: JenisGrid, Jalur: DaftarEstimasi, Bernomor: true,
-			Kolom: semuaRO(kol("TypeLoss", "", KTampil), kol("EstimationDate", "Estimation Date", KTanggal),
-				kSumber(kol("Type", "Type", KPilih), kode("EstimationType")), kSumber(kol("CurrencyID", "Currency", KPilih), SumberMataUang),
-				kol("KursValue", "Value In IDR", KAngka), kol("GrossEstimationPct", "Gross Estimate Treaty (100%)", KAngka),
-				kol("EstimationValue", "Estimation RNM", KAngka), kol("ConvertValue", "Estimation RNM in IDR", KAngka))}),
-		blokTotalEstimasi()[0], blokTotalEstimasi()[1],
-		bagian("Spreading Claim",
-			bagian("Spreading List", Unsur{Jenis: JenisGrid, Jalur: DaftarSpreading, Bernomor: true,
-				Kolom: []Unsur{
-					kROJ(kol("TreatyName", "Treaty Type", KTeks), spreadAdjRO),
-					kROJ(kol("SharePercentage", "Share(%)", KAngka), spreadAdjRO),
-					kRO(kol("Currency", "Currency", KTampil)),
-					kROJ(kol("ClaimSpreaded", "Claim Spreaded", KAngka), bOutstandng),
-				}, Kaki: []Unsur{ro(medan(CD+"TotalEstimasi", "", KAngka))}}),
-			bagian("Spreading List", Unsur{Jenis: JenisGrid, Jalur: DaftarBreakQS, Bernomor: true,
-				Kolom: []Unsur{kSumber(kRO(kol("TreatyType", "Treaty Type", KPilih)), SumberJenisReas),
-					kRO(kol("SharePercentage", "Share(%)", KAngka)), kRO(kol("Currency", "Currency", KTampil)),
-					kRO(kol("ClaimSpreaded", "Claim Spreaded", KAngka))},
-				Kaki: []Unsur{ro(medan(CD+"TotalEstimasi", "", KAngka))}}),
-		),
 		label("Acceptance Information"),
 		tombolOQ("PaymentClaim", "View Status Payment Claim", OQLayananLuar),
 		tombolOQ("PaymentAttachment", "View Payment Attachment", OQLayananLuar),
@@ -755,11 +719,6 @@ func sectionAdjs() Unsur {
 				Kaki: []Unsur{ro(medan(CD+"TotalEstimasi", "", KAngka))}}),
 		),
 	)
-}
-
-// spreadAdjRO = `pyWorkPage.IsOutstanding = 1 && pyWorkPage.IsEditEstimation != 'true'`.
-func spreadAdjRO(h *Halaman, _ Baris) bool {
-	return h.Ambil("IsOutstanding") == "1" && h.Ambil("IsEditEstimation") != "true"
 }
 
 // ---------------------------------------------------------------- pilihan
