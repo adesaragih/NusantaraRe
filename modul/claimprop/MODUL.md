@@ -142,6 +142,10 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   `InputAngka.tsx`, `nilai.tampilAngka`); isian tanggal diketik `dd-mm-yyyy` (+ `hh:mm`) dengan tombol kalender, aksi
   server hanya saat lengkap dan sah (`ketikTanggal.ts`, `InputTanggal.tsx`); label Type Estimation List dari
   screenshot (`LabelKode["EstimationType"]`); nilai tampil di sel tabel tidak lagi terpecah satu huruf per baris.
+- **Reporter Address dari CLIENT_ADDRESS** (08-10-2026, "ubah jangan dari json, ambil dari client address"; dikerjakan
+  sesi ASIS CLAIM PROP): `GetAddressCeding` membaca tabel datar CLIENT_ADDRESS (ASMADDRESS, RWNAME, DISTRICTNAME,
+  CITYNAME) klien milik agen ceding, bukan `M_CLIENT.JSONDATA` - baris Kantor (tipe 2) dulu, tanpa Email (tipe 7).
+  Nama ceding / SOB tetap dari JSON master treaty.
 - **Perbaikan Claim Information** (08-10-2026, daftar work owner): Date of Loss / Received Date tanggal saja
   (KTanggal, katalog kTgl); Reporter Phone Number kendali `telepon` (hanya angka, nol di depan tetap, kolom teks);
   label kode `models.LabelKode` - Report Type 1 Direct / 2 Via Email / 3 Via Fax / 4 via Postal Mail/Courier / 5 Via

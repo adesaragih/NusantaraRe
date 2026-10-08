@@ -66,3 +66,25 @@ func TestSqlBerkasPolis(t *testing.T) {
 		}
 	}
 }
+
+// Reporter Address dari CLIENT_ADDRESS, bukan JSON M_CLIENT (work owner 08-10-2026 "ubah jangan dari json, ambil dari
+// client address"): klien milik agen, baris Kantor (tipe 2) dulu, Email (tipe 7) tidak pernah, urutan stabil
+// PXCREATEDATETIME dengan ROWID hanya pemutus seri terakhir.
+func TestSqlAlamatKlienDariClientAddress(t *testing.T) {
+	q := sqlAlamatKlien("S.CLIENT_ADDRESS", "S.AGENT")
+	for _, w := range []string{
+		"SELECT ASMADDRESS, RWNAME, DISTRICTNAME, CITYNAME FROM",
+		"FROM S.CLIENT_ADDRESS a",
+		"a.CLIENTID = (SELECT MAX(CLIENTID) FROM S.AGENT WHERE ID = :1)",
+		"NVL(a.ASMADDRESSTYPE, '-') <> '7'",
+		"ORDER BY CASE WHEN a.ASMADDRESSTYPE = '2' THEN 0 ELSE 1 END, a.PXCREATEDATETIME NULLS LAST, a.ROWID",
+		"WHERE URUT = 1",
+	} {
+		if !strings.Contains(q, w) {
+			t.Fatalf("SQL tanpa %q:\n%s", w, q)
+		}
+	}
+	if strings.Contains(strings.ToUpper(q), "JSON") || strings.Contains(q, "M_CLIENT") {
+		t.Fatalf("Reporter Address tidak boleh dari JSON M_CLIENT:\n%s", q)
+	}
+}

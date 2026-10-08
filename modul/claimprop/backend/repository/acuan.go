@@ -410,11 +410,15 @@ func (a *Acuan) Wilayah(ctx context.Context, kodePos string) ([]models.BarisWila
 	return out, nil
 }
 
-// AlamatKlien = GetAddressCeding (`M_CLIENT.JSONDATA.AddressList.{ASMAddress,RWName,DistrictName,CityName}` klien
-// milik agen `agentID`).
+// AlamatKlien = GetAddressCeding (empat bagian alamat klien milik agen `agentID`). XML membaca
+// `M_CLIENT.JSONDATA.AddressList.{ASMAddress,RWName,DistrictName,CityName}`; [keputusan work owner 08-10-2026] "ubah
+// jangan dari json, ambil dari client address" - dibaca dari tabel datar CLIENT_ADDRESS (ASMADDRESS, RWNAME,
+// DISTRICTNAME, CITYNAME). Satu baris: tipe 2 (Kantor) dulu, tipe 7 (Email) tidak pernah, lalu PXCREATEDATETIME; ROWID
+// hanya pemutus seri terakhir. `[data DEV 08-10-2026]` agen ceding master treaty: setiap bagian alamat yang terisi di
+// kedua sumber SAMA dengan JSON lama; 2 agen ber-JSON kosong kini mendapat alamat Kantor.
 func (a *Acuan) AlamatKlien(ctx context.Context, agentID string) ([4]string, bool, error) {
 	var out [4]string
-	cl, err := a.q("M_CLIENT")
+	ca, err := a.q("CLIENT_ADDRESS")
 	if err != nil {
 		return out, false, err
 	}
@@ -422,17 +426,21 @@ func (a *Acuan) AlamatKlien(ctx context.Context, agentID string) ([4]string, boo
 	if err != nil {
 		return out, false, err
 	}
-	var kol []string
-	for _, p := range []string{"ASMAddress", "RWName", "DistrictName", "CityName"} {
-		kol = append(kol, fmt.Sprintf(`JSON_VALUE(a.JSONDATA, '$.AddressList.%s' RETURNING VARCHAR2(4000))`, p))
-	}
-	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT %s FROM %s a WHERE a.ID = (SELECT MAX(CLIENTID) FROM %s WHERE ID = :1)`,
-		strings.Join(kol, ", "), cl, ag), 4, agentID)
+	rows, err := a.banyak(ctx, sqlAlamatKlien(ca, ag), 4, agentID)
 	if err != nil || len(rows) == 0 {
 		return out, false, err
 	}
 	copy(out[:], rows[0])
 	return out, true, nil
+}
+
+// sqlAlamatKlien - satu baris CLIENT_ADDRESS klien milik agen (lihat AlamatKlien).
+func sqlAlamatKlien(clientAddress, agent string) string {
+	return fmt.Sprintf(`SELECT ASMADDRESS, RWNAME, DISTRICTNAME, CITYNAME FROM (
+		SELECT a.ASMADDRESS, a.RWNAME, a.DISTRICTNAME, a.CITYNAME,
+			ROW_NUMBER() OVER (ORDER BY CASE WHEN a.ASMADDRESSTYPE = '2' THEN 0 ELSE 1 END, a.PXCREATEDATETIME NULLS LAST, a.ROWID) URUT
+		FROM %s a WHERE a.CLIENTID = (SELECT MAX(CLIENTID) FROM %s WHERE ID = :1) AND NVL(a.ASMADDRESSTYPE, '-') <> '7')
+		WHERE URUT = 1`, clientAddress, agent)
 }
 
 // NamaAdjuster = BrowseAdjusterConsultant `.NAME` where `.ID`.

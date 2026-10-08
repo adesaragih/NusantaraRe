@@ -78,6 +78,7 @@
 | ikon Add di samping Consultant / Adjuster | `pyWorkActionsAddWork.png` | **dibangun** — selalu menempel ke medannya, juga saat baris nama tersembunyi |
 | isian angka (kendali angka, medan dan sel grid) | Currency / Decimal | **dibangun lain** — hanya angka, separator Indonesia (titik ribuan, koma desimal), paling banyak 4 desimal saat mengetik dan saat tampil; nilai tersimpan tetap mentah |
 | isian tanggal / tanggal-waktu | DateTime (pemilih bawaan) | **dibangun lain** — diketik `dd-mm-yyyy` (+ `hh:mm`), pemisah otomatis, tanggal tidak sah ditandai merah, tombol kalender; aksi server (CheckDateDOL dll.) hanya saat isian lengkap dan sah atau dikosongkan |
+| Reporter Address (`GetReportStatus_Act` -> `GetAddressCeding`) | `M_CLIENT.JSONDATA.AddressList.*` klien milik agen ceding | **dibangun lain** — dibaca dari tabel datar CLIENT_ADDRESS: baris Kantor (tipe 2) dulu, tanpa Email (tipe 7) ("ubah jangan dari json, ambil dari client address"); DEV: setiap bagian alamat yang terisi di kedua sumber sama, 2 agen tambahan mendapat alamat |
 | Type (grid Estimation List, `ASM-FW-GCNMFW-Data-Estimasi.Type`) | prompt values tidak ada di korpus | **dibangun** — dari screenshot work owner: 1 Claim, 2 Adjuster Fee, 3 Salvage, 4 Consultant Fee; nilai tersimpan kode |
 
 ## 3. Section `InputAcceptation` (Assignment1) dan sub-section-nya

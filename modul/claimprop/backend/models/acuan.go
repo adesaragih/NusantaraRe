@@ -205,7 +205,8 @@ type Acuan interface {
 	YearOfQuartal(ctx context.Context, nopolis, prodke string) (string, error)
 	// Wilayah = BrowseRW_SQL (RW + CITY where ZIPCODE).
 	Wilayah(ctx context.Context, kodePos string) ([]BarisWilayah, error)
-	// AlamatKlien = GetAddressCeding (M_CLIENT alamat klien milik agen `agentID`), empat bagian alamat.
+	// AlamatKlien = GetAddressCeding (alamat klien milik agen `agentID`, empat bagian) - dari CLIENT_ADDRESS, bukan JSON
+	// M_CLIENT (keputusan work owner 08-10-2026).
 	AlamatKlien(ctx context.Context, agentID string) ([4]string, bool, error)
 	// NamaAdjuster = RD BrowseAdjusterConsultant `.NAME` where `.ID`, baris pertama.
 	NamaAdjuster(ctx context.Context, id string) (string, error)
