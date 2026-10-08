@@ -101,8 +101,11 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   Delete nonaktif bila `IsOldData='Yes'` (XML); tabel bawah dan turunan disusun ulang sesudah setiap perubahan. Dropdown
   Treaty Type (kedua layar) = spreading polis + treaty baris yang sudah ada: koreksi atas `[dugaan]` SpreadingList
   master yang dibantah data DEV (TreatyType klaim lama = induk, SpreadingList = anak).
-- **`STS_REJECT = 1` ditunda** sampai modul Komite Claim Prop ("itu nanti kan dari komite") — pemuat mencatatnya
-  "ditunda", bukan gagal.
+- **`STS_REJECT = 1` = akseptasi komite → Input Acceptation** (keputusan work owner 08-10-2026: kasus komite lama tidak
+  dimigrasi, klaimnya dimuat Claim Prop). Dulu "ditunda" (07-10-2026).
+- **Penyerahan ulang baris subjectivity ke komite** (keputusan work owner 08-10-2026, OQ-KCP-06 "a"):
+  `models.BolehSerahKomite`; `KOMITE_ID` ditimpa dari kasus komite lama ke kasus baru; grid "Committe Accept Status"
+  memuat semua putaran komite baris itu (AddKomiteTreatyChild_ACT S17 tidak menghapus `ComiteeClaim` saat subjectivity).
 - **Halaman awal dua tab, rupa Kelola User** ("cuman ada 2 tab process dan resolve"): tab Process bawaan = worklist
   pembuat (Assignment2 Outstanding Claim, daftar `saya`, tanpa cek workbasket - XML `ToCurrentOperator` apa adanya;
   `ReasKlaimAdmin` dibuang - migrasi 534). Dropdown Admin / Teknik diganti **switch Teknik** (08-10-2026: "admin nya
@@ -214,6 +217,8 @@ go run ./modul/claimprop/backend/alat/pemuatlama -keluaran <folder> -jalankan   
   Keduanya memuat data kasus — simpan di luar repositori.
 - Uji-kering DEV 07-10-2026: 2.451 kasus, 6.596 baris OS (4.145 riwayat), 6 kasus berhalaman JSON, **2.032 siap**,
   **419 ditunda** (baris berlaku `STS_REJECT = 1`, menunggu modul Komite Claim Prop), **0 gagal**; keluar 0.
+- Uji-kering DEV 08-10-2026 (sesudah STS 1 dimuat): **2.451 siap** — Input Acceptation 536, Outstanding Claim 1.275,
+  Resolved-Completed 640; **0 ditunda, 0 gagal**.
 - Urutan resmi: work owner menjalankan `-migrate` (520–534, 980) → uji-kering ulang → keputusan OQ-CP-18 →
   `-jalankan` oleh work owner / DBA. Tidak pernah dijalankan agen.
 

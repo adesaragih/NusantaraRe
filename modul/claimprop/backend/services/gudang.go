@@ -31,7 +31,7 @@ type Gudang interface {
 	DaftarKasus(ctx context.Context, s repository.SaringanKasus) ([]repository.RingkasanKasus, error)
 
 	SimpanHalaman(ctx context.Context, tx *db.Tx, id string, h *models.Halaman) error
-	SetelKomiteAdjustment(ctx context.Context, tx *db.Tx, adjID, komiteID string) error
+	SetelKomiteAdjustment(ctx context.Context, tx *db.Tx, adjID, komiteID, komiteLama string) error
 	BacaHalaman(ctx context.Context, tx *db.Tx, id string) (*models.Halaman, error)
 
 	NomorSementara(ctx context.Context, tx *db.Tx, tahun string) (string, error)

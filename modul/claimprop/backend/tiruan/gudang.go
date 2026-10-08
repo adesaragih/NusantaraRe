@@ -388,13 +388,13 @@ func (g *Gudang) SisipKatastrofe(_ context.Context, _ *db.Tx, k models.Katastrof
 }
 
 // SetelKomiteAdjustment menautkan baris adjustment ke komite.
-func (g *Gudang) SetelKomiteAdjustment(_ context.Context, _ *db.Tx, adjID, komiteID string) error {
+func (g *Gudang) SetelKomiteAdjustment(_ context.Context, _ *db.Tx, adjID, komiteID, komiteLama string) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	for _, h := range g.halaman {
 		for _, b := range h.AmbilDaftar(models.DaftarAdjustment) {
 			if b[models.PropID] == adjID {
-				if b[models.PropKomiteID] != "" {
+				if b[models.PropKomiteID] != "" && b[models.PropKomiteID] != komiteLama {
 					return errors.New("tiruan: adjustment sudah berkomite")
 				}
 				b[models.PropKomiteID] = komiteID

@@ -395,7 +395,8 @@ func aksiKomite(j *jalanAksi) error {
 	if err != nil {
 		return err
 	}
-	if b["IsKomite"] == "1" || b[models.PropKomiteID] != "" {
+	komiteLama := b[models.PropKomiteID]
+	if !models.BolehSerahKomite(b) {
 		return fmt.Errorf("%w: baris adjustment sudah diserahkan ke komite", ErrAksiTertutup)
 	}
 	if err := models.TandaiKirimKomite(j.k, h, n); err != nil { // 1-15, 31
@@ -423,7 +424,7 @@ func aksiKomite(j *jalanAksi) error {
 	if err != nil {
 		return err
 	}
-	if err := j.l.g.SetelKomiteAdjustment(j.ctx, j.tx, b[models.PropID], komite); err != nil {
+	if err := j.l.g.SetelKomiteAdjustment(j.ctx, j.tx, b[models.PropID], komite, komiteLama); err != nil {
 		return err
 	}
 	b[models.PropKomiteID] = komite

@@ -68,12 +68,14 @@ func BarisBerlaku(rows []BarisOSLama) (BarisOSLama, int) {
 
 // TahapLama memetakan STS_REJECT baris berlaku ke tahap kasus. `[dugaan]` (OQ-CP-18): baris OS mencatat aksi, bukan
 // assignment - Submit tidak menulis baris, jadi kasus berbaris terakhir 0 bisa saja sudah di Input Acceptation.
-// STS_REJECT di luar 0 / 2 / 4 tidak punya penulis di ekspor (spec §1b butir 6) - `ok` palsu, kasus tidak dimuat.
+// STS_REJECT 1 = akseptasi komite (Komite Claim Prop `SaveAcceptation_Act`): klaim tetap di Input Acceptation sampai
+// ditutup (keputusan work owner 08-10-2026: kasus komite lama TIDAK dimigrasi, klaimnya dimuat Claim Prop). STS_REJECT
+// di luar 0 / 1 / 2 / 4 tidak punya penulis di ekspor (spec §1b butir 6) - `ok` palsu, kasus tidak dimuat.
 func TahapLama(sts string) (tahap string, tutup, ok bool) {
 	switch strings.TrimSpace(sts) {
 	case StsOSEstimasi:
 		return TahapOutstanding, false, true
-	case StsOSAkseptasi:
+	case StsOSAkseptasi, StsOSAkseptasiKomite:
 		return TahapAcceptation, false, true
 	case StsOSTutupBerkas:
 		return TahapAcceptation, true, true
@@ -96,13 +98,10 @@ const (
 	SebabBarisOS      = "tetap di OS_AKSEPTASI_KLAIM: medan baris estimasi / adjustment, bukan header kasus"
 	// SebabStsTakDikenal - galat: baris berlaku ber-STS_REJECT tanpa penulis di ekspor, tahapnya tidak dapat diturunkan.
 	SebabStsTakDikenal = "galat: STS_REJECT di luar 0 / 1 / 2 / 4 - tahap tidak diturunkan (OQ-CP-18)"
-	// SebabStsDitunda - baris berlaku ber-STS_REJECT 1: dibahas bersama modul Komite Claim Prop (keputusan work owner
-	// 07-10-2026 "itu nanti kan dari komite, lewatkan dulu claim prop"). Tidak dimuat, tidak dihitung gagal.
-	SebabStsDitunda = "ditunda: STS_REJECT = 1 dibahas bersama modul Komite Claim Prop (keputusan work owner 07-10-2026)"
 )
 
-// StsOSDitunda - STS_REJECT baris OS yang pemuatannya ditunda sampai modul Komite Claim Prop.
-const StsOSDitunda = "1"
+// StsOSAkseptasiKomite - STS_REJECT baris OS akseptasi komite (Komite Claim Prop `SaveAcceptation_Act` S1 Type 1).
+const StsOSAkseptasiKomite = "1"
 
 // tidakDiimpor - nama halaman yang tidak diimpor dari JSON lama (prompt implementasi §3, baris "diagram").
 var tidakDiimpor = map[string]bool{"InterestListDtl": true, "SpreadingRisk": true, "PaymentData": true}

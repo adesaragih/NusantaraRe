@@ -90,6 +90,14 @@ func TandaiKirimKomite(k *Konteks, h *Halaman, idx int) error {
 	return IsiEstimasiRetro(h)
 }
 
+// BolehSerahKomite - baris adjustment boleh diserahkan ke komite: belum pernah (KomiteID kosong), atau diserahkan ULANG
+// karena disetujui bersyarat (keputusan work owner 08-10-2026, OQ-KCP-06 "a": Komite S23 `IsKomite := 0` membuka lagi
+// tombol "Send to Committe", AddKomiteTreatyChild_ACT S16-S19 / S31 menyerahkannya ke jenjang terbawah). `IsKomite = 1`
+// = masih di komite.
+func BolehSerahKomite(b Baris) bool {
+	return b["IsKomite"] != "1" && (b[PropKomiteID] == "" || b["IsSubjectivity"] == "true")
+}
+
 // NilaiRosterKomite = AddKomiteTreatyChild_ACT langkah 18-19: batas roster = ValueAdjustment; subjectivity = 0
 // (hanya jenjang terbawah).
 func NilaiRosterKomite(b Baris) string {

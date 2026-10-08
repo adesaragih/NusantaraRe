@@ -124,7 +124,7 @@
 
 | Label XML | Aksi XML | Tiket | Status |
 | --- | --- | --- | --- |
-| Send Claim to Committee | `AddKomiteTreatyChild_ACT` (dis `Payable = ''`) | 11 | **dibangun** (opsi "b" 07-10-2026) — kasus TKMT- + tangga + email komite; terjangkau sesudah gerbang lampiran (OQ-CP-12) |
+| Send Claim to Committee | `AddKomiteTreatyChild_ACT` (dis `Payable = ''`) | 11 | **dibangun** (opsi "b" 07-10-2026) — kasus TKMT- + tangga + email komite; terjangkau sesudah gerbang lampiran (OQ-CP-12). Penyerahan ULANG baris subjectivity (S16-S19 / S31, roster jenjang terbawah) dibangun 08-10-2026 (OQ-KCP-06 "a") |
 | Cancel | tutup | 11 | **dibangun** |
 
 ## 6. Local action modal

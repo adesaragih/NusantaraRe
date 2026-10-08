@@ -19,7 +19,7 @@ var (
 	jam2 = time.Date(2026, 5, 3, 9, 0, 0, 0, time.UTC)
 )
 
-// gudangLama - tiga kasus lama: UJI-CLMP-7 (dua baris OS, terakhir tutup berkas), UJI-CLMP-8 (STS_REJECT tanpa penulis),
+// gudangLama - tiga kasus lama: UJI-CLMP-7 (dua baris OS, terakhir tutup berkas), UJI-CLMP-8 (akseptasi komite, STS 1),
 // UJI-CLMP-9 (satu baris acceptation + halaman JSON_KLAIM).
 func gudangLama() *tiruan.Gudang {
 	g := tiruan.Baru()
@@ -53,10 +53,10 @@ func jalankanPemuat(t *testing.T, g *tiruan.Gudang, tulis bool) (services.Ringka
 func TestPemuatUjiKeringTidakMenulis(t *testing.T) {
 	g := gudangLama()
 	r, arsip, galat := jalankanPemuat(t, g, false)
-	if r.Kasus != 3 || r.Baris != 4 || r.Riwayat != 1 || r.DariJSON != 1 || r.Siap != 2 || r.Gagal != 0 || r.Ditunda != 1 || r.Dimuat != 0 {
+	if r.Kasus != 3 || r.Baris != 4 || r.Riwayat != 1 || r.DariJSON != 1 || r.Siap != 3 || r.Gagal != 0 || r.Dimuat != 0 {
 		t.Fatalf("ringkasan uji-kering %+v", r)
 	}
-	if r.PerTahap[models.StatusSelesai] != 1 || r.PerTahap[models.TahapAcceptation] != 1 {
+	if r.PerTahap[models.StatusSelesai] != 1 || r.PerTahap[models.TahapAcceptation] != 2 {
 		t.Fatalf("per tahap %+v", r.PerTahap)
 	}
 	if len(g.Kasus) != 0 {
@@ -66,7 +66,7 @@ func TestPemuatUjiKeringTidakMenulis(t *testing.T) {
 		!adaBaris(t, arsip, "UJI-CLMP-9", "ClaimData.DaftarObjek", "UJI-OBJEK", models.SebabTanpaKolom) {
 		t.Fatalf("arsip medan:\n%s", arsip)
 	}
-	if !adaBaris(t, galat, "UJI-CLMP-8", "STS_REJECT", "1", models.SebabStsDitunda) || !r.Selesai() {
+	if strings.Contains(galat, "UJI-CLMP-8") || !r.Selesai() { // STS 1 dimuat (keputusan work owner 08-10-2026)
 		t.Fatalf("galat:\n%s (selesai %v)", galat, r.Selesai())
 	}
 	if !strings.Contains(r.Teks(), "uji-kering") {
@@ -77,7 +77,7 @@ func TestPemuatUjiKeringTidakMenulis(t *testing.T) {
 func TestPemuatJalankanMenulisLaluMelewatiUlang(t *testing.T) {
 	g := gudangLama()
 	r, _, _ := jalankanPemuat(t, g, true)
-	if r.Dimuat != 2 || r.Gagal != 0 || r.Ditunda != 1 || r.Dilewati != 0 {
+	if r.Dimuat != 3 || r.Gagal != 0 || r.Dilewati != 0 {
 		t.Fatalf("ringkasan jalankan %+v", r)
 	}
 	k7 := g.Kasus["UJI-CLMP-7"]
@@ -95,11 +95,11 @@ func TestPemuatJalankanMenulisLaluMelewatiUlang(t *testing.T) {
 	if n := len(g.Halaman("UJI-CLMP-9").AmbilDaftar(models.DaftarEstimasi)); n != 1 {
 		t.Fatalf("EstimationList UJI-CLMP-9 %d baris", n)
 	}
-	if _, ada := g.Kasus["UJI-CLMP-8"]; ada {
-		t.Fatalf("kasus bergalat ikut dimuat")
+	if k8 := g.Kasus["UJI-CLMP-8"]; k8.Tahap != models.TahapAcceptation || k8.Tertutup() {
+		t.Fatalf("kasus akseptasi komite (STS 1) di Input Acceptation, terbuka: %+v", k8)
 	}
 	r, _, _ = jalankanPemuat(t, g, true)
-	if r.Dimuat != 0 || r.Dilewati != 2 {
+	if r.Dimuat != 0 || r.Dilewati != 3 {
 		t.Fatalf("jalankan ulang mau melewati: %+v", r)
 	}
 }

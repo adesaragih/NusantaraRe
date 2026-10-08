@@ -45,7 +45,8 @@ func TestTahapLama(t *testing.T) {
 		{models.StsOSEstimasi, models.TahapOutstanding, false, true},
 		{models.StsOSAkseptasi, models.TahapAcceptation, false, true},
 		{models.StsOSTutupBerkas, models.TahapAcceptation, true, true},
-		{"1", "", false, false},
+		{models.StsOSAkseptasiKomite, models.TahapAcceptation, false, true}, // keputusan work owner 08-10-2026
+		{"3", "", false, false},
 		{"", "", false, false},
 	} {
 		tahap, tutup, ok := models.TahapLama(c.sts)

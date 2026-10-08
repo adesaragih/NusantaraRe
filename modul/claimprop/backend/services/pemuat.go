@@ -97,9 +97,6 @@ func (p *Pemuat) satu(ctx context.Context, tulis bool, kunci string, rows []mode
 	}
 	tahap, tutup, ok := models.TahapLama(berlaku.StsReject)
 	switch {
-	case !ok && strings.TrimSpace(berlaku.StsReject) == models.StsOSDitunda:
-		lap.tunda(id, "STS_REJECT", berlaku.StsReject, models.SebabStsDitunda)
-		return nil
 	case !ok:
 		lap.galat(id, "STS_REJECT", berlaku.StsReject, models.SebabStsTakDikenal)
 		return nil
@@ -181,8 +178,6 @@ type RingkasanPemuat struct {
 	// DariJSON - kasus berhalaman JSON_KLAIM; Siap - kasus lolos periksa (uji-kering: yang akan dimuat).
 	DariJSON, Siap          int
 	Dimuat, Dilewati, Gagal int
-	// Ditunda - kasus yang pemuatannya ditunda menurut keputusan (STS_REJECT = 1, modul Komite Claim Prop).
-	Ditunda int
 	// PerTahap - kasus siap per tahap (Resolved-Completed untuk kasus tutup berkas).
 	PerTahap map[string]int
 	// PerSebab - medan dibuang per sebab.
@@ -204,7 +199,7 @@ func (r RingkasanPemuat) Teks() string {
 		r.Kasus, r.Baris, r.Kasus, r.Riwayat)
 	fmt.Fprintf(&b, "Berhalaman JSON     : %d\nSiap dimuat         : %d\nDimuat              : %d\nDilewati (sudah ada): %d\n",
 		r.DariJSON, r.Siap, r.Dimuat, r.Dilewati)
-	fmt.Fprintf(&b, "Kasus ditunda       : %d\nKasus gagal         : %d\n", r.Ditunda, r.Gagal)
+	fmt.Fprintf(&b, "Kasus gagal         : %d\n", r.Gagal)
 	for _, k := range kunciPeta(r.PerTahap) {
 		fmt.Fprintf(&b, "  tahap %-20s: %d\n", k, r.PerTahap[k])
 	}
@@ -249,12 +244,6 @@ func (l *LaporanPemuat) galat(id, jalur, nilai, sebab string) {
 		l.gagal[id] = true
 		l.r.Gagal++
 	}
-	_ = l.salah.Write([]string{id, jalur, nilai, sebab})
-}
-
-// tunda mencatat kasus yang sengaja tidak dimuat sekarang (berkas galat, sebab "ditunda: ...").
-func (l *LaporanPemuat) tunda(id, jalur, nilai, sebab string) {
-	l.r.Ditunda++
 	_ = l.salah.Write([]string{id, jalur, nilai, sebab})
 }
 

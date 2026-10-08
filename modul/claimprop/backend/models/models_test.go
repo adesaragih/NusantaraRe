@@ -471,3 +471,23 @@ func TestTombolTambahAdjuster(t *testing.T) {
 		}
 	}
 }
+
+// Penyerahan ulang baris subjectivity ke komite (keputusan work owner 08-10-2026, OQ-KCP-06 "a").
+func TestBolehSerahKomite(t *testing.T) {
+	for _, c := range []struct {
+		b    models.Baris
+		mau  bool
+		nama string
+	}{
+		{models.Baris{}, true, "penyerahan pertama"},
+		{models.Baris{"IsKomite": "1"}, false, "masih di komite"},
+		{models.Baris{models.PropKomiteID: "TKMT-UJI1", "IsKomite": "1"}, false, "sudah diserahkan, belum diputus"},
+		{models.Baris{models.PropKomiteID: "TKMT-UJI1", "IsKomite": "1", "AcceptanceStatus": "1"}, false, "disetujui"},
+		{models.Baris{models.PropKomiteID: "TKMT-UJI1", "IsKomite": "0", "IsSubjectivity": "true"}, true, "subjectivity"},
+		{models.Baris{models.PropKomiteID: "TKMT-UJI1", "IsKomite": "0"}, false, "berkomite tanpa subjectivity"},
+	} {
+		if got := models.BolehSerahKomite(c.b); got != c.mau {
+			t.Errorf("%s: %v, mau %v", c.nama, got, c.mau)
+		}
+	}
+}

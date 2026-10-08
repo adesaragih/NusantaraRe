@@ -40,15 +40,26 @@ func sqlSisipAnggotaKomite(list string) string {
 		KOMITE_APPROVAL) VALUES (:1, :2, :3, :4, :5, :6, :7)`, list)
 }
 
-// sqlTanggaKomite - anggota tangga satu kasus komite, urut jenjang.
-func sqlTanggaKomite(list string) string {
-	return fmt.Sprintf(`SELECT ID, KOMITE_OPERATORID, KOMITE_JABATAN, KOMITE_APPROVAL, KOMITE_COMMENT, %s
-		  FROM %s WHERE DATA_KOMITE_ID = :1 ORDER BY KOMITE_URUT, ID`, fmt.Sprintf(db.FmtTanggalOracle, "DATE_APPROVE"), list)
+// sqlTanggaKomite - `ComiteeClaim` baris adjustment: anggota tangga SEMUA putaran komite baris adjustment yang sama
+// (kasus `:1` dan kasus terdahulunya - klaim, adjustment, dan LINI sama), urut putaran lalu jenjang.
+// AddKomiteTreatyChild_ACT S17 menghapus ComiteeClaim hanya pada penyerahan pertama; penyerahan ulang subjectivity
+// MENAMBAHKAN anggota baru (S22.2) di belakang keputusan putaran terdahulu.
+func sqlTanggaKomite(list, gen, work string) string {
+	return fmt.Sprintf(`SELECT l.ID, l.KOMITE_OPERATORID, l.KOMITE_JABATAN, l.KOMITE_APPROVAL, l.KOMITE_COMMENT, %s
+		  FROM %s l
+		  JOIN %s g ON g.ID = l.DATA_KOMITE_ID
+		  JOIN %s w ON w.ID = g.ID
+		  JOIN %s g0 ON g0.ID = :1
+		  JOIN %s w0 ON w0.ID = g0.ID
+		 WHERE g.ADJUSTMENT_ID = g0.ADJUSTMENT_ID AND w.COVER_KEY = w0.COVER_KEY AND w.LINI = w0.LINI
+		 ORDER BY w.TGL_CREATE, g.ID, l.KOMITE_URUT, l.ID`, fmt.Sprintf(db.FmtTanggalOracle, "l.DATE_APPROVE"), list, gen, work,
+		gen, work)
 }
 
-// sqlSetelKomiteAdjustment - penautan baris adjustment ke kasus komitenya (sekali; KOMITE_ID UNIQUE).
+// sqlSetelKomiteAdjustment - penautan baris adjustment ke kasus komitenya (KOMITE_ID UNIQUE): penyerahan pertama
+// (KOMITE_ID kosong) atau penyerahan ulang baris subjectivity dari kasus komite yang dibaca (`:3`).
 func sqlSetelKomiteAdjustment(adj string) string {
-	return fmt.Sprintf(`UPDATE %s SET KOMITE_ID = :1 WHERE ID = :2 AND KOMITE_ID IS NULL`, adj)
+	return fmt.Sprintf(`UPDATE %s SET KOMITE_ID = :1 WHERE ID = :2 AND (KOMITE_ID IS NULL OR KOMITE_ID = :3)`, adj)
 }
 
 // BuatKasusKomite = AddKomiteTreatyChild_ACT langkah 22-25: T_WORK_CLAIM TKMT- (COVER_KEY = klaim, LINI PROP, TAHAP
@@ -118,8 +129,9 @@ func (g *Gudang) BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID,
 	return id, nil
 }
 
-// SetelKomiteAdjustment menautkan baris adjustment ke kasus komitenya (T_CLAIM_ADJUSTMENT.KOMITE_ID, UNIQUE).
-func (g *Gudang) SetelKomiteAdjustment(ctx context.Context, tx *db.Tx, adjID, komiteID string) error {
+// SetelKomiteAdjustment menautkan baris adjustment ke kasus komitenya (T_CLAIM_ADJUSTMENT.KOMITE_ID, UNIQUE);
+// `komiteLama` = kasus komite yang tertaut saat dibaca (kosong pada penyerahan pertama).
+func (g *Gudang) SetelKomiteAdjustment(ctx context.Context, tx *db.Tx, adjID, komiteID, komiteLama string) error {
 	tabel, err := g.db.Qualify(models.TabelAdjustment.Nama)
 	if err != nil {
 		return err
@@ -128,20 +140,29 @@ func (g *Gudang) SetelKomiteAdjustment(ctx context.Context, tx *db.Tx, adjID, ko
 	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.ExecContext(ctx, q, komiteID, adjID)
+	hasil, err := tx.ExecContext(ctx, q, komiteID, adjID, teksAtauNil(komiteLama))
 	if err != nil {
 		return fmt.Errorf("repository: menautkan adjustment ke komite: %w", err)
 	}
 	return db.PastikanSatuBaris(hasil, "penautan adjustment ke komite")
 }
 
-// TanggaKomite - anggota tangga kasus komite untuk grid "Committe Accept Status".
+// TanggaKomite - anggota tangga kasus komite (beserta putaran terdahulu baris adjustment yang sama) untuk grid
+// "Committe Accept Status".
 func (a *Acuan) TanggaKomite(ctx context.Context, komiteID string) ([]models.AnggotaKomite, error) {
 	t, err := a.q(tabelTanggaKomite)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := a.banyak(ctx, sqlTanggaKomite(t), 6, komiteID)
+	gen, err := a.q("T_GENERAL_KOMITE")
+	if err != nil {
+		return nil, err
+	}
+	work, err := a.q("T_WORK_CLAIM")
+	if err != nil {
+		return nil, err
+	}
+	rows, err := a.banyak(ctx, sqlTanggaKomite(t, gen, work), 6, komiteID)
 	if err != nil {
 		return nil, err
 	}
