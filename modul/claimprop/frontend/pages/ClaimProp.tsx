@@ -80,6 +80,7 @@ export default function ClaimProp({ pelaku }: { pelaku: string }) {
       <div className="toolbar">
         {tab === 'proses' && (
           <span className="claimprop__saklar-bungkus" title={bolehTeknik ? undefined : CP.teknikTanpaHak}>
+            <span className="claimprop__saklar-label">{CP.inbox}</span>
             <button
               type="button"
               role="switch"

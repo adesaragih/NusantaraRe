@@ -198,8 +198,11 @@
   border-radius: 12px;
 }
 
-/* Tab Process / Resolve: jalur TIMBUL KE DALAM; tab aktif TIMBUL KELUAR. */
+/* Tab (Process / Resolve, Interest / Estimation / Spreading): jalur TIMBUL KE DALAM; kapsul aktif TIMBUL KELUAR dan
+   MELUNCUR halus ke tab terpilih (work owner 08-10-2026 "tab process sama resolve juga buat smooth"). Lebar tab sama
+   supaya posisi kapsul dihitung tanpa transform (transform memerangkap Modal tanpa portal). */
 .claimprop .tabs {
+  position: relative;
   width: fit-content;
   max-width: 100%;
   gap: 4px;
@@ -210,12 +213,38 @@
   box-shadow: var(--cp-cekung);
 }
 
+.claimprop .tabs::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 110px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--cp-isi);
+  box-shadow: var(--cp-timbul-kecil);
+  transition: left 220ms ease;
+}
+
+.claimprop .tabs:has(> .tabs__item:nth-child(2).tabs__item--aktif)::before {
+  left: 119px;
+}
+
+.claimprop .tabs:has(> .tabs__item:nth-child(3).tabs__item--aktif)::before {
+  left: 233px;
+}
+
 .claimprop .tabs__item {
-  height: 36px;
+  position: relative;
+  z-index: 1;
+  width: 110px;
+  justify-content: center;
+  height: 30px;
   margin-bottom: 0;
   border-bottom: 0;
   border-radius: 999px;
   color: var(--cp-teks-redup);
+  transition: color 220ms ease;
 }
 
 .claimprop .tabs__item:hover {
@@ -224,9 +253,16 @@
 
 .claimprop .tabs__item--aktif,
 .claimprop .tabs__item--aktif:hover {
-  background: var(--cp-isi);
+  background: transparent;
+  box-shadow: none;
   color: var(--cp-aksen-teks);
-  box-shadow: var(--cp-timbul-kecil);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .claimprop .tabs::before,
+  .claimprop .tabs__item {
+    transition: none;
+  }
 }
 
 /* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
@@ -329,6 +365,9 @@
   background: var(--cp-jalur-tab);
   box-shadow: var(--cp-cekung-kecil);
   cursor: pointer;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease;
 }
 
 .claimprop .claimprop__saklar--nyala {
@@ -350,10 +389,18 @@
   border-radius: 50%;
   background: var(--cp-isi);
   box-shadow: var(--cp-timbul-kecil);
+  transition: left 200ms ease;
 }
 
 .claimprop .claimprop__saklar--nyala .claimprop__saklar-kenop {
   left: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .claimprop .claimprop__saklar,
+  .claimprop .claimprop__saklar-kenop {
+    transition: none;
+  }
 }
 
 .claimprop .claimprop__saklar-label {

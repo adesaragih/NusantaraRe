@@ -93,13 +93,17 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   "ditunda", bukan gagal.
 - **Halaman awal dua tab, rupa Kelola User** ("cuman ada 2 tab process dan resolve"): tab Process bawaan = worklist
   pembuat (Assignment2 Outstanding Claim, daftar `saya`, tanpa cek workbasket - XML `ToCurrentOperator` apa adanya;
-  `ReasKlaimAdmin` di DEV tidak dipakai). Dropdown Admin / Teknik diganti **switch Teknik** (08-10-2026: "admin nya
+  `ReasKlaimAdmin` dibuang - migrasi 534). Dropdown Admin / Teknik diganti **switch Teknik** (08-10-2026: "admin nya
   buang ... seperti toggle ... kalo wb nya ada ReasKlaimTeknik baru switch nya di aktifkan"): nyala = Assignment1
   Input Acceptation (daftar `workbasket`); dapat dinyalakan hanya anggota `ReasKlaimTeknik` - halaman membacanya dari
   `GET /api/claim-prop/hak` karena sesi frontend inti hanya meloloskan peran Life. Tab Resolve = daftar `selesai`. Add
-  Claim hanya di Process saat switch mati (`pages/inbox.ts`).
+  Claim hanya di Process saat switch mati (`pages/inbox.ts`). Tampil "Inbox ( ) Technical" (label Inggris); switch dan
+  kapsul tab aktif bergerak halus (`transition` 200-220 ms, tanpa `transform`; mati bila prefers-reduced-motion).
   Medan, tombol, tabel, toolbar memakai kelas inti (`field__input`, `btn`, `inbox__tabel`, `toolbar`);
   `claimprop.css` hanya menata letak pohon tata, warna lewat token inti.
+- **Workbasket `ReasKlaimAdmin` dibuang** (08-10-2026, "hapus dari master wb ReasKlaimAdmin dan akun yang pake ini"):
+  migrasi `534` menghapus barisnya di `M_LOGIN_GO_WORKBASKET` (DEV: 3 pemegang) lalu di `M_WORKBASKET`; pola
+  Bordereaux 893. Pernyataannya diurai di DEV (`DBMS_SQL.PARSE`, tanpa eksekusi); berjalan saat work owner `-migrate`.
 - **Layar kasus berkulit Kelola User** (08-10-2026, "SAMAIN DENGAN MENU KELOLA USER SKIN NYA"): setiap bagian
   berlabel = kartu `panel` + `panel__title`, isi `form-grid`, medan berlabel di atas kotak `field__input`, hanya-baca
   tetap berkotak (`field__input--readonly`). Pengelompokan di `frontend/components/susun.ts` (diuji): label
@@ -138,7 +142,7 @@ go run ./modul/claimprop/backend/alat/pemuatlama -keluaran <folder> -jalankan   
   Keduanya memuat data kasus — simpan di luar repositori.
 - Uji-kering DEV 07-10-2026: 2.451 kasus, 6.596 baris OS (4.145 riwayat), 6 kasus berhalaman JSON, **2.032 siap**,
   **419 ditunda** (baris berlaku `STS_REJECT = 1`, menunggu modul Komite Claim Prop), **0 gagal**; keluar 0.
-- Urutan resmi: work owner menjalankan `-migrate` (520–533, 980) → uji-kering ulang → keputusan OQ-CP-18 →
+- Urutan resmi: work owner menjalankan `-migrate` (520–534, 980) → uji-kering ulang → keputusan OQ-CP-18 →
   `-jalankan` oleh work owner / DBA. Tidak pernah dijalankan agen.
 
 ## Uji SQL di DEV (baca saja)

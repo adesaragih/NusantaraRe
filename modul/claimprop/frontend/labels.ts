@@ -9,8 +9,10 @@ export const CP = {
   /** Tab dan switch halaman awal - keputusan work owner 07-10 dan 08-10-2026 (`[tidak ada di korpus]`). */
   tabProses: 'Process',
   tabResolve: 'Resolve',
-  /** Switch Teknik = Assignment1 "Input Acceptation" (workbasket ReasKlaimTeknik); mati = worklist sendiri. */
-  wbTeknik: 'Teknik',
+  /** Switch "Inbox ( ) Technical" (08-10-2026): mati = worklist sendiri; nyala = Assignment1 "Input Acceptation"
+   *  (workbasket ReasKlaimTeknik). */
+  inbox: 'Inbox',
+  wbTeknik: 'Technical',
   teknikTanpaHak: 'Requires workbasket ReasKlaimTeknik',
   /** Start1 -> Assignment2 (`Flow_TreatyIn`); harness New tidak diekspor (OQ-CP-13). */
   tambahKlaim: 'Add Claim',
