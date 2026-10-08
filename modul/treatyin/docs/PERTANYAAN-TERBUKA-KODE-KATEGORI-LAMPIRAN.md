@@ -1,5 +1,20 @@
 # Pertanyaan terbuka — empat kode kategori lampiran tanpa nama
 
+> ⭐ **TERJAWAB 8 Oktober 2026.** Sumbernya tabel yang RD Pega baca sendiri —
+> `GetMasterTreatyCategory_SQL`: `SELECT id, note FROM POOLDATA.M_KATEGORIMASTERTREATY order by note`.
+> Tabel itu tidak ada di sapuan di bawah. Isinya (terukur):
+>
+> | Kode | Nama |
+> |---|---|
+> | `00003` | Binding, signed share Email |
+> | `00004` | Info Pack *(NOTE tersimpan dengan ekor CR LF)* |
+> | `00008` | Letter of Acknowledgment / LOA |
+> | `00009` | Claim Data |
+>
+> `repository.BacaKatalogKategoriLampiran` kini membaca katalog itu lebih dulu (data lampiran hanya
+> melengkapi), sehingga kesebelas kategori `Dipastikan` dan tombol **Upload file** hidup
+> (`modul/treatyin/docs/KEPUTUSAN-SASARAN-TULIS.md` §5.5). Isi di bawah dibiarkan sebagai riwayat.
+
 **Diajukan kepada pemilik proses 4 Oktober 2026.**
 
 ⛔ **Berkas ini TIDAK memuat tebakan, dan itu seluruh pokoknya.** Empat kode dan empat nama

@@ -61,3 +61,11 @@ type BarisRiwayatWarisan struct {
 	Disetujui string `json:"disetujui"`
 	Catatan   string `json:"catatan"`
 }
+
+// BarisPolisMaster - satu baris panel `Existing Policy for Master ID` layar
+// Adjustment: `Policy No` (`NOPOLIS`) · `Pega ID` (`IDPEGA` tanpa 18 aksara
+// awalnya), dari `TREATYINPRODUCTION`.
+type BarisPolisMaster struct {
+	NomorPolis string `json:"nomorPolis"`
+	PegaID     string `json:"pegaID"`
+}

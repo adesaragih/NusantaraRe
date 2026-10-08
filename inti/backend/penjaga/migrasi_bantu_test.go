@@ -243,12 +243,25 @@ func namaTabelTreatyIn(t *testing.T) map[string]bool {
 	// punya `ALTER SEQUENCE … RENAME TO`).
 	polaNamai := regexp.MustCompile(`(?i)RENAME\s+(?:\w+\s+)?TO\s+(\w+)`)
 	out := map[string]bool{}
+	// ⭐ 7 Oktober 2026 — tabel Treaty In yang DIPARKIR. Rentang migrasi
+	// `treatyin` (400-439) penuh, sehingga `446` (`T_TREATY_HAZARD_LIMIT`,
+	// diagram v2 `TreatyIn [BATAS_BAHAYA]`) lahir di folder
+	// `treatyinadjustment`, seperti `444`/`445` yang menambah kolom. Nama dari
+	// folder itu diakui HANYA bila tercantum di peta pendaratan Treaty In —
+	// dibaca sebagai TEKS berkas, bukan impor — sehingga tabel Treaty
+	// Contract Out yang dibuat dari folder mana pun tetap tertangkap.
+	petaTreatyIn, _ := os.ReadFile(filepath.FromSlash(akarAplikasi + "/modul/treatyin/backend/repository/pendaratan_peta.go"))
 	for nama, teks := range seluruhSQL(t, false) {
-		if berkasMigrasi.modul(nama) != "treatyin" {
+		parkir := berkasMigrasi.modul(nama) == "treatyinadjustment"
+		if berkasMigrasi.modul(nama) != "treatyin" && !parkir {
 			continue
 		}
 		for _, m := range polaBuat.FindAllStringSubmatch(teks, -1) {
-			out[strings.ToUpper(m[1])] = true
+			n := strings.ToUpper(m[1])
+			if parkir && !strings.Contains(string(petaTreatyIn), `"`+n+`"`) {
+				continue
+			}
+			out[n] = true
 		}
 		for _, m := range polaNamai.FindAllStringSubmatch(teks, -1) {
 			out[strings.ToUpper(m[1])] = true

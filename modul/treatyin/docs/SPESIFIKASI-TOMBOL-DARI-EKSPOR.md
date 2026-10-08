@@ -6,6 +6,26 @@ Inventaris mentahnya: [`lampiran/INVENTARIS-TOMBOL-EKSPOR.txt`](lampiran/INVENTA
 
 ---
 
+## ⚠️ Dua aturan baca — ditambahkan 6 Oktober 2026 sore, sesudah keduanya memakan korban
+
+1. **`1=2` di XML belum berarti mati.** Yang menentukan PASANGANNYA:
+
+   | Tingkat | Pilihan visibilitas | Syarat | Artinya |
+   | --- | --- | --- | --- |
+   | sel | `pyVisible = OTHER` | `pyCondition = 1=2` | **mati** |
+   | sel | `pyVisible = ALWAYS` | `pyCondition = 1=2` | **hidup** — syaratnya sisa |
+   | wadah | `pyIsVisibilityOption = ALWAYS` | `pyContainerVisibleWhen = 1=2` | **hidup** — syaratnya sisa |
+
+   Kedua baris terakhir nyata: `DetailLimits` sel 3 `.TreatyGroupID`, dan grid `TreatyIn.CoInScale`
+   — yang sempat dinyatakan mati lalu dicabut, sampai gambar 18 (tangkapan layar Pega) memperlihatkannya
+   tampil. ⭐ Ke-69 tombol mati di §0 diperiksa ulang terhadap aturan ini: **seluruhnya `OTHER`** —
+   angkanya bertahan.
+
+2. **Sapu tombol berdasarkan API aksi, bukan label.** Tombol ikon berlabel `Button`, bukan `Add`/`Delete`.
+   Grid `TreatyIn.CoInScale` punya `AddRow` (sel 262) dan `DeleteRow` (sel 266) yang hidup, dan sapuan yang
+   menyaring label `Add|Delete|Remove` melewatkan keduanya. Inventaris di lampiran tidak terkena —
+   ia mencatat setiap sel ber-`Embed-SelectedContextAPI-*` apa pun labelnya.
+
 ## 0 · Angka pokok, dan dari mana ia datang
 
 Penyapu membuang `pyIncludedRuleXML` dengan **hitung kedalaman**, lalu mengurai hasilnya
@@ -125,6 +145,14 @@ bukan keputusan teknis:**
 | **C** tulis ke model acuan (`KONTRAK`/`VERSI_KONTRAK`/…) | sasaran akhir yang benar | model itu **nol baris**, dan `RENCANA-PINDAH-SKEMA.md` Tahap 2–7 masih terblokir pada bentuk akar kontrak induk |
 
 ⛔ **Tidak dipilih di sini.** Pertanyaannya ada di daftar kebutuhan, butir 1.
+
+⚠️ **Pembaruan 6 Oktober 2026 malam.** `KEPUTUSAN-SASARAN-TULIS.md` (ditulis sesi lain,
+16:29) mencatat keputusan pemilik proses yang sama dengan **jalan B**: Save/Submit menulis
+ke tabel pendaratan masing-masing, jalur `PEGA_TREATY_IN` ditinggalkan, dan isian tidak
+masuk DB sebelum tombolnya ditekan. Berkas ini tidak memutuskan ulang — rujuk berkas itu.
+Biaya jalan B di tabel atas (pemuat mengosongkan lalu menimpa) **belum terjawab**; di sana
+ia menjadi §2, dan jalur tulis tidak boleh di-`Commit` sebelum salah satu dari tiga
+jalannya dipilih.
 
 ---
 

@@ -46,13 +46,14 @@ func (g *Gudang) BacaKontrakWarisan(ctx context.Context, id string) (models.Kont
 	}
 	q := fmt.Sprintf(`SELECT ID, TREATYCONTRACTNAME, TERITORIALSCOPE, TREATYYEAR,
 		CEDING, CEDINGID, LEADINGREINSSOURCE, LEADINGREINSSOURCEID,
-		PROPORTIONTYPE, COMMENCEMENT, TERMINATION
+		PROPORTIONTYPE, COMMENCEMENT, TERMINATION,
+		STATUSAKSEPTASI, POSITION, POSITIONUSERNAME
 		FROM %s WHERE ID = :1`, tKontrak)
 
 	var k models.KontrakWarisan
-	var sid, nk, ts, ty, cd, cdid, lrs, lrsid, pt, cm, tm sql.NullString
+	var sid, nk, ts, ty, cd, cdid, lrs, lrsid, pt, cm, tm, st, pos, posKe sql.NullString
 	err = g.db.QueryRowContext(ctx, q, id).Scan(&sid, &nk, &ts, &ty, &cd, &cdid,
-		&lrs, &lrsid, &pt, &cm, &tm)
+		&lrs, &lrsid, &pt, &cm, &tm, &st, &pos, &posKe)
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.KontrakWarisan{}, fmt.Errorf("%w: %s", ErrWarisanTidakAda, id)
 	}
@@ -74,6 +75,12 @@ func (g *Gudang) BacaKontrakWarisan(ctx context.Context, id string) (models.Kont
 	k.SifatProporsiAsli = pt.String
 	k.TanggalMulaiAsli = cm.String
 	k.TanggalBerakhirAsli = tm.String
+	// ⭐ Status dan posisi tangga akseptasi — CADANGAN dari kolom `TREATY_IN`
+	// (1.820 kontrak Resolve Complete). Tabel pendaratan, bila berisi,
+	// menimpanya di services; tombol Save/Submit/Actions membacanya.
+	k.StatusAkseptasi = st.String
+	k.Posisi = pos.String
+	k.PemegangPosisi = posKe.String
 	k.AdaDiJSON = map[string]bool{}
 	k.TeksMentah = map[string]string{}
 

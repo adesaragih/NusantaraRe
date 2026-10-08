@@ -46,6 +46,10 @@ type Gudang interface {
 	// memperlihatkan riwayatnya, dan sebaliknya.
 	BacaRiwayatKontrak(ctx context.Context, masterID string) ([]models.BarisRiwayatWarisan, error)
 
+	// Panel `Existing Policy for Master ID` - `TREATYINPRODUCTION`, tabel
+	// WARISAN, BACA SAJA. Seam terpisah, alasannya sama dengan riwayat.
+	BacaPolisMaster(ctx context.Context, idMaster string) ([]models.BarisPolisMaster, error)
+
 	// Layar Adjustment - `TREATY_IN_EDM` + `M_TREATY_IN_EDM`, BACA SAJA.
 	DaftarPenyesuaianWarisan(ctx context.Context) ([]models.BarisPenyesuaian, error)
 	// ⛔⛔ `BacaPenyesuaianWarisan` DICABUT dari seam ini 6 Oktober 2026 —
@@ -53,6 +57,13 @@ type Gudang interface {
 	// keras menarik nilai dari JSONDATA. Penggantinya membaca TABEL
 	// PENDARATAN yang sama dengan modul Treaty In.
 	BacaPenyesuaianPendaratan(ctx context.Context, id string) (models.Penyesuaian, error)
+
+	// Picker Add Revision / Add Adjustment Premium dan tombol `Choose` -
+	// `TREATY_IN` ∪ `TREATY_IN_EDM` + tabel pendaratan, BACA SAJA. Draf
+	// disusun di services; nol tulisan sampai jalur Save.
+	DaftarMasterPilihan(ctx context.Context, hanyaNonProp bool) ([]models.BarisMasterPilihan, error)
+	BacaDokumenMaster(ctx context.Context, id string) (models.SisiPenyesuaian, bool, error)
+	AdaRevisi(ctx context.Context, id string) (bool, error)
 }
 
 // Layanan memegang aturan modul ini di atas satu Gudang.
@@ -139,6 +150,20 @@ func (l *Layanan) LampiranKontrakWarisan(ctx context.Context, p inti.Pelaku, mas
 // ⛔ Seam TERPISAH dari lampiran, dan itu disengaja: keduanya dibaca dari
 // tabel yang berbeda, dan kegagalan salah satunya tidak boleh mengosongkan
 // yang lain.
+// PolisMasterWarisan membaca panel `Existing Policy for Master ID`.
+//
+// `idMaster` dipilih LAYAR menurut `@if(TreatyIn.EDMState="", TreatyIn.ID,
+// TreatyIn.OLDID)` — Activity `FetchTreatyExistingProduction` langkah 2.
+func (l *Layanan) PolisMasterWarisan(ctx context.Context, p inti.Pelaku, idMaster string) ([]models.BarisPolisMaster, error) {
+	if err := inti.WajibIdentitas(p); err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(idMaster) == "" {
+		return nil, fmt.Errorf("%w: pengenal kontrak kosong", ErrIDTidakSah)
+	}
+	return l.gudang.BacaPolisMaster(ctx, idMaster)
+}
+
 func (l *Layanan) RiwayatKontrakWarisan(ctx context.Context, p inti.Pelaku, masterID string) ([]models.BarisRiwayatWarisan, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
 		return nil, err

@@ -224,3 +224,25 @@ func TestRuteHitungPeriodePelaporan(t *testing.T) {
 		t.Errorf("kode %d badan %s", w.Code, w.Body.String())
 	}
 }
+
+// ----------------------------------------------- LimitCalculation tab Limits
+
+func TestRuteHitungLimit(t *testing.T) {
+	h := handlers.RouterDengan(services.LayananDengan(gudangTiruan{}), true, true)
+	jalur := "/api/treaty-in/hitung/limit"
+	isi := badan(`{"jenis":"qs","otomatis":true,"detail":{"QSPct":"40",` +
+		`"IOOLimitList":[{"Currency":"IDR","CurrencyID":"10026","Value":"1000000000"}]}}`)
+	if w := kirim(t, h, http.MethodPost, jalur, "", isi); w.Code != http.StatusUnauthorized {
+		t.Errorf("tanpa identitas: %d, mau 401", w.Code)
+	}
+	if w := kirim(t, h, http.MethodPost, jalur, "AKUN-UJI", badan(`{`)); w.Code != http.StatusBadRequest {
+		t.Errorf("badan rusak: %d, mau 400", w.Code)
+	}
+	w := kirim(t, h, http.MethodPost, jalur, "AKUN-UJI", isi)
+	// Retention% 60 → 1.000.000.000 × 0,6000 = 600.000.000.
+	if w.Code != http.StatusOK ||
+		!strings.Contains(w.Body.String(), `"RetentionPct":"60"`) ||
+		!strings.Contains(w.Body.String(), `"Value":"600000000"`) {
+		t.Errorf("kode %d badan %s", w.Code, w.Body.String())
+	}
+}

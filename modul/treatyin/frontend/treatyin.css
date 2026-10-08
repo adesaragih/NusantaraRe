@@ -416,14 +416,30 @@
   table-layout: fixed;
   width: 100%;
 }
+/* ⛔ RASIO DIUBAH 7 Oktober 2026 atas permintaan pemilik proses:
+   *"di table rate of change juga ini terlalu kepanjangan table inputnya"*.
+
+   Rasio ekspor (27:48:12,5:12,5) dibawa dari layar Pega yang TIDAK
+   responsif. Di layar kita ia menyisakan kotak `Value to IDR` selebar
+   setengah tabel untuk angka sependek `286,07`, sementara kedua kolom
+   tanggal terdesak sampai ikon kalendernya terpotong.
+
+   ⚠️ Dan ada sebab kedua yang lebih dalam: `colgroup` hanya menyebut
+   EMPAT kolom, sementara baris mode-ubah punya LIMA sel — kolom tombol
+   Remove nol kebagian lebar. Keempatnya berjumlah tepat 100%, jadi yang
+   kelima mendapat 0 dan memaksa penggulir mendatar.
+
+   ⭐ Sekarang keempatnya berjumlah 84%: sisanya jatuh ke kolom tombol di
+   mode ubah, dan dibagi rata di antara keempatnya di mode lihat — satu
+   aturan yang benar di kedua mode, tanpa dua set kelas. */
 .treatyin .trin__kol-mata-uang {
-  width: 27%;
+  width: 14%;
 }
 .treatyin .trin__kol-nilai {
-  width: 48%;
+  width: 28%;
 }
 .treatyin .trin__kol-tanggal {
-  width: 12.5%;
+  width: 21%;
 }
 
 /* -------------------------------------------------------------------------
@@ -628,6 +644,28 @@
   line-height: 1.55;
 }
 
+/* ------------------------------------------------------------------
+ * Isian teks panjang — mode Ubah tab Exclusions / Special Conditions.
+ *
+ * ⛔ Lebarnya PENUH dan tingginya tetap: teks terpanjang terukur 23.453
+ * aksara, dan kotak sempit membuat yang menyuntingnya menggulir lebih banyak
+ * daripada membaca.
+ *
+ * `font-family: inherit` — `textarea` bawaan peramban memakai huruf monospace,
+ * dan teks yang di mode Lihat berhuruf biasa akan berubah rupa begitu tombol
+ * Edit ditekan. Rupa yang berubah tanpa isinya berubah terbaca sebagai
+ * kerusakan.
+ * ------------------------------------------------------------------ */
+.treatyin .trin__teks-isian {
+  width: 100%;
+  min-height: 320px;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
 /* Keterangan ejaan: dari mana teks ini datang, dan apa yang TIDAK terlihat. */
 .treatyin .trin__teks-asal {
   display: block;
@@ -690,43 +728,60 @@
 }
 
 /* ===========================================================================
-   MEDAN TANGGAL KOSONG — `dd/mm/yyyy` tidak boleh terbaca sebagai nilai
+   MEDAN TANGGAL YANG DAPAT DIKETIK — `components/TanggalKetik.tsx`
    ===========================================================================
 
-   ⛔ Masalahnya: `<input type="date">` yang kosong menuliskan `dd/mm/yyyy`
-   sendiri. Di layar yang penuh medan terisi, teks itu terbaca seperti isi —
-   kontrak tanpa tanggal terlihat seolah bertanggal.
+   ⭐ 7 Oktober 2026, permintaan pemakai: tanggal dapat DIKETIK. Bentuk Pega
+   (gambar 38): kotak teks `DD/MM/YYYY` + ikon kalender di kanannya.
 
-   ⚠️ `FieldTanggal` ada di `inti/frontend/components/ui/dasar.tsx`, berkas
-   yang DIPAKAI BERSAMA dan tidak disunting. Kaitnya karena itu dipasang di
-   `FormKontrakTreatyIn.tsx` — `TanggalRedup` menambahkan
-   `.trin__tanggal--kosong` selama nilainya kosong.
+   Kalender bawaan peramban tetap dipakai — lewat `<input type="date">` yang
+   TIDAK TERLIHAT (`.trin__tgl-asli`), dibuka tombol ikon. `opacity: 0`,
+   bukan `display: none`: pemilih tidak dapat dibuka dari elemen yang tidak
+   dirender.
 
-   ⛔ Mengapa kait itu PERLU, dan bukan kemalasan: tidak ada pemilih CSS yang
-   membedakan medan tanggal kosong dari yang terisi. `:placeholder-shown`
-   tidak cocok untuk `type="date"`; medan tanggal kosong tanpa `required`
-   itu `:valid`, jadi `:invalid` juga tidak cocok; dan React menyetel
-   `value` sebagai PROPERTI, bukan atribut, jadi `[value='']` tidak cocok
-   pula. Ketiganya diperiksa sebelum kait ini dipilih.
-
-   ⚠️ BATASNYA: `::-webkit-datetime-edit` hanya ada di Chromium dan WebKit.
-   Di Firefox `dd/mm/yyyy` tetap tampak, dan tidak ada padanan standarnya.
-
-   ⭐ Tetap DAPAT DIISI dan tetap TERBACA:
-   - `:focus` membatalkan aturannya, jadi begitu medan disentuh angkanya
-     kembali terlihat saat diketik;
-   - kelasnya hilang begitu nilainya tidak kosong, jadi tanggal yang terisi
-     tidak pernah tersentuh aturan ini;
-   - ikon pemilih tanggal TIDAK disembunyikan — yang transparan hanya teks
-     `::-webkit-datetime-edit`, sehingga medannya masih jelas dapat diklik.
+   ⛔ Tambalan lama `.trin__tanggal--kosong` (menyembunyikan `dd/mm/yyyy`
+   bawaan `type="date"` yang kosong) DICABUT: kotak teks yang kosong memang
+   kosong.
    =========================================================================== */
 
-.treatyin .trin__tanggal {
-  display: contents;
+.treatyin .trin__tgl {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
-.treatyin .trin__tanggal--kosong input[type='date']:not(:focus)::-webkit-datetime-edit {
-  color: transparent;
+.treatyin .trin__tgl-baris {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.treatyin .trin__tgl-baris > .field__input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.treatyin .trin__tgl-kalender {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  padding: 2px;
+}
+
+.treatyin .trin__tgl-asli {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* ===========================================================================
@@ -817,83 +872,6 @@
   font-size: var(--fs-sm);
 }
 
-/* ===========================================================================
-   TAB LIMITS — POHON TIGA TINGKAT
-   ===========================================================================
-
-   ⛔ Susunannya dari 18 gambar (`02`–`15` prop, `30`–`33` non-prop), dan
-   kedua cabang BERBEDA di puncak: prop mengelompok menurut `Kind of Treaty`,
-   non-prop menurut `Layers`.
-
-   ⚠️ `<details>`/`<summary>` dipakai, bukan tombol buka-tutup buatan sendiri:
-   keduanya sudah dapat dioperasikan papan ketik dan sudah dibacakan pembaca
-   layar sebagai "dapat dilipat" tanpa satu baris ARIA pun. Tiruan buatan
-   sendiri harus mengulang keduanya, dan yang mengulang selalu tertinggal.
-   =========================================================================== */
-
-.treatyin .trin__pohon {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.treatyin .trin__pohon-kepala {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.3rem 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  background: var(--trin-pohon-kepala, rgba(127, 127, 127, 0.12));
-}
-
-.treatyin .trin__pohon-tingkat {
-  border-left: 2px solid var(--trin-pohon-garis, rgba(127, 127, 127, 0.35));
-  margin-left: 0.25rem;
-  padding-left: 0.6rem;
-}
-
-.treatyin .trin__pohon-tingkat > summary {
-  cursor: pointer;
-  padding: 0.3rem 0;
-  font-weight: 600;
-}
-
-/* Medan tingkat layer — dua kolom, label di kiri. */
-.treatyin .trin__pohon-medan {
-  display: grid;
-  grid-template-columns: minmax(8rem, max-content) 1fr;
-  gap: 0.15rem 0.75rem;
-  margin: 0.35rem 0 0.6rem;
-  font-size: 0.85rem;
-}
-
-.treatyin .trin__pohon-medan dt {
-  font-weight: 600;
-}
-
-.treatyin .trin__pohon-medan dd {
-  margin: 0;
-}
-
-.treatyin .trin__pohon-daun {
-  margin: 0.2rem 0 0.5rem;
-  padding-left: 1.1rem;
-  font-size: 0.85rem;
-}
-
-/* Di telepon label dan nilai menumpuk — dua kolom di 320px memberi label
-   terpotong di sebelah nilai terpotong. */
-@media (max-width: 32rem) {
-  .treatyin .trin__pohon-medan {
-    grid-template-columns: 1fr;
-  }
-  .treatyin .trin__pohon-medan dd {
-    margin-bottom: 0.3rem;
-  }
-}
-
 /* Baris AKTIF pemilih bercari — yang panah geser dan yang Enter pilih.
    ⚠️ Berbeda dari `:hover`: papan tik tidak menghasilkan hover, dan tanpa
    kelas ini yang memakai papan tik tidak melihat di mana ia berada. */
@@ -967,13 +945,6 @@
 /* ---------------------------------------------------------------------
  * TAB LIMITS PROPORSIONAL — tiga tingkat dari ekspor (`labelsLimitsProp.ts`).
  * ------------------------------------------------------------------ */
-.treatyin .trin__limit-detail {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 8px 0 8px 14px;
-  border-left: 2px solid var(--border);
-}
 .treatyin .trin__limit-medan {
   display: flex;
   flex-wrap: wrap;
@@ -992,12 +963,1021 @@
 .treatyin .trin__limit-grid {
   width: 100%;
 }
-.treatyin .trin__limit-hapus {
-  margin-left: 12px;
-}
 
 /* Angka rata kanan, digit tabular — sel grid Limits proporsional. */
 .treatyin .trin__angka {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================================
+   KERAPATAN BADAN LAYAR — keputusan pemilik proses 6 Oktober 2026
+   =========================================================================
+   "perbaiki design untuk body keseluruhan dri menu treaty in agar tidak
+    terlalu besar … ambil rentang sedang nya saja … design dan jarak antar
+    layout juga diperhatikan … tema nya bisa mencontoh menu kelola user"
+
+   ⛔ UKURAN KONTROL TIDAK DIUBAH, dan itu justru yang "mencontoh kelola
+   user" berarti: `.field__input` 42px/15px dan `.btn` 44px/15px adalah tema
+   inti yang Kelola User pakai apa adanya. Mengecilkannya di sini akan
+   membuat satu modul berbeda dari seluruh aplikasi — kebalikan dari yang
+   diminta.
+
+   Yang membuat layar ini terasa besar BUKAN kontrolnya, melainkan dua hal
+   yang terukur di bawah.
+   ------------------------------------------------------------------------- */
+
+/* 1 · JARAK ANTAR MEDAN DIHITUNG DUA KALI.
+   `.trin__kolom` memberi `gap: 14px`, dan tema inti memberi tiap `.field`
+   `margin-bottom: 16px`. Keduanya bertumpuk menjadi 30px — dua kali lipat
+   jarak yang `.form-grid` Kelola User pakai (14px). Jaraknya dikembalikan
+   kepada SATU pemilik: gap kolomnya. */
+.treatyin .trin__kolom .field {
+  margin-bottom: 0;
+}
+
+/* 2 · BENTUK PEGA: LABEL DI KIRI MEDAN, DUA KOLOM SELEBAR LAYAR.
+   =========================================================================
+   Tangkapan layar Pega 6 Oktober 2026 menjawab pertanyaan yang empat ronde
+   sebelumnya salah tebak: yang membuat layar kita terasa salah BUKAN
+   lebarnya, melainkan LETAK LABELNYA.
+
+   Di Pega tiap label duduk di KIRI kotaknya, dalam kolom label sendiri. Satu
+   baris karena itu setinggi satu kotak, bukan dua — dan dua kolom selebar
+   layar tetap terbaca rapat tanpa kotak isian terlihat raksasa.
+
+   ⛔ EMPAT BENTUK SEBELUM INI DITOLAK, dan ketiganya salah pada hal yang
+   sama: mengatur LEBAR, padahal yang keliru TATA LETAK LABEL.
+
+     a. `max-width` pada wadah, rata kiri   -> separuh kanan menganga
+     b. batas hanya di kepala, tab tidak    -> dua bagian beda lebar
+     c. kolom menempel kedua ujung          -> ~460px menganga di TENGAH
+     d. blok ditengahkan                    -> masih label di atas, dan
+                                               pemilik proses menolaknya
+
+   ⚠️ Lebar kolom label 132px adalah keputusan KITA. Ekspor Pega tidak
+   responsif (lebarnya ~1900px tetap) dan tidak menyatakan lebar label mana
+   pun; 132px menampung label terpanjang di kolom ini ("Treaty Contract
+   Name", "Bordereaux Note") dalam dua baris tanpa memotongnya.
+
+   ⚠️ Hanya dari 900px ke atas. Di bawahnya label kembali ke ATAS medan —
+   kolom label 132px pada lebar telepon menyisakan kotak isian yang terlalu
+   ramping untuk diisi, cacat yang sama yang aturan inti 860px cegah. */
+@media (min-width: 900px) {
+  .treatyin .trin__dwikolom,
+  .treatyin .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 40px;
+  }
+
+  .treatyin .trin__kolom .field {
+    display: grid;
+    grid-template-columns: 132px minmax(0, 1fr);
+    align-items: start;
+    column-gap: 12px;
+  }
+
+  /* Label sejajar dengan teks DI DALAM kotak, bukan dengan tepi atasnya.
+     Kotak isian 42px dengan teks 15px -> teksnya duduk ~11px dari atas. */
+  .treatyin .trin__kolom .field .field__label {
+    margin: 0;
+    padding-top: 11px;
+    line-height: 1.3;
+  }
+
+  /* Keterangan di bawah medan ikut kolom KEDUA, bukan menumpuk di bawah
+     label. `MedanTakAda` memakai `.trin__redup`, galat memakai
+     `.field__error`. */
+  .treatyin .trin__kolom .field > .field__error,
+  .treatyin .trin__kolom .field > .trin__redup {
+    grid-column: 2;
+  }
+}
+
+/* 3 · JARAK ANTAR PANEL dirapatkan sedang: 24/20 menjadi 18/18.
+   Cukup untuk memisahkan kartu, tidak cukup untuk memaksa menggulir di
+   antara dua medan yang dibaca bersamaan. */
+.treatyin .panel {
+  margin-bottom: 18px;
+  padding: 18px;
+}
+.treatyin .panel__title {
+  margin-bottom: 12px;
+}
+
+/* ⭐ Deret tombol kaki Save · Close · Actions — jarak BAWAH sama dengan jarak
+   antar kartu (18px). Tanpanya kartu History menempel ke tombol, sementara di
+   atas tombol ada jarak kartu Attachment (tangkapan layar pemakai 7 Oktober
+   2026).
+   ⛔ Lewat pengubah `--kaki`, bukan `.trin__aksi` sendiri: kelas itu dipakai
+   juga deret tombol DI DALAM kartu (Apply, Update Total, …), dan di sana
+   jarak bawah tambahan hanya menggembungkan kartunya. */
+.treatyin .trin__aksi--kaki {
+  margin-bottom: 18px;
+}
+
+/* =========================================================================
+   `Existing Policy for Master ID` — empat baris, lalu menggulir
+   =========================================================================
+   Keputusan pemilik proses 6 Oktober 2026: "kalau table Existing Policy for
+   Master ID kebnyakan itu buat aja muncul 4 baris kalau misal lebih dari 4
+   buat aja seperti ada scroll agar tidak makan tempat".
+
+   ⛔ `min-height` inti DICABUT di sini, dan itu bagian yang penting:
+   `.table-wrap` inti memesan 160px bahkan ketika isinya `No items`, sehingga
+   panel yang KOSONG pun memakan ruang satu tabel penuh — terlihat di
+   tangkapan layar pemilik proses.
+
+   Tinggi 170px dihitung, bukan dikira: baris `.trin__tabel` berpadding
+   7px atas-bawah dengan tinggi baris ~17px — ~31px per baris. Kepala
+   ditambah empat baris ≈ 155px; 170px memberi sisa supaya baris keempat
+   tidak terpotong setengah, dan yang kelima tetap menuntut gulir. */
+.treatyin .trin__polis .table-wrap {
+  min-height: 0;
+  max-height: 170px;
+}
+
+/* =========================================================================
+   TIGA BLOK, TIGA LAYOUT — bentuk Pega, 6 Oktober 2026
+   =========================================================================
+   Pemilik proses: "antara form pengisian dan reinsurance type dan Existing
+   Policy for Master ID masing masing mempunyai dynamic layout sendiri".
+
+   Di Pega ketiganya berdiri sebagai pita terpisah: `ID` + `Reinsurance Type`
+   di pita pertama, form pengisian di pita kedua, dan tabel `Existing Policy`
+   di pitanya sendiri. Pemisahnya jeda abu di antara pita — bukan garis.
+
+   ⛔ Dibuat dengan JARAK dan GARIS TIPIS, bukan dengan memecah panel.
+   Memecahnya menjadi tiga `.panel` menambahkan tiga tepi, tiga bayangan, dan
+   tiga kali `padding` — layar menjadi lebih tinggi, bukan lebih tertata, dan
+   itu kebalikan dari yang diminta. */
+.treatyin .trin__kepala {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+/* Pita kedua — form pengisian — diberi napas dari pita di atasnya. */
+.treatyin .trin__dwikolom {
+  padding-top: 4px;
+}
+
+/* =========================================================================
+   Tab `Share` cabang PROPORSIONAL — bentuk `TreatyInShareProp.xml`
+   ========================================================================= */
+
+/* Ketiga grid total dan grid `Kind of Treaty` pendek — tingginya mengikuti
+   isinya, tidak memesan ruang seperti `.table-wrap` inti (yang memesan 160px
+   bahkan untuk `No items`). Empat tabel pendek berurutan dengan pesanan itu
+   akan menjulur lebih dari 600px untuk menampilkan empat baris `No items`. */
+.treatyin .trin__share-total {
+  min-height: 0;
+  max-height: none;
+  margin-bottom: 14px;
+}
+
+/* ⛔ Ketiga grid total SEMPIT, bukan selebar panel. Di ekspor keduanya dua
+   kolom — judul dan `Value` — dan membentangkannya selebar layar membuat
+   kolom `Value` berdiri ~1500px dari judulnya, terlalu jauh untuk dibaca
+   sebagai satu baris. */
+.treatyin .trin__share-total .trin__tabel {
+  max-width: 920px;
+}
+
+/* Medan panel `Total Share` memakai bentuk label-kiri yang sama dengan
+   kepala form — `.trin__kolom` sudah membawanya; lebarnya saja dibatasi
+   supaya kotak persen tidak selebar panel. */
+.treatyin .trin__share-medan {
+  max-width: 620px;
+}
+
+/* =========================================================================
+   TAB LIMITS — perangkat tampilan (`components/limitsUI.tsx`)
+   =========================================================================
+   Permintaan pemakai 6 Oktober 2026: "terapkan UI/UX hebat … jangan hanya
+   panah". Kartu lipat bernomor dengan ringkasan nilai, kepala bagian
+   berlencana, bagian rincian berjudul. Warna HANYA dari token `inti` —
+   mode gelap ikut tanpa aturan tambahan.
+   ========================================================================= */
+
+.treatyin .tl-kepala {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.treatyin .tl-kepala__judul {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-base);
+  font-weight: 700;
+  color: var(--text);
+}
+.treatyin .tl-lencana {
+  min-width: 22px;
+  padding: 1px 8px;
+  border-radius: var(--r-pill);
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Kotak centang berketerangan di sampingnya — `pyCheckboxCaption`
+   (`.Layer` grid 100% Limit/Retention: "Auto calculate"). */
+.treatyin .trin__cek {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: var(--fs-sm);
+}
+
+.treatyin .tl-tambah,
+.treatyin .tl-hapus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.treatyin .tl-tambah {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+.treatyin .tl-tambah:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+.treatyin .tl-hapus {
+  background: transparent;
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+.treatyin .tl-hapus:hover:not(:disabled) {
+  background: var(--danger-bg);
+}
+
+.treatyin .tl-daftar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.treatyin .tl-kartu {
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  transition: border-color var(--t), box-shadow var(--t);
+}
+.treatyin .tl-kartu--buka {
+  border-color: var(--primary);
+  box-shadow: 0 2px 10px rgba(23, 32, 51, 0.06);
+}
+.treatyin .tl-kartu__kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 12px;
+}
+.treatyin .tl-kartu__lipat {
+  display: inline-flex;
+  flex: 1 1 240px;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px 4px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.treatyin .tl-kartu__lipat:hover {
+  background: var(--hover-baris);
+}
+.treatyin .tl-kartu__lipat:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+/* Chevron kanan saat tertutup, bawah saat terbuka — DUA ikon, bukan
+   rotasi: properti pengurung `position: fixed` dilarang di modul ini. */
+.treatyin .tl-kartu__chevron {
+  display: inline-flex;
+  color: var(--text-3);
+}
+.treatyin .tl-kartu--buka .tl-kartu__chevron {
+  color: var(--primary);
+}
+.treatyin .tl-nomor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+.treatyin .tl-kartu__judul {
+  overflow: hidden;
+  font-size: var(--fs-base);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.treatyin .tl-kartu__judul--kosong {
+  color: var(--text-3);
+  font-style: italic;
+  font-weight: 500;
+}
+.treatyin .tl-kartu__petunjuk {
+  margin-left: auto;
+  color: var(--primary-text);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.treatyin .tl-kartu__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.treatyin .tl-kartu__aksi {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.treatyin .tl-kartu__isi {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+}
+.treatyin .tl-kartu__isi[hidden] {
+  display: none;
+}
+.treatyin .tl-kartu__isi .tl-kartu {
+  background: var(--surface);
+}
+
+.treatyin .tl-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  font-size: var(--fs-xs);
+}
+.treatyin .tl-chip__label {
+  color: var(--text-3);
+}
+.treatyin .tl-chip__nilai {
+  color: var(--text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.treatyin .tl-bagian {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+.treatyin .tl-bagian__kepala {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.treatyin .tl-bagian__judul {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+/* Tiga grid nilai (100% Limit · Retention · Cession) berdampingan. */
+.treatyin .tl-tiga {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+/* Matriks limit dua mata uang (Non-Prop). */
+.treatyin .tl-matriks th[scope='row'] {
+  color: var(--text-2);
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.treatyin .tl-pesan {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--danger-border);
+  border-radius: var(--r-md);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  font-size: var(--fs-sm);
+  list-style: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .treatyin .tl-kartu {
+    transition: none;
+  }
+}
+
+/* Telepon: aksi turun ke baris sendiri, chip tidak memaksa lebar. */
+@media (max-width: 32rem) {
+  .treatyin .tl-kartu__aksi {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .treatyin .tl-kartu__isi {
+    padding: 12px;
+  }
+}
+
+/* Badan rincian kartu — kolom bergap, menggantikan garis kiri pohon lama. */
+.treatyin .tl-rincian {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Kepala grid kecil di dalam bagian rincian — judul + Add. */
+.treatyin .tl-grid-kepala {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+/* Grid nilai Limit · Retention · Cession — rapi di kolom sempit:
+   isian mengisi selnya, label kosong dalam sel disembunyikan, kolom aksi
+   selebar tombolnya. */
+.treatyin .tl-tiga--nilai {
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  align-items: start;
+}
+.treatyin .trin__limit-grid .trin__tabel {
+  width: 100%;
+  table-layout: fixed;
+}
+.treatyin .trin__limit-grid td {
+  vertical-align: middle;
+}
+.treatyin .trin__limit-grid td .field {
+  min-width: 0;
+  margin: 0;
+}
+.treatyin .trin__limit-grid td .field__label:empty {
+  display: none;
+}
+.treatyin .trin__limit-grid td .field__input {
+  width: 100%;
+  min-width: 0;
+}
+.treatyin .trin__limit-grid th {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.treatyin .tl-kolom-aksi {
+  width: 112px;
+}
+.treatyin .tl-grid-judul {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 16px;
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+/* ⭐ Persen BERDAMPINGAN dengan labelnya sebagai teks biasa — `100 %`,
+   `0 %`, `100 %` seperti tangkapan layar Pega (pemakai, 7 Oktober 2026).
+   Dahulu lencana pill kecil. */
+.treatyin .tl-persen {
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================================
+   TAB EGNPI (non-prop) — `components/TabEgnpi.tsx`
+   =========================================================================
+   Bentuknya meminjam perangkat tab Limits (`tl-*`): kartu lipat, kepala
+   bagian berlencana, bagian berjudul kecil. Yang khas EGNPI hanya dua:
+   susunan medan rinciannya, dan dua kotak total di kaki tab.
+
+   ⛔ NOL warna baru. Seluruhnya token `inti`, jadi mode gelap ikut tanpa
+   satu baris tambahan — aturan yang sama dengan `limitsUI`. */
+
+/* ⛔ SATU BARIS PER MEDAN, bukan dua kolom.
+   Bentuk sebelumnya memepet enam medan ke petak dua kolom; tangkapan layar
+   Pega memperlihatkan satu baris per medan, selebar panel. */
+.treatyin .trin__egnpi-medan {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px 20px;
+  align-items: start;
+}
+
+/* ⭐ Baris `Amount` dan `Amount in IDR` memuat DUA medan: satuan di kiri,
+   nilai di kanan. Satuan dibuat sempit — isinya kode tiga huruf lawan angka
+   belasan digit. */
+.treatyin .trin__egnpi-pasangan {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 4px 20px;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .treatyin .trin__egnpi-pasangan {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.treatyin .trin__egnpi-total {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 4px 20px;
+  max-width: 640px;
+}
+
+/* =========================================================================
+   TAB CO-INS SCALE — `components/TabCoInsScale.tsx`
+   =========================================================================
+   Bentuk dari dua tangkapan layar Pega: gambar 18 (mode lihat) dan
+   tangkapan layar pemakai 6 Oktober 2026 (mode ubah). Grid SEMPIT tanpa
+   judul, tombol `Tambah` di sel kepala ketiga, "No items" saat kosong, dua
+   medan label-kiri di bawahnya.
+
+   Lebar kolom dari `pyWidth` sel kepala 260 · 261 · 262 = 206 · 206 · 101
+   -> 40% · 40% · 20%. Jumlahnya, 513px, menjadi batas lebar grid. Yang
+   dibawa perbandingannya, seperti grid Rate of Exchange. */
+.treatyin .trin__coin {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+/* ⭐ Lebar dari `pyWidth` ekspor: 206 · 206 untuk kedua kolom data; kolom
+   tombol (101 di ekspor) SELEBAR ISINYA. Dahulu 40/40/20 % dari 513px: kolom
+   tombol hanya ±102px, sedangkan `+ Tambah` beserta padding selnya ±120px —
+   tabel melebar melewati pembungkusnya dan memunculkan batang gulir di
+   bawah grid yang nyaris kosong (tangkapan layar pemakai 7 Oktober 2026).
+   `overflow-x` tetap untuk layar yang memang sempit. */
+.treatyin .trin__coin-bungkus {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.treatyin .trin__coin .trin__tabel {
+  width: auto;
+}
+.treatyin .trin__coin .trin__tabel th:nth-child(1),
+.treatyin .trin__coin .trin__tabel th:nth-child(2) {
+  width: 206px;
+}
+/* ⛔ Menimpa `13.5rem` kolom aksi daftar kontrak — aturan itu mengenai
+   SETIAP `.trin__tabel`, dan di sini kolom terakhir hanya memuat satu
+   tombol. */
+.treatyin .trin__coin .trin__tabel th:last-child,
+.treatyin .trin__coin .trin__tabel td:last-child {
+  width: auto;
+  white-space: nowrap;
+}
+.treatyin .trin__coin .trin__tabel th {
+  vertical-align: middle;
+}
+.treatyin .trin__coin-kosong {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.treatyin .trin__coin-persen {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Kotak `Max Co-Insurance Panel` SEMPIT: `pyWidth` 130 di ekspor. Kolom
+   label 132px datang dari `.trin__kolom`; batas ini menyisakan kotak
+   seukuran itu, bukan selebar panel. */
+.treatyin .trin__coin-medan {
+  max-width: 300px;
+}
+
+/* =========================================================================
+   TAB MAXIMUM RETENTION (non-prop) — `components/TabRetensi.tsx`
+   =========================================================================
+   Perangkatnya sama dengan tab Limits dan EGNPI (`tl-*`). Yang khas di sini
+   satu: baris `Amount` memuat DUA medan — pilihan mata uang lalu kotak
+   nilai — sebab ekspor menempelkan label `Amount` pada `.Currency` dan
+   menaruh `.Amount` di sebelahnya tanpa label sendiri.
+
+   ⛔ NOL warna baru; seluruhnya token `inti`. */
+
+.treatyin .trin__retensi-medan {
+  display: grid;
+  gap: 4px 20px;
+}
+
+/* ⭐ Mata uang sempit, nilainya lebar — susunan yang sama dengan tangkapan
+   layar Pega, dan sejalan dengan isinya: kode tiga huruf lawan angka
+   belasan digit. */
+.treatyin .trin__retensi-jumlah {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 4px 20px;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .treatyin .trin__retensi-jumlah {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ===================================================================
+   TAB SHARE NON-PROP — `TabShareNonProp.tsx`
+   Panel akar dua kolom (RNM · retro), dua grid reasuradur berdampingan,
+   grid per layer dengan panel rincian di bawah barisnya, dan sembilan
+   grid total dalam tata letak 3 × 5 ekspor (RNM · OR · R/I).
+   =================================================================== */
+.treatyin .tl-share-akar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px 24px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.treatyin .tl-share-kolom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.treatyin .tl-share-centang {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+}
+.treatyin .tl-share-dua {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.treatyin .tl-share-reins .trin__tabel {
+  width: 100%;
+  table-layout: fixed;
+}
+.treatyin .tl-share-rnm {
+  margin: 8px 0;
+  font-size: var(--fs-md);
+  color: var(--text);
+}
+.treatyin .tl-share-rnm strong {
+  font-variant-numeric: tabular-nums;
+}
+.treatyin .tl-share-grid td {
+  white-space: nowrap;
+}
+.treatyin .tl-share-grid .tl-share-mu {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.treatyin .tl-share-grid .tl-share-of {
+  color: var(--text-3);
+  font-style: italic;
+}
+.treatyin .tl-angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.treatyin .tl-kolom-buka {
+  width: 44px;
+}
+.treatyin .tl-share-buka[aria-expanded="true"] {
+  color: var(--primary-text);
+  background: var(--primary-soft);
+}
+.treatyin .tl-share-baris--buka td {
+  background: var(--primary-soft);
+}
+.treatyin .tl-share-panel > td {
+  padding: 12px 16px 16px;
+  background: var(--surface-2);
+  white-space: normal;
+}
+.treatyin .tl-share-rincian {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.treatyin .tl-share-layer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.treatyin .tl-share-layer__of {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-style: italic;
+}
+.treatyin .tl-share-atau {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+.treatyin .tl-share-catatan {
+  margin: 6px 0 0;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.treatyin .tl-share-total-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+@media (max-width: 960px) {
+  .treatyin .tl-share-total-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .treatyin .tl-share-total-grid > [aria-hidden="true"] {
+    display: none;
+  }
+}
+.treatyin .tl-share-total .trin__tabel {
+  width: 100%;
+}
+
+/* =========================================================================
+   TAB ACHIEVEMENT IN IDR — `components/TabAchievement.tsx`
+   =========================================================================
+   Grid enam kolom hanya-baca; empat di antaranya angka, jadi diratakan
+   kanan supaya digitnya sejajar dan selisih besarannya terbaca sekilas.
+
+   ⛔ NOL warna baru; seluruhnya token `inti`. */
+
+.treatyin .trin__ach td:nth-child(n + 3),
+.treatyin .trin__ach th:nth-child(n + 3),
+.treatyin .trin__ach tfoot td {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ⭐ Baris " Total In IDR" dan kaki dibedakan dari data \u2014 keduanya
+   rekapitulasi, dan membacanya sebagai baris biasa menggandakan angka di
+   kepala pembaca. */
+.treatyin .trin__ach-total td,
+.treatyin .trin__ach tfoot th,
+.treatyin .trin__ach tfoot td {
+  font-weight: 600;
+  background: var(--surface-2);
+}
+
+.treatyin .trin__ach tfoot th {
+  text-align: right;
+  color: var(--text-2);
+}
+
+/* Penanda baris Share yang membawa pesan Activity (panel rinciannya). */
+.treatyin .tl-share-tanda {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 4px;
+  border-radius: var(--r-pill);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+/* ⭐ 7 Oktober 2026 — penampung halaman (tab Prop).
+   Rincian baris (`expandPane`) grid Kind of Treaty / Treaty Group tab Share
+   Prop: kolom ▸/▾ sempit, panel rincian bertepi. */
+.treatyin .trin__buka-sel {
+  width: 28px;
+}
+
+.treatyin .trin__buka {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  padding: 0 4px;
+}
+
+.treatyin .trin__rincian > td {
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+}
+
+.treatyin .trin__share-rincian {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Judul blok di dalam rincian (`Spreading`) dan teks sel ekspor
+   (`Total Spreading Pct :`, `Share to RNM :`). */
+.treatyin .trin__subjudul {
+  margin: 8px 0 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.treatyin .trin__teks-sel {
+  margin: 0;
+  color: var(--text-2);
+}
+
+/* Medan Period tab Accumulation — di atas grid, seperti gambar 19. */
+.treatyin .trin__akumulasi-periode {
+  max-width: 320px;
+  margin-bottom: 12px;
+}
+
+/* Tab Installment Non-Prop (`components/TabAngsuran.tsx`) — gambar Pega 38:
+   isian Installment + Update Value sebaris; `% Total` / `Total` di bawah
+   grid rincian. */
+.treatyin .trin__angsuran-kepala {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.treatyin .trin__angsuran-total {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 12px 0 0;
+}
+
+.treatyin .trin__angsuran-total dd {
+  margin: 0;
+}
+
+/* =========================================================================
+   KERAPATAN — layar Treaty In dikecilkan, 7 Oktober 2026
+   =========================================================================
+   Permintaan pemilik proses: *"untuk design treaty in dikecilin lagi krn
+   terlalu besar"*, dengan tangkapan layar grid Rate of Exchange: kotak
+   setinggi 42px berderet tujuh baris menuntut satu layar penuh untuk tujuh
+   mata uang, dan kolom tanggalnya terdesak sampai muncul penggulir
+   mendatar.
+
+   ⛔ BAWAAN `inti` TIDAK DISENTUH. `.field__input` 42px/15px adalah ukuran
+   seluruh aplikasi; mengubahnya di `inti/frontend/styles.css` akan
+   mengecilkan setiap modul — permintaan ini hanya tentang Treaty In. Semua
+   aturan di bawah berakar `.treatyin`.
+
+   ⚠️ YANG TIDAK DIUBAH, dan ini disengaja:
+     • letak label (kiri medan, dua kolom) — bentuk yang butuh EMPAT ronde
+       untuk ditemukan; mengubah lebar lagi adalah kekeliruan yang sama;
+     • perbandingan kolom kurs 27:48:12,5:12,5 — ia dibawa dari ekspor.
+       Penggulir mendatarnya hilang karena kotaknya mengecil, bukan karena
+       rasionya digeser.
+   ========================================================================= */
+
+/* Kotak isian: 42 → 34px, 15 → 14px. Tetap di atas 32px, batas sentuh yang
+   nyaman; di bawah itu kotak tanggal berikonnya mulai terpotong. */
+.treatyin .field__input {
+  height: 34px;
+  font-size: 14px;
+  padding: 0 10px;
+}
+
+/* Area teks ikut, tetapi tidak sekecil kotak satu baris: isinya kalimat. */
+.treatyin .field__input textarea,
+.treatyin textarea.field__input {
+  height: auto;
+  min-height: 72px;
+}
+.treatyin .trin__kolom .field textarea {
+  min-height: 72px;
+}
+
+/* Label: satu tingkat lebih kecil, dan jaraknya ke medan dirapatkan. */
+.treatyin .field__label {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+/* Panel: bantalan dan jarak antarpanel dikurangi seperempat. */
+.treatyin .panel {
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+/* Sel tabel: 7px → 5px. Dengan puluhan baris kurs, dua piksel per sel
+   menghemat satu layar penuh. */
+.treatyin .trin__tabel td,
+.treatyin .trin__tabel th,
+.treatyin .trin__tabel-kurs td,
+.treatyin .trin__tabel-kurs th {
+  padding: 5px 8px;
+}
+
+/* ⛔ LEBAR KOLOM LABEL TIDAK DISENTUH — tetap 132px.
+   Permintaannya "dikecilkan", dan lebar label bukan ukuran: ia TATA LETAK,
+   bentuk yang butuh EMPAT ronde untuk ditemukan dan yang keempat bentuk
+   tertolaknya sama-sama salah karena mengatur lebar. Yang dikecilkan tinggi
+   dan bantalan; label tetap di kiri, selebar semula.
+
+   Hanya jarak atasnya disesuaikan, sebab kotaknya kini 34px bukan 42px —
+   tanpa ini labelnya menggantung di atas tengah medan. */
+@media (min-width: 900px) {
+  .treatyin .trin__kolom .field .field__label {
+    padding-top: 8px;
+  }
+}
+
+/* Tombol di dalam layar ini ikut mengecil — tombol 36px di sebelah kotak
+   34px terbaca seperti salah sejajar. */
+.treatyin .btn--sm {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+/* =========================================================================
+   KEPALA KOLOM TETAP TERLIHAT SAAT TABEL DIGULIR
+   Permintaan pemilik proses 7 Oktober 2026:
+   *"label per table kalau ada scroll nya labelnya itu netap tidak ikut
+   tenggelam"*.
+   =========================================================================
+
+   ⛔ MENGAPA BARU SEKARANG. Inti SUDAH punya aturan ini
+   (`.table thead th { position: sticky }` di `inti/frontend/styles.css`),
+   tetapi ia terikat kelas `.table` — dan NOL tabel modul ini memakainya.
+   Seluruhnya `.trin__tabel`. Jadi kepalanya tenggelam bukan karena sticky
+   gagal, melainkan karena tidak pernah dipasang.
+
+   ⭐ DIBATASI `.table-wrap` DENGAN SENGAJA. `position: sticky` menempel
+   pada penggulir TERDEKAT; bila tabelnya tidak punya penggulir sendiri, yang
+   terdekat adalah halaman — dan kepala kolom lalu menempel di tepi atas
+   layar, DI BELAKANG `.topbar` (yang ber-`z-index: 20`, jauh di atas 2).
+   Labelnya tidak tenggelam, ia hilang. `.table-wrap` adalah satu-satunya
+   penanda bahwa tabel itu memang menggulir sendiri.
+
+   ⚠️ `background` WAJIB dan tidak boleh tembus pandang: tanpa latar, baris
+   yang lewat di bawahnya terbaca MENIMPA huruf label.
+
+   ⚠️ Garis bawahnya dipasang sebagai `box-shadow: inset`, bukan
+   `border-bottom`: pada tabel ber-`border-collapse: collapse` garis itu milik
+   kisi tabel, bukan milik selnya, sehingga ia ikut tergulir pergi dan
+   meninggalkan label mengambang tanpa alas. */
+.treatyin .table-wrap .trin__tabel thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg);
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+
+/* ⛔ TABEL RINCIAN BERSARANG DIKECUALIKAN — dan inilah sebab aturan di atas
+   tidak boleh ditulis sebagai `.trin__tabel thead th` saja.
+
+   `TabAngsuran` dan `TabShareProp` menaruh tabel rincian DI DALAM satu sel
+   baris tabel induknya (`tr.trin__rincian > td[colSpan] > table`). Penggulir
+   terdekatnya adalah `.table-wrap` MILIK INDUK, jadi kepala rincian itu akan
+   melesat ke puncak penggulir dan berdiri di sana — berjajar dengan kepala
+   induk, memberi label pada baris yang bukan miliknya. Kepala tabel rincian
+   memang milik SATU baris, dan ia harus ikut bergerak bersama baris itu. */
+.treatyin .trin__rincian .trin__tabel thead th {
+  position: static;
+  box-shadow: none;
 }

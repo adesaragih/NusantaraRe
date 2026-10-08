@@ -24,6 +24,12 @@ type OpsiLimits struct {
 	JenisTreaty    []PilihanWarisan `json:"jenisTreaty"`
 	KelompokTreaty []PilihanWarisan `json:"kelompokTreaty"`
 	MataUang       []PilihanWarisan `json:"mataUang"`
+	// Dropdown `associated` tab Limits Non-Prop — daftarnya hidup di rule
+	// Property yang TIDAK diekspor; nilainya domain TERUKUR di data.
+	JenisLayer           []Opsi `json:"jenisLayer"`
+	Cover                []Opsi `json:"cover"`
+	RelasiMataUang       []Opsi `json:"relasiMataUang"`
+	CatatanReinstatement []Opsi `json:"catatanReinstatement"`
 }
 
 type PilihanWarisan struct {
@@ -34,4 +40,7 @@ type PilihanWarisan struct {
 	// Benar bila nama ini dipakai LEBIH DARI SATU pengenal. Diisi services,
 	// bukan repository, dan dipakai layar untuk menandainya.
 	Kembar bool `json:"kembar"`
+	// `SOANOTE` — kolom SOA Name menu Reinsurance Type. Hanya pilihan Treaty
+	// Type yang mengisinya: Kind of Treaty = SOA Name (keputusan pemakai).
+	NamaSOA string `json:"namaSoa,omitempty"`
 }

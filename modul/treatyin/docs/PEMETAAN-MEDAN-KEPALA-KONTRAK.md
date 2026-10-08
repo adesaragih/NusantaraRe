@@ -15,10 +15,10 @@ yang memuat kepala kontrak — ia melayani **kedua** cabang, dan strip tab-nyala
 | ---: | --- | --- | --- | --- | --- | --- |
 | 1 | `TreatyIn.ID` @31.441 | *ID-hidden testing* | `pxTextInput` | ⛔ `Never` | — | tidak — **kode mati** |
 | 2 | `TreatyIn.TreatyContractName` @38.115 | Treaty Contract Name | `pxTextInput` | `ALWAYS` | kolom `TREATY_IN.TREATYCONTRACTNAME` | ⭐ ya |
-| 3 | `TreatyIn.ContractRefNo` @44.674 | Contract Ref No | `pxTextInput` | `ALWAYS` | `JSONDATA.ContractRefNo` (742/1.854) | ⭐ ya, + `MedanTakAda` |
+| 3 | `TreatyIn.ContractRefNo` @44.674 | Contract Ref No | `pxTextInput` | `ALWAYS` | `JSONDATA.ContractRefNo` (742/1.854) | ⭐ ya — **selalu** (ralat 7 Okt 2026, §3a) |
 | 4 | `TreatyIn.TeritorialScope` @50.841 | Teritorial Scope | `pxTextArea` | `ALWAYS` | kolom `TERITORIALSCOPE` | ⭐ ya |
 | 5 | `TreatyIn.Bordeaux` @56.974 | Bordereaux | `pxDropdown` | **`ProportionType='Proportional'`** @60.649 | `JSONDATA.Bordeaux` (1.851) | ⭐ ya — **kini prop saja** |
-| 6 | `TreatyIn.BordereauxNote` @63.375 | Bordereaux Note | `pxTextArea` | `ALWAYS` | `JSONDATA.BordereauxNote` (1.018) | ⭐ ya, + `MedanTakAda` |
+| 6 | `TreatyIn.BordereauxNote` @63.375 | Bordereaux Note | `pxTextArea` | `ALWAYS` | `JSONDATA.BordereauxNote` (1.018) | ⭐ ya — **selalu** (ralat 7 Okt 2026, §3a) |
 | 7 | `TreatyIn.Commencement` @84.930 | Commencement | `pxDateTime` | — | kolom `COMMENCEMENT` | ⭐ ya |
 | 8 | `TreatyIn.Termination` @95.371 | Termination | `pxDateTime` | `ALWAYS` | kolom `TERMINATION` | ⭐ ya |
 | 9 | `TreatyIn.TreatyYear` @102.091 | Treaty Year | `pxTextInput` | `ALWAYS` | kolom `TREATYYEAR` | ⭐ ya, baca-saja |
@@ -27,7 +27,7 @@ yang memuat kepala kontrak — ia melayani **kedua** cabang, dan strip tab-nyala
 | 12 | `TreatyIn.Ceding` @120.957 | Ceding | `pxAutoComplete` | — | kolom `CEDING` + `CEDINGID` | ⭐ ya, + tombol `Choose Ceding` |
 | 13 | `TreatyIn.LeadingReinsSource` @132.888 | Business Source / Source of Business | `pxAutoComplete` | — | kolom `LEADINGREINSSOURCE` + `…ID` | ⭐ ya |
 | 14 | `TreatyIn.LeadingReinsName` @144.641 | Leading Reinsurer | `pxAutoComplete` | ⛔ `1=2` @146.051 | — | tidak — **kode mati** |
-| 15 | `TreatyIn.TreatyLeader` @191.054 | RNM as Treaty Leader @191.624 | `pxCheckbox` | ⚠️ **`TreatyMasterInEDM`** @248.313 | `JSONDATA.TreatyLeader` (659) | ⭐ ya — **tanpa syaratnya**, lihat §3 |
+| 15 | `TreatyIn.TreatyLeader` @191.054 | RNM as Treaty Leader @191.624 | `pxCheckbox` | `ALWAYS` (ralat §3a — `TreatyMasterInEDM` milik sel tetangga) | `JSONDATA.TreatyLeader` (659) | ⭐ ya — **selalu** |
 | 16 | `TreatyIn.EDMEffective` @240.791 | Effective Date @239.791 | `pxDateTime` | `TreatyIn.ViewState != 1` @238.233 | ⛔ nol | **tidak** — lihat §2 |
 | 17 | `TreatyIn.IsProRate` @250.948 | *(kotak centang "Pro Rate:")* | `pxCheckbox` | ⚠️ `TreatyMasterInEDM` | ⛔ nol | **tidak** — lihat §2 |
 | 18 | `TreatyIn.ProRateDays` @289.738 | *(angka di samping "Pro Rate:" @280.747, satuan `%` @284.933)* | `pxTextInput` | `ALWAYS` | ⛔ nol | **tidak** — lihat §2 |
@@ -53,7 +53,29 @@ hilang. Begitu jalur pro rata punya rumah, ketiganya masuk di sini.
 
 ---
 
+## 3a · ⭐ RALAT 7 Oktober 2026 — ketiga medan kepala SELALU tampil
+
+Dibaca ulang dengan alat baca bersama (`pyIncludedRuleXML` dibuang):
+
+| Sel | Kontrol | Tampil | Baca-saja / mati |
+| --- | --- | --- | --- |
+| `TreatyIn.ContractRefNo` | `pxTextInput`, `pyWidth` 130 | `ALWAYS` | `pyReadOnlyCondition TreatyIn.IsEditData= 1` · `pyDisabledWhen TreatyIn.EDMMaterialType = 1` |
+| `TreatyIn.BordereauxNote` | `pxTextArea`, `pyWidth` 0 | `ALWAYS` | `pyReadOnlyCondition TreatyIn.IsEditData= 1 \|\| TreatyIn.EDMMaterialType = 1` |
+| `TreatyIn.TreatyLeader` | `pxCheckbox`, `pyCheckboxCaption` "RNM as Treaty Leader", `pyIncludeLabel=false` | **tanpa syarat** | `pyDisabledWhen` / `pyReadOnlyCondition TreatyIn.ViewState = 1` |
+
+- ⛔ **§3 di bawah keliru membaca sel.** `VIS[TreatyMasterInEDM]` milik `TreatyIn.EDMEffective` dan
+  `TreatyIn.IsProRate` — sel tetangganya — bukan `TreatyLeader`. Medan ini tidak bersyarat.
+- ⛔ **`MedanTakAda` dicabut.** Layar dahulu mengganti ketiga medan dengan medan mati
+  "Tidak ada di dokumen sistem lama" bila kuncinya tak ada di dokumen lama. Ekspor tidak mengenal
+  syarat itu, dan sejak tabel `T_TREATY_*` sengaja dikosongkan ketiganya mati pada SETIAP kontrak.
+  Kini `FormKontrakTreatyIn` selalu merender `Field` · `textarea` · kotak centang ber-keterangan.
+- `IsEditData` didekati mode lihat (`<fieldset disabled>`), preseden `TabPortofolio.tsx` /
+  `TabRetensi.tsx`; `EDMMaterialType = 1` dibaca dari `edmJenisMaterial` kontrak.
+- Dijaga `layar.test.ts` (`selalu dirender — nol MedanTakAda`).
+
 ## 3 · ⚠️ `RNM as Treaty Leader` bersyarat, dan syaratnya tidak terpenuhi hari ini
+
+> ⛔ **Dibatalkan oleh §3a** — syarat di bawah milik sel tetangga. Dibiarkan sebagai jejak.
 
 `TreatyMasterInEDM` adalah rule `When` (`When/TreatyMasterInEDM.xml`, `pyRuleAvailable = Yes`),
 dan isinya tiga perbandingan:

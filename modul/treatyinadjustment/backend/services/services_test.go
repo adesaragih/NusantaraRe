@@ -31,6 +31,12 @@ type gudangTiruan struct {
 	daftarPenyesuaian []models.BarisPenyesuaian
 	penyesuaian       map[string]models.Penyesuaian
 	galatPenyesuaian  error
+
+	// Picker Add dan tombol `Choose`.
+	master        []models.BarisMasterPilihan
+	hanyaNonProp  *bool
+	dokumenMaster map[string]models.SisiPenyesuaian
+	adaRevisi     map[string]bool
 }
 
 func (g *gudangTiruan) DaftarKontrak(context.Context) ([]models.Kontrak, error) {
@@ -157,6 +163,11 @@ func (g *gudangTiruan) BacaKatalogKategoriLampiran(_ context.Context) (map[strin
 }
 
 // Panel History - `T_VIEW_COMMENT`, tabel warisan.
+// Panel `Existing Policy for Master ID` - `TREATYINPRODUCTION`, tabel warisan.
+func (g *gudangTiruan) BacaPolisMaster(_ context.Context, _ string) ([]models.BarisPolisMaster, error) {
+	return []models.BarisPolisMaster{}, g.galatLampiran
+}
+
 func (g *gudangTiruan) BacaRiwayatKontrak(_ context.Context, _ string) ([]models.BarisRiwayatWarisan, error) {
 	return g.riwayat, g.galatLampiran
 }

@@ -31,6 +31,12 @@ export interface KolomLimit {
    * `SetCurrName_Act` mengisi `.Currency` dengan namanya.
    */
   mataUang?: 'nama' | 'id'
+  /** Sel `pxCheckbox` (`.Layer`) — nilai teks `"true"`/`"false"`. */
+  cek?: true
+  /** `pyCheckboxCaption` sel kotak centang — teks di SAMPING kotaknya. */
+  keterangan?: string
+  /** Sel `pxAutoComplete` — `kelasBisnis` = `BrowseTreatyBusinessWOType_RD`. */
+  auto?: 'kelasBisnis'
 }
 
 const JENIS_SURPLUS = ['SURPLUS', '2ND SURPLUS', '3RD SURPLUS', 'SPECIAL SURPLUS']
@@ -65,7 +71,15 @@ export const LIMITS_PROP = {
   retensi: 'Retention', // @460405; `.RetentionPct` @474451 bila QUOTA SHARE
   cession: 'Cession to R/I', // @642766; `.CessionPct` @656819 bila QUOTA SHARE
   tanpaBaris: 'No items',
-  tidakAda: 'Tidak ada di dokumen sistem lama',
+  tidakAda: '',
+  // Judul kelompok tampilan — pengelompokan layar, bukan label ekspor.
+  bagianGrup: 'Treaty Group & Class of Business',
+  bagianKetentuan: 'Quota Share / Surplus',
+  bagianLimit: 'Limit · Retention · Cession',
+  belumDipilih: 'Not selected yet',
+  kindBelumDipilih: 'Choose a Treaty Type',
+  jumlahGrup: 'Treaty Group',
+  jumlahKelas: 'Class of Business',
 } as const
 
 /** `.TreatyType` QUOTA SHARE / jenis surplus — syarat medan DetailLimits. */
@@ -81,9 +95,9 @@ export const KOLOM_TREATY_GROUP: readonly KolomLimit[] = [
 ]
 
 /** Grid DetailLimits — kolom, lebar, desimal, syarat sel, dari ekspor. */
-export const GRID_DETAIL: Readonly<Record<string, { kolom: readonly KolomLimit[]; tambah: boolean; jejak: string }>> = {
+export const GRID_DETAIL: Readonly<Record<string, { kolom: readonly KolomLimit[]; tambah: boolean; jejak: string; bacaSaja?: true }>> = {
   COBList: {
-    kolom: [{ label: 'Class of Business', kunci: 'ClassOfBusiness', lebar: 272, golongan: 'teks', desimal: null }],
+    kolom: [{ label: 'Class of Business', kunci: 'ClassOfBusiness', lebar: 272, golongan: 'teks', desimal: null, auto: 'kelasBisnis' }],
     tambah: false, // tombolnya `TreatyIn.ViewState !='1' && 1=2` — MATI di ekspor
     jejak: 'DetailLimits @86887',
   },
@@ -91,7 +105,17 @@ export const GRID_DETAIL: Readonly<Record<string, { kolom: readonly KolomLimit[]
     kolom: [
       ...kolomNilai(194, 361),
       // `.Layer` tampil bila `.Note = 'QUOTA SHARE'` — baris itu sendiri.
-      { label: '', kunci: 'Layer', lebar: 128, golongan: 'teks', desimal: null, syarat: (b) => b.Note === 'QUOTA SHARE' },
+      // `pyCheckboxCaption` `Auto calculate` (layar Pega, 7 Oktober 2026).
+      {
+        label: '',
+        kunci: 'Layer',
+        lebar: 128,
+        golongan: 'teks',
+        desimal: null,
+        syarat: (b) => b.Note === 'QUOTA SHARE',
+        cek: true,
+        keterangan: 'Auto calculate',
+      },
     ],
     tambah: true,
     jejak: 'DetailLimits @345241',
@@ -99,7 +123,16 @@ export const GRID_DETAIL: Readonly<Record<string, { kolom: readonly KolomLimit[]
   RetentionList: {
     kolom: [
       ...kolomNilai(196, 363),
-      { label: '', kunci: 'Layer', lebar: 128, golongan: 'teks', desimal: null, syarat: (b) => JENIS_SURPLUS.includes(String(b.Note ?? '')) },
+      {
+        label: '',
+        kunci: 'Layer',
+        lebar: 128,
+        golongan: 'teks',
+        desimal: null,
+        syarat: (b) => JENIS_SURPLUS.includes(String(b.Note ?? '')),
+        cek: true,
+        keterangan: 'Auto calculate',
+      },
     ],
     tambah: true,
     jejak: 'DetailLimits @524406',
@@ -124,6 +157,7 @@ export const GRID_DETAIL: Readonly<Record<string, { kolom: readonly KolomLimit[]
     ],
     tambah: false, // tanpa kolom tombol di ekspor
     jejak: 'DetailLimits @1259471',
+    bacaSaja: true, // ditulis `CalculateDeduction`
   },
   ReserveList: { kolom: kolomNilai(198, 363), tambah: true, jejak: 'DetailLimits @1427153' },
   PLAList: { kolom: kolomNilai(197, 361), tambah: true, jejak: 'DetailLimits @1673566' },
@@ -149,8 +183,53 @@ export const GRID_DETAIL: Readonly<Record<string, { kolom: readonly KolomLimit[]
     ],
     tambah: false, // tanpa kolom tombol di ekspor
     jejak: 'DetailLimits @2413255',
+    bacaSaja: true, // grid `readOnly`, diisi `GetAchievement`
   },
 }
+
+/**
+ * Nama kolom untuk kepala grid yang KOSONG di ekspor (grid Currency · Value
+ * DetailLimits) — tampilan saja; nama properti apa adanya.
+ *
+ * ⛔ `Layer` TIDAK lagi diberi nama (7 Oktober 2026, perbandingan layar Pega):
+ * kotak centangnya membawa keterangannya sendiri, `Auto calculate`
+ * (`pyCheckboxCaption`), dan kepala kolomnya kosong — seperti di Pega.
+ */
+export const KEPALA_KOSONG: Readonly<Record<string, string>> = {
+  Currency: 'Currency',
+  Value: 'Value',
+}
+
+/** Sub-tab Achievement — kontrol di luar grid, urutan ekspor. */
+export const ACHIEVEMENT = {
+  asAt: 'As At Quarter', // @2929803 — pageList `TempQuarter`
+  tahun: 'Quarter Year', // @2939138 — pageList `TempQuarterYear`
+  refresh: 'Refresh', // @2976066 — `GetAchievement`
+  excel: 'Generate Excel', // @2982462 — `GenerateCSVTreaty`, bila FlagExcel = 1
+  kirim: 'Submit', // @2997863 — `InsertToLogAchievement`, bila FlagExcel = 1
+  berkasExcel: 'CSVAchievementTreatyIn.xlsx', // `FSFileName`
+  kirimMenunggu: '',
+  parameter: 'Parameter',
+  gross: 'Based on Gross',
+  nett: 'Based on Nett',
+} as const
+
+/**
+ * Grid `CurrencyList` @2844427 — kepala ekspor (Parameter / Based on Gross /
+ * Based on Nett) di atas properti `.Parameter` / `.AchievementPctGross` /
+ * `.LossRatioGross`. Kepala dan isinya memang tidak sejalan di ekspor.
+ */
+export const KOLOM_ACH_PARAMETER: readonly KolomLimit[] = [
+  { label: 'Parameter', kunci: 'Parameter', lebar: 150, golongan: 'teks', desimal: null },
+  { label: 'Based on Gross', kunci: 'AchievementPctGross', lebar: 150, golongan: 'persen', desimal: 2 },
+  { label: 'Based on Nett', kunci: 'LossRatioGross', lebar: 150, golongan: 'persen', desimal: 2 },
+]
+
+/**
+ * Sub-tab yang sel-selnya ber-`pyDisabledWhen … EDMMaterialType = 2` —
+ * dimatikan kunci materialitas walau mode Edit.
+ */
+export const TAB_KUNCI_MATERIAL: readonly string[] = ['Event Limits', 'Deduction In A', 'Deduction', 'Reserve', 'Experience Premium Refund']
 
 /** Satu medan DetailLimits. `desimal`: ekspor; `null` tidak dinyatakan; `-1` tak dibatasi. */
 export interface MedanLimit {

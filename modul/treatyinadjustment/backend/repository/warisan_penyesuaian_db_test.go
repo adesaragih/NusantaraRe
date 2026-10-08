@@ -12,12 +12,14 @@ package repository_test
 // ujinya yang dilonggarkan.
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 	"testing"
+	"time"
 )
 
 // ⭐ Daftar penyesuaian lengkap: cacahnya cocok dengan Oracle.
@@ -39,9 +41,10 @@ func TestDaftarPenyesuaianCacahCocok(t *testing.T) {
 	if n != 280 {
 		t.Logf("⚠️ TREATY_IN_EDM %d baris, terukur 280 pada 5 Oktober 2026", n)
 	}
+	// Urutan RD Pega `BrowseTREATY_IN_EDM`: `.ID` DESC — terbaru di atas.
 	for i := 1; i < len(d); i++ {
-		if d[i-1].ID > d[i].ID {
-			t.Fatalf("daftar tidak berurut ID: %q sebelum %q", d[i-1].ID, d[i].ID)
+		if d[i-1].ID < d[i].ID {
+			t.Fatalf("daftar tidak menurun menurut ID: %q sebelum %q", d[i-1].ID, d[i].ID)
 		}
 	}
 }
@@ -328,3 +331,265 @@ func TestValueDifferenceShareTerbacaDariOracle(t *testing.T) {
 		t.Errorf("%s: RnmLimitListDisplay(1).Currency tidak terbaca; kunci %v", id, b[0])
 	}
 }
+
+// ⭐ Grid Rate of Exchange kedua sisi dari `TREATYEXCHANGEYEARLY`, disaring
+// Treaty Year sisi masing-masing — bukan `CurrencyList` dokumen, yang tidak
+// pernah mendarat. Diukur atas SELURUH penyesuaian, tanpa ROWNUM.
+func TestKursPenyesuaianDariKursTahunan(t *testing.T) {
+	g, ctx := bacaSaja(t)
+	h, skema := sqlMentah(t)
+
+	cacahTahun := map[string]int{}
+	rows, err := h.QueryContext(ctx, `SELECT TREATYYEAR, COUNT(*) FROM `+skema+`.TREATYEXCHANGEYEARLY GROUP BY TREATYYEAR`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for rows.Next() {
+		var th string
+		var n int
+		if err := rows.Scan(&th, &n); err != nil {
+			t.Fatal(err)
+		}
+		cacahTahun[th] = n
+	}
+	_ = rows.Close()
+
+	d, err := g.DaftarPenyesuaianWarisan(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var terisiBaru, terisiLama, bertahunBaru, bertahunLama int
+	for _, b := range d {
+		p, err := g.BacaPenyesuaianPendaratan(ctx, b.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, s := range []struct {
+			nama          string
+			medan         map[string]string
+			larik         []map[string]string
+			terisi, tahun *int
+		}{
+			{"New", p.Baru.Medan, p.Baru.Larik["CurrencyList"], &terisiBaru, &bertahunBaru},
+			{"Old", p.Lama.Medan, p.Lama.Larik["CurrencyList"], &terisiLama, &bertahunLama},
+		} {
+			th := strings.TrimSpace(s.medan["TreatyYear"])
+			if th != "" {
+				*s.tahun++
+			}
+			if len(s.larik) != cacahTahun[th] {
+				t.Errorf("%s %s tahun %q: %d baris kurs, Oracle %d", b.ID, s.nama, th, len(s.larik), cacahTahun[th])
+			}
+			if len(s.larik) > 0 {
+				*s.terisi++
+				if s.larik[0]["Conversion"] == "" || s.larik[0]["Currency"] == "" {
+					t.Errorf("%s %s: baris kurs tanpa Currency/Conversion: %v", b.ID, s.nama, s.larik[0])
+				}
+			}
+		}
+	}
+	t.Logf("dari %d penyesuaian: New bertahun %d, berkurs %d · Old bertahun %d, berkurs %d",
+		len(d), bertahunBaru, terisiBaru, bertahunLama, terisiLama)
+	if terisiBaru == 0 {
+		t.Error("nol penyesuaian berkurs di sisi New — pembaca kurs tidak tersambung")
+	}
+}
+
+// ⭐ Enam larik yang ditambahkan ke peta 7 Oktober 2026 — setiap baris
+// pendaratannya terbaca, kedua sisi, SELURUH penyesuaian (tanpa ROWNUM).
+func TestLarikTambahanPenyesuaianTerbaca(t *testing.T) {
+	g, ctx := bacaSaja(t)
+	h, skema := sqlMentah(t)
+
+	tabel := map[string]string{
+		"Installment": "T_TREATY_INSTALLMENT", "CoInScale": "M_TREATYIN_COINSCALE",
+		"Share": "T_TREATY_SHARE", "ShareReins": "T_TREATY_RETRO_SHARE",
+		"FacultativeShareList": "T_TREATY_FAC_SHARE", "ShareFacultativeReinsurers": "T_TREATY_FAC_REINSURER",
+	}
+	d, err := g.DaftarPenyesuaianWarisan(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	terbaca := map[string]int{}
+	for _, b := range d {
+		p, err := g.BacaPenyesuaianPendaratan(ctx, b.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for larik := range tabel {
+			terbaca[larik] += len(p.Baru.Larik[larik]) + len(p.Lama.Larik[larik])
+		}
+	}
+	for larik, tb := range tabel {
+		var n int
+		q := `SELECT COUNT(*) FROM ` + skema + `.` + tb + ` WHERE MASTERID IN
+			(SELECT ID FROM ` + skema + `.TREATY_IN_EDM UNION ALL SELECT ID || '#LAMA' FROM ` + skema + `.TREATY_IN_EDM)`
+		if err := h.QueryRowContext(ctx, q).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("%-28s %-24s Oracle %5d · terbaca %5d", larik, tb, n, terbaca[larik])
+		if terbaca[larik] != n {
+			t.Errorf("%s: terbaca %d baris, Oracle %d", larik, terbaca[larik], n)
+		}
+	}
+}
+
+// ⭐ `TreatyCalculateProratePct` diukur terhadap nilai TERSIMPAN — SELURUH
+// penyesuaian ber-IsProRate, tanpa ROWNUM.
+//
+// Ekspor hari ini: Days = Effective → Termination. Data menyimpan DUA versi:
+// penyesuaian terbaru mengikuti ekspor, yang lebih lama menyimpan
+// Commencement → Effective (versi rumus sebelumnya). Terukur 7 Oktober
+// 2026: 22 ber-IsProRate · 6 cocok ekspor · 16 cocok versi lama (satu
+// cocok keduanya, 90 = 90) · 1 tersimpan 0 · total hari cocok 20.
+// Layar membangun bunyi ekspor (`frontend/komponen/rumusKepala.ts`).
+func TestRumusProRataTerukur(t *testing.T) {
+	g, ctx := bacaSaja(t)
+	d, err := g.DaftarPenyesuaianWarisan(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tgl := func(s string) (time.Time, bool) {
+		s = strings.TrimSpace(s)
+		if len(s) < 8 {
+			return time.Time{}, false
+		}
+		x, e := time.Parse("20060102", s[:8])
+		return x, e == nil
+	}
+	var proRata, cocokEkspor, cocokLama, cocokTotal, takTerbaca int
+	for _, b := range d {
+		p, err := g.BacaPenyesuaianPendaratan(ctx, b.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		m := p.Baru.Medan
+		if m["IsProRate"] != "true" {
+			continue
+		}
+		proRata++
+		ef, ok1 := tgl(m["EDMEffective"])
+		mu, ok2 := tgl(m["Commencement"])
+		ak, ok3 := tgl(m["Termination"])
+		if !ok1 || !ok2 || !ok3 {
+			takTerbaca++
+			continue
+		}
+		hari := func(a, b time.Time) string { return fmt.Sprint(int(b.Sub(a).Hours() / 24)) }
+		tersimpan := strings.TrimSpace(m["ProRateDays"])
+		if hari(ef, ak) == tersimpan {
+			cocokEkspor++
+		}
+		if hari(mu, ef) == tersimpan {
+			cocokLama++
+		}
+		if hari(mu, ak) == strings.TrimSpace(m["ProRateTotalDays"]) {
+			cocokTotal++
+		}
+	}
+	t.Logf("IsProRate=true %d dari %d penyesuaian · hari cocok ekspor %d · cocok versi lama %d · total cocok %d · tak terbaca %d",
+		proRata, len(d), cocokEkspor, cocokLama, cocokTotal, takTerbaca)
+	if proRata > 0 && cocokEkspor == 0 {
+		t.Error("nol penyesuaian cocok dengan rumus ekspor — rumus layar perlu ditinjau")
+	}
+}
+
+// ⭐ Panel `Existing Policy for Master ID` — `TREATYINPRODUCTION`, SQL rule
+// `FetchTreatyInProductionUsingNooffer` apa adanya. Diukur atas SELURUH
+// penyesuaian: cacah barisnya sama dengan kueri mentah yang setara.
+func TestPolisMasterPenyesuaianDariProduksi(t *testing.T) {
+	g, ctx := bacaSaja(t)
+	h, skema := sqlMentah(t)
+	d, err := g.DaftarPenyesuaianWarisan(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var berpolis, total int
+	for _, b := range d {
+		id := b.IDAsal
+		if strings.TrimSpace(id) == "" {
+			id = b.ID
+		}
+		polis, err := g.BacaPolisMaster(ctx, id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var n int
+		q := `SELECT COUNT(*) FROM (SELECT DISTINCT NOPOLIS, IDPEGA, QUARTER, QUARTER_YEAR FROM ` + skema +
+			`.TREATYINPRODUCTION WHERE SUBSTR(NOOFFER,1,7) = SUBSTR(:1,1,7))`
+		if err := h.QueryRowContext(ctx, q, id).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		if len(polis) != n {
+			t.Errorf("%s (master %s): %d baris, kueri mentah %d", b.ID, id, len(polis), n)
+		}
+		if n > 0 {
+			berpolis++
+		}
+		total += n
+	}
+	t.Logf("dari %d penyesuaian: %d punya polis produksi, %d baris", len(d), berpolis, total)
+}
+
+// ⭐ POHON — setiap baris tabel ANAK terangkai ke induknya, kedua sisi,
+// SELURUH penyesuaian (tanpa ROWNUM), dan nol yang yatim.
+func TestPohonPenyesuaianUtuh(t *testing.T) {
+	g, ctx := bacaSaja(t)
+	h, skema := sqlMentah(t)
+	d, err := g.DaftarPenyesuaianWarisan(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Cacah simpul per nama larik (akar maupun anak) di seluruh pohon.
+	cacah := map[string]int{}
+	var hitung func(simpul []map[string]any)
+	hitung = func(simpul []map[string]any) {
+		for _, s := range simpul {
+			for k, v := range s {
+				if anak, ok := v.([]map[string]any); ok {
+					cacah[k] += len(anak)
+					hitung(anak)
+				}
+			}
+		}
+	}
+	yatimTotal := 0
+	for _, b := range d {
+		for _, id := range []string{b.ID, b.ID + "#LAMA"} {
+			pohon, yatim, err := g.BacaPohonUntukUji(ctx, id)
+			if err != nil {
+				t.Fatal(err)
+			}
+			yatimTotal += yatim
+			for larik, simpul := range pohon {
+				cacah["akar:"+larik] += len(simpul)
+				hitung(simpul)
+			}
+		}
+	}
+	if yatimTotal != 0 {
+		t.Errorf("%d baris anak tanpa induk", yatimTotal)
+	}
+	saring := `WHERE MASTERID IN (SELECT ID FROM ` + skema + `.TREATY_IN_EDM UNION ALL SELECT ID || '#LAMA' FROM ` + skema + `.TREATY_IN_EDM)`
+	periksa := func(label, tabel, tambahan string, terbaca int) {
+		var n int
+		if err := h.QueryRowContext(ctx, `SELECT COUNT(*) FROM `+skema+`.`+tabel+` `+saring+tambahan).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("%-30s %-28s Oracle %6d · pohon %6d", label, tabel, n, terbaca)
+		if n != terbaca {
+			t.Errorf("%s: pohon %d, Oracle %d", label, terbaca, n)
+		}
+	}
+	periksa("akar:Limits", "T_TREATY_LIMITS", "", cacah["akar:Limits"])
+	periksa("akar:Share", "T_TREATY_SHARE", "", cacah["akar:Share"])
+	periksa("Detail", "T_TREATY_LIMIT_DETAIL", "", cacah["Detail"])
+	periksa("TreatyGroupList", "T_TREATY_LIMIT_GROUP", "", cacah["TreatyGroupList"])
+	periksa("ClassOfBusinessList", "T_TREATY_LIMIT_GROUP_COB", "", cacah["ClassOfBusinessList"])
+	periksa("COBList", "T_TREATY_LIMIT_COB", "", cacah["COBList"])
+	periksa("SpreadingListXOL", "T_TREATY_SHARE_SPREADING", "", cacah["SpreadingListXOL"])
+	periksa("InstallmentList", "T_TREATY_INSTALLMENT_ITEM", "", cacah["InstallmentList"])
+	periksa("MDPList", "T_TREATY_LIMIT_MEASURE", " AND JENIS = 'MDPList'", cacah["MDPList"])
+	periksa("IOOLimitList", "T_TREATY_LIMIT_AMOUNT", " AND JENIS = 'IOOLimitList'", cacah["IOOLimitList"])
+}
+

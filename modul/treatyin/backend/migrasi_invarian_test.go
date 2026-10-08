@@ -837,16 +837,25 @@ func TestWarisanHanyaDibaca(t *testing.T) {
 	for _, tabel := range []string{
 		"TREATY_IN", "M_TREATY_IN", "M_TREATY_IN2",
 		"TREATYEXCHANGEYEARLY", "M_TREATY_IN_DETAIL",
-		"M_ATTACHMENTTREATY_2", "TREATYINPRODUCTION",
+		// ⭐ `M_ATTACHMENTTREATY_2` DIKELUARKAN 8 Oktober 2026 — keputusan
+		// pemakai: *"untuk upload file seharusnya kesini SELECT * FROM
+		// M_ATTACHMENTTREATY_2"*. Tombol `Upload file` menulisnya
+		// (`repository/lampiran_tulis.go`, `InsertAttachment2_Sql`).
+		"TREATYINPRODUCTION",
 		// ⭐ 6 Oktober 2026 — isi dropdown `Treaty Type` tab Limits.
-		"REINSURANCETYPE", "TREATYGROUP", "CURRENCY",
+		"REINSURANCETYPE", "TREATYGROUP", "CURRENCY", "TREATYBUSINESS", "ACHIEVEMENT",
+		// ⭐ 7 Oktober 2026 — tab Share Non-Prop: susunan treaty master
+		// (dropdown Spreading Type dan anaknya) dan autocomplete Reinsurer.
+		"PROPORTIONALARRG", "TREATYYEAR", "AGENT",
+		// ⭐ 7 Oktober 2026 — cadangan skalar akar Share (`SaveTreatyInDetail_Act`).
+		"TREATYINDETAIL",
 	} {
 		t.Run(tabel, func(t *testing.T) { warisanHanyaDibaca(t, tabel) })
 	}
 }
 
 // namaKolomJuga - tabel warisan yang namanya juga dipakai sebagai kolom.
-var namaKolomJuga = map[string]bool{"TREATYGROUP": true, "CURRENCY": true}
+var namaKolomJuga = map[string]bool{"TREATYGROUP": true, "CURRENCY": true, "TREATYYEAR": true}
 
 func warisanHanyaDibaca(t *testing.T, tabel string) {
 	t.Helper()

@@ -101,8 +101,9 @@ POHON Section — grid `pyTable/pyRows/rowdata` → `pyCells/rowdata`, desimal d
 - **Butir mati dibuang dan dicatat** (`DIBUANG`, 109 butir): penjaga `1=2`/`3=4`/`Never`/`false`
   diperiksa pada BUTIR yang dijaganya, bukan wilayah sekitarnya. Penjaga di sekitar
   `Total Amount in IDR`, `Total Proportion %`, `Total ROL` membungkus tombol; ketiga nilai itu hidup.
-- **Kolom tombol** (`pxButton`, Add/Delete) dibuang — jalur tulis. **Butir bersyarat identitas
-  operator** (blok dev) dibuang; nol nama orang masuk kode.
+- ~~**Kolom tombol** (`pxButton`, Add/Delete) dibuang — jalur tulis.~~ ⛔ **Dibalik 7 Oktober 2026**
+  (§8): tombol — juga tombol ikon tanpa `pyLabel` — dibawa beserta aksinya. **Butir bersyarat
+  identitas operator** (blok dev) tetap dibuang; nol nama orang masuk kode.
 - **Syarat** dinilai `frontend/ekspor/syarat.ts`: satu penilai per TEKS syarat, semua atas halaman
   akar (`TreatyIn.*`, juga di panel Old). Teks yang tidak dikenal → butir tidak dirender, dan uji gagal.
 - **Isi Retro** (`TreatyInFacultativeShareCalculation*`, `TreatyInFacultativeRetro`) tidak dibangkitkan —
@@ -180,9 +181,174 @@ Dibangun: mode daftar · kepala · kedua panel (kepala form, Rate of Exchange, s
 cabang) · **seluruh 37 tab dari kerangka** · Value Difference (Before = `ValueBeforeProrate.*`,
 After = `ValueDifference.*`) · Attachment · deret tombol · History.
 
-Belum: isi Retro (§17, disengaja) · rincian baris grid yang dibuka rule
-`…!pyGridRowDetails` (Installment, Limits — rule itu TIDAK ada di ekspor) · isi
+Belum: isi Retro (§17, disengaja) · ~~rincian baris grid yang dibuka rule
+`…!pyGridRowDetails` (Installment, Limits — rule itu TIDAK ada di ekspor)~~ — **RALAT §9: ada di
+ekspor dan kini dibangkitkan** · isi
 `TreatyInTabsAchievement` (Section-nya kosong di ekspor) · penyaring daftar · Activity penghitung
 total (nilai tersimpan yang tampil). Medan di dalam tab baca-saja di kedua panel.
 
 Pertanyaan yang belum terjawab: [`PERTANYAAN-TERBUKA-LAYAR-ADJUSTMENT.md`](PERTANYAAN-TERBUKA-LAYAR-ADJUSTMENT.md).
+
+## 8 · Ronde 7 Oktober 2026 — panel New dapat disunting, tombol dan rumus hidup
+
+Permintaan pemakai: *"bandingkan terlebih dahulu antara pega dan di aplikasi kemudian lakukan
+pengerjaannya samakan mulai dari fungsi, rumus, button, posisi design juga"*.
+
+| Bagian | Yang berubah | Bukti / ukuran |
+|---|---|---|
+| Rate of Exchange | Dibaca dari `TREATYEXCHANGEYEARLY` per Treaty Year **sisi masing-masing** (`backend/repository/kurs_tahunan.go`), bukan larik `CurrencyList` yang tidak pernah mendarat | terisi 279/280 kedua sisi (`TestKursPenyesuaianDariKursTahunan`) |
+| Peta pendaratan | + `Installment`, `CoInScale`, `Share`, `ShareReins`, `FacultativeShareList`, `ShareFacultativeReinsurers` — disalin dari peta Treaty In, diadu `uji/lintasmodul` | setiap baris terbaca: Share 1.938, Installment 518, Co-Ins 68, … (`TestLarikTambahanPenyesuaianTerbaca`) |
+| Visibilitas | `pyIsVisibilityOption = ALWAYS` MENIMPA `pyContainerVisibleWhen` — grid Co-Ins Scale Prop dipulihkan | satu-satunya wadah `ALWAYS` + `1=2` di Section Adjustment |
+| Tombol | Pembangkit membawa tombol (label, ikon, Activity + parameter, `pyPreDataTransform`, syarat tampil, `pyDisabledWhen`) dan kolom tombol grid | 43 tombol; butir dibuang 109 → 98 |
+| Baca-saja | Per medan/sel: `Read-only` tanpa syarat = selalu; `Read-only` + `pyReadOnlyCondition` = bila syarat benar; `pyDisabledWhen` menambah kunci (termasuk `EDMMaterialType = 2`) | pola diukur: 103 · 41 · 23(+19) · 18 sel |
+| Mode Edit | Panel New (`ViewState 0`) dapat disunting; Add/Delete bekerja; panel Old tetap baca-saja. Suntingan di keadaan layar — Save mati | `penyesuaian.test.tsx` § mode sunting |
+| Tambah baris | Disalin dari Activity: `TreatyInNonAddItem` (retention/egnpi/limits/sharereins/sharefacname), `TreatyInPropAdd`, `TreatyInAddCurrency`, DataTransform `TreatyInAddAccumulation` | `komponen/aksiTombol.ts` |
+| Rumus tombol | Rute `/api/treaty-in/hitung/*` modul Treaty In — Activity-nya IDENTIK di kedua korpus (14/14 diadu). Tersambung: Update Total Retention, Update Total EGNPI, Update EGNPI Value, Apply Reporting Period | `komponen/rumus.ts`, `tombol.test.ts` |
+| Rumus kepala | `TreatyInSetTreatyYear` (Commencement) dan `TreatyCalculateProratePct` (Effective Date / Is Pro Rate) | diukur atas 22 penyesuaian ber-Pro Rate: 6 terbaru cocok ekspor, 16 lama menyimpan Commencement → Effective (versi sebelumnya) — `TestRumusProRataTerukur` |
+
+**Belum** — daftar persisnya dijaga `tombol.test.ts` dan berubah tiap ronde; keadaan terkini di §9.
+(Paragraf asli ronde ini menyebut Limits, Share, dropdown, dan Choose Ceding/SoB "belum"; keempatnya
+tersambung pada ronde yang sama sesudah pohon bersarang dibaca.)
+
+## 9 · Ronde 7 Oktober 2026 (lanjutan) — rincian baris, perilaku `change`, rumus Installment
+
+| Bagian | Yang berubah | Bukti |
+|---|---|---|
+| Rincian baris | Grid `pyGridProps/pyEditingMode = expandPane` menyebut flow action di `pyEditAction`; flow action itu menunjuk Section lewat `pySectionReference`. Pembangkit kini mengikutinya (`seksi_flowaction`) dan menulis **22 Section rincian** ke `KERANGKA_RINCIAN`, termasuk rincian di dalam rincian (CoBList di Layers, DetailLimits/DetailShare di Prop). Ikatan `.X` = halaman BARIS (`konteksBaris`). Grid menampilkan kolom ▸/▾, tertutup semula | gambar Pega 38 (Installment, baris IDR terbuka) dan 34 (Share, ▸ per layer); `penyesuaian.test.tsx` § rincian |
+| Judul blok | Kepala blok tampil hanya bila `pyIncludeHeader` ≠ `false` — **bukan** `pyContainerFormat = NOHEADER` (Exclusions dan *Summarry of RNM Share* ber-NOHEADER, judulnya TAMPIL di gambar 34/39). 29 judul kini tersembunyi: `hiddden`, `hidden, reference`, `Testing`, salinan *Account Reporting Period* di tab Accumulation, *After Pro Rate Calculation* cabang tanpa Pro Rate | gambar 19 (Accumulation hanya *Accumulation Control*), 34, 39 |
+| Perilaku `change` | Medan dan sel membawa `aksiUbah` (`pyBehaviors` ber-`pyEvent = change`) — 249 baris di kerangka. Dijalankan saat isian ditinggalkan atau Enter, hanya bila nilainya berubah; rantai yang salah satu Activity-nya belum punya rumus TIDAK dijalankan | `KerangkaTab.tsx` `PemicuUbah`, `rantaiUbah` |
+| Rumus Installment | Rute baru `POST /api/treaty-in/hitung/angsuran` (modul Treaty In, Activity identik di kedua korpus): `TreatyInSetValueInstallment` (isian Installment tanpa status; Update Value `status=update`; langkah 10 memulihkan dari sisi Old bila `EDMState` 1/2/3), `SetTotalInstallment` (sel % Installment `editpercentage`, sel Amount), `TreatyInNPSetTotal(installment)` | `treatyin/backend/services/hitung_angsuran.go` + 10 uji — termasuk angka gambar 38: 4 × 25 % atas 644.674.819,59 = 161.168.704,90 |
+| Hapus baris | `deleteRow` yang DISUSUL Activity (Remove + LimitCalculation / CalculateDeduction) kini mati sampai Activity itu berumus — dulu menghapus tanpa menghitung ulang (rantai separuh jalan) | `aksiTombol.ts` `rantaiSesudahHapus` |
+
+⚠️ **Yang TIDAK berbukti di ekspor, diputuskan dan dinyatakan** (`hitung_angsuran.go`): langkah 9/10
+membaca baris sumber yang bisa tidak ada (jumlah angsuran naik) — nilai hasil hitungan dipertahankan;
+isian Installment kosong/bukan angka diperlakukan `< 1`; `DueDate` ditulis bentuk tersimpan
+`YYYYMMDD` (panjang maksimum `DueDate` di data Pega = 8). Activity `TreatyInUpdatePaymentDate`
+(sel Due Date) dan `TreatyInUpdatePaymentDate_Act` (sel WPC) **tidak ada di ekspor** — Payment Date
+tidak dihitung ulang.
+
+⚠️ **Disalin apa adanya walau janggal:** Update Value memulihkan persen dari grid sebelumnya (dan dari
+sisi Old di Adjustment) tetapi TIDAK menghitung ulang Amount — `SetTotalInstallment` dipanggil tanpa
+parameter, jadi melompat ke label `calc`. Isian Installment < 1 mengosongkan tab sebelum pesan.
+
+⭐ **Sebagian besar yang tercantum di paragraf berikut sudah disambungkan — lihat §10.**
+
+**Masih terbuka** (dijaga daftar persis di uji): 11 sumber dropdown rincian Layers/Share/DetailLimits
+(`pilihan.test.tsx`), 36 kunci angka rincian tanpa golongan tampil (`penyesuaian.test.tsx`), tombol
+rincian Prop Limits (Add*, Achievement, Remove) serta Remove Share/Delete Layers (`tombol.test.ts`),
+dan perilaku `change` yang Activity-nya sudah punya rute Treaty In tetapi belum dipetakan
+(LimitCalculation, CalculateDeduction, PremiumReserveCalculate, DetailCalculation,
+SetReinstatementPct, SetAmountConversion, TotalEgnpi, TreatyInXOLAddSpreading, TreatyInSetBrokerage).
+Value Difference (`TreatyEDMCalculateDifference`) belum.
+
+## 10 · Ronde 7 Oktober 2026 (ketiga) — ketergantungan antartab dan rumus Section rincian
+
+Permintaan pemakai: isian tidak hilang saat pindah tab, dan tab yang nilainya saling bergantung
+terhubung, sesuai alur XML dan Pega.
+
+**Isian panel New memang tidak hilang saat pindah tab.** Keadaannya hidup di `SisiForm`, di atas
+strip tab, dan tidak punya efek reset. Yang kurang adalah RUMUS yang menghubungkan tab: perilaku
+`change` di Section rincian berjalan di halaman BARIS, sedangkan banyak Activity-nya menulis ke
+AKAR panel.
+
+### 10.1 Infrastruktur
+
+| Bagian | Isi | Di mana |
+|---|---|---|
+| Jalur | Tiap konteks tahu jalurnya dari akar (`Limits(2).Detail(1)`); rantai berjalan atas akar + jalur, jadi rumus rincian dapat membaca dan menulis akar | `baris.ts` (`ambilHalaman`, `ubahHalaman`), `konteksBaris(…, langkah)` |
+| Gabung tiga arah | Hasil rantai membawa akar sebelum (`awal`) dan sesudah (`akhir`). `SisiForm` menerapkannya atas keadaan TERKINI: yang rumus ubah menimpa, isian yang diketik selama rute menjawab bertahan | `gabungTigaArah`, `SisiPenyesuaian.tsx` |
+| Syarat aksi | `pyActionConditions` kini dibangkitkan (`AksiTombol.syarat`) dan dinilai atas halaman PEMICU (akar + skalar bertitik baris sel: `.Note`, `.Layer`). Aksi yang syaratnya gagal dilewati | `ekstrak_kerangka.py` `syarat_aksi`, `syarat.ts` |
+| Parameter DT | `pyDataTransformParams` kini dibangkitkan (`AksiTombol.paramDT`), mis. `AddLimitRetentionCession(type = limit/retention/cession)` | `ekstrak_kerangka.py` |
+| Kotak centang | Perilaku `click` pada `pxCheckbox` = perubahan nilainya (Share Across The Board) | `aksi_ubah` |
+| Parameter `.X` | Dibaca dari halaman pemicu; `.pxListSubscript` = sel/jalur + 1 | `nilaiParam` |
+| Langkah bersyarat tanpa rumus | Rantai diterima; bila syaratnya terpenuhi, rantai BATAL dengan pesan dan nol perubahan | `rumus.ts` `jalankan` |
+
+### 10.2 Yang kini tersambung (rute `/api/treaty-in/hitung/*`, nol tulisan basis data)
+
+| Section / tab | Pemicu | Activity / DT | Rute |
+|---|---|---|---|
+| Share Prop | Refresh, `% RNM Share`, Option, Fac Share | `TreatyInPropshare` | `share-prop` `share` |
+| `DetailShare` | `% RNM Share` · Spreading Type · sel spreading | `TreatyInPropshareDetail` · `FetchQSfromMaster(.SpreadingTypeID)` · `SetSpreadName` | `share-prop` `detail`/`spreading`/`sebar-nama` |
+| Accumulation | Period · sel Reporting Date / Submission Days | DT `TreatyInDeleteAccumulationLists` + `TreatyInSetAccountReport` · `TreatyInAccumulationSetSubDue` | `akumulasi` |
+| Reporting Period | sel Initial Date | `TreatyInSetReport(.InitialDate, .AutoCalculate)` | `periode-pelaporan` (`awal`) |
+| Exclusions | `ExclusionsP` / `SpecialConditionsP` | DT `TreatyInCopyConditions` | di layar |
+| `LimitProportional` | Treaty Type · Add | `SetTreatyTypeName_Act` + DT `TreatyTypeSetIndex` · `AddClassofBusiness` | di layar |
+| `DetailLimits` | Treaty Group | `SetTreatyGroupName_Act` → DT `SetDetailsID` + `FetchQSfromMaster("")` [QUOTA SHARE] → `LimitCalculation(surplus)` [SURPLUS] | `share-prop`, `limit` |
+| `DetailLimits` | QS % / Surplus · sel 100% Limit / Retention (Value, Currency, Remove) | `LimitCalculation` [syarat `.Note`, autocalculate `.Layer`] | `limit` |
+| `DetailLimits` | sel Deduction (CurrencyID/Deduction/%) · Remove | `CalculateDeduction(sts, index)` | `limit-deduksi` |
+| `DetailLimits` | `% Premium Reserve` | `PremiumReserveCalculate` | `limit-cadangan` |
+| `DetailLimits` | sel mata uang | `SetCurrName_Act` (lihat PERTANYAAN-TERBUKA §14) | di layar |
+| `DetailLimits` | Add (Limit/Retention/Cession, Deduction, Reserve, PLA, Cash Loss, Claim Coop, EPI) | DT `AddLimitRetentionCession(type)`, `AddDeduction`, `AddValue(type)` | di layar |
+| Share Non-Prop | `% RNM Share`, Fac Share, Brokerage From Other Retro · `% Brokerage` · Share Across The Board · Update Summary | `TreatyInXOLAddSpreading` · `SetBrokerage`→`XOLAddSpreading` · keduanya bersyarat · `setValue` + `NonAddItem(share)` (+XOL, SetBrokerage tercakup; langkah EDM `7897987` tak pernah jalan) | `share-np` `rnm`/`set-brokerage`/`summary` |
+| rincian `Share` | `% RNM Share` · Spreading Type · sel spreading Pct · sel Deduction, Add, Remove | `TreatyInXOLAddSpreadingDetail` (+`…Actual` bila `EDMState = 3`, lihat §14) · `FetchQSfromMasterXOL` · `SetSpreadingXOL` · `CalculateDeduction`, `AddDeduction` | `share-np` `rnm-baris`/`spreading-type`/`spreading-pct`/`deduksi` |
+| `Layers` | Adj Rate · MDP % / MDP Min % · Reinstatement Value · sel Reinstatement (3 DT) · Treaty Group (Add, Delete, sel) | `DetailCalculation(adj/mdp)` · `SetReinstatementPct` · `ReCalculateReinstatement`/`CalculateReinstatement`/`CalculateReinstatementPct` · `TreatyTypeSetIndex`, `SetIndexLayer_DT`, `TotalEgnpi` | `limit-np` |
+| `CoBList` | Treaty Group | `TotalEgnpi` ×2 (satu panggilan) | `limit-np` `egnpi` |
+| `DetailEGNPI` | Amount, Currency | `SetAmountConversion` | `egnpi` `konversi` |
+
+Hanya medan yang Activity TULIS yang digabung kembali (`DITULIS_LIMIT_CALCULATION`,
+`DITULIS_LIMIT_NP` — disalin dari Treaty In, nol impor). Uji: `rantai-jalur.test.ts` (32).
+
+### 10.3 Ralat ikut ronde ini
+
+- `pilihan.ts`: dropdown `BrowseTreatyGroup_RD` / `BrowseReinsuranceType_RD` bernilai `.ID`
+  (`TreatyGroupID` rincian Limits, `TreatyTypeID`) dulu mengisi NAMA ke medan pengenal.
+- Tanggal ke rute dikirim bentuk simpan `YYYYMMDD` (`keSimpanTanggal`): kotak tanggal sel
+  mengirim `YYYY-MM-DD`, yang tidak dibaca rute Treaty In.
+- `TreatyInSetReport` kini membaca parameternya (`autocalculate`, `startdate`).
+- `PemicuUbah`: kotak tanggal ketik menyimpan isiannya di blur yang SAMA dengan pemicu `change`, jadi sel
+  Initial Date / Reporting Date tidak pernah memicu rumusnya. Pemeriksaan kini diulang sekali sesudah
+  render berikutnya. ⚠️ Tanpa jsdom di repo, jalur ini belum diuji otomatis; perlu dicoba di peramban.
+
+### 10.4 Masih belum
+
+Achievement rincian Limits (`GetAchievement`, `GenerateCSVTreaty`, `InsertToLogAchievement` —
+halaman sesi `SearchData`), Retro (§17), Value Difference (`TreatyEDMCalculateDifference`),
+`TreatyInUpdatePaymentDate`/`_Act` (tidak diekspor), `TreatyInShowHideFacShare` (halaman sesi),
+Submit/Decline dan Save (jalur tulis).
+
+## 11 · Ronde 7 Oktober 2026 (keempat) — sisa §10.4 dikerjakan
+
+| Bagian | Isi | Bukti / rute |
+|---|---|---|
+| Payment Date | Sel Due Date → `TreatyInUpdatePaymentDate` (halaman itu), sel WPC → `_Act` (semua halaman, baris ber-Due Date): `PaymentDate = @addCalendar(DueDate, …, WPC + 1 hari)`. Kedua Activity DIUNGGAH pemakai (`D:\NUSANTARA RE APP\TreatyInUpdatePaymentDate*.xml`) | `angsuran` `tanggal-bayar` / `tanggal-bayar-semua` |
+| Retro | Tab `Retro` (ketiga cabang) dan `Actual Retro` DISEMBUNYIKAN dari strip — keputusan pemilik proses: *"untuk sementara retro di hide dari tab sampai ada perintah dari developer"*. Kerangka dan syaratnya tetap dibangkitkan | `TAB_DISEMBUNYIKAN` (`SisiPenyesuaian.tsx`) |
+| Value Difference | `TreatyEDMCalculateDifference` + sembilan Activity panggilannya (identik di kedua korpus): selisih EGNPI, Limits, Share, Deduction, ringkasan, total, Installment, Pro Rate (`ValueBeforeProrate`) | `selisih` (`hitung_selisih.go`, 7 uji) |
+| Achievement rincian Limits | Refresh dan Quarter Year → `GetAchievement`; As At → DT `Reset_DT`; Generate Excel → `GenerateCSVTreaty` (13 kolom, SEMUA baris, `CSVAchievementTreatyIn.xlsx`). Halaman SESI (`SearchData.CARI1/2`, `FlagExcel.CARI1`, `TempQuarter*`) kini dibangkitkan (`dari = 'sesi'`) dan hidup di akar panel | `achievement`, `unduhAchievement.ts` |
+| Cabang Adjust Premium | `EDMState = 3` (Non-Prop) → `TreatyInTabsNonProportionalAdjustPremi` (@566980): Actual GNPI, Actual Limits, Actual Share, Premium Adjustment, Information & Submit. Halaman `ActualValue`; selisih = Actual − Treaty In | `aktual` (`hitung_aktual.go`, 6 uji) |
+| Rincian Share `% RNM Share` (EDMState 3) | `TreatyInXOLAddSpreadingDetailActual(idx)` kini dibangun — dahulu rantainya batal | `aktual` `rnm-baris` |
+
+**Rute `aktual` — Activity per tombol:** Actual GNPI · Update Total = `TreatyInActualUpdateValue`
+(17 langkah); Actual Share · Update Summary = `setValue` + `TreatyInActualUpdateValueShare`;
+Actual Limits / Premium Adjustment · Update Total = `TreatyInNPSetTotalActual(limits)` +
+`TreatyInSummaryLimitActual` + `TreatyInSummaryLimitShareActual`; Add Actual GNPI =
+`TreatyInNonAddItem(actualpremium)` (mata uang dari `Retention(1)`).
+
+⚠️ **Disalin apa adanya walau janggal** (rinciannya di kepala `hitung_selisih.go` /
+`hitung_aktual.go`): `ActualValue.Limits` ditimpa salinan Limits Treaty In tiap Update Total;
+selisih premi/MDP/Gross/Net dinolkan bila Actual < Treaty In; beberapa Activity menulis atau
+membuang total AKAR (`TotalSpreaded*`, `TotalFac*`, `LimitFacShareSummaryList`,
+`TotalLimitPremiEarnNP/MDPNP`, `RnmShareDeducted`); langkah Deduction Value Difference membuang
+baris Brokerage fee yang baru ditambahkannya.
+
+**Masih belum:** Submit Achievement (`InsertToLogAchievement` → `POOLDATA.LOG_ACHIEVEMENT`;
+migrasi 423 memutuskan log itu TIDAK menjadi tabel kedua — jalur tulisnya bersama Save, yang
+dikerjakan sesi lain); `Show Facultative Share` (harness tanpa Activity); isi Retro (§17, kini
+disembunyikan). Belum diukur atas data: tabel pendaratan sedang dikosongkan.
+
+## 12 · Ralat 8 Oktober 2026 — penyesuaian tanpa pendaratan tidak dapat disunting
+
+Laporan pemakai: `1001540/R01` dibuka lewat Edit, kepala kosong (ID Original, Reinsurance Type,
+Adjustment/Material Type "tidak ada"), dan panel Old/New tidak muncul sama sekali.
+
+**Sebab:** `BacaPenyesuaianPendaratan` membaca HANYA tabel pendaratan `T_TREATY_*`, yang sengaja
+dikosongkan 7 Oktober. Grid daftar membaca `TREATY_IN_EDM`, jadi barisnya tampil; begitu dibuka,
+sisi New tidak punya `ProportionType`, dan wadah panel bersyarat `Proportional`/`NonProportional`.
+
+**Perbaikan:** kunci kepala yang tidak ada di pendaratan dilengkapi dari kolom `TREATY_IN_EDM`
+(`ProportionType`, `OLDID`, `EDMState`, `EDMMaterialType`, nama kontrak, Ceding, SoB, tanggal, posisi,
+status, Treaty Year) — cara yang sama dengan `BacaDokumenMaster` (picker Add). Nilai pendaratan tetap
+menang bila ada.
+
+⚠️ Hanya sisi **New**. Sisi Old (`OLDDATA`) adalah salinan saat penyesuaian dibuat; kepala master hari
+ini bukan salinan itu, jadi panel Old tetap kosong sampai pendaratannya terisi. Isi tab (Limits, Share,
+dst.) juga kosong sampai pendaratannya terisi — kolom `TREATY_IN_EDM` hanya kepala.

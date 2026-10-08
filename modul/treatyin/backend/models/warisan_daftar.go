@@ -51,6 +51,9 @@ type BarisDaftarWarisan struct {
 
 	// `POSITIONUSERNAME`. ⚠️ 1.822 dari 1.854 baris NULL, bukan teks kosong.
 	PosisiKe string `json:"posisiKe"`
+	// `POSITION` - workbasket tempat berkas menunggu; syarat tampil tombol
+	// `Revision` (`.Position = ''`).
+	Posisi string `json:"posisi"`
 	// `STATUSAKSEPTASI`. Empat nilai di data nyata: `Resolve Complete`
 	// (1.820), `Accept` (12), `Decline` (11), dan NULL (11).
 	StatusAkseptasi string `json:"statusAkseptasi"`

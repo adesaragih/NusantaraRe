@@ -1,44 +1,20 @@
-// ⛔ DIPINDAHKAN dari `pages/FormKontrakTreatyIn.tsx` 5 Oktober 2026 —
-// pemindahan MURNI, nol perubahan perilaku.
+import { useId } from 'react'
 
-import { FieldTanggal } from '../../../../inti/frontend/components/ui/dasar'
+import { KotakTanggalKetik } from './TanggalKetik'
 
 /**
- * Medan yang KUNCINYA tidak ada di dokumen warisan kontrak ini.
+ * Medan tanggal BERLABEL — dapat DIKETIK (`DD/MM/YYYY`, `18-01-2024`,
+ * `18012024`, …) atau dipilih dari ikon kalender. Lihat `TanggalKetik.tsx`.
  *
- * ⛔ MATI dengan keterangan, bukan kotak kosong. Kotak kosong terbaca
- * "belum diisi"; medan mati terbaca "tidak ada di sistem lama". Bedanya
- * menentukan apa yang orang tagih — dan sapuan 3 Oktober 2026 menemukan ia
- * BUKAN kasus langka: `ContractRefNo` tidak ada di 1.112 dari 1.854 kontrak,
- * `TreatyLeader` di 1.195.
+ * ⭐ 7 Oktober 2026 — permintaan pemakai: *"tiap inputan tanggal bisa
+ * diketik juga biar gampang"*. Sebelumnya pembungkus `FieldTanggal` inti
+ * (`<input type="date">`) yang hanya dapat diisi per segmen, dan yang
+ * menulis `dd/mm/yyyy` sendiri saat kosong — masalah yang dulu ditambal
+ * dengan kelas `trin__tanggal--kosong`. Kotak teks yang kosong memang
+ * kosong, jadi tambalan itu tidak diperlukan lagi.
  *
- * Pola yang sama sudah dipakai tombol `Choose Ceding`, dan sebabnya tertulis
- * di sana.
- */
-/**
- * Pembungkus `FieldTanggal` yang MENYEMBUNYIKAN `dd/mm/yyyy` saat kosong.
- *
- * ⛔ Masalahnya nyata: `<input type="date">` yang kosong menuliskan
- * `dd/mm/yyyy` sendiri, dan di layar ia terbaca seperti nilai — kontrak
- * tanpa tanggal terlihat seolah bertanggal.
- *
- * ⚠️ `FieldTanggal` tinggal di `inti/frontend/components/ui/dasar.tsx`, dan
- * berkas itu DIPAKAI BERSAMA — ia tidak disunting. Jadi kaitnya dipasang di
- * sini: satu `<span>` yang menambahkan kelas saat nilainya kosong, lalu
- * aturan CSS modul yang mewarnai `::-webkit-datetime-edit` transparan
- * selama kosong DAN tidak difokus.
- *
- * ⛔ CSS SAJA TIDAK CUKUP, dan itu terukur bukan dikira: tidak ada pemilih
- * yang membedakan `<input type="date">` kosong dari yang terisi.
- * `:placeholder-shown` tidak cocok untuk medan tanggal, medan tanggal
- * kosong tanpa `required` itu `:valid`, dan React menyetel `value` sebagai
- * PROPERTI sehingga `[value='']` tidak cocok. Kaitnya harus datang dari
- * markup, dan markup yang boleh disunting adalah yang ini.
- *
- * ⚠️ BATASNYA DINYATAKAN: `::-webkit-datetime-edit` hanya ada di
- * Chromium/WebKit. Di Firefox `dd/mm/yyyy` tetap tampak. Tidak ada padanan
- * standarnya, dan menggantinya dengan `type="text"` akan membuang pemilih
- * tanggal bawaan — harga yang lebih mahal daripada masalahnya.
+ * API tetap: `value` bentuk apa pun yang `keInputTanggal` inti baca,
+ * `onChange` menerima bentuk KABEL `DD-MM-YYYY` — sama dengan `FieldTanggal`.
  */
 export default function TanggalRedup({
   label,
@@ -49,9 +25,13 @@ export default function TanggalRedup({
   value: string
   onChange: (v: string) => void
 }) {
+  const id = useId()
   return (
-    <span className={'trin__tanggal' + (value === '' ? ' trin__tanggal--kosong' : '')}>
-      <FieldTanggal label={label} value={value} onChange={onChange} />
-    </span>
+    <div className="field">
+      <label className="field__label" htmlFor={id}>
+        {label}
+      </label>
+      <KotakTanggalKetik id={id} label={label} value={value} onChange={onChange} />
+    </div>
   )
 }

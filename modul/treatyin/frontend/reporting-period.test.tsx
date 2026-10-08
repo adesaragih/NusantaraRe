@@ -33,7 +33,8 @@ const OPSI = [{ value: 'quarter', label: 'Quarter Year' }, { value: 'other', lab
 
 describe('tombol Apply', () => {
   it('⭐ Apply MEMANGGIL rumus services — nol rumus di layar', () => {
-    expect(SUMBER).toContain('hitungPeriodePelaporan({ mulai, akhir, periode, interval, penyerahan, konfirmasi, pelunasan })')
+    // `awal` = `param.startdate` — kosong pada Apply, `.InitialDate` pada sel (7 Oktober 2026).
+    expect(SUMBER).toContain('hitungPeriodePelaporan({ mulai, akhir, periode, interval, penyerahan, konfirmasi, pelunasan, awal })')
     expect(SUMBER).not.toMatch(/addMonths|setMonth|getDate\(\)|new Date\(/)
     // Bentuk lama: Apply mengembalikan baris dokumen tanpa menghitung.
     expect(SUMBER).not.toContain('setBaris(barisAwal)')

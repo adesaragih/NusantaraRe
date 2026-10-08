@@ -64,6 +64,26 @@ type KontrakWarisan struct {
 	EDMState         string `json:"edmState"`
 	EDMJenisMaterial string `json:"edmJenisMaterial"`
 
+	// StatusAkseptasi - `TreatyIn.StatusAkseptasi`. Tab `Information & Submit`
+	// menyembunyikan `Submit` ketika nilainya `Resolve Complete`.
+	StatusAkseptasi string `json:"statusAkseptasi"`
+	// Posisi - `TreatyIn.Position`: workbasket tempat berkas menunggu.
+	// Syarat tampil tombol `Actions` (pemegangnya) dan pagar `Submit`.
+	Posisi string `json:"posisi"`
+	// PemegangPosisi - `TreatyIn.PositionUsername` ("Position To").
+	PemegangPosisi string `json:"pemegangPosisi"`
+	// Penampung - properti yang layar pegang HANYA di penampung halaman
+	// (`halaman.tsx`), dibaca kembali dari tabelnya (migrasi `448`):
+	// `RNMShareP`, `BrokeragePercentP`, `OptionLimit`, `InstallmentNo`,
+	// `RevisionState`, `ViewState`. Berkunci ejaan Pega; kunci yang `NULL`
+	// di tabel tidak masuk — tab menyemai bawaannya sendiri.
+	Penampung map[string]string `json:"penampung"`
+	// PenampungLarik - larik TOTAL yang tab pegang di penampung halaman
+	// (`TotalShareRnmProp`, `TotalSpreadedRnmProp`, `TotalSpreadedRnmRIProp`,
+	// `TotalEgnpiAmountNP`, `TotalInstallmentNP`), dari `T_TREATY_TOTAL`.
+	// Larik tanpa baris tidak masuk — tab menyemai bawaannya sendiri.
+	PenampungLarik map[string][]map[string]any `json:"penampungLarik"`
+
 	// `ContractRefNo` — ADA di 742 dari 1.854 baris.
 	NomorRujukan string `json:"nomorRujukan"`
 	// `TreatyLeader` — ADA di 659 baris; nilainya teks `"true"`/`"false"`.
@@ -121,6 +141,17 @@ type KontrakWarisan struct {
 	// Bentuknya dari `Section/LimitProportional.xml` dan `DetailLimits.xml`.
 	LimitsPohon []map[string]any `json:"limitsPohon"`
 
+	// ⭐ Larik dan skalar AKAR tab Limits Non-Prop — `Summary of Limit` dan
+	// `Total All Layers`. Dari tabel pendaratan; `TotalLimitsROL` dari
+	// `T_TREATY_REVISION`.
+	LimitsAkar LimitsAkar `json:"limitsAkar"`
+
+	// ⭐ Tab Share Non-Prop — dari tabel pendaratan `T_TREATY_SHARE*`,
+	// `T_TREATY_RETRO_SHARE`, `T_TREATY_FAC_*`; nilai turunan (100% Limit
+	// RNM, bagian OR/R/I, Summary, Total) dihitung services dengan rumus
+	// Activity yang sama. Lihat `share_np.go`.
+	ShareNP ShareNP `json:"shareNP"`
+
 	// Pilihan dropdown kepala — pasangan NILAI TERSIMPAN ↔ LABEL TAMPIL,
 	// diisi services. Dropdown memegang nilai tersimpan; labelnya untuk dibaca.
 	OpsiKepala OpsiKepala `json:"opsiKepala"`
@@ -160,6 +191,16 @@ type KontrakWarisan struct {
 //	EjaanLain ejaan LAIN yang juga berisi. Pembacanya berhak tahu ada teks
 //	         lain yang tidak ia lihat - terukur, isinya BERBEDA di seluruh
 //	         303 dokumen yang punya lebih dari satu.
+//
+// LimitsAkar - bagian AKAR dokumen yang tab Limits Non-Prop tampilkan.
+type LimitsAkar struct {
+	LimitSummaryList []map[string]any `json:"LimitSummaryList"`
+	// Kunci: `TotalLimitIOONP`, `TotalLimitDeductblNP`,
+	// `TotalLimitPremiEarnNP`, `TotalLimitMDPNP` — selalu keempatnya.
+	Total          map[string][]map[string]any `json:"Total"`
+	TotalLimitsROL string                      `json:"TotalLimitsROL"`
+}
+
 type TabTeksWarisan struct {
 	Isi       string   `json:"isi"`
 	Ejaan     string   `json:"ejaan"`
@@ -195,10 +236,45 @@ type BarisSkalaKoasuransiWarisan struct {
 // BarisKursWarisan - satu baris grid Rate of Exchange.
 // Dari `CurrencyList`; berisi di 297 dari 300 dokumen yang disapu.
 type BarisKursWarisan struct {
-	MataUang      string `json:"mataUang"`
-	NilaiKeIDR    string `json:"nilaiKeIDR"`
+	// ID - pengenal baris `TREATYEXCHANGEYEARLY`. ⭐ Kunci Save: satu mata
+	// uang dapat punya lebih dari satu baris setahun (`QUARTER`), jadi
+	// pembaruan berkunci baris, bukan mata uang. Kosong = baris baru.
+	ID       string `json:"id"`
+	MataUang string `json:"mataUang"`
+	// MataUangID - `.CurrencyID`, properti yang dropdown sel Currency ikat
+	// (`pxDropdown`, `BrowseCurrency_RD` nilai `.ID`). Dari kolom
+	// `IDCURRENCY` — cocok dengan `CURRENCY.ID` pada 139 dari 140 baris.
+	MataUangID string `json:"mataUangID"`
+	NilaiKeIDR string `json:"nilaiKeIDR"`
+	// BerlakuDari / BerlakuSampai - bentuk TAMPIL (`dd/mm/yy`), untuk dibaca.
 	BerlakuDari   string `json:"berlakuDari"`
 	BerlakuSampai string `json:"berlakuSampai"`
+	// ⭐ Pasangan `…Asli` - bentuk TERSIMPAN (`YYYYMMDD`), untuk kotak
+	// tanggal yang dapat diisi.
+	//
+	// ⛔ LAHIR DARI CACAT NYATA 7 Oktober 2026. Grid `Rate of Exchange`
+	// mode Edit memperlihatkan kotak `Valid From` dan `Valid Until` KOSONG,
+	// padahal `TREATYEXCHANGEYEARLY.STARTDATE` berisi
+	// `20180101T000000.000 GMT`. Sebabnya: kotak tanggal menerima bentuk
+	// kabel `DD-MM-YYYY`, sementara yang disuapkan `TanggalTampil` berupa
+	// `dd/mm/yy` — tahun DUA digit dan pemisah garis miring. Ia tidak
+	// terbaca, dan kotaknya kosong tanpa satu pun galat.
+	//
+	// ⚠️ Dan kosongnya BERBAHAYA: jalur Save menulis isi kotak itu apa
+	// adanya ke `STARTDATE`, jadi membuka lalu menyimpan kontrak akan
+	// MENGHAPUS tanggal yang sudah ada.
+	//
+	// ⭐ Polanya sama dengan `Angsuran` dan `Akumulasi`, yang sudah lebih
+	// dulu memisahkan medan tampil dari medan isi.
+	BerlakuDariAsli   string `json:"berlakuDariAsli"`
+	BerlakuSampaiAsli string `json:"berlakuSampaiAsli"`
+}
+
+// KursSimpan - grid Rate of Exchange yang tombol Save kirim: kurs TAHUN
+// kontrak (`TreatyYear`), ditulis ke `TREATYEXCHANGEYEARLY`.
+type KursSimpan struct {
+	Tahun string             `json:"tahun"`
+	Baris []BarisKursWarisan `json:"baris"`
 }
 
 // BarisPeriodeWarisan - satu baris grid tab Reporting Period.
@@ -246,6 +322,10 @@ type BarisAkumulasiWarisan struct {
 	TanggalLapor    string `json:"tanggalLapor"`
 	HariKirim       string `json:"hariKirim"`
 	JatuhTempoKirim string `json:"jatuhTempoKirim"`
+	// Bentuk TERSIMPAN (`YYYYMMDD`, tanggal WIB) - untuk penampung halaman
+	// dan kotak tanggal; dua medan di atas bentuk tampil.
+	TanggalLaporAsli    string `json:"tanggalLaporAsli"`
+	JatuhTempoKirimAsli string `json:"jatuhTempoKirimAsli"`
 }
 
 // BarisEgnpiWarisan - satu baris tab EGNPI. Dari `T_TREATY_EGNPI`;
@@ -321,6 +401,10 @@ type BarisAngsuranWarisan struct {
 	JatuhTempo   string `json:"jatuhTempo"`
 	TanggalBayar string `json:"tanggalBayar"`
 	WPC          string `json:"wpc"`
+	// Bentuk TERSIMPAN (`YYYYMMDD`, tanggal WIB) - untuk penampung halaman
+	// (tab Installment) dan kotak tanggal; dua medan di atas bentuk tampil.
+	JatuhTempoAsli   string `json:"jatuhTempoAsli"`
+	TanggalBayarAsli string `json:"tanggalBayarAsli"`
 }
 
 // BarisCatatanWarisan - satu baris tab Information & Submit.
@@ -350,4 +434,24 @@ type OpsiKepala struct {
 	CaraPembukuan        []Opsi `json:"caraPembukuan"`
 	CaraPembukuanNonProp []Opsi `json:"caraPembukuanNonProp"`
 	PeriodePelaporan     []Opsi `json:"periodePelaporan"`
+}
+
+// BarisAchievement - satu baris RDB `GetAchievement` (tabel `ACHIEVEMENT`).
+type BarisAchievement struct {
+	IDPega           string `json:"idPega"`
+	NoPolis          string `json:"noPolis"`
+	NoOffer          string `json:"noOffer"`
+	SoBName          string `json:"sobName"`
+	TreatyGroupName  string `json:"treatyGroupName"`
+	TreatyType       string `json:"treatyType"`
+	Quarter          string `json:"quarter"`
+	QuarterYear      string `json:"quarterYear"`
+	IDCurrency       string `json:"idCurrency"`
+	Currency         string `json:"currency"`
+	Premium          string `json:"premium"`
+	RIComm           string `json:"riComm"`
+	Brokerage        string `json:"brokerage"`
+	NetPremium       string `json:"netPremium"`
+	PaidClaim        string `json:"paidClaim"`
+	OutstandingClaim string `json:"outstandingClaim"`
 }

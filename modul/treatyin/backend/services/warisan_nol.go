@@ -78,6 +78,21 @@ func nolkanLarik(k *models.KontrakWarisan) {
 	if k.TotalRetensi == nil {
 		k.TotalRetensi = []models.BarisTotalRetensiWarisan{}
 	}
+	// Larik akar tab Limits Non-Prop — `Summary of Limit` dan keempat
+	// `TotalLimit…NP`, yang dibaca layar dengan `.length`.
+	if k.LimitsAkar.LimitSummaryList == nil {
+		k.LimitsAkar.LimitSummaryList = []map[string]any{}
+	}
+	if k.LimitsAkar.Total == nil {
+		k.LimitsAkar.Total = map[string][]map[string]any{}
+	}
+	for _, nama := range []string{"TotalLimitIOONP", "TotalLimitDeductblNP", "TotalLimitPremiEarnNP", "TotalLimitMDPNP"} {
+		if k.LimitsAkar.Total[nama] == nil {
+			k.LimitsAkar.Total[nama] = []map[string]any{}
+		}
+	}
+	// Tab Share Non-Prop — larik dan kesembilan kunci Total.
+	lengkapiShare(&k.ShareNP)
 	if k.PolisProduksi == nil {
 		k.PolisProduksi = []models.BarisPolisProduksi{}
 	}
@@ -125,5 +140,11 @@ func nolkanLarik(k *models.KontrakWarisan) {
 	}
 	if k.TeksMentah == nil {
 		k.TeksMentah = map[string]string{}
+	}
+	if k.Penampung == nil {
+		k.Penampung = map[string]string{}
+	}
+	if k.PenampungLarik == nil {
+		k.PenampungLarik = map[string][]map[string]any{}
 	}
 }

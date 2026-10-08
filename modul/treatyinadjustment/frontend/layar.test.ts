@@ -132,3 +132,20 @@ describe('§2.2 — satu pemilih kontrak, bukan dua daftar', () => {
     expect(P).not.toMatch(/ambilKontrak|TREATY_IN(?!_EDM)/)
   })
 })
+
+
+// ⛔ KEPALA KOLOM TETAP TERLIHAT SAAT TABEL DIGULIR — permintaan pemilik
+// proses 7 Oktober 2026, sepasang dengan penjaga di modul Treaty In.
+describe('kepala kolom tidak ikut tenggelam', () => {
+  it('sticky DIBATASI `.table-wrap`, berlatar penuh, bergaris `box-shadow`', () => {
+    const i = CSS.indexOf('.treatyinadjustment .table-wrap .tria__tabel thead th')
+    expect(i).toBeGreaterThan(0)
+    const aturan = CSS.slice(i, i + 260)
+    expect(aturan).toMatch(/position: sticky/)
+    expect(aturan).toMatch(/background: var\(--bg\)/)
+    // ⚠️ WAJIB di sini: `.tria__tabel` ber-`border-collapse: collapse`,
+    // dan `border-bottom` pada mode itu milik kisi tabel — ia tergulir pergi.
+    expect(aturan).toMatch(/box-shadow: inset 0 -1px 0 var\(--border\)/)
+    expect(CSS).toMatch(/\.tria__tabel \{[^}]*border-collapse: collapse/)
+  })
+})

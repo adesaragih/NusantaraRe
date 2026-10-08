@@ -13,6 +13,7 @@ package services
 
 import (
 	"context"
+	"strings"
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/modul/treatyin/backend/models"
@@ -49,7 +50,39 @@ func (l *Layanan) OpsiLimits(ctx context.Context, p inti.Pelaku) (models.OpsiLim
 	if o.MataUang, err = l.pilihanWarisan(ctx, p, l.gudang.BacaDaftarMataUangLimit); err != nil {
 		return models.OpsiLimits{}, err
 	}
+	// ⭐ LABEL dari PROMPT VALUE rule Property, bukan standard value —
+	// permintaan pemilik proses 7 Oktober 2026. Yang rule-nya belum
+	// diekspor jatuh ke nilainya sendiri; lihat `prompt_value.go`.
+	o.JenisLayer = opsiDariProperty("LayerType", domainJenisLayer)
+	o.Cover = opsiDariProperty("Cover", domainCover)
+	o.RelasiMataUang = opsiDariProperty("CurrencyRelation", domainRelasiMataUang)
+	o.CatatanReinstatement = opsiDariProperty("ReinstatementNote", domainCatatanReinstatement)
 	return o, nil
+}
+
+// Domain dropdown `associated` tab Limits Non-Prop — TERUKUR atas seluruh
+// `T_TREATY_LIMITS` 6 Oktober 2026 (6.262 layer). Label tampilnya hidup di
+// rule Property yang tidak diekspor, jadi nilainya tampil apa adanya.
+// `CurrencyRelation` dibaca Activity sebagai `"AND"` / `"OR"`
+// (`DetailCalculationROL`).
+var (
+	domainJenisLayer           = []string{"layer", "sublayer"}      // LayerType / LayerPartType: 4.457 / 323
+	domainCover                = []string{"risk", "cat", "riskcat"} // 1.089 / 1.124 / 2.564
+	domainRelasiMataUang       = []string{"OR", "AND"}              // 3.342 / 138
+	domainCatatanReinstatement = []string{"asamount", "astime"}     // 1.456 / 16
+)
+
+// DaftarKelasBisnisTreaty mengembalikan autocomplete `Class of Business`
+// untuk satu Treaty Group.
+func (l *Layanan) DaftarKelasBisnisTreaty(ctx context.Context, p inti.Pelaku, treatyGroupID string) ([]models.PilihanWarisan, error) {
+	if err := inti.WajibIdentitas(p); err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(treatyGroupID) == "" {
+		// Grup belum dipilih — parameter RD-nya kosong, nol baris.
+		return []models.PilihanWarisan{}, nil
+	}
+	return l.gudang.BacaDaftarKelasBisnisTreaty(ctx, treatyGroupID)
 }
 
 // pilihanWarisan membaca lalu MENANDAI nama yang dipakai lebih dari satu

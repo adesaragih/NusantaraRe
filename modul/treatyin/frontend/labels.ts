@@ -43,7 +43,7 @@ export const ACUAN_TREATYIN = {
   // mengisinya. Digabung jadi satu paragraf, yang kedua terbaca sebagai alasan
   // kosongnya - padahal ia jadwal, bukan sebab.
   kosong: 'Tabel acuan ini belum berisi.',
-  kosongPetunjuk: 'Pemindahan isinya dari sistem lama adalah tiket 44.',
+  kosongPetunjuk: '',
 } as const
 
 // ===========================================================================
@@ -96,13 +96,10 @@ export const DAFTAR_KONTRAK = {
   // `TREATY_IN`, yang berisi 1.854 baris. Layar ini tidak menunggu tiket 59,
   // dan petunjuk yang menunjuk tiket yang salah membuat orang menagih
   // pekerjaan yang tidak akan mengubah apa pun di sini.
-  kosongPetunjuk:
-    'Tabel warisan berisi 1.854 kontrak. Halaman ini kosong karena nomornya di luar jangkauan, atau karena penyaring tidak menemukan padanan.',
-  keterangan:
-    'Kesembilan kolom dan susunan tombolnya disalin dari Section/InputTreatyInOffer.xml ekspor 2026-09. Isinya dibaca dari tabel warisan POOLDATA.TREATY_IN — 1.854 kontrak, urut pengenal menurun.',
+  kosongPetunjuk: '',
+  keterangan: '',
   /** Sumber datanya, dinyatakan di layar — bukan hanya di komentar kode. */
-  catatanSumber:
-    'Baris di atas dibaca dari POOLDATA.TREATY_IN, tabel sistem lama — BACA SAJA. Kontrak yang sudah dipindahkan ke model baru (KONTRAK/VERSI_KONTRAK) adalah daftar yang berbeda, dan tiket 59 yang memindahkannya.',
+  catatanSumber: '',
   /** Kolom yang model baru BELUM punya rumahnya — dinyatakan, bukan diisi. */
   // ⚠️ RALAT 3 Oktober 2026 — kalimat lamanya menyangkal kolom yang ADA.
   // "Position To" memang belum punya rumah di MODEL BARU, dan itu tetap
@@ -112,13 +109,11 @@ export const DAFTAR_KONTRAK = {
   // tidak ada.
   /** Judul lipatan keterangan kaki — pendek, dan menyebut isinya. */
   kakiJudul: 'Tentang data di tabel ini',
-  catatanPosisiKe:
-    'Kolom "Position To" terisi pada 32 dari 1.854 baris warisan; sel kosong berarti nilainya memang kosong. Di model baru kolom ini belum ada — ia lahir bersama tiket 45 dan 49–53.',
+  catatanPosisiKe: '',
   // ⚠️ RALAT 3 Oktober 2026 — di tabel warisan keduanya NAMA, bukan pengenal.
   // `CEDING` dan `LEADINGREINSSOURCE` memuat teksnya langsung. Penyangkalan
   // lama berlaku untuk model baru, yang memang hanya menyimpan pengenal.
-  catatanNama:
-    'Di tabel warisan "Ceding" dan "Source of Business" berupa nama. Di model baru keduanya pengenal — ERD.md §2.8 menempatkan kedua tabel acuan itu DI LUAR skema ini.',
+  catatanNama: '',
 } as const
 
 // ===========================================================================
@@ -221,7 +216,7 @@ export const FORM_KONTRAK = {
   /** Teks grid kosong bawaan Pega — bukan rule `pyCaption`. */
   tanpaBaris: 'No items',
   /** Petunjuk di bawah grid kurs yang kosong — menyebut tiket pengisinya. */
-  kursPetunjuk: 'Kurs per mata uang adalah tiket 20 (MATA_UANG_KONTRAK); barisnya tidak dikarang.',
+  kursPetunjuk: '',
   /**
    * Keterangan KAKI, bukan isi layar.
    *
@@ -252,29 +247,13 @@ export const FORM_KONTRAK = {
   pilihKosongPetunjuk: 'Kosongkan penyaringnya untuk melihat seluruh daftar.',
   pilihMemuat: 'Memuat pilihan…',
 
-  /**
-   * Keterangan medan yang KUNCINYA tidak ada di dokumen warisan.
-   *
-   * ⛔ Medan MATI dengan keterangan, bukan kotak kosong. Kotak kosong
-   * terbaca "belum diisi"; medan mati terbaca "tidak ada di sistem lama".
-   * Pola yang sama sudah dipakai tombol `Choose Ceding`.
-   *
-   * Sapuan 3 Oktober 2026 atas 1.854 dokumen: `ContractRefNo` ada di 742,
-   * `TreatyLeader` di 659, `BordereauxNote` di 1.018. Jadi medan ini mati
-   * pada SEBAGIAN kontrak, bukan pada semuanya.
-   */
-  takAdaDiWarisan: 'Tidak ada di dokumen sistem lama',
   /** Kolom tab Portfolio - dari kunci `Portfolio` di dokumen warisan. */
-  petunjukPortofolio:
-    'Portofolio dibaca dari dokumen warisan kontrak ini; terisi pada 845 dari 1.855 kontrak. Kosong berarti kontrak ini memang tidak punya.',
-  petunjukAkumulasi:
-    'Akumulasi dibaca dari dokumen warisan kontrak ini; terisi pada 12 dari 300 dokumen yang disapu — jarang, dan kosong berarti kontrak ini memang tidak punya.',
-  petunjukPeriode:
-    'Periode pelaporan dibaca dari dokumen warisan kontrak ini; terisi pada 225 dari 300 dokumen yang disapu.',
+  petunjukPortofolio: '',
+  petunjukAkumulasi: '',
+  petunjukPeriode: '',
 
   /** Petunjuk umum grid tab kosong — menyebut sebabnya, bukan cacahnya. */
-  petunjukTabel:
-    'Dibaca dari tabel pendaratan kontrak ini. Kosong berarti dokumen warisannya memang tidak punya baris untuk tab ini.',
+  petunjukTabel: '',
 
   /**
    * ⭐ PETUNJUK LAMA DICABUT 5 Oktober 2026, dan sebabnya hilang bersamanya.
@@ -292,8 +271,7 @@ export const FORM_KONTRAK = {
    * sama dengan tujuh tab lain: dokumennya memang tidak punya. Membiarkan
    * petunjuk lama berarti layar menjelaskan sebab yang sudah tidak ada.
    */
-  petunjukLayer:
-    'Dibaca dari dokumen warisan kontrak ini. Kosong berarti dokumennya memang tidak punya layer untuk tab ini.',
+  petunjukLayer: '',
   /**
    * ⭐ Dan sebab KETIGA pun hilang.
    *
@@ -304,8 +282,7 @@ export const FORM_KONTRAK = {
    * 569 · `FloodJab` 218 · `FloodNation` 550, masing-masing dengan mata
    * uangnya. Gambar `28` memperlihatkan keempat barisnya di layar.
    */
-  petunjukEventLimits:
-    'Dibaca dari dokumen warisan kontrak ini. Kosong berarti dokumennya memang tidak punya batas untuk layer itu.',
+  petunjukEventLimits: '',
   /**
    * ⛔ Kedua tab teks punya pesan kosongnya SENDIRI. `tanpaBaris` berbunyi
    * tentang baris grid; tab ini tidak punya baris, ia punya satu medan.
@@ -320,12 +297,8 @@ export const FORM_KONTRAK = {
    */
   ejaanLainBerisi:
     '⚠️ Dokumen kontrak ini juga punya teks di bawah kunci lain, dan isinya BERBEDA — bukan salinan. Kunci itu:',
-  petunjukTeksPengecualian:
-    'Dibaca dari kunci ExclusionsP (proporsional) atau Exclusions (non-proporsional) di dokumen warisan. Kosong berarti kunci yang sesuai cabang kontrak ini tidak ada — dan ejaan cabang seberang sengaja TIDAK dipakai sebagai pengganti, sebab isinya teks yang berbeda.',
-  petunjukTeksSyarat:
-    'Dibaca dari kunci SpecialConditionsP (proporsional) atau SpecialConditions (non-proporsional) di dokumen warisan. Ejaan ketiga SpecialConditionsp dipakai kedua cabang, jadi ia tidak pernah terpilih — bila berisi, ia disebut sebagai kunci lain. Kosong berarti kunci yang sesuai cabang tidak ada.',
-  petunjukSkalaKoasuransi:
-    'Skala koasuransi dibaca dari tabel pendaratan kontrak ini; terisi pada 186 dari 1.854 kontrak. Kosong berarti kontrak ini memang tidak punya skala.',
+  petunjukTeksPengecualian: '',
+  petunjukTeksSyarat: '',
 
   belumDibangun: 'Tab ini belum dibangun.',
   /**
@@ -342,16 +315,14 @@ export const FORM_KONTRAK = {
    * karena itu. Orang yang membacanya tahu persis apa yang ia lihat.
    */
   jarangDipakai: 'Tab ini tidak dibangun — fiturnya JARANG dipakai.',
-  jarangDipakaiPetunjuk:
-    'Retro ada dan hidup di sistem lama, tetapi hanya 5 dari 1.854 kontrak menyalakannya dan hanya 2 yang punya isinya. Membangun tiga tabel bersarang dari dua contoh akan salah di tempat yang tidak ada contoh ketiga untuk membantahnya. Keputusan §17; ia ditinjau ulang begitu kontrak keenam atau ketiga muncul.',
+  jarangDipakaiPetunjuk: '',
   /**
    * ⛔ Pesan ini pernah menyebut "hanya tab Reporting Period", dan menjadi
    * BASI diam-diam begitu tab kedua mendarat. Kalimat yang menyebut cacah
    * atau nama tab akan selalu basi; yang ini menyebut SEBABNYA, dan sebab
    * tidak berubah tiap ronde.
    */
-  belumDibangunPetunjuk:
-    'Sumber datanya belum ditemukan di ekspor sistem lama. Tabnya tetap tampil supaya susunan strip tidak berubah diam-diam ketika isinya menyusul.',
+  belumDibangunPetunjuk: '',
 } as const
 
 /**
@@ -432,6 +403,55 @@ export const TAB_NON_PROPORSIONAL = [
  * ⚠️ `RNM Share` TETAP ADA di `TAB_NON_PROPORSIONAL` — nol tab dihapus.
  */
 export const SUB_TAB_SHARE = ['RNM Share'] as const
+
+// ===========================================================================
+// Tab `Share` cabang PROPORSIONAL — bentuknya dari ekspor, bukan dari gambar
+// ===========================================================================
+//
+// `Section/TreatyInShareProp.xml` (sesudah `pyIncludedRuleXML` bersarang
+// dibuang dengan hitung kedalaman) menyebut seluruhnya apa adanya:
+//
+//   pyTitle   `RNM Share`
+//   pyValue   `Kind of Treaty` · `.TreatyType` · `.Note`
+//             `Total Share RNM Limit`   + `Value`  ← `.Currency` / `.Value`
+//             `Total Value Spreading OR`  + `Value`
+//             `Total Value Spreading R/I` + `Value`
+//
+// ⚠️ Cabang NON-PROPORSIONAL tidak memakai bentuk ini — ia punya gridnya
+// sendiri per layer. Satu komponen untuk keduanya akan menampilkan kolom
+// yang di cabang seberang tidak pernah ada.
+export const TOTAL_SHARE = {
+  judul: 'Total Share',
+  segarkan: 'Refresh', // pyActionLabel `Refresh`
+  persenRnmShare: '% RNM Share', // pyLabelFieldValue `% RNM Share` (Share.xml)
+  persenBrokerage: '% Brokerage',
+  opsi: 'Option',
+  /** Petunjuk DI DALAM kotak — `pyValue` `%` di ekspor. */
+  satuanPersen: '%',
+  tanpaBaris: 'No items',
+  /**
+   * ⚠️ Petunjuk ketiga grid total yang KOSONG, dan ia menyatakan sebab yang
+   * tepat: sumbernya belum punya tabel — BUKAN kontraknya yang kosong.
+   * Keduanya terlihat sama di layar, dan hanya kalimat ini yang membedakan.
+   */
+  petunjukTotal: '',
+} as const
+
+/** Judul grid `Kind of Treaty` beserta kolom nilainya. */
+export const KOLOM_KIND_OF_TREATY_SHARE = ['Kind of Treaty'] as const
+
+/**
+ * Ketiga grid total sub-tab `RNM Share`, berurut seperti di ekspor.
+ *
+ * ⛔ Kolom keduanya BERJUDUL `Value` pada ketiganya — itu bunyi ekspornya,
+ * dan menamainya sendiri ("Jumlah", "Nilai") akan membuat layar berbeda dari
+ * layar lama tanpa ada yang memintanya.
+ */
+export const GRID_TOTAL_RNM_SHARE = [
+  'Total Share RNM Limit',
+  'Total Value Spreading OR',
+  'Total Value Spreading R/I',
+] as const
 
 export type TabProporsional = (typeof TAB_PROPORSIONAL)[number]
 export type TabNonProporsional = (typeof TAB_NON_PROPORSIONAL)[number]
@@ -820,8 +840,7 @@ export const TOTAL_RETENSI = {
    * menyembunyikan bahwa layar lama punya langkah ini.
    */
   perbarui: 'Update Total', // pyLabel @202657
-  perbaruiPetunjuk:
-    'Total dihitung setiap kontrak dibaca; tombol ini milik jalur simpan yang belum dibangun.',
+  perbaruiPetunjuk: '',
 
   /**
    * ⚠️ `Update Total` TIDAK hanya milik Maximum Retention.
@@ -865,6 +884,43 @@ export const JENIS_ANGSURAN: readonly JenisAngka[] = [
 
 /** Kolom tab Information & Submit. */
 export const KOLOM_CATATAN = ['Date', 'Operator', 'Approved', 'Suggest'] as const
+
+// ===========================================================================
+// Tab `Information & Submit` — FORM, bukan grid riwayat
+// ===========================================================================
+//
+// ⛔ CACAT YANG DIPERBAIKI 6 Oktober 2026: tab ini menampilkan grid riwayat
+// (`KOLOM_CATATAN` di atas), padahal di Pega ia FORM. Riwayatnya sudah punya
+// panelnya sendiri di kaki layar — jadi yang ditampilkan bukan sekadar
+// salah, ia SALINAN dari yang sudah ada di layar yang sama.
+//
+// Bentuknya dari `Section/TreatyInfoSubmit.xml`, sesudah `pyIncludedRuleXML`
+// bersarang dibuang dengan hitung kedalaman:
+//
+//   TreatyIn.Information  label `Additional Information`  Text area
+//   TreatyIn.Comment      label `Comment`                 Text area
+//
+//   tombol  `Submit`         pyActivity TreatyInSubmit     gaya Strong
+//           pyCondition      TreatyIn.ViewState !='1'
+//                            && TreatyIn.StatusAkseptasi != 'Resolve Complete'
+//   tombol  `Decline offer`                                gaya Simple
+//           pyCondition      TreatyIn.ViewState != '1'
+//
+//   pyDisabledWhen  TreatyIn.ID = ''   ·   TreatyIn.EDMEffective = ''
+export const INFO_SUBMIT = {
+  judul: 'Information & Submit',
+  infoTambahan: 'Additional Information', // pyLabelFieldValue
+  komentar: 'Comment', // pyLabelFieldValue
+  kirim: 'Submit', // pyLabel, gaya Strong
+  tolak: 'Decline offer', // pyLabel, gaya Simple
+  /**
+   * ⚠️ Kedua tombol MATI, dan sebabnya bukan kelalaian: `Submit` memanggil
+   * `TreatyInSubmit`, yang bermuara ke prosedur yang menulis `M_TREATY_IN`
+   * dan `TREATY_IN` — keduanya dilarang keras dipakai aplikasi. Sasaran
+   * tulisnya belum diputuskan pemilik proses.
+   */
+  petunjukTombol: '',
+} as const
 
 // ===========================================================================
 // EMPAT TAB DARI `M_TREATY_IN2` — Limits · Share · Event Limits · RNM Share
@@ -972,74 +1028,12 @@ export const JENIS_LIMITS: readonly JenisAngka[] = [
 ]
 
 /**
- * ⭐ TAB LIMITS BERSARANG — susunan tingkat, dibaca dari 18 gambar.
- *
- * ⛔ Kedua cabang BERBEDA di tingkat PUNCAK, dan itu terukur bukan dikira:
- *
- *   PROP (gambar 02–15)        puncaknya `Kind of Treaty`
- *   NON-PROP (gambar 30–33)    puncaknya `Layers`
- *
- * Buktinya di dokumen, sapuan 5 Oktober 2026:
- *
- *   `Limits[].TreatyType`  terisi pada PROP (1.360 elemen, 9 nilai:
- *                          QUOTA SHARE 724 · SURPLUS 590 · SPECIAL SURPLUS
- *                          12 …), dan NIL pada 2.847 dari 2.850 elemen
- *                          non-prop.
- *   `Limits[].LayerType`   terisi pada NON-PROP (2.850 elemen: `layer`
- *                          2.680 · `sublayer` 170), dan NIL pada SELURUH
- *                          1.360 elemen prop.
- *
- * Jadi setiap cabang memakai medan pengelompokan yang cabang lain kosongkan.
- *
- * Susunan selengkapnya:
- *
- *   PROP      Kind of Treaty          ← Limits[].TreatyType
- *             └ Treaty Group          ← Limits[].Detail[].TreatyGroup
- *               └ Class of Business   ← …Detail[].COBList[].ClassOfBusiness
- *
- *   NON-PROP  Layers                  ← Limits[].Layer (+ .LayerType)
- *             └ Treaty Group          ← Limits[].Detail[].TreatyGroup
- *               └ Class of Business   ← …Detail[].COBList[].ClassOfBusiness
- *
- * ⚠️ `Treaty Type` (dropdown berbunyi `2025 SPL 66M FAC` di gambar 03) BELUM
- * dipasang. Calon terkuatnya `Limits[].Detail[].SpreadingType` — 10 nilai
- * yang bentuknya persis sama (`2023 QS 150M TRT`, `QS HR 60M TRT`) — tetapi
- * ia hidup di tingkat `Detail[]` sementara layar menaruhnya di tingkat
- * `Kind of Treaty`. Memasangnya berarti memilih `Detail[0]` dan menyebutnya
- * milik seluruh kelompok. Pertanyaannya di
- * `PERTANYAAN-TERBUKA-LAYAR-PEGA.md` §14.
+ * Tab Limits kini dua komponen yang membaca ekspor langsung:
+ * `labelsLimitsProp.ts` (Prop: Kind of Treaty → Treaty Type → Treaty Group
+ * → DetailLimits) dan `labelsLimitsNP.ts` (Non-Prop: grid layer → Layers →
+ * Summary of Limit → Total All Layers). Pohon lama `LIMITS_POHON` dicabut
+ * 6 Oktober 2026 bersama `PohonLimits`.
  */
-export const LIMITS_POHON = {
-  /** Judul tingkat puncak, per cabang — gambar 03 lawan 30. */
-  puncakProp: 'Kind of Treaty', // gambar 03
-  puncakNonProp: 'Layers', // gambar 30
-  kelompokTreaty: 'Treaty Group', // gambar 03, 31
-  kelasBisnis: 'Class of Business', // gambar 05, 31
-  tanpaBaris: 'No items',
-  /** `Part of` — kolom kedua grid Layers non-prop, gambar 30. */
-  bagianDari: 'Part of',
-  /**
-   * ⚠️ Tombol-tombolnya MATI, seluruhnya: `Add` · `Delete` · `add Layer` ·
-   * `Add Treaty Group`. Nol jalur tulis, dan tombol hidup yang tidak
-   * menyimpan apa pun berbohong.
-   */
-  tambah: 'Add', // gambar 03
-  hapus: 'Delete', // gambar 03
-  tambahLayer: 'add Layer', // gambar 30 — huruf kecil, ejaan ekspor
-  tambahKelompok: 'Add Treaty Group', // gambar 31
-
-  /**
-   * ⚠️ Penanda medan yang padanannya BELUM pasti.
-   *
-   * `CEDANT_RETENTION` ↔ `.Deductible` cocok 70,6% atas 1.340 kontrak —
-   * jauh di atas dugaan 51% dan cukup untuk memetakan, tidak cukup untuk
-   * diam. Layar menandainya alih-alih menampilkannya seolah pasti.
-   */
-  belumPasti: '(padanan 70,6%)',
-  deductiblePetunjuk:
-    'Padanan CEDANT_RETENTION ↔ Limits[].Deductible cocok 70,6% atas 1.340 kontrak yang ada di kedua sumber. Gambar 30 memberi kolom Deductible ( IDR ) dengan nama itu di layar.',
-} as const
-
 /**
  * Tombol `Add` di baris kepala grid — dan daftar tab yang BERHAK punya.
  *
@@ -1060,7 +1054,7 @@ export const LIMITS_POHON = {
 export const GRID_TAMBAH = {
   tambah: 'Add', // pyButtonLabel, gambar 19/29
   hapus: 'Delete', // per baris, gambar 19/29
-  petunjuk: 'Baris baru milik jalur simpan yang belum dibangun.',
+  petunjuk: '',
 } as const
 
 /**
@@ -1070,7 +1064,7 @@ export const GRID_TAMBAH = {
  * `desain-pega.test.ts` menuntut tiap nama di sini punya tombolnya di layar.
  *
  * ⚠️ `Limits` TIDAK di sini walau punya tombol: pohonnya memasang tombolnya
- * sendiri (`LIMITS_POHON.tambahLayer` / `.tambahKelompok`), dua tingkat dan
+ * sendiri (`LIMITS_NP.tambahLayer` / `.tambahGrup`, `LIMITS_PROP.tambah`), dua tingkat dan
  * berbeda nama per cabang. Satu tanda boolean tidak dapat menyatakannya.
  *
  * ⛔ `Portfolio` DITAMBAHKAN 6 Oktober 2026, dan daftar ini pernah
@@ -1144,10 +1138,25 @@ export const JENIS_SHARE: readonly JenisAngka[] = [
 export const EVENT_LIMITS = {
   judul: 'Event Limits', // gambar 28
   layer: 'Layer',
-  rsmd: 'RSMD Limit', // gambar 28 · Detail[].RSMDLimit
-  gempa: 'Earthquake Limit', // gambar 28 · Detail[].Earthquake
-  banjirJab: 'Flood Limit (Jabodetabek)', // gambar 28 · Detail[].FloodJab
-  banjirNas: 'Flood Limit (Nationwide)', // gambar 28 · Detail[].FloodNation
+  // ⛔ RALAT 6 Oktober 2026: tab Event Limits NON-PROP mengikat properti
+  // AKAR (`TreatyIn.RSMDLimit` …), bukan `Detail[].…`. Label sel ekspor
+  // `pyLabelFieldValue`, sama persis dengan gambar 28.
+  rsmd: 'RSMD Limit', // gambar 28 · TreatyIn.CurrencyRSMD / RSMDLimit
+  gempa: 'Earthquake Limit', // gambar 28 · TreatyIn.CurrencyEarthquake / Earthquake
+  banjirJab: 'Flood Limit (Jabodetabek)', // gambar 28 · TreatyIn.CurrencyFloodJab / FloodJab
+  banjirNas: 'Flood Limit (Nationwide)', // gambar 28 · TreatyIn.CurrencyFloodNat / FloodNation
+  /**
+   * ⛔ BUKAN "tidak ada": nilai akar ini TERISI di 49 dari 772 kontrak
+   * Non-Prop (sapuan seluruh korpus, 6 Oktober 2026).
+   *
+   * ⭐ 7 Oktober 2026: rumahnya kini DITETAPKAN — `T_TREATY_HAZARD_LIMIT`
+   * (diagram v2 `TreatyIn [BATAS_BAHAYA]`, migrasi `446`). Yang tersisa dua:
+   * tabelnya belum terpasang di basis data, dan nilai kontrak LAMA hanya ada
+   * di dokumen JSON — `TREATYINDETAIL` tidak menulis nilai akar Non-Prop —
+   * sedangkan JSON dilarang dibaca. Kontrak lama karena itu tetap kosong.
+   */
+  belumTerjangkau:
+    'Nilai tersimpan belum dapat dibaca: tabelnya (T_TREATY_HAZARD_LIMIT) belum terpasang, dan nilai kontrak lama hanya ada di dokumen JSON yang tidak boleh dibaca.',
 } as const
 
 /**
@@ -1198,9 +1207,81 @@ export const JENIS_RNM_SHARE: readonly JenisAngka[] = [
  * terbaca alih-alih bergantung pada kebetulan.
  */
 export const KOLOM_COIN_SCALE = [
-  'Co-Insurance Share', '% Treaty Limit', 'Disusun oleh', 'Disusun pada',
+  'Co-Insurance Share', // sel 264 · .CoInShare · pxTextInput
+  '% Treaty Limit', // sel 265 · .PctLimit · pxNumber
 ] as const
-export const JENIS_COIN_SCALE: readonly JenisAngka[] = ['teks', 'persenShare', 'teks', 'teks']
+/**
+ * ⛔ DUA kolom, bukan empat — 6 Oktober 2026. Bentuk sebelumnya menambahkan
+ * `Disusun oleh` dan `Disusun pada` (jejak audit Pega pada elemennya). Grid
+ * `TreatyIn.CoInScale` di ekspor hanya punya `.CoInShare` dan `.PctLimit`,
+ * dan gambar `18` — tangkapan layar Pega yang berjalan — memperlihatkan dua
+ * kolom itu saja. Datanya TIDAK dibuang: ia tetap di model
+ * (`skalaKoasuransi[].penyusun`/`.disusunPada`), hanya tidak dirender.
+ */
+export const JENIS_COIN_SCALE: readonly JenisAngka[] = ['teks', 'persenShare']
+
+/**
+ * Tab Co-Ins Scale — grid DAN dua medan, 6 Oktober 2026.
+ *
+ * ---------------------------------------------------------------------
+ * ⛔⛔ RALAT DI RONDE YANG SAMA: GRIDNYA HIDUP, BUKAN MATI
+ * ---------------------------------------------------------------------
+ * Bunyi sebelumnya — dan laporan pencocokan §5 temuan 2 — menyatakan grid
+ * `TreatyIn.CoInScale` MATI, sebab wadahnya ber-`pyContainerVisibleWhen` =
+ * `1=2`. ITU SALAH BACA. Wadah yang sama juga ber-`pyIsVisibilityOption` =
+ * `ALWAYS`, dan pilihan itu MENIMPA syaratnya — persis seperti `pyVisible`
+ * = `ALWAYS` menimpa `pyCondition` pada sel. Saksi penentunya gambar `18`
+ * (tangkapan layar Pega yang berjalan): grid `Co-Insurance Share · % Treaty
+ * Limit` TAMPIL, dengan kedua medan di bawahnya.
+ *
+ * ⚠️ Jadi `1=2` di XML belum berarti mati. Yang menentukan pasangan
+ * pilihan-visibilitas + syaratnya: `OTHER` + `1=2` mati; `ALWAYS` + `1=2`
+ * hidup, dan `1=2`-nya hanya sisa.
+ *
+ * Yang SUNGGUH berlaku, dari `Section/TreatyInTabsProportional.xml`:
+ *
+ *   grid `TreatyIn.CoInScale`    TAMPIL (wadah `pyIsVisibilityOption` ALWAYS)
+ *     sel 262 tambah (`addRow`)    di sel KEPALA ketiga, `pyCondition` = `TreatyIn.IsEditData!='1'`
+ *     sel 266 hapus (`deleteRow`)  per baris, `pyCondition` = `TreatyIn.IsEditData!='1'`
+ *     sel 264/265 baca-saja bila `TreatyIn.IsEditData='1'`
+ *   sel 277 `.MaxCoNonGroup`     TAMPIL, `pxNumber`, baca-saja bila `ViewState ='1'`
+ *   sel 278 `.MaxCoGroup`        sama
+ *
+ * ⛔ Kedua tombol grid ber-`pyLabel` KOSONG — hanya ikon (`IconAdd.png`/
+ * `IconTrash.png`), dengan `pyControlDisplayTitle` = `Button`. Itulah sebab
+ * sapuan berdasarkan LABEL melewatkannya; sapuan harus berdasarkan API aksi
+ * (`addRow`/`deleteRow`). Teks yang tampil di layar datang dari Pega yang
+ * berjalan, bukan dari XML — lihat `tambah`/`hapus` di bawah.
+ *
+ * ⚠️ Label medan diambil dari `pyLabelFieldValue` sel itu sendiri, LENGKAP
+ * dengan kata `Panel` — ringkasan "Max Co-Insurance Non Group" menghilangkannya.
+ */
+export const CO_INS_SCALE = {
+  nonGroup: 'Max Co-Insurance Panel (Non Group)', // sel 277 · .MaxCoNonGroup
+  group: 'Max Co-Insurance Panel (Group)', // sel 278 · .MaxCoGroup
+  /**
+   * Sel 262. `pyLabel` dan `pyCaption` KOSONG di XML — bandingkan Rate of
+   * Exchange, yang tombolnya ber-`pyLabel` = `Add`. Teks `Tambah` diambil
+   * dari tangkapan layar Pega pemakai 6 Oktober 2026 (mode ubah): Pega
+   * mengisi tombol ikon tanpa teks dengan teks bawaannya sendiri.
+   */
+  tambah: 'Tambah',
+  /**
+   * Sel 266 — `pyLabel` kosong, ikon `IconTrash.png`. ⚠️ Belum ada tangkapan
+   * layar Treaty In yang memperlihatkan barisnya. `Hapus` disamakan dengan
+   * Pega yang SAMA di NB FacIn (`GRID_OBJEK`, tangkapan layar work owner
+   * 3 Oktober 2026): pasangan `IconAdd`/`IconTrash` tanpa teks tampil sebagai
+   * `Tambah`/`Hapus`.
+   */
+  hapus: 'Hapus',
+  /**
+   * `pyFieldValueForNoRows` = `GridNoResultsOnLoad` — field value bawaan
+   * Pega, teksnya terlihat di gambar 18 dan di tangkapan layar pemakai.
+   */
+  kosong: 'No items',
+  /** Sel 265 — `pySymbol` constant `%`, `pySymbolPosition` right. */
+  simbolPersen: '%',
+} as const
 
 /**
  * ⛔ Kolom `M_TREATY_IN2` yang TIDAK dipakai satu tab pun — disebut namanya,
@@ -1299,10 +1380,8 @@ export const LAMPIRAN = {
   /** `Kosong` panel History — teks layar lama apa adanya. */
   tanpaRiwayat: 'No items',
   tanpaLampiran: 'No items',
-  petunjukLampiran:
-    'Lampiran dibaca dari M_ATTACHMENTTREATY_2, tabel sistem lama. Kosong berarti kontrak ini memang belum punya berkas pada kategori itu.',
-  petunjukHistory:
-    'Riwayat dibaca dari tabel pendaratan komentar kontrak ini. Kosong berarti dokumen warisannya memang tidak punya catatan.',
+  petunjukLampiran: '',
+  petunjukHistory: '',
   /**
    * ⛔ Penanda kategori yang pasangan kode↔namanya BELUM dipastikan.
    *
@@ -1311,6 +1390,17 @@ export const LAMPIRAN = {
    * berkas di kategori yang salah, dan itu baru ketahuan bertahun kemudian.
    */
   kategoriBelumPasti: 'nama kategori belum dipastikan',
+  /** FlowAction `TreatyAttachContent` — `pyCaption ASM Attach Content`. */
+  judulUnggah: 'ASM Attach Content',
+  /** Tombol FlowAction — `pyButtonLabel Attach` / `Cancel`. */
+  lampirkan: 'Attach',
+  batal: 'Cancel',
+  /** `pyAttachmentScreen` — pemilih berkas. */
+  pilihBerkas: 'Select file(s)',
+  mengunggah: 'Mengunggah…',
+  terunggah: 'Terunggah',
+  /** Kontrak baru belum ber-ID — lampiran menempel pada `TREATYID`. */
+  simpanDulu: 'Simpan kontrak lebih dulu untuk mengunggah lampiran.',
   /**
    * ⛔ KEDUA kolom modal `View File` — gambar `25` memperlihatkan tepat dua.
    *

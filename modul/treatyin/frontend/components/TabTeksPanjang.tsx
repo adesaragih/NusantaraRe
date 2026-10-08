@@ -4,6 +4,20 @@
 import { Kosong, Panel } from '../../../../inti/frontend/components/ui/dasar'
 import type { TabTeksWarisan } from '../api'
 import { FORM_KONTRAK } from '../labels'
+import { bacaProperti, usePenampung, useProperti } from '../halaman'
+import type { ModeForm } from '../mode'
+
+/**
+ * DT `TreatyInCopyConditions` — perilaku `change` `ExclusionsP` dan
+ * `SpecialConditionsP` (Section `TreatyInTabsProportional`):
+ *   1  `TreatyIn.Exclusions = TreatyIn.ExclusionsP`
+ *   2  `TreatyIn.SpecialConditions = TreatyIn.SpecialConditionsP`
+ * KEDUANYA disalin, dari medan mana pun ia dipicu.
+ */
+const SALIN_SYARAT: Readonly<Record<string, string>> = {
+  ExclusionsP: 'Exclusions',
+  SpecialConditionsP: 'SpecialConditions',
+}
 
 /**
  * Tab yang isinya SATU medan teks panjang — Exclusions, Special Conditions.
@@ -21,15 +35,44 @@ import { FORM_KONTRAK } from '../labels'
  */
 export default function TabTeksPanjang({
   judul,
+  properti,
   tab,
   petunjukKosong,
+  mode = 'lihat',
 }: {
   judul: string
+  /**
+   * Properti halaman `TreatyIn` tab ini — `ExclusionsP` / `SpecialConditionsP`
+   * (Prop) atau `Exclusions` / `SpecialConditions` (Non-Prop), ejaan ekspor.
+   */
+  properti: string
   tab: TabTeksWarisan | undefined
   petunjukKosong: string
+  mode?: ModeForm
 }) {
-  const isi = tab?.isi ?? ''
+  const asli = tab?.isi ?? ''
   const lain = tab?.ejaanLain ?? []
+  const bisaUbah = mode === 'ubah'
+  // ⭐ Teks yang sedang disunting. Disalin SEKALI saat tab lahir; pemanggil
+  // memberi tab lain lewat `judul` yang berbeda, dan React melahirkan
+  // komponen baru — pola yang sama dengan `TabGridWarisan`.
+  // ⭐ Penampung halaman — isian bertahan saat pindah tab (`halaman.tsx`).
+  const [teks, setTeks] = useProperti(properti, asli)
+  const isi = teks
+  const penampung = usePenampung()
+  /**
+   * ⭐ `TreatyInCopyConditions` saat isian DITINGGALKAN (`change` Pega).
+   * ⛔ Sumber yang belum pernah dibuka (belum ada di halaman) TIDAK disalin
+   * — nilai tersimpannya tidak diketahui layar ini, dan menyalin kosong
+   * akan menghapusnya.
+   */
+  const salinSyarat = () => {
+    if (penampung === null || SALIN_SYARAT[properti] === undefined) return
+    for (const [sumber, tujuan] of Object.entries(SALIN_SYARAT)) {
+      const v = sumber === properti ? teks : bacaProperti(penampung.halaman, sumber)
+      if (typeof v === 'string') penampung.ubah(tujuan, () => v)
+    }
+  }
   return (
     <Panel judul={judul}>
       {lain.length > 0 && (
@@ -37,7 +80,23 @@ export default function TabTeksPanjang({
           {FORM_KONTRAK.ejaanLainBerisi} {lain.join(', ')}
         </span>
       )}
-      {isi === '' ? (
+      {/* ⭐ MODE UBAH — textarea, seperti layar lama.
+          ⛔ Sebelum 6 Oktober 2026 tab ini BACA-SAJA walau mode Edit, dan
+          itu bertentangan dengan keputusan pemilik proses bahwa seluruh
+          fungsi dapat dipakai di mode Edit. Kosong pun dapat diketik: tab
+          yang menolak isian pertama tidak akan pernah terisi. */}
+      {bisaUbah ? (
+        <textarea
+          className="field__input trin__teks-isian"
+          aria-label={judul}
+          value={teks}
+          rows={16}
+          onChange={(e) => {
+            setTeks(e.target.value)
+          }}
+          onBlur={salinSyarat}
+        />
+      ) : isi === '' ? (
         <Kosong pesan={FORM_KONTRAK.tanpaTeks} petunjuk={petunjukKosong} />
       ) : (
         <>

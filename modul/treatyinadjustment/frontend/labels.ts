@@ -20,9 +20,8 @@ export const RANTAI_VERSI = {
   // Dipisah karena `Kosong` punya dua medan: `pesan` = keadaan, `petunjuk` =
   // siapa yang akan mengisinya.
   kosong: 'Belum ada kontrak tercatat.',
-  kosongPetunjuk: 'Pemindahan kepala kontrak warisan adalah tiket 59.',
-  keterangan:
-    'Rantai versi sebuah kontrak, baca-saja. Kolom "Dasar" adalah rujukan eksplisit ke versi berlaku terakhir saat versi itu dibuat (tiket 01); kosong berarti versi pertama. Kolom "No. urut" boleh kosong sampai penomoran ulang baris warisan selesai (tiket 10).',
+  kosongPetunjuk: '',
+  keterangan: '',
 } as const
 
 // ===========================================================================
@@ -49,8 +48,7 @@ export const LAMPIRAN = {
   segarkan: 'Refresh', // pyButtonLabel REFRESH
   /** Teks kosong layar lama, apa adanya. */
   tanpaIsi: 'No items',
-  petunjukLampiran:
-    'Lampiran dibaca dari M_ATTACHMENTTREATY_2, tabel sistem lama. Kosong berarti kontrak ini memang belum punya berkas.',
+  petunjukLampiran: '',
   petunjukHistory:
     'Riwayat persetujuan kontrak ini. Kosong berarti belum ada catatan.',
   /**
@@ -62,5 +60,5 @@ export const LAMPIRAN = {
   namaBelumBerumah:
     'Empat nama kategori ada di layar lama tetapi kodenya belum dipastikan, jadi keempatnya belum ditampilkan sebagai nama: Binding, signed share Email · Claim Data · Info Pack · Letter of Acknowledgment / LOA. Lihat treatyin/docs/PERTANYAAN-TERBUKA-KODE-KATEGORI-LAMPIRAN.md.',
   /** Pengenal kontrak warisan yang panelnya tampilkan — sementara, lihat layar. */
-  labelPengenal: 'Pengenal kontrak sistem lama',
+  labelPengenal: 'Pengenal kontrak',
 } as const

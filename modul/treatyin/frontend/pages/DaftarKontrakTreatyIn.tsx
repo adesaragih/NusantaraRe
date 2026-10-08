@@ -16,12 +16,15 @@
 // baru, yang memang nol baris. Layar ini **tidak menunggu tiket 59**; yang
 // menunggu tiket 59 adalah daftar model baru, dan itu daftar yang berbeda.
 //
-// ⛔ BACA SAJA. Nol penulisan ke `TREATY_IN` dari jalur mana pun.
+// ⛔ DAFTARNYA BACA SAJA. Satu-satunya tulisan dari layar ini tombol
+// `Revision` (7 Oktober 2026), lewat `POST /kontrak/revisi` — persis
+// `SetTreatyIn_Act` yang di Pega pun menyimpan seketika.
 
 import { useEffect, useState } from 'react'
 
 import { Gagal, Halaman, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
-import { ambilDaftarWarisan, type BarisDaftarWarisan } from '../api'
+import { ambilSesiSaya } from '../../../../inti/frontend/klien'
+import { ambilDaftarWarisan, mulaiRevisi, type BarisDaftarWarisan } from '../api'
 import { DAFTAR_KONTRAK, KOLOM_DAFTAR } from '../labels'
 import type { ModeForm } from '../mode'
 
@@ -41,11 +44,30 @@ export function aksiUntuk(keadaan: string): readonly string[] {
 }
 
 /**
+ * Syarat tampil tombol `Revision` — `Section/InputTreatyInOffer.xml` cell 994:
+ * `OperatorID.pyWorkBasketList(2).pyWorkBasketName = 'ReasTreatyInAdmin'
+ * && .Position = '' && .StatusAkseptasi = 'Resolve Complete'`.
+ *
+ * ⭐ Sejak 7 Oktober 2026 tombol ini MENULIS (`SetTreatyIn_Act` langkah
+ * 6–11), jadi syarat lengkapnya ditegakkan — bukan hanya status.
+ */
+export function bolehRevisi(b: Pick<BarisDaftarWarisan, 'statusAkseptasi' | 'posisi'>, workbasket: readonly string[]): boolean {
+  return (
+    workbasket.includes('ReasTreatyInAdmin') &&
+    (b.posisi ?? '') === '' &&
+    b.statusAkseptasi === DAFTAR_KONTRAK.keadaanTerkunci
+  )
+}
+
+/**
  * Mode form yang dibuka sebuah tombol aksi baris.
  *
  * ⭐ `Edit` → `ubah` (seluruh fungsi form hidup), `View` → `lihat`.
- * `Copy`/`Revision` membuat kontrak BARU dari yang ada — alur itu belum
- * dibangun, jadi keduanya membuka kontrak sumbernya dalam mode `lihat`.
+ * `Copy` membuat kontrak BARU dari yang ada — alur itu belum dibangun, jadi
+ * ia membuka kontrak sumbernya dalam mode `lihat`. `Revision` menyimpan
+ * keadaan revisi lebih dulu (`mulaiRevisi`), lalu membuka kontraknya dalam
+ * mode `lihat` — form terkunci (`ViewState=1`, `IsEditData=1`), hanya
+ * Comment dan Submit revisi yang hidup.
  */
 export function modeUntuk(aksi: string): ModeForm {
   return aksi === DAFTAR_KONTRAK.edit ? 'ubah' : 'lihat'
@@ -119,6 +141,35 @@ export default function DaftarKontrakTreatyIn({ onBuka, onTambah }: DaftarKontra
   // kesembilan kolom mendapat penyaringnya.
   const [saring, setSaring] = useState<Record<string, string>>({})
   const [halaman, setHalaman] = useState(1)
+  // Workbasket pemakai — syarat tampil `Revision`.
+  const [workbasket, setWorkbasket] = useState<string[]>([])
+  const [galatRevisi, setGalatRevisi] = useState<string | null>(null)
+  const [sibukRevisi, setSibukRevisi] = useState(false)
+  useEffect(() => {
+    let dibuang = false
+    ambilSesiSaya()
+      .then((p) => {
+        if (!dibuang) setWorkbasket(p.peran)
+      })
+      .catch(() => undefined)
+    return () => {
+      dibuang = true
+    }
+  }, [])
+  const tekanRevisi = (id: string) => {
+    setSibukRevisi(true)
+    setGalatRevisi(null)
+    mulaiRevisi(id)
+      .then(() => {
+        onBuka(id, 'lihat')
+      })
+      .catch((e: unknown) => {
+        setGalatRevisi(e instanceof Error ? e.message : String(e))
+      })
+      .finally(() => {
+        setSibukRevisi(false)
+      })
+  }
 
   // ⛔ SATU HALAMAN PER PERMINTAAN, dan itu syarat — bukan penghematan.
   // Tabelnya 1.854 baris; menariknya sekaligus ke peramban untuk menampilkan
@@ -190,6 +241,11 @@ export default function DaftarKontrakTreatyIn({ onBuka, onTambah }: DaftarKontra
       </header>
 
       {galat !== null && <Gagal galat={galat} />}
+      {galatRevisi !== null && (
+        <div className="alert alert--error" role="alert">
+          {galatRevisi}
+        </div>
+      )}
 
       {/* ⛔ KEPALA KOLOM SELALU DIRENDER, termasuk saat nol baris.
           Sebelumnya seluruh <table> disembunyikan ketika kosong, sehingga
@@ -269,18 +325,37 @@ export default function DaftarKontrakTreatyIn({ onBuka, onTambah }: DaftarKontra
                     </td>
                   ))}
                   <td className="trin__aksi">
-                    {aksiUntuk(b.statusAkseptasi).map((a) => (
-                      <button
-                        key={a}
-                        type="button"
-                        className="btn btn--ghost btn--sm"
-                        onClick={() => {
-                          onBuka(b.id, modeUntuk(a))
-                        }}
-                      >
-                        {a}
-                      </button>
-                    ))}
+                    {aksiUntuk(b.statusAkseptasi)
+                      .filter((a) => a !== DAFTAR_KONTRAK.revisi || bolehRevisi(b, workbasket))
+                      .map((a) =>
+                        a === DAFTAR_KONTRAK.revisi ? (
+                          /* ⚠️ Event `doubleclick`, bukan `click` — persis
+                             `pyActionSets` cell 994 (Copy/Edit/View memakai
+                             `click`). Satu klik tidak melakukan apa pun. */
+                          <button
+                            key={a}
+                            type="button"
+                            className="btn btn--ghost btn--sm"
+                            disabled={sibukRevisi}
+                            onDoubleClick={() => {
+                              tekanRevisi(b.id)
+                            }}
+                          >
+                            {a}
+                          </button>
+                        ) : (
+                          <button
+                            key={a}
+                            type="button"
+                            className="btn btn--ghost btn--sm"
+                            onClick={() => {
+                              onBuka(b.id, modeUntuk(a))
+                            }}
+                          >
+                            {a}
+                          </button>
+                        ),
+                      )}
                   </td>
                 </tr>
               ))}

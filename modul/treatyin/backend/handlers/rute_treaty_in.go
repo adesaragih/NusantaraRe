@@ -55,6 +55,8 @@ func daftarkan(mux *http.ServeMux, layanan func() *services.Layanan, adaDB func(
 	daftarkanKontrak(pasang)
 	daftarkanIdentitas(pasang)
 	daftarkanWarisan(pasang)
+	daftarkanSimpan(pasang)
+	daftarkanLampiran(pasang)
 }
 
 // daftarkanAcuan - jalur baca keenam tabel acuan (tiket 15).
@@ -116,6 +118,22 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusInternalServerError, services.Pesan(err))
 	case errors.Is(err, services.ErrKontrakTidakAda):
 		galat.Tulis(w, http.StatusNotFound, services.Pesan(err))
+	case errors.Is(err, services.ErrTombolDitolak):
+		// 422: tombol tulis ditolak aturan ekspor — pesan Activity APA ADANYA
+		// ("Please input Ceding", "Please input Source of Business (SoB)").
+		galat.Tulis(w, http.StatusUnprocessableEntity, services.Pesan(err))
+	case errors.Is(err, services.ErrSimpananBelumSiap):
+		// 503: alamat `M_LINK_SERVICE`, App, atau token penyimpanan belum
+		// tersedia — pesannya menyebut KUNCI, tidak pernah nilainya.
+		log.Printf("treaty in: %v", err)
+		galat.Tulis(w, http.StatusServiceUnavailable, services.Pesan(err))
+	case errors.Is(err, services.ErrSimpananGagal):
+		// 502: layanan penyimpanan menjawab galat atau tak terjangkau.
+		log.Printf("treaty in: %v", err)
+		galat.Tulis(w, http.StatusBadGateway, services.Pesan(err))
+	case errors.Is(err, services.ErrBukanPemegangPosisi):
+		// 403 berpesan: posisi mana yang ditunggu berkas ini.
+		galat.Tulis(w, http.StatusForbidden, services.Pesan(err))
 	case errors.Is(err, services.ErrHimpunanTidakAda):
 		// 404: himpunan yang diminta bukan salah satu dari enam. Pesannya
 		// menyebut yang diminta - penolakan yang tidak menyebut apa yang

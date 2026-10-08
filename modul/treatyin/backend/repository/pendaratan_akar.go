@@ -64,6 +64,11 @@ var kolomRevisi = [][2]string{
 	{"ISMULTIPLERETRO", "IsMultipleRetro"},
 	{"EDMSTATE", "EDMState"},
 	{"EDMMATERIALTYPE", "EDMMaterialType"},
+	// ⭐ Dibaca sejak 6 Oktober 2026: tab `Information & Submit` memakainya.
+	// `Section/TreatyInfoSubmit.xml` menyembunyikan tombol `Submit` ketika
+	// `TreatyIn.StatusAkseptasi == 'Resolve Complete'` — kontrak yang sudah
+	// tuntas tidak dapat dikirim ulang.
+	{"STATUSAKSEPTASI", "StatusAkseptasi"},
 
 	// ⭐ ENAM BELAS kolom migrasi `444`, 6 Oktober 2026.
 	//
@@ -97,6 +102,19 @@ var kolomRevisi = [][2]string{
 	{"REPORTINGSUBMISSION", "ReportingSubmission"},
 	{"REPORTINGCONFIRMATION", "ReportingConfirmation"},
 	{"REPORTINGSETTLEMENT", "ReportingSettlement"},
+
+	// ⭐ ENAM kolom migrasi `448`, 7 Oktober 2026 — properti yang selama ini
+	// hanya hidup di penampung halaman (`halaman.tsx`): tab Share Prop
+	// (`RNMShareP`, `BrokeragePercentP`, `OptionLimit`), tab Installment
+	// (`InstallmentNo`), dan jalur revisi (`RevisionState`, `ViewState`).
+	// ⚠️ Kolomnya boleh belum terpasang — pembaca menyaring lewat
+	// `kolomTerpasang`, jadi kontrak tetap terbuka sebelum migrasinya jalan.
+	{"RNMSHAREP", "RNMShareP"},
+	{"BROKERAGEPERCENTP", "BrokeragePercentP"},
+	{"OPTIONLIMIT", "OptionLimit"},
+	{"INSTALLMENTNO", "InstallmentNo"},
+	{"REVISIONSTATE", "RevisionState"},
+	{"VIEWSTATE", "ViewState"},
 }
 
 // Kelima ejaan tab teks panjang — `CLOB` di DDL, teks di sini.
@@ -130,11 +148,32 @@ func (g *Gudang) BacaRevisiPendaratan(ctx context.Context, masterID string) (Rev
 	if err != nil {
 		return RevisiPendaratan{}, err
 	}
-	kolom := make([]string, 0, len(kolomRevisi)+len(kolomTeksRevisi))
+	// ⭐ Hanya kolom yang SUDAH terpasang — daftar di atas boleh mendahului
+	// migrasinya (`448`). Tabel yang belum ada = kontrak belum didaratkan.
+	terpasang, err := g.kolomTerpasang(ctx, "T_TREATY_REVISION")
+	if err != nil {
+		return RevisiPendaratan{}, err
+	}
+	kosong := RevisiPendaratan{Medan: map[string]string{}, Teks: map[string]string{}}
+	if terpasang == nil {
+		return kosong, nil
+	}
+	var medan, teks [][2]string
 	for _, p := range kolomRevisi {
-		kolom = append(kolom, p[0])
+		if terpasang[p[0]] {
+			medan = append(medan, p)
+		}
 	}
 	for _, p := range kolomTeksRevisi {
+		if terpasang[p[0]] {
+			teks = append(teks, p)
+		}
+	}
+	kolom := make([]string, 0, len(medan)+len(teks))
+	for _, p := range medan {
+		kolom = append(kolom, p[0])
+	}
+	for _, p := range teks {
 		kolom = append(kolom, p[0])
 	}
 	q := fmt.Sprintf("SELECT %s FROM %s WHERE MASTERID = :1", strings.Join(kolom, ", "), nama)
@@ -148,22 +187,22 @@ func (g *Gudang) BacaRevisiPendaratan(ctx context.Context, masterID string) (Rev
 	}
 	err = g.db.QueryRowContext(ctx, q, masterID).Scan(tuju...)
 	if err == sql.ErrNoRows {
-		return RevisiPendaratan{Medan: map[string]string{}, Teks: map[string]string{}}, nil
+		return kosong, nil
 	}
 	if err != nil {
 		return RevisiPendaratan{}, fmt.Errorf("repository: membaca T_TREATY_REVISION kontrak %s: %w", masterID, err)
 	}
 
 	r := RevisiPendaratan{Medan: map[string]string{}, Teks: map[string]string{}, Ada: true}
-	for i, p := range kolomRevisi {
+	for i, p := range medan {
 		// ⛔ `NULL` dilewati, bukan dimasukkan sebagai teks kosong: itulah
 		// yang membedakan "tidak ada di sistem lama" dari "belum diisi".
 		if sel[i].Valid {
 			r.Medan[p[1]] = sel[i].String
 		}
 	}
-	for j, p := range kolomTeksRevisi {
-		if s := sel[len(kolomRevisi)+j]; s.Valid {
+	for j, p := range teks {
+		if s := sel[len(medan)+j]; s.Valid {
 			r.Teks[p[1]] = s.String
 		}
 	}
@@ -201,7 +240,7 @@ func (g *Gudang) BacaKursTahunan(ctx context.Context, tahunTreaty string) ([]mod
 	if err != nil {
 		return nil, err
 	}
-	q := fmt.Sprintf(`SELECT CURRENCY, TOIDR, STARTDATE, ENDDATE
+	q := fmt.Sprintf(`SELECT ID, CURRENCY, IDCURRENCY, TOIDR, STARTDATE, ENDDATE
 		FROM %s WHERE TREATYYEAR = :1 ORDER BY CURRENCY`, nama)
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
@@ -214,12 +253,14 @@ func (g *Gudang) BacaKursTahunan(ctx context.Context, tahunTreaty string) ([]mod
 
 	out := []models.BarisKursWarisan{}
 	for rows.Next() {
-		var cur, toidr, mulai, akhir sql.NullString
-		if err := rows.Scan(&cur, &toidr, &mulai, &akhir); err != nil {
+		var id, cur, idCur, toidr, mulai, akhir sql.NullString
+		if err := rows.Scan(&id, &cur, &idCur, &toidr, &mulai, &akhir); err != nil {
 			return nil, fmt.Errorf("repository: membaca baris %s: %w", TabelKursTahunan, err)
 		}
 		out = append(out, models.BarisKursWarisan{
+			ID:            id.String,
 			MataUang:      cur.String,
+			MataUangID:    idCur.String,
 			NilaiKeIDR:    toidr.String,
 			BerlakuDari:   mulai.String,
 			BerlakuSampai: akhir.String,

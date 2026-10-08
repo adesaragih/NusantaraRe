@@ -54,6 +54,10 @@ type BarisPenyesuaian struct {
 type SisiPenyesuaian struct {
 	Medan map[string]string              `json:"medan"`
 	Larik map[string][]map[string]string `json:"larik"`
+	// Pohon - larik AKAR yang punya larik anak (Limits, Share,
+	// FacultativeShareList, Installment) sebagai simpul BERSARANG: nilai teks
+	// atau larik simpul. Dibaca rumus tombol; grid membaca `Larik`.
+	Pohon map[string][]map[string]any `json:"pohon"`
 }
 
 // Penyesuaian - satu penyesuaian utuh: pengenalnya, sisi New, dan sisi Old.

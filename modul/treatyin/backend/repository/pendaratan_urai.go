@@ -79,6 +79,50 @@ func BarisLarik(doc map[string]any, nama string) []map[string]any {
 	return out
 }
 
+// TanpaKosong - salinan dokumen TANPA nilai kosong: teks kosong, `nil`, dan
+// larik kosong dibuang, menurun ke halaman dan baris tertanam.
+//
+// ⭐ Untuk LAPORAN tombol Save saja (`kunciTakTersimpan`): properti kosong
+// tidak membawa apa pun yang dapat hilang, jadi menyebutnya "TIDAK tersimpan"
+// hanya derau — 8 Oktober 2026 pembaca pohon menyisipkan sembilan larik
+// kosong, dan laporan Save memuat kesembilannya. Dokumen yang DITULIS tidak
+// tersentuh.
+func TanpaKosong(doc map[string]any) map[string]any {
+	out := make(map[string]any, len(doc))
+	for k, v := range doc {
+		if b, ada := tanpaKosongNilai(v); ada {
+			out[k] = b
+		}
+	}
+	return out
+}
+
+func tanpaKosongNilai(v any) (any, bool) {
+	switch x := v.(type) {
+	case nil:
+		return nil, false
+	case string:
+		return x, x != ""
+	case map[string]any:
+		return TanpaKosong(x), true
+	case []any:
+		out := make([]any, 0, len(x))
+		for _, e := range x {
+			if b, ada := tanpaKosongNilai(e); ada {
+				out = append(out, b)
+			}
+		}
+		return out, len(out) > 0
+	case []map[string]any:
+		out := make([]any, 0, len(x))
+		for _, e := range x {
+			out = append(out, TanpaKosong(e))
+		}
+		return out, len(out) > 0
+	}
+	return v, true
+}
+
 // KunciTakTerpetakan mendaftar kunci JSON yang TIDAK punya kolom.
 //
 // ⛔ Ini penjaga terhadap diam. Pega menambah properti tanpa memberi tahu
@@ -115,6 +159,17 @@ func KunciTakTerpetakan(doc map[string]any) map[string][]string {
 			// larik tingkat pertama. Larik itu milik tabel lain.
 			for k := range larikTingkatPertama {
 				dikenal[k] = true
+			}
+			// ⭐ Sejak `446` dokumen yang sama mendarat ke DUA tabel akar
+			// (`T_TREATY_REVISION`, `T_TREATY_HAZARD_LIMIT`). Kunci milik
+			// tabel akar lain bukan kunci yang hilang.
+			for k := range kunciSemuaAkar {
+				dikenal[k] = true
+			}
+			// Sisa yang sungguh asing dilaporkan SEKALI, di tabel akar
+			// pertama — bukan diulang di setiap tabel akar.
+			if p.Tabel != tabelAkarPertama {
+				continue
 			}
 		}
 		asing := map[string]bool{}
@@ -167,6 +222,27 @@ var kunciAnak = func() map[string]map[string]bool {
 		m[p.Induk][p.KunciAnak] = true
 	}
 	return m
+}()
+
+// kunciSemuaAkar — gabungan kunci SELURUH tabel akar; tabelAkarPertama —
+// tempat sisa kunci akar yang asing dilaporkan.
+var kunciSemuaAkar, tabelAkarPertama = func() (map[string]bool, string) {
+	m, pertama := map[string]bool{}, ""
+	for _, p := range PetaPendaratan {
+		if !p.Akar {
+			continue
+		}
+		if pertama == "" {
+			pertama = p.Tabel
+		}
+		for _, k := range p.Kunci {
+			if i := strings.IndexByte(k, '.'); i > 0 {
+				k = k[:i]
+			}
+			m[k] = true
+		}
+	}
+	return m, pertama
 }()
 
 // larikTingkatPertama adalah setiap kunci larik di PUNCAK dokumen yang

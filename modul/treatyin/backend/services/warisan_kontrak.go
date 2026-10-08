@@ -26,6 +26,16 @@ var (
 	ErrJSONWarisanRusak = repository.ErrJSONWarisanRusak
 )
 
+// KunciPenampungRevisi - properti `T_TREATY_REVISION` (migrasi `448`) yang
+// layar pegang hanya di penampung halaman; lihat `KontrakWarisan.Penampung`.
+var KunciPenampungRevisi = []string{
+	"RNMShareP", "BrokeragePercentP", "OptionLimit", "InstallmentNo", "RevisionState", "ViewState",
+	// ⭐ 8 Oktober 2026 — kedua total skalar tab EGNPI (`TabEgnpi`): kolomnya
+	// sudah ada di `T_TREATY_REVISION` dan Save menulisnya, tetapi tab
+	// menyemai kosong saat kontrak dibuka.
+	"TotalEgnpiAmount", "TotalEgnpiProportion",
+}
+
 // BacaKontrakWarisan membaca satu kontrak warisan, siap tampil.
 func (l *Layanan) BacaKontrakWarisan(ctx context.Context, p inti.Pelaku, id string) (models.KontrakWarisan, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
@@ -85,6 +95,9 @@ func (l *Layanan) BacaKontrakWarisan(ctx context.Context, p inti.Pelaku, id stri
 	if k.LimitsPohon, err = l.gudang.BacaPohonLimitsPendaratan(ctx, id); err != nil {
 		return models.KontrakWarisan{}, err
 	}
+	if k.LimitsAkar, err = l.gudang.BacaLimitsAkarPendaratan(ctx, id); err != nil {
+		return models.KontrakWarisan{}, err
+	}
 
 	// ⭐⭐ MEDAN KEPALA dan grid Rate of Exchange — dari pendaratan pula.
 	//
@@ -106,6 +119,10 @@ func (l *Layanan) BacaKontrakWarisan(ctx context.Context, p inti.Pelaku, id stri
 		"IsMultipleRetro":       &k.RetroBerganda,
 		"EDMState":              &k.EDMState,
 		"EDMMaterialType":       &k.EDMJenisMaterial,
+		"StatusAkseptasi":       &k.StatusAkseptasi,
+		// ⭐ Posisi tangga akseptasi — pendaratan menimpa cadangan `TREATY_IN`.
+		"Position":         &k.Posisi,
+		"PositionUsername": &k.PemegangPosisi,
 		// ⭐ Ketujuh medan kepala Reporting Period — migrasi `444`.
 		// Ejaannya ejaan DOKUMEN; pemetaan kolomnya ada di
 		// `repository.kolomRevisi`.
@@ -121,6 +138,21 @@ func (l *Layanan) BacaKontrakWarisan(ctx context.Context, p inti.Pelaku, id stri
 			k.AdaDiJSON[nama] = true
 			*ke = v
 		}
+	}
+	k.LimitsAkar.TotalLimitsROL = rev.Medan["TotalLimitsROL"]
+	// ⭐ Properti penampung halaman — migrasi `448`. Disemai ke penampung
+	// saat form memuat, sehingga isian yang di-Save tampil kembali.
+	k.Penampung = map[string]string{}
+	for _, nama := range KunciPenampungRevisi {
+		if v, ada := rev.Medan[nama]; ada {
+			k.Penampung[nama] = v
+		}
+	}
+	// ⭐ Larik total penampung (`T_TREATY_TOTAL`) — laporan pemakai
+	// 8 Oktober 2026: total Share Prop "No items" sesudah Save sampai
+	// Refresh ditekan.
+	if k.PenampungLarik, err = l.gudang.BacaTotalPenampung(ctx, id); err != nil {
+		return models.KontrakWarisan{}, err
 	}
 	for nama, v := range rev.Teks {
 		k.AdaDiJSON[nama] = true
@@ -197,6 +229,36 @@ func (l *Layanan) BacaKontrakWarisan(ctx context.Context, p inti.Pelaku, id stri
 	k.CaraPembukuanNonProp = CaraPembukuanTampil(k.CaraPembukuanNonProp)
 	k.Bordereaux = BordereauxTampil(k.Bordereaux)
 	k.OpsiKepala = OpsiKepalaKontrak()
+	// ⭐ `SetTreatyIn_Act` langkah 13: kontrak Non-Prop yang dibuka membangun
+	// grid Reinstatement tiap layer (`TreatySetReinstatement`) — grid itu
+	// tidak punya tabel pendaratan, persis seperti ia belum ada sebelum
+	// Pega membangunnya saat kontrak dibuka.
+	if !SifatProporsional(k.SifatProporsiAsli) {
+		SiapkanReinstatementPohon(k.LimitsPohon)
+	}
+
+	// ⭐ Tab Share Non-Prop — pohon pendaratan, lalu larik turunannya
+	// (100% Limit RNM, bagian OR / R/I, Summary, Total) dengan rumus
+	// Activity yang sama. Lihat `share_np_muat.go`.
+	sp, err := l.gudang.BacaSharePendaratan(ctx, id)
+	if err != nil {
+		return models.KontrakWarisan{}, err
+	}
+	k.ShareNP = ShareDariPendaratan(sp, rev.Medan)
+	akarShare, err := l.gudang.BacaShareAkarRevisi(ctx, id)
+	if err != nil {
+		return models.KontrakWarisan{}, err
+	}
+	detailShare, err := l.gudang.BacaShareDetailWarisan(ctx, id)
+	if err != nil {
+		return models.KontrakWarisan{}, err
+	}
+	TerapkanAkarShare(&k.ShareNP, akarShare, detailShare)
+	idTreaty := rev.Medan["ID"]
+	if idTreaty == "" {
+		idTreaty = id
+	}
+	SiapkanShareNP(&k.ShareNP, LayerDariPohon(k.LimitsPohon), idTreaty)
 
 	// ⭐ TANGGAL DI DALAM LARIK ikut diterjemahkan.
 	//
@@ -211,8 +273,13 @@ func (l *Layanan) BacaKontrakWarisan(ctx context.Context, p inti.Pelaku, id stri
 	// mengembalikan apa adanya untuk yang bukan delapan angka, jadi nilai
 	// kosong dan nilai aneh lewat tanpa dikarang.
 	for i := range k.Kurs {
-		k.Kurs[i].BerlakuDari = TanggalTampil(k.Kurs[i].BerlakuDari)
-		k.Kurs[i].BerlakuSampai = TanggalTampil(k.Kurs[i].BerlakuSampai)
+		b := &k.Kurs[i]
+		// ⛔ URUTANNYA MENGIKAT: `…Asli` diisi SEBELUM medan tampil
+		// ditimpa. `TanggalTampil` menghasilkan `dd/mm/yy`, dan dari bentuk
+		// itu tahun empat digitnya tidak dapat dipulihkan.
+		b.BerlakuDariAsli, b.BerlakuSampaiAsli = TanggalWIB(b.BerlakuDari), TanggalWIB(b.BerlakuSampai)
+		b.BerlakuDari = TanggalTampil(b.BerlakuDari)
+		b.BerlakuSampai = TanggalTampil(b.BerlakuSampai)
 	}
 	for i := range k.PeriodePelaporan {
 		p := &k.PeriodePelaporan[i]
@@ -223,6 +290,7 @@ func (l *Layanan) BacaKontrakWarisan(ctx context.Context, p inti.Pelaku, id stri
 	}
 	for i := range k.Angsuran {
 		g := &k.Angsuran[i]
+		g.JatuhTempoAsli, g.TanggalBayarAsli = TanggalWIB(g.JatuhTempo), TanggalWIB(g.TanggalBayar)
 		g.JatuhTempo = TanggalTampil(g.JatuhTempo)
 		g.TanggalBayar = TanggalTampil(g.TanggalBayar)
 	}
@@ -234,6 +302,9 @@ func (l *Layanan) BacaKontrakWarisan(ctx context.Context, p inti.Pelaku, id stri
 	}
 	for i := range k.Akumulasi {
 		a := &k.Akumulasi[i]
+		// ReportDate/SubDueDate tersimpan sebagai stempel DateTime GMT
+		// (panjang 23) - bentuk simpannya tanggal WIB.
+		a.TanggalLaporAsli, a.JatuhTempoKirimAsli = TanggalWIB(a.TanggalLapor), TanggalWIB(a.JatuhTempoKirim)
 		a.TanggalLapor = TanggalTampil(a.TanggalLapor)
 		a.JatuhTempoKirim = TanggalTampil(a.JatuhTempoKirim)
 	}

@@ -9,17 +9,37 @@
 // ⛔ Pola tata letaknya DITIRU dari `modul/treatyin/frontend/pages/
 // FormKontrakTreatyIn.tsx`; nol impor dari modul itu.
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
-import { Area, Field, FieldTanggal, Panel, Pilih, StripTab } from '../../../../inti/frontend/components/ui/dasar'
-import type { SisiPenyesuaian } from '../api'
+import { Area, Field, Panel, Pilih, StripTab } from '../../../../inti/frontend/components/ui/dasar'
+import {
+  ambilAgenTreatyIn,
+  ambilOpsiKepalaTreatyIn,
+  ambilOpsiLimitsTreatyIn,
+  type BarisBersarang,
+  type SisiPenyesuaian,
+} from '../api'
 import { GRID_KURS, KERANGKA_TAB } from '../ekspor/kerangka.gen'
 import { syaratTerpenuhi } from '../ekspor/syarat'
-import { KURS, PENYESUAIAN, PILIHAN_MEDAN, PRO_RATA, type MedanForm } from '../labelsPenyesuaian'
+import { KURS, PENYESUAIAN, PILIH_AGEN, PILIHAN_MEDAN, PRO_RATA, type MedanForm } from '../labelsPenyesuaian'
 import { GridEkspor, RenderKerangka, type KonteksKerangka } from './KerangkaTab'
+import type { JenisTulis } from './aksiTombol'
+import { gabungPohon, gabungTigaArah } from './baris'
+import { ikutBerubah } from './rumusKepala'
+import { FieldTanggalKetik } from './TanggalKetik'
+import { opsiUntuk, type DataOpsi } from './pilihan'
+import PilihAgen from './PilihAgen'
 import { AreaBacaSaja, BelumDibangun, Centang, MedanTakAda, TanggalBacaSaja, selNilai } from './medan'
 
 export { selNilai } from './medan'
+
+/**
+ * Tab yang DISEMBUNYIKAN dari strip — keputusan pemilik proses 7 Oktober
+ * 2026: *"untuk sementara retro di hide dari tab sampai ada perintah dari
+ * developer"*. Berlaku bagi kedua panel dan ketiga cabang (`Retro`, `Actual
+ * Retro` Adjust Premium). Kerangka dan syaratnya tetap dibangkitkan.
+ */
+export const TAB_DISEMBUNYIKAN: ReadonlySet<string> = new Set(['Retro', 'Actual Retro'])
 
 /** `ViewState` sesi — `0` Edit, `1` View. */
 export type ModeLayar = '0' | '1'
@@ -57,10 +77,11 @@ function Medan({
     case 'area':
       return <Area label={spek.label} value={nilai} onChange={onUbah} />
     case 'tanggal':
-      // ⛔ `nilai` adalah nilai TERSIMPAN (`20180101`) atau yang
-      // `FieldTanggal` sendiri kembalikan (`DD-MM-YYYY`) — keduanya bentuk
+      // ⛔ `nilai` adalah nilai TERSIMPAN (`20180101`) atau bentuk kabel
+      // (`DD-MM-YYYY`) yang medan ini sendiri kembalikan — keduanya bentuk
       // yang `keInputTanggal` kenali. Nol terjemahan tampil masuk ke sini.
-      return <FieldTanggal label={spek.label} value={nilai} onChange={onUbah} />
+      // ⭐ Dapat DIKETIK atau dipilih dari kalender — `TanggalKetik.tsx`.
+      return <FieldTanggalKetik label={spek.label} value={nilai} onChange={onUbah} />
     case 'pilih':
       return (
         <Pilih
@@ -108,6 +129,11 @@ export interface SisiFormProps {
   sisi: SisiPenyesuaian
   /** Halaman AKAR — beberapa ikatan panel Old menunjuknya, dan SEMUA syarat dinilai di sana. */
   akar: SisiPenyesuaian
+  /**
+   * Panel New: halaman `OLDDATA` (sisi Old) — rumus Adjustment membacanya,
+   * mis. `TreatyInSetValueInstallment` langkah 10.
+   */
+  lama?: SisiPenyesuaian
   /** ⛔ Panel Old: `true`, tanpa pengecualian. */
   bacaSaja: boolean
   mode: ModeLayar
@@ -117,12 +143,21 @@ export interface SisiFormProps {
   /** Section tab sisi × cabang, mis. `TreatyInTabsNonProportionalOldData`. */
   bagian: string
   tab: readonly string[]
+  /**
+   * ⭐ Panel New: keadaan TERKINI dilaporkan ke form — tombol Save/Submit
+   * mengirimnya. Suntingan tetap hidup di panel ini.
+   */
+  onKini?: (s: SisiPenyesuaian) => void
+  /** Submit / Decline offer EDM di tab Information & Submit. */
+  tulis?: (jenis: JenisTulis) => void
+  sibukTulis?: boolean
 }
 
 export default function SisiForm({
   judul,
   sisi,
   akar,
+  lama,
   bacaSaja,
   mode,
   cabang,
@@ -130,18 +165,91 @@ export default function SisiForm({
   medanKanan,
   bagian,
   tab,
+  onKini,
+  tulis,
+  sibukTulis,
 }: SisiFormProps) {
-  // Suntingan kepala New hidup di sini SAJA — Save mati, jadi nol terkirim.
-  // Pemanggil memberi `key` per penyesuaian × mode sehingga ia lahir ulang.
-  const [ubahan, setUbahan] = useState<Record<string, string>>({})
-  const medan: Record<string, string> = { ...sisi.medan, ...ubahan }
+  // Suntingan panel New hidup di sini SAJA — kepala, medan tab, dan baris
+  // grid (Add/Delete). Isian tidak masuk basis data sebelum Save, dan Save
+  // masih mati. Pemanggil memberi `key` per penyesuaian × mode sehingga ia
+  // lahir ulang dari data tersimpan.
+  // ⭐ Pohon digabung ke larik SEKALI saat lahir — baris membawa larik
+  // anaknya sendiri (`komponen/baris.ts`).
+  const [kini, setKini] = useState<SisiPenyesuaian>(() => gabungPohon(sisi))
+  useEffect(() => {
+    if (!bacaSaja) onKini?.(kini)
+  }, [kini, bacaSaja, onKini])
+  const tampilSisi = bacaSaja ? gabungPohon(sisi) : kini
+  const medan = tampilSisi.medan
   // ⛔ Syarat dinilai atas halaman AKAR dengan `ViewState` SESI.
   const akarKini: Record<string, string> = bacaSaja ? akar.medan : medan
   const halaman: Record<string, string> = { ...akarKini, ViewState: mode }
-  const k: KonteksKerangka = { sisi, akar, halaman }
+  // ⭐ Medan yang punya event di ekspor menjalankan DataTransform-nya:
+  // Commencement → Treaty Year/Termination, Effective/Is Pro Rate → Pro
+  // Rate. Lihat `rumusKepala.ts`.
+  const ubahMedan = (kunci: string, v: string) => {
+    setKini((x) => {
+      const medanBaru = { ...x.medan, [kunci]: v }
+      return { ...x, medan: { ...medanBaru, ...ikutBerubah(kunci, medanBaru) } }
+    })
+  }
+  const ubahLarik = (larik: string, baris: BarisBersarang[]) => {
+    setKini((x) => ({ ...x, larik: { ...x.larik, [larik]: baris } }))
+  }
+  // ⭐ Daftar dropdown/autocomplete dimuat SEKALI, hanya bila panel ini
+  // dapat disunting. Rute yang gagal meninggalkan medannya kotak teks —
+  // bukan galat layar.
+  const dapatSunting = !bacaSaja && mode === '0'
+  const [dataOpsi, setDataOpsi] = useState<DataOpsi>({})
+  const [pilihAgen, setPilihAgen] = useState<'reinsured' | 'source' | null>(null)
+  useEffect(() => {
+    if (!dapatSunting) return
+    let dibuang = false
+    void Promise.allSettled([ambilOpsiLimitsTreatyIn(), ambilOpsiKepalaTreatyIn(), ambilAgenTreatyIn()]).then(([l, kp, ag]) => {
+      if (dibuang) return
+      setDataOpsi({
+        limits: l.status === 'fulfilled' ? l.value : undefined,
+        kepala: kp.status === 'fulfilled' ? kp.value : undefined,
+        agen: ag.status === 'fulfilled' ? ag.value : undefined,
+      })
+    })
+    return () => {
+      dibuang = true
+    }
+  }, [dapatSunting])
+  const k: KonteksKerangka = {
+    // ⭐ Larik akar ikut — daftar `pageList` halaman SESI (Achievement).
+    opsi: (sp, kunci) => opsiUntuk(sp, kunci, { ...dataOpsi, halaman: tampilSisi.larik }),
+    sisi: tampilSisi,
+    akar,
+    lama: lama === undefined ? undefined : gabungPohon(lama),
+    halaman,
+    // ⭐ Mode Edit panel New — `ViewState 0`. Panel Old tidak pernah.
+    ubah: dapatSunting,
+    ubahMedan,
+    ubahMedanAkar: ubahMedan,
+    ubahLarik,
+    // ⭐ Akar panel — Section rincian memperpanjang jalur ini (`konteksBaris`).
+    jalur: [],
+    // ⭐ Panel New saja — panel Old tidak pernah menulis.
+    tulis: bacaSaja ? undefined : tulis,
+    sibukTulis,
+    master: dataOpsi.limits,
+    terapkan: (h) => {
+      // ⭐ Hasil RANTAI digabung TIGA ARAH atas keadaan TERKINI: yang rumus
+      // ubah menimpa, isian yang diketik selama rute menjawab TIDAK hilang
+      // (`gabungTigaArah`, `komponen/baris.ts`).
+      const { awal, akhir } = h
+      if (awal !== undefined && akhir !== undefined) {
+        setKini((x) => gabungTigaArah(awal, x, akhir))
+        return
+      }
+      setKini((x) => ({ medan: { ...x.medan, ...h.medan }, larik: { ...x.larik, ...h.larik } }))
+    },
+  }
 
   const kerangka = (t: string) => KERANGKA_TAB[`${bagian}#${t}`]
-  const tabTampil = tab.filter((t) => syaratTerpenuhi(kerangka(t)?.syarat ?? [], halaman))
+  const tabTampil = tab.filter((t) => !TAB_DISEMBUNYIKAN.has(t) && syaratTerpenuhi(kerangka(t)?.syarat ?? [], halaman))
   const [tabAktif, setTabAktif] = useState<string>(tabTampil[0] ?? '')
   const aktif = tabTampil.includes(tabAktif) ? tabAktif : (tabTampil[0] ?? '')
   const isi = kerangka(aktif)
@@ -151,6 +259,25 @@ export default function SisiForm({
     const sumber = m.dari === 'akar' ? akar.medan : medan
     const ada = Object.prototype.hasOwnProperty.call(sumber, m.kunci)
     const kunciBaca = bacaSaja || m.selaluBacaSaja === true || (m.bacaSajaBila?.(halaman) ?? false)
+    // ⭐ Medan yang diisi lewat jendela pencarian: nilai tampil + tombol
+    // `Choose …` (sel 27/29, `TreatyIn.ViewState != 1`).
+    if (m.pilihAgen !== undefined && dapatSunting) {
+      return (
+        <div key={`${m.kunci}-${i}`} className="field">
+          <label className="field__label">{m.label}</label>
+          <span className="tria__nilai-pilih">{sumber[m.kunci] ?? ''}</span>
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => {
+              setPilihAgen(m.pilihAgen ?? null)
+            }}
+          >
+            {m.pilihAgen === 'reinsured' ? PILIH_AGEN.tombolCeding : PILIH_AGEN.tombolSob}
+          </button>
+        </div>
+      )
+    }
     return (
       <Medan
         key={`${m.kunci}-${i}`}
@@ -159,7 +286,7 @@ export default function SisiForm({
         ada={ada}
         bacaSaja={kunciBaca}
         onUbah={(v) => {
-          setUbahan((u) => ({ ...u, [m.kunci]: v }))
+          ubahMedan(m.kunci, v)
         }}
       />
     )
@@ -167,10 +294,28 @@ export default function SisiForm({
 
   // ⚠️ `CurrencyID` → `Currency` hanya untuk TAMPIL — lihat `KURS`.
   const kursAsli = GRID_KURS[bacaSaja ? 'lama' : 'baru']
-  const kurs = { ...kursAsli, kunci: kursAsli.kunci.map((x) => KURS.gantiKunciTampil[x] ?? x) }
+  // ⛔ Hanya untuk TAMPIL baca-saja. Di mode Edit sel itu dropdown
+  // `BrowseCurrency_RD` bernilai `.ID` — menukarnya ke nama membuat nilai
+  // tersimpan terbaca "di luar daftar".
+  const kurs = dapatSunting ? kursAsli : { ...kursAsli, kunci: kursAsli.kunci.map((x) => KURS.gantiKunciTampil[x] ?? x) }
 
   return (
     <section className={'tria__sisi' + (bacaSaja ? ' tria__sisi--lama' : '')} aria-label={judul}>
+      {pilihAgen !== null && (
+        <PilihAgen
+          judul={pilihAgen === 'reinsured' ? PILIH_AGEN.judulCeding : PILIH_AGEN.judulSob}
+          onTutup={() => {
+            setPilihAgen(null)
+          }}
+          onPilih={(nama, id) => {
+            // `TreatyInSetReinsured`: type reinsured → Ceding/CedingID,
+            // source → LeadingReinsSource/LeadingReinsSourceID.
+            const [kNama, kId] = pilihAgen === 'reinsured' ? ['Ceding', 'CedingID'] : ['LeadingReinsSource', 'LeadingReinsSourceID']
+            ubahMedan(kNama, nama)
+            ubahMedan(kId, id)
+          }}
+        />
+      )}
       <Panel judul={judul}>
         <div className="tria__dwikolom">
           <div className="tria__kolom">{medanKiri.map(render)}</div>

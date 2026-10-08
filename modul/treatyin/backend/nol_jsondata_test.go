@@ -179,14 +179,27 @@ func TestAplikasiTidakMenyebutMTreatyIn(t *testing.T) {
 		"treatyinadjustment/backend/repository/warisan_penyesuaian.go": "pengurai mati, menunggu dibuang",
 	}
 
-	akar := filepath.Join("..", "..", "..", "modul")
-	if _, err := os.Stat(akar); err != nil {
-		akar = "../.." // dijalankan dari dalam paket
+	// ⛔ LINGKUPNYA DUA MODUL, bukan seluruh `modul/`.
+	//
+	// Larangan pemilik proses berbunyi "di aplikasi" — dan aplikasi yang
+	// dimaksud layar Treaty In beserta Adjustment-nya. Bentuk pertama
+	// penjaga ini menyusuri seluruh `modul/` dan menuduh `nbtreatyin`,
+	// modul tim lain yang tidak pernah menerima keputusan ini.
+	//
+	// ⚠️ Penjaga yang menuduh hal yang benar akan dilonggarkan orang, bukan
+	// dipatuhi. Jadi ia dipersempit ke modul yang keputusannya berlaku.
+	var akar []string
+	for _, m := range []string{"treatyin", "treatyinadjustment"} {
+		j := filepath.Join("..", "..", "..", "modul", m)
+		if _, err := os.Stat(j); err != nil {
+			j = filepath.Join("..", "..", "..", "..", "modul", m)
+		}
+		akar = append(akar, j)
 	}
 	ekor := regexp.MustCompile(`(^|\s)//.*$`)
 	blok := regexp.MustCompile(`(?s)/\*.*?\*/`)
 	diperiksa := 0
-	err := filepath.Walk(filepath.FromSlash(akar), func(jalur string, info os.FileInfo, err error) error {
+	jalan := func(jalur string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() || filepath.Ext(jalur) != ".go" {
 			return err
 		}
@@ -221,9 +234,11 @@ func TestAplikasiTidakMenyebutMTreatyIn(t *testing.T) {
 			}
 		}
 		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
+	}
+	for _, a := range akar {
+		if err := filepath.Walk(filepath.FromSlash(a), jalan); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if diperiksa < 50 {
 		t.Fatalf("hanya %d berkas terbaca; pembacanya yang rusak", diperiksa)

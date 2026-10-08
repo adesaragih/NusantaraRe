@@ -99,9 +99,11 @@ var LarikDibaca = []string{
 
 // DaftarPenyesuaianWarisan membaca seluruh kepala penyesuaian.
 //
-// ⛔ `ORDER BY ID`. Pengenalnya berbentuk `<asal>/R<nn>`, jadi urutan teks
-// menaruh revisi satu kontrak bersebelahan dan berurut — dan tanpa klausa
-// ini Oracle bebas mengembalikan urutan apa pun.
+// ⛔ `ORDER BY ID DESC` — urutan RD daftar Pega (`ReportDefinition/
+// BrowseTREATY_IN_EDM.xml`: `.ID`, `pySortType` DESC, `pySortOrder` 1), jadi
+// yang TERBARU di atas. Pengenalnya teks `<asal>/R<nn>`: urutan teks tetap
+// menaruh revisi satu kontrak bersebelahan. Ralat 7 Oktober 2026 — bentuk
+// sebelumnya mengurutkan naik.
 func (g *Gudang) DaftarPenyesuaianWarisan(ctx context.Context) ([]models.BarisPenyesuaian, error) {
 	nama, err := g.db.Qualify(TabelWarisanPenyesuaian)
 	if err != nil {
@@ -110,7 +112,7 @@ func (g *Gudang) DaftarPenyesuaianWarisan(ctx context.Context) ([]models.BarisPe
 	q := fmt.Sprintf(`SELECT ID, OLDID, EDMSTATE, EDMMATERIALTYPE, TREATYCONTRACTNAME,
 		PROPORTIONTYPE, LEADINGREINSSOURCE, CEDING, COMMENCEMENT, TERMINATION,
 		POSITIONUSERNAME, STATUSAKSEPTASI
-		FROM %s ORDER BY ID`, nama)
+		FROM %s ORDER BY ID DESC`, nama)
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
@@ -188,7 +190,7 @@ func (g *Gudang) BacaPenyesuaianWarisan(ctx context.Context, id string) (models.
 }
 
 func sisiKosong() models.SisiPenyesuaian {
-	return models.SisiPenyesuaian{Medan: map[string]string{}, Larik: map[string][]map[string]string{}}
+	return models.SisiPenyesuaian{Medan: map[string]string{}, Larik: map[string][]map[string]string{}, Pohon: map[string][]map[string]any{}}
 }
 
 // UraiDokumenPenyesuaian memisah satu dokumen menjadi sisi New (halaman

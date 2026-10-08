@@ -59,6 +59,21 @@ func TestApplySamaDenganBarisTersimpan1000019(t *testing.T) {
 }
 
 // ⛔ Langkah 4–7: pesan per medan, apa adanya, lalu KELUAR — nol baris.
+// ⭐ Sel Initial Date — `TreatyInSetReport(startdate=.InitialDate, …)`:
+// baris pertama mulai dari tanggal sel itu, JUMLAH baris tetap dari
+// ReportingStart→End (langkah 8: `@DateTimeDifference(Start, End, 'M')`).
+func TestStartdateSelMenggeserAwalTanpaMengubahJumlah(t *testing.T) {
+	m := masukan("20190101", "20191231", "quarter", "45", "15", "15")
+	m.Awal = "20190401"
+	h := services.HitungPeriodePelaporan(m)
+	if len(h.Baris) != 4 {
+		t.Fatalf("%d baris, mau 4", len(h.Baris))
+	}
+	if h.Baris[0].TanggalAwalAsli != "20190401" || h.Baris[3].TanggalAwalAsli != "20200101" {
+		t.Errorf("awal %s … %s, mau 20190401 … 20200101", h.Baris[0].TanggalAwalAsli, h.Baris[3].TanggalAwalAsli)
+	}
+}
+
 func TestApplyMedanKosongMemberiPesanNolBaris(t *testing.T) {
 	h := services.HitungPeriodePelaporan(masukan("", "", "quarter", "", "", ""))
 	if len(h.Baris) != 0 {

@@ -41,6 +41,14 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 `module/<nama>` dijaga `.github/workflows/penjaga-wilayah-cabang.yml` - CODEOWNERS
 dipensiunkan 1 Oktober 2026.
 
+⚠️ **Ketergantungan RUTE, bukan impor — 7 Oktober 2026.** Tombol berumus panel New memanggil
+`/api/treaty-in/hitung/*` milik modul `treatyin` (`frontend/komponen/rumus.ts`). Nol kode diimpor; rute
+itu murni menghitung (nol tulisan). Activity-nya diadu identik di kedua korpus. Bentuk masukan rute itu
+karena itu **kontrak bersama**: modul `treatyin` yang mengubahnya wajib memberi tahu modul ini.
+Sejak 7 Oktober 2026 termasuk `POST /api/treaty-in/hitung/angsuran` (tab Installment — isian
+Installment, Update Value, sel rincian % Installment/Amount, Update Total), yang membawa
+`angsuranLama` (`TreatyIn.OLDDATA.Installment`) untuk langkah 10 Activity-nya.
+
 ## Isi folder
 
 | Folder | Isi |
@@ -223,11 +231,32 @@ nol migrasi. Bukan `VERSI_KONTRAK`: diukur nol baris. Rute
 (pengenalnya bergaris miring, jadi lewat parameter kueri).
 
 ⛔ Panel Old **nol medan dapat disunting**. Panel New dapat disunting di mode Edit
-menurut `pyReadOnlyCondition` ekspornya, tetapi tombol Save **mati** — nol yang
-terkirim. `NILAI_SELISIH` dan `NILAI_SEBELUM_PRO_RATE` tetap nol baris: tab Value
+menurut `pyReadOnlyCondition` ekspornya.
+
+⭐ **Tombol tulis HIDUP sejak 7 Oktober 2026** — Save, Submit, Actions, Decline offer
+menulis `TREATY_IN_EDM` + `T_TREATY_*` (sisi New; draf juga sisi Old) lewat rute
+`POST /api/treaty-in/penyesuaian/{simpan,kirim,hapus}`. Penulisnya di modul Treaty In
+(tabel pendaratannya sama, modul tidak saling impor) — rincian dan beda yang disengaja dari
+ekspor: `modul/treatyin/docs/KEPUTUSAN-SASARAN-TULIS.md` §5.3. Isian masuk basis data
+HANYA dari tombol itu; Choose tetap menyusun draf di layar. `NILAI_SELISIH` dan `NILAI_SEBELUM_PRO_RATE` tetap nol baris: tab Value
 Difference menampilkan nilai TERSIMPAN dokumen, bukan hitung ulang.
 
 Pertanyaan terbukanya: [`docs/PERTANYAAN-TERBUKA-LAYAR-ADJUSTMENT.md`](docs/PERTANYAAN-TERBUKA-LAYAR-ADJUSTMENT.md).
+
+### Tombol Add Revision / Add Adjustment Premium — 7 Oktober 2026
+
+Keduanya **hidup** dan membuka picker ekspornya (`komponen/PilihMaster.tsx`):
+`PickerTreatyInMasterRevisi` (radio `Internal / External` + `Material Type`, grid
+`TREATY_IN ∪ TREATY_IN_EDM`) dan `PickerTreatyInMaster` (grid NonProportional saja).
+Rute `GET /api/treaty-in-adjustment/penyesuaian-warisan/master?jenis=revisi|premi`.
+
+⛔ `Choose` di Pega **langsung menyimpan** (`TreatyInEDMSetValue` [8] salin lampiran,
+[9] `SaveTreatyIn_EDM_Act`). Keputusan pemilik proses 7 Oktober 2026: **draf di layar**.
+`POST /api/treaty-in-adjustment/penyesuaian-warisan/draf` menjalankan langkah [1]–[6]
+(muat dokumen, setel nilai EDM, `TreatyInSetEditPre`, `TreatyInSetEdit`, salin ke
+`OLDDATA`, pengenal `/Rnn` baru) dan **mengembalikan** penyesuaiannya — nol tulisan.
+Draf itu masuk tabel saat tombol Save (atau Submit) ditekan. Uraian dan kejanggalan yang disalin apa adanya:
+`docs/PERTANYAAN-TERBUKA-LAYAR-ADJUSTMENT.md` §13.
 
 ### Isi tab dibangkitkan dari ekspor
 

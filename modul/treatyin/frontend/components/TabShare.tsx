@@ -1,5 +1,37 @@
 // ⛔ DIPINDAHKAN dari `pages/FormKontrakTreatyIn.tsx` 5 Oktober 2026 —
 // pemindahan MURNI, nol perubahan perilaku.
+//
+// ---------------------------------------------------------------------
+// ⛔ ADD/DELETE DICABUT DARI KEDUA GRID, 6 Oktober 2026 — dan buktinya
+// ---------------------------------------------------------------------
+// Kedua grid di berkas ini adalah proyeksi PER LAYER dari larik
+// `TreatyIn.Share`. Di ekspor, grid itu punya tombolnya — dan keduanya MATI:
+//
+//   Section/TreatyInTabsNonProportional.xml, grid `TreatyIn.Share`
+//   (tab `RNM Share < Title < Share`):
+//     sel 382  `Add`     pyCondition = `1=2`   -> Refresh:TreatyInNonAddItem
+//     sel 398  `Delete`  pyCondition = `1=2`   -> DeleteRow
+//
+// Barisnya di Pega LAHIR dari `Update Summary` (`TreatyInNonAddItem`,
+// `param.Type=="share"`), yang membuang larik lama lalu menyusunnya ulang
+// satu per layer — tidak pernah diketik satu per satu.
+//
+// ⚠️ YANG HIDUP DI TAB `Share` adalah grid LAIN, dan keduanya BELUM
+// dibangun di aplikasi ini — jadi pencabutan ini tidak mengambil apa pun
+// yang Pega izinkan:
+//
+//   `TreatyIn.ShareReins`                  Reinsurer Name · Layer · % Share
+//     sel 280 `Add` / 285 `Delete`         `TreatyIn.ViewState !='1'`
+//   `TreatyIn.ShareFacultativeReinsurers`  Facultative Reinsurers · Layer · % Share
+//     non-prop sel 312/317 · prop sel 216/221   `TreatyIn.ViewState !='1'`
+//
+// Sisi Prop diperiksa terpisah, sebab grid ini dirender untuk keduanya:
+// `TreatyInTabsProportional`, `TreatyInShareProp`, `Share`, `DetailShare`
+// nol memuat Add/Delete pada grid Share per layer.
+//
+// ⛔ SEL TETAP DAPAT DIUBAH di mode Edit. 12 dari 13 sel properti grid
+// `TreatyIn.Share` ber-`pyEditOptions` = `Auto` di ekspor; yang dicabut
+// hanya kemampuan MENAMBAH dan MENGHAPUS baris.
 
 import { useState } from 'react'
 
@@ -39,6 +71,8 @@ export function PanelRnmShare({
       )}
       petunjukKosong={petunjukKosong}
       mode={mode}
+      // Sel 382/398 `1=2` — lihat kepala berkas.
+      bisaTambah={false}
     />
   )
 }
@@ -80,6 +114,8 @@ export default function SubTabShare({
         )}
         petunjukKosong={petunjukKosong}
         mode={mode}
+        // Proyeksi per layer larik yang sama — sel 382/398 `1=2`.
+        bisaTambah={false}
       />
       <StripTab tab={daftar} aktif={tampil} onPilih={setSub} />
       {tampil === 'RNM Share' && (

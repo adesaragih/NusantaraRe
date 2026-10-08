@@ -31,20 +31,34 @@ func TestKunciSyaratTabTerbaca(t *testing.T) {
 	g, ctx := gudangBaca(t)
 
 	for _, id := range kontrakRetroBerganda {
-		k, err := g.BacaKontrakWarisan(ctx, id)
+		// ⛔ SUMBERNYA DIGANTI 6 Oktober 2026, artinya DIPERKUAT.
+		//
+		// Dahulu `g.BacaKontrakWarisan`, yang mengurai `JSONDATA` di tempat.
+		// Penguraian itu DICABUT dari fungsi tersebut (keputusan "nol nilai
+		// dari JSONDATA"), sehingga medannya kembali kosong dan uji ini
+		// merah dengan pesan yang justru menuduh DATANYA hilang.
+		//
+		// ⭐ Penggantinya `BacaRevisiPendaratan` — TABEL pendaratan, rantai
+		// yang layar sungguh pakai. `Medan` berkunci ejaan DOKUMEN, jadi
+		// keberadaan kuncinya menggantikan `AdaDiJSON` apa adanya.
+		rev, err := g.BacaRevisiPendaratan(ctx, id)
 		if err != nil {
 			t.Fatalf("%s: %v", id, err)
 		}
-		if k.RetroBerganda != "true" {
-			t.Errorf("%s: RetroBerganda %q, mau \"true\"", id, k.RetroBerganda)
+		if !rev.Ada {
+			t.Fatalf("%s: belum didaratkan; jalankan pemuat lebih dulu", id)
 		}
-		if !k.AdaDiJSON["IsMultipleRetro"] {
-			t.Errorf("%s: AdaDiJSON[IsMultipleRetro] false padahal nilainya terbaca", id)
+		retro := rev.Medan["IsMultipleRetro"]
+		if retro != "true" {
+			t.Errorf("%s: IsMultipleRetro %q, mau \"true\"", id, retro)
+		}
+		if _, ada := rev.Medan["IsMultipleRetro"]; !ada {
+			t.Errorf("%s: kunci IsMultipleRetro tidak ada padahal nilainya terbaca", id)
 		}
 		// ⛔ Kelimanya NON-proporsional, dan itu penting: tab `Retro`
 		// bersyarat hanya di cabang PROPORSIONAL. Jadi kelima kontrak ini
 		// justru TIDAK memakai syarat itu di layar.
-		t.Logf("%s sifat=%q retro=%q", id, k.SifatProporsiAsli, k.RetroBerganda)
+		t.Logf("%s retro=%q", id, retro)
 	}
 }
 
@@ -105,21 +119,24 @@ func TestDuaPropertiCaraPembukuanBerbeda(t *testing.T) {
 		if err := rows.Scan(&id); err != nil {
 			t.Fatal(err)
 		}
-		k, err := g.BacaKontrakWarisan(ctx, id)
+		// ⛔ Dari TABEL pendaratan, bukan dari `BacaKontrakWarisan` — sebab
+		// yang sama seperti di atas.
+		rev, err := g.BacaRevisiPendaratan(ctx, id)
 		if err != nil {
 			t.Fatalf("%s: %v", id, err)
 		}
-		if !k.AdaDiJSON["AccountingModeNonProp"] {
+		nonProp, ada := rev.Medan["AccountingModeNonProp"]
+		if !ada {
 			continue
 		}
 		diperiksa++
-		if k.CaraPembukuanNonProp != k.CaraPembukuan {
+		if nonProp != rev.Medan["AccountingMode"] {
 			berbeda++
 		}
 		// Domainnya terukur: `loss` 1.830 · `risk` 21 pada 1.854 dokumen.
-		if k.CaraPembukuanNonProp != "loss" && k.CaraPembukuanNonProp != "risk" {
+		if nonProp != "loss" && nonProp != "risk" {
 			t.Errorf("%s: AccountingModeNonProp %q di luar {loss,risk} yang terukur",
-				id, k.CaraPembukuanNonProp)
+				id, nonProp)
 		}
 	}
 	if diperiksa == 0 {

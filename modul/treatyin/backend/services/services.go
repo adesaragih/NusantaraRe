@@ -18,7 +18,21 @@ import (
 var ErrHimpunanTidakAda = errors.New("himpunan acuan tidak dikenal")
 
 // Service membawa akar layanan modul ini.
-type Service struct{ *inti.Dasar }
+type Service struct {
+	*inti.Dasar
+	// garamToken - `STORAGE_TOKEN_SALT`, bahan token penyimpanan BARU (token
+	// berlaku di `GCP_IMAGE` dipakai ulang tanpa garam). ⛔ Tidak pernah
+	// dicetak, dicatat, atau masuk pesan galat.
+	garamToken string
+}
+
+// DenganGaramToken memasang garam token penyimpanan lampiran — dipanggil
+// sekali dari `modul.go` dengan `STORAGE_TOKEN_SALT`; boleh kosong.
+func (s *Service) DenganGaramToken(garam string) *Service {
+	salin := *s
+	salin.garamToken = garam
+	return &salin
+}
 
 // DariDasar merakit Service di atas akar yang perakit sediakan.
 func DariDasar(d *inti.Dasar) *Service { return &Service{Dasar: d} }
@@ -105,6 +119,11 @@ type Gudang interface {
 	// memaksa yang satu membongkar bentuk yang lain.
 	BacaLayerPendaratan(ctx context.Context, masterID string) ([]models.BarisLayerWarisan, error)
 	BacaPohonLimitsPendaratan(ctx context.Context, masterID string) ([]map[string]any, error)
+	// Larik AKAR tab Limits Non-Prop (`Summary of Limit`, `Total All Layers`).
+	BacaLimitsAkarPendaratan(ctx context.Context, masterID string) (models.LimitsAkar, error)
+	// Sub-tab Achievement — RDB `GetAchievement` dan `GetCurrencyToIDR_SQL`.
+	BacaAchievement(ctx context.Context, idKontrak string) ([]models.BarisAchievement, error)
+	BacaKursKeIDR(ctx context.Context, idMataUang []string) (map[string]string, error)
 
 	// ⭐ MEDAN KEPALA dari tabel pendaratan, 6 Oktober 2026. Sesudahnya NOL
 	// nilai layar Treaty In datang dari `M_TREATY_IN.JSONDATA`.
@@ -114,6 +133,10 @@ type Gudang interface {
 	// pemilik proses 4 dan 6 Oktober 2026. Ia berkunci TAHUN, bukan kontrak,
 	// jadi seamnya menerima `TREATYYEAR` dan bukan `MASTERID`.
 	BacaRevisiPendaratan(ctx context.Context, masterID string) (repository.RevisiPendaratan, error)
+	// Larik total yang tab pegang di penampung halaman (`T_TREATY_TOTAL`,
+	// `repository.LarikTotalPenampung`) — supaya isian yang di-Save tampil
+	// kembali tanpa Refresh.
+	BacaTotalPenampung(ctx context.Context, masterID string) (map[string][]map[string]any, error)
 	BacaKursTahunan(ctx context.Context, tahunTreaty string) ([]models.BarisKursWarisan, error)
 
 	// Tab Co-Ins Scale - tabel pendaratan kesembilan, migrasi 432.
@@ -145,16 +168,71 @@ type Gudang interface {
 	// `BrowseCurrencyTreatyIn_RD`.
 	BacaDaftarKelompokTreaty(ctx context.Context) ([]models.PilihanWarisan, error)
 	BacaDaftarMataUangLimit(ctx context.Context) ([]models.PilihanWarisan, error)
+	// Autocomplete `Class of Business` per Treaty Group —
+	// `BrowseTreatyBusinessWOType_RD`.
+	BacaDaftarKelasBisnisTreaty(ctx context.Context, treatyGroupID string) ([]models.PilihanWarisan, error)
+
+	// ⭐ Tab Share Non-Prop — pohon `T_TREATY_SHARE*`, `T_TREATY_RETRO_SHARE`,
+	// `T_TREATY_FAC_*` (pendaratan), dan kedua RD spreading atas
+	// `PROPORTIONALARRG` + `TREATYYEAR` (master, BACA SAJA).
+	BacaSharePendaratan(ctx context.Context, masterID string) (models.SharePendaratan, error)
+	BacaIndukSpreading(ctx context.Context, treatyGroupID, tanggalMulai, kecuali string) ([]models.SusunanSpreading, error)
+	BacaAnakSpreading(ctx context.Context, parentReinsTypeID, treatyYearID string) ([]models.SusunanSpreading, error)
+	// RD `Limit_MstTrt_RD` cabang PROP — kelima filternya, parameter kosong dilewati.
+	BacaAnakSpreadingProp(ctx context.Context, treatyYear, treatyGroupID, treatyDescID, parent, treatyYearID string) ([]models.SusunanSpreading, error)
+	// Autocomplete `Reinsurer Name` / `Facultative Reinsurers` —
+	// `BrowseAgentNusaRe_RD` TANPA saringan `ChildCount`.
+	BacaDaftarReasuradurShare(ctx context.Context) ([]models.PilihanWarisan, error)
+	// Skalar akar Share: kolom `T_TREATY_REVISION` (migrasi 445; toleran bila
+	// belum dijalankan) dan cadangan `TREATYINDETAIL` (warisan, baca saja).
+	BacaShareAkarRevisi(ctx context.Context, masterID string) (map[string]string, error)
+	BacaShareDetailWarisan(ctx context.Context, masterID string) (models.ShareDetailWarisan, error)
+
+	// ⭐ Tombol tulis Save/Submit/Actions/Decline offer — keputusan pemilik
+	// proses 6–7 Oktober 2026. Satu-satunya jalur TULIS form Treaty In:
+	// `T_TREATY_*` (peta pendaratan), kepala `TREATY_IN`, kurs
+	// `TREATYEXCHANGEYEARLY` (tambah & ubah), dalam satu transaksi.
+	BacaKepalaTreatyIn(ctx context.Context, id string) (map[string]any, bool, error)
+	BacaDokumenPendaratan(ctx context.Context, masterID string) (map[string]any, error)
+	SimpanKontrak(ctx context.Context, r models.RencanaSimpan) (string, error)
+	// Pemegang workbasket (Kelola User) — `PositionUsername` jalur naik.
+	PemegangPosisi(ctx context.Context, workbasket string) ([]string, error)
+	// Properti dokumen yang kolom/tabelnya BELUM terpasang (migrasi menunggu)
+	// — dilaporkan Save, tidak ditelan.
+	KunciBelumTerpasang(ctx context.Context, doc map[string]any) ([]string, error)
+
+	// ⭐ Tombol tulis layar ADJUSTMENT (EDM) — 7 Oktober 2026: kepala
+	// `TREATY_IN_EDM` dan kedua sisi dokumennya di `T_TREATY_*`.
+	BacaKepalaPenyesuaian(ctx context.Context, id string) (map[string]any, bool, error)
+	SimpanPenyesuaian(ctx context.Context, r models.RencanaPenyesuaian) error
+	HapusPenyesuaian(ctx context.Context, id string) error
+
+	// ⭐ Unggah panel Attachment — 8 Oktober 2026: objek `T_STORAGE_IMAGE`
+	// dan baris `M_ATTACHMENTTREATY_2`, satu transaksi.
+	NamaAplikasiSimpanan(ctx context.Context) (string, error)
+	CatatLampiran(ctx context.Context, l models.LampiranBaru) (string, error)
 }
 
 // Layanan memegang aturan modul ini di atas satu Gudang.
-type Layanan struct{ gudang Gudang }
+type Layanan struct {
+	gudang Gudang
+	// simpanan - `ServiceGoogle` panel Attachment; nil = belum disambung.
+	simpanan PengirimSimpanan
+}
 
 // LayananOracle merakit Layanan di atas Oracle.
-func LayananOracle(s *Service) *Layanan { return &Layanan{gudang: repository.Baru(s.DB())} }
+func LayananOracle(s *Service) *Layanan {
+	return &Layanan{gudang: repository.Baru(s.DB()), simpanan: s.pengirimSimpanan()}
+}
 
 // LayananDengan merakit Layanan di atas Gudang mana pun - dipakai uji.
 func LayananDengan(g Gudang) *Layanan { return &Layanan{gudang: g} }
+
+// LayananDenganSimpanan - seperti `LayananDengan`, dengan pengirim
+// penyimpanan tiruan. Dipakai uji.
+func LayananDenganSimpanan(g Gudang, s PengirimSimpanan) *Layanan {
+	return &Layanan{gudang: g, simpanan: s}
+}
 
 // himpunanSah adalah KELIMA himpunan acuan, DISEBUT satu per satu.
 // `mata-uang` dicabut 4 Oktober 2026 — migrasi 434.

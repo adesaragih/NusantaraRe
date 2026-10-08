@@ -299,6 +299,37 @@ func (g gudangTiruan) BacaDaftarKelompokTreaty(_ context.Context) ([]models.Pili
 func (g gudangTiruan) BacaDaftarMataUangLimit(_ context.Context) ([]models.PilihanWarisan, error) {
 	return g.jenisTreaty, nil
 }
+func (g gudangTiruan) BacaDaftarKelasBisnisTreaty(_ context.Context, _ string) ([]models.PilihanWarisan, error) {
+	return g.jenisTreaty, nil
+}
+
+func (_ gudangTiruan) BacaSharePendaratan(_ context.Context, _ string) (models.SharePendaratan, error) {
+	return models.SharePendaratan{}, nil
+}
+
+func (_ gudangTiruan) BacaIndukSpreading(_ context.Context, _, _, _ string) ([]models.SusunanSpreading, error) {
+	return []models.SusunanSpreading{}, nil
+}
+
+func (_ gudangTiruan) BacaAnakSpreading(_ context.Context, _, _ string) ([]models.SusunanSpreading, error) {
+	return []models.SusunanSpreading{}, nil
+}
+
+func (_ gudangTiruan) BacaAnakSpreadingProp(_ context.Context, _, _, _, _, _ string) ([]models.SusunanSpreading, error) {
+	return []models.SusunanSpreading{}, nil
+}
+
+func (_ gudangTiruan) BacaDaftarReasuradurShare(_ context.Context) ([]models.PilihanWarisan, error) {
+	return []models.PilihanWarisan{}, nil
+}
+
+func (_ gudangTiruan) BacaShareAkarRevisi(_ context.Context, _ string) (map[string]string, error) {
+	return map[string]string{}, nil
+}
+
+func (_ gudangTiruan) BacaShareDetailWarisan(_ context.Context, _ string) (models.ShareDetailWarisan, error) {
+	return models.ShareDetailWarisan{}, nil
+}
 
 func (g gudangTiruan) BacaSkalaKoasuransi(_ context.Context, _ string) ([]models.BarisSkalaKoasuransiWarisan, error) {
 	return nil, nil
@@ -307,6 +338,21 @@ func (g gudangTiruan) BacaSkalaKoasuransi(_ context.Context, _ string) ([]models
 // ⭐ Keempat tab dari TABEL PENDARATAN — keputusan 6 Oktober 2026.
 func (g gudangTiruan) BacaLayerPendaratan(_ context.Context, _ string) ([]models.BarisLayerWarisan, error) {
 	return nil, nil
+}
+
+func (g gudangTiruan) BacaAchievement(_ context.Context, _ string) ([]models.BarisAchievement, error) {
+	return []models.BarisAchievement{}, nil
+}
+func (g gudangTiruan) BacaKursKeIDR(_ context.Context, _ []string) (map[string]string, error) {
+	return map[string]string{}, nil
+}
+
+func (g gudangTiruan) BacaLimitsAkarPendaratan(_ context.Context, _ string) (models.LimitsAkar, error) {
+	return models.LimitsAkar{}, nil
+}
+
+func (g gudangTiruan) BacaTotalPenampung(_ context.Context, _ string) (map[string][]map[string]any, error) {
+	return map[string][]map[string]any{}, nil
 }
 
 func (g gudangTiruan) BacaPohonLimitsPendaratan(_ context.Context, _ string) ([]map[string]any, error) {

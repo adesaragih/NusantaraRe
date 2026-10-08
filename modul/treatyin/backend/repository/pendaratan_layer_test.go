@@ -22,7 +22,7 @@ func TestRangkaiLayerTanpaDetailTetapSatuBaris(t *testing.T) {
 	lim := []barisPendaratan{baris(1, 0, map[string]string{
 		"LAYER": "L-1", "LAYERTYPE": "XOL", "CURRENCY": "IDR", "LIMIT": "1500000000",
 	})}
-	got := RangkaiLayer(lim, nil, nil)
+	got := RangkaiLayer(lim, nil, nil, nil)
 	if len(got) != 1 {
 		t.Fatalf("mau 1 baris, dapat %d", len(got))
 	}
@@ -43,7 +43,7 @@ func TestRangkaiLayerSatuBarisPerDetail(t *testing.T) {
 		baris(11, 7, map[string]string{"TREATYGROUP": "PROPERTY", "CESSIONPCT": "25"}),
 		baris(12, 7, map[string]string{"TREATYGROUP": "MARINE", "CESSIONPCT": "30"}),
 	}
-	got := RangkaiLayer(lim, det, nil)
+	got := RangkaiLayer(lim, det, nil, nil)
 	if len(got) != 2 {
 		t.Fatalf("mau 2 baris, dapat %d", len(got))
 	}
@@ -71,7 +71,7 @@ func TestRangkaiLayerKelasBisnisTidakBocorAntarDetail(t *testing.T) {
 		baris(22, 11, map[string]string{"CLASSOFBUSINESS": "ENGINEERING"}),
 		baris(23, 12, map[string]string{"CLASSOFBUSINESS": "CARGO"}),
 	}
-	got := RangkaiLayer(lim, det, cob)
+	got := RangkaiLayer(lim, det, cob, nil)
 	if len(got[0].KelasBisnis) != 2 || got[0].KelasBisnis[0] != "FIRE" {
 		t.Fatalf("kelas bisnis detail pertama salah: %v", got[0].KelasBisnis)
 	}
@@ -88,7 +88,7 @@ func TestRangkaiLayerTreatyTypeDetailMenang(t *testing.T) {
 		baris(11, 7, map[string]string{"TREATYTYPE": "QUOTA SHARE"}),
 		baris(12, 7, map[string]string{"TREATYTYPE": ""}),
 	}
-	got := RangkaiLayer(lim, det, nil)
+	got := RangkaiLayer(lim, det, nil, nil)
 	if got[0].JenisTreaty != "QUOTA SHARE" {
 		t.Fatalf("detail yang terisi harus menang, dapat %q", got[0].JenisTreaty)
 	}
@@ -153,10 +153,68 @@ func TestRangkaiPohonLimitsGridKosongBukanNihil(t *testing.T) {
 
 // Nol layer mengembalikan larik KOSONG, bukan nihil.
 func TestRangkaiNolBarisTetapIrisanKosong(t *testing.T) {
-	if got := RangkaiLayer(nil, nil, nil); got == nil {
+	if got := RangkaiLayer(nil, nil, nil, nil); got == nil {
 		t.Fatal("RangkaiLayer mengembalikan nil")
 	}
 	if got := RangkaiPohonLimits(nil, nil, nil, nil); got == nil {
 		t.Fatal("RangkaiPohonLimits mengembalikan nil")
+	}
+}
+
+// ⭐ Besaran per layer DIPISAH menurut `JENIS` dan URUT — elemen ke-0 milik
+// mata uang pertama, ke-1 milik yang kedua.
+//
+// ⛔ Yang dijaga BUKAN "kodenya jalan" melainkan PASANGAN mata uangnya.
+// `T_TREATY_LIMIT_MEASURE` menampung TIGA larik dalam satu tabel, dan
+// pembaca yang lupa menyaring `JENIS` akan mengambil angka `PremiumEarnedList`
+// lalu menaruhnya di kolom MDP — angka yang salah di tempat yang benar,
+// yang tidak terlihat sampai seseorang membandingkan dengan sistem lama.
+func TestBesaranLayerDipisahMenurutJenisDanUrutan(t *testing.T) {
+	lim := []barisPendaratan{{ID: 7, Nilai: map[string]string{"LAYER": "1"}}}
+	ukur := []barisPendaratan{
+		{ID: 1, Induk: 7, Nilai: map[string]string{"JENIS": "MDPList", "VALUE": "mdp-IDR"}},
+		{ID: 2, Induk: 7, Nilai: map[string]string{"JENIS": "PremiumEarnedList", "VALUE": "premi-IDR"}},
+		{ID: 3, Induk: 7, Nilai: map[string]string{"JENIS": "MDPList", "VALUE": "mdp-USD"}},
+		{ID: 4, Induk: 7, Nilai: map[string]string{"JENIS": "EgnpiTotalList", "VALUE": "egnpi"}},
+		{ID: 5, Induk: 7, Nilai: map[string]string{"JENIS": "PremiumEarnedList", "VALUE": "premi-USD"}},
+	}
+	got := RangkaiLayer(lim, nil, nil, ukur)
+	if len(got) != 1 {
+		t.Fatalf("%d baris, mau 1", len(got))
+	}
+	b := got[0]
+	for _, p := range [][2]string{
+		{"MDP", b.MDP}, {"MDPKedua", b.MDPKedua},
+		{"PremiEarned", b.PremiEarned}, {"PremiEarnedKedua", b.PremiEarnedKedua},
+	} {
+		mau := map[string]string{
+			"MDP": "mdp-IDR", "MDPKedua": "mdp-USD",
+			"PremiEarned": "premi-IDR", "PremiEarnedKedua": "premi-USD",
+		}[p[0]]
+		if p[1] != mau {
+			t.Errorf("%s = %q, mau %q", p[0], p[1], mau)
+		}
+	}
+	// ⚠️ `EgnpiTotalList` ikut mendarat di tabel yang sama dan TIDAK boleh
+	// bocor ke salah satu dari keempat medan di atas.
+	if b.MDP == "egnpi" || b.PremiEarned == "egnpi" {
+		t.Error("nilai EgnpiTotalList bocor ke medan MDP/PremiEarned")
+	}
+}
+
+// ⛔ Larik yang hanya berisi SATU elemen memberi medan kedua KOSONG, bukan
+// menyalin yang pertama. Menyalinnya membuat layar memperlihatkan angka
+// yang sama dua kali seolah kontraknya memang bermata uang dua.
+func TestBesaranSatuElemenMemberiKeduaKosong(t *testing.T) {
+	lim := []barisPendaratan{{ID: 3, Nilai: map[string]string{"LAYER": "1"}}}
+	ukur := []barisPendaratan{
+		{ID: 1, Induk: 3, Nilai: map[string]string{"JENIS": "MDPList", "VALUE": "satu"}},
+	}
+	got := RangkaiLayer(lim, nil, nil, ukur)
+	if got[0].MDP != "satu" {
+		t.Errorf("MDP = %q, mau \"satu\"", got[0].MDP)
+	}
+	if got[0].MDPKedua != "" {
+		t.Errorf("MDPKedua = %q, mau kosong", got[0].MDPKedua)
 	}
 }

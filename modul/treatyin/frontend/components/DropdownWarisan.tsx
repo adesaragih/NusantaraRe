@@ -150,7 +150,13 @@ export default function DropdownWarisan({
       // ⛔ `preventDefault` SELALU saat daftarnya terbuka: Enter di dalam
       // form mengirim form, dan form ini belum punya jalur simpan.
       e.preventDefault()
-      const b = cocok[aktif]
+      // ⭐ Tanpa baris tersorot, Enter memilih yang PALING MIRIP (baris
+      // pertama saringan) — bila ada ketikan. Keluhan pemakai 7 Oktober 2026:
+      // ketik `QUOTA` lalu Enter → tidak ada yang terpilih, kotaknya kembali
+      // kosong, dan seluruh isian yang bergantung pada Treaty Type (QS %,
+      // persen Retention/Cession) ikut lenyap — terbaca "semua ke-reset".
+      // Autocomplete Pega menyorot hasil pertama; Enter memilihnya.
+      const b = cocok[aktif] ?? (q !== '' ? cocok[0] : undefined)
       if (b !== undefined) pilih(b)
     } else if (e.key === 'Escape') {
       // ⚠️ Menutup TANPA memilih, dan nilainya kembali seperti semula —
@@ -182,9 +188,28 @@ export default function DropdownWarisan({
         placeholder={nilai === '' ? '' : undefined}
         onKeyDown={papanTik}
         onFocus={() => {
-          setKetik('')
-          setBuka(true)
-          setAktif(-1)
+          // ⛔ KETIKAN TIDAK DIHAPUS bila daftarnya SUDAH terbuka.
+          //
+          // Bentuk sebelumnya mengosongkannya pada SETIAP fokus. Akibatnya
+          // nyata dan terlihat di tangkapan layar pemilik proses 6 Oktober
+          // 2026: diketik `zurich`, daftar menyaring ke satu baris, lalu satu
+          // peristiwa fokus susulan — render ulang, klik kembali ke kotak,
+          // pengembalian fokus dari daftar — mengembalikan seluruh 131 baris
+          // sementara kotaknya masih memperlihatkan `zurich`.
+          //
+          // ⚠⚠ Dan itu terbaca sebagai SARINGAN YANG RUSAK, padahal
+          // saringannya benar. `saringTerdekat('zurich')` terbukti
+          // mengembalikan tepat satu baris (`saring.test.ts`).
+          //
+          // ⭐ Membuka dari keadaan TERTUTUP tetap mengosongkannya — di sana
+          // kotak memperlihatkan nilai TERSIMPAN, bukan ketikan, dan membawa
+          // ketikan lama ke pembukaan berikutnya menyaring tanpa ada yang
+          // mengetiknya.
+          if (!buka) {
+            setKetik('')
+            setBuka(true)
+            setAktif(-1)
+          }
         }}
         // ⛔ Penutupan DITUNDA satu putaran: `onBlur` menyala sebelum `onClick`
         // baris, dan menutup seketika membuat pilihan tidak pernah sampai.
@@ -196,10 +221,13 @@ export default function DropdownWarisan({
         onChange={(e) => {
           setKetik(e.target.value)
           setBuka(true)
-          // ⚠️ Ketikan baru mengosongkan baris aktif: baris ke-3 dari daftar
+          // ⚠️ Ketikan baru MENGGANTI baris aktif: baris ke-3 dari daftar
           // LAMA bukan baris ke-3 dari daftar baru, dan membiarkannya
           // membuat Enter memilih yang tidak dilihat siapa pun.
-          setAktif(-1)
+          // ⭐ Ada ketikan → baris PERTAMA daftar BARU tersorot (yang paling
+          // mirip), jadi yang Enter pilih selalu terlihat — seperti
+          // autocomplete Pega. Kotak dikosongkan → nol baris tersorot.
+          setAktif(e.target.value.trim() === '' ? -1 : 0)
         }}
       />
       {buka && (

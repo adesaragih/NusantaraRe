@@ -50,6 +50,7 @@ func daftarkan(mux *http.ServeMux, layanan func() *services.Layanan, adaDB func(
 		})
 	}
 	daftarkanBaca(pasang)
+	daftarkanDraf(pasang)
 }
 
 // daftarkanBaca - enam jalur, SEMUANYA baca.
@@ -85,6 +86,12 @@ func daftarkanBaca(pasang func(string, rute)) {
 	pasang("GET "+Prefix+"/kontrak-warisan/{id}/riwayat", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		riw, err := l.RiwayatKontrakWarisan(r.Context(), p, r.PathValue("id"))
 		tulis(w, riw, err)
+	})
+	// Panel `Existing Policy for Master ID` — `TREATYINPRODUCTION`, seam
+	// terpisah: gagal membaca polis tidak mengosongkan layar detail.
+	pasang("GET "+Prefix+"/kontrak-warisan/{id}/polis", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		polis, err := l.PolisMasterWarisan(r.Context(), p, r.PathValue("id"))
+		tulis(w, polis, err)
 	})
 	// ⭐ Layar Adjustment — `Section/InputTreatyInAdjustment.xml`: grid
 	// daftar (`DATASHOW != 1`) dan satu penyesuaian (`DATASHOW = 1`).

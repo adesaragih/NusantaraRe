@@ -44,22 +44,25 @@
 // `KontrakWarisan` — jadi menyalakannya berarti menebak nilainya. Ia
 // dicatat di sini, tidak dikarang di kode.
 
-import { useState } from 'react'
-
 import { Kosong, Panel } from '../../../../inti/frontend/components/ui/dasar'
 import type { BarisPortofolioWarisan } from '../api'
 import { FORM_KONTRAK, GRID_TAMBAH, KOLOM_PORTOFOLIO, PORTOFOLIO } from '../labels'
+import { useProperti } from '../halaman'
 import type { ModeForm } from '../mode'
 
-/** Satu baris di layar — urutannya urutan KOLOM, bukan urutan kunci. */
-type Baris = {
-  /** Kolom 1 `Portfolio Type` ← `TypePortfolio`. */
-  arah: string
-  /** Kolom 2 `Premium / Loss Type` ← `Type`. */
-  jenis: string
+/**
+ * Satu baris `TreatyIn.Portfolio` — EJAAN PEGA, sebab ia isi penampung
+ * halaman (`halaman.tsx`) yang kelak dipetakan Save.
+ */
+export type BarisPortfolio = {
+  /** Kolom 1 `Portfolio Type`. */
+  TypePortfolio: string
+  /** Kolom 2 `Premium / Loss Type`. */
+  Type: string
   /** Kolom 3 `Description`. */
-  keterangan: string
+  Description: string
 }
+type Baris = BarisPortfolio
 
 /** Daftar pilihan satu sel — `<select>` telanjang, bukan `Pilih`. */
 function SelPilih({
@@ -123,12 +126,13 @@ export default function TabPortofolio({
   mode?: ModeForm
   petunjukKosong: string
 }) {
-  const [isi, setIsi] = useState<Baris[]>(() =>
+  // ⭐ Page list `TreatyIn.Portfolio` di penampung halaman — bertahan saat
+  // pindah tab. Nilai awalnya baris kontrak yang dimuat.
+  const [isi, setIsi] = useProperti<Baris[]>('Portfolio', () =>
     barisWarisan.map((b) => ({
-      // ⛔ `jenisPortfolio` membawa `TYPEPORTFOLIO`, dan ia kolom PERTAMA.
-      arah: b.jenisPortfolio,
-      jenis: b.jenis,
-      keterangan: b.keterangan,
+      TypePortfolio: b.jenisPortfolio,
+      Type: b.jenis,
+      Description: b.keterangan,
     })),
   )
   const bisaUbah = mode === 'ubah'
@@ -150,7 +154,7 @@ export default function TabPortofolio({
               // ⛔ Baris baru KOSONG bertiga. `Activity/TreatyInPropAdd.xml`
               // hanya menetapkan `.Description = ""`; kedua pilihannya
               // memang lahir belum terisi.
-              setIsi([...isi, { arah: '', jenis: '', keterangan: '' }])
+              setIsi([...isi, { TypePortfolio: '', Type: '', Description: '' }])
             }}
           >
             {PORTOFOLIO.tambah}
@@ -184,14 +188,14 @@ export default function TabPortofolio({
                   {bisaUbah ? (
                     <SelPilih
                       label={KOLOM_PORTOFOLIO[0]}
-                      nilai={b.arah}
+                      nilai={b.TypePortfolio}
                       opsi={PORTOFOLIO.opsiArah}
                       onUbah={(v) => {
-                        ubah(i, 'arah', v)
+                        ubah(i, 'TypePortfolio', v)
                       }}
                     />
                   ) : (
-                    b.arah
+                    b.TypePortfolio
                   )}
                 </td>
                 {/* Sel 113 — kolom 2, `.Type`. */}
@@ -199,14 +203,14 @@ export default function TabPortofolio({
                   {bisaUbah ? (
                     <SelPilih
                       label={KOLOM_PORTOFOLIO[1]}
-                      nilai={b.jenis}
+                      nilai={b.Type}
                       opsi={PORTOFOLIO.opsiJenis}
                       onUbah={(v) => {
-                        ubah(i, 'jenis', v)
+                        ubah(i, 'Type', v)
                       }}
                     />
                   ) : (
-                    b.jenis
+                    b.Type
                   )}
                 </td>
                 {/* Sel 114 — `pyFormat` = `pxTextArea`, bukan kotak sebaris. */}
@@ -216,13 +220,13 @@ export default function TabPortofolio({
                       className="field__input"
                       rows={2}
                       aria-label={KOLOM_PORTOFOLIO[2]}
-                      value={b.keterangan}
+                      value={b.Description}
                       onChange={(e) => {
-                        ubah(i, 'keterangan', e.target.value)
+                        ubah(i, 'Description', e.target.value)
                       }}
                     />
                   ) : (
-                    b.keterangan
+                    b.Description
                   )}
                 </td>
                 {/* Sel 115 — `Embed-SelectedContextAPI-DeleteRow`. */}

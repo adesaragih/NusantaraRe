@@ -22,6 +22,16 @@ func TestDaftarJenisTreatyDariReinsuranceType(t *testing.T) {
 			t.Errorf("urutan bukan ID menurun: %s lalu %s", d[i-1].ID, p.ID)
 		}
 	}
+	// ⭐ SOA Name ikut terbaca — `2020 QS 89M FAC` (10210) ber-SOA `QUOTA SHARE 2020`.
+	adaSOA := false
+	for _, p := range d {
+		if p.ID == "10210" {
+			adaSOA = p.NamaSOA == "QUOTA SHARE 2020"
+		}
+	}
+	if !adaSOA {
+		t.Error("10210 tidak membawa SOA Name `QUOTA SHARE 2020`")
+	}
 	for id, mau := range map[string]string{"10042": "SURPLUS", "10035": "QUOTA SHARE", "10037": "2ND SURPLUS"} {
 		if nama[id] != mau {
 			t.Errorf("%s -> %q, mau %q", id, nama[id], mau)

@@ -12,14 +12,42 @@
 // tersimpannya hanya ada di `JSONDATA`, yang dilarang dibaca layar Treaty In
 // (keputusan pemilik proses 6 Oktober 2026), dan `T_TREATY_REVISION` tidak
 // punya kolom `Reporting*`. Lihat `PERTANYAAN-TERBUKA-LAYAR-PEGA.md` §17.
+//
+// ⭐ 7 Oktober 2026 — PENAMPUNG HALAMAN (`../halaman.tsx`). Medan kepala dan
+// `ReportingPeriodList` hidup di halaman `TreatyIn` form, berejaan Pega, dan
+// tanggalnya bentuk simpan `YYYYMMDD`. Isian bertahan saat pindah tab, dan
+// tab Accumulation MEMBACA `ReportingStart`/`ReportingEnd` dari sini
+// (`TreatyInSetAccountReport`).
 
 import { useState } from 'react'
 
 import { Field, Kosong, Panel, Pilih } from '../../../../inti/frontend/components/ui/dasar'
 import { hitungPeriodePelaporan, type BarisPeriodeWarisan, type OpsiPilihan } from '../api'
+import { useProperti } from '../halaman'
 import { REPORTING_PERIOD } from '../labels'
 import type { ModeForm } from '../mode'
 import TanggalRedup from './TanggalRedup'
+import { keSimpan, tanggalTampil } from './tanggalIso'
+
+/** Satu baris `TreatyIn.ReportingPeriodList` — ejaan Pega, tanggal `YYYYMMDD`. */
+export interface BarisReportingPeriod {
+  Period: string
+  AutoCalculate: string
+  InitialDate: string
+  SubmissionDue: string
+  ConfirmationDue: string
+  SettlementDue: string
+}
+
+/** Baris jawaban rute / kontrak → baris halaman (bentuk TERSIMPAN). */
+export const barisReportingPeriod = (b: BarisPeriodeWarisan): BarisReportingPeriod => ({
+  Period: b.periode,
+  AutoCalculate: b.hitungOtomatis,
+  InitialDate: b.tanggalAwalAsli,
+  SubmissionDue: b.jatuhTempoKirimAsli,
+  ConfirmationDue: b.jatuhTempoKonfirmasiAsli,
+  SettlementDue: b.jatuhTempoBayarAsli,
+})
 
 /** Pesan satu medan dari Activity (`Property-Set-Messages`), apa adanya. */
 function Pesan({ teks }: { teks: string | undefined }) {
@@ -40,29 +68,32 @@ export default function TabReportingPeriod({
   opsiPeriode?: readonly OpsiPilihan[]
   mode?: ModeForm
 }) {
-  const [mulai, setMulai] = useState('')
-  const [akhir, setAkhir] = useState('')
-  const [periode, setPeriode] = useState('')
-  const [interval, setSelang] = useState('')
-  const [penyerahan, setPenyerahan] = useState('')
-  const [konfirmasi, setKonfirmasi] = useState('')
-  const [pelunasan, setPelunasan] = useState('')
+  // ⭐ Properti halaman `TreatyIn` — ejaan ekspor (`TreatyIn.ReportingStart` …).
+  const [mulai, setMulai] = useProperti('ReportingStart', '')
+  const [akhir, setAkhir] = useProperti('ReportingEnd', '')
+  const [periode, setPeriode] = useProperti('ReportingPeriod', '')
+  const [interval, setSelang] = useProperti('ReportingInterval', '')
+  const [penyerahan, setPenyerahan] = useProperti('ReportingSubmission', '')
+  const [konfirmasi, setKonfirmasi] = useProperti('ReportingConfirmation', '')
+  const [pelunasan, setPelunasan] = useProperti('ReportingSettlement', '')
+  // Pesan Activity — milik tab, bukan halaman.
   const [galat, setGalat] = useState<Record<string, string>>({})
   const [gagal, setGagal] = useState('')
-  const [baris, setBaris] = useState<BarisPeriodeWarisan[]>(() => [...barisWarisan])
+  const [baris, setBaris] = useProperti<BarisReportingPeriod[]>('ReportingPeriodList', () => barisWarisan.map(barisReportingPeriod))
   const bisaUbah = mode === 'ubah'
   // `TreatyIn.ReportingPeriod='other'` @144723 — Interval dan `, and Interval`.
   const lain = periode === 'other'
 
-  function terapkan() {
+  /** `TreatyInSetReport` — `awal` = `param.startdate` (kosong: ReportingStart). */
+  function terapkan(awal = '') {
     setGagal('')
-    hitungPeriodePelaporan({ mulai, akhir, periode, interval, penyerahan, konfirmasi, pelunasan })
+    hitungPeriodePelaporan({ mulai, akhir, periode, interval, penyerahan, konfirmasi, pelunasan, awal })
       .then((h) => {
         setGalat(h.galat)
         // ⛔ Langkah 2 Activity: daftar DIBUANG lalu disusun ulang — tetapi
         // isian kosong KELUAR di langkah 4–7 SEBELUM ada baris baru. Daftar
         // kosong hanya bila jawabannya nol pesan.
-        if (Object.keys(h.galat).length === 0) setBaris(h.baris)
+        if (Object.keys(h.galat).length === 0) setBaris(h.baris.map(barisReportingPeriod))
         else setBaris([])
       })
       .catch((e: unknown) => {
@@ -74,11 +105,25 @@ export default function TabReportingPeriod({
     <Panel judul={REPORTING_PERIOD.judul}>
       <div className="form-grid">
         <div>
-          <TanggalRedup label={REPORTING_PERIOD.mulai} value={mulai} onChange={setMulai} />
+          {/* Kotak tanggal menerima bentuk simpan; jawabannya bentuk kabel →
+              disimpan kembali `YYYYMMDD`. */}
+          <TanggalRedup
+            label={REPORTING_PERIOD.mulai}
+            value={mulai}
+            onChange={(v) => {
+              setMulai(keSimpan(v))
+            }}
+          />
           <Pesan teks={galat.mulai} />
         </div>
         <div>
-          <TanggalRedup label={REPORTING_PERIOD.akhir} value={akhir} onChange={setAkhir} />
+          <TanggalRedup
+            label={REPORTING_PERIOD.akhir}
+            value={akhir}
+            onChange={(v) => {
+              setAkhir(keSimpan(v))
+            }}
+          />
           <Pesan teks={galat.akhir} />
         </div>
         <Pilih
@@ -95,7 +140,14 @@ export default function TabReportingPeriod({
       </div>
 
       <div className="trin__aksi">
-        <button type="button" className="btn" onClick={terapkan} disabled={!bisaUbah}>
+        <button
+          type="button"
+          className="btn"
+          onClick={() => {
+            terapkan()
+          }}
+          disabled={!bisaUbah}
+        >
           {REPORTING_PERIOD.terapkan}
         </button>
         {/* Sel label @270162/@274479/@279526 — tampil SELALU di samping tombol,
@@ -127,40 +179,44 @@ export default function TabReportingPeriod({
             <tbody>
               {baris.map((b, i) => (
                 <tr key={i}>
-                  <td>{b.periode}</td>
+                  <td>{b.Period}</td>
                   {bisaUbah && (
                     <td>
                       <input
                         type="checkbox"
                         aria-label={REPORTING_PERIOD.kolomOtomatis}
-                        checked={b.hitungOtomatis === 'true'}
+                        checked={b.AutoCalculate === 'true'}
                         onChange={(e) => {
-                          setBaris(baris.map((x, j) => (j === i ? { ...x, hitungOtomatis: e.target.checked ? 'true' : 'false' } : x)))
+                          setBaris(baris.map((x, j) => (j === i ? { ...x, AutoCalculate: e.target.checked ? 'true' : 'false' } : x)))
                         }}
                       />
                     </td>
                   )}
                   {(
                     [
-                      ['tanggalAwal', 'tanggalAwalAsli', REPORTING_PERIOD.kolomTanggalAwal],
-                      ['jatuhTempoKirim', 'jatuhTempoKirimAsli', REPORTING_PERIOD.kolomPenyerahan],
-                      ['jatuhTempoKonfirmasi', 'jatuhTempoKonfirmasiAsli', REPORTING_PERIOD.kolomKonfirmasi],
-                      ['jatuhTempoBayar', 'jatuhTempoBayarAsli', REPORTING_PERIOD.kolomPelunasan],
+                      ['InitialDate', REPORTING_PERIOD.kolomTanggalAwal],
+                      ['SubmissionDue', REPORTING_PERIOD.kolomPenyerahan],
+                      ['ConfirmationDue', REPORTING_PERIOD.kolomKonfirmasi],
+                      ['SettlementDue', REPORTING_PERIOD.kolomPelunasan],
                     ] as const
-                  ).map(([tampil, asli, label]) => (
-                    <td key={tampil}>
+                  ).map(([kunci, label]) => (
+                    <td key={kunci}>
                       {bisaUbah ? (
-                        // ⛔ Kotak tanggal diisi nilai TERSIMPAN (`…Asli`), bukan
-                        // terjemahan tampil — yang tampil membuat kotaknya kosong.
+                        // ⛔ Kotak tanggal diisi nilai TERSIMPAN, bukan terjemahan
+                        // tampil — yang tampil membuat kotaknya kosong.
                         <TanggalRedup
                           label={label}
-                          value={b[asli]}
+                          value={b[kunci]}
                           onChange={(v) => {
-                            setBaris(baris.map((x, j) => (j === i ? { ...x, [asli]: v } : x)))
+                            setBaris(baris.map((x, j) => (j === i ? { ...x, [kunci]: keSimpan(v) } : x)))
+                            // ⭐ `change` sel Initial Date → `TreatyInSetReport(startdate =
+                            // .InitialDate, autocalculate = .AutoCalculate)`. Langkah 1
+                            // KELUAR bila Auto Calculate baris itu tidak dicentang.
+                            if (kunci === 'InitialDate' && b.AutoCalculate === 'true') terapkan(keSimpan(v))
                           }}
                         />
                       ) : (
-                        b[tampil]
+                        tanggalTampil(b[kunci])
                       )}
                     </td>
                   ))}

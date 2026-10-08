@@ -174,8 +174,8 @@ var PetaPendaratan = []Pendaratan{
 	{
 		Induk: "T_TREATY_LIMITS", KunciAnak: "Detail",
 		Tabel: "T_TREATY_LIMIT_DETAIL", Seq: "SEQ_TT_LIMIT_DETAIL",
-		Kunci:        []string{"AchievementPct", "Brokerage", "CashLoss", "CessionPct", "ClaimCooperation", "ClassOfBusiness", "CurrencyCashLoss", "CurrencyClaimCooperation", "CurrencyEPI", "CurrencyEarthquake", "CurrencyFloodJab", "CurrencyFloodNat", "CurrencyID", "CurrencyPLA", "CurrencyRSMD", "EPI", "Earthquake", "FloodJab", "FloodNation", "ID", "IOOPct", "LossRatio", "LowerBand", "PLA", "ParentID", "Periode", "PremiumReservePct", "ProfitCommision", "ProfitME", "ProfitYDCF", "QSPct", "RIOGR", "RIONR", "RNMShare", "RSMDLimit", "ReisuredParticipant", "RetentionPct", "ShareNote", "SpreadingTotalPct", "SpreadingType", "SpreadingTypeID", "SumLossRatio", "SumTotalAchievIncured", "SumTotalAchievNetPremium", "Surplus", "TotalAchAfterClaim", "TotalAchCASHCALL", "TotalAchEstCASHCALL", "TotalAchIncured", "TotalAchNetPremium", "TotalAchOsCASHCALL", "TotalAchOsClaim", "TotalAchOuts", "TotalAchPaid", "TotalAchPremium", "TreatyGroup", "TreatyGroupID", "TreatyType", "UpperBand"},
-		Kolom:        []string{"ACHIEVEMENTPCT", "BROKERAGE", "CASHLOSS", "CESSIONPCT", "CLAIMCOOPERATION", "CLASSOFBUSINESS", "CURRENCYCASHLOSS", "CURRENCYCLAIMCOOPERATION", "CURRENCYEPI", "CURRENCYEARTHQUAKE", "CURRENCYFLOODJAB", "CURRENCYFLOODNAT", "CURRENCYID", "CURRENCYPLA", "CURRENCYRSMD", "EPI", "EARTHQUAKE", "FLOODJAB", "FLOODNATION", "IDX", "IOOPCT", "LOSSRATIO", "LOWERBAND", "PLA", "PARENTID", "PERIODE", "PREMIUMRESERVEPCT", "PROFITCOMMISION", "PROFITME", "PROFITYDCF", "QSPCT", "RIOGR", "RIONR", "RNMSHARE", "RSMDLIMIT", "REISUREDPARTICIPANT", "RETENTIONPCT", "SHARENOTE", "SPREADINGTOTALPCT", "SPREADINGTYPE", "SPREADINGTYPEID", "SUMLOSSRATIO", "SUMTOTALACHIEVINCURED", "SUMTOTALACHIEVNETPREMIUM", "SURPLUS", "TOTALACHAFTERCLAIM", "TOTALACHCASHCALL", "TOTALACHESTCASHCALL", "TOTALACHINCURED", "TOTALACHNETPREMIUM", "TOTALACHOSCASHCALL", "TOTALACHOSCLAIM", "TOTALACHOUTS", "TOTALACHPAID", "TOTALACHPREMIUM", "TREATYGROUP", "TREATYGROUPID", "TREATYTYPE", "UPPERBAND"},
+		Kunci:        []string{"AchievementPct", "Brokerage", "CashLoss", "CessionPct", "ClaimCooperation", "ClassOfBusiness", "CurrencyCashLoss", "CurrencyClaimCooperation", "CurrencyEPI", "CurrencyEarthquake", "CurrencyFloodJab", "CurrencyFloodNat", "CurrencyID", "CurrencyPLA", "CurrencyRSMD", "EPI", "Earthquake", "FloodJab", "FloodNation", "ID", "IOOPct", "LossRatio", "LowerBand", "PLA", "ParentID", "Periode", "PremiumReservePct", "ProfitCommision", "ProfitME", "ProfitYDCF", "QSPct", "RIOGR", "RIONR", "RNMShare", "RSMDLimit", "ReisuredParticipant", "RetentionPct", "ShareNote", "SpreadingTotalPct", "SpreadingType", "SpreadingTypeID", "SumLossRatio", "SumTotalAchievIncured", "SumTotalAchievNetPremium", "Surplus", "TotalAchAfterClaim", "TotalAchCASHCALL", "TotalAchEstCASHCALL", "TotalAchIncured", "TotalAchNetPremium", "TotalAchOsCASHCALL", "TotalAchOsClaim", "TotalAchOuts", "TotalAchPaid", "TotalAchPremium", "TreatyGroup", "TreatyGroupID", "TreatyType", "UpperBand", "Currency", "NusaReLimit"},
+		Kolom:        []string{"ACHIEVEMENTPCT", "BROKERAGE", "CASHLOSS", "CESSIONPCT", "CLAIMCOOPERATION", "CLASSOFBUSINESS", "CURRENCYCASHLOSS", "CURRENCYCLAIMCOOPERATION", "CURRENCYEPI", "CURRENCYEARTHQUAKE", "CURRENCYFLOODJAB", "CURRENCYFLOODNAT", "CURRENCYID", "CURRENCYPLA", "CURRENCYRSMD", "EPI", "EARTHQUAKE", "FLOODJAB", "FLOODNATION", "IDX", "IOOPCT", "LOSSRATIO", "LOWERBAND", "PLA", "PARENTID", "PERIODE", "PREMIUMRESERVEPCT", "PROFITCOMMISION", "PROFITME", "PROFITYDCF", "QSPCT", "RIOGR", "RIONR", "RNMSHARE", "RSMDLIMIT", "REISUREDPARTICIPANT", "RETENTIONPCT", "SHARENOTE", "SPREADINGTOTALPCT", "SPREADINGTYPE", "SPREADINGTYPEID", "SUMLOSSRATIO", "SUMTOTALACHIEVINCURED", "SUMTOTALACHIEVNETPREMIUM", "SURPLUS", "TOTALACHAFTERCLAIM", "TOTALACHCASHCALL", "TOTALACHESTCASHCALL", "TOTALACHINCURED", "TOTALACHNETPREMIUM", "TOTALACHOSCASHCALL", "TOTALACHOSCLAIM", "TOTALACHOUTS", "TOTALACHPAID", "TOTALACHPREMIUM", "TREATYGROUP", "TREATYGROUPID", "TREATYTYPE", "UPPERBAND", "CURRENCY", "NUSARELIMIT"},
 		CacahTerukur: 2868,
 	},
 	{
@@ -221,6 +221,35 @@ var PetaPendaratan = []Pendaratan{
 		CacahTerukur: 2031,
 	},
 	{
+		// ⭐ 449 (8 Oktober 2026) — `Detail.SpreadingList` tab Share Prop:
+		// anak susunan treaty `PROPORTIONALARRG` (`FetchQSfromMaster` [9]).
+		Induk: "T_TREATY_LIMIT_DETAIL", KunciAnak: "SpreadingList",
+		Tabel: "T_TREATY_LIMIT_SPREADING", Seq: "SEQ_TT_LIMIT_SPREADING",
+		Kunci: []string{"ParentReinsTypeID", "Pct", "ReinsTypeID", "ReinsTypeName", "Rp", "Usd", "Value"},
+		Kolom: []string{"PARENTREINSTYPEID", "PCT", "REINSTYPEID", "REINSTYPENAME", "RP", "USD", "VALUE"},
+	},
+	{
+		// ⭐ 450 (8 Oktober 2026) — grid Deduction rincian Limits Prop.
+		Induk: "T_TREATY_LIMIT_DETAIL", KunciAnak: "DeductionList",
+		Tabel: "T_TREATY_LIMIT_DEDUCTION", Seq: "SEQ_TT_LIMIT_DEDUCTION",
+		Kunci: []string{"Comment", "Currency", "CurrencyID", "Deduction", "DeductionPct", "DeductionPctCalculate"},
+		Kolom: []string{"COMMENT_", "CURRENCY", "CURRENCYID", "DEDUCTION", "DEDUCTIONPCT", "DEDUCTIONPCTCALCULATE"},
+	},
+	{
+		// ⭐ 450 — grid Parameter tab Achievement (`GetAchievement`).
+		Induk: "T_TREATY_LIMIT_DETAIL", KunciAnak: "CurrencyList",
+		Tabel: "T_TREATY_LIMIT_ACH_PARAM", Seq: "SEQ_TT_LIMIT_ACH_PARAM",
+		Kunci: []string{"Parameter", "AchievementPctGross", "LossRatioGross"},
+		Kolom: []string{"PARAMETER", "ACHIEVEMENTPCTGROSS", "LOSSRATIOGROSS"},
+	},
+	{
+		// ⭐ 450 — grid Reinstatement layer Non-Prop.
+		Induk: "T_TREATY_LIMITS", KunciAnak: "Reinstatement_List",
+		Tabel: "T_TREATY_LIMIT_REINSTATEMENT", Seq: "SEQ_TT_LIMIT_REINST",
+		Kunci: []string{"AdditionalAmount1", "AdditionalAmount2", "AdditionalPct", "ID", "ReinstatementAmount1", "ReinstatementAmount2", "ReinstatementNote", "ReinstatementPct", "ReinstatementValue"},
+		Kolom: []string{"ADDITIONALAMOUNT1", "ADDITIONALAMOUNT2", "ADDITIONALPCT", "IDX", "REINSTATEMENTAMOUNT1", "REINSTATEMENTAMOUNT2", "REINSTATEMENTNOTE", "REINSTATEMENTPCT", "REINSTATEMENTVALUE"},
+	},
+	{
 		Induk: "T_TREATY_LIMIT_GROUP", KunciAnak: "ClassOfBusinessList",
 		Tabel: "T_TREATY_LIMIT_GROUP_COB", Seq: "SEQ_TT_LIMIT_GRP_COB",
 		Kunci:        []string{"ClassOfBusiness", "ClassOfBusinessID", "TreatyGroup", "TreatyGroupID"},
@@ -231,9 +260,14 @@ var PetaPendaratan = []Pendaratan{
 	// MIGRASI 438 — tabel NILAI, beberapa larik ke satu tabel lewat `JENIS`
 	// =====================================================================
 	{
-		Induk:       "T_TREATY_LIMIT_DETAIL",
-		LarikGabung: []string{"IOOLimitList", "RetentionList", "CessionList", "EPIList"},
-		Tabel:       "T_TREATY_LIMIT_AMOUNT", Seq: "SEQ_TT_LIMIT_AMOUNT",
+		Induk: "T_TREATY_LIMIT_DETAIL",
+		// ⭐ 449 (8 Oktober 2026) — tiga larik `{Currency, Value}` tab Share
+		// Prop (`CalculateShareList`, `FetchQSfromMaster`) — TANPA DDL.
+		LarikGabung: []string{"IOOLimitList", "RetentionList", "CessionList", "EPIList",
+			"RNMShareList", "RNMSpreadedList", "RNMSpreadedListRI",
+			// ⭐ 450 — grid nilai rincian Limits Prop, TANPA DDL.
+			"ReserveList", "PLAList", "CashLossList", "ClaimCoopList", "DeductionTotalList"},
+		Tabel: "T_TREATY_LIMIT_AMOUNT", Seq: "SEQ_TT_LIMIT_AMOUNT",
 		Kunci:        []string{"Currency", "CurrencyID", "Layer", "Note", "Value"},
 		Kolom:        []string{"CURRENCY", "CURRENCYID", "LAYER", "NOTE", "VALUE"},
 		CacahTerukur: 11475,
@@ -293,21 +327,45 @@ var PetaPendaratan = []Pendaratan{
 		// memperlihatkan kepala KOSONG pada seribu dua ratus kontrak yang
 		// sungguh punya nilainya (`PERTANYAAN-TERBUKA-LAYAR-PEGA.md` §17).
 		//
+		// ⭐ EMPAT kunci TERAKHIR ditambahkan migrasi `445` (parkir di folder
+		// `treatyinadjustment`), 7 Oktober 2026 — skalar akar tab Share
+		// Non-Prop, tempat Save menyimpannya (keputusan pemakai: skema v2,
+		// akar `TreatyIn` → `T_TREATY_REVISION`). Layar MEMBACANYA lewat
+		// `BacaShareAkarRevisi` yang toleran terhadap kolom yang belum ada.
+		//
 		// ⚠️ `Comment` -> `COMMENTTEKS`: `COMMENT` kata tercadang Oracle.
 		// Ini SATU-SATUNYA pasangan di peta ini yang nama kolomnya bukan
 		// nama kuncinya dalam huruf besar, dan `TestPetaPendaratanCocokDenganDDL`
 		// mengadu keduanya terhadap DDL — bukan terhadap aturan penamaan.
 		Akar:  true,
 		Tabel: "T_TREATY_REVISION", Seq: "SEQ_TT_REVISION",
-		Kunci: []string{"ID", "OLDID", "ProportionType", "TreatyContractName", "TeritorialScope", "TreatyYear", "Ceding", "LeadingReinsSource", "Commencement", "Termination", "ContractRefNo", "Bordeaux", "BordereauxNote", "AccountingMode", "AccountingModeNonProp", "TreatyLeader", "IsMultipleRetro", "EDMState", "EDMMaterialType", "EDMEffective", "StatusAkseptasi", "IsProRate", "ProRateDays", "ProRateTotalDays", "ProRatePercent", "IsEditData", "TotalEgnpiAmount", "TotalEgnpiProportion", "TotalLimitsROL", "FacultativeShare", "FacultativeShareBrokerage", "ValueDifference.RNMShare", "ValueDifference.BrokeragePercent", "Exclusions", "ExclusionsP", "SpecialConditions", "SpecialConditionsP", "SpecialConditionsp", "CedingID", "LeadingReinsSourceID", "LeadingReinsID", "Information", "Position", "PositionUsername", "ChooseStatusAkseptasi", "AccumulationPeriod", "Comment", "ReportingStart", "ReportingEnd", "ReportingPeriod", "ReportingInterval", "ReportingSubmission", "ReportingConfirmation", "ReportingSettlement"},
-		Kolom: []string{"IDX", "OLDID", "PROPORTIONTYPE", "TREATYCONTRACTNAME", "TERITORIALSCOPE", "TREATYYEAR", "CEDING", "LEADINGREINSSOURCE", "COMMENCEMENT", "TERMINATION", "CONTRACTREFNO", "BORDEAUX", "BORDEREAUXNOTE", "ACCOUNTINGMODE", "ACCOUNTINGMODENONPROP", "TREATYLEADER", "ISMULTIPLERETRO", "EDMSTATE", "EDMMATERIALTYPE", "EDMEFFECTIVE", "STATUSAKSEPTASI", "ISPRORATE", "PRORATEDAYS", "PRORATETOTALDAYS", "PRORATEPERCENT", "ISEDITDATA", "TOTALEGNPIAMOUNT", "TOTALEGNPIPROPORTION", "TOTALLIMITSROL", "FACULTATIVESHARE", "FACULTATIVESHAREBROKERAGE", "VALUEDIFF_RNMSHARE", "VALUEDIFF_BROKERAGEPCT", "EXCLUSIONS", "EXCLUSIONSP", "SPECIALCONDITIONS", "SPECIALCONDITIONSP", "SPECIALCONDITIONSLC", "CEDINGID", "LEADINGREINSSOURCEID", "LEADINGREINSID", "INFORMATION", "POSITION", "POSITIONUSERNAME", "CHOOSESTATUSAKSEPTASI", "ACCUMULATIONPERIOD", "COMMENTTEKS", "REPORTINGSTART", "REPORTINGEND", "REPORTINGPERIOD", "REPORTINGINTERVAL", "REPORTINGSUBMISSION", "REPORTINGCONFIRMATION", "REPORTINGSETTLEMENT"},
+		Kunci: []string{"ID", "OLDID", "ProportionType", "TreatyContractName", "TeritorialScope", "TreatyYear", "Ceding", "LeadingReinsSource", "Commencement", "Termination", "ContractRefNo", "Bordeaux", "BordereauxNote", "AccountingMode", "AccountingModeNonProp", "TreatyLeader", "IsMultipleRetro", "EDMState", "EDMMaterialType", "EDMEffective", "StatusAkseptasi", "IsProRate", "ProRateDays", "ProRateTotalDays", "ProRatePercent", "IsEditData", "TotalEgnpiAmount", "TotalEgnpiProportion", "TotalLimitsROL", "FacultativeShare", "FacultativeShareBrokerage", "ValueDifference.RNMShare", "ValueDifference.BrokeragePercent", "Exclusions", "ExclusionsP", "SpecialConditions", "SpecialConditionsP", "SpecialConditionsp", "CedingID", "LeadingReinsSourceID", "LeadingReinsID", "Information", "Position", "PositionUsername", "ChooseStatusAkseptasi", "AccumulationPeriod", "Comment", "ReportingStart", "ReportingEnd", "ReportingPeriod", "ReportingInterval", "ReportingSubmission", "ReportingConfirmation", "ReportingSettlement", "RNMShare", "BrokeragePercent", "RNMShareAcrossTheBoard", "RnmShareDeducted", "RNMShareP", "BrokeragePercentP", "OptionLimit", "InstallmentNo", "RevisionState", "ViewState", "RevisionDate"},
+		Kolom: []string{"IDX", "OLDID", "PROPORTIONTYPE", "TREATYCONTRACTNAME", "TERITORIALSCOPE", "TREATYYEAR", "CEDING", "LEADINGREINSSOURCE", "COMMENCEMENT", "TERMINATION", "CONTRACTREFNO", "BORDEAUX", "BORDEREAUXNOTE", "ACCOUNTINGMODE", "ACCOUNTINGMODENONPROP", "TREATYLEADER", "ISMULTIPLERETRO", "EDMSTATE", "EDMMATERIALTYPE", "EDMEFFECTIVE", "STATUSAKSEPTASI", "ISPRORATE", "PRORATEDAYS", "PRORATETOTALDAYS", "PRORATEPERCENT", "ISEDITDATA", "TOTALEGNPIAMOUNT", "TOTALEGNPIPROPORTION", "TOTALLIMITSROL", "FACULTATIVESHARE", "FACULTATIVESHAREBROKERAGE", "VALUEDIFF_RNMSHARE", "VALUEDIFF_BROKERAGEPCT", "EXCLUSIONS", "EXCLUSIONSP", "SPECIALCONDITIONS", "SPECIALCONDITIONSP", "SPECIALCONDITIONSLC", "CEDINGID", "LEADINGREINSSOURCEID", "LEADINGREINSID", "INFORMATION", "POSITION", "POSITIONUSERNAME", "CHOOSESTATUSAKSEPTASI", "ACCUMULATIONPERIOD", "COMMENTTEKS", "REPORTINGSTART", "REPORTINGEND", "REPORTINGPERIOD", "REPORTINGINTERVAL", "REPORTINGSUBMISSION", "REPORTINGCONFIRMATION", "REPORTINGSETTLEMENT", "RNMSHARE", "BROKERAGEPERCENT", "RNMSHAREACROSSTHEBOARD", "RNMSHAREDEDUCTED", "RNMSHAREP", "BROKERAGEPERCENTP", "OPTIONLIMIT", "INSTALLMENTNO", "REVISIONSTATE", "VIEWSTATE", "REVISIONDATE"},
 		// Satu baris per dokumen. 1.855 (EDM: +560).
 		CacahTerukur: 1855,
 	},
 	{
-		Induk:       "T_TREATY_LIMITS",
-		LarikGabung: []string{"MDPList", "PremiumEarnedList", "EgnpiTotalList"},
-		Tabel:       "T_TREATY_LIMIT_MEASURE", Seq: "SEQ_TT_LIMIT_MEASURE",
+		// ⭐ `T_TREATY_HAZARD_LIMIT` — migrasi `446` (parkir di folder
+		// `treatyinadjustment`), 7 Oktober 2026. Diagram v2
+		// (`Diagram-Skema-Tabel-TreatyIn-dan-EDM-v2.xlsx`): `TreatyIn
+		// [BATAS_BAHAYA]`, 1:1. Sepuluh skalar AKAR yang sebelumnya nol
+		// kolom pendaratan: Event Limits Non-Prop (akar berisi di 49 dari 772
+		// kontrak Non-Prop) dan Max Co-Insurance Panel tab Co-Ins Scale (173 /
+		// 87 dari 1.855 dokumen). Tabel akar KEDUA sesudah `T_TREATY_REVISION`
+		// — `KunciTakTerpetakan` menggabungkan kunci keduanya.
+		Akar:  true,
+		Tabel: "T_TREATY_HAZARD_LIMIT", Seq: "SEQ_TT_HAZARD_LIMIT",
+		Kunci: []string{"RSMDLimit", "CurrencyRSMD", "Earthquake", "CurrencyEarthquake", "FloodJab", "CurrencyFloodJab", "FloodNation", "CurrencyFloodNat", "MaxCoGroup", "MaxCoNonGroup"},
+		Kolom: []string{"RSMDLIMIT", "CURRENCYRSMD", "EARTHQUAKE", "CURRENCYEARTHQUAKE", "FLOODJAB", "CURRENCYFLOODJAB", "FLOODNATION", "CURRENCYFLOODNAT", "MAXCOGROUP", "MAXCONONGROUP"},
+		// Satu baris per dokumen, seperti `T_TREATY_REVISION`.
+		CacahTerukur: 1855,
+	},
+	{
+		Induk: "T_TREATY_LIMITS",
+		// ⭐ 450 — `MDPMinList` layer Non-Prop (`LimitCalculation`), TANPA DDL.
+		LarikGabung: []string{"MDPList", "PremiumEarnedList", "EgnpiTotalList",
+			"MDPMinList"},
+		Tabel: "T_TREATY_LIMIT_MEASURE", Seq: "SEQ_TT_LIMIT_MEASURE",
 		Kunci: []string{"Currency", "CurrencyID", "Value"},
 		Kolom: []string{"CURRENCY", "CURRENCYID", "VALUE"},
 		// Tiga larik di dalam tiap `Limits[]`. 8.849 (EDM: +6.383).
@@ -322,12 +380,27 @@ var PetaPendaratan = []Pendaratan{
 	},
 	{
 		LarikGabung: []string{"TotalRetentionAmountNP", "TotalEgnpiAmountNP", "TotalLimitIOONP",
-			"TotalLimitDeductblNP", "TotalLimitPremiEarnNP", "TotalLimitMDPNP"},
+			"TotalLimitDeductblNP", "TotalLimitPremiEarnNP", "TotalLimitMDPNP",
+			// ⭐ 448 (7 Oktober 2026) — total tab Share Prop/Non-Prop dan
+			// Installment yang tombol Save kirim; bentuknya sama, `JENIS`
+			// yang membedakan, jadi nol DDL.
+			"TotalShareRnmProp", "TotalSpreadedRnmProp", "TotalSpreadedRnmRIProp",
+			"TotalShareRnmNP", "TotalShareGrossNP", "TotalShareGrossMinNP", "TotalShareDeductionNP",
+			"TotalShareNetNP", "TotalSpreadedNetPremi", "TotalSpreadedNetPremiRI", "TotalInstallmentNP"},
 		Tabel: "T_TREATY_TOTAL", Seq: "SEQ_TT_TOTAL",
 		Kunci: []string{"Currency", "CurrencyID", "Value"},
 		Kolom: []string{"CURRENCY", "CURRENCYID", "VALUE"},
 		// Enam larik akar. 6.395 (EDM: +5.098).
 		CacahTerukur: 6395,
+	},
+	{
+		// ⭐ 448 (7 Oktober 2026) — dua larik ringkasan tab Share Non-Prop
+		// (`SummaryLimitShare`), dibedakan `JENIS`.
+		LarikGabung: []string{
+			"LimitShareSummaryList", "LimitFacShareSummaryList"},
+		Tabel: "T_TREATY_SHARE_SUMMARY", Seq: "SEQ_TT_SHARE_SUMMARY",
+		Kunci: []string{"LayerType", "Layer", "LayerPartType", "LayerPart", "Note", "Limit", "Limit2", "MDP", "MDP2", "Deductible", "Deductible2", "NetPremi", "NetPremi2"},
+		Kolom: []string{"LAYERTYPE", "LAYER", "LAYERPARTTYPE", "LAYERPART", "NOTE", "LIMITVAL", "LIMITVAL2", "MDP", "MDP2", "DEDUCTIBLE", "DEDUCTIBLE2", "NETPREMI", "NETPREMI2"},
 	},
 }
 

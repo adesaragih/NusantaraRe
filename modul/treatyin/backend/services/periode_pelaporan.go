@@ -50,6 +50,11 @@ type MasukanPeriodePelaporan struct {
 	Penyerahan string `json:"penyerahan"`
 	Konfirmasi string `json:"konfirmasi"`
 	Pelunasan  string `json:"pelunasan"`
+	// Awal - `param.startdate` (langkah 8 `local.startdate`): tanggal awal
+	// baris PERTAMA. Kosong = Mulai (tombol Apply: `startdate =
+	// TreatyIn.ReportingStart`); sel Initial Date mengirim `.InitialDate`
+	// barisnya. Durasi tetap dihitung dari Mulai→Akhir.
+	Awal string `json:"awal"`
 }
 
 // HasilPeriodePelaporan - baris hasil Apply, atau pesan per medan.
@@ -155,6 +160,9 @@ func HitungPeriodePelaporan(m MasukanPeriodePelaporan) HasilPeriodePelaporan {
 	}
 	format := func(t time.Time) string { return t.Format("20060102") }
 	temp := mulai
+	if a, ok := tanggalMasukan(m.Awal); ok {
+		temp = a
+	}
 	for i := 1; i <= jumlah; i++ {
 		awal := temp
 		temp = tambahBulan(temp, interval)

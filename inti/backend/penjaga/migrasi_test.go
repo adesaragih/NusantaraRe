@@ -227,12 +227,28 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 	// pengguna), bukan atribut klaim dan bukan dokumen JSON. Pengecualiannya SATU kolom BLOB di SATU tabel, dan
 	// berkas itu tidak boleh memuat CLOB atau JSON.
 	const berkasTemplat = "912_m_template_file"
-	dokumenDiOutbox, blobTemplat := 0, 0
+	// Treaty In (keputusan pemilik proses 06-10-2026): kelima `CLOB` di `439`
+	// adalah KOLOM BERNAMA — satu per ejaan medan teks bebas tab `Exclusions`
+	// dan `Special Conditions`, terukur mencapai 23.453 aksara sementara
+	// `VARCHAR2` Oracle berhenti di 4.000.
+	//
+	// ⛔ Larangan ini berbunyi "atribut klaim harus menjadi KOLOM BERNAMA";
+	// kelimanya justru kolom bernama. Alternatifnya MEMOTONG teks tanpa
+	// bersuara — kehilangan yang baru ketahuan bertahun kemudian.
+	//
+	// ⚠️ Cacahnya DIPATOK lima, dan berkas itu tidak boleh memuat BLOB.
+	const berkasTeksPanjang = "439_akar_dan_nilai_sisa"
+	const clobTeksPanjang = 5
+	dokumenDiOutbox, blobTemplat, teksPanjang := 0, 0, 0
 	for nama, isi := range seluruhSQL(t, false) {
 		atas := strings.ToUpper(isi)
 		if strings.Contains(nama, berkasOutbox) {
 			dokumenDiOutbox += strings.Count(atas, "CLOB")
 			continue
+		}
+		if strings.Contains(nama, berkasTeksPanjang) && !strings.Contains(nama, "_down") {
+			teksPanjang += strings.Count(atas, "CLOB")
+			atas = strings.ReplaceAll(atas, "CLOB", "")
 		}
 		if strings.Contains(nama, berkasTemplat) && !strings.Contains(nama, "_down") {
 			blobTemplat += len(regexp.MustCompile(`(?m)^\s*ISI\s+BLOB\s+NOT NULL,$`).FindAllString(atas, -1))
@@ -244,6 +260,10 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 					nama, tipe)
 			}
 		}
+	}
+	if teksPanjang != clobTeksPanjang {
+		t.Errorf("%s memuat %d kolom CLOB, mau tepat %d (kelima ejaan medan teks panjang)",
+			berkasTeksPanjang, teksPanjang, clobTeksPanjang)
 	}
 	if blobTemplat != 1 {
 		t.Errorf("M_TEMPLATE_FILE memuat %d kolom ISI BLOB, mau tepat 1", blobTemplat)

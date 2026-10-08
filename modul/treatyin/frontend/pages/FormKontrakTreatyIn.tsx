@@ -18,7 +18,7 @@
 // Co-Ins Scale (@1095716), dan satu SALINAN KEDUA "Account Reporting Period"
 // (@1300558). Yang dibangun salinan hidupnya, @45828.
 
-import {  useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 
 import {
   Area,
@@ -26,17 +26,30 @@ import {
   Gagal,
   Kosong,
   Memuat,
+  Modal,
   Panel,
   Pilih,
   StripTab,
 } from '../../../../inti/frontend/components/ui/dasar'
+import { ambilSesiSaya } from '../../../../inti/frontend/klien'
 import {
   ambilDaftarAsalBisnis,
   ambilDaftarCedant,
   ambilKontrakWarisan,
   ambilOpsiKepala,
+  ambilOpsiLimits,
+  kirimKontrak,
+  simpanKontrak,
+  type HasilSimpan,
+  type MasukanKirim,
+  type BarisEgnpi,
+  type BarisRetensi,
   type KontrakWarisan,
+  type LimitsAkar,
   type OpsiKepala,
+  type PilihanWarisan,
+  type ShareNP,
+  type SimpulLimit,
 } from '../api'
 import type { ModeForm } from '../mode'
 import {
@@ -46,38 +59,41 @@ import {
   type SyaratTabKontrak,
   TAB_NON_PROPORSIONAL,
   TAB_PROPORSIONAL,
-  KOLOM_AKUMULASI,
-  KOLOM_EGNPI,
-  KOLOM_RETENSI,
-  KOLOM_ANGSURAN,
-  KOLOM_CATATAN,
-  KOLOM_COIN_SCALE,
-  JENIS_COIN_SCALE,
-  JENIS_EGNPI,
-  JENIS_RETENSI,
-  JENIS_ANGSURAN,
   GRID_TAMBAH,
 } from '../labels'
 
 // ⭐ KOMPONEN DIPECAH 5 Oktober 2026 — pemindahan MURNI, nol perubahan
 // perilaku. Contohnya `modul/masterproductnamelife`, yang komponen
 // terbesarnya 372 baris sementara layar ini dahulu 1.826 dalam satu berkas.
-import MedanTakAda from '../components/MedanTakAda'
 import PanelHistory from '../components/PanelHistory'
 import PanelPolisProduksi from '../components/PanelPolisProduksi'
-import PanelTotalRetensi from '../components/PanelTotalRetensi'
 import TanggalRedup from '../components/TanggalRedup'
-import { barisAngka, selAngka } from '../components/angka'
+import { KotakTanggalKetik } from '../components/TanggalKetik'
+import { DropdownDaftar } from '../components/IsianAuto'
+import { selAngka } from '../components/angka'
+import { formatDate } from '../../../../inti/frontend/lib/format'
+import { akhirSetahunSesudah, keKabel, keSimpan, tahunDariMulai } from '../components/tanggalIso'
 import PanelLampiran from '../components/PanelLampiran'
-import PohonLimits from '../components/PohonLimits'
+import TabLimitsNonProp from '../components/TabLimitsNonProp'
 import TabLimitsProp from '../components/TabLimitsProp'
-import SubTabShare, { PanelRnmShare } from '../components/TabShare'
-import TabGridWarisan from '../components/TabGridWarisan'
+import { PanelRnmShare } from '../components/TabShare'
+import TabShareNonProp from '../components/TabShareNonProp'
+import TabShareProp from '../components/TabShareProp'
+import TabInfoSubmit from '../components/TabInfoSubmit'
+import TabAchievement from '../components/TabAchievement'
+import TabEgnpi from '../components/TabEgnpi'
+import TabRetensi from '../components/TabRetensi'
 import TabPortofolio from '../components/TabPortofolio'
+import TabCoInsScale from '../components/TabCoInsScale'
 import TabTeksPanjang from '../components/TabTeksPanjang'
 import TabEventLimits from '../components/TabEventLimits'
 import DropdownWarisan from '../components/DropdownWarisan'
 import TabReportingPeriod from '../components/TabReportingPeriod'
+import TabAkumulasi from '../components/TabAkumulasi'
+import { bacaProperti, PenyediaHalaman, usePenampungHalaman } from '../halaman'
+import { bolehActions, kursBerubah, susunDokumen } from '../simpanDokumen'
+import { PILIHAN_AKSEPTASI, TOMBOL_TULIS } from '../labelsTulis'
+import TabAngsuran from '../components/TabAngsuran'
 
 // ⛔ DIEKSPOR ULANG, bukan didefinisikan di sini: uji yang mengimpornya dari
 // halaman ini tetap berjalan tanpa disunting — itulah bukti pemindahannya
@@ -120,6 +136,14 @@ export const PROPORSIONAL = 'Proportional'
 export const NON_PROPORSIONAL = 'Non Proportional'
 
 /**
+ * Tab yang DISEMBUNYIKAN dari strip — keputusan pemilik proses 7 Oktober
+ * 2026: *"untuk sementara retro di hide dari tab sampai ada perintah dari
+ * developer"*. Tab-nya tetap di daftar ekspor (`TAB_*`) beserta syaratnya;
+ * ia hanya tidak ditawarkan. Membukanya kembali = menghapus entrinya.
+ */
+export const TAB_DISEMBUNYIKAN: ReadonlySet<string> = new Set(['Retro'])
+
+/**
  * Himpunan tab yang berlaku bagi sebuah cabang.
  *
  * ⛔ Dipisahkan sebagai fungsi supaya ia dapat diuji tanpa merender apa pun —
@@ -149,9 +173,15 @@ export function tabUntuk(jenis: string, syarat?: SyaratTabKontrak): readonly str
 /** Satu baris grid Rate of Exchange; kosong adalah keadaan awal yang sah. */
 interface BarisKurs {
   mataUang: string
+  /** `.CurrencyID` — nilai dropdown sel Currency. */
+  mataUangID: string
   nilaiKeIDR: string
+  /** Bentuk TAMPIL (`dd/mm/yy`) — mode lihat. */
   berlakuDari: string
   berlakuSampai: string
+  /** Bentuk TERSIMPAN (`YYYYMMDD`) — kotak tanggal mode ubah. */
+  berlakuDariAsli: string
+  berlakuSampaiAsli: string
 }
 
 export interface FormKontrakProps {
@@ -170,9 +200,14 @@ export interface FormKontrakProps {
    */
   mode?: ModeForm
   onKembali: () => void
+  /**
+   * Kontrak BARU tersimpan — pengenalnya baru lahir di server; rute membuka
+   * ulang form dengan pengenal itu.
+   */
+  onTersimpan?: (id: string) => void
 }
 
-export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKembali }: FormKontrakProps) {
+export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKembali, onTersimpan }: FormKontrakProps) {
   const bisaUbah = mode === 'ubah'
   // Pilihan dropdown kepala — nilai TERSIMPAN ↔ label, disusun services.
   // Kontrak yang dibuka membawanya; kontrak BARU memintanya sendiri.
@@ -203,6 +238,12 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
   const [bordereauxNote, setBordereauxNote] = useState('')
   const [mulai, setMulai] = useState('')
   const [berakhir, setBerakhir] = useState('')
+  // ⭐ `Treaty Year` BERKEADAAN, bukan turunan tampilan.
+  //
+  // `DataTransform/TreatyInSetTreatyYear.xml` menyetelnya pada event
+  // `change` milik `TreatyIn.Commencement` — jadi ia diisi dari kolom saat
+  // kontrak dibuka, lalu DIHITUNG ULANG setiap Commencement berubah.
+  const [tahunTreaty, setTahunTreaty] = useState('')
   const [pembukuan, setPembukuan] = useState('')
   // ⛔ MEDAN KEDUA, bukan medan yang sama. `AccountingModeNonProp` berdiri
   // sendiri di ekspor dengan `pyCondition` cabangnya sendiri; satu keadaan
@@ -211,15 +252,137 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
   const [pembukuanNonProp, setPembukuanNonProp] = useState('')
   const [cedant, setCedant] = useState('')
   const [asalBisnis, setAsalBisnis] = useState('')
+  // ⭐ PENGENAL ikut disimpan, 6 Oktober 2026. Pega mengisi KEDUANYA saat
+  // memilih — `DataTransform/TreatyInSetReinsured.xml`:
+  //   1.1 TreatyIn.Ceding               := param.name
+  //   1.2 TreatyIn.CedingID             := param.id
+  //   2.1 TreatyIn.LeadingReinsSource   := param.name
+  //   2.2 TreatyIn.LeadingReinsSourceID := param.id
+  // Layar ini dahulu hanya menjalankan 1.1 dan 2.1, sehingga memilih ulang
+  // meninggalkan pengenal LAMA di samping nama BARU — dan Submit Pega
+  // menolak kontrak yang pengenalnya kosong.
+  const [idCedant, setIdCedant] = useState('')
+  const [idAsalBisnis, setIdAsalBisnis] = useState('')
   const [pemimpin, setPemimpin] = useState(false)
   // ⭐ Grid Rate of Exchange dibaca dari dokumen warisan kontrak ini, bukan
   // dari keadaan kosong. `CurrencyList` berisi di 297 dari 300 dokumen yang
   // disapu — "No items" selama ini bukan karena datanya tidak ada, melainkan
   // karena tidak ada yang membacanya.
   const [kurs, setKurs] = useState<BarisKurs[]>([])
+  // ⭐ KEADAAN BERSAMA tab Limits Non-Prop dan Share Non-Prop — clipboard
+  // Pega (`TreatyIn.Limits`, `TreatyIn.Share`) hidup selama kasus terbuka,
+  // dan `Update Summary` tab Share MEMBACA layer yang sedang disunting di tab
+  // Limits. Tab di sini dirender ulang tiap pindah tab, jadi keadaannya
+  // disimpan di form; `null` = belum disentuh, pakai yang dimuat.
+  // ⭐ PENAMPUNG HALAMAN `TreatyIn` (`../halaman.tsx`) — padanan clipboard
+  // Pega untuk tab cabang Proporsional: isian tab bertahan saat pindah tab,
+  // dan tab yang saling bergantung (Limits ↔ Share ↔ Achievement In IDR,
+  // Reporting Period → Accumulation) membaca properti yang SAMA. Hidup di
+  // form, di atas strip tab — bukan tabel; Save/Submit kelak membacanya.
+  const penampung = usePenampungHalaman()
+  const [limitsNP, setLimitsNP] = useState<{ layers: SimpulLimit[]; akar: LimitsAkar } | null>(null)
+  const [shareNP, setShareNP] = useState<ShareNP | null>(null)
   // Sel grid kurs yang sedang diketik (`baris:kolom`), atau null. Dipakai
   // supaya pemformat tidak melawan pengetik — lihat catatan di gridnya.
   const [selDiketik, setSelDiketik] = useState<string | null>(null)
+  // Pilihan dropdown Currency grid kurs — `BrowseCurrency_RD` (CURRENCY,
+  // `Currency != 'ITL'`), rute yang SAMA dengan dropdown mata uang tab
+  // Limits. Hanya dibutuhkan selama gridnya dapat disunting.
+  const [mataUangKurs, setMataUangKurs] = useState<PilihanWarisan[]>([])
+  useEffect(() => {
+    if (!bisaUbah) return
+    let dibuang = false
+    ambilOpsiLimits()
+      .then((o) => {
+        if (!dibuang) setMataUangKurs(o.mataUang)
+      })
+      .catch(() => undefined)
+    return () => {
+      dibuang = true
+    }
+  }, [bisaUbah])
+  const ubahKurs = (i: number, sebagian: Partial<BarisKurs>) => {
+    setKurs(kurs.map((x, j) => (j === i ? { ...x, ...sebagian } : x)))
+  }
+
+  // ---------------------------------------------------------------------
+  // ⭐ TOMBOL TULIS — Save, Submit, Actions, Decline offer (keputusan
+  // pemilik proses 6–7 Oktober 2026). Isian masuk basis data HANYA di sini,
+  // dari tombolnya; sasarannya tabel masing-masing (`T_TREATY_*`, kepala
+  // `TREATY_IN`, kurs `TREATYEXCHANGEYEARLY`).
+  // ---------------------------------------------------------------------
+  const [muatUlang, setMuatUlang] = useState(0)
+  const [sibukTulis, setSibukTulis] = useState(false)
+  const [hasilTulis, setHasilTulis] = useState<{ galat: boolean; pesan: string; takTersimpan: string[] } | null>(null)
+  // Workbasket pemakai — `OperatorID.pyWorkBasketList`; syarat tampil Actions.
+  const [workbasket, setWorkbasket] = useState<string[]>([])
+  useEffect(() => {
+    let dibuang = false
+    ambilSesiSaya()
+      .then((p) => {
+        if (!dibuang) setWorkbasket(p.peran)
+      })
+      .catch(() => undefined)
+    return () => {
+      dibuang = true
+    }
+  }, [])
+  // Modal `TreatyInAction` — radio `ChooseStatusAkseptasi` + `Comment`.
+  const [actionsBuka, setActionsBuka] = useState(false)
+  const [pilihanActions, setPilihanActions] = useState('Accept')
+  const [komentarActions, setKomentarActions] = useState('')
+
+  /** Isi layar → dokumen `TreatyIn` ejaan Pega (`simpanDokumen.ts`). */
+  const isiTombol = (tambahan: Record<string, unknown> = {}) => ({
+    idKontrak,
+    dokumen: {
+      ...susunDokumen(
+        {
+          nonProporsional: jenis === NON_PROPORSIONAL,
+          nama, rujukan, wilayah, bordereaux, bordereauxNote, mulai, berakhir, tahunTreaty,
+          pembukuan, pembukuanNonProp, cedant, idCedant, asalBisnis, idAsalBisnis, pemimpin,
+        },
+        penampung.halaman,
+        limitsNP,
+        shareNP,
+      ),
+      ...tambahan,
+    },
+    kurs: kursBerubah(kurs, warisan?.kurs ?? [], tahunTreaty),
+  })
+
+  /** Satu penekanan tombol tulis; sesudah berhasil, data dibaca ulang dari tabel. */
+  const tekanTulis = (jalan: () => Promise<HasilSimpan>) => {
+    setSibukTulis(true)
+    setHasilTulis(null)
+    jalan()
+      .then((h) => {
+        setHasilTulis({ galat: false, pesan: h.pesan, takTersimpan: h.kunciTakTersimpan })
+        if (idKontrak === '') onTersimpan?.(h.id)
+        else setMuatUlang((n) => n + 1)
+      })
+      .catch((e: unknown) => {
+        setHasilTulis({ galat: true, pesan: e instanceof Error ? e.message : String(e), takTersimpan: [] })
+      })
+      .finally(() => {
+        setSibukTulis(false)
+      })
+  }
+  const tekanSave = () => {
+    tekanTulis(() => simpanKontrak(isiTombol()))
+  }
+  const tekanKirim = (aksi: MasukanKirim['aksi'], pilihan = '', tambahan: Record<string, unknown> = {}) => {
+    tekanTulis(() => kirimKontrak({ ...isiTombol(tambahan), aksi, pilihan }))
+  }
+  const statusKini = warisan?.statusAkseptasi ?? ''
+  // `TreatyIn.RevisionState` TERSIMPAN (migrasi 448) — tombol Revision daftar.
+  const tersimpanPenampung: Record<string, string> = warisan?.penampung ?? {}
+  const revisi = tersimpanPenampung.RevisionState === '1'
+  // Satu-satunya tab yang jalur revisi hidupkan di mode lihat.
+  const TAB_REVISI = 'Information & Submit'
+  // Syarat tampil Save — `TreatyIn.IsEditData !='1' && StatusAkseptasi != 'Resolve Complete'`.
+  const saveTampil = bisaUbah && statusKini !== 'Resolve Complete'
+  const actionsTampil = bolehActions(warisan?.posisi ?? '', workbasket, statusKini)
 
   // ⛔ Mengisi SELURUH medan dari kontrak nyata, termasuk radio jenisnya.
   // Radio itu memilih strip tab, dan tiket ronde ini menyebutnya: ia
@@ -234,10 +397,30 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
     let dibuang = false
     setMemuat(true)
     setGalat(null)
+    setLimitsNP(null)
+    setShareNP(null)
+    penampung.kosongkan()
     ambilKontrakWarisan(idKontrak)
       .then((k) => {
         if (dibuang) return
         setWarisan(k)
+        setLimitsNP(null)
+        setShareNP(null)
+        // ⛔ Halaman kasus BARU: tab yang sempat dirender selama memuat sudah
+        // menyemai nilai kosong — dibuang supaya tab menyemai dari kontrak.
+        penampung.kosongkan()
+        // ⭐ Properti penampung yang TERSIMPAN (migrasi `448`) disemai lebih
+        // dulu — tab yang dirender sesudahnya membaca nilai ini, bukan
+        // bawaan kosongnya sendiri.
+        for (const [kunci, v] of Object.entries(k.penampung ?? {})) {
+          penampung.ubah(kunci, () => v)
+        }
+        // ⭐ Larik total yang TERSIMPAN (`T_TREATY_TOTAL`) — tanpa ini total
+        // Share Prop / EGNPI / Installment "No items" sesudah Save sampai
+        // Refresh ditekan (laporan pemakai 8 Oktober 2026).
+        for (const [kunci, v] of Object.entries(k.penampungLarik ?? {})) {
+          penampung.ubah(kunci, () => v)
+        }
         setOpsi(k.opsiKepala)
         // ⛔ `?? []` BUKAN hiasan, dan bukan pula ketidakpercayaan pada
         // backend. Ia lapis kedua dari galat yang menghentikan halaman
@@ -255,12 +438,25 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
         // (`Underwriting Year`) memberi "tidak ada di daftar referensi".
         setBordereaux(k.bordereauxAsli)
         setBordereauxNote(k.bordereauxCatatan)
-        setMulai(k.tanggalMulai)
-        setBerakhir(k.tanggalBerakhir)
+        // ⛔ Dari `…Asli` (`YYYYMMDD`) ke bentuk KABEL `FieldTanggal`
+        // (`DD-MM-YYYY`), BUKAN dari `tanggalMulai` (`01/01/2025`).
+        //
+        // Bentuk BACA ditolak medan tanggal TANPA BERSUARA, dan bentuk ISO
+        // membuat kedua turunannya (`Treaty Year`, `Termination`) kosong
+        // begitu pemakai memilih tanggal — sebab `FieldTanggal`
+        // mengembalikan `DD-MM-YYYY`, bukan ISO. Satu bentuk kabel saja.
+        setMulai(keKabel(k.tanggalMulaiAsli))
+        setBerakhir(keKabel(k.tanggalBerakhirAsli))
+        setTahunTreaty(k.tahunTreaty)
         setPembukuan(k.caraPembukuanAsli)
         setPembukuanNonProp(k.caraPembukuanNonPropAsli)
         setCedant(k.cedant)
         setAsalBisnis(k.asalBisnis)
+        // ⛔ Dari KOLOM `TREATY_IN`, apa adanya. Terukur 6 Oktober 2026:
+        // 0 dari 1.854 kontrak bernama tanpa pengenal — jadi pencarian balik
+        // nama->ID TIDAK diperlukan di sini, dan sengaja tidak dipasang.
+        setIdCedant(k.idCedant)
+        setIdAsalBisnis(k.idAsalBisnis)
         // `TreatyLeader` tersimpan sebagai TEKS `"true"`/`"false"`, bukan
         // boolean JSON — sapuan menemukan 103 `true` dan 556 `false`.
         setPemimpin(k.pemimpinTreaty === 'true')
@@ -274,10 +470,14 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
     return () => {
       dibuang = true
     }
-  }, [idKontrak])
+    // ⭐ `muatUlang` — sesudah tombol tulis berhasil, kontrak dibaca ULANG dari
+    // tabel: layar memperlihatkan yang TERSIMPAN, bukan yang diketik.
+  }, [idKontrak, muatUlang])
 
-  /** Kunci itu ADA di dokumen kontrak ini? Kontrak baru: tidak relevan. */
-  const adaKunci = (kunci: string) => warisan === null || (warisan.adaDiJson[kunci] ?? false)
+  // ⭐ `TreatyIn.EDMMaterialType = 1` — mengunci `Contract Ref No`
+  // (`pyDisabledWhen`) dan `Bordereaux Note` (`pyReadOnlyCondition`).
+  const edmMateri = (warisan?.edmJenisMaterial ?? '') === '1'
+  const idBordereauxNote = useId()
 
   // ⭐ Syarat tampil tab — dari dokumen kontrak, nol untuk kontrak baru.
   const syaratTab: SyaratTabKontrak | undefined =
@@ -288,7 +488,9 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
           edmState: warisan.edmState,
           edmJenisMaterial: warisan.edmJenisMaterial,
         }
-  const tab = tabUntuk(jenis, syaratTab)
+  // ⭐ Syarat tab dinilai `tabUntuk`; yang DISEMBUNYIKAN pemilik proses
+  // (Retro) dibuang di sini, di strip — syaratnya tetap teruji.
+  const tab = tabUntuk(jenis, syaratTab).filter((t) => !TAB_DISEMBUNYIKAN.has(t))
   const [tabAktif, setTabAktif] = useState<string>(tab[0] ?? '')
   const tabTampil = tab.includes(tabAktif) ? tabAktif : (tab[0] ?? '')
 
@@ -327,7 +529,59 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
    *
    */
   // ⭐ `TREATYYEAR` adalah KOLOM di `TREATY_IN` — dibaca, bukan dihitung.
-  const tahunTreaty = warisan?.tahunTreaty ?? ''
+  // ⭐ Aturan `TreatyInSetTreatyYear`, disalin APA ADANYA dari ekspor —
+  // dijalankan pada `change` Commencement, persis seperti Pega
+  // (`pyEvent change` + `postValue` + `refresh`, pemiliknya
+  // `TreatyIn.Commencement`).
+  //
+  // ⚠️ Ia MENIMPA `Termination`, dan itu memang perilaku ekspornya. Diadu
+  // dengan POOLDATA 5 Oktober 2026, `TERMINATION = COMMENCEMENT + 12 bulan`
+  // hanya cocok pada 9 dari 1.854 — bukan karena aturannya salah, melainkan
+  // karena ia NILAI AWAL yang pemakai ubah sesudahnya. Menimpa saat
+  // Commencement berubah lalu membiarkannya disunting adalah justru yang
+  // menghasilkan sebaran itu.
+  const ubahMulai = (v: string) => {
+    setMulai(v)
+    setTahunTreaty(tahunDariMulai(v))
+    setBerakhir(akhirSetahunSesudah(v))
+  }
+
+  // ⭐ KETERGANTUNGAN ANTARTAB Non-Prop — 7 Oktober 2026. Satu sumber NILAI
+  // AWAL per page list (tab pemiliknya menyemai penampung darinya), dan
+  // nilai TERKINI dari penampung untuk tab yang membacanya:
+  //   Retention → EGNPI   `TreatyInNonAddItem(egnpi)` memakai `Retention(1)`
+  //   EGNPI → Limits      `TotalEgnpi` (`EgnpiTotalList` tiap layer)
+  //   Share → Installment `TreatyIn.TotalShareNetNP`
+  // Dahulu ketiganya membaca DATA KONTRAK yang dimuat, sehingga isian tab
+  // sumbernya tidak pernah sampai ke tab tujuan.
+  const retensiAwal: BarisRetensi[] = (warisan?.retensi ?? []).map((b) => ({
+    ID: '',
+    TreatyGroup: b.kelompokTreaty,
+    TreatyGroupID: '',
+    Currency: b.mataUang,
+    CurrencyID: '',
+    Amount: b.jumlah,
+    ClassOfBusiness: b.kelasBisnis,
+    ClassOfBusinessID: '',
+    Note: b.keterangan,
+  }))
+  const egnpiAwal: BarisEgnpi[] = (warisan?.egnpi ?? []).map((b) => ({
+    ID: '',
+    TreatyGroup: b.kelompokTreaty,
+    TreatyGroupID: '',
+    AsDate: b.perTanggal,
+    Proportion: b.proporsi,
+    Currency: b.mataUang,
+    CurrencyID: '',
+    Amount: b.jumlah,
+    AmountIDR: b.jumlahIDR,
+    ClassOfBusiness: b.kelasBisnis,
+    ClassOfBusinessID: '',
+    Note: b.keterangan,
+  }))
+  const retensiKini = (bacaProperti(penampung.halaman, 'Retention') as BarisRetensi[] | undefined) ?? retensiAwal
+  const egnpiKini = (bacaProperti(penampung.halaman, 'EGNPI') as BarisEgnpi[] | undefined) ?? egnpiAwal
+  const netPremiumKini = (shareNP ?? warisan?.shareNP)?.Total.TotalShareNetNP ?? []
 
   return (
     <div className="inbox">
@@ -400,11 +654,20 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
         <div className="trin__dwikolom">
           <div className="trin__kolom">
             <Field label={FORM_KONTRAK.namaKontrak} value={nama} onChange={setNama} />
-            {adaKunci('ContractRefNo') ? (
-              <Field label={FORM_KONTRAK.nomorRujukan} value={rujukan} onChange={setRujukan} />
-            ) : (
-              <MedanTakAda label={FORM_KONTRAK.nomorRujukan} />
-            )}
+            {/* ⭐ RALAT 7 Oktober 2026 — ketiga medan kepala yang dahulu
+                menjadi medan mati "Tidak ada di dokumen sistem lama"
+                kini SELALU dirender, persis ekspor
+                `Section/TreatyInNONProportional.xml`: sel `ContractRefNo`
+                dan `BordereauxNote` `pyVisible ALWAYS`, sel `TreatyLeader`
+                tanpa syarat tampil sama sekali. Ada-tidaknya nilai di
+                dokumen lama bukan syarat tampil di Pega; tabel `T_TREATY_*`
+                yang kosong pun membuat ketiganya mati pada SETIAP kontrak.
+
+                `pxTextInput` · `pyReadOnlyCondition TreatyIn.IsEditData= 1`
+                · `pyDisabledWhen TreatyIn.EDMMaterialType = 1`.
+                `IsEditData` didekati mode lihat (`<fieldset disabled>`),
+                preseden `TabPortofolio.tsx`/`TabRetensi.tsx`. */}
+            <Field label={FORM_KONTRAK.nomorRujukan} value={rujukan} onChange={setRujukan} readOnly={edmMateri} />
             {/* `pyWidth=0` — mengisi kolomnya; satu-satunya pembedaan lebar
                 yang ekspor nyatakan di form ini. */}
             <Area label={FORM_KONTRAK.lingkupWilayah} value={wilayah} onChange={setWilayah} />
@@ -431,20 +694,29 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
                 opsi={opsi?.bordereaux ?? []}
               />
             )}
-            {/* `pyWidth=0` — idem. */}
-            {adaKunci('BordereauxNote') ? (
-              <Area
-                label={FORM_KONTRAK.bordereauxCatatan}
+            {/* `pxTextArea`, `pyWidth=0` — idem. Baca-saja bila
+                `TreatyIn.IsEditData= 1 || TreatyIn.EDMMaterialType = 1`.
+                ⛔ `textarea` lokal bermarkup `Area`: `Area` inti nol punya
+                `readOnly`, dan ia tidak diubah dari sini. */}
+            <div className="field field--lebar">
+              <label className="field__label" htmlFor={idBordereauxNote}>
+                {FORM_KONTRAK.bordereauxCatatan}
+              </label>
+              <textarea
+                id={idBordereauxNote}
+                className="field__input"
+                rows={4}
                 value={bordereauxNote}
-                onChange={setBordereauxNote}
+                readOnly={edmMateri}
+                onChange={(e) => {
+                  setBordereauxNote(e.target.value)
+                }}
               />
-            ) : (
-              <MedanTakAda label={FORM_KONTRAK.bordereauxCatatan} />
-            )}
+            </div>
           </div>
 
           <div className="trin__kolom">
-            <TanggalRedup label={FORM_KONTRAK.mulai} value={mulai} onChange={setMulai} />
+            <TanggalRedup label={FORM_KONTRAK.mulai} value={mulai} onChange={ubahMulai} />
             <TanggalRedup label={FORM_KONTRAK.berakhir} value={berakhir} onChange={setBerakhir} />
             <Field
               label={FORM_KONTRAK.tahunTreaty}
@@ -483,30 +755,40 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
               nilai={cedant}
               onPilih={(b) => {
                 setCedant(b.nama)
+                setIdCedant(b.id)
               }}
             />
-            {adaKunci('TreatyLeader') ? (
-              <label className="trin__centang">
-                <input
-                  type="checkbox"
-                  checked={pemimpin}
-                  onChange={(e) => {
-                    setPemimpin(e.target.checked)
-                  }}
-                />
-                {FORM_KONTRAK.pemimpinTreaty}
-              </label>
-            ) : (
-              <MedanTakAda label={FORM_KONTRAK.pemimpinTreaty} />
-            )}
+            {/* ⛔ TERSEMBUNYI, sebab Pega pun tidak menampilkannya: kepala
+                hanya merender `TreatyIn.Ceding` (sel 23, baca-saja). Yang
+                memperlihatkan pengenal adalah DAFTAR pencariannya — di sini
+                `nama — id` untuk nama kembar. */}
+            <input type="hidden" name="cedingId" value={idCedant} />
+            {/* `pxCheckbox` · `pyCheckboxCaption` "RNM as Treaty Leader" ·
+                `pyIncludeLabel=false` — keterangan di SAMPING kotak, tanpa
+                label medan. `pyDisabledWhen TreatyIn.ViewState = 1` = mode
+                lihat (`<fieldset disabled>`). */}
+            <label className="trin__centang">
+              <input
+                type="checkbox"
+                checked={pemimpin}
+                onChange={(e) => {
+                  setPemimpin(e.target.checked)
+                }}
+              />
+              {FORM_KONTRAK.pemimpinTreaty}
+            </label>
             <DropdownWarisan
               label={FORM_KONTRAK.asalBisnis}
               ambil={ambilDaftarAsalBisnis}
               nilai={asalBisnis}
               onPilih={(b) => {
                 setAsalBisnis(b.nama)
+                setIdAsalBisnis(b.id)
               }}
             />
+            {/* Sel 28 `TreatyIn.LeadingReinsSource` baca-saja; pengenalnya
+                tidak tampil di Pega. */}
+            <input type="hidden" name="leadingReinsSourceId" value={idAsalBisnis} />
           </div>
         </div>
       </Panel>
@@ -523,7 +805,8 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
               type="button"
               className="btn btn--ghost btn--sm"
               onClick={() => {
-                setKurs([...kurs, { mataUang: '', nilaiKeIDR: '', berlakuDari: '', berlakuSampai: '' }])
+                // `TreatyInAddCurrency` — `CurrencyList(<APPEND>).CurrencyID = ""`.
+                setKurs([...kurs, { mataUang: '', mataUangID: '', nilaiKeIDR: '', berlakuDari: '', berlakuSampai: '', berlakuDariAsli: '', berlakuSampaiAsli: '' }])
               }}
             >
               {FORM_KONTRAK.tambah}
@@ -531,11 +814,18 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
           )}
         </div>
         <div className="table-wrap">
-          {/* ⛔ Perbandingan lebar DARI ekspor, satu-satunya di layar ini yang
-              sungguh berbeda: `.Currency` W=193, `.Value` W=349, `.Date` W=80
-              (`Section/InputTreatyInOffer.xml`, sel ber-`pyValue` + `pyWidth`).
-              193 : 349 : 80 : 80 -> 27% : 48% : 12,5% : 12,5%. Persen, bukan
-              piksel: tata letak kita responsif dan Pega tidak. */}
+          {/* ⛔ LEBARNYA TIDAK LAGI DARI EKSPOR — lihat `treatyin.css`.
+
+              Ekspor memberi `.Currency` W=193, `.Value` W=349, `.Date` W=80
+              (`Section/InputTreatyInOffer.xml`), yaitu 27 : 48 : 12,5 : 12,5.
+              Pemilik proses 7 Oktober 2026 memerintahkan kotak `Value to IDR`
+              dikecilkan, jadi rasionya kini 14 : 28 : 21 : 21 — ralat pemilik,
+              bukan pergeseran diam-diam.
+
+              ⚠️ HANYA EMPAT `col` untuk LIMA sel di mode ubah: sel tombol
+              Remove sengaja nol `col`. Keempatnya berjumlah 84%, jadi sisanya
+              jatuh ke sel tombol itu — inilah sebabnya jumlahnya bukan 100%,
+              dan mengapa penggulir mendatar yang dulu muncul kini hilang. */}
           <table className="trin__tabel trin__tabel-kurs">
             <colgroup>
               <col className="trin__kol-mata-uang" />
@@ -562,39 +852,85 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
               {bisaUbah &&
                 kurs.map((b, i) => (
                   <tr key={i}>
-                    {(['mataUang', 'nilaiKeIDR', 'berlakuDari', 'berlakuSampai'] as const).map((kk) => (
-                      <td key={kk}>
-                        {/* ⛔ ISIAN PUN DIFORMAT — cacat nyata 6 Oktober 2026:
-                            mode Edit merender nilai MENTAH (`10584.39`)
-                            sementara mode View merender `10.584,39`. Satu
-                            layar, dua bentuk, dan yang menyuntingnya mengira
-                            angkanya memang berbeda.
+                    {/* ⭐ Sel @439485 `.CurrencyID` — `pxDropdown`, sumber
+                        `BrowseCurrency_RD` (nilai `.ID`, teks `.Currency`).
+                        Saat berubah Pega menjalankan
+                        `SetCurrNameMasterTreaty_Act`: `Obj-Browse CURRENCY`
+                        lalu `.Currency = nama`. Dropdown ini mengisi
+                        keduanya sekaligus. ⛔ Dahulu kotak teks bebas. */}
+                    <td>
+                      <DropdownDaftar
+                        label=""
+                        nilai={b.mataUang}
+                        pilihan={mataUangKurs}
+                        bisaUbah
+                        onPilih={(nama, id) => {
+                          ubahKurs(i, { mataUang: nama, mataUangID: id })
+                        }}
+                      />
+                    </td>
+                    <td>
+                      {/* Sel @454068 `.Conversion` — `pxTextInput`.
 
-                            ⭐ Diformat HANYA saat sel itu tidak sedang
-                            diketik. Memformat di tiap ketukan membuat koma
-                            desimal mustahil diketik: `10,` berubah menjadi
-                            `10` sebelum angka berikutnya sempat masuk. */}
-                        <input
-                          className="field__input"
-                          type="text"
-                          value={
-                            selDiketik === `${String(i)}:${kk}` || kk !== 'nilaiKeIDR'
-                              ? b[kk]
-                              : selAngka(['uang', 2], b[kk])
-                          }
-                          aria-label={kk}
-                          onFocus={() => {
-                            setSelDiketik(`${String(i)}:${kk}`)
-                          }}
-                          onBlur={() => {
-                            setSelDiketik(null)
-                          }}
-                          onChange={(e) => {
-                            setKurs(kurs.map((x, j) => (j === i ? { ...x, [kk]: e.target.value } : x)))
-                          }}
-                        />
-                      </td>
-                    ))}
+                          ⛔ ISIAN PUN DIFORMAT — cacat nyata 6 Oktober 2026:
+                          mode Edit merender nilai MENTAH (`10584.39`)
+                          sementara mode View merender `10.584,39`. Satu
+                          layar, dua bentuk, dan yang menyuntingnya mengira
+                          angkanya memang berbeda.
+
+                          ⭐ Diformat HANYA saat sel itu tidak sedang
+                          diketik. Memformat di tiap ketukan membuat koma
+                          desimal mustahil diketik: `10,` berubah menjadi
+                          `10` sebelum angka berikutnya sempat masuk. */}
+                      <input
+                        className="field__input"
+                        type="text"
+                        value={selDiketik === `${String(i)}:nilaiKeIDR` ? b.nilaiKeIDR : selAngka(['uang', 2], b.nilaiKeIDR)}
+                        aria-label={FORM_KONTRAK.kursKeIDR}
+                        onFocus={() => {
+                          setSelDiketik(`${String(i)}:nilaiKeIDR`)
+                        }}
+                        onBlur={() => {
+                          setSelDiketik(null)
+                        }}
+                        onChange={(e) => {
+                          ubahKurs(i, { nilaiKeIDR: e.target.value })
+                        }}
+                      />
+                    </td>
+                    {/* Sel @460497 `.PeriodStart` / @466983 `.PeriodEnd` —
+                        `pxDateTime`: kotak tanggal yang dapat diketik atau
+                        dipilih dari kalender, bukan teks bebas.
+
+                        ⛔ RALAT 7 Oktober 2026 — kotak ini SEMPAT KOSONG
+                        walau basis datanya berisi. Ia diberi `berlakuDari`,
+                        bentuk TAMPIL `dd/mm/yy`; kotak tanggal menerima
+                        bentuk kabel `DD-MM-YYYY`, dan tahun dua digit
+                        beserta garis miring itu tidak terbaca olehnya.
+                        Sekarang yang diberikan `…Asli` (`YYYYMMDD`).
+
+                        ⚠️ Kosongnya BERBAHAYA, bukan sekadar jelek: Save
+                        menulis isi kotak ini apa adanya ke `STARTDATE`,
+                        jadi membuka lalu menyimpan kontrak akan MENGHAPUS
+                        tanggal yang sudah ada. */}
+                    <td>
+                      <KotakTanggalKetik
+                        label={FORM_KONTRAK.kursBerlakuDari}
+                        value={b.berlakuDariAsli}
+                        onChange={(v) => {
+                          ubahKurs(i, { berlakuDariAsli: v })
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <KotakTanggalKetik
+                        label={FORM_KONTRAK.kursBerlakuSampai}
+                        value={b.berlakuSampaiAsli}
+                        onChange={(v) => {
+                          ubahKurs(i, { berlakuSampaiAsli: v })
+                        }}
+                      />
+                    </td>
                     <td>
                       <button
                         type="button"
@@ -615,8 +951,10 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
                       berbunyi `1,00` dan `16.000,00`, gambar 26 `15.500,00`.
                       Aturan lama membuangnya dan memberi `1`. */}
                   <td>{selAngka(['uang', 2], b.nilaiKeIDR)}</td>
-                  <td>{b.berlakuDari}</td>
-                  <td>{b.berlakuSampai}</td>
+                  {/* `pxDateTime` — tanggal, bukan stempel mentah
+                      `20250701T140000.000 GMT`. */}
+                  <td>{formatDate(b.berlakuDari)}</td>
+                  <td>{formatDate(b.berlakuSampai)}</td>
                 </tr>
               ))}
             </tbody>
@@ -634,7 +972,15 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
       {/* Isi tab — mode lihat mematikannya seperti kepala. `key` melahirkan
           ulang grid ketika data kontrak tiba, sebab grid menyalin barisnya
           SEKALI. */}
-      <fieldset className="trin__mode" disabled={!bisaUbah} key={`${idKontrak}|${warisan === null ? '-' : 'isi'}|${mode}`}>
+      <PenyediaHalaman penampung={penampung}>
+      {/* ⭐ Kontrak REVISI: tab Information & Submit tidak dimatikan — Comment
+          dan Submit revisinya hidup di mode lihat (`TreatyInfoSubmit` cell 9
+          dan 21); tab itu sendiri yang mematikan medan lainnya. */}
+      <fieldset
+        className="trin__mode"
+        disabled={!bisaUbah && !(revisi && tabTampil === TAB_REVISI)}
+        key={`${idKontrak}|${warisan === null ? '-' : 'isi'}|${mode}`}
+      >
 
       {/* ⭐ DUA BELAS TAB KINI BERISI. Tujuh dari tabel pendaratan
           `M_TREATYIN_*`, empat dari `M_TREATY_IN2` (satu tabel warisan,
@@ -656,68 +1002,110 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
           mode={mode}
         />
       ) : tabTampil === 'EGNPI' ? (
-        <TabGridWarisan
-          judul={tabTampil}
-          kolom={KOLOM_EGNPI}
-          baris={barisAngka(
-            // ⛔ URUTANNYA mengikuti `KOLOM_EGNPI`, yang kini urut layar
-            // (gambar 29), bukan urut abjad kunci dokumen.
-            (warisan?.egnpi ?? []).map((b) => [
-              b.kelompokTreaty, b.perTanggal, b.proporsi, b.mataUang,
-              b.jumlah, b.jumlahIDR, b.kelasBisnis, b.keterangan,
-            ]),
-            JENIS_EGNPI,
-          )}
-          petunjukKosong={FORM_KONTRAK.petunjukTabel}
+        /* ⛔ GANTI 6 Oktober 2026 — grid hanya-baca menjadi tab berumus.
+           Ekspor (`Section/TreatyInTabsNonProportional.xml`, wadah TABBED
+           ke-3) memberi tab ini `Add`/`Delete`, dua panel total, dan dua
+           tombol berumus (`Update Total`, `Update EGNPI Value`). Nol di
+           antaranya ada sebelum ini, sehingga `Amount in IDR` dan
+           `Proportion %` nol pernah terisi — padahal tab Limits MEMBACA
+           keduanya lewat `TotalEgnpi`.
+
+           ⚠️ EGNPI hanya ada di `TAB_NON_PROPORSIONAL`; cabang prop nol
+           pernah sampai ke sini, jadi nol percabangan jenis di bawah. */
+        <TabEgnpi
+          baris={egnpiAwal}
+          kurs={kurs.map((k) => ({ Currency: k.mataUang, Conversion: k.nilaiKeIDR }))}
+          // ⭐ Retention TERKINI (tab Maximum Retention, penampung halaman).
+          retensi={retensiKini.map((r) => ({ Currency: r.Currency, CurrencyID: r.CurrencyID }))}
+          mode={mode}
         />
       ) : tabTampil === 'Maximum Retention' ? (
-        <>
-          <TabGridWarisan
-            judul={tabTampil}
-            kolom={KOLOM_RETENSI}
-            baris={barisAngka(
-              // ⛔ Urut layar (gambar 26), bukan abjad.
-              (warisan?.retensi ?? []).map((b) => [
-                b.kelompokTreaty, b.mataUang, b.jumlah, b.kelasBisnis, b.keterangan,
-              ]),
-              JENIS_RETENSI,
-            )}
-            petunjukKosong={FORM_KONTRAK.petunjukTabel}
-            mode={mode}
-          />
-          <PanelTotalRetensi baris={warisan?.totalRetensi ?? []} />
-        </>
+        /* ⛔ GANTI 6 Oktober 2026 — grid hanya-baca + panel bertombol MATI
+           menjadi tab berumus. Ekspor (`Section/TreatyInTabsNonProportional
+           .xml`, wadah TABBED ke-1) memberi tab ini `Add`/`Delete`, rincian
+           baris (`Section/MaxRetention.xml`), dan `Update Total`
+           (`TreatyInNPSetTotal` type=retention).
+
+           ⚠️ SATU tombol, bukan dua seperti EGNPI: retensi nol punya
+           kolom `Amount in IDR`, jadi nol konversi kurs untuk dijalankan. */
+        <TabRetensi
+          baris={retensiAwal}
+          totalAwal={(warisan?.totalRetensi ?? []).map((b) => ({
+            Currency: b.mataUang,
+            CurrencyID: '',
+            Value: b.nilai,
+          }))}
+          edmJenisMaterial={warisan?.edmJenisMaterial ?? ''}
+          mode={mode}
+        />
       ) : tabTampil === 'Installment' ? (
-        <TabGridWarisan
-          judul={tabTampil}
-          kolom={KOLOM_ANGSURAN}
-          baris={barisAngka(
-            (warisan?.angsuran ?? []).map((b) => [
-              b.angsuran, b.mataUang, b.jumlah, b.persen,
-              b.jatuhTempo, b.tanggalBayar, b.wpc,
-            ]),
-            JENIS_ANGSURAN,
-          )}
-          petunjukKosong={FORM_KONTRAK.petunjukTabel}
+        /* ⭐ 7 Oktober 2026 — tab BERUMUS dari ekspor (`TabAngsuran.tsx`):
+           Installment + Update Value (`TreatyInSetValueInstallment`), grid per
+           mata uang dengan rincian `Installments`, Update Total. Nilainya
+           `TotalShareNetNP` tab Share TERKINI.
+
+           ⛔ Add/Delete tetap TIDAK ada — Pega tidak punya keduanya (nol sel
+           tombol bergrid `TreatyIn.Installment` / `.InstallmentList` di 52
+           seksi); barisnya LAHIR dari Update Value. */
+        <TabAngsuran
+          baris={warisan?.angsuran ?? []}
+          netPremium={netPremiumKini}
+          edmState={warisan?.edmState ?? ''}
+          edmJenisMaterial={warisan?.edmJenisMaterial ?? ''}
           mode={mode}
         />
       ) : tabTampil === 'Information & Submit' ? (
-        <TabGridWarisan
-          judul={tabTampil}
-          kolom={KOLOM_CATATAN}
-          baris={(warisan?.catatan ?? []).map((b) => [
-            b.tanggal, b.operator, b.disetujui, b.catatan,
-          ])}
-          petunjukKosong={FORM_KONTRAK.petunjukTabel}
+        /* ⛔ RALAT 6 Oktober 2026 — tab ini FORM, bukan grid riwayat.
+           `Section/TreatyInfoSubmit.xml`: dua `Text area`
+           (`TreatyIn.Information`, `TreatyIn.Comment`) dan dua tombol.
+
+           ⚠️ Yang dirender sebelumnya bukan sekadar salah, ia SALINAN —
+           riwayat sudah punya panelnya sendiri di kaki layar, membaca tabel
+           yang sama. Layar menampilkan daftar yang sama dua kali, dan tab
+           yang seharusnya tempat MENGIRIM justru tempat membaca. */
+        <TabInfoSubmit
           mode={mode}
-          bisaTambah={false}
+          statusAkseptasi={warisan?.statusAkseptasi ?? ''}
+          revisi={revisi}
+          sibuk={sibukTulis}
+          onKirim={() => {
+            tekanKirim('submit')
+          }}
+          onTolak={() => {
+            tekanKirim('decline')
+          }}
         />
       ) : tabTampil === 'Limits' ? (
         jenis === NON_PROPORSIONAL ? (
-          <PohonLimits layer={warisan?.layer ?? []} nonProp />
+          /* ⭐ Cabang NP: grid layer → `Layers` → Summary → Total All
+             Layers, dari ekspor — `labelsLimitsNP.ts`. EGNPI dan kurs yang
+             rumusnya baca diambil dari tab EGNPI dan grid Rate of Exchange
+             kepala (keadaan TERKINI grid itu, seperti clipboard Pega). */
+          <TabLimitsNonProp
+            petunjukKosong={FORM_KONTRAK.petunjukLayer}
+            pohon={limitsNP?.layers ?? warisan?.limitsPohon ?? []}
+            akar={limitsNP?.akar ?? warisan?.limitsAkar}
+            onUbah={(layers, akar) => setLimitsNP({ layers, akar })}
+            // ⭐ EGNPI TERKINI (tab EGNPI, penampung halaman) — `TotalEgnpi`.
+            egnpi={egnpiKini.map((e) => ({
+              TreatyGroup: e.TreatyGroup,
+              Currency: e.Currency,
+              CurrencyID: e.CurrencyID,
+              Amount: e.Amount,
+            }))}
+            kurs={kurs.map((k) => ({ Currency: k.mataUang, Conversion: k.nilaiKeIDR }))}
+            edmState={warisan?.edmState ?? ''}
+            edmJenisMaterial={warisan?.edmJenisMaterial ?? ''}
+            mode={mode}
+          />
         ) : (
           /* ⭐ Cabang P: tiga tingkat dari ekspor — `labelsLimitsProp.ts`. */
-          <TabLimitsProp pohon={warisan?.limitsPohon ?? []} mode={mode} />
+          <TabLimitsProp
+            pohon={warisan?.limitsPohon ?? []}
+            mode={mode}
+            idKontrak={idKontrak}
+            edmJenisMaterial={warisan?.edmJenisMaterial ?? ''}
+          />
         )
       ) : tabTampil === 'Share' ? (
         /* ⭐ `RNM Share` adalah SUB-TAB di dalam `Share`, bukan tab setara —
@@ -734,14 +1122,46 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
            ⛔ Ini BUKAN penghapusan tab — §6 melarangnya, dan nol tab
            dihapus: `RNM Share` tetap dirender, dengan kolom dan data yang
            sama, satu tingkat di dalam tempat ekspor dan gambar menaruhnya. */
-        <SubTabShare
-          layer={warisan?.layer ?? []}
-          petunjukKosong={FORM_KONTRAK.petunjukLayer}
-          mode={mode}
-        />
+        /* ⭐ DUA BENTUK, DUA CABANG — tangkapan layar Pega 6 Oktober 2026.
+           Cabang proporsional memakai panel `Total Share` (Refresh, % RNM
+           Share, % Brokerage, Option) lalu sub-tab `RNM Share` berisi grid
+           `Kind of Treaty` dan tiga grid total. Cabang non-proporsional
+           memakai grid per layer, dan kolomnya tidak pernah ada di sini. */
+        jenis === PROPORSIONAL ? (
+          <TabShareProp
+            pohon={warisan?.limitsPohon ?? []}
+            petunjukKosong={FORM_KONTRAK.petunjukLayer}
+            mode={mode}
+            // Commencement kepala TERKINI — saringan RD spreading.
+            commencement={keSimpan(mulai) || (warisan?.tanggalMulaiAsli ?? '')}
+            edmJenisMaterial={warisan?.edmJenisMaterial ?? ''}
+          />
+        ) : (
+          /* ⭐ Cabang NON-PROP — tangkapan layar Pega pemakai 7 Oktober 2026
+             dan `TreatyInTabsNonProportional.xml` @1695720: panel Share,
+             grid Reinsurer / Facultative Reinsurers, sub-tab RNM Share
+             (grid per layer + rincian), Summarry, Total All Layers. Isi dari
+             `warisan.shareNP` (pendaratan `T_TREATY_SHARE*`); rumus di
+             services. Lihat `TabShareNonProp.tsx`. */
+          <TabShareNonProp
+            key={`${idKontrak}|${warisan === null ? '-' : 'isi'}`}
+            share={shareNP ?? warisan?.shareNP}
+            layers={limitsNP?.layers ?? warisan?.limitsPohon ?? []}
+            onUbah={setShareNP}
+            mode={mode}
+            idKontrak={idKontrak}
+            // Commencement medan kepala TERKINI (yang sedang diisi).
+            commencement={keSimpan(mulai) || (warisan?.tanggalMulaiAsli ?? '')}
+            edmState={warisan?.edmState ?? ''}
+            edmJenisMaterial={warisan?.edmJenisMaterial ?? ''}
+          />
+        )
       ) : tabTampil === 'Event Limits' ? (
-        /* ⭐ EMPAT BARIS BERLABEL, bukan grid sembilan kolom — gambar 28. */
-        <TabEventLimits layer={warisan?.layer ?? []} />
+        /* ⭐ EMPAT BARIS BERLABEL, SATU SET PER KONTRAK — gambar 28.
+           ⛔ Tidak lagi dari `warisan.layer`: tab Non-Prop mengikat properti
+           AKAR (`TreatyIn.RSMDLimit` …), bukan `Detail[]`. Lihat
+           `TabEventLimits.tsx`. */
+        <TabEventLimits mode={mode} />
       ) : tabTampil === 'RNM Share' ? (
         /* ⚠️ Cabang ini TETAP ADA walau `RNM Share` kini dirender sebagai
            sub-tab `Share`. Sebabnya: daftar tab masih memuatnya — §6
@@ -752,42 +1172,46 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
           petunjukKosong={FORM_KONTRAK.petunjukLayer}
           mode={mode}
         />
+      ) : tabTampil === 'Achievement In IDR' ? (
+        /* ⭐ TAB BARU 7 Oktober 2026. Namanya sudah ada di
+           `TAB_PROPORSIONAL` sejak lama, tetapi NOL cabang merendernya —
+           membukanya menampilkan isi tab pertama.
+
+           Bentuknya dari `Section/AchievementCombine.xml`: grid enam kolom
+           hanya-baca + tiga sel kaki. Angkanya dari
+           `Activity/GetAchievement.xml`, rumus yang SAMA yang sudah dipakai
+           sub-tab Achievement di dalam Limits Prop. Lihat
+           `TabAchievement.tsx`. */
+        <TabAchievement idKontrak={idKontrak} pohon={warisan?.limitsPohon ?? []} />
       ) : tabTampil === 'Co-Ins Scale' ? (
-        <TabGridWarisan
-          judul={tabTampil}
-          kolom={KOLOM_COIN_SCALE}
-          baris={(warisan?.skalaKoasuransi ?? []).map((b) =>
-            [b.bagianKoasuransi, b.persenLimit, b.penyusun, b.disusunPada].map((v, i) =>
-              selAngka(JENIS_COIN_SCALE[i] ?? 'teks', v),
-            ),
-          )}
-          petunjukKosong={FORM_KONTRAK.petunjukSkalaKoasuransi}
-          mode={mode}
-        />
+        // ⭐ Grid `TreatyIn.CoInScale` (dua kolom, Add/Delete hidup sel
+        // 262/266) DITAMBAH dua medan `Max Co-Insurance Panel` sel 277/278
+        // — urutan gambar 18. Lihat `TabCoInsScale.tsx`.
+        <TabCoInsScale baris={warisan?.skalaKoasuransi ?? []} mode={mode} />
       ) : tabTampil === 'Exclusions' ? (
         <TabTeksPanjang
           judul={tabTampil}
+          // `TreatyIn.ExclusionsP` (Prop) / `TreatyIn.Exclusions` (Non-Prop).
+          properti={jenis === NON_PROPORSIONAL ? 'Exclusions' : 'ExclusionsP'}
           tab={warisan?.pengecualian}
           petunjukKosong={FORM_KONTRAK.petunjukTeksPengecualian}
+          mode={mode}
         />
       ) : tabTampil === 'Special Conditions' ? (
         <TabTeksPanjang
           judul={tabTampil}
+          properti={jenis === NON_PROPORSIONAL ? 'SpecialConditions' : 'SpecialConditionsP'}
           tab={warisan?.syaratKhusus}
           petunjukKosong={FORM_KONTRAK.petunjukTeksSyarat}
+          mode={mode}
         />
       ) : tabTampil === 'Accumulation' ? (
-        <TabGridWarisan
-          judul={tabTampil}
-          kolom={KOLOM_AKUMULASI}
-          baris={(warisan?.akumulasi ?? []).map((b) => [
-            b.periode,
-            b.tanggalLapor,
-            b.hariKirim,
-            b.jatuhTempoKirim,
-          ])}
-          petunjukKosong={FORM_KONTRAK.petunjukAkumulasi}
-        />
+        /* ⭐ 7 Oktober 2026 — tab BERUMUS, bukan grid umum: Period →
+           `TreatyInSetAccountReport` (membaca Start/End tab Reporting Period
+           dari penampung halaman), Reporting Date / Submission Days →
+           `TreatyInAccumulationSetSubDue`, Add → `TreatyInAddAccumulation`.
+           Lihat `TabAkumulasi.tsx`. */
+        <TabAkumulasi baris={warisan?.akumulasi ?? []} mode={mode} edmJenisMaterial={warisan?.edmJenisMaterial ?? ''} />
       ) : (
         /* ⛔ SENGAJA BUKAN `Kosong`. `Kosong` menyatakan *"belum ada DATA"*;
            tab ini menyatakan *"belum ada KODE"*. Keduanya bukan hal yang
@@ -813,6 +1237,7 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
         </Panel>
       )}
       </fieldset>
+      </PenyediaHalaman>
       {/* ⭐ ATTACHMENT · tombol · HISTORY — di BAWAH strip tab, bukan di
           dalamnya. Begitu layar lama menyusunnya: panel Attachment, deret
           tombol Save/Close/Actions, lalu panel History. Ketiganya berlaku
@@ -820,32 +1245,96 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
       <PanelLampiran
         kategori={warisan?.kategoriLampiran ?? []}
         berkas={warisan?.lampiran ?? []}
+        idKontrak={idKontrak}
+        bisaUnggah={bisaUbah || revisi}
       />
 
-      {/* ⭐ `Close` HIDUP — ia satu-satunya dari ketiganya yang tidak menuntut
-          jalur tulis: ia hanya menutup layar. `Save` dan `Actions` tetap mati,
-          dan sebabnya berbeda satu sama lain:
+      {/* ⭐ HIDUP sejak 7 Oktober 2026 — keputusan pemilik proses: Save/Submit
+          menyimpan ke tabel masing-masing (`T_TREATY_*`, kepala `TREATY_IN`,
+          kurs `TREATYEXCHANGEYEARLY`), tidak lewat Pega.
 
-            Save    — nol jalur tulis. Tombol simpan yang tidak menyimpan
-                      adalah cara tercepat kehilangan suntingan tanpa seorang
-                      pun tahu.
-            Actions — syarat perannya belum terbaca di ekspor. Menghidupkannya
-                      berarti menebak siapa yang boleh menekannya.
+            Save     `IsEditData !='1' && StatusAkseptasi != 'Resolve Complete'`
+                     → DT `TreatyInAddNew` → `SaveTreatyIn_Act`
+            Close    selalu
+            Actions  pemegang workbasket `TreatyIn.Position` penyetuju
+                     (SecHead/DeptHead/Director) → modal `TreatyInAction` →
+                     `TreatyInAkseptasi_Act`
 
-          ⛔ Keduanya DIMATIKAN, bukan disembunyikan: tombol hilang terbaca
-          sebagai layar yang berbeda, tombol mati terbaca sebagai kemampuan
-          yang belum datang. */}
-      <div className="trin__aksi" role="group" aria-label={FORM_KONTRAK.judul}>
-        <button type="button" className="btn" disabled>
-          Save
-        </button>
+          ⛔ Tombol yang syarat tampilnya tidak terpenuhi TIDAK dirender —
+          persis Pega. */}
+      <div className="trin__aksi trin__aksi--kaki" role="group" aria-label={FORM_KONTRAK.judul}>
+        {saveTampil && (
+          <button type="button" className="btn btn--primary" disabled={sibukTulis} onClick={tekanSave}>
+            {sibukTulis ? TOMBOL_TULIS.menyimpan : TOMBOL_TULIS.simpan}
+          </button>
+        )}
         <button type="button" className="btn" onClick={onKembali}>
-          Close
+          {TOMBOL_TULIS.tutup}
         </button>
-        <button type="button" className="btn" disabled>
-          Actions
-        </button>
+        {actionsTampil && (
+          <button
+            type="button"
+            className="btn"
+            disabled={sibukTulis}
+            onClick={() => {
+              setPilihanActions('Accept')
+              setKomentarActions('')
+              setActionsBuka(true)
+            }}
+          >
+            {TOMBOL_TULIS.aksi}
+          </button>
+        )}
       </div>
+      {hasilTulis !== null && (
+        <div className={hasilTulis.galat ? 'alert alert--error' : 'alert alert--info'} role={hasilTulis.galat ? 'alert' : 'status'}>
+          {hasilTulis.pesan}
+          {hasilTulis.takTersimpan.length > 0 && (
+            <div className="trin__redup">
+              {TOMBOL_TULIS.takTersimpan} {hasilTulis.takTersimpan.join(', ')}
+            </div>
+          )}
+        </div>
+      )}
+      {actionsBuka && (
+        <Modal
+          judul={TOMBOL_TULIS.judulAksi}
+          onTutup={() => {
+            setActionsBuka(false)
+          }}
+          labelBatal={TOMBOL_TULIS.batal}
+          onKirim={() => {
+            setActionsBuka(false)
+            tekanKirim('akseptasi', pilihanActions, { Comment: komentarActions })
+          }}
+          aksi={
+            <button type="submit" className="btn btn--primary" disabled={sibukTulis}>
+              {TOMBOL_TULIS.kirim}
+            </button>
+          }
+        >
+          <p>
+            {TOMBOL_TULIS.dariID} <strong>{idKontrak}</strong>
+          </p>
+          <div className="trin__radio" role="radiogroup" aria-label={TOMBOL_TULIS.pilihan}>
+            {PILIHAN_AKSEPTASI.map((v) => (
+              <label key={v}>
+                <input
+                  type="radio"
+                  name="trin-pilihan-akseptasi"
+                  value={v}
+                  checked={pilihanActions === v}
+                  onChange={() => {
+                    setPilihanActions(v)
+                  }}
+                />
+                {v}
+              </label>
+            ))}
+          </div>
+          <Area label={TOMBOL_TULIS.komentar} value={komentarActions} onChange={setKomentarActions} baris={4} />
+        </Modal>
+      )}
 
       <PanelHistory baris={warisan?.catatan ?? []} />
 

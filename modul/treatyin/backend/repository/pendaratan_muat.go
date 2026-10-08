@@ -28,6 +28,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -113,9 +114,118 @@ func (g *Gudang) DaftarMasterID(ctx context.Context, batas int) ([]string, error
 // yang dikembalikan jujur per tabel, dan supaya fungsi ini tetap benar bila
 // kaskade itu suatu hari dicabut.
 func (g *Gudang) KosongkanKontrak(ctx context.Context, tx *db.Tx, masterID string) (map[string]int64, error) {
+	return g.KosongkanKontrakTerpilih(ctx, tx, masterID, nil)
+}
+
+// LarikPeta - nama larik dokumen yang mengisi satu tabel pendaratan.
+//
+// Satu tabel diisi `Larik` tunggal ATAU `LarikGabung`; tabel akar dan tabel
+// anak nol keduanya.
+func LarikPeta(p Pendaratan) []string {
+	if len(p.LarikGabung) > 0 {
+		return p.LarikGabung
+	}
+	if p.Larik != "" {
+		return []string{p.Larik}
+	}
+	return nil
+}
+
+// TabelDialamatkan - tabel pendaratan yang satu DOKUMEN berwenang atasnya.
+//
+// ---------------------------------------------------------------------
+// ⛔ MASALAH YANG FUNGSI INI PECAHKAN (7 Oktober 2026)
+// ---------------------------------------------------------------------
+// `MuatKontrak` lahir sebagai PEMUAT MASSAL migrasi, dan di sana dokumennya
+// SELALU kontrak utuh: mengosongkan seluruhnya lebih dulu benar, dan itulah
+// yang membuatnya idempoten.
+//
+// Tombol Save memakai ulang fungsi yang sama dengan dokumen yang SEBAGIAN.
+// Layar hanya mengirim properti tab yang PERNAH DIBUKA pemakai (`susunDokumen`
+// menyalin penampung halaman apa adanya), sementara tab dirender hanya ketika
+// aktif. Maka satu penekanan Save menghapus baris SELURUH tab yang tidak
+// dibuka, lalu layar memuat ulang keadaan yang sudah terlanjur kosong itu.
+//
+// Laporan pemakai: *"saat melakukan inputan tiba tiba datanya hilang dan
+// semua di reset malah tidak tersimpan"*.
+//
+// ---------------------------------------------------------------------
+// ⭐ ATURANNYA: KUNCI ADA = BERWENANG, KUNCI TIDAK ADA = TIDAK DISENTUH
+// ---------------------------------------------------------------------
+//
+//	kunci larik ADA di dokumen       layar berwenang - hapus lalu sisip ulang
+//	kunci larik TIDAK ADA            tabelnya tidak disentuh sama sekali
+//
+// ⚠️ Larik KOSONG (`"Limits": []`) tetap "ada": pemakai yang mengosongkan
+// gridnya memang bermaksud mengosongkannya, dan barisnya memang terhapus.
+// Bedanya dengan kunci yang hilang itulah seluruh inti perbaikan ini - dan
+// itu sebabnya ia diperiksa dengan `_, ok := doc[k]`, bukan dengan menguji
+// panjang lariknya.
+//
+// ⛔ ANAK IKUT INDUKNYA, selalu. Baris anak menunjuk pengenal baris induk
+// yang baru lahir; membiarkan anak hidup sementara induknya diganti akan
+// meninggalkan baris yatim yang menunjuk pengenal yang sudah tidak ada.
+//
+// ⛔ TABEL AKAR TIDAK PERNAH DIHAPUS lewat jalur ini - ia DIGABUNG
+// (`gabungBarisAkar`). Isinya skalar dari banyak tab sekaligus
+// (`Exclusions`, `Information`, `TotalLimitsROL`, …); menghapus lalu
+// menyisipkan ulang dari dokumen sebagian akan mengosongkan kolom tab yang
+// tidak dibuka - cacat yang sama persis, hanya berpindah dari baris ke kolom.
+func TabelDialamatkan(doc map[string]any) map[string]bool {
+	out := map[string]bool{}
+	for _, p := range PetaPendaratan {
+		switch {
+		case p.Akar:
+			out[p.Tabel] = true
+		case p.Induk != "":
+			out[p.Tabel] = out[p.Induk]
+		default:
+			for _, nama := range LarikPeta(p) {
+				if _, ada := doc[nama]; ada {
+					out[p.Tabel] = true
+					break
+				}
+			}
+		}
+	}
+	return out
+}
+
+// BolehDihapus - apakah baris satu tabel boleh DIBUANG untuk pilihan ini.
+//
+// Dipisahkan sebagai fungsi murni supaya keputusannya dapat diuji tanpa
+// basis data: inilah satu baris yang membedakan "menyimpan" dari
+// "menghapus tab yang pemakai belum buka".
+//
+//	pilih == nil   pemuat massal — seluruhnya dibuang
+//	p.Akar         TIDAK PERNAH dibuang lewat pilihan; ia digabung
+//	selainnya      dibuang hanya bila dokumen membawanya
+func BolehDihapus(p Pendaratan, pilih map[string]bool) bool {
+	if pilih == nil {
+		return true
+	}
+	return !p.Akar && pilih[p.Tabel]
+}
+
+// KosongkanKontrakTerpilih membuang baris pendaratan satu kontrak.
+//
+// `pilih == nil` berarti SELURUH tabel - perilaku pemuat massal. Selain itu
+// hanya tabel yang `pilih` sebut, dan tabel akar TIDAK PERNAH ikut: ia
+// digabung, bukan diganti.
+func (g *Gudang) KosongkanKontrakTerpilih(ctx context.Context, tx *db.Tx, masterID string, pilih map[string]bool) (map[string]int64, error) {
 	dibuang := map[string]int64{}
 	for i := len(PetaPendaratan) - 1; i >= 0; i-- {
 		p := PetaPendaratan[i]
+		if !BolehDihapus(p, pilih) {
+			continue
+		}
+		// ⭐ Tabel yang migrasinya belum terpasang tidak punya baris untuk
+		// dibuang (`kolom_terpasang.go`).
+		if kolom, err := g.kolomTerpasang(ctx, p.Tabel); err != nil {
+			return nil, err
+		} else if kolom == nil {
+			continue
+		}
 		nama, err := g.db.Qualify(p.Tabel)
 		if err != nil {
 			return nil, err
@@ -149,10 +259,34 @@ func (g *Gudang) KosongkanKontrak(ctx context.Context, tx *db.Tx, masterID strin
 // ⛔ Urutan `PetaPendaratan` tetap mengikat: induk WAJIB mendahului
 // anaknya, sebab anak menunjuk pengenal baris yang baru saja lahir.
 func (g *Gudang) MuatKontrak(ctx context.Context, tx *db.Tx, masterID string, doc map[string]any) (map[string]int, error) {
+	return g.muatKontrak(ctx, tx, masterID, doc, nil)
+}
+
+// MuatKontrakSebagian mendaratkan dokumen yang hanya memuat SEBAGIAN larik —
+// jalur tombol Save.
+//
+// ⛔ Bedanya dengan `MuatKontrak` satu kalimat: yang TIDAK dokumen bawa
+// tidak disentuh, alih-alih dihapus. Alasan lengkapnya ada di
+// `TabelDialamatkan`; ringkasnya, layar hanya mengirim tab yang pernah
+// dibuka, dan menghapus apa yang tidak dikirim berarti menghapus tab yang
+// pemakai bahkan belum lihat.
+//
+// ⚠️ Ia TIDAK idempoten dalam arti yang sama dengan `MuatKontrak`:
+// menjalankannya dua kali dengan dokumen BERBEDA menggabungkan keduanya.
+// Itu memang yang dituntut tombol Save, dan justru yang pemuat massal
+// tidak boleh lakukan.
+func (g *Gudang) MuatKontrakSebagian(ctx context.Context, tx *db.Tx, masterID string, doc map[string]any) (map[string]int, error) {
+	if doc == nil {
+		doc = map[string]any{}
+	}
+	return g.muatKontrak(ctx, tx, masterID, doc, TabelDialamatkan(doc))
+}
+
+func (g *Gudang) muatKontrak(ctx context.Context, tx *db.Tx, masterID string, doc map[string]any, pilih map[string]bool) (map[string]int, error) {
 	if strings.TrimSpace(masterID) == "" {
 		return nil, fmt.Errorf("repository: memuat pendaratan tanpa pengenal kontrak")
 	}
-	if _, err := g.KosongkanKontrak(ctx, tx, masterID); err != nil {
+	if _, err := g.KosongkanKontrakTerpilih(ctx, tx, masterID, pilih); err != nil {
 		return nil, err
 	}
 
@@ -173,7 +307,44 @@ func (g *Gudang) MuatKontrak(ctx context.Context, tx *db.Tx, masterID string, do
 	elemen := map[string][]map[string]any{}
 
 	disisip := map[string]int{}
-	for _, p := range PetaPendaratan {
+	for _, asli := range PetaPendaratan {
+		// ⭐ Hanya kolom yang SUDAH terpasang (`kolom_terpasang.go`); tabel
+		// yang belum ada dilewati, dan anaknya ikut terlewati karena tidak
+		// menemukan induk. Yang terlewati dilaporkan `KunciBelumTerpasang`.
+		p, ada, err := g.petaTerpasang(ctx, asli)
+		if err != nil {
+			return nil, err
+		}
+		if !ada {
+			continue
+		}
+		// ⛔ Tabel yang dokumen ini TIDAK bawa dilewati utuh: barisnya
+		// tadi tidak dihapus, jadi menyisipkan apa pun di sini akan
+		// menggandakannya — dan `UNIQUE (MASTERID, URUTAN)` akan meledak.
+		if pilih != nil && !pilih[p.Tabel] {
+			continue
+		}
+		// ⭐ Tabel AKAR digabung, bukan diganti: kolom yang dokumen ini
+		// tidak bawa mempertahankan isinya.
+		docTabel := doc
+		if pilih != nil && p.Akar {
+			gabung, err := g.gabungBarisAkar(ctx, tx, p, masterID, doc)
+			if err != nil {
+				return nil, err
+			}
+			docTabel = gabung
+			nama, err := g.db.Qualify(p.Tabel)
+			if err != nil {
+				return nil, err
+			}
+			q := fmt.Sprintf("DELETE FROM %s WHERE MASTERID = :1", nama)
+			if err := db.PeriksaSQL(q); err != nil {
+				return nil, err
+			}
+			if _, err := tx.ExecContext(ctx, q, masterID); err != nil {
+				return nil, fmt.Errorf("repository: mengosongkan %s kontrak %s: %w", p.Tabel, masterID, err)
+			}
+		}
 		// Satu kelompok = satu induk beserta anak-anaknya. Untuk tabel
 		// tingkat pertama kelompoknya satu, berinduk nil.
 		type kelompok struct {
@@ -189,7 +360,7 @@ func (g *Gudang) MuatKontrak(ctx context.Context, tx *db.Tx, masterID string, do
 		switch {
 		case p.Akar:
 			// ⭐ Dokumennya SENDIRI yang menjadi satu-satunya elemen.
-			kel = append(kel, kelompok{nil, []map[string]any{doc}, nil})
+			kel = append(kel, kelompok{nil, []map[string]any{docTabel}, nil})
 		case p.Induk == "" && len(p.LarikGabung) > 0:
 			var baris []map[string]any
 			var jenis []string
@@ -284,6 +455,68 @@ func (g *Gudang) MuatKontrak(ctx context.Context, tx *db.Tx, masterID string, do
 		disisip[p.Tabel] = n
 	}
 	return disisip, nil
+}
+
+// gabungBarisAkar menyusun elemen tabel AKAR dengan mempertahankan kolom
+// yang dokumen ini tidak bawa.
+//
+// ---------------------------------------------------------------------
+// ⛔ MENGAPA TABEL AKAR TIDAK BOLEH SEKADAR DIGANTI
+// ---------------------------------------------------------------------
+// `T_TREATY_REVISION` memuat skalar dari BANYAK tab sekaligus — `Exclusions`,
+// `ExclusionsP`, `SpecialConditionsP`, `Information`, `TotalEgnpiAmount`,
+// `TotalLimitsROL`, dan seterusnya. Dokumen Save hanya membawa tab yang
+// pemakai buka. Menghapus barisnya lalu menyisipkan ulang dari dokumen itu
+// akan meng-NULL-kan kolom milik tab yang tidak dibuka — cacat yang sama
+// dengan yang perbaikan ini tutup, hanya berpindah dari BARIS ke KOLOM.
+//
+// ⭐ Kunci yang dokumen BAWA tetap menang, termasuk ketika isinya kosong:
+// pemakai yang mengosongkan sebuah kotak memang bermaksud mengosongkannya.
+// Yang dipertahankan hanya kunci yang dokumennya tidak sebut sama sekali.
+//
+// ⚠️ Hasilnya memakai kunci DATAR, termasuk untuk jalur bertitik seperti
+// `ValueDifference.RNMShare`. Itu sah sebab `nilaiJalur` memeriksa kunci
+// datar LEBIH DULU sebelum menapaki titiknya.
+func (g *Gudang) gabungBarisAkar(ctx context.Context, tx *db.Tx, p Pendaratan, masterID string, doc map[string]any) (map[string]any, error) {
+	if len(p.Kolom) == 0 {
+		return doc, nil
+	}
+	nama, err := g.db.Qualify(p.Tabel)
+	if err != nil {
+		return nil, err
+	}
+	q := fmt.Sprintf("SELECT %s FROM %s WHERE MASTERID = :1 ORDER BY URUTAN FETCH FIRST 1 ROWS ONLY",
+		strings.Join(p.Kolom, ", "), nama)
+	if err := db.PeriksaSQL(q); err != nil {
+		return nil, err
+	}
+	lama := make([]sql.NullString, len(p.Kolom))
+	sasaran := make([]any, len(p.Kolom))
+	for i := range lama {
+		sasaran[i] = &lama[i]
+	}
+	if err := tx.QueryRowContext(ctx, q, masterID).Scan(sasaran...); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return doc, nil // kontrak baru — nol yang perlu dipertahankan
+		}
+		return nil, fmt.Errorf("repository: membaca %s kontrak %s: %w", p.Tabel, masterID, err)
+	}
+	gabung := make(map[string]any, len(doc)+len(p.Kunci))
+	for k, v := range doc {
+		gabung[k] = v
+	}
+	for j, k := range p.Kunci {
+		if _, ada := doc[k]; ada {
+			continue
+		}
+		if strings.Contains(k, ".") && nilaiJalur(doc, k) != nil {
+			continue
+		}
+		if lama[j].Valid {
+			gabung[k] = lama[j].String
+		}
+	}
+	return gabung, nil
 }
 
 // sisipSatu menyisipkan satu baris.
@@ -382,6 +615,11 @@ func (g *Gudang) CacahBarisSeluruhnya(ctx context.Context, tx *db.Tx) (map[strin
 func (g *Gudang) cacah(ctx context.Context, tx *db.Tx, saring string, args ...any) (map[string]int, error) {
 	out := map[string]int{}
 	for _, p := range PetaPendaratan {
+		if kolom, err := g.kolomTerpasang(ctx, p.Tabel); err != nil {
+			return nil, err
+		} else if kolom == nil {
+			continue // belum terpasang — nol baris
+		}
 		nama, err := g.db.Qualify(p.Tabel)
 		if err != nil {
 			return nil, err

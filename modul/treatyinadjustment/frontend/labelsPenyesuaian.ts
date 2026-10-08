@@ -40,35 +40,73 @@ export const PENYESUAIAN = {
    * ekspor: daftarnya `pyListSource=associated`, milik rule properti yang
    * tidak ikut diekspor. Yang tampil KODENYA, ditandai.
    */
-  kodeBelumBerteks: 'kode; teks pilihannya tidak ada di ekspor',
+  kodeBelumBerteks: '',
 
   // Mode daftar (`DATASHOW != 1` @481804).
   tambahRevisi: 'Add Revision', // pyLabel @500554 → PickerTreatyInMasterRevisi
   tambahPremi: 'Add Adjustment Premium', // pyLabel @515429 → PickerTreatyInMaster
-  saring: 'Show/Hide filter', // pyLabel @536692
+
+  // Picker tombol Add — `Section/PickerTreatyInMasterRevisi.xml` /
+  // `Section/PickerTreatyInMaster.xml`.
+  pickerRevisiInternal: 'Choose Master to Create Internal Revision', // @39970, EDMState = '1'
+  pickerRevisiEksternal: 'Choose Master to Create External Revision', // @44930, EDMState = '2'
+  pickerPremi: 'Choose Master to create Premium Adjustment', // @39472
+  internalEksternal: 'Internal / External', // .EDMState @86844 (pxRadioButtons)
+  materialRadio: 'Material Type', // .EDMMaterialType @108821 (pxRadioButtons)
+  pilihMaster: 'Choose', // .pyTemplateInputBox @186747 / @122878
+  petunjukMasterKosong: '',
+  /**
+   * ⛔ Di sistem lama `Choose` langsung MENYIMPAN (`TreatyInEDMSetValue` [9]
+   * `SaveTreatyIn_EDM_Act`). Keputusan pemilik proses 7 Oktober 2026: draf
+   * di layar, simpanannya menunggu tombol Save.
+   */
+  drafBelumTersimpan: 'Draf — belum tersimpan. Penyesuaian ini baru ada di layar; ia masuk basis data lewat tombol Save.',
+
   ubah: 'Edit', // pyLabel @782051
   lihat: 'View', // pyLabel @798870
   kembali: 'Kembali ke daftar',
   tanpaBaris: 'No items',
-  petunjukDaftarKosong:
-    'Daftar dibaca dari TREATY_IN_EDM, tabel sistem lama. Kosong berarti tabel itu memang tidak berbaris.',
-  tombolTulisMati: 'Jalur simpan belum dibangun — tombol ini dimatikan, bukan dihilangkan.',
+  petunjukDaftarKosong: '',
+  // Panel Old / mode View: tombol ekspor yang tidak berlaku di sini.
+  tombolTulisMati: 'Tombol ini tidak berlaku di panel atau mode ini — dimatikan, bukan dihilangkan.',
+  rumusBelum: 'Rumus tombol ini belum disambungkan — tombolnya dimatikan, bukan dihilangkan.',
+  /**
+   * Rantai menyentuh langkah BERSYARAT yang belum dibangun (mis.
+   * `TreatyInXOLAddSpreadingDetailActual` bila `EDMState = 3`, yang menulis
+   * halaman `TreatyIn.ActualValue`). Seluruh rantai batal — nol perubahan.
+   */
+  langkahBelum: '',
+  /**
+   * Submit Achievement (`InsertToLogAchievement` → `POOLDATA.LOG_ACHIEVEMENT`)
+   * — keputusan pemilik proses 7 Oktober 2026: tetap mati sampai tabel log
+   * diputuskan bersama jalur Save. Angka Achievement sendiri tersimpan lewat Save.
+   */
+  achievementMenunggu:
+    'Submit Achievement menulis log tersendiri; tabelnya menunggu keputusan bersama jalur Save. Angka Achievement tersimpan lewat Save.',
+  /** `GenerateCSVTreaty` — nama berkas dari ekspor (`FSFileName`). */
+  berkasAchievement: 'CSVAchievementTreatyIn.xlsx',
+  /** Daftar master (mata uang, Treaty Group, Treaty Type) belum dimuat. */
+  masterBelum: 'Daftar master belum dimuat; nama pasangannya tidak dapat diisi.',
+  /** Nilai tersimpan yang tidak ada di daftar — ditawarkan, bukan dijatuhkan. */
+  diLuarDaftar: '(di luar daftar)',
 
   // Medan bertanda dan keadaan.
-  takAdaDiWarisan: 'Tidak ada di dokumen sistem lama',
-  tanpaTeks: 'Teks ini kosong di dokumen sistem lama.',
+  takAdaDiWarisan: '',
+  tanpaTeks: '',
   belumDibangun: 'Tab ini belum dibangun.',
-  belumDibangunPetunjuk:
-    'Isinya ada di dokumen sistem lama, tetapi tata letaknya belum disalin dari ekspor. Ini kekurangan KODE, bukan kekurangan data.',
-  sebagian: 'Hanya grid tab ini yang dibangun; medan isian di atasnya belum disalin dari ekspor.',
-  petunjukGridKosong: 'Dokumen sistem lama tidak berbaris untuk grid ini.',
-  petunjukHistory: 'Riwayat dibaca dari CommentList dokumen penyesuaian ini.',
-  rincianBaris: 'Rincian baris grid ini dibuka rule yang TIDAK ada di ekspor; tidak dibangun',
-  includeTakAda: 'Section ini tidak ada di ekspor modul ini.',
+  belumDibangunPetunjuk: '',
+  sebagian: '',
+  petunjukGridKosong: '',
+  petunjukHistory: '',
+  // Grid `expandPane` yang flow action rinciannya TIDAK ada di ekspor —
+  // hari ini nol; rincian lain dibangkitkan (`KERANGKA_RINCIAN`).
+  rincianHilang: '',
+  /** Tombol ▸/▾ rincian baris (`expandPane`). */
+  rincianBuka: 'Rincian baris',
+  includeTakAda: '',
   /** §17 — isi Retro tidak dibangun karena jarang. */
   retroJarang: 'Isi Retro tidak dibangun — jarang dipakai.',
-  retroJarangPetunjuk:
-    "Keputusan §17: IsMultipleRetro = 'true' pada 5 dari 1.854 kontrak dan 2 dari 280 penyesuaian. Wadah tab dan syaratnya dibangun; isinya tidak.",
+  retroJarangPetunjuk: '',
 } as const
 
 /**
@@ -77,6 +115,17 @@ export const PENYESUAIAN = {
  * ⛔ Urutan dan lebar DISALIN (`pyWidth` sel kepala). Lebar dipakai sebagai
  * PERBANDINGAN, bukan piksel — tata letak kita responsif, Pega tidak.
  */
+/**
+ * Teks tombol IKON — `pyLabel` dan `pyCaption` KOSONG di XML, hanya
+ * `pyImage`. Pega yang berjalan mengisinya sendiri: `Tambah` terlihat di
+ * tangkapan layar Co-Ins Scale Treaty In (pemakai, 6 Oktober 2026), `Hapus`
+ * dari pola Pega yang SAMA di NB FacIn (tangkapan layar 3 Oktober 2026).
+ */
+export const TOMBOL_IKON: Readonly<Record<string, string>> = {
+  'IconAdd.png': 'Tambah',
+  'IconTrash.png': 'Hapus',
+}
+
 export const KOLOM_DAFTAR = [
   'ID Revision', // @663170 W136 .ID
   'ID Original', // @667220 W134 .OLDID
@@ -99,6 +148,38 @@ export const JENIS_DAFTAR: readonly JenisAngka[] = [
 export const LEBAR_TOMBOL_BARIS = 56
 
 /**
+ * Grid picker — `TempMasterList.pxResults` (`CARI1`…`CARI7`). Kolom PERTAMA
+ * tombol `Choose` tanpa judul (W109), lalu ketujuh kolom ini.
+ */
+export const KOLOM_PICKER = [
+  'ID', // .CARI1
+  'Contract Name', // .CARI2
+  'Reinsurance Type', // .CARI3
+  'Source of Business', // .CARI4
+  'Ceding', // .CARI5
+  'Commencement', // .CARI6 pxDateTime
+  'Termination', // .CARI7 pxDateTime
+] as const
+export const JENIS_PICKER: readonly JenisAngka[] = ['teks', 'teks', 'teks', 'teks', 'teks', 'tanggal', 'tanggal']
+/** `pyWidth` — tombol `Choose` lebih dulu. Kedua Section berbeda beberapa piksel. */
+export const LEBAR_PICKER_REVISI = [109, 213, 215, 134, 215, 215, 218, 225] as const
+export const LEBAR_PICKER_PREMI = [109, 208, 209, 132, 209, 212, 213, 217] as const
+
+/**
+ * Pilihan radio `Internal / External` (`TreatyIn.EDMState`).
+ *
+ * ⚠️ Daftarnya `associated` — milik rule properti yang TIDAK diekspor. Teks
+ * `Internal`/`External` diambil dari Section yang SAMA: judul picker
+ * `EDMState = '1'` berbunyi "…Internal Revision", `= '2'` "…External Revision".
+ */
+export const OPSI_JENIS_REVISI = [
+  { nilai: '1', label: 'Internal' },
+  { nilai: '2', label: 'External' },
+] as const
+/** Radio `Material Type` — kodenya saja; teks pilihannya tidak ada di ekspor (`kodeBelumBerteks`). */
+export const OPSI_MATERIAL = ['1', '2'] as const
+
+/**
  * Satu medan kepala form — `Section/TreatyInNONProportional[OldData].xml`.
  *
  * `dari`   halaman yang diikat. ⛔ Pada panel Old, `Contract Ref No`
@@ -119,6 +200,13 @@ export interface MedanForm {
    * `1`). Tanpa ini dan tanpa `selaluBacaSaja`, medan dapat disunting.
    */
   bacaSajaBila?: (m: Readonly<Record<string, string>>) => boolean
+  /**
+   * Medan diisi lewat jendela pencarian agen (`localAction`), bukan diketik:
+   * `reinsured` → Ceding + CedingID, `source` → LeadingReinsSource +
+   * LeadingReinsSourceID (`DataTransform/TreatyInSetReinsured`). Tombolnya
+   * tampil bila `TreatyIn.ViewState != 1`.
+   */
+  pilihAgen?: 'reinsured' | 'source'
   /** Sel `pyReadOnly=true` TANPA syarat — baca-saja di mode apa pun. */
   selaluBacaSaja?: boolean
   jejak: string
@@ -174,11 +262,11 @@ export const MEDAN_KANAN_BARU: readonly MedanForm[] = [
   { label: 'Treaty Year', kunci: 'TreatyYear', dari: 'sisi', bentuk: 'teks', selaluBacaSaja: true, jejak: 'NONProportional @99854' },
   { label: 'Accounting Mode', kunci: 'AccountingMode', dari: 'sisi', bentuk: 'pilih', syarat: 'Proportional', bacaSajaBila: modeLihat, jejak: 'NONProportional @106135' },
   { label: 'Accounting Mode', kunci: 'AccountingModeNonProp', dari: 'sisi', bentuk: 'pilih', syarat: 'NonProportional', bacaSajaBila: modeLihat, jejak: 'NONProportional @112579' },
-  { label: 'Ceding', kunci: 'Ceding', dari: 'sisi', bentuk: 'tampil', jejak: 'NONProportional @168493' },
+  { label: 'Ceding', kunci: 'Ceding', dari: 'sisi', bentuk: 'tampil', pilihAgen: 'reinsured', jejak: 'NONProportional @168493' },
   // Kotak centang menampilkan `pyCheckboxCaption`; label sel ketiga sel ini
   // (`Effective Date`) adalah sisa salin Pega.
   { label: 'RNM as Treaty Leader', kunci: 'TreatyLeader', dari: 'sisi', bentuk: 'centang', bacaSajaBila: modeLihat, jejak: 'NONProportional @189183' },
-  { label: 'Source of Business', kunci: 'LeadingReinsSource', dari: 'sisi', bentuk: 'tampil', jejak: 'NONProportional @221597' },
+  { label: 'Source of Business', kunci: 'LeadingReinsSource', dari: 'sisi', bentuk: 'tampil', pilihAgen: 'source', jejak: 'NONProportional @221597' },
   { label: 'Effective Date', kunci: 'EDMEffective', dari: 'sisi', bentuk: 'tanggal', bacaSajaBila: modeLihat, jejak: 'NONProportional @238886 (TreatyMasterInEDM)' },
   { label: 'Is Pro Rate', kunci: 'IsProRate', dari: 'sisi', bentuk: 'centang', bacaSajaBila: modeLihat, jejak: 'NONProportional @249049 (TreatyMasterInEDM)' },
 ]
@@ -188,6 +276,32 @@ export const MEDAN_KANAN_BARU: readonly MedanForm[] = [
  * (5 Oktober 2026). Teks tampilnya tidak ada di ekspor; yang tersimpan
  * itulah yang ditawarkan. Diukur ulang `penyesuaian_db_test.go`.
  */
+/**
+ * Jendela pencarian agen — `Section/TreatyInSearchReinsured.xml` dan
+ * `TreatyInSearchSoB.xml` (isi keduanya sama; yang berbeda `type` DataTransform
+ * `TreatyInSetReinsured`). Judul jendela = label flow action-nya: ekspor tidak
+ * memberi judul lain.
+ */
+/** Panel `Existing Policy for Master ID` — `Section/InputTreatyInAdjustment.xml` @111283. */
+export const POLIS_MASTER = {
+  judul: 'Existing Policy for Master ID', // pyTitle
+  kolom: ['Policy No', 'Pega ID'] as const, // sel 31 · sel 32
+  tanpaBaris: 'No items',
+} as const
+
+export const PILIH_AGEN = {
+  kataKunci: 'Search', // sel 5 InputData.CARI2 — tanpa label; nama akses dari tombolnya
+  cari: 'Search', // sel 8 pyLabel
+  kolomId: 'ID', // sel 21
+  kolomNama: 'Name', // sel 22
+  pilih: 'Choose', // sel 27 pyLabel
+  tanpaBaris: 'No items',
+  judulCeding: 'TreatyInSearchReinsured', // FlowAction pyLabel
+  judulSob: 'TreatyInSearchSoB', // FlowAction pyLabel
+  tombolCeding: 'Choose Ceding', // TreatyInNONProportional sel 27
+  tombolSob: 'Choose Source of Business', // TreatyInNONProportional sel 29
+} as const
+
 export const PILIHAN_MEDAN: Readonly<Record<string, readonly string[]>> = {
   Bordeaux: ['reporting', 'nonreporting'],
   AccountingMode: ['accounting', 'underwriting'],
@@ -227,6 +341,16 @@ export const TAB_BARU_NP = [
   'Maximum Retention', 'Event Limits', 'EGNPI', 'Limits', 'Share', 'Retro', 'Installment',
   'Value Difference', 'Exclusions', 'Special Conditions', 'Information & Submit',
 ] as const // TreatyInTabsNonProportional @15962 … @3977799
+/**
+ * Cabang ADJUST PREMIUM panel New — `TreatyInNONProportional` @566980
+ * menampilkan `TreatyInTabsNonProportionalAdjustPremi` bila
+ * `ProportionType='NonProportional' && EDMState=3` (dan
+ * `TreatyInTabsNonProportional` bila `EDMState!=3`). `Actual Retro`
+ * dibangkitkan tetapi disembunyikan bersama Retro lain.
+ */
+export const TAB_BARU_NP_ADJ = [
+  'Actual GNPI', 'Actual Limits', 'Actual Share', 'Actual Retro', 'Premium Adjustment', 'Information & Submit',
+] as const // TreatyInTabsNonProportionalAdjustPremi @20240 … @596060
 export const TAB_LAMA_P = [
   'Reporting Period', 'Portfolio', 'Limits', 'Share', 'Accumulation', 'Exclusions', 'Special Conditions',
 ] as const // TreatyInTabsProportionalOldData @23096 … @1167630
@@ -240,9 +364,28 @@ export const TOMBOL = {
   simpan: 'Save', // pyLabel @113510 — syarat @119719
   tutup: 'Close', // pyLabel @130374 — ALWAYS @137426
   aksi: 'Actions', // pyLabel @148044 → TreatyInActionEDM — syarat peran @155994
-  syaratPeranBelum:
-    'Syarat tampil Actions bergantung posisi/workbasket operator (@155994) dan belum dievaluasi; tombolnya ditampilkan mati.',
+  menyimpan: 'Menyimpan…',
+  /** Modal `TreatyInActionEDM` — teks disalin dari Section-nya. */
+  judulAksi: 'Action',
+  dariID: 'Of ID :', // pyLabelFieldValue, `TreatyIn.ID`
+  pilihan: 'Status', // `TreatyIn.ChooseStatusAkseptasi` (tanpa label di ekspor)
+  komentar: 'Comment', // `TreatyIn.Comment`
+  batal: 'Cancel',
+  kirim: 'Submit', // → `TreatyInAkseptasiEDM_Act`
+  /** Modal `TreatyInDeclineConfirmationEDM`. */
+  judulTolak: 'Decline offer',
+  tanyaTolak: 'Are you sure you want to DECLINE this offer?',
+  tolak: 'Decline', // → `TreatyInDeclineConfirmation_postactEDM`
+  /** Properti terkirim yang tidak tersimpan — dilaporkan, tidak ditelan. */
+  takTersimpan: 'TIDAK tersimpan (belum punya kolom/tabel):',
 } as const
+
+/**
+ * Pilihan `ChooseStatusAkseptasi` — nilai yang `Akseptasi_DT` periksa.
+ * ⚠️ Daftarnya `associated` (rule properti tidak diekspor); teksnya nilai itu
+ * sendiri.
+ */
+export const PILIHAN_AKSEPTASI = ['Accept', 'Reject', 'Decline'] as const
 
 /** Kolom History mode detail — `TreatyIn.CommentList` @407001, sel @428448…@446102. */
 export const KUNCI_HISTORY = ['Date', 'OperatorName', 'IsApproved', 'Suggest'] as const

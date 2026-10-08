@@ -185,6 +185,52 @@ func TestSepuluhKontrakNyataMuatDanCocok(t *testing.T) {
 	} {
 		sengaja[k] = true
 	}
+
+	// ⭐ BARU TERLIHAT 6 Oktober 2026, dan itu POKOKNYA.
+	//
+	// `KunciTakTerpetakan` sampai hari itu BUTA terhadap dua bentuk: tabel
+	// skalar akar (`T_TREATY_REVISION`) dan seluruh tabel ANAK kecuali butir
+	// angsuran. Keduanya tidak pernah diperiksa sama sekali, jadi penjaga ini
+	// hijau bukan karena bersih melainkan karena tidak melihat.
+	//
+	// Begitu penapaknya disatukan, empat puluh kunci muncul sekaligus. Nol di
+	// antaranya baru; seluruhnya sudah ada di korpus sejak awal.
+	//
+	// ⛔ DIDAFTAR, BUKAN DISARING DI SUMBERNYA — aturan yang sama dengan
+	// ketujuh belas di atas: daftar di tempat pemeriksaan tetap berbunyi
+	// untuk kunci ke-41.
+	for _, k := range []string{
+		// Larik di dalam `Limits[].Detail[]` yang belum punya tabel. Kelimanya
+		// ditambah/dihapus tombol `Add`/`Remove` pohon Limits lewat
+		// `Activity/AddValue.xml` (`param.type` = pla · cashloss · claimcoop ·
+		// epi · reserve), jadi ia DATA PEMAKAI, bukan turunan.
+		"PLAList", "CashLossList", "ClaimCoopList",
+		"RNMShareList", "RNMSpreadedList", "RNMSpreadedListRI", "SpreadingList",
+		// Jejak audit Pega pada `Limits[].TreatyGroupList[]` — perabot, sekelas
+		// `pxObjClass`, dan `PXOBJCLASS` dilarang keras sejak migrasi 436.
+		"pxCreateDateTime", "pxCreateOpName", "pxCreateOperator", "pxCreateSystemID",
+		// Skalar akar `T_TREATY_REVISION` yang migrasi `444` sengaja LEWATI:
+		// seluruhnya DIHITUNG Activity (`TreatyInNonAddItem`,
+		// `TreatyInNPSetTotal`), jadi ia termasuk pertanyaan `DITURUNKAN` yang
+		// belum dijawab — lihat `PERTANYAAN-TERBUKA-DITURUNKAN-DI-PENDARATAN.md`.
+		"ActualValue", "AltValue", "OptionLimit", "InstallmentNo",
+		"BrokeragePercent", "BrokeragePercentP",
+		"RNMShare", "RNMShareP", "RNMShareAcrossTheBoard", "RnmShareDeducted",
+		"FacShare", "FacShareBrokerage",
+		"MDPSumarry", "MDPSummaryList", "LimitShareSummaryList", "LimitFacShareSummaryList",
+		"TotalShareGrossNP", "TotalShareNetNP", "TotalShareDeductionNP", "TotalShareRnmNP",
+		"TotalFacShareGrossNP", "TotalFacShareNetNP", "TotalFacShareDeductionNP",
+		"TotalFacShareRnmNP", "TotalInstallmentNP", "TotalShareRnmProp",
+		"TotalSpreadedNetPremi", "TotalSpreadedNetPremiRI",
+		"TotalSpreadedRnmProp", "TotalSpreadedRnmRIProp",
+		// `CurrencyList` SALINAN `TREATYEXCHANGEYEARLY` — mendaratkannya
+		// melahirkan kurs kedua (`KOREKSI-ERD-VERSUS-POOLDATA.md` §1.2).
+		"CurrencyList",
+		// Keadaan layar Pega, bukan data kontrak.
+		"ViewState",
+	} {
+		sengaja[k] = true
+	}
 	for tabel, kunci := range services.RingkasTakTerpetakan(hasil) {
 		var nyata []string
 		for _, k := range kunci {

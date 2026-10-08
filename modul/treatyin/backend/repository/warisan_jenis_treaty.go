@@ -42,7 +42,32 @@ const (
 
 // BacaDaftarJenisTreaty — `BrowseReinsuranceType_RD`.
 func (g *Gudang) BacaDaftarJenisTreaty(ctx context.Context) ([]models.PilihanWarisan, error) {
-	return g.bacaPilihanRD(ctx, TabelJenisReasuransiWarisan, "ID", "NOTE", "FLAG = 'active'", "ID DESC")
+	nama, err := g.db.Qualify(TabelJenisReasuransiWarisan)
+	if err != nil {
+		return nil, err
+	}
+	// ⭐ Isi menu Reinsurance Type (`modul/reinsurancetype`, tabel yang sama):
+	// Name = `NOTE`, SOA Name = `SOANOTE`. Saringan dan urutan RD Pega.
+	q := fmt.Sprintf(`SELECT ID, NOTE, SOANOTE FROM %s WHERE FLAG = 'active'
+		ORDER BY ID DESC FETCH FIRST 500 ROWS ONLY`, nama)
+	rows, err := g.db.QueryContext(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("repository: membaca pilihan Treaty Type dari %s: %w", TabelJenisReasuransiWarisan, err)
+	}
+	defer func() { _ = rows.Close() }()
+	keluar := []models.PilihanWarisan{}
+	for rows.Next() {
+		var id, nm, soa sql.NullString
+		if err := rows.Scan(&id, &nm, &soa); err != nil {
+			return nil, fmt.Errorf("repository: membaca baris %s: %w", TabelJenisReasuransiWarisan, err)
+		}
+		keluar = append(keluar, models.PilihanWarisan{ID: id.String, Nama: nm.String, NamaSOA: soa.String})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	tandaiKembar(keluar)
+	return keluar, nil
 }
 
 // BacaDaftarKelompokTreaty — `BrowseTreatyGroup_RD`.
@@ -87,5 +112,85 @@ func (g *Gudang) bacaPilihanRD(ctx context.Context, tabel, kolomID, kolomNama, s
 		}
 		keluar = append(keluar, models.PilihanWarisan{ID: id.String, Nama: nm.String})
 	}
-	return keluar, baris.Err()
+	if err := baris.Err(); err != nil {
+		return nil, err
+	}
+	tandaiKembar(keluar)
+	return keluar, nil
+}
+
+// tandaiKembar menandai pilihan yang NAMANYA dipakai lebih dari satu pengenal.
+//
+// ---------------------------------------------------------------------
+// ⛔ MENGAPA INI PERLU: pencarian BALIK pengenal dari nama
+// ---------------------------------------------------------------------
+// Dokumen warisan menyimpan NAMA jenis treaty hampir selalu, tetapi
+// PENGENALNYA hampir tidak pernah — terukur `TreatyTypeID` terisi pada 19
+// dari 1.360 elemen `Limits[]`. Dropdown mengikat pengenal, jadi 98,6% layer
+// berbunyi `Choose` padahal namanya ada.
+//
+// ⭐ Pega sendiri menyelesaikannya dengan mencari BALIK, dan rulenya ada di
+// korpus — `Claim Non Prop/RDBList/GetReinsuranceTypeBYName_SQL.xml`:
+//
+//	select ID, NOTE as "Note" from REINSURANCETYPE
+//	 where type = '4' and FLAG = 'active' and note = {InputSpreading.CARI1}
+//
+// Jadi mencari pengenal dari nama BUKAN karangan; ia pola yang sistem lama
+// pakai. Yang TIDAK disalin saringan `type = '4'`: rule itu melayani
+// spreading, sementara dropdown Limits (`BrowseReinsuranceType_RD`) menyaring
+// `Flag = "active"` SAJA. Mencari di populasi yang lebih sempit daripada yang
+// ditawarkan dropdown akan gagal menemukan jenis yang dropdown-nya sendiri
+// tampilkan.
+//
+// ⚠️ DAN INILAH PAGARNYA: pencarian balik hanya aman bila namanya TUNGGAL.
+// Dua baris bernama sama membuat pencarian memilih salah satu, dan layer akan
+// menunjuk jenis treaty yang KELIRU tanpa ada yang tahu. Penanda ini yang
+// membuat layar menolak menebak pada nama kembar, alih-alih menebak diam-diam.
+func tandaiKembar(daftar []models.PilihanWarisan) {
+	cacah := map[string]int{}
+	for _, p := range daftar {
+		cacah[p.Nama]++
+	}
+	for i := range daftar {
+		daftar[i].Kembar = cacah[daftar[i].Nama] > 1
+	}
+}
+
+// TabelKelasBisnisWarisan - tabel kelas `ASM-FW-GISFW-Int-TREATYBUSINESS`.
+const TabelKelasBisnisWarisan = "TREATYBUSINESS"
+
+// BacaDaftarKelasBisnisTreaty — autocomplete `Class of Business`
+// (`BrowseTreatyBusinessWOType_RD`): `TreatyGroupID = pTreatyGroupId`,
+// `TreatyGroupName` dan `BIZNAME` tidak kosong, `pyGetDistinctRows=true`,
+// maks. 500, TANPA urutan. Nilai `.BizCode` → label `.BIZNAME`.
+//
+// ⚠️ DISTINCT atas pasangan (BizCode, BIZNAME) — tabelnya mengulang tiap
+// pasangan per tahun treaty dan jenis reasuransi (4.489 baris untuk 26
+// grup), dan RD-nya sendiri meminta baris berbeda.
+func (g *Gudang) BacaDaftarKelasBisnisTreaty(ctx context.Context, treatyGroupID string) ([]models.PilihanWarisan, error) {
+	nama, err := g.db.Qualify(TabelKelasBisnisWarisan)
+	if err != nil {
+		return nil, err
+	}
+	q := fmt.Sprintf(`SELECT DISTINCT BIZCODE, BIZNAME FROM %s
+		WHERE TREATYGROUPID = :1 AND TREATYGROUPNAME IS NOT NULL AND BIZNAME IS NOT NULL
+		FETCH FIRST 500 ROWS ONLY`, nama)
+	baris, err := g.db.QueryContext(ctx, q, treatyGroupID)
+	if err != nil {
+		return nil, fmt.Errorf("repository: membaca pilihan Class of Business dari %s: %w", TabelKelasBisnisWarisan, err)
+	}
+	defer func() { _ = baris.Close() }()
+	keluar := []models.PilihanWarisan{}
+	for baris.Next() {
+		var id, nm sql.NullString
+		if err := baris.Scan(&id, &nm); err != nil {
+			return nil, fmt.Errorf("repository: membaca baris %s: %w", TabelKelasBisnisWarisan, err)
+		}
+		keluar = append(keluar, models.PilihanWarisan{ID: id.String, Nama: nm.String})
+	}
+	if err := baris.Err(); err != nil {
+		return nil, err
+	}
+	tandaiKembar(keluar)
+	return keluar, nil
 }

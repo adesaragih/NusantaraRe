@@ -69,6 +69,24 @@ var tabelPendaratan = map[string]int{
 	"T_TREATY_LIMIT_MEASURE": 8849,
 	"T_TREATY_LIMIT_SUMMARY": 2855,
 	"T_TREATY_TOTAL":         6395,
+
+	// ⭐ Migrasi 446 (parkir di folder `treatyinadjustment`), 7 Oktober
+	// 2026 — tabel akar KEDUA, satu baris per dokumen seperti REVISION.
+	"T_TREATY_HAZARD_LIMIT": 1855,
+
+	// ⭐ Migrasi 448 (parkir), 7 Oktober 2026 — ringkasan tab Share
+	// Non-Prop. Baru: nol baris korpus; diisi tombol Save.
+	"T_TREATY_SHARE_SUMMARY": 0,
+
+	// ⭐ Migrasi 449 (parkir), 8 Oktober 2026 — `Detail.SpreadingList` tab
+	// Share Prop. Baru: nol baris; diisi tombol Save.
+	"T_TREATY_LIMIT_SPREADING": 0,
+
+	// ⭐ Migrasi 450 (parkir), 8 Oktober 2026 — Deduction, Parameter
+	// Achievement, Reinstatement. Baru: nol baris; diisi tombol Save.
+	"T_TREATY_LIMIT_DEDUCTION":     0,
+	"T_TREATY_LIMIT_ACH_PARAM":     0,
+	"T_TREATY_LIMIT_REINSTATEMENT": 0,
 }
 
 // Nama yang DIBUAT migrasi 430/432, untuk tiap nama yang dipakai hari ini.
@@ -113,10 +131,21 @@ var namaDDLPendaratan = map[string]string{
 	"T_TREATY_LIMIT_MEASURE":    "T_TREATY_LIMIT_MEASURE",
 	"T_TREATY_LIMIT_SUMMARY":    "T_TREATY_LIMIT_SUMMARY",
 	"T_TREATY_TOTAL":            "T_TREATY_TOTAL",
+
+	// 446 membuatnya langsung dengan nama ini, di folder parkir.
+	"T_TREATY_HAZARD_LIMIT": "T_TREATY_HAZARD_LIMIT",
+	// 448 juga, di folder parkir.
+	"T_TREATY_SHARE_SUMMARY": "T_TREATY_SHARE_SUMMARY",
+	// 449 juga, di folder parkir.
+	"T_TREATY_LIMIT_SPREADING": "T_TREATY_LIMIT_SPREADING",
+	// 450 juga, di folder parkir.
+	"T_TREATY_LIMIT_DEDUCTION":     "T_TREATY_LIMIT_DEDUCTION",
+	"T_TREATY_LIMIT_ACH_PARAM":     "T_TREATY_LIMIT_ACH_PARAM",
+	"T_TREATY_LIMIT_REINSTATEMENT": "T_TREATY_LIMIT_REINSTATEMENT",
 }
 
 func TestSembilanTabelPendaratanAdaDanBerkunciUtama(t *testing.T) {
-	sql := gabungan(t)
+	sql := gabunganDenganParkir(t)
 	for nama := range tabelPendaratan {
 		ddl, ok := namaDDLPendaratan[nama]
 		if !ok {
@@ -175,7 +204,7 @@ func TestSembilanTabelPendaratanAdaDanBerkunciUtama(t *testing.T) {
 func TestPendaratanTidakMerujukTabelWarisanDenganKunciAsing(t *testing.T) {
 	warisan := []string{"TREATY_IN", "M_TREATY_IN", "M_TREATY_IN2", "TREATYEXCHANGEYEARLY", "M_TREATY_IN_DETAIL"}
 	pola := regexp.MustCompile(`(?is)REFERENCES\s+\{skema\}\.(\w+)`)
-	sql := tanpaKomentar(gabungan(t))
+	sql := tanpaKomentar(gabunganDenganParkir(t))
 	for _, m := range pola.FindAllStringSubmatch(sql, -1) {
 		for _, w := range warisan {
 			if strings.EqualFold(m[1], w) {
@@ -475,7 +504,7 @@ func TestPembacaTabPendaratanAda(t *testing.T) {
 // kurung tutup terakhir sebelum pembatas pernyataan.
 func badanCreateTable(t *testing.T, tabel string) string {
 	t.Helper()
-	sql := gabungan(t)
+	sql := gabunganDenganParkir(t)
 	// ⛔ DDL membuatnya dengan nama LAMA; migrasi 436 yang menggantinya.
 	// Mencari nama hari ini di dalam `CREATE TABLE` karena itu selalu gagal
 	// untuk kedelapan tabel yang berganti nama.
@@ -596,7 +625,7 @@ func kolomDitambah(t *testing.T) map[string]map[string]bool {
 	t.Helper()
 	masuk := map[string]map[string]bool{}
 	var tabel string
-	for _, baris := range strings.Split(gabungan(t), "\n") {
+	for _, baris := range strings.Split(gabungan(t)+"\n"+migrasiTetanggaParkir(t), "\n") {
 		teks := strings.TrimSpace(baris)
 		ruas := strings.Fields(teks)
 		if len(ruas) >= 5 && ruas[0] == "ALTER" && ruas[1] == "TABLE" &&
@@ -620,4 +649,67 @@ func kolomDitambah(t *testing.T) map[string]map[string]bool {
 		}
 	}
 	return masuk
+}
+
+// migrasiTetanggaParkir membaca migrasi modul `treatyinadjustment` — hanya
+// untuk `kolomDitambah`.
+//
+// ⛔⛔ INI KOMPROMI, DAN IA DICATAT SUPAYA TIDAK TERBACA SEBAGAI RANCANGAN.
+//
+// Rentang migrasi `treatyin` adalah `400-439` dan ia PENUH TANPA CELAH —
+// keempat puluh nomornya terpakai. Migrasi `444`, yang menambah enam belas
+// kolom ke `T_TREATY_REVISION` (tabel MILIK modul ini), karena itu terpaksa
+// berdiri di folder `treatyinadjustment`: satu-satunya rentang sah yang
+// memuat nomor `444` adalah `440-479` milik modul itu.
+//
+// Akibatnya `TestPetaPendaratanCocokDenganDDL` kehilangan DDL-nya — ia
+// membaca `berkasMigrasi` modul ini saja, lalu menuduh peta menyebut enam
+// belas kolom yang "tidak ada di DDL", padahal kolomnya ADA di basis data
+// dan pemuat mengisinya.
+//
+// ⚠️ Ketiga pilihan, dan mengapa yang ketiga diambil:
+//
+//	biarkan merah          penjaga yang selalu merah berhenti dibaca orang
+//	longgarkan penjaganya  ia berhenti menangkap kolom yang SUNGGUH hilang
+//	baca folder tetangga   penjaga tetap benar; harganya satu jalur relatif
+//
+// ⛔ YANG SEHARUSNYA MENGGANTIKAN INI: jatah rentang baru untuk `treatyin`
+// dari tim inti — prosedur yang `MODUL.md` sebut sendiri. Begitu ada, `444`
+// dinomori ulang ke dalamnya, dipindahkan kembali, dan fungsi ini DIHAPUS.
+//
+// ⚠️ Ia membaca BERKAS, bukan mengimpor paket, jadi
+// `TestModulTidakMengimporModulLain` tidak dilanggar. Folder yang tidak ada
+// dijawab teks kosong — modul tetangga boleh tidak terpasang di pohon yang
+// sedang diuji, dan itu bukan kegagalan penjaga ini.
+// gabunganDenganParkir — migrasi modul ini DITAMBAH yang diparkir di folder
+// `treatyinadjustment`. Dipakai pemeriksaan yang mencari `CREATE TABLE`
+// tabel pendaratan: sejak `446` (`T_TREATY_HAZARD_LIMIT`) satu tabel
+// pendaratan LAHIR di folder parkir, bukan hanya ditambah kolom. Uji
+// invarian lain tetap membaca `gabungan` saja — folder tetangga punya
+// penjaganya sendiri.
+func gabunganDenganParkir(t *testing.T) string {
+	t.Helper()
+	return gabungan(t) + "\n" + migrasiTetanggaParkir(t)
+}
+
+func migrasiTetanggaParkir(t *testing.T) string {
+	t.Helper()
+	const dir = "../../treatyinadjustment/backend/migrations"
+	entri, err := os.ReadDir(dir)
+	if err != nil {
+		return ""
+	}
+	var b strings.Builder
+	for _, e := range entri {
+		if !strings.HasSuffix(e.Name(), ".sql") || strings.HasSuffix(e.Name(), "_down.sql") {
+			continue
+		}
+		isi, err := os.ReadFile(dir + "/" + e.Name())
+		if err != nil {
+			t.Fatalf("membaca %s: %v", e.Name(), err)
+		}
+		b.Write(isi)
+		b.WriteByte('\n')
+	}
+	return b.String()
 }

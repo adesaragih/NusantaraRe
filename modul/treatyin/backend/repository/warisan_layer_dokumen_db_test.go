@@ -28,6 +28,24 @@ package repository_test
 //	    cacah tabelnya, sebab tabelnya tetap terlarang disentuh.
 //
 // ⛔ BACA SAJA. Nol transaksi, nol tulisan, nol `Commit`, nol `DROP`.
+//
+// ---------------------------------------------------------------------
+// ⛔ RALAT 6 Oktober 2026 — SUMBER BARIS LAYER DIGANTI DI SELURUH BERKAS
+// ---------------------------------------------------------------------
+// Kelima uji di bawah dahulu membaca `g.BacaKontrakWarisan`, yang mengurai
+// `JSONDATA` di tempat. Penguraian itu DICABUT dari fungsi tersebut
+// (keputusan pemilik proses: nol nilai dari `JSONDATA`), sehingga `layer`
+// selalu kosong dan kelimanya merah — dengan pesan yang menuduh DATANYA
+// hilang, padahal yang hilang jalurnya.
+//
+// ⭐ Penggantinya `g.BacaLayerPendaratan` — TABEL pendaratan, rantai yang
+// layar sungguh pakai. Itu membuat berkas ini LEBIH kuat daripada
+// sebelumnya: dahulu ia mengadu dokumen dengan pengurai dokumen (dua jalur
+// atas sumber yang sama); kini ia mengadu dokumen dengan tabel.
+//
+// ⚠️ Karena itu kelimanya menuntut kontraknya SUDAH DIDARATKAN. Yang belum
+// dilewati, bukan digagalkan: pemuatan dijalankan dengan tangan, dan uji
+// baca tidak berhak menuntut seseorang sudah menjalankannya.
 
 import (
 	"database/sql"
@@ -35,7 +53,6 @@ import (
 	"testing"
 
 	"nusantarare/inti/backend/config"
-	"nusantarare/modul/treatyin/backend/models"
 )
 
 // ⭐ Medan layer terisi dari JALUR DOKUMEN yang benar, pada kontrak nyata.
@@ -78,7 +95,7 @@ func TestLayerDokumenMengisiMedanDariJalurYangBenar(t *testing.T) {
 		//
 		// Dahulu `g.BacaKontrakWarisan`, yang mengurai `JSONDATA` di
 		// tempat. Penguraian itu DICABUT dari fungsi tersebut (keputusan
-		// "nol nilai dari JSONDATA"), sehingga `k.Layer` kembali kosong
+		// "nol nilai dari JSONDATA"), sehingga `layer` kembali kosong
 		// dan uji ini mati dengan `index out of range` — bukan dengan
 		// pesan yang menjelaskan apa pun.
 		//
@@ -98,7 +115,6 @@ func TestLayerDokumenMengisiMedanDariJalurYangBenar(t *testing.T) {
 		if len(layer) == 0 {
 			continue
 		}
-		k := struct{ Layer []models.BarisLayerWarisan }{Layer: layer}
 		diperiksa++
 
 		// Cacah barisnya = jumlah (layer × treaty group).
@@ -111,9 +127,9 @@ func TestLayerDokumenMengisiMedanDariJalurYangBenar(t *testing.T) {
 			}
 			mau += len(d)
 		}
-		if len(k.Layer) != mau {
+		if len(layer) != mau {
 			t.Errorf("%s: %d baris layer, dokumen memberi %d (layer × treaty group)",
-				id.String, len(k.Layer), mau)
+				id.String, len(layer), mau)
 		}
 
 		// Medan tingkat layer baris PERTAMA diadu langsung dengan dokumen.
@@ -128,7 +144,7 @@ func TestLayerDokumenMengisiMedanDariJalurYangBenar(t *testing.T) {
 				t.Errorf("%s: %s = %q, dokumen `%s` = %q", id.String, nama, dapat, jalur, mau)
 			}
 		}
-		b := k.Layer[0]
+		b := layer[0]
 		cocok("Layer", "Layer", b.Layer)
 		cocok("JenisLayer", "LayerType", b.JenisLayer)
 		cocok("DasarCover", "Cover", b.DasarCover)
@@ -139,7 +155,7 @@ func TestLayerDokumenMengisiMedanDariJalurYangBenar(t *testing.T) {
 		cocok("ROL", "ROLPct", b.ROL)
 		cocok("AdjRate", "AdjRate", b.AdjRate)
 		cocok("RelasiMataUang", "CurrencyRelation", b.RelasiMataUang)
-		t.Logf("%s: %d baris layer", id.String, len(k.Layer))
+		t.Logf("%s: %d baris layer", id.String, len(layer))
 	}
 	if diperiksa == 0 {
 		t.Fatal("nol kontrak berisi diperiksa")
@@ -219,15 +235,15 @@ func TestLubang510Tertutup(t *testing.T) {
 		t.Skipf("lewati: nol kontrak di dalam lubang: %v", err)
 	}
 
-	k, err := g.BacaKontrakWarisan(ctx, id)
+	layer, err := g.BacaLayerPendaratan(ctx, id)
 	if err != nil {
 		t.Fatalf("%s: %v", id, err)
 	}
-	if len(k.Layer) == 0 {
+	if len(layer) == 0 {
 		t.Fatalf("%s ada di lubang 510 dan MASIH memberi nol baris layer — "+
 			"pencabutan M_TREATY_IN2 tidak membeli apa pun", id)
 	}
-	t.Logf("kontrak lubang %s kini memberi %d baris layer (dahulu 0)", id, len(k.Layer))
+	t.Logf("kontrak lubang %s kini memberi %d baris layer (dahulu 0)", id, len(layer))
 
 	// ⛔ Dan tabelnya TETAP UTUH — dicabut sebagai sumber, bukan dihapus.
 	var baris int
@@ -336,15 +352,15 @@ func TestTigaTingkatPohonLimitsTerisi(t *testing.T) {
 		if err := rows.Scan(&id); err != nil {
 			t.Fatal(err)
 		}
-		k, err := g.BacaKontrakWarisan(ctx, id)
+		layer, err := g.BacaLayerPendaratan(ctx, id)
 		if err != nil {
 			t.Fatalf("%s: %v", id, err)
 		}
-		if len(k.Layer) == 0 {
+		if len(layer) == 0 {
 			continue
 		}
 		diperiksa++
-		for _, b := range k.Layer {
+		for _, b := range layer {
 			// ⛔ Irisan KOSONG, bukan nil — layar membedakan keduanya.
 			if b.KelasBisnis == nil {
 				t.Errorf("%s: KelasBisnis nil, mau irisan kosong", id)
@@ -404,11 +420,11 @@ func TestMedanPuncakBercabang(t *testing.T) {
 			if err := rows.Scan(&id); err != nil {
 				t.Fatal(err)
 			}
-			k, err := g.BacaKontrakWarisan(ctx, id)
+			layer, err := g.BacaLayerPendaratan(ctx, id)
 			if err != nil {
 				t.Fatal(err)
 			}
-			for _, b := range k.Layer {
+			for _, b := range layer {
 				if b.JenisTreaty != "" {
 					jenisTreaty++
 				}
@@ -450,16 +466,16 @@ func TestMataUangKeduaPadaKontrakNyata(t *testing.T) {
 
 	// `1000003` — terukur 6 Oktober 2026: empat layer pertamanya
 	// ber-`Currency IDR` / `Currency2 USD`, dan `MDPList` berpanjang dua.
-	k, err := g.BacaKontrakWarisan(ctx, "1000003")
+	layer, err := g.BacaLayerPendaratan(ctx, "1000003")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(k.Layer) == 0 {
+	if len(layer) == 0 {
 		t.Fatal("1000003: nol baris layer")
 	}
 
 	var berdua int
-	for i, b := range k.Layer {
+	for i, b := range layer {
 		if b.MDPKedua == "" && b.PremiEarnedKedua == "" {
 			continue
 		}
@@ -481,7 +497,7 @@ func TestMataUangKeduaPadaKontrakNyata(t *testing.T) {
 		t.Fatal("1000003: nol baris bermata uang dua — terukur 4+ pada 6 Oktober 2026; " +
 			"bila dokumennya berubah, uji ini perlu kontrak lain")
 	}
-	t.Logf("1000003: %d dari %d baris layer membawa mata uang KEDUA", berdua, len(k.Layer))
+	t.Logf("1000003: %d dari %d baris layer membawa mata uang KEDUA", berdua, len(layer))
 }
 
 // ⭐ Cacah layer bermata uang dua DIKUNCI — angka yang hanya ditulis sekali
@@ -511,11 +527,11 @@ func TestCacahLayerMataUangDuaTerukur(t *testing.T) {
 
 	var mdp, premi int
 	for _, s := range id {
-		k, err := g.BacaKontrakWarisan(ctx, s)
+		layer, err := g.BacaLayerPendaratan(ctx, s)
 		if err != nil {
 			continue
 		}
-		for _, b := range k.Layer {
+		for _, b := range layer {
 			if b.MDPKedua != "" {
 				mdp++
 			}

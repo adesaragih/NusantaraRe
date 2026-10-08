@@ -59,6 +59,30 @@ func (g *Gudang) BacaPenyesuaianPendaratan(ctx context.Context, id string) (mode
 	if err != nil {
 		return models.Penyesuaian{}, err
 	}
+	// ⭐ Kunci kepala yang TIDAK ada di pendaratan dilengkapi dari kolom
+	// `TREATY_IN_EDM` — cara yang sama dengan `BacaDokumenMaster` (picker
+	// Add). Tanpa itu penyesuaian yang belum (atau tidak lagi) mendarat tidak
+	// punya `ProportionType`, panel Old/New tidak pernah terbuka, dan layar
+	// Edit tidak dapat disunting sama sekali (laporan 8 Oktober 2026,
+	// `1001540/R01`). Hanya sisi New: `OLDDATA` adalah salinan saat
+	// penyesuaian dibuat, dan kepala master HARI INI bukan salinan itu.
+	kepala, _, err := g.bacaKepala(ctx, TabelWarisanPenyesuaian,
+		append(append([][2]string{}, kolomKepalaMaster...), kolomKepalaEDM...), id)
+	if err != nil {
+		return models.Penyesuaian{}, err
+	}
+	for k, v := range kepala {
+		if _, sudah := baru.Medan[k]; !sudah {
+			baru.Medan[k] = v
+		}
+	}
+	// ⭐ Rate of Exchange — `TREATYEXCHANGEYEARLY` per Treaty Year sisi itu
+	// sendiri, bukan larik dokumen. Lihat `kurs_tahunan.go`.
+	for _, sisi := range []models.SisiPenyesuaian{baru, lama} {
+		if err := g.isiKurs(ctx, sisi); err != nil {
+			return models.Penyesuaian{}, err
+		}
+	}
 	p.Baru, p.Lama = baru, lama
 	// `OLDID` dibaca dari sisi yang punya — sisi `New` lebih dahulu.
 	if v, ada := baru.Medan["OLDID"]; ada && v != "" {
@@ -72,8 +96,21 @@ func (g *Gudang) BacaPenyesuaianPendaratan(ctx context.Context, id string) (mode
 // bacaSisi membaca SATU sisi — satu `MASTERID` — menjadi medan dan larik.
 func (g *Gudang) bacaSisi(ctx context.Context, masterID string) (models.SisiPenyesuaian, error) {
 	sisi := sisiKosong()
-	for _, pd := range petaPendaratanPenyesuaian {
+	for _, asli := range petaPendaratanPenyesuaian {
+		// ⭐ Hanya kolom yang SUDAH terpasang (`kolom_terpasang.go`) — peta
+		// boleh mendahului migrasinya; tabel yang belum ada = nol baris.
+		pd, ada, err := g.larikTerpasang(ctx, asli)
+		if err != nil {
+			return sisi, err
+		}
+		if !ada {
+			continue
+		}
 		switch {
+		case pd.Induk != "":
+			// Tabel ANAK — dirangkai ke `Pohon` oleh `bacaPohon`, tidak ke
+			// larik datar (nama larik anaknya bukan larik akar).
+			continue
 		case pd.Akar:
 			medan, err := g.bacaMedanAkar(ctx, pd, masterID)
 			if err != nil {
@@ -102,7 +139,18 @@ func (g *Gudang) bacaSisi(ctx context.Context, masterID string) (models.SisiPeny
 			}
 		}
 	}
+	pohon, _, err := g.bacaPohon(ctx, masterID)
+	if err != nil {
+		return sisi, err
+	}
+	sisi.Pohon = pohon
 	return sisi, nil
+}
+
+// BacaPohonUntukUji membuka perangkai pohon beserta cacah baris yatimnya —
+// untuk uji db saja.
+func (g *Gudang) BacaPohonUntukUji(ctx context.Context, masterID string) (map[string][]map[string]any, int, error) {
+	return g.bacaPohon(ctx, masterID)
 }
 
 func (g *Gudang) bacaMedanAkar(ctx context.Context, pd larikPendaratan, masterID string) (map[string]string, error) {

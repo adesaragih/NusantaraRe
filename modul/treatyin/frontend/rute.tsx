@@ -43,6 +43,11 @@ export function RuteTreatyIn({ halaman }: PropsRute<HalamanTreatyIn>) {
           onKembali={() => {
             setDibuka(null)
           }}
+          // ⭐ Kontrak BARU tersimpan — form dibuka ulang dengan pengenal
+          // yang baru lahir, tetap di mode Edit.
+          onTersimpan={(id) => {
+            setDibuka(id)
+          }}
         />
       )}
       {halaman === 'treatyin-acuan' && <AcuanTreatyIn />}

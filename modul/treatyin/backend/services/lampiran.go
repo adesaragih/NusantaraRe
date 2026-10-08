@@ -14,6 +14,13 @@ import (
 	"nusantarare/modul/treatyin/backend/models"
 )
 
+// namaKategoriSetara - nama Non-Prop → nama Prop untuk kode yang sama
+// (`GetMasterTreatyCategory_Act` [2.2], `TreatyIn.ProportionType ==
+// "NonProportional"`).
+var namaKategoriSetara = map[string]string{
+	"Pega Non Proportional Calculation /Perhitungan Pega Non Proportional": "Pega Proportional Calculation /Perhitungan Pega Proportional",
+}
+
 // SusunKategoriLampiran menggabungkan katalog yang TERBACA dengan empat
 // kode yang namanya belum dipastikan.
 //
@@ -34,6 +41,15 @@ func SusunKategoriLampiran(namaDesain []string, katalog map[string]string,
 	for kode, nama := range katalog {
 		if nama != "" {
 			kodeDariNama[nama] = kode
+		}
+	}
+	// ⭐ `GetMasterTreatyCategory_Act` [2.2]: kontrak Non-Prop menampilkan
+	// kode `00007` dengan nama Non-Prop — kodenya SAMA, hanya namanya.
+	for nonProp, prop := range namaKategoriSetara {
+		if kode, ada := kodeDariNama[prop]; ada {
+			if _, sudah := kodeDariNama[nonProp]; !sudah {
+				kodeDariNama[nonProp] = kode
+			}
 		}
 	}
 	// ⛔ Dicacah menurut NAMA, bukan kode. Nama itulah yang kedua sisi

@@ -4,6 +4,7 @@ package backend
 
 import (
 	"io/fs"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -83,12 +84,42 @@ var tabelMilikModulIni = map[string]bool{
 	"NILAI_SEBELUM_PRO_RATE": true,
 }
 
+// tabelTreatyInDiparkir — tabel MILIK modul `treatyin` yang `CREATE`-nya
+// terpaksa tinggal di folder ini, alasannya sama dengan `444`/`445`: rentang
+// `treatyin` (`400-439`) penuh, dan nomor berikutnya jatuh di rentang modul
+// ini. Ia BUKAN tabel modul ini — `tabelMilikModulIni` tidak berubah — dan
+// ia harus tercantum di peta pendaratan `treatyin` (diperiksa di bawah dari
+// teks berkasnya, bukan impor).
+//
+// ⛔ Kategori ini SEMPIT dengan sengaja: satu nama, satu alasan. Tabel
+// berikutnya yang hendak diparkir ditambahkan dengan alasannya sendiri.
+var tabelTreatyInDiparkir = map[string]string{
+	"T_TREATY_HAZARD_LIMIT": "446 — diagram v2 `TreatyIn [BATAS_BAHAYA]`; permintaan pemakai 7 Oktober 2026",
+	"T_TREATY_SHARE_SUMMARY": "448 — LimitShareSummaryList/LimitFacShareSummaryList tab Share Non-Prop " +
+		"tanpa tempat simpan (laporan `kunciTakTersimpan` Save); pemakai 7 Oktober 2026: \"ini dibuatkan saja\"",
+	"T_TREATY_LIMIT_SPREADING": "449 — Detail.SpreadingList tab Share Prop tanpa tempat simpan (laporan Save " +
+		"kontrak 1002305); pemakai 8 Oktober 2026: \"berikan apa yang anda butuhkan\"",
+	"T_TREATY_LIMIT_DEDUCTION": "450 — Detail.DeductionList tab Limits Prop: grid yang dapat diisi, tanpa tempat " +
+		"simpan (laporan Save kontrak 1002305, 8 Oktober 2026)",
+	"T_TREATY_LIMIT_ACH_PARAM": "450 — Detail.CurrencyList (Parameter Achievement) tanpa tempat simpan " +
+		"(laporan Save kontrak 1002305, 8 Oktober 2026)",
+	"T_TREATY_LIMIT_REINSTATEMENT": "450 — Limits.Reinstatement_List Non-Prop tanpa tempat simpan " +
+		"(laporan Save kontrak 1002305, 8 Oktober 2026)",
+}
+
 func TestNolTabelBaru(t *testing.T) {
 	pola := regexp.MustCompile(`(?i)CREATE\s+TABLE\s+\{skema\}\.(\w+)`)
 	dibuat := map[string]string{}
+	petaTreatyIn, _ := os.ReadFile("../../treatyin/backend/repository/pendaratan_peta.go")
 	for nama, isi := range majuSaja(t) {
 		for _, m := range pola.FindAllStringSubmatch(tanpaKomentar(isi), -1) {
 			tabel := strings.ToUpper(m[1])
+			if _, parkir := tabelTreatyInDiparkir[tabel]; parkir {
+				if !strings.Contains(string(petaTreatyIn), `Tabel: "`+tabel+`"`) {
+					t.Errorf("%s memarkir %s, tetapi tabel itu tidak ada di peta pendaratan treatyin", nama, tabel)
+				}
+				continue
+			}
 			if !tabelMilikModulIni[tabel] {
 				t.Errorf("%s membuat tabel %s; modul ini hanya mengubah tabel milik "+
 					"`treatyin`, kecuali dua yang KEPUTUSAN §19 pindahkan ke sini", nama, tabel)

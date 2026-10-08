@@ -31,8 +31,9 @@ const POHON: SimpulLimit[] = [
         RetentionPct: '75',
         COBList: [{ ClassOfBusiness: 'FIRE' }],
         IOOLimitList: [
-          { Currency: 'IDR', Value: '1500000000', Note: 'QUOTA SHARE', Layer: 'L-QS' },
-          { Currency: 'USD', Value: '100000', Note: 'LAIN', Layer: 'L-SEMBUNYI' },
+          // `.Layer` — kotak centang bernilai teks (terukur: `true`/`false`).
+          { Currency: 'IDR', Value: '1500000000', Note: 'QUOTA SHARE', Layer: 'true' },
+          { Currency: 'USD', Value: '100000', Note: 'LAIN', Layer: 'true' },
         ],
         RetentionList: [],
         CessionList: [{ Currency: 'IDR', Value: '375000000' }],
@@ -56,7 +57,10 @@ describe('daftar → mode form', () => {
   })
 
   it('⛔ mode lihat mematikan isian lewat fieldset — strip tab dan Close di luarnya', () => {
-    expect((FORM.match(/<fieldset className="trin__mode" disabled=\{!bisaUbah\}/g) ?? []).length).toBe(2)
+    expect((FORM.match(/<fieldset className="trin__mode" disabled=\{!bisaUbah\}/g) ?? []).length).toBe(1)
+    // ⭐ Fieldset isi tab: mati di mode lihat KECUALI tab Information & Submit
+    // kontrak revisi (`TreatyInfoSubmit` cell 9 dan 21) — 7 Oktober 2026.
+    expect(FORM).toContain('disabled={!bisaUbah && !(revisi && tabTampil === TAB_REVISI)}')
     const strip = FORM.indexOf('<StripTab tab={tab}')
     const tutup = FORM.lastIndexOf('</fieldset>', strip)
     expect(tutup).toBeGreaterThan(0)
@@ -119,8 +123,11 @@ describe('tab Limits proporsional — tiga tingkat dari ekspor', () => {
 
   it('⛔ syarat SEL: Layer hanya pada baris ber-Note QUOTA SHARE', () => {
     const html = renderToStaticMarkup(<TabLimitsProp pohon={POHON} mode="lihat" />)
-    expect(html).toContain('L-QS')
-    expect(html).not.toContain('L-SEMBUNYI')
+    // Kotak centang `Layer` HANYA pada baris ber-Note QUOTA SHARE.
+    expect((html.match(/type="checkbox"/g) ?? []).length).toBe(1)
+    // Keterangannya `pyCheckboxCaption` `Auto calculate` (layar Pega).
+    expect(html).toMatch(/type="checkbox" aria-label="Auto calculate"[^>]*checked=""/)
+    expect(html).toContain('Auto calculate</label>')
   })
 
   it('⭐ mode ubah: Add/Delete di tiap tingkat dan grid ber-Add; isian dapat diketik', () => {
@@ -135,8 +142,18 @@ describe('tab Limits proporsional — tiga tingkat dari ekspor', () => {
     expect(tombol(html, 'Delete')).toBeGreaterThanOrEqual(2)
     const bebas = kontrol(html).filter((t) => !/readOnly=""|readonly=""|disabled=""/i.test(t))
     expect(bebas.length).toBeGreaterThan(5)
-    // Isian memegang nilai TERSIMPAN, bukan terjemahan tampil.
-    expect(html).toContain('value="1500000000"')
+    // ⛔ RALAT 7 Oktober 2026 — pernyataan ini DULU menuntut nilai MENTAH
+    // di kotak isian (`value="1500000000"`), dengan alasan "isian memegang
+    // nilai TERSIMPAN, bukan terjemahan tampil".
+    //
+    // Alasannya benar untuk TEKS, dan keliru untuk ANGKA. Pemilik proses
+    // melaporkan grid `100% Limit` / `Retention` / `Cession to R/I`
+    // menampilkan `1500000000` apa adanya. `FieldAngka` memisahkan kedua
+    // bentuk itu: yang TAMPIL berpemisah ribuan, yang DIKIRIM tetap bentuk
+    // kabel — jadi tuntutan lamanya tidak hilang, ia pindah ke
+    // `inti/frontend/lib/angkaKetik.test.ts` (`keKabelAngka`).
+    expect(html).toContain('1.500.000.000')
+    expect(html).not.toContain('value="1500000000"')
   })
 
   it('⛔ mode lihat: nol tombol Add/Delete, nol isian dapat diketik', () => {
@@ -167,11 +184,24 @@ describe('grid tab lain — Add/Delete hidup di mode ubah', () => {
     expect(html).not.toContain('<input')
   })
 
-  it('⛔ riwayat Information & Submit tanpa Add — barisnya lahir dari Submit', () => {
+  it('⛔ riwayat tanpa Add — barisnya lahir dari Submit', () => {
     const html = renderToStaticMarkup(<TabGridWarisan {...props} mode="ubah" bisaTambah={false} />)
     expect(tombol(html, 'Add')).toBe(0)
+    // ⛔ ALAMATNYA DIGANTI 6 Oktober 2026, maksudnya TETAP.
+    //
+    // Bunyi sebelumnya menuntut `bisaTambah={false}` di cabang tab
+    // `Information & Submit`, sebab tab itu dahulu merender grid riwayat.
+    // Pukul 16:26 cabangnya diganti `<TabInfoSubmit …/>` — form Information
+    // + Comment dari `Section/TreatyInfoSubmit.xml` — dan grid riwayat
+    // keluar dari tab itu. Riwayat kini HANYA di `PanelHistory` di kaki
+    // layar. Jadi yang dijaga: tab itu tidak merender grid riwayat lagi,
+    // dan `PanelHistory` tidak punya tombol apa pun.
     const i = FORM.indexOf("tabTampil === 'Information & Submit'")
-    expect(FORM.slice(i, i + 600)).toContain('bisaTambah={false}')
+    expect(i).toBeGreaterThan(-1)
+    const j = FORM.indexOf('tabTampil ===', i + 1)
+    expect(FORM.slice(i, j === -1 ? undefined : j)).not.toContain('KOLOM_CATATAN')
+    const RIWAYAT = readFileSync(join(AKAR, 'components', 'PanelHistory.tsx'), 'utf8')
+    expect(RIWAYAT).not.toContain('<button')
   })
 })
 
@@ -181,18 +211,19 @@ describe('Treaty Type — dropdown `BrowseReinsuranceType_RD`', () => {
     { id: '10035', nama: 'QUOTA SHARE', kembar: false },
   ]
 
-  it('⭐ dropdown: kode tersimpan terpilih, label `.Note`', () => {
+  it('⭐ dropdown: kode tersimpan terpilih, label `.Note` — dapat diketik seperti Ceding', () => {
     const html = renderToStaticMarkup(<TabLimitsProp pohon={POHON} mode="ubah" opsi={{ jenisTreaty: OPSI_JENIS, kelompokTreaty: [], mataUang: [] }} />)
-    expect(html).toContain('<option value="">Choose</option>')
-    expect(html).toMatch(/<option value="10042" selected="">SURPLUS<\/option>/)
-    expect(html).toContain('<option value="10035">QUOTA SHARE</option>')
+    // Kotak ketik-pilih (`DropdownWarisan`) memperlihatkan Name pilihan tersimpan.
+    expect(html).toMatch(/<label class="field__label">Treaty Type<\/label><input(?=[^>]*role="combobox")(?=[^>]*value="SURPLUS")[^>]*>/)
     expect(html).not.toContain('teks pilihannya tidak ada di ekspor')
+    // ⛔ Bukan lagi `<select>` untuk Treaty Type.
+    expect(html).not.toMatch(/<option value="10042" selected="">SURPLUS<\/option>/)
   })
 
   it('⛔ pilihannya diminta dari server, bukan ditulis di layar', () => {
     const sumber = readFileSync(join(AKAR, 'components', 'TabLimitsProp.tsx'), 'utf8')
     expect(sumber).toContain('ambilOpsiLimits()')
-    expect(sumber).not.toMatch(/'SURPLUS'|'QUOTA SHARE'.*value/)
+    expect(sumber).not.toMatch(/value: 'SURPLUS'|value: 'QUOTA SHARE'/)
   })
 })
 
@@ -228,8 +259,8 @@ describe('tab Limits seperti layar Pega (lampiran 6 Oktober 2026)', () => {
     expect(html).toContain('>Remove</button>')
     expect(html).toContain('>Delete</button>')
   })
-  it('⛔ Kind of Treaty tidak punya isian sendiri; Treaty Group bernomor', () => {
-    expect(html).not.toMatch(/<label[^>]*>Kind of Treaty<\/label>/)
-    expect(html).toMatch(/<summary><span class="trin__redup">1 <\/span>PROPERTY/)
+  it('⭐ Kind of Treaty punya isian sendiri (autocomplete @586908); Treaty Group bernomor', () => {
+    expect(html).toMatch(/<label[^>]*>Kind of Treaty<\/label>/)
+    expect(html).toMatch(/<span class="tl-nomor">1<\/span><span class="tl-kartu__judul">PROPERTY<\/span>/)
   })
 })

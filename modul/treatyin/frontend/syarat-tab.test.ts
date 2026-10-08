@@ -21,7 +21,8 @@ import {
   TAB_PROPORSIONAL,
   TOTAL_RETENSI,
 } from './labels'
-import { NON_PROPORSIONAL, PROPORSIONAL, tabUntuk } from './pages/FormKontrakTreatyIn'
+import { totalTerkunci } from './labelsRetensi'
+import { NON_PROPORSIONAL, PROPORSIONAL, TAB_DISEMBUNYIKAN, tabUntuk } from './pages/FormKontrakTreatyIn'
 
 const AKAR = join(__dirname)
 // ⭐ Layar ini DIPECAH 5 Oktober 2026: halaman + `components/`. `FORM`
@@ -35,6 +36,7 @@ const FORM =
     .filter((f) => f.endsWith('.tsx') || f.endsWith('.ts'))
     .map((f) => readFileSync(join(AKAR, 'components', f), 'utf8'))
     .join(SELA)
+const RETENSI_SRC = readFileSync(join(AKAR, 'components', 'TabRetensi.tsx'), 'utf8')
 const CSS = readFileSync(join(AKAR, 'treatyin.css'), 'utf8')
 const LABELS = readFileSync(join(AKAR, 'labels.ts'), 'utf8')
 
@@ -153,22 +155,26 @@ describe('§2 Bordereaux', () => {
   })
 })
 
-describe('§4 medan tanggal kosong', () => {
+// ⭐ 7 Oktober 2026 — permintaan pemakai: "tiap inputan tanggal bisa diketik
+// juga biar gampang". `<input type="date">` (yang menulis `dd/mm/yyyy`
+// sendiri saat kosong, dan dulu ditambal `trin__tanggal--kosong`) diganti
+// kotak TEKS `DD/MM/YYYY` + ikon kalender — bentuk Pega gambar 38. Contoh
+// ketikan dijaga `tanggal-ketik.test.tsx`.
+describe('§4 medan tanggal — dapat DIKETIK', () => {
   it('kaitnya di modul, dan dasar.tsx tidak disentuh', () => {
-    expect(FORM).toContain('trin__tanggal--kosong')
     expect(FORM).toContain('function TanggalRedup(')
+    expect(FORM).toContain('<KotakTanggalKetik')
+    expect(FORM).not.toContain('<FieldTanggal')
   })
 
-  it('aturannya hanya berlaku saat KOSONG dan TIDAK difokus', () => {
-    expect(CSS).toContain('.trin__tanggal--kosong')
-    expect(CSS).toContain(':not(:focus)::-webkit-datetime-edit')
-    // ⭐ Yang transparan TEKSNYA saja — medannya tetap dapat diklik dan
-    // ikon pemilih tanggalnya tetap terlihat.
-    expect(CSS).toContain('color: transparent;')
+  it('tambalan `dd/mm/yyyy` dicabut — kotak teks yang kosong memang kosong', () => {
+    expect(CSS).not.toContain(':not(:focus)::-webkit-datetime-edit')
+    expect(CSS).not.toContain('.treatyin .trin__tanggal--kosong')
   })
 
-  it('batasnya DINYATAKAN, tidak disembunyikan', () => {
-    expect(CSS).toContain('Firefox')
+  it('kalender bawaan tetap ada — tak terlihat, bukan `display: none`', () => {
+    expect(CSS).toContain('.treatyin .trin__tgl-asli')
+    expect(CSS).toContain('opacity: 0;')
   })
 })
 
@@ -179,12 +185,25 @@ describe('§5 Update Total dan Total Retention Amount', () => {
     expect(TOTAL_RETENSI.tanpaBaris).toBe('No items')
   })
 
-  it('tombolnya ADA dan MATI — bukan dihilangkan', () => {
+  // ⛔ TOMBOLNYA HIDUP 6 Oktober 2026, dan pernyataan ini ikut berubah.
+  //
+  // Bentuk lama menuntutnya MATI, dan itu benar selama rumusnya belum ada:
+  // tombol hidup yang tidak menghitung apa pun lebih buruk daripada tombol
+  // mati yang jujur. Rumusnya kini ada (`hitung_retensi.go`), jadi yang
+  // dijaga berpindah — bukan "mati", melainkan "hidup, dan satu-satunya
+  // yang mematikannya syarat yang TERUKUR di ekspor".
+  it('tombolnya HIDUP, dan hanya `pyDisabledWhen` yang mematikannya', () => {
     expect(TOTAL_RETENSI.perbarui).toBe('Update Total')
-    expect(FORM).toContain('<PanelTotalRetensi baris={warisan?.totalRetensi ?? []} />')
-    expect(FORM).toContain('{TOTAL_RETENSI.perbarui}')
-    const i = FORM.indexOf('{TOTAL_RETENSI.perbarui}')
-    expect(FORM.slice(i - 200, i)).toContain('disabled')
+    expect(RETENSI_SRC).toContain('{TOTAL_RETENSI.perbarui}')
+    const i = RETENSI_SRC.indexOf('{TOTAL_RETENSI.perbarui}')
+    const sebelum = RETENSI_SRC.slice(i - 400, i)
+    // `pyDisabledWhen` = `TreatyIn.EDMMaterialType = 2` — @202558.
+    expect(sebelum).toContain('disabled={totalTerkunci(edmJenisMaterial)}')
+    expect(totalTerkunci('2')).toBe(true)
+    expect(totalTerkunci('1')).toBe(false)
+    // ⚠️ Tombol KEDUA tepat di atasnya di ekspor ber-`pyCondition 1=2`.
+    // Ia MATI dan TIDAK dibangun — nol tombol kedua di berkas ini.
+    expect((RETENSI_SRC.match(/<button/g) ?? []).length).toBe(1)
   })
 
   it('keempat tab lain yang juga punya Update Total TERCATAT', () => {
@@ -193,8 +212,26 @@ describe('§5 Update Total dan Total Retention Amount', () => {
   })
 
   it('rumusnya tidak dihitung ulang di layar', () => {
-    // ⛔ Layar membaca `totalRetensi`; nol penjumlahan di berkas layar.
+    // ⛔ Layar MEMANGGIL rumusnya, nol menghitungnya. Total tersimpan
+    // dokumen tetap dibaca sebagai nilai AWAL — Pega memperlihatkan total
+    // yang sudah ada di clipboard, bukan panel kosong.
     expect(FORM).toContain('warisan?.totalRetensi')
+    expect(RETENSI_SRC).toContain('hitungRetensi(')
     expect(FORM).not.toContain('reduce((t, b) => t + Number(b.jumlah)')
+    // Nol aritmetika di berkas tabnya pula.
+    const kode = RETENSI_SRC.split(String.fromCharCode(10))
+      .filter((b) => !b.trimStart().startsWith('//') && !b.trimStart().startsWith('*'))
+      .join(String.fromCharCode(10))
+    expect(kode).not.toContain('reduce(')
+    expect(kode).not.toContain('+ Number(')
+  })
+})
+
+describe('⛔ Retro DISEMBUNYIKAN dari strip — keputusan pemilik proses 7 Oktober 2026', () => {
+  it('syaratnya tetap dinilai `tabUntuk`; strip membuangnya lewat TAB_DISEMBUNYIKAN', () => {
+    expect(TAB_DISEMBUNYIKAN.has('Retro')).toBe(true)
+    expect(readFileSync(join(__dirname, 'pages/FormKontrakTreatyIn.tsx'), 'utf8')).toContain(
+      'tabUntuk(jenis, syaratTab).filter((t) => !TAB_DISEMBUNYIKAN.has(t))',
+    )
   })
 })

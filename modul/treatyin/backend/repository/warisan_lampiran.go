@@ -2,9 +2,10 @@ package repository
 
 // Baca `POOLDATA.M_ATTACHMENTTREATY_2` — panel Attachment.
 //
-// ⛔ BACA SAJA. Nol `INSERT`/`UPDATE`/`DELETE`/`MERGE`, nol DDL, nol
-// penyebutan di migrasi mana pun. Tabel ini WARISAN yang hidup — 43 baris
-// terukur 4 Oktober 2026 — dan modul ini bukan pemiliknya.
+// ⭐ Sejak 8 Oktober 2026 tombol `Upload file` MENULIS ke tabel ini
+// (keputusan pemakai) — jalurnya di `lampiran_tulis.go`. Berkas ini tetap
+// hanya MEMBACA. Nol DDL, nol penyebutan di migrasi mana pun: tabel ini
+// WARISAN yang hidup — 43 baris terukur 4 Oktober 2026.
 //
 // ⛔ NOL TABEL BARU. Aturan "tabel baru hanya untuk struktur tab ber-JSON"
 // tidak berlaku di sini: lampirannya sudah relasional, dengan `CATEGORY_ID`
@@ -92,17 +93,35 @@ func (g *Gudang) BacaLampiranKontrak(ctx context.Context, masterID string) ([]mo
 	return out, nil
 }
 
-// BacaKatalogKategoriLampiran membaca pasangan kode↔nama DARI DATA.
+// BacaKatalogKategoriLampiran membaca pasangan kode↔nama.
 //
-// ⛔ Dibaca, tidak dihafal. `M_ATTACHMENTTREATY_2` menyimpan `CATEGORY_ID`
-// dan `CATEGORY` berdampingan, jadi ketujuh pasangan yang terpakai adalah
-// fakta yang dapat diambil — bukan daftar di dalam kode yang akan membeku
-// pada hari seseorang mengganti sebuah nama di sistem lama.
-//
-// ⚠️ Yang TIDAK dapat dibaca adalah empat kode tanpa baris: `00003`
-// `00004` `00008` `00009`. Nama keempatnya ada di layar lama, pasangannya
-// tidak ada di mana pun. Services yang menggabungkannya, DENGAN penanda.
+// ⭐ 8 Oktober 2026 — sumber UTAMANYA katalog yang RD Pega baca:
+// `M_KATEGORIMASTERTREATY` (`GetMasterTreatyCategory_SQL`). Kesebelas
+// pasangannya ada di sana, termasuk keempat kode yang dulu "tanpa nama"
+// (`00003` Binding, signed share Email · `00004` Info Pack · `00008` LOA ·
+// `00009` Claim Data) — `docs/PERTANYAAN-TERBUKA-KODE-KATEGORI-LAMPIRAN.md`
+// TERJAWAB. Pasangan dari DATA lampiran melengkapi kode yang tidak ada di
+// katalog (nol hari ini).
 func (g *Gudang) BacaKatalogKategoriLampiran(ctx context.Context) (map[string]string, error) {
+	out, err := g.BacaKategoriMaster(ctx)
+	if err != nil {
+		return nil, err
+	}
+	data, err := g.bacaKatalogDariData(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for kode, nama := range data {
+		if _, ada := out[kode]; !ada {
+			out[kode] = nama
+		}
+	}
+	return out, nil
+}
+
+// bacaKatalogDariData - pasangan `CATEGORY_ID`/`CATEGORY` yang terpakai di
+// `M_ATTACHMENTTREATY_2`.
+func (g *Gudang) bacaKatalogDariData(ctx context.Context) (map[string]string, error) {
 	nama, err := g.db.Qualify(TabelWarisanLampiran)
 	if err != nil {
 		return nil, err

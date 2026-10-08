@@ -8,6 +8,9 @@
 // dijaga adalah teks dan susunannya, dan merender menambah ketergantungan
 // (jsdom, komponen inti) tanpa menambah satu pun hal yang dijaga.
 
+import { DESIMAL_EGNPI } from './labelsEgnpi'
+import { DESIMAL_RETENSI } from './labelsRetensi'
+
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -44,7 +47,7 @@ import {
   golongan,
   NAMA_KATEGORI_LAMPIRAN_PROP,
 } from './labels'
-import { aksiUntuk, MEDAN_WARISAN } from './pages/DaftarKontrakTreatyIn'
+import { aksiUntuk, bolehRevisi, MEDAN_WARISAN } from './pages/DaftarKontrakTreatyIn'
 import {
   NON_PROPORSIONAL,
   PROPORSIONAL,
@@ -112,16 +115,14 @@ describe('layar daftar kontrak', () => {
   // Sejak layar membaca `TREATY_IN` (1.854 baris) ia **tidak lagi benar**:
   // layar ini tidak menunggu tiket 59, dan petunjuk yang menunjuk tiket yang
   // salah membuat orang menagih pekerjaan yang tidak mengubah apa pun.
-  it('kosongnya TIDAK lagi menunjuk tiket 59', () => {
-    expect(DAFTAR_KONTRAK.kosongPetunjuk).not.toContain('tiket 59')
-    expect(DAFTAR_KONTRAK.kosongPetunjuk).toContain('1.854')
+  // ⛔ DIBALIK 8 Oktober 2026 — kedua catatan DICABUT dari layar.
+  it('⛔ kosongnya tidak lagi dijelaskan di layar', () => {
+    expect(DAFTAR_KONTRAK.kosongPetunjuk).toBe('')
   })
 
-  // Dan tiket 59 TETAP disebut — di tempat yang benar: keterangan sumber,
-  // yang menjelaskan daftar MANA yang menunggunya.
-  it('tiket 59 disebut sebagai pemindah model baru, bukan sebagai penahan layar ini', () => {
-    expect(DAFTAR_KONTRAK.catatanSumber).toContain('tiket 59')
-    expect(DAFTAR_KONTRAK.catatanSumber).toContain('POOLDATA.TREATY_IN')
+  it('⛔ nomor tiket dan nama tabel tidak lagi tampil di layar', () => {
+    expect(DAFTAR_KONTRAK.catatanSumber).toBe('')
+    expect(DAFTAR_KONTRAK.keterangan).toBe('')
   })
 })
 
@@ -280,8 +281,15 @@ describe('lebar yang disetel membawa asal-usulnya', () => {
   // sungguh bedakan di layar ini.
   it('grid Rate of Exchange memakai perbandingan dari ekspor', () => {
     expect(FORM).toContain('trin__kol-mata-uang')
-    expect(CSS).toMatch(/\.trin__kol-mata-uang\s*\{\s*width:\s*27%/)
-    expect(CSS).toMatch(/\.trin__kol-nilai\s*\{\s*width:\s*48%/)
+    // ⛔ RALAT 7 Oktober 2026 — rasio ekspor (27:48:12,5:12,5) DIGANTI
+    // atas permintaan pemilik proses: kotak `Value to IDR` selebar setengah
+    // tabel untuk angka sependek `286,07`, dan kolom tanggal terdesak.
+    //
+    // ⭐ Keempatnya kini berjumlah 84%, bukan 100% — sisanya untuk kolom
+    // tombol Remove, yang di `colgroup` memang tidak punya `<col>`.
+    expect(CSS).toMatch(/\.trin__kol-mata-uang\s*\{\s*width:\s*14%/)
+    expect(CSS).toMatch(/\.trin__kol-nilai\s*\{\s*width:\s*28%/)
+    expect(CSS).toMatch(/\.trin__kol-tanggal\s*\{\s*width:\s*21%/)
     expect(CSS).toContain('193')
     expect(CSS).toContain('349')
   })
@@ -450,6 +458,17 @@ describe('layar daftar membaca tabel warisan', () => {
   // makan oleh `STATUSAKSEPTASI` yang nyata. Sapuan menemukan EMPAT nilai,
   // bukan satu: `Resolve Complete` 1.820 · `Accept` 12 · `Decline` 11 ·
   // NULL 11. Ketiga yang terakhir 34 baris nyata, bukan kasus teoretis.
+  // ⭐ `Revision` MENULIS sejak 7 Oktober 2026 — syarat lengkap cell 994:
+  // workbasket Admin, Position kosong, Resolve Complete.
+  it('Revision hanya bagi Admin atas kontrak tuntas yang tidak berposisi', () => {
+    const tuntas = { statusAkseptasi: 'Resolve Complete', posisi: '' }
+    expect(bolehRevisi(tuntas, ['ReasTreatyInAdmin'])).toBe(true)
+    expect(bolehRevisi(tuntas, ['ReasTreatyInSecHead'])).toBe(false)
+    expect(bolehRevisi({ ...tuntas, posisi: 'ReasTreatyInSecHead' }, ['ReasTreatyInAdmin'])).toBe(false)
+    expect(bolehRevisi({ ...tuntas, statusAkseptasi: 'Accept' }, ['ReasTreatyInAdmin'])).toBe(false)
+    expect(DAFTAR).toContain('bolehRevisi(b, workbasket)')
+  })
+
   it('keempat nilai STATUSAKSEPTASI nyata memilih tombolnya', () => {
     expect(aksiUntuk('Resolve Complete')).toEqual(['View', 'Copy', 'Revision'])
     for (const lain of ['Accept', 'Decline', '']) {
@@ -491,25 +510,45 @@ describe('form membaca kontrak warisan', () => {
     expect(FORM).toMatch(/setJenis\(k\.sifatProporsi === NON_PROPORSIONAL/)
   })
 
-  // ⛔ Medan MATI, bukan kotak kosong — dan ia bukan kasus langka:
-  // `ContractRefNo` tidak ada di 1.112 dari 1.854 kontrak, `TreatyLeader`
-  // di 1.195, `BordereauxNote` di 836.
-  it('ketiga medan yang kuncinya bisa hilang memakai MedanTakAda', () => {
-    expect(FORM).toContain('function MedanTakAda')
-    for (const kunci of ['ContractRefNo', 'BordereauxNote', 'TreatyLeader']) {
-      expect(FORM).toContain(`adaKunci('${kunci}')`)
-    }
-  })
-
-  it('keterangan medan mati menyatakan SISTEM LAMA, bukan "belum diisi"', () => {
-    expect(FORM_KONTRAK.takAdaDiWarisan).toContain('sistem lama')
-    expect(FORM_KONTRAK.takAdaDiWarisan).not.toContain('belum diisi')
+  // ⭐ RALAT 7 Oktober 2026 — ketiga medan SELALU tampil, persis ekspor
+  // `Section/TreatyInNONProportional.xml` (`ContractRefNo` /
+  // `BordereauxNote` `pyVisible ALWAYS`, `TreatyLeader` tanpa syarat
+  // tampil). Dahulu `MedanTakAda` "Tidak ada di dokumen sistem lama"
+  // menggantikannya bila kuncinya tidak ada — syarat yang tidak dikenal Pega.
+  it('Contract Ref No · Bordereaux Note · RNM as Treaty Leader selalu dirender — nol MedanTakAda', () => {
+    expect(FORM).not.toContain('MedanTakAda')
+    expect(FORM).not.toContain('adaKunci(')
+    expect(FORM_KONTRAK).not.toHaveProperty('takAdaDiWarisan')
+    // `pxTextInput` — baca-saja bila `TreatyIn.EDMMaterialType = 1`.
+    expect(FORM).toMatch(/<Field\s+label=\{FORM_KONTRAK\.nomorRujukan\}[^>]*readOnly=\{edmMateri\}/)
+    // `pxTextArea` — idem, berlabel lewat `htmlFor`.
+    expect(FORM).toMatch(/htmlFor=\{idBordereauxNote\}/)
+    expect(FORM).toMatch(/<textarea[^>]*value=\{bordereauxNote\}[^>]*readOnly=\{edmMateri\}/)
+    // `pxCheckbox` dengan `pyCheckboxCaption`, `pyIncludeLabel=false`.
+    expect(FORM).toMatch(/<label className="trin__centang">\s*<input\s+type="checkbox"\s+checked=\{pemimpin\}/)
+    expect(FORM_KONTRAK.pemimpinTreaty).toBe('RNM as Treaty Leader')
   })
 
   // ⭐ `TREATYYEAR` adalah kolom — dibaca, bukan dipotong dari tanggal.
-  it('Treaty Year dibaca dari kolomnya', () => {
-    expect(FORM).toContain('warisan?.tahunTreaty')
-    expect(FORM).not.toContain("mulai.slice(0, 4)")
+  it('Treaty Year dibaca dari kolomnya SAAT MEMBUKA kontrak', () => {
+    // ⛔ Bukan dihitung dari Commencement saat membuka: 5 dari 1.854 kontrak
+    // sengaja bertahun berbeda dari tahun mulainya, dan menghitung ulang akan
+    // menimpa kelimanya tanpa suara.
+    expect(FORM).toContain('setTahunTreaty(k.tahunTreaty)')
+  })
+
+  it('⛔ medan tanggal diisi dari bentuk NILAI, bukan bentuk BACA', () => {
+    // `<input type="date">` hanya menerima `yyyy-mm-dd`. Disuapi `01/01/2025`
+    // ia menolaknya TANPA BERSUARA dan menampilkan placeholder — medan yang
+    // menolak nilainya terlihat persis seperti medan yang memang kosong.
+    expect(FORM).toContain('setMulai(keKabel(k.tanggalMulaiAsli))')
+    expect(FORM).toContain('setBerakhir(keKabel(k.tanggalBerakhirAsli))')
+    expect(FORM).not.toContain('setMulai(k.tanggalMulai)')
+    // ⛔ SATU bentuk kabel saja. Bentuk ISO di sini membuat kedua turunan
+    // (`Treaty Year`, `Termination`) KOSONG begitu pemakai memilih tanggal,
+    // sebab `FieldTanggal` mengembalikan `DD-MM-YYYY` — keluhan pemilik
+    // proses 6 Oktober 2026.
+    expect(FORM).not.toContain('keIso(')
   })
 
   // ⚠️ RALAT: nilai pilihan adalah yang TERSIMPAN, dan ada DUA per pilihan.
@@ -526,14 +565,35 @@ describe('form membaca kontrak warisan', () => {
 })
 
 describe('empat tab dari M_TREATY_IN2 — satu tabel, empat proyeksi', () => {
-  it('keempatnya membaca `warisan.layer`, bukan empat sumber berbeda', () => {
+  it('ketiganya membaca `warisan.layer` — Event Limits KELUAR, dengan bukti', () => {
     for (const tab of ['Limits', 'Share', 'Event Limits', 'RNM Share']) {
       expect(FORM).toContain(`tabTampil === '${tab}'`)
     }
-    // ⛔ Satu seam. Empat pembacaan berarti empat kueri untuk satu baca, dan
-    // empat kesempatan agar yang satu melihat layer yang lain tidak.
+    // ⛔ Satu seam. Banyak pembacaan berarti banyak kueri untuk satu baca,
+    // dan kesempatan agar yang satu melihat layer yang lain tidak.
+    //
+    // ⛔ RALAT 6 Oktober 2026: EMPAT menjadi TIGA, dan itu bukan pelonggaran.
+    // Tab Event Limits Non-Prop di ekspor mengikat properti AKAR
+    // (`TreatyIn.RSMDLimit`, `TreatyIn.Earthquake`, …) — satu set per
+    // kontrak — bukan nilai per layer. Diukur atas seluruh 1.855 dokumen:
+    // Non-Prop berisi di AKAR pada 49 kontrak, di `Detail[]` pada 1, tumpang
+    // tindih 0. Membacanya dari `warisan.layer` membuat tab itu kosong pada
+    // 771 dari 772 kontrak Non-Prop.
+    //
+    // ⛔ RALAT 7 Oktober 2026: TIGA menjadi DUA. Tab Share NON-PROP kini
+    // membaca `warisan.shareNP` (pendaratan `T_TREATY_SHARE*`) — bentuk
+    // ekspornya per baris `TreatyIn.Share`, bukan kolom `Detail[]` Prop yang
+    // dulu ditampilkannya. Yang tersisa: Share Prop dan RNM Share.
+    //
+    // ⛔ RALAT 7 Oktober 2026: DUA menjadi SATU. Share PROP kini membaca
+    // `TreatyIn.Limits` (penampung halaman, nilai awal `warisan.limitsPohon`)
+    // — grid `Kind of Treaty` di ekspor ADALAH page list `TreatyIn.Limits`.
+    // Yang tersisa hanya RNM Share.
     const pakai = FORM.match(/warisan\?\.layer \?\? \[\]/g) ?? []
-    expect(pakai.length).toBe(4)
+    expect(pakai.length).toBe(1)
+    expect(FORM).toContain('pohon={warisan?.limitsPohon ?? []}')
+    expect(FORM).toContain('share={shareNP ?? warisan?.shareNP}')
+    expect(FORM).toContain('<TabEventLimits mode={mode} />')
   })
 
   it('nol tabel baru dibuat untuk keempatnya', () => {
@@ -692,9 +752,19 @@ describe('angka: titik ribuan, koma desimal, dan batas desimalnya', () => {
 })
 
 describe('tab Co-Ins Scale dan petunjuk kosong yang membedakan sebabnya', () => {
-  it('Co-Ins Scale membaca tabel pendaratan kesembilan', () => {
+  it('Co-Ins Scale membaca tabel pendaratan kesembilan — DAN dua medan hidupnya', () => {
+    // ⛔ RALAT DI RONDE YANG SAMA, 6 Oktober 2026. Uji ini sempat DIBALIK
+    // untuk menuntut grid `TreatyIn.CoInScale` TIDAK dirender, atas dasar
+    // `pyContainerVisibleWhen` = `1=2` di wadahnya. Bacaan itu SALAH: wadah
+    // yang sama ber-`pyIsVisibilityOption` = `ALWAYS`, yang menimpa
+    // syaratnya, dan gambar `18` (tangkapan layar Pega) memperlihatkan
+    // gridnya TAMPIL. Bunyi aslinya — grid dirender — dipulihkan.
+    //
+    // Yang memang KURANG, dan kini ditambahkan: sel 277 `.MaxCoNonGroup`
+    // dan sel 278 `.MaxCoGroup` di bawah grid.
     expect(FORM).toContain("tabTampil === 'Co-Ins Scale'")
     expect(FORM).toContain('warisan?.skalaKoasuransi')
+    expect(FORM).toContain('<TabCoInsScale')
   })
 
   it('⭐ petunjuk kosong keempat tab layer DIBALIK — lubang 510 tertutup', () => {
@@ -704,10 +774,10 @@ describe('tab Co-Ins Scale dan petunjuk kosong yang membedakan sebabnya', () => 
     // "510", sebab kosong punya DUA arti dan layar tidak boleh mengaku tahu
     // yang mana. Sesudah `M_TREATY_IN2` dicabut, kosong punya SATU arti —
     // dan petunjuk lama menjelaskan sebab yang sudah tidak ada.
-    expect(FORM_KONTRAK.petunjukLayer).not.toContain('M_TREATY_IN2')
-    expect(FORM_KONTRAK.petunjukLayer).not.toContain('510')
-    expect(FORM_KONTRAK.petunjukLayer).not.toContain('1.340')
-    expect(FORM_KONTRAK.petunjukLayer).toContain('dokumen warisan')
+    // ⛔ 8 Oktober 2026 petunjuknya DICABUT seluruhnya — bukan hanya
+    // dibersihkan dari `M_TREATY_IN2`. Lihat penjaga menyeluruh di akhir
+    // berkas ini.
+    expect(FORM_KONTRAK.petunjukLayer).toBe('')
   })
 
   it('⭐ petunjuk Event Limits DIBALIK — ketiga batas kini punya sumbernya', () => {
@@ -725,8 +795,13 @@ describe('tab Co-Ins Scale dan petunjuk kosong yang membedakan sebabnya', () => 
     for (const tab of ['Limits', 'Share', 'RNM Share']) {
       const i = FORM.indexOf(`tabTampil === '${tab}'`)
       expect(i).toBeGreaterThan(0)
-      const blok = FORM.slice(i, i + 1400)
-      expect(blok).toContain('petunjukLayer')
+      // ⛔ Dipotong sampai CABANG BERIKUTNYA, bukan 1.400 aksara tetap —
+      // 6 Oktober 2026. Jendela tetap pecah begitu komentar cabangnya
+      // memanjang (cabang Share kini merender dua komponen Prop/Non-Prop
+      // dengan komentar bukti), padahal pemakaian petunjuknya tidak berubah.
+      const j = FORM.indexOf('tabTampil ===', i + 1)
+      const blok = FORM.slice(i, j === -1 ? undefined : j)
+      expect(blok, tab).toContain('petunjukLayer')
     }
   })
 })
@@ -755,7 +830,9 @@ describe('dua tab TEKS — Jalan B, keputusan §15', () => {
   it('⛔ kosong memakai Kosong (belum ada DATA), bukan .trin__belum', () => {
     const i = FORM.indexOf('function TabTeksPanjang')
     expect(i).toBeGreaterThan(0)
-    const blok = FORM.slice(i, i + 1800)
+    // Seluruh badan fungsi — bukan jendela beraksara tetap, yang bergeser
+    // setiap kali fungsi ini tumbuh (`TreatyInCopyConditions`, 7 Oktober 2026).
+    const blok = FORM.slice(i, FORM.indexOf('\n}\n', i))
     expect(blok).toContain('<Kosong')
     expect(blok).not.toContain('trin__belum')
   })
@@ -766,9 +843,11 @@ describe('dua tab TEKS — Jalan B, keputusan §15', () => {
     expect(FORM).toContain('ejaanLainBerisi')
   })
 
-  it('petunjuk kosong menyebut ejaan cabang seberang TIDAK dipakai', () => {
-    expect(FORM_KONTRAK.petunjukTeksPengecualian).toContain('TIDAK dipakai')
-    expect(FORM_KONTRAK.petunjukTeksSyarat).toContain('SpecialConditionsp')
+  // ⛔ DIBALIK 8 Oktober 2026 — ejaan kunci dokumen adalah urusan
+  // pengembang; ia tidak lagi tampil di layar.
+  it('⛔ petunjuk kosong kedua tab teks dicabut', () => {
+    expect(FORM_KONTRAK.petunjukTeksPengecualian).toBe('')
+    expect(FORM_KONTRAK.petunjukTeksSyarat).toBe('')
   })
 
   it('⛔ Value Difference TETAP belum dibangun — ia objek, bukan teks', () => {
@@ -783,11 +862,42 @@ describe('empat grid yang sampai 4 Oktober 2026 LOLOS dari pemformat', () => {
   // memakai nilai yang BENAR-BENAR ada di Oracle, bukan contoh karangan.
 
   it('⛔ keempat grid kini melewati barisAngka', () => {
-    for (const j of ['JENIS_EGNPI', 'JENIS_RETENSI', 'JENIS_ANGSURAN']) {
-      expect(FORM).toContain(j)
-    }
+    // ⛔ Installment KELUAR 7 Oktober 2026 — bukan lagi grid umum: tabnya
+    // sendiri (`TabAngsuran.tsx`) memformat Amount/Total lewat `selAngka`
+    // (`['uang', 2]`, % lewat `persenShare`), seperti gambar 38.
+    const ANG = readFileSync(join(AKAR, 'components', 'TabAngsuran.tsx'), 'utf8')
+    expect(ANG).toContain("selAngka(['uang', 2], v)")
+    expect(ANG).toContain("selAngka(['persenShare', 2], r.InstallmentPct)")
     // Rate of Exchange tidak punya JENIS_*; kursnya diformat langsung.
     expect(FORM).toContain("selAngka(['uang', 2], b.nilaiKeIDR)")
+  })
+
+  // ⛔ EGNPI KELUAR dari daftar di atas 6 Oktober 2026 — bukan karena
+  // pemformatannya dicabut, melainkan karena ia bukan lagi grid umum.
+  // Tabnya sendiri (`TabEgnpi.tsx`) memformat lewat `formatLimit` +
+  // `DESIMAL_EGNPI`, jadi yang dijaga tetap sama: nol angka mentah di layar.
+  //
+  // ⚠️ Dua desimal yang BERBEDA di baris yang sama adalah intinya —
+  // `Amount` 2, `Amount in IDR` 0 (gambar 29). Menyeragamkannya menghapus
+  // bukti yang membuat angka ini terbaca seperti di Pega.
+  // ⛔ Maximum Retention keluar dari daftar di atas sebab yang sama
+  // dengan EGNPI — bukan pemformatan yang dicabut, melainkan grid umumnya.
+  it('⛔ Maximum Retention memformat lewat tabnya sendiri', () => {
+    const RT = readFileSync(join(__dirname, 'components', 'TabRetensi.tsx'), 'utf8')
+    expect(RT).toContain('formatLimit')
+    expect(RT).toContain('DESIMAL_RETENSI.jumlah')
+    expect(RT).toContain('DESIMAL_RETENSI.nilaiTotal')
+    // ⚠️ Grid 0 desimal, panel total 2 — gambar 26. Nilai yang sama,
+    // dua presisi, dua tempat.
+    expect(DESIMAL_RETENSI.jumlah).not.toBe(DESIMAL_RETENSI.nilaiTotal)
+  })
+
+  it('⛔ EGNPI memformat lewat tabnya sendiri', () => {
+    const EG = readFileSync(join(__dirname, 'components', 'TabEgnpi.tsx'), 'utf8')
+    expect(EG).toContain('formatLimit')
+    expect(EG).toContain('DESIMAL_EGNPI.jumlah')
+    expect(EG).toContain('DESIMAL_EGNPI.jumlahIDR')
+    expect(DESIMAL_EGNPI.jumlah).not.toBe(DESIMAL_EGNPI.jumlahIDR)
   })
 
   it('tiap JENIS_* sepanjang KOLOM_* pasangannya', () => {
@@ -880,7 +990,7 @@ describe('panel Attachment + History — nol tabel baru', () => {
   it('⭐ panel menampilkan NAMA kategori, bukan kodenya', () => {
     const i = FORM.indexOf('function PanelLampiran')
     expect(i).toBeGreaterThan(0)
-    const blok = FORM.slice(i, i + 4200)
+    const blok = FORM.slice(i, FORM.indexOf('function berkasKategori', i))
     expect(blok).toContain('<td>{k.nama}</td>')
     expect(blok).not.toContain('{k.kode} <span')
   })
@@ -911,7 +1021,7 @@ describe('panel Attachment + History — nol tabel baru', () => {
 
   it('⛔ Count TIDAK diformat — ia cacah butir, bukan uang', () => {
     const i = FORM.indexOf('function PanelLampiran')
-    const blok = FORM.slice(i, i + 4200)
+    const blok = FORM.slice(i, FORM.indexOf('function berkasKategori', i))
     expect(blok).toContain('String(k.cacah)')
     // Nol pemformat angka menyentuhnya — cacah butir tidak diberi pemisah ribuan.
     expect(blok).not.toMatch(/selAngka\([^)]*cacah/)
@@ -927,32 +1037,44 @@ describe('panel Attachment + History — nol tabel baru', () => {
     for (const nama of ['function PanelLampiran', 'function PanelHistory']) {
       const i = FORM.indexOf(nama)
       expect(i).toBeGreaterThan(0)
-      const blok = FORM.slice(i, i + 4200)
+      // Panel Attachment kini memuat jalur unggah — dipotong sampai ujung fungsinya.
+      const ujung = nama === 'function PanelLampiran' ? FORM.indexOf('function berkasKategori', i) : i + 4200
+      const blok = FORM.slice(i, ujung)
       expect(blok).toContain('<Kosong')
       expect(blok).not.toContain('trin__belum')
     }
   })
 
-  it('DUA tombol mati, Close hidup — dan layar mengatakan sebab masing-masing', () => {
-    // ⚠️ `lastIndexOf`: `.trin__aksi` sudah dipakai tombol Apply di tab
-    // Reporting Period dan tombol `Update Total` di Maximum Retention.
-    // Deret Save · Close · Actions adalah yang TERAKHIR di berkas.
-    //
-    // ⛔ RALAT 5 Oktober 2026: uji ini menuntut KETIGANYA mati, dan itu
-    // bertentangan dengan komentar berkas layarnya sendiri — `Close` HIDUP,
-    // sebab ia satu-satunya yang tidak menuntut jalur tulis: ia hanya
-    // menutup layar. Gambar `24` dan `42` dokumen desain memperlihatkannya
-    // sebagai tombol merah yang aktif.
-    //
-    // Yang dijaga karena itu BERUBAH: bukan "tiga mati" melainkan "dua mati
-    // dan yang hidup memang yang tidak menulis apa pun".
-    const i = HALAMAN.lastIndexOf('trin__aksi')
+  it('⭐ Save dan Actions HIDUP menurut syarat tampil ekspor, Close selalu', () => {
+    // 7 Oktober 2026 — keputusan pemilik proses: jalur tulis ke tabel
+    // masing-masing. Syarat tampil disalin dari `TreatyInActionButtons`.
+    const i = HALAMAN.indexOf('className="trin__aksi trin__aksi--kaki"')
     expect(i).toBeGreaterThan(0)
-    const blok = HALAMAN.slice(i, i + 800)
-    for (const t of ['Save', 'Close', 'Actions']) expect(blok).toContain(t)
-    expect((blok.match(/disabled/g) ?? []).length).toBe(2)
-    // Dan yang hidup itu BENAR-BENAR `Close`, bukan salah satu yang menulis.
+    const blok = HALAMAN.slice(i, i + 1200)
+    expect(blok).toMatch(/\{saveTampil && \(\s*<button[^>]*onClick=\{tekanSave\}/)
     expect(blok).toContain('onClick={onKembali}')
+    expect(blok).toMatch(/\{actionsTampil && \(/)
+    expect(HALAMAN).toContain("const saveTampil = bisaUbah && statusKini !== 'Resolve Complete'")
+    expect(HALAMAN).toContain("bolehActions(warisan?.posisi ?? '', workbasket, statusKini)")
+  })
+
+  it('⭐ properti penampung yang TERSIMPAN (migrasi 448) disemai sesudah kosongkan', () => {
+    // Tanpa ini RNMShareP/OptionLimit/InstallmentNo yang di-Save kembali
+    // kosong begitu kontrak dibaca ulang — tabnya menyemai bawaan ''.
+    const i = HALAMAN.indexOf('Object.entries(k.penampung ?? {})')
+    expect(i).toBeGreaterThan(0)
+    expect(HALAMAN.lastIndexOf('penampung.kosongkan()', i)).toBeGreaterThan(HALAMAN.lastIndexOf('setWarisan(k)', i))
+    expect(HALAMAN.slice(i, i + 120)).toContain('penampung.ubah(kunci, () => v)')
+  })
+
+  it('deret Save · Close · Actions berjarak dari kartu History di bawahnya', () => {
+    // Tangkapan layar pemakai 7 Oktober 2026: History menempel ke tombol.
+    // Jarak bawahnya sama dengan jarak antar kartu (`.treatyin .panel`).
+    const i = HALAMAN.lastIndexOf('trin__aksi')
+    expect(HALAMAN.slice(i - 40, i + 40)).toContain('className="trin__aksi trin__aksi--kaki"')
+    expect(HALAMAN.indexOf('<PanelHistory', i)).toBeGreaterThan(i)
+    expect(CSS).toMatch(/\.treatyin \.trin__aksi--kaki \{\s*margin-bottom: 18px;/)
+    expect(CSS).toMatch(/\.treatyin \.panel \{\s*margin-bottom: 18px;/)
   })
 })
 
@@ -1022,16 +1144,17 @@ describe('Retro — keadaan KEEMPAT: jarang, bukan belum-ada-kode', () => {
     expect(FORM_KONTRAK.jarangDipakai).not.toContain('belum dibangun.')
   })
 
-  it('⛔ petunjuknya menyatakan fiturnya HIDUP, bukan dicabut', () => {
-    const p = FORM_KONTRAK.jarangDipakaiPetunjuk
-    expect(p).toContain('hidup di sistem lama')
-    expect(p).toContain('5 dari 1.854')
-    expect(p).toContain('§17')
-    // Kalimat yang mengaku fiturnya mati akan salah: verifikasi membuktikan
-    // `pyRuleAvailable = Yes` dan nol penjaga `1=2` membungkus tabnya.
-    for (const salah of ['tidak dipakai lagi', 'dicabut', 'kode mati']) {
-      expect(p).not.toContain(salah)
-    }
+  // ⛔ DIBALIK 8 Oktober 2026 — petunjuknya DICABUT dari layar.
+  //
+  // ⚠️ Yang dijaga uji lama tetap BENAR dan tetap perlu diketahui: Retro
+  // HIDUP di sistem lama (`pyRuleAvailable = Yes`, nol penjaga `1=2`), hanya
+  // jarang dipakai. Keterangan itu kini hidup di komentar kode dan dokumen
+  // modul, bukan di layar pemakai.
+  it('⛔ petunjuk Retro dicabut dari layar', () => {
+    expect(FORM_KONTRAK.jarangDipakaiPetunjuk).toBe('')
+    expect(FORM_KONTRAK.belumDibangunPetunjuk).toBe('')
+    // Pesan tab-nya sendiri TETAP — ia kalimat polos, bukan catatan internal.
+    expect(FORM_KONTRAK.belumDibangun).toBe('Tab ini belum dibangun.')
   })
 
   it('tab lain TETAP memakai belumDibangun — keempat keadaan tidak tertukar', () => {
@@ -1071,7 +1194,12 @@ describe('larik dari API tidak boleh menghentikan halaman', () => {
       .map((m) => m[1])
       .filter((n): n is string => n !== undefined)
       // Medan BUKAN larik — dibaca apa adanya, dan `?? []` di atasnya keliru.
-      .filter((n) => !['tahunTreaty', 'pengecualian', 'syaratKhusus'].includes(n))
+      // `limitsAkar` OBJEK, bukan larik — `TabLimitsNonProp` memakai bentuk
+      // kosongnya sendiri bila tak ada, dan larik di dalamnya dijamin
+      // services (`nolkanLarik`).
+      // `shareNP` OBJEK pula — `TabShareNonProp` memakai `SHARE_NP_KOSONG`
+      // bila tak ada, dan lariknya dijamin services (`lengkapiShare`).
+      .filter((n) => !['tahunTreaty', 'pengecualian', 'syaratKhusus', 'limitsAkar', 'shareNP'].includes(n))
     expect(telanjang).toEqual([])
   })
 })
@@ -1083,11 +1211,46 @@ describe('larik dari API tidak boleh menghentikan halaman', () => {
 // Cacat yang melahirkannya: mode Edit merender nilai MENTAH (`10584.39`)
 // sementara mode View merender `10.584,39`. Satu layar, dua bentuk, dan yang
 // menyuntingnya mengira angkanya memang berbeda.
+// ⭐ 7 Oktober 2026 — sel grid Rate of Exchange mengikuti
+// `Section/TreatyInNONProportional.xml` (@439485–@466983). Dahulu keempatnya
+// kotak teks bebas di mode Edit.
+describe('grid Rate of Exchange — kontrol sel sesuai ekspor', () => {
+  const HAL = readFileSync(join(__dirname, 'pages', 'FormKontrakTreatyIn.tsx'), 'utf8')
+  const i = HAL.indexOf('{bisaUbah &&\n                kurs.map')
+  const blokUbah = HAL.slice(i, HAL.indexOf('{!bisaUbah && kurs.map', i))
+
+  it('Currency `.CurrencyID` = pxDropdown `BrowseCurrency_RD` — bukan teks bebas', () => {
+    expect(blokUbah).toMatch(/<DropdownDaftar[\s\S]*?nilai=\{b\.mataUang\}[\s\S]*?pilihan=\{mataUangKurs\}/)
+    // `SetCurrNameMasterTreaty_Act`: memilih pengenal mengisi namanya juga.
+    expect(blokUbah).toContain('ubahKurs(i, { mataUang: nama, mataUangID: id })')
+    // Opsinya rute yang sama dengan dropdown mata uang tab Limits.
+    expect(HAL).toContain('if (!dibuang) setMataUangKurs(o.mataUang)')
+    // ⛔ Kotak teks yang mengulang keempat kunci sudah tidak ada.
+    expect(HAL).not.toContain("(['mataUang', 'nilaiKeIDR', 'berlakuDari', 'berlakuSampai'] as const)")
+  })
+
+  it('Valid From / Valid Until = pxDateTime — kotak tanggal, dan mode baca memformat tanggalnya', () => {
+    expect((blokUbah.match(/<KotakTanggalKetik/g) ?? []).length).toBe(2)
+    expect(HAL).toContain('<td>{formatDate(b.berlakuDari)}</td>')
+    expect(HAL).toContain('<td>{formatDate(b.berlakuSampai)}</td>')
+  })
+
+  it('Add = `TreatyInAddCurrency` — baris baru ber-CurrencyID kosong', () => {
+    // ⛔ Baris baru kini membawa DUA pasang medan tanggal: bentuk TAMPIL
+    // (`berlakuDari`) dan bentuk TERSIMPAN (`…Asli`). Yang kedua lahir
+    // 7 Oktober 2026 sebab kotak tanggal tidak dapat membaca `dd/mm/yy`.
+    expect(HAL).toContain(
+      "{ mataUang: '', mataUangID: '', nilaiKeIDR: '', berlakuDari: '', berlakuSampai: '', berlakuDariAsli: '', berlakuSampaiAsli: '' }",
+    )
+  })
+})
+
 describe('grid Rate of Exchange — satu bentuk angka di kedua mode', () => {
   it('⛔ sel isian pun diformat, bukan hanya sel baca', () => {
-    expect(FORM).toContain("selAngka(['uang', 2], b[kk])")
-    // Mode baca sudah memakai pemformat yang sama; keduanya harus sama.
-    expect(FORM).toContain("selAngka(['uang', 2], b.nilaiKeIDR)")
+    // Sel isian: diformat kecuali sedang diketik.
+    expect(FORM).toContain("selDiketik === `${String(i)}:nilaiKeIDR` ? b.nilaiKeIDR : selAngka(['uang', 2], b.nilaiKeIDR)")
+    // Mode baca memakai pemformat yang sama; keduanya harus sama.
+    expect(FORM).toContain("<td>{selAngka(['uang', 2], b.nilaiKeIDR)}</td>")
   })
 
   it('⭐ pemformat berhenti saat selnya sedang diketik', () => {
@@ -1103,5 +1266,67 @@ describe('grid Rate of Exchange — satu bentuk angka di kedua mode', () => {
     expect(selAngka(['uang', 2], '2294.18')).toBe('2.294,18')
     // Nol di ekor DIPERTAHANKAN — gambar 01 berbunyi `1,00`.
     expect(selAngka(['uang', 2], '1')).toBe('1,00')
+  })
+})
+
+// ⛔ Ketikan tidak boleh terhapus oleh peristiwa fokus susulan.
+//
+// Keluhan pemilik proses 6 Oktober 2026: diketik `zurich`, daftar kembali
+// memperlihatkan seluruh 131 cedant sementara kotaknya masih berbunyi
+// `zurich`. Saringannya BENAR — `saring.test.ts` membuktikannya atas nama
+// yang persis sama — yang keliru pengosongan `ketik` pada SETIAP fokus.
+describe('pemilih ketik-pilih menjaga ketikannya', () => {
+  const DD = readFileSync(join(__dirname, 'components', 'DropdownWarisan.tsx'), 'utf8')
+
+  it('⛔ fokus hanya mengosongkan ketikan bila daftarnya TERTUTUP', () => {
+    const i = DD.indexOf('onFocus={() => {')
+    expect(i).toBeGreaterThan(0)
+    const blok = DD.slice(i, i + 1600)
+    expect(blok).toContain('if (!buka) {')
+    // Pengosongan tanpa syarat adalah bentuk yang melahirkan keluhannya.
+    expect(blok).not.toMatch(/onFocus=\{\(\) => \{\s*setKetik\(''\)/)
+  })
+
+  it('daftar yang dirender adalah hasil SARINGAN, bukan daftar penuh', () => {
+    expect(DD).toContain('const cocok = saringTerdekat(daftar, q)')
+    expect(DD).toContain('{cocok.map((b, i) => (')
+    expect(DD).not.toContain('{daftar.map(')
+  })
+})
+
+
+// ⛔ KEPALA KOLOM TETAP TERLIHAT SAAT TABEL DIGULIR.
+//
+// Permintaan pemilik proses 7 Oktober 2026: *"label per table kalau ada
+// scroll nya labelnya itu netap tidak ikut tenggelam"*.
+//
+// ⚠️ Ketiga bagiannya DIJAGA TERPISAH, sebab tiap satunya punya cara
+// gagal sendiri yang TIDAK terlihat di layar sampai seseorang menggulir.
+describe('kepala kolom tidak ikut tenggelam', () => {
+  const ATURAN = CSS.slice(CSS.indexOf('.treatyin .table-wrap .trin__tabel thead th'))
+
+  it('⛔ sticky DIBATASI `.table-wrap` — di luar itu ia menempel di belakang topbar', () => {
+    // Tanpa penggulir sendiri, penggulir terdekat adalah HALAMAN, dan kepala
+    // kolom berhenti di tepi atas layar di belakang `.topbar` (z-index 20).
+    expect(CSS).toMatch(/\.treatyin \.table-wrap \.trin__tabel thead th \{/)
+    expect(CSS).not.toMatch(/\.treatyin \.trin__tabel thead th \{\s*position: sticky/)
+  })
+
+  it('⚠️ berlatar TIDAK tembus pandang, atau baris yang lewat menimpa labelnya', () => {
+    expect(ATURAN.slice(0, 260)).toMatch(/background: var\(--bg\)/)
+  })
+
+  it('⚠️ garis bawahnya `box-shadow`, bukan `border-bottom` yang ikut tergulir pergi', () => {
+    expect(ATURAN.slice(0, 260)).toMatch(/box-shadow: inset 0 -1px 0 var\(--border\)/)
+  })
+
+  it('⛔ tabel rincian BERSARANG dikecualikan — kepalanya milik satu baris', () => {
+    // `TabAngsuran`/`TabShareProp` menaruh tabel di dalam sel baris induk;
+    // penggulir terdekatnya `.table-wrap` MILIK INDUK, jadi kepalanya akan
+    // melesat ke puncak dan memberi label pada baris yang bukan miliknya.
+    expect(CSS).toMatch(/\.treatyin \.trin__rincian \.trin__tabel thead th \{\s*position: static/)
+    for (const f of ['components/TabAngsuran.tsx', 'components/TabShareProp.tsx']) {
+      expect(readFileSync(join(__dirname, f), 'utf8')).toContain('trin__rincian')
+    }
   })
 })

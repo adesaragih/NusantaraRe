@@ -1,10 +1,16 @@
 // ⛔ DIPINDAHKAN dari `pages/FormKontrakTreatyIn.tsx` 5 Oktober 2026 —
 // pemindahan MURNI, nol perubahan perilaku.
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Kosong, Modal, Panel } from '../../../../inti/frontend/components/ui/dasar'
-import type { BarisKategoriLampiran, BarisLampiranWarisan } from '../api'
+import {
+  ambilPanelLampiran,
+  unggahLampiran,
+  type BarisKategoriLampiran,
+  type BarisLampiranWarisan,
+  type HasilBerkasUnggah,
+} from '../api'
 import {
   KOLOM_LAMPIRAN,
   KOLOM_LIHAT_BERKAS,
@@ -21,17 +27,74 @@ import {
  * ⛔ SELURUH kategori tampil, termasuk yang nol berkas: kolom `Count` tidak
  * akan pernah berbunyi `0` kalau barisnya disembunyikan saat kosong.
  *
- * ⚠️ Kategori yang pasangan kode↔namanya BELUM dipastikan ditandai, dan
- * kodenya ditampilkan menggantikan namanya. Menebak pasangannya menaruh
- * berkas di kategori yang salah, dan itu baru ketahuan bertahun kemudian.
+ * ⭐ `Upload file` HIDUP sejak 8 Oktober 2026 — keputusan pemakai: unggahan
+ * masuk `M_ATTACHMENTTREATY_2`. Rantainya `Section/WorkAttachments.xml`:
+ * tombol per kategori (syarat `TreatyIn.ViewState !='1' ||
+ * TreatyIn.RevisionState='1'`) → `SetkategoriDoc` → modal `ASM Attach
+ * Content` (`TreatyAttachContent`) → Attach (`TreatySaveAttachment`) →
+ * Refresh (`GetMasterTreatyCategory_Act`). Kode kategorinya dari
+ * `M_KATEGORIMASTERTREATY` — kesebelasnya kini dipastikan.
  */
 export default function PanelLampiran({
-  kategori,
-  berkas,
+  kategori: kategoriAwal,
+  berkas: berkasAwal,
+  idKontrak = '',
+  bisaUnggah = false,
 }: {
   kategori: readonly BarisKategoriLampiran[]
   berkas: readonly BarisLampiranWarisan[]
+  /** `TreatyIn.ID` — kosong untuk kontrak yang belum tersimpan. */
+  idKontrak?: string
+  /** `TreatyIn.ViewState !='1' || TreatyIn.RevisionState='1'`. */
+  bisaUnggah?: boolean
 }) {
+  // Isi panel — dari kontrak yang dimuat, lalu dari Refresh/Attach sendiri
+  // (panel saja; isian form yang belum di-Save tidak ikut dibaca ulang).
+  const [kategori, setKategori] = useState<readonly BarisKategoriLampiran[]>(kategoriAwal)
+  const [berkas, setBerkas] = useState<readonly BarisLampiranWarisan[]>(berkasAwal)
+  useEffect(() => {
+    setKategori(kategoriAwal)
+    setBerkas(berkasAwal)
+  }, [kategoriAwal, berkasAwal])
+  // Modal `ASM Attach Content` — kategori yang dipilih (`SetkategoriDoc`).
+  const [unggahKe, setUnggahKe] = useState<BarisKategoriLampiran | null>(null)
+  const [dipilih, setDipilih] = useState<File[]>([])
+  const [sibuk, setSibuk] = useState(false)
+  const [hasil, setHasil] = useState<{ galat: string; berkas: HasilBerkasUnggah[] } | null>(null)
+  const segarkan = () => {
+    if (idKontrak === '') return
+    setSibuk(true)
+    ambilPanelLampiran(idKontrak)
+      .then((p) => {
+        setKategori(p.kategoriLampiran)
+        setBerkas(p.lampiran)
+      })
+      .catch((e: unknown) => {
+        setHasil({ galat: e instanceof Error ? e.message : String(e), berkas: [] })
+      })
+      .finally(() => {
+        setSibuk(false)
+      })
+  }
+  const lampirkan = () => {
+    if (unggahKe === null || dipilih.length === 0) return
+    setSibuk(true)
+    setHasil(null)
+    unggahLampiran(idKontrak, unggahKe.kode, dipilih)
+      .then((h) => {
+        setKategori(h.kategoriLampiran)
+        setBerkas(h.lampiran)
+        setHasil({ galat: '', berkas: h.berkas })
+        setUnggahKe(null)
+        setDipilih([])
+      })
+      .catch((e: unknown) => {
+        setHasil({ galat: e instanceof Error ? e.message : String(e), berkas: [] })
+      })
+      .finally(() => {
+        setSibuk(false)
+      })
+  }
   /**
    * ⭐ PERMINTAAN PERUBAHAN, satu-satunya tempat ronde ini menyimpang dari
    * Pega — dan pemilik proses yang memintanya, pada keterangan gambar `25`:
@@ -56,6 +119,24 @@ export default function PanelLampiran({
       <span className="trin__spanduk" role="note">
         {LAMPIRAN.spanduk}
       </span>
+      {/* `Refresh` — `GetMasterTreatyCategory_Act` (`!pyIsMobile`).
+          `Download All` ber-`pyCondition never` di ekspor: tidak dirender. */}
+      <div className="trin__aksi">
+        <button type="button" className="btn btn--sm" disabled={sibuk || idKontrak === ''} onClick={segarkan}>
+          {LAMPIRAN.segarkan}
+        </button>
+      </div>
+      {hasil !== null && (
+        <div className={hasil.galat !== '' ? 'alert alert--error' : 'alert alert--info'} role={hasil.galat !== '' ? 'alert' : 'status'}>
+          {hasil.galat}
+          {hasil.berkas.map((b) => (
+            <div key={b.nama}>
+              {b.nama}: {b.berhasil ? LAMPIRAN.terunggah : b.pesan}
+            </div>
+          ))}
+        </div>
+      )}
+      {bisaUnggah && idKontrak === '' && <p className="trin__redup">{LAMPIRAN.simpanDulu}</p>}
 
       <div className="table-wrap">
         <table className="trin__tabel">
@@ -93,13 +174,23 @@ export default function PanelLampiran({
                 {/* ⛔ Cacah TIDAK diformat — ia butir, bukan uang. */}
                 <td>{String(k.cacah)}</td>
                 <td>
-                  {/* ⛔ `Upload file` MATI — jalur unggahnya belum ada, dan
-                      tombol hidup yang tidak mengunggah apa pun berbohong.
-                      Gambar 24 memperlihatkan modal "ASM Attach Content"
-                      di baliknya. */}
-                  <button type="button" className="btn btn--sm" disabled>
-                    {LAMPIRAN.unggah}
-                  </button>
+                  {/* ⭐ `Upload file` — tampil bila `TreatyIn.ViewState !='1'
+                      || TreatyIn.RevisionState='1'`; butuh kode kategori dan
+                      kontrak yang sudah ber-ID. */}
+                  {bisaUnggah && (
+                    <button
+                      type="button"
+                      className="btn btn--sm"
+                      disabled={sibuk || idKontrak === '' || k.kode === ''}
+                      onClick={() => {
+                        setUnggahKe(k)
+                        setDipilih([])
+                        setHasil(null)
+                      }}
+                    >
+                      {LAMPIRAN.unggah}
+                    </button>
+                  )}
                 </td>
                 <td>
                   {/* ⭐ `View File` HIDUP — ia hanya menampilkan apa yang
@@ -120,6 +211,41 @@ export default function PanelLampiran({
           </tbody>
         </table>
       </div>
+
+      {unggahKe !== null && (
+        <Modal
+          judul={LAMPIRAN.judulUnggah}
+          onTutup={() => {
+            setUnggahKe(null)
+          }}
+          labelBatal={LAMPIRAN.batal}
+          onKirim={lampirkan}
+          aksi={
+            <button type="submit" className="btn btn--primary" disabled={sibuk || dipilih.length === 0}>
+              {sibuk ? LAMPIRAN.mengunggah : LAMPIRAN.lampirkan}
+            </button>
+          }
+        >
+          <p>
+            <strong>{unggahKe.nama}</strong>
+          </p>
+          <input
+            type="file"
+            multiple
+            aria-label={LAMPIRAN.pilihBerkas}
+            onChange={(e) => {
+              setDipilih(Array.from(e.target.files ?? []))
+            }}
+          />
+          {dipilih.length > 0 && (
+            <ul>
+              {dipilih.map((f) => (
+                <li key={f.name}>{f.name}</li>
+              ))}
+            </ul>
+          )}
+        </Modal>
+      )}
 
       {berkasDilihat !== null && (
         <Modal

@@ -67,6 +67,18 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Status | dimigrasi |
 | Rentang migrasi | `400-439` |
 | Slot menu | `972-973` |
+
+> ⛔⛔ **RENTANG `400-439` HABIS, 6 Oktober 2026.** Keempat puluh nomornya terpakai (`400` sampai
+> `439`), nol celah. Migrasi `treatyin` BERIKUTNYA tidak punya nomor sah.
+>
+> Akibatnya sudah terjadi sekali: migrasi `444_kolom_revisi_yang_layar_baca` — yang menambah enam
+> belas kolom ke `T_TREATY_REVISION`, **tabel modul ini** — terpaksa diparkir di folder migrasi
+> `treatyinadjustment`, satu-satunya rentang sah yang memuat nomor `444` (`440-479`). Sebabnya
+> ditulis di kepala berkas itu, dan penjaga `TestPetaPendaratanCocokDenganDDL` diberi pembaca
+> khusus (`migrasiTetanggaParkir`) supaya tidak menuduh peta menyebut kolom yang tidak ada.
+>
+> **Yang diminta:** jatah rentang baru dari tim inti — prosedur yang baris di atas sebut sendiri.
+> Begitu jatah itu ada, `444` dinomori ulang, dipindahkan kembali, dan pembaca khususnya DIHAPUS.
 | Prefix rute API | `/api/treaty-in` |
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |

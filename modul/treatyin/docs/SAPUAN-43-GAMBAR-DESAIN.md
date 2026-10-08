@@ -16,7 +16,7 @@ dikarang lebih buruk daripada panel yang dinyatakan belum punya sumber.
 | `ID` | 01, 26 | kolom `TREATY_IN.ID` | ⭐ ada |
 | `Reinsurance Type` | 01, 26 | kolom `PROPORTIONTYPE` | ⭐ ada |
 | `Treaty Contract Name` | 01, 26 | kolom `TREATYCONTRACTNAME` | ⭐ ada |
-| `Contract Ref No` | 01, 26 | `JSONDATA.ContractRefNo` | ⭐ ada + `MedanTakAda` |
+| `Contract Ref No` | 01, 26 | `JSONDATA.ContractRefNo` | ⭐ ada, selalu tampil (ralat 7 Okt 2026) |
 | `Teritorial Scope` | 01, 26 | kolom `TERITORIALSCOPE` | ⭐ ada |
 | `Bordereaux` | 01 **saja** | `JSONDATA.Bordeaux` | ⭐ ada, **prop saja** |
 | `Bordereaux Note` | 01, 26 | `JSONDATA.BordereauxNote` | ⭐ ada |

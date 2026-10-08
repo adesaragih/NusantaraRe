@@ -596,9 +596,9 @@ dengan `.Note` pilihan itu — layar meniru hal yang sama.
 **Terpasang:** `GET /api/treaty-in/warisan/jenis-treaty` (baca saja; `REINSURANCETYPE`
 masuk `TestWarisanHanyaDibaca`).
 
-**Yang perlu diketahui:** ekspor menandai sel ini `pyEditOptions=Read-only` tanpa syarat.
-Di sini dropdown hidup di mode Edit atas permintaan pemakai; di mode View tampil label
-`.Note` baca-saja, seperti dropdown read-only Pega.
+**Ralat (audit 6 Oktober 2026):** sel ini ber-`pyReadOnlyCondition = TreatyIn.ViewState = 1`
+— baca-saja HANYA di mode View. Perilaku layar (dropdown di Edit, label `.Note` baca-saja di
+View) sesuai ekspor.
 
 ### 18a. Dropdown lain di tab Limits — mengikuti layar Pega (lampiran pemakai)
 
@@ -609,8 +609,237 @@ Di sini dropdown hidup di mode Edit atas permintaan pemakai; di mode View tampil
 | Mata uang grid Deduction `.CurrencyID` | `BrowseCurrency_RD` | `CURRENCY` tanpa `ITL` | `.ID` → `.Currency` | `SetCurrName_Act` → `.Currency` |
 
 Rute: `GET /api/treaty-in/warisan/opsi-limits` (ketiganya sekaligus). Tombol baris grid
-DetailLimits berlabel `Remove`, baris Kind of Treaty/Treaty Group `Delete` (ekspor). Kind of
-Treaty tidak punya isian sendiri (`.TreatyType` diisi dari Treaty Type).
+DetailLimits berlabel `Remove`, baris Kind of Treaty/Treaty Group `Delete` (ekspor).
+⚠️ Ralat: Kind of Treaty di Pega ADALAH isian — `pxAutoComplete` dapat disunting di bilah baris
+(`TreatyInTabsProportional` @586908, `BrowseReinsuranceType_RD`, nilai `.Note`). Belum dipasang;
+kini ia hanya terisi dari pilihan Treaty Type.
 
-**Belum dibangun:** `FetchQSfromMaster` (Treaty Group berubah → isi SpreadingList dari master
-treaty) dan `LimitCalculation` (mata uang/nilai berubah) — keduanya hitungan lintas tab.
+**Belum dibangun:** `FetchQSfromMaster` dari rantai Treaty Group rincian Limits (Treaty Group
+berubah → isi SpreadingList dari master treaty).
+
+### 18b. Spreading tab Share Prop — DIPILIH dari master (keputusan pemilik proses 8 Oktober 2026)
+
+*"pctnya di ambil dari table PROPORTIONALARRG ... select nya menggunakan rd"* — rincian Detail
+tab Share SELALU memakai tata letak cabang `.SpreadingTypeID != ''` (`DetailShare`): dropdown
+`Spreading Type` (RD `BrowseTreatyArrangement_ParentReinsMasterTrt`), grid Reins Type · Pct
+BACA-SAJA dari `PROPORTIONALARRG` (`BrowseTreatyArrangement_Limit_MstTrt_RD`, lewat
+`FetchQSfromMaster`), `Total Spreading Pct :`, Value Spreading OR/R/I. Grid spreading manual
+(`SetSpreadName`, Add/Delete `AddDelSpreadingTreatyin`) tidak dirender lagi.
+
+⚠️ **Saringan RD apa adanya membatasi pilihan** (terukur 8 Oktober 2026, Treaty Group PROPERTY
+`10007`): logika `B AND C AND D AND (E OR A) AND F AND G AND H` hanya meloloskan induk bernama
+ber-`TRT` atau `ORS`, dalam tahun treaty yang memuat `Commencement`, kecuali `10246`.
+Commencement `20250101` → `2024 QS 155M TRT`, `ORS`, `2024 XOL TRT`; Commencement `20250801` →
+KOSONG. Susunan `FAC` (mis. `10252` `2025 QS 82M FAC`) TIDAK PERNAH ada di daftar — itulah
+sebabnya layar Pega menampilkan `Spreading Type 10252` sebagai ID mentah: nilainya berasal dari
+data, bukan dari dropdown. Layar ini berperilaku sama (nilai di luar daftar tetap tampil).
+Menunggu keputusan: tetap persis RD, atau ikut sertakan susunan `FAC`. `LimitCalculation` kini dibangun penuh — lihat §19.
+
+## 19 · Tab Limits Prop dan Non-Prop — dibangun dari ekspor (6 Oktober 2026)
+
+**Sumber data:** `BacaPohonLimitsPendaratan` kini membaca SELURUH pohon dari `PetaPendaratan`
+(satu sumber kunci↔kolom dengan pemuatnya): 100% Limit/Retention/Cession/EPI
+(`T_TREATY_LIMIT_AMOUNT`), Treaty Group per layer + Class of Business (`T_TREATY_LIMIT_GROUP`,
+`_GROUP_COB`), MDP/PE/EGNPI layer (`T_TREATY_LIMIT_MEASURE`), dan akar Summary of Limit / Total All
+Layers (`T_TREATY_LIMIT_SUMMARY`, `T_TREATY_TOTAL`, `TotalLimitsROL`). Larik tanpa tabel (Deduction,
+Reserve, PLA, Cash Loss, Claim Coop, MDPMinList) hadir kosong. Grid Reinstatement dibangun saat
+kontrak Non-Prop dibuka — `SetTreatyIn_Act` langkah 13 / `TreatySetReinstatement`.
+
+**Rumus (services, diukur atas data Pega):** `LimitCalculation` (lihat `hitung_limit.go`),
+`CalculateDeduction`, `PremiumReserveCalculate`, `TotalEgnpi` (99,0%), `DetailCalculation` adj
+(PE 89,0%) / mdp (MDP 97,8%), `DetailCalculationROL` (93,5% pada 2 desimal — data tersimpan
+memakai versi rule lama yang membulatkan rasio 4 desimal), `SetReinstatementPct`,
+`CalculateReinstatement*`, `TreatyInNPSetTotal(limits)`, `TreatyInSummaryLimit`,
+`TreatyInLimitsListValue`, `GetAchievement`.
+
+**Simpangan yang disengaja (salah ALAMAT di ekspor, bukan rumus):**
+- sel 75 mengirim `'QS'` huruf besar ke `=="qs"` → dibaca `qs`;
+- `ReCalculateReinstatement` menunjuk layer dengan subscript baris reinstatement → layer baris itu;
+- `TreatyInNPSetTotal(limits)` menghapus `TotalInstallmentNP` (tab lain) → tidak ditiru;
+- `CalculateDeduction` di rincian Prop (tanpa `GrossPremiumList`) mengosongkan mata uang → pesan
+  Activity tetap, baris tidak dirusak;
+- `GetAchievement` [12.3]/[12.4] menghapus Detail kosong dan menambah Detail tiruan
+  " Total In IDR" ke grid Treaty Group → tidak ditiru;
+- kurs IDR = 1 ditambahkan bila grid Rate of Exchange (dari `TREATYEXCHANGEYEARLY`) tidak memuatnya.
+
+**Yang DITIRU walau janggal:** relasi `AND` menjumlah limit dua kali di ROL; ROL = 9.989.998 × 100
+bila limit IDR nol; `CalculateReinstatementPct` menulis "% Additional Premium"; total 100% Limit
+memakai mata uang layer pertama; Total ROL = jumlah ROL%.
+
+**Menunggu keputusan pemilik proses:**
+1. **Klaim Achievement** — Cash Call / Estimation hanya ada di `OS_AKSEPTASI_KLAIM.DATA_JSON`
+   (RDB `GetIDClaimAchievement`). Nilai dari JSON dilarang; tanpa izin keduanya nol.
+2. **`RNMShareP`** — Achievement % memerlukannya; belum punya tabel pendaratan → kosong.
+3. **Submit Achievement** (`InsertToLogAchievement`) dan seluruh hasil suntingan — menulis; ✅ *keputusan pemilik proses 7 Oktober 2026: Submit Achievement TETAP MATI sampai tabel log diputuskan bersama jalur Save; angka Achievement tersimpan lewat Save (`T_TREATY_LIMIT_ACHIEVEMENT`).* Menunggu
+   jalur Save.
+4. Label dropdown `associated` (LayerType/PartType `layer`/`sublayer`, Cover `risk`/`cat`/`riskcat`,
+   Reinstatement Note `asamount`/`astime`) tampil apa adanya — rule Property tidak diekspor.
+
+## 20 · Kind of Treaty: `Name` atau `SOA Name` menu Reinsurance Type? (6 Oktober 2026)
+
+**Permintaan pemakai:** Treaty Type dari kolom **Name** menu Reinsurance Type, Kind of Treaty dari
+kolom **SOA Name**.
+
+**Yang ekspor dan data katakan:** menu Reinsurance Type (`modul/reinsurancetype`) membaca tabel yang
+sama, `REINSURANCETYPE`: Name = `NOTE`, SOA Name = `SOANOTE`.
+- Treaty Type (`LimitProportional` `.TreatyTypeID`): label `.Note` → **Name** ✅ (sudah begitu).
+- Kind of Treaty: sel `TreatyInTabsProportional` @586908 autocomplete bernilai `.Note`, dan
+  `SetTreatyTypeName_Act` langkah 3 menulis `.TreatyType = REINSURANCETYPE.Note` → juga **Name**.
+  `SOANote` tidak dipakai satu pun Section/Activity Treaty In.
+- Data: 1.418 nilai Kind of Treaty tersimpan SELURUHNYA cocok `NOTE`; jenis aktif `QUOTA SHARE`
+  (10035), `SURPLUS` (10042), `2ND SURPLUS` (10037) ber-`SOANOTE` KOSONG, dan `FACULTATIVE
+  OBLIGATORY`/`SPECIAL FACULTATIVE` tidak punya SOA Name sama sekali.
+
+**KEPUTUSAN PEMAKAI (final, 6 Oktober 2026 — "nilainya diambil dari menu ini … sesuaikan seperti
+perintah saya sebelumnya"):** nilai diambil dari menu **Reinsurance Type** (`modul/reinsurancetype`,
+tabel `REINSURANCETYPE`):
+- **Treaty Type** = kolom **Name** (`NOTE`) — dropdown Flag `active`, urut ID menurun (RD Pega);
+- **Kind of Treaty** = kolom **SOA Name** (`SOANOTE`) baris yang dipilih — `kindOfTreatyDari`.
+  SOA Name kosong (20 dari 84 jenis aktif, termasuk `QUOTA SHARE` 10035 dan `SURPLUS` 10042) →
+  Name, supaya Kind of Treaty tidak kosong.
+
+Menyimpang dari ekspor (`SetTreatyTypeName_Act` menulis `.Note`). Autocomplete Kind of Treaty
+terpisah (ronde sebelumnya) DICABUT.
+
+⚠️ AKIBAT yang perlu diputuskan: syarat ekspor `.TreatyType = 'QUOTA SHARE'` (medan QS %, 100 %,
+Retention %/Cession %, `LimitCalculation`) dan daftar jenis surplus mencocokkan TEKS PERSIS. Kind of
+Treaty ber-SOA Name seperti `QUOTA SHARE 2020` / `SURPLUS 2019` TIDAK memenuhinya, sehingga medan
+QS %/Lines tidak tampil dan hitungan otomatis tidak jalan untuk jenis itu.
+
+**Diputuskan pemakai 6 Oktober 2026: "persis seperti aturan Pega".** Syaratnya tetap pencocokan
+TEKS PERSIS (`QUOTA SHARE`; `SURPLUS`, `2ND SURPLUS`, `3RD SURPLUS`, `SPECIAL SURPLUS`) — tidak
+dilonggarkan menjadi "diawali". Dikunci uji `limits-tab.test.tsx`.
+
+## 21 · Tab Share Non-Prop — dibangun dari ekspor dan diukur ke data (7 Oktober 2026)
+
+**Permintaan pemakai:** "tab share yang ada di non prop samakan ke dalam aplikasi … samakan juga
+untuk perhitungannya dan pelajari lewat xml" (tangkapan layar Pega).
+
+**Bentuk** (`TreatyInTabsNonProportional.xml` @1695720–@3291797, `Share.xml`): panel Share
+(% RNM Share, % Brokerage, Share Across The Board, Share to Other Retro, Brokerage From Other Retro
+[tampil bila Share to Other Retro > 0], Update Summary) · grid Reinsurer Name · grid Facultative
+Reinsurers [> 0] · sub-tab RNM Share (Share to RNM : X % [> 0], grid per layer + panel rincian:
+% RNM Share baris, Class of Business, Cover, Deduction Details, Spreading Type, Spreading) ·
+Summarry of RNM Share · Total All Layers RNM Share (9 grid, 3 × 5) · Update Total · Update Value in
+Share [`TreatyMasterInEDM`]. Komponen `frontend/components/TabShareNonProp.tsx`; label
+`labelsShareNP.ts`.
+
+**Rumus** (`backend/services/hitung_share_np.go`): `TreatyInNonAddItem(share)`,
+`TreatyInXOLAddSpreading`, `FetchQSfromMasterXOL`, `SetSpreadingXOL`, `TreatyInSetBrokerage`,
+`CalculateDeduction`, `TreatyInNPSetTotal(share)`, `TreatyInSummaryLimitShare/FacShare`,
+`TreatyInXOLAddSpreadingDetail`, `AddSpreadingXOL`, `TreatyInShareListValue`. Rute
+`POST /hitung/share-np`, `GET /warisan/spreading-induk`, `GET /warisan/reasuradur-share`.
+
+**Diukur terhadap POOLDATA (baca saja):** baris Share ↔ layer Limits per `URUTAN` 3.892/3.892;
+Gross = MDP × `@divide(RNMShare,100,4)` lewat KODE 439/447 (98 %, 120 kontrak); Deduction
+`Brokerage fee` 3.290/3.290; Net = Gross − Σ Deduction 4.090/4.123; `SpreadingTypeXOL` tersimpan ada
+di RD `ParentReinsMasterTrt` 3.751/3.788.
+
+**Sumber data:** tabel pendaratan `T_TREATY_SHARE*`, `T_TREATY_RETRO_SHARE`, `T_TREATY_FAC_*`,
+`T_TREATY_REVISION` (nol JSON, nol `M_TREATY_IN`); master baca-saja `PROPORTIONALARRG` +
+`TREATYYEAR` (Spreading Type) dan `AGENT` (Reinsurer Name, `BrowseAgentNusaRe_RD` TANPA saringan
+`ChildCount` — parameternya kosong dan filter tanpa `pyUseNullIfEmpty` diabaikan Pega).
+
+**✅ DIPUTUSKAN 7 Oktober 2026 (lihat bawah, "Kolom akar Share") — butir 1 ditutup.**
+
+**⚠️ Celah sumber — perlu keputusan:**
+1. ~~`TreatyIn.RNMShare`, `BrokeragePercent`, `RNMShareAcrossTheBoard` tidak punya kolom pendaratan.~~
+   Dibaca dari salinan yang Activity tulis sendiri (`T_TREATY_SHARE.RNMSHARE`, deduksi
+   `Brokerage fee`); RNM Share terisi hanya di 1.104 dari 3.892 baris — kontrak tanpa salinan
+   tampil KOSONG (tidak ditebak dari rasio Gross/MDP). Across The Board = bawaan `true`.
+2. Larik turunan (100% Limit RNM, bagian OR / R/I, Summary, 9 Total) tidak didaratkan; dihitung
+   saat kontrak dibuka dengan rumus yang sama. `GrossPremiumMinList` kosong sampai Update Summary.
+
+**⚠️ Simpangan JALUR (bukan rumus), alasannya di kepala `hitung_share_np.go`:** S1 Spreading Type
+baris lama dibawa saat Update Summary menyusun ulang baris; S2 `XOLAddSpreading` memakai induk
+milik baris, bukan induk PERTAMA RD; S3 larik bagian Net/Deduction OR-R/I disusun ulang, bukan
+di-`APPEND` (Pega menggandakannya tiap klik); S4 `Overiding Commision` disusun ulang; dropdown
+Spreading Type tampil pula di mode Edit saat kosong (di Pega tersembunyi, sehingga tak terjangkau).
+
+**Ditiru apa adanya walau janggal:** `TreatyInNPSetTotal(share)` langkah [23] berlabel `//`
+(dimatikan) — hanya baris ber-Spreading Type KOSONG yang dijumlah, dari larik tingkat spreading;
+`Total RNM Limit (RNM Share)` dan `Total Gross Min Premium` tidak pernah terisi (sama dengan
+tangkapan layar Pega). `% RNM Share` satu baris menghapus Spreading Type baris itu. Net OR
+`TreatyInSetBrokerage` hanya mengenal `QS (OR)` dan persennya terbawa antar baris. Kode keras
+kontrak `1000951` (ORS 15 %, faktor 85 %).
+
+**Belum:** jalur Save (§16); Add/Delete deduksi panel memakai baris kosong (Activity
+`AddDeduction` milik kelas Limits, tidak terjangkau dari kelas Share).
+
+**Kunci sel — diperiksa ulang 7 Oktober 2026 dengan `hanya_baca()` pembaca bersama**
+(`D:\XML_NURE\_migration-docs\alat-baca-ekspor`, aturan: `pyReadOnlyCondition` MENIMPA `pyReadOnly`).
+Panel rincian (`Share.xml`): Layer Type · Layer · Layer Part Type · Layer Part · Cover · Deduction
+Details · Spreading Type · Reins Type/Pct manual terkunci HANYA bila `ViewState = 1`; Class of
+Business (`.TreatyGroup`) dan `.ReinsTypeName`/`.Pct` spreading bernama ber-`Auto`. Versi pertama
+mengunci Layer, Cover, Class of Business, dan sel spreading bernama — DIPERBAIKI, kini aktif di mode
+Edit (dikunci uji `share-np-tab.test.tsx`). Tab utama: grid Reinsurer/Facultative terkunci hanya bila
+`ViewState = 1`; `% Share` grid RNM Share selalu terkunci; sel baris grid RNM Share tidak berpenanda
+kunci, tetapi grid itu `masterDetail` — baris tampil, penyuntingan lewat panel rincian.
+
+**Audit penuh 7 Oktober 2026 — setiap tombol, isian, dan event tab Share NP lawan XML**
+(`TreatyInTabsNonProportional.xml` @1695720–@3291797 dan `Share.xml`; ke-18 syarat tampil
+seluruhnya `pyVisible = OTHER`, jadi semua penyembunyian berlaku):
+
+| Kontrol (ekspor) | Event → aksi Pega | Aplikasi |
+|---|---|---|
+| % RNM Share | change → `TreatyInXOLAddSpreading` | aksi `rnm` ✅ |
+| % Brokerage | change → `TreatyInSetBrokerage`, `TreatyInXOLAddSpreading` | aksi `brokerage` ✅ |
+| Share Across The Board | click → XOLAddSpreading bila `= true`; SetBrokerage bila Brokerage `> 0` | aksi `centang` ✅ |
+| Share to Other Retro · Brokerage From Other Retro [`> 0`] | change → `TreatyInXOLAddSpreading` | aksi `fac` ✅ |
+| Update Summary [`ViewState != 1`, mati bila EDM 2] | FacultativeShare `""`→0; `NonAddItem(share)`; XOLAddSpreading; SetBrokerage; `TreatyEDMCalculateDifference` bila `EDMMaterialType = '7897987'` (tak pernah) | aksi `summary` ✅ |
+| Reinsurer Name / Facultative Reinsurers [`> 0`]: Add · Delete [`ViewState != 1`] | `NonAddItem(sharereins/sharefacname)` (baris ID kosong) · deleteRow | layar ✅ |
+| sel `.ReinsName` (autocomplete `BrowseAgentNusaRe_RD`) · `.Layer` · `.SharePct` | terkunci bila `ViewState = 1`; nol aksi | ✅ |
+| Share to RNM : X % [`> 0`] | `.RnmShareDeducted` | ✅ |
+| grid RNM Share — Add/Delete [`1=2`] · klik baris (`masterDetail`, flow action `Share`) | — · panel rincian | tidak dibangun ✅ · tombol Detail ✅ |
+| panel: % RNM Share baris [mati bila ViewState 1 / EDM 2] | change → `TreatyInXOLAddSpreadingDetail(idx)`; `…DetailActual` bila `EDMState = 3` | aksi `rnm-baris` ✅; Actual → bagian ActualValue (bukan tab ini) |
+| panel: Layer Type · Layer · Part of · Layer Part Type · Layer Part · Cover | terkunci bila `ViewState = 1`; nol aksi | ✅ |
+| panel: Class of Business `.TreatyGroup` (`BrowseTreatyGroup_RD`) | change → `SetIndexLayer_DT`, `TotalEgnpi(idxLimit)` — milik tab Limits | isian ✅; efek Limits tidak diterapkan (state tab Limits terpisah) |
+| panel: Deduction Details — Add · Currency (`BrowseCurrency_RD`) · Deduction · Deduction % · Auto Calculate % · Remove | `AddDeduction` · `CalculateDeduction(index)` · `(val)` · `(pct)` · — · deleteRow + `CalculateDeduction(index)` | aksi `deduksi` ✅ (Add = baris kosong) |
+| panel: Spreading Type (`ParentReinsMasterTrt`, ReinsTypeID ≠ 10246) | change → `FetchQSfromMasterXOL(…, IsUpdate = 0)` | aksi `spreading-type` ✅ (tampil pula saat kosong — simpangan) |
+| panel: grid spreading bernama · Total Pct · Total Spreading Pct | `Auto`, nol aksi | ✅ |
+| panel: blok `hidden, reference` — 15 grid dasar · OR · R/I | TAMPIL bersama Spreading bernama (`NOHEADER`) | ✅ |
+| panel: spreading manual — Add · Reins Type (`TempSprd.TreatyGroupID` kosong → semua grup) · Pct Share · Delete · Total Share Pct | `AddSpreadingXOL(true)` · postValue · `SetSpreadingXOL` · `AddSpreadingXOL(false, idx)` | aksi `spreading-tambah/-pct/-hapus` ✅ |
+| Summarry of RNM Share · 9 grid Total | `LimitShareSummaryList`, `Total…` | ✅ |
+| Update Total [`ViewState != 1`, mati bila EDM 2] | `TreatyInNPSetTotal(share)`, `TreatyInSummaryLimitShare`, `…FacShare` | aksi `total` ✅ |
+| Update Value in Share [`ViewState != 1 && TreatyMasterInEDM` = EDMState 1/2/3] | `TreatyInShareListValue` | aksi `nilai-share` ✅ |
+| Spacers · tombol `TreatyInNonSetTotal` · Show/Hide Facultative Share (unused) · Show Share From Other Retro · Refresh Spreading | `1=2` / `NEVER` / `facsharedisp.CARI1` (hanya ditulis tombol Show yang `NEVER`) | tak terjangkau di Pega — tidak dibangun ✅ |
+
+RD induk spreading: kedelapan filternya tanpa `pyUseNullIfEmpty` → parameter kosong DILEWATI
+(`SaringanIndukSpreading`, dikunci uji db `TestIndukSpreadingFilterKosongDilewati`).
+
+**Kolom akar Share — DIPUTUSKAN pemakai 7 Oktober 2026** ("seharusnya kalau sudah di save sudah
+masuk table sendiri"; keputusan 6 Oktober: Save/Submit menyimpan ke tabel masing-masing, skema v2 —
+akar `TreatyIn` → `T_TREATY_REVISION`):
+
+- **Migrasi `445_kolom_share_revisi`** (diparkir di folder `treatyinadjustment` seperti `444`; rentang
+  `treatyin` habis; nomor diberikan pemegang modul itu) menambah `RNMSHARE`, `BROKERAGEPERCENT`,
+  `RNMSHAREACROSSTHEBOARD`, `RNMSHAREDEDUCTED`. Peta pendaratan `treatyin` sudah menyebutnya.
+- **Urutan baca:** kolom itu → salinan Pega di baris Share / deduksi `Brokerage fee` →
+  `TREATYINDETAIL` (`SaveTreatyInDetail_Act`; 283/283 sama dengan salinan baris). Nol JSON, nol
+  `M_TREATY_IN`, nol tebakan rasio. Pembacanya (`BacaShareAkarRevisi`) TOLERAN: sebelum 445
+  dijalankan layar tetap terbuka.
+- **Pengisian sekali kontrak lama:** `modul/treatyin/alat/isi-akar-share-revisi.sql`, dijalankan
+  TANGAN (nol `COMMIT` di dalamnya). Uji kering 7 Oktober 2026: dari 1.240 baris revisi Non-Prop,
+  RNM Share terisi 809, Brokerage 978; sisanya diisi pemakai lalu Save.
+- **Urutan pemasangan:** (1) betulkan `T_MIGRASI` 215–218 → 880–883 (masalah masterprovince) supaya
+  `-migrate` tidak berhenti di 880; (2) `-migrate` (memasang 445); (3) salinan peta Adjustment
+  (`treatyinadjustment/backend/repository/peta_pendaratan.go`, entri `T_TREATY_REVISION`) ditambah
+  keempat kunci — BARU sesudah 445 terpasang, sebab pembaca Adjustment memilih setiap kolom petanya;
+  sampai itu `uji/lintasmodul TestSalinanPetaAdjustmentCocokDenganTreatyIn` MERAH, dan merahnya
+  disengaja; (4) jalankan skrip `alat/` lalu `COMMIT`.
+
+**Alur dari NOL (7 Oktober 2026 — tabel `T_TREATY_*` sengaja dikosongkan pemakai sampai tombol Save
+jadi):**
+
+- **Clipboard bersama tab Limits ↔ Share.** Di Pega `Update Summary` membaca `TreatyIn.Limits` yang
+  sedang disunting. Tab aplikasi dirender ulang tiap pindah tab, sehingga dulu (a) isian tab Limits
+  HILANG saat pindah tab dan (b) Update Summary membaca layer yang dimuat — kini selalu kosong.
+  Keadaan Limits NP (layer + larik akar) dan Share NP kini disimpan di form
+  (`FormKontrakTreatyIn` `limitsNP` / `shareNP`) dan dilaporkan kedua tab lewat `onUbah`; Commencement
+  untuk dropdown Spreading Type diambil dari medan kepala TERKINI (`keSimpan(mulai)`).
+- **Pesan per baris.** `Total share must equal RNM share.!!` (`SetSpreadingXOL` [9], medan
+  `.SpreadingTotalPctXOL`) dan `Gross Premium (MDP) is still empty` (`CalculateDeduction` [2], medan
+  `.Layer`) di Pega menempel pada medan baris di panel rinciannya. Services mengembalikannya sebagai
+  `pesanBaris` (indeks baris); layar menampilkannya di panel baris itu dan memberi penanda `!` pada
+  baris grid. Aksi satu baris hanya mengganti pesan baris itu.
+- Rute `POST /hitung/share-np` diuji lewat handler dengan alur dari nol (`handlers/rute_share_test.go`).

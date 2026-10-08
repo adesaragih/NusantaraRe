@@ -67,7 +67,7 @@ func (g *Gudang) DaftarKontrakWarisan(ctx context.Context, offset, batas int) ([
 		return nil, err
 	}
 	q := fmt.Sprintf(`SELECT ID, TREATYCONTRACTNAME, PROPORTIONTYPE, LEADINGREINSSOURCE,
-		CEDING, COMMENCEMENT, TERMINATION, POSITIONUSERNAME, STATUSAKSEPTASI
+		CEDING, COMMENCEMENT, TERMINATION, POSITIONUSERNAME, STATUSAKSEPTASI, POSITION
 		FROM %s
 		ORDER BY TO_NUMBER(ID DEFAULT 0 ON CONVERSION ERROR) DESC, ID DESC
 		OFFSET :1 ROWS FETCH NEXT :2 ROWS ONLY`, nama)
@@ -81,11 +81,11 @@ func (g *Gudang) DaftarKontrakWarisan(ctx context.Context, offset, batas int) ([
 	keluar := []models.BarisDaftarWarisan{}
 	for baris.Next() {
 		var b models.BarisDaftarWarisan
-		// ⚠️ Kesembilan kolomnya NULLABLE - seluruh 20 kolom tabel ini
+		// ⚠️ Kesepuluh kolomnya NULLABLE - seluruh 20 kolom tabel ini
 		// nullable, dan 1.822 dari 1.854 `POSITIONUSERNAME` memang NULL.
-		// `sql.NullString` di sembilan tempat, bukan di satu.
-		var id, nk, pt, lrs, cd, cm, tm, pu, sa sql.NullString
-		if err := baris.Scan(&id, &nk, &pt, &lrs, &cd, &cm, &tm, &pu, &sa); err != nil {
+		// `sql.NullString` di sepuluh tempat, bukan di satu.
+		var id, nk, pt, lrs, cd, cm, tm, pu, sa, po sql.NullString
+		if err := baris.Scan(&id, &nk, &pt, &lrs, &cd, &cm, &tm, &pu, &sa, &po); err != nil {
 			return nil, fmt.Errorf("repository: membaca baris %s: %w", TabelWarisanKontrak, err)
 		}
 		b.ID = id.String
@@ -97,6 +97,7 @@ func (g *Gudang) DaftarKontrakWarisan(ctx context.Context, offset, batas int) ([
 		b.TanggalBerakhirAsli = tm.String
 		b.PosisiKe = pu.String
 		b.StatusAkseptasi = sa.String
+		b.Posisi = po.String
 		// Bentuk layarnya DITERJEMAHKAN DI SERVICES, bukan di sini: lapisan
 		// ini mengembalikan apa yang tersimpan.
 		keluar = append(keluar, b)
