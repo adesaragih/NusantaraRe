@@ -142,7 +142,11 @@ func LayarAdjustment(n int) []Unsur {
 			),
 		), komite),
 		bagian("",
-			// grid "Spreading In" baris ini: ContainerVisibleWhen NEVER di XML - tidak dibangun (datanya tetap)
+			// "Spreading In": XML ContainerVisibleWhen NEVER, tetapi Pega hidup menampilkannya (screenshot work owner
+			// 08-10-2026 "tampilan spreadingnya ada yang kurang") - Pega hidup lebih baru dari ekspor XML.
+			bagian("Spreading In", Unsur{Jenis: JenisGrid, Jalur: j(AnakSpreadAdj), Bernomor: true, Kolom: []Unsur{
+				kRO(kol("Currency", "Currency", KTeks)), kRO(kol("TreatyName", "Treaty Type", KTeks)),
+				kRO(kol("SharePercentage", "Share(%)", KAngka)), kRO(kol("ClaimSpreaded", "Claim Spreaded", KAngka))}}),
 			bagian("Spreading Out", Unsur{Jenis: JenisGrid, Jalur: j(AnakQuotaShare), Bernomor: true, Kolom: []Unsur{
 				kRO(kol("Currency", "Currency", KTeks)), kRO(kol("TreatyName", "Treaty Type", KTeks)),
 				kRO(kol("SharePercentage", "Share(%)", KAngka)), kRO(kol("ClaimSpreaded", "Claim Spreaded", KAngka))}}),

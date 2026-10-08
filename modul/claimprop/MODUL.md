@@ -145,7 +145,8 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
 - **Panel baris Acceptation List** (08-10-2026, "perbaiki tampilan" + screenshot Pega "ikuti dan rapihkan" + "tidak harus
   klik angka sebelah kiri"): `LayarAdjustment` mengikuti layout XML `AdjustmentDetail_Section` (tab group) /
   `AdjustmentDetail` - Inline grid double bersarang, checkbox "Transfer Direct to Kasir", tabel bebas 6 x 4
-  (`LetakTabel`, komponen `TabelTetap`), Payable | bank berdampingan, Spreading In (NEVER) tidak dibangun; judul mentah
+  (`LetakTabel`, komponen `TabelTetap`), Payable | bank berdampingan, Spreading In di atas Spreading Out (XML NEVER, tetapi Pega hidup menampilkannya -
+  screenshot work owner "tampilan spreadingnya ada yang kurang"); judul mentah
   "AdjustmentDetail" dibuang. Baris terbaru terbuka tanpa klik dan seluruh baris dapat diklik (`rincian.ts`
   bukaAwal / barisTerbuka). Label kode dari screenshot prompt values work owner: Type (AdjustmentType) 1 Claim /
   2 Adjuster Fee / 3 Salvage / 4 Consultant Fee, Deductible Type (IndividualRiskType) 0 Select.. (label saja) / 1 %

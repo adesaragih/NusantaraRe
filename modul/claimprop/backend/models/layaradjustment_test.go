@@ -10,7 +10,7 @@ import (
 // Panel AdjustmentDetail mengikuti layout Section `AdjustmentDetail_Section` / `AdjustmentDetail` (work owner 08-10-2026
 // "perbaiki tampilan", screenshot Pega "ikuti dan rapihkan"): tiga tab, blok atas Inline grid double bersarang
 // [Type, Currency | Payment Type, DLA] | [Value In IDR, RNM Share, Allocation | Share], checkbox "Transfer Direct to
-// Kasir", tabel bebas 6 x 4, Payable dan bank berdampingan, Spreading In tidak dibangun (ContainerVisibleWhen NEVER).
+// Kasir", tabel bebas 6 x 4, Payable dan bank berdampingan, Spreading In di atas Spreading Out (screenshot Pega).
 func TestLayarAdjustmentIkutLayoutXML(t *testing.T) {
 	h := models.HalamanBaru()
 	h.SetelDaftar(models.DaftarAdjustment, []models.Baris{{"Type": "1", "IsSubjectivity": "true"}})
@@ -96,11 +96,30 @@ func TestLayarAdjustmentIkutLayoutXML(t *testing.T) {
 		t.Fatalf("Payable To | Name of Bank tidak berdampingan: %+v", bayar)
 	}
 
-	if cari(ts, func(x models.Tata) bool { return x.Label == "Spreading In" }) != nil {
-		t.Errorf("Spreading In tampil, padahal XML ContainerVisibleWhen NEVER")
+	// Spreading In: XML ContainerVisibleWhen NEVER, tetapi Pega hidup menampilkannya di atas Spreading Out (screenshot
+	// work owner 08-10-2026 "tampilan spreadingnya ada yang kurang")
+	var urut []string
+	var jalanGrid func(xs []models.Tata)
+	jalanGrid = func(xs []models.Tata) {
+		for _, x := range xs {
+			if x.Jenis == models.JenisGrid {
+				urut = append(urut, x.Jalur)
+			}
+			jalanGrid(x.Anak)
+		}
 	}
-	if cari(ts, func(x models.Tata) bool { return x.Label == "Spreading Out" }) == nil {
-		t.Errorf("Spreading Out hilang")
+	jalanGrid(ts)
+	in, out := -1, -1
+	for i, g := range urut {
+		switch g {
+		case j(1, models.AnakSpreadAdj):
+			in = i
+		case j(1, models.AnakQuotaShare):
+			out = i
+		}
+	}
+	if in < 0 || out < 0 || in > out {
+		t.Errorf("Spreading In harus tampil tepat di atas Spreading Out: %v", urut)
 	}
 }
 
