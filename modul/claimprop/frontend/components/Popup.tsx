@@ -227,7 +227,7 @@ export default function Popup({
     )
   } else if (jenis === 'polis') {
     isi = (
-      <table className="claimprop__tabel">
+      <table className="claimprop__tabel claimprop__tabel--rapat">
         <thead>
           <tr>
             <th>No Polis</th>
@@ -402,6 +402,7 @@ export default function Popup({
       onTutup={onTutup}
       labelBatal={CP.tutup}
       penuh={jenis === 'master' || jenis === 'ringkasanOS'}
+      lebar={jenis !== 'master' && jenis !== 'ringkasanOS'}
     >
       {pakaiCari && !formBaru && (
         <input

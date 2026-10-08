@@ -315,6 +315,11 @@
   background: var(--cp-baris-hover);
 }
 
+/* Tabel pop-up berisi kode (Data Polis): sel tidak dipatah di tanda hubung nomor polis. */
+.claimprop .claimprop__tabel--rapat td {
+  white-space: nowrap;
+}
+
 /* Kartu bagian layar kasus: putih TIMBUL KELUAR seperti kartu tabel Kelola User; tabel di dalamnya tanpa bayangan
    kedua (dua lapis bayangan terbaca sebagai kotak mengapung di atas kotak). */
 .claimprop .claimprop__akar .panel {
