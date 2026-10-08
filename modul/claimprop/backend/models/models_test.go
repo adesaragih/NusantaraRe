@@ -338,3 +338,51 @@ func TestGridKomiteRosterLaluTangga(t *testing.T) {
 		t.Fatalf("keputusan tangga %+v", rows)
 	}
 }
+
+// Kerangka layout Section OutstandingClaim (XML `pyLayoutOtherFormat` / layout group; work owner 08-10-2026 "berikut
+// layout lama, ikuti dan rapihkan"): kepala judul, Claim Treaty Inline grid double 8|5, baris Inline "Quarter/Year",
+// layout group Tab Interest / Estimation / Spreading, Claim History paging 5, ikon pi-plus / pi-trash / pyEditIcon.
+func TestLetakOutstandingIkutXML(t *testing.T) {
+	ts := models.Evaluasi(models.HalamanBaru(), models.LayarOutstanding(), false)
+	if ts[0].Letak != models.LetakJudul || ts[0].Anak[0].Label != "Outstanding Claim" {
+		t.Fatalf("kepala layar: %+v", ts[0])
+	}
+	var cari func(ts []models.Tata, ok func(models.Tata) bool) *models.Tata
+	cari = func(ts []models.Tata, ok func(models.Tata) bool) *models.Tata {
+		for i := range ts {
+			if ok(ts[i]) {
+				return &ts[i]
+			}
+			if x := cari(ts[i].Anak, ok); x != nil {
+				return x
+			}
+		}
+		return nil
+	}
+	treaty := cari(ts, func(x models.Tata) bool { return x.Label == "Claim Treaty" })
+	kolom := cari(treaty.Anak, func(x models.Tata) bool { return x.Letak == models.LetakDua })
+	if kolom == nil || len(kolom.Anak) != 2 || len(kolom.Anak[0].Anak) != 8 || len(kolom.Anak[1].Anak) != 5 {
+		t.Fatalf("Claim Treaty bukan Inline grid double 8|5: %+v", kolom)
+	}
+	qy := cari(ts, func(x models.Tata) bool { return x.Letak == models.LetakSebaris && x.Label == "Quarter/Year" })
+	if qy == nil || len(qy.Anak) != 6 {
+		t.Fatalf("baris Quarter/Year: %+v", qy)
+	}
+	tab := cari(ts, func(x models.Tata) bool { return x.Letak == models.LetakTab })
+	var judul []string
+	for _, a := range tab.Anak {
+		judul = append(judul, a.Label)
+	}
+	if strings.Join(judul, "|") != "Interest|Estimation|Spreading" {
+		t.Fatalf("tab: %v", judul)
+	}
+	if g := cariTata(ts, models.DaftarRiwayatTampil); g == nil || g.PerHalaman != 5 {
+		t.Fatalf("Claim History paging: %+v", g)
+	}
+	if g := cariTata(ts, models.DaftarInterest); g.Tambah.Ikon != models.IkonTambah || g.Kolom[len(g.Kolom)-1].Ikon != models.IkonHapus {
+		t.Fatalf("ikon grid Interest: %+v / %+v", g.Tambah, g.Kolom[len(g.Kolom)-1])
+	}
+	if b := cariTata(ts, "EditRNMShare"); b == nil || b.Ikon != models.IkonUbah {
+		t.Fatalf("ikon EditRNMShare: %+v", b)
+	}
+}

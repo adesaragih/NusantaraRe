@@ -3,15 +3,17 @@
 // memanggil server saat nilainya berubah; medan tanpa aksi (postValue) hanya mengubah nilai lokal yang ikut terkirim
 // pada aksi berikutnya.
 //
-// Rupa = Kelola User (keputusan work owner 08-10-2026): kartu `panel` + `panel__title`, isi `form-grid`, medan `field`
-// berlabel di atas kotak `field__input`; medan hanya-baca tetap berkotak (`field__input--readonly`), sel grid ringkas.
-// Pengelompokannya di `susun.ts`.
+// Rupa = layout lama Pega dirapikan (work owner 08-10-2026 "berikut layout lama, ikuti dan rapihkan") dengan kulit
+// Kelola User: medan "Stacked with labels left" (label di kiri, nilai di kanan; hanya-baca = teks), `dua` = Inline grid
+// double, `sebaris` = Inline (Quarter/Year, RNM Share, baris tombol), `tab` = layout group Tab, `judul` = kepala tengah,
+// tombol ikon dari XML (pi-plus / pi-trash / pi-pencil / pi-check), grid ber-paging (pyGridPaginator). Pengelompokan di
+// `susun.ts`.
 
 import { Fragment, useState, type ReactNode } from 'react'
 
 import type { Halaman, Pilihan, Tata } from '../api'
 import { ambil, dariInputWaktu, jalurBaris, keInputWaktu, tampilAngka } from '../nilai'
-import { susunIsi, susunLayar, type Butir } from './susun'
+import { jumlahHalaman, potongHalaman, ratakan, susunIsi, susunLayar, type Butir } from './susun'
 
 export interface KonteksTata {
   h: Halaman
@@ -53,9 +55,24 @@ function teksTampil(t: Tata, v: string, opsi: () => Pilihan[]): string {
   }
 }
 
+/** Ikon tombol dari XML (pi-plus, pi-trash, pi-pencil, pi-check). */
+function Ikon({ jenis }: { jenis: NonNullable<Tata['ikon']> }) {
+  const d = {
+    tambah: 'M12 5v14M5 12h14',
+    hapus: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
+    ubah: 'M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4',
+    simpan: 'M5 12l5 5 9-10',
+  }[jenis]
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false">
+      <path d={d} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 /**
- * Kendali satu medan. `sel` = sel grid (isian ringkas, nilai hanya-baca berupa teks); selainnya kotak penuh Kelola
- * User, hanya-baca = kotak `field__input--readonly`.
+ * Kendali satu medan. `sel` = sel grid (isian ringkas); hanya-baca = teks nilai (layout lama), isian = kotak
+ * `field__input` kulit Kelola User.
  */
 function Medan({
   t,
@@ -80,10 +97,9 @@ function Medan({
     else k.ubah(jalur, baru)
   }
   const angka = t.kendali === 'angka'
-  const kelas = (tambahan = '') =>
-    ['field__input', sel && 'claimprop__input--sel', angka && 'claimprop__input--angka', tambahan]
-      .filter(Boolean)
-      .join(' ')
+  const kelas = ['field__input', sel && 'claimprop__input--sel', angka && 'claimprop__input--angka']
+    .filter(Boolean)
+    .join(' ')
 
   if (t.kendali === 'centang') {
     return (
@@ -100,18 +116,36 @@ function Medan({
   }
   if (kunci) {
     const teks = teksTampil(t, v, opsi)
-    if (sel) return <span className={angka ? 'claimprop__angka' : undefined}>{teks}</span>
-    if (t.kendali === 'area') {
-      return <textarea id={id} className="field__input field__input--readonly claimprop__area" readOnly value={teks} />
-    }
-    return <input id={id} className={kelas('field__input--readonly')} readOnly tabIndex={-1} value={teks} />
+    return (
+      <span id={id} className={angka ? 'claimprop__nilai claimprop__angka' : 'claimprop__nilai'}>
+        {teks}
+      </span>
+    )
+  }
+  if (t.kendali === 'radio' && !sel) {
+    return (
+      <span id={id} className="claimprop__radio" role="radiogroup">
+        {opsi().map((o) => (
+          <label key={o.nilai}>
+            <input
+              type="radio"
+              name={idMedan(jalur)}
+              checked={v === o.nilai}
+              disabled={k.sibuk}
+              onChange={() => ganti(o.nilai, true)}
+            />
+            {o.label}
+          </label>
+        ))}
+      </span>
+    )
   }
   switch (t.kendali) {
     case 'angka':
       return (
         <input
           id={id}
-          className={kelas()}
+          className={kelas}
           inputMode="decimal"
           value={v}
           disabled={k.sibuk}
@@ -124,7 +158,7 @@ function Medan({
         <input
           id={id}
           type="date"
-          className={kelas()}
+          className={kelas}
           value={v.slice(0, 10)}
           disabled={k.sibuk}
           onChange={(e) => ganti(e.target.value, true)}
@@ -135,7 +169,7 @@ function Medan({
         <input
           id={id}
           type="datetime-local"
-          className={kelas()}
+          className={kelas}
           value={keInputWaktu(v)}
           disabled={k.sibuk}
           onChange={(e) => ganti(dariInputWaktu(e.target.value), true)}
@@ -156,7 +190,7 @@ function Medan({
     case 'radio': {
       const daftar = opsi()
       return (
-        <select id={id} className={kelas()} value={v} disabled={k.sibuk} onChange={(e) => ganti(e.target.value, true)}>
+        <select id={id} className={kelas} value={v} disabled={k.sibuk} onChange={(e) => ganti(e.target.value, true)}>
           <option value="">Choose</option>
           {daftar.map((o) => (
             <option key={o.nilai} value={o.nilai}>
@@ -173,7 +207,7 @@ function Medan({
         <>
           <input
             id={id}
-            className={kelas()}
+            className={kelas}
             list={idDaftar}
             value={v}
             disabled={k.sibuk}
@@ -198,7 +232,7 @@ function Medan({
       return (
         <input
           id={id}
-          className={kelas()}
+          className={kelas}
           value={v}
           disabled={k.sibuk}
           onChange={(e) => k.ubah(jalur, e.target.value)}
@@ -208,140 +242,324 @@ function Medan({
   }
 }
 
-/** Tombol utama (Kelola User: Simpan) = Save / Submit; selainnya tombol bertepi. Ikon tanpa label = pengaturan. */
+/**
+ * Tombol: ikon dari XML = tombol ikon (label jadi keterangan); Save / Submit = tombol utama (Kelola User: Simpan);
+ * selainnya tombol bertepi. Tanpa label dan tanpa ikon = pengaturan.
+ */
 function Tombol({ t, k, indeks = 0 }: { t: Tata; k: KonteksTata; indeks?: number }) {
-  const utama = indeks === 0 && (t.label === 'Save' || t.label === 'Submit')
-  const kelas = ['btn', utama ? 'btn--primary' : 'btn--ghost', indeks > 0 && 'btn--sm'].filter(Boolean).join(' ')
+  const utama = indeks === 0 && !t.ikon && (t.label === 'Save' || t.label === 'Submit')
+  const kelas = [
+    'btn',
+    utama ? 'btn--primary' : 'btn--ghost',
+    (indeks > 0 || t.ikon) && 'btn--sm',
+    t.ikon && 'claimprop__ikon',
+    t.ikon === 'hapus' && 'claimprop__ikon--hapus',
+  ]
+    .filter(Boolean)
+    .join(' ')
+  const nama = t.label || t.id
   return (
     <button
       type="button"
       className={kelas}
       disabled={t.nonaktif || k.sibuk}
-      title={t.catatan ?? t.id}
-      aria-label={t.label ? undefined : t.id}
-      onClick={() => k.aksi(t.aksi ?? t.id ?? '', indeks)}
+      title={t.catatan ?? nama}
+      aria-label={t.ikon || !t.label ? nama : undefined}
+      onClick={(e) => {
+        e.stopPropagation()
+        k.aksi(t.aksi ?? t.id ?? '', indeks)
+      }}
     >
-      {t.label ? t.label : '⚙'}
+      {t.ikon ? <Ikon jenis={t.ikon} /> : t.label ? t.label : '⚙'}
     </button>
   )
 }
 
-/** Satu sel form-grid: label di atas, kotak isian + satuan + tombol menempel di kanan. */
-function SelMedan({ t, tombol, k }: { t: Butir; tombol: readonly Tata[]; k: KonteksTata }) {
+/** Satu baris "Stacked with labels left": label di kiri, nilai + satuan + tombol menempel di kanan. */
+function BarisMedan({ t, tombol, k }: { t: Butir; tombol: readonly Tata[]; k: KonteksTata }) {
   const jalur = t.jalur ?? ''
   const id = idMedan(jalur)
   const pesan = k.pesanMedan[jalur] ?? []
   return (
-    <div className="field" title={t.catatan}>
-      <label className="field__label" htmlFor={id}>
-        {t.label ? t.label : <>&nbsp;</>}
+    <div className={'claimprop__baris' + (t.label ? '' : ' claimprop__baris--tanpa-label')} title={t.catatan}>
+      <label className="claimprop__label-medan" htmlFor={id}>
+        {t.label}
         {t.wajib && <span className="field__req">*</span>}
       </label>
-      <div className="claimprop__baris-isian">
+      <div className="claimprop__isi-medan">
         <Medan t={t} k={k} jalur={jalur} id={id} />
         {t.satuan && <span className="claimprop__satuan">{t.satuan}</span>}
         {tombol.map((b, i) => (
           <Tombol key={i} t={b} k={k} />
         ))}
+        {pesan.length > 0 && <span className="field__error">{pesan.join('; ')}</span>}
       </div>
-      {pesan.length > 0 && <p className="field__error">{pesan.join('; ')}</p>}
+    </div>
+  )
+}
+
+/** Layout Inline: anak sebaris; label bagian = label baris (Quarter/Year). */
+function Sebaris({ t, k }: { t: Tata; k: KonteksTata }) {
+  const isi = ratakan(t.anak ?? [])
+  if (isi.length === 0) return null
+  const baris = (
+    <div className="claimprop__sebaris">
+      {isi.map((u, i) => {
+        if (u.jenis === 'medan') {
+          const jalur = u.jalur ?? ''
+          return (
+            <span key={i} className="claimprop__sebaris-medan" title={u.catatan}>
+              {u.label && (
+                <label className="claimprop__label-sebaris" htmlFor={idMedan(jalur)}>
+                  {u.label}
+                  {u.wajib && <span className="field__req">*</span>}
+                </label>
+              )}
+              <Medan t={u} k={k} jalur={jalur} id={idMedan(jalur)} />
+              {u.satuan && <span className="claimprop__satuan">{u.satuan}</span>}
+            </span>
+          )
+        }
+        if (u.jenis === 'tombol') return <Tombol key={i} t={u} k={k} />
+        if (u.jenis === 'label') {
+          return (
+            <span key={i} className="claimprop__satuan">
+              {u.label}
+            </span>
+          )
+        }
+        return <TataView key={i} tata={[u]} k={k} />
+      })}
+    </div>
+  )
+  if (!t.label) return baris
+  return (
+    <div className="claimprop__baris">
+      <span className="claimprop__label-medan">{t.label}</span>
+      <div className="claimprop__isi-medan">{baris}</div>
+    </div>
+  )
+}
+
+/** Layout Inline grid double: setiap anak satu sel; bagian tanpa judul = satu kolom. */
+function Dua({ t, k }: { t: Tata; k: KonteksTata }) {
+  return (
+    <div className="claimprop__dua">
+      {(t.anak ?? []).map((c, i) => (
+        <div key={i} className="claimprop__sel">
+          <TataView tata={c.jenis === 'bagian' && !c.label && !c.letak ? (c.anak ?? []) : [c]} k={k} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** Layout group Tab: satu tab per bagian berjudul. */
+function Tab({ t, k }: { t: Tata; k: KonteksTata }) {
+  const tab = (t.anak ?? []).filter((a) => a.jenis === 'bagian')
+  const [aktif, setAktif] = useState(0)
+  const i = Math.min(aktif, Math.max(0, tab.length - 1))
+  if (tab.length === 0) return null
+  return (
+    <div className="claimprop__tab">
+      <div className="tabs" role="tablist">
+        {tab.map((a, j) => (
+          <button
+            key={j}
+            type="button"
+            role="tab"
+            aria-selected={j === i}
+            className={'tabs__item' + (j === i ? ' tabs__item--aktif' : '')}
+            onClick={() => setAktif(j)}
+          >
+            {a.label}
+          </button>
+        ))}
+      </div>
+      <div role="tabpanel" className="claimprop__tab-isi">
+        <TataView tata={tab[i]?.anak ?? []} k={k} />
+      </div>
+    </div>
+  )
+}
+
+/** Kepala layar: judul tahap di tengah, Claim No di bawahnya. */
+function Kepala({ t, k }: { t: Tata; k: KonteksTata }) {
+  const isi = ratakan(t.anak ?? [])
+  return (
+    <div className="claimprop__kepala">
+      {isi.map((u, i) => {
+        if (u.jenis === 'label') {
+          return i === 0 ? (
+            <h3 key={i} className="claimprop__kepala-judul">
+              {u.label}
+            </h3>
+          ) : (
+            <div key={i} className="claimprop__kepala-teks">
+              {u.label}
+            </div>
+          )
+        }
+        if (u.jenis === 'medan') {
+          return (
+            <div key={i} className="claimprop__kepala-teks">
+              <span className="claimprop__label-sebaris">{u.label}</span> <Medan t={u} k={k} jalur={u.jalur ?? ''} />
+            </div>
+          )
+        }
+        return null
+      })}
     </div>
   )
 }
 
 function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
   const [buka, setBuka] = useState<number | null>(null)
+  const [hal, setHal] = useState(1)
   const kolom = t.kolom ?? []
-  const baris = t.baris ?? []
+  const semua = t.baris ?? []
+  const nHal = jumlahHalaman(semua.length, t.perHalaman)
+  const halIni = Math.min(hal, nHal)
+  const awal = t.perHalaman ? (halIni - 1) * t.perHalaman : 0
+  const baris = potongHalaman(semua, t.perHalaman, halIni)
+  // Add di sel kepala kolom tombol terakhir (pzPegaDefaultGridIcons); tanpa kolom tombol = sel kepala tambahan
+  const kolomAkhirTombol = kolom[kolom.length - 1]?.jenis === 'tombol'
+  const selKepalaTambah = !!t.tambah && !kolomAkhirTombol
+  const lebar = kolom.length + (t.bernomor ? 1 : 0) + (selKepalaTambah ? 1 : 0)
   return (
     <div className="claimprop__grid" title={t.catatan}>
-      {t.tambah && (
-        <div className="claimprop__grid-alat">
-          <Tombol t={t.tambah} k={k} />
+      {t.perHalaman && semua.length > t.perHalaman ? (
+        <div className="claimprop__pager">
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            disabled={halIni <= 1}
+            onClick={() => setHal(halIni - 1)}
+            aria-label="Previous"
+          >
+            ‹
+          </button>
+          <span>
+            Page {halIni} of {nHal}
+          </span>
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            disabled={halIni >= nHal}
+            onClick={() => setHal(halIni + 1)}
+            aria-label="Next"
+          >
+            ›
+          </button>
         </div>
-      )}
+      ) : null}
       <table className="claimprop__tabel">
         <thead>
           <tr>
             {t.bernomor && <th>#</th>}
             {kolom.map((c, i) => (
-              <th key={i}>{c.jenis === 'tombol' ? '' : c.label}</th>
+              <th key={i} className={c.jenis === 'tombol' ? 'claimprop__th-aksi' : undefined}>
+                {c.jenis !== 'tombol' ? (
+                  c.label
+                ) : i === kolom.length - 1 && t.tambah ? (
+                  <Tombol t={t.tambah} k={k} />
+                ) : null}
+              </th>
             ))}
+            {selKepalaTambah && t.tambah && (
+              <th className="claimprop__th-aksi">
+                <Tombol t={t.tambah} k={k} />
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
           {baris.length === 0 && (
             <tr>
-              <td className="muted" colSpan={kolom.length + (t.bernomor ? 1 : 0)}>
+              <td className="muted" colSpan={lebar}>
                 —
               </td>
             </tr>
           )}
-          {baris.map((sel, i) => (
-            <Fragment key={i}>
-              <tr
-                className={k.rincian ? 'inbox__baris' : undefined}
-                onClick={k.rincian ? () => setBuka(buka === i + 1 ? null : i + 1) : undefined}
-              >
-                {t.bernomor && <td>{i + 1}</td>}
-                {kolom.map((c, j) => {
-                  const s = sel[j]
-                  if (!s || !s.tampil) return <td key={j} />
-                  const cel: Tata = { ...c, hanyaBaca: s.hanyaBaca, nonaktif: s.nonaktif }
-                  return (
-                    <td
-                      key={j}
-                      onClick={(e) => {
-                        if (c.jenis === 'medan') e.stopPropagation()
-                      }}
-                    >
-                      {c.jenis === 'tombol' ? (
-                        <Tombol t={cel} k={k} indeks={i + 1} />
-                      ) : (
-                        <Medan t={cel} k={k} indeks={i + 1} jalur={jalurBaris(t.jalur ?? '', i + 1, c.jalur ?? '')} />
-                      )}
-                    </td>
-                  )
-                })}
-              </tr>
-              {k.rincian && buka === i + 1 && (
-                <tr>
-                  <td colSpan={kolom.length + (t.bernomor ? 1 : 0)}>{k.rincian(t.jalur ?? '', i + 1)}</td>
+          {baris.map((sel, i) => {
+            const n = awal + i + 1
+            return (
+              <Fragment key={n}>
+                <tr
+                  className={k.rincian ? 'inbox__baris' : undefined}
+                  onClick={k.rincian ? () => setBuka(buka === n ? null : n) : undefined}
+                >
+                  {t.bernomor && <td>{n}</td>}
+                  {kolom.map((c, j) => {
+                    const s = sel[j]
+                    if (!s || !s.tampil) return <td key={j} />
+                    const cel: Tata = { ...c, hanyaBaca: s.hanyaBaca, nonaktif: s.nonaktif }
+                    return (
+                      <td
+                        key={j}
+                        className={c.jenis === 'tombol' ? 'claimprop__td-aksi' : undefined}
+                        onClick={(e) => {
+                          if (c.jenis === 'medan') e.stopPropagation()
+                        }}
+                      >
+                        {c.jenis === 'tombol' ? (
+                          <Tombol t={cel} k={k} indeks={n} />
+                        ) : (
+                          <Medan t={cel} k={k} indeks={n} jalur={jalurBaris(t.jalur ?? '', n, c.jalur ?? '')} />
+                        )}
+                      </td>
+                    )
+                  })}
+                  {selKepalaTambah && <td />}
                 </tr>
-              )}
-            </Fragment>
-          ))}
+                {k.rincian && buka === n && (
+                  <tr>
+                    <td colSpan={lebar}>{k.rincian(t.jalur ?? '', n)}</td>
+                  </tr>
+                )}
+              </Fragment>
+            )
+          })}
         </tbody>
       </table>
       {(t.kaki ?? []).length > 0 && (
         <div className="claimprop__grid-kaki">
-          {(t.kaki ?? []).map((m, i) =>
-            m.jenis === 'medan' ? (
-              <span key={i} className="claimprop__kaki-nilai">
-                {m.label && <span className="field__label">{m.label}</span>}
-                <Medan t={m} k={k} jalur={m.jalur ?? ''} id={idMedan(m.jalur ?? '')} />
-              </span>
-            ) : m.jenis === 'tombol' ? (
-              <Tombol key={i} t={m} k={k} />
-            ) : null,
-          )}
+          {ratakan(t.kaki ?? []).map((m, i) => {
+            if (m.jenis === 'medan') {
+              return (
+                <span key={i} className="claimprop__sebaris-medan">
+                  {m.label && <span className="claimprop__label-sebaris">{m.label}</span>}
+                  <Medan t={m} k={k} jalur={m.jalur ?? ''} id={idMedan(m.jalur ?? '')} />
+                </span>
+              )
+            }
+            if (m.jenis === 'tombol') return <Tombol key={i} t={m} k={k} />
+            if (m.jenis === 'label') {
+              return (
+                <span key={i} className="claimprop__label-sebaris">
+                  {m.label}
+                </span>
+              )
+            }
+            return null
+          })}
         </div>
       )}
     </div>
   )
 }
 
-/** Isi satu kartu / sub-bagian / modal: form-grid Kelola User. */
+/** Isi satu kartu / kolom / tab / modal: "Stacked with labels left". */
 export default function TataView({ tata, k }: { tata: readonly Tata[]; k: KonteksTata }) {
   return (
-    <div className="form-grid">
+    <div className="claimprop__tumpuk">
       {susunIsi(tata).map((u, i) => {
         switch (u.jenis) {
           case 'medan':
-            return <SelMedan key={i} t={u.t} tombol={u.tombol} k={k} />
+            return <BarisMedan key={i} t={u.t} tombol={u.tombol} k={k} />
           case 'tombol':
             return (
-              <div key={i} className={'field--lebar claimprop__tombol' + (u.akhir ? ' claimprop__tombol--akhir' : '')}>
+              <div key={i} className={'claimprop__tombol' + (u.akhir ? ' claimprop__tombol--akhir' : '')}>
                 {u.tombol.map((b, j) => (
                   <Tombol key={j} t={b} k={k} />
                 ))}
@@ -349,19 +567,20 @@ export default function TataView({ tata, k }: { tata: readonly Tata[]; k: Kontek
             )
           case 'judul':
             return (
-              <h4 key={i} className="field--lebar claimprop__subjudul">
+              <h4 key={i} className="claimprop__subjudul">
                 {u.label}
               </h4>
             )
           case 'grid':
-            return (
-              <div key={i} className="field--lebar">
-                <Grid t={u.t} k={k} />
-              </div>
-            )
+            return <Grid key={i} t={u.t} k={k} />
+          case 'letak':
+            if (u.t.letak === 'dua') return <Dua key={i} t={u.t} k={k} />
+            if (u.t.letak === 'tab') return <Tab key={i} t={u.t} k={k} />
+            if (u.t.letak === 'judul') return <Kepala key={i} t={u.t} k={k} />
+            return <Sebaris key={i} t={u.t} k={k} />
           default:
             return (
-              <section key={i} className="field--lebar claimprop__sub">
+              <section key={i} className="claimprop__sub">
                 <h4 className="claimprop__subjudul">{u.t.label}</h4>
                 <TataView tata={u.t.anak ?? []} k={k} />
               </section>
@@ -372,24 +591,28 @@ export default function TataView({ tata, k }: { tata: readonly Tata[]; k: Kontek
   )
 }
 
-/** Tingkat layar kasus: kartu `panel` bertitel + baris aksi. */
+/** Tingkat layar kasus: kepala tengah, kartu `panel` bertitel, baris aksi. */
 export function LayarTata({ tata, k }: { tata: readonly Tata[]; k: KonteksTata }) {
   return (
     <>
-      {susunLayar(tata).map((b, i) =>
-        b.jenis === 'aksi' ? (
-          <div key={i} className="claimprop__aksi">
-            {b.tombol.map((t, j) => (
-              <Tombol key={j} t={t} k={k} />
-            ))}
-          </div>
-        ) : (
+      {susunLayar(tata).map((b, i) => {
+        if (b.jenis === 'kepala') return <Kepala key={i} t={b.t} k={k} />
+        if (b.jenis === 'aksi') {
+          return (
+            <div key={i} className="claimprop__aksi">
+              {b.tombol.map((t, j) => (
+                <Tombol key={j} t={t} k={k} />
+              ))}
+            </div>
+          )
+        }
+        return (
           <section key={i} className="panel">
             {b.judul && <h3 className="panel__title">{b.judul}</h3>}
             <TataView tata={b.isi} k={k} />
           </section>
-        ),
-      )}
+        )
+      })}
     </>
   )
 }

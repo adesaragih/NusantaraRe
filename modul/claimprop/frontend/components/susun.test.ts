@@ -4,13 +4,14 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Tata } from '../api'
-import { susunIsi, susunLayar } from './susun'
+import { jumlahHalaman, potongHalaman, susunIsi, susunLayar } from './susun'
 
 const medan = (jalur: string, label = ''): Tata => ({ jenis: 'medan', jalur, label, kendali: 'teks' })
 const label = (teks: string): Tata => ({ jenis: 'label', label: teks })
 const tombol = (id: string, teks = id): Tata => ({ jenis: 'tombol', id, label: teks, aksi: id })
 const bagian = (judul: string, ...anak: Tata[]): Tata => ({ jenis: 'bagian', label: judul, anak })
 const grid = (jalur: string): Tata => ({ jenis: 'grid', jalur })
+const letak = (l: NonNullable<Tata['letak']>, ...anak: Tata[]): Tata => ({ jenis: 'bagian', letak: l, anak })
 
 describe('susunIsi - isi satu kartu', () => {
   it('label tepat sebelum medan tanpa label menjadi label medan itu (Q, /, U/Y)', () => {
@@ -53,36 +54,50 @@ describe('susunIsi - isi satu kartu', () => {
   })
 })
 
-describe('susunLayar - kartu tingkat layar', () => {
-  it('Outstanding Claim: label judul membuka kartu, bagian berlabel kartu sendiri, tombol akhir baris aksi', () => {
-    const b = susunLayar([
-      label('Outstanding Claim'),
-      label('Claim No      ..........'),
-      bagian('Claim Treaty', tombol('ChooseMaster'), medan('IDMaster', 'Treaty ID')),
-      label('Claim Information'),
-      tombol('ChoosePolicy'),
+describe('susunIsi - letak layout XML', () => {
+  it('bagian berletak (dua / sebaris) tidak diratakan; label Q / U/Y di dalam baris sebaris menempel ke medannya', () => {
+    const qy = letak('sebaris', label('Q'), medan('Quater'), label('U/Y'), medan('TreatyYear'))
+    qy.label = 'Quarter/Year'
+    const u = susunIsi([
       medan('PolicyNo', 'Policy No'),
-      label('Q'),
-      medan('Quater'),
-      bagian('Interest', bagian('', grid('I'))),
-      bagian('Estimation', bagian('', grid('E'))),
+      qy,
+      letak('dua', bagian('', medan('A', 'A')), bagian('', medan('B', 'B'))),
+    ])
+    expect(u.map((x) => x.jenis)).toEqual(['medan', 'letak', 'letak'])
+    expect(susunIsi(qy.anak ?? []).map((x) => (x.jenis === 'medan' ? x.t.label : x.jenis))).toEqual(['Q', 'U/Y'])
+  })
+})
+
+describe('susunLayar - kartu tingkat layar', () => {
+  it('Outstanding Claim: kepala tengah, kartu Claim Treaty, kartu Claim Information, kartu tab membawa RNM Share', () => {
+    const b = susunLayar([
+      letak('judul', label('Outstanding Claim'), label('Claim No      ..........')),
+      bagian(
+        'Claim Treaty',
+        letak('sebaris', tombol('ChooseMaster')),
+        letak('dua', bagian('', medan('IDMaster', 'Treaty ID'))),
+      ),
+      label('Claim Information'),
+      letak('dua', bagian('', medan('PolicyNo', 'Policy No')), bagian('', medan('DateOfLoss', 'Date of Loss'))),
+      medan('Location', 'Location of Loss'),
+      letak('sebaris', medan('RNMShareP', 'RNM Share'), label('%')),
+      letak('tab', bagian('Interest', grid('I')), bagian('Estimation', grid('E'))),
       tombol('Save'),
       tombol('SaveToIssueRNM'),
       bagian('Claim History', grid('R')),
     ])
-    expect(b.map((x) => (x.jenis === 'panel' ? x.judul : 'aksi'))).toEqual([
-      'Outstanding Claim',
+    expect(b.map((x) => (x.jenis === 'panel' ? x.judul || 'tab' : x.jenis))).toEqual([
+      'kepala',
       'Claim Treaty',
       'Claim Information',
-      'Interest',
-      'Estimation',
+      'tab',
       'aksi',
       'Claim History',
     ])
     const info = b[2]
-    expect(
-      info?.jenis === 'panel' && susunIsi(info.isi).map((x) => (x.jenis === 'medan' ? x.t.label : x.jenis)),
-    ).toEqual(['tombol', 'Policy No', 'Q'])
+    expect(info?.jenis === 'panel' && info.isi.map((x) => x.letak ?? x.jalur)).toEqual(['dua', 'Location'])
+    const tab = b[3]
+    expect(tab?.jenis === 'panel' && tab.isi.map((x) => x.letak)).toEqual(['sebaris', 'tab'])
   })
 
   it('bagian berlabel kecil di tengah kartu terbuka (Information) tetap di kartu itu', () => {
@@ -97,8 +112,19 @@ describe('susunLayar - kartu tingkat layar', () => {
     expect(b.map((x) => (x.jenis === 'panel' ? x.judul : 'aksi'))).toEqual(['Claim Information', 'Interest'])
   })
 
-  it('bagian tanpa label di tingkat layar diratakan ke kartu yang terbuka (Claim No terisi)', () => {
+  it('bagian tanpa label dan tanpa letak di tingkat layar diratakan ke kartu yang terbuka', () => {
     const b = susunLayar([label('Acceptation Claim'), bagian('', medan('NoClaim', 'Claim No')), bagian('Claim Treaty')])
     expect(b[0]).toMatchObject({ jenis: 'panel', judul: 'Acceptation Claim', isi: [{ jalur: 'NoClaim' }] })
+  })
+})
+
+describe('paging grid (pyGridPaginator)', () => {
+  it('lima baris per halaman; tanpa paging = semua baris', () => {
+    const baris = [1, 2, 3, 4, 5, 6, 7]
+    expect(potongHalaman(baris, 5, 1)).toEqual([1, 2, 3, 4, 5])
+    expect(potongHalaman(baris, 5, 2)).toEqual([6, 7])
+    expect(potongHalaman(baris, undefined, 1)).toEqual(baris)
+    expect(jumlahHalaman(7, 5)).toBe(2)
+    expect(jumlahHalaman(0, 5)).toBe(1)
   })
 })

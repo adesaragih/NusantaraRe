@@ -87,6 +87,36 @@ func bagian(judul string, anak ...Unsur) Unsur {
 	return Unsur{Jenis: JenisBagian, Label: judul, Anak: anak}
 }
 
+// Letak layout Pega (`pyLayoutOtherFormat`, layout group) - dirender layar; "" = Stacked with labels left.
+const (
+	LetakDua     = "dua"     // Inline grid double: setiap anak satu sel, dua sel per baris
+	LetakSebaris = "sebaris" // Inline / Inline labels left: anak sebaris; label bagian = label baris
+	LetakTab     = "tab"     // layout group Tab: anak = bagian berjudul (satu tab per bagian)
+	LetakJudul   = "judul"   // kepala layar: Inline grid triple dengan label di sel tengah
+)
+
+// Ikon tombol (kelas ikon / gambar tombol di XML); label tetap dikirim sebagai keterangan.
+const (
+	IkonTambah = "tambah" // pi-plus, webwb/pyWorkActionsAddWork.png
+	IkonHapus  = "hapus"  // pi-trash
+	IkonUbah   = "ubah"   // pi-pencil, webwb/pyEditIcon.png
+	IkonSimpan = "simpan" // pi-check
+)
+
+func letak(l string, anak ...Unsur) Unsur { return Unsur{Jenis: JenisBagian, Letak: l, Anak: anak} }
+
+// sebaris - layout Inline; `lbl` = label baris (boleh kosong).
+func sebaris(lbl string, anak ...Unsur) Unsur {
+	u := letak(LetakSebaris, anak...)
+	u.Label = lbl
+	return u
+}
+
+// dua - layout Inline grid double; bagian tanpa judul di dalamnya = satu kolom Stacked with labels left.
+func dua(sel ...Unsur) Unsur { return letak(LetakDua, sel...) }
+
+func ikon(u Unsur, i string) Unsur { u.Ikon = i; return u }
+
 func tombol(id, lbl, aksiNama string) Unsur {
 	return Unsur{Jenis: JenisTombol, ID: id, Label: lbl, Aksi: aksiNama}
 }
@@ -108,6 +138,8 @@ func kSumber(u Unsur, s string) Unsur    { u.Sumber = s; return u }
 func kTombol(id, lbl, a string, na KondisiBaris) Unsur {
 	return Unsur{Jenis: JenisTombol, ID: id, Label: lbl, Aksi: a, NonaktifB: na}
 }
+
+func ikonK(u Unsur, i string) Unsur { u.Ikon = i; return u }
 
 // Catatan OQ untuk rule yang tidak diekspor.
 const (
@@ -155,27 +187,31 @@ func kode(p string) string { return AwalanKode + p }
 
 // ---------------------------------------------------------------- blok bersama
 
-// blokTreaty - Layout S4 "Claim Treaty" (OutstandingClaim / InputAcceptation).
-func blokTreaty(pilihMaster bool) []Unsur {
-	var out []Unsur
-	if pilihMaster {
-		out = append(out, naJika(tombol("ChooseMaster", "Choose Master", "PilihMaster"), isOutstanding))
+// blokTreaty - Layout S4 "Claim Treaty" (OutstandingClaim / InputAcceptation): baris tombol Inline, lalu Inline grid
+// double - kolom kiri 8 medan, kolom kanan 5 medan.
+func blokTreaty(tombolAtas ...Unsur) []Unsur {
+	return []Unsur{
+		sebaris("", tombolAtas...),
+		dua(
+			bagian("",
+				ro(medan(CD+"IDMaster", "Treaty ID", KTeks)),
+				ro(medan(CD+"TreatyName", "Treaty Name", KTeks)),
+				ro(medan(TM+"ProportionType", "R/I Type", KTeks)),
+				ro(medan(OQ+"BusinessName", "Class of Business", KTeks)),
+				ro(medan(TM+"Ceding", "Ceding Name", KTeks)),
+				ro(medan(TM+"LeadingReinsSource", "SOB Name", KTeks)),
+				ro(medan(TM+"Bordeaux", "Bordereaux", KTampil)),
+				ro(medan(TM+"BordereauxNote", "Bordereaux Note", KTeks)),
+			),
+			bagian("",
+				ro(medan(CD+"YearofAccount", "Treaty Year", KTeks)),
+				ro(medan(CD+"StartDateTreaty", "Treaty Start Date", KTanggal)),
+				ro(medan(CD+"EndDateTreaty", "Treaty End Date", KTanggal)),
+				ro(medan(TM+"AccountingMode", "Accounting Mode", KTampil)),
+				ro(medan(TM+"TeritorialScope", "Teritorial Scope", KArea)),
+			),
+		),
 	}
-	return append(out,
-		ro(medan(CD+"IDMaster", "Treaty ID", KTeks)),
-		ro(medan(CD+"TreatyName", "Treaty Name", KTeks)),
-		ro(medan(TM+"ProportionType", "R/I Type", KTeks)),
-		ro(medan(OQ+"BusinessName", "Class of Business", KTeks)),
-		ro(medan(TM+"Ceding", "Ceding Name", KTeks)),
-		ro(medan(TM+"LeadingReinsSource", "SOB Name", KTeks)),
-		ro(medan(TM+"Bordeaux", "Bordereaux", KTampil)),
-		ro(medan(TM+"BordereauxNote", "Bordereaux Note", KTeks)),
-		ro(medan(CD+"YearofAccount", "Treaty Year", KTeks)),
-		ro(medan(CD+"StartDateTreaty", "Treaty Start Date", KTanggal)),
-		ro(medan(CD+"EndDateTreaty", "Treaty End Date", KTanggal)),
-		ro(medan(TM+"AccountingMode", "Accounting Mode", KTampil)),
-		ro(medan(TM+"TeritorialScope", "Teritorial Scope", KArea)),
-	)
 }
 
 // blokKatastrofe - Section `Catastrope_Sec`.
@@ -189,8 +225,8 @@ func blokKatastrofe() Unsur {
 			ro(medan(CD+"KatastrofeNote", "Catastrophe Note", KTeks)),
 			tampil(tombol("CatastrofeList", "", "BukaKatastrofe"), editCatastrope),
 		), atau(sama(CD+"StsKatastrofe", "Catastrophe"), sama(CD+"NonKatastrofeType", "Big Claim"))),
-		tampil(tombol("EditCatastrope", "", "SetEditCatastrope:Edit"), beda(CD+"EditCatastrope", "true")),
-		tampil(tombol("SaveCatastrope", "", "SetEditCatastrope:Save"), editCatastrope),
+		tampil(ikon(tombol("EditCatastrope", "", "SetEditCatastrope:Edit"), IkonUbah), beda(CD+"EditCatastrope", "true")),
+		tampil(ikon(tombol("SaveCatastrope", "", "SetEditCatastrope:Save"), IkonSimpan), editCatastrope),
 	)
 }
 
@@ -215,19 +251,24 @@ func blokPelapor(relasiStatus string) []Unsur {
 	}
 }
 
-// blokAdjuster - Consultant / Adjuster (Section OutstandingClaim / InputAcceptation).
+// blokAdjuster - Consultant | Adjuster (Section OutstandingClaim / InputAcceptation): Inline grid double, ikon
+// `pyWorkActionsAddWork.png` di samping ID.
 func blokAdjuster(namaTampil Kondisi, namaAdjTampil Kondisi) []Unsur {
 	bukanAcc := beda("IsAnyAcceptation", "1")
-	return []Unsur{
-		aksi(sumber(tampil(wajibU(roJika(medan(CD+"ConsultantID", "Consultant ID", KOtomatis), isOutstanding)), bukanAcc),
-			SumberAdjuster), "SetConsultant"),
-		tampil(ro(medan(CD+"ConsultantName", "Consultant Name", KTeks)), namaTampil),
-		tampil(tombolOQ("AdjusterConsultantBaru1", "", OQMasterLain), bukanAcc),
-		aksi(sumber(tampil(wajibU(roJika(medan(CD+"AppointedADJID", "Adjuster / Professional ID", KOtomatis),
-			isOutstanding)), bukanAcc), SumberAdjuster), "SetAdjsuter"),
-		tampil(ro(medan(CD+"AppointedADJ", "Adjuster / Professional Name", KTeks)), namaAdjTampil),
-		tampil(tombolOQ("AdjusterConsultantBaru2", "", OQMasterLain), bukanAcc),
-	}
+	return []Unsur{dua(
+		bagian("",
+			aksi(sumber(tampil(wajibU(roJika(medan(CD+"ConsultantID", "Consultant ID", KOtomatis), isOutstanding)), bukanAcc),
+				SumberAdjuster), "SetConsultant"),
+			ikon(tampil(tombolOQ("AdjusterConsultantBaru1", "", OQMasterLain), bukanAcc), IkonTambah),
+			tampil(ro(medan(CD+"ConsultantName", "Consultant Name", KTeks)), namaTampil),
+		),
+		bagian("",
+			aksi(sumber(tampil(wajibU(roJika(medan(CD+"AppointedADJID", "Adjuster / Professional ID", KOtomatis),
+				isOutstanding)), bukanAcc), SumberAdjuster), "SetAdjsuter"),
+			ikon(tampil(tombolOQ("AdjusterConsultantBaru2", "", OQMasterLain), bukanAcc), IkonTambah),
+			tampil(ro(medan(CD+"AppointedADJ", "Adjuster / Professional Name", KTeks)), namaAdjTampil),
+		),
+	)}
 }
 
 // blokLokasi - Report Description dan Location of Loss (Occupation, Province, Zip Code ditulis per layar - kondisinya
@@ -243,7 +284,7 @@ func blokLokasi() []Unsur {
 // T_VIEW_SUGGEST.
 func gridRiwayat() Unsur {
 	return Unsur{Jenis: JenisBagian, Label: "Claim History", Anak: []Unsur{{
-		Jenis: JenisGrid, Jalur: DaftarRiwayatTampil, Bernomor: true,
+		Jenis: JenisGrid, Jalur: DaftarRiwayatTampil, Bernomor: true, PerHalaman: 5,
 		Kolom: []Unsur{kRO(kol("IsCedingConfirm", "Name", KTampil)), kRO(kol("DateSuggest", "Date", KWaktu)),
 			kRO(kol("CommentSuggest", "Noted", KTampil))},
 	}}}
@@ -257,20 +298,22 @@ func sectionInterest() Unsur {
 	return bagian("",
 		bagian("Insured Interests 100 %", Unsur{
 			Jenis: JenisGrid, Jalur: DaftarInterest, Bernomor: true,
-			Tambah: ptr(tombol("AddInterest", "Add", "AddInterest")),
+			Tambah: ptr(ikon(tombol("AddInterest", "Add", "AddInterest"), IkonTambah)),
 			Kolom: []Unsur{
 				kROJ(kol("ObjectName", "Insured Interest", KTeks), bIsAdjVal),
 				kAksi(kSumber(kROJ(kol("CurrencyID", "Currency", KPilih), bIsAdjVal), SumberMataUang), "SetCurencyInterest"),
 				kRO(kol("KursObjectItem", "Value In IDR", KAngka)),
 				kAksi(kROJ(kol("TSIPerObject", "Value", KAngka), bIsAdjVal), "CountTotalInsterest"),
-				kTombol("DeleteInterest", "Delete", "DeleteInterest", bIsAdjVal),
+				ikonK(kTombol("DeleteInterest", "Delete", "DeleteInterest", bIsAdjVal), IkonHapus),
 			},
 		}),
-		bagian("Total in Original Currency", Unsur{
-			Jenis: JenisGrid, Jalur: DaftarTotalTSI, Bernomor: true,
-			Kolom: []Unsur{kRO(kol("Currency", "Total", KTampil)), kRO(kol("Value", "Value", KAngka))},
-		}),
-		bagian("Total In IDR", label("IDR"), ro(medan(CD+"TotalSumInsuredIDR", "", KAngka))),
+		dua(
+			bagian("Total in Original Currency", Unsur{
+				Jenis: JenisGrid, Jalur: DaftarTotalTSI, Bernomor: true,
+				Kolom: []Unsur{kRO(kol("Currency", "Total", KTampil)), kRO(kol("Value", "Value", KAngka))},
+			}),
+			bagian("Total In IDR", sebaris("", label("IDR"), ro(medan(CD+"TotalSumInsuredIDR", "", KAngka)))),
+		),
 		medan(CD+"InsuredInterest", "Description", KArea),
 	)
 }
@@ -313,10 +356,10 @@ func gridClaimAmount(denganNet bool) Unsur {
 	kolom = append(kolom,
 		kRO(kol("Value", "Claim Amount Ceding", KAngka)),
 		kRO(kol("USD", "Claim Amount in IDR", KAngka)),
-		kTombol("DeleteListClaim", "Delete", "DeleteListClaim", bNote),
+		ikonK(kTombol("DeleteListClaim", "Delete", "DeleteListClaim", bNote), IkonHapus),
 	)
 	return Unsur{Jenis: JenisGrid, Jalur: DaftarClaimAmount, Bernomor: true,
-		Tambah: ptr(tombol("AddListClaimAmount", "Add", "AddListClaimAmount")), Kolom: kolom,
+		Tambah: ptr(ikon(tombol("AddListClaimAmount", "Add", "AddListClaimAmount"), IkonTambah)), Kolom: kolom,
 		Kaki: []Unsur{label("Total Claim Amount"), ro(medan(CD+"TotalListClaimAmount", "", KAngka)),
 			ro(medan(CD+"TotalListClaimAmountIDR", "", KAngka))}}
 }
@@ -328,21 +371,21 @@ func gridLossAllocation(acc bool) Unsur {
 		cur = kAksi(cur, "SetCurrency")
 	}
 	return bagian("Loss Allocation", Unsur{Jenis: JenisGrid, Jalur: DaftarLossAlloc, Bernomor: true,
-		Tambah: ptr(tombol("AddLossAllocation", "Add", "AddLossAllocation")),
+		Tambah: ptr(ikon(tombol("AddLossAllocation", "Add", "AddLossAllocation"), IkonTambah)),
 		Kolom: []Unsur{
 			cur,
 			kAksi(kSumber(kROJ(kol("TreatyName", "Treaty Type", KPilih), bOldData), SumberLimits), "SetNameTreaty"),
 			kAksi(kROJ(kol("SharePercentage", "Share(%)", KAngka), bOldData), "CountPersen"),
 			kRO(kol("ClaimSpreaded", "Result Claim", KAngka)),
 			kRO(kol("ClaimEstimation", "Result Claim in IDR", KAngka)),
-			kTombol("RemoveLossAlloction", "Delete", "RemoveLossAlloction", bOldData),
+			ikonK(kTombol("RemoveLossAlloction", "Delete", "RemoveLossAlloction", bOldData), IkonHapus),
 		}})
 }
 
 // gridEstimasi - Layout "Estimation List".
 func gridEstimasi(aksiGross string) Unsur {
 	return bagian("Estimation List", Unsur{Jenis: JenisGrid, Jalur: DaftarEstimasi, Bernomor: true,
-		Tambah: ptr(tombol("AddEstimation", "Add", "AddEstimation")),
+		Tambah: ptr(ikon(tombol("AddEstimation", "Add", "AddEstimation"), IkonTambah)),
 		Kolom: []Unsur{
 			kRO(kol("TypeLoss", "", KTampil)),
 			kAksi(kROJ(kol("EstimationDate", "Estimation Date", KTanggal), bPrintFace), "CheckEstimateDate"),
@@ -352,7 +395,7 @@ func gridEstimasi(aksiGross string) Unsur {
 			kAksi(kROJ(kol("GrossEstimationPct", "Gross Estimate Treaty (100%)", KAngka), bPrintFace), aksiGross),
 			kRO(kol("EstimationValue", "Estimation RNM", KAngka)),
 			kRO(kol("ConvertValue", "Estimation RNM in IDR", KAngka)),
-			kTombol("DeleteEstimation", "Delete", "DeleteEstimation", bPrintFace),
+			ikonK(kTombol("DeleteEstimation", "Delete", "DeleteEstimation", bPrintFace), IkonHapus),
 		}})
 }
 
@@ -410,23 +453,18 @@ func gridBreakQS(acc bool) Unsur {
 // LayarOutstanding - Section `OutstandingClaim` (FlowAction OutstandingClaim).
 func LayarOutstanding() []Unsur {
 	nomorKosong := dan(sama(CD+"NoClaim", ""), sama(CD+"ClaimNo", ""))
-	out := []Unsur{
-		label("Outstanding Claim"),
-		tampil(label("Claim No      .........."), nomorKosong),
-		tampil(bagian("",
-			tampilIsi(ro(medan(CD+"NoClaim", "Claim No", KTeks))),
-			tampilIsi(ro(medan(CD+"ClaimNo", "Claim No", KTeks))),
-		), atau(terisi(CD+"NoClaim"), terisi(CD+"ClaimNo"))),
-		bagian("Claim Treaty", blokTreaty(true)...),
-		label("Claim Information"),
-		tampil(tombol("SummaryOutstanding", "Summary Outstanding Claim", "RingkasanOS"), isOutstanding),
+	// Inline grid double Claim Information: kolom kiri (polis), kolom kanan (pelapor), sel ketiga Cause of Loss.
+	kiri := bagian("",
 		tampil(bagian("Information", catatan(ro(medan("Message", "", KTeks)), OQHarnessHilang)), terisi("Message")),
-		tampil(naJika(tombol("ChoosePolicy", "Choose Policy No", "PilihPolis"), isOutstanding), beda("IsOutstanding", "1")),
-		tampil(tombolOQ("ViewPolicy", "View", OQHarnessHilang), terisi(CD+"PolicyData.PolicyNo")),
-		tampil(tombolOQ("PaymentPremi", "View Status Payment Premi", OQLayananLuar), terisi(CD+"PolicyData.PolicyNo")),
+		sebaris("",
+			tampil(naJika(tombol("ChoosePolicy", "Choose Policy No", "PilihPolis"), isOutstanding), beda("IsOutstanding", "1")),
+			tampil(tombolOQ("ViewPolicy", "View", OQHarnessHilang), terisi(CD+"PolicyData.PolicyNo")),
+			tampil(tombolOQ("PaymentPremi", "View Status Payment Premi", OQLayananLuar), terisi(CD+"PolicyData.PolicyNo")),
+		),
 		ro(medan(CD+"PolicyData.PolicyNo", "Policy No", KTeks)),
-		label("Q"), ro(medan(CD+"Quater", "", KTeks)), label("/"), ro(medan(CD+"YearofQuartal", "", KTeks)),
-		label("U/Y"), ro(medan(CD+"TreatyYear", "", KTeks)),
+		sebaris("Quarter/Year",
+			label("Q"), ro(medan(CD+"Quater", "", KTeks)), label("/"), ro(medan(CD+"YearofQuartal", "", KTeks)),
+			label("U/Y"), ro(medan(CD+"TreatyYear", "", KTeks))),
 		roJika(medan(CD+"PolicyNo", "Policy No Ceding", KTeks), isOutstanding),
 		roJika(medan(CD+"InsuredName", "Insured Name", KTeks), isAnyAccept),
 		roJika(medan(CD+"PlaNoCeding", "Pla No  Ceding", KTeks), isOutstanding),
@@ -434,26 +472,44 @@ func LayarOutstanding() []Unsur {
 		naJika(medan(CD+"PeriodPolicyTBA", "Checkbox", KCentang), isAnyAccept),
 		aksi(wajibU(roJika(medan(CD+"PolicyData.StartDateTime", "Policy Start Ceding", KTanggal), isAnyAccept)), "SetEndDate"),
 		aksi(wajibU(roJika(medan(CD+"PolicyData.EndDateTime", "Policy End Ceding", KTanggal), isAnyAccept)), "CheckPeriodPolicy"),
-	}
-	out = append(out, blokPelapor(CD+"ReporterStatus")...)
-	out = append(out,
-		ro(medan(CD+"CauseOfLoss", "Cause of Loss", KTampil)),
-		naJika(tombol("ChooseCauseOfLoss", "Choose Cause of Loss", "PilihSebab"), isAnyAccept),
 	)
+	out := []Unsur{
+		letak(LetakJudul,
+			label("Outstanding Claim"),
+			tampil(label("Claim No      .........."), nomorKosong),
+			tampil(bagian("",
+				tampilIsi(ro(medan(CD+"NoClaim", "Claim No", KTeks))),
+				tampilIsi(ro(medan(CD+"ClaimNo", "Claim No", KTeks))),
+			), atau(terisi(CD+"NoClaim"), terisi(CD+"ClaimNo"))),
+		),
+		bagian("Claim Treaty", blokTreaty(naJika(tombol("ChooseMaster", "Choose Master", "PilihMaster"), isOutstanding))...),
+		label("Claim Information"),
+		tampil(tombol("SummaryOutstanding", "Summary Outstanding Claim", "RingkasanOS"), isOutstanding),
+		dua(kiri, bagian("", blokPelapor(CD+"ReporterStatus")...), dua(
+			bagian("", ro(medan(CD+"CauseOfLoss", "Cause of Loss", KTampil))),
+			bagian("", naJika(tombol("ChooseCauseOfLoss", "Choose Cause of Loss", "PilihSebab"), isAnyAccept)),
+		)),
+	}
 	out = append(out, blokAdjuster(terisi(CD+"ConsultantName"), terisi(CD+"AppointedADJ"))...)
 	out = append(out, blokLokasi()...)
 	out = append(out,
 		roJika(aksi(medan(CD+"Occupation", "Occupation", KArea), "MakeLowercase"), isOutstanding),
-		sumber(wajibU(medan(CD+"Province", "Province", KOtomatis)), SumberProvinsi),
-		aksi(medan(CD+"PostalCode", "Zip Code", KTeks), "GetAdders"),
-		tampil(ro(medan(TM+"RNMShareP", "RNM Share", KAngka)), beda("IsEditRNMShare", "true")),
-		tampil(aksi(sumber(medan("TreatyShareTemp.CARI1", "RNM Share", KPilih), SumberShareRNM), "DisableEditRNMShare"),
-			sama("IsEditRNMShare", "true")),
-		label("%"),
-		tampil(tombol("EditRNMShare", "", "GetRNMShareTreaty"), estimasiPertamaBelumTerkirim),
-		bagian("Interest", sectionInterest()),
-		bagian("Estimation", sectionEstimasiOutstanding()),
-		bagian("Spreading", bagian("Spreading Claim", gridSpreading(false), gridBreakQS(false))),
+		dua(
+			bagian("", sumber(wajibU(medan(CD+"Province", "Province", KOtomatis)), SumberProvinsi)),
+			bagian("", aksi(medan(CD+"PostalCode", "Zip Code", KTeks), "GetAdders")),
+		),
+		sebaris("",
+			tampil(ro(medan(TM+"RNMShareP", "RNM Share", KAngka)), beda("IsEditRNMShare", "true")),
+			tampil(aksi(sumber(medan("TreatyShareTemp.CARI1", "RNM Share", KPilih), SumberShareRNM), "DisableEditRNMShare"),
+				sama("IsEditRNMShare", "true")),
+			label("%"),
+			tampil(ikon(tombol("EditRNMShare", "", "GetRNMShareTreaty"), IkonUbah), estimasiPertamaBelumTerkirim),
+		),
+		letak(LetakTab,
+			bagian("Interest", sectionInterest()),
+			bagian("Estimation", sectionEstimasiOutstanding()),
+			bagian("Spreading", bagian("Spreading Claim", gridSpreading(false), gridBreakQS(false))),
+		),
 		tampil(tombol("Save", "Save", "SetOutstanding"), beda("IsAcceptation", "1")),
 		naJika(tombol("SaveToIssueRNM", "Save to issue RNM", "SaveOutstanding"), sama("IsCFS", "")),
 		naJika(tombol("PrintPLA", "PRINT PLA", "BukaPLA"), beda(CD+"IsPLA", "1")),
@@ -477,7 +533,7 @@ func sectionEstimasiOutstanding() Unsur {
 		blokDeductible(),
 		gridClaimAmount(true),
 		gridLossAllocation(false),
-		ro(medan(TM+"RNMShareP", "RNM Share", KAngka)), label("%"),
+		sebaris("", ro(medan(TM+"RNMShareP", "RNM Share", KAngka)), label("%")),
 		gridEstimasi("CountEstimation"),
 	}
 	anak = append(anak, blokTotalEstimasi()...)
@@ -488,17 +544,11 @@ func sectionEstimasiOutstanding() Unsur {
 
 // LayarAkseptasi - Section `InputAcceptation` (FlowAction InputAcceptation).
 func LayarAkseptasi() []Unsur {
-	out := []Unsur{
-		label("Acceptation Claim"),
-		tampilIsi(ro(medan(CD+"NoClaim", "Claim No", KTeks))),
-		bagian("Claim Treaty", append([]Unsur{
-			tombol("SummaryOutstanding", "Summary Outstanding Claim", "RingkasanOS"),
-			tombolOQ("PaymentPremiTreaty", "View Status Payment Premi", OQLayananLuar),
-			tombol("CloseClaim", "Close Claim", "BukaTutupKlaim"),
-		}, blokTreaty(false)...)...),
-		label("Claim Information"),
-		tampil(tombolOQ("ViewPolicy", "View", OQHarnessHilang), terisi(CD+"PolicyData.PolicyNo")),
-		tampil(tombolOQ("PaymentPremi", "View Status Payment Premi", OQLayananLuar), terisi(CD+"PolicyData.PolicyNo")),
+	kiri := bagian("",
+		sebaris("",
+			tampil(tombolOQ("ViewPolicy", "View", OQHarnessHilang), terisi(CD+"PolicyData.PolicyNo")),
+			tampil(tombolOQ("PaymentPremi", "View Status Payment Premi", OQLayananLuar), terisi(CD+"PolicyData.PolicyNo")),
+		),
 		ro(medan(CD+"PolicyData.PolicyNo", "Policy No", KTeks)),
 		roJika(medan(CD+"PolicyNo", "Policy No Ceding", KTeks), isOutstanding),
 		roJika(medan(CD+"InsuredName", "Insured Name", KTeks), isAnyAccept),
@@ -507,19 +557,37 @@ func LayarAkseptasi() []Unsur {
 		naJika(medan(CD+"PeriodPolicyTBA", "Checkbox", KCentang), isAnyAccept),
 		aksi(roJika(medan(CD+"PolicyData.StartDateTime", "Policy Start", KTanggal), isAnyAccept), "SetEndDate"),
 		aksi(roJika(medan(CD+"PolicyData.EndDateTime", "Policy End", KTanggal), isAnyAccept), "CheckPeriodPolicy"),
-		ro(medan(CD+"CauseOfLoss", "Cause of Loss", KTampil)),
-		naJika(tombol("ChooseCauseOfLoss", "Choose Cause of Loss", "PilihSebab"), isAnyAccept),
+		dua(
+			bagian("", ro(medan(CD+"CauseOfLoss", "Cause of Loss", KTampil))),
+			bagian("", naJika(tombol("ChooseCauseOfLoss", "Choose Cause of Loss", "PilihSebab"), isAnyAccept)),
+		),
+	)
+	out := []Unsur{
+		letak(LetakJudul,
+			label("Acceptation Claim"),
+			tampilIsi(ro(medan(CD+"NoClaim", "Claim No", KTeks))),
+		),
+		bagian("Claim Treaty", blokTreaty(
+			tombol("SummaryOutstanding", "Summary Outstanding Claim", "RingkasanOS"),
+			tombolOQ("PaymentPremiTreaty", "View Status Payment Premi", OQLayananLuar),
+			tombol("CloseClaim", "Close Claim", "BukaTutupKlaim"),
+		)...),
+		label("Claim Information"),
+		dua(kiri, bagian("", blokPelapor(CD+"InsuredRelationship")...)),
 	}
-	out = append(out, blokPelapor(CD+"InsuredRelationship")...)
 	out = append(out, blokAdjuster(atau(terisi(CD+"ConsultantName"), isAnyAccept), atau(terisi(CD+"AppointedADJ"), isAnyAccept))...)
 	out = append(out, blokLokasi()...)
 	out = append(out,
 		wajibU(roJika(aksi(medan(CD+"Occupation", "Occupation", KArea), "MakeLowercase"), isOutstanding)),
-		roJika(sumber(wajibU(medan(CD+"Province", "Province", KOtomatis)), SumberProvinsi), isOutstanding),
-		roJika(aksi(medan(CD+"PostalCode", "Zip Code", KTeks), "GetAdders"), isOutstanding),
-		bagian("Interests", sectionInterest()),
-		bagian("Estimation", sectionEstimasiAkseptasi(), tombol("SaveEstimation", "Save", "Simpan")),
-		bagian("Acceptation", sectionAdjs(), tombol("SaveAcceptation", "Save", "Simpan")),
+		dua(
+			bagian("", roJika(sumber(wajibU(medan(CD+"Province", "Province", KOtomatis)), SumberProvinsi), isOutstanding)),
+			bagian("", roJika(aksi(medan(CD+"PostalCode", "Zip Code", KTeks), "GetAdders"), isOutstanding)),
+		),
+		letak(LetakTab,
+			bagian("Interests", sectionInterest()),
+			bagian("Estimation", sectionEstimasiAkseptasi(), tombol("SaveEstimation", "Save", "Simpan")),
+			bagian("Acceptation", sectionAdjs(), tombol("SaveAcceptation", "Save", "Simpan")),
+		),
 		gridRiwayat(),
 	)
 	return out
@@ -531,7 +599,7 @@ func sectionEstimasiAkseptasi() Unsur {
 		roJika(medan(CD+"ShareCeding", "Share Ceding(%)", KAngka), isAnyAccept),
 		blokDeductible(),
 		gridClaimAmount(false),
-		ro(medan(TM+"RNMShareP", "RNM Share", KAngka)), label("%"),
+		sebaris("", ro(medan(TM+"RNMShareP", "RNM Share", KAngka)), label("%")),
 		gridLossAllocation(true),
 		gridEstimasi("CountEstimation"),
 	}
@@ -589,17 +657,17 @@ func sectionAdjs() Unsur {
 		tombolOQ("PaymentClaim", "View Status Payment Claim", OQLayananLuar),
 		tombolOQ("PaymentAttachment", "View Payment Attachment", OQLayananLuar),
 		bagian("Acceptation List", Unsur{Jenis: JenisGrid, Jalur: DaftarAdjustment, Bernomor: true,
-			Tambah: ptr(tampil(tombol("AddAdjustment", "Add", "AddAdjustment"),
-				atau(sama("AktifButton", "0"), sama("AktifButton", "")))),
+			Tambah: ptr(ikon(tampil(tombol("AddAdjustment", "Add", "AddAdjustment"),
+				atau(sama("AktifButton", "0"), sama("AktifButton", ""))), IkonTambah)),
 			Kolom: []Unsur{
 				kSumber(kRO(kol("Type", "Type", KPilih)), kode("AdjustmentType")),
 				kSumber(kRO(kol("AcceptanceStatus", "Status", KPilih)), kode("AcceptanceStatus")),
 				kRO(kol("AcceptedNo", "Acceptation No", KTampil)),
 				kRO(kol("AcceptedDate", "Acceptation Date", KTanggal)),
 				kRO(kol("pxCreateOpName", "PIC Name", KTampil)),
-				kTombol("DeleteAjsutment", "Delete", "DeleteAjsutment", func(_ *Halaman, b Baris) bool {
+				ikonK(kTombol("DeleteAjsutment", "Delete", "DeleteAjsutment", func(_ *Halaman, b Baris) bool {
 					return b["IsKomite"] == "1" || b["IsSubjectivity"] == "true"
-				}),
+				}), IkonHapus),
 			}}),
 		bagian("Spreading Adjustment Total",
 			bagian("Spreading In", Unsur{Jenis: JenisGrid, Jalur: DaftarSpreadAdj, Bernomor: true,

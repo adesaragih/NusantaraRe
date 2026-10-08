@@ -106,6 +106,13 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   tidak menumpang ke kelas inti. Akar dipasang di halaman awal dan layar kasus (popup / Modal ikut karena tanpa
   portal); semua tabel `claimprop__tabel` (kartu timbul berkepala navy), tab berjalur cekung, tombol kapsul, tombol
   utama merah bergradasi, isian cekung, kartu bagian timbul. Warna hanya di blok token (dijaga gaya.test.ts).
+- **Layout lama Pega dirapikan** (08-10-2026, "berikut layout lama, ikuti dan rapihkan" + "font juga kecilin"): server
+  mengirim format layout XML di `Tata.Letak` - `dua` (Inline grid double), `sebaris` (Inline / Inline labels left),
+  `tab` (layout group Tab), `judul` (kepala, label di sel tengah) - serta `Ikon` (pi-plus / pi-trash / pi-pencil /
+  pi-check / pyWorkActionsAddWork) dan `PerHalaman` (Claim History paging 5). Medan = Stacked with labels left (label
+  kiri 150px, hanya-baca = teks). Claim Treaty 8|5, Claim Information kiri polis / kanan pelapor, baris
+  "Quarter/Year" (label dari XML), Interest / Estimation / Spreading = tab, RNM Share di atas tab. Huruf modul 13px,
+  isian dan tombol 32px. "View Master" di screenshot Pega hidup tidak ada di XML - tidak dibangun.
 - **Pesan pra-proses tidak tampil saat kasus dibuat / dibuka** (08-10-2026, "BARU BUAT UDAH ADA WARNING
   ERROR"): `BukaKasus` membersihkan pesan `CheeckNoRNM_Act` (termasuk ProteksiData langkah 12) sesudah pra-proses;
   bendera Protect / IsError tetap dihitung. Pesan ProteksiData tampil pada Save to issue RNM / Submit.

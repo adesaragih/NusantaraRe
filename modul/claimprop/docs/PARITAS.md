@@ -15,7 +15,8 @@
 > Resolve, workbasket Admin / Teknik, Add Claim hanya di Admin; rupa kelas inti seperti Kelola User),
 > layar kasus 08-10-2026 berkulit Kelola User (kartu `panel`, `form-grid`, kotak hanya-baca; tema terang dan
 > gelap; kasus baru tanpa daftar pesan galat; kulit neumorfik `.kelola-user` disalin ke token `--cp-*` untuk inbox,
-> layar kasus, dan popup),
+> layar kasus, dan popup; susunan layout = format layout XML: kepala tengah, Claim Treaty Inline grid double 8|5,
+> Claim Information dua kolom, Quarter/Year sebaris, tab Interest / Estimation / Spreading, Claim History paging 5),
 > layar Outstanding Claim kasus baru (54 medan, nol galat konsol), popup "Data Master TreatyIn" — tombol tampak
 > cocok dengan baris berstatus di bawah untuk keadaan kasus baru. Tahap Input Acceptation sampai Resolved-Completed
 > dijaga uji HTTP `TestAlurPenuhSampaiResolved`.

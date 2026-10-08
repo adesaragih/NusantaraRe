@@ -1,13 +1,14 @@
-// Penyusun rupa layar kasus Claim Prop - pola Kelola User (keputusan work owner 08-10-2026): kartu `panel` bertitel,
-// isinya `form-grid`, setiap medan berlabel di atas kotak isian. Isi pohon tata server TIDAK diubah; di sini hanya
-// dikelompokkan:
-//   - bagian tanpa label diratakan ke induknya (pengelompokan tata letak Pega, bukan blok bertitel);
-//   - label tepat sebelum medan tanpa label menjadi label medan itu (`Q`, `/`, `U/Y`);
+// Penyusun rupa layar kasus Claim Prop - mengikuti layout lama Pega (work owner 08-10-2026 "berikut layout lama, ikuti
+// dan rapihkan") dengan kulit Kelola User. Isi pohon tata server TIDAK diubah; di sini hanya dikelompokkan:
+//   - bagian tanpa label dan tanpa letak diratakan ke induknya (pengelompokan Pega, bukan blok bertitel); bagian
+//     berletak (`dua`, `sebaris`, `tab`, `judul` - format layout di XML) dipertahankan;
+//   - label tepat sebelum medan tanpa label menjadi label medan itu (`Q`, `/`, `U/Y`, `IDR`);
 //   - label satuan ("%") tepat sesudah medan menjadi satuan medan itu;
-//   - tombol sesudah medan menempel di kanan kotak isiannya (Choose Cause of Loss, ikon), kecuali tombol berlabel
-//     di akhir isi - itu baris aksi;
-//   - tingkat layar: label judul membuka kartu, bagian berlabel menjadi kartu sendiri (bagian kecil tanpa grid di
-//     tengah kartu yang terbuka tetap di kartu itu), tombol tanpa kartu = baris aksi.
+//   - tombol sesudah medan menempel di kanan nilainya (Choose Cause of Loss, ikon), kecuali tombol berlabel di akhir
+//     isi - itu baris aksi;
+//   - tingkat layar: `judul` = kepala tengah, label judul membuka kartu, bagian berlabel menjadi kartu sendiri (bagian
+//     kecil tanpa grid di tengah kartu yang terbuka tetap di kartu itu), grup `tab` = kartu sendiri dan membawa baris
+//     `sebaris` tepat di atasnya (RNM Share), tombol tanpa kartu = baris aksi.
 
 import type { Tata } from '../api'
 
@@ -22,17 +23,21 @@ export type Unsur =
   | { jenis: 'judul'; label: string }
   | { jenis: 'sub'; t: Tata }
   | { jenis: 'grid'; t: Tata }
+  | { jenis: 'letak'; t: Tata }
 
-export type Blok = { jenis: 'panel'; judul: string; isi: Butir[] } | { jenis: 'aksi'; tombol: Tata[] }
+export type Blok =
+  { jenis: 'kepala'; t: Tata } | { jenis: 'panel'; judul: string; isi: Butir[] } | { jenis: 'aksi'; tombol: Tata[] }
 
 const SATUAN = new Set(['%'])
 
-/** Ratakan bagian tanpa label, lalu gabungkan label pendamping ke medannya. */
+const lebur = (t: Tata) => t.jenis === 'bagian' && !t.label && !t.letak
+
+/** Ratakan bagian tanpa label dan tanpa letak, lalu gabungkan label pendamping ke medannya. */
 export function ratakan(tata: readonly Tata[]): Butir[] {
   const datar: Butir[] = []
   const jalan = (ts: readonly Tata[]) => {
     for (const t of ts) {
-      if (t.jenis === 'bagian' && !t.label) jalan(t.anak ?? [])
+      if (lebur(t)) jalan(t.anak ?? [])
       else datar.push(t)
     }
   }
@@ -54,7 +59,7 @@ export function ratakan(tata: readonly Tata[]): Butir[] {
   return out
 }
 
-/** Isi satu kartu / sub-bagian / modal menjadi sel form-grid. */
+/** Isi satu kartu / kolom / tab / modal (Stacked with labels left). */
 export function susunIsi(tata: readonly Tata[]): Unsur[] {
   const b = ratakan(tata)
   const out: Unsur[] = []
@@ -78,7 +83,7 @@ export function susunIsi(tata: readonly Tata[]): Unsur[] {
         out.push({ jenis: 'grid', t })
         return
       default:
-        out.push({ jenis: 'sub', t })
+        out.push(t.letak ? { jenis: 'letak', t } : { jenis: 'sub', t })
     }
   })
   const terakhir = out[out.length - 1]
@@ -90,7 +95,7 @@ function adaGrid(t: Tata): boolean {
   return (t.anak ?? []).some((a) => a.jenis === 'grid' || (a.jenis === 'bagian' && (!!a.label || adaGrid(a))))
 }
 
-/** Tingkat layar: kartu bertitel dan baris aksi. */
+/** Tingkat layar: kepala, kartu bertitel, baris aksi. */
 export function susunLayar(tata: readonly Tata[]): Blok[] {
   const b = ratakan(tata)
   const out: Blok[] = []
@@ -104,7 +109,19 @@ export function susunLayar(tata: readonly Tata[]): Blok[] {
     kini = null
   }
   b.forEach((t, i) => {
-    if (t.jenis === 'bagian') {
+    if (t.jenis === 'bagian' && t.letak === 'judul') {
+      tutup()
+      out.push({ jenis: 'kepala', t })
+      return
+    }
+    if (t.jenis === 'bagian' && t.letak === 'tab') {
+      const bawa: Butir[] = []
+      while (kini !== null && kini.isi[kini.isi.length - 1]?.letak === 'sebaris') bawa.unshift(kini.isi.pop()!)
+      tutup()
+      out.push({ jenis: 'panel', judul: '', isi: [...bawa, t] })
+      return
+    }
+    if (t.jenis === 'bagian' && !t.letak) {
       const lepas = b[i + 1]?.jenis === 'medan' || b[i + 1]?.jenis === 'tombol'
       if (kini !== null && kini.judul !== '' && lepas && !adaGrid(t)) {
         kini.isi.push(t)
@@ -129,4 +146,16 @@ export function susunLayar(tata: readonly Tata[]): Blok[] {
   })
   tutup()
   return out
+}
+
+/** Potongan baris grid untuk halaman `hal` (1..n); tanpa paging = semua baris. */
+export function potongHalaman<T>(baris: readonly T[], perHalaman: number | undefined, hal: number): T[] {
+  if (!perHalaman || perHalaman <= 0) return [...baris]
+  return baris.slice((hal - 1) * perHalaman, hal * perHalaman)
+}
+
+/** Jumlah halaman grid (minimal 1). */
+export function jumlahHalaman(n: number, perHalaman: number | undefined): number {
+  if (!perHalaman || perHalaman <= 0) return 1
+  return Math.max(1, Math.ceil(n / perHalaman))
 }

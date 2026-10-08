@@ -73,19 +73,28 @@ describe('gaya modul Claim Prop', () => {
     }
   })
 
-  it('layar kasus memakai kelas inti Kelola User: panel, panel__title, form-grid, field__input--readonly', () => {
+  it('layar kasus = layout lama Pega dirapikan: label kiri, dua kolom, tab, kartu panel Kelola User', () => {
     const tata = readFileSync(join(AKAR, 'components', 'TataView.tsx'), 'utf8')
     for (const k of [
       'className="panel"',
       'panel__title',
-      'className="form-grid"',
-      'field__input--readonly',
+      'claimprop__baris',
+      'claimprop__label-medan',
+      'claimprop__dua',
+      'tabs__item',
       'field__error',
     ]) {
       expect(tata, k).toContain(k)
     }
-    // tata letak medan milik form-grid inti, bukan flex kolom modul (basis flex menjadi tinggi - 12.204px, 07-10-2026)
+    expect(CSS).toMatch(/\.claimprop \.claimprop__baris \{[^}]*grid-template-columns: 150px minmax\(0, 1fr\)/)
+    // tata letak tanpa flex kolom (basis flex medan pernah menjadi tinggi - 12.204px, 07-10-2026)
     expect(ATURAN).not.toMatch(/flex-direction:\s*column/)
+  })
+
+  it('huruf modul diperkecil (work owner 08-10-2026 "font juga kecilin"): akar 13px, isian dan tombol 32px', () => {
+    expect(CSS).toMatch(/\.claimprop \.claimprop__akar \{\s*font-size: 13px;\s*\}/)
+    expect(CSS).toMatch(/\.claimprop \.claimprop__akar \.field__input \{[^}]*height: 32px;[^}]*font-size: 13px;/)
+    expect(CSS).toMatch(/\.claimprop \.claimprop__akar \.btn \{[^}]*height: 32px;[^}]*font-size: 13px;/)
   })
 
   it('nol properti yang memerangkap Modal tanpa portal', () => {

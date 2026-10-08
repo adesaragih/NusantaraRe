@@ -49,6 +49,7 @@
   --cp-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
   --cp-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--cp-terang);
   --cp-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --cp-bahaya-teks: #b42318;
   --text-3: var(--cp-teks-redup);
   color: var(--cp-teks);
   padding: 24px;
@@ -87,6 +88,7 @@
   --cp-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
   --cp-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--cp-terang);
   --cp-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --cp-bahaya-teks: #fda29b;
 }
 
 /* Judul dan teks redup. */
@@ -327,23 +329,179 @@
   flex: 0 1 420px;
 }
 
-/* --------------------------------------------------------------- layar kasus */
+/* --------------------------------------------------------------- ukuran huruf (work owner 08-10-2026 "font juga
+   kecilin") - seluruh modul: halaman awal, layar kasus, pop-up */
 
-/* Kotak isian + satuan + tombol yang menempel di kanannya (Choose Cause of Loss, ikon pengaturan). */
-.claimprop .claimprop__baris-isian {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.claimprop .claimprop__akar {
+  font-size: 13px;
 }
 
-.claimprop .claimprop__baris-isian > .field__input {
-  flex: 1 1 auto;
+.claimprop .claimprop__akar .inbox__judul {
+  font-size: 22px;
+}
+
+.claimprop .claimprop__akar .panel {
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.claimprop .claimprop__akar .panel__title {
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+
+.claimprop .claimprop__akar .field__label {
+  font-size: 12px;
+}
+
+.claimprop .claimprop__akar .field__input {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  border-radius: 10px;
+}
+
+.claimprop .claimprop__akar textarea.field__input {
+  height: auto;
+  padding: 6px 10px;
+}
+
+.claimprop .claimprop__akar .btn {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.claimprop .claimprop__akar .btn--sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.claimprop .claimprop__akar .tabs__item {
+  height: 30px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.claimprop .claimprop__akar .alert {
+  font-size: 13px;
+}
+
+.claimprop .claimprop__tabel th,
+.claimprop .claimprop__tabel td {
+  padding: 7px 10px;
+  font-size: 12.5px;
+}
+
+/* --------------------------------------------------------------- layar kasus: layout lama Pega dirapikan */
+
+/* Kepala: judul tahap di tengah, Claim No di bawahnya (Inline grid triple, sel tengah). */
+.claimprop .claimprop__kepala {
+  text-align: center;
+  margin: 0 0 16px;
+}
+
+.claimprop .claimprop__kepala-judul {
+  margin: 0 0 4px;
+  font-family: "Poppins", var(--font);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--cp-teks);
+}
+
+.claimprop .claimprop__kepala-teks {
+  color: var(--cp-teks-redup);
+}
+
+/* Stacked: baris bertumpuk berjarak rapat (grid, bukan flex kolom - basis flex medan pernah menjadi tinggi). */
+.claimprop .claimprop__tumpuk {
+  display: grid;
+  gap: 8px;
   min-width: 0;
 }
 
-/* Tombol yang menempel tidak menyusut (teksnya terpotong); kotak isian yang mengalah. */
-.claimprop .claimprop__baris-isian > .btn {
+/* Stacked with labels left: label di kiri selebar tetap, nilai di kanan. */
+.claimprop .claimprop__baris {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 12px;
+  min-height: 32px;
+}
+
+/* Medan tanpa label di sub-bagian (pesan Information): selebar kotak. */
+.claimprop .claimprop__sub .claimprop__baris--tanpa-label {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.claimprop .claimprop__sub .claimprop__baris--tanpa-label > .claimprop__label-medan {
+  display: none;
+}
+
+.claimprop .claimprop__label-medan {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cp-teks-redup);
+}
+
+.claimprop .claimprop__isi-medan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.claimprop .claimprop__isi-medan > .field__input {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.claimprop .claimprop__isi-medan > .btn {
   flex: none;
+}
+
+.claimprop .claimprop__nilai {
+  color: var(--cp-teks);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Inline grid double: dua kolom; sel ketiga turun ke baris berikutnya. */
+.claimprop .claimprop__dua {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 32px;
+}
+
+.claimprop .claimprop__sel {
+  min-width: 0;
+}
+
+/* Inline: anak sebaris (Quarter/Year, RNM Share, baris tombol). */
+.claimprop .claimprop__sebaris {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.claimprop .claimprop__sebaris-medan {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.claimprop .claimprop__sebaris-medan > .field__input {
+  width: auto;
+  min-width: 120px;
+}
+
+.claimprop .claimprop__label-sebaris {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cp-teks-redup);
 }
 
 .claimprop .claimprop__satuan {
@@ -352,9 +510,26 @@
 }
 
 .claimprop .claimprop__centang {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  height: 42px;
+  min-height: 24px;
+}
+
+.claimprop .claimprop__radio {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.claimprop .claimprop__radio label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.claimprop .claimprop__radio input,
+.claimprop .claimprop__centang input {
+  accent-color: var(--cp-aksen);
 }
 
 .claimprop .claimprop__input--angka {
@@ -363,42 +538,70 @@
 }
 
 .claimprop .claimprop__area {
-  min-height: 84px;
+  min-height: 64px;
 }
 
-/* Sub-bagian bertitel di dalam kartu (Spreading Claim, Loss Allocation, ...): garis atas, bukan kartu kedua. */
+/* Sub-bagian bertitel (layout "add border"): kotak bergaris tipis di dalam kartu. */
 .claimprop .claimprop__sub {
-  border-top: 1px solid var(--cp-garis);
-  padding-top: 14px;
+  border: 1px solid var(--cp-garis);
+  border-radius: 12px;
+  padding: 10px 12px;
 }
 
 .claimprop .claimprop__subjudul {
-  margin: 0 0 12px;
-  font-size: 15px;
+  margin: 0 0 8px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--cp-teks);
 }
 
-/* Baris tombol di dalam kartu: di awal = alat (kiri), di akhir = aksi (kanan, seperti modal Kelola User). */
-.claimprop .claimprop__tombol {
+/* Baris tombol: rata kiri seperti layout lama. */
+.claimprop .claimprop__tombol,
+.claimprop .claimprop__aksi {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
 }
 
 .claimprop .claimprop__tombol--akhir {
-  justify-content: flex-end;
-  border-top: 1px solid var(--cp-garis);
-  padding-top: 14px;
+  margin-top: 4px;
 }
 
-/* Baris aksi tingkat layar (Save, Save to issue RNM, PRINT PLA, Submit). */
 .claimprop .claimprop__aksi {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-bottom: 24px;
+  margin: 0 0 16px;
+}
+
+/* Tombol ikon (pi-plus, pi-trash, pi-pencil, pi-check): kapsul bundar sekecil ikonnya. */
+.claimprop .claimprop__akar .claimprop__ikon {
+  width: 28px;
+  padding: 0;
+}
+
+.claimprop .claimprop__ikon--hapus,
+.claimprop .claimprop__ikon--hapus:hover:not(:disabled) {
+  color: var(--cp-bahaya-teks);
+}
+
+/* Layout group Tab. */
+.claimprop .claimprop__tab {
+  min-width: 0;
+}
+
+.claimprop .claimprop__tab-isi {
+  padding-top: 12px;
+}
+
+@media (max-width: 860px) {
+  .claimprop .claimprop__dua {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .claimprop .claimprop__baris {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* --------------------------------------------------------------- grid */
@@ -416,8 +619,33 @@
   vertical-align: middle;
 }
 
-.claimprop .claimprop__grid-alat,
+.claimprop .claimprop__th-aksi,
+.claimprop .claimprop__td-aksi {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.claimprop .claimprop__pager {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 6px;
+  font-size: 12px;
+  color: var(--cp-teks-redup);
+}
+
 .claimprop .claimprop__grid-kaki {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 4px 0;
+}
+
+.claimprop .claimprop__grid-alat {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -425,24 +653,10 @@
   padding: 8px 0;
 }
 
-.claimprop .claimprop__grid-kaki {
-  justify-content: flex-end;
-}
-
-.claimprop .claimprop__kaki-nilai {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.claimprop .claimprop__kaki-nilai .field__label {
-  margin: 0;
-}
-
 .claimprop .claimprop__input--sel {
-  height: 34px;
-  font-size: 14px;
-  min-width: 120px;
+  height: 28px;
+  font-size: 12.5px;
+  min-width: 110px;
 }
 
 .claimprop .claimprop__angka {

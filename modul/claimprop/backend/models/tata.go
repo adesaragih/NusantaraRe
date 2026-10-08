@@ -74,6 +74,12 @@ type Unsur struct {
 	Tambah *Unsur  // grid: tombol "Add" di header
 	// Bernomor - grid bernomor baris.
 	Bernomor bool
+	// Letak - format layout Pega (`pyLayoutOtherFormat` / layout group) untuk layar; "" = Stacked with labels left.
+	Letak string
+	// Ikon - gambar / kelas ikon tombol tanpa label (pi-plus, pi-trash, pi-pencil, pi-check, pyWorkActionsAddWork).
+	Ikon string
+	// PerHalaman - paging grid (`pyGridPaginator`); 0 = tanpa paging.
+	PerHalaman int
 }
 
 // Tata - unsur sesudah dievaluasi, dikirim ke layar.
@@ -95,6 +101,10 @@ type Tata struct {
 	Kaki      []Tata      `json:"kaki,omitempty"`
 	Tambah    *Tata       `json:"tambah,omitempty"`
 	Bernomor  bool        `json:"bernomor,omitempty"`
+	Letak     string      `json:"letak,omitempty"`
+	Ikon      string      `json:"ikon,omitempty"`
+	// PerHalaman - jumlah baris per halaman grid.
+	PerHalaman int `json:"perHalaman,omitempty"`
 }
 
 // SelTata - keadaan satu sel grid pada satu baris (sejajar `Tata.Kolom`).
@@ -127,7 +137,7 @@ func Evaluasi(h *Halaman, defs []Unsur, kunci bool) []Tata {
 			continue
 		}
 		t := Tata{Jenis: u.Jenis, ID: u.ID, Label: u.Label, Jalur: u.Jalur, Kendali: u.Kendali, Sumber: u.Sumber,
-			Aksi: u.Aksi, Catatan: u.Catatan, Bernomor: u.Bernomor}
+			Aksi: u.Aksi, Catatan: u.Catatan, Bernomor: u.Bernomor, Letak: u.Letak, Ikon: u.Ikon, PerHalaman: u.PerHalaman}
 		t.HanyaBaca = kunci || ya(u.HanyaBaca, h, false)
 		t.Nonaktif = kunci || ya(u.Nonaktif, h, false)
 		t.Wajib = ya(u.Wajib, h, false)
@@ -167,7 +177,7 @@ func kolomTanpaKondisi(k []Unsur) []Unsur {
 	out := make([]Unsur, len(k))
 	for i, u := range k {
 		out[i] = Unsur{Jenis: u.Jenis, ID: u.ID, Label: u.Label, Jalur: u.Jalur, Kendali: u.Kendali, Sumber: u.Sumber,
-			Aksi: u.Aksi, Catatan: u.Catatan}
+			Aksi: u.Aksi, Catatan: u.Catatan, Ikon: u.Ikon}
 	}
 	return out
 }
