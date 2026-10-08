@@ -43,7 +43,8 @@ type Ringkasan struct {
 }
 
 // Pilihan membaca satu daftar pilihan kasus.
-func (l *Layanan) Pilihan(ctx context.Context, p inti.Pelaku, id, jenis string, n int, cari string) (any, error) {
+func (l *Layanan) Pilihan(ctx context.Context, p inti.Pelaku, id, jenis string, n int, cari string,
+	sm models.SaringanMaster) (any, error) {
 	if err := l.periksaPelaku(p); err != nil {
 		return nil, err
 	}
@@ -60,7 +61,7 @@ func (l *Layanan) Pilihan(ctx context.Context, p inti.Pelaku, id, jenis string, 
 	}
 	switch jenis {
 	case PilihanMaster: // GetMasterTreaty_Act (defer load) + RD BrowseCLAIM_MASTER_TREATY
-		return l.a.DaftarMaster(ctx, cari)
+		return l.a.DaftarMaster(ctx, sm)
 	case PilihanPolis: // SetMasterID + SetPolicyTreatyProp
 		return l.a.DaftarPolis(ctx, models.AwalanMaster(h.Ambil(models.CD+"IDMaster")), h.Ambil(models.CD+"TreatyGroupName"))
 	case PilihanSebab:

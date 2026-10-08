@@ -50,7 +50,7 @@ type Gudang interface {
 // Acuan - bacaan baca-saja port activity dan pemilih layar.
 type Acuan interface {
 	models.Acuan
-	DaftarMaster(ctx context.Context, cari string) ([]models.BarisMaster, error)
+	DaftarMaster(ctx context.Context, s models.SaringanMaster) ([]models.BarisMaster, error)
 	BarisMasterDari(ctx context.Context, treatyID, grupID, cobID string) (models.BarisMaster, bool, error)
 	DaftarPolis(ctx context.Context, noOffer, grup string) ([]models.BarisPolis, error)
 	DaftarAdjuster(ctx context.Context, cari string) ([]models.Pilihan, error)

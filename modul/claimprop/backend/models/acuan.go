@@ -71,6 +71,27 @@ type BarisMaster struct {
 	TreatyYear         string `json:"treatyYear"`
 }
 
+// Popup "Data Master TreatyIn" (Section MasterTreatyInList, RD BrowseCLAIM_MASTER_TREATY): parameter section
+// TREATYTYPE = "Proportional" menyaring `.PROPORTIONTYPE`. Filter per kolom, batas, dan urutan terbaru dulu = keputusan
+// work owner 08-10-2026 (batas 20 di RD membuat 20 baris pertama satu treaty saja - pola popup NB Treaty In: saring di
+// server lalu batas 500, 50 per halaman di layar).
+const (
+	ProporsiMaster = "Proportional"
+	BatasMaster    = 500
+)
+
+// SaringanMaster - filter per kolom popup master (kosong = tanpa saringan); dicocokkan tanpa beda huruf, mengandung.
+type SaringanMaster struct {
+	TreatyID        string
+	ClassOfBusiness string
+	ContractName    string
+	SOB             string
+	InsuredName     string
+	TreatyType      string
+	TreatyGroup     string
+	TreatyYear      string
+}
+
 // BarisPolis - satu baris grid popup "Data Polis" (RDB `SetPolicyTreatyProp` atas TREATYINPRODUCTION).
 // ⚠️ Alias berbohong `TREATYGROUP AS "BusinessName"` diluruskan (AC 110): medannya bernama TreatyGroup.
 type BarisPolis struct {

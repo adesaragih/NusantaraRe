@@ -22,6 +22,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
+	"nusantarare/modul/claimprop/backend/models"
 	"nusantarare/modul/claimprop/backend/services"
 )
 
@@ -155,7 +156,11 @@ func (h *rute) aksi(w http.ResponseWriter, r *http.Request) {
 
 func (h *rute) pilihan(w http.ResponseWriter, r *http.Request) {
 	n, _ := strconv.Atoi(r.URL.Query().Get("indeks"))
-	out, err := h.l.Pilihan(r.Context(), h.pelaku(r), r.PathValue("id"), r.PathValue("jenis"), n, r.URL.Query().Get("cari"))
+	q := r.URL.Query()
+	sm := models.SaringanMaster{TreatyID: q.Get("treatyId"), ClassOfBusiness: q.Get("classOfBusiness"),
+		ContractName: q.Get("contractName"), SOB: q.Get("sob"), InsuredName: q.Get("insuredName"),
+		TreatyType: q.Get("treatyType"), TreatyGroup: q.Get("treatyGroup"), TreatyYear: q.Get("treatyYear")}
+	out, err := h.l.Pilihan(r.Context(), h.pelaku(r), r.PathValue("id"), r.PathValue("jenis"), n, q.Get("cari"), sm)
 	if err != nil {
 		tulisGalat(w, err)
 		return

@@ -128,10 +128,20 @@ export function aksiKasus(id: string, r: PermintaanAksi): Promise<Layar> {
   return minta(`${PREFIX_CP}/kasus/${encodeURIComponent(id)}/aksi`, { metode: 'POST', badan: r })
 }
 
-export function pilihanKasus<T>(id: string, jenis: string, indeks = 0, cari = ''): Promise<T> {
-  return minta(`${PREFIX_CP}/kasus/${encodeURIComponent(id)}/pilihan/${encodeURIComponent(jenis)}`, {
-    kueri: { indeks: indeks > 0 ? String(indeks) : undefined, cari: cari.trim() === '' ? undefined : cari.trim() },
-  })
+/** `saring` = filter per kolom popup master (kunci = parameter kueri server; kosong dilewati). */
+export function pilihanKasus<T>(
+  id: string,
+  jenis: string,
+  indeks = 0,
+  cari = '',
+  saring: Record<string, string> = {},
+): Promise<T> {
+  const kueri: Record<string, string | undefined> = {
+    indeks: indeks > 0 ? String(indeks) : undefined,
+    cari: cari.trim() === '' ? undefined : cari.trim(),
+  }
+  for (const [k, v] of Object.entries(saring)) kueri[k] = v.trim() === '' ? undefined : v.trim()
+  return minta(`${PREFIX_CP}/kasus/${encodeURIComponent(id)}/pilihan/${encodeURIComponent(jenis)}`, { kueri })
 }
 
 export function ambilAcuan(): Promise<AcuanStatis> {

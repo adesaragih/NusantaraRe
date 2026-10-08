@@ -142,7 +142,7 @@ func TestSQLDiDEV(t *testing.T) {
 		{"NamaJenisReasuransi", func() error { _, err := a.NamaJenisReasuransi(ctx, "UJI"); return err }},
 		{"IDJenisReasuransi", func() error { _, err := a.IDJenisReasuransi(ctx, "UJI", "4"); return err }},
 		{"MasterTreaty", func() error { _, _, err := a.MasterTreaty(ctx, "UJI"); return err }},
-		{"DaftarMaster", func() error { _, err := a.DaftarMaster(ctx, "UJI"); return err }},
+		{"DaftarMaster", func() error { _, err := a.DaftarMaster(ctx, models.SaringanMaster{TreatyID: "UJI"}); return err }},
 		{"BarisMasterDari", func() error { _, _, err := a.BarisMasterDari(ctx, "UJI", "UJI", "UJI"); return err }},
 		{"AdaPolisMaster", func() error { _, err := a.AdaPolisMaster(ctx, "UJI"); return err }},
 		{"AdaPolisRealisasi", func() error { _, err := a.AdaPolisRealisasi(ctx, "UJI"); return err }},

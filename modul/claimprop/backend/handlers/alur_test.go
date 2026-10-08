@@ -357,3 +357,43 @@ func TestHakWorkbasketTeknik(t *testing.T) {
 		t.Fatalf("tanpa identitas: HTTP %d, mau 401", kode)
 	}
 }
+
+// Popup "Data Master TreatyIn" (keputusan work owner 08-10-2026): hanya PROPORTIONTYPE Proportional (parameter Section
+// MasterTreatyInList), filter per kolom digabung AND, terbaru dulu.
+func TestPopupMasterProporsionalDanFilterKolom(t *testing.T) {
+	u := baruUji(t)
+	u.a.BarisMaster = append(u.a.BarisMaster,
+		models.BarisMaster{TreatyID: "UJI-M0000002", TreatyContractName: "UJI-NONPROP", ProportionType: "NonProportional",
+			TreatyYear: "2026"},
+		models.BarisMaster{TreatyID: "UJI-M0000003", TreatyContractName: "UJI-LAMA", ProportionType: "Proportional",
+			TreatyYear: "2025"})
+	id := u.buat()
+	ambil := func(kueri string) []string {
+		t.Helper()
+		r := httptest.NewRecorder()
+		q := httptest.NewRequest(http.MethodGet, handlers.Prefix+"/kasus/"+id+"/pilihan/master"+kueri, nil)
+		q.Header.Set("X-Pelaku", admin)
+		u.srv.ServeHTTP(r, q)
+		if r.Code != http.StatusOK {
+			t.Fatalf("pilihan master%s: HTTP %d %s", kueri, r.Code, r.Body.String())
+		}
+		var baris []models.BarisMaster
+		if err := json.Unmarshal(r.Body.Bytes(), &baris); err != nil {
+			t.Fatal(err)
+		}
+		var out []string
+		for _, b := range baris {
+			out = append(out, b.TreatyID)
+		}
+		return out
+	}
+	if got := strings.Join(ambil(""), ","); got != masterUji+",UJI-M0000003" {
+		t.Fatalf("tanpa filter: %s (mau Proportional saja, terbaru dulu)", got)
+	}
+	if got := strings.Join(ambil("?treatyYear=2025&contractName=lama"), ","); got != "UJI-M0000003" {
+		t.Fatalf("filter tahun + kontrak: %s", got)
+	}
+	if got := strings.Join(ambil("?treatyYear=2025&contractName=kontrak"), ","); got != "" {
+		t.Fatalf("filter digabung AND: %s", got)
+	}
+}

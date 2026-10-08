@@ -5,6 +5,7 @@ package tiruan
 
 import (
 	"context"
+	"sort"
 	"strings"
 
 	"nusantarare/modul/claimprop/backend/models"
@@ -184,12 +185,27 @@ func (a *Acuan) AdaProteksiPremi(_ context.Context, p string) (bool, error) {
 
 // ---------------------------------------------------------------- pemilih layar
 
-func (a *Acuan) DaftarMaster(_ context.Context, cari string) ([]models.BarisMaster, error) {
+func (a *Acuan) DaftarMaster(_ context.Context, s models.SaringanMaster) ([]models.BarisMaster, error) {
+	memuat := func(nilai, kata string) bool {
+		return strings.Contains(strings.ToUpper(nilai), strings.ToUpper(strings.TrimSpace(kata)))
+	}
 	out := []models.BarisMaster{}
 	for _, b := range a.BarisMaster {
-		if cari == "" || strings.Contains(strings.ToUpper(b.TreatyID+b.TreatyContractName), strings.ToUpper(cari)) {
+		if b.ProportionType == models.ProporsiMaster && memuat(b.TreatyID, s.TreatyID) &&
+			memuat(b.ClassOfBusiness, s.ClassOfBusiness) && memuat(b.TreatyContractName, s.ContractName) &&
+			memuat(b.SOB, s.SOB) && memuat(b.Ceding, s.InsuredName) && memuat(b.TreatyType, s.TreatyType) &&
+			memuat(b.TreatyGroup, s.TreatyGroup) && memuat(b.TreatyYear, s.TreatyYear) {
 			out = append(out, b)
 		}
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if out[i].TreatyYear != out[j].TreatyYear {
+			return out[i].TreatyYear > out[j].TreatyYear
+		}
+		return out[i].TreatyID > out[j].TreatyID
+	})
+	if len(out) > models.BatasMaster {
+		out = out[:models.BatasMaster]
 	}
 	return out, nil
 }

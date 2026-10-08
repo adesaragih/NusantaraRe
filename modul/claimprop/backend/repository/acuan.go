@@ -224,25 +224,38 @@ func tglPega(s string) string {
 	return s
 }
 
-// DaftarMaster = grid "Data Master TreatyIn" (RD BrowseCLAIM_MASTER_TREATY, distinct, pyMaxRecords 20; saringan kolom
-// grid dijalankan di server). `PROPORTIONTYPE = Param.TREATYTYPE` tidak diisi pemanggil - saringan tidak dipasang.
-func (a *Acuan) DaftarMaster(ctx context.Context, cari string) ([]models.BarisMaster, error) {
+// sqlDaftarMaster - RD BrowseCLAIM_MASTER_TREATY: `.PROPORTIONTYPE = Param.TREATYTYPE` ("Proportional", parameter
+// Section MasterTreatyInList), filter per kolom digabung AND (mengandung, tanpa beda huruf), terbaru dulu, batas
+// `models.BatasMaster` (keputusan work owner 08-10-2026).
+func sqlDaftarMaster(t string, s models.SaringanMaster) (string, []any) {
+	args := []any{models.ProporsiMaster}
+	w := "WHERE PROPORTIONTYPE = :1"
+	for _, f := range []struct{ kol, nilai string }{
+		{"TREATYID", s.TreatyID}, {"CLASSOFBUSINESS", s.ClassOfBusiness}, {"TREATYCONTRACTNAME", s.ContractName},
+		{"SOB", s.SOB}, {"CEDING", s.InsuredName}, {"TREATYTYPE", s.TreatyType}, {"TREATYGROUP", s.TreatyGroup},
+		{"TREATYYEAR", s.TreatyYear},
+	} {
+		if v := strings.TrimSpace(f.nilai); v != "" {
+			args = append(args, "%"+strings.ToUpper(v)+"%")
+			w += fmt.Sprintf(" AND UPPER(%s) LIKE :%d", f.kol, len(args))
+		}
+	}
+	return fmt.Sprintf(`SELECT DISTINCT TREATYID, CLASSOFBUSINESS, CLASSOFBUSINESSID, TREATYCONTRACTNAME,
+		SOB, CEDING, TREATYTYPE, PROPORTIONTYPE, TREATYGROUP, TREATYGROUPID, TREATYYEAR FROM %s
+		%s
+		ORDER BY TREATYYEAR DESC, TREATYID DESC
+		FETCH FIRST %d ROWS ONLY`, t, w, models.BatasMaster), args
+}
+
+// DaftarMaster = grid "Data Master TreatyIn" (RD BrowseCLAIM_MASTER_TREATY, distinct; Section MasterTreatyInList
+// mengirim TREATYTYPE = "Proportional" ke saringan `.PROPORTIONTYPE`). Saringan kolom dijalankan di server.
+func (a *Acuan) DaftarMaster(ctx context.Context, s models.SaringanMaster) ([]models.BarisMaster, error) {
 	t, err := a.q("CLAIM_MASTER_TREATY")
 	if err != nil {
 		return nil, err
 	}
-	w, args := "", []any{}
-	if c := strings.TrimSpace(cari); c != "" {
-		var o []string
-		for _, k := range []string{"TREATYID", "CLASSOFBUSINESS", "TREATYCONTRACTNAME", "SOB", "CEDING", "TREATYGROUP", "TREATYYEAR"} {
-			args = append(args, "%"+strings.ToUpper(c)+"%")
-			o = append(o, fmt.Sprintf("UPPER(%s) LIKE :%d", k, len(args)))
-		}
-		w = " WHERE " + strings.Join(o, " OR ")
-	}
-	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT DISTINCT TREATYID, CLASSOFBUSINESS, CLASSOFBUSINESSID, TREATYCONTRACTNAME,
-		SOB, CEDING, TREATYTYPE, PROPORTIONTYPE, TREATYGROUP, TREATYGROUPID, TREATYYEAR FROM %s%s
-		ORDER BY TREATYID FETCH FIRST 20 ROWS ONLY`, t, w), 11, args...)
+	q, args := sqlDaftarMaster(t, s)
+	rows, err := a.banyak(ctx, q, 11, args...)
 	if err != nil {
 		return nil, err
 	}

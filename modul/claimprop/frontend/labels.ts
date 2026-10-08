@@ -31,6 +31,11 @@ export const CP = {
   pilih: 'Choose',
   tutup: 'Close',
   cariPopup: 'Search',
+  /** Popup master: filter per kolom, 50 baris per halaman, batas 500 (keputusan work owner 08-10-2026). */
+  saring: 'Filter',
+  menampilkan: 'Showing',
+  dari: 'of',
+  batasMaster: 'First 500 rows - narrow the filter',
   // judul pop-up = WindowName / judul layout section
   popMaster: 'Data Master TreatyIn',
   popPolis: 'Data Polis',

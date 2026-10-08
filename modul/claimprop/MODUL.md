@@ -104,6 +104,11 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
 - **Workbasket `ReasKlaimAdmin` dibuang** (08-10-2026, "hapus dari master wb ReasKlaimAdmin dan akun yang pake ini"):
   migrasi `534` menghapus barisnya di `M_LOGIN_GO_WORKBASKET` (DEV: 3 pemegang) lalu di `M_WORKBASKET`; pola
   Bordereaux 893. Pernyataannya diurai di DEV (`DBMS_SQL.PARSE`, tanpa eksekusi); berjalan saat work owner `-migrate`.
+- **Popup Choose Master** (08-10-2026, "kenapa ga bisa filter dan cuman ada 1 master" -> "lanjut"): saringan XML
+  `PROPORTIONTYPE = 'Proportional'` (parameter section MasterTreatyInList ke RD BrowseCLAIM_MASTER_TREATY) dipasang;
+  filter per kolom digabung AND di server (`repository.sqlDaftarMaster`), urut Treaty Year lalu Treaty ID menurun,
+  batas 500 (`models.BatasMaster`), 50 per halaman di layar. Sebab lama: 20 baris pertama urut TREATYID = satu
+  treaty (rata-rata 39 baris per treaty di view CLAIM_MASTER_TREATY). DEV: 0,37 s tanpa filter, 0,05 s berfilter.
 - **Layar kasus berkulit Kelola User** (08-10-2026, "SAMAIN DENGAN MENU KELOLA USER SKIN NYA"): setiap bagian
   berlabel = kartu `panel` + `panel__title`, isi `form-grid`, medan berlabel di atas kotak `field__input`, hanya-baca
   tetap berkotak (`field__input--readonly`). Pengelompokan di `frontend/components/susun.ts` (diuji): label

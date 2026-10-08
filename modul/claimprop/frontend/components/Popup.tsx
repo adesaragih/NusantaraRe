@@ -8,6 +8,7 @@ import { Gagal, Memuat, Modal } from '../../../../inti/frontend/components/ui/da
 import { pilihanKasus } from '../api'
 import { CP } from '../labels'
 import { tampilAngka } from '../nilai'
+import { jumlahHalaman, potongHalaman } from './susun'
 
 export type JenisPopup = 'master' | 'polis' | 'sebab' | 'katastrofe' | 'ringkasanOS'
 
@@ -24,6 +25,21 @@ interface BarisMaster {
   treatyGroupId: string
   treatyYear: string
 }
+
+/** Kolom popup master: judul VERBATIM section MasterTreatyInList; `kunci` = filter per kolom (parameter kueri). */
+const KOLOM_MASTER: { label: string; kunci?: string; nilai: (b: BarisMaster) => string }[] = [
+  { label: 'Treaty ID', kunci: 'treatyId', nilai: (b) => b.treatyId },
+  { label: 'Class of Business', kunci: 'classOfBusiness', nilai: (b) => b.classOfBusiness },
+  { label: 'Contract Name', kunci: 'contractName', nilai: (b) => b.treatyContractName },
+  { label: 'Source of Business', kunci: 'sob', nilai: (b) => b.sob },
+  { label: 'Insured Name', kunci: 'insuredName', nilai: (b) => b.ceding },
+  { label: 'Treaty Type', kunci: 'treatyType', nilai: (b) => b.treatyType },
+  { label: 'Proportion Type', nilai: (b) => b.proportionType },
+  { label: 'Treaty Group', kunci: 'treatyGroup', nilai: (b) => b.treatyGroup },
+  { label: 'Treaty Year', kunci: 'treatyYear', nilai: (b) => b.treatyYear },
+]
+const PER_HALAMAN_MASTER = 50
+const BATAS_MASTER = 500 // models.BatasMaster
 
 interface BarisPolis {
   policyNo: string
@@ -88,70 +104,116 @@ export default function Popup({
   const [galat, setGalat] = useState<unknown>(null)
   const [formBaru, setFormBaru] = useState(false)
   const [catatan, setCatatan] = useState('')
+  const [saring, setSaring] = useState<Record<string, string>>({})
+  const [hal, setHal] = useState(1)
 
   useEffect(() => {
     const t = setTimeout(() => {
-      pilihanKasus<unknown>(id, jenis, 0, cari).then(
+      pilihanKasus<unknown>(id, jenis, 0, cari, saring).then(
         (d) => {
           setData(d)
           setGalat(null)
         },
         (g: unknown) => setGalat(g),
       )
-    }, 250)
+    }, 300)
     return () => clearTimeout(t)
-  }, [id, jenis, cari])
+  }, [id, jenis, cari, saring])
 
-  const pakaiCari = jenis === 'master' || jenis === 'sebab' || jenis === 'katastrofe'
+  const pakaiCari = jenis === 'sebab' || jenis === 'katastrofe'
   let isi
   if (galat) isi = <Gagal galat={galat} />
   else if (data === null) isi = <Memuat pesan={CP.memuat} />
   else if (jenis === 'master') {
+    const semua = data as BarisMaster[]
+    const nHal = jumlahHalaman(semua.length, PER_HALAMAN_MASTER)
+    const halIni = Math.min(hal, nHal)
+    const awal = (halIni - 1) * PER_HALAMAN_MASTER
     isi = (
-      <table className="claimprop__tabel">
-        <thead>
-          <tr>
-            {[
-              '',
-              'Treaty ID',
-              'Class of Business',
-              'Contract Name',
-              'Source of Business',
-              'Insured Name',
-              'Treaty Type',
-              'Proportion Type',
-              'Treaty Group',
-              'Treaty Year',
-            ].map((k, i) => (
-              <th key={i}>{k}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {(data as BarisMaster[]).map((b) => (
-            <tr key={b.treatyId + b.treatyGroupId + b.classOfBusinessId}>
-              <td>
-                <button
-                  type="button"
-                  className="btn btn--sm btn--primary"
-                  onClick={() => onPilih('SetValueToClaim', `${b.treatyId}|${b.treatyGroupId}|${b.classOfBusinessId}`)}
-                >
-                  {CP.pilih}
-                </button>
-              </td>
-              <td>{b.treatyId}</td>
-              <td>{b.classOfBusiness}</td>
-              <td>{b.treatyContractName}</td>
-              <td>{b.sob}</td>
-              <td>{b.ceding}</td>
-              <td>{b.treatyType}</td>
-              <td>{b.proportionType}</td>
-              <td>{b.treatyGroup}</td>
-              <td>{b.treatyYear}</td>
+      <>
+        <div className="claimprop__pager">
+          <span>
+            {CP.menampilkan} {semua.length === 0 ? 0 : awal + 1}–{Math.min(awal + PER_HALAMAN_MASTER, semua.length)}{' '}
+            {CP.dari} {semua.length}
+            {semua.length >= BATAS_MASTER && ` (${CP.batasMaster})`}
+          </span>
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            disabled={halIni <= 1}
+            onClick={() => setHal(halIni - 1)}
+            aria-label="Previous"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            disabled={halIni >= nHal}
+            onClick={() => setHal(halIni + 1)}
+            aria-label="Next"
+          >
+            ›
+          </button>
+        </div>
+        <table className="claimprop__tabel">
+          <thead>
+            <tr>
+              <th />
+              {KOLOM_MASTER.map((k) => (
+                <th key={k.label}>{k.label}</th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+            <tr>
+              <th />
+              {KOLOM_MASTER.map((k) => (
+                <th key={k.label}>
+                  {k.kunci && (
+                    <input
+                      className="field__input claimprop__input--sel"
+                      placeholder={CP.saring}
+                      aria-label={`${CP.saring} ${k.label}`}
+                      value={saring[k.kunci] ?? ''}
+                      onChange={(e) => {
+                        const kunci = k.kunci ?? ''
+                        setSaring((s) => ({ ...s, [kunci]: e.target.value }))
+                        setHal(1)
+                      }}
+                    />
+                  )}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {semua.length === 0 && (
+              <tr>
+                <td className="muted" colSpan={KOLOM_MASTER.length + 1}>
+                  —
+                </td>
+              </tr>
+            )}
+            {potongHalaman(semua, PER_HALAMAN_MASTER, halIni).map((b) => (
+              <tr key={b.treatyId + b.treatyGroupId + b.classOfBusinessId}>
+                <td>
+                  <button
+                    type="button"
+                    className="btn btn--sm btn--primary"
+                    onClick={() =>
+                      onPilih('SetValueToClaim', `${b.treatyId}|${b.treatyGroupId}|${b.classOfBusinessId}`)
+                    }
+                  >
+                    {CP.pilih}
+                  </button>
+                </td>
+                {KOLOM_MASTER.map((k) => (
+                  <td key={k.label}>{k.nilai(b)}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </>
     )
   } else if (jenis === 'polis') {
     isi = (

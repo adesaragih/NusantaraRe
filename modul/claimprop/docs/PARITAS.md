@@ -36,7 +36,7 @@
 
 | Label XML | Aksi XML | Tiket | Status |
 | --- | --- | --- | --- |
-| Choose Master | harness `MasterTreatyIn` (dis `IsOutstanding==1`) | 01 | **dibangun** (popup, tombol Choose per baris = `SetValueToClaim_Act`) |
+| Choose Master | harness `MasterTreatyIn` (dis `IsOutstanding==1`) | 01 | **dibangun** (popup, tombol Choose per baris = `SetValueToClaim_Act`); RD `BrowseCLAIM_MASTER_TREATY` + parameter section `TREATYTYPE = "Proportional"` → `PROPORTIONTYPE = 'Proportional'`; filter per kolom (AND) di server, terbaru dulu, batas 500, 50 per halaman — penyimpangan dari `pyMaxRecords 20` atas keputusan work owner 08-10-2026 |
 | Summary Outstanding Claim | harness `SummaryOutSClaim`, pre-act `GetDataOustanding` (vis `IsOutstanding = 1`) | 07 | **dibangun** |
 | teks `.Message` (klik) | harness `InputTreatyInOffer` (tidak diekspor) | 01 | **nonaktif-OQ** OQ-CP-02 — tampil hanya-baca |
 | Choose Policy No | harness `ListPolicyNoTreaty_Harness`, pre-act `SetMasterID` | 01 | **dibangun** (pilih = klik ganda baris → `CheckNoPolicy`, seperti XML) |
