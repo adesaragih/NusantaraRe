@@ -17,7 +17,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Rentang migrasi | `520-559` |
 | Slot menu | `980-981` |
 | Prefix rute API | `/api/claim-prop` |
-| Kontrak disediakan | — |
+| Kontrak disediakan | `kontrak.KlaimTreatyKomite` (`inti/backend/kontrak/klaimtreaty.go`, implementasi `backend/services/kontrak_komite.go`) — untuk Komite Claim Prop, keputusan work owner 08-10-2026 |
 | Kontrak dipakai | — (nol kontrak `inti/backend/kontrak`; pola modul lain disalin, tidak diimpor) |
 
 `Pemilik` adalah penanda pemegang modul. Wilayah berkas yang boleh disentuh cabang

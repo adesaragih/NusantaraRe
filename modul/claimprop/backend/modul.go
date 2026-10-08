@@ -11,6 +11,7 @@ import (
 	"net/http"
 
 	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/claimprop/backend/handlers"
 	"nusantarare/modul/claimprop/backend/services"
 )
@@ -24,15 +25,19 @@ var berkasMigrasi embed.FS
 // Nama pengenal modul ini di MODUL_AKTIF dan di GET /api/modul-aktif.
 const Nama = "claimprop"
 
-// Pendaftaran menyerahkan modul ini kepada perakit. Nol kontrak disediakan dan nol kontrak dipakai: tabel bersama
-// (T_WORK_CLAIM, T_GENERAL_CLAIM, T_VIEW_SUGGEST, T_GENERAL_KOMITE, T_KOMITE_KOMITELIST) dibaca dan ditulis lewat SQL
-// modul ini sendiri.
+// Pendaftaran menyerahkan modul ini kepada perakit. MENYEDIAKAN `kontrak.KlaimTreatyKomite` (keputusan work owner
+// 08-10-2026): Komite Claim Prop membaca kasus klaim induk dan menulis kembali hasil keputusannya HANYA lewat kontrak
+// itu (`services.KlaimUntukKomite`). Nol kontrak dipakai: tabel bersama (T_WORK_CLAIM, T_GENERAL_CLAIM,
+// T_VIEW_SUGGEST, T_GENERAL_KOMITE, T_KOMITE_KOMITELIST) dibaca dan ditulis lewat SQL modul ini sendiri.
 func Pendaftaran() inti.Pendaftaran {
 	return inti.Pendaftaran{
-		Nama:    Nama,
-		Migrasi: berkasMigrasi,
+		Nama:        Nama,
+		Migrasi:     berkasMigrasi,
+		Menyediakan: []inti.Kontrak{inti.KontrakDari[kontrak.KlaimTreatyKomite]()},
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
-			return Baru(services.DariDasar(p.Dasar()), p.Config().AuthStub), nil
+			svc := services.DariDasar(p.Dasar())
+			inti.Sediakan[kontrak.KlaimTreatyKomite](p, svc.KlaimUntukKomite())
+			return Baru(svc, p.Config().AuthStub), nil
 		},
 	}
 }
