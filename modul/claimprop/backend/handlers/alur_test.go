@@ -269,13 +269,26 @@ func TestAlurPenuhSampaiResolved(t *testing.T) {
 	kode, out = u.aksi(id, admin, "", "SaveOutstanding", 0, "", nil)
 	u.wajib(kode, http.StatusConflict, out, "Save to issue RNM tanpa estimasi baru")
 
+	// Send to Acceptation langsung mengirim ke Teknik tanpa Submit (perintah work owner 08-10-2026). Isian wajib kosong
+	// = seluruh aksi batal: IsAcceptation tidak tersetel dan berkas tetap di Outstanding.
+	h0 = u.g.Halaman(id)
+	tgl := h0.Ambil(models.CD + "DateOfLoss")
+	h0.Setel(models.CD+"DateOfLoss", "")
+	u.g.SetelHalaman(id, h0)
+	kode, out = u.aksi(id, admin, "", "CheckNopolicy", 0, "", nil)
+	u.wajib(kode, http.StatusUnprocessableEntity, out, "Send to Acceptation dengan Date of Loss kosong")
+	if k := u.g.Kasus[id]; k.Tahap != models.TahapOutstanding || u.g.Halaman(id).Ambil("IsAcceptation") == "1" {
+		t.Fatalf("Send to Acceptation gagal validasi tidak dibatalkan: %+v", k)
+	}
+	h0 = u.g.Halaman(id)
+	h0.Setel(models.CD+"DateOfLoss", tgl)
+	u.g.SetelHalaman(id, h0)
 	langkah("CheckNopolicy", 0, "", nil)
 	if u.g.Halaman(id).Ambil("IsAcceptation") != "1" {
 		t.Fatalf("Send to Acceptation tidak menyetel IsAcceptation")
 	}
-	langkah("SubmitOutstanding", 0, "", nil)
 	if k := u.g.Kasus[id]; k.Tahap != models.TahapAcceptation || k.Posisi != models.WorkbasketAcceptation {
-		t.Fatalf("Submit: %+v", k)
+		t.Fatalf("Send to Acceptation tidak langsung ke Teknik: %+v", k)
 	}
 
 	// pembuat tanpa peran workbasket tidak lagi memegang kasus

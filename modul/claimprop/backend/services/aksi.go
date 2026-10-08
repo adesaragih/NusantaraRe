@@ -332,7 +332,7 @@ func init() {
 		"SetOutstanding":    aksiSetOutstanding,
 		"SaveOutstanding":   aksiSaveOutstanding,
 		"TryMakePLA":        aksiPLA,
-		"CheckNopolicy":     aksiKirimAkseptasi,
+		"CheckNopolicy":     aksiKirimKeTeknik,
 		"SubmitOutstanding": aksiSubmit,
 		"Simpan":            halamanSaja(func(j *jalanAksi) {}),
 		// akseptasi (tiket 08, 10, 11, 12, 13)

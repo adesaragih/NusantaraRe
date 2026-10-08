@@ -49,8 +49,8 @@
 | Save | `SetOutstanding_Act` lalu save (vis `IsAcceptation!=1`) | 07 | **dibangun** |
 | Save to issue RNM | `SaveOutstanding_Act` → LA `PrintFile` bila `IsPLA=1` (dis `IsCFS = ''`) | 07, 12 | **dibangun** (PrintFile = pesan "Please Print Pla") |
 | PRINT PLA | LA `GeneratePLA` (dis `IsPLA!=1`) | 12 | **dibangun** — nomor PLA; berkas PDF OQ-CP-05 |
-| Send to Acceptation | `CheckNopolicy_Act` (vis `IsOutstanding = 1`, dis `IsAcceptation==1`) | 01 | **dibangun** |
-| Submit | finishAssignment `OutstandingClaim` bila PolicyNo dan NoClaim terisi (vis `IsAcceptation==1`) | 10 | **dibangun** — pindah ke workbasket `ReasKlaimTeknik` |
+| Send to Acceptation | `CheckNopolicy_Act` (vis `IsOutstanding = 1`, dis `IsAcceptation==1`) | 01 | **dibangun lain** — CheckNopolicy_Act lalu Submit dalam satu aksi: berkas langsung pindah ke `ReasKlaimTeknik`; validasi Submit gagal = seluruhnya batal (perintah work owner 08-10-2026 "langsung kirim ke teknik, ga usah klik submit lagi") |
+| Submit | finishAssignment `OutstandingClaim` bila PolicyNo dan NoClaim terisi (vis `IsAcceptation==1`) | 10 | **dibangun** — pindah ke workbasket `ReasKlaimTeknik`; kini hanya tampil untuk berkas yang sudah ber-IsAcceptation tetapi belum pindah tahap (dikirim sebelum 08-10-2026 / data lama) |
 
 ### Sub-section `Catastrope_Sec`, `OutstandingClaim_Intrs`, `OutstandingClaim_Est`, `OutstandingClaim_Sprd`
 

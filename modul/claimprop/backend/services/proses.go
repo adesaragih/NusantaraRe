@@ -266,6 +266,22 @@ func aksiKirimAkseptasi(j *jalanAksi) error {
 	return nil
 }
 
+// aksiKirimKeTeknik - tombol "Send to Acceptation" (perintah work owner 08-10-2026 "send to acceptation nya langsung
+// kirim ke teknik, ga usah klik submit lagi"): CheckNopolicy_Act lalu, bila IsAcceptation tersetel, Submit
+// (finishAssignment -> Input Acceptation, workbasket ReasKlaimTeknik) dalam SATU transaksi aksi - validasi Submit yang
+// gagal membatalkan seluruhnya (IsAcceptation, salinan JSON_KLAIM). Nomor klaim biasanya sudah diambil Save to issue
+// RNM (tombol ini aktif hanya bila IsOutstanding = 1). Tombol Submit tetap untuk berkas yang sudah ber-IsAcceptation
+// tetapi belum pindah tahap (dikirim sebelum perubahan ini / data lama).
+func aksiKirimKeTeknik(j *jalanAksi) error {
+	if err := aksiKirimAkseptasi(j); err != nil {
+		return err
+	}
+	if j.h.Ambil("IsAcceptation") != "1" {
+		return nil // CheckNopolicy_Act berhenti (polis belum ada) - tidak ada yang dikirim
+	}
+	return aksiSubmit(j)
+}
+
 // aksiSubmit - tombol "Submit" (finishAssignment FlowAction OutstandingClaim): [hanya jika Policy No dan NoClaim
 // terisi], validasi klien (wajib), post-activity `ProteksiData_act`, lalu Transition4 -> Assignment1 Input Acceptation
 // (workbasket ReasKlaimTeknik).

@@ -142,6 +142,10 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   `InputAngka.tsx`, `nilai.tampilAngka`); isian tanggal diketik `dd-mm-yyyy` (+ `hh:mm`) dengan tombol kalender, aksi
   server hanya saat lengkap dan sah (`ketikTanggal.ts`, `InputTanggal.tsx`); label Type Estimation List dari
   screenshot (`LabelKode["EstimationType"]`); nilai tampil di sel tabel tidak lagi terpecah satu huruf per baris.
+- **Send to Acceptation langsung ke Teknik** (08-10-2026, "send to acceptation nya langsung kirim ke teknik, ga usah
+  klik submit lagi"): aksi `CheckNopolicy` menjalankan CheckNopolicy_Act lalu Submit (validasi wajib, ProteksiData,
+  pindah ke Input Acceptation / `ReasKlaimTeknik`) dalam satu transaksi - gagal validasi membatalkan seluruhnya.
+  Tombol Submit tetap untuk berkas lama yang sudah ber-IsAcceptation tetapi belum pindah tahap.
 - **Reporter Address dari CLIENT_ADDRESS** (08-10-2026, "ubah jangan dari json, ambil dari client address"; dikerjakan
   sesi ASIS CLAIM PROP): `GetAddressCeding` membaca tabel datar CLIENT_ADDRESS (ASMADDRESS, RWNAME, DISTRICTNAME,
   CITYNAME) klien milik agen ceding, bukan `M_CLIENT.JSONDATA` - baris Kantor (tipe 2) dulu, tanpa Email (tipe 7).
