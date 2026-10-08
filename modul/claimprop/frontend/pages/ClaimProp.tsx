@@ -40,14 +40,22 @@ export default function ClaimProp({ pelaku }: { pelaku: string }) {
 
   useEffect(() => {
     if (buka) return
+    // Jawaban basi (tab / switch / kata cari lama) diabaikan - tidak menimpa daftar terbaru.
+    let aktif = true
     setDaftar(null)
     daftarKasus(jenisDaftar(tab, teknikNyala), cari).then(
       (d) => {
+        if (!aktif) return
         setDaftar(d)
         setGalat(null)
       },
-      (g: unknown) => setGalat(g),
+      (g: unknown) => {
+        if (aktif) setGalat(g)
+      },
     )
+    return () => {
+      aktif = false
+    }
   }, [tab, teknikNyala, cari, buka, segar])
 
   const baru = useCallback(() => {

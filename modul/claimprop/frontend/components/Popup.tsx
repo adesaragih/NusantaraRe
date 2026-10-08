@@ -108,16 +108,25 @@ export default function Popup({
   const [hal, setHal] = useState(1)
 
   useEffect(() => {
+    // Jawaban basi diabaikan: permintaan saringan lama (lebih lebar, lebih lambat) tidak boleh menimpa hasil saringan
+    // terbaru (temuan work owner 08-10-2026: filter Treaty ID menampilkan treaty lain).
+    let aktif = true
     const t = setTimeout(() => {
       pilihanKasus<unknown>(id, jenis, 0, cari, saring).then(
         (d) => {
+          if (!aktif) return
           setData(d)
           setGalat(null)
         },
-        (g: unknown) => setGalat(g),
+        (g: unknown) => {
+          if (aktif) setGalat(g)
+        },
       )
     }, 300)
-    return () => clearTimeout(t)
+    return () => {
+      aktif = false
+      clearTimeout(t)
+    }
   }, [id, jenis, cari, saring])
 
   const pakaiCari = jenis === 'sebab' || jenis === 'katastrofe'
