@@ -8,6 +8,7 @@ import { Gagal, Memuat, Modal } from '../../../../inti/frontend/components/ui/da
 import { pilihanKasus } from '../api'
 import { CP } from '../labels'
 import { tampilAngka } from '../nilai'
+import { kunciMaster } from './kunciBaris'
 import { jumlahHalaman, potongHalaman } from './susun'
 
 export type JenisPopup = 'master' | 'polis' | 'sebab' | 'katastrofe' | 'ringkasanOS'
@@ -203,7 +204,7 @@ export default function Popup({
               </tr>
             )}
             {potongHalaman(semua, PER_HALAMAN_MASTER, halIni).map((b) => (
-              <tr key={b.treatyId + b.treatyGroupId + b.classOfBusinessId}>
+              <tr key={kunciMaster(b)}>
                 <td>
                   <button
                     type="button"
@@ -236,8 +237,12 @@ export default function Popup({
           </tr>
         </thead>
         <tbody>
-          {(data as BarisPolis[]).map((b) => (
-            <tr key={b.policyNo} className="inbox__baris" onDoubleClick={() => onPilih('CheckNoPolicy', b.policyNo)}>
+          {(data as BarisPolis[]).map((b, i) => (
+            <tr
+              key={`${b.policyNo}|${b.quarter}|${i}`}
+              className="inbox__baris"
+              onDoubleClick={() => onPilih('CheckNoPolicy', b.policyNo)}
+            >
               <td>{b.policyNo}</td>
               <td>{b.quarter}</td>
               <td>{b.sourceOfBusinessName}</td>
