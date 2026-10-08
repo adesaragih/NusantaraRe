@@ -52,7 +52,6 @@ export const CP = {
   popTutup: 'PreventRejectClaimProp',
   popPLA: 'Generate File PLA',
   popDLA: 'GenerateDLATreaty',
-  popAdjustment: 'AdjustmentDetail',
   // CatastrofeList_Sec
   addNew: 'Add New',
   note: 'Note',

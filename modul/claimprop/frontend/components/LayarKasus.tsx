@@ -249,7 +249,6 @@ export default function LayarKasus({
         daftar: DAFTAR_RINCI,
         isi: (n: number) => (
           <div className="claimprop__rinci">
-            <div className="claimprop__label">{CP.popAdjustment}</div>
             <TataView tata={layar.adjustment?.[String(n)] ?? []} k={dasar} />
           </div>
         ),

@@ -111,6 +111,7 @@ const (
 	LetakSebaris = "sebaris" // Inline / Inline labels left: anak sebaris; label bagian = label baris
 	LetakTab     = "tab"     // layout group Tab: anak = bagian berjudul (satu tab per bagian)
 	LetakJudul   = "judul"   // kepala layar: Inline grid triple dengan label di sel tengah
+	LetakTabel   = "tabel"   // layout bebas berkolom (tanpa format): anak = baris (bagian), baris pertama = judul kolom
 )
 
 // Ikon tombol (kelas ikon / gambar tombol di XML); label tetap dikirim sebagai keterangan.

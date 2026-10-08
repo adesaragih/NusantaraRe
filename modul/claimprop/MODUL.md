@@ -142,6 +142,13 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   `InputAngka.tsx`, `nilai.tampilAngka`); isian tanggal diketik `dd-mm-yyyy` (+ `hh:mm`) dengan tombol kalender, aksi
   server hanya saat lengkap dan sah (`ketikTanggal.ts`, `InputTanggal.tsx`); label Type Estimation List dari
   screenshot (`LabelKode["EstimationType"]`); nilai tampil di sel tabel tidak lagi terpecah satu huruf per baris.
+- **Panel baris Acceptation List** (08-10-2026, "perbaiki tampilan" + screenshot Pega "ikuti dan rapihkan" + "tidak harus
+  klik angka sebelah kiri"): `LayarAdjustment` mengikuti layout XML `AdjustmentDetail_Section` (tab group) /
+  `AdjustmentDetail` - Inline grid double bersarang, checkbox "Transfer Direct to Kasir", tabel bebas 6 x 4
+  (`LetakTabel`, komponen `TabelTetap`), Payable | bank berdampingan, Spreading In (NEVER) tidak dibangun; judul mentah
+  "AdjustmentDetail" dibuang. Baris terbaru terbuka tanpa klik dan seluruh baris dapat diklik (`rincian.ts`
+  bukaAwal / barisTerbuka). Label kode Type (AdjustmentType) dan Deductible Type (IndividualRiskType) belum ada di
+  korpus - tampil kode sampai work owner memberi prompt values.
 - **Tab Acceptation tanpa data estimasi** (08-10-2026, "semua data estimasi yang muncul di tab akseptasi di hapus"):
   blok "Claim Estimation" `InputAcceptation_Adjs` (salinan hanya-baca tab Estimation) tidak ditampilkan; data tidak
   dihapus dan tetap di tab Estimation. Acceptance Information, Acceptation List, Spreading Adjustment Total tetap.

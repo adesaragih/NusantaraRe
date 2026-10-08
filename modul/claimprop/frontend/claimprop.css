@@ -574,6 +574,16 @@
   min-width: 0;
 }
 
+/* Inline grid double bersarang (panel AdjustmentDetail: [Type, Currency | Payment Type, DLA] di setengah kiri, seperti
+   Pega): kolom label lebih sempit supaya isian selebar seperempat tetap terbaca. */
+.claimprop .claimprop__dua .claimprop__dua {
+  gap: 8px 16px;
+}
+
+.claimprop .claimprop__dua .claimprop__dua .claimprop__baris {
+  grid-template-columns: 96px minmax(0, 1fr);
+}
+
 /* Inline: anak sebaris (Quarter/Year, RNM Share, baris tombol). */
 .claimprop .claimprop__sebaris {
   display: flex;
@@ -800,8 +810,28 @@
 }
 
 .claimprop .claimprop__rinci {
-  border-left: 3px solid var(--cp-garis);
+  border-left: 3px solid var(--cp-aksen-garis);
   padding: 8px 12px;
+}
+
+/* Penanda baris ber-panel (Acceptation List): seluruh baris dapat diklik, panah menunjukkan terbuka / tertutup. */
+.claimprop .claimprop__panah {
+  display: inline-block;
+  width: 1.1em;
+  color: var(--cp-teks-redup);
+}
+
+/* Layout bebas berkolom XML (LetakTabel): tabel tetap Deductible / Treaty Gross / Total di panel AdjustmentDetail. */
+.claimprop .claimprop__tabel--tetap {
+  width: 100%;
+  margin: 8px 0 12px;
+}
+
+.claimprop .claimprop__tabel--tetap th,
+.claimprop .claimprop__tabel--tetap td {
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid var(--cp-kepala-garis);
 }
 
 /* --------------------------------------------------------------- pop-up */

@@ -9,7 +9,7 @@
 // tombol ikon dari XML (pi-plus / pi-trash / pi-pencil / pi-check), grid ber-paging (pyGridPaginator). Pengelompokan di
 // `susun.ts`.
 
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 
 import { PilihSaring } from '../../../../inti/frontend/components/ui/pilihSaring'
 import type { Halaman, Pilihan, Tata } from '../api'
@@ -17,7 +17,7 @@ import { tampilTanggal } from '../ketikTanggal'
 import { ambil, hanyaAngka, jalurBaris, tampilAngka } from '../nilai'
 import InputAngka from './InputAngka'
 import InputTanggal from './InputTanggal'
-import { rincianUntuk, type RincianGrid } from './rincian'
+import { barisTerbuka, bukaAwal, rincianUntuk, type RincianGrid } from './rincian'
 import { jumlahHalaman, potongHalaman, ratakan, susunIsi, susunLayar, type Butir } from './susun'
 import { butirSaring, teksTerpilih } from './tampilanNama'
 
@@ -410,6 +410,43 @@ function Tab({ t, k }: { t: Tata; k: KonteksTata }) {
   )
 }
 
+/**
+ * Layout bebas berkolom XML (`LetakTabel`, mis. Deductible / Treaty Gross / Total di AdjustmentDetail): baris pertama =
+ * judul kolom, sel medan tanpa label; judul kolom berisi angka rata kanan seperti nilainya.
+ */
+function TabelTetap({ t, k }: { t: Tata; k: KonteksTata }) {
+  const [kepala, ...isi] = (t.anak ?? []).filter((b) => b.jenis === 'bagian')
+  if (!kepala) return null
+  const angka = (j: number) => isi.some((b) => b.anak?.[j]?.kendali === 'angka')
+  const sel = (c: Tata) => {
+    if (c.jenis === 'medan') {
+      const jalur = c.jalur ?? ''
+      return <Medan t={c} k={k} indeks={indeksDari(jalur)} jalur={jalur} />
+    }
+    return c.jenis === 'label' ? c.label : null
+  }
+  return (
+    <table className="claimprop__tabel claimprop__tabel--tetap">
+      <thead>
+        <tr>
+          {(kepala.anak ?? []).map((c, j) => (
+            <th key={j}>{angka(j) ? <span className="claimprop__angka">{c.label}</span> : c.label}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {isi.map((b, i) => (
+          <tr key={i}>
+            {(b.anak ?? []).map((c, j) => (
+              <td key={j}>{sel(c)}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
 /** Kepala layar: judul tahap di tengah, Claim No di bawahnya. */
 function Kepala({ t, k }: { t: Tata; k: KonteksTata }) {
   const isi = ratakan(t.anak ?? [])
@@ -441,11 +478,23 @@ function Kepala({ t, k }: { t: Tata; k: KonteksTata }) {
 }
 
 function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
-  const [buka, setBuka] = useState<number | null>(null)
-  const [hal, setHal] = useState(1)
   const rinci = rincianUntuk(k.rincian, t.jalur)
   const kolom = t.kolom ?? []
   const semua = t.baris ?? []
+  // Panel rinci baris terbuka tanpa klik (work owner 08-10-2026 "tidak harus klik angka sebelah kiri"): baris terbaru
+  // terbuka sejak awal dan sesudah Add; klik di mana pun pada baris membuka / menutup.
+  const nBaris = semua.length
+  const [buka, setBuka] = useState<number | null>(() => bukaAwal(nBaris))
+  const [hal, setHal] = useState(1)
+  const adaRinci = rinci !== undefined
+  const nLalu = useRef(nBaris)
+  useEffect(() => {
+    const lalu = nLalu.current
+    nLalu.current = nBaris
+    if (nBaris === lalu) return
+    setBuka((b) => barisTerbuka(b, lalu, nBaris))
+    if (adaRinci && nBaris > lalu && t.perHalaman) setHal(jumlahHalaman(nBaris, t.perHalaman))
+  }, [nBaris, adaRinci, t.perHalaman])
   const nHal = jumlahHalaman(semua.length, t.perHalaman)
   const halIni = Math.min(hal, nHal)
   const awal = t.perHalaman ? (halIni - 1) * t.perHalaman : 0
@@ -520,9 +569,19 @@ function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
               <Fragment key={n}>
                 <tr
                   className={rinci ? 'inbox__baris' : undefined}
+                  aria-expanded={rinci ? buka === n : undefined}
                   onClick={rinci ? () => setBuka(buka === n ? null : n) : undefined}
                 >
-                  {t.bernomor && <td>{n}</td>}
+                  {t.bernomor && (
+                    <td>
+                      {rinci && (
+                        <span className="claimprop__panah" aria-hidden="true">
+                          {buka === n ? '▾' : '▸'}
+                        </span>
+                      )}
+                      {n}
+                    </td>
+                  )}
                   {kolom.map((c, j) => {
                     const s = sel[j]
                     if (!s || !s.tampil) return <td key={j} />
@@ -532,7 +591,10 @@ function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
                         key={j}
                         className={c.jenis === 'tombol' ? 'claimprop__td-aksi' : undefined}
                         onClick={(e) => {
-                          if (c.jenis === 'medan') e.stopPropagation()
+                          // hanya isian yang dapat diubah menahan klik; sel hanya-baca ikut membuka panel baris
+                          if (c.jenis === 'medan' && !cel.hanyaBaca && !cel.nonaktif && c.kendali !== 'tampil') {
+                            e.stopPropagation()
+                          }
                         }}
                       >
                         {c.jenis === 'tombol' ? (
@@ -610,6 +672,7 @@ export default function TataView({ tata, k }: { tata: readonly Tata[]; k: Kontek
             if (u.t.letak === 'dua') return <Dua key={i} t={u.t} k={k} />
             if (u.t.letak === 'tab') return <Tab key={i} t={u.t} k={k} />
             if (u.t.letak === 'judul') return <Kepala key={i} t={u.t} k={k} />
+            if (u.t.letak === 'tabel') return <TabelTetap key={i} t={u.t} k={k} />
             return <Sebaris key={i} t={u.t} k={k} />
           default:
             return (

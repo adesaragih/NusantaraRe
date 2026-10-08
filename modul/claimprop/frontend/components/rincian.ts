@@ -19,3 +19,18 @@ export interface RincianGrid {
 export function rincianUntuk(r: RincianGrid | undefined, jalurGrid: string | undefined): RincianGrid | undefined {
   return r !== undefined && r.daftar === jalurGrid ? r : undefined
 }
+
+/**
+ * Baris grid ber-panel yang terbuka tanpa klik (work owner 08-10-2026 "tidak harus klik angka sebelah kiri untuk
+ * membuka adjustment nya"): baris terbaru terbuka sejak awal.
+ */
+export function bukaAwal(nBaris: number): number | null {
+  return nBaris > 0 ? nBaris : null
+}
+
+/** Baris terbuka sesudah jumlah baris berubah: baris baru (Add) langsung terbuka; baris yang terhapus ditutup. */
+export function barisTerbuka(buka: number | null, nLalu: number, nKini: number): number | null {
+  if (nKini > nLalu) return nKini
+  if (buka !== null && buka > nKini) return bukaAwal(nKini)
+  return buka
+}

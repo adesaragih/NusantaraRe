@@ -45,7 +45,7 @@ export interface Tata {
   tambah?: Tata
   bernomor?: boolean
   /** Format layout Pega: dua = Inline grid double, sebaris = Inline, tab = layout group Tab, judul = kepala layar. */
-  letak?: 'dua' | 'sebaris' | 'tab' | 'judul'
+  letak?: 'dua' | 'sebaris' | 'tab' | 'judul' | 'tabel'
   /** Ikon tombol dari XML (pi-plus, pi-trash, pi-pencil, pi-check). */
   ikon?: 'tambah' | 'hapus' | 'ubah' | 'simpan'
   /** Paging grid (pyGridPaginator). */
