@@ -26,9 +26,25 @@ func TestSpreadingTypeDariRDSamaLayarPega(t *testing.T) {
 	h := shareProp(t, MasukanShareProp{Aksi: AksiSharePropSpreading, Limits: limits, Commencement: "20250101"}, src)
 	d := detailUji(h, 0, 0)
 
-	// RD anak dipanggil dengan tahun, grup, desc, induk, dan TreatyYearID induk.
-	if !reflect.DeepEqual(src.panggil, [][]string{{"2025", "10007", "10001", "10252", "1000679"}}) {
+	// ⛔ GRUP KOSONG — penyimpangan yang diputuskan pemilik proses 8 Oktober
+	// 2026 (*"gimana pun caranya asal itu ada isinya"*): menyaring per Treaty
+	// Group mengosongkan dropdown untuk kontrak yang susunannya ADA di
+	// `PROPORTIONALARRG`, hanya di grup lain. Dibuang di dropdown DAN di
+	// pencarian ini sekaligus — lihat `fetchQS` (`hitung_share_np.go`).
+	if !reflect.DeepEqual(src.panggil, [][]string{{"2025", "", "10001", "10252", "1000679"}}) {
 		t.Errorf("RD anak %v", src.panggil)
+	}
+	// ⛔ RD INDUK pun dipanggil TANPA grup — penyimpangan ini hanya utuh
+	// bila KEDUANYA dibuang. Menyaring induk per grup sementara anaknya
+	// tidak membuat Spreading Type tidak pernah ditemukan, dan gridnya
+	// kosong tanpa satu pun galat.
+	for _, g := range src.grupInduk {
+		if g != "" {
+			t.Errorf("RD induk diminta dengan grup %q, mau kosong", g)
+		}
+	}
+	if len(src.grupInduk) == 0 {
+		t.Error("RD induk tidak dipanggil sama sekali")
 	}
 	var baris []string
 	for _, r := range larikSimpul(d, "SpreadingList") {

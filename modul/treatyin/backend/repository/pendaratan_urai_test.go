@@ -188,9 +188,9 @@ func TestPetaPendaratanSejajarDanUnik(t *testing.T) {
 		}
 	}
 	// 22 + 3 (migrasi 438) + 4 (migrasi 439) + 1 (migrasi 446) + 1 (migrasi 448)
-	// + 1 (migrasi 449) + 3 (migrasi 450) + 3 (migrasi 453) = 38.
-	if len(repository.PetaPendaratan) != 38 {
-		t.Errorf("%d tabel pendaratan, mau 38", len(repository.PetaPendaratan))
+	// + 1 (migrasi 449) + 3 (migrasi 450) + 3 (migrasi 453) + 1 (migrasi 454) = 39.
+	if len(repository.PetaPendaratan) != 39 {
+		t.Errorf("%d tabel pendaratan, mau 39", len(repository.PetaPendaratan))
 	}
 }
 

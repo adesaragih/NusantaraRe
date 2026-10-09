@@ -92,17 +92,19 @@ export function susunDokumen(
 }
 
 /**
- * Grid Rate of Exchange → `KursSimpan`: hanya baris BARU (ber-mata uang) dan
- * baris yang BERUBAH dari yang dimuat. `null` = tidak ada yang berubah.
+ * Grid Rate of Exchange → `KursSimpan`: SELURUH baris grid (yang kosong
+ * dibuang) — yang tidak berubah bertanda `tetap` dan tidak ditulis, yang
+ * baru/berubah ditulis. `null` = tidak ada yang berubah.
  *
- * ⛔ Baris yang dihapus dari grid TIDAK dikirim untuk dihapus — keputusan
- * pemilik proses: `TREATYEXCHANGEYEARLY` berkunci TAHUN dan dipakai bersama.
+ * ⛔ Baris yang dihapus dari grid tidak dihapus dari `TREATYEXCHANGEYEARLY`
+ * (keputusan pemilik proses: tabel bersama) — ia hanya lepas dari kontrak.
  * Tanggal dikirim `YYYYMMDD` di `…Asli`; server mengubahnya menjadi stempel.
  */
 export function kursBerubah(kini: readonly BarisKursWarisan[], asli: readonly BarisKursWarisan[], tahun: string): KursSimpan | null {
   const dimuat = new Map<string, BarisKursWarisan>()
   for (const a of asli) if (a.id !== undefined && a.id !== '') dimuat.set(a.id, a)
   const baris: BarisKursWarisan[] = []
+  let berubah = false
   for (const b of kini) {
     const id = b.id ?? ''
     if (id === '') {
@@ -116,11 +118,23 @@ export function kursBerubah(kini: readonly BarisKursWarisan[], asli: readonly Ba
         a.nilaiKeIDR === b.nilaiKeIDR &&
         keYYYYMMDD(a.berlakuDariAsli) === keYYYYMMDD(b.berlakuDariAsli) &&
         keYYYYMMDD(a.berlakuSampaiAsli) === keYYYYMMDD(b.berlakuSampaiAsli)
-      if (sama) continue
+      if (sama) {
+        // ⭐ Tetap DIKIRIM (bertanda `tetap`, tidak ditulis): server
+        // mencatat ulang kurs milik kontrak dari SELURUH grid. Dulu baris ini
+        // dibuang, sehingga lepas dari kontrak dan grid jatuh ke kurs
+        // seluruh tahun — tampak bertambah (laporan 9 Oktober 2026).
+        baris.push({ ...b, tetap: true })
+        continue
+      }
     }
+    berubah = true
     baris.push({ ...b, berlakuDariAsli: keYYYYMMDD(b.berlakuDariAsli), berlakuSampaiAsli: keYYYYMMDD(b.berlakuSampaiAsli) })
   }
-  return baris.length === 0 ? null : { tahun, baris }
+  // Baris yang di-Delete (atau urutan yang berganti) juga perubahan.
+  const idAsli = asli.map((a) => a.id ?? '').filter((id) => id !== '')
+  const idKini = baris.map((b) => b.id ?? '').filter((id) => id !== '')
+  if (idAsli.join('|') !== idKini.join('|')) berubah = true
+  return berubah ? { tahun, baris } : null
 }
 
 /**
@@ -130,6 +144,22 @@ export function kursBerubah(kini: readonly BarisKursWarisan[], asli: readonly Ba
  * Information & Submit.
  */
 export const POSISI_PENYETUJU = ['ReasTreatyInSecHead', 'ReasTreatyInDeptHead', 'ReasTreatyInDirector'] as const
+
+/**
+ * Syarat tampil tombol `Save` di form — keputusan pemakai 9 Oktober 2026:
+ * *"tombol save muncul apabila workbasketnya sesuai dengan yg di usernya"*.
+ * Workbasket berkas = `Position` (kosong = `ReasTreatyInAdmin`, kontrak
+ * baru/draf); Save tampil hanya bila akun memegang workbasket itu. Akun
+ * divisi IT (Force Edit) dikecualikan. Tetap tidak untuk `Resolve Complete`.
+ */
+export function bolehSave(posisi: string, workbasket: readonly string[], status: string, divisi: string): boolean {
+  if (status === 'Resolve Complete') return false
+  const wb = posisi === '' ? 'ReasTreatyInAdmin' : posisi
+  return workbasket.includes(wb) || divisi === DIVISI_IT
+}
+
+/** Divisi akun (`M_LOGIN_GO.DIVISION_CODE`) pemegang Force Edit. */
+export const DIVISI_IT = 'IT'
 
 export function bolehActions(posisi: string, workbasket: readonly string[], status: string): boolean {
   if (status === 'Resolve Complete') return false

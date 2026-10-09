@@ -31,10 +31,12 @@ import { useId, useRef, useState } from 'react'
 
 import { dariInputTanggal, keInputTanggal } from '../../../../inti/frontend/lib/tanggalInput'
 
+import { saringTanggal } from './ketikAngka'
+
 /** Petunjuk ketik — di `title` dan pesan salah. */
-export const PETUNJUK_TANGGAL = 'Ketik DD/MM/YYYY atau pilih dari kalender'
-export const TANGGAL_SALAH = 'Tanggal tidak dikenali — ketik DD/MM/YYYY'
-const LABEL_KALENDER = 'Pilih dari kalender'
+export const PETUNJUK_TANGGAL = 'Type DD/MM/YYYY or pick from the calendar'
+export const TANGGAL_SALAH = 'Date not recognised — type DD/MM/YYYY'
+const LABEL_KALENDER = 'Pick from the calendar'
 
 function wajar(th: number, bl: number, hr: number): boolean {
   if (th < 1900 || th > 9999 || bl < 1 || bl > 12 || hr < 1) return false
@@ -124,7 +126,9 @@ export function KotakTanggalKetik({
             if (draf === null) setDraf(keTeksTanggal(value))
           }}
           onChange={(e) => {
-            setDraf(e.target.value)
+            // ⭐ Huruf TIDAK dapat diketik — hanya digit dan pemisah tanggal
+            // (permintaan pemakai 9 Oktober 2026).
+            setDraf(saringTanggal(e.target.value))
             setSalah(false)
           }}
           onBlur={simpan}

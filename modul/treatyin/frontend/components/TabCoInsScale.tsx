@@ -60,6 +60,7 @@ import { useProperti } from '../halaman'
 import type { ModeForm } from '../mode'
 import { selAngka } from './angka'
 import { TombolHapus, TombolTambah } from './limitsUI'
+import { saringAngka } from './saringAngka'
 
 /**
  * Satu baris `TreatyIn.CoInScale` — `.CoInShare` dan `.PctLimit`, ejaan
@@ -96,7 +97,7 @@ function MedanAngka({
         // sel 277/278. `lihat` di layar ini.
         readOnly={!bisaUbah}
         onChange={(e) => {
-          onUbah(e.target.value)
+          onUbah(saringAngka(e.target.value))
         }}
       />
     </div>
@@ -130,7 +131,7 @@ export default function TabCoInsScale({
     // layar pemakai 7 Oktober 2026).
     <section className="panel trin__coin" aria-label="Co-Ins Scale">
       <div className="trin__coin-bungkus">
-        <table className="trin__tabel">
+        <table className="trin__tabel trin__tabel--pega">
           <thead>
             <tr>
               <th scope="col">{KOLOM_COIN_SCALE[0]}</th>
@@ -186,7 +187,7 @@ export default function TabCoInsScale({
                         aria-label={KOLOM_COIN_SCALE[1]}
                         value={b.PctLimit}
                         onChange={(e) => {
-                          ubah(i, 'PctLimit', e.target.value)
+                          ubah(i, 'PctLimit', saringAngka(e.target.value))
                         }}
                       />
                       <span aria-hidden="true">{CO_INS_SCALE.simbolPersen}</span>

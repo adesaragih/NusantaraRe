@@ -549,6 +549,11 @@ export interface BarisKursWarisan {
    */
   berlakuDariAsli: string
   berlakuSampaiAsli: string
+  /**
+   * Hanya di kiriman Save: baris ber-ID yang TIDAK diubah — tidak ditulis,
+   * hanya dicatat tetap milik kontrak (`kursBerubah`).
+   */
+  tetap?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -1305,6 +1310,9 @@ export interface MasukanAngsuran {
   /** `TreatyIn.TotalShareNetNP` — dari tab Share Non-Prop. */
   netPremium: readonly NilaiShare[]
   indeks: number
+  /** `TreatyIn.Commencement`/`.Termination` TERKINI (bentuk simpan) — sumber Due Date. */
+  commencement?: string
+  termination?: string
 }
 
 export interface HasilAngsuran {
@@ -1323,11 +1331,22 @@ export async function hitungAngsuran(m: MasukanAngsuran): Promise<HasilAngsuran>
   return minta<HasilAngsuran>(`${PREFIX_TREATYIN}/hitung/angsuran`, { metode: 'POST', badan: m })
 }
 
-/** `GET /api/treaty-in/warisan/spreading-induk` — dropdown `Spreading Type`. */
-export async function ambilIndukSpreading(treatyGroupId: string, mulai: string): Promise<SusunanSpreading[]> {
-  return minta<SusunanSpreading[]>(
-    `${PREFIX_TREATYIN}/warisan/spreading-induk?treatyGroupId=${encodeURIComponent(treatyGroupId)}&mulai=${encodeURIComponent(mulai)}`,
-  )
+/**
+ * `GET /api/treaty-in/warisan/spreading-induk` — dropdown `Spreading Type`.
+ *
+ * ⛔ PARAMETER YANG TIDAK DIKIRIM MEMBUAT FILTERNYA DILEWATI, persis
+ * `BrowseTreatyArrangement_ParentReinsMasterTrt` (nol `pyUseNullIfEmpty`).
+ * Jadi yang dikirim HARUS sama dengan yang Section-nya kirim:
+ *
+ *	XOL  (`Section/Share.xml`)         StartDate saja
+ *	Prop (`Section/DetailShare.xml`)   TreatyDescID "10001" + StartDate
+ *
+ * ⚠️ NOL pemanggil mengirim `treatyGroupId`. Ia tetap ada di tanda tangan ini
+ * karena rutenya menerimanya, bukan karena ada yang memakainya.
+ */
+export async function ambilIndukSpreading(treatyGroupId: string, treatyDescId: string, mulai: string): Promise<SusunanSpreading[]> {
+  const q = new URLSearchParams({ treatyGroupId, treatyDescId, mulai })
+  return minta<SusunanSpreading[]>(`${PREFIX_TREATYIN}/warisan/spreading-induk?${q.toString()}`)
 }
 
 /** `GET /api/treaty-in/warisan/reasuradur-share` — autocomplete `Reinsurer Name`. */
@@ -1405,5 +1424,17 @@ export interface HasilDaftarNegatifAgen {
 export async function periksaDaftarNegatifAgen(idCedant: string, idAsalBisnis: string): Promise<HasilDaftarNegatifAgen> {
   return minta<HasilDaftarNegatifAgen>(
     `${PREFIX_TREATYIN}/agen/daftar-negatif?cedant=${encodeURIComponent(idCedant)}&asalBisnis=${encodeURIComponent(idAsalBisnis)}`,
+  )
+}
+
+/**
+ * `GET /kontrak/{id}/lampiran/unduh-semua` — tombol `Download All` panel
+ * Attachment (`DownloadAll_Act`): seluruh lampiran dalam `AllDocuments.zip`,
+ * lewat fetch beridentitas seperti tautan nama berkas.
+ */
+export async function unduhSemuaLampiran(idKontrak: string): Promise<void> {
+  return unduhBerkasBeridentitas(
+    `${PREFIX_TREATYIN}/kontrak/${encodeURIComponent(idKontrak)}/lampiran/unduh-semua`,
+    'AllDocuments.zip',
   )
 }

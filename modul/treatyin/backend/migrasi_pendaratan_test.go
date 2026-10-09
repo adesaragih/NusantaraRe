@@ -93,6 +93,10 @@ var tabelPendaratan = map[string]int{
 	"T_TREATY_SHARE_GROUP":      0,
 	"T_TREATY_SHARE_XOL_AMOUNT": 0,
 	"T_TREATY_FAC_SHARE_GROUP":  0,
+
+	// ⭐ Migrasi 454 (parkir), 8 Oktober 2026 — pecahan spreading manual
+	// Share Prop (`BreakDownSprdList`). Baru: nol baris; diisi tombol Save.
+	"T_TREATY_LIMIT_SPRD_BREAKDOWN": 0,
 }
 
 // Nama yang DIBUAT migrasi 430/432, untuk tiap nama yang dipakai hari ini.
@@ -152,6 +156,8 @@ var namaDDLPendaratan = map[string]string{
 	"T_TREATY_SHARE_GROUP":      "T_TREATY_SHARE_GROUP",
 	"T_TREATY_SHARE_XOL_AMOUNT": "T_TREATY_SHARE_XOL_AMOUNT",
 	"T_TREATY_FAC_SHARE_GROUP":  "T_TREATY_FAC_SHARE_GROUP",
+	// 454 juga, di folder parkir.
+	"T_TREATY_LIMIT_SPRD_BREAKDOWN": "T_TREATY_LIMIT_SPRD_BREAKDOWN",
 }
 
 func TestSembilanTabelPendaratanAdaDanBerkunciUtama(t *testing.T) {

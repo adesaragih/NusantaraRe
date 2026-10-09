@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import type { BarisKursWarisan, LimitsAkar, ShareNP } from './api'
-import { bolehActions, keYYYYMMDD, kursBerubah, susunDokumen, type KepalaForm } from './simpanDokumen'
+import { bolehActions, bolehSave, keYYYYMMDD, kursBerubah, susunDokumen, type KepalaForm } from './simpanDokumen'
 
 const KEPALA: KepalaForm = {
   nonProporsional: true,
@@ -72,7 +72,7 @@ describe('susunDokumen — isi layar → properti TreatyIn ejaan Pega', () => {
   })
 })
 
-describe('kursBerubah — hanya baris baru dan yang berubah', () => {
+describe('kursBerubah — seluruh grid; yang tidak berubah bertanda tetap', () => {
   const asli: BarisKursWarisan[] = [
     {
       id: '13358',
@@ -111,8 +111,19 @@ describe('kursBerubah — hanya baris baru dan yang berubah', () => {
     expect(k?.baris[1]).toMatchObject({ mataUang: 'SGD', berlakuDariAsli: '20250701' })
   })
 
-  it('⛔ baris yang dihapus dari grid TIDAK dikirim untuk dihapus', () => {
-    expect(kursBerubah([], asli, '2025')).toBeNull()
+  it('⭐ baris yang tidak diubah IKUT dikirim bertanda tetap — tidak lepas dari kontrak', () => {
+    const kini: BarisKursWarisan[] = [
+      asli[0]!,
+      { mataUang: 'IDR', mataUangID: '10026', nilaiKeIDR: '1', berlakuDari: '', berlakuSampai: '', berlakuDariAsli: '01-07-2025', berlakuSampaiAsli: '30-06-2026' },
+    ]
+    const k = kursBerubah(kini, asli, '2025')
+    expect(k?.baris).toHaveLength(2)
+    expect(k?.baris[0]).toMatchObject({ id: '13358', tetap: true })
+    expect(k?.baris[1]?.tetap).toBeUndefined()
+  })
+
+  it('⛔ baris yang di-Delete hanya LEPAS: grid tanpa baris itu dikirim, nol hapus di tabel', () => {
+    expect(kursBerubah([], asli, '2025')).toEqual({ tahun: '2025', baris: [] })
   })
 
   it('keYYYYMMDD menerima tiga bentuk', () => {
@@ -120,6 +131,20 @@ describe('kursBerubah — hanya baris baru dan yang berubah', () => {
     expect(keYYYYMMDD('01-07-2025')).toBe('20250701')
     expect(keYYYYMMDD('2025-07-01')).toBe('20250701')
     expect(keYYYYMMDD('bukan')).toBe('')
+  })
+})
+
+describe('bolehSave — Save hanya bagi pemegang workbasket posisi berkas', () => {
+  it('posisi kosong = Admin; workbasket lain tidak melihat Save', () => {
+    expect(bolehSave('', ['ReasTreatyInAdmin'], '', '')).toBe(true)
+    expect(bolehSave('ReasTreatyInAdmin', ['ReasTreatyInAdmin'], 'Reject', '')).toBe(true)
+    expect(bolehSave('', ['ReasTreatyInSecHead'], '', '')).toBe(false)
+    expect(bolehSave('ReasTreatyInSecHead', ['ReasTreatyInAdmin'], 'Accept', '')).toBe(false)
+    expect(bolehSave('ReasTreatyInDeptHead', [], 'Accept', '')).toBe(false)
+  })
+  it('divisi IT (Force Edit) dikecualikan; Resolve Complete tetap tanpa Save', () => {
+    expect(bolehSave('ReasTreatyInDeptHead', [], 'Accept', 'IT')).toBe(true)
+    expect(bolehSave('', ['ReasTreatyInAdmin'], 'Resolve Complete', 'IT')).toBe(false)
   })
 })
 

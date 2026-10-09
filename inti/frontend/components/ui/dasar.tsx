@@ -151,6 +151,7 @@ export function FieldAngka({
   readOnly,
   placeholder,
   error,
+  ariaLabel,
 }: {
   label: string;
   /** Bentuk KABEL (titik desimal, tanpa pemisah ribuan). */
@@ -164,6 +165,16 @@ export function FieldAngka({
   readOnly?: boolean;
   placeholder?: string;
   error?: string;
+  /**
+   * Nama medan untuk pembaca layar ketika `label` sengaja KOSONG.
+   *
+   * ⛔ Sel tabel sudah bernama oleh `<th>`-nya, jadi label kedua di
+   * dalam sel menggandakan judul kolom — `Pct Share` tercetak dua kali
+   * bertumpuk (laporan pemilik proses 8 Oktober 2026). Mengosongkan
+   * `label` saja membuang namanya dari pembaca layar juga; prop ini
+   * menyembunyikan labelnya TANPA membuat medannya anonim.
+   */
+  ariaLabel?: string;
 }) {
   const [fokus, setFokus] = useState(false);
   const [ketik, setKetik] = useState("");
@@ -194,7 +205,7 @@ export function FieldAngka({
         value={tampil}
         readOnly={readOnly}
         placeholder={placeholder}
-        aria-label={label === "" ? undefined : label}
+        aria-label={label === "" ? ariaLabel : label}
         onFocus={() => {
           // ⛔ Bentuk KABEL memakai TITIK desimal; `formatKetik` membaca titik
           // sebagai pemisah ribuan. Terjemahkan dulu, atau `1000000.5`

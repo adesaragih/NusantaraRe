@@ -17,10 +17,13 @@
 //
 // ⭐ Kunci sel dibaca dengan `hanya_baca()` pembaca bersama
 // (`D:\XML_NURE\_migration-docs\alat-baca-ekspor`): `pyReadOnlyCondition`
-// MENIMPA `pyReadOnly`. Di panel rincian, Layer Type · Layer · Layer Part
-// Type · Layer Part · Cover · Deduction Details · Spreading Type terkunci
-// HANYA bila `TreatyIn.ViewState = 1`; Class of Business dan sel grid
-// spreading bernama ber-`Auto`. Semuanya dapat diisi di mode Edit.
+// MENIMPA `pyReadOnly`. Di panel rincian, Cover · Deduction Details ·
+// Spreading Type terkunci HANYA bila `TreatyIn.ViewState = 1`.
+// ⛔ KECUALI sel ber-`pyEditOptions = Read-only` yang modenya
+// `pyDisabledNew = always` (8 Oktober 2026; kerangka Adjustment `baca:
+// "selalu"`): Layer Type · Layer · Layer Part Type · Layer Part (@63296 dst.),
+// grid Treaty Group (`CoBListReadOnly`), dan grid spreading bernama — SELALU
+// baca-saja, seperti Pega.
 //
 // ⚠️ Simpangan tampilan yang disengaja:
 //  - Dropdown `Spreading Type` panel rincian di Pega hanya tampil bila
@@ -36,7 +39,9 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
-import { Field, Kosong, Panel, Pilih } from '../../../../inti/frontend/components/ui/dasar'
+import { formatNumber } from '../../../../inti/frontend/lib/format'
+import { Field } from '../../../../inti/frontend/components/ui/dasar'
+import { PilihCari as Pilih } from '../../../../inti/frontend/components/ui/pilihSaring'
 import {
   ambilIndukSpreading,
   ambilOpsiLimits,
@@ -50,6 +55,7 @@ import {
   type OpsiLimits,
   type OpsiPilihan,
   type PilihanWarisan,
+  type RingkasanShareNP,
   type ShareNP,
   type SimpulLimit,
   type SusunanSpreading,
@@ -69,13 +75,37 @@ import {
   SHARE_NP,
 } from '../labelsShareNP'
 import type { ModeForm } from '../mode'
-import IsianAuto from './IsianAuto'
+// ⛔ `DropdownDaftar`, BUKAN `IsianAuto`: yang kedua `<datalist>` —
+// ketikan bebas lolos jadi nilai, dan daftarnya tidak menyaring.
+// Permintaan pemilik proses 8 Oktober 2026 untuk seluruh dropdown
+// Treaty In dan Adjustment: mengetik harus terasa seperti mencari.
+import { DropdownDaftar } from './IsianAuto'
 import { StripTabNavigasi, TombolNavigasi } from './navigasi'
 import { PemicuUbah, usePemicuUbah } from './pemicuUbah'
-import { Bagian, IkonChevronKanan, KepalaBagian, TombolHapus, TombolTambah } from './limitsUI'
+import { BlokPega, DeretTombolPega, GridNilaiPega, GridPega, TeksPega } from './gridPega'
+import { TataPegaBlok } from './tataPega'
+import { Bagian, TombolHapus, TombolTambah } from './limitsUI'
+import { saringAngka } from './saringAngka'
 import { formatLimit } from './TabLimitsProp'
 
 const uang = (v: string) => formatLimit('uang', 2, v)
+/** `pxNumber` tanpa desimal ekspor — angka apa adanya, berpemisah ribuan. */
+/**
+ * Sel angka `Summarry of RNM Share` — DUA desimal, dan nol di ekor dibuang.
+ *
+ * ⛔ Dahulu `formatLimit('uang', -1, …)` = APA ADANYA, dan hasil pembagian
+ * membawa ekornya utuh ke layar: `11.652.832,7749999503125`. Angka seperti
+ * itu bukan hanya sukar dibaca, ia MEMBUNGKUS ke baris berikutnya dan
+ * merusak barisnya (laporan pemilik proses 8 Oktober 2026).
+ *
+ * ⭐ `formatNumber(v, 2)` membulatkan ke dua desimal LALU membuang nol di
+ * ekor, jadi catatan ekspor tetap terpenuhi: `175.000.000` dan `0` tampil
+ * tanpa `,00`, persis seperti Pega menampilkannya. Yang berubah hanya nilai
+ * yang memang berpecahan.
+ */
+const angkaRingkasan = (v: string) => formatNumber(v, 2)
+/** Lebar kolom `Summarry of RNM Share` dari ekspor (`pyWidth`). */
+const LEBAR_RINGKASAN_SHARE = [293, 199, 204, 123, 119, 205, 210, 150, 144] as const
 const persen = (v: string) => formatLimit('persen', 2, v)
 const lebihDariNol = (v: string) => Number.parseFloat(v.replace(',', '.')) > 0
 
@@ -117,6 +147,7 @@ function Medan({
   nilai,
   bisaUbah,
   placeholder,
+  angka = false,
   onUbah,
   onLepas,
 }: {
@@ -124,6 +155,8 @@ function Medan({
   nilai: string
   bisaUbah: boolean
   placeholder?: string
+  /** Kontrol Number di ekspor — huruf/simbol ditolak (`saringAngka`). */
+  angka?: boolean
   onUbah: (v: string) => void
   onLepas?: () => void
 }) {
@@ -131,7 +164,15 @@ function Medan({
   const pemicu = usePemicuUbah(nilai, bisaUbah ? onLepas : undefined)
   return (
     <div className="trin__limit-medan" onFocus={pemicu.masuk} onBlur={pemicu.keluar}>
-      <Field label={label} value={nilai} readOnly={!bisaUbah} placeholder={bisaUbah ? placeholder : undefined} onChange={onUbah} />
+      <Field
+        label={label}
+        value={nilai}
+        readOnly={!bisaUbah}
+        placeholder={bisaUbah ? placeholder : undefined}
+        onChange={(v) => {
+          onUbah(angka ? saringAngka(v) : v)
+        }}
+      />
     </div>
   )
 }
@@ -159,7 +200,39 @@ function PilihMedan({
 
 const OPSI_KOSONG: OpsiLimits = { jenisTreaty: [], kelompokTreaty: [], mataUang: [] }
 
-/** Grid reasuradur — `ShareReins` atau `ShareFacultativeReinsurers`. */
+/**
+ * Dropdown reasuradur grid Reinsurer / Facultative Reinsurers.
+ *
+ * Nilai pilihan = `ReinsID`. Nama kembar (satu nama, beberapa pengenal —
+ * `PilihanWarisan.kembar`) diberi pengenalnya supaya yang memilih tidak
+ * menebak. Baris lama yang `ReinsID`-nya kosong dicocokkan lewat nama; yang
+ * tetap tidak ditemukan tampil apa adanya sebagai pilihan tersendiri, tidak
+ * dikosongkan.
+ */
+export function nilaiReins(b: Pick<BarisReinsShare, 'ReinsID' | 'ReinsName'>, pilihan: readonly PilihanWarisan[]): string {
+  if (b.ReinsID !== '') return b.ReinsID
+  return pilihan.find((o) => o.nama === b.ReinsName)?.id ?? b.ReinsName
+}
+export function opsiReins(b: Pick<BarisReinsShare, 'ReinsID' | 'ReinsName'>, pilihan: readonly PilihanWarisan[]): OpsiPilihan[] {
+  const opsi = pilihan.map((o) => ({ value: o.id, label: o.kembar ? `${o.nama} (${o.id})` : o.nama }))
+  const kini = nilaiReins(b, pilihan)
+  if (kini !== '' && !opsi.some((o) => o.value === kini)) opsi.unshift({ value: kini, label: b.ReinsName || kini })
+  return opsi
+}
+export function pilihReins<T extends Pick<BarisReinsShare, 'ReinsID' | 'ReinsName'>>(b: T, pilihan: readonly PilihanWarisan[], v: string): T {
+  const p = pilihan.find((o) => o.id === v)
+  if (p !== undefined) return { ...b, ReinsID: p.id, ReinsName: p.nama }
+  if (v === '') return { ...b, ReinsID: '', ReinsName: '' }
+  return b
+}
+
+/**
+ * Grid reasuradur — `ShareReins` atau `ShareFacultativeReinsurers`.
+ *
+ * ⭐ Bentuk Pega (8 Oktober 2026): grid `row` berkolom ekspor (lebar 424 ·
+ * 180 · 188, kolom tombol 159), `Add` di sel kepala kolom tombol, `Delete`
+ * per baris — bukan kepala berlencana dengan tombol Add merah di luar grid.
+ */
 function GridReins({
   kolom,
   baris,
@@ -174,128 +247,100 @@ function GridReins({
   onUbah: (b: BarisReinsShare[]) => void
 }) {
   return (
-    <div className="tl-share-reins">
-      <KepalaBagian
-        judul={kolom[0] ?? ''}
-        jumlah={baris.length}
-        aksi={
-          bisaUbah && (
-            <TombolTambah
-              label={SHARE_NP.tambah}
-              onClick={() => {
-                // `TreatyInNonAddItem(sharereins | sharefacname)`: baris ber-ID kosong.
-                onUbah([...baris, { ID: '', ReinsID: '', ReinsName: '', Layer: '', SharePct: '' }])
-              }}
+    <GridPega
+      label={kolom[0]}
+      kolom={[
+        {
+          judul: kolom[0] ?? '',
+          lebar: 424,
+          // `.ReinsName` — daftar `BrowseAgentNusaRe_RD`: `.ClientName`,
+          // `.ID → .ReinsID`.
+          // ⛔ DROPDOWN, bukan autocomplete — permintaan pemakai 9 Oktober
+          // 2026: *"jangan auto complete melainkan dropdown seperti yang
+          // lainnya"* (ekspor: pxAutoComplete). Lihat `pilihReins`.
+          isi: (b, i) =>
+            bisaUbah ? (
+              <PilihMedan
+                label=""
+                nilai={nilaiReins(b, pilihan)}
+                opsi={opsiReins(b, pilihan)}
+                bisaUbah
+                onUbah={(v) => {
+                  onUbah(ganti(baris, i, pilihReins(b, pilihan, v)))
+                }}
+              />
+            ) : (
+              <Field label="" value={b.ReinsName} readOnly onChange={() => undefined} />
+            ),
+        },
+        {
+          judul: kolom[1] ?? '',
+          lebar: 180,
+          isi: (b, i) => (
+            <Medan
+              label=""
+              nilai={b.Layer}
+              bisaUbah={bisaUbah}
+              placeholder={SHARE_NP.placeholderTeks}
+              onUbah={(v) => onUbah(ganti(baris, i, { ...b, Layer: v }))}
             />
-          )
-        }
-      />
-      <div className="table-wrap trin__limit-grid">
-        <table className="trin__tabel">
-          <thead>
-            <tr>
-              {kolom.map((k) => (
-                <th key={k} scope="col">
-                  {k}
-                </th>
-              ))}
-              {bisaUbah && <th scope="col" className="tl-kolom-aksi" aria-label={SHARE_NP.hapus} />}
-            </tr>
-          </thead>
-          <tbody>
-            {baris.length === 0 && (
-              <tr>
-                <td colSpan={kolom.length + (bisaUbah ? 1 : 0)}>{SHARE_NP.tanpaBaris}</td>
-              </tr>
-            )}
-            {baris.map((b, i) => (
-              <tr key={i}>
-                <td>
-                  {/* `.ReinsName` pxAutoComplete `BrowseAgentNusaRe_RD`:
-                      `.ClientName`, `.ID → .ReinsID`. */}
-                  <IsianAuto
-                    label=""
-                    nilai={b.ReinsName}
-                    pilihan={pilihan}
-                    bisaUbah={bisaUbah}
-                    onPilih={(nama, id) => {
-                      onUbah(ganti(baris, i, { ...b, ReinsName: nama, ReinsID: id }))
-                    }}
-                  />
-                </td>
-                <td>
-                  <Medan
-                    label=""
-                    nilai={b.Layer}
-                    bisaUbah={bisaUbah}
-                    placeholder={SHARE_NP.placeholderTeks}
-                    onUbah={(v) => onUbah(ganti(baris, i, { ...b, Layer: v }))}
-                  />
-                </td>
-                <td>
-                  <Medan
-                    label=""
-                    nilai={bisaUbah ? b.SharePct : persen(b.SharePct)}
-                    bisaUbah={bisaUbah}
-                    placeholder={SHARE_NP.placeholderAngka}
-                    onUbah={(v) => onUbah(ganti(baris, i, { ...b, SharePct: v }))}
-                  />
-                </td>
-                {bisaUbah && (
-                  <td>
-                    <TombolHapus
-                      label={SHARE_NP.hapus}
-                      labelAkses={`${SHARE_NP.hapus} ${kolom[0] ?? ''} ${i + 1}`}
-                      onClick={() => onUbah(baris.filter((_, j) => j !== i))}
-                    />
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+          ),
+        },
+        {
+          judul: kolom[2] ?? '',
+          lebar: 188,
+          isi: (b, i) => (
+            <Medan
+              label=""
+              nilai={bisaUbah ? b.SharePct : persen(b.SharePct)}
+              bisaUbah={bisaUbah}
+              placeholder={SHARE_NP.placeholderAngka}
+              angka
+              onUbah={(v) => onUbah(ganti(baris, i, { ...b, SharePct: v }))}
+            />
+          ),
+        },
+      ]}
+      baris={baris}
+      tombol={
+        bisaUbah
+          ? {
+              lebar: 159,
+              // `TreatyInNonAddItem(sharereins | sharefacname)`: baris ber-ID kosong.
+              tambah: {
+                label: SHARE_NP.tambah,
+                onKlik: () => {
+                  onUbah([...baris, { ID: '', ReinsID: '', ReinsName: '', Layer: '', SharePct: '' }])
+                },
+              },
+              hapus: {
+                label: SHARE_NP.hapus,
+                akses: (_, i) => `${SHARE_NP.hapus} ${kolom[0] ?? ''} ${String(i + 1)}`,
+                onKlik: (i) => {
+                  onUbah(baris.filter((_, j) => j !== i))
+                },
+              },
+            }
+          : undefined
+      }
+    />
   )
 }
 
 /**
- * Grid baca-saja `Currency · Value`. Grid total berkepala `judul · Value`;
- * grid rincian panel (`satuKepala`) hanya berjudul, seperti di ekspor.
+ * Grid baca-saja `Currency · Value` — grid nilai Pega yang sempit.
+ * Grid total berkepala `judul · Value`; grid rincian panel (`satuKepala`)
+ * berkepala `judul · ''`, seperti di ekspor (`RNM Limit`, `''`).
  */
 function GridTotal({ judul, baris, satuKepala = false }: { judul: string; baris: readonly NilaiShare[]; satuKepala?: boolean }) {
   return (
-    <div className="table-wrap tl-share-total">
-      <table className="trin__tabel">
-        <thead>
-          <tr>
-            {satuKepala ? (
-              <th scope="colgroup" colSpan={2}>
-                {judul}
-              </th>
-            ) : (
-              <>
-                <th scope="col">{judul}</th>
-                <th scope="col">{SHARE_NP.nilai}</th>
-              </>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {baris.length === 0 && (
-            <tr>
-              <td colSpan={2}>{SHARE_NP.tanpaBaris}</td>
-            </tr>
-          )}
-          {baris.map((b, i) => (
-            <tr key={i}>
-              <td>{b.Currency}</td>
-              <td className="tl-angka">{uang(b.Value)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <GridNilaiPega
+      judul={judul}
+      nilai={satuKepala ? '' : SHARE_NP.nilai}
+      baris={baris}
+      lebar={[194, 352]}
+      tampil={uang}
+    />
   )
 }
 
@@ -303,6 +348,39 @@ function GridTotal({ judul, baris, satuKepala = false }: { judul: string; baris:
 function selPasangan(daftar: readonly NilaiShare[], i: number): [string, string] {
   const v = daftar[i]
   return v === undefined ? ['', ''] : [v.Currency, uang(v.Value)]
+}
+
+/** Teks tampil sebuah nilai dropdown `associated` (label opsi, atau nilainya). */
+function teksPilihan(opsi: readonly OpsiPilihan[], nilai: string): string {
+  return opsi.find((o) => o.value === nilai)?.label ?? nilai
+}
+
+/** Satu baris `TreatyGroupList` panel Share, berikut CoB bila kontraknya membawa. */
+type GrupShareBaca = BarisShareNP['TreatyGroupList'][number] & {
+  ClassOfBusinessList?: readonly { ClassOfBusiness?: string }[]
+}
+
+/**
+ * «CoBListReadOnly» (`Section/CoBListReadOnly.xml`) — rincian satu baris grid
+ * Treaty Group panel Share: `Treaty Group` baca-saja BERLABEL (@15187,
+ * `pyEditOptions = Read-only`, `pyLabelFieldValue = Treaty Group`) lalu grid
+ * `Class of Business` baca-saja (@45602, `readOnly`, tanpa tombol).
+ *
+ * ⚠️ `ClassOfBusinessList` belum ikut kontrak baris Share (`GrupShareNP`
+ * services hanya `TreatyGroup`/`TreatyGroupID`) — dibaca bila ada; selain itu
+ * grid menampilkan "No items", seperti Pega tanpa baris.
+ */
+function RincianCoBBaca({ g }: { g: GrupShareBaca }) {
+  return (
+    <TataPegaBlok tata="tumpuk">
+      <Field label={SHARE_NP.treatyGroup} value={g.TreatyGroup} readOnly onChange={() => undefined} />
+      <GridPega
+        label={SHARE_NP.kelasBisnis}
+        kolom={[{ judul: SHARE_NP.kelasBisnis, lebar: 196, isi: (c: { ClassOfBusiness?: string }) => c.ClassOfBusiness ?? '' }]}
+        baris={g.ClassOfBusinessList ?? []}
+      />
+    </TataPegaBlok>
+  )
 }
 
 /** Judul baris: `Layer 1 Part of Layer 1`. */
@@ -348,309 +426,32 @@ export function RincianShare({
   const ubahDeduksi = (i: number, d: BarisDeduksiShare) => {
     onUbah({ ...b, DeductionList: ganti(b.DeductionList, i, d) })
   }
-  return (
-    <div className="tl-rincian tl-share-rincian">
-      {pesan.length > 0 && (
-        <ul className="tl-pesan" role="alert">
-          {pesan.map((p, i) => (
-            <li key={i}>{p}</li>
-          ))}
-        </ul>
-      )}
-      <div className="form-grid">
-        <Medan
-          label={SHARE_NP.persenRnm}
-          nilai={b.RNMShare}
-          bisaUbah={bisaUbah}
-          placeholder={SHARE_NP.placeholderAngka}
-          onUbah={(v) => onUbah({ ...b, RNMShare: v })}
-          // `TreatyInXOLAddSpreadingDetail(idx)`.
-          onLepas={() => hitung('rnm-baris')}
-        />
-        {/* `.Cover` pxDropdown — terkunci hanya bila `ViewState = 1`. */}
-        <PilihMedan
-          label={SHARE_NP.cover}
-          nilai={b.Cover}
-          opsi={opsi.cover ?? []}
-          bisaUbah={modeUbah}
-          onUbah={(v) => onUbah({ ...b, Cover: v })}
-        />
-      </div>
-      {/* Layer Type · Layer · "Part of" · Layer Part Type · Layer Part —
-          terkunci hanya bila `ViewState = 1`, nol aksi. */}
-      <div className="tl-share-layer">
-        <PilihMedan
-          label={SHARE_NP.jenisLayer}
-          nilai={b.LayerType}
-          opsi={opsi.jenisLayer ?? []}
-          bisaUbah={modeUbah}
-          onUbah={(v) => onUbah({ ...b, LayerType: v })}
-        />
-        <Medan label={SHARE_NP.layer} nilai={b.Layer} bisaUbah={modeUbah} onUbah={(v) => onUbah({ ...b, Layer: v })} />
-        <span className="tl-share-layer__of">{SHARE_NP.bagianOf}</span>
-        <PilihMedan
-          label={SHARE_NP.jenisLayer}
-          nilai={b.LayerPartType}
-          opsi={opsi.jenisLayer ?? []}
-          bisaUbah={modeUbah}
-          onUbah={(v) => onUbah({ ...b, LayerPartType: v })}
-        />
-        <Medan label={SHARE_NP.layer} nilai={b.LayerPart} bisaUbah={modeUbah} onUbah={(v) => onUbah({ ...b, LayerPart: v })} />
-      </div>
-
-      <Bagian judul={SHARE_NP.kelasBisnis}>
-        <div className="table-wrap trin__limit-grid">
-          <table className="trin__tabel">
-            <thead>
-              <tr>
-                <th scope="col">{SHARE_NP.treatyGroup}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {b.TreatyGroupList.length === 0 && (
-                <tr>
-                  <td>{SHARE_NP.tanpaBaris}</td>
-                </tr>
-              )}
-              {b.TreatyGroupList.map((g, i) => (
-                <tr key={i}>
-                  <td>
-                    {/* `.TreatyGroup` pxAutoComplete `BrowseTreatyGroup_RD`
-                        (`.ID → .TreatyGroupID`), `Auto`. Aksi ekspornya
-                        (`SetIndexLayer_DT`, `TotalEgnpi`) milik tab Limits —
-                        nol pengaruh ke hitungan Share; yang berubah di sini
-                        isi dropdown Spreading Type (grup baris pertama). */}
-                    <IsianAuto
-                      label=""
-                      nilai={g.TreatyGroup}
-                      pilihan={opsi.kelompokTreaty}
-                      bisaUbah={modeUbah}
-                      onPilih={(nama, id) => {
-                        onUbah({ ...b, TreatyGroupList: ganti(b.TreatyGroupList, i, { TreatyGroup: nama, TreatyGroupID: id }) })
-                      }}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Bagian>
-
-      <Bagian
-        judul={SHARE_NP.deduksi}
-        aksi={
-          modeUbah && (
-            <TombolTambah
-              label={SHARE_NP.tambah}
-              disabled={!bisaUbah}
-              onClick={() => {
-                onUbah({
-                  ...b,
-                  DeductionList: [...b.DeductionList, { Comment: '', Currency: '', CurrencyID: '', Deduction: '', DeductionPct: '' }],
-                })
-              }}
-            />
-          )
-        }
-      >
-        <div className="table-wrap trin__limit-grid">
-          <table className="trin__tabel">
-            <thead>
-              <tr>
-                {KOLOM_DEDUKSI_SHARE.map((k) => (
-                  <th key={k} scope="col">
-                    {k}
-                  </th>
-                ))}
-                {modeUbah && <th scope="col" className="tl-kolom-aksi" aria-label={SHARE_NP.hapusBaris} />}
-              </tr>
-            </thead>
-            <tbody>
-              {b.DeductionList.length === 0 && (
-                <tr>
-                  <td colSpan={KOLOM_DEDUKSI_SHARE.length + (modeUbah ? 1 : 0)}>{SHARE_NP.tanpaBaris}</td>
-                </tr>
-              )}
-              {b.DeductionList.map((d, i) => (
-                <tr key={i}>
-                  <td>
-                    <Medan label="" nilai={d.Comment} bisaUbah={bisaUbah} onUbah={(v) => ubahDeduksi(i, { ...d, Comment: v })} />
-                  </td>
-                  <td>
-                    {/* `.Currency` pxAutoComplete `BrowseCurrency_RD` — dipanggil
-                        tanpa parameter, jadi filter `Currency`/`ID` dilewati:
-                        isinya = daftar mata uang tab Limits (`!= ITL`).
-                        `change` → `CalculateDeduction(index)`. */}
-                    <PemicuUbah
-                      className="trin__limit-medan"
-                      nilai={d.Currency}
-                      aktif={bisaUbah}
-                      aksi={() => hitung('deduksi', { baris: i, sts: '' })}
-                    >
-                      <IsianAuto
-                        label=""
-                        nilai={d.Currency}
-                        pilihan={opsi.mataUang}
-                        bisaUbah={bisaUbah}
-                        onPilih={(nama, id) => ubahDeduksi(i, { ...d, Currency: nama, CurrencyID: id })}
-                      />
-                    </PemicuUbah>
-                  </td>
-                  <td>
-                    <Medan
-                      label=""
-                      nilai={bisaUbah ? d.Deduction : uang(d.Deduction)}
-                      bisaUbah={bisaUbah}
-                      onUbah={(v) => ubahDeduksi(i, { ...d, Deduction: v })}
-                      onLepas={() => hitung('deduksi', { baris: i, sts: 'val' })}
-                    />
-                  </td>
-                  <td className="tl-share-atau">or</td>
-                  <td>
-                    <Medan
-                      label=""
-                      nilai={bisaUbah ? d.DeductionPct : persen(d.DeductionPct)}
-                      bisaUbah={bisaUbah}
-                      onUbah={(v) => ubahDeduksi(i, { ...d, DeductionPct: v })}
-                      onLepas={() => hitung('deduksi', { baris: i, sts: 'pct' })}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="checkbox"
-                      aria-label={KOLOM_DEDUKSI_SHARE[5]}
-                      checked={d.DeductionPctCalculate === 'true'}
-                      disabled={!bisaUbah}
-                      onChange={(e) => ubahDeduksi(i, { ...d, DeductionPctCalculate: e.target.checked ? 'true' : 'false' })}
-                    />
-                  </td>
-                  {modeUbah && (
-                    <td>
-                      <TombolHapus
-                        label={SHARE_NP.hapusBaris}
-                        labelAkses={`${SHARE_NP.hapusBaris} ${SHARE_NP.deduksi} ${i + 1}`}
-                        disabled={!bisaUbah}
-                        onClick={() => {
-                          // deleteRow, lalu `CalculateDeduction(index)`.
-                          const baru = { ...b, DeductionList: b.DeductionList.filter((_, j) => j !== i) }
-                          onUbah(baru)
-                          hitung('deduksi', { baris: i, sts: '', dasar: baru })
-                        }}
-                      />
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Bagian>
-
-      <Bagian judul={SHARE_NP.spreading}>
-        {(bernama || modeUbah) && (
-          <div className="trin__limit-medan">
-            {modeUbah ? (
-              <label className="field">
-                <span className="field__label">{SHARE_NP.spreadingType}</span>
-                <select
-                  className="field__input"
-                  value={b.SpreadingTypeXOL}
-                  onChange={(e) => {
-                    // `FetchQSfromMasterXOL(ParentReinsTypeID = .SpreadingTypeXOL, IsUpdate = 0)`.
-                    const baru = { ...b, SpreadingTypeXOL: e.target.value }
-                    onUbah(baru)
-                    hitung('spreading-type', { dasar: baru })
-                  }}
-                >
-                  <option value="">{SHARE_NP.pilihKosong}</option>
-                  {b.SpreadingTypeXOL !== '' && !induk.some((p) => p.reinsTypeName === b.SpreadingTypeXOL) && (
-                    <option value={b.SpreadingTypeXOL}>{b.SpreadingTypeXOL}</option>
-                  )}
-                  {induk.map((p) => (
-                    <option key={p.reinsTypeId} value={p.reinsTypeName}>
-                      {p.reinsTypeName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : (
-              <Field label={SHARE_NP.spreadingType} value={b.SpreadingTypeXOL} readOnly onChange={() => undefined} />
-            )}
-          </div>
-        )}
-        {bernama ? (
-          <>
+  // ⭐ DUA SPREADING, PERSIS PEGA — keputusan pemakai 9 Oktober 2026 (*"di
+  // pega ada terdapat 2 spreading … yang tidak bisa ditambah itu khusus untuk
+  // spreading lama"*), menggantikan "satu grid untuk kedua cabang" 8 Oktober.
+  //
+  //   `.SpreadingTypeXOL != ''` → spreading LAMA: dropdown Spreading Type +
+  //       grid `readOnly` (@408855, nol tombol) — isi `FetchQSfromMasterXOL`.
+  //   `.SpreadingTypeXOL == ''` → spreading BARU: grid manual ber-Add/Delete
+  //       (@54364, `AddSpreadingXOL`), dropdown Spreading Type TIDAK ada.
+  //
+  // ⚠️ `TreatyInXOLAddSpreading` TIDAK PERNAH mengisi Spreading Type — ia
+  // menjalankan `FetchQSfromMasterXOL` bila sudah terisi, `SetSpreadingXOL`
+  // bila kosong. Spreading lama = kontrak warisan yang menyimpannya.
+  const gridSebar = (lama: boolean) => {
+    const kolom = lama ? KOLOM_SPREADING : KOLOM_SPREADING_MANUAL
+    const sunting = modeUbah && !lama
+    return (
             <div className="table-wrap trin__limit-grid">
-              <table className="trin__tabel">
+              <table className="trin__tabel trin__tabel--pega">
                 <thead>
                   <tr>
-                    {KOLOM_SPREADING.map((k) => (
+                    {kolom.map((k) => (
                       <th key={k} scope="col">
                         {k}
                       </th>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {b.SpreadingListXOL.length === 0 && (
-                    <tr>
-                      <td colSpan={2}>{SHARE_NP.tanpaBaris}</td>
-                    </tr>
-                  )}
-                  {b.SpreadingListXOL.map((s, i) => (
-                    <tr key={i}>
-                      {/* `.ReinsTypeName` · `.Pct` pxTextInput `Auto`, nol aksi. */}
-                      <td>
-                        <Medan
-                          label=""
-                          nilai={s.ReinsTypeName}
-                          bisaUbah={modeUbah}
-                          onUbah={(v) => onUbah({ ...b, SpreadingListXOL: ganti(b.SpreadingListXOL, i, { ...s, ReinsTypeName: v }) })}
-                        />
-                      </td>
-                      <td className="tl-angka">
-                        <Medan
-                          label=""
-                          nilai={modeUbah ? s.Pct : persen(s.Pct)}
-                          bisaUbah={modeUbah}
-                          onUbah={(v) => onUbah({ ...b, SpreadingListXOL: ganti(b.SpreadingListXOL, i, { ...s, Pct: v }) })}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <th scope="row">{SHARE_NP.totalPct}</th>
-                    <td className="tl-angka">{persen(b.SpreadingTotalPctXOL)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-            <p className="tl-share-catatan">
-              {SHARE_NP.totalSpreadingPct} <strong>{persen(b.SpreadingTotalPctXOL)}</strong>
-            </p>
-            {/* Blok `hidden, reference` — TAMPIL bersama Spreading bernama
-                (`NOHEADER`, nol syarat sendiri): dasar · OR · R/I per baris. */}
-            <div className="tl-share-total-grid tl-share-rujukan">
-              {GRID_RINCIAN_SPREADING.flat().map((g) => (
-                <GridTotal key={g.kunci} judul={g.judul} baris={b[g.kunci as keyof BarisShareNP] as readonly NilaiShare[]} satuKepala />
-              ))}
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="table-wrap trin__limit-grid">
-              <table className="trin__tabel">
-                <thead>
-                  <tr>
-                    {KOLOM_SPREADING_MANUAL.map((k) => (
-                      <th key={k} scope="col">
-                        {k}
-                      </th>
-                    ))}
-                    {modeUbah && (
+                    {sunting && (
                       <th scope="col" className="tl-kolom-aksi">
                         <TombolTambah label={SHARE_NP.tambah} onClick={() => hitung('spreading-tambah')} />
                       </th>
@@ -660,16 +461,16 @@ export function RincianShare({
                 <tbody>
                   {b.SpreadingListXOL.length === 0 && (
                     <tr>
-                      <td colSpan={2 + (modeUbah ? 1 : 0)}>{SHARE_NP.tanpaBaris}</td>
+                      <td colSpan={2 + (sunting ? 1 : 0)}>{SHARE_NP.tanpaBaris}</td>
                     </tr>
                   )}
                   {b.SpreadingListXOL.map((s, i) => (
                     <tr key={i}>
                       <td>
-                        {modeUbah ? (
+                        {sunting ? (
                           <select
                             className="field__input"
-                            aria-label={KOLOM_SPREADING_MANUAL[0]}
+                            aria-label={kolom[0]}
                             value={s.ReinsTypeID}
                             onChange={(e) => {
                               // postValue saja — namanya diisi `SetSpreadingXOL`.
@@ -677,6 +478,15 @@ export function RincianShare({
                             }}
                           >
                             <option value="">{SHARE_NP.pilihKosong}</option>
+                            {/* ⛔ Nilai TERSIMPAN yang tidak ada di daftar tetap
+                                ditawarkan, bukan dijatuhkan: baris hasil
+                                `FetchQSfromMasterXOL` ber-`ReinsTypeID` ANAK
+                                (`QS (OR)`, `QS (R/I)`) sementara daftar ini
+                                berisi INDUK. Tanpa ini namanya hilang dari
+                                layar begitu gridnya dapat disunting. */}
+                            {s.ReinsTypeID !== '' && !indukManual.some((p) => p.reinsTypeId === s.ReinsTypeID) && (
+                              <option value={s.ReinsTypeID}>{s.ReinsTypeName || s.ReinsTypeID}</option>
+                            )}
                             {indukManual.map((p) => (
                               <option key={p.reinsTypeId} value={p.reinsTypeId}>
                                 {p.reinsTypeName}
@@ -690,13 +500,14 @@ export function RincianShare({
                       <td>
                         <Medan
                           label=""
-                          nilai={modeUbah ? s.Pct : persen(s.Pct)}
-                          bisaUbah={modeUbah}
+                          nilai={sunting ? s.Pct : persen(s.Pct)}
+                          bisaUbah={sunting}
+                          angka
                           onUbah={(v) => onUbah({ ...b, SpreadingListXOL: ganti(b.SpreadingListXOL, i, { ...s, Pct: v }) })}
                           onLepas={() => hitung('spreading-pct')}
                         />
                       </td>
-                      {modeUbah && (
+                      {sunting && (
                         <td>
                           <TombolHapus
                             label={SHARE_NP.hapus}
@@ -710,12 +521,272 @@ export function RincianShare({
                 </tbody>
               </table>
             </div>
-            <p className="tl-share-catatan">
-              {SHARE_NP.totalSharePct} <strong>{persen(b.SpreadingTotalPctXOL)}</strong>
-            </p>
-          </>
-        )}
-      </Bagian>
+    )
+  }
+
+  return (
+    <div className="tl-rincian tl-share-rincian">
+      {pesan.length > 0 && (
+        <ul className="tl-pesan" role="alert">
+          {pesan.map((p, i) => (
+            <li key={i}>{p}</li>
+          ))}
+        </ul>
+      )}
+      {/* Urutan & tata = `Share.xml` `Default` @546: % RNM Share (`Inline
+          labels left` @848) · baris layer (`Inline` @1965) · grid Treaty
+          Group · Cover · Deduction Details · Spreading Type · Spreading. */}
+      <TataPegaBlok tata="alir">
+        <Medan
+          label={SHARE_NP.persenRnm}
+          nilai={b.RNMShare}
+          bisaUbah={bisaUbah}
+          placeholder={SHARE_NP.placeholderAngka}
+          angka
+          onUbah={(v) => onUbah({ ...b, RNMShare: v })}
+          // `TreatyInXOLAddSpreadingDetail(idx)`.
+          onLepas={() => hitung('rnm-baris')}
+        />
+      </TataPegaBlok>
+      {/* Layer Type · Layer · "Part of" · Layer Part Type · Layer Part —
+          `Inline` @62575. SELALU baca-saja (`pyEditOptions = Read-only`,
+          `pyDisabledNew = always` @65740 · @71745 · @81918 · @87930;
+          kerangka Adjustment `baca: "selalu"`) dan TANPA label
+          (`pyLabelReserveSpace = false`, `pyIncludeLabel = false`) — teks
+          sebaris, seperti baris grid Pega di atasnya. */}
+      <TataPegaBlok tata="alir">
+        <TeksPega>{teksPilihan(opsi.jenisLayer ?? [], b.LayerType)}</TeksPega>
+        <TeksPega>{b.Layer}</TeksPega>
+        <TeksPega>{SHARE_NP.bagianOf}</TeksPega>
+        <TeksPega>{teksPilihan(opsi.jenisLayer ?? [], b.LayerPartType)}</TeksPega>
+        <TeksPega>{b.LayerPart}</TeksPega>
+      </TataPegaBlok>
+
+      {/* `.TreatyGroupList` @117429 — grid `masterDetail` baca-saja, SATU
+          kolom `Treaty Group` (lebar 196), TANPA judul blok (wadah @101614
+          tanpa kepala) dan tanpa tombol; ▸ membuka «CoBListReadOnly»
+          (`templatBaris … TreatyInLimitLayer!pyGridRowDetails`). */}
+      <GridPega
+        label={SHARE_NP.treatyGroup}
+        labelBuka={SHARE_NP.bukaRincian}
+        kolom={[{ judul: SHARE_NP.treatyGroup, lebar: 196, isi: (g: GrupShareBaca) => g.TreatyGroup }]}
+        baris={b.TreatyGroupList}
+        rincian={(g: GrupShareBaca) => <RincianCoBBaca g={g} />}
+      />
+
+      {/* `.Cover` pxDropdown @162739 — sel `Default` sesudah grid Treaty
+          Group: label `Cover` di ATAS (`pyLabelReserveSpace`, label properti),
+          kotak SELEBAR ISINYA (dropdown Pega tidak melar selebar panel).
+          Terkunci hanya bila `ViewState = 1`. */}
+      <div style={{ width: 'fit-content', maxWidth: '100%' }}>
+        <PilihMedan
+          label={SHARE_NP.cover}
+          nilai={b.Cover}
+          opsi={opsi.cover ?? []}
+          bisaUbah={modeUbah}
+          onUbah={(v) => onUbah({ ...b, Cover: v })}
+        />
+      </div>
+
+      {/* `Deduction Details` @171027 (wadah berjudul) — grid `row` berkolom
+          ekspor (203 · 195 · 199 · 30 · 210 · 117, kolom tombol 118): `Add`
+          di sel KEPALA kolom tombol (@217024), `Remove` per baris (@269980);
+          keduanya `ViewState != '1'` dan mati bila `EDMMaterialType = 2`. */}
+      <BlokPega judul={SHARE_NP.deduksi}>
+        <GridPega
+          label={SHARE_NP.deduksi}
+          kolom={[
+            {
+              judul: KOLOM_DEDUKSI_SHARE[0],
+              lebar: 203,
+              isi: (d: BarisDeduksiShare, i: number) => (
+                <Medan label="" nilai={d.Comment} bisaUbah={bisaUbah} onUbah={(v) => ubahDeduksi(i, { ...d, Comment: v })} />
+              ),
+            },
+            {
+              judul: KOLOM_DEDUKSI_SHARE[1],
+              lebar: 195,
+              isi: (d: BarisDeduksiShare, i: number) => (
+                /* `.Currency` pxAutoComplete `BrowseCurrency_RD` — dipanggil
+                   tanpa parameter, jadi filter `Currency`/`ID` dilewati:
+                   isinya = daftar mata uang tab Limits (`!= ITL`).
+                   `change` → `CalculateDeduction(index)`. */
+                <PemicuUbah
+                  className="trin__limit-medan"
+                  nilai={d.Currency}
+                  aktif={bisaUbah}
+                  aksi={() => hitung('deduksi', { baris: i, sts: '' })}
+                >
+                  <DropdownDaftar
+                    label=""
+                    nilai={d.Currency}
+                    pilihan={opsi.mataUang}
+                    bisaUbah={bisaUbah}
+                    onPilih={(nama, id) => ubahDeduksi(i, { ...d, Currency: nama, CurrencyID: id })}
+                  />
+                </PemicuUbah>
+              ),
+            },
+            {
+              judul: KOLOM_DEDUKSI_SHARE[2],
+              lebar: 199,
+              isi: (d: BarisDeduksiShare, i: number) => (
+                <Medan
+                  label=""
+                  nilai={bisaUbah ? d.Deduction : uang(d.Deduction)}
+                  bisaUbah={bisaUbah}
+                  angka
+                  onUbah={(v) => ubahDeduksi(i, { ...d, Deduction: v })}
+                  onLepas={() => hitung('deduksi', { baris: i, sts: 'val' })}
+                />
+              ),
+            },
+            { judul: KOLOM_DEDUKSI_SHARE[3], lebar: 30, isi: () => <span className="tl-share-atau">or</span> },
+            {
+              judul: KOLOM_DEDUKSI_SHARE[4],
+              lebar: 210,
+              isi: (d: BarisDeduksiShare, i: number) => (
+                <Medan
+                  label=""
+                  nilai={bisaUbah ? d.DeductionPct : persen(d.DeductionPct)}
+                  bisaUbah={bisaUbah}
+                  angka
+                  onUbah={(v) => ubahDeduksi(i, { ...d, DeductionPct: v })}
+                  onLepas={() => hitung('deduksi', { baris: i, sts: 'pct' })}
+                />
+              ),
+            },
+            {
+              judul: KOLOM_DEDUKSI_SHARE[5],
+              lebar: 117,
+              isi: (d: BarisDeduksiShare, i: number) => (
+                <input
+                  type="checkbox"
+                  aria-label={KOLOM_DEDUKSI_SHARE[5]}
+                  checked={d.DeductionPctCalculate === 'true'}
+                  disabled={!bisaUbah}
+                  onChange={(e) => ubahDeduksi(i, { ...d, DeductionPctCalculate: e.target.checked ? 'true' : 'false' })}
+                />
+              ),
+            },
+          ]}
+          baris={b.DeductionList}
+          tombol={
+            modeUbah
+              ? {
+                  lebar: 118,
+                  // `AddDeduction` — baris kosong.
+                  tambah: {
+                    label: SHARE_NP.tambah,
+                    mati: !bisaUbah,
+                    onKlik: () => {
+                      onUbah({
+                        ...b,
+                        DeductionList: [...b.DeductionList, { Comment: '', Currency: '', CurrencyID: '', Deduction: '', DeductionPct: '' }],
+                      })
+                    },
+                  },
+                  hapus: {
+                    label: SHARE_NP.hapusBaris,
+                    mati: !bisaUbah,
+                    akses: (_, i) => `${SHARE_NP.hapusBaris} ${SHARE_NP.deduksi} ${String(i + 1)}`,
+                    onKlik: (i) => {
+                      // deleteRow, lalu `CalculateDeduction(index)`.
+                      const baru = { ...b, DeductionList: b.DeductionList.filter((_, j) => j !== i) }
+                      onUbah(baru)
+                      hitung('deduksi', { baris: i, sts: '', dasar: baru })
+                    },
+                  },
+                }
+              : undefined
+          }
+        />
+      </BlokPega>
+
+      {/* Spreading Type — layout sendiri (`Stacked with labels left`
+          @326811) DI ATAS blok Spreading, bukan di dalamnya: label KIRI. */}
+      {/* ⛔ HANYA di cabang spreading lama — Pega: blok `.SpreadingTypeXOL!=''`. */}
+      {bernama && (
+        <TataPegaBlok tata="kiri">
+        <div className="trin__limit-medan">
+          {modeUbah ? (
+            <label className="field">
+              <span className="field__label">{SHARE_NP.spreadingType}</span>
+              <select
+                className="field__input"
+                value={b.SpreadingTypeXOL}
+                onChange={(e) => {
+                  // `FetchQSfromMasterXOL(ParentReinsTypeID = .SpreadingTypeXOL, IsUpdate = 0)`.
+                  const baru = { ...b, SpreadingTypeXOL: e.target.value }
+                  onUbah(baru)
+                  hitung('spreading-type', { dasar: baru })
+                }}
+              >
+                <option value="">{SHARE_NP.pilihKosong}</option>
+                {b.SpreadingTypeXOL !== '' && !induk.some((p) => p.reinsTypeName === b.SpreadingTypeXOL) && (
+                  <option value={b.SpreadingTypeXOL}>{b.SpreadingTypeXOL}</option>
+                )}
+                {induk.map((p) => (
+                  <option key={p.reinsTypeId} value={p.reinsTypeName}>
+                    {p.reinsTypeName}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <Field label={SHARE_NP.spreadingType} value={b.SpreadingTypeXOL} readOnly onChange={() => undefined} />
+          )}
+        </div>
+        </TataPegaBlok>
+      )}
+      {/* Spreading bernama: `Inline grid 30 70` @11860 = baris [30% blok
+          `Spreading` @11969 | 70% blok `hidden, reference` @17096] — blok
+          rujukan SAUDARA kotak Spreading, di sebelah kanannya. Spreading
+          manual: blok `Spreading` tersendiri @54364 (`.SpreadingTypeXOL = ''`). */}
+      {bernama ? (
+        <TataPegaBlok tata="t3070">
+          <Bagian judul={SHARE_NP.spreading}>
+            {/* @408855 — spreading LAMA: grid `readOnly`, nol tombol (`gridSebar`). */}
+            {gridSebar(true)}
+            {/* Kaki grid @442259: label `Total Pct` (@444655) + sel
+                `.pyTemplateInputBox` pxPercentage baca-saja TANPA properti —
+                Pega selalu menampilkannya kosong, jadi hanya labelnya. */}
+            <TataPegaBlok tata="alir">
+              <TeksPega>{SHARE_NP.totalPct}</TeksPega>
+            </TataPegaBlok>
+            {/* `Inline grid double` @464235 → `Inline labels left` @473224:
+                `Spreading Total Pct` (`pyLabelFieldValue` @475xxx, Decimal
+                baca-saja `.SpreadingTotalPctXOL`) · teks `%` @486235. Tombol
+                @479141 ber-`NEVER`. Slot kanan grid ganda kosong. */}
+            <TataPegaBlok tata="g2">
+              <TataPegaBlok tata="alir">
+                <Field label={SHARE_NP.spreadingTotalPct} value={uang(b.SpreadingTotalPctXOL)} readOnly onChange={() => undefined} />
+                <TeksPega>{SHARE_NP.persen}</TeksPega>
+              </TataPegaBlok>
+            </TataPegaBlok>
+          </Bagian>
+          <TataPegaBlok tata="tumpuk">
+            {/* Blok `hidden, reference` @17096 — TAMPIL bersama Spreading
+                bernama (`NOHEADER`, nol syarat sendiri): lima layout `Inline
+                grid triple` bertumpuk (@17588 · @24795 · @31991 · @39187 ·
+                @46426), dasar · OR · R/I per baris. */}
+            {GRID_RINCIAN_SPREADING.map((barisGrid, r) => (
+              <TataPegaBlok key={r} tata="g3">
+                {barisGrid.map((g) => (
+                  <GridTotal key={g.kunci} judul={g.judul} baris={b[g.kunci as keyof BarisShareNP] as readonly NilaiShare[]} satuKepala />
+                ))}
+              </TataPegaBlok>
+            ))}
+          </TataPegaBlok>
+        </TataPegaBlok>
+      ) : (
+        <Bagian judul={SHARE_NP.spreading}>
+          {gridSebar(false)}
+          <p className="tl-share-catatan">
+            {SHARE_NP.totalSharePct} <strong>{persen(b.SpreadingTotalPctXOL)}</strong>
+          </p>
+        </Bagian>
+      )}
     </div>
   )
 }
@@ -805,9 +876,31 @@ export default function TabShareNonProp({
   useEffect(() => {
     if (indukAwal !== undefined || !modeUbah || grupBuka === null) return
     let dibuang = false
-    for (const g of new Set([grupBuka, ''])) {
+    // ⛔ FILTER TREATY GROUP SENGAJA DIBUANG — PENYIMPANGAN DARI PEGA, dan ini
+    // pernyataannya.
+    //
+    // `Section/Share.xml` dan `Section/DetailShare.xml` MENGIRIM
+    // `TreatyGroupID`, begitu pula `FetchQSfromMaster(XOL)`. Mengikutinya berarti
+    // hanya induk yang terdaftar di Treaty Group baris itu yang dapat dipilih —
+    // dan untuk kontrak yang dilaporkan 8 Oktober 2026 daftarnya kosong, padahal
+    // susunannya ADA di `PROPORTIONALARRG` (dinyatakan pemilik proses).
+    //
+    // Keputusan pemilik proses, 8 Oktober 2026: *"gimana pun caranya asal itu ada
+    // isinya"*.
+    //
+    // ⚠️ DIBUANG DI KEDUA TEMPAT SEKALIGUS, dan itu syaratnya. Membuangnya hanya
+    // di dropdown — yang sempat terjadi — membuat layar menawarkan induk yang
+    // pencariannya sendiri tidak dapat menemukan: Spreading Type terpilih,
+    // grid spreading tetap kosong. Setengah penyimpangan lebih buruk daripada
+    // keduanya, sebab ia terbaca seperti berhasil.
+    //
+    // ⭐ `TreatyDescID = "10001"` TETAP dikirim: nol pemanggil yang menghilangkannya,
+    // dan ia tidak pernah menjadi sebab daftar kosong.
+    //
+    // Pasangannya di backend: `fetchQS` (`hitung_share_np.go`).
+    for (const g of ['']) {
       if (induk[g] !== undefined) continue
-      ambilIndukSpreading(g, commencement)
+      ambilIndukSpreading('', '10001', commencement)
         .then((d) => {
           if (!dibuang) setInduk((k) => ({ ...k, [g]: d }))
         })
@@ -867,29 +960,40 @@ export default function TabShareNonProp({
     </button>
   )
 
+  // ⭐ Urutan = Section `TreatyInTabsNonProportional` tab `Share` (bentuk
+  // Pega, 8 Oktober 2026): blok `Share` — medan, `Update Summary`, grid
+  // reasuradur — lalu `RNM Share`, `Summarry of RNM Share`, dan blok
+  // `Total All Layers RNM Share` dengan tombolnya DI BAWAH grid.
   return (
-    <Panel judul={SHARE_NP.judul}>
-      <div className="tl-rincian">
-        <KepalaBagian judul={SHARE_NP.judul} aksi={tombolRingkasan} />
+    <div className="trin__blok trin__tab">
+      <BlokPega judul={SHARE_NP.judul}>
         {share.IsProRate === 'true' && <p className="tl-share-catatan">{SHARE_NP.nonProRate}</p>}
-        <div className="tl-share-akar">
-          <div className="tl-share-kolom">
-            <Medan
-              label={SHARE_NP.persenRnm}
-              nilai={bisaUbah ? share.RNMShare : persen(share.RNMShare)}
-              bisaUbah={bisaUbah}
-              placeholder={SHARE_NP.placeholderAngka}
-              onUbah={(v) => ubahAkar('RNMShare', v)}
-              onLepas={() => hitung('rnm')}
-            />
-            <Medan
-              label={SHARE_NP.persenBrokerage}
-              nilai={bisaUbah ? share.BrokeragePercent : persen(share.BrokeragePercent)}
-              bisaUbah={bisaUbah}
-              placeholder={SHARE_NP.placeholderAngka}
-              onUbah={(v) => ubahAkar('BrokeragePercent', v)}
-              onLepas={() => hitung('brokerage')}
-            />
+        {/* Tata ekspor (`TreatyInTabsNonProportional.xml`): `Inline grid
+            double` @58958 = [ `Inline grid double` @59257 ( `Stacked with
+            labels left` @59555 RNM · Brokerage | centang Across The Board )
+            | `Stacked with labels left` @61418 retro ]. */}
+        <TataPegaBlok tata="g2">
+          <TataPegaBlok tata="g2">
+            <TataPegaBlok tata="kiri">
+              <Medan
+                label={SHARE_NP.persenRnm}
+                nilai={bisaUbah ? share.RNMShare : persen(share.RNMShare)}
+                bisaUbah={bisaUbah}
+                placeholder={SHARE_NP.placeholderAngka}
+                angka
+                onUbah={(v) => ubahAkar('RNMShare', v)}
+                onLepas={() => hitung('rnm')}
+              />
+              <Medan
+                label={SHARE_NP.persenBrokerage}
+                nilai={bisaUbah ? share.BrokeragePercent : persen(share.BrokeragePercent)}
+                bisaUbah={bisaUbah}
+                placeholder={SHARE_NP.placeholderAngka}
+                angka
+                onUbah={(v) => ubahAkar('BrokeragePercent', v)}
+                onLepas={() => hitung('brokerage')}
+              />
+            </TataPegaBlok>
             <label className="trin__limit-medan tl-share-centang">
               <input
                 type="checkbox"
@@ -902,13 +1006,14 @@ export default function TabShareNonProp({
               />{' '}
               {SHARE_NP.acrossTheBoard}
             </label>
-          </div>
-          <div className="tl-share-kolom">
+          </TataPegaBlok>
+          <TataPegaBlok tata="kiri">
             <Medan
               label={SHARE_NP.shareKeRetro}
               nilai={bisaUbah ? share.FacultativeShare : persen(share.FacultativeShare)}
               bisaUbah={bisaUbah}
               placeholder={SHARE_NP.placeholderAngka}
+              angka
               onUbah={(v) => ubahAkar('FacultativeShare', v)}
               onLepas={() => hitung('fac')}
             />
@@ -918,14 +1023,20 @@ export default function TabShareNonProp({
                 nilai={bisaUbah ? share.FacultativeShareBrokerage : persen(share.FacultativeShareBrokerage)}
                 bisaUbah={bisaUbah}
                 placeholder={SHARE_NP.placeholderAngka}
+                angka
                 onUbah={(v) => ubahAkar('FacultativeShareBrokerage', v)}
                 onLepas={() => hitung('fac')}
               />
             )}
-          </div>
-        </div>
+          </TataPegaBlok>
+        </TataPegaBlok>
 
-        <div className="tl-share-dua">
+        {tombolRingkasan !== false && <DeretTombolPega>{tombolRingkasan}</DeretTombolPega>}
+
+        {/* `Inline grid double` @63466: grid Reinsurer Name | grid
+            Facultative Reinsurers — tiap grid separuh lebar; bila grid
+            kedua tersembunyi, separuh kanan kosong seperti Pega. */}
+        <TataPegaBlok tata="g2">
           <GridReins
             kolom={KOLOM_REINS}
             baris={share.ShareReins}
@@ -943,7 +1054,8 @@ export default function TabShareNonProp({
               onUbah={(b) => setShare({ ...share, ShareFacultativeReinsurers: b })}
             />
           )}
-        </div>
+        </TataPegaBlok>
+      </BlokPega>
 
         {pesan.length > 0 && (
           <ul className="tl-pesan" role="alert">
@@ -967,11 +1079,14 @@ export default function TabShareNonProp({
                 {SHARE_NP.shareKeRnm} <strong>{share.RnmShareDeducted}</strong> {SHARE_NP.persen}
               </p>
             )}
-            {share.Share.length === 0 ? (
-              <Kosong pesan={SHARE_NP.tanpaBaris} petunjuk={SHARE_NP.petunjukKosong} />
-            ) : (
-              <div className="table-wrap trin__limit-grid tl-share-grid">
-                <table className="trin__tabel">
+            {/* ⭐ Grid Pega tetap tampil tanpa baris — kepala + "No items".
+                ⛔ TANPA `.table-wrap` (8 Oktober 2026): pembungkus itu
+                menggulir sendiri (`max-height: 62vh`, `overflow: auto`) —
+                panel rincian yang dibuka terpotong dengan penggulir di dalam
+                grid. Pega tidak punya penggulir dalam: tabel `table-layout:
+                fixed` selebar wadah, rincian sebaris penuh di bawah barisnya. */}
+            <div className="trin__limit-grid tl-share-grid">
+                <table className="trin__tabel trin__tabel--pega">
                   <thead>
                     <tr>
                       <th scope="col" className="tl-kolom-buka" aria-label={SHARE_NP.bukaRincian} />
@@ -998,6 +1113,13 @@ export default function TabShareNonProp({
                     </tr>
                   </thead>
                   <tbody>
+                    {share.Share.length === 0 && (
+                      <tr>
+                        <td colSpan={15} className="trin__kosong-pega">
+                          {SHARE_NP.tanpaBaris}
+                        </td>
+                      </tr>
+                    )}
                     {share.Share.map((b, i) => {
                       const terbuka = buka === i
                       const [c1, v1] = selPasangan(b.RnmLimitList, 0)
@@ -1009,14 +1131,14 @@ export default function TabShareNonProp({
                           <td>
                             {/* Navigasi, bukan `<button>` — tetap hidup di mode lihat. */}
                             <TombolNavigasi
-                              className="btn btn--ghost btn--sm tl-share-buka"
+                              className="trin__buka-tombol tl-share-buka"
                               terbuka={terbuka}
                               label={`${SHARE_NP.bukaRincian} ${judulBarisShare(b)}`}
                               onKlik={() => {
                                 setBuka(terbuka ? null : i)
                               }}
                             >
-                              <IkonChevronKanan />
+                              {terbuka ? '▾' : '▸'}
                             </TombolNavigasi>
                             {(pesanBaris[i]?.length ?? 0) > 0 && (
                               <span className="tl-share-tanda" role="img" aria-label={SHARE_NP.adaPesan} title={pesanBaris[i]?.join(' · ')}>
@@ -1040,11 +1162,11 @@ export default function TabShareNonProp({
                           <td className="tl-angka">{persen(b.RNMShare)}</td>
                         </tr>,
                         terbuka && (
-                          <tr key={`r${i}`} className="tl-share-panel">
+                          <tr key={`r${i}`} className="tl-share-panel trin__rincian">
                             <td colSpan={15}>
                               <RincianShare
                                 b={b}
-                                induk={induk[b.TreatyGroupList[0]?.TreatyGroupID ?? ''] ?? []}
+                                induk={induk[''] ?? []}
                                 indukManual={induk[''] ?? []}
                                 opsi={opsi}
                                 pesan={pesanBaris[i] ?? []}
@@ -1064,73 +1186,52 @@ export default function TabShareNonProp({
                   </tbody>
                 </table>
               </div>
-            )}
 
-            <Bagian judul={SHARE_NP.ringkasan}>
-              <div className="table-wrap trin__limit-grid">
-                <table className="trin__tabel">
-                  <thead>
-                    <tr>
-                      {KOLOM_RINGKASAN_SHARE.map((k) => (
-                        <th key={k.kunci} scope="col">
-                          {k.label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {share.LimitShareSummaryList.length === 0 && (
-                      <tr>
-                        <td colSpan={KOLOM_RINGKASAN_SHARE.length}>{SHARE_NP.tanpaBaris}</td>
-                      </tr>
-                    )}
-                    {share.LimitShareSummaryList.map((r, i) => (
-                      <tr key={i}>
-                        {KOLOM_RINGKASAN_SHARE.map((k) => (
-                          <td key={k.kunci} className={k.kunci === 'Note' ? undefined : 'tl-angka'}>
-                            {k.kunci === 'Note' ? r.Note : uang(r[k.kunci])}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Bagian>
+            {/* `Summarry of RNM Share` — `pxNumber` TANPA desimal di ekspor:
+                Pega menampilkan `4.000.000.000` dan `0`, bukan `,00`. */}
+            <BlokPega judul={SHARE_NP.ringkasan}>
+              <GridPega
+                label={SHARE_NP.ringkasan}
+                kolom={KOLOM_RINGKASAN_SHARE.map((k, c) => ({
+                  judul: k.label,
+                  lebar: LEBAR_RINGKASAN_SHARE[c] ?? 150,
+                  angka: k.kunci !== 'Note',
+                  isi: (r: RingkasanShareNP) => (k.kunci === 'Note' ? r.Note : angkaRingkasan(r[k.kunci])),
+                }))}
+                baris={share.LimitShareSummaryList}
+              />
+            </BlokPega>
 
-            <Bagian
-              judul={SHARE_NP.totalSemua}
-              aksi={
-                modeUbah && (
-                  <div className="trin__aksi">
-                    <button type="button" className="btn btn--primary btn--sm" disabled={!bisaUbah} onClick={() => hitung('total')}>
-                      {SHARE_NP.perbaruiTotal}
+            {/* `Total All Layers RNM Share` @84885 (`Default` @85082) — LIMA
+                layout `Inline grid triple` bertumpuk, satu per baris
+                `GRID_TOTAL_SHARE`: @85381 · @92542 · @95289 · @98036 ·
+                @100784. Baris berbutir satu mengisi kolom pertama; slot
+                sisanya kosong (layout terpisah, jadi tanpa sel pengisi).
+                Tombol DI BAWAH. */}
+            <BlokPega judul={SHARE_NP.totalSemua}>
+              {GRID_TOTAL_SHARE.map((baris, r) => (
+                <TataPegaBlok key={r} tata="g3">
+                  {baris.map((g) =>
+                    g === null ? null : <GridTotal key={g.kunci} judul={g.judul} baris={share.Total[g.kunci] ?? []} />,
+                  )}
+                </TataPegaBlok>
+              ))}
+              {modeUbah && (
+                <DeretTombolPega>
+                  <button type="button" className="btn btn--primary btn--sm" disabled={!bisaUbah} onClick={() => hitung('total')}>
+                    {SHARE_NP.perbaruiTotal}
+                  </button>
+                  {/* `TreatyIn.ViewState != '1' && TreatyMasterInEDM`. */}
+                  {kontrakRevisi(edmState) && (
+                    <button type="button" className="btn btn--sm" disabled={!bisaUbah} onClick={() => hitung('nilai-share')}>
+                      {SHARE_NP.perbaruiNilai}
                     </button>
-                    {/* `TreatyIn.ViewState != '1' && TreatyMasterInEDM`. */}
-                    {kontrakRevisi(edmState) && (
-                      <button type="button" className="btn btn--sm" disabled={!bisaUbah} onClick={() => hitung('nilai-share')}>
-                        {SHARE_NP.perbaruiNilai}
-                      </button>
-                    )}
-                  </div>
-                )
-              }
-            >
-              <div className="tl-share-total-grid">
-                {GRID_TOTAL_SHARE.flatMap((baris, r) =>
-                  baris.map((g, c) =>
-                    g === null ? (
-                      <div key={`${r}-${c}`} aria-hidden="true" />
-                    ) : (
-                      <GridTotal key={g.kunci} judul={g.judul} baris={share.Total[g.kunci] ?? []} />
-                    ),
-                  ),
-                )}
-              </div>
-            </Bagian>
+                  )}
+                </DeretTombolPega>
+              )}
+            </BlokPega>
           </>
         )}
-      </div>
-    </Panel>
+    </div>
   )
 }

@@ -128,6 +128,23 @@ var petaPendaratanPenyesuaian = []larikPendaratan{
 	{Induk: "T_TREATY_LIMIT_DETAIL", KunciAnak: "SpreadingList", Tabel: "T_TREATY_LIMIT_SPREADING",
 		Kunci: []string{"ParentReinsTypeID", "Pct", "ReinsTypeID", "ReinsTypeName", "Rp", "Usd", "Value"},
 		Kolom: []string{"PARENTREINSTYPEID", "PCT", "REINSTYPEID", "REINSTYPENAME", "RP", "USD", "VALUE"}},
+	// ⛔ `SpreadingList(n).BreakDownSprdList` — pecahan tiap baris spreading,
+	// panel yang terbuka lewat ▸ (`SpreadingTPDtl`: Spread · Currency ·
+	// Share (%) · Amount).
+	//
+	// Laporan pemilik proses 8 Oktober 2026: *"spreading di adjustment juga
+	// kosong"*. Kerangkanya sudah memuat `SpreadingTPDtl` dan tabelnya sudah
+	// terpasang (`modul/treatyin` migrasi 454) — yang hilang HANYA barisnya
+	// di peta ini, jadi lariknya tidak pernah dibaca dan panelnya selalu
+	// berbunyi `No items`.
+	//
+	// ⚠️ URUTANNYA MENGIKAT: `bacaPohon` merangkai anak ke induk yang SUDAH
+	// terbaca, jadi entri ini harus sesudah `T_TREATY_LIMIT_SPREADING`.
+	// Menaruhnya lebih dahulu membuat setiap barisnya yatim — dan yatim
+	// dihitung diam-diam, tidak digagalkan.
+	{Induk: "T_TREATY_LIMIT_SPREADING", KunciAnak: "BreakDownSprdList", Tabel: "T_TREATY_LIMIT_SPRD_BREAKDOWN",
+		Kunci: []string{"Amount", "Currency", "ReinsID", "ReinsName", "SharePct"},
+		Kolom: []string{"AMOUNT", "CURRENCY", "REINSID", "REINSNAME", "SHAREPCT"}},
 	// ⭐ 450 — Deduction, Parameter Achievement, Reinstatement (salinan peta Treaty In).
 	{Induk: "T_TREATY_LIMIT_DETAIL", KunciAnak: "DeductionList", Tabel: "T_TREATY_LIMIT_DEDUCTION",
 		Kunci: []string{"Comment", "Currency", "CurrencyID", "Deduction", "DeductionPct", "DeductionPctCalculate"},
@@ -144,10 +161,10 @@ var petaPendaratanPenyesuaian = []larikPendaratan{
 	{Induk: "T_TREATY_LIMIT_DETAIL", Gabung: []string{"IOOLimitList", "RetentionList", "CessionList", "EPIList", "RNMShareList", "RNMSpreadedList", "RNMSpreadedListRI", "ReserveList", "PLAList", "CashLossList", "ClaimCoopList", "DeductionTotalList"}, Tabel: "T_TREATY_LIMIT_AMOUNT",
 		Kunci: []string{"Currency", "CurrencyID", "Layer", "Note", "Value"},
 		Kolom: []string{"CURRENCY", "CURRENCYID", "LAYER", "NOTE", "VALUE"}},
-	{Induk: "T_TREATY_SHARE", Gabung: []string{"GrossPremiumList", "NetPremiumList"}, Tabel: "T_TREATY_SHARE_AMOUNT",
+	{Induk: "T_TREATY_SHARE", Gabung: []string{"GrossPremiumList", "NetPremiumList", "RnmLimitList", "GrossPremiumMinList", "DeductionTotalList"}, Tabel: "T_TREATY_SHARE_AMOUNT",
 		Kunci: []string{"Currency", "Value"},
 		Kolom: []string{"CURRENCY", "VALUE"}},
-	{Induk: "T_TREATY_FAC_SHARE", Gabung: []string{"GrossPremiumList", "NetPremiumList"}, Tabel: "T_TREATY_FAC_SHARE_AMOUNT",
+	{Induk: "T_TREATY_FAC_SHARE", Gabung: []string{"GrossPremiumList", "NetPremiumList", "RnmLimitList", "GrossPremiumMinList", "DeductionTotalList"}, Tabel: "T_TREATY_FAC_SHARE_AMOUNT",
 		Kunci: []string{"Currency", "Value"},
 		Kolom: []string{"CURRENCY", "VALUE"}},
 	{Induk: "T_TREATY_LIMITS", Gabung: []string{"MDPList", "PremiumEarnedList", "EgnpiTotalList", "MDPMinList"}, Tabel: "T_TREATY_LIMIT_MEASURE",

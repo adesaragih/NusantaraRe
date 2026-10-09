@@ -237,24 +237,50 @@ describe('kerapatan badan layar Treaty In', () => {
   // ⚠️ Bawaan `inti` (42px/15px) tidak disentuh: ia ukuran seluruh
   // aplikasi, dan permintaan ini hanya tentang Treaty In.
   it('⛔ ukuran kontrol hanya boleh ditimpa oleh blok kerapatan bernama', () => {
-    // Tinggi tombol: nol pengecualian.
+    // ⛔ Tinggi tombol: `.btn` telanjang NOL pengecualian.
     expect(CSS).not.toMatch(/\.treatyin[^{]*\.btn\s*\{[^}]*height:/)
+
+    // ⚠️ PAGAR DIRAPATKAN 8 Oktober 2026. Bentuk sebelumnya hanya mencari
+    // `.btn {` — varian seperti `.btn--sm {` LOLOS tanpa suara, dan sebuah
+    // penimpaan tinggi tombol sempat masuk tanpa terdaftar di sini.
+    //
+    // ⭐ SATU pengecualian, dan ia harus menyebut dirinya: tombol DI DALAM
+    // grid mengikuti tinggi kotak isian (34px), bukan 36px bawaan `.btn--sm`
+    // — selisih dua piksel membuat baris grid tampak tidak rata.
+    const tinggiTombol = [...CSS.matchAll(/\.treatyin[^{]*\.btn--[a-z]+\s*\{([^}]*)\}/g)]
+      .map((m) => /height:\s*([^;]+);/.exec(m[1] ?? '')?.[1]?.trim())
+      .filter((v): v is string => v !== undefined)
+    expect(tinggiTombol).toEqual(['28px', '34px'])
+    expect(CSS).toContain('Tombol baris mengikuti tinggi kotak isian')
 
     // `.field__input`: tepat SATU aturan bertinggi, dan tingginya 34px.
     const tinggi = [...CSS.matchAll(/\.treatyin[^{]*\.field__input\s*\{([^}]*)\}/g)]
       .map((m) => /height:\s*([^;]+);/.exec(m[1] ?? '')?.[1]?.trim())
       .filter((v): v is string => v !== undefined)
     // ⚠️ DUA nilai, dan keduanya perlu:
-    //   `34px` kotak satu baris — permintaan pengecilan;
+    //   `28px` kotak satu baris — permintaan pengecilan 8 Oktober 2026
+    //          (*"design inputan nya diubah seperti pega jangan kegedean"*);
+    //          sebelumnya 34px, dan sebelum itu 42px bawaan `inti`;
     //   `auto`  AREA TEKS, yang justru harus LEPAS dari tinggi itu. Area
     //           teks setinggi 34px memperlihatkan satu baris kalimat dan
     //           memaksa pembacanya menggulir di dalam kotak.
-    expect(tinggi).toEqual(['34px', 'auto'])
+    //   `34px` panel LAMPIRAN — blok kerapatannya sendiri sejak 8 Oktober
+    //          2026 (*"dynamic layout antara table attachment dengan inputan
+    //          yg di tab dipisah jangan di samakan"*). Isian tab adalah
+    //          FORMULIR DATA (kerapatan menang); panel lampiran PENGELOLA
+    //          BERKAS (ketepatan tekan menang). Keduanya tidak lagi bergerak
+    //          bersama.
+    expect(tinggi).toEqual(['28px', 'auto', '34px'])
 
     // ⛔ Dan blok itu WAJIB menyebut sebabnya — aturan tanpa alasan adalah
     // aturan yang akan disalin ke modul berikutnya tanpa dipikirkan.
     expect(CSS).toContain('KERAPATAN — layar Treaty In dikecilkan')
     expect(CSS).toContain('BAWAAN `inti` TIDAK DISENTUH')
+
+    // ⛔ Blok lampiran pun WAJIB menyebut sebabnya — dan sebabnya BUKAN
+    // selera, melainkan dua urusan yang berbeda.
+    expect(CSS).toContain('KERAPATAN PANEL LAMPIRAN — TERPISAH dari kerapatan isian tab')
+    expect(CSS).toContain('PENGELOLA BERKAS')
   })
 
   // ⭐ 7 Oktober 2026 — deret kaki Save · Close · Actions kini berjarak bawah
@@ -296,5 +322,112 @@ describe('tema Treaty Exchange Yearly', () => {
   it('lapisan tema TIDAK menimpa ukuran kontrol — kerapatan tetap milik bloknya', () => {
     const tema = css.slice(css.indexOf('.treatyin > .inbox {'))
     expect(tema).not.toMatch(/\.(btn|field__input)[^{]*\{[^}]*height:/)
+  })
+})
+
+// ⛔ KOLOM LABEL SATU UKURAN DI SELURUH LAYAR — permintaan pemilik proses
+// 8 Oktober 2026 atas tab Account Reporting Period: *"sebisa mungkin
+// dirapikan letaknya … designnya harus seperti yg di pega"*.
+//
+// ⚠️ Yang terbaca "berantakan" BUKAN jarak antarbarisnya, melainkan kolom
+// labelnya: bentuk lama `minmax(110px, 38%)` berukuran PERSEN, jadi tiap
+// blok punya lebar label sendiri dan nol baris segaris dengan yang lain.
+describe('kolom label blok tata Pega', () => {
+  it('⛔ lebarnya TETAP, bukan persen', () => {
+    const i = CSS.indexOf('.treatyin .trin__tata--kiri > .field {')
+    expect(i).toBeGreaterThan(0)
+    const aturan = CSS.slice(i, CSS.indexOf('}', i))
+    expect(aturan).toContain('grid-template-columns: 132px minmax(0, 1fr)')
+    expect(aturan).not.toContain('38%')
+  })
+
+  // ⭐ Dan angkanya SAMA dengan kolom label form — satu ukuran untuk seluruh
+  // layar, bukan dua yang kebetulan mirip.
+  it('⭐ angkanya sama dengan kolom label form', () => {
+    expect([...CSS.matchAll(/grid-template-columns: 132px minmax\(0, 1fr\)/g)].length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('⚠️ batas lebar ada pada KOTAKNYA, bukan pada selnya', () => {
+    const i = CSS.indexOf('.treatyin .trin__tata--kiri > .field > .field__input,')
+    expect(i).toBeGreaterThan(0)
+    expect(CSS.slice(i, CSS.indexOf('}', i))).toContain('max-width: 320px')
+    // Bentuk yang dilarang: membatasi SEL-nya, yang menggeser kolom berikutnya.
+    expect(CSS).not.toMatch(/\.treatyin \.trin__tata--kiri > \.field \{[^}]*max-width/)
+  })
+})
+
+// ⛔ RUPA GRID SERAGAM — permintaan pemilik proses 8 Oktober 2026:
+// *"tampilan di view saya mau di semuanya seperti ini, tidak hanya view"*.
+describe('rupa grid seragam', () => {
+  const TRIA = readFileSync(
+    join(AKAR, '..', '..', 'treatyinadjustment', 'frontend', 'treatyinadjustment.css'),
+    'utf8',
+  )
+
+  /** Bantalan sel yang BENAR-BENAR berlaku — aturan TERAKHIR yang menyebutnya. */
+  const bantalanTerakhir = (css: string, pemilih: string): string => {
+    const i = css.lastIndexOf(pemilih)
+    expect(i).toBeGreaterThan(0)
+    const m = /padding:\s*([^;]+);/.exec(css.slice(i, css.indexOf('}', i)))
+    return m?.[1]?.trim() ?? ''
+  }
+
+  // ⚠️ Sengaja memeriksa aturan TERAKHIR, bukan yang pertama. Bantalan grid
+  // kurs pernah ditulis dua kali di berkas yang sama, dan yang di bawah
+  // menimpa yang di atas — memeriksa yang pertama akan hijau sementara layar
+  // memakai nilai yang lain.
+  it('⛔ kedua modul memakai bantalan sel yang SAMA', () => {
+    expect(bantalanTerakhir(CSS, '.treatyin .trin__tabel td,')).toBe('7px 12px')
+    expect(bantalanTerakhir(TRIA, '.treatyinadjustment .tria__tabel th,')).toBe('7px 12px')
+  })
+
+  it('⛔ NOL belang baris — `inti` memberinya berkekhususan nol, dan grid tidak memintanya', () => {
+    for (const [css, pemilih] of [
+      [CSS, '.treatyin .trin__tabel tbody tr:nth-child(even)'],
+      [TRIA, '.treatyinadjustment .tria__tabel tbody tr:nth-child(even)'],
+    ] as const) {
+      const i = css.indexOf(pemilih)
+      expect(i).toBeGreaterThan(0)
+      expect(css.slice(i, css.indexOf('}', i))).toContain('background: transparent')
+    }
+  })
+
+  // ⭐ Sorot baris TETAP: tanpa belang, sorotlah satu-satunya penanda baris
+  // mana yang sedang ditunjuk mata.
+  it('⭐ sorot baris dipertahankan', () => {
+    expect(CSS).toContain('.treatyin .trin__tabel tbody tr:hover')
+    expect(TRIA).toContain('.treatyinadjustment .tria__tabel tbody tr:hover')
+  })
+})
+
+// ⛔ PANEL LAMPIRAN TIDAK IKUT BERGERAK — permintaan pemilik proses
+// 8 Oktober 2026: *"dynamic layout antara table attachment dengan inputan
+// yg di tab dipisah jangan di samakan"*.
+//
+// ⚠️ Yang dijaga BUKAN angkanya, melainkan PEMISAHANNYA: setiap kali kotak
+// isian tab dikecilkan (42 → 34 → 28px), kontrol panel lampiran dulu ikut
+// mengecil tanpa satu pun permintaan menyebutnya.
+describe('kerapatan panel lampiran terpisah', () => {
+  const LAMP = readFileSync(join(AKAR, 'components', 'PanelLampiran.tsx'), 'utf8')
+
+  it('⛔ panel punya pengaitnya sendiri — tanpa itu pemisahan mustahil', () => {
+    expect(LAMP).toContain('<div className="trin__lampiran">')
+    expect(CSS).toContain('.treatyin .trin__lampiran .field__input')
+  })
+
+  it('⛔ tingginya BERBEDA dari kotak isian tab', () => {
+    const tinggi = (pemilih: string): string => {
+      const i = CSS.indexOf(pemilih)
+      expect(i).toBeGreaterThan(0)
+      return /height:\s*([^;]+);/.exec(CSS.slice(i, CSS.indexOf('}', i)))?.[1]?.trim() ?? ''
+    }
+    expect(tinggi('.treatyin .field__input {')).toBe('28px')
+    expect(tinggi('.treatyin .trin__lampiran .field__input {')).toBe('34px')
+  })
+
+  it('⭐ grid lampiran juga punya bantalannya sendiri', () => {
+    const i = CSS.indexOf('.treatyin .trin__lampiran .trin__tabel td,')
+    expect(i).toBeGreaterThan(0)
+    expect(CSS.slice(i, CSS.indexOf('}', i))).toContain('padding: 9px 12px')
   })
 })

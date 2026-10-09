@@ -39,7 +39,7 @@ import {
 } from './labelsPenyesuaian'
 import { idMasterPolis } from './komponen/PanelPolisMaster'
 import type { JenisTulis } from './komponen/aksiTombol'
-import { actionsTampil, riwayatDari, simpanTampil, sisiKiriman } from './pages/PenyesuaianKontrak'
+import { actionsTampil, pilihanAksi, riwayatDari, simpanTampil, sisiKiriman } from './pages/PenyesuaianKontrak'
 
 const AKAR = __dirname
 const HALAMAN = readFileSync(join(AKAR, 'pages', 'PenyesuaianKontrak.tsx'), 'utf8')
@@ -284,7 +284,11 @@ describe('kerangka bangkitan — bentuk dan kelengkapan', () => {
       'Deduction', 'DeductionPct', 'IncuredClaim', 'LossRatio', 'LowerBand', 'MDPMinPct', 'MDPPct', 'NETPREMIUM',
       'OutstandingClaim', 'PREMIUM', 'PaidClaim', 'Pct', 'Period', 'Periode', 'QSPct', 'Quarter', 'RICOMM', 'ROLPct',
       'ReinstatementAmount1', 'ReinstatementAmount2', 'ReinstatementPct', 'ReinstatementValue', 'ReisuredParticipant',
-      'RetentionPct', 'SpreadingTotalPct', 'SpreadingTotalPctXOL', 'Surplus', 'Total', 'UpperBand',
+      // ⭐ `SpreadingTotalPct` / `…XOL` KELUAR 8 Oktober 2026: buktinya ada —
+      // layar Treaty In memformat keduanya persen (`selAngka(['persen', 2],
+      // …)` di Prop, `persen(…)` di XOL), dan pemilik proses meminta
+      // spreading Adjustment mirip layar itu.
+      'RetentionPct', 'Surplus', 'Total', 'UpperBand',
     ])
   })
 })
@@ -563,13 +567,21 @@ describe('deret tombol dan History', () => {
     expect(renderBaru('0', 'Information & Submit', tanpaEfektif, () => undefined)).toMatch(/<button[^>]*disabled[^>]*>Submit</)
   })
 
-  it('Actions hanya bagi pemegang posisi penyetuju, status Accept/Reject', () => {
+  // ⛔ 9 Oktober 2026 — "munculkan saja": Actions tampil selama berkas belum
+  // tuntas/ditolak (menyimpang dari @155994); penjaga peran di server.
+  it('Actions tampil kecuali Resolve Complete / Decline', () => {
     const m = { Position: 'ReasTreatyInSecHead', StatusAkseptasi: 'Accept' }
     expect(actionsTampil(m, ['ReasTreatyInSecHead'])).toBe(true)
-    expect(actionsTampil({ ...m, StatusAkseptasi: 'Reject' }, ['ReasTreatyInSecHead'])).toBe(true)
-    expect(actionsTampil({ ...m, StatusAkseptasi: '' }, ['ReasTreatyInSecHead'])).toBe(false)
-    expect(actionsTampil(m, ['ReasTreatyInAdmin'])).toBe(false)
-    expect(actionsTampil({ ...m, Position: 'ReasTreatyInAdmin' }, ['ReasTreatyInAdmin'])).toBe(false)
+    expect(actionsTampil({ Position: 'ReasTreatyInAdmin', StatusAkseptasi: '' }, ['ReasTreatyInAdmin'])).toBe(true)
+    expect(actionsTampil({ Position: '', StatusAkseptasi: '' }, [])).toBe(true)
+    expect(actionsTampil({ ...m, StatusAkseptasi: 'Resolve Complete' }, ['ReasTreatyInSecHead'])).toBe(false)
+    expect(actionsTampil({ ...m, StatusAkseptasi: 'Decline' }, ['ReasTreatyInSecHead'])).toBe(false)
+  })
+
+  it('pilihan Actions: posisi Admin hanya Accept, penyetuju Accept/Reject/Decline', () => {
+    expect(pilihanAksi('ReasTreatyInAdmin')).toEqual(['Accept'])
+    expect(pilihanAksi('')).toEqual(['Accept'])
+    expect(pilihanAksi('ReasTreatyInSecHead')).toEqual(['Accept', 'Reject', 'Decline'])
   })
 
   it('⛔ grid Rate of Exchange dikirim HANYA bila berubah', () => {
@@ -650,17 +662,23 @@ describe('⭐ mode sunting panel New — 7 Oktober 2026', () => {
     expect(html).toContain('Co-Insurance Share')
     expect(html).toContain('% Treaty Limit')
     // Tombol ikon tanpa `pyLabel`: teks bawaan Pega.
-    expect(html).toContain('>Tambah<')
-    expect(html).toContain('>Hapus<')
+    expect(html).toContain('>Add<')
+    expect(html).toContain('>Delete<')
   })
 })
 
 describe('⭐ Choose Ceding / Choose Source of Business — 7 Oktober 2026', () => {
-  it('tombol tampil di mode Edit panel New (sel 27/29, `ViewState != 1`)', () => {
+  // ⛔ DIBALIK 8 Oktober 2026 — pemilik proses menutup kedua medan ini.
+  //
+  // Daftar medan kepala yang BOLEH disunting disebutnya tuntas, dan `Ceding`
+  // serta `Source of Business` tidak ada di dalamnya. Tombol `Choose …`
+  // adalah penyuntingan juga: membiarkannya hidup sementara kotaknya
+  // baca-saja adalah pintu belakang, bukan pengecualian.
+  it('⛔ tombol Choose TIDAK tampil — kedua medan baca-saja di mode apa pun', () => {
     const html = renderBaru('0')
-    expect(html).toContain('>Choose Ceding<')
-    expect(html).toContain('>Choose Source of Business<')
-    // Nilai tetap terbaca sebagai teks di samping tombolnya.
+    expect(html).not.toContain('>Choose Ceding<')
+    expect(html).not.toContain('>Choose Source of Business<')
+    // ⭐ Nilainya TETAP terbaca — tertutup untuk disunting, bukan disembunyikan.
     expect(html).toContain('CEDANT A')
   })
 
@@ -695,13 +713,17 @@ describe('⭐ Existing Policy for Master ID — 7 Oktober 2026', () => {
     expect(idMasterPolis({}, '1000080', '')).toBe('1000080')
   })
 
-  it('dua kolom dari sel 31/32, dipasang di antara kepala dan panel Old/New', () => {
+  // ⭐ 9 Oktober 2026 — bentuk Pega: panel polis DI DALAM kepala (kanan),
+  // bukan kartu tersendiri di antara kepala dan Old/New.
+  it('dua kolom dari sel 31/32, dipasang di kanan kepala', () => {
     expect([...POLIS_MASTER.kolom]).toEqual(['Policy No', 'Pega ID'])
     const DETAIL = readFileSync(join(AKAR, 'pages', 'PenyesuaianKontrak.tsx'), 'utf8')
-    const kepala = DETAIL.indexOf('<Kepala p={p} />')
+    const kepala = DETAIL.indexOf('function Kepala(')
     expect(kepala).toBeGreaterThan(0)
-    expect(DETAIL.indexOf('<PanelPolisMaster')).toBeGreaterThan(kepala)
-    expect(DETAIL.indexOf('<PanelPolisMaster')).toBeLessThan(DETAIL.indexOf('tria__bandingan'))
+    const polis = DETAIL.indexOf('<PanelPolisMaster ringkas', kepala)
+    expect(polis).toBeGreaterThan(kepala)
+    expect(polis).toBeLessThan(DETAIL.indexOf('function ', kepala + 10))
+    expect(DETAIL).toContain('<Kepala p={p} />')
   })
 })
 
@@ -772,5 +794,153 @@ describe('rincian baris (expandPane) — Section dari FlowAction ekspor', () => 
     expect(dalam.halaman['.Currency']).toBeUndefined()
     expect(dalam.halaman['.Layer']).toBe('2')
     expect(dalam.panel).toBe(k.panel)
+  })
+})
+
+// ⛔ TAB REPORTING PERIOD — keluhan pemilik proses 8 Oktober 2026.
+//
+// Dua cacat pada satu tangkapan layar:
+//   1. `Start Date` / `End Date` menyusut jadi kotak kecil KOSONG;
+//   2. `Period` berbunyi `quarter` — nilai tersimpan, bukan `Quarter Year`.
+describe('Reporting Period — kotak tanggal dan teks pilihan', () => {
+  const CSSA = readFileSync(join(__dirname, 'treatyinadjustment.css'), 'utf8')
+  const SISI = readFileSync(join(__dirname, 'komponen', 'SisiPenyesuaian.tsx'), 'utf8')
+  const KT = readFileSync(join(__dirname, 'komponen', 'KerangkaTab.tsx'), 'utf8')
+
+  /** Badan aturan TERAKHIR yang pemilihnya `pemilih` dan isinya memuat `tanda`.
+   *  ⚠️ Mengambil yang PERTAMA memberi jawaban salah ketika satu pemilih
+   *  dipakai dua kali (label-kiri lalu flex) — jebakan yang sudah dua kali
+   *  terjadi di repositori ini. Yang berlaku adalah yang TERAKHIR. */
+  const aturan = (pemilih: string, tanda: string): string => {
+    let badan = ''
+    for (let i = CSSA.indexOf(pemilih); i > 0; i = CSSA.indexOf(pemilih, i + 1)) {
+      const isi = CSSA.slice(i, CSSA.indexOf('}', i))
+      if (isi.includes(tanda)) badan = isi
+    }
+    return badan
+  }
+
+  // ⛔ Kolomnya membungkus menurut lebar WADAH, bukan lebar LAYAR. Panel Old
+  // dan New berdampingan: layar 1600px, panelnya 760px — penjaga berbasis
+  // `@media` tidak pernah menyala justru ketika dibutuhkan.
+  it.each([
+    ['g2', 2, 16],
+    ['g3', 3, 32],
+    ['g4', 4, 48],
+  ])('⛔ kolom %s membungkus saat wadahnya sempit, dan TIDAK melebihi %d kolom', (n, _k, sela) => {
+    const badan = aturan(`.treatyinadjustment .tria__blok.tria__tata--${n} {`, 'grid-template-columns')
+    expect(badan).toContain('auto-fit')
+    // Batas bawah 300px → membungkus. Batas 1/n → tidak pernah lebih dari n kolom.
+    expect(badan).toContain(`max(300px, (100% - ${sela}px) / ${_k})`)
+  })
+
+  // ⚠️ Pembaginya menghitung SELA ANTAR KOLOM. Bila `gap` diubah dan rumusnya
+  // tidak, kolom terakhir meluber beberapa piksel — luberan yang terlalu kecil
+  // untuk terlihat di tangkapan layar, cukup besar untuk merusak barisnya.
+  it('⛔ sela di rumus kolom sama dengan `gap` yang benar-benar dipakai', () => {
+    const badan = aturan('.treatyinadjustment .tria__blok.tria__tata--g4 {', 'display: grid')
+      || aturan('.treatyinadjustment .tria__blok.tria__tata--g2,', 'display: grid')
+    expect(badan).toContain('gap: 8px 16px')
+  })
+
+  // ⛔ CACAT YANG DILAHIRKAN PERBAIKAN SEBELUMNYA, dan pagar ini menguncinya.
+  // `min-width` pada medan TIDAK melebarkan selnya — medan 260px di dalam sel
+  // 180px menggambar dirinya menimpa kolom sebelah, dan label `End Date`
+  // muncul di tengah kotak `Start Date`.
+  it('⛔ medan `alir` BOLEH menyusut — batas bawahnya di kolom induk, bukan di sini', () => {
+    expect(aturan('.treatyinadjustment .tria__blok.tria__tata--alir > .field {', 'flex:'))
+      .toContain('min-width: 0')
+    // Kotak tanggal pun tidak boleh menahan penyusutan dari dalam medan.
+    expect(CSSA).not.toContain('.treatyinadjustment .tria__blok .field > .tria__tgl {')
+  })
+
+  it('⛔ daftar pilihan dimuat di KEDUA mode, bukan hanya saat dapat disunting', () => {
+    const i = SISI.indexOf('void Promise.allSettled([ambilOpsiLimitsTreatyIn()')
+    expect(i).toBeGreaterThan(0)
+    // Bentuk lama yang melahirkan cacatnya.
+    expect(SISI.slice(Math.max(0, i - 400), i)).not.toContain('if (!dapatSunting) return')
+  })
+
+  it('⭐ mode LIHAT menampilkan teks pilihan; nilai di luar daftar apa adanya', () => {
+    expect(KT).toContain('const opsiBaca = pilihanSel(m.pilihan, m.kunci, k)')
+    expect(KT).toContain('opsiBaca?.find((o) => o.value === v)?.label')
+    expect(KT).toContain('label2 ?? selNilai(')
+  })
+})
+
+// ⭐ 8 Oktober 2026 — pemakai: *"seharusnya Is Pro Rate itu adalah check box"*.
+// `IsProRate` hanya ada di sebagian penyesuaian; yang tidak memilikinya dulu
+// tergambar sebagai kotak teks `MedanTakAda`. Kotak centang tanpa properti =
+// TIDAK tercentang, seperti `pxCheckbox` Pega.
+describe('Is Pro Rate selalu kotak centang', () => {
+  it('properti ADA (true) → tercentang', () => {
+    const html = renderBaru('0')
+    expect(html).toMatch(/<label class="tria__centang"><input type="checkbox" checked=""[^>]*\/>Is Pro Rate<\/label>/)
+  })
+
+  it('properti TIDAK ADA → kotak centang kosong, bukan kotak teks', () => {
+    const { IsProRate: _buang, ...tanpa } = AKAR_NP.medan
+    void _buang
+    const html = renderBaru('0', undefined, sisi(tanpa, AKAR_NP.larik))
+    expect(html).toMatch(/<label class="tria__centang"><input type="checkbox"(?![^>]*checked)[^>]*\/>Is Pro Rate<\/label>/)
+    expect(html).not.toMatch(/<label class="field__label">Is Pro Rate<\/label><input class="field__input/)
+  })
+})
+
+// ⭐ 8 Oktober 2026 — pemakai: *"seharusnya effective date itu tipenya edit"*.
+// `EDMEffective` hanya diisi otomatis untuk Internal Edit; yang tidak
+// memilikinya dulu tergambar sebagai kotak teks baca-saja `MedanTakAda`.
+describe('Effective Date dapat disunting walau propertinya belum ada', () => {
+  it('mode Edit, `EDMEffective` TIDAK ada → kotak tanggal yang dapat diisi', () => {
+    const { EDMEffective: _buang, ...tanpa } = AKAR_NP.medan
+    void _buang
+    const html = renderBaru('0', undefined, sisi(tanpa, AKAR_NP.larik))
+    const i = html.indexOf('>Effective Date<')
+    expect(i).toBeGreaterThan(0)
+    const sel = html.slice(i, html.indexOf('</div>', i))
+    expect(sel).not.toContain('readonly')
+    expect(sel).not.toContain('disabled')
+  })
+})
+
+// ⭐ 8 Oktober 2026 — pemakai: *"perbaiki spreading type nya samakan seperti
+// yang di treaty in"*. Grid spreading manual `DetailShare` L16 (cabang
+// `.SpreadingTypeID == ''`): Reins Type (dropdown) · Pct Share dapat
+// disunting, Add di kepala / Delete per baris (`AddDelSpreadingTreatyin`),
+// baris dapat dibuka ke panel `SpreadingTPDtl`.
+describe('spreading manual Share Prop = layar Treaty In', () => {
+  const DETAIL = {
+    TreatyGroup: 'HOSPITAL', SpreadingTypeID: '', RNMShare: '25', SpreadingTotalPct: '25',
+    SpreadingList: [{ ReinsTypeID: '10263', ReinsTypeName: '2025 QS 181M TRT', Pct: '25', BreakDownSprdList: [] }],
+  }
+  const k = (ubah: boolean) =>
+    konteksBaris(
+      {
+        sisi: sisi(AKAR_NP.medan), akar: sisi(AKAR_NP.medan), halaman: { ...AKAR_NP.medan, ViewState: ubah ? '0' : '1' }, ubah,
+        // Penyedia opsi halaman — RD `ParentReinsMasterTrt` (`spreading-induk`).
+        opsi: () => [{ value: '10263', label: '2025 QS 181M TRT' }],
+      },
+      DETAIL as never,
+      () => undefined,
+    )
+
+  it('kerangka: Add/Delete jadi tombol, sel berkunci ViewState saja, rincian SpreadingTPDtl', () => {
+    expect(KERANGKA_RINCIAN.SpreadingTPDtl).toBeDefined()
+    const html = renderToStaticMarkup(<RenderKerangka isi={KERANGKA_RINCIAN.DetailShare ?? []} k={k(true)} />)
+    expect(html).toContain('>Reins Type</th>')
+    expect(html).toContain('>Pct Share</th>')
+    expect(html).not.toContain('pyTemplateInputBox')
+    expect(html).toMatch(/>Add<\/button>/)
+    expect(html).toMatch(/>Delete<\/button>/)
+    expect(html).toMatch(/<select|role="combobox"/)
+    expect(html).toContain('2025 QS 181M TRT')
+    expect(html).toMatch(/aria-label="Pct Share"/)
+    expect(html).toContain('tria__buka-tombol')
+  })
+
+  it('mode lihat (ViewState 1): nol Add/Delete, nol dropdown', () => {
+    const html = renderToStaticMarkup(<RenderKerangka isi={KERANGKA_RINCIAN.DetailShare ?? []} k={k(false)} />)
+    expect(html).not.toMatch(/>Add<\/button>/)
+    expect(html).not.toMatch(/<select|role="combobox"/)
   })
 })

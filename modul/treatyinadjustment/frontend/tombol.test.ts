@@ -342,7 +342,19 @@ describe('rumus Installment — rute /hitung/angsuran Treaty In', () => {
   })
 
   it('isian Installment (perilaku change): postValue + TreatyInSetValueInstallment TANPA status', async () => {
-    const m = KERANGKA_TAB['TreatyInTabsNonProportional#Installment']?.isi.find((b) => b.t === 'medan' && b.kunci === 'InstallmentNo')
+    // Dicari REKURSIF: sejak 8 Oktober 2026 medan berada di dalam blok tata
+    // letak (`tata`), bukan selalu di tingkat atas.
+    const cari = (bs: readonly ButirKerangka[]): ButirKerangka | undefined => {
+      for (const b of bs) {
+        if (b.t === 'medan' && b.kunci === 'InstallmentNo') return b
+        if (b.t === 'blok') {
+          const x = cari(b.anak)
+          if (x !== undefined) return x
+        }
+      }
+      return undefined
+    }
+    const m = cari(KERANGKA_TAB['TreatyInTabsNonProportional#Installment']?.isi ?? [])
     const aksi = m?.t === 'medan' ? m.aksiUbah : undefined
     expect(aksi?.map((a) => a.aksi)).toEqual(['postValue', 'refresh'])
     const r = aksi === undefined ? undefined : rantaiRumus({ aksi })

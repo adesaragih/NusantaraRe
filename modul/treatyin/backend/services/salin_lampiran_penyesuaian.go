@@ -137,14 +137,14 @@ func (l *Layanan) SalinLampiranRevisi(ctx context.Context, p inti.Pelaku, idBaru
 	}
 	if !OLDIDSejalan(idBaru, idLama) {
 		return &HasilSalinLampiran{Sumber: idLama, Berkas: []HasilBerkasUnggah{},
-			Pesan: fmt.Sprintf("ID Original %s bukan asal %s — lampirannya tidak disalin.", idLama, idBaru)}
+			Pesan: fmt.Sprintf("Original ID %s is not the source of %s — its attachments were not copied.", idLama, idBaru)}
 	}
 	// [1] `CopyAllAttachment2_Sql`.
 	sumber, err := l.gudang.BacaLampiranKontrak(ctx, idLama)
 	if err != nil {
 		log.Printf("treaty in: copying attachments %s -> %s: %v", idLama, idBaru, err)
 		return &HasilSalinLampiran{Sumber: idLama, Berkas: []HasilBerkasUnggah{},
-			Pesan: "Daftar lampiran " + idLama + " tidak terbaca — lampirannya tidak disalin (lihat log server)."}
+			Pesan: "Attachment list for " + idLama + " could not be read — its attachments were not copied (see the server log)."}
 	}
 	if len(sumber) == 0 {
 		return nil
@@ -194,12 +194,12 @@ func (l *Layanan) salinSatuLampiran(ctx context.Context, p inti.Pelaku, idBaru, 
 		return fmt.Errorf("%w: reading the source object was interrupted", ErrSimpananGagal)
 	}
 	if len(isi) > unggah.BatasUkuranUnggahan {
-		return ditolak(fmt.Sprintf("Berkas melebihi %d MB — tidak disalin.", unggah.BatasUkuranUnggahan>>20))
+		return ditolak(fmt.Sprintf("File exceeds %d MB — not copied.", unggah.BatasUkuranUnggahan>>20))
 	}
 	gambar := base64.StdEncoding.EncodeToString(isi)
 	// [2.7] prasyarat `Datain.CARI53 == ""` → unggah dilewati.
 	if gambar == "" {
-		return ditolak("Isi berkas sumber kosong — tidak disalin.")
+		return ditolak("The source file is empty — not copied.")
 	}
 	// `InsertGoogleStorage_Act` [2] Ext = `DropFile.pyFileMimeType`; kosong →
 	// dari Namafile. [3] huruf kecil. [4] `GetMimeType`. [5] keluar.
@@ -213,7 +213,7 @@ func (l *Layanan) salinSatuLampiran(ctx context.Context, p inti.Pelaku, idBaru, 
 	ext = strings.ToLower(ext)
 	mime := unggah.MimeDariNamaFile("berkas." + ext)
 	if ext == "" || len(gambar) < 10 || mime == unggah.MimeBawaan {
-		return ditolak(fmt.Sprintf("Jenis berkas .%s tidak dikenal (GetMimeType) — tidak disalin.", ext))
+		return ditolak(fmt.Sprintf("File type .%s is not recognised (GetMimeType) — not copied.", ext))
 	}
 	// [6] `GetAppName_SQL` — sekali per salinan.
 	if *app == "" {

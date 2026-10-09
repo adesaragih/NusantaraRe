@@ -21,7 +21,9 @@ const KATEGORI: BarisKategoriLampiran[] = [
   { kode: '00002', nama: 'Approval Email', cacah: 1, dipastikan: true },
   { kode: '00008', nama: 'Letter of Acknowledgment / LOA', cacah: 0, dipastikan: true },
 ]
-const tombolUpload = (html: string) => [...html.matchAll(/<button[^>]*>Upload<\/button>/g)].map((m) => m[0])
+// Sejak 8 Okt 2026 sel Upload = kotak IKON (gambar Pega); tombolnya dikenali
+// dari `title="Upload"` — tag pembukanya memuat `disabled` bila mati.
+const tombolUpload = (html: string) => [...html.matchAll(/<button[^>]*title="Upload"[^>]*>/g)].map((m) => m[0])
 
 describe('⭐ Upload file — syarat tampil ekspor', () => {
   it('ViewState != 1 / RevisionState = 1 (bisaUnggah) + kontrak ber-ID: tombol HIDUP per kategori', () => {
@@ -38,13 +40,17 @@ describe('⭐ Upload file — syarat tampil ekspor', () => {
   it('kontrak belum tersimpan: tombol mati, dengan alasannya', () => {
     const html = renderToStaticMarkup(<PanelLampiran kategori={KATEGORI} berkas={[]} idKontrak="" bisaUnggah />)
     for (const b of tombolUpload(html)) expect(b).toContain('disabled')
-    expect(html).toContain('Simpan kontrak lebih dulu untuk mengunggah lampiran.')
+    expect(html).toContain('Save the contract first to upload attachments.')
   })
 
-  it('Refresh tampil; Download All (`pyCondition never`) tidak', () => {
+  // ⭐ RALAT 8 Oktober 2026: sel `Download All` ber-`pyVisible = ALWAYS`, yang
+  // MENIMPA `pyCondition never` — dan gambar Pega pemakai memperlihatkannya
+  // di samping Refresh (`DownloadAll_Act`, `AllDocuments.zip`).
+  it('Download All lalu Refresh tampil', () => {
     const html = renderToStaticMarkup(<PanelLampiran kategori={KATEGORI} berkas={[]} idKontrak="1002305" />)
     expect(html).toContain('>Refresh</button>')
-    expect(html).not.toContain('Download All')
+    expect(html).toContain('>Download All</button>')
+    expect(html.indexOf('Download All')).toBeLessThan(html.indexOf('>Refresh<'))
   })
 })
 

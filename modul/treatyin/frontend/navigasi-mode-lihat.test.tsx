@@ -32,10 +32,14 @@ describe('navigasi tetap hidup di mode lihat', () => {
   })
 
   it('tombol buka rincian dan strip sub-tab di dalam tab memakai navigasi, bukan `<button>`', () => {
-    for (const f of ['limitsUI.tsx', 'TabAngsuran.tsx', 'TabShareNonProp.tsx', 'TabShareProp.tsx']) {
+    // ⭐ 8 Oktober 2026 — `gridPega.tsx` (grid bentuk Pega) memegang tombol
+    // ▸/▾ rincian untuk tab yang memakainya (TabShareProp, Limits, …).
+    for (const f of ['limitsUI.tsx', 'TabAngsuran.tsx', 'TabShareNonProp.tsx', 'gridPega.tsx']) {
       expect(baca(f), f).not.toMatch(/<button[^>]*aria-expanded/)
       expect(baca(f), f).toContain('<TombolNavigasi')
     }
+    expect(baca('TabShareProp.tsx')).toContain('<GridPega')
+    expect(baca('TabShareProp.tsx')).not.toMatch(/<button[^>]*aria-expanded/)
     for (const f of ['TabLimitsProp.tsx', 'TabShare.tsx', 'TabShareNonProp.tsx', 'TabShareProp.tsx']) {
       expect(baca(f), f).toContain('<StripTabNavigasi')
       expect(baca(f), f).not.toMatch(/<StripTab /)

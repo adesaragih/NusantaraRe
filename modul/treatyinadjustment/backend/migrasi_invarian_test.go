@@ -111,6 +111,20 @@ var tabelTreatyInDiparkir = map[string]string{
 		"sebab namanya tak muat di T_TREATY_SHARE_AMOUNT (laporan Save kontrak 1001855, 8 Oktober 2026)",
 	"T_TREATY_FAC_SHARE_GROUP": "453 — FacultativeShareList.TreatyGroupList, pasangan T_TREATY_SHARE_GROUP " +
 		"(laporan Save kontrak 1001855, 8 Oktober 2026)",
+	"T_TREATY_LIMIT_SPRD_BREAKDOWN": "454 — Detail.SpreadingList.BreakDownSprdList (pecahan spreading manual " +
+		"Share Prop) tanpa tempat simpan (laporan Save, 8 Oktober 2026)",
+}
+
+// tabelTreatyInBantu — tabel BANTU milik `treatyin` (BUKAN tabel pendaratan
+// dokumen, jadi tidak ada di peta pendaratan) yang `CREATE`-nya terpaksa
+// diparkir di folder ini dengan alasan yang sama (rentang `treatyin` penuh).
+// Syaratnya setara: tabel itu harus DIPAKAI kode repository `treatyin`
+// (diperiksa dari teks berkasnya, bukan impor).
+//
+// ⛔ Sama sempitnya: satu nama, satu alasan.
+var tabelTreatyInBantu = map[string]string{
+	"T_TREATY_KURS": "455 — kurs MILIK kontrak (penghubung kontrak ↔ TREATYEXCHANGEYEARLY); grid Rate of " +
+		"Exchange menampilkan kurs kontrak lain (laporan pemakai, 8 Oktober 2026)",
 }
 
 func TestNolTabelBaru(t *testing.T) {
@@ -120,6 +134,12 @@ func TestNolTabelBaru(t *testing.T) {
 	for nama, isi := range majuSaja(t) {
 		for _, m := range pola.FindAllStringSubmatch(tanpaKomentar(isi), -1) {
 			tabel := strings.ToUpper(m[1])
+			if _, bantu := tabelTreatyInBantu[tabel]; bantu {
+				if !strings.Contains(kodeRepoTreatyIn(t), `"`+tabel+`"`) {
+					t.Errorf("%s memarkir tabel bantu %s, tetapi kode repository treatyin tidak memakainya", nama, tabel)
+				}
+				continue
+			}
 			if _, parkir := tabelTreatyInDiparkir[tabel]; parkir {
 				if !strings.Contains(string(petaTreatyIn), `Tabel: "`+tabel+`"`) {
 					t.Errorf("%s memarkir %s, tetapi tabel itu tidak ada di peta pendaratan treatyin", nama, tabel)
@@ -297,3 +317,25 @@ func TestKaskadeHanyaPadaBerkasTerdaftar(t *testing.T) {
 //
 // Yang DI SINI adalah yang khusus modul ini: invarian bernomor dan pernyataan
 // keputusan yang penjaga umum tidak dapat mengetahuinya.
+
+// kodeRepoTreatyIn — seluruh teks berkas Go (bukan uji) repository `treatyin`.
+func kodeRepoTreatyIn(t *testing.T) string {
+	t.Helper()
+	dir := "../../treatyin/backend/repository"
+	isi, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sb strings.Builder
+	for _, e := range isi {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".go") || strings.HasSuffix(e.Name(), "_test.go") {
+			continue
+		}
+		b, err := os.ReadFile(dir + "/" + e.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		sb.Write(b)
+	}
+	return sb.String()
+}

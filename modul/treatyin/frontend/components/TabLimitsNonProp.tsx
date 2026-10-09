@@ -17,11 +17,12 @@
 // ⛔ Hasil suntingan dan hitungan hidup di salinan pohon layar ini; jalur
 // Save menunggu keputusan pemilik proses.
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 
 import { PemicuUbah, usePemicuUbah } from './pemicuUbah'
 
-import { Field, FieldAngka, Kosong, Panel, Pilih } from '../../../../inti/frontend/components/ui/dasar'
+import { Field, FieldAngka } from '../../../../inti/frontend/components/ui/dasar'
+import { PilihCari as Pilih } from '../../../../inti/frontend/components/ui/pilihSaring'
 import {
   ambilKelasBisnis,
   ambilOpsiLimits,
@@ -38,7 +39,9 @@ import {
 import { GRID_TOTAL, KOLOM_LAYER, KOLOM_REINSTATEMENT, KOLOM_RINGKASAN, LIMITS_NP, kontrakRevisi, type KolomNP } from '../labelsLimitsNP'
 import type { ModeForm } from '../mode'
 import { DropdownDaftar } from './IsianAuto'
-import { Bagian, Chip, KartuLipat, KepalaBagian, TombolHapus, TombolTambah } from './limitsUI'
+import { BlokPega, GridPega, TeksPega, type KolomPega } from './gridPega'
+import { saringAngka } from './saringAngka'
+import { SelKosongPega, TataPegaBlok } from './tataPega'
 import { formatLimit, teksDari } from './TabLimitsProp'
 
 function larikDari(s: SimpulLimit, kunci: string): SimpulLimit[] {
@@ -142,7 +145,16 @@ function MedanNP({
           urut. Yang presisinya tidak diketahui LEWAT APA ADANYA, persis
           seperti sebelum pemisah ribuan ada. */}
       {desimal === null ? (
-        <Field label={label} value={bisaUbah ? nilai : tampil(nilai, desimal)} readOnly={!bisaUbah} onChange={onUbah} />
+        // Seluruh MedanNP kontrol Number (Layer, Part, AdjRate, MDP%, …) —
+        // huruf/simbol ditolak (permintaan pemakai 8 Oktober 2026).
+        <Field
+          label={label}
+          value={bisaUbah ? nilai : tampil(nilai, desimal)}
+          readOnly={!bisaUbah}
+          onChange={(v) => {
+            onUbah(saringAngka(v))
+          }}
+        />
       ) : (
         <FieldAngka label={label} value={nilai} desimal={desimal} readOnly={!bisaUbah} onChange={onUbah} />
       )}
@@ -167,9 +179,16 @@ function Centang({ label, nilai, bisaUbah, onUbah }: { label: string; nilai: str
   )
 }
 
-/** Grid `Currency · Value` — Premium Earned, Min Premium Amt, MDP, total. */
+/**
+ * Grid `Currency · Value` — Premium Earned, Min Premium Amt, MDP, Egnpi this
+ * layer, total. Bentuk Pega (8 Oktober 2026): kepala `judul · Value`
+ * (`judulNilai`), `Add MDP` di sel kepala kolom tombol, `Delete` per baris,
+ * selebar `pyWidth` ekspor.
+ */
 function GridNilai({
   judul,
+  judulNilai = LIMITS_NP.nilai,
+  lebar = [198, 363, 100],
   baris,
   bisaUbahMataUang,
   bisaUbahNilai,
@@ -178,6 +197,9 @@ function GridNilai({
   onUbah,
 }: {
   judul: string
+  judulNilai?: string
+  /** `pyWidth` ekspor: mata uang · nilai · kolom tombol. */
+  lebar?: readonly [number, number, number?]
   baris: readonly SimpulLimit[]
   bisaUbahMataUang: boolean
   bisaUbahNilai: boolean
@@ -186,143 +208,105 @@ function GridNilai({
   onUbah: (b: SimpulLimit[]) => void
 }) {
   return (
-    <div className="trin__limit-grid">
-      <div className="table-wrap">
-        <table className="trin__tabel">
-          <thead>
-            <tr>
-              <th scope="col">{judul}</th>
-              <th scope="col">{LIMITS_NP.nilai}</th>
-              {tambah && (
-                <th scope="col">
-                  <TombolTambah
-                    label={LIMITS_NP.tambahMDP}
-                    onClick={() => {
-                      onUbah([...baris, { Currency: '', CurrencyID: '', Value: '' }])
-                    }}
-                  />
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {baris.length === 0 && (
-              <tr>
-                <td colSpan={tambah ? 3 : 2}>
-                  <Kosong pesan={LIMITS_NP.tanpaBaris} />
-                </td>
-              </tr>
-            )}
-            {baris.map((b, r) => (
-              <tr key={r}>
-                <td>
-                  {bisaUbahMataUang ? (
-                    <DropdownDaftar
-                      label=""
-                      nilai={teksDari(b, 'Currency')}
-                      pilihan={mataUang}
-                      bisaUbah
-                      onPilih={(nama, id) => {
-                        onUbah(ganti(baris, r, { ...b, Currency: nama, CurrencyID: id }))
-                      }}
-                    />
-                  ) : (
-                    teksDari(b, 'Currency')
-                  )}
-                </td>
-                <td className="trin__angka">
-                  {bisaUbahNilai ? (
-                    /* ⭐ Sel angka berpemisah ribuan — sama dengan grid
-                       `100% Limit` / `Retention` / `Cession to R/I` cabang
-                       Prop. Keduanya grid nilai bermata uang; membiarkan
-                       yang satu mentah sementara yang lain terformat adalah
-                       jenis selisih yang tidak akan dilaporkan siapa pun
-                       sampai angkanya salah dibaca. */
-                    <FieldAngka
-                      label=""
-                      value={teksDari(b, 'Value')}
-                      desimal={2}
-                      onChange={(v) => {
-                        onUbah(ganti(baris, r, { ...b, Value: v }))
-                      }}
-                    />
-                  ) : (
-                    tampil(teksDari(b, 'Value'), 2)
-                  )}
-                </td>
-                {tambah && (
-                  <td>
-                    <TombolHapus
-                      label={LIMITS_NP.hapusMDP}
-                      labelAkses={`${LIMITS_NP.hapusMDP} ${judul} ${r + 1}`}
-                      onClick={() => {
-                        onUbah(baris.filter((_, j) => j !== r))
-                      }}
-                    />
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <GridPega
+      label={judul}
+      kelas="trin__tabel--nilai"
+      lebarTetap
+      kolom={[
+        {
+          judul,
+          lebar: lebar[0],
+          isi: (b, r) =>
+            bisaUbahMataUang ? (
+              <DropdownDaftar
+                label=""
+                nilai={teksDari(b, 'Currency')}
+                pilihan={mataUang}
+                bisaUbah
+                onPilih={(nama, id) => {
+                  onUbah(ganti(baris, r, { ...b, Currency: nama, CurrencyID: id }))
+                }}
+              />
+            ) : (
+              teksDari(b, 'Currency')
+            ),
+        },
+        {
+          judul: judulNilai,
+          lebar: lebar[1],
+          angka: true,
+          isi: (b, r) =>
+            bisaUbahNilai ? (
+              /* ⭐ Sel angka berpemisah ribuan — sama dengan grid
+                 `100% Limit` / `Retention` / `Cession to R/I` cabang Prop. */
+              <FieldAngka
+                label=""
+                value={teksDari(b, 'Value')}
+                desimal={2}
+                onChange={(v) => {
+                  onUbah(ganti(baris, r, { ...b, Value: v }))
+                }}
+              />
+            ) : (
+              tampil(teksDari(b, 'Value'), 2)
+            ),
+        },
+      ]}
+      baris={baris}
+      tombol={
+        tambah
+          ? {
+              lebar: lebar[2] ?? 100,
+              tambah: {
+                label: LIMITS_NP.tambahMDP,
+                onKlik: () => {
+                  onUbah([...baris, { Currency: '', CurrencyID: '', Value: '' }])
+                },
+              },
+              hapus: {
+                label: LIMITS_NP.hapusMDP,
+                akses: (_, r) => `${LIMITS_NP.hapusMDP} ${judul} ${String(r + 1)}`,
+                onKlik: (r) => {
+                  onUbah(baris.filter((_, j) => j !== r))
+                },
+              },
+            }
+          : undefined
+      }
+    />
   )
 }
 
-/** Grid baca-saja berkolom ekspor. */
-function GridBaca({ kolom, baris }: { kolom: readonly KolomNP[]; baris: readonly SimpulLimit[] }) {
+/** Grid baca-saja berkolom ekspor (`Summary of Limit`). */
+function GridBaca({ kolom, lebar, baris }: { kolom: readonly KolomNP[]; lebar: readonly number[]; baris: readonly SimpulLimit[] }) {
   return (
-    <div className="table-wrap">
-      <table className="trin__tabel">
-        <thead>
-          <tr>
-            {kolom.map((k) => (
-              <th key={k.kunci} scope="col">
-                {k.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {baris.length === 0 && (
-            <tr>
-              <td colSpan={kolom.length}>
-                <Kosong pesan={LIMITS_NP.tanpaBaris} />
-              </td>
-            </tr>
-          )}
-          {baris.map((b, r) => (
-            <tr key={r}>
-              {kolom.map((k) => (
-                <td key={k.kunci} className={k.desimal === null ? undefined : 'trin__angka'}>
-                  {k.desimal === null ? teksDari(b, k.kunci) : tampil(teksDari(b, k.kunci), k.desimal)}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <GridPega
+      kolom={kolom.map((k, c) => ({
+        judul: k.label,
+        lebar: lebar[c] ?? 150,
+        angka: k.desimal !== null,
+        isi: (b: SimpulLimit) => (k.desimal === null ? teksDari(b, k.kunci) : tampil(teksDari(b, k.kunci), k.desimal)),
+      }))}
+      baris={baris}
+    />
   )
 }
 
-/** Satu Treaty Group layer — kartu; rinciannya `Section/CoBList.xml`. */
-function KartuGrup({
+/**
+ * Rincian satu Treaty Group layer — `Section/CoBList.xml`: Treaty Group lalu
+ * grid `Class of Business`. Baris gridnya sendiri di `GridGrup`.
+ */
+function RincianGrup({
   g,
-  nomor,
   opsi,
   bisaUbah,
   onUbah,
-  onHapus,
   onGantiGrup,
 }: {
   g: SimpulLimit
-  nomor: number
   opsi: OpsiLimits
   bisaUbah: boolean
   onUbah: (g: SimpulLimit) => void
-  onHapus: () => void
   onGantiGrup: (g: SimpulLimit) => void
 }) {
   const [kelas, setKelas] = useState<PilihanWarisan[]>([])
@@ -344,68 +328,133 @@ function KartuGrup({
   }
   const daftarCoB = larikDari(g, 'ClassOfBusinessList')
   return (
-    <KartuLipat
-      nomor={nomor}
-      judul={teksDari(g, 'TreatyGroup')}
-      judulKosong={LIMITS_NP.belumDipilih}
-      bukaAwal={teksDari(g, 'TreatyGroup') === ''}
-      meta={
-        <>
-          <Chip label={LIMITS_NP.kelasBisnis} nilai={String(daftarCoB.length)} />
-          {teksDari(g, 'IsROLProfile') === 'true' && <span className="tl-chip">{LIMITS_NP.rolProfile}</span>}
-        </>
-      }
-      aksi={bisaUbah && <TombolHapus label={LIMITS_NP.hapus} labelAkses={`${LIMITS_NP.hapus} ${LIMITS_NP.treatyGroup} ${nomor}`} onClick={onHapus} />}
-    >
-      <div className="form-grid">
-        <DropdownDaftar label={LIMITS_NP.treatyGroup} nilai={teksDari(g, 'TreatyGroup')} pilihan={opsi.kelompokTreaty} bisaUbah={bisaUbah} onPilih={pilihGrup} />
-        <Centang
-          label={LIMITS_NP.rolProfile}
-          nilai={teksDari(g, 'IsROLProfile')}
-          bisaUbah={bisaUbah}
-          onUbah={(v) => {
-            onUbah({ ...g, IsROLProfile: v })
-          }}
-        />
-      </div>
+    <>
+      <DropdownDaftar label={LIMITS_NP.treatyGroup} nilai={teksDari(g, 'TreatyGroup')} pilihan={opsi.kelompokTreaty} bisaUbah={bisaUbah} onPilih={pilihGrup} />
       {/* Add CoB / Delete MATI di ekspor (`ViewState !='1' && 1=2`). */}
-      <div className="table-wrap">
-        <table className="trin__tabel">
-          <thead>
-            <tr>
-              <th scope="col">{LIMITS_NP.kelasBisnis}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {daftarCoB.length === 0 && (
-              <tr>
-                <td>
-                  <Kosong pesan={LIMITS_NP.tanpaBaris} />
-                </td>
-              </tr>
-            )}
-            {daftarCoB.map((c, r) => (
-              <tr key={r}>
-                <td>
-                  <DropdownDaftar
-                    label=""
-                    nilai={teksDari(c, 'ClassOfBusiness')}
-                    pilihan={kelas}
-                    bisaUbah={bisaUbah}
-                    onPilih={(nama, id) => {
-                      // DT `SetCoB` — nama dan kode Class of Business.
-                      onUbah({ ...g, ClassOfBusinessList: ganti(daftarCoB, r, { ...c, ClassOfBusiness: nama, ClassOfBusinessID: id }) })
-                    }}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </KartuLipat>
+      <GridPega
+        label={LIMITS_NP.kelasBisnis}
+        kolom={[
+          {
+            judul: LIMITS_NP.kelasBisnis,
+            lebar: 722,
+            isi: (c, r) => (
+              <DropdownDaftar
+                label=""
+                nilai={teksDari(c, 'ClassOfBusiness')}
+                pilihan={kelas}
+                bisaUbah={bisaUbah}
+                onPilih={(nama, id) => {
+                  // DT `SetCoB` — nama dan kode Class of Business.
+                  onUbah({ ...g, ClassOfBusinessList: ganti(daftarCoB, r, { ...c, ClassOfBusiness: nama, ClassOfBusinessID: id }) })
+                }}
+              />
+            ),
+          },
+        ]}
+        baris={daftarCoB}
+      />
+    </>
   )
 }
+
+/**
+ * Grid Treaty Group layer — `masterDetail`, rincian `CoBList`. Bentuk Pega:
+ * `Treaty Group` · kolom tombol (`Add Treaty Group` di kepala, `Delete` per
+ * baris) · `ROL Profile` — kolom tombol DI TENGAH, seperti ekspor (lebar 202 ·
+ * 147 · 104).
+ */
+function GridGrup({
+  grup,
+  opsi,
+  bisaUbah,
+  onTambah,
+  onUbahBaris,
+  onHapus,
+  onGantiBaris,
+}: {
+  grup: readonly SimpulLimit[]
+  opsi: OpsiLimits
+  bisaUbah: boolean
+  onTambah: () => void
+  onUbahBaris: (r: number, g: SimpulLimit) => void
+  onHapus: (r: number) => void
+  onGantiBaris: (r: number, g: SimpulLimit) => void
+}) {
+  return (
+    <GridPega
+      label={LIMITS_NP.treatyGroup}
+      kolom={[
+        { judul: LIMITS_NP.treatyGroup, lebar: 202, isi: (g) => (teksDari(g, 'TreatyGroup') === '' ? LIMITS_NP.belumDipilih : teksDari(g, 'TreatyGroup')) },
+        {
+          judul: LIMITS_NP.rolProfile,
+          lebar: 104,
+          isi: (g, r) => (
+            <input
+              type="checkbox"
+              aria-label={`${LIMITS_NP.rolProfile} ${String(r + 1)}`}
+              checked={teksDari(g, 'IsROLProfile') === 'true'}
+              disabled={!bisaUbah}
+              onChange={(e) => {
+                onUbahBaris(r, { ...g, IsROLProfile: e.target.checked ? 'true' : 'false' })
+              }}
+            />
+          ),
+        },
+      ]}
+      baris={grup}
+      tombol={
+        bisaUbah
+          ? {
+              lebar: 147,
+              sisip: 1,
+              tambah: { label: LIMITS_NP.tambahGrup, onKlik: onTambah },
+              hapus: {
+                label: LIMITS_NP.hapus,
+                akses: (_, r) => `${LIMITS_NP.hapus} ${LIMITS_NP.treatyGroup} ${String(r + 1)}`,
+                onKlik: onHapus,
+              },
+            }
+          : undefined
+      }
+      rincian={(g, r) => (
+        <RincianGrup
+          g={g}
+          opsi={opsi}
+          bisaUbah={bisaUbah}
+          onUbah={(baru) => {
+            onUbahBaris(r, baru)
+          }}
+          onGantiGrup={(baru) => {
+            onGantiBaris(r, baru)
+          }}
+        />
+      )}
+    />
+  )
+}
+
+/** Lebar kolom grid `.Reinstatement_List` (`Layers.xml` @770156, `pyWidth`). */
+const LEBAR_REINST: Readonly<Record<string, number>> = {
+  ReinstatementValue: 156,
+  ReinstatementPct: 146,
+  ReinstatementNote: 319,
+  AdditionalAmount1: 236,
+  AdditionalAmount2: 231,
+  AdditionalPct: 132,
+  ReinstatementAmount1: 302,
+  ReinstatementAmount2: 304,
+}
+
+/**
+ * Lebar grid `Min Premium Amt` / `MDP` (`Layers.xml` @992599 · @1089868):
+ * mata uang 198 · nilai 363 seperti ekspor; kolom tombol 120, bukan 100/101.
+ *
+ * ⚠️ Simpangan kecil yang disengaja (8 Oktober 2026): huruf tombol tema ini
+ * (12px tebal) lebih lebar dari skin Pega (±11px), dan tabel `table-layout:
+ * fixed` tidak melebarkan kolom mengikuti isinya — pada 100/661 tombol `Add
+ * MDP` di kolom TERAKHIR meluber dan terpotong tepi grid menjadi "Add MD".
+ */
+const LEBAR_GRID_MDP: readonly [number, number, number] = [198, 363, 120]
 
 /** Rincian satu layer — `Section/Layers.xml`. Diekspor untuk uji. */
 export function RincianLayer({
@@ -431,8 +480,10 @@ export function RincianLayer({
   }
   const grup = larikDari(l, 'TreatyGroupList')
   const reinst = larikDari(l, 'Reinstatement_List')
-  const limit2 = teksDari(l, 'Limit2')
-  const kolomReinst = KOLOM_REINSTATEMENT.filter((k) => k.kunci !== 'ReinstatementAmount2' || (limit2 !== '' && Number(limit2) !== 0))
+  // Kolom Reinstatement Amount USD SELALU tampil, walau Limit2 kosong —
+  // syarat `.Limit2 != 0` @801378 tidak diikuti: layar Pega produksi tetap
+  // menampilkannya (keputusan pemakai 9 Oktober 2026).
+  const kolomReinst = KOLOM_REINSTATEMENT
 
   /** Sel mata uang di kepala kolom matriks — satu properti per kolom. */
   const mataUang = (kunciMU: 'Currency' | 'Currency2', label: string) => (
@@ -455,7 +506,7 @@ export function RincianLayer({
         value={teksDari(l, kunci)}
         aria-label={label}
         onChange={(e) => {
-          onUbah({ ...l, [kunci]: e.target.value })
+          onUbah({ ...l, [kunci]: saringAngka(e.target.value) })
         }}
       />
     ) : (
@@ -467,62 +518,62 @@ export function RincianLayer({
     { label: LIMITS_NP.deductible, k1: 'Deductible', k2: 'Deductible2', desimal: 2 },
   ]
 
+  // ⭐ Urutan = Section `Layers` (bentuk Pega, 8 Oktober 2026), TANPA judul
+  // bagian tambahan: jenis/nomor layer · `Part of` · grid Treaty Group ·
+  // `Egnpi this layer` · Cover · Currency Relation · matriks limit · No RIP ·
+  // `Reinstatement` · grid Reinstatement · Adj Rate/Premium Earned · Min
+  // Premium · MDP · Combine MDP · ROL %.
   return (
-    <div className="tl-rincian">
-      <Bagian judul={LIMITS_NP.layers}>
-        <div className="form-grid">
-          <PilihNP label={LIMITS_NP.layers} nilai={teksDari(l, 'LayerType')} opsi={opsi.jenisLayer ?? []} bisaUbah={bisaUbah} onUbah={set('LayerType')} />
-          <MedanNP label={LIMITS_NP.layer} nilai={teksDari(l, 'Layer')} desimal={null} bisaUbah={bisaUbah} onUbah={set('Layer')} />
-          <PilihNP label={LIMITS_NP.partOf} nilai={teksDari(l, 'LayerPartType')} opsi={opsi.jenisLayer ?? []} bisaUbah={bisaUbah} onUbah={set('LayerPartType')} />
-          <MedanNP label={LIMITS_NP.part} nilai={teksDari(l, 'LayerPart')} desimal={null} bisaUbah={bisaUbah} onUbah={set('LayerPart')} />
-        </div>
-      </Bagian>
+    <>
+      {/* `Layers.xml` `Inline` @11943 — jenis/nomor layer · teks `Part of`
+          (sel LABEL @34562) · bagiannya, sebaris dan TANPA label: keempat
+          sel berlabel kosong di ekspor, dan tangkapan layar 31 memperlihatkan
+          `[Layer ▾] [1] Part of [Layer ▾] [1]`. */}
+      <TataPegaBlok tata="alir">
+        <PilihNP label="" nilai={teksDari(l, 'LayerType')} opsi={opsi.jenisLayer ?? []} bisaUbah={bisaUbah} onUbah={set('LayerType')} />
+        <MedanNP label="" nilai={teksDari(l, 'Layer')} desimal={null} bisaUbah={bisaUbah} onUbah={set('Layer')} />
+        <TeksPega>{LIMITS_NP.partOf}</TeksPega>
+        <PilihNP label="" nilai={teksDari(l, 'LayerPartType')} opsi={opsi.jenisLayer ?? []} bisaUbah={bisaUbah} onUbah={set('LayerPartType')} />
+        <MedanNP label="" nilai={teksDari(l, 'LayerPart')} desimal={null} bisaUbah={bisaUbah} onUbah={set('LayerPart')} />
+      </TataPegaBlok>
 
-      {/* Grid Treaty Group — expandPane `CoBList`. */}
-      <Bagian
-        judul={LIMITS_NP.treatyGroup}
-        aksi={
-          bisaUbah && (
-            <TombolTambah
-              label={LIMITS_NP.tambahGrup}
-              onClick={() => {
-                onUbah({ ...l, TreatyGroupList: [...grup, { TreatyGroup: '', TreatyGroupID: '', IsROLProfile: 'false', ClassOfBusinessList: [] }] })
-              }}
-            />
-          )
-        }
-      >
-        {grup.length === 0 ? (
-          <Kosong pesan={LIMITS_NP.tanpaBaris} />
-        ) : (
-          <div className="tl-daftar">
-            {grup.map((g, r) => (
-              <KartuGrup
-                key={r}
-                g={g}
-                nomor={r + 1}
-                opsi={opsi}
-                bisaUbah={bisaUbah}
-                onUbah={(baru) => {
-                  onUbah({ ...l, TreatyGroupList: ganti(grup, r, baru) })
-                }}
-                onHapus={() => {
-                  // deleteRow → `TotalEgnpi`
-                  onGantiGrup({ ...l, TreatyGroupList: grup.filter((_, j) => j !== r) })
-                }}
-                onGantiGrup={(baru) => {
-                  // DT `SetIndexLayer_DT` + `TotalEgnpi`
-                  onGantiGrup({ ...l, TreatyGroupList: ganti(grup, r, baru) })
-                }}
-              />
-            ))}
-          </div>
-        )}
-        <GridNilai judul={LIMITS_NP.egnpiLayer} baris={larikDari(l, 'EgnpiTotalList')} bisaUbahMataUang={false} bisaUbahNilai={false} tambah={false} mataUang={opsi.mataUang} onUbah={() => undefined} />
-      </Bagian>
+      {/* Grid Treaty Group — `masterDetail`, rincian `CoBList`. */}
+      <GridGrup
+        grup={grup}
+        opsi={opsi}
+        bisaUbah={bisaUbah}
+        onTambah={() => {
+          onUbah({ ...l, TreatyGroupList: [...grup, { TreatyGroup: '', TreatyGroupID: '', IsROLProfile: 'false', ClassOfBusinessList: [] }] })
+        }}
+        onUbahBaris={(r, baru) => {
+          onUbah({ ...l, TreatyGroupList: ganti(grup, r, baru) })
+        }}
+        onHapus={(r) => {
+          // deleteRow → `TotalEgnpi`
+          onGantiGrup({ ...l, TreatyGroupList: grup.filter((_, j) => j !== r) })
+        }}
+        onGantiBaris={(r, baru) => {
+          // DT `SetIndexLayer_DT` + `TotalEgnpi`
+          onGantiGrup({ ...l, TreatyGroupList: ganti(grup, r, baru) })
+        }}
+      />
+      <GridNilai
+        judul={LIMITS_NP.egnpiLayer}
+        judulNilai=""
+        lebar={[196, 184]}
+        baris={larikDari(l, 'EgnpiTotalList')}
+        bisaUbahMataUang={false}
+        bisaUbahNilai={false}
+        tambah={false}
+        mataUang={opsi.mataUang}
+        onUbah={() => undefined}
+      />
 
-      <Bagian judul={LIMITS_NP.bagianLimit}>
-        <div className="form-grid">
+      {/* `Default` @7873 bertumpuk: Cover · Currency Relation (`Stacked
+          with labels left` @8165) · matriks · No RIP · Reinstatement · grid ·
+          Adjustment Rate · Premium Earned · Min Premium · MDP · Combine MDP ·
+          ROL % — SEMUANYA satu per baris (tangkapan layar 32). */}
+      <TataPegaBlok tata="kiri">
           <PilihNP label={LIMITS_NP.cover} nilai={teksDari(l, 'Cover')} opsi={opsi.cover ?? []} bisaUbah={bisaUbah} onUbah={set('Cover')} />
           <PilihNP
             label={LIMITS_NP.relasi}
@@ -532,124 +583,116 @@ export function RincianLayer({
             bisaUbah={bisaUbah}
             onUbah={set('CurrencyRelation')}
           />
-        </div>
-        <div className="table-wrap">
-          <table className="trin__tabel tl-matriks">
-            <thead>
-              <tr>
-                <th scope="col" />
-                <th scope="col">{mataUang('Currency', LIMITS_NP.mataUang1)}</th>
-                <th scope="col">{mataUang('Currency2', LIMITS_NP.mataUang2)}</th>
-              </tr>
-            </thead>
-            <tbody>
+        </TataPegaBlok>
+        {/* `Inline grid double` @9155: [ `Inline grid double` @9444 mata uang 1
+            | `Inline grid double` @15826 mata uang 2 ]. Tiap sisi berbaris
+            [`Stacked with labels left` mata uang berlabel | nilai], lalu dua
+            "Spacer" `1=2` yang TETAP memakan slot — baris kosong di antara
+            100 % Limit · Agregate Year Limit · Deductible (tangkapan layar
+            32). Ketiga mata uang satu sisi mengikat SATU properti, seperti
+            Pega (`.Currency` / `.Currency2`). */}
+        <TataPegaBlok tata="g2">
+          {(['Currency', 'Currency2'] as const).map((mu, s) => (
+            <TataPegaBlok key={mu} tata="g2">
               {barisMatriks.map((b) => (
-                <tr key={b.k1}>
-                  <th scope="row">{b.label}</th>
-                  <td className="trin__angka">{selMatriks(b.k1, b.desimal, `${b.label} 1`)}</td>
-                  <td className="trin__angka">{selMatriks(b.k2, b.desimal, `${b.label} 2`)}</td>
-                </tr>
+                <Fragment key={b.k1}>
+                  <TataPegaBlok tata="kiri">{mataUang(mu, b.label)}</TataPegaBlok>
+                  <div>{selMatriks(s === 0 ? b.k1 : b.k2, b.desimal, `${b.label} ${String(s + 1)}`)}</div>
+                  <SelKosongPega />
+                  <SelKosongPega />
+                </Fragment>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </Bagian>
+            </TataPegaBlok>
+          ))}
+        </TataPegaBlok>
 
-      <Bagian judul={LIMITS_NP.reinstatement}>
-        <Centang label={LIMITS_NP.noRIP} nilai={teksDari(l, 'NoRIPCalculation')} bisaUbah={modeUbah} onUbah={set('NoRIPCalculation')} />
-        {/* `ReinstatementValue` → `SetReinstatementPct` saat berubah. */}
-        <MedanNP
+        <TataPegaBlok tata="alir">
+          <Centang label={LIMITS_NP.noRIP} nilai={teksDari(l, 'NoRIPCalculation')} bisaUbah={modeUbah} onUbah={set('NoRIPCalculation')} />
+        </TataPegaBlok>
+        {/* `ReinstatementValue` → `SetReinstatementPct` saat berubah.
+            Blok `Inline` @698608: sel LABEL `Reinstatement` (@704972) lalu
+            isian TANPA label (@714520) — sebaris, SESUDAH No RIP (gambar 32). */}
+        <TataPegaBlok tata="alir">
+          <TeksPega>{LIMITS_NP.reinstatement}</TeksPega>
+          <MedanNP
+            label=""
+            nilai={teksDari(l, 'ReinstatementValue')}
+            desimal={0}
+            bisaUbah={bisaUbah}
+            onUbah={set('ReinstatementValue')}
+            onLepas={() => {
+              hitung('reinstatement')
+            }}
+          />
+        </TataPegaBlok>
+        {/* Grid `.Reinstatement_List` @770156 — grid `row` Pega berkolom
+            ekspor (lebar `LEBAR_REINST`), kepala tipis dan "No items" — bukan
+            tabel tema yang menggulir sendiri (gambar 32). */}
+        <GridPega
           label={LIMITS_NP.reinstatement}
-          nilai={teksDari(l, 'ReinstatementValue')}
-          desimal={0}
-          bisaUbah={bisaUbah}
-          onUbah={set('ReinstatementValue')}
-          onLepas={() => {
-            hitung('reinstatement')
-          }}
+          kolom={kolomReinst.map((k) => ({
+            judul: k.label,
+            lebar: LEBAR_REINST[k.kunci] ?? 150,
+            angka: k.desimal !== null,
+            isi: (b: SimpulLimit, r: number) => {
+              const v = teksDari(b, k.kunci)
+              const ubahSel = (x: string) => {
+                onUbah({ ...l, Reinstatement_List: ganti(reinst, r, { ...b, [k.kunci]: x }) })
+              }
+              // DT per sel: % Additional Premium → ReCalculateReinstatement;
+              // Reinstatement % → CalculateReinstatement; Amount IDR →
+              // CalculateReinstatementPct.
+              const pemicu: Partial<Record<string, AksiLimitNP>> = {
+                ReinstatementPct: 'reinst-tambahan',
+                AdditionalPct: 'reinst-jumlah',
+                ReinstatementAmount1: 'reinst-persen',
+              }
+              const aksi = pemicu[k.kunci]
+              // ⛔ `Note` DIDAHULUKAN — keluhan pemilik proses 8 Oktober 2026:
+              // *"di nonprop bagian ReinstatementNote itu seharusnya mengambil
+              // Prompt value bukan standard value"*.
+              //
+              // Dahulu cabang ini duduk SESUDAH `!bisaUbah`, jadi mode lihat
+              // mengembalikan `v` — kode tersimpannya (`asamount`) — dan tidak
+              // pernah sampai ke penerjemah. `PilihNP` mode baca yang
+              // menerjemahkannya (`opsi.find(...)?.label ?? nilai`), jadi
+              // selnya memakai komponen yang sama di KEDUA mode; yang berbeda
+              // hanya boleh atau tidaknya diubah.
+              //
+              // ⚠️ Nilai di luar daftar tetap tampil apa adanya — tidak
+              // ditebak, tidak dikosongkan.
+              if (k.kunci === 'ReinstatementNote') {
+                return <PilihNP label="" nilai={v} opsi={opsi.catatanReinstatement ?? []} bisaUbah={bisaUbah} onUbah={ubahSel} />
+              }
+              if (k.kunci === 'ReinstatementValue' || !bisaUbah) {
+                return k.desimal === null ? v : tampil(v, k.desimal)
+              }
+              return (
+                /* ⭐ `change` Pega: DT baris berjalan HANYA bila sel ini
+                   berubah sejak dimasuki — sel yang hanya dilewati tidak
+                   menimpa nilai baris yang sudah disunting. */
+                <PemicuUbah
+                  nilai={v}
+                  aktif={aksi !== undefined}
+                  aksi={() => {
+                    if (aksi !== undefined) hitung(aksi, r)
+                  }}
+                >
+                  <input
+                    className="field__input"
+                    value={v}
+                    aria-label={k.label}
+                    onChange={(e) => {
+                      ubahSel(saringAngka(e.target.value))
+                    }}
+                  />
+                </PemicuUbah>
+              )
+            },
+          }))}
+          baris={reinst}
         />
-        <div className="table-wrap">
-          <table className="trin__tabel">
-            <thead>
-              <tr>
-                {kolomReinst.map((k) => (
-                  <th key={k.kunci} scope="col">
-                    {k.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {reinst.length === 0 && (
-                <tr>
-                  <td colSpan={kolomReinst.length}>
-                    <Kosong pesan={LIMITS_NP.tanpaBaris} />
-                  </td>
-                </tr>
-              )}
-              {reinst.map((b, r) => (
-                <tr key={r}>
-                  {kolomReinst.map((k) => {
-                    const v = teksDari(b, k.kunci)
-                    const ubahSel = (x: string) => {
-                      onUbah({ ...l, Reinstatement_List: ganti(reinst, r, { ...b, [k.kunci]: x }) })
-                    }
-                    // DT per sel: % Additional Premium → ReCalculateReinstatement;
-                    // Reinstatement % → CalculateReinstatement; Amount IDR →
-                    // CalculateReinstatementPct.
-                    const pemicu: Partial<Record<string, AksiLimitNP>> = {
-                      ReinstatementPct: 'reinst-tambahan',
-                      AdditionalPct: 'reinst-jumlah',
-                      ReinstatementAmount1: 'reinst-persen',
-                    }
-                    const aksi = pemicu[k.kunci]
-                    if (k.kunci === 'ReinstatementValue' || !bisaUbah) {
-                      return (
-                        <td key={k.kunci} className={k.desimal === null ? undefined : 'trin__angka'}>
-                          {k.desimal === null ? v : tampil(v, k.desimal)}
-                        </td>
-                      )
-                    }
-                    if (k.kunci === 'ReinstatementNote') {
-                      return (
-                        <td key={k.kunci}>
-                          <PilihNP label="" nilai={v} opsi={opsi.catatanReinstatement ?? []} bisaUbah onUbah={ubahSel} />
-                        </td>
-                      )
-                    }
-                    return (
-                      <td key={k.kunci} className="trin__angka">
-                        {/* ⭐ `change` Pega: DT baris berjalan HANYA bila sel ini
-                            berubah sejak dimasuki — sel yang hanya dilewati
-                            tidak menimpa nilai baris yang sudah disunting. */}
-                        <PemicuUbah
-                          nilai={v}
-                          aktif={aksi !== undefined}
-                          aksi={() => {
-                            if (aksi !== undefined) hitung(aksi, r)
-                          }}
-                        >
-                          <input
-                            className="field__input"
-                            value={v}
-                            aria-label={k.label}
-                            onChange={(e) => {
-                              ubahSel(e.target.value)
-                            }}
-                          />
-                        </PemicuUbah>
-                      </td>
-                    )
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Bagian>
-
-      <Bagian judul={LIMITS_NP.bagianPremi}>
-        <div className="tl-tiga">
+        <TataPegaBlok tata="tumpuk">
           <div>
             <MedanNP
               label={LIMITS_NP.adjRate}
@@ -686,6 +729,7 @@ export function RincianLayer({
             />
             <GridNilai
               judul={LIMITS_NP.mdpMinAmt}
+              lebar={LEBAR_GRID_MDP}
               baris={larikDari(l, 'MDPMinList')}
               bisaUbahMataUang={bisaUbah}
               bisaUbahNilai={bisaUbah}
@@ -709,6 +753,7 @@ export function RincianLayer({
             />
             <GridNilai
               judul={LIMITS_NP.mdp}
+              lebar={LEBAR_GRID_MDP}
               baris={larikDari(l, 'MDPList')}
               bisaUbahMataUang={bisaUbah}
               bisaUbahNilai={bisaUbah}
@@ -719,8 +764,8 @@ export function RincianLayer({
               }}
             />
           </div>
-        </div>
-        <div className="form-grid">
+        </TataPegaBlok>
+        <TataPegaBlok tata="tumpuk">
           <Centang label={LIMITS_NP.combineMDP} nilai={teksDari(l, 'IsCombineMDP')} bisaUbah={bisaUbah} onUbah={set('IsCombineMDP')} />
           {/* ⛔ ROL % TIDAK PERNAH diketik — Section `Layers` / `LayersEDM`
               `.ROLPct`: `pyDisabled=true`, `pyDisabledNew=always`. Nilainya
@@ -729,31 +774,32 @@ export function RincianLayer({
               berkoma terbaca NOL oleh services, dan `Total ROL` jadi 0,00
               (laporan pemakai 8 Oktober 2026). */}
           <MedanNP label={LIMITS_NP.rol} nilai={teksDari(l, 'ROLPct')} desimal={null} bisaUbah={false} onUbah={set('ROLPct')} />
-        </div>
-      </Bagian>
-    </div>
-  )
-}
-
-/** Judul kartu layer — `LayerType Layer of LayerPartType LayerPart` (kolom Layers). */
-function judulLayer(l: SimpulLimit): string {
-  const kiri = `${teksDari(l, 'LayerType')} ${teksDari(l, 'Layer')}`.trim()
-  const kanan = `${teksDari(l, 'LayerPartType')} ${teksDari(l, 'LayerPart')}`.trim()
-  if (kiri === '' && kanan === '') return ''
-  return `${kiri} ${LIMITS_NP.of} ${kanan}`.trim()
-}
-
-/** Ringkasan kepala kartu layer — kolom grid layer ekspor + ROL %. */
-function ringkasLayer(l: SimpulLimit): ReactNode {
-  return (
-    <>
-      {KOLOM_LAYER.map((k) => (
-        <Chip key={k.kunci} label={k.label} nilai={teksDari(l, k.kunci) === '' ? '' : tampil(teksDari(l, k.kunci), k.desimal)} />
-      ))}
-      <Chip label={LIMITS_NP.rol} nilai={teksDari(l, 'ROLPct') === '' ? '' : formatLimit('persen', 2, teksDari(l, 'ROLPct'))} />
+        </TataPegaBlok>
     </>
   )
 }
+
+/**
+ * Kolom grid layer — ekspor `TreatyIn.Limits` (`masterDetail`): `Layers` ·
+ * ` ` · `of` · ` ` · ` ` (jenis/nomor layer dan bagiannya, lebar 102 · 102 ·
+ * 102 · 102 · 105) lalu keempat nilai `KOLOM_LAYER` (185 · 187 · 185 · 187).
+ */
+const KOLOM_GRID_LAYER: readonly KolomPega<SimpulLimit>[] = [
+  { judul: LIMITS_NP.layers, lebar: 102, isi: (l) => teksDari(l, 'LayerType') },
+  { judul: '', lebar: 102, isi: (l) => teksDari(l, 'Layer') },
+  { judul: '', lebar: 102, isi: () => LIMITS_NP.of },
+  { judul: '', lebar: 102, isi: (l) => teksDari(l, 'LayerPartType') },
+  { judul: '', lebar: 105, isi: (l) => teksDari(l, 'LayerPart') },
+  ...KOLOM_LAYER.map((k, c) => ({
+    judul: k.label,
+    lebar: [185, 187, 185, 187][c] ?? 185,
+    angka: true,
+    isi: (l: SimpulLimit) => (teksDari(l, k.kunci) === '' ? '' : tampil(teksDari(l, k.kunci), k.desimal)),
+  })),
+]
+
+/** Lebar kolom `Summary of Limit` dari ekspor (`pyWidth`). */
+const LEBAR_RINGKASAN = [252, 170, 172, 100, 100, 170, 170, 170, 170] as const
 
 const OPSI_KOSONG: OpsiLimits = { jenisTreaty: [], kelompokTreaty: [], mataUang: [] }
 
@@ -862,106 +908,122 @@ export default function TabLimitsNonProp({
       })
   }
 
+  const layerKosong: SimpulLimit = {
+    TreatyGroupList: [],
+    EgnpiTotalList: [],
+    PremiumEarnedList: [],
+    MDPList: [],
+    MDPMinList: [],
+    Reinstatement_List: [],
+  }
+
+  // ⭐ Urutan = Section `TreatyInTabsNonProportional` tab `Limits` (bentuk
+  // Pega, 8 Oktober 2026): grid layer `masterDetail` (rincian `Layers`), blok
+  // `Summary of Limit`, blok `Total All Layers` dengan `Total ROL` dan
+  // tombolnya DI BAWAH grid. Kartu bernomor berchip sebelumnya DIGANTI grid.
   return (
-    <Panel judul={LIMITS_NP.judul}>
-      <div className="tl-rincian">
-        <KepalaBagian
-          judul={LIMITS_NP.layers}
-          jumlah={layers.length}
-          aksi={
-            bisaUbah && (
-              <TombolTambah
-                label={LIMITS_NP.tambahLayer}
-                onClick={() => {
-                  // `TreatyInNonAddItem(limits)`: ID = jumlah layer.
-                  // `CopyLastLimitNP` tidak tercapai (Activity keluar
-                  // sesudah langkah 5).
-                  setLayers([
-                    ...layers,
-                    {
-                      ID: String(layers.length + 1),
-                      TreatyGroupList: [],
-                      EgnpiTotalList: [],
-                      PremiumEarnedList: [],
-                      MDPList: [],
-                      MDPMinList: [],
-                      Reinstatement_List: [],
-                    },
-                  ])
-                }}
-              />
-            )
-          }
-        />
-        {layers.length === 0 ? (
-          <Kosong pesan={petunjukKosong ?? LIMITS_NP.tanpaBaris} />
-        ) : (
-          <div className="tl-daftar">
-            {layers.map((l, i) => (
-              <KartuLipat
-                key={i}
-                nomor={i + 1}
-                judul={judulLayer(l)}
-                judulKosong={LIMITS_NP.layerBaru}
-                bukaAwal={judulLayer(l) === ''}
-                meta={ringkasLayer(l)}
-                aksi={
-                  bisaUbah && (
-                    <TombolHapus
-                      label={LIMITS_NP.hapus}
-                      labelAkses={`${LIMITS_NP.hapus} ${LIMITS_NP.layers} ${i + 1}`}
-                      onClick={() => {
-                        setLayers(layers.filter((_, j) => j !== i))
-                      }}
-                    />
-                  )
-                }
-              >
-                <RincianLayer
-                  l={l}
-                  opsi={opsi}
-                  bisaUbah={bisaUbah}
-                  modeUbah={modeUbah}
-                  onUbah={(baru) => {
-                    setLayers(ganti(layers, i, baru))
-                  }}
-                  hitung={(aksi, baris = 0) => {
-                    hitung(aksi, i, baris)
-                  }}
-                  onGantiGrup={(baru) => {
-                    // Treaty Group berubah/dihapus → `TotalEgnpi` SEMUA layer;
-                    // ID layer = indeksnya (`TreatyTypeSetIndex`).
-                    const semua = ganti(layers, i, { ...baru, ID: String(i + 1) })
-                    setLayers(semua)
-                    hitung('egnpi', i, 0, semua)
-                  }}
-                />
-              </KartuLipat>
-            ))}
-          </div>
+    <div className="trin__blok trin__tab">
+      <GridPega
+        label={LIMITS_NP.layers}
+        kolom={KOLOM_GRID_LAYER}
+        baris={layers}
+        kosong={petunjukKosong ?? LIMITS_NP.tanpaBaris}
+        tombol={
+          bisaUbah
+            ? {
+                lebar: 108,
+                tambah: {
+                  label: LIMITS_NP.tambahLayer,
+                  onKlik: () => {
+                    // `TreatyInNonAddItem(limits)`: ID = jumlah layer.
+                    // `CopyLastLimitNP` tidak tercapai (Activity keluar
+                    // sesudah langkah 5).
+                    setLayers([...layers, { ...layerKosong, ID: String(layers.length + 1) }])
+                  },
+                },
+                hapus: {
+                  label: LIMITS_NP.hapus,
+                  akses: (_, i) => `${LIMITS_NP.hapus} ${LIMITS_NP.layers} ${String(i + 1)}`,
+                  onKlik: (i) => {
+                    setLayers(layers.filter((_, j) => j !== i))
+                  },
+                },
+              }
+            : undefined
+        }
+        rincian={(l, i) => (
+          <RincianLayer
+            l={l}
+            opsi={opsi}
+            bisaUbah={bisaUbah}
+            modeUbah={modeUbah}
+            onUbah={(baru) => {
+              setLayers(ganti(layers, i, baru))
+            }}
+            hitung={(aksi, baris = 0) => {
+              hitung(aksi, i, baris)
+            }}
+            onGantiGrup={(baru) => {
+              // Treaty Group berubah/dihapus → `TotalEgnpi` SEMUA layer;
+              // ID layer = indeksnya (`TreatyTypeSetIndex`).
+              const semua = ganti(layers, i, { ...baru, ID: String(i + 1) })
+              setLayers(semua)
+              hitung('egnpi', i, 0, semua)
+            }}
+          />
         )}
-        {pesan.length > 0 && (
-          <ul className="tl-pesan" role="alert">
-            {pesan.map((p, i) => (
-              <li key={i}>{p}</li>
-            ))}
-          </ul>
-        )}
-        {gagal !== '' && (
-          <p className="tl-pesan" role="alert">
-            {gagal}
-          </p>
-        )}
+      />
+      {pesan.length > 0 && (
+        <ul className="tl-pesan" role="alert">
+          {pesan.map((p, i) => (
+            <li key={i}>{p}</li>
+          ))}
+        </ul>
+      )}
+      {gagal !== '' && (
+        <p className="tl-pesan" role="alert">
+          {gagal}
+        </p>
+      )}
 
-        <Bagian judul={LIMITS_NP.ringkasan}>
-          <GridBaca kolom={KOLOM_RINGKASAN} baris={akar.LimitSummaryList} />
-        </Bagian>
+      <BlokPega judul={LIMITS_NP.ringkasan}>
+        <GridBaca kolom={KOLOM_RINGKASAN} lebar={LEBAR_RINGKASAN} baris={akar.LimitSummaryList} />
+      </BlokPega>
 
-        <Bagian
-          judul={LIMITS_NP.totalSemua}
-          aksi={
-            modeUbah && (
-              <div className="trin__aksi">
+      <BlokPega judul={LIMITS_NP.totalSemua}>
+        {/* `Total All Layers` @44149 (`Default` @44346): keempat grid
+            BERTUMPUK, satu per baris (bukan berdampingan). */}
+        <TataPegaBlok tata="tumpuk">
+          {GRID_TOTAL.map((g) => (
+            <GridNilai
+              key={g.kunci}
+              judul={g.judul}
+              lebar={[193, 349]}
+              baris={akar.Total[g.kunci] ?? []}
+              bisaUbahMataUang={false}
+              bisaUbahNilai={false}
+              tambah={false}
+              mataUang={[]}
+              onUbah={() => undefined}
+            />
+          ))}
+        </TataPegaBlok>
+        {/* `Inline grid double` @53680: [ `Inline grid 30 70` @53979 Total
+            ROL | tombol `1=2` ×3 | `Inline grid double` @55990 tombol ]. Sel
+            tersembunyi TETAP memakan slotnya (tangkapan layar 30/33): tombol
+            turun ke baris KETIGA, separuh kiri. */}
+        <TataPegaBlok tata="g2">
+          {/* Baris [label 30% | nilai 70%]. */}
+          <TataPegaBlok tata="t3070">
+            <TeksPega>{LIMITS_NP.totalROL}</TeksPega>
+            <Field label="" value={tampil(akar.TotalLimitsROL, 2)} readOnly onChange={() => undefined} />
+          </TataPegaBlok>
+          <SelKosongPega />
+          <SelKosongPega />
+          <SelKosongPega />
+          {modeUbah && (
+            <TataPegaBlok tata="g2">
+              <div>
                 <button
                   type="button"
                   className="btn btn--primary btn--sm"
@@ -972,7 +1034,9 @@ export default function TabLimitsNonProp({
                 >
                   {LIMITS_NP.perbaruiTotal}
                 </button>
-                {kontrakRevisi(edmState) && (
+              </div>
+              {kontrakRevisi(edmState) && (
+                <div>
                   <button
                     type="button"
                     className="btn btn--sm"
@@ -983,30 +1047,12 @@ export default function TabLimitsNonProp({
                   >
                     {LIMITS_NP.perbaruiList}
                   </button>
-                )}
-              </div>
-            )
-          }
-        >
-          <div className="tl-tiga">
-            {GRID_TOTAL.map((g) => (
-              <GridNilai
-                key={g.kunci}
-                judul={g.judul}
-                baris={akar.Total[g.kunci] ?? []}
-                bisaUbahMataUang={false}
-                bisaUbahNilai={false}
-                tambah={false}
-                mataUang={[]}
-                onUbah={() => undefined}
-              />
-            ))}
-          </div>
-          <div className="trin__limit-medan">
-            <Field label={LIMITS_NP.totalROL} value={tampil(akar.TotalLimitsROL, 2)} readOnly onChange={() => undefined} />
-          </div>
-        </Bagian>
-      </div>
-    </Panel>
+                </div>
+              )}
+            </TataPegaBlok>
+          )}
+        </TataPegaBlok>
+      </BlokPega>
+    </div>
   )
 }

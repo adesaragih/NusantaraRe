@@ -40,8 +40,8 @@ export const SHARE_NP = {
   deduksi: 'Deduction Details',
   spreadingType: 'Spreading Type',
   spreading: 'Spreading',
-  totalPct: 'Total Pct',
-  totalSpreadingPct: 'Total Spreading Pct :',
+  totalPct: 'Total Pct', // kaki grid `.SpreadingListXOL` Share.xml @444655
+  spreadingTotalPct: 'Spreading Total Pct', // pyLabelFieldValue `.SpreadingTotalPctXOL` Share.xml @473985
   totalSharePct: 'Total Share Pct',
   hapusBaris: 'Remove',
   pilihKosong: 'Choose',

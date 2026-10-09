@@ -27,13 +27,16 @@ import { useState } from 'react'
 
 import { PemicuUbah } from './pemicuUbah'
 
-import { Panel, Pilih } from '../../../../inti/frontend/components/ui/dasar'
+import { Panel } from '../../../../inti/frontend/components/ui/dasar'
+import { PilihCari as Pilih } from '../../../../inti/frontend/components/ui/pilihSaring'
 import { hitungAkumulasi, type BarisAkumulasi, type BarisAkumulasiWarisan } from '../api'
 import { useProperti } from '../halaman'
 import { KOLOM_AKUMULASI } from '../labels'
 import { AKUMULASI, AWALAN_AKUMULASI, OPSI_PERIODE_AKUMULASI } from '../labelsAkumulasi'
 import type { ModeForm } from '../mode'
-import TanggalRedup from './TanggalRedup'
+import { KotakTanggalKetik } from './TanggalKetik'
+import { saringAngka } from './saringAngka'
+import { TataPegaBlok } from './tataPega'
 import { keSimpan, tanggalTampil } from './tanggalIso'
 
 /** Baris kontrak → baris halaman (bentuk TERSIMPAN). */
@@ -85,7 +88,11 @@ export default function TabAkumulasi({
 
   return (
     <Panel judul={AKUMULASI.judul}>
+      {/* ⭐ TATA LETAK PEGA (8 Oktober 2026) — `Section/TreatyInTabsProportional.xml`
+          `Inline labels left` L42879: Period dengan label di KIRI kotaknya
+          (tombol sel yang sama `1=2`, tidak dirender). */}
       <div className="trin__akumulasi-periode">
+        <TataPegaBlok tata="kiri">
         <Pilih
           label={AKUMULASI.periode}
           value={periode}
@@ -100,6 +107,7 @@ export default function TabAkumulasi({
           }}
           opsi={[...OPSI_PERIODE_AKUMULASI]}
         />
+        </TataPegaBlok>
       </div>
       {gagal !== '' && (
         <p className="trin__galat" role="alert">
@@ -107,7 +115,7 @@ export default function TabAkumulasi({
         </p>
       )}
       <div className="table-wrap">
-        <table className="trin__tabel">
+        <table className="trin__tabel trin__tabel--pega">
           <thead>
             <tr>
               {KOLOM_AKUMULASI.map((k) => (
@@ -144,7 +152,9 @@ export default function TabAkumulasi({
                   {terkunci ? (
                     tanggalTampil(b.ReportDate)
                   ) : (
-                    <TanggalRedup
+                    // ⛔ Kotak TANPA label tampak — `Reporting Date` sudah di
+                    // kepala grid (gambar Pega 19); `label` = nama pembaca layar.
+                    <KotakTanggalKetik
                       label={KOLOM_AKUMULASI[1]}
                       value={b.ReportDate}
                       onChange={(v) => {
@@ -172,7 +182,7 @@ export default function TabAkumulasi({
                         aria-label={KOLOM_AKUMULASI[2]}
                         value={b.SubDays}
                         onChange={(e) => {
-                          ubahSel(i, 'SubDays', e.target.value)
+                          ubahSel(i, 'SubDays', saringAngka(e.target.value, true))
                         }}
                       />
                     </PemicuUbah>

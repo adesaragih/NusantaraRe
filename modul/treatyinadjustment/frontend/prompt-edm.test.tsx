@@ -40,8 +40,8 @@ describe('prompt value EDMState / EDMMaterialType', () => {
 
   it('kepala mode detail memakai teks prompt untuk kedua dropdown', () => {
     const src = readFileSync(join(__dirname, 'pages', 'PenyesuaianKontrak.tsx'), 'utf8')
-    expect(src).toContain("value={teksPromptEDM(kunci, m[kunci] ?? '')}")
-    expect(src).toContain("kode(PENYESUAIAN.jenisPenyesuaian, 'EDMState')")
-    expect(src).toContain("kode(PENYESUAIAN.jenisMaterial, 'EDMMaterialType')")
+    // ⭐ 9 Oktober 2026 — kepala bentuk Pega: nilai TEKS (bukan kotak isian).
+    expect(src).toContain("butir(PENYESUAIAN.jenisPenyesuaian, teksPromptEDM('EDMState', m.EDMState ?? ''))")
+    expect(src).toContain("butir(PENYESUAIAN.jenisMaterial, teksPromptEDM('EDMMaterialType', m.EDMMaterialType ?? ''))")
   })
 })

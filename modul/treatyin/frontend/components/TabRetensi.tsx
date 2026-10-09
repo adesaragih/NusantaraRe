@@ -36,7 +36,7 @@
 
 import { useEffect, useId, useState } from 'react'
 
-import { FieldAngka, Kosong, Panel } from '../../../../inti/frontend/components/ui/dasar'
+import { FieldAngka } from '../../../../inti/frontend/components/ui/dasar'
 import {
   ambilOpsiLimits,
   hitungRetensi,
@@ -50,7 +50,8 @@ import { DESIMAL_RETENSI, RETENSI, totalTerkunci } from '../labelsRetensi'
 import { useProperti } from '../halaman'
 import type { ModeForm } from '../mode'
 import { DropdownDaftar } from './IsianAuto'
-import { Bagian, Chip, KartuLipat, KepalaBagian, TombolHapus, TombolTambah } from './limitsUI'
+import { BlokPega, DeretTombolPega, GridNilaiPega, GridPega } from './gridPega'
+import { TataPegaBlok } from './tataPega'
 import { formatLimit } from './TabLimitsProp'
 
 /** Angka tampil — pemformat modul, bukan pemformat kedua. */
@@ -62,34 +63,20 @@ interface BarisTotal {
   Value: string
 }
 
-/** Grid dua kolom hanya-baca — panel `Total Retention Amount`. */
+/**
+ * Grid nilai baca-saja — `Total Retention Amount` | `Value`. ⭐ Judul kolom
+ * pertama ADALAH nama panelnya — @152591 — dan isinya mata uang
+ * (`.Currency` @161105). Bentuk Pega datar, selebar `pyWidth` (193 · 349).
+ */
 function GridTotal({ baris }: { baris: readonly BarisTotal[] }) {
   return (
-    <div className="table-wrap trin__share-total">
-      <table className="trin__tabel">
-        <thead>
-          <tr>
-            {/* ⭐ Judul kolom pertama ADALAH nama panelnya — @152591 — dan
-                isinya mata uang (`.Currency` @161105). */}
-            <th scope="col">{TOTAL_RETENSI.judul}</th>
-            <th scope="col">{TOTAL_RETENSI.kolomNilai}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {baris.length === 0 && (
-            <tr>
-              <td colSpan={2}>{TOTAL_RETENSI.tanpaBaris}</td>
-            </tr>
-          )}
-          {baris.map((b, i) => (
-            <tr key={String(i)}>
-              <td>{b.Currency}</td>
-              <td>{tampil(b.Value, DESIMAL_RETENSI.nilaiTotal)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <GridNilaiPega
+      judul={TOTAL_RETENSI.judul}
+      nilai={TOTAL_RETENSI.kolomNilai}
+      baris={baris}
+      lebar={[193, 349]}
+      tampil={(v) => tampil(v, DESIMAL_RETENSI.nilaiTotal)}
+    />
   )
 }
 
@@ -109,8 +96,12 @@ function RincianBaris({
 }) {
   const idNote = useId()
   return (
-    <Bagian judul={RETENSI.panel}>
-      <div className="trin__retensi-medan">
+    <>
+      {/* `MaxRetention.xml` @459 `Stacked with labels left`: Treaty Group ·
+          baris Amount (`Inline grid 30 70` @1105 = baris [30% `Stacked
+          with labels left` @1403 mata uang berlabel Amount | 70% nilai]) ·
+          Note. Tangkapan layar 27 Non-Prop. */}
+      <TataPegaBlok tata="kiri">
         {/* ⚠️ EKSPOR BERSELISIH DENGAN DIRINYA SENDIRI, sama seperti di tab
             EGNPI: grid membuat `.TreatyGroup` dapat diubah, rinciannya
             `pyReadOnly=true`. Yang dipakai bentuk GRID — `Add` melahirkan
@@ -131,16 +122,18 @@ function RincianBaris({
             (`pyLabelFieldValue = Amount` menempel pada `.Currency`, dan
             `.Amount` di sebelahnya tanpa label sendiri) dan itu pula yang
             terlihat di tangkapan layar pemilik proses. */}
-        <div className="trin__retensi-jumlah">
-          <DropdownDaftar
-            label={RETENSI.jumlah}
-            nilai={b.Currency}
-            pilihan={mataUang}
-            bisaUbah={bisaUbah}
-            onPilih={(nama, id) => {
-              onUbah({ ...b, Currency: nama, CurrencyID: id })
-            }}
-          />
+        <TataPegaBlok tata="t3070">
+          <TataPegaBlok tata="kiri">
+            <DropdownDaftar
+              label={RETENSI.jumlah}
+              nilai={b.Currency}
+              pilihan={mataUang}
+              bisaUbah={bisaUbah}
+              onPilih={(nama, id) => {
+                onUbah({ ...b, Currency: nama, CurrencyID: id })
+              }}
+            />
+          </TataPegaBlok>
           <FieldAngka
             label=""
             value={b.Amount}
@@ -150,7 +143,7 @@ function RincianBaris({
               onUbah({ ...b, Amount: v })
             }}
           />
-        </div>
+        </TataPegaBlok>
 
         {/* ⛔ RALAT 7 Oktober 2026 — medan ini SEMPAT DIKUNCI MATI.
             `Section/MaxRetention.xml` berbunyi `pyReadOnly = true`, tetapi
@@ -187,8 +180,8 @@ function RincianBaris({
             }}
           />
         </div>
-      </div>
-    </Bagian>
+      </TataPegaBlok>
+    </>
   )
 }
 
@@ -256,100 +249,85 @@ export default function TabRetensi({
       })
   }
 
+  // ⭐ Urutan = Section `TreatyInTabsNonProportional` tab `Maximum Retention`
+  // (bentuk Pega, 8 Oktober 2026): blok `Maximum Retention` — grid
+  // `masterDetail` Treaty Group · Currency · Amount (lebar 245 · 127 · 379,
+  // kolom tombol 153), rincian `MaxRetention` — lalu grid `Total Retention
+  // Amount` dan tombol `Update Total` DI BAWAHNYA. Kartu berchip DIGANTI.
   return (
-    <Panel judul={RETENSI.judul}>
-      <div className="tl-rincian">
-        <KepalaBagian
-          judul={RETENSI.panel}
-          jumlah={rows.length}
-          aksi={
-            bisaUbah && (
-              <TombolTambah
-                label={RETENSI.tambah}
-                onClick={() => {
+    <div className="trin__blok trin__tab">
+      <BlokPega judul={RETENSI.panel}>
+        <GridPega
+          label={RETENSI.panel}
+          kolom={[
+            { judul: RETENSI.treatyGroup, lebar: 245, isi: (b) => (b.TreatyGroup === '' ? RETENSI.barisBaru : b.TreatyGroup) },
+            { judul: RETENSI.mataUang, lebar: 127, isi: (b) => b.Currency },
+            { judul: RETENSI.jumlah, lebar: 379, angka: true, isi: (b) => tampil(b.Amount, DESIMAL_RETENSI.jumlah) },
+          ]}
+          baris={rows}
+          tombol={
+            bisaUbah
+              ? {
+                  lebar: 153,
                   // `TreatyInNonAddItem(retention)` — baris KOSONG, `ID=""`.
-                  jalankan('tambah')
-                }}
-              />
-            )
+                  tambah: {
+                    label: RETENSI.tambah,
+                    onKlik: () => {
+                      jalankan('tambah')
+                    },
+                  },
+                  hapus: {
+                    label: RETENSI.hapus,
+                    akses: (_, i) => `${RETENSI.hapus} ${RETENSI.treatyGroup} ${String(i + 1)}`,
+                    onKlik: (i) => {
+                      jalankan('hapus', i)
+                    },
+                  },
+                }
+              : undefined
           }
+          rincian={(b, i) => (
+            <RincianBaris
+              b={b}
+              bisaUbah={bisaUbah}
+              mataUang={opsi.mataUang}
+              kelompokTreaty={opsi.kelompokTreaty}
+              onUbah={(baru) => {
+                setRows(rows.map((x, j) => (j === i ? baru : x)))
+              }}
+            />
+          )}
         />
+      </BlokPega>
 
-        {rows.length === 0 ? (
-          <Kosong pesan={RETENSI.petunjukKosong} />
-        ) : (
-          <div className="tl-daftar">
-            {rows.map((b, i) => (
-              <KartuLipat
-                key={i}
-                nomor={i + 1}
-                judul={b.TreatyGroup}
-                judulKosong={RETENSI.barisBaru}
-                bukaAwal={b.TreatyGroup === ''}
-                meta={
-                  <>
-                    <Chip label={RETENSI.mataUang} nilai={b.Currency} />
-                    <Chip label={RETENSI.jumlah} nilai={tampil(b.Amount, DESIMAL_RETENSI.jumlah)} />
-                  </>
-                }
-                aksi={
-                  bisaUbah && (
-                    <TombolHapus
-                      label={RETENSI.hapus}
-                      labelAkses={`${RETENSI.hapus} ${RETENSI.treatyGroup} ${i + 1}`}
-                      onClick={() => {
-                        jalankan('hapus', i)
-                      }}
-                    />
-                  )
-                }
-              >
-                <RincianBaris
-                  b={b}
-                  bisaUbah={bisaUbah}
-                  mataUang={opsi.mataUang}
-                  kelompokTreaty={opsi.kelompokTreaty}
-                  onUbah={(baru) => {
-                    setRows(rows.map((x, j) => (j === i ? baru : x)))
-                  }}
-                />
-              </KartuLipat>
-            ))}
-          </div>
+      {gagal !== '' && (
+        <p className="tl-pesan" role="alert">
+          {gagal}
+        </p>
+      )}
+
+      {/* Wadah tanpa kepala @3976 (`Default` @4169): grid Total Retention
+          Amount lalu tombol Update Total di bawahnya. */}
+      <TataPegaBlok tata="tumpuk">
+        <GridTotal baris={total} />
+        {bisaUbah && (
+          <DeretTombolPega>
+            {/* ⛔ MATI bila `TreatyIn.EDMMaterialType = 2` — `pyDisabledWhen`
+                @202558. Tombol kedua tepat di atasnya di ekspor ber-`pyCondition
+                1=2`: ia MATI dan tidak dibangun. Yang dibangun yang hidup. */}
+            <button
+              type="button"
+              className="btn btn--primary btn--sm"
+              disabled={totalTerkunci(edmJenisMaterial)}
+              onClick={() => {
+                jalankan('total')
+              }}
+            >
+              {TOTAL_RETENSI.perbarui}
+            </button>
+          </DeretTombolPega>
         )}
-
-        {gagal !== '' && (
-          <p className="tl-pesan" role="alert">
-            {gagal}
-          </p>
-        )}
-
-        <Bagian
-          judul={TOTAL_RETENSI.judul}
-          aksi={
-            bisaUbah && (
-              <div className="trin__aksi">
-                {/* ⛔ MATI bila `TreatyIn.EDMMaterialType = 2` —
-                    `pyDisabledWhen` @202558. Tombol kedua tepat di atasnya
-                    di ekspor ber-`pyCondition 1=2`: ia MATI dan tidak
-                    dibangun. Yang dibangun yang hidup. */}
-                <button
-                  type="button"
-                  className="btn btn--primary btn--sm"
-                  disabled={totalTerkunci(edmJenisMaterial)}
-                  onClick={() => {
-                    jalankan('total')
-                  }}
-                >
-                  {TOTAL_RETENSI.perbarui}
-                </button>
-              </div>
-            )
-          }
-        >
-          <GridTotal baris={total} />
-        </Bagian>
-      </div>
-    </Panel>
+      </TataPegaBlok>
+    </div>
   )
 }

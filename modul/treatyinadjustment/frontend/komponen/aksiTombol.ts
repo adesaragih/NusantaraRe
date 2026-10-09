@@ -110,6 +110,15 @@ const TAMBAH_BARIS: Readonly<Record<string, TambahBaris>> = {
   // .Currency` — korpus Treaty In menulis `.CurrencyIOOLimit`. Kedua
   // korpus BERBEDA di sini; layar ini mengikuti korpusnya sendiri.
   'AddDeduction|': { larik: 'DeductionList', baris: (s) => ({ Currency: teks(s.medan.Currency) }) },
+  // ⭐ 8 Oktober 2026 — `Add` grid spreading manual (`DetailShare` L16):
+  // `AddDelSpreadingTreatyin(add=true)` [2] — `.SpreadingList(<APPEND>)`,
+  // `.SpreadingList(<LAST>).Pct = 0`. (`Delete` = `add=false`, lihat
+  // `hapusBarisGrid`.)
+  'AddDelSpreadingTreatyin|': { larik: 'SpreadingList', baris: () => ({ Pct: '0' }) },
+  // ⭐ 9 Oktober 2026 — padanan Share NP (`Share` grid manual,
+  // `.SpreadingTypeXOL == ''`): `AddSpreadingXOL(add=true)` [2]
+  // `.SpreadingListXOL(<append>).Pct = 0`; `add=false` [3] menghapus baris.
+  'AddSpreadingXOL|': { larik: 'SpreadingListXOL', baris: () => ({ Pct: '0' }) },
   // `AddClassofBusiness`: ID kosong, `ParentID = .pxListSubscript`, `TreatyType = .TreatyType`.
   'AddClassofBusiness|': {
     larik: 'Detail',
@@ -173,7 +182,16 @@ export const unduhanDari = (t: TombolKerangka): 'achievement' | undefined =>
 
 /** `addRow` / `deleteRow` grid — dijalankan atas grid tempat tombol itu duduk. */
 export const tambahBarisGrid = (t: TombolKerangka) => t.aksi.some((a) => a.aksi === 'addRow')
-export const hapusBarisGrid = (t: TombolKerangka) => t.aksi.some((a) => a.aksi === 'deleteRow')
+export const hapusBarisGrid = (t: TombolKerangka) => t.aksi.some((a) => a.aksi === 'deleteRow' || hapusSebar(a))
+
+/**
+ * `Delete` grid spreading manual — `AddDelSpreadingTreatyin(add=false,
+ * idx=.pxListSubscript)` [3] `Property-Remove .SpreadingList(Param.idx)`.
+ * Barisnya dihapus layar seperti `deleteRow`; langkah [4]
+ * (`CountTotalPctSpead`) dijalankan rantai sesudahnya (`rumus.ts`).
+ */
+const hapusSebar = (a: AksiTombol) =>
+  (a.aktivitas === 'AddDelSpreadingTreatyin' || a.aktivitas === 'AddSpreadingXOL') && a.param?.add !== 'true'
 
 /**
  * Rantai SESUDAH `deleteRow` / `addRow` — mis. `Remove` grid IOOLimitList

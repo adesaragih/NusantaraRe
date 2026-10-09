@@ -25,9 +25,9 @@
 // ⭐ Yang DILARANG hanya istilah internal. Kalimat polos yang menolong
 // pemakai TETAP BOLEH, dan beberapa memang sengaja dipertahankan:
 //
-//     'Belum ada baris EGNPI.'
-//     'Tab ini belum dibangun.'
-//     'Kosongkan penyaringnya untuk melihat seluruh daftar.'
+//     'No EGNPI rows yet.'
+//     'This tab has not been built yet.'
+//     'Clear the filter to see the whole list.'
 
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -96,11 +96,53 @@ describe('teks layar tidak membocorkan jeroan', () => {
       .flatMap((b) => teksLayar(b, 0))
       .map((x) => x.teks)
     for (const tetap of [
-      'Belum ada baris EGNPI.',
-      'Belum ada baris Maximum Retention.',
-      'Kosongkan penyaringnya untuk melihat seluruh daftar.',
+      'No EGNPI rows yet.',
+      'No Maximum Retention rows yet.',
+      'Clear the filter to see the whole list.',
     ]) {
       expect(semua).toContain(tetap)
     }
+  })
+})
+
+// ⛔ BAHASA INGGRIS — permintaan pemilik proses 8 Oktober 2026: *"gunakan
+// bahasa inggris untuk semua label dan text yang ada di treaty in dan treaty
+// in adjustment"*.
+//
+// ⚠️ TIGA SAPUAN DIBUTUHKAN, dan itu sebabnya pagar ini ada. Dua yang pertama
+// mencocokkan DAFTAR KATA dan melewatkan kata benda: judul layar
+// `Treaty In Adjustment — Penyesuaian` lolos keduanya, lalu dilaporkan
+// pemilik proses dengan tangkapan layar. Daftar kata tidak pernah lengkap;
+// pagar yang menolak SETIAP kata Indonesia yang dikenalnya lebih jujur.
+//
+// ⭐ Komentar BOLEH tetap Indonesia — di sanalah alasan tiap keputusan
+// ditulis, dan menerjemahkannya hanya menghilangkan nuansanya. `teksLayar`
+// sudah melewati komentar.
+const KATA_INDONESIA =
+  /\b(aksi|aktif|bahaya|berlaku|sejak|penyesuaian|lampiran|riwayat|kontrak|berkas|ukuran|jenis|keterangan|catatan|pilih|tidak|belum|sudah|dapat|dengan|yang|untuk|dari|akan|harus|lihat|simpan|ubah|hapus|tambah|baris|kolom|tanggal|jumlah|nilai|kosong|muat|cari|ketik|buka|tutup|batal|kembali|berhasil|gagal|galat|pesan|rincian|daftar|halaman|semua|bila|saat|masih|hanya|juga|sebab|karena|supaya|agar|disimpan|diisi|dipilih|melebihi|disalin|kalender|atau|dan|ini|itu|ada|nol|apa|anda|kami|pada|oleh|bukan|serta|lalu|maka|tetapi|namun|kurs|mata|uang|awal|akhir|mulai|selesai|urut|pengenal|pemakai|pemilik|wajib|contoh|bentuk|salinan|versi|unggah|unduh|terpilih|terkunci|dibuat|diubah|dihapus|ditambah|dimuat|periksa|pastikan|tunggu|hasil|sumber|tujuan|induk|anak|atas|bawah|kanan|kiri)\b/i
+
+describe('teks layar berbahasa Inggris', () => {
+  it('⛔ nol label berbahasa Indonesia', () => {
+    const bocor: string[] = []
+    for (const b of berkasLabel()) {
+      // ⚠️ `minimal` 1: yang bocor justru kata PENDEK (`Aksi`, `Hapus`),
+      // dan bawaan 24 huruf melewatkan semuanya.
+      for (const { baris, teks } of teksLayar(b, 1)) {
+        // ⛔ KODE INTERNAL BUKAN TEKS LAYAR. Berkas label juga memuat kunci
+        // golongan (`uang`, `tanggal`), nama aksi (`jenis-potongan`) dan kunci
+        // properti — semuanya berkutip, semuanya Indonesia, dan nol di
+        // antaranya sampai ke mata pemakai.
+        //
+        // ⭐ Pembedanya BENTUK: teks layar diawali huruf kapital atau memuat
+        // spasi; kode internal huruf kecil tanpa spasi. Penanda `{…}` juga
+        // dilewati — ia diganti nilainya sebelum sampai ke layar.
+        const tampil = /\s/.test(teks) || /^[A-Z(%]/.test(teks)
+        const tanpaPenanda = teks.replace(/\{[^}]*\}/g, ' ')
+        if (tampil && KATA_INDONESIA.test(tanpaPenanda)) {
+          bocor.push(`${b.split(/[\\/]/).pop() ?? b}:${String(baris)} ${teks}`)
+        }
+      }
+    }
+    expect(bocor).toEqual([])
   })
 })

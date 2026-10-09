@@ -60,7 +60,9 @@
 }
 .treatyinadjustment .tria__tabel th,
 .treatyinadjustment .tria__tabel td {
-  padding: 8px 12px;
+  /* ⭐ `7px 12px` sejak 8 Oktober 2026 — satu bantalan untuk SELURUH grid
+     kedua modul (lihat blok "RUPA GRID SERAGAM" di akhir berkas). */
+  padding: 7px 12px;
   border-bottom: 1px solid var(--border);
   text-align: left;
   vertical-align: top;
@@ -85,13 +87,26 @@
  * belas kolom di ekspor (136+134+93+93+141+106+137+135+160+149+83+72 =
  * 1.439) ditambah dua kolom tombol (2 x 56) = 1.551.
  *
- * ⚠️ Dengan batas ini tabelnya MENGGULIR mendatar pada layar sempit, dan
- * itu memang yang dikehendaki: menggulir dapat dibaca, terpenggal tidak.
- * `.table-wrap` sudah menggulir kedua sumbu.
+ * ⛔ RALAT 8 Oktober 2026 — permintaan pemakai *"perbaiki tampilan
+ * adjustment treaty"* (tangkapan layar). Lebar minimum 1.551px dengan
+ * `table-layout: fixed` TETAP memenggal kata: lebar tiap kolom dikunci ke
+ * persen ekspor, jadi `Status Accept` (W72) memecah `Complete` menjadi
+ * `Complet / e`, `Position To` (W83) memecah `ADESAMUEL`, `Reinsurance Type`
+ * memecah `NonProportional` — sementara `Commencement`/`Termination`
+ * (W160/W149) menyisakan ruang kosong untuk tanggal sependek `08-10-2026`.
+ * Dan 1.551px melebihi layar biasa, sehingga kolom pertama terdorong keluar.
+ *
+ * ⭐ Sekarang `table-layout: auto` selebar 100%: lebar ekspor (`<col>`)
+ * tinggal PERBANDINGAN acuan, dan peramban menjamin setiap kolom minimal
+ * selebar kata terpanjangnya (`break-word` tidak menyempitkan lebar
+ * minimum isi). Hasilnya: kata NOL terpenggal, tanggal tetap sebaris,
+ * kolom tanggal menyusut ke isinya, dan tabel muat di layar. Bila suatu
+ * saat isinya tetap tidak muat, `.table-wrap` menggulir mendatar — tetap
+ * tanpa memenggal.
  * ------------------------------------------------------------------ */
 .treatyinadjustment .tria__tabel--daftar {
-  min-width: 1551px;
-  table-layout: fixed;
+  width: 100%;
+  table-layout: auto;
 }
 
 /* ⛔ Tanggal TIDAK PERNAH membungkus. `08-10-2026` yang pecah menjadi dua
@@ -292,8 +307,15 @@
 }
 
 /* Grid berspesifikasi dan nilai tunggal di bawahnya. */
+/* ⛔ GRID MENGGULIR DI DALAM PANELNYA, tidak meluber keluar.
+   Grid Reporting Period punya enam kolom berkotak tanggal; pada panel
+   setengah layar ia lebih lebar daripada panelnya. Tanpa batas ini kolom
+   terakhir (`Settlement Due`) berikut ikon kalendernya menonjol keluar
+   kartu — bukan terpotong rapi, melainkan menimpa apa pun di sebelahnya. */
 .treatyinadjustment .tria__grid {
   margin-bottom: 12px;
+  max-width: 100%;
+  overflow-x: auto;
 }
 .treatyinadjustment .tria__subjudul {
   margin: 12px 0 6px;
@@ -543,10 +565,14 @@
 /* c · KERAPATAN — kotak 42 → 34px, label 13px, panel dan sel dirapatkan.
    Angka yang sama dengan Treaty In, supaya kedua layar form yang sama
    terlihat sama. */
+/* ⛔ 28px — angka yang SAMA dengan `modul/treatyin` (permintaan pemilik
+   proses 8 Oktober 2026, "jangan kegedean"). Alasan lengkapnya ditulis satu
+   kali di `modul/treatyin/frontend/treatyin.css`; dua salinan alasan adalah
+   cara termudah keduanya berbeda diam-diam. */
 .treatyinadjustment .field__input {
-  height: 34px;
-  font-size: 14px;
-  padding: 0 10px;
+  height: 28px;
+  font-size: 13px;
+  padding: 0 8px;
 }
 .treatyinadjustment textarea.field__input {
   height: auto;
@@ -561,9 +587,18 @@
   padding: 14px;
   margin-bottom: 14px;
 }
+/* ⛔ `7px 12px`, BUKAN `5px 8px` — permintaan pemilik proses 8 Oktober
+   2026: rupa grid SERAGAM di seluruh aplikasi (lihat blok "RUPA GRID
+   SERAGAM" di akhir berkas). Angkanya sama dengan `modul/treatyin`.
+
+   ⚠️ Aturan ini duduk JAUH DI BAWAH aturan bantalan yang pertama dan
+   menimpanya. Mengubah yang di atas saja tidak mengubah apa pun di layar —
+   dan itu terjadi: perubahan pertama saya hari ini mendarat di aturan yang
+   kalah. `TestRupaGridSeragam` kini memeriksa aturan TERAKHIR, bukan yang
+   pertama. */
 .treatyinadjustment .tria__tabel th,
 .treatyinadjustment .tria__tabel td {
-  padding: 5px 8px;
+  padding: 7px 12px;
 }
 /* ⚠️ Sel rincian baris TIDAK ikut dirapatkan — ia wadah blok, bukan sel
    data (aturan rincian 8 Oktober 2026 di atas). */
@@ -947,4 +982,1221 @@
   border-radius: 12px;
   background: var(--tria-aksen-lembut);
   color: var(--tria-aksen-teks);
+}
+
+/* =========================================================================
+   BENTUK PEGA — GRID DATAR (`.tria__grid`, kerangka ekspor)
+   =========================================================================
+   Permintaan pemakai 8 Oktober 2026: *"samakan designnya jangan ada bentuk
+   aneh aneh … bentuk tablenya … jangan ada design tambahan"* + tangkapan
+   layar Pega ("user nya mau tampilannya seperti ini"): tanpa kotak/kartu
+   pembungkus, kepala kolom teks tebal kecil TANPA latar dengan garis bawah,
+   baris bergaris bawah tipis TANPA zebra, angka rata KIRI, "No items" teks
+   kecil polos. ⛔ Aturan yang SAMA dengan `modul/treatyin/frontend/
+   treatyin.css` ("BENTUK PEGA — SELURUH ISI TAB") — kedua layar satu
+   bentuk. Ditiru, bukan diimpor: gaya tiap modul berakar di kelasnya
+   sendiri. Panel Old/New tetap — wadah perbandingan layar ini. */
+.treatyinadjustment .tria__grid > .table-wrap {
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.treatyinadjustment .tria__grid .tria__tabel {
+  border: 0;
+  border-radius: 0;
+  border-collapse: collapse;
+  background: transparent;
+  font-size: 12px;
+}
+.treatyinadjustment .tria__grid .tria__tabel th,
+.treatyinadjustment .tria__grid .tria__tabel td {
+  border-radius: 0;
+}
+.treatyinadjustment .tria__grid .tria__tabel thead th,
+.treatyinadjustment .tria__grid .table-wrap .tria__tabel thead th {
+  padding: 4px 8px;
+  background: var(--tria-latar-atas);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: inset 0 -1px 0 var(--tria-kepala-garis);
+}
+.treatyinadjustment .tria__grid .tria__tabel td {
+  padding: 3px 8px;
+  background: transparent;
+  border-bottom: 1px solid var(--tria-garis);
+}
+.treatyinadjustment .tria__grid .tria__tabel > tbody > tr:not(.tria__rincian):nth-child(even) > td,
+.treatyinadjustment .tria__grid .tria__tabel > tbody > tr:not(.tria__rincian):hover > td {
+  background: transparent;
+}
+/* Angka rata KIRI seperti Pega; digit tetap sejajar. */
+.treatyinadjustment .tria__grid .tria__tabel td.tria__angka {
+  text-align: left;
+}
+/* Grid kosong = "No items" teks kecil polos — tanpa ikon dan petunjuk. */
+.treatyinadjustment .tria__grid .tria__tabel .kosong {
+  align-items: flex-start;
+  padding: 6px 0 10px;
+  text-align: left;
+}
+.treatyinadjustment .tria__grid .tria__tabel .kosong__ikon,
+.treatyinadjustment .tria__grid .tria__tabel .kosong__petunjuk {
+  display: none;
+}
+.treatyinadjustment .tria__grid .tria__tabel .kosong__pesan {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-2);
+}
+/* Tombol di sel grid (`Add`, `Delete`) ringkas — tinggi baris serapat Pega. */
+.treatyinadjustment .tria__grid .tria__tabel .btn,
+.treatyinadjustment .tria__grid .tria__tabel .btn:not(.btn--primary):not(.btn--danger) {
+  padding: 1px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  box-shadow: none;
+}
+/* Judul blok — teks biasa seperti Pega, tanpa huruf kapital atau pita. */
+.treatyinadjustment .tria__subjudul {
+  margin: 10px 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* =========================================================================
+   LATAR PUTIH + STRIP TAB BENTUK PEGA — permintaan pemakai 8 Oktober 2026
+   =========================================================================
+   *"saya mau backgroundnya semua itu putih bukan agak abu abu"*.
+
+   ⛔ Token tema di atas TIDAK disunting — ia salinan nilai Treaty Exchange
+   Yearly yang dikunci uji. Lapisan ini MENIMPA token latar mode TERANG di
+   akar modul: kartu akar, popup, kepala tabel, rel strip tab, dan rincian
+   baris menjadi putih. Mode gelap tidak tersentuh (`:root[data-theme="dark"]
+   .treatyinadjustment` berkekhususan lebih tinggi). Panel Old ikut putih.
+
+   Strip tab: bentuk Pega (tangkapan layar pemakai) — teks di atas garis,
+   tab aktif bergaris bawah warna aksen, tanpa rel kapsul abu-abu. */
+.treatyinadjustment {
+  --tria-latar: #ffffff;
+  --tria-latar-atas: #ffffff;
+  --tria-latar-bawah: #ffffff;
+  --tria-lembut: #ffffff;
+  /* Kepala tabel daftar/lampiran juga putih. `--bg` inti dipakai `th`,
+     isian readonly, `.panel--anak`, dan kotak teks — TIDAK dipakai hover
+     mana pun, jadi aman diputihkan. */
+  --tria-kepala-tabel: #ffffff;
+  --bg: #ffffff;
+  /* Bidang statis yang tadinya `--surface-2`. `--surface-2` sendiri TIDAK
+     ditimpa: ia juga warna hover tombol & sorot pilihan inti. */
+  --tria-bidang: #ffffff;
+}
+/* Mode gelap tetap seperti semula: `inherit` = nilai inti dari induk. */
+:root[data-theme="dark"] .treatyinadjustment {
+  --bg: inherit;
+  --tria-bidang: var(--surface-2);
+}
+.treatyinadjustment .tria__radio,
+.treatyinadjustment .tria__belum {
+  background: var(--tria-bidang);
+}
+/* Zebra & sorot inti `:where(tbody tr…)` mewarnai `<tr>`, bukan `<td>`:
+   baris rincian dan baris genap grid jadi abu-abu. Sorot baris data biasa
+   tetap ada; rincian yang terbuka tidak ikut tersorot. */
+.treatyinadjustment .tria__grid tbody > tr:nth-child(even):not(:hover),
+.treatyinadjustment .tria__rincian,
+.treatyinadjustment .tria__rincian:hover {
+  background: transparent;
+}
+.treatyinadjustment .tabs {
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--tria-garis);
+  border-radius: 0;
+  background: transparent;
+}
+.treatyinadjustment .tabs__item {
+  height: auto;
+  padding: 8px 16px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--tria-teks);
+  font-size: 13px;
+  font-weight: 500;
+}
+.treatyinadjustment .tabs__item:hover {
+  background: transparent;
+  color: var(--tria-aksen-teks);
+}
+.treatyinadjustment .tabs__item--aktif,
+.treatyinadjustment .tabs__item--aktif:hover {
+  background: transparent;
+  border-bottom-color: var(--tria-aksen-teks);
+  color: var(--tria-teks);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+/* =========================================================================
+   TATA LETAK LAYOUT PEGA — `pyLayoutOtherFormat` (8 Oktober 2026)
+   =========================================================================
+   Permintaan pemakai: posisi tiap tab sama dengan Pega. Pembangkit kini
+   mencatat format layout dinamis (`tata` di kerangka) alih-alih meratakannya.
+   Contoh bukti: `Total All Layers RNM Share` = lima `Inline grid triple`
+   bertumpuk (baris 2–4 hanya satu butir di kolom pertama), persis gambar Pega.
+   ⚠️ Lebar persis skin Pega tidak diekspor — kolom sama lebar, celah tema. */
+.treatyinadjustment .tria__blok.tria__tata--g2,
+.treatyinadjustment .tria__blok.tria__tata--g3,
+.treatyinadjustment .tria__blok.tria__tata--g4 {
+  display: grid;
+  align-items: start;
+  gap: 8px 16px;
+}
+/* ⛔ KOLOM MEMBUNGKUS MENURUT LEBAR WADAHNYA, BUKAN LEBAR LAYAR.
+   Keluhan pemilik proses 8 Oktober 2026 atas tab Reporting Period:
+   *"kok jadi gini bentuknya"* — label `End Date` tergambar DI ATAS kotak
+   `Start Date`, dan kotak `Settlement` keluar dari panel.
+
+   Sebabnya satu, dan rantainya pendek:
+     · tiap sel `minmax(0, 1fr)` BOLEH menyusut sampai nol;
+     · medan berlabel kiri di dalamnya menuntut 132px label + 12px sela +
+       kotaknya — dan tuntutan itu TIDAK ikut menyusut;
+     · yang tidak muat tidak membungkus, melainkan MELUBER ke sel sebelahnya.
+
+   Satu-satunya penjaga dulu `@media (max-width: 900px)`, dan ia mengukur
+   LAYAR. Layar pemilik proses 1600px, panelnya 760px karena Old dan New
+   berdampingan — jadi penjaganya tidak pernah menyala justru ketika
+   dibutuhkan. Cacat yang sama persis sudah diselesaikan di `.tria__bandingan`
+   (baris 168) dengan `auto-fit` + `minmax`; ini memakai pola itu.
+
+   ⭐ `max(300px, (100% - sela) / n)` menjaga DUA sisi sekaligus: lebar kolom
+   tidak pernah turun di bawah 300px (ruang terkecil yang masih memuat label
+   132px + kotak yang terbaca), dan tidak pernah turun di bawah 1/n lebar —
+   sehingga kolomnya TIDAK PERNAH LEBIH BANYAK dari n. Tanpa batas kedua itu
+   `auto-fit` akan menaruh empat medan sebaris di layar lebar, dan tata letak
+   Pega berubah diam-diam.
+
+   ⛔ Bukan container query — alasannya sama dengan baris 175: `container-type`
+   mengurung popup `position: fixed`, dan `gaya.test.ts` melarangnya. */
+.treatyinadjustment .tria__blok.tria__tata--g2 {
+  grid-template-columns: repeat(auto-fit, minmax(max(300px, (100% - 16px) / 2), 1fr));
+}
+.treatyinadjustment .tria__blok.tria__tata--g3 {
+  grid-template-columns: repeat(auto-fit, minmax(max(300px, (100% - 32px) / 3), 1fr));
+}
+.treatyinadjustment .tria__blok.tria__tata--g4 {
+  grid-template-columns: repeat(auto-fit, minmax(max(300px, (100% - 48px) / 4), 1fr));
+}
+/* Butir di sel kolom mengisi selnya — termasuk grid dan blok anak. */
+.treatyinadjustment .tria__blok:is(.tria__tata--g2, .tria__tata--g3, .tria__tata--g4) > * {
+  min-width: 0;
+  max-width: 100%;
+}
+/* `Inline 30 70 table` — pasangan [30% | 70%] (mata uang · nilai, label · isi). */
+.treatyinadjustment .tria__blok.tria__tata--t3070 {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 7fr);
+  align-items: center;
+  gap: 6px 12px;
+}
+/* `Inline …` — mengalir sebaris pada lebar alaminya, membungkus bila penuh. */
+.treatyinadjustment .tria__blok.tria__tata--alir {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.treatyinadjustment .tria__blok.tria__tata--alir > .tria__grid,
+.treatyinadjustment .tria__blok.tria__tata--alir > .tria__blok {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+/* `Stacked with labels left` — satu butir per baris, label DI KIRI isiannya. */
+.treatyinadjustment .tria__blok.tria__tata--kiri {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+/* ⛔ LABEL DI KIRI, DAN KOLOMNYA TETAP 132px — permintaan pemilik proses
+   8 Oktober 2026 atas tab Account Reporting Period layar Adjustment.
+
+   DUA cacat sekaligus di sana, dan keduanya tidak terlihat sampai layar
+   Adjustment ditaruh bersebelahan dengan layar Treaty In:
+
+   1. LEBARNYA PERSEN (`38%`), jadi tiap blok punya lebar label sendiri dan
+      nol baris segaris dengan yang lain. Sama persis dengan cacat yang sudah
+      diperbaiki di `modul/treatyin`; 132px adalah angka yang dipakai di
+      sana.
+
+   2. LABELNYA DI ATAS, bukan di kiri — dan sebabnya bukan CSS melainkan
+      PEMBANGKIT KERANGKA: `kerangka.gen.ts` melebur SELURUH `Inline*` Pega
+      menjadi satu nilai `alir`, sehingga `Inline labels left` kehilangan
+      bagian "labels left"-nya. Tab Account Reporting Period memakai tujuh
+      blok `alir`, dan setiap medannya karena itu berlabel di atas.
+
+      ⚠️ Memperbaikinya di pembangkit menuntut kerangka dibangkitkan ulang
+      dari korpus. Sampai itu terjadi, aturan di bawah menegakkan bentuk yang
+      BENAR untuk medan di dalam `alir` — bukan menebak: seluruh tangkapan
+      layar Pega modul ini menempatkan label di kiri medannya.
+   --------------------------------------------------------------------- */
+.treatyinadjustment .tria__blok.tria__tata--kiri > .field,
+.treatyinadjustment .tria__blok.tria__tata--alir > .field {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  min-width: 0;
+}
+
+/* ⛔ `flex: none` HANYA untuk `kiri`, dan itu perbedaan yang baru saja
+   melahirkan cacat.
+
+   `kiri` adalah kolom (`flex-direction: column`) — di sana `flex: none`
+   berarti "setinggi isinya", tidak berbahaya. `alir` adalah BARIS, dan di
+   sana `flex: none` berarti `flex: 0 0 auto`: medannya TIDAK BOLEH MENYUSUT.
+
+   Tiga medan `Submission · Confirmation · Settlement` dalam satu baris
+   `alir` karena itu menuntut 3 × (132px label + 320px kotak + sela) ≈ 1.400px
+   dan MELUBER keluar panel — persis yang pemilik proses lihat 8 Oktober
+   2026 (*"jangan aneh seperti ini, buat designnya tidak keluar dari
+   container"*).
+
+   ⚠️ Cacat ini datang dari penggabungan selektor yang saya lakukan sendiri
+   satu giliran sebelumnya: `flex: none` milik `kiri` ikut terbawa ke `alir`.
+   Dipisahkan lagi, dan `alir` kini BOLEH menyusut lalu membungkus. */
+.treatyinadjustment .tria__blok.tria__tata--kiri > .field {
+  flex: none;
+}
+
+/* ⛔ `min-width` DI SINI PERNAH DICOBA, DAN IA JUSTRU CACATNYA.
+   Kotak `Start Date`/`End Date` memang sempat menyusut jadi kotak kecil
+   kosong, dan 8 Oktober 2026 saya tahan dengan `min-width: 260px` di medan
+   ini berikut `min-width: 150px` di kotak tanggalnya.
+
+   Hasilnya LEBIH BURUK, dan pemilik proses melihatnya seketika: medannya
+   memang berhenti menyusut, tetapi SELNYA tidak ikut melebar — jadi medan
+   260px duduk di dalam sel 180px dan menggambar dirinya menimpa kolom
+   sebelah. Label `End Date` muncul di tengah kotak `Start Date`.
+
+   ⭐ Batas bawahnya sekarang di tempat yang benar: pada KOLOM GRID induknya
+   (`tria__tata--g2/g3/g4` di atas), yang ketika tidak muat MEMBUNGKUS alih-
+   alih meluber. Medan ini karena itu kembali boleh menyusut mengikuti selnya.
+
+   ⚠️ Pelajarannya: menahan penyusutan ANAK tidak pernah melebarkan INDUK —
+   ia hanya memindahkan luberan ke tempat yang tak terlihat sampai dirender. */
+.treatyinadjustment .tria__blok.tria__tata--alir > .field {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+/* ⚠️ Kotak isian tidak melar mengikuti lebar bloknya — batasnya pada
+   KOTAKNYA, bukan pada selnya, supaya kolom berikutnya tetap di tempatnya. */
+.treatyinadjustment .tria__blok.tria__tata--kiri > .field > .field__input,
+.treatyinadjustment .tria__blok.tria__tata--alir > .field > .field__input {
+  max-width: 320px;
+}
+.treatyinadjustment .tria__blok.tria__tata--kiri > .field > .field__label,
+.treatyinadjustment .tria__blok.tria__tata--alir > .field > .field__label {
+  margin: 0;
+}
+/* Layar sempit / zoom besar: kolom turun bertumpuk, seperti Pega responsif. */
+@media (max-width: 900px) {
+  .treatyinadjustment .tria__blok:is(.tria__tata--g2, .tria__tata--g3, .tria__tata--g4, .tria__tata--t3070) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Slot kosong layout berkolom (sel `1=2`/`Spacer`, gambar Pega 05) — memakan
+   tempat di kolomnya; hilang saat kolom turun bertumpuk di layar sempit. */
+.treatyinadjustment .tria__tata-kosong {
+  min-height: 0;
+}
+@media (max-width: 900px) {
+  .treatyinadjustment .tria__tata-kosong {
+    display: none;
+  }
+}
+
+/* Tata letak Pega — kolom label `Stacked with labels left` LEBAR TETAP ±92px
+   (6rem, gambar Pega 05/27/29), label panjang membungkus; blok di pasangan
+   30/70 rata ATAS. Sama dengan layar Treaty In. */
+.treatyinadjustment .tria__blok.tria__tata--kiri > .field {
+  grid-template-columns: 6rem minmax(0, 1fr);
+}
+.treatyinadjustment .tria__blok.tria__tata--kiri > .field > .field__label {
+  white-space: normal;
+}
+.treatyinadjustment .tria__blok.tria__tata--t3070 > .tria__blok,
+.treatyinadjustment .tria__blok.tria__tata--t3070 > .tria__grid {
+  align-self: start;
+}
+
+/* =========================================================================
+   RUPA GRID SERAGAM — permintaan pemilik proses 8 Oktober 2026
+   =========================================================================
+   *"tampilan di view saya mau di semuanya seperti ini, tidak hanya view"*,
+   menunjuk grid Rate of Exchange mode LIHAT: baris rapat, teks polos, garis
+   tipis, NOL belang.
+
+   ⛔ Yang membuat grid kita tidak seragam ada DUA, dan keduanya tidak
+   terlihat sampai dua grid ditaruh berdampingan:
+
+     1. Bantalan sel berbeda-beda — `7px 10px`, `8px 12px`, `5px 8px` —
+        tergantung grid mana yang ditulis kapan.
+     2. BELANG BARIS. `inti` memberi `tbody tr:nth-child(even)` latar
+        `--alt-row` berkekhususan NOL, jadi ia menyentuh setiap tabel modul
+        tanpa satu pun di antaranya memintanya.
+
+   ⭐ Satu bantalan untuk seluruh grid: `7px 12px` — tinggi barisnya tetap
+   seperti sekarang, lebar kolomnya lebih lapang seperti gambar.
+
+   ⚠️ BELANG DICABUT, dan itu ADA HARGANYA: pada daftar 25 baris, belang
+   memudahkan mata menyusuri satu baris sampai ujung. Pemilik proses memilih
+   rupa yang ditunjuknya, dan pilihan itu dinyatakan di sini supaya yang
+   membacanya tahu apa yang ditukar — bukan mengira belangnya hilang karena
+   kelalaian.
+   ========================================================================= */
+.treatyinadjustment .tria__tabel tbody tr:nth-child(even) {
+  background: transparent;
+}
+
+.treatyinadjustment .tria__tabel tbody tr:hover {
+  background: var(--hover-baris);
+}
+
+/* =========================================================================
+   NOL SOROT ABU-ABU DI TEMPAT ISIAN — permintaan pemakai 8 Oktober 2026
+   =========================================================================
+   *"saya mau saat hover ke tempat inputan yg menjadi abu abu itu
+   dimatikan"*. Sorot baris (`tr:hover` → `--hover-baris`) mewarnai SELURUH
+   baris yang berisi isian — dan rincian ▸ yang terbuka adalah satu `<tr>`
+   penuh isian, jadi seluruh panel rincian ikut abu-abu begitu kursor masuk.
+
+   Dimatikan HANYA pada baris berisi isian (`input`/`select`/`textarea`) dan
+   baris rincian. Baris data baca-saja (daftar kontrak, grid baca) tetap
+   tersorot — di sana sorot adalah petunjuk baris yang dapat diklik. */
+.treatyinadjustment .tria__tabel tbody tr.tria__rincian:hover,
+.treatyinadjustment .tria__tabel tbody tr:has(input, select, textarea):hover {
+  background: transparent;
+}
+.treatyinadjustment .tria__tabel > tbody > tr:not(.tria__rincian):has(input, select, textarea):hover > td {
+  background: transparent;
+}
+
+/* Ralat pemakai 8 Oktober 2026 — *"mksd saya yg abu abu itu dimatikan itu
+   saat logo mouse saya menindih tab nya"*: sorot dimatikan untuk SEMUA
+   baris grid isi tab (`.tria__grid`, termasuk "No items" dan baris
+   baca-saja). Daftar kontrak dan popup pemilih tetap tersorot. */
+.treatyinadjustment .tria__grid .tria__tabel tbody tr:hover,
+.treatyinadjustment .tria__grid .tria__tabel tbody tr:hover > td {
+  background: transparent;
+}
+
+/* =========================================================================
+   SEMUA TABEL = BENTUK GRID PEGA (8 Oktober 2026)
+   =========================================================================
+   Permintaan pemakai (tangkapan layar grid `Total Share RNM Limit · Value`):
+   *"semua table digunakan seperti itu di treaty in dan adjustment treaty in"*.
+   Sama dengan `trin__tabel--pega` layar Treaty In: kepala TANPA latar, teks
+   tebal kecil, satu garis alas; baris tanpa belang, garis bawah tipis; angka
+   rata kiri; grid nilai `{Currency, Value}` mata uangnya rata tengah.
+   ⚠️ `.tria__tabel` diulang tiga kali — kekhususan sengaja dinaikkan supaya
+   menimpa aturan tema tabel di atas (daftar, picker, History, Attachment). */
+.treatyinadjustment .tria__tabel.tria__tabel.tria__tabel {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  border-collapse: collapse;
+  background: transparent;
+  box-shadow: none;
+  font-size: 12px;
+}
+.treatyinadjustment .tria__tabel.tria__tabel.tria__tabel > thead > tr > th {
+  position: static;
+  padding: 4px 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  white-space: normal;
+  box-shadow: none;
+  border: 0;
+  border-bottom: 1px solid var(--tria-kepala-garis);
+  border-radius: 0;
+}
+.treatyinadjustment .tria__tabel.tria__tabel.tria__tabel > tbody > tr > td {
+  padding: 3px 8px;
+  background: transparent;
+  color: var(--tria-teks);
+  text-align: left;
+  vertical-align: middle;
+  border: 0;
+  border-bottom: 1px solid var(--tria-garis);
+  border-radius: 0;
+}
+.treatyinadjustment .tria__tabel.tria__tabel.tria__tabel > tbody > tr:not(.tria__rincian):nth-child(even) > td,
+.treatyinadjustment .tria__tabel.tria__tabel.tria__tabel > tbody > tr:not(.tria__rincian):hover > td {
+  background: transparent;
+}
+.treatyinadjustment .tria__tabel.tria__tabel.tria__tabel > tbody > tr.tria__rincian > td {
+  padding: 10px 12px;
+  border: 1px solid var(--tria-garis);
+}
+.treatyinadjustment .tria__tabel.tria__tabel.tria__tabel td.tria__angka {
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+.treatyinadjustment .tria__tabel.tria__tabel--nilai.tria__tabel > thead > tr > th:first-child,
+.treatyinadjustment .tria__tabel.tria__tabel--nilai.tria__tabel > tbody > tr:not(.tria__rincian) > td:first-child {
+  text-align: center;
+}
+.treatyinadjustment .tria__tabel.tria__tabel.tria__tabel .btn,
+.treatyinadjustment .tria__tabel.tria__tabel.tria__tabel .btn:not(.btn--primary):not(.btn--danger) {
+  padding: 1px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  box-shadow: none;
+}
+/* Pembungkus tabel tanpa kotak tema — grid Pega berdiri di atas latar panel. */
+.treatyinadjustment .table-wrap:has(> .tria__tabel) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* =========================================================================
+   KOTAK ISIAN SEDERHANA SEPERTI PEGA — permintaan pemakai 8 Oktober 2026
+   =========================================================================
+   *"untuk inputannya tidak lagi designnya seperti itu, ikuti seperti yang
+   dipega saja, kotak sederhana"* — sama dengan Treaty In. Kotak tema (sudut
+   12px + bayang cekung) diganti kotak Pega: tepi 1px, sudut nyaris siku,
+   NOL bayang. Aturan tema di atas TIDAK disunting (dikunci `gaya.test`);
+   nol `height` di sini. */
+.treatyinadjustment .field__input {
+  border-radius: 2px;
+  box-shadow: none;
+}
+.treatyinadjustment .field__input:focus {
+  border-color: var(--tria-aksen);
+  box-shadow: 0 0 0 1px var(--tria-aksen);
+}
+
+/* Tabel Pega TANPA gulir dalam (8 Oktober 2026, permintaan pemakai soal panel
+   Attachment yang "makan tempat"): batas tinggi `.table-wrap` inti (62vh) dan
+   `min-height` 160px dicabut untuk semua tabel layar ini — grid kosong tidak
+   lagi memesan ruang satu tabel penuh, dan isinya mengalir di halaman. Gulir
+   MENDATAR tetap untuk tabel lebar. */
+.treatyinadjustment .table-wrap:has(> .tria__tabel) {
+  max-height: none;
+  min-height: 0;
+  overflow-y: visible;
+  overflow-x: auto;
+}
+
+/* =========================================================================
+   DROPDOWN BERBEDA DARI KOTAK ISIAN — permintaan pemakai 8 Oktober 2026
+   =========================================================================
+   *"perhatikan khusus drop down itu dibuat agar designnya berbeda dengan
+   kotak inputan biasa"*. Rupa `pxDropdown` Pega: kotak bergradasi terang ke
+   abu-abu muda, panah ▾ di kanan dipisah garis tipis, kursor tangan —
+   sekali lihat terbaca "pilih", bukan "ketik".
+
+   Dua bentuk dropdown di modul ini: `<select>` asli dan dropdown ketik-pilih
+   (`DropdownWarisan` di Treaty In, `input[role="combobox"]` — Treaty Type, Currency, …).
+   Keduanya diberi rupa yang sama. Isian `pxAutoComplete` (isian ketik)
+   TETAP kotak isian — di Pega pun ia kotak ketik.
+
+   Mode lihat / dinonaktifkan: aturan `.field__input:disabled` tema
+   (kekhususan lebih tinggi) mengembalikan latar polos — dropdown yang tak
+   dapat dipilih tidak berpura-pura dapat dipilih. */
+.treatyinadjustment select.field__input,
+.treatyinadjustment .field__input[role="combobox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 34px;
+  cursor: pointer;
+  background-color: var(--surface-2);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235b6478' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
+    linear-gradient(var(--tria-tepi), var(--tria-tepi)),
+    linear-gradient(180deg, var(--tria-isi) 0%, var(--surface-2) 100%);
+  background-repeat: no-repeat;
+  background-position: right 10px center, right 28px center, 0 0;
+  background-size: 10px 6px, 1px 60%, 100% 100%;
+}
+.treatyinadjustment .field__input[role="combobox"]:focus {
+  cursor: text;
+}
+.treatyinadjustment select.field__input:disabled,
+.treatyinadjustment .field__input[role="combobox"]:disabled,
+.treatyinadjustment .field__input[role="combobox"][readonly] {
+  background: var(--tria-lembut);
+  cursor: default;
+}
+
+/* Daftar pilihan `<select>` PUTIH (permintaan pemakai 8 Oktober 2026,
+   tangkapan layar Treaty Group). Chrome mewarnai daftar bawaan browser
+   dengan `background-color` milik `<select>` — dan rupa dropdown di atas
+   memberinya abu-abu muda, jadi seluruh daftar ikut abu-abu. Pilihan diberi
+   latar dan warna teks sendiri. */
+.treatyinadjustment select.field__input option,
+.treatyinadjustment select.field__input optgroup {
+  background-color: var(--tria-isi);
+  color: var(--tria-teks);
+}
+
+/* DAFTAR `<select>` KE BAWAH — `komponen/DaftarPilihBawah.tsx` (permintaan
+   pemakai 8 Oktober 2026: *"masih keatas drop nya"*). Daftar bawaan browser
+   diganti daftar ini, digambar `position: fixed` tepat di bawah kotaknya. */
+.treatyinadjustment .tria__pilih-bawah {
+  position: fixed;
+  z-index: 1000;
+  box-sizing: border-box;
+  min-width: 160px;
+  margin: 0;
+  padding: 2px 0;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--tria-tepi);
+  border-radius: 2px;
+  background: var(--tria-isi);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 14%);
+  font-size: 13px;
+  color: var(--tria-teks);
+}
+.treatyinadjustment .tria__pilih-bawah-butir {
+  padding: 6px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.treatyinadjustment .tria__pilih-bawah-butir--terpilih {
+  font-weight: 600;
+}
+.treatyinadjustment .tria__pilih-bawah-butir--aktif {
+  background: var(--tria-aksen-lembut);
+}
+.treatyinadjustment .tria__pilih-bawah-butir--mati {
+  color: var(--tria-teks-redup);
+  cursor: default;
+}
+
+/* =========================================================================
+   PENCARIAN DAFTAR ADJUSTMENT — permintaan pemakai 8 Oktober 2026
+   =========================================================================
+   *"di adjustment buat fitur pencarian"* lalu *"khusus fitur carinya itu
+   buatkan design terbaik kamu"*.
+
+   Bar pencarian di KANAN deret tombol Add: ikon kaca pembesar di kiri,
+   petunjuk pintasan `/` di kanan (berganti ✕ bulat saat ada ketikan),
+   cincin fokus lembut beraksen. Di bawahnya chip jumlah hasil; di tabel,
+   bagian yang cocok disorot `<mark>` kuning lembut.
+
+   ⛔ NOL `transform` — penjaga gaya modul melarangnya (ia mengurung popup
+   `position: fixed`). Pemusatan vertikal memakai `inset` + flex. */
+.treatyinadjustment .tria__cari {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 0 1 380px;
+  min-width: 240px;
+  margin-left: auto;
+}
+.treatyinadjustment .tria__cari-ikon {
+  position: absolute;
+  left: 11px;
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: var(--tria-teks-redup);
+  stroke-width: 2;
+  stroke-linecap: round;
+  pointer-events: none;
+  transition: stroke 0.15s ease;
+}
+.treatyinadjustment .tria__cari-kotak {
+  width: 100%;
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 36px 0 34px;
+  border: 1px solid var(--tria-tepi);
+  border-radius: 8px;
+  background: var(--tria-isi);
+  color: var(--tria-teks);
+  font: inherit;
+  font-size: 13px;
+  box-shadow: 0 1px 2px rgb(16 24 40 / 6%);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.treatyinadjustment .tria__cari-kotak::placeholder {
+  color: var(--tria-teks-redup);
+  opacity: 0.85;
+}
+.treatyinadjustment .tria__cari-kotak:hover {
+  border-color: var(--tria-aksen-garis);
+}
+.treatyinadjustment .tria__cari-kotak:focus {
+  outline: none;
+  border-color: var(--tria-aksen);
+  box-shadow: 0 0 0 3px var(--tria-aksen-lembut);
+}
+.treatyinadjustment .tria__cari:focus-within .tria__cari-ikon {
+  stroke: var(--tria-aksen);
+}
+.treatyinadjustment .tria__cari-kotak::-webkit-search-cancel-button,
+.treatyinadjustment .tria__cari-kotak::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+/* Petunjuk pintasan `/` dan tombol ✕ — duduk di sisi kanan kotak. */
+.treatyinadjustment .tria__cari-pintas,
+.treatyinadjustment .tria__cari-bersih {
+  position: absolute;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.treatyinadjustment .tria__cari-pintas {
+  min-width: 18px;
+  height: 20px;
+  box-sizing: border-box;
+  padding: 0 5px;
+  border: 1px solid var(--tria-tepi);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--tria-isi);
+  color: var(--tria-teks-redup);
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1;
+  pointer-events: none;
+}
+.treatyinadjustment .tria__cari:focus-within .tria__cari-pintas {
+  visibility: hidden;
+}
+.treatyinadjustment .tria__cari-bersih {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--tria-aksen-lembut);
+  color: var(--tria-aksen-teks);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.treatyinadjustment .tria__cari-bersih:hover {
+  background: var(--tria-aksen);
+  color: #ffffff;
+}
+.treatyinadjustment .tria__cari-bersih:focus-visible {
+  outline: 2px solid var(--tria-aksen);
+  outline-offset: 1px;
+}
+/* Chip jumlah hasil — rata kanan, tepat di bawah bar. */
+.treatyinadjustment .tria__cari-jumlah {
+  margin-left: auto;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--tria-aksen-lembut);
+  color: var(--tria-aksen-teks);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.treatyinadjustment .tria__aksi > .tria__cari-jumlah + .tria__cari {
+  margin-left: 0;
+}
+.treatyinadjustment .tria__cari-jumlah--nol {
+  background: var(--tria-netral-latar);
+  color: var(--tria-teks-redup);
+}
+/* Bagian sel yang cocok. */
+.treatyinadjustment mark.tria__sorot {
+  padding: 0 1px;
+  border-radius: 2px;
+  background: #fff1a8;
+  color: inherit;
+}
+:root[data-theme="dark"] .treatyinadjustment mark.tria__sorot {
+  background: #6b5a12;
+}
+/* Hasil kosong: kalimat + tautan "Clear search". */
+.treatyinadjustment .tria__tabel td.tria__cari-kosong {
+  padding: 18px 12px;
+  color: var(--tria-teks-redup);
+  font-size: 13px;
+  text-align: center;
+}
+.treatyinadjustment .tria__cari-tautan {
+  margin-left: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--tria-aksen-teks);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* =========================================================================
+   PANEL ATTACHMENT LAYAR ADJUSTMENT — BENTUK TREATY IN (8 Oktober 2026)
+   =========================================================================
+   Panel Attachment layar Adjustment kini HIDUP dan berbentuk SAMA dengan
+   Treaty In (`modul/treatyin/frontend/treatyin.css`, bagian "PANEL
+   ATTACHMENT — BLOK TERSENDIRI, RAPAT" dan "PANEL ATTACHMENT BENTUK PEGA"),
+   disalin berakar modul ini:
+     · wadah putih TERSENDIRI di bawah panel Old/New (`tria__inbox-lampiran`)
+       berisi Attachment, deret tombol, dan History;
+     · judul `Attachment` kecil polos, panel datar tanpa bingkai kartu;
+     · spanduk aturan nama berkas selebar penuh, PERSEGI, lebih tinggi;
+     · `Download All` · `Refresh` di KANAN atas grid;
+     · kepala grid berlatar, Count/Upload file/View File rata tengah,
+       kolom 64/12/12/12 %;
+     · sel Upload/View = kotak berbingkai selebar sel berisi ikon panah.
+   ⛔ Warna hanya token; nol `height` pada tombol/isian (kerapatan milik
+   bloknya — penjaga `gaya.test.ts`). */
+.treatyinadjustment .tria__inbox-lampiran {
+  margin-top: 16px;
+  padding: 20px 24px;
+  border: 1px solid var(--tria-latar-tepi);
+  border-radius: 18px;
+  background: var(--tria-isi);
+  box-shadow: var(--tria-timbul);
+}
+.treatyinadjustment .tria__inbox-lampiran .panel:has(> .tria__lampiran) {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.treatyinadjustment .tria__inbox-lampiran .panel:has(> .tria__lampiran) > .panel__title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.treatyinadjustment .tria__lampiran {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.treatyinadjustment .tria__lampiran > .tria__spanduk {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0;
+  padding: 14px 12px 28px;
+  border-radius: 0;
+}
+.treatyinadjustment .tria__lampiran > .tria__lampiran-aksi {
+  justify-content: flex-end;
+  margin: 0;
+}
+.treatyinadjustment .tria__lampiran > .table-wrap {
+  max-height: none;
+  min-height: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.treatyinadjustment .tria__lampiran .tria__tabel.tria__tabel.tria__lampiran-grid {
+  table-layout: fixed;
+}
+.treatyinadjustment .tria__lampiran .tria__tabel.tria__tabel.tria__lampiran-grid > thead > tr > th {
+  padding: 3px 8px;
+  background: var(--tria-garis);
+  border-right: 1px solid var(--bg);
+}
+.treatyinadjustment .tria__lampiran .tria__tabel.tria__tabel.tria__lampiran-grid > thead > tr > th.tria__lampiran-tengah {
+  text-align: center;
+}
+.treatyinadjustment .tria__lampiran .tria__tabel.tria__tabel.tria__lampiran-grid > tbody > tr > td {
+  padding: 2px 4px 2px 8px;
+}
+.treatyinadjustment .tria__lampiran-ikon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 3px 0;
+  border: 1px solid var(--tria-kepala-garis);
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.treatyinadjustment .tria__lampiran-ikon:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.treatyinadjustment .tria__lampiran-ikon:hover:not(:disabled) {
+  border-color: var(--primary);
+}
+.treatyinadjustment .tria__lampiran-ikon > svg {
+  width: 26px;
+  height: 26px;
+}
+.treatyinadjustment .tria__lampiran-ikon--unggah {
+  color: var(--success-text);
+}
+.treatyinadjustment .tria__lampiran-ikon--lihat {
+  color: var(--accent);
+}
+
+/* Modal `ASM Attach Content` — kotak seret-lepas bentuk Master Product Name
+   Life, sama dengan `.trin__unggah*` Treaty In. */
+.treatyinadjustment .tria__unggah {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 1rem;
+  border: 2px dashed var(--border);
+  border-radius: 0.5rem;
+  color: var(--text-2);
+  text-align: center;
+  cursor: pointer;
+}
+.treatyinadjustment .tria__unggah--seret {
+  border-color: var(--primary);
+  color: var(--primary-text);
+}
+.treatyinadjustment .tria__unggah-daftar,
+.treatyinadjustment .tria__unggah-gagal {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.treatyinadjustment .tria__unggah-daftar li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.treatyinadjustment .tria__unggah-gagal li {
+  padding: 0.25rem 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* Modal `View File` — nama berkas = tautan unduh; sel Type memuat jenis
+   (kiri) + tombolnya (kanan) sebaris. */
+.treatyinadjustment .tria__tautan {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary-text);
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.treatyinadjustment .tria__tautan:disabled {
+  color: inherit;
+  text-decoration: none;
+  cursor: default;
+}
+.treatyinadjustment .tria__tabel.tria__tabel.tria__tabel.tria__lihat-berkas {
+  table-layout: fixed;
+  width: 100%;
+}
+.treatyinadjustment .tria__lihat-berkas .tria__lihat-nama {
+  width: auto;
+}
+.treatyinadjustment .tria__lihat-berkas .tria__lihat-tipe {
+  width: 320px;
+}
+.treatyinadjustment .tria__lihat-jenis {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.treatyinadjustment .tria__lihat-aksi {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  min-width: 0;
+}
+.treatyinadjustment .tria__lihat-aksi > select {
+  width: auto;
+  min-width: 0;
+  max-width: 180px;
+}
+.treatyinadjustment .tria__lihat-aksi .tl-hapus {
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+.treatyinadjustment .tria__lihat-aksi .tl-hapus:hover:not(:disabled) {
+  background: var(--danger-bg);
+}
+/* Bingkai penampil `View Office Online` di popup. */
+.treatyinadjustment .tria__penampil {
+  display: block;
+  width: 100%;
+  height: 75vh;
+  border: 0;
+}
+
+/* =========================================================================
+   JUDUL GRID LIMITS (100% Limit / Retention / Cession to R/I) — permintaan
+   pemakai 8 Oktober 2026: bentuknya sama dengan Treaty In.
+   =========================================================================
+   Kerangka: pasangan Inline grid 30 70 (t3070) — sel kiri = blok kiri > g2
+   [judul | alir [persen, "%"]], sel kanan = gridnya (@283497/@460405/
+   @642766). Di sel 30% kolom g2 ber-minimum 300px runtuh jadi satu kolom
+   sehingga persennya turun ke baris bawah, dan RetentionPct/CessionPct
+   (baca-saja SELALU, @474451/@656819) tergambar sebagai kotak berlabel
+   132px yang meluber menimpa grid. Treaty In (tl-grid-judul/tl-persen):
+   judul tebal, persen teks biasa SEBARIS, sela 16px. */
+/* SIMETRIS (permintaan pemakai 8 Oktober 2026, "buat simetris"): sel judul =
+   DUA KOLOM — judul mengisi sisa sel 30%, persen di kolom kanan selebar
+   isinya. Lebar sel 30% sama di ketiga baris, jadi kolom persen jatuh di
+   posisi yang SAMA; angka rata kanan dalam 6ch, "%" sesudahnya. */
+.treatyinadjustment .tria__blok.tria__tata--t3070 > .tria__tata--kiri > .tria__blok.tria__tata--g2 {
+  display: grid;
+  grid-template-columns: minmax(min-content, 1fr) auto;
+  align-items: baseline;
+  gap: 0 16px;
+}
+.treatyinadjustment .tria__blok.tria__tata--t3070 > .tria__tata--kiri > .tria__tata--g2 > .tria__teks-sel {
+  /* Tidak menyusut di bawah kata terpanjangnya: aturan umum g2 (> * min-width 0)
+     memecahnya SATU HURUF per baris. Membungkus hanya di spasi. */
+  min-width: min-content;
+  overflow-wrap: normal;
+  word-break: normal;
+  padding-bottom: 0;
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+.treatyinadjustment .tria__blok.tria__tata--t3070 > .tria__tata--kiri > .tria__tata--g2 > .tria__blok.tria__tata--alir {
+  display: grid;
+  grid-template-columns: 6ch auto;
+  align-items: baseline;
+  gap: 0 4px;
+}
+.treatyinadjustment .tria__blok.tria__tata--t3070 > .tria__tata--kiri > .tria__tata--g2 > .tria__tata--alir > .field {
+  display: block;
+  flex: none;
+  /* Menimpa .tria__blok > .field (flex 240px, min-width 160px) yang membuat
+     kolom persen merebut sel 30% dan menjepit judulnya. */
+  min-width: 0;
+  width: auto;
+  margin: 0;
+}
+.treatyinadjustment .tria__blok.tria__tata--t3070 > .tria__tata--kiri > .tria__tata--g2 > .tria__tata--alir > .field > .field__label {
+  display: none;
+}
+/* Persen baca-saja = TEKS, seperti tl-persen Treaty In. */
+.treatyinadjustment .tria__blok.tria__tata--t3070 > .tria__tata--kiri > .tria__tata--g2 > .tria__tata--alir > .field > .field__input {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.treatyinadjustment .tria__blok.tria__tata--t3070 > .tria__tata--kiri > .tria__tata--g2 > .tria__tata--alir > .tria__teks-sel {
+  padding-bottom: 0;
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+}
+/* Angka (teks "100" atau kotak baca-saja) rata kanan di kolom 6ch. */
+.treatyinadjustment .tria__blok.tria__tata--t3070 > .tria__tata--kiri > .tria__tata--g2 > .tria__tata--alir > .tria__teks-sel:first-child {
+  text-align: right;
+}
+
+/* `Inline 30 70 table` — KOLOM 30% TIDAK BOLEH DIREBUT (8 Oktober 2026,
+   tangkapan layar pemakai: label `100% Limit` / `Retention` / `Cession to
+   R/I` rincian Limits Prop tergencet SATU HURUF per baris). Item grid CSS
+   ber-`min-width: auto` — lebar minimumnya = isinya. Grid nilai di sel 70%
+   (kotak isian, `Remove`, kotak centang) punya lebar minimum besar, jadi
+   kolom 70% melebar melewati jatahnya dan kolom 30% runtuh. Dengan
+   `min-width: 0` kedua sel memegang jatahnya; tabel yang lebih lebar dari
+   selnya menggulir di `.table-wrap` miliknya sendiri. Judul blok tidak
+   pernah dipecah di tengah kata. */
+.treatyinadjustment .tria__blok.tria__tata--t3070 > * {
+  min-width: 0;
+}
+.treatyinadjustment .tria__blok.tria__tata--t3070 > .tria__tata--kiri > .tria__tata--g2 > .tria__teks-sel {
+  min-width: min-content;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+/* =========================================================================
+   Pasangan `Inline grid 30 70` [medan berlabel | medan TANPA label]
+   (9 Oktober 2026, tangkapan Pega pemakai):
+       Amount         [IDR v]  [700.000.000,00 ...............]   (EGNPI)
+       Amount in IDR  [IDR  ]  [700.000.000,00 ...............]
+       Amount         [USD v]  [3.000.000,00 .................]   (Max Retention)
+   Medan sel 70% tidak berlabel — tanpa elemen label sama sekali, atau label
+   kosong (blok bertanda `tria__tanpa-label`, `kelasBlok`). Dulu ia jatuh ke kolom label `6rem` (kotak 3.000.000,00 terpotong)
+   atau bergeser sejauh kolom label kosong; kolom 30% terlalu sempit untuk
+   label + kotak (label `Amount` naik ke atas kotaknya). Kolom kiri kini
+   selebar label + kotak satuan, kolom kanan sisanya. Berlaku juga untuk
+   medan di dalam pembungkus `.tria__pemicu` (`display: contents`).
+   ========================================================================= */
+.treatyinadjustment .tria__blok.tria__tata--t3070:has(> .tria__tanpa-label:last-child) {
+  grid-template-columns: minmax(0, calc(6rem + 12px + 160px)) minmax(0, 1fr);
+  align-items: start;
+}
+.treatyinadjustment .tria__blok.tria__tata--kiri.tria__tanpa-label > .field,
+.treatyinadjustment .tria__blok.tria__tata--kiri.tria__tanpa-label > .tria__pemicu > .field {
+  grid-template-columns: minmax(0, 1fr);
+}
+.treatyinadjustment .tria__blok.tria__tata--kiri.tria__tanpa-label > .field > .field__label,
+.treatyinadjustment .tria__blok.tria__tata--kiri.tria__tanpa-label > .tria__pemicu > .field > .field__label {
+  display: none;
+}
+.treatyinadjustment .tria__blok.tria__tata--kiri.tria__tanpa-label > .field > .field__input,
+.treatyinadjustment .tria__blok.tria__tata--kiri.tria__tanpa-label > .tria__pemicu > .field > .field__input {
+  max-width: none;
+}
+
+/* ⛔ Medan ber-aksi `change` (`Currency` → `SetAmountConversion`, dll.)
+   dibungkus `.tria__pemicu` (`display: contents`) — tata letaknya ikut,
+   tetapi selektor anak langsung `.tria__tata--kiri > .field` TIDAK
+   mengenainya, jadi labelnya jatuh ke ATAS kotaknya (rincian EGNPI mode
+   Edit, 9 Oktober 2026). Bentuk `Stacked with labels left` yang sama
+   ditegakkan untuk medan di dalam pembungkus itu. */
+.treatyinadjustment .tria__blok.tria__tata--kiri > .tria__pemicu > .field {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  min-width: 0;
+}
+.treatyinadjustment .tria__blok.tria__tata--kiri > .tria__pemicu > .field > .field__label {
+  margin: 0;
+  white-space: normal;
+}
+.treatyinadjustment .tria__blok.tria__tata--kiri > .tria__pemicu > .field > .field__input {
+  max-width: 320px;
+}
+
+/* ⛔ Dropdown saring (`PilihSaring`, `.field.pilih-saring`) BERSARANG di
+   `.field` medan — batas 320px kotak biasa tidak mengenainya, jadi
+   `Treaty Group` melebar sepanjang panel (rincian Max Retention, 9 Oktober
+   2026). Lebarnya disamakan dengan kotak isian lain. */
+.treatyinadjustment .tria__blok.tria__tata--kiri > .field > .pilih-saring,
+.treatyinadjustment .tria__blok.tria__tata--kiri > .tria__pemicu > .field > .pilih-saring {
+  max-width: 320px;
+  margin: 0;
+}
+
+/* SATU PANAH di dropdown ketik-pilih `PilihSaring` (inti) — permintaan
+   pemakai 9 Oktober 2026: *"jangan panahnya 2"*. Komponen itu punya tombol
+   panah sendiri (`.pilih-saring__panah`); panah latar aturan combobox di atas
+   ikut tergambar di belakangnya. Di dalam `.pilih-saring` panah latar
+   DIBUANG — garis pemisah dan gradasi tetap, garisnya di tepi kiri tombol
+   (38px). Combobox lain (tanpa tombol panah sendiri) tidak berubah. */
+.treatyinadjustment .pilih-saring .field__input[role="combobox"] {
+  padding-right: 42px;
+  background-image:
+    linear-gradient(var(--tria-tepi), var(--tria-tepi)),
+    linear-gradient(180deg, var(--tria-isi) 0%, var(--surface-2) 100%);
+  background-position: right 38px center, 0 0;
+  background-size: 1px 60%, 100% 100%;
+}
+.treatyinadjustment .pilih-saring .field__input[role="combobox"]:disabled,
+.treatyinadjustment .pilih-saring .field__input[role="combobox"][readonly] {
+  background: var(--tria-lembut);
+}
+
+/* DAFTAR DROPDOWN TIDAK TENGGELAM — permintaan pemakai 9 Oktober 2026
+   (grid Rate of Exchange: daftar Currency terpotong dan wadahnya malah
+   menggulir). `.tria__grid` dan `.table-wrap` ber-`overflow-x: auto`, dan
+   menurut CSS sumbu Y ikut menjadi `auto` — daftar `position: absolute`
+   `PilihSaring` terpotong di dalamnya. Selama daftar TERBUKA (ia hanya
+   dirender saat terbuka) wadahnya dilepas; sesudah tertutup gulir mendatar
+   kembali seperti biasa. */
+.treatyinadjustment .tria__grid:has(.pilih-saring__daftar),
+.treatyinadjustment .table-wrap:has(.pilih-saring__daftar) {
+  overflow: visible;
+}
+
+/* LABEL KOTAK ANGKA DI SEL GRID TIDAK DITAMPILKAN — label kolom sudah di
+   kepala tabel (`Value to IDR` sempat tampil di dalam sel, 9 Oktober 2026).
+   `aria-label` kotaknya tetap. Hanya anak LANGSUNG sel (atau lewat pembungkus
+   pemicu `display: contents`) — medan berlabel di panel rincian tidak kena. */
+.treatyinadjustment .tria__tabel td > .field > .field__label,
+.treatyinadjustment .tria__tabel td > .tria__pemicu > .field > .field__label {
+  display: none;
+}
+
+/* KEPALA BENTUK PEGA (9 Oktober 2026, gambar pemakai `1001802/R01`): satu
+   wadah — kiri label tebal + nilai teks bertumpuk, kanan `Existing Policy
+   for Master ID` (judul kecil, grid ringkas bernomor baris). Turun bertumpuk
+   di layar sempit. */
+.treatyinadjustment .panel.tria__kepala-pega {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 16px 32px;
+}
+.treatyinadjustment .tria__kepala-data {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+}
+.treatyinadjustment .tria__kepala-butir > dt {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+.treatyinadjustment .tria__kepala-butir > dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: var(--text);
+}
+.treatyinadjustment .tria__polis-judul {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.treatyinadjustment .tria__polis > .table-wrap {
+  max-height: none;
+  min-height: 0;
+}
+.treatyinadjustment .tria__polis .tria__polis-no {
+  width: 32px;
+  color: var(--text-3);
+}
+@media (max-width: 900px) {
+  .treatyinadjustment .panel.tria__kepala-pega {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

@@ -154,6 +154,20 @@ func (l *Layanan) BacaKontrakWarisan(ctx context.Context, p inti.Pelaku, id stri
 			k.Penampung[nama] = v
 		}
 	}
+	// ⭐ Medan akar `T_TREATY_HAZARD_LIMIT` — tab Event Limits (Non-Prop)
+	// dan kedua batas Co-Ins. Tabelnya ditulis Save sejak migrasi `446`,
+	// tetapi NOL yang pernah membacanya: tab itu selalu kosong.
+	//
+	// ⚠️ Ditaruh SESUDAH gelung di atas supaya nilai dari tabel bahaya
+	// menang bila suatu hari ejaan yang sama muncul di kedua tabel —
+	// `T_TREATY_HAZARD_LIMIT` yang memilikinya menurut peta pendaratan.
+	bahaya, err := l.gudang.BacaBatasBahaya(ctx, id)
+	if err != nil {
+		return models.KontrakWarisan{}, err
+	}
+	for nama, v := range bahaya {
+		k.Penampung[nama] = v
+	}
 	// ⭐ Larik total penampung (`T_TREATY_TOTAL`) — laporan pemakai
 	// 8 Oktober 2026: total Share Prop "No items" sesudah Save sampai
 	// Refresh ditekan.
@@ -164,9 +178,11 @@ func (l *Layanan) BacaKontrakWarisan(ctx context.Context, p inti.Pelaku, id stri
 		k.AdaDiJSON[nama] = true
 		k.TeksMentah[nama] = v
 	}
-	// ⛔ Grid Rate of Exchange dari `TREATYEXCHANGEYEARLY`, berkunci TAHUN.
+	// ⛔ Grid Rate of Exchange dari `TREATYEXCHANGEYEARLY`.
+	// ⭐ 455 (8 Oktober 2026): HANYA baris milik kontrak ini (`T_TREATY_KURS`);
+	// kontrak tanpa catatan membaca kurs tahun treaty-nya seperti dulu.
 	// Dibaca SESUDAH `TahunTreaty` terisi dari kolom `TREATY_IN`.
-	if k.Kurs, err = l.gudang.BacaKursTahunan(ctx, k.TahunTreaty); err != nil {
+	if k.Kurs, err = l.gudang.BacaKursKontrak(ctx, id, k.TahunTreaty); err != nil {
 		return models.KontrakWarisan{}, err
 	}
 	if k.SkalaKoasuransi, err = l.gudang.BacaSkalaKoasuransi(ctx, id); err != nil {
@@ -318,6 +334,10 @@ func (l *Layanan) BacaKontrakWarisan(ctx context.Context, p inti.Pelaku, id stri
 	// tidak ada larik `nil` yang boleh meninggalkan fungsi ini. Alasannya,
 	// dan mengapa ia satu fungsi alih-alih tambalan di tempat, ada di
 	// `warisan_nol.go`.
+	// Pecahan spreading manual yang tak tersimpan (`hitung_share_prop.go`).
+	l.lengkapiPecahanKontrak(ctx, &k)
+	// Total yang tak tersimpan dihitung dari rinciannya (`total_cadangan.go`).
+	lengkapiTotalPenampung(&k)
 	nolkanLarik(&k)
 	return k, nil
 }

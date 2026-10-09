@@ -49,6 +49,9 @@ export function PilihSaring({
   onPilih,
   required,
   memuat = false,
+  error,
+  sembunyikanLabel = false,
+  jedaMs = JEDA_KETIK_MS,
 }: {
   label: string;
   /** Nilai terpilih (mis. ID); kosong = belum ada. */
@@ -62,6 +65,25 @@ export function PilihSaring({
   required?: boolean;
   /** true selama `onCari` belum menjawab. */
   memuat?: boolean;
+  /** Pesan galat di bawah medan — bentuk yang sama dengan `Pilih`/`Field`. */
+  error?: string;
+  /**
+   * Sembunyikan labelnya; namanya pindah ke `aria-label`.
+   *
+   * ⛔ Untuk SEL TABEL: `<th>` kolomnya sudah menamai medan itu, jadi label
+   * kedua di dalam sel menggandakan judul kolom dan menaikkan tinggi baris.
+   * Mengosongkan `label` saja akan membuat medannya anonim bagi pembaca
+   * layar — karena itu disembunyikan, bukan dihapus.
+   */
+  sembunyikanLabel?: boolean;
+  /**
+   * Jeda ketik sebelum `onCari` dipanggil, milidetik.
+   *
+   * ⭐ Bawaannya 250ms karena pemakai pertama menyaring DI SERVER. Daftar
+   * yang sudah ada di klien tidak perlu menunggu siapa pun: `PilihCari`
+   * memberi `0`, dan saringannya terasa seketika saat diketik.
+   */
+  jedaMs?: number;
 }) {
   const teks = useTeksUI();
   const [ketik, setKetik] = useState(teksTerpilih);
@@ -98,7 +120,7 @@ export function PilihSaring({
     setTerbuka(true);
     setSorot(0);
     window.clearTimeout(jeda.current);
-    jeda.current = window.setTimeout(() => onCari(t.trim()), JEDA_KETIK_MS);
+    jeda.current = window.setTimeout(() => onCari(t.trim()), jedaMs);
   }
 
   return (
@@ -108,17 +130,20 @@ export function PilihSaring({
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) tutup();
       }}
     >
-      <label className="field__label" htmlFor={idInput}>
-        {label}
-        {required && <span className="field__req">*</span>}
-      </label>
+      {!sembunyikanLabel && (
+        <label className="field__label" htmlFor={idInput}>
+          {label}
+          {required && <span className="field__req">*</span>}
+        </label>
+      )}
       <div className="pilih-saring__kotak">
         <input
           id={idInput}
-          className="field__input"
+          className={"field__input" + (error ? " field__input--error" : "")}
           role="combobox"
           aria-expanded={terbuka}
           aria-controls={idDaftar}
+          aria-label={sembunyikanLabel ? label : undefined}
           aria-autocomplete="list"
           aria-required={required}
           autoComplete="off"
@@ -195,6 +220,88 @@ export function PilihSaring({
           )}
         </ul>
       )}
+      {error && <div className="field__error">{error}</div>}
     </div>
+  );
+}
+
+/**
+ * Cocokkah satu butir dengan kata yang diketik?
+ *
+ * ⛔ Pencocokan BAGIAN TEKS, bukan awalan — pemakai mengetik potongan yang
+ * diingatnya (`"QS"`, `"181"`), bukan selalu huruf pertama. Tanpa huruf
+ * besar-kecil, dan `keterangan` (biasanya kode/ID) ikut dicari sebab di
+ * sanalah nomor kontrak berada.
+ */
+export function cocokSaring(o: OpsiSaring, kata: string): boolean {
+  const k = kata.trim().toLowerCase();
+  if (k === "") return true;
+  return o.label.toLowerCase().includes(k) || (o.keterangan ?? "").toLowerCase().includes(k);
+}
+
+/**
+ * PilihCari — `Pilih` yang DAPAT DIKETIK untuk mencari, saringan di KLIEN.
+ *
+ * ⛔ Permintaan pemilik proses 8 Oktober 2026 untuk seluruh dropdown Treaty
+ * In dan Adjustment: *"kondisi saat melakukan pengetikannya seharusnya
+ * terlihat layaknya melakukan mencari, kemudian data yang keluar adalah yang
+ * 100% mirip dengan yang diketik"*.
+ *
+ * ⭐ API-nya SENGAJA sama persis dengan `Pilih` (`label` · `value` ·
+ * `onChange` · `opsi` · `error` · `required` · `kosong`), supaya penggantian
+ * di layar cukup satu baris impor dan nol perubahan di badan komponennya.
+ * Dua puluhan pemakaian ditukar tanpa menyentuh logika satu pun di antaranya.
+ *
+ * ⚠️ BUKAN isian bebas: teks yang diketik tanpa memilih dikembalikan ke
+ * pilihan terakhir (`PilihSaring` yang menjaganya). Itu beda pokoknya dari
+ * `<datalist>` yang dibuang 8 Oktober 2026 — di sana ketikan apa pun lolos
+ * menjadi nilai.
+ */
+export function PilihCari({
+  label,
+  value,
+  onChange,
+  opsi,
+  error,
+  required,
+  kosong,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  opsi: readonly { value: string; label: string }[];
+  error?: string;
+  required?: boolean;
+  kosong?: string;
+}) {
+  const teksUI = useTeksUI();
+  const [kata, setKata] = useState("");
+  const teksKosong = kosong ?? teksUI.pilihKosong;
+
+  // ⛔ Nilai TERSIMPAN yang tidak ada di daftar tetap ditawarkan, bukan
+  // dijatuhkan — dropdown yang diam-diam mengosongkan nilai lama terbaca
+  // sebagai data yang hilang.
+  const asing = value !== "" && !opsi.some((o) => o.value === value);
+  const semua: OpsiSaring[] = [
+    { value: "", label: teksKosong },
+    ...(asing ? [{ value, label: value }] : []),
+    ...opsi.map((o) => ({ value: o.value, label: o.label })),
+  ];
+  const terpilih = semua.find((o) => o.value === value);
+
+  return (
+    <PilihSaring
+      label={label}
+      value={value}
+      teksTerpilih={terpilih?.label ?? teksKosong}
+      opsi={semua.filter((o) => cocokSaring(o, kata))}
+      onCari={setKata}
+      onPilih={(o) => {
+        onChange(o.value);
+      }}
+      required={required}
+      error={error}
+      jedaMs={0}
+    />
   );
 }

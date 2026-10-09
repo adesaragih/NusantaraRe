@@ -52,8 +52,8 @@ export const ACHIEVEMENT = {
   /** Baris terakhir grid — `.Detail(<LAST>).TreatyType` di ekspor. */
   barisTotal: ' Total In IDR',
   tanpaBaris: 'No items',
-  petunjukKosong: 'Belum ada baris Achievement untuk kontrak ini.',
-  gagalMuat: 'Gagal memuat Achievement',
+  petunjukKosong: 'No Achievement rows for this contract yet.',
+  gagalMuat: 'Failed to load Achievement',
 } as const
 
 /** Desimal — `uang` dua, `persen` dua. */

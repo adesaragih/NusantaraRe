@@ -29,6 +29,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -320,8 +321,15 @@ func (g *Gudang) simpanDalam(ctx context.Context, tx *db.Tx, r models.RencanaSim
 		return "", err
 	}
 	if r.Kurs != nil {
-		if err := g.tulisKurs(ctx, tx, *r.Kurs, r.Operator, r.Stempel); err != nil {
+		idKurs, err := g.tulisKurs(ctx, tx, id, *r.Kurs, r.Operator, r.Stempel)
+		if err != nil {
 			return "", err
+		}
+		// ⭐ 455 — baris kurs grid ini MILIK kontrak ini (`kurs_kontrak.go`).
+		if strings.TrimSpace(r.Kurs.Tahun) != "" {
+			if err := g.tulisHubunganKurs(ctx, tx, id, idKurs); err != nil {
+				return "", err
+			}
 		}
 	}
 	return id, nil
@@ -460,53 +468,98 @@ func (g *Gudang) tulisKepalaTreatyIn(ctx context.Context, tx *db.Tx, id string, 
 //
 // ⛔ Nol `DELETE` — keputusan pemilik proses: tabelnya berkunci TAHUN, satu
 // baris dipakai setiap kontrak tahun itu dan dibaca modul lain.
-func (g *Gudang) tulisKurs(ctx context.Context, tx *db.Tx, k models.KursSimpan, operator, stempel string) error {
+//
+// ⛔ Nol baris yang TIDAK ditambahkan pemakai: hanya baris tanpa ID (tombol
+// Add) yang di-INSERT. Baris bertanda `Tetap` (tidak diubah) tidak ditulis
+// sama sekali — ID-nya hanya dicatat tetap milik kontrak.
+//
+// ⛔ Baris yang tercatat milik kontrak LAIN (`T_TREATY_KURS`) tidak pernah
+// di-`UPDATE` dari kontrak ini: isinya yang diubah ditulis sebagai baris
+// milik kontrak ini sendiri — grid tetap berisi tepat yang diinput pemakai.
+// Insiden 9 Oktober 2026: Save 1002307 menimpa 10130 (IDR milik HEALTH) dan
+// 10125 (USD milik TESTS), pertama dengan tanggal 07/2026, lalu dengan isi
+// PGK/KRW 2025 yang ber-ID sama.
+func (g *Gudang) tulisKurs(ctx context.Context, tx *db.Tx, masterID string, k models.KursSimpan, operator, stempel string) ([]string, error) {
 	if strings.TrimSpace(k.Tahun) == "" {
-		return nil
+		return nil, nil
 	}
 	nama, err := g.db.Qualify(TabelKursTahunan)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	lain, err := g.kursMilikLain(ctx, tx, masterID)
+	if err != nil {
+		return nil, err
 	}
 	var situs string
+	// ID baris kurs grid ini, urut grid — dicatat milik kontrak (`tulisHubunganKurs`).
+	idKurs := []string{}
 	for _, b := range k.Baris {
 		if strings.TrimSpace(b.MataUangID) == "" && strings.TrimSpace(b.MataUang) == "" {
 			continue // baris kosong yang baru ditambahkan — tidak ada isinya
 		}
-		if strings.TrimSpace(b.ID) != "" {
+		if b.Tetap && strings.TrimSpace(b.ID) != "" {
+			idKurs = append(idKurs, strings.TrimSpace(b.ID))
+			continue
+		}
+		if strings.TrimSpace(b.ID) != "" && !lain[strings.TrimSpace(b.ID)] {
 			// Tanggal datang sebagai stempel tengah malam (services
 			// `stempelHariPega`); yang dikosongkan pemakai memang dikosongkan.
 			q := fmt.Sprintf(`UPDATE %s SET IDCURRENCY = :1, CURRENCY = :2, TOIDR = :3, STARTDATE = :4,
 				ENDDATE = :5, USERID = :6, DATEIU = :7 WHERE ID = :8 AND TREATYYEAR = :9`, nama)
 			if err := db.PeriksaSQL(q); err != nil {
-				return err
+				return nil, err
 			}
 			if _, err := tx.ExecContext(ctx, q, b.MataUangID, b.MataUang, b.NilaiKeIDR,
 				b.BerlakuDari, b.BerlakuSampai, operator, stempel, b.ID, k.Tahun); err != nil {
-				return fmt.Errorf("repository: memperbarui kurs %s: %w", b.ID, err)
+				return nil, fmt.Errorf("repository: memperbarui kurs %s: %w", b.ID, err)
 			}
+			idKurs = append(idKurs, strings.TrimSpace(b.ID))
 			continue
 		}
 		if situs == "" {
 			if situs, err = g.kodeSitus(ctx, tx); err != nil {
-				return err
+				return nil, err
 			}
 		}
-		n, err := g.db.NomorBerikut(ctx, tx, seqKursTahunan)
+		idBaru, err := g.idKursBaru(ctx, tx, situs)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		q := fmt.Sprintf(`INSERT INTO %s (ID, TREATYYEAR, STARTDATE, ENDDATE, TOIDR, USERID, DATEIU,
 			IDCURRENCY, CURRENCY, QUARTER, DATEIN) VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11)`, nama)
 		if err := db.PeriksaSQL(q); err != nil {
-			return err
+			return nil, err
 		}
-		if _, err := tx.ExecContext(ctx, q, situs+kiriNol(n, 4), k.Tahun, b.BerlakuDari, b.BerlakuSampai,
+		if _, err := tx.ExecContext(ctx, q, idBaru, k.Tahun, b.BerlakuDari, b.BerlakuSampai,
 			b.NilaiKeIDR, operator, stempel, b.MataUangID, b.MataUang, "0", stempel); err != nil {
-			return fmt.Errorf("repository: menambah kurs %s %s: %w", k.Tahun, b.MataUang, err)
+			return nil, fmt.Errorf("repository: menambah kurs %s %s: %w", k.Tahun, b.MataUang, err)
 		}
+		idKurs = append(idKurs, idBaru)
 	}
-	return nil
+	return idKurs, nil
+}
+
+// DivisiAkun - `M_LOGIN_GO.DIVISION_CODE` akun itu; kosong bila tidak ada.
+// Syarat Force Edit (divisi `IT`), padanan `OperatorID.pyOrgDivision`.
+func (g *Gudang) DivisiAkun(ctx context.Context, akunID string) (string, error) {
+	akun, err := g.db.Qualify("M_LOGIN_GO")
+	if err != nil {
+		return "", err
+	}
+	q := fmt.Sprintf(`SELECT DIVISION_CODE FROM %s WHERE LOGIN_ID = :1`, akun)
+	if err := db.PeriksaSQL(q); err != nil {
+		return "", err
+	}
+	var d sql.NullString
+	err = g.db.QueryRowContext(ctx, q, akunID).Scan(&d)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("repository: membaca divisi akun %s: %w", akunID, err)
+	}
+	return strings.TrimSpace(d.String), nil
 }
 
 // PemegangPosisi - LOGIN_ID akun AKTIF yang memegang workbasket itu (menu

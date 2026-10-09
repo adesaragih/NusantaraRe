@@ -45,7 +45,7 @@ describe('kotak', () => {
     const html = renderToStaticMarkup(<KotakTanggalKetik label="Due Date" value="20240118" onChange={() => undefined} />)
     expect(html).toContain('type="text"')
     expect(html).toContain('value="18/01/2024"')
-    expect(html).toContain('aria-label="Pilih dari kalender — Due Date"')
+    expect(html).toContain('aria-label="Pick from the calendar — Due Date"')
     expect(html).toMatch(/type="date"[^>]*value="2024-01-18"|value="2024-01-18"[^>]*type="date"/)
     // Kosong = kosong, bukan `dd/mm/yyyy` yang terbaca seperti nilai.
     expect(renderToStaticMarkup(<KotakTanggalKetik label="X" value="" onChange={() => undefined} />)).toContain('type="text" autoComplete="off" aria-label="X" title=')

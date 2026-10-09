@@ -127,7 +127,7 @@ const (
 // (`TREATYYEAR`) lewat `.TreatyYearID = TrtYr.ID`:
 //
 //	B .TreatyGroupID     = Param.TreatyGroupID
-//	C .TreatyDescID      = "10001"   (semua pemanggil mengirim nilai ini)
+//	C .TreatyDescID      = Param.TreatyDescID
 //	D .ParentReinsTypeID = "00"
 //	E .ReinsTypeName     Contains "TRT"   A .ReinsTypeName = "ORS"
 //	F TrtYr.StartDate   <= Param.StartDate
@@ -135,20 +135,32 @@ const (
 //	H .ReinsTypeID      != Param.ReinsTypeID
 //
 // ⭐ KEDELAPAN filter TANPA `pyUseNullIfEmpty` — parameter KOSONG membuat
-// filternya DILEWATI Pega (pembaca bersama `filter_diabaikan`). Itu bukan
-// teori di sini: dropdown Reins Type spreading manual mengirim
-// `TempSprd.TreatyGroupID`, yang tidak pernah diisi untuk baris Share
-// Non-Prop — jadi B dilewati dan daftarnya induk SEMUA Treaty Group. Dan H
-// hanya dikirim kedua dropdown (`"10246"` = `2025 XOL TRT`); pencarian di
-// `FetchQSfromMasterXOL` / `SetSpreadingXOL` tidak mengirimnya.
+// filternya DILEWATI Pega (pembaca bersama `filter_diabaikan`), dan di sini
+// itu menentukan isi dropdown, bukan sekadar teori. Parameter yang
+// BENAR-BENAR dikirim tiap pemanggil, dibaca dari ekspornya:
+//
+//	Section/Share.xml        (Spreading Type XOL)
+//	    StartDate · ReinsTypeID="10246"        → B dan C DILEWATI
+//	Section/DetailShare.xml  (Spreading Type Prop)
+//	    TreatyDescID="10001" · StartDate · ReinsTypeID="10246"
+//	                                           → B DILEWATI
+//	Activity/FetchQSfromMaster(XOL), SetSpreadName, SetSpreadingXOL
+//	    nol dari B, C, H                       → ketiganya dilewati
+//
+// ⛔ NOL pemanggil mengirim `TreatyGroupID`. Sampai 8 Oktober 2026 layar
+// mengirimkannya (Treaty Group baris yang sedang dibuka) dan `TreatyDescID`
+// dipakukan `'10001'` untuk SEMUA pemanggil — dua penyempitan yang tidak ada
+// di Pega, dan dropdown `Spreading Type` karena itu terbaca KOSONG: laporan
+// pemilik proses *"kenapa tidak bisa milih"*.
 //
 // ⚠️ `NVL(…, '~')` pada H: `!=` Pega atas nilai kosong MELOLOSKAN baris,
 // `<>` Oracle atas `NULL` menolaknya.
 //
 // ⚠️ Tanggal dibandingkan sebagai TEKS `YYYYMMDD` — bentuk `COMMENCEMENT`
 // dan `TREATYYEAR.STARTDATE/ENDDATE` di basis data (terukur 7 Oktober 2026).
-func SaringanIndukSpreading(treatyGroupID, tanggalMulai, kecuali string) (string, []any) {
-	w := `p.TREATYDESCID = '10001' AND p.PARENTREINSTYPEID = '00' ` +
+func SaringanIndukSpreading(treatyGroupID, treatyDescID, tanggalMulai, kecuali string) (string, []any) {
+	// D, E dan A tidak berparameter — ketiganya selalu berlaku.
+	w := `p.PARENTREINSTYPEID = '00' ` +
 		`AND (INSTR(p.REINSTYPENAME, 'TRT') > 0 OR p.REINSTYPENAME = 'ORS')`
 	arg := []any{}
 	tambah := func(klausa string, nilai string) {
@@ -158,7 +170,15 @@ func SaringanIndukSpreading(treatyGroupID, tanggalMulai, kecuali string) (string
 	if treatyGroupID != "" {
 		tambah("p.TREATYGROUPID = :%d", treatyGroupID)
 	}
+	// ⚠️ C BERPARAMETER, bukan konstanta: Prop mengirim `"10001"`, XOL tidak
+	// mengirim apa pun. Memakukannya menyaring XOL dengan filter yang di Pega
+	// dilewati.
+	if treatyDescID != "" {
+		tambah("p.TREATYDESCID = :%d", treatyDescID)
+	}
 	if tanggalMulai != "" {
+		// Bentuk kabel / kotak tanggal dinormalkan ke `YYYYMMDD` (`tanggalRD`).
+		tanggalMulai = tanggalRD(tanggalMulai)
 		tambah("t.STARTDATE <= :%d", tanggalMulai)
 		tambah("t.ENDDATE >= :%d", tanggalMulai)
 	}
@@ -177,7 +197,7 @@ const IndukDikecualikanDropdown = "10246"
 //
 // ⚠️ RD-nya TANPA urutan; di sini `ORDER BY p.ID` supaya "yang pertama"
 // tidak bergantung pada urutan fisik tabel.
-func (g *Gudang) BacaIndukSpreading(ctx context.Context, treatyGroupID, tanggalMulai, kecuali string) ([]models.SusunanSpreading, error) {
+func (g *Gudang) BacaIndukSpreading(ctx context.Context, treatyGroupID, treatyDescID, tanggalMulai, kecuali string) ([]models.SusunanSpreading, error) {
 	arrg, err := g.db.Qualify(TabelSusunanTreaty)
 	if err != nil {
 		return nil, err
@@ -186,7 +206,7 @@ func (g *Gudang) BacaIndukSpreading(ctx context.Context, treatyGroupID, tanggalM
 	if err != nil {
 		return nil, err
 	}
-	w, arg := SaringanIndukSpreading(treatyGroupID, tanggalMulai, kecuali)
+	w, arg := SaringanIndukSpreading(treatyGroupID, treatyDescID, tanggalMulai, kecuali)
 	q := fmt.Sprintf(`SELECT p.REINSTYPEID, p.REINSTYPENAME, p.PARENTREINSTYPEID, p.TREATYYEARID, p.PCT, p.RP, p.USD, p.TREATYYEAR
 		FROM %s p JOIN %s t ON t.ID = p.TREATYYEARID
 		WHERE %s ORDER BY p.ID FETCH FIRST 500 ROWS ONLY`, arrg, tahun, w)

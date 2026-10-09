@@ -306,6 +306,7 @@ func RangkaiLayer(limits, detail, cob, ukur []barisPendaratan) []models.BarisLay
 //	│ ├ COBList (T_TREATY_LIMIT_COB)
 //	│ ├ AchievementLists (T_TREATY_LIMIT_ACHIEVEMENT)
 //	│ ├ SpreadingList (T_TREATY_LIMIT_SPREADING)              — 449
+//	│ │ └ BreakDownSprdList (T_TREATY_LIMIT_SPRD_BREAKDOWN)    — 454
 //	│ ├ DeductionList (T_TREATY_LIMIT_DEDUCTION)              — 450
 //	│ ├ CurrencyList (T_TREATY_LIMIT_ACH_PARAM)               — 450
 //	│ └ IOOLimitList · RetentionList · CessionList · EPIList ·
@@ -381,7 +382,7 @@ func simpulPeta(b barisPendaratan, p Pendaratan) map[string]any {
 // tabelPohonLimits — urutan baca; kuncinya nama tabel.
 var tabelPohonLimits = []string{
 	"T_TREATY_LIMITS", "T_TREATY_LIMIT_DETAIL", "T_TREATY_LIMIT_COB",
-	"T_TREATY_LIMIT_ACHIEVEMENT", "T_TREATY_LIMIT_SPREADING", "T_TREATY_LIMIT_DEDUCTION",
+	"T_TREATY_LIMIT_ACHIEVEMENT", "T_TREATY_LIMIT_SPREADING", "T_TREATY_LIMIT_SPRD_BREAKDOWN", "T_TREATY_LIMIT_DEDUCTION",
 	"T_TREATY_LIMIT_ACH_PARAM", "T_TREATY_LIMIT_REINSTATEMENT", "T_TREATY_LIMIT_AMOUNT",
 	"T_TREATY_LIMIT_GROUP", "T_TREATY_LIMIT_GROUP_COB", "T_TREATY_LIMIT_MEASURE",
 }
@@ -450,7 +451,17 @@ func RangkaiPohonLimitsPeta(baris map[string][]barisPendaratan) []map[string]any
 	pGrp, _ := entriPeta("T_TREATY_LIMIT_GROUP")
 	cob := kelompokkan("T_TREATY_LIMIT_COB", baris["T_TREATY_LIMIT_COB"])
 	ach := kelompokkan("T_TREATY_LIMIT_ACHIEVEMENT", baris["T_TREATY_LIMIT_ACHIEVEMENT"])
-	sebar := kelompokkan("T_TREATY_LIMIT_SPREADING", baris["T_TREATY_LIMIT_SPREADING"])
+	// ⭐ 454 — baris spreading dirangkai di sini (bukan `kelompokkan`) karena
+	// tiap baris membawa ANAKNYA sendiri: `BreakDownSprdList`
+	// (`T_TREATY_LIMIT_SPRD_BREAKDOWN`, `IDINDUK` = ID baris spreading).
+	pSpr, _ := entriPeta("T_TREATY_LIMIT_SPREADING")
+	pecahan := kelompokkan("T_TREATY_LIMIT_SPRD_BREAKDOWN", baris["T_TREATY_LIMIT_SPRD_BREAKDOWN"])
+	sebar := map[int64][]map[string]any{}
+	for _, b := range baris["T_TREATY_LIMIT_SPREADING"] {
+		s := simpulPeta(b, pSpr)
+		s["BreakDownSprdList"] = isiAtauKosong(pecahan.biasa[b.ID])
+		sebar[b.Induk] = append(sebar[b.Induk], s)
+	}
 	deduksi := kelompokkan("T_TREATY_LIMIT_DEDUCTION", baris["T_TREATY_LIMIT_DEDUCTION"])
 	param := kelompokkan("T_TREATY_LIMIT_ACH_PARAM", baris["T_TREATY_LIMIT_ACH_PARAM"])
 	reinst := kelompokkan("T_TREATY_LIMIT_REINSTATEMENT", baris["T_TREATY_LIMIT_REINSTATEMENT"])
@@ -477,7 +488,7 @@ func RangkaiPohonLimitsPeta(baris map[string][]barisPendaratan) []map[string]any
 			// `.length` di atasnya.
 			sd["COBList"] = isiAtauKosong(cob.biasa[d.ID])
 			sd["AchievementLists"] = isiAtauKosong(ach.biasa[d.ID])
-			sd["SpreadingList"] = isiAtauKosong(sebar.biasa[d.ID])
+			sd["SpreadingList"] = isiAtauKosong(sebar[d.ID])
 			sd["DeductionList"] = isiAtauKosong(deduksi.biasa[d.ID])
 			sd["CurrencyList"] = isiAtauKosong(param.biasa[d.ID])
 			pasangLarikGabung(sd, amt, d.ID)

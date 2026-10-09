@@ -113,6 +113,9 @@ export const PENILAI_SYARAT: Readonly<Record<string, (m: Halaman) => boolean>> =
   ".SpreadingTypeID != ''": spreadingID(true),
   ".SpreadingTypeID == ''": spreadingID(false),
   ".SpreadingTypeID = ''": spreadingID(false),
+  // ⭐ 8 Oktober 2026 — panel `SpreadingTPDtl` (rincian baris spreading
+  // manual) tampil hanya bila baris itu sudah ber-Reins Type.
+  ".ReinsTypeID !=''": (m) => baris('ReinsTypeID')(m) !== '',
   ".SpreadingTypeXOL!=''": spreadingXOL(true),
   ".SpreadingTypeXOL !=''": spreadingXOL(true),
   ".SpreadingTypeXOL != ''": spreadingXOL(true),
@@ -120,8 +123,11 @@ export const PENILAI_SYARAT: Readonly<Record<string, (m: Halaman) => boolean>> =
   ".SpreadingTypeXOL =''": spreadingXOL(false),
   ".SpreadingTypeXOL==''": spreadingXOL(false),
   ".SpreadingTypeXOL = ''": spreadingXOL(false),
-  // Decimal kosong = 0 di aritmetika Pega (sama dengan `angka`).
-  '.Limit2 != 0': (m) => angka(baris('Limit2')(m)) !== 0,
+  // ⭐ 9 Oktober 2026 — satu-satunya pemakainya kolom Reinstatement Amount
+  // USD (@856176), yang SELALU tampil walau Limit2 kosong/0: layar Pega
+  // produksi tetap menampilkannya (keputusan pemakai; sama dengan Treaty In
+  // `TabLimitsNonProp`). Aturan XML-nya: `angka(baris('Limit2')(m)) !== 0`.
+  '.Limit2 != 0': () => true,
 
   // ---------------------------------------------------------------------
   // ⭐ 7 Oktober 2026 — SYARAT AKSI (`pyActionConditions`), teks

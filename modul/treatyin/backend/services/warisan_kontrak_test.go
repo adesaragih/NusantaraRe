@@ -177,3 +177,43 @@ func TestAdaDiJSONTidakPernahNil(t *testing.T) {
 		t.Error("AdaDiJSON nil")
 	}
 }
+
+// ⛔ TAB EVENT LIMITS TERISI — celah yang ditutup 8 Oktober 2026.
+//
+// `T_TREATY_HAZARD_LIMIT` berdiri sejak migrasi `446` dan Save menulisnya,
+// tetapi NOL jalur pernah membacanya kembali: tab Event Limits (Non-Prop)
+// selalu kosong walau kontraknya punya nilai.
+//
+// ⚠️ Yang membuatnya bertahan: komentar di `TabEventLimits.tsx` menyatakan
+// "belum ada kolom pendaratan yang memuatnya" — benar saat ditulis, dan
+// kedaluwarsa sejak `446`.
+func TestBatasBahayaMasukPenampung(t *testing.T) {
+	g := &gudangTiruan{kontrakWarisan: kontrakWarisanUji()}
+	g.batasBahaya = map[string]string{
+		"RSMDLimit": "500000000000", "CurrencyRSMD": "IDR",
+		"Earthquake": "250000000000", "CurrencyEarthquake": "IDR",
+		"FloodJab": "100000000000", "CurrencyFloodJab": "IDR",
+		"FloodNation": "75000000000", "CurrencyFloodNat": "IDR",
+		// ⭐ Kedua batas Co-Ins tinggal di tabel yang sama.
+		"MaxCoGroup": "40", "MaxCoNonGroup": "25",
+	}
+	k, err := services.LayananDengan(g).BacaKontrakWarisan(context.Background(), pelakuAda, "1000797")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for kunci, mau := range g.batasBahaya {
+		if k.Penampung[kunci] != mau {
+			t.Errorf("penampung[%q] = %q, mau %q", kunci, k.Penampung[kunci], mau)
+		}
+	}
+}
+
+// ⭐ Dan tabel yang KOSONG bukan galat — kontrak yang belum didaratkan tetap
+// harus terbuka.
+func TestBatasBahayaKosongTidakMenggagalkan(t *testing.T) {
+	g := &gudangTiruan{kontrakWarisan: kontrakWarisanUji()}
+	g.batasBahaya = nil
+	if _, err := services.LayananDengan(g).BacaKontrakWarisan(context.Background(), pelakuAda, "1000797"); err != nil {
+		t.Fatalf("kontrak tanpa batas bahaya gagal dibuka: %v", err)
+	}
+}

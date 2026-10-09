@@ -338,8 +338,15 @@ func TestSaveTidakMemundurkanTanggaAkseptasi(t *testing.T) {
 	if d := kirim(services.AksiSubmit, ""); d["Position"] != models.PosisiSecHead {
 		t.Fatalf("sesudah Submit posisi %v, mau SecHead", d["Position"])
 	}
-	// ⛔ INILAH LANGKAH YANG DULU MERUSAK.
-	if _, err := l.SimpanKontrak(ctx, semua, services.MasukanSimpan{IDKontrak: "1001001"}); err != nil {
+	// ⛔ INILAH LANGKAH YANG DULU MERUSAK. Sejak 9 Oktober 2026 Save di
+	// tengah tangga DITOLAK bagi akun biasa (syarat `Edit` Pega) — hanya
+	// Force Edit divisi IT yang dapat, dan ia pun tidak boleh memundurkan.
+	if _, err := l.SimpanKontrak(ctx, semua, services.MasukanSimpan{IDKontrak: "1001001"}); err == nil {
+		t.Fatal("Save di posisi SecHead oleh akun non-IT tidak ditolak")
+	}
+	g.divisi = map[string]string{"ITDEV": services.DivisiIT}
+	it := inti.Pelaku{AkunID: "ITDEV"}
+	if _, err := l.SimpanKontrak(ctx, it, services.MasukanSimpan{IDKontrak: "1001001"}); err != nil {
 		t.Fatal(err)
 	}
 	if d := simpanBalik(); d["Position"] != models.PosisiSecHead {
@@ -428,5 +435,69 @@ func TestSemuaPemegangTetapBolehBertindak(t *testing.T) {
 		Aksi:          services.AksiAkseptasi, Pilihan: models.PilihAccept,
 	}); !errors.Is(err, services.ErrBukanPemegangPosisi) {
 		t.Errorf("bukan pemegang tidak ditolak: %v", err)
+	}
+}
+
+// ⭐ 9 Oktober 2026 — syarat tombol `Edit` Pega (`InputTreatyInOffer`
+// @268974) ditegakkan di Save: hanya pemegang workbasket Admin, berkas di
+// posisi Admin/kosong, status bukan Decline. Force Edit divisi IT lolos.
+func TestSaveHanyaAdminDiPangkalTanggaAtauIT(t *testing.T) {
+	kasus := []struct {
+		nama   string
+		pelaku inti.Pelaku
+		posisi string
+		status string
+		boleh  bool
+	}{
+		{"admin di posisi kosong", admin, "", "", true},
+		{"admin di posisi Admin (sesudah Reject)", admin, models.PosisiAdmin, "Reject", true},
+		{"admin saat berkas di SecHead", admin, models.PosisiSecHead, "Accept", false},
+		{"SecHead di posisinya sendiri", secHead, models.PosisiSecHead, "Accept", false},
+		{"Director di posisinya sendiri", director, models.PosisiDirector, "Accept", false},
+		{"SecHead pada draf Admin", secHead, "", "", false},
+		{"admin pada kontrak Decline", admin, "", models.StatusDecline, false},
+		{"IT saat berkas di DeptHead", inti.Pelaku{AkunID: "ITDEV"}, models.PosisiDeptHead, "Accept", true},
+		{"IT pada kontrak Decline", inti.Pelaku{AkunID: "ITDEV"}, "", models.StatusDecline, true},
+	}
+	for _, k := range kasus {
+		t.Run(k.nama, func(t *testing.T) {
+			g := gudangSimpan()
+			g.divisi = map[string]string{"ITDEV": services.DivisiIT}
+			g.dokumenTersimpan["1001001"]["Position"] = k.posisi
+			g.dokumenTersimpan["1001001"]["StatusAkseptasi"] = k.status
+			_, err := services.LayananDengan(g).SimpanKontrak(context.Background(), k.pelaku, services.MasukanSimpan{IDKontrak: "1001001"})
+			if k.boleh && err != nil {
+				t.Fatalf("mau boleh, dapat %v", err)
+			}
+			if !k.boleh && err == nil {
+				t.Fatal("mau ditolak, ternyata tersimpan")
+			}
+			if k.boleh && k.posisi != "" && k.posisi != models.PosisiAdmin {
+				if d := g.disimpan[len(g.disimpan)-1].Dokumen; d["Position"] != k.posisi {
+					t.Errorf("Force Edit memindah posisi ke %v, mau tetap %s", d["Position"], k.posisi)
+				}
+			}
+		})
+	}
+}
+
+// ⭐ 9 Oktober 2026 — Force Edit IT pada kontrak Resolve Complete: Save
+// diterima (menyimpang dari Pega, keputusan pemakai), status dan posisi
+// TIDAK berubah. Akun non-IT tetap ditolak.
+func TestForceEditITPadaResolveComplete(t *testing.T) {
+	g := gudangSimpan()
+	g.divisi = map[string]string{"ITDEV": services.DivisiIT}
+	g.dokumenTersimpan["1001001"]["StatusAkseptasi"] = models.StatusTuntas
+	g.dokumenTersimpan["1001001"]["Position"] = models.PosisiKosong
+	l := services.LayananDengan(g)
+	if _, err := l.SimpanKontrak(context.Background(), admin, services.MasukanSimpan{IDKontrak: "1001001"}); err == nil {
+		t.Fatal("Save Resolve Complete oleh akun non-IT tidak ditolak")
+	}
+	if _, err := l.SimpanKontrak(context.Background(), inti.Pelaku{AkunID: "ITDEV"}, services.MasukanSimpan{IDKontrak: "1001001"}); err != nil {
+		t.Fatal(err)
+	}
+	d := g.disimpan[len(g.disimpan)-1].Dokumen
+	if d["StatusAkseptasi"] != models.StatusTuntas || d["Position"] != models.PosisiKosong {
+		t.Errorf("status/posisi berubah: %v / %v", d["StatusAkseptasi"], d["Position"])
 	}
 }

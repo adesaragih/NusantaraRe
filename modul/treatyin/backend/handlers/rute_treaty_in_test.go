@@ -17,11 +17,13 @@ import (
 )
 
 type gudangTiruan struct {
-	isi     []models.Acuan
-	kontrak models.KontrakDenganVersi
-	warisan []models.Kontrak
-	adaQS   bool
-	galat   error
+	// batasBahaya - medan akar `T_TREATY_HAZARD_LIMIT` (tab Event Limits).
+	batasBahaya map[string]string
+	isi         []models.Acuan
+	kontrak     models.KontrakDenganVersi
+	warisan     []models.Kontrak
+	adaQS       bool
+	galat       error
 	// Tiket 40 - nil berarti versinya yang pertama.
 	versiDasar *models.VersiKontrak
 	// Tiket 42.
@@ -307,7 +309,7 @@ func (_ gudangTiruan) BacaSharePendaratan(_ context.Context, _ string) (models.S
 	return models.SharePendaratan{}, nil
 }
 
-func (_ gudangTiruan) BacaIndukSpreading(_ context.Context, _, _, _ string) ([]models.SusunanSpreading, error) {
+func (_ gudangTiruan) BacaIndukSpreading(_ context.Context, _, _, _, _ string) ([]models.SusunanSpreading, error) {
 	return []models.SusunanSpreading{}, nil
 }
 
@@ -351,6 +353,11 @@ func (g gudangTiruan) BacaLimitsAkarPendaratan(_ context.Context, _ string) (mod
 	return models.LimitsAkar{}, nil
 }
 
+// BacaBatasBahaya - medan akar `T_TREATY_HAZARD_LIMIT` (tab Event Limits).
+func (g gudangTiruan) BacaBatasBahaya(_ context.Context, _ string) (map[string]string, error) {
+	return g.batasBahaya, nil
+}
+
 func (g gudangTiruan) BacaTotalPenampung(_ context.Context, _ string) (map[string][]map[string]any, error) {
 	return map[string][]map[string]any{}, nil
 }
@@ -365,6 +372,12 @@ func (g gudangTiruan) BacaRevisiPendaratan(_ context.Context, _ string) (reposit
 }
 
 func (g gudangTiruan) BacaKursTahunan(_ context.Context, _ string) ([]models.BarisKursWarisan, error) {
+	return nil, nil
+}
+
+func (g gudangTiruan) DivisiAkun(context.Context, string) (string, error) { return "", nil }
+
+func (g gudangTiruan) BacaKursKontrak(_ context.Context, _, _ string) ([]models.BarisKursWarisan, error) {
 	return nil, nil
 }
 

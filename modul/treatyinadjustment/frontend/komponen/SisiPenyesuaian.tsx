@@ -11,7 +11,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-import { Area, Field, Panel, Pilih, StripTab } from '../../../../inti/frontend/components/ui/dasar'
+import { Area, Field, Panel, StripTab } from '../../../../inti/frontend/components/ui/dasar'
+import { PilihCari as Pilih } from '../../../../inti/frontend/components/ui/pilihSaring'
 import {
   ambilAgenTreatyIn,
   ambilIndukSpreadingTreatyIn,
@@ -85,7 +86,18 @@ function Medan({
   /** Pilihan medan `pilih` — `opsiKepala`. */
   opsi?: Opsi[]
 }) {
-  if (!ada) return <MedanTakAda label={spek.label} />
+  // ⭐ 8 Oktober 2026 — medan yang propertinya TIDAK ada di dokumen tetap
+  // memakai KONTROL ASLINYA bila ia dapat disunting: kosong dan dapat diisi,
+  // seperti kontrol Pega atas properti yang belum ada. Pemakai: *"seharusnya
+  // Is Pro Rate itu adalah check box"* dan *"seharusnya effective date itu
+  // tipenya edit"* — `IsProRate` hanya ada di 22 penyesuaian, `EDMEffective`
+  // hanya diisi `TreatyInSetEditPre` untuk Internal Edit (`EDMState = 1`);
+  // sisanya dulu jatuh ke kotak teks baca-saja `MedanTakAda`.
+  //
+  // `MedanTakAda` tinggal untuk medan BACA-SAJA (panel Old, mode lihat):
+  // di sana ia jujur menyatakan propertinya tidak ada di warisan. Kotak
+  // centang tetap kotak centang (tak tercentang) di kedua keadaan.
+  if (!ada && bacaSaja && spek.bentuk !== 'centang') return <MedanTakAda label={spek.label} />
   if (bacaSaja) {
     switch (spek.bentuk) {
       case 'area':
@@ -253,8 +265,17 @@ export default function SisiForm({
   const dapatSunting = !bacaSaja && mode === '0'
   const [dataOpsi, setDataOpsi] = useState<DataOpsi>({})
   const [pilihAgen, setPilihAgen] = useState<'reinsured' | 'source' | null>(null)
+  // ⛔ DIMUAT DI KEDUA MODE sejak 8 Oktober 2026.
+  //
+  // Dahulu daftar ini hanya diambil ketika panel dapat disunting. Akibatnya
+  // mode LIHAT menampilkan NILAI TERSIMPAN apa adanya — `Period` berbunyi
+  // `quarter`, bukan `Quarter Year` — dan panel Old (yang selalu baca-saja)
+  // tidak pernah menampilkan label sama sekali.
+  //
+  // ⚠️ Pega menampilkan TEKS PILIHAN di kedua mode; yang berbeda hanya boleh
+  // atau tidaknya diubah. Label adalah bagian dari membaca, bukan dari
+  // menyunting.
   useEffect(() => {
-    if (!dapatSunting) return
     let dibuang = false
     void Promise.allSettled([ambilOpsiLimitsTreatyIn(), ambilOpsiKepalaTreatyIn(), ambilAgenTreatyIn()]).then(([l, kp, ag]) => {
       if (dibuang) return
@@ -267,7 +288,7 @@ export default function SisiForm({
     return () => {
       dibuang = true
     }
-  }, [dapatSunting])
+  }, [])
   const k: KonteksKerangka = {
     // ⭐ Larik akar ikut — daftar `pageList` halaman SESI (Achievement).
     opsi: (sp, kunci, tempat) =>
@@ -314,7 +335,10 @@ export default function SisiForm({
     const kunciBaca = bacaSaja || m.selaluBacaSaja === true || (m.bacaSajaBila?.(halaman) ?? false)
     // ⭐ Medan yang diisi lewat jendela pencarian: nilai tampil + tombol
     // `Choose …` (sel 27/29, `TreatyIn.ViewState != 1`).
-    if (m.pilihAgen !== undefined && dapatSunting) {
+    // ⛔ `kunciBaca` IKUT menggerbangi tombolnya. Tanpa itu, medan
+    // ber-`selaluBacaSaja` tetap punya tombol `Choose …` — kotaknya terkunci
+    // dan jendela pencariannya tidak: pintu belakang, bukan pengecualian.
+    if (m.pilihAgen !== undefined && dapatSunting && !kunciBaca) {
       return (
         <div key={`${m.kunci}-${i}`} className="field">
           <label className="field__label">{m.label}</label>

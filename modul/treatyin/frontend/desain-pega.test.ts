@@ -11,6 +11,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import {
+  EVENT_LIMITS,
   KOLOM_AKUMULASI,
   KOLOM_EGNPI,
   KOLOM_LIHAT_BERKAS,
@@ -140,16 +141,18 @@ describe('§6 RNM Share adalah SUB-TAB, dan nol tab dihapus', () => {
     expect(FORM).toContain('<StripTabNavigasi tab={daftar} aktif={tampil} onPilih={setSub} />')
   })
 
-  it('⛔ RNM Share TETAP di daftar tab — §6 melarang menghapusnya', () => {
-    expect(TAB_NON_PROPORSIONAL).toContain('RNM Share')
-    expect(TAB_NON_PROPORSIONAL).toHaveLength(11)
+  // ⛔ RALAT 8 Oktober 2026 — keputusan pemilik proses: *"di non prop tab RNM
+  // SHARE itu tidak ada"*. Larangan §6 ("nol tab dihapus") digantikan:
+  // `RNM Share` kini HANYA sub-tab di dalam `Share`, sesuai ekspor.
+  it('⛔ RNM Share BUKAN tab utama Non-Prop — hanya sub-tab Share', () => {
+    expect(TAB_NON_PROPORSIONAL as readonly string[]).not.toContain('RNM Share')
+    expect(TAB_NON_PROPORSIONAL).toHaveLength(10)
     expect(TAB_PROPORSIONAL).toHaveLength(10)
+    expect([...SUB_TAB_SHARE]).toEqual(['RNM Share'])
   })
 
-  it('cabang tab RNM Share masih merender sesuatu', () => {
-    // Tab yang dapat dipilih dan tidak merender apa pun adalah layar rusak.
-    expect(FORM).toContain("tabTampil === 'RNM Share'")
-    expect(FORM).toContain('<PanelRnmShare')
+  it('cabang tab utama RNM Share dicabut dari form', () => {
+    expect(FORM).not.toContain("tabTampil === 'RNM Share'")
   })
 
   it('gridnya SATU bentuk, dipakai dua tempat', () => {
@@ -182,8 +185,11 @@ describe('§4 permintaan perubahan — View File menjadi pop-up', () => {
     expect(LAMPIRAN.judulUnggah).toBe('ASM Attach Content')
     expect(LAMPIRAN.lampirkan).toBe('Attach')
     expect(FORM).toContain('bisaUnggah={bisaUbah || revisi}')
-    const iLihat = FORM.indexOf('{LAMPIRAN.lihatBerkas}')
-    expect(FORM.slice(iLihat - 220, iLihat)).toContain('setBerkasDilihat')
+    // Sejak 8 Okt 2026 sel View = kotak ikon (gambar Pega); label tombol di
+    // `aria-label`/`title`, handler `setBerkasDilihat` sesudahnya.
+    const iLihat = FORM.indexOf('title={LAMPIRAN.lihatBerkas}')
+    expect(iLihat).toBeGreaterThan(-1)
+    expect(FORM.slice(iLihat, iLihat + 400)).toContain('setBerkasDilihat')
   })
 
   it('penyaringnya memakai KODE kategori, bukan namanya', () => {
@@ -206,7 +212,16 @@ describe('§8 katalog kategori lampiran BERCABANG — gambar 24 lawan 42', () =>
   it('⛔ daftar nama TIDAK menutup pertanyaan kode↔nama', () => {
     // Urutan layarnya alfabetis, dan ronde 4 Oktober 2026 melarang keras
     // menyimpulkan kode dari urutan abjad.
-    expect(LAMPIRAN.namaBelumBerumah).toContain('PERTANYAAN-TERBUKA-KODE-KATEGORI-LAMPIRAN.md')
+    //
+    // ⛔ RUJUKAN DOKUMEN DIBUANG DARI TEKS LAYAR 8 Oktober 2026. Nama
+    // berkas `PERTANYAAN-TERBUKA-…md` ditulis untuk PENGEMBANG, dan
+    // `teks-layar.test.ts` memang melarang jeroan semacam itu sampai ke
+    // mata pemakai. Yang dijaga di sini tetap pokoknya: layar MENGAKU
+    // keempat nama itu belum dipastikan kodenya, bukan diam-diam
+    // menampilkannya seolah sudah.
+    expect(LAMPIRAN.namaBelumBerumah).toMatch(/not confirmed/i)
+    expect(LAMPIRAN.namaBelumBerumah).toContain('Letter of Acknowledgment')
+    expect(LAMPIRAN.namaBelumBerumah).not.toMatch(/\.md/)
   })
 })
 
@@ -317,8 +332,9 @@ describe('§24 desimal PER KOLOM, nol di ekor dipertahankan', () => {
 
 describe('§1 tab Limits — dua cabang, dua susunan dari ekspor', () => {
   it('puncaknya BERBEDA per cabang — Kind of Treaty lawan Layers', () => {
-    expect(FORM).toContain("judul={KOLOM_KIND_OF_TREATY[0]?.label ?? ''}")
-    expect(FORM).toContain('{LIMITS_NP.layers}')
+    // ⭐ 8 Oktober 2026 — kepala kolom grid Pega (`gridPega.tsx`).
+    expect(FORM).toContain("judul: KOLOM_KIND_OF_TREATY[0]?.label ?? ''")
+    expect(FORM).toContain('judul: LIMITS_NP.layers')
     expect(FORM).toContain('<TabLimitsNonProp')
     expect(FORM).toContain('<TabLimitsProp')
   })
@@ -331,8 +347,9 @@ describe('§1 tab Limits — dua cabang, dua susunan dari ekspor', () => {
   })
 
   it('⭐ tombol tab Limits HIDUP di mode Edit — rumus di services', () => {
-    expect(FORM).toContain('{LIMITS_NP.tambahLayer}')
-    expect(FORM).toContain('{LIMITS_NP.tambahGrup}')
+    // ⭐ 8 Oktober 2026 — kolom tombol grid Pega (`gridPega.tsx`).
+    expect(FORM).toContain('label: LIMITS_NP.tambahLayer')
+    expect(FORM).toContain('label: LIMITS_NP.tambahGrup')
     expect(FORM).toContain('{LIMITS_NP.perbaruiTotal}')
     expect(FORM).toContain('hitungLimitNP(')
   })
@@ -601,16 +618,18 @@ describe('§26 Add/Delete yang Pega tidak punya — dicabut', () => {
   it('⭐ Add/Delete Maximum Retention hidup di tab sendiri', () => {
     const RT = readFileSync(join(AKAR, 'components', 'TabRetensi.tsx'), 'utf8')
     expect(HAL).not.toContain('kolom={KOLOM_RETENSI}')
-    expect(RT).toContain('{RETENSI.tambah}')
-    expect(RT).toContain('{RETENSI.hapus}')
+    // ⭐ 8 Oktober 2026 — kolom tombol grid Pega (`gridPega.tsx`).
+    expect(RT).toContain('label: RETENSI.tambah')
+    expect(RT).toContain('label: RETENSI.hapus')
     expect(RT).not.toContain('bisaTambah={false}')
   })
 
   it('⭐ Add/Delete EGNPI hidup di tab sendiri', () => {
     const EG = readFileSync(join(AKAR, 'components', 'TabEgnpi.tsx'), 'utf8')
     expect(HAL).not.toContain('kolom={KOLOM_EGNPI}')
-    expect(EG).toContain('{EGNPI.tambah}')
-    expect(EG).toContain('{EGNPI.hapus}')
+    // ⭐ 8 Oktober 2026 — kolom tombol grid Pega (`gridPega.tsx`).
+    expect(EG).toContain('label: EGNPI.tambah')
+    expect(EG).toContain('label: EGNPI.hapus')
     expect(EG).not.toContain('bisaTambah={false}')
   })
 })
@@ -647,8 +666,8 @@ describe('§27 Co-Ins Scale — bentuk Pega (gambar 18 + tangkapan layar mode ub
   })
 
   it('teks tombol dari Pega yang berjalan, bukan dari XML — `pyLabel` keduanya kosong', () => {
-    expect(CO_INS_SCALE.tambah).toBe('Tambah')
-    expect(CO_INS_SCALE.hapus).toBe('Hapus')
+    expect(CO_INS_SCALE.tambah).toBe('Add')
+    expect(CO_INS_SCALE.hapus).toBe('Delete')
   })
 
   it('kosong berbunyi "No items" — `GridNoResultsOnLoad`, tanpa kartu kosong buatan kita', () => {
@@ -772,9 +791,18 @@ describe('§30 Event Limits Non-Prop — SATU set per kontrak, dari properti aka
     }
   })
 
-  it('⛔ kekosongannya DIKATAKAN "belum terjangkau" — 49 kontrak punya nilainya', () => {
-    expect(EV).toContain('EVENT_LIMITS.belumTerjangkau')
+  // ⛔ DIBALIK 8 Oktober 2026 — catatan "belum terjangkau" DICABUT, sebab
+  // pernyataannya sudah tidak benar: `T_TREATY_HAZARD_LIMIT` berdiri sejak
+  // migrasi `446`, Save menulisnya, dan sejak hari ini ada yang MEMBACANYA.
+  //
+  // ⚠️ Uji lama MENUNTUT catatan itu ada. Keterangan kedaluwarsa yang dijaga
+  // uji bertahan lebih lama daripada yang tidak dijaga — itulah sebab cacat
+  // ini hidup dua hari.
+  it('⛔ nol catatan "belum terjangkau" — nilainya sudah terbaca', () => {
+    expect(EV).not.toContain('belumTerjangkau')
     expect(EV).not.toContain('takAdaDiWarisan')
+    // Mode lihat menampilkan NILAINYA, bukan tanda pisah selamanya.
+    expect(EV).toContain('formatNumber(isi[b.nilai], 2)')
   })
 })
 
@@ -891,5 +919,53 @@ describe('§4 tab Information & Submit', () => {
     const i = FORM.indexOf("tabTampil === 'Information & Submit'")
     expect(i).toBeGreaterThan(0)
     expect(FORM.slice(i, i + 900)).not.toContain('KOLOM_CATATAN')
+  })
+})
+
+// ===========================================================================
+// §31 Tab `Event Limits` Non-Prop — TATA LETAK dari tangkapan layar Pega
+// ===========================================================================
+//
+// Permintaan pemilik proses 8 Oktober 2026: *"perbaiki semua design nya harus
+// sama seperti pega, di pega seperti ini tetapi pemilihan currency nya tetap
+// dropdown saja"*.
+//
+// Terukur dari tangkapan layarnya:
+//
+//   label      ~  90px   (dua baris untuk "Flood Limit (Jabodatebek)")
+//   mata uang  ~ 462px
+//   sela       ~  90px
+//   nilai      ~1200px
+describe('§31 Event Limits — tata letak mengikuti Pega', () => {
+  const EVCSS = readFileSync(join(__dirname, 'treatyin.css'), 'utf8')
+  const EVTSX = readFileSync(join(__dirname, 'components', 'TabEventLimits.tsx'), 'utf8')
+
+  it('⛔ kolom mata uang TIDAK lagi 4rem — kotak pilih tidak muat di sana', () => {
+    const i = EVCSS.indexOf('.treatyin .trin__ev-baris {')
+    expect(i).toBeGreaterThan(0)
+    const aturan = EVCSS.slice(i, EVCSS.indexOf('}', i))
+    expect(aturan).toContain('grid-template-columns: 9.5rem minmax(0, 0.3fr) minmax(0, 1fr)')
+    expect(aturan).not.toContain('4rem')
+  })
+
+  it('⛔ nilai TIDAK rata-kanan dan TIDAK berbatas lebar — keduanya bentuk kita sendiri', () => {
+    const i = EVCSS.indexOf('.treatyin .trin__ev-nilai {')
+    expect(i).toBeGreaterThan(0)
+    const aturan = EVCSS.slice(i, EVCSS.indexOf('}', i))
+    expect(aturan).not.toContain('text-align: right')
+    expect(aturan).not.toContain('max-width: 18rem')
+  })
+
+  it('⭐ mata uang TETAP dropdown, dan pilihan kosongnya berbunyi `Currency`', () => {
+    expect(EVTSX).toContain('<Pilih')
+    expect(EVTSX).toContain('kosong={EVENT_LIMITS.mataUangKosong}')
+    expect(EVENT_LIMITS.mataUangKosong).toBe('Currency')
+  })
+
+  it('⛔ `0,00` adalah BAYANGAN, bukan nilai — nol tidak boleh tertulis ke data', () => {
+    expect(EVTSX).toContain('placeholder={EVENT_LIMITS.nilaiKosong}')
+    expect(EVENT_LIMITS.nilaiKosong).toBe('0,00')
+    // Bentuk yang dilarang: memaksa nilai kosong menjadi nol.
+    expect(EVTSX).not.toMatch(/value=\{isi\[b\.nilai\] \|\| '0'\}/)
   })
 })

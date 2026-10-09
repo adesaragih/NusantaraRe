@@ -32,14 +32,17 @@
 
 import { Fragment, useState } from 'react'
 
-import { Panel } from '../../../../inti/frontend/components/ui/dasar'
+import { FieldAngka, Panel } from '../../../../inti/frontend/components/ui/dasar'
+import { formatNumber, formatPersen } from '../../../../inti/frontend/lib/format'
 import { hitungAngsuran, type Angsuran, type BarisAngsuranWarisan, type MasukanAngsuran, type NilaiShare } from '../api'
 import { useProperti } from '../halaman'
 import { ANGSURAN, KOLOM_RINCIAN_ANGSURAN } from '../labelsAngsuran'
 import type { ModeForm } from '../mode'
-import { selAngka } from './angka'
+import { angkaMurni, padankanDesimal, selAngka } from './angka'
 import { TombolNavigasi } from './navigasi'
+import { TataPegaBlok } from './tataPega'
 import { PemicuUbah, usePemicuUbah } from './pemicuUbah'
+import { saringAngka } from './saringAngka'
 import { KotakTanggalKetik } from './TanggalKetik'
 import { keSimpan, tanggalTampil } from './tanggalIso'
 
@@ -69,7 +72,23 @@ export function angsuranDariWarisan(baris: readonly BarisAngsuranWarisan[]): Ang
   return out
 }
 
-const uang = (v: string) => selAngka(['uang', 2], v)
+/**
+ * ⭐ DESIMAL MENURUT XML — permintaan pemakai 9 Oktober 2026 ("perbaiki
+ * format angka yang ada di tab installment"): `Amount` tampil mentah
+ * `10213025.1974774898103125`, dan Total ber-4 desimal.
+ *
+ * `Section/Installments`: `% Installment` (@81277) dan `Amount` (@91479)
+ * kontrol Number `pyDecimalPlaces` 2; `Total` (`AmountTotal`) 2; grid
+ * `TotalInstallmentNP` kolom Value 2; `% Total` (`PctTotal`) 4.
+ *
+ * ⛔ `selAngka(['uang', …])` memformat dengan `DESIMAL_UANG` (4) dan sengaja
+ * tidak memotong — aturan seluruh modul. Tab ini mengikuti XML-nya sendiri:
+ * dibulatkan ke 2 desimal untuk TAMPIL; nilai tersimpan tidak disentuh.
+ */
+const DESIMAL_ANGSURAN = 2
+const uang = (v: string) => padankanDesimal(formatNumber(v, DESIMAL_ANGSURAN), DESIMAL_ANGSURAN)
+const persenAngsuran = (v: string) =>
+  angkaMurni(v) ? padankanDesimal(formatPersen(v, DESIMAL_ANGSURAN), DESIMAL_ANGSURAN) : v
 
 export default function TabAngsuran({
   baris,
@@ -77,6 +96,8 @@ export default function TabAngsuran({
   edmState = '',
   edmJenisMaterial = '',
   mode = 'lihat',
+  commencement = '',
+  termination = '',
 }: {
   baris: readonly BarisAngsuranWarisan[]
   /** `TreatyIn.TotalShareNetNP` TERKINI — tab Share Non-Prop. */
@@ -84,6 +105,10 @@ export default function TabAngsuran({
   edmState?: string
   edmJenisMaterial?: string
   mode?: ModeForm
+  /** Commencement / Termination kepala TERKINI (bentuk simpan) — Due Date
+   *  dibagi rata dari Commencement (keputusan pemakai 9 Oktober 2026). */
+  commencement?: string
+  termination?: string
 }) {
   const [no, setNo] = useProperti('InstallmentNo', '')
   const [angsuran, setAngsuran] = useProperti<Angsuran[]>('Installment', () => angsuranDariWarisan(baris))
@@ -104,6 +129,8 @@ export default function TabAngsuran({
       edmState,
       angsuranLama: [],
       netPremium,
+      commencement,
+      termination,
     })
       .then((h) => {
         terima(h)
@@ -174,45 +201,51 @@ export default function TabAngsuran({
 
   return (
     <Panel judul={ANGSURAN.judul}>
-      <div className="trin__angsuran-kepala">
-        <div className="field">
-          <label className="field__label" htmlFor="trin-angsuran-no">
-            {ANGSURAN.jumlah}
-          </label>
-          <input
-            id="trin-angsuran-no"
-            className="field__input"
-            type="text"
-            inputMode="numeric"
-            value={no}
-            readOnly={terkunci}
-            onChange={(e) => {
-              setNo(e.target.value)
-            }}
-            // `change` (+ Enter) → `TreatyInSetValueInstallment` TANPA status.
-            onFocus={pemicuNo.masuk}
-            onBlur={pemicuNo.keluar}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !terkunci) nilai('', e.currentTarget.value)
-            }}
-          />
-        </div>
+      {/* `Inline grid quadruple` @118888: [ `Stacked with labels left`
+          @119186 Installment | Update Value ] — kolom 1 dan 2 dari empat. */}
+      <TataPegaBlok tata="g4">
+        <TataPegaBlok tata="kiri">
+          <div className="field">
+            <label className="field__label" htmlFor="trin-angsuran-no">
+              {ANGSURAN.jumlah}
+            </label>
+            <input
+              id="trin-angsuran-no"
+              className="field__input"
+              type="text"
+              inputMode="numeric"
+              value={no}
+              readOnly={terkunci}
+              onChange={(e) => {
+                setNo(saringAngka(e.target.value, true))
+              }}
+              // `change` (+ Enter) → `TreatyInSetValueInstallment` TANPA status.
+              onFocus={pemicuNo.masuk}
+              onBlur={pemicuNo.keluar}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !terkunci) nilai('', e.currentTarget.value)
+              }}
+            />
+          </div>
+        </TataPegaBlok>
         {bisaUbah && (
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            disabled={terkunci || sibuk}
-            onClick={() => {
-              nilai('update')
-            }}
-          >
-            {ANGSURAN.perbaruiNilai}
-          </button>
+          <div>
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              disabled={terkunci || sibuk}
+              onClick={() => {
+                nilai('update')
+              }}
+            >
+              {ANGSURAN.perbaruiNilai}
+            </button>
+          </div>
         )}
-      </div>
+      </TataPegaBlok>
 
       <div className="table-wrap">
-        <table className="trin__tabel">
+        <table className="trin__tabel trin__tabel--pega">
           <thead>
             <tr>
               <th scope="col" className="trin__buka-sel" aria-label={ANGSURAN.rincian} />
@@ -251,7 +284,7 @@ export default function TabAngsuran({
                 {buka.has(i) && (
                   <tr className="trin__rincian">
                     <td colSpan={2}>
-                      <table className="trin__tabel">
+                      <table className="trin__tabel trin__tabel--pega">
                         <thead>
                           <tr>
                             {KOLOM_RINCIAN_ANGSURAN.map((k) => (
@@ -302,7 +335,7 @@ export default function TabAngsuran({
                                       aria-label={KOLOM_RINCIAN_ANGSURAN[2]}
                                       value={r.WPC}
                                       onChange={(e) => {
-                                        ubahBaris(i, j, { WPC: e.target.value })
+                                        ubahBaris(i, j, { WPC: saringAngka(e.target.value, true) })
                                       }}
                                     />
                                   </PemicuUbah>
@@ -311,7 +344,7 @@ export default function TabAngsuran({
                               <td>{tanggalTampil(r.PaymentDate)}</td>
                               <td className="trin__angka">
                                 {terkunci ? (
-                                  selAngka(['persenShare', 2], r.InstallmentPct)
+                                  persenAngsuran(r.InstallmentPct)
                                 ) : (
                                   // `change` → SetTotalInstallment(status=editpercentage) — hanya bila berubah.
                                   <PemicuUbah
@@ -320,14 +353,14 @@ export default function TabAngsuran({
                                       totalHalaman(i, 'editpercentage', ubahBaris(i, j, { InstallmentPct: r.InstallmentPct }))
                                     }}
                                   >
-                                    <input
-                                      className="field__input"
-                                      type="text"
-                                      inputMode="decimal"
-                                      aria-label={KOLOM_RINCIAN_ANGSURAN[4]}
+                                    {/* Kontrol Number 2 desimal (@81277): berpemisah,
+                                        huruf ditolak, mentah saat diketik. */}
+                                    <FieldAngka
+                                      label=""
                                       value={r.InstallmentPct}
-                                      onChange={(e) => {
-                                        ubahBaris(i, j, { InstallmentPct: e.target.value })
+                                      desimal={DESIMAL_ANGSURAN}
+                                      onChange={(x) => {
+                                        ubahBaris(i, j, { InstallmentPct: x })
                                       }}
                                     />
                                   </PemicuUbah>
@@ -344,14 +377,13 @@ export default function TabAngsuran({
                                       totalHalaman(i, '', ubahBaris(i, j, { Amount: r.Amount }))
                                     }}
                                   >
-                                    <input
-                                      className="field__input"
-                                      type="text"
-                                      inputMode="decimal"
-                                      aria-label={KOLOM_RINCIAN_ANGSURAN[5]}
+                                    {/* Kontrol Number 2 desimal (@91479). */}
+                                    <FieldAngka
+                                      label=""
                                       value={r.Amount}
-                                      onChange={(e) => {
-                                        ubahBaris(i, j, { Amount: e.target.value })
+                                      desimal={DESIMAL_ANGSURAN}
+                                      onChange={(x) => {
+                                        ubahBaris(i, j, { Amount: x })
                                       }}
                                     />
                                   </PemicuUbah>
@@ -376,45 +408,49 @@ export default function TabAngsuran({
         </table>
       </div>
 
-      <div className="table-wrap trin__share-total">
-        <table className="trin__tabel">
-          <thead>
-            <tr>
-              <th scope="col">{ANGSURAN.totalAngsuran}</th>
-              <th scope="col">{ANGSURAN.nilai}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {total.length === 0 && (
+      {/* Wadah tanpa kepala @128066 (`Default` @128259): grid Total
+          Installment lalu tombol Update Total di bawahnya. */}
+      <TataPegaBlok tata="tumpuk">
+        <div className="table-wrap trin__share-total">
+          <table className="trin__tabel trin__tabel--pega">
+            <thead>
               <tr>
-                <td colSpan={2}>{ANGSURAN.tanpaBaris}</td>
+                <th scope="col">{ANGSURAN.totalAngsuran}</th>
+                <th scope="col">{ANGSURAN.nilai}</th>
               </tr>
-            )}
-            {total.map((t, i) => (
-              <tr key={i}>
-                <td>{t.Currency}</td>
-                <td className="trin__angka">{uang(t.Value)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {bisaUbah && (
-        <div className="trin__aksi">
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            disabled={terkunci || sibuk}
-            onClick={() => {
-              kirim({ aksi: 'total', status: '', angsuran, indeks: 0 }, (h) => {
-                setTotal(h.TotalInstallmentNP ?? [])
-              })
-            }}
-          >
-            {ANGSURAN.perbaruiTotal}
-          </button>
+            </thead>
+            <tbody>
+              {total.length === 0 && (
+                <tr>
+                  <td colSpan={2}>{ANGSURAN.tanpaBaris}</td>
+                </tr>
+              )}
+              {total.map((t, i) => (
+                <tr key={i}>
+                  <td>{t.Currency}</td>
+                  <td className="trin__angka">{uang(t.Value)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      )}
+        {bisaUbah && (
+          <div className="trin__aksi">
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              disabled={terkunci || sibuk}
+              onClick={() => {
+                kirim({ aksi: 'total', status: '', angsuran, indeks: 0 }, (h) => {
+                  setTotal(h.TotalInstallmentNP ?? [])
+                })
+              }}
+            >
+              {ANGSURAN.perbaruiTotal}
+            </button>
+          </div>
+        )}
+      </TataPegaBlok>
       {pesan.length > 0 && (
         <p className="trin__galat" role="alert">
           {pesan.join(' · ')}

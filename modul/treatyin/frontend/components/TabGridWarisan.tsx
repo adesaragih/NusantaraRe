@@ -62,7 +62,7 @@ export default function TabGridWarisan({
         </div>
       )}
       <div className="table-wrap">
-        <table className="trin__tabel">
+        <table className="trin__tabel trin__tabel--pega">
           <thead>
             <tr>
               {kolom.map((k) => (

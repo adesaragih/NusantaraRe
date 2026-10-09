@@ -62,7 +62,7 @@ export const LIMITS_PROP = {
    * (`BrowseReinsuranceType_RD`): nilai `.ID`, label `.Note`.
    */
   pilihKosong: 'Choose', // pyNoSelectionText LimitProportional
-  namaKembar: 'nama dipakai lebih dari satu kode',
+  namaKembar: 'name used by more than one code',
   qs: 'QS %', // @185962 `.QSPct` d2 — bila `.TreatyType = 'QUOTA SHARE'` @170234
   lines: 'Lines', // @228088 `.Surplus` d2 — bila jenis surplus @212267
   limit100: '100% Limit', // @283497

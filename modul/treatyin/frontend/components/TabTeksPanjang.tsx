@@ -1,11 +1,12 @@
 // ⛔ DIPINDAHKAN dari `pages/FormKontrakTreatyIn.tsx` 5 Oktober 2026 —
 // pemindahan MURNI, nol perubahan perilaku.
 
-import { Kosong, Panel } from '../../../../inti/frontend/components/ui/dasar'
+import { Panel } from '../../../../inti/frontend/components/ui/dasar'
 import type { TabTeksWarisan } from '../api'
 import { FORM_KONTRAK } from '../labels'
 import { bacaProperti, usePenampung, useProperti } from '../halaman'
 import type { ModeForm } from '../mode'
+import { SelKosongPega, TataPegaBlok } from './tataPega'
 
 /**
  * DT `TreatyInCopyConditions` — perilaku `change` `ExclusionsP` dan
@@ -85,6 +86,13 @@ export default function TabTeksPanjang({
           itu bertentangan dengan keputusan pemilik proses bahwa seluruh
           fungsi dapat dipakai di mode Edit. Kosong pun dapat diketik: tab
           yang menolak isian pertama tidak akan pernah terisi. */}
+      {/* ⭐ TATA LETAK PEGA (8 Oktober 2026) — `Inline grid double` dengan
+          SATU sel `pxTextArea`: kotak teks di separuh KIRI, separuh kanan
+          kosong. `Section/TreatyInTabsProportional.xml` L49386 (ExclusionsP)
+          dan L50813 (SpecialConditionsP); `TreatyInTabsNonProportional.xml`
+          L134068 / L135274 sama. */}
+      <TataPegaBlok tata="g2">
+      <div>
       {bisaUbah ? (
         <textarea
           className="field__input trin__teks-isian"
@@ -97,7 +105,9 @@ export default function TabTeksPanjang({
           onBlur={salinSyarat}
         />
       ) : isi === '' ? (
-        <Kosong pesan={FORM_KONTRAK.tanpaTeks} petunjuk={petunjukKosong} />
+        // ⭐ Bentuk Pega (8 Oktober 2026): `pxTextArea` baca-saja yang KOSONG —
+        // kotak teks tanpa isi, bukan ikon "tanpa teks".
+        <div className="trin__teks" tabIndex={0} aria-label={judul} title={petunjukKosong} />
       ) : (
         <>
           <span className="trin__teks-asal">
@@ -108,6 +118,9 @@ export default function TabTeksPanjang({
           </div>
         </>
       )}
+      </div>
+      <SelKosongPega />
+      </TataPegaBlok>
     </Panel>
   )
 }

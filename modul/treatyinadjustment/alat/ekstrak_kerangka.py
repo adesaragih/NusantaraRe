@@ -108,7 +108,62 @@ MATI = re.compile(
 )
 IDENTITAS = re.compile(r"OperatorID\.(pxInsName|pyUserName|pyUserIdentifier)")
 PENANDA = {"Title", "Mobile reveal", "Mobile dismiss", "Desktop dismiss", "Reveal", "New item", ""}
+
+# ⭐ 8 Oktober 2026 — TATA LETAK layout dinamis (`pyLayoutOtherFormat` tabel
+# SIMPLELAYOUT). Permintaan pemakai: posisi tiap tab sama dengan Pega. Skin
+# CSS Pega tidak diekspor; arti tiap format dari konvensi UI-Kit Pega dan
+# bukti ekspor (Total All Layers RNM Share = lima `Inline grid triple`).
+#   g2/g3/g4   `Inline grid double/triple/quadruple` — 2/3/4 kolom sama lebar
+#   t3070      `Inline 30 70 table` — pasangan [30% | 70%]
+#   t3070      juga `Inline grid 30 70` — RALAT 8 Oktober 2026: gambar Pega
+#              `design-treaty-in-gambar/05..08` (DetailLimits) menampilkan
+#              100% Limit · Retention · Cession sebagai TIGA BARIS [label 30%
+#              | grid 70%], bukan berdampingan.
+#   alir       `Inline`, `Inline middle`, `Inline labels left` — mengalir sebaris.
+#   kiri       `Stacked with labels left` — satu butir per baris, label kiri
+# `Default`/`Stacked`/kosong = bertumpuk (bawaan, tanpa `tata`).
+TATA_LAYOUT = {
+    "Inline grid double": "g2", "Inline grid triple": "g3", "Inline grid quadruple": "g4",
+    "Inline 30 70 table": "t3070", "Inline": "alir", "Inline middle": "alir",
+    "Inline labels left": "alir", "Inline grid 30 70": "t3070",
+    "Stacked with labels left": "kiri",
+}
+
+
+# Layout berkolom: sel tersembunyi (`1=2`, `Spacer`) dan sel tanpa isi TETAP
+# memakan slot — gambar Pega 05 (Treaty Group | Spacer, grid CoB turun ke baris
+# kedua) dan 22. Di layout lain sel seperti itu tidak meninggalkan apa pun.
+TATA_BERSLOT = {"g2", "g3", "g4", "t3070"}
+
+
+def tanpa_kosong(xs):
+    return [x for x in xs if x.get("t") != "kosong"]
+
+
+def tata_layout(c):
+    """Format tata letak Section `c` (rowdata `Embed-Harness-Section`) —
+    kode `TATA_LAYOUT`, atau "" bila bertumpuk biasa / bukan layout dinamis."""
+    for body in c.k("pySectionBody"):
+        for r in body.k("rowdata"):
+            if r.v("pyBodyType") != "SIMPLELAYOUT":
+                continue
+            for t in r.k("pyTable"):
+                kode = TATA_LAYOUT.get(t.v("pyLayoutOtherFormat"), "")
+                if kode:
+                    return kode
+    return ""
 LABEL_KOSONG = {"Text Input", "Spacer", "Button", "Checkbox", "Label", "Button Template", ""}
+
+# ⭐ 9 Oktober 2026 — `pyLabelFieldValue` yang berisi NAMA KONTROL bawaan
+# designer Pega, bukan label: layar Pega menampilkan `pyLabelPreview`-nya
+# (tangkapan pemakai rincian EGNPI: `Note`, bukan `Text Area`).
+LABEL_KONTROL = {"Text Area", "Dropdown"}
+
+# ⭐ 9 Oktober 2026 — sel `.pyTemplateRichTextEditor` berlabel = kotak SATUAN
+# baca-saja (tangkapan Pega rincian EGNPI: `Amount in IDR` [IDR] [nilai]).
+# Teksnya tidak ada di ekspor; diambil dari tangkapan, sama dengan layar
+# Treaty In (`labelsEgnpi.ts` `satuanIDR`).
+SATUAN_TEMPLAT = {"Amount in IDR": "IDR"}
 
 
 def syarat_sendiri(n):
@@ -380,6 +435,19 @@ def ikat(prop, sisi_lama):
 # Awalan halaman sesi yang kerangka bawa (lihat `Pembangkit.ikatan`).
 SESI = ("SearchData.", "FlagExcel.")
 
+# ⭐ Grid SPREADING MANUAL — lihat `Pembangkit.grid`. (Section, properti
+# larik) → Activity `change` selnya yang menandai grid itu:
+#   Share Prop   `DetailShare` `.SpreadingList`    (`.SpreadingTypeID == ''`)
+#                `SetSpreadName`, Add/Delete `AddDelSpreadingTreatyin` — 8 Okt 2026.
+#   Share NP     `Share` `.SpreadingListXOL`       (`.SpreadingTypeXOL == ''`)
+#                `SetSpreadingXOL`, Add/Delete `AddSpreadingXOL` — 9 Okt 2026.
+# Spreading BARU (manual) vs LAMA (bernama, dari master, baca-saja): Pega
+# memilih menurut Spreading Type kosong/terisi, di Prop dan NP sama.
+SEBAR_MANUAL = {
+    ("DetailShare", ".SpreadingList"): "SetSpreadName",
+    ("Share", ".SpreadingListXOL"): "SetSpreadingXOL",
+}
+
 
 class Pembangkit:
     def __init__(self, berkas, sisi_lama, korpus="", relatif=False):
@@ -442,6 +510,18 @@ class Pembangkit:
                     baris.append([c for cs in row.k("pyCells") for c in cs.k("rowdata")])
         kepala = baris[0] if baris else []
         badan = baris[1] if len(baris) > 1 else []
+        # ⭐ GRID SPREADING MANUAL (8 Oktober 2026) — `DetailShare` L16,
+        # `.SpreadingList` saat `.SpreadingTypeID == ''`. Pemakai: *"perbaiki
+        # spreading type nya samakan seperti yang di treaty in"*. Grid ini ber-
+        # `pyRowEditing = readOnly`, tetapi selnya BERAKSI (`SetSpreadName` saat
+        # Reins Type / Pct Share berubah), tombolnya `pxLink` (`Add` di kepala,
+        # `Delete` per baris → `AddDelSpreadingTreatyin`), dan rinciannya panel
+        # `pyEditAction = SpreadingTPDtl` (`pyEditingMode = readOnly`). Tiga
+        # aturan umum di bawah membuang ketiganya; di sini SAJA mereka
+        # dikecualikan — sama dengan layar Treaty In (`TabShareProp.tsx`).
+        penanda = SEBAR_MANUAL.get((self.berkas, prop))
+        manual = penanda is not None and any(penanda in json.dumps(aksi_ubah(c)) for c in badan)
+        tautan = lambda x: manual and x is not None and x.v("pyFormat") == "pxLink" and "pyTemplateInputBox" in x.v("pyValue")
         kol = {"kolom": [], "kunci": [], "lebar": [], "desimal": [], "format": [], "syaratSel": [], "atSel": [],
                "baca": [], "tombol": [], "tombolKepala": [], "pilihan": [], "aksiUbah": []}
         for i, c in enumerate(badan):
@@ -451,10 +531,10 @@ class Pembangkit:
                 self.buang(c, "kolom", f"penjaga mati: {sy}")
                 continue
             h = kepala[i] if i < len(kepala) else None
-            hk = h is not None and (h.v("pyFormat") == "pxButton" or "pyTemplateButton" in h.v("pyValue"))
+            hk = h is not None and (h.v("pyFormat") == "pxButton" or "pyTemplateButton" in h.v("pyValue") or tautan(h))
             hs = syarat_sendiri(h) if hk else []
             kol["tombolKepala"].append(tombol(h, hs) if hk and not any(MATI.search(x) for x in hs) else None)
-            if fmt == "pxButton" or "pyTemplateButton" in nilai:
+            if fmt == "pxButton" or "pyTemplateButton" in nilai or tautan(c):
                 # Kolom tombol baris (Delete/Hapus) — kuncinya kosong.
                 kol["kolom"].append("")
                 kol["kunci"].append("")
@@ -488,7 +568,10 @@ class Pembangkit:
         # "dapat disunting". Kolom TOMBOL baris (Delete) tidak tersentuh.
         mode = gp.v("pyRowEditing") if gp is not None else ""
         if mode in ("readOnly", "masterDetail"):
-            kol["baca"] = ["selalu" for _ in kol["baca"]]
+            # ⭐ Spreading manual: sel berkunci SENDIRI (`pyReadOnlyCondition`
+            # `TreatyIn.ViewState = '1'`) — lihat `manual` di atas.
+            if not manual:
+                kol["baca"] = ["selalu" for _ in kol["baca"]]
         g = {"t": "grid", "at": n.off, "prop": prop, "dari": dari, "larik": larik, "syarat": syarat, **kol}
         if mode:
             g["modeBaris"] = mode
@@ -499,7 +582,10 @@ class Pembangkit:
         if gp is not None and gp.v("pyRODetails") == "true":
             g["rincianBaca"] = True
         aksi = gp.v("pyEditAction") if gp is not None else ""
-        if gp is not None and gp.v("pyEditingMode") == "expandPane" and aksi:
+        # ⭐ Spreading manual: panel bentang `SpreadingTPDtl` walau
+        # `pyEditingMode = readOnly` (gambar Pega: ▾ baris → Spread · Currency ·
+        # Share (%) · Amount).
+        if gp is not None and (gp.v("pyEditingMode") == "expandPane" or manual) and aksi:
             sek = seksi_flowaction(self.korpus, aksi)
             if sek:
                 g["rincian"] = sek
@@ -513,8 +599,12 @@ class Pembangkit:
     def sel(self, c, syarat):
         nilai, fmt, typ = c.v("pyValue"), c.v("pyFormat"), c.v("pyType")
         label = c.v("pyLabelFieldValue")
+        if label in LABEL_KONTROL and c.v("pyLabelPreview").strip():
+            label = c.v("pyLabelPreview").strip()
         if fmt == "pxButton" or "pyTemplateButton" in nilai:
             return tombol(c, syarat)
+        if nilai == ".pyTemplateRichTextEditor" and label in SATUAN_TEMPLAT:
+            return {"t": "satuan", "at": c.off, "label": label, "teks": SATUAN_TEMPLAT[label], "syarat": syarat}
         if typ == "LABEL":
             if not nilai:
                 return None
@@ -541,6 +631,38 @@ class Pembangkit:
             m["aksiUbah"] = au
         return m
 
+    def slot(self, c):
+        """Isi Section `c` ber-layout BERKOLOM (`TATA_BERSLOT`) — SATU butir per
+        SEL tabel layout-nya, urut ekspor: sel kosong/tersembunyi menjadi
+        `kosong`, sel berbutir banyak dibungkus satu blok. Tanpa ini anak
+        Section tanpa format diratakan dan pasangan kolom bergeser (gambar Pega
+        05: label `Retention` + persen + `%` = SATU slot 30%)."""
+        sel = []
+        for body in c.k("pySectionBody"):
+            for r in body.k("rowdata"):
+                if r.v("pyBodyType") != "SIMPLELAYOUT":
+                    continue
+                for t in r.k("pyTable"):
+                    for rows in t.k("pyRows"):
+                        for row in rows.k("rowdata"):
+                            for cs in row.k("pyCells"):
+                                sel += cs.k("rowdata")
+        if not sel:
+            return self.jalan(c)
+        out = []
+        for x in sel:
+            satu = N("#sel", x.off, None)
+            satu.kids = [x]
+            isi = self.jalan(satu)
+            nyata = tanpa_kosong(isi)
+            if not nyata:
+                out.append({"t": "kosong", "at": x.off, "syarat": []})
+            elif len(nyata) == 1:
+                out.append(nyata[0])
+            else:
+                out.append({"t": "blok", "at": x.off, "judul": "", "syarat": [], "anak": nyata})
+        return out
+
     def jalan(self, n):
         out = []
         for c in n.kids:
@@ -561,10 +683,13 @@ class Pembangkit:
                 continue
             if c.par is not None and c.par.tag == "pyCells" and c.v("pyType") in ("FIELD", "LABEL"):
                 s = self.periksa(c, "sel")
-                if s is not None:
-                    b = self.sel(c, s)
-                    if b:
-                        out.append(b)
+                b = self.sel(c, s) if s is not None else None
+                if b:
+                    out.append(b)
+                else:
+                    # Slot kosong — dipertahankan HANYA oleh layout berkolom
+                    # (`TATA_BERSLOT`); induk lain membuangnya.
+                    out.append({"t": "kosong", "at": c.off, "syarat": []})
                 continue
             judul, kepala = c.v("pyTitle"), c.v("pyHeaderType")
             s = syarat_sendiri(c)
@@ -572,7 +697,7 @@ class Pembangkit:
                 s = self.periksa(c, "blok")
                 if s is None:
                     continue
-                anak = self.jalan(c)
+                anak = self.slot(c) if tata_layout(c) in TATA_BERSLOT else tanpa_kosong(self.jalan(c))
                 # ⛔ `pyIncludeHeader = false` menyembunyikan kepala berjudul
                 # (`hiddden` tab Share, `hidden, reference` Section Share).
                 # BUKAN `pyContainerFormat = NOHEADER`: blok `Exclusions` dan
@@ -581,6 +706,8 @@ class Pembangkit:
                 tampil = judul if (judul not in PENANDA and kepala in ("BAR", "TABBED")
                                    and c.v("pyIncludeHeader") != "false") else ""
                 blok = {"t": "blok", "at": c.off, "judul": tampil, "syarat": s, "anak": anak}
+                if tata_layout(c):
+                    blok["tata"] = tata_layout(c)
                 # ⭐ 8 Oktober 2026 — layout group `pyHeaderType = TABBED`:
                 # blok-blok seperti ini yang BERURUTAN adalah satu strip tab
                 # (mis. sebelas tab `DetailLimits`: Event Limits … Achievement).
@@ -588,8 +715,30 @@ class Pembangkit:
                     blok["tab"] = True
                 out.append(blok)
                 continue
-            out += self.jalan(c)
+            # ⭐ 8 Oktober 2026 — layout dinamis tanpa judul/syarat yang
+            # tata letaknya BERMAKNA (kolom, aliran, label kiri) dibungkus blok
+            # tak berjudul; dulu diratakan dan posisinya hilang.
+            tata = tata_layout(c) if c.v("pxObjClass") == "Embed-Harness-Section" else ""
+            if tata:
+                anak = self.slot(c) if tata in TATA_BERSLOT else tanpa_kosong(self.jalan(c))
+                if tanpa_kosong(anak):
+                    out.append({"t": "blok", "at": c.off, "judul": "", "syarat": [], "anak": anak, "tata": tata})
+                continue
+            # Rowdata perantara (body, baris tabel) meneruskan slot kosong apa
+            # adanya; hanya Section yang DIRATAKAN yang membuangnya.
+            dalam = self.jalan(c)
+            out += tanpa_kosong(dalam) if c.v("pxObjClass") == "Embed-Harness-Section" else dalam
         return out
+
+
+def isi_section(p, t):
+    """Isi satu Section tab — dibungkus format layout-nya sendiri bila bermakna
+    (dulu hanya Section ANAK yang dibungkus)."""
+    tata = tata_layout(t)
+    if not tata:
+        return tanpa_kosong(p.jalan(t))
+    anak = p.slot(t) if tata in TATA_BERSLOT else tanpa_kosong(p.jalan(t))
+    return [{"t": "blok", "at": t.off, "judul": "", "syarat": [], "anak": anak, "tata": tata}]
 
 
 def tab(root, judul):
@@ -630,7 +779,7 @@ def bangkit(korpus):
         semua.append(p)
         for j in daftar:
             t = tab(r, j)
-            kerangka[f"{nama}#{j}"] = {"at": t.off, "syarat": syarat_sendiri(t), "isi": p.jalan(t)}
+            kerangka[f"{nama}#{j}"] = {"at": t.off, "syarat": syarat_sendiri(t), "isi": isi_section(p, t)}
         dibuang += p.dibuang
     # ⛔ Isi Retro (TreatyInFacultativeShareCalculation*, TreatyInFacultativeRetro)
     # dan WorkAttachments TIDAK dibangkitkan — keputusan §17 / panel sendiri.

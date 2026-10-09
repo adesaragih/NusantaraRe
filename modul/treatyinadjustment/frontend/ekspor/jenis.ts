@@ -160,6 +160,13 @@ export interface BlokKerangka {
    * digambar sebagai SATU strip tab (`KerangkaTab.tsx`, `GrupTab`).
    */
   tab?: true
+  /**
+   * Tata letak layout dinamis Pega (`pyLayoutOtherFormat`), 8 Oktober 2026:
+   * `g2`/`g3`/`g4` = `Inline grid double/triple/quadruple` (kolom sama lebar),
+   * `t3070` = `Inline 30 70 table`, `alir` = `Inline*` (mengalir sebaris),
+   * `kiri` = `Stacked with labels left`. Tanpa = bertumpuk.
+   */
+  tata?: 'g2' | 'g3' | 'g4' | 't3070' | 'alir' | 'kiri'
 }
 
 export type ButirKerangka =
@@ -167,8 +174,19 @@ export type ButirKerangka =
   | GridKerangka
   | MedanKerangka
   | { t: 'teks'; at: number; teks: string; syarat: readonly string[] }
+  /**
+   * Kotak SATUAN baca-saja berlabel — sel `.pyTemplateRichTextEditor`
+   * (rincian EGNPI: `Amount in IDR` [IDR]). Teksnya dari tangkapan Pega,
+   * `SATUAN_TEMPLAT` pembangkit (9 Oktober 2026).
+   */
+  | { t: 'satuan'; at: number; label: string; teks: string; syarat: readonly string[] }
   | TombolKerangka
   | { t: 'include'; at: number; nama: string; syarat: readonly string[] }
+  /**
+   * Slot kosong layout BERKOLOM (`g2`/`g3`/`g4`/`t3070`) — sel tersembunyi
+   * (`1=2`, `Spacer`) atau tanpa isi TETAP memakan slot di Pega (gambar 05).
+   */
+  | { t: 'kosong'; at: number; syarat: readonly string[] }
 
 export interface Kerangka {
   at: number

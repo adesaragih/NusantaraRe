@@ -26,6 +26,7 @@
 import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 
 import { Area, Field, FieldAngka, Kosong, Modal, StripTab } from '../../../../inti/frontend/components/ui/dasar'
+import { DESIMAL_TAK_DIBATASI } from '../../../../inti/frontend/lib/format'
 import { keInputTanggal } from '../../../../inti/frontend/lib/tanggalInput'
 import { catatLogAchievement, type BarisBersarang, type BarisLogAchievement, type OpsiLimitsTreatyIn, type SisiPenyesuaian } from '../api'
 import { golongan } from '../ekspor/golongan'
@@ -50,8 +51,10 @@ import {
 import { unduhAchievement } from './unduhAchievement'
 import { AreaBacaSaja, BelumDibangun, Centang, MedanTakAda, TanggalBacaSaja, angkaMurni, selNilai } from './medan'
 import { rantaiRumus, type HasilTerapan, type LingkupRumus, type SelRumus } from './rumus'
+import { cocokSaring, PilihSaring, type OpsiSaring } from '../../../../inti/frontend/components/ui/pilihSaring'
 import { denganNilaiKini, ikutTerpilih, type Opsi, type TempatOpsi } from './pilihan'
 import { kunciBerjalur, nilaiJalur, type LangkahJalur } from './baris'
+import { angkaBerformat, penyaringKetik } from './ketikAngka'
 import { FieldTanggalKetik, KotakTanggalKetik } from './TanggalKetik'
 
 /**
@@ -237,7 +240,23 @@ function rantaiUbah(
  * kini diulang SEKALI sesudah render berikutnya — dan hanya sesudah blur
  * itu, supaya nilai yang diubah RUMUS tidak memicu perilaku `change`.
  */
-function PemicuUbah({ nilai, onPicu, children }: { nilai: string; onPicu: () => void; children: ReactNode }) {
+function PemicuUbah({
+  nilai,
+  onPicu,
+  segera = false,
+  children,
+}: {
+  nilai: string
+  onPicu: () => void
+  /**
+   * Dropdown (`pxDropdown`): perilaku `change` berjalan BEGITU dipilih,
+   * seperti Pega — bukan menunggu fokus pindah. Laporan pemakai 9 Oktober
+   * 2026: Reins Type spreading dipilih, fokus masih di dropdown, dan
+   * `SetSpreadName` tak pernah jalan (rincian tetap `No items`).
+   */
+  segera?: boolean
+  children: ReactNode
+}) {
   const terakhir = useRef(nilai)
   const menyusul = useRef(false)
   const picu = () => {
@@ -266,6 +285,10 @@ function PemicuUbah({ nilai, onPicu, children }: { nilai: string; onPicu: () => 
       }}
       onKeyDown={(e) => {
         if (e.key === 'Enter') picu()
+      }}
+      onChange={() => {
+        // Dijalankan sesudah render nilai barunya (efek di atas).
+        if (segera) menyusul.current = true
       }}
     >
       {children}
@@ -304,25 +327,58 @@ function TombolGrid({ t, mati, onKlik, akses }: { t: TombolKerangka; mati: boole
  * Kontrol berdaftar — `pxDropdown` menjadi `<select>`, `pxAutoComplete`
  * menjadi isian ber-`datalist` (ketik bebas, pilihan dari daftar).
  */
-function Berdaftar({ format, nilai, label, opsi, onUbah }: { format: string; nilai: string; label: string; opsi: readonly Opsi[]; onUbah: (v: string) => void }) {
+/**
+ * Medan berdaftar — DAPAT DIKETIK UNTUK MENCARI.
+ *
+ * ⛔ Permintaan pemilik proses 8 Oktober 2026: *"kondisi saat melakukan
+ * pengetikannya seharusnya terlihat layaknya melakukan mencari, kemudian
+ * data yang keluar adalah yang 100% mirip dengan yang diketik"*.
+ *
+ * ⭐ `PilihSaring` (inti) — satu kotak: klik/panah membuka daftar penuh,
+ * mengetik menyaringnya, Enter/klik memilih. Daftarnya sudah ada di klien,
+ * jadi `jedaMs = 0` dan saringannya seketika.
+ *
+ * ⚠️ BUKAN isian bebas: ketikan tanpa memilih dikembalikan ke pilihan
+ * terakhir, jadi tidak ada keadaan setengah-terpilih yang sampai ke Save.
+ * Itu beda pokoknya dari `<datalist>` yang dibuang 8 Oktober 2026.
+ */
+function Berdaftar({
+  format,
+  nilai,
+  label,
+  opsi,
+  onUbah,
+  sembunyikanLabel = false,
+}: {
+  format: string
+  nilai: string
+  label: string
+  opsi: readonly Opsi[]
+  onUbah: (v: string) => void
+  sembunyikanLabel?: boolean
+}) {
   const idDaftar = useId()
+  const [kata, setKata] = useState('')
   if (format === 'pxDropdown') {
+    // Pilihan kosong berbunyi `Choose`, seperti dropdown Pega dan layar
+    // Treaty In; nilai di luar daftar tetap ditawarkan, bukan dijatuhkan.
+    const semua: OpsiSaring[] = [
+      { value: '', label: PENYESUAIAN.pilihKosong },
+      ...denganNilaiKini(opsi, nilai, PENYESUAIAN.diLuarDaftar).map((o) => ({ value: o.value, label: o.label })),
+    ]
     return (
-      <select
-        className="field__input"
+      <PilihSaring
+        label={label}
+        sembunyikanLabel={sembunyikanLabel}
         value={nilai}
-        aria-label={label}
-        onChange={(e) => {
-          onUbah(e.target.value)
+        teksTerpilih={semua.find((o) => o.value === nilai)?.label ?? PENYESUAIAN.pilihKosong}
+        opsi={semua.filter((o) => cocokSaring(o, kata))}
+        onCari={setKata}
+        onPilih={(o) => {
+          onUbah(o.value)
         }}
-      >
-        <option value="" />
-        {denganNilaiKini(opsi, nilai, PENYESUAIAN.diLuarDaftar).map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+        jedaMs={0}
+      />
     )
   }
   return (
@@ -354,16 +410,23 @@ function SelSunting({
   nilai,
   label,
   opsi,
+  saring,
+  berformat,
   onUbah,
 }: {
   format: string
   nilai: string
   label: string
   opsi?: readonly Opsi[]
+  /** Kotak TEKS berisi angka (`pxTextInput`) — `ketikAngka.ts`. */
+  saring?: (v: string) => string
+  /** Teks berisi angka pecahan → kotak angka BERFORMAT (`angkaBerformat`). */
+  berformat?: boolean
   onUbah: (v: string) => void
 }) {
   if (opsi !== undefined && (format === 'pxDropdown' || format === 'pxAutoComplete')) {
-    return <Berdaftar format={format} nilai={nilai} label={label} opsi={opsi} onUbah={onUbah} />
+    // Sel tabel: `<th>` sudah menamainya — label kedua menggandakan judul.
+    return <Berdaftar format={format} nilai={nilai} label={label} opsi={opsi} onUbah={onUbah} sembunyikanLabel />
   }
   if (format === 'pxCheckbox') {
     return (
@@ -410,13 +473,23 @@ function SelSunting({
   // 8 Oktober 2026). Kosong tetap kotak angka.
   if (format === 'pxNumber' && (nilai.trim() === '' || angkaMurni(nilai))) {
     return (
+      // ⛔ LABEL DISEMBUNYIKAN DI SEL — `<th>` kolomnya sudah menamainya,
+      // jadi label kedua menggandakan judul kolom: `Pct Share` tercetak
+      // dua kali bertumpuk di grid Spreading (laporan pemilik proses
+      // 8 Oktober 2026, layar Adjustment). Namanya pindah ke
+      // `aria-label`, jadi medannya tidak menjadi anonim.
       <FieldAngka
-        label={label}
+        label=""
+        ariaLabel={label}
         value={nilai}
         desimal={2}
         onChange={onUbah}
       />
     )
+  }
+  // ⭐ `pxTextInput` berisi uang/persen — berformat seperti kotak angka lain.
+  if (berformat === true && (nilai.trim() === '' || angkaMurni(nilai))) {
+    return <FieldAngka label={label} value={nilai} desimal={2} onChange={onUbah} />
   }
   // Sisanya TEKS — nilainya mentah, sebab bukan bilangan.
   return (
@@ -426,7 +499,7 @@ function SelSunting({
       value={nilai}
       aria-label={label}
       onChange={(e) => {
-        onUbah(e.target.value)
+        onUbah(saring === undefined ? e.target.value : saring(e.target.value))
       }}
     />
   )
@@ -465,7 +538,7 @@ export function GridEkspor({ g, k }: { g: GridKerangka; k: KonteksKerangka }) {
   return (
     <div className="tria__grid">
       <div className="table-wrap">
-        <table className="tria__tabel">
+        <table className={tampil.length === 2 && g.kunci[tampil[0] ?? -1] === 'Currency' && g.kunci[tampil[1] ?? -1] === 'Value' ? 'tria__tabel tria__tabel--nilai' : 'tria__tabel'}>
           {/* Lebar DARI ekspor sebagai perbandingan — tata letak responsif. */}
           <colgroup>
             {rincian !== undefined && <col className="tria__buka-kolom" />}
@@ -593,7 +666,10 @@ export function GridEkspor({ g, k }: { g: GridKerangka; k: KonteksKerangka }) {
                     )
                   }
                   const kunci = g.kunci[i] ?? ''
-                  const fmt = g.format[i] ?? ''
+                  // ⛔ Sel grid ikut: 42 dari 82 butir `pxAutoComplete`
+                  // kerangka ada di grid, dan menggantinya hanya di medan
+                  // meninggalkan sebagian besarnya tetap autocomplete.
+                  const fmt = formatTampil(g.format[i] ?? '')
                   const v = nilaiJalur(b, kunci)
                   // ⛔ Jalur berindeks (`RnmLimitListDisplay(1).Value`) hasil
                   // rumus — tidak disunting langsung.
@@ -606,6 +682,8 @@ export function GridEkspor({ g, k }: { g: GridKerangka; k: KonteksKerangka }) {
                         nilai={v}
                         label={g.kolom[i] ?? kunci}
                         opsi={opsi}
+                        saring={penyaringKetik(kunci, g.larik)}
+                        berformat={angkaBerformat(kunci, g.larik)}
                         onUbah={(nv) => {
                           // ⭐ `pySetValueOnSelect` — pasangan kode ikut diisi
                           // (`CurrencyID`, `TreatyGroupID`, `ClassOfBusinessID`).
@@ -626,6 +704,7 @@ export function GridEkspor({ g, k }: { g: GridKerangka; k: KonteksKerangka }) {
                         ) : (
                           <PemicuUbah
                             nilai={v}
+                            segera={fmt === 'pxDropdown' && opsi !== undefined}
                             onPicu={() => {
                               jalankan(setPesanSel)
                             }}
@@ -643,10 +722,23 @@ export function GridEkspor({ g, k }: { g: GridKerangka; k: KonteksKerangka }) {
                       </td>
                     )
                   }
+                  // ⛔ SEL BACA-SAJA MENAMPILKAN TEKS PILIHAN, bukan kode
+                  // tersimpan — cacat yang sama dengan medan (lihat
+                  // `MedanEkspor`), dan tertinggal di sel sampai 8 Oktober
+                  // 2026.
+                  //
+                  // Terlihat paling jelas di panel Old, yang SELALU baca-saja:
+                  // kolom `Note` grid Reinstatement berbunyi `asamount`, bukan
+                  // `Additional Premium as to amount`; begitu pula `Cover`,
+                  // `LayerType`, `CurrencyRelation`.
+                  //
+                  // ⭐ Nilai di luar daftar tampil APA ADANYA — tidak ditebak,
+                  // tidak dikosongkan.
                   const jenis = golongan(kunci, fmt)
+                  const labelSel = pilihanSel(g.pilihan[i] ?? null, kunci, k, b)?.find((o) => o.value === v)?.label
                   return (
                     <td key={i} className={jenis === 'teks' || jenis === 'tanggal' ? undefined : 'tria__angka'}>
-                      {selNilai(jenis, v, g.desimal[i] ?? null)}
+                      {labelSel ?? selNilai(jenis, v, g.desimal[i] ?? null)}
                     </td>
                   )
                 })}
@@ -705,6 +797,33 @@ function pilihanSel(sp: SumberPilihan | null | undefined, kunci: string, k: Kont
   return k.opsi?.(sp, kunci, { halaman, sisi: k.sisi })
 }
 
+/**
+ * `pyFormat` yang BENAR-BENAR dirender: `pxAutoComplete` → dropdown.
+ *
+ * ⛔ MENYIMPANG DARI EKSPOR, dan simpangannya MENYELURUH — 82 butir di
+ * seluruh kerangka, 42 di antaranya sel grid.
+ *
+ * Permintaan pemilik proses 8 Oktober 2026 datang dua kali: mula-mula
+ * *"di non prop maximum retention perbaiki, jangan auto complete, buat
+ * dropdown seperti yang lainnya"*, lalu — setelah panel itu saja yang
+ * diubah — *"cek di tab lainnya juga, masih banyak ternyata auto
+ * complete"*.
+ *
+ * ⚠️ Daftar sumbernya katalog pendek, dan itu yang membuat penggantian ini
+ * dapat dipertahankan: `BrowseCurrencyTreatyIn_RD`/`BrowseCurrency_RD` (46
+ * butir), `BrowseTreatyGroup_RD` (16), `BrowseReinsuranceType_RD` (6),
+ * `BrowseTreatyBusinessWOType_RD` (5), `BrowseBusiness(Group)_RD` (4),
+ * `associated` (3).
+ *
+ * ⛔ SATU yang patut diawasi: `BrowseAgentNusaRe_RD` (`Reinsurer Name`,
+ * 2 butir) — daftar reasuradur adalah yang terpanjang di antara semuanya.
+ * Ia IKUT diubah karena permintaannya menyeluruh, tetapi bila kelak terasa
+ * sukar dipakai, itulah butir yang pertama dikembalikan.
+ */
+export function formatTampil(format: string): string {
+  return format === 'pxAutoComplete' ? 'pxDropdown' : format
+}
+
 /** Medan bangkitan — kontrolnya menurut `pyFormat`; dapat disunting di mode Edit panel New. */
 export function MedanEkspor({ m, k }: { m: MedanKerangka; k: KonteksKerangka }) {
   const [pesan, setPesan] = useState<string[]>([])
@@ -726,16 +845,15 @@ export function MedanEkspor({ m, k }: { m: MedanKerangka; k: KonteksKerangka }) 
       tulis?.(m.kunci, nv)
       for (const [target, nilai] of Object.entries(ikut)) tulis?.(target, nilai)
     }
+    const fmt = formatTampil(m.format)
     const kontrol = (() => {
-      if (opsi !== undefined && (m.format === 'pxDropdown' || m.format === 'pxAutoComplete')) {
-        return (
-          <div className="field">
-            <label className="field__label">{label}</label>
-            <Berdaftar format={m.format} nilai={v} label={label} opsi={opsi} onUbah={ubah} />
-          </div>
-        )
+      if (opsi !== undefined && (fmt === 'pxDropdown' || fmt === 'pxAutoComplete')) {
+        // ⛔ TANPA pembungkus `.field` tambahan: `PilihSaring` sudah membawa
+        // `.field` berikut labelnya. Membungkusnya lagi menghasilkan dua
+        // label bertumpuk, cacat yang sama dengan sel angka 8 Oktober 2026.
+        return <Berdaftar format={fmt} nilai={v} label={label} opsi={opsi} onUbah={ubah} />
       }
-      switch (m.format) {
+      switch (fmt) {
         case 'pxTextArea':
           return <Area label={label} value={v} onChange={ubah} />
         case 'pxDateTime':
@@ -744,8 +862,29 @@ export function MedanEkspor({ m, k }: { m: MedanKerangka; k: KonteksKerangka }) 
         case 'pxCheckbox':
           return <Centang label={m.caption ?? label} nilai={v} bacaSaja={false} onUbah={ubah} />
         default:
-          // ⛔ Nilai MENTAH, tanpa format angka — lihat `SelSunting`.
-          return <Field label={label} value={v} onChange={ubah} />
+          // ⭐ KONTROL NUMBER HANYA MENERIMA ANGKA — permintaan pemakai
+          // 8 Oktober 2026 (*"inputan yg khusus angka tidak boleh input
+          // karakter lain"*). Ekspor memasang `pxNumber` pada medan ini;
+          // `FieldAngka` membuang huruf/simbol di tiap ketukan (`\D`),
+          // sama dengan sel grid (`SelSunting`). Desimal = `pyDecimalPlaces`
+          // ekspor; tak dinyatakan = tidak dibatasi (Pega `-999`), jadi
+          // tarif seperti `0,125` tidak terpotong. Nilai tersimpan yang
+          // bukan angka tetap tampil apa adanya di kotak teks.
+          if (m.format === 'pxNumber' && (v.trim() === '' || angkaMurni(v))) {
+            return <FieldAngka label={label} value={v} desimal={m.desimal ?? DESIMAL_TAK_DIBATASI} onChange={ubah} />
+          }
+          // Sisanya TEKS — nilainya mentah, sebab bukan bilangan.
+          // Teks berisi angka (`pxTextInput` — Amount, % RNM Share, WPC, …):
+          // huruf/simbol ditolak (`ketikAngka.ts`, 9 Oktober 2026).
+          // ⭐ Uang/persen ber-`pxTextInput` (Amount rincian Maximum Retention,
+          // % RNM Share, Limit, …) BERFORMAT seperti kotak angka lain.
+          if (angkaBerformat(m.kunci) && (v.trim() === '' || angkaMurni(v))) {
+            return <FieldAngka label={label} value={v} desimal={m.desimal ?? 2} onChange={ubah} />
+          }
+          {
+            const saring = penyaringKetik(m.kunci)
+            return <Field label={label} value={v} onChange={(nv) => { ubah(saring === undefined ? nv : saring(nv)) }} />
+          }
       }
     })()
     // ⭐ Perilaku `change` ekspor (`Installment` → TreatyInSetValueInstallment).
@@ -755,6 +894,7 @@ export function MedanEkspor({ m, k }: { m: MedanKerangka; k: KonteksKerangka }) 
       <>
         <PemicuUbah
           nilai={v}
+          segera={m.format === 'pxDropdown' && opsi !== undefined}
           onPicu={() => {
             jalankan(setPesan)
           }}
@@ -773,8 +913,30 @@ export function MedanEkspor({ m, k }: { m: MedanKerangka; k: KonteksKerangka }) 
       return <TanggalBacaSaja label={label} nilai={v} />
     case 'pxCheckbox':
       return <Centang label={m.caption ?? label} nilai={v} bacaSaja onUbah={tanpaAksi} />
-    default:
-      return <Field label={label} value={selNilai(golongan(m.kunci, m.format), v, m.desimal)} onChange={tanpaAksi} readOnly />
+    default: {
+      // ⛔ MODE LIHAT MENAMPILKAN TEKS PILIHAN, bukan nilai tersimpan.
+      //
+      // Keluhan pemilik proses 8 Oktober 2026 atas tab Reporting
+      // Period: `Period` berbunyi `quarter`, bukan `Quarter Year` — dan
+      // panel Old, yang SELALU baca-saja, tidak pernah menampilkan
+      // label sama sekali.
+      //
+      // ⚠️ Pega menampilkan teks pilihan di KEDUA mode; yang berbeda
+      // hanya boleh atau tidaknya diubah. Label bagian dari membaca.
+      //
+      // ⭐ Nilai di luar daftar tampil APA ADANYA — tidak ditebak, dan
+      // tidak dikosongkan.
+      const opsiBaca = pilihanSel(m.pilihan, m.kunci, k)
+      const label2 = opsiBaca?.find((o) => o.value === v)?.label
+      return (
+        <Field
+          label={label}
+          value={label2 ?? selNilai(golongan(m.kunci, m.format), v, m.desimal)}
+          onChange={tanpaAksi}
+          readOnly
+        />
+      )
+    }
   }
 }
 
@@ -1044,6 +1206,18 @@ function himpunTab(isi: readonly ButirKerangka[]): Ruas[] {
   return out
 }
 
+/**
+ * Kelas blok. ⭐ `tria__tanpa-label` = blok yang SEMUA isinya medan tanpa
+ * label — sel 70% pasangan `Inline grid 30 70` (`Amount` [USD] | [nilai]).
+ * CSS memakainya untuk melebarkan kotak nilai tanpa kolom label kosong
+ * (`:has()` tidak boleh bersarang, jadi penandanya di sini, 9 Oktober 2026).
+ */
+export function kelasBlok(b: BlokKerangka): string {
+  const dasar = b.tata === undefined ? 'tria__blok' : `tria__blok tria__tata--${b.tata}`
+  const tanpaLabel = b.anak.length > 0 && b.anak.every((a) => a.t === 'medan' && a.label === '' && (a.caption ?? '') === '')
+  return tanpaLabel ? `${dasar} tria__tanpa-label` : dasar
+}
+
 export function RenderKerangka({ isi, k }: { isi: readonly ButirKerangka[]; k: KonteksKerangka }) {
   return (
     <>
@@ -1054,7 +1228,7 @@ export function RenderKerangka({ isi, k }: { isi: readonly ButirKerangka[]; k: K
         switch (b.t) {
           case 'blok':
             return (
-              <div key={b.at} className="tria__blok">
+              <div key={b.at} className={kelasBlok(b)}>
                 {b.judul !== '' && <h5 className="tria__subjudul">{b.judul}</h5>}
                 <RenderKerangka isi={b.anak} k={k} />
               </div>
@@ -1063,12 +1237,18 @@ export function RenderKerangka({ isi, k }: { isi: readonly ButirKerangka[]; k: K
             return <GridEkspor key={b.at} g={b} k={k} />
           case 'medan':
             return <MedanEkspor key={b.at} m={b} k={k} />
+          case 'kosong':
+            // Slot sel tersembunyi/kosong layout berkolom — memakan tempat.
+            return <div key={b.at} className="tria__tata-kosong" aria-hidden="true" />
           case 'teks':
             return (
               <span key={b.at} className="tria__teks-sel">
                 {b.teks}
               </span>
             )
+          case 'satuan':
+            // Kotak satuan TETAP (`Amount in IDR` [IDR]) — tidak pernah diubah.
+            return <Field key={b.at} label={b.label} value={b.teks} readOnly onChange={tanpaAksi} />
           case 'tombol':
             return <TombolEkspor key={b.at} t={b} k={k} />
           case 'include': {

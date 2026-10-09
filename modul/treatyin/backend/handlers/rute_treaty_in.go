@@ -60,6 +60,7 @@ func daftarkan(mux *http.ServeMux, layanan func() *services.Layanan, adaDB func(
 	daftarkanLogAchievement(pasang)
 	daftarkanDaftarNegatifAgen(pasang)
 	daftarkanLampiran(pasang)
+	daftarkanUnduhSemuaLampiran(pasang)
 }
 
 // daftarkanAcuan - jalur baca keenam tabel acuan (tiket 15).

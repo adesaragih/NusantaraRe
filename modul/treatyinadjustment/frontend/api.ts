@@ -4,7 +4,7 @@
 // ⛔ Seluruh rute modul ini BACA. Jalur tulis (Save, Submit, Actions, Decline
 // offer) memakai rute modul Treaty In — lihat bagian TOMBOL TULIS di bawah.
 
-import { minta } from '../../../inti/frontend/klien'
+import { minta, mintaFormulir, unduhBerkasBeridentitas } from '../../../inti/frontend/klien'
 
 /** Prefix rute API modul ini - SAMA dengan `handlers.Prefix`. */
 export const PREFIX_TREATYINADJUSTMENT = '/api/treaty-in-adjustment'
@@ -148,6 +148,8 @@ export interface BarisPenyesuaian {
   tanggalBerakhir: string
   posisi: string
   statusAkseptasi: string
+  /** Kolom `POSITION` — syarat tampil tombol `Edit` daftar. Opsional: backend lama. */
+  kodePosisi?: string
 }
 
 /**
@@ -308,8 +310,8 @@ export interface SusunanSpreadingTreatyIn {
  * (`BrowseTreatyArrangement_ParentReinsMasterTrt`, parameter `TreatyGroupID`
  * dan `StartDate = TreatyIn.Commencement`). Sama dengan Treaty In.
  */
-export async function ambilIndukSpreadingTreatyIn(treatyGroupId: string, mulai: string): Promise<SusunanSpreadingTreatyIn[]> {
-  return minta<SusunanSpreadingTreatyIn[]>(`${PREFIX_TREATYIN}/warisan/spreading-induk`, { kueri: { treatyGroupId, mulai } })
+export async function ambilIndukSpreadingTreatyIn(treatyGroupId: string, mulai: string, treatyDescId = ''): Promise<SusunanSpreadingTreatyIn[]> {
+  return minta<SusunanSpreadingTreatyIn[]>(`${PREFIX_TREATYIN}/warisan/spreading-induk`, { kueri: { treatyGroupId, mulai, treatyDescId } })
 }
 
 /** `GET /api/treaty-in/warisan/opsi-kepala` — Bordereaux, Accounting Mode, Reporting Period. */
@@ -424,4 +426,89 @@ export type BarisLogAchievement = Record<
  */
 export async function catatLogAchievement(m: { idKontrak: string; baris: BarisLogAchievement[] }): Promise<{ disisipkan: number; dilewati: number }> {
   return minta<{ disisipkan: number; dilewati: number }>(`${PREFIX_TREATYIN}/achievement/log`, { metode: 'POST', badan: m })
+}
+
+// ---------------------------------------------------------------------------
+// PANEL ATTACHMENT LAYAR ADJUSTMENT — tombol kelola lampiran (8 Oktober 2026)
+//
+// Harness Adjustment memakai Section `WorkAttachments` yang SAMA dengan
+// Treaty In (`InputTreatyInAdjustment.xml` `pyInclude WorkAttachments`), jadi
+// tombolnya memanggil rute lampiran modul Treaty In lewat HTTP — bukan impor
+// (`inti/frontend/lapisan.guard.test.ts`). Pengenal penyesuaian bergaris
+// miring (`1000080/R01`): `encodeURIComponent` menjadikannya `%2F`, dan
+// `ServeMux` Go tetap mencocokkan `{id}` utuh.
+//
+// ⚠️ Pembacaan panel (Refresh) TETAP lewat rute BACA modul ini
+// (`ambilLampiran`): rute baca Treaty In memeriksa kepala kontrak Treaty In,
+// sedang penyesuaian berkepala di tabel penyesuaian.
+// ---------------------------------------------------------------------------
+
+/** Isi panel jawaban rute tulis Treaty In — `services.PanelLampiran`. */
+export interface PanelLampiranTreatyIn {
+  lampiran: BarisLampiranWarisan[]
+  kategoriLampiran: BarisKategoriLampiran[]
+}
+
+/** Nasib SATU berkas yang di-Attach. */
+export interface HasilBerkasUnggah {
+  nama: string
+  berhasil: boolean
+  pesan: string
+}
+
+/** Jawaban Attach: hasil per berkas, lalu panel yang dibaca ulang. */
+export interface HasilUnggahLampiran extends PanelLampiranTreatyIn {
+  berkas: HasilBerkasUnggah[]
+}
+
+/** Jalur rute lampiran Treaty In untuk satu pengenal (bergaris miring pun). */
+function jalurLampiran(idKontrak: string): string {
+  return `${PREFIX_TREATYIN}/kontrak/${encodeURIComponent(idKontrak)}/lampiran`
+}
+
+/**
+ * Tombol Attach modal `ASM Attach Content` (`TreatySaveAttachment`) —
+ * multipart, medan `kategori` dan `berkas`.
+ */
+export async function unggahLampiran(idKontrak: string, kodeKategori: string, berkas: readonly File[]): Promise<HasilUnggahLampiran> {
+  const isi = new FormData()
+  isi.append('kategori', kodeKategori)
+  for (const f of berkas) isi.append('berkas', f, f.name)
+  return mintaFormulir<HasilUnggahLampiran>(jalurLampiran(idKontrak), isi)
+}
+
+/** `Delete_act` — objek di penyimpanan, lalu baris lampirannya. */
+export async function hapusLampiran(idKontrak: string, idLampiran: string): Promise<PanelLampiranTreatyIn> {
+  return minta<PanelLampiranTreatyIn>(`${jalurLampiran(idKontrak)}/${encodeURIComponent(idLampiran)}/hapus`, {
+    metode: 'POST',
+    badan: {},
+  })
+}
+
+/** `ChangeDokument_Act("Save")` — kategori baru per baris. */
+export async function ubahKategoriLampiran(
+  idKontrak: string,
+  perubahan: readonly { id: string; kategori: string }[],
+): Promise<PanelLampiranTreatyIn> {
+  return minta<PanelLampiranTreatyIn>(`${jalurLampiran(idKontrak)}/kategori`, { metode: 'POST', badan: { perubahan } })
+}
+
+/** `DownloadAttachmentTreaty` — URL bertanda tangan (`office` = View Office Online). */
+export async function ambilTautanLampiran(idKontrak: string, idLampiran: string, office: boolean): Promise<{ url: string }> {
+  return minta<{ url: string }>(`${jalurLampiran(idKontrak)}/${encodeURIComponent(idLampiran)}/tautan`, {
+    kueri: office ? { office: '1' } : undefined,
+  })
+}
+
+/**
+ * Tautan nama berkas (`DownloadAttachmentTreaty`) — isi berkas DIALIRKAN
+ * backend dan diunduh lewat `fetch` beridentitas, bukan membuka URL.
+ */
+export async function unduhLampiran(idKontrak: string, idLampiran: string, namaBerkas: string): Promise<void> {
+  return unduhBerkasBeridentitas(`${jalurLampiran(idKontrak)}/${encodeURIComponent(idLampiran)}/isi`, namaBerkas)
+}
+
+/** Tombol `Download All` (`DownloadAll_Act`) — seluruh lampiran dalam `AllDocuments.zip`. */
+export async function unduhSemuaLampiran(idKontrak: string): Promise<void> {
+  return unduhBerkasBeridentitas(`${jalurLampiran(idKontrak)}/unduh-semua`, 'AllDocuments.zip')
 }

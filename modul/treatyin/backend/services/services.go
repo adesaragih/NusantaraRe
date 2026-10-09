@@ -137,10 +137,17 @@ type Gudang interface {
 	// `repository.LarikTotalPenampung`) — supaya isian yang di-Save tampil
 	// kembali tanpa Refresh.
 	BacaTotalPenampung(ctx context.Context, masterID string) (map[string][]map[string]any, error)
+	// Medan akar `T_TREATY_HAZARD_LIMIT` — isi tab Event Limits (Non-Prop)
+	// dan kedua batas Co-Ins. Tabelnya berdiri sejak migrasi `446` dan Save
+	// menulisnya; pembacanya baru ada 8 Oktober 2026.
+	BacaBatasBahaya(ctx context.Context, masterID string) (map[string]string, error)
 	// Tombol `Submit` sub-tab Achievement — `InsertToLogAchievement` ke
 	// `LOG_ACHIEVEMENT`, satu transaksi (keputusan pemakai 8 Oktober 2026).
 	CatatLogAchievement(ctx context.Context, masterID, operator string, baris []repository.BarisLogSiap) error
 	BacaKursTahunan(ctx context.Context, tahunTreaty string) ([]models.BarisKursWarisan, error)
+	// BacaKursKontrak — kurs MILIK kontrak (`T_TREATY_KURS`, migrasi 455);
+	// tanpa catatan → `BacaKursTahunan`.
+	BacaKursKontrak(ctx context.Context, masterID, tahunTreaty string) ([]models.BarisKursWarisan, error)
 
 	// Tab Co-Ins Scale - tabel pendaratan kesembilan, migrasi 432.
 	BacaSkalaKoasuransi(ctx context.Context, masterID string) ([]models.BarisSkalaKoasuransiWarisan, error)
@@ -182,7 +189,7 @@ type Gudang interface {
 	// `T_TREATY_FAC_*` (pendaratan), dan kedua RD spreading atas
 	// `PROPORTIONALARRG` + `TREATYYEAR` (master, BACA SAJA).
 	BacaSharePendaratan(ctx context.Context, masterID string) (models.SharePendaratan, error)
-	BacaIndukSpreading(ctx context.Context, treatyGroupID, tanggalMulai, kecuali string) ([]models.SusunanSpreading, error)
+	BacaIndukSpreading(ctx context.Context, treatyGroupID, treatyDescID, tanggalMulai, kecuali string) ([]models.SusunanSpreading, error)
 	BacaAnakSpreading(ctx context.Context, parentReinsTypeID, treatyYearID string) ([]models.SusunanSpreading, error)
 	// RD `Limit_MstTrt_RD` cabang PROP — kelima filternya, parameter kosong dilewati.
 	BacaAnakSpreadingProp(ctx context.Context, treatyYear, treatyGroupID, treatyDescID, parent, treatyYearID string) ([]models.SusunanSpreading, error)
@@ -203,6 +210,8 @@ type Gudang interface {
 	SimpanKontrak(ctx context.Context, r models.RencanaSimpan) (string, error)
 	// Pemegang workbasket (Kelola User) — `PositionUsername` jalur naik.
 	PemegangPosisi(ctx context.Context, workbasket string) ([]string, error)
+	// Divisi akun (`M_LOGIN_GO.DIVISION_CODE`) — `IT` memegang Force Edit.
+	DivisiAkun(ctx context.Context, akunID string) (string, error)
 	// Properti dokumen yang kolom/tabelnya BELUM terpasang (migrasi menunggu)
 	// — dilaporkan Save, tidak ditelan.
 	KunciBelumTerpasang(ctx context.Context, doc map[string]any) ([]string, error)

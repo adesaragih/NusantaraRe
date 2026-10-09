@@ -21,7 +21,7 @@ package services
 //	[4]     DT TreatyInSetEditPre — satu baris CommentList per EDMState;
 //	        EDMState 1: EDMEffective=Commencement; EDMState 3:
 //	        ActualValue.EGNPI=EGNPI, AddendumPremi="1"
-//	[5]     DT TreatyInSetEdit — ViewState 0 (1 bila RevisionState==1),
+//	[5]     DT TreatyInSetEdit — ViewState 0 (RevisionState dikosongkan),
 //	        Position="ReasTreatyInAdmin", IsEditData 0, PositionUsername,
 //	        StatusAkseptasi="", Comment=""
 //	[6]     TreatyInRevisi_post — [1] salin TreatyIn → OLDDATA, lalu
@@ -135,10 +135,37 @@ func SusunDraf(dok models.SisiPenyesuaian, m models.MasukanDraf, adaRevisi bool,
 	}
 
 	// [5] DT `TreatyInSetEdit`.
+	//
+	// ⛔ `RevisionState` TERSIMPAN TIDAK MENGUNCI LAYAR INI, dan itu ralat
+	// atas salah tafsir yang dilaporkan pemilik proses 8 Oktober 2026
+	// (*"kenapa setelah saya coba tidak bisa edit juga"*).
+	//
+	// `TreatyInSetEdit[2]` memang berbunyi `WHEN TreatyIn.RevisionState==1 →
+	// ViewState = 1`, dan dahulu itu kami baca sebagai kolom. Ia bukan:
+	// `SetTreatyIn_Act[7]` — satu-satunya yang menyetel properti itu —
+	// berprasyarat `param.revisionstate==1`, yakni PARAMETER TOMBOL.
+	// `Section/InputTreatyInOffer` memasangkannya berpasangan:
+	//
+	//	Edit  → viewstate=<kosong>  revisionstate=<kosong>
+	//	View  → viewstate=1         revisionstate=1
+	//
+	// Jadi `RevisionState` pada halaman berarti *"halaman ini dibuka lewat
+	// View sebuah revisi"*, bukan *"kontrak ini pernah direvisi"*. Kolom
+	// `REVISIONSTATE` (migrasi 448) menyimpan yang KEDUA — ia dipakai tangga
+	// akseptasi `modul/treatyin` — dan memakainya untuk mengunci layar ini
+	// adalah pemakaian ulang yang keliru.
+	//
+	// ⚠️ Akibat salah tafsir itu nyata: kontrak yang pernah lewat tombol
+	// Revision di layar Treaty In tersimpan ber-`REVISIONSTATE = 1`, maka
+	// SETIAP penyesuaian turunannya lahir terkunci dan Add Revision menjadi
+	// tombol yang tidak menghasilkan apa-apa.
 	s.Medan["ViewState"] = "0"
-	if s.Medan["RevisionState"] == "1" {
-		s.Medan["ViewState"] = "1"
-	}
+
+	// ⭐ Dokumen BARU, jadi `RevisionState` dikosongkan — pola `TreatyInCopy[1]`
+	// (`TreatyIn.RevisionState = ""`), satu-satunya tempat di korpus yang
+	// melahirkan dokumen dari dokumen lain. Tanpa ini nilai warisan master
+	// ikut terbawa ke revisi dan menguncinya di pembukaan berikutnya.
+	s.Medan["RevisionState"] = ""
 	s.Medan["Position"] = "ReasTreatyInAdmin"
 	s.Medan["IsEditData"] = "0"
 	s.Medan["PositionUsername"] = operator

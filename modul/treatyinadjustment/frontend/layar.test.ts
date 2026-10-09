@@ -183,13 +183,21 @@ describe('grid daftar penyesuaian — lebar dan pemenggalan', () => {
     expect(aturan).not.toContain('overflow-wrap: anywhere')
   })
 
-  it('⭐ lebar minimumnya = jumlah lebar kolom di ekspor, bukan angka karangan', () => {
+  // ⛔ RALAT 8 Oktober 2026 — *"perbaiki tampilan adjustment treaty"*: lebar
+  // minimum 1.551px + `table-layout: fixed` tetap memenggal `Complete`,
+  // `ADESAMUEL`, `NonProportional` di kolom sempit ekspor dan mendorong kolom
+  // pertama keluar layar. Lebar ekspor kini PERBANDINGAN acuan di `<col>`;
+  // tata letak `auto` menjamin tiap kolom minimal selebar kata terpanjangnya.
+  it('⭐ lebar ekspor tetap acuan `<col>`; tabel `auto` selebar layar — kata nol terpenggal', () => {
     // 136+134+93+93+141+106+137+135+160+149+83+72 = 1.439, + 2 x 56 = 1.551.
     const jumlah = LEBAR_DAFTAR.reduce((a, b) => a + b, 0) + 2 * LEBAR_TOMBOL_BARIS
     expect(jumlah).toBe(1551)
     const i = CSS2.indexOf('.treatyinadjustment .tria__tabel--daftar {')
     expect(i).toBeGreaterThan(0)
-    expect(CSS2.slice(i, CSS2.indexOf('}', i))).toContain(`min-width: ${jumlah}px`)
+    const aturan = CSS2.slice(i, CSS2.indexOf('}', i))
+    expect(aturan).toContain('table-layout: auto')
+    expect(aturan).not.toContain('table-layout: fixed')
+    expect(aturan).not.toContain('min-width')
     expect(HAL).toContain('tria__tabel tria__tabel--daftar')
   })
 

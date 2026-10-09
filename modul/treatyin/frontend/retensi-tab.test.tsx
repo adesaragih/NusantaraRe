@@ -123,11 +123,15 @@ describe('tab Maximum Retention — bentuk dari ekspor', () => {
     expect(html).not.toContain(TOTAL_RETENSI.tanpaBaris)
   })
 
-  it('⭐ nol baris → petunjuk, bukan tabel kosong', () => {
+  // ⭐ 8 Oktober 2026 — bentuk Pega: grid tetap tampil (kepala + `Add`),
+  // baris kosongnya satu sel `No items`.
+  it('⭐ nol baris → grid Pega berisi "No items" dan tombol Add', () => {
     const html = renderToStaticMarkup(
       <TabRetensi baris={[]} opsiAwal={OPSI} mode="ubah" />,
     )
-    expect(html).toContain(RETENSI.petunjukKosong)
+    expect(html).toContain('<td colSpan="5" class="trin__kosong-pega">No items</td>')
+    expect(html).toContain(`>${RETENSI.tambah}</button>`)
+    expect(html).not.toContain(RETENSI.petunjukKosong)
   })
 
   it('⛔ nol rumus di layar — seluruhnya lewat /hitung/retensi', () => {

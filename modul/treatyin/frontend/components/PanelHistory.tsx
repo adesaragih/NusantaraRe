@@ -17,7 +17,7 @@ export default function PanelHistory({ baris }: { baris: readonly { tanggal: str
   return (
     <Panel judul={LAMPIRAN.judulHistory}>
       <div className="table-wrap">
-        <table className="trin__tabel">
+        <table className="trin__tabel trin__tabel--pega">
           <thead>
             <tr>
               {KOLOM_HISTORY.map((k) => (

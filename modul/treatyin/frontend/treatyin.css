@@ -313,21 +313,24 @@
 }
 /* Tiga kolom teks panjang: MEMBUNGKUS, dan berbagi sisa lebar. */
 .treatyin .trin__k--namaKontrak {
-  width: 16%;
+  width: 14%;
 }
 .treatyin .trin__k--idAsalBisnis,
 .treatyin .trin__k--idCedant {
-  width: 11%;
+  width: 10%;
 }
 .treatyin .trin__tabel td {
   overflow-wrap: anywhere;
 }
 
 /* Sel lebih rapat: dengan 25 baris per halaman, bantalan bawaan 14px
-   membuat satu halaman menuntut dua layar penuh untuk dibaca. */
+   membuat satu halaman menuntut dua layar penuh untuk dibaca.
+
+   ⭐ `7px 12px` sejak 8 Oktober 2026 — satu bantalan untuk SELURUH grid
+   kedua modul (lihat blok "RUPA GRID SERAGAM" di akhir berkas). */
 .treatyin .trin__tabel td,
 .treatyin .trin__tabel th {
-  padding: 7px 10px;
+  padding: 7px 12px;
   vertical-align: top;
 }
 
@@ -556,6 +559,34 @@
 }
 .treatyin .trin__tabel .trin__aksi .btn {
   padding: 2px 8px;
+}
+
+/* ⛔ SEL tombol daftar kontrak — selnya sel, deretnya flex.
+   Lihat komentar di `DaftarKontrakTreatyIn.tsx`: `display: flex` pada `<td>`
+   mencabutnya dari model tabel, dan tombolnya melayang di puncak baris.
+
+   ⚠️ `vertical-align: middle` menimpa `top` bawaan `.trin__tabel td`: pada
+   baris setinggi tiga aris, tombol yang menempel di atas terbaca seperti
+   milik baris sebelumnya. */
+/* ⛔ KOLOM AKSI PUNYA LEBARNYA SENDIRI — dan itu sebab tombolnya terpotong.
+   Kesembilan kolom data berjumlah 87%, menyisakan 13% untuk tiga tombol
+   (`View` · `Copy` · `Revision`). Pada lebar layar biasa 13% ≈ 180px,
+   sementara ketiganya menuntut ≈ 230px — selnya ber-`white-space: nowrap`,
+   jadi kelebihannya MELUBER dan terpotong di tepi kartu.
+
+   ⭐ Sekarang 17%, diambil dari `namaKontrak` (16→14) dan kedua kolom
+   pengenal (11→10 masing-masing). Jumlahnya tetap 100%.
+
+   ⚠️ Nama kontrak memang kehilangan dua persen; ia MEMBUNGKUS dan tetap
+   terbaca, sementara tombol yang terpotong tidak dapat ditekan sama sekali. */
+.treatyin .trin__k--aksi {
+  width: 17%;
+}
+
+.treatyin .trin__tabel .trin__sel-aksi {
+  vertical-align: middle;
+  white-space: nowrap;
+  text-align: right;
 }
 
 /* Kartu daftar tidak menelan layar. `.table-wrap` inti memberi
@@ -896,11 +927,24 @@
   margin: 0;
 }
 
+/* ⛔ TATA LETAKNYA DARI LAYAR PEGA, terukur dari tangkapan layar pemilik
+   proses 8 Oktober 2026 — *"di pega seperti ini"*:
+
+     label   ~ 90px   (dua baris untuk "Flood Limit (Jabodatebek)")
+     mata uang ~462px
+     sela    ~ 90px
+     nilai   ~1200px
+
+   ⇒ label tetap, mata uang sekitar 0,3 bagian, nilai sisanya.
+
+   ⚠️ Bentuk sebelumnya memberi mata uang hanya `4rem` (64px) — cukup untuk
+   teks `IDR`, jauh dari cukup untuk KOTAK PILIH berikut anak panahnya, dan
+   itulah yang membuat barisnya terlihat berdesakan. */
 .treatyin .trin__ev-baris {
   display: grid;
-  grid-template-columns: minmax(12rem, max-content) 4rem 1fr;
-  gap: 0.2rem 0.75rem;
-  align-items: baseline;
+  grid-template-columns: 9.5rem minmax(0, 0.3fr) minmax(0, 1fr);
+  gap: 0.35rem 2.5rem;
+  align-items: center;
   font-size: 0.85rem;
 }
 
@@ -912,9 +956,23 @@
   margin: 0;
 }
 
+/* ⛔ NOL rata-kanan dan NOL batas lebar. Keduanya bentuk kita sendiri; di
+   Pega kotak nilainya membentang penuh dan isinya rata KIRI. */
 .treatyin .trin__ev-nilai {
-  text-align: right;
-  max-width: 18rem;
+  min-width: 0;
+}
+
+/* Kotak pilih mata uang mengisi selnya — jangan menyusut ke lebar teks. */
+.treatyin .trin__ev-mu,
+.treatyin .trin__ev-mu .field,
+.treatyin .trin__ev-nilai .field {
+  min-width: 0;
+}
+
+/* ⚠️ Label `Flood Limit (Jabodatebek)` memang dua baris di Pega. Rapat,
+   bukan dipaksa satu baris. */
+.treatyin .trin__ev-baris dt {
+  line-height: 1.25;
 }
 
 @media (max-width: 32rem) {
@@ -924,8 +982,9 @@
   .treatyin .trin__ev-baris dt {
     grid-column: 1 / -1;
   }
+  .treatyin .trin__ev-mu,
   .treatyin .trin__ev-nilai {
-    text-align: left;
+    grid-column: 1 / -1;
   }
 }
 
@@ -1946,10 +2005,26 @@
 
 /* Kotak isian: 42 → 34px, 15 → 14px. Tetap di atas 32px, batas sentuh yang
    nyaman; di bawah itu kotak tanggal berikonnya mulai terpotong. */
+/* ⛔ KOTAK ISIAN DIKECILKAN LAGI, 34px → 28px — permintaan pemilik proses
+   8 Oktober 2026: *"design inputan nya diubah seperti pega jangan kegedean"*.
+
+   Acuannya tangkapan layar Pega yang ia kirim hari ini (Event Limits,
+   Account Reporting Period): kotaknya pendek dan bergaris tipis, satu baris
+   isian jauh lebih rendah daripada tombol.
+
+   ⚠️ SUDUTNYA TIDAK DISENTUH, dan itu keputusan sadar. Permintaannya
+   berbunyi "jangan kegedean" — UKURAN. Menyudutkan kotak (membuang
+   `border-radius`) akan membatalkan permintaan sebelumnya yang justru
+   meminta bentuk lebih membulat ("jangan kotak kaku"), dan dua permintaan
+   yang saling membatalkan tanpa ditanyakan adalah cara tercepat berputar
+   empat ronde lagi.
+
+   ⚠️ `auto` untuk AREA TEKS tetap: area teks setinggi 28px memperlihatkan
+   satu baris kalimat dan memaksa pembacanya menggulir di dalam kotak. */
 .treatyin .field__input {
-  height: 34px;
-  font-size: 14px;
-  padding: 0 10px;
+  height: 28px;
+  font-size: 13px;
+  padding: 0 8px;
 }
 
 /* Area teks ikut, tetapi tidak sekecil kotak satu baris: isinya kalimat. */
@@ -1974,13 +2049,56 @@
   margin-bottom: 14px;
 }
 
-/* Sel tabel: 7px → 5px. Dengan puluhan baris kurs, dua piksel per sel
-   menghemat satu layar penuh. */
+/* ⛔ RALAT 8 Oktober 2026 — aturan ini DULU `5px 8px`.
+   Bunyinya: *"dua piksel per sel menghemat satu layar penuh"*. Benar, dan
+   ia membuat grid kurs berbeda dari seluruh grid lain — pemilik proses
+   meminta rupa yang SERAGAM, dan seragam menang atas dua piksel.
+
+   ⚠️ Dan aturan inilah yang BERLAKU: ia duduk 1.700 baris di bawah
+   aturan `.trin__tabel td` yang pertama, jadi ia menimpanya. Mengubah yang
+   di atas saja tidak mengubah apa pun di layar — jebakan yang nyaris
+   membuat perbaikan ini tidak terlihat. */
 .treatyin .trin__tabel td,
 .treatyin .trin__tabel th,
 .treatyin .trin__tabel-kurs td,
 .treatyin .trin__tabel-kurs th {
-  padding: 5px 8px;
+  padding: 7px 12px;
+}
+
+/* ---------------------------------------------------------------------
+   ⛔ SEL TABEL BUKAN BARIS FORMULIR — permintaan pemilik proses 8 Oktober
+   2026: *"perbaiki designya harus seperti yang ada di pega jangan kegedean"*.
+
+   Tingginya BUKAN dari bantalan sel, melainkan dari `.field` yang setiap
+   kontrol bawa dari formulir:
+
+     label kosong   ~17px  (`<label class="field__label">` TETAP sebuah blok
+                            walau isinya kosong — ia memakan baris penuh)
+     jarak bawah     16px  (`.field { margin-bottom: 16px }`)
+     kotak isian     34px
+     bantalan sel    10px
+     ------------------------------
+     ~77px per baris, dan itulah yang terlihat di layar.
+
+   ⭐ Keduanya dicabut DI DALAM tabel saja. Di formulir jarak itu benar dan
+   tetap; yang keliru hanya membawanya ke dalam baris grid.
+
+   ⚠️ `:empty` dipakai dengan sengaja alih-alih menyembunyikan SETIAP label:
+   grid yang suatu hari memakai label sungguhan tetap menampilkannya. Label
+   kosong adalah yang dikirim `label=""`, dan hanya itu yang hilang.
+   --------------------------------------------------------------------- */
+.treatyin .trin__tabel .field {
+  margin-bottom: 0;
+}
+
+.treatyin .trin__tabel .field__label:empty {
+  display: none;
+}
+
+/* Tombol baris mengikuti tinggi kotak isian (34px), bukan 36px bawaan —
+   selisih dua piksel membuat barisnya tampak tidak rata. */
+.treatyin .trin__tabel .btn--sm {
+  height: 28px;
 }
 
 /* ⛔ LEBAR KOLOM LABEL TIDAK DISENTUH — tetap 132px.
@@ -2162,6 +2280,58 @@
   --trin-netral-teks: #475467;
   --text-3: var(--trin-teks-redup);
 }
+
+/* =========================================================================
+   KERAPATAN PANEL LAMPIRAN — TERPISAH dari kerapatan isian tab
+   =========================================================================
+   Permintaan pemilik proses 8 Oktober 2026: *"dynamic layout antara table
+   attachment dengan inputan yg di tab dipisah jangan di samakan"*.
+
+   ⛔ Sampai hari ini keduanya satu blok. Setiap kali kotak isian tab
+   dikecilkan (42 → 34 → 28px), kontrol panel lampiran ikut mengecil tanpa
+   satu pun permintaan menyebutnya — dan itulah yang membuat tabel lampiran
+   terasa ikut-ikutan.
+
+   ⚠️ Keduanya memang berbeda urusan:
+
+     isian tab      FORMULIR DATA     puluhan medan sekaligus → KERAPATAN
+                                      yang menang; satu layar harus memuat
+                                      satu tab penuh.
+     panel lampiran PENGELOLA BERKAS  segelintir kontrol, dipakai sesekali,
+                                      dan salah tekan berarti berkas salah
+                                      terunggah → KETEPATAN TEKAN yang
+                                      menang.
+
+   ⭐ Panel ini karena itu TETAP di 34px — ukuran sebelum pengecilan
+   terakhir — dan tidak lagi ikut bergerak ketika isian tab berubah.
+   ========================================================================= */
+.treatyin .trin__lampiran .field__input {
+  height: 34px;
+  font-size: 14px;
+  padding: 0 10px;
+}
+
+.treatyin .trin__lampiran .btn--sm {
+  height: 34px;
+}
+
+/* ⛔ Dan grid lampiran TIDAK ikut bantalan grid seragam: barisnya memuat
+   nama berkas panjang berikut tombolnya, bukan angka satu baris. */
+.treatyin .trin__lampiran .trin__tabel td,
+.treatyin .trin__lampiran .trin__tabel th {
+  padding: 9px 12px;
+}
+
+/* Ralat pemakai 8 Oktober 2026 — *"mksd saya yg abu abu itu dimatikan itu
+   saat logo mouse saya menindih tab nya"*: sorot dimatikan untuk SEMUA
+   baris grid di isi tab (termasuk baris "No items" dan baris baca-saja),
+   bukan hanya baris berisi isian. Daftar kontrak dan popup pemilih di luar
+   isi tab tetap tersorot. */
+.treatyin .trin__isi-tab .trin__tabel tbody tr:hover,
+.treatyin .trin__isi-tab .trin__tabel tbody tr:hover > td {
+  background: transparent;
+}
+
 
 /* Kartu akar halaman — `.inbox` langsung di bawah akar modul. */
 .treatyin > .inbox {
@@ -2414,4 +2584,1069 @@
   border-color: var(--trin-sukses-tepi);
   background: var(--trin-sukses-latar);
   color: var(--trin-sukses-teks);
+}
+
+/* =========================================================================
+   BENTUK PEGA — GRID, BLOK, RINCIAN BARIS (`components/gridPega.tsx`)
+   =========================================================================
+   Permintaan pemakai 8 Oktober 2026: *"samakan designnya jangan ada bentuk
+   aneh aneh, samakan posisi tiap property dan bentuk tablenya … jangan ada
+   design tambahan"* — acuan "Persis Pega", warna/huruf tema di atas TETAP.
+
+   ⛔ Disalin dari `treatyinadjustment.css` (`.tria__grid`, `.tria__blok`,
+   `.tria__subjudul`, `.tria__teks-sel`, `.tria__buka-*`, `.tria__rincian`)
+   — layar Adjustment dibangkitkan dari Section ekspor yang sama, jadi kedua
+   layar memakai satu bentuk. Ditiru, bukan diimpor: gaya tiap modul berakar
+   di kelasnya sendiri. */
+/* ⭐ TABEL DATAR — tangkapan layar Pega pemakai 8 Oktober 2026 ("user nya
+   mau tampilannya seperti ini"): tanpa kotak/kartu pembungkus, kepala kolom
+   teks tebal kecil TANPA latar dengan garis bawah, tiap baris hanya
+   bergaris bawah tipis, TANPA zebra, angka rata KIRI, "No items" teks kecil
+   polos. Menimpa rupa tabel tema di atas (kepala navy, zebra, kartu). */
+.treatyin .trin__grid {
+  flex-basis: 100%;
+  min-width: 0;
+  margin-bottom: 14px;
+}
+.treatyin .trin__grid > .table-wrap {
+  min-height: 0;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+/* ⛔ `:where(table)` inti memberi SETIAP tabel latar putih, bingkai, dan
+   sudut bulat (kotak yang terlihat di pratinjau); di dalam `.panel` ia
+   dinetralkan inti, dan tab Pega tidak lagi berbungkus `.panel`. */
+.treatyin .trin__tabel--pega {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  border-collapse: collapse;
+  background: transparent;
+  font-size: 12px;
+}
+.treatyin .trin__tabel--pega th,
+.treatyin .trin__tabel--pega td {
+  border-radius: 0;
+}
+/* Tombol di sel grid (`Add`, `Delete`) ringkas — tinggi baris tetap
+   serapat Pega. */
+.treatyin .trin__tabel--pega .btn,
+.treatyin .trin__tabel--pega .btn:not(.btn--primary):not(.btn--danger):not(.tl-tambah):not(.tl-hapus) {
+  padding: 1px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  box-shadow: none;
+}
+.treatyin .trin__tabel--pega > thead > tr > th,
+.treatyin .table-wrap .trin__tabel--pega > thead > tr > th {
+  position: static;
+  padding: 4px 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  white-space: normal;
+  box-shadow: none;
+  border-bottom: 1px solid var(--trin-kepala-garis);
+}
+.treatyin .trin__tabel--pega > tbody > tr > td {
+  padding: 3px 8px;
+  background: transparent;
+  color: var(--trin-teks);
+  text-align: left;
+  vertical-align: middle;
+  overflow-wrap: break-word;
+  border-bottom: 1px solid var(--trin-garis);
+}
+.treatyin .trin__tabel--pega > tbody > tr:not(.trin__rincian):nth-child(even) > td,
+.treatyin .trin__tabel--pega > tbody > tr:not(.trin__rincian):hover > td {
+  background: transparent;
+}
+/* ⛔ Aturan daftar kontrak `th/td:last-child { width: 13.5rem }` (kolom
+   aksi daftar) TIDAK berlaku di sini — lebar datang dari `<colgroup>`. */
+.treatyin .trin__tabel--pega th:last-child,
+.treatyin .trin__tabel--pega td:last-child {
+  width: auto;
+}
+/* Angka rata KIRI seperti Pega; digit tetap sejajar. */
+.treatyin .trin__tabel--pega .trin__angka {
+  font-variant-numeric: tabular-nums;
+}
+/* ⛔ ANGKA TIDAK MEMBUNGKUS — laporan pemilik proses 8 Oktober 2026:
+   *"kalau kepanjangan jangan sampai ke bawah, angkanya harus tetap
+   menyamping"*.
+
+   Satu nilai yang terpotong menjadi dua baris menaikkan tinggi SELURUH
+   barisnya dan memutus pembacaan kolom demi kolom; di `Summarry of RNM
+   Share` itu terjadi pada empat baris sekaligus.
+
+   ⚠️ Dipasang di SELNYA, bukan di `<col>`: `<col>` hanya menghormati width,
+   background, border, dan visibility — `white-space` di sana diam-diam
+   diabaikan, jebakan yang sudah pernah terjadi di repositori ini.
+
+   ⭐ Pasangannya pembulatan dua desimal (`angkaRingkasan`). Tanpa itu
+   `nowrap` hanya memindahkan masalahnya: barisnya tidak lagi tinggi, tapi
+   kolomnya melebar oleh ekor belasan digit. */
+.treatyin .trin__tabel--pega td.trin__angka,
+.treatyin .trin__tabel--pega th.trin__angka {
+  white-space: nowrap;
+}
+/* Grid nilai `{Currency, Value}`: kolom mata uang rata tengah, kepalanya pun. */
+.treatyin .trin__tabel--nilai > thead > tr > th:first-child,
+.treatyin .trin__tabel--nilai > tbody > tr > td:first-child:not(.trin__kosong-pega) {
+  text-align: center;
+}
+.treatyin .trin__tabel--pega > tbody > tr > td.trin__kosong-pega {
+  padding: 8px 8px 14px;
+  color: var(--text-2);
+  font-size: 11px;
+}
+/* Rincian baris (`expandPane`): kolom ▸/▾ dan panel di bawah baris. */
+.treatyin .trin__tabel--rinci {
+  table-layout: fixed;
+}
+.treatyin .trin__buka-kolom {
+  width: 28px;
+}
+.treatyin .trin__buka-tombol {
+  cursor: pointer;
+  padding: 0 4px;
+  user-select: none;
+}
+.treatyin .trin__tabel--pega > tbody > tr.trin__rincian > td {
+  padding: 10px 12px;
+  border: 1px solid var(--trin-garis);
+}
+.treatyin .trin__rincian .trin__tabel--pega td .field__input,
+.treatyin .trin__rincian .trin__tabel--pega td select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Blok layout ekspor — butir mengalir sejajar (medan, label, tombol) dan
+   butir lebar (grid, blok anak, judul, deret tombol) satu baris penuh. */
+.treatyin .trin__blok {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 16px;
+  width: 100%;
+}
+.treatyin .trin__blok > .trin__grid,
+.treatyin .trin__blok > .trin__blok,
+.treatyin .trin__blok > .trin__subjudul,
+.treatyin .trin__blok > .trin__deret-tombol,
+.treatyin .trin__blok > .tabs,
+.treatyin .trin__blok > .tl-pesan,
+.treatyin .trin__blok > .field--lebar {
+  flex-basis: 100%;
+}
+/* Pembungkus tata letak tab buatan tangan (`tl-share-akar`, `tl-share-dua`,
+   pesan, …) juga satu baris penuh; yang MENGALIR hanya medan. */
+.treatyin .trin__blok > div:not(.field):not(.trin__limit-medan):not(.trin__egnpi-pasangan),
+.treatyin .trin__blok > p,
+.treatyin .trin__blok > ul {
+  flex-basis: 100%;
+}
+.treatyin .trin__blok > .field {
+  flex: 0 1 240px;
+  min-width: 160px;
+}
+.treatyin .trin__rincian .trin__blok > .field {
+  min-width: 120px;
+}
+/* Judul blok — teks biasa seperti Pega ("Summarry of RNM Share"), tanpa
+   huruf kapital, pita, atau garis. */
+.treatyin .trin__subjudul {
+  margin: 10px 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: normal;
+}
+/* Sel label ekspor (`Part of`, `Total ROL`, `IDR`, `%`). */
+.treatyin .trin__teks-sel {
+  padding-bottom: 10px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.treatyin .trin__deret-tombol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* =========================================================================
+   BENTUK PEGA — SELURUH ISI TAB (`fieldset.trin__isi-tab`, form kontrak)
+   =========================================================================
+   Satu lapisan untuk SEMUA tab, supaya tidak ada tab yang tertinggal
+   berbentuk lain: panel bukan kartu, tabel datar seperti tangkapan layar
+   Pega pemakai 8 Oktober 2026, kepala/bagian `limitsUI` tanpa pita, bingkai,
+   dan lencana jumlah. Warna dan huruf tetap token tema di atas.
+   ⚠️ Kepala kolom TETAP menempel saat tabel digulir (keputusan pemilik
+   proses 7 Oktober 2026) — latarnya karena itu tetap tidak tembus pandang. */
+
+/* Panel tab: bukan kartu timbul — judulnya judul blok Pega. */
+.treatyin .trin__isi-tab .panel {
+  margin: 0 0 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.treatyin .trin__isi-tab .panel__title,
+.treatyin .trin__isi-tab .tl-kepala__judul,
+.treatyin .trin__isi-tab .tl-bagian__judul {
+  margin: 10px 0 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: normal;
+}
+.treatyin .trin__isi-tab .panel__title::before,
+.treatyin .trin__isi-tab .panel__title::after {
+  content: none;
+}
+.treatyin .trin__isi-tab .tl-kepala,
+.treatyin .trin__isi-tab .tl-bagian {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.treatyin .trin__isi-tab .tl-lencana {
+  display: none;
+}
+
+/* Tabel tab: datar. */
+.treatyin .trin__isi-tab .table-wrap {
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.treatyin .trin__isi-tab .trin__tabel {
+  border: 0;
+  border-radius: 0;
+  border-collapse: collapse;
+  background: transparent;
+  font-size: 12px;
+}
+.treatyin .trin__isi-tab .trin__tabel th,
+.treatyin .trin__isi-tab .trin__tabel td {
+  border-radius: 0;
+}
+.treatyin .trin__isi-tab .trin__tabel thead th,
+.treatyin .trin__isi-tab .table-wrap .trin__tabel thead th {
+  padding: 4px 8px;
+  background: var(--trin-latar-atas);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: inset 0 -1px 0 var(--trin-kepala-garis);
+}
+.treatyin .trin__isi-tab .trin__tabel td {
+  padding: 3px 8px;
+  background: transparent;
+  border-bottom: 1px solid var(--trin-garis);
+}
+.treatyin .trin__isi-tab .trin__tabel > tbody > tr:not(.trin__rincian):nth-child(even) > td,
+.treatyin .trin__isi-tab .trin__tabel > tbody > tr:not(.trin__rincian):hover > td {
+  background: transparent;
+}
+/* `Kosong` di dalam tabel = "No items" teks kecil polos, tanpa ikon. */
+.treatyin .trin__isi-tab .trin__tabel .kosong {
+  align-items: flex-start;
+  padding: 6px 0 10px;
+  text-align: left;
+}
+.treatyin .trin__isi-tab .trin__tabel .kosong__ikon,
+.treatyin .trin__isi-tab .trin__tabel .kosong__petunjuk {
+  display: none;
+}
+.treatyin .trin__isi-tab .trin__tabel .kosong__pesan {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-2);
+}
+/* Angka rata KIRI seperti Pega (tangkapan layar `Summarry of RNM Share`). */
+.treatyin .trin__isi-tab .tl-angka {
+  text-align: left;
+}
+/* Kotak abu-abu di sekeliling medan dan sorotan baris terbuka: tidak ada
+   di Pega. "Part of" dan kode mata uang teks biasa. */
+.treatyin .trin__isi-tab .tl-share-akar {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.treatyin .trin__isi-tab .tl-share-baris--buka td,
+.treatyin .trin__isi-tab .tl-share-buka[aria-expanded="true"] {
+  background: transparent;
+  color: inherit;
+}
+.treatyin .trin__isi-tab .tl-share-grid .tl-share-mu,
+.treatyin .trin__isi-tab .tl-share-grid .tl-share-of {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  font-style: normal;
+}
+/* `Add`/`Delete`/`Remove` (`TombolTambah`/`TombolHapus`) = tombol NETRAL
+   seperti Pega — bukan kapsul merah bergradasi. */
+.treatyin .trin__isi-tab .tl-tambah,
+.treatyin .trin__isi-tab .tl-hapus {
+  background: var(--trin-isi);
+  border: 1px solid var(--trin-tepi);
+  color: var(--trin-aksen-teks);
+  box-shadow: none;
+}
+.treatyin .trin__isi-tab .tl-tambah:hover:not(:disabled),
+.treatyin .trin__isi-tab .tl-hapus:hover:not(:disabled) {
+  background: var(--trin-aksen-lembut);
+  border-color: var(--trin-aksen-garis);
+}
+/* Tombol di sel tabel ringkas. */
+.treatyin .trin__isi-tab .trin__tabel .btn,
+.treatyin .trin__isi-tab .trin__tabel .btn:not(.btn--primary):not(.btn--danger):not(.tl-tambah):not(.tl-hapus) {
+  padding: 1px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+/* Grid 100% Limit · Retention · Cession (tab Limits Prop) — laporan pemakai
+   8 Oktober 2026: grid 100% Limit memunculkan GULIR MENDATAR. Sebabnya
+   `.trin__cek` (`white-space: nowrap`): kotak centang `.Layer` + keterangannya
+   `Auto calculate` lebih lebar dari kolom 128/683 ekspor di kolom sepertiga
+   layar, jadi isinya meluber keluar sel. Di sini keterangannya boleh membungkus
+   di samping kotaknya; sel tidak pernah melebihi lebar kolomnya. */
+.treatyin .trin__limit-grid td .trin__cek {
+  white-space: normal;
+  align-items: flex-start;
+  line-height: 1.25;
+}
+.treatyin .trin__limit-grid td .trin__cek > input {
+  flex: none;
+  margin-top: 1px;
+}
+.treatyin .trin__limit-grid td {
+  overflow-wrap: anywhere;
+}
+
+/* =========================================================================
+   TAB SHARE PROPORSIONAL — bentuk Pega (tangkapan layar pemakai
+   8 Oktober 2026, `components/TabShareProp.tsx`)
+   =========================================================================
+   `Share to RNM : 20,00 %` di bawah strip `RNM Share`; grid Treaty Group dan
+   grid nilai rincian sempit (lebar ekspor); tiga grid total BERTUMPUK
+   selebar ±separuh layar. */
+.treatyin .trin__share-rnm-prop {
+  margin: 4px 0 8px;
+  font-size: 13px;
+}
+.treatyin .trin__share-rnm-prop strong {
+  margin-right: 6px;
+  font-weight: 600;
+}
+.treatyin .trin__share-rnm-prop span {
+  margin-left: 12px;
+  font-weight: 600;
+  color: var(--trin-aksen-teks);
+}
+.treatyin .trin__share-prop-total {
+  display: flex;
+  flex-direction: column;
+  max-width: 50%;
+}
+.treatyin .trin__share-prop-total > .trin__grid {
+  margin-bottom: 4px;
+}
+@media (max-width: 900px) {
+  .treatyin .trin__share-prop-total {
+    max-width: 100%;
+  }
+}
+/* Medan berlabel kiri di dalam rincian baris tidak selebar panel. */
+.treatyin .trin__rincian .trin__kolom {
+  max-width: 420px;
+}
+
+/* =========================================================================
+   LATAR PUTIH + STRIP TAB BENTUK PEGA — permintaan pemakai 8 Oktober 2026
+   =========================================================================
+   *"saya mau backgroundnya semua itu putih bukan agak abu abu"*.
+
+   ⛔ Token tema di atas TIDAK disunting — ia salinan nilai Treaty Exchange
+   Yearly yang dikunci uji. Lapisan ini MENIMPA token latar mode TERANG di
+   akar modul: kartu akar, popup, kepala tabel, rel strip tab, dan rincian
+   baris menjadi putih. Mode gelap tidak tersentuh (`:root[data-theme="dark"]
+   .treatyin` berkekhususan lebih tinggi).
+
+   Strip tab: bentuk Pega (tangkapan layar pemakai) — teks di atas garis,
+   tab aktif bergaris bawah warna aksen, tanpa rel kapsul abu-abu. */
+.treatyin {
+  --trin-latar: #ffffff;
+  --trin-latar-atas: #ffffff;
+  --trin-latar-bawah: #ffffff;
+  --trin-lembut: #ffffff;
+  /* Kepala tabel daftar kontrak/lampiran juga putih. `--bg` inti dipakai
+     `th`, isian readonly, `.panel--anak`, dan kotak teks panjang — TIDAK
+     dipakai hover mana pun, jadi aman diputihkan. */
+  --trin-kepala-tabel: #ffffff;
+  --bg: #ffffff;
+  /* Bidang statis yang tadinya `--surface-2`. `--surface-2` sendiri TIDAK
+     ditimpa: ia juga warna hover tombol & sorot pilihan inti. */
+  --trin-bidang: #ffffff;
+}
+/* Mode gelap tetap seperti semula: `inherit` = nilai inti dari induk. */
+:root[data-theme="dark"] .treatyin {
+  --bg: inherit;
+  --trin-bidang: var(--surface-2);
+}
+.treatyin .tl-kartu__isi,
+.treatyin .tl-share-panel > td,
+.treatyin .trin__ach tfoot th,
+.treatyin .trin__ach tfoot td,
+.treatyin .trin__radio,
+.treatyin .trin__belum {
+  background: var(--trin-bidang);
+}
+/* Zebra & sorot inti `:where(tbody tr…)` mewarnai `<tr>`, bukan `<td>`:
+   baris rincian (td tanpa latar) dan baris genap grid jadi abu-abu. Sorot
+   baris data biasa tetap ada; rincian yang terbuka tidak ikut tersorot. */
+.treatyin .trin__isi-tab tbody > tr:nth-child(even):not(:hover),
+.treatyin .trin__tabel--pega > tbody > tr:nth-child(even):not(:hover),
+.treatyin .trin__rincian,
+.treatyin .trin__rincian:hover {
+  background: transparent;
+}
+.treatyin .tabs {
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--trin-garis);
+  border-radius: 0;
+  background: transparent;
+}
+.treatyin .tabs__item {
+  height: auto;
+  padding: 8px 16px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--trin-teks);
+  font-size: 13px;
+  font-weight: 500;
+}
+.treatyin .tabs__item:hover {
+  background: transparent;
+  color: var(--trin-aksen-teks);
+}
+.treatyin .tabs__item--aktif,
+.treatyin .tabs__item--aktif:hover {
+  background: transparent;
+  border-bottom-color: var(--trin-aksen-teks);
+  color: var(--trin-teks);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+/* =========================================================================
+   TATA LETAK LAYOUT PEGA — `pyLayoutOtherFormat` (8 Oktober 2026)
+   =========================================================================
+   Komponen `components/tataPega.tsx`. Padanan `tria__tata--*` layar Adjustment
+   — kedua layar tersusun sama karena Section ekspornya sama. Lebar persis skin
+   Pega tidak diekspor: kolom sama lebar, celah tema. */
+.treatyin .trin__tata-wadah {
+  min-width: 0;
+}
+.treatyin .trin__tata {
+  min-width: 0;
+}
+.treatyin .trin__tata--g2,
+.treatyin .trin__tata--g3,
+.treatyin .trin__tata--g4 {
+  display: grid;
+  align-items: start;
+  gap: 8px 16px;
+}
+.treatyin .trin__tata--g2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.treatyin .trin__tata--g3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.treatyin .trin__tata--g4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.treatyin .trin__tata:is(.trin__tata--g2, .trin__tata--g3, .trin__tata--g4) > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.treatyin .trin__tata--t3070 {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 7fr);
+  align-items: center;
+  gap: 6px 12px;
+}
+.treatyin .trin__tata--alir {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.treatyin .trin__tata--alir > * {
+  min-width: 0;
+}
+.treatyin .trin__tata--kiri {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+/* ⛔ KOLOM LABEL SATU UKURAN — permintaan pemilik proses 8 Oktober 2026:
+   *"sebisa mungkin dirapikan letaknya … designnya harus seperti yg di pega"*.
+
+   Bentuk sebelumnya `minmax(110px, 38%)`: PERSEN, jadi lebar kolom label
+   ikut lebar blok pemiliknya. Di tab Account Reporting Period itu berarti
+   tiga baris dengan tiga lebar label berbeda —
+
+     Start Date / End Date   di dalam `g2` → label ±150px
+     Period                  satu kolom    → label ±290px
+     Submission / Confirmation / Settlement di dalam `g3` → label ±195px
+
+   — dan tidak satu pun segaris dengan yang lain. Itulah yang terbaca
+   "berantakan", bukan jarak antarbarisnya.
+
+   ⭐ 132px adalah lebar yang SUDAH dipakai kolom label form (`.trin__kolom`),
+   hasil empat ronde. Memakai angka yang sama membuat label tab segaris
+   dengan label kepala — satu ukuran untuk seluruh layar, bukan dua. */
+.treatyin .trin__tata--kiri > .field {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  min-width: 0;
+}
+
+/* ⛔ Kotak isian tidak melar mengikuti lebar layar.
+   Pada layar 1900px, `Settlement` sempat selebar 280px sementara
+   `Start Date` 175px — keduanya medan sejenis, dan bedanya hanya berapa
+   banyak teman sebarisnya. Batas ini menyamakan keduanya.
+
+   ⚠️ Batasnya pada KOTAKNYA, bukan pada selnya: sel tetap mengisi
+   gridnya, sehingga label kolom berikutnya tetap di tempatnya. */
+.treatyin .trin__tata--kiri > .field > .field__input,
+.treatyin .trin__tata--kiri > .field > .trin__tgl {
+  max-width: 320px;
+}
+.treatyin .trin__tata--kiri > .field > .field__label {
+  margin: 0;
+}
+.treatyin .trin__tata--tumpuk {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+@media (max-width: 900px) {
+  .treatyin .trin__tata:is(.trin__tata--g2, .trin__tata--g3, .trin__tata--g4, .trin__tata--t3070) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .treatyin .trin__tata-kosong {
+    display: none;
+  }
+}
+
+/* Tata letak Pega — susulan agen N (8 Oktober 2026):
+   (1) medan yang dibungkus `.trin__limit-medan` di dalam `Stacked with labels
+       left` ikut berlabel KIRI (panel Share Non-Prop);
+   (2) blok tata letak bertumpuk di dalam satu Panel tetap berjarak. */
+.treatyin .trin__tata--kiri > .trin__limit-medan > .field {
+  display: grid;
+  grid-template-columns: minmax(110px, 38%) minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  min-width: 0;
+}
+.treatyin .trin__tata--kiri > .trin__limit-medan > .field > .field__label {
+  margin: 0;
+}
+.treatyin .trin__tata-wadah + .trin__tata-wadah {
+  margin-top: 12px;
+}
+
+/* `Inline labels left` — medan sebaris dengan label DI KIRI isiannya
+   (permintaan agen P, 8 Oktober 2026). */
+.treatyin .trin__tata--alir > .field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.treatyin .trin__tata--alir > .field > .field__label {
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Tata letak Pega — susulan agen N (8 Oktober 2026), dari gambar Pega 05/27/29:
+   (1) kolom label `Stacked with labels left` LEBAR TETAP ±92px (6rem); label
+       panjang membungkus (`Flood Limit (Jabodetabek)`), jadi `kiri` bersarang
+       di kolom 30% sejajar dengan `kiri` luar;
+   (2) blok di pasangan 30/70 rata ATAS (kotak Spreading di samping rujukan). */
+.treatyin .trin__tata--kiri > .field,
+.treatyin .trin__tata--kiri > .trin__limit-medan > .field {
+  grid-template-columns: 6rem minmax(0, 1fr);
+}
+.treatyin .trin__tata--kiri > .field > .field__label,
+.treatyin .trin__tata--kiri > .trin__limit-medan > .field > .field__label {
+  white-space: normal;
+}
+.treatyin .trin__tata--t3070 > .trin__tata-wadah,
+.treatyin .trin__tata--t3070 > .tl-bagian,
+.treatyin .trin__tata--t3070 > .trin__blok {
+  align-self: start;
+}
+
+/* Ralat aturan jarak antar-blok tata (susulan agen Y, 8 Oktober 2026): jarak
+   12px antar-`trin__tata-wadah` hanya untuk blok BERTUMPUK. Di layout berkolom
+   atau mengalir ia menurunkan sel kedua dan seterusnya (End Date tidak sejajar
+   Start Date). */
+.treatyin .trin__tata:is(.trin__tata--g2, .trin__tata--g3, .trin__tata--g4, .trin__tata--t3070, .trin__tata--alir) > .trin__tata-wadah + .trin__tata-wadah {
+  margin-top: 0;
+}
+/* Kalimat pesan di samping tombol (Apply Reporting Period) — tengah tombolnya. */
+.treatyin .trin__aksi > .trin__catatan {
+  margin: 0;
+  align-self: center;
+}
+
+/* =========================================================================
+   RUPA GRID SERAGAM — permintaan pemilik proses 8 Oktober 2026
+   =========================================================================
+   *"tampilan di view saya mau di semuanya seperti ini, tidak hanya view"*,
+   menunjuk grid Rate of Exchange mode LIHAT: baris rapat, teks polos, garis
+   tipis, NOL belang.
+
+   ⛔ Yang membuat grid kita tidak seragam ada DUA, dan keduanya tidak
+   terlihat sampai dua grid ditaruh berdampingan:
+
+     1. Bantalan sel berbeda-beda — `7px 10px`, `8px 12px`, `5px 8px` —
+        tergantung grid mana yang ditulis kapan.
+     2. BELANG BARIS. `inti` memberi `tbody tr:nth-child(even)` latar
+        `--alt-row` berkekhususan NOL, jadi ia menyentuh setiap tabel modul
+        tanpa satu pun di antaranya memintanya.
+
+   ⭐ Satu bantalan untuk seluruh grid: `7px 12px` — tinggi barisnya tetap
+   seperti sekarang, lebar kolomnya lebih lapang seperti gambar.
+
+   ⚠️ BELANG DICABUT, dan itu ADA HARGANYA: pada daftar 25 baris, belang
+   memudahkan mata menyusuri satu baris sampai ujung. Pemilik proses memilih
+   rupa yang ditunjuknya, dan pilihan itu dinyatakan di sini supaya yang
+   membacanya tahu apa yang ditukar — bukan mengira belangnya hilang karena
+   kelalaian.
+   ========================================================================= */
+.treatyin .trin__tabel tbody tr:nth-child(even) {
+  background: transparent;
+}
+
+.treatyin .trin__tabel tbody tr:hover {
+  background: var(--hover-baris);
+}
+
+/* =========================================================================
+   TAB REPORTING PERIOD — RAPI (permintaan pemakai 8 Oktober 2026)
+   =========================================================================
+   *"rapikan design tab reporting period"*. Pengait `.trin__rp` di
+   `TabReportingPeriod.tsx` — tab lain TIDAK tersentuh.
+
+   Jarak baris sempat tidak seragam: Start Date → Period 22px, Period →
+   Submission 36px (`.field { margin-bottom: 16px }` inti + celah blok 8px +
+   jarak antar-wadah 12px). Di layar Pega baris-baris itu berjarak SAMA. Kini
+   satu celah 8px untuk semua baris medan; tombol Apply berukuran tombol tab
+   lain (`btn--sm`, di TSX) dan grid berjarak 12px dari deretnya. */
+.treatyin .trin__rp .trin__tata .field {
+  margin-bottom: 0;
+}
+.treatyin .trin__rp .trin__tata--kiri,
+.treatyin .trin__rp .trin__tata--tumpuk {
+  gap: 8px;
+}
+.treatyin .trin__rp .trin__tata-wadah + .trin__tata-wadah {
+  margin-top: 0;
+}
+.treatyin .trin__rp > .trin__aksi {
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* Garis di ATAS kepala grid isi tab — dari inti `:where(.kartu, .panel,
+   .modal) :where(th) { border-top }`: grid yang dibungkus `Panel` (Reporting
+   Period, Accumulation, Portfolio, Co-Ins Scale) bergaris dua, grid
+   `GridPega` tidak. Grid Pega hanya bergaris di BAWAH kepalanya. */
+.treatyin .trin__isi-tab .trin__tabel thead th {
+  border-top: 0;
+}
+
+/* Susulan agen X (8 Oktober 2026): medan berbungkus `.trin__limit-medan` di
+   tata ALIR berlabel kiri (`% RNM Share` rincian Share, isian Reinstatement);
+   sel grid di dalam rincian Share boleh membungkus (aturan `nowrap` grid
+   Share tidak berlaku ke dalam panel rinciannya). */
+.treatyin .trin__tata--alir > .trin__limit-medan > .field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.treatyin .trin__tata--alir > .trin__limit-medan > .field > .field__label {
+  margin: 0;
+  white-space: nowrap;
+}
+.treatyin .tl-share-panel td {
+  white-space: normal;
+}
+
+/* =========================================================================
+   NOL SOROT ABU-ABU DI TEMPAT ISIAN — permintaan pemakai 8 Oktober 2026
+   =========================================================================
+   *"saya mau saat hover ke tempat inputan yg menjadi abu abu itu
+   dimatikan"*. Sorot baris (`tr:hover` → `--hover-baris`) mewarnai SELURUH
+   baris yang berisi isian — dan rincian ▸ yang terbuka adalah satu `<tr>`
+   penuh isian, jadi seluruh panel rincian ikut abu-abu begitu kursor masuk.
+
+   Dimatikan HANYA pada baris berisi isian (`input`/`select`/`textarea`) dan
+   baris rincian. Baris data baca-saja (daftar kontrak, grid baca) tetap
+   tersorot — di sana sorot adalah petunjuk baris yang dapat diklik. */
+.treatyin .trin__tabel tbody tr.trin__rincian:hover,
+.treatyin .trin__tabel tbody tr:has(input, select, textarea):hover {
+  background: transparent;
+}
+.treatyin .trin__tabel > tbody > tr:not(.trin__rincian):has(input, select, textarea):hover > td {
+  background: transparent;
+}
+
+/* =========================================================================
+   KOTAK ISIAN SEDERHANA SEPERTI PEGA — permintaan pemakai 8 Oktober 2026
+   =========================================================================
+   *"untuk inputannya tidak lagi designnya seperti itu, ikuti seperti yang
+   dipega saja, kotak sederhana"*. Kotak tema (sudut 12px + bayang cekung)
+   diganti kotak Pega: tepi 1px, sudut nyaris siku, NOL bayang. Fokus cukup
+   tepi beraksen + cincin tipis 1px.
+
+   ⛔ Aturan tema `.treatyin .field__input` di atas TIDAK disunting (dikunci
+   `gaya.test`); lapisan ini menimpanya karena duduk sesudahnya. Tinggi
+   kotak tetap milik blok kerapatan — nol `height` di sini. */
+.treatyin .field__input {
+  border-radius: 2px;
+  box-shadow: none;
+}
+.treatyin .field__input:focus {
+  border-color: var(--trin-aksen);
+  box-shadow: 0 0 0 1px var(--trin-aksen);
+}
+
+/* RATE OF EXCHANGE — rupa grid tab (`.trin__kurs`, 8 Oktober 2026):
+   kepala bergaris di bawah saja (inti memberi `th` di dalam `.panel` garis
+   atas) dan nol sorot abu-abu saat kursor di atas barisnya. */
+.treatyin .trin__kurs .trin__tabel thead th {
+  border-top: 0;
+}
+.treatyin .trin__kurs .trin__tabel tbody tr:hover,
+.treatyin .trin__kurs .trin__tabel tbody tr:hover > td {
+  background: transparent;
+}
+
+/* =========================================================================
+   PANEL ATTACHMENT — BLOK TERSENDIRI, RAPAT (8 Oktober 2026, lebih baru)
+   =========================================================================
+   Permintaan pemakai (tangkapan layar tab Portfolio + Attachment): *"Attachment
+   itu dipisahkan dulu dynamic layout nya jangan gabung dengan container
+   inputan, krn menjadi makan tempat"*.
+   ⭐ Menimpa "KERAPATAN PANEL LAMPIRAN" di atas (kotak/tombol 34px, bantalan
+   baris 9×12px) — itulah yang membuat tiap baris tinggi — dan batas tinggi
+   `.table-wrap` inti (62vh) yang memunculkan gulir di dalam panel:
+     · Attachment berdiri sebagai blok sendiri, berjarak dari isi tab;
+     · gridnya bentuk grid Pega yang sama dengan tabel lain (baris rapat,
+       tombol ringkas), tanpa gulir dalam. */
+.treatyin .trin__lampiran {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.treatyin .trin__lampiran > .table-wrap {
+  max-height: none;
+  min-height: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.treatyin .trin__lampiran .trin__tabel.trin__tabel--pega > thead > tr > th,
+.treatyin .trin__lampiran .trin__tabel.trin__tabel--pega > tbody > tr > td {
+  padding: 3px 8px;
+}
+/* Tinggi tombol TIDAK disentuh — 34px milik blok kerapatan (penjaga
+   `gaya.test.ts`); yang dirapatkan bantalan baris dan huruf tombolnya. */
+.treatyin .trin__lampiran .trin__tabel.trin__tabel--pega td > .btn {
+  padding: 0 12px;
+  font-size: 12px;
+}
+/* Panel Attachment terpisah dari isi tab di atasnya. */
+.treatyin .trin__isi-tab + .panel,
+.treatyin .panel:has(> .panel__body > .trin__lampiran),
+.treatyin .panel:has(.trin__lampiran) {
+  margin-top: 20px;
+}
+
+/* =========================================================================
+   DROPDOWN BERBEDA DARI KOTAK ISIAN — permintaan pemakai 8 Oktober 2026
+   =========================================================================
+   *"perhatikan khusus drop down itu dibuat agar designnya berbeda dengan
+   kotak inputan biasa"*. Rupa `pxDropdown` Pega: kotak bergradasi terang ke
+   abu-abu muda, panah ▾ di kanan dipisah garis tipis, kursor tangan —
+   sekali lihat terbaca "pilih", bukan "ketik".
+
+   Dua bentuk dropdown di modul ini: `<select>` asli dan dropdown ketik-pilih
+   (`DropdownWarisan`, `input[role="combobox"]` — Treaty Type, Currency, …).
+   Keduanya diberi rupa yang sama. Isian `pxAutoComplete` (`IsianAuto`)
+   TETAP kotak isian — di Pega pun ia kotak ketik.
+
+   Mode lihat / dinonaktifkan: aturan `.field__input:disabled` tema
+   (kekhususan lebih tinggi) mengembalikan latar polos — dropdown yang tak
+   dapat dipilih tidak berpura-pura dapat dipilih. */
+.treatyin select.field__input,
+.treatyin .field__input[role="combobox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 34px;
+  cursor: pointer;
+  background-color: var(--surface-2);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235b6478' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
+    linear-gradient(var(--trin-tepi), var(--trin-tepi)),
+    linear-gradient(180deg, var(--trin-isi) 0%, var(--surface-2) 100%);
+  background-repeat: no-repeat;
+  background-position: right 10px center, right 28px center, 0 0;
+  background-size: 10px 6px, 1px 60%, 100% 100%;
+}
+.treatyin .field__input[role="combobox"]:focus {
+  cursor: text;
+}
+.treatyin select.field__input:disabled,
+.treatyin .field__input[role="combobox"]:disabled,
+.treatyin .field__input[role="combobox"][readonly] {
+  background: var(--trin-lembut);
+  cursor: default;
+}
+
+/* RATE OF EXCHANGE — wadah DATAR tanpa gulir (permintaan pemakai 8 Oktober
+   2026, tangkapan layar: *"perbaiki di rate of change"*). `.table-wrap` inti
+   (tepi, sudut, `min-height: 160px`, `max-height: 62vh`, `overflow: auto`)
+   membuat grid kurs berkotak dengan penggulir sendiri, dan daftar pilihan
+   Currency TERPOTONG di dalamnya. Tabel kurs `table-layout: fixed` selebar
+   100% — nol kebutuhan gulir mendatar — jadi wadahnya dibuat terbuka:
+   daftar pilihan bebas menjulur ke luar grid seperti di Pega. */
+.treatyin .trin__kurs .table-wrap {
+  max-height: none;
+  min-height: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.treatyin .trin__kurs .trin__tabel {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* =========================================================================
+   PANEL ATTACHMENT BENTUK PEGA (8 Oktober 2026, gambar Pega pemakai)
+   =========================================================================
+   · wadah putih TERSENDIRI di bawah wadah tab (`trin__inbox-lampiran`), berjarak;
+   · judul `Attachment` kecil polos, panel tanpa bingkai kartu di dalam wadahnya;
+   · spanduk aturan nama berkas selebar penuh, PERSEGI, lebih tinggi;
+   · `Download All` · `Refresh` di KANAN atas grid;
+   · kepala grid berlatar, Count/Upload file/View File rata tengah;
+   · sel Upload/View = kotak berbingkai selebar sel berisi ikon panah.
+   Warna tetap token tema (keputusan pemakai: tema tetap, bentuk Pega). */
+.treatyin > .inbox.trin__inbox-lampiran {
+  margin-top: 16px;
+}
+.treatyin .trin__inbox-lampiran .panel:has(.trin__lampiran) {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.treatyin .trin__inbox-lampiran .panel:has(.trin__lampiran) > .panel__title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.treatyin .trin__lampiran > .trin__spanduk {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 12px 28px;
+  border-radius: 0;
+}
+.treatyin .trin__lampiran > .trin__lampiran-aksi {
+  justify-content: flex-end;
+}
+.treatyin .trin__lampiran .trin__lampiran-grid.trin__tabel--pega {
+  table-layout: fixed;
+}
+.treatyin .trin__lampiran .trin__lampiran-grid.trin__tabel--pega > thead > tr > th {
+  background: var(--trin-garis);
+  border-right: 1px solid var(--bg);
+}
+.treatyin .trin__lampiran .trin__lampiran-grid.trin__tabel--pega > thead > tr > th.trin__lampiran-tengah {
+  text-align: center;
+}
+.treatyin .trin__lampiran .trin__lampiran-grid.trin__tabel--pega > tbody > tr > td {
+  padding: 2px 4px 2px 8px;
+}
+.treatyin .trin__lampiran-ikon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 3px 0;
+  border: 1px solid var(--trin-kepala-garis);
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.treatyin .trin__lampiran-ikon:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.treatyin .trin__lampiran-ikon:hover:not(:disabled) {
+  border-color: var(--primary);
+}
+.treatyin .trin__lampiran-ikon > svg {
+  width: 26px;
+  height: 26px;
+}
+.treatyin .trin__lampiran-ikon--unggah {
+  color: var(--success-text);
+}
+.treatyin .trin__lampiran-ikon--lihat {
+  color: var(--accent);
+}
+
+/* GRID ISI TAB — wadah TERBUKA, tanpa gulir sendiri (permintaan pemakai
+   8 Oktober 2026, tangkapan layar Limits Prop: daftar Treaty Type
+   terpotong di dalam grid Kind of Treaty yang menggulir sendiri). Sama
+   dengan perbaikan Rate of Exchange: `.table-wrap` inti `max-height: 62vh`
+   + `overflow: auto` mengurung rincian dan daftar pilihan. Semua grid tab
+   `table-layout: fixed; width: 100%` (`.treatyin .trin__tabel`), jadi nol
+   kebutuhan gulir mendatar — di Pega pun grid tab memanjang ke bawah tanpa
+   penggulir dalam. */
+.treatyin .trin__isi-tab .table-wrap {
+  max-height: none;
+  overflow: visible;
+}
+
+/* Daftar pilihan `<select>` PUTIH (permintaan pemakai 8 Oktober 2026,
+   tangkapan layar Treaty Group). Chrome mewarnai daftar bawaan browser
+   dengan `background-color` milik `<select>` — dan rupa dropdown di atas
+   memberinya abu-abu muda, jadi seluruh daftar ikut abu-abu. Pilihan diberi
+   latar dan warna teks sendiri. */
+.treatyin select.field__input option,
+.treatyin select.field__input optgroup {
+  background-color: var(--trin-isi);
+  color: var(--trin-teks);
+}
+
+/* DAFTAR `<select>` KE BAWAH — `components/DaftarPilihBawah.tsx` (permintaan
+   pemakai 8 Oktober 2026: *"masih keatas drop nya"*). Daftar bawaan browser
+   diganti daftar ini, digambar `position: fixed` tepat di bawah kotaknya. */
+.treatyin .trin__pilih-bawah {
+  position: fixed;
+  z-index: 1000;
+  box-sizing: border-box;
+  min-width: 160px;
+  margin: 0;
+  padding: 2px 0;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--trin-tepi);
+  border-radius: 2px;
+  background: var(--trin-isi);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 14%);
+  font-size: 13px;
+  color: var(--trin-teks);
+}
+.treatyin .trin__pilih-bawah-butir {
+  padding: 6px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.treatyin .trin__pilih-bawah-butir--terpilih {
+  font-weight: 600;
+}
+.treatyin .trin__pilih-bawah-butir--aktif {
+  background: var(--trin-aksen-lembut);
+}
+.treatyin .trin__pilih-bawah-butir--mati {
+  color: var(--trin-teks-redup);
+  cursor: default;
+}
+
+/* Kotak angka (FieldAngka) di sel grid rincian, mis. % Installment dan
+   Amount tab Installment (9 Oktober 2026): tanpa jarak bawah .field, selebar
+   selnya, sejajar kotak lain di baris itu. */
+.treatyin .trin__rincian .trin__tabel--pega td .field {
+  margin: 0;
+  min-width: 0;
+}
+
+/* SATU PANAH di dropdown ketik-pilih `PilihSaring` (inti) — permintaan
+   pemakai 9 Oktober 2026: *"jangan panahnya 2"*. Komponen itu punya tombol
+   panah sendiri (`.pilih-saring__panah`); panah latar aturan combobox di atas
+   ikut tergambar di belakangnya. Di dalam `.pilih-saring` panah latar
+   DIBUANG — garis pemisah dan gradasi tetap, garisnya di tepi kiri tombol
+   (38px). Combobox lain (tanpa tombol panah sendiri) tidak berubah. */
+.treatyin .pilih-saring .field__input[role="combobox"] {
+  padding-right: 42px;
+  background-image:
+    linear-gradient(var(--trin-tepi), var(--trin-tepi)),
+    linear-gradient(180deg, var(--trin-isi) 0%, var(--surface-2) 100%);
+  background-position: right 38px center, 0 0;
+  background-size: 1px 60%, 100% 100%;
+}
+.treatyin .pilih-saring .field__input[role="combobox"]:disabled,
+.treatyin .pilih-saring .field__input[role="combobox"][readonly] {
+  background: var(--trin-lembut);
+}
+
+/* DAFTAR DROPDOWN TIDAK TENGGELAM — permintaan pemakai 9 Oktober 2026. Grid
+   ber-`overflow-x: auto` memotong daftar `position: absolute` `PilihCari`;
+   selama daftar TERBUKA (hanya dirender saat terbuka) wadahnya dilepas. */
+.treatyin .table-wrap:has(.pilih-saring__daftar),
+.treatyin .trin__grid:has(.pilih-saring__daftar),
+.treatyin .trin__limit-grid:has(.pilih-saring__daftar) {
+  overflow: visible;
 }

@@ -48,6 +48,7 @@ import { INFO_SUBMIT } from '../labels'
 import { TOMBOL_TULIS } from '../labelsTulis'
 import { useProperti } from '../halaman'
 import type { ModeForm } from '../mode'
+import { SelKosongPega, TataPegaBlok } from './tataPega'
 
 export default function TabInfoSubmit({
   mode = 'lihat',
@@ -87,6 +88,14 @@ export default function TabInfoSubmit({
 
   return (
     <Panel judul={INFO_SUBMIT.judul}>
+      {/* ⭐ TATA LETAK PEGA (8 Oktober 2026) — `Section/TreatyInfoSubmit.xml`
+          `Inline grid double` L816, urutan sel: Additional Information
+          (`Stacked with labels left` L1114) | tombol `1=2` (L1606) | Comment
+          (`Stacked with labels left` L2061) | tombol `1=2` (L2669) | …
+          Sel `1=2` tidak tampil tetapi TETAP memesan slotnya, jadi kedua
+          Text area BERTUMPUK di separuh KIRI — persis gambar Pega 22. Tiap
+          sel `.trin__kolom` = bentuk label-kiri kepala form. */}
+      <TataPegaBlok tata="g2">
       <div className="trin__kolom trin__infosubmit">
         {/* Additional Information TIDAK ikut dibuka jalur revisi — hanya
             Comment (cell 9). Form yang membuka tab ini untuk revisi tidak
@@ -99,23 +108,38 @@ export default function TabInfoSubmit({
             baris={5}
           />
         </fieldset>
+      </div>
+      <SelKosongPega />
+      <div className="trin__kolom">
         <Area label={INFO_SUBMIT.komentar} value={komentar} onChange={setKomentar} baris={5} />
       </div>
+      <SelKosongPega />
+      </TataPegaBlok>
 
       {/* ⛔ Kedua tombol TIDAK dirender di mode lihat — `pyCondition`-nya
           `TreatyIn.ViewState != '1'`, dan tombol yang Pega sembunyikan tidak
           boleh muncul di sini. */}
       {(!viewState1 || revisi) && (
-        <div className="trin__aksi" role="group" aria-label={INFO_SUBMIT.judul}>
+        // ⭐ `Inline grid double` L5197 (cabang EDM L7668 sama): sel KIRI =
+        // layout Submit/Submit revisi (L5218, selalu memesan slotnya), sel
+        // KANAN = Decline offer — Decline duduk di awal separuh kanan (gambar
+        // Pega 22 dan 41).
+        // ⛔ Kedua tombol DIBUNGKUS sel `<div>`: tombol yang langsung menjadi
+        // butir grid ikut melar selebar separuh layar. Di gambar 22/41
+        // `Decline offer` berukuran tombol biasa di awal selnya.
+        <div className="trin__aksi trin__tata trin__tata--g2" role="group" aria-label={INFO_SUBMIT.judul}>
           {/* ⭐ HIDUP sejak 7 Oktober 2026 — keputusan pemilik proses:
               Submit menyimpan ke tabel masing-masing DAN menjalankan tangga
               akseptasi (`TreatyInCheckError` → `Akseptasi_DT` →
               `AddCommentList_Act` → simpan). Bukan lewat Pega. */}
+          <div>
           {(bolehKirim || revisi) && (
             <button type="button" className="btn btn--primary" disabled={onKirim === undefined || sibuk} onClick={onKirim}>
               {INFO_SUBMIT.kirim}
             </button>
           )}
+          </div>
+          <div>
           {!viewState1 && (
             <button
               type="button"
@@ -128,6 +152,7 @@ export default function TabInfoSubmit({
               {INFO_SUBMIT.tolak}
             </button>
           )}
+          </div>
         </div>
       )}
       {konfirmasi && (

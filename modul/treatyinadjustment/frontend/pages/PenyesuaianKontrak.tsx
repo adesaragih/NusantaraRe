@@ -63,7 +63,8 @@ import {
   TAB_LAMA_P,
   TOMBOL,
 } from '../labelsPenyesuaian'
-import { PanelLampiranKontrak, PanelRiwayat } from './LampiranKontrak'
+import { PanelRiwayat } from './LampiranKontrak'
+import PanelLampiranPenyesuaian from '../komponen/PanelLampiranPenyesuaian'
 import { teksPromptEDM } from '../labelsPromptEDM'
 import PanelPolisMaster, { idMasterPolis } from '../komponen/PanelPolisMaster'
 
@@ -76,6 +77,47 @@ export function selDaftar(b: BarisPenyesuaian): string[] {
     b.id, b.idAsal, b.jenisPenyesuaian, b.jenisMaterial, b.namaKontrak, b.sifatProporsi,
     b.asalBisnis, b.cedant, b.tanggalMulai, b.tanggalBerakhir, b.posisi, b.statusAkseptasi,
   ].map((v, i) => selNilai(JENIS_DAFTAR[i] ?? 'teks', v))
+}
+
+/**
+ * ⭐ Pencarian daftar (8 Oktober 2026). Dicocokkan dengan TEKS YANG TAMPIL
+ * (`selDaftar` — tanggal `08-10-2026`, bukan bentuk simpanannya), tanpa
+ * membedakan huruf besar/kecil. Beberapa kata = SEMUANYA harus ada, boleh di
+ * kolom berbeda: `marsh 2024` menemukan kontrak broker MARSH tahun 2024.
+ */
+export function cocokCari(b: BarisPenyesuaian, cari: string): boolean {
+  const kata = kataCari(cari)
+  if (kata.length === 0) return true
+  const isi = selDaftar(b).join(' ').toLowerCase()
+  return kata.every((k) => isi.includes(k))
+}
+
+/** Kata ketikan Search — huruf kecil, tanpa spasi kosong. */
+export function kataCari(cari: string): string[] {
+  return cari.toLowerCase().split(/\s+/).filter((k) => k !== '')
+}
+
+/**
+ * Potong teks sel menjadi bagian biasa dan bagian COCOK (disorot `<mark>`),
+ * supaya terlihat MENGAPA sebuah baris muncul di hasil pencarian.
+ */
+export function potongSorot(teks: string, kata: readonly string[]): { isi: string; cocok: boolean }[] {
+  if (kata.length === 0 || teks === '') return [{ isi: teks, cocok: false }]
+  const kecil = teks.toLowerCase()
+  const tanda = new Array<boolean>(teks.length).fill(false)
+  for (const k of kata) {
+    for (let i = kecil.indexOf(k); i >= 0; i = kecil.indexOf(k, i + 1)) {
+      for (let j = i; j < i + k.length; j++) tanda[j] = true
+    }
+  }
+  const hasil: { isi: string; cocok: boolean }[] = []
+  for (let i = 0; i < teks.length; i++) {
+    const c = tanda[i] === true
+    const akhir = hasil[hasil.length - 1]
+    if (akhir !== undefined && akhir.cocok === c) akhir.isi += teks[i]
+    else hasil.push({ isi: teks[i] ?? '', cocok: c })
+  }
+  return hasil
 }
 
 /**
@@ -101,60 +143,96 @@ export function riwayatDari(sisi: SisiPenyesuaian): BarisRiwayatWarisan[] {
  * ⚠️ Kunci `StatusAkseptasi` yang TIDAK ADA bukan `Resolve Complete` — `!=`
  * Pega bernilai benar, jadi tombolnya tampil.
  */
+/**
+ * Mode layar EFEKTIF panel New — `ViewState` sesudah DT `TreatyInSetEdit`.
+ *
+ * ⛔ YANG MENENTUKAN ADALAH TOMBOLNYA, BUKAN NILAI TERSIMPAN — ralat atas
+ * salah tafsir yang dilaporkan pemilik proses 8 Oktober 2026 (*"kenapa
+ * setelah saya coba tidak bisa edit juga"*).
+ *
+ * `TreatyInSetEdit[2]` berbunyi `WHEN TreatyIn.RevisionState==1 → ViewState
+ * = 1`, dan dahulu kami membacanya sebagai kolom tersimpan. Ia bukan:
+ * `SetTreatyIn_Act[7]`, satu-satunya yang menyetel properti itu,
+ * berprasyarat `param.revisionstate==1` — PARAMETER TOMBOL.
+ * `Section/InputTreatyInOffer` memasangkannya:
+ *
+ *	Edit  → viewstate=<kosong>  revisionstate=<kosong>
+ *	View  → viewstate=1         revisionstate=1
+ *
+ * Keduanya bergerak bersama, jadi `RevisionState` tidak pernah menambahkan
+ * apa pun di atas `viewstate`: tombol Edit membuka SUNTING, tombol View
+ * membuka BACA. Itu yang `modeAwal` sudah bawa.
+ *
+ * ⚠️ Kolom `REVISIONSTATE` (migrasi 448) menyimpan hal LAIN — *"kontrak ini
+ * masuk jalur revisi tangga akseptasi"*, ditulis tombol Revision layar
+ * Treaty In. Memakainya untuk mengunci layar ini membuat setiap penyesuaian
+ * turunan kontrak itu lahir terkunci, dan Add Revision tidak menghasilkan
+ * apa-apa.
+ *
+ * ⭐ Dipertahankan sebagai fungsi — bukan diratakan menjadi `modeAwal` —
+ * supaya tempat keputusannya tetap satu dan beralasan, dan pagar di
+ * `terkunci-pendaratan.test.ts` tetap menunjuk ke sini.
+ *
+ * ⛔ BERKAS TUNTAS = BACA (9 Oktober 2026). Laporan pemakai: sesudah
+ * approve, status `Resolve Complete` tetapi seluruh isian di halaman masih
+ * dapat diubah. Di Pega halaman tertutup sesudah akseptasi, dan berkas
+ * `Resolve Complete`/`Decline` tidak dapat dibuka sunting lagi: tombol Edit
+ * daftar tersembunyi (@782051) dan Save tersembunyi (@119719). Jadi status
+ * tuntas/ditolak mengunci layar apa pun tombol pembukanya. (Revision
+ * mengosongkan `StatusAkseptasi`, jadi jalurnya tidak terkunci.)
+ */
+export function modeEfektif(
+  modeAwal: ModeLayar,
+  _adaDraf: boolean,
+  medan: Readonly<Record<string, string>>,
+): ModeLayar {
+  const status = medan.StatusAkseptasi ?? ''
+  if (status === 'Resolve Complete' || status === 'Decline') return '1'
+  return modeAwal
+}
+
 export function simpanTampil(mode: ModeLayar, medan: Readonly<Record<string, string>>): boolean {
   return mode !== '1' && medan.StatusAkseptasi !== 'Resolve Complete'
 }
 
-/** Kepala mode detail — kelima sel ber-`pyReadOnly=true`. */
+/**
+ * Kepala mode detail — kelima sel ber-`pyReadOnly=true`.
+ *
+ * ⭐ BENTUK PEGA (9 Oktober 2026, gambar pemakai `1001802/R01`): SATU wadah
+ * tanpa judul — kiri lima pasangan label tebal + nilai TEKS bertumpuk (ID
+ * Original, ID Revision, Reinsurance Type, Adjustment Type, Material Type),
+ * kanan panel `Existing Policy for Master ID` (@111283). Bukan kotak isian,
+ * bukan radio: semuanya baca-saja di Pega. Teks pilihan = PROMPT VALUE
+ * (`labelsPromptEDM.ts`); `NonProportional` tampil `Non Proportional`.
+ */
 function Kepala({ p }: { p: Penyesuaian }) {
   const m = p.baru.medan
-  const kode = (label: string, kunci: string) =>
-    Object.prototype.hasOwnProperty.call(m, kunci) ? (
-      <div className="field">
-        <label className="field__label">{label}</label>
-        {/* *(8 Okt, E)* Dropdown `associated` Pega menampilkan PROMPT VALUE
-            rule Property-nya (`ekspor-tambahan/EDMState.xml`,
-            `EDMMaterialType.xml`) — lihat `labelsPromptEDM.ts`. */}
-        <input className="field__input field__input--readonly" type="text" value={teksPromptEDM(kunci, m[kunci] ?? '')} readOnly />
-        <span className="tria__redup">{PENYESUAIAN.kodeBelumBerteks}</span>
-      </div>
-    ) : (
-      <div className="field">
-        <label className="field__label">{label}</label>
-        <span className="tria__tak-ada">{PENYESUAIAN.takAdaDiWarisan}</span>
-      </div>
-    )
+  const butir = (label: string, nilai: string) => (
+    <div className="tria__kepala-butir">
+      <dt>{label}</dt>
+      <dd>{nilai === '' ? '\u00a0' : nilai}</dd>
+    </div>
+  )
+  const jenis = m.ProportionType === PENYESUAIAN.nonProporsional ? PENYESUAIAN.nonProporsionalTeks : (m.ProportionType ?? '')
   return (
-    <Panel judul={PENYESUAIAN.judul}>
-      <div className="tria__kepala">
-        <div className="field">
-          <label className="field__label">{PENYESUAIAN.idAsal}</label>
-          <input className="field__input field__input--readonly" type="text" value={m.OLDID ?? p.idAsal} readOnly />
-        </div>
-        <div className="field">
-          <label className="field__label">{PENYESUAIAN.id}</label>
-          <input className="field__input field__input--readonly" type="text" value={m.ID ?? p.id} readOnly />
-        </div>
-        <fieldset className="tria__radio">
-          <legend>{PENYESUAIAN.jenisReasuransi}</legend>
-          {[PENYESUAIAN.proporsional, PENYESUAIAN.nonProporsional].map((v) => (
-            <label key={v}>
-              <input type="radio" name="tria-jenis-reasuransi" value={v} checked={m.ProportionType === v} disabled readOnly />
-              {v}
-            </label>
-          ))}
-        </fieldset>
+    <section className="panel tria__kepala-pega" aria-label={PENYESUAIAN.judul}>
+      <dl className="tria__kepala-data">
+        {butir(PENYESUAIAN.idAsal, m.OLDID ?? p.idAsal)}
+        {butir(PENYESUAIAN.id, m.ID ?? p.id)}
+        {butir(PENYESUAIAN.jenisReasuransi, jenis)}
         {/* `EDMState = 3` → LABEL "Adjustment Premium" @82379 menggantikan
-            dropdown @76962 (`EDMState != 3`). Keduanya tidak pernah tampil
-            bersamaan. */}
+            dropdown @76962 (`EDMState != 3`). */}
         {m.EDMState === '3' ? (
-          <h4 className="tria__label-jenis">{PENYESUAIAN.premiPenyesuaian}</h4>
+          <div className="tria__kepala-butir">
+            <dt>{PENYESUAIAN.premiPenyesuaian}</dt>
+          </div>
         ) : (
-          kode(PENYESUAIAN.jenisPenyesuaian, 'EDMState')
+          butir(PENYESUAIAN.jenisPenyesuaian, teksPromptEDM('EDMState', m.EDMState ?? ''))
         )}
-        {kode(PENYESUAIAN.jenisMaterial, 'EDMMaterialType')}
-      </div>
-    </Panel>
+        {butir(PENYESUAIAN.jenisMaterial, teksPromptEDM('EDMMaterialType', m.EDMMaterialType ?? ''))}
+      </dl>
+      <PanelPolisMaster ringkas idMaster={idMasterPolis(m, p.id, p.idAsal)} />
+    </section>
   )
 }
 
@@ -162,18 +240,31 @@ function Kepala({ p }: { p: Penyesuaian }) {
 const POSISI_PENYETUJU: readonly string[] = ['ReasTreatyInSecHead', 'ReasTreatyInDeptHead', 'ReasTreatyInDirector']
 
 /**
- * Syarat tampil Actions — @155994: pemegang workbasket `TreatyIn.Position`
- * penyetuju, DAN `StatusAkseptasi` Accept atau Reject.
+ * Syarat tampil Actions.
  *
- * ⚠️ Cabang `pyPosition = 'IT Developer'` dan `WB(1) = SecHead` tanpa posisi
- * tidak dibangun: server hanya menerima pemegang posisi berkas (keputusan
- * pemilik proses yang sama dengan Treaty In), dan tombol yang tampil lalu
- * ditolak lebih buruk daripada tombol yang tidak tampil.
+ * ⛔ MENYIMPANG DARI EKSPOR atas permintaan pemakai 9 Oktober 2026
+ * ("munculkan saja"). Ekspor @155994: hanya pemegang workbasket
+ * `TreatyIn.Position` penyetuju DAN `StatusAkseptasi` Accept/Reject — berkas
+ * di posisi Admin (belum diajukan) tidak punya Actions sama sekali.
+ *
+ * Kini Actions SELALU tampil selama berkas belum tuntas (`Resolve Complete`)
+ * atau ditolak (`Decline`). Penjaga tetap di server: akun yang tidak
+ * memegang workbasket posisi berkas DITOLAK dengan pesan (`KirimPenyesuaian`),
+ * dan dari posisi Admin hanya `Accept` yang berlaku (`pilihanAksi`).
+ * `POSISI_PENYETUJU` dipertahankan untuk `pilihanAksi`.
  */
-export function actionsTampil(medan: Readonly<Record<string, string>>, workbasket: readonly string[]): boolean {
-  const posisi = medan.Position ?? ''
+export function actionsTampil(medan: Readonly<Record<string, string>>, _workbasket: readonly string[]): boolean {
   const status = medan.StatusAkseptasi ?? ''
-  return (status === 'Accept' || status === 'Reject') && POSISI_PENYETUJU.includes(posisi) && workbasket.includes(posisi)
+  return status !== 'Resolve Complete' && status !== 'Decline'
+}
+
+/**
+ * Pilihan modal Actions menurut posisi berkas — tangga `Akseptasi_DT`:
+ * posisi Admin (atau kosong) HANYA punya cabang `Accept` (= mengajukan ke
+ * Sec Head); posisi penyetuju Accept / Reject / Decline.
+ */
+export function pilihanAksi(posisi: string | undefined): readonly string[] {
+  return POSISI_PENYETUJU.includes(posisi ?? '') ? PILIHAN_AKSEPTASI : ['Accept']
 }
 
 /**
@@ -247,7 +338,7 @@ function DeretTombol({
 function Detail({
   id,
   draf,
-  mode,
+  mode: modeAwal,
   onTutup,
   onTersimpan,
 }: {
@@ -297,9 +388,14 @@ function Detail({
     let dibuang = false
     setP(null)
     setGalat(null)
-    ambilPenyesuaian(id)
-      .then((x) => {
-        if (!dibuang) setP(x)
+    // ⭐ Tombol `Edit` daftar @782051 → `SetTreatyInEDM_Act(viewstate=0)` →
+    // DT `TreatyInSetEdit` atas halaman yang dimuat — SEKALI, saat dibuka.
+    // Muat ulang sesudah Save/Submit TIDAK mereset lagi (di Pega Submit
+    // menutup halaman). Belum tersimpan sampai Save.
+    const setelEdit = modeAwal === '0' && muatUlang === 0
+    Promise.all([ambilPenyesuaian(id), setelEdit ? ambilSesiSaya().catch(() => null) : Promise.resolve(null)])
+      .then(([x, sesi]) => {
+        if (!dibuang) setP(setelEdit ? terapkanSetEdit(x, sesi?.akunId ?? '') : x)
       })
       .catch((e: unknown) => {
         if (!dibuang) setGalat(e)
@@ -312,6 +408,8 @@ function Detail({
   if (galat !== null) return <Gagal galat={galat} />
   if (p === null) return <Memuat />
 
+  // `TreatyInSetEdit`: mode ditentukan TOMBOLNYA. Lihat `modeEfektif`.
+  const mode: ModeLayar = modeEfektif(modeAwal, draf !== undefined, p.baru.medan)
   const adalahDraf = draf !== undefined
   /** Isi layar → kiriman. Panel Old ikut HANYA untuk draf. */
   const masukan = (tambahan: Record<string, string> = {}): MasukanSimpanPenyesuaian => {
@@ -396,9 +494,8 @@ function Detail({
           {PENYESUAIAN.belumTerdarat}
         </div>
       )}
-      {/* ⭐ `Existing Policy for Master ID` (@111283) — di antara kepala dan
-          panel Old/New, seperti urutan Section-nya. */}
-      <PanelPolisMaster idMaster={idMasterPolis(p.baru.medan, p.id, p.idAsal)} />
+      {/* `Existing Policy for Master ID` (@111283) kini DI DALAM `Kepala`,
+          di kanan — bentuk Pega (9 Oktober 2026). */}
       {/* ⭐ BERDAMPINGAN: Old di kiri, New di kanan — @181268. Wadahnya
           bersyarat `(NonProportional && DATASHOW=1) || (Proportional &&
           DATASHOW=1)`: kontrak tanpa cabang yang dikenal tidak membukanya. */}
@@ -440,7 +537,20 @@ function Detail({
       {/* Draf: lampiran ASALNYA — `TreatyInEDMSetValue` [8]
           `TreatyRevisionCopyAttachment` menyalin lampiran itu ke pengenal
           baru, dan salinannya menunggu Save. */}
-      <PanelLampiranKontrak masterID={draf !== undefined ? p.idAsal : p.id} jenis={cabang} />
+      {/* ⭐ WADAH KEDUA (8 Oktober 2026) — Attachment · deret tombol ·
+          History di wadah putih TERSENDIRI di bawah Old/New, bentuk
+          Treaty In. Panel Attachment HIDUP: tombol Upload/Delete
+          `TreatyIn.ViewState !='1' || TreatyIn.RevisionState='1'`
+          (`WorkAttachments`/`ShowAttachmentTreaty`); draf belum ber-ID →
+          nol tombol tulis sampai Save. */}
+      <div className="tria__inbox-lampiran">
+      <PanelLampiranPenyesuaian
+        idKontrak={draf !== undefined ? p.idAsal : p.id}
+        draf={draf !== undefined}
+        jenis={cabang}
+        bisaUnggah={mode !== '1' || p.baru.medan.RevisionState === '1'}
+        statusAkseptasi={p.baru.medan.StatusAkseptasi ?? ''}
+      />
       <DeretTombol
         mode={modeBaru}
         medan={p.baru.medan}
@@ -487,7 +597,7 @@ function Detail({
             {TOMBOL.dariID} <strong>{p.id}</strong>
           </p>
           <div className="tria__radio" role="radiogroup" aria-label={TOMBOL.pilihan}>
-            {PILIHAN_AKSEPTASI.map((v) => (
+            {pilihanAksi(p.baru.medan.Position).map((v) => (
               <label key={v}>
                 <input
                   type="radio"
@@ -523,17 +633,98 @@ function Detail({
         </Modal>
       )}
       <PanelRiwayat riwayat={riwayatDari(p.baru)} petunjuk={PENYESUAIAN.petunjukHistory} />
+      </div>
     </>
   )
 }
 
 /** Mode daftar — grid `TREATY_IN_EDM`. */
+/**
+ * Syarat tampil tombol `Edit` daftar — `Section/InputTreatyInAdjustment.xml`
+ * @782051: `OperatorID.pyWorkBasketList(2).pyWorkBasketName =
+ * 'ReasTreatyInAdmin' && (.Position = 'ReasTreatyInAdmin' || .Position = '')
+ * && (.StatusAkseptasi != 'Decline' && .StatusAkseptasi != 'Resolve
+ * Complete')`. Workbasket = peran sesi (seperti syarat Actions).
+ */
+export function editTampil(b: Pick<BarisPenyesuaian, 'kodePosisi' | 'statusAkseptasi'>, workbasket: readonly string[]): boolean {
+  const posisi = b.kodePosisi ?? ''
+  return (
+    workbasket.includes('ReasTreatyInAdmin') &&
+    (posisi === 'ReasTreatyInAdmin' || posisi === '') &&
+    b.statusAkseptasi !== 'Decline' &&
+    b.statusAkseptasi !== 'Resolve Complete'
+  )
+}
+
+/**
+ * Syarat tampil tombol `Add Revision` (@500688) dan `Add Adjustment Premium`
+ * (@515563): `OperatorID.pyWorkBasketList(2).pyWorkBasketName =
+ * 'ReasTreatyInAdmin'`. Workbasket = peran sesi, seperti `editTampil`.
+ */
+export function tambahTampil(workbasket: readonly string[]): boolean {
+  return workbasket.includes('ReasTreatyInAdmin')
+}
+
+/**
+ * DT `TreatyInSetEdit` — tombol `Edit` daftar, atas halaman yang DIMUAT
+ * (clipboard; tersimpan baru oleh Save):
+ *   ViewState = 0 · Position = ReasTreatyInAdmin · IsEditData = 0 ·
+ *   PositionUsername = operator · StatusAkseptasi = "" · Comment = "".
+ *
+ * ⛔ Cabang `RevisionState == 1` TIDAK berlaku di sini: ia menyala dari
+ * `param.revisionstate`, dan tombol `Edit` mengirim parameter itu KOSONG
+ * (`Section/InputTreatyInOffer`). Lihat `modeEfektif` untuk uraiannya.
+ */
+export function terapkanSetEdit(p: Penyesuaian, operator: string): Penyesuaian {
+  const m = { ...p.baru.medan }
+  m.ViewState = '0'
+  m.Position = 'ReasTreatyInAdmin'
+  m.IsEditData = '0'
+  m.PositionUsername = operator
+  m.StatusAkseptasi = ''
+  m.Comment = ''
+  return { ...p, baru: { ...p.baru, medan: m } }
+}
+
 function Daftar({ onBuka, onDraf }: { onBuka: (id: string, mode: ModeLayar) => void; onDraf: (p: Penyesuaian) => void }) {
+  // Workbasket pemakai — syarat tampil `Edit` (@782051).
+  const [workbasket, setWorkbasket] = useState<string[]>([])
+  useEffect(() => {
+    let dibuang = false
+    ambilSesiSaya()
+      .then((s) => {
+        if (!dibuang) setWorkbasket(s.peran)
+      })
+      .catch(() => undefined)
+    return () => {
+      dibuang = true
+    }
+  }, [])
   const [baris, setBaris] = useState<BarisPenyesuaian[] | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [halaman, setHalaman] = useState(1)
   // Picker yang sedang terbuka — `null` = tertutup.
   const [picker, setPicker] = useState<JenisPicker | null>(null)
+  // Ketikan kotak Search — menyaring SELURUH baris (semuanya sudah dimuat),
+  // bukan hanya halaman yang tampil.
+  const [cari, setCari] = useState('')
+  const kotakCari = useRef<HTMLInputElement>(null)
+
+  // Pintasan `/` — langsung mengetik di kotak Search dari mana saja di
+  // halaman, kecuali sedang mengetik di isian lain.
+  useEffect(() => {
+    const tekan = (e: KeyboardEvent) => {
+      if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return
+      const t = e.target
+      if (t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return
+      e.preventDefault()
+      kotakCari.current?.focus()
+    }
+    document.addEventListener('keydown', tekan)
+    return () => {
+      document.removeEventListener('keydown', tekan)
+    }
+  }, [])
 
   useEffect(() => {
     let dibuang = false
@@ -549,7 +740,9 @@ function Daftar({ onBuka, onDraf }: { onBuka: (id: string, mode: ModeLayar) => v
     }
   }, [])
 
-  const semua = baris ?? []
+  const seluruh = baris ?? []
+  const semua = seluruh.filter((b) => cocokCari(b, cari))
+  const kata = kataCari(cari)
   const tampil = semua.slice((halaman - 1) * UKURAN_HALAMAN, halaman * UKURAN_HALAMAN)
   const lebar = [...LEBAR_DAFTAR, LEBAR_TOMBOL_BARIS, LEBAR_TOMBOL_BARIS]
 
@@ -560,11 +753,11 @@ function Daftar({ onBuka, onDraf }: { onBuka: (id: string, mode: ModeLayar) => v
           menyusun DRAF penyesuaian baru; di Pega ia juga menyimpan, di sini
           simpanannya menunggu tombol Save (keputusan pemilik proses).
 
-          ⚠️ `Add Adjustment Premium` bersyarat tampil
-          `OperatorID.pyWorkBasketList(2).pyWorkBasketName =
-          'ReasTreatyInAdmin'` @515429. Pemetaan workbasket Pega ke peran
-          aplikasi belum ada (`PERTANYAAN-TERBUKA-LAYAR-ADJUSTMENT.md` §3),
-          jadi tombolnya tampil untuk semua.
+          ⭐ Kedua tombol bersyarat tampil `OperatorID.pyWorkBasketList(2).
+          pyWorkBasketName = 'ReasTreatyInAdmin'` (@500688 Add Revision,
+          @515563 Add Adjustment Premium) — DITERAPKAN 9 Oktober 2026 lewat
+          `tambahTampil`, workbasket = peran sesi (seperti tombol Edit
+          @782051).
 
           ⛔ `Show/Hide filter` (sel 112) TIDAK dirender — dicabut 7 Oktober
           2026. Ekspor memberinya `pyVisible = NEVER`, dan ia satu-satunya
@@ -574,24 +767,80 @@ function Daftar({ onBuka, onDraf }: { onBuka: (id: string, mode: ModeLayar) => v
           muncul. Tombol mati yang Pega sendiri sembunyikan bukan bagian
           layarnya. */}
       <div className="tria__aksi" role="group" aria-label={PENYESUAIAN.judul}>
-        <button
-          type="button"
-          className="btn btn--primary"
-          onClick={() => {
-            setPicker('revisi')
-          }}
-        >
-          {PENYESUAIAN.tambahRevisi}
-        </button>
-        <button
-          type="button"
-          className="btn btn--primary"
-          onClick={() => {
-            setPicker('premi')
-          }}
-        >
-          {PENYESUAIAN.tambahPremi}
-        </button>
+        {tambahTampil(workbasket) && (
+          <>
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={() => {
+                setPicker('revisi')
+              }}
+            >
+              {PENYESUAIAN.tambahRevisi}
+            </button>
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={() => {
+                setPicker('premi')
+              }}
+            >
+              {PENYESUAIAN.tambahPremi}
+            </button>
+          </>
+        )}
+        {/* ⭐ Pencarian (8 Oktober 2026) — di KANAN deret tombol. Chip jumlah
+            hasil duduk DI KIRI bar, supaya bar tidak bergeser saat chip
+            muncul. */}
+        {baris !== null && kataCari(cari).length > 0 && (
+          <span className={'tria__cari-jumlah' + (semua.length === 0 ? ' tria__cari-jumlah--nol' : '')} aria-live="polite">
+            {PENYESUAIAN.cariJumlah(semua.length, seluruh.length)}
+          </span>
+        )}
+        <div className="tria__cari" role="search">
+          <svg className="tria__cari-ikon" viewBox="0 0 20 20" aria-hidden="true">
+            <circle cx="8.5" cy="8.5" r="5.5" />
+            <path d="M12.5 12.5 17 17" />
+          </svg>
+          <input
+            ref={kotakCari}
+            type="search"
+            className="tria__cari-kotak"
+            aria-label={PENYESUAIAN.cari}
+            placeholder={PENYESUAIAN.cariPetunjuk}
+            value={cari}
+            onChange={(e) => {
+              setCari(e.target.value)
+              setHalaman(1)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape' && cari !== '') {
+                e.preventDefault()
+                setCari('')
+                setHalaman(1)
+              }
+            }}
+          />
+          {cari !== '' ? (
+            <button
+              type="button"
+              className="tria__cari-bersih"
+              aria-label={PENYESUAIAN.cariBersihkan}
+              title={PENYESUAIAN.cariBersihkan}
+              onClick={() => {
+                setCari('')
+                setHalaman(1)
+                kotakCari.current?.focus()
+              }}
+            >
+              ✕
+            </button>
+          ) : (
+            <kbd className="tria__cari-pintas" title={PENYESUAIAN.cariPintasan}>
+              /
+            </kbd>
+          )}
+        </div>
       </div>
       {picker !== null && (
         <PilihMaster
@@ -611,12 +860,11 @@ function Daftar({ onBuka, onDraf }: { onBuka: (id: string, mode: ModeLayar) => v
       {baris !== null && (
         <>
           <div className="table-wrap">
-            {/* ⛔ `--daftar`: grid INI punya dua belas kolom data, dan
-                lebarnya persen — tanpa lebar minimum, persen itu menyusut
-                mengikuti layar sampai "SAHABAT INSURANCE" terpecah menjadi
-                `SAHAB AT INSUR ANCE`. Lebar minimumnya BUKAN karangan:
-                jumlah lebar piksel kedua belas kolom di ekspor, ditambah
-                kedua kolom tombol. */}
+            {/* ⛔ `--daftar`: grid INI punya dua belas kolom data. Lebar
+                piksel ekspor menjadi PERBANDINGAN `<col>`, dan tata letak
+                `auto` (8 Oktober 2026) menjamin tiap kolom minimal selebar
+                kata terpanjangnya — "SAHABAT INSURANCE", `Complete`,
+                `NonProportional` tidak pernah terpenggal. */}
             <table className="tria__tabel tria__tabel--daftar">
               <colgroup>
                 {lebar.map((_, i) => (
@@ -635,10 +883,29 @@ function Daftar({ onBuka, onDraf }: { onBuka: (id: string, mode: ModeLayar) => v
                 </tr>
               </thead>
               <tbody>
-                {semua.length === 0 && (
+                {semua.length === 0 && seluruh.length === 0 && (
                   <tr>
                     <td colSpan={KOLOM_DAFTAR.length + 2}>
                       <Kosong pesan={PENYESUAIAN.tanpaBaris} petunjuk={PENYESUAIAN.petunjukDaftarKosong} />
+                    </td>
+                  </tr>
+                )}
+                {/* Ada data, tetapi nol yang cocok dengan pencarian. */}
+                {semua.length === 0 && seluruh.length > 0 && (
+                  <tr>
+                    <td colSpan={KOLOM_DAFTAR.length + 2} className="tria__cari-kosong">
+                      <span>{PENYESUAIAN.cariTanpaHasil(cari.trim())}</span>
+                      <button
+                        type="button"
+                        className="tria__cari-tautan"
+                        onClick={() => {
+                          setCari('')
+                          setHalaman(1)
+                          kotakCari.current?.focus()
+                        }}
+                      >
+                        {PENYESUAIAN.cariBersihkan}
+                      </button>
                     </td>
                   </tr>
                 )}
@@ -651,13 +918,24 @@ function Daftar({ onBuka, onDraf }: { onBuka: (id: string, mode: ModeLayar) => v
                       // `visibility`. Aturan yang ditaruh di sana diam-diam
                       // tidak berlaku, dan `08-10-2026` tetap pecah dua baris.
                       <td key={i} className={JENIS_DAFTAR[i] === 'tanggal' ? 'tria__sel-tanggal' : undefined}>
-                        {v}
+                        {/* ⭐ Bagian yang cocok dengan pencarian disorot. */}
+                        {potongSorot(v, kata).map((p, j) =>
+                          p.cocok ? (
+                            <mark key={j} className="tria__sorot">
+                              {p.isi}
+                            </mark>
+                          ) : (
+                            p.isi
+                          ),
+                        )}
                       </td>
                     ))}
                     {/* `Edit` @782051 dan `View` @798870 sama-sama MEMBUKA —
                         bedanya `ViewState` 0 lawan 1. Membuka bukan menulis;
                         yang menulis tombol Save, dan ia mati. */}
                     <td>
+                      {/* `Edit` @782051 — syarat tampil `editTampil`. */}
+                      {editTampil(b, workbasket) && (
                       <button
                         type="button"
                         className="btn btn--ghost btn--sm"
@@ -667,6 +945,7 @@ function Daftar({ onBuka, onDraf }: { onBuka: (id: string, mode: ModeLayar) => v
                       >
                         {PENYESUAIAN.ubah}
                       </button>
+                      )}
                     </td>
                     <td>
                       <button

@@ -19,22 +19,22 @@ describe('ringkasan salinan lampiran', () => {
       tersalin: 1,
       berkas: [
         { nama: 'Slip.pdf', berhasil: true, pesan: 'Tersalin' },
-        { nama: 'Bordero.xlsx', berhasil: false, pesan: 'Berkas melebihi 25 MB — tidak disalin.' },
+        { nama: 'Bordero.xlsx', berhasil: false, pesan: 'File exceeds 25 MB — not copied.' },
       ],
     }
     expect(pesanSalinanLampiran(s)).toBe(
-      'Lampiran 1001001/R01 ikut disalin: 1 dari 2 berkas. Tidak tersalin: Bordero.xlsx (Berkas melebihi 25 MB — tidak disalin.)',
+      'Attachments from 1001001/R01 were copied too: 1 of 2 files. Not copied: Bordero.xlsx (File exceeds 25 MB — not copied.)',
     )
-    expect(gabungPesanSalinan(PESAN, s).startsWith(PESAN + ' Lampiran 1001001/R01')).toBe(true)
+    expect(gabungPesanSalinan(PESAN, s).startsWith(PESAN + ' Attachments from 1001001/R01')).toBe(true)
   })
 
   it('galat menyeluruh dari server ditampilkan apa adanya', () => {
-    const s = { sumber: '2002002', tersalin: 0, berkas: [], pesan: 'ID Original 2002002 bukan asal 1001001/R02 — lampirannya tidak disalin.' }
+    const s = { sumber: '2002002', tersalin: 0, berkas: [], pesan: 'Original ID 2002002 is not the source of 1001001/R02 — its attachments were not copied.' }
     expect(pesanSalinanLampiran(s)).toBe(s.pesan)
   })
 
   it('semua tersalin: tanpa daftar gagal', () => {
     const s = { sumber: '1001001', tersalin: 1, berkas: [{ nama: 'a.pdf', berhasil: true, pesan: 'Tersalin' }] }
-    expect(pesanSalinanLampiran(s)).toBe('Lampiran 1001001 ikut disalin: 1 dari 1 berkas.')
+    expect(pesanSalinanLampiran(s)).toBe('Attachments from 1001001 were copied too: 1 of 1 files.')
   })
 })

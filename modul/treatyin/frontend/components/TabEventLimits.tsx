@@ -31,10 +31,21 @@
 // tingkat Detail milik sub-tab Event Limits di dalam Limits PROPORSIONAL —
 // itu tetap di `TabLimitsProp`.)
 //
-// ⚠️ NILAI AKARNYA BELUM DAPAT DIBACA, dan itu dikatakan di layar: tidak ada
-// kolom pendaratan yang memuatnya, dan kolom baru menuntut migrasi —
-// rentang migrasi `treatyin` habis (larangan 6). Medan kosong di sini
-// bermakna "belum terjangkau", BUKAN "kontrak ini tidak punya".
+// ⭐ RALAT 8 Oktober 2026 — NILAINYA SUDAH DAPAT DIBACA.
+//
+// Keterangan lama berbunyi *"belum ada kolom pendaratan yang memuatnya"*. Itu
+// benar saat ditulis 6 Oktober, dan KEDALUWARSA sejak migrasi `446`
+// mendirikan `T_TREATY_HAZARD_LIMIT` — tabel yang kedelapan medan ini
+// tempati, dan yang Save memang tulis.
+//
+// ⛔ Yang hilang selama ini PEMBACANYA: nol jalur membaca tabel itu kembali,
+// sehingga tab ini selalu kosong walau kontraknya punya nilai. Pembacanya
+// lahir 8 Oktober 2026 (`repository.BacaBatasBahaya`), dan nilainya tiba di
+// sini lewat penampung halaman seperti medan tersimpan lain.
+//
+// ⚠️ Keterangan kedaluwarsa yang terdengar pasti adalah sebab cacat ini
+// bertahan dua hari: ia menjawab pertanyaan "kenapa kosong?" dengan jawaban
+// yang salah, dan nol orang memeriksanya lagi.
 //
 // ⚠️ Label sama, nasib baca-saja beda: hanya sel RSMD ber-
 // `pyReadOnlyCondition` = `TreatyIn.ViewState = 1`; tiga lainnya tanpa
@@ -43,7 +54,9 @@
 
 import { useEffect, useState } from 'react'
 
-import { Panel, Pilih } from '../../../../inti/frontend/components/ui/dasar'
+import { FieldAngka, Panel } from '../../../../inti/frontend/components/ui/dasar'
+import { PilihCari as Pilih } from '../../../../inti/frontend/components/ui/pilihSaring'
+import { formatNumber } from '../../../../inti/frontend/lib/format'
 import { ambilOpsiLimits, type PilihanWarisan } from '../api'
 import { EVENT_LIMITS } from '../labels'
 import { useProperti } from '../halaman'
@@ -119,38 +132,49 @@ export default function TabEventLimits({ mode = 'lihat' }: { mode?: ModeForm }) 
                 <Pilih
                   label=""
                   value={isi[b.mataUang] ?? ''}
+                  // ⭐ Pilihan kosong berbunyi `Currency`, seperti di Pega —
+                  // bukan teks kosong bawaan aplikasi.
+                  kosong={EVENT_LIMITS.mataUangKosong}
                   opsi={mataUang.map((o) => ({ value: o.nama, label: o.nama }))}
                   onChange={(v) => {
                     setIsi(b.mataUang, v)
                   }}
                 />
               ) : (
-                <span className="trin__redup">—</span>
+                <span>{isi[b.mataUang] || <span className="trin__redup">—</span>}</span>
               )}
             </dd>
             <dd className="trin__ev-nilai">
               {bisaUbah ? (
-                // ⛔ Tidak diformat saat diketik — koma desimal harus dapat diketik.
-                <input
-                  className="field__input"
-                  type="text"
-                  inputMode="decimal"
-                  aria-label={b.label}
+                // ⭐ `FieldAngka` — pemisah ribuan hidup saat mengetik, sama
+                // dengan seluruh isian uang modul ini. Bentuk KABEL-nya tetap
+                // titik desimal, jadi yang tersimpan tidak berubah.
+                <FieldAngka
+                  label=""
                   value={isi[b.nilai] ?? ''}
-                  onChange={(e) => {
-                    setIsi(b.nilai, e.target.value)
+                  desimal={2}
+                  // ⛔ `0,00` sebagai BAYANGAN, bukan nilai. Pega memang
+                  // memperlihatkan `0,00` pada medan kosong, tetapi menuliskan
+                  // nol ke dalamnya akan mengubah data: "belum diisi" dan
+                  // "diisi nol" bukan hal yang sama, dan Save membedakannya.
+                  placeholder={EVENT_LIMITS.nilaiKosong}
+                  onChange={(v) => {
+                    setIsi(b.nilai, v)
                   }}
                 />
               ) : (
-                <span className="trin__redup">—</span>
+                // ⛔ Mode lihat DULU selalu `—`, bahkan ketika nilainya ada:
+                // tab ini tidak pernah memperlihatkan apa pun. Sekarang ia
+                // menampilkan angkanya, berpemisah ribuan seperti grid uang
+                // lain, dan `—` hanya untuk yang benar-benar kosong.
+                <span>
+                  {isi[b.nilai] ? formatNumber(isi[b.nilai], 2) : <span className="trin__redup">—</span>}
+                </span>
               )}
             </dd>
           </div>
         ))}
       </dl>
-      <span className="trin__redup" role="note">
-        {EVENT_LIMITS.belumTerjangkau}
-      </span>
     </Panel>
   )
 }

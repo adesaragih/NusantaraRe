@@ -223,10 +223,11 @@ func daftarkanWarisan(pasang func(string, rute)) {
 		hasil, err := l.OpsiLimits(r.Context(), p)
 		tulis(w, hasil, err)
 	})
-	// Dropdown `Spreading Type` panel Share — per Treaty Group dan tanggal mulai.
+	// Dropdown `Spreading Type` panel Share. Parameternya DIKIRIM LAYAR, dan
+	// yang tidak dikirim membuat filternya dilewati — persis Pega.
 	pasang("GET "+Prefix+"/warisan/spreading-induk", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		q := r.URL.Query()
-		hasil, err := l.DaftarIndukSpreading(r.Context(), p, q.Get("treatyGroupId"), q.Get("mulai"))
+		hasil, err := l.DaftarIndukSpreading(r.Context(), p, q.Get("treatyGroupId"), q.Get("treatyDescId"), q.Get("mulai"))
 		tulis(w, hasil, err)
 	})
 	// Autocomplete `Reinsurer Name` / `Facultative Reinsurers` tab Share.

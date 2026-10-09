@@ -1,0 +1,2 @@
+DROP TABLE {skema}.T_TREATY_KURS PURGE
+/

@@ -42,7 +42,14 @@ describe('tombol Apply', () => {
 
   it('pilihan Period dari services; "Quarter Year" label nilai `quarter`', () => {
     const html = renderToStaticMarkup(<TabReportingPeriod baris={[]} opsiPeriode={OPSI} mode="ubah" />)
-    expect(html).toContain('<option value="quarter">Quarter Year</option>')
+    // ⛔ Combobox sejak 8 Oktober 2026 (*"mengetik harus terasa seperti
+    // mencari"*): daftar butirnya baru dirender ketika dibuka, jadi yang
+    // dapat diperiksa di sini adalah kontrolnya memang berdaftar dan
+    // menerima ketikan.
+    expect(html).toMatch(/aria-label="Period"|>Period<\/label>/)
+    expect(html).toContain('role="combobox"')
+    // ⚠️ Bunyinya dari `TEKS_UI` (bergantung bahasa); yang diuji adanya.
+    expect(html).toMatch(/placeholder="[^"]+"/)
   })
 
   it('⭐ label tanpa "(Days)" dan pesan statis di samping Apply — seperti layar Pega', () => {

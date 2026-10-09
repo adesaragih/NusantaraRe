@@ -17,7 +17,7 @@ export const DESIMAL_PERSEN = 2
 export const DESIMAL_PERSEN_SHARE = 8
 
 export const PENYESUAIAN = {
-  judulMenu: 'Treaty In Adjustment — Penyesuaian',
+  judulMenu: 'Treaty In Adjustment',
   /** pyValue @26602 — judul layar. */
   judul: 'Adjustment Treaty In',
   // Kepala mode detail — pyLabelFieldValue tiap sel.
@@ -30,6 +30,8 @@ export const PENYESUAIAN = {
   jenisMaterial: 'Material Type', // .EDMMaterialType @87067 (pxDropdown, ALWAYS)
   proporsional: 'Proportional',
   nonProporsional: 'NonProportional',
+  /** Teks tampil `ProportionType` di kepala — gambar Pega: `Non Proportional`. */
+  nonProporsionalTeks: 'Non Proportional',
 
   // Panel mode detail.
   panelLama: 'Old Data', // pyTitle @192816 → TreatyInNONProportionalOldData
@@ -45,6 +47,15 @@ export const PENYESUAIAN = {
   // Mode daftar (`DATASHOW != 1` @481804).
   tambahRevisi: 'Add Revision', // pyLabel @500554 → PickerTreatyInMasterRevisi
   tambahPremi: 'Add Adjustment Premium', // pyLabel @515429 → PickerTreatyInMaster
+  // ⭐ Pencarian daftar — permintaan pemakai 8 Oktober 2026 (*"di adjustment
+  // buat fitur pencarian"*). Bukan dari ekspor: penyaring Pega di layar ini
+  // `pyVisible = NEVER` (lihat `Daftar`), jadi ini fitur baru, bukan salinan.
+  cari: 'Search',
+  cariPetunjuk: 'Search ID, contract, ceding, broker…',
+  cariBersihkan: 'Clear search',
+  cariTanpaHasil: (q: string) => `No contracts match "${q}".`,
+  cariJumlah: (n: number, total: number) => `${String(n)} of ${String(total)} items`,
+  cariPintasan: 'Press / to search',
 
   // Picker tombol Add — `Section/PickerTreatyInMasterRevisi.xml` /
   // `Section/PickerTreatyInMaster.xml`.
@@ -60,7 +71,7 @@ export const PENYESUAIAN = {
    * `SaveTreatyIn_EDM_Act`). Keputusan pemilik proses 7 Oktober 2026: draf
    * di layar, simpanannya menunggu tombol Save.
    */
-  drafBelumTersimpan: 'Draf — belum tersimpan. Penyesuaian ini baru ada di layar; ia masuk basis data lewat tombol Save.',
+  drafBelumTersimpan: 'Draft — not saved. This adjustment exists on screen only; it reaches the database through the Save button.',
   /**
    * ⭐ Audit 8 Oktober 2026 — isi tab penyesuaian ini TIDAK ada di tabel
    * pendaratan (`Penyesuaian.terdarat = false`). Di Pega penyesuaian selalu
@@ -68,16 +79,16 @@ export const PENYESUAIAN = {
    * lalu disimpan sebagai data separuh — maka panel New dikunci.
    */
   belumTerdarat:
-    'Isi kontrak ini (Limits, Share, Portfolio, dst.) belum tersedia di aplikasi, jadi tab-tabnya kosong. Penyesuaian hanya dapat dilihat sampai kontrak induknya disimpan lewat menu Treaty In.',
+    'The content of this contract (Limits, Share, Portfolio, etc.) is not available in the application yet, so its tabs are empty. The adjustment can only be viewed until the parent contract is saved through the Treaty In menu.',
 
   ubah: 'Edit', // pyLabel @782051
   lihat: 'View', // pyLabel @798870
-  kembali: 'Kembali ke daftar',
+  kembali: 'Back to list',
   tanpaBaris: 'No items',
   petunjukDaftarKosong: '',
   // Panel Old / mode View: tombol ekspor yang tidak berlaku di sini.
-  tombolTulisMati: 'Tombol ini tidak berlaku di panel atau mode ini — dimatikan, bukan dihilangkan.',
-  rumusBelum: 'Rumus tombol ini belum disambungkan — tombolnya dimatikan, bukan dihilangkan.',
+  tombolTulisMati: 'This button does not apply in this panel or mode — disabled, not removed.',
+  rumusBelum: 'The formula for this button is not wired yet — the button is disabled, not removed.',
   /**
    * Rantai menyentuh langkah BERSYARAT yang belum dibangun (mis.
    * `TreatyInXOLAddSpreadingDetailActual` bila `EDMState = 3`, yang menulis
@@ -95,14 +106,16 @@ export const PENYESUAIAN = {
   /** `GenerateCSVTreaty` — nama berkas dari ekspor (`FSFileName`). */
   berkasAchievement: 'CSVAchievementTreatyIn.xlsx',
   /** Daftar master (mata uang, Treaty Group, Treaty Type) belum dimuat. */
-  masterBelum: 'Daftar master belum dimuat; nama pasangannya tidak dapat diisi.',
+  masterBelum: 'The master list is not loaded yet; its paired name cannot be filled.',
   /** Nilai tersimpan yang tidak ada di daftar — ditawarkan, bukan dijatuhkan. */
-  diLuarDaftar: '(di luar daftar)',
+  diLuarDaftar: '(outside the list)',
+  /** Pilihan kosong dropdown — `Choose`, seperti Pega dan layar Treaty In. */
+  pilihKosong: 'Choose',
 
   // Medan bertanda dan keadaan.
   takAdaDiWarisan: '',
   tanpaTeks: '',
-  belumDibangun: 'Tab ini belum dibangun.',
+  belumDibangun: 'This tab has not been built yet.',
   belumDibangunPetunjuk: '',
   sebagian: '',
   petunjukGridKosong: '',
@@ -111,10 +124,10 @@ export const PENYESUAIAN = {
   // hari ini nol; rincian lain dibangkitkan (`KERANGKA_RINCIAN`).
   rincianHilang: '',
   /** Tombol ▸/▾ rincian baris (`expandPane`). */
-  rincianBuka: 'Rincian baris',
+  rincianBuka: 'Row details',
   includeTakAda: '',
   /** §17 — isi Retro tidak dibangun karena jarang. */
-  retroJarang: 'Isi Retro tidak dibangun — jarang dipakai.',
+  retroJarang: 'Retro content is not built — rarely used.',
   retroJarangPetunjuk: '',
 } as const
 
@@ -131,8 +144,8 @@ export const PENYESUAIAN = {
  * dari pola Pega yang SAMA di NB FacIn (tangkapan layar 3 Oktober 2026).
  */
 export const TOMBOL_IKON: Readonly<Record<string, string>> = {
-  'IconAdd.png': 'Tambah',
-  'IconTrash.png': 'Hapus',
+  'IconAdd.png': 'Add',
+  'IconTrash.png': 'Delete',
 }
 
 export const KOLOM_DAFTAR = [
@@ -223,11 +236,39 @@ export interface MedanForm {
 
 /** `TreatyIn.ViewState = 1` — mode View. */
 const modeLihat = (m: Readonly<Record<string, string>>) => m.ViewState === '1'
-/** `TreatyIn.IsEditData= 1`. */
-const dataDiubah = (m: Readonly<Record<string, string>>) => m.IsEditData === '1'
-/** `TreatyIn.IsEditData= 1 || TreatyIn.EDMMaterialType = 1`. */
-const dataDiubahAtauMaterial = (m: Readonly<Record<string, string>>) =>
-  m.IsEditData === '1' || m.EDMMaterialType === '1'
+/**
+ * ⭐ DIKEMBALIKAN 9 Oktober 2026 — keputusan pemakai "Ikuti Pega" untuk empat
+ * medan kepala yang 8 Oktober ditutup penuh. `pyReadOnlyCondition`
+ * `Section/TreatyInNONProportional.xml` (panel New):
+ *
+ *   TreatyContractName @35853, ContractRefNo @42427
+ *       `TreatyIn.IsEditData= 1`
+ *   TeritorialScope @48962, BordereauxNote @61498
+ *       `TreatyIn.IsEditData= 1 || TreatyIn.EDMMaterialType = 1`
+ *
+ * — artinya Teritorial Scope & Bordereaux Note hanya dapat disunting pada
+ * adjustment NON MATERIAL. Mode lihat (`ViewState = 1`) tetap mengunci.
+ */
+const dataDiubah = (m: Readonly<Record<string, string>>) => modeLihat(m) || m.IsEditData === '1'
+const dataDiubahAtauMaterial = (m: Readonly<Record<string, string>>) => dataDiubah(m) || m.EDMMaterialType === '1'
+/*
+ * ⭐ (Riwayat) DUA PREDIKAT DICABUT 8 Oktober 2026 — DIKEMBALIKAN 9 Oktober 2026
+ * (`dataDiubah`, `dataDiubahAtauMaterial` di atas). Catatan lama:
+ *
+ * ⛔ DUA PREDIKAT DICABUT 8 Oktober 2026, dan isinya dicatat di sini supaya
+ * tidak hilang bersama kodenya:
+ *
+ *   dataDiubah              m.IsEditData === '1'
+ *   dataDiubahAtauMaterial  m.IsEditData === '1' || m.EDMMaterialType === '1'
+ *
+ * Keduanya menyalin `pyReadOnlyCondition` ekspor untuk `TreatyContractName`,
+ * `ContractRefNo`, `TeritorialScope`, dan `BordereauxNote`. Pemilik proses
+ * menutup keempat medan itu sepenuhnya (daftar putih kepala di bawah), jadi
+ * nol yang memakainya lagi.
+ *
+ * ⚠️ Bila suatu hari keempatnya dibuka kembali, syaratnya ADA DI ATAS —
+ * bukan harus ditemukan ulang dari korpus.
+ */
 
 /**
  * ⛔ Panel Old: NOL medan dapat disunting — keputusan, bukan salinan.
@@ -251,6 +292,36 @@ export const MEDAN_KANAN_LAMA: readonly MedanForm[] = [
   { label: 'Ceding', kunci: 'Ceding', dari: 'sisi', bentuk: 'tampil', jejak: 'OldData @113604' },
   { label: 'Source of Business', kunci: 'LeadingReinsSource', dari: 'sisi', bentuk: 'tampil', jejak: 'OldData @118843' },
 ]
+/**
+ * ⛔ KEPALA PANEL NEW — DAFTAR PUTIH, bukan daftar hitam.
+ *
+ * Pemilik proses 8 Oktober 2026 menyebut medan yang BOLEH disunting, dan
+ * hanya itu:
+ *
+ *   Commencement · Termination · Accounting Mode · RNM as Treaty Leader ·
+ *   Effective Date · Is Pro Rate · Bordereaux · Rate of Exchange
+ *
+ * Selain kedelapan itu BACA-SAJA di mode apa pun (`selaluBacaSaja`).
+ *
+ * ⭐ 9 Oktober 2026 — Treaty Contract Name, Contract Ref No, Teritorial Scope,
+ * dan Bordereaux Note DIBUKA KEMBALI mengikuti `pyReadOnlyCondition` Pega
+ * (keputusan pemakai "Ikuti Pega"); Ceding dan Source of Business tetap
+ * tertutup.
+ *
+ * ⚠️ INI MENYIMPANG DARI EKSPOR, dan simpangannya dinyatakan:
+ * `TreatyContractName`, `ContractRefNo`, `TeritorialScope`, dan
+ * `BordereauxNote` di Pega ber-`pyReadOnlyCondition` (`IsEditData = 1`,
+ * sebagian ditambah `EDMMaterialType = 1`) — artinya di sana mereka DAPAT
+ * disunting pada sebagian kontrak. Pemilik proses menutup keempatnya.
+ *
+ * ⚠️ `Ceding` dan `Source of Business` ikut tertutup: keduanya diisi lewat
+ * jendela pencarian, dan tombol `Choose …`-nya adalah penyuntingan juga.
+ * Membiarkan tombolnya hidup sementara kotaknya baca-saja adalah pintu
+ * belakang, bukan pengecualian.
+ *
+ * ⭐ `Rate of Exchange` bukan medan kepala — ia grid tersendiri, dan tetap
+ * dapat disunting lewat gridnya.
+ */
 export const MEDAN_KIRI_BARU: readonly MedanForm[] = [
   { label: 'Treaty Contract Name', kunci: 'TreatyContractName', dari: 'sisi', bentuk: 'teks', bacaSajaBila: dataDiubah, jejak: 'NONProportional @35853' },
   { label: 'Contract Ref No', kunci: 'ContractRefNo', dari: 'sisi', bentuk: 'teks', bacaSajaBila: dataDiubah, jejak: 'NONProportional @42427' },
@@ -271,11 +342,11 @@ export const MEDAN_KANAN_BARU: readonly MedanForm[] = [
   { label: 'Treaty Year', kunci: 'TreatyYear', dari: 'sisi', bentuk: 'teks', selaluBacaSaja: true, jejak: 'NONProportional @99854' },
   { label: 'Accounting Mode', kunci: 'AccountingMode', dari: 'sisi', bentuk: 'pilih', syarat: 'Proportional', bacaSajaBila: modeLihat, jejak: 'NONProportional @106135' },
   { label: 'Accounting Mode', kunci: 'AccountingModeNonProp', dari: 'sisi', bentuk: 'pilih', syarat: 'NonProportional', bacaSajaBila: modeLihat, jejak: 'NONProportional @112579' },
-  { label: 'Ceding', kunci: 'Ceding', dari: 'sisi', bentuk: 'tampil', pilihAgen: 'reinsured', jejak: 'NONProportional @168493' },
+  { label: 'Ceding', kunci: 'Ceding', dari: 'sisi', bentuk: 'tampil', selaluBacaSaja: true, jejak: 'NONProportional @168493' },
   // Kotak centang menampilkan `pyCheckboxCaption`; label sel ketiga sel ini
   // (`Effective Date`) adalah sisa salin Pega.
   { label: 'RNM as Treaty Leader', kunci: 'TreatyLeader', dari: 'sisi', bentuk: 'centang', bacaSajaBila: modeLihat, jejak: 'NONProportional @189183' },
-  { label: 'Source of Business', kunci: 'LeadingReinsSource', dari: 'sisi', bentuk: 'tampil', pilihAgen: 'source', jejak: 'NONProportional @221597' },
+  { label: 'Source of Business', kunci: 'LeadingReinsSource', dari: 'sisi', bentuk: 'tampil', selaluBacaSaja: true, jejak: 'NONProportional @221597' },
   { label: 'Effective Date', kunci: 'EDMEffective', dari: 'sisi', bentuk: 'tanggal', bacaSajaBila: modeLihat, jejak: 'NONProportional @238886 (TreatyMasterInEDM)' },
   { label: 'Is Pro Rate', kunci: 'IsProRate', dari: 'sisi', bentuk: 'centang', bacaSajaBila: modeLihat, jejak: 'NONProportional @249049 (TreatyMasterInEDM)' },
 ]
@@ -386,7 +457,7 @@ export const TOMBOL = {
   tanyaTolak: 'Are you sure you want to DECLINE this offer?',
   tolak: 'Decline', // → `TreatyInDeclineConfirmation_postactEDM`
   /** Properti terkirim yang tidak tersimpan — dilaporkan, tidak ditelan. */
-  takTersimpan: 'TIDAK tersimpan (belum punya kolom/tabel):',
+  takTersimpan: 'NOT saved (no column/table yet):',
 } as const
 
 /**
@@ -408,10 +479,10 @@ export const KUNCI_HISTORY = ['Date', 'OperatorName', 'IsApproved', 'Suggest'] a
  * `CARI7` Termination) — tepat ketujuh kolom grid.
  */
 export const CARI_MASTER = {
-  petunjuk: 'Cari…',
+  petunjuk: 'Search…',
   reset: 'Reset',
   hasil: (n: number, total: number) => `${n} dari ${total} baris`,
-  tanpaHasil: 'Tidak ada baris yang cocok dengan pencarian.',
+  tanpaHasil: 'No rows match the search.',
 }
 
 /**

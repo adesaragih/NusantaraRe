@@ -33,8 +33,18 @@ describe('PilihSaring — dropdown yang dapat difilter', () => {
   it('pilihan berubah HANYA saat butir dipilih; ketikan dikembalikan saat fokus pergi', () => {
     const tutup = KODE.slice(KODE.indexOf('function tutup'), KODE.indexOf('function pilih'))
     expect(tutup).toContain('setKetik(teksTerpilih)')
-    const ketik = KODE.slice(KODE.indexOf('function ubahKetik'))
-    expect(ketik.slice(0, ketik.indexOf('\n  }\n'))).not.toContain('onPilih')
+    // ⚠️ Akhiran baris DINORMALKAN dulu: berkasnya CRLF, dan irisan yang
+    // mencari penutup fungsi diam-diam gagal (`indexOf` = -1 →
+    // `slice(0, -1)` = seluruh sisa berkas). Uji ini lolos selama sisa
+    // berkas kebetulan tidak memuat `onPilih`; begitu `PilihCari`
+    // ditambahkan di bawahnya, kerapuhannya terbuka.
+    //
+    // ⭐ Yang diuji tetap sama: `ubahKetik` TIDAK mengubah pilihan.
+    const rapi = KODE.split('\r\n').join('\n')
+    const ketik = rapi.slice(rapi.indexOf('function ubahKetik'))
+    const tutupFn = ketik.indexOf('\n  }\n')
+    expect(tutupFn).toBeGreaterThan(0)
+    expect(ketik.slice(0, tutupFn)).not.toContain('onPilih')
   })
   it('Escape menutup daftar saja, bukan popup tempatnya berada', () => {
     const esc = KODE.slice(KODE.indexOf('e.key === "Escape"'))

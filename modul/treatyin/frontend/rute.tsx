@@ -1,10 +1,12 @@
 // Rute modul Treaty In — tiket 14, 15, dan ronde layar 1.
 
+import { BahasaUI } from '../../../inti/frontend/components/ui/bahasaUI'
 import { useState } from 'react'
 
 import type { PropsRute, RuteModul } from '../../../inti/frontend/modul'
 import type { HalamanTreatyIn } from './menu'
 import type { ModeForm } from './mode'
+import DaftarPilihBawah from './components/DaftarPilihBawah'
 import AcuanTreatyIn from './pages/AcuanTreatyIn'
 import DaftarKontrakTreatyIn from './pages/DaftarKontrakTreatyIn'
 import FormKontrakTreatyIn from './pages/FormKontrakTreatyIn'
@@ -25,9 +27,18 @@ export function RuteTreatyIn({ halaman }: PropsRute<HalamanTreatyIn>) {
   // salinan adalah kontrak baru sampai Save melahirkan pengenalnya.
   const [salinDari, setSalinDari] = useState<string | null>(null)
 
+  // ⛔ BAHASA INGGRIS untuk seluruh teks bawaan komponen bersama —
+  // permintaan pemilik proses 8 Oktober 2026: *"gunakan bahasa inggris untuk
+  // semua label dan text yang ada di treaty in dan treaty in adjustment"*.
+  //
+  // ⭐ Lewat `BahasaUI.Provider`, mekanisme yang SUDAH dipakai modul lain
+  // (Accounts, Aggregate, Treaty Contract Out) — bukan tiruannya. Tanpa itu
+  // `Memuat...`, `-- pilih --`, `Type to filter`, `Tidak ada baris`
+  // dan teks pager muncul berbahasa Indonesia di tengah layar Inggris.
   return (
     // Akar gaya modul: semua aturan `treatyin.css` diawali `.treatyin` (`display: contents`).
-    <div className="treatyin">
+    <BahasaUI.Provider value="en">
+      <div className="treatyin">
       {halaman === 'treatyin-kontrak' && dibuka === null && (
         <DaftarKontrakTreatyIn
           onBuka={(id, m) => {
@@ -66,7 +77,11 @@ export function RuteTreatyIn({ halaman }: PropsRute<HalamanTreatyIn>) {
         />
       )}
       {halaman === 'treatyin-acuan' && <AcuanTreatyIn />}
-    </div>
+      {/* ⭐ Daftar `<select>` selalu terbuka KE BAWAH (8 Oktober 2026) —
+          satu pemasangan untuk seluruh modul; lihat komponennya. */}
+      <DaftarPilihBawah akar=".treatyin" />
+      </div>
+    </BahasaUI.Provider>
   )
 }
 

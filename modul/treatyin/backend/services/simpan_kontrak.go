@@ -134,8 +134,20 @@ func (l *Layanan) SimpanKontrak(ctx context.Context, p inti.Pelaku, m MasukanSim
 		return HasilSimpan{}, err
 	}
 	// Syarat tampil Save: `StatusAkseptasi != 'Resolve Complete'`.
-	if teksDok(doc, "StatusAkseptasi") == models.StatusTuntas {
-		return HasilSimpan{}, ditolak("Kontrak sudah Resolve Complete — tombol Save tidak berlaku.")
+	// ⛔ Kecuali Force Edit divisi IT (keputusan pemakai 9 Oktober 2026) —
+	// menyimpang dari Pega, yang Save-nya tetap tersembunyi di sana.
+	tuntas := teksDok(doc, "StatusAkseptasi") == models.StatusTuntas
+	if tuntas {
+		it, err := l.adalahIT(ctx, p)
+		if err != nil {
+			return HasilSimpan{}, err
+		}
+		if !it {
+			return HasilSimpan{}, ditolak("Kontrak sudah Resolve Complete — tombol Save tidak berlaku.")
+		}
+	}
+	if err := l.bolehUbah(ctx, p, doc); err != nil {
+		return HasilSimpan{}, err
 	}
 	// DT `TreatyInAddNew` [1] (pra-DT tombol Save) — DIBERI SYARAT.
 	//
@@ -175,10 +187,62 @@ func (l *Layanan) SimpanKontrak(ctx context.Context, p inti.Pelaku, m MasukanSim
 	// menjalankan `[1]` tanpa syarat (tombol Save ber-`pyPreDataTransform`
 	// `TreatyInAddNew` sebelum `SaveTreatyIn_Act`). Keputusan pemilik proses
 	// 8 Oktober 2026 memilih syarat DT-nya sendiri daripada perilaku itu.
-	if posisi := teksDok(doc, "Position"); posisi == models.PosisiKosong || posisi == models.PosisiAdmin {
+	// Kontrak tuntas (Force Edit IT) TIDAK disentuh posisinya: `Position`
+	// kosong di sana berarti "selesai", bukan "draf Admin".
+	if posisi := teksDok(doc, "Position"); !tuntas && (posisi == models.PosisiKosong || posisi == models.PosisiAdmin) {
 		doc["Position"] = models.PosisiAdmin
 	}
 	return l.tulis(ctx, p, m, doc)
+}
+
+// DivisiIT - divisi akun (`M_LOGIN_GO.DIVISION_CODE`) pemegang Force Edit.
+const DivisiIT = "IT"
+
+// bolehUbah - syarat tombol `Edit` Pega (`Section/InputTreatyInOffer.xml`
+// @268974), ditegakkan di Save:
+//
+//	pyWorkBasketList(2) = 'ReasTreatyInAdmin' && (Position = 'ReasTreatyInAdmin'
+//	|| Position = '') && StatusAkseptasi != 'Decline' && != 'Resolve Complete'
+//
+// SecHead / DeptHead / Director hanya punya `View` (form hanya-baca) dan
+// bertindak lewat `Actions`; Admin pun tidak dapat mengubah berkas yang sudah
+// naik sampai di-Reject kembali. Satu-satunya pengecualian: Force Edit akun
+// divisi IT — padanan `Force Edit (dev)` Pega (keputusan pemakai 9 Oktober
+// 2026). Force Edit TIDAK memindah posisi: `TreatyInAddNew` [1] di
+// `SimpanKontrak` hanya menyetel Admin di pangkal tangga.
+func (l *Layanan) bolehUbah(ctx context.Context, p inti.Pelaku, doc map[string]any) error {
+	posisi := teksDok(doc, "Position")
+	status := teksDok(doc, "StatusAkseptasi")
+	pangkal := posisi == models.PosisiKosong || posisi == models.PosisiAdmin
+	if punyaPeran(p, models.PosisiAdmin) && pangkal && status != models.StatusDecline {
+		return nil
+	}
+	it, err := l.adalahIT(ctx, p)
+	if err != nil {
+		return err
+	}
+	if it {
+		return nil
+	}
+	switch {
+	case status == models.StatusDecline:
+		return ditolak("Kontrak berstatus Decline — tidak dapat diubah.")
+	case !pangkal:
+		return galatTombol{ErrBukanPemegangPosisi, fmt.Sprintf(
+			"Berkas ini di posisi %s — hanya Admin yang dapat mengubahnya, setelah berkas dikembalikan (Reject).", posisi)}
+	default:
+		return galatTombol{ErrBukanPemegangPosisi, fmt.Sprintf(
+			"Akun %s tidak memegang workbasket %s — kontrak hanya dapat diubah Admin.", p.AkunID, models.PosisiAdmin)}
+	}
+}
+
+// adalahIT - akun berdivisi IT (`M_LOGIN_GO.DIVISION_CODE`), pemegang Force Edit.
+func (l *Layanan) adalahIT(ctx context.Context, p inti.Pelaku) (bool, error) {
+	divisi, err := l.gudang.DivisiAkun(ctx, p.AkunID)
+	if err != nil {
+		return false, err
+	}
+	return divisi == DivisiIT, nil
 }
 
 // KirimKontrak - Submit, Actions, atau Decline offer.

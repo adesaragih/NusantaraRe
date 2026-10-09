@@ -81,7 +81,7 @@ export default function AcuanTreatyIn() {
           dua bahasa visual. */}
       <Panel judul={LABEL_HIMPUNAN[himpunan]}>
         <div className="table-wrap">
-          <table className="trin__tabel">
+          <table className="trin__tabel trin__tabel--pega">
             <thead>
               <tr>
                 <th scope="col">{ACUAN_TREATYIN.kolomKode}</th>

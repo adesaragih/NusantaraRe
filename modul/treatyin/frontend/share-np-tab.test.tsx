@@ -10,7 +10,7 @@ import { join } from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-import type { BarisShareNP, ShareNP } from './api'
+import type { BarisShareNP, RingkasanShareNP, ShareNP } from './api'
 import TabShareNonProp, { RincianShare, SHARE_NP_KOSONG, judulBarisShare } from './components/TabShareNonProp'
 import { GRID_RINCIAN_SPREADING, GRID_TOTAL_SHARE, SHARE_NP } from './labelsShareNP'
 
@@ -226,9 +226,12 @@ describe('tab Share Non-Prop — bentuk ekspor', () => {
     expect(render(share(), 'ubah', { edmState: '1' })).toContain(SHARE_NP.perbaruiNilai)
   })
 
-  it('⭐ kosong → "No items" dengan petunjuk Update Summary', () => {
+  // ⭐ 8 Oktober 2026 — bentuk Pega: grid tetap tampil, satu sel "No items",
+  // tanpa petunjuk tambahan ("jangan ada design tambahan").
+  it('⭐ kosong → grid Pega dengan satu sel "No items"', () => {
     const html = render(share({ Share: [] }))
-    expect(html).toContain(SHARE_NP.petunjukKosong)
+    expect(html).toContain(`<td colSpan="15" class="trin__kosong-pega">${SHARE_NP.tanpaBaris}</td>`)
+    expect(html).not.toContain(SHARE_NP.petunjukKosong)
   })
 
   it('⛔ nol rumus di layar — hanya memanggil services', () => {
@@ -260,21 +263,37 @@ describe('panel rincian baris — flow action `Share`', () => {
       />,
     )
 
-  it('⭐ Spreading Type bernama: dropdown dari RD, anak susunan, Total Spreading Pct', () => {
+  it('⭐ Spreading Type bernama: dropdown dari RD, anak susunan, Spreading Total Pct', () => {
     const html = panel(baris())
-    expect(html).toContain('<option value="2022 QS 145M TRT" selected="">2022 QS 145M TRT</option>')
-    // Sel grid spreading bernama ber-`Auto` — isian di mode Edit.
-    expect(html).toMatch(/<input class="field__input"[^>]*value="QS \(OR\)"/)
-    expect(html).toContain(SHARE_NP.totalSpreadingPct)
+    // ⛔ Combobox sejak 8 Oktober 2026 (*"mengetik harus terasa seperti
+    // mencari"*): teks pilihan ada di KOTAKNYA, dan daftar butirnya baru
+    // dirender ketika dibuka.
+    expect(html).toContain('value="2022 QS 145M TRT"')
+    // ⛔ DIBALIK 8 Oktober 2026 (sore) — grid `.SpreadingListXOL` Pega memang
+    // ber-`readOnly` (@408855, kerangka `baca: "selalu"`), tetapi pemilik
+    // proses meminta spread tetap dapat DITAMBAH walau Spreading Type sudah
+    // dipilih: *"konsepnya harus sama seperti yang di prop juga yang di mana
+    // spread nya bisa ditambah"*. Grid manual kini dipakai di kedua cabang.
+    expect(html).toContain('Add')
+    // ⛔ Kolom `Reins Type` TIDAK dapat diubah di cabang ini — permintaan
+    // pemilik proses 8 Oktober 2026. Isinya datang dari RD, jadi ia teks,
+    // bukan dropdown; yang dapat disunting hanya `Pct` dan jumlah barisnya.
+    expect(html).toContain('>QS (OR)</td>')
+    expect(html).not.toMatch(/<select[^>]*aria-label="Reins Type"/)
+    // Label ekspor `Spreading Total Pct` (Share.xml @473985) + teks `%`.
+    expect(html).toContain(SHARE_NP.spreadingTotalPct)
     expect(html).toContain('Deduction Details')
     expect(html).toContain('Brokerage fee')
-    expect(html).toMatch(/<input class="field__input" list="[^"]*"[^>]*value="PROPERTY"/)
+    // ⭐ 8 Oktober 2026 — grid Treaty Group baca-saja (`CoBListReadOnly`).
+    expect(html).toContain('>PROPERTY</td>')
+    expect(html).not.toMatch(/<input class="field__input" list="[^"]*"[^>]*value="PROPERTY"/)
   })
 
-  it('⭐ `pyReadOnlyCondition` MENIMPA `pyReadOnly`: Layer · Cover · Treaty Group aktif di mode Edit', () => {
-    // `hanya_baca()` atas `Section/Share.xml`: kelima sel ber-`pyReadOnly=true`
-    // DAN `pyReadOnlyCondition = TreatyIn.ViewState = 1` — terkunci HANYA di
-    // mode lihat.
+  it('⭐ `pyReadOnlyCondition` MENIMPA `pyReadOnly`: Cover aktif di mode Edit; Layer SELALU baca-saja', () => {
+    // `hanya_baca()` atas `Section/Share.xml`: sel ber-`pyReadOnly=true` DAN
+    // `pyReadOnlyCondition = TreatyIn.ViewState = 1` — terkunci HANYA di mode
+    // lihat. ⭐ 8 Oktober 2026: KECUALI sel layer ber-`pyDisabledNew =
+    // always` (kerangka Adjustment `baca: "selalu"`) — teks tanpa label.
     const opsi = {
       jenisTreaty: [],
       kelompokTreaty: [{ id: '10002', nama: 'PROPERTY', kembar: false }],
@@ -285,8 +304,10 @@ describe('panel rincian baris — flow action `Share`', () => {
     const ubah = renderToStaticMarkup(
       <RincianShare b={baris()} induk={[]} opsi={opsi} bisaUbah modeUbah onUbah={() => undefined} hitung={() => undefined} />,
     )
-    expect(ubah).toContain('<option value="risk" selected="">Risk</option>')
-    expect((ubah.match(/<option value="Layer" selected="">Layer<\/option>/g) ?? []).length).toBe(2)
+    expect(ubah).toContain('value="Risk"')
+    // `Layer` SELALU baca-saja: teks, bukan kontrol berdaftar.
+    expect(ubah).toContain('>Layer<')
+    expect((ubah.match(/<span class="trin__teks-sel">Layer<\/span>/g) ?? []).length).toBe(2)
     const lihat = renderToStaticMarkup(
       <RincianShare
         b={baris()}
@@ -298,7 +319,7 @@ describe('panel rincian baris — flow action `Share`', () => {
         hitung={() => undefined}
       />,
     )
-    expect(lihat).not.toContain('<select')
+    expect(lihat).not.toContain('role="combobox"')
     expect(lihat).toMatch(
       /<label class="field__label">Cover<\/label><input class="field__input field__input--readonly" type="text" readonly="" value="Risk"/,
     )
@@ -308,7 +329,27 @@ describe('panel rincian baris — flow action `Share`', () => {
     const html = panel(baris({ SpreadingTypeXOL: '', SpreadingListXOL: [] }))
     expect(html).toContain('Pct Share')
     expect(html).toContain(SHARE_NP.totalSharePct)
-    expect(html).not.toContain(SHARE_NP.totalSpreadingPct)
+    expect(html).not.toContain(SHARE_NP.spreadingTotalPct)
+  })
+
+  // ⭐ 9 Oktober 2026 — DUA spreading persis Pega (keputusan pemakai):
+  // terisi = spreading LAMA (grid `readOnly` @408855, nol Add/Delete);
+  // kosong = spreading BARU (grid manual @54364, Add/Delete, TANPA dropdown).
+  it('⭐ spreading LAMA (Spreading Type terisi): dropdown + grid baca, nol Add/Delete', () => {
+    const html = panel(baris())
+    expect(html).toContain(SHARE_NP.spreadingType)
+    expect(html).not.toContain('Pct Share')
+    expect(html).not.toContain('tl-tambah')
+    expect(html).not.toContain(`${SHARE_NP.hapus} ${SHARE_NP.spreading} 1`)
+    expect(html).not.toMatch(/<select[^>]*aria-label="Reins Type"/)
+  })
+
+  it('⭐ spreading BARU (Spreading Type kosong) mode Edit: Add/Delete, TANPA dropdown Spreading Type', () => {
+    const html = panel(baris({ SpreadingTypeXOL: '', SpreadingListXOL: [{ ReinsTypeName: '', ReinsTypeID: '', Pct: '0' }] as never }))
+    expect(html).not.toContain(SHARE_NP.spreadingType)
+    expect(html).toContain('tl-tambah')
+    expect(html).toContain(`${SHARE_NP.hapus} ${SHARE_NP.spreading} 1`)
+    expect(html).toMatch(/<select[^>]*aria-label="Reins Type"/)
   })
 
   it('⛔ mode lihat: Spreading Type kosong tidak menampilkan dropdown', () => {
@@ -323,7 +364,8 @@ describe('panel rincian baris — flow action `Share`', () => {
     expect(judul).toHaveLength(15)
     let posisi = -1
     for (const j of judul) {
-      const p = html.indexOf(`<th scope="colgroup" colSpan="2">${j}</th>`, posisi + 1)
+      // ⭐ 8 Oktober 2026 — kepala ekspor dua sel: judul · '' (grid Pega).
+      const p = html.indexOf(`<th scope="col">${j}</th><th scope="col" class="trin__angka"></th>`, posisi + 1)
       expect(p, j).toBeGreaterThan(posisi)
       posisi = p
     }
@@ -363,7 +405,7 @@ describe('panel rincian baris — flow action `Share`', () => {
     const html = renderToStaticMarkup(
       <RincianShare b={b} induk={[]} indukManual={[lain]} bisaUbah modeUbah onUbah={() => undefined} hitung={() => undefined} />,
     )
-    expect(html).toContain('<option value="10236">2023 QS 150M TRT</option>')
+    expect(html).toContain('role="combobox"')
   })
 
   it('⭐ Currency Deduction Details = autocomplete daftar mata uang (`BrowseCurrency_RD`)', () => {
@@ -378,8 +420,9 @@ describe('panel rincian baris — flow action `Share`', () => {
     const html = renderToStaticMarkup(
       <RincianShare b={baris()} induk={[]} opsi={opsi} bisaUbah modeUbah onUbah={() => undefined} hitung={() => undefined} />,
     )
-    expect(html).toMatch(/<input class="field__input" list="[^"]*"[^>]*value="IDR"/)
-    expect(html).toContain('<option value="USD"></option>')
+    // ⛔ BUKAN `<datalist>` lagi: ketikan bebas tidak boleh lolos jadi nilai.
+    expect(html).toContain('value="IDR"')
+    expect(html).not.toMatch(/<input[^>]*\slist=/)
   })
 
   it('⭐ pesan Activity milik baris tampil di panel barisnya (Pega: pesan medan, bukan kepala tab)', () => {
@@ -397,5 +440,47 @@ describe('panel rincian baris — flow action `Share`', () => {
     expect(html).toContain('<ul class="tl-pesan" role="alert"><li>Total share must equal RNM share.!!</li></ul>')
     // Aksi satu baris hanya mengganti pesan baris itu.
     expect(KOMP).toMatch(/const AKSI_BARIS: readonly AksiShareNP\[\] = \[[^\]]*'deduksi'[^\]]*'spreading-pct'/)
+  })
+})
+
+// ⛔ ANGKA `Summarry of RNM Share` — laporan pemilik proses 8 Oktober 2026:
+// *"maksimal di belakang koma berapa, dan kalau kepanjangan jangan sampai ke
+// bawah, angkanya harus tetap menyamping"*.
+//
+// Sebabnya sel ini diformat APA ADANYA (`formatLimit('uang', -1, …)`), jadi
+// hasil pembagian membawa ekornya utuh: `11.652.832,7749999503125`. Ekor itu
+// membungkus ke baris berikutnya dan menaikkan tinggi seluruh barisnya.
+describe('Summarry of RNM Share — angka dibulatkan dan tidak membungkus', () => {
+  const CSS = readFileSync(join(AKAR, 'treatyin.css'), 'utf8')
+
+  it('⛔ maksimal DUA desimal, dan nol di ekor dibuang', () => {
+    const dasar = share().LimitShareSummaryList[0] as RingkasanShareNP
+    const html = render(
+      share({ LimitShareSummaryList: [{ ...dasar, MDP: '11652832.7749999503125', Deductible: '20119177.6749' }] }),
+      'lihat',
+    )
+    expect(html).toContain('11.652.832,77')
+    expect(html).toContain('20.119.177,67')
+    // Ekor panjangnya TIDAK boleh sampai ke layar.
+    expect(html).not.toContain('7749999503125')
+    expect(html).not.toContain('6749<')
+  })
+
+  it('⭐ bilangan bulat tetap TANPA `,00` — catatan ekspor `pxNumber`', () => {
+    const dasar = share().LimitShareSummaryList[0] as RingkasanShareNP
+    const html = render(share({ LimitShareSummaryList: [{ ...dasar, Limit: '175000000', Limit2: '0' }] }), 'lihat')
+    expect(html).toContain('>175.000.000<')
+    expect(html).not.toContain('175.000.000,00')
+  })
+
+  // ⚠️ `white-space` HARUS di selnya: `<col>` hanya menghormati width,
+  // background, border dan visibility — di sana ia diam-diam diabaikan.
+  it('⛔ sel angka tidak membungkus, dan aturannya di SEL bukan di `<col>`', () => {
+    const i = CSS.indexOf('.treatyin .trin__tabel--pega td.trin__angka')
+    expect(i).toBeGreaterThan(0)
+    expect(CSS.slice(i, CSS.indexOf('}', i))).toContain('white-space: nowrap')
+    // Boundary-nya penting: tanpa `` pola ini ikut mencocoki
+    // `.trin__buka-kolom` dan gagal atas aturan yang benar.
+    expect(CSS).not.toMatch(/[\s,>]col\s*\{[^}]*white-space/)
   })
 })

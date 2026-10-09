@@ -86,4 +86,68 @@ describe('mode baris grid dibaca dari ekspor', () => {
     )
     expect(html).toMatch(/<input/)
   })
+
+  // ⛔ KELUHAN PEMILIK PROSES 8 Oktober 2026 — *"ReinstatementNote itu
+  // seharusnya mengambil Prompt value bukan standard value"*.
+  //
+  // Sel baca-saja dahulu mencetak nilai TERSIMPAN apa adanya, dan panel Old
+  // SELALU baca-saja — jadi di sanalah kodenya paling terlihat: `asamount`
+  // alih-alih `Additional Premium as to amount`.
+  //
+  // ⚠️ Diuji lewat `Kind of Treaty`, kolom grid Limits yang ber-`pilihan` dan
+  // `baca: 'selalu'`, dengan nilai SENGAJA berbeda dari labelnya — kalau
+  // keduanya sama, uji lulus untuk kedua perilaku dan nol yang terjaga.
+  const kBaca = (baris: Record<string, string>, opsi: Array<{ value: string; label: string }>) => {
+    const sisiBaca: SisiPenyesuaian = { medan: { ProportionType: 'Proportional' }, larik: { Limits: [baris] } }
+    return { sisi: sisiBaca, akar: sisiBaca, halaman: { ViewState: '1' }, ubahLarik: () => undefined, opsi: () => opsi }
+  }
+
+  it('⛔ sel grid baca-saja menampilkan TEKS PILIHAN, bukan kode tersimpan', () => {
+    const html = renderToStaticMarkup(
+      <RenderKerangka
+        isi={KERANGKA_TAB['TreatyInTabsProportional#Limits']?.isi ?? []}
+        k={kBaca({ TreatyType: 'QS' }, [{ value: 'QS', label: 'QUOTA SHARE' }])}
+      />,
+    )
+    expect(html).toContain('<td>QUOTA SHARE</td>')
+    expect(html).not.toContain('<td>QS</td>')
+  })
+
+  it('⭐ nilai di LUAR daftar tampil apa adanya — tidak ditebak, tidak dikosongkan', () => {
+    const html = renderToStaticMarkup(
+      <RenderKerangka
+        isi={KERANGKA_TAB['TreatyInTabsProportional#Limits']?.isi ?? []}
+        k={kBaca({ TreatyType: 'entah' }, [{ value: 'QS', label: 'QUOTA SHARE' }])}
+      />,
+    )
+    expect(html).toContain('<td>entah</td>')
+  })
+
+  // ⛔ LABEL GANDA DI SEL GRID — laporan pemilik proses 8 Oktober 2026:
+  // spreading Adjustment *"seharusnya mirip seperti yang ada di treaty in"*.
+  //
+  // Sel `pxNumber` merender `<label class="field__label">` di DALAM sel,
+  // tepat di bawah `<th>` yang sudah menamainya: `Pct Share` tercetak dua
+  // kali bertumpuk, dan barisnya jadi dua kali lebih tinggi. Layar Treaty In
+  // tidak melakukannya (selnya `<Medan label="" …>`).
+  it('⛔ sel angka grid TIDAK mengulang judul kolomnya sebagai label', () => {
+    const sisiSebar: SisiPenyesuaian = {
+      medan: { ProportionType: 'Proportional', RNMShare: '25' },
+      larik: { SpreadingList: [{ ReinsTypeID: '10500', ReinsTypeName: '2025 QS 181M TRT', Pct: '25', BreakDownSprdList: [] }] },
+    }
+    const k = {
+      sisi: sisiSebar,
+      akar: sisiSebar,
+      halaman: { ViewState: '0' },
+      ubah: true,
+      ubahLarik: () => undefined,
+      opsi: () => [{ value: '10500', label: '2025 QS 181M TRT' }],
+    }
+    const html = renderToStaticMarkup(<RenderKerangka isi={KERANGKA_RINCIAN.DetailShare ?? []} k={k} />)
+    // Judul kolomnya ADA, labelnya di dalam sel TIDAK.
+    expect(html).toContain('<th scope="col">Pct Share</th>')
+    expect(html).not.toContain('<label class="field__label">Pct Share</label>')
+    // ⭐ Dan medannya tidak menjadi anonim — namanya pindah ke `aria-label`.
+    expect(html).toContain('aria-label="Pct Share"')
+  })
 })

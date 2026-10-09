@@ -126,7 +126,20 @@ func (l *Layanan) KirimPenyesuaian(ctx context.Context, p inti.Pelaku, m Masukan
 	pilihan := models.PilihAccept
 	switch m.Aksi {
 	case AksiSubmit:
-		// TreatyInSubmitEDM [2]–[4] ber-`//`: nol validasi.
+		// ⛔ NOL VALIDASI, dan itu ekspornya — bukan kelalaian.
+		//
+		// `TreatyInSubmitEDM` langkah [2] (`Call TreatyInCheckID`), [3]
+		// (`call TreatyInCheckError`) dan [4] (syarat `ERRMSG==""`)
+		// KETIGANYA ber-`pyStepsBlockName == "//"`.
+		//
+		// ⚠️ Diperiksa ulang 8 Oktober 2026, dan `TreatyInCheckID` sempat
+		// masuk daftar pekerjaan sebelum penelusuran itu: ia dipanggil
+		// MATI di kedua Submit (`TreatyInSubmit` juga), dan satu-satunya
+		// pemanggil hidupnya tombol "Test Error (dev)". Membangunnya akan
+		// menambah tujuh pemeriksaan yang Pega sendiri tidak jalankan.
+		//
+		// ⭐ Bandingkan `TreatyInSubmit` cabang Treaty In: di sana [3] dan
+		// [4] HIDUP, dan `periksaGalatSubmit` memang dibangun.
 	case AksiAkseptasi:
 		pilihan = m.Pilihan
 	default:

@@ -22,27 +22,27 @@ import type { HimpunanAcuan } from './api'
 
 export const MENU_TREATYIN = {
   acuan: 'Treaty In — Tabel Acuan',
-  daftar: 'Treaty In — Daftar Kontrak',
+  daftar: 'Treaty In — Contract List',
 } as const
 
 export const LABEL_HIMPUNAN: Record<HimpunanAcuan, string> = {
-  'jenis-potongan': 'Jenis Potongan',
+  'jenis-potongan': 'Deduction Type',
   'kelas-bisnis': 'Kelas Bisnis',
   'kelompok-treaty': 'Kelompok Treaty',
-  bahaya: 'Bahaya',
-  'jenis-reasuransi': 'Jenis Reasuransi',
+  bahaya: 'Hazard',
+  'jenis-reasuransi': 'Reinsurance Type',
 }
 
 export const ACUAN_TREATYIN = {
   kolomKode: 'Kode',
   kolomNama: 'Nama',
-  kolomAktif: 'Aktif',
-  kolomInduk: 'Induk',
+  kolomAktif: 'Active',
+  kolomInduk: 'Parent',
   // Dua kalimat, dua medan `Kosong` yang berbeda: `pesan` menyatakan KEADAAN
   // (tabelnya memang belum berisi), `petunjuk` menyatakan SIAPA yang akan
   // mengisinya. Digabung jadi satu paragraf, yang kedua terbaca sebagai alasan
   // kosongnya - padahal ia jadwal, bukan sebab.
-  kosong: 'Tabel acuan ini belum berisi.',
+  kosong: 'This reference table is empty.',
   kosongPetunjuk: '',
 } as const
 
@@ -70,10 +70,10 @@ export const KOLOM_DAFTAR = [
 ] as const
 
 export const DAFTAR_KONTRAK = {
-  judul: 'Treaty In — Daftar Kontrak',
+  judul: 'Treaty In — Contract List',
   tambah: 'Add', // pyButtonLabel @1602683
   saring: 'Show/Hide filter', // pyButtonLabel @7276317
-  aksi: 'Aksi',
+  aksi: 'Actions',
   // Tombol aksi, dan keempatnya ada di ekspor sebagai `pyButtonLabel`.
   edit: 'Edit', // @7234432
   lihat: 'View', // @7258590
@@ -85,7 +85,7 @@ export const DAFTAR_KONTRAK = {
    * MENYIMPAN — laporan pemakai 8 Oktober 2026: satu klik dikira tombolnya
    * tidak berjalan. Event tetap seperti ekspor; petunjuk ini tambahan.
    */
-  petunjukRevisi: 'Klik dua kali untuk membuat revisi',
+  petunjukRevisi: 'Double-click to create a revision',
   /**
    * Keadaan yang membedakan susunan tombolnya.
    *
@@ -95,7 +95,7 @@ export const DAFTAR_KONTRAK = {
    * kontrak sudah tidak dapat disunting.
    */
   keadaanTerkunci: 'Resolve Complete',
-  kosong: 'Tidak ada kontrak pada halaman ini.',
+  kosong: 'No contracts on this page.',
   // ⚠️ RALAT 3 Oktober 2026. Kalimat ini pernah berbunyi "Pemindahan kepala
   // kontrak warisan dari sistem lama adalah tiket 59; sampai ia jalan,
   // tabelnya memang kosong." Itu benar ketika layar membaca `KONTRAK`
@@ -115,7 +115,7 @@ export const DAFTAR_KONTRAK = {
   // jadi selnya kosong karena nilainya memang kosong, bukan karena kolomnya
   // tidak ada.
   /** Judul lipatan keterangan kaki — pendek, dan menyebut isinya. */
-  kakiJudul: 'Tentang data di tabel ini',
+  kakiJudul: 'About the data in this table',
   catatanPosisiKe: '',
   // ⚠️ RALAT 3 Oktober 2026 — di tabel warisan keduanya NAMA, bukan pengenal.
   // `CEDING` dan `LEADINGREINSSOURCE` memuat teksnya langsung. Penyangkalan
@@ -131,7 +131,7 @@ export const DAFTAR_KONTRAK = {
 
 export const FORM_KONTRAK = {
   judul: 'Input Treaty In', // pyValue "Input Treaty In"
-  kembali: 'Kembali ke daftar',
+  kembali: 'Back to list',
 
   // --- kepala
   id: 'ID', // TreatyIn.ID
@@ -248,10 +248,10 @@ export const FORM_KONTRAK = {
    */
   pilihKolomID: 'ID',
   pilihKolomNama: 'Name',
-  pilihCari: 'Ketik untuk menyaring',
-  pilihKembar: 'nama ini punya lebih dari satu pengenal',
-  pilihKosong: 'Tidak ada yang cocok.',
-  pilihKosongPetunjuk: 'Kosongkan penyaringnya untuk melihat seluruh daftar.',
+  pilihCari: 'Type to filter',
+  pilihKembar: 'this name has more than one identifier',
+  pilihKosong: 'No matches.',
+  pilihKosongPetunjuk: 'Clear the filter to see the whole list.',
   pilihMemuat: 'Memuat pilihan…',
 
   /** Kolom tab Portfolio - dari kunci `Portfolio` di dokumen warisan. */
@@ -294,8 +294,8 @@ export const FORM_KONTRAK = {
    * ⛔ Kedua tab teks punya pesan kosongnya SENDIRI. `tanpaBaris` berbunyi
    * tentang baris grid; tab ini tidak punya baris, ia punya satu medan.
    */
-  tanpaTeks: 'Tidak ada teks',
-  ejaanDipakai: 'Dibaca dari kunci:',
+  tanpaTeks: 'No text',
+  ejaanDipakai: 'Read from key:',
   /**
    * ⛔ Kalimat ini menyatakan ada teks yang pembacanya TIDAK lihat, dan ia
    * harus berbunyi begitu. Terukur: dari 303 dokumen yang punya lebih dari
@@ -303,11 +303,11 @@ export const FORM_KONTRAK = {
    * lain BUKAN salinan, melainkan teks yang berbeda.
    */
   ejaanLainBerisi:
-    '⚠️ Dokumen kontrak ini juga punya teks di bawah kunci lain, dan isinya BERBEDA — bukan salinan. Kunci itu:',
+    '⚠️ This contract document also has text under another key, and its content DIFFERS — not a copy. That key:',
   petunjukTeksPengecualian: '',
   petunjukTeksSyarat: '',
 
-  belumDibangun: 'Tab ini belum dibangun.',
+  belumDibangun: 'This tab has not been built yet.',
   /**
    * ⛔ KEADAAN KEEMPAT, dan ia BUKAN "belum ada kode" maupun "tidak dipakai
    * lagi". Keputusan pemilik proses 4 Oktober 2026, `KEPUTUSAN §17`.
@@ -321,7 +321,7 @@ export const FORM_KONTRAK = {
    * Yang benar: fiturnya ada, dipakai lima kontrak, dan tidak dibangun
    * karena itu. Orang yang membacanya tahu persis apa yang ia lihat.
    */
-  jarangDipakai: 'Tab ini tidak dibangun — fiturnya JARANG dipakai.',
+  jarangDipakai: 'This tab is not built — the feature is RARELY used.',
   jarangDipakaiPetunjuk: '',
   /**
    * ⛔ Pesan ini pernah menyebut "hanya tab Reporting Period", dan menjadi
@@ -364,11 +364,15 @@ export const TAB_NON_PROPORSIONAL = [
   'EGNPI', // @490872 — panel "Estimate Gross Net Premium Income" @509493
   'Limits', // @886054 — panel "Summary of Limit" @1061345, "Summary of MDP" @1204191, "Total All Layers" @1292282
   'Share', // @1695720
-  // ⛔ `RNM Share` — PERTANYAAN TERBUKA, bukan tab menurut ekspor.
+  // ⛔ `RNM Share` DIHAPUS dari daftar tab — keputusan pemilik proses
+  // 8 Oktober 2026 (tangkapan layar): *"di non prop tab RNM SHARE itu tidak
+  // ada"*. Ini MENUTUP pertanyaan terbuka di bawah, sejalan dengan ekspor;
+  // larangan §0 ronde lama ("nol tab dihapus") digantikan keputusan ini.
+  // `RNM Share` tetap hidup sebagai SUB-TAB di dalam tab `Share`
+  // (`SUB_TAB_SHARE`), tempat ekspor menaruhnya.
   //
-  // Briefing 5 Oktober 2026 menyebutnya tab yang hilang dari tangkapan
-  // layar. Pengukuran berkata lain, dan ia TIDAK dihapus sepihak — §0
-  // ronde itu melarang menghapus tab mana pun. Yang terukur:
+  // Riwayat — briefing 5 Oktober 2026 menyebutnya tab yang hilang dari
+  // tangkapan layar. Pengukuran berkata lain:
   //
   // `Section/TreatyInTabsNonProportional.xml` (bersih 4.203.858 bita) punya
   // TEPAT 11 wadah `pyHeaderType = TABBED`, dan `RNM Share` BUKAN salah
@@ -384,9 +388,7 @@ export const TAB_NON_PROPORSIONAL = [
   // berkas, dan di berkas non-prop TABBED-lah tabnya.
   //
   // Hitungannya pun cocok: 11 tab − `Value Difference` (syaratnya tidak
-  // terpenuhi) = 10, persis yang tangkapan layar perlihatkan. Dengan
-  // `RNM Share` ikut, daftar ini 12 — satu lebih banyak daripada ekspor.
-  'RNM Share', // @2093710 — ⛔ lihat di atas
+  // terpenuhi) = 10, persis yang tangkapan layar perlihatkan.
   'Installment', // @3465901
   'Value Difference', // @3848946 — ⭐ BERSYARAT, lihat SYARAT_TAB
   'Exclusions', // @3907436
@@ -405,7 +407,8 @@ export const TAB_NON_PROPORSIONAL = [
  * dengan pengukuran ekspor: `RNM Share` bukan salah satu dari 11 wadah
  * `TABBED`, dan kedua judulnya jatuh di dalam wilayah tab `Share`.
  *
- * ⚠️ `RNM Share` TETAP ADA di `TAB_NON_PROPORSIONAL` — nol tab dihapus.
+ * ⭐ Sejak 8 Oktober 2026 `RNM Share` HANYA sub-tab ini — tab utamanya
+ * dihapus dari `TAB_NON_PROPORSIONAL` atas keputusan pemilik proses.
  */
 export const SUB_TAB_SHARE = ['RNM Share'] as const
 
@@ -1146,17 +1149,23 @@ export const EVENT_LIMITS = {
   banjirJab: 'Flood Limit (Jabodetabek)', // gambar 28 · TreatyIn.CurrencyFloodJab / FloodJab
   banjirNas: 'Flood Limit (Nationwide)', // gambar 28 · TreatyIn.CurrencyFloodNat / FloodNation
   /**
-   * ⛔ BUKAN "tidak ada": nilai akar ini TERISI di 49 dari 772 kontrak
-   * Non-Prop (sapuan seluruh korpus, 6 Oktober 2026).
+   * ⭐ RALAT 8 Oktober 2026 — nilainya SUDAH terbaca.
    *
-   * ⭐ 7 Oktober 2026: rumahnya kini DITETAPKAN — `T_TREATY_HAZARD_LIMIT`
-   * (diagram v2 `TreatyIn [BATAS_BAHAYA]`, migrasi `446`). Yang tersisa dua:
-   * tabelnya belum terpasang di basis data, dan nilai kontrak LAMA hanya ada
-   * di dokumen JSON — `TREATYINDETAIL` tidak menulis nilai akar Non-Prop —
-   * sedangkan JSON dilarang dibaca. Kontrak lama karena itu tetap kosong.
+   * Catatan "belum terjangkau" dicabut: `T_TREATY_HAZARD_LIMIT` berdiri sejak
+   * migrasi `446`, Save menulisnya, dan `repository.BacaBatasBahaya`
+   * membacanya kembali. Kekosongan di layar kini berarti kontrak itu memang
+   * tidak punya nilai.
    */
-  belumTerjangkau:
-    'Nilai tersimpan belum dapat dibaca: tabelnya (T_TREATY_HAZARD_LIMIT) belum terpasang, dan nilai kontrak lama hanya ada di dokumen JSON yang tidak boleh dibaca.',
+  /** Pilihan kosong dropdown mata uang — bunyi yang sama dengan Pega. */
+  mataUangKosong: 'Currency',
+  /**
+   * ⛔ BAYANGAN medan nilai, BUKAN nilai.
+   *
+   * Pega memperlihatkan `0,00` pada medan kosong. Menuliskan nol ke dalamnya
+   * akan mengubah data: "belum diisi" dan "diisi nol" bukan hal yang sama,
+   * dan jalur Save membedakan keduanya.
+   */
+  nilaiKosong: '0,00',
 } as const
 
 /**
@@ -1265,7 +1274,7 @@ export const CO_INS_SCALE = {
    * dari tangkapan layar Pega pemakai 6 Oktober 2026 (mode ubah): Pega
    * mengisi tombol ikon tanpa teks dengan teks bawaannya sendiri.
    */
-  tambah: 'Tambah',
+  tambah: 'Add',
   /**
    * Sel 266 — `pyLabel` kosong, ikon `IconTrash.png`. ⚠️ Belum ada tangkapan
    * layar Treaty In yang memperlihatkan barisnya. `Hapus` disamakan dengan
@@ -1273,7 +1282,7 @@ export const CO_INS_SCALE = {
    * 3 Oktober 2026): pasangan `IconAdd`/`IconTrash` tanpa teks tampil sebagai
    * `Tambah`/`Hapus`.
    */
-  hapus: 'Hapus',
+  hapus: 'Delete',
   /**
    * `pyFieldValueForNoRows` = `GridNoResultsOnLoad` — field value bawaan
    * Pega, teksnya terlihat di gambar 18 dan di tangkapan layar pemakai.
@@ -1389,7 +1398,7 @@ export const LAMPIRAN = {
    * namanya tidak ada di korpus kedua modul. Menebak pasangannya menaruh
    * berkas di kategori yang salah, dan itu baru ketahuan bertahun kemudian.
    */
-  kategoriBelumPasti: 'nama kategori belum dipastikan',
+  kategoriBelumPasti: 'category name not yet confirmed',
   /** FlowAction `TreatyAttachContent` — `pyCaption ASM Attach Content`. */
   judulUnggah: 'ASM Attach Content',
   /** Tombol FlowAction — `pyButtonLabel Attach` / `Cancel`. */
@@ -1406,7 +1415,7 @@ export const LAMPIRAN = {
   buangPilihan: 'Remove',
   gagal: 'Failed',
   /** Kontrak baru belum ber-ID — lampiran menempel pada `TREATYID`. */
-  simpanDulu: 'Simpan kontrak lebih dulu untuk mengunggah lampiran.',
+  simpanDulu: 'Save the contract first to upload attachments.',
   /** `ShowAttachmentTreaty` — `pyLabel` apa adanya. */
   viewOffice: 'View Office Online',
   /** Popup penampil kantor sebelum URL-nya datang. */
@@ -1422,7 +1431,7 @@ export const LAMPIRAN = {
    * modal ini bukan modal yang gambar 25 perlihatkan.
    */
   namaBelumBerumah:
-    'Empat nama kategori ada di layar lama tetapi kodenya belum dipastikan, jadi keempatnya belum ditampilkan sebagai nama: Binding, signed share Email · Claim Data · Info Pack · Letter of Acknowledgment / LOA. Lihat docs/PERTANYAAN-TERBUKA-KODE-KATEGORI-LAMPIRAN.md.',
+    'Four category names appear on the legacy screen but their codes are not confirmed yet, so none of the four is shown by name: Binding, signed share Email · Claim Data · Info Pack · Letter of Acknowledgment / LOA.',
 } as const
 
 /** Kolom modal `View File` — DUA, gambar 25. */

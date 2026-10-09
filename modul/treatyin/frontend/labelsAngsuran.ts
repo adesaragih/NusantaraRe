@@ -20,7 +20,7 @@ export const ANGSURAN = {
   /** Tombol — `TreatyInNPSetTotal(type=installment)`. */
   perbaruiTotal: 'Update Total',
   tanpaBaris: 'No items',
-  rincian: 'Rincian baris',
+  rincian: 'Row details',
 } as const
 
 /** Grid `.InstallmentList` Section Installments — urut sel ekspor / gambar 38. */
