@@ -95,6 +95,8 @@ var berkasKomiteBolehMenyebut = map[string]string{
 	// ⛔ MODUL KOMITE CLAIM PROP - izin work owner 08-10-2026: penulis keputusan tingkat (`KomitePostAdjustment` S6 /
 	// S26.1) dan pembaca tangga / daftar kerja (`KomiteRouter` S6.1). SATU berkas; nama properti keputusan tidak dipakai.
 	"modul/komiteclaimprop/backend/repository/tangga.go": "modul Komite Claim Prop - penulis keputusan tangga dan daftar kerja KomiteRouter; izin work owner 08-10-2026",
+	// ⛔ MODUL KOMITE CLAIM NON PROP - perintah work owner 09-10-2026 (pola Komite Claim Prop): SATU berkas.
+	"modul/komiteclaimnonprop/backend/repository/tangga.go": "modul Komite Claim Non Prop - penulis keputusan tangga dan daftar kerja KomiteRouter; izin work owner 09-10-2026",
 }
 
 // TestNolPenyimpanKeputusanKomiteDiKonteksIni menegakkan batas konteks.

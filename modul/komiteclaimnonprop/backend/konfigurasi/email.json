@@ -1,0 +1,6 @@
+{
+  "_sumber": "SendEmailKlaim_KMT S4 (Local.EmailCC, hanya IsPEGAPROD) dan S17-S18 (Param.pyNotifyAccountName; S18 bila Emailto memuat \"syariah\") - konfigurasi berdokumen (MODUL.md), bukan literal kode; BCC pribadi S3 tidak disalin",
+  "akun": "NUSARE",
+  "akunSyariah": "NUSARESYARIAH",
+  "cc": "claim@nusantarare.com"
+}

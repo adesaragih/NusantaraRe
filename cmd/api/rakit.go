@@ -197,6 +197,10 @@ var ruteDipinjam = map[string][]string{
 	"GET /api/komite-claim-prop/kasus":                {"claimprop"},
 	"GET /api/komite-claim-prop/kasus/{id}":           {"claimprop"},
 	"POST /api/komite-claim-prop/kasus/{id}/putuskan": {"claimprop"},
+	// Komite Claim Non Prop - pola yang sama atas inbox Claim Non Prop (perintah work owner 09-10-2026).
+	"GET /api/komite-claim-non-prop/kasus":                {"claimnonprop"},
+	"GET /api/komite-claim-non-prop/kasus/{id}":           {"claimnonprop"},
+	"POST /api/komite-claim-non-prop/kasus/{id}/putuskan": {"claimnonprop"},
 }
 
 // izinMenu menjawab apakah permintaan ini boleh memakai rute milik `pemilik`,

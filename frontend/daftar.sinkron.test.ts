@@ -83,6 +83,7 @@ describe('saringPalet', () => {
         FOLDER_KORPUS.claimNonProp,
         FOLDER_KORPUS.claimProp,
         FOLDER_KORPUS.komiteClaimLife,
+        FOLDER_KORPUS.komiteClaimNonProp,
         FOLDER_KORPUS.komiteClaimProp,
       ].sort(),
     )
