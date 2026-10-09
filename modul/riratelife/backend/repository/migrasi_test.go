@@ -78,8 +78,30 @@ func TestMigrasi927KolomRingkasan(t *testing.T) {
 	}
 	periksaLebar(t, "927", satuBaris(maju[0]), KolomRingkasan[1:])
 	mundur := langkahInti(t, "927_m_rate_life_summary_kolom", true)
-	if len(mundur) != 1 || satuBaris(mundur[0]) != "ALTER TABLE {skema}.M_RATE_LIFE_SUMMARY DROP (USEDBY, TYPE, MODIFIEDDATE, OPERATORID)" {
+	if len(mundur) != 2 || satuBaris(mundur[0]) != "UPDATE {skema}.M_RATE_LIFE_SUMMARY SET JSONDATA = JSONDATA WHERE 1 = 0" ||
+		satuBaris(mundur[1]) != "ALTER TABLE {skema}.M_RATE_LIFE_SUMMARY DROP (USEDBY, TYPE, MODIFIEDDATE, OPERATORID)" {
 		t.Errorf("927 mundur %q", mundur)
+	}
+}
+
+// Pelindung gagal-keras jalur mundur 927/929: pernyataan PERTAMA merujuk JSONDATA (ORA-00904 bila kolom itu sudah
+// dibuang langkah maju yang tidak tercatat), nol baris diubah, dan bukan blok PL/SQL (tidak bisa "dilewati diam-diam").
+func TestMundurKolomGagalKerasTanpaJSONDATA(t *testing.T) {
+	for kunci, tabel := range map[string]string{"927_m_rate_life_summary_kolom": TabelRingkasan, "929_m_rate_life_kolom": TabelRate} {
+		mundur := langkahInti(t, kunci, true)
+		mau := "UPDATE {skema}." + tabel + " SET JSONDATA = JSONDATA WHERE 1 = 0"
+		if len(mundur) < 2 || satuBaris(mundur[0]) != mau {
+			t.Errorf("%s_down: pernyataan pertama harus %q, dapat %q", kunci, mau, mundur)
+			continue
+		}
+		if _, blok := migrasi.BacaPerintahKatalog(mundur[0]); blok {
+			t.Errorf("%s_down: pelindung tidak boleh blok berpelindung (blok melewati diri, tidak gagal)", kunci)
+		}
+		for _, p := range mundur[1:] {
+			if strings.Contains(p, "JSONDATA") {
+				t.Errorf("%s_down: hanya pelindung yang menyebut JSONDATA: %s", kunci, p)
+			}
+		}
 	}
 }
 
@@ -134,5 +156,97 @@ func TestMigrasi928SatuTabel(t *testing.T) {
 	}
 	if nama, kolom := migrasi.KolomAlterTambah(mundur[4]); nama != TabelRingkasan || !slices.Equal(kolom, []string{"JSONDATA"}) {
 		t.Errorf("928 mundur ADD JSONDATA = %s %v", nama, kolom)
+	}
+}
+
+func periksaLebarRate(t *testing.T, nama, ddl string, kolom []string) {
+	t.Helper()
+	for _, k := range kolom {
+		m := regexp.MustCompile(`\b` + k + ` +VARCHAR2\((\d+)\)`).FindStringSubmatch(ddl)
+		if m == nil || m[1] != fmt.Sprint(LebarKolomRate[k]) {
+			t.Errorf("%s %s: DDL %v, LebarKolomRate %d", nama, k, m, LebarKolomRate[k])
+		}
+	}
+}
+
+// 929: SATU ALTER … ADD ( biasa (KolomAlterTambah) - ketujuh kolom view RATE_LIFE, semua VARCHAR2 (tipe tetap teks);
+// mundurnya membuang ketujuhnya.
+func TestMigrasi929KolomRate(t *testing.T) {
+	maju := langkahInti(t, "929_m_rate_life_kolom", false)
+	if len(maju) != 1 {
+		t.Fatalf("929 %d pernyataan, mau 1", len(maju))
+	}
+	nama, kolom := migrasi.KolomAlterTambah(maju[0])
+	if nama != TabelRate || !slices.Equal(kolom, KolomRate[1:]) {
+		t.Fatalf("KolomAlterTambah = %s %v", nama, kolom)
+	}
+	periksaLebarRate(t, "929", satuBaris(maju[0]), KolomRate[1:])
+	if strings.Contains(maju[0], "NUMBER") {
+		t.Error("kolom rincian harus TEKS (VARCHAR2) seperti view")
+	}
+	mundur := langkahInti(t, "929_m_rate_life_kolom", true)
+	if len(mundur) != 2 || satuBaris(mundur[1]) != "ALTER TABLE {skema}.M_RATE_LIFE DROP (IDUSEDBY, USEDBY, TYPE, GENDER, CONTRACT, AGE, RATE)" {
+		t.Errorf("929 mundur %q", mundur)
+	}
+}
+
+// 930: isi kolom dari JSONDATA (blok berpelindung, notasi titik = view) -> buang JSONDATA (blok berpelindung,
+// KolomAlterBuang) -> indeks IDUSEDBY -> DROP VIEW RATE_LIFE TERAKHIR. Mundurnya: JSONDATA dari JSON_OBJECT, constraint
+// IS JSON, view RATE_LIFE persis aslinya.
+func TestMigrasi930SatuTabel(t *testing.T) {
+	maju := langkahInti(t, "930_m_rate_life_satu_tabel", false)
+	if len(maju) != 4 {
+		t.Fatalf("930 %d pernyataan, mau 4", len(maju))
+	}
+	isi, ok := migrasi.BacaPerintahKatalog(maju[0])
+	if !ok || isi.Tabel != TabelRate || isi.Objek != "JSONDATA" || !isi.BilaAda {
+		t.Fatalf("blok isi %+v %v", isi, ok)
+	}
+	for _, k := range KolomRate[1:] {
+		if !strings.Contains(isi.Perintah, "m."+k+" = m.JSONDATA."+k) {
+			t.Errorf("blok isi tanpa %s apa adanya: %s", k, isi.Perintah)
+		}
+	}
+	buang, ok := migrasi.BacaPerintahKatalog(maju[1])
+	if !ok || buang.Objek != "JSONDATA" {
+		t.Fatalf("blok buang %+v %v", buang, ok)
+	}
+	if nama, kolom := migrasi.KolomAlterBuang(buang.Perintah); nama != TabelRate || !slices.Equal(kolom, []string{"JSONDATA"}) {
+		t.Errorf("KolomAlterBuang = %s %v", nama, kolom)
+	}
+	if satuBaris(maju[2]) != "CREATE INDEX {skema}.IX_M_RATE_LIFE_IDUSEDBY ON {skema}.M_RATE_LIFE (IDUSEDBY)" ||
+		satuBaris(maju[3]) != "DROP VIEW {skema}.RATE_LIFE" {
+		t.Errorf("930 indeks / DROP VIEW %q %q", maju[2], maju[3])
+	}
+	for _, p := range maju {
+		if strings.Contains(p, "FLAG") || strings.Contains(p, "JSON_OBJECT") {
+			t.Errorf("930 maju menyebut FLAG / membangun JSON: %s", p)
+		}
+	}
+	turun := langkahInti(t, "930_m_rate_life_satu_tabel", true)
+	if len(turun) != 5 {
+		t.Fatalf("930 mundur %d pernyataan, mau 5", len(turun))
+	}
+	// Aman diulang: indeks, JSONDATA, constraint lewat blok berpelindung katalog; CREATE VIEW terakhir.
+	for i, mau := range map[int]struct {
+		objek string
+		ada   bool
+	}{0: {"IX_M_RATE_LIFE_IDUSEDBY", true}, 1: {"JSONDATA", false}, 3: {"ENSURE_M_RATE_LIFE_JSON", false}} {
+		pk, ok := migrasi.BacaPerintahKatalog(turun[i])
+		if !ok || pk.Tabel != TabelRate || pk.Objek != mau.objek || pk.BilaAda != mau.ada {
+			t.Errorf("930 mundur pernyataan %d: %+v %v", i, pk, ok)
+		}
+	}
+	if !strings.HasPrefix(satuBaris(turun[4]), "CREATE VIEW {skema}.RATE_LIFE AS") {
+		t.Errorf("930 mundur terakhir %q", turun[4])
+	}
+	semua := satuBaris(strings.Join(turun, "\n"))
+	for _, mau := range []string{"DROP INDEX {skema}.IX_M_RATE_LIFE_IDUSEDBY",
+		"JSON_OBJECT('IDUSEDBY' VALUE m.IDUSEDBY, 'USEDBY' VALUE m.USEDBY, 'TYPE' VALUE m.TYPE, 'GENDER' VALUE m.GENDER, 'CONTRACT' VALUE m.CONTRACT, 'AGE' VALUE m.AGE, 'RATE' VALUE m.RATE ABSENT ON NULL RETURNING CLOB)",
+		"ADD CONSTRAINT ENSURE_M_RATE_LIFE_JSON CHECK (JSONDATA IS JSON)",
+		"CREATE VIEW {skema}.RATE_LIFE AS SELECT a.ID, a.JSONDATA.IDUSEDBY, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.GENDER, a.JSONDATA.CONTRACT, a.JSONDATA.AGE, a.JSONDATA.RATE FROM {skema}.M_RATE_LIFE a"} {
+		if !strings.Contains(semua, mau) {
+			t.Errorf("930 mundur tanpa %q", mau)
+		}
 	}
 }

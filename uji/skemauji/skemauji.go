@@ -229,6 +229,28 @@ func Pasang(ctx context.Context, db *sql.DB, skema string) error {
 			return fmt.Errorf("skemauji: membuat tiruan warisan Adjuster Consultant: %w", err)
 		}
 	}
+	// Tiruan objek Pega Cause Of Loss Life SEBELUM migrasi: migrasi modul causeoflosslife 090-092 (sebelum 900 di skema
+	// baru) mengganti nama M_CAUSEOFLOSS_LIFE dan membuang view-nya (coll_tiruan.go, keputusan work owner 08-10-2026 K0).
+	for _, q := range ddlTiruanCOL(skema) {
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			return fmt.Errorf("skemauji: membuat tiruan warisan Cause Of Loss Life: %w", err)
+		}
+	}
+	// Tiruan objek Pega Disease Life SEBELUM migrasi: migrasi modul diseaselife 080-081 (sebelum 900 di skema baru)
+	// membuat SEQ_DISEASE_LIFE dari ID tertinggi DISEASE_LIFE dan menambah PK-nya (disease_tiruan.go, keputusan work
+	// owner 08-10-2026 K0 / D1).
+	for _, q := range ddlTiruanDisease(skema) {
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			return fmt.Errorf("skemauji: membuat tiruan warisan Disease Life: %w", err)
+		}
+	}
+	// Tiruan objek Pega Cover Life SEBELUM migrasi: migrasi modul coverlife 085-086 (sebelum 900 di skema baru) menambah
+	// kolom M_COVER_LIFE, membuang JSONDATA dan view COVER_LIFE (cover_tiruan.go, keputusan work owner 08-10-2026 K0 / C1).
+	for _, q := range ddlTiruanCover(skema) {
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			return fmt.Errorf("skemauji: membuat tiruan warisan Cover Life: %w", err)
+		}
+	}
 
 	repo, err := BukaRepositori()
 	if err != nil {
@@ -340,6 +362,63 @@ func Bongkar(ctx context.Context, db *sql.DB, skema string) error {
 		if _, err := db.ExecContext(ctx, fmt.Sprintf(`DROP TABLE %s.%s CASCADE CONSTRAINTS`, skema, nama)); err != nil {
 			if !strings.Contains(err.Error(), "ORA-00942") {
 				return fmt.Errorf("skemauji: membongkar tiruan %s: %w", nama, err)
+			}
+		}
+	}
+
+	// Tiruan Cause Of Loss Life dibongkar SESUDAH migrasi mundur (coll_tiruan.go): 090_down mengembalikan nama tabel
+	// Pega dan view-nya. View dulu, lalu tabel (nama lama dan baru), lalu sequence.
+	for _, nama := range namaViewTiruanCOL {
+		if _, err := db.ExecContext(ctx, fmt.Sprintf(`DROP VIEW %s.%s`, skema, nama)); err != nil {
+			if !strings.Contains(err.Error(), "ORA-00942") {
+				return fmt.Errorf("skemauji: membongkar tiruan %s: %w", nama, err)
+			}
+		}
+	}
+	for _, nama := range namaTabelTiruanCOL {
+		if _, err := db.ExecContext(ctx, fmt.Sprintf(`DROP TABLE %s.%s CASCADE CONSTRAINTS`, skema, nama)); err != nil {
+			if !strings.Contains(err.Error(), "ORA-00942") {
+				return fmt.Errorf("skemauji: membongkar tiruan %s: %w", nama, err)
+			}
+		}
+	}
+	for _, nama := range namaSequenceTiruanCOL {
+		if _, err := db.ExecContext(ctx, fmt.Sprintf(`DROP SEQUENCE %s.%s`, skema, nama)); err != nil {
+			if !strings.Contains(err.Error(), "ORA-02289") {
+				return fmt.Errorf("skemauji: membongkar sequence tiruan %s: %w", nama, err)
+			}
+		}
+	}
+
+	// Tiruan Disease Life dibongkar SESUDAH migrasi mundur (disease_tiruan.go): 081_down / 080_down membutuhkannya.
+	for _, nama := range namaTabelTiruanDisease {
+		if _, err := db.ExecContext(ctx, fmt.Sprintf(`DROP TABLE %s.%s CASCADE CONSTRAINTS`, skema, nama)); err != nil {
+			if !strings.Contains(err.Error(), "ORA-00942") {
+				return fmt.Errorf("skemauji: membongkar tiruan %s: %w", nama, err)
+			}
+		}
+	}
+
+	// Tiruan Cover Life dibongkar SESUDAH migrasi mundur (cover_tiruan.go): 086_down mengembalikan JSONDATA dan view.
+	// View dulu, lalu tabel, lalu sequence.
+	for _, nama := range namaViewTiruanCover {
+		if _, err := db.ExecContext(ctx, fmt.Sprintf(`DROP VIEW %s.%s`, skema, nama)); err != nil {
+			if !strings.Contains(err.Error(), "ORA-00942") {
+				return fmt.Errorf("skemauji: membongkar tiruan %s: %w", nama, err)
+			}
+		}
+	}
+	for _, nama := range namaTabelTiruanCover {
+		if _, err := db.ExecContext(ctx, fmt.Sprintf(`DROP TABLE %s.%s CASCADE CONSTRAINTS`, skema, nama)); err != nil {
+			if !strings.Contains(err.Error(), "ORA-00942") {
+				return fmt.Errorf("skemauji: membongkar tiruan %s: %w", nama, err)
+			}
+		}
+	}
+	for _, nama := range namaSequenceTiruanCover {
+		if _, err := db.ExecContext(ctx, fmt.Sprintf(`DROP SEQUENCE %s.%s`, skema, nama)); err != nil {
+			if !strings.Contains(err.Error(), "ORA-02289") {
+				return fmt.Errorf("skemauji: membongkar sequence tiruan %s: %w", nama, err)
 			}
 		}
 	}
@@ -582,7 +661,8 @@ const (
 // gagal" itulah yang perlu diuji. Tiruan bertipe NUMBER akan membuat Oracle
 // mengurai angkanya lebih dulu, dan pembacanya tidak pernah menemui teks.
 //
-// ⛔ RATE_LIFE TIDAK ditiru. Katalog baru memuat enam kolom pertamanya
+// ⛔ RATE_LIFE (sejak migrasi inti 930 tabel flat `M_RATE_LIFE` berkolom sama - RALAT R7 riratelife) TIDAK
+// ditiru. Katalog baru memuat enam kolom pertamanya
 // (ID, IDUSEDBY, USEDBY, TYPE, GENDER, CONTRACT) dan tidak satu pun di
 // antaranya kolom rate. Menirunya berarti mengarang bentuk, dan membaca rate
 // dari tabel yang bentuknya dikarang berarti mengarang angkanya.

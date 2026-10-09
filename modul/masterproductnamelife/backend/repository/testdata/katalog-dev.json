@@ -1,5 +1,5 @@
 {
-  "sumber": "ALL_TAB_COLUMNS dan ALL_OBJECTS skema DEV, dibaca asisten 01-10-2026 (brief PROMPT-LANJUTAN-MASTER-PRODUCT-NAME-LIFE-1.md §1, §2 L3). Baca-saja; nol nilai baris. RATE_LIFE (8 kolom): brief PROMPT-LANJUTAN-TIGA-MODUL-LIFE-KEPUTUSAN-OQ.md §1 K1, 01-10-2026. M_RATE_LIFE_SUMMARY: TABLE ber-kolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID sejak migrasi inti 927/928 (keputusan work owner 07-10-2026; dulu view RATE_LIFE_SUMMARY 6 kolom).",
+  "sumber": "ALL_TAB_COLUMNS dan ALL_OBJECTS skema DEV, dibaca asisten 01-10-2026 (brief PROMPT-LANJUTAN-MASTER-PRODUCT-NAME-LIFE-1.md §1, §2 L3). Baca-saja; nol nilai baris. M_RATE_LIFE (8 kolom): brief PROMPT-LANJUTAN-TIGA-MODUL-LIFE-KEPUTUSAN-OQ.md §1 K1, 01-10-2026. M_RATE_LIFE_SUMMARY: TABLE ber-kolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID sejak migrasi inti 927/928 (keputusan work owner 07-10-2026; dulu view RATE_LIFE_SUMMARY 6 kolom). M_RATE_LIFE: TABLE ber-kolom ID, IDUSEDBY, USEDBY, TYPE, GENDER, CONTRACT, AGE, RATE (teks) sejak migrasi inti 929/930 (keputusan work owner 07-10-2026; dulu view RATE_LIFE 8 kolom). RIRISK_LIFE_SUMMARY: TABLE ber-kolom ID, USEDBY, MODIFIEDDATE, OPERATORID sejak migrasi inti 935-937 (keputusan work owner 08-10-2026 K1: tabel Pega M_RIRISK_LIFE_SUMMARY berganti nama; dulu view 4 kolom).",
   "tabel": {
     "M_PRODUCT_LIFE": ["ID", "JSONDATA", "RIRISKID", "RIRISK"],
     "M_PRODUCTINWARD_LIFE": ["ID", "JSONDATA"]
@@ -16,10 +16,10 @@
     "AGENT": "TABLE",
     "CLIENT": "TABLE",
     "CURRENCY": "VIEW",
-    "CAUSEOFLOSS_LIFE": "VIEW",
-    "PRODUCT_TYPE_LIFE": "VIEW",
-    "RIRISK_LIFE_SUMMARY": "VIEW",
+    "CAUSEOFLOSS_LIFE": "TABLE",
+    "PRODUCT_TYPE_LIFE": "TABLE",
+    "RIRISK_LIFE_SUMMARY": "TABLE",
     "M_RATE_LIFE_SUMMARY": "TABLE",
-    "RATE_LIFE": "VIEW"
+    "M_RATE_LIFE": "TABLE"
   }
 }

@@ -115,3 +115,11 @@ Sebelum pull request, jalankan gerbang lengkap (`APP_RNM/PANDUAN-TIM-PER-MODUL.m
 | K1 OQ-MCRL-13 + OQ-MCRL-05 rate | view `RATE_LIFE_SUMMARY` (autocomplete `R/I RATE`) dan `RATE_LIFE` (`Rate List`) dibaca **saja**, kolom RD saja; business baru dapat disimpan (RIRATEID pilihan baru wajib ada di view ringkasan). DEV baca-saja: `GET /ringkasan-rate` 200 (100 saran), `GET /rate` 200 (1 dan 59 baris, ±0,35 detik), nol tulisan | `repository/mcrl_master.go`, uji `TestRateDibacaKolomRDSaja`, `TestPeriksaBacaSajaMenolakTulisanKeView`, `TestMCRLMasterHanyaDibacaSelect` *(RALAT 07-10-2026: ringkasan rate kini tabel `M_RATE_LIFE_SUMMARY` berkolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID - keputusan work owner 07-10-2026, `modul/riratelife/MODUL.md` RALAT R6; modul ini membacanya `SELECT ID, USEDBY`, tetap baca-saja)* |
 | §2 dua belas OQ | OQ-MCRL-01 (gerbang tahun ikut Pega), 02, 03 (0–100 ditegakkan), 04, 06, 07 (laporan hanya API), 08–12, 14 **ditutup** dengan bawaan yang dibangun; konfirmasi menyusul OQ-MCRL-02 (DBA), OQ-MCRL-04 (pemilik ekspor Pega). OQ terbuka: nol | `docs/OQ-MASTER-CONTRACT-RETRO-LIFE.md` bab keputusan 01-10-2026; tiket 03, 07, 11 |
 
+## RALAT 07-10-2026 — rincian rate R/I Rate Life menjadi tabel flat `M_RATE_LIFE`
+
+Keputusan work owner 07-10-2026 (`modul/riratelife/MODUL.md` RALAT R7): view `RATE_LIFE` DIBUANG migrasi inti 930;
+`M_RATE_LIFE` kini tabel flat berkolom PERSIS seperti view lama (`ID, IDUSEDBY, USEDBY, TYPE, GENDER, CONTRACT, AGE,
+RATE`, semua teks, nilai Pega apa adanya - RATE berkoma maupun bertitik desimal). Modul ini membaca kolom yang sama
+dari `M_RATE_LIFE` (`repository/mcrl_tabel.go` (`MasterRate`); section `Rate List`) - perilaku tidak berubah, tetap baca-saja, nol JSONDATA. Rujukan `RATE_LIFE` di
+dokumen modul ini sebelum tanggal itu berarti view lama. ⚠️ Untuk tinjauan pemilik modul dan tim inti
+(`modul/riratelife/docs/PR-RIRATELIFE-FLAT.md` bab "Perlu tinjauan tim inti").

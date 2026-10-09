@@ -30,7 +30,7 @@ type Gudang struct {
 	Master map[models.JenisMaster][]models.NilaiMaster
 	// Plan - isi `PRODUCT_TYPE_LIFE`.
 	Plan []models.JenisPlan
-	// Rate - view `RATE_LIFE` per IDUSEDBY (dialog `View Rate`, K1 01-10-2026).
+	// Rate - `M_RATE_LIFE` per IDUSEDBY (dialog `View Rate`, K1 01-10-2026).
 	Rate map[string][]models.BarisRate
 	// CariTerakhir - kata cari terakhir yang diterima CariMaster.
 	CariTerakhir string

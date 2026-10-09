@@ -15,10 +15,15 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Pemilik | `@PEMILIK-CLAIMLIFE` |
 | Status | dimigrasi |
 | Rentang migrasi | `001-029` |
-| Slot menu | `950-951` |
+| Slot menu | `950-950` |
 | Prefix rute API | `/api/klaim-life`, `/api/peserta-life`, `/api/penyakit-life`, `/api/dokumen` |
 | Kontrak disediakan | `kontrak.KlaimKomite` (dipakai `komiteclaimlife`) |
 | Kontrak dipakai | `kontrak.PembacaPolis` (disediakan `premiumlistlife`) |
+
+**Slot menu dikecilkan** (keputusan work owner 08-10-2026, prompt Disease / Cover K0, perlu persetujuan tim inti
+(CODEOWNERS)): `950-951` → `950-950`; slot `951` diserahkan ke modul `diseaselife` (`modul/diseaselife/MODUL.md`).
+Nomor itu tidak pernah terpakai di sini. Pencarian diagnosa (`DISEASE_LIFE`) tidak berubah: modul `diseaselife` hanya
+menambah PK `PK_DISEASE_LIFE` dan sequence `SEQ_DISEASE_LIFE`, kolom dan nama tabel tetap.
 
 `Pemilik` adalah penanda pemegang modul. Wilayah berkas yang boleh disentuh cabang
 `module/<nama>` dijaga `.github/workflows/penjaga-wilayah-cabang.yml` - CODEOWNERS
@@ -34,7 +39,7 @@ dipensiunkan 1 Oktober 2026.
 
 ## Migrasi
 
-Rentang `001-029`, terpakai `001–022`. Slot menu `950-951` tidak terpakai: baris
+Rentang `001-029`, terpakai `001–022`. Slot menu `950-950` tidak terpakai (`951` diserahkan ke `diseaselife`): baris
 modul ini sudah `DIMIGRASI = '1'` sejak 900, dan menu datar (30-09-2026) tidak punya butir — slot hanya
 menyalakan `DIMIGRASI` (`APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6). Nama berkas migrasi yang sudah ada tidak pernah diubah:
 `T_MIGRASI` mencatat nama.
@@ -113,3 +118,12 @@ menyertainya di berkas yang sama (`TestHandlerMenyuntikkanImplementasiNyata`).
 ## Brief acuan
 
 `PROMPT-IMPLEMENTASI-MODUL-CLAIM-LIFE*.md`, `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-*.md` (folder `OUTPUT_HASIL_RNM\`).
+
+## RALAT 07-10-2026 — rincian rate R/I Rate Life menjadi tabel flat `M_RATE_LIFE`
+
+Keputusan work owner 07-10-2026 (`modul/riratelife/MODUL.md` RALAT R7): view `RATE_LIFE` DIBUANG migrasi inti 930;
+`M_RATE_LIFE` kini tabel flat berkolom PERSIS seperti view lama (`ID, IDUSEDBY, USEDBY, TYPE, GENDER, CONTRACT, AGE,
+RATE`, semua teks, nilai Pega apa adanya - RATE berkoma maupun bertitik desimal). Modul ini membaca kolom yang sama
+dari `M_RATE_LIFE` (`repository/ratelife.go` (`RateLife.Baca`, konstanta `NamaViewRateLife`); spreading retro (`services/spreading.go`)) - perilaku tidak berubah, tetap baca-saja, nol JSONDATA. Rujukan `RATE_LIFE` di
+dokumen modul ini sebelum tanggal itu berarti view lama. ⚠️ Untuk tinjauan pemilik modul dan tim inti
+(`modul/riratelife/docs/PR-RIRATELIFE-FLAT.md` bab "Perlu tinjauan tim inti").

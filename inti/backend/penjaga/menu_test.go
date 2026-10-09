@@ -168,9 +168,42 @@ var modulLuarKorpus = map[string]string{
 	// Perintah work owner 05-10-2026: modul `riratelife` (M_RATE_LIFE_SUMMARY, ringkasan rate reasuransi life), label
 	// "R/I Rate Life", kelompok MASTER TREATY (922) - tanpa migrasi sendiri, barisnya langsung menyala.
 	"riratelife": "922_m_nav_menu_riratelife.sql",
-	// Perintah work owner 06-10-2026: modul `ricommlife` (M_RICOMM_LIFE_SUMMARY + tabel flat RICOMM_LIFE 924), label
+	// Perintah work owner 06-10-2026: modul `ricommlife` (M_RICOMM_LIFE_SUMMARY + M_RICOMM_LIFE, satu tabel per jenis
+	// data sejak 931-934 - keputusan work owner 08-10-2026; tabel flat RICOMM_LIFE 924 dibuang 934), label
 	// "R/I Comm Life", kelompok MASTER TREATY URUTAN 10 (925) - tanpa migrasi sendiri, barisnya langsung menyala.
 	"ricommlife": "925_m_nav_menu_ricommlife.sql",
+	// Keputusan work owner 08-10-2026 K4: modul `ririsklife` (RIRISK_LIFE_SUMMARY + RIRISK_LIFE, tabel Pega berganti
+	// nama 935/938), LABEL "R/I Risk", kelompok MASTER TREATY URUTAN 11 (941) - tanpa migrasi sendiri, langsung menyala.
+	"ririsklife": "941_m_nav_menu_ririsklife.sql",
+	// Keputusan work owner 08-10-2026 K4: modul `benefitlife` (BENEFIT_LIFE, tabel Pega M_BENEFIT_LIFE berganti nama
+	// 942), LABEL "Benefit", kelompok MASTER TREATY URUTAN 12 (945) - tanpa migrasi sendiri, langsung menyala.
+	"benefitlife": "945_m_nav_menu_benefitlife.sql",
+	// Keputusan work owner 08-10-2026 K6: modul `planlife` (PRODUCT_TYPE_LIFE, tabel Pega M_PRODUCT_TYPE_LIFE berganti
+	// nama 946), LABEL "Plan", kelompok MASTER TREATY URUTAN 13 (949) - tanpa migrasi sendiri, langsung menyala.
+	"planlife": "949_m_nav_menu_planlife.sql",
+	// Keputusan work owner 08-10-2026 K0/K5: modul `causeoflosslife` (CAUSEOFLOSS_LIFE, tabel Pega M_CAUSEOFLOSS_LIFE
+	// berganti nama di migrasi MODUL 090-092), LABEL "Cause Of Loss Life", kelompok MASTER TREATY URUTAN 14. PERTAMA kali
+	// baris modul luar korpus lahir di SLOT MENU modulnya sendiri (955, dipinjam dari jatah premiumlistlife), bukan di
+	// langkah inti - rentang inti 900-949 penuh. Berkasnya modul, jadi juga terdaftar di `barisLahirDiSlot`.
+	"causeoflosslife": "955_menu_causeoflosslife.sql",
+	// Keputusan work owner 08-10-2026 K0/D4: modul `diseaselife` (DISEASE_LIFE, tabel Pega yang SUDAH flat - migrasi
+	// MODUL 080-081 hanya sequence + PK), LABEL "Disease Life", kelompok MASTER TREATY URUTAN 15. Barisnya lahir di slot
+	// menu modulnya sendiri (951, dipinjam dari jatah claimlife).
+	"diseaselife": "951_menu_diseaselife.sql",
+	// Keputusan work owner 08-10-2026 K0/C4: modul `coverlife` (M_COVER_LIFE, tabel Pega dijadikan flat TANPA RENAME di
+	// migrasi MODUL 085-086), LABEL "Cover Life", kelompok MASTER TREATY URUTAN 16. Barisnya lahir di slot menu modulnya
+	// sendiri (957, dipinjam dari jatah treatycontractout).
+	"coverlife": "957_menu_coverlife.sql",
+}
+
+// barisLahirDiSlot - modul luar korpus yang baris M_NAV_MENU-nya LAHIR di slot menu modulnya sendiri (bukan langkah
+// inti): KODE -> berkas slot. SATU-SATUNYA tempat INSERT baris modul boleh muncul di slot menu
+// (`pelanggaranSlotMenu`), hanya bentuk datar `polaIsiKelompokDatar` atas baris modul itu sendiri, jalur mundurnya
+// membuang hak lalu barisnya. Nilainya harus sama dengan `modulLuarKorpus` (`TestBarisLahirDiSlotTerdaftar`).
+var barisLahirDiSlot = map[string]string{
+	"causeoflosslife": "955_menu_causeoflosslife.sql",
+	"diseaselife":     "951_menu_diseaselife.sql",
+	"coverlife":       "957_menu_coverlife.sql",
 }
 
 // langkahPensiunMenu - langkah inti yang MEMBUANG baris modul luar korpus yang dihapus (berkas -> KODE): salin hak
@@ -210,9 +243,19 @@ var labelTampilDisetujui = map[string]labelTampil{
 	"mastercity":              {folder: "Master City", tampil: "City"},
 	"masterdistrict":          {folder: "Master District", tampil: "District"},
 	"masterczone":             {folder: "Master CZone", tampil: "CZone"},
-	"masteraccumulatedtype":   {folder: "Master Accumulated Type", tampil: "Accumulated Type"},
-	"masteraccumulation":      {folder: "Master Accumulation", tampil: "Accumulation"},
-	"masterobjectitemtype":    {folder: "Master Object Item Type", tampil: "Object Item Type"},
+	// Keputusan work owner 08-10-2026 K4: modul DI LUAR korpus `ririsklife` berlabel "R/I Risk" (bukan "R/I Risk Life"):
+	// KODE / MODUL tetap diturunkan dari "R/I Risk Life" (`/` dan spasi dibuang). Baris lahir berlabel itu di 941 -
+	// tanpa slot menu.
+	"ririsklife": {folder: "R/I Risk Life", tampil: "R/I Risk"},
+	// Keputusan work owner 08-10-2026 K4: modul DI LUAR korpus `benefitlife` berlabel "Benefit" (bukan "Benefit Life"):
+	// KODE / MODUL diturunkan dari "Benefit Life". Baris lahir berlabel itu di 945 - tanpa slot menu.
+	"benefitlife": {folder: "Benefit Life", tampil: "Benefit"},
+	// Keputusan work owner 08-10-2026 K6: modul DI LUAR korpus `planlife` berlabel "Plan" (bukan "Plan Life"): KODE /
+	// MODUL diturunkan dari "Plan Life". Baris lahir berlabel itu di 949 - tanpa slot menu.
+	"planlife":              {folder: "Plan Life", tampil: "Plan"},
+	"masteraccumulatedtype": {folder: "Master Accumulated Type", tampil: "Accumulated Type"},
+	"masteraccumulation":    {folder: "Master Accumulation", tampil: "Accumulation"},
+	"masterobjectitemtype":  {folder: "Master Object Item Type", tampil: "Object Item Type"},
 }
 
 // barisMenu - satu baris M_NAV_MENU di skema tiruan. `induk` kosong = baris
@@ -672,6 +715,11 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 	// puluh folder awal) - tidak dihitung sebagai folder modul korpus.
 	labelLuar := map[string]bool{}
 	tampil := 0
+	// URUTAN diperiksa menurut NILAINYA (stabil), bukan menurut urutan berkas yang melahirkan barisnya: baris yang
+	// lahir di SLOT MENU modul (`barisLahirDiSlot`) bernomor berkas menurut jatah slotnya, bukan menurut urutan menu -
+	// keputusan work owner 08-10-2026 K0 / D4: Disease Life URUTAN 15 lahir di slot 951, SEBELUM Cause Of Loss Life
+	// URUTAN 14 di slot 955. Yang dijaga tetap sama: setiap golongan bernomor 1, 2, 3, ... tanpa celah dan tanpa kembar.
+	sort.SliceStable(kelompok, func(i, j int) bool { return kelompok[i].urutan < kelompok[j].urutan })
 	for _, k := range kelompok {
 		if kode[k.kode] {
 			t.Errorf("KODE %s ganda", k.kode)
@@ -697,7 +745,7 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 		if mau := strings.ToLower(strings.NewReplacer(" ", "", "/", "").Replace(folder)); k.kode != mau || k.modul != mau {
 			t.Errorf("baris %q: KODE %q, MODUL %q, mau keduanya %q (tabel nama modul)", folder, k.kode, k.modul, mau)
 		}
-		// URUTAN 1, 2, 3, ... di dalam golongannya, menurut urutan berkas.
+		// URUTAN 1, 2, 3, ... di dalam golongannya (kembar atau celah = merah).
 		if k.urutan != urutanTerakhir[k.golongan]+1 {
 			t.Errorf("baris %s: URUTAN %d di %s, mau %d", k.kode, k.urutan, k.golongan, urutanTerakhir[k.golongan]+1)
 		}
