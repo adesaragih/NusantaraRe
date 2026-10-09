@@ -8,7 +8,7 @@
 //     ringkasan lewat nama.
 //   - ID baru (ringkasan DAN rincian) = site `M_SITE_DATABASE` || LPAD(sequence warisan, 6, '0') (butir 4).
 //   - OPERATORID = akun login; MODIFIEDDATE = format Pega `yyyyMMdd'T'HHmmss.SSS 'GMT'` (butir 6).
-//   - R/I COMM DETAIL (`setIDUsedBy_Act` b9059 + harness `InboxRIComm` b9096): tabel flat `RICOMM_LIFE`, tambah dan
+//   - R/I COMM DETAIL (`setIDUsedBy_Act` b9059 + harness `InboxRIComm` b9096): tabel `M_RICOMM_LIFE`, tambah dan
 //     ubah satu baris - detail.go.
 //   - Upload CSV / View Upload / Simpan Upload (b3189, b3706, b4771): gaya riratelife (butir 7) - unggah.go.
 //   - Transaksi milik Go: satu transaksi per simpan, prosedur PEGA_* tidak dipanggil (butir 5).
@@ -54,7 +54,7 @@ var (
 	ErrMasukanTidakSah = errors.New("services: masukan tidak sah")
 	// ErrDilarang - aktor tidak berhak; pesannya untuk pengguna.
 	ErrDilarang = errors.New("services: tidak berhak")
-	// ErrBelumAda - tabel, view, atau sequence tidak ada di skema ini.
+	// ErrBelumAda - tabel, kolom, atau sequence tidak ada di skema ini.
 	ErrBelumAda = repository.ErrBelumAda
 )
 

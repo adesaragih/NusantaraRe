@@ -4,8 +4,9 @@ package services
 // ID-37, AC 39-43); KEPUTUSAN 23-09-2026 butir 4: setiap polis, SETIAP generasi, tanpa penyaring. Asal: pola
 // `modul/nbtreatyin/backend/services/pemuat.go` (tiket NB 22; NB memuat PRODKE 0 dan hanya MENGHITUNG PRODKE > 0).
 //
-// Dijalankan MANUSIA lewat `backend/alat/pemuatlama`, tidak pernah saat aplikasi menyala - modul.go tidak
-// mendaftarkannya. Urutan: generasi NB lebih dulu oleh pemuat NB, lalu pemuat ini.
+// Dijalankan MANUSIA lewat `backend/alat/pemuatlama` (seluruh dokumen), atau per dokumen dari layar lewat tombol Copy
+// Old superadmin (`copyold.go`, perintah work owner 07-10-2026) - `muat` yang sama. Urutan: generasi NB lebih dulu
+// oleh pemuat NB, lalu pemuat ini.
 //
 // ⚠️ URUTAN PEMUATAN (tiket 10): dokumen dimuat menurut NOPOLIS lalu PRODKE BILANGAN naik
 // (`models.UrutKunciGenerasi`) - OLD_POLIS_ID menuntut generasi sebelumnya sudah ada. OLD_POLIS_ID = ID generasi
@@ -18,6 +19,8 @@ package services
 //	GenerasiSebelumnya      OLD_POLIS_ID (NOPOLIS, PRODKE - 1) + BacaGenerasi - pembanding (ID-8)
 //	BarisSpreadingHilang    PENJAGA KEUTUHAN jalur biasa (ID-15, AC 8; validasiKirim)
 //	HitungPenandaMigrasi    penanda tiket 09 (murni; angka tidak disentuh)
+//	PembuatPega             CREATE_OP / CREATE_OP_NAME = PXCREATEOPERATOR / PXCREATEOPNAME kasus Pega (WO 07-10-2026);
+//	                        tanpa baris Pega = NULL (tidak dikarang)
 //	SisipKasus              T_WORK_POLIS + generasi PRODKE / NOENDORS / OLD_POLIS_ID / EDM_TYPE - PENJAGA PERCABANGAN
 //	                        UNIQUE OLD_POLIS_ID di basis data (ID-10, AC 3)
 //	SimpanHalaman           T_GENERAL_POLIS_TREATY + T_POLIS_* menurut katalog (RapikanBentukSimpan sudah di pemecah)
@@ -26,7 +29,9 @@ package services
 //	SimpanSelisih           proyeksi selisih SUMBER 'PEGA' dari TreatyDifference / TreatyXOLDifferenceList dokumen
 //	                        APA ADANYA (ID-33, AC 39) - beku (ID-38)
 //	SetelPenandaMigrasi     PASANGAN_BERGESER / RUMUS_BERLAPIS, SUMBER 'PEGA' saja (AC 43)
-//	SalinUsulanLamaEDM      SuggestList -> HISTORYAKSEPTASIPRODUCTION lewat `CatatUsulan` (penjaga dobel IDPEGA)
+//	CatatUsulan             SuggestList -> HISTORYAKSEPTASIPRODUCTION, proteksi dobel `salinUsulanLama` (WO 07-10-2026):
+//	                        IDPEGA yang sudah ada di HISTORYAKSEPTASIPRODUCTION / HISTORYAKSEPTASIPEGA tidak ditulis
+//	                        lagi; HISTORYAKSEPTASIPEGA tidak pernah ditulis
 //	TutupKasus              Resolved-Completed: json_polis endorsemen hanya lahir di Utility1 sesudah disetujui
 //
 // Uji-kering (`tulis` false): hanya JSON_POLIS yang dibaca, nol pernyataan ke tabel mana pun. Pembanding generasi
@@ -55,9 +60,13 @@ type GudangPemuat interface {
 
 	// baca saja (repository/lama_edm.go)
 	KunciJSONPolisEDM(ctx context.Context) ([]models.KunciJSONPolis, error)
+	// KunciJSONPolisEDMCopyOld - popup Copy Old: hanya dokumen yang kasus Pega-nya ada dan sudah berproduksi (WO 07-10-2026).
+	KunciJSONPolisEDMCopyOld(ctx context.Context) ([]models.KunciJSONPolis, error)
 	BacaJSONPolisEDM(ctx context.Context, kunci string) (models.BarisJSONPolis, error)
 	BacaJSONPolisNB(ctx context.Context, nopolis string) ([]models.BarisJSONPolis, error)
 	KunciGenerasiLama(ctx context.Context, tx *db.Tx, id string) (models.KunciGenerasi, bool, error)
+	// PembuatPega - PXCREATEOPERATOR / PXCREATEOPNAME DATAPEGA.PC_ASM_FW_GISFW_WORK menurut pzInsKey (WO 07-10-2026).
+	PembuatPega(ctx context.Context, tx *db.Tx, idPega string) (operator, nama string, err error)
 
 	// antarmuka jalur biasa (repository/kasus.go, generasi.go, polis.go, selisih.go, usulan.go)
 	GenerasiSebelumnya(ctx context.Context, tx *db.Tx, k models.Kasus, nopolis string) (string, error)
@@ -71,7 +80,9 @@ type GudangPemuat interface {
 	// penulis tambahan pemuat (repository/lama_edm.go)
 	SetelKolomDatarLamaEDM(ctx context.Context, tx *db.Tx, id string, k models.KolomDatarLama) error
 	SetelPenandaMigrasi(ctx context.Context, tx *db.Tx, polisID string, p models.PenandaMigrasi) error
-	SalinUsulanLamaEDM(ctx context.Context, tx *db.Tx, idPega string, baris []models.UsulanProduksi) (models.NasibUsulan, error)
+	// AdaRiwayatIDPega - IDPEGA sudah punya baris HISTORYAKSEPTASIPRODUCTION / HISTORYAKSEPTASIPEGA (proteksi dobel).
+	AdaRiwayatIDPega(ctx context.Context, tx *db.Tx, idPega string) (bool, error)
+	CatatUsulan(ctx context.Context, tx *db.Tx, idPega string, baris []models.UsulanProduksi) error
 }
 
 // Pemuat - pemuat dokumen lama endorsemen.
@@ -126,7 +137,8 @@ func (pm *Pemuat) Jalankan(ctx context.Context, tulis bool, lap *models.LaporanP
 		}
 		h, err := models.PecahDokumenEDM(b)
 		switch {
-		case errors.Is(err, models.ErrBukanTreatyIn), errors.Is(err, models.ErrBukanGenerasiEndorsemen):
+		case errors.Is(err, models.ErrBukanTreatyIn), errors.Is(err, models.ErrBukanGenerasiEndorsemen),
+			errors.Is(err, models.ErrBarisAplikasiBaru):
 			lap.Lewat(err)
 			continue
 		case err != nil:
@@ -248,7 +260,12 @@ func (pm *Pemuat) muat(ctx context.Context, h models.HasilPecahEDM) (models.Pena
 			return err
 		}
 		gb := repository.GenerasiBaru{ProdKe: h.ProdKe, EDMNo: h.EDMNo, OldPolisID: lamaID, EDMType: h.EDMType}
-		if err := pm.g.SisipKasus(ctx, tx, h.ID, "", "", gb); err != nil {
+		// pembuat = pembuat kasus Pega (WO 07-10-2026 "PXCREATEOPERATOR,PXCREATEOPNAME"); tanpa baris Pega = NULL
+		op, nama, err := pm.g.PembuatPega(ctx, tx, models.KunciInstans(h.ID))
+		if err != nil {
+			return err
+		}
+		if err := pm.g.SisipKasus(ctx, tx, h.ID, op, nama, gb); err != nil {
 			if errors.Is(err, repository.ErrGenerasiSudahDiendorse) {
 				return fmt.Errorf("%w: OLD_POLIS_ID %s: %w", models.ErrPercabangan, lamaID, err)
 			}
@@ -271,10 +288,30 @@ func (pm *Pemuat) muat(ctx context.Context, h models.HasilPecahEDM) (models.Pena
 		if err := pm.g.SetelPenandaMigrasi(ctx, tx, h.ID, p); err != nil {
 			return err
 		}
-		if usulan, err = pm.g.SalinUsulanLamaEDM(ctx, tx, models.KunciInstans(h.ID), h.Usulan); err != nil {
+		if usulan, err = salinUsulanLama(ctx, pm.g, tx, models.KunciInstans(h.ID), h.Usulan); err != nil {
 			return err
 		}
 		return pm.g.TutupKasus(ctx, tx, h.ID, models.AssignmentAdmin, models.StatusSelesai)
 	})
 	return p, usulan, err
+}
+
+// salinUsulanLama - SuggestList dokumen lama -> POOLDATA.HISTORYAKSEPTASIPRODUCTION lewat `CatatUsulan` jalur biasa
+// (F3). PROTEKSI DOBEL (perintah WO 07-10-2026 "TAMBAKAN PROTEKSI UNTUK 2 TABLE INI historyakseptasiproduction,historyakseptasiPEGA -
+// SAAT COPY, JIKA UDAH ADA PADA 2 TABLE ITU JANGAN DI COPY, SUPAYA TIDAK DOUBLE"):
+// IDPEGA yang sudah punya baris di HISTORYAKSEPTASIPRODUCTION atau HISTORYAKSEPTASIPEGA (baris Pega sendiri atau
+// salinan sebelumnya) tidak ditulis lagi (`UsulanDilewati`). HISTORYAKSEPTASIPEGA tidak pernah ditulis pemuat:
+// riwayat Pega berkunci pzInsKey yang sama dan dibaca lewat `KunciInstans`.
+func salinUsulanLama(ctx context.Context, g GudangPemuat, tx *db.Tx, idPega string, baris []models.UsulanProduksi) (models.NasibUsulan, error) {
+	if len(baris) == 0 {
+		return models.UsulanTanpaBaris, nil
+	}
+	ada, err := g.AdaRiwayatIDPega(ctx, tx, idPega)
+	if err != nil {
+		return models.UsulanTanpaBaris, err
+	}
+	if ada {
+		return models.UsulanDilewati, nil
+	}
+	return models.UsulanDisalin, g.CatatUsulan(ctx, tx, idPega, baris)
 }

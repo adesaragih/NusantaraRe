@@ -9,9 +9,9 @@
 // dijaga `components/namaJujur.test.ts`.
 //
 // ⛔ [keputusan work owner 30-09-2026: bahasa Inggris] — SELURUH teks layar Treaty Contract Out
-// berbahasa Inggris. Label korpus yang berbahasa Indonesia (`Informasi`,
-// `Tidak ada file yg diattach`) diterjemahkan; teks aslinya tetap dibuktikan
-// `labels.test.ts`. Dijaga: nol kata Indonesia di nilai label.
+// berbahasa Inggris. Label korpus yang berbahasa Indonesia (`Informasi`)
+// diterjemahkan; teks aslinya tetap dibuktikan `labels.test.ts`. Dijaga: nol
+// kata Indonesia di nilai label.
 
 /**
  * Menu kelompok **Treaty Contract Out** — tco5 `[DIPUTUSKAN work owner
@@ -148,54 +148,6 @@ export const TAHUN_TCO = {
   tersimpan: 'Treaty year saved.',
   /** `[tidak ada di korpus]` — tombol yang menunggu tiketnya. */
   menungguTiket: 'awaiting ticket',
-} as const
-
-/**
- * Tiket 12 — panel lampiran tahun treaty (FITUR BARU, penyimpangan sadar 9).
- *
- * Nomor baris = `Section/GridTreatyArrangementAttachment.xml` kecuali disebut
- * lain; panel itu disertakan `Section/InputTreatyContract.xml` b13074.
- *
- * ⛔ `Download` b2391 (→ `DownloadAll_Act` generik) TIDAK dibawa sebagai
- * tombol kedua: `Download All` b2659 (→ `TreatyOutDownloadAll_Act`) adalah
- * aksi yang sama untuk modul ini, dan dua tombol unduh-semua berdampingan
- * hanya membingungkan.
- */
-export const LAMPIRAN_TCO = {
-  /** `Section/InputTreatyContract.xml` b11721 `<pyValue>`. */
-  attachmentFor: 'Attachment for',
-  /** b1785 `<pyValue>`. */
-  forTreatyContractOut: 'For Treaty Contract Out',
-  /** b578 `<pyLabel>` → `SetCategory_act` b596 → flow action `TreatyOutAttachContent` b642. */
-  addAttachment: 'Add attachment',
-  /** b1023 `<pyLabel>` → `LoadAttachmentTreatyOut` b1041. */
-  refresh: 'Refresh',
-  /** b2659 `<pyLabel>` → `TreatyOutDownloadAll_Act` b2677. */
-  downloadAll: 'Download All',
-  /** b3032 `<pyValue>` — judul kolom; sel `.pyFileName` b3428 → `TreatyOutDownloadOne` b3488. */
-  kolomFileName: 'File Name',
-  /** b3170 `<pyValue>` — judul kolom; sel `.pyCategory` b3705. Juga label pemilih kategori. */
-  kolomType: 'Type',
-  /** b3897 `<pyLabel>` → `DeleteAttachmentTreaty` b3915. */
-  delete: 'Delete',
-  /** `Activity/TreatyOutSaveAttachment.xml` b376 `Local.Err` "Tidak ada file yg diattach" — diterjemahkan [keputusan work owner 30-09-2026: bahasa Inggris]. */
-  tanpaBerkas: 'No file attached',
-
-  /** `[tidak ada di korpus]` — kosakata kami (fiturnya tidak ada di Pega). */
-  kolomStatus: 'Status',
-  statusTerkirim: 'sent',
-  statusTertunda: 'pending',
-  statusGagal: 'failed',
-  ulangi: 'Retry',
-  periksaSelaras: 'Check consistency',
-  selarasBersih: 'Attachment records and stored files are consistent.',
-  kosong: 'No attachments for this treaty year yet.',
-  pilihKategori: '— select —',
-  /** `[tidak ada di korpus]` — kode perbaikan keselarasan (`ulangi` / `hapus`) sebagai kata layar. */
-  perbaikanUlangi: 'retry',
-  perbaikanHapus: 'delete',
-  /** `[tidak ada di korpus]` — kepala kolom tombol (pembaca layar). */
-  kolomAksi: 'actions',
 } as const
 
 /**

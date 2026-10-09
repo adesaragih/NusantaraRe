@@ -150,7 +150,8 @@ func TestDaftarKasusPortalMenurutGetListOpportunity(t *testing.T) { // P8, temua
 	}); err != nil {
 		t.Fatal(err)
 	}
-	for cari, harap := range map[string]int{"uji-nb-cari": 1, "UJI-BISNIS-CARI": 0} {
+	// pencarian diperluas (perintah work owner 07-10-2026): group business ikut dicari; setiap kata wajib cocok
+	for cari, harap := range map[string]int{"uji-nb-cari": 1, "UJI-BISNIS-CARI": 1, "uji-nb-cari bisnis": 1, "uji-nb-cari UJI-TIDAK-ADA": 0} {
 		r, err := g.DaftarKasus(ctx, models.SaringanKasus{Cari: cari})
 		if err != nil {
 			t.Fatal(err)

@@ -1,0 +1,970 @@
+/* Gaya modul Claim Prop - satu berkas milik modul; setiap pemilih di bawah akar `.claimprop`, kelas modul berawalan
+   `claimprop__`. Tampilan SAMA dengan Kelola User dari inbox sampai isi kasus (work owner 08-10-2026 "SAMAIN DENGAN
+   MENU KELOLA USER SKIN NYA", "SEMUA DONG DARI LUAR SAMPE DALAM"): neumorfisme rapi di atas alas #eef1f6, isian
+   timbul ke dalam, tombol kapsul, tombol utama merah bergradasi, tabel sebagai kartu timbul berkepala navy, jalur tab
+   cekung. Nilainya disalin dari tema `.kelola-user` inti ke token `--cp-*` milik modul ini - TIDAK menumpang ke kelas
+   inti (pola Marketing Officer). Warna hanya di blok token akar. TANPA backdrop-filter, filter, atau transform:
+   Modal tanpa portal akan terperangkap. */
+
+.claimprop {
+  display: contents;
+}
+
+/* --------------------------------------------------------------- kulit Kelola User */
+
+.claimprop .claimprop__akar {
+  --cp-latar: #eef1f6;
+  --cp-latar-tepi: #cfd7e5;
+  --cp-latar-atas: #f9fafd;
+  --cp-latar-bawah: #e4e9f3;
+  --cp-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --cp-lembut: #e9edf3;
+  --cp-lembut-tepi: #dde3ec;
+  --cp-teks: #101828;
+  --cp-teks-redup: #4f586b;
+  --cp-aksen: var(--primary-tanda);
+  --cp-aksen-teks: #2339a3;
+  --cp-aksen-lembut: #e3e8f6;
+  --cp-aksen-garis: #b9c5ee;
+  --cp-kepala-tabel: #dde4f2;
+  --cp-kepala-teks: #22326b;
+  --cp-kepala-garis: #c3cde2;
+  --cp-isi: #ffffff;
+  --cp-baris-hover: #e6ecfa;
+  --cp-garis: #e1e6ef;
+  --cp-tepi: #c8d1e1;
+  --cp-jalur-tab: #dfe5ef;
+  --cp-tombol: #d63a42;
+  --cp-tombol-ujung: #bf2f37;
+  --cp-tombol-hover: #c2333b;
+  --cp-tombol-hover-ujung: #a9282f;
+  --cp-terang: rgba(255, 255, 255, 0.92);
+  --cp-gelap: rgba(163, 177, 198, 0.55);
+  --cp-kilau: rgba(255, 255, 255, 0.7);
+  --cp-tekan: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+  --cp-timbul: 8px 8px 18px var(--cp-gelap), -8px -8px 18px var(--cp-terang);
+  --cp-timbul-kecil: 4px 4px 9px var(--cp-gelap), -4px -4px 9px var(--cp-terang);
+  --cp-cekung: inset 3px 3px 7px var(--cp-gelap), inset -3px -3px 7px var(--cp-terang);
+  --cp-cekung-kecil: inset 2px 2px 4px var(--cp-gelap), inset -2px -2px 4px var(--cp-terang);
+  --cp-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --cp-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--cp-terang);
+  --cp-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --cp-bahaya-teks: #b42318;
+  --cp-unggah: #3bb273;
+  --cp-lihat: #12b5c6;
+  --cp-ikon-teks: #ffffff;
+  --text-3: var(--cp-teks-redup);
+  color: var(--cp-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--cp-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--cp-latar-atas) 0%, var(--cp-latar-bawah) 100%);
+  box-shadow: var(--cp-bayang-akar);
+}
+
+:root[data-theme="dark"] .claimprop .claimprop__akar {
+  --cp-latar: #1b2130;
+  --cp-latar-tepi: #323b50;
+  --cp-latar-atas: #222a3b;
+  --cp-latar-bawah: #161b27;
+  --cp-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --cp-lembut: #181d2a;
+  --cp-lembut-tepi: #242b3a;
+  --cp-teks: #eef0f6;
+  --cp-teks-redup: #aab2c4;
+  --cp-aksen-teks: #aebcff;
+  --cp-aksen-lembut: #222b45;
+  --cp-aksen-garis: #3a4b8f;
+  --cp-kepala-tabel: #273152;
+  --cp-kepala-teks: #dbe2ff;
+  --cp-kepala-garis: #3a4670;
+  --cp-isi: #1f2638;
+  --cp-baris-hover: #2b3554;
+  --cp-garis: #2c3447;
+  --cp-tepi: #3a4459;
+  --cp-jalur-tab: #151a26;
+  --cp-terang: rgba(255, 255, 255, 0.045);
+  --cp-gelap: rgba(0, 0, 0, 0.55);
+  --cp-kilau: rgba(255, 255, 255, 0.04);
+  --cp-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --cp-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--cp-terang);
+  --cp-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --cp-bahaya-teks: #fda29b;
+  --cp-unggah: #2f8f5c;
+  --cp-lihat: #0e8f9c;
+  --cp-ikon-teks: #f2fbf6;
+}
+
+/* Judul dan teks redup. */
+.claimprop .inbox__judul,
+.claimprop .modal__title,
+.claimprop .panel__title {
+  color: var(--cp-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.claimprop .muted {
+  color: var(--cp-teks-redup);
+}
+
+.claimprop :focus-visible {
+  outline: 2px solid var(--cp-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.claimprop .field__input {
+  background: var(--cp-isi);
+  border: 1px solid var(--cp-tepi);
+  border-radius: 12px;
+  box-shadow: var(--cp-cekung-kecil);
+  color: var(--cp-teks);
+}
+
+.claimprop .field__input:hover:not(:disabled) {
+  border-color: var(--cp-aksen-garis);
+}
+
+.claimprop .field__input:focus {
+  border-color: var(--cp-aksen);
+  box-shadow: var(--cp-cekung-kecil), var(--cp-cincin);
+  outline: none;
+}
+
+/* Hanya-baca: abu lembut bertulisan redup, terbedakan dari isian yang dapat diketik. */
+.claimprop .field__input--readonly,
+.claimprop .field__input--readonly:hover {
+  background: var(--cp-lembut);
+  border-color: var(--cp-lembut-tepi);
+  color: var(--cp-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.claimprop .btn {
+  border-radius: 999px;
+}
+
+.claimprop .btn--primary {
+  background: linear-gradient(180deg, var(--cp-tombol), var(--cp-tombol-ujung));
+  border-color: var(--cp-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--cp-bayang-tombol);
+}
+
+.claimprop .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--cp-tombol-hover), var(--cp-tombol-hover-ujung));
+  border-color: var(--cp-tombol-hover-ujung);
+}
+
+.claimprop .btn--primary:active:not(:disabled) {
+  box-shadow: var(--cp-tekan);
+}
+
+.claimprop .btn--ghost {
+  background: var(--cp-isi);
+  border: 1px solid var(--cp-tepi);
+  color: var(--cp-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--cp-timbul-kecil);
+}
+
+.claimprop .btn--ghost:hover:not(:disabled) {
+  background: var(--cp-aksen-lembut);
+  border-color: var(--cp-aksen-garis);
+  color: var(--cp-aksen-teks);
+}
+
+.claimprop .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--cp-cekung-kecil);
+}
+
+.claimprop .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut; isinya ikut neumorfisme. */
+.claimprop .modal {
+  background: var(--cp-latar);
+  border: 1px solid var(--cp-kilau);
+  border-radius: 22px;
+  box-shadow: var(--cp-bayang-popup);
+}
+
+.claimprop .modal__head,
+.claimprop .modal__actions {
+  border-color: var(--cp-garis);
+}
+
+.claimprop .alert {
+  border-radius: 12px;
+}
+
+/* Tab (Process / Resolve, Interest / Estimation / Spreading): jalur TIMBUL KE DALAM; kapsul aktif TIMBUL KELUAR dan
+   MELUNCUR halus ke tab terpilih (work owner 08-10-2026 "tab process sama resolve juga buat smooth"). Lebar tab sama
+   supaya posisi kapsul dihitung tanpa transform (transform memerangkap Modal tanpa portal). */
+.claimprop .tabs {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  gap: 4px;
+  padding: 5px;
+  border: 0;
+  border-radius: 22px;
+  background: var(--cp-jalur-tab);
+  box-shadow: var(--cp-cekung);
+}
+
+.claimprop .tabs::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 110px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--cp-isi);
+  box-shadow: var(--cp-timbul-kecil);
+  transition: left 220ms ease;
+}
+
+.claimprop .tabs:has(> .tabs__item:nth-child(2).tabs__item--aktif)::before {
+  left: 119px;
+}
+
+.claimprop .tabs:has(> .tabs__item:nth-child(3).tabs__item--aktif)::before {
+  left: 233px;
+}
+
+.claimprop .tabs__item {
+  position: relative;
+  z-index: 1;
+  width: 110px;
+  justify-content: center;
+  height: 30px;
+  margin-bottom: 0;
+  border-bottom: 0;
+  border-radius: 999px;
+  color: var(--cp-teks-redup);
+  transition: color 220ms ease;
+}
+
+.claimprop .tabs__item:hover {
+  color: var(--cp-teks);
+}
+
+.claimprop .tabs__item--aktif,
+.claimprop .tabs__item--aktif:hover {
+  background: transparent;
+  box-shadow: none;
+  color: var(--cp-aksen-teks);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .claimprop .tabs::before,
+  .claimprop .tabs__item {
+    transition: none;
+  }
+}
+
+/* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
+.claimprop .claimprop__tabel {
+  background: var(--cp-isi);
+  border: 1px solid var(--cp-tepi);
+  border-radius: 18px;
+  box-shadow: var(--cp-timbul);
+}
+
+.claimprop .claimprop__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.claimprop .claimprop__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.claimprop .claimprop__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.claimprop .claimprop__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.claimprop .claimprop__tabel thead th {
+  background: var(--cp-kepala-tabel);
+  color: var(--cp-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--cp-kepala-garis);
+}
+
+.claimprop .claimprop__tabel td {
+  color: var(--cp-teks);
+  background: var(--cp-isi);
+  border-bottom-color: var(--cp-garis);
+}
+
+.claimprop .claimprop__tabel tbody tr:nth-child(even),
+.claimprop .claimprop__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.claimprop .claimprop__tabel tbody tr:nth-child(even) > td {
+  background: var(--cp-lembut);
+}
+
+.claimprop .claimprop__tabel tbody tr:hover > td {
+  background: var(--cp-baris-hover);
+}
+
+/* Tabel pop-up berisi kode (Data Polis): sel tidak dipatah di tanda hubung nomor polis. */
+.claimprop .claimprop__tabel--rapat td {
+  white-space: nowrap;
+}
+
+/* Kartu bagian layar kasus: putih TIMBUL KELUAR seperti kartu tabel Kelola User; tabel di dalamnya tanpa bayangan
+   kedua (dua lapis bayangan terbaca sebagai kotak mengapung di atas kotak). */
+.claimprop .claimprop__akar .panel {
+  background: var(--cp-isi);
+  border: 1px solid var(--cp-tepi);
+  border-radius: 18px;
+  box-shadow: var(--cp-timbul);
+}
+
+.claimprop .panel .claimprop__tabel {
+  box-shadow: none;
+}
+
+.claimprop .claimprop__centang input {
+  accent-color: var(--cp-aksen);
+}
+
+@media (max-width: 640px) {
+  .claimprop .claimprop__akar {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .claimprop .claimprop__tabel,
+  .claimprop .claimprop__akar .panel {
+    box-shadow: var(--cp-timbul-kecil);
+  }
+}
+
+/* --------------------------------------------------------------- halaman awal */
+
+/* Switch Teknik (Input Acceptation, workbasket ReasKlaimTeknik): jalur TIMBUL KE DALAM, kenop TIMBUL KELUAR;
+   nyala = jalur aksen. Nonaktif bagi akun tanpa workbasket itu. */
+.claimprop .claimprop__saklar-bungkus {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.claimprop .claimprop__saklar {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--cp-tepi);
+  border-radius: 999px;
+  background: var(--cp-jalur-tab);
+  box-shadow: var(--cp-cekung-kecil);
+  cursor: pointer;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease;
+}
+
+.claimprop .claimprop__saklar--nyala {
+  background: var(--cp-aksen);
+  border-color: var(--cp-aksen);
+}
+
+.claimprop .claimprop__saklar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.claimprop .claimprop__saklar-kenop {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--cp-isi);
+  box-shadow: var(--cp-timbul-kecil);
+  transition: left 200ms ease;
+}
+
+.claimprop .claimprop__saklar--nyala .claimprop__saklar-kenop {
+  left: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .claimprop .claimprop__saklar,
+  .claimprop .claimprop__saklar-kenop {
+    transition: none;
+  }
+}
+
+.claimprop .claimprop__saklar-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cp-teks-redup);
+}
+
+.claimprop .claimprop__cari {
+  flex: 0 1 420px;
+}
+
+/* --------------------------------------------------------------- ukuran huruf (work owner 08-10-2026 "font juga
+   kecilin") - seluruh modul: halaman awal, layar kasus, pop-up */
+
+.claimprop .claimprop__akar {
+  font-size: 13px;
+}
+
+.claimprop .claimprop__akar .inbox__judul {
+  font-size: 22px;
+}
+
+.claimprop .claimprop__akar .panel {
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.claimprop .claimprop__akar .panel__title {
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+
+.claimprop .claimprop__akar .field__label {
+  font-size: 12px;
+}
+
+.claimprop .claimprop__akar .field__input {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  border-radius: 10px;
+}
+
+.claimprop .claimprop__akar textarea.field__input {
+  height: auto;
+  padding: 6px 10px;
+}
+
+.claimprop .claimprop__akar .btn {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.claimprop .claimprop__akar .btn--sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.claimprop .claimprop__akar .tabs__item {
+  height: 30px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.claimprop .claimprop__akar .alert {
+  font-size: 13px;
+}
+
+.claimprop .claimprop__tabel th,
+.claimprop .claimprop__tabel td {
+  padding: 7px 10px;
+  font-size: 12.5px;
+}
+
+/* --------------------------------------------------------------- layar kasus: layout lama Pega dirapikan */
+
+/* Kepala: judul tahap di tengah, Claim No di bawahnya (Inline grid triple, sel tengah). */
+.claimprop .claimprop__kepala {
+  text-align: center;
+  margin: 0 0 16px;
+}
+
+.claimprop .claimprop__kepala-judul {
+  margin: 0 0 4px;
+  font-family: "Poppins", var(--font);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--cp-teks);
+}
+
+.claimprop .claimprop__kepala-teks {
+  color: var(--cp-teks-redup);
+}
+
+/* Stacked: baris bertumpuk berjarak rapat (grid, bukan flex kolom - basis flex medan pernah menjadi tinggi). */
+.claimprop .claimprop__tumpuk {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Stacked with labels left: label di kiri selebar tetap, nilai di kanan. */
+.claimprop .claimprop__baris {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 12px;
+  min-height: 32px;
+}
+
+/* Medan tanpa label di sub-bagian (pesan Information): selebar kotak. */
+.claimprop .claimprop__sub .claimprop__baris--tanpa-label {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.claimprop .claimprop__sub .claimprop__baris--tanpa-label > .claimprop__label-medan {
+  display: none;
+}
+
+.claimprop .claimprop__label-medan {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cp-teks-redup);
+}
+
+.claimprop .claimprop__isi-medan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.claimprop .claimprop__isi-medan > .field__input {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.claimprop .claimprop__isi-medan > .btn {
+  flex: none;
+}
+
+.claimprop .claimprop__nilai {
+  color: var(--cp-teks);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Di sel tabel `anywhere` membuat lebar minimum kolom = satu huruf: tabel sempit memeras kolom tampil (Type Loss)
+   menjadi satu huruf per baris. `break-word` hanya memotong kata yang melebihi lebar kolom. */
+.claimprop .claimprop__tabel .claimprop__nilai {
+  overflow-wrap: break-word;
+}
+
+/* Inline grid double: dua kolom; sel ketiga turun ke baris berikutnya. */
+.claimprop .claimprop__dua {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 32px;
+}
+
+.claimprop .claimprop__sel {
+  min-width: 0;
+}
+
+/* Inline grid double bersarang (panel AdjustmentDetail: [Type, Currency | Payment Type, DLA] di setengah kiri, seperti
+   Pega): kolom label lebih sempit supaya isian selebar seperempat tetap terbaca. */
+.claimprop .claimprop__dua .claimprop__dua {
+  gap: 8px 16px;
+}
+
+.claimprop .claimprop__dua .claimprop__dua .claimprop__baris {
+  grid-template-columns: 96px minmax(0, 1fr);
+}
+
+/* Inline: anak sebaris (Quarter/Year, RNM Share, baris tombol). */
+.claimprop .claimprop__sebaris {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.claimprop .claimprop__sebaris-medan {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.claimprop .claimprop__sebaris-medan > .field__input {
+  width: auto;
+  min-width: 120px;
+}
+
+.claimprop .claimprop__label-sebaris {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cp-teks-redup);
+}
+
+/* Dropdown yang dapat dicari (PilihSaring inti) di kolom nilai: label sudah di kiri baris, kotak mengisi lebar. */
+.claimprop .claimprop__saring {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.claimprop .claimprop__tanggal {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+/* Isian tanggal (InputTanggal): di baris medan kotak boleh menyempit; sel grid memakai lebar minimum kelasnya. */
+.claimprop .claimprop__tanggal > .field__input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.claimprop .claimprop__tanggal > .claimprop__input--sel {
+  min-width: 110px;
+}
+
+/* Pemilih bawaan tersembunyi (sr-only, absolut) berjangkar di tombol kalender. */
+.claimprop .claimprop__tanggal-kalender {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.claimprop .claimprop__saring .pilih-saring {
+  margin: 0;
+}
+
+.claimprop .claimprop__saring .pilih-saring > .field__label {
+  display: none;
+}
+
+.claimprop .claimprop__satuan {
+  font-weight: 600;
+  color: var(--cp-teks-redup);
+}
+
+.claimprop .claimprop__centang {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+
+.claimprop .claimprop__radio {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.claimprop .claimprop__radio label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.claimprop .claimprop__radio input,
+.claimprop .claimprop__centang input {
+  accent-color: var(--cp-aksen);
+}
+
+.claimprop .claimprop__input--angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.claimprop .claimprop__area {
+  min-height: 64px;
+}
+
+/* Sub-bagian bertitel (layout "add border"): kotak bergaris tipis di dalam kartu. */
+.claimprop .claimprop__sub {
+  border: 1px solid var(--cp-garis);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.claimprop .claimprop__subjudul {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cp-teks);
+}
+
+/* Baris tombol: rata kiri seperti layout lama. */
+.claimprop .claimprop__tombol,
+.claimprop .claimprop__aksi {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.claimprop .claimprop__tombol--akhir {
+  margin-top: 4px;
+}
+
+.claimprop .claimprop__aksi {
+  margin: 0 0 16px;
+}
+
+/* Tombol ikon (pi-plus, pi-trash, pi-pencil, pi-check): kapsul bundar sekecil ikonnya. */
+.claimprop .claimprop__akar .claimprop__ikon {
+  width: 28px;
+  padding: 0;
+}
+
+.claimprop .claimprop__ikon--hapus,
+.claimprop .claimprop__ikon--hapus:hover:not(:disabled) {
+  color: var(--cp-bahaya-teks);
+}
+
+/* Layout group Tab. */
+.claimprop .claimprop__tab {
+  min-width: 0;
+}
+
+.claimprop .claimprop__tab-isi {
+  padding-top: 12px;
+}
+
+@media (max-width: 860px) {
+  .claimprop .claimprop__dua {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .claimprop .claimprop__baris {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --------------------------------------------------------------- grid */
+
+.claimprop .claimprop__grid {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.claimprop .claimprop__grid table {
+  width: 100%;
+}
+
+.claimprop .claimprop__grid td {
+  vertical-align: middle;
+}
+
+.claimprop .claimprop__th-aksi,
+.claimprop .claimprop__td-aksi {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.claimprop .claimprop__pager {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 6px;
+  font-size: 12px;
+  color: var(--cp-teks-redup);
+}
+
+.claimprop .claimprop__grid-kaki {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 4px 0;
+}
+
+.claimprop .claimprop__grid-alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.claimprop .claimprop__input--sel {
+  height: 28px;
+  font-size: 12.5px;
+  min-width: 110px;
+}
+
+.claimprop .claimprop__angka {
+  display: block;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.claimprop .claimprop__rinci {
+  border-left: 3px solid var(--cp-aksen);
+  border-radius: 0 12px 12px 0;
+  padding: 10px 16px 14px;
+  background: var(--cp-isi);
+}
+
+/* Panel baris (Acceptation List, work owner 08-10-2026 "pewarnaan ... kurang enak diliat"): baris panel bukan baris
+   zebra / sorot - latar tetap tenang; baris yang terbuka disorot aksen supaya tersambung dengan panelnya. */
+.claimprop .claimprop__tabel tbody tr.claimprop__baris-rinci > td,
+.claimprop .claimprop__tabel tbody tr.claimprop__baris-rinci:hover > td {
+  padding: 0 0 10px;
+  background: var(--cp-latar-atas);
+}
+
+.claimprop .claimprop__tabel tbody tr[aria-expanded="true"] > td,
+.claimprop .claimprop__tabel tbody tr[aria-expanded="true"]:hover > td {
+  background: var(--cp-aksen-lembut);
+  color: var(--cp-aksen-teks);
+  font-weight: 600;
+}
+
+/* Di dalam panel: tabel tanpa bayangan timbul, tab bergaris bawah selebar teks (seperti Pega) - kapsul 110 px tab
+   utama mematahkan "Adjusment List Detail" menjadi dua baris. */
+.claimprop .claimprop__rinci .claimprop__tabel {
+  box-shadow: none;
+}
+
+.claimprop .claimprop__rinci .tabs {
+  width: 100%;
+  padding: 0;
+  gap: 0;
+  border-bottom: 1px solid var(--cp-garis);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.claimprop .claimprop__rinci .tabs::before {
+  display: none;
+}
+
+.claimprop .claimprop__rinci .tabs__item {
+  width: auto;
+  padding: 0 14px;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+}
+
+.claimprop .claimprop__rinci .tabs__item--aktif,
+.claimprop .claimprop__rinci .tabs__item--aktif:hover {
+  border-bottom-color: var(--cp-aksen);
+  color: var(--cp-aksen-teks);
+  font-weight: 700;
+}
+
+/* Penanda baris ber-panel (Acceptation List): seluruh baris dapat diklik, panah menunjukkan terbuka / tertutup. */
+.claimprop .claimprop__panah {
+  display: inline-block;
+  width: 1.1em;
+  color: var(--cp-teks-redup);
+}
+
+/* Layout bebas berkolom XML (LetakTabel): tabel tetap Deductible / Treaty Gross / Total di panel AdjustmentDetail. */
+.claimprop .claimprop__tabel--tetap {
+  width: 100%;
+  margin: 8px 0 12px;
+}
+
+.claimprop .claimprop__tabel--tetap th,
+.claimprop .claimprop__tabel--tetap td {
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid var(--cp-kepala-garis);
+}
+
+/* --------------------------------------------------------------- pop-up */
+
+.claimprop .claimprop__label {
+  font-weight: 600;
+  color: var(--cp-teks-redup);
+  padding: 4px 0;
+}
+
+.claimprop .claimprop__tampil {
+  white-space: pre-wrap;
+  color: var(--cp-teks);
+}
+
+/* Tab "Lampiran" (screenshot Pega 09-10-2026): tombol kanan, ikon unggah hijau / lihat toska. */
+.claimprop .claimprop__lampiran-aksi {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 4px 0 8px;
+}
+
+/* Kolom Upload File / View File selebar layar Pega, ikon di tengah. */
+.claimprop .claimprop__kolom-ikon {
+  width: 140px;
+  text-align: center;
+}
+
+.claimprop .claimprop__akar .claimprop__ikon-lampiran {
+  width: 40px;
+  padding: 0;
+  color: var(--cp-ikon-teks);
+}
+
+.claimprop .claimprop__ikon-lampiran--unggah,
+.claimprop .claimprop__ikon-lampiran--unggah:hover:not(:disabled) {
+  background: var(--cp-unggah);
+}
+
+.claimprop .claimprop__ikon-lampiran--lihat,
+.claimprop .claimprop__ikon-lampiran--lihat:hover:not(:disabled) {
+  background: var(--cp-lihat);
+}
+
+/* Jendela unggah: area seret-lepas berkas (dragDropFileUpload). */
+.claimprop .claimprop__seret {
+  margin: 0 0 12px;
+  padding: 18px;
+  border: 2px dashed var(--cp-tepi);
+  border-radius: 12px;
+  text-align: center;
+  color: var(--cp-teks-redup);
+}
+
+.claimprop .claimprop__seret--aktif {
+  border-color: var(--cp-aksen-garis);
+  background: var(--cp-aksen-lembut);
+}
+
+/* Popup penampil lampiran (View / View Office Online, pola NB Treaty In). */
+.claimprop .claimprop__penampil-bingkai {
+  display: block;
+  width: 100%;
+  height: 75vh;
+  border: 0;
+}
+
+.claimprop .claimprop__penampil-gambar {
+  display: block;
+  max-width: 100%;
+  max-height: 75vh;
+  margin: 0 auto;
+}
+
+/* Tabel komite di bawah inbox (menu Komite Claim Prop dibuang, keputusan work owner 09-10-2026). */
+.claimprop .claimprop__komite {
+  margin-top: 24px;
+}

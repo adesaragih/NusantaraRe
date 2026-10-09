@@ -6,6 +6,9 @@
 >
 > ⚠️ Akibatnya **dua berkas lini Life masih menyebut nama tabel penyesuaian yang lama**. ⭐ Itu **dicatat sebagai `[terbuka]`**, ⛔ **bukan diperbaiki**.
 
+> ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Tujuh tabel dipakai bersama; lima di antaranya berkunci asing GANDA."* Tabel bersama berjumlah **lima**, sesuai badan berkas ini: `T_WORK_CLAIM`, `T_GENERAL_CLAIM`,
+> `T_GENERAL_KOMITE`, `T_KOMITE_KOMITELIST`, `T_VIEW_SUGGEST`. "Tujuh" di kalimat ini basi.
+
 
 **Tanggal:** 2026-09-19 · **Modul korpus:** `Claim Prop` (329 berkas) · Korpus **READ-ONLY**
 
@@ -126,6 +129,9 @@ lintas-lini, bukan definisi ulang tabelnya. ⚠️ **Sepuluh di antaranya dibawa
 | `T_GENERAL_KOMITE` | ⛔ **sudah terkunci** di `STRUKTUR-TABEL-KOMITE-CLAIM-PROP.md`. Yang mengikat sisi klaim: `ADJUSTMENT_ID`-nya menunjuk **`T_CLAIM_ADJUSTMENT.ID`** untuk lini PROP, **NOT NULL**, index **UNIK**, **tanpa `REFERENCES`** |
 | `T_KOMITE_KOMITELIST` | ⛔ **sudah terkunci**. **Nol** hubungan langsung ke tabel Claim Prop — ia anak `T_GENERAL_KOMITE` |
 
+> ⚠️ **RALAT 07-10-2026** — kalimat lama: *"`T_VIEW_SUGGEST` — tidak ketemu di korpus `Claim Prop` maupun `Komite Claim Prop` … `[terbuka]` apa perannya bagi lini PROP"* `T_VIEW_SUGGEST` **ketemu** sebagai halaman `SuggestList` (78 kemunculan di 4 berkas; RELASI §B6).
+> Kolom `CLAIM_ID`-nya dipasang (migrasi `532`, keputusan work owner 07-10-2026 "1 tabel aja gabung life dan non life").
+
 ### T5 · ⚠️ Tabel kesebelas: jejak audit — **BELUM PUNYA NAMA**
 
 **AC 4** menuntut: *"Jejak audit menjadi tabel milik Claim Prop sendiri, bukan menumpang struktur
@@ -164,6 +170,18 @@ langkah **8**).
 
 ## TUGAS 2 — Kolom tiap tabel
 
+> ⚠️ **RALAT 07-10-2026** — empat hal di bab ini basi:
+> 1. **Induk FK anak**: setiap *"`CLAIM_ID` → `T_WORK_CLAIM.ID`"* di bawah = **`T_GENERAL_CLAIM.ID`** (diagram sheet
+>    Claim Prop; RELASI relasi 3–10; migrasi 521–531).
+> 2. **Ketelitian**: *"20 digit seluruhnya, 8 di antaranya di belakang koma"* = **`NUMBER(38,10)`** (keputusan work
+>    owner 07-10-2026).
+> 3. **Kurs per baris**: tabel spreading tanpa kolom kurs memang benar menurut XML — lihat RALAT AC 25 di spec.
+> 4. `T_CLAIM_FAC_RETRO.TOTAL_ESTIMATION_REINS` dibuat seperti diagram: satu-satunya penulis
+>    `ClaimData.FacRetroList.TotalEstimasiReas` adalah `AddKomiteTreatyChild_ACT` 8.1 (terisi saat penyerahan ke komite);
+>    `PrintDLATreatyIn` 15.13 menulis salinan `AdjustmentList(n).FacRetroList`, bukan daftar ini.
+>
+> Bentuk yang berlaku = **Lampiran pengikat penjaga** di akhir berkas (dibandingkan penjaga dengan DDL).
+
 ### Ketelitian angka — berlaku untuk seluruh tabel di bawah
 
 `[keputusan work owner]`:
@@ -180,6 +198,13 @@ langkah **8**).
 > ⛔ **Invariant "satu klaim satu mata uang" milik Claim Life JANGAN ikut disalin.**
 > Di Claim Prop mata uang ditetapkan **per baris** — `Activity/CurencyEstimation_Act.xml`.
 > **Setiap tabel yang memuat uang punya kolom mata uang dan kursnya sendiri.**
+
+> ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Setiap tabel yang memuat uang punya kolom mata uang dan kursnya sendiri."* Diputuskan dari XML: kurs per baris HANYA ditulis pada `EstimationList.KursValue`
+> (`CurencyEstimation_Act` 5), `AdjustmentList.KursIDR` (`SetNameCurrency_Act` 6), `InterestList.KursObjectItem`
+> (`SetCurencyInterest_act` 5), `ListClaimAmount.IDR` (`SetCurencyList_act` 5) dan `SpreadingRisk.PremiumSpreaded`
+> (`SetCurrency_Act` 6; `LossAllocation` salinannya). Baris spreading — `SpreadingClaim`, `SpreadingBreakQS`,
+> `AdjustmentList(n).SpreadingAdjustment` / `.SpreadingQuotaShare` — **tidak pernah** diberi kurs (hanya
+> `CurrencyID` / `Currency`), maka keempat tabel spreading tanpa kolom kurs (migrasi 525, 526, 529, 530).
 
 ---
 
@@ -673,3 +698,303 @@ bukan-tabel.
 | **5** | **Menyelaraskan `STRUKTUR-TABEL-KOMITE-CLAIM-PROP.md`** dengan nama kolom baru `CLOSE_FILE`/`RESERVED_CLAIM` — berkas itu masih menulis usulan lama |
 | **6** | **Menetapkan generator nomor** untuk awalan `CLMP-` dan `TKMT-` pada `T_WORK_CLAIM.ID` |
 | **7** | **Memeriksa apakah lini lain memakai `T_VIEW_SUGGEST`** — ia terdaftar sebagai tabel bersama tetapi tidak ketemu di dua modul |
+
+---
+
+## Lampiran pengikat penjaga — kolom DDL tabel milik Claim Prop (07-10-2026)
+
+Bab di bawah **mengikat**: `inti/backend/penjaga` (`TestKolomDDLCocokDenganStruktur`,
+`TestGolonganTipeDDLCocokDenganStruktur`) membandingkan setiap judul `## T_…` dengan DDL migrasi
+`521`–`531`. TUGAS 2 di atas tetap catatan rancangan beserta alasan per kolom; bila keduanya berbeda,
+bab di bawah inilah yang berlaku. Kolom Claim Prop di tabel bersama `T_GENERAL_CLAIM` (migrasi `520`)
+dicatat di dokumen pemiliknya, bukan di sini, supaya satu tabel digambarkan satu dokumen: bab
+`## T_GENERAL_CLAIM` di `modul/claimlife/docs/STRUKTUR-TABEL-CLAIM-LIFE.md`.
+
+`T_VIEW_SUGGEST.CLAIM_ID` (migrasi `532`) dicatat di bab `## T_VIEW_SUGGEST`
+`modul/premiumlistlife/docs/STRUKTUR-TABEL-PREMIUMLIST-LIFE.md` — keputusan work owner 07-10-2026 "1 tabel aja gabung life dan non life".
+(Sempat dicabut pada hari yang sama karena uji PremiumList Life mengunci 243 kolom; uji itu kini menghitung 244.)
+
+Uang, persen, share, dan kurs `NUMBER(38,10)` (keputusan work owner 07-10-2026).
+
+## T_CLAIM_ESTIMATION
+
+Migrasi `521`.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | migrasi `521` |
+| `CLAIM_ID` | teks | tidak | FK | migrasi `521` — → `T_GENERAL_CLAIM.ID`, ON DELETE CASCADE |
+| `NOURUT` | bilangan bulat | tidak |  | migrasi `521` |
+| `ESTIMATION_DATE` | DATE | ya |  | migrasi `521` |
+| `ESTIMATION_TYPE` | teks | ya |  | migrasi `521` |
+| `TREATY_TYPE_ID` | teks | ya |  | migrasi `521` |
+| `TREATY_TYPE_NAME` | teks | ya |  | migrasi `521` |
+| `CURRENCY_ID` | teks | ya |  | migrasi `521` |
+| `CURRENCY_NAME` | teks | ya |  | migrasi `521` |
+| `KURS` | angka desimal | ya |  | migrasi `521` |
+| `GROSS_ESTIMATION_VALUE` | angka desimal | ya |  | migrasi `521` |
+| `GROSS_ESTIMATION_IDR` | angka desimal | ya |  | migrasi `521` |
+| `PERSEN_RNM` | angka desimal | ya |  | migrasi `521` |
+| `ESTIMATION_VALUE` | angka desimal | ya |  | migrasi `521` |
+| `ESTIMATION_VALUE_IDR` | angka desimal | ya |  | migrasi `521` |
+| `NO_PLA` | teks | ya |  | migrasi `521` |
+| `IS_PRINT_FACE_CLAIM` | teks | ya |  | migrasi `521` |
+
+**Unik:** `(CLAIM_ID, NOURUT)`.
+
+## T_CLAIM_INTEREST
+
+Migrasi `522`.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | migrasi `522` |
+| `CLAIM_ID` | teks | tidak | FK | migrasi `522` — → `T_GENERAL_CLAIM.ID`, ON DELETE CASCADE |
+| `NOURUT` | bilangan bulat | tidak |  | migrasi `522` |
+| `OBJECT_NAME` | teks | ya |  | migrasi `522` |
+| `CURRENCY_ID` | teks | ya |  | migrasi `522` |
+| `CURRENCY_NAME` | teks | ya |  | migrasi `522` |
+| `KURS` | angka desimal | ya |  | migrasi `522` |
+| `TSI_VALUE` | angka desimal | ya |  | migrasi `522` |
+| `TSI_VALUE_IDR` | angka desimal | ya |  | migrasi `522` |
+| `IS_ADJ_VALUE` | teks | ya |  | migrasi `522` |
+
+**Unik:** `(CLAIM_ID, NOURUT)`.
+
+## T_CLAIM_CLAIM_AMOUNT
+
+Migrasi `523`.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | migrasi `523` |
+| `CLAIM_ID` | teks | tidak | FK | migrasi `523` — → `T_GENERAL_CLAIM.ID`, ON DELETE CASCADE |
+| `NOURUT` | bilangan bulat | tidak |  | migrasi `523` |
+| `CURRENCY_ID` | teks | ya |  | migrasi `523` |
+| `CURRENCY_NAME` | teks | ya |  | migrasi `523` |
+| `KURS` | angka desimal | ya |  | migrasi `523` |
+| `CLAIM_AMOUNT` | angka desimal | ya |  | migrasi `523` |
+| `NET_DEDUCTIBLE_VALUE` | angka desimal | ya |  | migrasi `523` |
+| `VALUE` | angka desimal | ya |  | migrasi `523` |
+| `VALUE_IDR` | angka desimal | ya |  | migrasi `523` |
+| `NOTE` | teks | ya |  | migrasi `523` |
+
+**Unik:** `(CLAIM_ID, NOURUT)`.
+
+## T_CLAIM_LOSS_ALLOCATION
+
+Migrasi `524`.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | migrasi `524` |
+| `CLAIM_ID` | teks | tidak | FK | migrasi `524` — → `T_GENERAL_CLAIM.ID`, ON DELETE CASCADE |
+| `NOURUT` | bilangan bulat | tidak |  | migrasi `524` |
+| `CURRENCY_ID` | teks | ya |  | migrasi `524` |
+| `CURRENCY_NAME` | teks | ya |  | migrasi `524` |
+| `TREATY_TYPE_ID` | teks | ya |  | migrasi `524` |
+| `TREATY_NAME` | teks | ya |  | migrasi `524` |
+| `SHARE_PERCENTAGE` | angka desimal | ya |  | migrasi `524` |
+| `CLAIM_SPREADED` | angka desimal | ya |  | migrasi `524` |
+| `CLAIM_ESTIMATION` | angka desimal | ya |  | migrasi `524` |
+| `KURS` | angka desimal | ya |  | migrasi `524` |
+| `IS_OLD_DATA` | teks | ya |  | migrasi `524` |
+
+**Unik:** `(CLAIM_ID, NOURUT)`.
+
+## T_CLAIM_SPREADING
+
+Migrasi `525`.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | migrasi `525` |
+| `CLAIM_ID` | teks | tidak | FK | migrasi `525` — → `T_GENERAL_CLAIM.ID`, ON DELETE CASCADE |
+| `NOURUT` | bilangan bulat | tidak |  | migrasi `525` |
+| `TREATY_ID` | teks | ya |  | migrasi `525` |
+| `TREATY_NAME` | teks | ya |  | migrasi `525` |
+| `SHARE_PERCENTAGE` | angka desimal | ya |  | migrasi `525` |
+| `CLAIM_SPREADED` | angka desimal | ya |  | migrasi `525` |
+| `CURRENCY_ID` | teks | ya |  | migrasi `525` |
+| `CURRENCY_NAME` | teks | ya |  | migrasi `525` |
+| `IS_OLD_DATA` | teks | ya |  | migrasi `525` |
+
+**Unik:** `(CLAIM_ID, NOURUT)`.
+
+## T_CLAIM_BREAK_QS
+
+Migrasi `526`.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | migrasi `526` |
+| `CLAIM_ID` | teks | tidak | FK | migrasi `526` — → `T_GENERAL_CLAIM.ID`, ON DELETE CASCADE |
+| `NOURUT` | bilangan bulat | tidak |  | migrasi `526` |
+| `TREATY_ID` | teks | ya |  | migrasi `526` |
+| `TREATY_NAME` | teks | ya |  | migrasi `526` |
+| `SHARE_PERCENTAGE` | angka desimal | ya |  | migrasi `526` |
+| `CLAIM_SPREADED` | angka desimal | ya |  | migrasi `526` |
+| `CURRENCY_ID` | teks | ya |  | migrasi `526` |
+| `CURRENCY_NAME` | teks | ya |  | migrasi `526` |
+| `IS_OLD_DATA` | teks | ya |  | migrasi `526` |
+
+**Unik:** `(CLAIM_ID, NOURUT)`.
+
+## T_CLAIM_FAC_RETRO
+
+Migrasi `527`.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | migrasi `527` |
+| `CLAIM_ID` | teks | tidak | FK | migrasi `527` — → `T_GENERAL_CLAIM.ID`, ON DELETE CASCADE |
+| `NOURUT` | bilangan bulat | tidak |  | migrasi `527` |
+| `REINSURER_ID` | teks | ya |  | migrasi `527` |
+| `REINSURER_NAME` | teks | ya |  | migrasi `527` |
+| `SHARE_PCT` | angka desimal | ya |  | migrasi `527` |
+| `RI_COMMISSION_PCT` | angka desimal | ya |  | migrasi `527` |
+| `ADDITIONAL_INFO` | teks | ya |  | migrasi `527` |
+| `TOTAL_ESTIMATION_REINS` | angka desimal | ya |  | migrasi `527` |
+
+**Unik:** `(CLAIM_ID, NOURUT)`.
+
+## T_CLAIM_ADJUSTMENT
+
+Migrasi `528`.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | migrasi `528` |
+| `CLAIM_ID` | teks | tidak | FK | migrasi `528` — → `T_GENERAL_CLAIM.ID`, ON DELETE CASCADE |
+| `NOURUT` | bilangan bulat | tidak |  | migrasi `528` |
+| `KOMITE_ID` | teks | ya |  | migrasi `528` |
+| `ADJUSTMENT_TYPE` | teks | ya |  | migrasi `528` |
+| `FORM_TYPE` | teks | ya |  | migrasi `528` |
+| `PAYMENT_TYPE` | teks | ya |  | migrasi `528` |
+| `CURRENCY_ID` | teks | ya |  | migrasi `528` |
+| `CURRENCY_NAME` | teks | ya |  | migrasi `528` |
+| `KURS` | angka desimal | ya |  | migrasi `528` |
+| `PERSEN_RNM` | angka desimal | ya |  | migrasi `528` |
+| `LOSS_ALLOCATION_NAME` | teks | ya |  | migrasi `528` |
+| `LOSS_ALLOCATION_SHARE` | angka desimal | ya |  | migrasi `528` |
+| `GROSS_ADJUSTMENT` | angka desimal | ya |  | migrasi `528` |
+| `GROSS_ADJUSTMENT_IDR` | angka desimal | ya |  | migrasi `528` |
+| `GROSS_VALUE` | angka desimal | ya |  | migrasi `528` |
+| `INDIVIDUAL_RISK_TYPE` | teks | ya |  | migrasi `528` |
+| `INDIVIDUAL_RISK_PCT` | angka desimal | ya |  | migrasi `528` |
+| `INDIVIDUAL_RISK_VALUE` | angka desimal | ya |  | migrasi `528` |
+| `INDIVIDUAL_RISK_RNM` | angka desimal | ya |  | migrasi `528` |
+| `PROPOSE_ADJUSTMENT_VALUE` | angka desimal | ya |  | migrasi `528` |
+| `ADJUSTMENT_VALUE` | angka desimal | ya |  | migrasi `528` |
+| `VALUE_ADJUSTMENT_IDR` | angka desimal | ya |  | migrasi `528` |
+| `TOTAL_ESTIMATION_VALUE` | angka desimal | ya |  | migrasi `528` |
+| `ADJUSTER_FEE_VALUE` | angka desimal | ya |  | migrasi `528` |
+| `SALVAGE_VALUE` | angka desimal | ya |  | migrasi `528` |
+| `PAYABLE` | teks | ya |  | migrasi `528` |
+| `PAYABLE_TO` | teks | ya |  | migrasi `528` |
+| `BANK_NAME` | teks | ya |  | migrasi `528` |
+| `BANK_BRANCH` | teks | ya |  | migrasi `528` |
+| `BANK_ACCOUNT_NO` | teks | ya |  | migrasi `528` |
+| `SWIFT_CODE` | teks | ya |  | migrasi `528` |
+| `BANK_ID` | teks | ya |  | migrasi `528` |
+| `DLA_NO_CEDING` | teks | ya |  | migrasi `528` |
+| `DLA_NO_SOB` | teks | ya |  | migrasi `528` |
+| `IS_DIRECT_TO_KASIR` | teks | ya |  | migrasi `528` |
+| `STATUS_KASIR` | teks | ya |  | migrasi `528` |
+| `ACCEPTED_NO` | teks | ya |  | migrasi `528` |
+| `ACCEPTED_DATE` | DATE | ya |  | migrasi `528` |
+| `ACCEPTANCE_STATUS` | teks | ya |  | migrasi `528` |
+| `IS_APPROVED` | teks | ya |  | migrasi `528` |
+| `IS_KOMITE` | teks | ya |  | migrasi `528` |
+| `IS_SUBJECTIVITY` | teks | ya |  | migrasi `528` |
+| `SUBJECTIVITY_NOTE` | teks | ya |  | migrasi `528` |
+| `NOTES` | teks | ya |  | migrasi `528` |
+| `DLA_NO` | teks | ya |  | migrasi `528` |
+| `REMARKS_DLA` | teks | ya |  | migrasi `528` |
+| `IS_FAC_RETRO` | teks | ya |  | migrasi `528` |
+| `IS_PRINT_ACCEPT` | teks | ya |  | migrasi `528` |
+| `KOMITE_CIRCUM_CAUSE_OF_LOSS` | teks | ya |  | migrasi `528` |
+| `KOMITE_ADJUSTER_FEE` | teks | ya |  | migrasi `528` |
+| `KOMITE_REMARKS` | teks | ya |  | migrasi `528` |
+| `KOMITE_SALVAGE` | teks | ya |  | migrasi `528` |
+| `KOMITE_LEGAL_LIABILITY` | teks | ya |  | migrasi `528` |
+| `KOMITE_EXTENT_OF_LOSS` | teks | ya |  | migrasi `528` |
+| `KOMITE_OCCUPATION` | teks | ya |  | migrasi `528` |
+| `CREATED_BY` | teks | ya |  | migrasi `528` |
+| `CREATED_BY_NAME` | teks | ya |  | migrasi `528` |
+| `CREATED_AT` | DATE | ya |  | migrasi `528` |
+
+**Unik:** `(CLAIM_ID, NOURUT)`; `(KOMITE_ID)`.
+
+## T_CLAIM_ADJ_SPREADING
+
+Migrasi `529`.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | migrasi `529` |
+| `ADJUSTMENT_ID` | teks | tidak | FK | migrasi `529` — → `T_CLAIM_ADJUSTMENT.ID`, ON DELETE CASCADE |
+| `NOURUT` | bilangan bulat | tidak |  | migrasi `529` |
+| `TREATY_ID` | teks | ya |  | migrasi `529` |
+| `TREATY_NAME` | teks | ya |  | migrasi `529` |
+| `SHARE_PERCENTAGE` | angka desimal | ya |  | migrasi `529` |
+| `CLAIM_SPREADED` | angka desimal | ya |  | migrasi `529` |
+| `CURRENCY_ID` | teks | ya |  | migrasi `529` |
+| `CURRENCY_NAME` | teks | ya |  | migrasi `529` |
+| `PREMIUM_SPREADED` | angka desimal | ya |  | migrasi `529` |
+| `BANK_ACCOUNT_NO` | teks | ya |  | migrasi `529` |
+| `BANK_ID` | teks | ya |  | migrasi `529` |
+
+**Unik:** `(ADJUSTMENT_ID, NOURUT)`.
+
+## T_CLAIM_ADJ_QUOTA_SHARE
+
+Migrasi `530`.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | migrasi `530` |
+| `ADJUSTMENT_ID` | teks | tidak | FK | migrasi `530` — → `T_CLAIM_ADJUSTMENT.ID`, ON DELETE CASCADE |
+| `NOURUT` | bilangan bulat | tidak |  | migrasi `530` |
+| `TREATY_ID` | teks | ya |  | migrasi `530` |
+| `TREATY_NAME` | teks | ya |  | migrasi `530` |
+| `SHARE_PERCENTAGE` | angka desimal | ya |  | migrasi `530` |
+| `CLAIM_SPREADED` | angka desimal | ya |  | migrasi `530` |
+| `CURRENCY_ID` | teks | ya |  | migrasi `530` |
+| `CURRENCY_NAME` | teks | ya |  | migrasi `530` |
+
+**Unik:** `(ADJUSTMENT_ID, NOURUT)`.
+
+## T_CLAIM_ADJ_LOSS_ALLOCATION
+
+Migrasi `531`.
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | migrasi `531` |
+| `ADJUSTMENT_ID` | teks | tidak | FK | migrasi `531` — → `T_CLAIM_ADJUSTMENT.ID`, ON DELETE CASCADE |
+| `NOURUT` | bilangan bulat | tidak |  | migrasi `531` |
+| `CURRENCY_ID` | teks | ya |  | migrasi `531` |
+| `CURRENCY_NAME` | teks | ya |  | migrasi `531` |
+| `TREATY_TYPE_ID` | teks | ya |  | migrasi `531` |
+| `TREATY_NAME` | teks | ya |  | migrasi `531` |
+| `SHARE_PERCENTAGE` | angka desimal | ya |  | migrasi `531` |
+| `CLAIM_SPREADED` | angka desimal | ya |  | migrasi `531` |
+| `CLAIM_ESTIMATION` | angka desimal | ya |  | migrasi `531` |
+| `KURS` | angka desimal | ya |  | migrasi `531` |
+
+**Unik:** `(ADJUSTMENT_ID, NOURUT)`.
+
+## T_KATEGORI_DOC_KLAIM
+
+Migrasi `535` (tabel) dan `536` (isi 49 baris `kategoriifile.xls`). Master kategori dokumen klaim, perintah work owner
+08-10-2026 ("BUATKAN KATEGORI FILE INI, JADIKAN MASTER T_KATEGORI_DOC_KLAIM"). `ID` = `KATEGORI_1` tabel warisan
+dokumen klaim; satu `ID` dipakai lebih dari satu `TYPE_KLAIM` (FAC / PROP / NONPROP).
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | migrasi `535` — kolom `ID` berkas work owner |
+| `LABEL` | teks | tidak |  | migrasi `535` — kolom `LABEL` berkas work owner |
+| `TYPE_KLAIM` | teks | tidak | PK | migrasi `535` — kolom `TYPE KLAIM` berkas work owner |
+
+**Kunci utama:** `(TYPE_KLAIM, ID)`.

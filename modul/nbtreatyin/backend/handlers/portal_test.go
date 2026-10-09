@@ -95,10 +95,11 @@ func TestGerbangDaftarPortal(t *testing.T) { // AC 11, 14, 92 - wadah grid SFAPo
 		{"tanpa peran", pelakuUji{"UJI-KOSONG", ""}, "", http.StatusOK, []string{}},
 		// switch Proses / Resolved (keputusan work owner 06-10-2026, bawaan Proses): yang ditolak hanya di Resolved
 		{"admin: Resolved", admin, "?status=selesai", http.StatusOK, urut(ditolak)},
-		// Resolved = SEMUA berkas selesai, siapa pun pembuatnya (WO 06-10-2026)
-		{"Sec Head: Resolved semua", secHead, "?status=selesai", http.StatusOK, urut(ditolak)},
-		{"admin lain: Resolved semua", pelakuUji{"UJI-ADMIN2", models.PosisiAdmin}, "?status=selesai", http.StatusOK, urut(ditolak)},
-		{"tanpa peran: Resolved semua", pelakuUji{"UJI-KOSONG", ""}, "?status=selesai", http.StatusOK, urut(ditolak)},
+		// RALAT 07-10-2026 (WO "TAMBAHKAN KAN UNTUK PEMBUAT. MENU ITU HANYA UNTUK SI PEMBUAT, NB DAN EDM TREATY"; dulu
+		// 06-10-2026 "yang resolve nampilin semua yang resolve"): Resolved pun HANYA berkas buatan akun ini
+		{"Sec Head: Resolved bukan buatannya", secHead, "?status=selesai", http.StatusOK, []string{}},
+		{"admin lain: Resolved bukan buatannya", pelakuUji{"UJI-ADMIN2", models.PosisiAdmin}, "?status=selesai", http.StatusOK, []string{}},
+		{"tanpa peran: Resolved bukan buatannya", pelakuUji{"UJI-KOSONG", ""}, "?status=selesai", http.StatusOK, []string{}},
 		{"admin: Resolved disaring posisi", admin, "?status=selesai&posisi=" + models.PosisiSecHead, http.StatusOK, []string{}},
 		{"admin: status tak dikenal = Proses", admin, "?status=UJI", http.StatusOK, semua},
 	} {
@@ -118,10 +119,10 @@ func TestGerbangDaftarPortal(t *testing.T) { // AC 11, 14, 92 - wadah grid SFAPo
 	}
 }
 
-// RD `GetListOpportunity` (grid satu-satunya portal): pencarian hanya filter G
-// `.TextNoQuotation Contains Param.Search` (`pyCaseInsensitive=true`) = pengenal
-// kasus; filter C `.Name` (kelas CRM, ditulis nol rule) tidak dibangun - nama
-// bisnis/tertanggung BUKAN medan pencarian. `pyMaxRecords` = 500.
+// RD `GetListOpportunity` (grid satu-satunya portal), `pyMaxRecords` = 500. Pencarian filter G
+// `.TextNoQuotation Contains` DIPERLUAS (perintah work owner 07-10-2026: "pencarian nya pada nb dan edm treaty buat
+// bisa mencari nomor nb/edm. insured name dll"): setiap kata wajib termuat di salah satu medan berkas
+// (`models.CocokCariPortal`), tanpa beda huruf besar/kecil.
 func TestDaftarPortalSesuaiGetListOpportunity(t *testing.T) { // P8, temuan tinjauan P9
 	u := baru(t)
 	id := u.buat()
@@ -131,9 +132,11 @@ func TestDaftarPortalSesuaiGetListOpportunity(t *testing.T) { // P8, temuan tinj
 		kueri string
 		harap []string
 	}{
-		{"?cari=" + strings.ToLower(id), []string{id}}, // tanpa beda huruf besar/kecil
-		{"?cari=UJI-BISNIS-CARI", []string{}},          // .Name / nama bisnis bukan saringan RD
-		{"?cari=UJI-TERTANGGUNG-CARI", []string{}},
+		{"?cari=" + strings.ToLower(id), []string{id}},  // tanpa beda huruf besar/kecil
+		{"?cari=uji-bisnis-cari", []string{id}},         // group business ikut dicari
+		{"?cari=UJI-TERTANGGUNG-CARI", []string{id}},    // insured name ikut dicari
+		{"?cari=tertanggung+" + id, []string{id}},       // dua kata, keduanya cocok (kolom berbeda)
+		{"?cari=tertanggung+UJI-TIDAK-ADA", []string{}}, // satu kata tidak cocok = tidak tampil
 	} {
 		kode, ids, isi := u.daftar(admin, c.kueri)
 		if kode != http.StatusOK || strings.Join(ids, " ") != strings.Join(c.harap, " ") {

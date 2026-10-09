@@ -13,15 +13,21 @@
 // (keputusan work owner 07-10-2026; XML hanya satu grid ber-filter C `pyStatusWork != "Resolved-Completed"`):
 // In Progress = berkas buatan akun yang masih proses (tautan aktif hanya di posisi admin, XML); Resolved = semua
 // berkas selesai, dibuka hanya-baca. Status dipegang `rute.tsx` (bertahan sesudah Back; klik menu = In Progress).
+//
+// Tombol Copy Old di samping Create (perintah work owner 07-10-2026 "SAMA SEPERTI MASTER PRODUCTNAME LIFE, KHUSUS BUAT
+// SUPERUSER"; bukan layar Pega): tampil bila `GET /hak` menyatakan superadmin ber-hak penuh; popup
+// `components/DialogCopyOld.tsx`; portal dimuat ulang bila ada dokumen yang tersalin.
 
 import { useState } from 'react'
 
 import { Gagal, Kosong, Memuat, StripTab } from '../../../../inti/frontend/components/ui/dasar'
 import { useAmbil } from '../ambil'
-import { POSISI_ADMIN, ambilAcuan, daftarKasus, type RingkasanKasus } from '../api'
+import { POSISI_ADMIN, ambilAcuan, ambilHak, daftarKasus, type RingkasanKasus } from '../api'
 import BuatEDM from '../components/BuatEDM'
+import DialogCopyOld from '../components/DialogCopyOld'
 import Paginasi from '../components/Paginasi'
 import {
+  COPY_OLD,
   JUDUL,
   KOLOM_PORTAL,
   KOLOM_RESOLVED,
@@ -31,12 +37,17 @@ import {
   labelJenisEDM,
   type StatusPortal,
 } from '../labels'
-import { sajikan } from '../sajian'
+import { tampilCopyOld } from '../lama'
+import { idTampil, sajikan } from '../sajian'
 import { BARIS_PER_HALAMAN_GRID, irisan } from '../paginasi'
 
 /** Tautan sel 1: In Progress aktif hanya bagi kasus di posisi admin (pxLink `pyDisabled` bila PositionNote != ADM);
  *  Resolved selalu aktif - berkas selesai dibuka hanya-baca (aturan portal NB, WO 07-10-2026). */
 export const tautanAktif = (b: RingkasanKasus, selesai = false) => selesai || b.positionNote === POSISI_ADMIN
+
+/** Teks kolom Status: berkas tertutup (`Resolved-Completed` / `Resolved-Rejected`) = STATUS_WORK, selain itu NBStatus
+ *  (perintah work owner 07-10-2026, pola portal NB). */
+const statusPortal = (b: RingkasanKasus) => (b.statusWork.startsWith('Resolved-') ? b.statusWork : b.nbStatus)
 
 /** Grid `InboxEDM_RD2` - kolom VERBATIM `SFAPortal_Endorsement_Treaty` S122. */
 export function TabelPortal({
@@ -76,11 +87,12 @@ export function TabelPortal({
                         disabled={!tautanAktif(b, selesai)}
                         onClick={() => onBuka(b.id)}
                       >
-                        {b.id}
+                        {idTampil(b.id)}
                       </button>
                     ) : k.kunci === 'nbStatus' ? (
-                      // pxDisplayText pyVisible NOTBLANK
-                      b.nbStatus !== '' && <span className="edmt__status">{b.nbStatus}</span>
+                      // pxDisplayText pyVisible NOTBLANK. WO 07-10-2026 "KALO DAH RESOLVE STATUS NYA PAKE STATUS
+                      // RESOLVE" (sama dengan portal NB): berkas Resolved = T_WORK_POLIS.STATUS_WORK, bukan NBStatus
+                      statusPortal(b) !== '' && <span className="edmt__status">{statusPortal(b)}</span>
                     ) : k.kunci === 'edmType' ? (
                       // pxDropdown: teks DT TreatyEDMListType (screenshot work owner 07-10-2026)
                       labelJenisEDM(b.edmType)
@@ -102,6 +114,33 @@ export function TabelPortal({
       {/* pyPageMode Numeric, pyPageSize 50 */}
       <Paginasi jumlahBaris={baris.length} ukuran={BARIS_PER_HALAMAN_GRID} hal={hal} onHal={setHal} />
     </>
+  )
+}
+
+/** Kepala portal: judul, tombol Copy Old (superadmin) di samping tombol Create. */
+export function KepalaPortal({
+  copyOld,
+  onCopyOld,
+  onBuat,
+}: {
+  copyOld: boolean
+  onCopyOld: () => void
+  onBuat: () => void
+}) {
+  return (
+    <header className="inbox__kepala">
+      <h2 className="inbox__judul">{JUDUL.portal}</h2>
+      <div className="edmt__kepala-aksi">
+        {copyOld && (
+          <button type="button" className="btn" onClick={onCopyOld}>
+            {COPY_OLD.tombol}
+          </button>
+        )}
+        <button type="button" className="btn btn--primary" onClick={onBuat}>
+          {TOMBOL.create}
+        </button>
+      </div>
+    </header>
   )
 }
 
@@ -127,6 +166,8 @@ export default function PortalEDMTreatyIn({
   const { data: baris, galat } = useAmbil(() => daftarKasus(kueri, selesai), [kueri, ketuk, selesai])
   const [buat, setBuat] = useState(false)
   const { data: acuan } = useAmbil(() => (buat ? ambilAcuan() : Promise.resolve(null)), [buat])
+  const { data: hak } = useAmbil(() => ambilHak(), [])
+  const [copyOld, setCopyOld] = useState(false)
 
   const muatUlang = (teks: string) => {
     setKueri(teks)
@@ -135,12 +176,7 @@ export default function PortalEDMTreatyIn({
 
   return (
     <div className="inbox edmt__akar">
-      <header className="inbox__kepala">
-        <h2 className="inbox__judul">{JUDUL.portal}</h2>
-        <button type="button" className="btn btn--primary" onClick={() => setBuat(true)}>
-          {TOMBOL.create}
-        </button>
-      </header>
+      <KepalaPortal copyOld={tampilCopyOld(hak)} onCopyOld={() => setCopyOld(true)} onBuat={() => setBuat(true)} />
       {pesan && <div className="alert alert--ok">{pesan}</div>}
       <StripTab tab={STATUS_PORTAL} aktif={aktif} onPilih={onStatus ?? setStatusLokal} />
       <div className="edmt__aksi edmt__saring-baris">
@@ -201,6 +237,14 @@ export default function PortalEDMTreatyIn({
           onBuka={(id) => {
             setBuat(false)
             onBuka(id)
+          }}
+        />
+      )}
+      {copyOld && (
+        <DialogCopyOld
+          onTutup={(adaYangDisalin) => {
+            setCopyOld(false)
+            if (adaYangDisalin) muatUlang(kueri)
           }}
         />
       )}

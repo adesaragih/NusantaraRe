@@ -31,6 +31,10 @@ type gudangUji struct {
 	nb      map[string][]models.BarisJSONPolis // NOPOLIS -> baris JSON_POLIS generasi NB
 	penanda map[string]models.PenandaMigrasi
 	datar   map[string]models.KolomDatarLama
+	// tanpaProduksi - ROWID yang IDPEGA-nya tidak ada di tabel kerja Pega / TREATYINPRODUCTION (Copy Old).
+	tanpaProduksi map[string]bool
+	// pembuat - IDPEGA -> PXCREATEOPERATOR, PXCREATEOPNAME (DATAPEGA.PC_ASM_FW_GISFW_WORK).
+	pembuat map[string][2]string
 }
 
 func gudangBaru() *gudangUji {
@@ -68,6 +72,19 @@ func (g *gudangUji) KunciJSONPolisEDM(ctx context.Context) ([]models.KunciJSONPo
 		return out[i].Kunci < out[j].Kunci
 	})
 	return out, nil
+}
+
+// KunciJSONPolisEDMCopyOld - saringan WO 07-10-2026 (kasus Pega ada DAN sudah berproduksi): ROWID di `tanpaProduksi`
+// tidak lolos.
+func (g *gudangUji) KunciJSONPolisEDMCopyOld(ctx context.Context) ([]models.KunciJSONPolis, error) {
+	semua, err := g.KunciJSONPolisEDM(ctx)
+	var out []models.KunciJSONPolis
+	for _, k := range semua {
+		if !g.tanpaProduksi[k.Kunci] {
+			out = append(out, k)
+		}
+	}
+	return out, err
 }
 
 func (g *gudangUji) BacaJSONPolisEDM(ctx context.Context, kunci string) (models.BarisJSONPolis, error) {
@@ -132,16 +149,10 @@ func (g *gudangUji) SetelPenandaMigrasi(ctx context.Context, tx *db.Tx, polisID 
 	return nil
 }
 
-func (g *gudangUji) SalinUsulanLamaEDM(ctx context.Context, tx *db.Tx, idPega string, baris []models.UsulanProduksi) (models.NasibUsulan, error) {
-	if len(baris) == 0 {
-		return models.UsulanTanpaBaris, nil
-	}
-	for _, u := range g.Usulan {
-		if u.IDPega == idPega {
-			return models.UsulanDilewati, nil
-		}
-	}
-	return models.UsulanDisalin, g.CatatUsulan(ctx, tx, idPega, baris)
+// PembuatPega - DATAPEGA.PC_ASM_FW_GISFW_WORK PXCREATEOPERATOR / PXCREATEOPNAME menurut PZINSKEY; tanpa baris = kosong.
+func (g *gudangUji) PembuatPega(_ context.Context, _ *db.Tx, idPega string) (string, string, error) {
+	p := g.pembuat[idPega]
+	return p[0], p[1], nil
 }
 
 var _ services.GudangPemuat = (*gudangUji)(nil)
@@ -167,6 +178,10 @@ type dokUji struct {
 }
 
 func (d dokUji) edmNo() string { return models.NomorEDM(d.nopolis, d.prodke) }
+
+// pk - IDPEGA (`pzInsKey`) kasus Pega uji: kelas grup + pyID. ID kasus salinan = IDPEGA UTUH (WO 07-10-2026 "IDPEGA
+// BAWAAN PEGA JANGAN DI POTONG").
+func pk(pyID string) string { return models.KelasGrupKerjaPega + " " + pyID }
 
 func (d dokUji) isi() map[string]any {
 	var sp, sel, an, selAn []any
@@ -206,7 +221,7 @@ func (d dokUji) baris(t *testing.T) models.BarisJSONPolis {
 	b := models.BarisJSONPolis{NoPolis: d.nopolis, ProdKe: strconv.Itoa(d.prodke), TglInput: "2017-10-02 08:00:00",
 		Username: "UJI-AKUN", DataJSON: data}
 	if d.prodke > 0 {
-		b.IDPega, b.NoEndors = models.KelasKerjaEDM+" "+d.id, d.edmNo()
+		b.IDPega, b.NoEndors = pk(d.id), d.edmNo()
 	} else {
 		b.IDPega = "ASM-FW-GISFW-WORK-NB " + d.id
 	}
@@ -294,14 +309,19 @@ func periksaGalatRantai(t *testing.T, r models.RingkasanPemuat) {
 // TestPemuatRantaiTigaGenerasi - tiket 10 uji utama + AC 39-44.
 func TestPemuatRantaiTigaGenerasi(t *testing.T) {
 	g := siapkan(t)
+	// baris json_polis Utility1 aplikasi baru (IDPEGA polos, tanpa DATA_JSON): dilewati, bukan dokumen gagal
+	g.dok["Z1"] = models.BarisJSONPolis{IDPega: "EDMT-990777", NoPolis: polisA, NoEndors: models.NomorEDM(polisA, 9), ProdKe: "9"}
 	r := jalankanPemuat(t, g, true)
+	if r.BarisAplikasiBaru != 1 {
+		t.Errorf("baris aplikasi baru dilewati %d, harap 1", r.BarisAplikasiBaru)
+	}
 	if r.Dimuat != 3 || r.SudahDimuat != 0 || r.MedanBelumDiputuskan != 0 {
 		t.Fatalf("ringkasan %+v", r)
 	}
 	periksaGalatRantai(t, r)
 
 	// Rantai generasi: OLD_POLIS_ID = generasi TEPAT sebelumnya (ID-9, ID-14), PRODKE dan NOENDORS dari dokumen.
-	sebelumnya := map[string]string{"EDMT-990001": "NB-990000", "EDMT-990002": "EDMT-990001", "EDMT-990003": "EDMT-990002"}
+	sebelumnya := map[string]string{pk("EDMT-990001"): "NB-990000", pk("EDMT-990002"): pk("EDMT-990001"), pk("EDMT-990003"): pk("EDMT-990002")}
 	for id, lama := range sebelumnya {
 		x := g.Generasi[id]
 		if x == nil {
@@ -334,7 +354,7 @@ func TestPemuatRantaiTigaGenerasi(t *testing.T) {
 	if sisip != 4 {
 		t.Errorf("SisipKasus dipanggil %d kali, harap 4 (tiga generasi + percabangan yang ditolak basis data)", sisip)
 	}
-	for _, id := range []string{"EDMT-990009", "EDMT-990011", "EDMT-990012", "EDMT-990021"} {
+	for _, id := range []string{pk("EDMT-990009"), pk("EDMT-990011"), pk("EDMT-990012"), pk("EDMT-990021")} {
 		if g.Generasi[id] != nil || g.Kasus[id].ID != "" || g.Selisih[id] != nil {
 			t.Errorf("%s ditolak tetapi meninggalkan baris", id)
 		}
@@ -344,16 +364,16 @@ func TestPemuatRantaiTigaGenerasi(t *testing.T) {
 	}
 
 	// ⛔ AC 39: selisih tersimpan PERSIS seperti dokumen - digit galat utuh, varian rumus berlapis TIDAK dihitung ulang.
-	for id, harap := range map[string]string{"EDMT-990001": "-130463146.760000276", "EDMT-990002": "130", "EDMT-990003": "-180"} {
+	for id, harap := range map[string]string{pk("EDMT-990001"): "-130463146.760000276", pk("EDMT-990002"): "130", pk("EDMT-990003"): "-180"} {
 		if v := g.Selisih[id].Halaman.Ambil(models.HalamanPolis + ".TreatyDifference.NetPremium"); v != harap {
 			t.Errorf("%s: NET_PREMIUM selisih %q, harap %q (dokumen)", id, v, harap)
 		}
 	}
-	sp := g.Selisih["EDMT-990001"].Halaman.AmbilDaftar(models.DaftarSelisihSpreading)
+	sp := g.Selisih[pk("EDMT-990001")].Halaman.AmbilDaftar(models.DaftarSelisihSpreading)
 	if len(sp) != 2 || sp[0]["PremiumSpreaded"] != "-0.000000276" || sp[1]["PremiumSpreaded"] != "12.5" {
 		t.Errorf("selisih spreading generasi 1 %+v", sp)
 	}
-	if an := g.Selisih["EDMT-990002"].Halaman.AmbilDaftar(models.DaftarSelisihAngsuran); len(an) != 2 ||
+	if an := g.Selisih[pk("EDMT-990002")].Halaman.AmbilDaftar(models.DaftarSelisihAngsuran); len(an) != 2 ||
 		an[1]["Premium"] != "-0.000000276" || an[1]["DueDate"] != "2017-11-01" {
 		t.Errorf("selisih angsuran generasi 2 %+v", an)
 	}
@@ -361,7 +381,7 @@ func TestPemuatRantaiTigaGenerasi(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	g1, err := g.BacaGenerasi(context.Background(), nil, "EDMT-990001")
+	g1, err := g.BacaGenerasi(context.Background(), nil, pk("EDMT-990001"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -379,9 +399,9 @@ func TestPemuatRantaiTigaGenerasi(t *testing.T) {
 	f, t1 := models.PenandaBaris{}, models.PenandaBaris{RumusBerlapis: true}
 	gb := models.PenandaBaris{PasanganBergeser: true, RumusBerlapis: true}
 	harapPenanda := map[string]models.PenandaMigrasi{
-		"EDMT-990001": {Spreading: []models.PenandaBaris{f, f}, Angsuran: []models.PenandaBaris{f}},
-		"EDMT-990002": {Spreading: []models.PenandaBaris{gb, gb}, Angsuran: []models.PenandaBaris{t1, t1}},
-		"EDMT-990003": {Spreading: []models.PenandaBaris{t1, t1, t1}, Angsuran: []models.PenandaBaris{t1, t1}},
+		pk("EDMT-990001"): {Spreading: []models.PenandaBaris{f, f}, Angsuran: []models.PenandaBaris{f}},
+		pk("EDMT-990002"): {Spreading: []models.PenandaBaris{gb, gb}, Angsuran: []models.PenandaBaris{t1, t1}},
+		pk("EDMT-990003"): {Spreading: []models.PenandaBaris{t1, t1, t1}, Angsuran: []models.PenandaBaris{t1, t1}},
 	}
 	if !reflect.DeepEqual(g.penanda, harapPenanda) {
 		t.Errorf("penanda %+v\nharap   %+v", g.penanda, harapPenanda)
@@ -396,14 +416,14 @@ func TestPemuatRantaiTigaGenerasi(t *testing.T) {
 	}
 	// ID-38: proyeksi PEGA beku - jalur biasa (SUMBER 'GO') tidak dapat membangunnya ulang.
 	err = g.Transaksi(context.Background(), func(tx *db.Tx) error {
-		return g.SimpanSelisih(context.Background(), tx, "EDMT-990002", h2.Halaman, repository.KunciSelisih{Sumber: models.SumberGo})
+		return g.SimpanSelisih(context.Background(), tx, pk("EDMT-990002"), h2.Halaman, repository.KunciSelisih{Sumber: models.SumberGo})
 	})
 	if !errors.Is(err, repository.ErrSelisihBeku) {
 		t.Errorf("bangun ulang GO atas baris PEGA: %v", err)
 	}
 	// ... dan PEGA atas PEGA pun ditolak (bukan hapus anak lalu bentrok UNIQUE POLIS_ID).
 	err = g.Transaksi(context.Background(), func(tx *db.Tx) error {
-		return g.SimpanSelisih(context.Background(), tx, "EDMT-990002", h2.Halaman, repository.KunciSelisih{Sumber: models.SumberPega})
+		return g.SimpanSelisih(context.Background(), tx, pk("EDMT-990002"), h2.Halaman, repository.KunciSelisih{Sumber: models.SumberPega})
 	})
 	if !errors.Is(err, repository.ErrSelisihBeku) {
 		t.Errorf("tulis ulang PEGA atas baris PEGA: %v", err)
@@ -447,12 +467,12 @@ func TestPemuatUjiKeringNolTulisan(t *testing.T) {
 // TestPemuatIDKasusBentrokTidakMenimpa - ID kasus yang sudah dipakai generasi lain bukan "sudah dimuat".
 func TestPemuatIDKasusBentrokTidakMenimpa(t *testing.T) {
 	g := siapkan(t)
-	g.TanamPolis("EDMT-990001", "UJI-QP.LAIN", 1, "", models.HalamanBaru(), "")
+	g.TanamPolis(pk("EDMT-990001"), "UJI-QP.LAIN", 1, "", models.HalamanBaru(), "")
 	r := jalankanPemuat(t, g, true)
 	if r.GalatPerJenis[models.JenisGalat(models.ErrIDKasusBentrok)] != 1 || r.SudahDimuat != 0 {
 		t.Errorf("ringkasan %+v", r)
 	}
-	if x := g.Generasi["EDMT-990001"]; x.NoPolis != "UJI-QP.LAIN" {
+	if x := g.Generasi[pk("EDMT-990001")]; x.NoPolis != "UJI-QP.LAIN" {
 		t.Errorf("generasi lain tertimpa: %+v", *x)
 	}
 }

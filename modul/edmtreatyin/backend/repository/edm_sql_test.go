@@ -37,7 +37,7 @@ func penampungUrut(t *testing.T, q string, args []any) {
 
 func TestDaftarEDMHanyaGenerasiEndorsemen(t *testing.T) {
 	q, args := sqlDaftarKasus("P.W", "P.G", "P.Q", models.SaringanKasus{Cari: "UJI-POL", Pembuat: "UJI-AKUN"})
-	for _, w := range []string{"g.PRODKE >= 1", "w.ID LIKE 'EDMT-%'", "q.OLD_POLICY_NO LIKE", "w.CREATE_OP = ", "ORDER BY w.TGL_UPDATE DESC", "FETCH FIRST 500 ROWS ONLY", "NVL(g.NOPOLIS, q.OLD_POLICY_NO)", "TO_CHAR(g.TGL_PROD"} {
+	for _, w := range []string{"g.PRODKE >= 1", "w.ID LIKE 'EDMT-%'", "UPPER(q.OLD_POLICY_NO) LIKE", "w.CREATE_OP = ", "ORDER BY w.TGL_UPDATE DESC", "FETCH FIRST 500 ROWS ONLY", "NVL(g.NOPOLIS, q.OLD_POLICY_NO)", "TO_CHAR(g.TGL_PROD"} {
 		if !strings.Contains(q, w) {
 			t.Errorf("daftar portal tanpa %q\n%s", w, q)
 		}
@@ -48,6 +48,36 @@ func TestDaftarEDMHanyaGenerasiEndorsemen(t *testing.T) {
 	penampungUrut(t, q, args)
 	if args[len(args)-2] != "%UJI-POL%" || args[len(args)-1] != "UJI-AKUN" {
 		t.Fatalf("argumen cari / pembuat = %v", args)
+	}
+}
+
+// Perintah work owner 07-10-2026 ("pencarian ... buat bisa mencari nomor nb/edm, insured name dll"): setiap kata kotak
+// saring wajib cocok dengan SALAH SATU kolom portal (AND antar-kata, OR antar-kolom), tanpa beda huruf, % _ \ harfiah.
+func TestCariPortalBanyakKolomPerKata(t *testing.T) {
+	q, args := sqlDaftarKasus("P.W", "P.G", "P.Q", models.SaringanKasus{Cari: `  uji-pol   50%_x\  `})
+	penampungUrut(t, q, args)
+	kolom := []string{"w.ID", "g.NO_OFFER", "g.NOPOLIS", "q.OLD_POLICY_NO", "g.NOENDORS", "g.INSURED_NAME", "q.INSURED_NAME",
+		"q.BUSINESS_NAME", "g.SOB_NAME", "g.CEDING_CO_NAME", "q.MARKETING_NAME", "g.TREATY_GROUP_NAME", "g.BIZ_NAME",
+		"w.CREATE_OP_NAME"}
+	for _, k := range kolom {
+		if n := strings.Count(q, "UPPER("+k+") LIKE :"); n != 2 {
+			t.Errorf("kolom %s dicari %d kali, harap 2 (satu per kata)\n%s", k, n, q)
+		}
+	}
+	if n := strings.Count(q, `ESCAPE '\'`); n != 2*len(kolom) {
+		t.Errorf("ESCAPE %d, harap %d", n, 2*len(kolom))
+	}
+	if strings.Count(q, "\n\t    AND (UPPER(") != 2 {
+		t.Errorf("kata kedua wajib AND, kolom OR\n%s", q)
+	}
+	// argumen: 3 tetap + satu per kolom per kata; huruf besar, wildcard di-escape
+	if len(args) != 3+2*len(kolom) || args[3] != "%UJI-POL%" || args[3+len(kolom)] != `%50\%\_X\\%` {
+		t.Fatalf("argumen cari %v", args)
+	}
+	q, args = sqlDaftarKasus("P.W", "P.G", "P.Q", models.SaringanKasus{Cari: "a b c d e f g"})
+	penampungUrut(t, q, args)
+	if len(args) != 3+models.MaksKataCari*len(kolom) {
+		t.Fatalf("kata terbanyak %d, argumen %d", models.MaksKataCari, len(args))
 	}
 }
 
@@ -62,6 +92,22 @@ func TestDaftarEDMKotakMasukDanSelesai(t *testing.T) {
 	penampungUrut(t, q, args)
 	if strings.Contains(q, "NOT IN") || !strings.Contains(q, "w.STATUS_WORK IN (:2, :3)") {
 		t.Fatalf("switch Resolved = HANYA berkas selesai\n%s", q)
+	}
+}
+
+// Salinan dokumen Pega berkunci IDPEGA UTUH (WO 07-10-2026 "IDPEGA BAWAAN PEGA JANGAN DI POTONG"): daftar portal, kotak
+// masuk, dan cek EDM terbuka mengenali `EDMT-<n>` dan `<kelas> EDMT-<n>`.
+func TestIDKasusEDMMencakupPzInsKeyUtuh(t *testing.T) {
+	harap := "(w.ID LIKE 'EDMT-%' OR w.ID LIKE '% EDMT-%')"
+	if sqlIDKasusEDM("w.ID") != harap {
+		t.Fatalf("syarat ID kasus %q", sqlIDKasusEDM("w.ID"))
+	}
+	q, _ := sqlDaftarKasus("P.W", "P.G", "P.Q", models.SaringanKasus{})
+	k, _ := sqlHitungKotakMasuk("P.W", "P.G", "UJI", true, nil)
+	for _, x := range []string{q, k} {
+		if !strings.Contains(x, harap) {
+			t.Errorf("tanpa syarat ID kasus utuh\n%s", x)
+		}
 	}
 }
 
@@ -100,5 +146,27 @@ func TestPopupRetroTanpaKolomOldID(t *testing.T) {
 	}
 	if awalanKarakter("1234567890123", 7) != "1234567" || awalanKarakter("12", 7) != "12" {
 		t.Fatal("@substring(.., 0, n)")
+	}
+}
+
+// Copy Old (perintah work owner 07-10-2026): data lama = JSON_POLIS x tabel kerja Pega (PZINSKEY = IDPEGA) x
+// TREATYINPRODUCTION (IDPEGA), lewat EXISTS; generasi endorsemen saja; baca saja.
+func TestKunciCopyOldGabungKerjaPegaDanProduksi(t *testing.T) {
+	q := sqlPmKunciJSONPolisEDMCopyOld("P.JSON_POLIS", "P.TREATYINPRODUCTION")
+	for _, w := range []string{"FROM P.JSON_POLIS b", "EXISTS (SELECT 1 FROM DATAPEGA.PC_ASM_FW_GISFW_WORK a WHERE a.PZINSKEY = b.IDPEGA)",
+		"EXISTS (SELECT 1 FROM P.TREATYINPRODUCTION c WHERE c.IDPEGA = b.IDPEGA)", "TRIM(TO_CHAR(b.PRODKE)) <> '0'"} {
+		if !strings.Contains(q, w) {
+			t.Errorf("tanpa %q", w)
+		}
+	}
+	penampungUrut(t, q, nil)
+}
+
+// WO 07-10-2026 "PXCREATEOPERATOR,PXCREATEOPNAME": pembuat berkas salinan dibaca dari tabel kerja Pega menurut
+// pzInsKey = IDPEGA; baca saja, satu penampung.
+func TestPembuatPegaDariTabelKerjaPega(t *testing.T) {
+	q := sqlPmPembuatPega()
+	if q != `SELECT PXCREATEOPERATOR, PXCREATEOPNAME FROM DATAPEGA.PC_ASM_FW_GISFW_WORK WHERE PZINSKEY = :1` {
+		t.Fatalf("pembuat Pega: %s", q)
 	}
 }

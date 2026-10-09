@@ -1,6 +1,6 @@
 # 08: Baris adjustment, adjuster/consultant, dan pagar nilai
 
-**Status:** ready-for-agent
+**Status:** dibangun 07-10-2026 — pemeliharaan Adjuster / Consultant di luar lingkup (OQ-CP-04) — RALAT 07-10-2026 (semula `ready-for-agent`)
 **Blocked by:** 00 (PREFACTOR) · 06 (loss allocation dan spreading) · 07 (estimasi)
 **Menutup:** AC 44 · 45 · 46 · 47 · 48 · 49 · 95 · **126** · **127** *(9 AC)* — US 24–29
 

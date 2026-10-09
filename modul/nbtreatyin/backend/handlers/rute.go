@@ -19,6 +19,9 @@
 //	GET  /api/nb-treaty-in/kasus/{id}/riwayat         HISTORYAKSEPTASIPEGA
 //	GET  /api/nb-treaty-in/sumber-bisnis              grid popup SOB (BrowseAgentHierarkiList_RD)
 //	GET  /api/nb-treaty-in/acuan                      daftar pilihan layar
+//	GET  /api/nb-treaty-in/hak                        hak layar portal akun ({"copyOld": bool})
+//	GET  /api/nb-treaty-in/lama                       popup Copy Old - superadmin (WO 07-10-2026)
+//	POST /api/nb-treaty-in/lama/salin                 Process Copy {"ids": [...]} - superadmin
 package handlers
 
 import (
@@ -30,13 +33,18 @@ import (
 	"strings"
 
 	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/dokumenpolis"
 	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/menu"
 	"nusantarare/modul/nbtreatyin/backend/models"
 	"nusantarare/modul/nbtreatyin/backend/services"
 )
 
 // Prefix adalah awalan rute modul ini.
 const Prefix = "/api/nb-treaty-in"
+
+// KodeMenu - KODE menu modul ini (`M_LOGIN_GO_MENU.MENU_KODE`, sama dengan nama modul `backend.Nama`).
+const KodeMenu = "nbtreatyin"
 
 // batasBadan - badan permintaan terbesar (halaman kerja beserta daftarnya).
 const batasBadan = 4 << 20
@@ -59,6 +67,9 @@ func DaftarkanRute(mux *http.ServeMux, l *services.Layanan, stubPelaku bool) {
 	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/riwayat", h.riwayat)
 	mux.HandleFunc("GET "+Prefix+"/sumber-bisnis", h.sumberBisnis)
 	mux.HandleFunc("GET "+Prefix+"/acuan", h.acuan)
+	mux.HandleFunc("GET "+Prefix+"/hak", h.hak)
+	mux.HandleFunc("GET "+Prefix+"/lama", h.daftarLama)
+	mux.HandleFunc("POST "+Prefix+"/lama/salin", h.salinLama)
 }
 
 // Router menyusun mux tersendiri - untuk uji.
@@ -74,6 +85,13 @@ type rute struct {
 }
 
 func (h *rute) pelaku(r *http.Request) inti.Pelaku { return inti.PelakuDari(r, h.stub) }
+
+// superadmin - Copy Old (perintah work owner 07-10-2026, khusus superuser): pemegang menu Kelola User dengan menu NB
+// Treaty In ber-hak PENUH - pola Copy Old Data Bordereaux (View only berlaku juga bagi superadmin, 05-10-2026).
+func superadmin(r *http.Request) bool {
+	kode, _ := inti.AksesMenuDari(r.Context())
+	return inti.PunyaMenu(kode, menu.KodeKelolaUser) && menu.BolehUbah(r.Context(), KodeMenu)
+}
 
 // tulisGalat menerjemahkan galat services ke kode HTTP.
 func tulisGalat(w http.ResponseWriter, err error) {
@@ -106,6 +124,7 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		errors.Is(err, services.ErrTahapBerubah),
 		errors.Is(err, services.ErrGenerasiTertutup),
 		errors.Is(err, services.ErrNomorPolisSudahAda),
+		errors.Is(err, services.ErrNomorPolisDipakai),
 		errors.Is(err, services.ErrTindakanTakAdaDiPosisi):
 		galat.Tulis(w, http.StatusConflict, err.Error())
 	default:
@@ -314,4 +333,39 @@ func (h *rute) acuan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	galat.TulisJSON(w, a)
+}
+
+func (h *rute) hak(w http.ResponseWriter, r *http.Request) {
+	galat.TulisJSON(w, h.l.HakPortal(h.pelaku(r), superadmin(r)))
+}
+
+func (h *rute) daftarLama(w http.ResponseWriter, r *http.Request) {
+	out, err := h.l.DaftarDokumenLama(r.Context(), h.pelaku(r), superadmin(r))
+	if err != nil {
+		tulisGalat(w, err)
+		return
+	}
+	galat.TulisJSON(w, out)
+}
+
+func (h *rute) salinLama(w http.ResponseWriter, r *http.Request) {
+	var b struct {
+		IDs []string `json:"ids"`
+	}
+	if !bacaJSON(w, r, &b) {
+		return
+	}
+	j, err := h.l.SalinDokumenLama(r.Context(), h.pelaku(r), superadmin(r), b.IDs)
+	if err != nil {
+		tulisGalat(w, err)
+		return
+	}
+	galat.TulisJSON(w, j)
+}
+
+// DaftarkanLampiran memasang rute lampiran "Reas" kasus (`inti/backend/dokumenpolis.Pasang`) di bawah
+// `{Prefix}/kasus/{id}/lampiran` - panel Attachment di bawah layar kasus (keputusan work owner 08-10-2026).
+func DaftarkanLampiran(mux *http.ServeMux, l *services.Layanan, lampiran *dokumenpolis.Layanan, stubPelaku bool) {
+	dokumenpolis.Pasang(mux, Prefix+"/kasus/{id}/lampiran", func() *dokumenpolis.Layanan { return lampiran },
+		l.KasusLampiran, stubPelaku, tulisGalat)
 }

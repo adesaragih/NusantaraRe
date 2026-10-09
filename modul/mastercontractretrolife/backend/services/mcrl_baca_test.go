@@ -189,7 +189,7 @@ func TestRateTakTerbacaMenyebutView(t *testing.T) {
 	g.GalatMaster = errors.New("ORA-00942")
 	l := layananUji(g)
 	if _, err := l.DaftarRate(context.Background(), pelaku, "UJI-1"); !errors.Is(err, services.ErrMasterTidakTerbaca) ||
-		!strings.Contains(services.Pesan(err), "RATE_LIFE") {
+		!strings.Contains(services.Pesan(err), "M_RATE_LIFE") {
 		t.Errorf("DaftarRate: %v", err)
 	}
 	if _, err := l.CariRingkasanRate(context.Background(), pelaku, ""); !errors.Is(err, services.ErrMasterTidakTerbaca) ||

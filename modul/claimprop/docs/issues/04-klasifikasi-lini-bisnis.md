@@ -1,6 +1,6 @@
 # 04: Klasifikasi lini bisnis — satu kunci, satu mekanisme
 
-**Status:** ready-for-agent
+**Status:** dibangun 07-10-2026 — RALAT 07-10-2026 (semula `ready-for-agent`)
 **Blocked by:** 00 (PREFACTOR) · 01 (registrasi klaim dan nomor polis)
 **Menutup:** AC 71 · 72 · 73 · 74 *(4 AC)*
 

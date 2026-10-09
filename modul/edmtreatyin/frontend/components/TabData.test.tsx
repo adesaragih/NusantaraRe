@@ -18,7 +18,6 @@ const render = (varian: VarianTab, halaman: Halaman, boleh = true, wajib: string
       halaman={halaman}
       wajib={new Set(wajib)}
       boleh={boleh}
-      sibuk={false}
       opsi={kosong}
       opsiJenisReas={[{ nilai: '7', label: 'UJI-QS' }]}
       onUbah={() => {}}
@@ -54,10 +53,11 @@ describe('PropNewData2 (admin)', () => {
   })
 
   // keputusan work owner 07-10-2026 ("HAPUS AJA"): Save di dalam tab dibuang - Save kaki halaman (S19) tetap
-  it('tanpa Save di dalam tab; Calculate Value Difference (S24); isian Installment', () => {
+  // WO 08-10-2026 ("COBA CEK TOMBOLITU, APAKAH MASIH DIPERLUKAN? KALAU SUDAH TIDAK DIHAPUS AJA!"): tombol S24 dibuang
+  it('tanpa Save di dalam tab; tanpa Calculate Value Difference; isian Installment', () => {
     const html = render('baruAdmin', halaman)
     expect(html).not.toContain('>Save</button>')
-    expect(html).toContain('>Calculate Value Difference</button>')
+    expect(html).not.toContain('Calculate Value Difference')
     expect(html).toMatch(/<input[^>]*aria-label="Installment"[^>]*value="2"/)
   })
 

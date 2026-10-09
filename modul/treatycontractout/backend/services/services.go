@@ -22,9 +22,6 @@ import (
 // Service adalah akar layanan Treaty Contract Out.
 type Service struct {
 	*inti.Dasar
-	// penyimpananTCO - pelaksana penyimpanan lampiran Treaty Contract Out
-	// (OQ-TCO-08). nil = stub; lihat tco_penyimpanan_nyata.go.
-	penyimpananTCO *pengaturanPenyimpananTCO
 }
 
 // New membuat Service. db boleh nil bila proses berjalan tanpa Oracle;
@@ -37,14 +34,6 @@ func New(d *db.DB) *Service {
 // (lingkungan efek keluar, folder unggahan) - satu akar untuk semua modul.
 func DariDasar(d *inti.Dasar) *Service {
 	return &Service{Dasar: d}
-}
-
-// DenganUnggahanDir menyetel folder berkas unggahan - lihat
-// `inti.Dasar.DenganUnggahanDir`.
-func (s *Service) DenganUnggahanDir(dir string) *Service {
-	salin := *s
-	salin.Dasar = s.Dasar.DenganUnggahanDir(dir)
-	return &salin
 }
 
 // DenganLingkungan menyetel lingkungan efek keluarnya - lihat

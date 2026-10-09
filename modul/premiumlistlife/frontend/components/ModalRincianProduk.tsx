@@ -224,7 +224,7 @@ function TabelRate({ riRateId, nama }: { riRateId: string; nama: string }) {
   )
 }
 
-/** Isi R/I Risk Name produk - view `RIRISK_LIFE` (05-10-2026). */
+/** Isi R/I Risk Name produk - tabel `RIRISK_LIFE` (05-10-2026; dulu view, tabel sejak migrasi inti 938-940). */
 function TabelRisk({ riRiskId, nama }: { riRiskId: string; nama: string }) {
   const [risk, setRisk] = useState<RiskProduk | null>(null)
   const [galat, setGalat] = useState<unknown>(null)

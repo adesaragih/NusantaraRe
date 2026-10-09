@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { Halaman } from './api'
 import {
+  AKSI_SPREADING,
   MEDAN_KANAN,
   MEDAN_KIRI,
   deretQ,
@@ -239,8 +240,11 @@ describe('kerangka tab (lima section Prop)', () => {
       'Balance Due To Us',
     ])
     expect(label(t.kiri[0]!.medan, h)[1]).toBe('(%) Deduction In A (OGP)')
-    expect(t.hitungSelisih).toBe(true)
-    expect(t.installment?.aksi).toEqual([{ aksi: 'FillPaymentInstallment' }])
+    // WO 08-10-2026 ("COBA CEK TOMBOLITU, APAKAH MASIH DIPERLUKAN? KALAU SUDAH TIDAK DIHAPUS AJA!"): tombol "Calculate Value Difference" (PropNewData2 S24)
+    // dibuang - setiap sel yang mengubah data baru menghitung ulang tab Value Difference sendiri
+    expect('hitungSelisih' in t).toBe(false)
+    expect(t.installment?.aksi).toEqual([{ aksi: 'FillPaymentInstallment' }, { aksi: 'EDMTCalculateTreatyDifference' }])
+    expect(AKSI_SPREADING).toEqual([{ aksi: 'CountSpreading' }, { aksi: 'EDMTCalculateTreatyDifference' }])
   })
 
   it('PropNewData2 action set = NB MEDAN_ADMIN_UANG + EDMTCalculateTreatyDifference bila sel me-refresh Value Difference', () => {

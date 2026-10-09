@@ -48,10 +48,10 @@ func TestLaporanArsipMedanEDM(t *testing.T) {
 		ada[strings.Join(b, "|")] = true
 	}
 	for _, b := range [][]string{
-		{"EDMT-990002", "PolicyTreatyIn.UJIMedanFiktif", "UJI-a, \"b\"\nbaris kedua", KeputusanBelumDiputuskan},
-		{"EDMT-990002", "PolicyTreatyIn.OldData.PremiOgp", "150", "dibuang: old_data"},
-		{"EDMT-990002", "PolicyTreatyIn.TreatyDifference.TotalPremium", "130.000000276", "dibuang: selisih_turunan"},
-		{"EDMT-990002", "PolicyTreatyIn.TreatyXOLList(1).ValueList(1).GrossPremi", "5", "dibuang: prop_hasil_antara"},
+		{"ASM-FW-GISFW-WORK EDMT-990002", "PolicyTreatyIn.UJIMedanFiktif", "UJI-a, \"b\"\nbaris kedua", KeputusanBelumDiputuskan},
+		{"ASM-FW-GISFW-WORK EDMT-990002", "PolicyTreatyIn.OldData.PremiOgp", "150", "dibuang: old_data"},
+		{"ASM-FW-GISFW-WORK EDMT-990002", "PolicyTreatyIn.TreatyDifference.TotalPremium", "130.000000276", "dibuang: selisih_turunan"},
+		{"ASM-FW-GISFW-WORK EDMT-990002", "PolicyTreatyIn.TreatyXOLList(1).ValueList(1).GrossPremi", "5", "dibuang: prop_hasil_antara"},
 	} {
 		if !ada[strings.Join(b, "|")] {
 			t.Errorf("baris arsip %q tidak ada", b)

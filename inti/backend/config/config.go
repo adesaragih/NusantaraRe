@@ -12,7 +12,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // Prefix env var untuk alamat layanan luar: SERVICE_<NAMA>.
@@ -88,19 +87,6 @@ type Config struct {
 	// kebetulan menjalankan server.
 	UnggahanDir string
 
-	// PelaksanaStorage memilih pelaksana efek penyimpanan lampiran Treaty
-	// Contract Out (OQ-TCO-08, keputusan work owner 29-09-2026): `stub`
-	// (BAWAAN - folder lokal UnggahanDir) atau `nyata` (layanan penyimpanan
-	// yang alamatnya dibaca dari M_LINK_SERVICE saat jalan).
-	//
-	// ⛔ `nyata` menuntut StorageTokenSalt terisi - ditolak saat memuat,
-	// bukan saat unggahan pertama gagal.
-	PelaksanaStorage string
-
-	// IntervalPekerjaLampiranTCO - jeda pekerja latar antrean lampiran
-	// Treaty Contract Out (OQ-TCO-09). Nol = pekerja MATI (bawaan).
-	IntervalPekerjaLampiranTCO time.Duration
-
 	// ModulAktif - modul yang dipasang proses ini (refactor bentuk B), dari
 	// MODUL_AKTIF: nama dipisah koma, huruf kecil, tanpa ganda. KOSONG
 	// berarti SEMUA modul terdaftar aktif - bawaan yang sama dengan sebelum
@@ -166,34 +152,6 @@ func (c Config) PastikanSkemaUji() error {
 // ErrKonfigurasi membungkus seluruh kegagalan pembacaan konfigurasi.
 var ErrKonfigurasi = errors.New("konfigurasi")
 
-// Nilai PELAKSANA_STORAGE.
-const (
-	PelaksanaStorageStub  = "stub"
-	PelaksanaStorageNyata = "nyata"
-)
-
-// EnvIntervalPekerjaLampiranTCO - nama env interval pekerja latar.
-const EnvIntervalPekerjaLampiranTCO = "TCO_PEKERJA_LAMPIRAN_INTERVAL"
-
-// bacaPelaksanaStorage - kosong = stub; selain stub/nyata DITOLAK supaya salah
-// ketik tidak diam-diam jatuh ke stub.
-func bacaPelaksanaStorage(raw string) (string, error) {
-	switch v := strings.ToLower(strings.TrimSpace(raw)); v {
-	case "", PelaksanaStorageStub:
-		return PelaksanaStorageStub, nil
-	case PelaksanaStorageNyata:
-		return PelaksanaStorageNyata, nil
-	default:
-		return "", fmt.Errorf("%w: PELAKSANA_STORAGE harus %q atau %q, bukan %q",
-			ErrKonfigurasi, PelaksanaStorageStub, PelaksanaStorageNyata, raw)
-	}
-}
-
-// intervalMinimum - pekerja yang berketuk lebih rapat dari ini membanjiri
-// outbox bersama (`FOR UPDATE SKIP LOCKED` per ketukan); `30ms` hampir pasti
-// salah ketik untuk `30s`.
-const intervalMinimum = time.Second
-
 // bacaDaftarModul mengurai MODUL_AKTIF: dipisah koma, spasi dibuang, huruf
 // kecil, butir kosong dan ganda dilewati. Kosong seluruhnya = nil (semua).
 func bacaDaftarModul(raw string) []string {
@@ -208,21 +166,6 @@ func bacaDaftarModul(raw string) []string {
 		hasil = append(hasil, n)
 	}
 	return hasil
-}
-
-// bacaInterval - kosong/0 = 0 (mati); format time.ParseDuration ("30s", "1m"),
-// minimal 1s.
-func bacaInterval(nama, raw string) (time.Duration, error) {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return 0, nil
-	}
-	d, err := time.ParseDuration(raw)
-	if err != nil || d < 0 || (d > 0 && d < intervalMinimum) {
-		return 0, fmt.Errorf("%w: %s harus 0 atau durasi minimal %s (contoh 30s, 1m): %q",
-			ErrKonfigurasi, nama, intervalMinimum, raw)
-	}
-	return d, nil
 }
 
 // Load membaca konfigurasi dari environment.
@@ -244,20 +187,6 @@ func Load() (Config, error) {
 	c.StorageTokenSalt = os.Getenv("STORAGE_TOKEN_SALT")
 	c.UnggahanDir = strings.TrimSpace(os.Getenv("UNGGAHAN_DIR"))
 	c.ModulAktif = bacaDaftarModul(os.Getenv("MODUL_AKTIF"))
-
-	pelaksana, err := bacaPelaksanaStorage(os.Getenv("PELAKSANA_STORAGE"))
-	if err != nil {
-		return Config{}, err
-	}
-	c.PelaksanaStorage = pelaksana
-	// ⛔ Pesan menyebut NAMA kunci, tidak pernah nilainya.
-	if c.PelaksanaStorage == PelaksanaStorageNyata && strings.TrimSpace(c.StorageTokenSalt) == "" {
-		return Config{}, fmt.Errorf("%w: PELAKSANA_STORAGE=nyata menuntut STORAGE_TOKEN_SALT terisi", ErrKonfigurasi)
-	}
-	if c.IntervalPekerjaLampiranTCO, err = bacaInterval(EnvIntervalPekerjaLampiranTCO,
-		os.Getenv(EnvIntervalPekerjaLampiranTCO)); err != nil {
-		return Config{}, err
-	}
 
 	raw := strings.TrimSpace(os.Getenv("IS_PEGA_PROD"))
 	if raw != "" {

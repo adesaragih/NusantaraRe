@@ -36,7 +36,10 @@ describe('label layar = LABEL XML', () => {
       'Refresh',
       'Refresh EDM Grid',
     ])
-    expect([PORTAL.placeholder, PORTAL.filter]).toEqual(['Policy Number', 'Filter Term for Endorsement'])
+    expect([PORTAL.placeholder, PORTAL.filter]).toEqual([
+      'Search EDM no, master ID, policy no, insured, business, ceding, marketing...',
+      'Filter Term for Endorsement',
+    ])
     expect(KOLOM_PORTAL.map((k) => k.judul)).toEqual([
       'EDM Number',
       'Offer No',
@@ -84,12 +87,9 @@ describe('label layar = LABEL XML', () => {
 
   it('tombol layar kasus', () => {
     // Add grid spreading dibuang (keputusan work owner 07-10-2026)
-    expect([TOMBOL.chooseBusiness, TOMBOL.save, TOMBOL.submit, TOMBOL.hitungSelisih]).toEqual([
-      'Choose Business',
-      'Save',
-      'Submit',
-      'Calculate Value Difference',
-    ])
+    // tombol Calculate Value Difference dibuang (WO 08-10-2026)
+    expect([TOMBOL.chooseBusiness, TOMBOL.save, TOMBOL.submit]).toEqual(['Choose Business', 'Save', 'Submit'])
+    expect('hitungSelisih' in TOMBOL).toBe(false)
   })
 
   it('grid spreading dan angsuran section Prop', () => {

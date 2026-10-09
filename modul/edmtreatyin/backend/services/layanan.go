@@ -12,6 +12,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/dokumenpolis"
 	"nusantarare/inti/backend/galat"
 	"nusantarare/modul/edmtreatyin/backend/models"
 	"nusantarare/modul/edmtreatyin/backend/repository"
@@ -51,14 +52,21 @@ type Layanan struct {
 	// konversi dan produksi - efek keluar sesudah selesai (konversi.go).
 	konversi PengirimKonversi
 	produksi bool
+	// pemuat - Copy Old (copyold.go); nil bila gudang tidak membaca JSON_POLIS (tombol tidak tampil).
+	pemuat *Pemuat
 }
 
-// Baru menyusun layanan; `g` nil = tanpa Oracle (setiap tindakan 503).
+// Baru menyusun layanan; `g` nil = tanpa Oracle (setiap tindakan 503). Gudang yang juga `GudangPemuat` (Oracle)
+// menyalakan Copy Old.
 func Baru(g Gudang, jam func() time.Time) *Layanan {
 	if jam == nil {
 		jam = time.Now
 	}
-	return &Layanan{g: g, jam: jam}
+	l := &Layanan{g: g, jam: jam}
+	if gp, ok := g.(GudangPemuat); ok {
+		l.pemuat = PemuatBaru(gp)
+	}
+	return l
 }
 
 // AdaGudang - layanan tersambung ke penyimpanan.
@@ -86,12 +94,10 @@ func (l *Layanan) DaftarKasus(ctx context.Context, p inti.Pelaku, cari string, s
 		return nil, err
 	}
 	// Aturan portal NB Treaty In berlaku untuk EDM (keputusan work owner 07-10-2026 "YA"; NB 06-10-2026): In
-	// Progress = berkas BUATAN akun ini (filter A) yang masih proses; Resolved = SEMUA berkas selesai, siapa pun
-	// pembuatnya ("yang resolve nampilin semua yang resolve"); berkas selesai hanya-baca (`Layar.BolehKerja`).
+	// Progress = berkas BUATAN akun ini (filter A) yang masih proses; Resolved = berkas selesai BUATAN akun ini (RALAT
+	// 07-10-2026 "TAMBAHKAN KAN UNTUK PEMBUAT. MENU ITU HANYA UNTUK SI PEMBUAT, NB DAN EDM TREATY"; dulu semua berkas
+	// selesai); berkas selesai hanya-baca (`Layar.BolehKerja`).
 	s := models.SaringanKasus{Cari: cari, Pembuat: p.AkunID, Selesai: selesai}
-	if selesai {
-		s.Pembuat = ""
-	}
 	return l.g.DaftarKasus(ctx, s)
 }
 
@@ -423,4 +429,19 @@ func (l *Layanan) DaftarAcuan(ctx context.Context, p inti.Pelaku) (Acuan, error)
 		a.JenisEDM = append(a.JenisEDM, models.Pilihan{Nilai: kode, Label: models.LabelJenisEDM[kode]})
 	}
 	return a, nil
+}
+
+// KasusLampiran - kasus pemilik lampiran "Reas" (`inti/backend/dokumenpolis`, grid `AttachmentGridReas` NB FacIn yang
+// dipinjam EDM Treaty In lewat `SetCategoryAttach`): lampiran baru berkunci `KunciInstans`, lampiran Pega lama berkunci
+// pzInsKey `ASM-FW-GISFW-WORK <pyID>`. Upload / Delete selama kasus belum Resolve - keputusan work owner 08-10-2026:
+// "semua bisa asal belum resolve".
+func (l *Layanan) KasusLampiran(ctx context.Context, p inti.Pelaku, id string) (dokumenpolis.Kasus, error) {
+	if err := l.periksaPelaku(p); err != nil {
+		return dokumenpolis.Kasus{}, err
+	}
+	k, err := l.g.Keadaan(ctx, nil, id)
+	if err != nil {
+		return dokumenpolis.Kasus{}, err
+	}
+	return dokumenpolis.KasusDari(models.KunciInstans(k.ID), models.PyIDKasus(k.ID), !k.Tertutup()), nil
 }

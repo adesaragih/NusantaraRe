@@ -38,9 +38,6 @@ type ujiTCO struct {
 	ctx      context.Context
 	isiJenis func([]skemauji.JenisReasuransiUji)
 	isiGrup  func([]skemauji.GrupTreatyUji)
-	// Tiket 12: master kategori lampiran dan folder unggahan uji.
-	isiKategori func([]string)
-	unggahan    string
 	// Tiket 05: master reinsurer AGENT.
 	isiAgent func([]skemauji.AgentUji)
 	// Tiket 07: master bisnis BUSINESS.
@@ -86,11 +83,9 @@ func serverTCOAwal(t *testing.T) (*ujiTCO, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Tiket 12: UNGGAHAN_DIR uji - penyimpanan lampiran stub lokal di bawahnya.
-	unggahan := t.TempDir()
 	u := &ujiTCO{
-		srv:   httptest.NewServer(handlers.Router(services.New(db).DenganUnggahanDir(unggahan), true)),
-		sqlDB: sqlDB, db: db, skema: skema, ctx: ctx, unggahan: unggahan, mentah: sqlDB,
+		srv:   httptest.NewServer(handlers.Router(services.New(db), true)),
+		sqlDB: sqlDB, db: db, skema: skema, ctx: ctx, mentah: sqlDB,
 	}
 	u.isiBusiness = func(baris []skemauji.BusinessUji) {
 		if err := skemauji.IsiBusinessTCO(ctx, sqlDB, skema, baris); err != nil {
@@ -100,11 +95,6 @@ func serverTCOAwal(t *testing.T) (*ujiTCO, func()) {
 	u.isiAgent = func(baris []skemauji.AgentUji) {
 		if err := skemauji.IsiAgentTCO(ctx, sqlDB, skema, baris); err != nil {
 			t.Fatalf("mengisi master reinsurer: %v", err)
-		}
-	}
-	u.isiKategori = func(note []string) {
-		if err := skemauji.IsiKategoriLampiranTCO(ctx, sqlDB, skema, note); err != nil {
-			t.Fatalf("mengisi master kategori lampiran: %v", err)
 		}
 	}
 	u.isiJenis = func(baris []skemauji.JenisReasuransiUji) {

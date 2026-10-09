@@ -505,7 +505,7 @@ export const RINCIAN_PRODUK = {
   judulRate: 'R/I Rate',
   rateTerpotong: 'Only the first 500 rows are shown.',
   kolomRate: ['ID', 'USEDBY', 'GENDER', 'CONTRACT', 'AGE', 'RATE'],
-  // View R/I Risk (05-10-2026) - kepala kolom = kolom view RIRISK_LIFE.
+  // View R/I Risk (05-10-2026) - kepala kolom = kolom tabel RIRISK_LIFE (dulu view; kolom sama sejak migrasi inti 940).
   viewRisk: 'View R/I Risk',
   tutupRisk: 'Hide R/I Risk',
   // Teks pendek tombol yang menempel di kotak R/I Risk Name; nama lengkap di aria-label.

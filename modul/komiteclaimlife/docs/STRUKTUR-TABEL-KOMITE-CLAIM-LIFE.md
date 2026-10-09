@@ -75,8 +75,14 @@ adjustment ke Komite. `ID`-nya **sama persis** dengan baris komite di `T_WORK_CL
 | `KOMITE_LOOP` | bilangan bulat | ya | | keputusan tiket 00 Komite — jumlah tingkat tangga |
 | `KOMITE_COUNT` | bilangan bulat | ya | | keputusan tiket 00 Komite — tingkat yang sedang berjalan |
 | `ACCEPT_STATUS` | teks | ya | | keputusan tiket 00 Komite — hasil final: `1` aksep / `2` tolak |
+| `KOMITE_USUL_TUTUP` | teks | tidak | | migrasi `komiteclaimprop/680` (RALAT 08-10-2026) — usul tutup klaim, `'1'`/`'0'` bawaan `'0'`; kasus Life tidak menulisnya |
+| `KOMITE_USUL_CADANG` | teks | tidak | | migrasi `komiteclaimprop/680` (RALAT 08-10-2026) — usul cadangkan klaim, `'1'`/`'0'` bawaan `'0'`; kasus Life tidak menulisnya |
+| `KOMITE_SUBJECTIVITY` | teks | tidak | | migrasi `komiteclaimprop/682` (RALAT 08-10-2026) — isian Subjectivity tingkat 1 Komite Claim Prop, `'1'`/`'0'` bawaan `'0'`; kasus Life tidak menulisnya |
+| `KOMITE_SUBJECTIVITY_NOTE` | teks | ya | | migrasi `komiteclaimprop/682` (RALAT 08-10-2026) — catatan Subjectivity tingkat 1 Komite Claim Prop |
 
-**Index:** `ADJUSTMENT_ID` **(UNIK)**.
+**Index:** `ADJUSTMENT_ID` **(biasa — `IX_GENERAL_KOMITE_ADJ`, migrasi `komiteclaimprop/681`)**.
+
+> **RALAT 08-10-2026** (izin work owner 08-10-2026, Komite Claim Prop). Kalimat lama: *"**Index:** `ADJUSTMENT_ID` **(UNIK)**."* — ID adjustment Prop (`SEQ_T_CLAIM`) dan Life (`SEQ_CLAIMLF_ADJ`) sama-sama angka polos, sehingga indeks unik lintas lini suatu saat menolak penyerahan sah (ORA-00001). Keunikan satu adjustment ↔ satu kasus komite kini dijaga `KOMITE_ID` UNIK di `T_CLAIMLF_ADJUSTMENT` dan `T_CLAIM_ADJUSTMENT`. Dua kolom usul di atas ditambahkan migrasi `komiteclaimprop/680`.
 
 **Relasi:**
 

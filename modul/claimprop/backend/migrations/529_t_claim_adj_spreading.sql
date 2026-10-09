@@ -1,0 +1,21 @@
+-- 529 - T_CLAIM_ADJ_SPREADING <- AdjustmentList(n).SpreadingAdjustment (Section AdjustmentDetail grid "Spreading In").
+-- Disalin dari SpreadingClaim saat baris adjustment lahir/berganti mata uang (AddAdjustment_Act langkah 5,
+-- SetNameCurrency_Act), dihitung CountSpreadingADJ_Act langkah 6. TREATY_ID <- .TreatyType.
+CREATE TABLE {skema}.T_CLAIM_ADJ_SPREADING (
+  ID                VARCHAR2(32) NOT NULL,
+  ADJUSTMENT_ID     VARCHAR2(32) NOT NULL,
+  NOURUT            NUMBER(5) NOT NULL,
+  TREATY_ID         VARCHAR2(64),
+  TREATY_NAME       VARCHAR2(255),
+  SHARE_PERCENTAGE  NUMBER(38,10),
+  CLAIM_SPREADED    NUMBER(38,10),
+  CURRENCY_ID       VARCHAR2(64),
+  CURRENCY_NAME     VARCHAR2(64),
+  PREMIUM_SPREADED  NUMBER(38,10),
+  BANK_ACCOUNT_NO   VARCHAR2(100),
+  BANK_ID           VARCHAR2(64),
+  CONSTRAINT PK_CLAIM_ADJ_SPREADING PRIMARY KEY (ID),
+  CONSTRAINT FK_CLAIM_ADJ_SPREADING_ADJ FOREIGN KEY (ADJUSTMENT_ID) REFERENCES {skema}.T_CLAIM_ADJUSTMENT (ID) ON DELETE CASCADE,
+  CONSTRAINT UQ_CLAIM_ADJ_SPREADING_NOURUT UNIQUE (ADJUSTMENT_ID, NOURUT)
+)
+/

@@ -21,7 +21,6 @@ import {
   JUDUL_GRID_KLAUSUL,
   KOLOM_GRID_KLAUSUL,
   LABEL_MEDAN_KLAUSUL,
-  LAMPIRAN_TCO,
   MENU_TCO,
   REINSURER_TCO,
   SECURITY_TCO,
@@ -40,7 +39,6 @@ function baris(relatif: string, nomor: number): string {
 
 const GRID = 'Section\\InputTreatyContract.xml'
 const FORM = 'Section\\InputDtlTreatyContact.xml'
-const LAMPIRAN = 'Section\\GridTreatyArrangementAttachment.xml'
 const KONTRAK = 'Section\\InputTreatyContractReinsType.xml'
 const REAS = 'Section\\ViewDetailTreatyReinsurerGrid1.xml'
 const BIZ = 'Section\\ViewDetailTreatyBusinessGrid.xml'
@@ -78,17 +76,6 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
     [FORM, 'pyLabelFieldValue', 9282, TAHUN_TCO.formUsername],
     [FORM, 'pyLabel', 10332, TAHUN_TCO.save],
     [FORM, 'pyLabel', 10622, TAHUN_TCO.cancel],
-    // tiket 12 - panel lampiran
-    [GRID, 'pyValue', 11721, LAMPIRAN_TCO.attachmentFor],
-    [LAMPIRAN, 'pyValue', 1785, LAMPIRAN_TCO.forTreatyContractOut],
-    [LAMPIRAN, 'pyLabel', 578, LAMPIRAN_TCO.addAttachment],
-    [LAMPIRAN, 'pyLabel', 1023, LAMPIRAN_TCO.refresh],
-    [LAMPIRAN, 'pyLabel', 2659, LAMPIRAN_TCO.downloadAll],
-    [LAMPIRAN, 'pyValue', 3032, LAMPIRAN_TCO.kolomFileName],
-    [LAMPIRAN, 'pyValue', 3170, LAMPIRAN_TCO.kolomType],
-    [LAMPIRAN, 'pyLabel', 3897, LAMPIRAN_TCO.delete],
-    // Korpus Indonesia; label kita Inggris (keputusan work owner 30-09-2026) - diuji di bawah.
-    ['Activity\\TreatyOutSaveAttachment.xml', 'PropertiesValue', 376, '"Tidak ada file yg diattach"'],
     // tiket 04 - editor kontrak
     ['Harness\\InboxTreatyContractReinsType.xml', 'pyValue', 1670, KONTRAK_TCO.judul],
     [KONTRAK, 'pyLabelFieldValue', 1145, KONTRAK_TCO.headerUnderwritingYear],
@@ -166,17 +153,6 @@ describe.skipIf(!adaKorpus)('label Treaty Contract Out berbukti barisnya', () =>
   it('tombol Copy b20459 ada di korpus dan SENGAJA tidak dibawa (AC 72)', () => {
     expect(baris(GRID, 20459).trim()).toBe('<pyLabel>Copy</pyLabel>')
     expect(Object.values(TAHUN_TCO)).not.toContain('Copy')
-  })
-
-  it('tiket 12: panel lampiran disertakan form tahun, aksinya terbukti', () => {
-    expect(baris(GRID, 13074).trim()).toBe('<pyInclude>GridTreatyArrangementAttachment</pyInclude>')
-    expect(baris(LAMPIRAN, 1041).trim()).toBe('<pyActivity>LoadAttachmentTreatyOut</pyActivity>')
-    expect(baris(LAMPIRAN, 2677).trim()).toBe('<pyActivity>TreatyOutDownloadAll_Act</pyActivity>')
-    expect(baris(LAMPIRAN, 3488).trim()).toBe('<pyActivity>TreatyOutDownloadOne</pyActivity>')
-    expect(baris(LAMPIRAN, 3915).trim()).toBe('<pyActivity>DeleteAttachmentTreaty</pyActivity>')
-    // `Download` b2391 ada di korpus dan sengaja tidak dibawa sebagai tombol kedua.
-    expect(baris(LAMPIRAN, 2391).trim()).toBe('<pyLabel>Download</pyLabel>')
-    expect(Object.values(LAMPIRAN_TCO)).not.toContain('Download')
   })
 
   it('tiket 04: label kepala ReinsType memang memuat nama grup, dan aksi tombolnya terbukti', () => {
@@ -354,13 +330,12 @@ describe('label yang tidak bergantung korpus', () => {
 
 describe('bahasa Inggris (keputusan work owner 30-09-2026)', () => {
   it('label korpus berbahasa Indonesia diterjemahkan', () => {
-    expect(LAMPIRAN_TCO.tanpaBerkas).toBe('No file attached')
     expect(REINSURER_TCO.informasi).toBe('Information')
     expect(SECURITY_TCO.informasi).toBe('Information')
     expect(LABEL_MEDAN_KLAUSUL.Layer).toBe('Max Period (Month)')
   })
   it('nol kata Indonesia di nilai label Treaty', () => {
-    const semua = [MENU_TCO, JENIS_REASURANSI_TCO, TAHUN_TCO, LAMPIRAN_TCO, KONTRAK_TCO, REINSURER_TCO, BUSINESS_TCO,
+    const semua = [MENU_TCO, JENIS_REASURANSI_TCO, TAHUN_TCO, KONTRAK_TCO, REINSURER_TCO, BUSINESS_TCO,
       KLAUSUL_TCO, LABEL_MEDAN_KLAUSUL, SECURITY_TCO, KURS_TCO, HAPUS_TCO].flatMap((o) => Object.values(o).map(String))
     const indo = /\b(tidak|belum|pilih|tersimpan|tutup|kombinasi|hapus|berlaku|kurs|bisnis|klausul|lampiran|tahun|ikut|ulangi|periksa|informasi|aktif|nonaktif|ya|batal|cari|sampai|terkirim|tertunda|gagal|baris|milik|bukan|dengan|yang)\b/i
     for (const v of semua) expect(v, v).not.toMatch(indo)

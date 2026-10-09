@@ -110,6 +110,10 @@ var (
 	ErrDokumenRusak = errors.New("models: DATA_JSON tidak dapat diurai sebagai objek JSON")
 	// ErrBukanTreatyIn - dokumen lini lain (bukan galat; dihitung saja).
 	ErrBukanTreatyIn = errors.New("models: dokumen bukan polis Treaty In")
+	// ErrBarisAplikasiBaru - baris JSON_POLIS tulisan Utility1 APLIKASI BARU (keputusan work owner 06-10-2026: tanpa
+	// DATA_JSON, IDPEGA = ID T_WORK_POLIS polos): bukan dokumen Pega - berkasnya sudah di tabel baru. Dilewati dan
+	// dihitung, bukan galat (temuan sesi EDM 07-10-2026; 4 baris di DEV).
+	ErrBarisAplikasiBaru = errors.New("models: baris JSON_POLIS tulisan aplikasi baru (tanpa DATA_JSON) - bukan dokumen Pega")
 	// ErrGenerasiEndorsemen - PRODKE > 0: generasi endorsemen, milik pemuat
 	// EDM (edmtreatyin tiket 10), bukan galat.
 	ErrGenerasiEndorsemen = errors.New("models: generasi endorsemen (PRODKE > 0) - milik pemuat EDM tiket 10")
@@ -371,20 +375,31 @@ func alasanDiabaikan(pola string) string {
 // polaPyID - pyID kasus: awalan huruf, tanda hubung, nomor (`NB-77`).
 var polaPyID = regexp.MustCompile(`^[A-Z][A-Z0-9]*-\d+$`)
 
-// IDKasusDariIDPega mengambil pyID dari `pyWorkPage.pzInsKey`
-// (`<kelas> <pyID>`, kunci dokumen Pega lama). pyID menjadi ID T_WORK_POLIS - diagram
-// grilling: T_WORK_POLIS "diambil dari pyWorkPage.pzInsKey".
+// PanjangIDKasus - lebar kolom ID kasus (T_WORK_POLIS.ID, T_GENERAL_POLIS_TREATY.ID, T_POLIS_*.POLIS_ID: VARCHAR2(32)
+// di DEV 07-10-2026). pzInsKey kasus Pega terpanjang di DEV: 27 karakter (`ASM-FW-GISFW-WORK NB-<n>`).
+const PanjangIDKasus = 32
+
+// PyIDKasus - pyID sebuah ID kasus: ID salinan dokumen Pega = pzInsKey utuh (`<kelas> <pyID>`), ID aplikasi baru = pyID.
+func PyIDKasus(id string) string {
+	s := strings.TrimSpace(id)
+	return s[strings.LastIndex(s, " ")+1:]
+}
+
+// IDKasusDariIDPega - ID kasus salinan dokumen Pega = IDPEGA (`pyWorkPage.pzInsKey`, `<kelas> <pyID>`) UTUH, tidak
+// dipotong. ⛔ Perintah work owner 07-10-2026: "IDPEGA BAWAAN PEGA JANGAN DI POTONG, BERLAKU UNTUK SEMUA NB TREATY DAN
+// EDM TREATY" - RALAT bentuk lama (pyID saja): riwayat HISTORYAKSEPTASIPEGA / HISTORYAKSEPTASIPRODUCTION berkas Pega
+// berkunci pzInsKey yang sama, dibaca lewat `KunciInstans(ID)`. Diperiksa, tidak ditebak (ErrIDPega): ada kelas, pyID
+// `<awalan>-<nomor>`, panjang <= `PanjangIDKasus`.
 func IDKasusDariIDPega(idpega string) (string, error) {
 	s := strings.TrimSpace(idpega)
 	i := strings.LastIndex(s, " ")
 	if i <= 0 {
 		return "", fmt.Errorf("%w: %q", ErrIDPega, idpega)
 	}
-	id := s[i+1:]
-	if !polaPyID.MatchString(id) || len(id) > 32 {
+	if !polaPyID.MatchString(s[i+1:]) || len(s) > PanjangIDKasus {
 		return "", fmt.Errorf("%w: %q", ErrIDPega, idpega)
 	}
-	return id, nil
+	return s, nil
 }
 
 // periksaNilai menolak nilai yang akan ditolak konversi repository
@@ -519,7 +534,16 @@ func periksaProdKe(prodke string) error {
 // desimal KESEBELAS (NUMBER(38,10) - diagram NB Treaty In Prop F20 "skala
 // MINIMAL 9"; AC 19, 20b). Satu-satunya pengisian:
 // EndDate kosong = StartDate (`[keputusan work owner]` spec AC 69, §5.8).
+// BarisAplikasiBaru - baris JSON_POLIS tulisan aplikasi baru: IDPEGA tanpa spasi (bukan `<kelas> <pyID>` Pega) DAN
+// DATA_JSON kosong. Dokumen Pega ber-kelas yang JSON-nya kosong TETAP galat (`ErrDokumenRusak`).
+func BarisAplikasiBaru(b BarisJSONPolis) bool {
+	return !strings.Contains(strings.TrimSpace(b.IDPega), " ") && len(bytes.TrimSpace(b.DataJSON)) == 0
+}
+
 func PecahDokumenLama(b BarisJSONPolis) (HasilPecah, error) {
+	if BarisAplikasiBaru(b) {
+		return HasilPecah{}, ErrBarisAplikasiBaru
+	}
 	dek := json.NewDecoder(bytes.NewReader(b.DataJSON))
 	dek.UseNumber()
 	var akar any
@@ -608,6 +632,6 @@ func PecahDokumenLama(b BarisJSONPolis) (HasilPecah, error) {
 	if h.Ambil(HalamanPolis+".ProductionDate") == "" && b.TglProd != "" {
 		h.Setel(HalamanPolis+".ProductionDate", b.TglProd)
 	}
-	hasil.Usulan = UsulanDokumenLama(id, h)
+	hasil.Usulan = UsulanDokumenLama(PyIDKasus(id), h)
 	return hasil, nil
 }

@@ -41,6 +41,8 @@ type Gudang interface {
 	HariClosing(ctx context.Context, tx *db.Tx) (int, error)
 
 	DetailKontrak(ctx context.Context, id string) (models.BarisKontrak, error)
+	// DetailKontrakTreaty - baris view pertama ber-TREATYID itu (master berkas salinan dokumen Pega lama).
+	DetailKontrakTreaty(ctx context.Context, treatyID string) (models.BarisKontrak, error)
 	KomisiKontrak(ctx context.Context, treatyID string) ([]models.BarisKontrak, error)
 	DaftarBisnis(ctx context.Context, s models.SaringanBisnis) ([]models.BarisKontrak, error)
 	IDMataUangDariNama(ctx context.Context, nama string) (string, error)

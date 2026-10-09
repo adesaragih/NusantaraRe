@@ -6,13 +6,17 @@ package repository
 // (`SearchPolicyHolder.CARI1`, dihurufbesarkan `SearchPolicyHolder_act` 1 b236).
 // Objek fisik = nama kelas `ASM-FW-GISFW-Int-<X>` - TERBUKTI di katalog DEV
 // `ALL_OBJECTS` 01-10-2026 (OQ-MPNL-04 ditutup, lanjutan 1 L3): tabel `AGENT`,
-// `CLIENT`; view `CURRENCY`, `CAUSEOFLOSS_LIFE`, `PRODUCT_TYPE_LIFE`,
-// `RIRISK_LIFE_SUMMARY` (uji `TestObjekMasterAdaDiKatalogDEV`). Objek yang tidak
+// `CLIENT`; view `CURRENCY`; `CAUSEOFLOSS_LIFE` - dulu view, kini TABEL (tabel Pega M_CAUSEOFLOSS_LIFE berganti nama,
+// migrasi modul causeoflosslife 090-092, keputusan work owner 08-10-2026 K1; kolom ID, CAUSEOFLOSS tetap);
+// `PRODUCT_TYPE_LIFE` - dulu view, kini TABEL (tabel Pega
+// M_PRODUCT_TYPE_LIFE berganti nama, migrasi inti 946-948, modul `planlife` K1; kolom ID, COVERNAME, BUSINESS, BENEFIT
+// tetap); `RIRISK_LIFE_SUMMARY` - dulu view, kini TABEL (tabel Pega M_RIRISK_LIFE_SUMMARY berganti nama, migrasi inti
+// 935-937, keputusan work owner 08-10-2026 K1; kolom ID, USEDBY tetap) (uji `TestObjekMasterAdaDiKatalogDEV`). Objek yang tidak
 // terbaca di skema yang dikonfigurasi dijawab 503 yang MENYEBUT objeknya.
 //
 // ⛔ R/I Rate (`BrowseRateLifeSummary`, kelas `M_RATE_LIFE_SUMMARY`) dan `View Rate`
-// (`BrowseRateLife_RD`, kelas `M_RATE_LIFE` = view `RATE_LIFE`): K1 keputusan work owner 01-10-2026
-// (OQ-MPNL-03) - kedua view rate dibaca SAJA, kolom RD saja, nol `SELECT *`, nol
+// (`BrowseRateLife_RD`, kelas `M_RATE_LIFE` - kini tabel flat, dulu view `RATE_LIFE`, RALAT R7 riratelife): K1
+// keputusan work owner 01-10-2026 (OQ-MPNL-03) - kedua objek rate dibaca SAJA, kolom RD saja, nol `SELECT *`, nol
 // `JSONDATA`, nol tulisan (`periksaBacaSaja`).
 // ⛔ "Contains" Pega = `LIKE '%…%'`; kata cari kosong = semua baris. Batas
 // baris = `pyMaxRecords` RD.
@@ -36,9 +40,11 @@ const (
 	MasterCause     = "CAUSEOFLOSS_LIFE"    // BrowseCauseofLossLife_RD
 	MasterJenisPlan = "PRODUCT_TYPE_LIFE"   // BrowseProductTypeLife_RD (paket 6)
 	MasterRIRate    = "M_RATE_LIFE_SUMMARY" // BrowseRateLifeSummary b40 (pemilih `Choose R/I Rate`)
-	// MasterRate - view `RATE_LIFE` atas `M_RATE_LIFE.JSONDATA` (dialog `View Rate`, `BrowseRateLife_RD`
-	// b39); nama fisik kelasnya: `NB FacIn/RDBList/BrowseLifeRate_SQL.xml` b85 `… FROM RATE_LIFE …`.
-	MasterRate = "RATE_LIFE"
+	// MasterRate - dialog `View Rate` (`BrowseRateLife_RD` b39); nama fisik kelasnya di Pega:
+	// `NB FacIn/RDBList/BrowseLifeRate_SQL.xml` b85 `… FROM RATE_LIFE …`. RALAT 07-10-2026 (keputusan work owner,
+	// `modul/riratelife/MODUL.md` RALAT R7): kini TABEL flat `M_RATE_LIFE` berkolom sama dengan view `RATE_LIFE` lama
+	// (dibuang migrasi inti 930); tetap baca-saja.
+	MasterRate = "M_RATE_LIFE"
 )
 
 // DaftarMasterDibacaSaja - objek yang dibaca tetapi tidak pernah ditulis.
@@ -311,11 +317,11 @@ func (g *Gudang) AmbilPlan(ctx context.Context, id string) (models.JenisPlan, bo
 // dialog terpotong (Pega memotong diam-diam).
 const BatasRate = 500
 
-// KolomRate - kolom `RATE_LIFE` yang dibaca: enam kolom grid `ViewRate` (subset kolom RD b747–b791).
+// KolomRate - kolom `M_RATE_LIFE` yang dibaca: enam kolom grid `ViewRate` (subset kolom RD b747–b791).
 var KolomRate = []string{"ID", "USEDBY", "GENDER", "CONTRACT", "AGE", "RATE"}
 
 // sqlDaftarRate - `BrowseRateLife_RD`: `.IDUSEDBY = Param.idusedby` b859/b868, urut `.ID DESC` b748,
-// `.RATE ASC` b786. Berkunci `IDUSEDBY` (view atas CLOB tanpa index - nol pembacaan tanpa kunci).
+// `.RATE ASC` b786. Berkunci `IDUSEDBY` (indeks `IX_M_RATE_LIFE_IDUSEDBY` - nol pembacaan tanpa kunci).
 func sqlDaftarRate(t string) string {
 	return fmt.Sprintf(`SELECT ID, USEDBY, GENDER, CONTRACT, AGE, RATE FROM %s
 		WHERE IDUSEDBY = :1

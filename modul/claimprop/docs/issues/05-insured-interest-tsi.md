@@ -1,6 +1,6 @@
 # 05: Insured Interest — objek pertanggungan dan TSI
 
-**Status:** ready-for-agent
+**Status:** dibangun 07-10-2026 — RALAT 07-10-2026 (semula `ready-for-agent`)
 **Blocked by:** 00 (PREFACTOR) · 01 (registrasi klaim dan nomor polis) · 04 (klasifikasi lini bisnis)
 **Menutup:** AC 41 · 42 · 43 *(3 AC)* — US 10–13
 

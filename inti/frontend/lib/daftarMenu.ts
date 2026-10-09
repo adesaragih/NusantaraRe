@@ -110,6 +110,24 @@ export interface EntriMenu<H extends string = string> {
 }
 
 /**
+ * Modul tanpa menu sendiri yang dipakai lewat menu modul LAIN (`pinjam`: modul -> modul peminjam; padanan
+ * `ruteDipinjam` cmd/api) ikut dipasang bagi pemegang menu peminjamnya - asal aktif di backend (`aktif`; `null` =
+ * belum terbaca, semua dianggap aktif). `boleh` null = tanpa saringan akun, tetap null. Keputusan work owner
+ * 09-10-2026: menu Komite Claim Prop dibuang, kasus komite dibuka dari inbox Claim Prop.
+ */
+export function tambahModulDipinjam(
+  boleh: readonly string[] | null,
+  aktif: readonly string[] | null,
+  pinjam: Readonly<Record<string, readonly string[]>>,
+): readonly string[] | null {
+  if (boleh === null) return null
+  const tambah = Object.entries(pinjam)
+    .filter(([m, p]) => !boleh.includes(m) && (aktif === null || aktif.includes(m)) && p.some((x) => boleh.includes(x)))
+    .map(([m]) => m)
+  return tambah.length === 0 ? boleh : [...boleh, ...tambah]
+}
+
+/**
  * Apakah modul `pemilik` dipasang, menurut daftar modul aktif dari backend.
  *
  * ⛔ `null` - daftar belum terbaca atau backend tak terjangkau - berarti SEMUA

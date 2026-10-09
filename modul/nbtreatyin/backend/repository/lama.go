@@ -22,7 +22,9 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"strings"
 
 	"nusantarare/inti/backend/db"
 	"nusantarare/modul/nbtreatyin/backend/models"
@@ -39,6 +41,48 @@ func sqlKunciJSONPolis(t string) string {
 	return fmt.Sprintf(`SELECT ROWIDTOCHAR(ROWID) FROM %s
 	  WHERE PRODKE IS NULL OR TRIM(PRODKE) = '0'
 	  ORDER BY IDPEGA, ROWID`, t)
+}
+
+// tabelKerjaPega - tabel kerja Pega (kelas ASM-FW-GISFW-Work-*, skema DATAPEGA): PZINSKEY = JSON_POLIS.IDPEGA dokumen
+// Pega asli. Hanya DIBACA.
+const tabelKerjaPega = "DATAPEGA.PC_ASM_FW_GISFW_WORK"
+
+// sqlPembuatPega - pembuat kasus Pega dokumen lama (WO 07-10-2026 "PXCREATEOPERATOR,PXCREATEOPNAME"): satu baris
+// tabel kerja Pega menurut pzInsKey = IDPEGA. Baca saja.
+func sqlPembuatPega() string {
+	return fmt.Sprintf(`SELECT PXCREATEOPERATOR, PXCREATEOPNAME FROM %s WHERE PZINSKEY = :1`, tabelKerjaPega)
+}
+
+// PembuatPega - PXCREATEOPERATOR / PXCREATEOPNAME kasus Pega ber-pzInsKey `idPega` untuk CREATE_OP / CREATE_OP_NAME
+// berkas salinan. Tanpa baris Pega (alat pemuat CLI tidak menyaring tabel kerja Pega) = kosong: pembuat tidak
+// dikarang, ditulis NULL.
+func (g *Gudang) PembuatPega(ctx context.Context, tx *db.Tx, idPega string) (string, string, error) {
+	q := sqlPembuatPega()
+	if err := db.PeriksaSQL(q); err != nil {
+		return "", "", err
+	}
+	var op, nama sql.NullString
+	err := g.pembaca(tx).QueryRowContext(ctx, q, idPega).Scan(&op, &nama)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", "", nil
+	}
+	if err != nil {
+		return "", "", fmt.Errorf("repository: membaca pembuat kasus Pega: %w", err)
+	}
+	return strings.TrimSpace(op.String), strings.TrimSpace(nama.String), nil
+}
+
+// sqlKunciJSONPolisCopyOld - kunci popup Copy Old. ⛔ Perintah work owner 07-10-2026: data lama dipilih dengan
+// `SELECT * FROM DATAPEGA.PC_ASM_FW_GISFW_WORK a, json_polis b, treatyinproduction c WHERE a.pzinskey = b.idpega AND
+// b.idpega = c.idpega` - dokumen yang kasus Pega-nya ada DAN sudah berproduksi. Ditulis EXISTS: TREATYINPRODUCTION
+// berbaris banyak per IDPEGA (DEV 07-10-2026: gabungan 41 baris untuk 27 IDPEGA). Alat pemuat massal tetap tanpa
+// saringan (KEPUTUSAN-RONDE-12 butir 5).
+func sqlKunciJSONPolisCopyOld(t, prod string) string {
+	return fmt.Sprintf(`SELECT ROWIDTOCHAR(b.ROWID) FROM %s b
+	  WHERE (b.PRODKE IS NULL OR TRIM(b.PRODKE) = '0')
+	    AND EXISTS (SELECT 1 FROM %s a WHERE a.PZINSKEY = b.IDPEGA)
+	    AND EXISTS (SELECT 1 FROM %s c WHERE c.IDPEGA = b.IDPEGA)
+	  ORDER BY b.IDPEGA, b.ROWID`, t, tabelKerjaPega, prod)
 }
 
 // sqlHitungJSONPolisLain - baris generasi endorsemen (seluruh lini), hanya dihitung.
@@ -64,40 +108,38 @@ func sqlSetelKolomDatarLama(t string) string {
 		t, fmtTanggal, syaratTerbuka(t))
 }
 
-// sqlAdaUsulanIDPega - penjaga dobel salinan SuggestList lama (F3): cacah
-// baris riwayat produksi ber-IDPEGA itu.
-func sqlAdaUsulanIDPega(t string) string {
-	return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE IDPEGA = :1`, t)
+// sqlAdaRiwayatIDPega - proteksi dobel salinan SuggestList lama (F3; perintah WO 07-10-2026 "TAMBAKAN PROTEKSI UNTUK 2 TABLE INI historyakseptasiproduction,historyakseptasiPEGA -
+// SAAT COPY, JIKA UDAH ADA PADA 2 TABLE ITU JANGAN DI COPY, SUPAYA TIDAK DOUBLE"):
+// cacah sumber riwayat IDPEGA itu - HISTORYAKSEPTASIPRODUCTION (SuggestList) dan HISTORYAKSEPTASIPEGA (History),
+// paling banyak satu baris per tabel. > 0 = sudah ada, jangan disalin.
+func sqlAdaRiwayatIDPega(produksi, pega string) string {
+	return fmt.Sprintf(`SELECT COUNT(*) FROM (
+	         SELECT 1 FROM %s WHERE IDPEGA = :1 AND ROWNUM = 1
+	         UNION ALL
+	         SELECT 1 FROM %s WHERE ID_PEGA = :2 AND ROWNUM = 1)`, produksi, pega)
 }
 
-// SalinUsulanLama menyalin baris SuggestList dokumen lama ke
-// POOLDATA.HISTORYAKSEPTASIPRODUCTION (`[keputusan work owner]` F3
-// 04-10-2026) lewat penulis yang SAMA dengan jalur biasa (`CatatUsulan`,
-// pengganti `InsertViewSuggest_SQL`; ID-3, AC 56), di transaksi pemuatan
-// dokumen itu. Penjaga dobel menurut IDPEGA: bila IDPEGA itu sudah punya
-// baris riwayat produksi, tidak ada yang ditulis (`UsulanDilewati`) - pemuat
-// yang diulang tidak menggandakan baris. NOURUT = 1..n berurut baris dokumen
-// (`CatatUsulan` MAX+1 dari nol = `.pxListSubscript` langkah 2.1.2).
-func (g *Gudang) SalinUsulanLama(ctx context.Context, tx *db.Tx, idPega string, baris []models.UsulanProduksi) (models.NasibUsulan, error) {
-	if len(baris) == 0 {
-		return models.UsulanTanpaBaris, nil
-	}
-	t, err := g.nama(tabelRiwayatProduksi)
+// AdaRiwayatIDPega - IDPEGA itu sudah punya baris di POOLDATA.HISTORYAKSEPTASIPRODUCTION ATAU
+// POOLDATA.HISTORYAKSEPTASIPEGA: proteksi dobel salinan SuggestList dokumen lama (services `salinUsulanLama`).
+// Baca saja, di transaksi pemuatan dokumen itu.
+func (g *Gudang) AdaRiwayatIDPega(ctx context.Context, tx *db.Tx, idPega string) (bool, error) {
+	produksi, err := g.nama(tabelRiwayatProduksi)
 	if err != nil {
-		return models.UsulanTanpaBaris, err
+		return false, err
 	}
-	q := sqlAdaUsulanIDPega(t)
+	pega, err := g.nama(tabelRiwayatPega)
+	if err != nil {
+		return false, err
+	}
+	q := sqlAdaRiwayatIDPega(produksi, pega)
 	if err := db.PeriksaSQL(q); err != nil {
-		return models.UsulanTanpaBaris, err
+		return false, err
 	}
 	var n int
-	if err := g.pembaca(tx).QueryRowContext(ctx, q, idPega).Scan(&n); err != nil {
-		return models.UsulanTanpaBaris, fmt.Errorf("repository: memeriksa riwayat produksi IDPEGA: %w", err)
+	if err := g.pembaca(tx).QueryRowContext(ctx, q, idPega, idPega).Scan(&n); err != nil {
+		return false, fmt.Errorf("repository: memeriksa riwayat IDPEGA: %w", err)
 	}
-	if n > 0 {
-		return models.UsulanDilewati, nil
-	}
-	return models.UsulanDisalin, g.CatatUsulan(ctx, tx, idPega, baris)
+	return n > 0, nil
 }
 
 // KunciJSONPolis - kunci baca (ROWID) setiap baris generasi NB di JSON_POLIS.
@@ -106,7 +148,24 @@ func (g *Gudang) KunciJSONPolis(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	q := sqlKunciJSONPolis(t)
+	return g.kunciJSONPolis(ctx, sqlKunciJSONPolis(t))
+}
+
+// KunciJSONPolisCopyOld - kunci baca baris generasi NB yang kasus Pega-nya ada dan sudah berproduksi
+// (`sqlKunciJSONPolisCopyOld`, popup Copy Old).
+func (g *Gudang) KunciJSONPolisCopyOld(ctx context.Context) ([]string, error) {
+	t, err := g.nama(tabelPolisJSON)
+	if err != nil {
+		return nil, err
+	}
+	prod, err := g.nama(tabelProduksi)
+	if err != nil {
+		return nil, err
+	}
+	return g.kunciJSONPolis(ctx, sqlKunciJSONPolisCopyOld(t, prod))
+}
+
+func (g *Gudang) kunciJSONPolis(ctx context.Context, q string) ([]string, error) {
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}

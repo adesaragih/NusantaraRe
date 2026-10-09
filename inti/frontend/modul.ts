@@ -125,14 +125,28 @@ export interface PropsRute<H extends string> {
   /**
    * Opsional dan aditif (06-10-2026): permintaan membuka SATU berkas langsung - dari daftar kotak masuk Beranda.
    * `ketuk` bertambah setiap permintaan (berkas yang sama boleh diminta lagi). Rute yang tidak membacanya tetap
-   * seperti sebelumnya.
+   * seperti sebelumnya. `hanyaLihat` (aditif 09-10-2026) = berkas dibuka sebagai tampilan saja (jendela
+   * `onLihatBerkas`, mis. View more details Komite Claim Prop -> klaim Claim Prop read only).
    */
-  bukaKasus?: { id: string; ketuk: number }
+  bukaKasus?: { id: string; ketuk: number; hanyaLihat?: boolean }
   /**
    * Opsional dan aditif (06-10-2026): pindah ke Beranda - tombol Back berkas yang dibuka lewat `bukaKasus` kembali ke
    * sana, bukan ke layar awal modul (permintaan work owner "tombol back nya bisa ngetrack darimana bukanya").
    */
   onBeranda?: () => void
+  /**
+   * Opsional dan aditif (08-10-2026): buka SATU berkas modul lain di jendela di atas layar ini - tanpa menu, tanpa tab
+   * baru, layar pemanggil tetap (tombol View polis Claim Prop -> berkas NB / EDM Treaty In, perintah work owner "biarkan
+   * di layar utama"). `false` = modul itu tidak dipasang bagi akun ini (menunya tidak dipegang). Berkas di jendela =
+   * tampilan saja: `bukaKasus.hanyaLihat` benar.
+   */
+  onLihatBerkas?: (modul: string, id: string) => boolean
+  /**
+   * Opsional dan aditif (09-10-2026): buka SATU berkas modul lain DI TEMPAT (pindah halaman, bukan jendela) - Back
+   * berkas itu (`onBeranda`) kembali ke halaman pemanggil. Tabel komite inbox Claim Prop (keputusan work owner "jangan
+   * pop up, langsung buka komitenya"). `false` = modul itu tidak dipasang bagi akun ini.
+   */
+  onBukaModul?: (modul: string, id: string) => boolean
 }
 
 /** Satu modul frontend terdaftar. */

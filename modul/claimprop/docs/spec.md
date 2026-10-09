@@ -126,6 +126,9 @@
 **Sumber:** `.scratch/claim-prop/grilling-ronde-1.md` dan `grilling-ronde-2.md`. **Ronde 2 menang**
 bila bertentangan — ia memuat ralat atas ronde 1.
 
+> ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Sumber: `.scratch/claim-prop/grilling-ronde-1.md` dan `grilling-ronde-2.md`."* Folder `.scratch/claim-prop/` tidak ada lagi; berkas grilling kini `docs/grilling-ronde-1.md` …
+> `docs/grilling-ronde-6.md` di folder modul ini.
+
 **ADR yang mengikat:** ADR-0003 (uang non-float) · ADR-0006 (penomoran lewat stored procedure) ·
 ADR-0011 (unit keputusan = baris `AdjustmentList`) · ADR-0013 (endpoint lewat `M_LINK_SERVICE`) ·
 ADR-0014 (keputusan komite ditegakkan di **lapisan layanan** — ⚠️ cakupan asli ADR-nya Komite Claim
@@ -495,6 +498,11 @@ dalam satu transaksi**. Bila penyimpanan gagal, transaksi *rollback* dan nomor t
 Logika pembentukan nomor **tetap di stored procedure** dan **tidak direplikasi** (**ADR-0006**);
 yang berubah hanya **di mana `COMMIT` terjadi** — dipindahkan ke lapisan aplikasi.
 
+> ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Logika pembentukan nomor **tetap di stored procedure**, tidak direplikasi"*.
+> Diganti keputusan prompt implementasi §3: nomor klaim, PLA, dan DLA memakai `inti/backend/penomor` (padanan
+> `PROC_GENERATE_SEQUENCE_NUMBER` tanpa COMMIT), dalam transaksi yang sama dengan penyimpanan; nomor sementara
+> "KT" dan nomor CFS memanggil sequence-nya langsung lewat SQL (format dari isi procedure di `ALL_SOURCE`).
+
 `[terverifikasi]` Tanda tangan keempat procedure penomoran:
 
 | Procedure | Masuk | Keluar |
@@ -512,6 +520,10 @@ yang berubah hanya **di mana `COMMIT` terjadi** — dipindahkan ke lapisan aplik
 `[keputusan work owner]` **Simpan penuh tanpa pembulatan. Pembulatan hanya untuk tampilan.**
 Semua nilai uang bertipe **desimal presisi arbitrer**, tidak pernah melewati *binary floating point*
 (**ADR-0003**).
+
+> ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Simpan penuh tanpa pembulatan. Pembulatan hanya untuk tampilan."* Kolom uang, persen, share, dan kurs = **`NUMBER(38,10)`** (keputusan work owner 07-10-2026).
+> Hitungan di Go penuh (`apd.Decimal`, nol float); di batas simpan Oracle membulatkan ke 10 angka di belakang
+> koma. Bunyi "disimpan penuh tanpa pembulatan" berlaku untuk hitungan, bukan untuk kolom.
 
 `[terverifikasi]` Hari ini `.ClaimSpreaded` ditulis di **20 titik, 7 activity, dengan 4 perlakuan
 pembulatan berbeda** (`/100` polos · `@divide(…,100,4)` · `,100,10` · `,100,20`), dan nilainya
@@ -743,8 +755,20 @@ kode berbeda**. **Jangan digabung jadi satu enum.**
 varian ber-`S` untuk server Syariah (`CLMS-` · `CLMPS-` · `CLMNPS-`) yang **diperlakukan identik
 dengan induknya** (`[keputusan work owner]`).
 
+> ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Modul melayani tiga prefix: `CLM-` · `CLMP-` · `CLMNP-`, masing-masing dengan varian ber-`S` …"* Diputuskan dari XML: `When/IsCLMP` menguji `pyWorkIDPrefix = "CLMP-"` dengan properti kelas
+> `ASM-FW-GCNMFW-Work-ClaimTreaty` (kelas Claim Prop); `IsCLM` = kelas PNC (Fac), `IsCLMNP` = kelas ClaimTreatyNonProp.
+> Ketiganya hanya dipakai activity BERSAMA kelas Data-Adjustment (`HitServiceToKasir_Act`, `SendEmailKlaim`) yang
+> bercabang untuk tiga lini. Modul ini melayani **`CLMP-` saja** (STRUKTUR T3); cabang `CLM-` / `CLMNP-` tidak
+> dimigrasikan (Out of Scope "Claim Non Prop dan Claim Fac In"). Varian ber-`S` (`CLMPS-`) hanya muncul di
+> `SendEmailKlaimRejectClose` (kelas `ASM-FW-GCNMFW-Work`) — OQ-CP-14.
+
 `[terverifikasi]` Konsekuensinya **tiga rule simpan OS akseptasi terpisah**:
 `PEGA_JSON_OS_AKSEP_KLAIM` · `..._KLAIMTRT` (Treaty) · `..._KLAIMTNP` (Treaty Non Prop).
+
+> ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Konsekuensinya tiga rule simpan OS akseptasi terpisah: `PEGA_JSON_OS_AKSEP_KLAIM` · `..._KLAIMTRT` (Treaty) · `..._KLAIMTNP` (Treaty Non Prop)."* Jalur `KLAIMTRT` **tidak ada**: procedure `PEGA_JSON_OS_AKSEP_KLAIMTRT` tidak ada di DEV dan
+> jalurnya dibuang tiket 00 (keputusan work owner 18-09-2026); `..._KLAIMTNP` milik Claim Non Prop. Claim Prop
+> punya **satu** jalur simpan OS: baris `OS_AKSEPTASI_KLAIM` (isi `PEGA_JSON_OS_AKSEP_KLAIM` ditulis ulang sebagai
+> SQL langsung, `repository.SisipOS`).
 
 ### 10. ⚠️ Jejak audit — empat cacat yang diperbaiki
 
@@ -1133,6 +1157,10 @@ berikutnya tidak menyangka ada jalur PLA yang hilang.
 
 ### 17. ⚠️ Batas `COMMIT` — procedure yang sama, `COMMIT` dijalankan aplikasi
 
+> ⚠️ **RALAT 07-10-2026** — judul dan isi bab ini (*"procedure yang sama, COMMIT dijalankan aplikasi"*) diganti keputusan
+> 07-10-2026: procedure `PEGA_JSON_*` tidak dipanggil; isinya ditulis ulang sebagai SQL langsung di transaksi
+> aplikasi, tanpa `DATA_JSON`. Lihat RALAT AC 124.
+
 `[keputusan work owner]` **2026-09-18.**
 
 Go memanggil **stored procedure yang sama** — `POOLDATA.PEGA_JSON_OS_AKSEP_KLAIM` ·
@@ -1288,8 +1316,15 @@ luar dipalsukan.
     gagal, **nomor tidak terpakai**. **⚠️ penyimpangan sadar.**
 14. `[keputusan work owner]` Test: gagalkan langkah sesudah pengambilan nomor → nomor berikutnya **berurutan rapat**, tidak
     melompat.
+    > ⚠️ **RALAT 07-10-2026** — berlaku untuk nomor dari `inti/backend/penomor` (klaim, PLA, DLA: penghitung di tabel, ikut
+    > rollback). Nomor sementara "KT" (`CLMTRTINTEMP_SEQ`) dan CFS (`CLMTREATYIN_SEQ`) memakai SEQUENCE Oracle
+    > yang **dapat berlubang** bila transaksi gagal — sama dengan Pega (prompt §3).
 15. `[keputusan work owner]` Logika pembentukan nomor **tetap di stored procedure**, tidak direplikasi di aplikasi
     (**ADR-0006**).
+    > ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Logika pembentukan nomor **tetap di stored procedure**, tidak direplikasi"*.
+    > Diganti keputusan prompt implementasi §3: nomor klaim, PLA, dan DLA memakai `inti/backend/penomor` (padanan
+    > `PROC_GENERATE_SEQUENCE_NUMBER` tanpa COMMIT), dalam transaksi yang sama dengan penyimpanan; nomor sementara
+    > "KT" dan nomor CFS memanggil sequence-nya langsung lewat SQL (format dari isi procedure di `ALL_SOURCE`).
 16. ⚠️ `[terverifikasi]` Nomor **temp** tidak dapat dipromosikan menjadi nomor final — ia kekurangan
     `KODE_BIS` dan `BULAN`.
 17. `[terverifikasi]` Nomor klaim, PLA, dan DLA memakai **pola tanda tangan yang sama** — lima parameter masuk, dua
@@ -1301,6 +1336,9 @@ luar dipalsukan.
     mana pun maupun di kontrak API (**ADR-0003**).
 19. `[keputusan work owner]` Nilai **disimpan penuh tanpa pembulatan**; pembulatan **hanya untuk
     tampilan**.
+    > ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Nilai disimpan penuh tanpa pembulatan; pembulatan hanya untuk tampilan."* Kolom uang, persen, share, dan kurs = **`NUMBER(38,10)`** (keputusan work owner 07-10-2026).
+    > Hitungan di Go penuh (`apd.Decimal`, nol float); di batas simpan Oracle membulatkan ke 10 angka di belakang
+    > koma. Bunyi "disimpan penuh tanpa pembulatan" berlaku untuk hitungan, bukan untuk kolom.
 20. `[penyimpangan sadar]` ⚠️ Perhitungan spreading dilakukan **satu fungsi**, menggantikan 20 titik dengan 4 perlakuan
     pembulatan berbeda. **⚠️ penyimpangan sadar.**
 21. ⚠️ Urutan operasi **kali dulu, bagi terakhir**. Test: hasil **tidak berubah** oleh urutan
@@ -1316,6 +1354,12 @@ luar dipalsukan.
 
 25. ⚠️ `[terverifikasi]` Bentuk uang adalah **`(nilai, mata uang, kurs)` per baris**. Test yang
     menuntut satu klaim satu mata uang **gagal** — invariant itu **tidak berlaku** di Claim Prop.
+    > ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Bentuk uang adalah `(nilai, mata uang, kurs)` per baris."* Diputuskan dari XML: kurs per baris HANYA ditulis pada `EstimationList.KursValue`
+    > (`CurencyEstimation_Act` 5), `AdjustmentList.KursIDR` (`SetNameCurrency_Act` 6), `InterestList.KursObjectItem`
+    > (`SetCurencyInterest_act` 5), `ListClaimAmount.IDR` (`SetCurencyList_act` 5) dan `SpreadingRisk.PremiumSpreaded`
+    > (`SetCurrency_Act` 6; `LossAllocation` salinannya). Baris spreading — `SpreadingClaim`, `SpreadingBreakQS`,
+    > `AdjustmentList(n).SpreadingAdjustment` / `.SpreadingQuotaShare` — **tidak pernah** diberi kurs (hanya
+    > `CurrencyID` / `Currency`), maka keempat tabel spreading tanpa kolom kurs (migrasi 525, 526, 529, 530).
 26. `[terverifikasi]` Subtotal per mata uang tersimpan sebagai entitas tersendiri.
 27. `[terverifikasi]` Tiap objek pertanggungan punya **mata uang dan kursnya sendiri**.
 28. `[terverifikasi]` Satu klaim dengan **dua mata uang** tersimpan dan terhitung benar dari ujung ke ujung.
@@ -1328,6 +1372,9 @@ luar dipalsukan.
     `> 100 %`. **⚠️ penyimpangan sadar** — Pega hanya menjaga sebelah.
 31. `[terverifikasi]` **Alokasi sisa pembulatan tidak diperlukan** — karena total 100 % dan presisi
     penuh, penjumlahan baris spreading **tepat sampai digit terakhir**.
+    > ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Alokasi sisa pembulatan tidak diperlukan — karena total 100 % dan presisi penuh, penjumlahan baris spreading tepat sampai digit terakhir."* Penjumlahan tepat sampai digit terakhir berlaku di hitungan Go. Sesudah disimpan `NUMBER(38,10)` tiap
+    > baris dibulatkan sendiri, sehingga jumlah baris tersimpan dapat berselisih paling banyak 0,5 × 10⁻¹⁰ per baris
+    > terhadap total yang dihitung.
 32. `[terverifikasi]` Spreading di tingkat klaim terpisah dari spreading pada baris adjustment.
 33. `[terverifikasi]` Loss allocation disalin sebagai **snapshot** ke baris adjustment saat baris dibuat.
 
@@ -1444,6 +1491,12 @@ luar dipalsukan.
 64. `[terverifikasi]` Penyerahan ditolak bila data bank belum lengkap.
 65. `[terverifikasi]` Penyerahan ditolak bila lampiran wajib belum lengkap; daftar lampiran wajib **bergantung jenis
     pembayaran**.
+    > ⚠️ **RALAT 07-10-2026** — pemetaan jenis pembayaran (`.Type` baris adjustment; `AttachmentProtect_ACT` 4.2 menyalinnya ke
+    > `local.PaymentType`) yang dirujuk tetapi tidak tertulis, dari XML: **1** = Adjustment (label section
+    > `ComiteeClaimTreaty`), **2** hanya berpasangan "2 atau 4" (fee / expense), **3** = Salvage, **4** = Adjuster
+    > Fee (`DtlDataCommitte`). **5** dan **6** tanpa label di Claim Prop — hanya di cabang `CLM-`
+    > `HitServiceToKasir_Act` dan `CountSpreadingADJ_Act` 6 (`1 || 2 || 5`). Prompt values `.Type` (`associated`)
+    > tidak diekspor — OQ-CP-07.
 66. `[penyimpangan sadar]` ⚠️ `[terverifikasi]` **Dua jalur ke Komite** ada — penyerahan adjustment dan penutupan tanpa
     pembayaran — dan keduanya menghasilkan kasus anak berkelas sama. **Keduanya dapat aktif pada
     klaim yang sama.** ⚠️ Di Go dipasang **saling-kunci**. **⚠️ penyimpangan sadar.**
@@ -1542,7 +1595,17 @@ luar dipalsukan.
 
 75. `[terverifikasi]` Modul melayani **tiga prefix klaim**; varian ber-`S` diperlakukan **identik**
     dengan induknya.
+    > ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Modul melayani tiga prefix klaim; varian ber-`S` diperlakukan identik dengan induknya."* Diputuskan dari XML: `When/IsCLMP` menguji `pyWorkIDPrefix = "CLMP-"` dengan properti kelas
+    > `ASM-FW-GCNMFW-Work-ClaimTreaty` (kelas Claim Prop); `IsCLM` = kelas PNC (Fac), `IsCLMNP` = kelas ClaimTreatyNonProp.
+    > Ketiganya hanya dipakai activity BERSAMA kelas Data-Adjustment (`HitServiceToKasir_Act`, `SendEmailKlaim`) yang
+    > bercabang untuk tiga lini. Modul ini melayani **`CLMP-` saja** (STRUKTUR T3); cabang `CLM-` / `CLMNP-` tidak
+    > dimigrasikan (Out of Scope "Claim Non Prop dan Claim Fac In"). Varian ber-`S` (`CLMPS-`) hanya muncul di
+    > `SendEmailKlaimRejectClose` (kelas `ASM-FW-GCNMFW-Work`) — OQ-CP-14.
 76. `[terverifikasi]` **Tiga jalur simpan OS akseptasi terpisah** dipertahankan sesuai jenis.
+    > ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Tiga jalur simpan OS akseptasi terpisah dipertahankan sesuai jenis."* Jalur `KLAIMTRT` **tidak ada**: procedure `PEGA_JSON_OS_AKSEP_KLAIMTRT` tidak ada di DEV dan
+    > jalurnya dibuang tiket 00 (keputusan work owner 18-09-2026); `..._KLAIMTNP` milik Claim Non Prop. Claim Prop
+    > punya **satu** jalur simpan OS: baris `OS_AKSEPTASI_KLAIM` (isi `PEGA_JSON_OS_AKSEP_KLAIM` ditulis ulang sebagai
+    > SQL langsung, `repository.SisipOS`).
 
 ### Jejak audit
 
@@ -1805,6 +1868,8 @@ luar dipalsukan.
      **tidak diubah**; AC ini hanya menautkannya.
      > ⚠️ **RALAT 2026-09-18** — AC ini **baru**, bukan penggantian. Ia lahir dari usulan yang
      > dilaporkan bersama §17a dan disetujui `[keputusan work owner]` pada hari yang sama.
+     > ⚠️ **RALAT 07-10-2026** — kalimat lama: *"Panggilan stored procedure penulis adalah langkah TERAKHIR sebelum COMMIT dalam satu transaksi …"* AC ini **gugur**: tidak ada procedure penulis yang dipanggil (keputusan 07-10-2026), maka tidak ada
+     > `StsSimpan` yang diperiksa. Yang tetap: semua tulisan satu aksi berada dalam SATU transaksi aplikasi.
 
 ### Lintas modul — lima keputusan 2026-09-19
 

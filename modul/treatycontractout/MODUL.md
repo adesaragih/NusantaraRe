@@ -15,10 +15,14 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Pemilik | `@PEMILIK-TREATYCONTRACTOUT` |
 | Status | dimigrasi |
 | Rentang migrasi | `300-319` |
-| Slot menu | `956-957` |
+| Slot menu | `956-956` |
 | Prefix rute API | `/api/treaty-contract-out` (+ pekerja latar antrean lampiran) |
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |
+
+**Slot menu dikecilkan** (keputusan work owner 08-10-2026, prompt Disease / Cover K0, perlu persetujuan tim inti
+(CODEOWNERS)): `956-957` → `956-956`; slot `957` diserahkan ke modul `coverlife` (`modul/coverlife/MODUL.md`). Nomor
+itu tidak pernah terpakai di sini.
 
 `Pemilik` adalah penanda pemegang modul. Wilayah berkas yang boleh disentuh cabang
 `module/<nama>` dijaga `.github/workflows/penjaga-wilayah-cabang.yml` - CODEOWNERS
@@ -35,7 +39,8 @@ dipensiunkan 1 Oktober 2026.
 ## Migrasi
 
 Rentang `300-319` **tetap kosong**: tco4 *(keputusan work owner 29-09-2026)* — modul ini menulis dan
-membaca tabel warisan, nol tabel baru (`TestTCONolTabelBaru`). Slot menu `956-957` tidak terpakai:
+membaca tabel warisan, nol tabel baru (`TestTCONolTabelBaru`). Slot menu `956-956` tidak terpakai (`957` diserahkan
+ke `coverlife`):
 baris modul ini sudah `DIMIGRASI = '1'` sejak 900, dan menu datar (30-09-2026) tidak punya butir — slot
 hanya menyalakan `DIMIGRASI` (`APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6); berkas slot tidak
 membuat tabel, jadi tidak melanggar tco4.
@@ -74,8 +79,8 @@ kepemilikan tabel berpindah — keputusan work owner.
 | `MTREATYSECURITY` | tabel warisan POOLDATA yang Treaty Contract Out tulis dan baca tanpa membuatnya (tco4, keputusan work owner 29-09-2026) |
 | `TREATYBUSINESS` | tabel warisan POOLDATA yang Treaty Contract Out tulis dan baca tanpa membuatnya (tco4, keputusan work owner 29-09-2026) |
 | `PROPORTIONALARRG` | tabel warisan POOLDATA yang Treaty Contract Out tulis dan baca tanpa membuatnya (tco4, keputusan work owner 29-09-2026) |
-| `M_ATTACHMENTTREATY_2` | tabel warisan POOLDATA yang Treaty Contract Out tulis dan baca tanpa membuatnya (tco4, keputusan work owner 29-09-2026) |
-| `T_STORAGE_IMAGE` | tabel warisan POOLDATA yang Treaty Contract Out tulis dan baca tanpa membuatnya (tco4, keputusan work owner 29-09-2026) |
+| `M_ATTACHMENTTREATY_2` | tabel warisan POOLDATA yang Treaty Contract Out baca tanpa membuatnya - lampiran lama Pega dihitung sebagai anak tahun treaty; fitur lampiran modul ini dibuang (keputusan work owner 08-10-2026) |
+| `T_STORAGE_IMAGE` | tabel warisan POOLDATA, tidak dibuat modul ini; tidak lagi disentuh sejak fitur lampiran dibuang (keputusan work owner 08-10-2026), tetap terdokumentasi di STRUKTUR |
 
 ### Penyuntikan wajib di handler
 
@@ -94,7 +99,6 @@ menyertainya di berkas yang sama (`TestHandlerMenyuntikkanImplementasiNyata`).
 | `tco_kaskade.go` | `svc.KaskadeTCO()` | `DenganKaskade(services.KaskadeOracle(svc))`, `DenganKontrak(services.PemegangKontrakOracle(svc))`, `DenganTahun(services.GudangTahunTreatyOracle(svc))`, `DenganReinsurer(services.GudangReinsurerOracle(svc))` | Tiket 10 (aditif 29-09-2026): pelaksana kaskade, kontrak, tahun, reinsurer, jejak. tco4: nol jejak modul (T_TREATYCO_JEJAK dibuang; Pega tidak mencatatnya). |
 | `tco_kurs.go` | `svc.KursTCO()` | `DenganTahun(services.GudangTahunTreatyOracle(svc))`, `DenganMaster(services.MasterKursOracle(svc))`, `DenganMataUang(services.MataUangOracle(svc))` | Tiket 11 (aditif 29-09-2026): tahun, master kurs, master mata uang. |
 | `tco_security.go` | `svc.SecurityTCO()` | `DenganGudang(services.GudangSecurityOracle(svc))`, `DenganReinsurer(services.GudangReinsurerOracle(svc))`, `DenganKontrak(services.PemegangKontrakOracle(svc))`, `DenganTahun(services.GudangTahunTreatyOracle(svc))`, `DenganMaster(services.MasterReinsurerOracle(svc))` | Tiket 06 (aditif 29-09-2026): gudang security, reinsurer induk, kontrak, tahun, master AGENT. |
-| `tco_lampiran.go` | `svc.LampiranTahunTCO()` | `DenganGudang(services.GudangLampiranOracle(svc))`, `DenganKategori(services.KategoriLampiranOracle(svc))`, `DenganAntrean(services.AntreanLampiranOracle(svc))`, `DenganPenyimpanan(services.PenyimpananLampiranTCO(svc))`, `DenganTahun(services.GudangTahunTreatyOracle(svc))` | Tiket 12 (aditif 29-09-2026): lima pasangan lampiran; bawaannya gagal terang. OQ-TCO-08: pemilih stub/nyata, bukan stub mati. |
 
 ## Brief acuan
 

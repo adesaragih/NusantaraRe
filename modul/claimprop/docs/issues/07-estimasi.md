@@ -1,6 +1,6 @@
 # 07: Estimasi klaim per treaty
 
-**Status:** ready-for-agent
+**Status:** dibangun 07-10-2026 — RALAT 07-10-2026 (semula `ready-for-agent`)
 **Blocked by:** 00 (PREFACTOR) · 05 (Insured Interest / TSI) · 06 (loss allocation dan spreading)
 **Menutup:** AC 34 · 35 · 36 · 37 · 38 · 39 · 40 *(7 AC)* — US 14–19
 

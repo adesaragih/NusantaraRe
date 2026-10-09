@@ -124,7 +124,9 @@ export function kotakMasuk(): Promise<AntreanKotakMasuk[]> {
 
 /** Daftar berkas yang menunggu akun di `workbasket` (null = semua yang ia pegang) - kotak masuk Beranda. */
 export function daftarMenunggu(workbasket: string | null): Promise<RingkasanKasus[]> {
-  return minta<RingkasanKasus[]>(`${PREFIX_NBTREATYIN}/kotak-masuk/kasus`, { kueri: { workbasket: workbasket ?? undefined } })
+  return minta<RingkasanKasus[]>(`${PREFIX_NBTREATYIN}/kotak-masuk/kasus`, {
+    kueri: { workbasket: workbasket ?? undefined },
+  })
 }
 
 /** Daftar portal: hanya berkas buatan akun ini (keputusan work owner 06-10-2026); `selesai` = switch Resolved. */
@@ -190,7 +192,11 @@ export function kirimKasus(id: string, halaman: Halaman): Promise<HasilKirim> {
  *  mengirim isian layar - server menyaring dengan `QuotationData.ProportionalType`-nya, tanpa simpan.
  *  `saringan` (nama kolom view -> teks) dicari di SERVER sebelum batas 500 baris (keputusan work owner
  *  06-10-2026), supaya kontrak di luar 500 baris pertama dapat ditemukan. */
-export function daftarBisnis(id: string, halaman: Halaman, saringan: Record<string, string> = {}): Promise<BarisKontrak[]> {
+export function daftarBisnis(
+  id: string,
+  halaman: Halaman,
+  saringan: Record<string, string> = {},
+): Promise<BarisKontrak[]> {
   return minta<BarisKontrak[]>(`${kasus(id)}/bisnis`, { metode: 'POST', badan: { halaman, saringan } })
 }
 
@@ -201,6 +207,55 @@ export function daftarSumberBisnis(): Promise<BarisAgen[]> {
 
 export function ambilAcuan(): Promise<Acuan> {
   return minta<Acuan>(`${PREFIX_NBTREATYIN}/acuan`)
+}
+
+// ------------------------------------------------------------------ Copy Old (perintah work owner 07-10-2026)
+
+/** Hak layar portal akun - `services.Hak`. `copyOld` = superadmin (Kelola User) dengan menu NB ber-hak penuh. */
+export interface HakPortal {
+  copyOld: boolean
+}
+
+/** Satu baris popup Copy Old - `models.DokumenLama`; `alasan` menyebut sebab, tidak pernah nilai dokumen. */
+export interface DokumenLama {
+  id: string
+  noOffer: string
+  noPolis: string
+  insuredName: string
+  businessName: string
+  sobName: string
+  cedingCoName: string
+  tglProd: string
+  bolehDisalin: boolean
+  alasan: string[]
+}
+
+export type StatusSalinLama = 'disalin' | 'sudahAda' | 'ditolak' | 'gagal'
+
+/** Hasil satu ID sesudah `Process Copy` - `models.HasilSalinLama`. */
+export interface HasilSalinLama {
+  id: string
+  status: StatusSalinLama
+  pesan: string[]
+}
+
+export interface JawabanSalinLama {
+  hasil: HasilSalinLama[]
+  disalin: number
+}
+
+export function ambilHak(): Promise<HakPortal> {
+  return minta<HakPortal>(`${PREFIX_NBTREATYIN}/hak`)
+}
+
+/** Isi popup Copy Old: dokumen polis NB lama (JSON_POLIS generasi 0) yang belum ada di tabel flat. */
+export function ambilDokumenLama(): Promise<DokumenLama[]> {
+  return minta<DokumenLama[]>(`${PREFIX_NBTREATYIN}/lama`)
+}
+
+/** `Process Copy`: salin ID yang dicentang - satu transaksi per dokumen, hasil per ID. */
+export function salinDokumenLama(ids: string[]): Promise<JawabanSalinLama> {
+  return minta<JawabanSalinLama>(`${PREFIX_NBTREATYIN}/lama/salin`, { metode: 'POST', badan: { ids } })
 }
 
 // ------------------------------------------------------------------ halaman

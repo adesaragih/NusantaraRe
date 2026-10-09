@@ -74,12 +74,16 @@ baris penyesuaian ke Komite**. `ID`-nya **sama persis** dengan baris komite di `
 | Kolom | Tipe | Null | Isinya | Sumber |
 | --- | --- | --- | --- | --- |
 | `ID` | teks | **tidak** | **PK**, shared dengan `T_WORK_CLAIM` · berawalan `TKMT-` | keputusan work owner 2026-09-18 |
-| `ADJUSTMENT_ID` | teks | **tidak** | penunjuk ke **baris penyesuaian induk** di Claim Prop · index **UNIK** | keputusan work owner 2026-09-18 |
+| `ADJUSTMENT_ID` | teks | **tidak** | penunjuk ke **baris penyesuaian induk** di Claim Prop · index **biasa** (`IX_GENERAL_KOMITE_ADJ`, migrasi 681 — RALAT 08-10-2026) | keputusan work owner 2026-09-18 · 2026-10-08 |
 | `KOMITE_LOOP` | **bilangan bulat** | ya | berapa penyetuju yang dibutuhkan | korpus — **AddKomiteChild**, saat kasus dibuat |
 | `KOMITE_COUNT` | **bilangan bulat** | ya | penyetuju ke berapa yang sedang berjalan | korpus — **AddKomiteChild** langkah awal; dinaikkan **KomiteRouter** langkah 5 dan **KomitePost** langkah 40 |
 | `ACCEPT_STATUS` | teks | ya | hasil akseptasi komite terakhir · `1` setuju · `2` tolak | korpus — **KomitePost** |
-| `KOMITE_USUL_TUTUP` | teks *(penanda)* | ya | **usul tutup klaim** dari penyetuju | keputusan work owner **2026-09-19** · korpus — **ShowTransfer** |
-| `KOMITE_USUL_CADANG` | teks *(penanda)* | ya | **usul cadangkan klaim** dari penyetuju | keputusan work owner **2026-09-19** · korpus — **ShowTransfer** |
+| `KOMITE_USUL_TUTUP` | teks | **tidak** | **usul tutup klaim** dari penyetuju · penanda `'1'`/`'0'`, bawaan `'0'` (migrasi 680) | keputusan work owner **2026-09-19** · korpus — **ShowTransfer** |
+| `KOMITE_USUL_CADANG` | teks | **tidak** | **usul cadangkan klaim** dari penyetuju · penanda `'1'`/`'0'`, bawaan `'0'` (migrasi 680) | keputusan work owner **2026-09-19** · korpus — **ShowTransfer** |
+| `KOMITE_SUBJECTIVITY` | teks | **tidak** | isian "Subjectivity ?" tingkat 1 disimpan antar tingkat · `'1'`/`'0'`, bawaan `'0'` (migrasi 682) | keputusan work owner **2026-10-08** (OQ-KCP-01 "a") · korpus — **ShowTransfer** `.IsSubjectivity`, KomitePostAdjustment S16-S34 |
+| `KOMITE_SUBJECTIVITY_NOTE` | teks | ya | isian "Subjectivity Note" tingkat 1 (lebar 1000 = `T_CLAIM_ADJUSTMENT.SUBJECTIVITY_NOTE`, migrasi 682) | keputusan work owner **2026-10-08** · korpus — **ShowTransfer** `.SubjectivityNote`, S24 |
+
+> **RALAT 08-10-2026** (prompt implementasi §7 butir 2). Kalimat lama baris `ADJUSTMENT_ID`: *"index **UNIK**"* — diganti indeks biasa (keputusan work owner 08-10-2026: ID adjustment Prop `SEQ_T_CLAIM` dan Life `SEQ_CLAIMLF_ADJ` sama-sama angka polos; keunikan satu adjustment ↔ satu kasus komite dijaga `KOMITE_ID UNIQUE` di `T_CLAIM_ADJUSTMENT` dan `T_CLAIMLF_ADJUSTMENT`). Kalimat lama dua kolom usul: *"teks *(penanda)* | ya"* — bertentangan dengan keputusan 21 (2026-09-19: wajib isi, hanya `'1'`/`'0'`); kini `CHAR(1) DEFAULT '0' NOT NULL` + `CHECK`. Ketiga tabel komite sudah ada (`claimlife/013`, `komiteclaimlife/030`); modul ini hanya `ADD` dua kolom usul (680) dan mengganti indeks (681).
 
 ⚠️ `KOMITE_LOOP` dan `KOMITE_COUNT` adalah **pencacah** — **bilangan bulat biasa**, **tidak** ikut
 aturan ketelitian angka (lihat §Ketelitian angka).
@@ -103,7 +107,7 @@ Satu baris per **penyetuju** dalam satu kasus komite. Inilah tangga persetujuann
 | `KOMITE_EMAIL` | teks | ya | email penyetuju | korpus — ejaan Pega `KomiteEmail` |
 | `KOMITE_APPROVAL` | teks | ya | keputusan · `0` belum · `1` setuju · `2` tolak | korpus — ejaan Pega `KomiteAproval`, **ejaan dibetulkan** |
 | `KOMITE_COMMENT` | teks | ya | catatan penyetuju | korpus — ejaan Pega `KomiteComment` |
-| `DATE_APPROVE` | **DATE** | ya | tanggal diputuskan | korpus — ejaan Pega `DateApprove` |
+| `DATE_APPROVE` | DATE | ya | tanggal diputuskan | korpus — ejaan Pega `DateApprove` |
 
 `[keputusan work owner]` 2026-09-18 — **satu kolom tanggal saja.** Di Pega ada properti tanggal
 kedua yang diisi **langkah yang sama** dengan nilai identik, dan **tidak pernah ditampilkan**. Ia
@@ -280,6 +284,11 @@ dari korpus** (tidak ada nilai tercentang/tidak-tercentang yang dinyatakan di be
 
 ⚠️ **Pembulatan terjadi di batas penyimpanan, dan itu diterima sadar.** Angka persen yang di Pega
 dihitung sampai 10 desimal **akan menjadi 8** saat disimpan.
+
+> **RALAT 08-10-2026** (prompt §7 butir 2). Kalimat lama *"mengikuti bentuk yang sudah ada di produksi — 20 digit
+> seluruhnya, 8 di antaranya di belakang koma"* — kolom uang `T_CLAIM_*` yang ada di DEV `NUMBER(38,10)` (keputusan
+> work owner 07-10-2026). Bagan relasi di bawah yang menulis `ADJUSTMENT_ID` *"index UNIK"* kini indeks biasa
+> (migrasi 681).
 
 ⛔ **Di tabel-tabel berkas ini tidak ada satu pun kolom angka uang** — ketiga tabel di atas hanya
 memuat teks, tanggal, dan pencacah. Aturan ini berlaku bagi kolom uang di **tabel penyesuaian milik

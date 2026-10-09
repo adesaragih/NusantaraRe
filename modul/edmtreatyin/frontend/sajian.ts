@@ -90,3 +90,14 @@ export function sajikan(nilai: string | null | undefined, s: Sajian | undefined)
   if (s === 'tanggal') return formatDate(nilai ?? '')
   return sajikanAngka(nilai, s)
 }
+
+/**
+ * ID kasus di layar = pyID (`EDMT-<n>`). Berkas salinan Copy Old berkunci IDPEGA Pega UTUH (`ASM-FW-GISFW-WORK
+ * EDMT-<n>`, WO 07-10-2026 "IDPEGA BAWAAN PEGA JANGAN DI POTONG"); layar hanya menampilkan pyID (WO 07-10-2026
+ * "TAMPILAN NYA HANYA NB-XXX AJA, BERLAKU NB DAN EDM TREATY"). Kunci buka / kirim / centang tetap ID utuh. Sama dengan
+ * `models.PyIDKasus` backend.
+ */
+export function idTampil(id: string): string {
+  const s = id.trim()
+  return s.slice(s.lastIndexOf(' ') + 1)
+}

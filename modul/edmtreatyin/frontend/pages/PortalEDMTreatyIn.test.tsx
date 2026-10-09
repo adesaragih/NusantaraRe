@@ -32,6 +32,24 @@ beforeEach(() => vi.stubGlobal('fetch', ambil))
 afterEach(() => vi.unstubAllGlobals())
 
 describe('portal EDM Treaty In = SFAPortal_Endorsement_Treaty', () => {
+  // perintah work owner 07-10-2026 (screenshot tab Resolved): "KALO DAH RESOLVE STATUS NYA PAKE STATUS RESOLVE" - sama
+  // dengan portal NB (STATUS_WORK, bukan NBStatus terakhir)
+  it('kolom Status: berkas Resolved memakai STATUS_WORK, selain itu NBStatus', () => {
+    const status = (b: RingkasanKasus) =>
+      [
+        ...renderToStaticMarkup(<TabelPortal baris={[b]} onBuka={() => {}} selesai />).matchAll(
+          /<span class="edmt__status">([^<]*)<\/span>/g,
+        ),
+      ].map((m) => m[1])
+    expect(status(baris)).toEqual(['UJI STATUS'])
+    expect(status({ ...baris, statusWork: 'Resolved-Completed', nbStatus: 'UJI EDMT IS IN DEPT HEAD INBOX' })).toEqual([
+      'Resolved-Completed',
+    ])
+    expect(status({ ...baris, statusWork: 'Resolved-Rejected', nbStatus: 'UJI DECLINED' })).toEqual([
+      'Resolved-Rejected',
+    ])
+  })
+
   it('grid InboxEDM_RD2: 10 judul kolom VERBATIM berurutan (EDM Number kembar)', () => {
     const html = renderToStaticMarkup(<TabelPortal baris={[baris]} onBuka={() => {}} />)
     const judul = [...html.matchAll(/<th[^>]*>([^<]*)<\/th>/g)].map((m) => m[1])
@@ -98,11 +116,11 @@ describe('portal EDM Treaty In = SFAPortal_Endorsement_Treaty', () => {
     expect(html).toContain('>2</button>')
   })
 
-  it('kepala: judul "Addendum Treaty", tombol Create, switch In Progress / Resolved (aturan portal NB), saring "Policy Number" + Filter, tombol Refresh', () => {
+  it('kepala: judul "Addendum Treaty", tombol Create, switch In Progress / Resolved (aturan portal NB), saring (nomor EDM / polis / insured ...) + Filter, tombol Refresh', () => {
     const html = renderToStaticMarkup(<PortalEDMTreatyIn onBuka={() => {}} />)
     expect(html).toContain('<h2 class="inbox__judul">Addendum Treaty</h2>')
     expect(html).toContain('>Create New Addendum Treaty</button>')
-    expect(html).toContain('placeholder="Policy Number"')
+    expect(html).toContain('placeholder="Search EDM no, master ID, policy no, insured, business, ceding, marketing..."')
     expect(html).toContain('aria-label="Filter Term for Endorsement"')
     expect(html).toContain('>Filter</button>')
     expect(html).toContain('title="Refresh EDM Grid">Refresh</button>')
@@ -133,5 +151,17 @@ describe('layar Create TreatyCreateEdm', () => {
     ).toBe(false)
     expect(tampilTombolBuat('', '', 'UJI-MASTER')).toBe(false)
     expect(tampilTombolBuat('', 'UJI-POLIS', '')).toBe(false)
+  })
+})
+
+// WO 07-10-2026 "TAMPILAN NYA HANYA NB-XXX AJA, BERLAKU NB DAN EDM TREATY": ID kasus salinan Copy Old = IDPEGA Pega
+// utuh (`<kelas> <pyID>`); layar hanya menampilkan pyID, kunci buka / kirim tetap ID utuh.
+describe('portal EDM Treaty In - berkas salinan Copy Old', () => {
+  it('EDM Number tampil pyID saja', () => {
+    const html = renderToStaticMarkup(
+      <TabelPortal baris={[{ ...baris, id: 'ASM-FW-GISFW-WORK UJI-EDMT-9' }]} onBuka={() => {}} selesai />,
+    )
+    expect(html).toContain('>UJI-EDMT-9</button>')
+    expect(html).not.toContain('ASM-FW-GISFW-WORK')
   })
 })

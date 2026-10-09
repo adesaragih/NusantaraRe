@@ -75,7 +75,10 @@ describe('label layar = LABEL XML', () => {
       'Status',
     ])
     expect(PORTAL.judul).toBe('Opportunity')
-    expect(PORTAL.placeholder).toBe('NB-1234 or Name')
+    // placeholder menyebut kolom yang dicari (perintah work owner 07-10-2026), menyimpang dari pyPlaceholder XML
+    expect(PORTAL.placeholder).not.toBe('NB-1234 or Name')
+    expect(PORTAL.placeholder).toContain('NB no')
+    expect(PORTAL.placeholder).toContain('insured')
   })
 
   it('popup pilih bisnis: Section BusinessAndSOBList grid aktif (BrowseTreatyJoinEDM) baris 1 LABEL / baris 2 sel, pyWindowName', () => {

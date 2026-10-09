@@ -32,6 +32,7 @@ const (
 	KategoriUpload          = "upload"
 	KategoriGetURL          = "geturl"
 	KategoriHapus           = "delete"
+	KategoriTanyaAI         = "getAI"
 )
 
 // Kunci per efek, DIBACA dari activity-nya masing-masing - bukan ditebak dari
@@ -42,11 +43,13 @@ const (
 //	InsertGoogleStorage_Act  1775 · 1776  ("Google", "upload")
 //	GetUrlGoogleStorage_Act  1711 · 1712  ("Google", "geturl")
 //	DeleteGoogleStorage_Act  1349 · 1351  ("Google", "delete")
+//	GeminiAIGoogle_Act       langkah 10   ("Google", "getAI")  - `NB FacIn/Activity/GeminiAIGoogle_Act.xml`
 //	serviceInsertArasapas…    540 ·  541  ("Klaim",  "insertClaimLife")
 var (
 	KunciUnggahBerkas = KunciLayanan{Kategori1: KategoriGoogle, Kategori2: KategoriUpload}
 	KunciURLBerkas    = KunciLayanan{Kategori1: KategoriGoogle, Kategori2: KategoriGetURL}
 	KunciHapusBerkas  = KunciLayanan{Kategori1: KategoriGoogle, Kategori2: KategoriHapus}
+	KunciTanyaAI      = KunciLayanan{Kategori1: KategoriGoogle, Kategori2: KategoriTanyaAI}
 )
 
 // KunciLayanan adalah pasangan `(KATEGORI_1, KATEGORI_2)`.

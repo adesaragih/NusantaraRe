@@ -1,6 +1,11 @@
 # 09: Angka uang — total penyesuaian per mata uang
 
-**Status:** ready-for-agent
+**Status:** dibangun *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+
+> **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
+>
+> - Kalimat lama *"20 digit, 8 di belakang koma"* — kolom yang ada `NUMBER(38,10)`; hitungan `apd.Decimal` tanpa pembulatan di tengah, tampilan 4 desimal.
+
 
 **Blocked by:** **03 (layar komite)**
 

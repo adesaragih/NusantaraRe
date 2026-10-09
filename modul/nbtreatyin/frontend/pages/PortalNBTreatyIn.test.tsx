@@ -134,3 +134,15 @@ describe('portal NB Treaty In = SFAPortal_OpportunitiesList', () => {
     ])
   })
 })
+
+// WO 07-10-2026 "TAMPILAN NYA HANYA NB-XXX AJA, BERLAKU NB DAN EDM TREATY": ID kasus salinan Copy Old = IDPEGA Pega
+// utuh (`<kelas> <pyID>`); layar hanya menampilkan pyID, kunci buka / kirim tetap ID utuh.
+describe('portal NB Treaty In - berkas salinan Copy Old', () => {
+  it('Offer No tampil pyID saja', () => {
+    const html = renderToStaticMarkup(
+      <TabelPortal baris={[{ ...baris, id: 'ASM-FW-GISFW-WORK UJI-NB-9' }]} onBuka={() => {}} selesai />,
+    )
+    expect(html).toContain('<button type="button" class="nbti__tautan">UJI-NB-9</button>')
+    expect(html).not.toContain('ASM-FW-GISFW-WORK')
+  })
+})

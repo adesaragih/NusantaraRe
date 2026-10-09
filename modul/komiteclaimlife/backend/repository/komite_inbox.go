@@ -35,6 +35,7 @@ import (
 	"fmt"
 	"strings"
 
+	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/komiteclaimlife/backend/models"
@@ -96,6 +97,10 @@ func sqlDariKomite(gen, work, list, klaim, adj string) string {
 // tengah meninggalkan anggota berikutnya ber-approval menunggu; tanpa syarat
 // `IsKomiteLoop` (`models.KasusDiTangga`) kasus itu jatuh ke inbox mereka.
 // `End1` tidak punya `pyWorkStatus`, jadi syaratnya dibaca dari kepala kasus.
+//
+// ⛔ LINI (keputusan work owner 07-10-2026): tabel komite dipakai bersama Claim Prop, yang melahirkan kasus komite
+// `TKMT-` ber-`LINI = 'PROP'` di tabel yang sama. Tanpa saringan ini anggota roster Life yang juga anggota roster
+// PROP melihat kasus PROP di inbox Komite Life. `LINI` kosong tetap terbaca sebagai Life - baris lama.
 const sqlSaringInboxKomite = `
 	 WHERE l.KOMITE_OPERATORID = :akun
 	   AND l.KOMITE_APPROVAL = :menunggu
@@ -104,7 +109,8 @@ const sqlSaringInboxKomite = `
 	                           AND l2.KOMITE_APPROVAL = :menunggu)
 	   AND (w.STATUS_WORK IS NULL OR w.STATUS_WORK <> :tutup)
 	   AND (g.ACCEPT_STATUS IS NULL
-	        OR (g.ACCEPT_STATUS = :setuju AND g.KOMITE_COUNT <= g.KOMITE_LOOP))`
+	        OR (g.ACCEPT_STATUS = :setuju AND g.KOMITE_COUNT <= g.KOMITE_LOOP))
+	   AND (w.LINI = :lini OR w.LINI IS NULL)`
 
 // InboxKomite membaca kasus komite.
 type InboxKomite struct{ db *db.DB }
@@ -178,7 +184,7 @@ func (r *InboxKomite) Ambil(ctx context.Context, akunID, statusTutup string,
 	// jalur ini mengikat penanda bernama secara berurutan (pola `AmbilInbox`
 	// Claim Life). `:menunggu` muncul DUA kali, jadi ia dikirim dua kali.
 	saring := []any{akunID, ApprovalKomiteMenunggu, ApprovalKomiteMenunggu, statusTutup,
-		models.KeputusanKomiteSetuju}
+		models.KeputusanKomiteSetuju, inti.LiniLife}
 	rows, err := r.db.QueryContext(ctx, q, append(saring, offset, ukuran)...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("repository: membaca inbox komite: %w", err)
@@ -240,6 +246,9 @@ var ErrKasusKomiteTakDitemukan = errors.New("repository: kasus komite tidak dite
 
 // sqlKasusKomite membaca kepala satu kasus. Tingkat berjalannya dihitung
 // seperti inbox; kasus yang tidak lagi menunggu siapa pun memberi urut 0.
+//
+// ⛔ LINI seperti inbox (keputusan work owner 07-10-2026): kasus komite lini lain (TKMT- Claim Prop) dijawab
+// "tidak ditemukan" - membuka, memutuskan, dan riwayat Komite Life semuanya membaca lewat `Kasus`.
 func sqlKasusKomite(gen, work, list, klaim, adj string) string {
 	return fmt.Sprintf(`SELECT g.ID, w.COVER_KEY, c.CLAIM_NO,
 	       (SELECT MIN(l2.KOMITE_URUT) FROM %s l2
@@ -252,7 +261,8 @@ func sqlKasusKomite(gen, work, list, klaim, adj string) string {
 	  JOIN %s w ON w.ID = g.ID
 	  LEFT JOIN %s c ON c.ID = w.COVER_KEY
 	  LEFT JOIN %s a ON a.ID = g.ADJUSTMENT_ID
-	 WHERE g.ID = :2`, list, gen, work, klaim, adj)
+	 WHERE g.ID = :2
+	   AND (w.LINI = :3 OR w.LINI IS NULL)`, list, gen, work, klaim, adj)
 }
 
 // sqlTanggaKasus membaca tangga satu kasus, urut jenjang.
@@ -275,7 +285,7 @@ func (r *InboxKomite) Kasus(ctx context.Context, kasusID string) (KasusKomite, e
 	var k KasusKomite
 	var klaimID, nomor, nilai, mu, sts, status, adjID, accept, peserta, kpr sql.NullString
 	var urut, count, loop sql.NullInt64
-	err = r.db.QueryRowContext(ctx, q, ApprovalKomiteMenunggu, kasusID).Scan(
+	err = r.db.QueryRowContext(ctx, q, ApprovalKomiteMenunggu, kasusID, inti.LiniLife).Scan(
 		&k.Baris.KasusID, &klaimID, &nomor, &urut, &count, &loop, &nilai, &mu, &sts,
 		&status, &k.Baris.TglUpdate, &adjID, &accept, &peserta, &kpr)
 	if errors.Is(err, sql.ErrNoRows) {
