@@ -112,6 +112,13 @@ export interface IsiModal {
  */
 export function pisahKakiModal(tata: readonly Tata[]): IsiModal {
   const b = ratakan(tata)
+  // Baris tombol Inline (`sebaris` berisi tombol saja - Section KomiteCLMNP, CloseClaimMD, CloseClaimNP, PreviewPLA Claim
+  // Non Prop) di akhir isi = tombol kaki juga.
+  const akhir = b[b.length - 1]
+  if (akhir?.letak === 'sebaris') {
+    const isiBaris = ratakan(akhir.anak ?? [])
+    if (isiBaris.length > 0 && isiBaris.every((t) => t.jenis === 'tombol')) b.splice(b.length - 1, 1, ...isiBaris)
+  }
   let i = b.length
   while (i > 0 && b[i - 1]?.jenis === 'tombol') i--
   const ekor = b.slice(i)

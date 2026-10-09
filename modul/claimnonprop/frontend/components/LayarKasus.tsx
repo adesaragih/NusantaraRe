@@ -339,7 +339,9 @@ export default function LayarKasus({
         </BarisAdjustment.Provider>
       )}
       {popup && (
+        // Satu Popup per jenis: data jenis lama tidak pernah dirender dengan bentuk jenis baru.
         <Popup
+          key={`${popup.jenis}:${popup.sumber ?? ''}`}
           id={id}
           jenis={popup.jenis}
           sumber={popup.sumber}

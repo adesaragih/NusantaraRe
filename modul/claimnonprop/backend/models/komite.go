@@ -65,13 +65,6 @@ func HanyaTingkat1(h *Halaman, n int) bool {
 	return !Lebih(persen, kal.D(BatasPersenKomite)) && !Lebih(nilai, kal.D(BatasNilaiKomite))
 }
 
-// AnggotaTanggaAwal - roster terpilih menjadi tangga kasus komite (urut DEGREE).
-func AnggotaTanggaAwal(roster []AnggotaKomite) []AnggotaKomite {
-	out := make([]AnggotaKomite, len(roster))
-	copy(out, roster)
-	return out
-}
-
 // SusunKomiteAkseptasi - grid "Committe Accept Status" akseptasi `n` + `.TotalKomite`. Akseptasi yang sudah diserahkan
 // (`tangga` tidak nil, dibaca dari tangga kasus komitenya) menampilkan keputusan anggotanya; yang belum menampilkan
 // roster calon menurut aturan tangga (`calon`).

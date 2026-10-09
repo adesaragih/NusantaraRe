@@ -587,7 +587,7 @@ func (a *Acuan) RosterKomite(ctx context.Context, hanyaTingkat1 bool) ([]models.
 	}
 	saring := ""
 	if hanyaTingkat1 {
-		saring = " AND NVL(LIMIT_BOTTOM, 0) <= 0"
+		saring = " AND LIMIT_BOTTOM <= 0" // RD `LIMIT_BOTTOM <= Param.LIMIT_BOTTOM` (= 0): NULL tidak lolos, persis RD
 	}
 	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT TO_CHAR(ID), OPERATOR_ID, EMAIL, JABATAN, TO_CHAR(DEGREE) FROM %s
 		WHERE STS_KLAIM = :1 AND STS_AKTIF = '1'%s ORDER BY DEGREE, ID`, t, saring), 5, models.STSKlaimNonProp)

@@ -436,7 +436,7 @@ func aksiKomite(j *jalanAksi) error {
 		return err
 	}
 	var anggota []repository.AnggotaTangga
-	for i, r := range models.AnggotaTanggaAwal(roster) {
+	for i, r := range roster { // roster terpilih (RosterKomite, urut DEGREE) = tangga kasus komite
 		anggota = append(anggota, repository.AnggotaTangga{Urut: i + 1, OperatorID: r.OperatorID, Jabatan: r.Jabatan, Email: r.Email})
 	}
 	nama, err := j.l.a.NamaPelaku(j.ctx, j.k.Pelaku)
@@ -482,7 +482,8 @@ func aksiKasir(j *jalanAksi) error {
 	if err != nil {
 		return err
 	}
-	m, err := models.SusunMuatanKasir(j.h, n, email, j.k.Pelaku, j.l.kasir) // 9.3-9.6
+	// IsPEGASyariah (9.4) = node server Pega syariah; aplikasi ini satu instans konvensional (OQ-CNP-40).
+	m, err := models.SusunMuatanKasir(j.h, n, email, j.k.Pelaku, j.l.kasir, false) // 9.3-9.6
 	if err != nil {
 		return err
 	}
