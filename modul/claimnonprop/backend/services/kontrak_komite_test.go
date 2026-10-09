@@ -24,7 +24,7 @@ const (
 func siapKontrakKomite(t *testing.T) (*tiruan.Gudang, services.KlaimUntukKomite) {
 	t.Helper()
 	g, a := tiruan.Baru(), tiruan.AcuanBaru()
-	a.OldID["UJI COB"] = "123"
+	a.OldID["UJI COB"] = "123" // GetDataBusiness_SQL ada, tetapi S14.11 membaca OfferFacIn.QuotationData.BusinessOldId
 	saat := time.Date(2026, 10, 9, 10, 0, 0, 0, models.Jakarta)
 	if err := g.SisipKasus(context.Background(), nil, klaimUjiKomite, "UJI-ADMIN", "UJI Admin", saat); err != nil {
 		t.Fatal(err)
@@ -51,8 +51,8 @@ func TestKontrakKomiteNonPropBacaKlaimTreaty(t *testing.T) {
 	if kt.Adjustment != 2 || kt.Tertutup {
 		t.Fatalf("posisi akseptasi %d (mau 2), tertutup %v", kt.Adjustment, kt.Tertutup)
 	}
-	if kt.Nilai[models.CD+"NoClaim"] != "UJI-K-0001" || kt.Nilai[models.OQ+"BusinessOldId"] != "123" {
-		t.Fatalf("nilai klaim: NoClaim %q, BusinessOldId %q (mau 123 dari OLDID bisnis)", kt.Nilai[models.CD+"NoClaim"],
+	if kt.Nilai[models.CD+"NoClaim"] != "UJI-K-0001" || kt.Nilai[models.OQ+"BusinessOldId"] != "" {
+		t.Fatalf("nilai klaim: NoClaim %q, BusinessOldId %q (mau kosong persis XML, OQ-CNP-37)", kt.Nilai[models.CD+"NoClaim"],
 			kt.Nilai[models.OQ+"BusinessOldId"])
 	}
 	if rows := kt.Daftar[models.DaftarAdjustment]; len(rows) != 2 || rows[1]["DataCommitteeTreaty.Remarks"] != "UJI CATATAN" {

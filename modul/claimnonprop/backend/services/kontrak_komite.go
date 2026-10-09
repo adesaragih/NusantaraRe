@@ -6,11 +6,10 @@ package services
 // `KomitePostAdjustment`, menulis kembali ke kasus itu di DALAM transaksi Komite. Inilah satu-satunya jalan modul lain
 // menulis tabel klaim Non Prop; jalur yang boleh ditulis dibatasi daftar putih di paket kontrak.
 //
-// Bacaan = `muat` + `turunkan` (halaman persis seperti dibuka layar Claim Non Prop) ditambah
-// `OfferFacIn.QuotationData.BusinessOldId` bila belum terisi: properti itu tanpa penulis di korpus (OQ-CNP-37), padahal
-// nomor akseptasi `KomitePostAdjustment` S14.11 memakainya - diisi `ClaimData.QuotationData.BusinessOldId` (Save to issue
-// RNM) atau OLDID bisnis menurut nama (GetDataBusiness_SQL), pola `PeriksaOldID` Claim Prop. Tulisan = `BacaHalaman` ->
-// ubahan -> `SimpanHalaman` + `SentuhKasus`, jalur yang sama dengan setiap aksi Claim Non Prop.
+// Bacaan = `muat` + `turunkan` (halaman persis seperti dibuka layar Claim Non Prop). `OfferFacIn.QuotationData.
+// BusinessOldId` (nomor akseptasi `KomitePostAdjustment` S14.11, LbuId Kasir) tanpa penulis di korpus - dibiarkan
+// kosong persis XML (OQ-CNP-37), sama dengan tahap 1. Tulisan = `BacaHalaman` -> ubahan -> `SimpanHalaman` +
+// `SentuhKasus`, jalur yang sama dengan setiap aksi Claim Non Prop.
 
 import (
 	"context"
@@ -68,15 +67,6 @@ func (k KlaimUntukKomite) BacaKlaimTreaty(ctx context.Context, tx *db.Tx, klaimI
 	}
 	if err := k.l.turunkan(ctx, h); err != nil {
 		return kontrak.KlaimTreaty{}, err
-	}
-	if h.Ambil(models.OQ+"BusinessOldId") == "" { // OQ-CNP-37: properti tanpa penulis, pola PeriksaOldID Claim Prop
-		old := h.Ambil(models.CD + "QuotationData.BusinessOldId")
-		if nama := h.Ambil(models.OQ + "BusinessName"); old == "" && nama != "" {
-			if old, err = k.l.a.KodeLamaBisnis(ctx, nama); err != nil {
-				return kontrak.KlaimTreaty{}, err
-			}
-		}
-		h.Setel(models.OQ+"BusinessOldId", old)
 	}
 	n := posisiAdjustment(h, adjID)
 	if n == 0 {
