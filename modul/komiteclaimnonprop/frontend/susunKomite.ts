@@ -78,6 +78,9 @@ export interface Ringkasan {
   tingkat: { ke: number; dari: number; jabatan: string } | null
 }
 
+/** Label sel inline S9 ShowTransfer (`models.LabelNoKlaim`). */
+const LABEL_NO_KLAIM = 'Claim No / Claim ID'
+
 function nilaiMedan(l: Layar, kunci: string, label: string): string {
   const m = l.bagian.find((b) => b.kunci === kunci)?.medan?.find((x) => x.label === label)
   return m?.nilai.trim() ?? ''
@@ -88,8 +91,8 @@ export function ringkasan(l: Layar): Ringkasan {
   const i = tangga.findIndex((a) => a.keputusan === '0')
   const berjalan = i >= 0 ? tangga[i] : undefined
   return {
-    // S9: `NoClaim "/" CLMNO` tanpa label (sel Inline ShowTransfer)
-    noKlaim: nilaiMedan(l, 'klaimKanan', '') || l.kasus.klaimId,
+    // S9 "Claim No / Claim ID": `NoClaim "/" CLMNO`; NoClaim kosong = ID klaim saja
+    noKlaim: nilaiMedan(l, 'klaimKanan', LABEL_NO_KLAIM).replace(/^\/\s*/, '') || l.kasus.klaimId,
     polis: nilaiMedan(l, 'klaim', 'Policy No'),
     tertanggung: nilaiMedan(l, 'klaim', 'Insured Name'),
     tingkat: berjalan ? { ke: berjalan.urut, dari: tangga.length, jabatan: berjalan.jabatan } : null,

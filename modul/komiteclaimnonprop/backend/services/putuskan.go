@@ -167,9 +167,11 @@ func (j *jalan) laksanakan(r *models.Rencana) error {
 }
 
 // kasirEfek = HitServiceToKasirKMT_Act jalur CLMNP. S2: DirectToKasir dicentang dan StatusKasir kosong. S3
-// `getStatusKonversi_Act`: hanya dibaca di produksi (IsPEGAPROD). S9-S10 muatan per mata uang Spreading In (hanya bila
-// panjang AcceptedNo 23 / 24), S10.2 email ceding, REST S10.7 = outbox. S7 NoAccount angka saja, S12-S13 IDOfBank. S10.8 StatusKasir dan S11
-// IsPrintAccept bergantung jawaban REST - tidak ditulis di Submit (pola Komite Claim Prop).
+// `getStatusKonversi_Act`: hanya dibaca di produksi (IsPEGAPROD). S7 NoAccount angka saja. S9 / S10 panjang AcceptedNo
+// bukan 23 / 24 = Exit Activity (tanpa S12-S13). S9-S10 muatan per mata uang Spreading In, S10.2 email ceding, REST
+// S10.7 = outbox; S10.3 ber-WHEN `.TreatyName=="UR"` atas baris TempSpreadingRisk yang tidak pernah membawa TreatyName
+// - di sini muatan tetap disusun, sama dengan tahap 1 Claim Non Prop (PARITAS). S12-S13 IDOfBank. S10.8 StatusKasir dan
+// S11 IsPrintAccept bergantung jawaban REST - tidak ditulis di Submit (pola Komite Claim Prop).
 func (j *jalan) kasirEfek(r *models.Rencana, adj map[string]string, noAksep string) error {
 	if !(adj["DirectToKasir"] == "true" && adj["StatusKasir"] == "") { // S2
 		return nil
@@ -193,19 +195,20 @@ func (j *jalan) kasirEfek(r *models.Rencana, adj map[string]string, noAksep stri
 		b["NoAccount"] = akun
 		r.Klaim.Adjustment = tambahUbahan(r.Klaim.Adjustment, "NoAccount", akun)
 	}
-	if models.PanjangNoAksepCNP(noAksep) { // S9-S10
-		email, err := j.l.a.EmailCeding(j.ctx, j.kl.Nilai["TreatyInMaster.CedingID"]) // S10.1-S10.2
-		if err != nil {
+	if !models.PanjangNoAksepCNP(noAksep) { // S9 / S10 F->6 Exit Activity
+		return nil
+	}
+	email, err := j.l.a.EmailCeding(j.ctx, j.kl.Nilai["TreatyInMaster.CedingID"]) // S10.1-S10.2
+	if err != nil {
+		return err
+	}
+	m, err := models.SusunMuatanKasir(j.kl, b, email, false, j.l.kasir, j.akun) // IsPEGASyariah = OQ-CNP-40
+	if err != nil {
+		return err
+	}
+	if len(m) > 0 {
+		if err := j.antre(JenisEfekKasir, noAksep, map[string]any{"TAllPaymentData": m}); err != nil {
 			return err
-		}
-		m, err := models.SusunMuatanKasir(j.kl, b, email, false, j.l.kasir, j.akun) // IsPEGASyariah = OQ-CNP-40
-		if err != nil {
-			return err
-		}
-		if len(m) > 0 {
-			if err := j.antre(JenisEfekKasir, noAksep, map[string]any{"TAllPaymentData": m}); err != nil {
-				return err
-			}
 		}
 	}
 	if b["IDOfBank"] == "" { // S12-S13

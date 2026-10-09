@@ -68,7 +68,7 @@ type Kasus struct {
 	Tangga       []Anggota `json:"tangga"`
 }
 
-// Kepala - tulisan kepala kasus komite sesudah satu Submit (S25 / S40, isian tingkat 1).
+// Kepala - tulisan kepala kasus komite sesudah satu Submit (KomitePostAdjustment S20 / S29, isian tingkat 1).
 type Kepala struct {
 	Count                                                               int
 	AcceptStatus, UsulTutup, UsulCadang, Subjectivity, SubjectivityNote string

@@ -105,6 +105,9 @@ const (
 	TombolBatal      = "Cancel"
 	TombolKirim      = "Submit"
 	JudulClaimTreaty = "Claim Analysis"
+	// LabelPeriode / LabelNoKlaim - label layout inline S7 / S9 (`pyLabelFieldValue`).
+	LabelPeriode = "Insurance Period"
+	LabelNoKlaim = "Claim No / Claim ID"
 )
 
 // LabelTerima - pilihan `.AcceptStatus` (`pyListSource associated`, prompt values tidak diekspor). Teks dari
@@ -186,9 +189,9 @@ func SusunLayar(k Kasus, kl kontrak.KlaimTreaty, akun string, peran []string) La
 		p.medan("Policy No", "ClaimData.PolicyData.PolicyNo", JenisTeks),
 		p.medan("Policy No Ceding", "ClaimData.PolicyNo", JenisTeks),
 		p.medan("Insured Name", "ClaimData.InsuredName", JenisTeks),
-		// S7 Inline: StartDateTime "-" EndDateTime, sel tanpa label.
-		{Label: "", Nilai: periode(p.v("ClaimData.PolicyData.StartDateTime"), p.v("ClaimData.PolicyData.EndDateTime")),
-			Jenis: JenisTeks},
+		// S7 Inline "Insurance Period" (pyLabelFieldValue): StartDateTime "-" EndDateTime.
+		{Label: LabelPeriode, Nilai: periode(p.v("ClaimData.PolicyData.StartDateTime"),
+			p.v("ClaimData.PolicyData.EndDateTime")), Jenis: JenisTeks},
 		p.medan("Cause of Loss", "ClaimData.CauseOfLoss", JenisTeks),
 	}
 	kiri = tampilBila(kiri, strings.TrimSpace(p.v("ClaimData.Occupation")) != "",
@@ -207,8 +210,12 @@ func SusunLayar(k Kasus, kl kontrak.KlaimTreaty, akun string, peran []string) La
 		{Label: "PIC Name", Nilai: k.PembuatNama, Jenis: JenisTeks},
 		{Label: "Date", Nilai: FormatWaktu(k.TglCreate), Jenis: JenisTanggal},
 	}
-	kanan = tampilBila(kanan, strings.TrimSpace(p.v("ClaimData.NoClaim")) != "",
-		Medan{Label: "", Nilai: p.v("ClaimData.NoClaim") + " / " + k.KlaimID, Jenis: JenisTeks})
+	// S9 Inline "Claim No / Claim ID": NoClaim (NOTBLANK) "/" CLMNO - hanya NoClaim yang disembunyikan bila kosong.
+	noKlaim := strings.TrimSpace(p.v("ClaimData.NoClaim"))
+	if noKlaim != "" {
+		noKlaim += " "
+	}
+	kanan = append(kanan, Medan{Label: LabelNoKlaim, Nilai: noKlaim + "/ " + k.KlaimID, Jenis: JenisTeks})
 	persen := p.adj["PersenRNM"]
 	if strings.TrimSpace(persen) == "" { // `.Adjustment.PersenRNM` tanpa penulis di Claim Non Prop: RNM Share master
 		persen = p.v("TreatyInMaster.RNMShare")
@@ -253,7 +260,9 @@ func SusunLayar(k Kasus, kl kontrak.KlaimTreaty, akun string, peran []string) La
 			{Judul: "XOL Allocation", Kolom: kolomXOL(), Baris: barisNama(p.daftar(jalurAdj(n, AnakXOL)))},
 		}},
 	)
-	if dibayar := p.daftar(jalurAdj(n, AnakXOLDibayar)); len(dibayar) > 0 { // S23 IsPrevious == 1
+	dibayar := p.daftar(jalurAdj(n, AnakXOLDibayar))
+	sebelumnya := len(dibayar) > 0 // SetKomiteList_Act S2 `IsPrevious`
+	if sebelumnya {                // S23
 		ly.Bagian = append(ly.Bagian, Bagian{Kunci: "dibayar", Grid: []Grid{{Judul: "Previously Calculated",
 			Kolom: kolomXOL(), Baris: barisNama(dibayar)}}})
 	}
@@ -261,9 +270,9 @@ func SusunLayar(k Kasus, kl kontrak.KlaimTreaty, akun string, peran []string) La
 		{Judul: "Spreading In", Kolom: kolomSpreading(), Baris: p.daftar(jalurAdj(n, AnakSpreadIn))},
 		{Judul: "Spreading Out", Kolom: kolomSpreading(), Baris: p.daftar(jalurAdj(n, AnakSpreadOut))},
 	}})
-	if len(p.kl.Daftar[jalurAdj(n, AnakXOLDibayar)]) > 0 { // S36 tampil[IsPrevious == 1 ...] - VERBATIM
-		bayar := []Medan{{Label: "Payable To", Nilai: labelKode(LabelPayable, p.v("ClaimData.Payable")), Jenis: JenisTeks},
-			p.medan("Specify", "ClaimData.PayableTo", JenisTeks)}
+	if sebelumnya { // S36 tampil[IsPrevious == 1 ...] - VERBATIM
+		bayar := []Medan{{Label: "Payable To", Nilai: labelKode(LabelPayable, p.adj["Payable"]), Jenis: JenisTeks}, // S37
+			p.a("Specify", "PayableTo", JenisTeks)}
 		ly.Bagian = append(ly.Bagian, Bagian{Kunci: "bayar", Medan: bayar},
 			Bagian{Kunci: "bank", Medan: bankAkseptasi(p, "")})
 		if p.adj["FlagCurrency"] == "1" { // S40

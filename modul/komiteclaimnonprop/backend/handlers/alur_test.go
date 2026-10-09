@@ -414,3 +414,24 @@ func TestKirimUlangSubjectivity(t *testing.T) {
 		t.Fatalf("S7 baris terakhir: %+v", tg)
 	}
 }
+
+// HitServiceToKasirKMT_Act S9 / S10: panjang AcceptedNo bukan 23 / 24 = Exit Activity - tanpa muatan Kasir dan tanpa
+// S12-S13 IDOfBank (S7 NoAccount angka saja sudah berjalan).
+func TestKasirKeluarBilaPanjangNomorBukan23Atau24(t *testing.T) {
+	u := siap(t, 1, true)
+	u.a.Bank["UJI BANK|UJI CABANG|123456"] = "UJI-BANK-1"
+	u.g.KodeProduksi = "UJIXYZ" // nomor 26 karakter
+	u.a.Konversi["UJIXYZA123102026TX00001"] = "1"
+	h := u.putus(tiruan.PenyetujuUji(1), setuju("UJI"), http.StatusOK)
+	if len(h.AcceptedNo) == 23 || len(h.AcceptedNo) == 24 {
+		t.Fatalf("nomor uji harus di luar 23 / 24: %q", h.AcceptedNo)
+	}
+	for _, e := range u.g.Efek {
+		if strings.HasPrefix(e, services.JenisEfekKasir+":") {
+			t.Fatalf("Kasir tidak boleh diantre: %s", e)
+		}
+	}
+	if b := u.adj(); b["IDOfBank"] != "" || b["NoAccount"] != "123456" {
+		t.Fatalf("S12-S13 dilewati, S7 tetap: %+v", b)
+	}
+}

@@ -71,8 +71,8 @@ func sqlSisipXOL2(tabel string) string {
 		VALUES (:1, :2, :3, :4, :5, :6, :7)`, tabel)
 }
 
-// SisipXOL2 = InsertXOLKlaimCNP S5.1-S5.2 (`SaveXOLClaim_SQL`), satu baris per layer. TANGGAL = CARI55
-// `@CurrentDate("dd/MM/YYYY")` - tanggal hari aksi (PARITAS: pola `YYYY` Java = tahun-pekan, di sini tahun kalender).
+// SisipXOL2 = InsertXOLKlaimCNP S5.1-S5.2 (`SaveXOLClaim_SQL`), satu baris per layer. TANGGAL = RDB
+// `To_date(sysdate, 'DD/MM/RRRR')` - tanggal hari aksi (CARI55 diisi activity tetapi tidak diikat RDB).
 func (g *Gudang) SisipXOL2(ctx context.Context, tx *db.Tx, b models.BarisXOL2, saat time.Time) error {
 	if err := wajibTx(tx); err != nil {
 		return err

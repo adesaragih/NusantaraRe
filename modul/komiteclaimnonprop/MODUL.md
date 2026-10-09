@@ -59,7 +59,8 @@ bawah inbox Claim Non Prop dan layar keputusan yang dibuka di tempat.
 ## Konfigurasi berdokumen
 
 `backend/konfigurasi/kasir.json` — kode tetap muatan `SendAcceptationToKasir` (`HitServiceToKasirKMT_Act` S10.3 cabang
-IsCLMNP: CompanyName / LjtdId / LdcId; S10.4 IsPEGASyariah LdcId). Konfigurasi, bukan literal kode; env tidak dipakai
+IsCLMNP: CompanyName / LjtdId / LdcId; S10.4 IsPEGASyariah LdcId). `[penyimpangan sadar]` CLAUDE.md §10: konfigurasi,
+bukan literal kode; env tidak dipakai
 (env hanya dibaca `inti/backend/config`, ADR-U-0013).
 
 `backend/konfigurasi/email.json` — akun notifikasi `SendEmailKlaim_KMT` (`NUSARE` / `NUSARESYARIAH` bila alamat tujuan

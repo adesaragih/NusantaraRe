@@ -403,7 +403,7 @@ func SusunMuatanKasir(kl kontrak.KlaimTreaty, b map[string]string, email string,
 	v := kl.Nilai
 	var out []MuatanKasir
 	for _, j := range urut {
-		akun := bukanAngka.ReplaceAllString(j.akun, "")
+		akun := RekeningAngka(j.akun)
 		if akun == "" { // 10.3 `@replaceAll(Primary.NoAccount,"-","")` atas NoAccount yang sudah angka saja (S7)
 			akun = RekeningAngka(b["NoAccount"])
 		}

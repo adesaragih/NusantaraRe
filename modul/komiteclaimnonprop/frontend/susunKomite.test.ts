@@ -93,7 +93,7 @@ describe('ringkasan', () => {
       bagian('klaimKanan', {
         medan: [
           { label: 'PIC Name', nilai: 'UJI', jenis: 'teks' },
-          { label: '', nilai: 'UJI-K-1 / CLMNP-UJI001', jenis: 'teks' },
+          { label: 'Claim No / Claim ID', nilai: 'UJI-K-1 / CLMNP-UJI001', jenis: 'teks' },
         ],
       }),
     ],
@@ -115,7 +115,7 @@ describe('ringkasan', () => {
     bolehKerja: true,
   })
 
-  it('nomor klaim (sel S9 tanpa label), polis, tertanggung, tingkat berjalan', () => {
+  it('nomor klaim (sel S9 "Claim No / Claim ID"), polis, tertanggung, tingkat berjalan', () => {
     const r = ringkasan(layar([anggota(1, '1'), anggota(2, '0'), anggota(3, '0')]))
     expect(r).toEqual({
       noKlaim: 'UJI-K-1 / CLMNP-UJI001',
@@ -131,5 +131,8 @@ describe('ringkasan', () => {
     const r = ringkasan(l)
     expect(r.tingkat).toBeNull()
     expect(r.noKlaim).toBe('CLMNP-UJI001')
+    const tanpaNo = layar([anggota(1, '1')])
+    tanpaNo.bagian[1]!.medan![1]!.nilai = '/ CLMNP-UJI001'
+    expect(ringkasan(tanpaNo).noKlaim).toBe('CLMNP-UJI001')
   })
 })

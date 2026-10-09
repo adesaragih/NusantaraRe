@@ -90,9 +90,3 @@ func isiTeks(v any) map[string]string {
 	}
 	return out
 }
-
-// PekerjaKomiteClaimNonPropOracle menyusun pekerja outbox modul ini (tidak dijalankan modul - lihat `modul.go`).
-func PekerjaKomiteClaimNonPropOracle(svc inti.Akar, l inti.Lingkungan, p Penyusun) *outbox.PekerjaEfek {
-	return outbox.NewPekerjaEfekModul(svc, PelaksanaKomiteClaimNonProp{Lingkungan: l,
-		Resolver: layanan.ResolverLinkServiceOracle(svc), Penyusun: p}, repository.ModulOutbox)
-}

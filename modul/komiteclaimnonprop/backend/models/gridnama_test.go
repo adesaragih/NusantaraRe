@@ -58,6 +58,7 @@ func adaGrid(ly models.Layar, judul string) bool {
 func TestLayarShowTransferGridNamaBukanKode(t *testing.T) {
 	kl := klaimAkhir()
 	kl.Daftar["ClaimData.AdjustmentList"][0]["Type"] = "2"
+	kl.Nilai["ClaimData.PolicyData.StartDateTime"], kl.Nilai["ClaimData.PolicyData.EndDateTime"] = "2026-01-01", "2026-12-31"
 	kl.Daftar["ClaimData.AdjustmentList(1).ListClaimAcceptation"] = []map[string]string{{"CurrencyID": "UJI-9",
 		"Value": "10"}}
 	ly, sel := layarUji(t, kl)
@@ -79,6 +80,12 @@ func TestLayarShowTransferGridNamaBukanKode(t *testing.T) {
 	cek("Spreading In", 0, "Reinstatement Premium", "1.5")
 	if v, _ := medan(ly, "Type"); v != "Adjuster Fee" {
 		t.Errorf("Type akseptasi = %q, mau label", v)
+	}
+	if v, _ := medan(ly, "Claim No / Claim ID"); v != "UJI-K-0001 / CLMNP-UJI001" {
+		t.Errorf("S9 Claim No / Claim ID = %q", v)
+	}
+	if v, _ := medan(ly, "Insurance Period"); v != "01/01/2026 - 31/12/2026" {
+		t.Errorf("S7 Insurance Period = %q", v)
 	}
 	if v, _ := medan(ly, "RNM Share (%)"); v != "25" {
 		t.Errorf("RNM Share (%%) tanpa PersenRNM akseptasi = RNMShare master: %q", v)
@@ -103,10 +110,18 @@ func TestLayarShowTransferSyaratTampil(t *testing.T) {
 	kl.Daftar["ClaimData.AdjustmentList(1).AlokasiXOLPaid"] = []map[string]string{{"TreatyName": "UJI-L1",
 		"ClaimSpreaded": "40"}}
 	kl.Daftar["ClaimData.AdjustmentList"][0]["NameOfBank"] = "UJI BANK"
+	kl.Daftar["ClaimData.AdjustmentList"][0]["Payable"] = "2"
+	kl.Nilai["ClaimData.Payable"] = "1" // header klaim bukan sumber S37
 	kl.Daftar["ClaimData.AdjustmentList"][0]["FlagCurrency"] = "1"
 	ly, sel := layarUji(t, kl)
 	if v := sel("Previously Calculated", 0, "Claim Amount RNM"); v != "40" {
 		t.Fatalf("Previously Calculated: %q", v)
+	}
+	if v, _ := medan(ly, "Payable To"); v != "Broker Name" {
+		t.Fatalf("S37 Payable To = .Adjustment.Payable: %q", v)
+	}
+	if v, _ := medan(ly, "Specify"); v != "UJI-PENERIMA" {
+		t.Fatalf("S37 Specify = .Adjustment.PayableTo: %q", v)
 	}
 	if v, ada := medan(ly, "Name of Bank"); !ada || v != "UJI BANK" {
 		t.Fatalf("rekening S38: %q %v", v, ada)
