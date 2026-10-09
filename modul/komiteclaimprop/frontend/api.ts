@@ -99,22 +99,6 @@ export interface Layar {
   pesan?: string[]
 }
 
-/** Satu baris daftar kerja - `models.BarisKerja`. */
-export interface BarisKerja {
-  kasusId: string
-  klaimId: string
-  noKlaim: string
-  tingkat: number
-  komiteCount: number
-  komiteLoop: number
-  jabatan: string
-  nilai: string
-  mataUang: string
-  statusBaris: string
-  statusWork: string
-  tglUpdate: string
-}
-
 export interface HasilKeputusan {
   kasusId: string
   selesai: boolean
@@ -122,10 +106,6 @@ export interface HasilKeputusan {
   acceptedNo?: string
   /** Keputusan tersimpan, tetapi PDF akseptasi gagal disimpan (`services.PesanDokumenGagal`). */
   galatDokumen?: string
-}
-
-export function daftarKerja(): Promise<BarisKerja[]> {
-  return minta<BarisKerja[]>(`${PREFIX_KCP}/kasus`)
 }
 
 export function bukaKasus(id: string): Promise<Layar> {

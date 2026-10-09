@@ -201,6 +201,15 @@ var ruteDipinjam = map[string][]string{
 	"GET /api/komite-claim-non-prop/kasus":                {"claimnonprop"},
 	"GET /api/komite-claim-non-prop/kasus/{id}":           {"claimnonprop"},
 	"POST /api/komite-claim-non-prop/kasus/{id}/putuskan": {"claimnonprop"},
+	// Komite Claim Life - menu komite dihapus (perintah work owner 09-10-2026, "anggap menu itu tidak pernah ada"):
+	// tabel komite inbox Claim Life dan layar kasusnya (modul tanpa menu, `layar.ts`) dipakai pemegang menu Claim Life;
+	// siapa yang boleh memutus tetap dijaga layanan komite (anggota tangga tingkat berjalan).
+	"GET /api/komite":                 {"claimlife"},
+	"GET /api/komite/laporan-harian":  {"claimlife"},
+	"GET /api/komite/{id}":            {"claimlife"},
+	"GET /api/komite/{id}/riwayat":    {"claimlife"},
+	"POST /api/komite/{id}/keputusan": {"claimlife"},
+	"POST /api/komite/{id}/eskalasi":  {"claimlife"},
 }
 
 // izinMenu menjawab apakah permintaan ini boleh memakai rute milik `pemilik`,

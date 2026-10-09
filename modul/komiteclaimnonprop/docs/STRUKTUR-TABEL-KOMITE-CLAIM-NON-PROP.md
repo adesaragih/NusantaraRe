@@ -2,8 +2,8 @@
 
 Acuan bentuk tabel modul `komiteclaimnonprop` (dibangun 09-10-2026 atas perintah work owner, pola Komite Claim Prop).
 
-⛔ **Modul ini tidak membuat satu tabel pun dan tidak menambah kolom.** Migrasinya hanya slot menu 988
-(`UPDATE M_NAV_MENU SET DIMIGRASI = '1'`). Semua tabel di bawah milik modul lain atau tabel warisan; bentuk kolomnya
+⛔ **Modul ini tidak membuat satu tabel pun dan tidak menambah kolom.** Modul ini tanpa migrasi (menunya dihapus
+migrasi inti 949). Semua tabel di bawah milik modul lain atau tabel warisan; bentuk kolomnya
 tidak didefinisikan ulang di sini — judul bab sengaja bukan nama tabel telanjang supaya penjaga STRUKTUR tidak membaca
 berkas ini sebagai pemilik kolom.
 

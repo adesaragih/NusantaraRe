@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import type { MenuModul, RuteModul } from '../inti/frontend/modul'
-import { rakitModulFrontend, type BerkasMenu, type BerkasRute, type Halaman } from './daftar'
+import type { LayarModul, MenuModul, RuteModul } from '../inti/frontend/modul'
+import { rakitModulFrontend, type BerkasLayar, type BerkasMenu, type BerkasRute, type Halaman } from './daftar'
 
 // Perakit daftar modul frontend - struktur tim satu folder per modul
 // (30-09-2026). Daftarnya terbentuk dari FOLDER (`import.meta.glob`), jadi yang
@@ -14,6 +14,10 @@ function menu(nama: string, halamanAwal = 'awal'): { PENDAFTARAN_MENU: MenuModul
   // `MenuModul` bawaan berhalaman `HalamanTerdaftar`; modul tiruan memakai
   // halaman tiruan, jadi bentuknya dilonggarkan di satu tempat ini.
   return { PENDAFTARAN_MENU: { nama, kelompok: `Kelompok ${nama}`, halaman: ['awal'], halamanAwal } as unknown as MenuModul }
+}
+
+function layar(nama: string): { PENDAFTARAN_LAYAR: LayarModul } {
+  return { PENDAFTARAN_LAYAR: { nama, kelompok: `Kelompok ${nama}`, halaman: ['awal'], halamanAwal: 'awal' } as unknown as LayarModul }
 }
 
 describe('rakitModulFrontend', () => {
@@ -79,5 +83,38 @@ describe('rakitModulFrontend', () => {
         { '../modul/alfa/frontend/rute.tsx': { RUTE_MODUL: ruteKosong } },
       ),
     ).toThrow('menyebut nama "lain"')
+  })
+
+  // Perintah work owner 09-10-2026: menu komite dihapus, "anggap menu itu tidak pernah ada" - komite digabung ke menu
+  // klaim masing-masing. Modul TANPA MENU memakai `layar.ts` (PENDAFTARAN_LAYAR) di tempat `menu.ts`.
+  it('layar.ts + rute.tsx = modul tanpa menu (tanpaMenu), berurutan bersama modul bermenu', () => {
+    const r: BerkasRute = {
+      '../modul/alfa/frontend/rute.tsx': { RUTE_MODUL: ruteKosong },
+      '../modul/beta/frontend/rute.tsx': { RUTE_MODUL: ruteKosong },
+    }
+    const l: BerkasLayar = { '../modul/beta/frontend/layar.ts': layar('beta') }
+    const hasil = rakitModulFrontend({ '../modul/alfa/frontend/menu.ts': menu('alfa') }, r, l)
+    expect(hasil.map((x) => [x.nama, x.tanpaMenu === true])).toEqual([
+      ['alfa', false],
+      ['beta', true],
+    ])
+    expect(hasil[1]?.halamanAwal).toBe('awal')
+    expect(hasil[1]?.Rute).toBe(ruteKosong)
+  })
+
+  it('menu.ts DAN layar.ts di satu folder DITOLAK; layar.ts tanpa rute.tsx DITOLAK', () => {
+    expect(() =>
+      rakitModulFrontend(
+        { '../modul/alfa/frontend/menu.ts': menu('alfa') },
+        { '../modul/alfa/frontend/rute.tsx': { RUTE_MODUL: ruteKosong } },
+        { '../modul/alfa/frontend/layar.ts': layar('alfa') },
+      ),
+    ).toThrow('modul/alfa/frontend punya menu.ts dan layar.ts')
+    expect(() => rakitModulFrontend({}, {}, { '../modul/alfa/frontend/layar.ts': layar('alfa') })).toThrow(
+      'modul/alfa/frontend punya layar.ts tanpa rute.tsx',
+    )
+    expect(() => rakitModulFrontend({}, { '../modul/alfa/frontend/rute.tsx': { RUTE_MODUL: ruteKosong } }, {})).toThrow(
+      'modul/alfa/frontend punya rute.tsx tanpa menu.ts',
+    )
   })
 })

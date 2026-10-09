@@ -35,11 +35,12 @@ import { ENTRI_MENU, halamanAktif, MODUL_FRONTEND, type Halaman } from './daftar
 
 // Modul tanpa menu sendiri yang dipasang bagi pemegang menu modul LAIN (modul -> peminjam) - padanan `ruteDipinjam`
 // cmd/api (rute API-nya dipinjam modul yang sama). Komite Claim Prop: menu dibuang, kasus komite dibuka dari inbox
-// Claim Prop (keputusan work owner 09-10-2026); Komite Claim Non Prop: pola yang sama atas inbox Claim Non Prop
-// (perintah work owner 09-10-2026).
+// Claim Prop (keputusan work owner 09-10-2026); Komite Claim Non Prop dan Komite Claim Life: pola yang sama atas inbox
+// klaimnya. Keempat modul komite TANPA menu (perintah work owner 09-10-2026, `layar.ts`) - hanya terpasang lewat sini.
 const MODUL_DIPINJAM: Readonly<Record<string, readonly string[]>> = {
   komiteclaimprop: ['claimprop'],
   komiteclaimnonprop: ['claimnonprop'],
+  komiteclaimlife: ['claimlife'],
 }
 
 export default function App() {

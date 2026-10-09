@@ -98,29 +98,11 @@ export interface Layar {
   pesan?: string[]
 }
 
-/** Satu baris daftar kerja - `models.BarisKerja`. */
-export interface BarisKerja {
-  kasusId: string
-  klaimId: string
-  noKlaim: string
-  tingkat: number
-  komiteCount: number
-  komiteLoop: number
-  jabatan: string
-  statusBaris: string
-  statusWork: string
-  tglUpdate: string
-}
-
 export interface HasilKeputusan {
   kasusId: string
   selesai: boolean
   komiteCount: number
   acceptedNo?: string
-}
-
-export function daftarKerja(): Promise<BarisKerja[]> {
-  return minta<BarisKerja[]>(`${PREFIX_KCNP}/kasus`)
 }
 
 export function bukaKasus(id: string): Promise<Layar> {

@@ -10,7 +10,7 @@ package backend
 
 import (
 	"context"
-	"embed"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -21,12 +21,6 @@ import (
 	"nusantarare/modul/komiteclaimnonprop/backend/models"
 	"nusantarare/modul/komiteclaimnonprop/backend/services"
 )
-
-// berkasMigrasi adalah folder `migrations/` modul ini (rentang 720-759, slot menu 988-989 - MODUL.md), ditanam ke
-// biner.
-//
-//go:embed migrations/*.sql
-var berkasMigrasi embed.FS
 
 // Nama pengenal modul ini di MODUL_AKTIF dan di GET /api/modul-aktif.
 const Nama = "komiteclaimnonprop"
@@ -77,7 +71,6 @@ func KonfigurasiKasir() (models.KonfigurasiKasir, error) {
 func Pendaftaran() inti.Pendaftaran {
 	return inti.Pendaftaran{
 		Nama:        Nama,
-		Migrasi:     berkasMigrasi,
 		Membutuhkan: []inti.Kontrak{inti.KontrakDari[kontrak.KlaimTreatyNonPropKomite]()},
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
 			kasir, err := KonfigurasiKasir()

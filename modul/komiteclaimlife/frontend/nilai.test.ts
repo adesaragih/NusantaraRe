@@ -3,14 +3,12 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import type { BarisInboxKomite } from '../api'
-import { selKomite, tingkatKomite } from './InboxKomite'
+import type { BarisInboxKomite } from './api'
+import { selKomite, tingkatKomite } from './nilai'
 
-// Uji Inbox Komite — tiket 01 Komite Claim Life.
+// Uji nilai kasus komite — tiket 01 Komite Claim Life (dipindah dari uji Inbox Komite).
 
-const SUMBER = ['InboxKomite.tsx', 'KasusKomite.tsx']
-  .map((f) => readFileSync(join(__dirname, f), 'utf8'))
-  .join('\n')
+const SUMBER = readFileSync(join(__dirname, 'pages', 'KasusKomite.tsx'), 'utf8')
   .split('\n')
   .filter((b) => !b.trimStart().startsWith('//'))
   .join('\n')
@@ -28,7 +26,7 @@ const BARIS: BarisInboxKomite = {
   statusBaris: 'Outstanding',
 }
 
-describe('Inbox Komite', () => {
+describe('nilai kasus komite', () => {
   it('tingkat berjalan dari seluruh tingkat', () => {
     expect(tingkatKomite(BARIS)).toBe('2 / 3')
   })

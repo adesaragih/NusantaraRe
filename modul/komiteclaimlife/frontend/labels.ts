@@ -23,14 +23,9 @@ export const KOLOM_INBOX_KOMITE = {
   statusBaris: 'Status baris',
 } as const
 
-export const INBOX_KOMITE = {
-  judul: 'Inbox Komite',
-  kosong: 'Tidak ada kasus komite yang menunggu keputusan Anda.',
-} as const
-
 export const KASUS_KOMITE = {
   judul: 'Kasus Komite',
-  kembali: 'Kembali ke Inbox Komite',
+  kembali: 'Kembali ke Inbox Claim Life',
   tangga: 'Tangga persetujuan',
   urut: 'Tingkat',
   /**

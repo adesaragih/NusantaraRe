@@ -485,3 +485,26 @@ export const DIAGNOSA = {
   /** `Diagnose_Section.xml` b2509 `pyLabel` -> `SetDisease` b2528. */
   pilih: 'Choose',
 } as const
+
+/**
+ * Tabel komite di bawah inbox (perintah work owner 09-10-2026: menu Komite Claim Life dihapus) - judul dan kolom
+ * disalin dari Inbox Komite modul Komite Claim Life. ⚠️ Tiga kolom pertama dipinjam dari kolom Pega-standar
+ * `InboxPremiumList` (`pyFieldLabel` b721/b735/b764): worklist `KomiteRouter` tidak punya section inbox sendiri.
+ */
+export const TABEL_KOMITE = {
+  judul: 'Inbox Komite',
+  kosong: 'Tidak ada kasus komite yang menunggu keputusan Anda.',
+  kasusId: 'Case ID',
+  tglUpdate: 'Update Date/Time',
+  statusWork: 'Work Status',
+  nomorKlaim: 'Klaim induk',
+  tingkat: 'Tingkat',
+  nilaiKlaim: 'Nilai klaim',
+  mataUang: 'CURRENCY',
+  statusBaris: 'Status baris',
+  /** Laporan "perlu intervensi" — tiket 08 Komite Claim Life, tidak ada di korpus (ADR-0015). */
+  laporan: 'Perlu intervensi hari ini',
+  laporanKosong: 'Laporan hari ini: tidak ada efek keluar yang perlu intervensi.',
+  /** `[tidak ada di korpus]` - modul Komite Claim Life tidak dipasang bagi akun ini. */
+  takTerpasang: 'Kasus komite ini tidak dapat dibuka di sini: modul Komite Claim Life tidak aktif.',
+} as const

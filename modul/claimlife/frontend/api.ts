@@ -1262,3 +1262,46 @@ export async function ambilDataPolis(nomorPolis: string): Promise<PolicyDataLife
     `/api/polis-life/ringkas?nomorPolis=${encodeURIComponent(nomorPolis)}`,
   )
 }
+
+// ——— Tabel komite di bawah inbox (perintah work owner 09-10-2026: menu Komite Claim Life dihapus, komite digabung ke
+// menu Claim Life). Dibaca lewat rute pinjaman `GET /api/komite` (`cmd/api/rakit.go`); kasusnya dibuka di tempat
+// (`onBukaModul`). Bentuk = `BarisInboxKomite` modul Komite Claim Life (disalin, bukan diimpor). ———
+
+/** Satu kasus komite yang menunggu pelaku. Uang TEKS; status baris KATA. */
+export interface BarisKomite {
+  kasusId: string
+  tglUpdate: string
+  statusWork: string
+  klaimId: string
+  nomorKlaim: string
+  tingkatBerjalan: number
+  komiteLoop: number
+  nilaiKlaim: string
+  mataUang: string
+  statusBaris: string
+}
+
+export interface HalamanKomite {
+  baris: BarisKomite[]
+  total: number
+  halaman: number
+  ukuran: number
+}
+
+/** Laporan harian "perlu intervensi" — `GET /api/komite/laporan-harian` (admin). */
+export interface LaporanHarianKomite {
+  tanggal: string
+  kosong: boolean
+  baris: { kasusId: string; jenis: string; keadaan: string; percobaan: number; sejak: string }[]
+}
+
+export async function daftarKomite(halaman = 1): Promise<HalamanKomite> {
+  return minta<HalamanKomite>(`/api/komite?halaman=${String(halaman)}`)
+}
+
+export async function laporanHarianKomite(): Promise<LaporanHarianKomite> {
+  return minta<LaporanHarianKomite>('/api/komite/laporan-harian')
+}
+
+/** Nama modul layar kasus komite (`onBukaModul`). */
+export const MODUL_KOMITE = 'komiteclaimlife'

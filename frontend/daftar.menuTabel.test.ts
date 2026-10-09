@@ -6,8 +6,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AKAR_APLIKASI } from '../inti/frontend/uji/sumber'
 import { berkasMenu, menuBersih, type BarisMenuBersih } from '../inti/frontend/uji/menuBersih'
 import { ambilMenu } from '../inti/frontend/klien'
-import { FOLDER_KORPUS, LABEL_MENU, LABEL_TAMPIL, MODUL_LUAR_KORPUS } from './katalogKorpus'
-import { MODUL_FRONTEND } from './daftar'
+import { FOLDER_KORPUS, LABEL_MENU, LABEL_TAMPIL, MODUL_LUAR_KORPUS, MODUL_TANPA_MENU } from './katalogKorpus'
+import { MODUL_BERMENU, MODUL_FRONTEND } from './daftar'
 
 // Penjaga DUA ARAH: HASIL BERSIH M_NAV_MENU (900 + 901 + slot menu modul) ↔
 // `frontend/daftar.ts` - menu datar, keputusan work owner 30-09-2026
@@ -68,41 +68,43 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
   })
 
   it('dua puluh baris modul, nol butir anak (901)', () => {
-    // Dua puluh folder korpus + modul di luar korpus (Marketing Officer, migrasi inti 906 - keputusan work owner 03-10-2026).
-    expect(BERSIH.baris).toHaveLength(20 + Object.keys(MODUL_LUAR_KORPUS).length)
+    // Dua puluh folder korpus + modul di luar korpus (Marketing Officer, migrasi inti 906 - keputusan work owner 03-10-2026),
+    // dikurangi empat modul komite yang menunya dihapus (perintah work owner 09-10-2026, migrasi inti 949).
+    expect(BERSIH.baris).toHaveLength(20 - MODUL_TANPA_MENU.length + Object.keys(MODUL_LUAR_KORPUS).length)
+    for (const k of ['komiteclaimfacin', 'komiteclaimlife', 'komiteclaimnonprop', 'komiteclaimprop']) {
+      expect(BERSIH.baris.map((b) => b.kode), k).not.toContain(k)
+    }
     expect(BERSIH.butir).toEqual([])
     for (const b of BERSIH.baris) expect(b.kode, b.label).toBe(b.modul)
   })
 
   it('dua arah: baris DIMIGRASI ↔ modul frontend dengan HALAMAN_AWAL', () => {
-    expect(MODUL_FRONTEND.length).toBeGreaterThanOrEqual(4)
-    expect(selisihMenuModul(BERSIH.baris, MODUL_FRONTEND)).toEqual([])
+    expect(MODUL_BERMENU.length).toBeGreaterThanOrEqual(4)
+    expect(selisihMenuModul(BERSIH.baris, MODUL_BERMENU)).toEqual([])
+    // Modul tanpa menu (`layar.ts`) memang tanpa baris - bukan selisih.
+    for (const m of MODUL_FRONTEND.filter((x) => x.tanpaMenu === true)) {
+      expect(BERSIH.baris.map((b) => b.kode), m.nama).not.toContain(m.nama)
+    }
   })
 
   it('uji gigit: baris dimigrasi tanpa modul frontend', () => {
-    const tanpaSatu = MODUL_FRONTEND.filter((m) => m.nama !== 'premiumlistlife')
+    const tanpaSatu = MODUL_BERMENU.filter((m) => m.nama !== 'premiumlistlife')
     expect(selisihMenuModul(BERSIH.baris, tanpaSatu)).toEqual(['baris premiumlistlife DIMIGRASI=\'1\' tanpa modul frontend'])
   })
 
   it('uji gigit: modul frontend tanpa baris, atau berbaris DIMIGRASI=0', () => {
     const tiruan = { nama: 'modultiruan', kelompok: 'Modul Tiruan', halaman: ['t'], halamanAwal: 't' }
-    expect(selisihMenuModul(BERSIH.baris, [...MODUL_FRONTEND, tiruan])).toEqual(['modul frontend modultiruan tanpa baris M_NAV_MENU'])
-    // Contoh modul berbaris DIMIGRASI='0' - komiteclaimfacin (edmtreatyin menyala 06-10-2026, slot 970; claimprop
-    // menyala 07-10-2026, slot 980; komiteclaimprop menyala 08-10-2026, slot 986; claimnonprop menyala 09-10-2026,
-    // slot 982; komiteclaimnonprop menyala 09-10-2026, slot 988).
-    const komiteclaimfacin = {
-      nama: 'komiteclaimfacin',
-      kelompok: 'Komite Claim FacIn',
-      halaman: ['komiteclaimfacin'],
-      halamanAwal: 'komiteclaimfacin',
-    }
-    expect(selisihMenuModul(BERSIH.baris, [...MODUL_FRONTEND, komiteclaimfacin])).toEqual([
-      "modul frontend komiteclaimfacin: barisnya DIMIGRASI='0'",
+    expect(selisihMenuModul(BERSIH.baris, [...MODUL_BERMENU, tiruan])).toEqual(['modul frontend modultiruan tanpa baris M_NAV_MENU'])
+    // Contoh modul berbaris DIMIGRASI='0' - rnwfacin (edmtreatyin menyala 06-10-2026, slot 970; claimprop menyala
+    // 07-10-2026, slot 980; claimnonprop menyala 09-10-2026, slot 982; baris keempat komite dibuang 949, 09-10-2026).
+    const rnwfacin = { nama: 'rnwfacin', kelompok: 'RNW Fac In', halaman: ['rnwfacin'], halamanAwal: 'rnwfacin' }
+    expect(selisihMenuModul(BERSIH.baris, [...MODUL_BERMENU, rnwfacin])).toEqual([
+      "modul frontend rnwfacin: barisnya DIMIGRASI='0'",
     ])
   })
 
   it('uji gigit: HALAMAN_AWAL di luar halaman modul, dan nama ≠ LABEL', () => {
-    const rusak = MODUL_FRONTEND.map((m) => (m.nama === 'claimlife' ? { ...m, halamanAwal: 'bukan', kelompok: 'ClaimLife' } : m))
+    const rusak = MODUL_BERMENU.map((m) => (m.nama === 'claimlife' ? { ...m, halamanAwal: 'bukan', kelompok: 'ClaimLife' } : m))
     expect(selisihMenuModul(BERSIH.baris, rusak)).toEqual([
       'modul claimlife: HALAMAN_AWAL bukan bukan halamannya',
       'modul claimlife: nama ClaimLife, LABEL baris Claim Life',

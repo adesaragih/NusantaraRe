@@ -4,7 +4,7 @@ Komite klaim treaty inward non proporsional (XoL): kasus `ASM-FW-GCNMFW-Work-Kom
 (`Flow/KomiteTreaty_Flow.xml` korpus `Komite Claim Non Prop`: assignment "KomiteRouter" → `KomitePostAdjustment` →
 Resolved-Completed). Kasus `KMTNP-` **dilahirkan Claim Non Prop** (`CreateChildKomiteCNP_Act`); modul ini menampilkan
 layar `ShowTransfer` dan menjalankan `KomitePostAdjustment` dalam satu transaksi. Dibangun 09-10-2026 atas perintah
-work owner — pola Komite Claim Prop: **tanpa menu sendiri** (menu disembunyikan lewat data), daftar kasusnya tampil di
+work owner — pola Komite Claim Prop: **tanpa menu** (modul `layar.ts`, baris menunya dibuang migrasi inti 949), daftar kasusnya tampil di
 bawah inbox Claim Non Prop dan dibuka di tempat; jenjang komite memakai workbasket (roster NONPROP, migrasi
 claimnonprop 611).
 
@@ -19,7 +19,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Pemilik | `@PEMILIK-KOMITECLAIMNONPROP` |
 | Status | dimigrasi |
 | Rentang migrasi | `720-759` |
-| Slot menu | `988-989` |
+| Slot menu | `—` |
 | Prefix rute API | `/api/komite-claim-non-prop` (`/api/komite` milik Komite Claim Life, `/api/komite-claim-prop` milik Komite Claim Prop) |
 | Kontrak disediakan | — |
 | Kontrak dipakai | `kontrak.KlaimTreatyNonPropKomite` (`inti/backend/kontrak/klaimtreatynonprop.go`, disediakan `claimnonprop`) — perintah work owner 09-10-2026 |
@@ -33,8 +33,8 @@ dipensiunkan 1 Oktober 2026.
 | Folder | Isi |
 | --- | --- |
 | `docs/` | `PARITAS.md` (setiap isian / tombol / langkah `KomitePostAdjustment` ↔ status) |
-| `backend/` | `modul.go` (`Pendaftaran`), `models/` (murni; `templat/` = stream HTML `EmailKlaim_HTML_KMT`), `repository/` (SQL), `services/` (aturan + satu transaksi Submit + perakit isi efek + pelaksana outbox), `handlers/`, `tiruan/` (uji, kontrak palsu Claim Non Prop), `konfigurasi/kasir.json` / `email.json`, `migrations/` |
-| `frontend/` | `menu.ts`, `rute.tsx`, daftar kerja penyetuju, layar `ShowTransfer` |
+| `backend/` | `modul.go` (`Pendaftaran`), `models/` (murni; `templat/` = stream HTML `EmailKlaim_HTML_KMT`), `repository/` (SQL), `services/` (aturan + satu transaksi Submit + perakit isi efek + pelaksana outbox), `handlers/`, `tiruan/` (uji, kontrak palsu Claim Non Prop), `konfigurasi/kasir.json` / `email.json` |
+| `frontend/` | `layar.ts` (modul TANPA menu), `rute.tsx`, layar `ShowTransfer` (dibuka dari tabel komite inbox Claim Non Prop) |
 
 ## Rute
 
@@ -76,17 +76,16 @@ memuat "syariah") dan CC kotak surat klaim (hanya IsPEGAPROD). BCC pribadi yang 
 
 MUATAN email hanya pengenal (claimlife/015: tanpa nama / alamat); isi dirakit saat dikirim.
 
+## Menu
+
+**Tidak ada** (perintah work owner 09-10-2026: "kode menu nya di hapus dari repo, anggap menu itu tidak pernah ada,
+karena digabung di menu klaim nya masing-masing"). Baris `M_NAV_MENU` dan hak akunnya dibuang migrasi inti 949; slot
+menu 988 dihapus. Modul ini dipasang bagi pemegang menu `claimnonprop` (`MODUL_DIPINJAM` frontend/App.tsx, frontend
+`layar.ts`) dan rutenya dipinjam (`ruteDipinjam` cmd/api/rakit.go).
+
 ## Migrasi
 
-Rentang `720-759`. `-migrate` dijalankan **work owner**.
-
-| Nomor | Isi |
-| --- | --- |
-| 988 | slot menu: `UPDATE M_NAV_MENU SET DIMIGRASI = '1' WHERE KODE = 'komiteclaimnonprop'` |
-
-Menu `komiteclaimnonprop` **disembunyikan lewat data** (langkah work owner, bukan migrasi — pola Komite Claim Prop):
-`M_NAV_MENU.STATUS_AKTIF = '0'` untuk kode itu dan kode menu dicabut dari akun. Pemegang menu `claimnonprop` membuka
-kasus komite lewat rute pinjaman.
+Rentang `720-759`, belum terpakai (nol berkas migrasi; kolom kepala kasus milik migrasi komiteclaimprop 680 / 682).
 
 ## Data lama
 

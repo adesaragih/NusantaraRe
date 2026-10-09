@@ -14,6 +14,9 @@
 // modul = folder baru dengan dua berkas itu; berkas ini tidak disentuh. Union
 // halaman terbentuk dari `HalamanModul`, yang diperluas setiap `menu.ts`.
 //
+// Modul TANPA MENU (perintah work owner 09-10-2026, menu komite dihapus): `layar.ts` (ekspor `PENDAFTARAN_LAYAR`,
+// `LayarModul`) menggantikan `menu.ts` - modulnya terpasang dan dapat dibuka `onBukaModul`, tetapi bukan entri menu.
+//
 // Nama modulnya SAMA dengan nama folder dan `const Nama` di
 // `modul/<nama>/backend/modul.go` - dijaga `rakitModulFrontend` di bawah dan
 // `daftar.modulAktif.test.ts`.
@@ -28,7 +31,7 @@ import {
   modulDipasang,
   type EntriMenu,
 } from '../inti/frontend/lib/daftarMenu'
-import type { HalamanTerdaftar, MenuModul, ModulFrontend, RuteModul } from '../inti/frontend/modul'
+import type { HalamanTerdaftar, LayarModul, MenuModul, ModulFrontend, RuteModul } from '../inti/frontend/modul'
 
 /**
  * Halaman yang aplikasi dapat tampilkan, sebagai UNION — bukan `string`.
@@ -44,8 +47,9 @@ export type Halaman =
   | typeof HALAMAN_TEMPLATE_MANAGER
   | HalamanTerdaftar
 
-/** Berkas `menu.ts` dan `rute.tsx` satu modul, berkunci jalur glob. */
+/** Berkas `menu.ts`, `layar.ts`, dan `rute.tsx` satu modul, berkunci jalur glob. */
 export type BerkasMenu = Record<string, { PENDAFTARAN_MENU: MenuModul }>
+export type BerkasLayar = Record<string, { PENDAFTARAN_LAYAR: LayarModul }>
 export type BerkasRute = Record<string, { RUTE_MODUL: RuteModul<Halaman> }>
 
 /** Nama folder modul dari jalur glob `../modul/<nama>/frontend/<berkas>`. */
@@ -56,27 +60,34 @@ function folderModul(jalur: string): string {
 }
 
 /**
- * Merakit modul frontend dari berkas `menu.ts` dan `rute.tsx` setiap folder,
+ * Merakit modul frontend dari berkas `menu.ts` (atau `layar.ts`, modul tanpa menu) dan `rute.tsx` setiap folder,
  * berurutan menurut NAMA folder - urutan yang sama dengan daftar Go.
  *
- * ⛔ Folder yang hanya punya salah satunya, atau yang `PENDAFTARAN_MENU.nama`-nya
- * berbeda dari nama foldernya, DITOLAK saat aplikasi dimuat - bukan modul yang
- * diam-diam tidak tampil.
+ * ⛔ Folder yang hanya punya salah satunya, yang punya `menu.ts` DAN `layar.ts`, atau yang nama modulnya berbeda dari
+ * nama foldernya, DITOLAK saat aplikasi dimuat - bukan modul yang diam-diam tidak tampil.
  */
-export function rakitModulFrontend(menu: BerkasMenu, rute: BerkasRute): ModulFrontend<Halaman>[] {
-  const perFolder = new Map<string, { menu?: MenuModul; rute?: RuteModul<Halaman> }>()
+export function rakitModulFrontend(menu: BerkasMenu, rute: BerkasRute, layar: BerkasLayar = {}): ModulFrontend<Halaman>[] {
+  const perFolder = new Map<string, { menu?: MenuModul; layar?: LayarModul; rute?: RuteModul<Halaman> }>()
   for (const [jalur, isi] of Object.entries(menu)) {
     perFolder.set(folderModul(jalur), { ...perFolder.get(folderModul(jalur)), menu: isi.PENDAFTARAN_MENU })
+  }
+  for (const [jalur, isi] of Object.entries(layar)) {
+    perFolder.set(folderModul(jalur), { ...perFolder.get(folderModul(jalur)), layar: isi.PENDAFTARAN_LAYAR })
   }
   for (const [jalur, isi] of Object.entries(rute)) {
     perFolder.set(folderModul(jalur), { ...perFolder.get(folderModul(jalur)), rute: isi.RUTE_MODUL })
   }
   return [...perFolder.entries()]
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .map(([folder, { menu: m, rute: r }]) => {
+    .map(([folder, { menu: mm, layar: l, rute: r }]) => {
+      if (mm !== undefined && l !== undefined) {
+        throw new Error(`daftar modul: modul/${folder}/frontend punya menu.ts dan layar.ts - pilih satu`)
+      }
+      const m = mm ?? l
       if (m === undefined || r === undefined) {
+        const berkas = l !== undefined ? 'layar.ts' : 'menu.ts'
         throw new Error(
-          `daftar modul: modul/${folder}/frontend punya ${m === undefined ? 'rute.tsx tanpa menu.ts' : 'menu.ts tanpa rute.tsx'}`,
+          `daftar modul: modul/${folder}/frontend punya ${m === undefined ? 'rute.tsx tanpa menu.ts' : berkas + ' tanpa rute.tsx'}`,
         )
       }
       if (m.nama !== folder) {
@@ -90,8 +101,9 @@ export function rakitModulFrontend(menu: BerkasMenu, rute: BerkasRute): ModulFro
         kelompok: m.kelompok,
         halaman: m.halaman,
         halamanAwal: m.halamanAwal,
-        ...(m.antreanBeranda !== undefined ? { antreanBeranda: m.antreanBeranda } : {}),
-        ...(m.daftarBeranda !== undefined ? { daftarBeranda: m.daftarBeranda } : {}),
+        ...(mm?.antreanBeranda !== undefined ? { antreanBeranda: mm.antreanBeranda } : {}),
+        ...(mm?.daftarBeranda !== undefined ? { daftarBeranda: mm.daftarBeranda } : {}),
+        ...(l !== undefined ? { tanpaMenu: true as const } : {}),
         Rute: r,
       }
     })
@@ -104,7 +116,11 @@ export function rakitModulFrontend(menu: BerkasMenu, rute: BerkasRute): ModulFro
 export const MODUL_FRONTEND: readonly ModulFrontend<Halaman>[] = rakitModulFrontend(
   import.meta.glob<{ PENDAFTARAN_MENU: MenuModul }>('../modul/*/frontend/menu.ts', { eager: true }),
   import.meta.glob<{ RUTE_MODUL: RuteModul<Halaman> }>('../modul/*/frontend/rute.tsx', { eager: true }),
+  import.meta.glob<{ PENDAFTARAN_LAYAR: LayarModul }>('../modul/*/frontend/layar.ts', { eager: true }),
 )
+
+/** Modul BERMENU - satu baris `M_NAV_MENU` dan satu entri sidebar / palet masing-masing; modul `layar.ts` tidak. */
+export const MODUL_BERMENU: readonly ModulFrontend<Halaman>[] = MODUL_FRONTEND.filter((m) => m.tanpaMenu !== true)
 
 /**
  * Entri yang dapat dibuka: Beranda, lalu SATU per modul terdaftar - halaman
@@ -128,7 +144,7 @@ export const ENTRI_MENU: readonly EntriMenu<Halaman>[] = [
     kelompok: TEMPLATE_MANAGER.judul,
     pemilik: KODE_MENU_TEMPLATE_MANAGER,
   },
-  ...MODUL_FRONTEND.map((m) => ({
+  ...MODUL_BERMENU.map((m) => ({
     modul: m.halamanAwal,
     label: m.kelompok,
     kelompok: m.kelompok,

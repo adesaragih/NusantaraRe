@@ -2,25 +2,12 @@
 // server VERBATIM Section ShowTransfer (`models.Layar`). Berkas ini hanya memuat teks halaman awal dan perangkat yang
 // tidak punya label di XML (ditandai).
 
-/** Nama menu - `M_NAV_MENU.LABEL` baris modul ini (migrasi inti 900) = nama folder korpus. */
-export const MENU_KCNP = { kelompok: 'Komite Claim Non Prop' } as const
+/** Nama modul - nama folder korpus VERBATIM (`LayarModul.kelompok`, judul jendela berkas). Modul ini TANPA menu. */
+export const KORPUS_KCNP = { kelompok: 'Komite Claim Non Prop' } as const
 
-/**
- * Daftar kerja penyetuju (worklist assignment "KomiteRouter"). Worklist itu tidak punya section inbox di korpus; kolom
- * mengikuti daftar kerja Komite Claim Prop tanpa nilai / mata uang (akseptasi Non Prop bernilai per layer) -
- * `[tidak ada di korpus]`.
- */
+/** Teks perangkat layar kasus komite yang tidak punya label di XML (ditandai). */
 export const KCNP = {
-  judul: 'Komite Claim Non Prop',
   memuat: 'Loading…',
-  kosong: 'No committee case is waiting for your decision.',
-  kolomKasus: 'Case ID',
-  kolomTgl: 'Update Date/Time',
-  kolomStatus: 'Work Status',
-  kolomKlaim: 'Claim',
-  kolomTingkat: 'Level',
-  kolomJabatan: 'Committe Name',
-  kolomStatusBaris: 'Status',
   /** `[tidak ada di korpus]` - layar dibuka bukan oleh pemegang (mis. kasus sudah berpindah tingkat). */
   hanyaLihat: 'Read only - this case is waiting for another committee member.',
   memproses: 'Submitting…',

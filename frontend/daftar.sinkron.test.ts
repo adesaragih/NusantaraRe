@@ -5,9 +5,9 @@ import { describe, expect, it } from 'vitest'
 
 import { AKAR_APLIKASI, folderKorpusBelumDimigrasi } from '../inti/frontend/uji/sumber'
 import { menuTabelDariMigrasi } from '../inti/frontend/uji/menuBersih'
-import { FOLDER_KORPUS, LABEL_MENU } from './katalogKorpus'
+import { FOLDER_KORPUS, FOLDER_TANPA_MENU, LABEL_MENU } from './katalogKorpus'
 import { daftarPalet, saringPalet, susunMenu } from '../inti/frontend/lib/daftarMenu'
-import { ENTRI_MENU, MODUL_FRONTEND } from './daftar'
+import { ENTRI_MENU, MODUL_BERMENU } from './daftar'
 
 // Sinkron sidebar ↔ palet — DUA ARAH, butir bg.
 //
@@ -31,7 +31,7 @@ describe('sidebar ↔ palet, dua arah', () => {
   it('palet = Beranda + satu entri per tombol modul yang dapat dibuka, urutan sidebar', () => {
     const dariSidebar = PALET.golongan.flatMap((g) => g.modul.flatMap((t) => (t.halaman === null ? [] : [[t.halaman, t.label]])))
     expect(PALET.entri.map((e) => [e.modul, e.label])).toEqual([['beranda', 'Home'], ...dariSidebar])
-    expect(dariSidebar).toHaveLength(MODUL_FRONTEND.length)
+    expect(dariSidebar).toHaveLength(MODUL_BERMENU.length)
     // Label entri palet = LABEL tabel = nama folder korpus.
     const sah = new Set<string>(Object.values(LABEL_MENU))
     for (const e of PALET.entri.slice(1)) expect(sah.has(e.label), e.label).toBe(true)
@@ -68,8 +68,8 @@ describe('saringPalet', () => {
   })
 
   it('setiap KATA harus cocok, urutannya bebas', () => {
-    const hasil = saringPalet(DAFTAR, 'life komite')
-    expect(hasil.map((h) => h.label)).toEqual([FOLDER_KORPUS.komiteClaimLife])
+    const hasil = saringPalet(DAFTAR, 'life claim')
+    expect(hasil.map((h) => h.label)).toEqual([FOLDER_KORPUS.claimLife])
     // Dan kata yang tidak ada menolak barisnya.
     expect(saringPalet(DAFTAR, 'claim borderaux')).toHaveLength(0)
   })
@@ -82,9 +82,6 @@ describe('saringPalet', () => {
         FOLDER_KORPUS.claimLife,
         FOLDER_KORPUS.claimNonProp,
         FOLDER_KORPUS.claimProp,
-        FOLDER_KORPUS.komiteClaimLife,
-        FOLDER_KORPUS.komiteClaimNonProp,
-        FOLDER_KORPUS.komiteClaimProp,
       ].sort(),
     )
   })
@@ -108,7 +105,7 @@ describe('nol menu dikarang', () => {
     // (dulu angka 16 di sini, yang harus disunting setiap modul baru).
     const dapatDibuka = new Set(PALET.entri.map((e) => e.label))
     const tanpaButir = Object.values(LABEL_MENU).filter((n) => !dapatDibuka.has(n))
-    expect([...tanpaButir].sort()).toEqual(folderKorpusBelumDimigrasi())
+    expect([...tanpaButir].sort()).toEqual(folderKorpusBelumDimigrasi().filter((f) => !FOLDER_TANPA_MENU.includes(f)))
     expect(tanpaButir.length).toBeGreaterThan(0)
     for (const nama of tanpaButir) {
       // ⛔ DIPERSEMPIT KE MAKSUDNYA 28-09-2026 (sesi Treaty Contract Out).

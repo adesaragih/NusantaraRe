@@ -15,7 +15,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Pemilik | `@PEMILIK-KOMITECLAIMLIFE` |
 | Status | dimigrasi |
 | Rentang migrasi | `030-049` |
-| Slot menu | `952-953` |
+| Slot menu | `—` |
 | Prefix rute API | `/api/komite` |
 | Kontrak disediakan | — |
 | Kontrak dipakai | `kontrak.KlaimKomite` (disediakan `claimlife`) |
@@ -29,15 +29,21 @@ dipensiunkan 1 Oktober 2026.
 | Folder | Isi |
 | --- | --- |
 | `backend/` | `models/` `repository/` `services/` `handlers/` `migrations/` `modul.go` — paket Go `nusantarare/modul/komiteclaimlife/backend/...` |
-| `frontend/` | `pages/` `labels.ts` `api.ts` `menu.ts` `rute.tsx` dan berkas `*.test.ts` |
+| `frontend/` | `pages/KasusKomite.tsx` `labels.ts` `api.ts` `nilai.ts` `layar.ts` (modul TANPA menu) `rute.tsx` dan berkas `*.test.ts` |
 | `docs/` | spec, tiket (`issues/`), grilling, PARITAS, LAPORAN, OQ — dulu `.scratch/komite-claim-life/` |
 
 ## Migrasi
 
 Rentang `030-049`, terpakai `030`. Tabel tangga Komite sendiri lahir di migrasi Claim Life `013`
-(sebelum modul ini berdiri) dan tetap di sana: `T_MIGRASI` mencatat nama, bukan letak. Slot menu
-`952-953` tidak terpakai: baris modul ini sudah `DIMIGRASI = '1'` sejak 900, dan menu datar (30-09-2026)
-tidak punya butir — slot hanya menyalakan `DIMIGRASI` (`APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6).
+(sebelum modul ini berdiri) dan tetap di sana: `T_MIGRASI` mencatat nama, bukan letak.
+
+## Menu
+
+**Tidak ada** (perintah work owner 09-10-2026: "kode menu nya di hapus dari repo, anggap menu itu tidak pernah ada,
+karena digabung di menu klaim nya masing-masing"). Baris `M_NAV_MENU` (isi awal 900) dan hak akunnya dibuang migrasi
+inti 949; slot menu `952-953` dilepas. Inbox Komite dipindah menjadi tabel komite di bawah inbox Claim Life
+(`modul/claimlife/frontend/components/TabelKomite.tsx`); modul ini dipasang bagi pemegang menu `claimlife`
+(`MODUL_DIPINJAM` frontend/App.tsx, frontend `layar.ts`) dan rutenya dipinjam (`ruteDipinjam` cmd/api/rakit.go).
 
 ## Menjalankan uji modul ini saja
 

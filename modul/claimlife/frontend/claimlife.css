@@ -254,3 +254,8 @@
   border-top: 1px solid var(--border);
   border-radius: 0;
 }
+
+/* Tabel komite di bawah inbox (perintah work owner 09-10-2026: menu Komite Claim Life dihapus). */
+.claimlife .claimlife__komite {
+  margin-top: 24px;
+}

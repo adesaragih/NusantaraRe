@@ -12,7 +12,7 @@ Status: **ada** = dibangun persis; **ubah** = dibangun dengan penyimpangan sadar
 
 | Korpus | Status | Catatan |
 | --- | --- | --- |
-| Menu `komiteclaimnonprop` (M_NAV_MENU, migrasi inti 900) | **ubah** | Menu disembunyikan lewat DATA (STATUS_AKTIF '0' + kode dicabut dari akun — langkah work owner); slot 988 menyalakan DIMIGRASI supaya modul terpasang |
+| Menu `komiteclaimnonprop` (M_NAV_MENU, migrasi inti 900) | **ubah** | Menu DIHAPUS (perintah work owner 09-10-2026: "anggap menu itu tidak pernah ada"): baris M_NAV_MENU + hak akunnya dihapus migrasi inti 949; modul tanpa menu (`frontend/layar.ts`), dipasang bagi pemegang menu `claimnonprop` (`MODUL_DIPINJAM`) |
 | Worklist assignment "KomiteRouter" | **ubah** | Tabel "Committee" di bawah inbox Claim Non Prop (rute pinjaman `GET /api/komite-claim-non-prop/kasus`), hanya bagi pemegang workbasket roster NONPROP aktif (`GET /api/claim-non-prop/hak` `komite`); klik baris = layar komite di tempat (`onBukaModul`) |
 | KomiteRouter S6.1 `AssignTo = .KomiteID` baris pertama ber-approval 0 | **ada** | KomiteID = akun ATAU workbasket aktif pelaku (roster ke workbasket, 611) |
 | KomiteRouter S6 gerbang `Primary.TransferType=='2'` | **ubah** | `TransferType` = `.Type` akseptasi (CreateChild 9; 2 = Adjuster Fee): XML hanya menetapkan tujuan untuk Type 2. Tidak ditegakkan - tujuan setiap kasus = POSITION / KomiteID tingkat berjalan (jawaban OQ-CNP-25, pola workbasket) |

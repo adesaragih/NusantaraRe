@@ -7,8 +7,8 @@ import { AKAR_APLIKASI, folderKorpusBelumDimigrasi } from '../inti/frontend/uji/
 import { menuTabelDariMigrasi } from '../inti/frontend/uji/menuBersih'
 import { MENU } from '../inti/frontend/labels'
 import { susunMenu } from '../inti/frontend/lib/daftarMenu'
-import { FOLDER_KORPUS } from './katalogKorpus'
-import { ENTRI_MENU, MODUL_FRONTEND } from './daftar'
+import { FOLDER_KORPUS, FOLDER_TANPA_MENU } from './katalogKorpus'
+import { ENTRI_MENU, MODUL_BERMENU, MODUL_FRONTEND } from './daftar'
 
 // Menu DATAR - [keputusan work owner 30-09-2026] (`PROMPT-MENU-DATAR-PER-GROUPMENU.md`):
 // "menu jangan ada model seperti child ... 1 modul 1 menu". Di bawah kepala
@@ -28,11 +28,19 @@ const SEMUA = susunMenu(menuTabelDariMigrasi(null), ENTRI_MENU)
 const TOMBOL = SEMUA.golongan.flatMap((g) => g.modul)
 
 describe('sidebar satu tombol per modul, dikelompokkan GROUPMENU', () => {
-  it('tepat satu tombol per modul yang dimigrasi dan aktif - satu per modul frontend', () => {
+  it('tepat satu tombol per modul yang dimigrasi dan aktif - satu per modul frontend BERMENU', () => {
     const aktif = TOMBOL.filter((t) => t.halaman !== null)
-    expect(aktif.map((t) => t.kode).sort()).toEqual(MODUL_FRONTEND.map((m) => m.nama).sort())
-    expect(aktif).toHaveLength(MODUL_FRONTEND.length)
+    expect(aktif.map((t) => t.kode).sort()).toEqual(MODUL_BERMENU.map((m) => m.nama).sort())
+    expect(aktif).toHaveLength(MODUL_BERMENU.length)
     expect(new Set(TOMBOL.map((t) => t.kode)).size).toBe(TOMBOL.length)
+  })
+
+  // Perintah work owner 09-10-2026: menu komite dihapus - modul `layar.ts` tidak punya tombol sama sekali.
+  it('modul tanpa menu (komite) tidak punya tombol, aktif maupun nonaktif', () => {
+    const tanpaMenu = MODUL_FRONTEND.filter((m) => m.tanpaMenu === true).map((m) => m.nama)
+    expect(tanpaMenu.sort()).toEqual(['komiteclaimlife', 'komiteclaimnonprop', 'komiteclaimprop'])
+    for (const k of [...tanpaMenu, 'komiteclaimfacin']) expect(TOMBOL.map((t) => t.kode), k).not.toContain(k)
+    for (const f of FOLDER_TANPA_MENU) expect(TOMBOL.map((t) => t.label), f).not.toContain(f)
   })
 
   it('Treaty Contract Out tetap SATU tombol (tco5)', () => {
@@ -41,7 +49,7 @@ describe('sidebar satu tombol per modul, dikelompokkan GROUPMENU', () => {
 
   it("tombol nonaktif untuk DIMIGRASI='0' - tepat folder korpus yang belum dimigrasi", () => {
     const nonaktif = TOMBOL.filter((t) => t.halaman === null).map((t) => t.label)
-    expect(nonaktif.sort()).toEqual(folderKorpusBelumDimigrasi())
+    expect(nonaktif.sort()).toEqual(folderKorpusBelumDimigrasi().filter((f) => !FOLDER_TANPA_MENU.includes(f)))
     expect(NAV).toContain('aria-disabled="true"')
     expect(NAV).toContain('{KETERANGAN_BELUM_DIMIGRASI}')
   })
@@ -77,7 +85,7 @@ describe('klik tombol modul membuka halaman awalnya', () => {
   it.each([
     ['claimlife', 'inbox'],
     ['premiumlistlife', 'premiumlist'],
-    ['komiteclaimlife', 'komite'],
+    ['claimprop', 'claimprop-daftar'],
     ['treatycontractout', 'tco-tahun'],
   ])('%s → %s', (modul, halaman) => {
     expect(TOMBOL.find((t) => t.kode === modul)?.halaman).toBe(halaman)

@@ -244,7 +244,8 @@ func rentangNomor(nilai string) (awal, akhir int, err error) {
 }
 
 // tanpaSlot - nilai `Slot menu` modul luar korpus yang PUNYA rentang migrasi tetapi tanpa slot (keputusan work owner
-// 04-10-2026): barisnya lahir di langkah inti, DIMIGRASI '1'. Bedanya dengan tandaTanpaMigrasi: rentangnya tetap
+// 04-10-2026): barisnya lahir di langkah inti, DIMIGRASI '1'. Juga modul TANPA MENU (`modulTanpaMenu`, perintah work
+// owner 09-10-2026): tanpa baris menu sama sekali. Bedanya dengan tandaTanpaMigrasi: rentangnya tetap
 // bernomor, jadi berkas migrasinya tetap dijaga R2.
 const tanpaSlot = "—"
 
@@ -285,8 +286,11 @@ func rentangModul(t *testing.T, m modulMD) (migrasi, slot [2]int, kosong bool) {
 	r := strings.Trim(strings.TrimSpace(m.kunci["Rentang migrasi"]), "`")
 	s := strings.Trim(strings.TrimSpace(m.kunci["Slot menu"]), "`")
 	if s == tanpaSlot && r != tandaTanpaMigrasi {
-		if _, luar := modulLuarKorpus[m.folder]; !luar {
-			t.Fatalf("%s: `Slot menu` %s hanya untuk modul luar korpus (modulLuarKorpus)", m.jalur, tanpaSlot)
+		_, luar := modulLuarKorpus[m.folder]
+		_, tanpaMenu := modulTanpaMenu[m.folder]
+		if !luar && !tanpaMenu {
+			t.Fatalf("%s: `Slot menu` %s hanya untuk modul luar korpus (modulLuarKorpus) dan modul tanpa menu "+
+				"(modulTanpaMenu)", m.jalur, tanpaSlot)
 		}
 		a, b, err := rentangNomor(m.kunci["Rentang migrasi"])
 		if err != nil {
