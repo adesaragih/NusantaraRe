@@ -50,6 +50,9 @@
   --cp-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--cp-terang);
   --cp-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
   --cp-bahaya-teks: #b42318;
+  --cp-unggah: #3bb273;
+  --cp-lihat: #12b5c6;
+  --cp-ikon-teks: #ffffff;
   --text-3: var(--cp-teks-redup);
   color: var(--cp-teks);
   padding: 24px;
@@ -89,6 +92,9 @@
   --cp-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--cp-terang);
   --cp-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
   --cp-bahaya-teks: #fda29b;
+  --cp-unggah: #2f8f5c;
+  --cp-lihat: #0e8f9c;
+  --cp-ikon-teks: #f2fbf6;
 }
 
 /* Judul dan teks redup. */
@@ -896,4 +902,69 @@
 .claimprop .claimprop__tampil {
   white-space: pre-wrap;
   color: var(--cp-teks);
+}
+
+/* Tab "Lampiran" (screenshot Pega 09-10-2026): tombol kanan, ikon unggah hijau / lihat toska. */
+.claimprop .claimprop__lampiran-aksi {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 4px 0 8px;
+}
+
+/* Kolom Upload File / View File selebar layar Pega, ikon di tengah. */
+.claimprop .claimprop__kolom-ikon {
+  width: 140px;
+  text-align: center;
+}
+
+.claimprop .claimprop__akar .claimprop__ikon-lampiran {
+  width: 40px;
+  padding: 0;
+  color: var(--cp-ikon-teks);
+}
+
+.claimprop .claimprop__ikon-lampiran--unggah,
+.claimprop .claimprop__ikon-lampiran--unggah:hover:not(:disabled) {
+  background: var(--cp-unggah);
+}
+
+.claimprop .claimprop__ikon-lampiran--lihat,
+.claimprop .claimprop__ikon-lampiran--lihat:hover:not(:disabled) {
+  background: var(--cp-lihat);
+}
+
+/* Jendela unggah: area seret-lepas berkas (dragDropFileUpload). */
+.claimprop .claimprop__seret {
+  margin: 0 0 12px;
+  padding: 18px;
+  border: 2px dashed var(--cp-tepi);
+  border-radius: 12px;
+  text-align: center;
+  color: var(--cp-teks-redup);
+}
+
+.claimprop .claimprop__seret--aktif {
+  border-color: var(--cp-aksen-garis);
+  background: var(--cp-aksen-lembut);
+}
+
+/* Popup penampil lampiran (View / View Office Online, pola NB Treaty In). */
+.claimprop .claimprop__penampil-bingkai {
+  display: block;
+  width: 100%;
+  height: 75vh;
+  border: 0;
+}
+
+.claimprop .claimprop__penampil-gambar {
+  display: block;
+  max-width: 100%;
+  max-height: 75vh;
+  margin: 0 auto;
+}
+
+/* Tabel komite di bawah inbox (menu Komite Claim Prop dibuang, keputusan work owner 09-10-2026). */
+.claimprop .claimprop__komite {
+  margin-top: 24px;
 }

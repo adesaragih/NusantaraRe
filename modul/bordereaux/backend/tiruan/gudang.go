@@ -28,14 +28,18 @@ type Gudang struct {
 	JSON map[string]string
 	// Jam - TANGGAL berkas baru.
 	Jam string
+	// Kategori - master M_KATEGORIBORDEREAUX (ID, Nama); Lampiran - M_ATTACHMENTBORDEREAUX per ID.
+	Kategori []models.KategoriLampiran
+	Lampiran map[string]models.Lampiran
 }
 
 // Contoh - satu cedant, dua treaty, satu berkas lama di tangan Checker.
 func Contoh() *Gudang {
 	g := &Gudang{
 		Header: map[string]models.Header{}, Rinci: map[string]map[string][]models.Baris{}, Riw: map[string][]models.Riwayat{},
-		IDTerpakai: map[string]bool{}, JSON: map[string]string{}, Jam: "04-10-2026 09:30",
-		Cedant: []models.Cedant{{ID: "UJI-AG-1", Nama: "UJI CEDANT SATU"}, {ID: "UJI-AG-2", Nama: "UJI CEDANT DUA"}},
+		IDTerpakai: map[string]bool{}, JSON: map[string]string{}, Jam: "04-10-2026 09:30", Lampiran: map[string]models.Lampiran{},
+		Kategori: []models.KategoriLampiran{{ID: "00000", Nama: "Others"}, {ID: "00001", Nama: "UJI SOA"}},
+		Cedant:   []models.Cedant{{ID: "UJI-AG-1", Nama: "UJI CEDANT SATU"}, {ID: "UJI-AG-2", Nama: "UJI CEDANT DUA"}},
 		Treaty: []models.MasterTreaty{
 			{ID: "UJI-TI-1", ContractName: "UJI KONTRAK SATU", ReinsType: "Proportional", SobID: "UJI-AG-9", SobName: "UJI SOB", CedingID: "UJI-AG-1", CedingName: "UJI CEDANT SATU"},
 			{ID: "UJI-TI-2", ContractName: "UJI KONTRAK DUA", ReinsType: "NonProportional", SobID: "UJI-AG-9", SobName: "UJI SOB", CedingID: "UJI-AG-1", CedingName: "UJI CEDANT SATU"},
@@ -307,5 +311,78 @@ func (g *Gudang) SisipRiwayatLama(_ context.Context, _ *db.Tx, id, tanggal, pic 
 		tanggal = tanggal[:16]
 	}
 	g.Riw[id] = append(g.Riw[id], models.Riwayat{Tanggal: tanggal, PIC: pic, IsApproved: setuju, Komentar: komentar})
+	return nil
+}
+
+// KategoriLampiran memenuhi services.Gudang - setiap kategori master dan jumlah lampiran berkas itu.
+func (g *Gudang) KategoriLampiran(_ context.Context, bdxID string) ([]models.KategoriLampiran, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	out := make([]models.KategoriLampiran, 0, len(g.Kategori))
+	for _, k := range g.Kategori {
+		k.Cacah = 0
+		for _, l := range g.Lampiran {
+			if l.BdxID == bdxID && l.KategoriID == k.ID {
+				k.Cacah++
+			}
+		}
+		out = append(out, k)
+	}
+	return out, nil
+}
+
+// NamaKategoriLampiran memenuhi services.Gudang.
+func (g *Gudang) NamaKategoriLampiran(_ context.Context, id string) (string, bool, error) {
+	for _, k := range g.Kategori {
+		if k.ID == id {
+			return k.Nama, true, nil
+		}
+	}
+	return "", false, nil
+}
+
+// DaftarLampiran memenuhi services.Gudang (urut ID).
+func (g *Gudang) DaftarLampiran(_ context.Context, bdxID, kategoriID string) ([]models.Lampiran, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	out := []models.Lampiran{}
+	for _, l := range g.Lampiran {
+		if l.BdxID == bdxID && l.KategoriID == kategoriID {
+			out = append(out, l)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out, nil
+}
+
+// AmbilLampiran memenuhi services.Gudang.
+func (g *Gudang) AmbilLampiran(_ context.Context, bdxID, kategoriID, id string) (models.Lampiran, bool, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	l, ada := g.Lampiran[id]
+	if !ada || l.BdxID != bdxID || l.KategoriID != kategoriID {
+		return models.Lampiran{}, false, nil
+	}
+	return l, true, nil
+}
+
+// SisipLampiran memenuhi services.Gudang; ID terpakai (atau di IDTerpakai) = ErrIDTerpakai.
+func (g *Gudang) SisipLampiran(_ context.Context, _ *db.Tx, a models.Lampiran) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if _, ada := g.Lampiran[a.ID]; ada || g.IDTerpakai[a.ID] {
+		return repository.ErrIDTerpakai
+	}
+	g.Lampiran[a.ID] = a
+	return nil
+}
+
+// HapusLampiran memenuhi services.Gudang.
+func (g *Gudang) HapusLampiran(_ context.Context, _ *db.Tx, bdxID, id string) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if l, ada := g.Lampiran[id]; ada && l.BdxID == bdxID {
+		delete(g.Lampiran, id)
+	}
 	return nil
 }

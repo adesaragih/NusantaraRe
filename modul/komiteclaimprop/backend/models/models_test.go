@@ -36,20 +36,20 @@ func TestGiliranKomiteRouter(t *testing.T) {
 	if a, ada := k.Giliran(); !ada || a.OperatorID != "UJI-K1" {
 		t.Fatalf("giliran tingkat 1: %+v %v", a, ada)
 	}
-	if !k.Pemegang("UJI-K1") || k.Pemegang("UJI-K2") {
+	if !k.Pemegang("UJI-K1", nil) || k.Pemegang("UJI-K2", nil) {
 		t.Fatal("pemegang tingkat 1 = UJI-K1 saja")
 	}
 	k = kasusUji(2, models.KeputusanSetuju)
-	if !k.Pemegang("UJI-K2") || k.Pemegang("UJI-K1") {
+	if !k.Pemegang("UJI-K2", nil) || k.Pemegang("UJI-K1", nil) {
 		t.Fatal("sesudah UJI-K1 setuju, giliran UJI-K2")
 	}
 	k = kasusUji(3, models.KeputusanSetuju, models.KeputusanSetuju)
-	if _, ada := k.Giliran(); ada || k.Pemegang("UJI-K2") {
+	if _, ada := k.Giliran(); ada || k.Pemegang("UJI-K2", nil) {
 		t.Fatal("tanpa baris menunggu tidak ada pemegang (KomiteRouter tanpa cadangan)")
 	}
 	k = kasusUji(1)
 	k.StatusWork = models.StatusSelesai
-	if k.Pemegang("UJI-K1") {
+	if k.Pemegang("UJI-K1", nil) {
 		t.Fatal("kasus tertutup tidak dipegang siapa pun")
 	}
 }

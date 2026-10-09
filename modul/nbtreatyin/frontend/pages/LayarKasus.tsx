@@ -13,9 +13,11 @@
 import { Fragment, useCallback, useState, type ReactNode } from 'react'
 
 import { Gagal, Memuat, Modal, Panel, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
+import PanelLampiranReas from '../../../../inti/frontend/lampiran/PanelLampiranReas'
 import { useAmbilBatal } from '../ambil'
 import {
   POLIS,
+  PREFIX_NBTREATYIN,
   ambilAcuan,
   bukaKasus,
   daftar,
@@ -569,6 +571,10 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
           {tombolKirim()}
         </div>
       )}
+
+      {/* Lampiran "Reas" (`AttachmentGridReas`) di bawah layar kasus - keputusan work owner 08-10-2026; Upload / Delete
+          selama kasus belum Resolve (diputuskan backend). */}
+      <PanelLampiranReas dasar={`${PREFIX_NBTREATYIN}/kasus/${encodeURIComponent(id)}/lampiran`} />
 
       {popupSurvei && (
         <SurveiHistoris

@@ -87,12 +87,9 @@ describe('label layar = LABEL XML', () => {
 
   it('tombol layar kasus', () => {
     // Add grid spreading dibuang (keputusan work owner 07-10-2026)
-    expect([TOMBOL.chooseBusiness, TOMBOL.save, TOMBOL.submit, TOMBOL.hitungSelisih]).toEqual([
-      'Choose Business',
-      'Save',
-      'Submit',
-      'Calculate Value Difference',
-    ])
+    // tombol Calculate Value Difference dibuang (WO 08-10-2026)
+    expect([TOMBOL.chooseBusiness, TOMBOL.save, TOMBOL.submit]).toEqual(['Choose Business', 'Save', 'Submit'])
+    expect('hitungSelisih' in TOMBOL).toBe(false)
   })
 
   it('grid spreading dan angsuran section Prop', () => {

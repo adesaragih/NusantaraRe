@@ -162,19 +162,22 @@ func satuAtauBersamaan(h sql.Result, nama string) error {
 	return nil
 }
 
-// sqlTutupKasus - Decision `KomiteLoop` salah -> End (Resolved-Completed). TAHAP dibiarkan (tidak pernah NULL).
+// sqlTutupKasus - Decision `KomiteLoop` salah -> End (Resolved-Completed). TAHAP dibiarkan (tidak pernah NULL);
+// POSITION dikosongkan (tanpa pemegang).
 func sqlTutupKasus(work string) string {
-	return fmt.Sprintf(`UPDATE %s SET STATUS_WORK = :1, TGL_UPDATE = :2
+	return fmt.Sprintf(`UPDATE %s SET STATUS_WORK = :1, TGL_UPDATE = :2, POSITION = NULL
 		 WHERE ID = :3 AND LINI = :4 AND STATUS_WORK IS NULL`, work)
 }
 
-// sqlSentuhKasus - TGL_UPDATE kasus komite yang masih berjalan (assignment kembali ke KomiteRouter).
+// sqlSentuhKasus - TGL_UPDATE kasus komite yang masih berjalan (assignment kembali ke KomiteRouter); POSITION =
+// KomiteID tingkat berikut (workbasket, keputusan work owner 09-10-2026), seperti POSITION klaim = pemegang tahapnya.
 func sqlSentuhKasus(work string) string {
-	return fmt.Sprintf(`UPDATE %s SET TGL_UPDATE = :1 WHERE ID = :2 AND LINI = :3 AND STATUS_WORK IS NULL`, work)
+	return fmt.Sprintf(`UPDATE %s SET TGL_UPDATE = :1, POSITION = :2
+		 WHERE ID = :3 AND LINI = :4 AND STATUS_WORK IS NULL`, work)
 }
 
-// TutupKasus menutup kasus komite (`selesai`) atau hanya memperbarui TGL_UPDATE-nya.
-func (g *Gudang) TutupKasus(ctx context.Context, tx *db.Tx, id string, selesai bool, saat time.Time) error {
+// TutupKasus menutup kasus komite (`selesai`) atau memperbarui TGL_UPDATE dan POSITION (`posisi`)-nya.
+func (g *Gudang) TutupKasus(ctx context.Context, tx *db.Tx, id string, selesai bool, posisi string, saat time.Time) error {
 	if err := wajibTx(tx); err != nil {
 		return err
 	}
@@ -182,7 +185,7 @@ func (g *Gudang) TutupKasus(ctx context.Context, tx *db.Tx, id string, selesai b
 	if err != nil {
 		return err
 	}
-	q, args := sqlSentuhKasus(work), []any{saat, id, models.LiniProp}
+	q, args := sqlSentuhKasus(work), []any{saat, db.KosongJadiNil(posisi), id, models.LiniProp}
 	if selesai {
 		q, args = sqlTutupKasus(work), []any{models.StatusSelesai, saat, id, models.LiniProp}
 	}

@@ -24,16 +24,12 @@
 //
 // ⚠️ OQ-TCO-05: label tahun bersilang antara grid dan form di korpus; keduanya
 // dibawa apa adanya.
-//
-// Tiket 12: panel lampiran `GridTreatyArrangementAttachment` (b13074) tampil di
-// form tahun yang sudah ber-ID - `components/PanelLampiranTahun`.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { TAHUN_TCO } from '../labels'
 import PanelKlausulTahun from '../components/PanelKlausulTahun'
 import PanelKontrakTahun from '../components/PanelKontrakTahun'
-import PanelLampiranTahun from '../components/PanelLampiranTahun'
 import { PROPORSI_TCO, labelProporsi } from '../proporsi'
 import { Field, FieldTanggal, Gagal, Halaman, Kosong, Memuat, Pilih } from '../../../../inti/frontend/components/ui/dasar'
 import { formatDate } from '../../../../inti/frontend/lib/format'
@@ -329,10 +325,6 @@ export default function InboxTreatyContract() {
               {TAHUN_TCO.cancel}
             </button>
           </div>
-          {/* Tiket 12: panel lampiran (`InputTreatyContract.xml` b13074) melekat
-              pada tahun treaty yang SUDAH ber-ID; lampiran bersifat opsional dan
-              tidak menjadi syarat tersimpannya tahun treaty (AC 55). */}
-          {form.id !== '' && <PanelLampiranTahun tahunID={form.id} />}
         </section>
       )}
 

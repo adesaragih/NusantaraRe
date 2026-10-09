@@ -96,6 +96,9 @@ type UbahAnggota struct {
 	// IsiKomentar - false = komentar tidak disentuh (S26.1 menolak sisa tanpa menyentuh komentar).
 	IsiKomentar bool
 	Tanggal     time.Time
+	// Pemutus - akun pelaku yang memutus baris ini (KOMITE_OPERATORID ditimpa: KomiteID workbasket -> akun pemutus,
+	// keputusan work owner 09-10-2026); kosong = tidak ditimpa (S26.1).
+	Pemutus string
 }
 
 // Penerima email `SendEmailKlaim_KMT`.
@@ -139,6 +142,8 @@ type Rencana struct {
 	StatusRiwayat string
 	// Email - S35 (`SendEmailKlaim_KMT`, bergerbang IsPEGAPROD): jenis penerima.
 	Email string
+	// Posisi - T_WORK_CLAIM.POSITION sesudah Submit: KomiteID baris menunggu pertama yang tersisa; kosong = selesai.
+	Posisi string
 }
 
 // Rencanakan menyusun rencana Submit `kep` oleh `akun` atas kasus `k` (klaim induk `kl`, baris adjustment posisi
@@ -190,7 +195,7 @@ func Rencanakan(k Kasus, kl kontrak.KlaimTreaty, kep Keputusan, akun string, saa
 	if sasaran >= 0 {
 		// S6 / S7: keputusan, komentar, @CurrentDateTime() - KomiteList dan ComiteeClaim satu baris di sistem baru.
 		r.Tangga = append(r.Tangga, UbahAnggota{ID: k.Tangga[sasaran].ID, Keputusan: kep.AcceptStatus,
-			Komentar: kep.Comment, IsiKomentar: true, Tanggal: saat})
+			Komentar: kep.Comment, IsiKomentar: true, Tanggal: saat, Pemutus: akun})
 	}
 	// S8-S10: InsertChronology_DT ("Accepted by " / "Rejected by " + KomiteList(KomiteCount).IDKomite).
 	teks := ""
@@ -276,10 +281,27 @@ func Rencanakan(k Kasus, kl kontrak.KlaimTreaty, kep Keputusan, akun string, saa
 	}
 	r.Count = count + 1 // S40 (prakondisi nonaktif - selalu)
 	r.Selesai = !MasihBerjalan(kep.AcceptStatus, r.Count, k.Loop)
+	if !r.Selesai {
+		r.Posisi = posisiSesudah(k, r.Tangga)
+	}
 	if len(r.Klaim.Adjustment) == 0 {
 		r.Klaim.Adjustment = nil
 	}
 	return r
+}
+
+// posisiSesudah - KomiteID baris tangga menunggu PERTAMA sesudah ubahan `ubah` (giliran berikut, KomiteRouter S6.1).
+func posisiSesudah(k Kasus, ubah []UbahAnggota) string {
+	diputus := map[string]bool{}
+	for _, u := range ubah {
+		diputus[u.ID] = true
+	}
+	for _, a := range k.Tangga {
+		if a.Keputusan == KeputusanMenunggu && !diputus[a.ID] {
+			return a.OperatorID
+		}
+	}
+	return ""
 }
 
 // Kepala - tulisan kepala kasus komite rencana ini.

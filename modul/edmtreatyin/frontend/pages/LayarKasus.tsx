@@ -17,10 +17,12 @@
 import { Fragment, useCallback, useRef, useState } from 'react'
 
 import { Gagal, Memuat, Modal, StripTab, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
+import PanelLampiranReas from '../../../../inti/frontend/lampiran/PanelLampiranReas'
 import { useAmbilBatal } from '../ambil'
 import {
   POLIS,
   POSISI_ADMIN,
+  PREFIX_EDMTREATYIN,
   ambilAcuan,
   bukaKasus,
   daftar,
@@ -312,7 +314,6 @@ export default function LayarKasus({
             halaman={h}
             wajib={wajib}
             boleh={boleh}
-            sibuk={sibuk}
             opsi={daftarAcuan}
             opsiJenisReas={acuan?.jenisReas ?? []}
             onUbah={ubah}
@@ -345,6 +346,10 @@ export default function LayarKasus({
           {tombolKirim()}
         </div>
       )}
+
+      {/* Lampiran "Reas" (`AttachmentGridReas`) di bawah layar kasus - keputusan work owner 08-10-2026; Upload / Delete
+          selama kasus belum Resolve (diputuskan backend). */}
+      <PanelLampiranReas dasar={`${PREFIX_EDMTREATYIN}/kasus/${encodeURIComponent(id)}/lampiran`} />
 
       {popupBisnis && (
         <PilihBisnis

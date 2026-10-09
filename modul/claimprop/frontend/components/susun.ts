@@ -92,6 +92,34 @@ export function susunIsi(tata: readonly Tata[]): Unsur[] {
   return out
 }
 
+/** Aksi tombol penutup modal (Cancel / No). */
+const AKSI_TUTUP_MODAL = 'TutupModal'
+
+/** Isi modal local action / harness: badan, tombol kaki, dan label tombol batal `Modal`. */
+export interface IsiModal {
+  isi: Butir[]
+  kaki: Tata[]
+  /** Label tombol penutup section; `undefined` = label bawaan `Modal`. */
+  batal?: string
+}
+
+/**
+ * Tombol di akhir isi modal (Submit / Send Claim to Committee / Yes + Cancel / No) pindah ke kaki `Modal`. Tombol
+ * penutup (`TutupModal`) tidak digambar ulang - `Modal` sudah punya tombol batal, labelnya dipakai (work owner
+ * 09-10-2026 "cancel kok ada 2?").
+ */
+export function pisahKakiModal(tata: readonly Tata[]): IsiModal {
+  const b = ratakan(tata)
+  let i = b.length
+  while (i > 0 && b[i - 1]?.jenis === 'tombol') i--
+  const ekor = b.slice(i)
+  return {
+    isi: b.slice(0, i),
+    kaki: ekor.filter((t) => t.aksi !== AKSI_TUTUP_MODAL),
+    batal: ekor.find((t) => t.aksi === AKSI_TUTUP_MODAL)?.label,
+  }
+}
+
 function adaGrid(t: Tata): boolean {
   return (t.anak ?? []).some((a) => a.jenis === 'grid' || (a.jenis === 'bagian' && (!!a.label || adaGrid(a))))
 }

@@ -25,6 +25,8 @@ export default function DaftarKerja({
   const [galat, setGalat] = useState<unknown>(null)
   const [buka, setBuka] = useState<string | null>(null)
   const [segar, setSegar] = useState(0)
+  // Pesan dari layar kasus yang baru ditutup (mis. PDF akseptasi gagal disimpan sesudah keputusan tersimpan).
+  const [pesan, setPesan] = useState<string[]>([])
 
   useEffect(() => {
     if (buka) return
@@ -50,7 +52,8 @@ export default function DaftarKerja({
       <KasusKomite
         id={buka}
         onLihatBerkas={onLihatBerkas}
-        onKembali={() => {
+        onKembali={(p) => {
+          setPesan(p ?? [])
           setBuka(null)
           setSegar((s) => s + 1)
         }}
@@ -63,6 +66,11 @@ export default function DaftarKerja({
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{KCP.judul}</h2>
       </header>
+      {pesan.map((p) => (
+        <div key={p} className="alert alert--error">
+          {p}
+        </div>
+      ))}
       {galat !== null && <Gagal galat={galat} />}
       {daftar === null && galat === null && <Memuat pesan={KCP.memuat} />}
       {daftar !== null && daftar.length === 0 && <Kosong pesan={KCP.kosong} />}
@@ -83,7 +91,14 @@ export default function DaftarKerja({
           </thead>
           <tbody>
             {daftar.map((b) => (
-              <tr key={b.kasusId} className="inbox__baris" onClick={() => setBuka(b.kasusId)}>
+              <tr
+                key={b.kasusId}
+                className="inbox__baris"
+                onClick={() => {
+                  setPesan([])
+                  setBuka(b.kasusId)
+                }}
+              >
                 <td>{b.kasusId}</td>
                 <td>{tampil(b.tglUpdate, 'tanggalJam')}</td>
                 <td>{sel(b.statusWork)}</td>

@@ -12,6 +12,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/penyimpanan"
 	"nusantarare/modul/claimprop/backend/handlers"
 	"nusantarare/modul/claimprop/backend/services"
 )
@@ -36,6 +37,9 @@ func Pendaftaran() inti.Pendaftaran {
 		Menyediakan: []inti.Kontrak{inti.KontrakDari[kontrak.KlaimTreatyKomite]()},
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
 			svc := services.DariDasar(p.Dasar())
+			if d := p.Dasar(); d != nil && d.PunyaDatabase() { // GCNMSaveAttachments -> InsertDocument_Act (pola Bordereaux)
+				svc = svc.DenganPenyimpanan(penyimpanan.Oracle(d, p.Config().StorageTokenSalt))
+			}
 			inti.Sediakan[kontrak.KlaimTreatyKomite](p, svc.KlaimUntukKomite())
 			return Baru(svc, p.Config().AuthStub), nil
 		},

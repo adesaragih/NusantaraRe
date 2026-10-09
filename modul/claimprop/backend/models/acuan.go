@@ -184,6 +184,10 @@ type Acuan interface {
 	// saat polis dipilih dan sumber dropdown Treaty Type (keputusan work owner 08-10-2026; AddSpreading_Act tidak
 	// diekspor).
 	SpreadingPolis(ctx context.Context, nopolis string) ([]SpreadingPolis, error)
+	// AnakSpreading - anak PROPORTIONALARRG satu treaty induk (PARENTREINSTYPEID) dalam treaty group klaim, tahun
+	// arrangement terbaru <= tahun treaty klaim: cadangan tabel bawah bila SpreadingList master kosong (keputusan work
+	// owner 09-10-2026).
+	AnakSpreading(ctx context.Context, induk, tahun, grup string) ([]AnakSpreading, error)
 	// KursStandar = `POOLDATA.GETCURRENCYSTANDARD(CurrID, SYSDATE)` (RDB CurrencyStandard).
 	KursStandar(ctx context.Context, currencyID string) (string, error)
 	// NamaMataUang = RD BrowseCurrency_RD `.Currency` where `.ID = CurrID`.
@@ -236,4 +240,11 @@ type Acuan interface {
 	SaldoPremi(ctx context.Context, invoiceNo, currencyID string) (string, error)
 	// AdaProteksiPremi = CekProteksiKlaim (OPENPROTEKSI_EDM TYPE='5' STS_AKSEP='1' POLICY_NO).
 	AdaProteksiPremi(ctx context.Context, nopolis string) (bool, error)
+	// NamaPelaku = `OperatorID.pyLabel` (M_LOGIN_GO.NAME menurut LOGIN_ID); akun tanpa nama = akun itu sendiri.
+	NamaPelaku(ctx context.Context, akun string) (string, error)
+}
+
+// AnakSpreading - satu anak PROPORTIONALARRG (REINSTYPEID, REINSTYPENAME, PCT).
+type AnakSpreading struct {
+	ReinsTypeID, ReinsTypeName, Pct string
 }

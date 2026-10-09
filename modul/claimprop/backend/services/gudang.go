@@ -45,6 +45,12 @@ type Gudang interface {
 	BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID, pembuat, namaPembuat string,
 		anggota []repository.AnggotaTangga, saat time.Time) (string, error)
 	AntreEfek(ctx context.Context, tx *db.Tx, jenis, rujukan, muatan string, saat time.Time) (string, error)
+
+	KategoriLampiran(ctx context.Context, id string) ([]models.KategoriLampiran, error)
+	DaftarLampiran(ctx context.Context, id string) ([]models.Lampiran, error)
+	SisipDokumenKlaim(ctx context.Context, tx *db.Tx, d models.BarisDokumenKlaim) error
+	HapusDokumenKlaim(ctx context.Context, tx *db.Tx, id, lid string) error
+	PindahKategoriDokumen(ctx context.Context, tx *db.Tx, id, lid, kategori string) error
 }
 
 // Acuan - bacaan baca-saja port activity dan pemilih layar.
@@ -70,6 +76,7 @@ type Acuan interface {
 	IDBankRekening(ctx context.Context, bank, cabang, akun string) (string, error)
 	TingkatPelaku(ctx context.Context, operatorID string) (string, error)
 	NamaPelaku(ctx context.Context, akun string) (string, error)
+	OperatorKomiteAktif(ctx context.Context, sts string) ([]string, error)
 }
 
 // penyimpanOracle - `repository.Gudang` + transaksi `inti.Dasar`.

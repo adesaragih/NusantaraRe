@@ -153,8 +153,8 @@ export default function KasusKomite({
     setSibuk(true)
     setGalat(null)
     putuskan(id, isianKirim(isi, isian.terbuka)).then(
-      () => {
-        onKembali()
+      (h) => {
+        onKembali(h.galatDokumen ? [h.galatDokumen] : undefined)
       },
       (g: unknown) => {
         setSibuk(false)

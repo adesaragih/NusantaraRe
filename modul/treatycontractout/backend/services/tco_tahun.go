@@ -75,6 +75,11 @@ type GudangTahunTreatyTCO interface {
 	JumlahAnak(ctx context.Context, tx *db.Tx, tahunID string) (int64, error)
 }
 
+// PemeriksaTahunTCO memastikan tahun treaty induknya ada.
+type PemeriksaTahunTCO interface {
+	Ambil(ctx context.Context, id string) (models.TahunTreaty, error)
+}
+
 type gudangTahunTreatyBelumDisuntik struct{}
 
 func (gudangTahunTreatyBelumDisuntik) Daftar(context.Context, int, int) (repository.HalamanTahunTreaty, error) {

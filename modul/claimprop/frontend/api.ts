@@ -2,7 +2,15 @@
 // pohon tata (`models.Tata`): tampil / hanya-baca / nonaktif / wajib sudah dievaluasi di server; layar hanya merender
 // dan mengirim balik nilai medan terbuka bersama setiap aksi.
 
-import { minta } from '../../../inti/frontend/klien'
+import {
+  BATAS_WAKTU_MS,
+  kegagalanDari,
+  minta,
+  mintaFormulir,
+  rakitURL,
+  unduhBerkasBeridentitas,
+} from '../../../inti/frontend/klien'
+import { headerIdentitas } from '../../../inti/frontend/store/sesi'
 
 export const PREFIX_CP = '/api/claim-prop'
 
@@ -128,8 +136,9 @@ export function buatKasus(): Promise<Layar> {
   return minta(`${PREFIX_CP}/kasus`, { metode: 'POST' })
 }
 
-export function bukaKasus(id: string): Promise<Layar> {
-  return minta(`${PREFIX_CP}/kasus/${encodeURIComponent(id)}`)
+/** `lihat` = tampilan saja walau pemegang (View more details Komite Claim Prop, keputusan work owner 09-10-2026). */
+export function bukaKasus(id: string, lihat = false): Promise<Layar> {
+  return minta(`${PREFIX_CP}/kasus/${encodeURIComponent(id)}${lihat ? '?lihat=1' : ''}`)
 }
 
 export function aksiKasus(id: string, r: PermintaanAksi): Promise<Layar> {
@@ -180,11 +189,136 @@ export function tambahAdjuster(isi: { name: string; address: string; telpNo: str
   return minta('/api/adjuster-consultant', { metode: 'POST', badan: { id: '', ...isi } })
 }
 
-/** Hak halaman awal: switch Teknik aktif hanya bagi anggota workbasket ReasKlaimTeknik. */
+/**
+ * Hak halaman awal: switch Teknik aktif hanya bagi anggota workbasket ReasKlaimTeknik; `komite` = tabel komite tampil
+ * (akun memegang workbasket roster EMAILKOMITE PROP).
+ */
 export interface HakPelaku {
   workbasketTeknik: boolean
+  komite: boolean
 }
+
+/**
+ * Satu kasus komite yang menunggu workbasket / akun pelaku - `BarisKerja` modul Komite Claim Prop. Menu Komite Claim
+ * Prop dibuang (keputusan work owner 09-10-2026): daftarnya dibaca lewat rute pinjaman `GET /api/komite-claim-prop/kasus`
+ * (`cmd/api/rakit.go`), kasusnya dibuka di tempat (`onBukaModul`).
+ */
+export interface BarisKomite {
+  kasusId: string
+  klaimId: string
+  noKlaim: string
+  tingkat: number
+  komiteLoop: number
+  jabatan: string
+  nilai: string
+  mataUang: string
+  tglUpdate: string
+}
+
+export function daftarKomite(): Promise<BarisKomite[]> {
+  return minta('/api/komite-claim-prop/kasus')
+}
+
+/** Nama modul layar kasus komite (`onBukaModul`). */
+export const MODUL_KOMITE = 'komiteclaimprop'
 
 export function ambilHak(): Promise<HakPelaku> {
   return minta(`${PREFIX_CP}/hak`)
+}
+
+/** `AttachCategory.pxResults` - kategori master PROP dan cacah berkas klaim ini. */
+export interface KategoriLampiran {
+  id: string
+  label: string
+  countAttach: number
+}
+
+/** Satu dokumen klaim. */
+export interface Lampiran {
+  id: string
+  namaFile: string
+  kategori: string
+  mime: string
+  /** KATEGORI_2 (kolom Note popup NB). */
+  note: string
+  /** Upload Date `DD-MM-YYYY HH:mm`. */
+  tanggal: string
+  /** PXCREATEOPERATOR - username pengunggah. */
+  operator: string
+  /** Objek penyimpanan tercatat (syarat View / View Office Online). */
+  adaObjek: boolean
+}
+
+export interface LampiranKasus {
+  kategori: KategoriLampiran[]
+  lampiran: Lampiran[]
+  bolehUnggah: boolean
+}
+
+/** Kategori + dokumen klaim kasus. */
+export function ambilLampiran(id: string): Promise<LampiranKasus> {
+  return minta(`${PREFIX_CP}/kasus/${encodeURIComponent(id)}/lampiran`)
+}
+
+/** `GCNMSaveAttachments`: `kategori` bersama (TempInputParam.pyCategory, Upload File baris) ATAU `kategoriBerkas` per
+ *  berkas (`.pyCategory`, Add attachment), satu `InsertDocument_Act` per berkas. */
+export function unggahLampiran(
+  id: string,
+  kategori: string,
+  berkas: File[],
+  kategoriBerkas?: string[],
+): Promise<{ lampiran: Lampiran[] }> {
+  const isi = new FormData()
+  if (kategori !== '') isi.append('kategori', kategori)
+  berkas.forEach((b, i) => {
+    isi.append('berkas', b)
+    if (kategoriBerkas) isi.append('kategoriBerkas', kategoriBerkas[i] ?? '')
+  })
+  return mintaFormulir(`${PREFIX_CP}/kasus/${encodeURIComponent(id)}/lampiran`, isi)
+}
+
+/** View File: isi satu dokumen klaim (`GetBase64Attachment` -> `GetUrlGoogleStorage_Act`) - fetch beridentitas. */
+export function unduhLampiran(id: string, a: Lampiran): Promise<void> {
+  return unduhBerkasBeridentitas(`${jalurLampiran(id, a)}/isi`, a.namaFile)
+}
+
+function jalurLampiran(id: string, a: Lampiran): string {
+  return `${PREFIX_CP}/kasus/${encodeURIComponent(id)}/lampiran/${encodeURIComponent(a.id)}`
+}
+
+/** Isi satu dokumen klaim sebagai Blob - `View` pdf / gambar di popup penampil (pola NB Treaty In). */
+export async function ambilIsiLampiran(id: string, a: Lampiran): Promise<Blob> {
+  const kendali = new AbortController()
+  const jam = setTimeout(() => {
+    kendali.abort()
+  }, BATAS_WAKTU_MS)
+  try {
+    const jawab = await fetch(rakitURL(`${jalurLampiran(id, a)}/isi`), {
+      method: 'GET',
+      headers: { ...headerIdentitas() },
+      signal: kendali.signal,
+    })
+    if (!jawab.ok) throw kegagalanDari(jawab.status, await jawab.text())
+    return await jawab.blob()
+  } finally {
+    clearTimeout(jam)
+  }
+}
+
+/** View Office Online - URL bertanda tangan untuk penampil kantor (pola NB `DownloadDocumentPolis` ViewOffice). */
+export function tautanOfficeLampiran(id: string, a: Lampiran): Promise<{ url: string }> {
+  return minta(`${jalurLampiran(id, a)}/office`)
+}
+
+/** Change Category - dokumen terpilih ke kategori lain (layar Pega View File). */
+export function pindahKategoriLampiran(id: string, kategori: string, ids: string[]): Promise<{ ok: boolean }> {
+  return minta(`${PREFIX_CP}/kasus/${encodeURIComponent(id)}/lampiran/kategori`, {
+    metode: 'POST',
+    badan: { kategori, ids },
+  })
+}
+
+/** Delete (pola NB `DeleteDocumentPolis_Act`). */
+export function hapusLampiran(id: string, a: Lampiran): Promise<{ ok: boolean }> {
+  return minta(`${jalurLampiran(id, a)}/hapus`, { metode: 'POST' })
 }

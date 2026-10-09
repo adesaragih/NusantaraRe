@@ -199,9 +199,9 @@ var berkasAlamatDikecualikan = map[string]string{
 // `://` dan env tetap diperiksa. Tiap baris menyebut persetujuan manusianya;
 // jumlahnya dikunci di bawah.
 var berkasKlienHTTPDisetujui = map[string]string{
-	"modul/treatycontractout/backend/services/tco_pengirim_storage.go": "transport penyimpanan lampiran Treaty Contract Out - " +
-		"[keputusan work owner 29-09-2026, OQ-TCO-08]; alamat dari M_LINK_SERVICE saat jalan, " +
-		"hanya aktif bila PELAKSANA_STORAGE=nyata",
+	"inti/backend/penyimpanan/kirim.go": "Connect-REST `ServiceGoogle` bersama kelas `T_STORAGE_IMAGE` (upload, geturl, delete, " +
+		"getAI) untuk semua modul - [keputusan work owner 08-10-2026: \"kalo di pega, semua activity ini bisa dipake disemua " +
+		"modul\"; \"lakukan dengan XML yang ada\"]; alamat dari M_LINK_SERVICE saat jalan",
 	"modul/masterproductnamelife/backend/services/mpnl_storage.go": "transport penyimpanan lampiran Master Product Name Life - " +
 		"[keputusan work owner 03-10-2026, OQ-MPNL-10 dibalik: \"ikuti dari XML nya aja\"; entri ini disetujui work owner " +
 		"03-10-2026; \"selalu nyata, ikut XML\" 03-10-2026]; alamat dari M_LINK_SERVICE saat jalan",

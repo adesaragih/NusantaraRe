@@ -14,7 +14,11 @@ package models
 //   - Sel ber-visible `NEVER` / `1=2` dan placeholder `.pyTemplate*` tidak dibangun.
 //   - Medan tanggal Pega disimpan sebagai tanggal; kendali tanggal-waktu untuk DateTimeFormat DateTime-Short.
 
-import "strings"
+import (
+	"strings"
+	"time"
+	"unicode/utf8"
+)
 
 // ---------------------------------------------------------------- kondisi
 
@@ -136,17 +140,37 @@ func dua(sel ...Unsur) Unsur { return letak(LetakDua, sel...) }
 
 func ikon(u Unsur, i string) Unsur { u.Ikon = i; return u }
 
-// ModeLayar - penanda MODE layar Pega yang hidup di halaman kerja tetapi tidak punya kolom di tabel datar: ikon Edit /
-// Save Catastrophe (`EditCatastrope`, Catastrope_Sec) dan ikon Edit RNM Share (`IsEditRNMShare`). Server mengirimnya
-// di `Layar.Mode`, layar mengembalikannya di setiap aksi, server memasangnya SEBELUM tata (medan / aksi terbuka)
-// dihitung. Aman: penanda hanya membuka mode edit yang memang dapat dinyalakan pemegang lewat tombolnya (temuan work
-// owner 08-10-2026 "Catastrophe tidak berfungsi" - penanda hilang saat halaman dibaca ulang).
-var ModeLayar = []string{CD + "EditCatastrope", "IsEditRNMShare"}
+// ModeLayar - penanda MODE layar Pega yang hidup di clipboard tetapi tidak punya kolom di tabel datar: ikon Edit /
+// Save Catastrophe (`EditCatastrope`, Catastrope_Sec), ikon Edit RNM Share (`IsEditRNMShare`), dan halaman sementara
+// pop-up "Komite klaim Treaty" selama terbuka - `Protect.CARI1/CARI2` (kontainer tombol Send) serta tanggal dan PIC
+// (ProteksiInitialandDate_Act 2). Server mengirimnya di `Layar.Mode`, layar mengembalikannya di setiap aksi, server
+// memasangnya SEBELUM tata (medan / aksi terbuka) dihitung. Aman: penanda hanya membuka mode edit yang memang dapat
+// dinyalakan pemegang lewat tombolnya; Protect hanya menampilkan tombol Send - "Send Claim to Committee" menghitung
+// ulang proteksinya di server (AC 58); tanggal dan PIC hanya tampilan (temuan work owner 08-10-2026 "Catastrophe tidak
+// berfungsi", 09-10-2026 Date / PIC kosong dan tombol Send hilang sesudah refresh pop-up komite).
+var ModeLayar = []string{CD + "EditCatastrope", "IsEditRNMShare", "Protect.CARI1", "Protect.CARI2", JalurTanggalKomite,
+	JalurPICKomite}
 
-// PasangMode memasang penanda mode kiriman layar; hanya kunci ModeLayar dan nilai "true" / "false".
+// modeSah - nilai kiriman layar yang diterima per penanda ModeLayar.
+var modeSah = map[string]func(string) bool{
+	CD + "EditCatastrope": benarSalah,
+	"IsEditRNMShare":      benarSalah,
+	"Protect.CARI1":       nolSatu,
+	"Protect.CARI2":       nolSatu,
+	JalurTanggalKomite: func(v string) bool {
+		_, err := time.Parse("2006-01-02", v)
+		return err == nil
+	},
+	JalurPICKomite: func(v string) bool { return utf8.RuneCountInString(v) <= 200 },
+}
+
+func benarSalah(v string) bool { return v == "true" || v == "false" }
+func nolSatu(v string) bool    { return v == "0" || v == "1" }
+
+// PasangMode memasang penanda mode kiriman layar; hanya kunci ModeLayar dengan nilai yang sah (`modeSah`).
 func PasangMode(h *Halaman, mode map[string]string) {
 	for _, k := range ModeLayar {
-		if v, ada := mode[k]; ada && (v == "true" || v == "false") {
+		if v, ada := mode[k]; ada && modeSah[k](v) {
 			h.Setel(k, v)
 		}
 	}
@@ -239,6 +263,8 @@ var KodePilihan = map[string][]string{
 	"AdjustmentType":     {"1", "2", "3", "4"},
 	"IndividualRiskType": {"1", "2", "3"},
 	"AcceptanceStatus":   {"1", "2"},
+	// ASM-FW-GCNMFW-Data-Comitee.KomiteAproval - urutan pyLocalList `Komite Claim Prop/KomiteAproval.xml`.
+	"KomiteAproval": {"1", "2", "0"},
 }
 
 // LabelKode - label tampilan kode `associated` yang diberikan work owner (prompt values tidak ada di korpus; 08-10-2026).
@@ -254,6 +280,9 @@ var LabelKode = map[string]map[string]string{
 	"AdjustmentType":     {"1": "Claim", "2": "Adjuster Fee", "3": "Salvage", "4": "Consultant Fee"},
 	"IndividualRiskType": {"0": "Select..", "1": "% From claims", "2": "% FromTSI", "3": "Other"},
 	"Payable":            {"1": "Ceding Co Name", "2": "Broker Name", "3": "Others"},
+	// ASM-FW-GCNMFW-Data-Comitee.KomiteAproval - kolom Status grid "Committe Accept Status" (ekspor work owner
+	// `Komite Claim Prop/KomiteAproval.xml`, laporan 09-10-2026 "perbaiki kode nya").
+	"KomiteAproval": {"1": "Approved", "2": "Reject", "0": "Waiting"},
 }
 
 func kode(p string) string { return AwalanKode + p }
@@ -331,33 +360,42 @@ func blokPelapor(relasiStatus string) []Unsur {
 // simpan ID": medan ID (yang disimpan, aksi SetConsultant / SetAdjsuter tetap) berlabel nama dan menampilkan jalur
 // nama; baris nama hanya-baca XML hanya muncul saat dropdown tersembunyi (IsAnyAcceptation = 1), supaya nama tidak
 // tampil dua kali. Label XML "Consultant ID" / "Adjuster / Professional ID" tidak dipakai.
-func blokAdjuster(namaTampil Kondisi, namaAdjTampil Kondisi) []Unsur {
+//
+// `kunci` = syarat hanya-baca medan dan nonaktif tombol "+": XML `.IsOutstanding = 1` di kedua layar; Input
+// Acceptation memakai `IsAnyAcceptation = 1` (lihat kunciInfoAkseptasi).
+func blokAdjuster(namaTampil, namaAdjTampil, kunci Kondisi) []Unsur {
 	bukanAcc := beda("IsAnyAcceptation", "1")
 	sudahAcc := sama("IsAnyAcceptation", "1")
 	return []Unsur{dua(
 		bagian("",
-			tampilan(aksi(sumber(tampil(wajibU(roJika(medan(CD+"ConsultantID", "Consultant Name", KOtomatis), isOutstanding)),
+			tampilan(aksi(sumber(tampil(wajibU(roJika(medan(CD+"ConsultantID", "Consultant Name", KOtomatis), kunci)),
 				bukanAcc), SumberAdjuster), "SetConsultant"), CD+"ConsultantName"),
-			ikon(tampil(naJika(tombol("AdjusterConsultantBaru1", "Add", AksiTambahKonsultan), isOutstanding), bukanAcc), IkonTambah),
+			ikon(tampil(naJika(tombol("AdjusterConsultantBaru1", "Add", AksiTambahKonsultan), kunci), bukanAcc), IkonTambah),
 			tampil(ro(medan(CD+"ConsultantName", "Consultant Name", KTeks)), dan(namaTampil, sudahAcc)),
 		),
 		bagian("",
 			tampilan(aksi(sumber(tampil(wajibU(roJika(medan(CD+"AppointedADJID", "Adjuster / Professional Name", KOtomatis),
-				isOutstanding)), bukanAcc), SumberAdjuster), "SetAdjsuter"), CD+"AppointedADJ"),
-			ikon(tampil(naJika(tombol("AdjusterConsultantBaru2", "Add", AksiTambahAdjuster), isOutstanding), bukanAcc), IkonTambah),
+				kunci)), bukanAcc), SumberAdjuster), "SetAdjsuter"), CD+"AppointedADJ"),
+			ikon(tampil(naJika(tombol("AdjusterConsultantBaru2", "Add", AksiTambahAdjuster), kunci), bukanAcc), IkonTambah),
 			tampil(ro(medan(CD+"AppointedADJ", "Adjuster / Professional Name", KTeks)), dan(namaAdjTampil, sudahAcc)),
 		),
 	)}
 }
 
 // blokLokasi - Report Description dan Location of Loss (Occupation, Province, Zip Code ditulis per layar - kondisinya
-// berbeda).
-func blokLokasi() []Unsur {
+// berbeda). `kunci` seperti blokAdjuster.
+func blokLokasi(kunci Kondisi) []Unsur {
 	return []Unsur{
-		aksi(roJika(medan(CD+"ReportDescription", "Report Description", KArea), isOutstanding), "MakeLowercase"),
-		aksi(wajibU(roJika(medan(CD+"Location", "Location of Loss", KArea), isOutstanding)), "MakeLowercase"),
+		aksi(roJika(medan(CD+"ReportDescription", "Report Description", KArea), kunci), "MakeLowercase"),
+		aksi(wajibU(roJika(medan(CD+"Location", "Location of Loss", KArea), kunci)), "MakeLowercase"),
 	}
 }
+
+// kunciInfoAkseptasi - `[keputusan work owner 09-10-2026, penyimpangan sadar]` "buat boleh di ubah kalau belum ada
+// akseptasi, yang isanyacceptation itu": di Input Acceptation, Consultant, Adjuster, Report Description, Location of
+// Loss, Occupation, Province, dan Zip Code terbuka sampai ada baris adjustment ber-AcceptanceStatus 1
+// (CheckAnyAcceptationProp). XML menguncinya dengan `.IsOutstanding = 1`, yang selalu benar sesudah Save Outstanding.
+var kunciInfoAkseptasi = isAnyAccept
 
 // gridRiwayat - Layout "Claim History" (grid SuggestList, paging 5; urutan `TampilRiwayat`), tersimpan di
 // T_VIEW_SUGGEST.
@@ -570,8 +608,8 @@ func LayarOutstanding() []Unsur {
 			bagian("", naJika(tombol("ChooseCauseOfLoss", "Choose Cause of Loss", "PilihSebab"), isAnyAccept)),
 		)),
 	}
-	out = append(out, blokAdjuster(terisi(CD+"ConsultantName"), terisi(CD+"AppointedADJ"))...)
-	out = append(out, blokLokasi()...)
+	out = append(out, blokAdjuster(terisi(CD+"ConsultantName"), terisi(CD+"AppointedADJ"), isOutstanding)...)
+	out = append(out, blokLokasi(isOutstanding)...)
 	out = append(out,
 		roJika(aksi(medan(CD+"Occupation", "Occupation", KArea), "MakeLowercase"), isOutstanding),
 		dua(
@@ -655,13 +693,14 @@ func LayarAkseptasi() []Unsur {
 		label("Claim Information"),
 		dua(kiri, bagian("", blokPelapor(CD+"InsuredRelationship")...)),
 	}
-	out = append(out, blokAdjuster(atau(terisi(CD+"ConsultantName"), isAnyAccept), atau(terisi(CD+"AppointedADJ"), isAnyAccept))...)
-	out = append(out, blokLokasi()...)
+	out = append(out, blokAdjuster(atau(terisi(CD+"ConsultantName"), isAnyAccept), atau(terisi(CD+"AppointedADJ"), isAnyAccept),
+		kunciInfoAkseptasi)...)
+	out = append(out, blokLokasi(kunciInfoAkseptasi)...)
 	out = append(out,
-		wajibU(roJika(aksi(medan(CD+"Occupation", "Occupation", KArea), "MakeLowercase"), isOutstanding)),
+		wajibU(roJika(aksi(medan(CD+"Occupation", "Occupation", KArea), "MakeLowercase"), kunciInfoAkseptasi)),
 		dua(
-			bagian("", roJika(sumber(wajibU(medan(CD+"Province", "Province", KOtomatis)), SumberProvinsi), isOutstanding)),
-			bagian("", roJika(aksi(medan(CD+"PostalCode", "Zip Code", KTeks), "GetAdders"), isOutstanding)),
+			bagian("", roJika(sumber(wajibU(medan(CD+"Province", "Province", KOtomatis)), SumberProvinsi), kunciInfoAkseptasi)),
+			bagian("", roJika(aksi(medan(CD+"PostalCode", "Zip Code", KTeks), "GetAdders"), kunciInfoAkseptasi)),
 		),
 		letak(LetakTab,
 			bagian("Interests", sectionInterest()),

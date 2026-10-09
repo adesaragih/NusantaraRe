@@ -16,13 +16,17 @@ import {
   type Halaman,
   type Layar,
   type Pilihan,
+  type Tata,
 } from '../api'
+import { putuskanAksi, type AksiDiminta } from '../antreAksi'
 import { CP } from '../labels'
 import { ambil, masukan, semuaTata, setel } from '../nilai'
+import PanelLampiran from './PanelLampiran'
 import Popup, { type JenisPopup } from './Popup'
-import { DAFTAR_RINCI } from './rincian'
+import { barisModal, DAFTAR_RINCI } from './rincian'
+import { pisahKakiModal } from './susun'
 import TambahAdjuster from './TambahAdjuster'
-import TataView, { LayarTata, type KonteksTata } from './TataView'
+import TataView, { BarisAdjustment, LayarTata, Tombol, type KonteksTata } from './TataView'
 
 /** Aksi yang hanya membuka pop-up harness. */
 const POPUP: Record<string, JenisPopup> = {
@@ -31,6 +35,11 @@ const POPUP: Record<string, JenisPopup> = {
   PilihSebab: 'sebab',
   BukaKatastrofe: 'katastrofe',
   RingkasanOS: 'ringkasanOS',
+}
+
+/** Tombol aktif beraksi `aksi` di layout utama (tab Lampiran: Save = tombol Save layar, aksi `Simpan`). */
+function adaTombol(ts: readonly Tata[], aksi: string): boolean {
+  return ts.some((t) => (t.jenis === 'tombol' && t.aksi === aksi && !t.nonaktif) || adaTombol(t.anak ?? [], aksi))
 }
 
 /** Aksi submit local action: modal ditutup bila berhasil. */
@@ -47,6 +56,12 @@ const JUDUL_MODAL = (m: string): string => {
   return m
 }
 
+/** Satu aksi layar beserta ubahan medan yang memicunya. */
+interface Permintaan extends AksiDiminta {
+  ubahan: Record<string, string>
+  param: string
+}
+
 interface RekeningBank {
   ClientName: string
   NameOfBank: string
@@ -59,12 +74,15 @@ export default function LayarKasus({
   pelaku,
   onKembali,
   onLihatBerkas,
+  hanyaLihat = false,
 }: {
   id: string
   pelaku: string
   onKembali: () => void
   /** `PropsRute.onLihatBerkas` - tombol View polis. */
   onLihatBerkas?: (modul: string, id: string) => boolean
+  /** Tampilan saja walau pemegang (View more details Komite Claim Prop, keputusan work owner 09-10-2026). */
+  hanyaLihat?: boolean
 }) {
   const [layar, setLayar] = useState<Layar | null>(null)
   const [h, setH] = useState<Halaman | null>(null)
@@ -86,9 +104,9 @@ export default function LayarKasus({
   }, [])
 
   useEffect(() => {
-    bukaKasus(id).then(terima, (g: unknown) => setGalat(g))
+    bukaKasus(id, hanyaLihat).then(terima, (g: unknown) => setGalat(g))
     ambilAcuan().then(setAcuan, (g: unknown) => setGalat(g))
-  }, [id, terima])
+  }, [id, hanyaLihat, terima])
 
   const idMaster = h?.nilai['ClaimData.IDMaster'] ?? ''
   useEffect(() => {
@@ -110,27 +128,31 @@ export default function LayarKasus({
     )
   }, [id, polisKasus])
 
-  const kirim = useCallback(
-    (aksi: string, indeks = 0, ubahan: Record<string, string> = {}, param = '') => {
-      if (!layar || !h) return
-      let h2 = h
+  // Aksi yang sedang berjalan dan satu aksi yang menunggu (`antreAksi.ts`).
+  const berjalan = useRef<Permintaan | null>(null)
+  const menunggu = useRef<Permintaan | null>(null)
+
+  const jalankan = useCallback(
+    function jalan(p: Permintaan, ly: Layar, hKini: Halaman) {
+      const { aksi, indeks, ubahan, param } = p
+      let h2 = hKini
       for (const [j, v] of Object.entries(ubahan)) h2 = setel(h2, j, v)
       setH(h2)
       const prm = param !== '' ? param : PARAM_DARI_NILAI.has(aksi) ? (Object.values(ubahan)[0] ?? '') : ''
-      const semua = semuaTata(layar.tata, [layar.adjustment ?? {}, layar.modal ?? {}])
+      const semua = semuaTata(ly.tata, [ly.adjustment ?? {}, ly.modal ?? {}])
+      berjalan.current = p
       setSibuk(true)
       setInfo(null)
       aksiKasus(id, {
         aksi,
         indeks,
         param: prm,
-        tahap: layar.kasus.tahap,
+        tahap: ly.kasus.tahap,
         masukan: masukan(h2, semua),
-        mode: layar.mode,
+        mode: ly.mode,
       }).then(
         (l) => {
           terima(l)
-          setSibuk(false)
           if (l.info) setInfo(l.info)
           if (SUBMIT_MODAL.has(aksi)) setModal(null)
           if (aksi === 'BukaKomite') {
@@ -138,14 +160,36 @@ export default function LayarKasus({
             setModal(ok ? `komite:${indeks}` : null)
           }
           setPopup(null)
+          berjalan.current = null
+          const lanjut = menunggu.current
+          menunggu.current = null
+          if (lanjut) jalan(lanjut, l, l.halaman)
+          else setSibuk(false)
         },
         (g: unknown) => {
+          berjalan.current = null
+          menunggu.current = null
           setSibuk(false)
           setGalat(g)
         },
       )
     },
-    [id, layar, h, terima],
+    [id, terima],
+  )
+
+  const kirim = useCallback(
+    (aksi: string, indeks = 0, ubahan: Record<string, string> = {}, param = '') => {
+      if (!layar || !h) return
+      const p: Permintaan = { aksi, indeks, ubahan, param }
+      const putusan = putuskanAksi(berjalan.current, p)
+      if (putusan === 'abaikan') return
+      if (putusan === 'antre') {
+        menunggu.current = p
+        return
+      }
+      jalankan(p, layar, h)
+    },
+    [layar, h, jalankan],
   )
 
   // Tombol View polis (perintah work owner 08-10-2026 "jangan tab baru ... biarkan di layar utama", "hanya tampilan
@@ -273,6 +317,9 @@ export default function LayarKasus({
   }
 
   const pesanGalat = galat instanceof ApiFailure ? galat.detail.message : null
+  // Tombol di akhir isi modal ke kaki `Modal`; tombol penutup section = tombol batal `Modal` (bukan dua Cancel).
+  const isiModal = modal ? pisahKakiModal(layar.modal?.[modal] ?? []) : null
+  const kModal = { ...k, rincian: undefined }
   return (
     <section className="inbox claimprop__akar">
       <header className="inbox__kepala">
@@ -306,10 +353,26 @@ export default function LayarKasus({
         </Modal>
       )}
       <LayarTata tata={layar.tata} k={k} />
-      {modal && (
-        <Modal judul={JUDUL_MODAL(modal)} onTutup={() => setModal(null)} lebar>
-          <TataView tata={layar.modal?.[modal] ?? []} k={{ ...k, rincian: undefined }} />
-        </Modal>
+      <PanelLampiran
+        id={id}
+        hanyaLihat={hanyaLihat}
+        bolehSimpan={layar.bolehKerja && adaTombol(layar.tata, 'Simpan')}
+        onSimpan={() => kirim('Simpan')}
+      />
+      {modal && isiModal && (
+        <BarisAdjustment.Provider value={barisModal(modal)}>
+          <Modal
+            judul={JUDUL_MODAL(modal)}
+            onTutup={() => setModal(null)}
+            lebar
+            labelBatal={isiModal.batal}
+            aksi={isiModal.kaki.map((t, i) => (
+              <Tombol key={i} t={t} k={kModal} utama />
+            ))}
+          >
+            <TataView tata={isiModal.isi} k={kModal} />
+          </Modal>
+        </BarisAdjustment.Provider>
       )}
       {tambahAdj && (
         <TambahAdjuster

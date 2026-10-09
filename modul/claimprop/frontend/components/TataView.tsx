@@ -9,7 +9,7 @@
 // tombol ikon dari XML (pi-plus / pi-trash / pi-pencil / pi-check), grid ber-paging (pyGridPaginator). Pengelompokan di
 // `susun.ts`.
 
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { createContext, Fragment, useContext, useEffect, useRef, useState } from 'react'
 
 import { PilihSaring } from '../../../../inti/frontend/components/ui/pilihSaring'
 import type { Halaman, Pilihan, Tata } from '../api'
@@ -93,6 +93,8 @@ function Medan({
   id?: string
 }) {
   const v = ambil(k.h, jalur)
+  // Nilai saat fokus: textarea beraksi memanggil server hanya bila isinya berubah (event `change` XML).
+  const awal = useRef<string | null>(null)
   const sel = indeks > 0
   const kunci = !!(t.hanyaBaca || t.nonaktif)
   const n = indeks || indeksDari(jalur)
@@ -193,7 +195,8 @@ function Medan({
           value={v}
           disabled={k.sibuk}
           onChange={(e) => k.ubah(jalur, e.target.value)}
-          onBlur={(e) => t.aksi && ganti(e.target.value, true)}
+          onFocus={(e) => (awal.current = e.target.value)}
+          onBlur={(e) => t.aksi && e.target.value !== awal.current && ganti(e.target.value, true)}
         />
       )
     case 'pilih':
@@ -270,14 +273,28 @@ function Medan({
 }
 
 /**
- * Tombol: ikon dari XML = tombol ikon (label jadi keterangan); Save / Submit = tombol utama (Kelola User: Simpan);
- * selainnya tombol bertepi. Tanpa label dan tanpa ikon = pengaturan.
+ * Nomor baris adjustment (1..n) pemilik panel rinci yang sedang dirender; 0 di luar panel. Tombol panel (Send to
+ * Committe, Acceptation, Generate DLA, View Komite No) adalah aksi baris: server menyaring tata baris lewat Indeks
+ * (`services/aksi.go` aksiBarisAdj), jadi tanpa nomor ini aksinya ditolak "tidak tersedia" (laporan work owner
+ * 09-10-2026).
  */
-function Tombol({ t, k, indeks = 0 }: { t: Tata; k: KonteksTata; indeks?: number }) {
-  const utama = indeks === 0 && !t.ikon && (t.label === 'Save' || t.label === 'Submit')
+export const BarisAdjustment = createContext(0)
+
+/** Indeks yang dikirim tombol: indeks baris grid-nya sendiri, atau nomor baris panel rinci yang memuatnya. */
+export function indeksTombol(indeks: number, baris: number): number {
+  return indeks > 0 ? indeks : baris
+}
+
+/**
+ * Tombol: ikon dari XML = tombol ikon (label jadi keterangan); Save / Submit = tombol utama (Kelola User: Simpan);
+ * selainnya tombol bertepi. Tanpa label dan tanpa ikon = pengaturan. `utama` = tombol kaki modal.
+ */
+export function Tombol({ t, k, indeks = 0, utama }: { t: Tata; k: KonteksTata; indeks?: number; utama?: boolean }) {
+  const baris = useContext(BarisAdjustment)
+  const primer = utama ?? (indeks === 0 && !t.ikon && (t.label === 'Save' || t.label === 'Submit'))
   const kelas = [
     'btn',
-    utama ? 'btn--primary' : 'btn--ghost',
+    primer ? 'btn--primary' : 'btn--ghost',
     (indeks > 0 || t.ikon) && 'btn--sm',
     t.ikon && 'claimprop__ikon',
     t.ikon === 'hapus' && 'claimprop__ikon--hapus',
@@ -289,12 +306,13 @@ function Tombol({ t, k, indeks = 0 }: { t: Tata; k: KonteksTata; indeks?: number
     <button
       type="button"
       className={kelas}
-      disabled={t.nonaktif || k.sibuk}
+      disabled={t.nonaktif}
+      aria-busy={k.sibuk || undefined}
       title={t.catatan ?? nama}
       aria-label={t.ikon || !t.label ? nama : undefined}
       onClick={(e) => {
         e.stopPropagation()
-        k.aksi(t.aksi ?? t.id ?? '', indeks)
+        k.aksi(t.aksi ?? t.id ?? '', indeksTombol(indeks, baris))
       }}
     >
       {t.ikon ? <Ikon jenis={t.ikon} /> : t.label ? t.label : '⚙'}
@@ -609,7 +627,9 @@ function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
                 </tr>
                 {rinci && buka === n && (
                   <tr className="claimprop__baris-rinci">
-                    <td colSpan={lebar}>{rinci.isi(n)}</td>
+                    <td colSpan={lebar}>
+                      <BarisAdjustment.Provider value={n}>{rinci.isi(n)}</BarisAdjustment.Provider>
+                    </td>
                   </tr>
                 )}
               </Fragment>

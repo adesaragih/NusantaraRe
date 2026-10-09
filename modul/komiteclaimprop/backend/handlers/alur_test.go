@@ -28,6 +28,7 @@ type uji struct {
 	g   *tiruan.Gudang
 	a   *tiruan.Acuan
 	l   *services.Layanan
+	b   *tiruan.Berkas
 	srv http.Handler
 }
 
@@ -38,7 +39,9 @@ func siap(t *testing.T, n int, produksi bool) *uji {
 	l := services.Baru(g, a, g.Klaim, func() time.Time { return tiruan.SaatUji }, produksi).
 		DenganKasir(models.KonfigurasiKasir{CompanyName: "UJI-CO", LjtdID: "UJI-LJTD", LdcID: "UJI-LDC"}).
 		DenganEmail(models.KonfigurasiEmail{Akun: "UJI-AKUN", AkunSyariah: "UJI-SYARIAH", CC: "uji.cc@contoh.invalid"})
-	return &uji{t: t, g: g, a: a, l: l, srv: handlers.Router(l, true)}
+	b := g.BerkasBaru()
+	l = l.DenganPenyimpanan(b)
+	return &uji{t: t, g: g, a: a, l: l, b: b, srv: handlers.Router(l, true)}
 }
 
 func (u *uji) minta(metode, jalur, pelaku string, badan any) *httptest.ResponseRecorder {
@@ -335,14 +338,11 @@ func TestEfekKeluarDiProduksi(t *testing.T) {
 	if u.adj()["IDOfBank"] != "UJI-BANK-1" || len(h.AcceptedNo) != 23 {
 		t.Fatalf("IDOfBank S12-S13: %+v", u.adj())
 	}
-	if !jenis[services.JenisEfekDokumen] {
-		t.Fatalf("S21 -> PrintFileAcceptance_TKMT: dokumen akseptasi diantre: %v", u.g.Efek)
-	}
 	// MUATAN hanya pengenal (claimlife/015): tanpa alamat email, subjek, maupun nama.
 	muatan := map[string]services.MuatanOutbox{}
 	for _, e := range u.g.Efek {
 		p := strings.SplitN(e, ":", 3)
-		if p[0] == services.JenisEfekEmailKomite || p[0] == services.JenisEfekDokumen {
+		if p[0] == services.JenisEfekEmailKomite {
 			if strings.Contains(p[2], "@") || strings.Contains(p[2], "UJI Penyetuju") || strings.Contains(p[2], "subjek") {
 				t.Fatalf("MUATAN %s memuat alamat / nama: %s", p[0], p[2])
 			}
@@ -375,23 +375,54 @@ func TestEfekKeluarDiProduksi(t *testing.T) {
 		!strings.Contains(sr.HTML, "<strong>UJI Penyetuju Satu</strong>") || !strings.Contains(sr.HTML, "Status: <span") {
 		t.Fatalf("email komite: %+v", sr)
 	}
-	dk, err := u.l.SusunDokumenAkseptasi(ctx, tiruan.KomiteUji, isi(services.JenisEfekDokumen))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if dk.NamaBerkas != "Persetujuan Klaim   AcceptNo "+h.AcceptedNo+".pdf" || dk.Kategori != "AcceptanceNote" ||
-		dk.Folder != "Claim" || dk.MIME != "pdf" || !bytes.HasPrefix(dk.Isi, []byte("%PDF-")) {
-		t.Fatalf("dokumen akseptasi: %s %s %s %s %d", dk.NamaBerkas, dk.Kategori, dk.Folder, dk.MIME, len(dk.Isi))
-	}
-	// Pelaksana produksi: isi dirakit, lalu panggilan nyata ditahan sampai disetujui manusia.
+	// Pelaksana produksi: isi dirakit, lalu pengiriman SMTP ditahan sampai disetujui manusia.
 	pl := services.PelaksanaKomiteClaimProp{Lingkungan: inti.Produksi, Penyusun: u.l}
-	for j, mau := range map[string]error{services.JenisEfekEmailKomite: outbox.ErrEmailBelumDisetujui,
-		services.JenisEfekDokumen: outbox.ErrPenyimpananBelumDisetujui} {
-		b, _ := json.Marshal(muatan[j])
-		err := pl.Laksanakan(ctx, nil, outbox.BarisEfekKeluar{Modul: "komiteclaimprop", Jenis: j, Muatan: string(b)})
-		if !errors.Is(err, mau) {
-			t.Fatalf("pelaksana %s: %v", j, err)
-		}
+	b, _ := json.Marshal(muatan[services.JenisEfekEmailKomite])
+	err = pl.Laksanakan(ctx, nil, outbox.BarisEfekKeluar{Modul: "komiteclaimprop", Jenis: services.JenisEfekEmailKomite,
+		Muatan: string(b)})
+	if !errors.Is(err, outbox.ErrEmailBelumDisetujui) {
+		t.Fatalf("pelaksana email: %v", err)
+	}
+}
+
+// PrintFileAcceptance_TKMT S9-S13 (keputusan work owner 08-10-2026, pola lampiran Bordereaux): sesudah Submit tingkat
+// akhir tersimpan, PDF diunggah (folder Claim, Durasi 1800, ext pdf) lalu T_STORAGE_IMAGE + DOCUMENT_CLAIM dicatat - di
+// setiap lingkungan (tanpa gerbang IsPEGAPROD).
+func TestDokumenAkseptasiDiunggahDanDicatat(t *testing.T) {
+	u := siap(t, 2, false)
+	u.putus(tiruan.PenyetujuUji(1), setuju("UJI 1"), http.StatusOK)
+	if len(u.b.Unggahan) != 0 {
+		t.Fatal("tingkat 1 dari 2: belum ada dokumen")
+	}
+	h := u.putus(tiruan.PenyetujuUji(2), setuju("UJI 2"), http.StatusOK)
+	if h.AcceptedNo == "" || h.GalatDokumen != "" || len(u.b.Unggahan) != 1 {
+		t.Fatalf("tingkat akhir: %+v, unggahan %d", h, len(u.b.Unggahan))
+	}
+	m := u.b.Unggahan[0]
+	if m.Folder != "Claim" || m.Durasi != 1800 || m.Ext != "pdf" || m.Pengguna != tiruan.PenyetujuUji(2) ||
+		m.NamaFile != "Persetujuan Klaim   AcceptNo "+h.AcceptedNo+".pdf" || !bytes.HasPrefix(m.Isi, []byte("%PDF-")) {
+		t.Fatalf("InsertGoogleStorage_Act: %s %s %d %s %s", m.Folder, m.NamaFile, m.Durasi, m.Ext, m.Pengguna)
+	}
+	if len(u.g.Storage) != 1 || len(u.g.Dokumen) != 1 {
+		t.Fatalf("T_STORAGE_IMAGE %d, DOCUMENT_CLAIM %d", len(u.g.Storage), len(u.g.Dokumen))
+	}
+	d := u.g.Dokumen[0]
+	if len(d.ID) != 17 || d.IDPega != tiruan.KlaimUji || d.Kategori1 != "AcceptanceNote" || d.MIME != "pdf" ||
+		d.StorageID != u.g.Storage[0].ImageID || d.Operator != tiruan.PenyetujuUji(2) || d.NamaFile != m.NamaFile {
+		t.Fatalf("DOCUMENT_CLAIM: %+v", d)
+	}
+}
+
+// Unggah gagal: keputusan TETAP tersimpan (urutan Pega tidak ditiru), penyetuju menerima galatDokumen, nol catatan.
+func TestDokumenAkseptasiGagalKeputusanTetap(t *testing.T) {
+	u := siap(t, 1, false)
+	u.b.Gagal = errors.New("UJI storage mati")
+	h := u.putus(tiruan.PenyetujuUji(1), setuju("UJI"), http.StatusOK)
+	if h.AcceptedNo == "" || h.GalatDokumen != services.PesanDokumenGagal || u.adj()["AcceptedNo"] != h.AcceptedNo {
+		t.Fatalf("keputusan tersimpan + galat dokumen: %+v", h)
+	}
+	if len(u.g.Storage) != 0 || len(u.g.Dokumen) != 0 {
+		t.Fatal("tanpa unggahan: nol T_STORAGE_IMAGE / DOCUMENT_CLAIM")
 	}
 }
 

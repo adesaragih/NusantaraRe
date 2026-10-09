@@ -29,4 +29,6 @@ export const KCP = {
   pilih: 'Choose',
   /** `[tidak ada di korpus]` - View more details: menu Claim Prop tidak dipegang akun ini (teks sama dengan Claim Prop). */
   berkasTakTerpasang: 'This file cannot be opened here: the menu of its module is not assigned to your account.',
+  /** `[tidak ada di korpus]` - kembali ke inbox Claim Prop sesudah pesan Submit (kasus dibuka dari tabel komite). */
+  kembali: 'Back',
 } as const

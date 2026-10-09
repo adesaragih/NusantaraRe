@@ -16,7 +16,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Status | dimigrasi |
 | Rentang migrasi | `300-319` |
 | Slot menu | `956-957` |
-| Prefix rute API | `/api/treaty-contract-out` (+ pekerja latar antrean lampiran) |
+| Prefix rute API | `/api/treaty-contract-out` |
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |
 
@@ -74,8 +74,8 @@ kepemilikan tabel berpindah — keputusan work owner.
 | `MTREATYSECURITY` | tabel warisan POOLDATA yang Treaty Contract Out tulis dan baca tanpa membuatnya (tco4, keputusan work owner 29-09-2026) |
 | `TREATYBUSINESS` | tabel warisan POOLDATA yang Treaty Contract Out tulis dan baca tanpa membuatnya (tco4, keputusan work owner 29-09-2026) |
 | `PROPORTIONALARRG` | tabel warisan POOLDATA yang Treaty Contract Out tulis dan baca tanpa membuatnya (tco4, keputusan work owner 29-09-2026) |
-| `M_ATTACHMENTTREATY_2` | tabel warisan POOLDATA yang Treaty Contract Out tulis dan baca tanpa membuatnya (tco4, keputusan work owner 29-09-2026) |
-| `T_STORAGE_IMAGE` | tabel warisan POOLDATA yang Treaty Contract Out tulis dan baca tanpa membuatnya (tco4, keputusan work owner 29-09-2026) |
+| `M_ATTACHMENTTREATY_2` | tabel warisan POOLDATA yang Treaty Contract Out baca tanpa membuatnya - lampiran lama Pega dihitung sebagai anak tahun treaty; fitur lampiran modul ini dibuang (keputusan work owner 08-10-2026) |
+| `T_STORAGE_IMAGE` | tabel warisan POOLDATA, tidak dibuat modul ini; tidak lagi disentuh sejak fitur lampiran dibuang (keputusan work owner 08-10-2026), tetap terdokumentasi di STRUKTUR |
 
 ### Penyuntikan wajib di handler
 
@@ -94,7 +94,6 @@ menyertainya di berkas yang sama (`TestHandlerMenyuntikkanImplementasiNyata`).
 | `tco_kaskade.go` | `svc.KaskadeTCO()` | `DenganKaskade(services.KaskadeOracle(svc))`, `DenganKontrak(services.PemegangKontrakOracle(svc))`, `DenganTahun(services.GudangTahunTreatyOracle(svc))`, `DenganReinsurer(services.GudangReinsurerOracle(svc))` | Tiket 10 (aditif 29-09-2026): pelaksana kaskade, kontrak, tahun, reinsurer, jejak. tco4: nol jejak modul (T_TREATYCO_JEJAK dibuang; Pega tidak mencatatnya). |
 | `tco_kurs.go` | `svc.KursTCO()` | `DenganTahun(services.GudangTahunTreatyOracle(svc))`, `DenganMaster(services.MasterKursOracle(svc))`, `DenganMataUang(services.MataUangOracle(svc))` | Tiket 11 (aditif 29-09-2026): tahun, master kurs, master mata uang. |
 | `tco_security.go` | `svc.SecurityTCO()` | `DenganGudang(services.GudangSecurityOracle(svc))`, `DenganReinsurer(services.GudangReinsurerOracle(svc))`, `DenganKontrak(services.PemegangKontrakOracle(svc))`, `DenganTahun(services.GudangTahunTreatyOracle(svc))`, `DenganMaster(services.MasterReinsurerOracle(svc))` | Tiket 06 (aditif 29-09-2026): gudang security, reinsurer induk, kontrak, tahun, master AGENT. |
-| `tco_lampiran.go` | `svc.LampiranTahunTCO()` | `DenganGudang(services.GudangLampiranOracle(svc))`, `DenganKategori(services.KategoriLampiranOracle(svc))`, `DenganAntrean(services.AntreanLampiranOracle(svc))`, `DenganPenyimpanan(services.PenyimpananLampiranTCO(svc))`, `DenganTahun(services.GudangTahunTreatyOracle(svc))` | Tiket 12 (aditif 29-09-2026): lima pasangan lampiran; bawaannya gagal terang. OQ-TCO-08: pemilih stub/nyata, bukan stub mati. |
 
 ## Brief acuan
 

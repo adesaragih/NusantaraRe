@@ -264,3 +264,57 @@ func TestTambahSpreadingSatuBarisPerMataUang(t *testing.T) {
 		t.Fatalf("Add tanpa spreading polis: %v", atas)
 	}
 }
+
+// Keputusan work owner 09-10-2026 "kalo tidak ada di master, ambil dari proportionalarrg": SpreadingList master kosong
+// -> tabel bawah = anak PROPORTIONALARRG setiap TreatyType tabel atas (tahun + treaty group klaim); master berisi tetap
+// dipakai (PROPORTIONALARRG tidak dibaca).
+func TestTabelBawahCadanganProportionalArrg(t *testing.T) {
+	a := acuanSpreading()
+	a.Anak["UJI-INDUK|2026|UJI-TG"] = []models.AnakSpreading{
+		{ReinsTypeID: "UJI-PA1", ReinsTypeName: "UJI ANAK 1", Pct: "70.00"},
+		{ReinsTypeID: "UJI-PA2", ReinsTypeName: "UJI ANAK 2", Pct: "30"},
+	}
+	k := konteksUji(a)
+	h := models.HalamanBaru()
+	h.Setel(models.CD+"TreatyYear", "2026")
+	h.Setel(models.CD+"TreatyGroupID", "UJI-TG")
+	if err := models.IsiSpreadingPolis(k, h, "UJI-POLIS-1", models.MasterTreaty{}); err != nil {
+		t.Fatal(err)
+	}
+	bawah := h.AmbilDaftar(models.DaftarBreakQS)
+	if len(bawah) != 2 || bawah[0]["TreatyType"] != "UJI-PA1" || bawah[0]["TreatyName"] != "UJI ANAK 1" ||
+		bawah[0]["SharePercentage"] != "70" || bawah[1]["TreatyType"] != "UJI-PA2" || bawah[1]["CurrencyID"] != "UJI-ID-IDR" {
+		t.Fatalf("master kosong: tabel bawah dari PROPORTIONALARRG: %v", bawah)
+	}
+	// master berisi: master yang dipakai, cadangan tidak
+	if err := models.IsiSpreadingPolis(k, h, "UJI-POLIS-1", masterSpreading()); err != nil {
+		t.Fatal(err)
+	}
+	if b := h.AmbilDaftar(models.DaftarBreakQS); len(b) != 2 || b[0]["TreatyType"] != "UJI-RI" {
+		t.Fatalf("master berisi: tabel bawah dari master: %v", b)
+	}
+	// master kosong dan PROPORTIONALARRG tanpa anak: tabel bawah kosong
+	h.Setel(models.CD+"TreatyGroupID", "UJI-TG-LAIN")
+	if err := models.IsiSpreadingPolis(k, h, "UJI-POLIS-1", models.MasterTreaty{}); err != nil {
+		t.Fatal(err)
+	}
+	if b := h.AmbilDaftar(models.DaftarBreakQS); len(b) != 0 {
+		t.Fatalf("tanpa master dan tanpa anak: %v", b)
+	}
+}
+
+// U/Y polis kosong (klaim lama hasil pemuat): tahun cadangan = YearofAccount (tahun master treaty).
+func TestTabelBawahCadanganTanpaTreatyYear(t *testing.T) {
+	a := acuanSpreading()
+	a.Anak["UJI-INDUK|2018|UJI-TG"] = []models.AnakSpreading{{ReinsTypeID: "UJI-PA1", ReinsTypeName: "UJI ANAK 1", Pct: "60"}}
+	k := konteksUji(a)
+	h := models.HalamanBaru()
+	h.Setel(models.CD+"YearofAccount", "2018")
+	h.Setel(models.CD+"TreatyGroupID", "UJI-TG")
+	if err := models.IsiSpreadingPolis(k, h, "UJI-POLIS-1", models.MasterTreaty{}); err != nil {
+		t.Fatal(err)
+	}
+	if b := h.AmbilDaftar(models.DaftarBreakQS); len(b) != 1 || b[0]["TreatyType"] != "UJI-PA1" {
+		t.Fatalf("tanpa TreatyYear: anak lewat YearofAccount: %v", b)
+	}
+}

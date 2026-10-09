@@ -55,6 +55,7 @@ type Layanan struct {
 	produksi bool
 	kasir    models.KonfigurasiKasir
 	surel    models.KonfigurasiEmail
+	berkas   PenyimpananBerkas
 }
 
 // Baru menyusun layanan; `g` nil = tanpa Oracle (setiap aksi 503).
@@ -63,6 +64,13 @@ func Baru(g Gudang, a Acuan, k kontrak.KlaimTreatyKomite, jam func() time.Time, 
 		jam = time.Now
 	}
 	return &Layanan{g: g, a: a, klaim: k, jam: jam, produksi: produksi}
+}
+
+// DenganPenyimpanan memasang penyimpanan berkas dokumen akseptasi (Oracle: `penyimpanan.Oracle`; uji: tiruan).
+func (l *Layanan) DenganPenyimpanan(p PenyimpananBerkas) *Layanan {
+	salin := *l
+	salin.berkas = p
+	return &salin
 }
 
 // DenganEmail menyetel akun notifikasi dan CC email komite (konfigurasi berdokumen, MODUL.md).
@@ -108,7 +116,7 @@ func (l *Layanan) DaftarKerja(ctx context.Context, p inti.Pelaku) ([]models.Bari
 	if err := l.siap(p); err != nil {
 		return nil, err
 	}
-	d, err := l.g.DaftarKerja(ctx, p.AkunID)
+	d, err := l.g.DaftarKerja(ctx, p.AkunID, p.Peran)
 	for i := range d {
 		d[i].StatusBaris = models.LabelStatusBaris(d[i].StatusBaris)
 	}
@@ -158,5 +166,5 @@ func (l *Layanan) BukaKasus(ctx context.Context, p inti.Pelaku, id string) (mode
 	if err != nil {
 		return models.Layar{}, err
 	}
-	return models.SusunLayar(k, kl, total, p.AkunID), nil
+	return models.SusunLayar(k, kl, total, p.AkunID, p.Peran), nil
 }

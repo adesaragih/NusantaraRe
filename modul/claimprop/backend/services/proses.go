@@ -328,18 +328,19 @@ func aksiPilihRekening(j *jalanAksi) error {
 	return fmt.Errorf("%w: rekening bukan pilihan baris ini", ErrPermintaanTidakSah)
 }
 
-// LampiranKlaim - cacah berkas per kategori (`AttachCategory.pxResults.CountAttach`). ⚠️ Sumber halaman itu tidak ada
-// di ekspor dan unggahan berkas Claim Prop menunggu persetujuan storage (OQ-CP-12): selalu kosong - penyerahan komite
-// tertahan pesan "Please Upload Attachment ...", persis perilaku XML tanpa lampiran.
-func LampiranKlaim() map[string]int { return map[string]int{} }
-
 // j0BukaKomite - `AttachmentProtect_ACT` + `CekPremiLunas_Act` (penanda Protect.CARI1 / CARI2) baris n.
 func j0BukaKomite(l *Layanan, ctx context.Context, k *models.Konteks, h *models.Halaman, n int) error {
 	lim, _, err := l.a.LimitDirekturUtama(ctx)
 	if err != nil {
 		return err
 	}
-	lolos, err := models.AttachmentProtect(h, n, LampiranKlaim(), lim)
+	// AttachmentProtect_ACT S3 `AttachCategory.pxResults` (.ID, .CountAttach): master kategori PROP x dokumen klaim yang
+	// diunggah lewat GCNMSaveAttachments (`lampiran.go`).
+	kat, err := l.g.KategoriLampiran(ctx, h.Ambil("pyID"))
+	if err != nil {
+		return err
+	}
+	lolos, err := models.AttachmentProtect(h, n, models.CacahLampiran(kat), lim)
 	if err != nil {
 		return err
 	}

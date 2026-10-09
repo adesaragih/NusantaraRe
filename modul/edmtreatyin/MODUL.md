@@ -69,6 +69,11 @@ Kode yang disalin dari `modul/nbtreatyin` (modul tidak saling mengimpor) membawa
 - **Keputusan WO 07-10-2026** (jawaban laporan 06-10, rinci di `docs/HASIL-IMPLEMENTASI.md` bab 5):
   - **Kotak masuk Beranda**: EDM ikut (`frontend/menu.ts` `antreanBeranda` + `daftarBeranda`) - Sec Head / Dept Head
     membuka berkas dari Beranda.
+  - **Tombol "Calculate Value Difference" DIBUANG** (WO 08-10-2026 *"COBA CEK TOMBOLITU, APAKAH MASIH
+    DIPERLUKAN? KALAU SUDAH TIDAK DIHAPUS AJA!"*; penyimpangan sadar dari `PropNewData2` S24): sel uang tab
+    New Data sudah menghitung ulang tab Value Difference; % spreading dan `.Installment` kini ikut
+    (`medan.ts` `AKSI_SPREADING`, aksi Installment); server tetap menghitung ulang saat Save / Submit / produksi
+    (`models.HitungSelisihGenerasi`).
   - **Portal = aturan portal NB**: switch *In Progress* (buatan akun, masih proses) / *Resolved* (`?status=selesai`,
     berkas selesai BUATAN akun ini, dibuka hanya-baca - RALAT WO 07-10-2026 *"TAMBAHKAN KAN UNTUK PEMBUAT. MENU ITU
     HANYA UNTUK SI PEMBUAT, NB DAN EDM TREATY"*; dulu semua berkas selesai).
@@ -142,6 +147,7 @@ hanya dicatat (ORA-00955 ditelan, `inti/backend/migrasi`).
 | `TREATY_IN`, `TREATY_IN_EDM`, `TREATY_OUT2` | baca | popup *Choose Business* EDM (tiga varian RDB) |
 | `CURRENCY`, `MARKETINGOFFICER`, `REINSURANCETYPE`, `BUSINESS`, `AGENT`, `TANGGAL_CLOSING` | baca | RDB terjangkau |
 | `M_LOGIN_GO`, `M_LOGIN_GO_WORKBASKET`, `M_WORKBASKET` | baca | nama tampilan dan pemegang kotak masuk NBStatus (divisi IT tidak dihitung) |
+| `DOCUMENT_POLIS`, `CATEGORY_ATTACH_REAS`, `T_STORAGE_IMAGE`, `T_FOLDER_IMAGE` | tulis + baca (`DOCUMENT_POLIS`, `T_STORAGE_IMAGE`); baca (`CATEGORY_ATTACH_REAS`, `T_FOLDER_IMAGE`) | panel lampiran **Attachment File** di bawah layar kasus (grid `AttachmentGridReas` korpus NB FacIn, keputusan WO 08-10-2026) lewat `inti/backend/dokumenpolis` + `inti/backend/penyimpanan` - SQL di inti, bukan di modul ini. Lampiran baru berkunci `KunciInstans` (ID `T_WORK_POLIS` polos), lampiran Pega lama dibaca lewat pzInsKey `ASM-FW-GISFW-WORK <pyID>`. Upload / Delete selama kasus belum Resolve (WO 08-10-2026 *"SEMUA BISA ASAL BELUM RESOLVE"*); rute `/api/edm-treaty-in/kasus/{id}/lampiran` |
 
 ## API (`/api/edm-treaty-in`)
 
@@ -157,6 +163,7 @@ hanya dicatat (ORA-00955 ditelan, `inti/backend/migrasi`).
 | `POST /kasus/{id}/kirim` | submit per posisi (Utility1 saat Dept Head setuju) |
 | `GET /acuan` | daftar pilihan (mata uang, MO, jenis EDM, ...) |
 | `GET /hak` | hak layar portal akun (`{"copyOld": bool}`) |
+| `GET /kasus/{id}/lampiran`, `GET /kasus/{id}/lampiran/dokumen?kategori=`, `POST` (sama), `GET /kasus/{id}/lampiran/dokumen/{did}/isi`, `GET .../office`, `POST .../hapus` | lampiran **Attachment File** (`inti/backend/dokumenpolis.Pasang`): grid kategori + `bolehUbah`, daftar / unggah, unduh / View, View Office Online, Delete |
 | `GET /lama`, `POST /lama/salin` | popup **Copy Old** dan *Process Copy* `{"ids": [...]}` — superadmin saja |
 
 ## Pemuat dokumen lama (tiket 09-10)

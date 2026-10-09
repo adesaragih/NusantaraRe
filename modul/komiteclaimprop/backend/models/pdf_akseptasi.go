@@ -53,6 +53,7 @@ func PDFAcceptanceNote(d DataAcceptanceNote, saat time.Time) ([]byte, error) {
 	pdf.SetAutoPageBreak(true, marginBawahPDF)
 	pdf.SetCreationDate(saat)
 	pdf.SetModificationDate(saat)
+	pdf.SetCatalogSort(true) // urutan katalog fon tetap: berkas yang sama untuk masukan yang sama
 	pdf.AliasNbPages("")
 	k := &kertasAkseptasi{pdf: pdf, tr: pdf.UnicodeTranslatorFromDescriptor("")}
 	lebarHalaman, _ := pdf.GetPageSize()

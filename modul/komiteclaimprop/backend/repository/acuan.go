@@ -169,6 +169,48 @@ func sqlEmailPelaku(t string) string {
 	return fmt.Sprintf(`SELECT EMAIL FROM %s WHERE LOGIN_ID = :1`, t)
 }
 
+// sqlEmailAnggotaWorkbasket - email akun aktif pemegang workbasket aktif `:1`, unik, urut alfabet.
+func sqlEmailAnggotaWorkbasket(lwb, wb, login string) string {
+	return fmt.Sprintf(`SELECT DISTINCT m.EMAIL FROM %s l
+		  JOIN %s w ON w.WORKBASKET_ID = l.WORKBASKET_ID
+		  JOIN %s m ON m.LOGIN_ID = l.LOGIN_ID
+		 WHERE l.WORKBASKET_ID = :1 AND w.IS_ACTIVE = 1 AND m.IS_ACTIVE = '1' AND m.EMAIL IS NOT NULL
+		 ORDER BY m.EMAIL`, lwb, wb, login)
+}
+
+// EmailAnggotaWorkbasket - SendEmailKlaim_KMT S12 penyetuju berikut ber-KomiteID workbasket: email semua anggotanya
+// (keputusan work owner 09-10-2026; `.KomiteEmail` roster kosong sejak migrasi claimprop 537).
+func (a *Acuan) EmailAnggotaWorkbasket(ctx context.Context, workbasket string) ([]string, error) {
+	var nama [3]string
+	for i, t := range []string{"M_LOGIN_GO_WORKBASKET", "M_WORKBASKET", "M_LOGIN_GO"} {
+		q, err := a.q(t)
+		if err != nil {
+			return nil, err
+		}
+		nama[i] = q
+	}
+	q := sqlEmailAnggotaWorkbasket(nama[0], nama[1], nama[2])
+	if err := db.PeriksaSQL(q); err != nil {
+		return nil, err
+	}
+	rows, err := a.g.db.QueryContext(ctx, q, workbasket)
+	if err != nil {
+		return nil, fmt.Errorf("repository: email anggota workbasket: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	var out []string
+	for rows.Next() {
+		var v sql.NullString
+		if err := rows.Scan(&v); err != nil {
+			return nil, fmt.Errorf("repository: memindai email anggota workbasket: %w", err)
+		}
+		if s := strings.TrimSpace(v.String); s != "" {
+			out = append(out, s)
+		}
+	}
+	return out, rows.Err()
+}
+
 // NamaPelaku - `OperatorID.pyUserName` (M_LOGIN_GO.NAME); akun tanpa nama = ID akun.
 func (a *Acuan) NamaPelaku(ctx context.Context, akun string) (string, error) {
 	t, err := a.q("M_LOGIN_GO")

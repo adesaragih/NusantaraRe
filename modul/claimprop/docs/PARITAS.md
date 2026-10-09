@@ -65,7 +65,7 @@
 | tambah baris Spreading Claim | `AddSpreading_Act` (**tidak diekspor**) | 06 | **dibangun lain** — baris terisi dari polis saat CheckNoPolicy (TREATYINPRODUCTION JN_REAS / PCT_SHARE_PREMI / CURR_ID); Add aktif: satu klik = satu baris per mata uang yang belum ada untuk treaty spreading polis pertama yang masih kurang; Treaty Type LANGSUNG terisi dan hanya-baca; spreading sama (Treaty Type + Currency) ditolak, juga saat memilih di baris kosong; tanpa spreading polis baris kosong, Treaty Type dipilih (keputusan work owner 08-10-2026) |
 | hapus baris Spreading Claim (ikon baris) | `DeleteSpreading_Act` (**tidak diekspor**, dis `IsOldData='Yes'`) | 06 | **dibangun lain** — baris dihapus, nonaktif bila `IsOldData='Yes'` (XML); tabel bawah disusun ulang (keputusan work owner 08-10-2026) |
 | ikon grid standar Spreading List (tambah / hapus bawaan) | `pzPegaDefaultGridIcons` ("always"), tanpa activity | 06 | **tidak dibangun** — tambah / hapus spreading dinonaktifkan (keputusan work owner 07-10-2026) |
-| SpreadingBreakQS (`SetTreatyNameSpreading_Act` langkah 11) | `TreatyInMaster.Limits(1).Detail(1).SpreadingList` | 06 | **dibangun** — tetap master (XML); PROPORTIONALARRG dibatalkan sesudah uji data DEV (keputusan work owner 08-10-2026) |
+| SpreadingBreakQS (`SetTreatyNameSpreading_Act` langkah 11) | `TreatyInMaster.Limits(1).Detail(1).SpreadingList` | 06 | **dibangun** — master (XML) didahulukan; PROPORTIONALARRG sebagai pengganti dibatalkan sesudah uji data DEV (keputusan work owner 08-10-2026); SpreadingList master KOSONG -> anak PROPORTIONALARRG setiap TreatyType tabel atas (treaty group klaim, tahun arrangement terbaru <= tahun treaty; keputusan work owner 09-10-2026 "kalo tidak ada di master, ambil dari proportionalarrg"). DEV 09-10-2026: 786 / 1.856 M_TREATY_IN dan 237 / 281 M_TREATY_IN_EDM tanpa SpreadingList |
 | dropdown Treaty Type spreading | `Spreading.pxResults` (penulis tidak diekspor); XML Outstanding: pxTextInput `.TreatyName` | 06 | **dibangun lain** — dropdown TreatyType di kedua layar = spreading polis + treaty baris yang sudah ada, terkunci bila terisi atau data lama; koreksi `[dugaan]` master SpreadingList berdasar data DEV (induk vs anak) (keputusan work owner 08-10-2026) |
 | tombol tanpa label di samping RNMShareP | vis NEVER | — | tidak tampil di XML |
 | grid "Claim History" (SuggestList) | — | 14 | **dibangun** — `T_VIEW_SUGGEST` (keputusan work owner 07-10-2026) |
@@ -111,7 +111,7 @@
 | Label XML | Aksi XML | Tiket | Status |
 | --- | --- | --- | --- |
 | Save | save (layout `view.CARI21!=1`) | 08 | **dibangun** |
-| Send to Committe | `AttachmentProtect_ACT` → harness `CommitteeTreaty` bila `Protect.CARI1/2 = 1` (vis `TotalKomite!=''`, dis `IsKomite==1 \|\| IsError>1`) | 11 | **dibangun** — gerbang lampiran selalu menolak (OQ-CP-12) |
+| Send to Committe | `AttachmentProtect_ACT` → harness `CommitteeTreaty` bila `Protect.CARI1/2 = 1` (vis `TotalKomite!=''`, dis `IsKomite==1 \|\| IsError>1`) | 11 | **dibangun** — gerbang lampiran membaca cacah dokumen klaim per kategori master PROP (OQ-CP-12 ditutup 08-10-2026) |
 | Acceptation | `SaveAcceptationTreaty_Act` (when NEVER — tidak pernah jalan), `HitServiceToKasir_Act`, LA `PrintFileDLA` (vis `AcceptanceStatus = 1`) | 13 | **dibangun** — di luar produksi activity keluar di langkah 3 (status konversi hanya di produksi) |
 | Generate DLA | LA `GenerateDLATreaty` (dis `IsFacRetro != 1 \|\| DLA_No != ''`) | 12 | **dibangun** — nomor DLA; berkas OQ-CP-05 |
 | Print Claim Analysis | `CreatClaimAnalysis_Act` | 12 | **nonaktif-OQ** OQ-CP-05 |
@@ -124,7 +124,7 @@
 
 | Label XML | Aksi XML | Tiket | Status |
 | --- | --- | --- | --- |
-| Send Claim to Committee | `AddKomiteTreatyChild_ACT` (dis `Payable = ''`) | 11 | **dibangun** (opsi "b" 07-10-2026) — kasus TKMT- + tangga + email komite; terjangkau sesudah gerbang lampiran (OQ-CP-12). Penyerahan ULANG baris subjectivity (S16-S19 / S31, roster jenjang terbawah) dibangun 08-10-2026 (OQ-KCP-06 "a") |
+| Send Claim to Committee | `AddKomiteTreatyChild_ACT` (dis `Payable = ''`) | 11 | **dibangun** (opsi "b" 07-10-2026) — kasus TKMT- + tangga + email komite; terjangkau sesudah gerbang lampiran (uji `TestKirimKomiteSesudahLampiranLengkap`: LOD + DLA + SPGR -> TKMT-). Penyerahan ULANG baris subjectivity (S16-S19 / S31, roster jenjang terbawah) dibangun 08-10-2026 (OQ-KCP-06 "a") |
 | Cancel | tutup | 11 | **dibangun** |
 
 ## 6. Local action modal
@@ -142,13 +142,14 @@
 
 | Rule XML | Dipicu | Tiket | Status |
 | --- | --- | --- | --- |
-| section `pyCaseAttachmentsWrapper` (direfresh sesudah PRINT PLA) | lampiran kasus | 11, 12 | **tidak dibangun** — section tidak diekspor; lampiran OQ-CP-12 |
+| section `pyCaseAttachmentsWrapper` (direfresh sesudah PRINT PLA) | lampiran kasus | 11, 12 | **dibangun sebagai tab "Lampiran"** — susunan VERBATIM screenshot layar Pega work owner 09-10-2026: judul + (jumlah lampiran), tombol Add attachment / Refresh / Save (Save = tombol Save layar, aksi `Simpan`, aktif hanya bila layar menawarkannya), grid Category / Count Attach / Upload File / View File, 5 baris + "Show All" (judul tanpa jumlah - work owner 09-10-2026). Add attachment = tabel File / Category per berkas (`.pyCategory`, bawaan "File") + hapus pilihan, berkas dipilih atau diseret-lepas (work owner 09-10-2026); Upload File baris = kategori baris untuk semua berkas (TempInputParam.pyCategory). Jendela View File = screenshot layar Pega work owner 09-10-2026 (pilih Category "Label - (jumlah)", File Name / Category / Create Date `DD/MM/YYYY HH24:MI` / centang Action + centang-semua / Delete, tombol Download Selected, Delete Selected, Change Category = pindah dokumen terpilih ke kategori lain dalam satu transaksi) ditambah Attached By (PXCREATEOPERATOR; kolom No Acceptation / No Prekas dibuang atas perintah work owner) dan View (pdf / gambar) / View Office Online (xls...pptx) di popup penampil layar penuh pola NB Treaty In; Delete / Delete Selected / Change Category hanya pemegang assignment (Delete: objek penyimpanan lalu catatan + baris dokumen satu transaksi); "Move to" `[tidak ada di korpus]`; isi lewat `GetBase64Attachment` -> `GetUrlGoogleStorage_Act` (Durasi 1800). Section tidak diekspor (widget bawaan Pega); isi mengikuti `GCNMSaveAttachments` (diekspor 08-10-2026): kategori sekali untuk semua berkas (TempInputParam.pyCategory), satu `InsertDocument_Act` per berkas, IDPEGA = klaim; S1.1 / S1.3-S1.6 ter-remark (Link-Attachment Pega) tidak dibuat. Unggah hanya pemegang assignment; teks panel `[tidak ada di korpus]` |
+| `GCNMSaveAttachments` -> `InsertDocument_Act` | S1.2 kategori / InsKey, S1.7; InsertDocument S2-S3 (ID `yyyyMMddhhmmssSSS` jam 12-an, MIME huruf kecil), S4 InsertGoogleStorage_Act (Folder Claim, Durasi 1800), S5 Obj-Save bila T_STORAGE_ID terisi | 11 | **dibangun** — `services.UnggahLampiran`: unggah lalu T_STORAGE_IMAGE + baris dokumen klaim satu transaksi (pola Bordereaux); jenis berkas dijaga `penyimpanan` (daftar lama GetMimeType) |
 | REST `SendAcceptationToKasir` | Acceptation (`HitServiceToKasir_Act`) | 13 | **dibangun** — efek outbox "kasir" hanya bila `IS_PEGA_PROD`; panggilan nyata OQ-CP-03 |
 | REST `KonversiKlaimNonLife` | `KonversiKlaim_Act` (Save to issue RNM, Close Claim) | 13 | **dibangun** — efek outbox "konversi-klaim" hanya bila `IS_PEGA_PROD`; OQ-CP-03 |
 | REST `GetDtlPaymentClaim` | View Status Payment Claim | 13 | **nonaktif-OQ** OQ-CP-03 |
 | REST `getPayAttachment` | View Payment Attachment (`GetPayAttachment_Act` → `GetPayAttachmentAdj_Act`) | 13 | **nonaktif-OQ** OQ-CP-03 |
 | REST `getPremiumPaidOnTreatyIn` | View Status Payment Premi | 02 | **nonaktif-OQ** OQ-CP-03 |
-| REST `ServiceGoogle` | `InsertGoogleStorage_Act` / `GetUrlGoogleStorage_Act` (berkas) | 11, 12 | **tidak dibangun** — OQ-CP-12 / OQ-CP-05 |
+| REST `ServiceGoogle` | `InsertGoogleStorage_Act` / `GetUrlGoogleStorage_Act` (berkas) | 11, 12 | InsertGoogleStorage_Act **dibangun** lewat `inti/backend/penyimpanan` (lampiran); GetUrl (unduh) belum - OQ-CP-05 |
 | email `SendEmailKlaim` | `AddKomiteTreatyChild_ACT` 34 | 11, 13 | **dibangun** — efek outbox "email-komite" hanya bila `IS_PEGA_PROD`; CC/BCC OQ-CP-15 |
 | email `SendEmailKlaimRejectClose` | `SendCloseClaimToKomite` (tutup tanpa bayar) | 11 | **tidak dibangun** — OQ-CP-06 |
 

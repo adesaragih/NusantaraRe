@@ -30,7 +30,6 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
-	"nusantarare/inti/backend/unggah"
 	"nusantarare/modul/treatycontractout/backend/models"
 	"nusantarare/modul/treatycontractout/backend/services"
 )
@@ -70,8 +69,6 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 		satuTahunTreaty(svc, stubPelaku))
 	mux.HandleFunc("PUT /api/treaty-contract-out/tahun/{id}",
 		simpanTahunTreaty(svc, stubPelaku, true))
-	// Tiket 12: lampiran tahun treaty (tco_lampiran.go).
-	daftarkanRuteLampiranTCO(mux, svc, stubPelaku)
 	// Tiket 04: kontrak treaty di dalam tahun (tco_kontrak.go).
 	daftarkanRuteKontrakTCO(mux, svc, stubPelaku)
 	// Tiket 05: reinsurer pada kombinasi kontrak (tco_reinsurer.go).
@@ -242,11 +239,6 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 		// siap - master rujukan kosong atau tersaring habis - bukan
 		// permintaan yang salah, dan bukan daftar kosong yang diam (ADR-0015).
 		galat.Tulis(w, http.StatusServiceUnavailable, pesanTCO(err))
-	case errors.Is(err, services.ErrKategoriLampiranKosong),
-		errors.Is(err, unggah.ErrUnggahanDirBelumDisetel):
-		// Tiket 12: keadaan server - master kategori kosong atau folder
-		// unggahan belum disetel - bukan salah pemanggil.
-		galat.Tulis(w, http.StatusServiceUnavailable, pesanTCO(err))
 	case errors.Is(err, services.ErrTahunTreatyTidakAda):
 		galat.Tulis(w, http.StatusNotFound, "treaty year not found")
 	case errors.Is(err, services.ErrKontrakTidakAda):
@@ -318,21 +310,6 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 		errors.Is(err, services.ErrJenisKlausulDiLuarMaster),
 		errors.Is(err, services.ErrPilihanDiLuarMaster):
 		galat.Tulis(w, http.StatusUnprocessableEntity, pesanTCO(err))
-	case errors.Is(err, services.ErrLampiranTidakAda):
-		galat.Tulis(w, http.StatusNotFound, "attachment not found in this treaty year")
-	case errors.Is(err, services.ErrLampiranBelumTerkirim),
-		errors.Is(err, services.ErrLampiranSudahTerkirim),
-		errors.Is(err, services.ErrLampiranTanpaBerkas),
-		errors.Is(err, services.ErrBerkasSumberLampiranHilang):
-		// 409: keadaan DATA lampiran; pesannya menyebut lampiran mana dan
-		// perbaikannya.
-		galat.Tulis(w, http.StatusConflict, pesanTCO(err))
-	case errors.Is(err, unggah.ErrBerkasTerlaluBesar):
-		galat.Tulis(w, http.StatusRequestEntityTooLarge, pesanTCO(err))
-	case errors.Is(err, unggah.ErrBerkasKosong):
-		galat.Tulis(w, http.StatusBadRequest, services.PesanTanpaBerkasTCO)
-	case errors.Is(err, services.ErrKategoriLampiranTidakDikenal):
-		galat.Tulis(w, http.StatusUnprocessableEntity, pesanTCO(err))
 	case errors.Is(err, services.ErrTahunTreatyDobel):
 		// 409: keadaan DATA - kombinasi periode + grup sudah dipakai baris
 		// lain - dan pesannya menyebut baris mana (AC 73).
@@ -350,6 +327,15 @@ func jawabGalatTreatyContractOut(w http.ResponseWriter, err error) bool {
 		// di layar DAN di konsol backend (tco_galat500_test.go).
 		log.Printf("treaty contract out: %v", err)
 		galat.Tulis(w, http.StatusInternalServerError, "failed to process the treaty contract out request")
+	}
+	return true
+}
+
+// punyaDBTCO menjawab 503 bila Oracle belum dikonfigurasi.
+func punyaDBTCO(w http.ResponseWriter, svc *services.Service) bool {
+	if !svc.PunyaDatabase() {
+		galat.Tulis(w, http.StatusServiceUnavailable, "database is not configured")
+		return false
 	}
 	return true
 }

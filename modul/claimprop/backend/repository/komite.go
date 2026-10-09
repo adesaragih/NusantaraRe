@@ -27,8 +27,21 @@ type AnggotaTangga struct {
 
 // sqlSisipKasusKomite / sqlSisipKepalaKomite / sqlSisipAnggotaKomite - kelahiran kasus komite TKMT-.
 func sqlSisipKasusKomite(work string) string {
-	return fmt.Sprintf(`INSERT INTO %s (ID, COVER_KEY, LINI, TAHAP, CREATE_OP, CREATE_OP_NAME, TGL_CREATE, TGL_UPDATE)
-		VALUES (:1, :2, :3, :4, :5, :6, :7, :8)`, work)
+	return fmt.Sprintf(`INSERT INTO %s (ID, COVER_KEY, LINI, TAHAP, POSITION, CREATE_OP, CREATE_OP_NAME, TGL_CREATE,
+		TGL_UPDATE) VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9)`, work)
+}
+
+// posisiAwal - T_WORK_CLAIM.POSITION kasus komite yang lahir = KomiteID anggota tangga tingkat pertama (workbasket
+// tingkat 1 sejak tangga PROP ke workbasket, migrasi 537; keputusan work owner 09-10-2026), seperti POSITION klaim =
+// workbasket pemegang tahapnya. Modul Komite memajukannya per tingkat.
+func posisiAwal(anggota []AnggotaTangga) string {
+	posisi, urut := "", 0
+	for _, a := range anggota {
+		if posisi == "" || a.Urut < urut {
+			posisi, urut = a.OperatorID, a.Urut
+		}
+	}
+	return posisi
 }
 
 func sqlSisipKepalaKomite(gen string) string {
@@ -63,7 +76,7 @@ func sqlSetelKomiteAdjustment(adj string) string {
 }
 
 // BuatKasusKomite = AddKomiteTreatyChild_ACT langkah 22-25: T_WORK_CLAIM TKMT- (COVER_KEY = klaim, LINI PROP, TAHAP
-// KomiteTreaty_Flow), T_GENERAL_KOMITE (KOMITE_LOOP = cacah tangga, KOMITE_COUNT 1), tangga satu baris per anggota
+// KomiteTreaty_Flow, POSITION = `posisiAwal`), T_GENERAL_KOMITE (KOMITE_LOOP = cacah tangga, KOMITE_COUNT 1), tangga satu baris per anggota
 // (approval menunggu). Mengembalikan ID kasus komite.
 func (g *Gudang) BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID, pembuat, namaPembuat string,
 	anggota []AnggotaTangga, saat time.Time) (string, error) {
@@ -82,8 +95,8 @@ func (g *Gudang) BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID,
 	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
-	hasil, err := tx.ExecContext(ctx, q, id, klaimID, models.LiniProp, models.TahapKomiteTreaty, teksAtauNil(pembuat),
-		teksAtauNil(namaPembuat), saat, saat)
+	hasil, err := tx.ExecContext(ctx, q, id, klaimID, models.LiniProp, models.TahapKomiteTreaty,
+		teksAtauNil(posisiAwal(anggota)), teksAtauNil(pembuat), teksAtauNil(namaPembuat), saat, saat)
 	if err != nil {
 		return "", fmt.Errorf("repository: melahirkan kasus komite: %w", err)
 	}

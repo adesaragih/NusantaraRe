@@ -65,11 +65,14 @@ func (g *Gudang) BacaTangga(ctx context.Context, tx *db.Tx, id string) ([]models
 	return out, rows.Err()
 }
 
-// sqlTulisAnggota - keputusan satu baris tangga; bersyarat masih menunggu (dua klik tidak sama-sama menang).
+// sqlTulisAnggota - keputusan satu baris tangga; bersyarat masih menunggu (dua klik tidak sama-sama menang). Baris yang
+// diputus pelaku (`komentar`) menyimpan akun pemutusnya di KOMITE_OPERATORID (KomiteID workbasket -> akun; larangan
+// satu orang dua tingkat, keputusan work owner 09-10-2026); pemutus kosong = tidak ditimpa.
 func sqlTulisAnggota(list string, komentar bool) string {
 	if komentar {
-		return fmt.Sprintf(`UPDATE %s SET KOMITE_APPROVAL = :1, KOMITE_COMMENT = :2, DATE_APPROVE = :3
-			 WHERE ID = :4 AND DATA_KOMITE_ID = :5 AND KOMITE_APPROVAL = :6`, list)
+		return fmt.Sprintf(`UPDATE %s SET KOMITE_APPROVAL = :1, KOMITE_COMMENT = :2, DATE_APPROVE = :3,
+			       KOMITE_OPERATORID = NVL(:4, KOMITE_OPERATORID)
+			 WHERE ID = :5 AND DATA_KOMITE_ID = :6 AND KOMITE_APPROVAL = :7`, list)
 	}
 	return fmt.Sprintf(`UPDATE %s SET KOMITE_APPROVAL = :1, DATE_APPROVE = :2
 		 WHERE ID = :3 AND DATA_KOMITE_ID = :4 AND KOMITE_APPROVAL = :5`, list)
@@ -90,7 +93,8 @@ func (g *Gudang) TulisAnggota(ctx context.Context, tx *db.Tx, id string, u model
 	}
 	args := []any{u.Keputusan, u.Tanggal, u.ID, id, models.KeputusanMenunggu}
 	if u.IsiKomentar {
-		args = []any{u.Keputusan, db.KosongJadiNil(u.Komentar), u.Tanggal, u.ID, id, models.KeputusanMenunggu}
+		args = []any{u.Keputusan, db.KosongJadiNil(u.Komentar), u.Tanggal, db.KosongJadiNil(u.Pemutus), u.ID, id,
+			models.KeputusanMenunggu}
 	}
 	h, err := tx.ExecContext(ctx, q, args...)
 	if err != nil {
@@ -109,25 +113,38 @@ func sqlDariKerja(gen, work, list, klaim, adj string) string {
 		  LEFT JOIN %s a ON a.KOMITE_ID = g.ID`, gen, work, list, klaim, adj)
 }
 
-// sqlSaringKerja - KomiteRouter S6.1: baris tangga pelaku = baris TERKECIL yang masih menunggu; kasus terbuka; LINI
-// PROP ketat dan awalan TKMT-.
-func sqlSaringKerja(list string) string {
+// sqlSaringKerja - KomiteRouter S6.1: baris tangga pelaku = baris TERKECIL yang masih menunggu, ber-KomiteID akun
+// pelaku ATAU salah satu dari `nPeran` workbasket aktifnya (keputusan work owner 09-10-2026, migrasi claimprop 537);
+// kasus yang tingkat lainnya sudah diputus pelaku tidak tampil (satu orang tidak dua tingkat); kasus terbuka; LINI PROP
+// ketat dan awalan TKMT-. Bind urut kemunculan: akun, peran..., menunggu x3, akun, LINI, awalan.
+func sqlSaringKerja(list string, nPeran int) string {
+	pemegang := "l.KOMITE_OPERATORID = :1"
+	if nPeran > 0 {
+		ph := make([]string, nPeran)
+		for i := range ph {
+			ph[i] = fmt.Sprintf(":%d", i+2)
+		}
+		pemegang = "(l.KOMITE_OPERATORID = :1 OR l.KOMITE_OPERATORID IN (" + strings.Join(ph, ", ") + "))"
+	}
+	n := nPeran + 2
 	return fmt.Sprintf(`
-		 WHERE l.KOMITE_OPERATORID = :1
-		   AND l.KOMITE_APPROVAL = :2
+		 WHERE %s
+		   AND l.KOMITE_APPROVAL = :%d
 		   AND l.KOMITE_URUT = (SELECT MIN(l2.KOMITE_URUT) FROM %s l2
-		                         WHERE l2.DATA_KOMITE_ID = g.ID AND l2.KOMITE_APPROVAL = :3)
+		                         WHERE l2.DATA_KOMITE_ID = g.ID AND l2.KOMITE_APPROVAL = :%d)
+		   AND NOT EXISTS (SELECT 1 FROM %s l3
+		                    WHERE l3.DATA_KOMITE_ID = g.ID AND l3.KOMITE_APPROVAL <> :%d AND l3.KOMITE_OPERATORID = :%d)
 		   AND w.STATUS_WORK IS NULL
-		   AND w.LINI = :4
-		   AND w.ID LIKE :5`, list)
+		   AND w.LINI = :%d
+		   AND w.ID LIKE :%d`, pemegang, n, list, n+1, list, n+2, n+3, n+4, n+5)
 }
 
-// sqlDaftarKerja - daftar kerja satu penyetuju.
-func sqlDaftarKerja(gen, work, list, klaim, adj string) string {
+// sqlDaftarKerja - daftar kerja satu penyetuju (`nPeran` workbasket aktif).
+func sqlDaftarKerja(gen, work, list, klaim, adj string, nPeran int) string {
 	return `SELECT g.ID, w.COVER_KEY, c.CLAIM_NO, l.KOMITE_URUT, g.KOMITE_COUNT, g.KOMITE_LOOP, l.KOMITE_JABATAN,
 		       TO_CHAR(a.ADJUSTMENT_VALUE, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), a.CURRENCY_NAME,
 		       a.ACCEPTANCE_STATUS, w.STATUS_WORK, ` + fmt.Sprintf(db.FmtTanggalOracle, "w.TGL_UPDATE") +
-		sqlDariKerja(gen, work, list, klaim, adj) + sqlSaringKerja(list) + `
+		sqlDariKerja(gen, work, list, klaim, adj) + sqlSaringKerja(list, nPeran) + `
 		 ORDER BY w.TGL_UPDATE DESC, g.ID DESC`
 }
 
@@ -144,18 +161,23 @@ func (g *Gudang) tabelKerja() (gen, work, list, klaim, adj string, err error) {
 	return
 }
 
-// DaftarKerja membaca daftar kerja penyetuju `akun`.
-func (g *Gudang) DaftarKerja(ctx context.Context, akun string) ([]models.BarisKerja, error) {
+// DaftarKerja membaca daftar kerja penyetuju `akun` pemegang workbasket aktif `peran`.
+func (g *Gudang) DaftarKerja(ctx context.Context, akun string, peran []string) ([]models.BarisKerja, error) {
 	gen, work, list, klaim, adj, err := g.tabelKerja()
 	if err != nil {
 		return nil, err
 	}
-	q := sqlDaftarKerja(gen, work, list, klaim, adj)
+	q := sqlDaftarKerja(gen, work, list, klaim, adj, len(peran))
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := g.db.QueryContext(ctx, q, akun, models.KeputusanMenunggu, models.KeputusanMenunggu, models.LiniProp,
-		awalanLike())
+	args := []any{akun}
+	for _, p := range peran {
+		args = append(args, p)
+	}
+	args = append(args, models.KeputusanMenunggu, models.KeputusanMenunggu, models.KeputusanMenunggu, akun,
+		models.LiniProp, awalanLike())
+	rows, err := g.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca daftar kerja komite: %w", err)
 	}

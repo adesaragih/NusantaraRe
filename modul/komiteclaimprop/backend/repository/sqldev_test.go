@@ -105,6 +105,7 @@ func TestSQLKomiteDiDEV(t *testing.T) {
 		"SisipJSONKlaim JSON_KLAIM":             sqlSisipJSONKlaim(q("JSON_KLAIM")),
 		"LogLayanan MONITORING_KLAIM_LOG":       sqlLogLayanan(q("MONITORING_KLAIM_LOG")),
 		"RiwayatAkseptasi HISTORYAKSEPTASIPEGA": sqlRiwayatAkseptasi(q("HISTORYAKSEPTASIPEGA")),
+		"SisipDokumenKlaim (tabel warisan)":     sqlSisipDokumenKlaim(q(TabelDokumenKlaim)),
 	}
 	for nama, s := range tulis {
 		if !polaDML.MatchString(s) {
@@ -137,7 +138,7 @@ func TestSQLKomiteDiDEV(t *testing.T) {
 		}},
 		{"BacaTangga", func() error { _, err := g.BacaTangga(ctx, nil, "TKMT-UJI000"); return err }},
 		{"DaftarKerja", func() error {
-			rows, err := g.DaftarKerja(ctx, "UJI-K1")
+			rows, err := g.DaftarKerja(ctx, "UJI-K1", []string{"UJI-WB-1", "UJI-WB-2"})
 			if err == nil {
 				t.Logf("       daftar kerja UJI-K1: %d baris", len(rows))
 			}
@@ -156,6 +157,7 @@ func TestSQLKomiteDiDEV(t *testing.T) {
 		{"IDBankRekening", func() error { _, err := a.IDBankRekening(ctx, "UJI", "UJI", "UJI"); return err }},
 		{"NamaPelaku", func() error { _, err := a.NamaPelaku(ctx, "UJI"); return err }},
 		{"EmailPelaku", func() error { _, err := a.EmailPelaku(ctx, "UJI"); return err }},
+		{"EmailAnggotaWorkbasket", func() error { _, err := a.EmailAnggotaWorkbasket(ctx, "UJI-WB"); return err }},
 		{"KomentarAwal", func() error { _, err := g.KomentarAwal(ctx, "CLMP-UJI", "UJI", "TKMT-UJI"); return err }},
 		{"StatusKonversi (produksi; DEV tanpa hak = BELUM)", func() error {
 			_, err := AcuanDari(g, true).StatusKonversi(ctx, "UJI")

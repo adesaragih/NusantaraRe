@@ -553,8 +553,15 @@ func PilihAllocation(h *Halaman, idx int, treatyName string) error {
 
 // ---------------------------------------------------------------- komite
 
+// Kepala pop-up "Komite klaim Treaty" (ProteksiInitialandDate_Act 2): halaman sementara, tanpa kolom - ikut `ModeLayar`.
+const (
+	JalurTanggalKomite = "TempCommiteClaim.DateOfComitee"
+	JalurPICKomite     = "TreatyExchangeYearly.UserName"
+)
+
 // ProteksiInitialandDate meniru `Activity/ProteksiInitialandDate_Act.xml` (pembuka pop-up "Komite klaim Treaty"):
-// salin catatan komite baris sebelumnya, riwayat, lalu pesan bila tipe / bank / payable belum dipilih.
+// salin catatan komite baris sebelumnya, tanggal dan PIC pop-up, riwayat, lalu pesan bila tipe / bank / payable belum
+// dipilih.
 func ProteksiInitialandDate(k *Konteks, h *Halaman, idx int) error {
 	b, err := adj(h, idx)
 	if err != nil {
@@ -565,6 +572,12 @@ func ProteksiInitialandDate(k *Konteks, h *Halaman, idx int) error {
 		b["DataCommitteeTreaty.Remarks"] = prev["DataCommitteeTreaty.Remarks"]
 		b["DataCommitteeTreaty.CircumCauseOfLoss"] = prev["DataCommitteeTreaty.CircumCauseOfLoss"]
 	}
+	nama, err := k.Acuan.NamaPelaku(k.Ctxt(), k.Pelaku) // 2 UserName = OperatorID.pyLabel
+	if err != nil {
+		return err
+	}
+	h.Setel(JalurPICKomite, nama)
+	h.Setel(JalurTanggalKomite, k.Hari())               // 2 DateOfComitee = @substring(CurrentDateTime, 0, 8)
 	k.Riwayat(h, TeksKomiteAkseptasi)                   // 2-3
 	for i, x := range h.AmbilDaftar(DaftarAdjustment) { // 4
 		if x["Type"] == "" {
@@ -658,7 +671,8 @@ func AttachmentProtect(h *Halaman, idx int, lampiran map[string]int, limitDirut 
 	if !bank { // 13
 		h.TambahPesan("IsError", PesanBankKosongUlang)
 	}
-	if h.Ambil(CD+"Occupation") == "" { // 14
+	okupasiKosong := h.Ambil(CD+"Occupation") == ""
+	if okupasiKosong { // 14
 		h.TambahPesan("IsError", PesanOccupation)
 	}
 	if !spread { // 15
@@ -679,6 +693,13 @@ func AttachmentProtect(h *Halaman, idx int, lampiran map[string]int, limitDirut 
 	}
 	if lolos {
 		lolos = spread
+	}
+	// `[keputusan work owner 09-10-2026, penyimpangan sadar]` "Occupation cannot empty itu masih ada protek, tapi popup
+	// komite masih muncul!": di XML langkah 14 hanya pesan (CARI1 langkah 16-20 tidak membacanya, dan action set
+	// tombol membuka harness CommitteeTreaty tanpa syarat). Di sini Occupation kosong menggagalkan proteksi: popup
+	// tidak dibuka dan Send Claim to Committee ditolak (aksiKomite), untuk setiap Type seperti pesannya.
+	if okupasiKosong {
+		lolos = false
 	}
 	return lolos, nil
 }
@@ -856,7 +877,15 @@ func SelesaiTutupKlaim(k *Konteks, h *Halaman, remarks string) {
 func BarisOSTutup(k *Konteks, h *Halaman, kunciKasus string) BarisOS {
 	return BarisOS{CaseID: kunciKasus, NoClaim: h.Ambil(CD + "NoClaim"), NoPolis: h.Ambil(CD + "PolicyData.PolicyNo"),
 		MasterID: h.Ambil(TM + "ID"), StsReject: StsOSTutupBerkas, CauseOfLossID: h.Ambil(CD + "CauseOfLossID"),
-		CauseOfLoss: h.Ambil(CD + "CauseOfLoss"), EstimationDate: k.Sekarang, InsertOp: k.Pelaku}
+		CauseOfLoss: h.Ambil(CD + "CauseOfLoss"), EstimationDate: k.Sekarang, InsertOp: k.Pelaku,
+		// 6.1-6.2: DATA_JSON = halaman InputParamOs (GetPageJSONString).
+		DataJSON: JSONHalamanPega(map[string]string{
+			"CauseOfLoss":    h.Ambil(CD + "CauseOfLoss"),
+			"CauseOfLossID":  h.Ambil(CD + "CauseOfLossID"),
+			"NoClaim":        h.Ambil(CD + "NoClaim"),
+			"IDMasterTreaty": h.Ambil(TM + "ID"),
+			"pxObjClass":     KelasOSAkseptasi,
+		})}
 }
 
 // ---------------------------------------------------------------- PLA dan DLA

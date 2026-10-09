@@ -6,8 +6,9 @@ package services
 // ⛔ Non-produksi: baris berhenti `gagal-permanen` dengan `ErrPengirimStubNonProduksi` (nol panggilan keluar).
 // Produksi: alamat M_LINK_SERVICE di-resolve sungguhan (kunci VERBATIM dari activity) lalu berhenti terang
 // (`…BelumDisetujui`) sampai manusia menyetujui panggilan nyata. Email
-// (`SendEmailWithAttachments`) memakai SMTP, bukan M_LINK_SERVICE. Email dan dokumen akseptasi dirakit lebih dulu
-// (`Penyusun`) - isi yang akan dikirim terbukti dapat disusun sebelum panggilan nyatanya ditahan.
+// (`SendEmailWithAttachments`) memakai SMTP, bukan M_LINK_SERVICE. Email dirakit lebih dulu (`Penyusun`) - isi yang
+// akan dikirim terbukti dapat disusun sebelum panggilan nyatanya ditahan. Dokumen akseptasi BUKAN efek outbox: ia
+// diunggah sesudah Submit (`surat.go`).
 
 import (
 	"context"
@@ -27,7 +28,6 @@ import (
 // Penyusun merakit isi efek dari pengenal MUATAN - `*Layanan`.
 type Penyusun interface {
 	SusunEmailKomite(ctx context.Context, komiteID string, isi map[string]string) (models.SurelKomite, error)
-	SusunDokumenAkseptasi(ctx context.Context, komiteID string, isi map[string]string) (DokumenAkseptasi, error)
 }
 
 // ErrPenyusunBelumDisambung - pelaksana dirakit tanpa perakit isi (salah rakit).
@@ -50,27 +50,18 @@ func (p PelaksanaKomiteClaimProp) Laksanakan(ctx context.Context, _ *db.Tx, b ou
 		return fmt.Errorf("%w: muatan outbox Komite Claim Prop tak terbaca: %v", galat.ErrPermintaanTidakSah, err)
 	}
 	switch b.Jenis {
-	case JenisEfekKonversi, JenisEfekKasir, JenisEfekEmailKomite, JenisEfekDokumen:
+	case JenisEfekKonversi, JenisEfekKasir, JenisEfekEmailKomite:
 	default:
 		return fmt.Errorf("%w: jenis efek Komite Claim Prop %q", galat.ErrPermintaanTidakSah, b.Jenis)
 	}
 	if !p.Lingkungan.AdalahProduksi() {
 		return outbox.ErrPengirimStubNonProduksi
 	}
-	switch b.Jenis {
-	case JenisEfekEmailKomite, JenisEfekDokumen:
+	if b.Jenis == JenisEfekEmailKomite {
 		if p.Penyusun == nil {
 			return ErrPenyusunBelumDisambung
 		}
-		isi := isiTeks(m.Isi)
-		if b.Jenis == JenisEfekDokumen {
-			// PDF dirakit (HTMLToPDF); InsertDocument_Act (Google Storage, DOCUMENT_CLAIM) menunggu persetujuan.
-			if _, err := p.Penyusun.SusunDokumenAkseptasi(ctx, m.KomiteID, isi); err != nil {
-				return err
-			}
-			return outbox.ErrPenyimpananBelumDisetujui
-		}
-		if _, err := p.Penyusun.SusunEmailKomite(ctx, m.KomiteID, isi); err != nil {
+		if _, err := p.Penyusun.SusunEmailKomite(ctx, m.KomiteID, isiTeks(m.Isi)); err != nil {
 			return err
 		}
 		return outbox.EfekEmail{}.Jalankan(ctx, outbox.MuatanEfek{KlaimID: m.KlaimID})

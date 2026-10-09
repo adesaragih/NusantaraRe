@@ -1,6 +1,7 @@
 // Form Bordereaux - padanan harness/section `InputBordereaux`: header (Type, Type Business, Choose Master Treaty,
 // periode, Reff No), tab Details (Template, Upload CSV, grid detail), Summary (total per mata uang), Submit
-// (Maker > Checker > Supervisor), History, Save, Close. Tanpa JSON: Save menulis header dan detail ke tabelnya.
+// (Maker > Checker > Supervisor), lampiran (`AttachmentsBdx`), History, Save, Close. Tanpa JSON: Save menulis header dan
+// detail ke tabelnya.
 
 import { useCallback, useEffect, useState } from 'react'
 
@@ -13,10 +14,11 @@ import { BDX, teksStatus } from '../labels'
 import DialogMasterTreaty from './DialogMasterTreaty'
 import GridDetail from './GridDetail'
 import KepalaForm, { ISIAN_KOSONG, type Isian } from './KepalaForm'
+import PanelLampiran from './PanelLampiran'
 
 type Tab = 'details' | 'summary' | 'submit'
 
-const HAK_KOSONG: Hak = { ubah: false, hapus: false, submit: false, putuskan: false }
+const HAK_KOSONG: Hak = { ubah: false, hapus: false, submit: false, putuskan: false, lampiran: false }
 
 export default function FormBordereaux({
   id,
@@ -349,6 +351,10 @@ export default function FormBordereaux({
           </button>
         )}
       </div>
+
+      {/* `AttachmentsBdx` (b27972, sesudah Close/Save): Upload File / Delete hanya saat Edit - mode View tidak, siapa pun
+          (keputusan work owner 08-10-2026; pengecualian IT Developer Pega dibuang). */}
+      {!baru && <PanelLampiran bdxId={isian.bdxId} boleh={hak.lampiran && !lihat} />}
 
       {!baru && (
         <section className="bordereaux__kartu">

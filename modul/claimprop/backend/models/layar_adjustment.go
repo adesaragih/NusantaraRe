@@ -151,7 +151,8 @@ func LayarAdjustment(n int) []Unsur {
 				kRO(kol("Currency", "Currency", KTeks)), kRO(kol("TreatyName", "Treaty Type", KTeks)),
 				kRO(kol("SharePercentage", "Share(%)", KAngka)), kRO(kol("ClaimSpreaded", "Claim Spreaded", KAngka))}}),
 			bagian("Committe Accept Status", Unsur{Jenis: JenisGrid, Jalur: j("ComiteeClaim"), Bernomor: true, Kolom: []Unsur{
-				kRO(kol("IDKomite", "Committee Name", KTampil)), kRO(kol(PropKeputusanAnggota, "Status", KTampil)),
+				kRO(kol("IDKomite", "Committee Name", KTampil)),
+				kSumber(kRO(kol(PropKeputusanAnggota, "Status", KPilih)), kode("KomiteAproval")),
 				kRO(kol(PropTanggalKeputusan, "Date Approve", KWaktu)), kRO(kol(PropCatatanKeputusan, "Comment", KTampil))}}),
 			tombolBaris,
 		),
@@ -177,10 +178,15 @@ func angkaTeks(s string) int {
 	return n
 }
 
+// AksiSegarKomite - event change textarea pop-up komite ("Post value" + "Refresh this section", tanpa activity) = aksi
+// Simpan tanpa langkah: isian ditulis, tombol Send dievaluasi ulang.
+const AksiSegarKomite = "Simpan"
+
 // LayarKomite - Section `ComiteeClaimTreaty` (harness CommitteeTreaty) untuk baris ke-n. `lolos` = `Protect.CARI1 = 1
-// && Protect.CARI2 = 1` (AttachmentProtect_ACT + CekPremiLunas_Act).
+// && Protect.CARI2 = 1` (AttachmentProtect_ACT + CekPremiLunas_Act). Label "Initial" = "PIC" (work owner 09-10-2026).
 func LayarKomite(n int, lolos bool) []Unsur {
 	j := func(p string) string { return JalurAdj(n, p) }
+	area := func(p, lbl string) Unsur { return aksi(medan(j(p), lbl, KArea), AksiSegarKomite) }
 	tipe := func(v ...string) Kondisi {
 		return adjK(n, func(b Baris) bool {
 			for _, x := range v {
@@ -199,8 +205,8 @@ func LayarKomite(n int, lolos bool) []Unsur {
 	)
 	return []Unsur{
 		bagian("",
-			naJika(medan("TempCommiteClaim.DateOfComitee", "Date", KTanggal), selalu),
-			ro(medan("TreatyExchangeYearly.UserName", "Initial", KTeks)),
+			naJika(medan(JalurTanggalKomite, "Date", KTanggal), selalu),
+			ro(medan(JalurPICKomite, "PIC", KTeks)),
 		),
 		bagian("",
 			tampil(label("Adjustment"), tipe("1")),
@@ -208,11 +214,11 @@ func LayarKomite(n int, lolos bool) []Unsur {
 			tampil(label("Adjuster / Consultant Fee"), tipe("2", "4")),
 		),
 		bagian("",
-			tampil(wajibU(medan(j("DataCommitteeTreaty.CircumCauseOfLoss"), "Circumstanses", KArea)), tipe("1")),
-			tampil(wajibJ(medan(j("DataCommitteeTreaty.Salvage"), "Salvage", KArea), tipe("3")), tipe("3")),
-			tampil(wajibJ(medan(j("DataCommitteeTreaty.AdjusterFee"), "Adjuster / Consultant Fee", KArea), tipe("2", "4")),
+			tampil(wajibU(area("DataCommitteeTreaty.CircumCauseOfLoss", "Circumstanses")), tipe("1")),
+			tampil(wajibJ(area("DataCommitteeTreaty.Salvage", "Salvage"), tipe("3")), tipe("3")),
+			tampil(wajibJ(area("DataCommitteeTreaty.AdjusterFee", "Adjuster / Consultant Fee"), tipe("2", "4")),
 				tipe("2", "4")),
-			wajibU(medan(j("DataCommitteeTreaty.Remarks"), "Remarks", KArea)),
+			wajibU(area("DataCommitteeTreaty.Remarks", "Remarks")),
 		),
 		bagian("",
 			tampil(bagian("",

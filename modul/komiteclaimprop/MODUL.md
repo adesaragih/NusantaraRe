@@ -66,9 +66,15 @@ alamat tujuan memuat "syariah") dan CC kotak surat klaim S4 (hanya IsPEGAPROD). 
 | `konversi-klaim` | `KonversiKlaim_Act` (S29) | CASEID, NOPOLIS, STS_REJECT | `ErrArasapasBelumDisetujui` |
 | `kasir` | `HitServiceToKasirKMT_Act` (S34) | muatan `SendAcceptationToKasir` | `ErrKasirBelumDisetujui` |
 | `email-komite` | `SendEmailKlaim_KMT` (S35) | jenis, ID akun penerima, ID baris tangga | rakit isi (`SusunEmailKomite`) → `ErrEmailBelumDisetujui` |
-| `dokumen-akseptasi` | `PrintFileAcceptance_TKMT` (S21 → S8) | ID akun penyetuju, saat cetak | rakit PDF (`SusunDokumenAkseptasi`, `github.com/go-pdf/fpdf`) → `ErrPenyimpananBelumDisetujui` (unggah + `DOCUMENT_CLAIM` belum disambung) |
 
-MUATAN email / dokumen hanya pengenal (claimlife/015: tanpa nama / alamat); isi dirakit saat dikirim.
+MUATAN email hanya pengenal (claimlife/015: tanpa nama / alamat); isi dirakit saat dikirim.
+
+## Dokumen akseptasi (bukan outbox)
+
+`PrintFileAcceptance_TKMT` (S21 → S8) di SETIAP lingkungan, sesudah Submit tingkat akhir tersimpan: PDF
+(`github.com/go-pdf/fpdf`, `models.PDFAcceptanceNote`) diunggah lewat `inti/backend/penyimpanan` (folder Claim), lalu
+T_STORAGE_IMAGE dan baris tabel warisan dokumen klaim dicatat di satu transaksi - pola lampiran Bordereaux. Gagal =
+keputusan tetap tersimpan, layar menerima `galatDokumen`.
 
 ## Migrasi
 

@@ -12,6 +12,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -552,6 +553,36 @@ func (a *Acuan) TahunTreaty(ctx context.Context, grup, ymd string) (string, erro
 	return v, err
 }
 
+// AnakSpreading - anak PROPORTIONALARRG (PARENTREINSTYPEID) dalam treaty group klaim, pada tahun arrangement TERBARU
+// yang <= tahun treaty klaim: cadangan tabel bawah spreading bila SpreadingList master kosong (keputusan work owner
+// 09-10-2026; aturan commit 24a6e315 - `[data DEV 08-10-2026]` TREATYYEAR arrangement = tahun kontrak treaty). Satu
+// baris per REINSTYPEID: TGLUPDATE terbaru. Urut SPREADINGORDER lalu REINSTYPEID.
+func (a *Acuan) AnakSpreading(ctx context.Context, induk, tahun, grup string) ([]models.AnakSpreading, error) {
+	t, err := a.q("PROPORTIONALARRG")
+	if err != nil {
+		return nil, err
+	}
+	rows, err := a.banyak(ctx, sqlAnakSpreading(t), 3, induk, grup, induk, grup, tahun)
+	if err != nil {
+		return nil, err
+	}
+	out := []models.AnakSpreading{}
+	for _, r := range rows {
+		out = append(out, models.AnakSpreading{ReinsTypeID: r[0], ReinsTypeName: r[1], Pct: r[2]})
+	}
+	return out, nil
+}
+
+func sqlAnakSpreading(t string) string {
+	return fmt.Sprintf(`SELECT REINSTYPEID, REINSTYPENAME, PCT FROM (
+		SELECT REINSTYPEID, REINSTYPENAME, PCT, SPREADINGORDER,
+			ROW_NUMBER() OVER (PARTITION BY REINSTYPEID ORDER BY TGLUPDATE DESC NULLS LAST, ID DESC) URUT
+		FROM %s WHERE PARENTREINSTYPEID = :1 AND TREATYGROUPID = :2
+		  AND TREATYYEAR = (SELECT MAX(TREATYYEAR) FROM %s WHERE PARENTREINSTYPEID = :3 AND TREATYGROUPID = :4
+		    AND TREATYYEAR <= :5))
+		WHERE URUT = 1 ORDER BY SPREADINGORDER NULLS LAST, REINSTYPEID`, t, t)
+}
+
 // LimitPLA = GetLimitPLATreatyin (PROPORTIONALARRG `TREATYDESCID = '10001'`): kolom RP (alias CARI7) baris pertama.
 func (a *Acuan) LimitPLA(ctx context.Context, tahun, grup, reins string) (string, bool, error) {
 	t, err := a.q("PROPORTIONALARRG")
@@ -638,15 +669,53 @@ func (a *Acuan) RosterKomite(ctx context.Context, nilai, sts string) ([]models.A
 	return out, nil
 }
 
-// TingkatPelaku - label tingkat wewenang pelaku (JABATAN baris roster STS_KLAIM PROP ber-OPERATOR_ID itu; AC 54, 61).
+// TingkatPelaku - label tingkat wewenang pelaku (JABATAN baris roster aktif STS_KLAIM PROP; AC 54, 61). OPERATOR_ID
+// roster = akun pelaku ATAU workbasket aktif yang dipegangnya (tangga komite PROP ke workbasket, migrasi 537,
+// keputusan work owner 09-10-2026); beberapa baris = DEGREE terkecil.
 func (a *Acuan) TingkatPelaku(ctx context.Context, operatorID string) (string, error) {
 	t, err := a.q("EMAILKOMITE")
 	if err != nil {
 		return "", err
 	}
-	v, _, err := a.satu(ctx, fmt.Sprintf(`SELECT JABATAN FROM %s WHERE UPPER(OPERATOR_ID) = UPPER(:1) AND STS_KLAIM = :2
-		ORDER BY DEGREE FETCH FIRST 1 ROWS ONLY`, t), operatorID, models.STSKlaimProp)
+	lwb, err := a.q("M_LOGIN_GO_WORKBASKET")
+	if err != nil {
+		return "", err
+	}
+	wb, err := a.q("M_WORKBASKET")
+	if err != nil {
+		return "", err
+	}
+	v, _, err := a.satu(ctx, sqlTingkatPelaku(t, lwb, wb), models.STSKlaimProp, operatorID, operatorID)
 	return v, err
+}
+
+// sqlTingkatPelaku - bind urut kemunculan: STS_KLAIM, akun (OPERATOR_ID), akun (pemegang workbasket).
+func sqlTingkatPelaku(emk, lwb, wb string) string {
+	return fmt.Sprintf(`SELECT e.JABATAN FROM %s e
+		 WHERE e.STS_KLAIM = :1 AND e.STS_AKTIF = '1'
+		   AND (UPPER(e.OPERATOR_ID) = UPPER(:2)
+		        OR e.OPERATOR_ID IN (SELECT l.WORKBASKET_ID FROM %s l JOIN %s w ON w.WORKBASKET_ID = l.WORKBASKET_ID
+		                              WHERE l.LOGIN_ID = :3 AND w.IS_ACTIVE = 1))
+		 ORDER BY e.DEGREE, e.ID FETCH FIRST 1 ROWS ONLY`, emk, lwb, wb)
+}
+
+// OperatorKomiteAktif - KomiteID (OPERATOR_ID) roster aktif STS_KLAIM `sts` - nama workbasket sejak migrasi 537. Tabel
+// komite inbox Claim Prop tampil bagi pemegang salah satunya (keputusan work owner 09-10-2026).
+func (a *Acuan) OperatorKomiteAktif(ctx context.Context, sts string) ([]string, error) {
+	t, err := a.q("EMAILKOMITE")
+	if err != nil {
+		return nil, err
+	}
+	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT DISTINCT OPERATOR_ID FROM %s
+		WHERE STS_KLAIM = :1 AND STS_AKTIF = '1' AND OPERATOR_ID IS NOT NULL ORDER BY OPERATOR_ID`, t), 1, sts)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, r[0])
+	}
+	return out, nil
 }
 
 // DegreeDirekturUtama - baris roster Direktur Utama. `[dugaan]` GetLimitDirekturUtama_SQL mencarinya menurut NAMA orang
@@ -717,7 +786,22 @@ func (a *Acuan) SaldoPremi(ctx context.Context, invoice, cur string) (string, er
 	v, _, err := a.satu(ctx, fmt.Sprintf(`SELECT %s FROM ARASAPAS.INVOICE a, ARASAPAS.DETAIL_INVOICE b
 		WHERE a.INV_INV_NO = b.INV_INV_NO AND a.CURR_ENTRY_NO = b.CURR_ENTRY_NO AND a.INV_INV_NO = :1 AND a.INV_LKU_ID = :2`,
 		dec("SUM(IVD_TRANS_SIGN * IVD_TOTAL)")), invoice, cur)
-	return v, err
+	if err != nil {
+		return saldoPremiGagal(a.Produksi, err)
+	}
+	return v, nil
+}
+
+// saldoPremiGagal - `[keputusan work owner 09-10-2026, penyimpangan sadar]`: tabel ARASAPAS tidak ada di DEV (ORA-00942
+// lewat ketiga cara baca, 09-10-2026), padahal Send to Committe selalu menjalankan CekPremiLunas_Act. Di luar
+// produksi (`IsPEGAPROD` salah) tabel yang tidak terbaca = saldo kosong (premi dianggap lunas), dicatat di log; di
+// produksi galatnya diteruskan. Galat lain tidak pernah ditelan.
+func saldoPremiGagal(produksi bool, err error) (string, error) {
+	if produksi || !strings.Contains(err.Error(), "ORA-00942") {
+		return "", err
+	}
+	log.Printf("claimprop: CekLunasPremi_Sql dilewati di luar produksi (ARASAPAS.INVOICE tidak terbaca): %v", err)
+	return "", nil
 }
 
 // AdaProteksiPremi = CekProteksiKlaim (OPENPROTEKSI_EDM `TYPE = '5' AND STS_AKSEP = '1' AND POLICY_NO`).

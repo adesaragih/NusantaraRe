@@ -180,10 +180,10 @@ func tampilBila(m []Medan, ya bool, x ...Medan) []Medan {
 }
 
 // SusunLayar menyusun layar `ShowTransfer` (TT 2) kasus `k` atas klaim induk `kl`; `total` = hasil
-// `SetKomiteList_Act`, `akun` = pelaku.
-func SusunLayar(k Kasus, kl kontrak.KlaimTreaty, total []TotalMataUang, akun string) Layar {
+// `SetKomiteList_Act`, `akun` = pelaku, `peran` = workbasket aktifnya.
+func SusunLayar(k Kasus, kl kontrak.KlaimTreaty, total []TotalMataUang, akun string, peran []string) Layar {
 	p := pembaca{kl: kl, adj: AdjustmentKlaim(kl)}
-	ly := Layar{Kasus: k, Judul: []string{JudulKomite, JudulAdjustment}, BolehKerja: k.Pemegang(akun)}
+	ly := Layar{Kasus: k, Judul: []string{JudulKomite, JudulAdjustment}, BolehKerja: k.Pemegang(akun, peran)}
 
 	// Panel "Claim Treaty" - kolom kiri (Stacked with labels left).
 	kiri := []Medan{

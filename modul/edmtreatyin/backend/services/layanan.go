@@ -12,6 +12,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/dokumenpolis"
 	"nusantarare/inti/backend/galat"
 	"nusantarare/modul/edmtreatyin/backend/models"
 	"nusantarare/modul/edmtreatyin/backend/repository"
@@ -428,4 +429,19 @@ func (l *Layanan) DaftarAcuan(ctx context.Context, p inti.Pelaku) (Acuan, error)
 		a.JenisEDM = append(a.JenisEDM, models.Pilihan{Nilai: kode, Label: models.LabelJenisEDM[kode]})
 	}
 	return a, nil
+}
+
+// KasusLampiran - kasus pemilik lampiran "Reas" (`inti/backend/dokumenpolis`, grid `AttachmentGridReas` NB FacIn yang
+// dipinjam EDM Treaty In lewat `SetCategoryAttach`): lampiran baru berkunci `KunciInstans`, lampiran Pega lama berkunci
+// pzInsKey `ASM-FW-GISFW-WORK <pyID>`. Upload / Delete selama kasus belum Resolve - keputusan work owner 08-10-2026:
+// "semua bisa asal belum resolve".
+func (l *Layanan) KasusLampiran(ctx context.Context, p inti.Pelaku, id string) (dokumenpolis.Kasus, error) {
+	if err := l.periksaPelaku(p); err != nil {
+		return dokumenpolis.Kasus{}, err
+	}
+	k, err := l.g.Keadaan(ctx, nil, id)
+	if err != nil {
+		return dokumenpolis.Kasus{}, err
+	}
+	return dokumenpolis.KasusDari(models.KunciInstans(k.ID), models.PyIDKasus(k.ID), !k.Tertutup()), nil
 }

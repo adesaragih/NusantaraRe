@@ -28,13 +28,14 @@ func semuaSQL(t *testing.T) map[string]string {
 		"tangga":        sqlTangga("S." + tabelTangga),
 		"tulisAnggota":  sqlTulisAnggota("S."+tabelTangga, true),
 		"tulisAnggota2": sqlTulisAnggota("S."+tabelTangga, false),
-		"daftarKerja":   sqlDaftarKerja("S.G", "S.W", "S.L", "S.C", "S.A"),
+		"daftarKerja":   sqlDaftarKerja("S.G", "S.W", "S.L", "S.C", "S.A", 2),
 		"os":            os,
 		"adaJSON":       sqlAdaJSONKlaim("S.JSON_KLAIM"),
 		"sisipJSON":     sqlSisipJSONKlaim("S.JSON_KLAIM"),
 		"log":           sqlLogLayanan("S.MONITORING_KLAIM_LOG"),
 		"riwayat":       sqlRiwayatAkseptasi("S.HISTORYAKSEPTASIPEGA"),
 		"emailPelaku":   sqlEmailPelaku("S.M_LOGIN_GO"),
+		"dokumenKlaim":  sqlSisipDokumenKlaim("S." + TabelDokumenKlaim),
 	}
 }
 
@@ -64,7 +65,7 @@ func TestSQLKomiteMenyaringLiniPropKetat(t *testing.T) {
 	if !strings.Contains(s["daftarKerja"], "MIN(l2.KOMITE_URUT)") {
 		t.Error("daftar kerja: baris tangga PERTAMA yang menunggu (KomiteRouter S6.1)")
 	}
-	if !strings.Contains(s["tulisAnggota"], "KOMITE_APPROVAL = :6") || !strings.Contains(s["simpanKepala"],
+	if !strings.Contains(s["tulisAnggota"], "KOMITE_APPROVAL = :7") || !strings.Contains(s["simpanKepala"],
 		"KOMITE_COUNT = :8") {
 		t.Error("tulisan keputusan bersyarat keadaan yang dibaca (dua klik tidak sama-sama menang)")
 	}

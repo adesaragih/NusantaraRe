@@ -168,8 +168,8 @@ var aksiHitung = map[string]aksiFn{
 	"CountSpreading":  aksiIndeks(models.CountSpreading),
 	"SetDueTo":        aksiHalaman(models.SetDueTo),
 	"RemoveTypeTax":   aksiHalaman(tanpaGalat(models.RemoveTypeTax)),
-	// tombol "Calculate Value Difference" (PropNewData2 S24) dan refresh otherSection
-	// `DetailPolicyTreatyInPropValueDifference` (defer-load) sel uang tab New Data
+	// refresh otherSection `DetailPolicyTreatyInPropValueDifference` (defer-load) sel uang, % spreading, dan
+	// `.Installment` tab New Data (tombol "Calculate Value Difference" PropNewData2 S24 dibuang WO 08-10-2026)
 	"EDMTCalculateTreatyDifference": aksiHalaman(models.EDMTCalculateTreatyDifference),
 	"FillPaymentInstallment": func(l *Layanan, _ context.Context, h *models.Halaman, _ string, _ int) error {
 		return models.FillPaymentInstallment(h, l.jam())

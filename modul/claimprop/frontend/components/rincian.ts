@@ -15,6 +15,15 @@ export interface RincianGrid {
   isi: (n: number) => ReactNode
 }
 
+/**
+ * Nomor baris adjustment dari kunci modal (`komite:n` = harness CommitteeTreaty, `dla:n` = generateDLATreaty); 0 bila
+ * modal halaman (`pla`, `tutupKlaim`). Tombol modal baris (Send Claim to Committee, Submit DLA) adalah aksi baris.
+ */
+export function barisModal(kunci: string): number {
+  const m = /:(\d+)$/.exec(kunci)
+  return m ? Number(m[1]) : 0
+}
+
 /** Panel rinci untuk grid berjalur `jalurGrid`; `undefined` = baris grid itu tidak dapat dibuka. */
 export function rincianUntuk(r: RincianGrid | undefined, jalurGrid: string | undefined): RincianGrid | undefined {
   return r !== undefined && r.daftar === jalurGrid ? r : undefined

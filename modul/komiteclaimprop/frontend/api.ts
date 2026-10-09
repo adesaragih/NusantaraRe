@@ -120,6 +120,8 @@ export interface HasilKeputusan {
   selesai: boolean
   komiteCount: number
   acceptedNo?: string
+  /** Keputusan tersimpan, tetapi PDF akseptasi gagal disimpan (`services.PesanDokumenGagal`). */
+  galatDokumen?: string
 }
 
 export function daftarKerja(): Promise<BarisKerja[]> {

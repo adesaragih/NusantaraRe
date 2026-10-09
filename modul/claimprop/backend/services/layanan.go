@@ -51,6 +51,7 @@ type Layanan struct {
 	a        Acuan
 	jam      func() time.Time
 	produksi bool
+	berkas   PenyimpananBerkas
 }
 
 // Baru menyusun layanan; `g` nil = tanpa Oracle (setiap aksi 503).
@@ -264,9 +265,10 @@ func (l *Layanan) siapkan(k *models.Konteks, kasus models.Kasus, h *models.Halam
 // ---------------------------------------------------------------- buka, daftar, buat
 
 // BukaKasus membuka satu kasus. Pemegang assignment: pra-proses dijalankan (tidak disimpan); selainnya hanya-baca.
+// `lihat` = tampilan saja, juga bagi pemegang (View more details Komite Claim Prop, keputusan work owner 09-10-2026).
 // ⚠️ Pesan pra-proses (CheeckNoRNM_Act, termasuk ProteksiData langkah 12) TIDAK tampil saat kasus dibuat / dibuka -
 // keputusan work owner 08-10-2026; pesan tampil sesudah aksi pengguna (bendera Protect / IsError tetap dihitung).
-func (l *Layanan) BukaKasus(ctx context.Context, p inti.Pelaku, id string) (*Layar, error) {
+func (l *Layanan) BukaKasus(ctx context.Context, p inti.Pelaku, id string, lihat bool) (*Layar, error) {
 	if err := l.periksaPelaku(p); err != nil {
 		return nil, err
 	}
@@ -278,7 +280,7 @@ func (l *Layanan) BukaKasus(ctx context.Context, p inti.Pelaku, id string) (*Lay
 	if err != nil {
 		return nil, err
 	}
-	boleh := Pemegang(p, k)
+	boleh := Pemegang(p, k) && !lihat
 	if boleh {
 		if err := l.siapkan(kt, k, h); err != nil {
 			return nil, err
@@ -293,16 +295,33 @@ func (l *Layanan) BukaKasus(ctx context.Context, p inti.Pelaku, id string) (*Lay
 
 // HakPelaku - hak halaman awal: switch Teknik aktif hanya bagi anggota workbasket Assignment1 (keputusan work owner
 // 08-10-2026). Bawaan = worklist pembuat Assignment2 tanpa cek workbasket (`ToCurrentOperator`, XML apa adanya).
+// Komite - tabel komite di bawah inbox (menu Komite Claim Prop dibuang, keputusan work owner 09-10-2026): akun
+// memegang workbasket yang tercantum sebagai KomiteID roster EMAILKOMITE PROP aktif.
 type HakPelaku struct {
 	WorkbasketTeknik bool `json:"workbasketTeknik"`
+	Komite           bool `json:"komite"`
 }
 
-// Hak membaca hak halaman awal pelaku (tanpa basis data: workbasket dari sesi).
-func (l *Layanan) Hak(p inti.Pelaku) (HakPelaku, error) {
+// Hak membaca hak halaman awal pelaku (workbasket dari sesi; roster komite PROP dari basis data).
+func (l *Layanan) Hak(ctx context.Context, p inti.Pelaku) (HakPelaku, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
 		return HakPelaku{}, err
 	}
-	return HakPelaku{WorkbasketTeknik: p.PunyaPeran(models.WorkbasketAcceptation)}, nil
+	h := HakPelaku{WorkbasketTeknik: p.PunyaPeran(models.WorkbasketAcceptation)}
+	if len(p.Peran) == 0 || l.a == nil {
+		return h, nil
+	}
+	roster, err := l.a.OperatorKomiteAktif(ctx, models.STSKlaimProp)
+	if err != nil {
+		return HakPelaku{}, err
+	}
+	for _, wb := range roster {
+		if p.PunyaPeran(wb) {
+			h.Komite = true
+			break
+		}
+	}
+	return h, nil
 }
 
 // JenisDaftar - tab halaman awal.
@@ -358,7 +377,7 @@ func (l *Layanan) BuatKasus(ctx context.Context, p inti.Pelaku) (*Layar, error) 
 	if err != nil {
 		return nil, err
 	}
-	return l.BukaKasus(ctx, p, id)
+	return l.BukaKasus(ctx, p, id, false)
 }
 
 // AcuanStatis - daftar pilihan bersama layar.

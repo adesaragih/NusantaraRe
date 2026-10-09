@@ -20,6 +20,14 @@ export function switchTeknikAktif(hak: HakPelaku | null): boolean {
   return hak?.workbasketTeknik === true
 }
 
+/**
+ * Tabel komite di bawah inbox (menu Komite Claim Prop dibuang, keputusan work owner 09-10-2026): hanya bagi pemegang
+ * workbasket yang tercantum di roster EMAILKOMITE PROP; tanpa switch, tidak ikut tab.
+ */
+export function tabelKomiteTampil(hak: HakPelaku | null): boolean {
+  return hak?.komite === true
+}
+
 /** Tombol Add Claim tampil hanya di tab Process saat switch Teknik mati. */
 export function bolehTambahKlaim(tab: TabInbox, teknik: boolean): boolean {
   return tab === 'proses' && !teknik

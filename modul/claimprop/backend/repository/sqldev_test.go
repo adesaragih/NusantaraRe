@@ -85,7 +85,9 @@ func TestSQLDiDEV(t *testing.T) {
 
 	// ---- tulisan: diurai saja
 	sqlOS, osArgs, err := sqlSisipOS(q("OS_AKSEPTASI_KLAIM"), models.BarisOS{CaseID: "UJI-C", Value: "1", GrossValue: "1",
-		KursValue: "1", PersenRNM: "1", EstimationDate: time.Now()}, time.Now())
+		KursValue: "1", PersenRNM: "1", EstimationDate: time.Now(),
+		DataJSON: models.JSONHalamanPega(map[string]string{"Type": "0", "pxObjClass": models.KelasOSAkseptasi})},
+		time.Now())
 	if err != nil || len(osArgs) == 0 {
 		t.Fatal(err)
 	}
@@ -119,7 +121,7 @@ func TestSQLDiDEV(t *testing.T) {
 	tulis["SisipKepalaKomite T_GENERAL_KOMITE"] = sqlSisipKepalaKomite(q("T_GENERAL_KOMITE"))
 	tulis["SisipAnggotaKomite tangga"] = sqlSisipAnggotaKomite(q(tabelTanggaKomite))
 	tulis["SetelKomiteAdjustment"] = sqlSetelKomiteAdjustment(q(models.TabelAdjustment.Nama))
-	tulis["TanggaKomite (SELECT)"] = sqlTanggaKomite(q(tabelTanggaKomite))
+	tulis["TanggaKomite (SELECT)"] = sqlTanggaKomite(q(tabelTanggaKomite), q("T_GENERAL_KOMITE"), q("T_WORK_CLAIM"))
 	tulis["SisipRiwayat T_VIEW_SUGGEST"] = sqlSisipRiwayat(q("T_VIEW_SUGGEST"))
 	tulis["BacaRiwayat T_VIEW_SUGGEST (SELECT)"] = sqlBacaRiwayat(q("T_VIEW_SUGGEST"))
 	for nama, s := range tulis {
@@ -129,6 +131,15 @@ func TestSQLDiDEV(t *testing.T) {
 		_, err := d.ExecContext(ctx, sqlUrai, s)
 		h.catat(t, "urai "+nama, err)
 	}
+
+	// ---- DATA_JSON OS (keputusan work owner 08-10-2026): bentuk JSONHalamanPega lolos CHECK `DATA_JSON IS JSON`.
+	var sah int
+	err = d.QueryRowContext(ctx, `SELECT COUNT(*) FROM DUAL WHERE :1 IS JSON`, models.JSONHalamanPega(map[string]string{
+		"CauseOfLoss": `UJI "A"/B`, "Value": "1.5", "pxObjClass": models.KelasOSAkseptasi})).Scan(&sah)
+	if err == nil && sah != 1 {
+		err = errors.New("JSONHalamanPega ditolak IS JSON")
+	}
+	h.catat(t, "baca DATA_JSON IS JSON", err)
 
 	// ---- bacaan: dijalankan (SELECT), masukan UJI-*
 	a := AcuanDari(g, false)
@@ -162,12 +173,14 @@ func TestSQLDiDEV(t *testing.T) {
 		{"SpreadingPolis", func() error { _, err := a.SpreadingPolis(ctx, "UJI"); return err }},
 		{"RosterKomite", func() error { _, err := a.RosterKomite(ctx, "0", "UJI"); return err }},
 		{"TingkatPelaku", func() error { _, err := a.TingkatPelaku(ctx, "UJI"); return err }},
+		{"OperatorKomiteAktif", func() error { _, err := a.OperatorKomiteAktif(ctx, models.STSKlaimProp); return err }},
 		{"LimitDirekturUtama", func() error { _, _, err := a.LimitDirekturUtama(ctx); return err }},
 		{"RekeningBank", func() error { _, err := a.RekeningBank(ctx, "UJI", "UJI"); return err }},
 		{"RekeningBankMataUang", func() error { _, err := a.RekeningBankMataUang(ctx, "UJI"); return err }},
 		{"RekeningBankKlien", func() error { _, err := a.RekeningBankKlien(ctx, "UJI"); return err }},
 		{"IDBankRekening", func() error { _, err := a.IDBankRekening(ctx, "UJI", "UJI", "UJI"); return err }},
 		{"SaldoPremi", func() error { _, err := a.SaldoPremi(ctx, "UJI", "UJI"); return err }},
+		{"SaldoPremi (produksi)", func() error { _, err := ap.SaldoPremi(ctx, "UJI", "UJI"); return err }},
 		{"AdaProteksiPremi", func() error { _, err := a.AdaProteksiPremi(ctx, "UJI"); return err }},
 		{"StatusKasir", func() error { _, _, err := a.StatusKasir(ctx, "UJI"); return err }},
 		{"StatusKonversi (produksi)", func() error { _, err := ap.StatusKonversi(ctx, "UJI"); return err }},

@@ -41,8 +41,8 @@
 11. **Ekspor tambahan work owner 08-10-2026 (OQ-KCP-04):** prompt values `AcceptStatus` / `AcceptanceStatus` /
     `KomiteAproval` / `Payable` / `SubjectivityNote` → label layar dan dropdown "Subjectivity Note"; harness
     `ViewClaimFormKomite` → "View more details" aktif (berkas Claim Prop hanya-baca); stream `EmailKlaim_HTML_KMT` dan
-    `FILEAcceptanceNote` → isi email dan PDF dokumen akseptasi dirakit saat efek dikirim (MUATAN outbox hanya
-    pengenal). Harness `Confirm` = bawaan platform Pega, tidak dibutuhkan. OQ-KCP-05 diabaikan work owner. Konversi
+    `FILEAcceptanceNote` → isi email dirakit saat efek dikirim (MUATAN outbox hanya pengenal); PDF dokumen akseptasi
+    diunggah sesudah Submit tersimpan (pola lampiran Bordereaux). Harness `Confirm` = bawaan platform Pega, tidak dibutuhkan. OQ-KCP-05 diabaikan work owner. Konversi
     PDF (`HTMLToPDF`): OQ-KCP-07 "A" — pustaka Go `github.com/go-pdf/fpdf` (go.mod), PDF digambar dari halaman
     TempAcceptedNo.
 

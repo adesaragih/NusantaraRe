@@ -40,6 +40,9 @@ nol `INSERT` — menu datar 30-09-2026) saat modul mendapat layar pertamanya, di
 `backend/migrations/` modul ini sendiri — bentuk SQL-nya di `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`
 bab 6. Nomor selalu tiga digit.
 
+`535`–`536` — master `T_KATEGORI_DOC_KLAIM` (49 kategori dokumen klaim FAC / PROP / NONPROP dari `kategoriifile.xls`,
+perintah work owner 08-10-2026); `ID` = `KATEGORI_1` dokumen klaim (kategori lampiran `AttachmentProtect_ACT`).
+
 ## Pernyataan untuk penjaga
 
 ⛔ **Dibaca penjaga** `inti/backend/penjaga` — satu jenis pernyataan per judul `###`, satu baris per butir (pola
@@ -82,7 +85,9 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
 - **Baris kolom 520 di STRUKTUR Claim Life** (`## T_GENERAL_CLAIM`, dokumen saja) = keputusan "Tabel bersama".
 - **Penyerahan ke komite aktif** (jawaban "b"): kode batas komite dikumpulkan di `backend/models/komite.go` dan
   `backend/repository/komite.go`; keduanya masuk daftar pengecualian penjaga batas Claim Life `komite_statik_test.go`
-  (satu-satunya suntingan di modul itu). Gerbang lampiran tetap menolak selama OQ-CP-12 terbuka.
+  (satu-satunya suntingan di modul itu). Gerbang lampiran membaca cacah dokumen klaim per kategori master PROP
+  (`T_KATEGORI_DOC_KLAIM`, migrasi 535/536) - lampiran diunggah lewat panel "Attachments" (`GCNMSaveAttachments`,
+  rute `GET`/`POST /api/claim-prop/kasus/{id}/lampiran`), OQ-CP-12 ditutup 08-10-2026.
 - **Kotak masuk Komite Claim Life disaring LINI** ("tambahkan!"): `komiteclaimlife/backend/repository/komite_inbox.go`
   `sqlSaringInboxKomite` + `(w.LINI = :lini OR w.LINI IS NULL)`, argumen `inti.LiniLife`. Kasus komite PROP tidak
   muncul di inbox Komite Life. Pembaca satu kasus `sqlKasusKomite` disaring sama (membuka, memutuskan, riwayat).
@@ -90,7 +95,8 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
   owner; dikerjakan sesi ASIS CLAIM PROP, ditinjau dan di-commit sesi CLAIM PROP). SpreadingClaim terisi otomatis
   saat Policy No dipilih (`models.IsiSpreadingPolis` sesudah CheckNoPolicy) dari TREATYINPRODUCTION polis (JN_REAS,
   PCT_SHARE_PREMI, CURR_ID -> CURRENCY.ID). SpreadingBreakQS = `TreatyInMaster.Limits(1).Detail(1).SpreadingList`
-  (SetTreatyNameSpreading_Act langkah 11-15, XML); percobaan PROPORTIONALARRG (24a6e315) dibatalkan sesudah uji data
+  (SetTreatyNameSpreading_Act langkah 11-15, XML); master tanpa SpreadingList -> anak PROPORTIONALARRG (cadangan,
+  keputusan work owner 09-10-2026); percobaan PROPORTIONALARRG sebagai pengganti (24a6e315) dibatalkan sesudah uji data
   DEV - master cocok dengan seluruh SpreadingBreakQS klaim CLMP lama, PROPORTIONALARRG tidak. Add / Delete AKTIF
   (membatalkan "non aktifkan" 07-10-2026; AddSpreading_Act / DeleteSpreading_Act tidak diekspor, perilaku ditetapkan
   work owner): Add LANGSUNG mengisi Treaty Type (hanya-baca karena terisi; "begitu add langsung set spreading type nya

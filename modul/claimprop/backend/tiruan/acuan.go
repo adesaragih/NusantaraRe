@@ -60,8 +60,12 @@ type Acuan struct {
 	Kasir          map[string]string
 	Konversi       map[string]string
 	Tingkat        map[string]string
+	// Nama - akun -> nama tampilan (M_LOGIN_GO.NAME); akun tanpa nama = akun itu sendiri.
+	Nama map[string]string
 
 	SpreadingPolisMap map[string][]models.SpreadingPolis // nopolis
+	// Anak - "induk|tahun|grup" -> anak PROPORTIONALARRG.
+	Anak map[string][]models.AnakSpreading
 }
 
 // AcuanBaru membuat acuan tiruan kosong.
@@ -75,7 +79,8 @@ func AcuanBaru() *Acuan {
 		Tahun: map[string]string{}, LimitPLAMap: map[string]string{}, Retro: map[string][]models.Retro{},
 		Saldo: map[string]string{}, Proteksi: map[string]bool{}, OS: map[string][]repository.BarisRingkasanOS{},
 		Tangga: map[string][]models.AnggotaKomite{}, Kasir: map[string]string{}, Konversi: map[string]string{},
-		Tingkat: map[string]string{}, SpreadingPolisMap: map[string][]models.SpreadingPolis{}}
+		Tingkat: map[string]string{}, SpreadingPolisMap: map[string][]models.SpreadingPolis{},
+		Anak: map[string][]models.AnakSpreading{}}
 }
 
 func (a *Acuan) SpreadingPolis(_ context.Context, nopolis string) ([]models.SpreadingPolis, error) {
@@ -156,6 +161,17 @@ func (a *Acuan) RosterKomite(_ context.Context, nilai, sts string) ([]models.Ang
 		b, _ := models.AngkaTeks("batas", r.Batas)
 		if r.Sts == sts && !models.Lebih(b, n) {
 			out = append(out, r.AnggotaKomite)
+		}
+	}
+	return out, nil
+}
+
+// OperatorKomiteAktif - KomiteID roster tiruan ber-STS_KLAIM `sts` (semua dianggap aktif).
+func (a *Acuan) OperatorKomiteAktif(_ context.Context, sts string) ([]string, error) {
+	var out []string
+	for _, r := range a.Roster {
+		if r.Sts == sts && r.OperatorID != "" {
+			out = append(out, r.OperatorID)
 		}
 	}
 	return out, nil
@@ -321,4 +337,14 @@ func (a *Acuan) IDBankRekening(context.Context, string, string, string) (string,
 func (a *Acuan) TingkatPelaku(_ context.Context, op string) (string, error) {
 	return a.Tingkat[op], nil
 }
-func (a *Acuan) NamaPelaku(_ context.Context, akun string) (string, error) { return akun, nil }
+func (a *Acuan) NamaPelaku(_ context.Context, akun string) (string, error) {
+	if n := a.Nama[akun]; n != "" {
+		return n, nil
+	}
+	return akun, nil
+}
+
+// AnakSpreading - lihat `repository.Acuan.AnakSpreading`.
+func (a *Acuan) AnakSpreading(_ context.Context, induk, tahun, grup string) ([]models.AnakSpreading, error) {
+	return a.Anak[induk+"|"+tahun+"|"+grup], nil
+}

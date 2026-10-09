@@ -648,7 +648,9 @@ func SetTreatyNameSpreading(k *Konteks, h *Halaman, idx int, m MasterTreaty) err
 			b["TreatyName"] = nama
 		}
 	}
-	susunBreakQS(h, m)
+	if err := susunBreakQS(k, h, m); err != nil {
+		return err
+	}
 	return HitungTurunan(h)
 }
 
@@ -679,7 +681,9 @@ func IsiSpreadingPolis(k *Konteks, h *Halaman, nopolis string, m MasterTreaty) e
 			"SharePercentage": teksPersen(s.SharePercentage), "CurrencyID": s.CurrencyID, "Currency": s.Currency})
 	}
 	h.SetelDaftar(DaftarSpreading, atas)
-	susunBreakQS(h, m)
+	if err := susunBreakQS(k, h, m); err != nil {
+		return err
+	}
 	return HitungTurunan(h)
 }
 
@@ -756,7 +760,9 @@ func AddSpreading(k *Konteks, h *Halaman, m MasterTreaty) error {
 	for _, b := range tambah {
 		h.TambahBaris(DaftarSpreading, b)
 	}
-	susunBreakQS(h, m)
+	if err := susunBreakQS(k, h, m); err != nil {
+		return err
+	}
 	return HitungTurunan(h)
 }
 
@@ -772,21 +778,25 @@ func DeleteSpreading(k *Konteks, h *Halaman, idx int, m MasterTreaty) error {
 		return ErrBarisBeku
 	}
 	h.HapusBaris(DaftarSpreading, idx)
-	susunBreakQS(h, m)
+	if err := susunBreakQS(k, h, m); err != nil {
+		return err
+	}
 	return HitungTurunan(h)
 }
 
 // susunBreakQS - SetTreatyNameSpreading_Act langkah 11-15: SpreadingBreakQS = `TreatyInMaster.Limits(1).Detail(1)
 // .SpreadingList` untuk setiap mata uang estimasi (12: satu mata uang; 13: lebih), unik TreatyType#CurrencyID (14).
 //
-// [keputusan work owner 08-10-2026] sumber master DIPERTAHANKAN (PROPORTIONALARRG dibatalkan sesudah uji data DEV:
-// master cocok dengan seluruh SpreadingBreakQS klaim CLMP lama). Tambahan sejak spreading terisi dari polis: tanpa
-// estimasi dipakai mata uang baris spreading; tanpa baris spreading, tabel bawah kosong.
-func susunBreakQS(h *Halaman, m MasterTreaty) {
+// [keputusan work owner 08-10-2026] sumber master DIPERTAHANKAN (PROPORTIONALARRG sebagai pengganti dibatalkan sesudah
+// uji data DEV: master cocok dengan seluruh SpreadingBreakQS klaim CLMP lama). [keputusan work owner 09-10-2026] "kalo
+// tidak ada di master, ambil dari proportionalarrg": SpreadingList master KOSONG -> anak PROPORTIONALARRG setiap
+// TreatyType tabel atas (`AnakSpreading`, aturan commit 24a6e315). Tanpa estimasi dipakai mata uang baris spreading;
+// tanpa baris spreading, tabel bawah kosong.
+func susunBreakQS(k *Konteks, h *Halaman, m MasterTreaty) error {
 	atas := h.AmbilDaftar(DaftarSpreading)
 	if len(atas) == 0 {
 		h.SetelDaftar(DaftarBreakQS, nil)
-		return
+		return nil
 	}
 	mu := urutanMataUang(h.AmbilDaftar(DaftarEstimasi))
 	if len(mu) == 0 {
@@ -795,6 +805,26 @@ func susunBreakQS(h *Halaman, m MasterTreaty) {
 	var daftar []SpreadingMaster
 	if len(m.Limits) > 0 && len(m.Limits[0].Detail) > 0 {
 		daftar = m.Limits[0].Detail[0].SpreadingList
+	}
+	if len(daftar) == 0 { // cadangan PROPORTIONALARRG
+		// Tahun: U/Y polis; kosong (klaim lama hasil pemuat) -> tahun master treaty `YearofAccount` - uji DEV 09-10-2026:
+		// 4/4 klaim lama bertahun cocok persis, 1 klaim lama tanpa U/Y cocok Treaty Type lewat YearofAccount.
+		tahun, grup := h.Ambil(CD+"TreatyYear"), h.Ambil(CD+"TreatyGroupID")
+		if tahun == "" {
+			tahun = h.Ambil(CD + "YearofAccount")
+		}
+		for _, b := range atas {
+			if b["TreatyType"] == "" {
+				continue
+			}
+			anak, err := k.Acuan.AnakSpreading(k.Ctxt(), b["TreatyType"], tahun, grup)
+			if err != nil {
+				return err
+			}
+			for _, a := range anak {
+				daftar = append(daftar, SpreadingMaster{ReinsTypeID: a.ReinsTypeID, ReinsTypeName: a.ReinsTypeName, Pct: a.Pct})
+			}
+		}
 	}
 	var qs []Baris
 	sudah := map[string]bool{}
@@ -810,6 +840,7 @@ func susunBreakQS(h *Halaman, m MasterTreaty) {
 		}
 	}
 	h.SetelDaftar(DaftarBreakQS, qs) // 15
+	return nil
 }
 
 // teksPersen - persen DB dirapikan ("40.00" -> "40"); bukan angka = apa adanya.

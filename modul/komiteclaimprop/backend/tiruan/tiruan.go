@@ -15,6 +15,7 @@ import (
 
 	"nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/penyimpanan"
 	"nusantarare/modul/komiteclaimprop/backend/models"
 	"nusantarare/modul/komiteclaimprop/backend/repository"
 )
@@ -25,12 +26,17 @@ type Gudang struct {
 	Kasus  map[string]models.Kasus
 	Lini   map[string]string
 	Tangga map[string][]models.Anggota
+	// Posisi - T_WORK_CLAIM.POSITION kasus komite (KomiteID tingkat berjalan; kosong = selesai).
+	Posisi map[string]string
 	// Tabel warisan dan outbox.
 	OS        []models.BarisOSAkseptasi
 	JSONKlaim map[string][2]string
 	Log       []models.LogLayanan
 	Riwayat   []models.RiwayatAkseptasi
 	Efek      []string
+	// Dokumen - DOCUMENT_CLAIM; Storage - T_STORAGE_IMAGE (`Berkas.Catat`).
+	Dokumen []models.BarisDokumenKlaim
+	Storage []penyimpanan.Objek
 	// Urut - penghitung nomor akseptasi (jenis -> urut terakhir); KodeProduksi - KODE_PRODUKSI NONLIFE.
 	Urut         map[string]int
 	KodeProduksi string
@@ -41,26 +47,30 @@ type Gudang struct {
 // Baru membuat gudang kosong beserta kontrak palsunya.
 func Baru() *Gudang {
 	return &Gudang{Kasus: map[string]models.Kasus{}, Lini: map[string]string{}, Tangga: map[string][]models.Anggota{},
-		JSONKlaim: map[string][2]string{}, Urut: map[string]int{}, KodeProduksi: "UJI", Klaim: KlaimBaru()}
+		Posisi: map[string]string{}, JSONKlaim: map[string][2]string{}, Urut: map[string]int{}, KodeProduksi: "UJI", Klaim: KlaimBaru()}
 }
 
 type cadangan struct {
 	kasus  map[string]models.Kasus
 	tangga map[string][]models.Anggota
+	posisi map[string]string
 	os     []models.BarisOSAkseptasi
 	json   map[string][2]string
 	log    []models.LogLayanan
 	riw    []models.RiwayatAkseptasi
 	efek   []string
+	dok    []models.BarisDokumenKlaim
+	stor   []penyimpanan.Objek
 	urut   map[string]int
 	klaim  map[string]*klaimTiruan
 }
 
 func (g *Gudang) salin() cadangan {
-	c := cadangan{kasus: map[string]models.Kasus{}, tangga: map[string][]models.Anggota{},
+	c := cadangan{kasus: map[string]models.Kasus{}, tangga: map[string][]models.Anggota{}, posisi: map[string]string{},
 		os: append([]models.BarisOSAkseptasi{}, g.OS...), json: map[string][2]string{},
 		log: append([]models.LogLayanan{}, g.Log...), riw: append([]models.RiwayatAkseptasi{}, g.Riwayat...),
-		efek: append([]string{}, g.Efek...), urut: map[string]int{}}
+		efek: append([]string{}, g.Efek...), dok: append([]models.BarisDokumenKlaim{}, g.Dokumen...),
+		stor: append([]penyimpanan.Objek{}, g.Storage...), urut: map[string]int{}}
 	for k, v := range g.Kasus {
 		c.kasus[k] = v
 	}
@@ -69,6 +79,9 @@ func (g *Gudang) salin() cadangan {
 	}
 	for k, v := range g.JSONKlaim {
 		c.json[k] = v
+	}
+	for k, v := range g.Posisi {
+		c.posisi[k] = v
 	}
 	for k, v := range g.Urut {
 		c.urut[k] = v
@@ -82,6 +95,7 @@ func (g *Gudang) salin() cadangan {
 func (g *Gudang) pulihkan(c cadangan) {
 	g.Kasus, g.Tangga, g.OS, g.JSONKlaim, g.Log, g.Riwayat, g.Efek, g.Urut = c.kasus, c.tangga, c.os, c.json, c.log,
 		c.riw, c.efek, c.urut
+	g.Dokumen, g.Storage, g.Posisi = c.dok, c.stor, c.posisi
 	if g.Klaim != nil {
 		g.Klaim.mu.Lock()
 		g.Klaim.klaim = c.klaim
@@ -158,6 +172,9 @@ func (g *Gudang) TulisAnggota(_ context.Context, _ *db.Tx, id string, u models.U
 		t[i].Tanggal = models.FormatWaktu(u.Tanggal)
 		if u.IsiKomentar {
 			t[i].Komentar = u.Komentar
+			if u.Pemutus != "" {
+				t[i].OperatorID = u.Pemutus
+			}
 		}
 		return nil
 	}
@@ -197,7 +214,7 @@ func (g *Gudang) KomentarAwal(_ context.Context, klaimID, adjID, id string) (str
 }
 
 // TutupKasus - lihat `repository.Gudang.TutupKasus`.
-func (g *Gudang) TutupKasus(_ context.Context, _ *db.Tx, id string, selesai bool, saat time.Time) error {
+func (g *Gudang) TutupKasus(_ context.Context, _ *db.Tx, id string, selesai bool, posisi string, saat time.Time) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	k, ada := g.Kasus[id]
@@ -205,15 +222,19 @@ func (g *Gudang) TutupKasus(_ context.Context, _ *db.Tx, id string, selesai bool
 		return fmt.Errorf("%w: work object %s", repository.ErrKeputusanBersamaan, id)
 	}
 	if selesai {
-		k.StatusWork = models.StatusSelesai
+		k.StatusWork, posisi = models.StatusSelesai, ""
 	}
 	k.TglUpdate = saat
 	g.Kasus[id] = k
+	if g.Posisi == nil {
+		g.Posisi = map[string]string{}
+	}
+	g.Posisi[id] = posisi
 	return nil
 }
 
-// DaftarKerja - lihat `repository.Gudang.DaftarKerja` (KomiteRouter S6.1).
-func (g *Gudang) DaftarKerja(_ context.Context, akun string) ([]models.BarisKerja, error) {
+// DaftarKerja - lihat `repository.Gudang.DaftarKerja` (KomiteRouter S6.1; akun atau workbasket `peran`, tanpa rangkap).
+func (g *Gudang) DaftarKerja(_ context.Context, akun string, peran []string) ([]models.BarisKerja, error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	out := []models.BarisKerja{}
@@ -223,7 +244,7 @@ func (g *Gudang) DaftarKerja(_ context.Context, akun string) ([]models.BarisKerj
 		}
 		k.Tangga = g.Tangga[id]
 		a, ada := k.Giliran()
-		if !ada || a.OperatorID != akun {
+		if !ada || !k.Pemegang(akun, peran) {
 			continue
 		}
 		b := models.BarisKerja{KasusID: id, KlaimID: k.KlaimID, Tingkat: a.Urut, Count: k.Count, Loop: k.Loop,
@@ -287,6 +308,47 @@ func (g *Gudang) CatatRiwayatAkseptasi(_ context.Context, _ *db.Tx, r models.Riw
 	return nil
 }
 
+// SisipDokumenKlaim - DOCUMENT_CLAIM tiruan; ID kembar = `repository.ErrIDDokumenTerpakai` (PK).
+func (g *Gudang) SisipDokumenKlaim(_ context.Context, _ *db.Tx, d models.BarisDokumenKlaim) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	for _, x := range g.Dokumen {
+		if x.ID == d.ID {
+			return repository.ErrIDDokumenTerpakai
+		}
+	}
+	g.Dokumen = append(g.Dokumen, d)
+	return nil
+}
+
+// Berkas - penyimpanan berkas tiruan (`services.PenyimpananBerkas`); catatan objeknya ikut transaksi gudang.
+type Berkas struct {
+	g *Gudang
+	// Gagal - galat Unggah (layanan penyimpanan tak terjangkau).
+	Gagal    error
+	Unggahan []penyimpanan.MasukUnggah
+}
+
+// BerkasBaru membuat penyimpanan tiruan di atas gudang ini.
+func (g *Gudang) BerkasBaru() *Berkas { return &Berkas{g: g} }
+
+// Unggah - InsertGoogleStorage_Act tiruan: IMAGEID "UJI-IMG-n".
+func (b *Berkas) Unggah(_ context.Context, m penyimpanan.MasukUnggah) (penyimpanan.Objek, error) {
+	if b.Gagal != nil {
+		return penyimpanan.Objek{}, b.Gagal
+	}
+	b.Unggahan = append(b.Unggahan, m)
+	return penyimpanan.Objek{ImageID: fmt.Sprintf("UJI-IMG-%d", len(b.Unggahan)), FileName: m.NamaFile}, nil
+}
+
+// Catat - Insert_T_Storage_SQL tiruan.
+func (b *Berkas) Catat(_ context.Context, _ *db.Tx, o penyimpanan.Objek) error {
+	b.g.mu.Lock()
+	defer b.g.mu.Unlock()
+	b.g.Storage = append(b.g.Storage, o)
+	return nil
+}
+
 // AntreEfek - outbox tiruan: "jenis:rujukan:muatan".
 func (g *Gudang) AntreEfek(_ context.Context, _ *db.Tx, jenis, rujukan, muatan string, _ time.Time) (string, error) {
 	g.mu.Lock()
@@ -308,6 +370,8 @@ type Acuan struct {
 	Email    map[string]string
 	// Surel - akun -> M_LOGIN_GO.EMAIL.
 	Surel map[string]string
+	// AnggotaWB - workbasket -> email anggota aktifnya.
+	AnggotaWB map[string][]string
 }
 
 // AcuanBaru membuat acuan kosong.
@@ -350,6 +414,11 @@ func (a *Acuan) EmailCeding(_ context.Context, ceding string) (string, error) {
 // EmailPelaku - lihat `repository.Acuan.EmailPelaku`.
 func (a *Acuan) EmailPelaku(_ context.Context, akun string) (string, error) {
 	return a.Surel[akun], nil
+}
+
+// EmailAnggotaWorkbasket - lihat `repository.Acuan.EmailAnggotaWorkbasket`.
+func (a *Acuan) EmailAnggotaWorkbasket(_ context.Context, workbasket string) ([]string, error) {
+	return a.AnggotaWB[workbasket], nil
 }
 
 // NamaPelaku - lihat `repository.Acuan.NamaPelaku`.

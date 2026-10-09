@@ -216,6 +216,28 @@ const (
 	FolderDokumenKlaim       = "Claim"
 )
 
+// DurasiDokumenKlaim - InsertDocument_Act S4 `Durasi=1800` (detik).
+const DurasiDokumenKlaim = 1800
+
+// BarisDokumenKlaim - satu baris DOCUMENT_CLAIM (InsertDocument_Act S3, T_STORAGE_ID S4).
+type BarisDokumenKlaim struct {
+	ID        string    // S3 `@CurrentDate("yyyyMMddhhmmssSSS","Asia/Jakarta")`
+	Tanggal   time.Time // S3 `@CurrentDateTime()`
+	IDPega    string    // S13 `TempMainPage.pzInsKey` = ID kasus klaim (KunciInstans)
+	NamaFile  string
+	MIME      string // S3 `@toLowerCase(Param.MIME)`
+	Kategori1 string
+	StorageID string // InsertGoogleStorage_Act -> `NewDocument.T_STORAGE_ID`
+	Operator  string // S3 `pxRequestor.pyUserIdentifier`
+}
+
+// IDDokumenKlaim = InsertDocument_Act S3 `@CurrentDate("yyyyMMddhhmmssSSS","Asia/Jakarta")` - pola Java `hh` = jam
+// 12-an (katalog DEV: "20260521032231511" bertanggal 15:22:31), milidetik tiga angka.
+func IDDokumenKlaim(t time.Time) string {
+	t = t.In(Jakarta)
+	return t.Format("20060102030405") + fmt.Sprintf("%03d", t.Nanosecond()/int(time.Millisecond))
+}
+
 // NamaBerkasAkseptasi - S9 `param.PDFName` (VERBATIM, termasuk spasinya).
 func NamaBerkasAkseptasi(acceptedNo string) string {
 	return "Persetujuan Klaim" + "  " + " AcceptNo " + acceptedNo + ".pdf"

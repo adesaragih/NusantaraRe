@@ -33,6 +33,7 @@ import (
 	"strings"
 
 	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/dokumenpolis"
 	"nusantarare/inti/backend/galat"
 	"nusantarare/inti/backend/menu"
 	"nusantarare/modul/nbtreatyin/backend/models"
@@ -360,4 +361,11 @@ func (h *rute) salinLama(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	galat.TulisJSON(w, j)
+}
+
+// DaftarkanLampiran memasang rute lampiran "Reas" kasus (`inti/backend/dokumenpolis.Pasang`) di bawah
+// `{Prefix}/kasus/{id}/lampiran` - panel Attachment di bawah layar kasus (keputusan work owner 08-10-2026).
+func DaftarkanLampiran(mux *http.ServeMux, l *services.Layanan, lampiran *dokumenpolis.Layanan, stubPelaku bool) {
+	dokumenpolis.Pasang(mux, Prefix+"/kasus/{id}/lampiran", func() *dokumenpolis.Layanan { return lampiran },
+		l.KasusLampiran, stubPelaku, tulisGalat)
 }

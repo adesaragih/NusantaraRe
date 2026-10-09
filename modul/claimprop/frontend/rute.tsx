@@ -6,12 +6,18 @@ import './claimprop.css'
 import type { HalamanCP } from './menu'
 import ClaimProp from './pages/ClaimProp'
 
-export function RuteCP({ halaman, masuk, onLihatBerkas, bukaKasus, onBeranda }: PropsRute<HalamanCP>) {
+export function RuteCP({ halaman, masuk, onLihatBerkas, onBukaModul, bukaKasus, onBeranda }: PropsRute<HalamanCP>) {
   return (
     <BahasaUI.Provider value="en">
       <div className="claimprop">
         {halaman === 'claimprop-daftar' && (
-          <ClaimProp pelaku={masuk.akunID} onLihatBerkas={onLihatBerkas} bukaKasus={bukaKasus} onBeranda={onBeranda} />
+          <ClaimProp
+            pelaku={masuk.akunID}
+            onLihatBerkas={onLihatBerkas}
+            onBukaModul={onBukaModul}
+            bukaKasus={bukaKasus}
+            onBeranda={onBeranda}
+          />
         )}
       </div>
     </BahasaUI.Provider>

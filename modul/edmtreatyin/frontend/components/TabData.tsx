@@ -3,7 +3,8 @@
 // `tataTab`):
 //
 //   S2 Gross | S3 { S4 "OGP" ..., S5 "ONP" ... } | grid `.SpreadingRiskList` + kaki "Total" | total berlabel
-//   (PropNewData) | `.Installment` + "Installment Data Information" | tombol "Calculate Value Difference" (NewData2)
+//   (PropNewData) | `.Installment` + "Installment Data Information". Tombol "Calculate Value Difference" (NewData2 S24)
+//   DIBUANG (WO 08-10-2026 "COBA CEK TOMBOLITU, APAKAH MASIH DIPERLUKAN? KALAU SUDAH TIDAK DIHAPUS AJA!"): sel yang mengubah data baru menghitung ulang selisih sendiri
 //
 // Tata letak bagian uang mengikuti layar NB yang disetujui work owner (`modul/nbtreatyin/frontend/pages/LayarKasus.tsx`
 // 06-10-2026): Gross di atas, kolom kiri OGP lalu klaim/saldo, kolom kanan ONP lalu potongan/pajak.
@@ -15,8 +16,9 @@ import { Fragment } from 'react'
 
 import { Panel, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
 import { daftar, nilai, type Baris, type Halaman, type Pilihan } from '../api'
-import { BAGIAN, KOLOM_ANGSURAN, KOLOM_SPREADING, TOMBOL } from '../labels'
+import { BAGIAN, KOLOM_ANGSURAN, KOLOM_SPREADING } from '../labels'
 import {
+  AKSI_SPREADING,
   SAJIAN_ANGSURAN,
   SAJIAN_SPREADING,
   labelTreatyType,
@@ -37,7 +39,6 @@ export interface PropsTabData {
   wajib: ReadonlySet<string>
   /** Layar boleh disunting (pelaku anggota antrean, kasus terbuka). */
   boleh: boolean
-  sibuk: boolean
   opsi: Record<SumberAcuan, Opsi[]>
   /** Teks `.TreatyType` grid spreading hanya-baca (RD `BrowseReinsuranceType_RD`, acuan `jenisReas`). */
   opsiJenisReas: Pilihan[]
@@ -53,7 +54,6 @@ export default function TabData({
   halaman: h,
   wajib,
   boleh,
-  sibuk,
   opsi,
   opsiJenisReas,
   onUbah,
@@ -81,7 +81,7 @@ export default function TabData({
   )
   const kolom = (ms: Medan[]) => <div className="edmt__kolom">{medanTampil(ms, h).map(kotak)}</div>
 
-  /** Sel persen spreading PropNewData2: change -> refresh CountSpreading_Act(Index=.pxListSubscript). */
+  /** Sel persen spreading PropNewData2: change -> refresh CountSpreading_Act(Index=.pxListSubscript) + selisih. */
   const persen = (b: Baris, i: number, k: 'SharePercentage' | 'ClaimPercentage', label: string) =>
     sunting ? (
       <InputAngka
@@ -89,7 +89,7 @@ export default function TabData({
         value={b[k] ?? ''}
         sajian={SAJIAN_SPREADING.persen}
         onChange={(v) => onUbahBaris(SPREADING, i, k, v)}
-        onBlur={() => onRefresh([{ aksi: 'CountSpreading' }], i + 1)}
+        onBlur={() => onRefresh(AKSI_SPREADING, i + 1)}
       />
     ) : (
       sajikan(b[k] ?? '', SAJIAN_SPREADING.persen)
@@ -222,20 +222,6 @@ export default function TabData({
           </table>
         </div>
       </Panel>
-
-      {tata.hitungSelisih && sunting && (
-        // PropNewData2 S24: click -> refresh thisSection activity EDMTCalculateTreatyDifference
-        <div className="edmt__aksi">
-          <button
-            type="button"
-            className="btn"
-            disabled={sibuk}
-            onClick={() => onRefresh([{ aksi: 'EDMTCalculateTreatyDifference' }])}
-          >
-            {TOMBOL.hitungSelisih}
-          </button>
-        </div>
-      )}
     </>
   )
 }

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -61,20 +62,30 @@ func TestRuteTreatyContractOutTerdaftarSatuBaris(t *testing.T) {
 		}
 	}
 	// Master dan daftar MEMBACA: tidak pernah POST. Tahun treaty tidak punya
-	// jalur hapus.
-	//
-	// ⚠️ 29-09-2026 tiket 12: dipersempit ke jalur TAHUN itu sendiri (tanda
-	// kutip penutup ikut dicocokkan) dan diperluas ke tco_lampiran.go -
-	// `DELETE .../tahun/{id}/lampiran/{lid}` menghapus LAMPIRAN, bukan tahun.
-	lampiran, err := os.ReadFile("tco_lampiran.go")
+	// jalur hapus (tanda kutip penutup ikut dicocokkan).
+	for _, tidak := range []string{`"POST /api/treaty-contract-out/jenis-reasuransi"`,
+		`"POST /api/treaty-contract-out/grup-treaty"`,
+		`"DELETE /api/treaty-contract-out/tahun"`, `"DELETE /api/treaty-contract-out/tahun/{id}"`} {
+		if strings.Contains(string(rute), tidak) {
+			t.Errorf("rute %s tidak boleh ada", tidak)
+		}
+	}
+	// Fitur lampiran DIBUANG (keputusan work owner 08-10-2026): nol jalur
+	// lampiran di seluruh handler modul ini.
+	berkas, err := filepath.Glob("*.go")
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, tidak := range []string{`"POST /api/treaty-contract-out/jenis-reasuransi"`,
-		`"POST /api/treaty-contract-out/grup-treaty"`, `"POST /api/treaty-contract-out/kategori-lampiran"`,
-		`"DELETE /api/treaty-contract-out/tahun"`, `"DELETE /api/treaty-contract-out/tahun/{id}"`} {
-		if strings.Contains(string(rute), tidak) || strings.Contains(string(lampiran), tidak) {
-			t.Errorf("rute %s tidak boleh ada", tidak)
+	for _, b := range berkas {
+		if strings.HasSuffix(b, "_test.go") {
+			continue
+		}
+		isi, err := os.ReadFile(b)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(string(isi), "lampiran\"") || strings.Contains(string(isi), "/lampiran") {
+			t.Errorf("%s mendaftarkan jalur lampiran - fiturnya dibuang", b)
 		}
 	}
 	// AC 72: nol jalur salin tahun treaty.

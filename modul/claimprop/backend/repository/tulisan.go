@@ -2,8 +2,8 @@ package repository
 
 // Untuk apa berkas ini: TULISAN KE TABEL WARISAN di titik yang sama dengan XML, ditulis ulang tanpa procedure:
 //
-//	PEGA_JSON_OS_AKSEP_KLAIM / ..._KLAIMTNP  -> OS_AKSEPTASI_KLAIM (kolom datar; DATA_JSON kosong - keputusan work
-//	                                            owner 07-10-2026)
+//	PEGA_JSON_OS_AKSEP_KLAIM / ..._KLAIMTNP  -> OS_AKSEPTASI_KLAIM (kolom datar + DATA_JSON = DataPega apa adanya -
+//	                                            keputusan work owner 08-10-2026, meralat 07-10-2026)
 //	PEGA_JSON_KLAIM_PNC (InsertClaimPNC)     -> JSON_KLAIM (UPDATE ... lalu INSERT bila tak ada; DATA_JSON kosong)
 //	InsertLogServiceClaim                    -> MONITORING_KLAIM_LOG
 //	SaveCatasrtope_Act (Obj-Save)            -> CATASTROPHE
@@ -88,6 +88,11 @@ func sqlSisipOS(tabel string, b models.BarisOS, saat time.Time) (string, []any, 
 	if !b.EstimationDate.IsZero() {
 		kol = append(kol, "ESTIMATIONDATE")
 		nilai = append(nilai, ph(b.EstimationDate.In(models.Jakarta)))
+	}
+	// DATA_JSON = DataPega (procedure: `INSERT ... DATA_JSON ... VALUES (... DataPega ...)`); CHECK DATA_JSON IS JSON.
+	if b.DataJSON != "" {
+		kol = append(kol, "DATA_JSON")
+		nilai = append(nilai, ph(b.DataJSON))
 	}
 	return fmt.Sprintf(`INSERT INTO %s (%s) VALUES (%s)`, tabel, joinKoma(kol), joinKoma(nilai)), args, nil
 }

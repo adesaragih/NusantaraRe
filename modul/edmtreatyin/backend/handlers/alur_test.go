@@ -388,7 +388,7 @@ func TestPembatalanNolkanDataBaru(t *testing.T) {
 	if h.Ambil(models.HalamanPolis+".PremiOgp") != "0" || len(h.AmbilDaftar(models.DaftarSpreading)) != 2 {
 		t.Fatalf("SetEDMTCancel: PremiOgp %q, spreading %d", h.Ambil(models.HalamanPolis+".PremiOgp"), len(h.AmbilDaftar(models.DaftarSpreading)))
 	}
-	// tombol "Calculate Value Difference" (PropNewData2 S24)
+	// aksi EDMTCalculateTreatyDifference (sel uang / % spreading / Installment; tombol S24 dibuang WO 08-10-2026)
 	kode, isi := u.panggil("POST", "/kasus/"+k.ID+"/hitung", admin, map[string]any{
 		"urutan": []map[string]string{{"aksi": "EDMTCalculateTreatyDifference"}}, "halaman": models.HalamanBaru()})
 	u.wajib(kode, isi, http.StatusOK, "Calculate Value Difference")

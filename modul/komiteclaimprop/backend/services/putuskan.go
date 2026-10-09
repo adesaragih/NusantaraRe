@@ -20,6 +20,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"strings"
 	"time"
 
@@ -36,7 +37,13 @@ type HasilKeputusan struct {
 	Selesai     bool   `json:"selesai"`
 	KomiteCount int    `json:"komiteCount"`
 	AcceptedNo  string `json:"acceptedNo,omitempty"`
+	// GalatDokumen - keputusan TERSIMPAN, tetapi PDF akseptasi gagal dibuat / diunggah / dicatat (`simpanDokumenAkseptasi`).
+	GalatDokumen string `json:"galatDokumen,omitempty"`
 }
+
+// PesanDokumenGagal - `[tidak ada di korpus]` (urutan Pega tidak ditiru, keputusan work owner 2026-09-18): Submit sudah
+// tersimpan saat PDF akseptasi gagal; penyetuju diberi tahu, sebabnya dicatat di log server.
+const PesanDokumenGagal = "The decision was saved, but the acceptance note PDF could not be stored. Please contact the administrator."
 
 // Putuskan menjalankan satu Submit `kep` oleh `p` atas kasus komite `id`.
 func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, kep models.Keputusan) (HasilKeputusan, error) {
@@ -45,6 +52,7 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, kep mo
 	}
 	saat := l.jam()
 	var hasil HasilKeputusan
+	dokumen := false
 	err := l.g.Transaksi(ctx, func(tx *db.Tx) error {
 		k, kl, err := l.muat(ctx, tx, id, true)
 		if err != nil {
@@ -53,7 +61,7 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, kep mo
 		if k.Tertutup() {
 			return ErrKasusTertutup
 		}
-		if !k.Pemegang(p.AkunID) {
+		if !k.Pemegang(p.AkunID, p.Peran) {
 			return ErrBukanPemegang
 		}
 		if strings.TrimSpace(models.AdjustmentKlaim(kl)["AcceptedNo"]) != "" {
@@ -68,10 +76,17 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, kep mo
 			return err
 		}
 		hasil = HasilKeputusan{KasusID: k.ID, Selesai: r.Selesai, KomiteCount: r.Count, AcceptedNo: j.nomor}
+		dokumen = r.SimpanRetro // S21 -> SaveAcceptationTreaty_TKMT S8 PrintFileAcceptance_TKMT
 		return nil
 	})
 	if err != nil {
 		return HasilKeputusan{}, err
+	}
+	if dokumen {
+		if err := l.simpanDokumenAkseptasi(ctx, id, p.AkunID, saat); err != nil {
+			log.Printf("komiteclaimprop: dokumen akseptasi kasus %s: %v", id, err)
+			hasil.GalatDokumen = PesanDokumenGagal
+		}
 	}
 	return hasil, nil
 }
@@ -124,12 +139,6 @@ func (j *jalan) laksanakan(r *models.Rencana) error {
 		if err := j.retro(r, adj); err != nil {
 			return err
 		}
-		// S8 PrintFileAcceptance_TKMT: PDF ACCEPTED CLAIM INSURANCE (FILEAcceptanceNote -> HTMLToPDF) dirakit saat
-		// efek dikirim (`SusunDokumenAkseptasi`); InsertDocument_Act = pelaksana.
-		if err := j.antre(JenisEfekDokumen, k.ID, map[string]string{IsiPelaku: j.akun,
-			IsiSaat: j.saat.Format(time.RFC3339)}); err != nil {
-			return err
-		}
 	}
 	if r.Kasir { // S34 HitServiceToKasirKMT_Act
 		if err := j.kasirEfek(r, adj, noAksep); err != nil {
@@ -171,7 +180,7 @@ func (j *jalan) laksanakan(r *models.Rencana) error {
 	if err := j.l.g.SimpanKepala(ctx, tx, k.ID, k.Count, r.Kepala()); err != nil {
 		return err
 	}
-	return j.l.g.TutupKasus(ctx, tx, k.ID, r.Selesai, j.saat) // Decision KomiteLoop
+	return j.l.g.TutupKasus(ctx, tx, k.ID, r.Selesai, r.Posisi, j.saat) // Decision KomiteLoop; POSITION tingkat berikut
 }
 
 // retro = SaveAcceptationTreaty_TKMT S1-S9 (+ PrintFileAcceptance_TKMT S4 IsPrintAccept).
@@ -201,7 +210,7 @@ func (j *jalan) retro(r *models.Rencana, adj map[string]string) error {
 		// yang menampilkannya sendiri dari IsFacRetro di local action PrintFileDLA) - tidak dikembalikan ke penyetuju.
 		r.Klaim.Adjustment["IsFacRetro"] = "1"
 	}
-	r.Klaim.Adjustment["IsPrintAccept"] = "1" // S8 (PrintFileAcceptance_TKMT S4) + S9; PDF = efek dokumen-akseptasi
+	r.Klaim.Adjustment["IsPrintAccept"] = "1" // S8 (PrintFileAcceptance_TKMT S4) + S9; PDF sesudah Submit tersimpan
 	return nil
 }
 
@@ -278,10 +287,9 @@ func (j *jalan) email(r *models.Rencana) error {
 
 // Jenis efek outbox Komite Claim Prop.
 const (
-	JenisEfekKonversi    = "konversi-klaim"    // KonversiKlaim_Act -> KonversiKlaimNonLife (Klaim / insertClaimAccept)
-	JenisEfekKasir       = "kasir"             // HitServiceToKasirKMT_Act -> SendAcceptationToKasir (Kasir / insertAllPaymentKasir)
-	JenisEfekEmailKomite = "email-komite"      // SendEmailKlaim_KMT -> SendEmailWithAttachments
-	JenisEfekDokumen     = "dokumen-akseptasi" // PrintFileAcceptance_TKMT -> HTMLToPDF -> InsertDocument_Act
+	JenisEfekKonversi    = "konversi-klaim" // KonversiKlaim_Act -> KonversiKlaimNonLife (Klaim / insertClaimAccept)
+	JenisEfekKasir       = "kasir"          // HitServiceToKasirKMT_Act -> SendAcceptationToKasir (Kasir / insertAllPaymentKasir)
+	JenisEfekEmailKomite = "email-komite"   // SendEmailKlaim_KMT -> SendEmailWithAttachments
 )
 
 // MuatanOutbox - isi baris T_LOG_SERVICE_RNM.MUATAN.

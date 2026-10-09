@@ -55,7 +55,6 @@ export const TOMBOL = {
   /** `ShowPolicyNoTreaty_SC`. */
   ok: 'OK',
   /** `DetailPolicyTreatyInPropNewData2` S24. */
-  hitungSelisih: 'Calculate Value Difference',
   kembali: 'Kembali',
 } as const
 

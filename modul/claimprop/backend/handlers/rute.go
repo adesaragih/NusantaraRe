@@ -9,6 +9,8 @@
 //	POST /api/claim-prop/kasus/{id}/aksi                              aksi layar (refresh ber-activity, tombol, Choose)
 //	GET  /api/claim-prop/kasus/{id}/pilihan/{jenis}?indeks=&cari=     isi pop-up / autocomplete
 //	GET  /api/claim-prop/acuan                                        daftar pilihan bersama
+//	GET  /api/claim-prop/kasus/{id}/lampiran                          kategori + dokumen klaim (lampiran.go)
+//	POST /api/claim-prop/kasus/{id}/lampiran                          unggah lampiran (GCNMSaveAttachments)
 package handlers
 
 import (
@@ -22,6 +24,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/penyimpanan"
 	"nusantarare/modul/claimprop/backend/models"
 	"nusantarare/modul/claimprop/backend/services"
 )
@@ -43,6 +46,12 @@ func DaftarkanRute(mux *http.ServeMux, l *services.Layanan, stubPelaku bool) {
 	mux.HandleFunc("GET "+Prefix+"/acuan", h.acuan)
 	mux.HandleFunc("GET "+Prefix+"/hak", h.hak)
 	mux.HandleFunc("GET "+Prefix+"/berkas-polis", h.berkasPolis)
+	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/lampiran", h.lampiran)
+	mux.HandleFunc("POST "+Prefix+"/kasus/{id}/lampiran", h.unggahLampiran)
+	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/lampiran/{lid}/isi", h.unduhLampiran)
+	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/lampiran/{lid}/office", h.officeLampiran)
+	mux.HandleFunc("POST "+Prefix+"/kasus/{id}/lampiran/{lid}/hapus", h.hapusLampiran)
+	mux.HandleFunc("POST "+Prefix+"/kasus/{id}/lampiran/kategori", h.pindahKategoriLampiran)
 }
 
 // Router menyusun mux tersendiri - untuk uji.
@@ -79,6 +88,14 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		}{"validasi layar gagal: " + strings.Join(v.Pesan, "; "), v.Pesan, v.Layar})
 	case errors.Is(err, services.ErrTanpaOracle):
 		galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+	case errors.Is(err, penyimpanan.ErrObjekTidakAda):
+		galat.Tulis(w, http.StatusConflict, err.Error())
+	case errors.Is(err, penyimpanan.ErrBerkasDitolak):
+		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
+	case errors.Is(err, penyimpanan.ErrStorageBelumSiap):
+		galat.Tulis(w, http.StatusServiceUnavailable, err.Error())
+	case errors.Is(err, penyimpanan.ErrStorageGagal):
+		galat.Tulis(w, http.StatusBadGateway, err.Error())
 	case errors.Is(err, inti.ErrTanpaIdentitas):
 		galat.Tulis(w, http.StatusUnauthorized, err.Error())
 	case errors.Is(err, inti.ErrTanpaWewenang):
@@ -109,9 +126,9 @@ func (h *rute) berkasPolis(w http.ResponseWriter, r *http.Request) {
 	tulisJSON(w, http.StatusOK, out)
 }
 
-// hak - switch Teknik halaman awal: aktif hanya bagi anggota ReasKlaimTeknik.
+// hak - switch Teknik halaman awal (anggota ReasKlaimTeknik) dan tabel komite (pemegang workbasket roster PROP).
 func (h *rute) hak(w http.ResponseWriter, r *http.Request) {
-	out, err := h.l.Hak(h.pelaku(r))
+	out, err := h.l.Hak(r.Context(), h.pelaku(r))
 	if err != nil {
 		tulisGalat(w, err)
 		return
@@ -138,7 +155,8 @@ func (h *rute) buat(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *rute) buka(w http.ResponseWriter, r *http.Request) {
-	ly, err := h.l.BukaKasus(r.Context(), h.pelaku(r), r.PathValue("id"))
+	// `?lihat=1` - tampilan saja (View more details Komite Claim Prop, keputusan work owner 09-10-2026).
+	ly, err := h.l.BukaKasus(r.Context(), h.pelaku(r), r.PathValue("id"), r.URL.Query().Get("lihat") == "1")
 	if err != nil {
 		tulisGalat(w, err)
 		return

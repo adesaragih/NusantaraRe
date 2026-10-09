@@ -2,15 +2,17 @@
 // Resolve. Tab Process bawaan = worklist pembuat (Assignment2 "Outstanding Claim", tanpa cek workbasket - XML apa
 // adanya); switch Teknik = Assignment1 "Input Acceptation" (workbasket ReasKlaimTeknik), dapat dinyalakan hanya oleh
 // anggota workbasket itu. Add Claim (Start1 -> Assignment2; harness New tidak diekspor - OQ-CP-13) hanya saat switch
-// Teknik mati.
+// Teknik mati. Di bawahnya tabel komite (menu Komite Claim Prop dibuang, keputusan work owner 09-10-2026) - hanya bagi
+// pemegang workbasket roster EMAILKOMITE PROP, tanpa switch dan tidak ikut tab; barisnya membuka layar komite di tempat.
 
 import { useCallback, useEffect, useState } from 'react'
 
 import { Gagal, Kosong, Memuat, StripTab } from '../../../../inti/frontend/components/ui/dasar'
 import { ambilHak, buatKasus, daftarKasus, type HakPelaku, type RingkasanKasus } from '../api'
 import LayarKasus from '../components/LayarKasus'
+import TabelKomite from '../components/TabelKomite'
 import { CP } from '../labels'
-import { bolehTambahKlaim, jenisDaftar, switchTeknikAktif, TAB_INBOX, type TabInbox } from './inbox'
+import { bolehTambahKlaim, jenisDaftar, switchTeknikAktif, TAB_INBOX, tabelKomiteTampil, type TabInbox } from './inbox'
 
 const LABEL_TAB: Record<TabInbox, string> = { proses: CP.tabProses, selesai: CP.tabResolve }
 const JEDA_CARI_MS = 300
@@ -18,14 +20,20 @@ const JEDA_CARI_MS = 300
 export default function ClaimProp({
   pelaku,
   onLihatBerkas,
+  onBukaModul,
   bukaKasus,
   onBeranda,
 }: {
   pelaku: string
   /** `PropsRute.onLihatBerkas` - tombol View polis. */
   onLihatBerkas?: (modul: string, id: string) => boolean
-  /** `PropsRute.bukaKasus` - satu berkas dibuka langsung (View more details Komite Claim Prop, 08-10-2026). */
-  bukaKasus?: { id: string; ketuk: number }
+  /** `PropsRute.onBukaModul` - baris tabel komite: layar komite dibuka di tempat. */
+  onBukaModul?: (modul: string, id: string) => boolean
+  /**
+   * `PropsRute.bukaKasus` - satu berkas dibuka langsung; `hanyaLihat` = tampilan saja (View more details Komite Claim
+   * Prop, keputusan work owner 09-10-2026).
+   */
+  bukaKasus?: { id: string; ketuk: number; hanyaLihat?: boolean }
   /** `PropsRute.onBeranda` - Back berkas yang dibuka lewat `bukaKasus` kembali ke pemanggil. */
   onBeranda?: () => void
 }) {
@@ -40,15 +48,18 @@ export default function ClaimProp({
   const [segar, setSegar] = useState(0)
   // Berkas dibuka lewat `bukaKasus`: Back kembali ke pemanggil (`onBeranda`), bukan ke daftar.
   const [dariLuar, setDariLuar] = useState(false)
+  const [hanyaLihat, setHanyaLihat] = useState(false)
 
   const ketukBuka = bukaKasus?.ketuk
   const idBuka = bukaKasus?.id
+  const lihatBuka = bukaKasus?.hanyaLihat === true
   useEffect(() => {
     if (ketukBuka !== undefined && idBuka !== undefined) {
       setBuka(idBuka)
       setDariLuar(true)
+      setHanyaLihat(lihatBuka)
     }
-  }, [ketukBuka, idBuka])
+  }, [ketukBuka, idBuka, lihatBuka])
 
   useEffect(() => {
     const t = setTimeout(() => setCari(kata), JEDA_CARI_MS)
@@ -95,8 +106,10 @@ export default function ClaimProp({
         id={buka}
         pelaku={pelaku}
         onLihatBerkas={onLihatBerkas}
+        hanyaLihat={hanyaLihat}
         onKembali={() => {
           setBuka(null)
+          setHanyaLihat(false)
           setSegar((s) => s + 1)
           if (dariLuar) {
             setDariLuar(false)
@@ -181,6 +194,7 @@ export default function ClaimProp({
           </tbody>
         </table>
       )}
+      {tabelKomiteTampil(hak) && <TabelKomite onBukaModul={onBukaModul} />}
     </section>
   )
 }

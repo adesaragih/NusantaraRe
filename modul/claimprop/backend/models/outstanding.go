@@ -8,7 +8,10 @@ package models
 // tulisan OS_AKSEPTASI_KLAIM / JSON_KLAIM / MONITORING_KLAIM_LOG dijalankan services lewat repository, satu transaksi.
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 )
@@ -104,8 +107,9 @@ func PeriksaOldID(h *Halaman, oldID string) {
 	}
 }
 
-// BarisOS - satu baris OS_AKSEPTASI_KLAIM. `[keputusan work owner 07-10-2026]` kolom datar diisi, DATA_JSON kosong,
-// tanpa procedure; CASEID = pzInsKey (`KunciPegaLama`), NOCLAIM = NoClaim atau ClaimNo (langkah 23.1.5).
+// BarisOS - satu baris OS_AKSEPTASI_KLAIM, tanpa procedure; CASEID = pzInsKey (`KunciPegaLama`), NOCLAIM = NoClaim
+// atau ClaimNo (langkah 23.1.5). `[keputusan work owner 08-10-2026]` DATA_JSON DIISI khusus tabel ini (meralat
+// keputusan 07-10-2026 "DATA_JSON kosong"; JSON_KLAIM tetap tanpa DATA_JSON); kolom datar tetap diisi.
 type BarisOS struct {
 	CaseID, NoClaim, NoPolis, MasterID string
 	StsReject                          string
@@ -117,6 +121,62 @@ type BarisOS struct {
 	AcceptedNo                         string
 	EstimationDate                     time.Time
 	InsertOp                           string
+	// DataJSON - `InputData.CARI1` (DataPega procedure): JSON halaman yang dikirim activity (JSONHalamanPega).
+	DataJSON string
+}
+
+// KelasOSAkseptasi - pxObjClass halaman TempOSAkseptasi (SaveOutstanding_Act) dan InputParamOs (CloseClaimProp),
+// Pages & Classes kedua activity; seluruh 6.596 DATA_JSON baris CLMP di DEV berkelas ini `[data DEV 08-10-2026]`.
+const KelasOSAkseptasi = "ASM-FW-GCNMFW-Data-osAkseptasi"
+
+// JSONHalamanPega = `@ASM.GetPageJSONString()` atas satu halaman. Fungsinya tidak diekspor; bentuknya dibaca dari
+// DATA_JSON OS_AKSEPTASI_KLAIM warisan `[data DEV 08-10-2026, 6.596 baris CLMP]`:
+//   - "{" LF, pasangan pertama, lalu setiap pasangan berikutnya diawali LF ",", ditutup LF "}" LF;
+//   - kunci urut tanpa membedakan huruf besar (PersenRNM < PolicyNo < pxCreateOperator < pxObjClass < pzInsKey <
+//     Type);
+//   - semua nilai teks; properti kosong tidak ditulis (nol nilai "" di DEV, padahal CauseOfLoss selalu di-set);
+//   - tanpa spasi; garis miring tidak di-escape (119 baris); escape lain mengikuti JSON baku tanpa escape HTML.
+func JSONHalamanPega(p map[string]string) string {
+	kunci := make([]string, 0, len(p))
+	for k, v := range p {
+		if v != "" {
+			kunci = append(kunci, k)
+		}
+	}
+	sort.Slice(kunci, func(i, j int) bool {
+		a, b := strings.ToLower(kunci[i]), strings.ToLower(kunci[j])
+		if a != b {
+			return a < b
+		}
+		return kunci[i] < kunci[j]
+	})
+	var b strings.Builder
+	b.WriteString("{\n")
+	for i, k := range kunci {
+		if i > 0 {
+			b.WriteString("\n,")
+		}
+		b.WriteString(teksJSON(k))
+		b.WriteByte(':')
+		b.WriteString(teksJSON(p[k]))
+	}
+	b.WriteString("\n}\n")
+	return b.String()
+}
+
+// teksJSON - literal teks JSON tanpa escape HTML (`<`, `>`, `&` apa adanya).
+func teksJSON(s string) string {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	_ = enc.Encode(s) // menyandi string tidak pernah gagal
+	return strings.TrimSuffix(buf.String(), "\n")
+}
+
+// tanggalStempel = `@getCurrentDateStamp()` (yyyyMMdd); di DEV selalu sama dengan tanggal kolom TANGGAL (519/519
+// baris CLMP sejak 2025), maka dihitung dari saat yang sama dengan TANGGAL.
+func tanggalStempel(t time.Time) string {
+	return t.In(Jakarta).Format("20060102")
 }
 
 // nomorOS = InputData.CARI29 (langkah 23.1.4-5): NoClaim, atau ClaimNo bila keduanya kosong.
@@ -129,7 +189,8 @@ func nomorOS(h *Halaman) string {
 
 // KirimEstimasi = SaveOutstanding_Act langkah 23: SETIAP estimasi belum terkirim (`PrintFaceClaim != 1`) ditandai
 // terkirim (23.1.1, prakondisi nonaktif) dan melahirkan satu baris OS ber-STS_REJECT 0 (23.1.2-23.1.6, prakondisi
-// nonaktif). ESTIMATIONDATE = `@getCurrentDateStamp()` (jam simpan, bukan tanggal estimasi baris).
+// nonaktif). ESTIMATIONDATE = `@getCurrentDateStamp()` (jam simpan, bukan tanggal estimasi baris). DATA_JSON =
+// halaman TempOSAkseptasi (23.1.2 "set jsondata untuk table os_akseptasi_klaim", 23.1.3 GetPageJSONString).
 func KirimEstimasi(k *Konteks, h *Halaman, kunciKasus string) []BarisOS {
 	var out []BarisOS
 	for _, e := range h.AmbilDaftar(DaftarEstimasi) {
@@ -145,6 +206,24 @@ func KirimEstimasi(k *Konteks, h *Halaman, kunciKasus string) []BarisOS {
 			TypeLossID: e["TypeLossID"], TypeLoss: e["TypeLoss"],
 			CauseOfLossID: h.Ambil(CD + "CauseOfLossID"), CauseOfLoss: h.Ambil(CD + "CauseOfLoss"),
 			EstimationDate: k.Sekarang, InsertOp: k.Pelaku,
+			DataJSON: JSONHalamanPega(map[string]string{
+				"CauseOfLoss":      h.Ambil(CD + "CauseOfLoss"),
+				"CauseOfLossID":    h.Ambil(CD + "CauseOfLossID"),
+				"EstimationDate":   tanggalStempel(k.Sekarang),
+				"PersenRNM":        h.Ambil(TM + "RNMShareP"),
+				"NoClaim":          h.Ambil(CD + "NoClaim"),
+				"CurrencyID":       e["CurrencyID"],
+				"Currency":         e["Currency"],
+				"GrossValue":       e["GrossEstimationPct"],
+				"Value":            e["EstimationValue"],
+				"Type":             StsOSEstimasi,
+				"TypeID":           e["Type"],
+				"KursValue":        e["KursValue"],
+				"TypeLossID":       e["TypeLossID"],
+				"TypeLoss":         e["TypeLoss"],
+				"pxCreateOperator": k.Pelaku,
+				"pxObjClass":       KelasOSAkseptasi,
+			}),
 		})
 	}
 	return out

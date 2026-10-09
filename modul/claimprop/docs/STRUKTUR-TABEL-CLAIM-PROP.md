@@ -984,3 +984,17 @@ Migrasi `531`.
 | `KURS` | angka desimal | ya |  | migrasi `531` |
 
 **Unik:** `(ADJUSTMENT_ID, NOURUT)`.
+
+## T_KATEGORI_DOC_KLAIM
+
+Migrasi `535` (tabel) dan `536` (isi 49 baris `kategoriifile.xls`). Master kategori dokumen klaim, perintah work owner
+08-10-2026 ("BUATKAN KATEGORI FILE INI, JADIKAN MASTER T_KATEGORI_DOC_KLAIM"). `ID` = `KATEGORI_1` tabel warisan
+dokumen klaim; satu `ID` dipakai lebih dari satu `TYPE_KLAIM` (FAC / PROP / NONPROP).
+
+| Kolom | Tipe | Null | Kunci | Sumber |
+| --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | migrasi `535` — kolom `ID` berkas work owner |
+| `LABEL` | teks | tidak |  | migrasi `535` — kolom `LABEL` berkas work owner |
+| `TYPE_KLAIM` | teks | tidak | PK | migrasi `535` — kolom `TYPE KLAIM` berkas work owner |
+
+**Kunci utama:** `(TYPE_KLAIM, ID)`.
