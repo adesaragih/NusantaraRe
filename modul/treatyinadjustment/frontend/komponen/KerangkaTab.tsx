@@ -55,6 +55,7 @@ import { cocokSaring, PilihSaring, type OpsiSaring } from '../../../../inti/fron
 import { denganNilaiKini, ikutTerpilih, type Opsi, type TempatOpsi } from './pilihan'
 import { kunciBerjalur, nilaiJalur, type LangkahJalur } from './baris'
 import { angkaBerformat, penyaringKetik } from './ketikAngka'
+import { klikBaris } from './klikBaris'
 import { FieldTanggalKetik, KotakTanggalKetik } from './TanggalKetik'
 
 /**
@@ -606,7 +607,24 @@ export function GridEkspor({ g, k }: { g: GridKerangka; k: KonteksKerangka }) {
             )}
             {baris.map((b, r) => (
               <Fragment key={r}>
-              <tr>
+              <tr
+                className={rincian !== undefined ? 'tria__baris-buka' : undefined}
+                onClick={
+                  rincian !== undefined
+                    ? (e) => {
+                        // ⭐ Klik baris = klik panah (`klikBaris`).
+                        klikBaris(e, () => {
+                          setTerbuka((x) => {
+                            const y = new Set(x)
+                            if (y.has(r)) y.delete(r)
+                            else y.add(r)
+                            return y
+                          })
+                        })
+                      }
+                    : undefined
+                }
+              >
                 {rincian !== undefined && (
                   <td className="tria__buka">
                     <button

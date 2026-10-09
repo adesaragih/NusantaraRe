@@ -23,7 +23,7 @@
 
 import { Fragment, useState, type ReactNode } from 'react'
 
-import { TombolNavigasi } from './navigasi'
+import { klikBaris, TombolNavigasi } from './navigasi'
 
 /** Satu kolom data grid. */
 export interface KolomPega<T> {
@@ -132,7 +132,24 @@ export function GridPega<T>({
               const terbuka = buka.has(r)
               return (
                 <Fragment key={r}>
-                  <tr>
+                  <tr
+                    className={rincian !== undefined ? 'trin__baris-buka' : undefined}
+                    onClick={
+                      rincian !== undefined
+                        ? (e) => {
+                            // ⭐ Klik baris = klik panah (`klikBaris`).
+                            klikBaris(e, () => {
+                              setBuka((x) => {
+                                const y = new Set(x)
+                                if (y.has(r)) y.delete(r)
+                                else y.add(r)
+                                return y
+                              })
+                            })
+                          }
+                        : undefined
+                    }
+                  >
                     {rincian !== undefined && (
                       <td className="trin__buka">
                         {/* Navigasi, bukan `<button>` — tetap dapat dibuka di mode lihat. */}

@@ -381,7 +381,11 @@ describe('rupa grid seragam', () => {
     expect(bantalanTerakhir(TRIA, '.treatyinadjustment .tria__tabel th,')).toBe('7px 12px')
   })
 
-  it('⛔ NOL belang baris — `inti` memberinya berkekhususan nol, dan grid tidak memintanya', () => {
+  // ⛔ BELANG `inti` TETAP DINETRALKAN — ia berkekhususan NOL
+  // (`:where(tbody tr…)`) dan memakai `--alt-row` (= `--surface-2`), cukup
+  // pekat untuk terbaca sebagai dua warna berselang-seling. Itu yang ditolak
+  // pemilik proses, dan penetralnya harus tetap ada.
+  it('⛔ belang `--alt-row` inti dinetralkan di kedua modul', () => {
     for (const [css, pemilih] of [
       [CSS, '.treatyin .trin__tabel tbody tr:nth-child(even)'],
       [TRIA, '.treatyinadjustment .tria__tabel tbody tr:nth-child(even)'],
@@ -392,8 +396,60 @@ describe('rupa grid seragam', () => {
     }
   })
 
-  // ⭐ Sorot baris TETAP: tanpa belang, sorotlah satu-satunya penanda baris
-  // mana yang sedang ditunjuk mata.
+  // ⭐ DAN BELANG MODUL YANG HAMPIR TIDAK TERLIHAT DIPASANG — permintaan
+  // pemilik proses 8 Oktober 2026: *"buat design zebra nya tapi jangan gelap
+  // terang, tapi setidaknya bisa tahu perbedaan antar baris"*.
+  //
+  // ⚠️ Yang ditolak dahulu KEKUATANNYA, bukan belangnya. Uji ini karena itu
+  // menjaga DUA hal sekaligus: belangnya ada, dan ia tetap tipis.
+  it('⭐ belang modul ada, dan nilainya tipis — bukan gelap terang', () => {
+    for (const [css, akar, pre] of [
+      [CSS, 'treatyin', 'trin'],
+      [TRIA, 'treatyinadjustment', 'tria'],
+    ] as const) {
+      const i = css.indexOf(`--${pre}-belang: `)
+      expect(i, akar).toBeGreaterThan(0)
+      const nilai = css.slice(i, css.indexOf(';', i))
+      // Alfa maksimum 6% — di atas itu ia terbaca sebagai dua warna.
+      const alfa = Number(/,\s*([0-9.]+)\)/.exec(nilai)?.[1] ?? '1')
+      expect(alfa, `${akar} ${nilai}`).toBeGreaterThan(0)
+      expect(alfa, `${akar} ${nilai}`).toBeLessThanOrEqual(0.06)
+      // ⛔ BUKAN `--alt-row`: itu token yang justru dicabut.
+      expect(nilai).not.toContain('--alt-row')
+      // Dipakai, bukan sekadar dideklarasikan.
+      expect(css).toContain(`background: var(--${pre}-belang)`)
+    }
+  })
+
+  // ⛔ Baris RINCIAN adalah `<tr>` juga; mewarnai `<tr>` membuat seluruh
+  // panel yang terbuka ikut berbelang. Dan `:hover` harus MENANG atas
+  // belang, kalau tidak baris genap yang disorot terbaca lebih pucat.
+  it('⛔ belang melewati baris rincian dan tidak menimpa sorot', () => {
+    for (const [css, pre] of [
+      [CSS, 'trin'],
+      [TRIA, 'tria'],
+    ] as const) {
+      const i = css.indexOf(`background: var(--${pre}-belang)`)
+      // ⚠️ DIPERIKSA PER BARIS PEMILIH, bukan gabungannya. Aturannya punya
+      // dua pemilih berkoma, dan memeriksa gabungan membuat satu pemilih
+      // yang benar menutupi satu pemilih yang bocor.
+      const pemilih = css
+        .slice(css.lastIndexOf('}', i) + 1, i)
+        .split(',')
+        .map((x) => x.trim())
+        .filter((x) => x !== '' && !x.startsWith('{'))
+      expect(pemilih.length).toBeGreaterThan(0)
+      for (const satu of pemilih) {
+        expect(satu, satu).toContain(`:not(.${pre}__rincian)`)
+        expect(satu, satu).toContain(':not(:hover)')
+        // Diwarnai pada selnya, bukan pada barisnya.
+        expect(satu, satu).toContain('> td')
+      }
+    }
+  })
+
+  // ⭐ Sorot baris TETAP: bersama belang, sorotlah penanda baris mana yang
+  // sedang ditunjuk mata.
   it('⭐ sorot baris dipertahankan', () => {
     expect(CSS).toContain('.treatyin .trin__tabel tbody tr:hover')
     expect(TRIA).toContain('.treatyinadjustment .tria__tabel tbody tr:hover')
