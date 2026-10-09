@@ -46,6 +46,16 @@ describe('gaya modul Komite Claim Prop', () => {
     for (const k of dipakai) expect(didefinisikan, k).toContain(k)
   })
 
+  // Laporan work owner 09-10-2026 "table nya sejajarin header sama value": judul kolom angka rata kanan seperti
+  // nilainya - aturan `th` tabel (text-align: left, lebih spesifik) tidak boleh menimpanya.
+  it('judul kolom angka rata kanan seperti nilainya', () => {
+    expect(ATURAN).toMatch(
+      /\.komiteclaimprop \.komiteclaimprop__tabel th\.komiteclaimprop__angka \{[^}]*text-align: right;/,
+    )
+    const kasus = readFileSync(join(AKAR, 'pages', 'KasusKomite.tsx'), 'utf8')
+    expect(kasus).toContain("<th key={i} className={k.jenis === 'angka' ? 'komiteclaimprop__angka' : undefined}>")
+  })
+
   it('warna hanya di blok token akar; nol backdrop-filter / filter / transform', () => {
     const tanpaToken = ATURAN.replace(/(^|\n)[^{}\n]*\.komiteclaimprop__akar \{[^}]*\}/g, '')
     expect(tanpaToken).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/)

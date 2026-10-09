@@ -117,28 +117,14 @@ func (k Kasus) Giliran() (Anggota, bool) {
 
 // Pemegang menjawab apakah `akun` (pemegang workbasket aktif `peran`) memegang assignment kasus ini (KomiteRouter
 // S6.1, keputusan 30 ADR-0014). KomiteID tingkat berjalan = akun itu, ATAU workbasket yang dipegangnya (roster komite
-// PROP ke workbasket, migrasi claimprop 537, keputusan work owner 09-10-2026). Satu orang tidak menyetujui dua tingkat
-// kasus yang sama (keputusan yang sama): yang sudah memutus baris lain kasus ini bukan pemegang.
+// PROP ke workbasket, migrasi claimprop 537, keputusan work owner 09-10-2026). Tanpa larangan rangkap: "1 akun memang
+// tidak boleh memiliki 2 jabatan dalam komite" dijaga pengaturan akun (Kelola User), bukan di sini (WO 09-10-2026).
 func (k Kasus) Pemegang(akun string, peran []string) bool {
 	if k.Tertutup() || akun == "" {
 		return false
 	}
 	a, ada := k.Giliran()
-	if !ada || (a.OperatorID != akun && !slices.Contains(peran, a.OperatorID)) {
-		return false
-	}
-	return !k.SudahMemutus(akun)
-}
-
-// SudahMemutus - `akun` sudah memutus salah satu baris tangga kasus ini (baris yang diputus menyimpan akun pemutusnya,
-// `UbahAnggota.Pemutus`).
-func (k Kasus) SudahMemutus(akun string) bool {
-	for _, a := range k.Tangga {
-		if a.Keputusan != KeputusanMenunggu && a.OperatorID == akun {
-			return true
-		}
-	}
-	return false
+	return ada && (a.OperatorID == akun || slices.Contains(peran, a.OperatorID))
 }
 
 // barisBerjalan - anggota tangga tingkat `KomiteCount` (`KomiteList(local.count)`, KomitePostAdjustment S5-S6).

@@ -96,8 +96,8 @@ type UbahAnggota struct {
 	// IsiKomentar - false = komentar tidak disentuh (S26.1 menolak sisa tanpa menyentuh komentar).
 	IsiKomentar bool
 	Tanggal     time.Time
-	// Pemutus - akun pelaku yang memutus baris ini (KOMITE_OPERATORID ditimpa: KomiteID workbasket -> akun pemutus,
-	// keputusan work owner 09-10-2026); kosong = tidak ditimpa (S26.1).
+	// Pemutus - akun pelaku yang memutus baris ini (KOMITE_OPERATORID ditimpa: KomiteID workbasket -> akun pemutus -
+	// jejak siapa yang memutus dan nama pengirim email, keputusan work owner 09-10-2026); kosong = tidak ditimpa (S26.1).
 	Pemutus string
 }
 

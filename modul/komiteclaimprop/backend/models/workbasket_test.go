@@ -7,7 +7,7 @@ import (
 )
 
 // Keputusan work owner 09-10-2026: KomiteID roster komite PROP = nama workbasket (migrasi claimprop 537); penyetuju =
-// anggota workbasket tingkat berjalan; satu orang tidak menyetujui dua tingkat kasus yang sama; T_WORK_CLAIM.POSITION =
+// anggota workbasket tingkat berjalan; tanpa larangan rangkap (dijaga pengaturan akun); T_WORK_CLAIM.POSITION =
 // workbasket tingkat berjalan.
 
 // kasusWB - dua tingkat ber-KomiteID workbasket UJI-WB-1 / UJI-WB-2.
@@ -30,11 +30,13 @@ func TestPemegangAnggotaWorkbasketTingkatBerjalan(t *testing.T) {
 	}
 }
 
-func TestSatuOrangTidakMenyetujuiDuaTingkat(t *testing.T) {
+// WO 09-10-2026: "1 akun memang tidak boleh memiliki 2 jabatan dalam komite" - dijaga pengaturan akun, bukan layar;
+// akun pengujian yang memegang semua workbasket memutus tingkat demi tingkat.
+func TestPemutusTingkatSebelumnyaTetapMemegangTingkatBerikut(t *testing.T) {
 	k := kasusWB(2, models.KeputusanSetuju)
 	k.Tangga[0].OperatorID = "UJI-A" // baris yang diputuskan menyimpan akun pemutusnya
-	if k.Pemegang("UJI-A", []string{"UJI-WB-1", "UJI-WB-2"}) {
-		t.Fatal("UJI-A sudah memutus tingkat 1: tidak boleh memegang tingkat 2 kasus yang sama")
+	if !k.Pemegang("UJI-A", []string{"UJI-WB-1", "UJI-WB-2"}) {
+		t.Fatal("UJI-A pemegang UJI-WB-2: memegang tingkat 2 walau sudah memutus tingkat 1")
 	}
 	if !k.Pemegang("UJI-B", []string{"UJI-WB-2"}) {
 		t.Fatal("anggota lain workbasket tingkat 2 tetap memegang")

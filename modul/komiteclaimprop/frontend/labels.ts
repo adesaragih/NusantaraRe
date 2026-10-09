@@ -32,3 +32,32 @@ export const KCP = {
   /** `[tidak ada di korpus]` - kembali ke inbox Claim Prop sesudah pesan Submit (kasus dibuka dari tabel komite). */
   kembali: 'Back',
 } as const
+
+/**
+ * Tata letak layar komite (permintaan work owner 09-10-2026 "layout komite diperbaiki, lebih enak dilihat dan
+ * userfriendly") - judul kelompok kartu, ringkasan kepala, kartu keputusan, dan langkah tangga `[tidak ada di korpus]`.
+ * Label medan, judul grid, dan label isian tetap VERBATIM dari server.
+ */
+export const TATA_KCP = {
+  kelompokKlaim: 'Claim Analysis',
+  kelompokKerugian: 'Loss Details',
+  kelompokEstimasi: 'Estimation',
+  kelompokAdjustment: 'Adjustment',
+  kelompokSpreading: 'Spreading',
+  kelompokBayar: 'Payment & Bank',
+  kelompokCatatan: 'Committee Notes',
+  ringkasNoKlaim: 'Claim No',
+  ringkasPolis: 'Policy No',
+  ringkasTertanggung: 'Insured',
+  ringkasAdjustment: 'Adjustment RNM',
+  ringkasTingkat: 'Committee Level',
+  statusGiliranAnda: 'Waiting for your decision',
+  statusMenunggu: 'Waiting for',
+  statusSelesai: 'Completed',
+  keputusanAnda: 'Your Decision',
+  langkahSetuju: 'Approved',
+  langkahTolak: 'Rejected',
+  langkahBerjalan: 'In review',
+  langkahMenunggu: 'Waiting',
+  tanpaData: 'No data',
+} as const

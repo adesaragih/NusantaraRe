@@ -15,9 +15,10 @@ import (
 )
 
 // Keputusan work owner 09-10-2026 (tangga komite PROP ke workbasket, migrasi claimprop 537): penyetuju = anggota
-// workbasket tingkat berjalan; baris yang diputus menyimpan akun pemutus; satu orang tidak menyetujui dua tingkat kasus
-// yang sama; T_WORK_CLAIM.POSITION = workbasket tingkat berjalan; email tingkat berikut ke semua anggota workbasket.
-func TestTanggaWorkbasketPemegangRangkapPosisiEmail(t *testing.T) {
+// workbasket tingkat berjalan; baris yang diputus menyimpan akun pemutus; T_WORK_CLAIM.POSITION = workbasket tingkat
+// berjalan; email tingkat berikut ke semua anggota workbasket. TANPA larangan rangkap (WO: "1 akun memang tidak boleh
+// memiliki 2 jabatan dalam komite" - dijaga pengaturan akun; SUPERADMIN memegang semua untuk pengujian).
+func TestTanggaWorkbasketPemegangPosisiEmail(t *testing.T) {
 	u := siap(t, 2, false)
 	tangga := u.g.Tangga[tiruan.KomiteUji]
 	tangga[0].OperatorID, tangga[1].OperatorID = "UJI-WB-1", "UJI-WB-2"
@@ -64,13 +65,6 @@ func TestTanggaWorkbasketPemegangRangkapPosisiEmail(t *testing.T) {
 		t.Fatalf("POSITION sesudah tingkat 1 = %q, mau UJI-WB-2", p)
 	}
 
-	if d := kerja("UJI-A", keduanya); len(d) != 0 {
-		t.Fatalf("UJI-A sudah memutus tingkat 1: tingkat 2 tidak tampil baginya: %+v", d)
-	}
-	if w := minta("POST", "/kasus/"+tiruan.KomiteUji+"/putuskan", "UJI-A", keduanya, setuju("UJI 2")); w.Code != http.StatusForbidden {
-		t.Fatalf("satu orang dua tingkat: %d, mau 403", w.Code)
-	}
-
 	surel, err := u.l.SusunEmailKomite(context.Background(), tiruan.KomiteUji, map[string]string{
 		services.IsiJenis: models.EmailPenyetujuBerikut, services.IsiAnggota: u.g.Tangga[tiruan.KomiteUji][0].ID,
 		services.IsiPenerima: "UJI-WB-2"})
@@ -84,8 +78,12 @@ func TestTanggaWorkbasketPemegangRangkapPosisiEmail(t *testing.T) {
 	if d := kerja("UJI-B", "UJI-WB-2"); len(d) != 1 || d[0].Tingkat != 2 {
 		t.Fatalf("anggota lain workbasket tingkat 2: %+v", d)
 	}
-	if w := minta("POST", "/kasus/"+tiruan.KomiteUji+"/putuskan", "UJI-B", "UJI-WB-2", setuju("UJI 2")); w.Code != http.StatusOK {
-		t.Fatalf("anggota UJI-WB-2 memutus tingkat 2: %d %s", w.Code, w.Body.String())
+	// akun yang memegang dua workbasket (pengujian) tetap melihat dan memutus tingkat berikutnya
+	if d := kerja("UJI-A", keduanya); len(d) != 1 || d[0].Tingkat != 2 {
+		t.Fatalf("UJI-A pemegang UJI-WB-2 juga: tingkat 2 tampil: %+v", d)
+	}
+	if w := minta("POST", "/kasus/"+tiruan.KomiteUji+"/putuskan", "UJI-A", keduanya, setuju("UJI 2")); w.Code != http.StatusOK {
+		t.Fatalf("UJI-A memutus tingkat 2: %d %s", w.Code, w.Body.String())
 	}
 	if p, ada := u.g.Posisi[tiruan.KomiteUji]; !ada || p != "" {
 		t.Fatalf("kasus selesai: POSITION dikosongkan, dapat %q", p)

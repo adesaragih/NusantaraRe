@@ -9,14 +9,14 @@ import (
 )
 
 // Keputusan work owner 09-10-2026 (tangga komite PROP ke workbasket, migrasi claimprop 537): daftar kerja = baris
-// berjalan ber-KomiteID akun ATAU workbasket aktif pelaku, tanpa kasus yang tingkat lainnya sudah diputus pelaku;
+// berjalan ber-KomiteID akun ATAU workbasket aktif pelaku (tanpa larangan rangkap);
 // keputusan menimpa KOMITE_OPERATORID dengan akun pemutus; T_WORK_CLAIM.POSITION mengikuti tingkat berjalan; email
 // tingkat berikut ke semua anggota workbasket.
 
 // cacahBind - cacah penampung `:n` (driver mengikat menurut urutan kemunculan; format tanggal juga memuat ':').
 func cacahBind(q string) int { return len(regexp.MustCompile(`:\d+`).FindAllString(q, -1)) }
 
-func TestDaftarKerjaMenyaringWorkbasketDanRangkap(t *testing.T) {
+func TestDaftarKerjaMenyaringWorkbasket(t *testing.T) {
 	q := sqlDaftarKerja("S.G", "S.W", "S.L", "S.C", "S.A", 2)
 	if err := db.PeriksaSQL(q); err != nil {
 		t.Fatal(err)
@@ -24,14 +24,14 @@ func TestDaftarKerjaMenyaringWorkbasketDanRangkap(t *testing.T) {
 	if !strings.Contains(q, "l.KOMITE_OPERATORID IN (:2, :3)") {
 		t.Errorf("baris berjalan ber-KomiteID workbasket pelaku: %s", q)
 	}
-	if !strings.Contains(q, "NOT EXISTS") || !strings.Contains(q, "l3.KOMITE_OPERATORID = :7") {
-		t.Errorf("kasus yang tingkat lainnya sudah diputus pelaku tidak tampil: %s", q)
+	if strings.Contains(q, "NOT EXISTS") {
+		t.Errorf("tanpa larangan rangkap (WO 09-10-2026): %s", q)
 	}
-	if n := cacahBind(q); n != 9 {
-		t.Errorf("bind %d, mau 9 (akun, 2 peran, 3 keputusan, akun, LINI, awalan)", n)
+	if n := cacahBind(q); n != 7 {
+		t.Errorf("bind %d, mau 7 (akun, 2 peran, 2 keputusan, LINI, awalan)", n)
 	}
-	if q0 := sqlDaftarKerja("S.G", "S.W", "S.L", "S.C", "S.A", 0); strings.Contains(q0, " IN (") || cacahBind(q0) != 7 {
-		t.Errorf("tanpa workbasket: hanya akun (7 bind): %s", q0)
+	if q0 := sqlDaftarKerja("S.G", "S.W", "S.L", "S.C", "S.A", 0); strings.Contains(q0, " IN (") || cacahBind(q0) != 5 {
+		t.Errorf("tanpa workbasket: hanya akun (5 bind): %s", q0)
 	}
 }
 

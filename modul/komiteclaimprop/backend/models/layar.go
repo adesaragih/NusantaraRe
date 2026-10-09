@@ -240,23 +240,24 @@ func SusunLayar(k Kasus, kl kontrak.KlaimTreaty, total []TotalMataUang, akun str
 		Bagian{Kunci: "klaimKanan", Medan: kanan},
 		Bagian{Kunci: "kerugian", Grid: []Grid{
 			{Judul: "Insured Interests 100 %", Kolom: []KolomGrid{kol("Insured Interest", "ObjectName", JenisTeks),
-				kol("Currency", "CurrencyID", JenisTeks), kol("Value In IDR", "KursObjectItem", JenisAngka),
-				kol("Value", "TSIPerObject", JenisAngka)}, Baris: p.daftar("ClaimData.InterestList")},
-			{Judul: "Count Claim Amount", Kolom: []KolomGrid{kol("Currency", "CurrencyID", JenisTeks),
+				kol("Currency", "Currency", JenisTeks), kol("Value In IDR", "KursObjectItem", JenisAngka),
+				kol("Value", "TSIPerObject", JenisAngka)}, Baris: barisNama(p.daftar("ClaimData.InterestList"))},
+			{Judul: "Count Claim Amount", Kolom: []KolomGrid{kol("Currency", "Currency", JenisTeks),
 				kol("Claim Amount", "Value", JenisAngka), kol("Claim Amount in IDR", "USD", JenisAngka)},
-				Baris: p.daftar("ClaimData.ListClaimAmount")},
-			{Judul: "Loss Allocation", Kolom: []KolomGrid{kol("Curr", "CurrencyID", JenisTeks),
-				kol("Treaty Type", "TreatyType", JenisTeks), kol("Share(%)", "SharePercentage", JenisAngka),
+				Baris: barisNama(p.daftar("ClaimData.ListClaimAmount"))},
+			{Judul: "Loss Allocation", Kolom: []KolomGrid{kol("Curr", "Currency", JenisTeks),
+				kol("Treaty Type", "TreatyName", JenisTeks), kol("Share(%)", "SharePercentage", JenisAngka),
 				kol("Result Claim", "ClaimSpreaded", JenisAngka), kol("Result Claim In IDR", "ClaimEstimation", JenisAngka)},
-				Baris: p.daftar("ClaimData.SpreadingRisk")},
+				Baris: barisNama(p.daftar("ClaimData.SpreadingRisk"))},
 		}},
 		Bagian{Kunci: "estimasi", Grid: []Grid{
 			{Judul: "Estimation List", Kolom: []KolomGrid{kol("", "TypeLoss", JenisTeks),
 				kol("Estimation Date", "EstimationDate", JenisTanggal), kol("Type", "Type", JenisTeks),
-				kol("Currency", "CurrencyID", JenisTeks), kol("Value In IDR", "KursValue", JenisAngka),
+				kol("Currency", "Currency", JenisTeks), kol("Value In IDR", "KursValue", JenisAngka),
 				kol("Gross Estimate Treaty (100%)", "GrossEstimationPct", JenisAngka),
 				kol("Estimation RNM", "EstimationValue", JenisAngka),
-				kol("Estimation RNM in IDR", "ConvertValue", JenisAngka)}, Baris: p.daftar("ClaimData.EstimationList")},
+				kol("Estimation RNM in IDR", "ConvertValue", JenisAngka)},
+				Baris: barisNama(p.daftar("ClaimData.EstimationList"), "Type")},
 			// ContainerVisibleWhen .TransferType = 2.
 			{Judul: "Total Original Currency Estimation", Kolom: []KolomGrid{kol("Currency", "Currency", JenisTeks),
 				kol("Gross Estimate Treaty (100%)", "IDR", JenisAngka), kol("Estimation RNM", "Value", JenisAngka)},
@@ -350,11 +351,31 @@ func kolomSpreading() []KolomGrid {
 // riwayatAdjustment - `TempClaimData.AdjustmentList` (SetKomiteList_Act S4 Page-Copy `ClaimData`): kolom "Komite No" =
 // `.KomiteNo` (SetKomiteNo_Act: ID kasus komite) - di sistem baru ID kasus komite baris itu.
 func riwayatAdjustment(rows []map[string]string) []map[string]string {
-	for _, b := range rows {
+	for _, b := range barisNama(rows, "Type") {
 		if strings.TrimSpace(b["KomiteNo"]) == "" {
 			b["KomiteNo"] = b["KomiteID"]
 		}
 		b["AcceptanceStatus"] = LabelStatusBaris(b["AcceptanceStatus"]) // AcceptanceStatus.xml
+	}
+	return rows
+}
+
+// namaKode - kolom nama tampilan grid klaim dan kolom kodenya (nama kosong = kode yang tampil).
+var namaKode = map[string]string{"Currency": "CurrencyID", "TreatyName": "TreatyType"}
+
+// barisNama - nilai tampilan grid klaim (laporan work owner 09-10-2026 "perbaiki itu yang tampilin kode kode"):
+// mata uang / treaty = NAMA-nya (kode hanya bila nama kosong); kolom `tipe` (Type estimasi / Payment Type adjustment,
+// dropdown `associated`) = labelnya. Baris `p.daftar` sudah salinan - diubah di tempat.
+func barisNama(rows []map[string]string, tipe ...string) []map[string]string {
+	for _, b := range rows {
+		for nama, kode := range namaKode {
+			if strings.TrimSpace(b[nama]) == "" && b[kode] != "" {
+				b[nama] = b[kode]
+			}
+		}
+		for _, p := range tipe {
+			b[p] = labelKode(labelTipeAdjustment, b[p])
+		}
 	}
 	return rows
 }

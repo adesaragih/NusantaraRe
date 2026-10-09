@@ -66,8 +66,8 @@ func (g *Gudang) BacaTangga(ctx context.Context, tx *db.Tx, id string) ([]models
 }
 
 // sqlTulisAnggota - keputusan satu baris tangga; bersyarat masih menunggu (dua klik tidak sama-sama menang). Baris yang
-// diputus pelaku (`komentar`) menyimpan akun pemutusnya di KOMITE_OPERATORID (KomiteID workbasket -> akun; larangan
-// satu orang dua tingkat, keputusan work owner 09-10-2026); pemutus kosong = tidak ditimpa.
+// diputus pelaku (`komentar`) menyimpan akun pemutusnya di KOMITE_OPERATORID (KomiteID workbasket -> akun yang
+// memutus, keputusan work owner 09-10-2026); pemutus kosong = tidak ditimpa.
 func sqlTulisAnggota(list string, komentar bool) string {
 	if komentar {
 		return fmt.Sprintf(`UPDATE %s SET KOMITE_APPROVAL = :1, KOMITE_COMMENT = :2, DATE_APPROVE = :3,
@@ -115,8 +115,7 @@ func sqlDariKerja(gen, work, list, klaim, adj string) string {
 
 // sqlSaringKerja - KomiteRouter S6.1: baris tangga pelaku = baris TERKECIL yang masih menunggu, ber-KomiteID akun
 // pelaku ATAU salah satu dari `nPeran` workbasket aktifnya (keputusan work owner 09-10-2026, migrasi claimprop 537);
-// kasus yang tingkat lainnya sudah diputus pelaku tidak tampil (satu orang tidak dua tingkat); kasus terbuka; LINI PROP
-// ketat dan awalan TKMT-. Bind urut kemunculan: akun, peran..., menunggu x3, akun, LINI, awalan.
+// kasus terbuka; LINI PROP ketat dan awalan TKMT-. Bind urut kemunculan: akun, peran..., menunggu x2, LINI, awalan.
 func sqlSaringKerja(list string, nPeran int) string {
 	pemegang := "l.KOMITE_OPERATORID = :1"
 	if nPeran > 0 {
@@ -132,11 +131,9 @@ func sqlSaringKerja(list string, nPeran int) string {
 		   AND l.KOMITE_APPROVAL = :%d
 		   AND l.KOMITE_URUT = (SELECT MIN(l2.KOMITE_URUT) FROM %s l2
 		                         WHERE l2.DATA_KOMITE_ID = g.ID AND l2.KOMITE_APPROVAL = :%d)
-		   AND NOT EXISTS (SELECT 1 FROM %s l3
-		                    WHERE l3.DATA_KOMITE_ID = g.ID AND l3.KOMITE_APPROVAL <> :%d AND l3.KOMITE_OPERATORID = :%d)
 		   AND w.STATUS_WORK IS NULL
 		   AND w.LINI = :%d
-		   AND w.ID LIKE :%d`, pemegang, n, list, n+1, list, n+2, n+3, n+4, n+5)
+		   AND w.ID LIKE :%d`, pemegang, n, list, n+1, n+2, n+3)
 }
 
 // sqlDaftarKerja - daftar kerja satu penyetuju (`nPeran` workbasket aktif).
@@ -175,8 +172,7 @@ func (g *Gudang) DaftarKerja(ctx context.Context, akun string, peran []string) (
 	for _, p := range peran {
 		args = append(args, p)
 	}
-	args = append(args, models.KeputusanMenunggu, models.KeputusanMenunggu, models.KeputusanMenunggu, akun,
-		models.LiniProp, awalanLike())
+	args = append(args, models.KeputusanMenunggu, models.KeputusanMenunggu, models.LiniProp, awalanLike())
 	rows, err := g.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca daftar kerja komite: %w", err)

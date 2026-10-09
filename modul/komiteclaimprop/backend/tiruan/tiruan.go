@@ -233,7 +233,7 @@ func (g *Gudang) TutupKasus(_ context.Context, _ *db.Tx, id string, selesai bool
 	return nil
 }
 
-// DaftarKerja - lihat `repository.Gudang.DaftarKerja` (KomiteRouter S6.1; akun atau workbasket `peran`, tanpa rangkap).
+// DaftarKerja - lihat `repository.Gudang.DaftarKerja` (KomiteRouter S6.1; akun atau workbasket `peran`).
 func (g *Gudang) DaftarKerja(_ context.Context, akun string, peran []string) ([]models.BarisKerja, error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
