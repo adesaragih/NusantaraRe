@@ -44,6 +44,13 @@ const TERLARANG: ReadonlyArray<readonly [RegExp, string]> = [
   [/sistem lama|tabel warisan|dokumen warisan|tabel pendaratan/i, 'jeroan migrasi'],
   [/belum dibangun di layar|belum disalin dari ekspor|jalur simpan/i, 'kabar pekerjaan yang belum selesai'],
   [/dari 1\.85\d|dari 300 dokumen|yang disapu/i, 'cacah hasil sapuan korpus'],
+  // ⛔ NAMA KUNCI / PROPERTI DOKUMEN. Ditambahkan 8 Oktober 2026 sesudah
+  // dua kalimat lolos seluruh pola di atas dan tampil di tab Special
+  // Conditions: `Read from key: SpecialConditionsP` dan `⚠️ … That key:
+  // SpecialConditions`. Pemakai tidak dapat berbuat apa pun dengan nama
+  // properti Pega, dan tidak dapat membuka teks yang disebutnya.
+  [/(read from|under another|that)\s+key/i, 'nama kunci properti dokumen'],
+  [/(SpecialConditions|Exclusions)P?(?!\s*$)/, 'ejaan properti ekspor'],
 ]
 
 /** Berkas teks layar modul ini — di sinilah seluruh kalimat pemakai hidup. */

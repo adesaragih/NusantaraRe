@@ -295,15 +295,24 @@ export const FORM_KONTRAK = {
    * tentang baris grid; tab ini tidak punya baris, ia punya satu medan.
    */
   tanpaTeks: 'No text',
-  ejaanDipakai: 'Read from key:',
   /**
-   * ⛔ Kalimat ini menyatakan ada teks yang pembacanya TIDAK lihat, dan ia
-   * harus berbunyi begitu. Terukur: dari 303 dokumen yang punya lebih dari
-   * satu ejaan `SpecialConditions*`, NOL yang isinya identik — jadi ejaan
-   * lain BUKAN salinan, melainkan teks yang berbeda.
+   * ⛔ DIKOSONGKAN 8 Oktober 2026. Keduanya dahulu berbunyi
+   * `Read from key: SpecialConditionsP` dan `⚠️ … That key:
+   * SpecialConditions` — nama PROPERTI PEGA di layar pemakai, ditunjuk
+   * pemilik proses dengan tangkapan layar.
+   *
+   * ⚠️ Terukur: dari 303 dokumen ber-ejaan `SpecialConditions*` ganda, NOL
+   * yang isinya identik — ejaan lain memang teks BERBEDA. Kabar itu kini
+   * tidak sampai ke layar, dan itu ditukar sadar: menyebut nama kunci tanpa
+   * jalan membukanya hanya membingungkan. Bila kelak perlu, yang benar
+   * adalah MENAMPILKAN teks itu.
+   *
+   * ⭐ Kuncinya dipertahankan (bukan dihapus) supaya rujukan di komentar dan
+   * uji tetap punya rumah, dan supaya nilainya tidak diam-diam dihidupkan
+   * lagi oleh seseorang yang tidak membaca catatan ini.
    */
-  ejaanLainBerisi:
-    '⚠️ This contract document also has text under another key, and its content DIFFERS — not a copy. That key:',
+  ejaanDipakai: '',
+  ejaanLainBerisi: '',
   petunjukTeksPengecualian: '',
   petunjukTeksSyarat: '',
 
