@@ -988,3 +988,8 @@
   max-height: 75vh;
   margin: 0 auto;
 }
+
+/* Tabel komite di bawah inbox (menu Komite Claim Non Prop disembunyikan, perintah work owner 09-10-2026). */
+.claimnonprop .claimnonprop__komite {
+  margin-top: 24px;
+}

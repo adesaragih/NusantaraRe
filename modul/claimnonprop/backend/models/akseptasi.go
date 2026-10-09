@@ -547,9 +547,9 @@ func ProteksiKirimKomite(k *Konteks, h *Halaman, n int, email string) (CekKomite
 	h.BersihkanPesan() // 1
 	h.Setel("IsError", "")
 	c := CekKomite{PolicyNo: h.Ambil(CD + "PolicyData.PolicyNo"), EmailPelaku: email}
-	h.Setel(JalurAdjProp(n, "DataCommitteeTreaty.CircumCauseOfLoss"), h.Ambil(CD+"CNPCircumtances")) // 2
-	k.Riwayat(h, TeksKirimKomite)                                                                    // 3
-	semuaUR := len(h.AmbilDaftar(JalurAdj(n, AnakXOL))) > 0                                          // 4
+	b["DataCommitteeTreaty.CircumCauseOfLoss"] = h.Ambil(CD + "CNPCircumtances") // 2 (properti baris akseptasi)
+	k.Riwayat(h, TeksKirimKomite)                                                // 3
+	semuaUR := len(h.AmbilDaftar(JalurAdj(n, AnakXOL))) > 0                      // 4
 	for _, s := range h.AmbilDaftar(JalurAdj(n, AnakXOL)) {
 		if s["TreatyName"] != TreatyUR {
 			semuaUR = false
@@ -621,11 +621,6 @@ func ProteksiKirimKomite(k *Konteks, h *Halaman, n int, email string) (CekKomite
 		h.TambahPesan("", PesanNetNegatif)
 	}
 	return c, nil
-}
-
-// JalurAdjProp - jalur satu properti baris AdjustmentList(n) (`AdjustmentList(n).prop`).
-func JalurAdjProp(n int, prop string) string {
-	return fmt.Sprintf("%s(%d).%s", DaftarAdjustment, n, prop)
 }
 
 // MelebihiEstimasi = ProteksiSendKomiteCNP_Act langkah 23: per mata uang Summary XOL, total klaim Loss Allocation

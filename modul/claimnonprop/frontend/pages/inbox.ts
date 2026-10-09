@@ -4,7 +4,7 @@
 // bawaan = worklist pembuat (Assignment2 "Outstanding Claim", `Flow_TreatyIn` `ToCurrentOperator` - tanpa cek workbasket,
 // XML apa adanya). Switch Teknik menampilkan Assignment1 "Input Acceptation" (workbasket `ReasKlaimTeknik`) dan hanya
 // dapat dinyalakan anggota workbasket itu. Pembuatan klaim (Start1 -> Assignment2) hanya saat switch Teknik mati. Tabel
-// komite di bawah inbox = tahap 2 (`komiteclaimnonprop`), tidak ada di modul ini.
+// komite di bawah inbox (menu Komite Claim Non Prop disembunyikan, perintah work owner 09-10-2026).
 
 import type { HakPelaku, JenisDaftar } from '../api'
 
@@ -21,6 +21,14 @@ export function jenisDaftar(tab: TabInbox, teknik: boolean): JenisDaftar {
 /** Switch Teknik dapat dinyalakan hanya bila akun memegang workbasket ReasKlaimTeknik. */
 export function switchTeknikAktif(hak: HakPelaku | null): boolean {
   return hak?.workbasketTeknik === true
+}
+
+/**
+ * Tabel komite di bawah inbox: hanya bagi pemegang workbasket yang tercantum di roster EMAILKOMITE NONPROP; tanpa switch,
+ * tidak ikut tab (pola Claim Prop).
+ */
+export function tabelKomiteTampil(hak: HakPelaku | null): boolean {
+  return hak?.komite === true
 }
 
 /** Tombol Add Claim tampil hanya di tab Process saat switch Teknik mati. */

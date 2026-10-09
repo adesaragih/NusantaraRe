@@ -3,15 +3,16 @@
 // worklist pembuat (Assignment2 "Outstanding Claim", `Flow_TreatyIn` ToCurrentOperator - tanpa cek workbasket); switch
 // Teknik = Assignment1 "Input Acceptation" (workbasket ReasKlaimTeknik), dapat dinyalakan hanya oleh anggota workbasket
 // itu. Add Claim (Start1 -> Assignment2; harness New tidak diekspor - OQ-CNP-23) hanya saat switch Teknik mati. Tabel
-// komite di bawah inbox = tahap 2 (`komiteclaimnonprop`).
+// komite di bawah inbox (menu Komite Claim Non Prop disembunyikan, perintah work owner 09-10-2026, pola Claim Prop).
 
 import { useCallback, useEffect, useState } from 'react'
 
 import { Gagal, Kosong, Memuat, StripTab } from '../../../../inti/frontend/components/ui/dasar'
 import { ambilHak, buatKasus, daftarKasus, type HakPelaku, type RingkasanKasus } from '../api'
 import LayarKasus from '../components/LayarKasus'
+import TabelKomite from '../components/TabelKomite'
 import { CNP } from '../labels'
-import { bolehTambahKlaim, jenisDaftar, switchTeknikAktif, TAB_INBOX, type TabInbox } from './inbox'
+import { bolehTambahKlaim, jenisDaftar, switchTeknikAktif, TAB_INBOX, tabelKomiteTampil, type TabInbox } from './inbox'
 
 const LABEL_TAB: Record<TabInbox, string> = { proses: CNP.tabProses, selesai: CNP.tabResolve }
 const JEDA_CARI_MS = 300
@@ -19,12 +20,15 @@ const JEDA_CARI_MS = 300
 export default function ClaimNonProp({
   pelaku,
   onLihatBerkas,
+  onBukaModul,
   bukaKasus,
   onBeranda,
 }: {
   pelaku: string
   /** `PropsRute.onLihatBerkas` - tombol View polis (jendela Modal NB / EDM Treaty In, OQ-CNP-13). */
   onLihatBerkas?: (modul: string, id: string) => boolean
+  /** `PropsRute.onBukaModul` - baris tabel komite: layar komite dibuka di tempat. */
+  onBukaModul?: (modul: string, id: string) => boolean
   /** `PropsRute.bukaKasus` - satu berkas dibuka langsung; `hanyaLihat` = tampilan saja. */
   bukaKasus?: { id: string; ketuk: number; hanyaLihat?: boolean }
   /** `PropsRute.onBeranda` - Back berkas yang dibuka lewat `bukaKasus` kembali ke pemanggil. */
@@ -186,6 +190,7 @@ export default function ClaimNonProp({
           </tbody>
         </table>
       )}
+      {tabelKomiteTampil(hak) && <TabelKomite onBukaModul={onBukaModul} />}
     </section>
   )
 }

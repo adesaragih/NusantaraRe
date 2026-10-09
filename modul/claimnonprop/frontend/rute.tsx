@@ -6,7 +6,7 @@ import './claimnonprop.css'
 import type { HalamanCNP } from './menu'
 import ClaimNonProp from './pages/ClaimNonProp'
 
-export function RuteCNP({ halaman, masuk, onLihatBerkas, bukaKasus, onBeranda }: PropsRute<HalamanCNP>) {
+export function RuteCNP({ halaman, masuk, onLihatBerkas, onBukaModul, bukaKasus, onBeranda }: PropsRute<HalamanCNP>) {
   return (
     <BahasaUI.Provider value="en">
       <div className="claimnonprop">
@@ -14,6 +14,7 @@ export function RuteCNP({ halaman, masuk, onLihatBerkas, bukaKasus, onBeranda }:
           <ClaimNonProp
             pelaku={masuk.akunID}
             onLihatBerkas={onLihatBerkas}
+            onBukaModul={onBukaModul}
             bukaKasus={bukaKasus}
             onBeranda={onBeranda}
           />

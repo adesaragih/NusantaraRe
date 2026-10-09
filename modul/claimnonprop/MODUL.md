@@ -18,7 +18,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Rentang migrasi | `600-639` |
 | Slot menu | `982-983` |
 | Prefix rute API | `/api/claim-non-prop` |
-| Kontrak disediakan | — (kontrak klaim <-> komite Non Prop dibuat di tahap 2) |
+| Kontrak disediakan | `kontrak.KlaimTreatyNonPropKomite` (`inti/backend/kontrak/klaimtreatynonprop.go`, dipakai `komiteclaimnonprop`) — perintah work owner 09-10-2026 |
 | Kontrak dipakai | — (nol kontrak `inti/backend/kontrak`; pola Claim Prop disalin, tidak diimpor) |
 
 `Pemilik` adalah penanda pemegang modul. Wilayah berkas yang boleh disentuh cabang

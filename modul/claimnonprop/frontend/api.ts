@@ -185,10 +185,36 @@ export function berkasPolis(nopolis: string): Promise<BerkasPolis> {
   return minta(`${PREFIX_CNP}/berkas-polis`, { kueri: { nopolis } })
 }
 
-/** Hak halaman awal: switch Teknik aktif hanya bagi anggota workbasket ReasKlaimTeknik. */
+/**
+ * Hak halaman awal: switch Teknik aktif hanya bagi anggota workbasket ReasKlaimTeknik; tabel komite di bawah inbox hanya
+ * bagi pemegang workbasket roster EMAILKOMITE NONPROP aktif (pola Claim Prop, perintah work owner 09-10-2026).
+ */
 export interface HakPelaku {
   workbasketTeknik: boolean
+  komite: boolean
 }
+
+/**
+ * Satu kasus komite yang menunggu workbasket / akun pelaku - `BarisKerja` modul Komite Claim Non Prop. Menu komitenya
+ * disembunyikan (perintah work owner 09-10-2026, pola Claim Prop): daftarnya dibaca lewat rute pinjaman
+ * `GET /api/komite-claim-non-prop/kasus` (`cmd/api/rakit.go`), kasusnya dibuka di tempat (`onBukaModul`).
+ */
+export interface BarisKomite {
+  kasusId: string
+  klaimId: string
+  noKlaim: string
+  tingkat: number
+  komiteLoop: number
+  jabatan: string
+  tglUpdate: string
+}
+
+export function daftarKomite(): Promise<BarisKomite[]> {
+  return minta('/api/komite-claim-non-prop/kasus')
+}
+
+/** Nama modul layar kasus komite (`onBukaModul`). */
+export const MODUL_KOMITE = 'komiteclaimnonprop'
 
 export function ambilHak(): Promise<HakPelaku> {
   return minta(`${PREFIX_CNP}/hak`)

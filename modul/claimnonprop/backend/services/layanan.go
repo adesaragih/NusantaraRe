@@ -297,18 +297,34 @@ func (l *Layanan) BukaKasus(ctx context.Context, p inti.Pelaku, id string, lihat
 	return l.layar(k, h, boleh), nil
 }
 
-// HakPelaku - hak halaman awal: switch Teknik aktif hanya bagi anggota workbasket Assignment1 (pola Claim Prop). Tabel
-// komite di bawah inbox = tahap 2 (`komiteclaimnonprop`).
+// HakPelaku - hak halaman awal: switch Teknik aktif hanya bagi anggota workbasket Assignment1 (pola Claim Prop).
+// Komite - tabel komite di bawah inbox (menu Komite Claim Non Prop disembunyikan, perintah work owner 09-10-2026, pola
+// Claim Prop): akun memegang workbasket yang tercantum sebagai KomiteID roster EMAILKOMITE NONPROP aktif.
 type HakPelaku struct {
 	WorkbasketTeknik bool `json:"workbasketTeknik"`
+	Komite           bool `json:"komite"`
 }
 
-// Hak membaca hak halaman awal pelaku (workbasket dari sesi).
-func (l *Layanan) Hak(_ context.Context, p inti.Pelaku) (HakPelaku, error) {
+// Hak membaca hak halaman awal pelaku (workbasket dari sesi; roster komite NONPROP dari basis data).
+func (l *Layanan) Hak(ctx context.Context, p inti.Pelaku) (HakPelaku, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
 		return HakPelaku{}, err
 	}
-	return HakPelaku{WorkbasketTeknik: p.PunyaPeran(models.WorkbasketAcceptation)}, nil
+	h := HakPelaku{WorkbasketTeknik: p.PunyaPeran(models.WorkbasketAcceptation)}
+	if len(p.Peran) == 0 || l.a == nil {
+		return h, nil
+	}
+	roster, err := l.a.RosterKomite(ctx, false)
+	if err != nil {
+		return HakPelaku{}, err
+	}
+	for _, r := range roster {
+		if r.OperatorID != "" && p.PunyaPeran(r.OperatorID) {
+			h.Komite = true
+			break
+		}
+	}
+	return h, nil
 }
 
 // JenisDaftar - tab halaman awal.

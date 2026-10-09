@@ -26,6 +26,17 @@ export const CNP = {
   kolomTreaty: 'Treaty Name',
   kolomPembuat: 'Create Operator',
   kolomTanggal: 'Create Date/Time',
+  /**
+   * Tabel komite di bawah inbox (menu Komite Claim Non Prop disembunyikan, perintah work owner 09-10-2026) - kolom sama
+   * dengan tabel komite Claim Prop tanpa nilai / mata uang (`[tidak ada di korpus]`).
+   */
+  judulKomite: 'Committee',
+  kosongKomite: 'No committee case is waiting for your decision.',
+  komiteKolomTgl: 'Update Date/Time',
+  komiteKolomKlaim: 'Claim',
+  komiteKolomTingkat: 'Level',
+  komiteKolomJabatan: 'Committe Name',
+  komiteTakTerpasang: 'This committee case cannot be opened here: the Komite Claim Non Prop module is not active.',
   hanyaLihat: 'Read only - you do not hold this assignment.',
   pilih: 'Choose',
   tutup: 'Close',

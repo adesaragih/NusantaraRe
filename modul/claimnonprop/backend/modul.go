@@ -14,6 +14,7 @@ import (
 	"net/http"
 
 	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/kontrak"
 	"nusantarare/inti/backend/penyimpanan"
 	"nusantarare/modul/claimnonprop/backend/handlers"
 	"nusantarare/modul/claimnonprop/backend/models"
@@ -52,13 +53,14 @@ func KonfigurasiKasir() (models.KonfigKasir, error) {
 		LdcIDSyariah: c.LdcIDSyariah, StsAp: c.StsAp}, nil
 }
 
-// Pendaftaran menyerahkan modul ini kepada perakit. Nol kontrak disediakan / dipakai: tabel bersama (T_WORK_CLAIM,
-// T_GENERAL_CLAIM, T_CLAIM_*, T_VIEW_SUGGEST, T_GENERAL_KOMITE, T_KOMITE_KOMITELIST) dibaca dan ditulis lewat SQL modul
-// ini sendiri; kontrak klaim <-> komite Non Prop dibuat di tahap 2 (prompt §2).
+// Pendaftaran menyerahkan modul ini kepada perakit. MENYEDIAKAN `kontrak.KlaimTreatyNonPropKomite` untuk
+// `komiteclaimnonprop` (perintah work owner 09-10-2026, pola Claim Prop); tabel bersama (T_WORK_CLAIM, T_GENERAL_CLAIM,
+// T_CLAIM_*, T_VIEW_SUGGEST, T_GENERAL_KOMITE, T_KOMITE_KOMITELIST) dibaca dan ditulis lewat SQL modul ini sendiri.
 func Pendaftaran() inti.Pendaftaran {
 	return inti.Pendaftaran{
-		Nama:    Nama,
-		Migrasi: berkasMigrasi,
+		Nama:        Nama,
+		Migrasi:     berkasMigrasi,
+		Menyediakan: []inti.Kontrak{inti.KontrakDari[kontrak.KlaimTreatyNonPropKomite]()},
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
 			kasir, err := KonfigurasiKasir()
 			if err != nil {
@@ -68,6 +70,7 @@ func Pendaftaran() inti.Pendaftaran {
 			if d := p.Dasar(); d != nil && d.PunyaDatabase() { // lampiran klaim pola Claim Prop (penyimpanan bersama inti)
 				svc = svc.DenganPenyimpanan(penyimpanan.Oracle(d, p.Config().StorageTokenSalt))
 			}
+			inti.Sediakan[kontrak.KlaimTreatyNonPropKomite](p, svc.KlaimUntukKomite())
 			return Baru(svc, p.Config().AuthStub), nil
 		},
 	}
