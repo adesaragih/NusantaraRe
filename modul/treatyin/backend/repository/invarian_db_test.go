@@ -10,13 +10,27 @@ package repository_test
 // dengan constraint YANG MANA. Papan tiket menuntut keduanya: "sebuah tiket
 // selesai bila perilakunya DAPAT GAGAL dan DAPAT DIPERIKSA".
 //
-// Tanpa ORACLE_DSN seluruh test di sini MELEWATI dengan pesan. Dengan
-// ORACLE_SCHEMA yang bukan skema uji ia GAGAL - bukan melewati - sebab yang
-// dipertaruhkan tabel warisan yang terhapus (`uji/skemauji`).
+// Tanpa ORACLE_DSN seluruh test di sini MELEWATI dengan pesan.
 //
-// ⚠️ Pengenal 9000xxx dan kode berawalan ZZ dipakai dengan sengaja: skema uji
-// dibongkar sesudahnya, tetapi bila pembongkaran gagal barisnya harus mudah
-// dikenali sebagai milik uji.
+// ⭐ BERJALAN DI SKEMA APLIKASI - `POOLDATA` - dan TIDAK memakai `uji/skemauji`.
+// Keputusan pemilik proses 3 Oktober 2026: skema uji tidak dipakai; yang dipakai
+// POOLDATA, tempat ke-37 tabel Treaty In berdiri.
+//
+// ⛔ KENAPA `uji/skemauji` TIDAK BOLEH DIPAKAI DI SINI, dan ini bukan selera:
+// `Bongkar` menjalankan `DROP TABLE <skema>.<nama> CASCADE CONSTRAINTS` atas
+// daftar tetap yang memuat `OS_AKSEPTASI_KLAIM_LIFE`, `M_LIFE_PREMIUM_DETAIL`,
+// `M_LIFE_PREMIUM_SUMMARY`, `RETROCESSIONLIFE`, `TREATYYEAR_LIFE`, dan tiruan
+// Treaty Contract Out. Di skema uji itu tiruan; di POOLDATA itu TABEL WARISAN
+// SUNGGUHAN berisi data. Memanggilnya di sini berarti menghapusnya.
+//
+// ⭐ GANTINYA: SATU TRANSAKSI PER TEST, DIAKHIRI `Rollback`. DDL auto-commit di
+// Oracle, DML tidak - jadi seluruh `INSERT` di berkas ini hilang saat test
+// selesai, lulus maupun gagal. Nol baris menetap di POOLDATA. Itu yang
+// menggantikan "buang skemanya sesudahnya", dan ia lebih aman: ia tidak pernah
+// menyentuh satu pun tabel di luar yang dimasukinya.
+//
+// ⚠️ Pengenal 9000xxx dan kode berawalan ZZ tetap dipakai: bila sebuah
+// `Rollback` gagal, barisnya harus mudah dikenali sebagai milik uji.
 
 import (
 	"context"
@@ -25,33 +39,45 @@ import (
 	"strings"
 	"testing"
 
-	"nusantarare/uji/skemauji"
+	_ "github.com/sijms/go-ora/v2"
+
+	"nusantarare/inti/backend/config"
 )
 
-// siapkan membuka skema uji dan memasang seluruh migrasi; pembongkarannya
-// didaftarkan sebagai Cleanup.
-func siapkan(t *testing.T) (*sql.DB, string, context.Context) {
+// siapkan membuka POOLDATA lalu MEMULAI SATU TRANSAKSI; `Rollback`-nya
+// didaftarkan sebagai Cleanup, dan itulah seluruh pembersihannya.
+func siapkan(t *testing.T) (*sql.Tx, string, context.Context) {
 	t.Helper()
-	sqlDB, skema, err := skemauji.Buka()
+	cfg, err := config.Load()
 	if err != nil {
-		if !skemauji.BolehDilewati(err) {
-			t.Fatalf("skema uji menolak: %v", err)
-		}
-		t.Skipf("lewati: %v", err)
+		t.Fatalf("konfigurasi: %v", err)
+	}
+	// Produksi tetap ditolak keras - satu-satunya pagar yang tidak dicabut.
+	if cfg.IsPegaProd {
+		t.Fatal("menolak berjalan saat IS_PEGA_PROD=true (ADR-U-0005)")
+	}
+	if !cfg.PunyaOracle() {
+		t.Skip("lewati: ORACLE_DSN kosong")
+	}
+	sqlDB, err := sql.Open("oracle", cfg.OracleDSN)
+	if err != nil {
+		t.Fatalf("membuka oracle: %v", err)
 	}
 	t.Cleanup(func() { _ = sqlDB.Close() })
 	ctx := context.Background()
 	if err := sqlDB.PingContext(ctx); err != nil {
 		t.Skipf("lewati: oracle tidak terjangkau: %v", err)
 	}
-	if err := skemauji.Pasang(ctx, sqlDB, skema); err != nil {
-		t.Fatalf("memasang skema uji: %v", err)
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatalf("memulai transaksi: %v", err)
 	}
-	t.Cleanup(func() { _ = skemauji.Bongkar(ctx, sqlDB, skema) })
-	return sqlDB, skema, ctx
+	// ⛔ Rollback, SELALU - tidak ada cabang yang melakukan Commit.
+	t.Cleanup(func() { _ = tx.Rollback() })
+	return tx, cfg.OracleSchema, ctx
 }
 
-func jalankan(ctx context.Context, db *sql.DB, skema, q string) error {
+func jalankan(ctx context.Context, db *sql.Tx, skema, q string) error {
 	_, err := db.ExecContext(ctx, strings.ReplaceAll(q, "{skema}", skema))
 	return err
 }
@@ -61,7 +87,7 @@ func jalankan(ctx context.Context, db *sql.DB, skema, q string) error {
 // ⛔ Memeriksa namanya, bukan sekadar "ada galat": pernyataan yang ditolak
 // karena alasan lain - salah ketik kolom, NOT NULL yang terlewat - adalah uji
 // yang lulus secara kebetulan, dan itu lebih buruk daripada uji yang merah.
-func wajibTolak(t *testing.T, ctx context.Context, db *sql.DB, skema, constraint, q string) {
+func wajibTolak(t *testing.T, ctx context.Context, db *sql.Tx, skema, constraint, q string) {
 	t.Helper()
 	err := jalankan(ctx, db, skema, q)
 	if err == nil {
@@ -77,7 +103,7 @@ func wajibTolak(t *testing.T, ctx context.Context, db *sql.DB, skema, constraint
 
 // wajibTerima menuntut pernyataan BERHASIL. Uji positif ada sebab constraint
 // yang menolak TERLALU BANYAK lulus setiap uji negatif yang pernah ditulis.
-func wajibTerima(t *testing.T, ctx context.Context, db *sql.DB, skema, apa, q string) {
+func wajibTerima(t *testing.T, ctx context.Context, db *sql.Tx, skema, apa, q string) {
 	t.Helper()
 	if err := jalankan(ctx, db, skema, q); err != nil {
 		t.Errorf("%s DITOLAK, mau diterima: %v", apa, err)
@@ -85,18 +111,16 @@ func wajibTerima(t *testing.T, ctx context.Context, db *sql.DB, skema, apa, q st
 }
 
 const (
-	insMataUang = `INSERT INTO {skema}.MATA_UANG (ID_MATA_UANG,KODE,NAMA,AKTIF) VALUES (%d,'%s','Uji','1')`
-	insKontrak  = `INSERT INTO {skema}.KONTRAK (ID_KONTRAK,ID_CEDANT,ID_ASAL_BISNIS,SIFAT_PROPORSI,TANGGAL_MULAI,TANGGAL_BERAKHIR) VALUES (%d,1,1,'NON_PROPORSIONAL',DATE '2026-01-01',DATE '2026-12-31')`
-	insVersi    = `INSERT INTO {skema}.VERSI_KONTRAK (ID_VERSI_KONTRAK,ID_KONTRAK,NOMOR_URUT_VERSI,KEADAAN_SIKLUS_HIDUP,NAMA_KONTRAK,KODE_MATA_UANG_KONTRAK,PERSEN_BAGIAN_NURE,BAGIAN_NURE_SERAGAM,MEMAKAI_BORDEREAUX,CARA_PEMBUKUAN,MEMAKAI_PRORATA,RETRO_BERGANDA) VALUES (%d,%d,%d,'DRAFT','Uji',%d,10,'0','0','X','0','0')`
+	insKontrak = `INSERT INTO {skema}.KONTRAK (ID_KONTRAK,ID_CEDANT,ID_ASAL_BISNIS,SIFAT_PROPORSI,TANGGAL_MULAI,TANGGAL_BERAKHIR) VALUES (%d,1,1,'NON_PROPORSIONAL',DATE '2026-01-01',DATE '2026-12-31')`
+	insVersi   = `INSERT INTO {skema}.VERSI_KONTRAK (ID_VERSI_KONTRAK,ID_KONTRAK,NOMOR_URUT_VERSI,KEADAAN_SIKLUS_HIDUP,NAMA_KONTRAK,KODE_MATA_UANG_KONTRAK,PERSEN_BAGIAN_NURE,BAGIAN_NURE_SERAGAM,MEMAKAI_BORDEREAUX,CARA_PEMBUKUAN,MEMAKAI_PRORATA,RETRO_BERGANDA) VALUES (%d,%d,%d,'DRAFT','Uji',%d,10,'0','0','X','0','0')`
 )
 
-func dasar(t *testing.T, ctx context.Context, db *sql.DB, skema string) {
+func dasar(t *testing.T, ctx context.Context, db *sql.Tx, skema string) {
 	t.Helper()
-	wajibTerima(t, ctx, db, skema, "mata uang acuan", fmt.Sprintf(insMataUang, 9000001, "ZZU1"))
 	wajibTerima(t, ctx, db, skema, "kontrak", fmt.Sprintf(insKontrak, 9000001))
 }
 
-func cacah(t *testing.T, ctx context.Context, db *sql.DB, skema, q string) int {
+func cacah(t *testing.T, ctx context.Context, db *sql.Tx, skema, q string) int {
 	t.Helper()
 	var n int
 	if err := db.QueryRowContext(ctx, strings.ReplaceAll(q, "{skema}", skema)).Scan(&n); err != nil {
@@ -139,22 +163,11 @@ func TestVersiYatimDitolak(t *testing.T) {
 	wajibTolak(t, ctx, db, skema, "FK_VERSI_KONTRAK_1", fmt.Sprintf(insVersi, 9000003, 8888888, 1, 9000001))
 }
 
-// INV-44 - kode mata uang kontrak merujuk tabel acuan mata uang.
-//
-// Kunci asing ini TIDAK ada di ddl-usulan; ia ditambahkan modul ini sebab
-// tiket 15 menulis jalur gagalnya. KEPUTUSAN-PENYELARASAN-REPO butir 5.
-func TestMataUangKontrakTakTerdaftarDitolak(t *testing.T) {
-	db, skema, ctx := siapkan(t)
-	dasar(t, ctx, db, skema)
-	wajibTolak(t, ctx, db, skema, "FK_VERSI_KONTRAK_MATA_UANG", fmt.Sprintf(insVersi, 9000004, 9000001, 1, 7777777))
-}
-
-// INV-68 - KODE unik di KEENAM tabel acuan, diperiksa satu per satu, bukan
+// INV-68 - KODE unik di KELIMA tabel acuan (MATA_UANG dicabut, migrasi 434), diperiksa satu per satu, bukan
 // disimpulkan dari satu.
-func TestKodeGandaDitolakDiKeenamTabelAcuan(t *testing.T) {
+func TestKodeGandaDitolakDiKelimaTabelAcuan(t *testing.T) {
 	db, skema, ctx := siapkan(t)
 	acuan := []struct{ tabel, kunci, constraint string }{
-		{"MATA_UANG", "ID_MATA_UANG", "UQ_MATA_UANG"},
 		{"JENIS_POTONGAN", "ID_JENIS_POTONGAN", "UQ_JENIS_POTONGAN"},
 		{"KELAS_BISNIS", "ID_KELAS_BISNIS", "UQ_KELAS_BISNIS"},
 		{"KELOMPOK_TREATY", "ID_KELOMPOK_TREATY", "UQ_KELOMPOK_TREATY"},

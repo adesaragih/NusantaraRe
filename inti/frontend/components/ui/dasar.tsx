@@ -20,6 +20,7 @@ import { klasifikasiGalat } from "../../lib/keadaanGalat";
 import { useBahasaUI, useTeksUI } from "./bahasaUI";
 
 import { keInputTanggal, dariInputTanggal } from "../../lib/tanggalInput";
+import { formatKetik, keKabelAngka, normalisasiKetikan, formatNumber } from "../../lib/format";
 
 export function Field({
   label,
@@ -105,6 +106,119 @@ export function Field({
  * supaya CSS `.field`/`.field__label`/`.field__input`/`.field__error`
  * yang sudah ada tetap berlaku tanpa duplikasi aturan.
  */
+/**
+ * Kotak ISIAN ANGKA berpemisah ribuan — konvensi Indonesia.
+ *
+ * ⭐ Permintaan pemilik proses 7 Oktober 2026: *"titik pemisah ribuan
+ * jutann contoh 1.000.000,00 dan saat meng input juga sudah otomatis
+ * langsung ada pemisahnya"*.
+ *
+ * ---------------------------------------------------------------------
+ * ⛔ MENGAPA KOMPONEN TERPISAH, BUKAN PROP BARU DI `Field`
+ * ---------------------------------------------------------------------
+ * Sama dengan sebab `FieldSandi` dan `FieldTanggal` berdiri sendiri:
+ * `Field` dipakai 100+ titik panggil untuk teks biasa, dan menanam
+ * penguraian angka di sana membebani seratusan pemanggil yang tidak
+ * pernah memakainya — serta membuat teks yang KEBETULAN berangka
+ * (`>=30% up to < 50%`) diurai sebagai bilangan.
+ *
+ * ---------------------------------------------------------------------
+ * ⛔ DUA BENTUK, DAN KEDUANYA PERLU
+ * ---------------------------------------------------------------------
+ *   KABEL   `1000000.5`     yang disimpan dan dikirim backend
+ *   TAMPIL  `1.000.000,5`   yang dibaca dan diketik pemakai
+ *
+ * `nilai` dan `onUbah` SELALU bentuk KABEL. Terjemahannya di sini saja,
+ * supaya nol pemanggil perlu mengingat arah mana yang sedang dipegang.
+ *
+ * ---------------------------------------------------------------------
+ * ⚠️ MENGAPA BERGANTUNG PADA FOKUS
+ * ---------------------------------------------------------------------
+ * Saat DIKETIK, ekor desimal lewat apa adanya: `12,` tetap `12,` dan
+ * `1,00` tetap `1,00`. Keduanya keadaan SAH di tengah pengetikan, dan
+ * keduanya akan hilang bila `formatNumber` yang dipanggil — itulah sebab
+ * `KerangkaTab.tsx` dahulu menyerah dan membiarkan angka tanpa format.
+ *
+ * Saat DILEPAS, barulah `formatNumber` dipanggil untuk memadankan desimal
+ * (`1.000.000` → `1.000.000,00`) dan menempelkan `%` bila `persen`.
+ */
+export function FieldAngka({
+  label,
+  value,
+  onChange,
+  desimal = 2,
+  persen = false,
+  readOnly,
+  placeholder,
+  error,
+}: {
+  label: string;
+  /** Bentuk KABEL (titik desimal, tanpa pemisah ribuan). */
+  value: string;
+  /** Menerima bentuk KABEL. */
+  onChange: (v: string) => void;
+  /** Desimal maksimum; ekor yang lebih panjang DIPOTONG, bukan dibulatkan. */
+  desimal?: number;
+  /** Tempelkan `%` saat tidak sedang diketik. */
+  persen?: boolean;
+  readOnly?: boolean;
+  placeholder?: string;
+  error?: string;
+}) {
+  const [fokus, setFokus] = useState(false);
+  const [ketik, setKetik] = useState("");
+
+  // ⛔ Saat fokus, yang tampil adalah apa yang DIKETIK — bukan hasil
+  // pembacaan ulang `value`. Membaca ulang akan memaksa ekor desimal
+  // kembali ke bentuk kanonik di tengah pengetikan.
+  const tampil = fokus
+    ? ketik
+    : (() => {
+        const t = formatNumber(value, desimal);
+        if (t === "") return "";
+        const padan = t.includes(",")
+          ? t + "0".repeat(Math.max(0, desimal - (t.length - t.indexOf(",") - 1)))
+          : desimal > 0
+            ? t + "," + "0".repeat(desimal)
+            : t;
+        return persen ? padan + "%" : padan;
+      })();
+
+  return (
+    <div className="field">
+      {label !== "" && <label className="field__label">{label}</label>}
+      <input
+        className={"field__input" + (error ? " field__input--error" : "")}
+        type="text"
+        inputMode="decimal"
+        value={tampil}
+        readOnly={readOnly}
+        placeholder={placeholder}
+        aria-label={label === "" ? undefined : label}
+        onFocus={() => {
+          // ⛔ Bentuk KABEL memakai TITIK desimal; `formatKetik` membaca titik
+          // sebagai pemisah ribuan. Terjemahkan dulu, atau `1000000.5`
+          // terbaca `10.000.005`.
+          setKetik(formatKetik(value.replace(".", ","), desimal));
+          setFokus(true);
+        }}
+        onBlur={() => {
+          setFokus(false);
+        }}
+        onChange={(e) => {
+          // ⭐ Titik yang BARU DIKETIK menjadi koma — diputuskan dengan
+          // membandingkan terhadap teks sebelumnya, bukan ditebak dari
+          // bentuknya. Lihat `normalisasiKetikan`.
+          const t = formatKetik(normalisasiKetikan(e.target.value, ketik), desimal);
+          setKetik(t);
+          onChange(keKabelAngka(t));
+        }}
+      />
+      {error && <div className="field__error">{error}</div>}
+    </div>
+  );
+}
+
 export function FieldSandi({
   label,
   value,

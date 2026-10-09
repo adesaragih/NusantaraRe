@@ -1,0 +1,619 @@
+INVENTARIS TOMBOL — ekspor Pega `D:\XML_NURE\Treaty In`, disapu 6 Oktober 2026.
+
+DIBANGKITKAN MESIN. Jangan disunting tangan; jalankan ulang penyapunya.
+
+Cakupan : seluruh Section/*.xml dan Harness/*.xml modul Treaty In (52 berkas).
+Saringan: sel ber-`pyFormat` = pxButton ATAU `pyControlDisplayTitle` = Button,
+          DAN punya sekurangnya satu aksi (`Embed-SelectedContextAPI-*`).
+          `pyIncludedRuleXML` dibuang dengan HITUNG KEDALAMAN, bukan regex.
+
+Terhitung: 203 tombol beraksi — 69 KODE MATI, 11 khusus dev, 123 hidup.
+
+Baca   : [seksi] label  vis=<pyVisible>  cond=<pyUserData.pyCondition>
+         lalu satu baris per aksi, apa adanya dari ekspor.
+
+⚠️ `cond` memuat `1=2`, `NEVER`, atau `FALSE &&` berarti KODE MATI — tombolnya
+   tidak pernah tampil. Yang dibungkusnya tetap dicetak, sebab label yang sama
+   dapat HIDUP di seksi lain (`Update Summary` hidup di TreatyInTabsNonProportional,
+   mati di kedua TreatyInTabsNPValueDifference*).
+
+==============================================================================
+
+  [S:CoBList] Add CoB                  vis=OTHER   cond=TreatyIn.ViewState !='1' && 1=2           
+        {'api': 'Refresh', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitLayer', 'pyTarget': 'thisSection'}
+  [S:CoBList] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1' && 1=2           
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitLayer'}
+  -- S:CoBList: 2 tombol beraksi
+  [S:DetailLimits] Add CoB                  vis=OTHER   cond=TreatyIn.ViewState !='1' && 1=2           
+        {'api': 'Refresh', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  [S:DetailLimits] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1' && 1=2           
+        {'api': 'Refresh', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  [S:DetailLimits] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  [S:DetailLimits] Remove                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInTotal'}
+        {'api': 'Refresh', 'pyActivity': 'LimitCalculation', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInTotal'}
+        {'api': 'Refresh', 'pyActivity': 'LimitCalculation', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  [S:DetailLimits] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  [S:DetailLimits] Remove                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInTotal'}
+        {'api': 'Refresh', 'pyActivity': 'LimitCalculation', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInTotal'}
+        {'api': 'Refresh', 'pyActivity': 'LimitCalculation', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  [S:DetailLimits] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  [S:DetailLimits] Remove                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInTotal'}
+  [S:DetailLimits] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'AddDeduction', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInShare', 'pyTarget': 'thisSection'}
+  [S:DetailLimits] Remove                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInDeduction'}
+        {'api': 'Refresh', 'pyActivity': 'CalculateDeduction', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInShare', 'pyTarget': 'thisSection'}
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInDeduction'}
+        {'api': 'Refresh', 'pyActivity': 'CalculateDeduction', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInShare', 'pyTarget': 'thisSection'}
+  [S:DetailLimits] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'AddValue', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  [S:DetailLimits] Remove                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInTotal'}
+  [S:DetailLimits] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'AddValue', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  [S:DetailLimits] Remove                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInTotal'}
+  [S:DetailLimits] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'AddValue', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  [S:DetailLimits] Remove                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInTotal'}
+  [S:DetailLimits] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'AddValue', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  [S:DetailLimits] Remove                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInTotal'}
+  [S:DetailLimits] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'AddValue', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  [S:DetailLimits] Remove                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInTotal'}
+  [S:DetailLimits] Button                   vis=ALWAYS  cond=                                          
+        {'api': 'Refresh', 'pyActivity': 'GetAchievement', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  [S:DetailLimits] Button                   vis=OTHER   cond=FlagExcel.CARI1=='1'                      
+        {'api': 'Refresh', 'pyActivity': 'InsertToLogAchievement', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  -- S:DetailLimits: 22 tombol beraksi
+  [S:DetailShare] Refresh Spreading        vis=OTHER   cond=NEVER                                     
+        {'api': 'Refresh', 'pyActivity': 'FetchQSfromMaster', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  [S:DetailShare] Refresh Spreading        vis=OTHER   cond=NEVER                                     
+        {'api': 'Refresh', 'pyActivity': 'FetchQSfromMaster', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  -- S:DetailShare: 2 tombol beraksi
+  [S:InputTreatyInOffer] .pyTemplateButton        vis=OTHER   cond=OperatorID.pyWorkBasketList(2).pyWorkBaske
+        {'api': 'Refresh', 'pyActivity': 'TreatyInInputVis', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:InputTreatyInOffer] .pyTemplateButton        vis=OTHER   cond=OperatorID.pyWorkBasketList(2).pyWorkBaske
+        {'api': 'Refresh', 'pyActivity': 'TreatyInInputVis', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:InputTreatyInOffer] Show/Hide filter         vis=ALWAYS  cond=                                          
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:InputTreatyInOffer] Button                   vis=ALWAYS  cond=                                          
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:InputTreatyInOffer] testagent(dev)           vis=OTHER   cond=OperatorID.pyUserName= 'ALDO SAPUTRA1'    
+        {'api': 'Refresh', 'pyActivity': 'TreatyInTestAgent', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:InputTreatyInOffer] 2 populate treatyindetai vis=OTHER   cond=NEVER && OperatorID.pyUserName= 'ALDO SAPU
+        {'api': 'Refresh', 'pyActivity': 'TreatyInPopulateDetail', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:InputTreatyInOffer] 1 Add from JsonOffer(dev vis=OTHER   cond=OperatorID.pyUserName= 'ALDO SAPUTRA1'    
+        {'api': 'Refresh', 'pyActivity': 'TreatyInConvertCallData_act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:InputTreatyInOffer] save new value (dev)     vis=OTHER   cond=NEVER && OperatorID.pyUserName= 'ALDO SAPU
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSetValue', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:InputTreatyInOffer] Edit                     vis=OTHER   cond=OperatorID.pyWorkBasketList(2).pyWorkBaske
+        {'api': 'SetValue', 'pyActivityClass': 'ASM-FW-GISFW-Int-TREATY_IN'}
+        {'api': 'Refresh', 'pyActivity': 'SetTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInCheckCedingBlacklist', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'GetMasterTreatyCategory_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'SetValue', 'pyActivityClass': 'ASM-FW-GISFW-Int-TREATY_IN'}
+        {'api': 'Refresh', 'pyActivity': 'SetTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInCheckCedingBlacklist', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'GetMasterTreatyCategory_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  [S:InputTreatyInOffer] View                     vis=ALWAYS  cond=OperatorID.pyWorkBasketList(2).pyWorkBaske
+        {'api': 'SetValue', 'pyActivityClass': 'ASM-FW-GISFW-Int-TREATY_IN'}
+        {'api': 'Refresh', 'pyActivity': 'SetTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'GetMasterTreatyCategory_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'SetValue', 'pyActivityClass': 'ASM-FW-GISFW-Int-TREATY_IN'}
+        {'api': 'Refresh', 'pyActivity': 'SetTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'GetMasterTreatyCategory_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  [S:InputTreatyInOffer] Copy                     vis=OTHER   cond=(OperatorID.pyWorkBasketList(2).pyWorkBask
+        {'api': 'Refresh', 'pyActivity': 'SetTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInCopy', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'SetTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInCopy', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:InputTreatyInOffer] Revision                 vis=OTHER   cond=(OperatorID.pyWorkBasketList(2).pyWorkBask
+        {'api': 'SetValue', 'pyActivityClass': 'ASM-FW-GISFW-Int-TREATY_IN'}
+        {'api': 'Refresh', 'pyActivity': 'SetTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'GetMasterTreatyCategory_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'SetValue', 'pyActivityClass': 'ASM-FW-GISFW-Int-TREATY_IN'}
+        {'api': 'Refresh', 'pyActivity': 'SetTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'GetMasterTreatyCategory_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  [S:InputTreatyInOffer] Action                   vis=OTHER   cond=1==2 && (OperatorID.pyWorkBasketList(2).py
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'currentharness'}
+  -- S:InputTreatyInOffer: 13 tombol beraksi
+  [S:Layers] Add Treaty Group         vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'AddRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimits'}
+        {'api': 'RunDataTransform', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimits'}
+        {'api': 'AddRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimits'}
+        {'api': 'RunDataTransform', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimits'}
+  [S:Layers] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitLayer'}
+        {'api': 'Refresh', 'pyActivity': 'TotalEgnpi', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimits', 'pyTarget': 'thisSection'}
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitLayer'}
+        {'api': 'Refresh', 'pyActivity': 'TotalEgnpi', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimits', 'pyTarget': 'thisSection'}
+  [S:Layers] Add MDP                  vis=OTHER   cond=TreatyIn.ViewState !=1                    
+        {'api': 'AddRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimits'}
+  [S:Layers] Remove                   vis=OTHER   cond=TreatyIn.ViewState !=1                    
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInTotal'}
+  [S:Layers] Add MDP                  vis=OTHER   cond=TreatyIn.ViewState !=1                    
+        {'api': 'AddRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimits'}
+  [S:Layers] Remove                   vis=OTHER   cond=TreatyIn.ViewState !=1                    
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInTotal'}
+  -- S:Layers: 6 tombol beraksi
+  [S:LimitProportional] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'AddClassofBusiness', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimits', 'pyTarget': 'thisSection'}
+  [S:LimitProportional] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail'}
+  -- S:LimitProportional: 2 tombol beraksi
+  [S:Share] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'AddDeduction', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInShare', 'pyTarget': 'thisSection'}
+  [S:Share] Remove                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInDeduction'}
+        {'api': 'Refresh', 'pyActivity': 'CalculateDeduction', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInShare', 'pyTarget': 'thisSection'}
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInDeduction'}
+        {'api': 'Refresh', 'pyActivity': 'CalculateDeduction', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInShare', 'pyTarget': 'thisSection'}
+  [S:Share] Refresh Spreading        vis=OTHER   cond=NEVER                                     
+        {'api': 'Refresh', 'pyActivity': 'FetchQSfromMaster', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  [S:Share] Refresh Spreading        vis=OTHER   cond=NEVER                                     
+        {'api': 'Refresh', 'pyActivity': 'FetchQSfromMaster', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  -- S:Share: 4 tombol beraksi
+  [S:ShareOldData] Refresh Spreading        vis=OTHER   cond=NEVER                                     
+        {'api': 'Refresh', 'pyActivity': 'FetchQSfromMaster', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  -- S:ShareOldData: 1 tombol beraksi
+  [S:ShareRetro] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'AddDeduction', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInShare', 'pyTarget': 'thisSection'}
+  [S:ShareRetro] Remove                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInDeduction'}
+        {'api': 'Refresh', 'pyActivity': 'CalculateDeduction', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInShare', 'pyTarget': 'thisSection'}
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInDeduction'}
+        {'api': 'Refresh', 'pyActivity': 'CalculateDeduction', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInShare', 'pyTarget': 'thisSection'}
+  [S:ShareRetro] Refresh Spreading        vis=OTHER   cond=NEVER                                     
+        {'api': 'Refresh', 'pyActivity': 'FetchQSfromMaster', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  -- S:ShareRetro: 3 tombol beraksi
+  [S:ShowAttachmentTreaty] .pyTemplateButton        vis=OTHER   cond=FALSE                                     
+        {'api': 'Refresh', 'pyActivity': 'DownloadAll_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:ShowAttachmentTreaty] .pyTemplateInputBox      vis=OTHER   cond=never                                     
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:ShowAttachmentTreaty] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1' || TreatyIn.Revis
+        {'api': 'Refresh', 'pyActivity': 'Delete_act', 'pyActivityClass': 'ASM-FW-GISFW-Int-TREATY_IN', 'pyTarget': 'thisSection'}
+  [S:ShowAttachmentTreaty] Button                   vis=OTHER   cond=StatusDoc.CARI30 != 1                     
+        {'api': 'Refresh', 'pyActivity': 'ChangeDokument_Act', 'pyActivityClass': 'ASM-FW-GISFW-Int-TREATY_IN', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'ASM-FW-GISFW-Int-TREATY_IN', 'pyTarget': 'otherSection'}
+        {'api': 'Refresh', 'pyActivity': 'ChangeDokument_Act', 'pyActivityClass': 'ASM-FW-GISFW-Int-TREATY_IN', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'ASM-FW-GISFW-Int-TREATY_IN', 'pyTarget': 'otherSection'}
+  [S:ShowAttachmentTreaty] Button                   vis=OTHER   cond=StatusDoc.CARI30 = 1                      
+        {'api': 'Refresh', 'pyActivity': 'ChangeDokument_Act', 'pyActivityClass': 'ASM-FW-GISFW-Int-TREATY_IN', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'ASM-FW-GISFW-Int-TREATY_IN', 'pyTarget': 'otherSection'}
+        {'api': 'Refresh', 'pyActivity': 'ChangeDokument_Act', 'pyActivityClass': 'ASM-FW-GISFW-Int-TREATY_IN', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'ASM-FW-GISFW-Int-TREATY_IN', 'pyTarget': 'otherSection'}
+  -- S:ShowAttachmentTreaty: 5 tombol beraksi
+  [S:TreatyInAction] Submit                   vis=ALWAYS  cond=                                          
+        {'api': 'RunActivity', 'pyActivity': 'TreatyInAkseptasi_Act', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'RunActivity', 'pyActivity': 'TreatyInAkseptasi_Act', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  -- S:TreatyInAction: 1 tombol beraksi
+  [S:TreatyInActionButtons] Save                     vis=OTHER   cond=TreatyIn.IsEditData !='1' && TreatyIn.Stat
+        {'api': 'Refresh', 'pyActivity': 'SaveTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  [S:TreatyInActionButtons] Close                    vis=ALWAYS  cond=                                          
+        {'api': 'SetValue', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInInputVis', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'SetValue', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInInputVis', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  [S:TreatyInActionButtons] Save ROL Profile         vis=OTHER   cond=((TreatyIn.ViewState == '1' && TreatyIn.Pr
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSaveROL', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  [S:TreatyInActionButtons] Fix Soa Upload RIComm    vis=OTHER   cond=((TreatyIn.ViewState == '1' && TreatyIn.Pr
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'Refresh', 'pyActivity': 'SaveTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'Refresh', 'pyActivity': 'SaveTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActionButtons] Save                     vis=OTHER   cond=TreatyIn.ViewState !='1' && TreatyIn.Statu
+        {'api': 'Refresh', 'pyActivity': 'SaveTreatyIn_EDM_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  [S:TreatyInActionButtons] Close                    vis=ALWAYS  cond=                                          
+        {'api': 'SetValue', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInInputVis', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'SetValue', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInInputVis', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  [S:TreatyInActionButtons] Submit                   vis=OTHER   cond=TreatyIn.ViewState !='1' && 1=2           
+        {'api': 'Refresh', 'pyActivity': 'AddCommentList_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'SaveTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'RunActivity', 'pyActivity': 'TreatyInInputVis', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivity': 'AddCommentList_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'SaveTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'RunActivity', 'pyActivity': 'TreatyInInputVis', 'pyActivityClass': 'Data-Portal'}
+  [S:TreatyInActionButtons] Save(dev)                vis=OTHER   cond=OperatorID.pyOrgDivision = 'IT' && !Treaty
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'Refresh', 'pyActivity': 'SaveTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'Refresh', 'pyActivity': 'SaveTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActionButtons] Save EDM(dev)            vis=OTHER   cond=OperatorID.pyOrgDivision = 'IT' && TreatyM
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'Refresh', 'pyActivity': 'SaveTreatyIn_EDM_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'Refresh', 'pyActivity': 'SaveTreatyIn_EDM_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActionButtons] Populate treatyindetail  vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'SaveTreatyInDetail_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActionButtons] fix Spl(dev)             vis=OTHER   cond=OperatorID.pyUserName= 'Aldo Saputra' || O
+        {'api': 'Refresh', 'pyActivity': 'TreatyInFixSpl', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActionButtons] ReturnToInputor(dev)     vis=OTHER   cond=OperatorID.pyUserName= 'ALDO SAPUTRA' || O
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActionButtons] Button                   vis=OTHER   cond=NEVER && OperatorID.pyUserName= 'ALDO SAPU
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActionButtons] RemoveLastComment (dev)  vis=OTHER   cond=OperatorID.pyUserName= 'ALDO SAPUTRA'     
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActionButtons] Test Error (dev)         vis=OTHER   cond=OperatorID.pyUserName= 'ALDO SAPUTRA'     
+        {'api': 'Refresh', 'pyActivity': 'TreatyInCheckID', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActionButtons] Force Edit (dev)         vis=ALWAYS  cond=OperatorID.pyUserName= 'ALDO SAPUTRA' || O
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActionButtons] Force Resolve Complete(d vis=OTHER   cond=OperatorID.pyUserName= 'ALDO SAPUTRA' || O
+        {'api': 'Refresh', 'pyActivity': 'SaveTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActionButtons] Submit Revision          vis=OTHER   cond=FALSE && OperatorID.pyWorkBasketList(2).py
+        {'api': 'Refresh', 'pyActivity': 'AddCommentList_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'SaveTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'RunActivity', 'pyActivity': 'TreatyInInputVis', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivity': 'AddCommentList_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'SaveTreatyIn_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'RunActivity', 'pyActivity': 'TreatyInInputVis', 'pyActivityClass': 'Data-Portal'}
+  [S:TreatyInActionButtons] TestCopyDifference(dev)  vis=OTHER   cond=OperatorID.pyUserIdentifier = 'aldo_saputr
+        {'api': 'Refresh', 'pyActivity': 'TreatyEDMCalculateDifference', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  -- S:TreatyInActionButtons: 19 tombol beraksi
+  [S:TreatyInActionEDM] Submit                   vis=ALWAYS  cond=                                          
+        {'api': 'Refresh', 'pyActivity': 'TreatyInAkseptasiEDM_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  -- S:TreatyInActionEDM: 1 tombol beraksi
+  [S:TreatyInActualFacultativeShareCalculation] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  -- S:TreatyInActualFacultativeShareCalculation: 1 tombol beraksi
+  [S:TreatyInActualLimits] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActualLimits] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActualLimits] Update Total             vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNPSetTotalActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimitActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimitShareActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNPSetTotalActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimitActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimitShareActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  -- S:TreatyInActualLimits: 3 tombol beraksi
+  [S:TreatyInActualShare] Update Summary           vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'SetValue', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInActualUpdateValueShare', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'SetValue', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInActualUpdateValueShare', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  [S:TreatyInActualShare] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActualShare] Update Total             vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNPSetTotalActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimitActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimitShareActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNPSetTotalActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimitActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimitShareActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActualShare] Update Value in Share    vis=OTHER   cond=TreatyIn.ViewState !='1' && TreatyMasterIn
+        {'api': 'Refresh', 'pyActivity': 'TreatyInShareListValue', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActualShare] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  -- S:TreatyInActualShare: 5 tombol beraksi
+  [S:TreatyInActualSumary] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActualSumary] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActualSumary] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActualSumary] Update Total             vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNPSetTotalActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimitActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimitShareActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNPSetTotalActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimitActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimitShareActual', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActualSumary] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInActualSumary] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  -- S:TreatyInActualSumary: 6 tombol beraksi
+  [S:TreatyInDeclineConfirmation] Decline                  vis=ALWAYS  cond=                                          
+        {'api': 'Refresh', 'pyActivity': 'TreatyInDeclineConfirmation_postact', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  -- S:TreatyInDeclineConfirmation: 1 tombol beraksi
+  [S:TreatyInDeclineConfirmationEDM] Decline                  vis=ALWAYS  cond=                                          
+        {'api': 'Refresh', 'pyActivity': 'TreatyInDeclineConfirmation_postactEDM', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInDeclineConfirmation_postactEDM', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  -- S:TreatyInDeclineConfirmationEDM: 1 tombol beraksi
+  [S:TreatyInFacultativeShareCalculation] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  -- S:TreatyInFacultativeShareCalculation: 1 tombol beraksi
+  [S:TreatyInNONProportional] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInAddCurrency', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInNONProportional] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInCurrencyList'}
+  -- S:TreatyInNONProportional: 2 tombol beraksi
+  [S:TreatyInSearchReinsured] Search                   vis=ALWAYS  cond=                                          
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInSearchReinsured] Choose                   vis=ALWAYS  cond=                                          
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  -- S:TreatyInSearchReinsured: 2 tombol beraksi
+  [S:TreatyInSearchSoB] Search                   vis=ALWAYS  cond=                                          
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInSearchSoB] Choose                   vis=ALWAYS  cond=                                          
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  -- S:TreatyInSearchSoB: 2 tombol beraksi
+  [S:TreatyInTabsNPValueDifferenceProRate] Update Summary           vis=OTHER   cond=FALSE && TreatyIn.ViewState !='1'         
+        {'api': 'SetValue', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInXOLAddSpreading', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSetBrokerage', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'SetValue', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInXOLAddSpreading', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSetBrokerage', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNPValueDifferenceProRate] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNPValueDifferenceProRate] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetention'}
+  [S:TreatyInTabsNPValueDifferenceProRate] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNPValueDifferenceProRate] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetention'}
+  [S:TreatyInTabsNPValueDifferenceProRate] Add                      vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNPValueDifferenceProRate] Delete                   vis=OTHER   cond=1=2                                       
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetention'}
+  [S:TreatyInTabsNPValueDifferenceProRate] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNPValueDifferenceProRate] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNPValueDifferenceProRate] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  -- S:TreatyInTabsNPValueDifferenceProRate: 10 tombol beraksi
+  [S:TreatyInTabsNPValueDifference_NoProRate] Update Summary           vis=OTHER   cond=FALSE && TreatyIn.ViewState !='1'         
+        {'api': 'SetValue', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInXOLAddSpreading', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSetBrokerage', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'SetValue', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInXOLAddSpreading', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSetBrokerage', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNPValueDifference_NoProRate] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNPValueDifference_NoProRate] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetention'}
+  [S:TreatyInTabsNPValueDifference_NoProRate] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNPValueDifference_NoProRate] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetention'}
+  [S:TreatyInTabsNPValueDifference_NoProRate] Add                      vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNPValueDifference_NoProRate] Delete                   vis=OTHER   cond=1=2                                       
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetention'}
+  [S:TreatyInTabsNPValueDifference_NoProRate] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNPValueDifference_NoProRate] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNPValueDifference_NoProRate] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  -- S:TreatyInTabsNPValueDifference_NoProRate: 10 tombol beraksi
+  [S:TreatyInTabsNonProportional] Add                      vis=OTHER   cond=TreatyIn.IsEditData !='1'                 
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Delete                   vis=OTHER   cond=TreatyIn.IsEditData !='1'                 
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetention'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Update Total             vis=OTHER   cond=TreatyIn.IsEditData !='1'                 
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNPSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetention'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Update Total             vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNPSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Update EGNPI Value       vis=OTHER   cond=TreatyIn.ViewState !='1' && TreatyMasterIn
+        {'api': 'Refresh', 'pyActivity': 'TreatyInEGNPIListValue', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] add Layer                vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimits'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Update Total             vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNPSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryMDP', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimit', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNPSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryMDP', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimit', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Update Value in List     vis=OTHER   cond=TreatyIn.ViewState !='1' && TreatyMasterIn
+        {'api': 'Refresh', 'pyActivity': 'TreatyInLimitsListValue', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Update Summary           vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'SetValue', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInXOLAddSpreading', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSetBrokerage', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyEDMCalculateDifference', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'SetValue', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInXOLAddSpreading', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSetBrokerage', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyEDMCalculateDifference', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  [S:TreatyInTabsNonProportional] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetention'}
+  [S:TreatyInTabsNonProportional] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetention'}
+  [S:TreatyInTabsNonProportional] Add                      vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Delete                   vis=OTHER   cond=1=2                                       
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetention'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Update Total             vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNPSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimitShare', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimitFacShare', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNPSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimitShare', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSummaryLimitFacShare', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Update Value in Share    vis=OTHER   cond=TreatyIn.ViewState !='1' && TreatyMasterIn
+        {'api': 'Refresh', 'pyActivity': 'TreatyInShareListValue', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Show Facultative Share ( vis=OTHER   cond=NEVER                                     
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Hide Facultative Share ( vis=OTHER   cond=TreatyIn.FacultativeShare>0 && facsharedis
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Add                      vis=OTHER   cond=TreatyIn.ViewState != 1                   
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Delete                   vis=OTHER   cond=TreatyIn.ViewState != 1                   
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetroShare'}
+  [S:TreatyInTabsNonProportional] Update Value             vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSetValueInstallment', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Save                     vis=ALWAYS  cond=                                          
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportional] Update Total             vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNPSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  -- S:TreatyInTabsNonProportional: 44 tombol beraksi
+  [S:TreatyInTabsNonProportionalAdjustPremi] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonAddItem', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportionalAdjustPremi] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetention'}
+  [S:TreatyInTabsNonProportionalAdjustPremi] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportionalAdjustPremi] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportionalAdjustPremi] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportionalAdjustPremi] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportionalAdjustPremi] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsNonProportionalAdjustPremi] Update Total             vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInActualUpdateValue', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  -- S:TreatyInTabsNonProportionalAdjustPremi: 8 tombol beraksi
+  [S:TreatyInTabsNonProportionalValueDifference] Update Value             vis=OTHER   cond=TreatyIn.ViewState != 1                   
+        {'api': 'Refresh', 'pyActivity': 'TreatyEDMCalculateDifference', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  -- S:TreatyInTabsNonProportionalValueDifference: 1 tombol beraksi
+  [S:TreatyInTabsProportional] Apply                    vis=OTHER   cond=TreatyIn.IsEditData !='1'                 
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSetReport', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsProportional] Add                      vis=OTHER   cond=TreatyIn.IsEditData!='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInPropAdd', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsProportional] Delete                   vis=OTHER   cond=TreatyIn.IsEditData!='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInPortfolio'}
+  [S:TreatyInTabsProportional] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInPropAdd', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsProportional] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimits'}
+  [S:TreatyInTabsProportional] Update Value in Limits   vis=OTHER   cond=NEVER && TreatyMasterInEDM                
+        {'api': 'Refresh', 'pyActivity': 'TreatyInLimitsListValueProportional', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsProportional] Refresh                  vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'TreatyInPropshare', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsProportional] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivity': 'AddFacRetroProp', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsProportional] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetention'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetention'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  [S:TreatyInTabsProportional] Button                   vis=OTHER   cond=TreatyIn.IsEditData!='1'                  
+        {'api': 'AddRow', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'AddRow', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsProportional] Button                   vis=OTHER   cond=TreatyIn.IsEditData!='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-Search'}
+  [S:TreatyInTabsProportional] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyInTabsProportional] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInAccumulation'}
+  -- S:TreatyInTabsProportional: 13 tombol beraksi
+  [S:TreatyInfoSubmit] Submit                   vis=OTHER   cond=(TreatyIn.ViewState !='1' && TreatyIn.Stat
+        {'api': 'RunActivity', 'pyActivity': 'TreatyInSubmit', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'RunActivity', 'pyActivity': 'TreatyInSubmit', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  [S:TreatyInfoSubmit] Submit                   vis=OTHER   cond=TreatyIn.RevisionState='1'                
+        {'api': 'RunActivity', 'pyActivity': 'TreatyInSubmit', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'RunActivity', 'pyActivity': 'TreatyInSubmit', 'pyActivityClass': 'Data-Portal'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  [S:TreatyInfoSubmit] Submit                   vis=OTHER   cond=TreatyIn.ViewState !='1' && TreatyIn.Statu
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSubmitEDM', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'TreatyInSubmitEDM', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'otherSection'}
+  -- S:TreatyInfoSubmit: 3 tombol beraksi
+  [S:TreatyRetroList] Calculate                vis=OTHER   cond=TreatyIn.ViewState != 1                   
+        {'api': 'Refresh', 'pyActivity': 'CalculateSharePctToRetro', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetroShare', 'pyTarget': 'thisSection'}
+  [S:TreatyRetroList] Refresh Spreading        vis=OTHER   cond=NEVER                                     
+        {'api': 'Refresh', 'pyActivity': 'FetchQSfromMaster', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInLimitsDetail', 'pyTarget': 'thisSection'}
+  [S:TreatyRetroList] Add                      vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'AddRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetroShare'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'AddRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetroShare'}
+        {'api': 'Refresh', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:TreatyRetroList] Delete                   vis=OTHER   cond=TreatyIn.ViewState !='1'                  
+        {'api': 'DeleteRow', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInRetention'}
+  [S:TreatyRetroList] Button                   vis=OTHER   cond=1=2                                       
+        {'api': 'Refresh', 'pyActivity': 'TreatyInNonSetTotal', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  -- S:TreatyRetroList: 5 tombol beraksi
+  [S:TreatyinChooseRetro_Sec] .pyTemplateInputBox      vis=ALWAYS  cond=                                          
+        {'api': 'Refresh', 'pyActivity': 'SetTreatyinRetro_Act', 'pyActivityClass': 'ASM-FW-GISFW-Data-TreatyInShareReins', 'pyTarget': 'thisSection'}
+  -- S:TreatyinChooseRetro_Sec: 1 tombol beraksi
+  [S:WorkAttachments] Refresh                  vis=ALWAYS  cond=!pyIsMobile                               
+        {'api': 'Refresh', 'pyActivity': 'GetMasterTreatyCategory_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:WorkAttachments] Button                   vis=OTHER   cond=TreatyIn.ViewState !='1' || TreatyIn.Revis
+        {'api': 'Refresh', 'pyActivity': 'SetkategoriDoc', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'GetMasterTreatyCategory_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'SetkategoriDoc', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+        {'api': 'Refresh', 'pyActivity': 'GetMasterTreatyCategory_Act', 'pyActivityClass': 'Data-Portal', 'pyTarget': 'thisSection'}
+  [S:WorkAttachments] Button                   vis=ALWAYS  cond=                                          
+        {'api': 'RunActivity', 'pyActivity': 'SetkategoriDoc', 'pyActivityClass': 'ASM-FW-GISFW-Data-Search'}
+  -- S:WorkAttachments: 3 tombol beraksi
