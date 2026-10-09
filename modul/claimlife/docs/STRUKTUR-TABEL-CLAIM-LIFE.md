@@ -274,6 +274,25 @@ Header klaim Life. Satu baris mewakili **satu klaim**. `ID`-nya **sama persis** 
 | `RECEIVER_SWIFT_CODE2` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
 | `RECEIVER_BANK_ID2` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
 | `RECEIVER_CURRENCY2` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `PRODKE` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `QQ_NAME` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `CEDING_CO_NAME` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `SOB_NAME` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `COUNTRY` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `COUNTRY_ID` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `CURRENCY_VALUE_IDR` | angka desimal | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `GROSS_ESTIMATE` | angka desimal | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `CLAIM_ESTIMATE` | angka desimal | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `EX_GRATIA` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `IS_ERROR` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `IS_REGISTER` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `IS_ESTIMATION` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `IS_ADJUSTMENT` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `IS_PIC_TRANSFER` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `IS_TREATY_OUT` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `PY_NOTE` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `START_DATE_REGISTER` | DATE | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `END_DATE_REGISTER` | DATE | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
 
 **Index:** tidak ada di luar PK.
 

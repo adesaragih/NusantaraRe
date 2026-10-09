@@ -1,0 +1,12 @@
+-- 565 - T_CLAIM_BREAK_QS (Claim Prop 526) dipakai lini FAC: ObjectItemList(i).SpreadingAdjustment (Break QS tingkat
+-- item). OBJECT_ITEM_ID (OQ-CFI-01).
+-- NOL COMMIT (ADR-U-0029), nol MODIFY / DROP kolom yang sudah ada. -migrate dijalankan work owner.
+ALTER TABLE {skema}.T_CLAIM_BREAK_QS ADD (
+  OBJECT_ITEM_ID VARCHAR2(32)
+)
+/
+ALTER TABLE {skema}.T_CLAIM_BREAK_QS ADD CONSTRAINT FK_CLAIM_BQS_OBJ_ITEM FOREIGN KEY (OBJECT_ITEM_ID)
+  REFERENCES {skema}.T_CLAIM_OBJECT_ITEM (ID) ON DELETE CASCADE
+/
+CREATE INDEX {skema}.IX_CLAIM_BQS_OBJ_ITEM ON {skema}.T_CLAIM_BREAK_QS (OBJECT_ITEM_ID)
+/

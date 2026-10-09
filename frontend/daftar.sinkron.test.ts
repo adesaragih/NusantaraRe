@@ -79,6 +79,7 @@ describe('saringPalet', () => {
     const hasil = saringPalet(DAFTAR, 'klaim')
     expect(hasil.map((h) => h.label).sort()).toEqual(
       [
+        FOLDER_KORPUS.claimFacIn,
         FOLDER_KORPUS.claimLife,
         FOLDER_KORPUS.claimNonProp,
         FOLDER_KORPUS.claimProp,

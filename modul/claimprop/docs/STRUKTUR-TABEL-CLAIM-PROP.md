@@ -739,6 +739,12 @@ Migrasi `521`.
 | `ESTIMATION_VALUE_IDR` | angka desimal | ya |  | migrasi `521` |
 | `NO_PLA` | teks | ya |  | migrasi `521` |
 | `IS_PRINT_FACE_CLAIM` | teks | ya |  | migrasi `521` |
+| `OBJECT_ITEM_ID` | teks | ya | FK | Claim Fac In — migrasi `563` (lini `FACIN`, OQ-CFI-01 izin work owner 09-10-2026) — → `T_CLAIM_OBJECT_ITEM.ID`, ON DELETE CASCADE; nullable |
+| `GROSS_ESTIMATION_MBU` | angka desimal | ya |  | Claim Fac In — migrasi `563` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `DEDUCTIBLE` | angka desimal | ya |  | Claim Fac In — migrasi `563` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `NET_ESTIMATION_VALUE` | angka desimal | ya |  | Claim Fac In — migrasi `563` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `IS_MORE_THAN_TSI` | teks | ya |  | Claim Fac In — migrasi `563` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `CREATED_BY` | teks | ya |  | Claim Fac In — migrasi `563` (lini `FACIN`, izin work owner 09-10-2026); nullable |
 
 **Unik:** `(CLAIM_ID, NOURUT)`.
 
@@ -845,6 +851,10 @@ Migrasi `525`.
 | `OTHERS_FEE` | angka desimal | ya |  | Claim Non Prop — migrasi `603` (lini `NONPROP`, izin work owner 09-10-2026); nullable |
 | `CLAIM_AMOUNT_IDR` | angka desimal | ya |  | Claim Non Prop — migrasi `603` (lini `NONPROP`, izin work owner 09-10-2026); nullable |
 | `IS_LOCKED` | teks | ya |  | Claim Non Prop — migrasi `603` (lini `NONPROP`, izin work owner 09-10-2026); nullable |
+| `OBJECT_ITEM_ID` | teks | ya | FK | Claim Fac In — migrasi `564` (lini `FACIN`, OQ-CFI-01 izin work owner 09-10-2026) — → `T_CLAIM_OBJECT_ITEM.ID`, ON DELETE CASCADE; nullable |
+| `JENIS` | teks | ya |  | Claim Fac In — migrasi `564` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `TSI_SPREADED` | angka desimal | ya |  | Claim Fac In — migrasi `564` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `PREMIUM_SPREADED` | angka desimal | ya |  | Claim Fac In — migrasi `564` (lini `FACIN`, izin work owner 09-10-2026); nullable |
 
 **Unik:** `(CLAIM_ID, NOURUT)`.
 
@@ -869,6 +879,7 @@ Migrasi `526`.
 | `OTHERS_FEE` | angka desimal | ya |  | Claim Non Prop — migrasi `604` (lini `NONPROP`, izin work owner 09-10-2026); nullable |
 | `CLAIM_AMOUNT_IDR` | angka desimal | ya |  | Claim Non Prop — migrasi `604` (lini `NONPROP`, izin work owner 09-10-2026); nullable |
 | `IS_LOCKED` | teks | ya |  | Claim Non Prop — migrasi `604` (lini `NONPROP`, izin work owner 09-10-2026); nullable |
+| `OBJECT_ITEM_ID` | teks | ya | FK | Claim Fac In — migrasi `565` (lini `FACIN`, OQ-CFI-01 izin work owner 09-10-2026) — → `T_CLAIM_OBJECT_ITEM.ID`, ON DELETE CASCADE; nullable |
 
 **Unik:** `(CLAIM_ID, NOURUT)`.
 
@@ -887,6 +898,7 @@ Migrasi `527`.
 | `RI_COMMISSION_PCT` | angka desimal | ya |  | migrasi `527` |
 | `ADDITIONAL_INFO` | teks | ya |  | migrasi `527` |
 | `TOTAL_ESTIMATION_REINS` | angka desimal | ya |  | migrasi `527` |
+| `ADJUSTMENT_ID` | teks | ya | FK | Claim Fac In — migrasi `567` (lini `FACIN`, keputusan K5 STRUKTUR FAC, izin work owner 09-10-2026) — → `T_CLAIM_ADJUSTMENT.ID`, ON DELETE CASCADE; kosong = retro tingkat klaim |
 
 **Unik:** `(CLAIM_ID, NOURUT)`.
 
@@ -963,6 +975,20 @@ Migrasi `528`.
 | `BANK_ID2` | teks | ya |  | Claim Non Prop — migrasi `605` (lini `NONPROP`, izin work owner 09-10-2026); nullable |
 | `BANK_CURRENCY2` | teks | ya |  | Claim Non Prop — migrasi `605` (lini `NONPROP`, izin work owner 09-10-2026); nullable |
 | `FLAG_ERROR_KASIR` | teks | ya |  | Claim Non Prop — migrasi `605` (lini `NONPROP`, izin work owner 09-10-2026); nullable |
+| `OBJECT_ITEM_ID` | teks | ya | FK | Claim Fac In — migrasi `566` (lini `FACIN`, OQ-CFI-01 izin work owner 09-10-2026) — → `T_CLAIM_OBJECT_ITEM.ID`, ON DELETE CASCADE; nullable |
+| `NET_FOR_COLLECTION` | teks | ya |  | Claim Fac In — migrasi `566` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `CURRENCY_ESTIMASI` | teks | ya |  | Claim Fac In — migrasi `566` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `ESTIMATION_VALUE` | angka desimal | ya |  | Claim Fac In — migrasi `566` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `CURRENCY_CHOICE_ID` | teks | ya |  | Claim Fac In — migrasi `566` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `SURVEY_EXPENSES` | angka desimal | ya |  | Claim Fac In — migrasi `566` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `VAT_PCT` | angka desimal | ya |  | Claim Fac In — migrasi `566` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `VAT_VALUE` | angka desimal | ya |  | Claim Fac In — migrasi `566` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `PROFESSIONAL_FEE` | angka desimal | ya |  | Claim Fac In — migrasi `566` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `EX_GRATIA` | teks | ya |  | Claim Fac In — migrasi `566` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `TOTAL_SHARE_PCT` | angka desimal | ya |  | Claim Fac In — migrasi `566` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `TOTAL_SPREAD_ADJUSTMENT` | angka desimal | ya |  | Claim Fac In — migrasi `566` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `TOTAL_SPREAD_BREAK_QS` | angka desimal | ya |  | Claim Fac In — migrasi `566` (lini `FACIN`, izin work owner 09-10-2026); nullable |
+| `CEDANT_CHOICE` | teks | ya |  | Claim Fac In — migrasi `566` (lini `FACIN`, izin work owner 09-10-2026); nullable |
 
 **Unik:** `(CLAIM_ID, NOURUT)`; `(KOMITE_ID)`.
 

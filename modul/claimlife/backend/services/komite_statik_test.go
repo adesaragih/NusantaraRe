@@ -92,6 +92,8 @@ var berkasKomiteBolehMenyebut = map[string]string{
 	"modul/claimprop/backend/repository/komite.go":    "modul Claim Prop - penulis tangga AddKomiteTreatyChild_ACT dan pembacanya; keputusan work owner 07-10-2026",
 	"modul/claimnonprop/backend/models/komite.go":     "modul Claim Non Prop - nama properti keputusan anggota (grid Committe Accept Status); izin work owner 09-10-2026",
 	"modul/claimnonprop/backend/repository/komite.go": "modul Claim Non Prop - penulis tangga CreateChildKomiteCNP_Act dan pembacanya; izin work owner 09-10-2026",
+	"modul/claimfacin/backend/models/komite.go":       "modul Claim Fac In - nama properti keputusan anggota (grid Committee Accept Status); izin work owner 09-10-2026",
+	"modul/claimfacin/backend/repository/komite.go":   "modul Claim Fac In - penulis tangga CreateKMTNo_Act dan pembacanya; izin work owner 09-10-2026",
 	// ⛔ MODUL KOMITE CLAIM PROP - izin work owner 08-10-2026: penulis keputusan tingkat (`KomitePostAdjustment` S6 /
 	// S26.1) dan pembaca tangga / daftar kerja (`KomiteRouter` S6.1). SATU berkas; nama properti keputusan tidak dipakai.
 	"modul/komiteclaimprop/backend/repository/tangga.go": "modul Komite Claim Prop - penulis keputusan tangga dan daftar kerja KomiteRouter; izin work owner 08-10-2026",
