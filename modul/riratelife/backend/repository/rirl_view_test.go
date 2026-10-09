@@ -18,10 +18,10 @@ func TestKolomViewRingkasanEnamKolom(t *testing.T) {
 	}
 }
 
-// Setiap kolom ringkasan yang ditulis / dibaca dan kunci JSON rate ADA di definisi view - nol nama karangan.
+// Setiap kolom ringkasan dan rincian yang ditulis / dibaca ADA di definisi kolomnya - nol nama karangan.
 // TYPE dan FLAG tidak dirujuk XML InboxSummaryRIRate: tidak ditulis, tidak dibaca.
 func TestKunciDanKolomCocokDenganView(t *testing.T) {
-	ring, rate := KolomViewRingkasan, KolomViewRate
+	ring, rate := KolomViewRingkasan, KolomRate
 	for _, k := range []string{KolomUsedBy, KolomOperatorID, KolomModified} {
 		if !slices.Contains(ring, k) {
 			t.Errorf("kolom tulis ringkasan %s tidak ada di view", k)
@@ -32,17 +32,12 @@ func TestKunciDanKolomCocokDenganView(t *testing.T) {
 			t.Errorf("kolom ringkasan %s tidak ada di view", k)
 		}
 	}
-	for _, k := range []string{JSONIDUsedBy, JSONUsedBy, JSONGender, JSONContract, JSONAge, JSONRate} {
-		if !slices.Contains(rate, k) {
-			t.Errorf("kunci rate %s tidak ada di view", k)
-		}
-	}
 	for _, k := range strings.Split(kolomRate, ", ") {
 		if !slices.Contains(rate, k) {
 			t.Errorf("kolom rate %s tidak ada di view", k)
 		}
 	}
-	for _, q := range []string{SqlSisipRingkasan("T"), SqlTulisJSON("T"), SqlDaftar("V", "", false), kolomRingkasan} {
+	for _, q := range []string{SqlSisipRingkasan("T"), SqlUbahRate("T"), SqlSisipRate("T"), SqlDaftar("V", "", false), kolomRingkasan, kolomRate} {
 		for _, k := range []string{"'TYPE'", "'FLAG'", "TYPE,", "FLAG"} {
 			if strings.Contains(q, k) {
 				t.Errorf("%q memuat %s:\n%s", k, k, q)

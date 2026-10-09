@@ -10,7 +10,7 @@
 // `Copy to all Reinstype` b12020. `Add` b8484.
 //
 // K1 keputusan work owner 01-10-2026 (OQ-MCRL-13): `R/I RATE` (tabel `M_RATE_LIFE_SUMMARY`) dan `Rate List`
-// (view `RATE_LIFE`) dibaca saja; business BARU dapat disimpan (`RIRATEID` wajib, `SaveBusinessLife_Act`
+// (`M_RATE_LIFE` (dulu view `RATE_LIFE`)) dibaca saja; business BARU dapat disimpan (`RIRATEID` wajib, `SaveBusinessLife_Act`
 // b589, diisi autocomplete). Server menolak RIRATEID pilihan baru yang tidak ada di view ringkasan.
 
 import { useCallback, useEffect, useState } from 'react'

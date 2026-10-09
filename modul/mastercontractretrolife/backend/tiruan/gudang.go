@@ -33,7 +33,7 @@ type Gudang struct {
 	Jenis     []models.JenisReasuransi
 	MasterRe  []models.MasterReinsurer
 	MasterBiz []models.MasterBusiness
-	// RingkasanRate - tabel `M_RATE_LIFE_SUMMARY` tiruan; Rate - view `RATE_LIFE` per `IDUSEDBY`.
+	// RingkasanRate - tabel `M_RATE_LIFE_SUMMARY` tiruan; Rate - `M_RATE_LIFE` per `IDUSEDBY`.
 	RingkasanRate []models.RingkasanRate
 	Rate          map[string][]models.BarisRate
 

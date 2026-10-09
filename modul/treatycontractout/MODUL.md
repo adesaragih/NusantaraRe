@@ -15,10 +15,14 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Pemilik | `@PEMILIK-TREATYCONTRACTOUT` |
 | Status | dimigrasi |
 | Rentang migrasi | `300-319` |
-| Slot menu | `956-957` |
+| Slot menu | `956-956` |
 | Prefix rute API | `/api/treaty-contract-out` (+ pekerja latar antrean lampiran) |
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |
+
+**Slot menu dikecilkan** (keputusan work owner 08-10-2026, prompt Disease / Cover K0, perlu persetujuan tim inti
+(CODEOWNERS)): `956-957` → `956-956`; slot `957` diserahkan ke modul `coverlife` (`modul/coverlife/MODUL.md`). Nomor
+itu tidak pernah terpakai di sini.
 
 `Pemilik` adalah penanda pemegang modul. Wilayah berkas yang boleh disentuh cabang
 `module/<nama>` dijaga `.github/workflows/penjaga-wilayah-cabang.yml` - CODEOWNERS
@@ -35,7 +39,8 @@ dipensiunkan 1 Oktober 2026.
 ## Migrasi
 
 Rentang `300-319` **tetap kosong**: tco4 *(keputusan work owner 29-09-2026)* — modul ini menulis dan
-membaca tabel warisan, nol tabel baru (`TestTCONolTabelBaru`). Slot menu `956-957` tidak terpakai:
+membaca tabel warisan, nol tabel baru (`TestTCONolTabelBaru`). Slot menu `956-956` tidak terpakai (`957` diserahkan
+ke `coverlife`):
 baris modul ini sudah `DIMIGRASI = '1'` sejak 900, dan menu datar (30-09-2026) tidak punya butir — slot
 hanya menyalakan `DIMIGRASI` (`APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6); berkas slot tidak
 membuat tabel, jadi tidak melanggar tco4.

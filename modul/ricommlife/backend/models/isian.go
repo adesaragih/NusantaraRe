@@ -1,7 +1,7 @@
 package models
 
 // Form R/I COMM DETAIL - section Pega `InboxRIComm` (kelas `ASM-FW-GISFW-Int-RI_COMM_LIFE`, judul b349): tambah dan
-// ubah satu baris `RICOMM_LIFE` milik ringkasan yang sedang dilihat. USEDBY = `TempIDUsedBy.USEDBY` b1718 (disabled,
+// ubah satu baris `M_RICOMM_LIFE` milik ringkasan yang sedang dilihat. USEDBY = `TempIDUsedBy.USEDBY` b1718 (disabled,
 // wajib) dan IDUSEDBY = `TempIDUsedBy.ID` b1509 (tersembunyi `1=2` b1633): keduanya dari ringkasan, bukan isian.
 //
 // Tipe (STRUKTUR-TABEL-RICOMMLIFE.md): CONTRACT dan YEAR NUMBER(5) bilangan bulat, COMM NUMBER(38,8). Nilai yang tidak

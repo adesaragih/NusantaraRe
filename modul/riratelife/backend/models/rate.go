@@ -1,7 +1,7 @@
 // Package models memuat bentuk data modul R/I Rate Life (`riratelife`) - section Pega `InboxSummaryRIRate` (kelas
 // `ASM-FW-GISFW-Int-RATE_LIFE_SUMMARY`, judul "R/I RATE SUMMARY" b382): ringkasan rate reasuransi life
-// (kolom `M_RATE_LIFE_SUMMARY`, migrasi inti 927/928 - RALAT R6) dan rincian rate-nya (`M_RATE_LIFE`, view
-// `RATE_LIFE`). Perintah work owner 05-10-2026: "Buat Menu baru Namanya R/I Rate Life pada Master Treaty, menu ini
+// (kolom `M_RATE_LIFE_SUMMARY`, migrasi inti 927/928 - RALAT R6) dan rincian rate-nya (kolom `M_RATE_LIFE`, migrasi
+// inti 929/930 - RALAT R7). Perintah work owner 05-10-2026: "Buat Menu baru Namanya R/I Rate Life pada Master Treaty, menu ini
 // bisa CRUD untuk simpan data ke tabel RATE_LIFE_SUMMARY, panduannya xml yang saya berikan".
 package models
 
@@ -18,7 +18,7 @@ type Ringkasan struct {
 	ModifiedDate string `json:"modifiedDate"`
 	// Diubah - tampilan tanggal WIB `DD-MM-YYYY` dari ModifiedDate; bentuk lain apa adanya.
 	Diubah string `json:"diubah"`
-	// JumlahRate - baris `RATE_LIFE` ber-IDUSEDBY = ID (hanya diisi Buka, untuk dialog Delete).
+	// JumlahRate - baris `M_RATE_LIFE` ber-IDUSEDBY = ID (hanya diisi Buka, untuk dialog Delete).
 	JumlahRate *int `json:"jumlahRate,omitempty"`
 }
 
@@ -27,7 +27,7 @@ type Isian struct {
 	UsedBy string `json:"usedby"`
 }
 
-// Rate - satu baris view `RATE_LIFE` (atas `M_RATE_LIFE.JSONDATA`). Seluruhnya teks, seperti view-nya.
+// Rate - satu baris `M_RATE_LIFE` (kolom sama dengan view `RATE_LIFE` lama, RALAT R7). Seluruhnya teks.
 type Rate struct {
 	ID       string `json:"id"`
 	IDUsedBy string `json:"idUsedBy"`

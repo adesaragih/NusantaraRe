@@ -308,7 +308,7 @@ type JawabanRate struct {
 }
 
 // DaftarRate - section `ViewRate` (`Rate List`) untuk satu `RIRATEID`
-// (`ViewRate.xml` b1055 `idusedby = ParamID.RIRATEID`), view `RATE_LIFE`, baca saja.
+// (`ViewRate.xml` b1055 `idusedby = ParamID.RIRATEID`), `M_RATE_LIFE` (dulu view `RATE_LIFE`), baca saja.
 func (l *Layanan) DaftarRate(ctx context.Context, p inti.Pelaku, idUsedBy string) (JawabanRate, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
 		return JawabanRate{}, err

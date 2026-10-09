@@ -61,7 +61,13 @@ describe('menu hanya yang berbukti korpus', () => {
     // + Reinsurance Type (921).
     // + R/I Rate Life (922).
     // + R/I Comm Life (925).
-    expect(KELOMPOK_SIDEBAR).toHaveLength(42)
+    // + R/I Risk (941).
+    // + Benefit (945).
+    // + Plan (949).
+    // + Cause Of Loss Life (slot menu modul 955).
+    // + Disease Life (slot menu modul 951).
+    // + Cover Life (slot menu modul 957).
+    expect(KELOMPOK_SIDEBAR).toHaveLength(48)
     // Dan seluruhnya disebut di Shell, supaya tidak ada kelompok yang
     // terdaftar di label tetapi tidak dirender.
     for (const nama of KELOMPOK_SIDEBAR) {

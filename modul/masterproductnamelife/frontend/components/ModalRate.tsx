@@ -1,8 +1,8 @@
 // `View Rate` b34113 (grid `PLAN LIST`, vis `OTHER .RIRATE!=''`) → `SetParamRate` b34310 + `localAction ViewRate`
 // b34354: FlowAction `ViewRate` (submit `Submit` b18, `Cancel` b20), section `ViewRate` - judul `Outward List`
-// b843, grid `ID` · `USEDBY` · `GENDER` · `CONTRACT` · `AGE` · `RATE` (RD atas `RATE_LIFE`).
+// b843, grid `ID` · `USEDBY` · `GENDER` · `CONTRACT` · `AGE` · `RATE` (RD atas `RATE_LIFE`, kini tabel `M_RATE_LIFE`).
 //
-// K1 keputusan work owner 01-10-2026 (OQ-MPNL-03): view `RATE_LIFE` dibaca saja, disaring `RIRATEID` baris
+// K1 keputusan work owner 01-10-2026 (OQ-MPNL-03): `M_RATE_LIFE` (dulu view `RATE_LIFE`) dibaca saja, disaring `RIRATEID` baris
 // plan. ⚠️ Penyimpangan sadar: grid `ViewRate.xml` b1024 menyaring `ParamID.OUTWARDRATEID` yang tidak pernah
 // diisi rule mana pun (`SetParamRate` b259 mengisi `ParamID.RIRATEID` dari halaman Retro Life). View tak
 // terbaca = 503 berkalimat yang menyebut view-nya, dan kalimat itu yang tampil.

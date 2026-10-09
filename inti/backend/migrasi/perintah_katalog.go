@@ -22,7 +22,8 @@ import (
 
 // PerintahKatalog adalah satu blok berpelindung katalog yang sudah diurai.
 type PerintahKatalog struct {
-	// Katalog - ALL_TAB_COLUMNS, ALL_CONSTRAINTS, atau ALL_INDEXES.
+	// Katalog - ALL_TAB_COLUMNS, ALL_CONSTRAINTS, ALL_INDEXES, ALL_VIEWS (Tabel = Objek = nama view), atau
+	// ALL_IND_COLUMNS (Objek = kolom pertama sebuah indeks).
 	Katalog string
 	// Tabel yang ditanyakan (TABLE_NAME).
 	Tabel string
@@ -50,14 +51,36 @@ var sepadan = map[string]string{
 	"ALL_INDEXES":     "INDEX_NAME",
 }
 
+// polaPerintahView - bentuk KEDUA (R/I Risk 935/938, keputusan work owner 08-10-2026): tanya SYS.ALL_VIEWS -
+// satu-satunya katalog yang membedakan VIEW dari TABLE bernama sama (ALL_TAB_COLUMNS memuat keduanya). Tabel = Objek =
+// nama view; penjaga menuntut perintahnya menyebut `{skema}.<nama view>`.
+var polaPerintahView = regexp.MustCompile(`(?s)^DECLARE\s+n NUMBER;\s+BEGIN\s+` +
+	`SELECT COUNT\(\*\)\s+INTO\s+n\s+FROM\s+SYS\.ALL_VIEWS\s+` +
+	`WHERE OWNER = UPPER\('\{skema\}'\) AND VIEW_NAME = '(\w+)';\s+` +
+	`IF n (>|=) 0 THEN\s+EXECUTE IMMEDIATE '([^']+)';\s+END IF;\s+END;$`)
+
+// polaPerintahKolomIndeks - bentuk KETIGA (R/I Risk 940): tanya SYS.ALL_IND_COLUMNS apakah SUDAH ada indeks yang
+// kolom PERTAMA-nya kolom itu (indeks warisan yang namanya tidak diketahui, mis. `INDEX4`), supaya CREATE INDEX tidak
+// membuat indeks kembar (ORA-01408). Katalog ini memakai TABLE_OWNER, bukan OWNER.
+var polaPerintahKolomIndeks = regexp.MustCompile(`(?s)^DECLARE\s+n NUMBER;\s+BEGIN\s+` +
+	`SELECT COUNT\(\*\)\s+INTO\s+n\s+FROM\s+SYS\.ALL_IND_COLUMNS\s+` +
+	`WHERE TABLE_OWNER = UPPER\('\{skema\}'\) AND TABLE_NAME = '(\w+)' AND COLUMN_NAME = '(\w+)' AND COLUMN_POSITION = 1;\s+` +
+	`IF n (>|=) 0 THEN\s+EXECUTE IMMEDIATE '([^']+)';\s+END IF;\s+END;$`)
+
 // BacaPerintahKatalog mengurai satu pernyataan sebagai blok berpelindung
 // katalog. `ok` false berarti pernyataan itu BUKAN bentuk tersebut.
 func BacaPerintahKatalog(pernyataan string) (PerintahKatalog, bool) {
-	m := polaPerintahKatalog.FindStringSubmatch(strings.TrimSpace(pernyataan))
-	if m == nil || sepadan[m[1]] != m[3] {
-		return PerintahKatalog{}, false
+	t := strings.TrimSpace(pernyataan)
+	if m := polaPerintahKatalog.FindStringSubmatch(t); m != nil && sepadan[m[1]] == m[3] {
+		return PerintahKatalog{Katalog: m[1], Tabel: m[2], Objek: m[4], BilaAda: m[5] == ">", Perintah: m[6]}, true
 	}
-	return PerintahKatalog{Katalog: m[1], Tabel: m[2], Objek: m[4], BilaAda: m[5] == ">", Perintah: m[6]}, true
+	if m := polaPerintahView.FindStringSubmatch(t); m != nil {
+		return PerintahKatalog{Katalog: "ALL_VIEWS", Tabel: m[1], Objek: m[1], BilaAda: m[2] == ">", Perintah: m[3]}, true
+	}
+	if m := polaPerintahKolomIndeks.FindStringSubmatch(t); m != nil {
+		return PerintahKatalog{Katalog: "ALL_IND_COLUMNS", Tabel: m[1], Objek: m[2], BilaAda: m[3] == ">", Perintah: m[4]}, true
+	}
+	return PerintahKatalog{}, false
 }
 
 // polaAlterBuang mengenali ALTER TABLE {skema}.X DROP COLUMN Y - juga di dalam

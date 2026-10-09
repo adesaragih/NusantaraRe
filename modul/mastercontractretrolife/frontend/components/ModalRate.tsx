@@ -3,7 +3,7 @@
 // (`SetParamRateTable` `RIRATEID ← .RIRATEID` + `localAction ViewRateTable`). Grid RD `BrowseRateLife_RD`
 // param `idusedby = ParamID.RIRATEID` (`ViewRate.xml` b1055); tanpa penomoran.
 //
-// K1 keputusan work owner 01-10-2026 (OQ-MCRL-13): view `RATE_LIFE` dibaca saja. View tak terbaca =
+// K1 keputusan work owner 01-10-2026 (OQ-MCRL-13): `M_RATE_LIFE` (dulu view `RATE_LIFE`) dibaca saja. Objek tak terbaca =
 // 503 berkalimat yang menyebut view-nya, dan kalimat itu yang tampil (bukan daftar kosong).
 
 import { useEffect, useState } from 'react'

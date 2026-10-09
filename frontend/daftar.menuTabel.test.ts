@@ -129,6 +129,12 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
       reinsuranceType: 'Reinsurance Type',
       riRateLife: 'R/I Rate Life',
       riCommLife: 'R/I Comm Life',
+      riRiskLife: 'R/I Risk',
+      benefitLife: 'Benefit',
+      planLife: 'Plan',
+      causeOfLossLife: 'Cause Of Loss Life',
+      diseaseLife: 'Disease Life',
+      coverLife: 'Cover Life',
     })
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In')
     expect(Object.values(FOLDER_KORPUS)).toContain('Treaty In Adjustment')

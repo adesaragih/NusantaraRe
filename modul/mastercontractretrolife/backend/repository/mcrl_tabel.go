@@ -44,13 +44,15 @@ const (
 	// MasterRingkasanRate - kelas `ASM-FW-GISFW-Int-RATE_LIFE_SUMMARY` (`BrowseRateLifeSummary` b40),
 	// sumber autocomplete `R/I RATE`; tabel `M_RATE_LIFE_SUMMARY` (kolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID - keputusan work owner 07-10-2026).
 	// MasterRate - kelas `ASM-FW-GISFW-Int-M_RATE_LIFE` (`BrowseRateLife_RD` b39), section `Rate List`;
-	// view DEV `RATE_LIFE` (8 kolom, atas `M_RATE_LIFE.JSONDATA`) - nama fisik kelas itu terbukti
-	// `NB FacIn/RDBList/BrowseLifeRate_SQL.xml` b85 `… FROM RATE_LIFE WHERE IDUSEDBY= …`.
+	// dulu view DEV `RATE_LIFE` (8 kolom, atas `M_RATE_LIFE.JSONDATA`) - nama fisik kelas itu terbukti
+	// `NB FacIn/RDBList/BrowseLifeRate_SQL.xml` b85 `… FROM RATE_LIFE WHERE IDUSEDBY= …`. RALAT 07-10-2026
+	// (keputusan work owner, `modul/riratelife/MODUL.md` RALAT R7): kini TABEL flat `M_RATE_LIFE` berkolom sama
+	// (view dibuang migrasi inti 930); tetap baca-saja.
 	//
 	// ⛔ K1 keputusan work owner 01-10-2026 (OQ-MCRL-13 + OQ-MCRL-05): kedua view dibaca SAJA - kolom
 	// yang dibaca RD XML saja, nol `SELECT *`, nol `JSONDATA`, nol tulisan (`periksaBacaSaja`).
 	MasterRingkasanRate = "M_RATE_LIFE_SUMMARY"
-	MasterRate          = "RATE_LIFE"
+	MasterRate          = "M_RATE_LIFE"
 )
 
 // DaftarTabelWarisan - lima tabel yang ditulis modul ini (penjaga modul).

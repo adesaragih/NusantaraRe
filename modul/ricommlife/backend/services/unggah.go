@@ -169,7 +169,7 @@ func KalimatGalat(g []models.GalatBaris) string {
 
 // SimpanUnggah - Simpan Upload (`SubmitRIComm_Act`): urai ulang di server; satu galat = tidak ada yang tersimpan.
 // Per R/I COMM NAME: ringkasan bernama sama dipakai (OPERATORID / MODIFIEDDATE-nya diperbarui) atau dibuat baru; baris
-// rincian disisipkan ke tabel flat (IDUSEDBY = ID ringkasan). Satu transaksi.
+// rincian disisipkan ke M_RICOMM_LIFE (IDUSEDBY = ID ringkasan). Satu transaksi.
 func (l *Layanan) SimpanUnggah(ctx context.Context, a Aktor, p PermintaanUnggah) (HasilSimpanUnggah, error) {
 	if err := wajibPenuh(a); err != nil {
 		return HasilSimpanUnggah{}, err

@@ -323,7 +323,7 @@ export interface BarisRate {
 }
 
 /**
- * Tombol `View Rate` - `idusedby` = `RIRATEID`, view `RATE_LIFE` baca saja (K1, OQ-MCRL-13).
+ * Tombol `View Rate` - `idusedby` = `RIRATEID`, `M_RATE_LIFE` (dulu view `RATE_LIFE`) baca saja (K1, OQ-MCRL-13).
  * `terpotong` = view memuat lebih dari 500 baris (`BrowseRateLife_RD` `pyMaxRecords` 500, seperti Pega).
  */
 export async function ambilRate(idusedby: string): Promise<Daftar<BarisRate> & { terpotong: boolean }> {

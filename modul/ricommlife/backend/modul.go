@@ -2,10 +2,10 @@
 //
 // Menu "R/I Comm Life" golongan MASTER TREATY (perintah work owner 06-10-2026: "membuat modul baru di Master Treaty
 // dengan nama R/I Comm Life, panduannya baca dari xml di D:\NUSARE DEV\Menu RI Comm, konsepnya hampir sama dengan menu
-// R/I Rate, membuat CRUD, dan detail bisa di save dan edit"). Ringkasan = JSON warisan `M_RICOMM_LIFE_SUMMARY` (view
-// `RICOMM_LIFE_SUMMARY` dibaca); rincian = tabel flat `RICOMM_LIFE` (migrasi inti 924). NOL MIGRASI SENDIRI - tabel
-// flat 924 dan baris menu 925 adalah migrasi inti; ID dari sequence warisan (MODUL.md, keputusan work owner
-// 06-10-2026).
+// R/I Rate, membuat CRUD, dan detail bisa di save dan edit"). RALAT R1 (keputusan work owner 08-10-2026): SATU
+// tabel per jenis data - ringkasan = kolom `M_RICOMM_LIFE_SUMMARY`, rincian = kolom `M_RICOMM_LIFE` (migrasi inti
+// 931-934; tabel flat 924 dan view ringkasan dibuang). NOL MIGRASI SENDIRI - 924 (riwayat), 925 (baris menu), 931-934
+// adalah migrasi inti; ID dari sequence warisan (MODUL.md).
 package backend
 
 import (

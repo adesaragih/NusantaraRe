@@ -209,8 +209,33 @@ func TestSlotMenuHanyaMenyentuhMenuModulnya(t *testing.T) {
 		for _, alasan := range pelanggaranSlotMenu(pemilik, maju[nama], mundur[turun]) {
 			t.Errorf("%s: %s", nama, alasan)
 		}
+		// INSERT baris modul hanya di SATU berkas slot: yang dinyatakan `barisLahirDiSlot`.
+		if lahir, ada := barisLahirDiSlot[pemilik]; ada && lahir != nama {
+			for _, p := range maju[nama] {
+				if polaIsiKelompokDatar.MatchString(p) {
+					t.Errorf("%s: INSERT baris %s di luar berkas lahirnya %s", nama, pemilik, lahir)
+				}
+			}
+		}
 	}
 	t.Logf("%d berkas slot menu diperiksa", slot)
+}
+
+// `barisLahirDiSlot` sepadan dengan `modulLuarKorpus` dan benar-benar berkas SLOT modul pemiliknya - bukan pintu
+// belakang bagi INSERT menu di berkas lain.
+func TestBarisLahirDiSlotTerdaftar(t *testing.T) {
+	jatah := jatahSetiapModul(t)
+	for modul, berkas := range barisLahirDiSlot {
+		n, _ := nomorBerkas(berkas)
+		switch {
+		case modulLuarKorpus[modul] != berkas:
+			t.Errorf("%s: barisLahirDiSlot %s, modulLuarKorpus %s - harus sama", modul, berkas, modulLuarKorpus[modul])
+		case berkasMigrasi.modul(berkas) != modul:
+			t.Errorf("%s: berkas %s milik %q, bukan modul itu", modul, berkas, berkasMigrasi.modul(berkas))
+		case !jatah[modul].diSlot(n):
+			t.Errorf("%s: berkas %s di luar slot menu modul itu", modul, berkas)
+		}
+	}
 }
 
 // pernyataanPerLangkah - pernyataan setiap langkah migrasi (maju atau
@@ -259,6 +284,22 @@ func pelanggaranSlotMenu(modul string, maju, mundur []string) []string {
 				alasan = append(alasan, fmt.Sprintf("%smenyetel LABEL = '%s', mau '%s'", arah, m[1], mau))
 			}
 			return
+		}
+		// Baris modul luar korpus yang LAHIR di slot modulnya sendiri (`barisLahirDiSlot`, keputusan work owner
+		// 08-10-2026 K0/K5): maju = INSERT datar baris modul ITU SENDIRI berDIMIGRASI '1'; mundur = buang hak lalu barisnya.
+		if _, lahir := barisLahirDiSlot[modul]; lahir {
+			if m := polaIsiKelompokDatar.FindStringSubmatch(p); m != nil && mauDimigrasi == "1" {
+				if m[1] != modul || m[4] != modul || m[7] != modul || m[6] != "1" {
+					alasan = append(alasan, fmt.Sprintf("%sINSERT baris %s (MODUL %s, DIMIGRASI '%s') - slot ini hanya melahirkan baris %s, DIMIGRASI '1'",
+						arah, m[1], m[4], m[6], modul))
+				}
+				return
+			}
+			satu := strings.Join(strings.Fields(p), " ")
+			if mauDimigrasi == "0" && (satu == "DELETE FROM {skema}.M_LOGIN_GO_MENU WHERE MENU_KODE = '"+modul+"'" ||
+				satu == "DELETE FROM {skema}.M_NAV_MENU WHERE KODE = '"+modul+"'") {
+				return
+			}
 		}
 		if strings.Contains(strings.ToUpper(p), "INSERT INTO") {
 			alasan = append(alasan, arah+"INSERT INTO M_NAV_MENU di slot menu - satu modul satu baris, "+
@@ -320,6 +361,39 @@ func TestAturanSlotMenuMenggigit(t *testing.T) {
 		{"mundur bukan nama folder", ppn, []string{label(ppn, "Product Name Life")}, []string{label(ppn, "Product Name Life")}, false},
 		{"LABEL baris yang tidak disetujui", "alfa", []string{label("alfa", "A")}, []string{label("alfa", "Alfa")}, false},
 		{"LABEL modul lain dari slot ini", "alfa", []string{label(ppn, "Product Name Life")}, []string{label(ppn, "Master Product Name Life")}, false},
+	} {
+		if dapat := len(pelanggaranSlotMenu(k.modul, k.maju, k.mundur)) == 0; dapat != k.sah {
+			t.Errorf("%s: sah=%v, mau %v (%v)", k.nama, dapat, k.sah, pelanggaranSlotMenu(k.modul, k.maju, k.mundur))
+		}
+	}
+	// Baris yang LAHIR di slot (barisLahirDiSlot, keputusan work owner 08-10-2026 K0/K5): INSERT datar baris modul itu
+	// sendiri berDIMIGRASI '1', mundur buang hak lalu baris - sah HANYA untuk modul yang dinyatakan.
+	const col = "causeoflosslife"
+	lahir := func(kode, modul, dim string) string {
+		return "INSERT INTO {skema}.M_NAV_MENU (ID, KODE, LABEL, GROUPMENU, MODUL, URUTAN, DIMIGRASI)\n" +
+			"SELECT {skema}.SEQ_M_NAV_MENU.NEXTVAL, '" + kode + "', 'Label', 'MASTER TREATY', '" + modul + "', 14, '" + dim + "' FROM DUAL\n" +
+			"WHERE NOT EXISTS (SELECT 1 FROM {skema}.M_NAV_MENU WHERE KODE = '" + kode + "')"
+	}
+	hak := func(kode string) string {
+		return "DELETE FROM {skema}.M_LOGIN_GO_MENU WHERE MENU_KODE = '" + kode + "'"
+	}
+	for _, k := range []struct {
+		nama, modul  string
+		maju, mundur []string
+		sah          bool
+	}{
+		{"baris lahir di slotnya sendiri", col, []string{lahir(col, col, "1")}, []string{hak(col), hapus(col)}, true},
+		{"baris lahir berDIMIGRASI 0", col, []string{lahir(col, col, "0")}, []string{hak(col), hapus(col)}, false},
+		{"baris modul lain lahir di slot ini", col, []string{lahir("alfa", "alfa", "1")}, []string{hak("alfa"), hapus("alfa")}, false},
+		{"MODUL berbeda dari KODE", col, []string{lahir(col, "alfa", "1")}, []string{hak(col), hapus(col)}, false},
+		{"modul yang tidak dinyatakan melahirkan baris", "alfa", []string{lahir("alfa", "alfa", "1")}, []string{hak("alfa"), hapus("alfa")}, false},
+		{"mundur membuang baris modul lain", col, []string{lahir(col, col, "1")}, []string{hak(col), hapus("alfa")}, false},
+		// Keputusan work owner 08-10-2026 K0 (Disease / Cover): lebih dari satu modul melahirkan barisnya di slot - slot
+		// satu modul tetap tidak boleh melahirkan baris modul lain yang JUGA dinyatakan `barisLahirDiSlot`.
+		{"baris modul lahir-di-slot lain lahir di slot ini", col, []string{lahir("diseaselife", "diseaselife", "1")},
+			[]string{hak("diseaselife"), hapus("diseaselife")}, false},
+		{"baris lahir di slotnya sendiri (diseaselife)", "diseaselife", []string{lahir("diseaselife", "diseaselife", "1")},
+			[]string{hak("diseaselife"), hapus("diseaselife")}, true},
 	} {
 		if dapat := len(pelanggaranSlotMenu(k.modul, k.maju, k.mundur)) == 0; dapat != k.sah {
 			t.Errorf("%s: sah=%v, mau %v (%v)", k.nama, dapat, k.sah, pelanggaranSlotMenu(k.modul, k.maju, k.mundur))
@@ -422,8 +496,8 @@ func TestSlotMenuBerjalanSesudah900(t *testing.T) {
 	// 911 baris Master Data dibuang bersama modulnya); GitHub 911 / 913 / 915-921 (baris menu Aggregate, Bordereaux,
 	// Adjuster Consultant, Treaty Group OJK, Treaty Group, Business Group, Treaty Exchange Yearly, Treaty Description,
 	// Reinsurance Type, 05-10-2026), 912 (M_TEMPLATE_FILE, Template Manager 04-10-2026) dan 914 (hak menu). 922 merapatkan
-	// URUTAN golongan MASTER yang bertumpuk karena merge itu. R/I Rate Life: 922 (baris menu), 923 (sequence), 926-928 (ringkasan satu tabel M_RATE_LIFE_SUMMARY); R/I Comm Life: 924 (tabel flat RICOMM_LIFE), 925 (baris menu).
-	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql", "904_m_login_go_kontak.sql", "905_m_login_go_contact_id.sql", "906_m_nav_menu_marketingofficer.sql", "907_m_nav_menu_companydetail.sql", "908_m_nav_menu_accounts.sql", "909_m_nav_menu_master_treaty.sql", "910_m_login_go_contact_seq_max.sql", "911_m_nav_menu_aggregate.sql", "912_m_nav_menu_masternation.sql", "912_m_template_file.sql", "913_m_nav_menu_bordereaux.sql", "913_m_nav_menu_masterprovince.sql", "914_m_login_go_menu_hak.sql", "914_m_nav_menu_mastercity.sql", "915_m_nav_menu_adjusterconsultant.sql", "915_m_nav_menu_masterdistrict.sql", "916_m_nav_menu_masterczone.sql", "916_m_nav_menu_treatygroupojk.sql", "917_m_nav_menu_masteraccumulatedtype.sql", "917_m_nav_menu_treatygroup.sql", "918_m_nav_menu_businessgroup.sql", "918_m_nav_menu_masteraccumulation.sql", "919_m_nav_menu_masterobjectitemtype.sql", "919_m_nav_menu_treatyexchangeyearly.sql", "920_m_nav_menu_masterdata_pensiun.sql", "920_m_nav_menu_treatydescription.sql", "921_m_nav_menu_reinsurancetype.sql", "922_m_nav_menu_riratelife.sql", "922_m_nav_menu_urutan_master.sql", "923_seq_rate_life.sql", "924_ricomm_life.sql", "925_m_nav_menu_ricommlife.sql", "926_rate_life_summary_flat.sql", "927_m_rate_life_summary_kolom.sql", "928_m_rate_life_summary_satu_tabel.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
+	// URUTAN golongan MASTER yang bertumpuk karena merge itu. R/I Rate Life: 922 (baris menu), 923 (sequence), 926-928 (ringkasan satu tabel M_RATE_LIFE_SUMMARY); R/I Comm Life: 924 (tabel flat RICOMM_LIFE, dibuang 934), 925 (baris menu), 931-934 (satu tabel per jenis data, keputusan work owner 08-10-2026); R/I Risk: 935-940 (RENAME tabel Pega M_RIRISK_LIFE* + satu tabel per jenis data), 941 (baris menu) - keputusan work owner 08-10-2026; Benefit: 942-944 (RENAME tabel Pega M_BENEFIT_LIFE + satu tabel BENEFIT_LIFE, pemeriksaan K2 sebelum JSONDATA dibuang), 945 (baris menu) - keputusan work owner 08-10-2026; Plan: 946-948 (RENAME tabel Pega M_PRODUCT_TYPE_LIFE + satu tabel PRODUCT_TYPE_LIFE, pemeriksaan ID / isi, PK sebelum JSONDATA dibuang), 949 (baris menu) - keputusan work owner 08-10-2026.
+	if mau := []string{"030_tiruan.sql", "900_m_nav_menu.sql", "901_m_nav_menu_datar.sql", "902_m_login_go.sql", "903_m_login_go_menu.sql", "904_m_login_go_kontak.sql", "905_m_login_go_contact_id.sql", "906_m_nav_menu_marketingofficer.sql", "907_m_nav_menu_companydetail.sql", "908_m_nav_menu_accounts.sql", "909_m_nav_menu_master_treaty.sql", "910_m_login_go_contact_seq_max.sql", "911_m_nav_menu_aggregate.sql", "912_m_nav_menu_masternation.sql", "912_m_template_file.sql", "913_m_nav_menu_bordereaux.sql", "913_m_nav_menu_masterprovince.sql", "914_m_login_go_menu_hak.sql", "914_m_nav_menu_mastercity.sql", "915_m_nav_menu_adjusterconsultant.sql", "915_m_nav_menu_masterdistrict.sql", "916_m_nav_menu_masterczone.sql", "916_m_nav_menu_treatygroupojk.sql", "917_m_nav_menu_masteraccumulatedtype.sql", "917_m_nav_menu_treatygroup.sql", "918_m_nav_menu_businessgroup.sql", "918_m_nav_menu_masteraccumulation.sql", "919_m_nav_menu_masterobjectitemtype.sql", "919_m_nav_menu_treatyexchangeyearly.sql", "920_m_nav_menu_masterdata_pensiun.sql", "920_m_nav_menu_treatydescription.sql", "921_m_nav_menu_reinsurancetype.sql", "922_m_nav_menu_riratelife.sql", "922_m_nav_menu_urutan_master.sql", "923_seq_rate_life.sql", "924_ricomm_life.sql", "925_m_nav_menu_ricommlife.sql", "926_rate_life_summary_flat.sql", "927_m_rate_life_summary_kolom.sql", "928_m_rate_life_summary_satu_tabel.sql", "929_m_rate_life_kolom.sql", "930_m_rate_life_satu_tabel.sql", "931_m_ricomm_life_summary_kolom.sql", "932_m_ricomm_life_summary_satu_tabel.sql", "933_m_ricomm_life_kolom.sql", "934_m_ricomm_life_satu_tabel.sql", "935_ririsk_life_summary_ganti_nama.sql", "936_ririsk_life_summary_kolom.sql", "937_ririsk_life_summary_satu_tabel.sql", "938_ririsk_life_ganti_nama.sql", "939_ririsk_life_kolom.sql", "940_ririsk_life_satu_tabel.sql", "941_m_nav_menu_ririsklife.sql", "942_benefit_life_ganti_nama.sql", "943_benefit_life_kolom.sql", "944_benefit_life_satu_tabel.sql", "945_m_nav_menu_benefitlife.sql", "946_product_type_life_ganti_nama.sql", "947_product_type_life_kolom.sql", "948_product_type_life_satu_tabel.sql", "949_m_nav_menu_planlife.sql", "952_menu_tiruan.sql"}; strings.Join(urut, ",") != strings.Join(mau, ",") {
 		t.Errorf("urutan pelari %v, mau %v", urut, mau)
 	}
 }

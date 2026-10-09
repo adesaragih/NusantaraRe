@@ -83,11 +83,58 @@ daftar berurutan `… "923_seq_rate_life.sql", "924_ricomm_life.sql", "925_m_nav
 "952_menu_tiruan.sql"`. Sesudahnya `go vet ./...` bersih dan `go test ./...` = baseline (3 paket claimlife), ditambah
 `TestNolAlamatLayananDiKode` yang gagal HANYA karena worktree sementara tidak memuat berkas `.env` (tidak masuk git).
 
+## Keputusan work owner 07-10-2026 — rincian rate tabel flat `M_RATE_LIFE` (RALAT R7)
+
+*"Detail R/I Rate Life (M_RATE_LIFE) menjadi tabel flat, satu tabel saja (pola sama dengan ringkasan, migrasi
+927/928). M_RATE_LIFE TIDAK dihapus."* Sasaran akhir POOLDATA: `M_RATE_LIFE` berkolom PERSIS seperti view `RATE_LIFE`
+lama - `ID` (PK warisan), `IDUSEDBY`, `USEDBY`, `TYPE`, `GENDER`, `CONTRACT`, `AGE`, `RATE`, semua teks (RATE tetap
+teks: nilai Pega apa adanya, berkoma maupun bertitik desimal); `JSONDATA` + constraint `ENSURE_M_RATE_LIFE_JSON`
+dibuang; view `RATE_LIFE` DIBUANG; indeks `IX_M_RATE_LIFE_IDUSEDBY`; nol tabel baru.
+
+Keadaan DEV (WO 07-10-2026, baca-saja): `M_RATE_LIFE` = `ID VARCHAR2(10)` PK + `JSONDATA CLOB` (IS JSON), 98.306 baris;
+view `RATE_LIFE` 8 kolom VARCHAR2; panjang maksimum isi ID 7, IDUSEDBY 7, USEDBY 95, TYPE 0 (kosong), GENDER 1,
+CONTRACT 3, AGE 3, RATE 20 byte; RATE 90.437 baris berkoma desimal, 3.226 bertitik desimal; 539 baris yatim (IDUSEDBY
+tanpa ringkasan); `SEQ_M_RATE_LIFE` terakhir 1117016. Kunci JSON `FLAG` TIDAK dipindah (RALAT R5) - hanya di cadangan CSV.
+Prosedur `PEGA_M_RATE_LIFE` menjadi INVALID (diterima WO).
+
+Penerapan:
+
+- Migrasi inti `929_m_rate_life_kolom.sql` (ALTER … ADD ketujuh kolom, berdiri sendiri) dan
+  `930_m_rate_life_satu_tabel.sql` (blok berpelindung katalog: isi kolom dari JSONDATA apa adanya, lalu
+  `DROP COLUMN JSONDATA CASCADE CONSTRAINTS`; CREATE INDEX; DROP VIEW `RATE_LIFE` terakhir). Jalur mundur 930 + 929
+  membangun ulang JSONDATA (`JSON_OBJECT … ABSENT ON NULL`), constraint, dan view (FLAG hanya dari cadangan CSV).
+- Modul ini membaca dan menulis kolom bernama `M_RATE_LIFE` (`backend/repository/rirl.go`, `rirl_tabel.go`
+  `KolomRate`); `rirl_json.go` (baca `FOR UPDATE` + ganti kunci di Go) dihapus. Perilaku tetap: kosong = NULL (dulu
+  kunci dibuang), RATE disimpan berkoma desimal (A8), `TYPE` tidak ditulis.
+- Pembaca lain ikut membaca `M_RATE_LIFE` berkolom sama (baca-saja, nama konstanta tetap): `claimlife`
+  (`NamaViewRateLife`, spreading retro), `premiumlistlife` (`ViewRateProduk`, rate produk / Hitung QR),
+  `masterproductnamelife` (`MasterRate`, View Rate), `mastercontractretrolife` (`MasterRate`, Rate List) - ⚠️ tinjauan
+  tim inti (`docs/PR-RIRATELIFE-FLAT.md`).
+- Langkah WO: `docs/LANGKAH-WO-RIRATELIFE-DETAIL-FLAT.md` + berkas SQL\*Plus `docs/sql/detail_flat_*.sql` (prasyarat:
+  Pega R/I Rate dan backend dihentikan, nol kunci DML, angka acuan dibandingkan lagi tepat sebelum `-migrate`).
+- Tinjauan independen 08-10-2026: `929_down` / `927_down` mulai dengan pelindung gagal-keras
+  (`UPDATE … SET JSONDATA = JSONDATA WHERE 1 = 0` → ORA-00904 bila JSONDATA sudah dibuang); `930_down` aman diulang;
+  JSONDATA dikembalikan NULLABLE (bukti NOT NULL tidak ada di repo).
+
+### Item terbuka work owner — 539 baris yatim
+
+539 baris `M_RATE_LIFE` (WO 07-10-2026) ber-IDUSEDBY yang tidak ada di `M_RATE_LIFE_SUMMARY`. Keputusan: TIDAK dihapus,
+dipindah 930 apa adanya. Tidak tampil di layar mana pun modul ini (Rate Detail dibuka dari ringkasan), tetapi tetap
+terbaca pembaca lain menurut IDUSEDBY. Contoh ID BELUM dilihat executor (tidak dikarang); kueri baca-saja untuk WO:
+
+```sql
+SELECT COUNT(*) FROM POOLDATA.M_RATE_LIFE r WHERE NOT EXISTS
+  (SELECT 1 FROM POOLDATA.M_RATE_LIFE_SUMMARY s WHERE s.ID = r.IDUSEDBY);
+SELECT r.ID, r.IDUSEDBY, r.USEDBY FROM POOLDATA.M_RATE_LIFE r WHERE NOT EXISTS (SELECT 1 FROM POOLDATA.M_RATE_LIFE_SUMMARY s WHERE s.ID = r.IDUSEDBY) ORDER BY r.IDUSEDBY, r.ID FETCH FIRST 20 ROWS ONLY;
+```
+
+Perlu keputusan WO: dibiarkan, dihapus, atau disambungkan ke ringkasan - di luar cakupan R7.
+
 ## Isi folder
 
 | Folder | Isi |
 | --- | --- |
-| `docs/` | `STRUKTUR-TABEL-RIRATELIFE.md` — kolom ringkasan, tabel/view warisan, kunci JSON; `LANGKAH-WO-RIRATELIFE-SATU-TABEL.md`; `PR-RIRATELIFE-FLAT.md` |
+| `docs/` | `STRUKTUR-TABEL-RIRATELIFE.md` — kolom ringkasan, tabel/view warisan, kunci JSON; `LANGKAH-WO-RIRATELIFE-SATU-TABEL.md`; `LANGKAH-WO-RIRATELIFE-DETAIL-FLAT.md` (+ `sql/detail_flat_*.sql`); `PR-RIRATELIFE-FLAT.md` |
 | `backend/` | `models/` `repository/` `services/` `handlers/` `tiruan/` `modul.go` (tanpa `migrations/`) |
 | `frontend/` | `pages/` `components/` `labels.ts` `api.ts` `aturan.ts` `riratelife.css` `menu.ts` `rute.tsx` dan `*.test.ts` |
 
@@ -140,6 +187,7 @@ daftar berurutan `… "923_seq_rate_life.sql", "924_ricomm_life.sql", "925_m_nav
 
 | # | Bunyi lama | Bunyi baru | Bukti |
 | --- | --- | --- | --- |
+| R7 (07-10-2026) | Bab "Tabel warisan": *"`M_RATE_LIFE` tabel fisik warisan Pega (baris rate, JSON) … nol DDL"*, *"`RATE_LIFE` view warisan atas `M_RATE_LIFE`; dibaca Rate Detail, Delete, dan pemeriksa kembar upload"*; R3 (baca `FOR UPDATE` + ganti kunci JSON di Go) untuk rincian | **Keputusan work owner 07-10-2026: rincian rate SATU tabel flat `M_RATE_LIFE`** berkolom ID, IDUSEDBY, USEDBY, TYPE, GENDER, CONTRACT, AGE, RATE (teks, isi apa adanya; RATE tetap teks); JSONDATA + constraint IS JSON dibuang, view `RATE_LIFE` dibuang (930), indeks `IX_M_RATE_LIFE_IDUSEDBY`; `M_RATE_LIFE` bukan lagi tabel warisan; rincian dibaca/ditulis lewat kolom (`rirl_json.go` dihapus); FLAG tidak dipindah (R5); 539 baris yatim dipindah apa adanya (item terbuka WO); claimlife, premiumlistlife, MPNL, MCRL membaca `M_RATE_LIFE` berkolom sama; `PEGA_M_RATE_LIFE` INVALID (diterima WO) | migrasi inti `929_m_rate_life_kolom.sql`, `930_m_rate_life_satu_tabel.sql`; uji `TestMigrasi929KolomRate`, `TestMigrasi930SatuTabel`, `TestSqlRate`, `TestNolJSONDanViewDiRepository`, `-tags=db` `TestDBMigrasiRincianFlatDanMundur`; pengecualian penjaga `TestKolomUangDesimalDanNolJSON` untuk `DROP COLUMN JSONDATA` 930 (pola 928) - tinjauan tim inti (`docs/PR-RIRATELIFE-FLAT.md`); `docs/LANGKAH-WO-RIRATELIFE-DETAIL-FLAT.md` |
 | R6 (07-10-2026) | R4: *"VIEW `RATE_LIFE_SUMMARY` diganti TABEL FLAT bernama sama … `M_RATE_LIFE_SUMMARY` (JSON) TIDAK disentuh: cadangan + sumber alat pindah"* | **Keputusan work owner 07-10-2026: ringkasan cukup SATU tabel `M_RATE_LIFE_SUMMARY`** berkolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID (lebar = 926); JSONDATA + constraint IS JSON dibuang; tabel flat 926 dihapus (928); Pega tidak lagi menyimpan R/I Rate (prosedur `PEGA_M_RATE_LIFE_SUMMARY`, `PEGA_M_PLAN_LIFE_SUMMARY` INVALID - diterima WO); alat pindahflat dan berkas DBA lepas view dihapus; MPNL dan MCRL membaca kolom `M_RATE_LIFE_SUMMARY` | migrasi inti `927_m_rate_life_summary_kolom.sql`, `928_m_rate_life_summary_satu_tabel.sql`; uji `TestMigrasi927KolomRingkasan`, `TestMigrasi928SatuTabel`, `TestSqlTulisRingkasan`, `-tags=db` `TestDBMigrasiSatuTabelDanMundur`; [keputusan work owner 07-10-2026] DELETE 928 langkah 2 (buang baris `M_RATE_LIFE_SUMMARY` yang tidak ada di tabel flat) DISETUJUI; tabel flat tetap sumber kebenaran. Bukti POOLDATA (baca-saja, WO 07-10-2026): JSON 347 baris, flat 347 baris; ID hanya di JSON = `1000469` ("TEST RATE LIFE", sudah dihapus pengguna lewat aplikasi); ID hanya di flat = `1000471` (baru dari aplikasi); isi beda pada ID yang sama = 0; tidak ada tulisan Pega sesudah cutover 09:09. Pengecualian penjaga `TestKolomUangDesimalDanNolJSON` untuk `DROP COLUMN JSONDATA` 928 DISETUJUI WO, tetap ditinjau tim inti (`docs/PR-RIRATELIFE-FLAT.md`). |
 | R5 (06-10-2026) | R4/K-F2: tabel flat memuat keenam kolom view termasuk `FLAG`; FLAG berstatus [penyimpangan sadar - menunggu WO] + pertanyaan arti `AP`/`PM`/`PY` | **FLAG tidak digunakan - keputusan WO 06-10-2026; nilai lama tetap di `M_RATE_LIFE_SUMMARY.JSONDATA`.** FLAG diisi layar Pega saat Submit (nol trigger/prosedur). Kolom FLAG dibuang dari CREATE TABLE 926 (belum dijalankan di DEV - berkas yang sama diubah, bukan migrasi baru); `_down` tetap memulihkan view asli lengkap. Modul dan alat pindah tidak membaca/menulis/menyalin FLAG; delta, COUNT, dan MINUS memakai 5 kolom. Pertanyaan FLAG untuk WO dicabut | keputusan WO 06-10-2026; `926_rate_life_summary_flat.sql`; uji `TestMigrasi926TeruraiDanBerpasangan` (nol FLAG di DDL), `TestSqlTulisRingkasan` (nol FLAG di SQL repository dan alat), `TestRencanaPindahPenuh` |
 | R4 (06-10-2026) | K1: *"CRUD menulis ke `M_RATE_LIFE_SUMMARY`, view TIDAK di-DROP, nol DDL pada tabel/view warisan"* | **Keputusan work owner 06-10-2026 K-F1/K-F2**: VIEW `RATE_LIFE_SUMMARY` diganti TABEL FLAT bernama sama (migrasi inti 926, keenam kolom view, isi apa adanya); ringkasan dibaca DAN ditulis di tabel flat (kolom bernama, `TYPE`/`FLAG` tidak ditulis); `M_RATE_LIFE_SUMMARY` dibaca saja (cadangan, sumber alat pindah, ID terpakai); DROP VIEW = berkas DBA terpisah sebelum `-migrate` | perintah WO *"tabel M_RATE_LIFE_SUMMARY buat jadi flat …"*; `926_rate_life_summary_flat.sql`; uji `TestMigrasi926TeruraiDanBerpasangan`, `TestSqlTulisRingkasan`, `TestRencanaPindah`, `TestNilaiJSON`, `-tags=db` `rirl_db_test.go` |
@@ -152,9 +200,11 @@ daftar berurutan `… "923_seq_rate_life.sql", "924_ricomm_life.sql", "925_m_nav
 Nol migrasi modul. Migrasi inti `922_m_nav_menu_riratelife.sql` (baris menu, langsung menyala),
 `923_seq_rate_life.sql` (dua sequence, nilai awal = ID angka tertinggi + 1 dihitung di basis data tujuan),
 `926_rate_life_summary_flat.sql` (tabel flat ringkasan, RALAT R4 - sudah jalan di DEV), `927_m_rate_life_summary_kolom.sql`
-dan `928_m_rate_life_summary_satu_tabel.sql` (satu tabel, RALAT R6). 924/925 dipakai `ricommlife` di cabangnya.
-⚠️ Karena 927/928 mengubah bentuk `M_RATE_LIFE_SUMMARY`, tabel itu TIDAK lagi dinyatakan "Tabel warisan" di bawah
-(preseden `adjusterconsultant` 870); kolom yang dibuat migrasi tercatat di `docs/STRUKTUR-TABEL-RIRATELIFE.md`.
+dan `928_m_rate_life_summary_satu_tabel.sql` (satu tabel, RALAT R6), `929_m_rate_life_kolom.sql` dan
+`930_m_rate_life_satu_tabel.sql` (rincian flat, RALAT R7). 924/925 dipakai `ricommlife` di cabangnya.
+⚠️ Karena 927/928 mengubah bentuk `M_RATE_LIFE_SUMMARY` dan 929/930 mengubah bentuk `M_RATE_LIFE`, kedua tabel itu
+TIDAK lagi dinyatakan "Tabel warisan" di bawah (preseden `adjusterconsultant` 870); kolom yang dibuat migrasi tercatat
+di `docs/STRUKTUR-TABEL-RIRATELIFE.md`.
 
 ## Menjalankan uji modul ini saja
 
@@ -173,5 +223,4 @@ npx vitest run modul/riratelife
 
 | Tabel | Alasan |
 | --- | --- |
-| `M_RATE_LIFE` | tabel fisik warisan Pega (baris rate, JSON); disisipkan Simpan Upload dan Rate Detail Save, diubah Rate Detail Edit, dihapus Delete ringkasan; nol DDL |
-| `RATE_LIFE` | view warisan atas `M_RATE_LIFE`; dibaca Rate Detail, Delete, dan pemeriksa kembar upload |
+| `RATE_LIFE` | view warisan Pega atas `M_RATE_LIFE.JSONDATA`; tidak pernah dibuat migrasi maju - DIBUANG `930_m_rate_life_satu_tabel.sql` (RALAT R7), dibangun ulang hanya oleh jalur mundur 930; nol pembaca sesudah 930 |

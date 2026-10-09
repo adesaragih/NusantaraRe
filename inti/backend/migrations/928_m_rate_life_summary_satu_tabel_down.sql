@@ -3,6 +3,9 @@
 -- MODIFIEDDATE, OPERATORID) dan constraint IS JSON dipulihkan. Sesudahnya 927_down membuang keempat kolom.
 -- ⚠️ FLAG lama TIDAK dapat dibangun dari kolom; satu-satunya sumbernya cadangan CSV ID + JSONDATA (LANGKAH-WO (a)).
 -- Ringkasan yang dihapus 928 (sudah dihapus aplikasi) pun hanya ada di cadangan itu.
+-- ⚠️ JSONDATA dikembalikan NULLABLE: definisi asli DEV yang tercatat di repo hanya "ID VARCHAR2(10) PK + JSONDATA CLOB
+-- (IS JSON)" (fakta WO 07-10-2026, MODUL.md R6) - tanpa bukti NOT NULL. Bila katalog DEV menunjukkan NOT NULL, DBA
+-- menambahkannya sesudah mundur (LANGKAH-WO-RIRATELIFE-SATU-TABEL.md, Jalur mundur).
 CREATE TABLE {skema}.RATE_LIFE_SUMMARY (
   ID            VARCHAR2(10) NOT NULL,
   USEDBY        VARCHAR2(500),

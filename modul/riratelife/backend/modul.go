@@ -4,8 +4,9 @@
 // pada Master Treaty, menu ini bisa CRUD untuk simpan data ke tabel RATE_LIFE_SUMMARY, panduannya xml yang saya
 // berikan"). RALAT R4 (tabel flat, 06-10-2026) =
 // riwayat; RALAT R6 (keputusan work owner 07-10-2026): ringkasan dibaca dan ditulis di kolom SATU tabel
-// `M_RATE_LIFE_SUMMARY` (migrasi inti 927/928); rincian `M_RATE_LIFE` ditulis, view `RATE_LIFE` dibaca. NOL MIGRASI
-// SENDIRI - menu = migrasi inti 922, sequence ID = 923, ringkasan = 926 (riwayat) + 927/928.
+// `M_RATE_LIFE_SUMMARY` (migrasi inti 927/928); RALAT R7: rincian dibaca dan ditulis di kolom tabel flat
+// `M_RATE_LIFE`. NOL MIGRASI SENDIRI - menu = migrasi inti 922, sequence ID = 923, ringkasan = 926 (riwayat) + 927/928,
+// rincian = 929/930.
 package backend
 
 import (

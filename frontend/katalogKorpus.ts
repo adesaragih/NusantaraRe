@@ -100,8 +100,20 @@ export const LABEL_TAMPIL: Readonly<Partial<Record<keyof typeof FOLDER_KORPUS, s
  * (REINSURANCETYPE, master jenis reasuransi), label "Reinsurance Type", kelompok MASTER TREATY, migrasi inti 921.
  * Perintah work owner 05-10-2026: modul `riratelife` (M_RATE_LIFE_SUMMARY, ringkasan rate reasuransi life), label
  * "R/I Rate Life", kelompok MASTER TREATY, migrasi inti 922. Perintah work owner 06-10-2026: modul `ricommlife`
- * (M_RICOMM_LIFE_SUMMARY + tabel flat RICOMM_LIFE, migrasi inti 924), label "R/I Comm Life", kelompok MASTER TREATY,
- * migrasi inti 925.
+ * (M_RICOMM_LIFE_SUMMARY + M_RICOMM_LIFE, satu tabel per jenis data sejak migrasi inti 931-934 - keputusan work
+ * owner 08-10-2026), label "R/I Comm Life", kelompok MASTER TREATY, migrasi inti 925. Keputusan work owner 08-10-2026
+ * K4: modul `ririsklife` (RIRISK_LIFE_SUMMARY + RIRISK_LIFE, tabel Pega berganti nama migrasi inti 935-940), label
+ * "R/I Risk", kelompok MASTER TREATY URUTAN 11, migrasi inti 941. Keputusan work owner 08-10-2026 K4: modul
+ * `benefitlife` (BENEFIT_LIFE, tabel Pega M_BENEFIT_LIFE berganti nama migrasi inti 942-944), label "Benefit",
+ * kelompok MASTER TREATY URUTAN 12, migrasi inti 945. Keputusan work owner 08-10-2026 K6: modul `planlife`
+ * (PRODUCT_TYPE_LIFE, tabel Pega M_PRODUCT_TYPE_LIFE berganti nama migrasi inti 946-948), label "Plan", kelompok
+ * MASTER TREATY URUTAN 13, migrasi inti 949. Keputusan work owner 08-10-2026 K0/K5: modul `causeoflosslife`
+ * (CAUSEOFLOSS_LIFE, tabel Pega M_CAUSEOFLOSS_LIFE berganti nama migrasi MODUL 090-092), label "Cause Of Loss Life",
+ * kelompok MASTER TREATY URUTAN 14 - baris luar korpus PERTAMA yang lahir di slot menu modulnya sendiri (955).
+ * Keputusan work owner 08-10-2026 K0/D4: modul `diseaselife` (DISEASE_LIFE, tabel Pega yang sudah flat - migrasi MODUL
+ * 080-081 hanya sequence + PK), label "Disease Life", kelompok MASTER TREATY URUTAN 15, lahir di slot menu modulnya (951).
+ * Keputusan work owner 08-10-2026 K0/C4: modul `coverlife` (M_COVER_LIFE, tabel Pega dijadikan flat TANPA RENAME
+ * migrasi MODUL 085-086), label "Cover Life", kelompok MASTER TREATY URUTAN 16, lahir di slot menu modulnya (957).
  */
 export const MODUL_LUAR_KORPUS = {
   marketingOfficer: 'Marketing Officer',
@@ -126,6 +138,12 @@ export const MODUL_LUAR_KORPUS = {
   reinsuranceType: 'Reinsurance Type',
   riRateLife: 'R/I Rate Life',
   riCommLife: 'R/I Comm Life',
+  riRiskLife: 'R/I Risk',
+  benefitLife: 'Benefit',
+  planLife: 'Plan',
+  causeOfLossLife: 'Cause Of Loss Life',
+  diseaseLife: 'Disease Life',
+  coverLife: 'Cover Life',
 } as const
 
 /**
