@@ -227,34 +227,23 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 	// pengguna), bukan atribut klaim dan bukan dokumen JSON. Pengecualiannya SATU kolom BLOB di SATU tabel, dan
 	// berkas itu tidak boleh memuat CLOB atau JSON.
 	const berkasTemplat = "912_m_template_file"
-<<<<<<< HEAD
-	// R/I Rate Life (keputusan work owner 07-10-2026): 928 MEMBUANG kolom JSON warisan M_RATE_LIFE_SUMMARY.JSONDATA
-	// (ringkasan satu tabel) dan 930 MEMBUANG M_RATE_LIFE.JSONDATA (rincian tabel flat) - searah dengan penjaga ini.
-	// R/I Comm Life (keputusan work owner 08-10-2026, pola sama): 932 membuang M_RICOMM_LIFE_SUMMARY.JSONDATA dan 934
-	// membuang M_RICOMM_LIFE.JSONDATA - tetap untuk tinjauan tim inti (modul/ricommlife/docs/PR-RICOMMLIFE.md).
-	// R/I Risk (keputusan work owner 08-10-2026): 937 / 940 membuang JSONDATA tabel RIRISK_LIFE_SUMMARY / RIRISK_LIFE
-	// (nama baru M_RIRISK_LIFE*) - tinjauan tim inti (modul/ririsklife/docs/PR-RIRISKLIFE.md).
-	// Benefit (keputusan work owner 08-10-2026 K1/K2, pola R/I Risk): 944 membuang JSONDATA tabel BENEFIT_LIFE (nama baru
-	// M_BENEFIT_LIFE) - tinjauan tim inti (modul/benefitlife/docs/PR-BENEFITLIFE.md).
-	// Plan (keputusan work owner 08-10-2026 K1, pola Benefit): 948 membuang JSONDATA tabel PRODUCT_TYPE_LIFE (nama baru
-	// M_PRODUCT_TYPE_LIFE) - tinjauan tim inti (modul/planlife/docs/PR-PLANLIFE.md).
-	// Cause Of Loss Life (keputusan work owner 08-10-2026 K1, pola Benefit, migrasi MODUL K0): 092 membuang JSONDATA tabel
-	// CAUSEOFLOSS_LIFE (nama baru M_CAUSEOFLOSS_LIFE) - tinjauan tim inti (modul/causeoflosslife/docs/PR-CAUSEOFLOSSLIFE.md).
-	// Cover Life (keputusan work owner 08-10-2026 C1, pola Cause Of Loss TANPA RENAME, migrasi MODUL K0): 086 membuang
-	// JSONDATA tabel M_COVER_LIFE (nama tetap) - tinjauan tim inti (modul/coverlife/docs/PR-COVERLIFE.md).
-	// Pengecualiannya SATU perintah per berkas yang dinamai, persis.
+	// Master Life satu tabel (keputusan work owner 07/08-10-2026): berkas-berkas ini MEMBUANG kolom JSON warisan
+	// `JSONDATA` tabel Pega - searah dengan penjaga ini. Pengecualiannya SATU perintah di SETIAP berkas, persis:
+	// R/I Rate Life 928/930, R/I Comm Life 932/934, R/I Risk 937/940, Benefit 944, Plan 948 (inti), Cause Of Loss
+	// Life 092 dan Cover Life 086 (folder modul). Berkas `_down` tidak termasuk.
 	const perintahBuangJSON = "DROP COLUMN JSONDATA CASCADE CONSTRAINTS"
-	buangJSON := map[string]int{"928_m_rate_life_summary_satu_tabel": 0, "930_m_rate_life_satu_tabel": 0,
-		"932_m_ricomm_life_summary_satu_tabel": 0, "934_m_ricomm_life_satu_tabel": 0,
-		"937_ririsk_life_summary_satu_tabel": 0, "940_ririsk_life_satu_tabel": 0, "944_benefit_life_satu_tabel": 0,
-		"948_product_type_life_satu_tabel": 0, "092_causeofloss_life_satu_tabel": 0, "086_cover_life_satu_tabel": 0}
-	dokumenDiOutbox, blobTemplat := 0, 0
-=======
-	// Ringkasan R/I Rate Life satu tabel (keputusan work owner 07-10-2026): 928 MEMBUANG kolom JSON warisan
-	// M_RATE_LIFE_SUMMARY.JSONDATA - searah dengan penjaga ini. Pengecualiannya SATU perintah di SATU berkas, persis.
-	const berkasBuangJSON, perintahBuangJSON = "928_m_rate_life_summary_satu_tabel",
-		"DROP COLUMN JSONDATA CASCADE CONSTRAINTS"
-	buangJSON := 0
+	buangJSON := map[string]int{
+		"928_m_rate_life_summary_satu_tabel":   0,
+		"930_m_rate_life_satu_tabel":           0,
+		"932_m_ricomm_life_summary_satu_tabel": 0,
+		"934_m_ricomm_life_satu_tabel":         0,
+		"937_ririsk_life_summary_satu_tabel":   0,
+		"940_ririsk_life_satu_tabel":           0,
+		"944_benefit_life_satu_tabel":          0,
+		"948_product_type_life_satu_tabel":     0,
+		"092_causeofloss_life_satu_tabel":      0,
+		"086_cover_life_satu_tabel":            0,
+	}
 	// Treaty In (keputusan pemilik proses 06-10-2026): kelima `CLOB` di `439`
 	// adalah KOLOM BERNAMA — satu per ejaan medan teks bebas tab `Exclusions`
 	// dan `Special Conditions`, terukur mencapai 23.453 aksara sementara
@@ -268,7 +257,6 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 	const berkasTeksPanjang = "439_akar_dan_nilai_sisa"
 	const clobTeksPanjang = 5
 	dokumenDiOutbox, blobTemplat, teksPanjang := 0, 0, 0
->>>>>>> 1a449befcc7f72a478b790809a908c8060688b7d
 	for nama, isi := range seluruhSQL(t, false) {
 		atas := strings.ToUpper(isi)
 		if strings.Contains(nama, berkasOutbox) {
