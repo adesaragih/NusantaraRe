@@ -86,7 +86,9 @@ func (g *Gudang) BacaShareAkarRevisi(ctx context.Context, masterID string) (map[
 }
 
 // TabelDetailWarisan — tabel datar yang `SaveTreatyInDetail_Act` tulis
-// (kelas `ASM-FW-GISFW-Int-TREATYINDETAIL`). Warisan, BACA SAJA.
+// (kelas `ASM-FW-GISFW-Int-TREATYINDETAIL`). Sejak 9 Oktober 2026 modul ini
+// ikut MENULISNYA saat kontrak Resolve Complete (`detail_treaty.go`);
+// pembacaan di sini tidak berubah.
 const TabelDetailWarisan = "TREATYINDETAIL"
 
 // BacaShareDetailWarisan membaca `RNM_SHARE` / `BROKERAGE` kontrak Non-Prop

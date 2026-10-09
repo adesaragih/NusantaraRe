@@ -1,0 +1,3 @@
+-- Jalur mundur 609.
+DROP TABLE {skema}.T_CLAIM_NP_XOL_ALLOC CASCADE CONSTRAINTS
+/

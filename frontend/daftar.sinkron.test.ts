@@ -80,6 +80,7 @@ describe('saringPalet', () => {
     expect(hasil.map((h) => h.label).sort()).toEqual(
       [
         FOLDER_KORPUS.claimLife,
+        FOLDER_KORPUS.claimNonProp,
         FOLDER_KORPUS.claimProp,
         FOLDER_KORPUS.komiteClaimLife,
         FOLDER_KORPUS.komiteClaimProp,

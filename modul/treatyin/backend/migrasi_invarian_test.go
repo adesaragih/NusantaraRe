@@ -847,8 +847,9 @@ func TestWarisanHanyaDibaca(t *testing.T) {
 		// ⭐ 7 Oktober 2026 — tab Share Non-Prop: susunan treaty master
 		// (dropdown Spreading Type dan anaknya) dan autocomplete Reinsurer.
 		"PROPORTIONALARRG", "TREATYYEAR", "AGENT",
-		// ⭐ 7 Oktober 2026 — cadangan skalar akar Share (`SaveTreatyInDetail_Act`).
-		"TREATYINDETAIL",
+		// ⭐ `TREATYINDETAIL` DIKELUARKAN 9 Oktober 2026 — perintah WO:
+		// *"insert ke treatyindetail dan treatyindetailedm jika sudah resolve
+		// complete!"* (`repository/detail_treaty.go`, `SaveTreatyInDetail_Act`).
 	} {
 		t.Run(tabel, func(t *testing.T) { warisanHanyaDibaca(t, tabel) })
 	}

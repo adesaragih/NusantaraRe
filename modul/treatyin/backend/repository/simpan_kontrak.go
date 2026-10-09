@@ -22,9 +22,12 @@ package repository
 //	                      `PEGA_TREATYEXCHANGE`; ⛔ nol `DELETE`: tabelnya
 //	                      berkunci TAHUN dan dibaca modul lain
 //
+//	TREATYINDETAIL        ⭐ 9 Oktober 2026 (perintah WO) — HANYA bila kontrak
+//	                      Resolve Complete (`SaveTreatyInDetail_Act`):
+//	                      hapus lalu sisip, `detail_treaty.go`
+//
 // ⛔ `M_TREATY_IN` dan JSON TIDAK disentuh — prosedur Pega menulis keduanya,
-// jalur ini tidak. ⛔ `M_TREATY_IN_DETAIL` (`SaveTreatyInDetail_Act` saat
-// Resolve Complete) tidak termasuk tabel yang pemilik proses tentukan.
+// jalur ini tidak. ⛔ `M_TREATY_IN_DETAIL` (dokumen JSON detail) pun tidak.
 
 import (
 	"context"
@@ -284,6 +287,9 @@ func (g *Gudang) SimpanLaluBatalkanUntukUji(ctx context.Context, r models.Rencan
 		return "", nil, err
 	}
 	cacah, err := g.CacahBarisKontrak(ctx, tx, id)
+	if err == nil && r.Detail != nil {
+		cacah[TabelDetailTreatyIn], err = g.cacahDetail(ctx, tx, TabelDetailTreatyIn, id)
+	}
 	return id, cacah, err
 }
 
@@ -319,6 +325,14 @@ func (g *Gudang) simpanDalam(ctx context.Context, tx *db.Tx, r models.RencanaSim
 	}
 	if err := g.tulisKepalaTreatyIn(ctx, tx, id, doc, baru); err != nil {
 		return "", err
+	}
+	// SaveTreatyIn_Act [8] — SESUDAH kepala: tanggal baris detail dibaca
+	// prosedur dari `TREATY_IN` yang baru ditulis.
+	if r.Detail != nil {
+		if err := g.tulisDetailTreaty(ctx, tx, TabelDetailTreatyIn, TabelWarisanKontrak, id,
+			models.KolomDetailTreatyIn, r.Detail.Baris); err != nil {
+			return "", err
+		}
 	}
 	if r.Kurs != nil {
 		idKurs, err := g.tulisKurs(ctx, tx, id, *r.Kurs, r.Operator, r.Stempel)

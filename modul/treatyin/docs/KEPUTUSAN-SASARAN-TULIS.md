@@ -282,11 +282,43 @@ permintaan secara berurutan dengan progres `Uploading 2/5 nama`, berkas gagal (t
 `gabungBerkas` / `unggahBerurutan` DISALIN ke `frontend/unggahBerkas.ts` — impor lintas modul
 dilarang `lapisan.guard.test.ts`. Rute dan backend tidak berubah.
 
-### 5.4 Yang sengaja TIDAK dibangun
+### 5.4 ~~Yang sengaja TIDAK dibangun~~ → detail Resolve Complete DIBANGUN 9 Oktober 2026
 
-- `SaveTreatyInDetail_Act` / `SaveTreatyInDetailEdm_Act` (`M_TREATY_IN_DETAIL`,
-  `TREATYINDETAILEDM` saat Resolve Complete) — pemilik proses 7 Oktober 2026: *"biarkan data nya
-  ditarik dari table nya masing masing saja … untuk melihat status nya bisa dari treaty_in"*.
+~~`SaveTreatyInDetail_Act` / `SaveTreatyInDetailEdm_Act` — pemilik proses 7 Oktober 2026: *"biarkan
+data nya ditarik dari table nya masing masing saja"*.~~ **Dicabut** perintah WO 9 Oktober 2026:
+*"insert ke treatyindetail dan treatyindetailedm jika sudah resolve complete!"*
+
+| Tombol (dokumen ber-`Resolve Complete`) | Activity ekspor | Sasaran |
+|---|---|---|
+| Accept Director, Accept Sec Head jalur revisi, Save Force Edit IT | `SaveTreatyIn_Act` [8] → `SaveTreatyInDetail_Act` | `TREATYINDETAIL` |
+| Accept Director penyesuaian | `SaveTreatyIn_EDM_Act` [14] → `SaveTreatyInDetailEdm_Act` | `TREATYINDETAILEDM` |
+
+Dalam transaksi tombol yang sama, SESUDAH kepala: `DELETE … WHERE TREATYID = :id`, lalu satu
+`INSERT` per sisipan activity (`services/detail_treaty.go`, `repository/detail_treaty.go`).
+`SaveTreatyInOffer_Act` (`SaveTreatyIn_Act` [9]) dan `SaveTreatyInDetail_Act` di EDM [13]
+ber-`//` — tidak dibangun.
+
+**Penyimpangan yang dinyatakan:**
+
+- Dokumen JSON detail tidak ditulis/dihapus (larangan `M_TREATY_IN*` di aplikasi).
+- `ID` = situs + angka tertinggi di KEDUA tabel detail + 1 (bukan sequence prosedur, yang bernama
+  tabel dokumen); di DEV deretnya bersambung (719181 → 719182).
+- Galat konversi per baris tidak ditelan: tombolnya ditolak dengan nama kolom (prosedur Pega
+  diam-diam membuang baris). Angka ketikan Indonesia (`"22,5"`) dibaca seperti rumus Limits.
+- EDM Proportional: empat sisipan ber-EPI di ekspor memanggil `SaveTreatyInDetail` (tabel Treaty
+  In); mengikuti perintah WO, SEMUA baris EDM ke `TREATYINDETAILEDM` (data DEV: 363 baris EDM Prop
+  ber-EPI memang di sana).
+
+**Bukti (baca-saja, DEV):** terjemahan dijalankan atas JSON Pega lalu diadu dengan baris yang Pega
+tulis sendiri — kontrak hasil activity versi sekarang (berkolom `SPREAD_RNM_SHARE_*`) cocok penuh,
+termasuk NonProp "type > 1" 30/30 baris; ekspresi `VALUES` dijalankan sebagai `SELECT … FROM DUAL`.
+Baris yang lebih tua (ber-`CLASSOFBUSINESS`, tanpa `COMMENCEMENT`) berasal dari versi activity
+lama dan memang tidak sama.
+
+⚠️ **Terbuka untuk WO:** cabang Treaty In NonProp "spreading type 1" (`[5.4.2]`, `SpreadingTypeXOL`
+terisi) tidak punya langkah `RNM Limit` yang mengisi `LIMITCURRENCY` (EDM `[7.2.2.1]` dan Treaty In
+"type > 1" `[5.4.3.2.1]` punya), sehingga menurut ekspor ia menyisipkan NOL baris. Diikuti apa
+adanya; `TestDetailNonPropTreatyInTypeSatuNolBaris` memakunya.
 
 ### 5.5 Tombol `Copy` daftar kontrak (8 Oktober 2026)
 

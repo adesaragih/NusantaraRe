@@ -249,6 +249,31 @@ Header klaim Life. Satu baris mewakili **satu klaim**. `ID`-nya **sama persis** 
 | `IS_RESERVED_CLAIM` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
 | `IS_ANY_ACCEPTATION` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
 | `IS_SUBJECTIVITY` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `BUSINESS_OLD_ID` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `MASTER_ID_TO` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `POLICY_COB` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `REINSURANCE_SLIP` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `CLAIM_NO_CEDING` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `CIRCUMSTANCES` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `SUPPORTING_DOCUMENT` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `DEDUCTIBLE_MIN_MAX` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `IS_TPL` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `TPL_FORMAT` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `TPL_TYPE` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `TPL_PCT` | angka desimal | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `IS_SAVE_TO_OS` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `WAITING_ACTUAL_PREMIUM` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `STATUS_CASE` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `IS_REJECT` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `KOMITE_NO` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `FLAG_PRINT_PLA` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `RECEIVER_CURRENCY` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `RECEIVER_BANK_NAME2` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `RECEIVER_BANK_BRANCH2` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `RECEIVER_ACCOUNT_NO2` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `RECEIVER_SWIFT_CODE2` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `RECEIVER_BANK_ID2` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `RECEIVER_CURRENCY2` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
 
 **Index:** tidak ada di luar PK.
 

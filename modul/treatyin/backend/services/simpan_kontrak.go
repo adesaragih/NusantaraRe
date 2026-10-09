@@ -31,6 +31,11 @@ package services
 // ⭐ "Clipboard" Pega di sini = dokumen TERSIMPAN (`T_TREATY_*`, di atas
 // kepala `TREATY_IN`) ditimpa kunci yang layar kirim. Tab yang tidak dibuka
 // tidak dikirim layar, dan tidak terhapus.
+//
+// ⭐ `SaveTreatyIn_Act` [8] (9 Oktober 2026, perintah WO): setiap tulisan
+// kontrak ber-`Resolve Complete` — Accept Director, Accept Sec Head jalur
+// revisi, Save Force Edit IT — ikut menulis ulang `TREATYINDETAIL`
+// (`detail_treaty.go`). Syaratnya status DOKUMEN, sama dengan ekspor.
 
 import (
 	"context"
@@ -506,9 +511,19 @@ func (l *Layanan) tulis(ctx context.Context, p inti.Pelaku, m MasukanSimpan, doc
 	}
 	asing = unik(append(asing, belum...))
 	sort.Strings(asing)
+	// SaveTreatyIn_Act [8] — `SaveTreatyInDetail_Act` bila Resolve Complete
+	// (perintah WO 9 Oktober 2026). [9] `SaveTreatyInOffer_Act` ber-`//`.
+	var detail *models.RencanaDetail
+	if idKontrak := strings.TrimSpace(m.IDKontrak); idKontrak != "" && teksDok(doc, "StatusAkseptasi") == models.StatusTuntas {
+		baris, err := SusunDetailTreatyIn(doc, idKontrak)
+		if err != nil {
+			return HasilSimpan{}, err
+		}
+		detail = &models.RencanaDetail{Baris: baris}
+	}
 	id, err := l.gudang.SimpanKontrak(ctx, models.RencanaSimpan{
 		ID: strings.TrimSpace(m.IDKontrak), Dokumen: doc, Kurs: kurs,
-		Operator: p.AkunID, Stempel: stempelPega(time.Now()),
+		Operator: p.AkunID, Stempel: stempelPega(time.Now()), Detail: detail,
 	})
 	if err != nil {
 		return HasilSimpan{}, err

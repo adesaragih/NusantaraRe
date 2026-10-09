@@ -87,16 +87,17 @@ describe('hasil bersih M_NAV_MENU ↔ daftar.ts, dua arah', () => {
   it('uji gigit: modul frontend tanpa baris, atau berbaris DIMIGRASI=0', () => {
     const tiruan = { nama: 'modultiruan', kelompok: 'Modul Tiruan', halaman: ['t'], halamanAwal: 't' }
     expect(selisihMenuModul(BERSIH.baris, [...MODUL_FRONTEND, tiruan])).toEqual(['modul frontend modultiruan tanpa baris M_NAV_MENU'])
-    // Contoh modul berbaris DIMIGRASI='0' - claimnonprop (edmtreatyin menyala 06-10-2026, slot 970; claimprop
-    // menyala 07-10-2026, slot 980; komiteclaimprop menyala 08-10-2026, slot 986).
-    const claimnonprop = {
-      nama: 'claimnonprop',
-      kelompok: 'Claim Non Prop',
-      halaman: ['claimnonprop'],
-      halamanAwal: 'claimnonprop',
+    // Contoh modul berbaris DIMIGRASI='0' - komiteclaimnonprop (edmtreatyin menyala 06-10-2026, slot 970; claimprop
+    // menyala 07-10-2026, slot 980; komiteclaimprop menyala 08-10-2026, slot 986; claimnonprop menyala 09-10-2026,
+    // slot 982).
+    const komiteclaimnonprop = {
+      nama: 'komiteclaimnonprop',
+      kelompok: 'Komite Claim Non Prop',
+      halaman: ['komiteclaimnonprop'],
+      halamanAwal: 'komiteclaimnonprop',
     }
-    expect(selisihMenuModul(BERSIH.baris, [...MODUL_FRONTEND, claimnonprop])).toEqual([
-      "modul frontend claimnonprop: barisnya DIMIGRASI='0'",
+    expect(selisihMenuModul(BERSIH.baris, [...MODUL_FRONTEND, komiteclaimnonprop])).toEqual([
+      "modul frontend komiteclaimnonprop: barisnya DIMIGRASI='0'",
     ])
   })
 

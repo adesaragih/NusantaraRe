@@ -22,10 +22,13 @@ package repository
 //	               (`STSINPUT='0'` → INSERT, selainnya UPDATE semua kolom
 //	               kecuali ID); `EDMDATE = SYSDATE`
 //
+//	TREATYINDETAILEDM  ⭐ 9 Oktober 2026 (perintah WO) — HANYA bila
+//	               penyesuaian Resolve Complete (`SaveTreatyInDetailEdm_Act`):
+//	               hapus lalu sisip, `detail_treaty.go`
+//
 // ⛔ Dokumen JSON EDM TIDAK disentuh — prosedur Pega menulisnya, jalur ini
-// tidak (keputusan pemilik proses: nol akses ke dokumen JSON). ⛔ Detail EDM
-// saat Resolve Complete (`SaveTreatyInDetailEdm_Act`) tidak dibangun —
-// pemilik proses: data ditarik dari tabel tiap tab, status dari kepalanya.
+// tidak (keputusan pemilik proses: nol akses ke dokumen JSON), begitu pula
+// dokumen JSON detail EDM.
 
 import (
 	"context"
@@ -178,6 +181,11 @@ func (g *Gudang) SimpanPenyesuaianLaluBatalkanUntukUji(ctx context.Context, r mo
 	if baru, err = g.CacahBarisKontrak(ctx, tx, r.ID); err != nil {
 		return nil, nil, nil, err
 	}
+	if r.Detail != nil {
+		if baru[TabelDetailTreatyInEDM], err = g.cacahDetail(ctx, tx, TabelDetailTreatyInEDM, r.ID); err != nil {
+			return nil, nil, nil, err
+		}
+	}
 	if lama, err = g.CacahBarisKontrak(ctx, tx, r.ID+AkhiranSisiLama); err != nil {
 		return nil, nil, nil, err
 	}
@@ -226,7 +234,16 @@ func (g *Gudang) simpanPenyesuaianDalam(ctx context.Context, tx *db.Tx, r models
 			return err
 		}
 	}
-	return g.tulisKepalaPenyesuaian(ctx, tx, id, doc, !ada)
+	if err := g.tulisKepalaPenyesuaian(ctx, tx, id, doc, !ada); err != nil {
+		return err
+	}
+	// SaveTreatyIn_EDM_Act [14] — SESUDAH kepala: tanggal baris detail dibaca
+	// prosedur dari `TREATY_IN_EDM`.
+	if r.Detail != nil {
+		return g.tulisDetailTreaty(ctx, tx, TabelDetailTreatyInEDM, TabelKepalaPenyesuaian, id,
+			models.KolomDetailTreatyInEDM, r.Detail.Baris)
+	}
+	return nil
 }
 
 func (g *Gudang) adaKepalaPenyesuaian(ctx context.Context, tx *db.Tx, id string) (bool, error) {

@@ -88,8 +88,10 @@ var berkasKomiteBolehMenyebut = map[string]string{
 	// (`AddKomiteTreatyChild_ACT`, activity Claim Prop) menulis tangga awal, seperti `kasuskomite.go` di atas, dan grid
 	// "Committe Accept Status" membaca keputusannya. Kode batas komite Claim Prop dikumpulkan di DUA berkas ini saja;
 	// keputusan tingkat tetap ditulis konteks Komite.
-	"modul/claimprop/backend/models/komite.go":     "modul Claim Prop - nama properti keputusan anggota (grid Committe Accept Status); keputusan work owner 07-10-2026",
-	"modul/claimprop/backend/repository/komite.go": "modul Claim Prop - penulis tangga AddKomiteTreatyChild_ACT dan pembacanya; keputusan work owner 07-10-2026",
+	"modul/claimprop/backend/models/komite.go":        "modul Claim Prop - nama properti keputusan anggota (grid Committe Accept Status); keputusan work owner 07-10-2026",
+	"modul/claimprop/backend/repository/komite.go":    "modul Claim Prop - penulis tangga AddKomiteTreatyChild_ACT dan pembacanya; keputusan work owner 07-10-2026",
+	"modul/claimnonprop/backend/models/komite.go":     "modul Claim Non Prop - nama properti keputusan anggota (grid Committe Accept Status); izin work owner 09-10-2026",
+	"modul/claimnonprop/backend/repository/komite.go": "modul Claim Non Prop - penulis tangga CreateChildKomiteCNP_Act dan pembacanya; izin work owner 09-10-2026",
 	// ⛔ MODUL KOMITE CLAIM PROP - izin work owner 08-10-2026: penulis keputusan tingkat (`KomitePostAdjustment` S6 /
 	// S26.1) dan pembaca tangga / daftar kerja (`KomiteRouter` S6.1). SATU berkas; nama properti keputusan tidak dipakai.
 	"modul/komiteclaimprop/backend/repository/tangga.go": "modul Komite Claim Prop - penulis keputusan tangga dan daftar kerja KomiteRouter; izin work owner 08-10-2026",
