@@ -24,6 +24,13 @@ type Gudang interface {
 	IDKasusBerikut(ctx context.Context, tx *db.Tx, awalan string) (string, error)
 	SisipKasus(ctx context.Context, tx *db.Tx, id, pembuat, namaPembuat string, saat time.Time) error
 	Keadaan(ctx context.Context, tx *db.Tx, id string) (models.Kasus, error)
+
+	// lampiran klaim (pola Claim Prop)
+	KategoriLampiran(ctx context.Context, id string) ([]models.KategoriLampiran, error)
+	DaftarLampiran(ctx context.Context, id string) ([]models.Lampiran, error)
+	SisipDokumenKlaim(ctx context.Context, tx *db.Tx, d models.BarisDokumenKlaim) error
+	HapusDokumenKlaim(ctx context.Context, tx *db.Tx, id, lid string) error
+	PindahKategoriDokumen(ctx context.Context, tx *db.Tx, id, lid, kategori string) error
 	KunciKasus(ctx context.Context, tx *db.Tx, id, tahap string) (models.Kasus, error)
 	PindahTahap(ctx context.Context, tx *db.Tx, id, lama, baru, posisi string, saat time.Time) error
 	TutupKasus(ctx context.Context, tx *db.Tx, id, tahap string, saat time.Time) error

@@ -1,9 +1,17 @@
 // Klien Claim Non Prop - `/api/claim-non-prop` (`modul/claimnonprop/backend/handlers/rute.go`). Layar datang dari server
 // sebagai pohon tata (`models.Tata`): tampil / hanya-baca / nonaktif / wajib sudah dievaluasi di server; layar hanya
 // merender dan mengirim balik nilai medan terbuka bersama setiap aksi. Disalin dari pola `modul/claimprop/frontend/api.ts`
-// (bukan impor); nol rute lampiran (korpus Non Prop tanpa section unggahan).
+// (bukan impor); lampiran klaim pola Claim Prop (perintah work owner 09-10-2026).
 
-import { minta } from '../../../inti/frontend/klien'
+import {
+  BATAS_WAKTU_MS,
+  kegagalanDari,
+  minta,
+  mintaFormulir,
+  rakitURL,
+  unduhBerkasBeridentitas,
+} from '../../../inti/frontend/klien'
+import { headerIdentitas } from '../../../inti/frontend/store/sesi'
 
 export const PREFIX_CNP = '/api/claim-non-prop'
 
@@ -184,4 +192,101 @@ export interface HakPelaku {
 
 export function ambilHak(): Promise<HakPelaku> {
   return minta(`${PREFIX_CNP}/hak`)
+}
+
+/** `AttachCategory.pxResults` - kategori master NONPROP dan cacah berkas klaim ini. */
+export interface KategoriLampiran {
+  id: string
+  label: string
+  countAttach: number
+}
+
+/** Satu dokumen klaim. */
+export interface Lampiran {
+  id: string
+  namaFile: string
+  kategori: string
+  mime: string
+  /** KATEGORI_2 (kolom Note popup NB). */
+  note: string
+  /** Upload Date `DD-MM-YYYY HH:mm`. */
+  tanggal: string
+  /** PXCREATEOPERATOR - username pengunggah. */
+  operator: string
+  /** Objek penyimpanan tercatat (syarat View / View Office Online). */
+  adaObjek: boolean
+}
+
+export interface LampiranKasus {
+  kategori: KategoriLampiran[]
+  lampiran: Lampiran[]
+  bolehUnggah: boolean
+}
+
+/** Kategori + dokumen klaim kasus. */
+export function ambilLampiran(id: string): Promise<LampiranKasus> {
+  return minta(`${PREFIX_CNP}/kasus/${encodeURIComponent(id)}/lampiran`)
+}
+
+/** `GCNMSaveAttachments`: `kategori` bersama (TempInputParam.pyCategory, Upload File baris) ATAU `kategoriBerkas` per
+ *  berkas (`.pyCategory`, Add attachment), satu `InsertDocument_Act` per berkas. */
+export function unggahLampiran(
+  id: string,
+  kategori: string,
+  berkas: File[],
+  kategoriBerkas?: string[],
+): Promise<{ lampiran: Lampiran[] }> {
+  const isi = new FormData()
+  if (kategori !== '') isi.append('kategori', kategori)
+  berkas.forEach((b, i) => {
+    isi.append('berkas', b)
+    if (kategoriBerkas) isi.append('kategoriBerkas', kategoriBerkas[i] ?? '')
+  })
+  return mintaFormulir(`${PREFIX_CNP}/kasus/${encodeURIComponent(id)}/lampiran`, isi)
+}
+
+/** View File: isi satu dokumen klaim (`GetBase64Attachment` -> `GetUrlGoogleStorage_Act`) - fetch beridentitas. */
+export function unduhLampiran(id: string, a: Lampiran): Promise<void> {
+  return unduhBerkasBeridentitas(`${jalurLampiran(id, a)}/isi`, a.namaFile)
+}
+
+function jalurLampiran(id: string, a: Lampiran): string {
+  return `${PREFIX_CNP}/kasus/${encodeURIComponent(id)}/lampiran/${encodeURIComponent(a.id)}`
+}
+
+/** Isi satu dokumen klaim sebagai Blob - `View` pdf / gambar di popup penampil (pola NB Treaty In). */
+export async function ambilIsiLampiran(id: string, a: Lampiran): Promise<Blob> {
+  const kendali = new AbortController()
+  const jam = setTimeout(() => {
+    kendali.abort()
+  }, BATAS_WAKTU_MS)
+  try {
+    const jawab = await fetch(rakitURL(`${jalurLampiran(id, a)}/isi`), {
+      method: 'GET',
+      headers: { ...headerIdentitas() },
+      signal: kendali.signal,
+    })
+    if (!jawab.ok) throw kegagalanDari(jawab.status, await jawab.text())
+    return await jawab.blob()
+  } finally {
+    clearTimeout(jam)
+  }
+}
+
+/** View Office Online - URL bertanda tangan untuk penampil kantor (pola NB `DownloadDocumentPolis` ViewOffice). */
+export function tautanOfficeLampiran(id: string, a: Lampiran): Promise<{ url: string }> {
+  return minta(`${jalurLampiran(id, a)}/office`)
+}
+
+/** Change Category - dokumen terpilih ke kategori lain (layar Pega View File). */
+export function pindahKategoriLampiran(id: string, kategori: string, ids: string[]): Promise<{ ok: boolean }> {
+  return minta(`${PREFIX_CNP}/kasus/${encodeURIComponent(id)}/lampiran/kategori`, {
+    metode: 'POST',
+    badan: { kategori, ids },
+  })
+}
+
+/** Delete (pola NB `DeleteDocumentPolis_Act`). */
+export function hapusLampiran(id: string, a: Lampiran): Promise<{ ok: boolean }> {
+  return minta(`${jalurLampiran(id, a)}/hapus`, { metode: 'POST' })
 }

@@ -54,6 +54,7 @@ type Layanan struct {
 	jam      func() time.Time
 	produksi bool
 	kasir    models.KonfigKasir
+	berkas   PenyimpananBerkas
 }
 
 // Baru menyusun layanan; `g` nil = tanpa Oracle (setiap aksi 503).

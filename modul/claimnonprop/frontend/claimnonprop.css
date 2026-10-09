@@ -52,6 +52,9 @@
   --cnp-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--cnp-terang);
   --cnp-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
   --cnp-bahaya-teks: #b42318;
+  --cnp-unggah: #3bb273;
+  --cnp-lihat: #12b5c6;
+  --cnp-ikon-teks: #ffffff;
   --text-3: var(--cnp-teks-redup);
   color: var(--cnp-teks);
   padding: 24px;
@@ -91,6 +94,9 @@
   --cnp-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--cnp-terang);
   --cnp-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
   --cnp-bahaya-teks: #fda29b;
+  --cnp-unggah: #2f8f5c;
+  --cnp-lihat: #0e8f9c;
+  --cnp-ikon-teks: #f2fbf6;
 }
 
 /* Judul dan teks redup. */
@@ -805,6 +811,12 @@
   min-width: 110px;
 }
 
+/* Grid Non Prop lebih lebar (Claim Amount 7 isian, Loss Allocation 6): sel angka lebih sempit supaya kolom aksi
+   (Add / Delete) tidak terpotong di lebar layar biasa. */
+.claimnonprop .claimnonprop__input--sel.claimnonprop__input--angka {
+  min-width: 68px;
+}
+
 .claimnonprop .claimnonprop__angka {
   display: block;
   text-align: right;
@@ -915,4 +927,64 @@
   text-decoration: underline;
   cursor: pointer;
   font: inherit;
+}
+
+/* Tab "Lampiran" (screenshot Pega 09-10-2026): tombol kanan, ikon unggah hijau / lihat toska. */
+.claimnonprop .claimnonprop__lampiran-aksi {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 4px 0 8px;
+}
+
+/* Kolom Upload File / View File selebar layar Pega, ikon di tengah. */
+.claimnonprop .claimnonprop__kolom-ikon {
+  width: 140px;
+  text-align: center;
+}
+
+.claimnonprop .claimnonprop__akar .claimnonprop__ikon-lampiran {
+  width: 40px;
+  padding: 0;
+  color: var(--cnp-ikon-teks);
+}
+
+.claimnonprop .claimnonprop__ikon-lampiran--unggah,
+.claimnonprop .claimnonprop__ikon-lampiran--unggah:hover:not(:disabled) {
+  background: var(--cnp-unggah);
+}
+
+.claimnonprop .claimnonprop__ikon-lampiran--lihat,
+.claimnonprop .claimnonprop__ikon-lampiran--lihat:hover:not(:disabled) {
+  background: var(--cnp-lihat);
+}
+
+/* Jendela unggah: area seret-lepas berkas (dragDropFileUpload). */
+.claimnonprop .claimnonprop__seret {
+  margin: 0 0 12px;
+  padding: 18px;
+  border: 2px dashed var(--cnp-tepi);
+  border-radius: 12px;
+  text-align: center;
+  color: var(--cnp-teks-redup);
+}
+
+.claimnonprop .claimnonprop__seret--aktif {
+  border-color: var(--cnp-aksen-garis);
+  background: var(--cnp-aksen-lembut);
+}
+
+/* Popup penampil lampiran (View / View Office Online, pola NB Treaty In). */
+.claimnonprop .claimnonprop__penampil-bingkai {
+  display: block;
+  width: 100%;
+  height: 75vh;
+  border: 0;
+}
+
+.claimnonprop .claimnonprop__penampil-gambar {
+  display: block;
+  max-width: 100%;
+  max-height: 75vh;
+  margin: 0 auto;
 }

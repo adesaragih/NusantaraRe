@@ -18,10 +18,12 @@ import {
   type Halaman,
   type Layar,
   type Pilihan,
+  type Tata,
 } from '../api'
 import { putuskanAksi, type AksiDiminta } from '../antreAksi'
 import { CNP } from '../labels'
 import { ambil, masukan, semuaTata, setel } from '../nilai'
+import PanelLampiran from './PanelLampiran'
 import Popup, { type JenisPopup, type SumberMaster } from './Popup'
 import { barisModal, DAFTAR_ADJ, DAFTAR_INTEREST, jalurXOL, type RincianGrid } from './rincian'
 import { pisahKakiModal } from './susun'
@@ -39,6 +41,14 @@ const POPUP: Record<string, { jenis: JenisPopup; sumber?: SumberMaster }> = {
   LihatLampiranBayar: { jenis: 'lampiranBayar' },
   LihatRiwayatMaster: { jenis: 'riwayatMaster' },
 }
+
+/** Tombol aktif beraksi `aksi` di layout utama (tab Lampiran: Save = tombol Save layar, pola Claim Prop). */
+function adaTombol(ts: readonly Tata[], aksi: string): boolean {
+  return ts.some((t) => (t.jenis === 'tombol' && t.aksi === aksi && !t.nonaktif) || adaTombol(t.anak ?? [], aksi))
+}
+
+/** Aksi tombol Save Outstanding Claim (`SaveDataToJClaim_Act`); Input Acceptation tanpa Save layar (`1=2`). */
+const AKSI_SIMPAN = 'SaveDataToJClaim'
 
 /** Aksi yang parameternya nilai pilihan (bukan jalur medan): rekening = `AccountNo|NameOfBank`. */
 const PARAM_DARI_NILAI = new Set(['PilihRekening', 'PilihRekening2'])
@@ -323,6 +333,12 @@ export default function LayarKasus({
         </Modal>
       )}
       <LayarTata tata={layar.tata} k={k} />
+      <PanelLampiran
+        id={id}
+        hanyaLihat={hanyaLihat}
+        bolehSimpan={layar.bolehKerja && adaTombol(layar.tata, AKSI_SIMPAN)}
+        onSimpan={() => kirim(AKSI_SIMPAN)}
+      />
       {modal && isiModal && (
         <BarisAdjustment.Provider value={barisModal(modal)}>
           <Modal

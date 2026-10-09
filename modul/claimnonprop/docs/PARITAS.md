@@ -207,6 +207,16 @@ InputDtlInterest, dua tombol Save Input Acceptation, Back (container NEVER).
 
 ## 9. Frontend
 
+- **`[penyimpangan sadar]` tata letak ikut Claim Prop** (perintah work owner 09-10-2026 "ikuti tampilan klaim prop"):
+  Claim Information menjadi kartu sendiri di atas layout group (di XML tab pertama), tab tinggal Interests / Estimation /
+  Spreading (Outstanding) dan Interests / Estimation / Acceptation (Input Acceptation); tombol layar satu baris aksi tanpa
+  kartu. Isi medan, kondisi tampil / hanya-baca / nonaktif, dan aksinya tidak berubah.
+- **Lampiran klaim ikut Claim Prop** (perintah work owner 09-10-2026 "untuk attachment juga mengikuti dari klaim prop"):
+  tab Lampiran (Add attachment / Refresh / Save, Category - Count Attach - Upload File - View File, jendela View File
+  dengan View / View Office Online / Delete / Change Category), master `T_KATEGORI_DOC_KLAIM` TYPE_KLAIM NONPROP, tabel
+  warisan dokumen klaim + penyimpanan bersama inti. Korpus Non Prop sendiri tanpa section unggahan; Save tab = Save
+  Outstanding (`SaveDataToJClaim`).
+
 - Renderer tata, kulit, isian angka / tanggal disalin dari `modul/claimprop/frontend` (bukan impor); kelas berawalan
   `claimnonprop__`, token `--cnp-*`.
 - Expand pane umum (`components/rincian.ts`): Acceptation List (nomor akseptasi untuk aksi panel), Insured Interests, XOL

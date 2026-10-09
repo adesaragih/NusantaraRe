@@ -14,6 +14,7 @@ import (
 	"net/http"
 
 	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/penyimpanan"
 	"nusantarare/modul/claimnonprop/backend/handlers"
 	"nusantarare/modul/claimnonprop/backend/models"
 	"nusantarare/modul/claimnonprop/backend/services"
@@ -63,7 +64,11 @@ func Pendaftaran() inti.Pendaftaran {
 			if err != nil {
 				return nil, err
 			}
-			return Baru(services.DariDasar(p.Dasar()).DenganKasir(kasir), p.Config().AuthStub), nil
+			svc := services.DariDasar(p.Dasar()).DenganKasir(kasir)
+			if d := p.Dasar(); d != nil && d.PunyaDatabase() { // lampiran klaim pola Claim Prop (penyimpanan bersama inti)
+				svc = svc.DenganPenyimpanan(penyimpanan.Oracle(d, p.Config().StorageTokenSalt))
+			}
+			return Baru(svc, p.Config().AuthStub), nil
 		},
 	}
 }

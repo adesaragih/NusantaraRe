@@ -16,6 +16,7 @@ import (
 	"github.com/cockroachdb/apd/v3"
 
 	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/penyimpanan"
 	"nusantarare/modul/claimnonprop/backend/models"
 	"nusantarare/modul/claimnonprop/backend/repository"
 )
@@ -40,13 +41,18 @@ type Gudang struct {
 	NomorTerbit map[string]int
 	// TanpaSeqPLA - meniru PLATNP_SEQ yang tidak ada (ORA-02289, OQ-CNP-39).
 	TanpaSeqPLA bool
+	// KategoriDok - master T_KATEGORI_DOC_KLAIM TYPE_KLAIM NONPROP (ID -> LABEL); Dokumen - dokumen klaim tertulis;
+	// Storage - catatan T_STORAGE_IMAGE (`Berkas.Catat`).
+	KategoriDok map[string]string
+	Dokumen     []models.BarisDokumenKlaim
+	Storage     []penyimpanan.Objek
 }
 
 // Baru membuat gudang kosong.
 func Baru() *Gudang {
 	return &Gudang{seq: map[string]int{}, Kasus: map[string]models.Kasus{}, halaman: map[string]*models.Halaman{},
 		JSONKlaim: map[string][2]string{}, Komite: map[string][]repository.AnggotaTangga{}, KomiteAdj: map[string]string{},
-		NomorTerbit: map[string]int{}}
+		NomorTerbit: map[string]int{}, KategoriDok: map[string]string{}}
 }
 
 // Transaksi - tiruan: salinan keadaan dipulihkan bila fn gagal (rollback).
@@ -75,13 +81,16 @@ type cadangan struct {
 	komiteAdj   map[string]string
 	efek        []string
 	nomorTerbit map[string]int
+	dokumen     []models.BarisDokumenKlaim
+	storage     []penyimpanan.Objek
 }
 
 func (g *Gudang) salin() cadangan {
 	c := cadangan{urut: g.urut, seq: map[string]int{}, kasus: map[string]models.Kasus{}, halaman: map[string]*models.Halaman{},
 		os: append([]models.BarisOS{}, g.OS...), json: map[string][2]string{},
 		kat: append([]models.KatastrofeBaru{}, g.Katastrofe...), komite: map[string][]repository.AnggotaTangga{},
-		komiteAdj: map[string]string{}, efek: append([]string{}, g.Efek...), nomorTerbit: map[string]int{}}
+		komiteAdj: map[string]string{}, efek: append([]string{}, g.Efek...), nomorTerbit: map[string]int{},
+		dokumen: append([]models.BarisDokumenKlaim{}, g.Dokumen...), storage: append([]penyimpanan.Objek{}, g.Storage...)}
 	for k, v := range g.seq {
 		c.seq[k] = v
 	}
@@ -109,6 +118,7 @@ func (g *Gudang) salin() cadangan {
 func (g *Gudang) pulihkan(c cadangan) {
 	g.urut, g.seq, g.Kasus, g.halaman, g.OS, g.JSONKlaim = c.urut, c.seq, c.kasus, c.halaman, c.os, c.json
 	g.Katastrofe, g.Komite, g.KomiteAdj, g.Efek, g.NomorTerbit = c.kat, c.komite, c.komiteAdj, c.efek, c.nomorTerbit
+	g.Dokumen, g.Storage = c.dokumen, c.storage
 }
 
 func (g *Gudang) nomor(seq string) int {

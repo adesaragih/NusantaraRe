@@ -72,4 +72,38 @@ export const CNP = {
   claimSpreaded: 'Claim Spreaded',
   // ViewOldAllocation
   alokasiLama: 'Old XOL Allocation',
+  /** Tab "Lampiran" - VERBATIM screenshot layar Pega (work owner 09-10-2026); kolom jendela View File = Section
+   *  `ViewAttachment`. Isi modal unggah (pilih berkas, Attach) `[tidak ada di korpus]` (widget bawaan Pega). */
+  lampiran: 'Lampiran',
+  lampiranTambah: 'Add attachment',
+  lampiranMuatUlang: 'Refresh',
+  lampiranMenampilkan: 'Showing',
+  lampiranSemua: 'Show All',
+  lampiranKategori: 'Category',
+  lampiranCacah: 'Count Attach',
+  lampiranUnggah: 'Upload File',
+  lampiranLihat: 'View File',
+  lampiranPilih: 'Select file(s)',
+  lampiranSeret: 'Drag and drop files here or',
+  lampiranFile: 'File',
+  lampiranBuang: 'Remove',
+  lampiranKirim: 'Attach',
+  lampiranMengirim: 'Attaching…',
+  lampiranKosong: 'No attachment.',
+  /** Jendela View File - ikut NB Treaty In (`ReasViewAttachment` korpus NB FacIn: File b1363, Upload Date b1762,
+   *  View Office Online b2670, Delete b3434); kolom No Acceptation / No Prekas dibuang, diganti pengunggah dan tanggal
+   *  unggah (work owner 09-10-2026). `View`, `Attached By` `[tidak ada di korpus]`. */
+  lampiranNama: 'File Name',
+  lampiranTanggal: 'Create Date',
+  lampiranOleh: 'Attached By',
+  lampiranView: 'View',
+  lampiranViewOffice: 'View Office Online',
+  lampiranHapus: 'Delete',
+  /** Jendela View File - VERBATIM screenshot layar Pega (work owner 09-10-2026): pilih kategori, centang Action,
+   *  Download Selected / Delete Selected / Change Category, Create Date. "Move to" `[tidak ada di korpus]`. */
+  lampiranAksi: 'Action',
+  lampiranUnduhPilih: 'Download Selected',
+  lampiranHapusPilih: 'Delete Selected',
+  lampiranPindah: 'Change Category',
+  lampiranPindahKe: 'Move to',
 } as const
