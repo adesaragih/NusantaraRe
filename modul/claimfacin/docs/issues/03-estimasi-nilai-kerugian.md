@@ -39,6 +39,13 @@ Sesudah tiket ini, Penilai dapat **mencatat estimasi per item objek**, dengan ma
 | --- | --- | --- |
 | **12** | ⚠️ **10 dari 13 kolom estimasi tanpa penulis di korpus** — diduga diisi lewat layar, ⛔ belum terbukti | ⚠️ **menahan jalur TULIS**, tidak menahan jalur BACA |
 
+> ⛔ **RALAT 10-10-2026.** Baris lamanya dikutip utuh, tidak dihapus: *"⚠️ **10 dari 13 kolom estimasi tanpa penulis di
+> korpus**"* → ⚠️ **ruang nomor**: butir **12** di sini adalah butir register **`STRUKTUR-TABEL-CLAIM-FACIN.md` §6**,
+> bukan butir 12 spec (penggolongan tujuh pesan, sudah ditutup). Jalur TULIS estimasi **sudah dibangun** 10-10-2026:
+> kolom = katalog `backend/models/katalog_tabel.go` `TabelEstimasi` (nama DDL Claim Prop `521` + `ADD` `563`, mis.
+> `GROSS_ESTIMATION_VALUE`, `ESTIMATION_VALUE_IDR`, `CURRENCY_NAME`), baris FAC mengisi `CLAIM_ID` **dan**
+> `OBJECT_ITEM_ID`; uang `NUMBER(38,10)`. Tidak menahan lagi.
+
 ## Perintah verifikasi
 
 1. Catat estimasi pada satu item objek — ⭐ tersimpan dan terbaca kembali.

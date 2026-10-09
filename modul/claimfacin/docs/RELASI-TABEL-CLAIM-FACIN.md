@@ -12,6 +12,10 @@
 >
 > ⭐ **Tujuh tabel dipakai bersama; lima di antaranya berkunci asing GANDA.**
 > ⛔ **Tabel lini Life tidak disentuh** — awalannya berbeda dan tidak ikut terganti.
+>
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⭐ **Tujuh tabel dipakai bersama; lima di
+> antaranya berkunci asing GANDA.**"* → kunci asing ganda **DITOLAK** work owner (OQ-CFI-01, 09-10-2026); baris FAC
+> mengisi `CLAIM_ID` **dan** induk tingkatnya, nol `CHECK`, nol `MODIFY`. Rincian di RALAT §B dan §D.
 
 > **SENSUS BERKAS INI** — *(dihitung ulang sesudah relasi ke-16, 2026-09-20)*
 >
@@ -29,6 +33,9 @@
 > ⛔ ⭐ **Awalan tabel yang lama dan awalan lini Life: nol kemunculan** di berkas ini.
 >
 > ⚠️ **Bergeser dari keadaan sebelumnya** — badan **201 → 227**, relasi **15 → 16**.
+>
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⭐ **Angka yang dipakai: 227.**"* → sensus ini
+> **tidak dihitung ulang**; ia mengukur badan berkas 20-09-2026, dan blok RALAT 10-10-2026 berada di luar jendelanya.
 
 ---
 
@@ -42,6 +49,11 @@ tipe data, bukan daftar kolom.**
 | `claim-facin\STRUKTUR-TABEL-CLAIM-FACIN.md` | ⭐ sembilan tabel lini FAC, asalnya di Pega, dan lima kunci ganda |
 | `claim-prop\RELASI-TABEL-CLAIM-PROP.md` | ⭐ bentuk berkas ini ditiru dari sana |
 | `komite-claim-prop\STRUKTUR-TABEL-KOMITE-CLAIM-PROP.md` | ⭐ `T_GENERAL_KOMITE` dan `T_KOMITE_KOMITELIST` **sudah terkunci** di sana |
+
+> ⛔ **RALAT 10-10-2026.** Sel lamanya dikutip utuh, tidak dihapus: *"`claim-facin\STRUKTUR-TABEL-CLAIM-FACIN.md`"* ·
+> *"`claim-prop\RELASI-TABEL-CLAIM-PROP.md`"* · *"`komite-claim-prop\STRUKTUR-TABEL-KOMITE-CLAIM-PROP.md`"* → letak
+> folder `.scratch` lama; kini `APP_RNM/modul/claimfacin/docs/`, `APP_RNM/modul/claimprop/docs/`, dan
+> `APP_RNM/modul/komiteclaimprop/docs/`. Kolom yang **mengikat** ada di lampiran pengikat STRUKTUR masing-masing.
 
 **Cara membaca kolomnya:**
 
@@ -73,6 +85,14 @@ tipe data, bukan daftar kolom.**
 | **9** | `T_CLAIM_ADJUSTMENT` | `T_CLAIM_ADJ_SPREADING` | `ADJUSTMENT_ID` | `1:N` | `CASCADE` | kunci **SAMA** dua lini |
 | **10** | `T_CLAIM_ADJUSTMENT` | `T_CLAIM_ADJ_QUOTA_SHARE` | `ADJUSTMENT_ID` | `1:N` | `CASCADE` | kunci **SAMA** dua lini |
 | **11** | `T_CLAIM_ADJUSTMENT` | `T_CLAIM_FAC_RETRO` | `ADJUSTMENT_ID` | `1:N` | `CASCADE` | ⭐ **kunci ganda** |
+
+> ⛔ **RALAT 10-10-2026.** Sel lamanya dikutip utuh, tidak dihapus: *"⭐ **kunci ganda**"* (relasi 5–8 dan 11) →
+> relasinya sendiri **dibangun** (FK `ON DELETE CASCADE`, ber-index, migrasi `561`–`567`), tetapi **bukan kunci ganda**
+> (OQ-CFI-01): `CLAIM_ID` di kelima tabel itu tetap NOT NULL dan **juga diisi baris FAC** — jadi setiap baris FAC
+> menggantung pada **dua** relasi sekaligus: ke tingkatnya (`OBJECT_ITEM_ID` / `ADJUSTMENT_ID`) **dan** ke
+> `T_GENERAL_CLAIM` lewat `CLAIM_ID` (CASCADE, DDL Claim Prop `521`–`528`); pengecualian: baris retro tingkat klaim
+> (`ClaimData.FacRetroTreaty`) ber-`ADJUSTMENT_ID` kosong. Relasi 4 pun begitu: `T_CLAIM_OBJECT_ITEM`
+> membawa `CLAIM_ID` (NOT NULL, CASCADE ke `T_GENERAL_CLAIM`) di samping `OBJECT_ID`. Nol `CHECK` "tepat satu induk".
 
 ### ⚠️ Catatan atas relasi 1 dan 2
 
@@ -114,6 +134,14 @@ mengerjakan apa.
 
 ⭐ **Penulisnya dua:** `Activity\SethistoryKlaimTreaty` langkah **1** yang mengulang
 `ClaimData.SuggestList`, dan `DataTransform\InsertChronology_DT` sebagai penulis kedua.
+
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⚠️⚠️ **"Jangan cascade" adalah satu-satunya
+> perilaku hapus yang berbeda di seluruh berkas ini**"* dan *"`[terverifikasi]` Bentuk ini **sudah berlaku** di lini
+> PROP — relasi **9** di `claim-prop\RELASI-TABEL-CLAIM-PROP.md`, bertanda **JANGAN cascade** dengan alasan yang sama."*
+> → relasi 16 **CASCADE**: migrasi Claim Prop `532` membuat `T_VIEW_SUGGEST.CLAIM_ID` → `T_GENERAL_CLAIM` **ON DELETE
+> CASCADE** (`FK_VS_CLAIM`, ber-index `IDX_VS_CLAIM`, `CHECK` satu induk `CK_VS_SATU_INDUK` bersama `PREMIUM_LIST_ID`);
+> Claim Fac In memakai tabel itu apa adanya; relasi 16 kini berperilaku sama dengan relasi `CASCADE` lain. Modul ini
+> tidak menghapus baris `T_GENERAL_CLAIM`; penutupan kasus hanya mengisi `STATUS_WORK`.
 
 ### ⚠️ Catatan atas relasi 12 dan 13 — keduanya saling menunjuk
 
@@ -172,6 +200,13 @@ dari dua kolom induk yang terisi; kolom yang satunya **selalu kosong**.
 pada **penyesuaian**, di PROP pada **klaim**. ⛔ `[terbuka]` — lihat register §6
 `STRUKTUR-TABEL-CLAIM-FACIN.md`.
 
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⭐ **Penjaganya adalah `CHECK` "tepat satu
+> terisi"**, diuraikan di `STRUKTUR-TABEL-CLAIM-FACIN.md` §2"* dan sel tabel *"Kolom kosong di FAC *(dipakai PROP)*"* →
+> **tidak dibangun** (OQ-CFI-01, 09-10-2026): nol `CHECK`, `CLAIM_ID` **tidak kosong di FAC** — baris FAC mengisi
+> `CLAIM_ID` **dan** `OBJECT_ITEM_ID` (`563`–`566`); `T_CLAIM_FAC_RETRO` FAC mengisi `CLAIM_ID` + `ADJUSTMENT_ID`
+> (`567`). Relasi 11 bukan lagi `[terbuka]`: K5 menutupnya (FAC berinduk adjustment, `CLAIM_ID` tetap diisi). Lihat
+> RALAT 10-10-2026 di `STRUKTUR-TABEL-CLAIM-FACIN.md` §2.
+
 ---
 
 ## §E — Pohon relasi lini FAC
@@ -189,6 +224,14 @@ T_WORK_CLAIM                                    LINI = FAC · CLM- / KMT-
                     ├ T_CLAIM_ADJ_QUOTA_SHARE   ADJUSTMENT_ID
                     └ T_CLAIM_FAC_RETRO         ADJUSTMENT_ID
 ```
+
+> ⛔ **RALAT 10-10-2026.** Baris pohon lamanya dikutip utuh, tidak dihapus:
+> `T_WORK_CLAIM                                    LINI = FAC · CLM- / KMT-` →
+> nilainya **`T_WORK_CLAIM.LINI = 'FACIN'`** (sama dengan `STS_KLAIM` `EMAILKOMITE` FACIN); lini disaring lewat `LINI`,
+> tidak pernah lewat awalan (OQ-CFI-02). Pohon ini juga tidak menggambar bahwa `T_CLAIM_OBJECT_ITEM`,
+> `T_CLAIM_ESTIMATION`, `T_CLAIM_SPREADING` (baris `JENIS` `POLIS` / `KLAIM`), `T_CLAIM_BREAK_QS`, `T_CLAIM_ADJUSTMENT`,
+> dan `T_CLAIM_FAC_RETRO` **juga** membawa `CLAIM_ID` (CASCADE ke `T_GENERAL_CLAIM`), serta retro tingkat klaim
+> (`ADJUSTMENT_ID` kosong) langsung di bawah `T_GENERAL_CLAIM`.
 
 ⭐ **Sisi komite menggantung di dua titik:**
 
@@ -213,6 +256,13 @@ PROP**, sebab lini FAC menyisipkan **objek** dan **item objek** yang tidak ada d
 | `ObjectItemList[].SpreadingList` | ⛔ **bukan tabel** — ⭐ himpunan bagian dari `T_CLAIM_SPREADING`, diambil dengan `SELECT DISTINCT`. Lihat `STRUKTUR-TABEL-CLAIM-FACIN.md` §3 butir 7 |
 | `ObjectList[].CoverageList` dan lima saudaranya | ⛔ **salinan polis** — ⭐ dibaca dari **modul polis**, bukan dari tabel klaim |
 | `T_CLAIM_INTEREST` · `T_CLAIM_CLAIM_AMOUNT` · `T_CLAIM_ADJ_LOSS_ALLOCATION` | ⛔ **tidak dipakai lini FAC** — ⭐ ketiganya milik lini PROP, disebut hanya sebagai catatan |
+
+> ⛔ **RALAT 10-10-2026.** Sel lamanya dikutip utuh, tidak dihapus: *"⛔ **bukan tabel** — ⭐ himpunan bagian dari
+> `T_CLAIM_SPREADING`, diambil dengan `SELECT DISTINCT`."* → `SpreadingList` memang bukan tabel **sendiri**, tetapi
+> **disimpan** sebagai baris `T_CLAIM_SPREADING` ber-`JENIS = 'POLIS'` (migrasi `564`), bukan diturunkan dengan `SELECT
+> DISTINCT` — lihat RALAT 10-10-2026 di `STRUKTUR-TABEL-CLAIM-FACIN.md` §3. Baris ketiga juga kurang: selain ketiga
+> tabel itu, `T_CLAIM_LOSS_ALLOCATION` (Claim Prop `524`) dan tabel Claim Non Prop `T_CLAIM_NP_LOSS_ALLOC` ·
+> `T_CLAIM_NP_XOL_ALLOC` · `T_CLAIM_NP_CLAIM_ACCEPT` (`608`–`610`) ada, dan **tak satu pun dipakai lini FAC**.
 
 ---
 

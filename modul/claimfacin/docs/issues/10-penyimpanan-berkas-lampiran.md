@@ -33,6 +33,14 @@ Sesudah tiket ini, Penilai dapat **melampirkan berkas** pada klaim, dan berkas i
 - [ ] **AC 53–56** — penyimpanan berkas
 - [ ] ⭐ Berkas **tetap terbuka** sesudah kasus ditutup
 
+> ⛔ **RALAT 10-10-2026.** Butir lamanya dikutip utuh, tidak dihapus: *"**AC 53–56** — penyimpanan berkas"* → **AC 53
+> diralat di spec**: token penyimpanan diterbitkan **aplikasi**, bukan basis data — penyimpanan bersama
+> `inti/backend/penyimpanan` + token `inti/backend/layanan` (meniru `GetTokenStorage_SQL`) dengan garam dari env
+> **`STORAGE_TOKEN_SALT`**; garam kosong = gagal terang, dan garam tidak pernah masuk pesan galat. Lampiran klaim
+> tercatat di **`DOCUMENT_CLAIM`** + **`T_STORAGE_IMAGE`** di transaksi aksi (`backend/services/lampiran.go`,
+> `repository/lampiran.go`); kategori dokumen dari master `T_KATEGORI_DOC_KLAIM` baris FAC (Claim Prop `535` / `536`).
+> Berkas tetap di Google Storage (AC 94).
+
 ## Butir `[terbuka]` yang menyentuh tiket ini
 
 | Butir | Isinya | Menahan? |

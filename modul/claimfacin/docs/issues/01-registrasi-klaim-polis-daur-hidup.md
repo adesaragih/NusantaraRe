@@ -40,6 +40,14 @@ Sesudah tiket ini, Penilai dapat **mendaftarkan klaim**, mengikatnya ke polis ya
 | --- | --- | --- |
 | **1** | Kolom tabel data kutipan — `[data DBA]` | ⚠️ menahan pengikatan polis yang lengkap |
 
+> ⛔ **RALAT 10-10-2026.** Baris lamanya dikutip utuh, tidak dihapus: *"Kolom tabel data kutipan — `[data DBA]` | ⚠️
+> menahan pengikatan polis yang lengkap"* → **tidak lagi menahan** (butir 1 = register **spec**): pengikatan polis
+> membaca `FACINPRODUCTION` (Choose Polis) lalu menyalin `JSON_POLIS.DATA_JSON` ke `OfferFacIn` (`CopyNB_Act`), bukan
+> `T_QUOTATIONDATA` — yang ada (NB Fac In `183`) tetapi tanpa kolom `Business*`. Polis tanpa `JSON_POLIS` ditolak terang
+> (OQ-CFI-11); polis NB Fac In sistem baru belum terbaca (OQ-CFI-30). ⭐ **AC 9** (nomor klaim lewat stored procedure)
+> juga diralat: nomor dihitung aplikasi lewat `inti/backend/penomor` (ADR-0043), di dalam transaksi aksi — lihat RALAT
+> 10-10-2026 di spec AC 9. Nomor kasus `CLM-` dari `SEQ_WORK_CLAIM` (OQ-CFI-02).
+
 ## Perintah verifikasi
 
 1. Buat satu klaim, periksa ia terikat ke polis yang benar.

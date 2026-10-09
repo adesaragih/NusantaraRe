@@ -47,6 +47,18 @@ Sumber: `claim-facin\spec.md` · `STRUKTUR-TABEL-CLAIM-FACIN.md` · `RELASI-TABE
 | **13** | Penyerahan ke komite — **kontrak muatan** | 05 · 06 · 08 |
 | **14** | Migrasi data lama, paritas, dan penamaan ulang | 00 · seluruh 01–13 |
 
+> ⛔ **RALAT 10-10-2026.** Sel lamanya dikutip utuh, tidak dihapus: *"**PREFACTOR** — dua tabel baru dan kolom induk
+> kedua, **expand–contract**"* dan *"Klasifikasi lini produk — 13 penggolong hidup, 36 tidak dialihkan"* →
+>
+> - **00**: expand–contract **ditolak** (OQ-CFI-01, 09-10-2026) — nol `MODIFY`, nol `CHECK`, hanya `ADD` (`560`–`567`);
+>   baris FAC mengisi `CLAIM_ID` **dan** `OBJECT_ITEM_ID`. Lihat RALAT di tiket 00.
+> - **02**: korpus memuat **60** rule `When`, dibangun **satu fungsi per `When`** di `backend/models/lini.go`; angka
+>   13 / 36 / 49 tidak berdasar, dan premis "MBU / Travel tak pernah terbit" bertentangan dengan AC 18 / 109. Lihat
+>   RALAT di tiket 02.
+>
+> Tahap 1 modul ini **dibangun 10-10-2026** (`MODUL.md`, status per tombol di `docs/PARITAS.md`); urutan di bawah adalah
+> rencana 20-09-2026.
+
 ---
 
 ## ⭐ Rantai terdalam
@@ -77,6 +89,15 @@ perilaku yang dibangun tiket-tiket sebelumnya.
 
 ⚠️ **Tiket 13 ikut tertahan sebagian** — ⭐ kontrak muatannya dapat ditulis, ⛔ tetapi **jumlah
 jenjang** menunggu butir 6 yang sama.
+
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⛔ **MENAHAN PEMBANGUNAN.** ⭐ Tiketnya **tetap
+> ditulis** dan jahitannya disebut; ⛔ ia **tidak dapat selesai** sebelum work owner memberikan daftarnya"* → penahan
+> **terjawab**: wewenang = **ADR-0030 + keanggotaan workbasket** — Input Register / Input Estimasi = pembuat kasus,
+> Choose Surveyor = anggota workbasket `ReasKlaimTeknik` (`ReasPNCTeknik` XML tidak ada di DEV); server menolak tulisan
+> ke kasus tertutup dan ke adjustment yang sedang di komite (`backend/services/layanan.go`). ⚠️ Tiket 08 sendiri masih
+> berstatus *"ready-for-agent"* padahal tabel ini menahannya — status itu keliru sampai 10-10-2026 (RALAT di tiket 08).
+> Tiket 13: tangga awal dari roster `EMAILKOMITE` FACIN; pemutus menurut jabatan → workbasket di tahap 2
+> (`komiteclaimfacin`, OQ-CFI-04). Tidak ada lagi tiket yang tertahan oleh butir 6.
 
 ---
 
@@ -111,6 +132,23 @@ uji"** — ⭐ spec **sendiri** menyatakan mereka tidak punya sasaran uji.
 dan **ternyata menyentuh perilaku**, ⛔ ia **wajib melahirkan tiket baru** — dan nomornya diambil
 dari deret sesudah tiket sisi komite.
 
+> ⛔ **RALAT 10-10-2026.** Sel lamanya dikutip utuh, tidak dihapus: *"⭐ tertutup **tepat satu kali** | ⭐ **109**"* →
+> dua kekeliruan di liputan ini dan di tabel *Butir `[terbuka]`* tiket-tiket:
+>
+> - **AC 104** ber-`[terbuka]` (butir 21 spec) tetapi "ditutup" tiket 00 — AC tanpa sasaran uji tidak dapat ditutup
+>   tiket, sama seperti kelima AC di atas (RALAT di tiket 00).
+> - ⚠️ **Ruang nomor butir tercampur.** Tiket menyebut "butir n" dari **dua register berbeda tanpa menyebut yang mana**:
+>
+>   | Register | Butir yang disebut tiket |
+>   | --- | --- |
+>   | **spec** (*Butir `[terbuka]` — daftar penuh*, 1–25) | **1** (tiket 00 · 01 · 06 · 09 · 10 · 14) · **6** (tiket 02 · 08 · 12 · 13) |
+>   | **`STRUKTUR-TABEL-CLAIM-FACIN.md` §6** (1–13) | **9** (tiket 04) · **11** (tiket 00 · 07) · **12** (tiket 03) · **13** (tiket 05) |
+>   | ⛔ **tidak ada di register mana pun** | **26 · 27** (tiket 11) · **29** (tiket 14) |
+>
+>   Nomor yang sama berarti hal berbeda di kedua register (mis. butir 11 spec = mesin tiket, butir 11 STRUKTUR = 29 medan
+>   jenis objek). Setiap tiket kini memuat RALAT yang menyebut registernya. Pertanyaan terbuka yang lahir saat
+>   membangun dicatat di `docs/OQ.md` (`OQ-CFI-nn`), bukan sebagai butir baru.
+
 ---
 
 ## Bukti berkas lain tidak disentuh
@@ -121,6 +159,13 @@ dari deret sesudah tiket sisi komite.
 | `claim-facin\spec.md` · `STRUKTUR` · `RELASI` | ✅ md5 tidak berubah — hanya dibaca |
 | `komite-claim-facin\` · `claim-prop\` · `komite-claim-prop\` · `docs\adr\` · `CLAUDE.md` | ✅ **NOL disunting** |
 | korpus | ✅ md5 tidak berubah |
+
+> ⛔ **RALAT 10-10-2026.** Sel lamanya dikutip utuh, tidak dihapus: *"`komite-claim-facin\` · `claim-prop\` ·
+> `komite-claim-prop\` · `docs\adr\` · `CLAUDE.md`"* → letak folder `.scratch` lama. Kini:
+> `APP_RNM/modul/komiteclaimfacin/docs/` (tiket sisi komite di `issues/` di sana — juga untuk rujukan
+> `komite-claim-facin\issues\` di RALAT 2026-09-20 di atas),
+> `APP_RNM/modul/claimprop/docs/`, `APP_RNM/modul/komiteclaimprop/docs/`, dan ADR di `OUTPUT_HASIL_RNM/docs/bersama/adr/`
+> — **44 berkas**: `00-INDEKS.md` + **43 ADR** (0001–0043).
 
 ⛔ Kode **NOL** · DDL **NOL** · `CREATE TABLE` **NOL** · jalur berkas Go **NOL** · nomor baris XML
 **NOL** · tiket sisi komite **NOL**.

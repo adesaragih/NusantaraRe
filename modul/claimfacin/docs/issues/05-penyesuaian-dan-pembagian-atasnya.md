@@ -22,6 +22,15 @@ Sesudah tiket ini, Penilai dapat **mengajukan penyesuaian nilai klaim**, dengan 
 | Penyesuaian | daftar penyesuaian di dalam item objek, ditambah bahan pertimbangan komite |
 | Pembagian atas penyesuaian | dua daftar terpisah, ditulis **langkah bertetangga** di berkas yang sama |
 
+> ⛔ **RALAT 10-10-2026.** Sel lamanya dikutip utuh, tidak dihapus: *"dua daftar terpisah, ditulis **langkah
+> bertetangga** di berkas yang sama"* → benar untuk `CekExGratia` 6 / 8, tetapi **bukan satu-satunya penulis**: yang
+> ditiru kode — `Adjustment.SpreadingAdjustment` → `T_CLAIM_ADJ_SPREADING` (`CountTotalEstimasi_Act` 17.2,
+> `CheckCurrency_ACT` 4, `CekExGratia` 6, `SetSpreadingAjsutement_Act`); `Adjustment.SpreadingQuotaShare` →
+> `T_CLAIM_ADJ_QUOTA_SHARE` (Break QS item bermata uang sama; `ExGratia = 1` mengosongkannya); Break QS **item** →
+> `T_CLAIM_BREAK_QS` dari `CheckLimit_Act1` 8. Lihat RALAT 10-10-2026 di `STRUKTUR-TABEL-CLAIM-FACIN.md` §2b
+> (`T_CLAIM_BREAK_QS`). Penyesuaian disimpan di `T_CLAIM_ADJUSTMENT` dengan `CLAIM_ID` **dan** `OBJECT_ITEM_ID`
+> (OQ-CFI-01, migrasi `566`).
+
 ⭐ Rincian medan dan asalnya ada di `STRUKTUR-TABEL-CLAIM-FACIN.md` **§2b**.
 
 ## ADR terkait
@@ -39,6 +48,10 @@ Sesudah tiket ini, Penilai dapat **mengajukan penyesuaian nilai klaim**, dengan 
 | Butir | Isinya | Menahan? |
 | --- | --- | --- |
 | **13** | Daftar lokasi di dalam retro fakultatif — larik bersarang | tidak menahan |
+
+> ⛔ **RALAT 10-10-2026.** Baris lamanya dikutip utuh, tidak dihapus: *"Daftar lokasi di dalam retro fakultatif — larik
+> bersarang"* → ⚠️ **ruang nomor**: butir **13** di sini = register **`STRUKTUR-TABEL-CLAIM-FACIN.md` §6**, bukan butir
+> 13 spec (apakah pesan lama menghalangi penyerahan). Isinya tidak berubah.
 
 ## Perintah verifikasi
 
