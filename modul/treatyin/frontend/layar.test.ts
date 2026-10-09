@@ -898,10 +898,20 @@ describe('dua tab TEKS — Jalan B, keputusan §15', () => {
     expect(blok).not.toContain('trin__belum')
   })
 
-  it('peringatan ejaan lain menyatakan isinya BERBEDA, bukan salinan', () => {
-    expect(FORM_KONTRAK.ejaanLainBerisi).toContain('DIFFERS')
-    expect(FORM_KONTRAK.ejaanLainBerisi).toContain('not a copy')
-    expect(FORM).toContain('ejaanLainBerisi')
+  // ⛔ DICABUT PENUH 8 Oktober 2026. Pencabutan sebelumnya setengah:
+  // petunjuk kosong dibuang, tetapi `Read from key: SpecialConditionsP`
+  // dan `⚠️ … That key: SpecialConditions` tetap tampil — pemilik proses
+  // menunjuk keduanya dengan tangkapan layar dan bertanya *"ini kenapa?"*.
+  //
+  // ⚠️ Yang hilang dinyatakan: dari 303 dokumen ber-ejaan ganda, NOL yang
+  // isinya identik. Kabar itu tidak lagi sampai ke layar, sebab menyebut
+  // nama kunci tanpa jalan membukanya hanya membingungkan.
+  it('⛔ nama kunci dokumen TIDAK tampil di layar', () => {
+    expect(FORM_KONTRAK.ejaanLainBerisi).toBe('')
+    expect(FORM_KONTRAK.ejaanDipakai).toBe('')
+    // Dan komponennya tidak lagi merendernya.
+    expect(FORM).not.toContain('trin__teks-lain')
+    expect(FORM).not.toContain('trin__teks-asal')
   })
 
   // ⛔ DIBALIK 8 Oktober 2026 — ejaan kunci dokumen adalah urusan

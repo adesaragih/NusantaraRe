@@ -2200,3 +2200,76 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* =========================================================================
+   BELANG BARIS YANG HAMPIR TIDAK TERLIHAT — permintaan pemilik proses
+   8 Oktober 2026
+   =========================================================================
+   *"buat design zebra nya tapi jangan gelap terang, tapi setidaknya bisa
+   tahu perbedaan antar baris"*.
+
+   ⛔ BELANG PERNAH DICABUT di berkas ini, dan catatannya sudah menyebut
+   harganya: pada daftar 25 baris, belang memudahkan mata menyusuri satu
+   baris sampai ujung. Yang ditolak waktu itu BUKAN belangnya melainkan
+   KEKUATANNYA — `--alt-row` (= `--surface-2`) cukup pekat untuk terbaca
+   sebagai dua warna berselang-seling.
+
+   ⭐ Token sendiri, bukan `--alt-row`: 2,8% hitam di tema terang dan 3,5%
+   putih di tema gelap. Cukup untuk membedakan baris bila mata menyusurinya,
+   tidak cukup untuk terbaca sebagai "gelap terang".
+
+   ⚠️ Diwarnai pada `<td>`, bukan `<tr>` — dan itu bukan selera: baris
+   RINCIAN (panel yang terbuka di bawah barisnya) adalah `<tr>` juga, dan
+   mewarnai `<tr>` membuat seluruh panel ikut berbelang. `:not(.tria__rincian)`
+   menjaganya.
+
+   ⚠️ `:hover` TIDAK ikut: sorot baris harus tetap menang atas belang, kalau
+   tidak baris genap yang sedang disorot terbaca lebih pucat daripada baris
+   ganjil di sebelahnya.
+
+   ⛔ Aturan ini SENGAJA di akhir berkas. Tiga tempat di atas mematikan
+   belang dengan `background: transparent`, dan pada kekhususan yang sama
+   yang menang adalah yang terakhir.
+   ========================================================================= */
+.treatyinadjustment {
+  --tria-belang: rgba(15, 23, 42, 0.028);
+}
+:root[data-theme="dark"] .treatyinadjustment {
+  --tria-belang: rgba(255, 255, 255, 0.035);
+}
+.treatyinadjustment .tria__tabel > tbody > tr:not(.tria__rincian):nth-child(even):not(:hover) > td,
+.treatyinadjustment .tria__tabel--pega > tbody > tr:not(.tria__rincian):nth-child(even):not(:hover) > td {
+  background: var(--tria-belang);
+}
+
+/* KEPALA TABEL DAFTAR TERPIN SAAT DIGULIR (9 Oktober 2026, permintaan
+   pemakai: *"saat scroll header dari tablenya itu kena pin jadi tidak ikut
+   tenggelam"*). `position: sticky` hanya menempel pada wadah yang MENGGULIR
+   SENDIRI; aturan "tabel tanpa gulir dalam" (8 Oktober, panel Attachment)
+   mencabut gulir vertikal SEMUA `.table-wrap` ber-`.tria__tabel` — termasuk
+   daftar Adjustment — jadi kepalanya ikut tergulir pergi bersama halaman.
+   Daftar dikembalikan menjadi penggulir sendiri, setinggi daftar Treaty In
+   (`trin__tabel-daftar-bungkus`, 52vh). */
+.treatyinadjustment .table-wrap:has(> .tria__tabel--daftar) {
+  max-height: 52vh;
+  min-height: 0;
+  overflow: auto;
+}
+/* ⚠️ Selektor DIPERTAJAM: aturan rupa Pega `.tria__tabel.tria__tabel.tria__tabel
+   > thead > tr > th { position: static }` (0,4,3) mengalahkan bentuk pertama —
+   kepala tetap tenggelam. Bentuk ini (0,5,3) menang HANYA di daftar. */
+.treatyinadjustment .table-wrap > .tria__tabel.tria__tabel--daftar.tria__tabel--daftar > thead > tr > th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  /* Rupa Pega memberi kepala latar `transparent` — saat menempel baris di
+     bawahnya tembus (laporan pemakai 9 Oktober 2026). Latar kartu tabel (sama
+     warnanya, kini PENUH) dan garis bawah lewat `box-shadow`. */
+  background: var(--tria-isi);
+  box-shadow: inset 0 -1px 0 var(--tria-kepala-garis);
+}
+
+/* Baris ber-rincian dapat diklik di mana saja (9 Oktober 2026, `klikBaris`). */
+.treatyinadjustment tr.tria__baris-buka {
+  cursor: pointer;
+}

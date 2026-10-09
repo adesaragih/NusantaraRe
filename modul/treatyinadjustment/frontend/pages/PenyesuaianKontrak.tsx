@@ -71,10 +71,19 @@ import PanelPolisMaster, { idMasterPolis } from '../komponen/PanelPolisMaster'
 /** Baris per halaman grid daftar — `pyGridPaginator` @651683, ukuran bawaan Pega 10. */
 const UKURAN_HALAMAN = 10
 
-/** Nilai grid daftar, urut sesuai `KOLOM_DAFTAR`. */
+/**
+ * Nilai grid daftar, urut sesuai `KOLOM_DAFTAR`.
+ *
+ * Type / Material Type: sel Pega @726743 / @733188 adalah `pxDropdown` yang
+ * menampilkan TEKS (`.CARI2` daftar `EDMStates` / `EDMMaterial`), bukan kode.
+ * `EDMState 3` tidak ada di rule Property; teksnya mengikuti label kepala
+ * "Adjustment Premium" @82379 yang menggantikan dropdown Type untuk kode itu.
+ */
 export function selDaftar(b: BarisPenyesuaian): string[] {
+  const jenis = b.jenisPenyesuaian === '3' ? PENYESUAIAN.premiPenyesuaian : teksPromptEDM('EDMState', b.jenisPenyesuaian)
   return [
-    b.id, b.idAsal, b.jenisPenyesuaian, b.jenisMaterial, b.namaKontrak, b.sifatProporsi,
+    b.id, b.idAsal, jenis,
+    teksPromptEDM('EDMMaterialType', b.jenisMaterial), b.namaKontrak, b.sifatProporsi,
     b.asalBisnis, b.cedant, b.tanggalMulai, b.tanggalBerakhir, b.posisi, b.statusAkseptasi,
   ].map((v, i) => selNilai(JENIS_DAFTAR[i] ?? 'teks', v))
 }

@@ -3,7 +3,7 @@
 
 import { Panel } from '../../../../inti/frontend/components/ui/dasar'
 import type { TabTeksWarisan } from '../api'
-import { FORM_KONTRAK } from '../labels'
+
 import { bacaProperti, usePenampung, useProperti } from '../halaman'
 import type { ModeForm } from '../mode'
 import { SelKosongPega, TataPegaBlok } from './tataPega'
@@ -52,7 +52,6 @@ export default function TabTeksPanjang({
   mode?: ModeForm
 }) {
   const asli = tab?.isi ?? ''
-  const lain = tab?.ejaanLain ?? []
   const bisaUbah = mode === 'ubah'
   // ⭐ Teks yang sedang disunting. Disalin SEKALI saat tab lahir; pemanggil
   // memberi tab lain lewat `judul` yang berbeda, dan React melahirkan
@@ -76,11 +75,26 @@ export default function TabTeksPanjang({
   }
   return (
     <Panel judul={judul}>
-      {lain.length > 0 && (
-        <span className="trin__teks-lain" role="note">
-          {FORM_KONTRAK.ejaanLainBerisi} {lain.join(', ')}
-        </span>
-      )}
+      {/* ⛔ DUA CATATAN PENGEMBANG DIBUANG DARI LAYAR 8 Oktober 2026 —
+          pemilik proses menunjuk tab Special Conditions dan bertanya *"ini
+          kenapa?"*:
+
+            ⚠️ This contract document also has text under another key …
+               That key: SpecialConditions
+            Read from key: SpecialConditionsP
+
+          Keduanya menyebut NAMA PROPERTI PEGA. Itu jeroan migrasi: pemakai
+          tidak dapat berbuat apa pun dengannya, tidak dapat membuka teks
+          yang disebutnya, dan `teks-layar.test.ts` memang ada untuk
+          melarang kalimat semacam ini sampai ke layar — dua ini lolos
+          karena polanya belum menangkapnya.
+
+          ⚠️ ADA YANG HILANG, dan itu dinyatakan: dari 303 dokumen ber-ejaan
+          `SpecialConditions*` ganda, NOL yang isinya identik — jadi ejaan
+          lain memang teks BERBEDA, dan layar ini tidak lagi mengabarkannya.
+          Mengabarkannya pun nol gunanya selama teks itu tidak dapat dibuka
+          dari sini; bila kelak perlu, yang benar adalah MENAMPILKANNYA,
+          bukan menyebut nama kuncinya. */}
       {/* ⭐ MODE UBAH — textarea, seperti layar lama.
           ⛔ Sebelum 6 Oktober 2026 tab ini BACA-SAJA walau mode Edit, dan
           itu bertentangan dengan keputusan pemilik proses bahwa seluruh
@@ -109,14 +123,9 @@ export default function TabTeksPanjang({
         // kotak teks tanpa isi, bukan ikon "tanpa teks".
         <div className="trin__teks" tabIndex={0} aria-label={judul} title={petunjukKosong} />
       ) : (
-        <>
-          <span className="trin__teks-asal">
-            {FORM_KONTRAK.ejaanDipakai} {tab?.ejaan}
-          </span>
-          <div className="trin__teks" tabIndex={0}>
-            {isi}
-          </div>
-        </>
+        <div className="trin__teks" tabIndex={0}>
+          {isi}
+        </div>
       )}
       </div>
       <SelKosongPega />

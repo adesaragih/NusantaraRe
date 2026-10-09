@@ -17,9 +17,17 @@ dropdown):
 | `EDMMaterialType 1` / `2` | tidak ada | — |
 
 **Sementara:** layar menampilkan KODE bertanda "teks pilihannya tidak ada di ekspor",
-kecuali `EDMState 3` yang memang tampil sebagai label. Grid daftar (kolom Type,
-Material Type) juga menampilkan kode — selnya mengikat `.CARI1` sebuah halaman bantu
-(@728375, @734798) yang isinya tidak tersimpan.
+kecuali `EDMState 3` yang memang tampil sebagai label.
+
+> ⭐ **Diralat 8–9 Okt 2026.** Rule Property `EDMState` (1 `Internal`, 2 `External`) dan
+> `EDMMaterialType` (1 `Material`, 2 `Non Material`) ternyata diekspor di
+> `ekspor-tambahan/`; kepala form dan picker sudah memakainya (`labelsPromptEDM.ts`).
+> Grid daftar (kolom Type, Material Type) kini juga menampilkan teks: selnya
+> `pxDropdown` (@726743, @733188) dengan nilai `.CARI1` dan teks `.CARI2` dari halaman
+> `EDMStates` / `EDMMaterial`, diisi DT `InitTreatyEDMStateName` — DT itu tidak diekspor,
+> jadi teksnya diambil dari rule Property di atas. `EDMState 3` (tidak ada di daftar
+> Property) tampil `Adjustment Premium` — label kepala @82379 yang menggantikan dropdown
+> Type untuk kode itu. Bila ekspor DT `InitTreatyEDMStateName` menyebut teks lain, ikuti DT.
 **Yang mengubahnya:** teks pilihan resmi dari pemilik proses, atau ekspor rule
 properti `EDMState`/`EDMMaterialType`.
 

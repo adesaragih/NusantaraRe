@@ -10,8 +10,10 @@ import { join } from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
+import type { BarisPenyesuaian } from './api'
 import PilihMaster from './komponen/PilihMaster'
 import { PROMPT_EDM, teksPromptEDM } from './labelsPromptEDM'
+import { cocokCari, selDaftar } from './pages/PenyesuaianKontrak'
 
 describe('prompt value EDMState / EDMMaterialType', () => {
   it('peta persis rule Property ekspor-tambahan', () => {
@@ -36,6 +38,23 @@ describe('prompt value EDMState / EDMMaterialType', () => {
     expect(html).toMatch(/name="tria-picker-material"[^>]*value="1"|value="1"[^>]*name="tria-picker-material"/)
     expect(html).toContain('Material')
     expect(html).toContain('Non Material')
+  })
+
+  it('grid daftar: kolom Type / Material Type menampilkan teks, bukan kode', () => {
+    const baris: BarisPenyesuaian = {
+      id: '1002307/R01', idAsal: '1002307', jenisPenyesuaian: '2', jenisMaterial: '1',
+      namaKontrak: 'X', sifatProporsi: '', asalBisnis: '', cedant: '',
+      tanggalMulai: '', tanggalBerakhir: '', posisi: '', statusAkseptasi: '',
+    }
+    const sel = selDaftar(baris)
+    expect([sel[2], sel[3]]).toEqual(['External', 'Material'])
+    expect(selDaftar({ ...baris, jenisPenyesuaian: '1', jenisMaterial: '2' }).slice(2, 4)).toEqual(['Internal', 'Non Material'])
+    // EDMState 3 = label kepala "Adjustment Premium" @82379; Material kosong tetap kosong
+    expect(selDaftar({ ...baris, jenisPenyesuaian: '3', jenisMaterial: '' }).slice(2, 4)).toEqual(['Adjustment Premium', ''])
+    // kode lain di luar peta apa adanya
+    expect(selDaftar({ ...baris, jenisPenyesuaian: '9' })[2]).toBe('9')
+    // pencarian mencocokkan teks yang tampil
+    expect(cocokCari(baris, 'external')).toBe(true)
   })
 
   it('kepala mode detail memakai teks prompt untuk kedua dropdown', () => {

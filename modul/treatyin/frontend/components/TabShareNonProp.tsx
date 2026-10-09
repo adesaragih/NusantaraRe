@@ -80,7 +80,7 @@ import type { ModeForm } from '../mode'
 // Permintaan pemilik proses 8 Oktober 2026 untuk seluruh dropdown
 // Treaty In dan Adjustment: mengetik harus terasa seperti mencari.
 import { DropdownDaftar } from './IsianAuto'
-import { StripTabNavigasi, TombolNavigasi } from './navigasi'
+import { klikBaris, StripTabNavigasi, TombolNavigasi } from './navigasi'
 import { PemicuUbah, usePemicuUbah } from './pemicuUbah'
 import { BlokPega, DeretTombolPega, GridNilaiPega, GridPega, TeksPega } from './gridPega'
 import { TataPegaBlok } from './tataPega'
@@ -1127,7 +1127,16 @@ export default function TabShareNonProp({
                       const [m1, n1] = selPasangan(b.GrossPremiumList, 0)
                       const [m2, n2] = selPasangan(b.GrossPremiumList, 1)
                       return [
-                        <tr key={`b${i}`} className={terbuka ? 'tl-share-baris--buka' : undefined}>
+                        <tr
+                          key={`b${i}`}
+                          className={'trin__baris-buka' + (terbuka ? ' tl-share-baris--buka' : '')}
+                          onClick={(e) => {
+                            // ⭐ Klik baris = klik panah (`klikBaris`).
+                            klikBaris(e, () => {
+                              setBuka(terbuka ? null : i)
+                            })
+                          }}
+                        >
                           <td>
                             {/* Navigasi, bukan `<button>` — tetap hidup di mode lihat. */}
                             <TombolNavigasi

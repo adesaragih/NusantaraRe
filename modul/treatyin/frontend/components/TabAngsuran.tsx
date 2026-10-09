@@ -39,7 +39,7 @@ import { useProperti } from '../halaman'
 import { ANGSURAN, KOLOM_RINCIAN_ANGSURAN } from '../labelsAngsuran'
 import type { ModeForm } from '../mode'
 import { angkaMurni, padankanDesimal, selAngka } from './angka'
-import { TombolNavigasi } from './navigasi'
+import { klikBaris, TombolNavigasi } from './navigasi'
 import { TataPegaBlok } from './tataPega'
 import { PemicuUbah, usePemicuUbah } from './pemicuUbah'
 import { saringAngka } from './saringAngka'
@@ -260,7 +260,20 @@ export default function TabAngsuran({
             )}
             {angsuran.map((a, i) => (
               <Fragment key={i}>
-                <tr>
+                <tr
+                  className="trin__baris-buka"
+                  onClick={(e) => {
+                    // ⭐ Klik baris = klik panah (`klikBaris`).
+                    klikBaris(e, () => {
+                      setBuka((x) => {
+                        const y = new Set(x)
+                        if (y.has(i)) y.delete(i)
+                        else y.add(i)
+                        return y
+                      })
+                    })
+                  }}
+                >
                   <td className="trin__buka-sel">
                     {/* Navigasi, bukan `<button>` — tetap hidup di mode lihat. */}
                     <TombolNavigasi
