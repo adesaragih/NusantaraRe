@@ -4,10 +4,10 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { PERIODE as P, PILIHAN_PERIODE, SHOW_DETAIL, TEKS_INWARD, TOMBOL_KAKI_INWARD as KAKI } from '../labels'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import InwardFacultative, { endSebelumBegin, hariIniKabel, tambahSatuTahun, type KasusBaru } from './InwardFacultative'
+import InwardFacultative, { endSebelumBegin, hariIniKabel, kodePolicyType, tambahSatuTahun, type KasusBaru } from './InwardFacultative'
 
 const KASUS: KasusBaru = {
   caseId: 'NB-1',
@@ -61,16 +61,48 @@ describe('Inward Facultative tahap 1 = tangkapan layar kasus FIRE + XML Periode'
   })
 
   it('radio Policy Type dan Day dari tangkapan layar, belum terpilih', () => {
-    for (const p of [...PILIHAN_PERIODE.policyType, ...PILIHAN_PERIODE.day]) expect(HTML).toContain(`value="${p}"/> ${p}`)
+    for (const p of PILIHAN_PERIODE.policyType) expect(HTML).toContain(`value="${p.value}"/> ${p.label}`)
+    for (const p of PILIHAN_PERIODE.day) expect(HTML).toContain(`value="${p}"/> ${p}`)
     expect(HTML).not.toMatch(/type="radio"[^>]*checked/)
   })
 
+  it('mode hanya lihat (View Details / View Policy, work owner 09-10-2026): Show Detail terbuka, tanpa kaki Cancel / Save / Submit', () => {
+    const LIHAT = renderToStaticMarkup(<InwardFacultative kasus={KASUS} onBatal={() => {}} hanyaLihat />)
+    expect(LIHAT).not.toContain(`>${KAKI.simpan.label}</button>`)
+    expect(LIHAT).not.toContain(`>${KAKI.submit.label}</button>`)
+    expect(LIHAT).toMatch(/<input type="checkbox" checked=""\/> Show Detail/)
+    expect(HTML).toContain(`>${KAKI.submit.label}</button>`)
+  })
+
+  it('Class of Business selain FIRE (mis. Liability): tab berpesan "belum tersedia", bukan galat pemuatan (work owner 09-10-2026)', () => {
+    const SUMBER = readFileSync(join(__dirname, 'InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
+    expect(SUMBER).toContain("dariServer !== null && !kasusFire ? (")
+    expect(TEKS_INWARD.cobBelum('Object', 'LIABILITY')).toBe('Tab Object untuk Class of Business LIABILITY belum tersedia di sistem baru (saat ini baru FIRE).')
+  })
+
+  it('Policy Type tersimpan standard value DDL PolicyType.xml (work owner 09-10-2026); label lama dipetakan ke kode', () => {
+    expect(PILIHAN_PERIODE.policyType.map((p) => `${p.value}:${p.label}`)).toEqual(['0:Individual Policy', '1:Master Policy'])
+    expect(kodePolicyType('Master Policy')).toBe('1')
+    expect(kodePolicyType('Individual Policy')).toBe('0')
+    expect(kodePolicyType('1')).toBe('1')
+    expect(kodePolicyType('')).toBe('')
+    const DDL = 'D:\\migrasi\\RNM\\DDL\\PolicyType.xml'
+    if (existsSync(DDL)) {
+      const xml = readFileSync(DDL, 'utf-8')
+      for (const p of PILIHAN_PERIODE.policyType)
+        expect(xml).toMatch(new RegExp(`<pyLocalizedValue>${p.label}</pyLocalizedValue>\\s*<pyStandardValue>${p.value}</pyStandardValue>`))
+    }
+  })
+
   it('tombol fitur lain nonaktif; Cancel dan Save for later hidup, Submit nonaktif', () => {
-    for (const t of [P.uploadQuotation, P.uploadRISlip, P.search, P.downloadTemplateCsv, P.uploadCsv, P.viewUpload, P.saveData, P.insertAccumulation]) {
+    // Bilah CSV objek kini aktif (tiket 66) - lihat BilahCsvObjek.test.tsx.
+    for (const t of [P.search]) {
       expect(HTML).toMatch(new RegExp(`<button[^>]*disabled=""[^>]*>${t.label.replace(/[/.]/g, '\\$&')}</button>`))
     }
-    expect(HTML).toMatch(new RegExp(`<button type="button" class="btn btn--ghost">${KAKI.batal.label}</button>`))
-    expect(HTML).toMatch(new RegExp(`<button type="button" class="btn btn--ghost">${KAKI.simpan.label}</button>`))
+    // Upload AI hanya akun IT (work owner 08-10-2026) - render tanpa data server = bukan IT.
+    for (const t of [P.uploadQuotation, P.uploadRISlip, P.insertAccumulation]) expect(HTML).not.toContain(`>${t.label}</button>`)
+    expect(HTML).toMatch(new RegExp(`<button type="button" class="btn nbf-tema__tombol btn--ghost">${KAKI.batal.label}</button>`))
+    expect(HTML).toMatch(new RegExp(`<button type="button" class="btn nbf-tema__tombol btn--ghost">${KAKI.simpan.label}</button>`))
     expect(HTML).toMatch(new RegExp(`<button[^>]*disabled=""[^>]*>${KAKI.submit.label}</button>`))
   })
 
@@ -109,7 +141,7 @@ describe('Inward Facultative tahap 1 = tangkapan layar kasus FIRE + XML Periode'
 
   it('Change SOB hidup membuka popup; Choose mengisi kode + nama; kode ikut Save for later (tiket 33, E-1)', () => {
     const SUMBER = readFileSync(join(__dirname, 'InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
-    expect(HTML).toMatch(new RegExp(`<button type="button" class="btn btn--sm">${P.changeSob.label}</button>`))
+    expect(HTML).toMatch(new RegExp(`<button type="button" class="btn nbf-tema__tombol btn--sm">${P.changeSob.label}</button>`))
     expect(HTML).not.toContain('role="dialog"')
     expect(SUMBER).toContain('onClick={() => setPilihSob(true)}')
     expect(SUMBER).toMatch(/onPilih=\{\(b\) => \{\s*setSob\(\{ id: b\.id, nama: b\.name \}\)/)
@@ -120,7 +152,7 @@ describe('Inward Facultative tahap 1 = tangkapan layar kasus FIRE + XML Periode'
 
   it('Change Ceding Co hidup membuka popup daftar; Submit mengganti daftar; nama digabung `;`; kode ikut Save for later (tiket 34)', () => {
     const SUMBER = readFileSync(join(__dirname, 'InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
-    expect(HTML).toMatch(new RegExp(`<button type="button" class="btn btn--sm">${P.changeCedingCo.label}</button>`))
+    expect(HTML).toMatch(new RegExp(`<button type="button" class="btn nbf-tema__tombol btn--sm">${P.changeCedingCo.label}</button>`))
     expect(SUMBER).toContain('onClick={() => setUbahCeding(true)}')
     expect(SUMBER).toMatch(/<PopupCedingCoList\s*awal=\{ceding\}/)
     expect(SUMBER).toMatch(/onSubmit=\{\(d\) => \{\s*setCeding\(d\)/)
@@ -141,7 +173,7 @@ describe('Inward Facultative tahap 1 = tangkapan layar kasus FIRE + XML Periode'
   it('Begin date sah mengisi End date; ketikan setengah jadi tidak; End date tetap dapat diubah sendiri', () => {
     const SUMBER = readFileSync(join(__dirname, 'InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
     expect(SUMBER).toMatch(/setMulai\(k\)[\s\S]{0,160}if \(k !== ''\) setSelesai\(tambahSatuTahun\(k\)\)/)
-    expect(SUMBER).toMatch(/label=\{P\.endDate\.label\}\s*value=\{selesai\}\s*onChange=\{setSelesai\}/)
+    expect(SUMBER).toMatch(/label=\{P\.endDate\.label\}\s*value=\{selesai\}\s*disabled=\{kunciPeriode\}\s*onChange=\{setSelesai\}/)
   })
 
   it('End date < Begin date = peringatan di End date dan Save for later tertahan; sama = sah (F-1)', () => {
@@ -157,11 +189,58 @@ describe('Inward Facultative tahap 1 = tangkapan layar kasus FIRE + XML Periode'
     expect(SUMBER).toContain('disabled={menyimpan || tanggalSalah || bacaSaja}')
   })
 
-  it('tab Object kasus FIRE = TabObject; selain FIRE tetap BelumTersedia (G-5)', () => {
+  it('tahap Binding (tiket 64 K1): Begin / End date terkunci bila kunciPeriode', () => {
     const SUMBER = readFileSync(join(__dirname, 'InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
-    expect(SUMBER).toContain("const kasusFire = (op.groupBusiness ?? '').trim().toUpperCase() === 'FIRE'")
+    expect(SUMBER).toContain('const kunciPeriode = dariServer?.kunciPeriode === true')
+    expect(SUMBER).toMatch(/label=\{P\.beginDate\.label\}\s*value=\{mulai\}\s*disabled=\{kunciPeriode\}/)
+    expect(SUMBER).toMatch(/label=\{P\.endDate\.label\}\s*value=\{selesai\}\s*disabled=\{kunciPeriode\}/)
+  })
+
+  it('tahap Underwriting (tiket 59): baca-saja kecuali tab Spreading; grid baris hanya bila ubahBarisSpreading', () => {
+    const SUMBER = readFileSync(join(__dirname, 'InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
+    expect(SUMBER).toContain("const spreadingTerbuka = !hanyaLihat && bacaSaja && dariServer?.bolehUbahSpreading === true")
+    expect(SUMBER).toContain("const detailBacaSaja = bacaSaja && !(spreadingTerbuka && tab === 'Spreading')")
+    expect(SUMBER).toContain("<BacaSajaKasus key={`${detailBacaSaja ? `bacasaja${kecualiDetail ?? ''}` : 'ubah'}-${versiDetail}`} aktif={detailBacaSaja} kecuali={kecualiDetail} sembunyi={hanyaLihat}>")
+    expect(SUMBER).toContain('<TabSpreading caseId={kasus.caseId} tahapUw={dariServer?.ubahBarisSpreading === true} />')
+    // General + Save for later tetap baca-saja di tahap UW.
+    expect(SUMBER).toContain('<BacaSajaKasus aktif={bacaSaja} sembunyi={hanyaLihat}>')
+    expect(SUMBER).toContain('disabled={menyimpan || tanggalSalah || bacaSaja}')
+  })
+
+  it('bilah CSV: empat tombol CSV tidak tampil saat baca-saja (UW dst.); Insert Accumulation hanya IT (work owner 08-10-2026)', () => {
+    const SUMBER = readFileSync(join(__dirname, 'InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
+    expect(SUMBER).toContain('{!hanyaLihat && (!bacaSaja || akunIT) && (')
+    // Tahap ubah: bilah CSV objek (tiket 66) + Insert Accumulation hanya IT; baca-saja: hanya Insert Accumulation (bila IT).
+    expect(SUMBER).toMatch(/\{!bacaSaja \? \(\s*<BilahCsvObjek\s+caseId=\{kasus\.caseId\}\s+akhir=\{akunIT && <TombolNonaktif label=\{P\.insertAccumulation\.label\} \/>\}/)
+    expect(SUMBER).toMatch(/\) : \(\s*<div className="nbf-opp__tombol">\s*<TombolNonaktif label=\{P\.insertAccumulation\.label\} \/>/)
+  })
+
+  it('tombol Upload QUOTATION/PLACING SLIP AI dan Upload R/I SLIP AI hanya untuk akun IT (work owner 08-10-2026)', () => {
+    const SUMBER = readFileSync(join(__dirname, 'InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
+    expect(SUMBER).toContain('const akunIT = dariServer?.aksesLossRecord === true')
+    expect(SUMBER).toMatch(/\{akunIT && \(\s*<>\s*<div className="nbf-opp__tombol">\s*<TombolNonaktif label=\{P\.uploadQuotation\.label\} \/>[\s\S]{0,160}P\.uploadRISlip\.label/)
+  })
+
+  it('tahap Underwriting (tiket 60): Accumulation di tab Coverage terbuka lewat pengecualian data-ubah-akumulasi', () => {
+    const SUMBER = readFileSync(join(__dirname, 'InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
+    expect(SUMBER).toContain('const akumulasiTerbuka = !hanyaLihat && bacaSaja && dariServer?.ubahAkumulasi === true')
+    expect(SUMBER).toContain("const kecualiDetail = akumulasiTerbuka && tab === 'Coverage' ? PILIH_UBAH_AKUMULASI : undefined")
+    const FORM = readFileSync(join(__dirname, '..', 'components', 'FormCoverage.tsx'), 'utf8').replace(/\r\n/g, '\n')
+    // Choose + Copy Accumulation + popup bertanda; field coverage lain TIDAK (tetap baca-saja di UW - CoverageItem_IsUW Read-only).
+    expect(FORM.match(/data-ubah-akumulasi=""/g)).toHaveLength(3)
+    const TAB = readFileSync(join(__dirname, '..', 'components', 'TabCoverage.tsx'), 'utf8').replace(/\r\n/g, '\n')
+    expect(TAB).toContain("data-ubah-akumulasi={hanyaAkumulasi ? '' : undefined}")
+  })
+
+  it('tab Object kasus FIRE = TabObject; FIRE = Group Business "FIRE" (perilaku lama, tak boleh hilang) ATAU lini backend (tiket 73 P0), Clauses / Scoring Risk hanya FIRE (G-5)', () => {
+    const SUMBER = readFileSync(join(__dirname, 'InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
+    // Regresi 09-10-2026: case FIRE tampil "belum tersedia" karena layar FIRE hanya menurut `lini.fire` backend.
+    expect(SUMBER).toContain("const kasusFire = (op.groupBusiness ?? '').trim().toUpperCase() === 'FIRE' || dariServer?.lini?.fire === true")
+    expect(SUMBER).not.toContain('dariServer !== null ? dariServer.lini?.fire === true')
+    expect(SUMBER).toContain("(t !== 'Clauses' || kasusFire) &&")
+    expect(SUMBER).toContain("(t !== 'Scoring Risk' || kasusFire)")
     expect(SUMBER).toMatch(/\{tab === 'Object' && kasusFire \? \(\s*<TabObject caseId=\{kasus\.caseId\} insuredName=\{insured\} \/>/)
     // Tab Coverage FIRE (tiket 43).
-    expect(SUMBER).toMatch(/: tab === 'Coverage' && kasusFire \? \(\s*<TabCoverage caseId=\{kasus\.caseId\} \/>/)
+    expect(SUMBER).toMatch(/: tab === 'Coverage' && kasusFire \? \(\s*<TabCoverage caseId=\{kasus\.caseId\} hanyaAkumulasi=\{akumulasiTerbuka\} \/>/)
   })
 })

@@ -85,6 +85,11 @@ export function rakitModulFrontend(menu: BerkasMenu, rute: BerkasRute): ModulFro
       if (!m.halaman.includes(m.halamanAwal)) {
         throw new Error(`daftar modul: modul/${folder}/frontend/menu.ts: halaman awal "${m.halamanAwal}" bukan halaman modul itu`)
       }
+      for (const a of m.menuAtas ?? []) {
+        if (!m.halaman.includes(a.halaman)) {
+          throw new Error(`daftar modul: modul/${folder}/frontend/menu.ts: menuAtas "${a.halaman}" bukan halaman modul itu`)
+        }
+      }
       return {
         nama: m.nama,
         kelompok: m.kelompok,
@@ -92,6 +97,7 @@ export function rakitModulFrontend(menu: BerkasMenu, rute: BerkasRute): ModulFro
         halamanAwal: m.halamanAwal,
         ...(m.antreanBeranda !== undefined ? { antreanBeranda: m.antreanBeranda } : {}),
         ...(m.daftarBeranda !== undefined ? { daftarBeranda: m.daftarBeranda } : {}),
+        ...(m.menuAtas !== undefined ? { menuAtas: m.menuAtas } : {}),
         Rute: r,
       }
     })
@@ -135,6 +141,10 @@ export const ENTRI_MENU: readonly EntriMenu<Halaman>[] = [
     pemilik: m.nama,
     halamanModul: m.halaman,
   })),
+  // Tombol di bawah Beranda milik modul (`MenuModul.menuAtas`, 09-10-2026) - tampil bila tombol modul pemiliknya tampil.
+  ...MODUL_FRONTEND.flatMap((m) =>
+    (m.menuAtas ?? []).map((a) => ({ modul: a.halaman, label: a.label, kelompok: a.label, pemilik: m.nama, atas: true })),
+  ),
 ]
 
 /**

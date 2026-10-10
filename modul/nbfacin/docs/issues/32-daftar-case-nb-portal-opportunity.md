@@ -99,3 +99,49 @@ dan `.NBStatusNew = "NEW NB"`). Kolom `status` (STATUS_WORK) tetap. ⚠️ Migra
 kolom NB_STATUS kueri portal ORA-00904 (pembacaan tidak dibuat tahan: pembacaan bersyarat katalog menambah kueri per
 permintaan; urutan deploy cukup). Uji: SQL (kolom + JOIN), NB_STATUS apa adanya / kosong → "NEW NB" (services), kunci JSON
 `nbStatus` (handler); mutasi bawaan "NEW NB" → tertangkap.
+
+### Kotak masuk Beranda (permintaan work owner 07-10-2026 "ini kenapa tidak ada ya, padahal ini login teamleader")
+
+Backend sesi c3, pola nbtreatyin (keputusan work owner 06-10-2026 "beranda menunjukkan berapa banyak case yang masuk di akun
+dia, mengikuti workbasket"):
+- `GET /api/nbfacin/kotak-masuk` → `[{workbasket, nama, jumlah}]`: satu baris per workbasket ANTREAN NB Fac In yang DIPEGANG
+  akun (`inti.Pelaku.Peran`), urut antrean - ReasFacInMarketing, ReasFacInTeamLeader, lalu kesembilan tujuan Banding
+  SetBanding_ACT (tiket 57; `TestAntreanKasusNB` menjaga setiap tujuan Submit ada di antrean). Workbasket di luar antrean
+  (modul lain) tidak ditampilkan. Jumlah 0 tetap dikirim (Beranda menyembunyikannya). Nama = `M_WORKBASKET.NAME`, kosong /
+  tak terdaftar → kode.
+- `GET /api/nbfacin/kotak-masuk/kasus?workbasket=` → `[baris portal]` (bentuk sama dengan `GET /api/nbfacin/opportunity`, NB
+  status kosong → "NEW NB"); workbasket kosong = semua yang dipegang; workbasket tidak dipegang / bukan antrean → 403; urut
+  `TGL_UPDATE` terbaru dulu (NULLS LAST), paling banyak 500.
+- Saringan (`repository/kotakmasuk.go`): `LINI = 'FAC'`, `STATUS_WORK` bukan `Resolved-%` (Decline tiket 57 →
+  "Resolved-Decline"), lalu ATAU: (a) workbasket marketing → POSITION "Offer" / "ReasFacInMarketing" DAN `CREATE_OP` = akun
+  (selaras portal "hanya yang dia buat sendiri"; keduanya dijumlah ke ReasFacInMarketing); (b) workbasket lain → POSITION =
+  workbasket (seluruh case, siapa pun pembuatnya). Tanpa sesi 401; tanpa basis data 503. Tanpa migrasi.
+- Uji: `TestKotakMasuk` / `TestDaftarMenunggu` (TL melihat seluruh case Team Leader; selesai tidak; marketing hanya buatannya;
+  akun tanpa workbasket antrean → []; 403 workbasket asing; 401), `TestSQLKotakMasuk` (bind berurutan), `TestKotakMasukHandler`
+  (bentuk JSON larik); mutasi 5 titik → tertangkap.
+
+### Kolom inbox "New Business" (work owner 07-10-2026 "di tampilan inbox, keluarin kolom2 ini", gambar inbox Pega)
+
+`GET /api/nbfacin/kotak-masuk/kasus` kini `[BarisKotakMasukNbFacIn]` (bukan baris portal); cacah kotak masuk tidak berubah.
+Report inbox Pega tidak ada di korpus - kolom dari gambar (pola nbtreatyin). Sumber per kunci (backend sesi c3):
+
+| Kunci | Sumber | Catatan |
+| --- | --- | --- |
+| `caseId` | T_WORK_POLIS.ID | |
+| `insuredName` | T_M_ACCOUNT.INSUREDNAME lewat T_NB_OPPORTUNITY.ACCOUNT_ID (MAX, pola portal) | |
+| `businessName` | T_NB_OPPORTUNITY.CLASS_OF_BUSINESS | nama Class Of Business case |
+| `sourceOfBusiness` | T_QUOTATIONDATA.SOB_NAME | |
+| `cedingCompany` | T_QUOTATIONDATA.CEDING_CO_NAME | gabungan ";" seperti General |
+| `inceptionDate` | T_GENERAL_POLIS.START_DATE_TIME → DD-MM-YYYY WIB | Begin date |
+| `shareRnm` | T_GENERAL_POLIS.PERCENT_SHARE (teks desimal TM9) | sumber yang sama dengan % Share RNM tab Spreading / Cedant |
+| `marketing` | MARKETINGOFFICER.CLIENTNAME lewat MOID | |
+| `status` | padanan `.IsCedingConfirm` dari T_WORK_POLIS.FLAG_ONGOING_POLICY: "0" → "Offer", "2" → "Binding", lainnya "" | keputusan work owner 07-10-2026 ("setuju , buatin jangan halu"; semula STATUS_WORK). `[terverifikasi]` `Activity\InputOfferFacInEngineer_preACT.xml` langkah 3 (IsCedingConfirm "Offer" bila FlagOnGoingPolicy 0, tiap layar dibuka); konektor `Flow\InputInwardFacultativeOffer.xml` men-set "Binding" bersama FlagOnGoingPolicy 2 (Decision29 / Decision35). "Policy" (SetBanding_ACT jalur EDM) dan "Accepted" (hanya baris riwayat SetValidateDate 3.2) TIDAK ditebak - belum ada padanan tersimpan `[pertanyaan terbuka]` tahap binding / EDM |
+| `createdDate` | TO_CHAR(T_WORK_POLIS.TGL_CREATE, 'DD-MM-YYYY') | |
+| `offeringDate` | T_GENERAL_POLIS.OFFERING_DATE (Pega YYYYMMDD) → DD-MM-YYYY | |
+| `validityDate` | "" | `.OfferFacIn.DateValidity` (GetDateValidity_ACT, dipanggil pemeriksa spreading tahap UW) tidak dihitung / disimpan; kolom rancangan DATE_VALIDITY belum dibuat `belum terverifikasi` |
+| `statusInbox` | T_GENERAL_POLIS.NB_STATUS; kosong → "NEW NB" | |
+| `aksiTerakhir` | APPROVAL + " by " + PIC baris HISTORYAKSEPTASIPRODUCTION TERAKHIR (KEEP DENSE_RANK LAST atas TGL_INP, NOURUT; IDPEGA = pzInsKey) | `Activity\SetNBStatus_Act` langkah 6 (StsApproval "Accept by " … + ViewSuggest(<LAST>).PICSuggest); label APPROVAL tersimpan dipakai apa adanya; tanpa riwayat → "" |
+| `tglUpdate` | TO_CHAR(T_WORK_POLIS.TGL_UPDATE, 'YYYY-MM-DD HH24:MI:SS') | SYSDATE server basis data, dianggap WIB `[dugaan]` |
+
+Uji: `TestSQLKotakMasuk` (kolom berurutan = pemindai, bind :1 / :2 awalan pzInsKey lalu saringan), `TestKeBarisInbox` (pemetaan),
+`TestKotakMasukHandler` (kunci JSON persis).

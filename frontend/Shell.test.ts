@@ -75,7 +75,10 @@ describe('menu hanya yang berbukti korpus', () => {
     // Kelola User (01-10-2026) juga TIDAK dihitung - ia menu aplikasi, bukan
     // modul korpus (`daftar.kelolauser.test.ts`).
     // Template Manager (04-10-2026) sama: menu aplikasi.
-    const modul = ENTRI_MENU.filter((e) => e.modul !== 'beranda' && e.modul !== 'kelolauser' && e.modul !== 'templatemanager')
+    // Tombol di bawah Beranda (`MenuModul.menuAtas`, 09-10-2026) bukan tombol modul - tidak dihitung.
+    const modul = ENTRI_MENU.filter(
+      (e) => e.modul !== 'beranda' && e.modul !== 'kelolauser' && e.modul !== 'templatemanager' && e.atas !== true,
+    )
     // Lima sejak tiket 03 Treaty Contract Out. Sempat tujuh (tiket 04, 08);
     // tco5 [keputusan work owner 29-09-2026]: kelompok Treaty Contract Out
     // SATU butir "Treaty Contract Out" - ReinsType dan Description popup form

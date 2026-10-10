@@ -53,15 +53,63 @@ import PopupAkumulasi from './PopupAkumulasi'
 const JEDA_MS = 500
 
 /**
+ * Nilai awal coverage (work owner 08-10-2026, tangkapan layar Pega: "ini nilai default saat isi coverage, dan jika tidak
+ * di isi, dikasih nilainya, jangan null"): Indemnity 0, ‰ Gross Rate / % Discount / ‰ Net Rate / Limit of Liability /
+ * % Limit of Liability / Discount / Gross Premium 0, % Loss Limit 100, Indemnity Unit "0" (Day (s)). Asal di Pega tidak ada
+ * di korpus (`CountPremi_ACT` hanya memakai LossLimit 100 sebagai nilai lokal). Backend mengisi nilai yang sama untuk medan
+ * kosong saat simpan.
+ * Medan khusus basis (work owner 08-10-2026 "perlu juga, ikutin seperti xml dari pega"): Sub Limit 100 = `CountPremi_ACT`
+ * L3638 `Local.SubLimit = 100` bila tidak > 0 (pola sama dengan LossLimit; 0 akan memicu `seterrormessagesublimit_ACT`
+ * `.Sublimit < 5`); First Loss / EML-PML 0 = XML tanpa default, rumus `TSILiability = TSI * FirstLoss|EmlPml / 100` memperlakukan
+ * kosong sebagai 0. First Scale TIDAK diberi nilai awal: dihitung dari tabel First Loss Scale (`SetFirstLossScale_ACT` L1073).
+ */
+export const NILAI_AWAL_COVERAGE = {
+  indemnity: '0',
+  rate: '0',
+  discountPercentage: '0',
+  netRate: '0',
+  limitOfLiability: '0',
+  pctLol: '0',
+  lostLimit: '100',
+  discount: '0',
+  premium: '0',
+  unit: '0',
+  firstLoss: '0',
+  emlPml: '0',
+  sublimit: '100',
+} as const
+
+/**
+ * Coverage dari server (data lama / hasil hitung) dengan medan kosong -> `NILAI_AWAL_COVERAGE` saat ditampilkan (work owner
+ * 08-10-2026 "ini yang tidak ada isinya di ksh nilai 0 jgn ksong gitu"). Pasangan Rate / Premium dan % Discount / Discount
+ * hanya diisi bila KEDUANYA kosong: Rate 0 di samping premi terisi membuat Save memilih mode percent dan menimpa premi
+ * (backend `hitungSimpan` A158); % Discount 0 di samping diskon nominal sama halnya untuk hitung ulang diskon.
+ */
+export function isiNilaiAwal(c: CoverageObjek): CoverageObjek {
+  const hasil: CoverageObjek = { ...c }
+  const kosong = (v: string | undefined) => (v ?? '') === ''
+  const pasangan: Partial<Record<keyof CoverageObjek, boolean>> = {
+    rate: kosong(c.rate) && kosong(c.premium),
+    premium: kosong(c.rate) && kosong(c.premium),
+    discountPercentage: kosong(c.discountPercentage) && kosong(c.discount),
+    discount: kosong(c.discountPercentage) && kosong(c.discount),
+  }
+  for (const [k, v] of Object.entries(NILAI_AWAL_COVERAGE) as [keyof typeof NILAI_AWAL_COVERAGE, string][]) {
+    if (pasangan[k] === false) continue
+    if ((c[k] ?? '') === '') hasil[k] = v
+  }
+  return hasil
+}
+
+/**
  * Coverage kosong: basis Sum Insured, % Indemnity 100 (`AddCoverageAutoFire`); Indemnity Unit "0" = pilihan pertama yang
- * dikirim dropdown tanpa pilihan kosong (K-6).
+ * dikirim dropdown tanpa pilihan kosong (K-6); medan angka lain = `NILAI_AWAL_COVERAGE`.
  */
 export function coverageBaru(b?: BarisCoverage): CoverageObjek {
   return {
     coverage: b?.id ?? '', oldId: b?.oldId ?? '', coverageNote: b?.nama ?? '', coverageBasis: '1', day: '', tsi: '',
-    indemnity: '', rate: '', rateOjk: '', firstLoss: '', discountPercentage: '', tsiLiability: '', netRate: '',
-    limitOfLiability: '', pctLol: '', proRatePercent: '', indemnityPercentage: '100', firstScale: '', sublimit: '',
-    lostLimit: '', emlPml: '', discount: '', premium: '', conditions: '', unit: '0',
+    rateOjk: '', tsiLiability: '', proRatePercent: '', indemnityPercentage: '100', firstScale: '', conditions: '',
+    ...NILAI_AWAL_COVERAGE,
   }
 }
 
@@ -133,7 +181,7 @@ function PopupCoverage({ onTutup, onPilih }: { onTutup: () => void; onPilih: (b:
                   <td>{b.oldId}</td>
                   <td>{b.nama}</td>
                   <td className="table__actions">
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => onPilih(b)}>
+                    <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" onClick={() => onPilih(b)}>
                       {POPUP_OKUPASI.pilih.label}
                     </button>
                   </td>
@@ -152,7 +200,7 @@ function PopupCoverage({ onTutup, onPilih }: { onTutup: () => void; onPilih: (b:
 
 export default function FormCoverage({
   caseId,
-  c,
+  c: cAsli,
   tsiItem,
   item,
   pertama,
@@ -177,6 +225,8 @@ export default function FormCoverage({
   lokasi?: { province: string; occupationIds: string[] }
   ubah: (c: CoverageObjek) => void
 }) {
+  // Medan kosong tampil (dan ikut terkirim saat diubah) dengan nilai awal; backend mengisi nilai yang sama saat Save.
+  const c = isiNilaiAwal(cAsli)
   const [pilih, setPilih] = useState(false)
   const [pilihAkumulasi, setPilihAkumulasi] = useState(false)
   // Nama grup radio Days unik per form (beberapa coverage dapat terbuka bersamaan).
@@ -239,8 +289,13 @@ export default function FormCoverage({
     }, JEDA_MS)
   }
 
+  // Mode amount (Gross Premium diketik): Rate dikosongkan sampai hitung mengisinya - Save sebelum hitung selesai tetap
+  // amount di backend (hitungSimpan A158: rate kosong + premi terisi), tidak tertimpa Rate lama / nilai awal 0 (tiket 68).
   const set = (k: keyof CoverageObjek, mode: ModeHitung = 'percent') => (v: string) =>
-    ubahHitung({ ...c, [k]: (MEDAN_ANGKA as readonly string[]).includes(k) ? dariKetikan(v) : v }, mode)
+    ubahHitung(
+      { ...c, [k]: (MEDAN_ANGKA as readonly string[]).includes(k) ? dariKetikan(v) : v, ...(mode === 'amount' ? { rate: '' } : {}) },
+      mode,
+    )
   const angka = (k: (typeof MEDAN_ANGKA)[number], label: string, mode: ModeHitung = 'percent', required = false) => (
     <Field label={label} value={c[k]} onChange={set(k, mode)} required={required} error={angkaSah(c[k]) ? undefined : TEKS_COVERAGE.angka} />
   )
@@ -270,7 +325,7 @@ export default function FormCoverage({
       <div className="nbf-cov__atas nbf-labelkiri">
         <Pilih label={LABEL_COVERAGE_BASIS} value={b} onChange={set('coverageBasis')} opsi={OPSI_COVERAGE_BASIS} />
         <div className="nbf-opp__tombol">
-          <button type="button" className="btn btn--sm" onClick={() => setPilih(true)}>
+          <button type="button" className="btn nbf-tema__tombol btn--sm" onClick={() => setPilih(true)}>
             {F.pilihCoverage.label}
           </button>
         </div>
@@ -294,7 +349,7 @@ export default function FormCoverage({
                 <div className="nbf-inward__teks">{c.zone}</div>
                 <button
                   type="button"
-                  className="btn btn--ghost btn--sm"
+                  className="btn nbf-tema__tombol btn--ghost btn--sm"
                   title={ZONA_COVERAGE.ubahZona}
                   aria-label={ZONA_COVERAGE.ubahZona}
                   onClick={() => ubah({ ...c, zone: '', constructionEarthquake: '' })}
@@ -317,13 +372,14 @@ export default function FormCoverage({
         )}
         <Tampil label={F.accumulationCode.label} nilai={c.accumulationCode || AKUMULASI_KOSONG} />
         <Tampil label={F.accumulationAddress.label} nilai={c.accumulationDescription || AKUMULASI_KOSONG} />
+        {/* data-ubah-akumulasi: tetap aktif di tahap Underwriting (tiket 60, `CoverageItem_IsUW` kontainer tombol L7247). */}
         <div className="nbf-opp__tombol">
-          <button type="button" className="btn btn--sm" onClick={() => setPilihAkumulasi(true)}>
+          <button type="button" className="btn nbf-tema__tombol btn--sm" data-ubah-akumulasi="" onClick={() => setPilihAkumulasi(true)}>
             {F.pilihAkumulasi.label}
           </button>
           {/* Sel 19: hanya coverage pertama (`.pxListSubscript==1`). */}
           {pertama && onSalinAkumulasi && (
-            <button type="button" className="btn btn--sm" onClick={onSalinAkumulasi}>
+            <button type="button" className="btn nbf-tema__tombol btn--sm" data-ubah-akumulasi="" onClick={onSalinAkumulasi}>
               {F.salinAkumulasi.label}
             </button>
           )}
@@ -394,14 +450,16 @@ export default function FormCoverage({
         ubah={(deductibles) => ubah({ ...c, deductibles })}
       />
       {pilihAkumulasi && (
-        <PopupAkumulasi
-          zipRisiko={zipRisiko}
-          onTutup={() => setPilihAkumulasi(false)}
-          onPilih={(kode, alamat) => {
-            setPilihAkumulasi(false)
-            ubah({ ...c, accumulationCode: kode, accumulationDescription: alamat })
-          }}
-        />
+        <div data-ubah-akumulasi="">
+          <PopupAkumulasi
+            zipRisiko={zipRisiko}
+            onTutup={() => setPilihAkumulasi(false)}
+            onPilih={(kode, alamat) => {
+              setPilihAkumulasi(false)
+              ubah({ ...c, accumulationCode: kode, accumulationDescription: alamat })
+            }}
+          />
+        </div>
       )}
       {pilih && (
         <PopupCoverage

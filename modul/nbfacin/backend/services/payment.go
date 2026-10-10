@@ -100,6 +100,12 @@ func netPremium(b models.BarisDeduction) *apd.Decimal {
 	return bagiSkala(tambah(tambah(n, b.PPh), b.PPN), satu, 20)
 }
 
+// pesanNetNegatif - K51-7 (pesan agent, bukan korpus): Net Premium / Total Payment mata uang negatif. Dipakai Save Payment
+// dan PUT spreading tahap uw (K59-10).
+func pesanNetNegatif(mataUang string) string {
+	return fmt.Sprintf("Total Payment %s negatif - potongan melebihi premi", mataUang)
+}
+
 // isiCicilan - nilai uang tiap cicilan dari persen (SaveFillPaymentInstallment 3.1.5.5 + CountPaymentInstallment_Act 3.3.1)
 // dan SumTotalPayment / NetPremium mata uang.
 func isiCicilan(m *models.MataUangPayment) {
@@ -188,8 +194,9 @@ func selisihKecil(a, b *apd.Decimal) bool {
 }
 
 // proteksiPayment - ProtectPremiPolicy_Act (NB, bukan Life / EDM / MOP): pesan verbatim urut Page-Set-Messages Pega
-// (4 List Payment, per mata uang 5.7 List Installment, 10 Total premium, 11 Premi 0).
-func proteksiPayment(mu []models.MataUangPayment) []string {
+// (4 List Payment, per mata uang 5.7 List Installment, 10 Total premium, 11 Premi 0). Langkah 11 dilewati bila PolicyType == 1
+// (Master Policy) - keputusan work owner 09-10-2026 "Samakan dengan Pega" (ralat butir 78.2; sama dengan proteksi Accept).
+func proteksiPayment(mu []models.MataUangPayment, policyType string) []string {
 	if len(mu) == 0 {
 		return []string{pesanPaymentKosong}
 	}
@@ -227,7 +234,7 @@ func proteksiPayment(mu []models.MataUangPayment) []string {
 	if tidakCocok {
 		m = append(m, pesanTotalTakCocok)
 	}
-	if premiNol && totalPremiAll.Sign() <= 0 {
+	if premiNol && totalPremiAll.Sign() <= 0 && policyType != policyTypeMaster {
 		m = append(m, pesanPremiNol)
 	}
 	return m
@@ -427,10 +434,14 @@ func (s *Service) SimpanPayment(ctx context.Context, pelaku inti.Pelaku, id stri
 		}
 		isiCicilan(m)
 		if m.NetPremium.Sign() < 0 {
-			masalah = append(masalah, fmt.Sprintf("Total Payment %s negatif - potongan melebihi premi", m.Baris.Currency))
+			masalah = append(masalah, pesanNetNegatif(m.Baris.Currency))
 		}
 	}
-	masalah = append(proteksiPayment(mu), masalah...)
+	pt, err := s.policyTypeKasus(ctx, id)
+	if err != nil {
+		return TampilanPayment{}, err
+	}
+	masalah = append(proteksiPayment(mu, pt), masalah...)
 	if len(masalah) > 0 {
 		return TampilanPayment{}, fmt.Errorf("%w: %s", ErrMasukanPayment, strings.Join(masalah, "; "))
 	}

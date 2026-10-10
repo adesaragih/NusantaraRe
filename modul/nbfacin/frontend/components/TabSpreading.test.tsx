@@ -6,7 +6,17 @@ import { describe, expect, it } from 'vitest'
 
 import { SPREADING as S } from '../labels'
 import { TEKS_SPREADING } from '../labels'
-import { lebihDari100, templateLebih, treatyKembar } from './TabSpreading'
+import {
+  barisLebih,
+  barisLengkap,
+  barisSah,
+  barisSpreadingKosong,
+  gantiBarisCoverage,
+  lebihDari100,
+  templateLebih,
+  treatyKembar,
+} from './TabSpreading'
+import type { LokasiSpreading } from '../api'
 
 const KORPUS = 'D:\\migrasi\\RNM\\NB FacIn\\Section\\'
 const SUMBER = readFileSync(join(__dirname, 'TabSpreading.tsx'), 'utf8').replace(/\r\n/g, '\n')
@@ -83,6 +93,57 @@ describe('Proteksi Copy Spreading (CalcultePersentageSpeading_Act)', () => {
   })
 
   it('Copy To All ditahan selama pesan tampil', () => {
-    expect(SUMBER).toContain('disabled={lebih || kembar || v.template.length === 0 || menghitung}')
+    expect(SUMBER).toContain('disabled={lebih || kembar || pesanTemplate.length > 0 || v.template.length === 0 || menghitung}')
+  })
+
+  it('proteksi QS diperiksa saat Type Treaty berubah / baris dihapus (CalcultePersentageSpeading_Act 2.17-2.19, work owner 08-10-2026)', () => {
+    expect(SUMBER).toContain('periksaTemplateSpreading(caseId, template).then(')
+    expect(SUMBER.match(/,\s*true,?\s*\)/g)?.length).toBeGreaterThanOrEqual(2)
+    expect(SUMBER).toContain('onClick={() => ubahTemplate(v.template.filter((_, k) => k !== i), true)}')
+  })
+})
+
+describe('Grid spreading per coverage tahap Underwriting (tiket 59, When IsUWSpread)', () => {
+  const AKT = 'D:\\migrasi\\RNM\\NB FacIn\\Activity\\cekSpreadingFactIn.xml'
+  const b = (treatyType: string, sharePercentage: string) => ({ ...barisSpreadingKosong(), treatyType, treatyName: treatyType, sharePercentage })
+  const lokasi = (spreading: ReturnType<typeof b>[]): LokasiSpreading[] => [
+    {
+      objectNo: '1', objectName: 'UJI', location: 'UJI', total: [],
+      items: [{ itemType: 'UJI', currency: 'IDR', tsi: '1', totalGrossPremi: '1', totalPremiumRnm: '1', coverages: [
+        { oldId: 'UJI', coverageBasis: '', rate: '', premium: '', discount: '', tsi: '', tsiLiability: '', tsiNusantaraRe: '', premiNusantaraRe: '', spreading },
+      ] }],
+    },
+  ]
+
+  it.skipIf(!existsSync(AKT))('pesan Σ % Share = korpus verbatim (cekSpreadingFactIn)', () => {
+    expect(readFileSync(AKT, 'utf-8')).toContain(`<PropertiesValue>"${TEKS_SPREADING.shareBarisLebih}"</PropertiesValue>`)
+  })
+  it('Σ % Share satu coverage <= 100 (eksak); baris wajib Type Treaty + % Share', () => {
+    expect(barisLebih([b('UJI1', '60'), b('UJI2', '40')])).toBe(false)
+    expect(barisLebih([b('UJI1', '60'), b('UJI2', '40.0001')])).toBe(true)
+    expect(barisLengkap(lokasi([b('UJI1', '60')]))).toBe(true)
+    expect(barisLengkap(lokasi([b('', '60')]))).toBe(false)
+    expect(barisLengkap(lokasi([b('UJI1', '')]))).toBe(false)
+    expect(barisLengkap(lokasi([b('UJI1', '6,5')]))).toBe(false)
+    expect(barisSah(lokasi([b('UJI1', '70'), b('UJI2', '40')]))).toBe(false)
+    expect(barisSah(lokasi([]))).toBe(true)
+  })
+  it('gantiBarisCoverage mengganti satu coverage tanpa mengubah masukan', () => {
+    const awal = lokasi([b('UJI1', '100')])
+    const baru = gantiBarisCoverage(awal, 0, 0, 0, [])
+    expect(baru[0]?.items[0]?.coverages[0]?.spreading).toEqual([])
+    expect(awal[0]?.items[0]?.coverages[0]?.spreading).toHaveLength(1)
+  })
+  it('hanya bila tahapUw: Add / Delete / Type Treaty / % Share; perubahan -> hitung-baris berjeda; Save ditahan bila tidak sah', () => {
+    expect(SUMBER).toContain('tahapUw = false')
+    // Copy Spreading hanya tahap UW (work owner 08-10-2026; Pega pyContainerVisibleWhen=IsUWSpread).
+    expect(SUMBER).toMatch(/\{tahapUw && \(\n\s*<div className="nbf-spread__copy">/)
+    expect(SUMBER).toContain('jadwal.current = window.setTimeout(() => hitung(() => hitungBarisSpreading(caseId, berikut)), JEDA_MS)')
+    expect(SUMBER).toContain('onClick={() => ubahBarisCoverage(o, i, n, [...c.spreading, barisSpreadingKosong()])}')
+    expect(SUMBER).toContain('onClick={() => ubahBarisCoverage(o, i, n, c.spreading.filter((_, m) => m !== k))}')
+    expect(SUMBER).toContain('disabled={menyimpan || !angkaSah(share) || lebihDari100(share) || barisTidakSah}')
+    // TSI / Premium Spreaded tetap baca-saja (Pega: hanya user ID ter-hardcode).
+    expect(SUMBER).toContain('<td className="nbf-angka">{angka(b.tsiSpreaded)}</td>')
+    expect(SUMBER).toContain('<td className="nbf-angka">{angka(b.premiumSpreaded)}</td>')
   })
 })

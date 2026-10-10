@@ -1,6 +1,6 @@
 // API modul NB FacIn - tiket 20/21.
 
-import { minta } from '../../../inti/frontend/klien'
+import { minta, mintaFormulir } from '../../../inti/frontend/klien'
 
 /** Isian layar coverage kargo yang menjadi masukan rumus (butir 61). */
 export interface IsianPremiCargo {
@@ -180,6 +180,78 @@ export interface KasusNB {
   bolehUbah: boolean
   /** Sebab baca-saja (teks singkat); '' bila boleh ubah. */
   alasanBacaSaja: string
+  /**
+   * Tab Spreading boleh diubah akun ini (tiket 59): tahap marketing / Team Leader seperti `bolehUbah`, ATAU tahap
+   * Underwriting = When `IsUWSpread` (`NB FacIn\When\IsUWSpread.xml`: PositionNote salah satu posisi UW) + akun memegang
+   * workbasket posisi itu. Di tahap UW `bolehUbah` tetap false: hanya tab Spreading yang terbuka.
+   */
+  bolehUbahSpreading: boolean
+  /**
+   * Grid spreading per coverage dapat Add / Delete / ubah Type Treaty dan % Share (tiket 59) - HANYA tahap IsUWSpread
+   * (`Section\InputDtlSpreadingCoverage_FacIn_IsUW.xml` cabang IsUWSpread). Tahap marketing / Team Leader: baca-saja (K48 S-2).
+   */
+  ubahBarisSpreading: boolean
+  /**
+   * Accumulation Code / Address coverage boleh diubah di tab Coverage (tiket 60): tahap Underwriting = When `IsUWSpread`
+   * (enam posisi; keputusan work owner 08-10-2026 "DepHead dan UnderwritingFinancial juga bisa dong ubah accumulation" -
+   * penyimpangan sadar dari kontainer tombol `Section\CoverageItem_IsUW.xml` L7247 yang hanya empat posisi) + akun
+   * memegang workbasket posisi itu. Field coverage lain tetap baca-saja (di Pega semuanya Read-only di CoverageItem_IsUW).
+   */
+  ubahAkumulasi: boolean
+  /**
+   * Begin date / End date tab General terkunci (tiket 64 K1, work owner 08-10-2026 "Ikut Pega"): tahap Binding - di Pega
+   * kedua tanggal sudah Read-only sejak Binding walau field lain masih bisa diubah sampai tombol Binding ditekan.
+   * Backend menolak PUT general yang mengubah StartDateTime / EndDateTime pada tahap itu (409).
+   */
+  kunciPeriode: boolean
+  /**
+   * Tombol Search Following Policy Number aktif (tiket 70 A70-4): case boleh diubah akun ini, bukan Life, dan
+   * `ConfirmBinding != 1` (`Section\Periode.xml` L19826 `pyDisabledWhen .ConfirmBinding = 1`).
+   */
+  bolehFollowing: boolean
+  /**
+   * BusinessType case (tiket 73 P0) = `DecisionTable\BusinessType_DeT.xml` (first match) atas BUSINESS GROUPPANEL + OLDID Class
+   * of Business case: "Fire" / "FireStyle1" / "Liability" / "Aneka" / "Bonding" / … ; "UNKNOWN" bila BUSINESS tidak tunggal.
+   */
+  businessType: string
+  /**
+   * Lini layar case (tiket 73 P0) - When korpus lewat registry predikat: `fire` = IsFire (layar FIRE), `aneka` = IsAneka,
+   * `anekaNotBonding`, `liability` = IsLiability, `bonding` = IsBondingAndCustomBonds, `golf` = isGolfInsurance (Golf punya
+   * gerbang sendiri - aneka false).
+   */
+  lini: { fire: boolean; aneka: boolean; anekaNotBonding: boolean; liability: boolean; bonding: boolean; golf: boolean }
+  /** Tab Object keluarga Aneka (tiket 73 P1) - dihitung backend lewat When korpus; di luar Aneka: kontainer [] dan semua false. */
+  tampilanAneka: TampilanAneka
+}
+
+/**
+ * Sakelar form objek Aneka (tiket 73 P1, `Section\InputDtlObjectAneka_FacIn.xml`). `kontainer` = "C1".."C9" yang visible-when-nya
+ * benar (S1 docs/issues/73); `topRisk` = syarat `.Property.IsTopRisk` `InputDtlObjectLocation_FacIn.xml` L6301; `sectionLol` =
+ * IsObjectSectionAneka (K73-4: BusinessCode 2 karakter ditiru apa adanya); `jumlahSatuan` = `BusinessCode!=20` (L23869).
+ */
+export interface TampilanAneka {
+  kontainer: string[]
+  /** IsObjectWithQuantityYear. */
+  kolomTahunJumlah: boolean
+  /** IsHE. */
+  he: boolean
+  /** isGolfInsurance. */
+  golf: boolean
+  /** isGrowingTrees || IsYieldShortfall. */
+  tanamanHasil: boolean
+  /** IsEngineering (Maintenance Period). */
+  engineering: boolean
+  /** IsBonding (Draft Wording ID). */
+  bonding: boolean
+  /** IsCreditBriguna. */
+  briguna: boolean
+  topRisk: boolean
+  sectionLol: boolean
+  jumlahSatuan: boolean
+  /** Sel Currency form coverage (`InputCoverageAneka_FacIn.xml` L3557: IsPortRisk || IsBuilderRisk || IsObjectWithQuantityYear || …). */
+  currencyCoverage: boolean
+  /** IsMBD - Indemnity / Indemnity Unit / % Indemnity (L5548-6149). */
+  mbd: boolean
 }
 
 export function ambilKasus(caseId: string): Promise<KasusNB> {
@@ -208,6 +280,70 @@ export interface BarisCaseNB {
    * "NEW NB" (`Flow\InputInwardFacultativeOffer.xml` awal flow).
    */
   nbStatus: string
+}
+
+/** Satu batang kotak masuk Beranda: workbasket yang dipegang akun + banyak case NB FacIn yang menunggu di sana. */
+export interface AntreanKotakMasukNbFacIn {
+  /** Kode workbasket (= `T_WORK_POLIS.POSITION` case yang menunggu), mis. `ReasFacInTeamLeader`. */
+  workbasket: string
+  /** Nama tampil workbasket. */
+  nama: string
+  jumlah: number
+}
+
+/**
+ * `GET /api/nbfacin/kotak-masuk` - kotak masuk Beranda (work owner 07-10-2026: login Team Leader harus melihat case yang
+ * menunggu di workbasket-nya). Hanya workbasket yang dipegang akun (pelaku.Peran) dan berjumlah > 0.
+ */
+export function kotakMasukNbFacIn(): Promise<AntreanKotakMasukNbFacIn[]> {
+  return minta<AntreanKotakMasukNbFacIn[]>('/api/nbfacin/kotak-masuk')
+}
+
+/**
+ * Satu baris kotak masuk Beranda NB FacIn - kolom gambar layar inbox "New Business" Pega (work owner 07-10-2026; report-nya
+ * tidak di korpus). Teks apa adanya dari data; tanggal kabel `DD-MM-YYYY`; waktu kabel `YYYY-MM-DD HH:MM:SS`.
+ */
+export interface BarisKotakMasukNbFacIn {
+  caseId: string
+  insuredName: string
+  /** "Business name" (gambar: "CASH IN SAFE") - nama Class Of Business case. */
+  businessName: string
+  /** "Source Of Business" - nama SOB. */
+  sourceOfBusiness: string
+  /** "Ceding Company" - nama ceding (gabungan bila lebih dari satu). */
+  cedingCompany: string
+  /** "Inception Date" - Begin date polis. */
+  inceptionDate: string
+  /** "%Share RNM" - teks desimal persen. */
+  shareRnm: string
+  marketing: string
+  /**
+   * "Status" (gambar: "Accepted") = padanan Pega `.IsCedingConfirm` (keputusan work owner 07-10-2026): turunan
+   * FLAG_ONGOING_POLICY - "0" Offer, "2" Binding (`InputOfferFacInEngineer_preACT` langkah 3, konektor flow); lainnya "".
+   */
+  status: string
+  /** "Created date" - tanggal case dibuat. */
+  createdDate: string
+  offeringDate: string
+  /** "Validity Date" - batas berlaku penawaran. */
+  validityDate: string
+  /** "Status Inbox" (gambar: "NB IS IN <nama>'S INBOX") = NB_STATUS. */
+  statusInbox: string
+  /** Kolom tanpa judul (gambar: "Accept by <PIC>") = Approval + " by " + PIC riwayat terakhir. */
+  aksiTerakhir: string
+  /** "Time Since Last Update" dihitung layar dari waktu ini. */
+  tglUpdate: string
+  /**
+   * "Time in Underwriting" (inbox workbasket UW) dihitung layar dari `.OfferFacIn.SubmitToUW` (`T_GENERAL_POLIS.SUBMIT_TO_UW` -
+   * keputusan work owner 07-10-2026; diisi Accept Team Leader `IsJuniorUW_B` hanya bila kosong = pertama kali ke UW), kabel
+   * `YYYY-MM-DD HH:MM:SS` WIB; '' = belum ke UW.
+   */
+  submitToUw: string
+}
+
+/** `GET /api/nbfacin/kotak-masuk/kasus?workbasket=` - case yang menunggu akun; null = semua workbasket-nya. */
+export function daftarMenungguNbFacIn(workbasket: string | null): Promise<BarisKotakMasukNbFacIn[]> {
+  return minta<BarisKotakMasukNbFacIn[]>('/api/nbfacin/kotak-masuk/kasus', { kueri: { workbasket: workbasket ?? undefined } })
 }
 
 /** Jawaban `GET /api/nbfacin/opportunity` - daftar case NB Fac In, terbaru dulu. */
@@ -569,12 +705,106 @@ export interface DaftarObjek {
   baris: ObjekFire[]
 }
 
+/** Satu kategori lampiran (tiket 67): `CATEGORY_ATTACH_REAS.NOTE` + jumlah dokumen case (`DOCUMENT_POLIS` KATEGORI_2). */
+export interface KategoriLampiran {
+  kategori: string
+  jumlah: number
+}
+
+/** `GET …/lampiran` - grid Attachment File (`AttachmentGridReas`). */
+export interface TampilanLampiran {
+  kategori: KategoriLampiran[]
+  /** Akun memegang workbasket posisi case (semua tahap, keputusan work owner 08-10-2026). */
+  bolehUnggah: boolean
+  /** Persis Pega (work owner 08-10-2026): FlagOnGoingPolicy 0 (tahap Offer) atau akun IT, siapa pun yang membuka case. */
+  bolehHapus: boolean
+}
+
+/** Satu berkas di popup View File (`ViewPictureList`: File · Note · Upload Date). Tanggal kabel `DD-MM-YYYY HH:MM`. */
+export interface BarisLampiran {
+  id: string
+  namaFile: string
+  catatan: string
+  tanggal: string
+  /** Unggah ke Google Storage asinkron (ADR-0008): '' = tersimpan, 'menunggu' = antre, 'gagal' = perlu diulang. */
+  status: '' | 'menunggu' | 'gagal'
+}
+
+const jalurLampiran = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/lampiran`
+
+export function ambilLampiran(caseId: string): Promise<TampilanLampiran> {
+  return minta<TampilanLampiran>(jalurLampiran(caseId))
+}
+
+/** `GET …/lampiran/berkas?kategori=` - kategori lewat kueri (teksnya memuat "/", mis. "ACCEPTANCE / APPROVAL"). */
+export function daftarLampiran(caseId: string, kategori: string): Promise<{ baris: BarisLampiran[] }> {
+  return minta<{ baris: BarisLampiran[] }>(`${jalurLampiran(caseId)}/berkas`, { kueri: { kategori } })
+}
+
+/** `POST …/lampiran/berkas` multipart (berkas, kategori) - satu berkas per permintaan (pola Treaty Contract Out). */
+export function unggahLampiran(caseId: string, kategori: string, berkas: File): Promise<{ id: string }> {
+  const isi = new FormData()
+  isi.append('berkas', berkas)
+  isi.append('kategori', kategori)
+  return mintaFormulir<{ id: string }>(`${jalurLampiran(caseId)}/berkas`, isi)
+}
+
+/** Jalur isi satu berkas (`DownloadDocumentPolis` / `GetUrlGoogleStorage_Act`) untuk `unduhBerkasBeridentitas`. */
+export function jalurIsiLampiran(caseId: string, id: string): string {
+  return `${jalurLampiran(caseId)}/berkas/${encodeURIComponent(id)}/isi`
+}
+
+/** `POST …/lampiran/berkas/{id}/ulangi` - unggah ulang berkas yang menunggu / gagal (pola Treaty Contract Out). */
+export function ulangiLampiran(caseId: string, id: string): Promise<void> {
+  return minta<void>(`${jalurLampiran(caseId)}/berkas/${encodeURIComponent(id)}/ulangi`, { metode: 'POST' })
+}
+
+/**
+ * `DELETE …/lampiran/berkas/{id}` - hapus FISIK seperti Pega (objek storage + T_STORAGE_IMAGE + DOCUMENT_POLIS): pengecualian
+ * sadar ADR-0031, keputusan work owner 08-10-2026 "ikutin pega aja".
+ */
+export function hapusLampiran(caseId: string, id: string): Promise<void> {
+  return minta<void>(`${jalurLampiran(caseId)}/berkas/${encodeURIComponent(id)}`, { metode: 'DELETE' })
+}
+
 /** `GET /api/nbfacin/kasus/{caseId}/objek` - urut sesuai `.LocationList`. */
 export function ambilObjek(caseId: string): Promise<DaftarObjek> {
   return minta<DaftarObjek>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/objek`)
 }
 
+/** Jawaban Save Data CSV objek (tiket 66): objek sesudah diganti + pesan hasil (Pega `TempError.ERRMSG`, mis. "Success Insert Data"). */
+export interface HasilCsvObjekServer {
+  baris: ObjekFire[]
+  pesan: string[]
+}
+
+/**
+ * `POST /api/nbfacin/kasus/{caseId}/objek/csv` - Save Data bilah CSV (tiket 66, `InsertUploadFire_act`): baris CSV template FIRE
+ * (nama kolom -> teks apa adanya) MENGGANTI semua objek case.
+ */
+export function simpanCsvObjek(caseId: string, baris: Record<string, string>[]): Promise<HasilCsvObjekServer> {
+  return minta<HasilCsvObjekServer>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/objek/csv`, {
+    metode: 'POST',
+    badan: { baris },
+    batasWaktuMs: BATAS_WAKTU_CSV_OBJEK_MS,
+  })
+}
+
+/**
+ * Batas waktu Save Data CSV (tiket 66): sampai 3000 baris dalam satu transaksi, perkiraan sesi c3 1-3 menit untuk 1128 baris
+ * `[dugaan, belum diukur di DEV]`. Batas bawaan klien 30 s akan memutus permintaan padahal backend tetap menyimpan.
+ */
+export const BATAS_WAKTU_CSV_OBJEK_MS = 10 * 60_000
+
 /** `PUT /api/nbfacin/kasus/{caseId}/objek` - tombol Save tab Object; daftar diganti utuh. */
+/**
+ * Save tab Coverage di tahap Underwriting (tiket 60): HANYA Accumulation Code / Address tiap coverage yang ditulis; badan
+ * sama dengan `simpanObjek` (bentuk objek / item / coverage + OLDID wajib sama dengan tersimpan), field lain diabaikan.
+ */
+export function simpanAkumulasi(caseId: string, baris: ObjekFire[]): Promise<DaftarObjek> {
+  return minta<DaftarObjek>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/akumulasi`, { metode: 'PUT', badan: { baris } })
+}
+
 export function simpanObjek(caseId: string, baris: ObjekFire[]): Promise<DaftarObjek> {
   return minta<DaftarObjek>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/objek`, { metode: 'PUT', badan: { baris } })
 }
@@ -1058,9 +1288,30 @@ export function hitungShareSpreading(caseId: string, percentShare: string): Prom
   return minta<TampilanSpreading>(`${jalurSpreading(caseId)}/hitung-share`, { metode: 'POST', badan: { percentShare } })
 }
 
+/**
+ * Type Treaty grid Copy Spreading berubah (`Activity\CalcultePersentageSpeading_Act.xml` langkah 2.13-2.19, dijalankan Pega
+ * saat .TreatyType berubah): pesan proteksi template - "Can not proceed spreading without QS" (baris pertama bukan QS, NOTE
+ * REINSURANCETYPE di server) dan "Treaty Type can't be same". Tidak menyimpan. Work owner 08-10-2026: "dipega ada proteksi nya
+ * tidak bisa SPL tanpa ada QS".
+ */
+export function periksaTemplateSpreading(caseId: string, template: TemplateSpreading[]): Promise<{ pesan: string[] }> {
+  return minta<{ pesan: string[] }>(`${jalurSpreading(caseId)}/periksa-template`, { metode: 'POST', badan: { template } })
+}
+
 /** Copy To All Spreading (`CopyToAllSpreadingFire_ACT`); tidak menyimpan. */
 export function salinSpreading(caseId: string, percentShare: string, template: TemplateSpreading[]): Promise<TampilanSpreading> {
   return minta<TampilanSpreading>(`${jalurSpreading(caseId)}/salin`, { metode: 'POST', badan: { percentShare, template } })
+}
+
+/**
+ * Baris spreading per coverage diubah di tahap UW (tiket 59): hitung ulang TSI / premi spreading + total + ringkasan seperti
+ * Save (preDT `SetTSIPremiSpreaded_FacIn` Type=percent + `cekSpreadingFactIn`, refresh `SummarySpreading_Section`); tidak menyimpan.
+ */
+export function hitungBarisSpreading(caseId: string, isi: TampilanSpreading): Promise<TampilanSpreading> {
+  return minta<TampilanSpreading>(`${jalurSpreading(caseId)}/hitung-baris`, {
+    metode: 'POST',
+    badan: { percentShare: isi.percentShare, lokasi: isi.lokasi },
+  })
 }
 
 /** Save tab Spreading (`IsThereAnyObjectLocation_Act`): hitung ulang lalu simpan. */
@@ -1100,6 +1351,12 @@ export interface TampilanCedant {
   kursTidakAda: string[]
   /** Proteksi `ProtectShareCedant_Act` berlaku (IsGroup == "Group" atau FlagOnGoingPolicy == 2). */
   wajib: boolean
+  /**
+   * Share Cedant Type wajib diisi: `wajib` ATAU tahap Binding (tiket 64 K2, work owner 08-10-2026 - pesan
+   * "Share Cedant Type wajib diisi."; di Pega field ini Required di tahap Binding). Hanya menggerbang Share Cedant Type,
+   * bukan proteksi C-3 lain.
+   */
+  wajibType: boolean
   cedant: BarisCedant[]
   /** Ceding Co tab General (`QuotationData.CedingCoList`, atau CedingCo tunggal) - sumber Add pertama. */
   cedingUmum: BarisCedant[]
@@ -1502,8 +1759,11 @@ export function saranPenerimaKorespondensi(q: string): Promise<{ baris: SaranAku
   return minta<{ baris: SaranAkumulasi[] }>('/api/nbfacin/korespondensi/penerima/saran', { kueri: { q } })
 }
 
-/** Kode Email Type tahap marketing (`.EmailType`, `SaveViewSuggest`): 1 Accept, 2 Reject, 4 Banding, 7 Decline (tiket 57). */
-export type KodeEmailType = '1' | '2' | '4' | '7'
+/**
+ * Kode Email Type (`SaveViewSuggest`): 1 Accept, 2 Reject, 3 Ask, 4 Banding, 7 Decline. Marketing (`.EmailType`, tiket 57):
+ * 1 / 2 / 4 / 7; Team Leader (`.EmailTypeTL`, tiket 58): 1 / 2 / 3 / 7; Binding (`.EmailTypeBinding`, tiket 64): 1 / 4 / 7 / 9 Revise.
+ */
+export type KodeEmailType = '1' | '2' | '3' | '4' | '7' | '9'
 
 /** Satu baris grid riwayat akseptasi (`TempViewSuggest`: Date · PIC · Approval · Status · Comment), terbaru dulu. */
 export interface RiwayatAkseptasi {
@@ -1556,6 +1816,34 @@ export interface TampilanSubmit {
    * (Total Net Rate / 10) × (100 − RI Commission) / 100 dibulatkan 4 desimal; riComm = RI Commission. '' = tidak tersedia.
    */
   pctRnmOtomatis: { rate: string; riComm: string }
+  /**
+   * Tahap case yang menentukan opsi Email Type (tiket 58): 'marketing' (POSITION Offer / ReasFacInMarketing), 'teamLeader'
+   * (ReasFacInTeamLeader); '' = tahap lain (Submit tidak tersedia). Tiket 69 (jalur Policy, FlagOnGoingPolicy 1):
+   * 'teamLeaderPolicy' (form = TL tahap Offer, opsi `.EmailTypeTL`) dan 'uwPolicy' (jenjang UW tahap Policy, `.EmailTypeUWPolicy`
+   * Accept / Decline - K69-6).
+   */
+  tahap: 'marketing' | 'teamLeader' | 'uw' | 'binding' | 'teamLeaderPolicy' | 'uwPolicy' | ''
+  /**
+   * Team Leader: ada deductible bermata uang beda dari item (Pega `IsBedaCurr = 1`) -> tampil "Deductible Acceptance Case"
+   * (`Section\Periode.xml` sel 81 tampil bila TL && IsBedaCurr = 1).
+   */
+  deductibleBedaMataUang: boolean
+  /** Nilai tersimpan `.OfferFacIn.IsDeductibleAcceptance` / `.CommentDeductible`. */
+  deductibleAcceptance: boolean
+  commentDeductible: string
+  /**
+   * Tahap Underwriting (tiket 61, `EmailSection_IsUW` + `GetDateValidity_ACT`): Validity Of Acceptance (hari, teks angka),
+   * "days, or up to" dan Waiting Bind (kabel `DD-MM-YYYY`) dihitung server. '' di tahap lain.
+   */
+  daysValidity: string
+  dateValidity: string
+  waitingBindDate: string
+  /**
+   * Tahap Binding (tiket 64): tombol Binding sudah ditekan (`.ConfirmBinding = 1`, `UpdateTglBindJsonOffer_Act`) dan centang
+   * Received RI Slip tersimpan (`.OfferFacIn.ReceivedRiSlip`). false di tahap lain.
+   */
+  confirmBinding: boolean
+  receivedRiSlip: boolean
 }
 
 /** Isi Submit / periksa. */
@@ -1566,6 +1854,22 @@ export interface IsiSubmit {
   /** Decline: pilihan T/C (hanya baris yang dicentang) dan Non - T/C terpilih ('' = tidak ada). */
   sebabTc: PilihanSebabTc[]
   sebabNonTc: string
+  /** Team Leader (tiket 58): centang Deductible Acceptance Case + Comment Deductible; marketing mengirim false / ''. */
+  deductibleAcceptance: boolean
+  commentDeductible: string
+  /** Tahap Underwriting (tiket 61): Validity Of Acceptance (hari); '' tahap lain. */
+  daysValidity: string
+  /** Tahap Binding (tiket 64): centang Received RI Slip; false tahap lain. */
+  receivedRiSlip: boolean
+}
+
+/** Isi pemeriksaan proteksi Accept (tanpa submit). */
+export interface IsiPeriksaSubmit {
+  emailType: KodeEmailType
+  deductibleAcceptance: boolean
+  commentDeductible: string
+  /** Tahap Underwriting (tiket 61): Validity Of Acceptance (hari); '' tahap lain. */
+  daysValidity: string
 }
 
 /** Jawaban Submit / periksa. */
@@ -1575,6 +1879,17 @@ export interface HasilSubmit {
   /** Sesudah Submit berhasil: posisi baru case dan status teksnya (`NBStatus`). */
   position: string
   nbStatus: string
+  /**
+   * Tahap Binding (periksa Accept): pesan yang MENAHAN tombol "Binding" - `EmailSectionCeding` pyDisabledWhen hanya
+   * ProtectSpreading.CARI1 / CARI23 dan ProtectDeductible.CARI2 / CARI4. BUKAN bagian `pesan` (pesan deductible hanya muncul di
+   * sini; `pesan` = penahan Submit Accept). [] di tahap lain / jawaban 422. Boleh absen di backend lama.
+   */
+  pesanBinding?: string[]
+  /**
+   * Nomor polis yang terbit / dipakai ulang bila Submit ini menyelesaikan Policy (tiket 69a-2, work owner 09-10-2026 "Ya"
+   * tampilkan nomor polis); selain itu "".
+   */
+  nomorPolis: string
 }
 
 const jalurSubmit = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/submit`
@@ -1583,9 +1898,12 @@ export function ambilSubmit(caseId: string): Promise<TampilanSubmit> {
   return minta<TampilanSubmit>(jalurSubmit(caseId))
 }
 
-/** Proteksi Accept tanpa submit (Pega `Protection_Act` saat radio dipilih); Reject / Banding / Decline -> pesan kosong. */
-export function periksaSubmit(caseId: string, emailType: KodeEmailType): Promise<HasilSubmit> {
-  return minta<HasilSubmit>(`${jalurSubmit(caseId)}/periksa`, { metode: 'POST', badan: { emailType } })
+/**
+ * Proteksi Accept tanpa submit (Pega `Protection_Act` saat radio dipilih); Reject / Ask / Banding / Decline -> pesan kosong.
+ * Team Leader: proteksi Deductible Acceptance memakai isian TL (`deductibleAcceptance`, `commentDeductible`).
+ */
+export function periksaSubmit(caseId: string, isi: IsiPeriksaSubmit): Promise<HasilSubmit> {
+  return minta<HasilSubmit>(`${jalurSubmit(caseId)}/periksa`, { metode: 'POST', badan: isi })
 }
 
 /**
@@ -1593,6 +1911,535 @@ export function periksaSubmit(caseId: string, emailType: KodeEmailType): Promise
  * Reject -> tetap di marketing; Banding -> jabatan Banding to; Decline -> selesai. Proteksi gagal: 200 + `pesan` (diminta ke c3)
  * atau 422 `{"galat": pesan digabung "; "}` - keduanya ditangani `BlokEmailType` (`pesanProteksiDari`).
  */
+/** Jawaban `POST …/submit/validitas` (tiket 61): hari (teks angka) dan tanggal kabel `DD-MM-YYYY`. */
+export interface ValiditasSubmit {
+  daysValidity: string
+  dateValidity: string
+  waitingBindDate: string
+}
+
+/**
+ * Validity Of Acceptance tahap Underwriting (tiket 61), `GetDateValidity_ACT` dihitung server, tidak menyimpan:
+ * `daysValidity` '' = mode default (dipicu klik Email Type UW di Pega: hari = sisa hari ke Begin date + 1, maks 30, 0 bila
+ * Begin date lewat); berisi angka = mode edit (DateValidity = hari ini + DaysValidity).
+ */
+export function hitungValiditas(caseId: string, daysValidity: string): Promise<ValiditasSubmit> {
+  return minta<ValiditasSubmit>(`${jalurSubmit(caseId)}/validitas`, { metode: 'POST', badan: { daysValidity } })
+}
+
+/**
+ * Tombol "Binding" tahap Binding (tiket 64, `UpdateTglBindJsonOffer_Act`): TGL_BIND JSON_OFFER, ConfirmBinding = 1, riwayat
+ * "Offer has been bind.", FACINPERFORMANCE BINDING/ACCEPT - ditulis SEBELUM Submit (seperti Pega). Jawaban = tampilan Submit baru.
+ */
+export function tekanBinding(caseId: string): Promise<TampilanSubmit> {
+  return minta<TampilanSubmit>(`${jalurSubmit(caseId)}/binding`, { metode: 'POST', badan: {} })
+}
+
 export function ajukanSubmit(caseId: string, isi: IsiSubmit): Promise<HasilSubmit> {
   return minta<HasilSubmit>(jalurSubmit(caseId), { metode: 'POST', badan: isi })
+}
+
+// ---------------------------------------------------------------- Following Policy (tiket 70)
+// Popup `ViewFollowingNB` -> `ViewOpenFollowingPolicy` + grid `GridViewFollowingNB`; data tabel sistem baru (K70-1, bukan JSON).
+
+/** View Option (`DDL\FilterForViewRetro.xml`): 3 No Slip ditunda (K70-3). */
+export type OpsiFollowing = '1' | '2' | '4' | '5' | '6' | '7'
+
+/** Satu baris grid `GridViewFollowingNB` (alias `RDBList\BrowseDataViewPolis1.xml`). */
+export interface BarisFollowing {
+  /** `CaseID` - substr IDPEGA (tanpa awalan kelas). */
+  caseId: string
+  policyNo: string
+  /** `RiSlipCeding` - Reff. Number. */
+  reffNumber: string
+  insuredName: string
+  sourceOfBusiness: string
+  qqName: string
+  /** Kabel `DD-MM-YYYY`. */
+  startPeriod: string
+  endPeriod: string
+}
+
+export interface HalamanFollowing {
+  baris: BarisFollowing[]
+  total: number
+  halaman: number
+  ukuran: number
+}
+
+const jalurFollowing = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/following`
+
+/** Cari polis (`GetListViewFollowing_act`, SEARCHON "POLIFAC"); filter kosong = daftar kosong. */
+export function cariFollowing(caseId: string, opsi: OpsiFollowing, filter: string, halaman: number): Promise<HalamanFollowing> {
+  return minta<HalamanFollowing>(jalurFollowing(caseId), { kueri: { opsi, filter: filter.trim(), halaman } })
+}
+
+/** Copy Nopolis (`CopyNopolisFollowing_Act`): Old Policy Number + case asal. */
+export function salinNopolisFollowing(caseId: string, b: BarisFollowing): Promise<KasusNB> {
+  return minta<KasusNB>(`${jalurFollowing(caseId)}/nopolis`, { metode: 'POST', badan: { caseIdSumber: b.caseId, policyNo: b.policyNo } })
+}
+
+/** Copy All (`CopyLocationFollowing_Act`): Copy Nopolis + PercentShare + RI Commission + lokasi case sumber (A70-2). */
+export function salinSemuaFollowing(caseId: string, b: BarisFollowing): Promise<KasusNB> {
+  return minta<KasusNB>(`${jalurFollowing(caseId)}/salin-semua`, { metode: 'POST', badan: { caseIdSumber: b.caseId, policyNo: b.policyNo } })
+}
+
+// ---------------------------------------------------------------- View Policy (tiket 71)
+// Menu View Policy Pega (`DATA-PORTAL!VIEWOPENPOLICYMARINEINBOX`, tab Facultative "List Polis"): cari polis jadi di
+// FACINPRODUCTION (`GetListViewPolicy_act`), versi dari kolom relasional JSON_POLIS, ringkasan polis lama dari FACINPRODUCTION /
+// CEDING_FACINPRODUCTION - tanpa DATA_JSON (K71-1, K71-2).
+
+/** Cari polis (bentuk baris = grid `GridOpenPolicyMarine` = `BarisFollowing`). */
+export function cariPolis(opsi: OpsiFollowing, filter: string, halaman: number): Promise<HalamanFollowing> {
+  return minta<HalamanFollowing>('/api/nbfacin/polis', { kueri: { opsi, filter: filter.trim(), halaman } })
+}
+
+/** Satu versi polis ("View Data": `JSON_POLIS` PRODKE, terbaru dulu). */
+export interface VersiPolis {
+  prodke: string
+  /** ID case versi itu (IDPEGA tanpa awalan kelas) - label dropdown. */
+  caseId: string
+  /** Case versi ini ada di tabel case sistem baru -> layar case baca-saja; selain itu ringkasan. */
+  sistemBaru: boolean
+}
+
+export function versiPolis(nopolis: string): Promise<{ versi: VersiPolis[] }> {
+  return minta<{ versi: VersiPolis[] }>('/api/nbfacin/polis/versi', { kueri: { nopolis } })
+}
+
+/** Ringkasan polis lama Pega (A71-3) - FACINPRODUCTION + CEDING_FACINPRODUCTION. */
+export interface RingkasanPolis {
+  kepala: {
+    caseId: string
+    policyNo: string
+    noEndors: string
+    insuredName: string
+    qqName: string
+    sourceOfBusiness: string
+    cedingCo: string
+    /** Kabel `DD-MM-YYYY`. */
+    startPeriod: string
+    endPeriod: string
+    /** Kode standard value (0 / 1 / 2). */
+    policyType: string
+    reffNumber: string
+    groupName: string
+    statusBusiness: string
+    noMasterPolis: string
+  }
+  baris: {
+    objectNo: string
+    riskLocation: string
+    objectItem: string
+    coverage: string
+    accumulationCode: string
+    currency: string
+    tsi100: string
+    tsiRnm: string
+    rate: string
+    premiRnm: string
+    treaty: string
+    pctShare: string
+    riComm: string
+  }[]
+  ceding: { cedingName: string; pctShare: string }[]
+}
+
+export function ringkasanPolis(nopolis: string, prodke: string): Promise<RingkasanPolis> {
+  return minta<RingkasanPolis>('/api/nbfacin/polis/ringkasan', { kueri: { nopolis, prodke } })
+}
+
+// ---------------------------------------------------------------------------
+// Tab Object keluarga Aneka (tiket 73 P1) - kabel `GET`/`PUT /api/nbfacin/kasus/{caseId}/objek-aneka` (sesi c3,
+// `handlers/aneka.go`, uji `TestObjekAneka`). Semua medan teks; angka / uang = teks desimal bertitik (ADR-0003); tanggal
+// `DD-MM-YYYY`.
+// ---------------------------------------------------------------------------
+
+/** Blok `IsCreditBriguna` (`InputDtlObjectAneka_FacIn.xml` L4932-7687) - data pribadi, disimpan (K73-7). */
+export interface BrigunaAneka {
+  loanAccountNumber: string
+  loanName: string
+  job: string
+  depositAccountNo: string
+  idCardNo: string
+  institution: string
+  loanType: string
+  /** `DD-MM-YYYY`. */
+  dateOfBirth: string
+  /** Teks desimal. */
+  salary: string
+}
+
+/** `.MarineHull` (Data-Hull, kontainer C2). */
+export interface MarineHullAneka {
+  typeOfVessel: string
+  nrtrt: string
+  lengthm: string
+  classification: string
+  grtrt: string
+  breadthm: string
+  construction: string
+  dwtrt: string
+  depthm: string
+}
+
+/** `.AviationHull` (Data-Aviation, kontainer C7). */
+export interface AviationHullAneka {
+  registrationMarks: string
+  maxPassengers: string
+  pilots: string
+  standardUses: string
+  specialUses: string
+  specialRentalUses: string
+}
+
+/** `.VehicleHE` (Data-Vehicle, kontainer C4 / C6). `objectIdHe` / `brand` / `type` = ID dari lookup (kosong bila diketik bebas, K73-10). */
+export interface VehicleHeAneka {
+  objectNameHe: string
+  objectIdHe: string
+  brandName: string
+  brand: string
+  typeName: string
+  type: string
+  chassisNumber: string
+  engineNumber: string
+}
+
+/** `.MemorandumAccept` (Data-MemorandumAccept). `suretyType` diisi server (PreAct), diabaikan saat PUT. */
+export interface MemorandumAneka {
+  suretyType: string
+  applicationNumber: string
+  accumulation: string
+  collateral: string
+  insuredSiup: string
+  keyPerson: string
+  originalRate: string
+  principalsOutGo: string
+  typeOfWording: string
+  buildingStatus: string
+  supportingDocument: string
+  principalsData: string
+  conclusionsProposals: string
+  principalsBackground: string
+  summaryFinancial: string
+  principalsGuarantee: string
+}
+
+/** Satu objek `ASM-FW-GISFW-Data-Aneka` (`.AnekaList`). */
+export interface ObjekAneka {
+  objectName: string
+  section: string
+  noKontrak: string
+  startDate: string
+  endDate: string
+  noKtp: string
+  noNpwp: string
+  /** `.Currency.Name`. */
+  currency: string
+  tsi: string
+  tsiOld: string
+  draftWordingId: string
+  maintenancePeriod: string
+  others: string
+  year: string
+  quantity: string
+  unitQuantity: string
+  serialNo: string
+  builtIn: string
+  flag: string
+  geographicalLimits: string
+  invoiceNo: string
+  noOfTree: string
+  areaHectar: string
+  limitIdemnityDay: string
+  limitIdemnityMonth: string
+  limitOfLiability: string
+  /** `.AlmRiskID` - di-SET lookup kapal (ID SHIP). */
+  almRiskId: string
+  briguna: BrigunaAneka
+  marineHull: MarineHullAneka
+  aviationHull: AviationHullAneka
+  vehicleHe: VehicleHeAneka
+  memorandum: MemorandumAneka
+  /** `.CoverageList` (tiket 73 P2). Absen saat PUT = coverage tersimpan dipertahankan per posisi; larik = ganti utuh. */
+  coverages?: CoverageAneka[]
+}
+
+/**
+ * Satu coverage Aneka `ASM-FW-GISFW-Data-Coverage` (tiket 73 P2, form `Section\InputCoverageAneka_FacIn.xml`). Teks desimal
+ * bertitik. Medan bertanda "server" dihitung backend saat PUT, diabaikan klien.
+ */
+export interface CoverageAneka {
+  /** `.Coverage` (COVERAGE.ID). */
+  coverage: string
+  /** OLDID - baca saja. */
+  oldId: string
+  /** `.CoverageNote` - nama coverage (kolom grid "Coverage"). */
+  coverageNote: string
+  /** `.CalculateMethod_FacIn` 1 PRO RATA / 2 SHORT PERIOD / 3 FIX RATE (`DDL\CalculateMethod_FacIn.xml`). */
+  calculateMethodFacIn: string
+  /** `.CalculateMethod` - dibaca `ChangeCoveragePremium` (pemicu day). */
+  calculateMethod: string
+  /** `.ProRatePercent` coverage (dibaca `fillPremiBond`); % Pro Rate di layar = nilai CASE. */
+  proRatePercent: string
+  pctShortPeriod: string
+  /** `.Day` 365 / 366 / 360 (`DDL\Day.xml`). */
+  day: string
+  currency: string
+  tsi: string
+  loading: string
+  /** `.LostLimit` - "% Scale". */
+  lostLimit: string
+  rate: string
+  indemnity: string
+  /** `.Unit` 0 Day(s) / 1 Month(s) / 2 Year(s) (`DDL\Unit.xml`). */
+  unit: string
+  indemnityPercentage: string
+  premium: string
+  discountPercentage: string
+  discount: string
+  limitOfLiability: string
+  pctLol: string
+  subLimitNote: string
+  deductibles: Deductible[]
+  /** server */
+  minPremium?: string
+  /** server */
+  tsiLiability?: string
+  /** server */
+  tsiNusantaraRe?: string
+  /** server */
+  premiNusantaraRe?: string
+}
+
+/** Satu okupasi `.Property.RiskLocation.OccupationList` + objeknya. */
+export interface OkupasiAneka {
+  occupationId: string
+  occupationName: string
+  objek: ObjekAneka[]
+}
+
+/** Satu lokasi `.OfferFacIn.LocationList` (medan alamat sama dengan ObjekFire). */
+export interface LokasiAneka {
+  objectNo: string
+  isTopRisk: boolean
+  roadType: string
+  roadName: string
+  buildingNo: string
+  zipCode: string
+  country: string
+  riskLocation: string
+  territory: string
+  city: string
+  district: string
+  province: string
+  riskAddressId: string
+  okupasi: OkupasiAneka[]
+  /** Golf: `.Property.RiskLocation.AnekaList` langsung di bawah lokasi (tanpa okupasi). */
+  objekGolf: ObjekAneka[]
+  /** `.Property.TotalTSIPremiGrossList` - BACA-SAJA, server (`SumTotalTSIPremiGross_Act`; rate = Premi / TSI × 100). */
+  totalPerCurrency?: TotalCoverage[]
+}
+
+export interface DaftarAneka {
+  lokasi: LokasiAneka[]
+  /**
+   * `pyWorkPage.OfferFacIn.ProRatePercent` - % Pro Rate TINGKAT CASE (T_GENERAL_POLIS.PRO_RATE_PERCENT, migrasi 255). GET: nilai
+   * tersimpan, atau dihitung dari tanggal bila NULL. PUT menulisnya (kosong = NULL) - tab Object WAJIB mengirim balik nilai GET.
+   */
+  proRatePercent: string
+}
+
+const jalurAneka = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/objek-aneka`
+
+export function ambilObjekAneka(caseId: string): Promise<DaftarAneka> {
+  return minta<DaftarAneka>(jalurAneka(caseId))
+}
+
+/**
+ * `PUT …/objek-aneka` - Save tab Object Aneka; daftar lokasi diganti utuh. 422 = proteksi `ProtectionObjectAneka_Act`
+ * (`{galat: pesan digabung "; ", pelanggaran}`; klien inti hanya menyimpan `galat` - lihat `pesanProteksiDari`).
+ */
+export function simpanObjekAneka(caseId: string, lokasi: LokasiAneka[], proRatePercent: string): Promise<DaftarAneka> {
+  return minta<DaftarAneka>(jalurAneka(caseId), { metode: 'PUT', badan: { lokasi, proRatePercent } })
+}
+
+/** `GET /api/nbfacin/kasus/{caseId}/coverage-aneka?q=` - RD `BrowseCoverageFacIn_RD` Type ANEKA, BizCode case; pilih id → coverage, nama → coverageNote. */
+export function cariCoverageAneka(caseId: string, q: string): Promise<{ baris: BarisCoverage[] }> {
+  return minta<{ baris: BarisCoverage[] }>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/coverage-aneka`, { kueri: { q } })
+}
+
+/** Rantai on-change sel form coverage Aneka (`InputCoverageAneka_FacIn.xml`; nama = kabel sesi c3). */
+export type PemicuAneka =
+  | 'metode' | 'proRate' | 'shortPeriod' | 'day' | 'currency' | 'tsi' | 'loading' | 'scale' | 'rate' | 'indemnity' | 'premium'
+  | 'diskonPersen' | 'diskonJumlah' | 'lol' | 'pctLol'
+
+/**
+ * `POST …/hitung-coverage-aneka` - hitung tanpa menyimpan. `proRatePercent` = nilai CASE yang dipegang layar; jawaban membawa
+ * nilai barunya (berantai antarbaris). 409 = tanggal polis kosong pada pemicu yang memakai tanggal.
+ */
+export function hitungCoverageAneka(
+  caseId: string,
+  badan: { proRatePercent: string; baris: { coverage: CoverageAneka; pemicu: PemicuAneka }[] },
+): Promise<{ proRatePercent: string; baris: CoverageAneka[] }> {
+  return minta(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/hitung-coverage-aneka`, { metode: 'POST', badan })
+}
+
+/** Satu kapal - `ReportDefinition\BrowseShip_RD.xml` atas `POOLDATA.SHIP` (teks apa adanya). */
+export interface BarisKapal {
+  id: string
+  nama: string
+  flag: string
+  tahun: string
+  nrt: string
+  grt: string
+  dwt: string
+  klasifikasi: string
+  konstruksi: string
+}
+
+/** `GET /api/nbfacin/kapal?cari=` - Contains tak peka huruf atas NAME; kosong = tanpa saringan; maks. 500. */
+export function cariKapal(cari: string): Promise<{ baris: BarisKapal[] }> {
+  return minta<{ baris: BarisKapal[] }>('/api/nbfacin/kapal', { kueri: { cari } })
+}
+
+/** Satu tipe kendaraan HE - `BrowseType_RD` atas view BRANDDETAIL `TYPE = 'ANEKA'`. */
+export interface BarisTipeKendaraan {
+  id: string
+  typeName: string
+}
+
+/** `GET /api/nbfacin/tipe-kendaraan` - tanpa saringan (Pega mengirim param kosong); disaring di layar. */
+export function daftarTipeKendaraan(): Promise<{ baris: BarisTipeKendaraan[] }> {
+  return minta<{ baris: BarisTipeKendaraan[] }>('/api/nbfacin/tipe-kendaraan')
+}
+
+/** Satu okupasi Aneka - HARNESS `ChooseOccupation` (`D_Occupation` → `BrowseOccupationANEKA_RD`), kolom ID / Name. */
+export interface BarisOkupasiAneka {
+  id: string
+  name: string
+}
+
+/**
+ * `GET /api/nbfacin/kasus/{caseId}/occupation-aneka?q=` - `BrowseOccupationANEKA_RD`: TYPE 'ANEKA', BUSINESSNAME = Class of
+ * Business case, Name Contains q, urut ID DESC, maks. 500. Pilih: id → occupationId (OCCUPATION.ID, BUKAN OLDID seperti FIRE),
+ * name → occupationName (`GetOccupation_act` L357-404).
+ */
+export function cariOkupasiAneka(caseId: string, q: string): Promise<{ baris: BarisOkupasiAneka[] }> {
+  return minta<{ baris: BarisOkupasiAneka[] }>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/occupation-aneka`, { kueri: { q } })
+}
+
+// ---------------------------------------------------------------------------
+// Tab Spreading keluarga Aneka (tiket 73 P3) - kabel `…/spreading-aneka` (kontrak sesi 0f ke c3, 09-10-2026). Treaty, template,
+// baris spreading, total dan ringkasan = bentuk FIRE (tiket 48 / 59). Angka teks desimal (ADR-0034).
+// ---------------------------------------------------------------------------
+
+/** Satu coverage di rantai spreading Aneka (`SpreadingCoverageAneka` / Golf `InputCoverageSpreadingAneka` → `SpreadingItemAneka`). */
+export interface CoverageSpreadingAneka {
+  oldId: string
+  coverageNote: string
+  loading: string
+  rate: string
+  tsi: string
+  premium: string
+  discount: string
+  limitOfLiability: string
+  tsiNusantaraRe: string
+  premiNusantaraRe: string
+  spreading: BarisSpreading[]
+}
+
+/** Satu objek (`SpreadingObjectAneka`: Object Name · Currency · TSI Old · TSI). */
+export interface ObjekSpreadingAneka {
+  objectName: string
+  currency: string
+  tsiOld: string
+  tsi: string
+  coverages: CoverageSpreadingAneka[]
+}
+
+export interface LokasiSpreadingAneka {
+  objectNo: string
+  location: string
+  okupasi: { occupationName: string; objek: ObjekSpreadingAneka[] }[]
+  /** Golf: `.Property.RiskLocation.AnekaList`. */
+  objekGolf: ObjekSpreadingAneka[]
+  /** `.Property.TotalTSIPremiSpreadRNM` - hanya bila `tampilTotalLokasi` (K73-19). */
+  total: TotalSpreading[]
+}
+
+/** `GET /api/nbfacin/kasus/{caseId}/spreading-aneka`. */
+export interface TampilanSpreadingAneka {
+  percentShare: string
+  treaty: TreatySpreading[]
+  template: TemplateSpreading[]
+  lokasi: LokasiSpreadingAneka[]
+  ringkasanTreaty: TotalSpreading[]
+  ringkasanMataUang: RingkasanMataUangSpreading[]
+  pesan: string[]
+  /** Total per lokasi tampil (K73-19: hanya MBD di tahap UW; `PropertyItemListCoverageSpreading_IsUW.xml` L17067). */
+  tampilTotalLokasi: boolean
+}
+
+const jalurSpreadingAneka = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/spreading-aneka`
+
+export function ambilSpreadingAneka(caseId: string): Promise<TampilanSpreadingAneka> {
+  return minta<TampilanSpreadingAneka>(jalurSpreadingAneka(caseId))
+}
+
+/** % Share RNM diubah: NR semua coverage Aneka + spreading otomatis (Engineering / Golf, tahap UW - K73-17); tidak menyimpan. */
+export function hitungShareSpreadingAneka(caseId: string, percentShare: string): Promise<TampilanSpreadingAneka> {
+  return minta<TampilanSpreadingAneka>(`${jalurSpreadingAneka(caseId)}/hitung-share`, { metode: 'POST', badan: { percentShare } })
+}
+
+/** Copy To All Spreading Aneka (`CopyToAllSpreadingAnekaGolf_ACT`); tidak menyimpan. */
+export function salinSpreadingAneka(caseId: string, percentShare: string, template: TemplateSpreading[]): Promise<TampilanSpreadingAneka> {
+  return minta<TampilanSpreadingAneka>(`${jalurSpreadingAneka(caseId)}/salin`, { metode: 'POST', badan: { percentShare, template } })
+}
+
+/** Baris spreading diubah di tahap UW: hitung ulang (DT percent + `cekSpreadingFactIn`); tidak menyimpan. */
+export function hitungBarisSpreadingAneka(caseId: string, isi: TampilanSpreadingAneka): Promise<TampilanSpreadingAneka> {
+  return minta<TampilanSpreadingAneka>(`${jalurSpreadingAneka(caseId)}/hitung-baris`, {
+    metode: 'POST',
+    badan: { percentShare: isi.percentShare, lokasi: isi.lokasi },
+  })
+}
+
+/** Save tab Spreading Aneka (`IsThereAnyObjectLocation_Act`): hitung ulang lalu simpan. */
+export function simpanSpreadingAneka(caseId: string, isi: TampilanSpreadingAneka): Promise<TampilanSpreadingAneka> {
+  return minta<TampilanSpreadingAneka>(jalurSpreadingAneka(caseId), {
+    metode: 'PUT',
+    badan: { percentShare: isi.percentShare, template: isi.template, lokasi: isi.lokasi },
+  })
+}
+
+/** Satu baris template Copy Spreading PER LOKASI (tiket 73 P5) - `flagSpreading` = Type Facultative (wajib bila treaty 10015). */
+export interface TemplateSpreadingLokasi extends TemplateSpreading {
+  flagSpreading: string
+}
+
+/**
+ * `POST …/spreading/salin-lokasi` (FIRE) - Copy To All Spreading per lokasi (`CopyToAllLocSpreading_ACT`, tahap UW); `idxLokasi`
+ * 1-based. Jawaban = Tampilan salin dengan `template: []`; tidak menyimpan.
+ */
+export function salinLokasiSpreading(
+  caseId: string,
+  percentShare: string,
+  idxLokasi: number,
+  template: TemplateSpreadingLokasi[],
+): Promise<TampilanSpreading> {
+  return minta<TampilanSpreading>(`${jalurSpreading(caseId)}/salin-lokasi`, { metode: 'POST', badan: { percentShare, idxLokasi, template } })
+}
+
+/** `POST …/spreading-aneka/salin-lokasi` - sama dengan FIRE untuk pohon Aneka / Golf. */
+export function salinLokasiSpreadingAneka(
+  caseId: string,
+  percentShare: string,
+  idxLokasi: number,
+  template: TemplateSpreadingLokasi[],
+): Promise<TampilanSpreadingAneka> {
+  return minta<TampilanSpreadingAneka>(`${jalurSpreadingAneka(caseId)}/salin-lokasi`, {
+    metode: 'POST',
+    badan: { percentShare, idxLokasi, template },
+  })
 }

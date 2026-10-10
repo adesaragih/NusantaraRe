@@ -331,17 +331,26 @@ func (r *ObjekOracle) GantiObjek(ctx context.Context, tx *db.Tx, id string, bari
 			return err
 		}
 	}
+	return r.sisipObjekBerkelompok(ctx, tx, t, id, baris)
+}
+
+// sisipObjek - seluruh baris objek case `id` (urutan DFS: lokasi, property, risk, bangunan, sekitar, item -> coverage ->
+// deductible, okupasi -> table of limit, FEA, kerugian -> coins) lewat penulis w.p. Penulis langsung = satu NEXTVAL + satu
+// INSERT per baris (jalur lama); penulis berkelompok = ID diambil berkelompok lalu INSERT array-bind per SQL (tiket 66 K66-B13).
+func (w *tulisObjek) sisipObjek(ctx context.Context, id string, baris []models.ObjekFire) error {
+	t := w.t
 	k := db.KosongJadiNil
 	for i, o := range baris {
 		ids := make([]string, 5)
 		// ids: 0 lokasi, 1 property, 2 risk, 3 bangunan, 4 sekitar; item bernomor sendiri (sisipItem).
 		for j, seq := range []string{sequenceLocationList, sequenceProperty, sequenceRiskLocation, sequenceBuildingConstruct,
 			sequenceSurroundingRisk} {
-			if ids[j], err = r.db.NomorBerikut(ctx, tx, seq); err != nil {
+			var err error
+			if ids[j], err = w.p.nomor(ctx, seq); err != nil {
 				return err
 			}
 		}
-		uid, err := uidAcak()
+		uid, err := w.uid()
 		if err != nil {
 			return err
 		}
@@ -363,24 +372,20 @@ func (r *ObjekOracle) GantiObjek(ctx context.Context, tx *db.Tx, id string, bari
 			{sqlSisipSekitar(t.sekitar), TabelSurroundingRisk, append([]any{ids[4], ids[1]}, argSekitar(o.SurroundingRisk)...)},
 		}
 		for _, l := range langkah {
-			h, err := jalankan(ctx, tx, l.q, "menyisipkan "+l.tabel, l.arg...)
-			if err != nil {
-				return err
-			}
-			if err := db.PastikanSatuBaris(h, l.tabel); err != nil {
+			if err := w.p.sisip(ctx, l.q, l.tabel, l.arg); err != nil {
 				return err
 			}
 		}
-		if err := r.sisipItem(ctx, tx, t, ids[1], o.Items); err != nil {
+		if err := w.sisipItem(ctx, ids[1], o.Items); err != nil {
 			return err
 		}
-		if err := r.sisipOkupasi(ctx, tx, t, ids[1], o.Occupations); err != nil {
+		if err := w.sisipOkupasi(ctx, ids[1], o.Occupations); err != nil {
 			return err
 		}
-		if err := r.sisipFEA(ctx, tx, t, ids[0], o.FEA); err != nil {
+		if err := w.sisipFEA(ctx, ids[0], o.FEA); err != nil {
 			return err
 		}
-		if err := r.sisipKerugian(ctx, tx, t, ids[1], o.LossRecords); err != nil {
+		if err := w.sisipKerugian(ctx, ids[1], o.LossRecords); err != nil {
 			return err
 		}
 	}

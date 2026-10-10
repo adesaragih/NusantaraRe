@@ -180,6 +180,11 @@ var (
 		"T_WORK_POLIS.STATUS_WORK": "V-48a: tidak punya sumber di bahan mana pun - belum terverifikasi (STATUS_PROSES rancangan, digabung butir 76.4)",
 		"T_WORK_POLIS.TGL_CREATE":  "V-48: POOLDATA.JSON_POLIS (TGL_INPUT rancangan, digabung butir 76.4)",
 		"T_WORK_POLIS.CREATE_OP":   "V-48: POOLDATA.JSON_POLIS (USERNAME rancangan, digabung butir 76.4)",
+		// Tiket 58: ditulis Submit Team Leader (IsJuniorUW_B); FIELD ASLI rancangannya milik T_WORK_POLIS (V-48).
+		"T_GENERAL_POLIS.DATE_TO_UW":   "tiket 58: ditulis aplikasi saat Accept Team Leader (IsJuniorUW_B), bukan dari dokumen",
+		"T_GENERAL_POLIS.SUBMIT_TO_UW": "tiket 58: ditulis aplikasi saat Accept Team Leader bila kosong, bukan dari dokumen",
+		// Tiket 73 P1: grid Golf TSI Old (`InputDtlObjectLocation_FacIn.xml` L13568); medan TSIOld dibuang loader (V-28b).
+		"T_ANEKALIST.TSI_OLD": "tiket 73: ditulis aplikasi (PUT objek-aneka, grid Golf TSI Old); medan dokumen TSIOld terkena V-28b",
 	}
 	// kolomFKV47 - V-47 "IdxLocation jadi LOCATION_ID ke T_LOCATIONLIST, IndexProperty
 	// jadi PROPERTY_ID, IndexAneka jadi ANEKA_ID, dan seterusnya". ⛔ Belum diisi:

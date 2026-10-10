@@ -42,6 +42,7 @@ type tampilanCedantKabel struct {
 	TotalTSIRNM     string               `json:"totalTsiRnm"`
 	TotalPremiRNM   string               `json:"totalPremiRnm"`
 	Wajib           bool                 `json:"wajib"`
+	WajibType       bool                 `json:"wajibType"`
 	Cedant          []barisCedantKabel   `json:"cedant"`
 	CedingUmum      []barisCedantKabel   `json:"cedingUmum"`
 	DasarMataUang   []dasarMataUangKabel `json:"dasarMataUang"`
@@ -62,7 +63,7 @@ func keCedantKabel(d services.TampilanCedant) tampilanCedantKabel {
 		dasar = append(dasar, dasarMataUangKabel{x.Currency, teks(x.TSIRNM), teks(x.PremiumRNM), teks(x.TSIGross), teks(x.PremiumGross)})
 	}
 	return tampilanCedantKabel{SobName: d.SobName, ShareCedantType: d.ShareCedantType, ShareOfCeding: d.ShareOfCeding,
-		PercentShare: teks(d.PercentShare), TotalTSIRNM: teks(d.TotalTSIRNM), TotalPremiRNM: teks(d.TotalPremiRNM), Wajib: d.Wajib,
+		PercentShare: teks(d.PercentShare), TotalTSIRNM: teks(d.TotalTSIRNM), TotalPremiRNM: teks(d.TotalPremiRNM), Wajib: d.Wajib, WajibType: d.WajibType,
 		Cedant: keBarisCedantKabel(d.Cedant), CedingUmum: keBarisCedantKabel(d.CedingUmum), DasarMataUang: dasar,
 		KursTidakAda: append([]string{}, d.KursTidakAda...)}
 }

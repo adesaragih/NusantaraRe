@@ -21,11 +21,26 @@ export function navigasi(el: Pick<Element, 'closest' | 'getAttribute' | 'hasAttr
 
 const PEMILIH = 'input, select, textarea, button, [contenteditable]'
 
-/** Terapkan baca-saja pada satu akar; kembalikan jumlah elemen yang baru dinonaktifkan. */
-export function terapkanBacaSaja(akar: ParentNode): number {
+/**
+ * Pengecualian tahap Underwriting (tiket 60): kontrol Accumulation (Choose / Copy Accumulation, popup-nya, Save tab Coverage)
+ * bertanda atribut ini tetap aktif bila pembungkus menerima `kecuali={PILIH_UBAH_AKUMULASI}`.
+ */
+export const PILIH_UBAH_AKUMULASI = '[data-ubah-akumulasi]'
+
+/**
+ * Terapkan baca-saja pada satu akar; kembalikan jumlah elemen yang baru dinonaktifkan. `kecuali` = selektor yang dibiarkan.
+ * `sembunyi` (mode hanya lihat View Details / View Policy, work owner 09-10-2026 "button ubah,delete,save,submit dan lainnya
+ * smua tidak ditampilan"): TOMBOL non-navigasi disembunyikan (`hidden`), bukan sekadar dinonaktifkan.
+ */
+export function terapkanBacaSaja(akar: ParentNode, kecuali?: string, sembunyi = false): number {
   let n = 0
   akar.querySelectorAll(PEMILIH).forEach((el) => {
     if (navigasi(el)) return
+    if (kecuali && el.closest(kecuali) !== null) return
+    if (sembunyi && el.tagName === 'BUTTON' && !(el as HTMLElement).hidden) {
+      ;(el as HTMLElement).hidden = true
+      n++
+    }
     if (el.hasAttribute('contenteditable')) {
       if (el.getAttribute('contenteditable') !== 'false') {
         el.setAttribute('contenteditable', 'false')
@@ -42,16 +57,27 @@ export function terapkanBacaSaja(akar: ParentNode): number {
   return n
 }
 
-export default function BacaSajaKasus({ aktif, children }: { aktif: boolean; children: ReactNode }) {
+export default function BacaSajaKasus({
+  aktif,
+  kecuali,
+  sembunyi = false,
+  children,
+}: {
+  aktif: boolean
+  kecuali?: string
+  /** Mode hanya lihat: tombol aksi disembunyikan (lihat `terapkanBacaSaja`). */
+  sembunyi?: boolean
+  children: ReactNode
+}) {
   const ref = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     const akar = ref.current
     if (!akar || !aktif) return
-    terapkanBacaSaja(akar)
-    const pengamat = new MutationObserver(() => terapkanBacaSaja(akar))
-    pengamat.observe(akar, { subtree: true, childList: true, attributes: true, attributeFilter: ['disabled', 'contenteditable'] })
+    terapkanBacaSaja(akar, kecuali, sembunyi)
+    const pengamat = new MutationObserver(() => terapkanBacaSaja(akar, kecuali, sembunyi))
+    pengamat.observe(akar, { subtree: true, childList: true, attributes: true, attributeFilter: ['disabled', 'contenteditable', 'hidden'] })
     return () => pengamat.disconnect()
-  }, [aktif])
+  }, [aktif, kecuali, sembunyi])
   return (
     <div ref={ref} className={aktif ? 'nbf-bacasaja' : undefined}>
       {children}

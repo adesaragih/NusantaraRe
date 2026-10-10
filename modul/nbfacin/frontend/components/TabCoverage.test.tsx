@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { FORM_COV as F, LABEL_COVERAGE_BASIS, TEKS_COVERAGE } from '../labels'
-import FormCoverage, { adaGalatCoverage, angkaSah, coverageBaru } from './FormCoverage'
+import FormCoverage, { adaGalatCoverage, angkaSah, coverageBaru, isiNilaiAwal } from './FormCoverage'
 import { bolehNetRate, rateRingkasan, ringkasanCoverage, totalPremiItem } from './TabCoverage'
 import { RINGKASAN_COV_ITEM, RINGKASAN_COV_MATA_UANG } from '../labels'
 import type { ObjekFire } from '../api'
@@ -21,6 +21,28 @@ describe('FormCoverage', () => {
   it('coverage baru: basis Sum Insured (1), % Indemnity 100', () => {
     const c = coverageBaru({ id: 'ID1', oldId: '100815', nama: 'UJI' })
     expect([c.coverageBasis, c.indemnityPercentage, c.coverage, c.oldId, c.coverageNote]).toEqual(['1', '100', 'ID1', '100815', 'UJI'])
+  })
+
+  it('coverage baru: nilai awal tangkapan layar Pega (work owner 08-10-2026) - 0, % Loss Limit 100, Unit Day (s)', () => {
+    const c = coverageBaru()
+    expect([c.indemnity, c.rate, c.discountPercentage, c.netRate, c.limitOfLiability, c.pctLol, c.discount, c.premium]).toEqual(
+      ['0', '0', '0', '0', '0', '0', '0', '0'],
+    )
+    expect([c.lostLimit, c.unit]).toEqual(['100', '0'])
+    // Coverage dari server (kosong) tampil dengan nilai awal; pasangan Rate/Premium & %Discount/Discount hanya bila keduanya kosong.
+    const lama = { ...c, discountPercentage: '', limitOfLiability: '', pctLol: '', lostLimit: '', rate: '0.483', premium: '15924827', discount: '' }
+    const t = isiNilaiAwal(lama)
+    expect([t.discountPercentage, t.discount, t.limitOfLiability, t.pctLol, t.lostLimit, t.rate, t.premium]).toEqual(
+      ['0', '0', '0', '0', '100', '0.483', '15924827'],
+    )
+    expect(isiNilaiAwal({ ...c, rate: '', premium: '5000' }).rate).toBe('')
+    expect(isiNilaiAwal({ ...c, discountPercentage: '', discount: '1000' }).discountPercentage).toBe('')
+    expect(form({ ...lama })).toContain('value="100"')
+    // Gross Premium diketik (amount) mengosongkan Rate: Save sebelum hitung selesai tetap mode amount (A158), premi tidak hilang.
+    const SUMBER = readFileSync(join(__dirname, 'FormCoverage.tsx'), 'utf8')
+    expect(SUMBER).toContain("...(mode === 'amount' ? { rate: '' } : {})")
+    // Medan khusus basis = XML Pega: Sub Limit 100 (CountPremi_ACT L3638), First Loss / EML-PML 0, First Scale dari tabel.
+    expect([c.sublimit, c.firstLoss, c.emlPml, c.firstScale]).toEqual(['100', '0', '0', ''])
   })
 
   it('basis 1: medan umum (Indemnity / Indemnity Unit / % Loss Limit ALWAYS); tanpa First Loss / EML / Sub Limit', () => {
@@ -110,7 +132,7 @@ describe('TabCoverage', () => {
   it('Tambah: kosong -> lima coverage otomatis; ada -> satu coverage baru; Save = PUT objek; tanpa float', () => {
     expect(SUMBER_TAB).toMatch(/const h = await coverageOtomatis\(\)\s*ubahCoverage\(o, i, h\.baris\.map\(\(b\) => coverageBaru\(b\)\)\)/)
     expect(SUMBER_TAB).toContain('ubahCoverage(o, i, [...ada, coverageBaru()])')
-    expect(SUMBER_TAB).toContain('const h = await simpanObjek(caseId, objek)')
+    expect(SUMBER_TAB).toContain('const h = await (hanyaAkumulasi ? simpanAkumulasi : simpanObjek)(caseId, objek)')
     expect(SUMBER_TAB).not.toMatch(/(?<![A-Za-z])Number\(|parseFloat|parseInt/)
   })
 })

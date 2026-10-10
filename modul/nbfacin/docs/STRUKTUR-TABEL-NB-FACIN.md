@@ -145,6 +145,17 @@ dijaga `TestMigrasiFlatSebagianCocokRancangan`). Berbagi PK dengan `T_WORK_POLIS
 | `PAY_INSTALLMENT` | angka bulat | NUMBER(5) | tiket 51 (201) — Installment `.PolicyData.Payment.Installment` (jumlah cicilan, 1–99) |
 | `SHARE_CEDANT_TYPE` | angka bulat | NUMBER(5) | tiket 49 (migrasi 199) — Share Cedant Type `.OfferFacIn.ShareCedantType`: 0 Gross, 1 Share RNM (`DDL\ShareCedantType.xml`); kosong = belum dipilih |
 | `NB_STATUS` | teks | VARCHAR2(1000) | tiket 57 (migrasi 208) — `pyWorkPage.NBStatus` (halaman KERJA, amandemen loader: data lama kosong), ditulis Submit tahap marketing: "NB IS IN TEAM LEADER'S INBOX" / "NB IS IN <MARKETING>'S OPPORTUNITY" / "NB IS IN <jabatan>'S INBOX" / "NB WAS DECLINED BY  <OPERATOR>" |
+| `IS_DEDUCTIBLE_ACCEPTANCE` | teks | VARCHAR2(10) | tiket 58 (migrasi 210) — "Deductible Acceptance Case" `.OfferFacIn.IsDeductibleAcceptance`, teks Pega "true" / "false" (butir 68.1); ditulis Submit Team Leader |
+| `COMMENT_DEDUCTIBLE` | teks | VARCHAR2(500) | tiket 58 (migrasi 210) — "Comment Deductible" `.OfferFacIn.CommentDeductible`; ditulis Submit Team Leader |
+| `DATE_TO_UW` | teks | VARCHAR2(30) | tiket 58 (migrasi 210) — `.OfferFacIn.DateToUW` teks Pega DateTime; Accept Team Leader (`IsJuniorUW_B`); rancangan menaruhnya di T_WORK_POLIS (premiumlistlife) — amandemen loader |
+| `SUBMIT_TO_UW` | teks | VARCHAR2(30) | tiket 58 (migrasi 210) — `.OfferFacIn.SubmitToUW` teks Pega DateTime; Accept Team Leader bila kosong (`IsJuniorUW_B`); amandemen loader |
+| `DAYS_VALIDITY` | teks | VARCHAR2(50) | tiket 61 (migrasi 212) — "Validity Of Acceptance" `.OfferFacIn.DaysValidity` (hari, teks bulat); ditulis Submit tahap Underwriting |
+| `DATE_VALIDITY` | teks | VARCHAR2(30) | tiket 61 (migrasi 212) — "days, or up to" `.OfferFacIn.DateValidity` teks Pega DateTime 00:00 WIB (`GetDateValidity_ACT`); ditulis Submit tahap Underwriting |
+| `WAITING_BIND_DATE` | teks | VARCHAR2(30) | tiket 61 (migrasi 212) — "Waiting Bind" `.OfferFacIn.WaitingBindDate` teks Pega DateTime 00:00 WIB (`GetDateValidity_ACT` L701); ditulis Submit tahap Underwriting |
+| `COMMENT_TEXT` | teks | VARCHAR2(500) | tiket 61 (migrasi 212) — Comment `.OfferFacIn.Comment` Submit tahap Underwriting (juga ke riwayat KETERANGAN) |
+| `CONFIRM_BINDING` | teks | VARCHAR2(50) | tiket 64 (migrasi 213) — `.OfferFacIn.ConfirmBinding` "1" / "0"; ditulis tombol Binding (`POST …/submit/binding`), direset Revise |
+| `RECEIVED_RI_SLIP` | teks | VARCHAR2(50) | tiket 64 (migrasi 213) — `.OfferFacIn.ReceivedRiSlip` "true" / "false"; ditulis Submit tahap Binding (Accept), direset Revise |
+| `PRO_RATE_PERCENT` | angka desimal | NUMBER(38,8) | tiket 73 P2 (migrasi 255, rentang kedua) — `.OfferFacIn.ProRatePercent` % Pro Rate tingkat case tab Coverage Aneka; ditulis PUT `…/objek-aneka`; NULL = belum diisi (dihitung dari tanggal, CPCA langkah 4) |
 
 ## T_QUOTATIONDATA
 
@@ -685,6 +696,154 @@ medan kontrak ADA di rancangan — tanpa kolom baru. Medan uang / rate / persen 
 | `CONSTRUCTION_EARTHQUAKE` | teks | VARCHAR2(500) | tiket 52 (203) — `.ConstructionEarthquake` 4.2 Construction = `CONSTRUCTION.CONSTRUCTION`; TIDAK di rancangan (amandemen loader); lebar = kolom konstruksi saudaranya, lebar sumber belum terverifikasi |
 | `TSI_NUSANTARA_RE` | angka desimal | NUMBER(38,8) | tiket 48 (198) — `.TSINusantaraRe` = PercentShare × TSILiability / 100 (CountPremiAndTSIRNMFireMBU_ACT langkah 6) |
 | `PREMI_NUSANTARA_RE` | angka desimal | NUMBER(38,8) | tiket 48 (198) — `.PremiNusantaraRe` = PercentShare × Premium / 100 − PercentShare × Discount / 100 |
+| `CALCULATE_METHOD` | teks | VARCHAR2(50) | tiket 73 P2 (214) — `.CalculateMethod` coverage Aneka |
+| `CALCULATE_METHOD_FAC_IN` | teks | VARCHAR2(50) | tiket 73 P2 (214) — `.CalculateMethod_FacIn` |
+| `PCT_SHORT_PERIOD` | angka desimal | NUMBER(38,8) | tiket 73 P2 (214) — `.PctShortPeriod` (K73-6; rancangan VARCHAR2(30)) |
+| `LOADING` | angka desimal | NUMBER(38,8) | tiket 73 P2 (214) — `.Loading` |
+| `SUB_LIMIT_NOTE` | teks | VARCHAR2(500) | tiket 73 P2 (214) — `.SubLimitNote` |
+| `MIN_PREMIUM` | angka desimal | NUMBER(38,8) | tiket 73 P2 (214) — **uang**, `.MinPremium` |
+| `TYPE_OF_DISCOUNT` | teks | VARCHAR2(10) | tiket 73 P2 (214) — `.TypeOfDiscount` teks apa adanya (sampel "true" 95/95; kolomTeksMenyimpang butir 68.1) |
+| `IS_OLD_DATA` | teks | VARCHAR2(10) | tiket 73 P2 (214) — `.IsOldData` |
+
+## T_ANEKALIST
+
+Tiket 73 P1 — migrasi 214. Objek keluarga Aneka (form `NB FacIn\Section\InputDtlObjectAneka_FacIn.xml`, kontainer C1–C9). Rancangan 27 kolom (tanpa penunjuk IDX_* milik loader) + kolom form **baru** (amandemen loader `amandemenAneka`). Induk **jamak**: okupasi Aneka (`T_OCCUPATIONLIST` ber-`PARENT_TABLE` `T_RISKLOCATION`) atau Golf (`T_RISKLOCATION`); `PARENT_ID` tanpa FK, indeks `IX_T_ANEKALIST_PARENT (PARENT_TABLE, PARENT_ID)`.
+
+| Kolom | Tipe | Tipe DDL (migrasi 214) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_ANEKALIST` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_OCCUPATIONLIST.ID` (non-Golf) atau `T_RISKLOCATION.ID` (Golf); tanpa FK (induk jamak) |
+| `PARENT_TABLE` | teks | VARCHAR2(30) | `T_OCCUPATIONLIST` / `T_RISKLOCATION` |
+| `SRC_PATH` | teks | VARCHAR2(200) | `LocationList/Property/RiskLocation/OccupationList/AnekaList` / `LocationList/Property/RiskLocation/AnekaList` |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan objek 1..n |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
+| `BUILT_IN` | teks | VARCHAR2(50) | `.BuiltIn` Place of Manufacture (C2) |
+| `DRAFT_WORDING_ID` | teks | VARCHAR2(50) | `.DraftWordingID` (C1, `IsBonding`) |
+| `END_DATE` | teks | VARCHAR2(30) | `.END_DATE` (C1) |
+| `FLAG` | teks | VARCHAR2(1000) | `.Flag` (C2; SHIP.FLAGNAME, lebar sumber) |
+| `GEOGRAPHICAL_LIMITS` | teks | VARCHAR2(50) | `.GeographicalLimits` (C7) |
+| `IS_OLD_DATA` | teks | VARCHAR2(10) | `.IsOldData` |
+| `LOCATION_ID` | teks | VARCHAR2(50) | `.LocationID` (turunan rancangan) |
+| `OBJECT_NAME` | teks | VARCHAR2(4000) | `.ObjectName`; HE = SetObjectDescHE_DT; lebar 4000 (SHIP.NAME 1000 + sambungan HE) |
+| `OCCUPATION_ID` | teks | VARCHAR2(1000) | `.OccupationID`; lebar = 189 |
+| `QUANTITY` | teks | VARCHAR2(50) | `.Quantity` (C3 / C5 / C9) |
+| `START_DATE` | teks | VARCHAR2(30) | `.START_DATE` (C1) |
+| `SECTION` | teks | VARCHAR2(50) | `.Section` 1..4 (`DDL\Section.xml`) |
+| `SELECTED_LOCATION_ADDRESS` | teks | VARCHAR2(50) | `.SelectedLocationAddress` (rancangan) |
+| `SELECTED_OBJECT_ITEM` | teks | VARCHAR2(50) | `.SelectedObjectItem` (rancangan) |
+| `SERIAL_NO` | teks | VARCHAR2(50) | `.SerialNo` (C4) |
+| `TSI` | angka desimal | NUMBER(38,8) | **uang** — `.TSI` |
+| `UNIT_QUANTITY` | teks | VARCHAR2(50) | `.UnitQuantity` (C5) |
+| `YEAR` | teks | VARCHAR2(50) | `.Year` (C2 / C5 / C7 / C8 / C9) |
+| `CURRENCY_CODE` | teks | VARCHAR2(10) DEFAULT 'UNKNOWN' NOT NULL | = `.Currency.Name` objek (K-069 / K-012) |
+| `NO_KONTRAK` | teks | VARCHAR2(50) | **baru** — `.NO_KONTRAK` (C1) |
+| `NO_KTP` | teks | VARCHAR2(50) | **baru** — `.NO_KTP` (C1) |
+| `NO_NPWP` | teks | VARCHAR2(50) | **baru** — `.NO_NPWP` (C1) |
+| `OTHERS` | teks | VARCHAR2(500) | **baru** — `.Others` (C1, blok Briguna luar) |
+| `INVOICE_NO` | teks | VARCHAR2(50) | **baru** — `.InvoiceNo` (C3) |
+| `MAINTENANCE_PERIOD` | angka desimal | NUMBER(38,8) | **baru** — `.MaintenancePeriod` (C1 / C4, `IsEngineering`; K73-6) |
+| `NO_OF_TREE` | angka desimal | NUMBER(38,8) | **baru** — `.NoOfTree` (C8; K73-6) |
+| `AREA_HECTAR` | angka desimal | NUMBER(38,8) | **baru** — `.AreaHectar` (C8; K73-6) |
+| `LIMIT_IDEMNITY_DAY` | angka desimal | NUMBER(38,8) | **baru** — `.LimitIdemnityDay` (C9; K73-6) |
+| `LIMIT_IDEMNITY_MONTH` | angka desimal | NUMBER(38,8) | **baru** — `.LimitIdemnityMonth` (C9; K73-6) |
+| `LIMIT_OF_LIABILITY` | angka desimal | NUMBER(38,8) | **baru**, **uang** — `.LimitOfLiability` (grid okupasi) |
+| `TSI_OLD` | angka desimal | NUMBER(38,8) | **baru**, **uang** — `.TSIOld` (grid Golf); ditulis aplikasi (loader V-28b) |
+| `FLAG_DELETE` | teks | VARCHAR2(10) | **baru** — `.FlagDelete` (ADR-0031) |
+| `ALM_RISK_ID` | teks | VARCHAR2(100) | **baru** — `.AlmRiskID` (lookup kapal = SHIP.ID) |
+| `LOAN_ACCOUNT_NUMBER` | teks | VARCHAR2(50) | **baru** — Briguna `.LoanAccountNumber` (K73-7) |
+| `LOAN_NAME` | teks | VARCHAR2(500) | **baru** — Briguna `.LoanName` |
+| `JOB` | teks | VARCHAR2(500) | **baru** — Briguna `.Job` |
+| `DEPOSIT_ACCOUNT_NO` | teks | VARCHAR2(50) | **baru** — Briguna `.DepositAccountNo` |
+| `ID_CARD_NO` | teks | VARCHAR2(50) | **baru** — Briguna `.IDCardNo` |
+| `INSTITUTION` | teks | VARCHAR2(500) | **baru** — Briguna `.Institution` |
+| `LOAN_TYPE` | teks | VARCHAR2(50) | **baru** — Briguna `.LoanType` |
+| `DATE_OF_BIRTH` | teks | VARCHAR2(30) | **baru** — Briguna `.DateOfBirth` (teks Pega) |
+| `SALARY` | angka desimal | NUMBER(38,8) | **baru**, **uang** — Briguna `.Salary` |
+
+## T_MARINEHULL
+
+Tiket 73 P1 — migrasi 214, satu halaman per objek (`UQ_T_MARINEHULL_PARENT`). `.MarineHull` objek C2 (lookup kapal men-SET CLASSIFICATION / CONSTRUCTION / DWTRT / GRTRT / NRTRT; lebar = kolom POOLDATA.SHIP); LENGTHM / BREADTHM / DEPTHM **baru**.
+
+| Kolom | Tipe | Tipe DDL (migrasi 214) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_MARINEHULL` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_ANEKALIST.ID` (UNIQUE, FK) |
+| `CLASSIFICATION` | teks | VARCHAR2(1000) | `.CLASSIFICATION` |
+| `CONSTRUCTION` | teks | VARCHAR2(1000) | `.CONSTRUCTION` |
+| `DWTRT` | teks | VARCHAR2(1000) | `.DWTRT` |
+| `GRTRT` | teks | VARCHAR2(1000) | `.GRTRT` |
+| `NRTRT` | teks | VARCHAR2(1000) | `.NRTRT` |
+| `TYPE_OF_VESSEL` | teks | VARCHAR2(50) | `.TYPE_OF_VESSEL` |
+| `LENGTHM` | teks | VARCHAR2(50) | `.LENGTHM` |
+| `BREADTHM` | teks | VARCHAR2(50) | `.BREADTHM` |
+| `DEPTHM` | teks | VARCHAR2(50) | `.DEPTHM` |
+
+## T_AVIATIONHULL
+
+Tiket 73 P1 — migrasi 214, satu halaman per objek (`UQ_T_AVIATIONHULL_PARENT`). `.AviationHull` objek C7 — rancangan apa adanya.
+
+| Kolom | Tipe | Tipe DDL (migrasi 214) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_AVIATIONHULL` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_ANEKALIST.ID` (UNIQUE, FK) |
+| `MAX_PASSENGERS` | teks | VARCHAR2(50) | `.MAX_PASSENGERS` |
+| `PILOTS` | teks | VARCHAR2(50) | `.PILOTS` |
+| `REGISTRATION_MARKS` | teks | VARCHAR2(50) | `.REGISTRATION_MARKS` |
+| `SPECIAL_RENTAL_USES` | teks | VARCHAR2(50) | `.SPECIAL_RENTAL_USES` |
+| `SPECIAL_USES` | teks | VARCHAR2(50) | `.SPECIAL_USES` |
+| `STANDARD_USES` | teks | VARCHAR2(50) | `.STANDARD_USES` |
+
+## T_VEHICLEHE
+
+Tiket 73 P1 — migrasi 214, satu halaman per objek (`UQ_T_VEHICLEHE_PARENT`). `.VehicleHE` objek C4 / C6 — BRAND / TYPE = ID terpilih lookup merk / tipe; CHASSIS_NUMBER / ENGINE_NUMBER / OBJECT_ID_HE **baru**.
+
+| Kolom | Tipe | Tipe DDL (migrasi 214) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_VEHICLEHE` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_ANEKALIST.ID` (UNIQUE, FK) |
+| `BRAND` | teks | VARCHAR2(50) | `.BRAND` |
+| `BRAND_NAME` | teks | VARCHAR2(500) | `.BRAND_NAME` |
+| `OBJECT_NAME_HE` | teks | VARCHAR2(500) | `.OBJECT_NAME_HE` |
+| `TYPE` | teks | VARCHAR2(50) | `.TYPE` |
+| `TYPE_NAME` | teks | VARCHAR2(500) | `.TYPE_NAME` |
+| `CHASSIS_NUMBER` | teks | VARCHAR2(50) | `.CHASSIS_NUMBER` |
+| `ENGINE_NUMBER` | teks | VARCHAR2(50) | `.ENGINE_NUMBER` |
+| `OBJECT_ID_HE` | teks | VARCHAR2(50) | `.OBJECT_ID_HE` |
+
+## T_MEMORANDUMACCEPT
+
+Tiket 73 P1 — migrasi 214, satu halaman per objek (`UQ_T_MEMORANDUMACCEPT_PARENT`). `.MemorandumAccept` objek C1 — **tabel baru** (tidak di rancangan): SURETY_TYPE diisi server dari BusinessCode (`InputDtlObjectAneka_PreAct`), 15 medan `Section\InputDtlMemorandumAccept.xml`.
+
+| Kolom | Tipe | Tipe DDL (migrasi 214) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_MEMORANDUMACCEPT` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_ANEKALIST.ID` (UNIQUE, FK) |
+| `SURETY_TYPE` | teks | VARCHAR2(50) | `.SURETY_TYPE` |
+| `APPLICATION_NUMBER` | teks | VARCHAR2(500) | `.APPLICATION_NUMBER` |
+| `ACCUMULATION` | teks | VARCHAR2(500) | `.ACCUMULATION` |
+| `COLLATERAL` | teks | VARCHAR2(500) | `.COLLATERAL` |
+| `INSURED_SIUP` | teks | VARCHAR2(500) | `.INSURED_SIUP` |
+| `KEY_PERSON` | teks | VARCHAR2(500) | `.KEY_PERSON` |
+| `ORIGINAL_RATE` | teks | VARCHAR2(500) | `.ORIGINAL_RATE` |
+| `PRINCIPALS_OUT_GO` | teks | VARCHAR2(500) | `.PRINCIPALS_OUT_GO` |
+| `TYPE_OF_WORDING` | teks | VARCHAR2(500) | `.TYPE_OF_WORDING` |
+| `BUILDING_STATUS` | teks | VARCHAR2(4000) | `.BUILDING_STATUS` |
+| `SUPPORTING_DOCUMENT` | teks | VARCHAR2(4000) | `.SUPPORTING_DOCUMENT` |
+| `PRINCIPALS_DATA` | teks | VARCHAR2(4000) | `.PRINCIPALS_DATA` |
+| `CONCLUSIONS_PROPOSALS` | teks | VARCHAR2(4000) | `.CONCLUSIONS_PROPOSALS` |
+| `PRINCIPALS_BACKGROUND` | teks | VARCHAR2(4000) | `.PRINCIPALS_BACKGROUND` |
+| `SUMMARY_FINANCIAL` | teks | VARCHAR2(4000) | `.SUMMARY_FINANCIAL` |
+| `PRINCIPALS_GUARANTEE` | teks | VARCHAR2(4000) | `.PRINCIPALS_GUARANTEE` |
 
 ## T_SPREADINGLIST
 

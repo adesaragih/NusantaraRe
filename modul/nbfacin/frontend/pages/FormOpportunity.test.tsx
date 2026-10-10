@@ -157,7 +157,7 @@ describe('FormOpportunity = gambar Pega (keadaan awal)', () => {
     // Templat Kelola User: kepala `inbox__kepala`, judul kiri, tombol kanan.
     const kepala = HTML.slice(HTML.indexOf('<header class="inbox__kepala">'), HTML.indexOf('</header>'))
     expect(kepala).toContain(`<h2 class="inbox__judul">${F.judul}</h2>`)
-    expect(kepala).toContain(`<button type="button" class="btn btn--primary">${KEPALA_PORTAL.buat.label}</button>`)
+    expect(kepala).toContain(`<button type="button" class="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary">${KEPALA_PORTAL.buat.label}</button>`)
     expect(kepala.indexOf('inbox__judul')).toBeLessThan(kepala.indexOf('btn--primary'))
     expect(HTML).not.toMatch(/type="submit"/)
     expect(HTML).not.toContain(POPUP.judul)

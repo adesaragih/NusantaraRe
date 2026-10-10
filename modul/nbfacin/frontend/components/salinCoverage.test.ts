@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest'
 
 import type { CoverageObjek, ObjekFire } from '../api'
 import { SALIN_COVERAGE as S } from '../labels'
-import { coverageBaru } from './FormCoverage'
-import { JENIS_ITEM_BI, salinCoverageDari, salinCoverageLokasi, salinCoverageSemua, salinDeductible } from './salinCoverage'
+import { coverageBaru, NILAI_AWAL_COVERAGE } from './FormCoverage'
+import { JENIS_ITEM_BI, ringkasSalinDeductible, salinCoverageDari, salinCoverageLokasi, salinCoverageSemua, salinDeductible } from './salinCoverage'
 
 const NB = 'D:\\migrasi\\RNM\\NB FacIn\\'
 
@@ -74,7 +74,7 @@ describe('salinCoverage - aturan', () => {
     const awal = data()
     const h = salinCoverageLokasi(awal, 0)
     h.objek[0]!.items[1]!.coverages![0]!.rate = '9'
-    expect(h.objek[0]!.items[0]!.coverages![0]!.rate).toBe('')
+    expect(h.objek[0]!.items[0]!.coverages![0]!.rate).toBe(NILAI_AWAL_COVERAGE.rate)
   })
 
   it('Copy Deductible To All: per kode coverage; tanpa padanan -> kosong; item BI dilewati', () => {
@@ -88,6 +88,21 @@ describe('salinCoverage - aturan', () => {
     const h = salinDeductible(d, { o: 0, i: 0 }, 'ALL')
     expect(h[0]!.items[1]!.coverages!.map((c) => (c.deductibles ?? []).map((x) => x.amount))).toEqual([['20'], []])
     expect(h[0]!.items[2]!.coverages![0]!.deductibles!.map((x) => x.amount)).toEqual(['7'])
+  })
+
+  it('ringkasan Copy Deductible (umpan balik layar): sumber, coverage & item lain penerima', () => {
+    const d: ObjekFire[] = [
+      lok([
+        it1('A', '1', [cov('C1', '', [ded('10'), ded('11')]), cov('C2')]),
+        it1('B', '1', [cov('C1'), cov('C2'), cov('Z')]),
+        it1(JENIS_ITEM_BI, '1', [cov('C1')]),
+      ]),
+      lok([it1('B', '1', [cov('C1')]), it1('B', '1', [cov('Z')])]),
+    ]
+    // C2 sumber tanpa deductible -> tidak dihitung; item BI dilewati "ALL"; item sumber sendiri tidak dihitung.
+    expect(ringkasSalinDeductible(d, { o: 0, i: 0 }, 'ALL')).toEqual({ sumber: 2, coverage: 2, item: 2, biDilewati: 1 })
+    expect(ringkasSalinDeductible(d, { o: 0, i: 0 }, 'BI')).toEqual({ sumber: 2, coverage: 1, item: 1, biDilewati: 0 })
+    expect(ringkasSalinDeductible(d, { o: 1, i: 1 }, 'ALL')).toEqual({ sumber: 0, coverage: 0, item: 0, biDilewati: 1 })
   })
 
   it('Copy Deductible For BI: hanya item BI', () => {

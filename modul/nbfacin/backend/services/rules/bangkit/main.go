@@ -48,6 +48,8 @@ import (
 	"strings"
 
 	"nusantarare/modul/nbfacin/backend/services/rules/logika"
+
+	"nusantarare/modul/nbfacin/backend/services/rules/peta"
 )
 
 // folderUtama - folder `When` siklus NB, relatif terhadap akar korpus.
@@ -63,6 +65,11 @@ var pinjaman = []struct{ jalur, dasar string }{
 }
 
 // catatanSikap - catatan sikap khusus per predikat (tiket 09).
+// PetaWorkbasket - pembetulan nama workbasket (ADR-0032, penyimpangan sadar; sumber tunggal paket `peta`, dipakai juga aturan
+// tahap layanan). Diterapkan pada literal teks kondisi registry profil NB SAJA (sistem baru menulis POSITION kode baru, jadi
+// predikat verbatim tidak akan pernah benar); sidik isi (deteksi identitas berkonflik) tetap atas teks korpus.
+var PetaWorkbasket = peta.Workbasket
+
 var catatanSikap = map[string]string{
 	"ISOFFERFACIN": "K-002: ekspresi tersimpan yang berlaku. Teks tampilan <pyConditionString> menyebut " +
 		`Kode Bisnis = "02"/"58"/"SB"/"SG" - kandidat perbaikan, TIDAK dieksekusi; tersangka pertama ` +
@@ -84,6 +91,7 @@ type profil struct {
 	pinjaman      []struct{ jalur, dasar string }
 	catatan       map[string]string // catatanSikap
 	sikap         map[string]string // sikapKhusus
+	peta          map[string]string // PetaWorkbasket (NB saja)
 }
 
 var polaPaket = regexp.MustCompile(`^[a-z][a-z0-9]*$`)
@@ -101,7 +109,7 @@ func pilihProfil(folder, paket string) (profil, error) {
 	case folder == folderUtama && paket != "rules":
 		return profil{}, fmt.Errorf("bangkit: registry %s hanya untuk paket rules nbfacin", folderUtama)
 	case folder == folderUtama:
-		return profil{folder: folder, paket: paket, pinjaman: pinjaman, catatan: catatanSikap, sikap: sikapKhusus}, nil
+		return profil{folder: folder, paket: paket, pinjaman: pinjaman, catatan: catatanSikap, sikap: sikapKhusus, peta: PetaWorkbasket}, nil
 	}
 	return profil{folder: folder, paket: paket, catatan: map[string]string{}, sikap: map[string]string{}}, nil
 }
@@ -215,7 +223,7 @@ func bangkitkan(akar string, p profil) ([]byte, string, error) {
 			continue
 		}
 		berkas++
-		e, err := baca(filepath.Join(korpus, d.Name()), label+`\`+d.Name(), "", p.sikap)
+		e, err := baca(filepath.Join(korpus, d.Name()), label+`\`+d.Name(), "", p.sikap, p.peta)
 		if err != nil {
 			return nil, "", fmt.Errorf("bangkit: %s: %w", d.Name(), err)
 		}
@@ -230,7 +238,7 @@ func bangkitkan(akar string, p profil) ([]byte, string, error) {
 		urutan = append(urutan, e)
 	}
 	for _, pj := range p.pinjaman {
-		e, err := baca(filepath.Join(akar, pj.jalur), pj.jalur, pj.dasar, p.sikap)
+		e, err := baca(filepath.Join(akar, pj.jalur), pj.jalur, pj.dasar, p.sikap, p.peta)
 		if err != nil {
 			return nil, "", fmt.Errorf("bangkit: pinjaman %s: %w", pj.jalur, err)
 		}
@@ -267,7 +275,7 @@ func bangkitkan(akar string, p profil) ([]byte, string, error) {
 
 // baca membaca satu berkas `When`. `dasarPinjam` terisi bila berkas ini pinjaman
 // dari folder lain; asalnya lalu menyebut keputusan dan versi ruleset-nya.
-func baca(jalur, asal, dasarPinjam string, sikap map[string]string) (*entri, error) {
+func baca(jalur, asal, dasarPinjam string, sikap, peta map[string]string) (*entri, error) {
 	isi, err := os.ReadFile(jalur)
 	if err != nil {
 		return nil, err
@@ -307,7 +315,7 @@ func baca(jalur, asal, dasarPinjam string, sikap map[string]string) (*entri, err
 			continue
 		}
 		sidik = append(sidik, label+"="+nilai)
-		kd, alasan := kenaliKondisi(nilai)
+		kd, alasan := kenaliKondisi(nilai, peta)
 		if alasan != "" && e.panik == "" {
 			e.panik = fmt.Sprintf("baris %s belum diport (%s): %s", label, alasan, nilai)
 			// Ekspresi yang menyebut medan login/identitas tidak ditulis - apa pun alasannya
@@ -332,8 +340,9 @@ func baca(jalur, asal, dasarPinjam string, sikap map[string]string) (*entri, err
 	return e, nil
 }
 
-// kenaliKondisi - baris kondisi yang diport, atau alasan belum diport.
-func kenaliKondisi(nilai string) (kondisiGen, string) {
+// kenaliKondisi - baris kondisi yang diport, atau alasan belum diport. Literal teks yang ada di `peta` diganti nilainya
+// (PetaWorkbasket; nil = verbatim).
+func kenaliKondisi(nilai string, peta map[string]string) (kondisiGen, string) {
 	if m := polaRujuk.FindStringSubmatch(nilai); m != nil {
 		r := strings.ToUpper(m[1])
 		return kondisiGen{literal: fmt.Sprintf("{jenis: rujukWhen, rujukan: %s}", strconv.Quote(r)), rujukan: r}, ""
@@ -366,6 +375,9 @@ func kenaliKondisi(nilai string) (kondisiGen, string) {
 		if err != nil {
 			return kondisiGen{}, "literal teks"
 		}
+		if baru, ada := peta[s]; ada {
+			s = baru
+		}
 		kanan = fmt.Sprintf("operand{teksLiteral, %s}", strconv.Quote(s))
 	case polaAngka.MatchString(k):
 		kanan = fmt.Sprintf("operand{angkaLiteral, %s}", strconv.Quote(k))
@@ -378,6 +390,9 @@ func kenaliKondisi(nilai string) (kondisiGen, string) {
 	case polaKata.MatchString(k):
 		// Kata telanjang (`ReasFacInDirector`, `A1`, `Offer`) dibaca sebagai teks
 		// (keputusan work owner 01-10-2026, butir 28).
+		if baru, ada := peta[k]; ada {
+			k = baru
+		}
 		kanan = fmt.Sprintf("operand{teksLiteral, %s}", strconv.Quote(k))
 	default:
 		return kondisiGen{}, "operand kanan bukan literal " + k

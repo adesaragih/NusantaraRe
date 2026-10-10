@@ -25,6 +25,7 @@ import { angka4 } from '../angka4'
 import {
   ambilDeduction,
   ambilSpreading,
+  ambilSpreadingAneka,
   hitungDeduction,
   simpanDeduction,
   type AksiDeduction,
@@ -32,8 +33,11 @@ import {
   type LokasiSpreading,
   type TampilanDeduction,
   type TampilanSpreading,
+  type TampilanSpreadingAneka,
+  type LokasiSpreadingAneka,
+  type ObjekSpreadingAneka,
 } from '../api'
-import { DEDUCTION as D, TEKS_DEDUCTION as T } from '../labels'
+import { DEDUCTION as D, DEDUCTION_ANEKA as DA, TEKS_ANEKA, TEKS_DEDUCTION as T } from '../labels'
 import IsianAngka4 from './IsianAngka4'
 import { RingkasanSpreading } from './TabSpreading'
 
@@ -231,9 +235,208 @@ function DaftarKomisi({ lokasi }: { lokasi: LokasiSpreading[] }) {
   )
 }
 
-export default function TabDeduction({ caseId }: { caseId: string }) {
+/** `aneka` (tiket 73 P3): ringkasan Spreading dari `…/spreading-aneka` (SummarySpreading_Section tidak bercabang per COB). */
+/**
+ * Daftar komisi keluarga Aneka (tiket 73 P3; label `DEDUCTION_ANEKA`) - baca-saja, dari jawaban `…/spreading-aneka`. Keputusan
+ * agent: objek Golf ditampilkan dengan rantai coverage yang sama (Pega membuka baris Golf lewat FA kelas Data-PropertyItem,
+ * `PropertyItemListCoverageCommision.xml` L9814 - resolusinya `[pertanyaan terbuka]`, tiket 73).
+ */
+export function DaftarKomisiAneka({ lokasi }: { lokasi: LokasiSpreadingAneka[] }) {
+  const [terbuka, setTerbuka] = useState<string[]>([])
+  const ganti = (k: string) => setTerbuka((t) => (t.includes(k) ? t.filter((x) => x !== k) : [...t, k]))
+  const kepala = (kolom: readonly string[]) => (
+    <thead>
+      <tr>
+        <th scope="col" />
+        {kolom.map((k) => (
+          <th key={k} scope="col">
+            {k}
+          </th>
+        ))}
+      </tr>
+    </thead>
+  )
+  const coverage = (o: ObjekSpreadingAneka, ko: string) => (
+    <div className="nbf-cov-wrap">
+      <table className="nbf-tabel nbf-aneka-grid">
+        {kepala(DA.kolomCoverage)}
+        <tbody>
+          {o.coverages.length === 0 && (
+            <tr>
+              <td colSpan={3}>{T.kosong}</td>
+            </tr>
+          )}
+          {o.coverages.map((c, n) => {
+            const kc = `${ko}-c${n}`
+            return [
+              <tr key={kc}>
+                <td>
+                  <Buka buka={terbuka.includes(kc)} onKlik={() => ganti(kc)} />
+                </td>
+                <td>{c.coverageNote}</td>
+                <td className="nbf-angka">{angka(c.premium)}</td>
+              </tr>,
+              terbuka.includes(kc) && (
+                <tr key={`${kc}-d`} className="nbf-objek__detail">
+                  <td colSpan={3}>
+                    <dl className="nbf-deduct__rinci nbf-aneka-angka">
+                      <div>
+                        <dt>{DA.detailCoverage.tsi}</dt>
+                        <dd>{angka(c.tsi)}</dd>
+                      </div>
+                      <div>
+                        <dt>{DA.detailCoverage.tsiNusantaraRe}</dt>
+                        <dd>{angka(c.tsiNusantaraRe)}</dd>
+                      </div>
+                      <div>
+                        <dt>{DA.detailCoverage.premium}</dt>
+                        <dd>{angka(c.premium)}</dd>
+                      </div>
+                      <div>
+                        <dt>{DA.detailCoverage.premiNusantaraRe}</dt>
+                        <dd>{angka(c.premiNusantaraRe)}</dd>
+                      </div>
+                    </dl>
+                    <div className="nbf-cov-wrap">
+                      <table className="nbf-tabel">
+                        <thead>
+                          <tr>
+                            {D.kolomSpreading.map((h) => (
+                              <th key={h} scope="col">
+                                {h}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {c.spreading.length === 0 && (
+                            <tr>
+                              <td colSpan={5}>{T.kosong}</td>
+                            </tr>
+                          )}
+                          {c.spreading.map((s, m) => (
+                            <tr key={`${s.treatyType}-${m}`}>
+                              <td>{s.treatyName}</td>
+                              <td className="nbf-angka">{angka(s.sharePercentage)}</td>
+                              <td className="nbf-angka">{angka(s.tsiSpreaded)}</td>
+                              <td className="nbf-angka">{angka(s.claimEstimation)}</td>
+                              <td className="nbf-angka">{angka(s.premiumSpreaded)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+              ),
+            ]
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+  const objek = (daftar: ObjekSpreadingAneka[], awalan: string, golf: boolean) => {
+    const kolom = golf ? DA.kolomObjekGolf : DA.kolomObjek
+    return (
+      <div className="nbf-cov-wrap">
+        <table className="nbf-tabel nbf-aneka-grid">
+          {kepala(kolom)}
+          <tbody>
+            {daftar.length === 0 && (
+              <tr>
+                <td colSpan={kolom.length + 1}>{TEKS_ANEKA.kosongObjek}</td>
+              </tr>
+            )}
+            {daftar.map((o, j) => {
+              const ko = `${awalan}-${j}`
+              return [
+                <tr key={ko}>
+                  <td>
+                    <Buka buka={terbuka.includes(ko)} onKlik={() => ganti(ko)} />
+                  </td>
+                  <td>{o.objectName}</td>
+                  {!golf && <td>{o.currency}</td>}
+                  {!golf && <td className="nbf-angka">{angka(o.tsi)}</td>}
+                </tr>,
+                terbuka.includes(ko) && (
+                  <tr key={`${ko}-d`} className="nbf-objek__detail">
+                    <td colSpan={kolom.length + 1}>
+                      <div className="nbf-lapis">{coverage(o, ko)}</div>
+                    </td>
+                  </tr>
+                ),
+              ]
+            })}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+  return (
+    <div className="nbf-cov-wrap">
+      <table className="nbf-tabel nbf-aneka-grid nbf-aneka-grid--lokasi">
+        {kepala(DA.kolomLokasi)}
+        <tbody>
+          {lokasi.length === 0 && (
+            <tr>
+              <td colSpan={3}>{T.kosong}</td>
+            </tr>
+          )}
+          {lokasi.map((l, a) => {
+            const kl = `l${a}`
+            return [
+              <tr key={kl}>
+                <td>
+                  <Buka buka={terbuka.includes(kl)} onKlik={() => ganti(kl)} />
+                </td>
+                <td>{l.objectNo}</td>
+                <td>{l.location}</td>
+              </tr>,
+              terbuka.includes(kl) && (
+                <tr key={`${kl}-d`} className="nbf-objek__detail">
+                  <td colSpan={3}>
+                    <div className="nbf-lapis nbf-lapis--objek">
+                      {l.okupasi.length > 0 && (
+                        <div className="nbf-cov-wrap">
+                          <table className="nbf-tabel nbf-aneka-grid">
+                            {kepala(DA.kolomOkupasi)}
+                            <tbody>
+                              {l.okupasi.map((k, b) => {
+                                const kk = `k${a}-${b}`
+                                return [
+                                  <tr key={kk}>
+                                    <td>
+                                      <Buka buka={terbuka.includes(kk)} onKlik={() => ganti(kk)} />
+                                    </td>
+                                    <td>{k.occupationName}</td>
+                                  </tr>,
+                                  terbuka.includes(kk) && (
+                                    <tr key={`${kk}-d`} className="nbf-objek__detail">
+                                      <td colSpan={2}>{objek(k.objek, `o${a}-${b}`, false)}</td>
+                                    </tr>
+                                  ),
+                                ]
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                      {l.objekGolf.length > 0 && objek(l.objekGolf, `o${a}-g`, true)}
+                    </div>
+                  </td>
+                </tr>
+              ),
+            ]
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+export default function TabDeduction({ caseId, aneka = false }: { caseId: string; aneka?: boolean }) {
   const [v, setV] = useState<TampilanDeduction | null>(null)
-  const [sp, setSp] = useState<TampilanSpreading | null>(null)
+  const [sp, setSp] = useState<TampilanSpreading | TampilanSpreadingAneka | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [menghitung, setMenghitung] = useState(false)
   const [menyimpan, setMenyimpan] = useState(false)
@@ -249,7 +452,7 @@ export default function TabDeduction({ caseId }: { caseId: string }) {
         if (!batal) setGalat(err)
       },
     )
-    ambilSpreading(caseId).then(
+    ;(aneka ? ambilSpreadingAneka : ambilSpreading)(caseId).then(
       (h) => {
         if (!batal) setSp(h)
       },
@@ -339,7 +542,7 @@ export default function TabDeduction({ caseId }: { caseId: string }) {
       </section>
 
       <section className="nbf-lapis">
-        {sp === null ? <Memuat /> : <DaftarKomisi lokasi={sp.lokasi} />}
+        {sp === null ? <Memuat /> : aneka ? <DaftarKomisiAneka lokasi={(sp as TampilanSpreadingAneka).lokasi} /> : <DaftarKomisi lokasi={(sp as TampilanSpreading).lokasi} />}
       </section>
 
       {sp !== null && <RingkasanSpreading v={sp} />}
@@ -424,7 +627,7 @@ export default function TabDeduction({ caseId }: { caseId: string }) {
       </div>
 
       <div className="nbf-objek__kaki">
-        <button type="button" className="btn btn--primary" onClick={() => void simpan()} disabled={menyimpan || menghitung}>
+        <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" onClick={() => void simpan()} disabled={menyimpan || menghitung}>
           {menyimpan ? T.menyimpan : T.simpan}
         </button>
       </div>

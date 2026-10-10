@@ -47,6 +47,13 @@ func sqlCariPortal(t tabelPortal, cari bool) string {
 	if cari {
 		n = 5
 	}
+	return fmt.Sprintf(`%s%s
+ORDER BY w.TGL_CREATE DESC, w.ID DESC OFFSET :%d ROWS FETCH NEXT :%d ROWS ONLY`, kepalaBarisCase(t), saringPortal(cari), n, n+1)
+}
+
+// kepalaBarisCase - SELECT + JOIN satu baris case NB (bentuk BarisPortal) untuk portal dan kotak masuk Beranda; dibaca
+// bacaBarisCase.
+func kepalaBarisCase(t tabelPortal) string {
 	return fmt.Sprintf(`SELECT w.ID, o.BUSINESS_PROSPECT_NAME, o.GROUP_BUSINESS,
   (SELECT MAX(a.INSUREDNAME) FROM %s a WHERE a.ID = o.ACCOUNT_ID),
   (SELECT MAX(m.CLIENTNAME) FROM %s m WHERE m.ID = q.MOID),
@@ -54,9 +61,42 @@ func sqlCariPortal(t tabelPortal, cari bool) string {
 FROM %s w
 LEFT JOIN %s o ON o.ID = w.ID
 LEFT JOIN %s q ON q.PARENT_ID = w.ID
-LEFT JOIN %s g ON g.ID = w.ID%s
-ORDER BY w.TGL_CREATE DESC, w.ID DESC OFFSET :%d ROWS FETCH NEXT :%d ROWS ONLY`, t.akun, t.mo, t.work, t.opp, t.quo, t.general,
-		saringPortal(cari), n, n+1)
+LEFT JOIN %s g ON g.ID = w.ID`, t.akun, t.mo, t.work, t.opp, t.quo, t.general)
+}
+
+// tabelBarisCase - nama tabel kepalaBarisCase berkualifikasi skema.
+func tabelBarisCase(d *db.DB) (tabelPortal, error) {
+	var t tabelPortal
+	for _, x := range []struct {
+		nama string
+		ke   *string
+	}{{TabelWorkPolis, &t.work}, {TabelOpportunity, &t.opp}, {TabelAkun, &t.akun}, {TabelQuotationData, &t.quo},
+		{TabelMarketingOfficer, &t.mo}, {TabelGeneralPolis, &t.general}} {
+		q, err := d.Qualify(x.nama)
+		if err != nil {
+			return t, err
+		}
+		*x.ke = q
+	}
+	return t, nil
+}
+
+// bacaBarisCase - baris kepalaBarisCase -> BarisPortal (NULL = "").
+func bacaBarisCase(baris *sql.Rows) ([]models.BarisPortal, error) {
+	defer baris.Close()
+	hasil := []models.BarisPortal{}
+	for baris.Next() {
+		var caseID, nama, grup, tertanggung, marketing, status, nbStatus sql.NullString
+		if err := baris.Scan(&caseID, &nama, &grup, &tertanggung, &marketing, &status, &nbStatus); err != nil {
+			return nil, fmt.Errorf("repository: daftar case NB: %w", err)
+		}
+		hasil = append(hasil, models.BarisPortal{CaseID: caseID.String, Name: nama.String, GroupBusiness: grup.String,
+			InsuredName: tertanggung.String, Marketing: marketing.String, Status: status.String, NBStatus: nbStatus.String})
+	}
+	if err := baris.Err(); err != nil {
+		return nil, fmt.Errorf("repository: daftar case NB: %w", err)
+	}
+	return hasil, nil
 }
 
 // sqlCacahPortal - cacah seluruh baris yang cocok (tanpa T_QUOTATIONDATA: satu baris per case).
@@ -66,17 +106,9 @@ func sqlCacahPortal(t tabelPortal, cari bool) string {
 
 // CariPortal - lihat PembacaPortal.
 func (r *PortalOracle) CariPortal(ctx context.Context, pembuat, cari string, offset, ukuran int) ([]models.BarisPortal, int, error) {
-	var t tabelPortal
-	for _, x := range []struct {
-		nama string
-		ke   *string
-	}{{TabelWorkPolis, &t.work}, {TabelOpportunity, &t.opp}, {TabelAkun, &t.akun}, {TabelQuotationData, &t.quo},
-		{TabelMarketingOfficer, &t.mo}, {TabelGeneralPolis, &t.general}} {
-		q, err := r.db.Qualify(x.nama)
-		if err != nil {
-			return nil, 0, err
-		}
-		*x.ke = q
+	t, err := tabelBarisCase(r.db)
+	if err != nil {
+		return nil, 0, err
 	}
 	pola := PolaCari(cari)
 	arg := []any{LiniFacIn, pembuat}
@@ -91,18 +123,9 @@ func (r *PortalOracle) CariPortal(ctx context.Context, pembuat, cari string, off
 	if err != nil {
 		return nil, 0, fmt.Errorf("repository: baca daftar case NB: %w", err)
 	}
-	defer baris.Close()
-	hasil := []models.BarisPortal{}
-	for baris.Next() {
-		var caseID, nama, grup, tertanggung, marketing, status, nbStatus sql.NullString
-		if err := baris.Scan(&caseID, &nama, &grup, &tertanggung, &marketing, &status, &nbStatus); err != nil {
-			return nil, 0, fmt.Errorf("repository: daftar case NB: %w", err)
-		}
-		hasil = append(hasil, models.BarisPortal{CaseID: caseID.String, Name: nama.String, GroupBusiness: grup.String,
-			InsuredName: tertanggung.String, Marketing: marketing.String, Status: status.String, NBStatus: nbStatus.String})
-	}
-	if err := baris.Err(); err != nil {
-		return nil, 0, fmt.Errorf("repository: daftar case NB: %w", err)
+	hasil, err := bacaBarisCase(baris)
+	if err != nil {
+		return nil, 0, err
 	}
 	return hasil, total, nil
 }

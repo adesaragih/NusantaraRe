@@ -45,6 +45,8 @@ lokasi, ringkasan, Save.
 ## Keputusan agent (menunggu konfirmasi)
 
 - **S-1** Copy Spreading tampil untuk semua pengguna (Pega: IsGroup / user tertentu) — "bisa juga dibuat manual".
+  ⚠️ **RALAT 08-10-2026 (work owner):** "spreading hanya bisa di copy atau add yg masuk ke when IsUW, di marketing tidak
+  bisa add spreading" — Copy Spreading hanya tahap Underwriting (When IsUWSpread). Lihat tiket 59.
 - **S-2** Baris spreading per coverage baca-saja (grid editable Pega hanya untuk user ID tertentu).
 - **S-3** Total Accumulation = tahap berikut.
 - **S-4** % Share RNM menghitung ulang sesudah jeda 500 ms; jawaban lama dibuang.

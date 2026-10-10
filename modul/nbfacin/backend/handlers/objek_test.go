@@ -266,9 +266,17 @@ func TestObjekKerugian(t *testing.T) {
 	}
 }
 
-type tolTiruan struct{ kode []string }
+type tolTiruan struct {
+	kode   []string
+	bisnis []models.BarisBisnisLini
+}
 
 func (t tolTiruan) KodeBisnis(context.Context, string, string) ([]string, error) { return t.kode, nil }
+
+func (tolTiruan) OldIDBisnis(context.Context, string, string) ([]string, error) { return nil, nil }
+func (t tolTiruan) BisnisLini(context.Context, string, string) ([]models.BarisBisnisLini, error) {
+	return t.bisnis, nil
+}
 
 func (tolTiruan) DaftarTableOfLimit(context.Context, string, string) ([]models.BarisTableOfLimit, error) {
 	return []models.BarisTableOfLimit{{Description: "UJI KELAS", PctLimit: "70,000 "}}, nil

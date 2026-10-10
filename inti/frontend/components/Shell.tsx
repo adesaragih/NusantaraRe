@@ -69,6 +69,7 @@ import {
   IkonBulan,
   IkonCari,
   IkonChevron,
+  IkonDokumen,
   IkonMatahari,
   IkonMenu,
   IkonRumah,
@@ -353,6 +354,23 @@ export function Shell<H extends string>({
                 <span className="shell__label">{BERANDA.judul}</span>
               </button>
             </li>
+            {/* Tombol modul di bawah Beranda, di luar golongan (`MenuModul.menuAtas`, 09-10-2026). */}
+            {tersusun?.atas.map((e) => (
+              <li key={e.modul}>
+                <button
+                  type="button"
+                  className={`shell__butir shell__butir--beranda${halaman === e.modul ? ' shell__butir--aktif' : ''}`}
+                  aria-current={halaman === e.modul ? 'page' : undefined}
+                  title={terciut ? e.label : undefined}
+                  onClick={() => {
+                    pilih(e.modul)
+                  }}
+                >
+                  <IkonDokumen />
+                  <span className="shell__label">{e.label}</span>
+                </button>
+              </li>
+            ))}
 
             {menuTabel === null && (
               /* Tertunda 600 ms (CSS): pembacaan yang cepat tidak berkedip. */

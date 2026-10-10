@@ -32,11 +32,14 @@ func TestSkemaUkuran(t *testing.T) {
 	// Tiket 42 (A145): +5 T_LISTCAUSEOFLOSS -> 109. Tiket 50 (K50-2): +1 T_CURRENCYLIST.PAY_DEDUCTION2 -> 110.
 	// Tiket 52: +1 T_COVERAGELIST.CONSTRUCTION_EARTHQUAKE -> 111. Tiket 54: +1 T_DATASCORINGRISKLIST.INDEX_LOCATION,
 	// +1 T_SCORING_FACTOR.PERCENT_LOSS_RATIO -> 113. Tiket 57: +1 T_GENERAL_POLIS.NB_STATUS -> 114.
-	if am != 114 || len(amandemenPenunjuk) != 48 || len(amandemenTabel) != 2 || len(amandemenJalur) != 2 {
-		t.Fatalf("amandemen %d kolom (%d penunjuk) / %d tabel / %d jalur, mau 114 (48) / 2 / 2", am, len(amandemenPenunjuk), len(amandemenTabel), len(amandemenJalur))
+	// Tiket 58: +2 T_GENERAL_POLIS.DATE_TO_UW / SUBMIT_TO_UW -> 116.
+	// Tiket 73 P1 (migrasi 214): +23 T_ANEKALIST, +3 T_MARINEHULL, +3 T_VEHICLEHE, +1 tabel T_MEMORANDUMACCEPT (20 kolom),
+	// +2 jalur -> 165 / 3 / 4.
+	if am != 165 || len(amandemenPenunjuk) != 48 || len(amandemenTabel) != 3 || len(amandemenJalur) != 4 {
+		t.Fatalf("amandemen %d kolom (%d penunjuk) / %d tabel / %d jalur, mau 165 (48) / 3 / 4", am, len(amandemenPenunjuk), len(amandemenTabel), len(amandemenJalur))
 	}
-	if len(skemaTabel) != 78+2 || n != 1329+am || len(jalurSumber) != 148+2 || len(warisMataUang) != 8 || len(penunjukKandidat) != 50 {
-		t.Fatalf("%d tabel, %d kolom, %d jalur, %d waris, %d penunjuk; mau 80/1443/150/8/50",
+	if len(skemaTabel) != 78+3 || n != 1329+am || len(jalurSumber) != 148+4 || len(warisMataUang) != 8 || len(penunjukKandidat) != 50 {
+		t.Fatalf("%d tabel, %d kolom, %d jalur, %d waris, %d penunjuk; mau 81/1494/152/8/50",
 			len(skemaTabel), n, len(jalurSumber), len(warisMataUang), len(penunjukKandidat))
 	}
 	unknown := 0
@@ -188,7 +191,10 @@ func TestSetiapKolomBerasal(t *testing.T) {
 	// Tiket 52: medan +1 (ConstructionEarthquake). 908 + 331 + 169 + 32 = 1.440.
 	// Tiket 54: medan +2 (IndexLocation, PercentLossRatio). 910 + 331 + 169 + 32 = 1.442.
 	// Tiket 57: medan +1 (NBStatus T_GENERAL_POLIS). 911 + 331 + 169 + 32 = 1.443.
-	mau := map[string]int{asalMedan: 911, asalFlatten: 331, asalRepository: 169, asalKosong: 32}
+	// Tiket 58: repository +2 (DATE_TO_UW, SUBMIT_TO_UW T_GENERAL_POLIS - ditulis aplikasi). 911 + 331 + 171 + 32 = 1.445.
+	// Tiket 73 P1: medan +44 (23 T_ANEKALIST tanpa TSI_OLD 22, 3 T_MARINEHULL, 3 T_VEHICLEHE, 16 T_MEMORANDUMACCEPT), Flatten +2 dan
+	// repository +2 (kolom sistem T_MEMORANDUMACCEPT), repository +1 (T_ANEKALIST.TSI_OLD, V-28b). 955 + 333 + 174 + 32 = 1.494.
+	mau := map[string]int{asalMedan: 955, asalFlatten: 333, asalRepository: 174, asalKosong: 32}
 	for a, n := range mau {
 		if jumlah[a] != n {
 			t.Errorf("%s: %d kolom, mau %d", a, jumlah[a], n)

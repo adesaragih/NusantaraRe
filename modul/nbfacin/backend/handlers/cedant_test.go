@@ -39,7 +39,7 @@ func TestCedantKasus(t *testing.T) {
 	svc := services.Baru(nil).DenganCedant(c).DenganSpreading(&spreadingTiruanH{tersimpan: sp}).DenganTransaksi(tanpaOracleKlausa)
 	kode, isi := minta(t, svc, "GET", "/api/nbfacin/kasus/S1/cedant", "", "")
 	if kode != 200 || isi != `{"sobName":"UJI SOB","shareCedantType":"","shareOfCeding":"10%","percentShare":"50","totalTsiRnm":"500",`+
-		`"totalPremiRnm":"4","wajib":false,"cedant":[],"cedingUmum":[{"cedingCo":"A1","cedingCoName":"UJI A","shareCeding":""}],`+
+		`"totalPremiRnm":"4","wajib":false,"wajibType":false,"cedant":[],"cedingUmum":[{"cedingCo":"A1","cedingCoName":"UJI A","shareCeding":""}],`+
 		`"dasarMataUang":[{"currency":"IDR","tsiRnm":"0","premiumRnm":"4","tsiGross":"0","premiumGross":"8"}],"kursTidakAda":[]}` {
 		t.Fatalf("GET: %d %s", kode, isi)
 	}

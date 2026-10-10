@@ -26,6 +26,17 @@ func (p *paymentTiruan) BacaPayment(_ context.Context, id string) (models.KasusP
 }
 
 func (p *paymentTiruan) TulisPayment(_ context.Context, _ *db.Tx, _ string, k models.SimpanPayment) error {
+	for _, m := range k.MataUang {
+		if err := periksaMask("Total Payment "+m.Baris.Currency, m.SumTotalPayment, m.NetPremium); err != nil {
+			return err
+		}
+		for _, c := range m.Cicilan { // INSTALLMENT_PERCENTAGE = VARCHAR2, bukan angkaMasuk
+			if err := periksaMask("cicilan "+m.Baris.Currency, c.Premium, c.RICommision, c.Deduction2, c.BrokerageFee, c.PPh, c.PPN,
+				c.Discount, c.PaymentTotal); err != nil {
+				return err
+			}
+		}
+	}
 	p.tulis = append(p.tulis, k)
 	return nil
 }
@@ -170,28 +181,51 @@ func TestSimpanPayment(t *testing.T) {
 // TestProteksiPayment - ProtectPremiPolicy_Act: List Payment kosong; premi 0; total tidak cocok hanya bila KETIGA selisih
 // >= 0.001 (rantai OR Pega, K51-6).
 func TestProteksiPayment(t *testing.T) {
-	if m := proteksiPayment(nil); len(m) != 1 || m[0] != pesanPaymentKosong {
+	if m := proteksiPayment(nil, ""); len(m) != 1 || m[0] != pesanPaymentKosong {
 		t.Fatalf("kosong: %v", m)
 	}
 	baris := models.BarisDeduction{Currency: "IDR", Premium: d("6"), Commision: d("0.6")}
 	cocok := models.MataUangPayment{Baris: baris, NetPremium: d("5.4"), Cicilan: []models.CicilanPayment{{Premium: d("6"), RICommision: d("0.6"), PaymentTotal: d("5.4")}}}
-	if m := proteksiPayment([]models.MataUangPayment{cocok}); len(m) != 0 {
+	if m := proteksiPayment([]models.MataUangPayment{cocok}, ""); len(m) != 0 {
 		t.Fatalf("cocok: %v", m)
 	}
 	satuBeda := cocok
 	satuBeda.Cicilan = []models.CicilanPayment{{Premium: d("5"), RICommision: d("0.6"), PaymentTotal: d("5.4")}}
-	if m := proteksiPayment([]models.MataUangPayment{satuBeda}); len(m) != 0 {
+	if m := proteksiPayment([]models.MataUangPayment{satuBeda}, ""); len(m) != 0 {
 		t.Fatalf("satu beda (verbatim lolos): %v", m)
 	}
 	semuaBeda := cocok
 	semuaBeda.Cicilan = []models.CicilanPayment{{Premium: d("5"), RICommision: d("0.5"), PaymentTotal: d("4")}}
-	if m := proteksiPayment([]models.MataUangPayment{semuaBeda}); len(m) != 1 || m[0] != pesanTotalTakCocok {
+	if m := proteksiPayment([]models.MataUangPayment{semuaBeda}, ""); len(m) != 1 || m[0] != pesanTotalTakCocok {
 		t.Fatalf("semua beda: %v", m)
 	}
 	nol := models.MataUangPayment{Baris: models.BarisDeduction{Currency: "IDR", Premium: d("0")}, NetPremium: d("0"),
 		Cicilan: []models.CicilanPayment{{Premium: d("0"), RICommision: d("0"), PaymentTotal: d("0")}}}
-	if m := proteksiPayment([]models.MataUangPayment{nol}); len(m) != 1 || m[0] != pesanPremiNol {
+	if m := proteksiPayment([]models.MataUangPayment{nol}, ""); len(m) != 1 || m[0] != pesanPremiNol {
 		t.Fatalf("premi 0: %v", m)
+	}
+	// Work owner 09-10-2026 "Samakan dengan Pega": langkah 11 dilewati untuk Master Policy (kode "1"); kode lain tetap.
+	for pt, ditahan := range map[string]bool{"1": false, "0": true, "2": true} {
+		if m := proteksiPayment([]models.MataUangPayment{nol}, pt); (len(m) == 1 && m[0] == pesanPremiNol) != ditahan {
+			t.Errorf("premi 0 PolicyType %q: %v", pt, m)
+		}
+	}
+}
+
+// TestPolicyTypeKasusPayment - Save Payment membaca Policy Type case lewat kodePolicyType (label lama "Master Policy" -> "1");
+// tanpa pembaca kasus -> "" (tanpa gerbang); case tidak ada -> 404.
+func TestPolicyTypeKasusPayment(t *testing.T) {
+	ctx := context.Background()
+	kasus := &models.Kasus{CaseID: "NB-1", General: models.General{PolicyType: "Master Policy"}}
+	svc := Baru(nil).DenganKasus(kasusTiruan{ada: map[string]*models.Kasus{"NB-1": kasus}})
+	if pt, err := svc.policyTypeKasus(ctx, "NB-1"); err != nil || pt != "1" {
+		t.Errorf("label: %q %v", pt, err)
+	}
+	if _, err := svc.policyTypeKasus(ctx, "NB-9"); !errors.Is(err, ErrKasusTidakAda) {
+		t.Errorf("404: %v", err)
+	}
+	if pt, err := Baru(nil).policyTypeKasus(ctx, "NB-1"); err != nil || pt != "" {
+		t.Errorf("tanpa pembaca: %q %v", pt, err)
 	}
 }
 
@@ -208,5 +242,29 @@ func TestTampilanPayment(t *testing.T) {
 	}
 	if _, err := Baru(nil).TampilanPayment(context.Background(), "NB-1"); !errors.Is(err, ErrPaymentTanpaDatabase) {
 		t.Fatalf("503: %v", err)
+	}
+}
+
+// TestSimpanPaymentMasterPolicy - Save Payment premi 0 (% Share 0): Individual Policy -> 400 memuat "Premi on paymnet can't be 0";
+// Master Policy (label lama maupun kode) -> pesan itu TIDAK ada (langkah 11 dilewati, work owner 09-10-2026 "Samakan dengan Pega").
+// Galat lain fixture (Total Payment negatif karena Deduction2) tetap ada di keduanya - hanya pesan premi 0 yang diuji.
+func TestSimpanPaymentMasterPolicy(t *testing.T) {
+	ctx := context.Background()
+	c := func(ps ...string) []models.CicilanPayment {
+		var out []models.CicilanPayment
+		for _, x := range ps {
+			out = append(out, models.CicilanPayment{Persen: d(x), DueDate: "20250402"})
+		}
+		return out
+	}
+	for pt, ditahan := range map[string]bool{"0": true, "Individual Policy": true, "1": false, "Master Policy": false} {
+		p := &paymentTiruan{}
+		kasus := &models.Kasus{CaseID: "NB-1", General: models.General{PolicyType: pt}}
+		svc := layananPayment(p).DenganKasus(kasusTiruan{ada: map[string]*models.Kasus{"NB-1": kasus}})
+		svc.spreading.(*spreadingTiruan).baca = []models.KasusSpreading{kasusDuaItem("0", "USD")}
+		_, err := svc.SimpanPayment(ctx, pelakuUji, "NB-1", isianPaymentUji("2", c("60", "40"), c("60", "40")))
+		if !errors.Is(err, ErrMasukanPayment) || strings.Contains(err.Error(), pesanPremiNol) != ditahan || len(p.tulis) != 0 {
+			t.Errorf("%q: %v (tulis %d)", pt, err, len(p.tulis))
+		}
 	}
 }

@@ -111,7 +111,7 @@ function PopupOkupasi({ onTutup, onPilih }: { onTutup: () => void; onPilih: (b: 
                   <td>{b.oldId}</td>
                   <td>{b.name}</td>
                   <td className="table__actions">
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => onPilih(b)}>
+                    <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" onClick={() => onPilih(b)}>
                       {POPUP_OKUPASI.pilih.label}
                     </button>
                   </td>
@@ -173,7 +173,7 @@ function PopupKonstruksi({
                 <tr key={`${i}-${b.description}`}>
                   <td>{b.description}</td>
                   <td className="table__actions">
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => onPilih(b)}>
+                    <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" onClick={() => onPilih(b)}>
                       {POPUP_KONSTRUKSI.pilih.label}
                     </button>
                   </td>
@@ -221,7 +221,7 @@ export default function SubTabOkupasi({
               <th scope="col" className="table__actions">
                 <button
                   type="button"
-                  className="btn btn--ghost btn--sm"
+                  className="btn nbf-tema__tombol btn--ghost btn--sm"
                   onClick={() => {
                     ubah([...occupations, okupasiBaru()])
                     setTerbuka((t) => [...t, occupations.length])
@@ -243,7 +243,7 @@ export default function SubTabOkupasi({
                 <td>
                   <button
                     type="button"
-                    className="btn btn--ghost btn--sm"
+                    className="btn nbf-tema__tombol btn--ghost btn--sm"
                     aria-label={TEKS_OBJEK.bukaBaris}
                     aria-expanded={terbuka.includes(n)}
                     onClick={() => setTerbuka((t) => (t.includes(n) ? t.filter((x) => x !== n) : [...t, n]))}
@@ -257,7 +257,7 @@ export default function SubTabOkupasi({
                 <td className="table__actions">
                   <button
                     type="button"
-                    className="btn btn--ghost btn--sm"
+                    className="btn nbf-tema__tombol btn--ghost btn--sm"
                     onClick={() => {
                       ubah(occupations.filter((_, x) => x !== n))
                       setTerbuka((t) => t.filter((x) => x !== n).map((x) => (x > n ? x - 1 : x)))
@@ -273,7 +273,7 @@ export default function SubTabOkupasi({
                     <div className="nbf-objek__isi nbf-ringkas">
                       <div className="nbf-ringkas__grid">
                         <div className="nbf-opp__tombol nbf-ringkas__lebar">
-                          <button type="button" className="btn btn--sm" onClick={() => setPopup({ jenis: 'okupasi', n })}>
+                          <button type="button" className="btn nbf-tema__tombol btn--sm" onClick={() => setPopup({ jenis: 'okupasi', n })}>
                             {F.pilihOkupasi.label}
                           </button>
                         </div>
@@ -284,7 +284,7 @@ export default function SubTabOkupasi({
                         <div className="nbf-opp__tombol nbf-ringkas__lebar">
                           <button
                             type="button"
-                            className="btn btn--sm"
+                            className="btn nbf-tema__tombol btn--sm"
                             onClick={() => {
                               // Hanya ditahan bila Occupation belum dipilih sama sekali. Category kosong (KDRiskExposure
                               // selain 01/02/03) TETAP membuka popup - Pega pun membukanya; backend membuang saringan

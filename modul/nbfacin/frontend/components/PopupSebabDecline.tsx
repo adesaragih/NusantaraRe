@@ -63,13 +63,13 @@ export default function PopupSebabDecline({
       lebar
       aksi={
         <>
-          <button type="button" className="btn" onClick={() => setPesan(validasiSebab(pilihan, pilihNonTc))}>
+          <button type="button" className="btn nbf-tema__tombol" onClick={() => setPesan(validasiSebab(pilihan, pilihNonTc))}>
             {S.cek}
           </button>
           {lolos && (
             <button
               type="button"
-              className="btn btn--primary"
+              className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary"
               onClick={() => onSubmit({ pilihan, nonTc: pilihNonTc, komentar: komentarDecline(pilihan, pilihNonTc) })}
             >
               {S.submit}

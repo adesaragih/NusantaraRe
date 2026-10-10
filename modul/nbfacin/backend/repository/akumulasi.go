@@ -119,16 +119,18 @@ func sqlAkumulasiWilayah(acc, rw string, kecamatan bool) string {
 }
 
 // sqlAkumulasiPolis - GetSummaryRiskAccumPolis_Sql dipersempit ke yang dipakai langkah 6.6 (AccumulationCode -> CARI1,
-// accumulationname -> CARI2, note -> CARI3; ganda dibuang): JSON_TABLE jalur `$.LocationList[*]` >
-// `$.Property.PropertyItemList[*]` > `$.CoverageList[*]` `$.AccumulationCode` persis seperti SQL asal; subkueri dengan MAX
-// (SQL asal bisa ORA-01427 bila ID ganda, A175); kode kosong dibuang (A175). SELECT biasa - nol prosedur (ADR-0043).
-func sqlAkumulasiPolis(polis, acc string) string {
+// accumulationname -> CARI2, note -> CARI3; ganda dibuang). Keputusan work owner 09-10-2026 "sistem baru tidak pakai data_json
+// lgi" (ADR-0028): sumbernya TABEL POOLDATA.FACINPRODUCTION.ACCUMULATIONCODE per NOPOLIS (sumber yang sama dengan
+// GetCountAccumulation), bukan JSON_TABLE atas JSON_POLIS.DATA_JSON. ⚠️ Beda dengan asal: FACINPRODUCTION hanya memuat
+// coverage yang punya baris spreading (satu baris per SpreadingList; coverage basis 5 tanpa LayerList tidak ada), sedangkan
+// JSON_TABLE asal (NESTED PATH) juga memungut coverage tanpa spreading. Baris endorsement (NOENDORS terisi) ikut, seperti
+// semua baris JSON_POLIS ber-NOPOLIS itu. Subkueri dengan MAX (ORA-01427 bila ID ganda, A175); kode kosong dibuang (A175).
+// SELECT biasa - nol prosedur (ADR-0043).
+func sqlAkumulasiPolis(prod, acc string) string {
 	return "SELECT j.ACCUMULATIONCODE, (SELECT MAX(x.ACCUMULATIONNAME) FROM " + acc + " x WHERE x.ID = j.ACCUMULATIONCODE), " +
-		"(SELECT MAX(x.NOTE) FROM " + acc + " x WHERE x.ID = j.ACCUMULATIONCODE) FROM (SELECT DISTINCT jt.ACCUMULATIONCODE FROM " +
-		polis + " p, JSON_TABLE(p.DATA_JSON, '$.LocationList[*]' COLUMNS (NESTED PATH '$.Property.PropertyItemList[*]' COLUMNS " +
-		"(NESTED PATH '$.CoverageList[*]' COLUMNS (ACCUMULATIONCODE VARCHAR2(100) PATH '$.AccumulationCode')))) jt " +
-		"WHERE p.NOPOLIS = :1 AND jt.ACCUMULATIONCODE IS NOT NULL AND EXISTS (SELECT 1 FROM " + acc + " x WHERE x.ID = jt.ACCUMULATIONCODE " +
-		"AND x." + syaratMasterAktif + ")) j ORDER BY j.ACCUMULATIONCODE FETCH FIRST :2 ROWS ONLY"
+		"(SELECT MAX(x.NOTE) FROM " + acc + " x WHERE x.ID = j.ACCUMULATIONCODE) FROM (SELECT DISTINCT p.ACCUMULATIONCODE FROM " +
+		prod + " p WHERE p.NOPOLIS = :1 AND p.ACCUMULATIONCODE IS NOT NULL AND EXISTS (SELECT 1 FROM " + acc +
+		" x WHERE x.ID = p.ACCUMULATIONCODE AND x." + syaratMasterAktif + ")) j ORDER BY j.ACCUMULATIONCODE FETCH FIRST :2 ROWS ONLY"
 }
 
 // saranRD - satu autocomplete: tabel, kolom laporan RD (`unik` = pyGetDistinctRows), kolom id / label (medan cari,
@@ -251,11 +253,11 @@ func (r *AkumulasiOracle) AkumulasiWilayah(ctx context.Context, kecamatan bool, 
 
 // AkumulasiPolis - lihat PembacaAkumulasi.
 func (r *AkumulasiOracle) AkumulasiPolis(ctx context.Context, noPolis string) ([]models.BarisAkumulasi, error) {
-	polis, acc, err := r.qualifyDua(TabelJSONPolis, TabelAccumulation)
+	prod, acc, err := r.qualifyDua(TabelFacInProduction, TabelAccumulation)
 	if err != nil {
 		return nil, err
 	}
-	return r.bacaAkumulasi(ctx, TabelJSONPolis, sqlAkumulasiPolis(polis, acc), noPolis, BatasAkumulasi)
+	return r.bacaAkumulasi(ctx, TabelFacInProduction, sqlAkumulasiPolis(prod, acc), noPolis, BatasAkumulasi)
 }
 
 // Saran - lihat PembacaAkumulasi. Jenis tak dikenal -> galat (services memeriksanya lebih dulu).

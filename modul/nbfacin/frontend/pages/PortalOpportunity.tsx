@@ -77,15 +77,15 @@ export default function PortalOpportunity({
         <div className="alert alert--ok nbf-portal__pesan">
           <span>{pesan}</span>
           {onTutupPesan && (
-            <button type="button" className="btn btn--ghost btn--sm" aria-label="Tutup" onClick={onTutupPesan}>
+            <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" aria-label="Tutup" onClick={onTutupPesan}>
               ✕
             </button>
           )}
         </div>
       )}
-      <section className="inbox">
+      <section className="inbox nbf-tema">
         <header className="inbox__kepala">
-          <h2 className="inbox__judul">{KEPALA_PORTAL.judul.label}</h2>
+          <h2 className="inbox__judul nbf-tema__judul">{KEPALA_PORTAL.judul.label}</h2>
         </header>
         <form
           className="toolbar"
@@ -95,7 +95,7 @@ export default function PortalOpportunity({
           }}
         >
           <input
-            className="field__input nbf-saring__kotak"
+            className="field__input nbf-tema__isian nbf-saring__kotak"
             type="search"
             aria-label={SARING_PORTAL.label.label}
             placeholder={SARING_PORTAL.placeholder.label}
@@ -104,7 +104,7 @@ export default function PortalOpportunity({
           />
           <button
             type="button"
-            className="btn btn--ghost btn--sm"
+            className="btn btn--ghost btn--sm nbf-tema__tombol"
             aria-label={TEKS_PORTAL.hapusIsian}
             onClick={() => {
               setKotak('')
@@ -113,18 +113,20 @@ export default function PortalOpportunity({
           >
             ✕
           </button>
-          <button type="submit" className="btn btn--sm" disabled={memuat}>
+          <button type="submit" className="btn btn--sm nbf-tema__tombol" disabled={memuat}>
             {SARING_PORTAL.tombol.label}
           </button>
           <span className="toolbar__spacer" />
-          <button type="button" className="btn btn--primary" onClick={onBuat}>
+          <button type="button" className="btn btn--primary nbf-tema__tombol nbf-tema__tombol--utama" onClick={onBuat}>
             {KEPALA_PORTAL.buat.label}
           </button>
         </form>
         {hasil && hasil.baris.length > 0 && (
-          <Halaman halaman={hasil.halaman} ukuran={hasil.ukuran} total={hasil.total} onPindah={(h) => void muat(kunciCari.current, h)} />
+          <div className="nbf-tema__pager">
+            <Halaman halaman={hasil.halaman} ukuran={hasil.ukuran} total={hasil.total} onPindah={(h) => void muat(kunciCari.current, h)} />
+          </div>
         )}
-        <table className="inbox__tabel">
+        <table className="inbox__tabel nbf-tema__tabel">
             <thead>
               <tr>
                 {KOLOM_PORTAL.map((k) => (

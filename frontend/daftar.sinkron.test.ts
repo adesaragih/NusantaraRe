@@ -30,11 +30,16 @@ const DAFTAR = daftarPalet(PALET.entri)
 describe('sidebar ↔ palet, dua arah', () => {
   it('palet = Beranda + satu entri per tombol modul yang dapat dibuka, urutan sidebar', () => {
     const dariSidebar = PALET.golongan.flatMap((g) => g.modul.flatMap((t) => (t.halaman === null ? [] : [[t.halaman, t.label]])))
-    expect(PALET.entri.map((e) => [e.modul, e.label])).toEqual([['beranda', 'Home'], ...dariSidebar])
+    // Tombol di bawah Beranda (`MenuModul.menuAtas`, 09-10-2026) berdiri sesudah Beranda, sebelum tombol modul.
+    const dariAtas = PALET.atas.map((e) => [e.modul, e.label])
+    expect(PALET.entri.map((e) => [e.modul, e.label])).toEqual([['beranda', 'Home'], ...dariAtas, ...dariSidebar])
     expect(dariSidebar).toHaveLength(MODUL_FRONTEND.length)
-    // Label entri palet = LABEL tabel = nama folder korpus.
+    // Setiap tombol atas milik modul yang tombolnya TAMPIL.
+    const tampil = new Set(PALET.golongan.flatMap((g) => g.modul.filter((t) => t.halaman !== null).map((t) => t.kode)))
+    for (const e of PALET.atas) expect(tampil.has(e.pemilik ?? ''), e.modul).toBe(true)
+    // Label entri palet modul = LABEL tabel = nama folder korpus.
     const sah = new Set<string>(Object.values(LABEL_MENU))
-    for (const e of PALET.entri.slice(1)) expect(sah.has(e.label), e.label).toBe(true)
+    for (const e of PALET.entri.slice(1 + dariAtas.length)) expect(sah.has(e.label), e.label).toBe(true)
   })
 
   it('setiap tombol modul yang Shell render ada di palet', () => {
@@ -54,9 +59,12 @@ describe('sidebar ↔ palet, dua arah', () => {
     expect(SHELL).toContain('tersusun?.golongan.map((g) =>')
     expect(SHELL).toContain('menu={tersusun?.entri ?? berandaSaja}')
     const susun = DAFTAR_MENU.slice(DAFTAR_MENU.indexOf('export function susunMenu'))
-    const masuk = 'modul.push({ kode: m.kode, label: m.label, halaman: r.modul, halamanModul: r.halamanModul ?? [r.modul] })'
+    // 09-10-2026: halaman tombol di bawah Beranda (`menuAtas`) disaring dari halamanModul tombol modul.
+    const masuk = 'halamanModul: (r.halamanModul ?? [r.modul]).filter((h) => !halamanAtas.has(h)),'
+    expect(susun).toContain('halaman: r.modul,')
     expect(susun).toContain(masuk)
-    expect(susun.slice(susun.indexOf(masuk), susun.indexOf(masuk) + 400)).toContain('hasil.entri.push(')
+    expect(susun.slice(susun.indexOf(masuk), susun.indexOf(masuk) + 500)).toContain('hasil.entri.push(')
+    expect(SHELL).toContain('tersusun?.atas.map((e) =>')
   })
 })
 

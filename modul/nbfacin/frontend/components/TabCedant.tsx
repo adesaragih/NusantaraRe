@@ -23,7 +23,7 @@ import { useEffect, useState } from 'react'
 import { Gagal, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { desimalSah, jumlahDesimal, pangkasNolEkor } from '../../../../inti/frontend/lib/desimal'
 import { angka4 } from '../angka4'
-import { ambilCedant, ambilSpreading, simpanCedant, type BarisCedant, type DasarCedant, type TampilanCedant, type TampilanSpreading } from '../api'
+import { ambilCedant, ambilSpreading, ambilSpreadingAneka, simpanCedant, type BarisCedant, type DasarCedant, type TampilanCedant, type TampilanSpreading } from '../api'
 import { CEDANT as C, OPSI_SHARE_CEDANT_TYPE, TEKS_CEDANT as T } from '../labels'
 import IsianAngka4 from './IsianAngka4'
 import { lebihDari100, RingkasanSpreading } from './TabSpreading'
@@ -107,9 +107,10 @@ export function galatCedant(baris: BarisCedant[]): string[] {
   return pesan
 }
 
-export default function TabCedant({ caseId }: { caseId: string }) {
+/** `aneka` (tiket 73 P3): ringkasan dari `…/spreading-aneka` dan grid per mata uang versi `!IsFire` (tanpa Top Risk). */
+export default function TabCedant({ caseId, aneka = false }: { caseId: string; aneka?: boolean }) {
   const [v, setV] = useState<TampilanCedant | null>(null)
-  const [sp, setSp] = useState<TampilanSpreading | null>(null)
+  const [sp, setSp] = useState<Pick<TampilanSpreading, 'ringkasanTreaty' | 'ringkasanMataUang'> | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [cobaSimpan, setCobaSimpan] = useState(false)
   const [menyimpan, setMenyimpan] = useState(false)
@@ -129,7 +130,7 @@ export default function TabCedant({ caseId }: { caseId: string }) {
       },
     )
     // Total per mata uang (Dtl layout S62 `IsFire`: grid `TotalSpreadAll.pxResults`) = ringkasan tab Spreading.
-    ambilSpreading(caseId).then(
+    ;(aneka ? ambilSpreadingAneka : ambilSpreading)(caseId).then(
       (h) => {
         if (!batal) setSp(h)
       },
@@ -149,7 +150,8 @@ export default function TabCedant({ caseId }: { caseId: string }) {
     setTersimpan(false)
   }
   const ubahBaris = (n: number, b: Partial<BarisCedant>) => ubah({ cedant: v.cedant.map((x, k) => (k === n ? { ...x, ...b } : x)) })
-  const typeKosong = v.wajib && v.shareCedantType === ''
+  const typeWajib = v.wajib || v.wajibType === true
+  const typeKosong = typeWajib && v.shareCedantType === ''
   const pesan = v.wajib ? galatCedant(v.cedant) : []
   const shareLebih = adaShareLebih(v.cedant)
   const totalLebih = totalShareLebih(v.cedant)
@@ -193,7 +195,7 @@ export default function TabCedant({ caseId }: { caseId: string }) {
           <div className="nbf-cedant__medan">
             <span className="nbf-cedant__label">
               {C.shareCedantType}
-              {v.wajib && <span className="field__req">*</span>}
+              {typeWajib && <span className="field__req">*</span>}
             </span>
             <div className="nbf-cedant__tipe" role="radiogroup" aria-label={C.shareCedantType}>
               {OPSI_SHARE_CEDANT_TYPE.map((o) => (
@@ -250,7 +252,7 @@ export default function TabCedant({ caseId }: { caseId: string }) {
                 <th scope="col" className="table__actions">
                   <button
                     type="button"
-                    className="btn btn--sm"
+                    className="btn nbf-tema__tombol btn--sm"
                     onClick={() => {
                       const hasil = tambahCedant(v.cedant, v.cedingUmum)
                       setTanpaTambahan(hasil.length === v.cedant.length)
@@ -288,7 +290,7 @@ export default function TabCedant({ caseId }: { caseId: string }) {
                     <td>{b.cedingCoName || '—'}</td>
                     <td className="nbf-angka">{b.shareCeding === '' ? '—' : angka4(b.shareCeding)}</td>
                     <td className="table__actions">
-                      <button type="button" className="btn btn--sm" onClick={() => hapusBaris(n)}>
+                      <button type="button" className="btn nbf-tema__tombol btn--sm" onClick={() => hapusBaris(n)}>
                         {C.hapus}
                       </button>
                     </td>
@@ -362,10 +364,10 @@ export default function TabCedant({ caseId }: { caseId: string }) {
           ))}
       </section>
 
-      {sp !== null && <RingkasanSpreading v={sp} hanyaMataUang />}
+      {sp !== null && <RingkasanSpreading v={sp} hanyaMataUang tanpaTopRisk={aneka} />}
 
       <div className="nbf-objek__kaki">
-        <button type="button" className="btn btn--primary" onClick={() => void simpan()} disabled={menyimpan}>
+        <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" onClick={() => void simpan()} disabled={menyimpan}>
           {menyimpan ? T.menyimpan : T.simpan}
         </button>
       </div>

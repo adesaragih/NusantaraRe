@@ -124,7 +124,7 @@ export default function IsianSaran({
             <li key={`${i}-${s.id}`}>
               <button
                 type="button"
-                className="btn btn--ghost btn--sm"
+                className="btn nbf-tema__tombol btn--ghost btn--sm"
                 onClick={() => {
                   diketik.current = false
                   setKetik(false)

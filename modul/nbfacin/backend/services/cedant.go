@@ -40,8 +40,9 @@ const (
 	pesanCedantKosong = "List Inward facultative cedant can't be null!"           // ProtectShareCedant_Act 6
 	pesanShareCeding  = "Value can't be more than 100 or less than 0!"            // SetTSIPremiCedant_Act
 	pesanTotalPremi   = "Total premi share cedant must be equal total premi RNM!" // ProtectShareCedant_Act 5
-	// pesanTipeCedantWajib - pesan agent: Share Cedant Type wajib (Section `.FlagOnGoingPolicy ==2 || IsGroup`, K49-2).
-	pesanTipeCedantWajib = "Share Cedant Type wajib diisi"
+	// pesanTipeCedantWajib - Share Cedant Type wajib (Section `InputInwardFacultativeDtl` pyRequiredWhen `.FlagOnGoingPolicy ==2
+	// || IsGroup`, K49-2); teks = pilihan work owner 08-10-2026 tiket 64d K2 (Pega: pesan bawaan platform, tidak di korpus).
+	pesanTipeCedantWajib = "Share Cedant Type wajib diisi."
 	// pesanTotalShareCedant - pesan agent C-7 (work owner 05-10-2026 "ini masa bisa lebih dari 100%"): Σ ShareCeding > 100.
 	pesanTotalShareCedant = "Total % Share cedant tidak boleh lebih dari 100."
 	tipeCedantGross       = "0" // DDL\ShareCedantType.xml
@@ -62,9 +63,11 @@ type TampilanCedant struct {
 	SobName, ShareCedantType, ShareOfCeding  string
 	PercentShare, TotalTSIRNM, TotalPremiRNM *apd.Decimal
 	Wajib                                    bool
-	Cedant, CedingUmum                       []models.BarisCedant
-	DasarMataUang                            []DasarMataUangCedant
-	KursTidakAda                             []string
+	// WajibType - tiket 64d K2: Share Cedant Type wajib = Wajib ATAU tahap Binding; menggerbang Share Cedant Type SAJA.
+	WajibType          bool
+	Cedant, CedingUmum []models.BarisCedant
+	DasarMataUang      []DasarMataUangCedant
+	KursTidakAda       []string
 }
 
 // mataUangKosong - penanda KursTidakAda untuk item tanpa mata uang (tidak dapat dikonversi).
@@ -84,6 +87,11 @@ type jumlahMataUang struct {
 type DasarMataUangCedant struct {
 	Currency                                   string
 	TSIRNM, PremiumRNM, TSIGross, PremiumGross *apd.Decimal
+}
+
+// wajibTipeCedant - tiket 64d K2: proteksi ShareCedant berlaku (`wajib`) ATAU case di tahap Binding (KunciPeriode).
+func (s *Service) wajibTipeCedant(ctx context.Context, id string, k models.KasusCedant) bool {
+	return proteksiCedantBerlaku(gerbangKasus(k)) || s.KunciPeriode(ctx, id)
 }
 
 // gerbangCedant - masukan langkah 1 ProtectShareCedant_Act.
@@ -170,6 +178,9 @@ func ringkasanRNM(k models.KasusSpreading) (premiMentah *apd.Decimal, jumlah []j
 	if k.PercentShare == nil {
 		return nil, jumlah, dasar
 	}
+	// Salinan DALAM: k by value tetap berbagi backing array Lokasi / Items / Coverages dengan pemanggil; hitungNR atas salinan
+	// dangkal menimpa TSI / premi NR pemanggil dengan nilai skala 20 (bug DEV 08-10-2026: PUT spreading uw -> ORA-01722).
+	k = salinDalamSpreading(k)
 	hitungNR(&k)
 	premiMentah = nol()
 	var urut []string
@@ -273,7 +284,7 @@ func (s *Service) TampilanCedant(ctx context.Context, id string) (TampilanCedant
 	if err != nil {
 		return TampilanCedant{}, galatKasus(err)
 	}
-	sp, err := s.spreading.BacaSpreading(ctx, nil, id)
+	sp, err := s.bacaSpreadingRingkas(ctx, nil, id)
 	if err != nil {
 		return TampilanCedant{}, galatKasus(err)
 	}
@@ -288,7 +299,7 @@ func (s *Service) TampilanCedant(ctx context.Context, id string) (TampilanCedant
 	}
 	return TampilanCedant{SobName: k.SobName, ShareCedantType: k.ShareCedantType, ShareOfCeding: k.ShareOfCeding,
 		PercentShare: simpan8(sp.PercentShare), TotalTSIRNM: simpan8(tsi), TotalPremiRNM: simpan8(premi),
-		Wajib: proteksiCedantBerlaku(gerbangKasus(k)), Cedant: k.Cedant, CedingUmum: k.CedingUmum, DasarMataUang: dasar,
+		Wajib: proteksiCedantBerlaku(gerbangKasus(k)), WajibType: s.wajibTipeCedant(ctx, id, k), Cedant: k.Cedant, CedingUmum: k.CedingUmum, DasarMataUang: dasar,
 		KursTidakAda: tidakAda}, nil
 }
 
@@ -333,20 +344,21 @@ func (s *Service) SimpanCedant(ctx context.Context, pelaku inti.Pelaku, id, tipe
 	if err != nil {
 		return TampilanCedant{}, galatKasus(err)
 	}
+	var m []string
+	if tipe == "" && s.wajibTipeCedant(ctx, id, k) {
+		m = append(m, pesanTipeCedantWajib)
+	}
 	if proteksiCedantBerlaku(gerbangKasus(k)) {
-		sp, err := s.spreading.BacaSpreading(ctx, nil, id)
+		sp, err := s.bacaSpreadingRingkas(ctx, nil, id)
 		if err != nil {
 			return TampilanCedant{}, galatKasus(err)
 		}
 		// K49-11: dibandingkan dalam angka asli tanpa kurs, seperti Pega (TotalPremiNusaRe mentah vs Σ premi cedant mentah).
 		premiMentah, _, dasar := ringkasanRNM(sp)
-		m := periksaProteksiCedant(baris, tipe, dasar, premiMentah)
-		if tipe == "" {
-			m = append([]string{pesanTipeCedantWajib}, m...)
-		}
-		if len(m) > 0 {
-			return TampilanCedant{}, fmt.Errorf("%w: %s", ErrMasukanCedant, strings.Join(m, "; "))
-		}
+		m = append(m, periksaProteksiCedant(baris, tipe, dasar, premiMentah)...)
+	}
+	if len(m) > 0 {
+		return TampilanCedant{}, fmt.Errorf("%w: %s", ErrMasukanCedant, strings.Join(m, "; "))
 	}
 	// % Share RNM untuk SetShareOfCeding dibaca di transaksi yang sama dengan penulisan (bukan dari baca sebelumnya).
 	err = s.transaksi(ctx, func(tx *db.Tx) error {

@@ -96,6 +96,13 @@ export interface MenuModul<H extends string = HalamanTerdaftar> {
    * yang ia pegang), ditampilkan di Beranda. Tanpa penyedia ini klik di Beranda membuka halaman awal modul.
    */
   daftarBeranda?: (workbasket: string | null) => Promise<DaftarBeranda>
+  /**
+   * Opsional dan aditif (09-10-2026, work owner "View Policy dibuatin di menu baru. dibawah menu home"): tombol sidebar
+   * TAMBAHAN yang berdiri di bawah Beranda, di luar golongan - mis. menu View Policy milik NB FacIn. Tampil hanya bila tombol
+   * modul pemiliknya tampil untuk akun itu (baris M_NAV_MENU dimigrasi, modul aktif, menu dipegang akun); halamannya wajib
+   * salah satu `halaman` modul. Pengecualian sadar atas "satu modul satu menu" (30-09-2026).
+   */
+  menuAtas?: readonly { label: string; halaman: H }[]
 }
 
 /** Bentuk ekspor `RUTE_MODUL` di `modul/<nama>/frontend/rute.tsx`. */
@@ -149,6 +156,8 @@ export interface ModulFrontend<H extends string> {
   antreanBeranda?: () => Promise<AntreanBeranda[]>
   /** Penyedia daftar kotak masuk Beranda (lihat `MenuModul.daftarBeranda`). */
   daftarBeranda?: (workbasket: string | null) => Promise<DaftarBeranda>
+  /** Tombol sidebar di bawah Beranda (lihat `MenuModul.menuAtas`). */
+  menuAtas?: readonly { label: string; halaman: H }[]
   /**
    * Komponen rute. ⛔ Ia TETAP terpasang selama modulnya aktif, supaya
    * keadaannya (kasus yang sedang dibuka) bertahan saat pemakai pindah

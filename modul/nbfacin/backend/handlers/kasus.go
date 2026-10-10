@@ -49,6 +49,52 @@ type kasusKabel struct {
 	// BolehUbah / AlasanBacaSaja - case baca-saja sesudah keluar dari tahap marketing (aturan bersama Submit, bacasaja.go).
 	BolehUbah      bool   `json:"bolehUbah"`
 	AlasanBacaSaja string `json:"alasanBacaSaja"`
+	// BolehUbahSpreading / UbahBarisSpreading - tiket 59: tab Spreading dapat diubah (marketing / Team Leader seperti
+	// bolehUbah, ATAU tahap uw = When IsUWSpread + workbasket posisi); grid baris spreading (Add / Delete / Treaty Type /
+	// % Share, Copy Spreading) HANYA tahap uw.
+	BolehUbahSpreading bool `json:"bolehUbahSpreading"`
+	UbahBarisSpreading bool `json:"ubahBarisSpreading"`
+	// UbahAkumulasi - tiket 60: Accumulation Code / Address coverage dapat diubah (PUT …/akumulasi) - tahap uw (When
+	// IsUWSpread, K60-2) + workbasket posisi.
+	UbahAkumulasi bool `json:"ubahAkumulasi"`
+	// KunciPeriode - tiket 64d K1: Begin / End date terkunci (tahap Binding).
+	KunciPeriode bool `json:"kunciPeriode"`
+	// BolehFollowing - tiket 70 (A70-4): tombol Search Following Policy (boleh ubah + ConfirmBinding != 1).
+	BolehFollowing bool `json:"bolehFollowing"`
+	// BusinessType / Lini - tiket 73 P0: BusinessType_DeT atas BUSINESS GROUPPANEL + OLDID dan predikat When korpus
+	// (gerbang tab menurut Class of Business, bukan groupBusiness).
+	BusinessType string    `json:"businessType"`
+	Lini         liniKabel `json:"lini"`
+	// TampilanAneka - tiket 73 P1: kontainer form objek Aneka + sakelar (services.TampilanAneka).
+	TampilanAneka tampilanAnekaKabel `json:"tampilanAneka"`
+}
+
+// tampilanAnekaKabel - services.TampilanAneka; kontainer selalu larik ("C1".."C9", [] di luar gerbang tab Object Aneka).
+type tampilanAnekaKabel struct {
+	Kontainer        []string `json:"kontainer"`
+	KolomTahunJumlah bool     `json:"kolomTahunJumlah"`
+	HE               bool     `json:"he"`
+	Golf             bool     `json:"golf"`
+	TanamanHasil     bool     `json:"tanamanHasil"`
+	Engineering      bool     `json:"engineering"`
+	Bonding          bool     `json:"bonding"`
+	Briguna          bool     `json:"briguna"`
+	TopRisk          bool     `json:"topRisk"`
+	SectionLol       bool     `json:"sectionLol"`
+	JumlahSatuan     bool     `json:"jumlahSatuan"`
+	// Tiket 73 P2 - form coverage Aneka.
+	CurrencyCoverage bool `json:"currencyCoverage"`
+	MBD              bool `json:"mbd"`
+}
+
+// liniKabel - hasil predikat When per lini (services.LiniKasus).
+type liniKabel struct {
+	Fire            bool `json:"fire"`
+	Aneka           bool `json:"aneka"`
+	AnekaNotBonding bool `json:"anekaNotBonding"`
+	Liability       bool `json:"liability"`
+	Bonding         bool `json:"bonding"`
+	Golf            bool `json:"golf"`
 }
 
 // denganAksesTab - aksesLossRecord / aksesKorespondensi dari satu pembacaan lunak JOB_POSITION; bolehUbah / alasanBacaSaja
@@ -58,6 +104,22 @@ func denganAksesTab(out kasusKabel, svc *services.Service, r *http.Request, stub
 	akses := svc.AksesTabIT(r.Context(), pelaku)
 	out.AksesLossRecord, out.AksesKorespondensi = akses, akses
 	out.BolehUbah, out.AlasanBacaSaja = svc.AksesUbahKasus(r.Context(), pelaku, r.PathValue("caseId"))
+	out.BolehUbahSpreading, out.UbahBarisSpreading = svc.AksesSpreading(r.Context(), pelaku, r.PathValue("caseId"))
+	out.UbahAkumulasi = svc.AksesAkumulasi(r.Context(), pelaku, r.PathValue("caseId"))
+	out.KunciPeriode = svc.KunciPeriode(r.Context(), r.PathValue("caseId"))
+	out.BolehFollowing = svc.AksesFollowing(r.Context(), pelaku, r.PathValue("caseId"))
+	l := svc.LiniKasus(r.Context(), r.PathValue("caseId"))
+	out.BusinessType = l.BusinessType
+	out.Lini = liniKabel{Fire: l.Fire, Aneka: l.Aneka, AnekaNotBonding: l.AnekaNotBonding, Liability: l.Liability, Bonding: l.Bonding,
+		Golf: l.Golf}
+	a := l.TampilanAneka
+	if a.Kontainer == nil {
+		a.Kontainer = []string{}
+	}
+	out.TampilanAneka = tampilanAnekaKabel{Kontainer: a.Kontainer, KolomTahunJumlah: a.KolomTahunJumlah, HE: a.HE, Golf: a.Golf,
+		TanamanHasil: a.TanamanHasil, Engineering: a.Engineering, Bonding: a.Bonding, Briguna: a.Briguna, TopRisk: a.TopRisk,
+		SectionLol: a.SectionLol, JumlahSatuan: a.JumlahSatuan,
+		CurrencyCoverage: a.CurrencyCoverage, MBD: a.MBD}
 	return out
 }
 

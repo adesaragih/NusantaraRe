@@ -9,7 +9,7 @@ import (
 	"nusantarare/inti/backend/migrasi"
 )
 
-// tipeAkhirMigrasi - tipe kolom tabel flat sesudah migrasi nbfacin 182..205 dan 208 dijalankan BERURUTAN, pernyataan demi
+// tipeAkhirMigrasi - tipe kolom tabel flat sesudah migrasi nbfacin 182..205, 208, 210, 212, 213 dan 214 dijalankan BERURUTAN, pernyataan demi
 // pernyataan: CREATE TABLE, ALTER ... ADD (...), ALTER ... MODIFY (KOLOM TIPE), dan ALTER ... DROP COLUMN (juga di dalam blok
 // berpelindung katalog, `migrasi.KolomAlterBuang`) - 202 membuang lalu menambah ulang PPN_CHECK.
 func tipeAkhirMigrasi(t *testing.T) map[string]map[string]string {
@@ -34,7 +34,8 @@ func tipeAkhirMigrasi(t *testing.T) map[string]map[string]string {
 		"191_t_listcauseofloss.sql", "192_lebar_alamat_risiko.sql",
 		"193_t_coveragelist.sql", "194_t_deductiblelist.sql", "195_t_coveragelist_unit_akumulasi.sql",
 		"198_spreading.sql", "199_cedant.sql", "200_premium_deduction.sql", "201_payment.sql", "202_ppn_check_teks.sql",
-		"203_coverage_zona.sql", "204_coverage_zona_4000.sql", "205_scoring_risk.sql", "208_nb_status.sql"} {
+		"203_coverage_zona.sql", "204_coverage_zona_4000.sql", "205_scoring_risk.sql", "208_nb_status.sql", "210_submit_team_leader.sql", "212_submit_uw.sql",
+		"213_form_binding.sql", "214_objek_aneka.sql", "255_pro_rate_percent.sql"} {
 		b, err := os.ReadFile("../../migrations/" + berkas)
 		if err != nil {
 			t.Fatal(err)
@@ -143,13 +144,29 @@ func TestMigrasiFlatSebagianCocokRancangan(t *testing.T) {
 		"T_DATASCORINGRISKLIST.SCORE": "NUMBER(38,8)", "T_SCORING_FACTOR.ID": "NUMBER(19)", "T_SCORING_FACTOR.PARENT_ID": "NUMBER(19)",
 		"T_SCORING_FACTOR.SCORE_PER_FACTOR": "NUMBER(38,8)", "T_SCORING_FACTOR.PERCENT_LOSS_RATIO": "NUMBER(38,8)",
 		"T_SCORING_OPTION.ID": "NUMBER(19)", "T_SCORING_OPTION.PARENT_ID": "NUMBER(19)", "T_SCORING_OPTION.SCORE": "NUMBER(38,8)",
+		// tiket 73 (214): ID / PARENT_ID NUMBER(19) (A92); uang / angka K73-6 NUMBER(38,8) (ADR-0016) - rancangan / amandemen NUMBER
+		// polos; TYPE_OF_DISCOUNT teks (kolomTeksMenyimpang, isi sampel "true").
+		"T_ANEKALIST.ID": "NUMBER(19)", "T_ANEKALIST.PARENT_ID": "NUMBER(19)", "T_ANEKALIST.TSI": "NUMBER(38,8)",
+		"T_ANEKALIST.MAINTENANCE_PERIOD": "NUMBER(38,8)", "T_ANEKALIST.NO_OF_TREE": "NUMBER(38,8)",
+		"T_ANEKALIST.AREA_HECTAR": "NUMBER(38,8)", "T_ANEKALIST.LIMIT_IDEMNITY_DAY": "NUMBER(38,8)",
+		"T_ANEKALIST.LIMIT_IDEMNITY_MONTH": "NUMBER(38,8)", "T_ANEKALIST.LIMIT_OF_LIABILITY": "NUMBER(38,8)",
+		"T_ANEKALIST.TSI_OLD": "NUMBER(38,8)", "T_ANEKALIST.SALARY": "NUMBER(38,8)",
+		"T_MARINEHULL.ID": "NUMBER(19)", "T_MARINEHULL.PARENT_ID": "NUMBER(19)",
+		"T_AVIATIONHULL.ID": "NUMBER(19)", "T_AVIATIONHULL.PARENT_ID": "NUMBER(19)",
+		"T_VEHICLEHE.ID": "NUMBER(19)", "T_VEHICLEHE.PARENT_ID": "NUMBER(19)",
+		"T_MEMORANDUMACCEPT.ID": "NUMBER(19)", "T_MEMORANDUMACCEPT.PARENT_ID": "NUMBER(19)",
+		"T_COVERAGELIST.PCT_SHORT_PERIOD": "NUMBER(38,8)", "T_COVERAGELIST.LOADING": "NUMBER(38,8)",
+		"T_COVERAGELIST.MIN_PREMIUM": "NUMBER(38,8)", "T_COVERAGELIST.TYPE_OF_DISCOUNT": "VARCHAR2(10)",
+		// tiket 73 P2 (255): % Pro Rate case, persen NUMBER(38,8) - rancangan NUMBER polos.
+		"T_GENERAL_POLIS.PRO_RATE_PERCENT": "NUMBER(38,8)",
 	}
 	akhir := tipeAkhirMigrasi(t)
 	diperiksa := 0
 	for _, tabel := range []string{"T_GENERAL_POLIS", "T_QUOTATIONDATA", "T_CEDINGCOLIST", "T_LOCATIONLIST",
 		"T_PROPERTY", "T_RISKLOCATION", "T_BUILDINGCONSTRUCTION", "T_SURROUNDINGRISK", "T_PROPERTYITEMLIST", "T_OCCUPATIONLIST", "T_TABLEOFLIMIT",
 		"T_LISTCAUSEOFLOSS", "T_COINSDATA", "T_COVERAGELIST", "T_DEDUCTIBLELIST", "T_CEDINGCEDANTLIST", "T_CURRENCYLIST", "T_LISTINSTALLMENT",
-		"T_SCORINGRISK", "T_SCORINGRESULT", "T_DATASCORINGRISKLIST", "T_SCORING_FACTOR", "T_SCORING_OPTION"} {
+		"T_SCORINGRISK", "T_SCORINGRESULT", "T_DATASCORINGRISKLIST", "T_SCORING_FACTOR", "T_SCORING_OPTION",
+		"T_ANEKALIST", "T_MARINEHULL", "T_AVIATIONHULL", "T_VEHICLEHE", "T_MEMORANDUMACCEPT"} {
 		for k, tipe := range akhir[tabel] {
 			// "VARCHAR2(10)" dari "VARCHAR2(10) DEFAULT 'UNKNOWN' NOT NULL" - tipe saja yang dibandingkan.
 			if i := indeksKolom(tabel, k); i >= 0 && strings.HasPrefix(skemaTabel[tabel][i].tipe, tipe+" ") {
@@ -174,7 +191,9 @@ func TestMigrasiFlatSebagianCocokRancangan(t *testing.T) {
 	// Dibuat UTUH: setiap kolom rancangan (sesudah amandemen) ada di migrasi.
 	for _, tabel := range []string{"T_CEDINGCOLIST", "T_RISKLOCATION", "T_BUILDINGCONSTRUCTION", "T_SURROUNDINGRISK", "T_TABLEOFLIMIT", "T_LISTCAUSEOFLOSS",
 		"T_COINSDATA", "T_CEDINGCEDANTLIST",
-		"T_SCORINGRISK", "T_SCORINGRESULT", "T_DATASCORINGRISKLIST", "T_SCORING_FACTOR", "T_SCORING_OPTION"} {
+		"T_SCORINGRISK", "T_SCORINGRESULT", "T_DATASCORINGRISKLIST", "T_SCORING_FACTOR", "T_SCORING_OPTION",
+		// T_ANEKALIST tidak: penunjuk IDX_ANEKA / IDX_LOCATION / IDX_OCCUPATION (butir 72) milik loader, tidak dibuat (pola 198).
+		"T_MARINEHULL", "T_AVIATIONHULL", "T_VEHICLEHE", "T_MEMORANDUMACCEPT"} {
 		for _, k := range skemaTabel[tabel] {
 			if akhir[tabel][k.nama] == "" {
 				t.Errorf("%s.%s rancangan tidak dibuat migrasi", tabel, k.nama)
@@ -191,8 +210,11 @@ func TestMigrasiFlatSebagianCocokRancangan(t *testing.T) {
 	// 18 T_LISTINSTALLMENT (201) = 272. + 2 T_COVERAGELIST (203) = 274. 204 melebarkan ZONE (tanpa kolom baru) = 274.
 	// + 7 T_SCORINGRISK + 20 T_SCORINGRESULT + 11 T_DATASCORINGRISKLIST + 12 T_SCORING_FACTOR + 9 T_SCORING_OPTION (205) = 333.
 	// 206 / 207 tabel baru di luar rancangan (tidak diputar). + 1 T_GENERAL_POLIS NB_STATUS (208) = 334.
-	if diperiksa != 334 {
-		t.Errorf("%d kolom diperiksa, mau 334", diperiksa)
+	// 209 MODIFY NULL (tipe tetap). + 4 T_GENERAL_POLIS (210) = 338. 211 data saja. + 4 T_GENERAL_POLIS (212) = 342.
+	// + 2 T_GENERAL_POLIS (213) = 344. + 50 T_ANEKALIST + 13 T_MARINEHULL + 10 T_AVIATIONHULL + 12 T_VEHICLEHE
+	// + 20 T_MEMORANDUMACCEPT + 8 T_COVERAGELIST (214) = 457. + 1 T_GENERAL_POLIS PRO_RATE_PERCENT (255) = 458.
+	if diperiksa != 458 {
+		t.Errorf("%d kolom diperiksa, mau 458", diperiksa)
 	}
 	// Butir 87/88: Risk Location / Address VARCHAR2(4000), delapan kolom alamat lain VARCHAR2(100) sesudah 192.
 	for tk, mau := range map[string]string{"T_RISKLOCATION.ASM_ADDRESS": "VARCHAR2(4000)", "T_PROPERTY.ROAD_NAME": "VARCHAR2(4000)",

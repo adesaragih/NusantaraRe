@@ -180,7 +180,7 @@ func TestGantiObjekCoverage(t *testing.T) {
 	}
 	cov := tersimpan.ada["UJI-NB-1"][0].Items[0]
 	if teksD(cov.Coverages[0].Premium) != "1000000" || teksD(cov.Coverages[0].TSI) != "1000000000" || teksD(cov.Coverages[1].Rate) != "2" ||
-		cov.Coverages[2].Premium != nil || teksD(cov.Coverages[2].TSILiability) != "1000000000" || teksD(cov.TotalGrossPremi) != "3000000" {
+		teksD(cov.Coverages[2].Premium) != "0" || teksD(cov.Coverages[2].TSILiability) != "1000000000" || teksD(cov.TotalGrossPremi) != "3000000" {
 		t.Errorf("tersimpan: %+v", cov)
 	}
 	if len(d) != 1 || len(d[0].TotalPerCurrency) != 1 || teksD(d[0].TotalPerCurrency[0].Premium) != "3000000" || teksD(d[0].TotalPerCurrency[0].Rate) != "0.003" {

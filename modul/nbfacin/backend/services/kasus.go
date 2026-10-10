@@ -160,7 +160,7 @@ var batasGeneral = []struct {
 // periksaGeneral - A90: Save for later menyimpan isian SEBAGIAN - tidak ada medan wajib
 // (wajib-isi Pega ditegakkan saat Submit, `[dugaan]` dari brief sesi 0f). Yang ditolak
 // hanya tanggal tak sah dan isian melebihi lebar kolom. Teks lain apa adanya (butir
-// 78.2/78.3: Policy Type dan Type facultative disimpan seperti dikirim layar).
+// 78.3: Type facultative disimpan seperti dikirim layar); Policy Type wajib kode 0 / 1 / 2 (RALAT butir 78.2, 09-10-2026).
 // ⚠️ Kesembilan medan SELALU ditulis: medan yang tidak dikirim / "" mengosongkan kolomnya.
 func periksaGeneral(i IsianGeneral) (models.General, error) {
 	var masalah []string
@@ -180,6 +180,10 @@ func periksaGeneral(i IsianGeneral) (models.General, error) {
 		if len(b.nilai(i)) > b.n {
 			masalah = append(masalah, fmt.Sprintf("%s paling banyak %d byte", b.nama, b.n))
 		}
+	}
+	// Ralat butir 78.2 (work owner 09-10-2026): Policy Type disimpan sebagai standard value 0 / 1 / 2 (policytype.go).
+	if !kodePolicyTypeSah[i.PolicyType] {
+		masalah = append(masalah, "policyType wajib 0, 1 atau 2 (kosong boleh)")
 	}
 	// Tiket 34: tiap kode tidak kosong dan muat T_CEDINGCOLIST.CEDING_CO; kode ganda tidak
 	// ditolak (E-7 - Pega tidak memeriksanya).
@@ -223,7 +227,7 @@ func (s *Service) keKabel(k models.Kasus) KasusKabel {
 			TypeOfFacultative: o.TypeOfFacultative, Phase: o.Phase, Stage: o.Stage,
 			OpportunitySource: o.OpportunitySource, BusinessStatus: o.BusinessStatus, Description: o.Description},
 		General: GeneralKabel{ReffNumber: g.ReffNumber, QQName: g.QQName, BeginDate: waktuKeKabel(g.StartDateTime),
-			OfferingDate: tawar, EndDate: waktuKeKabel(g.EndDateTime), PolicyType: g.PolicyType,
+			OfferingDate: tawar, EndDate: waktuKeKabel(g.EndDateTime), PolicyType: kodePolicyType(g.PolicyType),
 			MarketingID: g.MarketingID, Day: g.Day, TypeFacultative: g.TypeFacultative,
 			SourceOfBusinessID: g.SourceOfBusinessID, SourceOfBusiness: g.SourceOfBusiness, CedingCoName: g.CedingCoName, GroupName: g.GroupName,
 			OldPolicyNumber: g.OldPolicyNumber, CedingList: cedingKabel(g.CedingList)}}
@@ -266,6 +270,9 @@ func (s *Service) SimpanGeneral(ctx context.Context, pelaku inti.Pelaku, id stri
 	if !idKasusSah(id) {
 		return KasusKabel{}, ErrKasusTidakAda
 	}
+	if err := s.wajibPeriodeTetap(ctx, id, isian); err != nil {
+		return KasusKabel{}, err
+	}
 	err = s.transaksi(ctx, func(tx *db.Tx) error { return s.kasus.SimpanGeneral(ctx, tx, id, g) })
 	if errors.Is(err, repository.ErrKasusTidakAda) {
 		return KasusKabel{}, ErrKasusTidakAda
@@ -280,6 +287,24 @@ func (s *Service) SimpanGeneral(ctx context.Context, pelaku inti.Pelaku, id stri
 		return KasusKabel{}, err
 	}
 	return s.BacaKasus(ctx, id)
+}
+
+// wajibPeriodeTetap - tiket 64d K1: di tahap Binding Begin / End date isian (bentuk kabel DD-MM-YYYY) wajib SAMA dengan yang
+// tersimpan (dibandingkan dalam bentuk kabel GET - jam tersimpan Pega tidak memicu tolakan palsu); beda -> 409. Medan
+// General lain tetap tersimpan.
+func (s *Service) wajibPeriodeTetap(ctx context.Context, id string, isian IsianGeneral) error {
+	if !s.KunciPeriode(ctx, id) {
+		return nil
+	}
+	k, err := s.kasus.BacaKasus(ctx, id)
+	if err != nil {
+		return galatKasus(err)
+	}
+	if strings.TrimSpace(isian.BeginDate) != waktuKeKabel(k.General.StartDateTime) ||
+		strings.TrimSpace(isian.EndDate) != waktuKeKabel(k.General.EndDateTime) {
+		return ErrPeriodeTerkunci
+	}
+	return nil
 }
 
 // DaftarMarketingOfficer - pilihan Marketing Name (RD BrowseMarketingOfficer_RD).

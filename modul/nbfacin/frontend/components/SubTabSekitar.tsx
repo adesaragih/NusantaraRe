@@ -110,7 +110,7 @@ function IsianOccupation({ label, sisi, ubah }: { label: string; sisi: SisiRisik
             <li key={b.oldId}>
               <button
                 type="button"
-                className="btn btn--ghost btn--sm"
+                className="btn nbf-tema__tombol btn--ghost btn--sm"
                 onClick={() => {
                   setKetik(false)
                   setSaran([])

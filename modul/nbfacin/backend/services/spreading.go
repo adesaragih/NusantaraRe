@@ -405,6 +405,30 @@ func terapkanPersen(k *models.KasusSpreading) {
 	})
 }
 
+// salinDalamSpreading - salinan yang TIDAK berbagi slice dengan k (Lokasi, Total, Items, Coverages, baris spreading). Nilai
+// *apd.Decimal tetap dibagi: aritmetika paket ini selalu membuat nilai baru, tidak mengubah desimal di tempat. Wajib dipakai
+// fungsi yang menerima KasusSpreading by value lalu mengubah isinya (ringkasanRNM, tampilan).
+func salinDalamSpreading(k models.KasusSpreading) models.KasusSpreading {
+	out := k
+	out.Lokasi = make([]models.LokasiSpreading, len(k.Lokasi))
+	for i, l := range k.Lokasi {
+		l.Total = append([]models.TotalSpreading(nil), l.Total...)
+		items := make([]models.ItemSpreading, len(l.Items))
+		for j, it := range l.Items {
+			cov := make([]models.CoverageSpreading, len(it.Coverages))
+			for m, c := range it.Coverages {
+				c.Spreading = append([]models.BarisSpreading(nil), c.Spreading...)
+				cov[m] = c
+			}
+			it.Coverages = cov
+			items[j] = it
+		}
+		l.Items = items
+		out.Lokasi[i] = l
+	}
+	return out
+}
+
 func setiapCoverage(k *models.KasusSpreading, fn func(*models.ItemSpreading, *models.CoverageSpreading)) {
 	for i := range k.Lokasi {
 		for j := range k.Lokasi[i].Items {
@@ -765,6 +789,7 @@ func (s *Service) kodeBisnisKasus(ctx context.Context, id string) (string, error
 // tampilan - total, ringkasan, pesan; periksaJenis = cekSpreadingFactIn langkah 8 (hanya Copy To All - Save Pega tidak
 // memanggilnya). TotalPremiumNusantaraRe item = Σ PremiNusantaraRe coverage (FireMBU 6.2.2.1.4; tidak disimpan).
 func (s *Service) tampilan(ctx context.Context, id string, k models.KasusSpreading, pesan []string, periksaJenis bool) (TampilanSpreading, error) {
+	k = salinDalamSpreading(k) // total / pembulatan di bawah tidak boleh mengubah kasus pemanggil
 	dropdown, batas, err := s.treatyKasus(ctx, id, k)
 	if err != nil {
 		return TampilanSpreading{}, err
@@ -869,10 +894,20 @@ func (s *Service) TampilanSpreading(ctx context.Context, id string) (TampilanSpr
 	return s.tampilan(ctx, id, k, nil, false)
 }
 
-// HitungShareSpreading - POST …/spreading/hitung-share: NR + spreading otomatis + total; TIDAK menyimpan. NR dihitung
-// SEBELUM spreading otomatis (K48-3; Pega memakai PremiNusantaraRe lama di GetKapasitasTreaty).
+// HitungShareSpreading - POST …/spreading/hitung-share: NR + total; TIDAK menyimpan. NR dihitung SEBELUM spreading
+// otomatis (K48-3; Pega memakai PremiNusantaraRe lama di GetKapasitasTreaty).
+//
+// Spreading otomatis HANYA di tahap uw (tiket 59, keputusan work owner 08-10-2026 "spreading terbentuk otomatis juga hanya
+// terbentuk di uw"): `CountPremiAndTSINusantaraRe_ACT` langkah 4 Call GetKapasitasTreaty berprekondisi `Param.spread ==
+// "Spreading"`, dan param `spread` hanya dikirim `Section\InputInwardFacultativeDtl_IsUW.xml` `[terverifikasi]`. Di luar uw
+// baris TERSIMPAN dipertahankan dan nilainya dihitung ulang (DT SetTSIPremiSpreaded_FacIn percent); case baru tanpa baris.
+// Tanpa pembaca tahap (penjaga tidak aktif) = perilaku tiket 48 (selalu otomatis). Tidak dijaga workbasket: tidak menulis.
 func (s *Service) HitungShareSpreading(ctx context.Context, id string, ps *apd.Decimal) (TampilanSpreading, error) {
 	if err := periksaShareKasus(ps); err != nil {
+		return TampilanSpreading{}, err
+	}
+	t, ada, err := s.tahapKasus(ctx, id)
+	if err != nil {
 		return TampilanSpreading{}, err
 	}
 	k, err := s.bacaSpreading(ctx, nil, id)
@@ -881,6 +916,10 @@ func (s *Service) HitungShareSpreading(ctx context.Context, id string, ps *apd.D
 	}
 	k.PercentShare = ps
 	hitungNR(&k)
+	if ada && !tahapUW(t) {
+		terapkanPersen(&k)
+		return s.tampilan(ctx, id, k, nil, false)
+	}
 	pesan, err := spreadingOtomatis(ctx, s.spreading, &k)
 	if err != nil {
 		return TampilanSpreading{}, err
@@ -888,8 +927,15 @@ func (s *Service) HitungShareSpreading(ctx context.Context, id string, ps *apd.D
 	return s.tampilan(ctx, id, k, pesan, false)
 }
 
-// SalinSpreading - POST …/spreading/salin: Copy To All Spreading + total; TIDAK menyimpan.
-func (s *Service) SalinSpreading(ctx context.Context, id string, ps *apd.Decimal, templat []models.TemplateSpreading) (TampilanSpreading, error) {
+// SalinSpreading - POST …/spreading/salin: Copy To All Spreading + total; TIDAK menyimpan. HANYA tahap uw + workbasket
+// posisi (tiket 59, keputusan work owner 08-10-2026; meralat K48 S-1): 409 ErrSpreadingHanyaUW / 403.
+func (s *Service) SalinSpreading(ctx context.Context, pelaku inti.Pelaku, id string, ps *apd.Decimal, templat []models.TemplateSpreading) (TampilanSpreading, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
+		return TampilanSpreading{}, err
+	}
+	if err := s.wajibTahapUW(ctx, pelaku, id); err != nil {
+		return TampilanSpreading{}, err
+	}
 	if err := periksaShareKasus(ps); err != nil {
 		return TampilanSpreading{}, err
 	}
@@ -925,6 +971,41 @@ func (s *Service) SalinSpreading(ctx context.Context, id string, ps *apd.Decimal
 	return t, nil
 }
 
+// PeriksaTemplateSpreading - POST …/spreading/periksa-template (tiket 59 lanjutan, permintaan work owner 08-10-2026 "DIPEGA ADA
+// PROTEKSI NYA TIDAK BISA SPL TANPA ADA QS"): proteksiTemplate atas baris template Copy Spreading SEKETIKA Type Treaty dipilih /
+// baris dihapus (Pega: CalcultePersentageSpeading_Act dipanggil onchange .TreatyType grid Copy Spreading `[terverifikasi]`);
+// tidak menyimpan. Penjaga = salin (tahap uw + workbasket posisi). Baris ber-treatyType kosong DIABAIKAN (salin menolaknya 400
+// lewat periksaBarisShare); tanpa baris ber-treatyType -> tanpa pesan.
+func (s *Service) PeriksaTemplateSpreading(ctx context.Context, pelaku inti.Pelaku, id string, templat []models.TemplateSpreading) ([]string, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
+		return nil, err
+	}
+	if err := s.wajibTahapUW(ctx, pelaku, id); err != nil {
+		return nil, err
+	}
+	if len(templat) > banyakBarisSpreading {
+		return nil, fmt.Errorf("%w: template paling banyak %d baris", ErrMasukanSpreading, banyakBarisSpreading)
+	}
+	if s.spreading == nil {
+		return nil, ErrSpreadingTanpaDatabase
+	}
+	var isi []models.TemplateSpreading
+	for _, t := range templat {
+		if strings.TrimSpace(t.TreatyType) != "" {
+			isi = append(isi, t)
+		}
+	}
+	pesan := []string{}
+	if len(isi) == 0 {
+		return pesan, nil
+	}
+	m, err := s.proteksiTemplate(ctx, isi)
+	if err != nil {
+		return nil, err
+	}
+	return append(pesan, m...), nil
+}
+
 // proteksiTemplate - CalcultePersentageSpeading_Act (change Type Treaty grid Copy Spreading), langkah 2.13-2.17:
 //   - jenis treaty sama di dua baris atau lebih -> "Treaty Type can't be same" (Local.Counter >= 2);
 //   - baris pertama yang bukan ORS (10007) / FACOUT (10015) wajib ber-REINSURANCETYPE.NOTE memuat "QS" (@contains, peka
@@ -957,28 +1038,159 @@ func (s *Service) proteksiTemplate(ctx context.Context, templat []models.Templat
 }
 
 // SimpanSpreading - PUT …/spreading (Save tab, IsThereAnyObjectLocation_Act): bentuk lokasi wajib sama dengan objek
-// tersimpan (409); hanya % Share RNM dan treatyType / treatyName / sharePercentage baris yang diambil; NR + DT percent +
-// total dihitung ulang; simpan; jawab baca ulang.
+// tersimpan (409); % Share RNM diambil; NR + DT percent + total dihitung ulang; simpan; jawab baca ulang. Di uw: jenis treaty
+// tidak sah -> 400 "Invalid Treaty Type Spreading!" tanpa tulisan (K59-8), lalu langkah 11 CountPremiAndTSI (spreadinguw.go).
+//
+// Tiket 59 (keputusan work owner 08-10-2026): tahap marketing / Team Leader / uw (+ workbasket posisi; tahap lain 409).
+// treatyType / treatyName / sharePercentage baris badan HANYA dipakai di tahap uw (grid IsUWSpread). Di marketing / Team
+// Leader baris badan DIABAIKAN: baris tersimpan dipertahankan dan nilainya dihitung ulang (badan bukan jalan menambah /
+// mengubah spreading). Tanpa pembaca tahap (penjaga tidak aktif) = perilaku tiket 48 (baris badan).
 func (s *Service) SimpanSpreading(ctx context.Context, pelaku inti.Pelaku, id string, ps *apd.Decimal, lokasi []models.LokasiSpreading) (TampilanSpreading, error) {
 	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return TampilanSpreading{}, err
 	}
-	if err := s.wajibBolehUbah(ctx, pelaku, id); err != nil {
-		return TampilanSpreading{}, err
-	}
-	if err := periksaShareKasus(ps); err != nil {
-		return TampilanSpreading{}, err
-	}
-	k, err := s.bacaSpreading(ctx, nil, id)
+	barisBadan, uw, err := s.penjagaPutSpreading(ctx, pelaku, id)
 	if err != nil {
 		return TampilanSpreading{}, err
 	}
-	if len(k.Lokasi) == 0 { // IsThereAnyObjectLocation_Act 7 / 16: tanpa lokasi tidak disimpan
-		return TampilanSpreading{}, fmt.Errorf("%w: %s", ErrMasukanSpreading, pesanObjekKosong)
+	k, err := s.bacaBentukBadan(ctx, id, ps, lokasi)
+	if err != nil {
+		return TampilanSpreading{}, err
+	}
+	if barisBadan {
+		if err := pasangBarisBadan(&k, lokasi); err != nil {
+			return TampilanSpreading{}, err
+		}
+	}
+	adaTop := hitungSaveSpreading(&k, ps)
+	if s.transaksi == nil {
+		return TampilanSpreading{}, ErrSpreadingTanpaDatabase
+	}
+	// K59-8 penyimpangan sadar [keputusan work owner 08-10-2026, atas rekomendasi sesi 0f] ("setuju untuk dibuat"): di uw
+	// jenis treaty tidak sah DITOLAK sebelum menulis apa pun -
+	// Pega memeriksanya di onchange grid sebelum Save dapat ditekan; di sini hitung-baris berjeda, jadi Save memeriksa ulang.
+	if uw {
+		pesan, err := s.jenisTreatyKasus(ctx, id, k, adaTop)
+		if err != nil {
+			return TampilanSpreading{}, err
+		}
+		if len(pesan) > 0 {
+			return TampilanSpreading{}, fmt.Errorf("%w: %s", ErrMasukanSpreading, pesan[0])
+		}
+	}
+	// Tahap uw: langkah 11 CountPremiAndTSINusantaraRe_ACT (Premium Deduction / Payment tersimpan) di transaksi yang sama
+	// (spreadinguw.go); gagal -> seluruh Save batal.
+	var l11 *dasarLangkah11
+	var baris11 []models.BarisDeduction
+	if uw {
+		if l11, err = s.bacaDasarLangkah11(ctx, id); err != nil {
+			return TampilanSpreading{}, err
+		}
+		baris11 = barisLangkah11(k, l11)
+		// K59-9 penyimpangan sadar [keputusan work owner 08-10-2026 "setuju jangan halu", atas rekomendasi sesi 0f]: Deduction 2
+		// tersimpan > premi baru di mata uang mana pun -> 400, tanpa tulisan. Pembanding = pesanDeduction2 (ProtekDeduction2_Act
+		// langkah 2, tiket 50); SetRIComm_Act Pega tidak memeriksanya, dan tab Deduction baca-saja di uw.
+		if pesan := pesanDeduction2(baris11); len(pesan) > 0 {
+			return TampilanSpreading{}, fmt.Errorf("%w: %s", ErrMasukanSpreading, pesan[0])
+		}
+		// K59-10 penyimpangan sadar [keputusan work owner 08-10-2026 "setuju jangan halu", atas rekomendasi sesi 0f]: Net
+		// Premium mata uang mana pun < 0 -> 400 (pesan K51-7 Save Payment), tanpa tulisan. Net = netPremium, fungsi yang sama
+		// dengan isiCicilan / segarkanCicilan; tidak bergantung pada cicilan, jadi mata uang tanpa cicilan tersimpan pun
+		// diperiksa. CountPaymentInstallment_Act Pega tidak menolak; di uw tab Payment baca-saja.
+		var negatif []string
+		for _, b := range baris11 {
+			if netPremium(b).Sign() < 0 {
+				negatif = append(negatif, pesanNetNegatif(b.Currency))
+			}
+		}
+		if len(negatif) > 0 {
+			return TampilanSpreading{}, fmt.Errorf("%w: %s", ErrMasukanSpreading, strings.Join(negatif, "; "))
+		}
+	}
+	err = s.transaksi(ctx, func(tx *db.Tx) error {
+		if err := s.spreading.TulisSpreading(ctx, tx, id, k, true); err != nil {
+			return err
+		}
+		return s.tulisLangkah11UW(ctx, tx, id, l11, baris11)
+	})
+	if errors.Is(err, repository.ErrKasusTidakAda) {
+		return TampilanSpreading{}, ErrKasusTidakAda
+	}
+	if err != nil {
+		return TampilanSpreading{}, err
+	}
+	return s.TampilanSpreading(ctx, id)
+}
+
+// HitungBarisSpreading - POST …/spreading/hitung-baris (tiket 59): baris spreading per coverage diubah di grid IsUWSpread -
+// hitungan SAMA dengan Save tahap uw (hitungSaveSpreading; preDT SetTSIPremiSpreaded_FacIn percent + refresh
+// SummarySpreading_Section) TANPA menulis, ditambah cekSpreadingFactIn langkah 8-9 "Invalid Treaty Type Spreading!".
+// `[terverifikasi]` `NB FacIn\Section\InputDtlSpreadingCoverage_FacIn_IsUW.xml` (±6364 / ±6548, cabang IsUWSpread): onchange
+// baris memanggil `NB FacIn\Activity\cekSpreadingFactIn.xml` tanpa param IsPct, sehingga prekondisi langkah 7
+// (`Param.IsPct=="Percent"` -> keluar) tidak terpenuhi dan langkah 7-9 berjalan; langkah 8.6 / 9 dilewati hanya bila
+// PositionNote ReasFacInMarketing atau `FlagViewOffer=="1"` (FlagViewOffer tidak disimpan sistem baru, `belum terverifikasi`).
+// HANYA tahap uw + workbasket posisi.
+func (s *Service) HitungBarisSpreading(ctx context.Context, pelaku inti.Pelaku, id string, ps *apd.Decimal, lokasi []models.LokasiSpreading) (TampilanSpreading, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
+		return TampilanSpreading{}, err
+	}
+	if err := s.wajibTahapUW(ctx, pelaku, id); err != nil {
+		return TampilanSpreading{}, err
+	}
+	k, err := s.bacaBentukBadan(ctx, id, ps, lokasi)
+	if err != nil {
+		return TampilanSpreading{}, err
+	}
+	if err := pasangBarisBadan(&k, lokasi); err != nil {
+		return TampilanSpreading{}, err
+	}
+	hitungSaveSpreading(&k, ps) // nilai yang akan ditulis Save, lalu dibaca ulang; jenis treaty diperiksa tampilan (non-blocking)
+	return s.tampilan(ctx, id, k, nil, true)
+}
+
+// hitungSaveSpreading - hitungan Save (IsThereAnyObjectLocation_Act): % Share RNM, NR, DT percent, total (ClaimEstimation baris),
+// 8 desimal. Satu jalur untuk PUT dan hitung-baris. Mengembalikan "ada top risk" totalLokasi (untuk jenisTreatyKasus).
+func hitungSaveSpreading(k *models.KasusSpreading, ps *apd.Decimal) bool {
+	k.PercentShare = ps
+	hitungNR(k)
+	terapkanPersen(k)
+	adaTop := totalLokasi(k)
+	bulatkanSimpan(k)
+	return adaTop
+}
+
+// jenisTreatyKasus - cekSpreadingFactIn langkah 8-9 (periksaJenisTreaty, aturan yang sama dengan hitung-baris / salin) atas k
+// yang sudah dihitung hitungSaveSpreading.
+func (s *Service) jenisTreatyKasus(ctx context.Context, id string, k models.KasusSpreading, adaTop bool) ([]string, error) {
+	_, batas, err := s.treatyKasus(ctx, id, k)
+	if err != nil {
+		return nil, err
+	}
+	return periksaJenisTreaty(totalMataUang(k, adaTop), batas), nil
+}
+
+// bacaBentukBadan - % Share RNM 0..100, spreading tersimpan, objek wajib ada (IsThereAnyObjectLocation_Act 7 / 16: tanpa
+// lokasi tidak disimpan), bentuk lokasi badan = tersimpan (409).
+func (s *Service) bacaBentukBadan(ctx context.Context, id string, ps *apd.Decimal, lokasi []models.LokasiSpreading) (models.KasusSpreading, error) {
+	if err := periksaShareKasus(ps); err != nil {
+		return models.KasusSpreading{}, err
+	}
+	k, err := s.bacaSpreading(ctx, nil, id)
+	if err != nil {
+		return k, err
+	}
+	if len(k.Lokasi) == 0 {
+		return k, fmt.Errorf("%w: %s", ErrMasukanSpreading, pesanObjekKosong)
 	}
 	if !samaBentuk(k.Lokasi, lokasi) {
-		return TampilanSpreading{}, ErrSpreadingBerubah
+		return k, ErrSpreadingBerubah
 	}
+	return k, nil
+}
+
+// pasangBarisBadan - treatyType / treatyName / sharePercentage baris badan (bentuk sudah sama) menggantikan baris tersimpan;
+// setiap daftar baris coverage diperiksa periksaBarisShare (400).
+func pasangBarisBadan(k *models.KasusSpreading, lokasi []models.LokasiSpreading) error {
 	var masalah []string
 	for i := range k.Lokasi {
 		for j := range k.Lokasi[i].Items {
@@ -997,24 +1209,9 @@ func (s *Service) SimpanSpreading(ctx context.Context, pelaku inti.Pelaku, id st
 		}
 	}
 	if len(masalah) > 0 {
-		return TampilanSpreading{}, fmt.Errorf("%w: %s", ErrMasukanSpreading, strings.Join(masalah, "; "))
+		return fmt.Errorf("%w: %s", ErrMasukanSpreading, strings.Join(masalah, "; "))
 	}
-	k.PercentShare = ps
-	hitungNR(&k)
-	terapkanPersen(&k)
-	totalLokasi(&k) // ClaimEstimation baris
-	bulatkanSimpan(&k)
-	if s.transaksi == nil {
-		return TampilanSpreading{}, ErrSpreadingTanpaDatabase
-	}
-	err = s.transaksi(ctx, func(tx *db.Tx) error { return s.spreading.TulisSpreading(ctx, tx, id, k, true) })
-	if errors.Is(err, repository.ErrKasusTidakAda) {
-		return TampilanSpreading{}, ErrKasusTidakAda
-	}
-	if err != nil {
-		return TampilanSpreading{}, err
-	}
-	return s.TampilanSpreading(ctx, id)
+	return nil
 }
 
 // samaBentuk - jumlah lokasi / item / coverage dan oldId coverage sama menurut posisi.

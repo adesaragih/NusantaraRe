@@ -39,6 +39,7 @@ export default function TanggalDMY({
   error,
   labelKalender,
   pesanFormat,
+  disabled,
 }: {
   label: string
   /** Bentuk kabel `DD-MM-YYYY`, atau kosong. */
@@ -50,6 +51,8 @@ export default function TanggalDMY({
   labelKalender: string
   /** Pesan bila isian sudah 10 karakter tetapi bukan tanggal yang ada. */
   pesanFormat: string
+  /** Kotak dan tombol kalender terkunci (mis. Begin / End date di tahap Binding, tiket 64 K1). */
+  disabled?: boolean
 }) {
   const [teks, setTeks] = useState(keTampil(value))
   const pemilih = useRef<HTMLInputElement>(null)
@@ -83,13 +86,15 @@ export default function TanggalDMY({
           inputMode="numeric"
           placeholder="dd/mm/yyyy"
           value={teks}
+          disabled={disabled}
           onChange={(e) => ketik(e.target.value)}
         />
         <button
           type="button"
-          className="btn btn--ghost btn--sm"
+          className="btn nbf-tema__tombol btn--ghost btn--sm"
           aria-label={labelKalender}
           title={labelKalender}
+          disabled={disabled}
           onClick={() => {
             const el = pemilih.current
             if (el && typeof el.showPicker === 'function') el.showPicker()

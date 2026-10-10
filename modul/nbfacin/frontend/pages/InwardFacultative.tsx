@@ -47,6 +47,8 @@ import {
   type KasusNB,
 } from '../api'
 import PopupCedingCoList from '../components/PopupCedingCoList'
+import { DetailPolis } from '../components/DetailPolis'
+import PopupFollowing from '../components/PopupFollowing'
 import PopupPilihAgent from '../components/PopupPilihAgent'
 import TabClauses from '../components/TabClauses'
 import TabCoverage from '../components/TabCoverage'
@@ -56,10 +58,15 @@ import TabDeduction from '../components/TabDeduction'
 import TabPayment from '../components/TabPayment'
 import TabLossRecord from '../components/TabLossRecord'
 import TabCorrespondence from '../components/TabCorrespondence'
+import BilahCsvObjek from '../components/BilahCsvObjek'
+import BlokLampiran from '../components/BlokLampiran'
 import BlokEmailType, { useSubmitMarketing } from '../components/BlokEmailType'
-import BacaSajaKasus from '../components/BacaSajaKasus'
+import BacaSajaKasus, { PILIH_UBAH_AKUMULASI } from '../components/BacaSajaKasus'
 import TabScoring, { nadaKelas } from '../components/TabScoring'
 import TabObject from '../components/TabObject'
+import TabObjectAneka from '../components/TabObjectAneka'
+import TabCoverageAneka from '../components/TabCoverageAneka'
+import TabSpreadingAneka from '../components/TabSpreadingAneka'
 import TanggalDMY from '../components/TanggalDMY'
 import { angka4 } from '../angka4'
 import {
@@ -91,6 +98,15 @@ type TabDetail = (typeof TAB_DETAIL)[number]
 export function hariIniKabel(d: Date = new Date()): string {
   const p = (n: number) => String(n).padStart(2, '0')
   return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()}`
+}
+
+/**
+ * Policy Type tersimpan -> kode standard value (`DDL\PolicyType.xml`). Data lama sistem baru menyimpan LABEL (butir 78.2
+ * "Label text for now") - dipetakan ke kodenya supaya radio terpilih dan Save berikutnya menulis kode. Nilai lain apa adanya.
+ */
+export function kodePolicyType(v: string): string {
+  const label: Record<string, string> = { 'Individual Policy': '0', 'Master Policy': '1', 'Declaration Policy': '2' }
+  return label[v.trim()] ?? v
 }
 
 /**
@@ -148,7 +164,8 @@ function Radio({
 }: {
   label: string
   nama: string
-  pilihan: readonly string[]
+  /** Teks (nilai = label) atau pasangan kode + label (Policy Type: standard value). */
+  pilihan: readonly (string | { readonly value: string; readonly label: string })[]
   value: string
   onChange: (v: string) => void
 }) {
@@ -156,11 +173,14 @@ function Radio({
     <div className="field">
       <span className="field__label">{label}</span>
       <div className="nbf-inward__radio" role="radiogroup" aria-label={label}>
-        {pilihan.map((p) => (
-          <label key={p} className="nbf-inward__pilihan">
-            <input type="radio" name={nama} value={p} checked={value === p} onChange={() => onChange(p)} /> {p}
-          </label>
-        ))}
+        {pilihan.map((o) => {
+          const p = typeof o === 'string' ? { value: o, label: o } : o
+          return (
+            <label key={p.value} className="nbf-inward__pilihan">
+              <input type="radio" name={nama} value={p.value} checked={value === p.value} onChange={() => onChange(p.value)} /> {p.label}
+            </label>
+          )
+        })}
       </div>
     </div>
   )
@@ -170,11 +190,19 @@ export default function InwardFacultative({
   kasus,
   onBatal,
   onSelesai,
+  hanyaLihat = false,
 }: {
   kasus: KasusBaru
   onBatal: () => void
   /** Submit berhasil (tiket 57): layar case ditutup; pemanggil menampilkan `pesan` di portal. */
   onSelesai?: (pesan: string) => void
+  /**
+   * Mode HANYA LIHAT (View Details Following Policy / View Policy, work owner 09-10-2026 "HARUSNYA MUNCUL SEMUA DONG, KOLOM2
+   * NYA KAYA YG LAGI DI INPUT. MISAL TAB GENERAL, OBJECT ITEM, SPREADING DAN LAINNYA"): seluruh layar case tampil baca-saja
+   * (General + semua tab + riwayat akseptasi + lampiran), Show Detail terbuka, tanpa form Email Type, bilah CSV, dan kaki
+   * Cancel / Save / Submit (pemanggil punya tombol Back).
+   */
+  hanyaLihat?: boolean
 }) {
   const isian = kasus.isian
   const [reff, setReff] = useState('')
@@ -187,8 +215,11 @@ export default function InwardFacultative({
   const [marketing, setMarketing] = useState('')
   const [hari, setHari] = useState('')
   const [skorRisiko, setSkorRisiko] = useState({ finalScore: '', noteFinalScore: '' })
-  const [detail, setDetail] = useState(false)
+  const [detail, setDetail] = useState(hanyaLihat)
   const [tab, setTab] = useState<TabDetail>(TAB_DETAIL[0])
+  // Naik sesudah Save Data CSV objek (tiket 66): tab detail dipasang ulang supaya objek / coverage / spreading terbaca baru.
+  const [versiDetail, setVersiDetail] = useState(0)
+  const [bukaFollowing, setBukaFollowing] = useState(false)
   const [dariServer, setDariServer] = useState<KasusNB | null>(null)
   const [opsiMarketing, setOpsiMarketing] = useState<Opsi[]>([])
   const [galatMuat, setGalatMuat] = useState<unknown>(null)
@@ -209,7 +240,7 @@ export default function InwardFacultative({
     setMulai(g.beginDate)
     setPenawaran(g.offeringDate || hariIniKabel())
     setSelesai(g.endDate)
-    setPolicyType(g.policyType)
+    setPolicyType(kodePolicyType(g.policyType))
     setTypeFac(g.typeFacultative || k.opportunity.typeOfFacultative)
     setMarketing(g.marketingId)
     setHari(g.day)
@@ -246,7 +277,9 @@ export default function InwardFacultative({
   // Submit tahap marketing (tiket 57): sesudah berhasil case DITUTUP dan pengguna kembali ke portal (Pega
   // `finishAssignment`; work owner 07-10-2026 "harusnya saat berhasil di submit, case nya langsung tertutup").
   const sub = useSubmitMarketing(kasus.caseId, (h) => {
-    const pesan = `${TEKS_EMAIL_TYPE.terkirim} ${h.nbStatus}`.trim()
+    const pesan = [TEKS_EMAIL_TYPE.terkirim, h.nbStatus, h.nomorPolis ? TEKS_EMAIL_TYPE.nomorPolis(h.nomorPolis) : '']
+      .filter((x) => x.trim() !== '')
+      .join(' ')
     if (onSelesai) onSelesai(pesan)
     else onBatal()
   })
@@ -283,15 +316,40 @@ export default function InwardFacultative({
   /** Medan tampil-saja: dari server bila sudah dimuat. */
   const g: Partial<GeneralInward> = dariServer?.general ?? {}
   const insured = dariServer?.insuredName ?? kasus.insuredName ?? ''
-  // Tab Loss Record (tiket 55) dan Correspondence (tiket 56) hanya bila backend mengizinkan (POSITION "IT").
+  const op: Partial<IsianOpportunity> = dariServer?.opportunity ?? isian ?? {}
+  // Layar FIRE: Group Business "FIRE" (perilaku yang sudah berjalan sebelum tiket 73 - TIDAK boleh berubah, work owner 09-10-2026
+  // "KALO YANG SUDAH BERHASIL, JANGAN DIUBAH2") ATAU lini backend `fire` (tiket 73 P0: BusinessType_DeT + When IsFire). Lini
+  // backend hanya MENAMBAH case FIRE; kunci yang absen (biner lama) / BusinessType "UNKNOWN" tidak lagi menyembunyikan layar FIRE.
+  const kasusFire = (op.groupBusiness ?? '').trim().toUpperCase() === 'FIRE' || dariServer?.lini?.fire === true
+  // Tab Object keluarga Aneka (tiket 73 P1): gerbang grid lokasi `InputDtlObject_FacIn.xml` L36463 (`IsAnekaNotBonding || IsHE
+  // || IsGolfInsurance || IsGrowingTrees`) / L22724 (`IsBonding || IsCustomBonds`); FIRE selalu menang (layar FIRE tidak berubah).
+  const lini = dariServer?.lini
+  const tampilanAneka = dariServer?.tampilanAneka
+  const kasusAneka = !kasusFire && lini !== undefined && tampilanAneka !== undefined && (lini.anekaNotBonding || lini.golf || lini.bonding)
+  // Submit + blok Email Type: FIRE dan (tiket 73 P4) keluarga Aneka - kabel `…/submit` sama; proteksi per lini di backend.
+  const bolehSubmit = kasusFire || kasusAneka
+  // Tab Loss Record (tiket 55) dan Correspondence (tiket 56) hanya bila backend mengizinkan (POSITION "IT"). Clauses dan Scoring
+  // Risk hanya FIRE (`InputInwardFacultativeDtl.xml`: Clauses `IsOilGas || IsFire`, Scoring Risk `IsFire`).
   const tabTampil = TAB_DETAIL.filter(
     (t) =>
-      (t !== 'Loss Record' || dariServer?.aksesLossRecord === true) && (t !== 'Correspondence' || dariServer?.aksesKorespondensi === true),
+      (t !== 'Loss Record' || dariServer?.aksesLossRecord === true) &&
+      (t !== 'Correspondence' || dariServer?.aksesKorespondensi === true) &&
+      (t !== 'Clauses' || kasusFire) &&
+      (t !== 'Scoring Risk' || kasusFire),
   )
   // Baca-saja bila case sudah keluar dari tahap marketing (work owner 07-10-2026); backend menolak tulisan secara mandiri.
-  const bacaSaja = dariServer?.bolehUbah === false
-  const op: Partial<IsianOpportunity> = dariServer?.opportunity ?? isian ?? {}
-  const kasusFire = (op.groupBusiness ?? '').trim().toUpperCase() === 'FIRE'
+  const bacaSaja = hanyaLihat || dariServer?.bolehUbah === false
+  // Akun IT (JOB_POSITION "IT") - aturan backend yang sama dengan tab Loss Record / Correspondence (tiket 55 / 56). Tombol
+  // Upload QUOTATION/PLACING SLIP AI dan Upload R/I SLIP AI hanya untuk IT (work owner 08-10-2026).
+  const akunIT = dariServer?.aksesLossRecord === true
+  // Tahap Underwriting (When IsUWSpread, tiket 59): case baca-saja KECUALI tab Spreading.
+  const spreadingTerbuka = !hanyaLihat && bacaSaja && dariServer?.bolehUbahSpreading === true
+  const detailBacaSaja = bacaSaja && !(spreadingTerbuka && tab === 'Spreading')
+  // Tahap Underwriting (tiket 60): Accumulation di tab Coverage terbuka - pembungkus tetap aktif, kecuali kontrol Accumulation.
+  const akumulasiTerbuka = !hanyaLihat && bacaSaja && dariServer?.ubahAkumulasi === true
+  // Tiket 64 K1: Begin / End date terkunci di tahap Binding (Pega Read-only) walau field General lain masih bisa diubah.
+  const kunciPeriode = dariServer?.kunciPeriode === true
+  const kecualiDetail = akumulasiTerbuka && tab === 'Coverage' ? PILIH_UBAH_AKUMULASI : undefined
 
   return (
     <div className="nbfacin">
@@ -301,14 +359,19 @@ export default function InwardFacultative({
       <Gagal galat={galatMuat} />
       {tersimpan && <div className="alert alert--ok">{TEKS_INWARD.tersimpan}</div>}
       <Gagal galat={galatSimpan} />
-      {bacaSaja && (
+      {/* Mode hanya lihat: tanpa banner baca-saja (work owner 09-10-2026 "pesan yang diatas ini tidak perlu"). */}
+      {bacaSaja && !hanyaLihat && (
         <div className="alert nbf-inward__bacasaja">
-          {TEKS_INWARD.bacaSaja}
-          {dariServer?.alasanBacaSaja ? ` ${dariServer.alasanBacaSaja}` : ''}
+          {akumulasiTerbuka
+            ? TEKS_INWARD.bacaSajaKecualiSpreadingAkumulasi
+            : spreadingTerbuka
+              ? TEKS_INWARD.bacaSajaKecualiSpreading
+              : TEKS_INWARD.bacaSaja}
+          {!spreadingTerbuka && !akumulasiTerbuka && dariServer?.alasanBacaSaja ? ` ${dariServer.alasanBacaSaja}` : ''}
         </div>
       )}
 
-      <BacaSajaKasus aktif={bacaSaja}>
+      <BacaSajaKasus aktif={bacaSaja} sembunyi={hanyaLihat}>
       <section className="panel nbf-inward">
         <h4 className="panel__title">{P.judul.label}</h4>
         <div className="nbf-opp__kolom">
@@ -320,6 +383,7 @@ export default function InwardFacultative({
             <TanggalDMY
               label={P.beginDate.label}
               value={mulai}
+              disabled={kunciPeriode}
               onChange={(k) => {
                 setMulai(k)
                 // Hanya saat Begin date lengkap dan sah - ketikan setengah jadi tidak menghapus End date.
@@ -355,12 +419,16 @@ export default function InwardFacultative({
                 )
               }
             />
-            <div className="nbf-opp__tombol">
-              <TombolNonaktif label={P.uploadQuotation.label} />
-            </div>
-            <div className="nbf-opp__tombol">
-              <TombolNonaktif label={P.uploadRISlip.label} />
-            </div>
+            {akunIT && (
+              <>
+                <div className="nbf-opp__tombol">
+                  <TombolNonaktif label={P.uploadQuotation.label} />
+                </div>
+                <div className="nbf-opp__tombol">
+                  <TombolNonaktif label={P.uploadRISlip.label} />
+                </div>
+              </>
+            )}
           </div>
           <div className="nbf-opp__tumpuk">
             <Tampil label={P.classOfBusiness.label} nilai={op.groupBusiness ?? ''} />
@@ -368,13 +436,13 @@ export default function InwardFacultative({
             <Tampil label={P.typeFacultative.label} nilai={typeFac} />
             <div className="nbf-inward__baris-tombol">
               <Tampil label={P.sourceOfBusiness.label} nilai={sob.nama} />
-              <button type="button" className="btn btn--sm" onClick={() => setPilihSob(true)}>
+              <button type="button" className="btn nbf-tema__tombol btn--sm" onClick={() => setPilihSob(true)}>
                 {P.changeSob.label}
               </button>
             </div>
             <div className="nbf-inward__baris-tombol">
               <Tampil label={P.cedingCoName.label} nilai={ceding.map((c) => c.name).join(';')} />
-              <button type="button" className="btn btn--sm" onClick={() => setUbahCeding(true)}>
+              <button type="button" className="btn nbf-tema__tombol btn--sm" onClick={() => setUbahCeding(true)}>
                 {P.changeCedingCo.label}
               </button>
             </div>
@@ -382,6 +450,7 @@ export default function InwardFacultative({
             <TanggalDMY
               label={P.endDate.label}
               value={selesai}
+              disabled={kunciPeriode}
               onChange={setSelesai}
               required
               error={tanggalSalah ? TEKS_INWARD.endSebelumBegin : undefined}
@@ -390,23 +459,39 @@ export default function InwardFacultative({
             />
             <div className="nbf-inward__baris-tombol">
               <span className="field__label">{P.followingPolicyNumber.label}</span>
-              <TombolNonaktif label={P.search.label} utama />
+              {/* Tiket 70: popup ViewFollowingNB (cari polis, Copy Nopolis / Copy All, View Details). */}
+              <button
+                type="button"
+                className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary btn--sm"
+                disabled={hanyaLihat || dariServer?.bolehFollowing !== true}
+                onClick={() => setBukaFollowing(true)}
+              >
+                {P.search.label}
+              </button>
             </div>
             <Tampil label={P.oldPolicyNumber.label} nilai={g.oldPolicyNumber ?? ''} />
             <Pilih label={P.marketingName.label} value={marketing} onChange={setMarketing} opsi={opsiMarketing} kosong={P.marketingKosong.label} required />
             <Radio label={P.day.label} nama="nbfacin-day" pilihan={PILIHAN_PERIODE.day} value={hari} onChange={setHari} />
           </div>
         </div>
-        <div className="nbf-inward__csv nbf-inward__bilah">
-          <strong>{P.judulCsv.label}</strong>
-          <div className="nbf-opp__tombol">
-            <TombolNonaktif label={P.downloadTemplateCsv.label} />
-            <TombolNonaktif label={P.uploadCsv.label} utama />
-            <TombolNonaktif label={P.viewUpload.label} utama />
-            <TombolNonaktif label={P.saveData.label} utama />
-            <TombolNonaktif label={P.insertAccumulation.label} />
+        {/* Bilah CSV (work owner 08-10-2026): empat tombol CSV tidak tampil di tahap baca-saja (UW dst.); Insert Accumulation
+            hanya akun IT. Bilah hilang bila tidak ada tombol. */}
+        {!hanyaLihat && (!bacaSaja || akunIT) && (
+          <div className="nbf-inward__csv nbf-inward__bilah">
+            <strong>{P.judulCsv.label}</strong>
+            {!bacaSaja ? (
+              <BilahCsvObjek
+                caseId={kasus.caseId}
+                akhir={akunIT && <TombolNonaktif label={P.insertAccumulation.label} />}
+                onTersimpan={() => setVersiDetail((n) => n + 1)}
+              />
+            ) : (
+              <div className="nbf-opp__tombol">
+                <TombolNonaktif label={P.insertAccumulation.label} />
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </section>
       </BacaSajaKasus>
 
@@ -418,17 +503,17 @@ export default function InwardFacultative({
           <input type="checkbox" checked={detail} onChange={(e) => setDetail(e.target.checked)} /> {SHOW_DETAIL}
         </label>
         {detail && (
-          <BacaSajaKasus aktif={bacaSaja}>
+          <BacaSajaKasus key={`${detailBacaSaja ? `bacasaja${kecualiDetail ?? ''}` : 'ubah'}-${versiDetail}`} aktif={detailBacaSaja} kecuali={kecualiDetail} sembunyi={hanyaLihat}>
           <div className="nbf-inward__detail">
             <StripTab tab={tabTampil} aktif={tab} onPilih={setTab} />
             {tab === 'Object' && kasusFire ? (
               <TabObject caseId={kasus.caseId} insuredName={insured} />
             ) : tab === 'Coverage' && kasusFire ? (
-              <TabCoverage caseId={kasus.caseId} />
+              <TabCoverage caseId={kasus.caseId} hanyaAkumulasi={akumulasiTerbuka} />
             ) : tab === 'Clauses' && kasusFire ? (
               <TabClauses caseId={kasus.caseId} />
             ) : tab === 'Spreading' && kasusFire ? (
-              <TabSpreading caseId={kasus.caseId} />
+              <TabSpreading caseId={kasus.caseId} tahapUw={dariServer?.ubahBarisSpreading === true} />
             ) : tab === 'Inw Fac Cedant Panels' && kasusFire ? (
               <TabCedant caseId={kasus.caseId} />
             ) : tab === 'Premium Deduction / Brokerage Fee' && kasusFire ? (
@@ -441,27 +526,68 @@ export default function InwardFacultative({
               <TabPayment caseId={kasus.caseId} />
             ) : tab === 'Scoring Risk' && kasusFire ? (
               <TabScoring caseId={kasus.caseId} saatTersimpan={setSkorRisiko} />
+            ) : tab === 'Object' && kasusAneka && tampilanAneka !== undefined ? (
+              <TabObjectAneka caseId={kasus.caseId} tampilan={tampilanAneka} aneka={lini?.aneka === true} />
+            ) : tab === 'Coverage' && kasusAneka && tampilanAneka !== undefined ? (
+              <TabCoverageAneka caseId={kasus.caseId} tampilan={tampilanAneka} aneka={lini?.aneka === true} />
+            ) : tab === 'Spreading' && kasusAneka ? (
+              <TabSpreadingAneka caseId={kasus.caseId} tahapUw={dariServer?.ubahBarisSpreading === true} />
+            ) : tab === 'Inw Fac Cedant Panels' && kasusAneka ? (
+              <TabCedant caseId={kasus.caseId} aneka />
+            ) : tab === 'Premium Deduction / Brokerage Fee' && kasusAneka ? (
+              <TabDeduction caseId={kasus.caseId} aneka />
+            ) : tab === 'Payment' && kasusAneka ? (
+              <TabPayment caseId={kasus.caseId} />
             ) : (
-              <BelumTersedia apa={`${TEKS_INWARD.isiTab} ${tab}`} />
+              dariServer !== null && !kasusFire ? (
+                <div className="alert alert--info">{TEKS_INWARD.cobBelum(tab, op.groupBusiness ?? '')}</div>
+              ) : (
+                <BelumTersedia apa={`${TEKS_INWARD.isiTab} ${tab}`} />
+              )
             )}
           </div>
           </BacaSajaKasus>
         )}
       </section>
 
-      {kasusFire && <BlokEmailType s={sub} />}
+      {bolehSubmit && <BlokEmailType s={sub} hanyaRiwayat={hanyaLihat} />}
+      {/* Attachment File (tiket 67): di bawah riwayat akseptasi, semua tahap (bukan bagian pembungkus baca-saja). Mode hanya
+          lihat: unggah / hapus terkunci, View File (data-navigasi) tetap. */}
+      <BacaSajaKasus aktif={hanyaLihat} sembunyi>
+        <BlokLampiran caseId={kasus.caseId} />
+      </BacaSajaKasus>
 
+      {!hanyaLihat && (
       <div className="nbf-inward__kaki">
-        <button type="button" className="btn btn--ghost" onClick={onBatal}>
+        <button type="button" className="btn nbf-tema__tombol btn--ghost" onClick={onBatal}>
           {KAKI.batal.label}
         </button>
-        <button type="button" className="btn btn--ghost" onClick={() => void simpan()} disabled={menyimpan || tanggalSalah || bacaSaja}>
+        <button type="button" className="btn nbf-tema__tombol btn--ghost" onClick={() => void simpan()} disabled={menyimpan || tanggalSalah || bacaSaja}>
           {menyimpan ? TEKS_FORM_OPPORTUNITY.menyimpan : KAKI.simpan.label}
         </button>
-        <button type="button" className="btn btn--primary" disabled={!kasusFire || !sub.bisaSubmit} title={sub.galatIsi || undefined} onClick={sub.submit}>
+        <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" disabled={!bolehSubmit || !sub.bisaSubmit} title={sub.galatIsi || undefined} onClick={sub.submit}>
           {sub.mengajukan ? TEKS_EMAIL_TYPE.mengajukan : KAKI.submit.label}
         </button>
       </div>
+      )}
+      {bukaFollowing && (
+        <PopupFollowing
+          caseId={kasus.caseId}
+          tampilDetail={(b, kembali) => (
+            <DetailPolis
+              baris={b}
+              judul=""
+              onKembali={kembali}
+              tampilKasus={(caseId) => <InwardFacultative kasus={{ caseId }} onBatal={kembali} hanyaLihat />}
+            />
+          )}
+          onTutup={() => setBukaFollowing(false)}
+          onTersalin={(k) => {
+            terapkan(k)
+            setVersiDetail((n) => n + 1)
+          }}
+        />
+      )}
       {pilihSob && (
         <PopupPilihAgent
           judul={POPUP_SOB.judul}

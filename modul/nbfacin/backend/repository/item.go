@@ -130,25 +130,21 @@ func (r *ObjekOracle) bacaItem(ctx context.Context, t tabelObjek, id string) (ma
 }
 
 // sisipItem - item satu property, SEQ_NO dan PROPERTY_ITEM_NO = 1..n (K-6 tiket 39).
-func (r *ObjekOracle) sisipItem(ctx context.Context, tx *db.Tx, t tabelObjek, idProperty string, item []models.ItemObjek) error {
+func (w *tulisObjek) sisipItem(ctx context.Context, idProperty string, item []models.ItemObjek) error {
 	for j, it := range item {
-		idItem, err := r.db.NomorBerikut(ctx, tx, sequencePropertyItemList)
+		idItem, err := w.p.nomor(ctx, sequencePropertyItemList)
 		if err != nil {
 			return err
 		}
-		uid, err := uidAcak()
+		uid, err := w.uid()
 		if err != nil {
 			return err
 		}
 		arg := append([]any{idItem, idProperty, j + 1, uid, strconv.Itoa(j + 1)}, argItem(it)...)
-		h, err := jalankan(ctx, tx, sqlSisipItem(t.item), "menyisipkan "+TabelPropertyItemList, arg...)
-		if err != nil {
+		if err := w.p.sisip(ctx, sqlSisipItem(w.t.item), TabelPropertyItemList, arg); err != nil {
 			return err
 		}
-		if err := db.PastikanSatuBaris(h, TabelPropertyItemList); err != nil {
-			return err
-		}
-		if err := r.sisipCoverage(ctx, tx, t, idItem, it.Currency, it.Coverages); err != nil {
+		if err := w.sisipCoverage(ctx, idItem, it.Currency, it.Coverages); err != nil {
 			return err
 		}
 	}

@@ -13,7 +13,6 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/inti/backend/db"
 	"nusantarare/modul/nbfacin/backend/models"
 )
 
@@ -151,25 +150,21 @@ func (r *ObjekOracle) bacaCoverage(ctx context.Context, t tabelObjek, id string)
 }
 
 // sisipCoverage - coverage satu item (SEQ_NO 1..n); CURRENCY_CODE = mata uang item (K-069/K-012).
-func (r *ObjekOracle) sisipCoverage(ctx context.Context, tx *db.Tx, t tabelObjek, idItem, mataUang string, cov []models.CoverageObjek) error {
+func (w *tulisObjek) sisipCoverage(ctx context.Context, idItem, mataUang string, cov []models.CoverageObjek) error {
 	for k, c := range cov {
-		idCov, err := r.db.NomorBerikut(ctx, tx, sequenceCoverageList)
+		idCov, err := w.p.nomor(ctx, sequenceCoverageList)
 		if err != nil {
 			return err
 		}
-		uid, err := uidAcak()
+		uid, err := w.uid()
 		if err != nil {
 			return err
 		}
 		arg := append([]any{idCov, idItem, indukCoverage, jalurCoverage, k + 1, uid}, argCoverage(c, mataUang)...)
-		h, err := jalankan(ctx, tx, sqlSisipCoverage(t.cov), "menyisipkan "+TabelCoverageList, arg...)
-		if err != nil {
+		if err := w.p.sisip(ctx, sqlSisipCoverage(w.t.cov), TabelCoverageList, arg); err != nil {
 			return err
 		}
-		if err := db.PastikanSatuBaris(h, TabelCoverageList); err != nil {
-			return err
-		}
-		if err := r.sisipDeductible(ctx, tx, t, idCov, c.Deductibles); err != nil {
+		if err := w.sisipDeductible(ctx, idCov, c.Deductibles); err != nil {
 			return err
 		}
 	}

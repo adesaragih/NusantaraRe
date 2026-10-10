@@ -88,6 +88,42 @@ export function salinCoverageDari(objek: ObjekFire[], dari: PosisiItem, ke: Posi
   return { objek: baru, tujuan: [ke] }
 }
 
+/** Ringkasan Copy Deductible untuk umpan balik layar: jumlah deductible sumber, coverage & item lain yang menerima. */
+export interface RingkasanSalinDeductible {
+  sumber: number
+  coverage: number
+  item: number
+  /** Item Business Interruption yang dilewati "ALL" (Pega: "jangan copy ke Business Interuption 10000992"). */
+  biDilewati: number
+}
+
+/** Hitung apa yang akan dilakukan `salinDeductible` (item sumber sendiri tidak dihitung). */
+export function ringkasSalinDeductible(objek: ObjekFire[], dari: PosisiItem, metode: 'ALL' | 'BI'): RingkasanSalinDeductible {
+  const sumber = objek[dari.o]?.items[dari.i]?.coverages ?? []
+  const kodeBerisi = new Set(sumber.filter((c) => (c.deductibles ?? []).length > 0).map((c) => c.coverage))
+  const r: RingkasanSalinDeductible = {
+    sumber: sumber.reduce((n, c) => n + (c.deductibles ?? []).length, 0),
+    coverage: 0,
+    item: 0,
+    biDilewati: 0,
+  }
+  objek.forEach((x, o) =>
+    x.items.forEach((it, i) => {
+      const bi = it.itemTypeId === JENIS_ITEM_BI
+      if (o === dari.o && i === dari.i) return
+      if (metode === 'ALL' && bi) {
+        r.biDilewati += 1
+        return
+      }
+      if (metode === 'BI' && !bi) return
+      const n = (it.coverages ?? []).filter((c) => kodeBerisi.has(c.coverage)).length
+      r.coverage += n
+      if (n > 0) r.item += 1
+    }),
+  )
+  return r
+}
+
 /** Copy Deductible To All ("ALL") / For BI ("BI"): deductible per kode coverage dari item `dari` ke item lain. */
 export function salinDeductible(objek: ObjekFire[], dari: PosisiItem, metode: 'ALL' | 'BI'): ObjekFire[] {
   const sumber = objek[dari.o]?.items[dari.i]?.coverages ?? []

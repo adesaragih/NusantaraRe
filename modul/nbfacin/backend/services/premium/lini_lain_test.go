@@ -144,8 +144,11 @@ func TestPremiAnekaGolf(t *testing.T) {
 	if got := premiTeks(t, aneka(LiniAneka, func(i *Input) { i.TSI = "1"; i.Rate = "0.005" })); got != "0.0001" {
 		t.Errorf("seri: %s, mau 0.0001", got)
 	}
-	// ANEKA langkah 14.1: pro-rata 0 atau kosong dihitung ulang dari tanggal (belum
-	// diport). GOLF tidak punya langkah itu: pro-rata 0 = premi 0.
+	// ANEKA langkah 14.1: pro-rata 0 atau kosong dihitung ulang dari tanggal (di mesin ini
+	// ditolak; diport di services/hitunganeka.go). GOLF (tiket 73 P2, K73-15): FillPremiGolf
+	// langkah 2 (`NB FacIn\Activity\FillPremiGolf.xml` L399) SELALU mengisi pro-rata dari tanggal
+	// sebelum rumus - pro-rata ketikan tidak pernah sampai ke sini; 0 hanya bila Start = End
+	// (NB-183524), dan rumus murni memberi premi 0.
 	for _, pr := range []string{"0", ""} {
 		if _, err := Calculate(aneka(LiniAneka, func(i *Input) { i.CalculateMethod = "1"; i.ProRatePercent = pr })); !errors.Is(err, ErrBentukBelumDiport) {
 			t.Errorf("ANEKA pro-rata %q: galat %v", pr, err)

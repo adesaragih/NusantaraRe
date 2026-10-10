@@ -20,7 +20,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-import { Area, Field, Gagal, Halaman, Kosong, Memuat, Modal, Pilih, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
+import { Area, Field, Gagal, Kosong, Memuat, Modal, Pilih, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
+import HalamanPopup from '../components/HalamanPopup'
 import TanggalDMY from '../components/TanggalDMY'
 import type { KasusBaru } from './InwardFacultative'
 import {
@@ -105,12 +106,12 @@ export function PopupChooseAccount({ onTutup, onPilih }: { onTutup: () => void; 
         <div className="nbf-popup__kotak">
           <Field label={POPUP.cari} value={kotak} onChange={setKotak} />
         </div>
-        <button type="submit" className="btn btn--ghost btn--sm" disabled={memuat}>
+        <button type="submit" className="btn nbf-tema__tombol btn--ghost btn--sm" disabled={memuat}>
           {POPUP.tombolCari}
         </button>
       </div>
       {hasil && hasil.baris.length > 0 && (
-        <Halaman halaman={hasil.halaman} ukuran={hasil.ukuran} total={hasil.total} onPindah={(h) => void muat(kunciCari.current, h)} />
+        <HalamanPopup halaman={hasil.halaman} ukuran={hasil.ukuran} total={hasil.total} onPindah={(h) => void muat(kunciCari.current, h)} />
       )}
       <div className="table-wrap">
         <table className="nbf-tabel">
@@ -134,7 +135,7 @@ export function PopupChooseAccount({ onTutup, onPilih }: { onTutup: () => void; 
                   <td>{b.insuredName}</td>
                   <td>{b.groupBusiness}</td>
                   <td className="table__actions">
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => onPilih(b)}>
+                    <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" onClick={() => onPilih(b)}>
                       {POPUP.pilih}
                     </button>
                   </td>
@@ -255,7 +256,7 @@ export default function FormOpportunity({
       <section className="inbox">
         <header className="inbox__kepala">
           <h2 className="inbox__judul">{F.judul}</h2>
-          <button type="button" className="btn btn--primary" onClick={() => void buat()} disabled={menyimpan || caseId !== ''}>
+          <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" onClick={() => void buat()} disabled={menyimpan || caseId !== ''}>
             {menyimpan ? TEKS.menyimpan : KEPALA_PORTAL.buat.label}
           </button>
         </header>
@@ -291,7 +292,7 @@ export default function FormOpportunity({
                   <span>{grup.groupBusiness}</span>
                   <button
                     type="button"
-                    className="btn btn--ghost btn--sm"
+                    className="btn nbf-tema__tombol btn--ghost btn--sm"
                     aria-label={TEKS_GRUP_BISNIS.ganti}
                     title={TEKS_GRUP_BISNIS.ganti}
                     onClick={() => setCariGrup(true)}
@@ -301,13 +302,13 @@ export default function FormOpportunity({
                 </div>
               ) : (
                 <div className="nbf-opp__tombol">
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => setCariGrup(true)}>
+                  <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" onClick={() => setCariGrup(true)}>
                     {TOMBOL.cariGrup}
                   </button>
-                  <button type="button" className="btn btn--sm" disabled>
+                  <button type="button" className="btn nbf-tema__tombol btn--sm" disabled>
                     {TOMBOL.perusahaanBaru}
                   </button>
-                  <button type="button" className="btn btn--sm" disabled>
+                  <button type="button" className="btn nbf-tema__tombol btn--sm" disabled>
                     {TOMBOL.grupBaru}
                   </button>
                 </div>

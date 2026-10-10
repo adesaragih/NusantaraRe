@@ -22,7 +22,16 @@ import { useEffect, useRef, useState } from 'react'
 import { Gagal, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { desimalSah, jumlahDesimal } from '../../../../inti/frontend/lib/desimal'
 import { angka4 } from '../angka4'
-import { ambilObjek, coverageOtomatis, hitungCoverage, hitungNetRate, simpanObjek, type CoverageObjek, type ObjekFire } from '../api'
+import {
+  ambilObjek,
+  coverageOtomatis,
+  hitungCoverage,
+  hitungNetRate,
+  simpanAkumulasi,
+  simpanObjek,
+  type CoverageObjek,
+  type ObjekFire,
+} from '../api'
 import {
   GRID_COV_ITEM,
   GRID_COV_OBJEK,
@@ -47,6 +56,7 @@ import {
   salinCoverageDari,
   salinCoverageLokasi,
   salinCoverageSemua,
+  ringkasSalinDeductible,
   salinDeductible,
   type PosisiItem,
 } from './salinCoverage'
@@ -176,7 +186,11 @@ function IsianNetRate({ nilai, onUbah }: { nilai: string; onUbah: (v: string) =>
   )
 }
 
-export default function TabCoverage({ caseId }: { caseId: string }) {
+/**
+ * `hanyaAkumulasi` = tahap Underwriting (tiket 60, `KasusNB.ubahAkumulasi`): layar dibungkus baca-saja dengan pengecualian
+ * `data-ubah-akumulasi` (Choose / Copy Accumulation + popup + Save); Save menulis Accumulation saja (`simpanAkumulasi`).
+ */
+export default function TabCoverage({ caseId, hanyaAkumulasi = false }: { caseId: string; hanyaAkumulasi?: boolean }) {
   const [objek, setObjek] = useState<ObjekFire[] | null>(null)
   const [terbuka, setTerbuka] = useState<string[]>([])
   const [galat, setGalat] = useState<unknown>(null)
@@ -185,6 +199,8 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
   // Tiket 53: salin coverage sedang menghitung ulang premi; item tujuan popup Copy Coverage From.
   const [menyalin, setMenyalin] = useState(false)
   const [salinKe, setSalinKe] = useState<PosisiItem | null>(null)
+  // Umpan balik Copy Deductible di bawah tombolnya (item sumber) - sebelumnya klik tanpa tanda apa pun.
+  const [pesanDeductible, setPesanDeductible] = useState<(PosisiItem & { teks: string; ok: boolean }) | null>(null)
   const aktif = useRef(true)
   const jadwalNet = useRef<number | undefined>(undefined)
   const nomorNet = useRef(0)
@@ -269,7 +285,25 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
    * Tiket 53: pasang hasil salin, lalu hitung ulang premi setiap coverage item tujuan (CountPremi_ACT percent / percent,
    * TSI item tujuan - K53-1). Gagal satu -> galat tampil, data salinan tetap di layar (belum disimpan).
    */
+  /** Copy Deductible To All / For BI: salin (CopyDeductibleToAllLocation_Act) lalu tampilkan apa yang tersalin. */
+  function salinDeductibleDari(dari: PosisiItem, metode: 'ALL' | 'BI') {
+    if (objek === null) return
+    const r = ringkasSalinDeductible(objek, dari, metode)
+    void pasangSalinan(salinDeductible(objek, dari, metode), [])
+    const utama =
+      r.sumber === 0
+        ? SALIN_COVERAGE.deductibleKosong
+        : r.coverage === 0
+          ? r.biDilewati > 0
+            ? ''
+            : SALIN_COVERAGE.deductibleTanpaPadanan
+          : SALIN_COVERAGE.deductibleTersalin(r.coverage, r.item)
+    const teks = [utama, r.biDilewati > 0 ? SALIN_COVERAGE.deductibleBiDilewati(r.biDilewati) : ''].filter((x) => x !== '').join(' ')
+    setPesanDeductible({ ...dari, teks, ok: r.sumber > 0 && r.coverage > 0 && r.biDilewati === 0 })
+  }
+
   async function pasangSalinan(data: ObjekFire[], tujuan: PosisiItem[]) {
+    setPesanDeductible(null)
     setObjek(data)
     setTersimpan(false)
     if (tujuan.length === 0) return
@@ -335,8 +369,9 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
     setMenyimpan(true)
     setGalat(null)
     setTersimpan(false)
+    setPesanDeductible(null)
     try {
-      const h = await simpanObjek(caseId, objek)
+      const h = await (hanyaAkumulasi ? simpanAkumulasi : simpanObjek)(caseId, objek)
       setObjek(h.baris.map(rapikanObjek))
       setTersimpan(true)
     } catch (err) {
@@ -435,7 +470,7 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                                                 </th>
                                               ))}
                                               <th scope="col" className="table__actions">
-                                                <button type="button" className="btn btn--ghost btn--sm" onClick={() => void tambah(o, i, covs)}>
+                                                <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" onClick={() => void tambah(o, i, covs)}>
                                                   {GRID_OBJEK.tambah}
                                                 </button>
                                               </th>
@@ -463,7 +498,7 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                                                 <td className="table__actions">
                                                   <button
                                                     type="button"
-                                                    className="btn btn--ghost btn--sm"
+                                                    className="btn nbf-tema__tombol btn--ghost btn--sm"
                                                     onClick={() => ubahCoverage(o, i, covs.filter((_, k) => k !== n))}
                                                   >
                                                     {GRID_OBJEK.hapus}
@@ -496,7 +531,7 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                                         {i === 0 && (
                                           <button
                                             type="button"
-                                            className="btn btn--sm"
+                                            className="btn nbf-tema__tombol btn--sm"
                                             disabled={menyalin}
                                             onClick={() => {
                                               const h = salinCoverageLokasi(objek, o)
@@ -509,7 +544,7 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                                         {o === 0 && i === 0 && (
                                           <button
                                             type="button"
-                                            className="btn btn--sm"
+                                            className="btn nbf-tema__tombol btn--sm"
                                             disabled={menyalin}
                                             onClick={() => {
                                               const h = salinCoverageSemua(objek)
@@ -519,15 +554,15 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                                             {SALIN_COVERAGE.semua}
                                           </button>
                                         )}
-                                        <button type="button" className="btn btn--sm" disabled={menyalin} onClick={() => setSalinKe({ o, i })}>
+                                        <button type="button" className="btn nbf-tema__tombol btn--sm" disabled={menyalin} onClick={() => setSalinKe({ o, i })}>
                                           {SALIN_COVERAGE.dari}
                                         </button>
                                         {o === 0 && i === 0 && (
                                           <button
                                             type="button"
-                                            className="btn btn--sm"
+                                            className="btn nbf-tema__tombol btn--sm"
                                             disabled={menyalin}
-                                            onClick={() => void pasangSalinan(salinDeductible(objek, { o, i }, 'ALL'), [])}
+                                            onClick={() => salinDeductibleDari({ o, i }, 'ALL')}
                                           >
                                             {SALIN_COVERAGE.deductibleSemua}
                                           </button>
@@ -535,15 +570,20 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
                                         {o === 0 && it.itemTypeId === JENIS_ITEM_BI && (
                                           <button
                                             type="button"
-                                            className="btn btn--sm"
+                                            className="btn nbf-tema__tombol btn--sm"
                                             disabled={menyalin}
-                                            onClick={() => void pasangSalinan(salinDeductible(objek, { o, i }, 'BI'), [])}
+                                            onClick={() => salinDeductibleDari({ o, i }, 'BI')}
                                           >
                                             {SALIN_COVERAGE.deductibleBI}
                                           </button>
                                         )}
                                         {menyalin && <span className="muted">{SALIN_COVERAGE.menyalin}</span>}
                                       </div>
+                                      {pesanDeductible?.o === o && pesanDeductible.i === i && (
+                                        <div className={`alert ${pesanDeductible.ok ? 'alert--ok' : 'alert--warn'}`} role="status">
+                                          {pesanDeductible.teks}
+                                        </div>
+                                      )}
                                     </td>
                                   </tr>
                                 ),
@@ -659,7 +699,13 @@ export default function TabCoverage({ caseId }: { caseId: string }) {
         />
       )}
       <div className="nbf-objek__kaki">
-        <button type="button" className="btn btn--primary" onClick={() => void simpan()} disabled={menyimpan}>
+        <button
+          type="button"
+          className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary"
+          data-ubah-akumulasi={hanyaAkumulasi ? '' : undefined}
+          onClick={() => void simpan()}
+          disabled={menyimpan}
+        >
           {menyimpan ? TEKS_FORM_OPPORTUNITY.menyimpan : SIMPAN_COVERAGE}
         </button>
       </div>

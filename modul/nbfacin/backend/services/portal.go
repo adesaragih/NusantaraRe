@@ -20,6 +20,15 @@ import (
 // `.NBStatus = "NEW NB"` (bersama IsCedingConfirm "Offer" dan FlagOnGoingPolicy "0"); NB_STATUS kosong dibaca sebagai itu.
 const nbStatusBaru = "NEW NB"
 
+// isiNBStatusBaru - NB_STATUS kosong -> "NEW NB" (portal dan kotak masuk Beranda).
+func isiNBStatusBaru(baris []models.BarisPortal) {
+	for i := range baris {
+		if strings.TrimSpace(baris[i].NBStatus) == "" {
+			baris[i].NBStatus = nbStatusBaru
+		}
+	}
+}
+
 // UkuranHalamanPortal - A95: 15 baris, pola keputusan work owner tiket 27 (butir 73.2).
 const UkuranHalamanPortal = 15
 
@@ -65,10 +74,6 @@ func (s *Service) CariPortal(ctx context.Context, pelaku inti.Pelaku, cari strin
 	if err != nil {
 		return HasilPortal{}, err
 	}
-	for i := range baris {
-		if strings.TrimSpace(baris[i].NBStatus) == "" {
-			baris[i].NBStatus = nbStatusBaru
-		}
-	}
+	isiNBStatusBaru(baris)
 	return HasilPortal{Baris: baris, Total: total, Halaman: halaman, Ukuran: UkuranHalamanPortal}, nil
 }

@@ -22,7 +22,7 @@ describe('halaman depan NB FacIn', () => {
   })
 
   it('empat halaman terdaftar; coverage kargo tidak dihapus', () => {
-    expect([...HALAMAN_NBFACIN]).toEqual(['nbfacin-portal', 'nbfacin-opportunity', 'nbfacin-inward', 'nbfacin-coverage-cargo'])
+    expect([...HALAMAN_NBFACIN]).toEqual(['nbfacin-portal', 'nbfacin-opportunity', 'nbfacin-inward', 'nbfacin-coverage-cargo', 'nbfacin-view-policy'])
   })
 
   it('rute: tiap halaman merender layarnya sendiri saja', () => {
@@ -47,6 +47,6 @@ describe('halaman depan NB FacIn', () => {
 
   it('klik Name di portal membuka case tersebut di layar Inward Facultative (tiket 32)', () => {
     const rute = readFileSync(join(__dirname, 'rute.tsx'), 'utf8')
-    expect(rute).toMatch(/onBuka=\{\(caseId\) => \{\s*setPesanPortal\(''\)\s*setKasus\(\{ caseId \}\)\s*onPindah\('nbfacin-inward'\)/)
+    expect(rute).toMatch(/onBuka=\{\(caseId\) => \{\s*setPesanPortal\(''\)\s*setDariBeranda\(false\)\s*setKasus\(\{ caseId \}\)\s*onPindah\('nbfacin-inward'\)/)
   })
 })

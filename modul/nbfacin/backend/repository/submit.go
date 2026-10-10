@@ -29,6 +29,9 @@ const (
 	// TabelLimitProperty - POOLDATA.M_LIMIT_PROPERTYY (pilihan Banding to), TabelSebabDecline - POOLDATA.CAUSEOFDECLINE.
 	TabelLimitProperty = "M_LIMIT_PROPERTYY"
 	TabelSebabDecline  = "CAUSEOFDECLINE"
+	// AwalanIDPega - pzInsKey kelas kerja NB Fac In = AwalanIDPega + ID case (`InsertHistoryAkseptasiPega` langkah 8;
+	// index DBA HISTOAKSPEGA_INDEX4).
+	AwalanIDPega = "ASM-FW-GISFW-WORK "
 	// WorkbasketMarketing - PositionNote tahap marketing (Assignment12), dipakai saringan GetAksepBanding_SQL.
 	WorkbasketMarketing = "ReasFacInMarketing"
 )
@@ -54,6 +57,16 @@ type PenyimpanSubmit interface {
 	// TulisSubmit - riwayat, performance, posisi, NB_STATUS, kunci korespondensi; ErrPosisiBerubah bila posisi kasus sudah
 	// bukan PosisiLama.
 	TulisSubmit(ctx context.Context, tx *db.Tx, t models.TulisanSubmit) error
+	// TulisTekanBinding - tombol Binding (tiket 64): ErrPosisiBerubah / ErrSudahBinding / ErrPenawaranTidakAda.
+	TulisTekanBinding(ctx context.Context, tx *db.Tx, b models.TekanBinding) error
+	// PenerimaBinding - email pembuat case (createOp) dan email marketing MOID + atasannya (SendEmailPolicy, tiket 63).
+	PenerimaBinding(ctx context.Context, createOp, moid string) (string, []string, error)
+	// HitungAkumulasiBerjalan - GetCountAccumulation (tiket 69a, IsFlagUW): jumlah baris FACINPRODUCTION (IDPEGA != pzInsKey) +
+	// FACINOFFER (IDPEGA != pyID) ber-ACCUMULATIONCODE itu dengan ENDDATE >= tanggal (dd/mm/yyyy).
+	HitungAkumulasiBerjalan(ctx context.Context, kode, tanggal, pzInsKey, pyID string) (int, error)
+	// KasusGanda - GetDataDoubleCase (tiket 73 P4, ProtectCoverage_Act cabang Aneka): IDPEGA FACINPRODUCTION polis lain ber-
+	// insured / SOB / BusinessCode / NoOfferSlip / periode sama, case sendiri dikecualikan (K73-31); [] bila tidak ada.
+	KasusGanda(ctx context.Context, c models.CariKasusGanda) ([]string, error)
 }
 
 // ErrPosisiBerubah - posisi kasus berubah di antara baca dan tulis (Submit serentak).
@@ -67,7 +80,7 @@ func NewSubmitOracle(d *db.DB) *SubmitOracle { return &SubmitOracle{db: d} }
 
 // tabelSubmit - nama berkualifikasi skema (ADR-U-0033).
 type tabelSubmit struct {
-	work, opp, general, quo, akun, mo, login, produksi, pega, perf, limit, sebab, rw, okupasi, kor, pen string
+	work, opp, general, quo, akun, mo, login, produksi, pega, perf, limit, sebab, rw, okupasi, kor, pen, jo, fo string
 }
 
 func (r *SubmitOracle) tabel() (tabelSubmit, error) {
@@ -79,7 +92,7 @@ func (r *SubmitOracle) tabel() (tabelSubmit, error) {
 		{TabelAkun, &t.akun}, {TabelMarketingOfficer, &t.mo}, {TabelLoginGo, &t.login}, {TabelRiwayatProduksi, &t.produksi},
 		{TabelRiwayatPega, &t.pega}, {TabelPerformanceFacIn, &t.perf}, {TabelLimitProperty, &t.limit},
 		{TabelSebabDecline, &t.sebab}, {TabelRW, &t.rw}, {TabelOccupation, &t.okupasi}, {TabelKorespondensi, &t.kor},
-		{TabelPenerimaKorespondensi, &t.pen}} {
+		{TabelPenerimaKorespondensi, &t.pen}, {TabelJSONOffer, &t.jo}, {TabelFacInOffer, &t.fo}} {
 		q, err := r.db.Qualify(x.nama)
 		if err != nil {
 			return t, err
@@ -99,7 +112,10 @@ func sqlKonteksSubmit(t tabelSubmit) string {
  (SELECT MAX(m.TEAMGROUP) FROM ` + t.mo + ` m WHERE m.ID = q.MOID),
  (SELECT MAX(m.MOLEADER) FROM ` + t.mo + ` m WHERE m.ID = q.MOID AND m.MOSTATUS = '1' AND m.BRANCHSTATUS IS NULL AND m.CLIENTID2 <> 'LEADER'),
  (SELECT MAX(a.INSUREDNAME) FROM ` + t.akun + ` a WHERE a.ID = o.ACCOUNT_ID),
- q.SOB_NAME, o.CLASS_OF_BUSINESS, ` + angkaKeluar("g.PERCENT_SHARE") + `, ` + angkaKeluar("g.PAY_RI_COMMISION") + `
+ q.SOB_NAME, o.CLASS_OF_BUSINESS, ` + angkaKeluar("g.PERCENT_SHARE") + `, ` + angkaKeluar("g.PAY_RI_COMMISION") + `,
+ g.IS_DEDUCTIBLE_ACCEPTANCE, g.COMMENT_DEDUCTIBLE,
+ w.CREATE_OP, g.START_DATE_TIME, g.DATE_TO_UW, g.DAYS_VALIDITY, g.DATE_VALIDITY, g.WAITING_BIND_DATE,
+ (SELECT MAX(m.CLIENTID) FROM ` + t.mo + ` m WHERE m.ID = q.MOID), g.CONFIRM_BINDING, g.RECEIVED_RI_SLIP, w.STATUS_WORK
 FROM ` + t.work + ` w
 LEFT JOIN ` + t.opp + ` o ON o.ID = w.ID
 LEFT JOIN ` + t.general + ` g ON g.ID = w.ID
@@ -168,13 +184,14 @@ func sqlSisipRiwayatPega(pega string) string {
 // sqlSisipPerformance - InsertDataFacinPerformance_SQL (RISLIPRECEIVED NULL).
 func sqlSisipPerformance(perf string) string {
 	return `INSERT INTO ` + perf + ` (IDPEGA, POSITIONDOC, STATUSDOC, DATETIME, USERNAME, INSUREDNAME, SOB, MOLEADER, COB, RISLIPRECEIVED)
-VALUES (:1, :2, :3, SYSDATE, :4, :5, :6, :7, :8, NULL)`
+VALUES (:1, :2, :3, SYSDATE, :4, :5, :6, :7, :8, :9)`
 }
 
-// sqlPosisiSubmit - POSITION baru; STATUS_WORK baru bila diisi (NULL = tetap).
+// sqlPosisiSubmit - POSITION baru; STATUS_WORK baru bila diisi (NULL = tetap). Penjaga serentak: posisi lama dan case belum
+// selesai (selesai Policy tiket 69a-2 tidak mengubah POSITION).
 func sqlPosisiSubmit(work string) string {
 	return "UPDATE " + work + " SET POSITION = :1, STATUS_WORK = NVL(:2, STATUS_WORK), TGL_UPDATE = SYSDATE" +
-		" WHERE ID = :3 AND LINI = :4 AND POSITION = :5"
+		" WHERE ID = :3 AND LINI = :4 AND POSITION = :5 AND (STATUS_WORK IS NULL OR STATUS_WORK NOT LIKE '" + polaSelesai + "')"
 }
 
 // sqlNBStatus / sqlSisipNBStatus - T_GENERAL_POLIS.NB_STATUS (migrasi 208); baris General belum ada (UPDATE 0 baris) ->
@@ -185,6 +202,21 @@ func sqlNBStatus(general string) string {
 
 func sqlSisipNBStatus(general string) string {
 	return "INSERT INTO " + general + " (ID, NB_STATUS) VALUES (:1, :2)"
+}
+
+// sqlDeductibleTL - isian Team Leader (migrasi 210); baris General sudah ada (sesudah sqlNBStatus / sqlSisipNBStatus).
+func sqlDeductibleTL(general string) string {
+	return "UPDATE " + general + " SET IS_DEDUCTIBLE_ACCEPTANCE = :1, COMMENT_DEDUCTIBLE = :2 WHERE ID = :3"
+}
+
+// sqlKeUW - IsJuniorUW_B: DateToUW = sekarang; SubmitToUW = sekarang bila kosong (migrasi 210).
+func sqlKeUW(general string) string {
+	return "UPDATE " + general + " SET DATE_TO_UW = :1, SUBMIT_TO_UW = NVL(SUBMIT_TO_UW, :2) WHERE ID = :3"
+}
+
+// sqlValiditasUW - Submit tahap Underwriting (tiket 61, migrasi 212): Validity Of Acceptance + Comment.
+func sqlValiditasUW(general string) string {
+	return "UPDATE " + general + " SET DAYS_VALIDITY = :1, DATE_VALIDITY = :2, WAITING_BIND_DATE = :3, COMMENT_TEXT = :4 WHERE ID = :5"
 }
 
 // sqlKunciKorespondensi / sqlKunciPenerima - SetCorrespondenceReadOnly: `.OfferFacIn.CorrespondenceList(*).IsEditable = "0"`
@@ -205,7 +237,7 @@ func (r *SubmitOracle) KonteksSubmit(ctx context.Context, id string) (models.Kon
 	if err != nil {
 		return models.KonteksSubmit{}, err
 	}
-	var v [11]sql.NullString
+	var v [23]sql.NullString
 	tujuan := make([]any, len(v))
 	for i := range v {
 		tujuan[i] = &v[i]
@@ -219,7 +251,10 @@ func (r *SubmitOracle) KonteksSubmit(ctx context.Context, id string) (models.Kon
 	}
 	k := models.KonteksSubmit{Position: v[0].String, FlagOnGoingPolicy: v[1].String, MOID: v[2].String,
 		MarketingName: v[3].String, TeamGroup: v[4].String, MOLeader: v[5].String, InsuredName: v[6].String,
-		SobName: v[7].String, ClassOfBusiness: v[8].String}
+		SobName: v[7].String, ClassOfBusiness: v[8].String, DeductibleAcceptance: v[11].String, CommentDeductible: v[12].String,
+		CreateOp: v[13].String, StartDateTime: v[14].String, DateToUW: v[15].String, DaysValidity: v[16].String,
+		DateValidity: v[17].String, WaitingBindDate: v[18].String, MarketingCode: v[19].String,
+		ConfirmBinding: v[20].String, ReceivedRiSlip: v[21].String, StatusWork: v[22].String}
 	if k.PercentShare, err = bacaDesimal(id, "T_GENERAL_POLIS.PERCENT_SHARE", &v[9]); err != nil {
 		return models.KonteksSubmit{}, err
 	}
@@ -379,6 +414,23 @@ func (r *SubmitOracle) KategoriOkupasi(ctx context.Context, kode []string) (map[
 
 // ---- tulis -------------------------------------------------------------------------------------------------------
 
+// tulisNBStatus - UPDATE NB_STATUS; baris General belum ada -> INSERT.
+func tulisNBStatus(ctx context.Context, tx *db.Tx, general, caseID, nbStatus string) error {
+	k := db.KosongJadiNil
+	hasil, err := jalankan(ctx, tx, sqlNBStatus(general), "NB_STATUS", k(nbStatus), caseID)
+	if err != nil {
+		return err
+	}
+	if n, err := hasil.RowsAffected(); err != nil {
+		return fmt.Errorf("repository: NB_STATUS: %w", err)
+	} else if n == 0 {
+		if _, err := jalankan(ctx, tx, sqlSisipNBStatus(general), "NB_STATUS", caseID, k(nbStatus)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // TulisSubmit - lihat PenyimpanSubmit. Urutan: posisi (penjaga Submit serentak) -> riwayat produksi -> riwayat Pega ->
 // performance -> NB_STATUS (UPDATE, atau INSERT bila baris General belum ada) -> kunci korespondensi.
 func (r *SubmitOracle) TulisSubmit(ctx context.Context, tx *db.Tx, w models.TulisanSubmit) error {
@@ -397,6 +449,11 @@ func (r *SubmitOracle) TulisSubmit(ctx context.Context, tx *db.Tx, w models.Tuli
 	} else if n != 1 {
 		return ErrPosisiBerubah
 	}
+	if w.FlagBaru != "" {
+		if _, err := jalankan(ctx, tx, sqlFlagBinding(t.work), "FLAG_ONGOING_POLICY", w.FlagBaru, w.CaseID, LiniFacIn); err != nil {
+			return err
+		}
+	}
 	p := w.Riwayat
 	if _, err := jalankan(ctx, tx, sqlSisipRiwayatProduksi(t.produksi), "riwayat "+TabelRiwayatProduksi, w.IDPega, k(p.TypePolis),
 		k(p.Posisi), k(p.PIC), p.TglInp, k(p.Div), k(p.Type), k(p.Putaran), k(p.Approval), k(p.Keterangan), k(p.AksesLogin),
@@ -407,20 +464,49 @@ func (r *SubmitOracle) TulisSubmit(ctx context.Context, tx *db.Tx, w models.Tuli
 		k(w.Pega.Username), k(w.Pega.Workbasket)); err != nil {
 		return err
 	}
-	if f := w.Performance; f != nil {
+	for _, f := range []*models.PerformanceFacIn{w.Performance, w.PerformanceLanjut} {
+		if f == nil {
+			continue
+		}
 		if _, err := jalankan(ctx, tx, sqlSisipPerformance(t.perf), TabelPerformanceFacIn, w.IDPega, k(f.PositionDoc), k(f.StatusDoc),
-			k(f.Username), k(f.InsuredName), k(f.SOB), k(f.MOLeader), k(f.COB)); err != nil {
+			k(f.Username), k(f.InsuredName), k(f.SOB), k(f.MOLeader), k(f.COB), k(f.RISlipReceived)); err != nil {
 			return err
 		}
 	}
-	hasil, err = jalankan(ctx, tx, sqlNBStatus(t.general), "NB_STATUS", k(w.NBStatus), w.CaseID)
-	if err != nil {
-		return err
+	if !w.NBStatusTetap {
+		if err := tulisNBStatus(ctx, tx, t.general, w.CaseID, w.NBStatus); err != nil {
+			return err
+		}
 	}
-	if n, err := hasil.RowsAffected(); err != nil {
-		return fmt.Errorf("repository: NB_STATUS: %w", err)
-	} else if n == 0 {
-		if _, err := jalankan(ctx, tx, sqlSisipNBStatus(t.general), "NB_STATUS", w.CaseID, k(w.NBStatus)); err != nil {
+	if d := w.Deductible; d != nil {
+		if _, err := jalankan(ctx, tx, sqlDeductibleTL(t.general), "Deductible Acceptance", k(d.Acceptance), k(d.Comment), w.CaseID); err != nil {
+			return err
+		}
+	}
+	if w.KeUW != "" {
+		if _, err := jalankan(ctx, tx, sqlKeUW(t.general), "tanggal ke UW", w.KeUW, w.KeUW, w.CaseID); err != nil {
+			return err
+		}
+	}
+	if sb := w.StatusBinding; sb != nil {
+		if _, err := jalankan(ctx, tx, sqlStatusBinding(t.general), "CONFIRM_BINDING", k(sb.ConfirmBinding), k(sb.ReceivedRiSlip),
+			w.CaseID); err != nil {
+			return err
+		}
+	}
+	if b := w.Binding; b != nil {
+		if err := r.tulisBinding(ctx, tx, t, w.CaseID, w.IDPega, *b); err != nil {
+			return err
+		}
+	}
+	if p := w.Policy; p != nil {
+		if err := r.tulisPolicy(ctx, tx, w.IDPega, p); err != nil {
+			return err
+		}
+	}
+	if v := w.Validitas; v != nil {
+		if _, err := jalankan(ctx, tx, sqlValiditasUW(t.general), "Validity Of Acceptance", k(v.Days), k(v.Date), k(v.WaitingBind),
+			k(v.Comment), w.CaseID); err != nil {
 			return err
 		}
 	}

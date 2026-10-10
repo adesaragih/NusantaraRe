@@ -60,21 +60,24 @@ func TestSQLSubmit(t *testing.T) {
 		q   string
 		mau int
 	}{
-		"konteks":     {sqlKonteksSubmit(tbSubmit), 2},
-		"akun":        {sqlAkunSubmit("L"), 1},
-		"riwayat":     {sqlRiwayatAkseptasi("P"), 1},
-		"banding":     {sqlOpsiBanding("LIM", "HP"), 3},
-		"rw":          {sqlCekRW("RW"), 4},
-		"okupasi":     {sqlKategoriOkupasi("OC", 3), 3},
-		"produksi":    {sqlSisipRiwayatProduksi("P"), 13},
-		"pega":        {sqlSisipRiwayatPega("HP"), 4},
-		"performance": {sqlSisipPerformance("F"), 8},
-		"posisi":      {sqlPosisiSubmit("W"), 5},
-		"nbstatus":    {sqlNBStatus("G"), 2},
-		"sisipNB":     {sqlSisipNBStatus("G"), 2},
-		"kunciKor":    {sqlKunciKorespondensi("K"), 1},
-		"kunciPen":    {sqlKunciPenerima("PN", "K"), 1},
-		"sebab":       {sqlSebabDecline("C"), 0},
+		"konteks":      {sqlKonteksSubmit(tbSubmit), 2},
+		"akun":         {sqlAkunSubmit("L"), 1},
+		"riwayat":      {sqlRiwayatAkseptasi("P"), 1},
+		"banding":      {sqlOpsiBanding("LIM", "HP"), 3},
+		"rw":           {sqlCekRW("RW"), 4},
+		"okupasi":      {sqlKategoriOkupasi("OC", 3), 3},
+		"produksi":     {sqlSisipRiwayatProduksi("P"), 13},
+		"pega":         {sqlSisipRiwayatPega("HP"), 4},
+		"performance":  {sqlSisipPerformance("F"), 9},
+		"posisi":       {sqlPosisiSubmit("W"), 5},
+		"nbstatus":     {sqlNBStatus("G"), 2},
+		"sisipNB":      {sqlSisipNBStatus("G"), 2},
+		"deductibleTL": {sqlDeductibleTL("G"), 3},
+		"keUW":         {sqlKeUW("G"), 3},
+		"validitasUW":  {sqlValiditasUW("G"), 5},
+		"kunciKor":     {sqlKunciKorespondensi("K"), 1},
+		"kunciPen":     {sqlKunciPenerima("PN", "K"), 1},
+		"sebab":        {sqlSebabDecline("C"), 0},
 	} {
 		if n := bindBerurutan(t, nama, c.q); n != c.mau {
 			t.Errorf("%s: %d bind, mau %d", nama, n, c.mau)
@@ -91,11 +94,42 @@ func TestSQLSubmit(t *testing.T) {
 	}
 	if !strings.Contains(sqlSisipRiwayatProduksi("P"), "TO_DATE(:5, 'DD/MM/YYYY HH24:MI:SS')") ||
 		!strings.Contains(sqlKonteksSubmit(tbSubmit), "m.MOSTATUS = '1' AND m.BRANCHSTATUS IS NULL AND m.CLIENTID2 <> 'LEADER'") ||
-		!strings.Contains(sqlPosisiSubmit("W"), "STATUS_WORK = NVL(:2, STATUS_WORK)") || !strings.Contains(sqlPosisiSubmit("W"), "AND POSITION = :5") {
+		!strings.Contains(sqlPosisiSubmit("W"), "STATUS_WORK = NVL(:2, STATUS_WORK)") || !strings.Contains(sqlPosisiSubmit("W"), "AND POSITION = :5 AND (STATUS_WORK IS NULL OR STATUS_WORK NOT LIKE 'Resolved-%')") {
 		t.Error("TGL_INP jam 24 / saringan MOLEADER / penjaga posisi")
 	}
 	if !regexp.MustCompile(`(?m)^\s+NB_STATUS VARCHAR2\(1000\)$`).MatchString(bacaMigrasi(t, "208_nb_status.sql")) ||
 		sqlNBStatus("G") != "UPDATE G SET NB_STATUS = :1 WHERE ID = :2" {
 		t.Error("NB_STATUS 208")
+	}
+	// Tiket 58 (migrasi 210): isian Deductible TL dan IsJuniorUW_B (SubmitToUW hanya bila kosong).
+	m210 := bacaMigrasi(t, "210_submit_team_leader.sql")
+	for _, k := range []string{"IS_DEDUCTIBLE_ACCEPTANCE VARCHAR2(10)", "COMMENT_DEDUCTIBLE       VARCHAR2(500)", "DATE_TO_UW               VARCHAR2(30)",
+		"SUBMIT_TO_UW             VARCHAR2(30)"} {
+		if !strings.Contains(m210, k) {
+			t.Errorf("210 tanpa %s", k)
+		}
+	}
+	if sqlKeUW("G") != "UPDATE G SET DATE_TO_UW = :1, SUBMIT_TO_UW = NVL(SUBMIT_TO_UW, :2) WHERE ID = :3" ||
+		sqlDeductibleTL("G") != "UPDATE G SET IS_DEDUCTIBLE_ACCEPTANCE = :1, COMMENT_DEDUCTIBLE = :2 WHERE ID = :3" ||
+		!strings.Contains(sqlKonteksSubmit(tbSubmit), "g.IS_DEDUCTIBLE_ACCEPTANCE, g.COMMENT_DEDUCTIBLE,\n w.CREATE_OP, g.START_DATE_TIME, "+
+			"g.DATE_TO_UW, g.DAYS_VALIDITY, g.DATE_VALIDITY, g.WAITING_BIND_DATE,\n") {
+		t.Error("SQL tiket 58")
+	}
+}
+
+// TestMigrasiPosisiJUWB - 211 (ADR-0032): hanya baris LINI Fac In, nama lama -> ReasFacInJuniorUnderwritingB; jalur mundur
+// kebalikannya.
+func TestMigrasiPosisiJUWB(t *testing.T) {
+	naik, turun := bacaMigrasi(t, "211_posisi_juw_b.sql"), bacaMigrasi(t, "211_posisi_juw_b_down.sql")
+	if !strings.Contains(naik, "UPDATE {skema}.T_WORK_POLIS SET POSITION = 'ReasFacInJuniorUnderwritingB'\n WHERE LINI = '"+LiniFacIn+"' AND POSITION = 'ReasFacInJuniorUnderwriting'\n") ||
+		!strings.Contains(turun, "UPDATE {skema}.T_WORK_POLIS SET POSITION = 'ReasFacInJuniorUnderwriting'\n WHERE LINI = '"+LiniFacIn+"' AND POSITION = 'ReasFacInJuniorUnderwritingB'\n") {
+		t.Error("211")
+	}
+}
+
+// TestSQLValiditasUW - tiket 61 (migrasi 212): empat kolom T_GENERAL_POLIS, bind berurutan.
+func TestSQLValiditasUW(t *testing.T) {
+	if q := sqlValiditasUW("UJI.G"); q != "UPDATE UJI.G SET DAYS_VALIDITY = :1, DATE_VALIDITY = :2, WAITING_BIND_DATE = :3, COMMENT_TEXT = :4 WHERE ID = :5" {
+		t.Errorf("%q", q)
 	}
 }

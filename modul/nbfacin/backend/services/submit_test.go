@@ -18,6 +18,8 @@ import (
 // per kode.
 type submitTiruan struct {
 	konteks    map[string]models.KonteksSubmit
+	ganda      []string                // jawaban KasusGanda (tiket 73 P4)
+	cariGanda  []models.CariKasusGanda // isian KasusGanda yang diterima
 	akun       models.AkunSubmit
 	riwayat    []models.RiwayatAkseptasi
 	banding    []string
@@ -27,6 +29,40 @@ type submitTiruan struct {
 	tulis      []models.TulisanSubmit
 	galatTulis error
 	idBanding  string
+	// tiket 63: penerima email "Waiting for Bind".
+	pembuat   string
+	ccBinding []string
+	// tiket 64: tombol Binding.
+	tekan      []models.TekanBinding
+	galatTekan error
+	// tiket 69a: GetCountAccumulation per ACCUMULATIONCODE; argumen terakhir dicatat.
+	akumulasi    map[string]int
+	argAkumulasi []string
+}
+
+func (s *submitTiruan) HitungAkumulasiBerjalan(_ context.Context, kode, tanggal, pzInsKey, pyID string) (int, error) {
+	s.argAkumulasi = []string{kode, tanggal, pzInsKey, pyID}
+	return s.akumulasi[kode], nil
+}
+
+func (s *submitTiruan) KasusGanda(_ context.Context, c models.CariKasusGanda) ([]string, error) {
+	s.cariGanda = append(s.cariGanda, c)
+	return s.ganda, nil
+}
+
+func (s *submitTiruan) TulisTekanBinding(_ context.Context, _ *db.Tx, b models.TekanBinding) error {
+	if s.galatTekan != nil {
+		return s.galatTekan
+	}
+	s.tekan = append(s.tekan, b)
+	k := s.konteks[b.CaseID]
+	k.ConfirmBinding = "1"
+	s.konteks[b.CaseID] = k
+	return nil
+}
+
+func (s *submitTiruan) PenerimaBinding(context.Context, string, string) (string, []string, error) {
+	return s.pembuat, s.ccBinding, nil
 }
 
 func (s *submitTiruan) KonteksSubmit(_ context.Context, id string) (models.KonteksSubmit, error) {
@@ -64,6 +100,9 @@ func (s *submitTiruan) KategoriOkupasi(_ context.Context, kode []string) (map[st
 func (s *submitTiruan) TulisSubmit(_ context.Context, _ *db.Tx, t models.TulisanSubmit) error {
 	if s.galatTulis != nil {
 		return s.galatTulis
+	}
+	if t.Policy != nil {
+		t.Policy.NomorPolis = "UJI-F" + t.Policy.BusinessOldID + ".10.2026.00001" // repository mengisi di transaksi
 	}
 	s.tulis = append(s.tulis, t)
 	return nil
@@ -115,7 +154,7 @@ func submitUji() *submitTiruan {
 // TestProteksiAcceptLolos - kasus sah: tanpa pesan (instrumen: setiap pesan di TestProteksiAcceptGagal muncul hanya bila
 // datanya dirusak).
 func TestProteksiAcceptLolos(t *testing.T) {
-	p, err := layananSubmit(submitUji()).ProteksiAccept(context.Background(), "UJI-NB-1")
+	p, err := layananSubmit(submitUji()).ProteksiAccept(context.Background(), "UJI-NB-1", nil)
 	if err != nil || len(p) != 0 {
 		t.Fatalf("%v %q", err, p)
 	}
@@ -139,7 +178,7 @@ func TestProteksiAcceptGagal(t *testing.T) {
 	svc := layananSubmit(st, lokasiSah(), rusak)
 	k := svc.kasus.(kasusTiruan).ada["UJI-NB-1"]
 	k.General.MarketingID, k.RiskScoring.FinalScore = "", nil
-	p, err := svc.ProteksiAccept(ctx, "UJI-NB-1")
+	p, err := svc.ProteksiAccept(ctx, "UJI-NB-1", nil)
 	mau := []string{
 		"Harus memilih dari daftar nama marketing yang tersedia",
 		"Scoring Risk Cannot Empty !!",
@@ -163,12 +202,12 @@ func TestProteksiAcceptGagal(t *testing.T) {
 	}
 	// Langkah 2: > 400 lokasi / InsuredID dikecualikan -> tanpa proteksi.
 	banyak := make([]models.ObjekFire, 401)
-	if p, err := layananSubmit(submitUji(), banyak...).ProteksiAccept(ctx, "UJI-NB-1"); err != nil || len(p) != 0 {
+	if p, err := layananSubmit(submitUji(), banyak...).ProteksiAccept(ctx, "UJI-NB-1", nil); err != nil || len(p) != 0 {
 		t.Errorf("> 400 lokasi: %v %q", err, p)
 	}
 	svc = layananSubmit(submitUji(), rusak)
 	svc.kasus.(kasusTiruan).ada["UJI-NB-1"].Opportunity.InsuredID = "ASM-SFAGIS-WORK-ORG ORG-7889"
-	if p, err := svc.ProteksiAccept(ctx, "UJI-NB-1"); err != nil || len(p) != 0 {
+	if p, err := svc.ProteksiAccept(ctx, "UJI-NB-1", nil); err != nil || len(p) != 0 {
 		t.Errorf("ORG-7889: %v %q", err, p)
 	}
 }
@@ -178,12 +217,12 @@ func TestProteksiKategoriOkupasi(t *testing.T) {
 	ctx := context.Background()
 	o := lokasiSah()
 	o.Occupations = []models.OkupasiObjek{{OccupationID: "UJI-9"}, {OccupationID: "UJI-8"}}
-	p, err := layananSubmit(submitUji(), o).ProteksiAccept(ctx, "UJI-NB-1")
+	p, err := layananSubmit(submitUji(), o).ProteksiAccept(ctx, "UJI-NB-1", nil)
 	if err != nil || !reflect.DeepEqual(p, []string{"Kategori Okupasi ID UJI-8 lokasi1 tidak boleh kosong"}) {
 		t.Errorf("%v %q", err, p)
 	}
 	o.Occupations = append(o.Occupations, models.OkupasiObjek{OccupationID: "2001"})
-	if p, err := layananSubmit(submitUji(), o).ProteksiAccept(ctx, "UJI-NB-1"); err != nil || len(p) != 0 {
+	if p, err := layananSubmit(submitUji(), o).ProteksiAccept(ctx, "UJI-NB-1", nil); err != nil || len(p) != 0 {
 		t.Errorf("preferred: %v %q", err, p)
 	}
 }
@@ -193,7 +232,7 @@ func TestProteksiKategoriOkupasi(t *testing.T) {
 func TestProteksiAcceptPayment(t *testing.T) {
 	svc := layananSubmit(submitUji())
 	svc.payment.(*paymentTiruan).ada.Cicilan = map[string][]models.CicilanPayment{}
-	p, err := svc.ProteksiAccept(context.Background(), "UJI-NB-1")
+	p, err := svc.ProteksiAccept(context.Background(), "UJI-NB-1", nil)
 	if err != nil || !reflect.DeepEqual(p, []string{"List Installment can't be null!", "Total premium RNM on installment didn't match with premium RNM!"}) {
 		t.Errorf("%v %q", err, p)
 	}
@@ -219,7 +258,8 @@ func TestTampilanSubmit(t *testing.T) {
 	k := st.konteks["UJI-NB-1"]
 	k.FlagOnGoingPolicy = "1"
 	st.konteks["UJI-NB-1"] = k
-	if v, _ := svc.TampilanSubmit(ctx, pelakuMkt, "UJI-NB-1"); v.BolehSubmit || !strings.Contains(v.Alasan, "tahap marketing") {
+	// K69-8: flag 1 = tahap Policy (sudah di-bind) - marketing tidak memegang Submit dan tab baca-saja.
+	if v, _ := svc.TampilanSubmit(ctx, pelakuMkt, "UJI-NB-1"); v.BolehSubmit || v.Alasan != pesanTahapPolicy {
 		t.Errorf("flag 1: %+v", v)
 	}
 	if _, err := svc.TampilanSubmit(ctx, inti.Pelaku{}, "UJI-NB-1"); !errors.Is(err, inti.ErrTanpaIdentitas) {
@@ -240,7 +280,7 @@ func TestAjukanSubmit(t *testing.T) {
 		{models.IsiSubmit{EmailType: "1", Comment: " ok "}, "ReasFacInTeamLeader", "NB IS IN TEAM LEADER'S INBOX"},
 		{models.IsiSubmit{EmailType: "2", Comment: "tolak"}, "Offer", "NB IS IN UJI PEMASAR'S OPPORTUNITY"},
 		{models.IsiSubmit{EmailType: "4", Comment: "banding", BandingTo: "SENIORUW"}, "ReasFacInSeniorUnderwriting", "NB IS IN SENIORUW'S INBOX"},
-		{models.IsiSubmit{EmailType: "4", Comment: "banding", BandingTo: "JUW_B"}, "ReasFacInJuniorUnderwriting", "NB IS IN JUNIOR UNDERWRITER (B)'S INBOX"},
+		{models.IsiSubmit{EmailType: "4", Comment: "banding", BandingTo: "JUW_B"}, "ReasFacInJuniorUnderwritingB", "NB IS IN JUNIOR UNDERWRITER (B)'S INBOX"},
 		{models.IsiSubmit{EmailType: "7", Comment: "diabaikan", SebabTc: []models.PilihanSebabTc{{TermCondition: "Rate", Prioritas: "I", PctRNM: "1.5", PctSOB: "2"},
 			{TermCondition: "Occupancy"}, {TermCondition: "Risk Exposure", Prioritas: "II", Description1: "Others", Description2: "UJI"}}}, "Decline",
 			"NB WAS DECLINED BY  UJI PENGGUNA"},
@@ -306,20 +346,30 @@ func TestAjukanSubmitDitolak(t *testing.T) {
 		"403 workbasket": {inti.Pelaku{AkunID: "UJI-UW", Peran: []string{"ReasFacInTeamLeader"}}, "UJI-NB-1", sah, nil, inti.ErrTanpaWewenang},
 		"409 posisi": {pelakuMkt, "UJI-NB-1", sah, func(st *submitTiruan, _ *Service) {
 			k := st.konteks["UJI-NB-1"]
-			k.Position = "ReasFacInTeamLeader"
+			k.Position = "UJI-POSISI-LAIN" // tiket 62: FacultativeDivHead kini tahap uw (403)
 			st.konteks["UJI-NB-1"] = k
 		}, ErrSubmitBukanTahapMarketing},
+		"403 marketing di UW": {pelakuMkt, "UJI-NB-1", sah, func(st *submitTiruan, _ *Service) {
+			k := st.konteks["UJI-NB-1"]
+			k.Position = "ReasFacInJuniorUnderwritingB" // tiket 61: tahap uw, workbasket POSITION
+			st.konteks["UJI-NB-1"] = k
+		}, inti.ErrTanpaWewenang},
+		"403 marketing di TL": {pelakuMkt, "UJI-NB-1", sah, func(st *submitTiruan, _ *Service) {
+			k := st.konteks["UJI-NB-1"]
+			k.Position = "ReasFacInTeamLeader"
+			st.konteks["UJI-NB-1"] = k
+		}, inti.ErrTanpaWewenang},
 		"409 serentak":   {pelakuMkt, "UJI-NB-1", sah, func(st *submitTiruan, _ *Service) { st.galatTulis = repository.ErrPosisiBerubah }, ErrSubmitBukanTahapMarketing},
 		"400 ask":        {pelakuMkt, "UJI-NB-1", models.IsiSubmit{EmailType: "3", Comment: "x"}, nil, ErrMasukanSubmit},
 		"400 comment":    {pelakuMkt, "UJI-NB-1", models.IsiSubmit{EmailType: "2", Comment: "  "}, nil, ErrMasukanSubmit},
 		"400 banding":    {pelakuMkt, "UJI-NB-1", models.IsiSubmit{EmailType: "4", Comment: "x", BandingTo: "DIREKTURTEKNIK"}, nil, ErrMasukanSubmit},
 		"400 managertek": {pelakuMkt, "UJI-NB-1", models.IsiSubmit{EmailType: "4", Comment: "x", BandingTo: "MANAGERTEKNIK"}, nil, ErrMasukanSubmit},
 		"400 decline":    {pelakuMkt, "UJI-NB-1", models.IsiSubmit{EmailType: "7", SebabTc: []models.PilihanSebabTc{{TermCondition: "Rate", Prioritas: "I"}}}, nil, ErrMasukanSubmit},
-		"403 sebelum 409": {inti.Pelaku{AkunID: "UJI-UW", Peran: []string{"ReasFacInTeamLeader"}}, "UJI-NB-1", sah, func(st *submitTiruan, _ *Service) {
+		"409 tahap dulu": {inti.Pelaku{AkunID: "UJI-UW", Peran: []string{"ReasFacInTeamLeader"}}, "UJI-NB-1", sah, func(st *submitTiruan, _ *Service) {
 			k := st.konteks["UJI-NB-1"]
 			k.Position = "Decline"
 			st.konteks["UJI-NB-1"] = k
-		}, inti.ErrTanpaWewenang},
+		}, ErrKasusBacaSaja},
 		"400 option asing": {pelakuMkt, "UJI-NB-1", models.IsiSubmit{EmailType: "7", SebabTc: []models.PilihanSebabTc{{TermCondition: "Period Of Insurance (POI)", Prioritas: "I", Description1: "Power plant"}}}, nil, ErrMasukanSubmit},
 		"400 tc asing":     {pelakuMkt, "UJI-NB-1", models.IsiSubmit{EmailType: "7", SebabTc: []models.PilihanSebabTc{{TermCondition: "UJI asing", Prioritas: "I"}}}, nil, ErrMasukanSubmit},
 		"400 sebab asing":  {pelakuMkt, "UJI-NB-1", models.IsiSubmit{EmailType: "7", SebabNonTc: "UJI asing"}, nil, ErrMasukanSubmit},
@@ -350,12 +400,12 @@ func TestPeriksaSubmit(t *testing.T) {
 	svc := layananSubmit(submitUji())
 	svc.kasus.(kasusTiruan).ada["UJI-NB-1"].RiskScoring.FinalScore = nil
 	for e, mau := range map[string]int{"1": 1, "2": 0, "4": 0, "7": 0} {
-		h, err := svc.PeriksaSubmit(ctx, pelakuMkt, "UJI-NB-1", e)
+		h, err := svc.PeriksaSubmit(ctx, pelakuMkt, "UJI-NB-1", IsiPeriksa{EmailType: e})
 		if err != nil || len(h.Pesan) != mau || h.Pesan == nil {
 			t.Errorf("%s: %v %+v", e, err, h)
 		}
 	}
-	if _, err := svc.PeriksaSubmit(ctx, pelakuMkt, "UJI-NB-1", "9"); !errors.Is(err, ErrMasukanSubmit) {
+	if _, err := svc.PeriksaSubmit(ctx, pelakuMkt, "UJI-NB-1", IsiPeriksa{EmailType: "9"}); !errors.Is(err, ErrMasukanSubmit) {
 		t.Errorf("400: %v", err)
 	}
 }

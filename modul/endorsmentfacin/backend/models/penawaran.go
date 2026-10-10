@@ -57,6 +57,22 @@ const FlagDihapus = "1"
 // "loop saat periode polis sudah berjalan", prakondisi `==1`).
 const FlagPolisBerjalan = "1"
 
+// HasilProdKePolisNBRNW - `InputParamEdm.pxResults(1).HASIL2` yang membuat
+// `CountPaymentEdm_Act` langkah 7 dilewati (`CheckData.CARI24` tetap 0).
+// [dugaan] arti: polis lama NB/RNW - deskripsi langkah 7:
+// `@contains(…OldData.IDNewBisnis,"NB")||@contains(…,"RNW")`.
+const HasilProdKePolisNBRNW = "0"
+
+// EdmTypeNewRISlip - `QuotationData.EdmTypeNew` endorsement RI slip. Korpus
+// membandingkannya DUA cara, keduanya diport apa adanya: sebagai TEKS
+// berkutip (`InputData.CARI40=="4"`, SetErrorBatalEndorsement_Act 5.1/5.10)
+// dan sebagai ANGKA (`EdmTypeNew==4`, CountPaymentEdm_Act langkah 5).
+const EdmTypeNewRISlip = "4"
+
+// TypeRISlip - `QuotationData.Type` yang disetel CountPaymentEdm_Act langkah 5
+// untuk RI slip (`= 0`).
+const TypeRISlip JenisPenyesuaian = "0"
+
 // NilaiBenar - literal boolean berkutip `"true"` (`.IsAdjustableFlag`).
 const NilaiBenar = "true"
 

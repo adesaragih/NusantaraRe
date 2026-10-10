@@ -205,20 +205,45 @@ func (s *Service) GantiObjek(ctx context.Context, pelaku inti.Pelaku, id string,
 	if !idKasusSah(id) {
 		return nil, ErrKasusTidakAda
 	}
-	if err := s.periksaMataUang(ctx, baris); err != nil {
+	if err := s.gantiObjek(ctx, id, baris, opsiGantiObjek{}); err != nil {
 		return nil, err
+	}
+	return s.BacaObjek(ctx, id)
+}
+
+// opsiGantiObjek - variasi penggantian objek. periode: pengganti periode Prorate (nil = tersimpan); buangSpreading: spreading
+// TIDAK dipertahankan (Save Data CSV, tiket 66 D5 ii); spreading: spreading yang dipasang menggantikan milik case (Copy All
+// Following, tiket 70: spreading case sumber); sebelum: tulisan lain di transaksi yang sama, SEBELUM objek ditulis.
+type opsiGantiObjek struct {
+	periode        *Periode
+	buangSpreading bool
+	spreading      *models.KasusSpreading
+	sebelum        func(tx *db.Tx) error
+}
+
+// gantiObjek - mata uang item / catatan kerugian di CURRENCY (400) -> siapkanKerugian -> siapkanCoverage -> satu transaksi.
+func (s *Service) gantiObjek(ctx context.Context, id string, baris []models.ObjekFire, o opsiGantiObjek) error {
+	if err := s.periksaMataUang(ctx, baris); err != nil {
+		return err
 	}
 	simpan, err := s.siapkanKerugian(ctx, id, baris)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if err := s.siapkanCoverage(ctx, id, simpan); err != nil {
-		return nil, err
+	if err := s.siapkanCoverageDengan(ctx, id, simpan, o.periode); err != nil {
+		return err
 	}
 	err = s.transaksi(ctx, func(tx *db.Tx) error {
+		if o.sebelum != nil {
+			if err := o.sebelum(tx); err != nil {
+				return err
+			}
+		}
 		// Spreading coverage (tiket 48, K48-7) dibaca sebelum objek ditulis ulang, dipasang lagi sesudahnya.
 		var lama models.KasusSpreading
-		if s.spreading != nil {
+		if o.spreading != nil {
+			lama = *o.spreading
+		} else if s.spreading != nil && !o.buangSpreading {
 			k, err := s.spreading.BacaSpreading(ctx, tx, id)
 			if err != nil {
 				return err
@@ -231,10 +256,7 @@ func (s *Service) GantiObjek(ctx context.Context, pelaku inti.Pelaku, id string,
 		return s.pertahankanSpreading(ctx, tx, id, lama)
 	})
 	if errors.Is(err, repository.ErrKasusTidakAda) {
-		return nil, ErrKasusTidakAda
+		return ErrKasusTidakAda
 	}
-	if err != nil {
-		return nil, err
-	}
-	return s.BacaObjek(ctx, id)
+	return err
 }

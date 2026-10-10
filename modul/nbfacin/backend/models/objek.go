@@ -171,6 +171,13 @@ type BarisTableOfLimit struct {
 	PctLimit    string // TABLEOFLIMIT.PCTLIMIT
 }
 
+// BarisBisnisLini - satu baris BUSINESS untuk lini case (tiket 73 P0): ID, OLDID, GROUPPANEL dari baris yang SAMA.
+type BarisBisnisLini struct {
+	ID         string // BUSINESS.ID -> BusinessCode
+	OldID      string // BUSINESS.OLDID -> BusinessOldId
+	GroupPanel string // BUSINESS.GROUPPANEL -> .Quotation.GroupPanel
+}
+
 // BarisCoverage - satu pilihan coverage (tiket 43) dari tabel COVERAGE (popup dan otomatis).
 type BarisCoverage struct {
 	ID    string // ID -> .Coverage
@@ -235,4 +242,21 @@ type CZoneZip struct {
 // ZipAkumulasi - satu saran Zip Code form Add New akumulasi (BrowseRiskAddressZipCode_RD + SetCountryID_Act).
 type ZipAkumulasi struct {
 	ZipCode, City, Province, Nation, NationInitial string
+}
+
+// AkumulasiCoverage - PUT …/akumulasi (tiket 60): ID baris T_COVERAGELIST dan dua kolom akumulasinya.
+type AkumulasiCoverage struct {
+	ID                                        string
+	AccumulationCode, AccumulationDescription string
+}
+
+// RWCsv - satu baris BrowseRW2_SQL (Save Data CSV objek, tiket 66): Note (kelurahan / ASMRW), DistrictName, CITYNAME,
+// PROVINCENAME, NATION (NATIONNAME).
+type RWCsv struct {
+	Note, District, City, Province, Nation string
+}
+
+// MataUangCsv - satu baris GetDataCurrencyByName_SQL (ID, OLDID, CURRENCY "CURR").
+type MataUangCsv struct {
+	ID, OldID, Currency string
 }

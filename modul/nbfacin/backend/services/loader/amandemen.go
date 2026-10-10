@@ -96,6 +96,20 @@ var amandemenLebar = map[string]string{
 	"T_DATASCORINGRISKLIST.TOP_RISK_LOCATION": "VARCHAR2(4000)",
 	"T_DATASCORINGRISKLIST.OCCUPATION_CODE":   "VARCHAR2(1000)",
 	"T_DATASCORINGRISKLIST.OCCUPATION_NOTE":   "VARCHAR2(1000)",
+	// Tiket 73 P1 (pola butir 80, keputusan agent): lebar sumber - OCCUPATION_ID = 189; FLAG / kolom MarineHull = POOLDATA.SHIP
+	// FLAGNAME / CLASSIFICATION / CONSTRUCTION / DWT / GRT / NRT VARCHAR2(1000) (`DDL\SHIP.txt`, di-SET BrowseShip_RD);
+	// OBJECT_NAME 4000 (SHIP.NAME 1000; SetObjectDescHE_DT menyambung tiga medan 500). Migrasi 214.
+	"T_ANEKALIST.OCCUPATION_ID":   "VARCHAR2(1000)",
+	"T_ANEKALIST.FLAG":            "VARCHAR2(1000)",
+	"T_ANEKALIST.OBJECT_NAME":     "VARCHAR2(4000)",
+	"T_MARINEHULL.CLASSIFICATION": "VARCHAR2(1000)",
+	"T_MARINEHULL.CONSTRUCTION":   "VARCHAR2(1000)",
+	"T_MARINEHULL.DWTRT":          "VARCHAR2(1000)",
+	"T_MARINEHULL.GRTRT":          "VARCHAR2(1000)",
+	"T_MARINEHULL.NRTRT":          "VARCHAR2(1000)",
+	// Tiket 73 P2 (migrasi 214): PctShortPeriod angka (K73-6) - rancangan VARCHAR2(30). TYPE_OF_DISCOUNT sudah teks
+	// (kolomTeksMenyimpang, butir 68.1).
+	"T_COVERAGELIST.PCT_SHORT_PERIOD": "NUMBER",
 }
 
 // T_ADDITIONALSHIP - kolom sistem sepola tabel berulang berjalur tunggal di DDL draf
@@ -226,6 +240,15 @@ var amandemenScoring = map[string]kolomSkema{
 // di halaman OfferFacIn, jadi loader data lama mengisinya kosong. VARCHAR2(1000) - lebar sumber tidak tertulis. Migrasi 208.
 var amandemenNBStatus = kolomSkema{nama: "NB_STATUS", tipe: "VARCHAR2(1000)", medan: "NBStatus"}
 
+// amandemenKeUW - tiket 58: `.OfferFacIn.DateToUW` / `.SubmitToUW` (`DataTransform\IsJuniorUW_B.xml`, Accept Team Leader)
+// ada di rancangan TETAPI di T_WORK_POLIS (milik premiumlistlife, K-064); ditaruh di T_GENERAL_POLIS, tipe = rancangan
+// VARCHAR2(30). Tanpa FIELD ASLI (V-48: medan akar tidak boleh ganda dengan T_WORK_POLIS) - asal = repository (ditulis
+// aplikasi, aturan.go kolomRepository). Migrasi 210.
+var amandemenKeUW = []kolomSkema{
+	{nama: "DATE_TO_UW", tipe: "VARCHAR2(30)"},
+	{nama: "SUBMIT_TO_UW", tipe: "VARCHAR2(30)"},
+}
+
 // amandemenBangunan - tiket 35 (A110): tiga medan BuildingConstruction yang ADA di layar
 // (`Section\ObjectDetails.xml` sel 56-58) tetapi tidak di rancangan; tipe = kolom
 // saudaranya (VARCHAR2(50)). Migrasi 186. Digabung ke amandemenKolom di init.
@@ -302,6 +325,87 @@ var amandemenKerugian = []kolomSkema{
 	{nama: "CAUSE_OF_LOSS", tipe: "VARCHAR2(500)", medan: "CauseOfLoss"},
 }
 
+// amandemenAneka - tiket 73 P1 (migrasi 214): medan form objek Aneka yang ADA di layar
+// (`NB FacIn\Section\InputDtlObjectAneka_FacIn.xml`; LimitOfLiability grid okupasi `InputOkupasiAneka_FacIn.xml` L5858; TSIOld
+// grid Golf `InputDtlObjectLocation_FacIn.xml` L13568; AlmRiskID di-SET BrowseShip_RD sel L10329) tetapi tidak di rancangan
+// T_ANEKALIST (sampel tidak mengisinya). Teks pxTextInput VARCHAR2(50), pxTextArea / nama 500 (pola V-6); angka K73-6 dan uang
+// NUMBER (pola rancangan; migrasi NUMBER(38,8)); tanggal teks VARCHAR2(30) (pola START_DATE); Briguna K73-7. TSI_OLD tanpa
+// FIELD ASLI: medan TSIOld terkena V-28b (berakhiran Old) - ditulis aplikasi (aturan.go kolomRepository).
+var amandemenAneka = []kolomSkema{
+	{nama: "NO_KONTRAK", tipe: "VARCHAR2(50)", medan: "NO_KONTRAK"},
+	{nama: "NO_KTP", tipe: "VARCHAR2(50)", medan: "NO_KTP"},
+	{nama: "NO_NPWP", tipe: "VARCHAR2(50)", medan: "NO_NPWP"},
+	{nama: "OTHERS", tipe: "VARCHAR2(500)", medan: "Others"},
+	{nama: "INVOICE_NO", tipe: "VARCHAR2(50)", medan: "InvoiceNo"},
+	{nama: "MAINTENANCE_PERIOD", tipe: "NUMBER", medan: "MaintenancePeriod"},
+	{nama: "NO_OF_TREE", tipe: "NUMBER", medan: "NoOfTree"},
+	{nama: "AREA_HECTAR", tipe: "NUMBER", medan: "AreaHectar"},
+	{nama: "LIMIT_IDEMNITY_DAY", tipe: "NUMBER", medan: "LimitIdemnityDay"},
+	{nama: "LIMIT_IDEMNITY_MONTH", tipe: "NUMBER", medan: "LimitIdemnityMonth"},
+	{nama: "LIMIT_OF_LIABILITY", tipe: "NUMBER", medan: "LimitOfLiability"},
+	{nama: "TSI_OLD", tipe: "NUMBER"},
+	{nama: "FLAG_DELETE", tipe: "VARCHAR2(10)", medan: "FlagDelete"},
+	{nama: "ALM_RISK_ID", tipe: "VARCHAR2(100)", medan: "AlmRiskID"},
+	{nama: "LOAN_ACCOUNT_NUMBER", tipe: "VARCHAR2(50)", medan: "LoanAccountNumber"},
+	{nama: "LOAN_NAME", tipe: "VARCHAR2(500)", medan: "LoanName"},
+	{nama: "JOB", tipe: "VARCHAR2(500)", medan: "Job"},
+	{nama: "DEPOSIT_ACCOUNT_NO", tipe: "VARCHAR2(50)", medan: "DepositAccountNo"},
+	{nama: "ID_CARD_NO", tipe: "VARCHAR2(50)", medan: "IDCardNo"},
+	{nama: "INSTITUTION", tipe: "VARCHAR2(500)", medan: "Institution"},
+	{nama: "LOAN_TYPE", tipe: "VARCHAR2(50)", medan: "LoanType"},
+	{nama: "DATE_OF_BIRTH", tipe: "VARCHAR2(30)", medan: "DateOfBirth"},
+	{nama: "SALARY", tipe: "NUMBER", medan: "Salary"},
+}
+
+// amandemenKapal / amandemenHE - tiket 73 P1 (migrasi 214): medan layar halaman `.MarineHull` (sel L14598 / L15741 / L16884)
+// dan `.VehicleHE` (sel L21528 / L21767 / L26301 / L26540; ObjectIdHE di-SET BrowseObject_RD sel L24970) yang tidak di
+// rancangan. Tipe = kolom saudaranya VARCHAR2(50).
+var (
+	amandemenKapal = []kolomSkema{
+		{nama: "LENGTHM", tipe: "VARCHAR2(50)", medan: "LENGTHM"},
+		{nama: "BREADTHM", tipe: "VARCHAR2(50)", medan: "BREADTHM"},
+		{nama: "DEPTHM", tipe: "VARCHAR2(50)", medan: "DEPTHM"},
+	}
+	amandemenHE = []kolomSkema{
+		{nama: "CHASSIS_NUMBER", tipe: "VARCHAR2(50)", medan: "ChassisNumber"},
+		{nama: "ENGINE_NUMBER", tipe: "VARCHAR2(50)", medan: "EngineNumber"},
+		{nama: "OBJECT_ID_HE", tipe: "VARCHAR2(50)", medan: "ObjectIdHE"},
+	}
+)
+
+// amandemenMemorandum - tiket 73 P1 (migrasi 214): tabel BARU T_MEMORANDUMACCEPT untuk halaman `.MemorandumAccept` baris
+// Aneka (`NB FacIn\Section\InputDtlMemorandumAccept.xml` 15 FIELD L1068-3633 + SuretyType dari
+// `Activity\InputDtlObjectAneka_PreAct.xml`). Kolom sistem pola tabel anak satu halaman (T_MARINEHULL); pxTextInput 500,
+// pxTextArea 4000 (keputusan agent). Dua jalur: non-Golf (OccupationList) dan Golf (RiskLocation/AnekaList, kontainer C1).
+var (
+	amandemenMemorandum = []kolomSkema{
+		{nama: "ID", tipe: "NUMBER", wajib: true},
+		{nama: "IDPEGA", tipe: "VARCHAR2(50)"},
+		{nama: "COB_GROUP", tipe: "VARCHAR2(20)"},
+		{nama: "PARENT_ID", tipe: "NUMBER", wajib: true},
+		{nama: "SURETY_TYPE", tipe: "VARCHAR2(50)", medan: "SuretyType"},
+		{nama: "APPLICATION_NUMBER", tipe: "VARCHAR2(500)", medan: "ApplicationNumber"},
+		{nama: "ACCUMULATION", tipe: "VARCHAR2(500)", medan: "Accumulation"},
+		{nama: "COLLATERAL", tipe: "VARCHAR2(500)", medan: "Collateral"},
+		{nama: "INSURED_SIUP", tipe: "VARCHAR2(500)", medan: "InsuredSiup"},
+		{nama: "KEY_PERSON", tipe: "VARCHAR2(500)", medan: "KeyPerson"},
+		{nama: "ORIGINAL_RATE", tipe: "VARCHAR2(500)", medan: "OriginalRate"},
+		{nama: "PRINCIPALS_OUT_GO", tipe: "VARCHAR2(500)", medan: "PrincipalsOutGo"},
+		{nama: "TYPE_OF_WORDING", tipe: "VARCHAR2(500)", medan: "TypeOfWording"},
+		{nama: "BUILDING_STATUS", tipe: "VARCHAR2(4000)", medan: "BuildingStatus"},
+		{nama: "SUPPORTING_DOCUMENT", tipe: "VARCHAR2(4000)", medan: "SupportingDocument"},
+		{nama: "PRINCIPALS_DATA", tipe: "VARCHAR2(4000)", medan: "PrincipalsData"},
+		{nama: "CONCLUSIONS_PROPOSALS", tipe: "VARCHAR2(4000)", medan: "ConclusionsProposals"},
+		{nama: "PRINCIPALS_BACKGROUND", tipe: "VARCHAR2(4000)", medan: "PrincipalsBackground"},
+		{nama: "SUMMARY_FINANCIAL", tipe: "VARCHAR2(4000)", medan: "SummaryFinancial"},
+		{nama: "PRINCIPALS_GUARANTEE", tipe: "VARCHAR2(4000)", medan: "PrincipalsGuarantee"},
+	}
+	jalurMemorandum = []jalurSkema{
+		{jalur: "LocationList/Property/RiskLocation/OccupationList/AnekaList/MemorandumAccept", tabel: "T_MEMORANDUMACCEPT", induk: "T_ANEKALIST"},
+		{jalur: "LocationList/Property/RiskLocation/AnekaList/MemorandumAccept", tabel: "T_MEMORANDUMACCEPT", induk: "T_ANEKALIST"},
+	}
+)
+
 // jalurFEA, lipatFEA - tiket 41: jalur FEAList di bawah baris lokasi; halaman .DataFEA dilipat (medan sendiri ikut).
 var (
 	jalurFEA = jalurSkema{jalur: "LocationList/FEAList", tabel: "T_FEALIST", induk: "T_LOCATIONLIST"}
@@ -319,6 +423,14 @@ func init() {
 	}
 	amandemenTabel[jalurFEA.tabel] = amandemenFEA
 	amandemenJalur = append(amandemenJalur, jalurFEA)
+	if _, ada := amandemenTabel["T_MEMORANDUMACCEPT"]; ada {
+		panic("loader: amandemen tabel T_MEMORANDUMACCEPT ganda")
+	}
+	amandemenTabel["T_MEMORANDUMACCEPT"] = amandemenMemorandum
+	amandemenJalur = append(amandemenJalur, jalurMemorandum...)
+	amandemenKolom["T_ANEKALIST"] = append(amandemenKolom["T_ANEKALIST"], amandemenAneka...)
+	amandemenKolom["T_MARINEHULL"] = append(amandemenKolom["T_MARINEHULL"], amandemenKapal...)
+	amandemenKolom["T_VEHICLEHE"] = append(amandemenKolom["T_VEHICLEHE"], amandemenHE...)
 	if _, ada := lipat[lipatFEA]; ada {
 		panic("loader: lipatan T_FEALIST/DataFEA sudah ada")
 	}
@@ -330,6 +442,7 @@ func init() {
 	amandemenKolom["T_CURRENCYLIST"] = append(amandemenKolom["T_CURRENCYLIST"], amandemenDeduction2)
 	amandemenKolom["T_COVERAGELIST"] = append(amandemenKolom["T_COVERAGELIST"], amandemenKonstruksiGempa)
 	amandemenKolom["T_GENERAL_POLIS"] = append(amandemenKolom["T_GENERAL_POLIS"], amandemenNBStatus)
+	amandemenKolom["T_GENERAL_POLIS"] = append(amandemenKolom["T_GENERAL_POLIS"], amandemenKeUW...)
 	for t, k := range amandemenScoring {
 		amandemenKolom[t] = append(amandemenKolom[t], k)
 	}

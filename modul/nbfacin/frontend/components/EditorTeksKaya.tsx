@@ -55,7 +55,7 @@ export default function EditorTeksKaya({
             <button
               key={t.perintah}
               type="button"
-              className="btn btn--ghost btn--sm"
+              className="btn nbf-tema__tombol btn--ghost btn--sm"
               title={t.label}
               aria-label={t.label}
               onMouseDown={(e) => e.preventDefault()}

@@ -198,7 +198,7 @@ func (s *Service) dasarDeduction(ctx context.Context, id string) ([]models.Baris
 	if err != nil {
 		return nil, k, tarif, false, nil, galatKasus(err)
 	}
-	sp, err := s.spreading.BacaSpreading(ctx, nil, id)
+	sp, err := s.bacaSpreadingRingkas(ctx, nil, id)
 	if err != nil {
 		return nil, k, tarif, false, nil, galatKasus(err)
 	}
@@ -394,7 +394,7 @@ func (s *Service) SimpanDeduction(ctx context.Context, pelaku inti.Pelaku, id st
 	}
 	// Premi per mata uang dibaca di transaksi yang sama dengan penulisan (bukan dari baca sebelumnya), seperti tab Cedant.
 	err = s.transaksi(ctx, func(tx *db.Tx) error {
-		sp, err := s.spreading.BacaSpreading(ctx, tx, id)
+		sp, err := s.bacaSpreadingRingkas(ctx, tx, id)
 		if err != nil {
 			return err
 		}

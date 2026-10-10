@@ -108,14 +108,37 @@ type MasukanPorsiPembayaran struct {
 	StartDateTime, EndDateTime time.Time
 	// EdmDate - `QuotationData.EdmDate`; TIDAK dinormalisasi langkah 4.
 	EdmDate time.Time
-	// CacahMataUang - baris `OfferFacIn.CurrencyList` yang diulang 14.4 dan
-	// langkah 3 `CountPaymentEdmTSIObj_Act`.
-	CacahMataUang int
+	// MataUang - `OfferFacIn.CurrencyList` sesudah langkah 2 (`SetRIComm_Act`)
+	// dan 10 (`CountPremiEDM_DT`) - keduanya belum diport (A21). MataUangLama -
+	// `OfferFacIn.OldData.CurrencyList`.
+	MataUang, MataUangLama []BarisBayar
+	// ProrateEDMEndAwal - `OfferFacIn.ProrateEDMEnd` sesudah langkah 10; dibaca
+	// TSIObj 3.2 bila activity ini belum menulisnya.
+	ProrateEDMEndAwal uang.Ratio
+	// HasilProdKe - `InputParamEdm.pxResults(1).HASIL2` (`GetEdmProdKe_Act`,
+	// langkah 6): langkah 7 menyetel `CheckData.CARI24 = 1` bila BUKAN 0
+	// (deskripsi: polis lama bukan NB/RNW). Dibaca TSIObj blok 2 saja.
+	HasilProdKe string
+	// ShareBaru, ShareLama - `OfferFacIn.PercentShare` / `OldData.PercentShare`
+	// (14.1 → 14.4.7 IsEDMShare).
+	ShareBaru, ShareLama uang.Ratio
+	// LangkahSepuluh - bila terisi, `CountPremiEDM_DT` (langkah 10) dijalankan
+	// di tempatnya: sesudah langkah 4 dan 9, sebelum 11; ProrateEDMEndAwal lalu
+	// tidak dipakai. nil = MataUang/ProrateEDMEndAwal sudah keadaan sesudah
+	// langkah 10 (rekonsiliasi blok 13).
+	LangkahSepuluh *LangkahSepuluh
 	// IsProRate - `OfferFacIn.IsProRate` (models.NilaiShortPeriod membuka 1.3
 	// TSIObj).
 	IsProRate string
 	// EdmType - `QuotationData.EdmType` (K-029).
 	EdmType models.JenisEndorsemen
+}
+
+// LangkahSepuluh - masukan DataTransform yang tidak ada di
+// MasukanPorsiPembayaran (lihat MasukanPremiEDMDT).
+type LangkahSepuluh struct {
+	LamaStart, LamaEnd, LamaEdmDate time.Time
+	RICommision                     uang.Ratio
 }
 
 // HasilPorsiPembayaran - yang DITULIS activity. Porsi kosong = tidak ditulis
@@ -134,6 +157,18 @@ type HasilPorsiPembayaran struct {
 	// `Local.startdate`/`edmdate`: 15.3 (tetap jalan) menyetel keduanya 1.
 	Datedif, DatedifBefore, Day int64
 	DayKosong                   bool
+	// MataUang - CurrencyList sesudah activity (salinan; masukan tidak diubah).
+	MataUang []BarisBayar
+	// FlagEDMCurrency - TSIObj 1.5 menulis 1 bila jumlah baris mata uang baru ≠
+	// lama. false = TIDAK ditulis (nilai halaman sebelumnya tetap); 1.5 tidak
+	// pernah menulis 0.
+	FlagEDMCurrency bool
+	// IsEDMShare - 14.1 (0) / 14.4.7 (1) - ditulis ke `OfferFacIn.QuotationData`
+	// DAN `Quotation`; nil = tidak ditulis.
+	IsEDMShare *bool
+	// BarisTerbawa - Name baris mata uang tanpa pasangan OldData yang membaca
+	// lokal terbawa dari baris lain (A20, K-046).
+	BarisTerbawa []string
 }
 
 // satu - literal Pega `= 1`, skala 0.
@@ -159,6 +194,7 @@ func HitungPorsiPembayaran(m MasukanPorsiPembayaran) (HasilPorsiPembayaran, erro
 		return HasilPorsiPembayaran{}, err
 	}
 	m.StartDateTime, m.EndDateTime = h.StartDateTime, h.EndDateTime
+	h.MataUang = salinBaris(m.MataUang)
 	// 9 - IsMarineCargo T=5 F=2, IsEdmAdjShareCedant T=2 F=3 (ATAU) →
 	// `ProtectSpreading.CARI2 = "FIX RATE"` ("biar g usah dikali prorate").
 	if m.Predikat.IsMarineCargo || m.Predikat.IsEdmAdjShareCedant {
@@ -166,16 +202,42 @@ func HitungPorsiPembayaran(m MasukanPorsiPembayaran) (HasilPorsiPembayaran, erro
 	}
 	h.FixRate = m.FixRate
 
+	// 10 - Apply-DataTransform CountPremiEDM_DT (premiedmdt.go).
+	if l10 := m.LangkahSepuluh; l10 != nil {
+		dt, err := HitungPremiEDMDT(MasukanPremiEDMDT{
+			StartDateTime: m.StartDateTime, EndDateTime: m.EndDateTime, EdmDate: m.EdmDate,
+			LamaStart: l10.LamaStart, LamaEnd: l10.LamaEnd, LamaEdmDate: l10.LamaEdmDate,
+			FixRate: m.FixRate, EdmType: m.EdmType, RICommision: l10.RICommision, HasilProdKe: m.HasilProdKe,
+			MataUang: h.MataUang, MataUangLama: m.MataUangLama,
+		})
+		if err != nil {
+			return HasilPorsiPembayaran{}, err
+		}
+		h.MataUang, h.ProrateEDMEnd, h.Ditulis = dt.MataUang, dt.ProrateEDMEnd, true
+		h.BarisTerbawa = append(h.BarisTerbawa, dt.BarisTerbawa...)
+	}
+
 	// 11 - `Call CountPaymentEdmTSIObj_Act`: lokalnya milik activity itu, yang
 	// menyeberang hanya `OfferFacIn.ProrateEDMEnd`.
 	if err := porsiTSIObj(m, &h); err != nil {
 		return HasilPorsiPembayaran{}, err
 	}
 
+	// Lokal CountPaymentEdm_Act (terpisah dari lokal TSIObj).
+	lok := lokal{}
+
 	// 13 - IsEdmExtendPeriod. 13.1 tanpa syarat di dalam blok.
 	if m.Predikat.IsEdmExtendPeriod {
 		h.Datedif, h.Day, h.DayKosong = 1, 1, false
 		h.ProrateEDMEnd, h.Ditulis = satu(), true
+		// 13.2 pembayaran, r = @Math.divide(datedif, day, 20).
+		r, err := bagiPorsi(h.Datedif, h.Day)
+		if err != nil {
+			return HasilPorsiPembayaran{}, err
+		}
+		if err := bayarBlok13(h.MataUang, m.MataUangLama, lok, r.Value, &h.BarisTerbawa); err != nil {
+			return HasilPorsiPembayaran{}, err
+		}
 	}
 
 	// 14 - IsEdmAdjRate ATAU IsEdmAdjShareCedant (pola (5,2)(2,3)).
@@ -193,6 +255,8 @@ func HitungPorsiPembayaran(m MasukanPorsiPembayaran) (HasilPorsiPembayaran, erro
 		}
 		h.DayKosong = false
 		h.ProrateEDMEnd, h.Ditulis = satu(), true
+		salah := false
+		h.IsEDMShare = &salah // 14.1
 		// 14.2
 		if h.Day == 0 {
 			h.Day = 365
@@ -204,7 +268,7 @@ func HitungPorsiPembayaran(m MasukanPorsiPembayaran) (HasilPorsiPembayaran, erro
 		}
 		// 14.4 - loop CurrencyList (`pyStepsPreCondition=false`: tanpa syarat);
 		// 14.4.5 menulis kedua porsi di setiap baris, nilainya sama.
-		if m.CacahMataUang > 0 {
+		if len(h.MataUang) > 0 {
 			akhir, err := bagiPorsi(h.Datedif, h.Day)
 			if err != nil {
 				return HasilPorsiPembayaran{}, err
@@ -214,6 +278,14 @@ func HitungPorsiPembayaran(m MasukanPorsiPembayaran) (HasilPorsiPembayaran, erro
 				return HasilPorsiPembayaran{}, err
 			}
 			h.ProrateEDMEnd, h.ProrateStartEDM = akhir, awal
+			share, err := bayarBlok14(h.MataUang, m.MataUangLama, lok, akhir.Value, awal.Value,
+				shareEDM{baru: m.ShareBaru, lama: m.ShareLama}, &h.BarisTerbawa)
+			if err != nil {
+				return HasilPorsiPembayaran{}, err
+			}
+			if share != nil {
+				h.IsEDMShare = share
+			}
 		}
 	}
 
@@ -237,6 +309,10 @@ func HitungPorsiPembayaran(m MasukanPorsiPembayaran) (HasilPorsiPembayaran, erro
 			return HasilPorsiPembayaran{}, err
 		}
 		h.ProrateEDMEnd, h.Ditulis = akhir, true
+		// 15.5 pembayaran, r = @Math.divide(edmdate, startdate, 20) = 1.
+		if err := bayarBlok15(h.MataUang, m.MataUangLama, lok, akhir.Value, &h.BarisTerbawa); err != nil {
+			return HasilPorsiPembayaran{}, err
+		}
 	}
 	return h, nil
 }
@@ -288,6 +364,7 @@ func normalTanggalPolis(t time.Time) (time.Time, error) {
 // `CountPaymentEdm_Act` tidak memakai +1. Langkah 3 tidak punya guard day = 0.
 func porsiTSIObj(m MasukanPorsiPembayaran, h *HasilPorsiPembayaran) error {
 	p := m.Predikat
+	lok := lokal{} // lokal TSIObj
 	selisih := func() (datedif, day int64, err error) {
 		if datedif, err = hariBulat(m.EndDateTime.Sub(m.EdmDate)); err != nil {
 			return 0, 0, err
@@ -310,12 +387,27 @@ func porsiTSIObj(m MasukanPorsiPembayaran, h *HasilPorsiPembayaran) error {
 		if err != nil {
 			return err
 		}
+		// 1.4 pembayaran (r = porsi), 1.5 flag ganti mata uang, 1.6 ProrateEDMEnd.
+		if err := bayarTSIObjBlok1(h.MataUang, m.MataUangLama, lok, porsi.Value, &h.BarisTerbawa); err != nil {
+			return err
+		}
+		if len(m.MataUang) != len(m.MataUangLama) {
+			h.FlagEDMCurrency = true
+		}
 		h.ProrateEDMEnd, h.Ditulis = porsi, true
 	}
 	if p.IsEdmAdjInsured || p.IsEdmAdjRefNo || p.IsEdmAdjSpreading {
 		h.ProrateEDMEnd, h.Ditulis = satu(), true
+		// 2.2 pembayaran; CheckData.CARI24 dari langkah 7 pemanggil.
+		cari24EDM, err := cari24(m.HasilProdKe)
+		if err != nil {
+			return err
+		}
+		if err := bayarTSIObjBlok2(h.MataUang, m.MataUangLama, lok, cari24EDM, &h.BarisTerbawa); err != nil {
+			return err
+		}
 	}
-	if m.CacahMataUang > 0 {
+	if len(m.MataUang) > 0 {
 		batalProrata, err := samaKode(string(m.EdmType), string(models.EdmBatalProrata))
 		if err != nil {
 			return err
@@ -331,6 +423,31 @@ func porsiTSIObj(m MasukanPorsiPembayaran, h *HasilPorsiPembayaran) error {
 			}
 			h.ProrateEDMEnd, h.Ditulis = porsi, true
 		}
+		// 3.2 prorateend = OfferFacIn.ProrateEDMEnd saat itu; 3.3-3.5 cicilan.
+		prorate := h.ProrateEDMEnd
+		if prorate.Kosong() {
+			prorate = m.ProrateEDMEndAwal
+		}
+		if prorate.Kosong() {
+			return fmt.Errorf("%w: OfferFacIn.ProrateEDMEnd (TSIObj 3.2)", ErrNilaiPembayaranKosong)
+		}
+		if err := bayarTSIObjLangkah3(h.MataUang, lok, prorate.Value); err != nil {
+			return err
+		}
 	}
 	return nil
+}
+
+// cari24 - langkah 7: `InputParamEdm.pxResults(1).HASIL2==0` T=3 (lewati, CARI24
+// tetap 0 dari langkah 3), selain itu CARI24 = 1. Kosong → galat (perbandingan
+// kosong dengan angka belum terverifikasi).
+func cari24(hasil2 string) (bool, error) {
+	if hasil2 == "" {
+		return false, fmt.Errorf("%w: InputParamEdm.pxResults(1).HASIL2", ErrNilaiPembayaranKosong)
+	}
+	nol, err := samaKode(hasil2, models.HasilProdKePolisNBRNW)
+	if err != nil {
+		return false, err
+	}
+	return !nol, nil
 }

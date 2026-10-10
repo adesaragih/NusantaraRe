@@ -26,7 +26,7 @@ const tanpaUbah = () => {}
 function TombolBelumDiport({ label }: { label: string }) {
   return (
     <span>
-      <button type="button" className="btn btn--ghost btn--sm" disabled aria-describedby="nbfacin-belum-diport">
+      <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" disabled aria-describedby="nbfacin-belum-diport">
         {label}
       </button>{' '}
       <small>({TEKS.belumDiport})</small>
@@ -103,7 +103,7 @@ export default function CoverageCargo() {
         <Field label={MEDAN.diskon.label} value="" onChange={tanpaUbah} readOnly />
       </div>
       <p>
-        <button type="button" className="btn" onClick={() => void hitung()} disabled={sibuk}>
+        <button type="button" className="btn nbf-tema__tombol" onClick={() => void hitung()} disabled={sibuk}>
           {sibuk ? TEKS.menghitung : TEKS.hitung}
         </button>
       </p>

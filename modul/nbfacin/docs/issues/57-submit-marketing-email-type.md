@@ -27,7 +27,8 @@
   "Are you sure want to reject?" / "Are you sure want to decline?" (`Section\RejectNotificationSection.xml`).
 
 ### Proteksi (Accept) - `Activity\Protection_Act.xml`
-Reject / Ask / Decline melewati seluruh proteksi (langkah 7–8). Accept diperiksa ±40 pesan verbatim, mis. "Scoring Risk
+Reject / Ask / Decline melewati seluruh proteksi (langkah 7–8). **RALAT 57b (08-10-2026):** Banding (4) TIDAK dilewati langkah 8 - lihat
+"RALAT 57b" di akhir berkas. Accept diperiksa ±40 pesan verbatim, mis. "Scoring Risk
 Cannot Empty !!" (IsFire), "Survey report cannot be empty", "Ceding Co cannot be empty", lokasi / okupasi / zip / akumulasi /
 coverage / deductible (`ProtectFIREMBUPA_Act`), spreading 100 % dan premi (`CheckSpreadingProtectFire_ACT`), payment /
 installment (`ProtectPremiPolicy_Act`), mata uang TSI (`ProtectCurrencyTSI_Act`).
@@ -296,3 +297,81 @@ di Team Leader (Pega: marketing tidak memegang assignment-nya lagi) - menunggu k
     sumber). Uji: `TestPenjagaBacaSaja` (13 metode tulis × posisi TL / Decline / flag 1 → 409, kasus asing 404, tanpa sesi
     401 lebih dulu, tanpa workbasket 403 kecuali tab IT, tahap marketing lolos), `TestAksesUbahKasus`, `TestBacaSajaHandler`
     (GET 200 + bolehUbah false, PUT general 409 / 403), `TestSQLTahapKasus`; mutasi 5 titik → semuanya tertangkap.
+
+## Kotak masuk Beranda (work owner 07-10-2026: "ini kenapa tidak ada ya, padahal ini login teamleader")
+
+Beranda hanya menampilkan modul yang mendaftarkan `antreanBeranda` / `daftarBeranda` (`inti/frontend/modul.ts`); nbfacin belum.
+Kini (sesi 0f, pola NB Treaty In): `menu.ts` mendaftarkan `kotakMasukNbFacIn` + `daftarBeranda` (`beranda.ts`, kolom = kolom portal
+berjudul); `rute.tsx` membuka case dari Beranda (`bukaKasus`) dan Cancel kembali ke Beranda; `frontend/Beranda.test.ts` (root)
+diperbarui (daftar modul berkotak masuk + nbfacin). Backend `GET /api/nbfacin/kotak-masuk(/kasus)` diminta ke c3. Catatan:
+Team Leader yang membuka case melihatnya baca-saja - layar / aksi tahap Team Leader belum dibangun.
+
+## Kolom daftar kotak masuk (work owner 07-10-2026: "di tampilan inbox, keluarin kolom2 ini" + gambar inbox "New Business")
+
+Report inbox Pega tidak ada di korpus (label "Status Inbox", "Time Since Last Update" nihil) - kolom dari gambar layar, pola
+NB Treaty In: ID · Insured Name · Business name · Source Of Business · Ceding Company · Inception Date (DD/MM/YY) · %Share RNM
+(2 desimal) · Marketing Name · Status · Created date · Offering Date · Validity Date · Status Inbox (NB_STATUS) · (tanpa judul:
+"Accept by <PIC>" = Approval + PIC riwayat terakhir) · Time Since Last Update. Frontend `beranda.ts` / `labels.ts`
+`KOLOM_INBOX_NBFACIN` / `api.ts` `BarisKotakMasukNbFacIn` + `beranda.test.ts`; backend diminta ke c3.
+
+## RALAT 57b (08-10-2026) - Banding tahap marketing diproteksi; penahan = flag tombol Banding
+
+> Teks lama yang diralat (K57-15 / bagian Backend): proteksi hanya dijalankan untuk Accept - *"`case isi.EmailType !=
+> models.EmailTypeAccept:`"* (PeriksaSubmit) dan *"`} else if isi.EmailType == models.EmailTypeAccept {`"* (Submit); Banding
+> tahap marketing lolos tanpa proteksi.
+
+**Sebab ralat** `[terverifikasi]` (temuan tiket 64): `Activity\Protection_Act.xml` langkah 8 hanya melewati Reject / Ask /
+Decline / Revise - Email Type 4 (Banding) TIDAK dilewati, jadi port tiket 57 keliru membiarkan Banding tanpa proteksi.
+**Keputusan work owner 08-10-2026** (lewat sesi 9d, "iya disamakan, jangan halu"): Banding menjalankan port Protection_Act yang
+sama dengan Accept, tetapi yang MENAHAN hanya pesan yang langkahnya men-SET flag Protect* di syarat Visible tombol Send Email
+Banding:
+
+- tahap marketing - `Section\EmailSection.xml`: `TempEmail.CARI28 != .PositionNote || pyWorkPage.LetterNo = '' ||
+  ProtectSpreading.CARI1 == 1|| ProtectSpreading.CARI23 == 1 || FlagBanding.CARI11==''|| ProtectPayment.CARI1==1 ||
+  ProtectMarine.CARI2==1|| ProtectNeRate.CARI1==…` → penahan **ProtectSpreading.CARI1, ProtectSpreading.CARI23,
+  ProtectPayment.CARI1, ProtectMarine.CARI2, ProtectNeRate.CARI1** (`flagBandingMarketing`);
+- tahap Binding (tiket 64) - `Section\EmailSectionCeding.xml`: `… ||ProtectSpreading.CARI1 == 1|| ProtectSpreading.CARI23 == 1
+  || FlagBanding.CARI11==''` → penahan **hanya ProtectSpreading.CARI1, ProtectSpreading.CARI23** (`flagBandingBinding`) -
+  ⚠️ BERBEDA dari EmailSection (tanpa Payment / Marine / NeRate).
+
+Satu fungsi bersama `proteksiBanding(ctx, id, tahan)` (`services/proteksi.go`) dipakai PeriksaSubmit dan Submit tahap marketing
+dan `proteksiBinding` Email Type 4. Pesan bukan penahan TIDAK ditampilkan untuk Banding. Accept tidak berubah (semua pesan).
+Syarat tombol non-flag (`CARI28 != PositionNote`, `LetterNo` kosong, `FlagBanding.CARI11`) di luar cakupan ralat ini.
+
+### Pemetaan pesan → flag (dump langkah Property-Set / Page-Set-Messages; urutan reset diperiksa: ProtectCurrencyTSI 1.1
+mereset CARI1 SEBELUM langkah lain menyetelnya, ProtectPremiPolicy 2 mereset CARI23 / CARI28 / Payment, ProtectFIREMBUPA 6
+mereset Occupation / NeRate - tidak ada reset sesudah penyetel)
+
+| Pesan | Langkah penyetel flag | Flag | Marketing | Binding |
+| --- | --- | --- | --- | --- |
+| "Deductible Acceptance cannot be empty" / "Comment Deductible cannot be empty" | Protection_Act 9 / 11 | ProtectDeductible.CARI1 / CARI2 | — | — (hanya TL) |
+| "Harus memilih dari daftar nama marketing yang tersedia" | Protection_Act 16 | ProtectMarketing.CARI1 | — | — |
+| "Scoring Risk Cannot Empty !!" | Protection_Act 18 (tanpa Property-Set) | tanpa flag | — | — |
+| "Currency Pada Lokasi … Bermasalah …" | ProtectCurrencyTSI_Act 1.2.1.3 | ProtectSpreading.CARI1 | menahan | menahan |
+| "List Payment can't be null!" | ProtectPremiPolicy_Act 3 | ProtectPayment.CARI1 | menahan | — |
+| "List Installment can't be null!" | ProtectPremiPolicy_Act 5.8 (syarat = 5.7) | ProtectSpreading.CARI1 | menahan | menahan |
+| "Total premium RNM on installment didn't match …" | ProtectPremiPolicy_Act 5.5 | ProtectSpreading.CARI28 | — | — |
+| "Premi on paymnet can't be 0" | ProtectPremiPolicy_Act 7 | ProtectSpreading.CARI23 | menahan | menahan |
+| "Province … can't be null!" / "City … can't be null!" | ProtectFIREMBUPA_Act 9.2.3 / 9.2.5 | ProtectSpreading.CARI1 | menahan | menahan |
+| "ZipCode … can't be null!" / "Occupation on location … can't be null!" / "Loss record … can't be empty !" | 9.2.7 (satu Property-Set; When kode 5 = Skip Whens → ATAU `[dugaan kuat]`) | ProtectSpreading.CARI1 | menahan | menahan |
+| "ZipCode / CITYNAME / DISTRICT / PROVINCE … doesn’t exist in Master!" | 9.2.21 / 9.2.18-20 | ProtectZipCode.CARI1 | — | — |
+| "Occupation ID on location…can't be null!" | 9.2.27.3 / 9.2.28.3 | ProtectSpreading.CARI1 | menahan | menahan |
+| "Kategori Okupasi ID … tidak boleh kosong" | 9.2.29 | ProtectOccupation.CARI1 | — | — |
+| "Currency on location … must be choose!" / "Choose Object Item on location … !" | 9.2.30.3 (Currency ATAU ItemTypeID; kode 5 = Skip Whens `[dugaan kuat]`) | ProtectSpreading.CARI1 | menahan | menahan |
+| " Coverage … can't be empty!" / " Accumulation … can't be empty!" | 9.2.30.6.2 | ProtectMarine.CARI2 | menahan | — |
+| "coverage on location … can't be Net Rate!" | 9.2.30.7 | ProtectNeRate.CARI1 | menahan | — |
+
+**Bukan penahan Banding (kedua tahap):** MOID, Scoring Risk, Total premium installment (CARI28), keempat "doesn’t exist in
+Master!", kategori okupasi, deductible TL. `[dugaan kuat]` = dua baris kode When 5 di atas. **Ralat 08-10-2026:** kode 5 = **Skip Whens**
+(`KEPUTUSAN-30-09-2026.md` peta kode transisi, `[terverifikasi]` lewat UI Pega); artinya - sisa When dilewati dan langkah
+DIJALANKAN - `[dugaan kuat]` di tingkat proyek (KEPUTUSAN baris "Arti tindakannya"). Kalimat lama *"dibaca sebagai "lanjut ke
+When berikut""* salah tulis; logika port (ATAU) tidak berubah.
+
+**Uji** - `services/proteksibanding_test.go`: `TestPengumpulPesanFlag` (kembar + gabungan flag, urutan), `TestProteksiBandingPemetaan`
+(kasus rusak 16 pesan: marketing 10, Binding 7; 9.2.7; cicilan; List Payment; kategori), `TestProteksiPremiNol`,
+`TestSubmitBandingMarketing` (penahan → 422 tanpa tulisan + periksa sama; hanya MOID / Scoring → Banding lolos, Accept 422),
+`TestSubmitBandingBinding` (Province kosong → 422; coverage kosong → lolos). `TestSubmitBindingDitolak` diralat: Scoring kosong
+kini TIDAK menahan Banding Binding (Accept tetap 422). `handlers.TestSubmitHandler` periksa memakai Decline (Banding kini butuh
+kasus). **Mutasi 45 / 46 mati**; 1 setara: net rate ProtectNeRate.CARI1 → ProtectMarine.CARI2 (keduanya penahan marketing dan
+bukan penahan Binding - tak terbedakan oleh perilaku). Mutan uji tiket 57 lama 8 / 8 tetap mati.
+

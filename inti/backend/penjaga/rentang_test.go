@@ -56,10 +56,22 @@ func nomorBerkas(nama string) (int, bool) {
 type jatahModul struct {
 	migrasi, slot [2]int
 	tanpaSlot     bool
+	// migrasiLain - rentang migrasi tambahan sesudah `migrasi` (rentangNomorJamak); kosong untuk hampir semua modul.
+	migrasiLain [][2]int
 }
 
-func (j jatahModul) diMigrasi(n int) bool { return n >= j.migrasi[0] && n <= j.migrasi[1] }
-func (j jatahModul) diSlot(n int) bool    { return !j.tanpaSlot && n >= j.slot[0] && n <= j.slot[1] }
+// semuaMigrasi - rentang migrasi pertama lalu tambahan.
+func (j jatahModul) semuaMigrasi() [][2]int { return append([][2]int{j.migrasi}, j.migrasiLain...) }
+
+func (j jatahModul) diMigrasi(n int) bool {
+	for _, r := range j.semuaMigrasi() {
+		if n >= r[0] && n <= r[1] {
+			return true
+		}
+	}
+	return false
+}
+func (j jatahModul) diSlot(n int) bool { return !j.tanpaSlot && n >= j.slot[0] && n <= j.slot[1] }
 
 // tanpaMigrasi - modul `—` (tandaTanpaMigrasi): nol nomor; setiap berkas migrasinya ditolak R2.
 func (j jatahModul) tanpaMigrasi() bool { return j.migrasi == [2]int{} && j.slot == [2]int{} }
@@ -72,8 +84,8 @@ func jatahSetiapModul(t *testing.T) map[string]jatahModul {
 		if nama := strings.Trim(m.kunci["Nama modul"], "`"); nama != m.folder {
 			t.Errorf("%s: `Nama modul` %q, mau nama foldernya %q", m.jalur, nama, m.folder)
 		}
-		mig, slot, tanpaSlot := rentangModul(t, m)
-		hasil[m.folder] = jatahModul{migrasi: mig, slot: slot, tanpaSlot: tanpaSlot}
+		mig, slot, tanpaSlot, lain := rentangModul(t, m)
+		hasil[m.folder] = jatahModul{migrasi: mig, slot: slot, tanpaSlot: tanpaSlot, migrasiLain: lain}
 	}
 	return hasil
 }
@@ -81,36 +93,49 @@ func jatahSetiapModul(t *testing.T) map[string]jatahModul {
 // ⛔ R2: jatah setiap modul berbentuk benar dan tidak berbagi nomor.
 func TestRentangMigrasiDanSlotMenuTidakBerbagiNomor(t *testing.T) {
 	jatah := jatahSetiapModul(t)
+	for _, m := range masalahJatah(jatah) {
+		t.Error(m)
+	}
+	t.Logf("jatah %d modul terbaca", len(jatah))
+}
+
+// masalahJatah - pemeriksaan R2 atas jatah semua modul: setiap rentang migrasi (termasuk tambahan) di 001-899, slot menu di
+// 950-999, dan tidak ada dua rentang (antar-modul, juga antar-rentang satu modul, juga dengan inti) yang berbagi nomor.
+func masalahJatah(jatah map[string]jatahModul) []string {
 	type rentang struct {
 		pemilik string
 		awal    int
 		akhir   int
 	}
+	var masalah []string
 	semua := []rentang{{"inti (900-949)", awalInti, akhirInti}}
 	for m, j := range jatah {
 		if j.tanpaMigrasi() {
 			continue
 		}
-		if j.migrasi[0] < 1 || j.migrasi[1] >= awalInti {
-			t.Errorf("modul %s: rentang migrasi %03d-%03d di luar 001-899 (900-999 milik inti dan slot menu)",
-				m, j.migrasi[0], j.migrasi[1])
+		for _, r := range j.semuaMigrasi() {
+			if r[0] < 1 || r[1] >= awalInti {
+				masalah = append(masalah, fmt.Sprintf("modul %s: rentang migrasi %03d-%03d di luar 001-899 (900-999 milik inti dan slot menu)",
+					m, r[0], r[1]))
+			}
+			semua = append(semua, rentang{"modul " + m + " (rentang migrasi)", r[0], r[1]})
 		}
-		semua = append(semua, rentang{"modul " + m + " (rentang migrasi)", j.migrasi[0], j.migrasi[1]})
 		if j.tanpaSlot {
 			continue
 		}
 		if j.slot[0] < awalSlot || j.slot[1] > akhirSlot {
-			t.Errorf("modul %s: slot menu %03d-%03d di luar %d-%d", m, j.slot[0], j.slot[1], awalSlot, akhirSlot)
+			masalah = append(masalah, fmt.Sprintf("modul %s: slot menu %03d-%03d di luar %d-%d", m, j.slot[0], j.slot[1], awalSlot, akhirSlot))
 		}
 		semua = append(semua, rentang{"modul " + m + " (slot menu)", j.slot[0], j.slot[1]})
 	}
 	sort.Slice(semua, func(i, k int) bool { return semua[i].awal < semua[k].awal })
 	for i := 1; i < len(semua); i++ {
 		if a, b := semua[i-1], semua[i]; b.awal <= a.akhir {
-			t.Errorf("%s %03d-%03d dan %s %03d-%03d berbagi nomor", a.pemilik, a.awal, a.akhir, b.pemilik, b.awal, b.akhir)
+			masalah = append(masalah, fmt.Sprintf("%s %03d-%03d dan %s %03d-%03d berbagi nomor", a.pemilik, a.awal, a.akhir, b.pemilik,
+				b.awal, b.akhir))
 		}
 	}
-	t.Logf("jatah %d modul terbaca", len(jatah))
+	return masalah
 }
 
 // ⛔ R2: setiap berkas migrasi berada di rentang atau slot menu modulnya, dan
@@ -137,8 +162,8 @@ func TestSetiapMigrasiDiRentangAtauSlotModulnya(t *testing.T) {
 		case !ada:
 			t.Errorf("%s: modul %s tanpa rentang migrasi di MODUL.md", nama, pemilik)
 		case !j.diMigrasi(n) && !j.diSlot(n):
-			t.Errorf("%s: nomor %03d di luar rentang migrasi %03d-%03d dan slot menu %03d-%03d modul %s",
-				nama, n, j.migrasi[0], j.migrasi[1], j.slot[0], j.slot[1], pemilik)
+			t.Errorf("%s: nomor %03d di luar rentang migrasi %v dan slot menu %03d-%03d modul %s",
+				nama, n, j.semuaMigrasi(), j.slot[0], j.slot[1], pemilik)
 		}
 	}
 	if diperiksa < 20 {
@@ -371,7 +396,7 @@ func TestAturanRentangMenggigit(t *testing.T) {
 // Setengah `—` ditolak, dan modul `—` yang ternyata punya berkas migrasi tertangkap R2.
 func TestModulTanpaMigrasi(t *testing.T) {
 	m := modulMD{folder: "tiruan", jalur: "modul/tiruan/MODUL.md", kunci: map[string]string{"Rentang migrasi": "—", "Slot menu": "`—`"}}
-	mig, slot, _ := rentangModul(t, m)
+	mig, slot, _, _ := rentangModul(t, m)
 	j := jatahModul{migrasi: mig, slot: slot}
 	if !j.tanpaMigrasi() || j.diMigrasi(1) || j.diSlot(950) {
 		t.Errorf("modul tanpa migrasi: %+v", j)
@@ -381,6 +406,44 @@ func TestModulTanpaMigrasi(t *testing.T) {
 	}
 	if _, err := jatahDari("—", "`950-951`"); err == nil {
 		t.Error("setengah `—` harus ditolak")
+	}
+}
+
+// Rentang migrasi jamak (keputusan work owner 09-10-2026, nbfacin `180-214, 255-259`): dua rentang sah dan keduanya dijaga R2;
+// rentang tunggal tetap sah; format salah ditolak; rentang tambahan yang menimpa modul lain (atau rentang sendiri) tertangkap.
+func TestRentangMigrasiJamak(t *testing.T) {
+	for nilai, mau := range map[string][][2]int{
+		"`180-214, 255-259`": {{180, 214}, {255, 259}}, "`180-214`, `255-259`": {{180, 214}, {255, 259}}, "`001-029`": {{1, 29}},
+	} {
+		if got, err := rentangNomorJamak(nilai); err != nil || fmt.Sprint(got) != fmt.Sprint(mau) {
+			t.Errorf("%s: %v (%v), mau %v", nilai, got, err, mau)
+		}
+	}
+	for _, salah := range []string{"`180-214,`", "`180-214; 255-259`", "`180-214, 55-59`", "`180-214, 259-255`", "`,`"} {
+		if _, err := rentangNomorJamak(salah); err == nil {
+			t.Errorf("%s harus ditolak", salah)
+		}
+	}
+	j, err := jatahDari("`180-214, 255-259`", "`962-962`")
+	if err != nil || !j.diMigrasi(214) || !j.diMigrasi(255) || j.diMigrasi(220) || j.diMigrasi(260) {
+		t.Errorf("jatah jamak: %+v (%v)", j, err)
+	}
+	sah := map[string]jatahModul{"a": j, "b": {migrasi: [2]int{220, 254}, slot: [2]int{963, 963}}}
+	if m := masalahJatah(sah); len(m) != 0 {
+		t.Errorf("jatah sah ditolak: %v", m)
+	}
+	for nama, b := range map[string]jatahModul{
+		"menimpa rentang tambahan": {migrasi: [2]int{220, 259}, slot: [2]int{963, 963}},
+		"tambahan menimpa modul":   {migrasi: [2]int{100, 109}, migrasiLain: [][2]int{{210, 212}}, slot: [2]int{963, 963}},
+		"tambahan di wilayah inti": {migrasi: [2]int{100, 109}, migrasiLain: [][2]int{{905, 906}}, slot: [2]int{963, 963}},
+	} {
+		if m := masalahJatah(map[string]jatahModul{"a": j, "b": b}); len(m) == 0 {
+			t.Errorf("%s tidak tertangkap", nama)
+		}
+	}
+	if m := masalahJatah(map[string]jatahModul{"a": {migrasi: [2]int{180, 214}, migrasiLain: [][2]int{{200, 210}},
+		slot: [2]int{962, 962}}}); len(m) == 0 {
+		t.Error("rentang sendiri yang tumpang-tindih tidak tertangkap")
 	}
 }
 

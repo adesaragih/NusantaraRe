@@ -138,9 +138,11 @@ func TestBacaKasusMemakaiKolomBernama(t *testing.T) {
 	}
 }
 
-// TestSQLTahapKasus - penentu baca-saja: POSITION / FLAG_ONGOING_POLICY satu case FAC (bind ID, LINI).
+// TestSQLTahapKasus - penentu baca-saja: POSITION / FLAG_ONGOING_POLICY satu case FAC (bind ID, LINI) + CONFIRM_BINDING General
+// (tiket 64 lanjutan; LEFT JOIN - case tanpa baris General tetap terbaca) + STATUS_WORK (tiket 69a-2, case selesai).
 func TestSQLTahapKasus(t *testing.T) {
-	if q := sqlTahapKasus("UJI.W"); q != "SELECT POSITION, FLAG_ONGOING_POLICY FROM UJI.W WHERE ID = :1 AND LINI = :2" {
+	if q := sqlTahapKasus("UJI.W", "UJI.G"); q != "SELECT w.POSITION, w.FLAG_ONGOING_POLICY, g.CONFIRM_BINDING, w.STATUS_WORK FROM UJI.W w "+
+		"LEFT JOIN UJI.G g ON g.ID = w.ID WHERE w.ID = :1 AND w.LINI = :2" {
 		t.Errorf("%q", q)
 	}
 }

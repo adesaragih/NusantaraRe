@@ -414,7 +414,7 @@ export default function TabScoring({
       {v.bolehUbah && (
         <div className="nbf-objek__kaki">
           {menghitung && <span className="muted">{T.menghitung}</span>}
-          <button type="button" className="btn btn--primary" onClick={() => void simpan()} disabled={menyimpan || menghitung}>
+          <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" onClick={() => void simpan()} disabled={menyimpan || menghitung}>
             {menyimpan ? T.menyimpan : T.simpan}
           </button>
         </div>

@@ -21,7 +21,7 @@ describe('TabObject - keadaan awal', () => {
 
   it('belum ada objek = No items; tombol Save di kanan', () => {
     expect(HTML).toContain(`<td colSpan="6">${TEKS_INWARD.kosong}</td>`)
-    expect(HTML).toContain(`<div class="nbf-objek__kaki"><button type="button" class="btn btn--primary">${SIMPAN_OBJEK.label}</button></div>`)
+    expect(HTML).toContain(`<div class="nbf-objek__kaki"><button type="button" class="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary">${SIMPAN_OBJEK.label}</button></div>`)
   })
 })
 

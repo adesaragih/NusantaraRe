@@ -264,7 +264,7 @@ export default function TabPayment({ caseId }: { caseId: string }) {
       </section>
 
       <div className="nbf-objek__kaki">
-        <button type="button" className="btn btn--primary" onClick={() => void simpan()} disabled={menyimpan || menghitung}>
+        <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" onClick={() => void simpan()} disabled={menyimpan || menghitung}>
           {menyimpan ? T.menyimpan : T.simpan}
         </button>
       </div>

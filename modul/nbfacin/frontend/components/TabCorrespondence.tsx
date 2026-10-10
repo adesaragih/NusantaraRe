@@ -179,7 +179,7 @@ export default function TabCorrespondence({ caseId, awal = null }: { caseId: str
             {!kunci && (
               <button
                 type="button"
-                className="btn btn--ghost btn--sm"
+                className="btn nbf-tema__tombol btn--ghost btn--sm"
                 onClick={() => ubah(k.no, { penerima: [...k.penerima, { recipient: '', recipientMail: '' }] })}
               >
                 ＋ {K.tambah}
@@ -215,7 +215,7 @@ export default function TabCorrespondence({ caseId, awal = null }: { caseId: str
                 </div>
                 <button
                   type="button"
-                  className="btn btn--ghost btn--sm"
+                  className="btn nbf-tema__tombol btn--ghost btn--sm"
                   onClick={() => ubah(k.no, { penerima: k.penerima.filter((_, j) => j !== i) })}
                 >
                   ✕ {K.hapus}
@@ -242,10 +242,10 @@ export default function TabCorrespondence({ caseId, awal = null }: { caseId: str
         {galatKirim?.no === k.no && <div className="alert alert--warn">{galatKirim.teks}</div>}
         {!kunci && (
           <div className="nbf-kor__tombol">
-            <button type="button" className="btn btn--primary" disabled={sibuk !== null || kepanjangan} onClick={() => void simpan(k)}>
+            <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" disabled={sibuk !== null || kepanjangan} onClick={() => void simpan(k)}>
               {sedang === 'simpan' ? T.menyimpan : K.simpan}
             </button>
-            <button type="button" className="btn" disabled={sibuk !== null || kepanjangan} onClick={() => void kirim(k)}>
+            <button type="button" className="btn nbf-tema__tombol" disabled={sibuk !== null || kepanjangan} onClick={() => void kirim(k)}>
               {sedang === 'kirim' ? T.mengirim : K.kirim}
             </button>
           </div>
@@ -273,7 +273,7 @@ export default function TabCorrespondence({ caseId, awal = null }: { caseId: str
                 </th>
               ))}
               <th scope="col">
-                <button type="button" className="btn btn--ghost btn--sm" disabled={sibuk !== null} onClick={() => void tambah()}>
+                <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" disabled={sibuk !== null} onClick={() => void tambah()}>
                   ＋ {K.tambah}
                 </button>
               </th>
@@ -311,7 +311,7 @@ export default function TabCorrespondence({ caseId, awal = null }: { caseId: str
                   </td>
                   <td>
                     {!k.terkirim && (
-                      <button type="button" className="btn btn--ghost btn--sm" disabled={sibuk !== null} onClick={() => void hapus(k)}>
+                      <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" disabled={sibuk !== null} onClick={() => void hapus(k)}>
                         ✕ {K.hapus}
                       </button>
                     )}

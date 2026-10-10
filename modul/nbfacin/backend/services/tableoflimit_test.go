@@ -11,13 +11,32 @@ import (
 
 type tolTiruan struct {
 	kode          []string
+	oldID         []string
+	bisnis        []models.BarisBisnisLini // baris BUSINESS NOTE + group case; GroupPanel "" = NULL
 	kodeDiminta   *[2]string
 	daftarDiminta *string
 }
 
 func (t tolTiruan) KodeBisnis(_ context.Context, nama, grup string) ([]string, error) {
-	*t.kodeDiminta = [2]string{nama, grup}
+	if t.kodeDiminta != nil {
+		*t.kodeDiminta = [2]string{nama, grup}
+	}
 	return t.kode, nil
+}
+
+func (t tolTiruan) OldIDBisnis(context.Context, string, string) ([]string, error) {
+	return t.oldID, nil
+}
+
+// BisnisLini - meniru `AND GROUPPANEL IS NOT NULL` repository.sqlBisnisLini (teks SQL dipatok TestSQLTableOfLimit).
+func (t tolTiruan) BisnisLini(context.Context, string, string) ([]models.BarisBisnisLini, error) {
+	hasil := []models.BarisBisnisLini{}
+	for _, b := range t.bisnis {
+		if b.GroupPanel != "" {
+			hasil = append(hasil, b)
+		}
+	}
+	return hasil, nil
 }
 
 func (t tolTiruan) DaftarTableOfLimit(_ context.Context, kode, kategori string) ([]models.BarisTableOfLimit, error) {

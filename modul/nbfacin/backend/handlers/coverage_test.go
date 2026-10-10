@@ -222,7 +222,7 @@ func TestObjekDeductible(t *testing.T) {
 			`{"coverage":"2","coverageBasis":"1"}]}]}]}`
 	}
 	kode, isi := minta(t, svc, "PUT", jalur, badan(ded1+","+ded2), "UJI-USER")
-	if kode != 200 || !strings.Contains(isi, `"deductibles":[`+ded1+","+ded2+`],"unit":""`) || !strings.Contains(isi, `"conditions":"","deductibles":[],"unit":""`) ||
+	if kode != 200 || !strings.Contains(isi, `"deductibles":[`+ded1+","+ded2+`],"unit":"0"`) || !strings.Contains(isi, `"conditions":"","deductibles":[],"unit":"0"`) ||
 		!strings.Contains(isi, `"premium":"1000000"`) {
 		t.Fatalf("%d %s", kode, isi)
 	}

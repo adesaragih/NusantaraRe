@@ -26,6 +26,12 @@ func (d *deductionTiruan) BacaDeduction(_ context.Context, id string) (models.Ka
 }
 
 func (d *deductionTiruan) TulisDeduction(_ context.Context, _ *db.Tx, _ string, k models.KasusDeduction) error {
+	if err := periksaMask("persen", k.RICommision, k.PctBrokerageFee); err != nil {
+		return err
+	}
+	if err := maskBarisDeduction(k.MataUang); err != nil {
+		return err
+	}
 	d.tulis = append(d.tulis, k)
 	d.ada = k
 	return nil

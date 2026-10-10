@@ -193,6 +193,84 @@
 .nbfacin .nbf-inward__detail {
   margin-top: 12px;
 }
+/* Blok Attachment File (tiket 67). */
+.nbfacin .nbf-lampiran {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+.nbfacin .nbf-lampiran__judul {
+  margin: 0;
+  font-size: var(--fs-md, 1rem);
+}
+/* Grid kategori: lebar kolom tetap, angka & tombol rata tengah (work owner 08-10-2026 "rapikan biar user friendly"). */
+.nbfacin .nbf-lampiran__tabel {
+  table-layout: fixed;
+  width: 100%;
+}
+.nbfacin .nbf-lampiran__kolom-jumlah {
+  width: 110px;
+}
+.nbfacin .nbf-lampiran__kolom-aksi {
+  width: 130px;
+}
+.nbfacin .nbf-lampiran__tabel td,
+.nbfacin .nbf-lampiran__tabel th {
+  vertical-align: middle;
+}
+.nbfacin .nbf-lampiran__tengah {
+  text-align: center;
+}
+.nbfacin .nbf-lampiran__nama {
+  font-weight: 500;
+}
+.nbfacin .nbf-lampiran__jumlah {
+  display: inline-block;
+  min-width: 28px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.nbfacin .nbf-lampiran__jumlah[data-ada] {
+  background: var(--success-bg, #e6f4ea);
+  color: var(--success-text, #1e6b34);
+  font-weight: 600;
+}
+.nbfacin .nbf-lampiran__ikon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 32px;
+  padding: 0 10px;
+  color: #fff;
+  border: 0;
+}
+.nbfacin .nbf-lampiran__ikon--unggah {
+  background: #2e9d5b;
+}
+.nbfacin .nbf-lampiran__ikon--lihat {
+  background: #1aa6b7;
+}
+.nbfacin .nbf-lampiran__ikon:disabled {
+  opacity: 0.45;
+}
+/* Bilah CSV objek (tiket 66): pesan hasil (Pega sel 98 TempError.ERRMSG) dan tabel View Upload 55 kolom. */
+.nbfacin .nbf-csvobj__pesan {
+  margin: 0;
+  padding: 8px 12px 8px 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+.nbfacin .nbf-csvobj__tabel th,
+.nbfacin .nbf-csvobj__tabel td {
+  white-space: nowrap;
+}
 /* ------------------------------------------------------- tab Object (tiket 35) */
 .nbfacin .nbf-objek__detail > td {
   background: var(--surface-2, transparent);
@@ -204,6 +282,126 @@
 }
 .nbfacin .nbf-objek__judul {
   margin: 8px 0 0;
+}
+/* Grid Deductible coverage (work owner 08-10-2026 "rapikan dong biar lebih user friendly"): kepala bertombol Tambah,
+   baris terbuka disorot, detail = kartu berbaris tiga kolom (isian tidak lagi selebar layar). */
+.nbfacin .nbf-dedgrid__kepala {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.nbfacin .nbf-dedgrid__kepala .nbf-objek__judul {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.nbfacin .nbf-dedgrid__jumlah {
+  min-width: 22px;
+  padding: 1px 8px;
+  border-radius: var(--r-pill);
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+.nbfacin .nbf-dedgrid__tambah {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.nbfacin .nbf-dedgrid__tambah:hover {
+  background: var(--primary-hover);
+}
+.nbfacin .nbf-dedgrid__tabel {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 960px;
+}
+.nbfacin .nbf-dedgrid__tabel th,
+.nbfacin .nbf-dedgrid__tabel td {
+  vertical-align: middle;
+  padding-left: 10px;
+  padding-right: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nbfacin .nbf-dedgrid__k-buka {
+  width: 64px;
+}
+.nbfacin .nbf-dedgrid__tabel td:first-child,
+.nbfacin .nbf-dedgrid__tabel td:last-child {
+  overflow: visible;
+}
+.nbfacin .nbf-dedgrid__k-angka {
+  width: 80px;
+}
+.nbfacin .nbf-dedgrid__k-kode {
+  width: 76px;
+}
+.nbfacin .nbf-dedgrid__k-uang {
+  width: 150px;
+}
+.nbfacin .nbf-dedgrid__k-hari {
+  width: 160px;
+}
+.nbfacin .nbf-dedgrid__k-aksi {
+  width: 96px;
+}
+.nbfacin .nbf-dedgrid__panah {
+  min-width: 30px;
+  padding: 2px 8px;
+}
+.nbfacin .nbf-dedgrid__aktif > td {
+  background: var(--primary-soft);
+}
+.nbfacin .nbf-dedgrid__kosong {
+  color: var(--text-3);
+  text-align: center;
+}
+.nbfacin .nbf-dedgrid__hapus {
+  color: var(--danger-text);
+  border-color: var(--danger-border);
+}
+.nbfacin .nbf-dedgrid__hapus:hover {
+  background: var(--danger-bg);
+}
+.nbfacin .nbf-dedgrid__kartu {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0 4px 44px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+.nbfacin .nbf-dedgrid__baris {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 16px;
+}
+.nbfacin .nbf-dedgrid__lebar {
+  grid-column: span 2;
+}
+.nbfacin .nbf-dedgrid__kartu input,
+.nbfacin .nbf-dedgrid__kartu select {
+  height: 34px;
+  padding: 4px 10px;
+  font-size: var(--fs-sm);
+}
+@media (max-width: 760px) {
+  .nbfacin .nbf-dedgrid__kartu {
+    margin-left: 0;
+  }
+  .nbfacin .nbf-dedgrid__baris {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nbfacin .nbf-dedgrid__lebar {
+    grid-column: auto;
+  }
 }
 /* Popup Choose Risk Address: saringan kiri, grid kanan (tangkapan layar). */
 .nbfacin .nbf-risk {
@@ -2207,7 +2405,9 @@
   gap: 4px;
 }
 .nbfacin .nbf-et__opsi label {
-  display: flex;
+  /* Area klik selebar teksnya saja (sebelumnya selebar kolom ±1160 px: klik ruang kosong di kanan ikut memilih). */
+  display: inline-flex;
+  justify-self: start;
   align-items: center;
   gap: 6px;
   margin: 0;
@@ -2225,6 +2425,43 @@
   display: grid;
   gap: 4px;
 }
+/* Tahap Binding (tiket 64): tombol Binding + centang Received RI Slip (rata kanan seperti EmailSectionCeding). */
+.nbfacin .nbf-et__binding {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+/* Tahap Underwriting (tiket 61): Validity Of Acceptance [hari] days, or up to [tanggal]  Waiting Bind [tanggal]. */
+.nbfacin .nbf-et__validitas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.nbfacin .nbf-et__validitas label,
+.nbfacin .nbf-et__validitas span {
+  margin: 0;
+  color: var(--text-3);
+}
+.nbfacin .nbf-et__validitas input {
+  width: 120px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  text-align: right;
+}
+.nbfacin .nbf-et__validitas output {
+  min-width: 120px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
 .nbfacin .nbf-et__komentar label {
   margin: 0;
   color: var(--text-3);
@@ -2240,12 +2477,20 @@
   font: inherit;
   resize: vertical;
 }
-.nbfacin .nbf-et__info {
+.nbfacin .nbf-et__deductible {
   display: grid;
-  gap: 4px;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
 }
-.nbfacin .nbf-et__info small {
-  color: var(--text-3);
+.nbfacin .nbf-et__centang {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-weight: 600;
 }
 .nbfacin .nbf-et__proteksi {
   margin: 0;
@@ -2304,4 +2549,503 @@
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;
+}
+/* Popup Following Policy Number (tiket 70): saringan sebaris, detail baca-saja bertumpuk. */
+.nbfacin .nbf-following__judul {
+  margin: 12px 0 4px;
+}
+.nbfacin .nbf-following__detail {
+  display: grid;
+  gap: 16px;
+}
+/* Menu View Policy (tiket 71): kepala ringkasan polis lama dua kolom label-nilai, pemilih versi sebaris toolbar. */
+.nbfacin .nbf-vp__detail {
+  display: grid;
+  gap: 12px;
+}
+.nbfacin .nbf-vp__versi {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 0 12px;
+}
+.nbfacin .nbf-vp__ringkasan {
+  display: grid;
+  gap: 12px;
+}
+.nbfacin .nbf-vp__kepala {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 32px;
+  margin: 0;
+}
+.nbfacin .nbf-vp__medan {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 8px;
+}
+.nbfacin .nbf-vp__medan dt {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.nbfacin .nbf-vp__medan dd {
+  margin: 0;
+  font-weight: 600;
+}
+.nbfacin .nbf-vp__ceding {
+  max-width: 560px;
+}
+@media (max-width: 760px) {
+  .nbfacin .nbf-vp__kepala {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* View Policy (tiket 71): templat Kelola User (inbox / toolbar / inbox__tabel, work owner 09-10-2026); hanya lebar pemilih
+   View Option yang khusus. */
+.nbfacin .nbf-vp__opsi {
+  width: min(240px, 100%);
+}
+/* ==========================================================================
+   Tema Kelola User untuk SEMUA layar NB FacIn - work owner 09-10-2026 "template nya disamain dong kaya menu ini, biar ga
+   beda2 sama semua", "dari bentuk button warna dll nya masih beda", "isi dalam menu nya juga ... jangan hanya tampilan
+   depannya saja" -> "Semua layar NB FacIn". SALINAN aturan `.kelola-user` inti/frontend/styles.css (neumorfisme: isian
+   cekung, tombol kapsul timbul, tombol utama merah bergradasi, kepala tabel biru muda tebal, zebra lembut, akar kartu
+   bergradasi) dengan kelas modul sendiri (penjaga gaya: pemilih di bawah .nbfacin, kelas nbf-*; pola modul accounts).
+   Token di akar .nbfacin memakai light-dark(): inti memasang color-scheme dark pada :root[data-theme="dark"].
+   Tanpa transform / filter (popup position: fixed tetap di tengah layar).
+   ========================================================================== */
+.nbfacin {
+  --nbt-latar-tepi: light-dark(#cfd7e5, #323b50);
+  --nbt-latar-atas: light-dark(#f9fafd, #222a3b);
+  --nbt-latar-bawah: light-dark(#e4e9f3, #161b27);
+  --nbt-bayang-a: light-dark(rgba(30, 45, 90, 0.08), rgba(0, 0, 0, 0.45));
+  --nbt-bayang-b: light-dark(rgba(30, 45, 90, 0.24), rgba(0, 0, 0, 0.75));
+  --nbt-lembut: light-dark(#e9edf3, #181d2a);
+  --nbt-teks: light-dark(#101828, #eef0f6);
+  --nbt-teks-redup: light-dark(#4f586b, #aab2c4);
+  --nbt-aksen: var(--primary-tanda);
+  --nbt-aksen-teks: light-dark(#2339a3, #aebcff);
+  --nbt-aksen-lembut: light-dark(#e3e8f6, #222b45);
+  --nbt-aksen-garis: light-dark(#b9c5ee, #3a4b8f);
+  --nbt-kepala-tabel: light-dark(#dde4f2, #273152);
+  --nbt-kepala-teks: light-dark(#22326b, #dbe2ff);
+  --nbt-kepala-garis: light-dark(#c3cde2, #3a4670);
+  --nbt-isi: light-dark(#ffffff, #1f2638);
+  --nbt-baris-hover: light-dark(#e6ecfa, #2b3554);
+  --nbt-garis: light-dark(#e1e6ef, #2c3447);
+  --nbt-tepi: light-dark(#c8d1e1, #3a4459);
+  --nbt-tombol: #d63a42;
+  --nbt-tombol-ujung: #bf2f37;
+  --nbt-tombol-hover: #c2333b;
+  --nbt-tombol-hover-ujung: #a9282f;
+  --nbt-terang: light-dark(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.045));
+  --nbt-gelap: light-dark(rgba(163, 177, 198, 0.55), rgba(0, 0, 0, 0.55));
+  --nbt-merah-bayang: light-dark(rgba(214, 58, 66, 0.35), rgba(0, 0, 0, 0.5));
+  --nbt-cincin-warna: light-dark(rgba(43, 68, 176, 0.18), rgba(142, 162, 245, 0.25));
+  --nbt-timbul: 8px 8px 18px var(--nbt-gelap), -8px -8px 18px var(--nbt-terang);
+  --nbt-timbul-kecil: 4px 4px 9px var(--nbt-gelap), -4px -4px 9px var(--nbt-terang);
+  --nbt-cekung-kecil: inset 2px 2px 4px var(--nbt-gelap), inset -2px -2px 4px var(--nbt-terang);
+  --nbt-cincin: 0 0 0 3px var(--nbt-cincin-warna);
+  --nbt-bayang-tombol: 4px 4px 10px var(--nbt-merah-bayang), -4px -4px 10px var(--nbt-terang);
+}
+/* Akar kartu halaman daftar (portal, View Policy). */
+.nbfacin .nbf-tema {
+  color: var(--nbt-teks);
+  padding: 24px;
+  overflow-x: auto;
+  border: 1px solid var(--nbt-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--nbt-latar-atas) 0%, var(--nbt-latar-bawah) 100%);
+  box-shadow: 0 2px 6px var(--nbt-bayang-a), 0 16px 40px -12px var(--nbt-bayang-b);
+}
+.nbfacin .nbf-tema__judul {
+  color: var(--nbt-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.nbfacin :focus-visible {
+  outline: 2px solid var(--nbt-aksen);
+  outline-offset: 2px;
+}
+/* Isian: CEKUNG, putih bertepi jelas; fokus biru navy bercincin. Berlaku untuk SEMUA isian layar NB FacIn. */
+.nbfacin .nbf-tema__isian,
+.nbfacin input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):not([type="range"]):not([type="color"]),
+.nbfacin select,
+.nbfacin textarea {
+  background: var(--nbt-isi);
+  border: 1px solid var(--nbt-tepi);
+  border-radius: 12px;
+  box-shadow: var(--nbt-cekung-kecil);
+  color: var(--nbt-teks);
+}
+.nbfacin input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):hover:not(:disabled),
+.nbfacin select:hover:not(:disabled),
+.nbfacin textarea:hover:not(:disabled) {
+  border-color: var(--nbt-aksen-garis);
+}
+.nbfacin input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):focus,
+.nbfacin select:focus,
+.nbfacin textarea:focus {
+  border-color: var(--nbt-aksen);
+  box-shadow: var(--nbt-cekung-kecil), var(--nbt-cincin);
+  outline: none;
+}
+.nbfacin input:disabled,
+.nbfacin input[readonly],
+.nbfacin select:disabled,
+.nbfacin textarea:disabled,
+.nbfacin textarea[readonly] {
+  background: var(--nbt-lembut);
+  color: var(--nbt-teks-redup);
+  box-shadow: none;
+}
+/* Tombol kapsul TIMBUL KELUAR (teks biru navy); ditekan: CEKUNG. Utama: merah bergradasi halus. */
+.nbfacin .nbf-tema__tombol {
+  border-radius: 999px;
+  background: var(--nbt-isi);
+  border: 1px solid var(--nbt-tepi);
+  color: var(--nbt-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--nbt-timbul-kecil);
+}
+.nbfacin .nbf-tema__tombol:hover:not(:disabled) {
+  background: var(--nbt-aksen-lembut);
+  border-color: var(--nbt-aksen-garis);
+  color: var(--nbt-aksen-teks);
+}
+.nbfacin .nbf-tema__tombol:active:not(:disabled) {
+  box-shadow: var(--nbt-cekung-kecil);
+}
+.nbfacin .nbf-tema__tombol:disabled {
+  box-shadow: none;
+}
+.nbfacin .nbf-tema__tombol--utama {
+  background: linear-gradient(180deg, var(--nbt-tombol), var(--nbt-tombol-ujung));
+  border-color: var(--nbt-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--nbt-bayang-tombol);
+}
+.nbfacin .nbf-tema__tombol--utama:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--nbt-tombol-hover), var(--nbt-tombol-hover-ujung));
+  border-color: var(--nbt-tombol-hover-ujung);
+  color: var(--on-primary);
+}
+.nbfacin .nbf-tema__tombol--utama:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+/* Pager inti di layar NB FacIn: tombolnya ikut kapsul. */
+.nbfacin .nbf-tema__pager button {
+  border-radius: 999px;
+}
+/* Tabel daftar (portal, View Policy): kartu TIMBUL bersudut membulat. */
+.nbfacin .nbf-tema__tabel {
+  background: var(--nbt-isi);
+  border: 1px solid var(--nbt-tepi);
+  border-radius: 18px;
+  box-shadow: var(--nbt-timbul);
+}
+.nbfacin .nbf-tema__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+.nbfacin .nbf-tema__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+.nbfacin .nbf-tema__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+.nbfacin .nbf-tema__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+/* Kepala biru muda tebal, sel putih, zebra lembut, sorot biru - tabel daftar DAN semua grid modul (nbf-tabel). */
+.nbfacin .nbf-tema__tabel thead th,
+.nbfacin .nbf-tabel thead th {
+  background: var(--nbt-kepala-tabel);
+  color: var(--nbt-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--nbt-kepala-garis);
+  box-shadow: none;
+}
+.nbfacin .nbf-tema__tabel td,
+.nbfacin .nbf-tabel tbody td {
+  color: var(--nbt-teks);
+  background: var(--nbt-isi);
+  border-bottom-color: var(--nbt-garis);
+}
+.nbfacin .nbf-tema__tabel tbody tr:hover,
+.nbfacin .nbf-tema__tabel tbody tr:nth-child(even),
+.nbfacin .nbf-tabel tbody tr:hover,
+.nbfacin .nbf-tabel tbody tr:nth-child(even) {
+  background: transparent;
+}
+.nbfacin .nbf-tema__tabel tbody tr:nth-child(even) > td,
+.nbfacin .nbf-tabel tbody tr:nth-child(even) > td {
+  background: var(--nbt-lembut);
+}
+.nbfacin .nbf-tema__tabel tbody tr:hover > td,
+.nbfacin .nbf-tabel tbody tr:hover > td {
+  background: var(--nbt-baris-hover);
+}
+/* Popup Following Policy dirapikan (work owner 09-10-2026): bilah saring sebaris, judul daftar + jumlah, aksi sebaris. */
+.nbfacin .nbf-following__cari {
+  align-items: center;
+  margin-bottom: 4px;
+}
+.nbfacin .nbf-following__kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 0;
+}
+.nbfacin .nbf-following__kepala .nbf-following__judul {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.nbfacin .nbf-following__jumlah {
+  min-width: 24px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--nbt-aksen-lembut);
+  color: var(--nbt-aksen-teks);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+.nbfacin .nbf-following__kosong {
+  padding: 36px 16px;
+  color: var(--nbt-teks-redup);
+  text-align: center;
+}
+.nbfacin .nbf-following__nopolis {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.nbfacin .nbf-following__aksi {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+/* Elemen ber-`hidden` di layar NB FacIn benar-benar tersembunyi: `.btn { display: inline-flex }` inti mengalahkan aturan
+   bawaan peramban untuk [hidden], sehingga tombol yang disembunyikan mode hanya lihat (BacaSajaKasus `sembunyi`) tetap
+   terlihat (work owner 09-10-2026 "button add,hapus,save, dll, tidak dimunculin saja saat view policy"). */
+.nbfacin [hidden] {
+  display: none !important;
+}
+/* Kepala detail View Policy: tiga kolom - kosong | judul di tengah | aksi di kanan atas. */
+.nbfacin .nbf-vp__kepala-detail {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.nbfacin .nbf-vp__judul-detail {
+  margin: 0;
+  text-align: center;
+}
+.nbfacin .nbf-vp__aksi-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.nbfacin .nbf-vp__aksi-detail .nbf-vp__versi {
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .nbfacin .nbf-vp__kepala-detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nbfacin .nbf-vp__aksi-detail {
+    justify-content: flex-start;
+  }
+}
+
+/* ---- Tab Object Aneka (tiket 73 P1): form objek C1-C9 dalam kisi dua kolom yang turun menjadi satu kolom di layar sempit;
+   isian teks panjang (Object Description, Others, Memorandum) memakai lebar penuh. */
+.nbfacin .nbf-aneka-form {
+  display: grid;
+  gap: 12px;
+  max-width: 1180px;
+}
+.nbfacin .nbf-aneka-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 10px 18px;
+  align-items: start;
+}
+.nbfacin .nbf-aneka-form__grid > div:has(> textarea) {
+  grid-column: 1 / -1;
+}
+
+/* Perapian tab Object Aneka (work owner 09-10-2026 "RAPIKAN BIAR USER FRIENDLY"): form objek dikelompokkan ke kartu
+   berjudul (gaya kartu Object Address FIRE); kartu kecil Period / Sum Insured / Identity berjajar; jarak antarbaris rapat
+   (jarak diatur gap kisi, bukan margin bawah medan); grid: kolom buka sempit, judul rata kiri, tombol rata kanan. */
+.nbfacin .nbf-aneka-form {
+  gap: 10px;
+}
+.nbfacin .nbf-aneka-form__kartu {
+  gap: 8px;
+}
+.nbfacin .nbf-aneka-form__kartu .nbf-aneka-form__grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 8px 16px;
+}
+.nbfacin .nbf-aneka-form__grid > div {
+  margin-bottom: 0;
+}
+.nbfacin .nbf-aneka-form__baris {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+.nbfacin .nbf-aneka-form__baris .nbf-aneka-form__grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+}
+/* Selector ANAK LANGSUNG (> thead / > tbody): grid Aneka bersarang (lokasi → okupasi → objek → total), aturan satu tabel tidak
+   boleh menembus tabel di dalam sel detailnya (perbaikan work owner 09-10-2026 "INI DI RAPIKAN": kolom Location / Occupation
+   Name terdorong ke kanan, total per mata uang bergeser). Kolom angka rata kanan lewat aturan `:has(td.nbf-angka)` umum. */
+.nbfacin .nbf-aneka-grid > thead > tr > th,
+.nbfacin .nbf-aneka-grid > tbody > tr > td {
+  text-align: left;
+  vertical-align: middle;
+}
+.nbfacin .nbf-aneka-grid > thead > tr > th:first-child,
+.nbfacin .nbf-aneka-grid > tbody > tr:not(.nbf-objek__detail) > td:first-child {
+  width: 44px;
+}
+.nbfacin .nbf-aneka-grid > tbody > tr > td.nbf-angka {
+  text-align: right;
+}
+/* Kolom tombol (Tambah / Hapus) hanya di grid yang memilikinya. */
+.nbfacin .nbf-aneka-grid--aksi > thead > tr > th:last-child,
+.nbfacin .nbf-aneka-grid--aksi > tbody > tr:not(.nbf-objek__detail) > td:last-child {
+  width: 120px;
+  text-align: right;
+}
+/* Total per mata uang: kolom Currency selebar isinya, angka rata kanan. */
+.nbfacin .nbf-aneka-total > thead > tr > th:first-child {
+  width: 140px;
+}
+.nbfacin .nbf-aneka-grid__kosong {
+  color: var(--muted);
+  font-style: italic;
+}
+/* Radio Day form coverage Aneka (`DDL\Day.xml` 365 / 366 / 360). */
+.nbfacin .nbf-aneka-radio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.nbfacin .nbf-aneka-radio > legend {
+  width: 100%;
+  padding: 0;
+}
+/* Isian angka (IsianAngka4) selebar kolom kisi, sama dengan dropdown di sebelahnya. */
+.nbfacin .nbf-aneka-form__grid input:not([type="radio"]):not([type="checkbox"]) {
+  width: 100%;
+  box-sizing: border-box;
+}
+/* Grid lokasi: kolom No. sempit. */
+.nbfacin .nbf-aneka-grid--lokasi > thead > tr > th:nth-child(2) {
+  width: 70px;
+}
+/* Form coverage Aneka = layout Pega (work owner 09-10-2026 "SAMAIN KAYA GAMBAR2"): satu kisi 3 kolom, sel mengalir, Sub Limit
+   selebar penuh, garis lalu Deductible. */
+.nbfacin .nbf-aneka-cov {
+  display: grid;
+  gap: 10px;
+  padding: 4px 2px;
+}
+.nbfacin .nbf-aneka-cov__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 18px;
+  align-items: start;
+}
+.nbfacin .nbf-aneka-cov__grid > div,
+.nbfacin .nbf-aneka-cov__grid > fieldset {
+  margin-bottom: 0;
+}
+.nbfacin .nbf-aneka-cov__grid input:not([type="radio"]):not([type="checkbox"]),
+.nbfacin .nbf-aneka-cov__grid select {
+  width: 100%;
+  box-sizing: border-box;
+}
+.nbfacin .nbf-aneka-cov__lebar {
+  grid-column: 1 / -1;
+}
+.nbfacin .nbf-aneka-cov__garis {
+  width: 100%;
+  margin: 4px 0 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 900px) {
+  .nbfacin .nbf-aneka-cov__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .nbfacin .nbf-aneka-cov__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Kartu Vessel Details: tepat 3 kolom seperti layout Pega (Production Year · Place of Manufacture · Flag, lalu blok MarineHull 3×3). */
+.nbfacin .nbf-aneka-form__kartu--kapal .nbf-aneka-form__grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 560px) {
+  .nbfacin .nbf-aneka-form__kartu--kapal .nbf-aneka-form__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Detail angka coverage Aneka (tab Spreading / Premium Deduction; perapian work owner 09-10-2026): empat kartu kecil berlabel,
+   nilai rata kanan di bawah labelnya - angka tidak lagi terpisah jauh dari label. */
+.nbfacin .nbf-aneka-angka {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 8px;
+}
+.nbfacin .nbf-aneka-angka > div {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+.nbfacin .nbf-aneka-angka dt {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.nbfacin .nbf-aneka-angka dd {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 900px) {
+  .nbfacin .nbf-aneka-angka {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* Baris master-detail dapat diklik di mana pun untuk buka / tutup (work owner 10-10-2026; `components/klikBaris.ts`). */
+.nbfacin tr:has(> td > .nbf-buka) {
+  cursor: pointer;
+}
+.nbfacin tr:has(> td > .nbf-buka):hover > td {
+  background: var(--alt-row);
 }

@@ -13,6 +13,12 @@ package services
 // ADR-0043); hanya tahap marketing; empat opsi. NB_STATUS (keputusan 9d dari korpus): Accept "NB IS IN TEAM LEADER'S
 // INBOX" (konektor Decision29), Reject / Decline = SetValidateDate_PostAct 6.9 / 6.8 verbatim, Banding = tanpa nama orang.
 // Tanpa email (SendOfferEmail langkah 1 Exit-Activity).
+//
+// Tiket 58 - Submit tahap TEAM LEADER (Assignment14, flow action yang sama `InwardFacultative`), keputusan work owner
+// 07-10-2026 ("setuju" atas 6 saran + `DDL\EmailTypeTL.xml`): Email Type TL 1 Accept / 2 Reject / 3 Ask / 7 Decline; Accept
+// -> Decision9 confirm -> `DataTransform\IsJuniorUW_B.xml` (posisi ReasFacInJuniorUnderwriting -> ReasFacInJuniorUnderwritingB ADR-0032, DateToUW, SubmitToUW bila
+// kosong, NB status); Reject / Ask -> Utility8 SendEmailPolicy (TANPA email, butir 2) -> Transition170 kembali ke marketing;
+// Decline -> End5 (Resolved-Decline, butir 5). Isian Deductible Acceptance + proteksi Protection_Act 9-12 (butir 4).
 
 import (
 	"context"
@@ -54,11 +60,13 @@ func (g GalatProteksi) Error() string {
 func (g GalatProteksi) Is(target error) bool { return target == ErrProteksiSubmit }
 
 const (
-	// awalanIDPega - pzInsKey kelas kerja NB Fac In (`InsertHistoryAkseptasiPega` langkah 8 "ASM-FW-GISFW-WORK "+idpega;
-	// index DBA HISTOAKSPEGA_INDEX4 memotong awalan yang sama).
-	awalanIDPega = "ASM-FW-GISFW-WORK "
 	// posisiTeamLeader - Assignment14 `pyRouterProp.pyCallParams.Workbasket`.
 	posisiTeamLeader = "ReasFacInTeamLeader"
+	// posisiJuniorUWB - Accept Team Leader: `IsJuniorUW_B` PositionNote (Assignment13 JUNIOR UNDERWITER B) "ReasFacInJuniorUnderwriting",
+	// dibetulkan menjadi kode baru (keputusan work owner 07-10-2026, ADR-0032; tabel pemetaan issues/58).
+	posisiJuniorUWB = "ReasFacInJuniorUnderwritingB"
+	// lebarCommentDeductible - T_GENERAL_POLIS.COMMENT_DEDUCTIBLE VARCHAR2(500) (rancangan, migrasi 210).
+	lebarCommentDeductible = 500
 	// posisiDecline / statusDecline - Decline (End5; korpus tidak mengubah pyStatusWork): POSITION memakai kosakata
 	// T_WORK_POLIS.POSITION yang sudah ada ("Decline") `[dugaan]`; STATUS_WORK "Resolved-Decline" = keputusan work owner
 	// 07-10-2026.
@@ -79,8 +87,11 @@ const (
 var labelApproval = map[string]struct{ riwayat, pega string }{
 	models.EmailTypeAccept:  {"Accept", "ACCEPT"},
 	models.EmailTypeReject:  {"Reject", "REJECT"},
+	models.EmailTypeAsk:     {"Ask", "ASK"},
 	models.EmailTypeBanding: {"Banding", "BANDING"},
 	models.EmailTypeDecline: {"Decline", "DECLINE"},
+	// Tiket 64 - tahap Binding: SaveViewSuggest 1.2.2 "Revise"; InsertHistoryAkseptasiPega langkah 5 REVISE.
+	models.EmailTypeRevise: {"Revise", "REVISE"},
 }
 
 // tujuanBanding - SetBanding_ACT langkah 3 (StatusBusiness bukan 3): LetterNo (= Banding to) -> PositionNote dan teks NB
@@ -88,7 +99,7 @@ var labelApproval = map[string]struct{ riwayat, pega string }{
 // 07-10-2026); yang tanpa nama dipakai verbatim. MANAGERTEKNIK (3.7) dan Financial (3.6) ber-label `//` - tidak ada.
 var tujuanBanding = map[string]struct{ posisi, label string }{
 	"JUW_A":              {"ReasFacInJuniorUnderwritingA", "JUNIOR UNDERWRITER (A)"},
-	"JUW_B":              {"ReasFacInJuniorUnderwriting", "JUNIOR UNDERWRITER (B)"},
+	"JUW_B":              {"ReasFacInJuniorUnderwritingB", "JUNIOR UNDERWRITER (B)"},
 	"UNDERWRITER":        {"ReasFacInUnderwriting", "UNDERWRITER"},
 	"SENIORUW":           {"ReasFacInSeniorUnderwriting", "SENIORUW"},
 	"DEPHEADUNDERWRITER": {"ReasFacInDepHeadUnderwriting", "DEPHEADUNDERWRITER"},
@@ -96,6 +107,17 @@ var tujuanBanding = map[string]struct{ posisi, label string }{
 	"KADIVTEKNIK":        {"ReasFacInGroupLeader", "KADIVTEKNIK"},
 	"DIREKTURMARKETING":  {"ReasFacInMarketingDirector", "DIREKTURMARKETING"},
 	"DIREKTURTEKNIK":     {"ReasFacInTechnicalDirector", "DIREKTURTEKNIK"},
+}
+
+// emailTypeTahap - Email Type sah per tahap: marketing 1 / 2 / 4 / 7 (keputusan tiket 57 butir 7), Team Leader 1 / 2 / 3 / 7
+// (`DDL\EmailTypeTL.xml`, tiket 58 butir 1).
+var emailTypeTahap = map[string][]string{
+	TahapMarketing:  {models.EmailTypeAccept, models.EmailTypeReject, models.EmailTypeBanding, models.EmailTypeDecline},
+	TahapTeamLeader: {models.EmailTypeAccept, models.EmailTypeReject, models.EmailTypeAsk, models.EmailTypeDecline},
+	// Tiket 61 - Underwriting `DDL\EmailTypeUW.xml` (ASM-FW-GISFW-WORK!EMAILTYPEUW) 1 / 2 / 3 / 7.
+	TahapUW: {models.EmailTypeAccept, models.EmailTypeReject, models.EmailTypeAsk, models.EmailTypeDecline},
+	// Tiket 64 - Binding `DDL\EmailTypeBinding.xml` (ASM-FW-GISFW-WORK!EMAILTYPEBINDING) 1 / 4 / 7 / 9.
+	TahapBinding: {models.EmailTypeAccept, models.EmailTypeBanding, models.EmailTypeDecline, models.EmailTypeRevise},
 }
 
 // DenganSubmit memasang penyimpan Submit (tiket 57).
@@ -114,16 +136,37 @@ type TampilanSubmit struct {
 	// pemeriksa itu keluar untuk tahap marketing, jadi isi halaman saat popup marketing belum terverifikasi -> selalu ""
 	// `[pertanyaan terbuka]`; RI Commission = `.Policy.Payment.RICommision` (PAY_RI_COMMISION).
 	PctRnmRate, PctRnmRIComm string
+	// Tahap - "marketing" / "teamLeader" / "" (tiket 58). DeductibleBedaMataUang - Pega `IsBedaCurr` (hanya dihitung di tahap
+	// Team Leader); DeductibleAcceptance / CommentDeductible - isian TL tersimpan.
+	Tahap                                        string
+	DeductibleBedaMataUang, DeductibleAcceptance bool
+	CommentDeductible                            string
+	// Tiket 61 - tahap Underwriting: Validity Of Acceptance (hari) dan dua tanggal kabel DD-MM-YYYY; "" tahap lain.
+	DaysValidity, DateValidity, WaitingBindDate string
+	// Tiket 64 - tahap Binding: ConfirmBinding ("1") / ReceivedRiSlip ("true") tersimpan (migrasi 213); false tahap lain.
+	ConfirmBinding, ReceivedRiSlip bool
+}
+
+// IsiPeriksa - badan POST …/submit/periksa (tiket 58: isian TL ikut, proteksi Deductible; tiket 61: daysValidity tahap uw).
+type IsiPeriksa struct {
+	EmailType            string
+	DeductibleAcceptance bool
+	CommentDeductible    string
+	DaysValidity         string
 }
 
 // HasilSubmit - jawaban periksa / Submit.
 type HasilSubmit struct {
 	Pesan              []string
 	Position, NBStatus string
+	// PesanBinding - tiket 64b: periksa Accept tahap Binding = penahan tombol "Binding" (flagTombolBinding); [] selain itu.
+	PesanBinding []string
+	// NomorPolis - tiket 69a-2 (work owner 09-10-2026): nomor polis bila Submit menyelesaikan Policy; "" selain itu.
+	NomorPolis string
 }
 
 // idPega - pzInsKey kasus.
-func idPega(id string) string { return awalanIDPega + id }
+func idPega(id string) string { return repository.AwalanIDPega + id }
 
 // awalanNBStatus - `@replaceAll(pyWorkIDPrefix,"-","")` = "NB".
 func awalanNBStatus() string { return strings.ReplaceAll(repository.AwalanCaseNB, "-", "") }
@@ -148,9 +191,27 @@ func (s *Service) konteksSubmit(ctx context.Context, id string) (models.KonteksS
 }
 
 // alasanTidakBoleh - tombol Submit Pega aktif bila `TempEmail.CARI28 == .PositionNote` (workbasket operator = posisi
-// kasus) dan Email Type tampil (FlagOnGoingPolicy 0) = aturan baca-saja bersama (alasanUbah, bacasaja.go). Kosong = boleh.
+// kasus) dan Email Type tampil (FlagOnGoingPolicy 0) = aturan baca-saja bersama (alasanUbah, bacasaja.go). Tiket 61: tahap uw
+// (When IsUWSpread, FlagOnGoingPolicy 0) - workbasket POSITION (alasanUbahSpreading). Kosong = boleh.
 func alasanTidakBoleh(k models.KonteksSubmit, pelaku inti.Pelaku) (string, error) {
-	return alasanUbah(models.TahapKasus{Position: k.Position, FlagOnGoingPolicy: k.FlagOnGoingPolicy}, pelaku, true)
+	t := tahapKasusKonteks(k)
+	if kasusSelesai(t.StatusWork) {
+		return alasanUbah(t, pelaku, true)
+	}
+	// K69-8: TL tahap Policy tetap boleh Submit (form saja), walau tab baca-saja.
+	if tahapSubmitUW(t) || tahapSubmitBinding(t) || tahapSubmitUWPolicy(t) || tahapTLPolicy(t) {
+		if !pelaku.PunyaPeran(t.Position) {
+			return "Akun tidak memegang workbasket " + t.Position + ".",
+				fmt.Errorf("%w: kasus di posisi %s hanya dapat di-Submit workbasket itu", inti.ErrTanpaWewenang, t.Position)
+		}
+		return "", nil
+	}
+	return alasanUbah(t, pelaku, true)
+}
+
+// tahapSubmitUW - Submit tahap uw: (When IsUWSpread ATAU jenjang lanjutan tiket 62) + FlagOnGoingPolicy 0 (tiket 61, D7).
+func tahapSubmitUW(t models.TahapKasus) bool {
+	return (tahapUW(t) || posisiJenjangLanjut[t.Position]) && t.FlagOnGoingPolicy == flagScoringUbah
 }
 
 // unik - urutan pertama dipertahankan (M_LIMIT_PROPERTYY memuat jabatan kembar per TEAM_GROUP).
@@ -178,9 +239,23 @@ func (s *Service) TampilanSubmit(ctx context.Context, pelaku inti.Pelaku, id str
 	if err != nil {
 		return TampilanSubmit{}, err
 	}
-	t := TampilanSubmit{}
+	t := TampilanSubmit{Tahap: tahapKonteks(k), DeductibleAcceptance: k.DeductibleAcceptance == "true",
+		CommentDeductible: k.CommentDeductible}
 	t.Alasan, _ = alasanTidakBoleh(k, pelaku)
 	t.BolehSubmit = t.Alasan == ""
+	if tahapTL(t.Tahap) {
+		objek, err := s.BacaObjek(ctx, id)
+		if err != nil {
+			return TampilanSubmit{}, err
+		}
+		t.DeductibleBedaMataUang = deductibleBedaMataUang(objek)
+	}
+	if tahapUWForm(t.Tahap) {
+		t.DaysValidity, t.DateValidity, t.WaitingBindDate = validitasTampilan(k)
+	}
+	if t.Tahap == TahapBinding {
+		t.ConfirmBinding, t.ReceivedRiSlip = k.ConfirmBinding == "1", k.ReceivedRiSlip == "true"
+	}
 	if t.Riwayat, err = s.submit.RiwayatAkseptasi(ctx, idPega(id)); err != nil {
 		return TampilanSubmit{}, err
 	}
@@ -212,27 +287,105 @@ func bandingAktif(xs []string) []string {
 	return hasil
 }
 
-// emailTypeSah - empat opsi tahap marketing (keputusan butir 7).
-func emailTypeSah(e string) bool { _, ada := labelApproval[e]; return ada }
+// teksBoolPega - boolean Pega disimpan teks "true" / "false" (butir 68.1).
+func teksBoolPega(b bool) string {
+	if b {
+		return "true"
+	}
+	return "false"
+}
 
-// PeriksaSubmit - POST …/submit/periksa: Accept -> proteksi; Reject / Banding / Decline -> kosong (Protection_Act 7-8).
-func (s *Service) PeriksaSubmit(ctx context.Context, pelaku inti.Pelaku, id, emailType string) (HasilSubmit, error) {
+// tahapKonteks - tahap kasus Submit (bacasaja.go tahapDari); tiket 61: When IsUWSpread + FlagOnGoingPolicy 0 = "uw" (Pega
+// menampilkan EmailTypeUW juga pada flag 2 = tahap Binding - di luar cakupan, D7).
+func tahapKonteks(k models.KonteksSubmit) string {
+	t := tahapKasusKonteks(k)
+	if tahapSubmitUW(t) {
+		return TahapUW
+	}
+	if tahapSubmitBinding(t) {
+		return TahapBinding
+	}
+	if tahapSubmitUWPolicy(t) {
+		return TahapUWPolicy
+	}
+	if tahapTLPolicy(t) {
+		return TahapTeamLeaderPolicy
+	}
+	return tahapDari(t)
+}
+
+// tahapKasusKonteks - TahapKasus dari konteks Submit (ConfirmBinding tidak dipakai penentu tahap Submit).
+func tahapKasusKonteks(k models.KonteksSubmit) models.TahapKasus {
+	return models.TahapKasus{Position: k.Position, FlagOnGoingPolicy: k.FlagOnGoingPolicy, StatusWork: k.StatusWork}
+}
+
+// emailTypeSah - Email Type sah tahap itu; pesan 400 menyebut daftarnya.
+func emailTypeSah(tahap, e string) error {
+	if dalam(emailTypeTahap[tahap], e) {
+		return nil
+	}
+	return fmt.Errorf("%w: emailType tahap %s wajib salah satu %s", ErrMasukanSubmit, tahap, strings.Join(emailTypeTahap[tahap], " / "))
+}
+
+// deductibleTL - isian Team Leader untuk proteksi Accept (nil = tahap marketing, Protection_Act 9-12 dilewati).
+func deductibleTL(tahap string, terima bool, komentar string) *isianDeductibleTL {
+	if !tahapTL(tahap) {
+		return nil
+	}
+	return &isianDeductibleTL{terima: terima, komentar: strings.TrimSpace(komentar)}
+}
+
+// PeriksaSubmit - POST …/submit/periksa: Accept -> proteksi (TL: + Deductible Acceptance); Reject / Ask / Banding /
+// Decline -> kosong (Protection_Act 7-8). Kasus baca-saja (tahap "") -> 409.
+func (s *Service) PeriksaSubmit(ctx context.Context, pelaku inti.Pelaku, id string, isi IsiPeriksa) (HasilSubmit, error) {
 	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HasilSubmit{}, err
 	}
 	if err := s.siapSubmit(id); err != nil {
 		return HasilSubmit{}, err
 	}
-	if !emailTypeSah(emailType) {
-		return HasilSubmit{}, fmt.Errorf("%w: emailType wajib 1 / 2 / 4 / 7", ErrMasukanSubmit)
-	}
-	if _, err := s.konteksSubmit(ctx, id); err != nil {
+	k, err := s.konteksSubmit(ctx, id)
+	if err != nil {
 		return HasilSubmit{}, err
 	}
+	// Penjaga sama dengan Submit / POST …/validitas: 403 workbasket / 409 tahap (review tiket 61).
+	if _, err := alasanTidakBoleh(k, pelaku); err != nil {
+		return HasilSubmit{}, err
+	}
+	tahap := tahapKonteks(k)
+	if err := emailTypeSah(tahap, isi.EmailType); err != nil {
+		return HasilSubmit{}, err
+	}
+	if tahapUWForm(tahap) {
+		if _, err := uraiHariValiditas(isi.DaysValidity); err != nil {
+			return HasilSubmit{}, err
+		}
+	}
 	pesan := []string{}
-	if emailType == models.EmailTypeAccept {
-		var err error
-		if pesan, err = s.ProteksiAccept(ctx, id); err != nil {
+	switch {
+	case tahap == TahapBinding:
+		var pesanBinding []string
+		if pesan, pesanBinding, err = s.periksaBinding(ctx, id, k, isi.EmailType); err != nil {
+			return HasilSubmit{}, err
+		}
+		return HasilSubmit{Pesan: pesan, PesanBinding: pesanBinding}, nil
+	case tahap == TahapMarketing && isi.EmailType == models.EmailTypeBanding:
+		if pesan, err = s.proteksiBanding(ctx, id, flagBandingMarketing); err != nil {
+			return HasilSubmit{}, err
+		}
+	case isi.EmailType != models.EmailTypeAccept:
+	case tahapPolicy(tahap):
+		// Tiket 69a: selesai Policy / FacRetro -> 409 juga di periksa.
+		if pesan, _, err = s.periksaAcceptPolicy(ctx, id, k, pelaku, tahap,
+			deductibleTL(tahap, isi.DeductibleAcceptance, isi.CommentDeductible)); err != nil {
+			return HasilSubmit{}, err
+		}
+	case tahap == TahapUW:
+		if pesan, _, err = s.periksaAcceptUW(ctx, id, k, pelaku); err != nil {
+			return HasilSubmit{}, err
+		}
+	default:
+		if pesan, err = s.ProteksiAccept(ctx, id, deductibleTL(tahap, isi.DeductibleAcceptance, isi.CommentDeductible)); err != nil {
 			return HasilSubmit{}, err
 		}
 	}
@@ -251,14 +404,35 @@ func potongKomentar(s string) string {
 	return s
 }
 
-// rapikanIsiSubmit - isian 400 (emailType, comment, bandingTo, Cause of Decline). Decline: Comment disusun ulang server.
-func rapikanIsiSubmit(isi models.IsiSubmit, opsiBanding []string, tc []models.BarisSebabTc, nonTc []string) (models.IsiSubmit, error) {
+// rapikanIsiSubmit - isian 400 (emailType per tahap, comment, bandingTo, Cause of Decline, Comment Deductible TL). Decline:
+// Comment disusun ulang server.
+func rapikanIsiSubmit(tahap string, isi models.IsiSubmit, opsiBanding []string, tc []models.BarisSebabTc, nonTc []string) (models.IsiSubmit, error) {
 	out := isi
 	out.Comment, out.BandingTo = strings.TrimSpace(isi.Comment), strings.TrimSpace(isi.BandingTo)
-	if !emailTypeSah(out.EmailType) {
-		return out, fmt.Errorf("%w: emailType wajib 1 / 2 / 4 / 7", ErrMasukanSubmit)
+	out.CommentDeductible = strings.TrimSpace(isi.CommentDeductible)
+	if err := emailTypeSah(tahap, out.EmailType); err != nil {
+		return out, err
 	}
 	var masalah []string
+	if len(out.CommentDeductible) > lebarCommentDeductible {
+		masalah = append(masalah, fmt.Sprintf("commentDeductible paling banyak %d bita", lebarCommentDeductible))
+	}
+	if tahapUWForm(tahap) {
+		// Tiket 61: tanpa Cause of Decline / Banding; Comment wajib untuk semua (EmailSection_IsUW), ke COMMENT_TEXT 500 bita.
+		if _, err := uraiHariValiditas(out.DaysValidity); err != nil {
+			return out, err
+		}
+		if out.Comment == "" {
+			masalah = append(masalah, "comment wajib diisi")
+		}
+		if len(out.Comment) > lebarCommentUW {
+			masalah = append(masalah, fmt.Sprintf("comment paling banyak %d bita", lebarCommentUW))
+		}
+		if len(masalah) > 0 {
+			return out, fmt.Errorf("%w: %s", ErrMasukanSubmit, strings.Join(masalah, "; "))
+		}
+		return out, nil
+	}
 	switch out.EmailType {
 	case models.EmailTypeBanding:
 		ada := false
@@ -291,9 +465,50 @@ func rapikanIsiSubmit(isi models.IsiSubmit, opsiBanding []string, tc []models.Ba
 	return out, nil
 }
 
-// nbStatusSubmit - NB_STATUS dan posisi baru per Email Type.
-func nbStatusSubmit(isi models.IsiSubmit, k models.KonteksSubmit, akun models.AkunSubmit) (posisi, status string) {
+// nbStatusSubmit - NB_STATUS dan posisi baru per tahap dan Email Type.
+func nbStatusSubmit(tahap string, isi models.IsiSubmit, k models.KonteksSubmit, akun models.AkunSubmit) (posisi, status string) {
 	a := awalanNBStatus()
+	if tahapPolicy(tahap) {
+		return nbStatusPolicy(tahap, isi, k, akun)
+	}
+	if tahap == TahapBinding {
+		// Accept: posisi / NB status dari lengkapiTulisanBinding (TL / UW Financial). Banding: SetBanding_ACT (sama dengan
+		// marketing). Revise: Assignment12 marketing. Decline: pola UW (dua spasi) - Pega tidak memasangnya (K64-2).
+		switch isi.EmailType {
+		case models.EmailTypeAccept:
+			return "", ""
+		case models.EmailTypeBanding:
+			t := tujuanBanding[isi.BandingTo]
+			return t.posisi, a + " IS IN " + t.label + "'S INBOX"
+		case models.EmailTypeRevise:
+			return repository.WorkbasketMarketing, a + " IS IN " + k.MarketingName + "'S INBOX"
+		}
+		return posisiDecline, a + " WAS DECLINED BY  " + strings.ToUpper(akun.Nama)
+	}
+	if tahap == TahapUW {
+		// Accept: posisi / NB status dari jenjang (acceptUW, tulisanSubmit). Reject / Ask: Utility8 -> Transition170 (sama
+		// dengan Team Leader). Decline: SetValidateDateUW_PostAct L3474 (dua spasi).
+		switch isi.EmailType {
+		case models.EmailTypeAccept:
+			return "", "" // diisi lengkapiTulisanUW dari jenjang
+		case models.EmailTypeReject, models.EmailTypeAsk:
+			return repository.WorkbasketMarketing, a + " IS IN " + k.MarketingName + "'S INBOX"
+		}
+		return posisiDecline, a + " WAS DECLINED BY  " + strings.ToUpper(akun.Nama)
+	}
+	if tahap == TahapTeamLeader {
+		switch isi.EmailType {
+		case models.EmailTypeAccept:
+			// IsJuniorUW_B verbatim.
+			return posisiJuniorUWB, a + " IS IN JUNIOR UNDERWRITER (B)'S INBOX"
+		case models.EmailTypeReject, models.EmailTypeAsk:
+			// Transition170: MarketingName APA ADANYA (tanpa huruf besar, beda dengan Reject marketing 6.9).
+			return repository.WorkbasketMarketing, a + " IS IN " + k.MarketingName + "'S INBOX"
+		}
+		// Decline TL: SetValidateDate 6.8 hanya untuk PositionNote Admin / Marketing (NextUser kosong -> "NB IS IN  'S
+		// INBOX" di Pega) - teks Decline marketing dipakai `[keputusan agent]`.
+		return posisiDecline, a + " WAS DECLINED BY  " + strings.ToUpper(akun.Nama)
+	}
 	switch isi.EmailType {
 	case models.EmailTypeAccept:
 		return posisiTeamLeader, a + " IS IN TEAM LEADER'S INBOX"
@@ -325,26 +540,48 @@ func (s *Service) AjukanSubmit(ctx context.Context, pelaku inti.Pelaku, id strin
 	if _, err := alasanTidakBoleh(k, pelaku); err != nil {
 		return HasilSubmit{}, err
 	}
+	tahap := tahapKonteks(k)
 	var opsiBanding, nonTc []string
 	var tc []models.BarisSebabTc
-	switch isi.EmailType {
-	case models.EmailTypeBanding:
+	switch {
+	case tahapUWForm(tahap): // tanpa Banding / Cause of Decline
+	case isi.EmailType == models.EmailTypeBanding:
 		if opsiBanding, err = s.submit.OpsiBanding(ctx, idPega(id), k.TeamGroup); err != nil {
 			return HasilSubmit{}, err
 		}
-	case models.EmailTypeDecline:
+	case isi.EmailType == models.EmailTypeDecline:
 		baris, err := s.submit.SebabDecline(ctx)
 		if err != nil {
 			return HasilSubmit{}, err
 		}
 		tc, nonTc = susunSebabDecline(baris)
 	}
-	isi, err = rapikanIsiSubmit(isi, opsiBanding, tc, nonTc)
+	isi, err = rapikanIsiSubmit(tahap, isi, opsiBanding, tc, nonTc)
 	if err != nil {
 		return HasilSubmit{}, err
 	}
-	if isi.EmailType == models.EmailTypeAccept {
-		pesan, err := s.ProteksiAccept(ctx, id)
+	var tujuan tujuanUW
+	if tahap == TahapBinding {
+		pesan, _, err := s.periksaBinding(ctx, id, k, isi.EmailType)
+		if err != nil {
+			return HasilSubmit{}, err
+		}
+		if len(pesan) > 0 {
+			return HasilSubmit{}, GalatProteksi{Pesan: pesan}
+		}
+	} else if isi.EmailType == models.EmailTypeAccept || (tahap == TahapMarketing && isi.EmailType == models.EmailTypeBanding) {
+		var pesan []string
+		switch {
+		case isi.EmailType == models.EmailTypeBanding: // tiket 57b
+			pesan, err = s.proteksiBanding(ctx, id, flagBandingMarketing)
+		case tahapPolicy(tahap): // tiket 69a
+			pesan, tujuan, err = s.periksaAcceptPolicy(ctx, id, k, pelaku, tahap,
+				deductibleTL(tahap, isi.DeductibleAcceptance, isi.CommentDeductible))
+		case tahap == TahapUW:
+			pesan, tujuan, err = s.periksaAcceptUW(ctx, id, k, pelaku)
+		default:
+			pesan, err = s.ProteksiAccept(ctx, id, deductibleTL(tahap, isi.DeductibleAcceptance, isi.CommentDeductible))
+		}
 		if err != nil {
 			return HasilSubmit{}, err
 		}
@@ -356,7 +593,20 @@ func (s *Service) AjukanSubmit(ctx context.Context, pelaku inti.Pelaku, id strin
 	if err != nil {
 		return HasilSubmit{}, err
 	}
-	w := s.tulisanSubmit(id, pelaku, isi, k, akun)
+	w := s.tulisanSubmit(tahap, id, pelaku, isi, k, akun)
+	if tahap == TahapBinding {
+		s.lengkapiTulisanBinding(&w, id, pelaku, isi, k)
+	}
+	if tahap == TahapUW {
+		if err := s.lengkapiTulisanUW(ctx, &w, id, pelaku, isi, k, tujuan); err != nil {
+			return HasilSubmit{}, err
+		}
+	}
+	if tahapPolicy(tahap) {
+		if err := s.lengkapiTulisanPolicy(ctx, &w, tahap, id, pelaku, isi, k, tujuan); err != nil {
+			return HasilSubmit{}, err
+		}
+	}
 	if err := s.transaksi(ctx, func(tx *db.Tx) error { return s.submit.TulisSubmit(ctx, tx, w) }); err != nil {
 		if errors.Is(err, repository.ErrPosisiBerubah) {
 			return HasilSubmit{}, ErrSubmitBukanTahapMarketing
@@ -364,24 +614,41 @@ func (s *Service) AjukanSubmit(ctx context.Context, pelaku inti.Pelaku, id strin
 		return HasilSubmit{}, galatKasus(err)
 	}
 	log.Printf("nbfacin: Submit kasus %s %s oleh %s -> %s", id, labelApproval[isi.EmailType].riwayat, pelaku.AkunID, w.PosisiBaru)
-	return HasilSubmit{Pesan: []string{}, Position: w.PosisiBaru, NBStatus: w.NBStatus}, nil
+	if w.Binding != nil {
+		s.kirimSurelBinding(ctx, id, k, w.NBStatus)
+	}
+	h := HasilSubmit{Pesan: []string{}, Position: w.PosisiBaru, NBStatus: w.NBStatus}
+	if w.Policy != nil {
+		h.NomorPolis = w.Policy.NomorPolis
+	}
+	return h, nil
 }
 
-// tulisanSubmit - seluruh baris tulis (SaveViewSuggest, InsertHistoryAkseptasiPega, InsertFacInPerformance_Act).
-func (s *Service) tulisanSubmit(id string, pelaku inti.Pelaku, isi models.IsiSubmit, k models.KonteksSubmit, akun models.AkunSubmit) models.TulisanSubmit {
+// tulisanSubmit - seluruh baris tulis (SaveViewSuggest, InsertHistoryAkseptasiPega, InsertFacInPerformance_Act; TL: isian
+// Deductible, IsJuniorUW_B).
+func (s *Service) tulisanSubmit(tahap, id string, pelaku inti.Pelaku, isi models.IsiSubmit, k models.KonteksSubmit, akun models.AkunSubmit) models.TulisanSubmit {
 	nama := akun.Nama
 	if nama == "" {
 		nama = pelaku.AkunID // OperatorID.pyUserName tak tersedia `[dugaan]`
 	}
 	label := labelApproval[isi.EmailType]
-	posisi, status := nbStatusSubmit(isi, k, akun)
+	posisi, status := nbStatusSubmit(tahap, isi, k, akun)
 	w := models.TulisanSubmit{CaseID: id, IDPega: idPega(id), PosisiLama: k.Position, PosisiBaru: posisi, NBStatus: status,
 		Riwayat: models.RiwayatProduksi{TypePolis: awalanNBStatus(), Posisi: posisiCedingConfirmOffer, PIC: nama,
 			TglInp: s.sekarang().In(WIB).Format(bentukTglInp), Div: akun.Divisi, Type: "F", Putaran: "1", Approval: label.riwayat,
 			Keterangan: isi.Comment, AksesLogin: pelaku.AkunID, PercentRNM: k.PercentShare},
-		Pega: models.RiwayatPega{Status: label.pega, Username: nama, Workbasket: repository.WorkbasketMarketing}}
+		Pega: models.RiwayatPega{Status: label.pega, Username: nama, Workbasket: workbasketTahap[tahap]}}
+	if tahapTL(tahap) {
+		w.Deductible = &models.DeductibleTL{Acceptance: teksBoolPega(isi.DeductibleAcceptance), Comment: isi.CommentDeductible}
+		if tahap == TahapTeamLeader && isi.EmailType == models.EmailTypeAccept {
+			w.KeUW = s.sekarang().UTC().Format(BentukWaktuPega)
+		}
+	}
 	if isi.EmailType == models.EmailTypeDecline {
 		w.StatusWorkBaru = statusDecline
+	}
+	// FACINPERFORMANCE hanya Decline MARKETING: InsertFacInPerformance_Act tidak membaca EmailTypeTL `[terverifikasi]`.
+	if isi.EmailType == models.EmailTypeDecline && tahap == TahapMarketing {
 		f := models.PerformanceFacIn{PositionDoc: "OFFER", StatusDoc: "DECLINE", Username: pelaku.AkunID, InsuredName: k.InsuredName,
 			SOB: k.SobName, MOLeader: k.MOLeader, COB: k.ClassOfBusiness}
 		// Langkah 12: dilewati bila salah satu kolom NOT NULL kosong (seperti penjaga Pega).

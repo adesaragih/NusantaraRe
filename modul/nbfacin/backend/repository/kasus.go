@@ -90,8 +90,11 @@ LEFT JOIN %s q ON q.PARENT_ID = w.ID
 WHERE w.ID = :1 AND w.LINI = :2`, strings.Join(pilih, ", "), work, opp, general, quo)
 }
 
-func sqlTahapKasus(work string) string {
-	return "SELECT POSITION, FLAG_ONGOING_POLICY FROM " + work + " WHERE ID = :1 AND LINI = :2"
+// sqlTahapKasus - POSITION / FLAG_ONGOING_POLICY T_WORK_POLIS + CONFIRM_BINDING T_GENERAL_POLIS (tiket 64 lanjutan: tahap
+// Binding dapat diubah sampai tombol Binding ditekan).
+func sqlTahapKasus(work, general string) string {
+	return "SELECT w.POSITION, w.FLAG_ONGOING_POLICY, g.CONFIRM_BINDING, w.STATUS_WORK FROM " + work + " w LEFT JOIN " + general +
+		" g ON g.ID = w.ID WHERE w.ID = :1 AND w.LINI = :2"
 }
 
 // TahapKasus - lihat PembacaTahapKasus.
@@ -100,15 +103,20 @@ func (r *KasusOracle) TahapKasus(ctx context.Context, id string) (models.TahapKa
 	if err != nil {
 		return models.TahapKasus{}, err
 	}
-	var pos, flag sql.NullString
-	err = r.db.QueryRowContext(ctx, sqlTahapKasus(work), id, LiniFacIn).Scan(&pos, &flag)
+	general, err := r.db.Qualify(TabelGeneralPolis)
+	if err != nil {
+		return models.TahapKasus{}, err
+	}
+	var pos, flag, confirm, status sql.NullString
+	err = r.db.QueryRowContext(ctx, sqlTahapKasus(work, general), id, LiniFacIn).Scan(&pos, &flag, &confirm, &status)
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.TahapKasus{}, ErrKasusTidakAda
 	}
 	if err != nil {
 		return models.TahapKasus{}, fmt.Errorf("repository: baca tahap case NB: %w", err)
 	}
-	return models.TahapKasus{Position: pos.String, FlagOnGoingPolicy: flag.String}, nil
+	return models.TahapKasus{Position: pos.String, FlagOnGoingPolicy: flag.String, ConfirmBinding: confirm.String,
+		StatusWork: status.String}, nil
 }
 
 // BacaKasus - lihat PembacaKasus. ErrKasusTidakAda bila tidak ada.

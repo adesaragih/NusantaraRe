@@ -221,14 +221,14 @@ export default function TabLossRecord({
       <section className="nbf-lr__unggah">
         <h5>{L.judulUnggah}</h5>
         <div className="nbf-lr__tombol">
-          <button type="button" className="btn btn--ghost btn--sm" onClick={unduhTemplate}>
+          <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" onClick={unduhTemplate}>
             {L.unduhTemplate}
           </button>
-          <button type="button" className="btn btn--sm" onClick={() => berkas.current?.click()} disabled={menyimpan}>
+          <button type="button" className="btn nbf-tema__tombol btn--sm" onClick={() => berkas.current?.click()} disabled={menyimpan}>
             {L.unggah}
           </button>
           <input ref={berkas} type="file" accept=".csv,text/csv" hidden aria-label={L.unggah} onChange={(e) => void unggah(e)} />
-          <button type="button" className="btn btn--primary btn--sm" onClick={() => void simpan()} disabled={menyimpan || menghitung}>
+          <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary btn--sm" onClick={() => void simpan()} disabled={menyimpan || menghitung}>
             {menyimpan ? T.menyimpan : L.simpan}
           </button>
           {menghitung && <span className="muted">{T.menghitung}</span>}
@@ -265,7 +265,7 @@ export default function TabLossRecord({
               <th scope="col">
                 <button
                   type="button"
-                  className="btn btn--ghost btn--sm"
+                  className="btn nbf-tema__tombol btn--ghost btn--sm"
                   onClick={() => {
                     setTerbuka((t) => [...t, v.baris.length])
                     ubahHitung({ ...v, baris: [...v.baris, barisLossRecordBaru()] })
@@ -307,7 +307,7 @@ export default function TabLossRecord({
                   <td>
                     <button
                       type="button"
-                      className="btn btn--ghost btn--sm"
+                      className="btn nbf-tema__tombol btn--ghost btn--sm"
                       onClick={() => {
                         setTerbuka([])
                         ubahHitung({ ...v, baris: v.baris.filter((_, k) => k !== i) })
@@ -436,7 +436,7 @@ export default function TabLossRecord({
 
       <div className="nbf-objek__kaki">
         {menghitung && <span className="muted">{T.menghitung}</span>}
-        <button type="button" className="btn btn--primary" onClick={() => void simpan()} disabled={menyimpan || menghitung}>
+        <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" onClick={() => void simpan()} disabled={menyimpan || menghitung}>
           {menyimpan ? T.menyimpan : L.simpanTab}
         </button>
       </div>

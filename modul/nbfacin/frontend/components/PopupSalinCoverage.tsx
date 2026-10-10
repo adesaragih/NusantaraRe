@@ -30,7 +30,7 @@ export default function PopupSalinCoverage({
       onTutup={onTutup}
       aksi={
         lokasi !== '' && item !== '' ? (
-          <button type="button" className="btn btn--primary" onClick={() => onSalin({ o, i: Number.parseInt(item, 10) })}>
+          <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" onClick={() => onSalin({ o, i: Number.parseInt(item, 10) })}>
             {S.keItemLain}
           </button>
         ) : undefined

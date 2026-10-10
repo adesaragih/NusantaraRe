@@ -882,6 +882,17 @@ export function IkonRumah({ ukuran = 20 }: { ukuran?: number }) {
   );
 }
 
+/** `file-text` — tombol sidebar di bawah Beranda milik modul (`MenuModul.menuAtas`). */
+export function IkonDokumen({ ukuran = 20 }: { ukuran?: number }) {
+  return (
+    <svg {...sifatIkon(ukuran)} strokeWidth={1.8}>
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+      <path d="M10 9H8M16 13H8M16 17H8" />
+    </svg>
+  );
+}
+
 /** `menu` — tombol ciutkan/buka menu di topbar. */
 export function IkonMenu({ ukuran = 20 }: { ukuran?: number }) {
   return (

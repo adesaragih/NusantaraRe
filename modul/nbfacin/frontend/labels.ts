@@ -85,6 +85,43 @@ export const KOLOM_PORTAL = [
   { sel: '96', label: 'Status', properti: 'A.NBStatusNew' },
 ] as const
 
+/**
+ * Kolom daftar kotak masuk Beranda NB FacIn = gambar layar inbox "New Business" Pega dari work owner 07-10-2026 (report-nya
+ * tidak ada di korpus). Judul kosong = kolom tanpa judul di gambar yang berisi "Accept by <PIC>".
+ */
+export const KOLOM_INBOX_NBFACIN = [
+  { kunci: 'id', label: 'ID' },
+  { kunci: 'tertanggung', label: 'Insured Name' },
+  { kunci: 'bisnis', label: 'Business name' },
+  { kunci: 'sob', label: 'Source Of Business' },
+  { kunci: 'ceding', label: 'Ceding Company' },
+  { kunci: 'mulai', label: 'Inception Date' },
+  { kunci: 'share', label: '%Share RNM' },
+  { kunci: 'marketing', label: 'Marketing Name' },
+  { kunci: 'status', label: 'Status' },
+  { kunci: 'dibuat', label: 'Created date' },
+  { kunci: 'penawaran', label: 'Offering Date' },
+  { kunci: 'validitas', label: 'Validity Date' },
+  { kunci: 'statusInbox', label: 'Status Inbox' },
+  { kunci: 'aksiTerakhir', label: '' },
+  { kunci: 'sejak', label: 'Time Since Last Update' },
+] as const
+
+/**
+ * Kolom tambahan kotak masuk workbasket Underwriting (gambar layar inbox "New Business" Pega di underwriter, work owner
+ * 07-10-2026): "Time in Underwriting" sesudah Validity Date; tampil untuk workbasket `WORKBASKET_UW_NBFACIN`.
+ */
+export const KOLOM_INBOX_UW_NBFACIN = { kunci: 'diUw', label: 'Time in Underwriting' } as const
+
+/** Workbasket berkolom "Time in Underwriting" (daftar work owner 07-10-2026). */
+export const WORKBASKET_UW_NBFACIN = [
+  'ReasFacInJuniorUnderwritingB',
+  'ReasFacInJuniorUnderwritingA',
+  'ReasFacInUnderwriting',
+  'ReasFacInSeniorUnderwriting',
+  'ReasFacInDepHeadUnderwriting',
+] as const
+
 /** Teks sistem baru - BUKAN dari korpus. */
 export const TEKS_PORTAL = {
   /** Daftar berhasil dimuat tetapi kosong / tidak ada yang cocok dengan saringan. */
@@ -255,8 +292,30 @@ export const PERIODE = {
  * Pilihan radio Policy Type (sel 26) dan Day (sel 78) - daftarnya ikut definisi properti (`associated`, tipe
  * rule Property tidak ada di korpus), jadi teksnya dari TANGKAPAN LAYAR work owner 03-10-2026.
  */
+/**
+ * Bilah CSV objek (tiket 66). `pleaseUpload` verbatim `NB FacIn\Activity\InsertUploadFire_act.xml` b.492; "Success Insert Data"
+ * (b.7577) datang dari backend. Selebihnya teks sistem baru.
+ */
+export const TEKS_CSV_OBJEK = {
+  pleaseUpload: 'Please Upload CSV',
+  terbaca: (n: number) => `${n} baris CSV terbaca - periksa lewat View Upload, lalu tekan Save Data untuk menyimpan.`,
+  konfirmasiGanti: 'Case ini sudah memiliki objek. Save Data akan MENGGANTI semua objek / lokasi dengan isi CSV. Lanjutkan?',
+  menyimpan: 'Menyimpan…',
+  ya: 'Ya',
+  batal: 'Batal',
+  tutup: 'Tutup',
+} as const
+
 export const PILIHAN_PERIODE = {
-  policyType: ['Individual Policy', 'Master Policy'],
+  /**
+   * Policy Type: disimpan STANDARD VALUE (`D:\migrasi\RNM\DDL\PolicyType.xml` `ASM-FW-GISFW-DATA-QUOTATION!POLICYTYPE`: 0 Individual
+   * Policy, 1 Master Policy, 2 Declaration Policy) - work owner 09-10-2026 "YANG DISIMPAN ITU STANDARD VALUENYA. ( 0,1,2)",
+   * ralat butir 78.2 ("Label text for now"). Layar tetap dua pilihan (gambar layar Pega).
+   */
+  policyType: [
+    { value: '0', label: 'Individual Policy' },
+    { value: '1', label: 'Master Policy' },
+  ],
   day: ['365', '366'],
 } as const
 
@@ -296,10 +355,20 @@ export const TEKS_INWARD = {
   kosong: 'No items',
   /** Untuk `BelumTersedia` isi tab detail (tahap 3). */
   isiTab: 'Isi tab',
+  /**
+   * Isi tab untuk Class of Business selain FIRE (work owner 09-10-2026 "ini kenapa? saya baru buat cob liability"): layar Pega
+   * keluarga Aneka (Liability dkk., 36 section) belum diport - bukan galat pemuatan. Teks sistem baru.
+   */
+  cobBelum: (tab: string, cob: string) => `Tab ${tab} untuk Class of Business ${cob} belum tersedia di sistem baru (saat ini baru FIRE).`,
   /** Sesudah Save for later berhasil. */
   tersimpan: 'Tersimpan.',
   /** Case baca-saja: sudah keluar dari tahap marketing (work owner 07-10-2026). */
   bacaSaja: 'Case ini baca-saja: sudah tidak berada di tahap marketing, jadi isinya tidak dapat diubah.',
+  /** Tahap Underwriting (When IsUWSpread, tiket 59): hanya tab Spreading yang dapat diubah. Teks sistem baru. */
+  bacaSajaKecualiSpreading: 'Case berada di tahap Underwriting: hanya tab Spreading (% Share RNM dan spreading) yang dapat diubah.',
+  /** Tahap Underwriting dengan Accumulation terbuka (tiket 60). Teks sistem baru. */
+  bacaSajaKecualiSpreadingAkumulasi:
+    'Case berada di tahap Underwriting: hanya tab Spreading (% Share RNM dan spreading) dan Accumulation di tab Coverage yang dapat diubah.',
   /** Popup Change SOB: pencarian berhasil tetapi kosong. */
   tanpaSob: 'Tidak ada SOB yang cocok.',
 } as const
@@ -1050,7 +1119,7 @@ export const FORM_DEDUCTIBLE = {
   inputCondition: { sel: '13', label: 'Condition' },
   timeExcess: { sel: '14', label: 'Time Excess (In Days)' },
 } as const
-/** Kepala kolom grid "Time Excess (Days)" (CoverageItem.xml); kolom lain memakai label form (keputusan agent R-1). */
+/** Kepala kolom grid "Time Excess (Days)" (CoverageItem.xml); kolom lain berkepala kosong seperti Pega (work owner 08-10-2026). */
 export const KOLOM_TIME_EXCESS = 'Time Excess (Days)'
 /** Pilihan kosong dropdown deductible (`pyNoSelectionText` addDeductible). */
 export const DEDUCTIBLE_KOSONG = 'Choose'
@@ -1314,6 +1383,10 @@ export const TEKS_SPREADING = {
   angka: 'Isi angka (pemisah desimal titik).',
   /** Pesan Pega verbatim - `Activity\CalcultePersentageSpeading_Act.xml` langkah "check same treaty type". */
   treatySama: "Treaty Type can't be same",
+  /** Pesan Pega verbatim - `Activity\cekSpreadingFactIn.xml` (Σ % Share baris spreading satu coverage > 100; tiket 59). */
+  shareBarisLebih: "Share Percentage can't be more than 100",
+  /** Grid spreading tahap UW: baris tanpa Type Treaty / % Share (teks sistem baru, bukan korpus). */
+  barisBelumLengkap: 'Lengkapi Type Treaty dan % Share setiap baris spreading.',
 } as const
 
 /**
@@ -1349,7 +1422,7 @@ export const TEKS_CEDANT = {
   simpan: 'Save',
   menyimpan: 'Menyimpan…',
   tersimpan: 'Cedant tersimpan.',
-  typeWajib: 'Share Cedant Type wajib dipilih.',
+  typeWajib: 'Share Cedant Type wajib diisi.',
   /** Pesan Pega verbatim - `Activity\ProtectShareCedant_Act.xml`. */
   shareTidakSah: '% Share cedant more than 100 or less than 0!',
   cedingKosong: "Ceding on list inward facultative cedant can't be null!",
@@ -1474,6 +1547,14 @@ export const SALIN_COVERAGE = {
   item: 'Object Item Name',
   objek: 'Objek',
   menyalin: 'Menyalin dan menghitung ulang premi…',
+  // Umpan balik Copy Deductible (work owner 08-10-2026 "dicoba tidak ada berfungsi"; Pega tanpa pesan - teks keputusan agent).
+  deductibleKosong: 'Coverage item ini belum punya deductible - deductible coverage berkode sama di item lain dikosongkan.',
+  deductibleTanpaPadanan: 'Tidak ada coverage di item lain yang kodenya sama dengan coverage item ini, jadi tidak ada deductible yang disalin.',
+  deductibleTersalin: (coverage: number, item: number) =>
+    `Deductible disalin ke ${coverage} coverage di ${item} item lain. Klik Save untuk menyimpan.`,
+  // CopyDeductibleToAllLocation_Act "jangan copy ke Business Interuption 10000992"; tombol For BI hanya di item BI lokasi 1.
+  deductibleBiDilewati: (n: number) =>
+    `${n} item Business Interruption tidak ikut Copy Deductible To All (aturan Pega). Isi deductible di item Business Interruption, lalu pakai Copy Deductible For BI di item itu untuk menyalinnya ke item Business Interruption lain.`,
 } as const
 
 /**
@@ -1848,6 +1929,102 @@ export const EMAIL_TYPE = {
   yakinDecline: 'Are you sure want to decline?',
 } as const
 
+/**
+ * Email Type tahap Team Leader (tiket 58) - properti `.EmailTypeTL` (`D:\migrasi\RNM\DDL\EmailTypeTL.xml`,
+ * `ASM-FW-GISFW-WORK!EMAILTYPETL`, PromptList: 1 Accept, 2 Reject, 3 Ask, 7 Decline) = gambar layar work owner 07-10-2026.
+ * Isian khusus TL `Section\Periode.xml` (`ASM-FW-GISFW-DATA-OFFERFACIN!PERIODE`) sel 81 / 82.
+ */
+export const EMAIL_TYPE_TL = {
+  opsi: [
+    { kode: '1', label: 'Accept' },
+    { kode: '2', label: 'Reject' },
+    { kode: '3', label: 'Ask' },
+    { kode: '7', label: 'Decline' },
+  ],
+  deductibleAcceptance: 'Deductible Acceptance Case',
+  commentDeductible: 'Comment Deductible',
+} as const
+
+/**
+ * Email Type tahap Underwriting (tiket 61) - properti `.EmailTypeUW` (`D:\migrasi\RNM\DDL\EmailTypeUW.xml`,
+ * `ASM-FW-GISFW-WORK!EMAILTYPEUW`, PromptList: 1 Accept, 2 Reject, 3 Ask, 7 Decline). Isian UW = `NB FacIn\Section\EmailSection_IsUW.xml`
+ * (pyLabelFieldValue): Validity Of Acceptance (`.OfferFacIn.DaysValidity`), "days, or up to" (`.OfferFacIn.DateValidity`,
+ * disabled), Waiting Bind (`.OfferFacIn.WaitingBindDate`, disabled). Tanpa "Choose Cause of decline" (hanya di EmailSection).
+ */
+export const EMAIL_TYPE_UW = {
+  opsi: [
+    { kode: '1', label: 'Accept' },
+    { kode: '2', label: 'Reject' },
+    { kode: '3', label: 'Ask' },
+    { kode: '7', label: 'Decline' },
+  ],
+  validitas: 'Validity Of Acceptance',
+  hariAtau: 'days, or up to',
+  waitingBind: 'Waiting Bind',
+} as const
+
+/**
+ * Email Type UW tahap Policy (tiket 69) - properti `.EmailTypeUWPolicy` (`Section\EmailSection_IsUW.xml` L2026, tampil
+ * `FlagOnGoingPolicy == 1`; `D:\migrasi\RNM\DDL\EmailTypeUWPolicy.xml` `ASM-FW-GISFW-WORK!EMAILTYPEUWPOLICY`: 1 Accept, 4 Banding,
+ * 7 Decline). Banding TIDAK ditampilkan (work owner 08-10-2026 K69-6: "banding hanya ada di marketing, dan banding tidak boleh
+ * di tahap policy").
+ */
+export const EMAIL_TYPE_UW_POLICY = {
+  opsi: [
+    { kode: '1', label: 'Accept' },
+    { kode: '7', label: 'Decline' },
+  ],
+} as const
+
+/**
+ * Email Type tahap MARKETING (BINDING) (tiket 64) - properti `.EmailTypeBinding` (`D:\migrasi\RNM\DDL\EmailTypeBinding.xml`,
+ * `ASM-FW-GISFW-WORK!EMAILTYPEBINDING`: 1 Accept, 4 Banding, 7 Decline, 9 Revise). Section `EmailSectionCeding` (tombol "Binding",
+ * centang "Received RI Slip" `.OfferFacIn.ReceivedRiSlip`); konfirmasi Revise = `Section\ReviseNotification.xml`.
+ */
+export const EMAIL_TYPE_BINDING = {
+  opsi: [
+    { kode: '1', label: 'Accept' },
+    { kode: '4', label: 'Banding' },
+    { kode: '7', label: 'Decline' },
+    { kode: '9', label: 'Revise' },
+  ],
+  tombolBinding: 'Binding',
+  receivedRiSlip: 'Received RI Slip',
+  yakinRevise: 'Are you sure you want to revise?',
+} as const
+
+/**
+ * Blok Attachment File (tiket 67) - `NB FacIn\Section\AttachmentGridReas.xml` (pyTitle "Attachment File"; kolom Category · Count ·
+ * Upload File · View File) dan harness `ViewPictureList` (File · Note · Upload Date · Delete).
+ */
+export const LAMPIRAN = {
+  judul: 'Attachment File',
+  kategori: 'Category',
+  jumlah: 'Count',
+  unggah: 'Upload File',
+  lihat: 'View File',
+  berkas: 'File',
+  catatan: 'Note',
+  tanggal: 'Upload Date',
+  hapus: 'Delete',
+} as const
+
+/** Teks sistem baru (bukan Pega) blok Attachment File. Konfirmasi hapus = keputusan agent (Pega tanpa konfirmasi). */
+export const TEKS_LAMPIRAN = {
+  kosong: 'No items',
+  memuat: 'Memuat…',
+  mengunggah: 'Mengunggah…',
+  terunggah: (n: number, kategori: string) => `${n} berkas terunggah ke ${kategori}.`,
+  /** Status unggah asinkron (ADR-0008). */
+  menunggu: 'Menunggu unggah…',
+  gagal: 'Unggah gagal',
+  ulangi: 'Ulangi',
+  yakinHapus: (nama: string) => `Hapus berkas ${nama}?`,
+  ya: 'Ya',
+  batal: 'Batal',
+  tutup: 'Tutup',
+} as const
+
 /** Teks layar sistem baru (bukan Pega) blok Email Type / Submit. */
 export const TEKS_EMAIL_TYPE = {
   memeriksa: 'Memeriksa kelengkapan data…',
@@ -1858,11 +2035,18 @@ export const TEKS_EMAIL_TYPE = {
   wajibComment: 'Comment wajib diisi.',
   wajibBanding: 'Pilih Banding to.',
   wajibSebab: 'Pilih Cause of decline lebih dulu.',
+  /** Validity Of Acceptance tahap UW (tiket 61): bila diisi, angka bulat hari. */
+  hariAngka: 'Validity Of Acceptance: isi jumlah hari (angka bulat).',
+  /** Tahap Binding (tiket 64): Accept butuh tombol Binding lebih dulu (Pega: Send Email Accept butuh ConfirmBinding = 1). */
+  wajibBinding: 'Tekan tombol Binding lebih dulu sebelum Submit Accept.',
+  membinding: 'Binding…',
   bandingTanpaOpsi: 'Case ini belum pernah diproses approver di luar marketing - Banding belum dapat dipilih.',
-  tidakBoleh: 'Submit tidak tersedia: ',
-  /** Case sudah tidak di tahap marketing (mis. sudah di-submit ke Team Leader): form disembunyikan, riwayat tetap. */
-  sudahDiproses: 'Case ini sudah tidak berada di tahap marketing (sudah di-submit / diproses), jadi Email Type dan Submit tidak tersedia. Riwayat akseptasi ada di bawah.',
   terkirim: 'Case berhasil di-submit.',
+  /** Tiket 69a-2: Submit menyelesaikan Policy - nomor polis yang terbit. */
+  nomorPolis: (no: string) => `Policy Number: ${no}`,
+  /** Jendela konfirmasi sesudah Submit dari kotak masuk Beranda (work owner 08-10-2026: NB Status tidak terlihat). */
+  judulSelesai: 'Submit',
+  ok: 'OK',
   riwayatKosong: 'No items',
 } as const
 
@@ -1905,3 +2089,379 @@ export const TEKS_SEBAB_DECLINE = {
   lolos: 'Cause of Decline lengkap - klik Submit.',
   kosong: 'Pilih minimal satu Cause of Decline.',
 } as const
+
+/**
+ * Popup Following Policy (tiket 70) - verbatim `NB FacIn\Section\ViewOpenFollowingPolicy.xml` ("Policy List", "View Option"
+ * + "Choose", "Filter" + placeholder "Policy No / ID", "Refresh", "Back"), grid `Section\GridViewFollowingNB.xml` (kolom
+ * dan link), View Option `D:\migrasi\RNM\DDL\FilterForViewRetro.xml` (3 No Slip ditunda K70-3). Judul popup = label sel
+ * Periode "Following Policy Number". Teks konfirmasi / kosong = sistem baru (keputusan agent).
+ */
+export const FOLLOWING = {
+  judul: 'Following Policy Number',
+  daftar: 'Policy List',
+  viewOption: 'View Option',
+  pilihKosong: 'Choose',
+  filter: 'Filter',
+  placeholder: 'Policy No / ID',
+  refresh: 'Refresh',
+  back: 'Back',
+  opsi: [
+    { value: '1', label: 'ID Pega' },
+    { value: '2', label: 'Policy Number' },
+    { value: '4', label: 'Reff. Number' },
+    { value: '5', label: 'Insured Name' },
+    { value: '6', label: 'Source Of Business' },
+    { value: '7', label: 'QQ Name' },
+  ],
+  kolom: ['ID', 'Policy Number', 'Reff. Number', 'Insured Name', 'Source of Business', 'QQ Name', 'Start Period', 'End Period'],
+  lihat: 'View Details',
+  salinSemua: 'Copy All',
+  salinNopolis: 'Copy Nopolis',
+} as const
+
+export const TEKS_FOLLOWING = {
+  isiFilter: 'Pilih View Option lalu isi Filter untuk mencari polis.',
+  kosong: 'Tidak ada polis yang cocok.',
+  yakinSalinSemua: (no: string) =>
+    `Copy All akan MENGGANTI seluruh lokasi / objek case ini dengan milik polis ${no}, serta mengisi Old Policy Number, % Share dan RI Commission. Lanjutkan?`,
+  ya: 'Ya, Copy All',
+  menyalin: 'Menyalin…',
+  judulDetail: (no: string) => `Policy ${no}`,
+} as const
+
+/**
+ * Menu View Policy (tiket 71) - tab Facultative "List Polis" `D:\migrasi\RNM\DDL\ViewOpenPolicyMarineInbox.xml` (label "List
+ * Polis" L3255; View Option / Filter / grid = `FOLLOWING` karena sel & grid `GridOpenPolicyMarine` sama dengan
+ * `GridViewFollowingNB`); "View Data" (`TempPolis.CARI12`). Judul halaman / tombol portal = nama menu Pega "View Policy"
+ * (work owner 09-10-2026). Teks ringkasan polis lama = sistem baru (A71-3).
+ */
+export const VIEW_POLICY = {
+  judul: 'View Policy',
+  daftar: 'List Polis',
+  viewData: 'View Data',
+  kolomRingkasan: [
+    'Object No', 'Risk Location', 'Object Item', 'Coverage', 'Accumulation Code', 'Currency', 'TSI 100%', 'TSI RNM', 'Rate',
+    'Premium RNM', 'Treaty', '% Share', 'RI Commission',
+  ],
+  kepala: {
+    policyNo: 'Policy Number',
+    noEndors: 'Endorsement Number',
+    caseId: 'ID',
+    insuredName: 'Insured Name',
+    qqName: 'QQ Name',
+    sourceOfBusiness: 'Source of Business',
+    cedingCo: 'Ceding Co',
+    periode: 'Period',
+    policyType: 'Policy Type',
+    reffNumber: 'Reff. Number',
+    groupName: 'Group Name',
+    statusBusiness: 'Business Status',
+    noMasterPolis: 'Master Policy Number',
+  },
+  ceding: ['Ceding', '% Share'],
+} as const
+
+export const TEKS_VIEW_POLICY = {
+  polisLama: 'Polis ini dibuat di sistem lama (Pega) - ditampilkan ringkasan dari data produksi.',
+  memuatDetail: 'Memuat detail polis…',
+} as const
+
+// ---------------------------------------------------------------------------
+// Tab Object keluarga Aneka (tiket 73 P1). Label = label tampil sel Pega (preview, atau pyLabelFormatValue bila preview
+// kosong); sumber per blok di komentarnya.
+// ---------------------------------------------------------------------------
+
+/** Grid lokasi Aneka - `Section\InputDtlObject_FacIn.xml` L37067-37366 (kontainer L36463 / Bonding L22724). */
+export const GRID_LOKASI_ANEKA = ['No', 'Top Risk', 'Location'] as const
+
+/** Grid Occupation di form lokasi - `Section\InputDtlObjectLocation_FacIn.xml` L15910 / L16080. */
+export const GRID_OKUPASI_ANEKA = ['Occupation Code', 'Occupation Name'] as const
+
+/**
+ * Grid Object List Golf - `InputDtlObjectLocation_FacIn.xml` L12144-12602. Kolom TSI Old tidak ditampilkan di NB / RNW (work owner 09-10-2026: "tsi old hanya untuk EDM, di nb,rnw tidak perlu") -
+ * menyimpang dari XML (kolomnya ALWAYS; TSI Old hanya terisi endorsement).
+ */
+export const GRID_GOLF_ANEKA = ['Object Name', 'Currency', 'TSI'] as const
+
+/**
+ * Kolom grid objek di detail okupasi - `Section\InputOkupasiAneka_FacIn.xml`: K2 L3852-4956, K3 (HE) L9821-10609, K4 (Growing
+ * Trees / Yield Shortfall) L14377-14672.
+ */
+export const GRID_OBJEK_ANEKA = {
+  objectName: 'Object Name',
+  section: 'Section',
+  limitOfLiability: 'Limit of Liability',
+  year: 'Year',
+  quantity: 'Quantity',
+  unitQuantity: 'Unit Quantity',
+  chassisNumber: 'Chassis Number',
+  engineNumber: 'Engine Number',
+  currency: 'Currency',
+  tsi: 'TSI',
+} as const
+
+/** Popup Choose Occupation Aneka - HARNESS `Harness\ChooseOccupation.xml` (L289 judul, L1955 Search, kolom ID / Occupation Name, L3260 Choose; 10 per halaman). */
+export const POPUP_OKUPASI_ANEKA = {
+  judul: 'Choose Occupation',
+  cari: 'Search',
+  kolom: ['ID', 'Occupation Name'],
+  pilih: 'Choose',
+  ukuran: 10,
+} as const
+
+/** Opsi `.Section` - `DDL\Section.xml` L189-208. */
+export const OPSI_SECTION_ANEKA = [
+  { value: '1', label: 'Section I' },
+  { value: '2', label: 'Section II' },
+  { value: '3', label: 'Warranty' },
+  { value: '4', label: 'No Section' },
+] as const
+
+/** Label medan form objek - `Section\InputDtlObjectAneka_FacIn.xml` (nomor baris sel per kontainer di FormObjekAneka.tsx). */
+export const FORM_OBJEK_ANEKA = {
+  objectDescription: 'Object Description',
+  objectName: 'Object Name',
+  vesselName: 'Vessel Name',
+  modelTipe: 'Model dan Tipe',
+  section: 'Section',
+  noKontrak: 'Contract No',
+  startDate: 'Start Date',
+  endDate: 'End Date',
+  noKtp: 'KTP No',
+  noNpwp: 'NPWP No',
+  currency: 'Currency',
+  tsi: 'TSI',
+  vesselPrice: 'Vessel Price (TSI)',
+  draftWordingId: 'Draft Wording ID',
+  maintenancePeriod: 'Maintenance Period',
+  others: 'Others (Note)',
+  productionYear: 'Production Year',
+  builtIn: 'Place of Manufacture',
+  flag: 'Flag',
+  quantity: 'Quantity',
+  invoiceNo: 'Invoice No',
+  chassisNumber: 'Chassis Number',
+  engineNumber: 'Engine Number',
+  serialNo: 'Serial No',
+  year: 'Year',
+  unit: 'Unit',
+  objectNameHe: 'Object Name',
+  merk: 'Merk',
+  type: 'Type',
+  tahun: 'Tahun',
+  batasGeografis: 'Batas Geografis',
+  yearOfPlanting: 'Year of Planting',
+  noOfTree: 'No of Trees',
+  areaHectar: 'Area ( Hectar )',
+  limitIdemnityDay: 'Limit Idemnity Day',
+  limitIdemnityMonth: 'Limit Idemnity Month',
+  briguna: {
+    loanAccountNumber: 'Loan Account No',
+    loanName: 'Loan Name',
+    job: 'Job',
+    depositAccountNo: 'Deposit Account No',
+    idCardNo: 'ID Card Number',
+    institution: 'Institution',
+    loanType: 'Loan Type',
+    dateOfBirth: 'Date Of Birth',
+    salary: 'Salary',
+  },
+  marineHull: {
+    typeOfVessel: 'Type of Vessel',
+    nrtrt: 'NRT(RT)',
+    lengthm: 'Length (M)',
+    classification: 'Classification',
+    grtrt: 'GRT(RT)',
+    breadthm: 'Breadth (M)',
+    construction: 'Construction',
+    dwtrt: 'DWT(RT)',
+    depthm: 'Depth (M)',
+  },
+  aviationHull: {
+    registrationMarks: 'Kode Registrasi',
+    maxPassengers: 'Maksimal Penumpang',
+    pilots: 'Pilot',
+    standardUses: 'Penggunaan Standar',
+    specialUses: 'Penggunaan Khusus',
+    specialRentalUses: 'Penggunaan Khusus Rental',
+  },
+} as const
+
+/** Sub-form `Section\InputDtlMemorandumAccept.xml` (L470 judul; L1068-3633). */
+export const FORM_MEMORANDUM = {
+  judul: 'Akseptasi Memorandum',
+  applicationNumber: 'Permohanan Ke',
+  accumulation: 'Akumulasi',
+  collateral: 'Colateral',
+  insuredSiup: 'S.I.U.P',
+  keyPerson: 'Key Person ( PIC )',
+  originalRate: 'Rate Baku ( % )',
+  principalsOutGo: 'Out Go ( % )',
+  typeOfWording: 'Jenis Wording',
+  buildingStatus: 'Status Bangunan',
+  supportingDocument: 'Dok Pendukung',
+  principalsData: 'Data Prinsipal',
+  conclusionsProposals: 'Kesimpulan Dan Usulan',
+  principalsBackground: 'Latar Belakang',
+  summaryFinancial: 'Summary Laporan Keuangan',
+  principalsGuarantee: 'Penjaminan',
+} as const
+
+/** Teks layar tab Object Aneka (bukan dari Pega). */
+export const TEKS_ANEKA = {
+  kosongLokasi: 'Belum ada lokasi.',
+  kosongOkupasi: 'Belum ada okupasi.',
+  kosongObjek: 'Belum ada objek.',
+  bukaBaris: 'Buka / tutup detail',
+  ketikCari: 'Ketik untuk mencari…',
+  tanpaKontainer: 'Form objek untuk Class of Business ini tidak tersedia di Pega (tanpa kontainer).',
+  tersimpan: 'Data objek tersimpan.',
+  ditolak: 'Data objek belum dapat disimpan:',
+  belumDiisi: '(belum diisi)',
+  /**
+   * Judul kartu pengelompokan form objek (perapian work owner 09-10-2026 "RAPIKAN BIAR USER FRIENDLY") - BUKAN dari Pega;
+   * Pega menaruh semua sel dalam satu layout per kontainer.
+   */
+  grup: {
+    objek: 'Object',
+    kapal: 'Vessel Details',
+    kendaraan: 'Vehicle / Equipment Details',
+    pesawat: 'Aircraft Details',
+    periode: 'Period',
+    nilai: 'Sum Insured',
+    identitas: 'Identity',
+    briguna: 'Loan Details',
+    catatan: 'Note',
+  },
+} as const
+
+// ---------------------------------------------------------------------------
+// Tab Coverage keluarga Aneka (tiket 73 P2).
+// ---------------------------------------------------------------------------
+
+/** Grid lokasi - `DDL\InputDtlCoverage_FacIn.xml` kontainer 7 L25661 / L25804. */
+export const GRID_COV_LOKASI_ANEKA = ['No.', 'Location'] as const
+/** Grid okupasi - `DDL\ObjectOccupation_FacIn.xml` L1277 (kontainer !IsEDM). */
+export const GRID_COV_OKUPASI_ANEKA = ['Occupation Name'] as const
+/** Grid objek - `NB FacIn\Section\ObjectDtlAneka_FacIn.xml` L2893-3179; grid Golf `ObjectOccupation_FacIn.xml` L3641-3927. */
+export const GRID_COV_OBJEK_ANEKA = ['Object Name', 'Currency', 'TSI'] as const
+/** Total per mata uang - `ObjectOccupation_FacIn.xml` L6151-6577 (`.Property.TotalTSIPremiGrossList`, `!IsMultiCOB`). */
+export const GRID_COV_TOTAL_ANEKA = ['Currency', 'Grand Total Gross TSI', 'Grand Total Gross Premium', 'Grand Total Gross Rate'] as const
+/** Grid `.CoverageList` - `DDL\InputCoverageAneka_FacIn.xml` (Data-Aneka) L1417 / L1561. */
+export const GRID_COVERAGE_ANEKA = ['Coverage', 'Gross Premium'] as const
+
+/** Tombol salin kontainer `IsAneka` - `DDL\InputCoverageAneka_FacIn.xml` L7966 / L9356 / L9619. */
+export const SALIN_ANEKA = {
+  dariSeksi: 'Copy Coverage From This Section',
+  deductibleSemua: 'Copy Deductible To All',
+  deductibleSeksi: 'Copy Deductible (This Section)',
+} as const
+
+/** Label sel form coverage - `NB FacIn\Section\InputCoverageAneka_FacIn.xml` (nomor baris di FormCoverageAneka.tsx). */
+export const FORM_COVERAGE_ANEKA = {
+  coverageNote: 'Coverage Note',
+  calculateMethod: 'Calculate Method',
+  proRate: '% Pro Rate',
+  shortPeriod: '% Short Period',
+  day: 'Day',
+  currency: 'Currency',
+  tsi: 'TSI',
+  loading: '% Loading',
+  scale: '% Scale',
+  rate: '% Rate',
+  indemnity: 'Indemnity',
+  unit: 'Indemnity Unit',
+  pctIndemnity: '% Indemnity',
+  premium: 'Premium',
+  pctDiscount: '% Discount',
+  discount: 'Discount',
+  lol: 'Limit of Liability',
+  pctLol: '% Limit of Liability / % Sub Limit / % First Loss Limit',
+  subLimit: 'Sub Limit',
+} as const
+
+/** `DDL\CalculateMethod_FacIn.xml` L198-212. */
+export const OPSI_METODE_ANEKA = [
+  { value: '1', label: 'PRO RATA' },
+  { value: '2', label: 'SHORT PERIOD' },
+  { value: '3', label: 'FIX RATE' },
+] as const
+/** `DDL\Day.xml` (radio). */
+export const OPSI_DAY_ANEKA = ['365', '366', '360'] as const
+/** `DDL\Unit.xml` L218-229. */
+export const OPSI_UNIT_INDEMNITY = [
+  { value: '0', label: 'Day (s)' },
+  { value: '1', label: 'Month (s)' },
+  { value: '2', label: 'Year (s)' },
+] as const
+
+/** Teks layar tab Coverage Aneka (bukan dari Pega). */
+export const TEKS_COV_ANEKA = {
+  menghitung: 'Menghitung premi…',
+  kosongCoverage: 'Belum ada coverage.',
+  tersimpan: 'Data coverage tersimpan.',
+  deductibleTersalin: (n: number) => `Deductible disalin ke ${n} coverage berkode sama.`,
+  deductibleKosong: 'Objek ini belum punya coverage berkode untuk disalin.',
+  seksiTersalin: (n: number) => `Coverage disalin ke ${n} objek dengan Section yang sama.`,
+} as const
+
+/**
+ * Tab Spreading keluarga Aneka (tiket 73 P3) - label rantai Pega: lokasi `NB FacIn\Section\CoverageSpreadingList.xml` L3591 / L3733;
+ * okupasi `PropertyItemListCoverageSpreading.xml` L18903; objek `SpreadingObjectAneka.xml` L1229-1653; coverage
+ * `SpreadingCoverageAneka.xml` L1218 / L1354; Golf objek `PropertyItemListCoverageSpreading.xml` L17071, coverage
+ * `InputCoverageSpreadingAneka.xml` L992-1568; detail `SpreadingItemAneka.xml` L794-1285. Header % Share RNM, Copy Spreading,
+ * baris spreading, total dan ringkasan = `SPREADING` (FIRE).
+ */
+export const SPREADING_ANEKA = {
+  kolomLokasi: ['No', 'Location'],
+  kolomOkupasi: ['Occupation Name'],
+  /** Kolom TSI Old tidak ditampilkan di NB / RNW (work owner 09-10-2026: "tsi old hanya untuk EDM, di nb,rnw tidak perlu") - menyimpang dari XML (kolomnya ALWAYS; TSI Old hanya terisi endorsement). */
+  kolomObjek: ['Object Name', 'Currency', 'TSI'],
+  kolomCoverage: ['Coverage', 'Gross Premium'],
+  kolomObjekGolf: ['Object Name'],
+  kolomCoverageGolf: ['Coverage Note', '% Loading', '% Rate', 'TSI', 'Premi'],
+  detailCoverage: {
+    tsi: 'Gross TSI',
+    tsiNusantaraRe: 'TSI Nusantara Re',
+    premium: 'Gross Premium',
+    premiNusantaraRe: 'Premium Nusantara Re',
+  },
+} as const
+
+/**
+ * Daftar komisi tab Premium Deduction untuk keluarga Aneka (tiket 73 P3) - rantai Pega `NB FacIn\Section\CoverageCommisionList.xml`
+ * kontainer L6319 (No L6900 · Location L7040) → `PropertyItemListCoverageCommision.xml` L10644 (Occupation Name L11273) / Golf L8795
+ * (Object Name L9424) → `CommisionObjectAneka.xml` (Object Name · Currency · TSI Old · TSI, L1239-1663) → `CommisionCoverageAneka.xml`
+ * (Coverage · Gross Premium, L1228 / L1364) → `CommisionItemAneka.xml` (TSI Liability `.TSI` L795 · TSI Nusantara Re L980 · Gross
+ * Premium L1127 · Premium Nusantara Re L1285) + grid `InputDtlSpreadingCommisionCoverage_FacIn` (= `DEDUCTION.kolomSpreading`).
+ */
+export const DEDUCTION_ANEKA = {
+  kolomLokasi: ['No', 'Location'],
+  kolomOkupasi: ['Occupation Name'],
+  /** Kolom TSI Old tidak ditampilkan di NB / RNW (work owner 09-10-2026: "tsi old hanya untuk EDM, di nb,rnw tidak perlu") - menyimpang dari XML (kolomnya ALWAYS; TSI Old hanya terisi endorsement). */
+  kolomObjek: ['Object Name', 'Currency', 'TSI'],
+  kolomObjekGolf: ['Object Name'],
+  kolomCoverage: ['Coverage', 'Gross Premium'],
+  detailCoverage: {
+    tsi: 'TSI Liability',
+    tsiNusantaraRe: 'TSI Nusantara Re',
+    premium: 'Gross Premium',
+    premiNusantaraRe: 'Premium Nusantara Re',
+  },
+} as const
+
+/**
+ * Copy Spreading per lokasi (tiket 73 P5) - `NB FacIn\Section\PropertyItemListCoverageSpreading_IsUW.xml` kepala kolom L1571 /
+ * L1735 / L1876, tombol Add L2025 · Delete L3290 · Copy To All Spreading L4444. Judul kartu = teks layar (bukan dari Pega).
+ */
+export const SPREADING_LOKASI = {
+  judul: 'Copy Spreading Lokasi Ini',
+  kolom: ['Type Treaty', '% Share', 'Type Facultative'],
+  tambah: 'Add',
+  hapus: 'Delete',
+  salin: 'Copy To All Spreading',
+  fakultatifWajib: 'Type Facultative wajib untuk treaty 10015.',
+} as const
+
+/** Opsi `.FlagSpreading` - `DDL\FlagSpreading.xml` (ASM-FW-GISFW-DATA-SPREADINGRISK!FLAGSPREADING). */
+export const OPSI_FLAG_SPREADING = ['SF-MR 2023', 'Open Fac Market'] as const

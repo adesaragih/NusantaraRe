@@ -113,6 +113,9 @@ describe('TabCedant - Σ % Share cedant <= 100 selalu (C-7)', () => {
     expect(totalShareLebih([b('UJI A', '50'), b('UJI B', '50.0001')])).toBe(true)
     expect(totalShareLebih([b('UJI A', 'x'), b('UJI B', '')])).toBe(false)
     expect(SUMBER).toContain('if (typeKosong || pesan.length > 0 || shareLebih || totalLebih) return')
+    // Tiket 64 K2: Share Cedant Type juga wajib di tahap Binding (wajibType), pesan pilihan work owner 08-10-2026.
+    expect(SUMBER).toContain('const typeWajib = v.wajib || v.wajibType === true')
+    expect(SUMBER).toContain("const typeKosong = typeWajib && v.shareCedantType === ''")
   })
 })
 
@@ -126,6 +129,6 @@ describe('TabCedant - total per mata uang (Dtl S62 IsFire, TotalSpreadAll)', () 
     }
   })
   it('layar memakai ringkasan Spreading per mata uang saja', () => {
-    expect(SUMBER).toContain('{sp !== null && <RingkasanSpreading v={sp} hanyaMataUang />}')
+    expect(SUMBER).toContain('{sp !== null && <RingkasanSpreading v={sp} hanyaMataUang tanpaTopRisk={aneka} />}')
   })
 })

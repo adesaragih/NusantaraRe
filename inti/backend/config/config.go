@@ -106,6 +106,10 @@ type Config struct {
 	// email sungguhan"). Host atau alamat pengirim (Dari) kosong = SMTP belum dikonfigurasi: modul tidak mengirim (503).
 	SMTPNBFacIn SMTP
 
+	// GrupNBFacIn - penanda case "group" NB Fac In (tiket 63, keputusan work owner 08-10-2026 D5): pengganti literal When
+	// IsGroup. ⛔ Nilainya (login akun / kode marketing) hanya dari env, tidak pernah di kode (CLAUDE.md §4.10).
+	GrupNBFacIn GrupNBFacIn
+
 	// ModulAktif - modul yang dipasang proses ini (refactor bentuk B), dari
 	// MODUL_AKTIF: nama dipisah koma, huruf kecil, tanpa ganda. KOSONG
 	// berarti SEMUA modul terdaftar aktif - bawaan yang sama dengan sebelum
@@ -267,6 +271,9 @@ func Load() (Config, error) {
 	if c.SMTPNBFacIn, err = bacaSMTP("NBFACIN_SMTP"); err != nil {
 		return Config{}, err
 	}
+	c.GrupNBFacIn = GrupNBFacIn{Login: daftarKoma(os.Getenv("NBFACIN_GROUP_LOGIN")),
+		MarketingCode:        daftarKoma(os.Getenv("NBFACIN_GROUP_MARKETINGCODE")),
+		BondingMarketingName: daftarKoma(os.Getenv("NBFACIN_BONDING_MARKETINGNAME"))}
 
 	raw := strings.TrimSpace(os.Getenv("IS_PEGA_PROD"))
 	if raw != "" {
@@ -324,6 +331,30 @@ func ambil(nama, bawaan string) string {
 		return v
 	}
 	return bawaan
+}
+
+// GrupNBFacIn - NBFACIN_GROUP_LOGIN (login akun, dipisah koma) dan NBFACIN_GROUP_MARKETINGCODE (kode marketing, dipisah koma);
+// tiket 64: NBFACIN_BONDING_MARKETINGNAME (nama marketing penanda Bonding, When IsTBonding). Kosong = tidak ada.
+// ⛔ Nilainya tidak pernah dicetak (String hanya jumlah).
+type GrupNBFacIn struct {
+	Login, MarketingCode, BondingMarketingName []string
+}
+
+// String - jumlah saja (aman dicetak di log).
+func (g GrupNBFacIn) String() string {
+	return fmt.Sprintf("Grup{login:%d marketingCode:%d bondingMarketingName:%d}", len(g.Login), len(g.MarketingCode),
+		len(g.BondingMarketingName))
+}
+
+// daftarKoma - teks dipisah koma -> butir dipangkas, butir kosong dibuang; kosong -> nil.
+func daftarKoma(teks string) []string {
+	var hasil []string
+	for _, b := range strings.Split(teks, ",") {
+		if b = strings.TrimSpace(b); b != "" {
+			hasil = append(hasil, b)
+		}
+	}
+	return hasil
 }
 
 // SMTP - satu kotak surat keluar. ⛔ Nilainya hanya dari env (ADR-0004); Password tidak pernah dicetak (String).
