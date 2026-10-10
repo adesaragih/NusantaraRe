@@ -5,7 +5,7 @@
 import type { DaftarBeranda } from '../../../inti/frontend/modul'
 import { daftarMenunggu, type RingkasanKasus } from './api'
 import { KOLOM_BERANDA } from './labels'
-import { sajikan } from './sajian'
+import { idTampil, sajikan } from './sajian'
 
 /** Tanggal pertukaran `YYYY-MM-DD[ HH:MI:SS]` sebagai waktu lokal; selain itu null. */
 function bacaWaktu(t: string): Date | null {
@@ -42,7 +42,7 @@ export function keDaftarBeranda(baris: readonly RingkasanKasus[], kini: Date): D
     baris: baris.map((b) => ({
       id: b.id,
       sel: {
-        id: b.id,
+        id: idTampil(b.id),
         jenis: b.proportionalType,
         tertanggung: b.insuredName,
         bisnis: b.businessName,

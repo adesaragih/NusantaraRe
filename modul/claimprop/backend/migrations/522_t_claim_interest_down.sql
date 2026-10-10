@@ -1,0 +1,3 @@
+-- Jalur mundur 522.
+DROP TABLE {skema}.T_CLAIM_INTEREST CASCADE CONSTRAINTS
+/

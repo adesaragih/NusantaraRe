@@ -287,7 +287,7 @@ func (l *Layanan) CariMasterBusiness(ctx context.Context, p inti.Pelaku, kata st
 	return kosongBukanNil(d), err
 }
 
-// CariRingkasanRate - autocomplete `R/I RATE` (`BrowseRateLifeSummary`, view `RATE_LIFE_SUMMARY`).
+// CariRingkasanRate - autocomplete `R/I RATE` (`BrowseRateLifeSummary`, tabel `M_RATE_LIFE_SUMMARY`).
 //
 // K1 keputusan work owner 01-10-2026 (OQ-MCRL-13): dibaca saja. View tak terbaca = 503 yang menyebut
 // objeknya (ErrMasterTidakTerbaca), bukan daftar kosong.
@@ -308,7 +308,7 @@ type JawabanRate struct {
 }
 
 // DaftarRate - section `ViewRate` (`Rate List`) untuk satu `RIRATEID`
-// (`ViewRate.xml` b1055 `idusedby = ParamID.RIRATEID`), view `RATE_LIFE`, baca saja.
+// (`ViewRate.xml` b1055 `idusedby = ParamID.RIRATEID`), `M_RATE_LIFE` (dulu view `RATE_LIFE`), baca saja.
 func (l *Layanan) DaftarRate(ctx context.Context, p inti.Pelaku, idUsedBy string) (JawabanRate, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
 		return JawabanRate{}, err

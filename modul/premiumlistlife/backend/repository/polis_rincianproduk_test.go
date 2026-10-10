@@ -39,7 +39,7 @@ func TestSqlRincianProduk(t *testing.T) {
 }
 
 func TestSqlRateProduk(t *testing.T) {
-	q := sqlRateProduk("S.RATE_LIFE")
+	q := sqlRateProduk("S.M_RATE_LIFE")
 	if err := db.PeriksaSQL(q); err != nil {
 		t.Fatal(err)
 	}

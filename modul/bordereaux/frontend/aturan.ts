@@ -253,3 +253,19 @@ export function potong<T>(daftar: T[], ukuran: number): T[][] {
   for (let i = 0; i < daftar.length; i += n) out.push(daftar.slice(i, i + n))
   return out
 }
+
+/**
+ * Upload File lampiran: berkas dari pilihan dan seret-lepas DIGABUNG ke daftar terpilih; berkas yang sama (nama tanpa
+ * beda huruf besar dan ukuran) tidak digandakan, urutan pilihan lama dipertahankan.
+ */
+export function gabungBerkas(lama: readonly File[], baru: readonly File[]): File[] {
+  const kunci = (f: File) => `${f.name.toLowerCase()}|${f.size}`
+  const ada = new Set(lama.map(kunci))
+  const hasil = [...lama]
+  for (const f of baru) {
+    if (ada.has(kunci(f))) continue
+    ada.add(kunci(f))
+    hasil.push(f)
+  }
+  return hasil
+}

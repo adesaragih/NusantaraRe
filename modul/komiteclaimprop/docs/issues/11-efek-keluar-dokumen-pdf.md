@@ -1,6 +1,11 @@
 # 11: Efek keluar — dokumen PDF akseptasi
 
-**Status:** ready-for-agent
+**Status:** dibangun *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+
+> **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
+>
+> - `IsPrintAccept := 1` ditulis; ~~berkas PDF tidak dikarang: stream `FILEAcceptanceNote` tidak diekspor (OQ, sama dengan Claim Prop).~~ RALAT kedua 08-10-2026 (stream diekspor work owner): efek outbox `dokumen-akseptasi` diantre di S21 (hanya produksi); markup "ACCEPTED CLAIM INSURANCE" dirakit VERBATIM saat efek dikirim (`SusunDokumenAkseptasi`), nama berkas "Persetujuan Klaim   AcceptNo <no>.pdf", kategori AcceptanceNote, folder Claim. ~~`HTMLToPDF` (mesin PDF platform Pega) tanpa padanan di go.mod → pelaksana berhenti `ErrPenyimpananBelumDisetujui` (OQ-KCP-07).~~ RALAT ketiga 08-10-2026 (OQ-KCP-07 "A"): PDF A4 digambar `github.com/go-pdf/fpdf` dari halaman TempAcceptedNo (`models.PDFAcceptanceNote`). RALAT keempat 08-10-2026 (work owner "OKE", pola lampiran Bordereaux): BUKAN efek outbox lagi - sesudah Submit tingkat akhir tersimpan, PDF diunggah `inti/backend/penyimpanan` (folder Claim, Durasi 1800) lalu T_STORAGE_IMAGE + baris tabel warisan dokumen klaim (S13 InsertDocument_Act) dicatat di satu transaksi, di setiap lingkungan. Kegagalan PDF / unggah TIDAK membatalkan keputusan (AC 70: urutan Pega tidak ditiru); penyetuju menerima pesan terlihat (`galatDokumen`) - butir uji "kegagalan menghentikan dengan galat yang terlihat" dipenuhi sebagai pesan, bukan pembatalan. Jenis berkas (AC 86) dijaga `penyimpanan.Unggah` (daftar lama). AC 85-86 (pengenal berkas nanodetik + UUID, jenis berkas diterima) ditempel di sini, menunggu unggahan PDF.
+
 
 **Blocked by:** **08 (nomor akseptasi)**
 

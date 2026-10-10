@@ -273,13 +273,17 @@ export interface TataTab {
   totalBerlabel: Medan[]
   /** Sel `.Installment` tampil (`PropNewData`: mati). */
   installment: Medan | null
-  /** Tombol "Calculate Value Difference" (`PropNewData2` S24). */
-  hitungSelisih: boolean
 }
 
 /** Action set: `refresh <Act>(Data=..)` LALU `refresh CountOGPONP_Act`, lalu (bila sel me-refresh section
  *  `DetailPolicyTreatyInPropValueDifference` ber-defer-load) `EDMTCalculateTreatyDifference`. */
 const SELISIH: Aksi = { aksi: 'EDMTCalculateTreatyDifference' }
+
+/** Sel persen spreading `PropNewData2`: CountSpreading_Act(Index=.pxListSubscript) lalu hitung ulang selisih.
+ *  ⛔ PENYIMPANGAN SADAR (WO 08-10-2026 "COBA CEK TOMBOLITU, APAKAH MASIH DIPERLUKAN? KALAU SUDAH TIDAK DIHAPUS AJA!"): tombol "Calculate Value Difference"
+ *  (`PropNewData2` S24) dibuang - sel spreading dan `.Installment` ikut menghitung ulang tab Value Difference
+ *  (sel uang sudah sejak awal), server menghitung ulang lagi saat Save / Submit (`HitungSelisihGenerasi`). */
+export const AKSI_SPREADING: Aksi[] = [{ aksi: 'CountSpreading' }, SELISIH]
 const OGPONP: Aksi = { aksi: 'CountOGPONP' }
 
 /** Kerangka satu tab - urutan sel VERBATIM section varian itu. */
@@ -347,8 +351,9 @@ export function tataTab(varian: VarianTab): TataTab {
     jalur: a + 'Installment',
     label: 'Installment',
     jenis: 'tampil',
-    // PropNewData2 S19: change -> refresh FillPaymentInstallment(Installment=.Installment)
-    aksi: admin ? [{ aksi: 'FillPaymentInstallment' }] : undefined,
+    // PropNewData2 S19: change -> refresh FillPaymentInstallment(Installment=.Installment); + selisih (tombol S24
+    // dibuang, lihat AKSI_SPREADING)
+    aksi: admin ? [{ aksi: 'FillPaymentInstallment' }, SELISIH] : undefined,
   }
 
   if (admin) {
@@ -377,7 +382,6 @@ export function tataTab(varian: VarianTab): TataTab {
       kanan: [{ judul: BAGIAN.onp, medan: onp }, { medan: potongan }, { medan: pajak }],
       totalBerlabel: [],
       installment,
-      hitungSelisih: true,
     }
   }
   if (varian === 'baru') {
@@ -398,7 +402,6 @@ export function tataTab(varian: VarianTab): TataTab {
         { jalur: a + 'TotalClaim', label: 'Total Claim', jenis: 'tampil', sajian: DUA },
       ],
       installment: null,
-      hitungSelisih: false,
     }
   }
   // lama / lama2 / selisih: S4 OGP + klaim + Net Premium + empat Balance; S5 ONP + Deduction1/2 + S6 PPH/PPN
@@ -415,7 +418,6 @@ export function tataTab(varian: VarianTab): TataTab {
     kanan: [{ judul: BAGIAN.onp, medan: [...onp, ...potongan] }, { medan: pajak }],
     totalBerlabel: [],
     installment,
-    hitungSelisih: false,
   }
 }
 

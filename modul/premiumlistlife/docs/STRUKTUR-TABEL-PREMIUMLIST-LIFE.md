@@ -424,12 +424,14 @@ versi polis.
 | `IS_CEDING_CONFIRM` | teks | ya | | NB + EDM | keputusan `spec.md` §12 — `Accept`/`Reject`/`Decline` |
 | `COMMENT_SUGGEST` | teks | ya | | NB + EDM | keputusan `spec.md` §12; `AddHistorySuggest.xml` |
 | `INITIAL_SUGGEST` | teks | ya | | NB + EDM | keputusan `spec.md` §12 — `Offer`/`Bind`. ⛔ **Diralat 28-09-2026 (pl6)**: namanya semula `INITIAL`, **kata cadangan Oracle** — migrasi `056` gagal di DEV. Nama baru mengikuti pola saudaranya `DATE_SUGGEST`/`PIC_SUGGEST`/`COMMENT_SUGGEST` |
+| `CLAIM_ID` | teks | ya | FK | Claim Prop | Claim Prop — migrasi `532` (keputusan work owner 07-10-2026 "1 tabel aja gabung life dan non life") — → `T_GENERAL_CLAIM.ID`, ON DELETE CASCADE; CHECK `CK_VS_SATU_INDUK`: tepat satu dari `PREMIUM_LIST_ID` / `CLAIM_ID` terisi |
 
-**Index:** `PREMIUM_LIST_ID`.
+**Index:** `PREMIUM_LIST_ID`; `CLAIM_ID` (Claim Prop, migrasi `532`).
 
 **Relasi:**
 
 - induknya `T_PREMIUM_LIST` lewat `PREMIUM_LIST_ID` · 1:N · ON DELETE **CASCADE**
+- induk kedua `T_GENERAL_CLAIM` lewat `CLAIM_ID` · 1:N · ON DELETE **CASCADE** — riwayat klaim Claim Prop (migrasi `532`); tepat satu induk terisi (`CK_VS_SATU_INDUK`)
 
 ---
 

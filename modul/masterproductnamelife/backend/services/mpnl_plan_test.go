@@ -22,7 +22,7 @@ func layananPlan() (*services.Layanan, func(models.Produk) error) {
 	g.IsiJSON("100007", produkBerplan, "")
 	g.Plan = []models.JenisPlan{{ID: "P1", CoverName: "UJI COVER", Business: "UJI BIZ", Benefit: "UJI MANFAAT"},
 		{ID: "P2", CoverName: "UJI COVER DUA", Business: "UJI BIZ 2", Benefit: "UJI MANFAAT 2"}}
-	// View `RATE_LIFE_SUMMARY` tiruan (K1 01-10-2026): R1 sengaja TIDAK ada - pasangan tersimpan tidak diperiksa ulang.
+	// Tabel `M_RATE_LIFE_SUMMARY` tiruan (K1 01-10-2026): R1 sengaja TIDAK ada - pasangan tersimpan tidak diperiksa ulang.
 	g.Master[models.MasterRIRate] = []models.NilaiMaster{{ID: "R2", Nama: "UJI RATE DUA"}}
 	return l, func(m models.Produk) error {
 		m.ID = "100007"
@@ -75,7 +75,7 @@ func TestPlanDuaBarisKosongKeduanyaSama(t *testing.T) {
 }
 
 // K1 keputusan work owner 01-10-2026 (OQ-MPNL-03): baris PLAN LIST baru dapat diberi R/I Rate dari view
-// `RATE_LIFE_SUMMARY`; nama = `.USEDBY` master (`SetRIRate` b249), ID di luar view dan nama ketikan tanpa
+// `M_RATE_LIFE_SUMMARY`; nama = `.USEDBY` master (`SetRIRate` b249), ID di luar view dan nama ketikan tanpa
 // pilihan ditolak.
 func TestPlanRIRateBaruDariViewRingkasan(t *testing.T) {
 	l, simpan := layananPlan()

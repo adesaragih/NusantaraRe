@@ -305,7 +305,7 @@ export async function cariMasterBusiness(cari: string): Promise<Daftar<MasterBus
 }
 
 /**
- * Autocomplete `R/I RATE` - view `RATE_LIFE_SUMMARY`, baca saja (K1 keputusan work owner 01-10-2026,
+ * Autocomplete `R/I RATE` - tabel `M_RATE_LIFE_SUMMARY`, baca saja (K1 keputusan work owner 01-10-2026,
  * OQ-MCRL-13). View tak terbaca = 503 berkalimat yang menyebut view-nya; pesannya tampil apa adanya.
  */
 export async function cariRingkasanRate(cari: string): Promise<Daftar<{ id: string; usedBy: string }>> {
@@ -323,7 +323,7 @@ export interface BarisRate {
 }
 
 /**
- * Tombol `View Rate` - `idusedby` = `RIRATEID`, view `RATE_LIFE` baca saja (K1, OQ-MCRL-13).
+ * Tombol `View Rate` - `idusedby` = `RIRATEID`, `M_RATE_LIFE` (dulu view `RATE_LIFE`) baca saja (K1, OQ-MCRL-13).
  * `terpotong` = view memuat lebih dari 500 baris (`BrowseRateLife_RD` `pyMaxRecords` 500, seperti Pega).
  */
 export async function ambilRate(idusedby: string): Promise<Daftar<BarisRate> & { terpotong: boolean }> {

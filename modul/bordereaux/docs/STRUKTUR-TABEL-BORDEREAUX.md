@@ -63,6 +63,28 @@ Migrasi 892 melebarkan kolom spread dua tabel Aviation dari `NUMBER(10,4)` waris
 Isinya nominal, bukan persen (27 tabel lain: NUMBER bebas, sampai 11 digit di DEV), sehingga `NUMBER(10,4)` menolak
 setiap nilai sejuta ke atas - Copy Old Data berkas klaim Aviation DEV ditolak karenanya (04-10-2026).
 
+## M_ATTACHMENTBORDEREAUX
+
+Tabel warisan Pega (lampiran berkas), terdaftar `Tabel warisan: dibaca, tidak dibuat` di `MODUL.md`. Katalog DEV
+08-10-2026: PK `ID`; 1 baris. Ditulis `AttachDocBdx_Post` / `AttachDocumentBdx_SQL`, dibaca `GetKategoryDocBDX_SQL` dan
+`getAttcachmentList`, dihapus `DeleteAttachmentBdx` dan bersama berkasnya.
+
+| Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
+| --- | --- | --- | --- | --- | --- |
+| `ID` | teks | tidak | PK | popup View File | `yyyyMMddHHmmssSSS` Asia/Jakarta (`AttachDocBdx_Post` b392); bentrok = milidetik berikutnya |
+| `BDX_ID` | teks | ya | | semua | `BORDEREAUX.BDX_ID` - tanpa FK |
+| `CATEGORY_ID` | teks (20) | ya | | grid, popup | `M_KATEGORIBORDEREAUX.ID` baris grid (`Primary.MASTERID`) |
+| `CATEGORY` | teks (100) | ya | | kolom Type popup | `M_KATEGORIBORDEREAUX.NOTE` saat diunggah (`Primary.TYPE`) |
+| `FILENAME` | teks (1000) | ya | | File Name | nama asli berkas, tanpa jalur folder peramban |
+| `FILEMIMETYPE` | teks (100) | ya | | View Office Online | EKSTENSI huruf kecil (`.pyFileMimeType`; DEV: `csv`) |
+| `DATEINPUT` | date | ya | | — | tidak ditulis Pega maupun modul ini |
+| `USERNAME` | teks (100) | ya | | — | pengunggah (`pxRequestor.pxUserIdentifier`) |
+| `T_STORAGE_ID` | teks (50) | ya | | unduh, hapus | `T_STORAGE_IMAGE.IMAGEID` objek berkas (`inti/backend/penyimpanan`) |
+
+## M_KATEGORIBORDEREAUX
+
+Master kategori lampiran, hanya dibaca (`ID`, `NOTE`; DEV 08-10-2026: satu baris `00000 Others`).
+
 ## M_WORKBASKET
 
 Master peran warisan. Migrasi 891 menambah `ReasBordereauxAdmin`, `ReasBordereauxChecker`, `ReasBordereauxSupervisor`;

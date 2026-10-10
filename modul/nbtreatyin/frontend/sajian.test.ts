@@ -12,7 +12,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { nilaiNol, sajikan, sajikanAngka, sajikanTanggalJam } from './sajian'
+import { idTampil, nilaiNol, sajikan, sajikanAngka, sajikanTanggalJam } from './sajian'
 
 describe('sajikanAngka - pyDecimalPlaces terbaca: tepat N desimal', () => {
   it('2 desimal: dipadankan dan dibulatkan setengah ke atas, titik ribuan koma desimal', () => {
@@ -109,5 +109,16 @@ describe('sajikanTanggalJam', () => {
     const layar = readFileSync(join(__dirname, 'pages', 'LayarKasus.tsx'), 'utf8')
     expect(layar).toContain('<td>{sajikanTanggalJam(b.Date)}</td>')
     expect(layar).not.toContain('riwayat')
+  })
+})
+
+// WO 07-10-2026 "TAMPILAN NYA HANYA NB-XXX AJA, BERLAKU NB DAN EDM TREATY": ID kasus salinan Copy Old = IDPEGA Pega
+// utuh (`<kelas> <pyID>`); layar hanya menampilkan pyID, kunci buka / kirim tetap ID utuh.
+describe('idTampil - ID kasus di layar = pyID', () => {
+  it('IDPEGA utuh tampil pyID; ID aplikasi baru apa adanya', () => {
+    expect(idTampil('ASM-FW-GISFW-WORK UJI-NB-1')).toBe('UJI-NB-1')
+    expect(idTampil(' ASM-FW-GISFW-WORK UJI-NB-2 ')).toBe('UJI-NB-2')
+    expect(idTampil('UJI-NB-3')).toBe('UJI-NB-3')
+    expect(idTampil('')).toBe('')
   })
 })

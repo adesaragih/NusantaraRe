@@ -1,6 +1,6 @@
 # 01: Registrasi klaim dan validasi nomor polis treaty
 
-**Status:** ready-for-agent
+**Status:** sebagian 07-10-2026 — registrasi dan nomor polis dibangun; tombol View polis nonaktif (OQ-CP-02); pintu New = OQ-CP-13 — RALAT 07-10-2026 (semula `ready-for-agent`)
 **Blocked by:** 00 (PREFACTOR)
 **Menutup:** AC 102 · 103 · 104 · 108 · 109 · 110 · 111 · 112 *(8 AC)* — US 1–4
 

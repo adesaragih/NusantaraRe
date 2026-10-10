@@ -45,7 +45,7 @@ func pmAnggotaUsulanLama(pola string) (string, bool) {
 }
 
 // UsulanDokumenLamaEDM memetakan baris SuggestList dokumen lama yang `IsSave`-nya kosong (langkah 2.1) menjadi
-// baris riwayat produksi. `id` = pyID kasus (`IDKasusDariIDPegaEDM`); `.Date` sudah dibaca pemecah. Halaman tidak
+// baris riwayat produksi. `id` = pyID kasus (`PyIDKasus`); `.Date` sudah dibaca pemecah. Halaman tidak
 // diubah.
 func UsulanDokumenLamaEDM(id string, h *Halaman) []UsulanProduksi {
 	q := HalamanPolis + ".QuotationData."

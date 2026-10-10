@@ -3,7 +3,7 @@ package repository
 // Rate retro per produk - OQ-M7 DITUTUP 29-09-2026 (GILIRAN-17), izin sempit
 // seperti butir bh.
 //
-// Untuk apa berkas ini: membaca baris `RATE_LIFE` satu `OUTWARDRATEID` -
+// Untuk apa berkas ini: membaca baris `M_RATE_LIFE` (dulu view `RATE_LIFE`) satu `OUTWARDRATEID` -
 // masukan rate `services.HitungSpreading` (`BarisRate`).
 //
 // `[terverifikasi]` `Claim Life/RDBList/GetRateRetro.xml` b84:
@@ -46,14 +46,16 @@ import (
 // `TestMasterViewTidakDisentuh`; kolom keenam akan berbunyi.
 var KolomRateLife = []string{"ID", "AGE", "CONTRACT", "GENDER", "RATE"}
 
-// NamaViewRateLife - view yang dibaca, ditulis UTUH (lihat ambangproduk.go).
-const NamaViewRateLife = "RATE_LIFE"
+// NamaViewRateLife - objek rate yang dibaca, ditulis UTUH (lihat ambangproduk.go). RALAT 07-10-2026 (keputusan work
+// owner, `modul/riratelife/MODUL.md` RALAT R7): kini TABEL flat `M_RATE_LIFE` berkolom sama dengan view `RATE_LIFE`
+// lama (dibuang migrasi inti 930) - lima kolom yang sama, teks apa adanya; nol JSONDATA. Nama konstanta tetap.
+const NamaViewRateLife = "M_RATE_LIFE"
 
 // ErrRateLifeTanpaPengenal - `IDUSEDBY` kosong tidak pernah membaca view.
 var ErrRateLifeTanpaPengenal = errors.New(
-	"repository: pengenal rate (OUTWARDRATEID) kosong; RATE_LIFE tidak dibaca")
+	"repository: pengenal rate (OUTWARDRATEID) kosong; M_RATE_LIFE tidak dibaca")
 
-// BarisRateLife adalah satu baris `RATE_LIFE`, TEKS apa adanya.
+// BarisRateLife adalah satu baris `M_RATE_LIFE`, TEKS apa adanya.
 type BarisRateLife struct {
 	ID           string
 	Umur         string // AGE

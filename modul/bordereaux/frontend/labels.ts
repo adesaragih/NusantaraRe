@@ -149,6 +149,43 @@ export const BDX = {
   statusGagal: 'failed',
 } as const
 
+/**
+ * Lampiran - section `AttachmentsBdx` (grid kategori, disertakan `InputBordereaux` b27972) dan `AttachmentDetailBdx`
+ * (popup View File), flow action `BordereauxAttach` (Upload File). Nomor baris = berkas section-nya.
+ */
+export const LAMPIRAN_BDX = {
+  /** `AttachmentsBdx` b2422 - judul layout grid (di Pega wadahnya NOHEADER; di sini judul kartu). */
+  judul: 'Attachment File',
+  /** b1800 (tampil); `Download All` b1566 tidak dibawa - `pyCondition never` b1656, tanpa aksi. */
+  refresh: 'Refresh',
+  category: 'Category', // b3039
+  count: 'Count', // b3192
+  uploadFile: 'Upload File', // b3342
+  viewFile: 'View File', // b3490
+  fileName: 'File Name', // AttachmentDetailBdx b1529
+  viewOffice: 'View Office Online', // AttachmentDetailBdx b2562
+  /** `[tidak ada di korpus]` - `View` pdf / gambar di popup penampil (permintaan work owner 08-10-2026). */
+  view: 'View',
+  type: 'Type', // AttachmentDetailBdx b1796
+  delete: 'Delete', // AttachmentDetailBdx b3185
+  submit: 'Submit', // BordereauxAttach b21
+  cancel: 'Cancel', // BordereauxAttach b20
+  // `[tidak ada di korpus]` - kalimat layar ini.
+  close: 'Close',
+  pilihBerkas: 'Choose files',
+  /** Kotak `dragDropFileUpload` (`pyAttachmentScreen`) - seret-lepas atau klik untuk memilih. */
+  seretBerkas: 'Drag and drop files here, or click to choose files',
+  buangPilihan: 'Remove',
+  tanpaBerkas: 'No file attached',
+  memuat: 'Loading attachments…',
+  kosong: 'No items',
+  berkasTerpilih: (n: number) => `${n} file${n === 1 ? '' : 's'} selected`,
+  mengunggah: (ke: number, total: number, nama: string) => `Uploading ${ke}/${total}: ${nama}`,
+  gagalUnggah: 'These files were not uploaded:',
+  judulUnggah: (kategori: string) => `Upload File · ${kategori}`,
+  judulLihat: (kategori: string) => `View File · ${kategori}`,
+} as const
+
 /** Nama status untuk dibaca (STATUSAKSEP kosong = draf). */
 export function teksStatus(s: string): string {
   return s === '' ? 'Draft' : s

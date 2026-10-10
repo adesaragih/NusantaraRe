@@ -357,7 +357,7 @@ export interface BarisRate {
 }
 
 /**
- * `View Rate` b34113 - view `RATE_LIFE` baca saja (K1 keputusan work owner 01-10-2026, OQ-MPNL-03), disaring
+ * `View Rate` b34113 - `M_RATE_LIFE` (dulu view `RATE_LIFE`) baca saja (K1 keputusan work owner 01-10-2026, OQ-MPNL-03), disaring
  * `RIRATEID` baris plan. `terpotong` = view memuat lebih dari 500 baris (`pyMaxRecords` 500, seperti Pega).
  */
 export async function ambilRate(riRateId: string): Promise<Daftar<BarisRate> & { terpotong: boolean }> {

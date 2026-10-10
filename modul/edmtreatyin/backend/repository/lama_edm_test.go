@@ -25,7 +25,7 @@ func TestSQLPemuatEDMBerskemaTanpaCommit(t *testing.T) {
 		"datar":          sqlPmSetelKolomDatarLama(gen),
 		"penanda 361":    sqlPmSetelPenanda(ujiSkema+"T_POLIS_DIFFERENCE_SPREADING", ujiSkema+"T_POLIS_DIFFERENCE", true),
 		"penanda 363":    sqlPmSetelPenanda(ujiSkema+"T_POLIS_XOL_LAYER_DIFFERENCE", ujiSkema+"T_POLIS_DIFFERENCE", false),
-		"usulan":         sqlPmAdaUsulanIDPega(ujiSkema + "HISTORYAKSEPTASIPRODUCTION"),
+		"riwayat":        sqlPmAdaRiwayatIDPega(ujiSkema+"HISTORYAKSEPTASIPRODUCTION", ujiSkema+"HISTORYAKSEPTASIPEGA"),
 	} {
 		if err := db.PeriksaSQL(q); err != nil {
 			t.Errorf("%s: %v", nama, err)

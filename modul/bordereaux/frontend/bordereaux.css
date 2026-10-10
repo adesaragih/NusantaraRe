@@ -614,6 +614,113 @@
   overflow: auto;
 }
 
+/* Lampiran (AttachmentsBdx / AttachmentDetailBdx): kepala kartu, daftar berkas terpilih, galat, nama berkas sebagai
+   tautan unduh, dan bingkai penampil View Office Online di dalam popup View File. */
+.bordereaux .bordereaux__lampiran-kepala {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.bordereaux .bordereaux__lampiran-kepala .bordereaux__judul-kartu {
+  margin: 0;
+}
+
+/* Kotak seret-lepas Upload File (`dragDropFileUpload`): teks di atas, input berkas bawaan (tombol "Choose Files" +
+   "No file chosen", gaya `inti`) di bawahnya, di tengah kotak; berkas yang dijatuhkan ditangkap kotaknya, dan klik di
+   mana pun dalam kotak membuka pemilih berkas (label). */
+.bordereaux .bordereaux__lampiran-seret {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 16px;
+  color: var(--bd-teks-redup);
+  text-align: center;
+  background: var(--bd-lembut);
+  border: 2px dashed var(--bd-lembut-tepi);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.bordereaux .bordereaux__lampiran-seret--aktif {
+  color: var(--bd-aksen-teks);
+  background: var(--bd-aksen-lembut);
+  border-color: var(--bd-aksen-garis);
+}
+
+.bordereaux .bordereaux__lampiran-pilihan {
+  max-height: 220px;
+  margin: 10px 0 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.bordereaux .bordereaux__lampiran-pilihan li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--bd-garis);
+  overflow-wrap: anywhere;
+}
+
+.bordereaux .bordereaux__lampiran-galat {
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  color: var(--bd-waspada-teks);
+  background: var(--bd-waspada-latar);
+  border: 1px solid var(--bd-waspada-tepi);
+  border-radius: 10px;
+}
+
+.bordereaux .bordereaux__lampiran-galat ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.bordereaux .bordereaux__lampiran-nama {
+  padding: 0;
+  font: inherit;
+  color: var(--bd-aksen-teks);
+  text-align: left;
+  text-decoration: underline;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.bordereaux .bordereaux__lampiran-nama:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.bordereaux .bordereaux__lampiran-lihat {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Popup penampil layar penuh (`View` pdf / gambar, View Office Online) - seperti Product Name Life. */
+.bordereaux .bordereaux__penampil-bingkai {
+  display: block;
+  width: 100%;
+  height: 75vh;
+  background: var(--bd-isi);
+  border: 0;
+}
+
+.bordereaux .bordereaux__penampil-gambar {
+  display: block;
+  max-width: 100%;
+  max-height: 75vh;
+  margin: 0 auto;
+}
+
 /* Grid lebar (sampai 64 kolom): menggulir di dalam kotaknya, kepala menempel di atas. */
 .bordereaux .bordereaux__gulir {
   overflow: auto;

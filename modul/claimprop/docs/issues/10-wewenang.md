@@ -1,6 +1,6 @@
 # 10: Wewenang — satu sumber, ditegakkan di lapisan layanan
 
-**Status:** ready-for-agent
+**Status:** dibangun 07-10-2026 — workbasket Input Acceptation = `ReasKlaimTeknik` (keputusan 07-10-2026) — RALAT 07-10-2026 (semula `ready-for-agent`)
 **Blocked by:** 00 (PREFACTOR)
 **Menutup:** AC 54 · 55 · 56 · 57 · 58 · 59 · 60 · 61 *(8 AC)* — US 55–58
 

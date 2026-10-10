@@ -34,7 +34,7 @@ jalur simpan yang sama. Daftar lengkapnya di
 kontrak beserta kepala versi pertamanya dalam SATU transaksi, `GET /api/treaty-in/kontrak/{id}`
 menemukannya kembali dengan pengenal yang sistem berikan. **`INV-53` dan `INV-29` kini DITEGAKKAN**
 di lapisan services — keduanya yang migrasi `401` tulis "DITAGIH: tiket lapisan aplikasi".
-Nol layar baru (`L-4`).
+~~Nol layar baru (`L-4`).~~ **`L-4` dicabut 3 Oktober 2026** — dua layar dibangun dari ekspor Pega; lihat bab di bawah.
 
 ✅ **Migrasi `400`–`419` dan `440`–`441` SUDAH BERJALAN DI ORACLE** (`DEV_NUSARE2`, 2 Oktober 2026):
 ke-22 langkah tercatat di `T_MIGRASI`, **nol `ORA-`**. Lima constraint dibuktikan sungguh menolak
@@ -48,7 +48,7 @@ hampa. Ia ditegakkan bersama jalur simpan.
 
 ℹ️ **Layar modul ini ada karena mendaftarkan modul menuntutnya** `[keputusan work owner 01-10-2026]`.
 Penjaga `daftar.modulAktif.test.ts` mewajibkan setiap modul terdaftar punya `frontend/`, sementara
-papan tiket melarang mengarang layar (`L-4`). Jalan keluarnya: satu halaman **baca-saja** atas data
+papan tiket melarang mengarang layar (~~`L-4`~~, **dicabut 3 Okt 2026**). Jalan keluar saat itu: satu halaman **baca-saja** atas data
 yang tiket `15` buat — nol alur karangan.
 
 ⚠️ **Lima penyelarasan spec dengan repo** tercatat di
@@ -67,6 +67,18 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Status | dimigrasi |
 | Rentang migrasi | `400-439` |
 | Slot menu | `972-973` |
+
+> ⛔⛔ **RENTANG `400-439` HABIS, 6 Oktober 2026.** Keempat puluh nomornya terpakai (`400` sampai
+> `439`), nol celah. Migrasi `treatyin` BERIKUTNYA tidak punya nomor sah.
+>
+> Akibatnya sudah terjadi sekali: migrasi `444_kolom_revisi_yang_layar_baca` — yang menambah enam
+> belas kolom ke `T_TREATY_REVISION`, **tabel modul ini** — terpaksa diparkir di folder migrasi
+> `treatyinadjustment`, satu-satunya rentang sah yang memuat nomor `444` (`440-479`). Sebabnya
+> ditulis di kepala berkas itu, dan penjaga `TestPetaPendaratanCocokDenganDDL` diberi pembaca
+> khusus (`migrasiTetanggaParkir`) supaya tidak menuduh peta menyebut kolom yang tidak ada.
+>
+> **Yang diminta:** jatah rentang baru dari tim inti — prosedur yang baris di atas sebut sendiri.
+> Begitu jatah itu ada, `444` dinomori ulang, dipindahkan kembali, dan pembaca khususnya DIHAPUS.
 | Prefix rute API | `/api/treaty-in` |
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |
@@ -79,8 +91,9 @@ dipensiunkan 1 Oktober 2026.
 
 | Folder | Isi |
 | --- | --- |
-| `docs/` | `STRUKTUR-TABEL-TREATY-IN.md` (delapan tabel), `KEPUTUSAN-PENYELARASAN-REPO.md` (empat penyelarasan), `issues/` (tiket `14` dan `15`) |
-| `backend/` | `modul.go` (`Pendaftaran()`), `models/`, `repository/`, `services/`, `handlers/`, `migrations/` |
+| `docs/` | `STRUKTUR-TABEL-TREATY-IN.md`, `KEPUTUSAN-PENYELARASAN-REPO.md`, `LEDGER-PROGRES.md`, `PEMETAAN-M-TREATY-IN2.md`, tiga `PERTANYAAN-TERBUKA-*.md`, `issues/` |
+| `backend/` | `modul.go` (`Pendaftaran()`), `models/`, `repository/`, `services/`, `handlers/`, `migrations/`, `pemuat/` |
+| `alat/` | skrip SQL yang dijalankan dengan tangan — **bukan migrasi**, tidak tercatat di `T_MIGRASI` |
 | `frontend/` | `menu.ts`, `rute.tsx`, `api.ts`, `labels.ts`, `pages/AcuanTreatyIn.tsx` |
 
 ## Migrasi
@@ -90,6 +103,19 @@ selalu berjalan sesudahnya). Slot menu `972-973` hanya menyalakan `DIMIGRASI` ba
 nol `INSERT` — menu datar 30-09-2026) saat modul mendapat layar pertamanya, di folder
 `backend/migrations/` modul ini sendiri — bentuk SQL-nya di `APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md`
 bab 6. Nomor selalu tiga digit.
+
+⚠️ **Dua pencabutan hidup di rentang ini**, dan keduanya mengikuti pola yang sama: berkas
+pencabutan BARU, bukan menghapus migrasi lama dari riwayat. `434_cabut_mata_uang.sql`
+([`KEPUTUSAN` §16](docs/KEPUTUSAN-PENYELARASAN-REPO.md)) dan `435_cabut_nilai_selisih.sql`
+([§19](docs/KEPUTUSAN-PENYELARASAN-REPO.md)) — yang kedua memindahkan tabelnya ke modul
+Adjustment, bukan membuangnya.
+
+⚠️ **`backend/pemuat/jalankan.go` bertanda `//go:build ignore`, dan itu disengaja.** Ia `package
+main` yang memuat delapan tabel pendaratan ke POOLDATA, dijalankan dengan
+`go run modul/treatyin/backend/pemuat/jalankan.go`. Ia **tidak** dapat tinggal di `cmd/`:
+`TestModulTidakMengimporModulLain` menyatakan *"cmd hanya mengimpor `inti/...`"*. Ia juga tidak
+dapat tinggal di `alat/`: `pelanggaranLetak` di penjaga yang sama menuntut kode Go modul berada di
+`modul/<nama>/backend/`. Bawaannya **kering** — tanpa `-ikat`, setiap transaksi dibatalkan.
 
 ## Pernyataan untuk penjaga
 
@@ -104,7 +130,16 @@ dikutip dari sana, dan `TestPerilakuHapusSesuaiERD` mengadu ke-32 kunci asing de
 
 | Awalan berkas | Relasi |
 | --- | --- |
-| `420_` | seluruh 21 relasi `ikut hapus` — lihat daftar di bawah |
+| `420_` | 21 relasi `ikut hapus` dari `ERD.md` §2 — lihat daftar di bawah |
+| `422_` | `DETAIL_PROPORSIONAL` → `KELAS_BISNIS_LAYER` · `LAYER` → `KELOMPOK_LAYER` · `KELOMPOK_LAYER` → `KELAS_BISNIS_KELOMPOK` *(tiga)* |
+| `424_` | `TERMIN` → `RINCIAN_ANGSURAN` *(satu)* |
+| `426_` | `VERSI_KONTRAK` → `NILAI_SELISIH`, `NILAI_SEBELUM_PRO_RATE` *(dua)* — `ERD.md` §2.6 |
+| `429_` | `BAGIAN` → `PENYEBARAN` · `DETAIL_PROPORSIONAL` → `PENYEBARAN` · `PENYEBARAN` → `RINCIAN_PENYEBARAN` · `RINCIAN_PENYEBARAN` → `NILAI_PENYEBARAN` *(empat)* — `ERD.md` §2.5 |
+| `430_` | `M_TREATYIN_INSTALLMENT` → `M_TREATYIN_INSTALLMENTITEM` *(satu)* — ⚠️ **bukan dari `ERD.md` §2**, lihat di bawah |
+| `437_` | delapan relasi antar tabel pendaratan anak *(delapan)* — ⚠️ **bukan dari `ERD.md` §2**, lihat di bawah |
+| `438_` | `T_TREATY_LIMIT_DETAIL` → `T_TREATY_LIMIT_AMOUNT` · `T_TREATY_SHARE` → `T_TREATY_SHARE_AMOUNT` · `T_TREATY_FAC_SHARE` → `T_TREATY_FAC_SHARE_AMOUNT` *(tiga)* — alasan yang sama dengan `437_` |
+| `439_` | `T_TREATY_LIMITS` → `T_TREATY_LIMIT_MEASURE` *(satu)* — alasan yang sama dengan `437_` |
+| `438_` | `T_TREATY_LIMIT_DETAIL` → `T_TREATY_LIMIT_AMOUNT` · `T_TREATY_SHARE` → `T_TREATY_SHARE_AMOUNT` · `T_TREATY_FAC_SHARE` → `T_TREATY_FAC_SHARE_AMOUNT` *(tiga)* — ⚠️ **bukan dari `ERD.md` §2**, sebab yang sama dengan `437_` |
 
 ⚠️ **Seluruhnya di SATU berkas, `420_perilaku_hapus_erd.sql`, dan itu disengaja.** Kaskadenya
 sempat disunting langsung ke migrasi `403`–`418`; sesudah pemilik proses menyatakan POOLDATA adalah
@@ -123,6 +158,65 @@ Ke-21 relasi yang `420` jadikan `ON DELETE CASCADE`:
 - `LAYER` → `NILAI_MDP`, `NILAI_MDP_MINIMUM` · `BAGIAN` → `NILAI_PREMI_BRUTO`,
   `NILAI_PREMI_BRUTO_MINIMUM` · `DETAIL_PROPORSIONAL` → `NILAI_CADANGAN_PREMI` — §2.3c, tabel anak
   paket uang *(lima)*
+
+⛔ **Keempat kaskade `422_` dan `424_` TIDAK dari `ERD.md` §2** — dan itu disebut di sini supaya
+tidak terbaca sebagai kutipan yang tidak ada sumbernya. Keempat relasinya lahir sesudah §2 ditulis,
+persis seperti delapan relasi §2.3c. Buktinya **dua dokumen yang sepakat**:
+
+- `4-erd-dan-tabel-datar/ERD-TREATY-IN-DAN-EDM.html` — **ACUAN struktur sistem lama** sejak
+  keputusan pemilik proses 2 Oktober 2026 (*"fokus ini aja, yang lainnya ada yang salah itu"*).
+  Baris relasi **4**, **9**, **10**, **27**, seluruhnya `CASCADE`;
+- aturan yang kelompoknya sendiri sudah nyatakan di `ERD.md`: §2.5 (anak cabang ikut hapus) dan
+  §2.3 (anak langsung baris versi ikut hapus).
+
+⚠️ Kolom `ON DELETE` di ERD HTML menyatakan dirinya ***"USULAN rancangan mengikuti konvensi
+contooh.xlsx, bukan perilaku sistem lama"***, jadi ia **tidak dipakai sendirian**. Yang mengikat
+untuk perilaku hapus tetap `ERD.md` §2; ERD HTML dipakai untuk **struktur** — induk, nama kolom
+kunci asing, kardinalitas. Keduanya sepakat pada keempat baris ini.
+
+**Satu tempat keduanya BERSELISIH, dan itu `PENCAPAIAN`.** `ERD.md` §2.9 menulis induk `KONTRAK`
+dengan `[hapus: tolak]`; ERD HTML baris 6 menulis induk `T_TREATY_LIMIT_DETAIL` dengan `CASCADE`.
+Yang menang `ERD.md` §2 — dan kali ini bukti SQL sejalan dengannya, sementara ERD HTML menandai
+buktinya sendiri **DAUN-RELATIF** (*"lemah, mungkin memungut nama milik entitas lain"*). Uraiannya
+di kepala migrasi `423_pencapaian.sql`.
+
+⛔ **Kaskade `430_` BUKAN dari `ERD.md` §2 maupun dari ERD HTML, dan buktinya bukan dokumen.**
+Kedelapan tabel `M_TREATYIN_*` adalah tabel **pendaratan** — ia mendaratkan larik di dalam
+`M_TREATY_IN.JSONDATA`, bukan menggambar ulang entitas sistem lama — jadi tidak ada baris ERD yang
+dapat dikutip untuknya. Yang mengikat adalah **bentuk datanya**: `InstallmentList` hidup DI DALAM
+elemen `Installment`, dan rincian angsuran tanpa terminnya tidak berarti apa pun. Alasan yang sama
+sudah dipakai migrasi `424_` untuk pasangan `TERMIN` → `RINCIAN_ANGSURAN`, yang memodelkan dua
+tingkat yang sama persis.
+
+⛔ **Kaskade `437_` berdiri di atas alasan yang SAMA dengan `430_`, dan buktinya juga bukan dokumen.**
+Ketiga belas tabel yang `437_anak_treaty_in.sql` buat adalah tabel **pendaratan** tingkat kedua dan
+ketiga — ia mendaratkan larik yang hidup DI DALAM elemen larik lain di `M_TREATY_IN.JSONDATA`.
+Namanya dan induknya dikutip dari `Diagram-Skema-Tabel-TreatyIn-dan-EDM-v2.xlsx`, yang pemilik proses
+tetapkan 5 Oktober 2026 sebagai sumber nama tabel modul ini; `ERD.md` §2 tidak memuat satu baris pun
+untuknya, sebab ia menggambar entitas sistem lama, bukan bentuk dokumennya.
+
+Yang mengikat adalah **bentuk datanya**, persis seperti `430_` dan `424_`: `Detail[]` hidup di dalam
+elemen `Limits[]`, `COBList[]` di dalam elemen `Detail[]`, dan sebuah kelas bisnis tanpa detail
+limitnya tidak berarti apa pun. Kedelapan relasinya:
+
+⛔ Daftarnya ditulis sebagai butir, **bukan tabel** — pembaca bab ini (`kaskadePerModul`)
+mengurai setiap tabel markdown di bawah judul ini sebagai daftar awalan berkas, dan tabel kedua di
+sini akan dibacanya sebagai awalan yang cacat.
+
+- `T_TREATY_LIMITS` → `T_TREATY_LIMIT_DETAIL`, `T_TREATY_LIMIT_GROUP`
+- `T_TREATY_LIMIT_DETAIL` → `T_TREATY_LIMIT_COB`, `T_TREATY_LIMIT_ACHIEVEMENT`
+- `T_TREATY_LIMIT_GROUP` → `T_TREATY_LIMIT_GROUP_COB`
+- `T_TREATY_SHARE` → `T_TREATY_SHARE_SPREADING`, `T_TREATY_SHARE_DEDUCTION`
+- `T_TREATY_FAC_SHARE` → `T_TREATY_FAC_SHARE_DEDUCTION`
+
+⚠️ Dan batasnya sama pula: dari kontrak ke tabel **tingkat pertama** `437_` tidak memasang kunci
+asing, dengan sebab yang dinyatakan di alinea berikut. `ikut hapus` di sana dijalankan pemuat.
+
+⚠️ **Dari kontrak ke kedelapan tabel, `ikut hapus` TIDAK dijalankan basis data.** `MASTERID` bukan
+kunci asing, sebab `POOLDATA.TREATY_IN` tidak punya kunci utama maupun `UNIQUE` pada `ID` — diukur
+3 Oktober 2026 — sehingga Oracle menolak merujuknya (ORA-02270). Yang menjalankan `ikut hapus` di
+sana adalah pemuat. Uraiannya di kepala `430_tabel_tab_treatyin.sql` dan di
+[`docs/KEPUTUSAN-PENYELARASAN-REPO.md`](docs/KEPUTUSAN-PENYELARASAN-REPO.md) §12.
 
 **Dua puluh satu relasi**, dari 28 yang `ERD.md` §2 nyatakan `ikut hapus`. Ketujuh sisanya menyentuh
 tabel yang modul ini belum buat: `PENYEBARAN`, `RINCIAN_PENYEBARAN`, `NILAI_PENYEBARAN` (tiket `38`),
@@ -144,3 +238,47 @@ sumbernya disebut:
 **Satu relasi `putus`**, satu-satunya di modul ini: `KONTRAK` → `KONTRAK` lewat
 `ID_KONTRAK_DISALIN_DARI` (§2.1), `ON DELETE SET NULL` di migrasi `401`. Kontrak salinan bertahan
 ketika asalnya dihapus; rujukannya saja yang dikosongkan.
+
+## ⛔ `L-4` DICABUT — 3 Oktober 2026
+
+`L-4` berbunyi: ***"tidak ada spesifikasi layar di mana pun."*** Atas dasar itu papan melarang
+menyentuh UI, dan dua ronde menolak membangun layar.
+
+**Pernyataan itu salah, dan sudah salah sejak awal.** Spesifikasinya ada di ekspor Pega 2026-09,
+dan cacahnya dapat diperiksa dalam satu perintah:
+
+| Modul | `Section/` | `Harness/` |
+|---|---:|---:|
+| Treaty In | **50** | **3** |
+| Treaty In Adjustment | **68** | **6** |
+
+```bash
+ls "D:/XML_NURE/Treaty In/Section"/*.xml | wc -l            # 50
+ls "D:/XML_NURE/Treaty In/Harness"/*.xml | wc -l            # 3
+ls "D:/XML_NURE/Treaty In Adjustment/Section"/*.xml | wc -l # 68
+ls "D:/XML_NURE/Treaty In Adjustment/Harness"/*.xml | wc -l # 6
+```
+
+Yang tidak ada bukan spesifikasinya, melainkan **pembacaannya**. Di dalam berkas itu tata letaknya
+tertulis lengkap: `<pyValue>` properti yang diikat sebuah kontrol, `<pyLabelFor>` medan milik
+sebuah label, `<pyPropertyTarget>` properti yang diisi pemilih, `<pyGridProps>` bentuk tabelnya.
+
+> ### Larangan yang TETAP berlaku
+>
+> **Jangan mengarang layar.** Yang berubah hanya alasannya: dulu tidak boleh karena tidak ada
+> acuannya, kini tidak boleh karena **acuannya ada dan harus dibaca**. Tiap medan yang dibangun
+> membawa jejaknya — nama rule dan posisi bitanya — di `frontend/labels.ts`.
+
+**Tiga jebakan yang dicatat saat pencabutan ini, supaya ronde berikutnya tidak kejeblos:**
+
+1. **`<pyIncludedRuleXML>` dibuang lebih dulu.** Ekspor Pega menyematkan salinan utuh rule anak;
+   sapuan datar membaca medan milik anak sebagai milik induk. Pada
+   `Section/InputTreatyInOffer.xml` salinan itu **899.307 bita** dari 8.194.691.
+2. **Berkas Section membundel indeks rule LAIN.** Caption `Treaty Contract Name`,
+   `Contract Ref No`, `Teritorial Scope`, `Bordereaux Note`, `Accounting Mode`, dan `Treaty Year`
+   muncul di `InputTreatyInOffer.xml` tetapi `pzIndexOwnerKey`-nya **`TREATYINNONPROPORTIONAL`**.
+   Menyimpulkan pemilik sebuah medan dari **nama berkasnya** dapat salah total.
+3. **Blok bergaris mati tidak dibangun.** Pega tidak dapat mengomentari tata letak, jadi blok
+   dimatikan dengan kondisi mustahil — `1=2`, `1==2`, `Never` pada `pyContainerVisibleWhen` /
+   `pyVisibleWhen` / `pyRowVisibleCondition`. ⚠️ `pyDisabledWhen>1=2` artinya **kebalikannya**:
+   tidak pernah dinonaktifkan. Jangan tertukar.

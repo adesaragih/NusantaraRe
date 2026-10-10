@@ -271,3 +271,40 @@ func TestValidasiQRAbaikanKolomHasil(t *testing.T) {
 		t.Error("QP tidak lagi memeriksa bentuk GROSS_PREMIUM")
 	}
 }
+
+// RISK master dibaca sebagai teks: dulu view JSON berkoma ("921,9"), sejak migrasi inti 940 (ririsklife, keputusan work
+// owner 08-10-2026 K2) NUMBER dibaca TM9 bertitik ("921.9", pecahan tanpa nol depan ".9"). Ketiga bentuk memberi hasil
+// hitung QR yang SAMA - SUM_AT_RISK_GROSS, RISK, dan seluruh kolom hasil.
+func TestHitungQRRiskKomaDanTitikSama(t *testing.T) {
+	bentuk := map[string][]BarisRiskQR{
+		"koma (view lama)":   {{ID: "1", Year: "1", Contract: "1", Risk: "921,9"}, {ID: "2", Year: "2", Contract: "1", Risk: "0,9"}},
+		"titik (TM9 NUMBER)": {{ID: "1", Year: "1", Contract: "1", Risk: "921.9"}, {ID: "2", Year: "2", Contract: "1", Risk: ".9"}},
+	}
+	var acuan map[string]string
+	for nama, risk := range bentuk {
+		m, err := SiapkanMasterQR(paramUji(), planUji, rateUnisex, risk)
+		if err != nil {
+			t.Fatalf("%s: %v", nama, err)
+		}
+		for _, tgl := range []string{"01/01/2027", "01/01/2028"} {
+			n, tolak := hitungSatu(t, m, map[string]string{"GROSS_VALUATION_BEGIN_DATE": tgl})
+			if len(tolak) != 0 {
+				t.Fatalf("%s %s ditolak: %+v", nama, tgl, tolak)
+			}
+			if acuan == nil {
+				acuan = map[string]string{}
+			}
+			for k, v := range n {
+				kunci := tgl + "|" + k
+				if lama, ada := acuan[kunci]; ada && lama != v {
+					t.Errorf("%s %s: %s = %q, bentuk lain %q", nama, tgl, k, v, lama)
+				}
+				acuan[kunci] = v
+			}
+		}
+	}
+	if acuan["01/01/2027|RISK"] == "" || acuan["01/01/2028|RISK"] == "" {
+		t.Errorf("RISK tahun ke-2 / ke-3 kosong: %v", acuan)
+	}
+	samaAngka(t, "RISK 921,9 / 1000", acuan["01/01/2027|RISK"], "0.9219")
+}

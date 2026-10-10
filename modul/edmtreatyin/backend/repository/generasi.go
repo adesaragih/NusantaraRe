@@ -80,8 +80,8 @@ func (g *Gudang) AdaEDMBerjalan(ctx context.Context, nopolis string) (bool, erro
 	}
 	q := fmt.Sprintf(`SELECT COUNT(*)
 	   FROM %s w JOIN %s g ON g.ID = w.ID JOIN %s q ON q.POLIS_ID = g.ID
-	  WHERE g.PRODKE >= 1 AND w.ID LIKE '%s%%' AND q.OLD_POLICY_NO = :1
-	    AND (w.STATUS_WORK IS NULL OR w.STATUS_WORK NOT IN (:2, :3))`, kerja, gen, quot, models.AwalanKasus)
+	  WHERE g.PRODKE >= 1 AND %s AND q.OLD_POLICY_NO = :1
+	    AND (w.STATUS_WORK IS NULL OR w.STATUS_WORK NOT IN (:2, :3))`, kerja, gen, quot, sqlIDKasusEDM("w.ID"))
 	if err := db.PeriksaSQL(q); err != nil {
 		return false, err
 	}

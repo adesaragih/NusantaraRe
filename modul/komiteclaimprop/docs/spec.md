@@ -6,6 +6,46 @@
 
 ---
 
+## RALAT 08-10-2026 — implementasi satu modul
+
+> Prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §3 dan §7. Kalimat lama di bab-bab di bawah **tetap
+> tertulis** (dikutip di sini); yang berlaku adalah butir berikut.
+
+1. **Kontrak** — keputusan 18 dan `urutan-tiket.md` (*"seam memakai ulang milik Claim Prop, tidak menambah seam baru"*):
+   seam UJI tetap milik Claim Prop; batas MODUL kini kontrak baru `kontrak.KlaimTreatyKomite`
+   (`inti/backend/kontrak/klaimtreaty.go`), disediakan `claimprop`, dipakai modul ini. Tulisan ke tabel klaim Prop
+   hanya lewat kontrak itu, di dalam transaksi Submit.
+2. **Kasus komite lahir** — opsi B 07-10-2026: Claim Prop melahirkan kasus `TKMT-` beserta tangga awal; modul ini
+   tidak melahirkan kasus.
+3. **JSON / procedure / COMMIT** — `InsertJsonClaimTreaty_act` (`PEGA_JSON_KLAIM_PNC`) dan `SaveOSClaim_SQL`
+   (`PEGA_JSON_OS_AKSEP_KLAIM`) ditulis ulang sebagai SQL langsung; procedure tidak dipanggil, nol `COMMIT`.
+   `JSON_KLAIM` tanpa DATA_JSON; `OS_AKSEPTASI_KLAIM` **dengan** DATA_JSON halaman `TempOSAkseptasi` (keputusan work
+   owner 08-10-2026 sore, *"isi json nya khusus os_akseptasi_klaim"*).
+4. **AC 56** (*"Kesembilan rule yang di Pega menyimpan sendiri tetap menyimpan sendiri"*) — diganti SATU transaksi
+   aplikasi per Submit (prompt §6 butir 7); efek keluar diantre outbox di transaksi itu. Penyimpangan sadar
+   (`docs/PARITAS.md`).
+5. **Tiga jalur** — TT 2 (ADJUSTMENT) dibangun; TT 3 (`KomitePost_Reject`) tanpa penulis `TransferType = 3` di
+   korpus Claim Prop (hanya dibaca `SendEmailKlaimRejectClose`) — tak terjangkau; TT 4 (`KomitePost_Close`) ditunda
+   **OQ-CP-06** (keputusan work owner 08-10-2026).
+6. **Nomor akseptasi** — rujukan ke `GenerateNoAcceptTreaty` / `GENERATE_NOACCEPTTREATYIN` adalah jalur ter-remark
+   (S16.1-S16.4); yang hidup S16.5-S16.9 lewat `inti/backend/penomor`.
+7. **Ketelitian kolom** — *"20 digit seluruhnya, 8 di belakang koma"* → DDL yang ada `NUMBER(38,10)` (keputusan
+   work owner 07-10-2026); modul ini tidak membuat kolom uang.
+8. **Indeks `ADJUSTMENT_ID`** — *"index UNIK"* → indeks biasa (migrasi 681, keputusan work owner 08-10-2026);
+   keunikan dijaga `KOMITE_ID UNIQUE` di kedua tabel adjustment.
+9. **AC 81-86** ditempel ke tiket: 81-82 → 04; 83 → 13; 84 → 03 (aksi tak ada di wajah TT 2); 85-86 → 11.
+10. **Jawaban work owner 08-10-2026 (laporan implementasi):** OQ-KCP-01 "a" — isian Subjectivity tingkat 1 disimpan di
+    `T_GENERAL_KOMITE` (migrasi 682); OQ-KCP-06 "a" — baris subjectivity dapat diserahkan ulang ke komite (Claim Prop +
+    komite, S7); OQ-KCP-02 "b" — **AC 83** (*"Seluruh data kasus komite dipindahkan"*) DIRALAT: kasus komite lama tidak
+    dimigrasi, klaimnya dimuat Claim Prop; OQ-KCP-03 "ikuti" — bacaan lintas skema bergerbang IsPEGAPROD.
+11. **Ekspor tambahan work owner 08-10-2026 (OQ-KCP-04):** prompt values `AcceptStatus` / `AcceptanceStatus` /
+    `KomiteAproval` / `Payable` / `SubjectivityNote` → label layar dan dropdown "Subjectivity Note"; harness
+    `ViewClaimFormKomite` → "View more details" aktif (berkas Claim Prop hanya-baca); stream `EmailKlaim_HTML_KMT` dan
+    `FILEAcceptanceNote` → isi email dirakit saat efek dikirim (MUATAN outbox hanya pengenal); PDF dokumen akseptasi
+    diunggah sesudah Submit tersimpan (pola lampiran Bordereaux). Harness `Confirm` = bawaan platform Pega, tidak dibutuhkan. OQ-KCP-05 diabaikan work owner. Konversi
+    PDF (`HTMLToPDF`): OQ-KCP-07 "A" — pustaka Go `github.com/go-pdf/fpdf` (go.mod), PDF digambar dari halaman
+    TempAcceptedNo.
+
 ## Cara membaca berkas ini
 
 Pembacanya **pengembang Go dan React yang tidak tahu Pega**. Istilah Pega hanya dipakai bila perlu,
@@ -1839,6 +1879,21 @@ migrasi yang penunjuknya salah alamat.)* ⛔ **Nol butir lama ditutup.**
 | **12** | ⭐ **BARU** — **baris mana di tabel alamat layanan** yang menunjuk lingkungan uji | Testing | work owner |
 | **13** | ⭐ **BARU** — **sasaran uji untuk urutan efek keluar**, menunggu urutan barunya ditetapkan | Testing | work owner |
 | **14** | ⭐ **BARU 2026-09-19** — kasus komite **LAMA hasil migrasi** yang penunjuk baris penyesuaiannya **sudah salah alamat atau menunjuk baris yang tidak ada** — apa yang dilakukan aplikasi saat kasus itu dibuka: **menolak terang-terangan**, atau **diam seperti Pega**. ⚠️ **Kunci beku (bab 11) TIDAK menutup butir ini karena tidak berlaku surut.** | 2 · 11 · Migrasi | work owner |
+
+> **RALAT 08-10-2026 — penilaian ulang tiga butir** (prompt §7 butir 9). Yang ditutup hanya yang terbukti:
+>
+> - **Butir 4 DITUTUP.** Perulangan berputar sekali per tingkat tangga: setiap Submit menjalankan
+>   `KomitePostAdjustment` sekali, S40 menaikkan `KomiteCount` (prakondisi nonaktif), dan Decision `KomiteLoop`
+>   (`IsKomiteLoop`: `.AcceptStatus="1" AND .KomiteCount <= .KomiteLoop`) mengembalikan assignment ke KomiteRouter
+>   sampai tingkat akhir. Langkah uang / Kasir (S14-S34) bergerbang `KomiteCount == TotalKomite && AcceptStatus == 1`
+>   - terjadi **sekali** per kasus komite. Bukti: `Activity/KomitePostAdjustment.xml` S13-S40, `Flow/KomiteTreaty_Flow.xml`.
+> - **Butir 11 DITUTUP.** Kolom yang ada `NUMBER(38,10)` menyimpan 10 desimal; persen 10 desimal tidak terpangkas
+>   menjadi 8.
+> - **Butir 3 TETAP.** Arti blok `ULANG[1]` (S16, HitServiceToKasirKMT_Act S14) tidak dinyatakan ekspor; perilakunya
+>   ditiru (sekali jalan) tanpa menafsirkan nama.
+> - **Butir 9 TETAP** (pintu masuk `ViewDetailInterest`).
+>
+> Jumlah butir terbuka: 13 → **11**.
 
 #### ⭐ Apakah ketiga belas butir ini MENGHAMBAT — penilaian 2026-09-19
 

@@ -4,7 +4,7 @@ package repository
 // 05-10-2026). Aturannya murni di models/polis_hitungqr.go.
 //
 // Untuk apa berkas ini: membaca SEKALI per polis - kepala polis, parameter
-// produk Master Product Name Life, plan produk, master rate `RATE_LIFE` dan
+// produk Master Product Name Life, plan produk, master rate `M_RATE_LIFE` dan
 // master risk `RIRISK_LIFE` - untuk dihitung.
 //
 // ⛔ BACA-SAJA, kolom disebut satu per satu, berkunci ID / IDUSEDBY. Master
@@ -88,8 +88,11 @@ func sqlRateHitungQR(tabel string) string {
 	return fmt.Sprintf(`SELECT ID, GENDER, AGE, CONTRACT, RATE FROM %s WHERE IDUSEDBY = :1`, tabel)
 }
 
+// sqlRiskHitungQR - RISK kini NUMBER (migrasi inti 940, keputusan work owner 08-10-2026 K2): dibaca sebagai teks
+// TANPA bergantung NLS sesi maupun format driver (db.FmtDesimal, `TM9` ber-NLS eksplisit - `921.9`, `.5`), lalu diurai
+// angkaMaster yang menerima koma maupun titik desimal - hasil hitung SAMA dengan teks lama "921,9".
 func sqlRiskHitungQR(tabel string) string {
-	return fmt.Sprintf(`SELECT ID, YEAR, CONTRACT, RISK FROM %s WHERE IDUSEDBY = :1`, tabel)
+	return fmt.Sprintf(`SELECT ID, YEAR, CONTRACT, %s FROM %s WHERE IDUSEDBY = :1`, fmt.Sprintf(db.FmtDesimal, "RISK"), tabel)
 }
 
 // KepalaUnggah membaca Type, Product Name ID, Class of Business, Premium
@@ -164,7 +167,7 @@ func (r *Rujukan) BahanHitungQR(ctx context.Context, produkID string) (models.Pa
 	return p, plan, rows.Err()
 }
 
-// RateHitungQR membaca SELURUH baris `RATE_LIFE` satu IDUSEDBY (tanpa batas tampilan).
+// RateHitungQR membaca SELURUH baris `M_RATE_LIFE` satu IDUSEDBY (tanpa batas tampilan).
 func (r *Rujukan) RateHitungQR(ctx context.Context, riRateID string) ([]models.BarisRateQR, error) {
 	tabel, err := r.db.Qualify(ViewRateProduk)
 	if err != nil {
@@ -191,7 +194,7 @@ func (r *Rujukan) RateHitungQR(ctx context.Context, riRateID string) ([]models.B
 	return hasil, rows.Err()
 }
 
-// RiskHitungQR membaca SELURUH baris `RIRISK_LIFE` satu IDUSEDBY (tanpa batas tampilan).
+// RiskHitungQR membaca SELURUH baris tabel `RIRISK_LIFE` satu IDUSEDBY (tanpa batas tampilan).
 func (r *Rujukan) RiskHitungQR(ctx context.Context, riRiskID string) ([]models.BarisRiskQR, error) {
 	tabel, err := r.db.Qualify(ViewRiskProduk)
 	if err != nil {

@@ -113,6 +113,7 @@ func (l *Layanan) Buka(ctx context.Context, a Aktor, id string) (Rincian, error)
 		return Rincian{}, err
 	}
 	r := Rincian{Header: h, Baris: []models.Baris{}, Ringkasan: []models.Ringkasan{}, Hak: HakAtas(a, h)}
+	r.Hak.Lampiran = BolehLampiran(a, h)
 	if k, e := models.CariKombinasi(h.Type, h.TypeBusiness); e == nil {
 		if r.Baris, err = l.gudang.Detail(ctx, nil, k, h.BdxID); err != nil {
 			return Rincian{}, err

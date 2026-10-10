@@ -317,12 +317,14 @@ func (r *Rujukan) gridRincian(ctx context.Context, g gridRincian, id string) (Gr
 // ——— View Rate: isi satu R/I Rate baris PLAN LIST (permintaan work owner 05-10-2026) ———
 //
 // Sama dengan dialog `View Rate` Master Product Name Life (`BrowseRateLife_RD`):
-// view `RATE_LIFE` berkunci `IDUSEDBY` = RIRATEID baris plan, enam kolom grid
+// `M_RATE_LIFE` (dulu view `RATE_LIFE`) berkunci `IDUSEDBY` = RIRATEID baris plan, enam kolom grid
 // `ViewRate`, urut `ID DESC, RATE ASC`, paling banyak BatasRateProduk baris.
 // BACA-SAJA, nol `SELECT *`, nol `JSONDATA`.
 
-// ViewRateProduk - view rate yang dibaca.
-const ViewRateProduk = "RATE_LIFE"
+// ViewRateProduk - objek rate yang dibaca. RALAT 07-10-2026 (keputusan work owner, `modul/riratelife/MODUL.md`
+// RALAT R7): kini TABEL flat `M_RATE_LIFE` berkolom sama dengan view `RATE_LIFE` lama (dibuang migrasi inti 930), teks
+// apa adanya. Nama konstanta tetap.
+const ViewRateProduk = "M_RATE_LIFE"
 
 // BatasRateProduk - `pyMaxRecords` `BrowseRateLife_RD`; lebih dari ini dinyatakan terpotong.
 const BatasRateProduk = 500
@@ -385,13 +387,16 @@ func (r *Rujukan) RateProduk(ctx context.Context, riRateID string) (RateProduk, 
 
 // ——— View R/I Risk: isi R/I Risk Name produk (permintaan work owner 05-10-2026) ———
 //
-// View `RIRISK_LIFE` berkunci `IDUSEDBY` = `M_PRODUCTNAME_LIFE.RIRISKID`.
-// Kolomnya `[terverifikasi]` ALL_TAB_COLUMNS POOLDATA, dikirim work owner
-// 05-10-2026: ID, IDUSEDBY, USEDBY, AGE, YEAR, MONTH, RISK, CONTRACT (semua
-// VARCHAR2). BACA-SAJA, kolom disebut satu per satu, paling banyak
-// BatasRiskProduk baris (lebih dari itu dinyatakan terpotong).
+// Tabel `RIRISK_LIFE` berkunci `IDUSEDBY` = `M_PRODUCTNAME_LIFE.RIRISKID` - dulu
+// VIEW (semua VARCHAR2, ALL_TAB_COLUMNS POOLDATA, work owner 05-10-2026), sejak
+// migrasi inti 938-940 TABEL (tabel Pega M_RIRISK_LIFE berganti nama, keputusan
+// work owner 08-10-2026 K1) berkolom sama: ID, IDUSEDBY, USEDBY, AGE, YEAR,
+// MONTH, CONTRACT teks; RISK NUMBER (dulu teks "921,9", kini dipindai driver
+// sebagai teks angka bertitik - tampilan saja). BACA-SAJA, kolom disebut satu
+// per satu, paling banyak BatasRiskProduk baris (lebih dari itu dinyatakan
+// terpotong).
 
-// ViewRiskProduk - view R/I Risk yang dibaca.
+// ViewRiskProduk - tabel R/I Risk yang dibaca (nama tetap; dulu view).
 const ViewRiskProduk = "RIRISK_LIFE"
 
 // BatasRiskProduk - baris paling banyak satu R/I Risk.

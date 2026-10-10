@@ -337,6 +337,11 @@ func (m *MasterTahunTreaty) kunciTabelTahunTCO(ctx context.Context, tx *db.Tx) e
 	return nil
 }
 
+// TabelLampiranTCO - `M_ATTACHMENTTREATY_2`, lampiran warisan Pega. Fitur
+// lampiran modul ini dibuang (keputusan work owner 08-10-2026); tabelnya tetap
+// DIHITUNG di sini supaya lampiran lama tidak terputus dari tahunnya.
+const TabelLampiranTCO = "M_ATTACHMENTTREATY_2"
+
 // sqlJumlahAnakTahunTCO - kontrak + klausul + LAMPIRAN (tco4: kunci lampiran
 // `TREATYID` = teks `TREATYYEAR` + ID - mengubah TREATYYEAR memutusnya;
 // temuan /code-review).

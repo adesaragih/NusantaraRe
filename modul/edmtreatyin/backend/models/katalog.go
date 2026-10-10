@@ -211,6 +211,9 @@ var TabelGeneralPolis = Tabel{Nama: "T_GENERAL_POLIS_TREATY", Kolom: []Kolom{
 	kPersen(pt+"OveriddingCommOgp", "OVERIDDING_COMM_OGP"),
 	kPersen(pt+"RiCommOnp", "RI_COMM_ONP"),
 	kPersen(pt+"OveriddingCommOnp", "OVERIDDING_COMM_ONP"),
+	// WO 08-10-2026 (cek Copy Old; kolom NB `320_t_general_polis_treaty`): "IsSOAUpload ITU PERLU" - disimpan dan
+	// ikut tersalin ke generasi endorsemen. GuaranteeFund TIDAK berkolom (WO 08-10-2026 "GUARANTEE_FUND NUMBER(38,10), buang!").
+	kKode(pt+"IsSOAUpload", "IS_SOA_UPLOAD", 16),
 }}
 
 // TabelQuotation - T_POLIS_QUOTATION, 1:1 (ID-23; diagram J35-J37 "10 medan

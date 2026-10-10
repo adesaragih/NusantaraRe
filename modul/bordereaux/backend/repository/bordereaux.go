@@ -445,7 +445,7 @@ func (g *Gudang) HapusBerkas(ctx context.Context, tx *db.Tx, id string) error {
 		}
 	}
 	for _, x := range []struct{ tabel, kolom string }{
-		{TabelRiwayat, "BDX_ID"}, {TabelJSON, "ID"}, {"M_ATTACHMENTBORDEREAUX", "BDX_ID"},
+		{TabelRiwayat, "BDX_ID"}, {TabelJSON, "ID"}, {TabelLampiran, "BDX_ID"},
 	} {
 		t, err := g.nama(x.tabel)
 		if err != nil {

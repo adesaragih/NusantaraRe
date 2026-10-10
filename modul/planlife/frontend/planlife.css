@@ -1,0 +1,782 @@
+/* Gaya modul Plan - SETIAP pemilih di bawah akar .planlife (gaya.test.ts). Fondasi tema
+   (token terang/gelap, isian, tombol, tabel, kolom aksi menempel, tampilan View) disalin dari modul Bordereaux supaya
+   tampilannya seragam; nol pemilih global, nol properti yang memerangkap Modal. */
+
+.planlife {
+  display: contents;
+}
+
+.planlife .planlife__akar {
+  --rc-latar: #eef1f6;
+  --rc-seri-0: #4f46e5;
+  --rc-seri-1: #0d9488;
+  --rc-seri-2: #f59e0b;
+  --rc-seri-3: #64748b;
+  --rc-lintasan: #e8ecf4;
+  --rc-latar-tepi: #cfd7e5;
+  --rc-latar-atas: #f9fafd;
+  --rc-latar-bawah: #e4e9f3;
+  --rc-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --rc-lembut: #e9edf3;
+  --rc-lembut-tepi: #dde3ec;
+  --rc-teks: #101828;
+  --rc-teks-redup: #4f586b;
+  --rc-aksen: var(--primary-tanda);
+  --rc-aksen-teks: #2339a3;
+  --rc-aksen-lembut: #e3e8f6;
+  --rc-aksen-garis: #b9c5ee;
+  --rc-kepala-tabel: #dde4f2;
+  --rc-kepala-teks: #22326b;
+  --rc-kepala-garis: #c3cde2;
+  --rc-isi: #ffffff;
+  --rc-baris-hover: #e6ecfa;
+  --rc-garis: #e1e6ef;
+  --rc-tepi: #c8d1e1;
+  --rc-tombol: #d63a42;
+  --rc-tombol-ujung: #bf2f37;
+  --rc-tombol-hover: #c2333b;
+  --rc-tombol-hover-ujung: #a9282f;
+  --rc-terang: rgba(255, 255, 255, 0.92);
+  --rc-gelap: rgba(163, 177, 198, 0.55);
+  --rc-kilau: rgba(255, 255, 255, 0.7);
+  --rc-timbul: 8px 8px 18px var(--rc-gelap), -8px -8px 18px var(--rc-terang);
+  --rc-timbul-kecil: 4px 4px 9px var(--rc-gelap), -4px -4px 9px var(--rc-terang);
+  --rc-cekung-kecil: inset 2px 2px 4px var(--rc-gelap), inset -2px -2px 4px var(--rc-terang);
+  --rc-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --rc-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--rc-terang);
+  --rc-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --rc-sukses-latar: #e6f7ee;
+  --rc-sukses-tepi: #b7e8cc;
+  --rc-sukses-teks: #067647;
+  --rc-netral-latar: #e9edf3;
+  --rc-netral-tepi: #d5dce7;
+  --rc-netral-teks: #475467;
+  --rc-waspada-latar: #fbf3df;
+  --rc-waspada-tepi: #f1d58a;
+  --rc-waspada-teks: #a3410a;
+  --text-3: var(--rc-teks-redup);
+  color: var(--rc-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--rc-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--rc-latar-atas) 0%, var(--rc-latar-bawah) 100%);
+  box-shadow: var(--rc-bayang-akar);
+}
+
+:root[data-theme="dark"] .planlife .planlife__akar {
+  --rc-latar: #1b2130;
+  --rc-seri-0: #818cf8;
+  --rc-seri-1: #2dd4bf;
+  --rc-seri-2: #fbbf24;
+  --rc-seri-3: #94a3b8;
+  --rc-lintasan: #252d40;
+  --rc-latar-tepi: #323b50;
+  --rc-latar-atas: #222a3b;
+  --rc-latar-bawah: #161b27;
+  --rc-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --rc-lembut: #181d2a;
+  --rc-lembut-tepi: #242b3a;
+  --rc-teks: #eef0f6;
+  --rc-teks-redup: #aab2c4;
+  --rc-aksen-teks: #aebcff;
+  --rc-aksen-lembut: #222b45;
+  --rc-aksen-garis: #3a4b8f;
+  --rc-kepala-tabel: #273152;
+  --rc-kepala-teks: #dbe2ff;
+  --rc-kepala-garis: #3a4670;
+  --rc-isi: #1f2638;
+  --rc-baris-hover: #2b3554;
+  --rc-garis: #2c3447;
+  --rc-tepi: #3a4459;
+  --rc-terang: rgba(255, 255, 255, 0.045);
+  --rc-gelap: rgba(0, 0, 0, 0.55);
+  --rc-kilau: rgba(255, 255, 255, 0.04);
+  --rc-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --rc-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--rc-terang);
+  --rc-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --rc-sukses-latar: #0d2a1f;
+  --rc-sukses-tepi: #1d5c40;
+  --rc-sukses-teks: #75e0a7;
+  --rc-netral-latar: #1f2533;
+  --rc-netral-tepi: #333c4f;
+  --rc-netral-teks: #c3cad8;
+  --rc-waspada-latar: #2b2112;
+  --rc-waspada-tepi: #6b4d17;
+  --rc-waspada-teks: #fec84b;
+}
+
+/* Judul dan teks redup. */
+.planlife .inbox__judul,
+.planlife .modal__title {
+  color: var(--rc-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.planlife .muted {
+  color: var(--rc-teks-redup);
+}
+
+.planlife :focus-visible {
+  outline: 2px solid var(--rc-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.planlife .field__input {
+  background: var(--rc-isi);
+  border: 1px solid var(--rc-tepi);
+  border-radius: 12px;
+  box-shadow: var(--rc-cekung-kecil);
+  color: var(--rc-teks);
+}
+
+.planlife .field__input:hover:not(:disabled) {
+  border-color: var(--rc-aksen-garis);
+}
+
+.planlife .field__input:focus {
+  border-color: var(--rc-aksen);
+  box-shadow: var(--rc-cekung-kecil), var(--rc-cincin);
+  outline: none;
+}
+
+.planlife .field__input--readonly,
+.planlife .field__input--readonly:hover {
+  background: var(--rc-lembut);
+  border-color: var(--rc-lembut-tepi);
+  color: var(--rc-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.planlife .btn {
+  border-radius: 999px;
+}
+
+.planlife .btn--primary {
+  background: linear-gradient(180deg, var(--rc-tombol), var(--rc-tombol-ujung));
+  border-color: var(--rc-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--rc-bayang-tombol);
+}
+
+.planlife .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--rc-tombol-hover), var(--rc-tombol-hover-ujung));
+  border-color: var(--rc-tombol-hover-ujung);
+}
+
+.planlife .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.planlife .btn--ghost {
+  background: var(--rc-isi);
+  border: 1px solid var(--rc-tepi);
+  color: var(--rc-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--rc-timbul-kecil);
+}
+
+.planlife .btn--ghost:hover:not(:disabled) {
+  background: var(--rc-aksen-lembut);
+  border-color: var(--rc-aksen-garis);
+  color: var(--rc-aksen-teks);
+}
+
+.planlife .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--rc-cekung-kecil);
+}
+
+.planlife .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.planlife .modal {
+  background: var(--rc-latar);
+  border: 1px solid var(--rc-kilau);
+  border-radius: 22px;
+  box-shadow: var(--rc-bayang-popup);
+}
+
+.planlife .modal__head,
+.planlife .modal__actions {
+  border-color: var(--rc-garis);
+}
+
+.planlife .alert {
+  border-radius: 12px;
+}
+
+/* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
+.planlife .planlife__tabel {
+  background: var(--rc-isi);
+  border: 1px solid var(--rc-tepi);
+  border-radius: 18px;
+  box-shadow: var(--rc-timbul);
+}
+
+.planlife .planlife__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.planlife .planlife__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.planlife .planlife__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.planlife .planlife__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.planlife .planlife__tabel thead th {
+  background: var(--rc-kepala-tabel);
+  color: var(--rc-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--rc-kepala-garis);
+}
+
+.planlife .planlife__tabel td {
+  color: var(--rc-teks);
+  background: var(--rc-isi);
+  border-bottom-color: var(--rc-garis);
+}
+
+.planlife .planlife__tabel tbody tr:nth-child(even),
+.planlife .planlife__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.planlife .planlife__tabel tbody tr:nth-child(even) > td {
+  background: var(--rc-lembut);
+}
+
+.planlife .planlife__tabel tbody tr:hover > td {
+  background: var(--rc-baris-hover);
+}
+
+/* Tombol aksi SEBARIS ke samping (permintaan work owner 03-10-2026 "buat ke samping aja"): tidak turun ke bawah;
+   tabel yang lebih lebar dari layar menggulir di dalam akar. */
+.planlife .planlife__aksi {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.planlife .planlife__tabel td.table__actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.planlife .planlife__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.planlife .planlife__hapus {
+  color: var(--rc-tombol);
+}
+
+.planlife .planlife__halaman {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  white-space: nowrap;
+}
+
+.planlife .planlife__badge {
+  margin-left: 10px;
+  background: var(--rc-aksen-lembut);
+  color: var(--rc-aksen-teks);
+}
+
+/* Kartu: form header, tab, riwayat. */
+.planlife .planlife__kartu {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--rc-isi);
+  border: 1px solid var(--rc-tepi);
+  border-radius: 18px;
+  box-shadow: var(--rc-timbul);
+}
+
+.planlife .planlife__judul-kartu {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--rc-teks);
+}
+
+/* View: nilai saja, kisi label di atas nilai. */
+.planlife .planlife__ringkas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 24px;
+  margin: 0;
+}
+
+.planlife .planlife__ringkas dt,
+.planlife .planlife__treaty-isi dt {
+  font-size: 12px;
+  color: var(--rc-teks-redup);
+}
+
+.planlife .planlife__ringkas dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Kolom tombol baris MENEMPEL di kanan saat tabel digulir (pola Treaty Contract Out, permintaan work owner
+   04-10-2026 "tidak perlu scroll ke kanan buat aksesnya"). */
+.planlife .planlife__tabel th.table__actions,
+.planlife .planlife__tabel td.table__actions {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  box-shadow: -8px 0 10px -8px rgba(16, 24, 40, 0.25);
+}
+
+.planlife .planlife__tabel {
+  width: max-content;
+  min-width: 100%;
+}
+
+.planlife .planlife__tabel th.table__actions,
+.planlife .planlife__tabel td.table__actions {
+  padding-right: 16px;
+  padding-left: 14px;
+}
+
+.planlife .planlife__tabel td {
+  white-space: nowrap;
+}
+
+/* Daftar menggulir di dalam kotaknya; kolom Action menempel di kanan. */
+.planlife .planlife__gulir {
+  overflow: auto;
+  max-height: 68vh;
+}
+
+/* Toolbar daftar: cari, saringan status, tombol Add. */
+.planlife .planlife__alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 12px;
+}
+
+.planlife .planlife__cari {
+  width: min(340px, 100%);
+}
+
+/* Saringan status Active / Inactive / All: tombol segmen. */
+.planlife .planlife__segmen {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--rc-tepi);
+  border-radius: 999px;
+  background: var(--rc-lembut);
+}
+
+.planlife .planlife__segmen-butir {
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--rc-teks-redup);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.planlife .planlife__segmen-butir--aktif {
+  background: var(--rc-isi);
+  color: var(--rc-teks);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.14);
+}
+
+/* Status baris. */
+.planlife .planlife__status {
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid var(--rc-sukses-tepi);
+  border-radius: 999px;
+  background: var(--rc-sukses-latar);
+  color: var(--rc-sukses-teks);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.planlife .planlife__status--nonaktif {
+  border-color: var(--rc-netral-tepi);
+  background: var(--rc-netral-latar);
+  color: var(--rc-netral-teks);
+}
+
+/* Kolom Status: ruang di kanan supaya badge tidak tertutup kolom Action yang menempel. */
+.planlife .planlife__tabel .planlife__kolom-status {
+  min-width: 96px;
+  padding-right: 22px;
+}
+
+.planlife .planlife__baris--nonaktif > td {
+  color: var(--rc-teks-redup);
+}
+
+/* Teks panjang (alamat) boleh turun baris di tabel. */
+.planlife .planlife__alamat {
+  min-width: 220px;
+  max-width: 360px;
+  white-space: normal;
+}
+
+/* Form Add / Edit di popup. */
+.planlife .planlife__form {
+  display: grid;
+  gap: 14px;
+}
+
+.planlife .planlife__form textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.planlife .planlife__catatan {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Saringan Type dan Flag di toolbar daftar. */
+.planlife .planlife__saring {
+  width: min(200px, 100%);
+}
+
+/* Form: dua kolom (Type / Flag, Code / No Urut) yang turun satu kolom di layar sempit. */
+.planlife .planlife__baris {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .planlife .planlife__baris {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* View (permintaan work owner 05-10-2026 "rapihin"): kepala nama + lencana, kartu rincian, jejak di kaki. */
+.planlife .planlife__lihat {
+  display: grid;
+  gap: 16px;
+}
+
+.planlife .planlife__lihat-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 1px solid var(--rc-aksen-garis);
+  border-radius: 16px;
+  background: var(--rc-aksen-lembut);
+}
+
+.planlife .planlife__lihat-mata {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.planlife .planlife__lihat-kode {
+  margin: 0;
+  color: var(--rc-aksen-teks);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.planlife .planlife__lihat-nama {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+}
+
+.planlife .planlife__lencana {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px solid var(--rc-tepi);
+  border-radius: 999px;
+  background: var(--rc-isi);
+  color: var(--rc-teks);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.planlife .planlife__lihat-kartu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.planlife .planlife__lihat-kartu .planlife__kartu {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .planlife .planlife__lihat-kartu {
+    grid-template-columns: 1fr;
+  }
+}
+
+.planlife .planlife__pasangan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.planlife .planlife__pasangan dt {
+  color: var(--rc-teks-redup);
+  font-size: 12px;
+}
+
+.planlife .planlife__pasangan dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.planlife .planlife__nilai-besar {
+  font-size: 19px;
+}
+
+.planlife .planlife__jejak {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Lencana Flag: active hijau, inactive abu, nilai warisan lain netral. */
+.planlife .planlife__lencana--aktif {
+  border-color: var(--rc-sukses-tepi);
+  background: var(--rc-sukses-latar);
+  color: var(--rc-sukses-teks);
+}
+
+.planlife .planlife__lencana--nonaktif {
+  border-color: var(--rc-netral-tepi);
+  background: var(--rc-netral-latar);
+  color: var(--rc-netral-teks);
+}
+
+.planlife .planlife__baris--nonaktif > td {
+  color: var(--rc-teks-redup);
+}
+
+/* View: label kecil SOA Name di kepala, ubin Code / No Urut / Group Type (hanya yang terisi). */
+.planlife .planlife__label-kecil {
+  margin-right: 8px;
+  color: var(--rc-teks-redup);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.planlife .planlife__lihat-nama {
+  color: var(--rc-teks);
+  font-weight: 600;
+}
+
+.planlife .planlife__ubin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.planlife .planlife__ubin > div {
+  padding: 12px 16px;
+  border: 1px solid var(--rc-tepi);
+  border-radius: 14px;
+  background: var(--rc-isi);
+  box-shadow: var(--rc-timbul-kecil);
+}
+
+.planlife .planlife__ubin dt {
+  color: var(--rc-teks-redup);
+  font-size: 12px;
+}
+
+.planlife .planlife__ubin dd {
+  margin: 4px 0 0;
+  color: var(--rc-teks);
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Kepala kolom grid yang dapat diurutkan (filter + sort `BrowseRIRiskSummary`). */
+.planlife .planlife__urut {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Pesan galat per baris View Upload: boleh turun baris. */
+.planlife .planlife__tabel td.planlife__galat {
+  min-width: 260px;
+  white-space: normal;
+  color: var(--rc-waspada-teks);
+}
+
+/* Form R/I RISK DETAIL (section InboxRIRisk) - ringkas seperti form detail riratelife: satu baris medan rapat (ID,
+   R/I RISK NAME, CONTRACT, YEAR, RISK), input 32px, tombol kecil sebaris kanan; layar sempit turun ke dua kolom.
+   Baris grid yang sedang di-Edit ditandai. */
+.planlife .planlife__form--rapat {
+  gap: 8px;
+  padding: 12px 14px;
+}
+
+.planlife .planlife__subjudul {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.planlife .planlife__rincian {
+  display: grid;
+  grid-template-columns: 110px minmax(150px, 1.6fr) 96px 84px minmax(110px, 1fr);
+  gap: 10px;
+  align-items: end;
+}
+
+@media (max-width: 860px) {
+  .planlife .planlife__rincian {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.planlife .planlife__form--rapat .field {
+  gap: 4px;
+  margin: 0;
+}
+
+.planlife .planlife__form--rapat .field__label {
+  font-size: 11px;
+}
+
+.planlife .planlife__form--rapat .field__input {
+  height: 32px;
+  padding: 0 8px;
+  font-size: 13px;
+}
+
+.planlife .planlife__form--rapat .btn {
+  padding: 5px 14px;
+  font-size: 13px;
+}
+
+.planlife .planlife__form--rapat .planlife__aksi {
+  justify-content: flex-end;
+}
+
+.planlife .planlife__baris--pilih td {
+  background: var(--rc-aksen-lembut);
+}
+
+/* Form InboxProductType: Plan Name (pxTextInput b844) dan dua autocomplete (b1107 / b1464) sebaris. */
+.planlife .planlife__form .planlife__baris {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+  .planlife .planlife__form .planlife__baris {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Autocomplete: daftar pilihan di bawah isian (OLDID / Note / ID business b1200-b1265; Benefit b1552). */
+.planlife .planlife__isian {
+  position: relative;
+  min-width: 0;
+}
+
+.planlife .planlife__pilihan {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 280px;
+  overflow-y: auto;
+  margin-top: 4px;
+  border: 1px solid var(--rc-tepi);
+  border-radius: 12px;
+  background: var(--rc-isi);
+  box-shadow: var(--rc-bayang-popup);
+}
+
+.planlife .planlife__pilihan-kepala,
+.planlife .planlife__pilihan-butir {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr) 70px;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.planlife .planlife__pilihan-kepala {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rc-kepala-teks);
+  background: var(--rc-kepala-tabel);
+}
+
+.planlife .planlife__pilihan-butir {
+  border: 0;
+  background: transparent;
+  color: var(--rc-teks);
+  cursor: pointer;
+}
+
+.planlife .planlife__pilihan-butir--satu {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.planlife .planlife__pilihan-butir:hover,
+.planlife .planlife__pilihan-butir:focus-visible {
+  background: var(--rc-baris-hover);
+}
+
+.planlife .planlife__pilihan-kosong {
+  padding: 8px 10px;
+}
+
+/* Kolom Benefit grid: teks panjang dibungkus. */
+.planlife .planlife__benefit {
+  white-space: normal;
+  word-break: break-word;
+}

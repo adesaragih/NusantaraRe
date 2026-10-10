@@ -219,6 +219,14 @@ func (g *Gudang) TutupKasus(ctx context.Context, tx *db.Tx, id, statusLama, stat
 //
 // `s.Antrean` = workbasket gerbang portal (services.DaftarKasus); kosong =
 // tanpa batas antrean.
+// kolomCariPortal - kolom yang dicari kotak saring portal, padanan medan `models.CocokCariPortal` (urutan sama):
+// nomor kasus, Master ID, nomor polis, insured name (quotation dan polis), group business, marketing, source of
+// business, ceding, treaty group, class of business, pembuat. Setiap kolom mendapat penampung sendiri.
+var kolomCariPortal = []string{
+	"w.ID", "g.NO_OFFER", "g.NOPOLIS", "q.INSURED_NAME", "g.INSURED_NAME", "q.BUSINESS_NAME", "q.MARKETING_NAME",
+	"g.SOB_NAME", "g.CEDING_CO_NAME", "g.TREATY_GROUP_NAME", "g.BIZ_NAME", "w.CREATE_OP_NAME",
+}
+
 func sqlDaftarKasus(kerja, gen, quot string, s models.SaringanKasus) (string, []any) {
 	var b strings.Builder
 	args := []any{models.LiniKasus, models.StatusDitolak, models.StatusSelesai}
@@ -242,9 +250,14 @@ func sqlDaftarKasus(kerja, gen, quot string, s models.SaringanKasus) (string, []
 		b.WriteString(`
 	    AND (w.STATUS_WORK IS NULL OR w.STATUS_WORK NOT IN (:2, :3))`)
 	}
-	if cari := strings.TrimSpace(s.Cari); cari != "" {
+	// pencarian portal (models.CocokCariPortal): setiap kata termuat di salah satu kolom; wildcard di-escape
+	for _, kata := range models.KataCariPortal(s.Cari) {
+		atau := make([]string, 0, len(kolomCariPortal))
+		for _, k := range kolomCariPortal {
+			atau = append(atau, fmt.Sprintf(`UPPER(%s) LIKE %s ESCAPE '\'`, k, pen("%"+escapeLike(kata)+"%")))
+		}
 		fmt.Fprintf(&b, `
-	    AND UPPER(w.ID) LIKE %s`, pen("%"+strings.ToUpper(cari)+"%"))
+	    AND (%s)`, strings.Join(atau, " OR "))
 	}
 	if s.Posisi != "" {
 		fmt.Fprintf(&b, `

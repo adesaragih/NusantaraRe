@@ -1,0 +1,55 @@
+-- 609 - T_CLAIM_NP_XOL_ALLOC <- grid "XOL Allocation" per layer (UR / layer, limit, MDP, % reinstatement,
+-- reinstatement, porsi RNM): JENIS ALOKASI = `ClaimData.SpreadingRisk` (klaim) / `AdjustmentList(n).SpreadingRisk`
+-- (akseptasi); LAMA = `AdjustmentList(n).LossAllocation` (salinan alokasi saat akseptasi lahir, View Old Allocation);
+-- DIBAYAR = `AdjustmentList(n).AlokasiXOLPaid` (grid "Previously Calculated").
+-- Tabel baru khas XoL (OQ-CNP-06, docs/STRUKTUR-TABEL-CLAIM-NON-PROP.md). ID dari SEQ_T_CLAIM (claimprop 533).
+-- Kolom = katalog `models/katalog.go`. NOL COMMIT. -migrate oleh work owner.
+CREATE TABLE {skema}.T_CLAIM_NP_XOL_ALLOC (
+  ID                   VARCHAR2(32) NOT NULL,
+  CLAIM_ID             VARCHAR2(32),
+  ADJUSTMENT_ID        VARCHAR2(32),
+  NOURUT               NUMBER(5) NOT NULL,
+  JENIS                VARCHAR2(16) NOT NULL,
+  TREATY_TYPE_ID       VARCHAR2(64),
+  TREATY_NAME          VARCHAR2(255),
+  CURRENCY_ID          VARCHAR2(64),
+  CURRENCY_NAME        VARCHAR2(64),
+  KURS                 NUMBER(38,10),
+  KURS_IDR             NUMBER(38,10),
+  CLAIM_ESTIMATION     NUMBER(38,10),
+  CLAIM_AMOUNT_ADJUST  NUMBER(38,10),
+  ADJ_CLAIM_VALUE      NUMBER(38,10),
+  TOTAL_CLAIM          NUMBER(38,10),
+  CLAIM_PERCENTAGE     NUMBER(38,10),
+  CLAIM_SPREADED       NUMBER(38,10),
+  ADJUSTER_FEE         NUMBER(38,10),
+  SALVAGE              NUMBER(38,10),
+  OTHERS_FEE           NUMBER(38,10),
+  TOTAL_SPREAD         NUMBER(38,10),
+  CLAIM_AMOUNT_IDR     NUMBER(38,10),
+  PRORATE_PCT          NUMBER(38,10),
+  LIMIT_VALUE          NUMBER(38,10),
+  LIMIT_FULL           NUMBER(38,10),
+  LAYER_CURRENCY       VARCHAR2(64),
+  MDP_VALUE            NUMBER(38,10),
+  REINSTATE_PCT        NUMBER(38,10),
+  LAYER                VARCHAR2(64),
+  LAYER_TYPE           VARCHAR2(64),
+  LAYER_PART           VARCHAR2(64),
+  LAYER_PART_TYPE      VARCHAR2(64),
+  IS_EDIT_CLAIM        VARCHAR2(16),
+  IS_LOCKED            VARCHAR2(16),
+  TOTAL_CLAIM_RNM      NUMBER(38,10),
+  REINSTATEMENT        NUMBER(38,10),
+  REINSTATEMENT_RNM    NUMBER(38,10),
+  CONSTRAINT PK_CLAIM_NP_XOL PRIMARY KEY (ID),
+  CONSTRAINT FK_CLAIM_NP_XOL_CLAIM FOREIGN KEY (CLAIM_ID) REFERENCES {skema}.T_GENERAL_CLAIM (ID) ON DELETE CASCADE,
+  CONSTRAINT FK_CLAIM_NP_XOL_ADJ FOREIGN KEY (ADJUSTMENT_ID) REFERENCES {skema}.T_CLAIM_ADJUSTMENT (ID) ON DELETE CASCADE,
+  CONSTRAINT CK_CLAIM_NP_XOL_INDUK CHECK ((CLAIM_ID IS NOT NULL AND ADJUSTMENT_ID IS NULL) OR (CLAIM_ID IS NULL AND ADJUSTMENT_ID IS NOT NULL)),
+  CONSTRAINT CK_CLAIM_NP_XOL_JENIS CHECK (JENIS IN ('ALOKASI', 'LAMA', 'DIBAYAR')),
+  CONSTRAINT UQ_CLAIM_NP_XOL_NOURUT UNIQUE (CLAIM_ID, ADJUSTMENT_ID, JENIS, NOURUT)
+)
+/
+-- Indeks induk kedua (kaskade hapus akseptasi; CLAIM_ID tercakup awal UQ).
+CREATE INDEX {skema}.IX_CLAIM_NP_XOL_ADJ ON {skema}.T_CLAIM_NP_XOL_ALLOC (ADJUSTMENT_ID)
+/

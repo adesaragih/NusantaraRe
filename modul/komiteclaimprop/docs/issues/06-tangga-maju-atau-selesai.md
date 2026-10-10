@@ -1,6 +1,11 @@
 # 06: Tangga maju ke penyetuju berikutnya, atau selesai
 
-**Status:** ready-for-agent
+**Status:** dibangun *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+
+> **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
+>
+> - `IsKomiteLoop` (`.AcceptStatus="1" AND .KomiteCount <= .KomiteLoop`) + S40 (`KomiteCount + 1`, prakondisi nonaktif).
+
 
 **Blocked by:** **04 (keputusan penyetuju tersimpan)**
 

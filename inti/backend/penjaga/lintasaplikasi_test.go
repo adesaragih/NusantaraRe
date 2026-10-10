@@ -199,9 +199,9 @@ var berkasAlamatDikecualikan = map[string]string{
 // `://` dan env tetap diperiksa. Tiap baris menyebut persetujuan manusianya;
 // jumlahnya dikunci di bawah.
 var berkasKlienHTTPDisetujui = map[string]string{
-	"modul/treatycontractout/backend/services/tco_pengirim_storage.go": "transport penyimpanan lampiran Treaty Contract Out - " +
-		"[keputusan work owner 29-09-2026, OQ-TCO-08]; alamat dari M_LINK_SERVICE saat jalan, " +
-		"hanya aktif bila PELAKSANA_STORAGE=nyata",
+	"inti/backend/penyimpanan/kirim.go": "Connect-REST `ServiceGoogle` bersama kelas `T_STORAGE_IMAGE` (upload, geturl, delete, " +
+		"getAI) untuk semua modul - [keputusan work owner 08-10-2026: \"kalo di pega, semua activity ini bisa dipake disemua " +
+		"modul\"; \"lakukan dengan XML yang ada\"]; alamat dari M_LINK_SERVICE saat jalan",
 	"modul/masterproductnamelife/backend/services/mpnl_storage.go": "transport penyimpanan lampiran Master Product Name Life - " +
 		"[keputusan work owner 03-10-2026, OQ-MPNL-10 dibalik: \"ikuti dari XML nya aja\"; entri ini disetujui work owner " +
 		"03-10-2026; \"selalu nyata, ikut XML\" 03-10-2026]; alamat dari M_LINK_SERVICE saat jalan",
@@ -585,6 +585,19 @@ func TestNolNamaTabelTelanjangDiQuery(t *testing.T) {
 func TestTCONolTabelBaru(t *testing.T) {
 	pola := regexp.MustCompile(`(?i)CREATE\s+(TABLE|SEQUENCE)\s+\{skema\}\.(\w+)`)
 	nama := regexp.MustCompile(`(?i)^(SEQ_)?(T_)?(M?TREATY|PROPORTIONAL)`)
+	// ⭐ Nama milik Treaty In dikecualikan, dan HANYA nama itu - lihat
+	// `namaTabelTreatyIn` untuk tabrakan keputusan yang melahirkannya.
+	// Pengecualiannya daftar nama, bukan letak berkas: migrasi Treaty In yang
+	// kelak membuat tabel Treaty Contract Out tetap tertangkap.
+	treatyin := namaTabelTreatyIn(t)
+	// ⛔ Dibuktikan MASIH MENGGIGIT sebelum dipakai: daftar yang diam-diam
+	// memuat nama warisan Treaty Contract Out akan membuat penjaga ini lulus
+	// atas pelanggaran yang sesungguhnya.
+	for _, warisanTCO := range []string{"T_TREATYYEAR", "T_TREATYCONTRACT", "T_PROPORTIONAL"} {
+		if treatyin[warisanTCO] {
+			t.Fatalf("daftar nama Treaty In memuat %s - pengecualiannya terlalu lebar", warisanTCO)
+		}
+	}
 	berkas := 0
 	for n, teks := range seluruhSQL(t, false) {
 		berkas++
@@ -592,7 +605,7 @@ func TestTCONolTabelBaru(t *testing.T) {
 			t.Errorf("%s: berkas migrasi di rentang Treaty Contract Out 300-319 - tco4 menolak tabel baru", n)
 		}
 		for _, m := range pola.FindAllStringSubmatch(teks, -1) {
-			if nama.MatchString(m[2]) {
+			if nama.MatchString(m[2]) && !treatyin[strings.ToUpper(m[2])] {
 				t.Errorf("%s membuat %s %s - tco4: modul ini memakai tabel warisan", n, m[1], m[2])
 			}
 		}
@@ -611,6 +624,11 @@ func TestTCONolNamaTabelBaruDiKode(t *testing.T) {
 		pola.MatchString("SELECT ID FROM S.TREATYYEAR") {
 		t.Fatal("pola penjaga tidak menggigit atau menuduh nama warisan")
 	}
+	// ⭐ Pengecualian yang SAMA dengan `TestTCONolTabelBaru`, dan dengan
+	// syarat KEDUA: berkasnya harus milik modul `treatyin`. Nama Treaty In
+	// yang disebut dari dalam Treaty Contract Out - atau dari `inti` - tetap
+	// pelanggaran, sebab di sanalah tco4 berlaku.
+	treatyin := namaTabelTreatyIn(t)
 	ekor := regexp.MustCompile(`(^|\s)//.*$`)
 	blok := regexp.MustCompile(`(?s)/\*.*?\*/`)
 	berkas := 0
@@ -639,9 +657,31 @@ func TestTCONolNamaTabelBaruDiKode(t *testing.T) {
 				if filepath.Ext(jalur) != ".go" && strings.HasPrefix(strings.TrimSpace(baris), "*") {
 					continue // badan JSDoc
 				}
-				if m := pola.FindString(baris); m != "" {
-					t.Errorf("%s:%d menyebut %s - tco4: modul ini memakai tabel warisan", filepath.ToSlash(jalur), i+1, m)
+				m := pola.FindString(baris)
+				if m == "" {
+					continue
 				}
+				// ⛔ Cocok PERSIS atau AWALAN sebuah nama Treaty In. Awalan
+				// diperlukan karena kode memang menyebut `"T_TREATY_"` apa
+				// adanya - `ringkasCacah` memotong awalan itu dari kunci peta
+				// - dan awalan yang disebut dari dalam Treaty In tidak dapat
+				// menamai tabel Treaty Contract Out mana pun.
+				// ⭐ Modul Adjustment ikut dikecualikan sejak 6 Oktober 2026:
+				// keputusan pemilik proses menyuruhnya MEMBACA tabel
+				// pendaratan milik Treaty In alih-alih JSONDATA, dan
+				// `Diagram-Skema-Tabel-TreatyIn-dan-EDM-v2.xlsx` memang
+				// menandai tiap kotaknya `BERSAMA -> … EDM Prop, EDM Non
+				// Prop`.
+				//
+				// ⚠️ Syarat NAMANYA tetap: tabel Treaty Contract Out yang
+				// disebut dari kedua modul ini tetap tertangkap.
+				switch pemilikJalur(jalur) {
+				case "treatyin", "treatyinadjustment":
+					if milikTreatyIn(treatyin, m) {
+						continue
+					}
+				}
+				t.Errorf("%s:%d menyebut %s - tco4: modul ini memakai tabel warisan", filepath.ToSlash(jalur), i+1, m)
 			}
 			return nil
 		})

@@ -4,7 +4,7 @@ package models
 //
 // Untuk apa berkas ini: aturan MURNI (tanpa Oracle) yang mengisi kolom hasil
 // peserta polis Type "QR" dari SUM_INSURED, parameter produk Master Product
-// Name Life, master rate (`RATE_LIFE`) dan master risk (`RIRISK_LIFE`).
+// Name Life, master rate (`M_RATE_LIFE`, dulu view `RATE_LIFE`) dan master risk (tabel `RIRISK_LIFE`, dulu view).
 // Type lain TIDAK melewati berkas ini - nilainya tetap dari CSV.
 //
 // Acuan: `SetRateLIfePremium_Act` langkah 1-10.4 (Find RIRATE / RIRISK, set
@@ -85,10 +85,11 @@ type PlanProdukQR struct {
 	RIRateID string
 }
 
-// BarisRateQR - satu baris view `RATE_LIFE` (semua kolom teks di view).
+// BarisRateQR - satu baris `M_RATE_LIFE` (dulu view `RATE_LIFE`); semua kolom teks.
 type BarisRateQR struct{ ID, Gender, Age, Contract, Rate string }
 
-// BarisRiskQR - satu baris view `RIRISK_LIFE`.
+// BarisRiskQR - satu baris tabel `RIRISK_LIFE` (dulu view). Risk = teks angka: dulu teks JSON berkoma ("921,9"), sejak
+// migrasi inti 940 NUMBER dibaca `TM9` bertitik ("921.9") - angkaMaster menerima keduanya, hasil hitung SAMA.
 type BarisRiskQR struct{ ID, Year, Contract, Risk string }
 
 // rateQR / riskQR - baris master yang sudah diurai. nil = sel kosong.

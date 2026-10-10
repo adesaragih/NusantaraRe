@@ -105,14 +105,15 @@ func TokenStorageOracle(svc inti.Akar, garam string) TokenStorage {
 }
 
 // Token memakai ulang token yang masih berlaku, atau menerbitkan yang baru.
+//
+// ⚠️ Urutan procedure-nya: token berlaku dipakai ulang TANPA garam; garam hanya bahan token BARU (temuan 08-10-2026:
+// DEV punya token berlaku, tetapi upload lampiran Bordereaux ditolak "STORAGE_TOKEN_SALT kosong" karena garam dulu
+// diperiksa paling awal).
 func (t tokenOracle) Token(ctx context.Context, tx *db.Tx,
 	appName, pengguna string, saat time.Time) (string, error) {
 
 	if strings.TrimSpace(appName) == "" {
 		return "", ErrAppNameKosong
-	}
-	if strings.TrimSpace(t.garam) == "" {
-		return "", ErrGaramTokenKosong
 	}
 	lama, err := t.pohon.TokenBerlaku(ctx, tx, appName, saat)
 	if err != nil {
@@ -120,6 +121,9 @@ func (t tokenOracle) Token(ctx context.Context, tx *db.Tx,
 	}
 	if lama != "" {
 		return lama, nil
+	}
+	if strings.TrimSpace(t.garam) == "" {
+		return "", ErrGaramTokenKosong
 	}
 	baru, err := RakitToken(t.garam, saat)
 	if err != nil {

@@ -161,6 +161,10 @@ var (
 	ErrDokumenRusak = errors.New("models: DATA_JSON tidak dapat diurai sebagai objek JSON")
 	// ErrBukanTreatyIn - dokumen lini lain (dihitung saja).
 	ErrBukanTreatyIn = errors.New("models: dokumen bukan polis Treaty In")
+	// ErrBarisAplikasiBaru - baris json_polis yang ditulis Utility1 APLIKASI BARU (`repository/produksi.go`: IDPEGA =
+	// ID kasus polos `EDMT-<n>`, DATA_JSON tidak ditulis). Bukan dokumen Pega lama - generasinya sudah di tabel flat
+	// (dihitung saja; ditemukan popup Copy Old DEV 07-10-2026).
+	ErrBarisAplikasiBaru = errors.New("models: baris json_polis tulisan aplikasi baru (tanpa DATA_JSON), bukan dokumen Pega")
 	// ErrBukanGenerasiEndorsemen - PRODKE 0: generasi NB, milik pemuat NB tiket 22 (dihitung saja).
 	ErrBukanGenerasiEndorsemen = errors.New("models: generasi NB (PRODKE 0) - milik pemuat NB tiket 22")
 	// ErrProdKe - PRODKE kosong atau bukan bilangan.
@@ -411,19 +415,45 @@ const (
 // pmPolaPyIDEDM - pyID kasus endorsemen: `EDMT-<nomor>` (`pyWorkIDPrefix=="EDMT-"`, EDMChooseBusiness_Act 11-12).
 var pmPolaPyIDEDM = regexp.MustCompile(`^` + regexp.QuoteMeta(AwalanKasus) + `\d+$`)
 
-// IDKasusDariIDPegaEDM mengambil pyID dari `pyWorkPage.pzInsKey` kasus endorsemen ("<kelas> <pyID>"). Kelas wajib
-// `KelasKerjaEDM` (tanpa beda huruf) dan pyID wajib `EDMT-<nomor>`; selain itu ErrIDPega - tidak ditebak.
+// BarisAplikasiBaru - baris json_polis tulisan Utility1 aplikasi baru: IDPEGA tanpa kelas Pega (tanpa spasi; Pega selalu
+// `<kelas> <pyID>`) DAN DATA_JSON kosong. Dokumen Pega ber-kelas tanpa JSON tetap galat (`ErrDokumenRusak`).
+func BarisAplikasiBaru(b BarisJSONPolis) bool {
+	id := strings.TrimSpace(b.IDPega)
+	return id != "" && !strings.Contains(id, " ") && len(bytes.TrimSpace(b.DataJSON)) == 0
+}
+
+// KelasGrupKerjaPega - kelas di depan pyID pada `pzInsKey` kasus Pega. DEV 07-10-2026 (DATAPEGA.PC_ASM_FW_GISFW_WORK):
+// 4 kasus EDMT dan 264 kasus NB berkunci `ASM-FW-GISFW-WORK <pyID>` - kelas GRUP, bukan kelas kerjanya
+// (`KelasKerjaEDM` tetap PXOBJCLASS-nya).
+const KelasGrupKerjaPega = "ASM-FW-GISFW-WORK"
+
+// PanjangIDKasus - lebar kolom ID kasus (T_WORK_POLIS.ID, T_GENERAL_POLIS_TREATY.ID / OLD_POLIS_ID, T_POLIS_*.POLIS_ID:
+// VARCHAR2(32) di DEV 07-10-2026). pzInsKey kasus Pega terpanjang di DEV: 27 karakter.
+const PanjangIDKasus = 32
+
+// PyIDKasus - pyID sebuah ID kasus: ID salinan dokumen Pega = pzInsKey utuh (`<kelas> <pyID>`), ID aplikasi baru = pyID.
+func PyIDKasus(id string) string {
+	s := strings.TrimSpace(id)
+	return s[strings.LastIndex(s, " ")+1:]
+}
+
+// IDKasusDariIDPegaEDM - ID kasus salinan dokumen Pega = IDPEGA (`pyWorkPage.pzInsKey`) UTUH, tidak dipotong.
+// ⛔ Perintah work owner 07-10-2026: "IDPEGA BAWAAN PEGA JANGAN DI POTONG, BERLAKU UNTUK SEMUA NB TREATY DAN EDM
+// TREATY" - riwayat HISTORYAKSEPTASIPEGA / HISTORYAKSEPTASIPRODUCTION berkas Pega berkunci pzInsKey yang sama
+// (`KunciInstans`). Diperiksa, tidak ditebak (ErrIDPega): kelas = `KelasGrupKerjaPega` (tanpa beda huruf; RALAT
+// 07-10-2026 - dulu `KelasKerjaEDM`, yang tidak pernah dipakai pzInsKey), pyID `EDMT-<nomor>`, panjang <=
+// `PanjangIDKasus`.
 func IDKasusDariIDPegaEDM(idpega string) (string, error) {
 	s := strings.TrimSpace(idpega)
 	i := strings.LastIndex(s, " ")
 	if i <= 0 {
 		return "", fmt.Errorf("%w: %q", ErrIDPega, idpega)
 	}
-	kelas, id := strings.TrimSpace(s[:i]), s[i+1:]
-	if !strings.EqualFold(kelas, KelasKerjaEDM) || !pmPolaPyIDEDM.MatchString(id) || len(id) > 32 {
+	kelas, py := strings.TrimSpace(s[:i]), s[i+1:]
+	if !strings.EqualFold(kelas, KelasGrupKerjaPega) || !pmPolaPyIDEDM.MatchString(py) || len(s) > PanjangIDKasus {
 		return "", fmt.Errorf("%w: %q", ErrIDPega, idpega)
 	}
-	return id, nil
+	return s, nil
 }
 
 // pmPeriksaNilai menolak nilai yang akan ditolak konversi repository (`repository.nilaiTulis`) - uji-kering
@@ -591,6 +621,9 @@ func pmBuangOldData(h *Halaman) {
 // lahir dari varian rumus berlapis Pega: teks desimal dibawa apa adanya (pembulatan hanya di Oracle pada desimal
 // kesebelas, NUMBER(38,10)). Tidak ada pengisian nilai: EndDate / ProductionDate kosong tetap kosong.
 func PecahDokumenEDM(b BarisJSONPolis) (HasilPecahEDM, error) {
+	if BarisAplikasiBaru(b) {
+		return HasilPecahEDM{}, ErrBarisAplikasiBaru
+	}
 	m, err := pmUrai(b.DataJSON)
 	if err != nil {
 		return HasilPecahEDM{}, err
@@ -702,7 +735,7 @@ func PecahDokumenEDM(b BarisJSONPolis) (HasilPecahEDM, error) {
 		h.Setel(pmJalurEDMNo, hasil.EDMNo)
 	}
 	h.Setel(pmJalurProdKe, strconv.Itoa(prodke))
-	hasil.Usulan = UsulanDokumenLamaEDM(id, h)
+	hasil.Usulan = UsulanDokumenLamaEDM(PyIDKasus(id), h)
 	return hasil, nil
 }
 

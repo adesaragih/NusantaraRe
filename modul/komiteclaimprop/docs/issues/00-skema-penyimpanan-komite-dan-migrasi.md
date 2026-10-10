@@ -1,6 +1,14 @@
 # 00: Skema penyimpanan komite — tiga tabel + dua kolom usul — **PREFACTOR**
 
-**Status:** ready-for-agent
+**Status:** dibangun — migrasi 680 + 681 (`-migrate` oleh work owner) *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+
+> **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
+>
+> - Judul lama *"tiga tabel + dua kolom usul"* — ketiga tabel komite **sudah ada** (`claimlife/013`, `komiteclaimlife/030`); isi tiket ini kini `ADD` dua kolom usul (`CHAR(1) DEFAULT '0' NOT NULL` + CHECK, migrasi 680) dan penggantian indeks (681). Nol `CREATE TABLE`.
+> - Kalimat lama *"index unik"* `ADJUSTMENT_ID` — keputusan work owner 08-10-2026: **indeks biasa** (`IX_GENERAL_KOMITE_ADJ`). ID adjustment Prop (`SEQ_T_CLAIM`) dan Life (`SEQ_CLAIMLF_ADJ`) sama-sama angka polos. Uji lama *"dua kasus komite tidak bisa menunjuk baris yang sama"* kini dijaga `KOMITE_ID UNIQUE` di `T_CLAIM_ADJUSTMENT` (`UQ_CLAIM_ADJUSTMENT_KOMITE`, penautan `AND KOMITE_ID IS NULL`) dan `T_CLAIMLF_ADJUSTMENT` (`UX_ADJ_KOMITE_ID`).
+> - Kalimat lama *"20 digit seluruhnya, 8 di belakang koma"* — DDL yang ada kini `NUMBER(38,10)` (keputusan work owner 07-10-2026); modul ini tidak membuat kolom uang.
+> - Kalimat lama *"memakai ulang seam Claim Prop, tidak menambah seam baru"* — seam UJI tetap milik Claim Prop; batas MODUL kini kontrak baru `kontrak.KlaimTreatyKomite` (keputusan work owner 08-10-2026).
+
 
 **Blocked by:** **skema klaim Claim Prop** — `T_WORK_CLAIM` harus sudah ada, karena baris komite
 tinggal di tabel yang sama. Bukan penyelesaian modul Claim Prop, hanya tabelnya.

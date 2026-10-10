@@ -14,11 +14,17 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | GROUPMENU | `TREATY` |
 | Pemilik | `@PEMILIK-PREMIUMLISTLIFE` |
 | Status | dimigrasi |
-| Rentang migrasi | `050-099` |
-| Slot menu | `954-955` |
+| Rentang migrasi | `050-079` |
+| Slot menu | `954-954` |
 | Prefix rute API | `/api/polis-life` |
 | Kontrak disediakan | `kontrak.PembacaPolis` (dipakai `claimlife`) |
 | Kontrak dipakai | — |
+
+**Jatah dikecilkan** (keputusan work owner 08-10-2026, perlu persetujuan tim inti (CODEOWNERS)): rentang `050-099` →
+`050-089` dan slot `954-955` → `954-954`; `090-099` dan slot `955` diserahkan ke modul `causeoflosslife`
+(`modul/causeoflosslife/MODUL.md`). Dikecilkan lagi (keputusan work owner 08-10-2026, prompt Disease / Cover K0, perlu
+persetujuan tim inti (CODEOWNERS)): `050-089` → `050-079`; `080-084` diserahkan ke modul `diseaselife` dan `085-089` ke
+modul `coverlife`. Nomor yang diserahkan tidak pernah terpakai di sini (terpakai `050–064`).
 
 `Pemilik` adalah penanda pemegang modul. Wilayah berkas yang boleh disentuh cabang
 `module/<nama>` dijaga `.github/workflows/penjaga-wilayah-cabang.yml` - CODEOWNERS
@@ -34,8 +40,9 @@ dipensiunkan 1 Oktober 2026.
 
 ## Migrasi
 
-Rentang `050-099` *(ralat 30-09-2026: dulu tertulis `050–079` di panduan deploy)*, terpakai
-`050–064`. Slot menu `954-955` tidak terpakai: baris modul ini sudah
+Rentang `050-079` *(ralat 30-09-2026: dulu tertulis `050–079` di panduan deploy; sempat `050-099` lalu `050-089` -
+dikecilkan keputusan work owner 08-10-2026, lihat di atas)*, terpakai `050–064`. Slot menu `954-954` tidak terpakai
+(`955` diserahkan ke `causeoflosslife`): baris modul ini sudah
 `DIMIGRASI = '1'` sejak 900, dan menu datar (30-09-2026) tidak punya butir — slot hanya menyalakan
 `DIMIGRASI` (`APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6). Nama berkas migrasi yang sudah ada tidak pernah diubah: `T_MIGRASI` mencatat nama.
 
@@ -82,3 +89,12 @@ Nilainya DIBACA dari sumber konstantanya, tidak diketik ulang.
 ## Brief acuan
 
 `PROMPT-IMPLEMENTASI-MODUL-PREMIUMLIST-LIFE.md`, `PROMPT-IMPLEMENTASI-TIGA-MODUL-GILIRAN-*.md` (folder `OUTPUT_HASIL_RNM\`).
+
+## RALAT 07-10-2026 — rincian rate R/I Rate Life menjadi tabel flat `M_RATE_LIFE`
+
+Keputusan work owner 07-10-2026 (`modul/riratelife/MODUL.md` RALAT R7): view `RATE_LIFE` DIBUANG migrasi inti 930;
+`M_RATE_LIFE` kini tabel flat berkolom PERSIS seperti view lama (`ID, IDUSEDBY, USEDBY, TYPE, GENDER, CONTRACT, AGE,
+RATE`, semua teks, nilai Pega apa adanya - RATE berkoma maupun bertitik desimal). Modul ini membaca kolom yang sama
+dari `M_RATE_LIFE` (`repository/polis_rincianproduk.go` (`ViewRateProduk`) dan `repository/polis_hitungqr.go` (`RateHitungQR`); rate produk dan Hitung QR) - perilaku tidak berubah, tetap baca-saja, nol JSONDATA. Rujukan `RATE_LIFE` di
+dokumen modul ini sebelum tanggal itu berarti view lama. ⚠️ Untuk tinjauan pemilik modul dan tim inti
+(`modul/riratelife/docs/PR-RIRATELIFE-FLAT.md` bab "Perlu tinjauan tim inti").

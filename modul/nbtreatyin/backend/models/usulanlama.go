@@ -98,7 +98,7 @@ func petaUsulan(b Baris, k kasusUsulan) UsulanProduksi {
 
 // UsulanDokumenLama memetakan baris SuggestList dokumen lama yang `IsSave`-nya
 // kosong (langkah 2.1) menjadi baris riwayat produksi. `id` = pyID kasus lama
-// (`IDKasusDariIDPega`); `.Date` baris sudah dibaca `BacaTanggalLama` oleh
+// (`PyIDKasus`); `.Date` baris sudah dibaca `BacaTanggalLama` oleh
 // pemecah. Halaman tidak diubah: penanda IsSave milik jalur biasa.
 func UsulanDokumenLama(id string, h *Halaman) []UsulanProduksi {
 	q := HalamanPolis + ".QuotationData."

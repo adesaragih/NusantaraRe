@@ -1,7 +1,8 @@
 // Klien Bordereaux - `/api/bordereaux` (`modul/bordereaux/backend/handlers/rute.go`). Rutenya hanya terbuka bagi
 // pemegang menu `bordereaux`.
 
-import { minta } from '../../../inti/frontend/klien'
+import { BATAS_WAKTU_MS, kegagalanDari, minta, mintaFormulir, rakitURL, unduhBerkasBeridentitas } from '../../../inti/frontend/klien'
+import { headerIdentitas } from '../../../inti/frontend/store/sesi'
 
 export const PREFIX_BDX = '/api/bordereaux'
 
@@ -36,6 +37,8 @@ export interface Hak {
   hapus: boolean
   submit: boolean
   putuskan: boolean
+  /** Upload File / Delete lampiran (`services.BolehLampiran`); terisi saat berkas dibuka. */
+  lampiran: boolean
 }
 
 export interface BarisDaftar extends Header {
@@ -231,4 +234,90 @@ export function ambilLama(): Promise<{ daftar: BerkasLama[] }> {
 /** Process Copy - superadmin; hasil per ID. */
 export function salinLama(ids: string[]): Promise<JawabanSalinLama> {
   return minta(`${PREFIX_BDX}/lama/salin`, { metode: 'POST', badan: { ids }, batasWaktuMs: BATAS_WAKTU_LAMA_MS })
+}
+
+// ---------------------------------------------------------------------------- lampiran
+// `AttachmentsBdx` / `AttachmentDetailBdx` - penyimpanan bersama `inti/backend/penyimpanan` (keputusan work owner
+// 08-10-2026).
+
+/** Satu kategori grid lampiran (`GetKategoryDocBDX_SQL`: kategori master + jumlah lampiran berkas ini). */
+export interface KategoriLampiran {
+  id: string
+  nama: string
+  cacah: number
+}
+
+/** Satu lampiran (`AttachDocumentBdx_SQL`). Kunci objek penyimpanan TIDAK dikirim backend. */
+export interface Lampiran {
+  id: string
+  kategoriId: string
+  /** Kolom Type popup (`CATEGORY`). */
+  kategori: string
+  fileName: string
+  /** `FILEMIMETYPE` - ekstensi huruf kecil, mis. `xlsx`. */
+  ekstensi: string
+  username: string
+}
+
+function jalurLampiran(id: string, kategori?: string): string {
+  const dasar = `${PREFIX_BDX}/berkas/${encodeURIComponent(id)}/lampiran`
+  return kategori === undefined ? dasar : `${dasar}/${encodeURIComponent(kategori)}`
+}
+
+function jalurSatuLampiran(id: string, l: Lampiran): string {
+  return `${jalurLampiran(id, l.kategoriId)}/${encodeURIComponent(l.id)}`
+}
+
+/** Grid kategori (`GetKategotyDocBdx`). */
+export function ambilKategoriLampiran(id: string): Promise<{ daftar: KategoriLampiran[] }> {
+  return minta(jalurLampiran(id))
+}
+
+/** Popup View File (`getAttcachmentList`). */
+export function ambilLampiran(id: string, kategori: string): Promise<{ daftar: Lampiran[] }> {
+  return minta(jalurLampiran(id, kategori))
+}
+
+/** Upload File - satu berkas per permintaan (`AttachDocBdx_Post` mengulang setiap berkas). */
+export function unggahLampiran(id: string, kategori: string, berkas: File): Promise<Lampiran> {
+  const isi = new FormData()
+  isi.append('berkas', berkas)
+  return mintaFormulir(jalurLampiran(id, kategori), isi)
+}
+
+/** Tautan nama berkas (`DownloadAttachmentBdx`) - fetch beridentitas, bukan pranala. */
+export function unduhLampiran(id: string, l: Lampiran): Promise<void> {
+  return unduhBerkasBeridentitas(`${jalurSatuLampiran(id, l)}/isi`, l.fileName)
+}
+
+/**
+ * Isi satu lampiran sebagai Blob - rute unduh yang ADA (`DownloadAttachmentBdx`), berheader identitas - untuk `View`
+ * pdf / gambar di popup penampil (permintaan work owner 08-10-2026, seperti Product Name Life).
+ */
+export async function ambilIsiLampiran(id: string, l: Lampiran): Promise<Blob> {
+  const kendali = new AbortController()
+  const jam = setTimeout(() => {
+    kendali.abort()
+  }, BATAS_WAKTU_MS)
+  try {
+    const jawab = await fetch(rakitURL(`${jalurSatuLampiran(id, l)}/isi`), {
+      method: 'GET',
+      headers: { ...headerIdentitas() },
+      signal: kendali.signal,
+    })
+    if (!jawab.ok) throw kegagalanDari(jawab.status, await jawab.text())
+    return await jawab.blob()
+  } finally {
+    clearTimeout(jam)
+  }
+}
+
+/** View Office Online - URL bertanda tangan untuk penampil (`DownloadAttachmentBdx` ViewOffice=true). */
+export function tautanOffice(id: string, l: Lampiran): Promise<{ url: string }> {
+  return minta(`${jalurSatuLampiran(id, l)}/office`)
+}
+
+/** Delete (`DeleteAttachmentBdx`). */
+export function hapusLampiran(id: string, l: Lampiran): Promise<{ ok: boolean }> {
+  return minta(`${jalurSatuLampiran(id, l)}/hapus`, { metode: 'POST' })
 }

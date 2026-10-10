@@ -87,16 +87,10 @@ describe('paritas layar', () => {
     expect(KODE).not.toContain('.filter(')
     expect(KODE).toContain("from '../proporsi'")
   })
-  it('tiket 12: panel lampiran hanya untuk tahun yang sudah ber-ID, bukan syarat simpan', () => {
-    expect(KODE).toContain('<PanelLampiranTahun tahunID={form.id} />')
-    expect(KODE).toMatch(/form\.id !== '' &&/)
+  it('fitur lampiran dibuang (keputusan work owner 08-10-2026): form tahun tanpa panel lampiran', () => {
+    expect(KODE).not.toMatch(/[Ll]ampiran|Attachment/)
     // [keputusan work owner 30-09-2026] catatan "simpan dulu" tidak tampil.
     expect(KODE).not.toContain('simpanDulu')
-    // Simpan tahun tidak menunggu lampiran: fungsi simpan tidak menyebut lampiran.
-    const awal = KODE.indexOf('async function simpan')
-    const simpan = KODE.slice(awal, KODE.indexOf('\n  }\n', awal))
-    expect(simpan).toContain('simpanTahunTreaty(')
-    expect(simpan).not.toMatch(/[Ll]ampiran/)
   })
 
   it('panel rinci SATU saja, dan selama terbuka tabel utama tidak dirender (keputusan work owner 30-09-2026)', () => {

@@ -238,7 +238,8 @@ func (g *Gudang) sisipAnak(ctx context.Context, tx *db.Tx, a anakTabel, induk st
 // ------------------------------------------------------------------ nomor polis
 
 // SetelNomorPolis menulis NOPOLIS SEKALI (AC 74): berkas yang sudah bernomor
-// ditolak, dan indeks unik (NOPOLIS, PRODKE) menolak nomor kembar (AC 31).
+// ditolak, dan indeks unik (NOPOLIS, PRODKE) menolak nomor kembar (AC 31) -
+// ORA-00001 dijawab ErrNomorPolisDipakai.
 func (g *Gudang) SetelNomorPolis(ctx context.Context, tx *db.Tx, id, nopol string) error {
 	t, err := g.nama(models.TabelGeneralPolis.Nama)
 	if err != nil {
@@ -247,6 +248,9 @@ func (g *Gudang) SetelNomorPolis(ctx context.Context, tx *db.Tx, id, nopol strin
 	hasil, err := jalankan(ctx, tx, "menyimpan nomor polis",
 		fmt.Sprintf(`UPDATE %s g SET NOPOLIS = :1 WHERE g.ID = :2 AND g.NOPOLIS IS NULL AND %s`, t, syaratTerbuka(t)), nopol, id)
 	if err != nil {
+		if strings.Contains(err.Error(), "ORA-00001") {
+			return ErrNomorPolisDipakai // teks ORA / nama skema tidak sampai ke layar
+		}
 		return err
 	}
 	if n, _ := hasil.RowsAffected(); n != 1 {

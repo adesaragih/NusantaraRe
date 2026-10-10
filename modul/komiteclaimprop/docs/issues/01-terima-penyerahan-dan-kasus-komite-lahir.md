@@ -1,6 +1,12 @@
 # 01: Terima penyerahan dari Claim Prop — kasus komite lahir
 
-**Status:** ready-for-agent
+**Status:** dibangun sebagai PENERIMAAN (Claim Prop melahirkan kasus) *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+
+> **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
+>
+> - Judul lama *"kasus komite lahir"* dan kriteria *"Penyerahan satu baris penyesuaian **melahirkan** baris komite"* — opsi B 07-10-2026: Claim Prop (`AddKomiteTreatyChild_ACT`, `BuatKasusKomite`) melahirkan kasus `TKMT-` (`LINI='PROP'`, `KOMITE_LOOP` = cacah anggota, `KOMITE_COUNT = 1`, tangga approval `0`). Modul ini **tidak** melahirkan kasus; tiket ini kini = kasus `TKMT-` muncul di daftar kerja penyetuju pertama.
+> - Kalimat lama *"kontrak muatan Claim Prop"* — kontrak baru `kontrak.KlaimTreatyKomite` (keputusan work owner 08-10-2026).
+
 
 **Blocked by:** **00 (skema — PREFACTOR)** · **kontrak muatan penyerahan Claim Prop** — bukan
 penyelesaian modul Claim Prop.

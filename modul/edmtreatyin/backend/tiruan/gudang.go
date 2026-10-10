@@ -12,7 +12,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strings"
 	"sync"
 
 	"nusantarare/inti/backend/db"
@@ -292,7 +291,11 @@ func (g *Gudang) DaftarKasus(ctx context.Context, s models.SaringanKasus) ([]mod
 		if selesai != s.Selesai {
 			continue
 		}
-		if s.Cari != "" && !strings.Contains(models.NilaiQuotation(h, "OldPolicyNo"), s.Cari) {
+		pt := func(m string) string { return h.Ambil(models.HalamanPolis + "." + m) }
+		if !models.CocokCari(s.Cari, id, pt("NoOffer"), g.Generasi[id].NoPolis, models.NilaiQuotation(h, "OldPolicyNo"),
+			g.Generasi[id].EDMNo, pt("InsuredName"), models.NilaiQuotation(h, "InsuredName"), models.NilaiQuotation(h, "BusinessName"),
+			pt("SOBName"), pt("CedingCoName"), models.NilaiQuotation(h, "MarketingName"), pt("TreatyGroupName"), pt("BizName"),
+			g.NamaPembuat[id]) {
 			continue
 		}
 		if s.Posisi != "" && k.PositionNote != s.Posisi {
@@ -736,6 +739,24 @@ func (g *Gudang) CatatUsulan(ctx context.Context, tx *db.Tx, idPega string, bari
 		g.Usulan = append(g.Usulan, BarisRiwayatProduksi{IDPega: idPega, UsulanProduksi: b})
 	}
 	return nil
+}
+
+// AdaRiwayatIDPega = repository.AdaRiwayatIDPega: IDPEGA sudah punya baris SuggestList (Usulan) atau History
+// (Riwayat).
+func (g *Gudang) AdaRiwayatIDPega(_ context.Context, _ *db.Tx, idPega string) (bool, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	for _, u := range g.Usulan {
+		if u.IDPega == idPega {
+			return true, nil
+		}
+	}
+	for _, r := range g.Riwayat {
+		if r.IDPega == idPega {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (g *Gudang) NamaTampilan(ctx context.Context, loginID string) (string, error) {

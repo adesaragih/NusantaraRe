@@ -50,15 +50,14 @@ func daftarkan(mux *http.ServeMux, layanan func() *services.Layanan, adaDB func(
 		})
 	}
 	daftarkanBaca(pasang)
+	daftarkanDraf(pasang)
 }
 
-// daftarkanBaca - dua jalur baca.
+// daftarkanBaca - enam jalur, SEMUANYA baca.
 //
-// ⛔ Ini SELURUH permukaan HTTP modul ini hari ini, dan itu disengaja. Papan
-// tiket modul ini menyatakan `L-4` ("tidak ada spesifikasi layar di mana pun")
-// dan melarang mengarang layar untuk memenuhi bentuk irisan tegak. Jalur SIMPAN
-// - yang menegakkan materialitas (tiket 02) dan batas tanggal berlaku (tiket
-// 03) - lahir bersama spesifikasinya, bukan sebelum.
+// ⛔ Nol jalur tulis, dan itu disengaja. Jalur SIMPAN - yang menegakkan
+// materialitas (tiket 02) dan batas tanggal berlaku (tiket 03) - belum
+// dibangun; layar mematikan tombol tulisnya alih-alih menyembunyikannya.
 func daftarkanBaca(pasang func(string, rute)) {
 	pasang("GET "+Prefix+"/kontrak", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		k, err := l.DaftarKontrak(r.Context(), p)
@@ -74,6 +73,38 @@ func daftarkanBaca(pasang func(string, rute)) {
 		}
 		v, err := l.RantaiVersi(r.Context(), p, id)
 		tulis(w, v, err)
+	})
+	// ⛔ Pengenalnya TEKS, dan tidak diuraikan menjadi angka seperti rute di
+	// atas. `M_ATTACHMENTTREATY_2.TREATYID` adalah `VARCHAR2(100)` milik
+	// sistem lama; menuntutnya berupa angka akan menolak pengenal yang sah.
+	pasang("GET "+Prefix+"/kontrak-warisan/{id}/lampiran", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		lam, err := l.LampiranKontrakWarisan(r.Context(), p, r.PathValue("id"), r.URL.Query().Get("jenis"))
+		tulis(w, lam, err)
+	})
+	// ⛔ Seam TERPISAH dari lampiran: keduanya dibaca dari tabel berbeda,
+	// dan kegagalan salah satunya tidak boleh mengosongkan yang lain.
+	pasang("GET "+Prefix+"/kontrak-warisan/{id}/riwayat", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		riw, err := l.RiwayatKontrakWarisan(r.Context(), p, r.PathValue("id"))
+		tulis(w, riw, err)
+	})
+	// Panel `Existing Policy for Master ID` — `TREATYINPRODUCTION`, seam
+	// terpisah: gagal membaca polis tidak mengosongkan layar detail.
+	pasang("GET "+Prefix+"/kontrak-warisan/{id}/polis", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		polis, err := l.PolisMasterWarisan(r.Context(), p, r.PathValue("id"))
+		tulis(w, polis, err)
+	})
+	// ⭐ Layar Adjustment — `Section/InputTreatyInAdjustment.xml`: grid
+	// daftar (`DATASHOW != 1`) dan satu penyesuaian (`DATASHOW = 1`).
+	pasang("GET "+Prefix+"/penyesuaian-warisan", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		d, err := l.DaftarPenyesuaianWarisan(r.Context(), p)
+		tulis(w, d, err)
+	})
+	// ⛔ Pengenalnya TEKS dan BERGARIS MIRING (`1000080/R02`), jadi ia
+	// dibawa lewat parameter kueri, bukan segmen jalur: segmen `{id}` tidak
+	// dapat memuat `/`, dan `%2F` di jalur dinormalisasi sebagian proksi.
+	pasang("GET "+Prefix+"/penyesuaian-warisan/satu", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		d, err := l.PenyesuaianWarisan(r.Context(), p, r.URL.Query().Get("id"))
+		tulis(w, d, err)
 	})
 }
 
@@ -96,7 +127,7 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusForbidden, "insufficient permission")
 	case errors.Is(err, services.ErrIDTidakSah):
 		galat.Tulis(w, http.StatusBadRequest, services.Pesan(err))
-	case errors.Is(err, services.ErrKontrakTidakAda):
+	case errors.Is(err, services.ErrKontrakTidakAda), services.PenyesuaianTidakAda(err):
 		galat.Tulis(w, http.StatusNotFound, services.Pesan(err))
 	default:
 		// Galat tak terduga: sebab aslinya ke log server, kalimat umum ke layar.

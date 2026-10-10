@@ -75,10 +75,10 @@ func TestLaporanArsipMedanTanpaKolomBerkasCSV(t *testing.T) { // F3; K17, AC 57,
 		ada[strings.Join(b, "|")] = true
 	}
 	for _, b := range [][]string{
-		{"UJI-77", "PolicyTreatyIn.UJIMedanFiktif", "UJI-a, \"b\"\nbaris kedua", KeputusanBelumDiputuskan}, // nilai utuh
-		{"UJI-77", "PolicyTreatyIn.QuotationData.UJIFiktifQuotation", "", KeputusanBelumDiputuskan},
-		{"UJI-77", "PolicyTreatyIn.Show", "true", "dibuang: keadaan_layar"},
-		{"UJI-77", "PolicyTreatyIn.TotalPremium", "592629512.880000276", "dibuang: turunan"},
+		{"ASM-FW-GISFW-WORK-NB UJI-77", "PolicyTreatyIn.UJIMedanFiktif", "UJI-a, \"b\"\nbaris kedua", KeputusanBelumDiputuskan}, // nilai utuh
+		{"ASM-FW-GISFW-WORK-NB UJI-77", "PolicyTreatyIn.QuotationData.UJIFiktifQuotation", "", KeputusanBelumDiputuskan},
+		{"ASM-FW-GISFW-WORK-NB UJI-77", "PolicyTreatyIn.Show", "true", "dibuang: keadaan_layar"},
+		{"ASM-FW-GISFW-WORK-NB UJI-77", "PolicyTreatyIn.TotalPremium", "592629512.880000276", "dibuang: turunan"},
 	} {
 		if !ada[strings.Join(b, "|")] {
 			t.Errorf("baris arsip %q tidak ada di %q", b, baris)
@@ -115,6 +115,10 @@ func TestLaporanGalatBerkasCSVDanTanggalAmbiguDihitung(t *testing.T) { // AC 58,
 		t.Fatal(err)
 	}
 	l.Lewat(ErrBukanTreatyIn)
+	l.Lewat(ErrBarisAplikasiBaru)
+	if r := l.Ringkasan(); r.BarisAplikasiBaru != 1 || r.BukanTreatyIn != 1 || r.DokumenGagal != 2 {
+		t.Fatalf("baris aplikasi baru dihitung terpisah, bukan galat: %+v", r)
+	}
 	if err := l.Tutup(); err != nil {
 		t.Fatal(err)
 	}

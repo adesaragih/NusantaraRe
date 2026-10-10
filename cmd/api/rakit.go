@@ -188,6 +188,15 @@ var ruteDipinjam = map[string][]string{
 	// Panel Data Polis Claim Life membaca polis versi berjalan dari PremiumList
 	// Life (`modul/claimlife/frontend/api.ts`, butir av).
 	"GET /api/polis-life/ringkas": {"claimlife"},
+	// Tombol "+" Consultant / Adjuster Claim Prop menambah master adjuster lewat API modul Adjuster Consultant
+	// (Pega MstAdjusterConsultant; keputusan work owner 08-10-2026, `modul/claimprop/frontend/api.ts`).
+	"POST /api/adjuster-consultant": {"claimprop"},
+	// Komite Claim Prop tanpa menu sendiri: tabel komite di inbox Claim Prop dan layar komitenya (jendela
+	// `JENDELA_DIPINJAM` frontend/App.tsx) dipakai pemegang menu Claim Prop; siapa yang boleh memutus tetap dijaga
+	// layanan komite (anggota workbasket tingkat berjalan). Keputusan work owner 09-10-2026.
+	"GET /api/komite-claim-prop/kasus":                {"claimprop"},
+	"GET /api/komite-claim-prop/kasus/{id}":           {"claimprop"},
+	"POST /api/komite-claim-prop/kasus/{id}/putuskan": {"claimprop"},
 }
 
 // izinMenu menjawab apakah permintaan ini boleh memakai rute milik `pemilik`,

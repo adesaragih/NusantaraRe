@@ -12,8 +12,9 @@ package services
 //	              atasan TIDAK boleh mengubahnya - penyimpangan sadar.
 //	              + tab New Data `PropNewData2` (wadah `.IsNewPolicyNonProp != 1`): sel uang (CountOGPONP_Act,
 //	              CountResult1_Act, CountResult2Ogp_act, CountResult1Onp_Act, CountResult2Onp_act + refresh
-//	              PropValueDifference = EDMTCalculateTreatyDifference), tombol Calculate Value Difference, grid
-//	              spreading %Share (CountSpreading_Act), `.Installment` (FillPaymentInstallment); S12 `.Installment`
+//	              PropValueDifference = EDMTCalculateTreatyDifference), grid spreading %Share (CountSpreading_Act)
+//	              dan `.Installment` (FillPaymentInstallment) - keduanya + EDMTCalculateTreatyDifference karena tombol
+//	              Calculate Value Difference (S24) DIBUANG (WO 08-10-2026); S12 `.Installment`
 //	              NonProp baru (FillPaymentInstallmentEDMT)
 //
 // Grid `.ListInstallment` ber-edit mode readOnly (semua tab): CountPctInstallment_Act / SetValidateInstallment_Act di

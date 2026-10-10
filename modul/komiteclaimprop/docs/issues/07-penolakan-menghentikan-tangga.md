@@ -1,6 +1,11 @@
 # 07: Penolakan menghentikan tangga dan menolak sisa penyetuju
 
-**Status:** ready-for-agent
+**Status:** dibangun *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+
+> **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
+>
+> - S25 (`KomiteCount := KomiteLoop`, `AcceptanceStatus := 2`, `AktifButton := 0`), S26.1 sisa tangga menunggu -> 2, S27 Notes; `FlagOnGoingCommitte` dibuang (keputusan 27).
+
 
 **Blocked by:** **06 (tangga maju atau selesai)**
 
