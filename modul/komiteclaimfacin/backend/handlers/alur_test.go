@@ -7,8 +7,11 @@ package handlers_test
 
 import (
 	"bytes"
+	"compress/zlib"
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -28,12 +31,14 @@ type uji struct {
 	t   *testing.T
 	g   *tiruan.Gudang
 	a   *tiruan.Acuan
+	b   *tiruan.Berkas
 	srv http.Handler
 }
 
 func siap(t *testing.T, produksi bool) *uji {
 	t.Helper()
 	g, a := tiruan.Baru(), tiruan.AcuanBaru()
+	b := g.BerkasBaru()
 	a.Roster = tiruan.RosterUji()
 	a.JenisReas["10003"] = "UJI QUOTA SHARE"
 	a.Nama["UJI-SPVA"], a.Nama["UJI-HEAD"] = "UJI Supervisor", "UJI Kepala"
@@ -41,8 +46,9 @@ func siap(t *testing.T, produksi bool) *uji {
 	a.Anggota[models.WorkbasketDeptHead] = []string{"uji.head@contoh.invalid"}
 	l := services.Baru(g, a, g.Klaim, func() time.Time { return saatUji }, produksi).
 		DenganKasir(models.KonfigurasiKasir{CompanyName: "UJI-CO", LjtdID: "UJI-LJTD", LdcID: "UJI-LDC"}).
-		DenganEmail(models.KonfigurasiEmail{Akun: "UJI-AKUN", AkunSyariah: "UJI-SYARIAH", CC: "uji.cc@contoh.invalid"})
-	return &uji{t: t, g: g, a: a, srv: handlers.Router(l, true)}
+		DenganEmail(models.KonfigurasiEmail{Akun: "UJI-AKUN", AkunSyariah: "UJI-SYARIAH", CC: "uji.cc@contoh.invalid"}).
+		DenganPenyimpanan(b)
+	return &uji{t: t, g: g, a: a, b: b, srv: handlers.Router(l, true)}
 }
 
 func (u *uji) minta(metode, jalur, pelaku, peran string, badan any) *httptest.ResponseRecorder {
@@ -120,8 +126,8 @@ func TestTT2SPVATingkatAkhirTanpaPerluasan(t *testing.T) {
 		t.Fatalf("ubin: %v", ubin)
 	}
 	h := u.putus("UJI-SPVA", models.WorkbasketSPVA, setuju, http.StatusOK)
-	// prompt §5 butir 4: PDF akseptasi diterbitkan bila nomor terisi (berkasnya OQ-KCFI-01 -> pesan info)
-	if !h.Selesai || h.AcceptedNo != "UJI-A12.10.2026.00001" || h.KomiteCount != 2 || h.Info != services.OQDokumenPDF {
+	// prompt §5 butir 4: PDF akseptasi diterbitkan bila nomor terisi (stream AcceptanceNotePDF lini Fire -> tanpa info)
+	if !h.Selesai || h.AcceptedNo != "UJI-A12.10.2026.00001" || h.KomiteCount != 2 || h.Info != "" {
 		t.Fatalf("hasil: %+v", h)
 	}
 	if !models.PanjangNoAksepCLM(h.AcceptedNo) {
@@ -170,6 +176,7 @@ func TestTT2SPVATingkatAkhirTanpaPerluasan(t *testing.T) {
 	if len(u.g.Efek) != 0 {
 		t.Fatalf("efek keluar di luar produksi: %+v", u.g.Efek)
 	}
+	u.dokumenAkseptasi(h.AcceptedNo, "UJI-SPVA", "UJI Supervisor")
 	// Submit kedua -> 409
 	u.putus("UJI-SPVA", models.WorkbasketSPVA, setuju, http.StatusConflict)
 }
@@ -328,8 +335,8 @@ func TestTT3RejectDisetujuiMenutupKlaim(t *testing.T) {
 	}
 	u.putus("UJI-SPVA", models.WorkbasketSPVA, setuju, http.StatusForbidden)
 	h := u.putus("UJI-HEAD", models.WorkbasketDeptHead, setuju, http.StatusOK)
-	if !h.Selesai || h.Info == "" {
-		t.Fatalf("hasil TT3: %+v", h)
+	if !h.Selesai || h.Info != services.InfoTanpaStream(models.StreamTolak) || len(u.g.Dokumen) != 0 {
+		t.Fatalf("hasil TT3 (stream CommitteReject_CC tidak diekspor): %+v dokumen %d", h, len(u.g.Dokumen))
 	}
 	if st := u.g.Klaim.Status(tiruan.KlaimUji); st != kontrak.StatusKlaimDitolak {
 		t.Fatalf("klaim induk %q", st)
@@ -369,7 +376,10 @@ func TestTT4CloseWithoutPayment(t *testing.T) {
 	if ly := u.layar("UJI-HEAD", models.WorkbasketDeptHead); strings.Join(ly.Judul, " ") != "CLAIM COMMITTEE - CLOSE" {
 		t.Fatalf("judul TT4: %v", ly.Judul)
 	}
-	u.putus("UJI-HEAD", models.WorkbasketDeptHead, setuju, http.StatusOK)
+	if h := u.putus("UJI-HEAD", models.WorkbasketDeptHead, setuju, http.StatusOK); h.Info !=
+		services.InfoTanpaStream(models.StreamTutup) {
+		t.Fatalf("info TT4 (stream CommitteCloseClaim tidak diekspor): %q", h.Info)
+	}
 	if st := u.g.Klaim.Status(tiruan.KlaimUji); st != kontrak.StatusKlaimSelesai {
 		t.Fatalf("klaim induk %q", st)
 	}
@@ -481,5 +491,97 @@ func TestTT3TT4TeksPopUpTampil(t *testing.T) {
 		if strings.Join(label, "|") != mau {
 			t.Fatalf("TT%s teks komite: %v", tt, label)
 		}
+	}
+}
+
+// dokumenAkseptasi - S24-S27 sesudah Submit tingkat akhir: satu unggahan PDF (Folder Claim, Durasi 1800, Ext pdf), satu
+// catatan T_STORAGE_IMAGE, satu baris DOCUMENT_CLAIM atas kasus klaim; isi PDF memuat nomor, Technical PIC (`nama`
+// penyetuju), dan TreatyName dari REINSURANCETYPE.
+func (u *uji) dokumenAkseptasi(no, akun, nama string) {
+	u.t.Helper()
+	nama1 := models.NamaBerkasAkseptasi(tiruan.KlaimUji, no)
+	if len(u.b.Unggahan) != 1 {
+		u.t.Fatalf("unggahan PDF: %d", len(u.b.Unggahan))
+	}
+	m := u.b.Unggahan[0]
+	if m.Folder != "Claim" || m.NamaFile != nama1 || m.Durasi != 1800 || m.Ext != "pdf" || m.Pengguna != akun ||
+		!bytes.HasPrefix(m.Isi, []byte("%PDF-")) {
+		u.t.Fatalf("unggahan: %+v", m)
+	}
+	teks := teksPDF(u.t, m.Isi)
+	for _, s := range []string{"(Accepted No : " + no + ")", "(PIC Name / Technical PIC)", "(UJI Admin/" + nama + ")",
+		"(UJI QUOTA SHARE)", "(Jakarta, 10 October 2026)"} {
+		if !strings.Contains(teks, s) {
+			u.t.Errorf("PDF tanpa %s\n%s", s, teks)
+		}
+	}
+	if len(u.g.Storage) != 1 || u.g.Storage[0].ImageID != "UJI-IMG-1" {
+		u.t.Fatalf("T_STORAGE_IMAGE: %+v", u.g.Storage)
+	}
+	want := models.BarisDokumenKlaim{ID: models.IDDokumenKlaim(saatUji), Tanggal: saatUji,
+		IDPega: models.KunciInstans(tiruan.KlaimUji), NamaFile: nama1, MIME: "pdf", Kategori1: "AcceptanceNote",
+		StorageID: "UJI-IMG-1", Operator: akun}
+	if len(u.g.Dokumen) != 1 || u.g.Dokumen[0] != want {
+		u.t.Fatalf("DOCUMENT_CLAIM: %+v mau %+v", u.g.Dokumen, want)
+	}
+}
+
+// awalStream - penanda awal isi stream PDF yang ditulis fpdf.
+const awalStream = "stream\n"
+
+// teksPDF - isi stream FlateDecode PDF (konten halaman) sebagai teks.
+func teksPDF(t *testing.T, b []byte) string {
+	t.Helper()
+	var out strings.Builder
+	for {
+		i := bytes.Index(b, []byte(awalStream))
+		if i < 0 {
+			return out.String()
+		}
+		b = b[i+len(awalStream):]
+		j := bytes.Index(b, []byte("endstream"))
+		if j < 0 {
+			t.Fatal("stream tanpa endstream")
+		}
+		if r, err := zlib.NewReader(bytes.NewReader(b[:j])); err == nil {
+			isi, _ := io.ReadAll(r)
+			out.Write(isi)
+		}
+		b = b[j+len("endstream"):]
+	}
+}
+
+func TestDokumenAkseptasiLiniTanpaStream(t *testing.T) {
+	// PrintPDFAccep_MultiAksep_KMT S19: lini MBU memakai stream AcceptanceNotePDFMBU yang tidak diekspor korpus ->
+	// keputusan tersimpan, tanpa berkas, info OQ menyebut stream.
+	u := siap(t, false)
+	u.g.SiapkanTT2("20000000", saatUji)
+	n, d := tiruan.KlaimFacInUji("20000000")
+	n[models.OQ+"BusinessType"] = "MBUCar"
+	u.g.Klaim.Setel(tiruan.KlaimUji, n, d)
+	h := u.putus("UJI-SPVA", models.WorkbasketSPVA, setuju, http.StatusOK)
+	if !h.Selesai || h.Info != services.InfoTanpaStream(models.StreamAkseptasiMBU) {
+		t.Fatalf("hasil MBU: %+v", h)
+	}
+	if len(u.b.Unggahan) != 0 || len(u.g.Dokumen) != 0 || len(u.g.Storage) != 0 {
+		t.Fatalf("MBU tanpa berkas: unggah %d dokumen %d storage %d", len(u.b.Unggahan), len(u.g.Dokumen), len(u.g.Storage))
+	}
+}
+
+func TestDokumenAkseptasiGagalKeputusanTetapTersimpan(t *testing.T) {
+	// [penyimpangan sadar] pola Komite Claim Prop: unggah gagal sesudah commit -> keputusan TETAP, penyetuju diberi
+	// PesanDokumenGagal, tanpa catatan T_STORAGE_IMAGE / DOCUMENT_CLAIM.
+	u := siap(t, false)
+	u.g.SiapkanTT2("20000000", saatUji)
+	u.b.Gagal = errors.New("UJI penyimpanan tak terjangkau")
+	h := u.putus("UJI-SPVA", models.WorkbasketSPVA, setuju, http.StatusOK)
+	if !h.Selesai || h.AcceptedNo == "" || h.Info != services.PesanDokumenGagal {
+		t.Fatalf("hasil: %+v", h)
+	}
+	if b := u.adj(); b["AcceptanceStatus"] != "1" || b["AcceptedNo"] != h.AcceptedNo {
+		t.Fatalf("keputusan tidak tersimpan: %+v", b)
+	}
+	if k := u.g.Kasus[tiruan.KomiteUji]; !k.Tertutup() || len(u.g.Dokumen) != 0 || len(u.g.Storage) != 0 {
+		t.Fatalf("kasus %+v dokumen %d storage %d", k, len(u.g.Dokumen), len(u.g.Storage))
 	}
 }

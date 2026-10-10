@@ -16,6 +16,7 @@ import (
 
 	"nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/penyimpanan"
 	"nusantarare/modul/komiteclaimfacin/backend/models"
 	"nusantarare/modul/komiteclaimfacin/backend/repository"
 )
@@ -47,6 +48,9 @@ type Gudang struct {
 	KodeProduksi string
 	// Klaim - kontrak palsu (keadaannya ikut dipulihkan saat transaksi gagal).
 	Klaim *KlaimPalsu
+	// Dokumen / Storage - DOCUMENT_CLAIM dan T_STORAGE_IMAGE PDF akseptasi (PrintPDFAccep_MultiAksep_KMT S27).
+	Dokumen []models.BarisDokumenKlaim
+	Storage []penyimpanan.Objek
 }
 
 // Baru membuat gudang kosong beserta kontrak palsunya.
@@ -70,6 +74,8 @@ type cadangan struct {
 	urut       map[string]int
 	urutTangga int
 	klaim      map[string]*klaimTiruan
+	dokumen    []models.BarisDokumenKlaim
+	storage    []penyimpanan.Objek
 }
 
 func salinPeta[V any](m map[string]V) map[string]V {
@@ -84,7 +90,8 @@ func (g *Gudang) salin() cadangan {
 	c := cadangan{kasus: salinPeta(g.Kasus), tangga: map[string][]models.Anggota{}, posisi: salinPeta(g.Posisi),
 		os: slices.Clone(g.OS), json: salinPeta(g.JSONKlaim), log: slices.Clone(g.Log), riw: slices.Clone(g.Riwayat),
 		sub: salinPeta(g.SubProgres), tolak: slices.Clone(g.KlaimTolak), efek: slices.Clone(g.Efek),
-		urut: salinPeta(g.Urut), urutTangga: g.urutTangga}
+		urut: salinPeta(g.Urut), urutTangga: g.urutTangga, dokumen: slices.Clone(g.Dokumen),
+		storage: slices.Clone(g.Storage)}
 	for k, v := range g.Tangga {
 		c.tangga[k] = slices.Clone(v)
 	}
@@ -98,6 +105,7 @@ func (g *Gudang) pulihkan(c cadangan) {
 	g.Kasus, g.Tangga, g.Posisi, g.OS, g.JSONKlaim, g.Log, g.Riwayat = c.kasus, c.tangga, c.posisi, c.os, c.json, c.log,
 		c.riw
 	g.SubProgres, g.KlaimTolak, g.Efek, g.Urut, g.urutTangga = c.sub, c.tolak, c.efek, c.urut, c.urutTangga
+	g.Dokumen, g.Storage = c.dokumen, c.storage
 	if g.Klaim != nil {
 		g.Klaim.mu.Lock()
 		g.Klaim.klaim = c.klaim
@@ -332,6 +340,47 @@ func (g *Gudang) AntreEfek(_ context.Context, _ *db.Tx, jenis, rujukan, muatan s
 }
 
 // ---------------------------------------------------------------- acuan
+
+// SisipDokumenKlaim - lihat `repository.Gudang.SisipDokumenKlaim` (ID bentrok ditiru).
+func (g *Gudang) SisipDokumenKlaim(_ context.Context, _ *db.Tx, d models.BarisDokumenKlaim) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	for _, x := range g.Dokumen {
+		if x.ID == d.ID {
+			return repository.ErrIDDokumenTerpakai
+		}
+	}
+	g.Dokumen = append(g.Dokumen, d)
+	return nil
+}
+
+// Berkas - penyimpanan berkas tiruan (`services.PenyimpananBerkas`); catatan objeknya ikut transaksi gudang.
+type Berkas struct {
+	g *Gudang
+	// Gagal - galat Unggah (layanan penyimpanan tak terjangkau).
+	Gagal    error
+	Unggahan []penyimpanan.MasukUnggah
+}
+
+// BerkasBaru membuat penyimpanan tiruan di atas gudang ini.
+func (g *Gudang) BerkasBaru() *Berkas { return &Berkas{g: g} }
+
+// Unggah - InsertGoogleStorage_Act tiruan: IMAGEID "UJI-IMG-n".
+func (b *Berkas) Unggah(_ context.Context, m penyimpanan.MasukUnggah) (penyimpanan.Objek, error) {
+	if b.Gagal != nil {
+		return penyimpanan.Objek{}, b.Gagal
+	}
+	b.Unggahan = append(b.Unggahan, m)
+	return penyimpanan.Objek{ImageID: fmt.Sprintf("UJI-IMG-%d", len(b.Unggahan)), FileName: m.NamaFile}, nil
+}
+
+// Catat - Insert_T_Storage_SQL tiruan.
+func (b *Berkas) Catat(_ context.Context, _ *db.Tx, o penyimpanan.Objek) error {
+	b.g.mu.Lock()
+	defer b.g.mu.Unlock()
+	b.g.Storage = append(b.g.Storage, o)
+	return nil
+}
 
 // Acuan - acuan tiruan.
 type Acuan struct {

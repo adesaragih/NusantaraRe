@@ -38,6 +38,9 @@ func KlaimFacInUji(nilaiIDR string) (map[string]string, map[string][]map[string]
 		models.OQ + "BusinessName": "UJI FIRE", models.OQ + "CedingCo": "UJI-CEDING-01",
 		"OfferFacIn.PolicyData.PolicyNo": "UJI-RNM-F.001", "OfferFacIn.PercentShare": "25", "IsTreatyIn": "0",
 		"pxCreateOperator": PembuatUji, "pxCreateOpName": "UJI Admin",
+		// dokumen akseptasi (stream AcceptanceNotePDF)
+		"ClaimData.ClaimNo": KlaimUji, models.OQ + "SobName": "UJI SOB", models.OQ + "CedingCoName": "UJI CEDING",
+		"OfferFacIn.PolicyData.StartDateTime": "2026-01-01", "OfferFacIn.PolicyData.EndDateTime": "2026-12-31",
 	}
 	daftar := map[string][]map[string]string{
 		models.DaftarObjek: {{"ID": "UJI-OBJ-1", "ObjectID": "1", "ObjectName": "UJI GEDUNG", "PlaStatus": "1"}},
@@ -67,6 +70,9 @@ func KlaimFacInUji(nilaiIDR string) (map[string]string, map[string][]map[string]
 				"IndividualRiskValue": "0", "IsKomite": "1", "KomiteID": KomiteUji, "pxCreateOperator": PembuatUji,
 				"pxCreateOpName": "UJI Admin", "DirectToKasir": "true", "NameOfBank": "UJI BANK", "BranchOfBank": "UJI CABANG",
 				"NoAccount": "12-34", "PayableTo": "UJI PENERIMA", "DataCommitteFacin.Remarks": "UJI CATATAN KOMITE"},
+		},
+		models.DaftarDiItem(1, 2, models.AnakSpreadKlaim): {
+			{"TreatyType": "10003", "SharePercentage": "60"}, {"TreatyType": "10015", "SharePercentage": "40"},
 		},
 		models.DaftarDiAdj(1, 2, 1, models.AnakSpread): {
 			{"TreatyType": "10003", "TreatyName": "UJI QS", "SharePercentage": "100", "ClaimSpreaded": nilaiIDR,

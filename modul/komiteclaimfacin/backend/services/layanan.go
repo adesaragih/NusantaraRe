@@ -54,6 +54,7 @@ type Layanan struct {
 	produksi bool
 	kasir    models.KonfigurasiKasir
 	surel    models.KonfigurasiEmail
+	berkas   PenyimpananBerkas
 }
 
 // Baru menyusun layanan; `g` nil = tanpa Oracle (setiap aksi 503).
@@ -68,6 +69,13 @@ func Baru(g Gudang, a Acuan, k kontrak.KlaimFacInKomite, jam func() time.Time, p
 func (l *Layanan) DenganEmail(c models.KonfigurasiEmail) *Layanan {
 	salin := *l
 	salin.surel = c
+	return &salin
+}
+
+// DenganPenyimpanan memasang penyimpanan berkas dokumen akseptasi (Oracle: `penyimpanan.Oracle`; uji: tiruan).
+func (l *Layanan) DenganPenyimpanan(p PenyimpananBerkas) *Layanan {
+	salin := *l
+	salin.berkas = p
 	return &salin
 }
 

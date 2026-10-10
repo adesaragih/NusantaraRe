@@ -90,8 +90,9 @@ S11.10 (`NUSARE` / `NUSARESYARIAH`) dan CC kotak surat klaim (hanya IsPEGAPROD).
 | `kasir` | `HitServiceToKasirKMT_Act` (TT2 S25) | muatan `SendAcceptationToKasir` per `AcceptedNo` | `ErrKasirBelumDisetujui` |
 | `email-komite` | `SendEmailKlaim_KMT` (S7.2.1.15), TT3 S13.10, TT4 S11.10 | jenis, KomiteID / akun penerima | rakit isi (`SusunEmailKomite`) → `ErrEmailBelumDisetujui` |
 
-MUATAN email hanya pengenal (claimlife/015: tanpa nama / alamat); isi dirakit saat dikirim. Badan email dan PDF menunggu
-stream (OQ-KCFI-01). Pekerja outbox tidak dijalankan modul ini (`TanpaPekerja`, pola Komite Claim Prop).
+MUATAN email hanya pengenal (claimlife/015: tanpa nama / alamat); isi dirakit saat dikirim. Badan email dan PDF lini MBU /
+Travel / PA / TT3 / TT4 menunggu stream (OQ-KCFI-01); PDF akseptasi `AcceptanceNotePDF` dibuat sesudah
+Submit tersimpan (PARITAS S9). Pekerja outbox tidak dijalankan modul ini (`TanpaPekerja`, pola Komite Claim Prop).
 
 ## Menu
 

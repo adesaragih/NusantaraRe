@@ -18,6 +18,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/penyimpanan"
 	"nusantarare/modul/komiteclaimfacin/backend/handlers"
 	"nusantarare/modul/komiteclaimfacin/backend/models"
 	"nusantarare/modul/komiteclaimfacin/backend/services"
@@ -90,6 +91,9 @@ func Pendaftaran() inti.Pendaftaran {
 			}
 			svc := services.DariDasar(p.Dasar(), inti.Ambil[kontrak.KlaimFacInKomite](p)).DenganKasir(kasir).
 				DenganEmail(surel)
+			if d := p.Dasar(); d != nil && d.PunyaDatabase() { // PrintPDFAccep_MultiAksep_KMT S27 (pola Komite Claim Prop)
+				svc = svc.DenganPenyimpanan(penyimpanan.Oracle(d, p.Config().StorageTokenSalt))
+			}
 			return Baru(svc, p.Config().AuthStub), nil
 		},
 	}

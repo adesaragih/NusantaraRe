@@ -16,6 +16,7 @@ import (
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/kontrak"
+	"nusantarare/inti/backend/penyimpanan"
 	"nusantarare/modul/komiteclaimfacin/backend/models"
 	"nusantarare/modul/komiteclaimfacin/backend/repository"
 )
@@ -40,6 +41,15 @@ type Gudang interface {
 	UbahSubProgres(ctx context.Context, tx *db.Tx, komiteID, posisi string) error
 	SisipKlaimDitolak(ctx context.Context, tx *db.Tx, k models.KlaimDitolak) error
 	AntreEfek(ctx context.Context, tx *db.Tx, jenis, rujukan, muatan string, saat time.Time) (string, error)
+	// SisipDokumenKlaim - DOCUMENT_CLAIM PDF akseptasi (PrintPDFAccep_MultiAksep_KMT S27 InsertDocument_Act).
+	SisipDokumenKlaim(ctx context.Context, tx *db.Tx, d models.BarisDokumenKlaim) error
+}
+
+// PenyimpananBerkas - bagian `inti/backend/penyimpanan` yang dipakai modul ini (InsertGoogleStorage_Act +
+// Insert_T_Storage_SQL; pola Komite Claim Prop).
+type PenyimpananBerkas interface {
+	Unggah(ctx context.Context, m penyimpanan.MasukUnggah) (penyimpanan.Objek, error)
+	Catat(ctx context.Context, tx *db.Tx, o penyimpanan.Objek) error
 }
 
 // Acuan - bacaan baca-saja RDB komite.

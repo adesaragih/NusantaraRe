@@ -85,7 +85,7 @@ Status: **ada** = dibangun persis; **ubah** = dibangun dengan penyimpangan sadar
 | S7.2.1.15 `SendEmailKlaim_KMT` (IsPEGAPROD) | **ada** | outbox `email-komite`, hanya produksi: tingkat berikut disetujui → semua anggota workbasket KomiteID berikut; tingkat akhir → pembuat "(Approval)"; tolak → pembuat "(Reject)". BCC pribadi tidak disalin; badan = stream tidak diekspor (OQ-KCFI-01) |
 | S7.2.1.16 `SaveAcceptation_KMT` (`IsPrintAccept == ""`) | **ada** | `IsFacretro` objek / item / adjustment dari SpreadingList `TreatyType = 10015`, `DLAStatus = 0` |
 | S7.2.1.17 + S8 `SaveAccept_ACT` + `SaveOSClaim_SQL` → `OS_AKSEPTASI_KLAIM` | **ada** | STS **4** bila PaymentType 1, selain itu **1**; `STS_DLA` 8 retro / 7; `DATA_JSON` per lini (Fire / Aneka / Golf, MarineCargo + ObjectItemName, MBU, Travel, PA) format `GetPageJSONString` (DEV); **sekali per KMT** (§5 butir 5). Tanpa procedure: INSERT kolom procedure (`TGL_PROD` trigger); status konversi hanya ikut INSERT bila terisi (TT3 S17, keputusan OQ-KCFI-08, `repository/osakseptasi.go`) |
-| S9 `PrintPDFAccep_MultiAksep_KMT` | **ubah** | gerbang `OutputData.START_DATE == ""` sesudah nomor terisi tak pernah benar → diterbitkan bila nomor terisi (§5 butir 4); **berkas tidak dibuat**: stream `AcceptanceNotePDF*` tidak diekspor (OQ-KCFI-01, info di layar) |
+| S9 `PrintPDFAccep_MultiAksep_KMT` | **ubah** | gerbang `OutputData.START_DATE == ""` sesudah nomor terisi tak pernah benar → diterbitkan bila nomor terisi (§5 butir 4). Lini Fire / Aneka / Golf / Marine Cargo: stream `AcceptanceNotePDF` (diberikan work owner 10-10-2026) disusun `models/akseptasi_pdf.go`, digambar go-pdf/fpdf `models/pdf_akseptasi.go`, diunggah SESUDAH commit (`services/dokumen.go`: InsertGoogleStorage_Act Folder "Claim" Durasi 1800, lalu T_STORAGE_IMAGE + DOCUMENT_CLAIM satu transaksi, KATEGORI_1 "AcceptanceNote", MIME "pdf", nama "Persetujuan   <ClaimNo> AcceptNo <AcceptedNo>.pdf"). Gagal → keputusan tetap, `info` `PesanDokumenGagal`. Lini MBU / Travel / PA → stream tidak diekspor (OQ-KCFI-01, `info`). Rincian §8 |
 | S12 tingkat akhir: objek `IsPrintAccept := @if(AcceptStatus == "2", "1", "")`; S12.1.1 adjustment `IsPrintAccept := 1` (`.AcceptanceStatus = "1"`) | **ada** | `=` tunggal dibaca pembandingan (§5 butir 2) |
 | S13 (pre=false, setiap tingkat) `IsCloseFile` / `IsReservedClaim` ← Propose tingkat 1 | **ada** | disimpan di kepala kasus komite (`KOMITE_USUL_TUTUP` / `_CADANG`), ditulis balik ke kepala klaim. `IDObjectUpdate` **tidak** (tanpa kolom / pembaca) |
 | S14 tolak: `KomiteCount := KomiteLoop` | **ada** | |
@@ -115,7 +115,7 @@ Satu tingkat `ReasClaimDeptHead` (KCF-03).
 | S11 / S10 `InsertJsonClaimNonMBU_act` | **ada** | tanpa syarat |
 | S12 (setuju) `SaveReject_ACT_KMT` per estimasi `PrintFaceClaim == 1` → OS STS 2 | **ada** | Reject saja; `STS_KONVERSI` "1" bila Value kosong (S17), `STS_DLA` 8 / 7 dari `PlaStatus` |
 | — / S12.1–S12.3 (setuju) OS STS 4 (`CauseOfLoss`, `CauseOfLossID`, `NoClaim`, `IDMasterTreaty`) | **ada** | Close saja |
-| S13.4–S13.9 / S11.4–S11.9 PDF "Reject Claim " + NoClaim / "Close Claim " + NoClaim + NoClaim, kategori CloseClaim | **ubah** | nama berkas VERBATIM; **berkas tidak dibuat** (stream `CommitteReject_CC` / `CommitteCloseClaim` tidak diekspor, OQ-KCFI-01) |
+| S13.4–S13.9 / S11.4–S11.9 PDF "Reject Claim " + NoClaim / "Close Claim " + NoClaim + NoClaim, kategori CloseClaim | **ubah** | nama berkas VERBATIM; **berkas tidak dibuat** (stream `CommitteReject_CC` / `CommitteCloseClaim` tidak diekspor, OQ-KCFI-01, `info` `InfoTanpaStream`) |
 | S13.10 / S11.10 email ke pembuat "(Approval)" / "(Reject)" Pengajuan Reject / Close Klaim | **ada** | outbox, hanya produksi; ejaan bulan VERBATIM ("Febuari", "July"); BCC pribadi tidak disalin |
 | S14 (setuju) `CLAIMREJECTED` | **ada** | Reject saja; LABEL "CLM", OBJCLASS kelas klaim, STATUSWORK "New" (status sebelum ditutup), REMARK = `Remark` klaim |
 | S15 / S12.4 (setuju) `KonversiKlaim_Act` STSREJECT "2" / "4" | **ada** | outbox, hanya produksi |
@@ -129,7 +129,7 @@ Satu tingkat `ReasClaimDeptHead` (KCF-03).
 | 1 | `SetProteksiSubmiteKomite` L2.1 (baris menunggu mana saja, pemetaan akun, "IT Developer") | pemutus = anggota workbasket / akun **tingkat berjalan**; tingkat 1 juga anggota `ReasClaimSPVB` | `handlers/alur_test.go` `TestWewenangDanValidasi`, `TestTT2PitaSPVB`; `models/models_test.go` `TestPemegangTingkatBerjalan` |
 | 2 | `ApprovalKomite_Act` L7, `KomitePost_Adjustment` L12.1.1, L25.2.1.1 `=` tunggal | pembandingan | `TestTT2SPVATingkatAkhirTanpaPerluasan` (`IsPrintAccept`), `TestTT2PerluasanTanggaTampilLaluTersimpan` |
 | 3 | `KomitePost_Adjustment` L7.2.1.9.1 lompat ke label tak ada | tanpa lompatan | `TestTT2TolakMenutupSisaTangga` (sisa tangga "2", HISTORY / SUBPROGRESS / kronologi sesudahnya tetap berjalan) |
-| 4 | `KomitePost_Adjustment` L9 gerbang PDF tak pernah benar | diterbitkan bila nomor terisi; berkas OQ-KCFI-01 | `TestTT2SPVATingkatAkhirTanpaPerluasan` (`info` = `OQDokumenPDF`) |
+| 4 | `KomitePost_Adjustment` L9 gerbang PDF tak pernah benar | diterbitkan bila nomor terisi | `TestTT2SPVATingkatAkhirTanpaPerluasan` (DOCUMENT_CLAIM AcceptanceNote + isi PDF), `TestDokumenAkseptasiLiniTanpaStream`, `TestDokumenAkseptasiGagalKeputusanTetapTersimpan` |
 | 5 | `KomitePost_Adjustment` L8 OS dengan adjustment terakhir | sekali per KMT, adjustment KMT itu | `TestTT2SPVATingkatAkhirTanpaPerluasan` (tepat satu baris OS) |
 | 6 | Obj-Save per iterasi | satu transaksi Submit | `TestKlaimTertutupMenolakSubmitUtuh` |
 | 7 | `SendRejectClaimToKomite2` / `SendCloseClaimToKomite` anggota tunggal akun + email tertulis mati | `ReasClaimDeptHead` | claimfacin `handlers/komite_test.go` `TestRejectClaimTT3MelahirkanKomiteTanpaAdjustment`, `TestCloseWithoutPaymentTT4` |
@@ -145,6 +145,28 @@ Satu tingkat `ReasClaimDeptHead` (KCF-03).
 - Tanggal Boleh Bayar Kasir (`HitServiceToKasirKMT_Act` S10.5 / S14.1.5) **ditiru VERBATIM**, sama dengan Claim Fac In
   tahap 1: hari > 25 → tanggal 01 dua bulan sesudahnya; bulan 13 / 14 → "1"; tahun naik hanya bila bulan hasil 01 dan
   bulan berjalan Desember.
+
+- **Dokumen akseptasi (S9, stream `AcceptanceNotePDF`)** — pemetaan medan stream → halaman `TempAcceptedNo`
+  (`PrintPDFAccep_MultiAksep_KMT` S1-S22) di `models/akseptasi_pdf.go`; uji `models/pdf_test.go`:
+  - `[penyimpangan sadar]` urutan (prompt tahap 2 §6 butir 7: "seperti pola Komite Prop sesudah commit"): Pega
+    membuat PDF di tengah Submit; di sini SESUDAH keputusan tersimpan (pemutusan klien tidak membatalkannya), dan
+    kegagalan PDF - termasuk panik penggambar - tidak membatalkan keputusan. Akibatnya saringan S10.3.11
+    `.IsPrintAccept == ""` tidak dipakai (S12 sudah menyetelnya 1): adjustment dipilih menurut status 1 + nomor
+    akseptasi.
+  - `[penyimpangan sadar]` `HTMLToPDF` (mesin HTML Pega) → go-pdf/fpdf yang MENGGAMBAR susunan stream (judul, baris
+    label : nilai, tabel di sel nilai, penutup; kepala "PT. REASURANSI NUSANTARA MAKMUR", kaki "Page n of N pages"):
+    teks label VERBATIM, ukuran dari CSS stream; lebar kolom tabel tanpa `width` = isi terpanjang; penutup rata kanan;
+    nilai lebih panjang dari satu halaman berlanjut di halaman berikut; huruf cp1252 (é, –, ’) dicetak.
+  - `[penyimpangan sadar]` angka `DecimalFormat("#,###.####")` id_ID atas nilai DESIMAL tersimpan, bukan `double` Java
+    (nol float untuk uang): beda hanya pada seri tepat ...5 di desimal ke-5 dan nilai di atas 15 digit bermakna.
+  - PERBAIKAN kelainan XML (maksud pasti): S10.3.6 / S10.3.9 `6 || 4 && U` dibaca `(6 || 4) && U`; `TemporaryUang`
+    segar per cetak (Pega tak pernah membersihkannya), bertambah selama iterasi seperti S10.3.1; Property-Remove di
+    dalam For Each = saringan biasa; lini dinilai atas halaman KLAIM (Pega menilai kasus komite tanpa `OfferFacIn`);
+    "Swift Code" hanya bila terisi.
+  - VERBATIM (maksud tidak pasti): "Location of Loss" berisi CauseOfLoss (S14); nominal, Payable To, dan tabel
+    spreading hanya untuk item TERAKHIR yang lolos, AdjustmentGross kumulatif; tabel "BreakDown Spreading (QS)" tanpa
+    penulis tingkat item - tidak tercetak; "Premium Paid On" kosong (PaymentData tidak disimpan, OQ-CFI-14); ID
+    DOCUMENT_CLAIM `yyyyMMddhhmmssSSS` jam 12-an.
 
 ## 9. Sambungan Claim Fac In (`claimfacin`)
 

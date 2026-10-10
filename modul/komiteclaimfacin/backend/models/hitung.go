@@ -26,6 +26,10 @@ const (
 	AnakSpreadPL = "SpreadingList"
 	AnakEstimasi = "EstimationList"
 	AnakCoverage = "CoverageList"
+	// AnakSpreadKlaim - `ObjectItemList(i).SpreadingClaim` (T_CLAIM_SPREADING JENIS KLAIM; dibaca stream AcceptanceNotePDF);
+	// AnakCedant - `Adjustment(a).CedingCedantList`.
+	AnakSpreadKlaim = "SpreadingClaim"
+	AnakCedant      = "CedingCedantList"
 	// DaftarRetroPolis - `pyWorkCover.OfferFacIn.FacRetroList` (PreShowRetro_Act S2.2, PreSecurityReas_Act S2.2).
 	DaftarRetroPolis = "OfferFacIn.FacRetroList"
 )

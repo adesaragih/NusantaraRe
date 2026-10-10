@@ -28,7 +28,7 @@
 
 | OQ | Rule yang dibutuhkan | Akibat sekarang |
 | --- | --- | --- |
-| **OQ-KCFI-01** | Stream HTML `AcceptanceNotePDF*` (`PrintPDFAccep_MultiAksep_KMT`), `CommitteReject_CC`, `CommitteCloseClaim`, badan email `EmailKlaim_HTML_KMT` | Nomor, penanda (`IsPrintAccept`), nama berkas VERBATIM disiapkan; **berkas PDF tidak dibuat** dan badan email tidak dikarang. Submit yang di Pega menerbitkan PDF menjawab `info` OQ-KCFI-01. Bila stream diberikan: digambar go-pdf/fpdf (pola Komite Claim Prop) |
+| **OQ-KCFI-01** | Stream HTML `AcceptanceNotePDFMBU` / `AcceptanceNotePDFTravel` / `AcceptanceNotePDFPA` (`PrintPDFAccep_MultiAksep_KMT` S19-S21), `CommitteReject_CC`, `CommitteCloseClaim`, badan email `EmailKlaim_HTML_KMT` | **Sebagian terjawab 10-10-2026**: work owner memberi `Claim Fac In/AcceptanceNotePDF.xml` -> PDF akseptasi lini Fire / Aneka / Golf / Marine Cargo digambar go-pdf/fpdf (pola Komite Claim Prop), diunggah sesudah Submit tersimpan, dicatat T_STORAGE_IMAGE + DOCUMENT_CLAIM (PARITAS S9). Stream lain masih tidak diekspor: Submit lini MBU / Travel / PA dan TT3 / TT4 menjawab `info` yang menyebut stream-nya (`services.InfoTanpaStream`); nama berkas VERBATIM tetap disiapkan; badan email tidak dikarang |
 
 ## C. DBA
 

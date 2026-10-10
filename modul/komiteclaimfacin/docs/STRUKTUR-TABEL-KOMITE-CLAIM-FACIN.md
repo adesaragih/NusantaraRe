@@ -72,6 +72,8 @@ Tanpa procedure dan tanpa COMMIT (isi procedure dibaca dari ALL_SOURCE DEV 10-10
 | `HISTORYAKSEPTASIPEGA` | ID_PEGA, TGL_TRANSFER, STATUS, USERNAME, WORKBASKET "KLAIM", ID_KOMITE | KomitePost_Adjustment S20-S21 |
 | `SUBPROGRESSCLAIM` | POSITION2 "Accepted" / "Rejected" (UPDATE `IDPEGA` = KMT) | KomitePost_Adjustment S22-S23 |
 | `CLAIMREJECTED` | INSKEY, ID, INSNAME, LABEL, STATUSWORK, CREATEOPNAME, CREATEOPERATOR, OBJCLASS, UPDATEDATETIME, UPDATEOPNAME, UPDATEOPERATOR, REMARK | KomitePost_Reject S14 (TT3 disetujui) |
+| `DOCUMENT_CLAIM` | ID (`yyyyMMddhhmmssSSS`), TANGGAL, IDPEGA (ID kasus klaim), NAMAFILE, MIME "pdf", KATEGORI_1 "AcceptanceNote", T_STORAGE_ID, PXCREATEOPERATOR (katalog DEV 10-10-2026: VARCHAR2 100 / 1000 / 50; INSERT diurai DBMS_SQL.PARSE) | KomitePost_Adjustment S9 `PrintPDFAccep_MultiAksep_KMT` S27 `InsertDocument_Act` — sesudah Submit tersimpan |
+| `T_STORAGE_IMAGE` | lewat `inti/backend/penyimpanan` (`Unggah` + `Catat`, satu transaksi dengan DOCUMENT_CLAIM) | idem, `InsertGoogleStorage_Act` Folder "Claim" Durasi 1800 |
 | `T_LOG_SERVICE_RNM` | outbox `inti/backend/outbox` (konversi, Kasir, email — hanya produksi) | KomitePost_Adjustment S17 / S25 / 7.2.1.15, KomitePost_Reject S13.10 / S15, KomitePost_CloseClaim S11.10 / S12.4 |
 
 Dibaca: `EMAILKOMITE` (roster FACIN aktif), `REINSURANCETYPE`, `BANKACCOUNT`, `M_LOGIN_GO`, `M_LOGIN_GO_WORKBASKET`,

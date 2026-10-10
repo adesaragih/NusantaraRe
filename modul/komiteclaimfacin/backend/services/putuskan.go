@@ -12,7 +12,8 @@ package services
 //	S7.2.1.15  email (outbox, IsPEGAPROD)             S12        OS STS 2 per estimasi / OS STS 4
 //	S7.2.1.16  SaveAcceptation_KMT (kontrak)          S13 / S11  PDF (stream tidak diekspor, OQ) + email (outbox)
 //	S8         OS_AKSEPTASI_KLAIM                     S14        CLAIMREJECTED (TT3)
-//	S12-S13    penanda cetak / usul (kontrak)         S15 / S12.4 konversi Arasapas (outbox)
+//	S9         PDF akseptasi (sesudah commit)         S15 / S12.4 konversi Arasapas (outbox)
+//	S12-S13    penanda cetak / usul (kontrak)
 //	S16        JSON_KLAIM                             S16 / S13  KomiteCount + 1
 //	S17-S19    konversi (outbox) + log AKSEPATSI      S17 / S14  tutup klaim induk (kontrak)
 //	S20-S23    HISTORYAKSEPTASIPEGA, SUBPROGRESSCLAIM
@@ -21,11 +22,13 @@ package services
 // PENYIMPANGAN SADAR (prompt §5 butir 6, pola Komite Claim Prop): di Pega setiap rule menyimpan sendiri (`COMMIT` di
 // RDB, Obj-Save per iterasi). Di sini semuanya satu transaksi aplikasi: keputusan yang gagal di tengah batal UTUH.
 // Panggilan keluar (Arasapas, Kasir, email) diantre di transaksi yang sama dan baru berjalan sesudah commit (outbox,
-// hanya produksi). Dokumen PDF tidak dibuat (stream tidak diekspor, OQ-KCFI-01).
+// hanya produksi). Dokumen akseptasi (S9, stream `AcceptanceNotePDF`) dibuat SESUDAH commit (`dokumen.go`); stream
+// lini lain dan TT3 / TT4 tidak diekspor korpus (OQ-KCFI-01, pesan info).
 
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"strings"
 	"time"
 
@@ -35,9 +38,14 @@ import (
 	"nusantarare/modul/komiteclaimfacin/backend/models"
 )
 
-// OQDokumenPDF - pesan info Submit yang menerbitkan dokumen PDF di Pega (stream tidak diekspor).
-const OQDokumenPDF = "OQ-KCFI-01: dokumen PDF komite (stream AcceptanceNotePDF / CommitteReject_CC / " +
-	"CommitteCloseClaim) tidak diekspor korpus - berkas belum dibuat"
+// InfoTanpaStream - pesan info Submit yang di Pega menerbitkan PDF dengan stream `stream` yang tidak diekspor korpus
+// (OQ-KCFI-01: hanya `AcceptanceNotePDF` yang diberikan work owner 10-10-2026); kosong = lini tanpa stream.
+func InfoTanpaStream(stream string) string {
+	if stream == "" {
+		return "OQ-KCFI-01: lini klaim tanpa stream dokumen akseptasi - berkas belum dibuat"
+	}
+	return "OQ-KCFI-01: stream PDF " + stream + " tidak diekspor korpus - berkas belum dibuat"
+}
 
 // StatusKlaimTerbuka - `TempOpenPage.pyStatusWork` kasus klaim yang masih terbuka saat CLAIMREJECTED ditulis
 // (KomitePost_Reject S14 sebelum S17 pxForceCaseClose; DEV CLAIMREJECTED `CLM-` STATUSWORK "New").
@@ -63,6 +71,7 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, kep mo
 	}
 	saat := l.jam()
 	var hasil HasilKeputusan
+	dokumen := false
 	err := l.g.Transaksi(ctx, func(tx *db.Tx) error {
 		k, kl, err := l.muat(ctx, tx, id, true)
 		if err != nil {
@@ -98,13 +107,24 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, kep mo
 			return err
 		}
 		hasil = HasilKeputusan{KasusID: k.ID, Selesai: r.Selesai, KomiteCount: r.Kepala.Count, AcceptedNo: j.nomor}
-		if r.PDF != "" {
-			hasil.Info = OQDokumenPDF
+		stream := r.PDF
+		if stream == models.StreamAkseptasi { // S9 PrintPDFAccep_MultiAksep_KMT S16-S22 (stream per lini)
+			stream = models.StreamAkseptasiLini(kl.Nilai)
+		}
+		dokumen = stream == models.StreamAkseptasi
+		if r.PDF != "" && !dokumen {
+			hasil.Info = InfoTanpaStream(stream)
 		}
 		return nil
 	})
 	if err != nil {
 		return HasilKeputusan{}, err
+	}
+	if dokumen { // keputusan sudah tersimpan: pemutusan klien tidak membatalkan dokumennya
+		if err := l.simpanDokumenAkseptasi(context.WithoutCancel(ctx), id, p.AkunID, saat); err != nil {
+			log.Printf("komiteclaimfacin: dokumen akseptasi kasus %s: %v", id, err)
+			hasil.Info = PesanDokumenGagal
+		}
 	}
 	return hasil, nil
 }
