@@ -131,6 +131,15 @@ kedua modul. ⛔ **Disengaja.**
 > diajukan sendiri ditiru apa adanya — anggota pertama saja di Fac In, nihil di Prop — dan lubang
 > pada urutan kedua ke bawah diterima dengan sadar.**
 
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"**Fac In:** pemeriksaan **hanya pada anggota
+> komite urutan PERTAMA.**"* → **K9 salah baca** (prompt tahap 2 §3 "Gugur"). Satu-satunya langkah yang dikira
+> pemeriksaan itu, `ApprovalKomite_Act` L6.2 (when `pyWorkPage.KomiteList(1).KomiteID == .OPERATOR_ID`), hanya membuang
+> **calon perluasan** roster DEGREE > 1 yang sama dengan anggota tingkat 1. Ia tidak membandingkan pengaju. Korpus Komite
+> Claim FacIn tidak memuat larangan menyetujui klaim sendiri di jenjang mana pun, jadi tidak ada yang ditiru. Tiket 01
+> gugur; penutupan butir 24 berdiri di atas premis yang keliru, dan rujukan K9 di K10 ikut terkena. Rinciannya di RALAT
+> `spec.md` ID-5 / AC 9–13 / Out of Scope 9 dan `issues/01-pengeluaran-pengaju.md`. ADR-0040 di
+> `OUTPUT_HASIL_RNM/docs/bersama/adr/` bersumber ID-5 dan tidak disunting di sini.
+
 ### K8 → Q5 · data lama MBU dan Travel
 
 > ⭐ **BIARKAN, tetapi TANDAI.** Ringkasan akseptasi historis MBU dan Travel **tidak dibangun
@@ -151,11 +160,31 @@ kebetulan membaca catatan kaki.
 
 ⭐ **Cacah baris terdampak = `[data DBA]`.**
 
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⭐ **BIARKAN, tetapi TANDAI.** Ringkasan
+> akseptasi historis MBU dan Travel **tidak dibangun ulang**."* → **K8 `DIBANGUN_ATURAN_LAMA` gugur** oleh **KCF-04**
+> (keputusan work owner 10-10-2026: kasus komite lama Pega `KMT-` tidak dimigrasi; K8 gugur). Baris akseptasi lama
+> dibiarkan apa adanya, tanpa kolom penanda. Rinciannya di RALAT `spec.md` ID-12 / AC 91–95 dan
+> `issues/12-kronologi-dan-penandaan-data-lama.md`.
+
 ### Q3 → ⛔ **BELUM DIPUTUSKAN**
 
 ⛔ **Jawaban work owner bermakna ganda, dan saya TIDAK memilih sendiri.**
 ⭐ Diajukan utuh sebagai **Pertanyaan A** di bab **PERTANYAAN BARU**.
 ⛔ **Tidak ada keputusan Q3 yang ditulis di berkas ini.**
+
+> ⛔ **RALAT 10-10-2026 (K7).** Kalimat lamanya dikutip utuh, tidak dihapus: *"⛔ **Tidak ada keputusan Q3 yang ditulis di
+> berkas ini.**"* → berkas ini benar menurut isinya sendiri, tetapi `spec.md` ID-10 / AC 71–74 dan
+> `issues/10-jalur-fac-retro.md` menyebut keputusan **K7 · 2026-09-20 "ditiru apa adanya"** atas pertanyaan yang sama.
+> Asal K7 tidak tertelusur di berkas yang boleh disunting (grilling tersegel tidak disentuh). Mulai 10-10-2026 isinya
+> tidak lagi bergantung pada asal itu:
+>
+> - XML + **KCF-02**: Fac Retro **hanya** melewati perluasan tangga (`ApprovalKomite_Act` L2.2 / L3) serta konversi dan
+>   log "AKSEPATSI" di tingkat akhir (`KomitePost_Adjustment` S17 / S19). Tangganya dibentuk sisi klaim. Pemeriksaan
+>   wewenang **tidak** dilewati, jadi kekhawatiran Pertanyaan A §2 ("melewatkan pemeriksaan wewenang") gugur.
+> - `TreatyType == "10015"` (`SaveAcceptation_KMT` L2.1) tetap konstanta bernama di kode; isinya sama dengan pilihan (b)
+>   Pertanyaan A.
+> - Nomor K7 juga dipakai `modul/claimfacin/docs/STRUKTUR-TABEL-CLAIM-FACIN.md` §5d untuk keputusan lain (jejak komite
+>   satu tabel); jangan dicampur.
 
 ---
 
@@ -751,6 +780,16 @@ menghapus akarnya**, bukan menambal gejalanya.
 
 ⚠️ **Butir `[terbuka]` BARU — butir 39:** satu jabatan dapat dipegang **lebih dari satu orang**.
 ⛔ **Siapa menerima giliran?** Tangga tidak dapat maju tanpa jawabannya.
+
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⭐ **`[keputusan work owner]` 2026-09-20 —
+> `jabatan` menjadi kolom di tabel login dan diambil dari situ**, dengan **empat syarat**."* → **K13 digantikan
+> workbasket** (prompt tahap 2 §3 "Gugur", **KCF-01**). Roster `EMAILKOMITE` STS_KLAIM FACIN di-UPDATE di tempat menurut
+> DEGREE: 1 Claim Supervisor → `ReasClaimSPVA` (anggota `ReasClaimSPVB` juga boleh memutus tingkat 1), 2 →
+> `ReasClaimDeptHead`, 3 → `ReasClaimTechDivHead`, 4 → `ReasClaimOpsDir`, 5 → `ReasClaimTechDir`; JABATAN dan LIMIT
+> tetap. Tidak ada kolom jabatan di tabel login dan tidak ada daftar induk jabatan. Syarat 1 dan 4 gugur. Syarat 2 tetap
+> terpenuhi oleh DEGREE roster. Syarat 3 terpenuhi oleh `KOMITE_JABATAN` baris tangga (salinan teks JABATAN). Butir 39
+> tertutup pola Komite Prop 09-10-2026: setiap anggota workbasket tingkat berjalan boleh memutus. Rinciannya di RALAT
+> `spec.md` ID-1 / ID-2 / AC 5 / AC 77–83, `issues/05-*.md`, dan `issues/11-*.md` (gugur).
 
 ---
 

@@ -201,6 +201,12 @@ var ruteDipinjam = map[string][]string{
 	"GET /api/komite-claim-non-prop/kasus":                {"claimnonprop"},
 	"GET /api/komite-claim-non-prop/kasus/{id}":           {"claimnonprop"},
 	"POST /api/komite-claim-non-prop/kasus/{id}/putuskan": {"claimnonprop"},
+	// Komite Claim Fac In tanpa menu sendiri (prompt work owner tahap 2 10-10-2026, pola Komite Claim Prop / Non Prop):
+	// tabel komite di inbox Claim Fac In dan layar komitenya dibuka di tempat; yang boleh memutus tetap dijaga layanan
+	// komite (anggota workbasket tingkat berjalan, KCF-01).
+	"GET /api/komite-claim-fac-in/kasus":                {"claimfacin"},
+	"GET /api/komite-claim-fac-in/kasus/{id}":           {"claimfacin"},
+	"POST /api/komite-claim-fac-in/kasus/{id}/putuskan": {"claimfacin"},
 	// Komite Claim Life - menu komite dihapus (perintah work owner 09-10-2026, "anggap menu itu tidak pernah ada"):
 	// tabel komite inbox Claim Life dan layar kasusnya (modul tanpa menu, `layar.ts`) dipakai pemegang menu Claim Life;
 	// siapa yang boleh memutus tetap dijaga layanan komite (anggota tangga tingkat berjalan).

@@ -41,6 +41,7 @@ const MODUL_DIPINJAM: Readonly<Record<string, readonly string[]>> = {
   komiteclaimprop: ['claimprop'],
   komiteclaimnonprop: ['claimnonprop'],
   komiteclaimlife: ['claimlife'],
+  komiteclaimfacin: ['claimfacin'],
 }
 
 export default function App() {

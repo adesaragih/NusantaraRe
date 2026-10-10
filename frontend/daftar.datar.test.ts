@@ -38,8 +38,8 @@ describe('sidebar satu tombol per modul, dikelompokkan GROUPMENU', () => {
   // Perintah work owner 09-10-2026: menu komite dihapus - modul `layar.ts` tidak punya tombol sama sekali.
   it('modul tanpa menu (komite) tidak punya tombol, aktif maupun nonaktif', () => {
     const tanpaMenu = MODUL_FRONTEND.filter((m) => m.tanpaMenu === true).map((m) => m.nama)
-    expect(tanpaMenu.sort()).toEqual(['komiteclaimlife', 'komiteclaimnonprop', 'komiteclaimprop'])
-    for (const k of [...tanpaMenu, 'komiteclaimfacin']) expect(TOMBOL.map((t) => t.kode), k).not.toContain(k)
+    expect(tanpaMenu.sort()).toEqual(['komiteclaimfacin', 'komiteclaimlife', 'komiteclaimnonprop', 'komiteclaimprop'])
+    for (const k of tanpaMenu) expect(TOMBOL.map((t) => t.kode), k).not.toContain(k)
     for (const f of FOLDER_TANPA_MENU) expect(TOMBOL.map((t) => t.label), f).not.toContain(f)
   })
 

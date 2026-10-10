@@ -79,6 +79,9 @@ adjustment ke Komite. `ID`-nya **sama persis** dengan baris komite di `T_WORK_CL
 | `KOMITE_USUL_CADANG` | teks | tidak | | migrasi `komiteclaimprop/680` (RALAT 08-10-2026) — usul cadangkan klaim, `'1'`/`'0'` bawaan `'0'`; kasus Life tidak menulisnya |
 | `KOMITE_SUBJECTIVITY` | teks | tidak | | migrasi `komiteclaimprop/682` (RALAT 08-10-2026) — isian Subjectivity tingkat 1 Komite Claim Prop, `'1'`/`'0'` bawaan `'0'`; kasus Life tidak menulisnya |
 | `KOMITE_SUBJECTIVITY_NOTE` | teks | ya | | migrasi `komiteclaimprop/682` (RALAT 08-10-2026) — catatan Subjectivity tingkat 1 Komite Claim Prop |
+| `TRANSFER_TYPE` | teks | tidak | | migrasi `komiteclaimfacin/642` (RALAT 10-10-2026) — jenis penyerahan `'2'` adjustment / `'3'` Reject Claim / `'4'` Close Without Payment, bawaan `'2'`; kasus Life tidak menulisnya |
+
+> **RALAT 10-10-2026** (izin work owner 10-10-2026, Komite Claim Fac In tahap 2, keputusan KCF-03). `ADJUSTMENT_ID` kini **boleh kosong** (migrasi `komiteclaimfacin/641`, `MODIFY ... NULL`): kasus komite Fac In TT3 Reject Claim dan TT4 Close Without Payment (`T_WORK_CLAIM.LINI = 'FACIN'`, awalan `KMT-`) lahir tanpa baris adjustment; kasus Life / Prop / Non Prop tetap mengisinya. Kolom `TRANSFER_TYPE` ditambahkan migrasi `komiteclaimfacin/642` (`CHAR(1) DEFAULT '2' NOT NULL`, CHECK `'2'`/`'3'`/`'4'` = jenis penyerahan `pyWorkPage.TransferType`); baris lini lain bernilai bawaan `'2'` (penyerahan adjustment). Mundur 641 = `NOT NULL NOVALIDATE` (baris kosong yang ada dibiarkan).
 
 **Index:** `ADJUSTMENT_ID` **(biasa — `IX_GENERAL_KOMITE_ADJ`, migrasi `komiteclaimprop/681`)**.
 

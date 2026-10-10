@@ -99,6 +99,9 @@ var berkasKomiteBolehMenyebut = map[string]string{
 	"modul/komiteclaimprop/backend/repository/tangga.go": "modul Komite Claim Prop - penulis keputusan tangga dan daftar kerja KomiteRouter; izin work owner 08-10-2026",
 	// ⛔ MODUL KOMITE CLAIM NON PROP - perintah work owner 09-10-2026 (pola Komite Claim Prop): SATU berkas.
 	"modul/komiteclaimnonprop/backend/repository/tangga.go": "modul Komite Claim Non Prop - penulis keputusan tangga dan daftar kerja KomiteRouter; izin work owner 09-10-2026",
+	// ⛔ MODUL KOMITE CLAIM FAC IN - izin work owner 10-10-2026 (prompt tahap 2 §6 butir 3, pola Komite Claim Prop): SATU
+	// berkas - penulis keputusan tangga (KomitePost_*), perluasan ApprovalKomite_Act S7.1, daftar kerja KomiteRouter.
+	"modul/komiteclaimfacin/backend/repository/tangga.go": "modul Komite Claim Fac In - penulis keputusan dan perluasan tangga, daftar kerja KomiteRouter; izin work owner 10-10-2026",
 }
 
 // TestNolPenyimpanKeputusanKomiteDiKonteksIni menegakkan batas konteks.

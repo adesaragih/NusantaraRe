@@ -1,0 +1,753 @@
+/* Gaya modul Komite Claim Fac In - satu berkas milik modul; setiap pemilih di bawah akar `.komiteclaimfacin`, kelas
+   modul berawalan `komiteclaimfacin__`. Disalin dari Komite Claim Non Prop (pola Komite Claim Prop: kulit Kelola User -
+   alas terang, isian timbul ke dalam, tombol kapsul, tabel sebagai kartu timbul berkepala navy), nilainya DISALIN ke
+   token `--kcfi-*` milik modul ini, tidak menumpang ke kelas modul lain. Warna hanya di blok token akar. TANPA
+   backdrop-filter, filter, atau transform (Modal View Retro dirender tanpa portal di dalam akar). */
+
+.komiteclaimfacin {
+  display: contents;
+}
+
+/* --------------------------------------------------------------- kulit */
+
+.komiteclaimfacin .komiteclaimfacin__akar {
+  --kcfi-latar-tepi: #cfd7e5;
+  --kcfi-latar-atas: #f9fafd;
+  --kcfi-latar-bawah: #e4e9f3;
+  --kcfi-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --kcfi-lembut: #e9edf3;
+  --kcfi-lembut-tepi: #dde3ec;
+  --kcfi-teks: #101828;
+  --kcfi-teks-redup: #4f586b;
+  --kcfi-aksen: var(--primary-tanda);
+  --kcfi-aksen-teks: #2339a3;
+  --kcfi-aksen-lembut: #e3e8f6;
+  --kcfi-aksen-garis: #b9c5ee;
+  --kcfi-kepala-tabel: #dde4f2;
+  --kcfi-kepala-teks: #22326b;
+  --kcfi-kepala-garis: #c3cde2;
+  --kcfi-isi: #ffffff;
+  --kcfi-baris-hover: #e6ecfa;
+  --kcfi-garis: #e1e6ef;
+  --kcfi-tepi: #c8d1e1;
+  --kcfi-tombol: #d63a42;
+  --kcfi-tombol-ujung: #bf2f37;
+  --kcfi-tombol-hover: #c2333b;
+  --kcfi-tombol-hover-ujung: #a9282f;
+  --kcfi-terang: rgba(255, 255, 255, 0.92);
+  --kcfi-gelap: rgba(163, 177, 198, 0.55);
+  --kcfi-timbul: 8px 8px 18px var(--kcfi-gelap), -8px -8px 18px var(--kcfi-terang);
+  --kcfi-timbul-kecil: 4px 4px 9px var(--kcfi-gelap), -4px -4px 9px var(--kcfi-terang);
+  --kcfi-cekung-kecil: inset 2px 2px 4px var(--kcfi-gelap), inset -2px -2px 4px var(--kcfi-terang);
+  --kcfi-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --kcfi-tekan: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+  --kcfi-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--kcfi-terang);
+  --kcfi-setuju: #1d7a46;
+  --kcfi-setuju-lembut: #e2f3e8;
+  --kcfi-setuju-garis: #9fd3b2;
+  --kcfi-tolak: #b42a31;
+  --kcfi-tolak-lembut: #fbe6e7;
+  --kcfi-tolak-garis: #efb0b4;
+  --kcfi-tunggu: #8a5a0c;
+  --kcfi-tunggu-lembut: #fdf1dc;
+  --kcfi-tunggu-garis: #f0cf8f;
+  --kcfi-redup-lembut: #eef1f6;
+  --kcfi-di-atas-warna: #ffffff;
+  --text-3: var(--kcfi-teks-redup);
+  color: var(--kcfi-teks);
+  padding: 20px;
+  border: 1px solid var(--kcfi-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--kcfi-latar-atas) 0%, var(--kcfi-latar-bawah) 100%);
+  box-shadow: var(--kcfi-bayang-akar);
+}
+
+:root[data-theme="dark"] .komiteclaimfacin .komiteclaimfacin__akar {
+  --kcfi-latar-tepi: #323b50;
+  --kcfi-latar-atas: #222a3b;
+  --kcfi-latar-bawah: #161b27;
+  --kcfi-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --kcfi-lembut: #181d2a;
+  --kcfi-lembut-tepi: #242b3a;
+  --kcfi-teks: #eef0f6;
+  --kcfi-teks-redup: #aab2c4;
+  --kcfi-aksen-teks: #aebcff;
+  --kcfi-aksen-lembut: #222b45;
+  --kcfi-aksen-garis: #3a4b8f;
+  --kcfi-kepala-tabel: #273152;
+  --kcfi-kepala-teks: #dbe2ff;
+  --kcfi-kepala-garis: #3a4670;
+  --kcfi-isi: #1f2638;
+  --kcfi-baris-hover: #2b3554;
+  --kcfi-garis: #2c3447;
+  --kcfi-tepi: #3a4459;
+  --kcfi-terang: rgba(255, 255, 255, 0.045);
+  --kcfi-gelap: rgba(0, 0, 0, 0.55);
+  --kcfi-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --kcfi-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--kcfi-terang);
+  --kcfi-setuju: #7fd6a2;
+  --kcfi-setuju-lembut: #17321f;
+  --kcfi-setuju-garis: #2f6b45;
+  --kcfi-tolak: #ff9aa0;
+  --kcfi-tolak-lembut: #3a1a1d;
+  --kcfi-tolak-garis: #7a3238;
+  --kcfi-tunggu: #f3c879;
+  --kcfi-tunggu-lembut: #33280f;
+  --kcfi-tunggu-garis: #6e5320;
+  --kcfi-redup-lembut: #1b2130;
+  --kcfi-di-atas-warna: #10141f;
+}
+
+.komiteclaimfacin .inbox__judul,
+.komiteclaimfacin .panel__title {
+  color: var(--kcfi-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.komiteclaimfacin .muted {
+  color: var(--kcfi-teks-redup);
+}
+
+.komiteclaimfacin :focus-visible {
+  outline: 2px solid var(--kcfi-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian. */
+.komiteclaimfacin .field__input {
+  background: var(--kcfi-isi);
+  border: 1px solid var(--kcfi-tepi);
+  border-radius: 12px;
+  box-shadow: var(--kcfi-cekung-kecil);
+  color: var(--kcfi-teks);
+}
+
+.komiteclaimfacin .field__input:focus {
+  border-color: var(--kcfi-aksen);
+  box-shadow: var(--kcfi-cekung-kecil), var(--kcfi-cincin);
+  outline: none;
+}
+
+.komiteclaimfacin .field__input--readonly {
+  background: var(--kcfi-lembut);
+  border-color: var(--kcfi-lembut-tepi);
+  color: var(--kcfi-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul. */
+.komiteclaimfacin .btn {
+  border-radius: 999px;
+}
+
+.komiteclaimfacin .btn--primary {
+  background: linear-gradient(180deg, var(--kcfi-tombol), var(--kcfi-tombol-ujung));
+  border-color: var(--kcfi-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--kcfi-bayang-tombol);
+}
+
+.komiteclaimfacin .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--kcfi-tombol-hover), var(--kcfi-tombol-hover-ujung));
+}
+
+.komiteclaimfacin .btn--primary:active:not(:disabled) {
+  box-shadow: var(--kcfi-tekan);
+}
+
+.komiteclaimfacin .btn--ghost {
+  background: var(--kcfi-isi);
+  border: 1px solid var(--kcfi-tepi);
+  color: var(--kcfi-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--kcfi-timbul-kecil);
+}
+
+.komiteclaimfacin .btn:disabled {
+  box-shadow: none;
+}
+
+.komiteclaimfacin .alert {
+  border-radius: 12px;
+}
+
+/* Kartu bagian layar kasus. */
+.komiteclaimfacin .komiteclaimfacin__akar .panel {
+  margin-top: 16px;
+  padding: 16px 18px;
+  background: var(--kcfi-isi);
+  border: 1px solid var(--kcfi-tepi);
+  border-radius: 18px;
+  box-shadow: var(--kcfi-timbul);
+}
+
+/* Tabel: kartu berkepala navy muda, zebra, sorot biru muda. */
+.komiteclaimfacin .komiteclaimfacin__tabel {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--kcfi-isi);
+  border: 1px solid var(--kcfi-tepi);
+  border-radius: 14px;
+}
+
+.komiteclaimfacin .komiteclaimfacin__tabel th {
+  padding: 6px 10px;
+  background: var(--kcfi-kepala-tabel);
+  color: var(--kcfi-kepala-teks);
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 1px solid var(--kcfi-kepala-garis);
+}
+
+.komiteclaimfacin .komiteclaimfacin__tabel td {
+  padding: 6px 10px;
+  color: var(--kcfi-teks);
+  border-bottom: 1px solid var(--kcfi-garis);
+}
+
+.komiteclaimfacin .komiteclaimfacin__tabel tbody tr:nth-child(even) > td {
+  background: var(--kcfi-lembut);
+}
+
+.komiteclaimfacin .komiteclaimfacin__tabel tbody tr:hover > td {
+  background: var(--kcfi-baris-hover);
+}
+
+.komiteclaimfacin .komiteclaimfacin__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Judul kolom angka rata kanan seperti nilainya - `.komiteclaimfacin__tabel th` (text-align: left) lebih spesifik
+   daripada `.komiteclaimfacin__angka` (laporan work owner 09-10-2026 "sejajarin header sama value"). */
+.komiteclaimfacin .komiteclaimfacin__tabel th.komiteclaimfacin__angka {
+  text-align: right;
+}
+
+/* --------------------------------------------------------------- layar kasus komite
+   Tata letak (permintaan work owner 09-10-2026 "layout komite diperbaiki, lebih enak dilihat dan userfriendly"):
+   kepala + ringkasan, kartu rincian, lalu di bawah: tangga + keputusan (work owner "ini biarkan tetep dibawah"). */
+
+.komiteclaimfacin .komiteclaimfacin__kepala {
+  display: grid;
+  gap: 16px;
+}
+
+.komiteclaimfacin .komiteclaimfacin__kepala-baris {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.komiteclaimfacin .komiteclaimfacin__judul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.komiteclaimfacin .komiteclaimfacin__kepala-sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Lencana keadaan: kepala (giliran Anda / menunggu / selesai) dan langkah tangga. */
+.komiteclaimfacin .komiteclaimfacin__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border: 1px solid var(--kcfi-garis);
+  border-radius: 999px;
+  background: var(--kcfi-redup-lembut);
+  color: var(--kcfi-teks-redup);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.komiteclaimfacin .komiteclaimfacin__status--anda,
+.komiteclaimfacin .komiteclaimfacin__status--berjalan {
+  border-color: var(--kcfi-tunggu-garis);
+  background: var(--kcfi-tunggu-lembut);
+  color: var(--kcfi-tunggu);
+}
+
+.komiteclaimfacin .komiteclaimfacin__status--setuju,
+.komiteclaimfacin .komiteclaimfacin__status--selesai {
+  border-color: var(--kcfi-setuju-garis);
+  background: var(--kcfi-setuju-lembut);
+  color: var(--kcfi-setuju);
+}
+
+.komiteclaimfacin .komiteclaimfacin__status--tolak {
+  border-color: var(--kcfi-tolak-garis);
+  background: var(--kcfi-tolak-lembut);
+  color: var(--kcfi-tolak);
+}
+
+.komiteclaimfacin .komiteclaimfacin__status--tunggu,
+.komiteclaimfacin .komiteclaimfacin__status--menunggu {
+  border-color: var(--kcfi-garis);
+  background: var(--kcfi-redup-lembut);
+  color: var(--kcfi-teks-redup);
+}
+
+/* Ringkasan: ubin server (Committee No, Claim No, Level). */
+.komiteclaimfacin .komiteclaimfacin__ringkas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.komiteclaimfacin .komiteclaimfacin__ringkas-isi {
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--kcfi-tepi);
+  border-radius: 14px;
+  background: var(--kcfi-isi);
+  box-shadow: var(--kcfi-timbul-kecil);
+}
+
+.komiteclaimfacin .komiteclaimfacin__ringkas-isi dt {
+  margin-bottom: 4px;
+  color: var(--kcfi-teks-redup);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.komiteclaimfacin .komiteclaimfacin__ringkas-isi dd {
+  margin: 0;
+  color: var(--kcfi-teks);
+  font-size: 15px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.komiteclaimfacin .komiteclaimfacin__angka-teks {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Rincian, lalu tangga + keputusan di bawahnya (berdampingan bila lega, bertumpuk bila sempit). */
+.komiteclaimfacin .komiteclaimfacin__tata {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.komiteclaimfacin .komiteclaimfacin__utama {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.komiteclaimfacin .komiteclaimfacin__bawah {
+  display: grid;
+  /* min(): lebar ponsel (isi < 340px) tidak memaksa gulir mendatar */
+  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+  align-items: start;
+  gap: 16px;
+}
+
+.komiteclaimfacin .komiteclaimfacin__tata .panel {
+  margin-top: 0;
+}
+
+/* Kartu kelompok. */
+.komiteclaimfacin .komiteclaimfacin__kartu {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.komiteclaimfacin .komiteclaimfacin__kartu-judul {
+  margin: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--kcfi-garis);
+  font-size: 15px;
+}
+
+.komiteclaimfacin .komiteclaimfacin__bagian {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.komiteclaimfacin .komiteclaimfacin__subjudul {
+  margin: 0;
+  color: var(--kcfi-kepala-teks);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Pasangan label-nilai (bukan kotak isian): label redup di kiri, nilai di kanan; teks panjang selebar kartu. */
+.komiteclaimfacin .komiteclaimfacin__dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  gap: 0 32px;
+  margin: 0;
+}
+
+.komiteclaimfacin .komiteclaimfacin__dl-baris {
+  display: grid;
+  grid-template-columns: minmax(110px, 42%) minmax(0, 1fr);
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--kcfi-garis);
+}
+
+.komiteclaimfacin .komiteclaimfacin__dl-baris--panjang {
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  border-bottom: 0;
+}
+
+.komiteclaimfacin .komiteclaimfacin__label {
+  color: var(--kcfi-teks-redup);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.komiteclaimfacin .komiteclaimfacin__nilai {
+  margin: 0;
+  color: var(--kcfi-teks);
+  font-weight: 500;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.komiteclaimfacin .komiteclaimfacin__dl-baris.komiteclaimfacin__angka .komiteclaimfacin__label {
+  text-align: left;
+}
+
+.komiteclaimfacin .komiteclaimfacin__dl-baris.komiteclaimfacin__angka .komiteclaimfacin__nilai {
+  text-align: right;
+}
+
+.komiteclaimfacin .komiteclaimfacin__dl-baris--panjang .komiteclaimfacin__nilai {
+  min-height: 40px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--kcfi-lembut);
+}
+
+.komiteclaimfacin .komiteclaimfacin__kosong {
+  color: var(--kcfi-teks-redup);
+  font-weight: 400;
+}
+
+/* Grid: tabel bergulir mendatar di dalam kartu (tabel lebar tidak melebarkan halaman). */
+.komiteclaimfacin .komiteclaimfacin__grid {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.komiteclaimfacin .komiteclaimfacin__gulir {
+  overflow-x: auto;
+  border-radius: 14px;
+}
+
+.komiteclaimfacin .komiteclaimfacin__tabel th,
+.komiteclaimfacin .komiteclaimfacin__tabel td {
+  padding: 7px 9px;
+  font-size: 12.5px;
+}
+
+.komiteclaimfacin .komiteclaimfacin__tabel th {
+  font-size: 11.5px;
+  line-height: 1.3;
+  vertical-align: bottom;
+}
+
+.komiteclaimfacin .komiteclaimfacin__tabel td.komiteclaimfacin__angka {
+  white-space: nowrap;
+}
+
+.komiteclaimfacin .komiteclaimfacin__tabel td.komiteclaimfacin__kosong {
+  text-align: center;
+}
+
+/* Kartu keputusan. */
+.komiteclaimfacin .komiteclaimfacin__keputusan {
+  border-color: var(--kcfi-aksen-garis);
+}
+
+.komiteclaimfacin .komiteclaimfacin__isian-blok {
+  display: grid;
+  gap: 6px;
+}
+
+.komiteclaimfacin .komiteclaimfacin__pilihan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.komiteclaimfacin .komiteclaimfacin__opsi {
+  padding: 10px 12px;
+  border: 1.5px solid var(--kcfi-tepi);
+  border-radius: 12px;
+  background: var(--kcfi-isi);
+  color: var(--kcfi-teks);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--kcfi-timbul-kecil);
+}
+
+.komiteclaimfacin .komiteclaimfacin__opsi:hover:not(:disabled) {
+  border-color: var(--kcfi-aksen-garis);
+}
+
+.komiteclaimfacin .komiteclaimfacin__opsi:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.komiteclaimfacin .komiteclaimfacin__opsi--setuju.komiteclaimfacin__opsi--dipilih {
+  border-color: var(--kcfi-setuju);
+  background: var(--kcfi-setuju-lembut);
+  color: var(--kcfi-setuju);
+  box-shadow: none;
+}
+
+.komiteclaimfacin .komiteclaimfacin__opsi--tolak.komiteclaimfacin__opsi--dipilih {
+  border-color: var(--kcfi-tolak);
+  background: var(--kcfi-tolak-lembut);
+  color: var(--kcfi-tolak);
+  box-shadow: none;
+}
+
+.komiteclaimfacin .komiteclaimfacin__centang {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.komiteclaimfacin .komiteclaimfacin__area {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.komiteclaimfacin .komiteclaimfacin__aksi {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.komiteclaimfacin .komiteclaimfacin__keputusan .komiteclaimfacin__aksi .btn--primary {
+  flex: 1;
+}
+
+/* Langkah tangga ("List of Committee"). */
+.komiteclaimfacin .komiteclaimfacin__langkah {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.komiteclaimfacin .komiteclaimfacin__langkah-isi {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  padding-bottom: 16px;
+}
+
+.komiteclaimfacin .komiteclaimfacin__langkah-isi:last-child {
+  padding-bottom: 0;
+}
+
+.komiteclaimfacin .komiteclaimfacin__langkah-isi:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 30px;
+  bottom: 2px;
+  left: 13px;
+  width: 2px;
+  background: var(--kcfi-garis);
+}
+
+.komiteclaimfacin .komiteclaimfacin__langkah-tanda {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--kcfi-tepi);
+  border-radius: 50%;
+  background: var(--kcfi-isi);
+  color: var(--kcfi-teks-redup);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.komiteclaimfacin .komiteclaimfacin__langkah--setuju .komiteclaimfacin__langkah-tanda {
+  border-color: var(--kcfi-setuju);
+  background: var(--kcfi-setuju);
+  color: var(--kcfi-di-atas-warna);
+}
+
+.komiteclaimfacin .komiteclaimfacin__langkah--tolak .komiteclaimfacin__langkah-tanda {
+  border-color: var(--kcfi-tolak);
+  background: var(--kcfi-tolak);
+  color: var(--kcfi-di-atas-warna);
+}
+
+.komiteclaimfacin .komiteclaimfacin__langkah--berjalan .komiteclaimfacin__langkah-tanda {
+  border-color: var(--kcfi-tunggu);
+  background: var(--kcfi-tunggu-lembut);
+  color: var(--kcfi-tunggu);
+}
+
+.komiteclaimfacin .komiteclaimfacin__langkah-teks {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding-top: 3px;
+}
+
+.komiteclaimfacin .komiteclaimfacin__langkah-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.komiteclaimfacin .komiteclaimfacin__langkah-tgl {
+  color: var(--kcfi-teks-redup);
+  font-size: 12px;
+  word-spacing: 0.4em;
+}
+
+.komiteclaimfacin .komiteclaimfacin__langkah-catatan {
+  margin: 2px 0 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--kcfi-lembut);
+  font-size: 12.5px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------------- khusus Fac In
+   Grid berincian (expand pane masterDetail: Object Detail -> SpreadingDetail, adjustment KMT -> DetailAdjustmentFac,
+   ShowRetro -> ShowSecurityReinsurer), kaki grid, tautan View Retro, centang hanya-baca. */
+
+.komiteclaimfacin .komiteclaimfacin__panah-kolom {
+  width: 28px;
+  text-align: center;
+}
+
+.komiteclaimfacin .komiteclaimfacin__panah {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--kcfi-tepi);
+  border-radius: 6px;
+  background: var(--kcfi-isi);
+  color: var(--kcfi-aksen-teks);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.komiteclaimfacin .komiteclaimfacin__baris-buka {
+  cursor: pointer;
+}
+
+/* Baris rincian: latar tenang bergaris aksen, tidak ikut zebra / sorot baris induk (aturan sesudah keduanya). */
+.komiteclaimfacin .komiteclaimfacin__tabel tbody tr.komiteclaimfacin__baris-rinci > td {
+  padding: 10px 12px 14px;
+  background: var(--kcfi-lembut);
+}
+
+.komiteclaimfacin .komiteclaimfacin__rinci {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding-left: 12px;
+  border-left: 3px solid var(--kcfi-aksen-garis);
+}
+
+.komiteclaimfacin .komiteclaimfacin__rinci .komiteclaimfacin__rinci {
+  border-left-color: var(--kcfi-tepi);
+}
+
+.komiteclaimfacin .komiteclaimfacin__panjang {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Kaki grid (Total ...): pasangan label-nilai rata kanan di bawah tabel. */
+.komiteclaimfacin .komiteclaimfacin__kaki {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px 24px;
+  margin: 0;
+}
+
+.komiteclaimfacin .komiteclaimfacin__kaki-isi {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.komiteclaimfacin .komiteclaimfacin__kaki-isi dt {
+  color: var(--kcfi-teks-redup);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.komiteclaimfacin .komiteclaimfacin__kaki-isi dd {
+  margin: 0;
+  color: var(--kcfi-teks);
+  font-weight: 700;
+}
+
+/* Tautan View Retro (pxLink): teks bergaris bawah, bukan tombol kapsul. */
+.komiteclaimfacin .komiteclaimfacin__tautan {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--kcfi-aksen-teks);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.komiteclaimfacin .komiteclaimfacin__centang-baca {
+  margin: 0;
+  accent-color: var(--kcfi-aksen);
+}
+
+.komiteclaimfacin .komiteclaimfacin__pesan {
+  margin: 0;
+  padding-left: 18px;
+}
+
+/* Isi pop-up ShowRetro. */
+.komiteclaimfacin .komiteclaimfacin__modal {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  color: var(--kcfi-teks);
+}

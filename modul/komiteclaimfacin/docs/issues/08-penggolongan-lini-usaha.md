@@ -17,6 +17,21 @@ Sesudah tiket ini, Setiap lini usaha **tergolong benar di sisi komite**, termasu
 | 13 penggolong hidup | ⭐ dari 49 rule penggolong, **13 dipakai hidup**; ⛔ **36 tidak dipakai sama sekali** |
 | ⚠️ Cacat lama | ⛔ sembilan penggolong menguji medan yang **tidak disalin**; **dua dipakai hidup lima kali** |
 
+> ⛔ **RALAT 10-10-2026.** Kalimat dan baris lamanya dikutip utuh, tidak dihapus: *"Sesudah tiket ini, Setiap lini usaha
+> **tergolong benar di sisi komite**, termasuk **MBU dan Travel** yang dulu tak pernah terbit."* dan *"13 penggolong
+> hidup | ⭐ dari 49 rule penggolong, **13 dipakai hidup**; ⛔ **36 tidak dipakai sama sekali**"* →
+>
+> - **Komite membaca klaim lewat kontrak, bukan impor dan bukan salinan.** Halaman kasus klaim induk (termasuk
+>   `OfferFacIn.QuotationData` / `PolicyData`) dibaca lewat `kontrak.KlaimFacInKomite` (`BacaKlaimFacIn`,
+>   `inti/backend/kontrak/klaimfacin.go`), disediakan claimfacin (`services.KlaimUntukKomite`). Komite **tidak
+>   mengimpor** `modul/claimfacin`; tulisan ke tabel klaim hanya lewat kontrak yang sama, di dalam transaksi Submit.
+>   Penggolong sisi komite membaca halaman utuh itu, jadi premis "medan tidak disalin ke objek kerja komite"
+>   (`SetValueKomite` S12 hanya menyalin `BusinessType` / `GroupPanel`) tidak berlaku di sistem baru.
+> - Angka **49 / 13 / 36** bersandar ronde lama. Penggolong yang benar-benar dipanggil rule komite (mis.
+>   `SaveAccept_ACT`: `IsFire`, `IsAneka`, `isGolfInsurance`, `IsMarineCargo`, `IsMBU`, `IsTravel`, `IsPA` untuk
+>   `DATA_JSON`) dicacah di PARITAS komite, bukan di tiket ini. Pembanding sisi klaim: RALAT `modul/claimfacin/docs/issues/02-*.md` (60 `When`, satu fungsi per
+>   `When`).
+
 ⭐ Sumber: `komite-claim-facin\spec.md` · `claim-facin\STRUKTUR-TABEL-CLAIM-FACIN.md` §5.
 
 ## Keputusan work owner yang mengikat

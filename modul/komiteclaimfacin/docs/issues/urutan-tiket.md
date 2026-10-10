@@ -23,6 +23,15 @@ mulai dari `00`**.
 ⚠️ **Tabel basis datanya tetap satu** — `[keputusan work owner]` **K4 · K6**, komite lini FAC dan
 lini PROP memakai tabel yang sama. ⭐ **Tabel bersama tidak menuntut tiket bersama.**
 
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⚠️ **Tabel basis datanya tetap satu** —
+> `[keputusan work owner]` **K4 · K6**, komite lini FAC dan lini PROP memakai tabel yang sama."* → **"K4 · K6" di sini
+> memakai nomor `STRUKTUR-TABEL-CLAIM-FACIN.md`** (`modul/claimfacin/docs/`, §0 K4 "Modul Komite tidak punya tabel baru"
+> dan §5d K6 "Komite lini PROP dan lini FAC disimpan di TABEL YANG SAMA"), **bukan** K4 / K6 spec modul ini (ID-13 dua
+> kotak centang, ID-9 surel galat kasir). Isinya tetap: nol tabel baru. Tetapi `T_GENERAL_KOMITE` kini **diubah** oleh
+> KCF-03 (migrasi komiteclaimfacin 640–679: `MODIFY ADJUSTMENT_ID` boleh kosong + kolom `TRANSFER_TYPE` 2 / 3 / 4, izin
+> work owner). Jalur folder lama di berkas ini (`komite-claim-facin\…`, `claim-facin\issues\…`) kini
+> `modul/komiteclaimfacin/docs/…` dan `modul/claimfacin/docs/issues/…`.
+
 ---
 
 ## Tiga belas tiket
@@ -42,6 +51,14 @@ lini PROP memakai tabel yang sama. ⭐ **Tabel bersama tidak menuntut tiket bers
 | ⚠️ **10** | Jalur Fac Retro — jalur yang melompati penyiapan wewenang | 00 · 03 |
 | ⭐ **11** | Jabatan, tabel login, dan jejak audit | 05 · `claim-facin\issues\12` |
 | **12** | Kronologi komite dan penandaan data lama | 05 · 11 |
+
+> ⛔ **RALAT 10-10-2026.** Baris lamanya dikutip utuh, tidak dihapus: *"| ⚠️ **01** | Pengeluaran pengaju — jenjang
+> pertama saja | 00 |"*, *"| ⭐ **02** | Tangga berjalan — giliran, maju, selesai, tutup seketika | 00 · 01 |"*, *"| ⭐
+> **11** | Jabatan, tabel login, dan jejak audit | 05 · `claim-facin\issues\12` |"* dan *"| **12** | Kronologi komite dan
+> penandaan data lama | 05 · 11 |"* → **tiket 01 GUGUR** (K9 salah baca: `ApprovalKomite_Act` L6.2 hanya membuang calon
+> yang sama dengan anggota tingkat 1) dan **tiket 11 GUGUR** (K13 digantikan workbasket, KCF-01). Tersisa **sebelas tiket
+> hidup**. Gantungan baru: 02 ← 00; 12 ← 05. Tiket 00 kini membaca kasus yang sudah dilahirkan claimfacin tahap 1
+> (`8c3b2e71`) dan membangun perluasan KCF-02 + TT3 / TT4 KCF-03.
 
 ---
 
@@ -65,6 +82,13 @@ In. ⛔ Jadi tiket **09** adalah yang **paling jauh dari titik mulai** pada selu
 | **06** | 07 · 09 |
 | **11** | 12 |
 
+> ⛔ **RALAT 10-10-2026.** Bagan dan kalimat lamanya dikutip utuh, tidak dihapus: *"└─▶ 00 ──▶ 01 ──▶ 02 ──▶ 05 ──▶ 06
+> ──▶ 09"*, *"⭐ **Enam tingkat di dalam modul ini**, ⚠️ **menumpang rantai delapan tingkat** di modul Claim Fac In."*,
+> *"| **00** | 01 · **08** *(penggolongan hanya butuh kasus lahir)* · **10** |"*, *"| **05** | 06 · **11** |"* dan
+> *"| **11** | 12 |"* → rantai terdalam kini **claimfacin tahap 1 (`8c3b2e71`, kasus `KMT-` lahir) ──▶ 00 ──▶ 02 ──▶ 05
+> ──▶ 06 ──▶ 09**: lima tingkat di modul ini, dan gantungan Claim Fac In sudah terpenuhi. Sesudah 00: 02 · 08 · 10.
+> Sesudah 05: 06 · 12. Baris "11 → 12" gugur bersama tiket 11.
+
 ---
 
 ## ⚠️ Lima tiket bergantung pada modul Claim Fac In
@@ -79,6 +103,17 @@ In. ⛔ Jadi tiket **09** adalah yang **paling jauh dari titik mulai** pada selu
 
 ⭐ **Kelimanya benar** — ⛔ keduanya **bukan** salinan yang berdiri sendiri.
 
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⭐ **Kelimanya benar** — ⛔ keduanya **bukan**
+> salinan yang berdiri sendiri."* → keadaan 10-10-2026:
+>
+> - **00** ← `claim-facin\issues\13`: **terpenuhi** (claimfacin tahap 1 `8c3b2e71`, `CreateKMTNo_Act`).
+> - **03** ← `claim-facin\issues\08`: **terpenuhi** (ADR-0030 + keanggotaan workbasket, dibangun tahap 1). Wewenang
+>   komite memakai pola yang sama (`Pemegang`), dibangun di modul ini, tidak dipinjam dari claimfacin.
+> - **08** ← `claim-facin\issues\02`: komite **tidak** memakai penggolong claimfacin lewat impor; halaman klaim dibaca
+>   lewat kontrak `kontrak.KlaimFacInKomite` (`inti/backend/kontrak/klaimfacin.go`).
+> - **09** ← `claim-facin\issues\11`: muatan kasir claimfacin masuk outbox hanya di produksi; dedupe = OQ-CFI-26.
+> - **11** ← `claim-facin\issues\12`: **gugur** bersama tiket 11.
+
 ---
 
 ## ⛔ Dua tiket yang TERTAHAN
@@ -90,6 +125,14 @@ In. ⛔ Jadi tiket **09** adalah yang **paling jauh dari titik mulai** pada selu
 
 ⚠️ **Tiket 00 tertahan sebagian** — ⭐ kasus dapat lahir, ⛔ tetapi **jumlah jenjang** menunggu butir
 6, dan **butir 39** *(satu jabatan, beberapa pemegang)* menahan bila keadaan itu terjadi.
+
+> ⛔ **RALAT 10-10-2026.** Baris dan kalimat lamanya dikutip utuh, tidak dihapus: *"| ⛔ **03 · Wewenang** | **butir 6** —
+> ⛔ isi daftar jabatan dan susunan jenjang **belum ada** | ⛔⛔ **MENAHAN PEMBANGUNAN.** ⭐ Tiketnya **tetap ditulis**,
+> jahitannya disebut |"*, *"| ⛔ **11 · Jabatan & jejak audit** | **butir 6** yang sama | ⛔⛔ **MENAHAN PEMBANGUNAN** |"* dan
+> *"⚠️ **Tiket 00 tertahan sebagian** — ⭐ kasus dapat lahir, ⛔ tetapi **jumlah jenjang** menunggu butir 6, dan **butir
+> 39** *(satu jabatan, beberapa pemegang)* menahan bila keadaan itu terjadi."* → **nol tiket tertahan.** Butir 6 tertutup
+> ADR-0030 (`OUTPUT_HASIL_RNM/docs/bersama/adr/0030-aturan-peran-ditetapkan-sekali-lintas-modul.md`) + KCF-01. Butir 39
+> tertutup pola Komite Prop 09-10-2026 (setiap anggota workbasket tingkat berjalan boleh memutus). Tiket 11 gugur.
 
 ---
 
@@ -111,6 +154,13 @@ tidak tertutup — sebab spec di sana punya bab **"Butir yang belum punya sasara
 ⭐ `[terverifikasi]` **Spec modul ini TIDAK punya bab serupa** — 15 bab AC-nya seluruhnya perilaku
 yang dapat diuji.
 
+> ⛔ **RALAT 10-10-2026.** Baris lamanya dikutip utuh, tidak dihapus: *"| ⭐ tertutup **tepat satu kali** | ⭐ **100** |"* →
+> angka itu berlaku 20-09-2026. Sesudah RALAT 10-10-2026 di spec dan tiket, AC berikut **gugur** dan tidak lagi punya
+> tiket penutup: **9–13** (tiket 01), **20–22** (eskalasi), **25** (percobaan ditolak terekam), **77 · 78 · 82 · 83**
+> (tiket 11), **92–95** (K8 / KCF-04). AC **79 · 80 · 81 · 84 · 85** dari tiket 11 yang gugur tetap berlaku dengan sumber
+> roster + KCF-01; ditutup migrasi roster dan tiket 03 / 05. Cacah ulang liputan dibuat sesudah PARITAS komite selesai,
+> bukan di blok ini.
+
 ---
 
 ## ⭐ Dua uji yang MENGUNCI keputusan, bukan menguji fungsi
@@ -121,6 +171,13 @@ yang dapat diuji.
 | --- | --- | --- |
 | ⭐ **Pengeluaran pengaju — DUA ARAH** | **01** | ⛔ Arah kedua membuktikan pengaju di jenjang **kedua TETAP di daftar** — ⭐ **mengunci K9** supaya tidak "terperbaiki" diam-diam |
 | ⭐ **Salinan jabatan** | **11** | ⛔ Naik jabatan ⇒ catatan lama **tidak berubah** — ⭐ inilah yang **membedakan salinan dari rujukan** |
+
+> ⛔ **RALAT 10-10-2026.** Baris lamanya dikutip utuh, tidak dihapus: *"| ⭐ **Pengeluaran pengaju — DUA ARAH** | **01** |
+> ⛔ Arah kedua membuktikan pengaju di jenjang **kedua TETAP di daftar** — ⭐ **mengunci K9** supaya tidak "terperbaiki"
+> diam-diam |"* dan *"| ⭐ **Salinan jabatan** | **11** | ⛔ Naik jabatan ⇒ catatan lama **tidak berubah** — ⭐ inilah yang
+> **membedakan salinan dari rujukan** |"* → uji pengeluaran pengaju **gugur** bersama K9; penggantinya uji L6.2 (calon
+> perluasan yang sama dengan anggota tingkat 1 tidak masuk dua kali) di tiket 00. Uji salinan jabatan **pindah ke tiket
+> 05**: ubah JABATAN roster sesudah keputusan ⇒ `KOMITE_JABATAN` dan teks kronologi lama tidak berubah.
 
 ---
 
