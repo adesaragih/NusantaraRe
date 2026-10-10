@@ -283,13 +283,19 @@ func nilaiAngsuran(m MasukanAngsuran, kini time.Time) (HasilAngsuran, error) {
 			if ke.Cmp(n) == 0 && jumlah.Cmp(seratus) != 0 {
 				pctBaris = tambah(persen, kurang(seratus, jumlah)) // 8.2.2
 			}
-			a.InstallmentList = append(a.InstallmentList, BarisAngsuran{
+			baris := BarisAngsuran{
 				Installment:    teks(ke),
 				DueDate:        tanggal,
 				Currency:       a.Currency,
 				InstallmentPct: teks(pctBaris),
 				Amount:         teks(kali(bagiBulat(pctBaris, 100, 4), nilai)),
-			})
+			}
+			// ⭐ Payment Date terisi sejak baris lahir (laporan pemakai
+			// 10 Oktober 2026: kolomnya kosong sesudah Update Value). Rumus
+			// `TreatyInUpdatePaymentDate` yang sama dengan sel Due Date/WPC;
+			// langkah 9/10 di bawah tetap menimpanya dengan nilai pulihan.
+			tanggalBayar(&baris)
+			a.InstallmentList = append(a.InstallmentList, baris)
 		}
 	}
 	// Langkah 9 lalu 10 - urutannya penting: OLDDATA menimpa TempDate.

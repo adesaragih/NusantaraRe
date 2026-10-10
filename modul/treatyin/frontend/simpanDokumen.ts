@@ -92,19 +92,24 @@ export function susunDokumen(
 }
 
 /**
- * Grid Rate of Exchange → `KursSimpan`: hanya baris BARU (ber-mata uang) dan
- * baris yang BERUBAH dari yang dimuat. `null` = tidak ada yang berubah.
+ * Grid Rate of Exchange → `KursSimpan`: baris BARU (ber-mata uang), baris
+ * yang BERUBAH dari yang dimuat, dan pengenal baris dimuat yang di-Delete
+ * (`hapus`). `null` = tidak ada yang berubah.
  *
- * ⛔ Baris yang dihapus dari grid TIDAK dikirim untuk dihapus — keputusan
- * pemilik proses: `TREATYEXCHANGEYEARLY` berkunci TAHUN dan dipakai bersama.
+ * ⭐ Delete DIKIRIM sejak 10 Oktober 2026 — permintaan pemakai: *"buat jadi
+ * flexibel ketika add, delete dan save sesuai dengan jumlah yang ada"*.
+ * `TREATYEXCHANGEYEARLY` tetap dipakai bersama, jadi server hanya menghapus
+ * baris yang berada di periode kontrak (`kursBolehDihapus`).
  * Tanggal dikirim `YYYYMMDD` di `…Asli`; server mengubahnya menjadi stempel.
  */
 export function kursBerubah(kini: readonly BarisKursWarisan[], asli: readonly BarisKursWarisan[], tahun: string): KursSimpan | null {
   const dimuat = new Map<string, BarisKursWarisan>()
   for (const a of asli) if (a.id !== undefined && a.id !== '') dimuat.set(a.id, a)
   const baris: BarisKursWarisan[] = []
+  const masihAda = new Set<string>()
   for (const b of kini) {
     const id = b.id ?? ''
+    if (id !== '') masihAda.add(id)
     if (id === '') {
       if (b.mataUangID.trim() === '' && b.mataUang.trim() === '') continue
     } else {
@@ -120,7 +125,8 @@ export function kursBerubah(kini: readonly BarisKursWarisan[], asli: readonly Ba
     }
     baris.push({ ...b, berlakuDariAsli: keYYYYMMDD(b.berlakuDariAsli), berlakuSampaiAsli: keYYYYMMDD(b.berlakuSampaiAsli) })
   }
-  return baris.length === 0 ? null : { tahun, baris }
+  const hapus = [...dimuat.keys()].filter((id) => !masihAda.has(id))
+  return baris.length === 0 && hapus.length === 0 ? null : { tahun, baris, hapus }
 }
 
 /**

@@ -214,6 +214,11 @@ const TabelKursTahunan = "TREATYEXCHANGEYEARLY"
 
 // BacaKursTahunan membaca grid Rate of Exchange satu kontrak.
 //
+// ⚠️ Yang dikembalikan SELURUH baris tahun itu, dari kontrak mana pun.
+// Services menyempitkannya ke periode kontrak (`KursDalamPeriode`,
+// 10 Oktober 2026) — pembaca lain yang memanggil fungsi ini menerima
+// seluruh tahun.
+//
 // ⚠️ DISARING MENURUT `TREATYYEAR`, dan itu BACAAN SAYA atas bentuk
 // tabelnya — bukan salinan aturan Pega. Yang ekspor tunjukkan
 // (`RDBList/GetCurrencyToIDR_SQL.xml`) menyaring menurut `IDCURRENCY` lalu

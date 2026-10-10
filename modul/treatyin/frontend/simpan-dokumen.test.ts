@@ -111,8 +111,24 @@ describe('kursBerubah — hanya baris baru dan yang berubah', () => {
     expect(k?.baris[1]).toMatchObject({ mataUang: 'SGD', berlakuDariAsli: '20250701' })
   })
 
-  it('⛔ baris yang dihapus dari grid TIDAK dikirim untuk dihapus', () => {
-    expect(kursBerubah([], asli, '2025')).toBeNull()
+  it('⭐ baris dimuat yang di-Delete dikirim di `hapus` (10 Oktober 2026)', () => {
+    expect(kursBerubah([], asli, '2025')).toEqual({ tahun: '2025', baris: [], hapus: ['13358'] })
+  })
+
+  it('Add + Delete dalam satu Save: baris baru di `baris`, yang dibuang di `hapus`', () => {
+    const baru: BarisKursWarisan = {
+      mataUang: 'AUD',
+      mataUangID: '10003',
+      nilaiKeIDR: '14000',
+      berlakuDari: '',
+      berlakuSampai: '',
+      berlakuDariAsli: '01-07-2025',
+      berlakuSampaiAsli: '30-06-2026',
+    }
+    const k = kursBerubah([baru], asli, '2025')
+    expect(k?.baris).toHaveLength(1)
+    expect(k?.baris[0]).toMatchObject({ mataUang: 'AUD', berlakuDariAsli: '20250701' })
+    expect(k?.hapus).toEqual(['13358'])
   })
 
   it('keYYYYMMDD menerima tiga bentuk', () => {

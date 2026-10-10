@@ -364,29 +364,11 @@ export const TAB_NON_PROPORSIONAL = [
   'EGNPI', // @490872 — panel "Estimate Gross Net Premium Income" @509493
   'Limits', // @886054 — panel "Summary of Limit" @1061345, "Summary of MDP" @1204191, "Total All Layers" @1292282
   'Share', // @1695720
-  // ⛔ `RNM Share` — PERTANYAAN TERBUKA, bukan tab menurut ekspor.
-  //
-  // Briefing 5 Oktober 2026 menyebutnya tab yang hilang dari tangkapan
-  // layar. Pengukuran berkata lain, dan ia TIDAK dihapus sepihak — §0
-  // ronde itu melarang menghapus tab mana pun. Yang terukur:
-  //
-  // `Section/TreatyInTabsNonProportional.xml` (bersih 4.203.858 bita) punya
-  // TEPAT 11 wadah `pyHeaderType = TABBED`, dan `RNM Share` BUKAN salah
-  // satunya. Kedua judul "RNM Share" (@2093710, @2133893) ber-`BAR`, dan
-  // keduanya jatuh DI ANTARA tab `Share` (TABBED @1695720) dan tab `Retro`
-  // (TABBED @3291797) — artinya ia panel DI DALAM tab Share, bersama
-  // "Summarry of RNM Share" @2324385 dan "Total All Layers RNM Share"
-  // @2486274.
-  //
-  // ⚠️ "BAR berarti bukan tab" TIDAK berlaku umum: di
-  // `TreatyInTabsProportional.xml` nol wadah ber-TABBED dan kesebelas
-  // tabnya justru `BAR`. Yang membedakan adalah pemakaian DI DALAM satu
-  // berkas, dan di berkas non-prop TABBED-lah tabnya.
-  //
-  // Hitungannya pun cocok: 11 tab − `Value Difference` (syaratnya tidak
-  // terpenuhi) = 10, persis yang tangkapan layar perlihatkan. Dengan
-  // `RNM Share` ikut, daftar ini 12 — satu lebih banyak daripada ekspor.
-  'RNM Share', // @2093710 — ⛔ lihat di atas
+  // ⭐ `Retro` (TABBED @3291797) MENGGANTIKAN `RNM Share` — permintaan
+  // pemakai 10 Oktober 2026: di Pega tab `RNM Share` tidak ada, yang ada tab
+  // `Retro`. `RNM Share` memang hanya panel di dalam tab `Share`
+  // (ekspor: kedua judulnya ber-`BAR`, jatuh di antara `Share` dan `Retro`).
+  'Retro', // @3291797
   'Installment', // @3465901
   'Value Difference', // @3848946 — ⭐ BERSYARAT, lihat SYARAT_TAB
   'Exclusions', // @3907436
@@ -405,7 +387,7 @@ export const TAB_NON_PROPORSIONAL = [
  * dengan pengukuran ekspor: `RNM Share` bukan salah satu dari 11 wadah
  * `TABBED`, dan kedua judulnya jatuh di dalam wilayah tab `Share`.
  *
- * ⚠️ `RNM Share` TETAP ADA di `TAB_NON_PROPORSIONAL` — nol tab dihapus.
+ * ⚠️ Sejak 10 Oktober 2026 `RNM Share` TIDAK lagi di `TAB_NON_PROPORSIONAL` — diganti `Retro`.
  */
 export const SUB_TAB_SHARE = ['RNM Share'] as const
 

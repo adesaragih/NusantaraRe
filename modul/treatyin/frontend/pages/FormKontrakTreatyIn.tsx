@@ -90,6 +90,7 @@ import TabPortofolio from '../components/TabPortofolio'
 import TabCoInsScale from '../components/TabCoInsScale'
 import TabTeksPanjang from '../components/TabTeksPanjang'
 import TabEventLimits from '../components/TabEventLimits'
+import TabRetro from '../components/TabRetro'
 import DropdownWarisan from '../components/DropdownWarisan'
 import TabReportingPeriod from '../components/TabReportingPeriod'
 import TabAkumulasi from '../components/TabAkumulasi'
@@ -1213,6 +1214,8 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
            AKAR (`TreatyIn.RSMDLimit` …), bukan `Detail[]`. Lihat
            `TabEventLimits.tsx`. */
         <TabEventLimits mode={mode} />
+      ) : tabTampil === 'Retro' ? (
+        <TabRetro awal={warisan?.retroBerganda ?? ''} mode={mode} />
       ) : tabTampil === 'RNM Share' ? (
         /* ⚠️ Cabang ini TETAP ADA walau `RNM Share` kini dirender sebagai
            sub-tab `Share`. Sebabnya: daftar tab masih memuatnya — §6
@@ -1241,6 +1244,10 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
         <TabCoInsScale baris={warisan?.skalaKoasuransi ?? []} mode={mode} />
       ) : tabTampil === 'Exclusions' ? (
         <TabTeksPanjang
+          // ⛔ `key` WAJIB: kedua tab (Exclusions, Special Conditions) berada di
+          // posisi pohon yang sama, jadi tanpa `key` React memakai ulang
+          // komponennya dan teks tab pertama ikut tersemai ke tab kedua.
+          key={tabTampil}
           judul={tabTampil}
           // `TreatyIn.ExclusionsP` (Prop) / `TreatyIn.Exclusions` (Non-Prop).
           properti={jenis === NON_PROPORSIONAL ? 'Exclusions' : 'ExclusionsP'}
@@ -1250,6 +1257,10 @@ export default function FormKontrakTreatyIn({ idKontrak, mode = 'lihat', onKemba
         />
       ) : tabTampil === 'Special Conditions' ? (
         <TabTeksPanjang
+          // ⛔ `key` WAJIB: kedua tab (Exclusions, Special Conditions) berada di
+          // posisi pohon yang sama, jadi tanpa `key` React memakai ulang
+          // komponennya dan teks tab pertama ikut tersemai ke tab kedua.
+          key={tabTampil}
           judul={tabTampil}
           properti={jenis === NON_PROPORSIONAL ? 'SpecialConditions' : 'SpecialConditionsP'}
           tab={warisan?.syaratKhusus}

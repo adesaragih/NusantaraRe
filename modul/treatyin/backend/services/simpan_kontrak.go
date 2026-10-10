@@ -416,6 +416,26 @@ func (l *Layanan) tulis(ctx context.Context, p inti.Pelaku, m MasukanSimpan, doc
 			b.BerlakuDari = stempelHariPega(b.BerlakuDariAsli)
 			b.BerlakuSampai = stempelHariPega(b.BerlakuSampaiAsli)
 		}
+		// ⛔ Baris kurs yang tanggalnya kosong atau di luar periode kontrak
+		// DITOLAK (laporan pemakai 10 Oktober 2026: "Rate of Exchange hilang
+		// sesudah Save"). Baris seperti itu tersimpan di tabel tetapi tidak
+		// lolos `KursDalamPeriode`, jadi grid kosong sesudah dimuat ulang.
+		if err := periksaKursDalamPeriode(k.Baris, teksDok(doc, "Commencement"), teksDok(doc, "Termination")); err != nil {
+			return HasilSimpan{}, err
+		}
+		// ⭐ Delete grid — hanya baris tahun ini yang berada di periode
+		// kontrak yang disimpan (`kursBolehDihapus`).
+		if len(k.Hapus) > 0 {
+			tahunan, err := l.gudang.BacaKursTahunan(ctx, k.Tahun)
+			if err != nil {
+				return HasilSimpan{}, err
+			}
+			for i := range tahunan {
+				b := &tahunan[i]
+				b.BerlakuDariAsli, b.BerlakuSampaiAsli = TanggalWIB(b.BerlakuDari), TanggalWIB(b.BerlakuSampai)
+			}
+			k.Hapus = kursBolehDihapus(k.Hapus, tahunan, teksDok(doc, "Commencement"), teksDok(doc, "Termination"))
+		}
 		kurs = &k
 	}
 	// Kepala `TREATY_IN` mendarat di tabelnya sendiri — bukan kunci asing.

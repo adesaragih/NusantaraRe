@@ -69,6 +69,7 @@ import {
   SHARE_NP,
 } from '../labelsShareNP'
 import type { ModeForm } from '../mode'
+import { hanyaAngka } from './angka'
 import IsianAuto from './IsianAuto'
 import { StripTabNavigasi, TombolNavigasi } from './navigasi'
 import { PemicuUbah, usePemicuUbah } from './pemicuUbah'
@@ -238,7 +239,7 @@ function GridReins({
                     nilai={bisaUbah ? b.SharePct : persen(b.SharePct)}
                     bisaUbah={bisaUbah}
                     placeholder={SHARE_NP.placeholderAngka}
-                    onUbah={(v) => onUbah(ganti(baris, i, { ...b, SharePct: v }))}
+                    onUbah={(v) => onUbah(ganti(baris, i, { ...b, SharePct: hanyaAngka(v) }))}
                   />
                 </td>
                 {bisaUbah && (
@@ -305,6 +306,44 @@ function selPasangan(daftar: readonly NilaiShare[], i: number): [string, string]
   return v === undefined ? ['', ''] : [v.Currency, uang(v.Value)]
 }
 
+/**
+ * Rincian spreading satu baris Share, susunan Pega (permintaan pemakai
+ * 10 Oktober 2026, gambar desain): lima baris, tiap baris tiga kolom —
+ * dasar · Spreading OR · Spreading R/I — judul di atas, lalu `IDR  nilai`
+ * per mata uang. Isinya tetap `GRID_RINCIAN_SPREADING`.
+ */
+function TabelRincianSpreading({ b }: { b: BarisShareNP }) {
+  const larik = (kunci: string) => (b[kunci as keyof BarisShareNP] as readonly NilaiShare[] | undefined) ?? []
+  return (
+    <div className="tl-pega-rincian">
+      {GRID_RINCIAN_SPREADING.map((baris) => (
+        <div key={baris[0]!.kunci} className="tl-pega-rincian__baris">
+          {baris.map((g) => {
+            const isi = larik(g.kunci)
+            return (
+              <div key={g.kunci} className="tl-pega-rincian__sel">
+                <div className="tl-pega-rincian__judul">{g.judul}</div>
+                <div className="tl-pega-rincian__isi">
+                  {isi.length === 0 ? (
+                    <div className="tl-pega-rincian__nilai">&nbsp;</div>
+                  ) : (
+                    isi.map((n, i) => (
+                      <div key={i} className="tl-pega-rincian__nilai">
+                        <span className="tl-pega-rincian__mu">{n.Currency}</span>
+                        <span>{uang(n.Value)}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 /** Judul baris: `Layer 1 Part of Layer 1`. */
 export function judulBarisShare(b: BarisShareNP): string {
   return [b.LayerType, b.Layer, SHARE_NP.bagianOf, b.LayerPartType, b.LayerPart].filter((x) => x !== '').join(' ')
@@ -363,7 +402,7 @@ export function RincianShare({
           nilai={b.RNMShare}
           bisaUbah={bisaUbah}
           placeholder={SHARE_NP.placeholderAngka}
-          onUbah={(v) => onUbah({ ...b, RNMShare: v })}
+          onUbah={(v) => onUbah({ ...b, RNMShare: hanyaAngka(v) })}
           // `TreatyInXOLAddSpreadingDetail(idx)`.
           onLepas={() => hitung('rnm-baris')}
         />
@@ -502,7 +541,7 @@ export function RincianShare({
                       label=""
                       nilai={bisaUbah ? d.Deduction : uang(d.Deduction)}
                       bisaUbah={bisaUbah}
-                      onUbah={(v) => ubahDeduksi(i, { ...d, Deduction: v })}
+                      onUbah={(v) => ubahDeduksi(i, { ...d, Deduction: hanyaAngka(v) })}
                       onLepas={() => hitung('deduksi', { baris: i, sts: 'val' })}
                     />
                   </td>
@@ -512,7 +551,7 @@ export function RincianShare({
                       label=""
                       nilai={bisaUbah ? d.DeductionPct : persen(d.DeductionPct)}
                       bisaUbah={bisaUbah}
-                      onUbah={(v) => ubahDeduksi(i, { ...d, DeductionPct: v })}
+                      onUbah={(v) => ubahDeduksi(i, { ...d, DeductionPct: hanyaAngka(v) })}
                       onLepas={() => hitung('deduksi', { baris: i, sts: 'pct' })}
                     />
                   </td>
@@ -600,22 +639,14 @@ export function RincianShare({
                   )}
                   {b.SpreadingListXOL.map((s, i) => (
                     <tr key={i}>
-                      {/* `.ReinsTypeName` · `.Pct` pxTextInput `Auto`, nol aksi. */}
+                      {/* ⭐ BACA-SAJA (permintaan pemakai 10 Oktober 2026): isi grid
+                          ini hasil pilihan Spreading Type dari master
+                          (`FetchQSfromMasterXOL`), bukan isian. */}
                       <td>
-                        <Medan
-                          label=""
-                          nilai={s.ReinsTypeName}
-                          bisaUbah={modeUbah}
-                          onUbah={(v) => onUbah({ ...b, SpreadingListXOL: ganti(b.SpreadingListXOL, i, { ...s, ReinsTypeName: v }) })}
-                        />
+                        <Medan label="" nilai={s.ReinsTypeName} bisaUbah={false} onUbah={() => undefined} />
                       </td>
                       <td className="tl-angka">
-                        <Medan
-                          label=""
-                          nilai={modeUbah ? s.Pct : persen(s.Pct)}
-                          bisaUbah={modeUbah}
-                          onUbah={(v) => onUbah({ ...b, SpreadingListXOL: ganti(b.SpreadingListXOL, i, { ...s, Pct: v }) })}
-                        />
+                        <Medan label="" nilai={persen(s.Pct)} bisaUbah={false} onUbah={() => undefined} />
                       </td>
                     </tr>
                   ))}
@@ -633,11 +664,7 @@ export function RincianShare({
             </p>
             {/* Blok `hidden, reference` — TAMPIL bersama Spreading bernama
                 (`NOHEADER`, nol syarat sendiri): dasar · OR · R/I per baris. */}
-            <div className="tl-share-total-grid tl-share-rujukan">
-              {GRID_RINCIAN_SPREADING.flat().map((g) => (
-                <GridTotal key={g.kunci} judul={g.judul} baris={b[g.kunci as keyof BarisShareNP] as readonly NilaiShare[]} satuKepala />
-              ))}
-            </div>
+            <TabelRincianSpreading b={b} />
           </>
         ) : (
           <>
@@ -692,7 +719,7 @@ export function RincianShare({
                           label=""
                           nilai={modeUbah ? s.Pct : persen(s.Pct)}
                           bisaUbah={modeUbah}
-                          onUbah={(v) => onUbah({ ...b, SpreadingListXOL: ganti(b.SpreadingListXOL, i, { ...s, Pct: v }) })}
+                          onUbah={(v) => onUbah({ ...b, SpreadingListXOL: ganti(b.SpreadingListXOL, i, { ...s, Pct: hanyaAngka(v) }) })}
                           onLepas={() => hitung('spreading-pct')}
                         />
                       </td>
@@ -848,6 +875,21 @@ export default function TabShareNonProp({
         setGagal(e instanceof Error ? e.message : String(e))
       })
   }
+  // ⭐ Baris Share dibuat dari layer Limits — permintaan pemakai 10 Oktober
+  // 2026: "ketika limit sudah di isi, di tab share sudah ada". Di Pega
+  // barisnya lahir dari `Update Summary` (`TreatyInNonAddItem`); di sini
+  // tombol itu dijalankan otomatis sekali per jumlah layer, bila Share
+  // masih kurang dari jumlah layer. Hanya di mode Edit.
+  const jumlahLayer = layers.length
+  const jumlahShare = share.Share.length
+  const sudahOtomatis = useRef(-1)
+  useEffect(() => {
+    if (!bisaUbah || jumlahLayer === 0 || jumlahShare >= jumlahLayer) return
+    if (sudahOtomatis.current === jumlahLayer) return
+    sudahOtomatis.current = jumlahLayer
+    hitung('summary')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bisaUbah, jumlahLayer, jumlahShare])
   const ubahAkar = (medan: keyof ShareNP, v: string) => {
     const baru = { ...share, [medan]: v }
     setShare(baru)
@@ -879,7 +921,7 @@ export default function TabShareNonProp({
               nilai={bisaUbah ? share.RNMShare : persen(share.RNMShare)}
               bisaUbah={bisaUbah}
               placeholder={SHARE_NP.placeholderAngka}
-              onUbah={(v) => ubahAkar('RNMShare', v)}
+              onUbah={(v) => ubahAkar('RNMShare', hanyaAngka(v))}
               onLepas={() => hitung('rnm')}
             />
             <Medan
@@ -887,7 +929,7 @@ export default function TabShareNonProp({
               nilai={bisaUbah ? share.BrokeragePercent : persen(share.BrokeragePercent)}
               bisaUbah={bisaUbah}
               placeholder={SHARE_NP.placeholderAngka}
-              onUbah={(v) => ubahAkar('BrokeragePercent', v)}
+              onUbah={(v) => ubahAkar('BrokeragePercent', hanyaAngka(v))}
               onLepas={() => hitung('brokerage')}
             />
             <label className="trin__limit-medan tl-share-centang">
@@ -909,7 +951,7 @@ export default function TabShareNonProp({
               nilai={bisaUbah ? share.FacultativeShare : persen(share.FacultativeShare)}
               bisaUbah={bisaUbah}
               placeholder={SHARE_NP.placeholderAngka}
-              onUbah={(v) => ubahAkar('FacultativeShare', v)}
+              onUbah={(v) => ubahAkar('FacultativeShare', hanyaAngka(v))}
               onLepas={() => hitung('fac')}
             />
             {adaFac && (
@@ -918,7 +960,7 @@ export default function TabShareNonProp({
                 nilai={bisaUbah ? share.FacultativeShareBrokerage : persen(share.FacultativeShareBrokerage)}
                 bisaUbah={bisaUbah}
                 placeholder={SHARE_NP.placeholderAngka}
-                onUbah={(v) => ubahAkar('FacultativeShareBrokerage', v)}
+                onUbah={(v) => ubahAkar('FacultativeShareBrokerage', hanyaAngka(v))}
                 onLepas={() => hitung('fac')}
               />
             )}

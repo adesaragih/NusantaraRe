@@ -560,10 +560,12 @@ export interface BarisKursWarisan {
 // `T_TREATY_*`, kepala `TREATY_IN`, kurs `TREATYEXCHANGEYEARLY`.
 // ---------------------------------------------------------------------------
 
-/** Grid Rate of Exchange yang Save kirim — baris yang BERUBAH atau BARU saja. */
+/** Grid Rate of Exchange yang Save kirim — baris yang BERUBAH atau BARU, dan yang di-Delete. */
 export interface KursSimpan {
   tahun: string
   baris: BarisKursWarisan[]
+  /** Pengenal baris yang dimuat lalu di-Delete; server hanya menghapus yang di periode kontrak. */
+  hapus: string[]
 }
 
 /** Isi layar untuk tombol Save. */

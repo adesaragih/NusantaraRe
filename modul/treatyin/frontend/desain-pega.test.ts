@@ -140,8 +140,9 @@ describe('§6 RNM Share adalah SUB-TAB, dan nol tab dihapus', () => {
     expect(FORM).toContain('<StripTabNavigasi tab={daftar} aktif={tampil} onPilih={setSub} />')
   })
 
-  it('⛔ RNM Share TETAP di daftar tab — §6 melarang menghapusnya', () => {
-    expect(TAB_NON_PROPORSIONAL).toContain('RNM Share')
+  it('⭐ Non-Prop: `Retro` menggantikan `RNM Share` di strip (10 Oktober 2026)', () => {
+    expect(TAB_NON_PROPORSIONAL).toContain('Retro')
+    expect(TAB_NON_PROPORSIONAL).not.toContain('RNM Share')
     expect(TAB_NON_PROPORSIONAL).toHaveLength(11)
     expect(TAB_PROPORSIONAL).toHaveLength(10)
   })

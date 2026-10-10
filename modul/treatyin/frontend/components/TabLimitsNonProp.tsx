@@ -23,7 +23,6 @@ import { PemicuUbah, usePemicuUbah } from './pemicuUbah'
 
 import { Field, FieldAngka, Kosong, Panel, Pilih } from '../../../../inti/frontend/components/ui/dasar'
 import {
-  ambilKelasBisnis,
   ambilOpsiLimits,
   hitungLimitNP,
   type AksiLimitNP,
@@ -37,6 +36,7 @@ import {
 } from '../api'
 import { GRID_TOTAL, KOLOM_LAYER, KOLOM_REINSTATEMENT, KOLOM_RINGKASAN, LIMITS_NP, kontrakRevisi, type KolomNP } from '../labelsLimitsNP'
 import type { ModeForm } from '../mode'
+import { hanyaAngka } from './angka'
 import { DropdownDaftar } from './IsianAuto'
 import { Bagian, Chip, KartuLipat, KepalaBagian, TombolHapus, TombolTambah } from './limitsUI'
 import { formatLimit, teksDari } from './TabLimitsProp'
@@ -142,7 +142,7 @@ function MedanNP({
           urut. Yang presisinya tidak diketahui LEWAT APA ADANYA, persis
           seperti sebelum pemisah ribuan ada. */}
       {desimal === null ? (
-        <Field label={label} value={bisaUbah ? nilai : tampil(nilai, desimal)} readOnly={!bisaUbah} onChange={onUbah} />
+        <Field label={label} value={bisaUbah ? nilai : tampil(nilai, desimal)} readOnly={!bisaUbah} onChange={(v) => onUbah(hanyaAngka(v))} />
       ) : (
         <FieldAngka label={label} value={nilai} desimal={desimal} readOnly={!bisaUbah} onChange={onUbah} />
       )}
@@ -325,36 +325,16 @@ function KartuGrup({
   onHapus: () => void
   onGantiGrup: (g: SimpulLimit) => void
 }) {
-  const [kelas, setKelas] = useState<PilihanWarisan[]>([])
-  const idGrup = teksDari(g, 'TreatyGroupID')
-  useEffect(() => {
-    if (!bisaUbah || idGrup === '') return
-    let dibuang = false
-    ambilKelasBisnis(idGrup)
-      .then((d) => {
-        if (!dibuang) setKelas(d)
-      })
-      .catch(() => undefined)
-    return () => {
-      dibuang = true
-    }
-  }, [bisaUbah, idGrup])
   const pilihGrup = (nama: string, id: string) => {
     onGantiGrup({ ...g, TreatyGroup: nama, TreatyGroupID: id })
   }
-  const daftarCoB = larikDari(g, 'ClassOfBusinessList')
   return (
     <KartuLipat
       nomor={nomor}
       judul={teksDari(g, 'TreatyGroup')}
       judulKosong={LIMITS_NP.belumDipilih}
       bukaAwal={teksDari(g, 'TreatyGroup') === ''}
-      meta={
-        <>
-          <Chip label={LIMITS_NP.kelasBisnis} nilai={String(daftarCoB.length)} />
-          {teksDari(g, 'IsROLProfile') === 'true' && <span className="tl-chip">{LIMITS_NP.rolProfile}</span>}
-        </>
-      }
+      meta={teksDari(g, 'IsROLProfile') === 'true' && <span className="tl-chip">{LIMITS_NP.rolProfile}</span>}
       aksi={bisaUbah && <TombolHapus label={LIMITS_NP.hapus} labelAkses={`${LIMITS_NP.hapus} ${LIMITS_NP.treatyGroup} ${nomor}`} onClick={onHapus} />}
     >
       <div className="form-grid">
@@ -368,41 +348,9 @@ function KartuGrup({
           }}
         />
       </div>
-      {/* Add CoB / Delete MATI di ekspor (`ViewState !='1' && 1=2`). */}
-      <div className="table-wrap">
-        <table className="trin__tabel">
-          <thead>
-            <tr>
-              <th scope="col">{LIMITS_NP.kelasBisnis}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {daftarCoB.length === 0 && (
-              <tr>
-                <td>
-                  <Kosong pesan={LIMITS_NP.tanpaBaris} />
-                </td>
-              </tr>
-            )}
-            {daftarCoB.map((c, r) => (
-              <tr key={r}>
-                <td>
-                  <DropdownDaftar
-                    label=""
-                    nilai={teksDari(c, 'ClassOfBusiness')}
-                    pilihan={kelas}
-                    bisaUbah={bisaUbah}
-                    onPilih={(nama, id) => {
-                      // DT `SetCoB` — nama dan kode Class of Business.
-                      onUbah({ ...g, ClassOfBusinessList: ganti(daftarCoB, r, { ...c, ClassOfBusiness: nama, ClassOfBusinessID: id }) })
-                    }}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* ⛔ Class of Business TIDAK ditampilkan lagi (permintaan pemakai
+          10 Oktober 2026: "tidak digunakan lagi"). `ClassOfBusinessList`
+          tetap ada di data layer dan ikut tersimpan apa adanya. */}
     </KartuLipat>
   )
 }
@@ -455,7 +403,7 @@ export function RincianLayer({
         value={teksDari(l, kunci)}
         aria-label={label}
         onChange={(e) => {
-          onUbah({ ...l, [kunci]: e.target.value })
+          onUbah({ ...l, [kunci]: hanyaAngka(e.target.value) })
         }}
       />
     ) : (
@@ -518,11 +466,21 @@ export function RincianLayer({
             ))}
           </div>
         )}
-        <GridNilai judul={LIMITS_NP.egnpiLayer} baris={larikDari(l, 'EgnpiTotalList')} bisaUbahMataUang={false} bisaUbahNilai={false} tambah={false} mataUang={opsi.mataUang} onUbah={() => undefined} />
       </Bagian>
 
       <Bagian judul={LIMITS_NP.bagianLimit}>
-        <div className="form-grid">
+        {/* ⭐ `Egnpi this layer` di atas Cover, satu baris per mata uang:
+            `Egnpi this layer  IDR  45.000.000.000,00` (permintaan pemakai
+            10 Oktober 2026). Baca-saja — nilainya hasil `TotalEgnpi`. */}
+        {larikDari(l, 'EgnpiTotalList').map((e, i) => (
+          <div key={i} className="tl-egnpi-baris">
+            <span className="tl-egnpi-baris__label">{LIMITS_NP.egnpiLayer}</span>
+            <span>{teksDari(e, 'Currency')}</span>
+            <span className="trin__angka">{tampil(teksDari(e, 'Value'), 2)}</span>
+          </div>
+        ))}
+        {/* Cover, lalu Currency Relation DI BAWAHNYA (satu kolom). */}
+        <div className="tl-satu-kolom">
           <PilihNP label={LIMITS_NP.cover} nilai={teksDari(l, 'Cover')} opsi={opsi.cover ?? []} bisaUbah={bisaUbah} onUbah={set('Cover')} />
           <PilihNP
             label={LIMITS_NP.relasi}
@@ -533,25 +491,21 @@ export function RincianLayer({
             onUbah={set('CurrencyRelation')}
           />
         </div>
-        <div className="table-wrap">
-          <table className="trin__tabel tl-matriks">
-            <thead>
-              <tr>
-                <th scope="col" />
-                <th scope="col">{mataUang('Currency', LIMITS_NP.mataUang1)}</th>
-                <th scope="col">{mataUang('Currency2', LIMITS_NP.mataUang2)}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {barisMatriks.map((b) => (
-                <tr key={b.k1}>
-                  <th scope="row">{b.label}</th>
-                  <td className="trin__angka">{selMatriks(b.k1, b.desimal, `${b.label} 1`)}</td>
-                  <td className="trin__angka">{selMatriks(b.k2, b.desimal, `${b.label} 2`)}</td>
-                </tr>
+        {/* Susunan Pega (`Layers.xml`): satu baris = label, mata uang, nilai;
+            kolom kiri mata uang 1, kolom kanan mata uang 2. Ketiga baris
+            satu kolom mengikat SATU properti mata uang. */}
+        <div className="tl-limit-pega">
+          {barisMatriks.map((b) => (
+            <div key={b.k1} className="tl-limit-pega__baris">
+              {([['Currency', b.k1, '1'], ['Currency2', b.k2, '2']] as const).map(([kunciMU, kunciNilai, no]) => (
+                <div key={kunciMU} className="tl-limit-pega__sisi">
+                  <span className="tl-limit-pega__label">{b.label}</span>
+                  {mataUang(kunciMU, `${b.label} ${LIMITS_NP.mataUang1.replace('1', no)}`)}
+                  <div className="trin__angka">{selMatriks(kunciNilai, b.desimal, `${b.label} ${no}`)}</div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          ))}
         </div>
       </Bagian>
 
@@ -634,7 +588,7 @@ export function RincianLayer({
                             value={v}
                             aria-label={k.label}
                             onChange={(e) => {
-                              ubahSel(e.target.value)
+                              ubahSel(hanyaAngka(e.target.value))
                             }}
                           />
                         </PemicuUbah>

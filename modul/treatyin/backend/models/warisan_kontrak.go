@@ -275,6 +275,9 @@ type BarisKursWarisan struct {
 type KursSimpan struct {
 	Tahun string             `json:"tahun"`
 	Baris []BarisKursWarisan `json:"baris"`
+	// Hapus - pengenal baris yang dimuat grid lalu di-Delete pemakai.
+	// Services hanya meneruskan yang berada di periode kontrak.
+	Hapus []string `json:"hapus"`
 }
 
 // BarisPeriodeWarisan - satu baris grid tab Reporting Period.

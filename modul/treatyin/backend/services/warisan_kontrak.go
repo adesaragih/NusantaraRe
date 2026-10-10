@@ -287,6 +287,9 @@ func (l *Layanan) BacaKontrakWarisan(ctx context.Context, p inti.Pelaku, id stri
 		b.BerlakuDari = TanggalTampil(b.BerlakuDari)
 		b.BerlakuSampai = TanggalTampil(b.BerlakuSampai)
 	}
+	// ⭐ Hanya kurs periode kontrak INI — bukan seluruh tahunnya. Sesudah
+	// `…Asli` dan `StatusAkseptasi` terisi; lihat `KursGridKontrak`.
+	k.Kurs = KursGridKontrak(k.Kurs, k.TanggalMulaiAsli, k.TanggalBerakhirAsli, k.StatusAkseptasi)
 	for i := range k.PeriodePelaporan {
 		p := &k.PeriodePelaporan[i]
 		// `InitialDate` disimpan Pega sebagai stempel GMT — tanggal WIB-nya

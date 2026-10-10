@@ -181,7 +181,7 @@ describe('strip tab - DUA himpunan, dan keduanya tidak sama', () => {
       'Maximum Retention',
       'Event Limits',
       'EGNPI',
-      'RNM Share',
+      'Retro',
       'Installment',
       'Value Difference',
     ])
@@ -1160,8 +1160,11 @@ describe('pemilih "Choose …" adalah DROPDOWN sejak 5 Oktober 2026', () => {
 describe('Retro — keadaan KEEMPAT: jarang, bukan belum-ada-kode', () => {
   // ⛔ DIBALIK 8 Oktober 2026 — tab itu dikeluarkan dari proyek, jadi nol
   // cabang render boleh menyebutnya lagi.
-  it('⛔ nol cabang render menyebutnya', () => {
-    expect(FORM).not.toContain("tabTampil === 'Retro'")
+  // ⭐ 10 Oktober 2026 — tab Retro Non-Prop kembali (Pega: `Has Share To
+  // Retro`), dirender `TabRetro`.
+  it('⭐ tab Retro Non-Prop dirender `TabRetro`', () => {
+    expect(FORM).toContain("tabTampil === 'Retro'")
+    expect(FORM).toContain('<TabRetro')
   })
 
   // ⛔ DIBALIK 8 Oktober 2026 — petunjuknya DICABUT dari layar.

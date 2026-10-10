@@ -55,13 +55,16 @@ describe('§0 syarat tampil tab', () => {
     expect(tabUntuk(NON_PROPORSIONAL)).toEqual(TAB_NON_PROPORSIONAL)
   })
 
-  // ⛔ DIBALIK 8 Oktober 2026 — tab itu DIKELUARKAN dari proyek atas
-  // keputusan pemilik proses. Kedua uji lama menjaga kapan ia tampil; yang
-  // ini menjaga bahwa ia TIDAK PERNAH tampil, pada nilai apa pun.
-  it('⛔ tab itu nol di kedua cabang, pada keadaan dokumen apa pun', () => {
+  // ⛔ 8 Oktober 2026 — Retro DIKELUARKAN dari cabang PROPORSIONAL atas
+  // keputusan pemilik proses, dan tetap tidak pernah tampil di sana.
+  // ⭐ 10 Oktober 2026 — cabang NON-PROPORSIONAL memakainya lagi (Pega: tab
+  // `Retro` ada, `RNM Share` tidak), tanpa syarat (`TABBED` @3291797, nol
+  // `pyContainerVisibleWhen`): tampil pada keadaan dokumen apa pun.
+  it('⛔ Retro nol di Prop; selalu ada di Non-Prop, pada keadaan dokumen apa pun', () => {
     for (const k of [KOSONG, { ...KOSONG, retroBerganda: 'false' }, { ...KOSONG, retroBerganda: 'true' }]) {
       expect(tabUntuk(PROPORSIONAL, k)).not.toContain('Retro')
-      expect(tabUntuk(NON_PROPORSIONAL, k)).not.toContain('Retro')
+      expect(tabUntuk(NON_PROPORSIONAL, k)).toContain('Retro')
+      expect(tabUntuk(NON_PROPORSIONAL, k)).not.toContain('RNM Share')
     }
   })
 
@@ -104,11 +107,12 @@ describe('§0 syarat tampil tab', () => {
 
   it('NOL tab dihapus dari kedua daftar — §0 melarangnya', () => {
     expect(TAB_PROPORSIONAL).toHaveLength(10)
-    // ⚠️ DUA BELAS, dan butir ke-12 (RNM Share) adalah pertanyaan terbuka —
-    // lihat komentarnya di `labels.ts`. Ia TIDAK dihapus.
+    // ⭐ 10 Oktober 2026: `Retro` menggantikan `RNM Share` (pertanyaan
+    // terbuka lama terjawab — di Pega `RNM Share` bukan tab). Tetap 11.
     expect(TAB_NON_PROPORSIONAL).toHaveLength(11)
-    expect(TAB_NON_PROPORSIONAL).toContain('RNM Share')
-    expect(LABELS).toContain('PERTANYAAN TERBUKA, bukan tab menurut ekspor')
+    expect(TAB_NON_PROPORSIONAL).toContain('Retro')
+    expect(TAB_NON_PROPORSIONAL).not.toContain('RNM Share')
+    expect(LABELS).toContain('MENGGANTIKAN `RNM Share`')
   })
 
   it('SATU tab bersyarat tersisa, dan sumbernya disebut', () => {
@@ -229,7 +233,8 @@ describe('§5 Update Total dan Total Retention Amount', () => {
 // untuk memasukkan sesuatu ke dalamnya diam-diam.
 describe('⛔ tab yang dikeluarkan nol jejak di strip', () => {
   it('daftar tab dan peta syaratnya bersih', () => {
-    expect([...TAB_PROPORSIONAL, ...TAB_NON_PROPORSIONAL]).not.toContain('Retro')
+    expect([...TAB_PROPORSIONAL]).not.toContain('Retro')
+    expect([...TAB_NON_PROPORSIONAL]).toContain('Retro')
     expect(Object.keys(SYARAT_TAB_PROPORSIONAL)).not.toContain('Retro')
     expect(Object.keys(SYARAT_TAB_NON_PROPORSIONAL)).not.toContain('Retro')
   })

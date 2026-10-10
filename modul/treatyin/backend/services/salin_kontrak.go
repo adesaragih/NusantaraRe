@@ -155,6 +155,9 @@ func (l *Layanan) BacaDraftSalinan(ctx context.Context, p inti.Pelaku, idSumber 
 	}
 	k.Penampung["RevisionState"] = ""
 	k.Penampung["ViewState"] = "0"
+	// ⭐ Draf dapat di-Save: grid kursnya periode kontrak saja, bukan
+	// cadangan seluruh tahun milik sumber yang tuntas (`KursGridKontrak`).
+	k.Kurs = KursDalamPeriode(k.Kurs, k.TanggalMulaiAsli, k.TanggalBerakhirAsli)
 	// [1]–[3] — panel History hanya memuat komentar salinan.
 	k.Catatan = []models.BarisCatatanWarisan{{
 		Tanggal:  TanggalTampil(stempel),

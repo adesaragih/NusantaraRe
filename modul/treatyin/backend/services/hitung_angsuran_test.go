@@ -137,7 +137,8 @@ func TestAngsuranPerMataUang(t *testing.T) {
 
 // TestAngsuranUpdateMemulihkanTanpaMenghitungUlangAmount - langkah 9 lalu 11:
 // persen, tanggal, WPC, dan tanggal bayar dipulihkan dari grid sebelumnya;
-// Amount TETAP hasil langkah 8; baris yang tidak punya padanan dipertahankan.
+// Amount TETAP hasil langkah 8; baris yang tidak punya padanan dipertahankan —
+// dengan Payment Date hasil rumus (Due Date + WPC kosong 0 + 1 hari, 10 Oktober 2026).
 func TestAngsuranUpdateMemulihkanTanpaMenghitungUlangAmount(t *testing.T) {
 	sebelum := []Angsuran{{Currency: "IDR", InstallmentList: []BarisAngsuran{
 		{Installment: "1", DueDate: "20260118", WPC: "60", PaymentDate: "20260318", InstallmentPct: "60", Amount: "600"},
@@ -148,7 +149,7 @@ func TestAngsuranUpdateMemulihkanTanpaMenghitungUlangAmount(t *testing.T) {
 	if got := kolomAngsuran(a, func(r BarisAngsuran) string { return r.InstallmentPct }); !reflect.DeepEqual(got, []string{"60", "40", "33.34"}) {
 		t.Errorf("persen %v", got)
 	}
-	if got := kolomAngsuran(a, func(r BarisAngsuran) string { return r.DueDate + "|" + r.WPC + "|" + r.PaymentDate }); !reflect.DeepEqual(got, []string{"20260118|60|20260318", "20260418|45|20260602", "20261007||"}) {
+	if got := kolomAngsuran(a, func(r BarisAngsuran) string { return r.DueDate + "|" + r.WPC + "|" + r.PaymentDate }); !reflect.DeepEqual(got, []string{"20260118|60|20260318", "20260418|45|20260602", "20261007||20261008"}) {
 		t.Errorf("tanggal %v", got)
 	}
 	if got := kolomAngsuran(a, func(r BarisAngsuran) string { return r.Amount }); !reflect.DeepEqual(got, []string{"333.3", "333.3", "333.4"}) {

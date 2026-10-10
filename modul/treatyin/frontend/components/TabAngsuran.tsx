@@ -32,7 +32,7 @@
 
 import { Fragment, useState } from 'react'
 
-import { Panel } from '../../../../inti/frontend/components/ui/dasar'
+import { FieldAngka, Panel } from '../../../../inti/frontend/components/ui/dasar'
 import { hitungAngsuran, type Angsuran, type BarisAngsuranWarisan, type MasukanAngsuran, type NilaiShare } from '../api'
 import { useProperti } from '../halaman'
 import { ANGSURAN, KOLOM_RINCIAN_ANGSURAN } from '../labelsAngsuran'
@@ -320,14 +320,14 @@ export default function TabAngsuran({
                                       totalHalaman(i, 'editpercentage', ubahBaris(i, j, { InstallmentPct: r.InstallmentPct }))
                                     }}
                                   >
-                                    <input
-                                      className="field__input"
-                                      type="text"
-                                      inputMode="decimal"
-                                      aria-label={KOLOM_RINCIAN_ANGSURAN[4]}
+                                    {/* Pemisah ribuan titik, desimal koma saat diketik —
+                                        bentuk kabel (titik desimal) tetap yang tersimpan. */}
+                                    <FieldAngka
+                                      label=""
                                       value={r.InstallmentPct}
-                                      onChange={(e) => {
-                                        ubahBaris(i, j, { InstallmentPct: e.target.value })
+                                      desimal={2}
+                                      onChange={(v) => {
+                                        ubahBaris(i, j, { InstallmentPct: v })
                                       }}
                                     />
                                   </PemicuUbah>
@@ -344,14 +344,14 @@ export default function TabAngsuran({
                                       totalHalaman(i, '', ubahBaris(i, j, { Amount: r.Amount }))
                                     }}
                                   >
-                                    <input
-                                      className="field__input"
-                                      type="text"
-                                      inputMode="decimal"
-                                      aria-label={KOLOM_RINCIAN_ANGSURAN[5]}
+                                    {/* Pemisah ribuan titik, desimal koma saat diketik —
+                                        bentuk kabel (titik desimal) tetap yang tersimpan. */}
+                                    <FieldAngka
+                                      label=""
                                       value={r.Amount}
-                                      onChange={(e) => {
-                                        ubahBaris(i, j, { Amount: e.target.value })
+                                      desimal={2}
+                                      onChange={(v) => {
+                                        ubahBaris(i, j, { Amount: v })
                                       }}
                                     />
                                   </PemicuUbah>

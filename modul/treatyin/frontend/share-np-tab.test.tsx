@@ -263,8 +263,9 @@ describe('panel rincian baris — flow action `Share`', () => {
   it('⭐ Spreading Type bernama: dropdown dari RD, anak susunan, Total Spreading Pct', () => {
     const html = panel(baris())
     expect(html).toContain('<option value="2022 QS 145M TRT" selected="">2022 QS 145M TRT</option>')
-    // Sel grid spreading bernama ber-`Auto` — isian di mode Edit.
-    expect(html).toMatch(/<input class="field__input"[^>]*value="QS \(OR\)"/)
+    // Sel grid spreading bernama BACA-SAJA (10 Oktober 2026): isinya hasil
+    // pilihan Spreading Type dari master.
+    expect(html).toMatch(/<input[^>]*value="QS \(OR\)"[^>]*readonly=""|<input[^>]*readonly=""[^>]*value="QS \(OR\)"/)
     expect(html).toContain(SHARE_NP.totalSpreadingPct)
     expect(html).toContain('Deduction Details')
     expect(html).toContain('Brokerage fee')
@@ -317,19 +318,19 @@ describe('panel rincian baris — flow action `Share`', () => {
     expect(html).not.toContain('tl-tambah')
   })
 
-  it('⭐ blok `hidden, reference` TAMPIL bersama Spreading bernama — 15 grid dasar · OR · R/I', () => {
+  it('⭐ blok `hidden, reference` TAMPIL bersama Spreading bernama — 15 judul, lima baris dasar · OR · R/I', () => {
     const html = panel(baris({ RNMSpreadedListXOL: [nilai('IDR', '160000000')] }))
     const judul = GRID_RINCIAN_SPREADING.flat().map((g) => g.judul)
     expect(judul).toHaveLength(15)
     let posisi = -1
     for (const j of judul) {
-      const p = html.indexOf(`<th scope="colgroup" colSpan="2">${j}</th>`, posisi + 1)
+      const p = html.indexOf(`>${j}</div>`, posisi + 1)
       expect(p, j).toBeGreaterThan(posisi)
       posisi = p
     }
     expect(html).toContain('160.000.000,00')
     // Spreading manual: blok itu tidak tampil (wadahnya `.SpreadingTypeXOL != ''`).
-    expect(panel(baris({ SpreadingTypeXOL: '', SpreadingListXOL: [] }))).not.toContain('Spreading OR Limit')
+    expect(panel(baris({ SpreadingTypeXOL: '', SpreadingListXOL: [] }))).not.toContain('tl-pega-rincian')
   })
 
   it('⭐ Reins Type spreading manual: induk SEMUA grup (`TempSprd.TreatyGroupID` kosong → filter dilewati)', () => {

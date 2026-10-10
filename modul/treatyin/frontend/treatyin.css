@@ -1455,12 +1455,57 @@
   gap: 12px;
 }
 
-/* Matriks limit dua mata uang (Non-Prop). */
-.treatyin .tl-matriks th[scope='row'] {
+/* Egnpi this layer + Cover/Currency Relation (Non-Prop). */
+.treatyin .tl-egnpi-baris {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.treatyin .tl-egnpi-baris__label {
+  min-width: 140px;
   color: var(--text-2);
   font-weight: 600;
-  text-align: left;
-  white-space: nowrap;
+}
+
+.treatyin .tl-satu-kolom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Limit dua mata uang (Non-Prop) — susunan Pega: label | mata uang | nilai,
+   kolom kiri mata uang 1, kolom kanan mata uang 2. */
+.treatyin .tl-limit-pega {
+  display: grid;
+  gap: 12px;
+}
+
+.treatyin .tl-limit-pega__baris {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.treatyin .tl-limit-pega__sisi {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.8fr) minmax(90px, 1fr) minmax(0, 2fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.treatyin .tl-limit-pega__label {
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .treatyin .tl-limit-pega__baris {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .treatyin .tl-pesan {
@@ -1809,6 +1854,53 @@
 }
 .treatyin .tl-share-total .trin__tabel {
   width: 100%;
+}
+
+/* ⭐ Total All Layers RNM Share susunan Pega (10 Oktober 2026): tanpa kotak
+   dan tanpa tinggi tetap — judul, garis, lalu `IDR  nilai` sebaris. */
+.treatyin .tl-share-total.table-wrap {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  height: auto;
+  min-height: 0;
+}
+
+.treatyin .tl-share-total .trin__tabel {
+  border-collapse: collapse;
+}
+
+.treatyin .tl-share-total .trin__tabel th {
+  background: transparent;
+  color: var(--text);
+  font-size: 0.85em;
+  padding: 6px 8px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.treatyin .tl-share-total .trin__tabel th:first-child,
+.treatyin .tl-share-total .trin__tabel td:first-child {
+  width: 40%;
+  text-align: center;
+}
+
+.treatyin .tl-share-total .trin__tabel td {
+  background: transparent;
+  padding: 6px 8px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.treatyin .tl-share-total .trin__tabel td:first-child {
+  color: var(--primary);
+}
+
+.treatyin .tl-share-total .trin__tabel td.tl-angka {
+  text-align: left;
+  font-variant-numeric: tabular-nums;
 }
 
 /* =========================================================================
@@ -2414,4 +2506,51 @@
   border-color: var(--trin-sukses-tepi);
   background: var(--trin-sukses-latar);
   color: var(--trin-sukses-teks);
+}
+
+/* Rincian spreading susunan Pega (tab Share Non-Prop): tiga kolom per baris. */
+.treatyin .tl-pega-rincian {
+  display: grid;
+  gap: 4px;
+}
+
+.treatyin .tl-pega-rincian__baris {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+.treatyin .tl-pega-rincian__judul {
+  padding: 8px 0 4px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.85em;
+}
+
+.treatyin .tl-pega-rincian__isi {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.treatyin .tl-pega-rincian__nilai {
+  display: grid;
+  grid-template-columns: minmax(48px, 0.5fr) 1fr;
+  gap: 12px;
+  padding: 6px 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.treatyin .tl-pega-rincian__nilai + .tl-pega-rincian__nilai {
+  border-top: 1px solid var(--border);
+}
+
+.treatyin .tl-pega-rincian__mu {
+  text-align: center;
+  color: var(--primary);
+}
+
+@media (max-width: 900px) {
+  .treatyin .tl-pega-rincian__baris {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

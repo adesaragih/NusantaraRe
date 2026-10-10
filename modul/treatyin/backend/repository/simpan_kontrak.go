@@ -19,8 +19,9 @@ package repository
 //	TREATY_IN             kepala kontrak — kesembilan belas parameter
 //	                      prosedur `PEGA_TREATY_IN` (RDB `SaveTreatyIn`)
 //	TREATYEXCHANGEYEARLY  grid Rate of Exchange — kolom prosedur
-//	                      `PEGA_TREATYEXCHANGE`; ⛔ nol `DELETE`: tabelnya
-//	                      berkunci TAHUN dan dibaca modul lain
+//	                      `PEGA_TREATYEXCHANGE`; `DELETE` HANYA baris
+//	                      periode kontrak yang di-Delete di grid (10 Oktober
+//	                      2026, lihat `tulisKurs`)
 //
 // ⛔ `M_TREATY_IN` dan JSON TIDAK disentuh — prosedur Pega menulis keduanya,
 // jalur ini tidak. ⛔ `M_TREATY_IN_DETAIL` (`SaveTreatyInDetail_Act` saat
@@ -458,8 +459,15 @@ func (g *Gudang) tulisKepalaTreatyIn(ctx context.Context, tx *db.Tx, id string, 
 // DIPERBARUI, baris tanpa ID DITAMBAHKAN (ID = situs || LPAD(
 // TREATYEXCHANGE_SEQ.NEXTVAL, 4, '0'), seperti `PEGA_TREATYEXCHANGE`).
 //
-// ⛔ Nol `DELETE` — keputusan pemilik proses: tabelnya berkunci TAHUN, satu
-// baris dipakai setiap kontrak tahun itu dan dibaca modul lain.
+// ⭐ `k.Hapus` DIHAPUS lebih dulu — permintaan pemakai 10 Oktober 2026:
+// *"buat jadi flexibel ketika add, delete dan save sesuai dengan jumlah yang
+// ada"*. Ini MEMBALIK keputusan "tambah & ubah saja" 7 Oktober 2026.
+// Pengamannya ada di services (`kursBolehDihapus`): yang sampai di sini
+// hanya baris tahun kontrak yang berada DI DALAM periode kontrak.
+//
+// ⚠️ Tabelnya tetap dipakai bersama: kontrak lain berperiode sama dan modul
+// lain (`aggregate`, `treatycontractout`, `nbfacin`) ikut kehilangan baris
+// yang dihapus di sini.
 func (g *Gudang) tulisKurs(ctx context.Context, tx *db.Tx, k models.KursSimpan, operator, stempel string) error {
 	if strings.TrimSpace(k.Tahun) == "" {
 		return nil
@@ -467,6 +475,18 @@ func (g *Gudang) tulisKurs(ctx context.Context, tx *db.Tx, k models.KursSimpan, 
 	nama, err := g.db.Qualify(TabelKursTahunan)
 	if err != nil {
 		return err
+	}
+	for _, id := range k.Hapus {
+		if strings.TrimSpace(id) == "" {
+			continue
+		}
+		q := fmt.Sprintf(`DELETE FROM %s WHERE ID = :1 AND TREATYYEAR = :2`, nama)
+		if err := db.PeriksaSQL(q); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, q, id, k.Tahun); err != nil {
+			return fmt.Errorf("repository: menghapus kurs %s: %w", id, err)
+		}
 	}
 	var situs string
 	for _, b := range k.Baris {
