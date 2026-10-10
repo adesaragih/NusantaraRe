@@ -155,8 +155,8 @@ func aksiKirimKomite(j *jalanAksi) error {
 	if err != nil {
 		return err
 	}
-	kmt, err := j.l.g.BuatKasusKomite(j.ctx, j.tx, j.kasus.ID, b[models.PropID], models.TransferAdjustment, j.k.Pelaku,
-		nama, anggota, j.k.Sekarang) // 10 pxAddChildWork
+	kmt, err := j.l.g.BuatKasusKomite(j.ctx, j.tx, j.kasus.ID, b[models.PropID], models.TransferAdjustment,
+		repository.TeksKomite{}, j.k.Pelaku, nama, anggota, j.k.Sekarang) // 10 pxAddChildWork
 	if err != nil {
 		return err
 	}

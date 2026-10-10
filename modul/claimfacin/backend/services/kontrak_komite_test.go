@@ -165,13 +165,13 @@ func TestKontrakKomiteFacInTutupKlaim(t *testing.T) {
 	// dua kasus komite anak klaim: yang memutus (TT3) dikecualikan, yang lain (TT2 menunggu) ikut ditutup
 	// (pxForceCaseClose `CloseAllSubCases=true`, KomitePost_Reject S17 / KomitePost_CloseClaim S14)
 	ang := []repository.AnggotaTangga{{Urut: 1, OperatorID: "ReasClaimDeptHead", Jabatan: "Claim Dept. Head"}}
-	kmtTutup, err := g.BuatKasusKomite(context.Background(), nil, klaimUjiKomite, "", models.TransferTolak, "UJI-ADMIN",
-		"UJI Admin", ang, saat)
+	kmtTutup, err := g.BuatKasusKomite(context.Background(), nil, klaimUjiKomite, "", models.TransferTolak,
+		repository.TeksKomite{}, "UJI-ADMIN", "UJI Admin", ang, saat)
 	if err != nil {
 		t.Fatal(err)
 	}
 	kmtLain, err := g.BuatKasusKomite(context.Background(), nil, klaimUjiKomite, adjUjiKomite, models.TransferAdjustment,
-		"UJI-ADMIN", "UJI Admin", ang, saat)
+		repository.TeksKomite{}, "UJI-ADMIN", "UJI Admin", ang, saat)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -54,6 +54,8 @@ type KasusKomite struct {
 	Transfer                      string
 	KlaimID, AdjustmentID, Posisi string
 	Anggota                       []repository.AnggotaTangga
+	// Teks - teks pop-up TT3 / TT4 di kepala kasus komite (migrasi komiteclaimfacin 643).
+	Teks repository.TeksKomite
 }
 
 // Baru membuat gudang kosong.
@@ -486,8 +488,9 @@ func Normalkan(h *models.Halaman) {
 }
 
 // BuatKasusKomite - kelahiran kasus komite tiruan (T_WORK_CLAIM KMT- + header + tangga).
-func (g *Gudang) BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID, transfer, pembuat, namaPembuat string,
-	anggota []repository.AnggotaTangga, saat time.Time) (string, error) {
+func (g *Gudang) BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID, transfer string,
+	teks repository.TeksKomite, pembuat, namaPembuat string, anggota []repository.AnggotaTangga,
+	saat time.Time) (string, error) {
 	if len(anggota) == 0 {
 		return "", fmt.Errorf("tiruan: tangga komite kosong")
 	}
@@ -500,7 +503,7 @@ func (g *Gudang) BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID,
 	g.Kasus[id] = models.Kasus{ID: id, Tahap: models.TahapKomite, Posisi: anggota[0].OperatorID, PembuatID: pembuat,
 		PembuatNama: namaPembuat}
 	g.Komite[id] = KasusKomite{KlaimID: klaimID, AdjustmentID: adjID, Transfer: transfer, Posisi: anggota[0].OperatorID,
-		Anggota: anggota}
+		Anggota: anggota, Teks: teks}
 	return id, nil
 }
 

@@ -126,7 +126,9 @@ func kirimKomiteTutup(j *jalanAksi, transfer string) error {
 	}
 	anggota := []repository.AnggotaTangga{{Urut: 1, OperatorID: models.WorkbasketTutupKomite,
 		Jabatan: models.JabatanTutupKomite}}
-	kmt, err := j.l.g.BuatKasusKomite(j.ctx, j.tx, j.kasus.ID, "", transfer, j.k.Pelaku, nama, anggota,
+	teks := repository.TeksKomite{Kronologi: h.Ambil(models.JalurTKKronologi), Extent: h.Ambil(models.JalurTKExtent),
+		Liability: h.Ambil(models.JalurTKLiability)} // 7.2 childPageKomite.Komite.* (migrasi 643, OQ-KCFI-03)
+	kmt, err := j.l.g.BuatKasusKomite(j.ctx, j.tx, j.kasus.ID, "", transfer, teks, j.k.Pelaku, nama, anggota,
 		j.k.Sekarang) // 7.4 pxAddChildWork
 	if err != nil {
 		return err

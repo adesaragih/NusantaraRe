@@ -52,8 +52,8 @@ type Gudang interface {
 	HapusDokumenKlaim(ctx context.Context, tx *db.Tx, id, lid string) error
 	PindahKategoriDokumen(ctx context.Context, tx *db.Tx, id, lid, kategori string) error
 
-	BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID, transfer, pembuat, namaPembuat string,
-		anggota []repository.AnggotaTangga, saat time.Time) (string, error)
+	BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID, transfer string, teks repository.TeksKomite,
+		pembuat, namaPembuat string, anggota []repository.AnggotaTangga, saat time.Time) (string, error)
 	// TutupKomiteAnak = `CloseAllSubCases=true` (pxForceCaseClose / ASMForceCaseClose): kasus komite KMT- klaim yang
 	// masih terbuka ditutup berstatus `status`, kecuali `kecuali` (kosong = semua).
 	TutupKomiteAnak(ctx context.Context, tx *db.Tx, klaimID, kecuali, status string, saat time.Time) error

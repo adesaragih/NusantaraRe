@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"nusantarare/modul/claimfacin/backend/models"
+	"nusantarare/modul/claimfacin/backend/repository"
 	"nusantarare/modul/claimfacin/backend/services"
 )
 
@@ -177,7 +178,8 @@ func TestRejectClaimTT3MelahirkanKomiteTanpaAdjustment(t *testing.T) {
 	}
 	kode, out = u.aksiP(id, admin, "", services.PermintaanAksi{Aksi: "SendRejectClaimToKomite2",
 		Konteks: services.ModalTolak, Masukan: map[string]string{models.JalurTKRemarks: "UJI ALASAN",
-			models.JalurTKKronologi: "UJI KRONOLOGI"}})
+			models.JalurTKKronologi: "UJI KRONOLOGI", models.JalurTKExtent: "UJI EXTENT",
+			models.JalurTKLiability: "UJI LIABILITAS"}})
 	u.wajib(kode, http.StatusOK, out, "reject TT3 (KCF-03)")
 	// ClaimComiteeReject LS4 tampil selalu: isian pop-up (halaman requestor TempCommiteClaim) tetap terbaca sesudah Yes
 	if nl, _ := out["halaman"].(map[string]any)["nilai"].(map[string]any); nl[models.JalurTKRemarks] != "UJI ALASAN" ||
@@ -187,6 +189,10 @@ func TestRejectClaimTT3MelahirkanKomiteTanpaAdjustment(t *testing.T) {
 	}
 	kmt := modeLayar(out)[models.JalurKomiteBaru]
 	k, ada := u.g.Komite[kmt]
+	// jawaban work owner 10-10-2026 (OQ-KCFI-03): teks pop-up disimpan di kepala kasus komite (migrasi 643)
+	if k.Teks != (repository.TeksKomite{Kronologi: "UJI KRONOLOGI", Extent: "UJI EXTENT", Liability: "UJI LIABILITAS"}) {
+		t.Fatalf("teks pop-up kasus komite TT3: %+v", k.Teks)
+	}
 	if !ada || k.Transfer != models.TransferTolak || k.AdjustmentID != "" || k.KlaimID != id || len(k.Anggota) != 1 ||
 		k.Anggota[0].OperatorID != models.WorkbasketTutupKomite || k.Anggota[0].Jabatan != models.JabatanTutupKomite {
 		t.Fatalf("kasus komite TT3 %q: %+v", kmt, k)

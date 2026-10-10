@@ -53,9 +53,35 @@ func sqlSisipKepalaKomite(gen string) string {
 // sqlSisipKepalaKomiteTutup - kepala kasus komite TT3 / TT4 (SendRejectClaimToKomite2 / SendCloseClaimToKomite 7.3):
 // tanpa adjustment (ADJUSTMENT_ID NULL, migrasi komiteclaimfacin 641) dan ber-TRANSFER_TYPE (642). TT2 tetap
 // `sqlSisipKepalaKomite` (DEFAULT '2').
+//
+// Teks pop-up Chronology / Extent Of Loss / Policy Liability (`TempCommiteClaim.*` -> `childPageKomite.Komite.*`, 7.2)
+// ikut disimpan - migrasi komiteclaimfacin 643 (jawaban work owner 10-10-2026 OQ-KCFI-03).
 func sqlSisipKepalaKomiteTutup(gen string) string {
-	return fmt.Sprintf(`INSERT INTO %s (ID, ADJUSTMENT_ID, KOMITE_LOOP, KOMITE_COUNT, TRANSFER_TYPE)
-		VALUES (:1, NULL, :2, :3, :4)`, gen)
+	return fmt.Sprintf(`INSERT INTO %s (ID, ADJUSTMENT_ID, KOMITE_LOOP, KOMITE_COUNT, TRANSFER_TYPE,
+		KOMITE_CIRCUM_CAUSE_OF_LOSS, KOMITE_EXTENT_OF_LOSS, KOMITE_LEGAL_LIABILITY)
+		VALUES (:1, NULL, :2, :3, :4, :5, :6, :7)`, gen)
+}
+
+// TeksKomite - teks pop-up Reject Claim / Close Claim kasus komite TT3 / TT4 (kosong untuk TT2).
+type TeksKomite struct {
+	Kronologi, Extent, Liability string
+}
+
+// panjangTeksKomite - VARCHAR2(4000) kolom teks kepala kasus komite (migrasi 643).
+const panjangTeksKomite = 4000
+
+func (t TeksKomite) args() ([]any, error) {
+	var out []any
+	for _, x := range []struct{ jalur, nilai string }{{models.JalurTKKronologi, t.Kronologi},
+		{models.JalurTKExtent, t.Extent}, {models.JalurTKLiability, t.Liability}} {
+		v, err := nilaiTulis(models.Kolom{Properti: x.jalur, Golongan: models.GolTeks, Panjang: panjangTeksKomite},
+			x.nilai)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, v...)
+	}
+	return out, nil
 }
 
 // sqlKomiteTutupTerbuka - kasus komite TT3 / TT4 klaim `:1` yang masih menunggu (LINI FACIN, belum selesai).
@@ -94,7 +120,8 @@ func sqlSetelKomiteAdjustment(adj string) string {
 // SendCloseClaimToKomite 7.1-7.4 (TT3 / TT4, `adjID` kosong): T_WORK_CLAIM KMT- (COVER_KEY = klaim, LINI FACIN, TAHAP
 // Komite_Flow, POSITION = `posisiAwal`), T_GENERAL_KOMITE (ADJUSTMENT_ID, KOMITE_LOOP = cacah tangga, KOMITE_COUNT 1,
 // TRANSFER_TYPE TT3 / TT4), tangga satu baris per anggota (approval menunggu). Mengembalikan ID kasus komite.
-func (g *Gudang) BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID, transfer, pembuat, namaPembuat string,
+func (g *Gudang) BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID, transfer string, teks TeksKomite,
+	pembuat, namaPembuat string,
 	anggota []AnggotaTangga, saat time.Time) (string, error) {
 	tutup := transfer == models.TransferTolak || transfer == models.TransferTutup
 	if tutup != (adjID == "") {
@@ -129,7 +156,11 @@ func (g *Gudang) BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID,
 	}
 	q, args := sqlSisipKepalaKomite(gen), []any{id, adjID, len(anggota), 1}
 	if tutup {
-		q, args = sqlSisipKepalaKomiteTutup(gen), []any{id, len(anggota), 1, transfer}
+		ta, err := teks.args()
+		if err != nil {
+			return "", err
+		}
+		q, args = sqlSisipKepalaKomiteTutup(gen), append([]any{id, len(anggota), 1, transfer}, ta...)
 	}
 	if err := db.PeriksaSQL(q); err != nil {
 		return "", err

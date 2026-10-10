@@ -122,3 +122,20 @@ func TestUbahAdjustmentKomiteHanyaKolomKomite(t *testing.T) {
 		t.Fatalf("SQL got %s, want %s", q, want)
 	}
 }
+
+func TestKepalaKomiteTutupMenyimpanTeksPopUp(t *testing.T) {
+	// migrasi komiteclaimfacin 643 (jawaban work owner 10-10-2026 OQ-KCFI-03): Chronology / Extent Of Loss / Policy
+	// Liability pop-up TT3 / TT4 disimpan di kepala kasus komite; TT2 tetap tanpa kolom itu.
+	q := sqlSisipKepalaKomiteTutup("UJI.G")
+	for _, k := range []string{"TRANSFER_TYPE", "KOMITE_CIRCUM_CAUSE_OF_LOSS", "KOMITE_EXTENT_OF_LOSS", "KOMITE_LEGAL_LIABILITY"} {
+		if !strings.Contains(q, k) {
+			t.Fatalf("kepala TT3 / TT4 tanpa %s: %s", k, q)
+		}
+	}
+	if n := strings.Count(q, ":"); n != 7 {
+		t.Fatalf("penampung %d, mau 7: %s", n, q)
+	}
+	if strings.Contains(sqlSisipKepalaKomite("UJI.G"), "KOMITE_CIRCUM") {
+		t.Fatal("kepala TT2 menyebut teks pop-up TT3 / TT4")
+	}
+}
