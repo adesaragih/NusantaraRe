@@ -203,6 +203,7 @@ func aksiDLA(j *jalanAksi) error {
 //	SaveAcceptation 1-7   models.SaveAcceptation (keluar bila sudah Print Acceptation)
 //	8                     nama treaty spreading adjustment kosong (SetTreatNameAdjustment)
 //	9.2                   kasir bila AcceptanceStatus 1, IsPrintAccept kosong, StatusKasir kosong
+//	12                    PrintPDFAccep_MultiAksep (akseptasi_pdf.go: salinan halaman; PDF sesudah commit)
 //	13                    models.SelesaiAkseptasi
 //	15                    JSON_KLAIM (InsertJsonClaimNonMBU_act)
 //	16                    KonversiKlaim_Act STS 1 (pre=false)
@@ -236,17 +237,16 @@ func aksiAkseptasi(j *jalanAksi) error {
 			return err
 		}
 	}
+	if err := j.tundaDokumenAkseptasi(o, i, a); err != nil { // 12 PrintPDFAccep_MultiAksep (PDF sesudah commit)
+		return err
+	}
 	if err := models.SelesaiAkseptasi(h, o, i, a); err != nil { // 13
 		return err
 	}
 	if err := j.salinJSONKlaim(); err != nil { // 15
 		return err
 	}
-	if err := j.antreKonversi("1"); err != nil { // 16
-		return err
-	}
-	j.info = models.OQDokumenPDF
-	return nil
+	return j.antreKonversi("1") // 16
 }
 
 // kasir = HitServiceToKasir_Act jalur `IsCLM` (13.2): muatan kasir ke outbox (hanya produksi). DIRECTTOKASIR_LOG ditulis

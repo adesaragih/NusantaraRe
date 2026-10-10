@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -62,6 +63,8 @@ type jalanAksi struct {
 	selesai bool
 	// tanpaProgres - InsertProgressClaim tidak dijalankan sesudah aksi (pemindahan tahap menuliskannya sendiri).
 	tanpaProgres bool
+	// dokumen - bahan PDF akseptasi yang diproses SESUDAH aksi tersimpan (SaveAcceptation 12).
+	dokumen *dokumenTunda
 }
 
 type penanganAksi func(j *jalanAksi) error
@@ -81,6 +84,7 @@ func (l *Layanan) Aksi(ctx context.Context, p inti.Pelaku, id string, r Perminta
 	}
 	var hasil *Layar
 	var gagal *GalatValidasi
+	var dokumen *dokumenTunda
 	err := l.g.Transaksi(ctx, func(tx *db.Tx) error {
 		kasus, err := l.g.Keadaan(ctx, tx, id)
 		if err != nil {
@@ -192,6 +196,7 @@ func (l *Layanan) Aksi(ctx context.Context, p inti.Pelaku, id string, r Perminta
 		h2.Pesan = pesan
 		hasil = l.layar(k2, h2, Pemegang(p, k2))
 		hasil.Info, hasil.BukaModal = j.info, j.bukaModal
+		dokumen = j.dokumen
 		return nil
 	})
 	if gagal != nil {
@@ -202,6 +207,12 @@ func (l *Layanan) Aksi(ctx context.Context, p inti.Pelaku, id string, r Perminta
 	}
 	if err != nil {
 		return nil, err
+	}
+	if dokumen != nil { // akseptasi sudah tersimpan: pemutusan klien tidak membatalkan dokumennya
+		if err := l.simpanDokumenAkseptasi(context.WithoutCancel(ctx), *dokumen); err != nil {
+			log.Printf("claimfacin: dokumen akseptasi kasus %s: %v", id, err)
+			hasil.Info = models.PesanDokumenGagal
+		}
 	}
 	return hasil, nil
 }

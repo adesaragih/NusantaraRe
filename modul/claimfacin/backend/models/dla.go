@@ -352,7 +352,7 @@ func SaveAcceptation(k *Konteks, h *Halaman, o, i, a int) (bool, error) {
 }
 
 // SelesaiAkseptasi = SaveAcceptation langkah 13: IsPrintAccept adjustment + objek 1, DLAStatus objek 0 (tombol Print
-// DLA terbuka). Langkah 12 PrintPDFAccep_MultiAksep = OQ-CFI-20.
+// DLA terbuka). Langkah 12 PrintPDFAccep_MultiAksep: `SusunAcceptanceNote` (services, sebelum langkah ini).
 func SelesaiAkseptasi(h *Halaman, o, i, a int) error {
 	b, err := Adj(h, o, i, a)
 	if err != nil {

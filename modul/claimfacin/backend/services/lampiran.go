@@ -158,14 +158,26 @@ func (l *Layanan) simpanLampiran(ctx context.Context, akun, klaimID, kategori st
 		return models.Lampiran{}, err
 	}
 	kini := l.jam()
-	baru := models.BarisDokumenKlaim{Tanggal: kini, IDPega: models.KunciInstans(klaimID), NamaFile: nama, MIME: mime,
-		Kategori1: kategori, StorageID: o.ImageID, Operator: akun}
-	err = l.g.Transaksi(ctx, func(tx *db.Tx) error {
+	baru, err := l.catatDokumenKlaim(ctx, o, models.BarisDokumenKlaim{Tanggal: kini, IDPega: models.KunciInstans(klaimID),
+		NamaFile: nama, MIME: mime, Kategori1: kategori, StorageID: o.ImageID, Operator: akun})
+	if err != nil {
+		return models.Lampiran{}, err
+	}
+	return models.Lampiran{ID: baru.ID, NamaFile: nama, Kategori: kategori, MIME: mime,
+		Tanggal: kini.In(models.Jakarta).Format("2006-01-02 15:04:05"), Operator: akun}, nil
+}
+
+// catatDokumenKlaim = InsertDocument_Act S4-S5 sesudah objek `o` terunggah: Insert_T_Storage_SQL + baris dokumen klaim
+// `baru` di SATU transaksi; ID (`yyyyMMddhhmmssSSS` dari `baru.Tanggal`) yang bentrok dicoba +1 milidetik. Dipakai
+// lampiran dan dokumen akseptasi.
+func (l *Layanan) catatDokumenKlaim(ctx context.Context, o penyimpanan.Objek, baru models.BarisDokumenKlaim) (
+	models.BarisDokumenKlaim, error) {
+	err := l.g.Transaksi(ctx, func(tx *db.Tx) error {
 		if err := l.berkas.Catat(ctx, tx, o); err != nil {
 			return err
 		}
 		for i := 0; i < cobaIDDokumen; i++ {
-			baru.ID = models.IDDokumenKlaim(kini.Add(time.Duration(i) * time.Millisecond))
+			baru.ID = models.IDDokumenKlaim(baru.Tanggal.Add(time.Duration(i) * time.Millisecond))
 			err := l.g.SisipDokumenKlaim(ctx, tx, baru)
 			if errors.Is(err, repository.ErrIDDokumenTerpakai) {
 				continue
@@ -176,11 +188,9 @@ func (l *Layanan) simpanLampiran(ctx context.Context, akun, klaimID, kategori st
 	})
 	if err != nil {
 		// Objeknya sudah di penyimpanan tanpa catatan - dicatat di log untuk dibersihkan (pola Bordereaux).
-		log.Printf("claimfacin: lampiran %s klaim %s tidak tercatat, objek penyimpanan tertinggal", o.ImageID, klaimID)
-		return models.Lampiran{}, err
+		log.Printf("claimfacin: dokumen %s klaim %s tidak tercatat, objek penyimpanan tertinggal", o.ImageID, baru.IDPega)
 	}
-	return models.Lampiran{ID: baru.ID, NamaFile: nama, Kategori: kategori, MIME: mime,
-		Tanggal: kini.In(models.Jakarta).Format("2006-01-02 15:04:05"), Operator: akun}, nil
+	return baru, err
 }
 
 // IsiLampiran - isi satu dokumen klaim untuk diunduh.

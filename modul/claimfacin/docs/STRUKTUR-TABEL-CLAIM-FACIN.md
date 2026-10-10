@@ -225,8 +225,9 @@ riwayat siapa mengerjakan apa.
 > - `JSON_KLAIM` — baris `IDPEGA` yang ada dibiarkan, selainnya `INSERT`, **tanpa** `DATA_JSON`.
 > - `PROGRESSCLAIM` / `SUBPROGRESSCLAIM` — logika procedure `PEGA_PROGRESSCLAIM` / `PEGA_SUBPROGRESSCLAIM` ditulis
 >   ulang, procedure tidak dipanggil.
-> - `CATASTROPHE` (`SaveCatasrtope_Act`); `DOCUMENT_CLAIM` + `T_STORAGE_IMAGE` (lampiran, `inti/backend/penyimpanan`);
->   `MONITORING_KLAIM_LOG`; kronologi di `T_VIEW_SUGGEST`.
+> - `CATASTROPHE` (`SaveCatasrtope_Act`); `DOCUMENT_CLAIM` + `T_STORAGE_IMAGE` (lampiran dan nota akseptasi
+>   Acceptation KATEGORI_1 "AcceptanceNote", `inti/backend/penyimpanan`); `MONITORING_KLAIM_LOG`; kronologi di
+>   `T_VIEW_SUGGEST`.
 > - Efek keluar hanya lewat outbox `T_LOG_SERVICE_RNM`, dan hanya di produksi (`IS_PEGA_PROD`).
 
 ---

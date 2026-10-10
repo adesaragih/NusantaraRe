@@ -144,7 +144,7 @@
 | BreakDown Spreading Quota Share | — | **dibangun** (hanya-baca) |
 | Save | click:save | **dibangun** (`SimpanAdjustment`) |
 | Send to Committe (NA `IsKomite = 1` atau spreading kosong) | `SendPICProtect_Act` → harness `Comittee` | **dibangun** (`SendPICProtect`, modal `komite:…`, §5) |
-| Acceptation (VIS `AcceptanceStatus = 1`) | `SaveAcceptation` + `HitServiceToKasir_Act` | **dibangun** — aktif sesudah komite tahap 2 menulis `AcceptanceStatus`; kasir lewat outbox produksi, sekali per klik (§8). RALAT 10-10-2026: `HitServiceToKasir_Act` 3 `getStatusKonversi_Act` bertransisi pasca `.StatusKonversi=="1"` (COUNT `reinsurance.trloss_detail_t`, hanya produksi) - selainnya keluar; kini ditegakkan (`Acuan.StatusKonversi`) |
+| Acceptation (VIS `AcceptanceStatus = 1`) | `SaveAcceptation` + `HitServiceToKasir_Act` | **dibangun** — aktif sesudah komite tahap 2 menulis `AcceptanceStatus`; kasir lewat outbox produksi, sekali per klik (§8). RALAT 10-10-2026: `HitServiceToKasir_Act` 3 `getStatusKonversi_Act` bertransisi pasca `.StatusKonversi=="1"` (COUNT `reinsurance.trloss_detail_t`, hanya produksi) - selainnya keluar; kini ditegakkan (`Acuan.StatusKonversi`). Langkah 12 `PrintPDFAccep_MultiAksep` **dibangun** (10-10-2026, stream `AcceptanceNotePDF` diberikan work owner): salinan halaman klaim diambil sebelum langkah 13; PDF disusun, digambar, diunggah sesudah aksi tersimpan (InsertGoogleStorage_Act Folder "Claim" Durasi 1800, T_STORAGE_IMAGE + DOCUMENT_CLAIM KATEGORI_1 "AcceptanceNote" MIME "pdf"); lini MBU / Travel / PA → `info` OQ-CFI-20; §8 butir 24 |
 
 ## 5. Komite, penutupan, penolakan
 
@@ -239,6 +239,19 @@
     halaman sebelum komite memutuskan tidak boleh menimpa keputusan itu.
 23. Submit pop-up (Print PLA `GeneratePLA`, Comittee `KirimKomite`) memeriksa ulang tombol pembukanya di server (Pega:
     pop-up hanya dapat dibuka lewat tombol yang aktif); hapus adjustment bertaut komite = 409.
+24. Nota akseptasi `PrintPDFAccep_MultiAksep` (SaveAcceptation 12; `models/akseptasi_pdf.go`, `models/pdf_akseptasi.go`,
+    `services/akseptasi_pdf.go`, salinan Komite Claim Fac In - bukan impor):
+    - urutan (prompt tahap 2 §6 butir 7, pola Komite Prop): salinan halaman diambil di langkah 12 (saringan S9.3.11
+      `IsPrintAccept == "" && AcceptanceStatus == 1 && AcceptedNo == Param.NoAkseptasi` VERBATIM); PDF disusun,
+      digambar, diunggah, dan dicatat SESUDAH aksi tersimpan (tidak menahan kunci kasus; pemutusan klien tidak
+      membatalkannya); gagal (termasuk panik penggambar) → akseptasi tetap, `info` `PesanDokumenGagal`;
+    - angka `DecimalFormat("#,###.####")` id_ID atas nilai DESIMAL tersimpan, bukan `double` Java (nol float untuk
+      uang): beda hanya pada seri tepat ...5 di desimal ke-5 dan nilai di atas 15 digit bermakna;
+    - `HTMLToPDF` → go-pdf/fpdf yang menggambar susunan stream (label VERBATIM, ukuran CSS stream);
+    - perbaikan (maksud pasti): `(6 || 4) && U` di S9.3.6 / S9.3.9; `TemporaryUang` segar per cetak, bertambah selama
+      iterasi; Property-Remove di dalam For Each = saringan biasa; "Swift Code" hanya bila terisi;
+    - VERBATIM (maksud tidak pasti): "Location of Loss" = CauseOfLoss (S13); nominal / Payable To / spreading hanya item
+      terakhir yang lolos; tabel QS tanpa penulis tidak tercetak; "Premium Paid On" kosong (OQ-CFI-14).
 
 **`[inferensi]`:**
 
