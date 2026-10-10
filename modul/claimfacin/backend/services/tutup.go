@@ -1,11 +1,13 @@
 package services
 
 // Untuk apa berkas ini: PENUTUPAN DAN PENOLAKAN - tombol "Close Claim" layar Input Adjustment (local action
-// PreventRejectClaim -> `CloseClaim`) dan tombol "Reject Claim" layar Input Register (local action RejectSurveyClaim,
-// pra-proses `SetRejectClaim_pre`). Jalur komite TT3 / TT4 = OQ-CFI-27 (models/tutup.go).
+// PreventRejectClaim -> `CloseClaim` atau `SendCloseClaimToKomite` TT4) dan tombol "Reject Claim" layar Input Register
+// (local action RejectSurveyClaim, pra-proses `SetRejectClaim_pre`; "Yes" SureRejectClaim -> `SendRejectClaimToKomite2`
+// TT3). Kelahiran kasus komite TT3 / TT4 lewat `repository/komite.go` (keputusan work owner 10-10-2026 KCF-03).
 
 import (
 	"nusantarare/modul/claimfacin/backend/models"
+	"nusantarare/modul/claimfacin/backend/repository"
 )
 
 // Kunci modal penutupan / penolakan.
@@ -58,6 +60,10 @@ func aksiTutupKlaim(j *jalanAksi) error {
 	if err := j.l.g.TutupKasus(j.ctx, j.tx, j.kasus.ID, j.kasus.Tahap, j.k.Sekarang); err != nil {
 		return err
 	}
+	// 12 ASMForceCaseClose CloseAllSubCases=true: kasus komite KMT- klaim ini yang masih menunggu ikut ditutup
+	if err := j.l.g.TutupKomiteAnak(j.ctx, j.tx, j.kasus.ID, "", models.StatusSelesai, j.k.Sekarang); err != nil {
+		return err
+	}
 	j.selesai = true
 	return nil
 }
@@ -68,4 +74,68 @@ func aksiBukaTolak(j *jalanAksi) error {
 	models.SetRejectClaimPre(j.k, j.h, j.kasus.PembuatNama)
 	j.bukaModal = ModalTolak
 	return nil
+}
+
+// aksiKirimTolakKomite = "Yes" SureRejectClaim_section -> `SendRejectClaimToKomite2` (TT3).
+func aksiKirimTolakKomite(j *jalanAksi) error { return kirimKomiteTutup(j, models.TransferTolak) }
+
+// aksiKirimTutupKomite = "Yes" PreventRejectClaim (AllocationShareSalvage true) -> `SendCloseClaimToKomite` (TT4).
+func aksiKirimTutupKomite(j *jalanAksi) error { return kirimKomiteTutup(j, models.TransferTutup) }
+
+// kirimKomiteTutup = SendRejectClaimToKomite2 / SendCloseClaimToKomite:
+//
+//	2        Remark / Remark_Close := Remarks pop-up (models.SalinCatatanTutup)
+//	4-6      TT3: sudah ada akseptasi / estimasi belum Face Claim; TT4: adjustment belum diputus - pesan VERBATIM,
+//	         kasus komite tidak lahir
+//	7.1-7.4  kasus komite KMT- tanpa adjustment, TransferType 3 / 4, tangga satu tingkat ReasClaimDeptHead (KCF-03;
+//	         7.2 / 7.3 akun + email orang tertulis mati diganti workbasket, prompt §5 butir 7)
+//	7.5-7.7  Komite.CARI1, kronologi "Request Reject claim " / "Request close claim without payment " + KMT
+//	7.9      SendEmailKlaimRejectClose (outbox, hanya produksi; CC / BCC orang tidak disalin)
+//
+// ClaimComitee klaim induk (7.2 / 7.5) tidak ditulis: tanpa kolom (tangga dibaca dari tabel komite). Penjaga ganda
+// `models.PesanTutupKomiteGanda` = penyimpangan sadar (PARITAS).
+func kirimKomiteTutup(j *jalanAksi, transfer string) error {
+	h := j.h
+	layar := models.LayarTolak()
+	if transfer == models.TransferTutup {
+		layar = models.LayarTutup()
+	}
+	if err := wajibTerisi(j, models.Evaluasi(h, layar, false)); err != nil {
+		return err
+	}
+	models.SalinCatatanTutup(h) // 2
+	galat := models.PeriksaTolakKomite(h)
+	if transfer == models.TransferTutup {
+		galat = models.PeriksaTutupKomite(h)
+	}
+	if galat != "" { // 6 Page-Set-Messages
+		h.TambahPesan("", galat)
+		return validasi(h)
+	}
+	ada, err := j.l.g.AdaKomiteTutupTerbuka(j.ctx, j.tx, j.kasus.ID)
+	if err != nil {
+		return err
+	}
+	if ada {
+		h.TambahPesan("", models.PesanTutupKomiteGanda)
+		return validasi(h)
+	}
+	nama, err := j.l.a.NamaPelaku(j.ctx, j.k.Pelaku)
+	if err != nil {
+		return err
+	}
+	anggota := []repository.AnggotaTangga{{Urut: 1, OperatorID: models.WorkbasketTutupKomite,
+		Jabatan: models.JabatanTutupKomite}}
+	kmt, err := j.l.g.BuatKasusKomite(j.ctx, j.tx, j.kasus.ID, "", transfer, j.k.Pelaku, nama, anggota,
+		j.k.Sekarang) // 7.4 pxAddChildWork
+	if err != nil {
+		return err
+	}
+	models.TandaiKirimTutup(j.k, h, transfer, kmt) // 7.5-7.7
+	if transfer == models.TransferTolak {
+		j.bukaModal = ModalTolak
+	} else {
+		j.bukaModal = ModalTutup
+	}
+	return j.antre(JenisEfekEmail, kmt, map[string]string{"klaim": j.kasus.ID, "komite": kmt}) // 7.9
 }

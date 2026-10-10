@@ -813,6 +813,23 @@ func (a *Acuan) StatusKasir(ctx context.Context, noAksep string) (string, bool, 
 		FETCH FIRST 1 ROWS ONLY`, t), noAksep)
 }
 
+// StatusKonversi = getStatusKonversi_Act (HitServiceToKasir_Act 3): 2 nomor akseptasi tanpa titik, 3 RDB
+// `getStatusKonversi_SQL` (`COUNT(1) FROM reinsurance.trloss_detail_t WHERE NO_AKSEP`) HANYA bila IsPEGAPROD dan nomor
+// terisi, 4 `> 0` -> "1". Di luar produksi kosong (3 tidak berjalan) - kasir keluar di transisi langkah 3.
+func (a *Acuan) StatusKonversi(ctx context.Context, noAksep string) (string, error) {
+	if !a.Produksi || noAksep == "" {
+		return "", nil
+	}
+	v, _, err := a.satu(ctx, `SELECT TO_CHAR(COUNT(1)) FROM REINSURANCE.TRLOSS_DETAIL_T WHERE NO_AKSEP = :1`, noAksep)
+	if err != nil {
+		return "", err
+	}
+	if v != "" && v != "0" {
+		return "1", nil
+	}
+	return v, nil
+}
+
 // EmailCeding = GetEmailCeding_SQL (`GL.F_GET_EMAIL(:ceding) FROM DUAL`) - HANYA dibaca saat muatan kasir disusun di
 // produksi (skema GL tidak terlihat dari akun DEV, pola Claim Prop).
 func (a *Acuan) EmailCeding(ctx context.Context, ceding string) (string, error) {

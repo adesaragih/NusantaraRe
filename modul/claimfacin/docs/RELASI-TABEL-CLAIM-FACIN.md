@@ -114,6 +114,13 @@ ada kolom kunci tamu** — keduanya satu baris logis yang dipecah dua tabel.
 | **14** | `T_WORK_CLAIM` | `T_GENERAL_KOMITE` | **SHARED PK** | `1:1` | **—** | ⭐ baris **`KMT-`** |
 | **15** | `T_GENERAL_KOMITE` | `T_KOMITE_KOMITELIST` | `DATA_KOMITE_ID` | `1:N` | `CASCADE` | ⭐ **bersama lini PROP** |
 
+> ⛔ **RALAT 10-10-2026** (Komite Claim Fac In tahap 2, keputusan work owner KCF-03). Sel lamanya dikutip utuh, tidak
+> dihapus: *"⭐ **UNIK** · **NOT NULL** · ⛔ **tanpa `REFERENCES`**"* → relasi 12 kini **`0..1:1`**: `ADJUSTMENT_ID`
+> **boleh kosong** (migrasi `komiteclaimfacin/641`) untuk kasus komite TT3 Reject Claim / TT4 Close Without Payment
+> (lahir tanpa adjustment, `T_GENERAL_KOMITE.TRANSFER_TYPE` 3 / 4, migrasi `komiteclaimfacin/642`), dan indeksnya
+> **biasa**, bukan unik (`IX_GENERAL_KOMITE_ADJ`, migrasi `komiteclaimprop/681`). Keunikan satu adjustment per KMT tetap
+> dijaga relasi 13 (`UQ_CLAIM_ADJUSTMENT_KOMITE`, OQ-CFI-28). Tetap tanpa `REFERENCES`.
+
 ---
 
 ## §C2 — ⭐ Relasi ke-16: kronologi klaim

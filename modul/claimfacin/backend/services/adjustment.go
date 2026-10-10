@@ -259,6 +259,13 @@ func (j *jalanAksi) kasir(o, i, a int) error {
 	if !models.BolehKasir(b) { // 2
 		return nil
 	}
+	sts, err := j.l.a.StatusKonversi(j.ctx, strings.ReplaceAll(b["AcceptedNo"], ".", "")) // 3 (hanya IsPEGAPROD)
+	if err != nil {
+		return err
+	}
+	if sts != "1" { // 3 transisi PASCA-langkah: status konversi 1 lanjut (T=2), selainnya keluar (F=6)
+		return nil
+	}
 	if b["IDOfBank"] == "" { // 11-12
 		id, err := j.l.a.IDBankRekening(j.ctx, b["NameOfBank"], b["BranchOfBank"], b["NoAccount"])
 		if err != nil {
@@ -355,5 +362,8 @@ func penanganAdjustment() map[string]penanganAksi {
 		"SetelAlokasiSalvage": halamanSaja(func(*jalanAksi) {}), // postValue + muat ulang pilihan konfirmasi
 		"CloseClaim":          aksiTutupKlaim,
 		"BukaRejectClaim":     aksiBukaTolak,
+		// TT3 / TT4 (KCF-03)
+		"SendRejectClaimToKomite2": aksiKirimTolakKomite,
+		"SendCloseClaimToKomite":   aksiKirimTutupKomite,
 	}
 }

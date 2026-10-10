@@ -50,6 +50,8 @@ type Gudang struct {
 
 // KasusKomite - satu kasus komite tiruan.
 type KasusKomite struct {
+	// Transfer - TRANSFER_TYPE (2 TT2, 3 TT3, 4 TT4).
+	Transfer                      string
 	KlaimID, AdjustmentID, Posisi string
 	Anggota                       []repository.AnggotaTangga
 }
@@ -174,15 +176,35 @@ func (g *Gudang) PindahTahap(_ context.Context, _ *db.Tx, id, lama, baru, posisi
 }
 
 // TutupKasus menutup kasus.
-func (g *Gudang) TutupKasus(_ context.Context, _ *db.Tx, id, tahap string, saat time.Time) error {
+func (g *Gudang) TutupKasus(ctx context.Context, tx *db.Tx, id, tahap string, saat time.Time) error {
+	return g.TutupKasusStatus(ctx, tx, id, tahap, models.StatusSelesai, saat)
+}
+
+// TutupKasusStatus - penutupan kasus berstatus `status` (kontrak Komite Claim Fac In).
+func (g *Gudang) TutupKasusStatus(_ context.Context, _ *db.Tx, id, tahap, status string, saat time.Time) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	k := g.Kasus[id]
 	if k.Tahap != tahap || k.Tertutup() {
 		return repository.ErrTahapBerubah
 	}
-	k.StatusWork, k.TglUpdate = models.StatusSelesai, saat
+	k.StatusWork, k.TglUpdate = status, saat
 	g.Kasus[id] = k
+	return nil
+}
+
+// TutupKomiteAnak - lihat `repository.Gudang.TutupKomiteAnak`.
+func (g *Gudang) TutupKomiteAnak(_ context.Context, _ *db.Tx, klaimID, kecuali, status string, saat time.Time) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	for id, km := range g.Komite {
+		k := g.Kasus[id]
+		if km.KlaimID != klaimID || id == kecuali || k.Tahap != models.TahapKomite || k.Tertutup() {
+			continue
+		}
+		k.StatusWork, k.TglUpdate, k.Posisi = status, saat, ""
+		g.Kasus[id] = k
+	}
 	return nil
 }
 
@@ -259,6 +281,7 @@ func (g *Gudang) SimpanHalaman(_ context.Context, _ *db.Tx, id string, h *models
 	}
 	s := models.ProyeksiKatalog(h)
 	Normalkan(s)
+	pertahankanKolomKomite(lama, s)
 	kr := models.SalinDaftar(lama.AmbilDaftar(models.DaftarKronologi))
 	for _, b := range h.AmbilDaftar(models.DaftarKronologi) {
 		if b[models.PropRiwayatBaru] == "1" {
@@ -463,7 +486,7 @@ func Normalkan(h *models.Halaman) {
 }
 
 // BuatKasusKomite - kelahiran kasus komite tiruan (T_WORK_CLAIM KMT- + header + tangga).
-func (g *Gudang) BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID, pembuat, namaPembuat string,
+func (g *Gudang) BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID, transfer, pembuat, namaPembuat string,
 	anggota []repository.AnggotaTangga, saat time.Time) (string, error) {
 	if len(anggota) == 0 {
 		return "", fmt.Errorf("tiruan: tangga komite kosong")
@@ -476,8 +499,22 @@ func (g *Gudang) BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID,
 	defer g.mu.Unlock()
 	g.Kasus[id] = models.Kasus{ID: id, Tahap: models.TahapKomite, Posisi: anggota[0].OperatorID, PembuatID: pembuat,
 		PembuatNama: namaPembuat}
-	g.Komite[id] = KasusKomite{KlaimID: klaimID, AdjustmentID: adjID, Posisi: anggota[0].OperatorID, Anggota: anggota}
+	g.Komite[id] = KasusKomite{KlaimID: klaimID, AdjustmentID: adjID, Transfer: transfer, Posisi: anggota[0].OperatorID,
+		Anggota: anggota}
 	return id, nil
+}
+
+// AdaKomiteTutupTerbuka - kasus komite TT3 / TT4 klaim yang belum selesai.
+func (g *Gudang) AdaKomiteTutupTerbuka(_ context.Context, _ *db.Tx, klaimID string) (bool, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	for id, k := range g.Komite {
+		if k.KlaimID == klaimID && (k.Transfer == models.TransferTolak || k.Transfer == models.TransferTutup) &&
+			!g.Kasus[id].Tertutup() {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // SetelKomiteAdjustment - KOMITE_ID baris adjustment tersimpan (UNIQUE ditiru: satu KMT satu adjustment).
@@ -542,4 +579,80 @@ func jagaKomite(lama, baru *models.Halaman) error {
 		}
 	})
 	return hilang
+}
+
+// pertahankanKolomKomite meniru `sqlUbahSimpul`: baris adjustment yang sudah tersimpan (UPDATE) tidak menulis kolom milik
+// komite (`Kolom.MilikKomite`) - nilainya tetap nilai tersimpan; baris baru (INSERT) menulisnya.
+func pertahankanKolomKomite(lama, baru *models.Halaman) {
+	if lama == nil {
+		return
+	}
+	tersimpan := map[string]models.Baris{}
+	for o := range lama.AmbilDaftar(models.DaftarObjek) {
+		for i := range lama.AmbilDaftar(models.DaftarItem(o + 1)) {
+			for _, a := range lama.AmbilDaftar(models.DaftarAdj(o+1, i+1)) {
+				tersimpan[a[models.PropID]] = a
+			}
+		}
+	}
+	for o := range baru.AmbilDaftar(models.DaftarObjek) {
+		for i := range baru.AmbilDaftar(models.DaftarItem(o + 1)) {
+			for _, a := range baru.AmbilDaftar(models.DaftarAdj(o+1, i+1)) {
+				l, ada := tersimpan[a[models.PropID]]
+				if !ada {
+					continue
+				}
+				for _, k := range models.TabelAdjustment.Kolom {
+					if !k.MilikKomite {
+						continue
+					}
+					if v := l[k.Properti]; v != "" {
+						a[k.Properti] = v
+					} else {
+						delete(a, k.Properti)
+					}
+				}
+			}
+		}
+	}
+}
+
+// UbahAdjustmentKomite - tiruan `repository.Gudang.UbahAdjustmentKomite`: kolom milik komite baris adjustment `adjID`.
+func (g *Gudang) UbahAdjustmentKomite(_ context.Context, _ *db.Tx, klaimID, adjID string, nilai map[string]string) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	milik := map[string]bool{}
+	for _, k := range models.TabelAdjustment.Kolom {
+		if k.MilikKomite {
+			milik[k.Properti] = true
+		}
+	}
+	for p := range nilai {
+		if !milik[p] {
+			return fmt.Errorf("tiruan: %q bukan kolom milik komite baris adjustment", p)
+		}
+	}
+	h := g.halaman[klaimID]
+	if h == nil {
+		return repository.ErrKasusTidakAda
+	}
+	for o := range h.AmbilDaftar(models.DaftarObjek) {
+		for i := range h.AmbilDaftar(models.DaftarItem(o + 1)) {
+			for _, a := range h.AmbilDaftar(models.DaftarAdj(o+1, i+1)) {
+				if a[models.PropID] != adjID {
+					continue
+				}
+				for p, v := range nilai {
+					if v == "" {
+						delete(a, p)
+					} else {
+						a[p] = v
+					}
+				}
+				Normalkan(h)
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("tiruan: baris adjustment %q klaim %q tidak ada", adjID, klaimID)
 }

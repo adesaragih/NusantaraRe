@@ -1,9 +1,11 @@
 package handlers_test
 
 // Uji seam HTTP penyerahan komite TT2 (SendPICProtect_Act -> pop-up Comittee -> CreateKMTNo_Act), Close Claim
-// (ValidationAdjustmentKomite + CloseClaim), dan pop-up Reject Claim (TT3 = OQ-CFI-27). Fixture `UJI-*`.
+// (ValidationAdjustmentKomite + CloseClaim), dan kelahiran kasus komite TT3 Reject Claim / TT4 Close Without Payment
+// (KCF-03). Fixture `UJI-*`.
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -165,7 +167,7 @@ func TestCloseClaim(t *testing.T) {
 	}
 }
 
-func TestRejectClaimTT3MenungguKeputusan(t *testing.T) {
+func TestRejectClaimTT3MelahirkanKomiteTanpaAdjustment(t *testing.T) {
 	u := baruUji(t)
 	id := u.buat()
 	kode, out := u.aksiP(id, admin, "", services.PermintaanAksi{Aksi: "BukaRejectClaim"})
@@ -174,8 +176,141 @@ func TestRejectClaimTT3MenungguKeputusan(t *testing.T) {
 		t.Fatalf("modal %v", out["bukaModal"])
 	}
 	kode, out = u.aksiP(id, admin, "", services.PermintaanAksi{Aksi: "SendRejectClaimToKomite2",
+		Konteks: services.ModalTolak, Masukan: map[string]string{models.JalurTKRemarks: "UJI ALASAN",
+			models.JalurTKKronologi: "UJI KRONOLOGI"}})
+	u.wajib(kode, http.StatusOK, out, "reject TT3 (KCF-03)")
+	// ClaimComiteeReject LS4 tampil selalu: isian pop-up (halaman requestor TempCommiteClaim) tetap terbaca sesudah Yes
+	if nl, _ := out["halaman"].(map[string]any)["nilai"].(map[string]any); nl[models.JalurTKRemarks] != "UJI ALASAN" ||
+		nl[models.JalurTKKronologi] != "UJI KRONOLOGI" {
+		t.Fatalf("isian pop-up hilang sesudah Yes: Remarks %v Chronology %v", nl[models.JalurTKRemarks],
+			nl[models.JalurTKKronologi])
+	}
+	kmt := modeLayar(out)[models.JalurKomiteBaru]
+	k, ada := u.g.Komite[kmt]
+	if !ada || k.Transfer != models.TransferTolak || k.AdjustmentID != "" || k.KlaimID != id || len(k.Anggota) != 1 ||
+		k.Anggota[0].OperatorID != models.WorkbasketTutupKomite || k.Anggota[0].Jabatan != models.JabatanTutupKomite {
+		t.Fatalf("kasus komite TT3 %q: %+v", kmt, k)
+	}
+	h := u.g.Halaman(id)
+	if h.Ambil(models.CD+"Remark") != "UJI ALASAN" || h.Ambil(models.CD+"Remark_Close") != "UJI ALASAN" {
+		t.Fatalf("Remark: %q / %q", h.Ambil(models.CD+"Remark"), h.Ambil(models.CD+"Remark_Close"))
+	}
+	kr := h.AmbilDaftar(models.DaftarKronologi)
+	if len(kr) == 0 || kr[len(kr)-1]["pyNote"] != models.AwalanTolakKomite+kmt {
+		t.Fatalf("kronologi: %+v", kr)
+	}
+	// permintaan kedua selagi menunggu komite ditolak (penjaga ganda)
+	kode, out = u.aksiP(id, admin, "", services.PermintaanAksi{Aksi: "SendRejectClaimToKomite2",
 		Konteks: services.ModalTolak, Masukan: map[string]string{models.JalurTKRemarks: "UJI"}})
-	if kode == http.StatusOK {
-		t.Fatalf("reject TT3 diterima padahal OQ-CFI-27: %v", out)
+	if kode != http.StatusUnprocessableEntity || !strings.Contains(fmt.Sprint(out), models.PesanTutupKomiteGanda) {
+		t.Fatalf("permintaan ganda: %d %v", kode, out)
+	}
+}
+
+func TestCloseWithoutPaymentTT4(t *testing.T) {
+	u := baruUji(t)
+	id := u.adjustmentFinal()
+	kode, out := u.aksiT(id, services.PermintaanAksi{Aksi: "PreventRejectClaim"})
+	u.wajib(kode, http.StatusOK, out, "buka close claim")
+	tutup := map[string]string{models.JalurTKRemarks: "UJI TANPA BAYAR", models.JalurAlokasiSalvage: "true"}
+	kode, out = u.aksiT(id, services.PermintaanAksi{Aksi: "SetelAlokasiSalvage", Konteks: services.ModalTutup,
+		Mode: map[string]string{models.JalurAlokasiSalvage: "true"}, Masukan: tutup})
+	u.wajib(kode, http.StatusOK, out, "close without payment")
+	mode := map[string]string{models.JalurAlokasiSalvage: "true"}
+	// adjustment ber-AcceptanceStatus kosong menahan TT4 (SendCloseClaimToKomite 5.1.1.1, VERBATIM)
+	kode, out = u.aksiT(id, services.PermintaanAksi{Aksi: "SendCloseClaimToKomite", Konteks: services.ModalTutup,
+		Mode: mode, Masukan: tutup})
+	if kode != http.StatusUnprocessableEntity || !pesanMemuat(out, models.PesanAdjustmentDiKomite(1)) {
+		t.Fatalf("TT4 dengan adjustment belum diputus: %d %v", kode, out["pesan"])
+	}
+	if len(u.g.Komite) != 0 {
+		t.Fatalf("kasus komite lahir walau ditolak: %+v", u.g.Komite)
+	}
+	h := u.g.Halaman(id)
+	h.AmbilDaftar(models.DaftarAdj(1, 1))[0]["AcceptanceStatus"] = "2"
+	u.g.SetelHalaman(id, h)
+	kode, out = u.aksiT(id, services.PermintaanAksi{Aksi: "SendCloseClaimToKomite", Konteks: services.ModalTutup,
+		Mode: mode, Masukan: tutup})
+	u.wajib(kode, http.StatusOK, out, "close without payment ke komite")
+	kmt := modeLayar(out)[models.JalurKomiteBaru]
+	if k := u.g.Komite[kmt]; k.Transfer != models.TransferTutup || k.AdjustmentID != "" || k.KlaimID != id {
+		t.Fatalf("kasus komite TT4 %q: %+v", kmt, k)
+	}
+	if k := u.g.Kasus[id]; k.Tertutup() {
+		t.Fatal("klaim ditutup sebelum komite memutus")
+	}
+	kr := u.g.Halaman(id).AmbilDaftar(models.DaftarKronologi)
+	if kr[len(kr)-1]["pyNote"] != models.AwalanTutupKomite+kmt {
+		t.Fatalf("kronologi: %+v", kr[len(kr)-1])
+	}
+}
+
+func TestKasirAcceptationMenungguStatusKonversi(t *testing.T) {
+	// HitServiceToKasir_Act 3: transisi PASCA-langkah `.StatusKonversi=="1"` T=2 F=6 (getStatusKonversi_Act, COUNT
+	// reinsurance.trloss_detail_t - hanya produksi); selainnya keluar sebelum IDOfBank / muatan kasir.
+	u := baruUjiProduksi(t)
+	id := u.adjustmentFinal()
+	h := u.g.Halaman(id)
+	b := h.AmbilDaftar(models.DaftarAdj(1, 1))[0]
+	b["AcceptanceStatus"], b["AcceptedNo"], b["IsApproved"], b["IsKomite"] = "1", "UJI-A77.03.2026.00005", "1", "1"
+	b["IsPrintAccept"], b["DirectToKasir"], b["StatusKasir"] = "1", "true", ""
+	b[models.PropKomiteID] = "KMT-UJI8"
+	u.g.SetelHalaman(id, h)
+	kasir := func() int {
+		n := 0
+		for _, e := range u.g.Efek {
+			if strings.HasPrefix(e, services.JenisEfekKasir+":") {
+				n++
+			}
+		}
+		return n
+	}
+	kode, out := u.aksiT(id, services.PermintaanAksi{Aksi: "Acceptation", Konteks: panelAdj(1)})
+	u.wajib(kode, http.StatusOK, out, "acceptation tanpa status konversi")
+	if kasir() != 0 {
+		t.Fatalf("kasir diantre sebelum konversi tercatat: %v", u.g.Efek)
+	}
+	u.a.Konversi["UJI-A7703202600005"] = "1"
+	kode, out = u.aksiT(id, services.PermintaanAksi{Aksi: "Acceptation", Konteks: panelAdj(1)})
+	u.wajib(kode, http.StatusOK, out, "acceptation sesudah konversi")
+	if kasir() != 1 {
+		t.Fatalf("kasir tidak diantre sesudah konversi: %v", u.g.Efek)
+	}
+}
+
+func TestCloseClaimMenutupKomiteAnak(t *testing.T) {
+	// CloseClaim 12 `ASMForceCaseClose` CloseAllSubCases=true: kasus komite TT4 yang masih menunggu ikut ditutup
+	// (tanpa itu barisnya tertinggal di daftar kerja komite dan setiap Submit-nya 409).
+	u := baruUji(t)
+	id := u.adjustmentFinal()
+	h := u.g.Halaman(id)
+	h.AmbilDaftar(models.DaftarAdj(1, 1))[0]["AcceptanceStatus"] = "2"
+	u.g.SetelHalaman(id, h)
+	kode, out := u.aksiT(id, services.PermintaanAksi{Aksi: "PreventRejectClaim"})
+	u.wajib(kode, http.StatusOK, out, "buka close claim")
+	mode := map[string]string{models.JalurAlokasiSalvage: "true"}
+	kode, out = u.aksiT(id, services.PermintaanAksi{Aksi: "SendCloseClaimToKomite", Konteks: services.ModalTutup,
+		Mode: mode, Masukan: map[string]string{models.JalurTKRemarks: "UJI TT4", models.JalurAlokasiSalvage: "true"}})
+	u.wajib(kode, http.StatusOK, out, "TT4")
+	kmt := modeLayar(out)[models.JalurKomiteBaru]
+	if kmt == "" || u.g.Kasus[kmt].Tertutup() {
+		t.Fatalf("kasus komite TT4 %q", kmt)
+	}
+	// adjustment kemudian diterima + dicetak, klaim ditutup lewat Close Claim biasa
+	h = u.g.Halaman(id)
+	b := h.AmbilDaftar(models.DaftarAdj(1, 1))[0]
+	b["AcceptanceStatus"], b["AcceptedNo"], b["IsApproved"], b["IsKomite"] = "1", "UJI-AKS.03.2026.00006", "1", "1"
+	b[models.PropKomiteID] = "KMT-UJI7"
+	u.g.SetelHalaman(id, h)
+	kode, out = u.aksiT(id, services.PermintaanAksi{Aksi: "Acceptation", Konteks: panelAdj(1)})
+	u.wajib(kode, http.StatusOK, out, "acceptation")
+	kode, out = u.aksiT(id, services.PermintaanAksi{Aksi: "CloseClaim", Konteks: services.ModalTutup,
+		Masukan: map[string]string{models.JalurTKRemarks: "UJI TUTUP"}})
+	u.wajib(kode, http.StatusOK, out, "close claim")
+	if !u.g.Kasus[id].Tertutup() {
+		t.Fatal("klaim belum tertutup")
+	}
+	if k := u.g.Kasus[kmt]; k.StatusWork != models.StatusSelesai {
+		t.Fatalf("kasus komite TT4 %s tidak ikut ditutup: %+v", kmt, k)
 	}
 }

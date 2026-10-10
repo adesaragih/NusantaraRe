@@ -62,6 +62,9 @@ var TabelHeaderKlaim = Tabel{Nama: "T_GENERAL_CLAIM", Kolom: []Kolom{
 	baru(kPenanda(CD+"ExGratia", "EX_GRATIA")),
 	kTeks(CD+"Remark", "REMARK", 4000),
 	kTeks(CD+"Remark_Close", "REMARK_CLOSE", 4000),
+	// usul penyetuju tingkat 1 (Komite Claim Fac In `KomitePost_Adjustment` S13, lewat kontrak; kolom claimprop 520)
+	kPenanda(CD+"IsCloseFile", "IS_CLOSE_FILE"),
+	kPenanda(CD+"IsReservedClaim", "IS_RESERVED_CLAIM"),
 	// penanda alur (pyWorkPage)
 	baru(kPenanda(JalurIsError, "IS_ERROR")),
 	baru(kPenanda(JalurIsRegister, "IS_REGISTER")),
@@ -306,6 +309,7 @@ var TabelAdjustment = Tabel{Nama: "T_CLAIM_ADJUSTMENT", Daftar: AnakAdj, KolomIn
 		milikKomite(kTglWaktu("AcceptedDate", "ACCEPTED_DATE")),
 		milikKomite(kKode("AcceptanceStatus", "ACCEPTANCE_STATUS", 16)),
 		milikKomite(kPenanda("IsApproved", "IS_APPROVED")),
+		milikKomite(kTeks("Notes", "NOTES", 4000)), // KomitePost_Adjustment S7.2.1.5 (<- Comment); kolom claimprop 528
 		kPenanda("IsKomite", "IS_KOMITE"),
 		kKode("DLA_No", "DLA_NO", 64),
 		kTeks("RemarksDLA", "REMARKS_DLA", 4000),

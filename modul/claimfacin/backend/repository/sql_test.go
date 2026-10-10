@@ -77,7 +77,7 @@ func TestGeserNourutSemuaTabelStabil(t *testing.T) {
 // simpan klaim yang membaca halaman sebelum komite memutuskan tidak menimpa keputusannya (temuan review 10-10-2026).
 func TestUbahAdjustmentTanpaKolomKomite(t *testing.T) {
 	q := sqlUbahSimpul("UJI.ADJ", &models.TabelAdjustment)
-	for _, k := range []string{"ACCEPTED_NO", "ACCEPTED_DATE", "ACCEPTANCE_STATUS", "IS_APPROVED"} {
+	for _, k := range []string{"ACCEPTED_NO", "ACCEPTED_DATE", "ACCEPTANCE_STATUS", "IS_APPROVED", "NOTES"} {
 		if strings.Contains(q, k+" =") {
 			t.Errorf("%s ikut UPDATE: %s", k, q)
 		}
@@ -96,5 +96,29 @@ func TestUbahAdjustmentTanpaKolomKomite(t *testing.T) {
 	}
 	if len(semua)-len(ubah) < 4 || len(regexp.MustCompile(`:\d+`).FindAllString(q, -1)) != len(ubah)+4 {
 		t.Fatalf("jumlah bind: semua %d ubah %d, teks %s", len(semua), len(ubah), q)
+	}
+}
+
+// TestUbahAdjustmentKomiteHanyaKolomKomite - penulis keputusan komite (kontrak KlaimFacInKomite) hanya menyentuh kolom
+// milik komite, terikat ID + CLAIM_ID, bind urut kemunculan.
+func TestUbahAdjustmentKomiteHanyaKolomKomite(t *testing.T) {
+	var kolom []models.Kolom
+	for _, p := range []string{"AcceptanceStatus", "AcceptedDate", "AcceptedNo", "IsApproved", "Notes"} {
+		k, ok := kolomKomiteAdjustment(p)
+		if !ok {
+			t.Fatalf("%s bukan kolom milik komite", p)
+		}
+		kolom = append(kolom, k)
+	}
+	for _, p := range []string{"PaymentType", "IsPrintAccept", "StatusKasir", "IDOfBank", "IsFacRetro"} {
+		if _, ok := kolomKomiteAdjustment(p); ok {
+			t.Fatalf("%s dianggap kolom milik komite (harus lewat simpan halaman)", p)
+		}
+	}
+	q := sqlUbahAdjustmentKomite("UJI.ADJ", kolom)
+	want := "UPDATE UJI.ADJ SET ACCEPTANCE_STATUS = :1, ACCEPTED_DATE = TO_DATE(:2, 'YYYY-MM-DD HH24:MI:SS'), " +
+		"ACCEPTED_NO = :3, IS_APPROVED = :4, NOTES = :5 WHERE ID = :6 AND CLAIM_ID = :7"
+	if q != want {
+		t.Fatalf("SQL got %s, want %s", q, want)
 	}
 }

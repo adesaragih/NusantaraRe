@@ -479,6 +479,7 @@ func SetNilaiResikoSendiri(k *Konteks, h *Halaman, o, i, a int) error {
 	if bukanSF && propNol { // 14-15
 		h.Setel(JalurIsError, "2")
 		h.TambahPesan(JalurAnak(DaftarAdj(o, i), a, "AdjustmentValue"), PesanAdjNol)
+		return nil // 15 transisi pasca-langkah `true` -> keluar (RALAT 10-10-2026: langkah 16+ tidak berjalan)
 	}
 	if bukanSF && Lebih(jumlah, kk.B(b, "TotalEstimasiValue")) { // 16
 		h.Setel(JalurIsError, "2")

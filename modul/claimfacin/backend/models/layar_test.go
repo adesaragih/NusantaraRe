@@ -23,15 +23,45 @@ func cariTata(ts []models.Tata, cocok func(models.Tata) bool) (models.Tata, bool
 }
 
 func TestTombolOQTetapNonaktifWalauDibungkusNaJika(t *testing.T) {
+	// "View KMT NO" = tombolOQ dibungkus naJika(`.KomiteNo != ''`) + tampil: KomiteNo kosong -> naJika salah, tombol
+	// tetap nonaktif ber-OQ (pembungkus MENGGABUNG kondisi).
 	h := models.HalamanBaru()
-	h.Setel("IsReject", "0") // kondisi naJika XML salah -> Pega: aktif; tombolOQ: tetap nonaktif
-	ts := models.Evaluasi(h, models.LayarTolak(), false)
-	yes, ok := cariTata(ts, func(t models.Tata) bool { return t.ID == "SendRejectClaimToKomite2" })
-	if !ok || !yes.Nonaktif || yes.Catatan == "" {
-		t.Fatalf("Yes Reject Claim harus nonaktif ber-OQ: %+v", yes)
+	h.SetelDaftar(models.DaftarObjek, []models.Baris{{}})
+	h.SetelDaftar(models.DaftarItem(1), []models.Baris{{}})
+	h.SetelDaftar(models.DaftarAdj(1, 1), []models.Baris{{"IsKomite": "1"}})
+	ts := models.Evaluasi(h, models.LayarAdjustment(1, 1, 1), false)
+	lihat, ok := cariTata(ts, func(t models.Tata) bool { return t.ID == "ViewKMTNo" })
+	if !ok || !lihat.Nonaktif || lihat.Catatan == "" {
+		t.Fatalf("View KMT NO harus nonaktif ber-OQ: %+v", lihat)
 	}
-	if models.AksiTerbuka(ts, "SendRejectClaimToKomite2", 0) {
-		t.Fatal("aksi Yes Reject Claim terbuka")
+	if models.AksiTerbuka(ts, "ViewKMTNo", 0) {
+		t.Fatal("aksi View KMT NO terbuka")
+	}
+}
+
+func TestYesRejectTT3MenggabungKondisi(t *testing.T) {
+	// SureRejectClaim "Yes" (KCF-03): naJika(IsReject = 1) + tampil(Komite.CARI1 kosong) - keduanya berlaku bersama.
+	cari := func(h *models.Halaman) (models.Tata, bool, []models.Tata) {
+		ts := models.Evaluasi(h, models.LayarTolak(), false)
+		y, ok := cariTata(ts, func(t models.Tata) bool { return t.ID == "SendRejectClaimToKomite2" })
+		return y, ok, ts
+	}
+	h := models.HalamanBaru()
+	if y, ok, ts := cari(h); !ok || y.Nonaktif || !models.AksiTerbuka(ts, "SendRejectClaimToKomite2", 0) {
+		t.Fatalf("Yes Reject aktif: %+v", y)
+	}
+	h.Setel("IsReject", "1")
+	if y, _, ts := cari(h); !y.Nonaktif || models.AksiTerbuka(ts, "SendRejectClaimToKomite2", 0) {
+		t.Fatalf("IsReject 1 -> Yes nonaktif: %+v", y)
+	}
+	h.Setel("IsReject", "")
+	h.Setel(models.JalurKomiteBaru, "KMT-UJI1")
+	y, ok, ts := cari(h)
+	if ok || models.AksiTerbuka(ts, "SendRejectClaimToKomite2", 0) {
+		t.Fatalf("sesudah KMT lahir Yes tersembunyi: %+v", y)
+	}
+	if _, ok := cariTata(ts, func(t models.Tata) bool { return t.Label == models.TeksSuksesKomite }); !ok {
+		t.Fatal("label Success Create Request to Committee tidak tampil")
 	}
 }
 
@@ -116,5 +146,39 @@ func TestKronologiJabatanSetiapBaris(t *testing.T) {
 		if len(kr) != 1 || kr[0]["ASMUserID"] != c.mau || kr[0]["ASMNoteType"] == models.JenisCatatanKomite {
 			t.Fatalf("tingkat %q: %v", c.tingkat, kr)
 		}
+	}
+}
+
+func TestCentangCWPTampilSelalu(t *testing.T) {
+	// PreventRejectClaim LS21 (checkbox Close Without Payment) tanpa syarat tampil; hanya LS23 (isian + Yes) yang
+	// tersembunyi sesudah kasus komite TT4 lahir (`Komite.CARI1 != ''`, LS28 label sukses).
+	h := models.HalamanBaru()
+	h.Setel(models.JalurKomiteBaru, "KMT-UJI1")
+	ts := models.Evaluasi(h, models.LayarTutup(), false)
+	if _, ok := cariTata(ts, func(t models.Tata) bool { return t.Jalur == models.JalurAlokasiSalvage }); !ok {
+		t.Fatal("checkbox Close Without Payment hilang sesudah KMT lahir")
+	}
+	if _, ok := cariTata(ts, func(t models.Tata) bool { return t.Jalur == models.JalurTKRemarks }); ok {
+		t.Fatal("isian LS23 masih tampil sesudah KMT lahir")
+	}
+}
+
+func TestTambahEstimasiTanpaSpreadingKeluarDiLangkah6(t *testing.T) {
+	// ValidateInputEstimate_act 6 (pre `countSpreading==0`): baris baru dibuang lalu transisi pasca `true` -> 6 keluar;
+	// langkah 7+ (tanggal, Deductible, CopyCurrency, kurs) TIDAK berjalan atas baris lain.
+	h := models.HalamanBaru()
+	h.SetelDaftar(models.DaftarObjek, []models.Baris{{}})
+	h.SetelDaftar(models.DaftarItem(1), []models.Baris{{"NetDeductibleValue": "5"}})
+	h.SetelDaftar(models.DaftarDiItem(1, 1, models.AnakEstimasi), []models.Baris{{"EstimationDate": "2026-01-02",
+		"Deductible": "999"}})
+	if err := models.TambahEstimasi(konteksUji(), h, 1, 1); err != nil {
+		t.Fatal(err)
+	}
+	rows := h.AmbilDaftar(models.DaftarDiItem(1, 1, models.AnakEstimasi))
+	if len(rows) != 1 || rows[0]["Deductible"] != "999" {
+		t.Fatalf("baris estimasi sesudah Add tanpa spreading: %+v", rows)
+	}
+	if len(h.Pesan) == 0 {
+		t.Fatal("pesan tanpa spreading tidak tampil")
 	}
 }

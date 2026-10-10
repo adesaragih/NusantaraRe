@@ -29,6 +29,22 @@ export const CFI = {
   kolomPembuat: 'Create Operator',
   kolomTanggal: 'Create Date/Time',
   hanyaLihat: 'Read only - you do not hold this assignment.',
+  /**
+   * Tabel komite di bawah inbox (modul Komite Claim Fac In tanpa menu, perintah work owner 09-10-2026; pola Claim Non
+   * Prop) - kolom daftar kerja penyetuju `models.BarisKerja` (`[tidak ada di korpus]`: worklist KomiteRouter tanpa section
+   * inbox sendiri).
+   */
+  judulKomite: 'Committee',
+  kosongKomite: 'No committee case is waiting for your decision.',
+  komiteKolomNo: 'Committee No',
+  komiteKolomKlaimId: 'Claim ID',
+  komiteKolomNoKlaim: 'Claim No',
+  komiteKolomJenis: 'Type',
+  komiteKolomJabatan: 'Committee',
+  komiteKolomTingkat: 'Level',
+  komiteKolomStatus: 'Status',
+  komiteKolomTgl: 'Updated',
+  komiteTakTerpasang: 'This committee case cannot be opened here: the Komite Claim Fac In module is not active.',
   pilih: 'Choose',
   tutup: 'Close',
   cariPopup: 'Search',

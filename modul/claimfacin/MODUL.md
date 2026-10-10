@@ -18,7 +18,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Rentang migrasi | `560-599` |
 | Slot menu | `978-979` |
 | Prefix rute API | `/api/claim-fac-in` |
-| Kontrak disediakan | — (kontrak untuk `komiteclaimfacin` = tahap 2) |
+| Kontrak disediakan | `kontrak.KlaimFacInKomite` (`inti/backend/kontrak/klaimfacin.go`, penyedia `services.KlaimUntukKomite`) untuk `komiteclaimfacin` — prompt work owner tahap 2 10-10-2026 |
 | Kontrak dipakai | — (nol kontrak `inti/backend/kontrak`; pola Claim Prop / Non Prop disalin, tidak diimpor) |
 
 `Pemilik` adalah penanda pemegang modul. Wilayah berkas yang boleh disentuh cabang
@@ -84,6 +84,13 @@ Kaskade HANYA pada berkas migrasi modul ini yang berawalan di bawah; berkas lain
   `T_KOMITE_KOMITELIST` (hanya `backend/models/komite.go` + `backend/repository/komite.go`, dikecualikan penjaga batas
   Claim Life `komite_statik_test.go` atas izin work owner 09-10-2026); `POSITION` = `OPERATOR_ID` tingkat 1. TT3 / TT4
   (tanpa adjustment) = OQ-CFI-27.
+  > **RALAT 10-10-2026** (tahap 2, keputusan work owner KCF-03). Kalimat lamanya dikutip utuh, tidak dihapus: *"TT3 / TT4
+  > (tanpa adjustment) = OQ-CFI-27."* → TT3 Reject Claim (`SendRejectClaimToKomite2`) dan TT4 Close Without Payment
+  > (`SendCloseClaimToKomite`) **dibangun**: kasus `KMT-` tanpa adjustment, `T_GENERAL_KOMITE.TRANSFER_TYPE` 3 / 4,
+  > tangga satu tingkat `ReasClaimDeptHead` (migrasi `komiteclaimfacin` 641 / 642). Keputusannya dijalankan modul
+  > `komiteclaimfacin` lewat kontrak `kontrak.KlaimFacInKomite` (disediakan modul ini, `services/kontrak_komite.go`).
+  > Tabel komite di bawah inbox (`frontend/components/TabelKomite.tsx`) tampil bila `GET /api/claim-fac-in/hak` →
+  > `komite`.
 - **Izin menyunting STRUKTUR Claim Life / Claim Prop** untuk kolom yang ditambahkan ke tabel bersama (dokumen saja).
 - `OS_AKSEPTASI_KLAIM.DATA_JSON` diisi (format `GetPageJSONString`), `JSON_KLAIM` tanpa `DATA_JSON`; nol stored
   procedure, nol `COMMIT` di teks SQL; uang / persen `NUMBER(38,10)`; efek luar hanya produksi; nilai DB tampil apa

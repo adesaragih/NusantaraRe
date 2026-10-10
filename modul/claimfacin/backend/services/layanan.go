@@ -411,17 +411,36 @@ func (l *Layanan) BukaKasus(ctx context.Context, p inti.Pelaku, id string, lihat
 	return l.layar(k, h, boleh), nil
 }
 
-// HakPelaku - hak halaman awal: tab workbasket aktif hanya bagi pemegang workbasket Choose Surveyor.
+// HakPelaku - hak halaman awal: tab workbasket aktif hanya bagi pemegang workbasket Choose Surveyor; tabel komite di
+// bawah inbox (modul Komite Claim Fac In tanpa menu, prompt tahap 2 §2 butir 2) hanya bagi anggota roster komite FACIN.
 type HakPelaku struct {
 	WorkbasketSurveyor bool `json:"workbasketSurveyor"`
+	Komite             bool `json:"komite"`
 }
 
-// Hak membaca hak halaman awal pelaku.
-func (l *Layanan) Hak(_ context.Context, p inti.Pelaku) (HakPelaku, error) {
+// WorkbasketSPVB - cadangan SPV A di tingkat 1 komite (keputusan work owner 10-10-2026 KCF-01; bukan baris roster).
+const WorkbasketSPVB = "ReasClaimSPVB"
+
+// Hak membaca hak halaman awal pelaku (workbasket dari sesi; roster komite FACIN dari basis data).
+func (l *Layanan) Hak(ctx context.Context, p inti.Pelaku) (HakPelaku, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
 		return HakPelaku{}, err
 	}
-	return HakPelaku{WorkbasketSurveyor: p.PunyaPeran(models.WorkbasketSurveyor)}, nil
+	h := HakPelaku{WorkbasketSurveyor: p.PunyaPeran(models.WorkbasketSurveyor), Komite: p.PunyaPeran(WorkbasketSPVB)}
+	if h.Komite || l.a == nil {
+		return h, nil
+	}
+	roster, err := l.a.RosterKomite(ctx)
+	if err != nil {
+		return HakPelaku{}, err
+	}
+	for _, r := range roster {
+		if r.OperatorID != "" && (r.OperatorID == p.AkunID || p.PunyaPeran(r.OperatorID)) {
+			h.Komite = true
+			break
+		}
+	}
+	return h, nil
 }
 
 // Jenis daftar halaman awal.

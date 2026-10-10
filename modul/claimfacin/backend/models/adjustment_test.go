@@ -309,3 +309,20 @@ func TestHapusAdjustment(t *testing.T) {
 		t.Fatalf("kronologi %v", kr)
 	}
 }
+
+func TestDeductibleNolKeluarDiLangkah15(t *testing.T) {
+	// SetNilaiResikoSendiri 15 (pesan "can not be filled by Zero") bertransisi pasca `true` -> 6 keluar: langkah 16+
+	// tidak berjalan - pesan "lebih besar dari estimasi" (17) TIDAK ikut tampil walau jumlah adjustment melampaui.
+	h := halamanAdj(models.Baris{"GrossAdjustment": "20000000", "IndividualRiskType": "1",
+		"IndividualRiskPercentage": "100", "PersenRNM": "25"})
+	rows := h.AmbilDaftar(models.DaftarAdj(1, 1))
+	h.SetelDaftar(models.DaftarAdj(1, 1), append(rows, models.Baris{"CurrencyID": idr, "UploadLOD": idr,
+		"PaymentType": models.BayarFinal, "ValueAdjustment": "50000000"}))
+	if err := models.SetNilaiResikoSendiri(konteksUji(), h, 1, 1, 1); err != nil {
+		t.Fatal(err)
+	}
+	pesan := strings.Join(h.SemuaPesan(), "|")
+	if !strings.Contains(pesan, models.PesanAdjNol) || strings.Contains(pesan, models.PesanAdjLebihEstimasi) {
+		t.Fatalf("pesan %q", pesan)
+	}
+}

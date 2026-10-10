@@ -1004,3 +1004,8 @@
 .claimfacin .claimfacin__akar .pilih-saring__panah {
   height: 32px;
 }
+
+/* Tabel komite di bawah inbox (modul Komite Claim Fac In tanpa menu, pola Claim Non Prop). */
+.claimfacin .claimfacin__komite {
+  margin-top: 24px;
+}

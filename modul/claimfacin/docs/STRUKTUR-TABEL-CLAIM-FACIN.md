@@ -762,6 +762,19 @@ terkunci:
 ⭐ **Tautan induknya:** `T_GENERAL_KOMITE.ADJUSTMENT_ID` untuk lini FAC menunjuk
 `T_CLAIM_ADJUSTMENT.ID`.
 
+> ⛔ **RALAT 10-10-2026** (Komite Claim Fac In tahap 2, keputusan work owner KCF-03). Kalimat lamanya dikutip utuh, tidak
+> dihapus: *"`T_GENERAL_KOMITE.ADJUSTMENT_ID` untuk lini FAC menunjuk `T_CLAIM_ADJUSTMENT.ID`."* → berlaku untuk kasus
+> komite **TT2** (penyerahan adjustment, `CreateKMTNo_Act`). Kasus **TT3** Reject Claim (`SendRejectClaimToKomite2`) dan
+> **TT4** Close Without Payment (`SendCloseClaimToKomite`) lahir **tanpa adjustment**: `ADJUSTMENT_ID` kosong (migrasi
+> `komiteclaimfacin/641`, `MODIFY ... NULL`) dan jenis penyerahan di kolom baru `T_GENERAL_KOMITE.TRANSFER_TYPE` 2 / 3 / 4
+> (`komiteclaimfacin/642`). Baris kolomnya di STRUKTUR pemilik tabel (Claim Life, Komite Claim Life, Komite Claim Prop).
+>
+> Katalog Claim Fac In tahap 2 memetakan tiga kolom tabel bersama yang **sudah ada** (nol DDL): `T_CLAIM_ADJUSTMENT.NOTES`
+> (`Notes` — kolom milik komite, ditulis `KomitePost_Adjustment` S7.2.1.5 `Notes := Comment` lewat kontrak
+> `kontrak.KlaimFacInKomite`, dilewati simpan halaman klaim), `T_GENERAL_CLAIM.IS_CLOSE_FILE` / `IS_RESERVED_CLAIM`
+> (`ClaimData.IsCloseFile` / `ClaimData.IsReservedClaim` — `KomitePost_Adjustment` S13, usul tingkat 1 "Propose To Close
+> Case" / "Propose To Reserved").
+
 ### 5b — ⭐ Yang berbeda dari Komite Claim Prop: **perilakunya, bukan tabelnya**
 
 `[terverifikasi]` — enam perbedaan, semuanya **perilaku**:
@@ -774,6 +787,20 @@ terkunci:
 | ⚠️ **4** | **Fac Retro melompati wewenang** | `ApprovalKomite_Act` lgk **4** · `Exit-Activity` when `.IsFacRetro==1` |
 | ⭐ **5** | `KomiteRouter` | ⭐ **identik langkah demi langkah** dengan milik PROP — **8 langkah, gerbang sama** |
 | **6** | `ProteksiKomite.CARI1` | ada di `ShowTransfer` **FAC** · ⛔ **nol** di `ShowTransfer` **PROP** |
+
+> ⛔ **RALAT 10-10-2026** (dibaca ulang dari XML `Komite Claim FacIn/Activity/ApprovalKomite_Act.xml` dan
+> `SetProteksiSubmiteKomite.xml`, nomor langkah hierarki rule; prompt work owner tahap 2 §3). Sel lamanya dikutip utuh,
+> tidak dihapus:
+> - butir 2 *"**Larangan menyetujui klaim sendiri**"* → **gugur** (K9 / tiket 01 komite gugur): L6.2
+>   `KomiteList(1).KomiteID == .OPERATOR_ID` hanya membuang **calon perluasan** yang sama dengan anggota tingkat 1; nol
+>   perbandingan dengan pengaju di korpus.
+> - butir 3 *"`OperatorID.pyPosition == "SPV B"` — **hidup di FAC**"* → L5, pita SPV B: berlaku bila pemutus tingkat 1
+>   anggota workbasket `ReasClaimSPVB` (KCF-01) dan 30.000.000 < total ≤ 57.750.000 → satu jenjang atas.
+> - butir 4 *"`Exit-Activity` when `.IsFacRetro==1`"* → L3: Fac Retro hanya **melewati perluasan** (KCF-02); tangganya
+>   dibentuk sisi klaim (`CreateKMTNo_Act`).
+> - butir 6 *"`ProteksiKomite.CARI1` | ada di `ShowTransfer` **FAC**"* → `SetProteksiSubmiteKomite` L2.1 (lolos untuk
+>   baris menunggu mana saja, pemetaan akun, jabatan "IT Developer") **tidak ditiru**: Submit hanya pemegang tingkat
+>   berjalan (prompt §5 butir 1).
 
 ⭐⭐ **Kesimpulan bentuk:** ⛔ keenam perbedaan itu **tidak menuntut satu kolom pun berbeda**. ⭐ Ia
 **perbedaan aturan**, dan tempatnya di **spec modul komite**, bukan di struktur tabel.

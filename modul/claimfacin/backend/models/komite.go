@@ -26,8 +26,14 @@ const (
 // ApprovalKomiteMenunggu - `KomiteAproval = 0`: roster calon dan anggota tangga yang belum memutuskan.
 const ApprovalKomiteMenunggu = "0"
 
-// TransferAdjustment - `childPageKomite.TransferType := 2` (CreateKMTNo_Act 6.9): penyerahan adjustment.
-const TransferAdjustment = "2"
+// TransferType kasus komite (`childPageKomite.TransferType`, kolom T_GENERAL_KOMITE.TRANSFER_TYPE migrasi
+// komiteclaimfacin 642): 2 adjustment (CreateKMTNo_Act 6.9), 3 Reject Claim (SendRejectClaimToKomite2 7.3), 4 Close
+// Without Payment (SendCloseClaimToKomite 7.3).
+const (
+	TransferAdjustment = "2"
+	TransferTolak      = "3"
+	TransferTutup      = "4"
+)
 
 // JabatanBatasFacOut - JABATAN roster yang LIMIT_TOP-nya membatasi tangga objek retro (SetListKomite_act 4.1).
 const JabatanBatasFacOut = "Technic Div. Head"

@@ -11,6 +11,8 @@ package repository
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"nusantarare/inti/backend/db"
@@ -48,6 +50,21 @@ func sqlSisipKepalaKomite(gen string) string {
 	return fmt.Sprintf(`INSERT INTO %s (ID, ADJUSTMENT_ID, KOMITE_LOOP, KOMITE_COUNT) VALUES (:1, :2, :3, :4)`, gen)
 }
 
+// sqlSisipKepalaKomiteTutup - kepala kasus komite TT3 / TT4 (SendRejectClaimToKomite2 / SendCloseClaimToKomite 7.3):
+// tanpa adjustment (ADJUSTMENT_ID NULL, migrasi komiteclaimfacin 641) dan ber-TRANSFER_TYPE (642). TT2 tetap
+// `sqlSisipKepalaKomite` (DEFAULT '2').
+func sqlSisipKepalaKomiteTutup(gen string) string {
+	return fmt.Sprintf(`INSERT INTO %s (ID, ADJUSTMENT_ID, KOMITE_LOOP, KOMITE_COUNT, TRANSFER_TYPE)
+		VALUES (:1, NULL, :2, :3, :4)`, gen)
+}
+
+// sqlKomiteTutupTerbuka - kasus komite TT3 / TT4 klaim `:1` yang masih menunggu (LINI FACIN, belum selesai).
+func sqlKomiteTutupTerbuka(work, gen string) string {
+	return fmt.Sprintf(`SELECT COUNT(*) FROM %s w JOIN %s g ON g.ID = w.ID
+		 WHERE w.COVER_KEY = :1 AND w.LINI = :2 AND w.TAHAP = :3 AND w.STATUS_WORK IS NULL
+		   AND g.TRANSFER_TYPE IN (:4, :5)`, work, gen)
+}
+
 func sqlSisipAnggotaKomite(list string) string {
 	return fmt.Sprintf(`INSERT INTO %s (ID, DATA_KOMITE_ID, KOMITE_URUT, KOMITE_OPERATORID, KOMITE_JABATAN, KOMITE_EMAIL,
 		KOMITE_APPROVAL) VALUES (:1, :2, :3, :4, :5, :6, :7)`, list)
@@ -73,11 +90,16 @@ func sqlSetelKomiteAdjustment(adj string) string {
 	return fmt.Sprintf(`UPDATE %s SET KOMITE_ID = :1 WHERE ID = :2 AND (KOMITE_ID IS NULL OR KOMITE_ID = :3)`, adj)
 }
 
-// BuatKasusKomite = CreateKMTNo_Act 8-10: T_WORK_CLAIM KMT- (COVER_KEY = klaim, LINI FACIN, TAHAP Komite_Flow,
-// POSITION = `posisiAwal`), T_GENERAL_KOMITE (ADJUSTMENT_ID, KOMITE_LOOP = cacah tangga, KOMITE_COUNT 1), tangga satu
-// baris per anggota (approval menunggu). Mengembalikan ID kasus komite.
-func (g *Gudang) BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID, pembuat, namaPembuat string,
+// BuatKasusKomite = CreateKMTNo_Act 8-10 (TT2, `transfer` "2" / kosong) dan SendRejectClaimToKomite2 /
+// SendCloseClaimToKomite 7.1-7.4 (TT3 / TT4, `adjID` kosong): T_WORK_CLAIM KMT- (COVER_KEY = klaim, LINI FACIN, TAHAP
+// Komite_Flow, POSITION = `posisiAwal`), T_GENERAL_KOMITE (ADJUSTMENT_ID, KOMITE_LOOP = cacah tangga, KOMITE_COUNT 1,
+// TRANSFER_TYPE TT3 / TT4), tangga satu baris per anggota (approval menunggu). Mengembalikan ID kasus komite.
+func (g *Gudang) BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID, transfer, pembuat, namaPembuat string,
 	anggota []AnggotaTangga, saat time.Time) (string, error) {
+	tutup := transfer == models.TransferTolak || transfer == models.TransferTutup
+	if tutup != (adjID == "") {
+		return "", fmt.Errorf("repository: kasus komite TT %q dengan adjustment %q tidak sah", transfer, adjID)
+	}
 	if len(anggota) == 0 {
 		return "", fmt.Errorf("repository: tangga komite kosong; kasus tanpa anggota tidak dapat diputuskan siapa pun")
 	}
@@ -105,11 +127,14 @@ func (g *Gudang) BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID,
 	if err != nil {
 		return "", err
 	}
-	q = sqlSisipKepalaKomite(gen)
+	q, args := sqlSisipKepalaKomite(gen), []any{id, adjID, len(anggota), 1}
+	if tutup {
+		q, args = sqlSisipKepalaKomiteTutup(gen), []any{id, len(anggota), 1, transfer}
+	}
 	if err := db.PeriksaSQL(q); err != nil {
 		return "", err
 	}
-	if hasil, err = tx.ExecContext(ctx, q, id, adjID, len(anggota), 1); err != nil {
+	if hasil, err = tx.ExecContext(ctx, q, args...); err != nil {
 		return "", fmt.Errorf("repository: melahirkan baris komite: %w", err)
 	}
 	if err := db.PastikanSatuBaris(hasil, "kelahiran baris komite"); err != nil {
@@ -183,4 +208,91 @@ func (a *Acuan) TanggaKomite(ctx context.Context, komiteID string) ([]models.Ang
 			Email: r[5], TanggalSetuju: r[6]})
 	}
 	return out, nil
+}
+
+// sqlUbahAdjustmentKomite - UPDATE kolom milik komite (`Kolom.MilikKomite`, yang dilewati simpan halaman klaim) baris
+// adjustment `ID` + `CLAIM_ID`; `kolom` urut nama properti (penampung urut kemunculan = urut argumen).
+func sqlUbahAdjustmentKomite(tabel string, kolom []models.Kolom) string {
+	var set []string
+	n := 1
+	for _, k := range kolom {
+		e, jml := ekspresiTulis(k, n)
+		set = append(set, k.Kolom+" = "+e)
+		n += jml
+	}
+	return fmt.Sprintf(`UPDATE %s SET %s WHERE ID = :%d AND CLAIM_ID = :%d`, tabel, strings.Join(set, ", "), n, n+1)
+}
+
+// UbahAdjustmentKomite menulis kolom milik komite baris adjustment `adjID` klaim `klaimID` (`KomitePost_Adjustment`
+// S7.2.1.5-S7.2.1.7, lewat kontrak `kontrak.KlaimFacInKomite`). Properti yang bukan kolom milik komite ditolak (kolom
+// lain ditulis simpan halaman).
+func (g *Gudang) UbahAdjustmentKomite(ctx context.Context, tx *db.Tx, klaimID, adjID string, nilai map[string]string) error {
+	if len(nilai) == 0 {
+		return nil
+	}
+	props := make([]string, 0, len(nilai))
+	for p := range nilai {
+		props = append(props, p)
+	}
+	sort.Strings(props)
+	var kolom []models.Kolom
+	var args []any
+	for _, p := range props {
+		k, ok := kolomKomiteAdjustment(p)
+		if !ok {
+			return fmt.Errorf("repository: %q bukan kolom milik komite baris adjustment", p)
+		}
+		v, err := nilaiTulis(k, nilai[p])
+		if err != nil {
+			return err
+		}
+		kolom = append(kolom, k)
+		args = append(args, v...)
+	}
+	tabel, err := g.db.Qualify(models.TabelAdjustment.Nama)
+	if err != nil {
+		return err
+	}
+	q := sqlUbahAdjustmentKomite(tabel, kolom)
+	if err := db.PeriksaSQL(q); err != nil {
+		return err
+	}
+	hasil, err := tx.ExecContext(ctx, q, append(args, adjID, klaimID)...)
+	if err != nil {
+		return fmt.Errorf("repository: menulis keputusan komite baris adjustment: %w", err)
+	}
+	return db.PastikanSatuBaris(hasil, "keputusan komite baris adjustment")
+}
+
+// kolomKomiteAdjustment - kolom katalog milik komite berproperti `p`.
+func kolomKomiteAdjustment(p string) (models.Kolom, bool) {
+	for _, k := range models.TabelAdjustment.Kolom {
+		if k.Properti == p && k.MilikKomite {
+			return k, true
+		}
+	}
+	return models.Kolom{}, false
+}
+
+// AdaKomiteTutupTerbuka - klaim `klaimID` punya kasus komite TT3 / TT4 yang masih menunggu (penjaga permintaan ganda,
+// models.PesanTutupKomiteGanda).
+func (g *Gudang) AdaKomiteTutupTerbuka(ctx context.Context, tx *db.Tx, klaimID string) (bool, error) {
+	work, err := g.db.Qualify("T_WORK_CLAIM")
+	if err != nil {
+		return false, err
+	}
+	gen, err := g.db.Qualify("T_GENERAL_KOMITE")
+	if err != nil {
+		return false, err
+	}
+	q := sqlKomiteTutupTerbuka(work, gen)
+	if err := db.PeriksaSQL(q); err != nil {
+		return false, err
+	}
+	var n int
+	if err := tx.QueryRowContext(ctx, q, klaimID, models.LiniFacIn, models.TahapKomite, models.TransferTolak,
+		models.TransferTutup).Scan(&n); err != nil {
+		return false, fmt.Errorf("repository: memeriksa kasus komite TT3 / TT4: %w", err)
+	}
+	return n > 0, nil
 }

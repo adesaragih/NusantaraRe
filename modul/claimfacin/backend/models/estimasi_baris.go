@@ -67,8 +67,8 @@ func ProtectionDate(k *Konteks, h *Halaman, o, i, e int) {
 }
 
 // TambahEstimasi = tombol Add grid estimasi (`ValidateInputEstimate_act`): baris baru bertanggal hari aksi + kronologi
-// "Input Estimation - n"; tanpa spreading DI SELURUH KLAIM -> pesan, baris dibuang; tanggal semua baris diperiksa;
-// Deductible baris 1 = NetDeductibleValue item; `CopyCurrency` (PersenRNM bagi baris ber-EstimationValue 0);
+// "Input Estimation - n"; tanpa spreading DI SELURUH KLAIM -> pesan, baris dibuang, KELUAR (6); tanggal semua baris
+// diperiksa; Deductible baris 1 = NetDeductibleValue item; `CopyCurrency` (PersenRNM bagi baris ber-EstimationValue 0);
 // `GetNameCurrency_Act`; `SetConvertCurrencyValue_Act`.
 func TambahEstimasi(k *Konteks, h *Halaman, o, i int) error {
 	it, err := Item(h, o, i)
@@ -88,6 +88,7 @@ func TambahEstimasi(k *Konteks, h *Halaman, o, i int) error {
 	if spread == 0 { // 4, 6
 		h.TambahPesan(JalurAnak(DaftarItem(o), i, "CoverageID"), PesanEstimasiTanpaSpread)
 		h.HapusBaris(daftar, n)
+		return nil // 6 transisi pasca-langkah `true` -> keluar (RALAT 10-10-2026: langkah 7+ tidak berjalan)
 	}
 	for e, b := range h.AmbilDaftar(daftar) { // 7
 		periksaTanggalEstimasi(k, h, JalurBaris(daftar, e+1), b)

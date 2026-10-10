@@ -60,8 +60,8 @@ describe('pisahKakiModal', () => {
     expect(m.kaki.map((t) => t.id)).toEqual(['KirimKomite'])
   })
 
-  it('Reject Claim: tombol OQ nonaktif tetap di kaki (catatannya terbaca), bukan penutup', () => {
-    const oq: Tata = { ...tombol('SendRejectClaimToKomite2', 'Yes'), nonaktif: true, catatan: 'OQ-CFI-27' }
+  it('Reject Claim: tombol Yes nonaktif (naJika IsReject = 1) tetap di kaki, bukan penutup', () => {
+    const oq: Tata = { ...tombol('SendRejectClaimToKomite2', 'Yes'), nonaktif: true }
     const m = pisahKakiModal([
       medan('Remarks', 'Remarks'),
       label('Are you sure want to reject this claim ?'),

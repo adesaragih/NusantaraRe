@@ -28,6 +28,7 @@ type Gudang interface {
 	KunciKasus(ctx context.Context, tx *db.Tx, id, tahap string) (models.Kasus, error)
 	PindahTahap(ctx context.Context, tx *db.Tx, id, lama, baru, posisi string, saat time.Time) error
 	TutupKasus(ctx context.Context, tx *db.Tx, id, tahap string, saat time.Time) error
+	TutupKasusStatus(ctx context.Context, tx *db.Tx, id, tahap, status string, saat time.Time) error
 	SentuhKasus(ctx context.Context, tx *db.Tx, id string, saat time.Time) error
 	DaftarKasus(ctx context.Context, s repository.SaringanKasus) ([]repository.RingkasanKasus, error)
 
@@ -51,9 +52,14 @@ type Gudang interface {
 	HapusDokumenKlaim(ctx context.Context, tx *db.Tx, id, lid string) error
 	PindahKategoriDokumen(ctx context.Context, tx *db.Tx, id, lid, kategori string) error
 
-	BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID, pembuat, namaPembuat string,
+	BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID, transfer, pembuat, namaPembuat string,
 		anggota []repository.AnggotaTangga, saat time.Time) (string, error)
+	// TutupKomiteAnak = `CloseAllSubCases=true` (pxForceCaseClose / ASMForceCaseClose): kasus komite KMT- klaim yang
+	// masih terbuka ditutup berstatus `status`, kecuali `kecuali` (kosong = semua).
+	TutupKomiteAnak(ctx context.Context, tx *db.Tx, klaimID, kecuali, status string, saat time.Time) error
+	AdaKomiteTutupTerbuka(ctx context.Context, tx *db.Tx, klaimID string) (bool, error)
 	SetelKomiteAdjustment(ctx context.Context, tx *db.Tx, adjID, komiteID, komiteLama string) error
+	UbahAdjustmentKomite(ctx context.Context, tx *db.Tx, klaimID, adjID string, nilai map[string]string) error
 }
 
 // Acuan - bacaan baca-saja port activity dan pemilih layar.
@@ -75,6 +81,7 @@ type Acuan interface {
 	ProgresKlaim(ctx context.Context, kasusID string) ([]models.Baris, map[int][]models.Baris, error)
 	IDBankRekening(ctx context.Context, bank, cabang, akun string) (string, error)
 	StatusKasir(ctx context.Context, noAksep string) (string, bool, error)
+	StatusKonversi(ctx context.Context, noAksep string) (string, error)
 	EmailCeding(ctx context.Context, ceding string) (string, error)
 	LimitDirekturUtama(ctx context.Context) (string, bool, error)
 	SaldoPremi(ctx context.Context, invoice, cur string) (string, error)

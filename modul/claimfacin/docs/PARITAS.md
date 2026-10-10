@@ -48,7 +48,7 @@
 | Label XML | Aksi XML | Status |
 | --- | --- | --- |
 | View Status Payment Premi | REST `getPremiumPaidOn` (M_LINK_SERVICE) | **nonaktif-OQ** OQ-CFI-14 |
-| Reject Claim | local action `RejectSurveyClaim` (pra `SetRejectClaim_pre`) | **dibangun** — pop-up `ClaimComiteeReject` (`BukaRejectClaim`, modal `tolak`); tombol **Yes** = `SendRejectClaimToKomite2` **nonaktif-OQ** OQ-CFI-27 |
+| Reject Claim | local action `RejectSurveyClaim` (pra `SetRejectClaim_pre`) | **dibangun** — pop-up `ClaimComiteeReject` (`BukaRejectClaim`, modal `tolak`); tombol **Yes** = `SendRejectClaimToKomite2` **dibangun** tahap 2 (§5) |
 | Tab Register / Policy Detail & Claims History / Progress Claim | — | **dibangun** |
 | Save (VIS `PolicyNo` kosong) | click:save | **dibangun** (`Simpan`) |
 | Submit (VIS `IsError = 1`) | local action `ProtectDOL` | **dibangun** (`BukaProtectDOL`, modal `protectDOL`) |
@@ -144,7 +144,7 @@
 | BreakDown Spreading Quota Share | — | **dibangun** (hanya-baca) |
 | Save | click:save | **dibangun** (`SimpanAdjustment`) |
 | Send to Committe (NA `IsKomite = 1` atau spreading kosong) | `SendPICProtect_Act` → harness `Comittee` | **dibangun** (`SendPICProtect`, modal `komite:…`, §5) |
-| Acceptation (VIS `AcceptanceStatus = 1`) | `SaveAcceptation` + `HitServiceToKasir_Act` | **dibangun** — aktif sesudah komite tahap 2 menulis `AcceptanceStatus`; kasir lewat outbox produksi, sekali per klik (§8) |
+| Acceptation (VIS `AcceptanceStatus = 1`) | `SaveAcceptation` + `HitServiceToKasir_Act` | **dibangun** — aktif sesudah komite tahap 2 menulis `AcceptanceStatus`; kasir lewat outbox produksi, sekali per klik (§8). RALAT 10-10-2026: `HitServiceToKasir_Act` 3 `getStatusKonversi_Act` bertransisi pasca `.StatusKonversi=="1"` (COUNT `reinsurance.trloss_detail_t`, hanya produksi) - selainnya keluar; kini ditegakkan (`Acuan.StatusKonversi`) |
 
 ## 5. Komite, penutupan, penolakan
 
@@ -154,11 +154,11 @@
 | Send Claim to Committee (VIS `Protect.CARI1 = 1 && CARI2 = 1` + isian wajib) | `DraftGenerateDLAFacin_Act` + `CreateKMTNo_Act` + `SetListKomite_act` | **dibangun** (`KirimKomite`) — kasus `KMT-` TT2 lahir (`T_WORK_CLAIM` LINI FACIN, `TAHAP Komite_Flow`, `POSITION` = `OPERATOR_ID` tingkat 1, `T_GENERAL_KOMITE`, `T_KOMITE_KOMITELIST`), `KomiteNo`, progres "Waiting Committee", kronologi, email outbox produksi. Bundel PT 2 = OQ-CFI-28. Tanggal / circumstances tidak ditimpa (§7 butir 6–7) |
 | `SendPICProtect_Act` proteksi lampiran LOD / DLA / SPGR / ADU / Invoice / Salvage, rekening, premi | — | **dibangun** — cacah `DOCUMENT_CLAIM` × master `T_KATEGORI_DOC_KLAIM` FAC; premi lunas pola Claim Prop (saldo premi non-produksi dilewati) |
 | PreventRejectClaim: Close Without Payment (centang) | postValue | **dibangun** (`SetelAlokasiSalvage`) |
-| PreventRejectClaim: Yes (CWP) | `SendCloseClaimToKomite` (TT4) | **nonaktif-OQ** OQ-CFI-27 |
-| PreventRejectClaim: Yes (close) | `CloseClaim` | **dibangun** — `ValidationAdjustmentKomite`, setiap pesan menghentikan (§7 butir 8), `OS_AKSEPTASI_KLAIM` STS 4, konversi STS 4 (produksi), kronologi, `JSON_KLAIM`, Resolved-Completed |
+| PreventRejectClaim: Yes (CWP) | `SendCloseClaimToKomite` (TT4) | **dibangun** tahap 2 (`SendCloseClaimToKomite`, KCF-03) — 2 `Remark` / `Remark_Close` := Remarks; 4–6 adjustment belum diputus → pesan VERBATIM, kasus tidak lahir; 7.1–7.4 kasus `KMT-` tanpa adjustment, `TRANSFER_TYPE` 4, tangga satu tingkat `ReasClaimDeptHead` (prompt §5 butir 7: akun + email tertulis mati diganti workbasket); 7.5–7.7 `Komite.CARI1`, kronologi "Request close claim without payment " + KMT; 7.9 email outbox produksi. Penjaga permintaan ganda (`PesanTutupKomiteGanda`) `[penyimpangan sadar]`. Sesudah lahir: LS23 (isian + Yes) tersembunyi, LS28 label sukses, checkbox LS21 tetap tampil (tanpa syarat) |
+| PreventRejectClaim: Yes (close) | `CloseClaim` | **dibangun** — `ValidationAdjustmentKomite`, setiap pesan menghentikan (§7 butir 8), `OS_AKSEPTASI_KLAIM` STS 4, konversi STS 4 (produksi), kronologi, `JSON_KLAIM`, Resolved-Completed; 12 `ASMForceCaseClose` `CloseAllSubCases=true`: kasus komite KMT- klaim ini yang masih menunggu ikut ditutup (10-10-2026, `TutupKomiteAnak`) |
 | `UpdateTotalJob_sql` (`mst_user_teknis.TOTAL_JOB`) | CloseClaim 7 | **tidak dibangun** — `ClaimData.UserTeknis` tanpa penulis (LS177 VIS `1=2`); langkah tidak pernah berjalan (OQ-CFI-33) |
-| ClaimComiteeReject: Yes | `SendRejectClaimToKomite2` (TT3) | **nonaktif-OQ** OQ-CFI-27 |
-| Perluasan tangga `ApprovalKomite_Act`, keputusan komite, `SaveAccept_ACT` (OS STS 1) | — | **tahap 2** |
+| ClaimComiteeReject: Yes (naJika `IsReject = 1`, tampil selama `Komite.CARI1` kosong) | `SendRejectClaimToKomite2` (TT3) | **dibangun** tahap 2 (`SendRejectClaimToKomite2`, KCF-03) — 2 `Remark` / `Remark_Close` := Remarks; 4–6 sudah ada akseptasi / estimasi belum Face Claim → pesan VERBATIM (pesan terakhir menang); 7.1–7.4 kasus `KMT-` tanpa adjustment, `TRANSFER_TYPE` 3, tangga `ReasClaimDeptHead`; 7.5–7.7 kronologi "Request Reject claim " + KMT; 7.9 email outbox produksi. Sesudah lahir: isian LS4 tetap tampil berisi ketikan (clipboard Pega; `models.IsianPopUpTutup` dibawa `BawaSementara`), Yes diganti label sukses. Chronology / Extent / Policy Liability pop-up TT3 / TT4 **tidak disimpan** (tanpa kolom, OQ-KCFI-03 modul komite). Keputusan komite (CLAIMREJECTED, OS STS 2, Resolved-Rejected) = modul `komiteclaimfacin` |
+| Perluasan tangga `ApprovalKomite_Act`, keputusan komite, `SaveAccept_ACT` (OS STS 1) | — | **tahap 2 dibangun** — modul `komiteclaimfacin` (`modul/komiteclaimfacin/docs/PARITAS.md`), tulis balik lewat kontrak `kontrak.KlaimFacInKomite` (`services/kontrak_komite.go`) |
 
 ## 6. Tidak tampil di XML (tidak dibangun)
 
@@ -167,7 +167,9 @@
 - Tombol Add / Delete spreading estimasi (`1=2`), medan `ClaimData.UserTeknis` (`1=2`), grid `.KomiteList`
   ItemListEstimation (`1=2`).
 - Grid estimasi Travel di section `Estimasi` (Travel memakai `EstimasiPA`).
-- Bagian "Success Create Request to Committee" PreventRejectClaim (`Komite.CARI1` hanya terisi oleh TT4, OQ-CFI-27).
+- ~~Bagian "Success Create Request to Committee" PreventRejectClaim (`Komite.CARI1` hanya terisi oleh TT4, OQ-CFI-27).~~
+  Tahap 2 (10-10-2026): `Komite.CARI1` kini terisi TT3 / TT4 — label tampil di pop-up Reject / Close sesudah kasus
+  komite lahir, tombol Yes tersembunyi.
 
 ## 7. Sebelas arah perbaikan prompt §5 — `[penyimpangan sadar]`
 
@@ -253,6 +255,21 @@
 8. Label ReportType / IndividualRiskType / Payable dari screenshot Claim Prop (kelas properti sama).
 9. Perbandingan `CheckLimit_Act1` 9 numerik (`FindData.HASILD2` desimal); `@divide(x,1,2)` = ROUND_HALF_UP.
 
+### RALAT 10-10-2026 — transisi pasca-langkah yang terlewat alat dump tahap 1
+
+Alat dump activity tahap 1 hanya mencetak prasyarat langkah (`pyStepsPreCondParams`), tidak transisi pasca-langkah
+(`pyStepsTransition` + `pyStepsTransParams`). Sensus ulang seluruh `Claim Fac In/Activity` (tahap 2, review kode):
+
+| Rule / langkah | Transisi pasca | Status |
+| --- | --- | --- |
+| `HitServiceToKasir_Act` 3 | `.StatusKonversi=="1"` T=2 F=6 | **diperbaiki** — gerbang `Acuan.StatusKonversi` (hanya produksi) sebelum IDOfBank / muatan |
+| `ValidateInputEstimate_act` 6 (pre: tanpa spreading) | `true` T=6 | **diperbaiki** — `TambahEstimasi` keluar sesudah baris dibuang |
+| `SetNilaiResikoSendiri` 15 (pesan "can not be filled by Zero") | `true` T=6 | **diperbaiki** — keluar; pesan langkah 17 tidak ikut tampil |
+| `CLaimFaceSheet_Act` 1 (`ProtectDownloadFaceClaim`) | `Protect.HASIL1==1` T=6 | sudah ditegakkan (`validasi`) |
+| `CLaimFaceSheet_Act` 6 | `1==1` T=6 | jalur mati (`ExGratia` selalu 0, langkah 4–6 tidak dibangun) |
+| `CloseClaim` 5.2 | `.IsFacretro==1 && .RemarksDLA==""` T=6 | sudah ditegakkan (§7 butir 8) |
+| `SetProtectionEstimation` 23 | F=1 tanpa label | tidak dibangun (pemanggil = tombol OQ-CFI-25) |
+
 ## 9. Frontend
 
 `frontend/` merender pohon tata server apa adanya (pola Claim Non Prop, disalin, tidak diimpor); bahasa layar Inggris,
@@ -261,6 +278,12 @@ kulit token `--cfi-*` salinan `.kelola-user`, kelas `claimfacin__*`.
 - **Halaman awal** (`pages/ClaimFacIn.tsx`): tab *Process* (worklist pembuat) / *Resolve*, switch **Teknik** (workbasket
   `ReasKlaimTeknik`, nonaktif bagi akun bukan anggota, `GET /hak`), **Add Claim** (`POST /kasus`). Tanpa tabel komite
   (tahap 2).
+  > **RALAT 10-10-2026** (tahap 2). Kalimat lamanya dikutip utuh, tidak dihapus: *"Tanpa tabel komite (tahap 2)."* → tabel
+  > **Committee** (`components/TabelKomite.tsx`) di bawah inbox, tanpa switch, tidak ikut tab, tampil bila `GET /hak` →
+  > `komite` (pemegang `ReasClaimSPVB` atau akun / workbasket roster FACIN aktif); isinya `GET
+  > /api/komite-claim-fac-in/kasus` (rute pinjaman); klik baris = layar komite di tempat (`onBukaModul`,
+  > `MODUL_DIPINJAM`), Back / Submit kembali ke inbox. "View more details" di layar komite membuka berkas ini hanya-baca
+  > (`?lihat=1`).
 - **Panel bersarang** (`components/rincian.ts`, `TataView.tsx`): grid ber-`rincian` membuka panel baris
   `layar.panel["<prefiks>:<jalur>(n)"]`; panel dirender ulang lewat `TataView`, sehingga grid di dalam panel membuka
   panelnya sendiri (objek → item → estimasi / adjustment → detail adjustment). Satu baris terbuka per grid; status buka

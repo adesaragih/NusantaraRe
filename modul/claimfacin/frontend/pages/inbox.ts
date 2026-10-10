@@ -3,8 +3,8 @@
 // Aturan halaman awal (pola Claim Prop, keputusan work owner 07-10 dan 08-10-2026): dua tab, Process dan Resolve. Tab
 // Process bawaan = worklist pembuat (Assignment1 Input Register + Assignment7 Input Estimasi, `Register_Flow` ke worklist
 // pembuat). Switch Teknik menampilkan Assignment3 "Choose Surveyor" (workbasket `ReasKlaimTeknik`) dan hanya dapat
-// dinyalakan anggota workbasket itu. Pembuatan klaim (Start -> Assignment1) hanya saat switch Teknik mati. Tanpa tabel
-// komite (keputusan komite KMT- = tahap 2, modul `komiteclaimfacin`).
+// dinyalakan anggota workbasket itu. Pembuatan klaim (Start -> Assignment1) hanya saat switch Teknik mati. Tabel komite
+// di bawah inbox (modul `komiteclaimfacin` tanpa menu, prompt tahap 2 §2 butir 2; pola Claim Non Prop).
 
 import type { HakPelaku, JenisDaftar } from '../api'
 
@@ -21,6 +21,14 @@ export function jenisDaftar(tab: TabInbox, teknik: boolean): JenisDaftar {
 /** Switch Teknik dapat dinyalakan hanya bila akun memegang workbasket ReasKlaimTeknik (Choose Surveyor). */
 export function switchTeknikAktif(hak: HakPelaku | null): boolean {
   return hak?.workbasketSurveyor === true
+}
+
+/**
+ * Tabel komite di bawah inbox: hanya bagi anggota roster komite FACIN (`HakPelaku.komite`); tanpa switch, tidak ikut tab
+ * Process / Resolve.
+ */
+export function tabelKomiteTampil(hak: HakPelaku | null): boolean {
+  return hak?.komite === true
 }
 
 /** Tombol Add Claim tampil hanya di tab Process saat switch Teknik mati. */

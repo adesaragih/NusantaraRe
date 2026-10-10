@@ -5,6 +5,7 @@ package models
 // diimpor. Definisi section Claim Fac In ada di `layar_*.go`.
 
 import (
+	"slices"
 	"strings"
 	"unicode/utf8"
 )
@@ -154,7 +155,7 @@ func ikon(u Unsur, i string) Unsur { u.Ikon = i; return u }
 // (`TempClaimData.ClaimData.ObjectList(n).Selected`) dikirim sebagai isian grid dan dibawa `BawaSementara`.
 var ModeLayar = []string{CD + "EditCatastrope", JalurLokasiSementara, JalurJenisCari, JalurTeksCari, JalurDetailPolis,
 	JalurKirimSurel, JalurPesanSurel, JalurProtect1, JalurProtect2, JalurTanggalKomite, JalurInisialKomite,
-	JalurAlokasiSalvage, JalurTKInisial, JalurTKTipe}
+	JalurAlokasiSalvage, JalurTKInisial, JalurTKTipe, JalurKomiteBaru}
 
 // Jalur pop-up Choose Polis (ViewPolis).
 const (
@@ -179,6 +180,7 @@ var modeSah = map[string]func(string) bool{
 	JalurAlokasiSalvage:   benarSalah,
 	JalurTKInisial:        teksPendek(128),
 	JalurTKTipe:           func(v string) bool { return v == "1" || v == "5" },
+	JalurKomiteBaru:       func(string) bool { return false }, // hanya ditulis server (TandaiKirimTutup)
 }
 
 func benarSalah(v string) bool { return v == "true" || v == "false" }
@@ -210,9 +212,9 @@ func AmbilMode(h *Halaman) map[string]string {
 }
 
 // BawaSementara memindahkan keadaan layar sementara dari halaman aksi ke halaman yang dimuat ulang sesudahnya:
-// penanda ModeLayar dan pilihan calon objek (menurut `KunciPolis`).
+// penanda ModeLayar, isian pop-up Reject / Close (IsianPopUpTutup), dan pilihan calon objek (menurut `KunciPolis`).
 func BawaSementara(dari, ke *Halaman) {
-	for _, k := range ModeLayar {
+	for _, k := range append(slices.Clone(ModeLayar), IsianPopUpTutup...) {
 		if v := dari.Ambil(k); v != "" {
 			ke.Setel(k, v)
 		}

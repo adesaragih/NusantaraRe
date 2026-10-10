@@ -47,8 +47,10 @@ type Acuan struct {
 	// Rekening - klien|mata uang -> baris BANKACCOUNT; RekeningMU - mata uang -> baris (Payable 3).
 	Rekening   map[string][]models.RekeningBank
 	RekeningMU map[string][]models.RekeningBank
-	// Kasir - NOAKSEPTASI -> KET DIRECTTOKASIR_LOG.
-	Kasir map[string]string
+	// Kasir - NOAKSEPTASI -> KET DIRECTTOKASIR_LOG; Konversi - nomor akseptasi tanpa titik -> status konversi
+	// (getStatusKonversi_Act, "1" = sudah di TRLOSS_DETAIL_T).
+	Kasir    map[string]string
+	Konversi map[string]string
 	// LimitDirut - LIMIT_BOTTOM Direktur Utama; Saldo - polis tanpa titik|mata uang -> saldo premi; Proteksi - polis
 	// ber-proteksi premi dibuka.
 	LimitDirut string
@@ -67,8 +69,13 @@ func AcuanBaru() *Acuan {
 		OSKasus: map[string]string{}, OSPolis: map[string]string{}, Batas: map[string]models.BatasTreaty{},
 		QS: map[string][]models.BarisQuotaShare{}, Reasuradur: map[string][]models.ReasuradurTreaty{},
 		MO: map[string][6]string{}, Rekening: map[string][]models.RekeningBank{},
-		RekeningMU: map[string][]models.RekeningBank{}, Kasir: map[string]string{},
+		RekeningMU: map[string][]models.RekeningBank{}, Kasir: map[string]string{}, Konversi: map[string]string{},
 		Saldo: map[string]string{}, Proteksi: map[string]bool{}}
+}
+
+// StatusKonversi - lihat `repository.Acuan.StatusKonversi` (tiruan: peta Konversi).
+func (a *Acuan) StatusKonversi(_ context.Context, noAksep string) (string, error) {
+	return a.Konversi[noAksep], nil
 }
 
 // CariPolis - baris polis berkolom cocok.

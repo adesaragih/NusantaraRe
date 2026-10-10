@@ -5,10 +5,10 @@ package models
 // `RejectSurveyClaim` (tombol "Reject Claim" layar Input Register: ClaimComiteeReject -> SureRejectClaim ->
 // `SendRejectClaimToKomite2` TT3).
 //
-// ⛔ TT3 / TT4 melahirkan kasus komite TANPA adjustment, sedangkan `T_GENERAL_KOMITE.ADJUSTMENT_ID` NOT NULL dan tabel
-// itu tidak punya kolom TransferType (katalog DEV 10-10-2026) - aturannya hanya dapat dibangun dengan MODIFY tabel
-// bersama: OQ-CFI-27 (prompt §10), tombol "Yes" kedua jalur tampil sesuai section tetapi nonaktif dengan title OQ.
-// Pemeriksaan sebelum kelahiran (pesan VERBATIM) tetap dibangun.
+// TT3 / TT4 melahirkan kasus komite TANPA adjustment (keputusan work owner 10-10-2026 KCF-03: `T_GENERAL_KOMITE.
+// ADJUSTMENT_ID` boleh kosong, kolom `TRANSFER_TYPE` - migrasi komiteclaimfacin 641 / 642), satu tingkat
+// `ReasClaimDeptHead` (pengganti akun + email orang tertulis mati di 7.2 / 7.3, prompt tahap 2 §5 butir 7). Keputusannya
+// milik modul Komite Claim Fac In.
 
 import (
 	"strconv"
@@ -26,9 +26,38 @@ const (
 	TeksTutupKlaim        = "Finish Adjustment (Close Claim)" // CloseClaim 9
 	KategoriTutupKlaim    = "CloseClaim"                      // ValidationAdjustmentKomite 3.1.1
 	StsOSTutup            = "4"                               // CloseClaim 8.1 CARI10
-	OQKomiteTanpaAdj      = "OQ-CFI-27: kasus komite tanpa adjustment (TT3 Reject / TT4 Close Without Payment) " +
-		"menuntut T_GENERAL_KOMITE.ADJUSTMENT_ID nullable dan kolom TransferType - MODIFY tabel bersama, menunggu keputusan"
+	// SendRejectClaimToKomite2 4 (VERBATIM).
+	PesanSudahAkseptasi = "Cannot be rejected because there is already an acceptance"
+	// SureRejectClaim_section LS14 / PreventRejectClaim LS28 (`Komite.CARI1 != ''`).
+	TeksSuksesKomite = "Success Create Request to Committee"
+	// Kronologi 7.6 (VERBATIM): "Request Reject claim " / "Request close claim without payment " + KMT.
+	AwalanTolakKomite = "Request Reject claim "
+	AwalanTutupKomite = "Request close claim without payment "
+	// Tangga TT3 / TT4 satu tingkat (7.2 `IDKomite := "Claim Dept. Head"`, KCF-03 workbasket).
+	JabatanTutupKomite    = "Claim Dept. Head"
+	WorkbasketTutupKomite = "ReasClaimDeptHead"
+	// PesanTutupKomiteGanda - permintaan TT3 / TT4 kedua selagi yang pertama menunggu komite (`[penyimpangan sadar]`,
+	// pola satu adjustment per KMT tahap 1: Pega melahirkan kasus komite kedua). Bukan VERBATIM.
+	PesanTutupKomiteGanda = "A reject / close request for this claim is already waiting for the committee"
 )
+
+// JalurKomiteBaru - `Komite.CARI1` (7.5 `@substring(pxCoveredInsKeys(<last>),19)`): kasus komite TT3 / TT4 yang baru
+// lahir; halaman requestor, dibawa ke layar sesudah aksi (ModeLayar), tidak pernah diterima dari kiriman layar.
+const JalurKomiteBaru = "Komite.CARI1"
+
+// PesanHapusEstimasi - SendRejectClaimToKomite2 5.1.1.1 (VERBATIM; "Location" = indeks ITEM objek, `local.IdxObj` diisi
+// subscript ObjectItemList di 5.1).
+func PesanHapusEstimasi(e, i int) string {
+	return "Please Delete Estimationlist " + strconv.Itoa(e) + " in Location " + strconv.Itoa(i)
+}
+
+// PesanAdjustmentDiKomite - SendCloseClaimToKomite 5.1.1.1 (VERBATIM).
+func PesanAdjustmentDiKomite(a int) string {
+	return "Can not close claim, there is adjustment " + strconv.Itoa(a) + " in comitee!"
+}
+
+// belumKomite - Komite.CARI1 kosong (kasus komite belum lahir di permintaan ini).
+func belumKomite(h *Halaman) bool { return h.Ambil(JalurKomiteBaru) == "" }
 
 // Jalur pop-up penutupan / penolakan (halaman requestor `TempCommiteClaim`, tidak disimpan).
 const (
@@ -41,25 +70,34 @@ const (
 	JalurTKInisial      = "TempCommiteClaim.Initial"
 )
 
-// LayarTutup - Section PreventRejectClaim (local action PreventRejectClaim). `Komite.CARI1` (kasus komite TT4 lahir)
-// tidak pernah terisi di sini (OQ-CFI-27), jadi bagian "Success Create Request to Committee" tidak dibangun.
+// IsianPopUpTutup - isian teks pop-up ClaimComiteeReject LS4 / PreventRejectClaim LS23 (halaman requestor
+// `TempCommiteClaim`, tidak disimpan). Di Pega nilainya tetap di clipboard sesudah "Yes" (ClaimComiteeReject LS4 tampil
+// selalu), jadi layar balasan aksi membawanya (BawaSementara) - bukan penanda mode: tidak dikirim balik sebagai `mode`.
+var IsianPopUpTutup = []string{JalurTKKronologi, JalurTKExtent, JalurTKLiability, JalurTKRemarks}
+
+// LayarTutup - Section PreventRejectClaim (local action PreventRejectClaim): LS23 isian + konfirmasi selagi
+// `Komite.CARI1 = ”`; LS28 "Success Create Request to Committee" sesudah kasus komite TT4 lahir.
 func LayarTutup() []Unsur {
 	alokasi := sama(JalurAlokasiSalvage, "true")
+	sudah := func(h *Halaman) bool { return !belumKomite(h) }
 	return []Unsur{
-		aksi(medan(JalurAlokasiSalvage, "Close Without Payment", KCentang), "SetelAlokasiSalvage"),
-		medan(JalurTKKronologi, "Chronology", KArea),
-		medan(JalurTKExtent, "Extent Of Loss", KArea),
-		medan(JalurTKLiability, "Policy Liability", KArea),
-		wajibU(medan(JalurTKRemarks, "Remarks", KArea)),
-		tampil(bagian("", label("Are you sure want close this claim without payment?"),
-			sebaris("", tombolOQ("SendCloseClaimToKomite", "Yes", OQKomiteTanpaAdj))), alokasi),
-		tampil(bagian("", label("Are you sure want close this claim?"),
+		aksi(medan(JalurAlokasiSalvage, "Close Without Payment", KCentang), "SetelAlokasiSalvage"), // LS21 (selalu)
+		tampil(medan(JalurTKKronologi, "Chronology", KArea), belumKomite),                          // LS23
+		tampil(medan(JalurTKExtent, "Extent Of Loss", KArea), belumKomite),
+		tampil(medan(JalurTKLiability, "Policy Liability", KArea), belumKomite),
+		tampil(wajibU(medan(JalurTKRemarks, "Remarks", KArea)), belumKomite),
+		tampil(tampil(bagian("", label("Are you sure want close this claim without payment?"),
+			sebaris("", tombol("SendCloseClaimToKomite", "Yes", "SendCloseClaimToKomite"))), alokasi), belumKomite),
+		tampil(tampil(bagian("", label("Are you sure want close this claim?"),
 			sebaris("", tombol("CloseClaim", "Yes", "CloseClaim"))), func(h *Halaman) bool { return !alokasi(h) }),
+			belumKomite),
+		tampil(label(TeksSuksesKomite), sudah), // LS28
 	}
 }
 
 // LayarTolak - Section ClaimComiteeReject (local action RejectSurveyClaim, pra-proses SetRejectClaim_pre) dengan
-// konfirmasi SureRejectClaim_section. "Yes" = SendRejectClaimToKomite2 (OQ-CFI-27).
+// konfirmasi SureRejectClaim_section (LS14: tanya + "Yes" selagi `Komite.CARI1 = ”`, sesudahnya "Success Create Request
+// to Committee").
 func LayarTolak() []Unsur {
 	return []Unsur{
 		sebaris("",
@@ -71,11 +109,67 @@ func LayarTolak() []Unsur {
 		medan(JalurTKExtent, "Extent Of Loss", KArea),
 		medan(JalurTKLiability, "Policy Liability", KArea),
 		wajibU(medan(JalurTKRemarks, "Remarks", KArea)),
-		label("Are you sure want to reject this claim ?"),
-		sebaris("",
-			naJika(tombolOQ("SendRejectClaimToKomite2", "Yes", OQKomiteTanpaAdj), sama("IsReject", "1")),
-		),
+		tampil(label("Are you sure want to reject this claim ?"), belumKomite),
+		tampil(sebaris("",
+			naJika(tombol("SendRejectClaimToKomite2", "Yes", "SendRejectClaimToKomite2"), sama("IsReject", "1")),
+		), belumKomite),
+		tampil(label(TeksSuksesKomite), func(h *Halaman) bool { return !belumKomite(h) }),
 	}
+}
+
+// PeriksaTolakKomite = SendRejectClaimToKomite2 4-6: sudah ada akseptasi; estimasi belum dicetak Face Claim
+// (`.PrintFaceClaim == ""`) harus dihapus. `Local.Error` DITIMPA setiap temuan - hanya pesan TERAKHIR yang tampil (6).
+func PeriksaTolakKomite(h *Halaman) string {
+	galat := ""
+	if h.Ambil(JalurIsAnyAccept) == "1" { // 4
+		galat = PesanSudahAkseptasi
+	}
+	for o := range h.AmbilDaftar(DaftarObjek) { // 5
+		for i := range h.AmbilDaftar(DaftarItem(o + 1)) { // 5.1 local.IdxObj = subscript item
+			for e, est := range h.AmbilDaftar(DaftarDiItem(o+1, i+1, AnakEstimasi)) {
+				if est["PrintFaceClaim"] == "" { // 5.1.1.1
+					galat = PesanHapusEstimasi(e+1, i+1)
+				}
+			}
+		}
+	}
+	return galat
+}
+
+// PeriksaTutupKomite = SendCloseClaimToKomite 5-6: adjustment ber-AcceptanceStatus kosong menahan penutupan tanpa
+// pembayaran; pesan TERAKHIR yang tampil.
+func PeriksaTutupKomite(h *Halaman) string {
+	galat := ""
+	for o := range h.AmbilDaftar(DaftarObjek) {
+		for i := range h.AmbilDaftar(DaftarItem(o + 1)) {
+			for a, b := range h.AmbilDaftar(DaftarAdj(o+1, i+1)) {
+				if b["AcceptanceStatus"] == "" { // 5.1.1.1
+					galat = PesanAdjustmentDiKomite(a + 1)
+				}
+			}
+		}
+	}
+	return galat
+}
+
+// SalinCatatanTutup = SendRejectClaimToKomite2 / SendCloseClaimToKomite 2: Remark dan Remark_Close := Remarks pop-up.
+// `[penyimpangan sadar]` (PARITAS): di TT3 Pega langkah 3 Obj-Open-By-Handle membuka ulang pyWorkPage sehingga isian 2
+// hilang sebelum 7.8 Obj-Save; di sini disimpan - Remark klaim satu-satunya tempat teks komite TT3 / TT4 tersimpan
+// (`Komite.Remarks` kasus komite = `CLAIMREJECTED.REMARK`, KomitePost_Reject S14.1).
+func SalinCatatanTutup(h *Halaman) {
+	r := h.Ambil(JalurTKRemarks)
+	h.Setel(CD+"Remark", r)
+	h.Setel(CD+"Remark_Close", r)
+}
+
+// TandaiKirimTutup = 7.5-7.7 sesudah kasus komite `kmt` lahir: Komite.CARI1, kronologi "Request ... " + KMT.
+func TandaiKirimTutup(k *Konteks, h *Halaman, transfer, kmt string) {
+	h.Setel(JalurKomiteBaru, kmt)
+	awal := AwalanTolakKomite
+	if transfer == TransferTutup {
+		awal = AwalanTutupKomite
+	}
+	k.Kronologi(h, awal+kmt)
 }
 
 func init() {
@@ -89,9 +183,6 @@ func SetRejectClaimPre(k *Konteks, h *Halaman, pembuat string) {
 	h.Setel(JalurTKInisial, pembuat)
 	h.Setel("TempCommiteClaim.DateOfComitee", k.Hari())
 }
-
-// SendRejectClaimToKomite2 2-6 (Remark, proteksi akseptasi / estimasi belum CFS) dan SendCloseClaimToKomite 2-4 tidak
-// dibangun bersama tombol "Yes"-nya (OQ-CFI-27, prompt §10): penyerahan TT3 / TT4 menuntut MODIFY tabel bersama.
 
 // ValidasiTutup = ValidationAdjustmentKomite (CloseClaim 1). `lampiranTutup` = cacah dokumen klaim berkategori
 // "CloseClaim" (`ClaimData.Attachment.pyCategory`, lampiran sistem baru). Pesan dipasang di halaman.

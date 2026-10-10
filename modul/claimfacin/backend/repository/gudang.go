@@ -211,6 +211,12 @@ func sqlTutupKasus(work string) string {
 // TutupKasus - penutupan kasus (CloseClaim / SureRejectClaim): STATUS_WORK Resolved-Completed. TAHAP dibiarkan berisi
 // tahap terakhir (aturan modul: TAHAP tidak pernah NULL).
 func (g *Gudang) TutupKasus(ctx context.Context, tx *db.Tx, id, tahap string, saat time.Time) error {
+	return g.TutupKasusStatus(ctx, tx, id, tahap, models.StatusSelesai, saat)
+}
+
+// TutupKasusStatus - penutupan kasus berstatus `status` (`pxForceCaseClose` Komite Claim Fac In lewat kontrak:
+// Resolved-Rejected KomitePost_Reject S17, Resolved-Completed KomitePost_CloseClaim S14).
+func (g *Gudang) TutupKasusStatus(ctx context.Context, tx *db.Tx, id, tahap, status string, saat time.Time) error {
 	work, err := g.db.Qualify("T_WORK_CLAIM")
 	if err != nil {
 		return err
@@ -219,7 +225,7 @@ func (g *Gudang) TutupKasus(ctx context.Context, tx *db.Tx, id, tahap string, sa
 	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	hasil, err := tx.ExecContext(ctx, q, models.StatusSelesai, saat, id, models.LiniFacIn, tahap)
+	hasil, err := tx.ExecContext(ctx, q, status, saat, id, models.LiniFacIn, tahap)
 	if err != nil {
 		return fmt.Errorf("repository: menutup kasus: %w", err)
 	}
@@ -227,6 +233,39 @@ func (g *Gudang) TutupKasus(ctx context.Context, tx *db.Tx, id, tahap string, sa
 		return ErrTahapBerubah
 	}
 	return db.PastikanSatuBaris(hasil, "penutupan kasus")
+}
+
+// sqlTutupKomiteAnak - kasus komite KMT- klaim `COVER_KEY` yang masih terbuka; `kecuali` = tambahan `ID <> :6` (tanpa
+// itu kosong: `ID <> ”` di Oracle = NULL, tidak pernah benar).
+func sqlTutupKomiteAnak(work string, kecuali bool) string {
+	q := fmt.Sprintf(`UPDATE %s SET STATUS_WORK = :1, TGL_UPDATE = :2, POSITION = NULL
+		 WHERE COVER_KEY = :3 AND LINI = :4 AND TAHAP = :5 AND STATUS_WORK IS NULL`, work)
+	if kecuali {
+		q += ` AND ID <> :6`
+	}
+	return q
+}
+
+// TutupKomiteAnak = `CloseAllSubCases=true` (`pxForceCaseClose` KomitePost_Reject S17 / KomitePost_CloseClaim S14,
+// `ASMForceCaseClose` CloseClaim 12): kasus komite KMT- klaim `klaimID` yang masih terbuka ditutup berstatus `status`
+// (`[inferensi]` status induk), kecuali `kecuali`. Nol baris = tidak ada sub-kasus terbuka (bukan galat).
+func (g *Gudang) TutupKomiteAnak(ctx context.Context, tx *db.Tx, klaimID, kecuali, status string, saat time.Time) error {
+	work, err := g.db.Qualify("T_WORK_CLAIM")
+	if err != nil {
+		return err
+	}
+	q := sqlTutupKomiteAnak(work, kecuali != "")
+	if err := db.PeriksaSQL(q); err != nil {
+		return err
+	}
+	args := []any{status, saat, klaimID, models.LiniFacIn, models.TahapKomite}
+	if kecuali != "" {
+		args = append(args, kecuali)
+	}
+	if _, err := tx.ExecContext(ctx, q, args...); err != nil {
+		return fmt.Errorf("repository: menutup kasus komite anak: %w", err)
+	}
+	return nil
 }
 
 // sqlSentuhKasus - TGL_UPDATE kasus.

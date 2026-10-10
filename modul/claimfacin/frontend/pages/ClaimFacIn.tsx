@@ -2,26 +2,31 @@
 // bukan impor): dua tab, Process dan Resolve. Tab Process bawaan = worklist pembuat (Assignment1 Input Register +
 // Assignment7 Input Estimasi, `Register_Flow`); switch Teknik = Assignment3 "Choose Surveyor" (workbasket
 // ReasKlaimTeknik), dapat dinyalakan hanya oleh anggota workbasket itu. Add Claim (Start -> Assignment1; harness New
-// tidak diekspor) hanya saat switch Teknik mati. Tanpa tabel komite (keputusan komite KMT- = tahap 2).
+// tidak diekspor) hanya saat switch Teknik mati. Tabel komite di bawah inbox (modul Komite Claim Fac In tanpa menu,
+// prompt tahap 2 §2 butir 2; pola Claim Non Prop): baris dibuka DI TEMPAT lewat `onBukaModul`.
 
 import { useCallback, useEffect, useState } from 'react'
 
 import { Gagal, Kosong, Memuat, StripTab } from '../../../../inti/frontend/components/ui/dasar'
 import { ambilHak, buatKasus, daftarKasus, type HakPelaku, type RingkasanKasus } from '../api'
 import LayarKasus from '../components/LayarKasus'
+import TabelKomite from '../components/TabelKomite'
 import { tampilTanggal } from '../ketikTanggal'
 import { CFI } from '../labels'
-import { bolehTambahKlaim, jenisDaftar, switchTeknikAktif, TAB_INBOX, type TabInbox } from './inbox'
+import { bolehTambahKlaim, jenisDaftar, switchTeknikAktif, TAB_INBOX, tabelKomiteTampil, type TabInbox } from './inbox'
 
 const LABEL_TAB: Record<TabInbox, string> = { proses: CFI.tabProses, selesai: CFI.tabResolve }
 const JEDA_CARI_MS = 300
 
 export default function ClaimFacIn({
   pelaku,
+  onBukaModul,
   bukaKasus,
   onBeranda,
 }: {
   pelaku: string
+  /** `PropsRute.onBukaModul` - baris tabel komite: layar komite dibuka di tempat. */
+  onBukaModul?: (modul: string, id: string) => boolean
   /** `PropsRute.bukaKasus` - satu berkas dibuka langsung; `hanyaLihat` = tampilan saja. */
   bukaKasus?: { id: string; ketuk: number; hanyaLihat?: boolean }
   /** `PropsRute.onBeranda` - Back berkas yang dibuka lewat `bukaKasus` kembali ke pemanggil. */
@@ -184,6 +189,7 @@ export default function ClaimFacIn({
           </tbody>
         </table>
       )}
+      {tabelKomiteTampil(hak) && <TabelKomite onBukaModul={onBukaModul} />}
     </section>
   )
 }

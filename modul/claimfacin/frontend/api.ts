@@ -250,14 +250,47 @@ export function ambilAcuan(): Promise<AcuanStatis> {
   return minta(`${PREFIX_CFI}/acuan`)
 }
 
-/** Hak halaman awal (`services.HakPelaku`): switch Teknik aktif hanya bagi anggota workbasket Choose Surveyor. */
+/**
+ * Hak halaman awal (`services.HakPelaku`): switch Teknik aktif hanya bagi anggota workbasket Choose Surveyor; tabel komite
+ * di bawah inbox hanya bagi anggota roster komite FACIN (workbasket roster EMAILKOMITE, atau ReasClaimSPVB - cadangan SPV
+ * A, keputusan work owner 10-10-2026 KCF-01).
+ */
 export interface HakPelaku {
   workbasketSurveyor: boolean
+  komite: boolean
 }
 
 export function ambilHak(): Promise<HakPelaku> {
   return minta(`${PREFIX_CFI}/hak`)
 }
+
+/**
+ * Satu kasus komite `KMT-` yang menunggu workbasket / akun pelaku - `models.BarisKerja` modul Komite Claim Fac In (modul
+ * TANPA menu, prompt tahap 2 §2 butir 2): daftarnya dibaca lewat rute pinjaman `GET /api/komite-claim-fac-in/kasus`
+ * (`cmd/api/rakit.go`), kasusnya dibuka di tempat (`onBukaModul`). Pola `modul/claimnonprop/frontend/api.ts`.
+ */
+export interface BarisKomite {
+  kasusId: string
+  klaimId: string
+  noKlaim: string
+  /** ADJUSTMENT / REJECT / CLOSE (TransferType 2 / 3 / 4). */
+  jenis: string
+  tingkat: number
+  komiteCount: number
+  komiteLoop: number
+  jabatan: string
+  /** Label `.AcceptanceStatus` adjustment TT2 (kosong TT3 / TT4). */
+  statusBaris: string
+  statusWork: string
+  tglUpdate: string
+}
+
+export function daftarKomite(): Promise<BarisKomite[] | null> {
+  return minta('/api/komite-claim-fac-in/kasus')
+}
+
+/** Nama modul layar kasus komite (`onBukaModul`). */
+export const MODUL_KOMITE = 'komiteclaimfacin'
 
 /** Satu baris grid pop-up Choose Polis - `models.BarisPolisCari` (GetPolisForClaim_SQL). */
 export interface BarisPolisCari {

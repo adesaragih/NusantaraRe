@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { bolehTambahKlaim, jenisDaftar, switchTeknikAktif, TAB_INBOX } from './inbox'
+import { bolehTambahKlaim, jenisDaftar, switchTeknikAktif, TAB_INBOX, tabelKomiteTampil } from './inbox'
 
 describe('halaman awal Claim Fac In', () => {
   it('dua tab saja, berurut Process lalu Resolve', () => {
@@ -21,9 +21,17 @@ describe('halaman awal Claim Fac In', () => {
   })
 
   it('switch Teknik hanya dapat dinyalakan anggota ReasKlaimTeknik', () => {
-    expect(switchTeknikAktif({ workbasketSurveyor: true })).toBe(true)
-    expect(switchTeknikAktif({ workbasketSurveyor: false })).toBe(false)
+    expect(switchTeknikAktif({ workbasketSurveyor: true, komite: false })).toBe(true)
+    expect(switchTeknikAktif({ workbasketSurveyor: false, komite: true })).toBe(false)
     expect(switchTeknikAktif(null)).toBe(false)
+  })
+
+  // Modul Komite Claim Fac In tanpa menu (prompt tahap 2 §2 butir 2, pola Claim Non Prop): tabel komite di bawah inbox
+  // hanya bagi anggota roster komite FACIN, tanpa switch dan tanpa ikut tab.
+  it('tabel komite hanya bagi anggota roster komite FACIN', () => {
+    expect(tabelKomiteTampil({ workbasketSurveyor: false, komite: true })).toBe(true)
+    expect(tabelKomiteTampil({ workbasketSurveyor: true, komite: false })).toBe(false)
+    expect(tabelKomiteTampil(null)).toBe(false)
   })
 
   it('Add Claim hanya di tab Process saat switch Teknik mati', () => {

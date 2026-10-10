@@ -6,12 +6,12 @@ import './claimfacin.css'
 import type { HalamanCFI } from './menu'
 import ClaimFacIn from './pages/ClaimFacIn'
 
-export function RuteCFI({ halaman, masuk, bukaKasus, onBeranda }: PropsRute<HalamanCFI>) {
+export function RuteCFI({ halaman, masuk, onBukaModul, bukaKasus, onBeranda }: PropsRute<HalamanCFI>) {
   return (
     <BahasaUI.Provider value="en">
       <div className="claimfacin">
         {halaman === 'claimfacin-daftar' && (
-          <ClaimFacIn pelaku={masuk.akunID} bukaKasus={bukaKasus} onBeranda={onBeranda} />
+          <ClaimFacIn pelaku={masuk.akunID} onBukaModul={onBukaModul} bukaKasus={bukaKasus} onBeranda={onBeranda} />
         )}
       </div>
     </BahasaUI.Provider>
