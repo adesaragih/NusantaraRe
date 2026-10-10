@@ -83,6 +83,12 @@ type Kasus struct {
 	TglCreate   time.Time `json:"tglCreate"`
 	TglUpdate   time.Time `json:"tglUpdate"`
 	Tangga      []Anggota `json:"tangga"`
+	// Kronologi / Extent / Liability - teks pop-up TT3 / TT4 (`Komite.CircumtansesCouseOfLoss` / `ExtentOfLoss` /
+	// `LegalLiability`, SendRejectClaimToKomite2 / SendCloseClaimToKomite 7.2; migrasi 643, OQ-KCFI-03). Tampil lewat
+	// blok teks komite, bukan JSON kasus.
+	Kronologi string `json:"-"`
+	Extent    string `json:"-"`
+	Liability string `json:"-"`
 }
 
 // Kepala - tulisan kepala kasus komite sesudah satu Submit (KomitePost_Adjustment S14 / S24, KomitePost_Reject S16;
@@ -172,6 +178,9 @@ func PeranKerja(peran []string) []string {
 	return out
 }
 
-// AnggotaSPVB - pemutus anggota workbasket ReasClaimSPVB (`OperatorID.pyPosition == "SPV B"`, ApprovalKomite_Act L5;
-// KCF-01: keanggotaan workbasket, bukan jabatan di profil).
-func AnggotaSPVB(peran []string) bool { return slices.Contains(peran, WorkbasketSPVB) }
+// AnggotaSPVB - pemutus anggota workbasket ReasClaimSPVB SAJA (`OperatorID.pyPosition == "SPV B"`, ApprovalKomite_Act
+// L5; KCF-01: keanggotaan workbasket, bukan jabatan di profil). Anggota ReasClaimSPVA + ReasClaimSPVB sekaligus = SPV A,
+// pita tidak berlaku (jawaban work owner 10-10-2026 OQ-KCFI-06; di produksi rangkap dijaga Kelola User).
+func AnggotaSPVB(peran []string) bool {
+	return slices.Contains(peran, WorkbasketSPVB) && !slices.Contains(peran, WorkbasketSPVA)
+}

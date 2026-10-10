@@ -90,4 +90,7 @@ func (g *Gudang) SiapkanTutup(transfer string, saat time.Time) {
 	g.Klaim.Setel(KlaimUji, n, d)
 	g.Lahirkan(KomiteUji, KlaimUji, "", transfer, PembuatUji, "UJI Admin",
 		[]models.Anggota{{OperatorID: models.WorkbasketDeptHead, Jabatan: "Claim Dept. Head"}}, saat)
+	k := g.Kasus[KomiteUji] // teks pop-up TT3 / TT4 (migrasi 643)
+	k.Kronologi, k.Extent, k.Liability = "UJI KRONOLOGI", "UJI EXTENT", "UJI LIABILITAS"
+	g.Kasus[KomiteUji] = k
 }

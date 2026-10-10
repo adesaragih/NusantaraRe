@@ -322,7 +322,8 @@ func TestTT3RejectDisetujuiMenutupKlaim(t *testing.T) {
 	if _, ada := bagian(ly, "tangga"); ada {
 		t.Fatal("List of Committee hanya TT2 (LS41)")
 	}
-	if tk := mustBagian(t, ly, "teksKomite"); len(tk.Medan) != 1 || tk.Medan[0].Nilai != "UJI ALASAN" {
+	// Remarks = ClaimData.Remark klaim; tiga teks pop-up lain dari kepala kasus (urutan: TestTT3TT4TeksPopUpTampil)
+	if tk := mustBagian(t, ly, "teksKomite"); len(tk.Medan) != 4 || tk.Medan[3].Nilai != "UJI ALASAN" {
 		t.Fatalf("teks komite TT3: %+v", tk)
 	}
 	u.putus("UJI-SPVA", models.WorkbasketSPVA, setuju, http.StatusForbidden)
@@ -433,5 +434,52 @@ func TestKasirMenungguStatusKonversi(t *testing.T) {
 	}
 	if b := u.adj(); b["IDOfBank"] != "" {
 		t.Fatalf("IDOfBank ditulis padahal S3 keluar: %q", b["IDOfBank"])
+	}
+}
+
+func TestPitaSPVBTigaKasusPemutus(t *testing.T) {
+	// Jawaban work owner 10-10-2026 (OQ-KCFI-06): pita SPV B (ApprovalKomite_Act S5) hanya untuk pemutus tingkat 1 yang
+	// anggota ReasClaimSPVB SAJA; anggota ReasClaimSPVA + ReasClaimSPVB sekaligus = SPV A (tangga tidak diperluas).
+	kasus := []struct {
+		nama, peran string
+		tingkat     int
+		selesai     bool
+	}{
+		{"SPVA saja", models.WorkbasketSPVA, 1, true},
+		{"SPVB saja", models.WorkbasketSPVB, 2, false},
+		{"keduanya", models.WorkbasketSPVA + "," + models.WorkbasketSPVB, 1, true},
+	}
+	for _, c := range kasus {
+		t.Run(c.nama, func(t *testing.T) {
+			u := siap(t, false)
+			u.g.SiapkanTT2("40000000", saatUji)
+			if n := len(mustBagian(t, u.layar("UJI-SPV", c.peran), "tangga").Grid[0].Baris); n != c.tingkat {
+				t.Fatalf("tangga tampil %d tingkat, mau %d", n, c.tingkat)
+			}
+			if h := u.putus("UJI-SPV", c.peran, setuju, http.StatusOK); h.Selesai != c.selesai {
+				t.Fatalf("Submit: %+v, selesai mau %v", h, c.selesai)
+			}
+			if n := len(u.g.Tangga[tiruan.KomiteUji]); n != c.tingkat {
+				t.Fatalf("tangga tersimpan %d tingkat, mau %d", n, c.tingkat)
+			}
+		})
+	}
+}
+
+func TestTT3TT4TeksPopUpTampil(t *testing.T) {
+	// SendRejectClaimToKomite2 / SendCloseClaimToKomite menyalin Chronology / Extent / Policy Liability pop-up ke
+	// `Komite.*`; ShowTransfer LS39 (VIS NOTBLANK) menampilkannya - urutan LS39: Legal, Chronology, Extent, Remarks.
+	for _, tt := range []string{models.TransferReject, models.TransferClose} {
+		u := siap(t, false)
+		u.g.SiapkanTutup(tt, saatUji)
+		var label []string
+		for _, m := range mustBagian(t, u.layar("UJI-HEAD", models.WorkbasketDeptHead), "teksKomite").Medan {
+			label = append(label, m.Label+"="+m.Nilai)
+		}
+		mau := "Legal Liability / Policy Liability=UJI LIABILITAS|Chronology=UJI KRONOLOGI|Extent Of Loss=UJI EXTENT|" +
+			"Remarks=UJI ALASAN"
+		if strings.Join(label, "|") != mau {
+			t.Fatalf("TT%s teks komite: %v", tt, label)
+		}
 	}
 }

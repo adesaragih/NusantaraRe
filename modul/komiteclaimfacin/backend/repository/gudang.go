@@ -83,7 +83,8 @@ func satuAtauBersamaan(h sql.Result, nama string) error {
 func sqlKepalaKasus(gen, work string, kunci bool) string {
 	q := fmt.Sprintf(`SELECT g.ID, w.COVER_KEY, g.ADJUSTMENT_ID, g.TRANSFER_TYPE, g.KOMITE_LOOP, g.KOMITE_COUNT,
 		       g.ACCEPT_STATUS, g.KOMITE_USUL_TUTUP, g.KOMITE_USUL_CADANG, w.TAHAP, w.STATUS_WORK, w.CREATE_OP,
-		       w.CREATE_OP_NAME, %s, %s
+		       w.CREATE_OP_NAME, %s, %s, g.KOMITE_CIRCUM_CAUSE_OF_LOSS, g.KOMITE_EXTENT_OF_LOSS,
+		       g.KOMITE_LEGAL_LIABILITY
 		  FROM %s g JOIN %s w ON w.ID = g.ID
 		 WHERE g.ID = :1 AND w.LINI = :2 AND w.ID LIKE :3`, fmt.Sprintf(db.FmtTanggalOracle, "w.TGL_CREATE"),
 		fmt.Sprintf(db.FmtTanggalOracle, "w.TGL_UPDATE"), gen, work)
@@ -110,10 +111,10 @@ func (g *Gudang) BacaKasus(ctx context.Context, tx *db.Tx, id string, kunci bool
 	if err := db.PeriksaSQL(q); err != nil {
 		return models.Kasus{}, err
 	}
-	var n [13]sql.NullString
+	var n [16]sql.NullString
 	var loop, count sql.NullInt64
 	err = g.barisAtau(ctx, tx, q, id, models.LiniFacIn, awalanLike()).Scan(&n[0], &n[1], &n[2], &n[3], &loop, &count,
-		&n[4], &n[5], &n[6], &n[7], &n[8], &n[9], &n[10], &n[11], &n[12])
+		&n[4], &n[5], &n[6], &n[7], &n[8], &n[9], &n[10], &n[11], &n[12], &n[13], &n[14], &n[15])
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.Kasus{}, fmt.Errorf("%w: %q", ErrKasusTidakAda, id)
 	}
@@ -124,7 +125,8 @@ func (g *Gudang) BacaKasus(ctx context.Context, tx *db.Tx, id string, kunci bool
 		TransferType: strings.TrimSpace(n[3].String), Loop: int(loop.Int64), Count: int(count.Int64),
 		AcceptStatus: strings.TrimSpace(n[4].String), UsulTutup: strings.TrimSpace(n[5].String),
 		UsulCadang: strings.TrimSpace(n[6].String), Tahap: n[7].String, StatusWork: n[8].String, PembuatID: n[9].String,
-		PembuatNama: n[10].String, TglCreate: waktuDB(n[11].String), TglUpdate: waktuDB(n[12].String)}, nil
+		PembuatNama: n[10].String, TglCreate: waktuDB(n[11].String), TglUpdate: waktuDB(n[12].String),
+		Kronologi: n[13].String, Extent: n[14].String, Liability: n[15].String}, nil
 }
 
 // sqlSimpanKepala - KOMITE_COUNT (S14 / S24, Reject S16), KOMITE_LOOP (ApprovalKomite_Act S8 sesudah perluasan),

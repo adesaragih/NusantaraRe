@@ -111,6 +111,7 @@ claimprop 537 (empat workbasket jenjang 2–5) dan claimfacin 560–567.
 | `640` | `M_WORKBASKET` `ReasClaimSPVA` / `ReasClaimSPVB` bila belum ada; `EMAILKOMITE` FACIN `OPERATOR_ID` / `NAME` = workbasket per DEGREE + JABATAN, `EMAIL` kosong (KCF-01) | baris FACIN ber-workbasket dikosongkan; workbasket tidak dibuang |
 | `641` | `T_GENERAL_KOMITE.ADJUSTMENT_ID` boleh kosong (KCF-03) | `NOT NULL NOVALIDATE` |
 | `642` | `T_GENERAL_KOMITE.TRANSFER_TYPE CHAR(1) DEFAULT '2' NOT NULL` + `CK_GENERAL_KOMITE_TRANSFER` (KCF-03) | kolom + CHECK dibuang |
+| `643` | `T_GENERAL_KOMITE` + 3 kolom teks pop-up TT3 / TT4 `VARCHAR2(4000)` nullable (OQ-KCFI-03) | tiga kolom dibuang |
 
 ## Data lama
 

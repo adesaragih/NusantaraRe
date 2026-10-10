@@ -24,7 +24,8 @@ func semuaSQL() map[string]string {
 		"tulis":        sqlTulisAnggota("UJI.L", true),
 		"tulisSisa":    sqlTulisAnggota("UJI.L", false),
 		"kerja":        sqlDaftarKerja("UJI.G", "UJI.W", "UJI.L", "UJI.C", "UJI.A", 2),
-		"os":           sqlSisipOS("UJI.OS"),
+		"os":           sqlSisipOS("UJI.OS", true),
+		"osTanpaKonv":  sqlSisipOS("UJI.OS", false),
 		"jsonAda":      sqlAdaJSONKlaim("UJI.J"),
 		"json":         sqlSisipJSONKlaim("UJI.J"),
 		"log":          sqlLogLayanan("UJI.M"),
@@ -79,13 +80,28 @@ func TestKueriKasusMenyaringLiniDanAwalan(t *testing.T) {
 }
 
 func TestOSSesuaiProcedure(t *testing.T) {
-	q := sqlSisipOS("UJI.OS")
+	q := sqlSisipOS("UJI.OS", true)
 	for _, k := range []string{"CASEID", "NOCLAIM", "DATA_JSON", "TANGGAL", "NOPOLIS", "STS_REJECT", "STS_KONVERSI", "STS_DLA"} {
 		if !strings.Contains(q, k) {
 			t.Fatalf("OS tanpa %s: %s", k, q)
 		}
 	}
+	// jawaban work owner 10-10-2026 (OQ-KCFI-08, preseden Claim Prop): STS_KONVERSI kosong -> kolom tidak disebut
+	if q := sqlSisipOS("UJI.OS", false); strings.Contains(q, "STS_KONVERSI") || !strings.Contains(q, "STS_DLA") ||
+		strings.Count(q, ":") != 7 {
+		t.Fatalf("OS tanpa status konversi: %s", q)
+	}
 	if strings.Contains(q, "TGL_PROD") || strings.Contains(q, "MASTERID") {
 		t.Fatalf("OS menulis kolom yang tidak ditulis procedure (TGL_PROD = trigger): %s", q)
+	}
+}
+
+func TestKepalaMembacaTeksTutup(t *testing.T) {
+	// migrasi 643 (jawaban work owner 10-10-2026 OQ-KCFI-03): teks pop-up TT3 / TT4 di kepala kasus komite
+	q := sqlKepalaKasus("UJI.G", "UJI.W", false)
+	for _, k := range []string{"g.KOMITE_CIRCUM_CAUSE_OF_LOSS", "g.KOMITE_EXTENT_OF_LOSS", "g.KOMITE_LEGAL_LIABILITY"} {
+		if !strings.Contains(q, k) {
+			t.Fatalf("kepala kasus tanpa %s: %s", k, q)
+		}
 	}
 }

@@ -29,6 +29,7 @@ Rule korpus yang dirujuk:
 | 640 | `EMAILKOMITE` STS_KLAIM FACIN: `OPERATOR_ID` / `NAME` = workbasket per DEGREE + JABATAN (1 `ReasClaimSPVA`, 2 `ReasClaimDeptHead`, 3 `ReasClaimTechDivHead`, 4 `ReasClaimOpsDir`, 5 `ReasClaimTechDir`), `EMAIL` kosong; `M_WORKBASKET` `ReasClaimSPVA` / `ReasClaimSPVB` disisipkan bila belum ada (keputusan work owner KCF-01) | baris FACIN ber-workbasket dikosongkan; workbasket tidak dibuang (sudah ada di DEV sebelum 640) |
 | 641 | `T_GENERAL_KOMITE.ADJUSTMENT_ID` boleh kosong (`MODIFY ... NULL`, KCF-03) | `NOT NULL NOVALIDATE` — baris kosong yang ada dibiarkan |
 | 642 | `T_GENERAL_KOMITE.TRANSFER_TYPE CHAR(1) DEFAULT '2' NOT NULL` + `CK_GENERAL_KOMITE_TRANSFER` (`'2'`/`'3'`/`'4'`, KCF-03) | kolom + CHECK dibuang |
+| 643 | `T_GENERAL_KOMITE.KOMITE_CIRCUM_CAUSE_OF_LOSS` / `KOMITE_EXTENT_OF_LOSS` / `KOMITE_LEGAL_LIABILITY` `VARCHAR2(4000)` nullable — teks pop-up TT3 / TT4 (keputusan work owner OQ-KCFI-03) | tiga kolom dibuang |
 
 Urutan: 640+ berjalan sesudah claimprop 537 (empat workbasket jenjang 2–5) dan claimfacin 560–567 (kolom FAC tabel klaim).
 
@@ -49,6 +50,7 @@ Yang mengikat baris FACIN:
 | `T_GENERAL_KOMITE.KOMITE_COUNT` | tingkat berjalan; tolak = `KOMITE_LOOP`, lalu +1 setiap Submit (akhir = loop + 1) | KomitePost_Adjustment S14 / S24, KomitePost_Reject S16 |
 | `T_GENERAL_KOMITE.KOMITE_USUL_TUTUP` / `_CADANG` | isian "Propose To Close Case" / "Propose To Reserved" tingkat 1 TT2 | ShowTransfer LS45 (kolom komiteclaimprop 680) |
 | `T_GENERAL_KOMITE.KOMITE_SUBJECTIVITY(_NOTE)` | tidak dipakai Fac In (bawaan `'0'`) | — |
+| `T_GENERAL_KOMITE.KOMITE_CIRCUM_CAUSE_OF_LOSS` / `_EXTENT_OF_LOSS` / `_LEGAL_LIABILITY` | teks pop-up Chronology / Extent Of Loss / Policy Liability TT3 / TT4 (ditulis Claim Fac In saat KMT lahir; TT2 kosong) | SendRejectClaimToKomite2 / SendCloseClaimToKomite 7.2 (migrasi 643) |
 | `T_KOMITE_KOMITELIST` | ditulis HANYA `backend/repository/tangga.go` (perluasan ApprovalKomite S7.1, keputusan KomitePost); `KOMITE_OPERATORID` = akun pemutus sesudah diputus | penjaga Claim Life `komite_statik_test.go` |
 
 ## Klaim induk — hanya lewat kontrak
@@ -64,7 +66,7 @@ Tanpa procedure dan tanpa COMMIT (isi procedure dibaca dari ALL_SOURCE DEV 10-10
 
 | Tabel | Kolom yang ditulis | Asal |
 | --- | --- | --- |
-| `OS_AKSEPTASI_KLAIM` | CASEID, NOCLAIM, DATA_JSON, TANGGAL, NOPOLIS, STS_REJECT, STS_KONVERSI, STS_DLA (TGL_PROD = trigger) | KomitePost_Adjustment S8 (STS 1 / 4), KomitePost_Reject S12 → SaveReject_ACT_KMT (STS 2 per estimasi), KomitePost_CloseClaim S12 (STS 4) — `PEGA_JSON_OS_AKSEP_KLAIM` |
+| `OS_AKSEPTASI_KLAIM` | CASEID, NOCLAIM, DATA_JSON, TANGGAL, NOPOLIS, STS_REJECT, STS_KONVERSI (hanya bila terisi, OQ-KCFI-08), STS_DLA (TGL_PROD = trigger) | KomitePost_Adjustment S8 (STS 1 / 4), KomitePost_Reject S12 → SaveReject_ACT_KMT (STS 2 per estimasi), KomitePost_CloseClaim S12 (STS 4) — `PEGA_JSON_OS_AKSEP_KLAIM` |
 | `JSON_KLAIM` | MNK_NO_KLAIM, IDPEGA, TGL_INPUT, NOPOLIS, IDPROD (INSERT bila IDPEGA belum ada; tanpa DATA_JSON) | KomitePost_Adjustment S16, KomitePost_Reject S11, KomitePost_CloseClaim S10 (`PEGA_JSON_KLAIM_PNC`) |
 | `MONITORING_KLAIM_LOG` | TGL_INPUT, IDPEGA, PARAMETER, JN_SERVICE "AKSEPATSI", NO_AKSEPTASI | KomitePost_Adjustment S18-S19 (bukan Fac Retro) |
 | `HISTORYAKSEPTASIPEGA` | ID_PEGA, TGL_TRANSFER, STATUS, USERNAME, WORKBASKET "KLAIM", ID_KOMITE | KomitePost_Adjustment S20-S21 |

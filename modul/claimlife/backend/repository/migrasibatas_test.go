@@ -102,6 +102,9 @@ var kolomTidakDibawa = []string{
 // berkasBolehMenyebutKolomTakDibawa berkunci akhiran jalur, dengan alasan.
 var berkasBolehMenyebutKolomTakDibawa = map[string]string{
 	"repository/barislamakolom.go": "katalog 62 kolom - kolomnya ADA di tabel, ia hanya tidak dibawa",
+	// ⛔ izin work owner 10-10-2026 (OQ-KCFI-08), SEMPIT: satu berkas Komite Claim Fac In penulis OS_AKSEPTASI_KLAIM;
+	// STS_KONVERSI hanya disebut bila terisi (SaveReject_ACT_KMT S17), kosong = kolom tidak ikut INSERT.
+	"modul/komiteclaimfacin/backend/repository/osakseptasi.go": "Komite Claim Fac In - INSERT OS_AKSEPTASI_KLAIM (PEGA_JSON_OS_AKSEP_KLAIM), STS_KONVERSI hanya bila terisi",
 }
 
 // migrasiDiLuarClaimLife menjawab apakah berkas itu migrasi milik modul lain.

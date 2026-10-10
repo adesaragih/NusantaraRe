@@ -431,8 +431,8 @@ func modalRetro(kl kontrak.KlaimFacIn, s map[string]string) []Bagian {
 }
 
 // bagianTeksKomite - LS39 (`VIS NOTBLANK`, hanya-baca). TT2: `pyWorkPage.Komite.*` = `DataCommitteFacin.*` adjustment
-// (CreateKMTNo_Act 7). TT3 / TT4: `Komite.Remarks` = `ClaimData.Remark` klaim induk (SendRejectClaimToKomite2 2 / 7.2);
-// Chronology / Extent / Legal TT3 / TT4 tanpa kolom (OQ-KCFI-03).
+// (CreateKMTNo_Act 7). TT3 / TT4: Legal / Chronology / Extent = teks pop-up tersimpan di kepala kasus komite (7.2,
+// migrasi 643, jawaban work owner 10-10-2026 OQ-KCFI-03); `Komite.Remarks` = `ClaimData.Remark` klaim induk (2 / 7.2).
 func bagianTeksKomite(k Kasus, kl kontrak.KlaimFacIn) Bagian {
 	var m []Medan
 	tambah := func(label, nilai string) {
@@ -452,6 +452,9 @@ func bagianTeksKomite(k Kasus, kl kontrak.KlaimFacIn) Bagian {
 		tambah("Salvage", d("Salvage"))
 		tambah("Remarks", d("Remarks"))
 	} else {
+		tambah("Legal Liability / Policy Liability", k.Liability)
+		tambah("Chronology", k.Kronologi)
+		tambah("Extent Of Loss", k.Extent)
 		tambah("Remarks", kl.Nilai["ClaimData.Remark"])
 	}
 	return Bagian{Kunci: "teksKomite", Medan: m}

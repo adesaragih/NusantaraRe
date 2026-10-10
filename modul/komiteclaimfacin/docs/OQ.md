@@ -13,16 +13,16 @@
 | **KCF-02** | Perluasan tangga ikut XML (`ApprovalKomite_Act` L4–L8), ditampilkan saat tingkat 1 membuka, disimpan saat tingkat 1 Submit; Fac Retro melewatinya | 10-10-2026 |
 | **KCF-03** | TT3 / TT4 untuk Fac In: `ADJUSTMENT_ID` boleh kosong (641) + `TRANSFER_TYPE` (642); satu tingkat `ReasClaimDeptHead` | 10-10-2026 |
 | **KCF-04** | Kasus komite lama Pega `KMT-` tidak dimigrasi | 10-10-2026 |
+| **OQ-KCFI-02** | Kasir kasus Fac Retro **ikut XML**: tetap dikirim bila gerbangnya terpenuhi (DirectToKasir, StatusKasir kosong, status konversi 1); tanpa pengecualian retro (retro biasanya baru terkonversi sesudah Print DLA di klaim) | 10-10-2026 |
+| **OQ-KCFI-03** | **Boleh**: 3 kolom nullable `T_GENERAL_KOMITE` (`KOMITE_CIRCUM_CAUSE_OF_LOSS` / `KOMITE_EXTENT_OF_LOSS` / `KOMITE_LEGAL_LIABILITY`, ADD saja, migrasi 643); isian pop-up `SendRejectClaimToKomite2` / `SendCloseClaimToKomite` disimpan dan tampil di LS39; STRUKTUR pemilik tabel diperbarui | 10-10-2026 |
+| **OQ-KCFI-06** | **Anggap SPV A**: pemutus tingkat 1 anggota `ReasClaimSPVA` + `ReasClaimSPVB` sekaligus -> pita SPV B tidak berlaku; pita hanya untuk anggota `ReasClaimSPVB` saja (rangkap di produksi dijaga Kelola User) | 10-10-2026 |
+| **OQ-KCFI-08** | **Boleh, sempit**: `STS_KONVERSI` kosong -> kolom tidak ikut INSERT OS (preseden Claim Prop); pengecualian penjaga Claim Life `repository/migrasibatas_test.go` hanya untuk `backend/repository/osakseptasi.go` | 10-10-2026 |
 
 ## A. Work owner
 
 | OQ | Pertanyaan | Rekomendasi (yang dibangun) | Bukti |
 | --- | --- | --- | --- |
-| **OQ-KCFI-02** | `KomitePost_Adjustment` S25 (kasir) bergerbang `Local.FacRetro == 1 [T=3]` berkomentar "JIKA RETRO KONVESI WAKTU PRINT DLA", tetapi `pre=false` — gerbangnya tidak dinilai, kasir **tetap** berjalan untuk Fac Retro. Maksudnya retro dilewati? | Ikut XML: muatan kasir retro ikut diantre (produksi saja); konversi S17 dan log S19 tetap dilewati untuk retro | `Activity/KomitePost_Adjustment.xml` S17, S19, S25 |
-| **OQ-KCFI-03** | Pop-up Reject Claim (ClaimComiteeReject LS4) dan Close Claim (PreventRejectClaim LS23) punya isian **Chronology / Extent Of Loss / Policy Liability** (`TempCommiteClaim.*`); `SendRejectClaimToKomite2` / `SendCloseClaimToKomite` menyalinnya ke `childPageKomite.Komite.*` dan `ClaimData.ClaimComitee(<LAST>)`, lalu ShowTransfer LS39 menampilkannya. Kasus TT3 / TT4 **tanpa adjustment**, jadi tidak ada kolom penampung (TT2 menyimpannya di baris adjustment `DataCommitteFacin.*`). Simpan di 3 kolom baru `T_GENERAL_KOMITE` (ADD, di luar KCF-03)? | Tidak disimpan: isian tetap dapat diketik (tampil di pop-up sampai ditutup), layar komite TT3 / TT4 hanya menampilkan **Remarks** (`ClaimData.Remark` klaim induk, langkah 2). Nol DDL tanpa izin | `SendRejectClaimToKomite2.xml` / `SendCloseClaimToKomite.xml` (salinan `TempCommiteClaim.*`), Section `ShowTransfer` LS39 |
-| **OQ-KCFI-06** | Akun yang memegang **`ReasClaimSPVA` dan `ReasClaimSPVB` sekaligus**: XML memakai jabatan profil (`pyPosition == "SPV B"`, satu nilai). Sekarang pita SPV B berlaku bila pemutus anggota `ReasClaimSPVB`, walau ia juga anggota SPVA | Keanggotaan SPVB menang (pita berlaku). Usul: satu akun hanya di salah satu dari dua workbasket | `ApprovalKomite_Act` L5, `models.AnggotaSPVB` |
 | **OQ-KCFI-07** | ADR-0038 / 0039 / 0040 (`OUTPUT_HASIL_RNM/docs/bersama/adr/`, di luar repo) bersumber dari spec September dan kini bertentangan dengan RALAT 10-10-2026 (ADR-0040 premis gugur; ADR-0038 "bukan karena pencacah" padahal XML memakai `KomiteCount`; ADR-0039 "data kutipan disalin utuh") | Tidak disunting (di luar berkas yang diizinkan). Usul: ADR diperbarui atau diberi catatan "digantikan KCF-01–04" | `docs/spec.md` Lampiran 3 (RALAT) |
-| **OQ-KCFI-08** | Penjaga Claim Life `repository/migrasibatas_test.go` `TestKolomTakDibawaHanyaAdaDiKatalog` (sudah gagal di HEAD) kini juga menyebut `backend/repository/warisan.go` modul ini: `STS_KONVERSI` termasuk "kolom yang sengaja tidak dibawa". Kolom itu kolom procedure `PEGA_JSON_OS_AKSEP_KLAIM` yang ditulis `SaveReject_ACT_KMT` S17 (TT3, `1` bila Value kosong); preseden HEAD: `claimnonprop/backend/repository/tulisan.go` | Kolom tetap ditulis (ikut XML). Butuh pengecualian di berkas penjaga Claim Life (modul lain — tidak disunting) | `SaveReject_ACT_KMT.xml` S17; penjaga Claim Life |
 
 ## B. Pemilik ekspor Pega
 
@@ -34,7 +34,7 @@
 
 | OQ | Pertanyaan | Akibat sekarang |
 | --- | --- | --- |
-| — | `-migrate` 640–642 menunggu work owner. Sebelum 642: setiap kueri yang menyebut `T_GENERAL_KOMITE.TRANSFER_TYPE` → `ORA-00904` di DEV (wajar; dicoba baca-saja 10-10-2026: varian tanpa kolom itu lolos urai / SELECT) | — |
+| — | `-migrate` 640–642 **sudah dijalankan** work owner 10-10-2026 15:02 (diverifikasi baca-saja: ADJUSTMENT_ID nullable, TRANSFER_TYPE + CHECK, roster FACIN workbasket). **643 menunggu** `-migrate`: sebelum itu kueri kepala kasus komite (tiga kolom teks) → `ORA-00904` di DEV | — |
 | — | Mundur 641 = `MODIFY (ADJUSTMENT_ID NOT NULL NOVALIDATE)`: baris TT3 / TT4 ber-`ADJUSTMENT_ID` kosong yang sudah ada dibiarkan (kendala tidak memvalidasi baris lama) | — |
 
 ## Catatan (tanpa keputusan)

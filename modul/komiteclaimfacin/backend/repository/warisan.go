@@ -3,9 +3,7 @@ package repository
 // Untuk apa berkas ini: TULISAN KE TABEL WARISAN di titik yang sama dengan XML, ditulis ulang tanpa procedure dan tanpa
 // COMMIT (isi procedure dibaca dari ALL_SOURCE DEV 10-10-2026; bentuk sama dengan Claim Fac In tahap 1):
 //
-//	SaveOSClaim_SQL -> PEGA_JSON_OS_AKSEP_KLAIM   OS_AKSEPTASI_KLAIM (CASEID, NOCLAIM, DATA_JSON, TANGGAL, NOPOLIS,
-//	                                              STS_REJECT, STS_KONVERSI, STS_DLA; TGL_PROD trigger)
-//	                                              KomitePost_Adjustment S8, KomitePost_Reject S12, KomitePost_CloseClaim S12
+//	SaveOSClaim_SQL -> PEGA_JSON_OS_AKSEP_KLAIM   OS_AKSEPTASI_KLAIM - berkas sendiri `osakseptasi.go`
 //	InsertClaimPNC  -> PEGA_JSON_KLAIM_PNC        JSON_KLAIM (INSERT bila IDPEGA belum ada; DATA_JSON tidak diisi)
 //	InsertLogServiceClaim                         MONITORING_KLAIM_LOG (KomitePost_Adjustment S18-S19 "AKSEPATSI")
 //	InsertHistoryAkseptasiPega_Sql                HISTORYAKSEPTASIPEGA (S20-S21)
@@ -42,35 +40,6 @@ func potong(s string, n int) string {
 		return string(r[:n])
 	}
 	return s
-}
-
-// sqlSisipOS - isi PEGA_JSON_OS_AKSEP_KLAIM baris 16 (tanpa COMMIT). MASTERID / CLAIMOLD = NULL (CARI18 / CARI20 tidak
-// diisi pemanggil mana pun).
-func sqlSisipOS(tabel string) string {
-	return fmt.Sprintf(`INSERT INTO %s (CASEID, NOCLAIM, DATA_JSON, TANGGAL, NOPOLIS, STS_REJECT, STS_KONVERSI, STS_DLA)
-		VALUES (:1, :2, :3, :4, :5, :6, :7, :8)`, tabel)
-}
-
-// SisipOS menyisipkan satu baris OS_AKSEPTASI_KLAIM.
-func (g *Gudang) SisipOS(ctx context.Context, tx *db.Tx, b models.BarisOS, saat time.Time) error {
-	if err := wajibTx(tx); err != nil {
-		return err
-	}
-	tabel, err := g.db.Qualify("OS_AKSEPTASI_KLAIM")
-	if err != nil {
-		return err
-	}
-	q := sqlSisipOS(tabel)
-	if err := db.PeriksaSQL(q); err != nil {
-		return err
-	}
-	h, err := tx.ExecContext(ctx, q, b.CaseID, db.KosongJadiNil(b.NoClaim), db.KosongJadiNil(b.DataJSON),
-		hariJakarta(saat), db.KosongJadiNil(b.NoPolis), db.KosongJadiNil(b.StsReject), db.KosongJadiNil(b.StsKonversi),
-		db.KosongJadiNil(b.StsDLA))
-	if err != nil {
-		return fmt.Errorf("repository: menyisipkan OS_AKSEPTASI_KLAIM: %w", err)
-	}
-	return db.PastikanSatuBaris(h, "baris OS_AKSEPTASI_KLAIM")
 }
 
 // sqlAdaJSONKlaim / sqlSisipJSONKlaim - isi PEGA_JSON_KLAIM_PNC tanpa DATA_JSON.

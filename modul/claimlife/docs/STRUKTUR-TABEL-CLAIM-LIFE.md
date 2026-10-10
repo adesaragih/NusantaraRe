@@ -928,8 +928,13 @@ kode Go**. `NOT NULL` dan ber-index **biasa** (`IX_GENERAL_KOMITE_ADJ`, migrasi 
 | `KOMITE_SUBJECTIVITY` | teks | tidak | | isian Subjectivity tingkat 1 Komite Claim Prop, `'1'`/`'0'` bawaan `'0'` — migrasi `komiteclaimprop/682` (RALAT 08-10-2026); kasus Life tidak menulisnya |
 | `KOMITE_SUBJECTIVITY_NOTE` | teks | ya | | catatan Subjectivity tingkat 1 Komite Claim Prop — migrasi `komiteclaimprop/682` (RALAT 08-10-2026) |
 | `TRANSFER_TYPE` | teks | tidak | | jenis penyerahan `'2'` adjustment / `'3'` Reject Claim / `'4'` Close Without Payment, bawaan `'2'` — migrasi `komiteclaimfacin/642` (RALAT 10-10-2026); kasus Life tidak menulisnya |
+| `KOMITE_CIRCUM_CAUSE_OF_LOSS` | teks | ya | | teks pop-up Chronology kasus komite Fac In TT3 / TT4 — migrasi `komiteclaimfacin/643` (RALAT 10-10-2026); kasus Life tidak menulisnya |
+| `KOMITE_EXTENT_OF_LOSS` | teks | ya | | teks pop-up Extent Of Loss kasus komite Fac In TT3 / TT4 — migrasi `komiteclaimfacin/643` (RALAT 10-10-2026); kasus Life tidak menulisnya |
+| `KOMITE_LEGAL_LIABILITY` | teks | ya | | teks pop-up Policy Liability kasus komite Fac In TT3 / TT4 — migrasi `komiteclaimfacin/643` (RALAT 10-10-2026); kasus Life tidak menulisnya |
 
 > **RALAT 10-10-2026** (izin work owner 10-10-2026, Komite Claim Fac In tahap 2, keputusan KCF-03). `ADJUSTMENT_ID` kini **boleh kosong** (migrasi `komiteclaimfacin/641`, `MODIFY ... NULL`): kasus komite Fac In TT3 Reject Claim dan TT4 Close Without Payment (`T_WORK_CLAIM.LINI = 'FACIN'`, awalan `KMT-`) lahir tanpa baris adjustment; kasus Life / Prop / Non Prop tetap mengisinya. Kolom `TRANSFER_TYPE` ditambahkan migrasi `komiteclaimfacin/642` (`CHAR(1) DEFAULT '2' NOT NULL`, CHECK `'2'`/`'3'`/`'4'` = jenis penyerahan `pyWorkPage.TransferType`); baris lini lain bernilai bawaan `'2'` (penyerahan adjustment). Mundur 641 = `NOT NULL NOVALIDATE` (baris kosong yang ada dibiarkan).
+
+> **RALAT 10-10-2026 (migrasi 643)** (jawaban work owner 10-10-2026, Komite Claim Fac In, OQ-KCFI-03). Kolom `KOMITE_CIRCUM_CAUSE_OF_LOSS` / `KOMITE_EXTENT_OF_LOSS` / `KOMITE_LEGAL_LIABILITY` (`VARCHAR2(4000)`, boleh kosong, ADD saja) ditambahkan migrasi `komiteclaimfacin/643`: teks pop-up Chronology / Extent Of Loss / Policy Liability kasus komite Fac In TT3 Reject Claim / TT4 Close Without Payment (`SendRejectClaimToKomite2` / `SendCloseClaimToKomite` 7.2 -> `childPageKomite.Komite.*`, Section `ShowTransfer` LS39). Kasus lini lain dan TT2 tidak menulisnya (TT2 menyimpan teks yang sama di baris adjustment).
 
 ---
 
