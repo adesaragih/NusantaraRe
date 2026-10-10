@@ -61,6 +61,8 @@ export interface IsianLayar {
   nilai: Keputusan
   /** `pyDisabledWhen .KomiteCount!='1'` salah. */
   terbuka: boolean
+  /** `.TransferType = 2`: Subjectivity dan dua Propose tampil; false = kasus Close Without Payment (TT 4). */
+  adjustment: boolean
   pilihanTerima: Pilihan[]
   /** Dropdown "Subjectivity Note" (SubjectivityNote.xml). */
   pilihanSubjectivityNote: Pilihan[]

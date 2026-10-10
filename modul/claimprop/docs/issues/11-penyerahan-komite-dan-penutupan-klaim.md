@@ -1,6 +1,6 @@
 # 11: Penyerahan ke Komite dan penutupan klaim
 
-**Status:** sebagian 07-10-2026 — penyerahan ke komite (opsi "b") dan penutupan klaim dibangun; gerbang lampiran selalu menolak (OQ-CP-12); tutup tanpa bayar (OQ-CP-06) — RALAT 07-10-2026 (semula `ready-for-agent`)
+**Status:** sebagian 07-10-2026 — penyerahan ke komite (opsi "b") dan penutupan klaim dibangun; gerbang lampiran selalu menolak (OQ-CP-12); tutup tanpa bayar (OQ-CP-06) — RALAT 07-10-2026 (semula `ready-for-agent`). **RALAT 10-10-2026:** tutup tanpa bayar dibangun (OQ-CP-06 selesai, `SendCloseClaimToKomite` → kasus komite TT 4; keputusan di Komite Claim Prop `KomitePost_Close`)
 **AC yang dipegang (RALAT 07-10-2026, prompt §7 butir 4):** AC 130 (uang ke komite tetap desimal) dan AC 131 (tabel pemetaan `TSISpread` / `ClaimSpread` / `TotalAdjustment`) — uang penyerahan memakai `apd.Decimal`, nol float; tabel pemetaan ketiga parameter menunggu modul Komite Claim Prop.
 **Blocked by:** 00 (PREFACTOR) · 08 (baris adjustment) · 10 (wewenang)
 **Menutup:** AC 62 · 63 · 64 · 65 · 66 · 67 · 68 · 69 · 70 · **125** *(10 AC)* — US 36–44

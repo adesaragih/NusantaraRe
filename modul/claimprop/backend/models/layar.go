@@ -225,12 +225,11 @@ func ikonK(u Unsur, i string) Unsur { u.Ikon = i; return u }
 
 // Catatan OQ untuk rule yang tidak diekspor.
 const (
-	OQTidakDiekspor   = "OQ-CP-01: activity tidak ada di ekspor Pega - perilakunya tidak ditebak"
-	OQHarnessHilang   = "OQ-CP-02: harness tidak ada di ekspor Pega"
-	OQLayananLuar     = "OQ-CP-03: layanan REST luar (M_LINK_SERVICE) belum disetujui dipanggil dari aplikasi"
-	OQMasterLain      = "OQ-CP-04: pemeliharaan master milik menu lain - Claim Prop hanya memakai pemilihnya"
-	OQDokumenPDF      = "OQ-CP-05: stream HTML dokumen tidak diekspor dan aplikasi belum punya mesin PDF"
-	OQTutupTanpaBayar = "OQ-CP-06: kasus komite tanpa baris adjustment tidak dapat ditulis (T_GENERAL_KOMITE.ADJUSTMENT_ID NOT NULL)"
+	OQTidakDiekspor = "OQ-CP-01: activity tidak ada di ekspor Pega - perilakunya tidak ditebak"
+	OQHarnessHilang = "OQ-CP-02: harness tidak ada di ekspor Pega"
+	OQLayananLuar   = "OQ-CP-03: layanan REST luar (M_LINK_SERVICE) belum disetujui dipanggil dari aplikasi"
+	OQMasterLain    = "OQ-CP-04: pemeliharaan master milik menu lain - Claim Prop hanya memakai pemilihnya"
+	OQDokumenPDF    = "OQ-CP-05: stream HTML dokumen tidak diekspor dan aplikasi belum punya mesin PDF"
 )
 
 // Kunci daftar pilihan (`services` mengisinya).

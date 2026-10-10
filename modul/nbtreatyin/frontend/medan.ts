@@ -227,18 +227,30 @@ const uangAdmin = (m: string, label: string, aksi?: Aksi[], sajian: Sajian = UAN
 /** Persen/hasil OGP-ONP: `refresh <Act>(Data=..)` LALU `refresh CountOGPONP_Act`. */
 const lalu = (aksi: string, param: string): Aksi[] => [{ aksi, param }, { aksi: 'CountOGPONP' }]
 const OGPONP: Aksi[] = [{ aksi: 'CountOGPONP' }]
+/** Premi Ogp / Onp (work owner 10-10-2026: "jika premi di ubah semua yang berkaitan ikut otomatis terhitung",
+ *  "deduction A tidak berubah otomatis, harus di triger dulu") - bukan sel XML: Deduction In A / B OGP dan ONP dari
+ *  persennya = Count*_Act(Data=Pct), aksi yang sama dengan sel (%) Deduction (`CountOGPONP_Act` memanggilnya TANPA
+ *  Data, sehingga di XML hasilnya tidak ikut premi), LALU `refresh CountOGPONP_Act` seperti sel aslinya.
+ *  ⛔ Deduction1 / Deduction2 TETAP isian manual - tidak dihitung dari premi (work owner 10-10-2026). */
+const PREMI: Aksi[] = [
+  { aksi: 'CountResult1', param: 'Pct' },
+  { aksi: 'CountResult2Ogp', param: 'Pct' },
+  { aksi: 'CountResult1Onp', param: 'Pct' },
+  { aksi: 'CountResult2Onp', param: 'Pct' },
+  ...OGPONP,
+]
 
 /** Medan uang layar admin - bagian "Old Soa Input Format" (wadah
  *  `.IsNewPolicyNonProp != 1 && .IsNewPolicyListFormat != 1`). */
 export const MEDAN_ADMIN_UANG: Medan[] = dalamWadah(wadahUangAdmin, [
   uangAdmin('GrossPremium', 'Gross Premium 100%', [{ aksi: 'CalculatePremi', param: 'PREMIUM' }], UANG4_SUNTING),
   uangAdmin('GrossClaim', 'Claim 100%', [{ aksi: 'CalculatePremi', param: 'CLAIM' }], UANG4_SUNTING),
-  uangAdmin('PremiOgp', 'Premi Ogp', OGPONP),
+  uangAdmin('PremiOgp', 'Premi Ogp', PREMI),
   uangAdmin('RiCommOgp', '(%) Deduction In A (OGP)', lalu('CountResult1', 'Pct'), UANG4_SUNTING, false),
   uangAdmin('ResultOgp1', 'Deduction In A (OGP)', lalu('CountResult1', 'Amount')),
   uangAdmin('OveriddingCommOgp', '(%) Deduction In B (OGP)', lalu('CountResult2Ogp', 'Pct'), UANG4_SUNTING, false),
   uangAdmin('ResultOgp2', 'Deduction In B (OGP)', lalu('CountResult2Ogp', 'Amount')),
-  uangAdmin('PremiOnp', 'Premi Onp', OGPONP),
+  uangAdmin('PremiOnp', 'Premi Onp', PREMI),
   uangAdmin('RiCommOnp', '(%) Deduction In A (ONP)', lalu('CountResult1Onp', 'Pct'), UANG4_SUNTING, false),
   uangAdmin('ResultOnp1', 'Deduction In A (ONP)', lalu('CountResult1Onp', 'Amount')),
   uangAdmin('OveriddingCommOnp', '(%) Deduction In B (ONP)', lalu('CountResult2Onp', 'Pct'), UANG4_SUNTING, false),

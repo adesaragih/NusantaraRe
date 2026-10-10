@@ -3,9 +3,10 @@ package repository
 // Untuk apa berkas ini: ACUAN - bacaan baca-saja yang dibutuhkan port activity (`models.Acuan`) dan pemilih layar.
 // Setiap kueri meniru satu RDB-List / Report Definition korpus (nama rule di komentar); alias berbohong diluruskan.
 //
-// ⚠️ Dokumen JSON warisan (M_TREATY_IN.JSONDATA, JSON_POLIS.DATA_JSON, M_CLIENT.JSONDATA, JSON_KLAIM.DATA_JSON,
-// OS_AKSEPTASI_KLAIM.DATA_JSON) DIBACA lewat JSON_VALUE / JSON_TABLE persis seperti rule-nya - baca-saja; modul ini
-// tidak pernah MENULIS JSON (keputusan work owner).
+// ⚠️ Dokumen JSON warisan (JSON_POLIS.DATA_JSON, M_CLIENT.JSONDATA, JSON_KLAIM.DATA_JSON, OS_AKSEPTASI_KLAIM.DATA_JSON)
+// DIBACA lewat JSON_VALUE / JSON_TABLE persis seperti rule-nya - baca-saja; modul ini tidak pernah MENULIS JSON
+// (keputusan work owner). Master treaty (M_TREATY_IN.JSONDATA) TIDAK dibaca lagi - `MasterTreaty` memakai TREATY_IN /
+// TREATYINDETAILJOINEDM (perintah work owner 10-10-2026).
 
 import (
 	"context"
@@ -123,10 +124,23 @@ func (a *Acuan) IDJenisReasuransi(ctx context.Context, nama, tipe string) (strin
 
 // ---------------------------------------------------------------- master treaty
 
-// MasterTreaty = GetLimitsTreatyIn_SQL (`SELECT JSONDATA FROM M_TREATY_IN WHERE ID UNION ALL ... M_TREATY_IN_EDM`) +
-// adoptJSONObject: baris pertama yang ada (M_TREATY_IN lebih dulu).
+// MasterTreaty - halaman `TreatyInMaster` dari TABEL RELASIONAL, bukan JSONDATA (perintah work owner 10-10-2026
+// "perbaiki cek choose master. jangan ambil dari json" - pengganti GetLimitsTreatyIn_SQL + adoptJSONObject):
+//
+//	header   TREATY_IN lalu TREATY_IN_EDM `ID = IDMaster` (urutan union M_TREATY_IN / _EDM rule aslinya): nama kontrak,
+//	         proportion type, ceding, leading reins source, teritorial scope, commencement / termination, treaty year,
+//	         status akseptasi - sama dengan JSONDATA di 1.850+ dari 1.856 master `[data DEV 10-10-2026]`;
+//	Limits   view TREATYINDETAILJOINEDM `TREATYID = IDMaster`: TREATYTYPE / TREATYGROUPID / RNM_SHARE unik, urut ID
+//	         baris pertamanya - 2.790 dari 2.796 detail JSON ada di view; RNM_SHARE terisi di 933 detail yang
+//	         RNMShare JSON-nya kosong;
+//	RNMShareP  RNM_SHARE detail treaty group klaim (`models.ShareMaster`, keputusan work owner 10-10-2026);
+//	Bordeaux / BordereauxNote / AccountingMode  tabel flat Treaty In T_TREATY_REVISION `MASTERID = IDMaster`
+//	         (perintah work owner 10-10-2026 "kamu bisa cek dari flat table treaty in"); master yang belum punya baris
+//	         flat = kosong (TREATY_IN tidak punya kolomnya);
+//	kosong   CashLossList (keputusan work owner 10-10-2026 "kosongkan" - plafon cash call tidak ada), SpreadingList
+//	         (tabel bawah memakai cadangan PROPORTIONALARRG, `models.susunBreakQS`).
 func (a *Acuan) MasterTreaty(ctx context.Context, id string) (models.MasterTreaty, bool, error) {
-	for _, tabel := range []string{"M_TREATY_IN", "M_TREATY_IN_EDM"} {
+	for _, tabel := range []string{"TREATY_IN", "TREATY_IN_EDM"} {
 		m, ada, err := a.bacaMaster(ctx, tabel, id)
 		if err != nil || ada {
 			return m, ada, err
@@ -135,87 +149,54 @@ func (a *Acuan) MasterTreaty(ctx context.Context, id string) (models.MasterTreat
 	return models.MasterTreaty{}, false, nil
 }
 
-var medanMaster = []string{"TreatyContractName", "ProportionType", "Ceding", "CedingID", "LeadingReinsSource",
-	"LeadingReinsSourceID", "Bordeaux", "BordereauxNote", "AccountingMode", "TeritorialScope", "Commencement",
-	"Termination", "TreatyYear", "RNMShareP", "StatusAkseptasi"}
-
 func (a *Acuan) bacaMaster(ctx context.Context, objek, id string) (models.MasterTreaty, bool, error) {
 	t, err := a.q(objek)
 	if err != nil {
 		return models.MasterTreaty{}, false, err
 	}
-	var kol []string
-	for _, m := range medanMaster {
-		kol = append(kol, fmt.Sprintf(`JSON_VALUE(JSONDATA, '$.%s' RETURNING VARCHAR2(4000))`, m))
-	}
-	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT ID, %s FROM %s WHERE ID = :1`, strings.Join(kol, ", "), t),
-		len(medanMaster)+1, id)
+	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT TO_CHAR(ID), TREATYCONTRACTNAME, PROPORTIONTYPE, CEDING, CEDINGID,
+		LEADINGREINSSOURCE, LEADINGREINSSOURCEID, TERITORIALSCOPE, COMMENCEMENT, TERMINATION, TREATYYEAR, STATUSAKSEPTASI
+		FROM %s WHERE TO_CHAR(ID) = :1 FETCH FIRST 1 ROWS ONLY`, t), 12, id)
 	if err != nil || len(rows) == 0 {
 		return models.MasterTreaty{}, false, err
 	}
 	r := rows[0]
 	m := models.MasterTreaty{ID: r[0], TreatyContractName: r[1], ProportionType: r[2], Ceding: r[3], CedingID: r[4],
-		LeadingReinsSource: r[5], LeadingReinsSourceID: r[6], Bordeaux: r[7], BordereauxNote: r[8],
-		AccountingMode: r[9], TeritorialScope: r[10], Commencement: tglPega(r[11]), Termination: tglPega(r[12]),
-		TreatyYear: r[13], RNMShareP: r[14], StatusAkseptasi: r[15]}
-	lim, err := a.banyak(ctx, fmt.Sprintf(`SELECT jt.li, jt.tt, jt.di, jt.tg, jt.rs FROM %s m,
-		JSON_TABLE(m.JSONDATA, '$.Limits[*]' COLUMNS (li FOR ORDINALITY, tt VARCHAR2(200) PATH '$.TreatyType',
-		  NESTED PATH '$.Detail[*]' COLUMNS (di FOR ORDINALITY, tg VARCHAR2(100) PATH '$.TreatyGroupID',
-		  rs VARCHAR2(100) PATH '$.RNMShare'))) jt WHERE m.ID = :1 ORDER BY jt.li, jt.di`, t), 5, id)
+		LeadingReinsSource: r[5], LeadingReinsSourceID: r[6], TeritorialScope: r[7], Commencement: tglPega(r[8]),
+		Termination: tglPega(r[9]), TreatyYear: r[10], StatusAkseptasi: r[11]}
+	f, err := a.q("T_TREATY_REVISION")
+	if err != nil {
+		return models.MasterTreaty{}, false, err
+	}
+	flat, err := a.banyak(ctx, fmt.Sprintf(`SELECT BORDEAUX, BORDEREAUXNOTE, ACCOUNTINGMODE FROM %s WHERE MASTERID = :1
+		ORDER BY ID DESC FETCH FIRST 1 ROWS ONLY`, f), 3, id)
+	if err != nil {
+		return models.MasterTreaty{}, false, err
+	}
+	if len(flat) > 0 {
+		m.Bordeaux, m.BordereauxNote, m.AccountingMode = flat[0][0], flat[0][1], flat[0][2]
+	}
+	v, err := a.q("TREATYINDETAILJOINEDM")
+	if err != nil {
+		return models.MasterTreaty{}, false, err
+	}
+	det, err := a.banyak(ctx, fmt.Sprintf(`SELECT TREATYTYPE, TREATYGROUPID,
+		TO_CHAR(RNM_SHARE, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''')
+		FROM %s WHERE TREATYID = :1 GROUP BY TREATYTYPE, TREATYGROUPID, RNM_SHARE ORDER BY MIN(ID)`, v), 3, id)
 	if err != nil {
 		return models.MasterTreaty{}, false, err
 	}
 	idx := map[string]int{}
-	for _, l := range lim {
-		li, ok := idx[l[0]]
+	for _, d := range det {
+		li, ok := idx[d[0]]
 		if !ok {
-			m.Limits = append(m.Limits, models.LimitMaster{TreatyType: l[1]})
+			m.Limits = append(m.Limits, models.LimitMaster{TreatyType: d[0]})
 			li = len(m.Limits) - 1
-			idx[l[0]] = li
+			idx[d[0]] = li
 		}
-		if l[2] != "" {
-			m.Limits[li].Detail = append(m.Limits[li].Detail, models.DetailLimit{TreatyGroupID: l[3], RNMShare: l[4]})
-		}
-	}
-	cash, err := a.banyak(ctx, fmt.Sprintf(`SELECT jt.li, jt.di, jt.cur, jt.val FROM %s m,
-		JSON_TABLE(m.JSONDATA, '$.Limits[*]' COLUMNS (li FOR ORDINALITY, NESTED PATH '$.Detail[*]' COLUMNS
-		  (di FOR ORDINALITY, NESTED PATH '$.CashLossList[*]' COLUMNS (cur VARCHAR2(100) PATH '$.Currency',
-		  val VARCHAR2(100) PATH '$.Value')))) jt WHERE m.ID = :1 AND (jt.cur IS NOT NULL OR jt.val IS NOT NULL)
-		  ORDER BY jt.li, jt.di`, t), 4, id)
-	if err != nil {
-		return models.MasterTreaty{}, false, err
-	}
-	for _, c := range cash {
-		if d := detail(&m, idx, c[0], c[1]); d != nil {
-			d.CashLossList = append(d.CashLossList, models.CashLoss{Currency: c[2], Value: c[3]})
-		}
-	}
-	spr, err := a.banyak(ctx, fmt.Sprintf(`SELECT jt.li, jt.di, jt.ri, jt.rn, jt.pc FROM %s m,
-		JSON_TABLE(m.JSONDATA, '$.Limits[*]' COLUMNS (li FOR ORDINALITY, NESTED PATH '$.Detail[*]' COLUMNS
-		  (di FOR ORDINALITY, NESTED PATH '$.SpreadingList[*]' COLUMNS (ri VARCHAR2(100) PATH '$.ReinsTypeID',
-		  rn VARCHAR2(400) PATH '$.ReinsTypeName', pc VARCHAR2(100) PATH '$.Pct')))) jt
-		 WHERE m.ID = :1 AND (jt.ri IS NOT NULL OR jt.rn IS NOT NULL) ORDER BY jt.li, jt.di`, t), 5, id)
-	if err != nil {
-		return models.MasterTreaty{}, false, err
-	}
-	for _, s := range spr {
-		if d := detail(&m, idx, s[0], s[1]); d != nil {
-			d.SpreadingList = append(d.SpreadingList, models.SpreadingMaster{ReinsTypeID: s[2], ReinsTypeName: s[3], Pct: s[4]})
-		}
+		m.Limits[li].Detail = append(m.Limits[li].Detail, models.DetailLimit{TreatyGroupID: d[1], RNMShare: rapikanDesimal(d[2])})
 	}
 	return m, true, nil
-}
-
-func detail(m *models.MasterTreaty, idx map[string]int, li, di string) *models.DetailLimit {
-	l, ok := idx[li]
-	if !ok {
-		return nil
-	}
-	n := angkaBulat(di)
-	if n < 1 || n > len(m.Limits[l].Detail) {
-		return nil
-	}
-	return &m.Limits[l].Detail[n-1]
 }
 
 // tglPega - "yyyyMMdd" master -> "2006-01-02".

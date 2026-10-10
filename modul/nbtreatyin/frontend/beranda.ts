@@ -45,7 +45,7 @@ export function keDaftarBeranda(baris: readonly RingkasanKasus[], kini: Date): D
         id: idTampil(b.id),
         jenis: b.proportionalType,
         tertanggung: b.insuredName,
-        bisnis: b.businessName,
+        bisnis: b.treatyGroupName,
         ceding: b.cedingCoName,
         mulai: sajikan(b.startDate, 'tanggal'),
         marketing: b.marketingName,

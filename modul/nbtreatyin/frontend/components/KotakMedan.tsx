@@ -6,13 +6,15 @@
 // `pyShowReadonlyFormatting=true`, dan mentah saat diketik. Nilai tersimpan
 // tidak pernah diubah oleh format (AC 24).
 
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 import { Area, Field, Pilih, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
 import { nilai, type Halaman } from '../api'
+import { JEDA_HITUNG_MS, hitungSaatKetik } from '../hitungLangsung'
 import { teksPilihan, type Medan } from '../medan'
 import { nilaiNol, sajikan, type Sajian } from '../sajian'
 import InputAngka from './InputAngka'
+import InputTanggal from './InputTanggal'
 
 export interface PropsKotakMedan {
   medan: Medan
@@ -38,6 +40,19 @@ export default function KotakMedan({ medan, halaman, wajib, hanyaBaca, opsiMataU
   const pesan = halaman.pesan?.[medan.jalur]?.join('; ')
   const sajian = sajianMedan(medan)
   const idIsian = useId()
+  // Hitung langsung saat mengetik (`hitungLangsung.ts`): jeda sesudah ketikan terakhir; nilai yang sudah terkirim tidak
+  // dikirim ulang saat blur. `onSelesai` terkini dipakai saat jeda habis - halaman / hasil server terbaru, bukan saat
+  // jeda dipasang.
+  const jeda = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const terkirim = useRef<string | null>(null)
+  const selesaiKini = useRef(onSelesai)
+  selesaiKini.current = onSelesai
+  useEffect(
+    () => () => {
+      if (jeda.current !== null) clearTimeout(jeda.current)
+    },
+    [],
+  )
 
   if (kunci && medan.jenis !== 'centang') {
     // angka rata kanan; nol di bagian uang tampil "0" redup (sama dengan placeholder isian)
@@ -124,8 +139,25 @@ export default function KotakMedan({ medan, halaman, wajib, hanyaBaca, opsiMataU
               label={medan.label}
               value={v}
               sajian={sajian ?? {}}
-              onChange={(x) => onUbah(medan.jalur, x)}
-              onBlur={() => onSelesai(medan, nilai(halaman, medan.jalur))}
+              onChange={(x) => {
+                onUbah(medan.jalur, x)
+                if (jeda.current !== null) clearTimeout(jeda.current)
+                jeda.current = null
+                if (!hitungSaatKetik(!!medan.aksi?.length, x)) return
+                jeda.current = setTimeout(() => {
+                  jeda.current = null
+                  terkirim.current = x
+                  selesaiKini.current(medan, x)
+                }, JEDA_HITUNG_MS)
+              }}
+              onBlur={() => {
+                if (jeda.current !== null) clearTimeout(jeda.current)
+                jeda.current = null
+                const kini = nilai(halaman, medan.jalur)
+                const sudah = terkirim.current === kini
+                terkirim.current = null
+                if (!sudah) onSelesai(medan, kini)
+              }}
             />
             {pesan && <div className="field__error">{pesan}</div>}
           </div>
@@ -144,9 +176,22 @@ export default function KotakMedan({ medan, halaman, wajib, hanyaBaca, opsiMataU
         />
       )
     case 'tanggal':
+      // Kotak teks dd-mm-yyyy + tombol kalender (work owner 10-10-2026: "bisa di copy paste dan di ketik lancar"),
+      // bukan isian tanggal bawaan browser. Aksi medan (SystemSetOneYear, ProtectDate) berjalan saat fokus
+      // MENINGGALKAN kotak dan tombolnya - pindah dari kotak ke tombol kalender bukan selesai.
       return (
-        <div onBlur={() => onSelesai(medan, nilai(halaman, medan.jalur))}>
-          <Field label={medan.label} type="date" value={v.slice(0, 10)} required={wajib} error={pesan} onChange={(x) => onUbah(medan.jalur, x)} />
+        <div
+          className="field"
+          onBlur={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) onSelesai(medan, nilai(halaman, medan.jalur))
+          }}
+        >
+          <label className="field__label" htmlFor={idIsian}>
+            {medan.label}
+            {wajib && <span className="field__req">*</span>}
+          </label>
+          <InputTanggal id={idIsian} value={v} galat={!!pesan} onChange={(x) => onUbah(medan.jalur, x)} />
+          {pesan && <div className="field__error">{pesan}</div>}
         </div>
       )
     default: {

@@ -11,7 +11,7 @@ import { PENDAFTARAN_MENU } from './menu'
 const baris: RingkasanKasus = {
   id: 'UJI-NB-1',
   proportionalType: 'Proportional',
-  businessName: 'UJI BISNIS',
+  treatyGroupName: 'UJI BISNIS',
   insuredName: 'UJI TERTANGGUNG',
   marketingName: 'UJI MO',
   nbStatus: 'UJI STATUS',
@@ -33,7 +33,7 @@ describe('daftar kotak masuk Beranda NB Treaty In', () => {
       'Offer No',
       'Type',
       'Insured Name',
-      'Group Business',
+      'Treaty Business',
       'Ceding Company',
       'Inception Date',
       'Marketing',

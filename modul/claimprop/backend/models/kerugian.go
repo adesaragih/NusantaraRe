@@ -301,8 +301,12 @@ const TipeJenisLossAllocation = "4"
 // ⚠️ Di OutstandingClaim_Est / InputAcceptation_Est dropdown `.TreatyName` bernilai `TreatyInMaster.Limits.TreatyType`
 // (NAMA treaty) dan activity dipanggil TANPA Param.Index. `[data DEV 07-10-2026]` baris loss allocation dokumen CLMP
 // membawa `TreatyType` = ID REINSURANCETYPE ber-TYPE 4 yang NOTE-nya sama dengan `TreatyName` (10035 "QUOTA SHARE",
-// 10042 "SURPLUS"). Maka: baris bernama tanpa TreatyType mendapat ID lewat NOTE (saringan B RD BrowseReinsuranceType_RD
-// `.Note = Param.Note`); baris ber-TreatyType mendapat nama lewat ID (langkah 4.1).
+// 10042 "SURPLUS"). Maka: baris BERNAMA mendapat ID lewat NOTE (saringan B RD BrowseReinsuranceType_RD
+// `.Note = Param.Note`) - nama yang dipilih di dropdown menentukan ID; baris tanpa nama tetapi ber-TreatyType mendapat
+// nama lewat ID (langkah 4.1).
+// ⛔ RALAT 10-10-2026 (laporan work owner "kenapa ga bisa pilih surplus"): dulu baris yang SUDAH ber-TreatyType
+// (10035 QUOTA SHARE) dinamai ulang dari ID lamanya, sehingga pilihan SURPLUS di dropdown selalu kembali menjadi
+// QUOTA SHARE. Dropdown aplikasi diikat ke NAMA, jadi nama yang menang.
 func SetNameTreaty(k *Konteks, h *Halaman, idx int) error {
 	d := h.AmbilDaftar(DaftarLossAlloc)
 	for i, b := range d {
@@ -310,6 +314,12 @@ func SetNameTreaty(k *Konteks, h *Halaman, idx int) error {
 			continue
 		}
 		switch {
+		case b["TreatyName"] != "":
+			id, err := k.Acuan.IDJenisReasuransi(k.Ctxt(), b["TreatyName"], TipeJenisLossAllocation)
+			if err != nil {
+				return err
+			}
+			b["TreatyType"] = id
 		case b["TreatyType"] != "" && idx > 0:
 			nama, err := k.Acuan.NamaJenisReasuransi(k.Ctxt(), b["TreatyType"])
 			if err != nil {
@@ -318,12 +328,6 @@ func SetNameTreaty(k *Konteks, h *Halaman, idx int) error {
 			if nama != "" {
 				b["TreatyName"] = nama
 			}
-		case b["TreatyName"] != "":
-			id, err := k.Acuan.IDJenisReasuransi(k.Ctxt(), b["TreatyName"], TipeJenisLossAllocation)
-			if err != nil {
-				return err
-			}
-			b["TreatyType"] = id
 		}
 	}
 	k.Riwayat(h, "Add Name Loss Allocation")

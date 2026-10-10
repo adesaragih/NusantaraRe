@@ -39,6 +39,7 @@ type Gudang interface {
 	CatatRiwayatAkseptasi(ctx context.Context, tx *db.Tx, r models.RiwayatAkseptasi, saat time.Time) error
 	AntreEfek(ctx context.Context, tx *db.Tx, jenis, rujukan, muatan string, saat time.Time) (string, error)
 	SisipDokumenKlaim(ctx context.Context, tx *db.Tx, d models.BarisDokumenKlaim) error
+	SisipKlaimDitolak(ctx context.Context, tx *db.Tx, k models.KlaimDitolak) error
 }
 
 // PenyimpananBerkas - bagian `inti/backend/penyimpanan` yang dipakai modul ini (InsertGoogleStorage_Act +

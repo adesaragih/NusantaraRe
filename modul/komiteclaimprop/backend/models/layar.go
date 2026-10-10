@@ -1,13 +1,16 @@
 package models
 
-// Untuk apa berkas ini: LAYAR KOMITE - flow action `ViewTransferDtl`, Section `ShowTransfer` wajah TT 2 (ADJUSTMENT).
+// Untuk apa berkas ini: LAYAR KOMITE - flow action `ViewTransferDtl`, Section `ShowTransfer` wajah TT 2 (ADJUSTMENT)
+// dan TT 4 (CLOSE, Close Without Payment - perintah work owner 10-10-2026). Wajah CLOSE menyembunyikan tujuh container
+// ber-`pyContainerVisibleWhen .TransferType =2` (Total Estimation, History / Total Adjustment, Spreading Claim,
+// deductible, Spreading In / Out, Payable / bank) dan membaca teks komite dari `pyWorkPage.Komite.*` kasus komite.
 // Urutan bagian, label, dan syarat tampil diambil dari `Section/ShowTransfer.xml` (VERBATIM, termasuk ejaan
 // "Dedutible Type" dan "Committe"). Nilai dibaca dari kasus klaim induk lewat kontrak (`pyWorkCover`, dan
 // `pyWorkPage.Adjustment` / `pyWorkPage.Komite` - salinan baris adjustment yang dibuat `AddKomiteTreatyChild_ACT`
 // langkah 13-17; baris itu beku selama diserahkan ke komite, jadi baris aslinya yang dibaca).
 //
 // ⚠️ Tidak dibangun (PARITAS):
-//   - judul "CLOSE" (TT 4, OQ-CP-06) dan "REJECT" (TT 3, tanpa penulis di Claim Prop);
+//   - judul "REJECT" (TT 3, tanpa penulis di Claim Prop);
 //   - sel ber-`pyVisible` NEVER: No Claim di kepala "Claim Treaty", "sample text", Total Original Currency Gross
 //     Estimate(100%), Total Original Currency Estimation (blok Total Estimation In IDR), grid "Spreading Claim" (1=2);
 //   - sel yang di XML dapat disunting tetapi tidak pernah disimpan `KomitePost*` (Payment Type / Komite No History
@@ -79,7 +82,10 @@ type Tombol struct {
 type IsianLayar struct {
 	Nilai Keputusan `json:"nilai"`
 	// Terbuka - `pyDisabledWhen .KomiteCount!='1'` salah: Subjectivity, catatannya, dan dua Propose aktif.
-	Terbuka       bool      `json:"terbuka"`
+	Terbuka bool `json:"terbuka"`
+	// Adjustment - `.TransferType = 2`: Subjectivity (`.AcceptStatus = 1 && .TransferType = 2`) dan dua Propose tampil;
+	// false = kasus Close Without Payment (TT 4), ketiganya tidak tampil.
+	Adjustment    bool      `json:"adjustment"`
 	PilihanTerima []Pilihan `json:"pilihanTerima"`
 	// PilihanSubjectivityNote - dropdown "Subjectivity Note" (SubjectivityNote.xml).
 	PilihanSubjectivityNote []Pilihan         `json:"pilihanSubjectivityNote"`
@@ -102,6 +108,7 @@ type Layar struct {
 const (
 	JudulKomite      = "CLAIM COMMITTEE -"
 	JudulAdjustment  = "ADJUSTMENT"
+	JudulTutup       = "CLOSE"
 	TombolLihat      = "View more details"
 	TombolBatal      = "Cancel"
 	TombolKirim      = "Submit"
@@ -184,6 +191,10 @@ func tampilBila(m []Medan, ya bool, x ...Medan) []Medan {
 func SusunLayar(k Kasus, kl kontrak.KlaimTreaty, total []TotalMataUang, akun string, peran []string) Layar {
 	p := pembaca{kl: kl, adj: AdjustmentKlaim(kl)}
 	ly := Layar{Kasus: k, Judul: []string{JudulKomite, JudulAdjustment}, BolehKerja: k.Pemegang(akun, peran)}
+	tt2 := !k.Tutup() // `.TransferType = 2` (container TT 2 dan judul ADJUSTMENT); TT 4 = judul CLOSE
+	if !tt2 {
+		ly.Judul = []string{JudulKomite, JudulTutup}
+	}
 
 	// Panel "Claim Treaty" - kolom kiri (Stacked with labels left).
 	kiri := []Medan{
@@ -235,6 +246,19 @@ func SusunLayar(k Kasus, kl kontrak.KlaimTreaty, total []TotalMataUang, akun str
 		p.medan("Report Description", "ClaimData.ReportDescription", JenisTeksPanjang),
 		p.a("RNM Share (%)", "PersenRNM", JenisAngka),
 	)
+	estimasi := []Grid{{Judul: "Estimation List", Kolom: []KolomGrid{kol("", "TypeLoss", JenisTeks),
+		kol("Estimation Date", "EstimationDate", JenisTanggal), kol("Type", "Type", JenisTeks),
+		kol("Currency", "Currency", JenisTeks), kol("Value In IDR", "KursValue", JenisAngka),
+		kol("Gross Estimate Treaty (100%)", "GrossEstimationPct", JenisAngka),
+		kol("Estimation RNM", "EstimationValue", JenisAngka),
+		kol("Estimation RNM in IDR", "ConvertValue", JenisAngka)},
+		Baris: barisNama(p.daftar("ClaimData.EstimationList"), "Type")}}
+	if tt2 { // ContainerVisibleWhen .TransferType = 2.
+		estimasi = append(estimasi, Grid{Judul: "Total Original Currency Estimation",
+			Kolom: []KolomGrid{kol("Currency", "Currency", JenisTeks),
+				kol("Gross Estimate Treaty (100%)", "IDR", JenisAngka), kol("Estimation RNM", "Value", JenisAngka)},
+			Baris: p.daftar("ClaimData.ListTotalEstimation")})
+	}
 	ly.Bagian = append(ly.Bagian,
 		Bagian{Kunci: "klaim", Judul: JudulClaimTreaty, Medan: kiri},
 		Bagian{Kunci: "klaimKanan", Medan: kanan},
@@ -250,19 +274,15 @@ func SusunLayar(k Kasus, kl kontrak.KlaimTreaty, total []TotalMataUang, akun str
 				kol("Result Claim", "ClaimSpreaded", JenisAngka), kol("Result Claim In IDR", "ClaimEstimation", JenisAngka)},
 				Baris: barisNama(p.daftar("ClaimData.SpreadingRisk"))},
 		}},
-		Bagian{Kunci: "estimasi", Grid: []Grid{
-			{Judul: "Estimation List", Kolom: []KolomGrid{kol("", "TypeLoss", JenisTeks),
-				kol("Estimation Date", "EstimationDate", JenisTanggal), kol("Type", "Type", JenisTeks),
-				kol("Currency", "Currency", JenisTeks), kol("Value In IDR", "KursValue", JenisAngka),
-				kol("Gross Estimate Treaty (100%)", "GrossEstimationPct", JenisAngka),
-				kol("Estimation RNM", "EstimationValue", JenisAngka),
-				kol("Estimation RNM in IDR", "ConvertValue", JenisAngka)},
-				Baris: barisNama(p.daftar("ClaimData.EstimationList"), "Type")},
-			// ContainerVisibleWhen .TransferType = 2.
-			{Judul: "Total Original Currency Estimation", Kolom: []KolomGrid{kol("Currency", "Currency", JenisTeks),
-				kol("Gross Estimate Treaty (100%)", "IDR", JenisAngka), kol("Estimation RNM", "Value", JenisAngka)},
-				Baris: p.daftar("ClaimData.ListTotalEstimation")},
-		}},
+		Bagian{Kunci: "estimasi", Grid: estimasi},
+	)
+	if !tt2 { // TT 4: tanpa tujuh container `.TransferType =2`
+		ly.Bagian = append(ly.Bagian, Bagian{Kunci: "teksKomite", Medan: teksKomiteTutup(k, p)}, bagianTangga(k))
+		ly.Isian = isianLayar(k, false)
+		ly.Tombol = tombolLayar(ly.BolehKerja, "")
+		return ly
+	}
+	ly.Bagian = append(ly.Bagian,
 		Bagian{Kunci: "totalEstimasi", Judul: "Total Estimation In IDR", Medan: []Medan{
 			p.medan("Total Gross Estimate(100%) in IDR", "ClaimData.TotalGrossEstimateIDR", JenisAngka),
 			p.medan("Total Estimation in IDR", "ClaimData.TotalEstimasiIDR", JenisAngka),
@@ -304,29 +324,52 @@ func SusunLayar(k Kasus, kl kontrak.KlaimTreaty, total []TotalMataUang, akun str
 		Bagian{Kunci: "bayar", Medan: bayar},
 		Bagian{Kunci: "bank", Medan: bank},
 		Bagian{Kunci: "teksKomite", Medan: teks},
-		Bagian{Kunci: "tangga", Grid: []Grid{{Judul: "Committe Accept Status", Kolom: []KolomGrid{
-			kol("Committe Name", "jabatan", JenisTeks), kol("Status", "keputusan", JenisTeks),
-			kol("Date Approve", "tanggal", JenisTanggalJam), kol("Comment", "komentar", JenisTeks)},
-			Baris: barisTangga(k.Tangga)}}},
+		bagianTangga(k),
 	)
+	ly.Isian = isianLayar(k, true)
+	ly.Tombol = tombolLayar(ly.BolehKerja, p.adj["AcceptedNo"])
+	return ly
+}
 
-	ly.Isian = IsianLayar{Nilai: nilaiAwal(k), Terbuka: IsianTerbuka(k), PilihanTerima: LabelTerima,
+// teksKomiteTutup - teks komite TT 4 dari `pyWorkPage.Komite.*` (SendCloseClaimToKomite 5.2): Circumstances =
+// isian "Chronology" pop-up close, Occupation / Salvage / Adjuster Fee tidak diisi rule itu (`pyVisible NOTBLANK` ->
+// tidak tampil), Remarks selalu (= Remarks pop-up, `ClaimData.Remark_Close` klaim induk, langkah 2).
+func teksKomiteTutup(k Kasus, p pembaca) []Medan {
+	var teks []Medan
+	teks = tampilBila(teks, strings.TrimSpace(k.Kronologi) != "",
+		Medan{Label: "Circumstances", Nilai: k.Kronologi, Jenis: JenisTeksPanjang})
+	return append(teks, p.medan("Remarks", "ClaimData.Remark_Close", JenisTeksPanjang))
+}
+
+// bagianTangga - grid "Committe Accept Status" (`pyWorkPage.KomiteList`).
+func bagianTangga(k Kasus) Bagian {
+	return Bagian{Kunci: "tangga", Grid: []Grid{{Judul: "Committe Accept Status", Kolom: []KolomGrid{
+		kol("Committe Name", "jabatan", JenisTeks), kol("Status", "keputusan", JenisTeks),
+		kol("Date Approve", "tanggal", JenisTanggalJam), kol("Comment", "komentar", JenisTeks)},
+		Baris: barisTangga(k.Tangga)}}}
+}
+
+// isianLayar - isian keputusan; `adjustment` = `.TransferType = 2` (Subjectivity dan dua Propose).
+func isianLayar(k Kasus, adjustment bool) IsianLayar {
+	return IsianLayar{Nilai: nilaiAwal(k), Terbuka: IsianTerbuka(k), Adjustment: adjustment, PilihanTerima: LabelTerima,
 		PilihanSubjectivityNote: PilihanSubjectivityNote,
 		Label: map[string]string{"acceptStatus": LabelAcceptStatus, "isSubjectivity": LabelSubjectivity,
 			"subjectivityNote": LabelSubjectivityNote, "usulTutup": LabelProposeClose, "usulCadang": LabelProposeReserved,
 			"comment": LabelNote}}
+}
 
-	bernomor := strings.TrimSpace(p.adj["AcceptedNo"]) != ""
-	kirim := Tombol{Label: TombolKirim, Aksi: "putuskan", Aktif: ly.BolehKerja && !bernomor}
+// tombolLayar - View more details / Cancel / Submit (`pyDisabledWhen pyWorkPage.Adjustment.AcceptedNo != ”`).
+func tombolLayar(bolehKerja bool, acceptedNo string) []Tombol {
+	bernomor := strings.TrimSpace(acceptedNo) != ""
+	kirim := Tombol{Label: TombolKirim, Aksi: "putuskan", Aktif: bolehKerja && !bernomor}
 	if bernomor {
 		kirim.Alasan = AlasanSudahBernomor
 	}
-	ly.Tombol = []Tombol{
+	return []Tombol{
 		{Label: TombolLihat, Aksi: "lihat", Aktif: true},
 		{Label: TombolBatal, Aksi: "batal", Aktif: true},
 		kirim,
 	}
-	return ly
 }
 
 // nilaiAwal - isian yang tersimpan di `pyWorkPage` dari tingkat sebelumnya (Pega tidak mengosongkannya antar tingkat):

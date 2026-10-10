@@ -152,7 +152,17 @@ describe('medan layar NB Treaty In - aksi sel (action set XML, berurutan)', () =
   it('Gross* -> CalculatePremi_Act(Action); Premi/Claim/Salvage/Excess/Deduction -> CountOGPONP_Act; Outstanding tanpa aksi', () => {
     expect(cari(MEDAN_ADMIN_UANG, 'GrossPremium').aksi).toEqual([{ aksi: 'CalculatePremi', param: 'PREMIUM' }])
     expect(cari(MEDAN_ADMIN_UANG, 'GrossClaim').aksi).toEqual([{ aksi: 'CalculatePremi', param: 'CLAIM' }])
-    for (const m of ['PremiOgp', 'PremiOnp', 'Claim', 'SalvageValue', 'ExcessLoss', 'Deduction1', 'Deduction2']) {
+    // premi: Deduction In A/B dari persennya (Count*(Pct)) LALU CountOGPONP (work owner 10-10-2026); Deduction1/2 manual
+    for (const m of ['PremiOgp', 'PremiOnp']) {
+      expect(cari(MEDAN_ADMIN_UANG, m).aksi).toEqual([
+        { aksi: 'CountResult1', param: 'Pct' },
+        { aksi: 'CountResult2Ogp', param: 'Pct' },
+        { aksi: 'CountResult1Onp', param: 'Pct' },
+        { aksi: 'CountResult2Onp', param: 'Pct' },
+        { aksi: 'CountOGPONP' },
+      ])
+    }
+    for (const m of ['Claim', 'SalvageValue', 'ExcessLoss', 'Deduction1', 'Deduction2']) {
       expect(cari(MEDAN_ADMIN_UANG, m).aksi).toEqual([{ aksi: 'CountOGPONP' }])
     }
     expect(cari(MEDAN_ADMIN_UANG, 'OutstandingClaim').aksi).toBeUndefined()

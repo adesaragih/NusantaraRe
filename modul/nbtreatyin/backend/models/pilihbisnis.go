@@ -275,15 +275,6 @@ func KunciCariBisnis(nama string, langkahPra bool) string {
 // CARI2 GROUPPANEL, CARI3 ID); kosong semua bila tidak ada baris.
 type BarisBisnis struct{ OldID, GroupPanel, ID string }
 
-// IsiGrupBisnis - [keputusan work owner 06-10-2026] kontrak tanpa Class of Business: Group Business (portal
-// `GetListOpportunity` = Quotation.BusinessName) diisi nama grup bisnis dari tabel BUSINESS. Class of Business
-// yang terisi (preACT langkah 3) tidak pernah ditimpa; nama kosong = tidak ada perubahan.
-func IsiGrupBisnis(h *Halaman, nama string) {
-	if h.Ambil(HalamanQuotation+".BusinessName") == "" && nama != "" {
-		h.Setel(HalamanQuotation+".BusinessName", nama)
-	}
-}
-
 // TerapkanBisnisPilih = preACT langkah 14.7-14.9.
 func TerapkanBisnisPilih(h *Halaman, b BarisBisnis) {
 	h.Setel(HalamanQuotation+".BusinessOldId", b.OldID)

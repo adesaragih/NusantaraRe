@@ -30,9 +30,11 @@ const (
 	KelasKlaim = "ASM-FW-GCNMFW-Work-ClaimTreaty"
 	// KelasKomite - kelas kasus komite (kunci instans HISTORYAKSEPTASIPEGA.ID_KOMITE).
 	KelasKomite = "ASM-FW-GCNMFW-Work-KomiteTreaty"
-	// TransferAdjustment - `.TransferType` jalur penyesuaian (TT 2). TT 3 (reject claim) tanpa penulis di Claim Prop,
-	// TT 4 (close) ditunda OQ-CP-06.
+	// TransferAdjustment - `.TransferType` jalur penyesuaian (TT 2). TT 3 (reject claim) tanpa penulis di Claim Prop.
 	TransferAdjustment = "2"
+	// TransferTutup - `.TransferType` Close Without Payment (TT 4, `SendCloseClaimToKomite` -> `KomitePost_Close`;
+	// perintah work owner 10-10-2026). Kasusnya tanpa baris adjustment (`T_GENERAL_KOMITE.ADJUSTMENT_ID` NULL).
+	TransferTutup = "4"
 )
 
 // Keputusan anggota tangga (`KomiteList(n)` / kolom `KOMITE_APPROVAL`) dan `.AcceptStatus`.
@@ -53,6 +55,10 @@ type Kasus struct {
 	ID           string `json:"id"`
 	KlaimID      string `json:"klaimId"`
 	AdjustmentID string `json:"adjustmentId"`
+	// TransferType - `.TransferType`: TT 2 (adjustment) atau TT 4 (Close Without Payment, AdjustmentID kosong).
+	TransferType string `json:"transferType"`
+	// Kronologi - `pyWorkPage.Komite.CircumtansesCouseOfLoss` kasus TT 4 (isian "Chronology" pop-up close).
+	Kronologi    string `json:"kronologi,omitempty"`
 	Loop         int    `json:"komiteLoop"`
 	Count        int    `json:"komiteCount"`
 	AcceptStatus string `json:"acceptStatus"`
@@ -82,6 +88,9 @@ type Kepala struct {
 
 // Tertutup - kasus sudah Resolved-Completed.
 func (k Kasus) Tertutup() bool { return k.StatusWork == StatusSelesai }
+
+// Tutup - kasus komite Close Without Payment (TT 4).
+func (k Kasus) Tutup() bool { return k.TransferType == TransferTutup }
 
 // Anggota - satu baris tangga (penyetuju).
 type Anggota struct {

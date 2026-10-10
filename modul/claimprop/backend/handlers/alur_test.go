@@ -38,7 +38,7 @@ func acuanUji() *tiruan.Acuan {
 	a := tiruan.AcuanBaru()
 	a.Master[masterUji] = models.MasterTreaty{ID: masterUji, TreatyContractName: "UJI-KONTRAK", ProportionType: "Proportional",
 		Ceding: "UJI-CEDING", CedingID: "UJI-CED", LeadingReinsSource: "UJI-SOB", LeadingReinsSourceID: "UJI-SOBID",
-		Commencement: "2026-01-01", Termination: "2026-12-31", TreatyYear: "2026", RNMShareP: "10",
+		Commencement: "2026-01-01", Termination: "2026-12-31", TreatyYear: "2026",
 		StatusAkseptasi: "Resolve Complete", Limits: []models.LimitMaster{{TreatyType: "QUOTA SHARE",
 			Detail: []models.DetailLimit{{TreatyGroupID: "UJI-TG", RNMShare: "10",
 				SpreadingList: []models.SpreadingMaster{{ReinsTypeID: "UJI-R1", ReinsTypeName: "UJI-QS", Pct: "100"}}}}}}}

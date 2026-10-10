@@ -53,6 +53,22 @@ dipensiunkan 1 Oktober 2026.
 - **Portal** = berkas buatan akun ini (`w.CREATE_OP`) + LINI non-life, switch *In Progress* / *Resolved*
   (`?status=selesai`). RALAT WO 07-10-2026 *"TAMBAHKAN KAN UNTUK PEMBUAT. MENU ITU HANYA UNTUK SI PEMBUAT, NB DAN EDM
   TREATY"*: Resolved pun hanya buatan akun ini (dulu 06-10-2026 semua berkas selesai).
+- **Kolom inbox "Treaty Business"** (portal + kotak masuk Beranda) = `T_GENERAL_POLIS_TREATY.TREATY_GROUP_NAME` - perintah
+  WO 10-10-2026 *"GANTI YANG DI INBOX GROUPBISNIS JADI TREATY BISNIS! SCRIPT YANG SELECT GROUP BISNIS HAPUS AJA"*. Dulu
+  "Group Business" = `Quotation.BusinessName`; pencarian nama grup bisnis lewat `TREATYGROUP.COAID` ->
+  `BUSINESS.BUSINESSGROUPID` (keputusan 06-10-2026) DICABUT - COAID 10041 (Surety Bond, Custom Bond, Counter Bank
+  Guarantee) tidak punya grup di BUSINESS. `Quotation.BusinessName` kini = CLASSOFBUSINESS kontrak apa adanya.
+- **Premi diubah -> Deduction In A / B ikut** (WO 10-10-2026 *"DEDUCTION A TIDAK BERUBAH OTOMATIS, HARUS DI TRIGER DULU"*;
+  penyimpangan sadar dari XML): sel Premi Ogp / Premi Onp mengirim `CountResult1` / `CountResult2Ogp` / `CountResult1Onp` /
+  `CountResult2Onp` (Data=Pct) lalu `CountOGPONP` - di XML `CountOGPONP_Act` memanggilnya TANPA Data sehingga Deduction
+  In A / B tidak ikut premi. ⛔ Deduction1 / Deduction2 TETAP isian manual (WO 10-10-2026 menolak hitung otomatisnya).
+- **Hitung langsung saat mengetik**: isian angka ber-aksi menghitung 600 ms sesudah ketikan terakhir
+  (`frontend/hitungLangsung.ts`), tidak hanya saat blur; kosong / 0 tetap menunggu blur (CountOGPONP langkah 1-2
+  mengenolkan persen OGP/ONP). Jawaban hitung yang sudah disusul diabaikan, ketikan sesudah kirim dipertahankan.
+  Dibuktikan Chrome headless 10-10-2026 (klik, Ctrl+A, ketik 2000 -> Deduction In A 650 tanpa blur).
+- **Isian tanggal** (Statement Period, To, Production Date) = kotak teks dd-mm-yyyy + tombol kalender
+  (`components/InputTanggal.tsx`, WO 10-10-2026 *"BISA DI COPY PASTE DAN DI KETIK LANCAR"*); tempelan dd/mm/yyyy,
+  yyyy-mm-dd, "1 Jul 2024" dibaca utuh (hari dulu).
 - **Riwayat** `HISTORYAKSEPTASIPEGA` di transaksi submit; `OPERATORID` = identitas login, `USERNAME`
   = nama tampilan (`M_LOGIN_GO.NAME`).
 - **Catatan usulan** (`PolicyTreatyIn.SuggestList`) = tabel lama `POOLDATA.HISTORYAKSEPTASIPRODUCTION`

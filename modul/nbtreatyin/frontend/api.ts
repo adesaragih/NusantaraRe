@@ -36,7 +36,8 @@ export interface Kasus {
 /** Satu baris daftar portal - `models.RingkasanKasus`. */
 export interface RingkasanKasus {
   id: string
-  businessName: string
+  /** T_GENERAL_POLIS_TREATY.TREATY_GROUP_NAME - kolom "Treaty Business" (perintah work owner 10-10-2026). */
+  treatyGroupName: string
   insuredName: string
   marketingName: string
   nbStatus: string

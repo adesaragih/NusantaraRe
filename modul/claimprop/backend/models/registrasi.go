@@ -613,7 +613,7 @@ func TerapkanMaster(h *Halaman, m MasterTreaty, gantiShare bool) {
 		"Ceding": m.Ceding, "CedingID": m.CedingID, "LeadingReinsSource": m.LeadingReinsSource,
 		"LeadingReinsSourceID": m.LeadingReinsSourceID, "Bordeaux": m.Bordeaux, "BordereauxNote": m.BordereauxNote,
 		"AccountingMode": m.AccountingMode, "TeritorialScope": m.TeritorialScope, "Commencement": m.Commencement,
-		"Termination": m.Termination, "TreatyYear": m.TreatyYear, "RNMShareP": m.RNMShareP,
+		"Termination": m.Termination, "TreatyYear": m.TreatyYear, "RNMShareP": ShareMaster(m, h.Ambil(CD+"TreatyGroupID")),
 		"StatusAkseptasi": m.StatusAkseptasi,
 	} {
 		if v != "" {
@@ -628,6 +628,32 @@ func TerapkanMaster(h *Halaman, m MasterTreaty, gantiShare bool) {
 		lim = append(lim, Baris{"TreatyType": l.TreatyType})
 	}
 	h.SetelDaftar(TM+"Limits", lim)
+}
+
+// ShareMaster - RNM Share master untuk klaim (keputusan work owner 10-10-2026: RNM_SHARE view detail treaty group
+// klaim, menggantikan `TreatyInMaster.RNMShareP` JSON): RNMShare Detail pertama ber-TreatyGroupID klaim; tanpa yang
+// cocok, nilai bila SELURUH detail berbagi satu nilai; selain itu kosong - dipilih dari dropdown RNM Share
+// (`PilihanShareRNM`).
+func ShareMaster(m MasterTreaty, grup string) string {
+	satu, banyak := "", false
+	for _, l := range m.Limits {
+		for _, d := range l.Detail {
+			if grup != "" && d.TreatyGroupID == grup && d.RNMShare != "" {
+				return d.RNMShare
+			}
+			switch {
+			case d.RNMShare == "":
+			case satu == "":
+				satu = d.RNMShare
+			case satu != d.RNMShare:
+				banyak = true
+			}
+		}
+	}
+	if banyak {
+		return ""
+	}
+	return satu
 }
 
 // PilihanShareRNM meniru `Activity/GetRNMShareTreaty.xml`: seluruh `Limits(n).Detail(m).RNMShare` tanpa duplikat

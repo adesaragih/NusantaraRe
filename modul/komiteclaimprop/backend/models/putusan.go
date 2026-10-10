@@ -144,6 +144,55 @@ type Rencana struct {
 	Email string
 	// Posisi - T_WORK_CLAIM.POSITION sesudah Submit: KomiteID baris menunggu pertama yang tersisa; kosong = selesai.
 	Posisi string
+	// StsKonversi - `STS_REJECT` Konversi (S29): kosong = `StsOSAkseptasi` (TT 2); TT 4 = "4" (KomitePost_Close S14).
+	StsKonversi string
+	// OSTutup - KomitePost_Close S11 (baris OS close STS 4); KlaimDitolak - S13 (CLAIMREJECTED); TutupKlaim - S17
+	// (`pxForceCaseClose` klaim induk Resolved-Completed). Ketiganya hanya TT 4 disetujui.
+	OSTutup, KlaimDitolak, TutupKlaim bool
+}
+
+// Teks riwayat klaim KomitePost_Close S2 / S3 (VERBATIM, termasuk dua spasi "Claim  by" pada penolakan) + jabatan
+// tingkat berjalan (keputusan 17-09: jabatan tangga, bukan nama akun yang di-hardcode XML).
+const (
+	TeksTutupDisetujui = "Accepted - Close Claim by "
+	TeksTutupDitolak   = "Rejected - Close Claim  by "
+)
+
+// RencanakanTutup = `KomitePost` S3 -> `KomitePost_Close` (TT 4, Close Without Payment). Tanpa baris adjustment: tanpa
+// nomor akseptasi, OS Type 1, retro, Kasir, HISTORYAKSEPTASIPEGA, maupun log layanan (langkah itu tidak ada di rule ini).
+// PDF `CommitteCloseClaim` dan email S12 tidak dibangun: stream HTML-nya tidak diekspor (OQ, PARITAS).
+func RencanakanTutup(k Kasus, kep Keputusan, akun string, saat time.Time) Rencana {
+	r := Rencana{Count: k.Count, AcceptStatus: kep.AcceptStatus, UsulTutup: UsulTidak, UsulCadang: UsulTidak,
+		SubjectivitySimpan: UsulTidak}
+	setuju := kep.AcceptStatus == KeputusanSetuju
+	berjalan := k.barisBerjalan()
+	jabatan := ""
+	if berjalan >= 0 {
+		jabatan = k.Tangga[berjalan].Jabatan
+		// S5: KomiteList(KomiteCount) <- keputusan, komentar, @CurrentDateTime().
+		r.Tangga = append(r.Tangga, UbahAnggota{ID: k.Tangga[berjalan].ID, Keputusan: kep.AcceptStatus,
+			Komentar: kep.Comment, IsiKomentar: true, Tanggal: saat, Pemutus: akun})
+	}
+	teks := TeksTutupDitolak
+	if setuju {
+		teks = TeksTutupDisetujui
+	}
+	if setuju || kep.AcceptStatus == KeputusanTolak { // S2 / S3 (gerbang AcceptStatus 1 / 2), S4 DataTransform
+		r.Klaim.Riwayat = append(r.Klaim.Riwayat, kontrak.RiwayatKlaimTreaty{Teks: teks + jabatan, Pelaku: akun,
+			Tingkat: jabatan, Saat: saat})
+	}
+	r.JSONKlaim = true // S10 InsertJsonClaimTreaty_act (tanpa gerbang)
+	if setuju {
+		r.OSTutup, r.KlaimDitolak, r.Konversi, r.TutupKlaim = true, true, true, true // S11, S13, S15, S17
+		r.StsKonversi = StsOSTutup                                                   // S14 TempOpenPage.stsReject := 4
+		r.TingkatAkhirSetuju = k.Count == k.Loop
+	}
+	r.Count = k.Count + 1 // S16
+	r.Selesai = !MasihBerjalan(kep.AcceptStatus, r.Count, k.Loop)
+	if !r.Selesai {
+		r.Posisi = posisiSesudah(k, r.Tangga)
+	}
+	return r
 }
 
 // Rencanakan menyusun rencana Submit `kep` oleh `akun` atas kasus `k` (klaim induk `kl`, baris adjustment posisi

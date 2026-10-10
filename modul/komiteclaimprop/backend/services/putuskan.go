@@ -67,11 +67,19 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, kep mo
 		if strings.TrimSpace(models.AdjustmentKlaim(kl)["AcceptedNo"]) != "" {
 			return ErrAksiTertutup
 		}
+		if k.Tutup() { // TT 4: Subjectivity dan dua Propose hanya tampil untuk `.TransferType = 2`
+			kep.IsSubjectivity, kep.SubjectivityNote, kep.UsulTutup, kep.UsulCadang = false, "", false, false
+		}
 		if pesan := models.PeriksaIsian(k, kep); len(pesan) > 0 {
 			return &GalatValidasi{Pesan: pesan}
 		}
 		j := &jalan{l: l, ctx: ctx, tx: tx, k: k, kl: kl, akun: p.AkunID, saat: saat}
-		r := models.Rencanakan(k, kl, kep, p.AkunID, saat)
+		var r models.Rencana
+		if k.Tutup() { // KomitePost S3 -> KomitePost_Close
+			r = models.RencanakanTutup(k, kep, p.AkunID, saat)
+		} else { // KomitePost S1 -> KomitePostAdjustment
+			r = models.Rencanakan(k, kl, kep, p.AkunID, saat)
+		}
 		if err := j.laksanakan(&r); err != nil {
 			return err
 		}
@@ -149,14 +157,36 @@ func (j *jalan) laksanakan(r *models.Rencana) error {
 		return galatKontrak(err)
 	}
 	kunci := models.KunciInstans(k.KlaimID)
-	if r.JSONKlaim { // S28
+	if r.JSONKlaim { // S28 (TT 4: KomitePost_Close S10)
 		if err := j.l.g.SalinJSONKlaim(ctx, tx, kunci, kl.Nilai["ClaimData.NoClaim"], noPolis, j.saat); err != nil {
 			return err
 		}
 	}
-	if r.Konversi { // S29 KonversiKlaim_Act (Connect-REST bergerbang IsPEGAPROD)
+	nama, err := j.l.a.NamaPelaku(ctx, j.akun) // S32 InsertHistory.CARI4 = OperatorID.pyUserName
+	if err != nil {
+		return err
+	}
+	if r.OSTutup { // KomitePost_Close S11.1-S11.3
+		if err := j.l.g.SisipOS(ctx, tx, models.SusunOSTutup(kl), j.saat); err != nil {
+			return err
+		}
+	}
+	if r.KlaimDitolak { // KomitePost_Close S13
+		if err := j.l.g.SisipKlaimDitolak(ctx, tx, models.KlaimDitolak{InsKey: kunci, ID: k.KlaimID, InsName: k.KlaimID,
+			Label: models.LabelKlaimTreaty, StatusWork: models.StatusKlaimTerbuka, Kelas: models.KelasKlaim,
+			PembuatNama: kl.Nilai[kontrak.JalurNamaPembuatKlaimTreaty], PembuatID: kl.Nilai[kontrak.JalurPembuatKlaimTreaty],
+			Diperbarui: j.saat, PengubahNama: nama, PengubahID: j.akun,
+			Remark: kl.Nilai["ClaimData.Remark_Close"]}); err != nil {
+			return err
+		}
+	}
+	if r.Konversi { // S29 KonversiKlaim_Act (Connect-REST bergerbang IsPEGAPROD); TT 4: KomitePost_Close S15
+		sts := r.StsKonversi
+		if sts == "" {
+			sts = models.StsOSAkseptasi
+		}
 		if err := j.antre(JenisEfekKonversi, k.KlaimID, map[string]string{"CASEID": kunci, "NOPOLIS": noPolis,
-			"STS_REJECT": models.StsOSAkseptasi}); err != nil {
+			"STS_REJECT": sts}); err != nil {
 			return err
 		}
 	}
@@ -165,17 +195,20 @@ func (j *jalan) laksanakan(r *models.Rencana) error {
 			return err
 		}
 	}
-	nama, err := j.l.a.NamaPelaku(ctx, j.akun) // S32 InsertHistory.CARI4 = OperatorID.pyUserName
-	if err != nil {
-		return err
-	}
-	if err := j.l.g.CatatRiwayatAkseptasi(ctx, tx, models.RiwayatAkseptasi{IDPega: kunci,
-		IDKomite: models.KunciInstans(k.ID), Status: r.StatusRiwayat, Username: nama,
-		Workbasket: models.WorkbasketRiwayat}, j.saat); err != nil { // S33
-		return err
+	if r.StatusRiwayat != "" { // S32-S33 (KomitePost_Close tanpa langkah ini)
+		if err := j.l.g.CatatRiwayatAkseptasi(ctx, tx, models.RiwayatAkseptasi{IDPega: kunci,
+			IDKomite: models.KunciInstans(k.ID), Status: r.StatusRiwayat, Username: nama,
+			Workbasket: models.WorkbasketRiwayat}, j.saat); err != nil {
+			return err
+		}
 	}
 	if err := j.email(r); err != nil { // S35
 		return err
+	}
+	if r.TutupKlaim { // KomitePost_Close S17 pxForceCaseClose (CloseAllSubCases, kecuali kasus ini)
+		if err := j.l.klaim.TutupKlaimTreaty(ctx, tx, k.KlaimID, k.ID, j.saat); err != nil {
+			return galatKontrak(err)
+		}
 	}
 	if err := j.l.g.SimpanKepala(ctx, tx, k.ID, k.Count, r.Kepala()); err != nil {
 		return err

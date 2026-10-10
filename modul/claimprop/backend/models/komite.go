@@ -98,6 +98,60 @@ func BolehSerahKomite(b Baris) bool {
 	return b["IsKomite"] != "1" && (b[PropKomiteID] == "" || b["IsSubjectivity"] == "true")
 }
 
+// ---------------------------------------------------------------- Close Without Payment (SendCloseClaimToKomite)
+
+// Close Without Payment - perintah work owner 10-10-2026 (OQ-CP-06 ditutup lewat kolom bersama migrasi
+// komiteclaimfacin 641-643).
+const (
+	// TransferTutup - `childPageKomite.TransferType := 4` (SendCloseClaimToKomite 5.3).
+	TransferTutup = "4"
+	// PropKronologiTutup - isian "Chronology" pop-up PreventRejectClaimProp (`TempCommiteClaim.CircumtansesCouseOfLoss`,
+	// 5.2 -> `childPageKomite.Komite.CircumtansesCouseOfLoss`).
+	PropKronologiTutup = "TempCommiteClaim.CircumtansesCouseOfLoss"
+	// PropCentangTutupTanpaBayar - kotak centang "Close Without Payment" pop-up PreventRejectClaimProp.
+	PropCentangTutupTanpaBayar = "TempCommiteClaim.AllocationShareSalvage"
+	// JabatanTutupTanpaBayar - satu-satunya penyetuju kasus komite close (5.2-5.3 `IDKomite := "Claim Dept. Head"`).
+	// XML menanam akun orang; di sini baris roster PROP berjabatan itu (workbasket ReasClaimDeptHead, migrasi 537).
+	JabatanTutupTanpaBayar = "Claim Dept. Head"
+	// BatasRosterSemua - batas roster yang memuat setiap baris aktif (LIMIT_BOTTOM <= batas): penyetuju close dicari
+	// menurut JABATAN, bukan menurut nilai (langkah 5.2-5.3 tanpa batas nilai).
+	BatasRosterSemua = "999999999999999"
+	// TeksMintaTutupTanpaBayar - riwayat SendCloseClaimToKomite 5.6 (VERBATIM): + ID kasus komite.
+	TeksMintaTutupTanpaBayar = "Request close claim without payment "
+	// PesanTutupTanpaBayarBerjalan - `[tidak ada di XML]` penjaga kiriman ganda: Pega membiarkan Close Without Payment
+	// dikirim lagi selama kasus komite close sebelumnya masih menunggu (penyimpangan sadar, PARITAS).
+	PesanTutupTanpaBayarBerjalan = "Close without payment for this claim is already waiting for committee decision"
+)
+
+// PeriksaTutupTanpaBayar = SendCloseClaimToKomite langkah 3-4: setiap baris adjustment ber-AcceptanceStatus kosong
+// -> "Can not close claim, there is adjustment in comitee!" (3.1 hanya `.AcceptanceStatus==""`, berbeda dengan
+// CloseClaimProp yang juga menolak "0").
+func PeriksaTutupTanpaBayar(h *Halaman) bool {
+	for _, b := range h.AmbilDaftar(DaftarAdjustment) {
+		if b["AcceptanceStatus"] == "" {
+			h.TambahPesan("", PesanKomiteMasihJalan)
+			return false
+		}
+	}
+	return true
+}
+
+// TandaiTutupTanpaBayar = SendCloseClaimToKomite langkah 2: Remark / Remark_Close <- Remarks pop-up.
+func TandaiTutupTanpaBayar(h *Halaman, remarks string) {
+	h.Setel(CD+"Remark", remarks)
+	h.Setel(CD+"Remark_Close", remarks)
+}
+
+// PilihPenyetujuTutup - baris roster PROP berjabatan `JabatanTutupTanpaBayar` (langkah 5.2-5.3); false bila tidak ada.
+func PilihPenyetujuTutup(roster []AnggotaKomite) (AnggotaKomite, bool) {
+	for _, a := range roster {
+		if a.Jabatan == JabatanTutupTanpaBayar {
+			return a, true
+		}
+	}
+	return AnggotaKomite{}, false
+}
+
 // NilaiRosterKomite = AddKomiteTreatyChild_ACT langkah 18-19: batas roster = ValueAdjustment; subjectivity = 0
 // (hanya jenjang terbawah).
 func NilaiRosterKomite(b Baris) string {

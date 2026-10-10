@@ -111,6 +111,7 @@ describe('ringkasan', () => {
         usulCadang: false,
       },
       terbuka: true,
+      adjustment: true,
       pilihanTerima: [],
       pilihanSubjectivityNote: [],
       label: { acceptStatus: '', comment: '', isSubjectivity: '', subjectivityNote: '', usulTutup: '', usulCadang: '' },

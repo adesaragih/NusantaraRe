@@ -91,6 +91,22 @@ func SusunOSAkseptasi(kl kontrak.KlaimTreaty, acceptedNo, komiteID string, saat 
 	}
 }
 
+// StsOSTutup - `InputData.CARI10 := "4"` (KomitePost_Close S11.1): baris penanda close file.
+const StsOSTutup = "4"
+
+// SusunOSTutup = KomitePost_Close S11.1-S11.3 (AcceptStatus 1): halaman InputParamOs (CauseOfLoss, CauseOfLossID,
+// NoClaim, IDMasterTreaty = TreatyInMaster.ID) sebagai DATA_JSON, STS 4, MASTERID (CARI18) TreatyInMaster.ID. Bentuk
+// sama dengan baris close Claim Prop (`CloseClaimProp` langkah 6, `BarisOSTutup`); EstimationDate tidak ada di halaman.
+func SusunOSTutup(kl kontrak.KlaimTreaty) BarisOSAkseptasi {
+	v := kl.Nilai
+	return BarisOSAkseptasi{CaseID: KunciInstans(v["pyID"]), NoClaim: v["ClaimData.NoClaim"],
+		NoPolis: v["ClaimData.PolicyData.PolicyNo"], StsReject: StsOSTutup, MasterID: v["TreatyInMaster.ID"],
+		CauseOfLoss: v["ClaimData.CauseOfLoss"], CauseOfLossID: v["ClaimData.CauseOfLossID"],
+		DataJSON: JSONHalamanPega(map[string]string{"CauseOfLoss": v["ClaimData.CauseOfLoss"],
+			"CauseOfLossID": v["ClaimData.CauseOfLossID"], "NoClaim": v["ClaimData.NoClaim"],
+			"IDMasterTreaty": v["TreatyInMaster.ID"], "pxObjClass": KelasOSAkseptasi})}
+}
+
 // JSONHalamanPega = `@ASM.GetPageJSONString()` atas satu halaman (fungsi tidak diekspor; bentuk dibaca dari DATA_JSON
 // OS_AKSEPTASI_KLAIM warisan - 6.596 baris CLMP di DEV, sesi ASIS CLAIM PROP 08-10-2026). DISALIN dari pola Claim Prop,
 // tidak diimpor (batas modul):

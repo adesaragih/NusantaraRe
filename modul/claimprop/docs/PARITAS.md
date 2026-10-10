@@ -134,7 +134,7 @@
 | `PrintFile` / `PrintFileDLA` | label "Please Print Pla" / "Please Print DLA" | 12 | **dibangun** sebagai pesan info |
 | `GeneratePLA` | `.ClaimData.Remark`, post-act `TryMakePLA_Act`; tombol `pySubmitLabel` "Submit" / `pyCancelLabel` "Cancel" | 12 | **dibangun** |
 | `GenerateDLATreaty` | `.RemarksDLA`, post-act `PrintDLATreatyIn`; Submit / Cancel | 12 | **dibangun** |
-| `PreventRejectClaimProp` | Yes (tanpa bayar → `SendCloseClaimToKomite`) / No / Yes (`CloseClaimProp`) / No / Close | 11 | **dibangun**, kecuali Yes tanpa bayar = **nonaktif-OQ** OQ-CP-06 |
+| `PreventRejectClaimProp` | Yes (tanpa bayar → `SendCloseClaimToKomite`) / No / Yes (`CloseClaimProp`) / No / Close | 11 | **dibangun** — Yes tanpa bayar dibangun 10-10-2026 (OQ-CP-06 selesai): `SendCloseClaimToKomite` melahirkan kasus komite TT 4 satu tingkat (roster PROP "Claim Dept. Head"), kronologi + `Remark_Close` + riwayat "Request close claim without payment", klaim tetap terbuka sampai komite memutuskan. Penyimpangan sadar: (1) CWP kedua selagi kasus TT 4 klaim itu masih terbuka ditolak "Close without payment for this claim is already waiting for committee decision" `[tidak ada di korpus]`; (2) `CloseClaimProp` ditolak server bila centang tanpa bayar menyala (XML hanya menyembunyikan tombolnya); (3) Close biasa ikut menutup kasus komite TT 4 yang masih terbuka (`CloseAllSubCases`) |
 | `CatastrofeList` | lihat §2 | 03 | **dibangun** |
 | `MessageBeforeDeleteTreatyGroup` | dibuka tombol Delete yang `1==2` | — | tidak tampil di XML |
 
@@ -151,7 +151,7 @@
 | REST `getPremiumPaidOnTreatyIn` | View Status Payment Premi | 02 | **nonaktif-OQ** OQ-CP-03 |
 | REST `ServiceGoogle` | `InsertGoogleStorage_Act` / `GetUrlGoogleStorage_Act` (berkas) | 11, 12 | InsertGoogleStorage_Act **dibangun** lewat `inti/backend/penyimpanan` (lampiran); GetUrl (unduh) belum - OQ-CP-05 |
 | email `SendEmailKlaim` | `AddKomiteTreatyChild_ACT` 34 | 11, 13 | **dibangun** — efek outbox "email-komite" hanya bila `IS_PEGA_PROD`; CC/BCC OQ-CP-15 |
-| email `SendEmailKlaimRejectClose` | `SendCloseClaimToKomite` (tutup tanpa bayar) | 11 | **tidak dibangun** — OQ-CP-06 |
+| email `SendEmailKlaimRejectClose` | `SendCloseClaimToKomite` (tutup tanpa bayar) | 11 | **dibangun 10-10-2026** — efek outbox "email-komite" (MUATAN `jenis` = `tutup`) hanya bila `IS_PEGA_PROD`; pengiriman nyata sama dengan `SendEmailKlaim` (OQ-CP-03 / OQ-CP-15) |
 
 ## 7. Pemeliharaan master (di luar lingkup, prompt §2)
 
